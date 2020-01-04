@@ -2261,8 +2261,7 @@ nsPresContext::FireDOMPaintEvent(nsInvalidateRequestList* aList)
   
   
   nsRefPtr<NotifyPaintEvent> event =
-    NS_NewDOMNotifyPaintEvent(eventTarget, this, nullptr, NS_AFTERPAINT,
-                              aList);
+    NS_NewDOMNotifyPaintEvent(eventTarget, this, nullptr, eAfterPaint, aList);
 
   
   

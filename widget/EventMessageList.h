@@ -268,7 +268,7 @@ NS_EVENT_MESSAGE(eVolumeChange,         eMediaEventFirst + 19)
 
 
 NS_EVENT_MESSAGE(ePaintEventFirst,      3400)
-NS_EVENT_MESSAGE(NS_AFTERPAINT,         ePaintEventFirst)
+NS_EVENT_MESSAGE(eAfterPaint,           ePaintEventFirst)
 
 
 NS_EVENT_MESSAGE(NS_SIMPLE_GESTURE_EVENT_START,    3500)
