@@ -297,6 +297,36 @@ pub trait WriteBytesExt: io::Write {
 
     
     
+    
+    
+    #[inline]
+    fn write_uint<T: ByteOrder>(
+        &mut self,
+        n: u64,
+        nbytes: usize,
+    ) -> Result<()> {
+        let mut buf = [0; 8];
+        T::write_uint(&mut buf, n, nbytes);
+        write_all(self, &buf[0..nbytes])
+    }
+
+    
+    
+    
+    
+    #[inline]
+    fn write_int<T: ByteOrder>(
+        &mut self,
+        n: i64,
+        nbytes: usize,
+    ) -> Result<()> {
+        let mut buf = [0; 8];
+        T::write_int(&mut buf, n, nbytes);
+        write_all(self, &buf[0..nbytes])
+    }
+
+    
+    
     #[inline]
     fn write_f32<T: ByteOrder>(&mut self, n: f32) -> Result<()> {
         let mut buf = [0; 4];
