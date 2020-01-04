@@ -316,6 +316,8 @@ public:
 
   nsViewManager* GetViewManager() const { return mViewManager; }
 
+  nsRefreshDriver* GetRefreshDriver() const;
+
 #ifdef ACCESSIBILITY
   
 
