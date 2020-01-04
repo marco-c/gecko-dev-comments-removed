@@ -410,7 +410,8 @@ public class GeckoThread extends Thread {
 
     private String getGeckoArgs(final String apkPath) {
         
-        final StringBuilder args = new StringBuilder(apkPath);
+        final Context context = GeckoAppShell.getApplicationContext();
+        final StringBuilder args = new StringBuilder(context.getPackageName());
         args.append(" -greomni ").append(apkPath);
 
         final String userArgs = addCustomProfileArg(mArgs);
