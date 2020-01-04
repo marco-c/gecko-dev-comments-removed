@@ -51,6 +51,7 @@ namespace layers {
 class APZChild;
 class APZEventState;
 class AsyncDragMetrics;
+class IAPZCTreeManager;
 class ImageCompositeNotification;
 } 
 
@@ -774,6 +775,7 @@ private:
 
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
+  RefPtr<layers::IAPZCTreeManager> mApzcTreeManager;
   
   
   layers::APZChild* mAPZChild;
