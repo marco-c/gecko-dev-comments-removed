@@ -685,6 +685,10 @@ js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
     }
     maybeEndProfile(ProfileKey::MarkDebugger);
 
+    maybeStartProfile(ProfileKey::ClearNewObjectCache);
+    rt->contextFromMainThread()->caches.newObjectCache.clearNurseryObjects(rt);
+    maybeEndProfile(ProfileKey::ClearNewObjectCache);
+
     
     
     

@@ -24,6 +24,7 @@
 #include "jscompartmentinlines.h"
 #include "jsobjinlines.h"
 
+#include "vm/Caches-inl.h"
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
@@ -1529,6 +1530,35 @@ EmptyShape::getInitialShape(ExclusiveContext* cx, const Class* clasp, TaggedProt
     return getInitialShape(cx, clasp, proto, GetGCKindSlots(kind, clasp), objectFlags);
 }
 
+void
+NewObjectCache::invalidateEntriesForShape(JSContext* cx, HandleShape shape, HandleObject proto)
+{
+    const Class* clasp = shape->getObjectClass();
+
+    gc::AllocKind kind = gc::GetGCObjectKind(shape->numFixedSlots());
+    if (CanBeFinalizedInBackground(kind, clasp))
+        kind = GetBackgroundAllocKind(kind);
+
+    RootedObjectGroup group(cx, ObjectGroup::defaultNewGroup(cx, clasp, TaggedProto(proto)));
+    if (!group) {
+        purge();
+        cx->recoverFromOutOfMemory();
+        return;
+    }
+
+    EntryIndex entry;
+    for (CompartmentsInZoneIter comp(shape->zone()); !comp.done(); comp.next()) {
+        if (GlobalObject* global = comp->unsafeUnbarrieredMaybeGlobal()) {
+            if (lookupGlobal(clasp, global, kind, &entry))
+                PodZero(&entries[entry]);
+        }
+    }
+    if (!proto->is<GlobalObject>() && lookupProto(clasp, proto, kind, &entry))
+        PodZero(&entries[entry]);
+    if (lookupGroup(group, kind, &entry))
+        PodZero(&entries[entry]);
+}
+
  void
 EmptyShape::insertInitialShape(ExclusiveContext* cx, HandleShape shape, HandleObject proto)
 {
@@ -1553,6 +1583,21 @@ EmptyShape::insertInitialShape(ExclusiveContext* cx, HandleShape shape, HandleOb
 #endif
 
     entry.shape = ReadBarrieredShape(shape);
+
+    
+
+
+
+
+
+
+
+
+
+    if (cx->isJSContext()) {
+        JSContext* ncx = cx->asJSContext();
+        ncx->caches.newObjectCache.invalidateEntriesForShape(ncx, shape, proto);
+    }
 }
 
 void
