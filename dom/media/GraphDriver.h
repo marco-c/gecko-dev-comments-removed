@@ -149,19 +149,6 @@ public:
     return mCurrentTimeStamp;
   }
 
-  bool IsWaiting() {
-    return mWaitState == WAITSTATE_WAITING_INDEFINITELY ||
-           mWaitState == WAITSTATE_WAITING_FOR_NEXT_ITERATION;
-  }
-
-  bool IsWaitingIndefinitly() {
-    return mWaitState == WAITSTATE_WAITING_INDEFINITELY;
-  }
-
-  GraphTime IterationStart() {
-    return mIterationStart;
-  }
-
   GraphTime IterationEnd() {
     return mIterationEnd;
   }
@@ -191,13 +178,6 @@ public:
   void SetGraphTime(GraphDriver* aPreviousDriver,
                     GraphTime aLastSwitchNextIterationStart,
                     GraphTime aLastSwitchNextIterationEnd);
-
-  
-
-
-
-  void EnsureImmediateWakeUpLocked();
-
   
 
 
@@ -526,10 +506,6 @@ private:
   
 
   Atomic<bool> mInCallback;
-  
-
-
-  bool mPauseRequested;
   
 
 
