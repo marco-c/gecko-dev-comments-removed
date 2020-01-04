@@ -8,6 +8,7 @@
 #ifndef mozilla_net_HttpChannelChild_h
 #define mozilla_net_HttpChannelChild_h
 
+#include "mozilla/UniquePtr.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/PHttpChannelChild.h"
 #include "mozilla/net/ChannelEventQueue.h"
@@ -204,7 +205,7 @@ private:
   
   
   
-  nsTArray<nsAutoPtr<ChannelEvent>> mUnknownDecoderEventQ;
+  nsTArray<UniquePtr<ChannelEvent>> mUnknownDecoderEventQ;
   bool mUnknownDecoderInvolved;
 
   

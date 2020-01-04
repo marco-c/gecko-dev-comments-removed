@@ -8,6 +8,7 @@
 #ifndef mozilla_net_FTPChannelChild_h
 #define mozilla_net_FTPChannelChild_h
 
+#include "mozilla/UniquePtr.h"
 #include "mozilla/net/PFTPChannelChild.h"
 #include "mozilla/net/ChannelEventQueue.h"
 #include "nsBaseChannel.h"
@@ -126,7 +127,7 @@ private:
   
   
   
-  nsTArray<nsAutoPtr<ChannelEvent>> mUnknownDecoderEventQ;
+  nsTArray<UniquePtr<ChannelEvent>> mUnknownDecoderEventQ;
   bool mUnknownDecoderInvolved;
 
   bool mCanceled;
