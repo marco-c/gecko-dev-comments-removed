@@ -703,9 +703,9 @@ DeviceStorageStatics::Observe(nsISupports* aSubject,
     
     
     
-    if (!NS_strcmp(aData, MOZ_UTF16("full"))) {
+    if (!NS_strcmp(aData, u"full")) {
       sInstance->mLowDiskSpace = true;
-    } else if (!NS_strcmp(aData, MOZ_UTF16("free"))) {
+    } else if (!NS_strcmp(aData, u"free")) {
       sInstance->mLowDiskSpace = false;
     } else {
       return NS_OK;

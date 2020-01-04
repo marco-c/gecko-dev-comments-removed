@@ -100,7 +100,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer)
     
     
 
-    str = JS_NewUCStringCopyZ(cx, MOZ_UTF16("\xD3\x68\xE3\xEF")); 
+    str = JS_NewUCStringCopyZ(cx, u"\xD3\x68\xE3\xEF"); 
     MOZ_RELEASE_ASSERT(str);
     flatStr = JS_FlattenString(cx, str);
 
@@ -192,7 +192,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer)
     
     
 
-    str = JS_NewUCStringCopyZ(cx, MOZ_UTF16("\x038C\x0068\x0203\x0457")); 
+    str = JS_NewUCStringCopyZ(cx, u"\x038C\x0068\x0203\x0457"); 
     MOZ_RELEASE_ASSERT(str);
     flatStr = JS_FlattenString(cx, str);
 

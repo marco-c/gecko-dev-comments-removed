@@ -3026,7 +3026,7 @@ GetFormattedTimeString(PRTime aTime, nsAString& aFormattedTimeString)
   } else {
     
     
-    aFormattedTimeString.AssignLiteral(MOZ_UTF16("01/01/1970 00:00:00"));
+    aFormattedTimeString.AssignLiteral(u"01/01/1970 00:00:00");
   }
 }
 
@@ -5590,8 +5590,7 @@ nsDocument::CreateElement(const nsAString& aTagName,
 {
   *aReturn = nullptr;
   ErrorResult rv;
-  ElementCreationOptions options;
-  nsCOMPtr<Element> element = CreateElement(aTagName, options, rv);
+  nsCOMPtr<Element> element = nsIDocument::CreateElement(aTagName, rv);
   NS_ENSURE_FALSE(rv.Failed(), rv.StealNSResult());
   return CallQueryInterface(element, aReturn);
 }
@@ -5608,32 +5607,8 @@ bool IsLowercaseASCII(const nsAString& aValue)
   return true;
 }
 
-CustomElementDefinition*
-nsDocument::LookupCustomElementDefinition(const nsAString& aLocalName,
-                                          uint32_t aNameSpaceID,
-                                          const nsAString* aIs)
-{
-  if (!mRegistry || aNameSpaceID != kNameSpaceID_XHTML) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIAtom> localNameAtom = NS_Atomize(aLocalName);
-  nsCOMPtr<nsIAtom> typeAtom = aIs ? NS_Atomize(*aIs) : localNameAtom;
-
-  CustomElementDefinition* data;
-  CustomElementHashKey key(aNameSpaceID, typeAtom);
-  if (mRegistry->mCustomDefinitions.Get(&key, &data) &&
-      data->mLocalName == localNameAtom) {
-    return data;
-  }
-
-  return nullptr;
-}
-
 already_AddRefed<Element>
-nsDocument::CreateElement(const nsAString& aTagName,
-                          const ElementCreationOptions& aOptions,
-                          ErrorResult& rv)
+nsIDocument::CreateElement(const nsAString& aTagName, ErrorResult& rv)
 {
   rv = nsContentUtils::CheckQName(aTagName, false);
   if (rv.Failed()) {
@@ -5646,17 +5621,8 @@ nsDocument::CreateElement(const nsAString& aTagName,
     nsContentUtils::ASCIIToLower(aTagName, lcTagName);
   }
 
-  
-  nsString* is = CheckCustomElementName(
-    aOptions, needsLowercase ? lcTagName : aTagName, mDefaultElementType, rv);
-  if (rv.Failed()) {
-    return nullptr;
-  }
-
-  RefPtr<Element> elem = CreateElem(
-    needsLowercase ? lcTagName : aTagName, nullptr, mDefaultElementType, is);
-
-  return elem.forget();
+  return CreateElem(needsLowercase ? lcTagName : aTagName, nullptr,
+                    mDefaultElementType);
 }
 
 void
@@ -5664,7 +5630,7 @@ nsDocument::SetupCustomElement(Element* aElement,
                                uint32_t aNamespaceID,
                                const nsAString* aTypeExtension)
 {
-  if (!mRegistry || aNamespaceID != kNameSpaceID_XHTML) {
+  if (!mRegistry) {
     return;
   }
 
@@ -5678,10 +5644,9 @@ nsDocument::SetupCustomElement(Element* aElement,
     aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::is, *aTypeExtension, true);
   }
 
-  CustomElementDefinition* data = LookupCustomElementDefinition(
-    aElement->NodeInfo()->LocalName(), aNamespaceID, aTypeExtension);
-
-  if (!data) {
+  CustomElementDefinition* data;
+  CustomElementHashKey key(aNamespaceID, typeAtom);
+  if (!mRegistry->mCustomDefinitions.Get(&key, &data)) {
     
     
     
@@ -5701,25 +5666,43 @@ nsDocument::SetupCustomElement(Element* aElement,
   EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, data);
 }
 
+already_AddRefed<Element>
+nsDocument::CreateElement(const nsAString& aTagName,
+                          const nsAString& aTypeExtension,
+                          ErrorResult& rv)
+{
+  RefPtr<Element> elem = nsIDocument::CreateElement(aTagName, rv);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+
+  if (!aTypeExtension.IsVoid() &&
+      !aTagName.Equals(aTypeExtension)) {
+    
+    
+    SetupCustomElement(elem, GetDefaultNamespaceID(), &aTypeExtension);
+  }
+
+  return elem.forget();
+}
+
 NS_IMETHODIMP
 nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
                             const nsAString& aQualifiedName,
                             nsIDOMElement** aReturn)
 {
   *aReturn = nullptr;
-  ElementCreationOptions options;
   ErrorResult rv;
   nsCOMPtr<Element> element =
-    CreateElementNS(aNamespaceURI, aQualifiedName, options, rv);
+    nsIDocument::CreateElementNS(aNamespaceURI, aQualifiedName, rv);
   NS_ENSURE_FALSE(rv.Failed(), rv.StealNSResult());
   return CallQueryInterface(element, aReturn);
 }
 
 already_AddRefed<Element>
-nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
-                            const nsAString& aQualifiedName,
-                            const ElementCreationOptions& aOptions,
-                            ErrorResult& rv)
+nsIDocument::CreateElementNS(const nsAString& aNamespaceURI,
+                             const nsAString& aQualifiedName,
+                             ErrorResult& rv)
 {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
   rv = nsContentUtils::GetNodeInfoFromQName(aNamespaceURI,
@@ -5731,21 +5714,47 @@ nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
     return nullptr;
   }
 
-  
-  nsString* is = CheckCustomElementName(
-    aOptions, aQualifiedName, nodeInfo->NamespaceID(), rv);
-  if (rv.Failed()) {
-    return nullptr;
-  }
-
   nsCOMPtr<Element> element;
   rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                     NOT_FROM_PARSER, is);
+                     NOT_FROM_PARSER);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+  return element.forget();
+}
+
+already_AddRefed<Element>
+nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
+                            const nsAString& aQualifiedName,
+                            const nsAString& aTypeExtension,
+                            ErrorResult& rv)
+{
+  RefPtr<Element> elem = nsIDocument::CreateElementNS(aNamespaceURI,
+                                                        aQualifiedName,
+                                                        rv);
   if (rv.Failed()) {
     return nullptr;
   }
 
-  return element.forget();
+  if (aTypeExtension.IsVoid() ||
+      aQualifiedName.Equals(aTypeExtension)) {
+    
+    
+    return elem.forget();
+  }
+
+  int32_t nameSpaceId = kNameSpaceID_Wildcard;
+  if (!aNamespaceURI.EqualsLiteral("*")) {
+    rv = nsContentUtils::NameSpaceManager()->RegisterNameSpace(aNamespaceURI,
+                                                               nameSpaceId);
+    if (rv.Failed()) {
+      return nullptr;
+    }
+  }
+
+  SetupCustomElement(elem, nameSpaceId, &aTypeExtension);
+
+  return elem.forget();
 }
 
 NS_IMETHODIMP
@@ -8775,7 +8784,7 @@ nsDocument::RetrieveRelevantHeaders(nsIChannel *aChannel)
 
 already_AddRefed<Element>
 nsDocument::CreateElem(const nsAString& aName, nsIAtom *aPrefix,
-                       int32_t aNamespaceID, nsAString* aIs)
+                       int32_t aNamespaceID)
 {
 #ifdef DEBUG
   nsAutoString qName;
@@ -8802,7 +8811,7 @@ nsDocument::CreateElem(const nsAString& aName, nsIAtom *aPrefix,
 
   nsCOMPtr<Element> element;
   nsresult rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                              NOT_FROM_PARSER, aIs);
+                              NOT_FROM_PARSER);
   return NS_SUCCEEDED(rv) ? element.forget() : nullptr;
 }
 
@@ -9743,16 +9752,16 @@ nsIDocument::GetReadyState(nsAString& aReadyState) const
 {
   switch(mReadyState) {
   case READYSTATE_LOADING :
-    aReadyState.AssignLiteral(MOZ_UTF16("loading"));
+    aReadyState.AssignLiteral(u"loading");
     break;
   case READYSTATE_INTERACTIVE :
-    aReadyState.AssignLiteral(MOZ_UTF16("interactive"));
+    aReadyState.AssignLiteral(u"interactive");
     break;
   case READYSTATE_COMPLETE :
-    aReadyState.AssignLiteral(MOZ_UTF16("complete"));
+    aReadyState.AssignLiteral(u"complete");
     break;
   default:
-    aReadyState.AssignLiteral(MOZ_UTF16("uninitialized"));
+    aReadyState.AssignLiteral(u"uninitialized");
   }
 }
 
@@ -13487,27 +13496,4 @@ nsIDocument::UpdateStyleBackendType()
 #else
   mStyleBackendType = StyleBackendType::Gecko;
 #endif
-}
-
-nsString*
-nsDocument::CheckCustomElementName(const ElementCreationOptions& aOptions,
-                                   const nsAString& aLocalName,
-                                   uint32_t aNamespaceID,
-                                   ErrorResult& rv)
-{
-  
-  
-  if (!aOptions.mIs.WasPassed() ||
-      !Preferences::GetBool("dom.webcomponents.enabled")) {
-      return nullptr;
-  }
-
-  nsString* is = const_cast<nsString*>(&(aOptions.mIs.Value()));
-
-  
-  if (!LookupCustomElementDefinition(aLocalName, aNamespaceID, is)) {
-      rv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
-  }
-
-  return is;
 }

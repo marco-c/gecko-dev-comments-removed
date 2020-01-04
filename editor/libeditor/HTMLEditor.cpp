@@ -1212,12 +1212,10 @@ HTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
   nsAutoString inputString (aSourceToInsert);  
 
   
-  inputString.ReplaceSubstring(MOZ_UTF16("\r\n"),
-                               MOZ_UTF16("\n"));
+  inputString.ReplaceSubstring(u"\r\n", u"\n");
 
   
-  inputString.ReplaceSubstring(MOZ_UTF16("\r"),
-                               MOZ_UTF16("\n"));
+  inputString.ReplaceSubstring(u"\r", u"\n");
 
   AutoEditBatch beginBatching(this);
 

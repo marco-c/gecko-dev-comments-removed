@@ -82,7 +82,7 @@ nsCommandManager::CommandStatusChanged(const char* aCommandName)
       
       observer->Observe(NS_ISUPPORTS_CAST(nsICommandManager*, this),
                         aCommandName,
-                        MOZ_UTF16("command_status_changed"));
+                        u"command_status_changed");
     }
   }
 

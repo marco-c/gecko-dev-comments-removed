@@ -33,9 +33,9 @@ using namespace mozilla;
 
 
 #define VERSIONED_JS_BLOCKED_MESSAGE \
-  MOZ_UTF16("Versioned JavaScript is a non-standard, deprecated extension, and is ") \
-  MOZ_UTF16("not supported in WebExtension code. For alternatives, please see: ") \
-  MOZ_UTF16("https://developer.mozilla.org/Add-ons/WebExtensions/Tips")
+  u"Versioned JavaScript is a non-standard, deprecated extension, and is " \
+  u"not supported in WebExtension code. For alternatives, please see: " \
+  u"https://developer.mozilla.org/Add-ons/WebExtensions/Tips"
 
 AddonContentPolicy::AddonContentPolicy()
 {
@@ -238,7 +238,7 @@ class CSPValidator final : public nsCSPSrcVisitor {
         
         
         if (!mFoundSelf) {
-          nsAutoString url(MOZ_UTF16("moz-extension://"));
+          nsAutoString url(u"moz-extension://");
           url.Append(host);
 
           mFoundSelf = url.Equals(mURL);
@@ -409,7 +409,7 @@ AddonContentPolicy::ValidateAddonCSP(const nsAString& aPolicyString,
   
   
   
-  nsAutoString url(MOZ_UTF16("moz-extension://"));
+  nsAutoString url(u"moz-extension://");
   {
     nsCOMPtr<nsIUUIDGenerator> uuidgen = services::GetUUIDGenerator();
     NS_ENSURE_TRUE(uuidgen, NS_ERROR_FAILURE);

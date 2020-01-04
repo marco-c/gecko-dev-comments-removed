@@ -32,7 +32,7 @@ SVGPointList::GetValueAsString(nsAString& aValue) const
     
     
     nsTextFormatter::snprintf(buf, ArrayLength(buf),
-                              MOZ_UTF16("%g,%g"),
+                              u"%g,%g",
                               double(mItems[i].mX), double(mItems[i].mY));
     
     aValue.Append(buf);
