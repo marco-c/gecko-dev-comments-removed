@@ -782,7 +782,7 @@ Statistics::~Statistics()
         fclose(fp);
 }
 
- void
+ bool
 Statistics::initialize()
 {
     for (size_t i = 0; i < PHASE_LIMIT; i++) {
@@ -806,7 +806,8 @@ Statistics::initialize()
         MOZ_ASSERT(phases[child].parent == PHASE_MULTI_PARENTS);
         int j = child;
         do {
-            dagDescendants[phaseExtra[parent].dagSlot].append(Phase(j));
+            if (!dagDescendants[phaseExtra[parent].dagSlot].append(Phase(j)))
+                return false;
             j++;
         } while (j != PHASE_LIMIT && phases[j].parent != PHASE_MULTI_PARENTS);
     }
@@ -815,7 +816,8 @@ Statistics::initialize()
     
     
     mozilla::Vector<Phase> stack;
-    stack.append(PHASE_LIMIT); 
+    if (!stack.append(PHASE_LIMIT)) 
+        return false;
     for (int i = 0; i < PHASE_LIMIT; i++) {
         if (phases[i].parent == PHASE_NO_PARENT ||
             phases[i].parent == PHASE_MULTI_PARENTS)
@@ -826,9 +828,11 @@ Statistics::initialize()
                 stack.popBack();
         }
         phaseExtra[i].depth = stack.length();
-        stack.append(Phase(i));
+        if (!stack.append(Phase(i)))
+            return false;
     }
 
+    return true;
 }
 
 JS::GCSliceCallback
