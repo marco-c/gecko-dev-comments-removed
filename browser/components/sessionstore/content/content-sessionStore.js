@@ -49,6 +49,9 @@ const DOM_STORAGE_MAX_CHARS = 10000000;
 
 const TIMEOUT_DISABLED_PREF = "browser.sessionstore.debug.no_auto_updates";
 
+const kNoIndex = Number.MAX_SAFE_INTEGER;
+const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
+
 
 
 
@@ -252,9 +255,49 @@ var SessionHistoryListener = {
   },
 
   collect: function () {
+    this._fromIdx = kNoIndex;
     if (docShell) {
       MessageQueue.push("history", () => SessionHistory.collect(docShell));
     }
+  },
+
+  _fromIdx: kNoIndex,
+
+  
+  
+  
+  
+  
+  
+  
+  collectFrom: function (idx) {
+    if (this._fromIdx <= idx) {
+      
+      
+      
+      
+      
+      return;
+    }
+
+    this._fromIdx = idx;
+    MessageQueue.push("historychange", () => {
+      if (this._fromIdx === kNoIndex) {
+        return null;
+      }
+
+      let history = SessionHistory.collect(docShell);
+      if (kLastIndex == idx) {
+        history.entries = [];
+      } else {
+        history.entries.splice(0, this._fromIdx + 1);
+      }
+
+      history.fromIdx = this._fromIdx;
+
+      this._fromIdx = kNoIndex;
+      return history;
+    });
   },
 
   handleEvent(event) {
@@ -269,22 +312,22 @@ var SessionHistoryListener = {
     this.collect();
   },
 
-  OnHistoryNewEntry: function (newURI) {
-    this.collect();
+  OnHistoryNewEntry: function (newURI, oldIndex) {
+    this.collectFrom(oldIndex);
   },
 
   OnHistoryGoBack: function (backURI) {
-    this.collect();
+    this.collectFrom(kLastIndex);
     return true;
   },
 
   OnHistoryGoForward: function (forwardURI) {
-    this.collect();
+    this.collectFrom(kLastIndex);
     return true;
   },
 
   OnHistoryGotoIndex: function (index, gotoURI) {
-    this.collect();
+    this.collectFrom(kLastIndex);
     return true;
   },
 
@@ -496,7 +539,7 @@ var SessionStorageListener = {
 
   handleEvent: function (event) {
     if (gFrameTree.contains(event.target)) {
-      this.collect();
+      this.collectFromEvent(event);
     }
   },
 
@@ -537,8 +580,47 @@ var SessionStorageListener = {
     return size;
   },
 
+  
+  
+  
+  
+  
+  _changes: undefined,
+
+  resetChanges: function () {
+    this._changes = undefined;
+  },
+
+  collectFromEvent: function (event) {
+    
+    if (docShell) {
+      let {url, key, newValue} = event;
+      let uri = Services.io.newURI(url, null, null);
+      let domain = uri.prePath;
+      if (!this._changes) {
+        this._changes = {};
+      }
+      if (!this._changes[domain]) {
+        this._changes[domain] = {};
+      }
+      this._changes[domain][key] = newValue;
+
+      MessageQueue.push("storagechange", () => {
+        let tmp = this._changes;
+        
+        
+        
+        this.resetChanges();
+        return tmp;
+      });
+    }
+  },
+
   collect: function () {
     if (docShell) {
+      
+      
+      this.resetChanges();
       MessageQueue.push("storage", () => {
         let collected = SessionStorage.collect(docShell, gFrameTree);
 
@@ -727,7 +809,7 @@ var MessageQueue = {
         for (let histogramId of Object.keys(value)) {
           telemetry[histogramId] = value[histogramId];
         }
-      } else {
+      } else if (value || (key != "storagechange" && key != "historychange")) {
         data[key] = value;
       }
     }

@@ -402,7 +402,7 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
 
   nsCOMPtr<nsIURI> uri;
   aSHEntry->GetURI(getter_AddRefs(uri));
-  NOTIFY_LISTENERS(OnHistoryNewEntry, (uri));
+  NOTIFY_LISTENERS(OnHistoryNewEntry, (uri, currentIndex));
 
   
   
