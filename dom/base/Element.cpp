@@ -1720,6 +1720,9 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   nsIDocument* document =
     HasFlag(NODE_FORCE_XBL_BINDINGS) ? OwnerDoc() : GetComposedDoc();
 
+  if (HasPointerLock()) {
+    nsIDocument::UnlockPointer();
+  }
   if (aNullParent) {
     if (IsFullScreenAncestor()) {
       
@@ -1730,9 +1733,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
                                       "RemovedFullScreenElement");
       
       nsIDocument::ExitFullscreenInDocTree(OwnerDoc());
-    }
-    if (HasPointerLock()) {
-      nsIDocument::UnlockPointer();
     }
 
     if (GetParent() && GetParent()->IsInUncomposedDoc()) {
