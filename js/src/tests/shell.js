@@ -3,6 +3,110 @@
 
 
 
+
+
+
+
+
+
+(function(global) {
+  
+
+
+
+  var Error = global.Error;
+  var Number = global.Number;
+  var TypeError = global.TypeError;
+
+  
+
+
+
+  function SameValue(v1, v2) {
+    
+    if (v1 === 0 && v2 === 0)
+      return 1 / v1 === 1 / v2;
+    if (v1 !== v1 && v2 !== v2)
+      return true;
+    return v1 === v2;
+  }
+
+  var assertEq = global.assertEq;
+  if (typeof assertEq !== "function") {
+    assertEq = function assertEq(actual, expected, message) {
+      if (!SameValue(actual, expected)) {
+        throw new TypeError('Assertion failed: got "' + actual + '", ' +
+                            'expected "' + expected +
+                            (message ? ": " + message : ""));
+      }
+    };
+    global.assertEq = assertEq;
+  }
+
+  function assertThrows(f) {
+    var ok = false;
+    try {
+      f();
+    } catch (exc) {
+      ok = true;
+    }
+    if (!ok)
+      throw new Error("Assertion failed: " + f + " did not throw as expected");
+  }
+  global.assertThrows = assertThrows;
+
+  
+
+
+
+  
+  
+  assertEq(typeof global.print, "function",
+           "print function is pre-existing, either provided by the shell or " +
+           "the already-executed top-level browser.js");
+
+  
+
+
+
+  global.SECTION = "";
+  global.VERSION = "";
+  global.BUGNUMBER = "";
+
+  
+
+
+
+  
+  function startTest() {
+    if (global.BUGNUMBER)
+      global.print("BUGNUMBER: " + global.BUGNUMBER);
+  }
+  global.startTest = startTest;
+
+  
+
+
+
+  function inRhino() {
+    return typeof global.defineClass === "function";
+  }
+  global.inRhino = inRhino;
+
+  function GetContext() {
+    return global.Packages.com.netscape.javascript.Context.getCurrentContext();
+  }
+  global.GetContext = GetContext;
+
+  function OptLevel(i) {
+    i = Number(i);
+    var cx = GetContext();
+    cx.setOptimizationLevel(i);
+  }
+  global.OptLevel = OptLevel;
+})(this);
+
+
 var STATUS = "STATUS: ";
 var VERBOSE = false;
 var SECT_PREFIX = 'Section ';
@@ -13,16 +117,11 @@ var gDelayTestDriverEnd = false;
 
 var gTestcases = new Array();
 var gTc = gTestcases.length;
-var BUGNUMBER = '';
 var summary = '';
 var description = '';
 var expected = '';
 var actual = '';
 var msg = '';
-
-var SECTION = "";
-var VERSION = "";
-var BUGNUMBER = "";
 
 
 
@@ -54,18 +153,6 @@ function testPassesUnlessItThrows() {
 
 function AddTestCase( description, expect, actual ) {
   new TestCase( SECTION, description, expect, actual );
-}
-
-
-
-
-
-function startTest() {
-  
-
-  if ( BUGNUMBER ) {
-    print ("BUGNUMBER: " + BUGNUMBER );
-  }
 }
 
 function TestCase(n, d, e, a)
@@ -217,36 +304,6 @@ function escapeString (str)
   }
 
   return result;
-}
-
-
-
-
-
-
-
-
-
-
-if (typeof assertEq == 'undefined')
-{
-  var assertEq =
-    function (actual, expected, message)
-    {
-      function SameValue(v1, v2)
-      {
-        if (v1 === 0 && v2 === 0)
-          return 1 / v1 === 1 / v2;
-        if (v1 !== v1 && v2 !== v2)
-          return true;
-        return v1 === v2;
-      }
-      if (!SameValue(actual, expected))
-      {
-        throw new TypeError('Assertion failed: got "' + actual + '", expected "' + expected +
-                            (message ? ": " + message : ""));
-      }
-    };
 }
 
 
@@ -880,18 +937,6 @@ function assertEqArray(a1, a2) {
   }
 }
 
-function assertThrows(f) {
-    var ok = false;
-    try {
-        f();
-    } catch (exc) {
-        ok = true;
-    }
-    if (!ok)
-        throw new Error("Assertion failed: " + f + " did not throw as expected");
-}
-
-
 function assertThrowsInstanceOf(f, ctor, msg) {
   var fullmsg;
   try {
@@ -907,23 +952,3 @@ function assertThrowsInstanceOf(f, ctor, msg) {
     fullmsg += " - " + msg;
   throw new Error(fullmsg);
 };
-
-
-
-
-function inRhino()
-{
-  return (typeof defineClass == "function");
-}
-
-
-
-function GetContext() {
-  return Packages.com.netscape.javascript.Context.getCurrentContext();
-}
-function OptLevel( i ) {
-  i = Number(i);
-  var cx = GetContext();
-  cx.setOptimizationLevel(i);
-}
-
