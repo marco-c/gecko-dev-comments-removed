@@ -61,7 +61,9 @@ static MOZ_CONSTEXPR_VAR Register CallTempReg4 = esi;
 static MOZ_CONSTEXPR_VAR Register CallTempReg5 = edx;
 
 
-static MOZ_CONSTEXPR_VAR Register CallTempNonArgRegs[] = { edi, eax, ebx, ecx, esi, edx };
+
+
+static const Register CallTempNonArgRegs[] = { edi, eax, ebx, ecx, esi, edx };
 static const uint32_t NumCallTempNonArgRegs =
     mozilla::ArrayLength(CallTempNonArgRegs);
 
