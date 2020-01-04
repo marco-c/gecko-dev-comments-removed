@@ -15,14 +15,15 @@ function* runTests() {
   removeThumbnail(url);
   
   
-  let tab = gBrowser.loadOneTab(url, { inBackground: false });
+  let tab = yield BrowserTestUtils.openNewForgroundTab(gBrowser, url);
   let browser = tab.linkedBrowser;
-  yield whenLoaded(browser);
 
   
-  let redStr = "rgb(255, 0, 0)";
-  isnot(browser.contentDocument.documentElement.style.backgroundColor,
-        redStr,
-        "The page shouldn't be red.");
+  yield ContentTask.spawn(browser, null, function(){
+    Assert.notEqual(content.document.documentElement.style.backgroundColor,
+                    "rgb(255, 0, 0)",
+                    "The page shouldn't be red.");
+  });
+
   gBrowser.removeTab(tab);
 }
