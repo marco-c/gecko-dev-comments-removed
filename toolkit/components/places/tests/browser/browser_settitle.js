@@ -1,20 +1,14 @@
-
-
-
-
-
 var conn = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase).DBConnection;
 
 
 
 
-function getColumn(table, column, fromColumnName, fromColumnValue)
+function getColumn(table, column, url)
 {
   var stmt = conn.createStatement(
-    `SELECT ${column} FROM ${table} WHERE ${fromColumnName} = :val
-     LIMIT 1`);
+    `SELECT ${column} FROM ${table} WHERE url_hash = hash(:val) AND url = :val`);
   try {
-    stmt.params.val = fromColumnValue;
+    stmt.params.val = url;
     stmt.executeStep();
     return stmt.row[column];
   }
@@ -69,10 +63,10 @@ add_task(function* ()
   let data = yield titleChangedPromise;
   is(data[0].uri.spec, "http://example.com/tests/toolkit/components/places/tests/browser/title2.html");
   is(data[0].title, "Some title");
-  is(data[0].guid, getColumn("moz_places", "guid", "url", data[0].uri.spec));
+  is(data[0].guid, getColumn("moz_places", "guid", data[0].uri.spec));
 
   data.forEach(function(item) {
-    var title = getColumn("moz_places", "title", "url", data[0].uri.spec);
+    var title = getColumn("moz_places", "title", data[0].uri.spec);
     is(title, item.title);
   });
 

@@ -10,56 +10,10 @@
 
 
 
-
-
-
-
-
-
 const DEFAULT_TIMER_DELAY_SECONDS = 3 * 60;
 
 
 const EXPIRE_AGGRESSIVITY_MULTIPLIER = 3;
-
-Cu.import("resource://testing-common/MockRegistrar.jsm");
-
-
-const TIMER_CONTRACT_ID = "@mozilla.org/timer;1";
-var mockCID;
-
-var mockTimerImpl = {
-  initWithCallback: function MTI_initWithCallback(aCallback, aDelay, aType) {
-    print("Checking timer delay equals expected interval value");
-    if (!currentTest)
-      return;
-    
-    do_check_eq(aDelay, currentTest.expectedTimerDelay * 1000 * EXPIRE_AGGRESSIVITY_MULTIPLIER)
-
-    do_execute_soon(runNextTest);
-  },
-
-  cancel: function() {},
-  initWithFuncCallback: function() {},
-  init: function() {},
-
-  QueryInterface: XPCOMUtils.generateQI([
-    Ci.nsITimer,
-  ])
-}
-
-function replace_timer_factory() {
-  mockCID = MockRegistrar.register(TIMER_CONTRACT_ID, mockTimerImpl);
-}
-
-do_register_cleanup(function() {
-  
-  
-  shutdownExpiration();
-
-  
-  MockRegistrar.unregister(mockCID);
-});
-
 
 var tests = [
 
@@ -89,32 +43,21 @@ var tests = [
 
 var currentTest;
 
-function run_test() {
+add_task(function* test() {
   
-  try {
-    getInterval();
-    do_throw("interval pref should not exist by default");
-  }
-  catch (ex) {}
-
-  
-  replace_timer_factory();
+  Assert.throws(() => getInterval());
 
   
   force_expiration_start();
 
-  runNextTest();
-  do_test_pending();
-}
-
-function runNextTest() {
-  if (tests.length) {
-    currentTest = tests.shift();
+  for (let currentTest of tests) {
     print(currentTest.desc);
+    let promise = promiseTopicObserved("test-interval-changed");
     setInterval(currentTest.interval);
+    let [, data] = yield promise;
+    Assert.equal(data, currentTest.expectedTimerDelay * EXPIRE_AGGRESSIVITY_MULTIPLIER);
   }
-  else {
-    clearInterval();
-    do_test_finished();
-  }
-}
+
+  clearInterval();
+});
+

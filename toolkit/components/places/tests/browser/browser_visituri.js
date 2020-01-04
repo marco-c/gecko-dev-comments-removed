@@ -1,11 +1,6 @@
 
 
 
-
-
-
-
-
 function promiseObserve(name, checkFn) {
   return new Promise(resolve => {
     Services.obs.addObserver(function observer(subject) {
@@ -26,6 +21,7 @@ function getColumn(table, column, fromColumnName, fromColumnValue) {
   let sql = `SELECT ${column}
              FROM ${table}
              WHERE ${fromColumnName} = :val
+             ${fromColumnName == "url" ? "AND url_hash = hash(:val)" : ""}
              LIMIT 1`;
   let stmt = conn.createStatement(sql);
   try {
