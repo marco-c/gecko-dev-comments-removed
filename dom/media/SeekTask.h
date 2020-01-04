@@ -157,8 +157,8 @@ protected:
 
 
   MozPromiseRequestHolder<MediaDecoderReader::SeekPromise> mSeekRequest;
-  MozPromiseRequestHolder<MediaDecoderReader::AudioDataPromise> mAudioDataRequest;
-  MozPromiseRequestHolder<MediaDecoderReader::VideoDataPromise> mVideoDataRequest;
+  MozPromiseRequestHolder<MediaDecoderReader::MediaDataPromise> mAudioDataRequest;
+  MozPromiseRequestHolder<MediaDecoderReader::MediaDataPromise> mVideoDataRequest;
   MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise> mAudioWaitRequest;
   MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise> mVideoWaitRequest;
 

@@ -75,9 +75,7 @@ public:
 
   using MetadataPromise =
     MozPromise<RefPtr<MetadataHolder>, ReadMetadataFailureReason, IsExclusive>;
-  using AudioDataPromise =
-    MozPromise<RefPtr<MediaData>, NotDecodedReason, IsExclusive>;
-  using VideoDataPromise =
+  using MediaDataPromise =
     MozPromise<RefPtr<MediaData>, NotDecodedReason, IsExclusive>;
   using SeekPromise = MozPromise<media::TimeUnit, nsresult, IsExclusive>;
 
@@ -135,7 +133,7 @@ public:
   
   
   
-  virtual RefPtr<AudioDataPromise> RequestAudioData();
+  virtual RefPtr<MediaDataPromise> RequestAudioData();
 
   
   
@@ -143,7 +141,7 @@ public:
   
   
   
-  virtual RefPtr<VideoDataPromise>
+  virtual RefPtr<MediaDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe, int64_t aTimeThreshold);
 
   
@@ -306,7 +304,7 @@ protected:
   
   virtual media::TimeIntervals GetBuffered();
 
-  RefPtr<VideoDataPromise> DecodeToFirstVideoData();
+  RefPtr<MediaDataPromise> DecodeToFirstVideoData();
 
   bool HaveStartTime()
   {
@@ -421,8 +419,8 @@ private:
 
   
   
-  MozPromiseHolder<AudioDataPromise> mBaseAudioPromise;
-  MozPromiseHolder<VideoDataPromise> mBaseVideoPromise;
+  MozPromiseHolder<MediaDataPromise> mBaseAudioPromise;
+  MozPromiseHolder<MediaDataPromise> mBaseVideoPromise;
 
   
   
