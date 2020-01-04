@@ -263,6 +263,8 @@ private:
     nsRefPtr<SharedTrackInfo> mLastInfo;
 
     
+    
+    
     Maybe<uint32_t> mNextGetSampleIndex;
     
     media::TimeUnit mNextSampleTimecode;
