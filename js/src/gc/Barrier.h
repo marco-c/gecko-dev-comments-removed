@@ -179,6 +179,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -553,12 +564,6 @@ class ReadBarrieredBase : public BarrieredBase<T>
     void read() const { InternalBarrierMethods<T>::readBarrier(this->value); }
     void post(T prev, T next) { InternalBarrierMethods<T>::postBarrier(&this->value, prev, next); }
 };
-
-
-
-
-
-
 
 
 
