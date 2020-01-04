@@ -1403,7 +1403,7 @@ gfxFontFamily::CheckForSimpleFamily()
     
     if (mIsSimpleFamily) {
         return;
-    };
+    }
 
     uint32_t count = mAvailableFonts.Length();
     if (count > 4 || count == 0) {

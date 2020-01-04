@@ -55,7 +55,7 @@ void* AllocateNearTo(void* source, size_t size) {
 
     
     base = reinterpret_cast<char*>(base) + 100 * 0x100000;
-  };
+  }
 
   if (attempts == 41)
     return NULL;

@@ -91,7 +91,7 @@ public:
   int64_t GetMediaTimeUs() override;
 
   
-  void SetElementVisibility(bool aIsVisible) override;;
+  void SetElementVisibility(bool aIsVisible) override;
 
   
   

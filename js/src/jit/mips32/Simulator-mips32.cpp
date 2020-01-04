@@ -281,7 +281,7 @@ SimInstruction::isForbiddenInBranchDelay() const
         break;
       default:
         return false;
-    };
+    }
 }
 
 bool
@@ -446,7 +446,7 @@ SimInstruction::instructionType() const
         return kJumpType;
       default:
         return kUnsupported;
-    };
+    }
     return kUnsupported;
 }
 
@@ -2231,7 +2231,7 @@ Simulator::configureTypeRegister(SimInstruction* instr,
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
       case op_cop1x:
         break;
@@ -2367,7 +2367,7 @@ Simulator::configureTypeRegister(SimInstruction* instr,
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
       case op_special2:
         switch (instr->functionFieldRaw()) {
@@ -2379,7 +2379,7 @@ Simulator::configureTypeRegister(SimInstruction* instr,
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
       case op_special3:
         switch (instr->functionFieldRaw()) {
@@ -2405,11 +2405,11 @@ Simulator::configureTypeRegister(SimInstruction* instr,
           }
           default:
             MOZ_CRASH();
-        };
+        }
         break;
       default:
         MOZ_CRASH();
-    };
+    }
 }
 
 void
@@ -2775,7 +2775,7 @@ Simulator::decodeTypeRegister(SimInstruction* instr)
                 break;
               default:
                 MOZ_CRASH();
-            };
+            }
             break;
           case rs_l:
             switch (instr->functionFieldRaw()) {
@@ -2797,7 +2797,7 @@ Simulator::decodeTypeRegister(SimInstruction* instr)
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
       case op_cop1x:
         switch (instr->functionFieldRaw()) {
@@ -2817,7 +2817,7 @@ Simulator::decodeTypeRegister(SimInstruction* instr)
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
       case op_special:
         switch (instr->functionFieldRaw()) {
@@ -2897,7 +2897,7 @@ Simulator::decodeTypeRegister(SimInstruction* instr)
             break;
           default:  
             setRegister(rd_reg, alu_out);
-          };
+          }
           break;
       case op_special2:
         switch (instr->functionFieldRaw()) {
@@ -2923,14 +2923,14 @@ Simulator::decodeTypeRegister(SimInstruction* instr)
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
         
         
         
       default:
         setRegister(rd_reg, alu_out);
-      };
+      }
 }
 
 
@@ -2992,7 +2992,7 @@ Simulator::decodeTypeImmediate(SimInstruction* instr)
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         break;
         
       case op_regimm:
@@ -3011,7 +3011,7 @@ Simulator::decodeTypeImmediate(SimInstruction* instr)
             break;
           default:
             MOZ_CRASH();
-        };
+        }
         switch (instr->rtFieldRaw()) {
           case rt_bltz:
           case rt_bltzal:
@@ -3030,7 +3030,7 @@ Simulator::decodeTypeImmediate(SimInstruction* instr)
             }
           default:
             break;
-        };
+        }
         break;  
         
         
@@ -3163,7 +3163,7 @@ Simulator::decodeTypeImmediate(SimInstruction* instr)
         break;
       default:
         MOZ_CRASH();
-    };
+    }
 
     
     signalExceptions();
@@ -3239,7 +3239,7 @@ Simulator::decodeTypeImmediate(SimInstruction* instr)
         break;
       default:
         break;
-    };
+    }
 
 
     if (execute_branch_delay_instruction) {
