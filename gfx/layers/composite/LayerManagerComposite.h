@@ -79,11 +79,6 @@ public:
   
 
 
-  bool Initialize();
-
-  
-
-
 
 
 

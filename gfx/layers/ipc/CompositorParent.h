@@ -501,6 +501,8 @@ protected:
   void CancelCurrentCompositeTask();
   void Invalidate();
 
+  RefPtr<Compositor> NewCompositor(const nsTArray<LayersBackend>& aBackendHints);
+
   
 
 
