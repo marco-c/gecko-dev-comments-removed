@@ -1679,11 +1679,6 @@ nsDocument::~nsDocument()
   mImageTracker.Clear();
 
   mPlugins.Clear();
-
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    os->RemoveObserver(this, "service-worker-get-client");
-  }
 }
 
 NS_INTERFACE_TABLE_HEAD(nsDocument)
@@ -2084,11 +2079,6 @@ nsDocument::Init()
   mScriptLoader = new nsScriptLoader(this);
 
   mozilla::HoldJSObjects(this);
-
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    os->AddObserver(this, "service-worker-get-client",  true);
-  }
 
   return NS_OK;
 }
@@ -4711,6 +4701,28 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
         mMaybeServiceWorkerControlled = false;
       }
       swm->MaybeStopControlling(this);
+    }
+
+    
+    
+    if (!nsContentUtils::IsSystemPrincipal(GetPrincipal()) &&
+        !GetPrincipal()->GetIsNullPrincipal()) {
+      nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+      if (os) {
+        os->RemoveObserver(this, "service-worker-get-client");
+      }
+    }
+
+  } else if (!mScriptGlobalObject && aScriptGlobalObject &&
+             mDocumentContainer && GetChannel() &&
+             !nsContentUtils::IsSystemPrincipal(GetPrincipal()) &&
+             !GetPrincipal()->GetIsNullPrincipal()) {
+    
+    
+    
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      os->AddObserver(this, "service-worker-get-client",  false);
     }
   }
 
@@ -12469,11 +12481,18 @@ nsDocument::Observe(nsISupports *aSubject,
       OnAppThemeChanged();
     }
   } else if (strcmp("service-worker-get-client", aTopic) == 0) {
-    nsAutoString clientId;
-    GetOrCreateId(clientId);
+    
+    
+    
+    nsString clientId = GetId();
     if (!clientId.IsEmpty() && clientId.Equals(aData)) {
       nsCOMPtr<nsISupportsInterfacePointer> ifptr = do_QueryInterface(aSubject);
       if (ifptr) {
+#ifdef DEBUG
+        nsCOMPtr<nsISupports> value;
+        MOZ_ALWAYS_SUCCEEDS(ifptr->GetData(getter_AddRefs(value)));
+        MOZ_ASSERT(!value);
+#endif
         ifptr->SetData(static_cast<nsIDocument*>(this));
         ifptr->SetDataIID(&NS_GET_IID(nsIDocument));
       }
