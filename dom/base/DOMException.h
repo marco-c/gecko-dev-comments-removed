@@ -75,6 +75,18 @@ public:
 
   void GetName(nsString& retval);
 
+  virtual void GetErrorMessage(nsAString& aRetVal)
+  {
+    
+    
+    
+    nsAutoString name;
+    nsAutoString message;
+    GetName(name);
+    GetMessageMoz(message);
+    CreateErrorMessage(name, message, aRetVal);
+  }
+
   
   
 
@@ -101,6 +113,23 @@ public:
 
 protected:
   virtual ~Exception();
+
+  void CreateErrorMessage(const nsAString& aName, const nsAString& aMessage,
+                          nsAString& aRetVal)
+  {
+    
+    if (!aName.IsEmpty() && !aMessage.IsEmpty()) {
+      aRetVal.Assign(aName);
+      aRetVal.AppendLiteral(": ");
+      aRetVal.Append(aMessage);
+    } else if (!aName.IsEmpty()) {
+      aRetVal.Assign(aName);
+    } else if (!aMessage.IsEmpty()) {
+      aRetVal.Assign(aMessage);
+    } else {
+      aRetVal.Truncate();
+    }
+  }
 
   nsCString       mMessage;
   nsresult        mResult;
@@ -150,6 +179,16 @@ public:
   
   void GetMessageMoz(nsString& retval);
   void GetName(nsString& retval);
+
+  virtual void GetErrorMessage(nsAString& aRetVal) override
+  {
+    
+    nsAutoString name;
+    nsAutoString message;
+    GetName(name);
+    GetMessageMoz(message);
+    CreateErrorMessage(name, message, aRetVal);
+  }
 
   static already_AddRefed<DOMException>
   Create(nsresult aRv);

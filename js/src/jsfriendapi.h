@@ -1363,7 +1363,41 @@ struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
     explicit ErrorReport(JSContext* cx);
     ~ErrorReport();
 
-    bool init(JSContext* cx, JS::HandleValue exn);
+    enum SniffingBehavior {
+        WithSideEffects,
+        NoSideEffects
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool init(JSContext* cx, JS::HandleValue exn,
+              SniffingBehavior sniffingBehavior);
 
     JSErrorReport* report()
     {
