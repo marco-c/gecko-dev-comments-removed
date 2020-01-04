@@ -3589,28 +3589,20 @@ class nsDisplayTransform: public nsDisplayItem
   public:
     StoreList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
               nsDisplayList* aList) :
-      nsDisplayWrapList(aBuilder, aFrame, aList),
-      mHasBounds(false) {}
+      nsDisplayWrapList(aBuilder, aFrame, aList) {}
     StoreList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
               nsDisplayItem* aItem) :
-      nsDisplayWrapList(aBuilder, aFrame, aItem),
-      mHasBounds(false) {}
+      nsDisplayWrapList(aBuilder, aFrame, aItem) {}
     virtual ~StoreList() {}
 
     virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override {}
     virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
                              bool* aSnap) override {
-      if (!mHasBounds) {
-        
-        
-        nsDisplayWrapList::UpdateBounds(aBuilder);
-        mHasBounds = true;
-      }
+      
+      
+      nsDisplayWrapList::UpdateBounds(aBuilder);
       return nsDisplayWrapList::GetBounds(aBuilder, aSnap);
     }
-
-  private:
-    bool mHasBounds;
   };
 
 public:
