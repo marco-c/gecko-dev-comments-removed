@@ -282,48 +282,6 @@ private:
 
 
 
-class FastPromiseResolveThenableJob final : public nsRunnable
-{
-public:
-  FastPromiseResolveThenableJob(PromiseCallback* aResolveCallback,
-                                PromiseCallback* aRejectCallback,
-                                Promise* aNextPromise)
-    : mResolveCallback(aResolveCallback)
-    , mRejectCallback(aRejectCallback)
-    , mNextPromise(aNextPromise)
-  {
-    MOZ_ASSERT(aResolveCallback);
-    MOZ_ASSERT(aRejectCallback);
-    MOZ_ASSERT(aNextPromise);
-    MOZ_COUNT_CTOR(FastPromiseResolveThenableJob);
-  }
-
-  virtual
-  ~FastPromiseResolveThenableJob()
-  {
-    NS_ASSERT_OWNINGTHREAD(FastPromiseResolveThenableJob);
-    MOZ_COUNT_DTOR(FastPromiseResolveThenableJob);
-  }
-
-protected:
-  NS_IMETHOD
-  Run() override
-  {
-    NS_ASSERT_OWNINGTHREAD(FastPromiseResolveThenableJob);
-    mNextPromise->AppendCallbacks(mResolveCallback, mRejectCallback);
-    return NS_OK;
-  }
-
-private:
-  RefPtr<PromiseCallback> mResolveCallback;
-  RefPtr<PromiseCallback> mRejectCallback;
-  RefPtr<Promise> mNextPromise;
-};
-
-
-
-
-
 
 
 
@@ -2028,25 +1986,15 @@ Promise::ResolveInternal(JSContext* aCx,
       
       
       
-      Promise* nextPromise;
-      if (PromiseBinding::IsThenMethod(thenObj) &&
-          NS_SUCCEEDED(UNWRAP_OBJECT(Promise, valueObj, nextPromise))) {
-        
-        
-        
-        
-        
-        
-        
-        
-        JS::Rooted<JSObject*> glob(aCx, GlobalJSObject());
-        RefPtr<PromiseCallback> resolveCb = new ResolvePromiseCallback(this, glob);
-        RefPtr<PromiseCallback> rejectCb = new RejectPromiseCallback(this, glob);
-        RefPtr<FastPromiseResolveThenableJob> task =
-          new FastPromiseResolveThenableJob(resolveCb, rejectCb, nextPromise);
-        DispatchToMicroTask(task);
-        return;
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
       RefPtr<PromiseInit> thenCallback =
         new PromiseInit(nullptr, thenObj, mozilla::dom::GetIncumbentGlobal());
