@@ -96,6 +96,9 @@ using namespace widget;
 
 
 
+
+
+
 ContentEventHandler::ContentEventHandler(nsPresContext* aPresContext)
   : mPresContext(aPresContext)
   , mPresShell(aPresContext->GetPresShell())
@@ -1001,12 +1004,31 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
   }
 
   if (!startSet) {
-    
     MOZ_ASSERT(!mRootContent->IsNodeOfType(nsINode::eTEXT));
-    rv = aRange->SetStart(mRootContent,
-                          static_cast<int32_t>(mRootContent->GetChildCount()));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (!offset) {
+      
+      
+      
+      
+      
+      rv = aRange->SetStart(mRootContent, 0);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      if (!aLength) {
+        rv = aRange->SetEnd(mRootContent, 0);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        return NS_OK;
+      }
+    } else {
+      
+      rv = aRange->SetStart(mRootContent,
+                     static_cast<int32_t>(mRootContent->GetChildCount()));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
     if (aNewOffset) {
       *aNewOffset = offset;
