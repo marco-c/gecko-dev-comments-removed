@@ -102,7 +102,7 @@ class nsJAR final : public nsIZipReader
     
     nsCOMPtr<nsIFile>        mZipFile;        
     nsCString                mOuterZipEntry;  
-    RefPtr<nsZipArchive>   mZip;            
+    RefPtr<nsZipArchive>     mZip;            
     ManifestDataHashtable    mManifestData;   
     bool                     mParsedManifest; 
     nsCOMPtr<nsIX509Cert>    mSigningCert;    
@@ -166,7 +166,8 @@ public:
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSIUTF8STRINGENUMERATOR
 
-    explicit nsJAREnumerator(nsZipFind *aFind) : mFind(aFind), mName(nullptr) {
+    explicit nsJAREnumerator(nsZipFind *aFind)
+      : mFind(aFind), mName(nullptr), mNameLen(0) {
       NS_ASSERTION(mFind, "nsJAREnumerator: Missing zipFind.");
     }
 
