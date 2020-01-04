@@ -153,6 +153,26 @@ var inputTests = [
     inspectable: true,
     variablesViewLabel: "Map[3]",
   },
+
+  
+  {
+    input: "window.weakset",
+    
+    output: new RegExp("WeakSet \\[ (String\\[7\\], <head>|<head>, String\\[7\\]) \\]"),
+    printOutput: "[object WeakSet]",
+    inspectable: true,
+    variablesViewLabel: "WeakSet[2]",
+  },
+
+  
+  {
+    input: "window.weakmap",
+    
+    output: new RegExp("WeakMap { (String\\[7\\]: 23, HTMLCollection\\[2\\]: Object|HTMLCollection\\[2\\]: Object, String\\[7\\]: 23) }"),
+    printOutput: "[object WeakMap]",
+    inspectable: true,
+    variablesViewLabel: "WeakMap[2]",
+  },
 ];
 
 function test() {
