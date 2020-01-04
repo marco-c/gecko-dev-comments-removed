@@ -45,7 +45,7 @@ add_task(function* () {
 
   
   
-  content.location = TEST_URI3;
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI3);
 
   yield waitForMessages({
     webconsole: hud2,
@@ -59,7 +59,7 @@ add_task(function* () {
 
   
   
-  content.location = TEST_URI4;
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, TEST_URI4);
   yield loadBrowser(browser);
 
   testLogEntry(hud2.outputNode, "bTimer: timer started",
