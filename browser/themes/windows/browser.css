@@ -192,10 +192,6 @@
   #main-window[tabsintitlebar]:not([inFullscreen]) #TabsToolbar:not(:-moz-lwtheme):-moz-window-inactive {
     color: InactiveCaptionText;
   }
-
-  #main-window[tabsintitlebar] #main-menubar > menu:not(:-moz-lwtheme) {
-    color: inherit;
-  }
 }
 
 @media not all and (-moz-windows-compositor) {
@@ -206,6 +202,12 @@
   #main-window[tabsintitlebar] #titlebar-content:-moz-lwtheme {
     -moz-binding: url("chrome://global/content/bindings/general.xml#windowdragbox");
     visibility: visible;
+  }
+
+  
+
+  #main-window[tabsintitlebar] #main-menubar > menu:not(:-moz-lwtheme) {
+    color: inherit;
   }
 }
 
