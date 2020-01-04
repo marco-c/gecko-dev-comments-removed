@@ -2361,10 +2361,10 @@ bool AsyncPanZoomController::AttemptScroll(ParentLayerPoint& aStartPoint,
   
   
   
-  
-  
-  bool scrollThisApzc = gfxPrefs::APZAllowImmediateHandoff() ||
-      (CurrentInputBlock() && (!CurrentInputBlock()->GetScrolledApzc() || this == CurrentInputBlock()->GetScrolledApzc()));
+  bool scrollThisApzc = false;
+  if (InputBlockState* block = CurrentInputBlock()) {
+    scrollThisApzc = !block->GetScrolledApzc() || block->IsDownchainOfScrolledApzc(this);
+  }
 
   if (scrollThisApzc) {
     ReentrantMonitorAutoEnter lock(mMonitor);
@@ -2383,20 +2383,18 @@ bool AsyncPanZoomController::AttemptScroll(ParentLayerPoint& aStartPoint,
 
     if (!IsZero(adjustedDisplacement)) {
       ScrollBy(adjustedDisplacement / mFrameMetrics.GetZoom());
-      if (!gfxPrefs::APZAllowImmediateHandoff()) {
-        if (InputBlockState* block = CurrentInputBlock()) {
-          block->SetScrolledApzc(this);
-        }
+      if (InputBlockState* block = CurrentInputBlock()) {
+        block->SetScrolledApzc(this);
       }
       ScheduleCompositeAndMaybeRepaint();
       UpdateSharedCompositorFrameMetrics();
     }
+
+    
+    aStartPoint = aEndPoint + overscroll;
   } else {
     overscroll = displacement;
   }
-
-  
-  aStartPoint = aEndPoint + overscroll;
 
   
   if (IsZero(overscroll)) {
