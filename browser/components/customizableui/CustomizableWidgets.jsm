@@ -311,34 +311,13 @@ const CustomizableWidgets = [
       let formatArgs = ["android", "ios"].map(os => {
         let link = doc.createElement("label");
         link.textContent = bundle.getString(`appMenuRemoteTabs.mobilePromo.${os}`)
-        link.setAttribute("mobile-promo-os", os);
+        link.setAttribute("href", Services.prefs.getCharPref(`identity.mobilepromo.${os}`) + "synced-tabs");
         link.className = "text-link remotetabs-promo-link";
         return link.outerHTML;
       });
       
       let contents = bundle.getFormattedString("appMenuRemoteTabs.mobilePromo", formatArgs);
-      let promoParentElt = doc.getElementById("PanelUI-remotetabs-mobile-promo");
-      promoParentElt.innerHTML = contents;
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      promoParentElt.addEventListener("click", e => {
-        let os = e.target.getAttribute("mobile-promo-os");
-        if (!os || e.button > 1) {
-          return;
-        }
-        let link = Services.prefs.getCharPref(`identity.mobilepromo.${os}`) + "synced-tabs";
-        doc.defaultView.openUILinkIn(link, "tab");
-        CustomizableUI.hidePanelForNode(e.target);
-      });
+      doc.getElementById("PanelUI-remotetabs-mobile-promo").innerHTML = contents;
     },
     onViewShowing(aEvent) {
       let doc = aEvent.target.ownerDocument;
