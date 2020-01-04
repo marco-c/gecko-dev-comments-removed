@@ -551,8 +551,7 @@ Toolbox.prototype = {
       this.toggleSplitConsole();
       
       
-      let jsdebugger = this.getPanel("jsdebugger");
-      if (jsdebugger && jsdebugger.panelWin.gThreadClient.state == "paused") {
+      if (this._threadClient.state == "paused") {
         e.preventDefault();
       }
     }
