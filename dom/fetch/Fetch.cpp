@@ -403,8 +403,9 @@ WorkerFetchResolver::OnResponseEnd()
     
     
     
-    NS_WARN_IF_FALSE(cr->Dispatch(),
-                     "Failed to dispatch WorkerFetchResponseEndControlRunnable");
+    if (!cr->Dispatch()) {
+      NS_WARNING("Failed to dispatch WorkerFetchResponseEndControlRunnable");
+    }
   }
 }
 
