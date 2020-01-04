@@ -749,13 +749,32 @@ class Dumper_Win32(Dumper):
         result = file
 
         ctypes.windll.kernel32.SetErrorMode(ctypes.c_uint(1))
-        (path, filename) = os.path.split(file)
-        if os.path.isdir(path):
-            lc_filename = filename.lower()
-            for f in os.listdir(path):
-                if f.lower() == lc_filename:
-                    result = os.path.join(path, f)
-                    break
+        if not isinstance(file, unicode):
+            file = unicode(file, sys.getfilesystemencoding())
+        handle = ctypes.windll.kernel32.CreateFileW(file,
+                                                    
+                                                    0x80000000,
+                                                    
+                                                    1,
+                                                    None,
+                                                    
+                                                    3,
+                                                    0,
+                                                    None)
+        if handle != -1:
+            size = ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle,
+                                                                    None,
+                                                                    0,
+                                                                    0)
+            buf = ctypes.create_unicode_buffer(size)
+            if ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle,
+                                                                buf,
+                                                                size,
+                                                                0) > 0:
+                
+                
+                result = buf.value.encode(sys.getfilesystemencoding())[4:]
+            ctypes.windll.kernel32.CloseHandle(handle)
 
         
         self.fixedFilenameCaseCache[file] = result
