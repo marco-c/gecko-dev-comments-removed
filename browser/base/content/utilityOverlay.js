@@ -224,13 +224,20 @@ function openLinkIn(url, where, params) {
   var aIndicateErrorPageLoad = params.indicateErrorPageLoad;
 
   if (where == "save") {
-    if (!aInitiatingDoc) {
-      Components.utils.reportError("openUILink/openLinkIn was called with " +
-        "where == 'save' but without initiatingDoc.  See bug 814264.");
-      return;
-    }
     
-    saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, aInitiatingDoc);
+
+    
+    if ("isContentWindowPrivate" in params) {
+      saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, null, params.isContentWindowPrivate);
+    }
+    else {
+      if (!aInitiatingDoc) {
+        Components.utils.reportError("openUILink/openLinkIn was called with " +
+          "where == 'save' but without initiatingDoc.  See bug 814264.");
+        return;
+      }
+      saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, aInitiatingDoc);
+    }
     return;
   }
 
