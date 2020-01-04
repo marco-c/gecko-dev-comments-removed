@@ -33,7 +33,7 @@
 #include "mozilla/Preferences.h"
 #include "nsIContentPolicy.h"
 #include "nsContentUtils.h"
-#include "nsINode.h"
+#include "nsIPrincipal.h"
 
 #include "WinUtils.h"
 #include "mozilla/LazyIdleThread.h"
@@ -65,16 +65,16 @@ nsDataObj::CStream::~CStream()
 
 nsresult nsDataObj::CStream::Init(nsIURI *pSourceURI,
                                   uint32_t aContentPolicyType,
-                                  nsINode* aRequestingNode)
+                                  nsIPrincipal* aRequestingPrincipal)
 {
   
-  if (!aRequestingNode) {
+  if (!aRequestingPrincipal) {
     return NS_ERROR_FAILURE;
   }
   nsresult rv;
   rv = NS_NewChannel(getter_AddRefs(mChannel),
                      pSourceURI,
-                     aRequestingNode,
+                     aRequestingPrincipal,
                      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS,
                      aContentPolicyType,
                      nullptr,   
@@ -342,14 +342,13 @@ HRESULT nsDataObj::CreateStream(IStream **outStream)
   pStream->AddRef();
 
   
-  nsCOMPtr<nsIDOMNode> requestingDomNode;
-  mTransferable->GetRequestingNode(getter_AddRefs(requestingDomNode));
-  nsCOMPtr<nsINode> requestingNode = do_QueryInterface(requestingDomNode);
-  MOZ_ASSERT(requestingNode, "can not create channel without a node");
+  nsCOMPtr<nsIPrincipal> requestingPrincipal;
+  mTransferable->GetRequestingPrincipal(getter_AddRefs(requestingPrincipal));
+  MOZ_ASSERT(requestingPrincipal, "can not create channel without a principal");
   
   uint32_t contentPolicyType = nsIContentPolicy::TYPE_OTHER;
   mTransferable->GetContentPolicyType(&contentPolicyType);
-  rv = pStream->Init(sourceURI, contentPolicyType, requestingNode);
+  rv = pStream->Init(sourceURI, contentPolicyType, requestingPrincipal);
   if (NS_FAILED(rv))
   {
     pStream->Release();
