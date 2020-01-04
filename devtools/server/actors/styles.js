@@ -7,13 +7,12 @@
 const {Cc, Ci} = require("chrome");
 const promise = require("promise");
 const protocol = require("devtools/shared/protocol");
-const {Arg, Option, method, RetVal, types} = protocol;
 const events = require("sdk/event/core");
-const {Class} = require("sdk/core/heritage");
-const {PageStyleFront, StyleRuleFront} = require("devtools/client/fronts/styles");
+const {PageStyleFront, StyleRuleFront} = require("devtools/client/fronts/styles"); 
 const {LongStringActor} = require("devtools/server/actors/string");
 const {getDefinedGeometryProperties} = require("devtools/server/actors/highlighters/geometry-editor");
 const {parseDeclarations} = require("devtools/client/shared/css-parsing-utils");
+const {Task} = require("resource://gre/modules/Task.jsm");
 
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} = require("devtools/server/actors/stylesheets");
@@ -59,7 +58,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  initialize: function(inspector) {
+  initialize: function (inspector) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.inspector = inspector;
     if (!this.inspector.walker) {
@@ -82,7 +81,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     this._watchedSheets = new Set();
   },
 
-  destroy: function() {
+  destroy: function () {
     if (!this.walker) {
       return;
     }
@@ -104,7 +103,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     return this.inspector.conn;
   },
 
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -126,7 +125,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   
 
 
-  _styleApplied: function(kind, styleSheet) {
+  _styleApplied: function (kind, styleSheet) {
     
     
     this.cssLogic.reset();
@@ -139,7 +138,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  _styleRef: function(item) {
+  _styleRef: function (item) {
     if (this.refMap.has(item)) {
       return this.refMap.get(item);
     }
@@ -160,7 +159,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  updateStyleRef: function(oldItem, item, actor) {
+  updateStyleRef: function (oldItem, item, actor) {
     this.refMap.delete(oldItem);
     this.refMap.set(item, actor);
   },
@@ -172,7 +171,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  _sheetRef: function(sheet) {
+  _sheetRef: function (sheet) {
     let tabActor = this.inspector.tabActor;
     let actor = tabActor.createStyleSheetActor(sheet);
     if (!this._watchedSheets.has(actor)) {
@@ -206,7 +205,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getComputed: function(node, options) {
+  getComputed: function (node, options) {
     let ret = Object.create(null);
 
     this.cssLogic.sourceFilter = options.filter || CssLogic.FILTER.UA;
@@ -245,7 +244,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getAllUsedFontFaces: function(options) {
+  getAllUsedFontFaces: function (options) {
     let windows = this.inspector.tabActor.windows;
     let fontsList = [];
     for (let win of windows) {
@@ -268,7 +267,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getUsedFontFaces: function(node, options) {
+  getUsedFontFaces: function (node, options) {
     
     let actualNode = node.rawNode || node;
     let contentDocument = actualNode.ownerDocument;
@@ -331,16 +330,16 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     
-    fontsArray.sort(function(a, b) {
+    fontsArray.sort(function (a, b) {
       return a.weight > b.weight ? 1 : -1;
     });
-    fontsArray.sort(function(a, b) {
+    fontsArray.sort(function (a, b) {
       if (a.CSSFamilyName == b.CSSFamilyName) {
         return 0;
       }
       return a.CSSFamilyName > b.CSSFamilyName ? 1 : -1;
     });
-    fontsArray.sort(function(a, b) {
+    fontsArray.sort(function (a, b) {
       if ((a.rule && b.rule) || (!a.rule && !b.rule)) {
         return 0;
       }
@@ -386,7 +385,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getMatchedSelectors: function(node, property, options) {
+  getMatchedSelectors: function (node, property, options) {
     this.cssLogic.sourceFilter = options.filter || CssLogic.FILTER.UA;
     this.cssLogic.highlight(node.rawNode);
 
@@ -423,7 +422,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
   
   
-  getSelectorSource: function(selectorInfo, relativeTo) {
+  getSelectorSource: function (selectorInfo, relativeTo) {
     let result = selectorInfo.selector.text;
     if (selectorInfo.elementStyle) {
       let source = selectorInfo.sourceElement;
@@ -467,7 +466,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     return result;
   }),
 
-  _hasInheritedProps: function(style) {
+  _hasInheritedProps: function (style) {
     return Array.prototype.some.call(style, prop => {
       return DOMUtils.isInheritedProperty(prop);
     });
@@ -502,7 +501,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  _getAllElementRules: function(node, inherited, options) {
+  _getAllElementRules: function (node, inherited, options) {
     let {bindingElement, pseudo} =
         CssLogic.getBindingElementAndPseudo(node.rawNode);
     let rules = [];
@@ -571,7 +570,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  _getElementRules: function(node, pseudo, inherited, options) {
+  _getElementRules: function (node, pseudo, inherited, options) {
     let domRules = DOMUtils.getCSSStyleRules(node, pseudo);
     if (!domRules) {
       return [];
@@ -623,7 +622,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  findEntryMatchingRule: function(node, filterRule) {
+  findEntryMatchingRule: function (node, filterRule) {
     const options = {matchedSelectors: true, inherited: true};
     let entries = [];
     let parent = this.walker.parentNode(node);
@@ -657,7 +656,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getAppliedProps: function(node, entries, options) {
+  getAppliedProps: function (node, entries, options) {
     if (options.inherited) {
       let parent = this.walker.parentNode(node);
       while (parent && parent.rawNode.nodeType != Ci.nsIDOMNode.DOCUMENT_NODE) {
@@ -726,7 +725,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   
 
 
-  expandSets: function(ruleSet, sheetSet) {
+  expandSets: function (ruleSet, sheetSet) {
     
     for (let rule of ruleSet) {
       if (rule.rawRule.parentRule) {
@@ -767,7 +766,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getLayout: function(node, options) {
+  getLayout: function (node, options) {
     this.cssLogic.highlight(node.rawNode);
 
     let layout = {};
@@ -817,7 +816,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   
 
 
-  processMargins: function(cssLogic) {
+  processMargins: function (cssLogic) {
     let margins = {};
 
     for (let prop of ["top", "bottom", "left", "right"]) {
@@ -834,7 +833,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   
 
 
-  onFrameUnload: function() {
+  onFrameUnload: function () {
     this.styleElements = new WeakMap();
   },
 
@@ -846,7 +845,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getStyleElement: function(document) {
+  getStyleElement: function (document) {
     if (!this.styleElements.has(document)) {
       let style = document.createElementNS(XHTML_NS, "style");
       style.setAttribute("type", "text/css");
@@ -864,7 +863,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  getNewAppliedProps: function(node, rule) {
+  getNewAppliedProps: function (node, rule) {
     let ruleActor = this._styleRef(rule);
     return this.getAppliedProps(node, [{ rule: ruleActor }],
       { matchedSelectors: true });
@@ -925,7 +924,7 @@ exports.PageStyleActor = PageStyleActor;
 
 
 var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
-  initialize: function(pageStyle, item) {
+  initialize: function (pageStyle, item) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.pageStyle = pageStyle;
     this.rawStyle = item.style;
@@ -951,7 +950,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       this.rawNode = item;
       this.rawRule = {
         style: item.style,
-        toString: function() {
+        toString: function () {
           return "[element rule " + this.style + "]";
         }
       };
@@ -962,7 +961,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     return this.pageStyle.conn;
   },
 
-  destroy: function() {
+  destroy: function () {
     if (!this.rawStyle) {
       return;
     }
@@ -997,7 +996,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
             this._parentSheet.href !== "about:PreferenceStyleSheet");
   },
 
-  getDocument: function(sheet) {
+  getDocument: function (sheet) {
     let document;
 
     if (sheet.ownerNode instanceof Ci.nsIDOMHTMLDocument) {
@@ -1009,11 +1008,11 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     return document;
   },
 
-  toString: function() {
+  toString: function () {
     return "[StyleRuleActor for " + this.rawRule + "]";
   },
 
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -1112,7 +1111,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  _notifyLocationChanged: function(line, column) {
+  _notifyLocationChanged: function (line, column) {
     events.emit(this, "location-changed", line, column);
   },
 
@@ -1122,7 +1121,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  _computeRuleIndex: function() {
+  _computeRuleIndex: function () {
     let rule = this.rawRule;
     let result = [];
 
@@ -1163,7 +1162,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  _getRuleFromIndex: function(parentSheet) {
+  _getRuleFromIndex: function (parentSheet) {
     let currentRule = null;
     for (let i of this._ruleIndex) {
       if (currentRule === null) {
@@ -1179,7 +1178,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  _onStyleApplied: function(kind) {
+  _onStyleApplied: function (kind) {
     if (kind === UPDATE_GENERAL) {
       
       
@@ -1213,7 +1212,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  getAuthoredCssText: function() {
+  getAuthoredCssText: function () {
     if (!this.canSetRuleText ||
         (this.type !== Ci.nsIDOMCSSRule.STYLE_RULE &&
          this.type !== Ci.nsIDOMCSSRule.KEYFRAME_RULE)) {
@@ -1284,7 +1283,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  modifyProperties: function(modifications) {
+  modifyProperties: function (modifications) {
     
     
     
@@ -1440,7 +1439,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  modifySelector2: function(node, value, editAuthored = false) {
+  modifySelector2: function (node, value, editAuthored = false) {
     if (this.type === ELEMENT_STYLE ||
         this.rawRule.selectorText === value) {
       return { ruleProps: null, isMatching: true };
