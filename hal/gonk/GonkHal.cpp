@@ -711,27 +711,6 @@ namespace {
 
 
 
-
-bool WriteToFile(const char *filename, const char *toWrite)
-{
-  int fd = open(filename, O_WRONLY);
-  ScopedClose autoClose(fd);
-  if (fd < 0) {
-    HAL_LOG("Unable to open file %s.", filename);
-    return false;
-  }
-
-  if (write(fd, toWrite, strlen(toWrite)) < 0) {
-    HAL_LOG("Unable to write to file %s.", filename);
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
 bool sScreenEnabled = true;
 
 
@@ -849,7 +828,7 @@ UpdateCpuSleepState()
 
   sInternalLockCpuMonitor->AssertCurrentThreadOwns();
   bool allowed = sCpuSleepAllowed && !sInternalLockCpuCount;
-  WriteToFile(allowed ? wakeUnlockFilename : wakeLockFilename, "gecko");
+  WriteSysFile(allowed ? wakeUnlockFilename : wakeLockFilename, "gecko");
 }
 
 static void
@@ -1257,7 +1236,7 @@ public:
       mRegexes(nullptr)
   {
     
-    WriteToFile("/sys/module/printk/parameters/time", "Y");
+    WriteSysFile("/sys/module/printk/parameters/time", "Y");
   }
 
   NS_DECL_ISUPPORTS
@@ -1559,16 +1538,16 @@ EnsureCpuCGroupExists(const nsACString &aGroup)
 
   nsAutoCString pathPrefix(kDevCpuCtl + aGroup + kSlash);
   nsAutoCString cpuSharesPath(pathPrefix + NS_LITERAL_CSTRING("cpu.shares"));
-  if (cpuShares && !WriteToFile(cpuSharesPath.get(),
-                                nsPrintfCString("%d", cpuShares).get())) {
+  if (cpuShares && !WriteSysFile(cpuSharesPath.get(),
+                                 nsPrintfCString("%d", cpuShares).get())) {
     HAL_LOG("Could not set the cpu share for group %s", cpuSharesPath.get());
     return false;
   }
 
   nsAutoCString notifyOnMigratePath(pathPrefix
     + NS_LITERAL_CSTRING("cpu.notify_on_migrate"));
-  if (!WriteToFile(notifyOnMigratePath.get(),
-                   nsPrintfCString("%d", cpuNotifyOnMigrate).get())) {
+  if (!WriteSysFile(notifyOnMigratePath.get(),
+                    nsPrintfCString("%d", cpuNotifyOnMigrate).get())) {
     HAL_LOG("Could not set the cpu migration notification flag for group %s",
             notifyOnMigratePath.get());
     return false;
@@ -1616,8 +1595,8 @@ EnsureMemCGroupExists(const nsACString &aGroup)
 
   nsAutoCString pathPrefix(kMemCtl + aGroup + kSlash);
   nsAutoCString memSwappinessPath(pathPrefix + NS_LITERAL_CSTRING("memory.swappiness"));
-  if (!WriteToFile(memSwappinessPath.get(),
-                   nsPrintfCString("%d", memSwappiness).get())) {
+  if (!WriteSysFile(memSwappinessPath.get(),
+                    nsPrintfCString("%d", memSwappiness).get())) {
     HAL_LOG("Could not set the memory.swappiness for group %s", memSwappinessPath.get());
     return false;
   }
@@ -1809,9 +1788,9 @@ EnsureKernelLowMemKillerParamsSet()
   adjParams.Cut(adjParams.Length() - 1, 1);
   minfreeParams.Cut(minfreeParams.Length() - 1, 1);
   if (!adjParams.IsEmpty() && !minfreeParams.IsEmpty()) {
-    WriteToFile("/sys/module/lowmemorykiller/parameters/adj", adjParams.get());
-    WriteToFile("/sys/module/lowmemorykiller/parameters/minfree",
-                minfreeParams.get());
+    WriteSysFile("/sys/module/lowmemorykiller/parameters/adj", adjParams.get());
+    WriteSysFile("/sys/module/lowmemorykiller/parameters/minfree",
+                 minfreeParams.get());
   }
 
   
@@ -1821,7 +1800,7 @@ EnsureKernelLowMemKillerParamsSet()
         &lowMemNotifyThresholdKB))) {
 
     
-    WriteToFile("/sys/module/lowmemorykiller/parameters/notify_trigger",
+    WriteSysFile("/sys/module/lowmemorykiller/parameters/notify_trigger",
       nsPrintfCString("%ld", lowMemNotifyThresholdKB * 1024 / page_size).get());
   }
 
@@ -1856,11 +1835,11 @@ SetProcessPriority(int aPid, ProcessPriority aPriority, uint32_t aLRU)
 
   
   
-  if (!WriteToFile(nsPrintfCString("/proc/%d/oom_score_adj", aPid).get(),
-                   nsPrintfCString("%d", oomScoreAdj).get()))
+  if (!WriteSysFile(nsPrintfCString("/proc/%d/oom_score_adj", aPid).get(),
+                    nsPrintfCString("%d", oomScoreAdj).get()))
   {
-    WriteToFile(nsPrintfCString("/proc/%d/oom_adj", aPid).get(),
-                nsPrintfCString("%d", OomAdjOfOomScoreAdj(oomScoreAdj)).get());
+    WriteSysFile(nsPrintfCString("/proc/%d/oom_adj", aPid).get(),
+                 nsPrintfCString("%d", OomAdjOfOomScoreAdj(oomScoreAdj)).get());
   }
 
   HAL_LOG("Assigning pid %d to cgroup %s", aPid, pc->CGroup().get());

@@ -180,6 +180,10 @@ void ReadAhead(filedesc_t aFd, const size_t aOffset = 0,
 #define ReadSysFile_PRESENT
 #endif 
 
+#ifndef WriteSysFile_PRESENT
+#define WriteSysFile_PRESENT
+#endif 
+
 
 
 
@@ -206,6 +210,8 @@ bool ReadSysFile(const char* aFilename, int* aVal);
 
 
 bool ReadSysFile(const char* aFilename, bool* aVal);
+
+bool WriteSysFile(const char* aFilename, const char* aBuf);
 
 #endif 
 
