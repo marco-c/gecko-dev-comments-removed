@@ -91,22 +91,21 @@ class FilePickerResultHandler implements ActivityResultHandler {
 
         final FragmentActivity fa = (FragmentActivity) GeckoAppShell.getGeckoInterface().getActivity();
         final LoaderManager lm = fa.getSupportLoaderManager();
-        
-        Cursor cursor = null;
-        try {
-            
-            final ContentResolver cr = fa.getContentResolver();
-            cursor = cr.query(uri, new String[] { MediaStore.Video.Media.DATA }, null, null, null);
 
-            int index = cursor.getColumnIndex(MediaStore.Video.Media.DATA);
-            if (index >= 0) {
-                lm.initLoader(intent.hashCode(), null, new VideoLoaderCallbacks(uri));
-                return;
-            }
-        } catch(Exception ex) {
-            
-        } finally {
-            if (cursor != null) {
+        
+        final ContentResolver cr = fa.getContentResolver();
+        final Cursor cursor = cr.query(uri, new String[] { MediaStore.Video.Media.DATA }, null, null, null);
+        if (cursor != null) {
+            try {
+                
+                int index = cursor.getColumnIndex(MediaStore.Video.Media.DATA);
+                if (index >= 0) {
+                    lm.initLoader(intent.hashCode(), null, new VideoLoaderCallbacks(uri));
+                    return;
+                }
+            } catch (Exception ex) {
+                
+            } finally {
                 cursor.close();
             }
         }
