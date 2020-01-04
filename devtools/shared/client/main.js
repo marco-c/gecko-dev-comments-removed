@@ -356,6 +356,22 @@ DebuggerClient.prototype = {
     
     this._eventsEnabled = false;
 
+    let cleanup = () => {
+      this._transport.close();
+      this._transport = null;
+    };
+
+    
+    
+    
+    if (this._closed) {
+      cleanup();
+      if (aOnClosed) {
+        aOnClosed();
+      }
+      return;
+    }
+
     if (aOnClosed) {
       this.addOneTimeListener('closed', function (aEvent) {
         aOnClosed();
@@ -371,8 +387,7 @@ DebuggerClient.prototype = {
       let client = clients.pop();
       if (!client) {
         
-        this._transport.close();
-        this._transport = null;
+        cleanup();
         return;
       }
       if (client.detach) {
