@@ -181,6 +181,7 @@ JitRuntime::JitRuntime(JSRuntime* rt)
     functionWrappers_(nullptr),
     osrTempData_(nullptr),
     preventBackedgePatching_(false),
+    backedgeTarget_(BackedgeLoopHeader),
     ionReturnOverride_(MagicValue(JS_ARG_POISON)),
     jitcodeGlobalTable_(nullptr)
 {
@@ -370,6 +371,12 @@ JitRuntime::patchIonBackedges(JSRuntime* rt, BackedgeTarget target)
         MOZ_ASSERT(!preventBackedgePatching_);
         MOZ_ASSERT(rt->handlingJitInterrupt());
     }
+
+    
+    if (backedgeTarget_ == target)
+        return;
+
+    backedgeTarget_ = target;
 
     backedgeExecAlloc_.makeAllWritable();
 
@@ -1149,9 +1156,7 @@ IonScript::copyPatchableBackedges(JSContext* cx, JitCode* code,
 
         
         
-        
-        
-        if (cx->runtime()->hasPendingInterrupt())
+        if (jrt->backedgeTarget() == JitRuntime::BackedgeInterruptCheck)
             PatchBackedge(backedge, interruptCheck, JitRuntime::BackedgeInterruptCheck);
         else
             PatchBackedge(backedge, loopHeader, JitRuntime::BackedgeLoopHeader);

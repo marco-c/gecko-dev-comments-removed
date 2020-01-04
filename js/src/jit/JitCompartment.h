@@ -82,6 +82,13 @@ class PatchableBackedge : public InlineListNode<PatchableBackedge>
 
 class JitRuntime
 {
+  public:
+    enum BackedgeTarget {
+        BackedgeLoopHeader,
+        BackedgeInterruptCheck
+    };
+
+  private:
     friend class JitCompartment;
 
     
@@ -152,7 +159,11 @@ class JitRuntime
 
     
     
-    volatile bool preventBackedgePatching_;
+    mozilla::Atomic<bool> preventBackedgePatching_;
+
+    
+    
+    BackedgeTarget backedgeTarget_;
 
     
     
@@ -247,6 +258,9 @@ class JitRuntime
     bool preventBackedgePatching() const {
         return preventBackedgePatching_;
     }
+    BackedgeTarget backedgeTarget() const {
+        return backedgeTarget_;
+    }
     void addPatchableBackedge(PatchableBackedge* backedge) {
         MOZ_ASSERT(preventBackedgePatching_);
         backedgeList_.pushFront(backedge);
@@ -255,11 +269,6 @@ class JitRuntime
         MOZ_ASSERT(preventBackedgePatching_);
         backedgeList_.remove(backedge);
     }
-
-    enum BackedgeTarget {
-        BackedgeLoopHeader,
-        BackedgeInterruptCheck
-    };
 
     void patchIonBackedges(JSRuntime* rt, BackedgeTarget target);
 
