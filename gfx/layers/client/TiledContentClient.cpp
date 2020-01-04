@@ -541,14 +541,10 @@ TileClient::DiscardFrontBuffer()
   if (mFrontBuffer) {
     MOZ_ASSERT(mFrontBuffer->GetReadLock());
 
-    MOZ_ASSERT(mAllocator);
-    if (mAllocator) {
-      mAllocator->ReturnTextureClientDeferred(mFrontBuffer);
-      if (mFrontBufferOnWhite) {
-        mAllocator->ReturnTextureClientDeferred(mFrontBufferOnWhite);
-      }
+    mAllocator->ReturnTextureClientDeferred(mFrontBuffer);
+    if (mFrontBufferOnWhite) {
+      mAllocator->ReturnTextureClientDeferred(mFrontBufferOnWhite);
     }
-
     if (mFrontBuffer->IsLocked()) {
       mFrontBuffer->Unlock();
     }
@@ -563,8 +559,7 @@ TileClient::DiscardFrontBuffer()
 static void
 DiscardTexture(TextureClient* aTexture, TextureClientAllocator* aAllocator)
 {
-  MOZ_ASSERT(aAllocator);
-  if (aTexture && aAllocator) {
+  if (aTexture) {
     MOZ_ASSERT(aTexture->GetReadLock());
     if (!aTexture->HasSynchronization() && aTexture->IsReadLocked()) {
       
@@ -626,10 +621,6 @@ TileClient::GetBackBuffer(CompositableClient& aCompositable,
                           nsIntRegion& aAddPaintedRegion,
                           RefPtr<TextureClient>* aBackBufferOnWhite)
 {
-  if (!mAllocator) {
-    gfxCriticalError() << "[TileClient] Missing TextureClientAllocator.";
-    return nullptr;
-  }
   if (aMode != SurfaceMode::SURFACE_COMPONENT_ALPHA) {
     
     
