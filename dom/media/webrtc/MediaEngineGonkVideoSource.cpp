@@ -79,8 +79,8 @@ MediaEngineGonkVideoSource::NotifyPull(MediaStreamGraph* aGraph,
   
   RefPtr<layers::Image> image = mImage;
   StreamTime delta = aDesiredTime - aSource->GetEndOfAppendedData(aID);
-  LOGFRAME(("NotifyPull, desired = %ld, delta = %ld %s", (int64_t) aDesiredTime,
-            (int64_t) delta, image ? "" : "<null>"));
+  LOGFRAME(("NotifyPull, desired = %" PRIi64 ", delta = %" PRIi64 " %s",
+            (int64_t) aDesiredTime, (int64_t) delta, image ? "" : "<null>"));
 
   
   
