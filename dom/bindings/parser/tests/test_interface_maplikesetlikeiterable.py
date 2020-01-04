@@ -78,6 +78,10 @@ def WebIDLTest(parser, harness):
     
     iterableMembers.append(("__iterable", WebIDL.IDLIterable))
 
+    valueIterableMembers = list(iterableMembers)
+    valueIterableMembers.append(("__indexedgetter", WebIDL.IDLMethod))
+    valueIterableMembers.append(("length", WebIDL.IDLAttribute))
+
     disallowedIterableNames = ["keys", "entries", "values"]
     disallowedMemberNames = ["forEach", "has", "size"] + disallowedIterableNames
     mapDisallowedMemberNames = ["get"] + disallowedMemberNames
@@ -93,8 +97,10 @@ def WebIDLTest(parser, harness):
                """
                interface Foo1 {
                iterable<long>;
+               readonly attribute unsigned long length;
+               getter long(unsigned long index);
                };
-               """, iterableMembers,
+               """, valueIterableMembers,
                
                numProductions=2)
 

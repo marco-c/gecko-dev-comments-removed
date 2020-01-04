@@ -1138,9 +1138,11 @@ class CGHeaders(CGWrapper):
                 bindingHeaders.add("mozilla/dom/ToJSValue.h")
                 
                 
-                addHeadersForType((desc.interface.maplikeOrSetlikeOrIterable.keyType,
-                                   desc, None))
-                if desc.interface.maplikeOrSetlikeOrIterable.valueType:
+                
+                if desc.interface.maplikeOrSetlikeOrIterable.hasKeyType():
+                    addHeadersForType((desc.interface.maplikeOrSetlikeOrIterable.keyType,
+                                       desc, None))
+                if desc.interface.maplikeOrSetlikeOrIterable.hasValueType():
                     addHeadersForType((desc.interface.maplikeOrSetlikeOrIterable.valueType,
                                        desc, None))
 
@@ -2283,7 +2285,13 @@ class MethodDefiner(PropertyDefiner):
 
         
         
-        if descriptor.interface.maplikeOrSetlikeOrIterable:
+        
+        
+        
+        maplikeOrSetlikeOrIterable = descriptor.interface.maplikeOrSetlikeOrIterable
+        if (maplikeOrSetlikeOrIterable and
+            (not maplikeOrSetlikeOrIterable.isIterable() or
+             not maplikeOrSetlikeOrIterable.isValueIterator())):
             if hasIterator(methods, self.regular):
                 raise TypeError("Cannot have maplike/setlike/iterable interface with "
                                 "other members that generate @@iterator "
@@ -2294,12 +2302,10 @@ class MethodDefiner(PropertyDefiner):
                 if (m.isMaplikeOrSetlikeOrIterableMethod() and
                     (((m.maplikeOrSetlikeOrIterable.isMaplike() or
                        (m.maplikeOrSetlikeOrIterable.isIterable() and
-                        m.maplikeOrSetlikeOrIterable.hasValueType())) and
+                        m.maplikeOrSetlikeOrIterable.isPairIterator())) and
                        m.identifier.name == "entries") or
-                    (((m.maplikeOrSetlikeOrIterable.isSetlike() or
-                       (m.maplikeOrSetlikeOrIterable.isIterable() and
-                        not m.maplikeOrSetlikeOrIterable.hasValueType()))) and
-                       m.identifier.name == "values"))):
+                    (m.maplikeOrSetlikeOrIterable.isSetlike() and
+                     m.identifier.name == "values"))):
                     self.regular.append({
                         "name": "@@iterator",
                         "methodName": m.identifier.name,
@@ -13073,8 +13079,9 @@ class CGForwardDeclarations(CGWrapper):
             
             
             if d.interface.maplikeOrSetlikeOrIterable:
-                builder.forwardDeclareForType(d.interface.maplikeOrSetlikeOrIterable.keyType,
-                                              config)
+                if d.interface.maplikeOrSetlikeOrIterable.hasKeyType():
+                    builder.forwardDeclareForType(d.interface.maplikeOrSetlikeOrIterable.keyType,
+                                                  config)
                 if d.interface.maplikeOrSetlikeOrIterable.hasValueType():
                     builder.forwardDeclareForType(d.interface.maplikeOrSetlikeOrIterable.valueType,
                                                   config)
