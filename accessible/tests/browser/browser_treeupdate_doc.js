@@ -230,11 +230,20 @@ addAccessibleTask(`
   };
   testAccessibleTree(iframe, tree);
 
+  reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
   yield ContentTask.spawn(browser, {}, () => {
-    let docNode = content.document.getElementById('iframe').contentDocument;
+    let docEl =
+      content.document.getElementById('iframe').contentDocument.documentElement;
     
-    docNode.documentElement.removeChild(content.window.inputNode);
+    docEl.removeChild(docEl.firstChild);
   });
+  
+  yield reorderEventPromise;
+  tree = {
+    role: ROLE_DOCUMENT,
+    children: [ ]
+  };
+  testAccessibleTree(iframe, tree);
 
   
   reorderEventPromise = waitForEvent(EVENT_REORDER, id);
