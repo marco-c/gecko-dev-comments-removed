@@ -163,21 +163,6 @@ function LocalMediaStreamPlayback(mediaElement, mediaStream) {
 
 LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype, {
 
-   
-
-
-
-
-
-
-  playMediaWithMediaStreamTracksStop: {
-    value: function(isResume) {
-      return this.startMedia(isResume)
-        .then(() => this.stopTracksForStreamInMediaPlayback())
-        .then(() => this.stopMediaElement());
-    }
-  },
-
   
 
 
@@ -185,40 +170,10 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
 
 
-  stopTracksForStreamInMediaPlayback: {
-    value: function () {
-      var elem = this.mediaElement;
-      var waitForEnded = () => new Promise(resolve => {
-        elem.addEventListener('ended', function ended() {
-          elem.removeEventListener('ended', ended);
-          resolve();
-        });
-      });
-
-      
-      this.mediaStream.getTracks().forEach(t => t.stop());
-
-      
-      
-      this.mediaStream.stop();
-      return timeout(waitForEnded(), ENDED_TIMEOUT_LENGTH, "ended event never fired")
-               .then(() => ok(true, "ended event successfully fired"));
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-  playMediaWithDeprecatedStreamStop : {
+  playMediaWithStreamStop : {
     value: function(isResume) {
       return this.startMedia(isResume)
-        .then(() => this.deprecatedStopStreamInMediaPlayback())
+        .then(() => this.stopStreamInMediaPlayback())
         .then(() => this.stopMediaElement());
     }
   },
@@ -231,9 +186,7 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
 
 
-
-
-  deprecatedStopStreamInMediaPlayback : {
+  stopStreamInMediaPlayback : {
     value: function () {
       return new Promise((resolve, reject) => {
         

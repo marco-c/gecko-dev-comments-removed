@@ -182,31 +182,11 @@ class DOMMediaStream : public DOMEventTargetHelper
   typedef dom::VideoTrack VideoTrack;
   typedef dom::AudioTrackList AudioTrackList;
   typedef dom::VideoTrackList VideoTrackList;
+  typedef dom::MediaTrackListListener MediaTrackListListener;
 
 public:
   typedef dom::MediaTrackConstraints MediaTrackConstraints;
-
-  class TrackListener {
-    NS_INLINE_DECL_REFCOUNTING(TrackListener)
-
-  public:
-    
-
-
-
-    virtual void
-    NotifyTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack) {};
-
-    
-
-
-
-    virtual void
-    NotifyTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack) {};
-
-  protected:
-    virtual ~TrackListener() {}
-  };
+  typedef uint8_t TrackTypeHints;
 
   DOMMediaStream();
 
@@ -230,8 +210,6 @@ public:
   void GetAudioTracks(nsTArray<nsRefPtr<AudioStreamTrack> >& aTracks);
   void GetVideoTracks(nsTArray<nsRefPtr<VideoStreamTrack> >& aTracks);
   void GetTracks(nsTArray<nsRefPtr<MediaStreamTrack> >& aTracks);
-  void AddTrack(MediaStreamTrack& aTrack);
-  void RemoveTrack(MediaStreamTrack& aTrack);
 
   
 
@@ -254,11 +232,6 @@ public:
 
 
   MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aOwningStream, TrackID aTrackID) const;
-
-  
-
-
-  TrackPort* FindPlaybackTrackPort(const MediaStreamTrack& aTrack) const;
 
   MediaStream* GetInputStream() const { return mInputStream; }
   ProcessedMediaStream* GetOwnedStream() const { return mOwnedStream; }
@@ -414,8 +387,23 @@ public:
     }
   }
 
-  void RegisterTrackListener(TrackListener* aListener);
-  void UnregisterTrackListener(TrackListener* aListener);
+  
+
+
+
+
+  void ConstructMediaTracks(AudioTrackList* aAudioTrackList,
+                            VideoTrackList* aVideoTrackList);
+
+  
+
+
+  void DisconnectTrackListListeners(const AudioTrackList* aAudioTrackList,
+                                    const VideoTrackList* aVideoTrackList);
+
+  virtual void NotifyMediaStreamTrackCreated(MediaStreamTrack* aTrack);
+
+  virtual void NotifyMediaStreamTrackEnded(MediaStreamTrack* aTrack);
 
 protected:
   virtual ~DOMMediaStream();
@@ -425,18 +413,14 @@ protected:
   void InitTrackUnionStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
   void InitAudioCaptureStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
   void InitStreamCommon(MediaStream* aStream, MediaStreamGraph* aGraph);
+  already_AddRefed<AudioTrack> CreateAudioTrack(AudioStreamTrack* aStreamTrack);
+  already_AddRefed<VideoTrack> CreateVideoTrack(VideoStreamTrack* aStreamTrack);
+
+  
+  
+  void TracksCreated();
 
   void CheckTracksAvailable();
-
-  
-  
-  void NotifyTracksCreated();
-
-  
-  void NotifyTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack);
-
-  
-  void NotifyTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack);
 
   class OwnedStreamListener;
   friend class OwnedStreamListener;
@@ -498,7 +482,8 @@ protected:
   bool mNotifiedOfMediaStreamGraphShutdown;
 
   
-  nsTArray<nsRefPtr<TrackListener>> mTrackListeners;
+  
+  nsTArray<MediaTrackListListener> mMediaTrackListListeners;
 
 private:
   void NotifyPrincipalChanged();
@@ -530,7 +515,7 @@ public:
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  void Stop();
+  virtual void Stop();
 
   virtual MediaEngineSource* GetMediaEngine(TrackID aTrackID) { return nullptr; }
 
@@ -556,8 +541,6 @@ public:
 
 protected:
   virtual ~DOMLocalMediaStream();
-
-  void StopImpl();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMLocalMediaStream,

@@ -215,8 +215,7 @@ function createMediaElement(type, label) {
 
 function getUserMedia(constraints) {
   info("Call getUserMedia for " + JSON.stringify(constraints));
-  return navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream => (checkMediaStreamTracks(constraints, stream), stream));
+  return navigator.mediaDevices.getUserMedia(constraints);
 }
 
 
@@ -322,22 +321,6 @@ function checkMediaStreamTracks(constraints, mediaStream) {
 
 
 
-
-
-
-
-function checkMediaStreamContains(mediaStream, tracks, message) {
-  message = message ? (message + ": ") : "";
-  tracks.forEach(t => ok(mediaStream.getTracks().includes(t),
-                         message + "MediaStream " + mediaStream.id +
-                         " contains track " + t.id));
-  is(mediaStream.getTracks().length, tracks.length,
-     message + "MediaStream " + mediaStream.id + " contains no extra tracks");
-}
-
-
-
-
 function wait(time) {
   return new Promise(r => setTimeout(r, time));
 }
@@ -353,10 +336,6 @@ function waitUntil(func, time) {
     }, time || 200);
   });
 }
-
-
-var timeout = (promise, time, msg) =>
-  Promise.race([promise, wait(time).then(() => Promise.reject(new Error(msg)))]);
 
 
 
