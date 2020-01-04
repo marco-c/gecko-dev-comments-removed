@@ -55,7 +55,7 @@
 #include "nsVariant.h"
 
 
-#include "prprf.h"
+#include "mozilla/Snprintf.h"
 
 #include "nsJSUtils.h"
 #include "nsGlobalWindow.h"
@@ -2540,7 +2540,7 @@ MediaManager::RemoveWindowID(uint64_t aWindowId)
 
   
   char windowBuffer[32];
-  PR_snprintf(windowBuffer, sizeof(windowBuffer), "%llu", outerID);
+  snprintf_literal(windowBuffer, "%" PRIu64, outerID);
   nsString data = NS_ConvertUTF8toUTF16(windowBuffer);
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
