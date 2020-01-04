@@ -253,20 +253,6 @@ InterpreterFrame::epilogue(JSContext* cx)
                 DebugScopes::onPopStrictEvalScope(this);
         } else if (isDirectEvalFrame()) {
             MOZ_ASSERT_IF(isDebuggerEvalFrame(), !IsSyntacticScope(scopeChain()));
-        } else {
-            
-
-
-
-
-
-
-            if (isDebuggerEvalFrame()) {
-                MOZ_ASSERT(scopeChain()->is<GlobalObject>() ||
-                           scopeChain()->enclosingScope()->is<GlobalObject>());
-            } else {
-                MOZ_ASSERT(scopeChain()->is<GlobalObject>());
-            }
         }
         return;
     }

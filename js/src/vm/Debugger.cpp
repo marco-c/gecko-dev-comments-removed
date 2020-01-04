@@ -6344,9 +6344,21 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, HandleValue thisv, AbstractFrameP
     Rooted<ScopeObject*> enclosingStaticScope(cx);
     if (!env->is<GlobalObject>())
         enclosingStaticScope = StaticNonSyntacticScopeObjects::create(cx, nullptr);
-    Rooted<StaticEvalObject*> staticScope(cx, StaticEvalObject::create(cx, enclosingStaticScope));
-    if (!staticScope)
-        return false;
+
+    
+    
+    
+    
+    
+    Rooted<ScopeObject*> staticScope(cx);
+    if (frame) {
+        staticScope = StaticEvalObject::create(cx, enclosingStaticScope);
+        if (!staticScope)
+            return false;
+    } else {
+        staticScope = enclosingStaticScope;
+    }
+
     CompileOptions options(cx);
     options.setIsRunOnce(true)
            .setForEval(true)
@@ -6363,11 +6375,14 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, HandleValue thisv, AbstractFrameP
     if (!script)
         return false;
 
-    if (script->strict())
-        staticScope->setStrict();
+    
+    if (frame) {
+        if (script->strict())
+            staticScope->as<StaticEvalObject>().setStrict();
+        script->setActiveEval();
+    }
 
-    script->setActiveEval();
-    ExecuteType type = !frame ? EXECUTE_DEBUG_GLOBAL : EXECUTE_DEBUG;
+    ExecuteType type = !frame ? EXECUTE_GLOBAL : EXECUTE_DEBUG;
     return ExecuteKernel(cx, script, *env, thisv, NullValue(), type, frame, rval.address());
 }
 
