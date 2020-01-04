@@ -336,7 +336,13 @@ WebSocketImpl::PrintErrorOnConsole(const char *aBundleURI,
     RefPtr<PrintErrorOnConsoleRunnable> runnable =
       new PrintErrorOnConsoleRunnable(this, aBundleURI, aError, aFormatStrings,
                                       aFormatStringsLen);
-    runnable->Dispatch(mWorkerPrivate->GetJSContext());
+    ErrorResult rv;
+    runnable->Dispatch(rv);
+    
+    
+    
+    
+    rv.SuppressException();
     return;
   }
 
@@ -617,7 +623,11 @@ WebSocketImpl::Disconnect()
   } else {
     RefPtr<DisconnectInternalRunnable> runnable =
       new DisconnectInternalRunnable(this);
-    runnable->Dispatch(mWorkerPrivate->GetJSContext());
+    ErrorResult rv;
+    runnable->Dispatch(rv);
+    
+    
+    rv.SuppressException();
   }
 
   
@@ -1259,7 +1269,7 @@ WebSocket::Constructor(const GlobalObject& aGlobal,
       new InitRunnable(webSocket->mImpl, aUrl, protocolArray,
                        nsAutoCString(file.get()), lineno, column, aRv,
                        &connectionFailed);
-    runnable->Dispatch(aGlobal.Context());
+    runnable->Dispatch(aRv);
   }
 
   if (NS_WARN_IF(aRv.Failed())) {
@@ -1339,7 +1349,7 @@ WebSocket::Constructor(const GlobalObject& aGlobal,
   } else {
     RefPtr<AsyncOpenRunnable> runnable =
       new AsyncOpenRunnable(webSocket->mImpl, aRv);
-    runnable->Dispatch(aGlobal.Context());
+    runnable->Dispatch(aRv);
   }
 
   if (NS_WARN_IF(aRv.Failed())) {
