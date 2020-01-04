@@ -619,10 +619,6 @@ public:
   
   void ClearSdpParseErrorMessages();
 
-  void OnAddIceCandidateError() {
-    ++mAddCandidateErrorCount;
-  }
-
   
   const std::vector<std::string> &GetSdpParseErrors();
 
