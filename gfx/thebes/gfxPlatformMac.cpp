@@ -427,14 +427,6 @@ gfxPlatformMac::ReadAntiAliasingThreshold()
 }
 
 bool
-gfxPlatformMac::UseAcceleratedSkiaCanvas()
-{
-  
-  
-  return nsCocoaFeatures::OnMountainLionOrLater() && gfxPlatform::UseAcceleratedSkiaCanvas();
-}
-
-bool
 gfxPlatformMac::UseProgressivePaint()
 {
   
