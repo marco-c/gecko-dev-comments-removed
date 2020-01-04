@@ -92,11 +92,11 @@ void
 TestEmpty(const char* aTestName, const char* aMode)
 {
   char filename[128];
-  sprintf(filename, "full-%s-%s.json", aTestName, aMode);
+  sprintf(filename, "complete-%s-%s.json", aTestName, aMode);
   auto f = MakeUnique<FpWriteFunc>(filename);
 
   char options[128];
-  sprintf(options, "--mode=%s --sample-below=1", aMode);
+  sprintf(options, "--mode=%s --stacks=full", aMode);
   ResetEverything(options);
 
   
@@ -104,16 +104,16 @@ TestEmpty(const char* aTestName, const char* aMode)
 }
 
 void
-TestUnsampled(const char* aTestName, int aNum, const char* aMode, int aSeven)
+TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
 {
   char filename[128];
-  sprintf(filename, "full-%s%d-%s.json", aTestName, aNum, aMode);
+  sprintf(filename, "complete-%s%d-%s.json", aTestName, aNum, aMode);
   auto f = MakeUnique<FpWriteFunc>(filename);
 
   
   
   char options[128];
-  sprintf(options, "--mode=%s --sample-below=1 --show-dump-stats=yes", aMode);
+  sprintf(options, "--mode=%s --stacks=full --show-dump-stats=yes", aMode);
   ResetEverything(options);
 
   
@@ -272,49 +272,27 @@ TestUnsampled(const char* aTestName, int aNum, const char* aMode, int aSeven)
 }
 
 void
-TestSampled(const char* aTestName, const char* aMode, int aSeven)
+TestPartial(const char* aTestName, const char* aMode, int aSeven)
 {
   char filename[128];
-  sprintf(filename, "full-%s-%s.json", aTestName, aMode);
+  sprintf(filename, "complete-%s-%s.json", aTestName, aMode);
   auto f = MakeUnique<FpWriteFunc>(filename);
 
   char options[128];
-  sprintf(options, "--mode=%s --sample-below=128", aMode);
+  sprintf(options, "--mode=%s", aMode);
   ResetEverything(options);
 
+  int kTenThousand = aSeven + 9993;
   char* s;
 
   
   
-  s = (char*) malloc(128);
-  UseItOrLoseIt(s, aSeven);
+  
 
   
-  s = (char*) malloc(160);
-  UseItOrLoseIt(s, aSeven);
-
   
-  for (int i = 0; i < aSeven + 9; i++) {
-    s = (char*) malloc(8);
-    UseItOrLoseIt(s, aSeven);
-  }
-
   
-  for (int i = 0; i < aSeven + 8; i++) {
-    s = (char*) malloc(8);
-    UseItOrLoseIt(s, aSeven);
-  }
-
-  
-  s = (char*) malloc(256);
-  UseItOrLoseIt(s, aSeven);
-
-  
-  s = (char*) malloc(96);
-  UseItOrLoseIt(s, aSeven);
-
-  
-  for (int i = 0; i < aSeven - 2; i++) {
+  for (int i = 0; i < kTenThousand; i++) {
     s = (char*) malloc(8);
     UseItOrLoseIt(s, aSeven);
   }
@@ -322,13 +300,18 @@ TestSampled(const char* aTestName, const char* aMode, int aSeven)
   
   
   
-  for (int i = 1; i <= aSeven + 1; i++) {
-    s = (char*) malloc(i * 16);
+  for (int i = 0; i < kTenThousand; i++) {
+    s = (char*) malloc(128);
     UseItOrLoseIt(s, aSeven);
   }
 
   
   
+  
+  for (int i = 0; i < kTenThousand; i++) {
+    s = (char*) malloc(1024);
+    UseItOrLoseIt(s, aSeven);
+  }
 
   Analyze(Move(f));
 }
@@ -377,13 +360,13 @@ RunTests()
   TestEmpty("empty", "dark-matter");
   TestEmpty("empty", "cumulative");
 
-  TestUnsampled("unsampled", 1, "live",        seven);
-  TestUnsampled("unsampled", 1, "dark-matter", seven);
+  TestFull("full", 1, "live",        seven);
+  TestFull("full", 1, "dark-matter", seven);
 
-  TestUnsampled("unsampled", 2, "dark-matter", seven);
-  TestUnsampled("unsampled", 2, "cumulative",  seven);
+  TestFull("full", 2, "dark-matter", seven);
+  TestFull("full", 2, "cumulative",  seven);
 
-  TestSampled("sampled", "live", seven);
+  TestPartial("partial", "live", seven);
 
   TestScan(seven);
 }

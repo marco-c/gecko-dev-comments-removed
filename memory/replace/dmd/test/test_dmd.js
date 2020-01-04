@@ -134,13 +134,14 @@ function run_test() {
   
   
   
+  
 
   gEnv.set(gEnv.get("DMD_PRELOAD_VAR"), gEnv.get("DMD_PRELOAD_VALUE"));
 
   runProcess(gDmdTestFile, []);
 
   function test2(aTestName, aMode) {
-    let name = "full-" + aTestName + "-" + aMode;
+    let name = "complete-" + aTestName + "-" + aMode;
     jsonFile = FileUtils.getFile("CurWorkD", [name + ".json"]);
     test(name, [jsonFile.path]);
     jsonFile.remove(true);
@@ -152,13 +153,13 @@ function run_test() {
   test2("empty", "dark-matter");
   test2("empty", "cumulative");
 
-  test2("unsampled1", "live");
-  test2("unsampled1", "dark-matter");
+  test2("full1", "live");
+  test2("full1", "dark-matter");
 
-  test2("unsampled2", "dark-matter");
-  test2("unsampled2", "cumulative");
+  test2("full2", "dark-matter");
+  test2("full2", "cumulative");
 
-  test2("sampled", "live");
+  test2("partial", "live");
 
   
   jsonFile = FileUtils.getFile("CurWorkD", ["basic-scan.json"]);
@@ -169,12 +170,12 @@ function run_test() {
   let basicScanFileName = "basic-scan-" + (is64Bit ? "64" : "32");
   test(basicScanFileName, ["--clamp-contents", jsonFile.path]);
   ok(scanTest(jsonFile.path, ["--clamp-contents"]), "Scan with address clamping");
+
   
   
   
   test(basicScanFileName, ["--clamp-contents", jsonFile.path]);
   jsonFile.remove(true);
-
 
   
   

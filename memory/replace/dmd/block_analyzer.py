@@ -17,7 +17,7 @@ import re
 
 
 
-outputVersion = 4
+outputVersion = 5
 
 
 
@@ -223,10 +223,6 @@ def loadGraph(options):
         raise Exception("'version' property isn't '{:d}'".format(outputVersion))
 
     invocation = j['invocation']
-    sampleBelowSize = invocation['sampleBelowSize']
-    heapIsSampled = sampleBelowSize > 1
-    if heapIsSampled:
-        raise Exception("Heap analysis is not going to work with sampled blocks.")
 
     block_list = j['blockList']
     blocks = {}
