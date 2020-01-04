@@ -92,6 +92,7 @@ public:
 
 
   void SetFirstFrameTimeout(FrameTimeout aTimeout) { mFirstFrameTimeout = aTimeout; }
+  FrameTimeout FirstFrameTimeout() const { return mFirstFrameTimeout; }
 
 private:
   friend class FrameAnimator;
