@@ -40,6 +40,17 @@ Compartment::~Compartment()
     MOZ_ASSERT(!instances_.initialized() || instances_.empty());
 }
 
+void
+Compartment::trace(JSTracer* trc)
+{
+    
+    
+    
+    
+    if (activationCount_)
+        instances_.get().trace(trc);
+}
+
 bool
 Compartment::registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj)
 {

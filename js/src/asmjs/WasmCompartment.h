@@ -48,6 +48,7 @@ class Compartment
   public:
     explicit Compartment(Zone* zone);
     ~Compartment();
+    void trace(JSTracer* trc);
 
     
     
