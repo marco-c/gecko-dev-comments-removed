@@ -1846,6 +1846,12 @@ WebSocketImpl::InitializeConnection(nsIPrincipal* aPrincipal)
   
   mOriginDocument = nullptr;
 
+
+  
+  
+  
+  MOZ_ASSERT(!doc || doc->NodePrincipal()->Equals(aPrincipal));
+
   wsChannel->InitLoadInfo(doc ? doc->AsDOMNode() : nullptr,
                           doc ? doc->NodePrincipal() : aPrincipal,
                           aPrincipal,
