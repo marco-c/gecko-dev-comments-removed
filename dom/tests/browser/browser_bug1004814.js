@@ -3,11 +3,11 @@
 
 
 
-const TEST_URI = "http://example.com/browser/dom/tests/browser/test_bug1004814.html";
-
 add_task(function*() {
-  yield BrowserTestUtils.withNewTab(TEST_URI, function*(aBrowser) {
+  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
     let duration = yield ContentTask.spawn(aBrowser, null, function (opts) {
+      const TEST_URI = "http://example.com/browser/dom/tests/browser/test_bug1004814.html";
+
       return new Promise(resolve => {
         let ConsoleObserver = {
           QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
@@ -25,6 +25,9 @@ add_task(function*() {
         };
 
         Services.obs.addObserver(ConsoleObserver, "console-api-log-event", false);
+
+        
+        content.document.location = TEST_URI;
       });
     });
 
