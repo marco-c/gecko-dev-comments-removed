@@ -219,6 +219,9 @@ public:
         if (!gFontHintingEnabled || !isAxisAligned(*rec)) {
             rec->setHinting(SkPaint::kNo_Hinting);
         }
+
+        
+        rec->ignorePreBlend();
     }
 
     virtual void onGetFontDescriptor(SkFontDescriptor*, bool*) const override
