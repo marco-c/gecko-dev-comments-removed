@@ -11,13 +11,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource:///modules/loop/MozLoopService.jsm");
 Cu.import("resource:///modules/loop/LoopRooms.jsm");
-Cu.import("resource:///modules/loop/LoopContacts.jsm");
 Cu.importGlobalProperties(["Blob"]);
 
-XPCOMUtils.defineLazyModuleGetter(this, "LoopContacts",
-                                        "resource:///modules/loop/LoopContacts.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "LoopStorage",
-                                        "resource:///modules/loop/LoopStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "hookWindowCloseForPanelClose",
                                         "resource://gre/modules/MozSocialAPI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PageMetadata",
@@ -223,7 +218,6 @@ function injectLoopAPI(targetWindow) {
   let ringer;
   let ringerStopper;
   let appVersionInfo;
-  let contactsAPI;
   let roomsAPI;
   let callsAPI;
   let savedWindowListeners = new Map();
@@ -391,27 +385,6 @@ function injectLoopAPI(targetWindow) {
 
 
 
-    contacts: {
-      enumerable: true,
-      get: function() {
-        if (contactsAPI) {
-          return contactsAPI;
-        }
-
-        
-        let profile = MozLoopService.userProfile;
-        if (profile) {
-          LoopStorage.switchDatabase(profile.uid);
-        }
-        return contactsAPI = injectObjectAPI(LoopContacts, targetWindow);
-      }
-    },
-
-    
-
-
-
-
     rooms: {
       enumerable: true,
       get: function() {
@@ -419,25 +392,6 @@ function injectLoopAPI(targetWindow) {
           return roomsAPI;
         }
         return roomsAPI = injectObjectAPI(LoopRooms, targetWindow);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-    startImport: {
-      enumerable: true,
-      writable: true,
-      value: function(options, callback) {
-        LoopContacts.startImport(options, getChromeWindow(targetWindow), function(...results) {
-          invokeCallback(callback, ...[cloneValueInto(r, targetWindow) for (r of results)]);
-        });
       }
     },
 
