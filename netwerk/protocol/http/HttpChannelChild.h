@@ -232,6 +232,10 @@ private:
   bool mShouldParentIntercept;
 
   
+  
+  bool mSuspendParentAfterSynthesizeResponse;
+
+  
   bool RemoteChannelExists() { return mIPCOpen && !mKeptAlive; }
 
   void AssociateApplicationCache(const nsCString &groupID,
