@@ -2,6 +2,7 @@
 
 
 const promise = require("promise");
+const defer = require("devtools/shared/defer");
 
 var gAppId = "actor-test";
 const APP_ORIGIN = "app://" + gAppId;
@@ -177,7 +178,7 @@ add_test(function testFileUploadInstall() {
   
   gClient.traits.bulk = false;
 
-  let progressDeferred = promise.defer();
+  let progressDeferred = defer();
   
   gActorFront.on("install-progress", function onProgress(e, progress) {
     if (progress.bytesSent == progress.totalBytes) {
@@ -206,7 +207,7 @@ add_test(function testBulkUploadInstall() {
   let packageFile = do_get_file("data/app.zip");
   do_check_true(gClient.traits.bulk);
 
-  let progressDeferred = promise.defer();
+  let progressDeferred = defer();
   
   gActorFront.on("install-progress", function onProgress(e, progress) {
     if (progress.bytesSent == progress.totalBytes) {

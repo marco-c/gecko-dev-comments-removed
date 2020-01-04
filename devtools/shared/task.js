@@ -88,6 +88,7 @@
 
 
 const Promise = require("promise");
+const defer = require("devtools/shared/defer");
 
 
 
@@ -266,7 +267,7 @@ function TaskImpl(iterator) {
   if (gMaintainStack) {
     this._stack = (new Error()).stack;
   }
-  this.deferred = Promise.defer();
+  this.deferred = defer();
   this._iterator = iterator;
   this._isStarGenerator = !("send" in iterator);
   this._run(true);

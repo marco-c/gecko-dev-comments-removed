@@ -9,6 +9,7 @@
 var { Ci, Cu, Cc, components } = require("chrome");
 var Services = require("Services");
 var promise = require("promise");
+var defer = require("devtools/shared/defer");
 
 loader.lazyRequireGetter(this, "FileUtils",
                          "resource://gre/modules/FileUtils.jsm", true);
@@ -50,7 +51,7 @@ exports.executeSoon = function executeSoon(aFn) {
 
 
 exports.waitForTick = function waitForTick() {
-  let deferred = promise.defer();
+  let deferred = defer();
   exports.executeSoon(deferred.resolve);
   return deferred.promise;
 };
@@ -64,7 +65,7 @@ exports.waitForTick = function waitForTick() {
 
 
 exports.waitForTime = function waitForTime(aDelay) {
-  let deferred = promise.defer();
+  let deferred = defer();
   setTimeout(deferred.resolve, aDelay);
   return deferred.promise;
 };
@@ -85,7 +86,7 @@ exports.waitForTime = function waitForTime(aDelay) {
 
 
 exports.yieldingEach = function yieldingEach(aArray, aFn) {
-  const deferred = promise.defer();
+  const deferred = defer();
 
   let i = 0;
   let len = aArray.length;
@@ -435,7 +436,7 @@ function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
                           .loadGroup;
   }
 
-  let deferred = promise.defer();
+  let deferred = defer();
   let onResponse = (stream, status, request) => {
     if (!components.isSuccessCode(status)) {
       deferred.reject(new Error(`Failed to fetch ${url}. Code ${status}.`));
@@ -597,7 +598,7 @@ exports.settleAll = values => {
     throw new Error("settleAll() expects an iterable.");
   }
 
-  let deferred = promise.defer();
+  let deferred = defer();
 
   values = Array.isArray(values) ? values : [...values];
   let countdown = values.length;

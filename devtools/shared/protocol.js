@@ -8,6 +8,7 @@ var { Cu, components } = require("chrome");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var Services = require("Services");
 var promise = require("promise");
+var defer = require("devtools/shared/defer");
 var {Class} = require("sdk/core/heritage");
 var {EventTarget} = require("sdk/event/target");
 var events = require("sdk/event/core");
@@ -1213,7 +1214,7 @@ var Front = Class({
 
 
   request: function (packet) {
-    let deferred = promise.defer();
+    let deferred = defer();
     
     let { to, type } = packet;
     this._requests.push({
