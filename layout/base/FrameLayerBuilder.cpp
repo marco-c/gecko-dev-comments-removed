@@ -3406,7 +3406,7 @@ PaintedLayerData::Accumulate(ContainerState* aState,
        
        
        if (tmp.GetNumRects() <= 4 || aItem->Frame()->PresContext()->IsChrome()) {
-        mOpaqueRegion = tmp;
+        mOpaqueRegion = Move(tmp);
       }
     }
   }

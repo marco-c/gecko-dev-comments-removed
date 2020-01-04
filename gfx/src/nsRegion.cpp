@@ -11,6 +11,7 @@
 bool nsRegion::Contains(const nsRegion& aRgn) const
 {
   
+  
   nsRegionRectIterator iter(aRgn);
   while (const nsRect* r = iter.Next()) {
     if (!Contains (*r)) {
