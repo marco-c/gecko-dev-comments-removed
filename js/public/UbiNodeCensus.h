@@ -87,7 +87,7 @@ using CountBasePtr = UniquePtr<CountBase, CountDeleter>;
 
 
 struct CountType {
-    explicit CountType(Census& census) : census(census) { }
+    explicit CountType() { }
     virtual ~CountType() { }
 
     
@@ -102,14 +102,13 @@ struct CountType {
 
     
     
-    virtual bool count(CountBase& count, const Node& node) = 0;
+    virtual bool count(CountBase& count,
+                       mozilla::MallocSizeOf mallocSizeOf,
+                       const Node& node) = 0;
 
     
     
-    virtual bool report(CountBase& count, MutableHandleValue report) = 0;
-
-  protected:
-    Census& census;
+    virtual bool report(JSContext* cx, CountBase& count, MutableHandleValue report) = 0;
 };
 
 using CountTypePtr = UniquePtr<CountType, JS::DeletePolicy<CountType>>;
@@ -129,12 +128,16 @@ class CountBase {
     explicit CountBase(CountType& type) : type(type), total_(0) { }
 
     
-    bool count(const Node& node) { return type.count(*this, node); }
+    bool count(mozilla::MallocSizeOf mallocSizeOf, const Node& node) {
+        return type.count(*this, mallocSizeOf, node);
+    }
 
     
     
     
-    bool report(MutableHandleValue report) { return type.report(*this, report); }
+    bool report(JSContext* cx, MutableHandleValue report) {
+        return type.report(cx, *this, report);
+    }
 
     
     
@@ -173,18 +176,6 @@ struct Census {
     explicit Census(JSContext* cx) : cx(cx), atomsZone(nullptr) { }
 
     bool init();
-
-    
-    
-    
-    template<typename T, typename... Args>
-    T* new_(Args&&... args) MOZ_HEAP_ALLOCATOR {
-        void* memory = js_malloc(sizeof(T));
-        if (MOZ_UNLIKELY(!memory)) {
-            return nullptr;
-        }
-        return new(memory) T(mozilla::Forward<Args>(args)...);
-    }
 };
 
 
@@ -192,15 +183,17 @@ struct Census {
 class CensusHandler {
     Census& census;
     CountBasePtr& rootCount;
+    mozilla::MallocSizeOf mallocSizeOf;
 
   public:
-    CensusHandler(Census& census, CountBasePtr& rootCount)
+    CensusHandler(Census& census, CountBasePtr& rootCount, mozilla::MallocSizeOf mallocSizeOf)
       : census(census),
-        rootCount(rootCount)
+        rootCount(rootCount),
+        mallocSizeOf(mallocSizeOf)
     { }
 
-    bool report(MutableHandleValue report) {
-        return rootCount->report(report);
+    bool report(JSContext* cx, MutableHandleValue report) {
+        return rootCount->report(cx, report);
     }
 
     
@@ -217,6 +210,12 @@ using CensusTraversal = BreadthFirst<CensusHandler>;
 
 bool ParseCensusOptions(JSContext* cx, Census& census, HandleObject options,
                         CountTypePtr& outResult);
+
+
+
+
+CountTypePtr ParseBreakdown(JSContext* cx, HandleValue breakdownValue);
+
 
 } 
 } 

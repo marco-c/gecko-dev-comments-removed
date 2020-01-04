@@ -221,6 +221,9 @@ WriteHeapGraph(JSContext* cx,
                         ignoreNodeCount, ignoreEdgeCount);
 }
 
+
+MallocSizeOf GetCurrentThreadDebuggerMallocSizeOf();
+
 } 
 } 
 
