@@ -3075,7 +3075,6 @@ wasm::IonCompileFunction(IonCompileTask* task)
 
     
     {
-
         jit::SpewBeginFunction(&mir, nullptr);
         jit::AutoSpewEndFunction spewEndFunction(&mir);
 
