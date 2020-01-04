@@ -5,11 +5,13 @@
 
 
 #include "SandboxInfo.h"
+#include "SandboxLogging.h"
 #include "LinuxSched.h"
 
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/prctl.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -35,6 +37,30 @@
 
 
 namespace mozilla {
+
+
+
+
+namespace {
+
+static bool
+IsSingleThreaded()
+{
+  
+  
+  
+  
+  
+  struct stat sb;
+  if (stat("/proc/self/task", &sb) < 0) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "Couldn't access /proc/self/task!");
+    return false;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(sb.st_nlink >= 3);
+  return sb.st_nlink == 3;
+}
+
+} 
 
 static bool
 HasSeccompBPF()
@@ -159,7 +185,7 @@ CanCreateUserNamespace()
 }
 
 
-const SandboxInfo SandboxInfo::sSingleton = SandboxInfo();
+SandboxInfo SandboxInfo::sSingleton = SandboxInfo();
 
 SandboxInfo::SandboxInfo() {
   int flags = 0;
@@ -172,10 +198,15 @@ SandboxInfo::SandboxInfo() {
     }
   }
 
-  if (HasUserNamespaceSupport()) {
-    flags |= kHasPrivilegedUserNamespaces;
-    if (CanCreateUserNamespace()) {
-      flags |= kHasUserNamespaces;
+  
+  if (getenv("MOZ_SANDBOX_UNEXPECTED_THREADS")) {
+    flags |= kUnexpectedThreads;
+  } else {
+    if (HasUserNamespaceSupport()) {
+      flags |= kHasPrivilegedUserNamespaces;
+      if (CanCreateUserNamespace()) {
+        flags |= kHasUserNamespaces;
+      }
     }
   }
 
@@ -197,6 +228,30 @@ SandboxInfo::SandboxInfo() {
   }
 
   mFlags = static_cast<Flags>(flags);
+}
+
+ void
+SandboxInfo::ThreadingCheck()
+{
+  
+  if (IsSingleThreaded() &&
+      !getenv("MOZ_SANDBOX_UNEXPECTED_THREADS")) {
+    return;
+  }
+  SANDBOX_LOG_ERROR("unexpected multithreading found; this prevents using"
+                    " namespace sandboxing.%s",
+                    
+                    getenv("LD_PRELOAD") ? "  (If you're LD_PRELOAD'ing"
+                    " nVidia GL: that's not necessary for Gecko.)" : "");
+
+  
+  
+  
+  setenv("MOZ_SANDBOX_UNEXPECTED_THREADS", "1", 0);
+  int flags = sSingleton.mFlags;
+  flags |= kUnexpectedThreads;
+  flags &= ~(kHasUserNamespaces | kHasPrivilegedUserNamespaces);
+  sSingleton.mFlags = static_cast<Flags>(flags);
 }
 
 } 

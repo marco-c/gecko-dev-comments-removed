@@ -524,8 +524,11 @@ SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
     return;
   }
 
-  MOZ_RELEASE_ASSERT(IsSingleThreaded());
   const SandboxInfo info = SandboxInfo::Get();
+  if (info.Test(SandboxInfo::kUnexpectedThreads)) {
+    return;
+  }
+  MOZ_RELEASE_ASSERT(IsSingleThreaded());
 
   
   

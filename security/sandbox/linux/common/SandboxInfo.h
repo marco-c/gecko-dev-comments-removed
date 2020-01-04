@@ -39,6 +39,8 @@ public:
     kHasPrivilegedUserNamespaces = 1 << 6,
     
     kPermissive        = 1 << 7,
+    
+    kUnexpectedThreads = 1 << 8,
   };
 
   bool Test(Flags aFlag) const { return (mFlags & aFlag) == aFlag; }
@@ -54,9 +56,18 @@ public:
   {
     return !Test(kEnabledForMedia) || Test(kHasSeccompBPF);
   }
+
+  
+  
+  
+  
+  
+  
+  static void ThreadingCheck();
 private:
   enum Flags mFlags;
-  static MOZ_EXPORT const SandboxInfo sSingleton;
+  
+  static MOZ_EXPORT SandboxInfo sSingleton;
   SandboxInfo();
 };
 

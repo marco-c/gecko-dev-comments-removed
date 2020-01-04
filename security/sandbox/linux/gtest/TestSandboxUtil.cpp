@@ -7,6 +7,7 @@
 #include "gtest/gtest.h"
 
 #include "SandboxUtil.h"
+#include "SandboxInfo.h"
 
 #include <pthread.h>
 
@@ -32,6 +33,10 @@ static const EarlyTest gEarlyTest;
 
 TEST(SandboxUtil, IsSingleThreaded)
 {
+  
+  
+  
+  ASSERT_FALSE(SandboxInfo::Get().Test(SandboxInfo::kUnexpectedThreads));
   EXPECT_TRUE(gEarlyTest.mWasSingleThreaded);
   EXPECT_FALSE(IsSingleThreaded());
 }
