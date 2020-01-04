@@ -1475,12 +1475,14 @@ protected:
   nsresult SetFirstBaseNodeWithHref(nsIContent *node);
 
   
-  
-  nsIContent* GetTitleContent(uint32_t aNodeType);
-  
-  
-  
-  void GetTitleFromElement(uint32_t aNodeType, nsAString& aTitle);
+
+
+
+
+
+
+  Element* GetTitleElement();
+
 public:
   
   virtual void GetTitle(nsString& aTitle) override;
