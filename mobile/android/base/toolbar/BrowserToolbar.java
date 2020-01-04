@@ -218,6 +218,11 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
             @Override
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
                 
+                if (isEditing()) {
+                    return;
+                }
+
+                
                 
                 MenuInflater inflater = activity.getMenuInflater();
                 inflater.inflate(R.menu.titlebar_contextmenu, menu);
