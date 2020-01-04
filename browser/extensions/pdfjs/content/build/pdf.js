@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdf = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.4.95';
-var pdfjsBuild = '2b813c0';
+var pdfjsVersion = '1.4.121';
+var pdfjsBuild = '51f6aba';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -688,6 +688,55 @@ function stringToBytes(str) {
     bytes[i] = str.charCodeAt(i) & 0xFF;
   }
   return bytes;
+}
+
+
+
+
+
+
+function arrayByteLength(arr) {
+  if (arr.length !== undefined) {
+    return arr.length;
+  }
+  assert(arr.byteLength !== undefined);
+  return arr.byteLength;
+}
+
+
+
+
+
+
+function arraysToBytes(arr) {
+  
+  if (arr.length === 1 && (arr[0] instanceof Uint8Array)) {
+    return arr[0];
+  }
+  var resultLength = 0;
+  var i, ii = arr.length;
+  var item, itemLength ;
+  for (i = 0; i < ii; i++) {
+    item = arr[i];
+    itemLength = arrayByteLength(item);
+    resultLength += itemLength;
+  }
+  var pos = 0;
+  var data = new Uint8Array(resultLength);
+  for (i = 0; i < ii; i++) {
+    item = arr[i];
+    if (!(item instanceof Uint8Array)) {
+      if (typeof item === 'string') {
+        item = stringToBytes(item);
+      } else {
+        item = new Uint8Array(item);
+      }
+    }
+    itemLength = item.byteLength;
+    data.set(item, pos);
+    pos += itemLength;
+  }
+  return data;
 }
 
 function string32(value) {
@@ -1542,6 +1591,8 @@ exports.UnexpectedResponseException = UnexpectedResponseException;
 exports.UnknownErrorException = UnknownErrorException;
 exports.Util = Util;
 exports.XRefParseException = XRefParseException;
+exports.arrayByteLength = arrayByteLength;
+exports.arraysToBytes = arraysToBytes;
 exports.assert = assert;
 exports.bytesToString = bytesToString;
 exports.combineUrl = combineUrl;
@@ -5281,15 +5332,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        if (simpleFillText && !accent) {
-          
-          ctx.fillText(character, scaledX, scaledY);
-        } else {
-          this.paintChar(character, scaledX, scaledY);
-          if (accent) {
-            scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-            scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-            this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+        
+        
+        if (glyph.isInFont || font.missingFile) {
+          if (simpleFillText && !accent) {
+            
+            ctx.fillText(character, scaledX, scaledY);
+          } else {
+            this.paintChar(character, scaledX, scaledY);
+            if (accent) {
+              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
+              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+            }
           }
         }
 
