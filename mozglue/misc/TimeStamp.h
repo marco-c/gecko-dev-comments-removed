@@ -258,6 +258,14 @@ public:
   {
     return mValue != aOther.mValue;
   }
+  bool IsZero() const
+  {
+    return mValue == 0;
+  }
+  explicit operator bool() const
+  {
+    return mValue != 0;
+  }
 
   
   
@@ -412,6 +420,15 @@ public:
 
 
   bool IsNull() const { return mValue == 0; }
+
+  
+
+
+
+  explicit operator bool() const
+  {
+    return mValue != 0;
+  }
 
   
 
