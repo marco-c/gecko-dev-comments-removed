@@ -13,10 +13,9 @@ var All_Pointer_Events = [
 
 
 function check_PointerEvent(event) {
-    var pointerTestName = event.pointerType + ' ' + event.type;
     test(function () {
         assert_true(event instanceof PointerEvent, "event is a PointerEvent event");
-    }, pointerTestName + " event is a PointerEvent event");
+    }, event.type + " event is a PointerEvent event");
 
 
     
@@ -38,37 +37,31 @@ function check_PointerEvent(event) {
         ["readonly", "long", "tiltX"],
         ["readonly", "long", "tiltY"],
         ["readonly", "string", "pointerType"],
-        ["readonly", "boolean", "isPrimary"],
-        ["readonly", "long", "detail", 0]
+        ["readonly", "boolean", "isPrimary"]
     ].forEach(function (attr) {
         var readonly = attr[0];
         var type = attr[1];
         var name = attr[2];
-        var value = attr[3];
+
 
         
         test(function () {
             assert_true(name in event, name + " attribute in " + event.type + " event");
-        }, pointerTestName + "." + name + " attribute exists");
+        }, event.type + "." + name + " attribute exists");
+
 
         
         if (readonly === "readonly") {
             test(function () {
                 assert_readonly(event.type, name, event.type + "." + name + " cannot be changed");
-            }, pointerTestName + "." + name + " is readonly");
+            }, event.type + "." + name + " is readonly");
         }
+
 
         
         test(function () {
             assert_true(idl_type_check[type](event[name]), name + " attribute of type " + type);
-        }, pointerTestName + "." + name + " IDL type " + type + " (JS type was " + typeof event[name] + ")");
-
-        
-        if (value != undefined) {
-            test(function () {
-                assert_equals(event[name], value, name + " attribute value");
-            }, pointerTestName + "." + name + " value is " + value + ".");
-        }
+        }, event.type + "." + name + " IDL type " + type + " (JS type was " + typeof event[name] + ")");
     });
 
 
@@ -88,7 +81,7 @@ function check_PointerEvent(event) {
                 assert_equals(event.pressure, 0.5, "pressure is 0.5 for mouse with a button pressed");
             }
         }
-    }, pointerTestName + ".pressure value is valid");
+    }, event.type + ".pressure value is valid");
 
 
     
@@ -98,7 +91,7 @@ function check_PointerEvent(event) {
             assert_equals(event.tiltX, 0, event.type + ".tiltX is 0 for mouse");
             assert_equals(event.tiltY, 0, event.type + ".tiltY is 0 for mouse");
             assert_true(event.isPrimary, event.type + ".isPrimary is true for mouse");
-        }, pointerTestName + " properties for pointerType = mouse");
+        }, event.type + " properties for pointerType = mouse");
         
     }
 }
@@ -109,14 +102,6 @@ function showPointerTypes() {
     var pointertypes = Object.keys(detected_pointertypes);
     pointertype_log.innerHTML = pointertypes.length ?
         pointertypes.join(",") : "(none)";
-    complete_notice.style.display = "block";
-}
-
-function showLoggedEvents() {
-    var event_log_elem = document.getElementById("event-log");
-    event_log_elem.innerHTML = event_log.length ? event_log.join(", ") : "(none)";
-
-    var complete_notice = document.getElementById("complete-notice");
     complete_notice.style.display = "block";
 }
 
