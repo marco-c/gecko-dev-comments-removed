@@ -237,6 +237,7 @@ function InplaceEditor(options, event) {
                           : !!options.preserveTextStyles;
 
   this._onBlur = this._onBlur.bind(this);
+  this._onWindowBlur = this._onWindowBlur.bind(this);
   this._onKeyPress = this._onKeyPress.bind(this);
   this._onInput = this._onInput.bind(this);
   this._onKeyup = this._onKeyup.bind(this);
@@ -281,6 +282,7 @@ function InplaceEditor(options, event) {
   this.input.addEventListener("dblclick", this._stopEventPropagation, false);
   this.input.addEventListener("click", this._stopEventPropagation, false);
   this.input.addEventListener("mousedown", this._stopEventPropagation, false);
+  this.doc.defaultView.addEventListener("blur", this._onWindowBlur, false);
 
   this.validate = options.validate;
 
@@ -344,6 +346,7 @@ InplaceEditor.prototype = {
     this.input.removeEventListener("click", this._stopEventPropagation, false);
     this.input.removeEventListener("mousedown", this._stopEventPropagation,
       false);
+    this.doc.defaultView.removeEventListener("blur", this._onWindowBlur, false);
 
     this._stopAutosize();
 
@@ -929,6 +932,19 @@ InplaceEditor.prototype = {
   
 
 
+  _onWindowBlur: function() {
+    if (this.popup && this.popup.isOpen) {
+      this.popup.hidePopup();
+    }
+
+    if (this._openPopupTimeout) {
+      this.doc.defaultView.clearTimeout(this._openPopupTimeout);
+    }
+  },
+
+  
+
+
   _onBlur: function(event) {
     if (event && this.popup && this.popup.isOpen &&
         this.popup.selectedIndex >= 0) {
@@ -1202,7 +1218,7 @@ InplaceEditor.prototype = {
     
     
     
-    this.doc.defaultView.setTimeout(() => {
+    this._openPopupTimeout = this.doc.defaultView.setTimeout(() => {
       if (this._preventSuggestions) {
         this._preventSuggestions = false;
         return;
