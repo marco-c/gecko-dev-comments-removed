@@ -95,14 +95,14 @@ var blocklist_contents =
     
     
     
-    "<certItem issuerName='MBIxEDAOBgNVBAMTB1Rlc3QgQ0E='>" +
+    "<certItem issuerName='MBIxEDAOBgNVBAMMB1Rlc3QgQ0E='>" +
     "<serialNumber>oops! more nonsense.</serialNumber>" +
-    "<serialNumber>X1o=</serialNumber></certItem>" +
+    "<serialNumber>Y1HQqXGtw7ek2v/QAqBL8jf6rbA=</serialNumber></certItem>" +
     
     
     
-    "<certItem issuerName='MBgxFjAUBgNVBAMTDU90aGVyIHRlc3QgQ0E='>" +
-    "<serialNumber>AKEIivg=</serialNumber></certItem>" +
+    "<certItem issuerName='MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E='>" +
+    "<serialNumber>Szin5enUEn9TnVq29c4IMPNFuqE=</serialNumber></certItem>" +
     
     
     
@@ -113,8 +113,9 @@ var blocklist_contents =
     "<certItem issuerName='YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy'>" +
     "<serialNumber>c2VyaWFsMi4=</serialNumber>" +
     "<serialNumber>YW5vdGhlciBzZXJpYWwu</serialNumber>" +
-    "</certItem><certItem subject='MCIxIDAeBgNVBAMTF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5'"+
-    " pubKeyHash='2ETEb0QP574JkM+35JVwS899PLUmt1rrJyWOV6GRfAE='>" +
+    
+    "</certItem><certItem subject='MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5'"+
+    " pubKeyHash='VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8='>" +
     "</certItem></certItems></blocklist>";
 testserver.registerPathHandler("/push_blocked_cert/",
   function serveResponse(request, response) {
@@ -136,13 +137,12 @@ var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
 converter.charset = "UTF-8";
 
 function verify_cert(file, expectedError) {
-  let cert_der = readFile(do_get_file(file));
-  let ee = certDB.constructX509(cert_der, cert_der.length);
+  let ee = constructCertFromFile(file);
   checkCertErrorGeneric(certDB, ee, expectedError, certificateUsageSSLServer);
 }
 
 function load_cert(cert, trust) {
-  let file = "tlsserver/" + cert + ".der";
+  let file = "tlsserver/" + cert + ".pem";
   addCertFromFile(certDB, file, trust);
 }
 
@@ -204,17 +204,17 @@ function run_test() {
   
   
   
-  let file = "tlsserver/test-int-ee.der";
+  let file = "tlsserver/test-int-ee.pem";
   verify_cert(file, PRErrorCodeSuccess);
 
   
   
-  file = "tlsserver/other-issuer-ee.der";
+  file = "tlsserver/other-issuer-ee.pem";
   verify_cert(file, PRErrorCodeSuccess);
 
   
   
-  file = "tlsserver/same-issuer-ee.der";
+  file = "tlsserver/same-issuer-ee.pem";
   verify_cert(file, PRErrorCodeSuccess);
 
   
@@ -271,35 +271,35 @@ function run_test() {
       contents = contents + (contents.length == 0 ? "" : "\n") + line.value;
     } while (hasmore);
     let expected = "# Auto generated contents. Do not edit.\n" +
-                  "MCIxIDAeBgNVBAMTF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5\n"+
-                  "\t2ETEb0QP574JkM+35JVwS899PLUmt1rrJyWOV6GRfAE=\n"+
-                  "MBgxFjAUBgNVBAMTDU90aGVyIHRlc3QgQ0E=\n" +
-                  " AKEIivg=\n" +
-                  "MBIxEDAOBgNVBAMTB1Rlc3QgQ0E=\n" +
-                  " X1o=\n" +
+                  "MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5\n"+
+                  "\tVCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=\n"+
+                  "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=\n" +
+                  " Y1HQqXGtw7ek2v/QAqBL8jf6rbA=\n" +
+                  "MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E=\n" +
+                  " Szin5enUEn9TnVq29c4IMPNFuqE=\n" +
                   "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy\n" +
                   " YW5vdGhlciBzZXJpYWwu\n" +
                   " c2VyaWFsMi4=";
     equal(contents, expected, "revocations.txt should be as expected");
 
     
-    let file = "tlsserver/test-int-ee.der";
+    let file = "tlsserver/test-int-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    file = "tlsserver/other-issuer-ee.der";
+    file = "tlsserver/other-issuer-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    file = "tlsserver/same-issuer-ee.der";
+    file = "tlsserver/same-issuer-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    file = "tlsserver/default-ee.der";
+    file = "tlsserver/default-ee.pem";
     verify_cert(file, PRErrorCodeSuccess);
 
     
-    file = "tlsserver/unknown-issuer.der";
+    file = "tlsserver/unknownissuer.pem";
     verify_cert(file, SEC_ERROR_UNKNOWN_ISSUER);
 
     
