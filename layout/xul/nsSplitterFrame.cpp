@@ -716,7 +716,7 @@ nsSplitterFrameInner::MouseDown(nsIDOMEvent* aMouseEvent)
     count++;
   }
 
-  if (!mParentBox->IsNormalDirection()) {
+  if (!mParentBox->IsXULNormalDirection()) {
     
     
     Reverse(mChildInfosBefore, mChildInfosBeforeCount);
