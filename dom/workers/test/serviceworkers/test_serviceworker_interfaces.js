@@ -115,8 +115,6 @@ var interfaceNamesInGlobalScope =
 
     "File",
 
-    "FileReader",
-
     "FileReaderSync",
 
     "FormData",
