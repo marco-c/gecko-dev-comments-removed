@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ServiceWorkerRegistration.h"
 
@@ -37,14 +37,14 @@ using namespace mozilla::dom::workers;
 namespace mozilla {
 namespace dom {
 
-/* static */ bool
+ bool
 ServiceWorkerRegistration::Visible(JSContext* aCx, JSObject* aObj)
 {
   if (NS_IsMainThread()) {
     return Preferences::GetBool("dom.serviceWorkers.enabled", false);
   }
 
-  // Otherwise check the pref via the work private helper
+  
   WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
   if (!workerPrivate) {
     return false;
@@ -53,14 +53,14 @@ ServiceWorkerRegistration::Visible(JSContext* aCx, JSObject* aObj)
   return workerPrivate->ServiceWorkersEnabled();
 }
 
-/* static */ bool
+ bool
 ServiceWorkerRegistration::NotificationAPIVisible(JSContext* aCx, JSObject* aObj)
 {
   if (NS_IsMainThread()) {
     return Preferences::GetBool("dom.webnotifications.serviceworker.enabled", false);
   }
 
-  // Otherwise check the pref via the work private helper
+  
   WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
   if (!workerPrivate) {
     return false;
@@ -69,8 +69,8 @@ ServiceWorkerRegistration::NotificationAPIVisible(JSContext* aCx, JSObject* aObj
   return workerPrivate->DOMServiceWorkerNotificationEnabled();
 }
 
-////////////////////////////////////////////////////
-// Main Thread implementation
+
+
 
 class ServiceWorkerRegistrationMainThread final : public ServiceWorkerRegistration,
                                                   public ServiceWorkerRegistrationListener
@@ -90,7 +90,7 @@ public:
   already_AddRefed<Promise>
   Unregister(ErrorResult& aRv) override;
 
-  // Partial interface from Notification API.
+  
   already_AddRefed<Promise>
   ShowNotification(JSContext* aCx,
                    const nsAString& aTitle,
@@ -113,14 +113,14 @@ public:
   already_AddRefed<PushManager>
   GetPushManager(JSContext* aCx, ErrorResult& aRv) override;
 
-  // DOMEventTargethelper
+  
   void DisconnectFromOwner() override
   {
     StopListeningForEvents();
     ServiceWorkerRegistration::DisconnectFromOwner();
   }
 
-  // ServiceWorkerRegistrationListener
+  
   void
   UpdateFound() override;
 
@@ -150,10 +150,10 @@ private:
 
   bool mListeningForEvents;
 
-  // The following properties are cached here to ensure JS equality is satisfied
-  // instead of acquiring a new worker instance from the ServiceWorkerManager
-  // for every access. A null value is considered a cache miss.
-  // These three may change to a new worker at any time.
+  
+  
+  
+  
   RefPtr<ServiceWorker> mInstallingWorker;
   RefPtr<ServiceWorker> mWaitingWorker;
   RefPtr<ServiceWorker> mActiveWorker;
@@ -233,8 +233,8 @@ ServiceWorkerRegistrationMainThread::GetWorkerReference(WhichServiceWorker aWhic
   return ref.forget();
 }
 
-// XXXnsm, maybe this can be optimized to only add when a event handler is
-// registered.
+
+
 void
 ServiceWorkerRegistrationMainThread::StartListeningForEvents()
 {
@@ -325,9 +325,9 @@ ServiceWorkerRegistrationMainThread::InvalidateWorkers(WhichServiceWorker aWhich
 void
 ServiceWorkerRegistrationMainThread::RegistrationRemoved()
 {
-  // If the registration is being removed completely, remove it from the
-  // window registration hash table so that a new registration would get a new
-  // wrapper JS object.
+  
+  
+  
   if (nsCOMPtr<nsPIDOMWindowInner> window = GetOwner()) {
     window->InvalidateServiceWorkerRegistration(mScope);
   }
@@ -390,8 +390,8 @@ public:
     : WorkerRunnable(aPromiseProxy->GetWorkerPrivate())
     , mPromiseProxy(aPromiseProxy)
   {
-    // ErrorResult is not thread safe.  Serialize it for transfer across
-    // threads.
+    
+    
     IPC::WriteParam(&mSerializedErrorResult, aStatus);
     aStatus.SuppressException();
   }
@@ -399,8 +399,8 @@ public:
   bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
-    // Deserialize the ErrorResult now that we are back in the worker
-    // thread.
+    
+    
     ErrorResult status;
     PickleIterator iter = PickleIterator(mSerializedErrorResult);
     Unused << IPC::ReadParam(&mSerializedErrorResult, &iter, &status);
@@ -481,8 +481,8 @@ public:
     ErrorResult result;
 
     nsCOMPtr<nsIPrincipal> principal;
-    // UpdateInternal may try to reject the promise synchronously leading
-    // to a deadlock.
+    
+    
     {
       MutexAutoLock lock(mPromiseProxy->Lock());
       if (mPromiseProxy->CleanedUp()) {
@@ -629,10 +629,10 @@ private:
 
 NS_IMPL_ISUPPORTS(WorkerUnregisterCallback, nsIServiceWorkerUnregisterCallback);
 
-/*
- * If the worker goes away, we still continue to unregister, but we don't try to
- * resolve the worker Promise (which doesn't exist by that point).
- */
+
+
+
+
 class StartUnregisterRunnable final : public Runnable
 {
   RefPtr<PromiseWorkerProxy> mPromiseWorkerProxy;
@@ -652,11 +652,11 @@ public:
   {
     AssertIsOnMainThread();
 
-    // XXXnsm: There is a rare chance of this failing if the worker gets
-    // destroyed. In that case, unregister() called from a SW is no longer
-    // guaranteed to run. We should fix this by having a main thread proxy
-    // maintain a strongref to ServiceWorkerRegistrationInfo and use its
-    // principal. Can that be trusted?
+    
+    
+    
+    
+    
     nsCOMPtr<nsIPrincipal> principal;
     {
       MutexAutoLock lock(mPromiseWorkerProxy->Lock());
@@ -682,7 +682,7 @@ public:
     return NS_OK;
   }
 };
-} // namespace
+} 
 
 already_AddRefed<Promise>
 ServiceWorkerRegistrationMainThread::Update(ErrorResult& aRv)
@@ -719,11 +719,11 @@ ServiceWorkerRegistrationMainThread::Unregister(ErrorResult& aRv)
     return nullptr;
   }
 
-  // Although the spec says that the same-origin checks should also be done
-  // asynchronously, we do them in sync because the Promise created by the
-  // WebIDL infrastructure due to a returned error will be resolved
-  // asynchronously. We aren't making any internal state changes in these
-  // checks, so ordering of multiple calls is not affected.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIDocument> document = GetOwner()->GetExtantDoc();
   if (!document) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -732,7 +732,7 @@ ServiceWorkerRegistrationMainThread::Unregister(ErrorResult& aRv)
 
   nsCOMPtr<nsIURI> scopeURI;
   nsCOMPtr<nsIURI> baseURI = document->GetBaseURI();
-  // "If the origin of scope is not client's origin..."
+  
   nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), mScope, nullptr, baseURI);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
@@ -740,8 +740,8 @@ ServiceWorkerRegistrationMainThread::Unregister(ErrorResult& aRv)
   }
 
   nsCOMPtr<nsIPrincipal> documentPrincipal = document->NodePrincipal();
-  rv = documentPrincipal->CheckMayLoad(scopeURI, true /* report */,
-                                       false /* allowIfInheritsPrinciple */);
+  rv = documentPrincipal->CheckMayLoad(scopeURI, true ,
+                                       false );
   if (NS_FAILED(rv)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
@@ -772,7 +772,7 @@ ServiceWorkerRegistrationMainThread::Unregister(ErrorResult& aRv)
   return promise.forget();
 }
 
-// Notification API extension.
+
 already_AddRefed<Promise>
 ServiceWorkerRegistrationMainThread::ShowNotification(JSContext* aCx,
                                                       const nsAString& aTitle,
@@ -846,8 +846,8 @@ ServiceWorkerRegistrationMainThread::GetPushManager(JSContext* aCx,
   return ret.forget();
 }
 
-////////////////////////////////////////////////////
-// Worker Thread implementation
+
+
 
 class ServiceWorkerRegistrationWorkerThread final : public ServiceWorkerRegistration
                                                   , public WorkerHolder
@@ -866,7 +866,7 @@ public:
   already_AddRefed<Promise>
   Unregister(ErrorResult& aRv) override;
 
-  // Partial interface from Notification API.
+  
   already_AddRefed<Promise>
   ShowNotification(JSContext* aCx,
                    const nsAString& aTitle,
@@ -921,12 +921,12 @@ private:
 
 class WorkerListener final : public ServiceWorkerRegistrationListener
 {
-  // Accessed on the main thread.
+  
   WorkerPrivate* mWorkerPrivate;
   nsString mScope;
   bool mListeningForEvents;
 
-  // Accessed on the worker thread.
+  
   ServiceWorkerRegistrationWorkerThread* mRegistration;
 
 public:
@@ -941,7 +941,7 @@ public:
     MOZ_ASSERT(mWorkerPrivate);
     mWorkerPrivate->AssertIsOnWorkerThread();
     MOZ_ASSERT(mRegistration);
-    // Copy scope so we can return it on the main thread.
+    
     mRegistration->GetScope(mScope);
   }
 
@@ -953,7 +953,7 @@ public:
     MOZ_ASSERT(mWorkerPrivate);
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (swm) {
-      // FIXME(nsm): Maybe the function shouldn't take an explicit scope.
+      
       swm->AddRegistrationEventListener(mScope, this);
       mListeningForEvents = true;
     }
@@ -968,18 +968,18 @@ public:
 
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
 
-    // We aren't going to need this anymore and we shouldn't hold on since the
-    // worker will go away soon.
+    
+    
     mWorkerPrivate = nullptr;
 
     if (swm) {
-      // FIXME(nsm): Maybe the function shouldn't take an explicit scope.
+      
       swm->RemoveRegistrationEventListener(mScope, this);
       mListeningForEvents = false;
     }
   }
 
-  // ServiceWorkerRegistrationListener
+  
   void
   UpdateFound() override;
 
@@ -987,7 +987,7 @@ public:
   InvalidateWorkers(WhichServiceWorker aWhichOnes) override
   {
     AssertIsOnMainThread();
-    // FIXME(nsm);
+    
   }
 
   void
@@ -1033,7 +1033,7 @@ NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistrationWorkerThread, ServiceWorkerRe
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationWorkerThread)
 NS_INTERFACE_MAP_END_INHERITING(ServiceWorkerRegistration)
 
-// Expanded macros since we need special behaviour to release the proxy.
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(ServiceWorkerRegistrationWorkerThread)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServiceWorkerRegistrationWorkerThread,
@@ -1065,21 +1065,21 @@ ServiceWorkerRegistrationWorkerThread::~ServiceWorkerRegistrationWorkerThread()
 already_AddRefed<workers::ServiceWorker>
 ServiceWorkerRegistrationWorkerThread::GetInstalling()
 {
-  // FIXME(nsm): Will be implemented after Bug 1113522.
+  
   return nullptr;
 }
 
 already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationWorkerThread::GetWaiting()
 {
-  // FIXME(nsm): Will be implemented after Bug 1113522.
+  
   return nullptr;
 }
 
 already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationWorkerThread::GetActive()
 {
-  // FIXME(nsm): Will be implemented after Bug 1113522.
+  
   return nullptr;
 }
 
@@ -1095,9 +1095,9 @@ ServiceWorkerRegistrationWorkerThread::Update(ErrorResult& aRv)
     return nullptr;
   }
 
-  // Avoid infinite update loops by ignoring update() calls during top
-  // level script evaluation.  See:
-  // https://github.com/slightlyoff/ServiceWorker/issues/800
+  
+  
+  
   if (worker->LoadScriptAsPartOfLoadingServiceWorkerScript()) {
     promise->MaybeResolveWithUndefined();
     return promise.forget();
@@ -1123,9 +1123,9 @@ ServiceWorkerRegistrationWorkerThread::Unregister(ErrorResult& aRv)
   worker->AssertIsOnWorkerThread();
 
   if (!worker->IsServiceWorker()) {
-    // For other workers, the registration probably originated from
-    // getRegistration(), so we may have to validate origin etc. Let's do this
-    // this later.
+    
+    
+    
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
@@ -1225,11 +1225,11 @@ ServiceWorkerRegistrationWorkerThread::ReleaseListener(Reason aReason)
     return;
   }
 
-  // We can assert worker here, because:
-  // 1) We always HoldWorker, so if the worker has shutdown already, we'll
-  //    have received Notify and removed it. If HoldWorker had failed,
-  //    mListener will be null and we won't reach here.
-  // 2) Otherwise, worker is still around even if we are going away.
+  
+  
+  
+  
+  
   mWorkerPrivate->AssertIsOnWorkerThread();
   ReleaseWorker();
 
@@ -1246,7 +1246,7 @@ ServiceWorkerRegistrationWorkerThread::ReleaseListener(Reason aReason)
     r->Dispatch(rv);
     if (rv.Failed()) {
       NS_ERROR("Failed to dispatch stop listening runnable!");
-      // And now what?
+      
       rv.SuppressException();
     }
   } else {
@@ -1272,9 +1272,9 @@ public:
     : WorkerRunnable(aWorkerPrivate)
     , mListener(aListener)
   {
-    // Need this assertion for now since runnables which modify busy count can
-    // only be dispatched from parent thread to worker thread and we don't deal
-    // with nested workers. SW threads can't be nested.
+    
+    
+    
     MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());
   }
 
@@ -1299,21 +1299,21 @@ WorkerListener::UpdateFound()
   if (mWorkerPrivate) {
     RefPtr<FireUpdateFoundRunnable> r =
       new FireUpdateFoundRunnable(mWorkerPrivate, this);
-    NS_WARN_IF(!r->Dispatch());
+    Unused << NS_WARN_IF(!r->Dispatch());
   }
 }
 
-// Notification API extension.
+
 already_AddRefed<Promise>
 ServiceWorkerRegistrationWorkerThread::ShowNotification(JSContext* aCx,
                                                         const nsAString& aTitle,
                                                         const NotificationOptions& aOptions,
                                                         ErrorResult& aRv)
 {
-  // Until Bug 1131324 exposes ServiceWorkerContainer on workers,
-  // ShowPersistentNotification() checks for valid active worker while it is
-  // also verifying scope so that we block the worker on the main thread only
-  // once.
+  
+  
+  
+  
   RefPtr<Promise> p =
     Notification::ShowPersistentNotification(aCx, mWorkerPrivate->GlobalScope(),
                                              mScope, aTitle, aOptions, aRv);
@@ -1342,8 +1342,8 @@ ServiceWorkerRegistrationWorkerThread::GetPushManager(JSContext* aCx, ErrorResul
   return ret.forget();
 }
 
-////////////////////////////////////////////////////
-// Base class implementation
+
+
 
 NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistration, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistration, DOMEventTargetHelper)
@@ -1364,7 +1364,7 @@ ServiceWorkerRegistration::WrapObject(JSContext* aCx,
   return ServiceWorkerRegistrationBinding::Wrap(aCx, this, aGivenProto);
 }
 
-/* static */ already_AddRefed<ServiceWorkerRegistration>
+ already_AddRefed<ServiceWorkerRegistration>
 ServiceWorkerRegistration::CreateForMainThread(nsPIDOMWindowInner* aWindow,
                                                const nsAString& aScope)
 {
@@ -1377,7 +1377,7 @@ ServiceWorkerRegistration::CreateForMainThread(nsPIDOMWindowInner* aWindow,
   return registration.forget();
 }
 
-/* static */ already_AddRefed<ServiceWorkerRegistration>
+ already_AddRefed<ServiceWorkerRegistration>
 ServiceWorkerRegistration::CreateForWorker(workers::WorkerPrivate* aWorkerPrivate,
                                            const nsAString& aScope)
 {
@@ -1390,5 +1390,5 @@ ServiceWorkerRegistration::CreateForWorker(workers::WorkerPrivate* aWorkerPrivat
   return registration.forget();
 }
 
-} // dom namespace
-} // mozilla namespace
+} 
+} 

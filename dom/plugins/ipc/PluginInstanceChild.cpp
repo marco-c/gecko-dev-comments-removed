@@ -1677,7 +1677,8 @@ PluginInstanceChild::PluginWindowProcInternal(HWND hWnd,
             
             
             
-            NS_WARN_IF(self->mPostingKeyEvents > 0);
+            NS_WARNING_ASSERTION(self->mPostingKeyEvents == 0,
+                                 "pending events");
             self->mPostingKeyEvents = 0;
             self->mLastKeyEventConsumed = false;
             break;

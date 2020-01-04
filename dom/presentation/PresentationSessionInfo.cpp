@@ -225,17 +225,17 @@ PresentationSessionInfo::Shutdown(nsresult aReason)
   PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
 
-  NS_WARN_IF(NS_FAILED(aReason));
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(aReason), "bad reason");
 
   
   if (mControlChannel) {
-    NS_WARN_IF(NS_FAILED(mControlChannel->Disconnect(aReason)));
+    Unused << NS_WARN_IF(NS_FAILED(mControlChannel->Disconnect(aReason)));
   }
 
   
   if (mTransport) {
     
-    NS_WARN_IF(NS_FAILED(mTransport->Close(aReason)));
+    Unused << NS_WARN_IF(NS_FAILED(mTransport->Close(aReason)));
   }
 
   mIsResponderReady = false;
@@ -248,7 +248,7 @@ nsresult
 PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
 {
   if (mListener && aListener) {
-    NS_WARN_IF(NS_FAILED(mListener->NotifyReplaced()));
+    Unused << NS_WARN_IF(NS_FAILED(mListener->NotifyReplaced()));
   }
 
   mListener = aListener;
@@ -606,7 +606,7 @@ PresentationControllingInfo::Shutdown(nsresult aReason)
 
   
   if (mServerSocket) {
-    NS_WARN_IF(NS_FAILED(mServerSocket->Close()));
+    Unused << NS_WARN_IF(NS_FAILED(mServerSocket->Close()));
     mServerSocket = nullptr;
   }
 
@@ -879,7 +879,7 @@ PresentationControllingInfo::NotifyDisconnected(nsresult aReason)
     nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
       builder = do_QueryInterface(mBuilder);
     if (builder) {
-      NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
+      Unused << NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
     }
   }
 
@@ -1152,7 +1152,7 @@ PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* 
     
     nsCOMPtr<nsINetAddr> selfAddr;
     rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
-    NS_WARN_IF(NS_FAILED(rv));
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "GetSelfAddress failed");
 
     nsCString address;
     uint16_t port = 0;
@@ -1282,7 +1282,7 @@ PresentationPresentingInfo::UntrackFromService()
 {
   
   if (mContentParent) {
-    NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverCleanUp(mSessionId));
+    Unused << NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverCleanUp(mSessionId));
   }
 
   
@@ -1427,7 +1427,7 @@ PresentationPresentingInfo::NotifyDisconnected(nsresult aReason)
     nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
       builder = do_QueryInterface(mBuilder);
     if (builder) {
-      NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
+      Unused << NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
     }
   }
 
@@ -1502,7 +1502,7 @@ PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
     
     
     mContentParent = tabParent->Manager();
-    NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
+    Unused << NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
   } else {
     
     nsCOMPtr<nsIDocShell> docShell;

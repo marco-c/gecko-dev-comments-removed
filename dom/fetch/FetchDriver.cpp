@@ -607,7 +607,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
   
   if (nsCOMPtr<nsIThreadRetargetableRequest> rr = do_QueryInterface(aRequest)) {
-    NS_WARN_IF(NS_FAILED(rr->RetargetDeliveryTo(sts)));
+    Unused << NS_WARN_IF(NS_FAILED(rr->RetargetDeliveryTo(sts)));
   }
   return NS_OK;
 }

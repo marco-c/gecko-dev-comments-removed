@@ -131,7 +131,7 @@ MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable,
   
   
   
-  NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(sAlertRunnable)));
+  Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(sAlertRunnable)));
   return WaitForCompletion(aTimeout);
 }
 

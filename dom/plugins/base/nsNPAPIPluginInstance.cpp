@@ -1807,7 +1807,7 @@ nsNPAPIPluginInstance::WindowVolumeChanged(float aVolume, bool aMuted)
 {
   
   nsresult rv = SetMuted(aMuted);
-  NS_WARN_IF(NS_FAILED(rv));
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetMuted failed");
   return rv;
 }
 

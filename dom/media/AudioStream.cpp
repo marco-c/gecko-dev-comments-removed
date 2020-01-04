@@ -530,7 +530,8 @@ AudioStream::GetUnprocessed(AudioBufferWriter& aWriter)
     
     
     
-    NS_WARN_IF(mTimeStretcher->numUnprocessedSamples() > 0);
+    NS_WARNING_ASSERTION(
+      mTimeStretcher->numUnprocessedSamples() == 0, "no samples");
   }
 
   while (aWriter.Available() > 0) {

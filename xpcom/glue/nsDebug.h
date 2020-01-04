@@ -32,10 +32,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 #ifdef DEBUG
-inline bool NS_warn_if_impl(bool aCondition, const char* aExpr,
-                            const char* aFile, int32_t aLine)
+inline MOZ_MUST_USE bool NS_warn_if_impl(bool aCondition, const char* aExpr,
+                                         const char* aFile, int32_t aLine)
 {
   if (MOZ_UNLIKELY(aCondition)) {
     NS_DebugBreak(NS_DEBUG_WARNING, nullptr, aExpr, aFile, aLine);

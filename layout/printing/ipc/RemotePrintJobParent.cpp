@@ -130,10 +130,10 @@ RemotePrintJobParent::RecvFinalizePrint()
   
   
   if (mPrintDeviceContext) {
-    nsresult rv = mPrintDeviceContext->EndDocument();
+    DebugOnly<nsresult> rv = mPrintDeviceContext->EndDocument();
 
     
-    NS_WARN_IF(NS_FAILED(rv));
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EndDocument failed");
   }
 
 

@@ -188,7 +188,7 @@ TextTrackList::CreateAndDispatchTrackEventRunner(TextTrack* aTrack,
                         NS_DISPATCH_NORMAL);
 
   
-  NS_WARN_IF(NS_FAILED(rv));
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Dispatch failed");
 }
 
 HTMLMediaElement*

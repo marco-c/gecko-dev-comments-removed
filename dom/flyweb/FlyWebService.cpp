@@ -324,12 +324,12 @@ FlyWebMDNSService::OnDiscoveryStarted(const nsACString& aServiceType)
   
   if (!mDiscoveryActive) {
     
-    NS_WARN_IF(NS_FAILED(mDiscoveryStopTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
+    Unused << NS_WARN_IF(NS_FAILED(mDiscoveryStopTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
     return NS_OK;
   }
 
   
-  NS_WARN_IF(NS_FAILED(mDiscoveryStopTimer->InitWithCallback(this, 5 * 1000, nsITimer::TYPE_ONE_SHOT)));
+  Unused << NS_WARN_IF(NS_FAILED(mDiscoveryStopTimer->InitWithCallback(this, 5 * 1000, nsITimer::TYPE_ONE_SHOT)));
 
   return NS_OK;
 }
@@ -363,7 +363,7 @@ FlyWebMDNSService::OnDiscoveryStopped(const nsACString& aServiceType)
   mService->NotifyDiscoveredServicesChanged();
 
   
-  NS_WARN_IF(NS_FAILED(mDiscoveryStartTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
+  Unused << NS_WARN_IF(NS_FAILED(mDiscoveryStartTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
 
   return NS_OK;
 }
@@ -405,7 +405,7 @@ FlyWebMDNSService::OnStartDiscoveryFailed(const nsACString& aServiceType, int32_
 
   
   if (mDiscoveryActive && mNumConsecutiveStartDiscoveryFailures < 3) {
-    NS_WARN_IF(NS_FAILED(mDiscoveryStartTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
+    Unused << NS_WARN_IF(NS_FAILED(mDiscoveryStartTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
   }
 
   return NS_OK;
@@ -420,7 +420,7 @@ FlyWebMDNSService::OnStopDiscoveryFailed(const nsACString& aServiceType, int32_t
 
   
   if (mDiscoveryActive) {
-    NS_WARN_IF(NS_FAILED(mDiscoveryStartTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
+    Unused << NS_WARN_IF(NS_FAILED(mDiscoveryStartTimer->InitWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT)));
   }
 
   return NS_OK;

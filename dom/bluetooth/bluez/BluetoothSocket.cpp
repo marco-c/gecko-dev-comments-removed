@@ -9,10 +9,11 @@
 #include "BluetoothSocketObserver.h"
 #include "BluetoothUnixSocketConnector.h"
 #include "BluetoothUtils.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Unused.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
-#include "mozilla/Unused.h"
 
 using namespace mozilla::ipc;
 
@@ -242,7 +243,7 @@ BluetoothSocket::BluetoothSocketIO::Listen()
     
     rv = UnixSocketWatcher::Listen(
       reinterpret_cast<struct sockaddr*>(&mAddress), mAddressLength);
-    NS_WARN_IF(NS_FAILED(rv));
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Listen failed");
   }
 }
 
@@ -266,9 +267,9 @@ BluetoothSocket::BluetoothSocketIO::Connect()
   }
 
   
-  nsresult rv = UnixSocketWatcher::Connect(
+  DebugOnly<nsresult> rv = UnixSocketWatcher::Connect(
     reinterpret_cast<struct sockaddr*>(&mAddress), mAddressLength);
-  NS_WARN_IF(NS_FAILED(rv));
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Connect failed");
 }
 
 void
