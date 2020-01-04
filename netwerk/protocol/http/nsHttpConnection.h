@@ -77,7 +77,7 @@ public:
     nsresult Activate(nsAHttpTransaction *, uint32_t caps, int32_t pri);
 
     
-    void Close(nsresult reason);
+    void Close(nsresult reason, bool aIsShutdown = false);
 
     
     

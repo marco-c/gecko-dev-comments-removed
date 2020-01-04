@@ -8,6 +8,7 @@
 #include "nsSocketTransport2.h"
 #include "NetworkActivityMonitor.h"
 #include "mozilla/Preferences.h"
+#include "nsIOService.h"
 #endif 
 #include "nsASocketHandler.h"
 #include "nsError.h"
@@ -1065,7 +1066,16 @@ nsSocketTransportService::DoPollIteration(bool wait, TimeDuration *pollDuration)
     
     uint32_t pollInterval;
 
-    int32_t n = Poll(wait, &pollInterval, pollDuration);
+    int32_t n = 0;
+#if !defined(MOZILLA_XPCOMRT_API)
+    if (!gIOService->IsNetTearingDown()) {
+        
+        n = Poll(wait, &pollInterval, pollDuration);
+    }
+#else
+    n = Poll(wait, &pollInterval, pollDuration);
+#endif 
+
     if (n < 0) {
         SOCKET_LOG(("  PR_Poll error [%d] os error [%d]\n", PR_GetError(),
                     PR_GetOSError()));

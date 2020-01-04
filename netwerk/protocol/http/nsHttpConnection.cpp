@@ -558,7 +558,7 @@ nsHttpConnection::AddTransaction(nsAHttpTransaction *httpTransaction,
 }
 
 void
-nsHttpConnection::Close(nsresult reason)
+nsHttpConnection::Close(nsresult reason, bool aIsShutdown)
 {
     LOG(("nsHttpConnection::Close [this=%p reason=%x]\n", this, reason));
 
@@ -596,7 +596,8 @@ nsHttpConnection::Close(nsresult reason)
             
             
             
-            if (mSocketIn) {
+            
+            if (mSocketIn && !aIsShutdown) {
                 char buffer[4000];
                 uint32_t count, total = 0;
                 nsresult rv;
