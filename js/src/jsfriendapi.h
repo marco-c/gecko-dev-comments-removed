@@ -323,9 +323,8 @@ extern JS_FRIEND_DATA(const js::ObjectOps) ProxyObjectOps;
 
 
 
-#define PROXY_MAKE_EXT(isWrappedNative, objectMoved)                    \
+#define PROXY_MAKE_EXT(objectMoved)                                     \
     {                                                                   \
-        isWrappedNative,                                                \
         js::proxy_WeakmapKeyDelegate,                                   \
         objectMoved                                                     \
     }

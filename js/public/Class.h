@@ -591,12 +591,6 @@ struct ClassExtension
 
 
 
-    bool                isWrappedNative;
-
-    
-
-
-
 
 
 
@@ -659,6 +653,10 @@ struct JSClass {
 
 #define JSCLASS_HAS_PRIVATE             (1<<0)  // objects have private slot
 #define JSCLASS_DELAY_METADATA_BUILDER  (1<<1)  // class's initialization code
+                                                
+                                                
+#define JSCLASS_IS_WRAPPED_NATIVE       (1<<2)  // class is an XPCWrappedNative.
+                                                
                                                 
                                                 
 #define JSCLASS_PRIVATE_IS_NSISUPPORTS  (1<<3)  // private is (nsISupports*)
@@ -802,6 +800,10 @@ struct Class
         return flags & JSCLASS_DELAY_METADATA_BUILDER;
     }
 
+    bool isWrappedNative() const {
+        return flags & JSCLASS_IS_WRAPPED_NATIVE;
+    }
+
     static size_t offsetOfFlags() { return offsetof(Class, flags); }
 
     bool specDefined()         const { return spec ? spec->defined()   : false; }
@@ -824,7 +826,6 @@ struct Class
     FinishClassInitOp specFinishInitHook()
                                const { return spec ? spec->finishInitHook()          : nullptr; }
 
-    bool extIsWrappedNative()  const { return ext ? ext->isWrappedNative             : false; }
     JSWeakmapKeyDelegateOp extWeakmapKeyDelegateOp()
                                const { return ext ? ext->weakmapKeyDelegateOp        : nullptr; }
     JSObjectMovedOp extObjectMovedOp()

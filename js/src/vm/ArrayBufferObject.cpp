@@ -97,7 +97,6 @@ const Class ArrayBufferObject::protoClass = {
 };
 
 static const ClassExtension ArrayBufferObjectClassExtension = {
-    false,      
     nullptr,    
     ArrayBufferObject::objectMoved
 };

@@ -219,7 +219,6 @@ CreateNPObjectMember(NPP npp, JSContext *cx, JSObject *obj, NPObject* npobj,
                      JS::MutableHandle<JS::Value> vp);
 
 const static js::ClassExtension sNPObjectJSWrapperClassExtension = {
-    false,                                                
     nullptr,                                              
     NPObjWrapper_ObjectMoved
 };
