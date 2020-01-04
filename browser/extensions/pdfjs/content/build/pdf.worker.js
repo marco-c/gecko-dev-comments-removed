@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdfWorker = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.4.213';
-var pdfjsBuild = '1c253e6';
+var pdfjsVersion = '1.4.258';
+var pdfjsBuild = '990150c';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -2338,15 +2338,6 @@ var UNSUPPORTED_FEATURES = {
 };
 
 
-
-function combineUrl(baseUrl, url) {
-  if (!url) {
-    return baseUrl;
-  }
-  return new URL(url, baseUrl).href;
-}
-
-
 function isSameOrigin(baseUrl, otherUrl) {
   try {
     var base = new URL(baseUrl);
@@ -2363,7 +2354,7 @@ function isSameOrigin(baseUrl, otherUrl) {
 
 
 function isValidUrl(url, allowRelative) {
-  if (!url) {
+  if (!url || typeof url !== 'string') {
     return false;
   }
   
@@ -3455,7 +3446,6 @@ exports.arrayByteLength = arrayByteLength;
 exports.arraysToBytes = arraysToBytes;
 exports.assert = assert;
 exports.bytesToString = bytesToString;
-exports.combineUrl = combineUrl;
 exports.createBlob = createBlob;
 exports.createPromiseCapability = createPromiseCapability;
 exports.createObjectURL = createObjectURL;
@@ -18786,6 +18776,7 @@ var createObjectURL = sharedUtil.createObjectURL;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
+var isDict = corePrimitives.isDict;
 var Jbig2Image = coreJbig2.Jbig2Image;
 var JpegImage = coreJpg.JpegImage;
 var JpxImage = coreJpx.JpxImage;
@@ -19427,6 +19418,9 @@ var FlateStream = (function FlateStreamClosure() {
 
 var PredictorStream = (function PredictorStreamClosure() {
   function PredictorStream(str, maybeLength, params) {
+    if (!isDict(params)) {
+      return str; 
+    }
     var predictor = this.predictor = params.get('Predictor') || 1;
 
     if (predictor <= 1) {
@@ -31517,10 +31511,42 @@ var isName = corePrimitives.isName;
 var isStream = corePrimitives.isStream;
 var PDFFunction = coreFunction.PDFFunction;
 
-var coreImage; 
-var PDFImage; 
-
 var ColorSpace = (function ColorSpaceClosure() {
+  
+
+
+
+
+
+
+
+
+
+
+  function resizeRgbImage(src, bpc, w1, h1, w2, h2, alpha01, dest) {
+    var COMPONENTS = 3;
+    alpha01 = alpha01 !== 1 ? 0 : alpha01;
+    var xRatio = w1 / w2;
+    var yRatio = h1 / h2;
+    var i, j, py, newIndex = 0, oldIndex;
+    var xScaled = new Uint16Array(w2);
+    var w1Scanline = w1 * COMPONENTS;
+
+    for (i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
+    }
+    for (i = 0; i < h2; i++) {
+      py = Math.floor(i * yRatio) * w1Scanline;
+      for (j = 0; j < w2; j++) {
+        oldIndex = py + xScaled[j];
+        dest[newIndex++] = src[oldIndex++];
+        dest[newIndex++] = src[oldIndex++];
+        dest[newIndex++] = src[oldIndex++];
+        newIndex += alpha01;
+      }
+    }
+  }
+
   
   function ColorSpace() {
     error('should not call ColorSpace constructor');
@@ -31646,8 +31672,8 @@ var ColorSpace = (function ColorSpaceClosure() {
 
       if (rgbBuf) {
         if (needsResizing) {
-          PDFImage.resize(rgbBuf, bpc, 3, originalWidth, originalHeight, width,
-                          height, dest, alpha01);
+          resizeRgbImage(rgbBuf, bpc, originalWidth, originalHeight,
+                         width, height, alpha01, dest);
         } else {
           rgbPos = 0;
           destPos = 0;
@@ -32767,13 +32793,6 @@ var LabCS = (function LabCSClosure() {
   return LabCS;
 })();
 
-
-function _setCoreImage(coreImage_) {
-  coreImage = coreImage_;
-  PDFImage = coreImage_.PDFImage;
-}
-exports._setCoreImage = _setCoreImage;
-
 exports.ColorSpace = ColorSpace;
 }));
 
@@ -32821,6 +32840,39 @@ var PDFImage = (function PDFImageClosure() {
     value = addend + value * coefficient;
     
     return (value < 0 ? 0 : (value > max ? max : value));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  function resizeImageMask(src, bpc, w1, h1, w2, h2) {
+    var length = w2 * h2;
+    var dest = (bpc <= 8 ? new Uint8Array(length) :
+      (bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length)));
+    var xRatio = w1 / w2;
+    var yRatio = h1 / h2;
+    var i, j, py, newIndex = 0, oldIndex;
+    var xScaled = new Uint16Array(w2);
+    var w1Scanline = w1;
+
+    for (i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio);
+    }
+    for (i = 0; i < h2; i++) {
+      py = Math.floor(i * yRatio) * w1Scanline;
+      for (j = 0; j < w2; j++) {
+        oldIndex = py + xScaled[j];
+        dest[newIndex++] = src[oldIndex];
+      }
+    }
+    return dest;
   }
 
   function PDFImage(xref, res, image, inline, smask, mask, isMask) {
@@ -32962,66 +33014,6 @@ var PDFImage = (function PDFImageClosure() {
         var maskData = results[2];
         return new PDFImage(xref, res, imageData, inline, smaskData, maskData);
       });
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  PDFImage.resize = function PDFImage_resize(pixels, bpc, components,
-                                             w1, h1, w2, h2, dest, alpha01) {
-
-    if (components !== 1 && components !== 3) {
-      error('Unsupported component count for resizing.');
-    }
-
-    var length = w2 * h2 * components;
-    var temp = dest ? dest : (bpc <= 8 ? new Uint8Array(length) :
-        (bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length)));
-    var xRatio = w1 / w2;
-    var yRatio = h1 / h2;
-    var i, j, py, newIndex = 0, oldIndex;
-    var xScaled = new Uint16Array(w2);
-    var w1Scanline = w1 * components;
-    if (alpha01 !== 1) {
-      alpha01 = 0;
-    }
-
-    for (j = 0; j < w2; j++) {
-      xScaled[j] = Math.floor(j * xRatio) * components;
-    }
-
-    if (components === 1) {
-      for (i = 0; i < h2; i++) {
-        py = Math.floor(i * yRatio) * w1Scanline;
-        for (j = 0; j < w2; j++) {
-          oldIndex = py + xScaled[j];
-          temp[newIndex++] = pixels[oldIndex];
-        }
-      }
-    } else if (components === 3) {
-      for (i = 0; i < h2; i++) {
-        py = Math.floor(i * yRatio) * w1Scanline;
-        for (j = 0; j < w2; j++) {
-          oldIndex = py + xScaled[j];
-          temp[newIndex++] = pixels[oldIndex++];
-          temp[newIndex++] = pixels[oldIndex++];
-          temp[newIndex++] = pixels[oldIndex++];
-          newIndex += alpha01;
-        }
-      }
-    }
-    return temp;
   };
 
   PDFImage.createMask =
@@ -33194,8 +33186,8 @@ var PDFImage = (function PDFImageClosure() {
         alphaBuf = new Uint8Array(sw * sh);
         smask.fillGrayBuffer(alphaBuf);
         if (sw !== width || sh !== height) {
-          alphaBuf = PDFImage.resize(alphaBuf, smask.bpc, 1, sw, sh, width,
-                                     height);
+          alphaBuf = resizeImageMask(alphaBuf, smask.bpc, sw, sh,
+                                     width, height);
         }
       } else if (mask) {
         if (mask instanceof PDFImage) {
@@ -33211,8 +33203,8 @@ var PDFImage = (function PDFImageClosure() {
           }
 
           if (sw !== width || sh !== height) {
-            alphaBuf = PDFImage.resize(alphaBuf, mask.bpc, 1, sw, sh, width,
-                                       height);
+            alphaBuf = resizeImageMask(alphaBuf, mask.bpc, sw, sh,
+                                       width, height);
           }
         } else if (isArray(mask)) {
           
@@ -33448,9 +33440,6 @@ var PDFImage = (function PDFImageClosure() {
 })();
 
 exports.PDFImage = PDFImage;
-
-
-coreColorSpace._setCoreImage(exports);
 }));
 
 
@@ -37436,13 +37425,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    extractDataStructures: function
-      partialEvaluatorExtractDataStructures(dict, baseDict,
-                                            xref, properties) {
+    extractDataStructures:
+        function PartialEvaluator_extractDataStructures(dict, baseDict,
+                                                        xref, properties) {
       
       var toUnicode = (dict.get('ToUnicode') || baseDict.get('ToUnicode'));
       var toUnicodePromise = toUnicode ?
-            this.readToUnicode(toUnicode) : Promise.resolve(undefined);
+        this.readToUnicode(toUnicode) : Promise.resolve(undefined);
 
       if (properties.composite) {
         
@@ -37542,7 +37531,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 
 
-    buildToUnicode: function partialEvaluator_buildToUnicode(properties) {
+
+    buildToUnicode: function PartialEvaluator_buildToUnicode(properties) {
       
       if (properties.toUnicode && properties.toUnicode.length !== 0) {
         return Promise.resolve(properties.toUnicode);
@@ -37643,7 +37633,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         
         
         
-        var ucs2CMapName = new Name(registry + '-' + ordering + '-UCS2');
+        var ucs2CMapName = Name.get(registry + '-' + ordering + '-UCS2');
         
         
         return CMapFactory.create(ucs2CMapName, this.options.cMapOptions,
@@ -39062,6 +39052,8 @@ var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationType = sharedUtil.AnnotationType;
 var OPS = sharedUtil.OPS;
 var Util = sharedUtil.Util;
+var isBool = sharedUtil.isBool;
+var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
 var isValidUrl = sharedUtil.isValidUrl;
@@ -39730,66 +39722,91 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     var data = this.data;
     data.annotationType = AnnotationType.LINK;
 
-    var action = dict.get('A');
+    var action = dict.get('A'), url, dest;
     if (action && isDict(action)) {
       var linkType = action.get('S').name;
-      if (linkType === 'URI') {
-        var url = action.get('URI');
-        if (isName(url)) {
-          
-          url = '/' + url.name;
-        } else if (url) {
-          url = addDefaultProtocolToUrl(url);
-        }
-        
-        
-        if (!isValidUrl(url, false)) {
-          url = '';
-        }
-        
-        
-        
-        try {
-          data.url = stringToUTF8String(url);
-        } catch (e) {
-          
-          data.url = url;
-        }
-      } else if (linkType === 'GoTo') {
-        data.dest = action.get('D');
-      } else if (linkType === 'GoToR') {
-        var urlDict = action.get('F');
-        if (isDict(urlDict)) {
+      switch (linkType) {
+        case 'URI':
+          url = action.get('URI');
+          if (isName(url)) {
+            
+            url = '/' + url.name;
+          } else if (url) {
+            url = addDefaultProtocolToUrl(url);
+          }
           
           
-          url = urlDict.get('F') || '';
-        }
+          break;
 
-        
-        
-        if (!isValidUrl(url, false)) {
-          url = '';
-        }
-        data.url = url;
-        data.dest = action.get('D');
-      } else if (linkType === 'Named') {
-        data.action = action.get('N').name;
-      } else {
-        warn('unrecognized link type: ' + linkType);
+        case 'GoTo':
+          dest = action.get('D');
+          break;
+
+        case 'GoToR':
+          var urlDict = action.get('F');
+          if (isDict(urlDict)) {
+            
+            
+            url = urlDict.get('F') || null;
+          } else if (isString(urlDict)) {
+            url = urlDict;
+          }
+
+          
+          var remoteDest = action.get('D');
+          if (remoteDest) {
+            if (isName(remoteDest)) {
+              remoteDest = remoteDest.name;
+            }
+            if (isString(remoteDest) && isString(url)) {
+              var baseUrl = url.split('#')[0];
+              url = baseUrl + '#' + remoteDest;
+            }
+          }
+          
+          var newWindow = action.get('NewWindow');
+          if (isBool(newWindow)) {
+            data.newWindow = newWindow;
+          }
+          break;
+
+        case 'Named':
+          data.action = action.get('N').name;
+          break;
+
+        default:
+          warn('unrecognized link type: ' + linkType);
       }
-    } else if (dict.has('Dest')) {
-      
-      var dest = dict.get('Dest');
+    } else if (dict.has('Dest')) { 
+      dest = dict.get('Dest');
+    }
+
+    if (url) {
+      if (isValidUrl(url,  false)) {
+        data.url = tryConvertUrlEncoding(url);
+      }
+    }
+    if (dest) {
       data.dest = isName(dest) ? dest.name : dest;
     }
   }
 
   
   function addDefaultProtocolToUrl(url) {
-    if (url && url.indexOf('www.') === 0) {
+    if (isString(url) && url.indexOf('www.') === 0) {
       return ('http://' + url);
     }
     return url;
+  }
+
+  function tryConvertUrlEncoding(url) {
+    
+    
+    try {
+      return stringToUTF8String(url);
+    } catch (e) {
+      return url;
+    }
   }
 
   Util.inherit(LinkAnnotation, Annotation, {});
