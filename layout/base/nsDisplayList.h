@@ -1076,22 +1076,6 @@ public:
 
 
 
-  void StoreDirtyRectForScrolledContents(const nsIFrame* aScrollableFrame, const nsRect& aDirty);
-
-  
-
-
-
-
-  nsRect GetDirtyRectForScrolledContents(const nsIFrame* aScrollableFrame) const;
-
-  
-
-
-
-
-
-
 
 
   class AutoPreserves3DContext;
@@ -1220,9 +1204,6 @@ private:
   uint32_t mUsedAGRBudget;
   
   nsTHashtable<nsPtrHashKey<nsIFrame> > mAGRBudgetSet;
-
-  
-  nsDataHashtable<nsPtrHashKey<nsIFrame>, nsRect> mDirtyRectForScrolledContents;
 
   
   nsRect                         mDirtyRect;
