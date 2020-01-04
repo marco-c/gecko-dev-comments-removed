@@ -426,6 +426,7 @@ private:
 
   
   
+  int32_t             mClientGoAwayReason;
   int32_t             mPeerGoAwayReason;
 
   
