@@ -218,12 +218,10 @@ class ShapeTable {
     }
 
     
-
-
-
-
     bool init(ExclusiveContext* cx, Shape* lastProp);
-    bool change(int log2Delta, ExclusiveContext* cx);
+
+    
+    bool change(ExclusiveContext* cx, int log2Delta);
 
     template<MaybeAdding Adding>
     Entry& search(jsid id);
