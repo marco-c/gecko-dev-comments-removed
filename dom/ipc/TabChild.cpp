@@ -1943,6 +1943,16 @@ TabChild::RecvRealDragEvent(const WidgetDragEvent& aEvent,
   return true;
 }
 
+bool
+TabChild::RecvPluginEvent(const WidgetPluginEvent& aEvent)
+{
+  WidgetPluginEvent localEvent(aEvent);
+  localEvent.widget = mPuppetWidget;
+  APZCCallbackHelper::DispatchWidgetEvent(localEvent);
+  
+  return true;
+}
+
 void
 TabChild::RequestNativeKeyBindings(AutoCacheNativeKeyCommands* aAutoCache,
                                    WidgetKeyboardEvent* aEvent)
