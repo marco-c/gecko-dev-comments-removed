@@ -107,7 +107,6 @@ nsPNGDecoder::nsPNGDecoder(RasterImage* aImage)
  , mPass(0)
  , mFrameIsHidden(false)
  , mDisablePremultipliedAlpha(false)
- , mSuccessfulEarlyFinish(false)
  , mNumFrames(0)
 { }
 
@@ -355,12 +354,10 @@ nsPNGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 
     
     
-    
-    if (!mSuccessfulEarlyFinish && !HasError()) {
+    if (!HasError()) {
       PostDataError();
     }
 
-    png_destroy_read_struct(&mPNG, &mInfo, nullptr);
     return;
   }
 
@@ -654,8 +651,8 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
 
     
     
-    decoder->mSuccessfulEarlyFinish = true;
-    png_longjmp(decoder->mPNG, 1);
+    png_process_data_pause(png_ptr,  false);
+    return;
   }
 
 #ifdef PNG_APNG_SUPPORTED
@@ -776,6 +773,8 @@ nsPNGDecoder::row_callback(png_structp png_ptr, png_bytep new_row,
     return;  
   }
 
+  MOZ_ASSERT_IF(decoder->IsFirstFrameDecode(), decoder->mNumFrames == 0);
+
   while (pass > decoder->mPass) {
     
     
@@ -883,8 +882,8 @@ nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
     
     
     decoder->PostDecodeDone();
-    decoder->mSuccessfulEarlyFinish = true;
-    png_longjmp(decoder->mPNG, 1);
+    png_process_data_pause(png_ptr,  false);
+    return;
   }
 
   
