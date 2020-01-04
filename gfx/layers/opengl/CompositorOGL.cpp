@@ -418,16 +418,47 @@ CompositorOGL::Initialize()
 
 
 
+static IntSize
+CalculatePOTSize(const IntSize& aSize, GLContext* gl)
+{
+  if (CanUploadNonPowerOfTwo(gl))
+    return aSize;
+
+  return IntSize(NextPowerOfTwo(aSize.width), NextPowerOfTwo(aSize.height));
+}
+
+
+
+
+
+
+
 void
 CompositorOGL::BindAndDrawQuadWithTextureRect(ShaderProgramOGL *aProg,
                                               const Rect& aRect,
                                               const Rect& aTexCoordRect,
                                               TextureSource *aTexture)
 {
+  Rect scaledTexCoordRect = aTexCoordRect;
+
+  
+  
+  
+  
+  if (!CanUploadNonPowerOfTwo(mGLContext)) {
+    const IntSize& textureSize = aTexture->GetSize();
+    const IntSize potSize = CalculatePOTSize(textureSize, mGLContext);
+    if (potSize != textureSize) {
+      const float xScale = (float)textureSize.width / (float)potSize.width;
+      const float yScale = (float)textureSize.height / (float)potSize.height;
+      scaledTexCoordRect.Scale(xScale, yScale);
+    }
+  }
+
   Rect layerRects[4];
   Rect textureRects[4];
   size_t rects = DecomposeIntoNoRepeatRects(aRect,
-                                            aTexCoordRect,
+                                            scaledTexCoordRect,
                                             &layerRects,
                                             &textureRects);
 
@@ -570,21 +601,6 @@ GetFrameBufferInternalFormat(GLContext* gl,
     return aWidget->GetGLFrameBufferFormat();
   }
   return LOCAL_GL_RGBA;
-}
-
-
-
-
-
-
-
-static IntSize
-CalculatePOTSize(const IntSize& aSize, GLContext* gl)
-{
-  if (CanUploadNonPowerOfTwo(gl))
-    return aSize;
-
-  return IntSize(NextPowerOfTwo(aSize.width), NextPowerOfTwo(aSize.height));
 }
 
 void
