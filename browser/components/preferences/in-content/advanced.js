@@ -47,6 +47,7 @@ var gAdvancedPane = {
 #ifdef MOZ_SERVICES_HEALTHREPORT
     this.initSubmitHealthReport();
 #endif
+    this.updateOnScreenKeyboardVisibility();
     this.updateCacheSizeInputField();
     this.updateActualCacheSize();
     this.updateActualAppCacheSize();
@@ -115,6 +116,10 @@ var gAdvancedPane = {
   
 
   
+
+
+
+
 
 
 
@@ -311,6 +316,15 @@ var gAdvancedPane = {
     this.setTelemetrySectionEnabled(checkbox.checked);
   },
 #endif
+
+  updateOnScreenKeyboardVisibility() {
+    if (AppConstants.platform == "win") {
+      let minVersion = Services.prefs.getBoolPref("ui.osk.require_win10") ? 10 : 6.2;
+      if (Services.vc.compare(Services.sysinfo.getProperty("version"), minVersion) >= 0) {
+        document.getElementById("useOnScreenKeyboard").hidden = false;
+      }
+    }
+  },
 
   
 
