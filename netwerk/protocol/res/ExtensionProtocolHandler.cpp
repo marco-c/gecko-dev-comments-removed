@@ -29,7 +29,7 @@ ExtensionProtocolHandler::GetFlagsForURI(nsIURI* aURI, uint32_t* aFlags)
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  *aFlags = URI_STD | URI_IS_LOCAL_RESOURCE | (loadableByAnyone ? URI_LOADABLE_BY_ANYONE : URI_DANGEROUS_TO_LOAD);
+  *aFlags = URI_STD | URI_IS_LOCAL_RESOURCE | (loadableByAnyone ? (URI_LOADABLE_BY_ANYONE | URI_FETCHABLE_BY_ANYONE) : URI_DANGEROUS_TO_LOAD);
   return NS_OK;
 }
 
