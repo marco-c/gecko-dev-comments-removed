@@ -90,7 +90,6 @@
   
   
   
-  
   function AddPrintOutput(s) {
     var msgDiv = CreateElement("div");
     SetTextContent(msgDiv, s);
@@ -182,25 +181,6 @@ function include(file) {
 function setRestoreFunction(restore) {
   jstestsRestoreFunction = restore;
 }
-
-function print() {
-  var s = 'TEST-INFO | ';
-  var a;
-  for (var i = 0; i < arguments.length; i++)
-  {
-    a = arguments[i];
-    s += String(a) + ' ';
-  }
-
-  if (typeof dump == 'function')
-  {
-    dump( s + '\n');
-  }
-
-  
-  AddPrintOutput(s);
-}
-
 
 window.onerror = function (msg, page, line)
 {

@@ -18,6 +18,7 @@
 
   var Error = global.Error;
   var Number = global.Number;
+  var String = global.String;
   var TypeError = global.TypeError;
 
   var ArrayIsArray = global.Array.isArray;
@@ -34,6 +35,8 @@
     var SpecialPowersSetGCZeal =
       global.SpecialPowers ? global.SpecialPowers.setGCZeal : undefined;
   }
+
+  var runningInShell = typeof window === "undefined";
 
   
 
@@ -151,11 +154,47 @@
 
 
 
-  
-  
-  assertEq(typeof global.print, "function",
-           "print function is pre-existing, either provided by the shell or " +
-           "the already-executed top-level browser.js");
+  var dump = global.dump;
+  if (typeof global.dump === "function") {
+    
+  } else {
+    
+    if (runningInBrowser) {
+      
+      
+      
+      
+      
+      dump = function() {};
+    } else {
+      
+      dump = global.print;
+    }
+    global.dump = dump;
+  }
+
+  var print;
+  if (runningInBrowser) {
+    
+    
+    
+    print = function print() {
+      var s = "TEST-INFO | ";
+      for (var i = 0; i < arguments.length; i++)
+        s += String(arguments[i]) + " ";
+
+      
+      dump(s + "\n");
+
+      
+      global.AddPrintOutput(s);
+    };
+
+    global.print = print;
+  } else {
+    
+    print = global.print;
+  }
 
   var quit = global.quit;
   if (typeof quit !== "function") {
@@ -749,19 +788,6 @@ function getTestCaseResult(expected, actual)
   
   
   return true;
-}
-
-if (typeof dump == 'undefined')
-{
-  if (typeof window == 'undefined' &&
-      typeof print == 'function')
-  {
-    dump = print;
-  }
-  else
-  {
-    dump = (function () {});
-  }
 }
 
 function test() {
