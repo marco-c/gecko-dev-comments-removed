@@ -14,7 +14,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 const MESSAGES_IN_INTERVAL = 1500
 
-const STORAGE_MAX_EVENTS = 200;
+const STORAGE_MAX_EVENTS = 1000;
 
 var _consoleStorage = new Map();
 
