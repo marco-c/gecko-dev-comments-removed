@@ -1954,6 +1954,7 @@ public class BrowserApp extends GeckoApp
 
             } else if (event.equals("Search:Keyword")) {
                 storeSearchQuery(message.getString("query"));
+                recordSearch(message.getString("identifier"), TelemetryContract.Method.ACTIONBAR);
             } else if (event.equals("LightweightTheme:Update")) {
                 ThreadUtils.postToUiThread(new Runnable() {
                     @Override
@@ -2404,8 +2405,6 @@ public class BrowserApp extends GeckoApp
                     return;
                 }
 
-                recordSearch(null, "barkeyword");
-
                 
                 
                 
@@ -2425,21 +2424,11 @@ public class BrowserApp extends GeckoApp
 
 
 
-
-
-
-
-    private static void recordSearch(SearchEngine engine, String where) {
+    private static void recordSearch(@NonNull final String engineIdentifier,
+            @NonNull final TelemetryContract.Method where) {
         
         
-        
-        
-        
-        
-        
-        
-        
-        
+        Telemetry.sendUIEvent(TelemetryContract.Event.SEARCH, where);
     }
 
     
@@ -3888,14 +3877,14 @@ public class BrowserApp extends GeckoApp
 
     
     @Override
-    public void onSearch(SearchEngine engine, String text) {
+    public void onSearch(SearchEngine engine, final String text, final TelemetryContract.Method method) {
         
         
         
         if (!Tabs.getInstance().getSelectedTab().isPrivate()) {
             storeSearchQuery(text);
         }
-        recordSearch(engine, "barsuggest");
+        recordSearch(engine.getEngineIdentifier(), method);
         openUrlAndStopEditing(text, engine.name);
     }
 
