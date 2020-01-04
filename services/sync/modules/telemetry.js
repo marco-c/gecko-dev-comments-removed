@@ -18,6 +18,7 @@ Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/TelemetryController.jsm");
 Cu.import("resource://gre/modules/FxAccounts.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/osfile.jsm", this);
 
 let constants = {};
 Cu.import("resource://services-sync/constants.js", constants);
@@ -51,6 +52,14 @@ const ENGINES = new Set(["addons", "bookmarks", "clients", "forms", "history",
                          "passwords", "prefs", "tabs"]);
 
 
+
+
+
+const reProfileDir = new RegExp(
+        OS.Constants.Path.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "gi");
+
+
 function isBrowerIdAuthError(error) {
   
   
@@ -73,7 +82,9 @@ function transformError(error, engineName) {
       
       return { name: "othererror", error };
     }
-
+    
+    
+    error = error.replace(reProfileDir, "[profileDir]");
     return { name: "unexpectederror", error };
   }
 
@@ -99,7 +110,8 @@ function transformError(error, engineName) {
 
   return {
     name: "unexpectederror",
-    error: String(error),
+    
+    error: String(error).replace(reProfileDir, "[profileDir]")
   }
 }
 

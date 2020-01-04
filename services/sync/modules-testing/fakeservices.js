@@ -22,6 +22,20 @@ this.FakeFilesystemService = function FakeFilesystemService(contents) {
   this.fakeContents = contents;
   let self = this;
 
+  
+  
+  
+  
+  
+  
+  
+  for (let name of ["jsonSave", "jsonLoad", "jsonMove", "jsonRemove"]) {
+    let origName = "_real_" + name;
+    if (!Utils[origName]) {
+      Utils[origName] = Utils[name];
+    }
+  }
+
   Utils.jsonSave = function jsonSave(filePath, that, obj, callback) {
     let json = typeof obj == "function" ? obj.call(that) : obj;
     self.fakeContents["weave/" + filePath + ".json"] = JSON.stringify(json);
