@@ -24,9 +24,22 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename To, typename From>
-inline To
-BitwiseCast(const From aFrom)
+inline void
+BitwiseCast(const From aFrom, To* aResult)
 {
   static_assert(sizeof(From) == sizeof(To),
                 "To and From must have the same size");
@@ -36,7 +49,16 @@ BitwiseCast(const From aFrom)
     To mTo;
   } u;
   u.mFrom = aFrom;
-  return u.mTo;
+  *aResult = u.mTo;
+}
+
+template<typename To, typename From>
+inline To
+BitwiseCast(const From aFrom)
+{
+  To temp;
+  BitwiseCast<To, From>(aFrom, &temp);
+  return temp;
 }
 
 namespace detail {

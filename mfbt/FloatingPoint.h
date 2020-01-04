@@ -246,19 +246,43 @@ NegativeInfinity()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename T>
-static MOZ_ALWAYS_INLINE T
-SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand)
+static MOZ_ALWAYS_INLINE void
+SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand, T* result)
 {
   typedef FloatingPoint<T> Traits;
   MOZ_ASSERT(signbit == 0 || signbit == 1);
   MOZ_ASSERT((significand & ~Traits::kSignificandBits) == 0);
   MOZ_ASSERT(significand & Traits::kSignificandBits);
 
-  T t = BitwiseCast<T>((signbit ? Traits::kSignBit : 0) |
-                       Traits::kExponentBits |
-                       significand);
-  MOZ_ASSERT(IsNaN(t));
+  BitwiseCast<T>((signbit ? Traits::kSignBit : 0) |
+                  Traits::kExponentBits |
+                  significand,
+                  result);
+  MOZ_ASSERT(IsNaN(*result));
+}
+
+template<typename T>
+static MOZ_ALWAYS_INLINE T
+SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand)
+{
+  T t;
+  SpecificNaN(signbit, significand, &t);
   return t;
 }
 
