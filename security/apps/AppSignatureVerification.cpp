@@ -663,11 +663,18 @@ VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
                 const SECItem& detachedDigest,
                  ScopedCERTCertList& builtChain)
 {
+  
+  
+  
+  
+  
+  nsNSSShutDownPreventionLock locker;
   VerifyCertificateContext context = { trustedRoot, builtChain };
   
   return VerifyCMSDetachedSignatureIncludingCertificate(buffer, detachedDigest,
                                                         VerifyCertificate,
-                                                        &context, nullptr);
+                                                        &context, nullptr,
+                                                        locker);
 }
 
 NS_IMETHODIMP

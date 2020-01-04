@@ -2,16 +2,12 @@
 
 
 
-#ifndef _NS_DATASIGNATUREVERIFIER_H_
-#define _NS_DATASIGNATUREVERIFIER_H_
+#ifndef nsDataSignatureVerifier_h
+#define nsDataSignatureVerifier_h
 
+#include "certt.h"
 #include "nsIDataSignatureVerifier.h"
-#include "mozilla/Attributes.h"
-
-#include "keythi.h"
-
-typedef struct CERTCertificateStr CERTCertificate;
-
+#include "nsNSSShutDown.h"
 
 #define NS_DATASIGNATUREVERIFIER_CID \
     { 0x296d76aa, 0x275b, 0x4f3c, \
@@ -20,6 +16,7 @@ typedef struct CERTCertificateStr CERTCertificate;
     "@mozilla.org/security/datasignatureverifier;1"
 
 class nsDataSignatureVerifier final : public nsIDataSignatureVerifier
+                                    , public nsNSSShutDownObject
 {
 public:
   NS_DECL_ISUPPORTS
@@ -30,9 +27,10 @@ public:
   }
 
 private:
-  ~nsDataSignatureVerifier()
-  {
-  }
+  ~nsDataSignatureVerifier();
+
+  
+  virtual void virtualDestroyNSSReference() override {}
 };
 
 namespace mozilla {
@@ -41,7 +39,8 @@ nsresult VerifyCMSDetachedSignatureIncludingCertificate(
   const SECItem& buffer, const SECItem& detachedDigest,
   nsresult (*verifyCertificate)(CERTCertificate* cert, void* context,
                                 void* pinArg),
-  void* verifyCertificateContext, void* pinArg);
+  void* verifyCertificateContext, void* pinArg,
+  const nsNSSShutDownPreventionLock& proofOfLock);
 
 } 
 
