@@ -58,9 +58,21 @@ function* spawnTest() {
     return m.start;
   }, 0);
 
+  
+  
+  
+  let timestampMarker = markers.find(m => m.name === "ConsoleTime");
+  ok(typeof timestampMarker.stack === "number", "ConsoleTime marker has a stack before overwriting.");
+  let frames = PerformanceController.getCurrentRecording().getFrames();
+  let frameIndex = timestampMarker.stack = frames.length;
+  frames.push({ line: 1, column: 1, source: "file.js", functionDisplayName: "test", parent: frameIndex + 1});
+  frames.push({ line: 1, column: 1, source: "file.js", functionDisplayName: "test", parent: frameIndex + 2 });
+  frames.push({ line: 1, column: 1, source: "file.js", functionDisplayName: "test", parent: frameIndex });
+
   const tests = {
     ConsoleTime: function (marker) {
       info("Got `ConsoleTime` marker with data: " + JSON.stringify(marker));
+      ok(marker.stack === frameIndex, "Should have the ConsoleTime marker with recursive stack");
       shouldHaveStack($, "startStack", marker);
       shouldHaveStack($, "endStack", marker);
       shouldHaveLabel($, "Timer Name:", "!!!", marker);
