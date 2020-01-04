@@ -66,23 +66,6 @@ InputQueue::ReceiveInputEvent(const RefPtr<AsyncPanZoomController>& aTarget,
   }
 }
 
-bool
-InputQueue::MaybeHandleCurrentBlock(CancelableBlockState *block,
-                                    const InputData& aEvent) {
-  if (mQueuedInputs.IsEmpty() && block->IsReadyForHandling()) {
-    const RefPtr<AsyncPanZoomController>& target = block->GetTargetApzc();
-    INPQ_LOG("current block is ready with target %p preventdefault %d\n",
-        target.get(), block->IsDefaultPrevented());
-    if (!target || block->IsDefaultPrevented()) {
-      return true;
-    }
-    UpdateActiveApzc(block->GetTargetApzc());
-    block->DispatchImmediate(aEvent);
-    return true;
-  }
-  return false;
-}
-
 nsEventStatus
 InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
                               bool aTargetConfirmed,
@@ -170,10 +153,9 @@ InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
     INPQ_LOG("dropping event due to block %p being in mini-slop\n", block);
     result = nsEventStatus_eConsumeNoDefault;
   }
-  if (!MaybeHandleCurrentBlock(block, aEvent)) {
-    block->AddEvent(aEvent.AsMultiTouchInput());
-    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMultiTouchInput(), *block));
-  }
+  block->AddEvent(aEvent.AsMultiTouchInput());
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMultiTouchInput(), *block));
+  ProcessInputBlocks();
   return result;
 }
 
@@ -226,10 +208,9 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
     *aOutInputBlockId = block->GetBlockId();
   }
 
-  if (!MaybeHandleCurrentBlock(block, aEvent)) {
-    block->AddEvent(aEvent.AsMouseInput());
-    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMouseInput(), *block));
-  }
+  block->AddEvent(aEvent.AsMouseInput());
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMouseInput(), *block));
+  ProcessInputBlocks();
 
   if (DragTracker::EndsDrag(aEvent)) {
     block->MarkMouseUpReceived();
@@ -285,10 +266,9 @@ InputQueue::ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarge
   
   
   
-  if (!MaybeHandleCurrentBlock(block, event)) {
-    block->AddEvent(event);
-    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
-  }
+  block->AddEvent(event);
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
+  ProcessInputBlocks();
 
   return nsEventStatus_eConsumeDoDefault;
 }
@@ -369,10 +349,9 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
   
   
   
-  if (!MaybeHandleCurrentBlock(block, event)) {
-    block->AddEvent(event.AsPanGestureInput());
-    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event.AsPanGestureInput(), *block));
-  }
+  block->AddEvent(event.AsPanGestureInput());
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event.AsPanGestureInput(), *block));
+  ProcessInputBlocks();
 
   return result;
 }

@@ -168,13 +168,6 @@ public:
 
 
 
-
-  void DispatchImmediate(const InputData& aEvent) const;
-
-  
-
-
-
   virtual void DispatchEvent(const InputData& aEvent) const;
 
   
