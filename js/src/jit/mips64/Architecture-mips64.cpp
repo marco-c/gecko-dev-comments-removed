@@ -61,7 +61,7 @@ FloatRegisterSet
 FloatRegister::ReduceSetForPush(const FloatRegisterSet& s)
 {
     LiveFloatRegisterSet mod;
-    for (FloatRegisterIterator iter(s); iter.more(); iter++) {
+    for (FloatRegisterIterator iter(s); iter.more(); ++iter) {
         if ((*iter).isSingle()) {
             
             mod.addUnchecked((*iter).doubleOverlay());
