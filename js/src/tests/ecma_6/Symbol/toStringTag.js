@@ -147,7 +147,6 @@ testDefault(function* () {}.constructor.prototype, "GeneratorFunction");
 testDefault(function* () {}().__proto__.__proto__, "Generator");
 
 
-
-
+testDefault(Promise.prototype, "Promise");
 
 reportCompare(true, true);
