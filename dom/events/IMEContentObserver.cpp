@@ -1297,15 +1297,26 @@ IMEContentObserver::IMENotificationSender::Run()
 
   
   
-  
-  if (mIMEContentObserver->mIsSelectionChangeEventPending) {
-    mIMEContentObserver->mIsSelectionChangeEventPending = false;
-    SendSelectionChange();
+  if (!mIMEContentObserver->mIsTextChangeEventPending) {
+    
+    
+    
+    if (mIMEContentObserver->mIsSelectionChangeEventPending) {
+      mIMEContentObserver->mIsSelectionChangeEventPending = false;
+      SendSelectionChange();
+    }
   }
 
-  if (mIMEContentObserver->mIsPositionChangeEventPending) {
-    mIMEContentObserver->mIsPositionChangeEventPending = false;
-    SendPositionChange();
+  
+  
+  
+  
+  if (!mIMEContentObserver->mIsTextChangeEventPending &&
+      !mIMEContentObserver->mIsSelectionChangeEventPending) {
+    if (mIMEContentObserver->mIsPositionChangeEventPending) {
+      mIMEContentObserver->mIsPositionChangeEventPending = false;
+      SendPositionChange();
+    }
   }
 
   
