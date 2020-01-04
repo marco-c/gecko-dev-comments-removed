@@ -209,7 +209,7 @@ add_task(function test_frecency()
   }
 
   
-  results.sort((a,b) => b[1] - a[1]);
+  results.sort(function(a,b) b[1] - a[1]);
   
   prefs.setIntPref("browser.urlbar.maxRichResults", results.length);
 
@@ -258,7 +258,7 @@ add_task(function test_frecency()
         
         
         
-        let getFrecency = aURL => aURL.match(/frecency:(-?\d+)$/)[1];
+        let getFrecency = function(aURL) aURL.match(/frecency:(-?\d+)$/)[1];
         print("### checking for same frecency between '" + searchURL +
               "' and '" + expectURL + "'");
         do_check_eq(getFrecency(searchURL), getFrecency(expectURL));

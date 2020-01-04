@@ -133,7 +133,7 @@ function cartProd(aSequences, aCallback)
 
   
   
-  let seqEltPtrs = aSequences.map(i => 0);
+  let seqEltPtrs = aSequences.map(function (i) 0);
 
   let numProds = 0;
   let done = false;
@@ -210,7 +210,7 @@ add_task(function test_add_visits_to_database()
   ];
 
   
-  t.forEach(transition => visits.push(
+  t.forEach(function (transition) visits.push(
     { isVisit: true,
       transType: transition,
       uri: "http://" + transition + ".example.com/",
@@ -222,7 +222,7 @@ add_task(function test_add_visits_to_database()
       isInQuery: true }));
 
   
-  t.forEach(transition => visits.push(
+  t.forEach(function (transition) visits.push(
     { isVisit: true,
       transType: Ci.nsINavHistoryService.TRANSITION_REDIRECT_TEMPORARY,
       uri: "http://" + transition + ".redirect.temp.example.com/",
@@ -234,7 +234,7 @@ add_task(function test_add_visits_to_database()
       isInQuery: true }));
 
   
-  t.forEach(transition => visits.push(
+  t.forEach(function (transition) visits.push(
     { isVisit: true,
       transType: Ci.nsINavHistoryService.TRANSITION_REDIRECT_PERMANENT,
       uri: "http://" + transition + ".redirect.perm.example.com/",
@@ -257,7 +257,7 @@ add_task(function test_add_visits_to_database()
     do_throw("Unknown uri.");
     return null;
   }
-  t.forEach(transition => visits.push(
+  t.forEach(function (transition) visits.push(
     { isVisit: true,
       transType: Ci.nsINavHistoryService.TRANSITION_REDIRECT_PERMANENT,
       uri: "http://" + transition + ".example.com/",

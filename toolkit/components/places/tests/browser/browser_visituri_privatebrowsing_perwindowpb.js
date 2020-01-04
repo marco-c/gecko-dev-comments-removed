@@ -59,7 +59,7 @@ function test() {
       
       
       
-      executeSoon(() => aCallback(aWin));
+      executeSoon(function() aCallback(aWin));
     });
   };
 
