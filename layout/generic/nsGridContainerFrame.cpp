@@ -226,7 +226,102 @@ public:
     MOZ_ASSERT(!mHasRepeatAuto || mLineNameLists.Length() >= 2);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static uint32_t FindNamedLine(const nsString& aName, int32_t* aNth,
+                         uint32_t aFromIndex, uint32_t aImplicitLine,
+                         const nsTArray<nsTArray<nsString>>& aNameList)
+  {
+    MOZ_ASSERT(aNth && *aNth != 0);
+    if (*aNth > 0) {
+      return FindLine(aName, aNth, aFromIndex, aImplicitLine, aNameList);
+    }
+    int32_t nth = -*aNth;
+    int32_t line = RFindLine(aName, &nth, aFromIndex, aImplicitLine, aNameList);
+    *aNth = -nth;
+    return line;
+  }
+
 private:
+  
+
+
+  static uint32_t FindLine(const nsString& aName, int32_t* aNth,
+                    uint32_t aFromIndex, uint32_t aImplicitLine,
+                    const nsTArray<nsTArray<nsString>>& aNameList)
+  {
+    MOZ_ASSERT(aNth && *aNth > 0);
+    int32_t nth = *aNth;
+    const uint32_t len = aNameList.Length();
+    uint32_t line;
+    uint32_t i = aFromIndex;
+    for (; i < len; i = line) {
+      line = i + 1;
+      if (line == aImplicitLine || aNameList[i].Contains(aName)) {
+        if (--nth == 0) {
+          return line;
+        }
+      }
+    }
+    if (aImplicitLine > i) {
+      
+      
+      if (--nth == 0) {
+        return aImplicitLine;
+      }
+    }
+    MOZ_ASSERT(nth > 0, "should have returned a valid line above already");
+    *aNth = nth;
+    return 0;
+  }
+
+  
+
+
+  static uint32_t RFindLine(const nsString& aName, int32_t* aNth,
+                     uint32_t aFromIndex, uint32_t aImplicitLine,
+                     const nsTArray<nsTArray<nsString>>& aNameList)
+  {
+    MOZ_ASSERT(aNth && *aNth > 0);
+    if (MOZ_UNLIKELY(aFromIndex == 0)) {
+      return 0; 
+    }
+    --aFromIndex; 
+    int32_t nth = *aNth;
+    const uint32_t len = aNameList.Length();
+    
+    
+    if (aImplicitLine > len && aImplicitLine < aFromIndex) {
+      if (--nth == 0) {
+        return aImplicitLine;
+      }
+    }
+    for (uint32_t i = std::min(aFromIndex, len); i; --i) {
+      if (i == aImplicitLine || aNameList[i - 1].Contains(aName)) {
+        if (--nth == 0) {
+          return i;
+        }
+      }
+    }
+    MOZ_ASSERT(nth > 0, "should have returned a valid line above already");
+    *aNth = nth;
+    return 0;
+  }
+
   
   const bool Contains(uint32_t aIndex, const nsString& aName) const
   {
@@ -760,104 +855,6 @@ bool IsMinContent(const nsStyleCoord& aCoord)
 
 
 
-static uint32_t
-FindLine(const nsString& aName, int32_t* aNth,
-         uint32_t aFromIndex, uint32_t aImplicitLine,
-         const nsTArray<nsTArray<nsString>>& aNameList)
-{
-  MOZ_ASSERT(aNth && *aNth > 0);
-  int32_t nth = *aNth;
-  const uint32_t len = aNameList.Length();
-  uint32_t line;
-  uint32_t i = aFromIndex;
-  for (; i < len; i = line) {
-    line = i + 1;
-    if (line == aImplicitLine || aNameList[i].Contains(aName)) {
-      if (--nth == 0) {
-        return line;
-      }
-    }
-  }
-  if (aImplicitLine > i) {
-    
-    
-    if (--nth == 0) {
-      return aImplicitLine;
-    }
-  }
-  MOZ_ASSERT(nth > 0, "should have returned a valid line above already");
-  *aNth = nth;
-  return 0;
-}
-
-
-
-
-static uint32_t
-RFindLine(const nsString& aName, int32_t* aNth,
-          uint32_t aFromIndex, uint32_t aImplicitLine,
-          const nsTArray<nsTArray<nsString>>& aNameList)
-{
-  MOZ_ASSERT(aNth && *aNth > 0);
-  if (MOZ_UNLIKELY(aFromIndex == 0)) {
-    return 0; 
-  }
-  --aFromIndex; 
-  int32_t nth = *aNth;
-  const uint32_t len = aNameList.Length();
-  
-  
-  if (aImplicitLine > len && aImplicitLine < aFromIndex) {
-    if (--nth == 0) {
-      return aImplicitLine;
-    }
-  }
-  for (uint32_t i = std::min(aFromIndex, len); i; --i) {
-    if (i == aImplicitLine || aNameList[i - 1].Contains(aName)) {
-      if (--nth == 0) {
-        return i;
-      }
-    }
-  }
-  MOZ_ASSERT(nth > 0, "should have returned a valid line above already");
-  *aNth = nth;
-  return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static uint32_t
-FindNamedLine(const nsString& aName, int32_t* aNth,
-              uint32_t aFromIndex, uint32_t aImplicitLine,
-              const nsTArray<nsTArray<nsString>>& aNameList)
-{
-  MOZ_ASSERT(aNth && *aNth != 0);
-  if (*aNth > 0) {
-    return ::FindLine(aName, aNth, aFromIndex, aImplicitLine, aNameList);
-  }
-  int32_t nth = -*aNth;
-  int32_t line = ::RFindLine(aName, &nth, aFromIndex, aImplicitLine, aNameList);
-  *aNth = -nth;
-  return line;
-}
-
-
-
-
 
 
 static const css::GridNamedArea*
@@ -1372,7 +1369,7 @@ nsGridContainerFrame::ResolveLine(
           lineName.AppendLiteral("-end");
           implicitLine = area ? area->*aAreaEnd : 0;
         }
-        line = ::FindNamedLine(lineName, &aNth, aFromIndex, implicitLine,
+        line = LineNameMap::FindNamedLine(lineName, &aNth, aFromIndex, implicitLine,
                                aLineNameList);
       }
     }
@@ -1395,7 +1392,7 @@ nsGridContainerFrame::ResolveLine(
           implicitLine = area->*areaEdge;
         }
       }
-      line = ::FindNamedLine(aLine.mLineName, &aNth, aFromIndex, implicitLine,
+      line = LineNameMap::FindNamedLine(aLine.mLineName, &aNth, aFromIndex, implicitLine,
                              aLineNameList);
     }
 
