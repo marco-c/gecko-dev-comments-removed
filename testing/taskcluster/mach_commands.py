@@ -11,6 +11,8 @@ import os
 import json
 import copy
 import sys
+import time
+from collections import namedtuple
 
 from mach.decorators import (
     CommandArgument,
@@ -203,6 +205,44 @@ def remove_caches_from_task(task):
     except KeyError:
         pass
 
+def query_pushinfo(repository, revision):
+    """Query the pushdate and pushid of a repository/revision.
+    This is intended to be used on hg.mozilla.org/mozilla-central and
+    similar. It may or may not work for other hg repositories.
+    """
+    PushInfo = namedtuple('PushInfo', ['pushid', 'pushdate'])
+
+    try:
+        import urllib2
+        url = '%s/json-pushes?changeset=%s' % (repository, revision)
+        sys.stderr.write("Querying URL for pushdate: %s\n" % url)
+        contents = json.load(urllib2.urlopen(url))
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pushid = contents.iterkeys().next()
+        pushdate = contents[pushid]['date']
+        return PushInfo(pushid, pushdate)
+
+    except Exception:
+        sys.stderr.write(
+            "Error querying pushinfo for repository '%s' revision '%s'\n" % (
+                repository, revision,
+            )
+        )
+        return None
+
 @CommandProvider
 class DecisionTask(object):
     @Command('taskcluster-decision', category="ci",
@@ -334,6 +374,12 @@ class Graph(object):
         cmdline_interactive = params.get('interactive', False)
 
         
+        pushdate = time.strftime('%Y%m%d%H%M%S', time.gmtime())
+        pushinfo = query_pushinfo(params['head_repository'], params['head_rev'])
+        if pushinfo:
+            pushdate = time.strftime('%Y%m%d%H%M%S', time.gmtime(pushinfo.pushdate))
+
+        
         parameters = dict(gaia_info().items() + {
             'index': 'index',
             'project': project,
@@ -344,6 +390,10 @@ class Graph(object):
             'head_repository': params['head_repository'],
             'head_ref': params['head_ref'] or params['head_rev'],
             'head_rev': params['head_rev'],
+            'pushdate': pushdate,
+            'year': pushdate[0:4],
+            'month': pushdate[4:6],
+            'day': pushdate[6:8],
             'owner': params['owner'],
             'from_now': json_time_from_now,
             'now': current_json_time(),
