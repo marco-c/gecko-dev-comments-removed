@@ -175,22 +175,23 @@ struct InitParam {
   bool mShouldSucceed;  
   int  mWidth;          
   int  mHeight;         
-  mozilla::TrackRate mTrackRate; 
 };
 
 class TestVP8TrackEncoder: public VP8TrackEncoder
 {
 public:
+  explicit TestVP8TrackEncoder(TrackRate aTrackRate = 90000)
+    : VP8TrackEncoder(aTrackRate) {}
+
   ::testing::AssertionResult TestInit(const InitParam &aParam)
   {
-    nsresult result = Init(aParam.mWidth, aParam.mHeight, aParam.mWidth, aParam.mHeight, aParam.mTrackRate);
+    nsresult result = Init(aParam.mWidth, aParam.mHeight, aParam.mWidth, aParam.mHeight);
 
     if (((NS_FAILED(result) && aParam.mShouldSucceed)) || (NS_SUCCEEDED(result) && !aParam.mShouldSucceed))
     {
       return ::testing::AssertionFailure()
                 << " width = " << aParam.mWidth
-                << " height = " << aParam.mHeight
-                << " TrackRate = " << aParam.mTrackRate << ".";
+                << " height = " << aParam.mHeight;
     }
     else
     {
@@ -204,17 +205,15 @@ TEST(VP8VideoTrackEncoder, Initialization)
 {
   InitParam params[] = {
     
-    { false, 640, 480, 0 },      
-    { false, 640, 480, -1 },     
-    { false, 0, 0, 90000 },      
-    { false, 0, 1, 90000 },      
-    { false, 1, 0, 90000},       
+    { false, 0, 0},      
+    { false, 0, 1},      
+    { false, 1, 0},       
 
     
-    { true, 640, 480, 90000},    
-    { true, 800, 480, 90000},    
-    { true, 960, 540, 90000},    
-    { true, 1280, 720, 90000}    
+    { true, 640, 480},    
+    { true, 800, 480},    
+    { true, 960, 540},    
+    { true, 1280, 720}    
   };
 
   for (size_t i = 0; i < ArrayLength(params); i++)
@@ -229,10 +228,10 @@ TEST(VP8VideoTrackEncoder, FetchMetaData)
 {
   InitParam params[] = {
     
-    { true, 640, 480, 90000},    
-    { true, 800, 480, 90000},    
-    { true, 960, 540, 90000},    
-    { true, 1280, 720, 90000}    
+    { true, 640, 480},    
+    { true, 800, 480},    
+    { true, 960, 540},    
+    { true, 1280, 720}    
   };
 
   for (size_t i = 0; i < ArrayLength(params); i++)
@@ -254,7 +253,7 @@ TEST(VP8VideoTrackEncoder, FrameEncode)
 {
   
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480, 90000};
+  InitParam param = {true, 640, 480};
   encoder.TestInit(param);
 
   
@@ -288,7 +287,7 @@ TEST(VP8VideoTrackEncoder, EncodeComplete)
 {
   
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480, 90000};
+  InitParam param = {true, 640, 480};
   encoder.TestInit(param);
 
   
