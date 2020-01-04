@@ -60,7 +60,6 @@ PyMakeIgnoreList = [
 
 configuration_tokens = ('branch',
                         'platform',
-                        'en_us_binary_url',
                         'update_platform',
                         'update_channel',
                         'ssh_key_dir',
