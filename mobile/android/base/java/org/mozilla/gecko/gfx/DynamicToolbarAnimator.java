@@ -13,8 +13,8 @@ import org.mozilla.gecko.util.ThreadUtils;
 import android.graphics.PointF;
 import android.support.v4.view.ViewCompat;
 import android.util.Log;
-import android.view.animation.DecelerateInterpolator;
 import android.view.MotionEvent;
+import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +36,7 @@ public class DynamicToolbarAnimator {
     private final Set<PinReason> pinFlags = Collections.synchronizedSet(EnumSet.noneOf(PinReason.class));
 
     
-    private static final long ANIMATION_DURATION = 250000000;
+    private static final long ANIMATION_DURATION = 150000000;
 
     private final GeckoLayerClient mTarget;
     private final List<LayerView.DynamicToolbarListener> mListeners;
@@ -63,7 +63,7 @@ public class DynamicToolbarAnimator {
     private float mMaxTranslation;
 
     
-    private DecelerateInterpolator mInterpolator;
+    private LinearInterpolator mInterpolator;
 
     
 
@@ -102,7 +102,7 @@ public class DynamicToolbarAnimator {
         mTarget = aTarget;
         mListeners = new ArrayList<LayerView.DynamicToolbarListener>();
 
-        mInterpolator = new DecelerateInterpolator();
+        mInterpolator = new LinearInterpolator();
 
         
         mPrefObserver = new PrefsHelper.PrefHandlerBase() {
