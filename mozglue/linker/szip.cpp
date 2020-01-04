@@ -425,7 +425,11 @@ int SzipCompress::do_compress(Buffer &origBuf, Buffer &outBuf,
     zStream.avail_in = avail;
     zStream.next_in = data;
     ret = deflate(&zStream, Z_FINISH);
-    MOZ_ASSERT(ret == Z_STREAM_END);
+    
+
+
+
+    MOZ_ASSERT(ret == Z_STREAM_END || ret == Z_OK);
     ret = deflateEnd(&zStream);
     MOZ_ASSERT(ret == Z_OK);
     if (zStream.avail_out <= 0)
