@@ -7248,7 +7248,8 @@ class MPhi final
     public InlineListNode<MPhi>,
     public NoTypePolicy::Data
 {
-    js::Vector<MUse, 2, JitAllocPolicy> inputs_;
+    using InputVector = js::Vector<MUse, 2, JitAllocPolicy>;
+    InputVector inputs_;
 
     TruncateKind truncateKind_;
     bool hasBackedgeType_;
@@ -7354,29 +7355,30 @@ class MPhi final
 
     
     
-    bool addBackedgeType(MIRType type, TemporaryTypeSet* typeSet);
+    MOZ_WARN_UNUSED_RESULT bool addBackedgeType(MIRType type, TemporaryTypeSet* typeSet);
 
     
     
-    bool reserveLength(size_t length) {
+    MOZ_WARN_UNUSED_RESULT bool reserveLength(size_t length) {
         return inputs_.reserve(length);
     }
 
     
     void addInput(MDefinition* ins) {
-        
-        
-        
-        
-        
-        inputs_.infallibleGrowByUninitialized(1);
-        new (&inputs_.back()) MUse(ins, this);
+        inputs_.infallibleEmplaceBack(ins, this);
     }
 
     
     
-    bool addInputSlow(MDefinition* ins) {
+    MOZ_WARN_UNUSED_RESULT bool addInputSlow(MDefinition* ins) {
         return inputs_.emplaceBack(ins, this);
+    }
+
+    
+    
+    void addInlineInput(MDefinition* ins) {
+        MOZ_ASSERT(inputs_.length() < InputVector::InlineLength);
+        MOZ_ALWAYS_TRUE(addInputSlow(ins));
     }
 
     
