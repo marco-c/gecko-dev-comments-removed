@@ -69,11 +69,6 @@ public:
   float AnimationTime() const { return mAnimationTime; }
   SurfaceFlags Flags() const { return mFlags; }
 
-  SurfaceKey WithNewFlags(SurfaceFlags aFlags) const
-  {
-    return SurfaceKey(mSize, mSVGContext, mAnimationTime, aFlags);
-  }
-
 private:
   SurfaceKey(const IntSize& aSize,
              const Maybe<SVGImageContext>& aSVGContext,
@@ -185,16 +180,8 @@ struct SurfaceCache
 
 
 
-
-
-
-
-
-
   static LookupResult Lookup(const ImageKey    aImageKey,
-                             const SurfaceKey& aSurfaceKey,
-                             const Maybe<SurfaceFlags>& aAlternateFlags
-                               = Nothing());
+                             const SurfaceKey& aSurfaceKey);
 
   
 
@@ -215,15 +202,8 @@ struct SurfaceCache
 
 
 
-
-
-
-
-
   static LookupResult LookupBestMatch(const ImageKey    aImageKey,
-                                      const SurfaceKey& aSurfaceKey,
-                                      const Maybe<SurfaceFlags>& aAlternateFlags
-                                        = Nothing());
+                                      const SurfaceKey& aSurfaceKey);
 
   
 

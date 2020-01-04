@@ -288,31 +288,22 @@ RasterImage::LookupFrameInternal(uint32_t aFrameNum,
     return mAnim->GetCompositedFrame(aFrameNum);
   }
 
-  Maybe<SurfaceFlags> alternateFlags;
-  if (IsOpaque()) {
-    
-    
-    
-    alternateFlags.emplace(ToSurfaceFlags(aFlags) ^
-                             SurfaceFlags::NO_PREMULTIPLY_ALPHA);
-  }
+  SurfaceFlags surfaceFlags = ToSurfaceFlags(aFlags);
 
   
   
   if (aFlags & FLAG_SYNC_DECODE) {
     return SurfaceCache::Lookup(ImageKey(this),
                                 RasterSurfaceKey(aSize,
-                                                 ToSurfaceFlags(aFlags),
-                                                 aFrameNum),
-                                alternateFlags);
+                                                 surfaceFlags,
+                                                 aFrameNum));
   }
 
   
   return SurfaceCache::LookupBestMatch(ImageKey(this),
                                        RasterSurfaceKey(aSize,
-                                                        ToSurfaceFlags(aFlags),
-                                                        aFrameNum),
-                                       alternateFlags);
+                                                        surfaceFlags,
+                                                        aFrameNum));
 }
 
 DrawableFrameRef
@@ -321,6 +312,12 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
                          uint32_t aFlags)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  if (IsOpaque()) {
+    aFlags &= ~FLAG_DECODE_NO_PREMULTIPLY_ALPHA;
+  }
 
   IntSize requestedSize = CanDownscaleDuringDecode(aSize, aFlags)
                         ? aSize : mSize;
@@ -1285,16 +1282,23 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
     decoderFlags |= DecoderFlags::IS_REDECODE;
   }
 
+  SurfaceFlags surfaceFlags = ToSurfaceFlags(aFlags);
+  if (IsOpaque()) {
+    
+    
+    surfaceFlags &= ~SurfaceFlags::NO_PREMULTIPLY_ALPHA;
+  }
+
   
   nsRefPtr<Decoder> decoder;
   if (mAnim) {
     decoder = DecoderFactory::CreateAnimationDecoder(mDecoderType, this,
                                                      mSourceBuffer, decoderFlags,
-                                                     ToSurfaceFlags(aFlags));
+                                                     surfaceFlags);
   } else {
     decoder = DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer,
                                             targetSize, decoderFlags,
-                                            ToSurfaceFlags(aFlags),
+                                            surfaceFlags,
                                             mRequestedSampleSize);
   }
 
