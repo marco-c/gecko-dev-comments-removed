@@ -271,14 +271,16 @@ Decoder::AllocateFrame(uint32_t aFrameNum,
     mCurrentFrame->GetImageData(&mImageData, &mImageDataLength);
     mCurrentFrame->GetPaletteData(&mColormap, &mColormapSize);
 
-    if (aFrameNum + 1 == mFrameCount) {
-      
-      MOZ_ASSERT_IF(mFrameCount > 1, HasAnimation());
+    
+    
+    MOZ_ASSERT(aFrameNum + 1 == mFrameCount);
 
-      
-      MOZ_ASSERT(!mInFrame, "Starting new frame but not done with old one!");
-      mInFrame = true;
-    }
+    
+    MOZ_ASSERT_IF(mFrameCount > 1, HasAnimation());
+
+    
+    MOZ_ASSERT(!mInFrame, "Starting new frame but not done with old one!");
+    mInFrame = true;
   }
 
   return mCurrentFrame ? NS_OK : NS_ERROR_FAILURE;
