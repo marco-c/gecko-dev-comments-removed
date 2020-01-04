@@ -118,14 +118,14 @@ TextPropertyEditor.prototype = {
     
     
     
-    let propertyContainer = createChild(this.container, "span", {
+    this.valueContainer = createChild(this.container, "span", {
       class: "ruleview-propertyvaluecontainer"
     });
 
     
     
     
-    this.valueSpan = createChild(propertyContainer, "span", {
+    this.valueSpan = createChild(this.valueContainer, "span", {
       class: "ruleview-propertyvalue theme-fg-color1",
       tabindex: this.ruleEditor.isEditable ? "0" : "-1",
     });
@@ -149,7 +149,7 @@ TextPropertyEditor.prototype = {
                        value: parsedValue,
                        priority: this.prop.priority };
 
-    appendText(propertyContainer, ";");
+    appendText(this.valueContainer, ";");
 
     this.warning = createChild(this.container, "div", {
       class: "ruleview-warning",
@@ -183,7 +183,9 @@ TextPropertyEditor.prototype = {
       this.nameContainer.addEventListener("click", (event) => {
         
         event.stopPropagation();
-        if (event.target === propertyContainer) {
+
+        
+        if (event.target === this.nameContainer) {
           this.nameSpan.click();
         }
       }, false);
@@ -202,11 +204,12 @@ TextPropertyEditor.prototype = {
       this.nameContainer.addEventListener("paste",
         blurOnMultipleProperties, false);
 
-      propertyContainer.addEventListener("click", (event) => {
+      this.valueContainer.addEventListener("click", (event) => {
         
         event.stopPropagation();
 
-        if (event.target === propertyContainer) {
+        
+        if (event.target === this.valueContainer) {
           this.valueSpan.click();
         }
       }, false);
