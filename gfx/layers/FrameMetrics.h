@@ -16,6 +16,7 @@
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/TimeStamp.h"          
 #include "nsString.h"
+#include "nsStyleCoord.h"               
 
 namespace IPC {
 template <typename T> struct ParamTraits;
@@ -751,6 +752,29 @@ private:
   }
 };
 
+struct ScrollSnapInfo {
+  ScrollSnapInfo()
+    : mScrollSnapTypeX(NS_STYLE_SCROLL_SNAP_TYPE_NONE)
+    , mScrollSnapTypeY(NS_STYLE_SCROLL_SNAP_TYPE_NONE)
+  {}
+
+  
+  
+  uint8_t mScrollSnapTypeX;
+  uint8_t mScrollSnapTypeY;
+
+  
+  Maybe<nscoord> mScrollSnapIntervalX;
+  Maybe<nscoord> mScrollSnapIntervalY;
+
+  
+  
+  nsPoint mScrollSnapDestination;
+
+  
+  
+  nsTArray<nsPoint> mScrollSnapCoordinates;
+};
 
 
 
