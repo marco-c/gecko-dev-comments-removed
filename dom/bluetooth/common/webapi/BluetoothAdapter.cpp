@@ -1063,6 +1063,8 @@ BluetoothAdapter::IsAdapterAttributeChanged(BluetoothAdapterAttribute aType,
 bool
 BluetoothAdapter::IsBluetoothCertifiedApp()
 {
+  NS_ENSURE_TRUE(GetOwner(), false);
+
   
   nsCOMPtr<nsIDocument> doc = GetOwner()->GetExtantDoc();
   NS_ENSURE_TRUE(doc, false);
