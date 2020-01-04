@@ -7017,20 +7017,13 @@ nsBlockFrame::RenumberLists(nsPresContext* aPresContext)
     
     
     ordinal = 0;
-    for (nsIContent* kid = mContent->GetFirstChild(); kid;
-         kid = kid->GetNextSibling()) {
-      if (kid->IsHTMLElement(nsGkAtoms::li)) {
-        
-        
-        
-        ordinal -= increment;
-      }
-    }
+    nsBlockFrame* block = static_cast<nsBlockFrame*>(FirstInFlow());
+    RenumberListsInBlock(aPresContext, block, &ordinal, 0, -increment, true);
   }
 
   
   nsBlockFrame* block = static_cast<nsBlockFrame*>(FirstInFlow());
-  return RenumberListsInBlock(aPresContext, block, &ordinal, 0, increment);
+  return RenumberListsInBlock(aPresContext, block, &ordinal, 0, increment, false);
 }
 
 bool
@@ -7038,7 +7031,8 @@ nsBlockFrame::RenumberListsInBlock(nsPresContext* aPresContext,
                                    nsBlockFrame* aBlockFrame,
                                    int32_t* aOrdinal,
                                    int32_t aDepth,
-                                   int32_t aIncrement)
+                                   int32_t aIncrement,
+                                   bool aForCounting)
 {
   
   bool foundValidLine;
@@ -7055,8 +7049,9 @@ nsBlockFrame::RenumberListsInBlock(nsPresContext* aPresContext,
     int32_t n = line->GetChildCount();
     while (--n >= 0) {
       bool kidRenumberedABullet = RenumberListsFor(aPresContext, kid, aOrdinal,
-                                                   aDepth, aIncrement);
-      if (kidRenumberedABullet) {
+                                                   aDepth, aIncrement,
+                                                   aForCounting);
+      if (!aForCounting && kidRenumberedABullet) {
         line->MarkDirty();
         renumberedABullet = true;
       }
@@ -7081,7 +7076,8 @@ nsBlockFrame::RenumberListsFor(nsPresContext* aPresContext,
                                nsIFrame* aKid,
                                int32_t* aOrdinal,
                                int32_t aDepth,
-                               int32_t aIncrement)
+                               int32_t aIncrement,
+                               bool aForCounting)
 {
   NS_PRECONDITION(aPresContext && aKid && aOrdinal, "null params are immoral!");
 
@@ -7121,23 +7117,31 @@ nsBlockFrame::RenumberListsFor(nsPresContext* aPresContext,
     if (listItem) {
       nsBulletFrame* bullet = listItem->GetBullet();
       if (bullet) {
-        bool changed;
-        *aOrdinal = bullet->SetListItemOrdinal(*aOrdinal, &changed, aIncrement);
-        if (changed) {
-          kidRenumberedABullet = true;
+        if (!aForCounting) {
+          bool changed;
+          *aOrdinal = bullet->SetListItemOrdinal(*aOrdinal, &changed, aIncrement);
+          if (changed) {
+            kidRenumberedABullet = true;
 
+            
+            
+            
+            
+            
+            bullet->AddStateBits(NS_FRAME_IS_DIRTY);
+            nsIFrame *f = bullet;
+            do {
+              nsIFrame *parent = f->GetParent();
+              parent->ChildIsDirty(f);
+              f = parent;
+            } while (f != listItem);
+          }
+        } else {
           
           
           
           
-          
-          bullet->AddStateBits(NS_FRAME_IS_DIRTY);
-          nsIFrame *f = bullet;
-          do {
-            nsIFrame *parent = f->GetParent();
-            parent->ChildIsDirty(f);
-            f = parent;
-          } while (f != listItem);
+          *aOrdinal += aIncrement;
         }
       }
 
@@ -7145,7 +7149,8 @@ nsBlockFrame::RenumberListsFor(nsPresContext* aPresContext,
       
       
       bool meToo = RenumberListsInBlock(aPresContext, listItem, aOrdinal,
-                                        aDepth + 1, aIncrement);
+                                        aDepth + 1, aIncrement,
+                                        aForCounting);
       if (meToo) {
         kidRenumberedABullet = true;
       }
@@ -7164,7 +7169,8 @@ nsBlockFrame::RenumberListsFor(nsPresContext* aPresContext,
       if (kidBlock) {
         kidRenumberedABullet = RenumberListsInBlock(aPresContext, kidBlock,
                                                     aOrdinal, aDepth + 1,
-                                                    aIncrement);
+                                                    aIncrement,
+                                                    aForCounting);
       }
     }
   }
