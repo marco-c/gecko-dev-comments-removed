@@ -309,6 +309,11 @@ AutoJSAPI::~AutoJSAPI()
     JS::SetWarningReporter(JS_GetRuntime(cx()), mOldWarningReporter.value());
   }
 
+  
+  if (mIsMainThread) {
+    mAutoRequest.reset();
+  }
+
   ScriptSettingsStack::Pop(this);
 }
 
@@ -337,6 +342,7 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
     
     
     JS::Rooted<JSObject*> global(JS_GetRuntime(aCx), aGlobal);
+    mAutoRequest.emplace(mCx);
     mCxPusher.emplace(mCx);
     mAutoNullableCompartment.emplace(mCx, global);
   } else {
@@ -781,19 +787,10 @@ danger::AutoCxPusher::AutoCxPusher(JSContext* cx, bool allowNull)
   mPushedContext = cx;
   mCompartmentDepthOnEntry = cx ? js::GetEnterCompartmentDepth(cx) : 0;
 #endif
-
-  
-  
-  if (cx) {
-    mAutoRequest.emplace(cx);
-  }
 }
 
 danger::AutoCxPusher::~AutoCxPusher()
 {
-  
-  mAutoRequest.reset();
-
   
   
   

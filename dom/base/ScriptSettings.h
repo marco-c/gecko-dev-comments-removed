@@ -41,7 +41,6 @@ public:
   ~AutoCxPusher();
 
 private:
-  mozilla::Maybe<JSAutoRequest> mAutoRequest;
 #ifdef DEBUG
   JSContext* mPushedContext;
   unsigned mCompartmentDepthOnEntry;
@@ -212,10 +211,6 @@ private:
 
 
 
-
-
-
-
 class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 public:
   
@@ -314,6 +309,7 @@ protected:
             Type aType);
 
 private:
+  mozilla::Maybe<JSAutoRequest> mAutoRequest;
   mozilla::Maybe<danger::AutoCxPusher> mCxPusher;
   mozilla::Maybe<JSAutoNullableCompartment> mAutoNullableCompartment;
   JSContext *mCx;
