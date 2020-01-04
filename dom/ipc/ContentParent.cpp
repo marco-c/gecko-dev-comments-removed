@@ -271,6 +271,11 @@ using namespace mozilla::system;
 
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
+#if defined(XP_WIN)
+
+extern const char* kForceEnableE10sPref;
+#endif
+
 using base::ChildPrivileges;
 using base::KillProcess;
 #ifdef MOZ_ENABLE_PROFILER_SPS
@@ -1555,7 +1560,15 @@ ContentParent::Init()
     
     
     if (nsIPresShell::IsAccessibilityActive()) {
+#if !defined(XP_WIN)
         Unused << SendActivateA11y();
+#else
+        
+        
+        if (Preferences::GetBool(kForceEnableE10sPref, false)) {
+            Unused << SendActivateA11y();
+        }
+#endif
     }
 #endif
 
@@ -3334,7 +3347,15 @@ ContentParent::Observe(nsISupports* aSubject,
     
     else if (aData && (*aData == '1') &&
              !strcmp(aTopic, "a11y-init-or-shutdown")) {
+#if !defined(XP_WIN)
         Unused << SendActivateA11y();
+#else
+        
+        
+        if (Preferences::GetBool(kForceEnableE10sPref, false)) {
+            Unused << SendActivateA11y();
+        }
+#endif
     }
 #endif
     else if (!strcmp(aTopic, "app-theme-changed")) {
