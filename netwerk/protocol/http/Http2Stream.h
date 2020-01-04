@@ -175,6 +175,12 @@ protected:
   
   Http2Session *mSession;
 
+  
+  
+  
+  nsAHttpSegmentReader        *mSegmentReader;
+  nsAHttpSegmentWriter        *mSegmentWriter;
+
   nsCString     mOrigin;
   nsCString     mHeaderHost;
   nsCString     mHeaderScheme;
@@ -204,6 +210,7 @@ protected:
   void     ChangeState(enum upstreamStateType);
 
   virtual void AdjustInitialWindow();
+  nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
 
 private:
   friend class nsAutoPtr<Http2Stream>;
@@ -212,7 +219,6 @@ private:
   nsresult GenerateOpen();
 
   void     AdjustPushedPriority();
-  nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
   void     GenerateDataFrameHeader(uint32_t, bool);
 
   nsresult BufferInput(uint32_t , uint32_t *);
@@ -225,12 +231,6 @@ private:
 
   
   nsISocketTransport         *mSocketTransport;
-
-  
-  
-  
-  nsAHttpSegmentReader        *mSegmentReader;
-  nsAHttpSegmentWriter        *mSegmentWriter;
 
   
   uint32_t                    mChunkSize;
@@ -315,9 +315,6 @@ private:
   
   
   bool                         mBlockedOnRwin;
-
-  
-  bool                         mSentPushWindowBump;
 
   
   uint64_t                     mTotalSent;

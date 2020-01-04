@@ -152,25 +152,47 @@ Http2PushedStream::TryOnPush()
 }
 
 nsresult
-Http2PushedStream::ReadSegments(nsAHttpSegmentReader *,
+Http2PushedStream::ReadSegments(nsAHttpSegmentReader *reader,
                                 uint32_t, uint32_t *count)
 {
-  
-  
-  
-  CreatePushHashKey(mHeaderScheme, mHeaderHost,
-                    mSession->Serial(), mHeaderPath,
-                    mOrigin, mHashKey);
-
-  LOG3(("Http2PushStream 0x%X hash key %s\n", mStreamID, mHashKey.get()));
-
-  
-  SetSentFin(true);
-  Http2Stream::mRequestHeadersDone = 1;
-  Http2Stream::mOpenGenerated = 1;
-  Http2Stream::ChangeState(UPSTREAM_COMPLETE);
+  nsresult rv = NS_OK;
   *count = 0;
-  return NS_OK;
+
+  switch (mUpstreamState) {
+  case GENERATING_HEADERS:
+    
+    
+    
+    CreatePushHashKey(mHeaderScheme, mHeaderHost,
+                      mSession->Serial(), mHeaderPath,
+                      mOrigin, mHashKey);
+
+    LOG3(("Http2PushStream 0x%X hash key %s\n", mStreamID, mHashKey.get()));
+
+    
+    SetSentFin(true);
+    Http2Stream::mRequestHeadersDone = 1;
+    Http2Stream::mOpenGenerated = 1;
+    Http2Stream::ChangeState(UPSTREAM_COMPLETE);
+    break;
+
+  case UPSTREAM_COMPLETE:
+    
+    
+    LOG3(("Http2Push::ReadSegments 0x%X \n", mStreamID));
+    mSegmentReader = reader;
+    rv = TransmitFrame(nullptr, nullptr, true);
+    mSegmentReader = nullptr;
+    break;
+
+  case GENERATING_BODY:
+  case SENDING_BODY:
+  case SENDING_FIN_STREAM:
+  default:
+    break;
+  }
+
+  return rv;
 }
 
 void
@@ -178,12 +200,13 @@ Http2PushedStream::AdjustInitialWindow()
 {
   LOG3(("Http2PushStream %p 0x%X AdjustInitialWindow", this, mStreamID));
   if (mConsumerStream) {
-    LOG3(("Http2PushStream::AdjustInitialWindow %p 0x%X calling super %p", this,
-          mStreamID, mConsumerStream));
+    LOG3(("Http2PushStream::AdjustInitialWindow %p 0x%X "
+          "calling super consumer %p 0x%X\n", this,
+          mStreamID, mConsumerStream, mConsumerStream->StreamID()));
     Http2Stream::AdjustInitialWindow();
     
     
-    mSession->TransactionHasDataToWrite(mConsumerStream);
+    mSession->TransactionHasDataToWrite(this);
   }
   
   
