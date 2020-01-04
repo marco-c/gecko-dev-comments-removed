@@ -234,7 +234,6 @@ Sanitizer.prototype = {
         let seenException;
         let yieldCounter = 0;
         let refObj = {};
-        TelemetryStopwatch.start("FX_SANITIZE_COOKIES", refObj);
 
         
         TelemetryStopwatch.start("FX_SANITIZE_COOKIES_2", refObj);
@@ -287,7 +286,6 @@ Sanitizer.prototype = {
         
         
         let promiseClearPluginCookies;
-        TelemetryStopwatch.start("FX_SANITIZE_PLUGINS", refObj);
         try {
           
           promiseClearPluginCookies = this.promiseClearPluginCookies(range);
@@ -306,10 +304,6 @@ Sanitizer.prototype = {
           
           
           
-        }).then(() => {
-          
-          TelemetryStopwatch.finish("FX_SANITIZE_PLUGINS", refObj);
-          TelemetryStopwatch.finish("FX_SANITIZE_COOKIES", refObj);
         });
 
         if (seenException) {
@@ -361,15 +355,9 @@ Sanitizer.prototype = {
 
     offlineApps: {
       clear: Task.async(function* (range) {
-        let refObj = {};
-        TelemetryStopwatch.start("FX_SANITIZE_OFFLINEAPPS", refObj);
-        try {
-          Components.utils.import("resource:///modules/offlineAppCache.jsm");
-          
-          OfflineAppCacheHelper.clear();
-        } finally {
-          TelemetryStopwatch.finish("FX_SANITIZE_OFFLINEAPPS", refObj);
-        }
+        Components.utils.import("resource:///modules/offlineAppCache.jsm");
+        
+        OfflineAppCacheHelper.clear();
       })
     },
 
