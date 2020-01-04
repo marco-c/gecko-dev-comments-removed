@@ -176,6 +176,7 @@ public:
         SkScalar ptCount = SkScalarMulDiv(pathLength,
                                           SkIntToScalar(intervalCount),
                                           intervalLength);
+        ptCount = SkTMin(ptCount, SkDashPath::kMaxDashCount);
         int n = SkScalarCeilToInt(ptCount) << 2;
         dst->incReserve(n);
 
@@ -252,7 +253,6 @@ bool SkDashPath::InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec
         
         
         
-        static const SkScalar kMaxDashCount = 1000000;
         dashCount += length * (count >> 1) / intervalLength;
         if (dashCount > kMaxDashCount) {
             dst->reset();
