@@ -30,7 +30,6 @@
   var documentBody = global.document.body;
   var documentDocumentElement = global.document.documentElement;
   var DocumentCreateElement = global.document.createElement;
-  var HTMLDocumentPrototypeWrite = global.HTMLDocument.prototype.write;
   var ElementInnerHTMLSetter =
     ObjectGetOwnPropertyDescriptor(global.Element.prototype, "innerHTML").set;
   var HTMLIFramePrototypeContentWindowGetter =
@@ -64,10 +63,6 @@
     ReflectApply(HTMLElementPrototypeSetAttribute, element, [name, value]);
   }
 
-  function SetInnerHTML(element, html) {
-    ReflectApply(ElementInnerHTMLSetter, element, [html]);
-  }
-
   function SetTextContent(element, text) {
     ReflectApply(NodePrototypeTextContentSetter, element, [text]);
   }
@@ -91,21 +86,6 @@
     };
     global.newGlobal = newGlobal;
   }
-
-  
-  
-  
-  
-  function DocumentWrite(s) {
-    try {
-      var msgDiv = CreateElement('div');
-      SetInnerHTML(msgDiv, s);
-      AppendChild(documentBody, msgDiv);
-    } catch (e) {
-      ReflectApply(HTMLDocumentPrototypeWrite, document, [s + "<br>\n"]);
-    }
-  }
-  global.DocumentWrite = DocumentWrite;
 
   
   
@@ -201,16 +181,6 @@ function include(file) {
 
 function setRestoreFunction(restore) {
   jstestsRestoreFunction = restore;
-}
-
-function htmlesc(str) {
-  if (str == '<')
-    return '&lt;';
-  if (str == '>')
-    return '&gt;';
-  if (str == '&')
-    return '&amp;';
-  return str;
 }
 
 function print() {
