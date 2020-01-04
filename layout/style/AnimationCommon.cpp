@@ -489,11 +489,21 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
     return;
   }
 
-  if (mManager->IsAnimationManager()) {
-    
-    
-    static_cast<nsAnimationManager*>(mManager)->MaybeUpdateCascadeResults(this);
+  
+  
+  nsStyleContext* styleContext = nullptr;
+  {
+    dom::Element* elementToRestyle = GetElementToRestyle();
+    if (elementToRestyle) {
+      nsIFrame* frame = elementToRestyle->GetPrimaryFrame();
+      if (frame) {
+        styleContext = frame->StyleContext();
+      }
+    }
   }
+  EffectCompositor::MaybeUpdateCascadeResults(mElement,
+                                              PseudoElementType(),
+                                              styleContext);
 
   mStyleRuleRefreshTime = aRefreshTime;
   mStyleRule = nullptr;

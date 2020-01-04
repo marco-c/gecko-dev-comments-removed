@@ -51,6 +51,21 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>> pseudoElement =
+    EffectCompositor::GetAnimationElementAndPseudoForFrame(aFrame);
+  if (pseudoElement) {
+    EffectCompositor::MaybeUpdateCascadeResults(pseudoElement->first(),
+                                                pseudoElement->second(),
+                                                aFrame->StyleContext());
+  }
+
   if (!nsLayoutUtils::AreAsyncAnimationsEnabled()) {
     if (nsLayoutUtils::IsAnimationLoggingEnabled()) {
       nsCString message;
