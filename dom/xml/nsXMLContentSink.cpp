@@ -96,16 +96,12 @@ NS_NewXMLContentSink(nsIXMLContentSink** aResult,
 }
 
 nsXMLContentSink::nsXMLContentSink()
-  : mConstrainSize(true),
-    mPrettyPrintXML(true)
+  : mPrettyPrintXML(true)
 {
 }
 
 nsXMLContentSink::~nsXMLContentSink()
 {
-  if (mText) {
-    PR_Free(mText);  
-  }
 }
 
 nsresult
@@ -475,7 +471,6 @@ nsXMLContentSink::CreateElement(const char16_t** aAtts, uint32_t aAttsCount,
     nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(content);
     sele->SetScriptLineNumber(aLineNumber);
     sele->SetCreatorParser(GetParser());
-    mConstrainSize = false;
   }
 
   
@@ -552,7 +547,6 @@ nsXMLContentSink::CloseElement(nsIContent* aContent)
   if (nodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XHTML)
       || nodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_SVG)
     ) {
-    mConstrainSize = true;
     nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(aContent);
 
     if (mPreventScriptExecution) {
@@ -778,26 +772,19 @@ nsXMLContentSink::FlushText(bool aReleaseTextNode)
 
   if (mTextLength != 0) {
     if (mLastTextNode) {
-      if ((mLastTextNodeSize + mTextLength) > mTextSize && !mXSLTProcessor) {
-        mLastTextNodeSize = 0;
-        mLastTextNode = nullptr;
-        FlushText(aReleaseTextNode);
-      } else {
-        bool notify = HaveNotifiedForCurrentContent();
-        
-        
-        
-        if (notify) {
-          ++mInNotification;
-        }
-        rv = mLastTextNode->AppendText(mText, mTextLength, notify);
-        if (notify) {
-          --mInNotification;
-        }
-
-        mLastTextNodeSize += mTextLength;
-        mTextLength = 0;
+      bool notify = HaveNotifiedForCurrentContent();
+      
+      
+      
+      if (notify) {
+        ++mInNotification;
       }
+      rv = mLastTextNode->AppendText(mText, mTextLength, notify);
+      if (notify) {
+        --mInNotification;
+      }
+
+      mTextLength = 0;
     } else {
       nsRefPtr<nsTextNode> textContent = new nsTextNode(mNodeInfoManager);
 
@@ -805,7 +792,6 @@ nsXMLContentSink::FlushText(bool aReleaseTextNode)
 
       
       textContent->SetText(mText, mTextLength, false);
-      mLastTextNodeSize += mTextLength;
       mTextLength = 0;
 
       
@@ -814,7 +800,6 @@ nsXMLContentSink::FlushText(bool aReleaseTextNode)
   }
 
   if (aReleaseTextNode) {
-    mLastTextNodeSize = 0;
     mLastTextNode = nullptr;
   }
 
@@ -1438,40 +1423,18 @@ nsXMLContentSink::AddText(const char16_t* aText,
                           int32_t aLength)
 {
   
-  if (0 == mTextSize) {
-    mText = (char16_t *) PR_MALLOC(sizeof(char16_t) * NS_ACCUMULATION_BUFFER_SIZE);
-    if (nullptr == mText) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-    mTextSize = NS_ACCUMULATION_BUFFER_SIZE;
-  }
-
-  
   int32_t offset = 0;
   while (0 != aLength) {
-    int32_t amount = mTextSize - mTextLength;
+    int32_t amount = NS_ACCUMULATION_BUFFER_SIZE - mTextLength;
     if (0 == amount) {
-      
-      if (mConstrainSize && !mXSLTProcessor) {
-        nsresult rv = FlushText();
-        if (NS_OK != rv) {
-          return rv;
-        }
-
-        amount = mTextSize - mTextLength;
+      nsresult rv = FlushText(false);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
-      else {
-        mTextSize += aLength;
-        mText = (char16_t *) PR_REALLOC(mText, sizeof(char16_t) * mTextSize);
-        if (nullptr == mText) {
-          mTextSize = 0;
-
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        amount = aLength;
-      }
+      MOZ_ASSERT(mTextLength == 0);
+      amount = NS_ACCUMULATION_BUFFER_SIZE;
     }
+
     if (amount > aLength) {
       amount = aLength;
     }
