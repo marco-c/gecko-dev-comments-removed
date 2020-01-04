@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {Cc, Ci, Cu} = require("chrome");
+const {Cc, Ci} = require("chrome");
 const promise = require("promise");
 const protocol = require("devtools/server/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
@@ -572,7 +572,8 @@ var PageStyleActor = protocol.ActorClass({
 
     this.cssLogic.highlight(node.rawNode);
     let entries = [];
-    entries = entries.concat(this._getAllElementRules(node, undefined, options));
+    entries = entries.concat(this._getAllElementRules(node, undefined,
+                                                      options));
 
     let result = this.getAppliedProps(node, entries, options);
     for (let rule of result.rules) {
@@ -611,7 +612,8 @@ var PageStyleActor = protocol.ActorClass({
 
 
   _getAllElementRules: function(node, inherited, options) {
-    let {bindingElement, pseudo} = CssLogic.getBindingElementAndPseudo(node.rawNode);
+    let {bindingElement, pseudo} =
+        CssLogic.getBindingElementAndPseudo(node.rawNode);
     let rules = [];
 
     if (!bindingElement || !bindingElement.style) {
@@ -644,21 +646,24 @@ var PageStyleActor = protocol.ActorClass({
     
     
     
-    this._getElementRules(bindingElement, pseudo, inherited, options).forEach(rule => {
-      
-      
-      
-      rule.pseudoElement = null;
-      rules.push(rule);
-    });
+    this._getElementRules(bindingElement, pseudo, inherited, options)
+        .forEach(oneRule => {
+          
+          
+          
+          
+          oneRule.pseudoElement = null;
+          rules.push(oneRule);
+        });
 
     
     
     if (showElementStyles) {
-      for (let pseudo of PSEUDO_ELEMENTS_TO_READ) {
-        this._getElementRules(bindingElement, pseudo, inherited, options).forEach(rule => {
-          rules.push(rule);
-        });
+      for (let readPseudo of PSEUDO_ELEMENTS_TO_READ) {
+        this._getElementRules(bindingElement, readPseudo, inherited, options)
+            .forEach(oneRule => {
+              rules.push(oneRule);
+            });
       }
     }
 
@@ -741,7 +746,8 @@ var PageStyleActor = protocol.ActorClass({
     if (options.inherited) {
       let parent = this.walker.parentNode(node);
       while (parent && parent.rawNode.nodeType != Ci.nsIDOMNode.DOCUMENT_NODE) {
-        entries = entries.concat(this._getAllElementRules(parent, parent, options));
+        entries = entries.concat(this._getAllElementRules(parent, parent,
+                                                          options));
         parent = this.walker.parentNode(parent);
       }
     }
@@ -756,10 +762,12 @@ var PageStyleActor = protocol.ActorClass({
         let selectors = CssLogic.getSelectors(domRule);
         let element = entry.inherited ? entry.inherited.rawNode : node.rawNode;
 
-        let {bindingElement, pseudo} = CssLogic.getBindingElementAndPseudo(element);
+        let {bindingElement, pseudo} =
+            CssLogic.getBindingElementAndPseudo(element);
         entry.matchedSelectors = [];
         for (let i = 0; i < selectors.length; i++) {
-          if (DOMUtils.selectorMatchesElement(bindingElement, domRule, i, pseudo)) {
+          if (DOMUtils.selectorMatchesElement(bindingElement, domRule, i,
+                                              pseudo)) {
             entry.matchedSelectors.push(selectors[i]);
           }
         }
@@ -1007,7 +1015,7 @@ exports.PageStyleActor = PageStyleActor;
 
 
 
-var PageStyleFront = protocol.FrontClass(PageStyleActor, {
+protocol.FrontClass(PageStyleActor, {
   initialize: function(conn, form, ctx, detail) {
     protocol.Front.prototype.initialize.call(this, conn, form, ctx, detail);
     this.inspector = this.parent();
@@ -1041,7 +1049,7 @@ var PageStyleFront = protocol.FrontClass(PageStyleActor, {
     impl: "_getMatchedSelectors"
   }),
 
-  getApplied: protocol.custom(Task.async(function*(node, options={}) {
+  getApplied: protocol.custom(Task.async(function*(node, options = {}) {
     
     
     
@@ -1126,7 +1134,7 @@ var StyleRuleActor = protocol.ActorClass({
     return this.pageStyle.conn;
   },
 
-  destroy: function () {
+  destroy: function() {
     if (!this.rawStyle) {
       return;
     }
@@ -1175,7 +1183,7 @@ var StyleRuleActor = protocol.ActorClass({
   },
 
   toString: function() {
-    return "[StyleRuleActor for " + this.rawRule + "]"
+    return "[StyleRuleActor for " + this.rawRule + "]";
   },
 
   form: function(detail) {
@@ -1199,7 +1207,8 @@ var StyleRuleActor = protocol.ActorClass({
     };
 
     if (this.rawRule.parentRule) {
-      form.parentRule = this.pageStyle._styleRef(this.rawRule.parentRule).actorID;
+      form.parentRule =
+        this.pageStyle._styleRef(this.rawRule.parentRule).actorID;
 
       
       
@@ -1213,7 +1222,8 @@ var StyleRuleActor = protocol.ActorClass({
       }
     }
     if (this._parentSheet) {
-      form.parentStyleSheet = this.pageStyle._sheetRef(this._parentSheet).actorID;
+      form.parentStyleSheet =
+        this.pageStyle._sheetRef(this._parentSheet).actorID;
     }
 
     
@@ -1519,7 +1529,7 @@ var StyleRuleActor = protocol.ActorClass({
             parentStyleSheet.insertRule(value + " " + ruleText, i);
             parentStyleSheet.deleteRule(i + 1);
             break;
-          } catch(e) {
+          } catch (e) {
             
             return null;
           }
@@ -1550,7 +1560,7 @@ var StyleRuleActor = protocol.ActorClass({
 
     let document = this.getDocument(this._parentSheet);
     
-    let [selector, pseudoProp] = value.split(/(:{1,2}.+$)/);
+    let [selector] = value.split(/(:{1,2}.+$)/);
     let selectorElement;
 
     try {
@@ -1625,7 +1635,7 @@ var StyleRuleActor = protocol.ActorClass({
       let isMatching = false;
       try {
         isMatching = node.rawNode.matches(value);
-      } catch(e) {
+      } catch (e) {
         
       }
 
@@ -1644,7 +1654,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
+protocol.FrontClass(StyleRuleActor, {
   initialize: function(client, form, ctx, detail) {
     protocol.Front.prototype.initialize.call(this, client, form, ctx, detail);
   },
@@ -1912,7 +1922,11 @@ var RuleModificationList = Class({
 
 
 
-  renameProperty: function(index, name, newName) {
+
+
+
+
+  renameProperty: function(index, name) {
     this.removeProperty(index, name);
   },
 
@@ -1950,7 +1964,12 @@ var RuleModificationList = Class({
 
 
 
-  createProperty: function(index, name, value, priority) {
+
+
+
+
+
+  createProperty: function() {
     
   },
 });
