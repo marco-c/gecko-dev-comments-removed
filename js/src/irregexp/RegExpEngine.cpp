@@ -1720,12 +1720,6 @@ RegExpCompiler::Assemble(JSContext* cx,
     macro_assembler_ = assembler;
     macro_assembler_->set_slow_safe(false);
 
-    
-    
-    
-    
-    LifoAlloc::AutoFallibleScope fallibleAllocator(alloc());
-
     jit::Label fail;
     macro_assembler_->PushBacktrack(&fail);
     Trace new_trace;
