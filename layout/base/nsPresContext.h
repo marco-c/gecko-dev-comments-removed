@@ -455,7 +455,7 @@ public:
 
 
 
-  nsRect GetVisibleArea() { return mVisibleArea; }
+  nsRect GetVisibleArea() const { return mVisibleArea; }
 
   
 
