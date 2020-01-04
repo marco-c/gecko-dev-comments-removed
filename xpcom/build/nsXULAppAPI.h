@@ -121,6 +121,11 @@
 
 
 
+#define XRE_APP_FEATURES_DIR "XREAppFeat"
+
+
+
+
 
 
 
