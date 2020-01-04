@@ -697,7 +697,7 @@ class MarionetteTestCase(CommonTestCase):
                                                (self.filepath.replace('\\', '\\\\'),
                                                 self.methodName))
                 self.marionette.test_name = None
-            except:
+            except (MarionetteException, IOError):
                 
                 
                 pass
