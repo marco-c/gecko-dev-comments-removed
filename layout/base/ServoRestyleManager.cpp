@@ -148,12 +148,13 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
     if (aContent->IsElement()) {
       Element* aElement = aContent->AsElement();
       const static CSSPseudoElementType pseudosToRestyle[] = {
-        CSSPseudoElementType::before, CSSPseudoElementType::after,
+        CSSPseudoElementType::before,
+        CSSPseudoElementType::after,
       };
 
       for (CSSPseudoElementType pseudoType : pseudosToRestyle) {
-        nsIAtom* pseudoTag =
-          nsCSSPseudoElements::GetPseudoAtom(pseudoType);
+        nsIAtom* pseudoTag = nsCSSPseudoElements::GetPseudoAtom(pseudoType);
+
         if (nsIFrame* pseudoFrame =
               FrameForPseudoElement(aElement, pseudoTag)) {
           
@@ -169,13 +170,26 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
                         changeHint & nsChangeHint_ReconstructFrame);
           if (pseudoContext) {
             pseudoFrame->SetStyleContext(pseudoContext);
+
+            
+            
+            
+            
+            StyleChildrenIterator it(pseudoFrame->GetContent());
+            for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+              if (n->IsNodeOfType(nsINode::eTEXT)) {
+                RefPtr<nsStyleContext> childContext =
+                  aStyleSet->ResolveStyleForText(n, pseudoContext);
+                MOZ_ASSERT(n->GetPrimaryFrame(),
+                           "How? This node is created at FC time!");
+                n->GetPrimaryFrame()->SetStyleContext(childContext);
+              }
+            }
           }
         }
       }
     }
 
-    
-    
     aContent->UnsetIsDirtyForServo();
   }
 
