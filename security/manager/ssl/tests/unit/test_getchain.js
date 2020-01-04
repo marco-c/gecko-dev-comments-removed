@@ -9,17 +9,11 @@ do_get_profile();
 const certdb  = Cc["@mozilla.org/security/x509certdb;1"]
                   .getService(Ci.nsIX509CertDB);
 
-
 var certList = [
   'ee',
   'ca-1',
   'ca-2',
 ];
-
-function load_cert(cert_name, trust_string) {
-  var cert_filename = cert_name + ".der";
-  addCertFromFile(certdb, "test_getchain/" + cert_filename, trust_string);
-}
 
 
 
@@ -31,7 +25,7 @@ function get_ca_array() {
   while (enumerator.hasMoreElements()) {
     let cert = enumerator.getNext().QueryInterface(Ci.nsIX509Cert);
     if (cert.commonName == 'ca') {
-      ret_array[parseInt(cert.serialNumber)] = cert;
+      ret_array[parseInt(cert.serialNumber, 16)] = cert;
     }
   }
   return ret_array;
@@ -73,8 +67,8 @@ function run_test() {
   clearOCSPCache();
   clearSessionCache();
 
-  for (let i = 0 ; i < certList.length; i++) {
-    load_cert(certList[i], ',,');
+  for (let cert of certList) {
+    addCertFromFile(certdb, `test_getchain/${cert}.pem`, ",,");
   }
 
   let ee_cert = certdb.findCertByNickname(null, 'ee');
