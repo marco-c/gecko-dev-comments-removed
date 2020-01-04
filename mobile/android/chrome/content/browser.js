@@ -3602,7 +3602,11 @@ Tab.prototype = {
       return;
 
     let url = currentURI.spec;
-    let flags = Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
+    
+    
+    
+    let flags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE |
+                Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
     if (this.originalURI && !this.originalURI.equals(currentURI)) {
       
       url = this.originalURI.spec;
