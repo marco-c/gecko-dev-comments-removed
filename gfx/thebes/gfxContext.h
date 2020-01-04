@@ -315,7 +315,8 @@ public:
 
 
 
-    void Mask(mozilla::gfx::SourceSurface *aSurface, const mozilla::gfx::Matrix& aTransform);
+    void Mask(mozilla::gfx::SourceSurface *aSurface, mozilla::gfx::Float aAlpha, const mozilla::gfx::Matrix& aTransform);
+    void Mask(mozilla::gfx::SourceSurface *aSurface, const mozilla::gfx::Matrix& aTransform) { Mask(aSurface, 1.0f, aTransform); }
 
     
 
