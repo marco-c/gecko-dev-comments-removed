@@ -528,7 +528,8 @@ nsMediaFeatures::features[] = {
     &nsGkAtoms::devicePixelRatio,
     nsMediaFeature::eMinMaxAllowed,
     nsMediaFeature::eFloat,
-    nsMediaFeature::eHasWebkitPrefix,
+    nsMediaFeature::eHasWebkitPrefix |
+      nsMediaFeature::eWebkitDevicePixelRatioPrefEnabled,
     { nullptr },
     GetDevicePixelRatio
   },

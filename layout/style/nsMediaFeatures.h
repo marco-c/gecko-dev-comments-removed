@@ -52,8 +52,13 @@ struct nsMediaFeature
     
     
     eNoRequirements = 0,
-    eHasWebkitPrefix = 1 
-                         
+    eHasWebkitPrefix = 1 << 0, 
+                               
+
+    
+    
+    
+    eWebkitDevicePixelRatioPrefEnabled = 1 << 1
   };
   uint8_t mReqFlags;
 
