@@ -10,6 +10,7 @@
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/Compositor.h"  
+#include "mozilla/layers/CompositorParent.h"  
 #include "mozilla/layers/Effects.h"     
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "mozilla/layers/TextureHostOGL.h"  
@@ -27,6 +28,26 @@ using namespace gfx;
 namespace layers {
 
 class Layer;
+
+float
+TileHost::GetFadeInOpacity(float aOpacity)
+{
+  TimeStamp now = TimeStamp::Now();
+  if (!gfxPrefs::LayerTileFadeInEnabled() ||
+      mFadeStart.IsNull() ||
+      now < mFadeStart)
+  {
+    return aOpacity;
+  }
+
+  float duration = gfxPrefs::LayerTileFadeInDuration();
+  float elapsed = (now - mFadeStart).ToMilliseconds();
+  if (elapsed > duration) {
+    mFadeStart = TimeStamp();
+    return aOpacity;
+  }
+  return aOpacity * (elapsed / duration);
+}
 
 TiledLayerBufferComposite::TiledLayerBufferComposite()
   : mFrameResolution()
@@ -52,6 +73,21 @@ TiledLayerBufferComposite::SetCompositor(Compositor* aCompositor)
     tile.mTextureHost->SetCompositor(aCompositor);
     if (tile.mTextureHostOnWhite) {
       tile.mTextureHostOnWhite->SetCompositor(aCompositor);
+    }
+  }
+}
+
+void
+TiledLayerBufferComposite::InvalidateForAnimation(nsIntRegion& aRegion)
+{
+  
+  
+  for (size_t i = 0; i < mRetainedTiles.Length(); i++) {
+    if (!mRetainedTiles[i].mFadeStart.IsNull()) {
+      TileIntPoint position = mTiles.TilePosition(i);
+      IntPoint offset = GetTileOffset(position);
+      nsIntRegion tileRegion = IntRect(offset, GetScaledTileSize());
+      aRegion.OrWith(tileRegion);
     }
   }
 }
@@ -233,6 +269,14 @@ public:
     }
   }
 
+  void RecycleTileFading(TileHost& aTile) {
+    for (size_t i = 0; i < mTiles.Length(); i++) {
+      if (mTiles[i].mTextureHost == aTile.mTextureHost) {
+        aTile.mFadeStart = mTiles[i].mFadeStart;
+      }
+    }
+  }
+
 protected:
   nsTArray<TileHost> mTiles;
   size_t mFirstPossibility;
@@ -310,6 +354,20 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
     
     
     oldRetainedTiles.RecycleTextureSourceForTile(tile);
+
+    
+    oldRetainedTiles.RecycleTileFading(tile);
+
+    if (aTiles.isProgressive() &&
+        texturedDesc.wasPlaceholder())
+    {
+      
+      
+      tile.mFadeStart = TimeStamp::Now();
+
+      aCompositor->CompositeUntil(tile.mFadeStart +
+        TimeDuration::FromMilliseconds(gfxPrefs::LayerTileFadeInDuration()));
+    }
   }
 
   
@@ -487,6 +545,8 @@ TiledContentHost::RenderTile(TileHost& aTile,
     return;
   }
 
+  float opacity = aTile.GetFadeInOpacity(aOpacity);
+
   aEffectChain.mPrimaryEffect = effect;
 
   nsIntRegionRectIterator it(aScreenRegion);
@@ -499,7 +559,7 @@ TiledContentHost::RenderTile(TileHost& aTile,
                                   textureRect.y / aTextureBounds.height,
                                   textureRect.width / aTextureBounds.width,
                                   textureRect.height / aTextureBounds.height);
-    mCompositor->DrawQuad(graphicsRect, aClipRect, aEffectChain, aOpacity, aTransform, aVisibleRect);
+    mCompositor->DrawQuad(graphicsRect, aClipRect, aEffectChain, opacity, aTransform, aVisibleRect);
   }
   DiagnosticFlags flags = DiagnosticFlags::CONTENT | DiagnosticFlags::TILE;
   if (aTile.mTextureHostOnWhite) {
@@ -633,6 +693,13 @@ TiledContentHost::Dump(std::stringstream& aStream,
 {
   mTiledBuffer.Dump(aStream, aPrefix, aDumpHtml);
 }
+
+void
+TiledContentHost::InvalidateForAnimation(nsIntRegion& aRegion)
+{
+  return mTiledBuffer.InvalidateForAnimation(aRegion);
+}
+
 
 } 
 } 
