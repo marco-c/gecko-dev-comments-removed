@@ -806,7 +806,6 @@ function test() {
       print('test(): empty testcase for gTc = ' + gTc + ' ' + e);
     }
   }
-  stopTest();
   return ( gTestcases );
 }
 
@@ -831,18 +830,6 @@ function writeHeaderToLog( string ) {
 }
 
 
-
-
-
-
-
-
-function stopTest() {
-  var gc;
-  if ( gc != undefined ) {
-    gc();
-  }
-}
 
 function jsTestDriverEnd()
 {
