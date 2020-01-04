@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_Entry_h
-#define mozilla_dom_Entry_h
+#ifndef mozilla_dom_FileSystemEntry_h
+#define mozilla_dom_FileSystemEntry_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
@@ -20,15 +20,15 @@ namespace dom {
 class FileSystem;
 class OwningFileOrDirectory;
 
-class Entry
+class FileSystemEntry
   : public nsISupports
   , public nsWrapperCache
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Entry)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FileSystemEntry)
 
-  static already_AddRefed<Entry>
+  static already_AddRefed<FileSystemEntry>
   Create(nsIGlobalObject* aGlobalObject,
          const OwningFileOrDirectory& aFileOrDirectory,
          FileSystem* aFileSystem);
@@ -67,9 +67,9 @@ public:
   }
 
 protected:
-  Entry(nsIGlobalObject* aGlobalObject,
-        FileSystem* aFileSystem);
-  virtual ~Entry();
+  FileSystemEntry(nsIGlobalObject* aGlobalObject,
+                  FileSystem* aFileSystem);
+  virtual ~FileSystemEntry();
 
 private:
   nsCOMPtr<nsIGlobalObject> mParent;
