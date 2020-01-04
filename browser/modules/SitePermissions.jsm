@@ -20,6 +20,24 @@ this.SitePermissions = {
 
 
 
+  hasGrantedPermissions: function (aURI) {
+    if (!this.isSupportedURI(aURI)) {
+      return false;
+    }
+
+    for (let permission of this.listPermissions()) {
+      let state = this.get(aURI, permission);
+      if (state === this.ALLOW || state === this.SESSION) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  
+
+
+
   isSupportedURI: function (aURI) {
     return aURI.schemeIs("http") || aURI.schemeIs("https");
   },
