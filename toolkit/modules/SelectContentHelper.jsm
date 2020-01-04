@@ -114,36 +114,29 @@ this.SelectContentHelper.prototype = {
       case "Forms:DismissedDropDown":
         if (this.initialSelection != this.element.item(this.element.selectedIndex)) {
           let win = this.element.ownerDocument.defaultView;
-          let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDOMWindowUtils);
-          dwu.startHandlingUserInput();
-          try {
-            let inputEvent = new win.UIEvent("input", {
-              bubbles: true,
-            });
-            this.element.dispatchEvent(inputEvent);
+          let inputEvent = new win.UIEvent("input", {
+            bubbles: true,
+          });
+          this.element.dispatchEvent(inputEvent);
 
-            let changeEvent = new win.Event("change", {
-              bubbles: true,
-            });
-            this.element.dispatchEvent(changeEvent);
+          let changeEvent = new win.Event("change", {
+            bubbles: true,
+          });
+          this.element.dispatchEvent(changeEvent);
 
-            
-            
-            
-            
-            
-            const MOUSE_EVENTS = ["mousedown", "mouseup", "click"];
-            for (let eventName of MOUSE_EVENTS) {
-              let mouseEvent = new win.MouseEvent(eventName, {
-                view: win,
-                bubbles: true,
-                cancelable: true,
-              });
-              this.element.dispatchEvent(mouseEvent);
-            }
-          } finally {
-            dwu.stopHandlingUserInput();
+          
+          
+          
+          
+          
+          const MOUSE_EVENTS = ["mousedown", "mouseup", "click"];
+          for (let eventName of MOUSE_EVENTS) {
+            let mouseEvent = new win.MouseEvent(eventName, {
+              view: win,
+              bubbles: true,
+              cancelable: true,
+            });
+            this.element.dispatchEvent(mouseEvent);
           }
         }
 
