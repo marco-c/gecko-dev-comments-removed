@@ -22,6 +22,16 @@
 
 
 
+
+
+.hidden {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+
+
 #performance-toolbar-control-other {
   -moz-padding-end: 5px;
 }

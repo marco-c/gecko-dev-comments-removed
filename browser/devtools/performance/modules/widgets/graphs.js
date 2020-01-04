@@ -288,7 +288,7 @@ GraphsController.prototype = {
 
   enable: function (graphName, isEnabled) {
     let el = this.$(this._definition[graphName].selector);
-    el.hidden = !isEnabled;
+    el.classList[isEnabled ? "remove" : "add"]("hidden");
 
     
     if (this._enabled.has(graphName) === isEnabled) {
@@ -310,7 +310,7 @@ GraphsController.prototype = {
 
 
   disableAll: function () {
-    this._root.hidden = true;
+    this._root.classList.add("hidden");
     
     Object.keys(this._definition).forEach(graphName => this.enable(graphName, false));
   },
@@ -381,6 +381,9 @@ GraphsController.prototype = {
       CanvasGraphUtils.linkAnimation(this._getPrimaryLink(), graph);
       CanvasGraphUtils.linkSelection(this._getPrimaryLink(), graph);
     }
+
+    
+    el.classList[this._enabled.has(graphName) ? "remove" : "add"]("hidden");
 
     this.setTheme();
     return graph;

@@ -336,14 +336,14 @@ let OverviewView = {
 
   _showGraphsPanel: function (recording) {
     this._setGraphVisibilityFromRecordingFeatures(recording);
-    $("#overview-pane").hidden = false;
+    $("#overview-pane").classList.remove("hidden");
   },
 
   
 
 
   _hideGraphsPanel: function () {
-    $("#overview-pane").hidden = true;
+    $("#overview-pane").classList.add("hidden");
   },
 
   
