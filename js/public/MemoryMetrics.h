@@ -737,6 +737,8 @@ struct CompartmentStats
         MOZ_ASSERT(!other.isTotals);
     }
 
+    CompartmentStats(const CompartmentStats&) = delete; 
+
     ~CompartmentStats() {
         
         

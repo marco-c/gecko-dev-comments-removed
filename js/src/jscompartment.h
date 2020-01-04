@@ -755,8 +755,28 @@ struct JSCompartment
 
     js::NativeIterator* enumerators;
 
+  private:
     
-    void*              compartmentStats;
+    JS::CompartmentStats* compartmentStats_;
+
+  public:
+    
+    
+    JS::CompartmentStats& compartmentStats() {
+        
+        
+        
+        MOZ_RELEASE_ASSERT(compartmentStats_);
+        return *compartmentStats_;
+    }
+    void nullCompartmentStats() {
+        MOZ_ASSERT(compartmentStats_);
+        compartmentStats_ = nullptr;
+    }
+    void setCompartmentStats(JS::CompartmentStats* newStats) {
+        MOZ_ASSERT(!compartmentStats_ && newStats);
+        compartmentStats_ = newStats;
+    }
 
     
     
