@@ -6,6 +6,9 @@
 
 #include "mozilla/RangedPtr.h"
 
+#include <algorithm>
+#include <iterator>
+
 #include "nsURLHelper.h"
 #include "nsIFile.h"
 #include "nsIURLParser.h"
@@ -572,33 +575,37 @@ net_IsAbsoluteURL(const nsACString& uri)
 void
 net_FilterURIString(const nsACString& input, nsACString& result)
 {
+    const char kCharsToStrip[] = "\r\n\t";
+
     result.Truncate();
 
-    nsACString::const_iterator start, end;
-    input.BeginReading(start);
-    input.EndReading(end);
+    auto start = input.BeginReading();
+    auto end = input.EndReading();
 
     
-    while (start != end) {
-        if ((uint8_t) *start > 0x20) {
-            break;
-        }
-        start++;
-    }
+    auto charFilter = [](char c) { return static_cast<uint8_t>(c) > 0x20; };
+    auto newStart = std::find_if(start, end, charFilter);
+    auto newEnd = std::find_if(
+        std::reverse_iterator<decltype(end)>(end),
+        std::reverse_iterator<decltype(newStart)>(newStart),
+        charFilter).base();
 
-    MOZ_ASSERT(!*end, "input should null terminated");
     
-    while (end != start) {
-        end--;
-        if ((uint8_t) *end > 0x20) {
-            end++;
-            break;
-        }
+    auto itr = std::find_first_of(
+        newStart, newEnd, std::begin(kCharsToStrip), std::end(kCharsToStrip));
+    const bool needsStrip = itr != newEnd;
+
+    
+    
+    if (newStart == start && newEnd == end && !needsStrip) {
+        result = input;
+        return;
     }
 
-    nsAutoCString temp(Substring(start, end));
-    temp.StripChars("\r\n\t");
-    result.Assign(temp);
+    result.Assign(Substring(newStart, newEnd));
+    if (needsStrip) {
+        result.StripChars(kCharsToStrip);
+    }
 }
 
 
