@@ -3,6 +3,8 @@
 
 
 
+
+
 "use strict";
 
 const {Cc, Cu, Ci} = require("chrome");
@@ -20,15 +22,19 @@ const DRAG_DROP_MIN_INITIAL_DISTANCE = 10;
 const AUTOCOMPLETE_POPUP_PANEL_ID = "markupview_autoCompletePopup";
 
 const {UndoStack} = require("devtools/client/shared/undo");
-const {editableField, InplaceEditor} = require("devtools/client/shared/inplace-editor");
+const {editableField, InplaceEditor} =
+      require("devtools/client/shared/inplace-editor");
 const {HTMLEditor} = require("devtools/client/inspector/markup/html-editor");
 const promise = require("promise");
 const {Tooltip} = require("devtools/client/shared/widgets/Tooltip");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Heritage = require("sdk/core/heritage");
-const {setTimeout, clearTimeout, setInterval, clearInterval} = require("sdk/timers");
-const {parseAttribute} = require("devtools/client/shared/node-attribute-parser");
-const ELLIPSIS = Services.prefs.getComplexValue("intl.ellipsis", Ci.nsIPrefLocalizedString).data;
+const {setTimeout, clearTimeout, setInterval, clearInterval} =
+      require("sdk/timers");
+const {parseAttribute} =
+      require("devtools/client/shared/node-attribute-parser");
+const ELLIPSIS = Services.prefs.getComplexValue("intl.ellipsis",
+      Ci.nsIPrefLocalizedString).data;
 const {Task} = require("resource://gre/modules/Task.jsm");
 const {scrollIntoViewIfNeeded} = require("devtools/shared/layout/utils");
 
@@ -37,8 +43,9 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
-loader.lazyGetter(this, "DOMParser", function() {
-  return Cc["@mozilla.org/xmlextras/domparser;1"].createInstance(Ci.nsIDOMParser);
+loader.lazyGetter(this, "DOMParser", () => {
+  return Cc["@mozilla.org/xmlextras/domparser;1"]
+    .createInstance(Ci.nsIDOMParser);
 });
 loader.lazyGetter(this, "AutocompletePopup", () => {
   return require("devtools/client/shared/autocomplete-popup").AutocompletePopup;
@@ -65,10 +72,10 @@ loader.lazyGetter(this, "AutocompletePopup", () => {
 
 
 
-function MarkupView(aInspector, aFrame, aControllerWindow) {
-  this._inspector = aInspector;
+function MarkupView(inspector, frame, controllerWindow) {
+  this._inspector = inspector;
   this.walker = this._inspector.walker;
-  this._frame = aFrame;
+  this._frame = frame;
   this.win = this._frame.contentWindow;
   this.doc = this._frame.contentDocument;
   this._elt = this.doc.querySelector("#root");
@@ -91,10 +98,11 @@ function MarkupView(aInspector, aFrame, aControllerWindow) {
     
     panelId: AUTOCOMPLETE_POPUP_PANEL_ID
   };
-  this.popup = new AutocompletePopup(this.doc.defaultView.parent.document, options);
+  this.popup = new AutocompletePopup(this.doc.defaultView.parent.document,
+                                     options);
 
   this.undo = new UndoStack();
-  this.undo.installController(aControllerWindow);
+  this.undo.installController(controllerWindow);
 
   this._containers = new Map();
 
@@ -129,8 +137,6 @@ function MarkupView(aInspector, aFrame, aControllerWindow) {
 
   EventEmitter.decorate(this);
 }
-
-exports.MarkupView = MarkupView;
 
 MarkupView.prototype = {
   
@@ -286,6 +292,8 @@ MarkupView.prototype = {
 
 
 
+
+
   _showContainerAsHovered: function(nodeFront) {
     if (this._hoveredNode === nodeFront) {
       return;
@@ -321,11 +329,17 @@ MarkupView.prototype = {
 
 
 
+
+
   _showBoxModel: function(nodeFront) {
-    return this._inspector.toolbox.highlighterUtils.highlightNodeFront(nodeFront);
+    return this._inspector.toolbox.highlighterUtils
+      .highlightNodeFront(nodeFront);
   },
 
   
+
+
+
 
 
 
@@ -362,10 +376,10 @@ MarkupView.prototype = {
     return promise.all([onShown, this._briefBoxModelPromise.promise]);
   },
 
-  template: function(aName, aDest, aOptions={stack: "markup.xhtml"}) {
-    let node = this.doc.getElementById("template-" + aName).cloneNode(true);
+  template: function(name, dest, options = {stack: "markup.xhtml"}) {
+    let node = this.doc.getElementById("template-" + name).cloneNode(true);
     node.removeAttribute("id");
-    template(node, aDest, aOptions);
+    template(node, dest, options);
     return node;
   },
 
@@ -373,8 +387,8 @@ MarkupView.prototype = {
 
 
 
-  getContainer: function(aNode) {
-    return this._containers.get(aNode);
+  getContainer: function(node) {
+    return this._containers.get(node);
   },
 
   update: function() {
@@ -399,6 +413,8 @@ MarkupView.prototype = {
   },
 
   
+
+
 
 
 
@@ -442,11 +458,17 @@ MarkupView.prototype = {
 
 
 
+
   _shouldNewSelectionBeHighlighted: function() {
     let reason = this._inspector.selection.reason;
-    let unwantedReasons = ["inspector-open", "navigateaway", "nodeselected", "test"];
-    let isHighlitNode = this._hoveredNode === this._inspector.selection.nodeFront;
-    return !isHighlitNode && reason && unwantedReasons.indexOf(reason) === -1;
+    let unwantedReasons = [
+      "inspector-open",
+      "navigateaway",
+      "nodeselected",
+      "test"
+    ];
+    let isHighlight = this._hoveredNode === this._inspector.selection.nodeFront;
+    return !isHighlight && reason && unwantedReasons.indexOf(reason) === -1;
   },
 
   
@@ -519,14 +541,14 @@ MarkupView.prototype = {
 
 
 
-  _selectionWalker: function(aStart) {
+  _selectionWalker: function(start) {
     let walker = this.doc.createTreeWalker(
-      aStart || this._elt,
+      start || this._elt,
       Ci.nsIDOMNodeFilter.SHOW_ELEMENT,
-      function(aElement) {
-        if (aElement.container &&
-            aElement.container.elt === aElement &&
-            aElement.container.visible) {
+      function(element) {
+        if (element.container &&
+            element.container.elt === element &&
+            element.container.visible) {
           return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
         }
         return Ci.nsIDOMNodeFilter.FILTER_SKIP;
@@ -536,7 +558,7 @@ MarkupView.prototype = {
     return walker;
   },
 
-  _onCopy: function (evt) {
+  _onCopy: function(evt) {
     
     if (this._isInputOrTextarea(evt.target)) {
       return;
@@ -553,17 +575,17 @@ MarkupView.prototype = {
   
 
 
-  _onKeyDown: function(aEvent) {
+  _onKeyDown: function(event) {
     let handled = true;
 
     
-    if (this._isInputOrTextarea(aEvent.target)) {
+    if (this._isInputOrTextarea(event.target)) {
       return;
     }
 
-    switch(aEvent.keyCode) {
+    switch (event.keyCode) {
       case Ci.nsIDOMKeyEvent.DOM_VK_H:
-        if (aEvent.metaKey || aEvent.shiftKey) {
+        if (event.metaKey || event.shiftKey) {
           handled = false;
         } else {
           let node = this._selectedContainer.node;
@@ -662,20 +684,22 @@ MarkupView.prototype = {
         handled = false;
     }
     if (handled) {
-      aEvent.stopPropagation();
-      aEvent.preventDefault();
+      event.stopPropagation();
+      event.preventDefault();
     }
   },
 
   
 
 
-  _isInputOrTextarea : function (element) {
+  _isInputOrTextarea: function(element) {
     let name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
   },
 
   
+
+
 
 
 
@@ -702,21 +726,22 @@ MarkupView.prototype = {
 
 
 
-  deleteNode: function(aNode, moveBackward) {
-    if (aNode.isDocumentElement ||
-        aNode.nodeType == Ci.nsIDOMNode.DOCUMENT_TYPE_NODE ||
-        aNode.isAnonymous) {
+
+  deleteNode: function(node, moveBackward) {
+    if (node.isDocumentElement ||
+        node.nodeType == Ci.nsIDOMNode.DOCUMENT_TYPE_NODE ||
+        node.isAnonymous) {
       return;
     }
 
-    let container = this.getContainer(aNode);
+    let container = this.getContainer(node);
 
     
-    this.walker.retainNode(aNode).then(() => {
-      let parent = aNode.parentNode();
+    this.walker.retainNode(node).then(() => {
+      let parent = node.parentNode();
       let nextSibling = null;
       this.undo.do(() => {
-        this.walker.removeNode(aNode).then(siblings => {
+        this.walker.removeNode(node).then(siblings => {
           nextSibling = siblings.nextSibling;
           let focusNode = moveBackward ? siblings.previousSibling : nextSibling;
 
@@ -731,7 +756,7 @@ MarkupView.prototype = {
           }
         });
       }, () => {
-        this.walker.insertBefore(aNode, parent, nextSibling);
+        this.walker.insertBefore(node, parent, nextSibling);
       });
     }).then(null, console.error);
   },
@@ -739,8 +764,8 @@ MarkupView.prototype = {
   
 
 
-  _onFocus: function(aEvent) {
-    let parent = aEvent.target;
+  _onFocus: function(event) {
+    let parent = event.target;
     while (!parent.container) {
       parent = parent.parentNode;
     }
@@ -758,16 +783,16 @@ MarkupView.prototype = {
 
 
 
-  navigate: function(aContainer, aIgnoreFocus) {
-    if (!aContainer) {
+  navigate: function(container, ignoreFocus) {
+    if (!container) {
       return;
     }
 
-    let node = aContainer.node;
+    let node = container.node;
     this.markNodeAsSelected(node, "treepanel");
 
-    if (!aIgnoreFocus) {
-      aContainer.focus();
+    if (!ignoreFocus) {
+      container.focus();
     }
   },
 
@@ -780,35 +805,35 @@ MarkupView.prototype = {
 
 
 
-  importNode: function(aNode, aFlashNode) {
-    if (!aNode) {
+  importNode: function(node, flashNode) {
+    if (!node) {
       return null;
     }
 
-    if (this._containers.has(aNode)) {
-      return this.getContainer(aNode);
+    if (this._containers.has(node)) {
+      return this.getContainer(node);
     }
 
     let container;
-    let {nodeType, isPseudoElement} = aNode;
-    if (aNode === this.walker.rootNode) {
-      container = new RootContainer(this, aNode);
+    let {nodeType, isPseudoElement} = node;
+    if (node === this.walker.rootNode) {
+      container = new RootContainer(this, node);
       this._elt.appendChild(container.elt);
-      this._rootNode = aNode;
+      this._rootNode = node;
     } else if (nodeType == Ci.nsIDOMNode.ELEMENT_NODE && !isPseudoElement) {
-      container = new MarkupElementContainer(this, aNode, this._inspector);
+      container = new MarkupElementContainer(this, node, this._inspector);
     } else if (nodeType == Ci.nsIDOMNode.COMMENT_NODE ||
                nodeType == Ci.nsIDOMNode.TEXT_NODE) {
-      container = new MarkupTextContainer(this, aNode, this._inspector);
+      container = new MarkupTextContainer(this, node, this._inspector);
     } else {
-      container = new MarkupReadOnlyContainer(this, aNode, this._inspector);
+      container = new MarkupReadOnlyContainer(this, node, this._inspector);
     }
 
-    if (aFlashNode) {
+    if (flashNode) {
       container.flashMutation();
     }
 
-    this._containers.set(aNode, container);
+    this._containers.set(node, container);
     container.childrenDirty = true;
 
     this._updateChildren(container);
@@ -821,8 +846,8 @@ MarkupView.prototype = {
   
 
 
-  _mutationObserver: function(aMutations) {
-    for (let mutation of aMutations) {
+  _mutationObserver: function(mutations) {
+    for (let mutation of mutations) {
       let type = mutation.type;
       let target = mutation.target;
 
@@ -858,8 +883,8 @@ MarkupView.prototype = {
           "the markup-view was destroyed while waiting for children.");
         return;
       }
-      this._flashMutatedNodes(aMutations);
-      this._inspector.emit("markupmutation", aMutations);
+      this._flashMutatedNodes(mutations);
+      this._inspector.emit("markupmutation", mutations);
 
       
       
@@ -868,6 +893,8 @@ MarkupView.prototype = {
   },
 
   
+
+
 
 
 
@@ -884,11 +911,11 @@ MarkupView.prototype = {
 
 
 
-  _flashMutatedNodes: function(aMutations) {
+  _flashMutatedNodes: function(mutations) {
     let addedOrEditedContainers = new Set();
     let removedContainers = new Set();
 
-    for (let {type, target, added, removed, newValue} of aMutations) {
+    for (let {type, target, added, removed, newValue} of mutations) {
       let container = this.getContainer(target);
 
       if (container) {
@@ -935,10 +962,10 @@ MarkupView.prototype = {
 
 
 
-  showNode: function(aNode, centered=true) {
-    let parent = aNode;
+  showNode: function(node, centered = true) {
+    let parent = node;
 
-    this.importNode(aNode);
+    this.importNode(node);
 
     while ((parent = parent.parentNode())) {
       this.importNode(parent);
@@ -949,9 +976,9 @@ MarkupView.prototype = {
       if (this._destroyer) {
         return promise.reject("markupview destroyed");
       }
-      return this._ensureVisible(aNode);
+      return this._ensureVisible(node);
     }).then(() => {
-      scrollIntoViewIfNeeded(this.getContainer(aNode).editor.elt, centered);
+      scrollIntoViewIfNeeded(this.getContainer(node).editor.elt, centered);
     }, e => {
       
       
@@ -967,21 +994,22 @@ MarkupView.prototype = {
   
 
 
-  _expandContainer: function(aContainer) {
-    return this._updateChildren(aContainer, {expand: true}).then(() => {
+  _expandContainer: function(container) {
+    return this._updateChildren(container, {expand: true}).then(() => {
       if (this._destroyer) {
-        console.warn("Could not expand the node, the markup-view was destroyed");
+        console.warn("Could not expand the node, the markup-view was " +
+          "destroyed");
         return;
       }
-      aContainer.setExpanded(true);
+      container.setExpanded(true);
     });
   },
 
   
 
 
-  expandNode: function(aNode) {
-    let container = this.getContainer(aNode);
+  expandNode: function(node) {
+    let container = this.getContainer(node);
     this._expandContainer(container);
   },
 
@@ -990,9 +1018,10 @@ MarkupView.prototype = {
 
 
 
-  _expandAll: function(aContainer) {
-    return this._expandContainer(aContainer).then(() => {
-      let child = aContainer.children.firstChild;
+
+  _expandAll: function(container) {
+    return this._expandContainer(container).then(() => {
+      let child = container.children.firstChild;
       let promises = [];
       while (child) {
         promises.push(this._expandAll(child.container));
@@ -1008,16 +1037,16 @@ MarkupView.prototype = {
 
 
 
-  expandAll: function(aNode) {
-    aNode = aNode || this._rootNode;
-    return this._expandAll(this.getContainer(aNode));
+  expandAll: function(node) {
+    node = node || this._rootNode;
+    return this._expandAll(this.getContainer(node));
   },
 
   
 
 
-  collapseNode: function(aNode) {
-    let container = this.getContainer(aNode);
+  collapseNode: function(node) {
+    let container = this.getContainer(node);
     container.setExpanded(false);
   },
 
@@ -1028,13 +1057,16 @@ MarkupView.prototype = {
 
 
 
-  _getNodeHTML: function(aNode, isOuter) {
+
+
+
+  _getNodeHTML: function(node, isOuter) {
     let walkerPromise = null;
 
     if (isOuter) {
-      walkerPromise = this.walker.outerHTML(aNode);
+      walkerPromise = this.walker.outerHTML(node);
     } else {
-      walkerPromise = this.walker.innerHTML(aNode);
+      walkerPromise = this.walker.innerHTML(node);
     }
 
     return walkerPromise.then(longstr => {
@@ -1050,8 +1082,10 @@ MarkupView.prototype = {
 
 
 
-  getNodeOuterHTML: function(aNode) {
-    return this._getNodeHTML(aNode, true);
+
+
+  getNodeOuterHTML: function(node) {
+    return this._getNodeHTML(node, true);
   },
 
   
@@ -1059,8 +1093,10 @@ MarkupView.prototype = {
 
 
 
-  getNodeInnerHTML: function(aNode) {
-    return this._getNodeHTML(aNode);
+
+
+  getNodeInnerHTML: function(node) {
+    return this._getNodeHTML(node);
   },
 
   
@@ -1085,7 +1121,8 @@ MarkupView.prototype = {
       for (let mutation of mutations) {
         let containsRemovedNode = mutation.removed &&
                                   mutation.removed.some(n => n === removedNode);
-        if (mutation.type === "childList" && (containsRemovedNode || isHTMLTag)) {
+        if (mutation.type === "childList" &&
+            (containsRemovedNode || isHTMLTag)) {
           isNodeRemovalMutation = true;
           break;
         }
@@ -1139,7 +1176,10 @@ MarkupView.prototype = {
 
 
 
-  updateNodeOuterHTML: function(node, newValue, oldValue) {
+
+
+
+  updateNodeOuterHTML: function(node, newValue) {
     let container = this.getContainer(node);
     if (!container) {
       return promise.reject();
@@ -1154,6 +1194,8 @@ MarkupView.prototype = {
   },
 
   
+
+
 
 
 
@@ -1189,6 +1231,9 @@ MarkupView.prototype = {
 
 
 
+
+
+
   insertAdjacentHTMLToNode: function(node, position, value) {
     let container = this.getContainer(node);
     if (!container) {
@@ -1214,20 +1259,22 @@ MarkupView.prototype = {
 
 
 
-  beginEditingOuterHTML: function(aNode) {
-    this.getNodeOuterHTML(aNode).then(oldValue => {
-      let container = this.getContainer(aNode);
+
+
+  beginEditingOuterHTML: function(node) {
+    this.getNodeOuterHTML(node).then(oldValue => {
+      let container = this.getContainer(node);
       if (!container) {
         return;
       }
       this.htmlEditor.show(container.tagLine, oldValue);
-      this.htmlEditor.once("popuphidden", (e, aCommit, aValue) => {
+      this.htmlEditor.once("popuphidden", (e, commit, value) => {
         
         
         this.doc.documentElement.focus();
 
-        if (aCommit) {
-          this.updateNodeOuterHTML(aNode, aValue, oldValue);
+        if (commit) {
+          this.updateNodeOuterHTML(node, value, oldValue);
         }
       });
     });
@@ -1239,19 +1286,26 @@ MarkupView.prototype = {
 
 
 
-  setNodeExpanded: function(aNode, aExpanded, aExpandDescendants) {
-    if (aExpanded) {
-      if (aExpandDescendants) {
-        this.expandAll(aNode);
+
+
+
+
+  setNodeExpanded: function(node, expanded, expandDescendants) {
+    if (expanded) {
+      if (expandDescendants) {
+        this.expandAll(node);
       } else {
-        this.expandNode(aNode);
+        this.expandNode(node);
       }
     } else {
-      this.collapseNode(aNode);
+      this.collapseNode(node);
     }
   },
 
   
+
+
+
 
 
 
@@ -1321,11 +1375,12 @@ MarkupView.prototype = {
 
 
 
-  _checkSelectionVisible: function(aContainer) {
+
+  _checkSelectionVisible: function(container) {
     let centered = null;
     let node = this._inspector.selection.nodeFront;
     while (node) {
-      if (node.parentNode() === aContainer.node) {
+      if (node.parentNode() === container.node) {
         centered = node;
         break;
       }
@@ -1356,86 +1411,85 @@ MarkupView.prototype = {
 
 
 
-  _updateChildren: function(aContainer, options) {
+  _updateChildren: function(container, options) {
     let expand = options && options.expand;
     let flash = options && options.flash;
 
-    aContainer.hasChildren = aContainer.node.hasChildren;
+    container.hasChildren = container.node.hasChildren;
 
     if (!this._queuedChildUpdates) {
       this._queuedChildUpdates = new Map();
     }
 
-    if (this._queuedChildUpdates.has(aContainer)) {
-      return this._queuedChildUpdates.get(aContainer);
+    if (this._queuedChildUpdates.has(container)) {
+      return this._queuedChildUpdates.get(container);
     }
 
-    if (!aContainer.childrenDirty) {
-      return promise.resolve(aContainer);
+    if (!container.childrenDirty) {
+      return promise.resolve(container);
     }
 
-    if (aContainer.singleTextChild
-        && aContainer.singleTextChild != aContainer.node.singleTextChild) {
-
+    if (container.singleTextChild
+        && container.singleTextChild != container.node.singleTextChild) {
       
       
-      this._containers.delete(aContainer.singleTextChild);
-      aContainer.clearSingleTextChild();
+      this._containers.delete(container.singleTextChild);
+      container.clearSingleTextChild();
 
-      if (aContainer.hasChildren && aContainer.selected) {
-        aContainer.setExpanded(true);
+      if (container.hasChildren && container.selected) {
+        container.setExpanded(true);
       }
     }
 
-    if (aContainer.node.singleTextChild) {
-      aContainer.setExpanded(false);
+    if (container.node.singleTextChild) {
+      container.setExpanded(false);
       
       
-      while (aContainer.children.firstChild) {
-        aContainer.children.removeChild(aContainer.children.firstChild);
+      while (container.children.firstChild) {
+        container.children.removeChild(container.children.firstChild);
       }
 
-      aContainer.setSingleTextChild(aContainer.node.singleTextChild);
+      container.setSingleTextChild(container.node.singleTextChild);
 
-      this._containers.set(aContainer.node.singleTextChild, aContainer);
-      aContainer.childrenDirty = false;
-      return promise.resolve(aContainer);
+      this._containers.set(container.node.singleTextChild, container);
+      container.childrenDirty = false;
+      return promise.resolve(container);
     }
 
-    if (!aContainer.hasChildren) {
-      while (aContainer.children.firstChild) {
-        aContainer.children.removeChild(aContainer.children.firstChild);
+    if (!container.hasChildren) {
+      while (container.children.firstChild) {
+        container.children.removeChild(container.children.firstChild);
       }
-      aContainer.childrenDirty = false;
-      aContainer.setExpanded(false);
-      return promise.resolve(aContainer);
+      container.childrenDirty = false;
+      container.setExpanded(false);
+      return promise.resolve(container);
     }
 
     
     
     
-    if (!(aContainer.expanded || expand)) {
-      return promise.resolve(aContainer);
+    if (!(container.expanded || expand)) {
+      return promise.resolve(container);
     }
 
     
     
-    let centered = this._checkSelectionVisible(aContainer);
+    let centered = this._checkSelectionVisible(container);
 
     
     
     
-    aContainer.childrenDirty = false;
-    let updatePromise = this._getVisibleChildren(aContainer, centered).then(children => {
+    container.childrenDirty = false;
+    let updatePromise = this._getVisibleChildren(container, centered).then(children => {
       if (!this._containers) {
         return promise.reject("markup view destroyed");
       }
-      this._queuedChildUpdates.delete(aContainer);
+      this._queuedChildUpdates.delete(container);
 
       
       
-      if (aContainer.childrenDirty) {
-        return this._updateChildren(aContainer, {expand: centered});
+      if (container.childrenDirty) {
+        return this._updateChildren(container, {expand: centered});
       }
 
       let fragment = this.doc.createDocumentFragment();
@@ -1445,8 +1499,8 @@ MarkupView.prototype = {
         fragment.appendChild(container.elt);
       }
 
-      while (aContainer.children.firstChild) {
-        aContainer.children.removeChild(aContainer.children.firstChild);
+      while (container.children.firstChild) {
+        container.children.removeChild(container.children.firstChild);
       }
 
       if (!(children.hasFirst && children.hasLast)) {
@@ -1454,11 +1508,11 @@ MarkupView.prototype = {
           showing: this.strings.GetStringFromName("markupView.more.showing"),
           showAll: this.strings.formatStringFromName(
                     "markupView.more.showAll",
-                    [aContainer.node.numChildren.toString()], 1),
+                    [container.node.numChildren.toString()], 1),
           allButtonClick: () => {
-            aContainer.maxChildren = -1;
-            aContainer.childrenDirty = true;
-            this._updateChildren(aContainer);
+            container.maxChildren = -1;
+            container.childrenDirty = true;
+            this._updateChildren(container);
           }
         };
 
@@ -1472,10 +1526,10 @@ MarkupView.prototype = {
         }
       }
 
-      aContainer.children.appendChild(fragment);
-      return aContainer;
+      container.children.appendChild(fragment);
+      return container;
     }).then(null, console.error);
-    this._queuedChildUpdates.set(aContainer, updatePromise);
+    this._queuedChildUpdates.set(container, updatePromise);
     return updatePromise;
   },
 
@@ -1490,15 +1544,15 @@ MarkupView.prototype = {
   
 
 
-  _getVisibleChildren: function(aContainer, aCentered) {
-    let maxChildren = aContainer.maxChildren || this.maxChildren;
+  _getVisibleChildren: function(container, centered) {
+    let maxChildren = container.maxChildren || this.maxChildren;
     if (maxChildren == -1) {
       maxChildren = undefined;
     }
 
-    return this.walker.children(aContainer.node, {
+    return this.walker.children(container.node, {
       maxNodes: maxChildren,
-      center: aCentered
+      center: centered
     });
   },
 
@@ -1535,7 +1589,8 @@ MarkupView.prototype = {
     this.walker.off("mutations", this._mutationObserver);
     this.walker.off("display-change", this._onDisplayChange);
     this._inspector.selection.off("new-node-front", this._onNewSelection);
-    this._inspector.toolbox.off("picker-node-hovered", this._onToolboxPickerHover);
+    this._inspector.toolbox.off("picker-node-hovered",
+                                this._onToolboxPickerHover);
 
     this._elt = null;
 
@@ -1557,6 +1612,7 @@ MarkupView.prototype = {
   },
 
   
+
 
 
 
@@ -1620,8 +1676,8 @@ MarkupView.prototype = {
 
     let parent, nextSibling;
 
-    if (this._lastDropTarget.previousElementSibling &&
-        this._lastDropTarget.previousElementSibling.nodeName.toLowerCase() === "ul") {
+    if (target.previousElementSibling &&
+        target.previousElementSibling.nodeName.toLowerCase() === "ul") {
       parent = target.parentNode.container.node;
       nextSibling = null;
     } else {
@@ -1740,8 +1796,8 @@ MarkupContainer.prototype = {
     return this._hasChildren;
   },
 
-  set hasChildren(aValue) {
-    this._hasChildren = aValue;
+  set hasChildren(value) {
+    this._hasChildren = value;
     this.updateExpander();
   },
 
@@ -1790,19 +1846,19 @@ MarkupContainer.prototype = {
     return !this.elt.classList.contains("collapsed");
   },
 
-  setExpanded: function(aValue) {
+  setExpanded: function(value) {
     if (!this.expander) {
       return;
     }
 
     if (!this.canExpand) {
-      aValue = false;
+      value = false;
     }
     if (this.mustExpand) {
-      aValue = true;
+      value = true;
     }
 
-    if (aValue && this.elt.classList.contains("collapsed")) {
+    if (value && this.elt.classList.contains("collapsed")) {
       
       
       let closingTag = this.elt.querySelector(".close");
@@ -1826,7 +1882,7 @@ MarkupContainer.prototype = {
       this.elt.classList.remove("collapsed");
       this.expander.setAttribute("open", "");
       this.hovered = false;
-    } else if (!aValue) {
+    } else if (!value) {
       if (this.closeTagLine) {
         this.elt.removeChild(this.closeTagLine);
         this.closeTagLine = undefined;
@@ -1981,7 +2037,6 @@ MarkupContainer.prototype = {
 
   flashMutation: function() {
     if (!this.selected) {
-      let contentWin = this.win;
       flashElementOn(this.tagState, this.editor.elt);
       if (this._flashMutationTimer) {
         clearTimeout(this._flashMutationTimer);
@@ -1999,10 +2054,10 @@ MarkupContainer.prototype = {
 
 
 
-  set hovered(aValue) {
+  set hovered(value) {
     this.tagState.classList.remove("flash-out");
-    this._hovered = aValue;
-    if (aValue) {
+    this._hovered = value;
+    if (value) {
       if (!this.selected) {
         this.tagState.classList.add("theme-bg-darker");
       }
@@ -2035,10 +2090,10 @@ MarkupContainer.prototype = {
     return this._selected;
   },
 
-  set selected(aValue) {
+  set selected(value) {
     this.tagState.classList.remove("flash-out");
-    this._selected = aValue;
-    this.editor.selected = aValue;
+    this._selected = value;
+    this.editor.selected = value;
     if (this._selected) {
       this.tagLine.setAttribute("selected", "");
       this.tagState.classList.add("theme-selected");
@@ -2091,7 +2146,8 @@ MarkupContainer.prototype = {
     this.elt.removeEventListener("mousedown", this._onMouseDown, false);
     this.elt.removeEventListener("dblclick", this._onToggle, false);
     this.markup.doc.body.removeEventListener("mouseup", this._onMouseUp, true);
-    this.markup.doc.body.removeEventListener("mousemove", this._onMouseMove, true);
+    this.markup.doc.body.removeEventListener("mousemove",
+      this._onMouseMove, true);
 
     this.win = null;
 
@@ -2100,14 +2156,15 @@ MarkupContainer.prototype = {
     }
 
     
-    let firstChild;
-    while (firstChild = this.children.firstChild) {
+    let firstChild = this.children.firstChild;
+    while (firstChild) {
       
       
       if (firstChild.container) {
         firstChild.container.destroy();
       }
       this.children.removeChild(firstChild);
+      firstChild = this.children.firstChild;
     }
 
     this.editor.destroy();
@@ -2126,13 +2183,15 @@ MarkupContainer.prototype = {
 
 
 function MarkupReadOnlyContainer(markupView, node) {
-  MarkupContainer.prototype.initialize.call(this, markupView, node, "readonlycontainer");
+  MarkupContainer.prototype.initialize.call(this, markupView, node,
+    "readonlycontainer");
 
   this.editor = new GenericEditor(this, node);
   this.tagLine.appendChild(this.editor.elt);
 }
 
-MarkupReadOnlyContainer.prototype = Heritage.extend(MarkupContainer.prototype, {});
+MarkupReadOnlyContainer.prototype =
+  Heritage.extend(MarkupContainer.prototype, {});
 
 
 
@@ -2146,14 +2205,15 @@ MarkupReadOnlyContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
 function MarkupTextContainer(markupView, node) {
-  MarkupContainer.prototype.initialize.call(this, markupView, node, "textcontainer");
+  MarkupContainer.prototype.initialize.call(this, markupView, node,
+    "textcontainer");
 
   if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE) {
     this.editor = new TextEditor(this, node, "text");
   } else if (node.nodeType == Ci.nsIDOMNode.COMMENT_NODE) {
     this.editor = new TextEditor(this, node, "comment");
   } else {
-    throw "Invalid node for MarkupTextContainer";
+    throw new Error("Invalid node for MarkupTextContainer");
   }
 
   this.tagLine.appendChild(this.editor.elt);
@@ -2172,19 +2232,19 @@ MarkupTextContainer.prototype = Heritage.extend(MarkupContainer.prototype, {});
 
 
 function MarkupElementContainer(markupView, node) {
-  MarkupContainer.prototype.initialize.call(this, markupView, node, "elementcontainer");
+  MarkupContainer.prototype.initialize.call(this, markupView, node,
+    "elementcontainer");
 
   if (node.nodeType === Ci.nsIDOMNode.ELEMENT_NODE) {
     this.editor = new ElementEditor(this, node);
   } else {
-    throw "Invalid node for MarkupElementContainer";
+    throw new Error("Invalid node for MarkupElementContainer");
   }
 
   this.tagLine.appendChild(this.editor.elt);
 }
 
 MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
-
   _buildEventTooltipContent: function(target, tooltip) {
     if (target.hasAttribute("data-event")) {
       tooltip.hide(target);
@@ -2247,6 +2307,7 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
   },
 
   
+
 
 
 
@@ -2333,12 +2394,12 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
 
-function RootContainer(aMarkupView, aNode) {
-  this.doc = aMarkupView.doc;
+function RootContainer(markupView, node) {
+  this.doc = markupView.doc;
   this.elt = this.doc.createElement("ul");
   this.elt.container = this;
   this.children = this.elt;
-  this.node = aNode;
+  this.node = node;
   this.toString = () => "[root container]";
 }
 
@@ -2356,27 +2417,31 @@ RootContainer.prototype = {
     return [...this.children.children].map(node => node.container);
   },
 
-  setExpanded: function(aValue) {}
+  
+
+
+
+  setExpanded: function() {}
 };
 
 
 
 
-function GenericEditor(aContainer, aNode) {
-  this.container = aContainer;
+function GenericEditor(container, node) {
+  this.container = container;
   this.markup = this.container.markup;
   this.template = this.markup.template.bind(this.markup);
   this.elt = null;
   this.template("generic", this);
 
-  if (aNode.isPseudoElement) {
+  if (node.isPseudoElement) {
     this.tag.classList.add("theme-fg-color5");
-    this.tag.textContent = aNode.isBeforePseudoElement ? "::before" : "::after";
-  } else if (aNode.nodeType == Ci.nsIDOMNode.DOCUMENT_TYPE_NODE) {
+    this.tag.textContent = node.isBeforePseudoElement ? "::before" : "::after";
+  } else if (node.nodeType == Ci.nsIDOMNode.DOCUMENT_TYPE_NODE) {
     this.elt.classList.add("comment");
-    this.tag.textContent = aNode.doctypeString;
+    this.tag.textContent = node.doctypeString;
   } else {
-    this.tag.textContent = aNode.nodeName;
+    this.tag.textContent = node.nodeName;
   }
 }
 
@@ -2401,14 +2466,17 @@ GenericEditor.prototype = {
 
 
 
-function TextEditor(aContainer, aNode, aTemplate) {
-  this.container = aContainer;
+
+
+
+function TextEditor(container, node, template) {
+  this.container = container;
   this.markup = this.container.markup;
-  this.node = aNode;
-  this.template = this.markup.template.bind(aTemplate);
+  this.node = node;
+  this.template = this.markup.template.bind(template);
   this._selected = false;
 
-  this.markup.template(aTemplate, this);
+  this.markup.template(template, this);
 
   editableField({
     element: this.value,
@@ -2416,8 +2484,8 @@ function TextEditor(aContainer, aNode, aTemplate) {
     trigger: "dblclick",
     multiline: true,
     trimOutput: false,
-    done: (aVal, aCommit) => {
-      if (!aCommit) {
+    done: (val, commit) => {
+      if (!commit) {
         return;
       }
       this.node.getNodeValue().then(longstr => {
@@ -2425,7 +2493,7 @@ function TextEditor(aContainer, aNode, aTemplate) {
           longstr.release().then(null, console.error);
 
           this.container.undo.do(() => {
-            this.node.setNodeValue(aVal);
+            this.node.setNodeValue(val);
           }, () => {
             this.node.setNodeValue(oldValue);
           });
@@ -2442,11 +2510,11 @@ TextEditor.prototype = {
     return this._selected;
   },
 
-  set selected(aValue) {
-    if (aValue === this._selected) {
+  set selected(value) {
+    if (value === this._selected) {
       return;
     }
-    this._selected = aValue;
+    this._selected = value;
     this.update();
   },
 
@@ -2466,7 +2534,7 @@ TextEditor.prototype = {
         longstr.release().then(null, console.error);
         if (this.selected) {
           this.value.textContent = str;
-          this.markup.emit("text-expand")
+          this.markup.emit("text-expand");
         }
       }).then(null, console.error);
     }
@@ -2488,9 +2556,11 @@ TextEditor.prototype = {
 
 
 
-function ElementEditor(aContainer, aNode) {
-  this.container = aContainer;
-  this.node = aNode;
+
+
+function ElementEditor(container, node) {
+  this.container = container;
+  this.node = node;
   this.markup = this.container.markup;
   this.template = this.markup.template.bind(this.markup);
   this.doc = this.markup.doc;
@@ -2511,7 +2581,7 @@ function ElementEditor(aContainer, aNode) {
 
   
   
-  if (!aNode.isDocumentElement) {
+  if (!node.isDocumentElement) {
     this.tag.setAttribute("tabindex", "0");
     editableField({
       element: this.tag,
@@ -2528,14 +2598,14 @@ function ElementEditor(aContainer, aNode) {
     stopOnReturn: true,
     contentType: InplaceEditor.CONTENT_TYPES.CSS_MIXED,
     popup: this.markup.popup,
-    done: (aVal, aCommit) => {
-      if (!aCommit) {
+    done: (val, commit) => {
+      if (!commit) {
         return;
       }
 
       let doMods = this._startModifyingAttributes();
       let undoMods = this._startModifyingAttributes();
-      this._applyAttributes(aVal, null, doMods, undoMods);
+      this._applyAttributes(val, null, doMods, undoMods);
       this.container.undo.do(() => {
         doMods.apply();
       }, function() {
@@ -2553,10 +2623,9 @@ function ElementEditor(aContainer, aNode) {
 }
 
 ElementEditor.prototype = {
-
-  set selected(aValue) {
+  set selected(value) {
     if (this.textEditor) {
-      this.textEditor.selected = aValue;
+      this.textEditor.selected = value;
     }
   },
 
@@ -2579,8 +2648,6 @@ ElementEditor.prototype = {
 
 
 
-
-
   getInfoAtNode: function(node) {
     if (!node) {
       return null;
@@ -2591,11 +2658,11 @@ ElementEditor.prototype = {
     let value = null;
 
     
-    let attribute = node.closest('.attreditor');
+    let attribute = node.closest(".attreditor");
     if (attribute) {
       type = "attribute";
-      name = attribute.querySelector('.attr-name').textContent;
-      value = attribute.querySelector('.attr-value').textContent;
+      name = attribute.querySelector(".attr-name").textContent;
+      value = attribute.querySelector(".attr-value").textContent;
     }
 
     return {type, name, value, el: node};
@@ -2608,7 +2675,7 @@ ElementEditor.prototype = {
     let nodeAttributes = this.node.attributes || [];
 
     
-    let currentAttributes = new Set(nodeAttributes.map(a=>a.name));
+    let currentAttributes = new Set(nodeAttributes.map(a => a.name));
     for (let name of this.attrElements.keys()) {
       if (!currentAttributes.has(name)) {
         this.removeAttribute(name);
@@ -2619,7 +2686,8 @@ ElementEditor.prototype = {
     
     for (let attr of nodeAttributes) {
       let el = this.attrElements.get(attr.name);
-      let valueChanged = el && el.querySelector(".attr-value").textContent !== attr.value;
+      let valueChanged = el &&
+        el.querySelector(".attr-value").textContent !== attr.value;
       let isEditing = el && el.querySelector(".editable").inplaceEditor;
       let canSimplyShowEditor = el && (!valueChanged || isEditing);
 
@@ -2683,12 +2751,16 @@ ElementEditor.prototype = {
 
 
 
+
+
   getAttributeElement: function(attrName) {
     return this.attrList.querySelector(
       ".attreditor[data-attr=" + CSS.escape(attrName) + "] .attr-value");
   },
 
   
+
+
 
 
 
@@ -2700,10 +2772,10 @@ ElementEditor.prototype = {
     }
   },
 
-  _createAttribute: function(aAttr, aBefore = null) {
+  _createAttribute: function(attribute, before = null) {
     
     let data = {
-      attrName: aAttr.name,
+      attrName: attribute.name,
     };
     this.template("attribute", data);
     let {attr, inner, name, val} = data;
@@ -2711,20 +2783,20 @@ ElementEditor.prototype = {
     
     
     
-    let editValueDisplayed = aAttr.value || "";
+    let editValueDisplayed = attribute.value || "";
     let hasDoubleQuote = editValueDisplayed.includes('"');
     let hasSingleQuote = editValueDisplayed.includes("'");
-    let initial = aAttr.name + '="' + editValueDisplayed + '"';
+    let initial = attribute.name + '="' + editValueDisplayed + '"';
 
     
     if (hasDoubleQuote && hasSingleQuote) {
       editValueDisplayed = editValueDisplayed.replace(/\"/g, "&quot;");
-      initial = aAttr.name + '="' + editValueDisplayed + '"';
+      initial = attribute.name + '="' + editValueDisplayed + '"';
     }
 
     
     if (hasDoubleQuote && !hasSingleQuote) {
-      initial = aAttr.name + "='" + editValueDisplayed + "'";
+      initial = attribute.name + "='" + editValueDisplayed + "'";
     }
 
     
@@ -2736,22 +2808,22 @@ ElementEditor.prototype = {
       initial: initial,
       contentType: InplaceEditor.CONTENT_TYPES.CSS_MIXED,
       popup: this.markup.popup,
-      start: (aEditor, aEvent) => {
+      start: (editor, event) => {
         
         
-        if (aEvent && aEvent.target === name) {
-          aEditor.input.setSelectionRange(0, name.textContent.length);
-        } else if (aEvent && aEvent.target.closest(".attr-value") === val) {
+        if (event && event.target === name) {
+          editor.input.setSelectionRange(0, name.textContent.length);
+        } else if (event && event.target.closest(".attr-value") === val) {
           let length = editValueDisplayed.length;
-          let editorLength = aEditor.input.value.length;
+          let editorLength = editor.input.value.length;
           let start = editorLength - (length + 1);
-          aEditor.input.setSelectionRange(start, start + length);
+          editor.input.setSelectionRange(start, start + length);
         } else {
-          aEditor.input.select();
+          editor.input.select();
         }
       },
-      done: (aVal, aCommit, direction) => {
-        if (!aCommit || aVal === initial) {
+      done: (val, commit, direction) => {
+        if (!commit || val === initial) {
           return;
         }
 
@@ -2761,10 +2833,10 @@ ElementEditor.prototype = {
         
         
         
-        this.refocusOnEdit(aAttr.name, attr, direction);
-        this._saveAttribute(aAttr.name, undoMods);
-        doMods.removeAttribute(aAttr.name);
-        this._applyAttributes(aVal, attr, doMods, undoMods);
+        this.refocusOnEdit(attribute.name, attr, direction);
+        this._saveAttribute(attribute.name, undoMods);
+        doMods.removeAttribute(attribute.name);
+        this._applyAttributes(val, attr, doMods, undoMods);
         this.container.undo.do(() => {
           doMods.apply();
         }, () => {
@@ -2774,26 +2846,26 @@ ElementEditor.prototype = {
     });
 
     
-    let before = aBefore;
-    if (aAttr.name == "id") {
+    if (attribute.name == "id") {
       before = this.attrList.firstChild;
-    } else if (aAttr.name == "class") {
+    } else if (attribute.name == "class") {
       let idNode = this.attrElements.get("id");
       before = idNode ? idNode.nextSibling : this.attrList.firstChild;
     }
     this.attrList.insertBefore(attr, before);
 
-    this.removeAttribute(aAttr.name);
-    this.attrElements.set(aAttr.name, attr);
+    this.removeAttribute(attribute.name);
+    this.attrElements.set(attribute.name, attr);
 
     
     
     
     
-    let attributes = this.node.attributes.filter(({name}) => name !== aAttr.name);
-    attributes.push(aAttr);
+    let attributes = this.node.attributes
+      .filter(({name}) => name !== attribute.name);
+    attributes.push(attribute);
     let parsedLinksData = parseAttribute(this.node.namespaceURI,
-      this.node.tagName, attributes, aAttr.name);
+      this.node.tagName, attributes, attribute.name);
 
     
     
@@ -2820,7 +2892,7 @@ ElementEditor.prototype = {
       }
     }
 
-    name.textContent = aAttr.name;
+    name.textContent = attribute.name;
 
     return attr;
   },
@@ -2834,13 +2906,15 @@ ElementEditor.prototype = {
 
 
 
-  _applyAttributes: function(aValue, aAttrNode, aDoMods, aUndoMods) {
-    let attrs = parseAttributeValues(aValue, this.doc);
+
+
+  _applyAttributes: function(value, attrNode, doMods, undoMods) {
+    let attrs = parseAttributeValues(value, this.doc);
     for (let attr of attrs) {
       
-      this._createAttribute(attr, aAttrNode ? aAttrNode.nextSibling : null);
-      this._saveAttribute(attr.name, aUndoMods);
-      aDoMods.setAttribute(attr.name, attr.value);
+      this._createAttribute(attr, attrNode ? attrNode.nextSibling : null);
+      this._saveAttribute(attr.name, undoMods);
+      doMods.setAttribute(attr.name, attr.value);
     }
   },
 
@@ -2848,13 +2922,13 @@ ElementEditor.prototype = {
 
 
 
-  _saveAttribute: function(aName, aUndoMods) {
+  _saveAttribute: function(name, undoMods) {
     let node = this.node;
-    if (node.hasAttribute(aName)) {
-      let oldValue = node.getAttribute(aName);
-      aUndoMods.setAttribute(aName, oldValue);
+    if (node.hasAttribute(name)) {
+      let oldValue = node.getAttribute(name);
+      undoMods.setAttribute(name, oldValue);
     } else {
-      aUndoMods.removeAttribute(aName);
+      undoMods.removeAttribute(name);
     }
   },
 
@@ -2867,34 +2941,41 @@ ElementEditor.prototype = {
     
     
     if (this._editedAttributeObserver) {
-      this.markup._inspector.off("markupmutation", this._editedAttributeObserver);
+      this.markup._inspector.off("markupmutation",
+        this._editedAttributeObserver);
       this._editedAttributeObserver = null;
     }
 
     let container = this.markup.getContainer(this.node);
 
-    let activeAttrs = [...this.attrList.childNodes].filter(el => el.style.display != "none");
+    let activeAttrs = [...this.attrList.childNodes]
+      .filter(el => el.style.display != "none");
     let attributeIndex = activeAttrs.indexOf(attrNode);
 
     let onMutations = this._editedAttributeObserver = (e, mutations) => {
       let isDeletedAttribute = false;
       let isNewAttribute = false;
+
       for (let mutation of mutations) {
-        let inContainer = this.markup.getContainer(mutation.target) === container;
+        let inContainer =
+          this.markup.getContainer(mutation.target) === container;
         if (!inContainer) {
           continue;
         }
 
         let isOriginalAttribute = mutation.attributeName === attrName;
 
-        isDeletedAttribute = isDeletedAttribute || isOriginalAttribute && mutation.newValue === null;
+        isDeletedAttribute = isDeletedAttribute || isOriginalAttribute &&
+                             mutation.newValue === null;
         isNewAttribute = isNewAttribute || mutation.attributeName !== attrName;
       }
+
       let isModifiedOrder = isDeletedAttribute && isNewAttribute;
       this._editedAttributeObserver = null;
 
       
-      let visibleAttrs = [...this.attrList.childNodes].filter(el => el.style.display != "none");
+      let visibleAttrs = [...this.attrList.childNodes]
+        .filter(el => el.style.display != "none");
       let activeEditor;
       if (visibleAttrs.length > 0) {
         if (!direction) {
@@ -2908,17 +2989,16 @@ ElementEditor.prototype = {
           let newAttributeIndex;
           if (isDeletedAttribute) {
             newAttributeIndex = attributeIndex;
-          } else {
-            if (direction == Ci.nsIFocusManager.MOVEFOCUS_FORWARD) {
-              newAttributeIndex = attributeIndex + 1;
-            } else if (direction == Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
-              newAttributeIndex = attributeIndex - 1;
-            }
+          } else if (direction == Ci.nsIFocusManager.MOVEFOCUS_FORWARD) {
+            newAttributeIndex = attributeIndex + 1;
+          } else if (direction == Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
+            newAttributeIndex = attributeIndex - 1;
           }
 
           
           
-          if (newAttributeIndex >= 0 && newAttributeIndex <= visibleAttrs.length - 1) {
+          if (newAttributeIndex >= 0 &&
+              newAttributeIndex <= visibleAttrs.length - 1) {
             activeEditor = visibleAttrs[newAttributeIndex];
           }
         }
@@ -2937,7 +3017,8 @@ ElementEditor.prototype = {
       } else {
         
         
-        let editable = activeEditor === this.newAttr ? activeEditor : activeEditor.querySelector(".editable");
+        let editable = activeEditor === this.newAttr ?
+          activeEditor : activeEditor.querySelector(".editable");
         editable.focus();
       }
 
@@ -2953,7 +3034,8 @@ ElementEditor.prototype = {
 
 
   onTagEdit: function(newTagName, isCommit) {
-    if (!isCommit || newTagName.toLowerCase() === this.node.tagName.toLowerCase() ||
+    if (!isCommit ||
+        newTagName.toLowerCase() === this.node.tagName.toLowerCase() ||
         !("editTagName" in this.markup.walker)) {
       return;
     }
@@ -2974,11 +3056,6 @@ ElementEditor.prototype = {
     this.animationTimers = null;
   }
 };
-
-function nodeDocument(node) {
-  return node.ownerDocument ||
-    (node.nodeType == Ci.nsIDOMNode.DOCUMENT_NODE ? node : null);
-}
 
 function truncateString(str, maxLength) {
   if (!str || str.length <= maxLength) {
@@ -3003,12 +3080,16 @@ function truncateString(str, maxLength) {
 function parseAttributeValues(attr, doc) {
   attr = attr.trim();
 
+  let parseAndGetNode = str => {
+    return DOMParser.parseFromString(str, "text/html").body.childNodes[0];
+  };
+
   
   
   
-  let el = DOMParser.parseFromString("<svg " + attr + "></svg>", "text/html").body.childNodes[0] ||
-           DOMParser.parseFromString("<svg " + attr + "\"></svg>", "text/html").body.childNodes[0] ||
-           DOMParser.parseFromString("<svg " + attr + "'></svg>", "text/html").body.childNodes[0];
+  let el = parseAndGetNode("<svg " + attr + "></svg>") ||
+           parseAndGetNode("<svg " + attr + "\"></svg>") ||
+           parseAndGetNode("<svg " + attr + "'></svg>");
 
   let div = doc.createElement("div");
   let attributes = [];
@@ -3018,10 +3099,14 @@ function parseAttributeValues(attr, doc) {
     try {
       div.setAttribute(name, value);
       attributes.push({ name, value });
+    } catch (e) {
+      
+      
+      
     }
-    catch(e) { }
   }
 
+  
   
   return attributes.reverse();
 }
@@ -3036,7 +3121,7 @@ function parseAttributeValues(attr, doc) {
 
 
 
-function flashElementOn(backgroundElt, foregroundElt=backgroundElt) {
+function flashElementOn(backgroundElt, foregroundElt = backgroundElt) {
   if (!backgroundElt || !foregroundElt) {
     return;
   }
@@ -3064,7 +3149,7 @@ function flashElementOn(backgroundElt, foregroundElt=backgroundElt) {
 
 
 
-function flashElementOff(backgroundElt, foregroundElt=backgroundElt) {
+function flashElementOff(backgroundElt, foregroundElt = backgroundElt) {
   if (!backgroundElt || !foregroundElt) {
     return;
   }
@@ -3098,6 +3183,8 @@ loader.lazyGetter(MarkupView.prototype, "strings", () => Services.strings.create
 ));
 
 XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function() {
-  return Cc["@mozilla.org/widget/clipboardhelper;1"].
-    getService(Ci.nsIClipboardHelper);
+  return Cc["@mozilla.org/widget/clipboardhelper;1"]
+    .getService(Ci.nsIClipboardHelper);
 });
+
+exports.MarkupView = MarkupView;
