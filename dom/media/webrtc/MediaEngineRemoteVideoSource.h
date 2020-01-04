@@ -122,38 +122,10 @@ private:
   size_t NumCapabilities() const override;
   void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) const override;
 
-  
-
-
-
-
-
-
-
-
-
-  nsresult
-  UpdateExisting(AllocationHandle* aHandle,
-                 NormalizedConstraints* aNewConstraints,
-                 const MediaEnginePrefs& aPrefs,
-                 const nsString& aDeviceId,
-                 const char** aOutBadConstraint);
-
-  nsresult
-  UpdateNew(AllocationHandle* aHandle,
-            const MediaEnginePrefs& aPrefs,
-            const nsString& aDeviceId,
-            const char** aOutBadConstraint) {
-    return UpdateExisting(aHandle, nullptr, aPrefs, aDeviceId, aOutBadConstraint);
-  }
-
   dom::MediaSourceEnum mMediaSource; 
   mozilla::camera::CaptureEngine mCapEngine;
 
   nsTArray<RefPtr<AllocationHandle>> mRegisteredHandles;
-
-  
-  webrtc::CaptureCapability mLastCapability;
 };
 
 }
