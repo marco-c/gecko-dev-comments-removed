@@ -776,11 +776,6 @@ void HTMLMediaElement::AbortExistingLoads()
     ChangeNetworkState(nsIDOMHTMLMediaElement::NETWORK_EMPTY);
     ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_NOTHING);
 
-    
-    if (mTextTrackManager) {
-      mTextTrackManager->GetTextTracks()->SetCuesInactive();
-    }
-
     if (fireTimeUpdate) {
       
       

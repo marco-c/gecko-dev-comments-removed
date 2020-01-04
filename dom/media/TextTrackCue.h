@@ -332,16 +332,6 @@ public:
 
   void SetTrackElement(HTMLTrackElement* aTrackElement);
 
-  void SetActive(bool aActive)
-  {
-    mActive = aActive;
-  }
-
-  bool GetActive()
-  {
-    return mActive;
-  }
-
 private:
   ~TextTrackCue();
 
@@ -375,8 +365,6 @@ private:
   
   
   bool mReset;
-
-  bool mActive;
 
   static StaticRefPtr<nsIWebVTTParserWrapper> sParserWrapper;
 };
