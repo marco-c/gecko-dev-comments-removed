@@ -391,26 +391,6 @@ public:
     virtual void NotifySelectionDecorationLinePathEmitted() { }
   };
 
-  struct PaintTextParams
-  {
-    gfxContext* context;
-    gfxPoint framePt;
-    LayoutDeviceRect dirtyRect;
-    gfxTextContextPaint* contextPaint = nullptr;
-    DrawPathCallbacks* callbacks = nullptr;
-    explicit PaintTextParams(gfxContext* aContext) : context(aContext) {}
-  };
-
-  struct PaintTextSelectionParams : PaintTextParams
-  {
-    gfxPoint textBaselinePt;
-    PropertyProvider* provider = nullptr;
-    Range contentRange;
-    nsTextPaintStyle* textPaintStyle = nullptr;
-    explicit PaintTextSelectionParams(const PaintTextParams& aParams)
-      : PaintTextParams(aParams) {}
-  };
-
   struct DrawTextRunParams
   {
     gfxContext* context;
@@ -439,27 +419,52 @@ public:
   
   
   
-  void PaintText(const PaintTextParams& aParams,
+  void PaintText(nsRenderingContext* aRenderingContext, nsPoint aPt,
+                 const LayoutDeviceRect& aDirtyRect,
                  const nsCharClipDisplayItem& aItem,
+                 gfxTextContextPaint* aContextPaint = nullptr,
+                 DrawPathCallbacks* aCallbacks = nullptr,
                  float aOpacity = 1.0f);
   
   
   
-  bool PaintTextWithSelection(const PaintTextSelectionParams& aParams,
-                              const nsCharClipDisplayItem::ClipEdges& aClipEdges);
+  bool PaintTextWithSelection(gfxContext* aCtx,
+                              const gfxPoint& aFramePt,
+                              const gfxPoint& aTextBaselinePt,
+                              const LayoutDeviceRect& aDirtyRect,
+                              PropertyProvider& aProvider,
+                              Range aRange,
+                              nsTextPaintStyle& aTextPaintStyle,
+                              const nsCharClipDisplayItem::ClipEdges& aClipEdges,
+                              gfxTextContextPaint* aContextPaint,
+                              DrawPathCallbacks* aCallbacks);
   
   
   
   
   
-  bool PaintTextWithSelectionColors(const PaintTextSelectionParams& aParams,
+  bool PaintTextWithSelectionColors(gfxContext* aCtx,
+                                    const gfxPoint& aFramePt,
+                                    const gfxPoint& aTextBaselinePt,
+                                    const LayoutDeviceRect& aDirtyRect,
+                                    PropertyProvider& aProvider,
+                                    Range aContentRange,
+                                    nsTextPaintStyle& aTextPaintStyle,
                                     SelectionDetails* aDetails,
                                     SelectionType* aAllTypes,
-                                    const nsCharClipDisplayItem::ClipEdges& aClipEdges);
+                             const nsCharClipDisplayItem::ClipEdges& aClipEdges,
+                                    DrawPathCallbacks* aCallbacks);
   
-  void PaintTextSelectionDecorations(const PaintTextSelectionParams& aParams,
+  void PaintTextSelectionDecorations(gfxContext* aCtx,
+                                     const gfxPoint& aFramePt,
+                                     const gfxPoint& aTextBaselinePt,
+                                     const LayoutDeviceRect& aDirtyRect,
+                                     PropertyProvider& aProvider,
+                                     Range aContentRange,
+                                     nsTextPaintStyle& aTextPaintStyle,
                                      SelectionDetails* aDetails,
-                                     SelectionType aSelectionType);
+                                     SelectionType aSelectionType,
+                                     DrawPathCallbacks* aCallbacks);
 
   void DrawEmphasisMarks(gfxContext* aContext,
                          mozilla::WritingMode aWM,
