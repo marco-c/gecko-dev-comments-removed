@@ -56,8 +56,8 @@ public:
 
 
   nsresult BeginInputTransaction(TextEventDispatcherListener* aListener);
-  nsresult BeginInputTransactionForTests(
-             TextEventDispatcherListener* aListener);
+  nsresult BeginTestInputTransaction(TextEventDispatcherListener* aListener);
+  nsresult BeginNativeInputTransaction(TextEventDispatcherListener* aListener);
 
   
 
@@ -280,7 +280,20 @@ private:
   
   uint16_t mDispatchingEvent;
 
-  bool mForTests;
+  enum InputTransactionType : uint8_t
+  {
+    
+    eNoInputTransaction,
+    
+    eNativeInputTransaction,
+    
+    eTestInputTransaction,
+    
+    eOtherInputTransaction
+  };
+
+  InputTransactionType mInputTransactionType;
+
   
   bool mIsComposing;
 
@@ -290,7 +303,7 @@ private:
 
   nsresult BeginInputTransactionInternal(
              TextEventDispatcherListener* aListener,
-             bool aForTests);
+             InputTransactionType aType);
 
   
 
