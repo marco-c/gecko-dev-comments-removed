@@ -869,6 +869,7 @@ void TransportLayerDtls::Handshake() {
         MOZ_MTLOG(ML_ERROR, LAYER_INFO << "Malformed DTLS message; ignoring");
         
         
+        MOZ_FALLTHROUGH;
       case PR_WOULD_BLOCK_ERROR:
         MOZ_MTLOG(ML_NOTICE, LAYER_INFO << "Handshake would have blocked");
         PRIntervalTime timeout;
