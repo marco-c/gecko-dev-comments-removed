@@ -183,9 +183,6 @@ if (AppConstants.MOZ_SAFE_BROWSING) {
     "resource://gre/modules/SafeBrowsing.jsm");
 }
 
-XPCOMUtils.defineLazyModuleGetter(this, "gCustomizationTabPreloader",
-  "resource:///modules/CustomizationTabPreloader.jsm", "CustomizationTabPreloader");
-
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -2344,10 +2341,12 @@ function URLBarSetURI(aURI) {
     
     let defaultRemoteURL = gAboutNewTabService.remoteEnabled &&
                            uri.spec === gAboutNewTabService.newTabURL;
-    if (gInitialPages.includes(uri.spec) || defaultRemoteURL)
-      value = gBrowser.selectedBrowser.hasContentOpener ? uri.spec : "";
-    else
+    if ((gInitialPages.includes(uri.spec) || defaultRemoteURL) &&
+        checkEmptyPageOrigin(gBrowser.selectedBrowser, uri)) {
+      value = "";
+    } else {
       value = losslessDecodeURI(uri);
+    }
 
     valid = !isBlankPageURL(uri.spec);
   }
@@ -4327,7 +4326,7 @@ var XULBrowserWindow = {
     
 
     if (aWebProgress.isTopLevel) {
-      if ((location == "about:blank" && !gBrowser.selectedBrowser.hasContentOpener) ||
+      if ((location == "about:blank" && checkEmptyPageOrigin()) ||
           location == "") {  
                              
         this.reloadCommand.setAttribute("disabled", "true");
@@ -4339,7 +4338,7 @@ var XULBrowserWindow = {
         URLBarSetURI(aLocationURI);
 
         BookmarkingUI.onLocationChange();
-        SocialUI.updateState(location);
+        SocialUI.updateState();
         UITour.onLocationChange(location);
         gTabletModePageCounter.inc();
       }
@@ -4387,12 +4386,11 @@ var XULBrowserWindow = {
 
       
       
-      let customizingURI = "about:customizing";
-      if (location == customizingURI) {
+      if (location == "about:blank" &&
+          gBrowser.selectedTab.hasAttribute("customizemode")) {
         gCustomizeMode.enter();
-      } else if (location != customizingURI &&
-                 (CustomizationHandler.isEnteringCustomizeMode ||
-                  CustomizationHandler.isCustomizing())) {
+      } else if (CustomizationHandler.isEnteringCustomizeMode ||
+                 CustomizationHandler.isCustomizing()) {
         gCustomizeMode.exit();
       }
     }
@@ -6390,17 +6388,67 @@ function isTabEmpty(aTab) {
   if (aTab.hasAttribute("busy"))
     return false;
 
+  if (aTab.hasAttribute("customizemode"))
+    return false;
+
   let browser = aTab.linkedBrowser;
   if (!isBlankPageURL(browser.currentURI.spec))
     return false;
 
-  if (browser.hasContentOpener)
+  if (!checkEmptyPageOrigin(browser))
     return false;
 
   if (browser.canGoForward || browser.canGoBack)
     return false;
 
   return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkEmptyPageOrigin(browser = gBrowser.selectedBrowser,
+                              uri = browser.currentURI) {
+  
+  
+  if (browser.hasContentOpener) {
+    return false;
+  }
+  let contentPrincipal = browser.contentPrincipal;
+  if (gMultiProcessBrowser && browser.isRemoteBrowser &&
+      !contentPrincipal && uri.spec == "about:blank") {
+    
+    
+    
+    return true;
+  }
+  
+  if (contentPrincipal.URI) {
+    return contentPrincipal.URI.equals(uri);
+  }
+  
+  
+  let ssm = Services.scriptSecurityManager;
+  return ssm.isSystemPrincipal(contentPrincipal);
 }
 
 function BrowserOpenSyncTabs() {
@@ -7292,7 +7340,6 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams={}) {
   
   const kPrivateBrowsingWhitelist = new Set([
     "about:addons",
-    "about:customizing",
   ]);
 
   let ignoreFragment = aOpenParams.ignoreFragment;
