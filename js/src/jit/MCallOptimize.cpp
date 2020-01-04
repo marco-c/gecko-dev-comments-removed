@@ -3695,6 +3695,11 @@ IonBuilder::inlineSimdStore(CallInfo& callInfo, JSNative native, SimdTypeDescr::
     return InliningStatus_Inlined;
 }
 
+
+
+
+static_assert(uint16_t(SimdOperation::Constructor) == 0, "Constructor opcode must be 0");
+
 #define ADD_NATIVE(native) const JSJitInfo JitInfo_##native { \
     { nullptr }, { uint16_t(InlinableNative::native) }, { 0 }, JSJitInfo::InlinableNative };
     INLINABLE_NATIVE_LIST(ADD_NATIVE)
