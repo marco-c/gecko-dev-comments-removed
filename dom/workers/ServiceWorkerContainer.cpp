@@ -106,9 +106,11 @@ CheckForSlashEscapedCharsInPath(nsIURI* aURI)
 {
   MOZ_ASSERT(aURI);
 
+  
+  
   nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
   if (NS_WARN_IF(!url)) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_DOM_SECURITY_ERR;
   }
 
   nsAutoCString path;
