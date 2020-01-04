@@ -440,6 +440,12 @@ protected:
 
 
 
+  bool IsInARIAOwnsLoop(nsIContent* aOwnerEl, nsIContent* aDependentEl);
+
+  
+
+
+
 
 
 

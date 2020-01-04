@@ -1613,34 +1613,21 @@ DocAccessible::AddDependentIDsFor(Accessible* aRelProvider, nsIAtom* aRelAttr)
               mInvalidationList.AppendElement(dependentContent);
             }
 
+            
             if (relAttr == nsGkAtoms::aria_owns) {
               
               
-              
-              
-              bool isvalid = true;
-              for (auto it = mARIAOwnsHash.Iter(); !it.Done(); it.Next()) {
-                Accessible* owner = it.Key();
-                nsIContent* parentEl = owner->GetContent();
-                while (parentEl && parentEl != dependentContent) {
-                  parentEl = parentEl->GetParent();
-                }
-                if (parentEl) {
-                  isvalid = false;
-                  break;
-                }
+              nsIContent* parentEl = relProviderEl;
+              while (parentEl && parentEl != dependentContent) {
+                parentEl = parentEl->GetParent();
               }
-              if (isvalid) {
-                
-                nsIContent* parentEl = relProviderEl;
-                while (parentEl && parentEl != dependentContent) {
-                  parentEl = parentEl->GetParent();
-                }
-                if (parentEl) {
-                  isvalid = false;
-                }
 
-                if (isvalid) {
+              if (!parentEl) {
+                
+                
+                
+                
+                if (!IsInARIAOwnsLoop(relProviderEl, dependentContent)) {
                   nsTArray<nsIContent*>* list =
                     mARIAOwnsHash.LookupOrAdd(aRelProvider);
                   list->AppendElement(dependentContent);
@@ -1757,6 +1744,45 @@ DocAccessible::RemoveDependentIDsFor(Accessible* aRelProvider,
     if (aRelAttr)
       break;
   }
+}
+
+bool
+DocAccessible::IsInARIAOwnsLoop(nsIContent* aOwnerEl, nsIContent* aDependentEl)
+{
+  
+  
+  
+  for (auto it = mARIAOwnsHash.Iter(); !it.Done(); it.Next()) {
+    Accessible* otherOwner = it.Key();
+    nsIContent* parentEl = otherOwner->GetContent();
+    while (parentEl && parentEl != aDependentEl) {
+      parentEl = parentEl->GetParent();
+    }
+
+    
+    
+    
+    
+    if (parentEl) {
+      nsTArray<nsIContent*>* childEls = it.UserData();
+      for (uint32_t idx = 0; idx < childEls->Length(); idx++) {
+        nsIContent* childEl = childEls->ElementAt(idx);
+        nsIContent* parentEl = aOwnerEl;
+        while (parentEl && parentEl != childEl) {
+          parentEl = parentEl->GetParent();
+        }
+        if (parentEl) {
+          return true;
+        }
+
+        if (IsInARIAOwnsLoop(aOwnerEl, childEl)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 bool
