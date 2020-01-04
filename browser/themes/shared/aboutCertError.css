@@ -53,13 +53,6 @@ body {
   flex: 1;
 }
 
-
-
-
-button:disabled {
-  cursor: pointer;
-}
-
 #returnButton {
   background-color: var(--in-content-primary-button-background);
   border: none;
