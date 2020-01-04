@@ -98,19 +98,6 @@ var Scripts = {
 };
 
 
-var Schemas = {
-  schemas: new Set(),
-
-  register(schema) {
-    this.schemas.add(schema);
-  },
-
-  getSchemas() {
-    return this.schemas;
-  },
-};
-
-
 
 
 
@@ -209,9 +196,6 @@ this.ExtensionManagement = {
 
   registerScript: Scripts.register.bind(Scripts),
   getScripts: Scripts.getScripts.bind(Scripts),
-
-  registerSchema: Schemas.register.bind(Schemas),
-  getSchemas: Schemas.getSchemas.bind(Schemas),
 
   getFrameId: Frames.getId.bind(Frames),
   getParentFrameId: Frames.getParentId.bind(Frames),
