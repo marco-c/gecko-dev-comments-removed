@@ -408,6 +408,15 @@ public:
   {
     return DECODER_STATE_DORMANT;
   }
+
+  bool HandleDormant(bool aDormant) override
+  {
+    if (!aDormant) {
+      
+      SetState(DECODER_STATE_DECODING_METADATA);
+    }
+    return true;
+  }
 };
 
 class MediaDecoderStateMachine::DecodingFirstFrameState
@@ -1497,42 +1506,39 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     return;
   }
 
-  bool wasDormant = mState == DECODER_STATE_DORMANT;
-  if (wasDormant == aDormant) {
+  
+  
+  MOZ_ASSERT(mState != DECODER_STATE_DORMANT);
+
+  
+  if (!aDormant) {
     return;
   }
 
-  DECODER_LOG("SetDormant=%d", aDormant);
+  DECODER_LOG("Enter dormant state");
 
-  
-  if (aDormant) {
-    if (mState == DECODER_STATE_SEEKING) {
-      MOZ_ASSERT(!mQueuedSeek.Exists());
-      MOZ_ASSERT(mCurrentSeek.Exists());
-      
-      
-      
-      
-      if (mCurrentSeek.mTarget.IsVideoOnly()) {
-        mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
-        mCurrentSeek.mTarget.SetVideoOnly(false);
-      }
-      mQueuedSeek = Move(mCurrentSeek);
-    } else {
-      mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
-                                       SeekTarget::Accurate,
-                                       MediaDecoderEventVisibility::Suppressed);
-      
-      
-      RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
+  if (mState == DECODER_STATE_SEEKING) {
+    MOZ_ASSERT(!mQueuedSeek.Exists());
+    MOZ_ASSERT(mCurrentSeek.Exists());
+    
+    
+    
+    
+    if (mCurrentSeek.mTarget.IsVideoOnly()) {
+      mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
+      mCurrentSeek.mTarget.SetVideoOnly(false);
     }
-
-    SetState(DECODER_STATE_DORMANT);
-    return;
+    mQueuedSeek = Move(mCurrentSeek);
+  } else {
+    mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
+                                     SeekTarget::Accurate,
+                                     MediaDecoderEventVisibility::Suppressed);
+    
+    
+    RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
   }
 
-  
-  SetState(DECODER_STATE_DECODING_METADATA);
+  SetState(DECODER_STATE_DORMANT);
 }
 
 RefPtr<ShutdownPromise>
