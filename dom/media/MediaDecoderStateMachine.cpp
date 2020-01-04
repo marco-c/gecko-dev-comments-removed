@@ -932,7 +932,9 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
           
           mCurrentSeek.mTarget.mType = SeekTarget::Accurate;
         }
-        if (mCurrentSeek.mTarget.mType == SeekTarget::PrevSyncPoint) {
+        if (mCurrentSeek.mTarget.mType == SeekTarget::PrevSyncPoint ||
+            mPendingSeek.Exists()) {
+          
           
           Push(video, MediaData::VIDEO_DATA);
         } else {
