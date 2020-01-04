@@ -101,33 +101,39 @@ WebGLContext::InitWebGL2(FailureReason* const out_failReason)
 {
     MOZ_ASSERT(IsWebGL2(), "WebGLContext is not a WebGL 2 context!");
 
-    
-    if (!gl->IsSupported(gl::GLFeature::occlusion_query) &&
-        !gl->IsSupported(gl::GLFeature::occlusion_query_boolean))
-    {
-        
-        
-        *out_failReason = FailureReason("FEATURE_FAILURE_WEBGL2_OCCL",
-                                        "WebGL 2 requires occlusion query support.");
-        return false;
-    }
-
     std::vector<gl::GLFeature> missingList;
 
-    for (size_t i = 0; i < ArrayLength(kRequiredFeatures); i++) {
-        if (!gl->IsSupported(kRequiredFeatures[i])) {
-            missingList.push_back(kRequiredFeatures[i]);
+    const auto fnGatherMissing = [&](gl::GLFeature cur) {
+        if (!gl->IsSupported(cur)) {
+            missingList.push_back(cur);
         }
+    };
+
+    const auto fnGatherMissing2 = [&](gl::GLFeature main, gl::GLFeature alt) {
+        if (!gl->IsSupported(main) && !gl->IsSupported(alt)) {
+            missingList.push_back(main);
+        }
+    };
+
+    
+
+    for (const auto& cur : kRequiredFeatures) {
+        fnGatherMissing(cur);
     }
+
+    
+    
+    fnGatherMissing2(gl::GLFeature::occlusion_query_boolean,
+                     gl::GLFeature::occlusion_query);
 
 #ifdef XP_MACOSX
     
     
     
-    if (!gl->IsSupported(gl::GLFeature::texture_swizzle)) {
-        missingList.push_back(gl::GLFeature::texture_swizzle);
-    }
+    fnGatherMissing(gl::GLFeature::texture_swizzle);
 #endif
+
+    
 
     if (missingList.size()) {
         nsAutoCString exts;
