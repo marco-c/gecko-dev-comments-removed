@@ -259,8 +259,6 @@
 #include "IPeerConnection.h"
 #endif 
 
-#include "VRDisplayProxy.h"
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
