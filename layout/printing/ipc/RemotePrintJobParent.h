@@ -57,6 +57,11 @@ public:
 
   void RegisterListener(nsIWebProgressListener* aListener);
 
+  
+
+
+  already_AddRefed<nsIPrintSettings> GetPrintSettings();
+
 private:
   ~RemotePrintJobParent() final;
 

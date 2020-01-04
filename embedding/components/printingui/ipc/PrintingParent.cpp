@@ -98,9 +98,18 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   
   nsCOMPtr<nsIWebBrowserPrint> wbp = new MockWebBrowserPrint(aData);
 
+  
+  
+  RemotePrintJobParent* remotePrintJob =
+    static_cast<RemotePrintJobParent*>(aData.remotePrintJobParent());
   nsCOMPtr<nsIPrintSettings> settings;
-  nsresult rv = mPrintSettingsSvc->GetNewPrintSettings(getter_AddRefs(settings));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv;
+  if (remotePrintJob) {
+    settings = remotePrintJob->GetPrintSettings();
+  } else {
+    rv = mPrintSettingsSvc->GetNewPrintSettings(getter_AddRefs(settings));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   rv = mPrintSettingsSvc->DeserializeToPrintSettings(aData, settings);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -108,10 +117,6 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   rv = pps->ShowPrintDialog(parentWin, wbp, settings);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  RemotePrintJobParent* remotePrintJob =
-    static_cast<RemotePrintJobParent*>(aData.remotePrintJobParent());
   rv = SerializeAndEnsureRemotePrintJob(settings, nullptr, remotePrintJob,
                                         aResult);
 
