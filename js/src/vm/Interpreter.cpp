@@ -709,6 +709,43 @@ js::Execute(JSContext* cx, HandleScript script, JSObject& scopeChainArg, Value* 
                          NullFramePtr() , rval);
 }
 
+
+
+
+extern bool
+js::InstanceOfOperator(JSContext* cx, HandleObject obj, MutableHandleValue v, bool* bp)
+{
+    
+
+    
+    RootedValue hasInstance(cx);
+    RootedId id(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().hasInstance));
+    if (!GetProperty(cx, obj, obj, id, &hasInstance))
+        return false;
+
+    if (!hasInstance.isNullOrUndefined()) {
+        if (!IsCallable(hasInstance))
+            ReportIsNotFunction(cx, hasInstance);
+
+        
+        RootedValue rval(cx);
+        if (!Call(cx, hasInstance, obj, v, &rval))
+            return false;
+        *bp = ToBoolean(rval);
+        return true;
+    }
+
+    
+    if (!obj->isCallable()) {
+        RootedValue val(cx, ObjectValue(*obj));
+        ReportIsNotFunction(cx, val);
+        return false;
+    }
+
+    
+    return js::OrdinaryHasInstance(cx, obj, v, bp);
+}
+
 bool
 js::HasInstance(JSContext* cx, HandleObject obj, HandleValue v, bool* bp)
 {
@@ -716,11 +753,7 @@ js::HasInstance(JSContext* cx, HandleObject obj, HandleValue v, bool* bp)
     RootedValue local(cx, v);
     if (JSHasInstanceOp hasInstance = clasp->getHasInstance())
         return hasInstance(cx, obj, &local, bp);
-
-    RootedValue val(cx, ObjectValue(*obj));
-    ReportValueError(cx, JSMSG_BAD_INSTANCEOF_RHS,
-                        JSDVG_SEARCH_STACK, val, nullptr);
-    return false;
+    return js::InstanceOfOperator(cx, obj, &local, bp);
 }
 
 static inline bool

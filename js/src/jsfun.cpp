@@ -672,22 +672,68 @@ template bool
 js::XDRInterpretedFunction(XDRState<XDR_DECODE>*, HandleObject, HandleScript, MutableHandleFunction);
 
 
+bool
+js::fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    if (args.length() < 1) {
+        args.rval().setBoolean(false);
+        return true;
+    }
+
+    
+    HandleValue func = args.thisv();
+    if (!func.isObject()) {
+        ReportIncompatible(cx, args);
+        return false;
+    }
+
+    RootedObject obj(cx, &func.toObject());
+    RootedValue v(cx, args[0]);
+
+    
+    bool result;
+    if (!OrdinaryHasInstance(cx, obj, &v, &result))
+        return false;
+
+    args.rval().setBoolean(result);
+    return true;
+}
 
 
 
 
-static bool
-fun_hasInstance(JSContext* cx, HandleObject objArg, MutableHandleValue v, bool* bp)
+bool
+js::OrdinaryHasInstance(JSContext* cx, HandleObject objArg, MutableHandleValue v, bool* bp)
 {
     RootedObject obj(cx, objArg);
 
-    while (obj->is<JSFunction>() && obj->isBoundFunction())
-        obj = obj->as<JSFunction>().getBoundFunctionTarget();
+    
+    if (!obj->isCallable()) {
+        *bp = false;
+        return true;
+    }
 
+    
+    if (obj->is<JSFunction>() && obj->isBoundFunction()) {
+        
+        obj = obj->as<JSFunction>().getBoundFunctionTarget();
+        return InstanceOfOperator(cx, obj, v, bp);
+    }
+
+    
+    if (!v.isObject()) {
+        *bp = false;
+        return true;
+    }
+
+    
     RootedValue pval(cx);
     if (!GetProperty(cx, obj, obj, cx->names().prototype, &pval))
         return false;
 
+    
     if (pval.isPrimitive()) {
         
 
@@ -698,6 +744,7 @@ fun_hasInstance(JSContext* cx, HandleObject objArg, MutableHandleValue v, bool* 
         return false;
     }
 
+    
     RootedObject pobj(cx, &pval.toObject());
     bool isDelegate;
     if (!IsDelegate(cx, pobj, v, &isDelegate))
@@ -857,7 +904,7 @@ static const ClassOps JSFunctionClassOps = {
     fun_mayResolve,
     nullptr,                 
     nullptr,                 
-    fun_hasInstance,
+    nullptr,
     nullptr,                 
     fun_trace,
 };
@@ -1746,7 +1793,8 @@ const JSFunctionSpec js::function_methods[] = {
     JS_FN(js_apply_str,      fun_apply,      2,0),
     JS_FN(js_call_str,       fun_call,       1,0),
     JS_FN("isGenerator",     fun_isGenerator,0,0),
-    JS_SELF_HOSTED_FN("bind", "FunctionBind", 2,JSFUN_HAS_REST),
+    JS_SELF_HOSTED_FN("bind", "FunctionBind", 2, JSFUN_HAS_REST),
+    JS_SYM_FN(hasInstance, fun_symbolHasInstance, 1, JSPROP_READONLY | JSPROP_PERMANENT),
     JS_FS_END
 };
 
