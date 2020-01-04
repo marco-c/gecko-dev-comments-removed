@@ -160,9 +160,9 @@ var interfaceNamesInGlobalScope =
 
     "MessagePort",
 
-    "Notification",
+    { name: "Notification", release: false },
 
-    "NotificationEvent",
+    { name: "NotificationEvent", release: false },
 
     "Performance",
 

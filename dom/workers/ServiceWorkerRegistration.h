@@ -33,6 +33,9 @@ class WorkerPrivate;
 bool
 ServiceWorkerRegistrationVisible(JSContext* aCx, JSObject* aObj);
 
+bool
+ServiceWorkerNotificationAPIVisible(JSContext* aCx, JSObject* aObj);
+
 
 
 
