@@ -2048,6 +2048,8 @@ Toolbox.prototype = {
     if (this._destroyer) {
       return this._destroyer;
     }
+    let deferred = defer();
+    this._destroyer = deferred.promise;
 
     this.emit("destroy");
 
@@ -2143,7 +2145,7 @@ Toolbox.prototype = {
     
     
     
-    this._destroyer = settleAll(outstanding)
+    deferred.resolve(settleAll(outstanding)
         .catch(console.error)
         .then(() => this.destroyHost())
         .catch(console.error)
@@ -2177,7 +2179,7 @@ Toolbox.prototype = {
               .getInterface(Ci.nsIDOMWindowUtils)
               .garbageCollect();
           }
-        }).then(null, console.error);
+        }).then(null, console.error));
 
     let leakCheckObserver = ({wrappedJSObject: barrier}) => {
       
