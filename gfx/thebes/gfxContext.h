@@ -255,7 +255,7 @@ public:
 
 
 
-    void SetDeviceColor(const gfxRGBA& c);
+    void SetDeviceColor(const mozilla::gfx::Color& aColor);
 
     
 
