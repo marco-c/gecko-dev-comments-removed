@@ -225,18 +225,17 @@ HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
                                          int32_t aDepth,
                                          bool aNotify)
 {
+  MOZ_ASSERT(aDepth == 0 || aDepth == 1);
   int32_t insertIndex = aListIndex;
 
   HTMLOptionElement* optElement = HTMLOptionElement::FromContent(aOptions);
   if (optElement) {
     mOptions->InsertOptionAt(optElement, insertIndex);
     insertIndex++;
-  } else {
+  } else if (aDepth == 0) {
     
     
-    if (aDepth == 0) {
-      mNonOptionChildren++;
-    }
+    mNonOptionChildren++;
 
     
     if (aOptions->IsHTMLElement(nsGkAtoms::optgroup)) {
@@ -252,7 +251,7 @@ HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
         }
       }
     }
-  }
+  } 
 
   
   if (insertIndex - aListIndex) {
@@ -307,6 +306,7 @@ HTMLSelectElement::RemoveOptionsFromList(nsIContent* aOptions,
                                          int32_t aDepth,
                                          bool aNotify)
 {
+  MOZ_ASSERT(aDepth == 0 || aDepth == 1);
   int32_t numRemoved = 0;
 
   HTMLOptionElement* optElement = HTMLOptionElement::FromContent(aOptions);
@@ -317,11 +317,9 @@ HTMLSelectElement::RemoveOptionsFromList(nsIContent* aOptions,
     }
     mOptions->RemoveOptionAt(aListIndex);
     numRemoved++;
-  } else {
+  } else if (aDepth == 0) {
     
-    if (aDepth == 0) {
-      mNonOptionChildren--;
-    }
+    mNonOptionChildren--;
 
     
     if (mOptGroupCount && aOptions->IsHTMLElement(nsGkAtoms::optgroup)) {
@@ -341,7 +339,7 @@ HTMLSelectElement::RemoveOptionsFromList(nsIContent* aOptions,
         }
       }
     }
-  }
+  } 
 
   if (numRemoved) {
     
