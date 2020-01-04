@@ -30,7 +30,7 @@ CreateDirectoryTask::Create(FileSystemBase* aFileSystem,
   
 
   nsCOMPtr<nsIGlobalObject> globalObject =
-    do_QueryInterface(aFileSystem->GetWindow());
+    do_QueryInterface(aFileSystem->GetParentObject());
   if (NS_WARN_IF(!globalObject)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -182,7 +182,7 @@ CreateDirectoryTask::HandlerCallback()
     mPromise = nullptr;
     return;
   }
-  RefPtr<Directory> dir = Directory::Create(mFileSystem->GetWindow(),
+  RefPtr<Directory> dir = Directory::Create(mFileSystem->GetParentObject(),
                                             mTargetPath,
                                             Directory::eNotDOMRootDirectory,
                                             mFileSystem);

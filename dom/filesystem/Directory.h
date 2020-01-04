@@ -13,7 +13,6 @@
 #include "mozilla/dom/File.h"
 #include "nsAutoPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsPIDOMWindow.h"
 #include "nsWrapperCache.h"
 
 
@@ -70,12 +69,12 @@ public:
   };
 
   static already_AddRefed<Directory>
-  Create(nsPIDOMWindowInner* aWindow, nsIFile* aDirectory,
+  Create(nsISupports* aParent, nsIFile* aDirectory,
          DirectoryType aType, FileSystemBase* aFileSystem = 0);
 
   
 
-  nsPIDOMWindowInner*
+  nsISupports*
   GetParentObject() const;
 
   virtual JSObject*
@@ -141,8 +140,13 @@ public:
   FileSystemBase*
   GetFileSystem(ErrorResult& aRv);
 
+  DirectoryType Type() const
+  {
+    return mType;
+  }
+
 private:
-  Directory(nsPIDOMWindowInner* aWindow,
+  Directory(nsISupports* aParent,
             nsIFile* aFile, DirectoryType aType,
             FileSystemBase* aFileSystem = nullptr);
   ~Directory();
@@ -157,7 +161,7 @@ private:
   RemoveInternal(const StringOrFileOrDirectory& aPath, bool aRecursive,
                  ErrorResult& aRv);
 
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  nsCOMPtr<nsISupports> mParent;
   RefPtr<FileSystemBase> mFileSystem;
   nsCOMPtr<nsIFile> mFile;
   DirectoryType mType;
