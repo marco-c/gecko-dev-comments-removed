@@ -3,8 +3,8 @@
 
 
 
-#ifndef _nshtmlobjectresizer__h
-#define _nshtmlobjectresizer__h
+#ifndef HTMLEditorObjectResizerUtils_h
+#define HTMLEditorObjectResizerUtils_h
 
 #include "nsIDOMEventListener.h"
 #include "nsISelectionListener.h"
@@ -13,6 +13,8 @@
 #include "nsLiteralString.h"
 
 class nsIHTMLEditor;
+
+namespace mozilla {
 
 #define kTopLeft       NS_LITERAL_STRING("nw")
 #define kTop           NS_LITERAL_STRING("n")
@@ -27,21 +29,17 @@ class nsIHTMLEditor;
 
 
 
-class ResizerSelectionListener : public nsISelectionListener
+class ResizerSelectionListener final : public nsISelectionListener
 {
 public:
-
-  explicit ResizerSelectionListener(nsIHTMLEditor * aEditor);
+  explicit ResizerSelectionListener(nsIHTMLEditor* aEditor);
   void Reset();
 
-  
   NS_DECL_ISUPPORTS
-
   NS_DECL_NSISELECTIONLISTENER
 
 protected:
-  virtual ~ResizerSelectionListener();
-
+  virtual ~ResizerSelectionListener() {}
   nsWeakPtr mEditor;
 };
 
@@ -49,41 +47,36 @@ protected:
 
 
 
-class ResizerMouseMotionListener : public nsIDOMEventListener
+class ResizerMouseMotionListener final : public nsIDOMEventListener
 {
 public:
-  explicit ResizerMouseMotionListener(nsIHTMLEditor * aEditor);
-
+  explicit ResizerMouseMotionListener(nsIHTMLEditor* aEditor);
 
   NS_DECL_ISUPPORTS
-
   NS_DECL_NSIDOMEVENTLISTENER
 
- protected:
-  virtual ~ResizerMouseMotionListener();
-
+protected:
+  virtual ~ResizerMouseMotionListener() {}
   nsWeakPtr mEditor;
-
 };
 
 
 
 
 
-class DocumentResizeEventListener: public nsIDOMEventListener
+class DocumentResizeEventListener final : public nsIDOMEventListener
 {
 public:
-  explicit DocumentResizeEventListener(nsIHTMLEditor * aEditor);
+  explicit DocumentResizeEventListener(nsIHTMLEditor* aEditor);
 
-  
   NS_DECL_ISUPPORTS
-
   NS_DECL_NSIDOMEVENTLISTENER
 
- protected:
-  virtual ~DocumentResizeEventListener();
+protected:
+  virtual ~DocumentResizeEventListener() {}
   nsWeakPtr mEditor;
-
 };
+
+} 
 
 #endif 

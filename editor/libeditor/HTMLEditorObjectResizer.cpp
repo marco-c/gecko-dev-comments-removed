@@ -4,7 +4,7 @@
 
 
 #include "mozilla/HTMLEditor.h"
-#include "nsHTMLObjectResizer.h"
+#include "HTMLEditorObjectResizerUtils.h"
 
 #include "EditorUtils.h"
 #include "HTMLEditUtils.h"
@@ -45,6 +45,10 @@
 
 class nsISelection;
 
+namespace mozilla {
+
+using namespace dom;
+
 
 
 
@@ -54,10 +58,6 @@ NS_IMPL_ISUPPORTS(DocumentResizeEventListener, nsIDOMEventListener)
 DocumentResizeEventListener::DocumentResizeEventListener(nsIHTMLEditor* aEditor)
 {
   mEditor = do_GetWeakReference(aEditor);
-}
-
-DocumentResizeEventListener::~DocumentResizeEventListener()
-{
 }
 
 NS_IMETHODIMP
@@ -78,10 +78,6 @@ NS_IMPL_ISUPPORTS(ResizerSelectionListener, nsISelectionListener)
 ResizerSelectionListener::ResizerSelectionListener(nsIHTMLEditor* aEditor)
 {
   mEditor = do_GetWeakReference(aEditor);
-}
-
-ResizerSelectionListener::~ResizerSelectionListener()
-{
 }
 
 NS_IMETHODIMP
@@ -114,10 +110,6 @@ ResizerMouseMotionListener::ResizerMouseMotionListener(nsIHTMLEditor* aEditor)
   mEditor = do_GetWeakReference(aEditor);
 }
 
-ResizerMouseMotionListener::~ResizerMouseMotionListener()
-{
-}
-
 NS_IMETHODIMP
 ResizerMouseMotionListener::HandleEvent(nsIDOMEvent* aMouseEvent)
 {
@@ -137,10 +129,6 @@ ResizerMouseMotionListener::HandleEvent(nsIDOMEvent* aMouseEvent)
 
   return NS_OK;
 }
-
-namespace mozilla {
-
-using namespace dom;
 
 
 
