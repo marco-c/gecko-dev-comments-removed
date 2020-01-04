@@ -313,6 +313,14 @@ public:
                      JS::Handle<JSObject*> aPromiseObj);
 #endif 
 
+  enum class PromiseState {
+    Pending,
+    Resolved,
+    Rejected
+  };
+
+  PromiseState State() const;
+
 protected:
   struct PromiseCapability;
 
@@ -369,12 +377,6 @@ protected:
 #endif 
 
 private:
-  enum PromiseState {
-    Pending,
-    Resolved,
-    Rejected
-  };
-
 #ifndef SPIDERMONKEY_PROMISE
   friend class PromiseDebugging;
 
