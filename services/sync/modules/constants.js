@@ -5,7 +5,7 @@
 
 
 this.EXPORTED_SYMBOLS = [];
-for (let [key, val] in Iterator({
+for (let [key, val] of Object.entries({
 
 WEAVE_VERSION:                         "@weave_version@",
 

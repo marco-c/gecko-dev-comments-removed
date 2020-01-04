@@ -70,7 +70,7 @@ function configureClients(clients, clientSettings = {}) {
   
   let engine = Weave.Service.engineManager.get("tabs");
   
-  for (let [guid, client] in Iterator(clients)) {
+  for (let [guid, client] of Object.entries(clients)) {
     client.id = guid;
   }
   engine.clients = clients;
