@@ -65,8 +65,12 @@
   background-position: 0 0;
 }
 
+.side-menu-widget-item:not(.selected) .checkbox-check {
+  filter: var(--icon-filter);
+}
 
-.theme-light .side-menu-widget-item:not(.selected) .checkbox-check {
+
+.side-menu-widget-item.selected .checkbox-check {
   filter: invert(1);
 }
 
