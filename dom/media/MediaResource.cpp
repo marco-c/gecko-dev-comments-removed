@@ -236,7 +236,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
     
     bool boundedSeekLimit = true;
     
-    if (!mByteRange.IsNull() && (responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
+    if (!mByteRange.IsEmpty() && (responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
       
       int64_t rangeStart = 0;
       int64_t rangeEnd = 0;
@@ -273,7 +273,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
       mOffset = rangeStart;
       
       acceptsRanges = true;
-    } else if (((mOffset > 0) || !mByteRange.IsNull())
+    } else if (((mOffset > 0) || !mByteRange.IsEmpty())
                && (responseStatus == HTTP_OK_CODE)) {
       
       
@@ -534,7 +534,7 @@ nsresult ChannelMediaResource::OpenChannel(nsIStreamListener** aStreamListener)
     *aStreamListener = nullptr;
   }
 
-  if (mByteRange.IsNull()) {
+  if (mByteRange.IsEmpty()) {
     
     
     
@@ -583,14 +583,14 @@ nsresult ChannelMediaResource::SetupChannelHeaders()
     
     
     nsAutoCString rangeString("bytes=");
-    if (!mByteRange.IsNull()) {
+    if (!mByteRange.IsEmpty()) {
       rangeString.AppendInt(mByteRange.mStart);
       mOffset = mByteRange.mStart;
     } else {
       rangeString.AppendInt(mOffset);
     }
     rangeString.Append('-');
-    if (!mByteRange.IsNull()) {
+    if (!mByteRange.IsEmpty()) {
       rangeString.AppendInt(mByteRange.mEnd);
     }
     nsresult rv = hc->SetRequestHeader(NS_LITERAL_CSTRING("Range"), rangeString, false);

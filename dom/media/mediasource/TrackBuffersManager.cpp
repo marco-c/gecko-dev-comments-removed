@@ -680,7 +680,7 @@ TrackBuffersManager::SegmentParserLoop()
     
     
     if (mAppendState == AppendState::PARSING_INIT_SEGMENT) {
-      if (mParser->InitSegmentRange().IsNull()) {
+      if (mParser->InitSegmentRange().IsEmpty()) {
         mInputBuffer = nullptr;
         NeedMoreData();
         return;
@@ -707,7 +707,7 @@ TrackBuffersManager::SegmentParserLoop()
           ResetDemuxingState();
           return;
         }
-        if (newData || !mParser->MediaSegmentRange().IsNull()) {
+        if (newData || !mParser->MediaSegmentRange().IsEmpty()) {
           if (mPendingInputBuffer) {
             
             
@@ -1135,7 +1135,7 @@ TrackBuffersManager::CodedFrameProcessing()
   MOZ_ASSERT(mProcessingPromise.IsEmpty());
 
   MediaByteRange mediaRange = mParser->MediaSegmentRange();
-  if (mediaRange.IsNull()) {
+  if (mediaRange.IsEmpty()) {
     AppendDataToCurrentInputBuffer(mInputBuffer);
     mInputBuffer = nullptr;
   } else {
@@ -1309,7 +1309,7 @@ TrackBuffersManager::CompleteCodedFrameProcessing()
   }
 
   
-  if (mParser->MediaSegmentRange().IsNull()) {
+  if (mParser->MediaSegmentRange().IsEmpty()) {
     ResolveProcessing(true, __func__);
     return;
   }
