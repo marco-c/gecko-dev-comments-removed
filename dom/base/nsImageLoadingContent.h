@@ -265,6 +265,7 @@ private:
 
 
 
+
   nsresult FireEvent(const nsAString& aEventType);
 
 protected:

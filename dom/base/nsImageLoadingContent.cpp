@@ -230,8 +230,15 @@ nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest, nsresult aStatus)
   
   if (NS_SUCCEEDED(aStatus)) {
     FireEvent(NS_LITERAL_STRING("load"));
+
+    
+    bool isMultipart;
+    if (NS_FAILED(aRequest->GetMultipart(&isMultipart)) || !isMultipart) {
+      FireEvent(NS_LITERAL_STRING("loadend"));
+    }
   } else {
     FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
   }
 
   nsCOMPtr<nsINode> thisNode = do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
@@ -628,7 +635,9 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
     
     if (!mCurrentRequest)
       aChannel->GetURI(getter_AddRefs(mCurrentURI));
+
     FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
     aError.Throw(rv);
   }
   return listener.forget();
@@ -755,6 +764,7 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
     
     CancelImageRequests(aNotify);
     FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
   }
 
@@ -793,6 +803,7 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
     
     
     FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
   }
 
@@ -849,6 +860,7 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
                                policyType);
   if (!NS_CP_ACCEPTED(cpDecision)) {
     FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
     SetBlockedRequest(aNewURI, cpDecision);
     return NS_OK;
   }
@@ -921,7 +933,9 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
     
     if (!mCurrentRequest)
       mCurrentURI = aNewURI;
+
     FireEvent(NS_LITERAL_STRING("error"));
+    FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
   }
 
