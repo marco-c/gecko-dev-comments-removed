@@ -93,26 +93,25 @@ SpdySession31::SpdySession31(nsISocketTransport *aSocketTransport)
   mPingThreshold = gHttpHandler->SpdyPingThreshold();
 }
 
-PLDHashOperator
-SpdySession31::ShutdownEnumerator(nsAHttpTransaction *key,
-                                  nsAutoPtr<SpdyStream31> &stream,
-                                  void *closure)
+void
+SpdySession31::Shutdown()
 {
-  SpdySession31 *self = static_cast<SpdySession31 *>(closure);
+  for (auto iter = mStreamTransactionHash.Iter(); !iter.Done(); iter.Next()) {
+    nsAutoPtr<SpdyStream31>& stream = iter.Data();
 
-  
-  
-  
-  
-  
-  
-  if (self->mCleanShutdown &&
-      (stream->StreamID() > self->mGoAwayID || !stream->HasRegisteredID()))
-    self->CloseStream(stream, NS_ERROR_NET_RESET); 
-  else
-    self->CloseStream(stream, NS_ERROR_ABORT);
-
-  return PL_DHASH_NEXT;
+    
+    
+    
+    
+    
+    
+    if (mCleanShutdown &&
+        (stream->StreamID() > mGoAwayID || !stream->HasRegisteredID())) {
+      CloseStream(stream, NS_ERROR_NET_RESET); 
+    } else {
+      CloseStream(stream, NS_ERROR_ABORT);
+    }
+  }
 }
 
 PLDHashOperator
@@ -142,7 +141,8 @@ SpdySession31::~SpdySession31()
   inflateEnd(&mDownstreamZlib);
   deflateEnd(&mUpstreamZlib);
 
-  mStreamTransactionHash.Enumerate(ShutdownEnumerator, this);
+  Shutdown();
+
   Telemetry::Accumulate(Telemetry::SPDY_PARALLEL_STREAMS, mConcurrentHighWater);
   Telemetry::Accumulate(Telemetry::SPDY_REQUEST_PER_CONN, (mNextStreamID - 1) / 2);
   Telemetry::Accumulate(Telemetry::SPDY_SERVER_INITIATED_STREAMS,
@@ -2377,7 +2377,8 @@ SpdySession31::Close(nsresult aReason)
 
   mClosed = true;
 
-  mStreamTransactionHash.Enumerate(ShutdownEnumerator, this);
+  Shutdown();
+
   mStreamIDHash.Clear();
   mStreamTransactionHash.Clear();
 

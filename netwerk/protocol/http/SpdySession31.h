@@ -243,9 +243,7 @@ private:
   
   nsresult   NetworkRead(nsAHttpSegmentWriter *, char *, uint32_t, uint32_t *);
 
-  static PLDHashOperator ShutdownEnumerator(nsAHttpTransaction *,
-                                            nsAutoPtr<SpdyStream31> &,
-                                            void *);
+  void Shutdown();
 
   static PLDHashOperator GoAwayEnumerator(nsAHttpTransaction *,
                                           nsAutoPtr<SpdyStream31> &,
