@@ -2090,9 +2090,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   uint8_t mTextAlignLast;               
   bool mTextAlignTrue : 1;              
   bool mTextAlignLastTrue : 1;          
-  bool mTextEmphasisColorForeground : 1;
-  bool mWebkitTextFillColorForeground : 1;    
-  bool mWebkitTextStrokeColorForeground : 1;  
   uint8_t mTextTransform;               
   uint8_t mWhiteSpace;                  
   uint8_t mWordBreak;                   
@@ -2107,9 +2104,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   uint8_t mTextEmphasisStyle;           
   uint8_t mTextRendering;               
   int32_t mTabSize;                     
-  nscolor mTextEmphasisColor;           
-  nscolor mWebkitTextFillColor;         
-  nscolor mWebkitTextStrokeColor;       
+  mozilla::StyleComplexColor mTextEmphasisColor;      
+  mozilla::StyleComplexColor mWebkitTextFillColor;    
+  mozilla::StyleComplexColor mWebkitTextStrokeColor;  
 
   nsStyleCoord mWordSpacing;            
   nsStyleCoord mLetterSpacing;          

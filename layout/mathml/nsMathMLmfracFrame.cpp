@@ -628,11 +628,10 @@ void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
   nsPresContext* presContext = mFrame->PresContext();
   Rect rect = NSRectToRect(mRect + ToReferenceFrame(),
                            presContext->AppUnitsPerDevPixel());
-  
-  nsCSSPropertyID colorProp = mFrame->StyleContext()->GetTextFillColorProp();
+
   ColorPattern color(ToDeviceColor(
-                                 mFrame->GetVisitedDependentColor(colorProp)));
- 
+    mFrame->GetVisitedDependentColor(eCSSProperty__webkit_text_fill_color)));
+
   
   Point delta = Point(presContext->AppUnitsToGfxUnits(mThickness), 0);
   RefPtr<PathBuilder> builder = aDrawTarget.CreatePathBuilder();
