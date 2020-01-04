@@ -1629,7 +1629,7 @@ TryAttachGetElemStub(JSContext* cx, JSScript* script, jsbytecode* pc, ICGetElem_
 
         
         
-        if (IsPrimitiveArrayTypedObject(obj) && cx->compartment()->neuteredTypedObjects)
+        if (IsPrimitiveArrayTypedObject(obj) && cx->compartment()->detachedTypedObjects)
             return true;
 
         JitSpew(JitSpew_BaselineIC, "  Generating GetElem(TypedArray[Int32]) stub");
@@ -2296,7 +2296,7 @@ ICGetElem_TypedArray::Compiler::generateStubCode(MacroAssembler& masm)
     Label failure;
 
     if (layout_ != Layout_TypedArray)
-        CheckForNeuteredTypedObject(cx, masm, &failure);
+        CheckForTypedObjectWithDetachedStorage(cx, masm, &failure);
 
     masm.branchTestObject(Assembler::NotEqual, R0, &failure);
 
@@ -2790,7 +2790,8 @@ DoSetElemFallback(JSContext* cx, BaselineFrame* frame, ICSetElem_Fallback* stub_
 
             
             
-            if (cx->compartment()->neuteredTypedObjects)
+            
+            if (cx->compartment()->detachedTypedObjects)
                 return true;
         }
 
@@ -3346,7 +3347,7 @@ ICSetElem_TypedArray::Compiler::generateStubCode(MacroAssembler& masm)
     Label failure;
 
     if (layout_ != Layout_TypedArray)
-        CheckForNeuteredTypedObject(cx, masm, &failure);
+        CheckForTypedObjectWithDetachedStorage(cx, masm, &failure);
 
     masm.branchTestObject(Assembler::NotEqual, R0, &failure);
 
@@ -5143,7 +5144,7 @@ ICSetProp_TypedObject::Compiler::generateStubCode(MacroAssembler& masm)
 
     Label failure;
 
-    CheckForNeuteredTypedObject(cx, masm, &failure);
+    CheckForTypedObjectWithDetachedStorage(cx, masm, &failure);
 
     
     masm.branchTestObject(Assembler::NotEqual, R0, &failure);

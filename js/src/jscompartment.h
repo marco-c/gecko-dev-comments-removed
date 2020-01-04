@@ -371,7 +371,8 @@ struct JSCompartment
     bool                         globalWriteBarriered;
 
     
-    int32_t                      neuteredTypedObjects;
+    
+    int32_t                      detachedTypedObjects;
 
   private:
     friend class js::AutoSetNewObjectMetadata;
