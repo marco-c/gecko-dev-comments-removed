@@ -38,11 +38,16 @@ public interface HomeScreen {
 
     void onToolbarFocusChange(boolean hasFocus);
 
+    
+    
+    
     void showPanel(String panelId, Bundle restoreData);
-
     void setOnPanelChangeListener(OnPanelChangeListener listener);
-
     void setPanelStateChangeListener(HomeFragment.PanelStateChangeListener listener);
+
+    
+
+
 
     void setBanner(HomeBanner banner);
 
