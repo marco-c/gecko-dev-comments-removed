@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* A higher-order macro for enumerating all cached property names. */
+
+
+
+
+
+
 
 #ifndef vm_CommonPropertyNames_h
 #define vm_CommonPropertyNames_h
@@ -311,6 +311,7 @@
      * enum JS::SymbolCode in jsapi.h. */ \
     macro(iterator, iterator, "iterator") \
     macro(match, match, "match") \
+    macro(search, search, "search") \
     macro(species, species, "species") \
     macro(toPrimitive, toPrimitive, "toPrimitive") \
     macro(unscopables, unscopables, "unscopables") \
@@ -319,10 +320,11 @@
     macro(Symbol_isConcatSpreadable, Symbol_isConcatSpreadable, "Symbol.isConcatSpreadable") \
     macro(Symbol_iterator, Symbol_iterator, "Symbol.iterator") \
     macro(Symbol_match,    Symbol_match,    "Symbol.match") \
+    macro(Symbol_search,   Symbol_search,   "Symbol.search") \
     macro(Symbol_species,  Symbol_species,  "Symbol.species") \
     macro(Symbol_toPrimitive, Symbol_toPrimitive, "Symbol.toPrimitive") \
     macro(Symbol_unscopables, Symbol_unscopables, "Symbol.unscopables") \
     /* Function names for properties named by symbols. */ \
     macro(Symbol_iterator_fun, Symbol_iterator_fun, "[Symbol.iterator]") \
 
-#endif /* vm_CommonPropertyNames_h */
+#endif 

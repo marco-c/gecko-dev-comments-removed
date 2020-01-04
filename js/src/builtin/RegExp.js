@@ -148,6 +148,38 @@ function RegExpMatch(string) {
 }
 
 
+function RegExpSearch(string) {
+    
+    var rx = this;
+
+    
+    if (!IsObject(rx))
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, rx === null ? "null" : typeof rx);
+
+    
+    var S = ToString(string);
+
+    
+    var previousLastIndex = rx.lastIndex;
+
+    
+    rx.lastIndex = 0;
+
+    
+    var result = RegExpExec(rx, S, false);
+
+    
+    rx.lastIndex = previousLastIndex;
+
+    
+    if (result === null)
+        return -1;
+
+    
+    return result.index;
+}
+
+
 
 function RegExp_prototype_Exec(string) {
     
