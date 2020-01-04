@@ -300,11 +300,11 @@ function InplaceEditor(options, event) {
 
   this._updateSize();
 
+  EventEmitter.decorate(this);
+
   if (options.start) {
     options.start(this, event);
   }
-
-  EventEmitter.decorate(this);
 }
 
 exports.InplaceEditor = InplaceEditor;
@@ -1308,7 +1308,7 @@ InplaceEditor.prototype = {
       }
       let list = [];
       if (this.contentType == CONTENT_TYPES.CSS_PROPERTY) {
-        list = CSSPropertyList;
+        list = this._getCSSPropertyList();
       } else if (this.contentType == CONTENT_TYPES.CSS_VALUE) {
         
         let match = /([^\s,.\/]+$)/.exec(query);
@@ -1320,7 +1320,7 @@ InplaceEditor.prototype = {
 
         list =
           ["!important",
-           ...domUtils.getCSSValuesForProperty(this.property.name)];
+           ...this._getCSSValuesForPropertyName(this.property.name)];
 
         if (query == "") {
           
@@ -1346,7 +1346,7 @@ InplaceEditor.prototype = {
               query.match(/[;"'=]\s*([^"';:= ]+)\s*:\s*[^"';:=]*$/)[1];
             list =
               ["!important;",
-               ...domUtils.getCSSValuesForProperty(propertyName)];
+               ...this._getCSSValuesForPropertyName(propertyName)];
             let matchLastQuery = /([^\s,.\/]+$)/.exec(match[2] || "");
             if (matchLastQuery) {
               startCheckQuery = matchLastQuery[0];
@@ -1359,7 +1359,7 @@ InplaceEditor.prototype = {
             }
           } else if (match[1]) {
             
-            list = CSSPropertyList;
+            list = this._getCSSPropertyList();
             startCheckQuery = match[2];
           }
           if (startCheckQuery == null) {
@@ -1454,6 +1454,28 @@ InplaceEditor.prototype = {
   _isSingleLine: function () {
     let inputRect = this.input.getBoundingClientRect();
     return inputRect.height < 2 * this.inputCharDimensions.height;
+  },
+
+  
+
+
+
+
+
+  _getCSSPropertyList: function () {
+    return CSSPropertyList;
+  },
+
+  
+
+
+
+
+
+
+
+  _getCSSValuesForPropertyName: function (propertyName) {
+    return domUtils.getCSSValuesForProperty(propertyName);
   },
 };
 

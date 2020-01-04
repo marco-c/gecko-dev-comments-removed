@@ -2,15 +2,16 @@
 
 
 
+
 "use strict";
 
-var {editableField, getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
+loadHelperScript("helper_inplace_editor.js");
 
 
 
 add_task(function* () {
   yield addTab("data:text/html;charset=utf-8,inline editor tests");
-  let [host, win, doc] = yield createHost();
+  let [host, , doc] = yield createHost();
 
   yield testNonTrimmed(doc);
   yield testTrimmed(doc);
@@ -67,24 +68,4 @@ function onDone(value, isCommit, def) {
     is(actualCommit, isCommit, "The commit boolean is correct");
     def.resolve();
   };
-}
-
-function createInplaceEditorAndClick(options, doc) {
-  doc.body.innerHTML = "";
-  let span = options.element = createSpan(doc);
-
-  info("Creating an inplace-editor field");
-  editableField(options);
-
-  info("Clicking on the inplace-editor field to turn to edit mode");
-  span.click();
-}
-
-function createSpan(doc) {
-  info("Creating a new span element");
-  let span = doc.createElement("span");
-  span.setAttribute("tabindex", "0");
-  span.textContent = "Edit Me!";
-  doc.body.appendChild(span);
-  return span;
 }
