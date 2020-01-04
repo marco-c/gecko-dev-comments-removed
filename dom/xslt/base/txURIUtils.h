@@ -23,14 +23,6 @@ public:
 
 
     static void ResetWithSource(nsIDocument *aNewDoc, nsIDOMNode *aSourceNode);
-
-    
-
-
-
-
-    static void resolveHref(const nsAString& href, const nsAString& base,
-                            nsAString& dest);
 }; 
 
 
