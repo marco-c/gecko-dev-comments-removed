@@ -684,7 +684,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
 
     
     "-webkit-gradient(radial, 1 2, 8, 3 4, 9)",
-    "-webkit-gradient(radial, 0 0, 10, 0 0, 5)",
     "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)",
 
     
