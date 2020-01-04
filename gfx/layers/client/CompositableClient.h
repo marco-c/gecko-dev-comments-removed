@@ -222,7 +222,15 @@ public:
 
   static PCompositableChild* CreateIPDLActor();
 
-  static bool DestroyIPDLActor(PCompositableChild* actor);
+  static bool DeallocIPDLActor(PCompositableChild* actor);
+
+  
+  
+  
+  
+  
+  
+  static void ForceIPDLActorShutdown(PCompositableChild* aActor);
 
   void InitIPDLActor(PCompositableChild* aActor, uint64_t aAsyncID = 0);
 

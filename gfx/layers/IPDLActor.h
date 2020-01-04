@@ -34,51 +34,42 @@ namespace layers {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename Protocol>
 class ChildActor : public Protocol
 {
 public:
-  ChildActor() : mDestroyed(false) {}
+  ChildActor()
+  : mReleased(false)
+  , mSentDestroy(false)
+  , mIPCOpen(true)
+  {}
 
-  ~ChildActor() { MOZ_ASSERT(mDestroyed); }
+  ~ChildActor() { MOZ_ASSERT(mReleased); }
 
   
-  bool CanSend() const { return !mDestroyed; }
+  bool CanSend() const { return !mSentDestroy && mIPCOpen; }
 
   
-  
-  
-  
-  void Destroy(CompositableForwarder* aFwd = nullptr)
-  {
-    MOZ_ASSERT(!mDestroyed);
-    if (!mDestroyed) {
-      mDestroyed = true;
-      DestroyManagees();
-      if (!aFwd || !aFwd->DestroyInTransaction(this, false)) {
-        this->SendDestroy();
-      }
-    }
-  }
+  bool IPCOpen() const { return mIPCOpen; }
 
   
   
   
   
-  
-  void DestroySynchronously(CompositableForwarder* aFwd = nullptr)
-  {
-    MOZ_PERFORMANCE_WARNING("gfx", "IPDL actor requires synchronous deallocation");
-    MOZ_ASSERT(!mDestroyed);
-    if (!mDestroyed) {
-      DestroyManagees();
-      mDestroyed = true;
-      if (!aFwd || !aFwd->DestroyInTransaction(this, true)) {
-        this->SendDestroySync();
-        this->SendDestroy();
-      }
-    }
-  }
+  bool Released() const { return mReleased; }
 
   
   
@@ -87,13 +78,86 @@ public:
     return aActor->SendDestroySync();
   }
 
+  typedef ipc::IProtocolManager<ipc::IProtocol>::ActorDestroyReason Why;
+
+  virtual void ActorDestroy(Why) override
+  {
+    mIPCOpen = false;
+  }
+
   
   
-  virtual void DestroyManagees() {}
+  void ForceActorShutdown()
+  {
+    if (mIPCOpen && !mSentDestroy) {
+      this->SendDestroy();
+      mSentDestroy = true;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  void ReleaseActor(CompositableForwarder* aFwd = nullptr)
+  {
+    if (!IPCOpen()) {
+      mReleased = true;
+      delete this;
+      return;
+    }
+
+    Destroy(aFwd, false);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  void ReleaseActorSynchronously(CompositableForwarder* aFwd = nullptr)
+  {
+    if (!IPCOpen()) {
+      mReleased = true;
+      delete this;
+      return;
+    }
+
+    Destroy(aFwd, true);
+  }
+
+protected:
+
+  void Destroy(CompositableForwarder* aFwd = nullptr, bool synchronously = false)
+  {
+    MOZ_ASSERT(mIPCOpen);
+    MOZ_ASSERT(!mReleased);
+    if (mReleased) {
+      return;
+    }
+    mReleased = true;
+
+    if (!aFwd || !aFwd->DestroyInTransaction(this, synchronously)) {
+      if (synchronously) {
+        MOZ_PERFORMANCE_WARNING("gfx", "IPDL actor requires synchronous deallocation");
+        this->SendDestroySync();
+      } else {
+        this->SendDestroy();
+      }
+    }
+    mSentDestroy = true;
+  }
 
 private:
-  bool mDestroyed;
+  bool mReleased;
+  bool mSentDestroy;
+  bool mIPCOpen;
 };
+
 
 
 
@@ -103,20 +167,20 @@ template<typename Protocol>
 class ParentActor : public Protocol
 {
 public:
-  ParentActor() : mDestroyed(false) {}
+  ParentActor() : mReleased(false) {}
 
-  ~ParentActor() { MOZ_ASSERT(mDestroyed); }
+  ~ParentActor() { MOZ_ASSERT(mReleased); }
 
-  bool CanSend() const { return !mDestroyed; }
+  bool CanSend() const { return !mReleased; }
 
   
   virtual void Destroy() {}
 
   virtual bool RecvDestroy() override
   {
-    if (!mDestroyed) {
+    if (!mReleased) {
       Destroy();
-      mDestroyed = true;
+      mReleased = true;
     }
     Unused << Protocol::Send__delete__(this);
     return true;
@@ -124,9 +188,9 @@ public:
 
   virtual bool RecvDestroySync() override
   {
-    if (!mDestroyed) {
+    if (!mReleased) {
       Destroy();
-      mDestroyed = true;
+      mReleased = true;
     }
     return true;
   }
@@ -135,14 +199,14 @@ public:
 
   virtual void ActorDestroy(Why) override
   {
-    if (!mDestroyed) {
+    if (!mReleased) {
       Destroy();
-      mDestroyed = true;
+      mReleased = true;
     }
   }
 
 private:
-  bool mDestroyed;
+  bool mReleased;
 };
 
 } 

@@ -428,7 +428,8 @@ public:
 
 
   static PTextureChild* CreateIPDLActor();
-  static bool DestroyIPDLActor(PTextureChild* actor);
+  static bool DeallocIPDLActor(PTextureChild* actor);
+  static void ForceIPDLActorShutdown(PTextureChild* actor);
   
   static bool DestroyFallback(PTextureChild* actor);
 
@@ -620,7 +621,7 @@ protected:
 
 
   RefPtr<ClientIPCAllocator> mAllocator;
-  RefPtr<TextureChild> mActor;
+  TextureChild* mActor;
   RefPtr<ITextureClientRecycleAllocator> mRecycleAllocator;
   RefPtr<AsyncTransactionWaiter> mRemoveFromCompositableWaiter;
 
