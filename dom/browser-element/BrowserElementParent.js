@@ -24,10 +24,6 @@ XPCOMUtils.defineLazyGetter(this, "DOMApplicationRegistry", function () {
   return DOMApplicationRegistry;
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "systemMessenger",
-                                   "@mozilla.org/system-message-internal;1",
-                                   "nsISystemMessagesInternal");
-
 function debug(msg) {
   
 }
@@ -1185,26 +1181,6 @@ BrowserElementParent.prototype = {
   isAudioChannelActive: function(aAudioChannel) {
     return this._sendDOMRequest('get-is-audio-channel-active',
                                 {audioChannel: aAudioChannel});
-  },
-
-  notifyChannel: function(aEvent, aManifest, aAudioChannel) {
-    var self = this;
-    var req = Services.DOMRequest.createRequest(self._window);
-
-    
-    
-    
-    let manifestURL = Services.io.newURI(aManifest, null, null);
-    systemMessenger.sendMessage(aEvent, aAudioChannel, null, manifestURL)
-      .then(function() {
-        Services.DOMRequest.fireSuccess(req,
-          Cu.cloneInto(true, self._window));
-      }, function() {
-        debug("Error : NotifyChannel fail.");
-        Services.DOMRequest.fireErrorAsync(req,
-          Cu.cloneInto("NotifyChannel fail.", self._window));
-      });
-    return req;
   },
 
   getWebManifest: defineDOMRequestMethod('get-web-manifest'),
