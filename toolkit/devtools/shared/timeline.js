@@ -258,7 +258,7 @@ let Timeline = exports.Timeline = Class({
 
 
 
-  _onGarbageCollection: function ({ collections, reason, nonincrementalReason }) {
+  _onGarbageCollection: function ({ collections, gcCycleNumber, reason, nonincrementalReason }) {
     if (!this._isRecording || !this.docShells.length) {
       return;
     }
@@ -270,9 +270,9 @@ let Timeline = exports.Timeline = Class({
         name: "GarbageCollection",
         causeName: reason,
         nonincrementalReason: nonincrementalReason,
-        
-        start: start,
-        end: end
+        cycle: gcCycleNumber,
+        start,
+        end,
       };
     }), endTime);
   },

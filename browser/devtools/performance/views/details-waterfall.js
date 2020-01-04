@@ -142,8 +142,8 @@ let WaterfallView = Heritage.extend(DetailsSubview, {
     let recording = PerformanceController.getCurrentRecording();
     let markers = recording.getMarkers();
 
-    let mostRecentGC = null;
-
+    let lastGCMarkerFromPreviousCycle = null;
+    let lastGCMarker = null;
     
     
     for (let marker of markers) {
@@ -151,13 +151,17 @@ let WaterfallView = Heritage.extend(DetailsSubview, {
       if (marker.start === endTime) {
         break;
       }
+
       if (marker.name === "GarbageCollection") {
-        mostRecentGC = marker;
+        if (lastGCMarker && lastGCMarker.cycle !== marker.cycle) {
+          lastGCMarkerFromPreviousCycle = lastGCMarker;
+        }
+        lastGCMarker = marker;
       }
     }
 
-    if (mostRecentGC) {
-      startTime = mostRecentGC.end;
+    if (lastGCMarkerFromPreviousCycle) {
+      startTime = lastGCMarkerFromPreviousCycle.end;
     }
 
     
