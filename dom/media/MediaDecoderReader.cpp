@@ -259,19 +259,9 @@ MediaDecoderReader::AsyncReadMetadata()
   mDecoder->GetReentrantMonitor().AssertNotCurrentThreadIn();
   DECODER_LOG("MediaDecoderReader::AsyncReadMetadata");
 
-  if (IsWaitingMediaResources()) {
-    return MetadataPromise::CreateAndReject(Reason::WAITING_FOR_RESOURCES, __func__);
-  }
-
   
   nsRefPtr<MetadataHolder> metadata = new MetadataHolder();
   nsresult rv = ReadMetadata(&metadata->mInfo, getter_Transfers(metadata->mTags));
-
-  
-  
-  if (IsWaitingMediaResources()) {
-    return MetadataPromise::CreateAndReject(Reason::WAITING_FOR_RESOURCES, __func__);
-  }
 
   
   
