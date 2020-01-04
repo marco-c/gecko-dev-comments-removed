@@ -162,7 +162,21 @@ FileAsTypedArray(JSContext* cx, const char* pathname)
             obj = JS_NewUint8Array(cx, len);
             if (!obj)
                 return nullptr;
-            char* buf = (char*) obj->as<js::TypedArrayObject>().viewData();
+            js::TypedArrayObject& ta = obj->as<js::TypedArrayObject>();
+            if (ta.isSharedMemory()) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                JS_ReportError(cx, "can't read %s: shared memory buffer", pathname);
+                return nullptr;
+            }
+            char* buf = static_cast<char*>(ta.viewDataUnshared());
             size_t cc = fread(buf, 1, len, file);
             if (cc != len) {
                 JS_ReportError(cx, "can't read %s: %s", pathname,
@@ -267,7 +281,15 @@ osfile_writeTypedArrayToFile(JSContext* cx, unsigned argc, Value* vp)
 
     TypedArrayObject* obj = &args[1].toObject().as<TypedArrayObject>();
 
-    if (fwrite(obj->viewData(), obj->bytesPerElement(), obj->length(), file) != obj->length() ||
+    if (obj->isSharedMemory()) {
+        
+        
+        
+        JS_ReportError(cx, "can't write %s: shared memory buffer", filename.ptr());
+        return false;
+    }
+    void* buf = obj->viewDataUnshared();
+    if (fwrite(buf, obj->bytesPerElement(), obj->length(), file) != obj->length() ||
         !autoClose.release())
     {
         JS_ReportError(cx, "can't write %s", filename.ptr());
