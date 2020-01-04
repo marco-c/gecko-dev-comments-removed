@@ -35,8 +35,13 @@ nsresult
 BluetoothDaemonHandsfreeModule::Send(DaemonSocketPDU* aPDU,
                                      BluetoothHandsfreeResultHandler* aRes)
 {
-  aRes->AddRef(); 
-  return Send(aPDU, static_cast<void*>(aRes));
+  nsRefPtr<BluetoothHandsfreeResultHandler> res(aRes);
+  nsresult rv = Send(aPDU, static_cast<void*>(res.get()));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  unused << res.forget(); 
+  return NS_OK;
 }
 
 void
