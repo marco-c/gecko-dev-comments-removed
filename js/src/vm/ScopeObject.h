@@ -608,17 +608,9 @@ class DynamicWithObject : public NestedScopeObject
 
 class BlockObject : public NestedScopeObject
 {
-  protected:
-    static const unsigned DEPTH_SLOT = 1;
-
   public:
     static const unsigned RESERVED_SLOTS = 2;
     static const Class class_;
-
-    
-    uint32_t stackDepth() const {
-        return getReservedSlot(DEPTH_SLOT).toPrivateUint32();
-    }
 
     
     uint32_t numVariables() const {
