@@ -11,6 +11,7 @@
 #include "jsfuninlines.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Range.h"
 
@@ -1703,7 +1704,6 @@ static bool
 FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind generatorKind)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    RootedString arg(cx);   
 
     
     Rooted<GlobalObject*> global(cx, &args.callee().global());
@@ -1711,11 +1711,6 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CSP_BLOCKED_FUNCTION);
         return false;
     }
-
-    AutoKeepAtoms keepAtoms(cx->perThreadData);
-    Rooted<PropertyNameVector> formals(cx, PropertyNameVector(cx));
-
-    bool hasRest = false;
 
     bool isStarGenerator = generatorKind == StarGenerator;
     MOZ_ASSERT(generatorKind != LegacyGenerator);
@@ -1742,63 +1737,59 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
            .setNoScriptRval(false)
            .setIntroductionInfo(introducerFilename, introductionType, lineno, maybeScript, pcOffset);
 
-    unsigned n = args.length() ? args.length() - 1 : 0;
-    if (n > 0) {
+    Vector<char16_t> paramStr(cx);
+    RootedString bodyText(cx);
+
+    if (args.length() == 0) {
+        bodyText = cx->names().empty;
+    } else {
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsigned n = args.length() - 1;
 
-
-
-
-
-
-
-
-
-        size_t args_length = 0;
+        
+        
+        mozilla::CheckedInt<uint32_t> paramStrLen = 0;
+        RootedString str(cx);
         for (unsigned i = 0; i < n; i++) {
-            
-            arg = ToString<CanGC>(cx, args[i]);
-            if (!arg)
+            str = ToString<CanGC>(cx, args[i]);
+            if (!str)
                 return false;
-            args[i].setString(arg);
 
-            
-
-
-
-            size_t old_args_length = args_length;
-            args_length = old_args_length + arg->length();
-            if (args_length < old_args_length) {
-                ReportAllocationOverflow(cx);
-                return false;
-            }
+            args[i].setString(str);
+            paramStrLen += str->length();
         }
 
         
-        size_t old_args_length = args_length;
-        args_length = old_args_length + n - 1;
-        if (args_length < old_args_length ||
-            args_length >= ~(size_t)0 / sizeof(char16_t)) {
+        if (n > 0)
+            paramStrLen += n - 1;
+
+        
+        if (!paramStrLen.isValid() || paramStrLen.value() > JSString::MAX_LENGTH) {
             ReportAllocationOverflow(cx);
             return false;
         }
 
+        uint32_t paramsLen = paramStrLen.value();
+
         
-
-
-
-
-        LifoAllocScope las(&cx->tempLifoAlloc());
-        char16_t* cp = cx->tempLifoAlloc().newArray<char16_t>(args_length + 1);
-        if (!cp) {
+        
+        MOZ_ASSERT(paramStr.length() == 0);
+        if (!paramStr.growBy(paramsLen)) {
             ReportOutOfMemory(cx);
             return false;
         }
-        ConstTwoByteChars collected_args(cp, args_length + 1);
 
-        
-
-
+        char16_t* cp = paramStr.begin();
         for (unsigned i = 0; i < n; i++) {
             JSLinearString* argLinear = args[i].toString()->ensureLinear(cx);
             if (!argLinear)
@@ -1807,18 +1798,61 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
             CopyChars(cp, *argLinear);
             cp += argLinear->length();
 
-            
-            *cp++ = (i + 1 < n) ? ',' : 0;
+            if (i + 1 < n)
+                *cp++ = ',';
         }
 
+        MOZ_ASSERT(cp == paramStr.end());
+
+        bodyText = ToString(cx, args[n]);
+        if (!bodyText)
+            return false;
+    }
+
+    
+
+
+
+
+
+    RootedAtom anonymousAtom(cx, cx->names().anonymous);
+    RootedObject proto(cx);
+    if (isStarGenerator) {
+        proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, global);
+        if (!proto)
+            return false;
+    }
+    RootedFunction fun(cx, NewFunctionWithProto(cx, nullptr, 0,
+                                                JSFunction::INTERPRETED_LAMBDA, global,
+                                                anonymousAtom, proto,
+                                                AllocKind::FUNCTION, TenuredObject));
+    if (!fun)
+        return false;
+
+    if (!JSFunction::setTypeForScriptedFunction(cx, fun))
+        return false;
+
+    AutoStableStringChars stableChars(cx);
+    if (!stableChars.initTwoByte(cx, bodyText))
+        return false;
+
+    bool hasRest = false;
+
+    Rooted<PropertyNameVector> formals(cx, PropertyNameVector(cx));
+    if (args.length() > 1) {
         
-
-
-
-
-
-
-        TokenStream ts(cx, options, collected_args.start().get(), args_length,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        AutoKeepAtoms keepAtoms(cx->perThreadData);
+        TokenStream ts(cx, options, paramStr.begin(), paramStr.length(),
                         nullptr);
         bool yieldIsValidName = ts.versionNumber() < JSVERSION_1_7 && !isStarGenerator;
 
@@ -1827,7 +1861,7 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
         if (!ts.getToken(&tt))
             return false;
         if (tt != TOK_EOF) {
-            for (;;) {
+            while (true) {
                 
                 if (hasRest) {
                     ts.reportError(JSMSG_PARAMETER_AFTER_REST);
@@ -1857,9 +1891,7 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
                     return false;
 
                 
-
-
-
+                
                 if (!ts.getToken(&tt))
                     return false;
                 if (tt == TOK_EOF)
@@ -1872,50 +1904,8 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
         }
     }
 
-#ifdef DEBUG
-    for (unsigned i = 0; i < formals.length(); ++i) {
-        JSString* str = formals[i];
-        MOZ_ASSERT(str->asAtom().asPropertyName() == formals[i]);
-    }
-#endif
-
-    RootedString str(cx);
-    if (!args.length())
-        str = cx->runtime()->emptyString;
-    else
-        str = ToString<CanGC>(cx, args[args.length() - 1]);
-    if (!str)
-        return false;
-
-    
-
-
-
-
-
-    RootedAtom anonymousAtom(cx, cx->names().anonymous);
-    RootedObject proto(cx);
-    if (isStarGenerator) {
-        proto = GlobalObject::getOrCreateStarGeneratorFunctionPrototype(cx, global);
-        if (!proto)
-            return false;
-    }
-    RootedFunction fun(cx, NewFunctionWithProto(cx, nullptr, 0,
-                                                JSFunction::INTERPRETED_LAMBDA, global,
-                                                anonymousAtom, proto,
-                                                AllocKind::FUNCTION, TenuredObject));
-    if (!fun)
-        return false;
-
-    if (!JSFunction::setTypeForScriptedFunction(cx, fun))
-        return false;
-
     if (hasRest)
         fun->setHasRest();
-
-    AutoStableStringChars stableChars(cx);
-    if (!stableChars.initTwoByte(cx, str))
-        return false;
 
     mozilla::Range<const char16_t> chars = stableChars.twoByteRange();
     SourceBufferHolder::Ownership ownership = stableChars.maybeGiveOwnershipToCaller()
