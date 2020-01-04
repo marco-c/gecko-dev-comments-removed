@@ -9,6 +9,7 @@
 
 #include "jsfriendapi.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Likely.h"
 
 #include "mozilla/dom/PrototypeList.h" 
 
@@ -77,8 +78,7 @@ static const uint32_t ServiceWorkerGlobalScope = 1u << 4;
 static const uint32_t WorkerDebuggerGlobalScope = 1u << 5;
 } 
 
-template<typename T>
-struct Prefable {
+struct PrefableDisablers {
   inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
     
     
@@ -96,9 +96,6 @@ struct Prefable {
     }
     if (!enabled) {
       return false;
-    }
-    if (!enabledFunc && !availableFunc && !checkAnyPermissions && !checkAllPermissions) {
-      return true;
     }
     if (enabledFunc &&
         !enabledFunc(cx, js::GetGlobalForObjectCrossCompartment(obj))) {
@@ -122,24 +119,43 @@ struct Prefable {
   }
 
   
+  
   bool enabled;
+
   
-  uint32_t nonExposedGlobals;
-  
-  
-  
-  PropertyEnabled enabledFunc;
+  const uint16_t nonExposedGlobals;
+
   
   
   
-  
-  PropertyEnabled availableFunc;
-  const char* const* checkAnyPermissions;
-  const char* const* checkAllPermissions;
+  const PropertyEnabled enabledFunc;
+
   
   
   
-  const T* specs;
+  
+  const PropertyEnabled availableFunc;
+  const char* const* const checkAnyPermissions;
+  const char* const* const checkAllPermissions;
+};
+
+template<typename T>
+struct Prefable {
+  inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
+    if (MOZ_LIKELY(!disablers)) {
+      return true;
+    }
+    return disablers->isEnabled(cx, obj);
+  }
+
+  
+  
+  PrefableDisablers* const disablers;
+
+  
+  
+  
+  const T* const specs;
 };
 
 struct NativeProperties
