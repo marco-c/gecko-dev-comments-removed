@@ -44,6 +44,8 @@ struct DefaultMapSweepPolicy {
 
 
 
+
+
 template <typename Key,
           typename Value,
           typename HashPolicy = DefaultHasher<Key>,
@@ -88,6 +90,10 @@ class GCHashMap : public HashMap<Key, Value, HashPolicy, AllocPolicy>
     GCHashMap(const GCHashMap& hm) = delete;
     GCHashMap& operator=(const GCHashMap& hm) = delete;
 };
+
+
+
+
 
 
 template <typename Key,
