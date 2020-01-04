@@ -657,75 +657,6 @@ nsresult AudioDevice::Restart(const dom::MediaTrackConstraints &aConstraints,
   return GetSource()->Restart(aConstraints, aPrefs, mID);
 }
 
-
-
-
-
-class nsDOMUserMediaStream : public DOMLocalMediaStream
-{
-public:
-  static already_AddRefed<nsDOMUserMediaStream>
-  CreateSourceStream(nsPIDOMWindowInner* aWindow,
-                     GetUserMediaCallbackMediaStreamListener* aListener,
-                     MediaStreamGraph* aMSG,
-                     MediaStreamTrackSourceGetter* aTrackSourceGetter)
-  {
-    RefPtr<nsDOMUserMediaStream> stream =
-      new nsDOMUserMediaStream(aWindow, aListener, aTrackSourceGetter);
-    stream->InitSourceStream(aMSG);
-    return stream.forget();
-  }
-
-  nsDOMUserMediaStream(nsPIDOMWindowInner* aWindow,
-                       GetUserMediaCallbackMediaStreamListener* aListener,
-                       MediaStreamTrackSourceGetter* aTrackSourceGetter) :
-    DOMLocalMediaStream(aWindow, aTrackSourceGetter),
-    mListener(aListener)
-  {}
-
-  virtual ~nsDOMUserMediaStream()
-  {
-    StopImpl();
-
-    if (GetSourceStream()) {
-      GetSourceStream()->Destroy();
-    }
-  }
-
-  
-  bool AddDirectListener(MediaStreamDirectListener *aListener) override
-  {
-    if (GetSourceStream()) {
-      GetSourceStream()->AddDirectListener(aListener);
-      return true; 
-    }
-    return false;
-  }
-
-  void RemoveDirectListener(MediaStreamDirectListener *aListener) override
-  {
-    if (GetSourceStream()) {
-      GetSourceStream()->RemoveDirectListener(aListener);
-    }
-  }
-
-  DOMLocalMediaStream* AsDOMLocalMediaStream() override
-  {
-    return this;
-  }
-
-  SourceMediaStream* GetSourceStream()
-  {
-    if (GetInputStream()) {
-      return GetInputStream()->AsSourceStream();
-    }
-    return nullptr;
-  }
-
-  RefPtr<GetUserMediaCallbackMediaStreamListener> mListener;
-};
-
-
 void
 MediaOperationTask::ReturnCallbackError(nsresult rv, const char* errorLog)
 {
@@ -936,7 +867,7 @@ public:
       
       
       domStream =
-        nsDOMUserMediaStream::CreateSourceStream(window, mListener, msg, nullptr);
+        DOMLocalMediaStream::CreateSourceStream(window, msg, nullptr);
 
       if (mPeerIdentity) {
         domStream->SetPeerIdentity(mPeerIdentity.forget());

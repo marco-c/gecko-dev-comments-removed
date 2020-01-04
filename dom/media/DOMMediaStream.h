@@ -417,9 +417,8 @@ public:
 
 
 
-
-  virtual bool AddDirectListener(MediaStreamDirectListener *aListener) { return false; }
-  virtual void RemoveDirectListener(MediaStreamDirectListener *aListener) {}
+  bool AddDirectListener(MediaStreamDirectListener *aListener);
+  void RemoveDirectListener(MediaStreamDirectListener *aListener);
 
   virtual DOMLocalMediaStream* AsDOMLocalMediaStream() { return nullptr; }
   virtual DOMHwMediaStream* AsDOMHwMediaStream() { return nullptr; }
