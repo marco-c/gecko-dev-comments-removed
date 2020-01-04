@@ -3,7 +3,7 @@
 
 
 
-__version__ = '0.13'
+__version__ = '0.2.0'
 
 
 from marionette_driver import ( errors, by, decorators, expected, geckoinstance,
