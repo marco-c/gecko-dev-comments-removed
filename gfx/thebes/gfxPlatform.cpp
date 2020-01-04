@@ -2067,7 +2067,6 @@ gfxPlatform::OptimalFormatForContent(gfxContentType aContent)
 
 
 
-bool gANGLESupportsD3D11 = false;
 static mozilla::Atomic<bool> sLayersSupportsHardwareVideoDecoding(false);
 static bool sLayersHardwareVideoDecodingFailed = false;
 static bool sBufferRotationCheckPref = true;
@@ -2096,15 +2095,6 @@ gfxPlatform::InitAcceleration()
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   nsCString discardFailureId;
   int32_t status;
-#ifdef XP_WIN
-  if (!gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly() && gfxInfo) {
-    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE, discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-        gANGLESupportsD3D11 = true;
-      }
-    }
-  }
-#endif
 
   if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
 #ifdef XP_WIN
