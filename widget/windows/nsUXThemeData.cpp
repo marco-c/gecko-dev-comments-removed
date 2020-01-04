@@ -168,6 +168,7 @@ nsUXThemeData::UpdateTitlebarInfo(HWND aWnd)
     }
   }
 
+  
   if (sTitlebarInfoPopulatedThemed || IsWin8OrLater())
     return;
 
@@ -197,7 +198,15 @@ nsUXThemeData::UpdateTitlebarInfo(HWND aWnd)
                               nsToolkit::mDllInstance, nullptr);
   NS_ASSERTION(hWnd, "UpdateTitlebarInfo window creation failed.");
 
-  ShowWindow(hWnd, SW_SHOW);
+  int showType = SW_SHOWNA;
+  
+  
+  
+  if (sThemeId == LookAndFeel::eWindowsTheme_AeroLite ||
+      (sThemeId == LookAndFeel::eWindowsTheme_Aero && !nsUXThemeData::CheckForCompositor())) {
+    showType = SW_SHOW;
+  }
+  ShowWindow(hWnd, showType);
   TITLEBARINFOEX info = {0};
   info.cbSize = sizeof(TITLEBARINFOEX);
   SendMessage(hWnd, WM_GETTITLEBARINFOEX, 0, (LPARAM)&info); 
