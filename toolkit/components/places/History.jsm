@@ -659,27 +659,6 @@ var clear = Task.async(function* (db) {
 
 
 
-var removePagesById = Task.async(function*(db, idList) {
-  if (idList.length == 0) {
-    return;
-  }
-  
-  yield db.execute(`DELETE FROM moz_places
-                    WHERE id IN ( ${ sqlList(idList) } )`);
-  
-  
-  yield db.execute(`DELETE FROM moz_updatehosts_temp`);
-});
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -694,7 +673,25 @@ var removePagesById = Task.async(function*(db, idList) {
 
 var cleanupPages = Task.async(function*(db, pages) {
   yield invalidateFrecencies(db, pages.filter(p => p.hasForeign || p.hasVisits).map(p => p.id));
-  yield removePagesById(db, pages.filter(p => !p.hasForeign && !p.hasVisits).map(p => p.id));
+
+  let pageIdsToRemove = pages.filter(p => !p.hasForeign && !p.hasVisits).map(p => p.id);
+  if (pageIdsToRemove.length > 0) {
+    let idsList = sqlList(pageIdsToRemove);
+    
+    yield db.execute(`DELETE FROM moz_places WHERE id IN ( ${ idsList } )`);
+    
+    
+    yield db.executeCached(`DELETE FROM moz_updatehosts_temp`);
+
+    
+    yield db.executeCached(`
+      DELETE FROM moz_favicons WHERE NOT EXISTS
+        (SELECT 1 FROM moz_places WHERE favicon_id = moz_favicons.id)`);
+    yield db.execute(`DELETE FROM moz_annos
+                      WHERE place_id IN ( ${ idsList } )`);
+    yield db.execute(`DELETE FROM moz_inputhistory
+                      WHERE place_id IN ( ${ idsList } )`);
+  }
 });
 
 

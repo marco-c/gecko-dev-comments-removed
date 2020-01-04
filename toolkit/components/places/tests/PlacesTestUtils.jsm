@@ -120,23 +120,15 @@ this.PlacesTestUtils = Object.freeze({
 
 
   promiseAsyncUpdates() {
-    return new Promise(resolve => {
-      let db = PlacesUtils.history.DBConnection;
-      let begin = db.createAsyncStatement("BEGIN EXCLUSIVE");
-      begin.executeAsync();
-      begin.finalize();
-
-      let commit = db.createAsyncStatement("COMMIT");
-      commit.executeAsync({
-        handleResult: function () {},
-        handleError: function () {},
-        handleCompletion: function(aReason)
-        {
-          resolve();
-        }
-      });
-      commit.finalize();
-    });
+    return PlacesUtils.withConnectionWrapper("promiseAsyncUpdates", Task.async(function* (db) {
+      try {
+        yield db.executeCached("BEGIN EXCLUSIVE");
+        yield db.executeCached("COMMIT");
+      } catch (ex) {
+        
+        
+      }
+    }));
   },
 
   
