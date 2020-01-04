@@ -10,6 +10,9 @@ loader.lazyRequireGetter(this, "PerformanceIO",
   "devtools/toolkit/performance/io");
 loader.lazyRequireGetter(this, "RecordingUtils",
   "devtools/toolkit/performance/utils");
+loader.lazyRequireGetter(this, "PerformanceRecordingCommon",
+  "devtools/toolkit/performance/recording-common", true);
+loader.lazyRequireGetter(this, "merge", "sdk/util/object", true);
 
 
 
@@ -33,49 +36,10 @@ const LegacyPerformanceRecording = function (options={}) {
   };
 };
 
-LegacyPerformanceRecording.prototype = {
-  
-  _console: false,
-  _imported: false,
-  _recording: false,
-  _completed: false,
+LegacyPerformanceRecording.prototype = merge({
   _profilerStartTime: 0,
   _timelineStartTime: 0,
   _memoryStartTime: 0,
-  _configuration: {},
-  _startingBufferStatus: null,
-  _bufferPercent: null,
-
-  
-  _label: "",
-  _duration: 0,
-  _markers: null,
-  _frames: null,
-  _memory: null,
-  _ticks: null,
-  _allocations: null,
-  _profile: null,
-
-  
-
-
-
-
-
-  importRecording: Task.async(function *(file) {
-    let recordingData = yield PerformanceIO.loadRecordingFromFile(file);
-
-    this._imported = true;
-    this._label = recordingData.label || "";
-    this._duration = recordingData.duration;
-    this._markers = recordingData.markers;
-    this._frames = recordingData.frames;
-    this._memory = recordingData.memory;
-    this._ticks = recordingData.ticks;
-    this._allocations = recordingData.allocations;
-    this._profile = recordingData.profile;
-    this._configuration = recordingData.configuration || {};
-  }),
 
   
 
@@ -107,11 +71,11 @@ LegacyPerformanceRecording.prototype = {
       totalSize: info.totalSize,
       generation: info.generation
     };
-    
-    this._bufferPercent = info.position !== void 0 ? 0 : null;
 
     this._recording = true;
 
+    this._systemHost = {};
+    this._systemClient = {};
     this._markers = [];
     this._frames = [];
     this._memory = [];
@@ -134,7 +98,7 @@ LegacyPerformanceRecording.prototype = {
 
 
 
-  _onStopRecording: Task.async(function *({ profilerEndTime, profile }) {
+  _onStopRecording: Task.async(function *({ profilerEndTime, profile, systemClient, systemHost }) {
     
     
     this._duration = profilerEndTime - this._profilerStartTime;
@@ -150,162 +114,17 @@ LegacyPerformanceRecording.prototype = {
     
     
     this._markers = this._markers.sort((a, b) => (a.start > b.start));
+
+    this._systemHost = systemHost;
+    this._systemClient = systemClient;
   }),
 
   
 
 
 
-  getProfilerStartTime: function () {
+  _getProfilerStartTime: function () {
     return this._profilerStartTime;
-  },
-
-  
-
-
-
-  getLabel: function () {
-    return this._label;
-  },
-
-  
-
-
-
-  getDuration: function () {
-    
-    
-    
-    if (this._recording) {
-      return Date.now() - this._localStartTime;
-    } else {
-      return this._duration;
-    }
-  },
-
-  
-
-
-
-
-  getConfiguration: function () {
-    return this._configuration;
-  },
-
-  
-
-
-
-  getMarkers: function() {
-    return this._markers;
-  },
-
-  
-
-
-
-  getFrames: function() {
-    return this._frames;
-  },
-
-  
-
-
-
-  getMemory: function() {
-    return this._memory;
-  },
-
-  
-
-
-
-  getTicks: function() {
-    return this._ticks;
-  },
-
-  
-
-
-
-  getAllocations: function() {
-    return this._allocations;
-  },
-
-  
-
-
-
-  getProfile: function() {
-    return this._profile;
-  },
-
-  
-
-
-  getAllData: function() {
-    let label = this.getLabel();
-    let duration = this.getDuration();
-    let markers = this.getMarkers();
-    let frames = this.getFrames();
-    let memory = this.getMemory();
-    let ticks = this.getTicks();
-    let allocations = this.getAllocations();
-    let profile = this.getProfile();
-    let configuration = this.getConfiguration();
-    return { label, duration, markers, frames, memory, ticks, allocations, profile, configuration };
-  },
-
-  
-
-
-
-  isImported: function () {
-    return this._imported;
-  },
-
-  
-
-
-
-  isConsole: function () {
-    return this._console;
-  },
-
-  
-
-
-
-
-
-  isCompleted: function () {
-    return this._completed || this.isImported();
-  },
-
-  
-
-
-
-
-
-  isRecording: function () {
-    return this._recording;
-  },
-
-  
-
-
-
-  isFinalizing: function () {
-    return !this.isRecording() && !this.isCompleted();
-  },
-
-  
-
-
-
-  getStartingBufferStatus: function () {
-    return this._startingBufferStatus;
   },
 
   
@@ -348,6 +167,6 @@ LegacyPerformanceRecording.prototype = {
   },
 
   toString: () => "[object LegacyPerformanceRecording]"
-};
+}, PerformanceRecordingCommon);
 
 exports.LegacyPerformanceRecording = LegacyPerformanceRecording;
