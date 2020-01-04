@@ -51,33 +51,3 @@ def set_treeherder_machine_platform(config, tests):
         build_platform = test['build-platform']
         test['treeherder-machine-platform'] = translation.get(build_platform, build_platform)
         yield test
-
-
-@transforms.add
-def set_chunk_args(config, tests):
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    for test in tests:
-        test['mozharness']['chunking-args'] = 'test-suite-suffix'
-
-        
-        
-        if isinstance(test['chunks'], int):
-            test['mozharness']['chunk-suffix'] = "-<CHUNK>"
-        else:
-            
-            
-            if test['test-platform'].endswith('debug'):
-                test['mozharness']['chunk-suffix'] = '-debug-<CHUNK>'
-            else:
-                test['mozharness']['chunk-suffix'] = '-<CHUNK>'
-        yield test
