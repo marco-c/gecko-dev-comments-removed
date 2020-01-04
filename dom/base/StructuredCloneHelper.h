@@ -238,6 +238,16 @@ public:
                                     JS::TransferableOwnership aOwnership,
                                     void* aContent,
                                     uint64_t aExtraData) override;
+
+  static JSObject* ReadFullySerializableObjects(JSContext* aCx,
+                                                JSStructuredCloneReader* aReader,
+                                                uint32_t aTag,
+                                                uint32_t aIndex);
+
+  static bool  WriteFullySerializableObjects(JSContext* aCx,
+                                             JSStructuredCloneWriter* aWriter,
+                                             JS::Handle<JSObject*> aObj);
+
 protected:
   
   
