@@ -1438,7 +1438,7 @@ add_task(function* test_DirectoryLinksProvider_getFrequencyCapLogic() {
 
   
   let _wasTodayOrig = DirectoryLinksProvider._wasToday;
-  DirectoryLinksProvider._wasToday = function () {return false;}
+  DirectoryLinksProvider._wasToday = function () { return false; }
   
   DirectoryLinksProvider._addFrequencyCapView("1")
   do_check_true(DirectoryLinksProvider._testFrequencyCapLimits("1"));
@@ -1487,7 +1487,7 @@ add_task(function* test_DirectoryLinksProvider_getFrequencyCapReportSiteAction()
       targetedSite: "foo.com",
       url: "bar.com"
     },
-    isPinned: function() {return false;},
+    isPinned: function() { return false; },
   }], "view", 0);
 
   
@@ -1531,9 +1531,9 @@ add_task(function* test_DirectoryLinksProvider_ClickRemoval() {
         }]
       },
       {
-        handleError: function () {do_check_true(false);},
+        handleError: function () { do_check_true(false); },
         handleResult: function () {},
-        handleCompletion: function () {resolve();}
+        handleCompletion: function () { resolve(); }
       }
     );
   });
@@ -1828,7 +1828,7 @@ add_task(function* test_blockSuggestedTiles() {
 
   
   DirectoryLinksProvider.reportSitesAction([{
-      isPinned: function() {return false;},
+      isPinned: function() { return false; },
       link: Object.assign({frecency: 1000},suggestedLink)
   }], "block", 0);
 
