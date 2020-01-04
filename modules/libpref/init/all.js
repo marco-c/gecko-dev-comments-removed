@@ -4783,7 +4783,15 @@ pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.imagecapture.enabled", false);
 
 
+
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("layout.css.touch_action.enabled", true);
+#else
 pref("layout.css.touch_action.enabled", false);
+#endif
 
 
 
