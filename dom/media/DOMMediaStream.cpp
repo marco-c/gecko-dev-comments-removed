@@ -35,6 +35,12 @@
 #undef LOG
 #endif
 
+
+
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::layers;
