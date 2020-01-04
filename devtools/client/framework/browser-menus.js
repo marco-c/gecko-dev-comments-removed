@@ -13,8 +13,147 @@
 
 
 const Services = require("Services");
+const MenuStrings = Services.strings.createBundle("chrome://devtools/locale/menus.properties");
 
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
+
+
+
+const FragmentsCache = new Map();
+
+function l10n(key) {
+  return MenuStrings.GetStringFromName(key);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createKey(doc, l10nKey, command, key) {
+  let k = doc.createElement("key");
+  k.id = "key_" + key.id;
+  let shortcut = l10n(l10nKey + ".key");
+  if (shortcut.startsWith("VK_")) {
+    k.setAttribute("keycode", shortcut);
+    k.setAttribute("keytext", l10n(l10nKey + ".keytext"));
+  } else {
+    k.setAttribute("key", shortcut);
+  }
+  if (command) {
+    k.setAttribute("command", command);
+  }
+  if (key.modifiers) {
+    k.setAttribute("modifiers", key.modifiers);
+  }
+  return k;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createMenuItem({ doc, id, label, broadcasterId, accesskey, isCheckbox }) {
+  let menuitem = doc.createElement("menuitem");
+  menuitem.id = id;
+  if (label) {
+    menuitem.setAttribute("label", label);
+  }
+  if (broadcasterId) {
+    menuitem.setAttribute("observes", broadcasterId);
+  }
+  if (accesskey) {
+    menuitem.setAttribute("accesskey", accesskey);
+  }
+  if (isCheckbox) {
+    menuitem.setAttribute("type", "checkbox");
+    menuitem.setAttribute("autocheck", "false");
+  }
+  return menuitem;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createBroadcaster({ doc, id, label, isCheckbox }) {
+  let broadcaster = doc.createElement("broadcaster");
+  broadcaster.id = id;
+  broadcaster.setAttribute("label", label);
+  if (isCheckbox) {
+    broadcaster.setAttribute("type", "checkbox");
+    broadcaster.setAttribute("autocheck", "false");
+  }
+  return broadcaster;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createCommand({ doc, id, oncommand, disabled }) {
+  let command = doc.createElement("command");
+  command.id = id;
+  command.setAttribute("oncommand", oncommand);
+  if (disabled) {
+    command.setAttribute("disabled", "true");
+    command.setAttribute("hidden", "true");
+  }
+  return command;
+}
 
 
 
@@ -55,10 +194,11 @@ function createToolMenuElements(toolDefinition, doc) {
     return;
   }
 
-  let cmd = doc.createElement("command");
-  cmd.id = "Tools:" + id;
-  cmd.setAttribute("oncommand",
-      'gDevToolsBrowser.selectToolCommand(gBrowser, "' + id + '");');
+  let cmd = createCommand({
+    doc,
+    id: "Tools:" + id,
+    oncommand: 'gDevToolsBrowser.selectToolCommand(gBrowser, "' + id + '");',
+  });
 
   let key = null;
   if (toolDefinition.key) {
@@ -75,22 +215,23 @@ function createToolMenuElements(toolDefinition, doc) {
     key.setAttribute("modifiers", toolDefinition.modifiers);
   }
 
-  let bc = doc.createElement("broadcaster");
-  bc.id = "devtoolsMenuBroadcaster_" + id;
-  bc.setAttribute("label", toolDefinition.menuLabel || toolDefinition.label);
+  let bc = createBroadcaster({
+    doc,
+    id: "devtoolsMenuBroadcaster_" + id,
+    label: toolDefinition.menuLabel || toolDefinition.label
+  });
   bc.setAttribute("command", cmd.id);
 
   if (key) {
     bc.setAttribute("key", "key_" + id);
   }
 
-  let menuitem = doc.createElement("menuitem");
-  menuitem.id = "menuitem_" + id;
-  menuitem.setAttribute("observes", "devtoolsMenuBroadcaster_" + id);
-
-  if (toolDefinition.accesskey) {
-    menuitem.setAttribute("accesskey", toolDefinition.accesskey);
-  }
+  let menuitem = createMenuItem({
+    doc,
+    id: "menuitem_" + id,
+    broadcasterId: "devtoolsMenuBroadcaster_" + id,
+    accesskey: toolDefinition.accesskey
+  });
 
   return {
     cmd: cmd,
@@ -215,9 +356,94 @@ function addAllToolsToMenu(doc) {
 
 
 
-function isFirebugInstalled() {
-  let bootstrappedAddons = Services.prefs.getCharPref("extensions.bootstrappedAddons");
-  return bootstrappedAddons.indexOf("firebug@software.joehewitt.com") != -1;
+
+
+
+function addTopLevelItems(doc) {
+  let keys = doc.createDocumentFragment();
+  let menuItems = doc.createDocumentFragment();
+
+  let { menuitems } = require("../menus");
+  for (let item of menuitems) {
+    if (item.separator) {
+      let separator = doc.createElement("menuseparator");
+      separator.id = item.id;
+      menuItems.appendChild(separator);
+    } else {
+      let { id, l10nKey } = item;
+
+      
+      let menuitem = createMenuItem({
+        doc,
+        id,
+        label: l10n(l10nKey + ".label"),
+        accesskey: l10n(l10nKey + ".accesskey"),
+        isCheckbox: item.checkbox
+      });
+      menuitem.addEventListener("command", item.oncommand);
+      menuItems.appendChild(menuitem);
+
+      if (item.key && l10nKey) {
+        
+        let key = createKey(doc, l10nKey, null, item.key);
+        
+        key.setAttribute("oncommand", ";");
+        key.addEventListener("command", item.oncommand);
+        
+        menuitem.setAttribute("key", key.id);
+        keys.appendChild(key);
+      }
+      if (item.additionalKeys) {
+        
+        for (let key of item.additionalKeys) {
+          let node = createKey(doc, key.l10nKey, null, key);
+          
+          node.setAttribute("oncommand", ";");
+          node.addEventListener("command", item.oncommand);
+          keys.appendChild(node);
+        }
+      }
+    }
+  }
+
+  
+  let nodes = [];
+  for(let node of keys.children) {
+    nodes.push(node);
+  }
+  for(let node of menuItems.children) {
+    nodes.push(node);
+  }
+  FragmentsCache.set(doc, nodes);
+
+  attachKeybindingsToBrowser(doc, keys);
+
+  let menu = doc.getElementById("menuWebDeveloperPopup");
+  menu.appendChild(menuItems);
+
+  
+  
+  
+  let pageSource = doc.getElementById("menu_pageSource");
+  let endSeparator = doc.getElementById("devToolsEndSeparator");
+  menu.insertBefore(pageSource, endSeparator);
+}
+
+
+
+
+
+
+
+function removeTopLevelItems(doc) {
+  let nodes = FragmentsCache.get(doc);
+  if (!nodes) {
+    return;
+  }
+  FragmentsCache.delete(doc);
+  for (let node of nodes) {
+    node.remove();
+  }
 }
 
 
@@ -227,10 +453,19 @@ function isFirebugInstalled() {
 
 
 exports.addMenus = function (doc) {
-  addAllToolsToMenu(doc);
+  addTopLevelItems(doc);
 
-  if (isFirebugInstalled()) {
-    let broadcaster = doc.getElementById("devtoolsMenuBroadcaster_DevToolbox");
-    broadcaster.removeAttribute("key");
-  }
+  addAllToolsToMenu(doc);
+};
+
+
+
+
+
+
+
+exports.removeMenus = function (doc) {
+  
+  
+  removeTopLevelItems(doc);
 };
