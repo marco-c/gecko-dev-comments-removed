@@ -99,15 +99,15 @@ public:
   
   
   
+  void PostRestyleForThrottledAnimations();
+
+  
+  
+  
   
   void MaybeUpdateAnimationRule(dom::Element* aElement,
                                 nsCSSPseudoElements::Type aPseudoType,
                                 CascadeLevel aCascadeLevel);
-
-  
-  bool HasThrottledAnimations(dom::Element* aElement,
-                              nsCSSPseudoElements::Type aPseudoType,
-                              CascadeLevel aCascadeLevel) const;
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);

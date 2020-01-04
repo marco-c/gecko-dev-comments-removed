@@ -84,10 +84,6 @@ public:
     return false;
   }
 
-  
-  
-  void FlushAnimations();
-
   nsIStyleRule* GetAnimationRule(dom::Element* aElement,
                                  nsCSSPseudoElements::Type aPseudoType);
 
