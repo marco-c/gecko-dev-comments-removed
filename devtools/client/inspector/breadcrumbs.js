@@ -6,8 +6,7 @@
 
 "use strict";
 
-const {Cu, Ci} = require("chrome");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Ci} = require("chrome");
 const Services = require("Services");
 const promise = require("promise");
 const FocusManager = Services.focus;
@@ -18,17 +17,6 @@ const ELLIPSIS = Services.prefs.getComplexValue(
     "intl.ellipsis",
     Ci.nsIPrefLocalizedString).data;
 const MAX_LABEL_LENGTH = 40;
-const LOW_PRIORITY_ELEMENTS = {
-  "HEAD": true,
-  "BASE": true,
-  "BASEFONT": true,
-  "ISINDEX": true,
-  "LINK": true,
-  "META": true,
-  "SCRIPT": true,
-  "STYLE": true,
-  "TITLE": true
-};
 
 
 
@@ -112,33 +100,6 @@ HTMLBreadcrumbs.prototype = {
 
   
 
-
-
-
-  selectionGuard: function () {
-    let selection = this.selection.nodeFront;
-    return result => {
-      if (selection != this.selection.nodeFront) {
-        return promise.reject("selection-changed");
-      }
-      return result;
-    };
-  },
-
-  
-
-
-
-  selectionGuardEnd: function (err) {
-    
-    
-    
-    if (err !== "selection-changed") {
-      console.error(err);
-    }
-  },
-
-  
 
 
 
@@ -302,60 +263,57 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   handleKeyPress: function (event) {
-    let navigate = promise.resolve(null);
+    let win = this.chromeWin;
+    let {keyCode, shiftKey, metaKey, ctrlKey, altKey} = event;
 
-    this._keyPromise = (this._keyPromise || promise.resolve(null)).then(() => {
-      switch (event.keyCode) {
-        case this.chromeWin.KeyEvent.DOM_VK_LEFT:
-          if (this.currentIndex != 0) {
-            navigate = promise.resolve(
-              this.nodeHierarchy[this.currentIndex - 1].node);
-          }
-          break;
-        case this.chromeWin.KeyEvent.DOM_VK_RIGHT:
-          if (this.currentIndex < this.nodeHierarchy.length - 1) {
-            navigate = promise.resolve(
-              this.nodeHierarchy[this.currentIndex + 1].node);
-          }
-          break;
-        case this.chromeWin.KeyEvent.DOM_VK_UP:
-          navigate = this.walker.previousSibling(this.selection.nodeFront, {
-            whatToShow: Ci.nsIDOMNodeFilter.SHOW_ELEMENT
-          });
-          break;
-        case this.chromeWin.KeyEvent.DOM_VK_DOWN:
-          navigate = this.walker.nextSibling(this.selection.nodeFront, {
-            whatToShow: Ci.nsIDOMNodeFilter.SHOW_ELEMENT
-          });
-          break;
-        case this.chromeWin.KeyEvent.DOM_VK_TAB:
-          
-          
-          
-          let elm, type;
-          if (event.shiftKey) {
-            elm = this.container;
-            type = FocusManager.MOVEFOCUS_BACKWARD;
-          } else {
-            
-            
-            let last = this.container.lastChild;
-            while (last && last.lastChild) {
-              last = last.lastChild;
-            }
-            elm = last;
-            type = FocusManager.MOVEFOCUS_FORWARD;
-          }
-          FocusManager.moveFocus(this.chromeWin, elm, type, 0);
-          break;
-      }
+    
+    
+    let hasModifier = metaKey || ctrlKey || altKey || shiftKey;
+    let isLeft = keyCode === win.KeyEvent.DOM_VK_LEFT && !hasModifier;
+    let isRight = keyCode === win.KeyEvent.DOM_VK_RIGHT && !hasModifier;
+    let isTab = keyCode === win.KeyEvent.DOM_VK_TAB && !hasModifier;
+    let isShiftTab = keyCode === win.KeyEvent.DOM_VK_TAB && shiftKey &&
+                     !metaKey && !ctrlKey && !altKey;
 
-      return navigate.then(node => this.navigateTo(node));
-    });
+    if (!isLeft && !isRight && !isTab && !isShiftTab) {
+      return;
+    }
 
     event.preventDefault();
     event.stopPropagation();
+
+    this.keyPromise = (this.keyPromise || promise.resolve(null)).then(() => {
+      if (isLeft && this.currentIndex != 0) {
+        let node = this.nodeHierarchy[this.currentIndex - 1].node;
+        return this.selection.setNodeFront(node, "breadcrumbs");
+      } else if (isRight && this.currentIndex < this.nodeHierarchy.length - 1) {
+        let node = this.nodeHierarchy[this.currentIndex + 1].node;
+        return this.selection.setNodeFront(node, "breadcrumbs");
+      } else if (isTab || isShiftTab) {
+        
+        
+        
+        let elm, type;
+        if (shiftKey) {
+          elm = this.container;
+          type = FocusManager.MOVEFOCUS_BACKWARD;
+        } else {
+          
+          
+          let last = this.container.lastChild;
+          while (last && last.lastChild) {
+            last = last.lastChild;
+          }
+          elm = last;
+          type = FocusManager.MOVEFOCUS_FORWARD;
+        }
+        FocusManager.moveFocus(win, elm, type, 0);
+      }
+
+      return null;
+    });
   },
 
   
@@ -368,9 +326,9 @@ HTMLBreadcrumbs.prototype = {
     this.inspector.off("markupmutation", this.update);
 
     this.container.removeEventListener("underflow",
-        this.onscrollboxreflow, false);
+      this.onscrollboxreflow, false);
     this.container.removeEventListener("overflow",
-        this.onscrollboxreflow, false);
+      this.onscrollboxreflow, false);
     this.container.removeEventListener("click", this, true);
     this.container.removeEventListener("keypress", this, true);
     this.container.removeEventListener("mouseover", this, true);
@@ -442,14 +400,6 @@ HTMLBreadcrumbs.prototype = {
     }
   },
 
-  navigateTo: function (node) {
-    if (node) {
-      this.selection.setNodeFront(node, "breadcrumbs");
-    } else {
-      this.inspector.emit("breadcrumbs-navigation-cancelled");
-    }
-  },
-
   
 
 
@@ -474,7 +424,7 @@ HTMLBreadcrumbs.prototype = {
     };
 
     button.onBreadcrumbsClick = () => {
-      this.navigateTo(node);
+      this.selection.setNodeFront(node, "breadcrumbs");
     };
 
     button.onBreadcrumbsHover = () => {
@@ -517,46 +467,6 @@ HTMLBreadcrumbs.prototype = {
 
 
 
-
-  getInterestingFirstNode: function (node) {
-    let deferred = promise.defer();
-
-    let fallback = null;
-    let lastNode = null;
-
-    let moreChildren = () => {
-      this.walker.children(node, {
-        start: lastNode,
-        maxNodes: 10,
-        whatToShow: Ci.nsIDOMNodeFilter.SHOW_ELEMENT
-      }).then(this.selectionGuard()).then(response => {
-        for (let childNode of response.nodes) {
-          if (!(childNode.tagName in LOW_PRIORITY_ELEMENTS)) {
-            deferred.resolve(childNode);
-            return;
-          }
-          if (!fallback) {
-            fallback = childNode;
-          }
-          lastNode = childNode;
-        }
-        if (response.hasLast) {
-          deferred.resolve(fallback);
-          return;
-        }
-        moreChildren();
-      }).catch(this.selectionGuardEnd);
-    };
-
-    moreChildren();
-    return deferred.promise;
-  },
-
-  
-
-
-
-
   getCommonAncestor: function (node) {
     while (node) {
       let idx = this.indexOf(node);
@@ -566,27 +476,6 @@ HTMLBreadcrumbs.prototype = {
       node = node.parentNode();
     }
     return -1;
-  },
-
-  
-
-
-
-
-  ensureFirstChild: function () {
-    
-    if (this.currentIndex == this.nodeHierarchy.length - 1) {
-      let node = this.nodeHierarchy[this.currentIndex].node;
-      return this.getInterestingFirstNode(node).then(child => {
-        
-        if (child && !this.isDestroyed) {
-          
-          this.expand(child);
-        }
-      });
-    }
-
-    return waitForTick().then(() => true);
   },
 
   
@@ -651,10 +540,8 @@ HTMLBreadcrumbs.prototype = {
       if (type === "childList") {
         
         
-        
         return added.some(node => this.indexOf(node) > -1) ||
-               removed.some(node => this.indexOf(node) > -1) ||
-               this.indexOf(target) === this.nodeHierarchy.length - 1;
+               removed.some(node => this.indexOf(node) > -1);
       } else if (type === "attributes" && this.indexOf(target) > -1) {
         
         
@@ -729,23 +616,14 @@ HTMLBreadcrumbs.prototype = {
     }
 
     let doneUpdating = this.inspector.updating("breadcrumbs");
+
+    this.updateSelectors();
+
     
-    this.ensureFirstChild().then(this.selectionGuard()).then(() => {
-      if (this.isDestroyed) {
-        return null;
-      }
-
-      this.updateSelectors();
-
-      
-      this.scroll();
-      return waitForTick().then(() => {
-        this.inspector.emit("breadcrumbs-updated", this.selection.nodeFront);
-        doneUpdating();
-      });
-    }).catch(err => {
-      doneUpdating(this.selection.nodeFront);
-      this.selectionGuardEnd(err);
+    this.scroll();
+    waitForTick().then(() => {
+      this.inspector.emit("breadcrumbs-updated", this.selection.nodeFront);
+      doneUpdating();
     });
   }
 };

@@ -10,6 +10,7 @@ Services.scriptloader.loadSubScript(
   this);
 
 Services.prefs.setBoolPref("devtools.fontinspector.enabled", true);
+Services.prefs.setCharPref("devtools.inspector.activeSidebar", "fontinspector");
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.fontinspector.enabled");
 });
@@ -19,24 +20,27 @@ registerCleanupFunction(() => {
 
 
 
+
+var _selectNode = selectNode;
+selectNode = function* (node, inspector, reason) {
+  let onUpdated = inspector.once("fontinspector-updated");
+  yield _selectNode(node, inspector, reason);
+  yield onUpdated;
+};
+
+
+
+
+
+
 var openFontInspectorForURL = Task.async(function*(url) {
   yield addTab(url);
-  let {toolbox, inspector} = yield openInspectorSidebarTab("fontinspector");
+  let {toolbox, inspector} = yield openInspector();
 
   
-
-
-
-
-
-
-
-
-
-
-  let onUpdated = inspector.once("fontinspector-updated");
+  
+  
   yield selectNode("body", inspector);
-  yield onUpdated;
 
   return {
     toolbox,
