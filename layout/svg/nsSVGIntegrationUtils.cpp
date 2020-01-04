@@ -747,7 +747,7 @@ BlendToTarget(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
 }
 
 DrawResult
-nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
+nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
 {
   
 
@@ -889,23 +889,13 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
   }
 
   
-  if (effectProperties.HasValidFilter() && !aParams.builder->IsForGenerateGlyphMask()) {
-    RegularFramePaintCallback callback(aParams.builder, aParams.layerManager,
-                                       offsetToUserSpace);
-
-    nsRegion dirtyRegion = aParams.dirtyRect - offsetToBoundingBox;
-    gfxMatrix tm = nsSVGIntegrationUtils::GetCSSPxToDevPxMatrix(frame);
-    nsFilterInstance::PaintFilteredFrame(frame, target->GetDrawTarget(),
-                                         tm, &callback, &dirtyRegion);
-  } else {
-    target->SetMatrix(matrixAutoSaveRestore.Matrix());
-    BasicLayerManager* basic = static_cast<BasicLayerManager*>(aParams.layerManager);
-    RefPtr<gfxContext> oldCtx = basic->GetTarget();
-    basic->SetTarget(target);
-    aParams.layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
-                                          aParams.builder);
-    basic->SetTarget(oldCtx);
-  }
+  target->SetMatrix(matrixAutoSaveRestore.Matrix());
+  BasicLayerManager* basic = static_cast<BasicLayerManager*>(aParams.layerManager);
+  RefPtr<gfxContext> oldCtx = basic->GetTarget();
+  basic->SetTarget(target);
+  aParams.layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
+                                        aParams.builder);
+  basic->SetTarget(oldCtx);
 
   if (shouldApplyClipPath || shouldApplyBasicShape) {
     context.Restore();
