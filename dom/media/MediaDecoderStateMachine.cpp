@@ -2353,12 +2353,12 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
       
       
       
-        MaybeStartPlayback();
       if (VideoQueue().GetSize() > 1 ||
           (HasAudio() && !mAudioCompleted) ||
           (mAudioCaptured && !mDecodedStream->IsFinished()))
       {
         
+        MaybeStartPlayback();
         UpdateRenderedVideoFrames();
         NS_ASSERTION(!IsPlaying() ||
                      mLogicallySeeking ||
