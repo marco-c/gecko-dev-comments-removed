@@ -6,7 +6,8 @@
 
 "use strict";
 
-const { ActorClass, method } = require("devtools/shared/protocol");
+const { ActorClassWithSpec } = require("devtools/shared/protocol");
+const { breakpointSpec } = require("devtools/shared/specs/breakpoint");
 
 
 
@@ -33,9 +34,7 @@ exports.setBreakpointAtEntryPoints = setBreakpointAtEntryPoints;
 
 
 
-let BreakpointActor = ActorClass({
-  typeName: "breakpoint",
-
+let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
   
 
 
@@ -176,7 +175,7 @@ let BreakpointActor = ActorClass({
   
 
 
-  delete: method(function () {
+  delete: function () {
     
     if (this.originalLocation) {
       this.threadActor.breakpointActorMap.deleteActor(this.originalLocation);
@@ -184,7 +183,7 @@ let BreakpointActor = ActorClass({
     this.threadActor.threadLifetimePool.removeActor(this);
     
     this.removeScripts();
-  })
+  }
 });
 
 exports.BreakpointActor = BreakpointActor;
