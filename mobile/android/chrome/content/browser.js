@@ -421,11 +421,7 @@ var BrowserApp = {
 
     this.deck = document.getElementById("browsers");
 
-    
-    
-    if (!AppConstants.MOZ_ANDROID_APZ) {
-      BrowserEventHandler.init();
-    }
+    BrowserEventHandler.init();
 
     ViewportHandler.init();
 
@@ -682,9 +678,9 @@ var BrowserApp = {
         let newtabStrings = Strings.browser.GetStringFromName("newtabpopup.opened");
         let label = PluralForm.get(1, newtabStrings).replace("#1", 1);
         let buttonLabel = Strings.browser.GetStringFromName("newtabpopup.switch");
-
-        Snackbars.show(label, Snackbars.LENGTH_LONG, {
-          action: {
+        NativeWindow.toast.show(label, "long", {
+          button: {
+            icon: "drawable://switch_button_icon",
             label: buttonLabel,
             callback: () => { BrowserApp.selectTab(tab); },
           }
@@ -711,8 +707,9 @@ var BrowserApp = {
           let newtabStrings = Strings.browser.GetStringFromName("newprivatetabpopup.opened");
           let label = PluralForm.get(1, newtabStrings).replace("#1", 1);
           let buttonLabel = Strings.browser.GetStringFromName("newtabpopup.switch");
-          Snackbars.show(label, Snackbars.LENGTH_LONG, {
-            action: {
+          NativeWindow.toast.show(label, "long", {
+            button: {
+              icon: "drawable://switch_button_icon",
               label: buttonLabel,
               callback: () => { BrowserApp.selectTab(tab); },
             }
@@ -1010,8 +1007,8 @@ var BrowserApp = {
           return;
         }
         let message = Strings.browser.GetStringFromName("imageblocking.downloadedImage");
-        Snackbars.show(message, Snackbars.LENGTH_SHORT, {
-          action: {
+        NativeWindow.toast.show(message, "short", {
+          button: {
             label: Strings.browser.GetStringFromName("imageblocking.showAllImages"),
             callback: () => {
               UITelemetry.addEvent("action.1", "toast", null, "web_show_all_image");
@@ -4776,14 +4773,17 @@ var BrowserEventHandler = {
   init: function init() {
     this._clickInZoomedView = false;
     Services.obs.addObserver(this, "Gesture:SingleTap", false);
-    Services.obs.addObserver(this, "Gesture:CancelTouch", false);
     Services.obs.addObserver(this, "Gesture:ClickInZoomedView", false);
-    Services.obs.addObserver(this, "Gesture:DoubleTap", false);
-    Services.obs.addObserver(this, "Gesture:Scroll", false);
-    Services.obs.addObserver(this, "dom-touch-listener-added", false);
+
+    if (!AppConstants.MOZ_ANDROID_APZ) {
+      Services.obs.addObserver(this, "Gesture:CancelTouch", false);
+      Services.obs.addObserver(this, "Gesture:DoubleTap", false);
+      Services.obs.addObserver(this, "Gesture:Scroll", false);
+      Services.obs.addObserver(this, "dom-touch-listener-added", false);
+      BrowserApp.deck.addEventListener("touchstart", this, true);
+    }
 
     BrowserApp.deck.addEventListener("DOMUpdatePageReport", PopupBlockerObserver.onUpdatePageReport, false);
-    BrowserApp.deck.addEventListener("touchstart", this, true);
     BrowserApp.deck.addEventListener("MozMouseHittest", this, true);
 
     InitLater(() => BrowserApp.deck.addEventListener("click", InputWidgetHelper, true));
@@ -4987,16 +4987,20 @@ var BrowserEventHandler = {
           if (this._clickInZoomedView != true) {
             this._closeZoomedView();
           }
-          
-          
-          
-          this._sendMouseEvent("mousemove", x, y);
-          this._sendMouseEvent("mousedown", x, y);
-          this._sendMouseEvent("mouseup",   x, y);
+          if (!AppConstants.MOZ_ANDROID_APZ) {
+            
+            
+            
+            this._sendMouseEvent("mousemove", x, y);
+            this._sendMouseEvent("mousedown", x, y);
+            this._sendMouseEvent("mouseup",   x, y);
+          }
         }
         this._clickInZoomedView = false;
-        
-        BrowserApp.scrollToFocusedInput(BrowserApp.selectedBrowser);
+        if (!AppConstants.MOZ_ANDROID_APZ) {
+          
+          BrowserApp.scrollToFocusedInput(BrowserApp.selectedBrowser);
+        }
 
         this._cancelTapHighlight();
         break;
@@ -5071,7 +5075,9 @@ var BrowserEventHandler = {
   _highlightElement: null,
 
   _doTapHighlight: function _doTapHighlight(aElement) {
-    DOMUtils.setContentState(aElement, kStateActive);
+    if (!AppConstants.MOZ_ANDROID_APZ) {
+      DOMUtils.setContentState(aElement, kStateActive);
+    }
     this._highlightElement = aElement;
   },
 
@@ -5079,12 +5085,15 @@ var BrowserEventHandler = {
     if (!this._highlightElement)
       return;
 
-    
-    
-    if (this._highlightElement.ownerDocument != BrowserApp.selectedBrowser.contentWindow.document)
-      DOMUtils.setContentState(this._highlightElement.ownerDocument.documentElement, kStateActive);
+    if (!AppConstants.MOZ_ANDROID_APZ) {
+      
+      
+      if (this._highlightElement.ownerDocument != BrowserApp.selectedBrowser.contentWindow.document)
+        DOMUtils.setContentState(this._highlightElement.ownerDocument.documentElement, kStateActive);
 
-    DOMUtils.setContentState(BrowserApp.selectedBrowser.contentWindow.document.documentElement, kStateActive);
+      DOMUtils.setContentState(BrowserApp.selectedBrowser.contentWindow.document.documentElement, kStateActive);
+    }
+
     this._highlightElement = null;
   },
 
@@ -6055,8 +6064,9 @@ var XPInstallObserver = {
       
       if (!aInstall.existingAddon || !AddonManager.shouldAutoUpdate(aInstall.existingAddon)) {
         let message = Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.message");
-        Snackbars.show(message, Snackbars.LENGTH_LONG, {
-          action: {
+        NativeWindow.toast.show(message, "short", {
+          button: {
+            icon: "drawable://alert_addon",
             label: Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.action2"),
             callback: () => {
               UITelemetry.addEvent("show.1", "toast", null, "addons");
