@@ -99,6 +99,7 @@ TestRunner.slowestTestURL = "";
 TestRunner.interactiveDebugger = false;
 
 TestRunner._expectingProcessCrash = false;
+TestRunner._structuredFormatter = new StructuredFormatter();
 
 
 
@@ -211,22 +212,18 @@ TestRunner.generateFailureList = function () {
 
 
 
+var LOG_DELIMITER = String.fromCharCode(0xe175) + String.fromCharCode(0xee31) + String.fromCharCode(0x2c32) + String.fromCharCode(0xacbf);
+
+
 TestRunner._dumpMessage = function(message) {
-  
-  var LOG_DELIMITER = String.fromCharCode(0xe175) + String.fromCharCode(0xee31) + String.fromCharCode(0x2c32) + String.fromCharCode(0xacbf);
-  var _structuredFormatter;
   var str;
 
   
   
   
   message.js_source = 'TestRunner.js'
-
-  if (TestRunner.interactiveDebugger) {
-    if (!_structuredFormatter) {
-      _structuredFormatter = new StructuredFormatter();
-    }
-    str = _structuredFormatter[message.action](message);
+  if (TestRunner.interactiveDebugger && message.action in TestRunner._structuredFormatter) {
+    str = TestRunner._structuredFormatter[message.action](message);
   } else {
     str = LOG_DELIMITER + JSON.stringify(message) + LOG_DELIMITER;
   }
