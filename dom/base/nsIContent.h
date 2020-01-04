@@ -7,6 +7,7 @@
 #define nsIContent_h___
 
 #include "mozilla/Attributes.h"
+#include "nsAttrInfo.h"
 #include "nsCaseTreatment.h" 
 #include "nsINode.h"
 
@@ -35,7 +36,7 @@ struct IMEState;
 enum nsLinkState {
   eLinkState_Unvisited  = 1,
   eLinkState_Visited    = 2,
-  eLinkState_NotLink    = 3 
+  eLinkState_NotLink    = 3
 };
 
 
@@ -393,7 +394,7 @@ public:
                    nsIAtom* aName,
                    const nsAString& aValue,
                    nsCaseTreatment aCaseSensitive) const;
-  
+
   
 
 
@@ -408,7 +409,7 @@ public:
                    nsIAtom* aName,
                    nsIAtom* aValue,
                    nsCaseTreatment aCaseSensitive) const;
-  
+
   enum {
     ATTR_MISSING = -1,
     ATTR_VALUE_NO_MATCH = -2
@@ -447,7 +448,7 @@ public:
 
 
 
-  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttr, 
+  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttr,
                              bool aNotify) = 0;
 
 
@@ -463,6 +464,11 @@ public:
 
 
   virtual const nsAttrName* GetAttrNameAt(uint32_t aIndex) const = 0;
+
+  
+
+
+  virtual nsAttrInfo GetAttrInfoAt(uint32_t aIndex) const = 0;
 
   
 
@@ -484,7 +490,7 @@ public:
 
   virtual uint32_t TextLength() const = 0;
 
-   
+  
 
 
 

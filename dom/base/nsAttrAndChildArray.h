@@ -16,6 +16,7 @@
 #include "mozilla/MemoryReporting.h"
 
 #include "nscore.h"
+#include "nsAttrInfo.h"
 #include "nsAttrName.h"
 #include "nsAttrValue.h"
 #include "nsCaseTreatment.h"
@@ -100,6 +101,9 @@ public:
   const nsAttrName* AttrNameAt(uint32_t aPos) const;
 
   
+  nsAttrInfo AttrInfoAt(uint32_t aPos) const;
+
+  
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
   const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
@@ -164,7 +168,7 @@ private:
 
   void SetChildCount(uint32_t aCount)
   {
-    mImpl->mAttrAndChildCount = 
+    mImpl->mAttrAndChildCount =
         (mImpl->mAttrAndChildCount & ATTRCHILD_ARRAY_ATTR_SLOTS_COUNT_MASK) |
         (aCount << ATTRCHILD_ARRAY_ATTR_SLOTS_BITS);
   }

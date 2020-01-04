@@ -443,7 +443,7 @@ private:
   
   
   int32_t EnumTableEntryToValue(const EnumTable* aEnumTable,
-                                const EnumTable* aTableEntry);  
+                                const EnumTable* aTableEntry);
 
   static nsTArray<const EnumTable*>* sEnumTableArray;
 
