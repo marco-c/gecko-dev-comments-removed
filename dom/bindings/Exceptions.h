@@ -55,19 +55,6 @@ already_AddRefed<nsIStackFrame>
 GetCurrentJSStack(int32_t aMaxDepth = -1);
 
 
-
-
-
-class MOZ_STACK_CLASS AutoForceSetExceptionOnContext {
-private:
-  JSContext* mCx;
-  bool mOldValue;
-public:
-  explicit AutoForceSetExceptionOnContext(JSContext* aCx);
-  ~AutoForceSetExceptionOnContext();
-};
-
-
 namespace exceptions {
 
 

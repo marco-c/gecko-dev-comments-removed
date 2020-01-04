@@ -584,7 +584,7 @@ CompileError::throwError(JSContext* cx)
     
     
     
-    if (cx->options().autoJSAPIOwnsErrorReporting() && !JSREPORT_IS_WARNING(report.flags))
+    if (!JSREPORT_IS_WARNING(report.flags))
         return;
 
     CallErrorReporter(cx, message, &report);

@@ -225,17 +225,15 @@ ReportError(JSContext* cx, const char* message, JSErrorReport* reportp,
         reportp->flags |= JSREPORT_EXCEPTION;
     }
 
-    if (cx->options().autoJSAPIOwnsErrorReporting() || JS_IsRunning(cx)) {
-        if (ErrorToException(cx, message, reportp, callback, userRef))
-            return;
+    if (ErrorToException(cx, message, reportp, callback, userRef))
+        return;
 
-        
-
+    
 
 
-        if (cx->options().autoJSAPIOwnsErrorReporting() && !JSREPORT_IS_WARNING(reportp->flags))
-            return;
-    }
+
+    if (!JSREPORT_IS_WARNING(reportp->flags))
+        return;
 
     
 
@@ -304,36 +302,7 @@ js::ReportOutOfMemory(ExclusiveContext* cxArg)
     if (JS::OutOfMemoryCallback oomCallback = cx->runtime()->oomCallback)
         oomCallback(cx, cx->runtime()->oomCallbackData);
 
-    if (cx->options().autoJSAPIOwnsErrorReporting() || JS_IsRunning(cx)) {
-        cx->setPendingException(StringValue(cx->names().outOfMemory));
-        return;
-    }
-
-    
-    const JSErrorFormatString* efs = GetErrorMessage(nullptr, JSMSG_OUT_OF_MEMORY);
-    const char* msg = efs ? efs->format : "Out of memory";
-
-    
-    JSErrorReport report;
-    report.flags = JSREPORT_ERROR;
-    report.errorNumber = JSMSG_OUT_OF_MEMORY;
-    PopulateReportBlame(cx, &report);
-
-    
-    if (JSErrorReporter onError = cx->runtime()->errorReporter)
-        onError(cx, msg, &report);
-
-    
-
-
-
-
-
-
-
-
-
-    MOZ_ASSERT(!cx->isExceptionPending());
+    cx->setPendingException(StringValue(cx->names().outOfMemory));
 }
 
 void
@@ -964,7 +933,6 @@ JSContext::JSContext(JSRuntime* rt)
   : ExclusiveContext(rt, &rt->mainThread, Context_JS),
     throwing(false),
     unwrappedException_(this),
-    options_(),
     overRecursed_(false),
     propagatingForcedReturn_(false),
     liveVolatileJitFrameIterators_(nullptr),

@@ -296,7 +296,6 @@ GetWebIDLCallerPrincipal()
 
 AutoJSAPI::AutoJSAPI()
   : mCx(nullptr)
-  , mOldAutoJSAPIOwnsErrorReporting(false)
   , mIsMainThread(false) 
 {
 }
@@ -311,13 +310,6 @@ AutoJSAPI::~AutoJSAPI()
   }
 
   ReportException();
-
-  
-  
-  
-  
-  
-  JS::ContextOptionsRef(cx()).setAutoJSAPIOwnsErrorReporting(mOldAutoJSAPIOwnsErrorReporting);
 
   if (mOldErrorReporter.isSome()) {
     JS_SetErrorReporter(JS_GetRuntime(cx()), mOldErrorReporter.value());
@@ -358,8 +350,6 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
   JSRuntime* rt = JS_GetRuntime(aCx);
   mOldErrorReporter.emplace(JS_GetErrorReporter(rt));
 
-  mOldAutoJSAPIOwnsErrorReporting = JS::ContextOptionsRef(aCx).autoJSAPIOwnsErrorReporting();
-  JS::ContextOptionsRef(aCx).setAutoJSAPIOwnsErrorReporting(true);
   JS_SetErrorReporter(rt, WarningOnlyErrorReporter);
 
 #ifdef DEBUG
@@ -432,8 +422,7 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
 AutoJSAPI::AutoJSAPI(nsIGlobalObject* aGlobalObject,
                      bool aIsMainThread,
                      JSContext* aCx)
-  : mOldAutoJSAPIOwnsErrorReporting(false)
-  , mIsMainThread(aIsMainThread)
+  : mIsMainThread(aIsMainThread)
 {
   MOZ_ASSERT(aGlobalObject);
   MOZ_ASSERT(aGlobalObject->GetGlobalJSObject(), "Must have a JS global");

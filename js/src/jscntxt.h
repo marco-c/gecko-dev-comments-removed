@@ -322,9 +322,6 @@ struct JSContext : public js::ExclusiveContext,
     JS::PersistentRooted<JS::Value> unwrappedException_; 
 
     
-    JS::ContextOptions  options_;
-
-    
     
     bool                overRecursed_;
 
@@ -362,14 +359,6 @@ struct JSContext : public js::ExclusiveContext,
 
 
     JSVersion findVersion() const;
-
-    const JS::ContextOptions& options() const {
-        return options_;
-    }
-
-    JS::ContextOptions& options() {
-        return options_;
-    }
 
     js::LifoAlloc& tempLifoAlloc() { return runtime()->tempLifoAlloc; }
 
