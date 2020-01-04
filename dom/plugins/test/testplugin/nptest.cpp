@@ -428,8 +428,13 @@ static void clearIdentifiers()
 
 static void addRange(InstanceData* instanceData, const char* range)
 {
-  char rangestr[16];
-  strncpy(rangestr, range, sizeof(rangestr));
+  
+
+
+
+  char rangestr[17];
+  memset(rangestr, 0, sizeof(rangestr));
+  strncpy(rangestr, range, sizeof(rangestr) - sizeof(char));
   const char* str1 = strtok(rangestr, ",");
   const char* str2 = str1 ? strtok(nullptr, ",") : nullptr;
   if (str1 && str2) {
