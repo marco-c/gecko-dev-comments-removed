@@ -7,7 +7,6 @@
 #define MOZILLA_LAYERS_IPDLACTOR_H
 
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/unused.h"
 
 namespace mozilla {
@@ -49,15 +48,13 @@ public:
   
   
   
-  void Destroy(CompositableForwarder* aFwd = nullptr)
+  void Destroy()
   {
     MOZ_ASSERT(!mDestroyed);
     if (!mDestroyed) {
       mDestroyed = true;
       DestroyManagees();
-      if (!aFwd || !aFwd->DestroyInTransaction(this, false)) {
-        this->SendDestroy();
-      }
+      this->SendDestroy();
     }
   }
 
@@ -66,25 +63,16 @@ public:
   
   
   
-  void DestroySynchronously(CompositableForwarder* aFwd = nullptr)
+  void DestroySynchronously()
   {
     MOZ_PERFORMANCE_WARNING("gfx", "IPDL actor requires synchronous deallocation");
     MOZ_ASSERT(!mDestroyed);
     if (!mDestroyed) {
       DestroyManagees();
       mDestroyed = true;
-      if (!aFwd || !aFwd->DestroyInTransaction(this, true)) {
-        this->SendDestroySync();
-        this->SendDestroy();
-      }
+      this->SendDestroySync();
+      this->SendDestroy();
     }
-  }
-
-  
-  
-  static bool DestroyFallback(Protocol* aActor)
-  {
-    return aActor->SendDestroySync();
   }
 
   
