@@ -351,7 +351,7 @@ class MOZ_STACK_CLASS CallArgs : public detail::CallArgsBase<detail::IncludeUsed
 
 
 
-    bool requireAtLeast(JSContext* cx, const char* fnname, unsigned required);
+    bool requireAtLeast(JSContext* cx, const char* fnname, unsigned required) const;
 
 };
 

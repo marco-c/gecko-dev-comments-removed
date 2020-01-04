@@ -144,7 +144,7 @@ bool IsWitness(JS::Handle<JS::Value> v)
 
 
 
-bool ForgetImpl(JSContext* cx, JS::CallArgs args)
+bool ForgetImpl(JSContext* cx, const JS::CallArgs& args)
 {
   if (args.length() != 0) {
     JS_ReportError(cx, "forget() takes no arguments");

@@ -1146,7 +1146,7 @@ js::intrinsic_SetOverlappingTypedElements(JSContext* cx, unsigned argc, Value* v
 }
 
 bool
-CallSelfHostedNonGenericMethod(JSContext* cx, CallArgs args)
+CallSelfHostedNonGenericMethod(JSContext* cx, const CallArgs& args)
 {
     
     

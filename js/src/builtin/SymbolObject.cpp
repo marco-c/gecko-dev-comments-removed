@@ -189,7 +189,7 @@ IsSymbol(HandleValue v)
 
 
 bool
-SymbolObject::toString_impl(JSContext* cx, CallArgs args)
+SymbolObject::toString_impl(JSContext* cx, const CallArgs& args)
 {
     
     HandleValue thisv = args.thisv();
@@ -211,7 +211,7 @@ SymbolObject::toString(JSContext* cx, unsigned argc, Value* vp)
 
 
 bool
-SymbolObject::valueOf_impl(JSContext* cx, CallArgs args)
+SymbolObject::valueOf_impl(JSContext* cx, const CallArgs& args)
 {
     
     HandleValue thisv = args.thisv();

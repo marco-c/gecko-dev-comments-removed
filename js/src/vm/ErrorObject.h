@@ -108,7 +108,7 @@ class ErrorObject : public NativeObject
     
     static bool getStack(JSContext* cx, unsigned argc, Value* vp);
     static bool setStack(JSContext* cx, unsigned argc, Value* vp);
-    static bool setStack_impl(JSContext* cx, CallArgs args);
+    static bool setStack_impl(JSContext* cx, const CallArgs& args);
 };
 
 } 
