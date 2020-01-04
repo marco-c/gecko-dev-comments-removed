@@ -285,7 +285,7 @@ Editor.prototype = {
       scssSpec.valueKeywords = cssValues;
       win.CodeMirror.defineMIME("text/x-scss", scssSpec);
 
-      win.CodeMirror.commands.save = () => this.emit("save");
+      win.CodeMirror.commands.save = () => this.emit("saveRequested");
 
       
       
