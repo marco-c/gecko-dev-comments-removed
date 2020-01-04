@@ -199,6 +199,8 @@ private:
   
   gfx::IntRect mCurrentClip;
   nsIntRegion mInvalidRegion;
+
+  bool mVerifyBuffersFailed;
 };
 
 }
