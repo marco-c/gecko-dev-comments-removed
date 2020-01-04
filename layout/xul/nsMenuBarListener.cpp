@@ -211,7 +211,7 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
     
     WidgetKeyboardEvent* nativeKeyEvent =
       aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-    if (nativeKeyEvent->mAccessKeyForwardedToChild) {
+    if (nativeKeyEvent && nativeKeyEvent->mAccessKeyForwardedToChild) {
       return NS_OK;
     }
 
