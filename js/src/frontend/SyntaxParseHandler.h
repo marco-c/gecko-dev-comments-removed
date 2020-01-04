@@ -123,14 +123,6 @@ class SyntaxParseHandler
         
         
         
-        NodeUnparenthesizedYieldExpr,
-
-        
-        
-        
-        
-        
-        
         
         
         
@@ -288,7 +280,7 @@ class SyntaxParseHandler
     bool addShorthand(Node literal, Node name, Node expr) { return true; }
     bool addObjectMethodDefinition(Node literal, Node name, Node fn, JSOp op) { return true; }
     bool addClassMethodDefinition(Node literal, Node name, Node fn, JSOp op, bool isStatic) { return true; }
-    Node newYieldExpression(uint32_t begin, Node value, Node gen) { return NodeUnparenthesizedYieldExpr; }
+    Node newYieldExpression(uint32_t begin, Node value, Node gen) { return NodeGeneric; }
     Node newYieldStarExpression(uint32_t begin, Node value, Node gen) { return NodeGeneric; }
 
     
@@ -483,10 +475,6 @@ class SyntaxParseHandler
         return newBinary(kind, lhs, rhs, op);
     }
 
-    bool isUnparenthesizedYieldExpression(Node node) {
-        return node == NodeUnparenthesizedYieldExpr;
-    }
-
     bool isUnparenthesizedCommaExpression(Node node) {
         return node == NodeUnparenthesizedCommaExpr;
     }
@@ -534,7 +522,6 @@ class SyntaxParseHandler
         
         if (node == NodeUnparenthesizedString ||
             node == NodeUnparenthesizedCommaExpr ||
-            node == NodeUnparenthesizedYieldExpr ||
             node == NodeUnparenthesizedAssignment)
         {
             return NodeGeneric;
