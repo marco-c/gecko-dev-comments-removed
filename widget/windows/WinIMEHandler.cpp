@@ -713,37 +713,6 @@ IMEHandler::NeedOnScreenKeyboard()
 
   
   
-  
-  
-
-  
-  
-  
-
-  
-  
-
-  typedef BOOL (WINAPI* GetAutoRotationState)(PAR_STATE state);
-  GetAutoRotationState get_rotation_state =
-    reinterpret_cast<GetAutoRotationState>(::GetProcAddress(
-      ::GetModuleHandleW(L"user32.dll"), "GetAutoRotationState"));
-
-  if (get_rotation_state) {
-    AR_STATE auto_rotation_state = AR_ENABLED;
-    get_rotation_state(&auto_rotation_state);
-    
-    
-    
-    if (auto_rotation_state & AR_NOSENSOR) {
-      Preferences::SetString(kOskDebugReason,
-                             L"IKPOS: Rotation sensor not found.");
-      return false;
-    } else if (auto_rotation_state & AR_NOT_SUPPORTED) {
-      Preferences::SetString(kOskDebugReason,
-                             L"IKPOS: Auto-rotation not supported.");
-      return false;
-    }
-  }
 
   
   
@@ -764,25 +733,14 @@ IMEHandler::NeedOnScreenKeyboard()
 
   
   
-  if (sPowerPlatformRole != PlatformRoleMobile &&
-      sPowerPlatformRole != PlatformRoleSlate) {
-    Preferences::SetString(kOskDebugReason, L"IKPOS: PlatformRole is neither Mobile nor Slate.");
-    return false;
-  }
-
-  
-  if (::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) != 0) {
-    Preferences::SetString(kOskDebugReason, L"IKPOS: ConvertibleSlateMode is non-zero");
-    return false;
-  }
-
-  
-  
-  if (sLastContextActionCause == InputContextAction::CAUSE_TOUCH) {
-    Preferences::SetString(kOskDebugReason,
-      L"IKPOS: Used touch to focus control, ignoring keyboard presence");
+  if ((sPowerPlatformRole == PlatformRoleMobile ||
+       sPowerPlatformRole == PlatformRoleSlate) &&
+      ::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) == 0 &&
+      sLastContextActionCause == InputContextAction::CAUSE_TOUCH) {
+    Preferences::SetString(kOskDebugReason, L"IKPOS: Mobile/Slate Platform role, in slate mode with touch event.");
     return true;
   }
+
   return !IMEHandler::IsKeyboardPresentOnSlate();
 }
 
