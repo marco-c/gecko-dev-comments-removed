@@ -3720,7 +3720,10 @@ function FillHistoryMenu(aParent) {
         
         aParent.hidePopup();
         return;
-      } else if (!aParent.parentNode.open) {
+      } else if (aParent.id != "backForwardMenu" && !aParent.parentNode.open) {
+        
+        
+        
         
         
         aParent.parentNode.open = true;
