@@ -39,6 +39,8 @@
 
 
 
+
+
 using namespace mozilla;
 
 
@@ -63,10 +65,22 @@ class CheckStaticAtomSizes
 
 
 
+static Atomic<uint32_t, ReleaseAcquire> gUnusedAtomCount(0);
+
 class DynamicAtom final : public nsIAtom
 {
 public:
+  static already_AddRefed<DynamicAtom> Create(const nsAString& aString, uint32_t aHash)
+  {
+    
+    return dont_AddRef(new DynamicAtom(aString, aHash));
+  }
+
+  static void GCAtomTable();
+
+private:
   DynamicAtom(const nsAString& aString, uint32_t aHash)
+    : mRefCnt(1)
   {
     mLength = aString.Length();
     mIsStatic = false;
@@ -101,17 +115,14 @@ public:
 private:
   
   
-  
   ~DynamicAtom();
 
 public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIATOM
 
   void TransmuteToStatic(nsStringBuffer* aStringBuffer);
 };
-
-NS_IMPL_ISUPPORTS(DynamicAtom, nsIAtom)
 
 class StaticAtom final : public nsIAtom
 {
@@ -387,16 +398,72 @@ static const PLDHashTableOps AtomTableOps = {
 
 
 
+void
+DynamicAtom::GCAtomTable()
+{
+  MutexAutoLock lock(*gAtomTableLock);
+  uint32_t removedCount = 0; 
+  for (auto i = gAtomTable->Iter(); !i.Done(); i.Next()) {
+    auto entry = static_cast<AtomTableEntry*>(i.Get());
+    if (!entry->mAtom->IsStaticAtom()) {
+      auto atom = static_cast<DynamicAtom*>(entry->mAtom);
+      if (atom->mRefCnt == 0) {
+        i.Remove();
+        delete atom;
+        ++removedCount;
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(removedCount <= gUnusedAtomCount);
+  gUnusedAtomCount -= removedCount;
+
+}
+
+NS_IMPL_QUERY_INTERFACE(DynamicAtom, nsIAtom)
+
+NS_IMETHODIMP_(MozExternalRefCountType)
+DynamicAtom::AddRef(void)
+{
+  nsrefcnt count = ++mRefCnt;
+  if (count == 1) {
+    MOZ_ASSERT(gUnusedAtomCount > 0);
+    gUnusedAtomCount--;
+  }
+  return count;
+}
+
+#ifdef DEBUG
+
+
+static const uint32_t kAtomGCThreshold = 20;
+#else
+static const uint32_t kAtomGCThreshold = 10000;
+#endif
+
+NS_IMETHODIMP_(MozExternalRefCountType)
+DynamicAtom::Release(void)
+{
+  MOZ_ASSERT(mRefCnt > 0);
+  nsrefcnt count = --mRefCnt;
+  if (count == 0) {
+    if (++gUnusedAtomCount >= kAtomGCThreshold) {
+      GCAtomTable();
+    }
+  }
+
+  return count;
+}
+
 DynamicAtom::~DynamicAtom()
 {
-  MOZ_ASSERT(gAtomTable, "uninitialized atom hashtable");
-  MutexAutoLock lock(*gAtomTableLock);
-
-  
-  
-  AtomTableKey key(mString, mLength, mHash);
-  gAtomTable->Remove(&key);
-
   nsStringBuffer::FromData(mString)->Release();
 }
 
@@ -473,6 +540,13 @@ NS_ShutdownAtomTable()
 {
   delete gStaticAtomTable;
   gStaticAtomTable = nullptr;
+
+#ifdef NS_FREE_PERMANENT_DATA
+  
+  
+  DynamicAtom::GCAtomTable();
+  MOZ_ASSERT(gUnusedAtomCount == 0);
+#endif
 
   
   
@@ -589,7 +663,7 @@ NS_Atomize(const nsACString& aUTF8String)
   
   nsString str;
   CopyUTF8toUTF16(aUTF8String, str);
-  RefPtr<DynamicAtom> atom = new DynamicAtom(str, hash);
+  RefPtr<DynamicAtom> atom = DynamicAtom::Create(str, hash);
 
   he->mAtom = atom;
 
@@ -617,7 +691,7 @@ NS_Atomize(const nsAString& aUTF16String)
     return atom.forget();
   }
 
-  RefPtr<DynamicAtom> atom = new DynamicAtom(aUTF16String, hash);
+  RefPtr<DynamicAtom> atom = DynamicAtom::Create(aUTF16String, hash);
   he->mAtom = atom;
 
   return atom.forget();
@@ -626,6 +700,7 @@ NS_Atomize(const nsAString& aUTF16String)
 nsrefcnt
 NS_GetNumberOfAtoms(void)
 {
+  DynamicAtom::GCAtomTable(); 
   MutexAutoLock lock(*gAtomTableLock);
   return gAtomTable->EntryCount();
 }
