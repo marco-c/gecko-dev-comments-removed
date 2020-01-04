@@ -405,10 +405,12 @@ GlobalManager = {
               
               promise = schemaApi[ns][name](...args, callback);
             } catch (e) {
-              promise = Promise.reject(e);
-              
-              
-              throw e;
+              if (e instanceof context.cloneScope.Error) {
+                promise = Promise.reject(e);
+              } else {
+                Cu.reportError(e);
+                promise = Promise.reject({ message: "An unexpected error occurred" });
+              }
             }
 
             
