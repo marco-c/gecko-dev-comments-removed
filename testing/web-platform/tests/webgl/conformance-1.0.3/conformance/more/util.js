@@ -1021,6 +1021,40 @@ function assertGLError(gl, err, name, f) {
 }
 
 
+function assertGLErrorIn(gl, expectedErrorList, name, f) {
+  if (f == null) { f = name; name = null; }
+
+  var actualError = 0;
+  try {
+    f();
+  } catch(e) {
+    if ('glError' in e) {
+      actualError = e.glError;
+    } else {
+      testFailed("assertGLError: UNEXPCETED EXCEPTION", name, f);
+      return false;
+    }
+  }
+
+  var expectedErrorStrList = [];
+  var expectedErrorSet = {};
+  for (var i in expectedErrorList) {
+    var cur = expectedErrorList[i];
+    expectedErrorSet[cur] = true;
+    expectedErrorStrList.push(getGLErrorAsString(gl, cur));
+  }
+  var expectedErrorListStr = "[" + expectedErrorStrList.join(", ") + "]";
+
+  if (actualError in expectedErrorSet) {
+    return true;
+  }
+
+  testFailed("assertGLError: expected: " + expectedErrorListStr +
+             " actual: " + getGLErrorAsString(gl, actualError), name, f);
+  return false;
+}
+
+
 
 function assertSomeGLError(gl, name, f) {
   if (f == null) { f = name; name = null; }
