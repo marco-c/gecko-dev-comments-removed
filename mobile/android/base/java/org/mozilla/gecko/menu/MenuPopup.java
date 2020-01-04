@@ -42,18 +42,6 @@ public class MenuPopup extends PopupWindow {
         mPanel = (CardView) inflater.inflate(R.layout.menu_popup, null);
         setContentView(mPanel);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        if (AppConstants.Versions.preLollipop) {
-            mPanel.setRadius(0);
-        }
-
         setAnimationStyle(R.style.PopupAnimation);
     }
 
