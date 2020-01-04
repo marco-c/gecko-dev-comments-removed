@@ -6,7 +6,7 @@ function test() {
   
 
   waitForExplicitFinish();
-  requestLongerTimeout(3);
+  requestLongerTimeout(4);
 
   
   
