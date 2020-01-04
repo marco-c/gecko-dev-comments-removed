@@ -112,11 +112,33 @@ Volume::Dump(const char* aLabel) const
                            : (IsUnmounting() ? "y" : "n"));
 }
 
+void
+Volume::ResolveAndSetMountPoint(const nsCSubstring& aMountPoint)
+{
+  nsCString mountPoint(aMountPoint);
+  char realPathBuf[PATH_MAX];
+
+  
+  
+
+  if (realpath(mountPoint.get(), realPathBuf) < 0) {
+    
+    
+
+    ERR("ResolveAndSetMountPoint: realpath on '%s' failed: %d",
+        mountPoint.get(), errno);
+    mMountPoint = mountPoint;
+  } else {
+    mMountPoint = realPathBuf;
+  }
+  DBG("Volume %s: Setting mountpoint to '%s'", NameStr(), mMountPoint.get());
+}
+
 void Volume::SetFakeVolume(const nsACString& aMountPoint)
 {
   this->mMountLocked = false;
   this->mCanBeShared = false;
-  this->mMountPoint = aMountPoint;
+  ResolveAndSetMountPoint(aMountPoint);
   SetState(nsIVolume::STATE_MOUNTED);
 }
 
@@ -386,8 +408,7 @@ Volume::SetMountPoint(const nsCSubstring& aMountPoint)
   if (mMountPoint.Equals(aMountPoint)) {
     return;
   }
-  mMountPoint = aMountPoint;
-  DBG("Volume %s: Setting mountpoint to '%s'", NameStr(), mMountPoint.get());
+  ResolveAndSetMountPoint(aMountPoint);
 }
 
 void
