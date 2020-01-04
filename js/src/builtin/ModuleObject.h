@@ -211,6 +211,7 @@ class ModuleObject : public NativeObject
         EnvironmentSlot,
         NamespaceSlot,
         EvaluatedSlot,
+        HostDefinedSlot,
         RequestedModulesSlot,
         ImportEntriesSlot,
         LocalExportEntriesSlot,
@@ -245,6 +246,7 @@ class ModuleObject : public NativeObject
     ModuleEnvironmentObject* environment() const;
     ModuleNamespaceObject* namespace_();
     bool evaluated() const;
+    Value hostDefinedField() const;
     ArrayObject& requestedModules() const;
     ArrayObject& importEntries() const;
     ArrayObject& localExportEntries() const;
@@ -254,14 +256,27 @@ class ModuleObject : public NativeObject
     JSObject* namespaceExports();
     IndirectBindingMap* namespaceBindings();
 
+    static bool DeclarationInstantiation(JSContext* cx, HandleModuleObject self);
+    static bool Evaluation(JSContext* cx, HandleModuleObject self);
+
+    void setHostDefinedField(JS::Value value);
+
+    
     void createEnvironment();
 
+    
     bool noteFunctionDeclaration(ExclusiveContext* cx, HandleAtom name, HandleFunction fun);
+
+    
     static bool instantiateFunctionDeclarations(JSContext* cx, HandleModuleObject self);
 
+    
     void setEvaluated();
+
+    
     static bool evaluate(JSContext* cx, HandleModuleObject self, MutableHandleValue rval);
 
+    
     static ModuleNamespaceObject* createNamespace(JSContext* cx, HandleModuleObject self,
                                                   HandleObject exports);
 
@@ -325,8 +340,6 @@ class MOZ_STACK_CLASS ModuleBuilder
     template <typename T>
     ArrayObject* createArray(const GCVector<T>& vector);
 };
-
-bool InitModuleClasses(JSContext* cx, HandleObject obj);
 
 } 
 

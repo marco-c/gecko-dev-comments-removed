@@ -761,6 +761,16 @@ class MOZ_STACK_CLASS SourceBufferHolder final
         }
     }
 
+    SourceBufferHolder(SourceBufferHolder&& other)
+      : data_(other.data_),
+        length_(other.length_),
+        ownsChars_(other.ownsChars_)
+    {
+        other.data_ = nullptr;
+        other.length_ = 0;
+        other.ownsChars_ = false;
+    }
+
     ~SourceBufferHolder() {
         if (ownsChars_)
             js_free(const_cast<char16_t*>(data_));
@@ -4139,6 +4149,14 @@ CompileOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
 extern JS_PUBLIC_API(JSScript*)
 FinishOffThreadScript(JSContext* maybecx, JSRuntime* rt, void* token);
 
+extern JS_PUBLIC_API(bool)
+CompileOffThreadModule(JSContext* cx, const ReadOnlyCompileOptions& options,
+                       const char16_t* chars, size_t length,
+                       OffThreadCompileCallback callback, void* callbackData);
+
+extern JS_PUBLIC_API(JSObject*)
+FinishOffThreadModule(JSContext* maybecx, JSRuntime* rt, void* token);
+
 
 
 
@@ -4281,6 +4299,79 @@ Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
 extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
          const char* filename, JS::MutableHandleValue rval);
+
+
+
+
+extern JS_PUBLIC_API(JSFunction*)
+GetModuleResolveHook(JSContext* cx);
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetModuleResolveHook(JSContext* cx, JS::HandleFunction func);
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+CompileModule(JSContext* cx, const ReadOnlyCompileOptions& options,
+              SourceBufferHolder& srcBuf, JS::MutableHandleObject moduleRecord);
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetModuleHostDefinedField(JSObject* module, JS::Value value);
+
+
+
+
+extern JS_PUBLIC_API(JS::Value)
+GetModuleHostDefinedField(JSObject* module);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+ModuleDeclarationInstantiation(JSContext* cx, JS::HandleObject moduleRecord);
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+ModuleEvaluation(JSContext* cx, JS::HandleObject moduleRecord);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetRequestedModules(JSContext* cx, JS::HandleObject moduleRecord);
+
+
+
+
+extern JS_PUBLIC_API(JSScript*)
+GetModuleScript(JSContext* cx, JS::HandleObject moduleRecord);
 
 } 
 

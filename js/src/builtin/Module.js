@@ -241,6 +241,7 @@ function ModuleDeclarationInstantiation()
     
     InstantiateModuleFunctionDeclarations(module);
 }
+_SetCanonicalName(ModuleDeclarationInstantiation, "ModuleDeclarationInstantiation");
 
 
 function ModuleEvaluation()
@@ -268,6 +269,7 @@ function ModuleEvaluation()
 
     return EvaluateModule(module);
 }
+_SetCanonicalName(ModuleEvaluation, "ModuleEvaluation");
 
 function ModuleNamespaceEnumerate()
 {
