@@ -227,6 +227,9 @@ class RobocopTestRunner(MochitestDesktop):
         self.options.extraPrefs.append('browser.casting.enabled=true')
         self.options.extraPrefs.append('extensions.autoupdate.enabled=false')
 
+        
+        self.options.extraPrefs.append('toolkit.telemetry.initDelay=1')
+
         self.options.extensionsToExclude.extend([
             'mochikit@mozilla.org',
             'worker-test@mozilla.org.xpi',
