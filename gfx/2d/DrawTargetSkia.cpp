@@ -205,7 +205,7 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, Float aAlpha = 1.0)
                                                           mode, 0, &mat);
         SkSafeUnref(aPaint.setShader(shader));
       } else {
-        aPaint.setColor(SkColorSetARGB(0, 0, 0, 0));
+        aPaint.setColor(SK_ColorTRANSPARENT);
       }
       break;
     }
@@ -231,7 +231,7 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, Float aAlpha = 1.0)
                                                                    mode, 0, &mat);
         SkSafeUnref(aPaint.setShader(shader));
       } else {
-        aPaint.setColor(SkColorSetARGB(0, 0, 0, 0));
+        aPaint.setColor(SK_ColorTRANSPARENT);
       }
       break;
     }
@@ -766,8 +766,6 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
                             const IntRect& aSourceRect,
                             const IntPoint &aDestination)
 {
-  
-
   if (aSurface->GetType() != SurfaceType::SKIA && aSurface->GetType() != SurfaceType::DATA) {
     return;
   }
@@ -776,42 +774,22 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
 
   SkBitmap bitmap = GetBitmapForSurface(aSurface);
 
-  
-  if (false && !bitmap.getTexture() && mCanvas->imageInfo() == bitmap.info()) {
-    SkBitmap bm(bitmap);
-    bm.lockPixels();
-    if (bm.getPixels()) {
-      SkImageInfo info = bm.info().makeWH(aSourceRect.width, aSourceRect.height);
-      uint8_t* pixels = static_cast<uint8_t*>(bm.getPixels());
-      
-      pixels += aSourceRect.x + aSourceRect.y*bm.rowBytes();
-      mCanvas->writePixels(info, pixels, bm.rowBytes(), aDestination.x, aDestination.y);
-      return;
-    }
-  }
-
   mCanvas->save();
   mCanvas->resetMatrix();
   SkRect dest = IntRectToSkRect(IntRect(aDestination.x, aDestination.y, aSourceRect.width, aSourceRect.height));
   SkIRect source = IntRectToSkIRect(aSourceRect);
   mCanvas->clipRect(dest, SkRegion::kReplace_Op);
-  SkPaint paint;
 
-  if (mCanvas->imageInfo().colorType() == kRGB_565_SkColorType) {
+  SkPaint paint;
+  if (!bitmap.isOpaque()) {
     
     
-    
-    paint.setXfermodeMode(SkXfermode::kSrcOver_Mode);
-  } else {
     paint.setXfermodeMode(SkXfermode::kSrc_Mode);
   }
   
   
   if (bitmap.colorType() == kAlpha_8_SkColorType) {
-    SkPaint clearPaint;
-    clearPaint.setColor(SkColorSetARGB(0, 0, 0, 0));
-    clearPaint.setXfermodeMode(SkXfermode::kSrc_Mode);
-    mCanvas->drawPaint(clearPaint);
+    mCanvas->clear(SK_ColorTRANSPARENT);
   }
   mCanvas->drawBitmapRect(bitmap, source, dest, &paint);
   mCanvas->restore();
@@ -840,7 +818,7 @@ DrawTargetSkia::Init(const IntSize &aSize, SurfaceFormat aFormat)
     return false;
   }
 
-  bitmap.eraseARGB(0, 0, 0, 0);
+  bitmap.eraseColor(SK_ColorTRANSPARENT);
 
   mCanvas.adopt(new SkCanvas(bitmap));
   mSize = aSize;
@@ -948,12 +926,9 @@ void
 DrawTargetSkia::ClearRect(const Rect &aRect)
 {
   MarkChanged();
-  SkPaint paint;
   mCanvas->save();
   mCanvas->clipRect(RectToSkRect(aRect), SkRegion::kIntersect_Op, true);
-  paint.setColor(SkColorSetARGB(0, 0, 0, 0));
-  paint.setXfermodeMode(SkXfermode::kSrc_Mode);
-  mCanvas->drawPaint(paint);
+  mCanvas->clear(SK_ColorTRANSPARENT);
   mCanvas->restore();
 }
 
