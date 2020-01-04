@@ -9286,7 +9286,7 @@ nsDocument::OnPageHide(bool aPersisted,
   EnumerateActivityObservers(NotifyActivityChanged, nullptr);
 
   ClearPendingFullscreenRequests(this);
-  if (IsFullScreenDoc()) {
+  if (GetFullscreenElement()) {
     
     
     
@@ -11099,7 +11099,7 @@ nsIDocument::AsyncExitFullscreen(nsIDocument* aDoc)
 static bool
 CountFullscreenSubDocuments(nsIDocument* aDoc, void* aData)
 {
-  if (aDoc->IsFullScreenDoc()) {
+  if (aDoc->GetFullscreenElement()) {
     uint32_t* count = static_cast<uint32_t*>(aData);
     (*count)++;
   }
@@ -11119,7 +11119,7 @@ nsDocument::IsFullscreenLeaf()
 {
   
   
-  if (!IsFullScreenDoc()) {
+  if (!GetFullscreenElement()) {
     return false;
   }
   return CountFullscreenSubDocuments(this) == 0;
@@ -11128,11 +11128,12 @@ nsDocument::IsFullscreenLeaf()
 static bool
 ResetFullScreen(nsIDocument* aDocument, void* aData)
 {
-  if (aDocument->IsFullScreenDoc()) {
+  if (aDocument->GetFullscreenElement()) {
     NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
         "Should have at most 1 fullscreen subdocument.");
     static_cast<nsDocument*>(aDocument)->CleanupFullscreenState();
-    NS_ASSERTION(!aDocument->IsFullScreenDoc(), "Should reset full-screen");
+    NS_ASSERTION(!aDocument->GetFullscreenElement(),
+                 "Should reset full-screen");
     auto changed = reinterpret_cast<nsCOMArray<nsIDocument>*>(aData);
     changed->AppendElement(aDocument);
     aDocument->EnumerateSubDocuments(ResetFullScreen, aData);
@@ -11179,7 +11180,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
   UnlockPointer();
 
   nsCOMPtr<nsIDocument> root = aMaybeNotARootDoc->GetFullscreenRoot();
-  if (!root || !root->IsFullScreenDoc()) {
+  if (!root || !root->GetFullscreenElement()) {
     
     
     
@@ -11208,7 +11209,7 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
     DispatchFullScreenChange(changed[changed.Length() - i - 1]);
   }
 
-  NS_ASSERTION(!root->IsFullScreenDoc(),
+  NS_ASSERTION(!root->GetFullscreenElement(),
     "Fullscreen root should no longer be a fullscreen doc...");
 
   
@@ -11225,7 +11226,7 @@ GetFullscreenLeaf(nsIDocument* aDoc, void* aData)
     nsIDocument** result = static_cast<nsIDocument**>(aData);
     *result = aDoc;
     return false;
-  } else if (aDoc->IsFullScreenDoc()) {
+  } else if (aDoc->GetFullscreenElement()) {
     aDoc->EnumerateSubDocuments(GetFullscreenLeaf, aData);
   }
   return true;
@@ -11244,7 +11245,7 @@ GetFullscreenLeaf(nsIDocument* aDoc)
   nsIDocument* root = nsContentUtils::GetRootDocument(aDoc);
   
   
-  if (!root->IsFullScreenDoc()) {
+  if (!root->GetFullscreenElement()) {
     return nullptr;
   }
   GetFullscreenLeaf(root, &leaf);
@@ -11254,10 +11255,10 @@ GetFullscreenLeaf(nsIDocument* aDoc)
 void
 nsDocument::RestorePreviousFullScreenState()
 {
-  NS_ASSERTION(!IsFullScreenDoc() || !FullscreenRoots::IsEmpty(),
+  NS_ASSERTION(!GetFullscreenElement() || !FullscreenRoots::IsEmpty(),
     "Should have at least 1 fullscreen root when fullscreen!");
 
-  if (!IsFullScreenDoc() || !GetWindow() || FullscreenRoots::IsEmpty()) {
+  if (!GetFullscreenElement() || !GetWindow() || FullscreenRoots::IsEmpty()) {
     return;
   }
 
@@ -11335,12 +11336,6 @@ nsDocument::RestorePreviousFullScreenState()
       newFullscreenDoc, NS_LITERAL_STRING("MozDOMFullscreen:NewOrigin"),
        true,  true);
   }
-}
-
-bool
-nsDocument::IsFullScreenDoc()
-{
-  return GetFullscreenElement() != nullptr;
 }
 
 class nsCallRequestFullScreen : public nsRunnable
@@ -11814,7 +11809,7 @@ ShouldApplyFullscreenDirectly(nsIDocument* aDoc,
     
     
     
-    return nsContentUtils::GetRootDocument(aDoc)->IsFullScreenDoc();
+    return !!nsContentUtils::GetRootDocument(aDoc)->GetFullscreenElement();
   } else {
     
     
@@ -12151,7 +12146,7 @@ public:
       return NS_OK;
     }
 
-    if (doc->IsFullScreenDoc() || doc->mAllowRelocking) {
+    if (doc->GetFullscreenElement() || doc->mAllowRelocking) {
       Allow(JS::UndefinedHandleValue);
       return NS_OK;
     }

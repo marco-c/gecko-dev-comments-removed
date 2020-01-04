@@ -1178,11 +1178,6 @@ public:
   
 
 
-  virtual bool IsFullScreenDoc() = 0;
-
-  
-
-
 
   virtual bool IsFullscreenLeaf() = 0;
 
@@ -2505,7 +2500,7 @@ public:
   virtual Element* GetFullscreenElement() = 0;
   bool MozFullScreen()
   {
-    return IsFullScreenDoc();
+    return !!GetFullscreenElement();
   }
   void ExitFullscreen();
   Element* GetMozPointerLockElement();

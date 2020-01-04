@@ -3171,7 +3171,7 @@ nsDOMWindowUtils::ExitFullscreen()
   
   
   nsSize oldSize = OldWindowSize::GetAndRemove(doc->GetWindow());
-  if (!doc->IsFullScreenDoc()) {
+  if (!doc->GetFullscreenElement()) {
     return NS_OK;
   }
 
