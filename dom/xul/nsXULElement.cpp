@@ -35,6 +35,7 @@
 #include "nsIDocument.h"
 #include "nsLayoutStylesheetCache.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
@@ -2701,17 +2702,43 @@ nsXULPrototypeScript::DeserializeOutOfLine(nsIObjectInputStream* aInput,
 
 class NotifyOffThreadScriptCompletedRunnable : public nsRunnable
 {
-    RefPtr<nsIOffThreadScriptReceiver> mReceiver;
+    
+    
+    
+    
+    
+    
+    
+    
+    static StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>> sReceivers;
+    static bool sSetupClearOnShutdown;
+
+    nsIOffThreadScriptReceiver* mReceiver;
     void *mToken;
 
 public:
-    NotifyOffThreadScriptCompletedRunnable(already_AddRefed<nsIOffThreadScriptReceiver> aReceiver,
+    NotifyOffThreadScriptCompletedRunnable(nsIOffThreadScriptReceiver* aReceiver,
                                            void *aToken)
       : mReceiver(aReceiver), mToken(aToken)
     {}
 
+    static void NoteReceiver(nsIOffThreadScriptReceiver* aReceiver) {
+        if (!sSetupClearOnShutdown) {
+            ClearOnShutdown(&sReceivers);
+            sSetupClearOnShutdown = true;
+            sReceivers = new nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>();
+        }
+
+        
+        
+        sReceivers->AppendElement(aReceiver);
+    }
+
     NS_DECL_NSIRUNNABLE
 };
+
+StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>> NotifyOffThreadScriptCompletedRunnable::sReceivers;
+bool NotifyOffThreadScriptCompletedRunnable::sSetupClearOnShutdown = false;
 
 NS_IMETHODIMP
 NotifyOffThreadScriptCompletedRunnable::Run()
@@ -2728,7 +2755,17 @@ NotifyOffThreadScriptCompletedRunnable::Run()
         script = JS::FinishOffThreadScript(cx, JS_GetRuntime(cx), mToken);
     }
 
-    return mReceiver->OnScriptCompileComplete(script, script ? NS_OK : NS_ERROR_FAILURE);
+    if (!sReceivers) {
+        
+        return NS_OK;
+    }
+
+    auto index = sReceivers->IndexOf(mReceiver);
+    MOZ_RELEASE_ASSERT(index != sReceivers->NoIndex);
+    nsCOMPtr<nsIOffThreadScriptReceiver> receiver = (*sReceivers)[index].forget();
+    sReceivers->RemoveElementAt(index);
+
+    return receiver->OnScriptCompileComplete(script, script ? NS_OK : NS_ERROR_FAILURE);
 }
 
 static void
@@ -2738,8 +2775,7 @@ OffThreadScriptReceiverCallback(void *aToken, void *aCallbackData)
     
     nsIOffThreadScriptReceiver* aReceiver = static_cast<nsIOffThreadScriptReceiver*>(aCallbackData);
     RefPtr<NotifyOffThreadScriptCompletedRunnable> notify =
-        new NotifyOffThreadScriptCompletedRunnable(
-            already_AddRefed<nsIOffThreadScriptReceiver>(aReceiver), aToken);
+        new NotifyOffThreadScriptCompletedRunnable(aReceiver, aToken);
     NS_DispatchToMainThread(notify);
 }
 
@@ -2778,8 +2814,7 @@ nsXULPrototypeScript::Compile(JS::SourceBufferHolder& aSrcBuf,
                                   static_cast<void*>(aOffThreadReceiver))) {
             return NS_ERROR_OUT_OF_MEMORY;
         }
-        
-        NS_ADDREF(aOffThreadReceiver);
+        NotifyOffThreadScriptCompletedRunnable::NoteReceiver(aOffThreadReceiver);
     } else {
         JS::Rooted<JSScript*> script(cx);
         if (!JS::Compile(cx, options, aSrcBuf, &script))
