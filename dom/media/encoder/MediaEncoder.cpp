@@ -78,6 +78,16 @@ MediaEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
   if (!mDirectConnected) {
     NotifyRealtimeData(aGraph, aID, aTrackOffset, aTrackEvents, aQueuedMedia);
   } else {
+    if (aTrackEvents != 0) {
+      
+      if (aQueuedMedia.GetType() == MediaSegment::VIDEO) {
+        VideoSegment segment;
+        NotifyRealtimeData(aGraph, aID, aTrackOffset, aTrackEvents, segment);
+      } else {
+        AudioSegment segment;
+        NotifyRealtimeData(aGraph, aID, aTrackOffset, aTrackEvents, segment);
+      }
+    }
     if (mSuspended == RECORD_RESUMED) {
       if (mVideoEncoder) {
         if (aQueuedMedia.GetType() == MediaSegment::VIDEO) {
