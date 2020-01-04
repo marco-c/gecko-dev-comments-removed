@@ -54,29 +54,28 @@ var WebProgressListener = {
   },
 
   onStateChange: function onStateChange(webProgress, request, stateFlags, status) {
-    let data = {
-      requestURL: request.QueryInterface(Ci.nsIChannel).URI.spec,
-      windowId: webProgress.DOMWindowID,
-      parentWindowId: WebNavigationFrames.getParentWindowId(webProgress.DOMWindow),
-      status,
-      stateFlags,
-    };
+    let locationURI = request.QueryInterface(Ci.nsIChannel).URI;
 
-    sendAsyncMessage("Extension:StateChange", data);
+    this.sendStateChange({webProgress, locationURI, stateFlags, status});
 
-    if (webProgress.DOMWindow.top != webProgress.DOMWindow) {
-      let webNav = webProgress.QueryInterface(Ci.nsIWebNavigation);
-      if (!webNav.canGoBack) {
-        
-        
-        
-        this.onLocationChange(webProgress, request, request.QueryInterface(Ci.nsIChannel).URI, 0);
-      }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if ((webProgress.DOMWindow.top != webProgress.DOMWindow) &&
+        (stateFlags & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT)) {
+      this.sendDocumentChange({webProgress, locationURI});
     }
   },
 
   onLocationChange: function onLocationChange(webProgress, request, locationURI, flags) {
-    let {DOMWindow, loadType} = webProgress;
+    let {DOMWindow} = webProgress;
 
     
     let previousURI = this.previousURIMap.get(DOMWindow);
@@ -85,37 +84,79 @@ var WebProgressListener = {
     this.previousURIMap.set(DOMWindow, locationURI);
 
     let isSameDocument = (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-    let isHistoryStateUpdated = false;
-    let isReferenceFragmentUpdated = false;
 
+    
+    
+    
+    
+    
+    
     if (isSameDocument) {
-      let pathChanged = !(previousURI && locationURI.equalsExceptRef(previousURI));
-      let hashChanged = !(previousURI && previousURI.ref == locationURI.ref);
-
+      this.sendHistoryChange({webProgress, previousURI, locationURI});
+    } else if (webProgress.DOMWindow.top == webProgress.DOMWindow) {
       
       
       
-      
-      
-      
-
-      if (!pathChanged && hashChanged) {
-        isReferenceFragmentUpdated = true;
-      } else if (loadType & Ci.nsIDocShell.LOAD_CMD_PUSHSTATE) {
-        isHistoryStateUpdated = true;
-      } else if (loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY) {
-        isHistoryStateUpdated = true;
-      }
+      this.sendDocumentChange({webProgress, locationURI, request});
     }
+  },
 
+  sendStateChange({webProgress, locationURI, stateFlags, status}) {
     let data = {
-      isHistoryStateUpdated, isReferenceFragmentUpdated,
+      requestURL: locationURI.spec,
+      windowId: webProgress.DOMWindowID,
+      parentWindowId: WebNavigationFrames.getParentWindowId(webProgress.DOMWindow),
+      status,
+      stateFlags,
+    };
+
+    sendAsyncMessage("Extension:StateChange", data);
+  },
+
+  sendDocumentChange({webProgress, locationURI}) {
+    let data = {
       location: locationURI ? locationURI.spec : "",
       windowId: webProgress.DOMWindowID,
       parentWindowId: WebNavigationFrames.getParentWindowId(webProgress.DOMWindow),
     };
 
-    sendAsyncMessage("Extension:LocationChange", data);
+    sendAsyncMessage("Extension:DocumentChange", data);
+  },
+
+  sendHistoryChange({webProgress, previousURI, locationURI}) {
+    let {loadType} = webProgress;
+
+    let isHistoryStateUpdated = false;
+    let isReferenceFragmentUpdated = false;
+
+    let pathChanged = !(previousURI && locationURI.equalsExceptRef(previousURI));
+    let hashChanged = !(previousURI && previousURI.ref == locationURI.ref);
+
+    
+    
+    
+    
+    
+    
+
+    if (!pathChanged && hashChanged) {
+      isReferenceFragmentUpdated = true;
+    } else if (loadType & Ci.nsIDocShell.LOAD_CMD_PUSHSTATE) {
+      isHistoryStateUpdated = true;
+    } else if (loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY) {
+      isHistoryStateUpdated = true;
+    }
+
+    if (isHistoryStateUpdated || isReferenceFragmentUpdated) {
+      let data = {
+        isHistoryStateUpdated, isReferenceFragmentUpdated,
+        location: locationURI ? locationURI.spec : "",
+        windowId: webProgress.DOMWindowID,
+        parentWindowId: WebNavigationFrames.getParentWindowId(webProgress.DOMWindow),
+      };
+
+      sendAsyncMessage("Extension:HistoryChange", data);
+    }
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener, Ci.nsISupportsWeakReference]),
