@@ -98,12 +98,12 @@ var Debugger =
 	var startDebugging = _require5.startDebugging;
 	
 	var firefox = __webpack_require__(98);
-	var configureStore = __webpack_require__(179);
-	var reducers = __webpack_require__(187);
-	var selectors = __webpack_require__(198);
+	var configureStore = __webpack_require__(180);
+	var reducers = __webpack_require__(188);
+	var selectors = __webpack_require__(199);
 	
-	var Tabs = __webpack_require__(205);
-	var App = __webpack_require__(211);
+	var Tabs = __webpack_require__(206);
+	var App = __webpack_require__(212);
 	
 	var createStore = configureStore({
 	  log: getValue("logging.actions"),
@@ -113,7 +113,7 @@ var Debugger =
 	});
 	
 	var store = createStore(combineReducers(reducers));
-	var actions = bindActionCreators(__webpack_require__(213), store.dispatch);
+	var actions = bindActionCreators(__webpack_require__(214), store.dispatch);
 	
 	if (isDevelopment()) {
 	  AppConstants.DEBUG_JS_MODULES = true;
@@ -169,7 +169,7 @@ var Debugger =
 	  });
 	} else if (isFirefoxPanel()) {
 	  (function () {
-	    var sourceMap = __webpack_require__(215);
+	    var sourceMap = __webpack_require__(216);
 	
 	    module.exports = {
 	      bootstrap: _ref => {
@@ -178,8 +178,8 @@ var Debugger =
 	
 	        firefox.setThreadClient(threadClient);
 	        firefox.setTabTarget(tabTarget);
-	        firefox.initPage(actions);
 	        renderRoot(App);
+	        return firefox.initPage(actions);
 	      },
 	      destroy: () => {
 	        unmountRoot();
@@ -10174,7 +10174,7 @@ var Debugger =
 	var Task = _require.Task;
 	
 	var firefox = __webpack_require__(98);
-	var chrome = __webpack_require__(172);
+	var chrome = __webpack_require__(173);
 	
 	var _require2 = __webpack_require__(45);
 	
@@ -10326,6 +10326,10 @@ var Debugger =
 	var setupEvents = _require7.setupEvents;
 	var clientEvents = _require7.clientEvents;
 	
+	var _require8 = __webpack_require__(172);
+	
+	var createSource = _require8.createSource;
+	
 	
 	var debuggerClient = null;
 	var threadClient = null;
@@ -10418,16 +10422,24 @@ var Debugger =
 	    threadClient.addListener(eventName, clientEvents[eventName]);
 	  });
 	
-	  threadClient.reconfigure({
-	    "useSourceMaps": false,
-	    "autoBlackBox": false
-	  });
+	  
+	  
+	  
+	  
+	  
+	  
+	  return threadClient.getSources().then(_ref => {
+	    var sources = _ref.sources;
 	
-	  
-	  
-	  
-	  
-	  threadClient.getSources();
+	    actions.newSources(sources.map(createSource));
+	
+	    
+	    
+	    var pausedPacket = threadClient.getLastPausePacket();
+	    if (pausedPacket) {
+	      clientEvents.paused(null, pausedPacket);
+	    }
+	  });
 	}
 	
 	module.exports = {
@@ -19873,22 +19885,53 @@ var Debugger =
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
+	var _require = __webpack_require__(172);
+	
+	var createFrame = _require.createFrame;
+	var createSource = _require.createSource;
+	
+	
+	var CALL_STACK_PAGE_SIZE = 1000;
+	
+	var threadClient = void 0;
+	var actions = void 0;
+	
+	function setupEvents(dependencies) {
+	  threadClient = dependencies.threadClient;
+	  actions = dependencies.actions;
+	}
+	
+	function resumed(_, packet) {
+	  actions.resumed(packet);
+	}
+	
+	function newSource(_, _ref2) {
+	  var source = _ref2.source;
+	
+	  actions.newSource(createSource(source));
+	}
+	
+	var clientEvents = {
+	  paused,
+	  resumed,
+	  newSource
+	};
+	
+	module.exports = {
+	  setupEvents,
+	  clientEvents
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
 	var _require = __webpack_require__(114);
 	
 	var Source = _require.Source;
 	var Frame = _require.Frame;
 	var Location = _require.Location;
 	
-	
-	var CALL_STACK_PAGE_SIZE = 1000;
-	var threadClient = void 0;
-	var actions = void 0;
-	var evalIndex = 1;
-	
-	function setupEvents(dependencies) {
-	  threadClient = dependencies.threadClient;
-	  actions = dependencies.actions;
-	}
 	
 	function createFrame(frame) {
 	  var title = void 0;
@@ -19912,35 +19955,21 @@ var Debugger =
 	  });
 	}
 	
-	function resumed(_, packet) {
-	  actions.resumed(packet);
-	}
-	
-	function newSource(_, packet) {
-	  var source = packet.source;
-	
+	var evalIndex = 1;
+	function createSource(source) {
 	  if (!source.url) {
 	    source.url = `SOURCE${ evalIndex++ }`;
 	  }
 	
-	  actions.newSource(Source({
+	  return Source({
 	    id: source.actor,
 	    url: source.url,
 	    isPrettyPrinted: false,
 	    sourceMapURL: source.sourceMapURL
-	  }));
+	  });
 	}
 	
-	var clientEvents = {
-	  paused,
-	  resumed,
-	  newSource
-	};
-	
-	module.exports = {
-	  setupEvents,
-	  clientEvents
-	};
+	module.exports = { createFrame, createSource };
 
  },
 
@@ -19948,7 +19977,7 @@ var Debugger =
 
 	
 	
-	var _require = __webpack_require__(173);
+	var _require = __webpack_require__(174);
 	
 	var connect = _require.connect;
 	
@@ -19963,16 +19992,16 @@ var Debugger =
 	var isEnabled = _require3.isEnabled;
 	var getValue = _require3.getValue;
 	
-	var _require4 = __webpack_require__(174);
+	var _require4 = __webpack_require__(175);
 	
 	var networkRequest = _require4.networkRequest;
 	
-	var _require5 = __webpack_require__(177);
+	var _require5 = __webpack_require__(178);
 	
 	var setupCommands = _require5.setupCommands;
 	var clientCommands = _require5.clientCommands;
 	
-	var _require6 = __webpack_require__(178);
+	var _require6 = __webpack_require__(179);
 	
 	var setupEvents = _require6.setupEvents;
 	var clientEvents = _require6.clientEvents;
@@ -20071,7 +20100,7 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var _require = __webpack_require__(175);
+	var _require = __webpack_require__(176);
 	
 	var log = _require.log;
 	
@@ -20136,7 +20165,7 @@ var Debugger =
 
 
 	
-	var co = __webpack_require__(176);
+	var co = __webpack_require__(177);
 	
 	var _require = __webpack_require__(46);
 	
@@ -20828,23 +20857,23 @@ var Debugger =
 	var createStore = _require.createStore;
 	var applyMiddleware = _require.applyMiddleware;
 	
-	var _require2 = __webpack_require__(180);
+	var _require2 = __webpack_require__(181);
 	
 	var waitUntilService = _require2.waitUntilService;
 	
-	var _require3 = __webpack_require__(181);
+	var _require3 = __webpack_require__(182);
 	
 	var log = _require3.log;
 	
-	var _require4 = __webpack_require__(182);
+	var _require4 = __webpack_require__(183);
 	
 	var history = _require4.history;
 	
-	var _require5 = __webpack_require__(183);
+	var _require5 = __webpack_require__(184);
 	
 	var promise = _require5.promise;
 	
-	var _require6 = __webpack_require__(186);
+	var _require6 = __webpack_require__(187);
 	
 	var thunk = _require6.thunk;
 	
@@ -21025,15 +21054,15 @@ var Debugger =
 
 
 	
-	var uuidgen = __webpack_require__(184).uuid;
+	var uuidgen = __webpack_require__(185).uuid;
 	var defer = __webpack_require__(112);
 	
-	var _require = __webpack_require__(175);
+	var _require = __webpack_require__(176);
 	
 	var entries = _require.entries;
 	var toObject = _require.toObject;
 	
-	var _require2 = __webpack_require__(185);
+	var _require2 = __webpack_require__(186);
 	
 	var executeSoon = _require2.executeSoon;
 	
@@ -21158,12 +21187,12 @@ var Debugger =
 
 
 	
-	var eventListeners = __webpack_require__(188);
-	var sources = __webpack_require__(190);
-	var breakpoints = __webpack_require__(194);
-	var asyncRequests = __webpack_require__(195);
-	var tabs = __webpack_require__(196);
-	var pause = __webpack_require__(197);
+	var eventListeners = __webpack_require__(189);
+	var sources = __webpack_require__(191);
+	var breakpoints = __webpack_require__(195);
+	var asyncRequests = __webpack_require__(196);
+	var tabs = __webpack_require__(197);
+	var pause = __webpack_require__(198);
 	
 	module.exports = {
 	  eventListeners,
@@ -21182,7 +21211,7 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	
 	var initialState = {
 	  activeEventNames: [],
@@ -21276,9 +21305,9 @@ var Debugger =
 
 
 	
-	var fromJS = __webpack_require__(191);
-	var I = __webpack_require__(192);
-	var makeRecord = __webpack_require__(193);
+	var fromJS = __webpack_require__(192);
+	var I = __webpack_require__(193);
+	var makeRecord = __webpack_require__(194);
 	
 	var State = makeRecord({
 	  sources: I.Map(),
@@ -21299,11 +21328,6 @@ var Debugger =
 	        var _source = action.source;
 	        return state.mergeIn(["sources", action.source.id], _source);
 	      }
-	
-	    case "ADD_SOURCES":
-	      return state.mergeIn(["sources"], I.Map(action.sources.map(source => {
-	        return [source.id, fromJS(source)];
-	      })));
 	
 	    case "LOAD_SOURCE_MAP":
 	      if (action.status == "done") {
@@ -21533,7 +21557,7 @@ var Debugger =
 
 	
 	
-	var Immutable = __webpack_require__(192);
+	var Immutable = __webpack_require__(193);
 	
 	
 	
@@ -26568,7 +26592,7 @@ var Debugger =
 	
 	
 	
-	var I = __webpack_require__(192);
+	var I = __webpack_require__(193);
 	
 	
 
@@ -26591,14 +26615,14 @@ var Debugger =
 
 
 	
-	var fromJS = __webpack_require__(191);
+	var fromJS = __webpack_require__(192);
 	
-	var _require = __webpack_require__(175);
+	var _require = __webpack_require__(176);
 	
 	var updateObj = _require.updateObj;
 	
-	var I = __webpack_require__(192);
-	var makeRecord = __webpack_require__(193);
+	var I = __webpack_require__(193);
+	var makeRecord = __webpack_require__(194);
 	
 	var State = makeRecord({
 	  breakpoints: I.Map(),
@@ -26781,7 +26805,7 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	var initialState = [];
 	
 	function update() {
@@ -26816,9 +26840,9 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
-	var Immutable = __webpack_require__(192);
-	var fromJS = __webpack_require__(191);
+	var constants = __webpack_require__(190);
+	var Immutable = __webpack_require__(193);
+	var fromJS = __webpack_require__(192);
 	
 	var initialState = fromJS({
 	  tabs: {},
@@ -26871,8 +26895,8 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
-	var fromJS = __webpack_require__(191);
+	var constants = __webpack_require__(190);
+	var fromJS = __webpack_require__(192);
 	
 	var initialState = fromJS({
 	  pause: null,
@@ -27035,11 +27059,11 @@ var Debugger =
 
 	
 	
-	var URL = __webpack_require__(199);
-	var path = __webpack_require__(204);
-	var sources = __webpack_require__(190);
-	var pause = __webpack_require__(197);
-	var breakpoints = __webpack_require__(194);
+	var URL = __webpack_require__(200);
+	var path = __webpack_require__(205);
+	var sources = __webpack_require__(191);
+	var pause = __webpack_require__(198);
+	var breakpoints = __webpack_require__(195);
 	
 	function getTabs(state) {
 	  return state.tabs.get("tabs");
@@ -27128,7 +27152,7 @@ var Debugger =
 	
 	
 	
-	var punycode = __webpack_require__(200);
+	var punycode = __webpack_require__(201);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -27200,7 +27224,7 @@ var Debugger =
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(201);
+	    querystring = __webpack_require__(202);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && isObject(url) && url instanceof Url) return url;
@@ -28357,8 +28381,8 @@ var Debugger =
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(202);
-	exports.encode = exports.stringify = __webpack_require__(203);
+	exports.decode = exports.parse = __webpack_require__(203);
+	exports.encode = exports.stringify = __webpack_require__(204);
 
 
  },
@@ -28552,14 +28576,14 @@ var Debugger =
 	
 	var connect = _require.connect;
 	
-	var classnames = __webpack_require__(206);
+	var classnames = __webpack_require__(207);
 	
-	var _require2 = __webpack_require__(198);
+	var _require2 = __webpack_require__(199);
 	
 	var getTabs = _require2.getTabs;
 	
 	
-	__webpack_require__(207);
+	__webpack_require__(208);
 	var dom = React.DOM;
 	
 	var githubUrl = "https://github.com/devtools-html/debugger.html/blob/master";
@@ -28676,19 +28700,19 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var _require3 = __webpack_require__(212);
+	var _require3 = __webpack_require__(213);
 	
 	var Services = _require3.Services;
 	
-	var classnames = __webpack_require__(206);
-	var actions = __webpack_require__(213);
+	var classnames = __webpack_require__(207);
+	var actions = __webpack_require__(214);
 	
 	var _require4 = __webpack_require__(46);
 	
 	var isFirefoxPanel = _require4.isFirefoxPanel;
 	
 	
-	__webpack_require__(224);
+	__webpack_require__(225);
 	
 	
 	
@@ -28696,29 +28720,29 @@ var Debugger =
 	  require("../lib/themes/light-theme.css");
 	}
 	
-	var Sources = createFactory(__webpack_require__(226));
-	var Editor = createFactory(__webpack_require__(261));
-	var SplitBox = createFactory(__webpack_require__(266));
-	var RightSidebar = createFactory(__webpack_require__(270));
-	var SourceTabs = createFactory(__webpack_require__(347));
-	var SourceFooter = createFactory(__webpack_require__(352));
-	var Svg = __webpack_require__(234);
-	var Autocomplete = createFactory(__webpack_require__(355));
+	var Sources = createFactory(__webpack_require__(227));
+	var Editor = createFactory(__webpack_require__(262));
+	var SplitBox = createFactory(__webpack_require__(267));
+	var RightSidebar = createFactory(__webpack_require__(271));
+	var SourceTabs = createFactory(__webpack_require__(348));
+	var SourceFooter = createFactory(__webpack_require__(353));
+	var Svg = __webpack_require__(235);
+	var Autocomplete = createFactory(__webpack_require__(356));
 	
-	var _require5 = __webpack_require__(198);
+	var _require5 = __webpack_require__(199);
 	
 	var getSources = _require5.getSources;
 	var getSelectedSource = _require5.getSelectedSource;
 	
-	var _require6 = __webpack_require__(175);
+	var _require6 = __webpack_require__(176);
 	
 	var endTruncateStr = _require6.endTruncateStr;
 	
-	var _require7 = __webpack_require__(364);
+	var _require7 = __webpack_require__(365);
 	
 	var KeyShortcuts = _require7.KeyShortcuts;
 	
-	var _require8 = __webpack_require__(229);
+	var _require8 = __webpack_require__(230);
 	
 	var isHiddenSource = _require8.isHiddenSource;
 	var getURL = _require8.getURL;
@@ -29440,12 +29464,12 @@ var Debugger =
 
 	
 	
-	var breakpoints = __webpack_require__(214);
-	var eventListeners = __webpack_require__(217);
-	var sources = __webpack_require__(218);
-	var tabs = __webpack_require__(221);
-	var pause = __webpack_require__(222);
-	var navigation = __webpack_require__(223);
+	var breakpoints = __webpack_require__(215);
+	var eventListeners = __webpack_require__(218);
+	var sources = __webpack_require__(219);
+	var tabs = __webpack_require__(222);
+	var pause = __webpack_require__(223);
+	var navigation = __webpack_require__(224);
 	
 	module.exports = Object.assign(navigation, breakpoints, eventListeners, sources, tabs, pause);
 
@@ -29466,18 +29490,18 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(183);
+	var _require = __webpack_require__(184);
 	
 	var PROMISE = _require.PROMISE;
 	
-	var _require2 = __webpack_require__(198);
+	var _require2 = __webpack_require__(199);
 	
 	var getBreakpoint = _require2.getBreakpoint;
 	var getBreakpoints = _require2.getBreakpoints;
 	
-	var _require3 = __webpack_require__(215);
+	var _require3 = __webpack_require__(216);
 	
 	var getOriginalLocation = _require3.getOriginalLocation;
 	var getGeneratedLocation = _require3.getGeneratedLocation;
@@ -29795,16 +29819,16 @@ var Debugger =
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
-	var _require = __webpack_require__(175);
+	var _require = __webpack_require__(176);
 	
 	var workerTask = _require.workerTask;
 	
-	var _require2 = __webpack_require__(216);
+	var _require2 = __webpack_require__(217);
 	
 	var makeOriginalSource = _require2.makeOriginalSource;
 	var getGeneratedSourceId = _require2.getGeneratedSourceId;
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getSource = _require3.getSource;
 	var getSourceByURL = _require3.getSourceByURL;
@@ -29942,13 +29966,13 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(175);
+	var _require = __webpack_require__(176);
 	
 	var asPaused = _require.asPaused;
 	
-	var _require2 = __webpack_require__(185);
+	var _require2 = __webpack_require__(186);
 	
 	var reportException = _require2.reportException;
 	
@@ -30128,7 +30152,7 @@ var Debugger =
 	
 	var defer = __webpack_require__(112);
 	
-	var _require = __webpack_require__(183);
+	var _require = __webpack_require__(184);
 	
 	var PROMISE = _require.PROMISE;
 	
@@ -30136,31 +30160,31 @@ var Debugger =
 	
 	var Task = _require2.Task;
 	
-	var _require3 = __webpack_require__(219);
+	var _require3 = __webpack_require__(220);
 	
 	var isJavaScript = _require3.isJavaScript;
 	
-	var _require4 = __webpack_require__(174);
+	var _require4 = __webpack_require__(175);
 	
 	var networkRequest = _require4.networkRequest;
 	
-	var _require5 = __webpack_require__(175);
+	var _require5 = __webpack_require__(176);
 	
 	var workerTask = _require5.workerTask;
 	
-	var _require6 = __webpack_require__(220);
+	var _require6 = __webpack_require__(221);
 	
 	var updateFrameLocations = _require6.updateFrameLocations;
 	
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	var invariant = __webpack_require__(24);
 	
 	var _require7 = __webpack_require__(46);
 	
 	var isEnabled = _require7.isEnabled;
 	
-	var _require8 = __webpack_require__(215);
+	var _require8 = __webpack_require__(216);
 	
 	var createOriginalSources = _require8.createOriginalSources;
 	var getOriginalSourceTexts = _require8.getOriginalSourceTexts;
@@ -30168,7 +30192,7 @@ var Debugger =
 	var makeOriginalSource = _require8.makeOriginalSource;
 	var getGeneratedSource = _require8.getGeneratedSource;
 	
-	var _require9 = __webpack_require__(198);
+	var _require9 = __webpack_require__(199);
 	
 	var getSource = _require9.getSource;
 	var getSourceByURL = _require9.getSourceByURL;
@@ -30183,13 +30207,6 @@ var Debugger =
 	  return isEnabled("sourceMaps") && generatedSource.sourceMapURL;
 	}
 	
-	function _addSource(source) {
-	  return {
-	    type: constants.ADD_SOURCE,
-	    source
-	  };
-	}
-	
 	function newSource(source) {
 	  return _ref4 => {
 	    var dispatch = _ref4.dispatch;
@@ -30199,7 +30216,10 @@ var Debugger =
 	      dispatch(loadSourceMap(source));
 	    }
 	
-	    dispatch(_addSource(source));
+	    dispatch({
+	      type: constants.ADD_SOURCE,
+	      source
+	    });
 	
 	    
 	    
@@ -30210,14 +30230,23 @@ var Debugger =
 	  };
 	}
 	
+	function newSources(sources) {
+	  return _ref5 => {
+	    var dispatch = _ref5.dispatch;
+	    var getState = _ref5.getState;
+	
+	    sources.filter(source => !getSource(getState(), source.id)).forEach(source => dispatch(newSource(source)));
+	  };
+	}
+	
 	
 
 
 
 	function loadSourceMap(generatedSource) {
-	  return _ref5 => {
-	    var dispatch = _ref5.dispatch;
-	    var getState = _ref5.getState;
+	  return _ref6 => {
+	    var dispatch = _ref6.dispatch;
+	    var getState = _ref6.getState;
 	
 	    var sourceMap = getSourceMap(getState(), generatedSource.id);
 	    if (sourceMap) {
@@ -30255,9 +30284,9 @@ var Debugger =
 	function selectSourceURL(url) {
 	  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	
-	  return _ref7 => {
-	    var dispatch = _ref7.dispatch;
-	    var getState = _ref7.getState;
+	  return _ref8 => {
+	    var dispatch = _ref8.dispatch;
+	    var getState = _ref8.getState;
 	
 	    var source = getSourceByURL(getState(), url);
 	    if (source) {
@@ -30280,10 +30309,10 @@ var Debugger =
 	function selectSource(id) {
 	  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	
-	  return _ref8 => {
-	    var dispatch = _ref8.dispatch;
-	    var getState = _ref8.getState;
-	    var client = _ref8.client;
+	  return _ref9 => {
+	    var dispatch = _ref9.dispatch;
+	    var getState = _ref9.getState;
+	    var client = _ref9.client;
 	
 	    if (!client) {
 	      
@@ -30330,9 +30359,9 @@ var Debugger =
 
 
 	function blackbox(source, shouldBlackBox) {
-	  return _ref9 => {
-	    var dispatch = _ref9.dispatch;
-	    var client = _ref9.client;
+	  return _ref10 => {
+	    var dispatch = _ref10.dispatch;
+	    var client = _ref10.client;
 	
 	    dispatch({
 	      type: constants.BLACKBOX,
@@ -30360,10 +30389,10 @@ var Debugger =
 
 
 	function togglePrettyPrint(id) {
-	  return _ref10 => {
-	    var dispatch = _ref10.dispatch;
-	    var getState = _ref10.getState;
-	    var client = _ref10.client;
+	  return _ref11 => {
+	    var dispatch = _ref11.dispatch;
+	    var getState = _ref11.getState;
+	    var client = _ref11.client;
 	
 	    var source = getSource(getState(), id).toJS();
 	    var sourceText = getSourceText(getState(), id).toJS();
@@ -30378,7 +30407,10 @@ var Debugger =
 	
 	    var url = source.url + ":formatted";
 	    var originalSource = makeOriginalSource({ url, source });
-	    dispatch(_addSource(originalSource));
+	    dispatch({
+	      type: constants.ADD_SOURCE,
+	      source: originalSource
+	    });
 	
 	    return dispatch({
 	      type: constants.TOGGLE_PRETTY_PRINT,
@@ -30412,10 +30444,10 @@ var Debugger =
 
 
 	function loadSourceText(source) {
-	  return _ref12 => {
-	    var dispatch = _ref12.dispatch;
-	    var getState = _ref12.getState;
-	    var client = _ref12.client;
+	  return _ref13 => {
+	    var dispatch = _ref13.dispatch;
+	    var getState = _ref13.getState;
+	    var client = _ref13.client;
 	
 	    
 	    var textInfo = getSourceText(getState(), source.id);
@@ -30472,9 +30504,9 @@ var Debugger =
 
 
 	function getTextForSources(actors) {
-	  return _ref14 => {
-	    var dispatch = _ref14.dispatch;
-	    var getState = _ref14.getState;
+	  return _ref15 => {
+	    var dispatch = _ref15.dispatch;
+	    var getState = _ref15.getState;
 	
 	    var deferred = defer();
 	    var pending = new Set(actors);
@@ -30489,9 +30521,9 @@ var Debugger =
 	
 	    var _loop = function (actor) {
 	      var source = getSource(getState(), actor);
-	      dispatch(loadSourceText(source)).then(_ref23 => {
-	        var text = _ref23.text;
-	        var contentType = _ref23.contentType;
+	      dispatch(loadSourceText(source)).then(_ref24 => {
+	        var text = _ref24.text;
+	        var contentType = _ref24.contentType;
 	
 	        onFetch([source, text, contentType]);
 	      }, err => {
@@ -30512,12 +30544,12 @@ var Debugger =
 	    }
 	
 	    
-	    function onFetch(_ref15) {
-	      var _ref16 = _slicedToArray(_ref15, 3);
+	    function onFetch(_ref16) {
+	      var _ref17 = _slicedToArray(_ref16, 3);
 	
-	      var aSource = _ref16[0];
-	      var aText = _ref16[1];
-	      var aContentType = _ref16[2];
+	      var aSource = _ref17[0];
+	      var aText = _ref17[1];
+	      var aContentType = _ref17[2];
 	
 	      
 	      if (!pending.has(aSource.actor)) {
@@ -30529,11 +30561,11 @@ var Debugger =
 	    }
 	
 	    
-	    function onError(_ref17) {
-	      var _ref18 = _slicedToArray(_ref17, 2);
+	    function onError(_ref18) {
+	      var _ref19 = _slicedToArray(_ref18, 2);
 	
-	      var aSource = _ref18[0];
-	      var aError = _ref18[1];
+	      var aSource = _ref19[0];
+	      var aError = _ref19[1];
 	
 	      pending.delete(aSource.actor);
 	      maybeFinish();
@@ -30545,14 +30577,14 @@ var Debugger =
 	    function maybeFinish() {
 	      if (pending.size == 0) {
 	        
-	        deferred.resolve(fetched.sort((_ref19, _ref20) => {
-	          var _ref22 = _slicedToArray(_ref19, 1);
+	        deferred.resolve(fetched.sort((_ref20, _ref21) => {
+	          var _ref23 = _slicedToArray(_ref20, 1);
 	
-	          var aFirst = _ref22[0];
+	          var aFirst = _ref23[0];
 	
-	          var _ref21 = _slicedToArray(_ref20, 1);
+	          var _ref22 = _slicedToArray(_ref21, 1);
 	
-	          var aSecond = _ref21[0];
+	          var aSecond = _ref22[0];
 	          return aFirst > aSecond;
 	        }));
 	      }
@@ -30564,6 +30596,7 @@ var Debugger =
 	
 	module.exports = {
 	  newSource,
+	  newSources,
 	  selectSource,
 	  selectSourceURL,
 	  closeTab,
@@ -30653,11 +30686,11 @@ var Debugger =
 	var Location = _require.Location;
 	var Frame = _require.Frame;
 	
-	var _require2 = __webpack_require__(215);
+	var _require2 = __webpack_require__(216);
 	
 	var getOriginalLocation = _require2.getOriginalLocation;
 	
-	var _require3 = __webpack_require__(175);
+	var _require3 = __webpack_require__(176);
 	
 	var asyncMap = _require3.asyncMap;
 	
@@ -30680,7 +30713,7 @@ var Debugger =
 
 
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	
 	
 
@@ -30729,21 +30762,21 @@ var Debugger =
 
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(218);
+	var _require = __webpack_require__(219);
 	
 	var selectSource = _require.selectSource;
 	
-	var _require2 = __webpack_require__(183);
+	var _require2 = __webpack_require__(184);
 	
 	var PROMISE = _require2.PROMISE;
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getExpressions = _require3.getExpressions;
 	
-	var _require4 = __webpack_require__(220);
+	var _require4 = __webpack_require__(221);
 	
 	var updateFrameLocations = _require4.updateFrameLocations;
 	
@@ -31055,9 +31088,9 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var constants = __webpack_require__(189);
+	var constants = __webpack_require__(190);
 	
-	var _require = __webpack_require__(215);
+	var _require = __webpack_require__(216);
 	
 	var clearData = _require.clearData;
 	
@@ -31115,7 +31148,7 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var ImPropTypes = __webpack_require__(227);
+	var ImPropTypes = __webpack_require__(228);
 	
 	var _require = __webpack_require__(2);
 	
@@ -31125,16 +31158,16 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var SourcesTree = React.createFactory(__webpack_require__(228));
-	var actions = __webpack_require__(213);
+	var SourcesTree = React.createFactory(__webpack_require__(229));
+	var actions = __webpack_require__(214);
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getSelectedSource = _require3.getSelectedSource;
 	var getSources = _require3.getSources;
 	
 	
-	__webpack_require__(259);
+	__webpack_require__(260);
 	
 	var Sources = React.createClass({
 	  propTypes: {
@@ -31169,7 +31202,7 @@ var Debugger =
 
 	"use strict";
 	
-	var Immutable = __webpack_require__(192);
+	var Immutable = __webpack_require__(193);
 	
 	var ANONYMOUS = "<<anonymous>>";
 	
@@ -31369,14 +31402,14 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var classnames = __webpack_require__(206);
-	var ImPropTypes = __webpack_require__(227);
+	var classnames = __webpack_require__(207);
+	var ImPropTypes = __webpack_require__(228);
 	
-	var _require = __webpack_require__(192);
+	var _require = __webpack_require__(193);
 	
 	var Set = _require.Set;
 	
-	var _require2 = __webpack_require__(229);
+	var _require2 = __webpack_require__(230);
 	
 	var nodeHasChildren = _require2.nodeHasChildren;
 	var createParentMap = _require2.createParentMap;
@@ -31384,10 +31417,10 @@ var Debugger =
 	var collapseTree = _require2.collapseTree;
 	var createTree = _require2.createTree;
 	
-	var ManagedTree = React.createFactory(__webpack_require__(230));
-	var Svg = __webpack_require__(234);
+	var ManagedTree = React.createFactory(__webpack_require__(231));
+	var Svg = __webpack_require__(235);
 	
-	var _require3 = __webpack_require__(175);
+	var _require3 = __webpack_require__(176);
 	
 	var throttle = _require3.throttle;
 	
@@ -31534,13 +31567,13 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var URL = __webpack_require__(199);
+	var URL = __webpack_require__(200);
 	
-	var _require = __webpack_require__(185);
+	var _require = __webpack_require__(186);
 	
 	var assert = _require.assert;
 	
-	var _require2 = __webpack_require__(219);
+	var _require2 = __webpack_require__(220);
 	
 	var isPretty = _require2.isPretty;
 	
@@ -31734,8 +31767,8 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var Tree = React.createFactory(__webpack_require__(231));
-	__webpack_require__(232);
+	var Tree = React.createFactory(__webpack_require__(232));
+	__webpack_require__(233);
 	
 	var ManagedTree = React.createClass({
 	  propTypes: Tree.propTypes,
@@ -32423,7 +32456,7 @@ var Debugger =
 	
 
 
-	var Svg = __webpack_require__(235);
+	var Svg = __webpack_require__(236);
 	module.exports = Svg;
 
  },
@@ -32431,31 +32464,31 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var InlineSVG = __webpack_require__(236);
+	var InlineSVG = __webpack_require__(237);
 	
 	var svg = {
-	  "angle-brackets": __webpack_require__(237),
-	  "arrow": __webpack_require__(238),
-	  "blackBox": __webpack_require__(239),
-	  "breakpoint": __webpack_require__(240),
-	  "close": __webpack_require__(241),
-	  "disableBreakpoints": __webpack_require__(242),
-	  "domain": __webpack_require__(243),
-	  "file": __webpack_require__(244),
-	  "folder": __webpack_require__(245),
-	  "globe": __webpack_require__(246),
-	  "magnifying-glass": __webpack_require__(247),
-	  "pause": __webpack_require__(248),
-	  "pause-circle": __webpack_require__(249),
-	  "pause-exceptions": __webpack_require__(250),
-	  "prettyPrint": __webpack_require__(251),
-	  "resume": __webpack_require__(252),
-	  "settings": __webpack_require__(253),
-	  "stepIn": __webpack_require__(254),
-	  "stepOut": __webpack_require__(255),
-	  "stepOver": __webpack_require__(256),
-	  "subSettings": __webpack_require__(257),
-	  "worker": __webpack_require__(258)
+	  "angle-brackets": __webpack_require__(238),
+	  "arrow": __webpack_require__(239),
+	  "blackBox": __webpack_require__(240),
+	  "breakpoint": __webpack_require__(241),
+	  "close": __webpack_require__(242),
+	  "disableBreakpoints": __webpack_require__(243),
+	  "domain": __webpack_require__(244),
+	  "file": __webpack_require__(245),
+	  "folder": __webpack_require__(246),
+	  "globe": __webpack_require__(247),
+	  "magnifying-glass": __webpack_require__(248),
+	  "pause": __webpack_require__(249),
+	  "pause-circle": __webpack_require__(250),
+	  "pause-exceptions": __webpack_require__(251),
+	  "prettyPrint": __webpack_require__(252),
+	  "resume": __webpack_require__(253),
+	  "settings": __webpack_require__(254),
+	  "stepIn": __webpack_require__(255),
+	  "stepOut": __webpack_require__(256),
+	  "stepOver": __webpack_require__(257),
+	  "subSettings": __webpack_require__(258),
+	  "worker": __webpack_require__(259)
 	};
 	
 	module.exports = function (name, props) {
@@ -32775,7 +32808,7 @@ var Debugger =
 
 	var React = __webpack_require__(17);
 	var ReactDOM = __webpack_require__(25);
-	var ImPropTypes = __webpack_require__(227);
+	var ImPropTypes = __webpack_require__(228);
 	
 	var _require = __webpack_require__(2);
 	
@@ -32785,30 +32818,30 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var SourceEditor = __webpack_require__(262);
+	var SourceEditor = __webpack_require__(263);
 	
 	var _require3 = __webpack_require__(45);
 	
 	var debugGlobal = _require3.debugGlobal;
 	
-	var _require4 = __webpack_require__(198);
+	var _require4 = __webpack_require__(199);
 	
 	var getSourceText = _require4.getSourceText;
 	var getBreakpointsForSource = _require4.getBreakpointsForSource;
 	var getSelectedLocation = _require4.getSelectedLocation;
 	var getSelectedFrame = _require4.getSelectedFrame;
 	
-	var _require5 = __webpack_require__(194);
+	var _require5 = __webpack_require__(195);
 	
 	var makeLocationId = _require5.makeLocationId;
 	
-	var actions = __webpack_require__(213);
-	var Breakpoint = React.createFactory(__webpack_require__(263));
+	var actions = __webpack_require__(214);
+	var Breakpoint = React.createFactory(__webpack_require__(264));
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
 	
-	__webpack_require__(264);
+	__webpack_require__(265);
 	
 	function isTextForSource(sourceText) {
 	  return !sourceText.get("loading") && !sourceText.get("error");
@@ -33050,7 +33083,7 @@ var Debugger =
 	var React = __webpack_require__(17);
 	var PropTypes = React.PropTypes;
 	
-	var classnames = __webpack_require__(206);
+	var classnames = __webpack_require__(207);
 	
 	function makeMarker(isDisabled) {
 	  var marker = document.createElement("div");
@@ -33136,8 +33169,8 @@ var Debugger =
 	
 	var React = __webpack_require__(17);
 	var ReactDOM = __webpack_require__(25);
-	var Draggable = React.createFactory(__webpack_require__(267));
-	__webpack_require__(268);
+	var Draggable = React.createFactory(__webpack_require__(268));
+	__webpack_require__(269);
 	
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
@@ -33176,8 +33209,8 @@ var Debugger =
 	
 	    return dom.div({ className: "split-box",
 	      style: this.props.style }, dom.div({ className: rightFlex ? "uncontrolled" : "controlled",
-	      style: { width: rightFlex ? null : width } }, left), Draggable({ className: "splitter",
-	      onMove: x => this.onMove(x) }), dom.div({ className: rightFlex ? "controlled" : "uncontrolled",
+	      style: { width: rightFlex ? null : width } }, left), dom.div({ className: "splitter" }, Draggable({ className: "splitter-handle",
+	      onMove: x => this.onMove(x) })), dom.div({ className: rightFlex ? "controlled" : "uncontrolled",
 	      style: { width: rightFlex ? width : null } }, right));
 	  }
 	});
@@ -33261,7 +33294,7 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getPause = _require3.getPause;
 	var getIsWaitingOnBreak = _require3.getIsWaitingOnBreak;
@@ -33275,23 +33308,23 @@ var Debugger =
 	
 	var isEnabled = _require4.isEnabled;
 	
-	var Svg = __webpack_require__(234);
-	var ImPropTypes = __webpack_require__(227);
+	var Svg = __webpack_require__(235);
+	var ImPropTypes = __webpack_require__(228);
 	
-	var _require5 = __webpack_require__(212);
+	var _require5 = __webpack_require__(213);
 	
 	var Services = _require5.Services;
 	
 	var shiftKey = Services.appinfo.OS === "Darwin" ? "\u21E7" : "Shift+";
 	var ctrlKey = Services.appinfo.OS === "Linux" ? "Ctrl+" : "";
 	
-	var actions = __webpack_require__(213);
-	var Breakpoints = React.createFactory(__webpack_require__(271));
-	var Expressions = React.createFactory(__webpack_require__(274));
-	var Scopes = React.createFactory(__webpack_require__(307));
-	var Frames = React.createFactory(__webpack_require__(339));
-	var Accordion = React.createFactory(__webpack_require__(342));
-	__webpack_require__(345);
+	var actions = __webpack_require__(214);
+	var Breakpoints = React.createFactory(__webpack_require__(272));
+	var Expressions = React.createFactory(__webpack_require__(275));
+	var Scopes = React.createFactory(__webpack_require__(308));
+	var Frames = React.createFactory(__webpack_require__(340));
+	var Accordion = React.createFactory(__webpack_require__(343));
+	__webpack_require__(346);
 	
 	function debugBtn(onClick, type, className, tooltip) {
 	  className = `${ type } ${ className }`;
@@ -33492,36 +33525,36 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var ImPropTypes = __webpack_require__(227);
-	var classnames = __webpack_require__(206);
-	var actions = __webpack_require__(213);
+	var ImPropTypes = __webpack_require__(228);
+	var classnames = __webpack_require__(207);
+	var actions = __webpack_require__(214);
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getSource = _require3.getSource;
 	var getPause = _require3.getPause;
 	var getBreakpoints = _require3.getBreakpoints;
 	
-	var _require4 = __webpack_require__(194);
+	var _require4 = __webpack_require__(195);
 	
 	var makeLocationId = _require4.makeLocationId;
 	
-	var _require5 = __webpack_require__(175);
+	var _require5 = __webpack_require__(176);
 	
 	var truncateStr = _require5.truncateStr;
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var _require6 = __webpack_require__(175);
+	var _require6 = __webpack_require__(176);
 	
 	var endTruncateStr = _require6.endTruncateStr;
 	
-	var _require7 = __webpack_require__(204);
+	var _require7 = __webpack_require__(205);
 	
 	var basename = _require7.basename;
 	
 	
-	__webpack_require__(272);
+	__webpack_require__(273);
 	
 	function isCurrentlyPausedAtBreakpoint(state, breakpoint) {
 	  var pause = getPause(state);
@@ -33639,23 +33672,23 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var ImPropTypes = __webpack_require__(227);
+	var ImPropTypes = __webpack_require__(228);
 	
-	var Svg = __webpack_require__(234);
-	var actions = __webpack_require__(213);
+	var Svg = __webpack_require__(235);
+	var actions = __webpack_require__(214);
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getExpressions = _require3.getExpressions;
 	var getPause = _require3.getPause;
 	
-	var Rep = React.createFactory(__webpack_require__(275));
+	var Rep = React.createFactory(__webpack_require__(276));
 	
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
 	
-	__webpack_require__(305);
+	__webpack_require__(306);
 	
 	var Expressions = React.createClass({
 	  propTypes: {
@@ -33762,10 +33795,10 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var Rep = React.createFactory(__webpack_require__(276).Rep);
-	var Grip = __webpack_require__(302).Grip;
+	var Rep = React.createFactory(__webpack_require__(277).Rep);
+	var Grip = __webpack_require__(303).Grip;
 	
-	__webpack_require__(303);
+	__webpack_require__(304);
 	
 	function renderRep(_ref) {
 	  var object = _ref.object;
@@ -33793,31 +33826,31 @@ var Debugger =
 	  
 	  const React = __webpack_require__(17);
 	
-	  const { isGrip } = __webpack_require__(277);
+	  const { isGrip } = __webpack_require__(278);
 	
 	  
-	  const { Undefined } = __webpack_require__(278);
-	  const { Null } = __webpack_require__(280);
-	  const { StringRep } = __webpack_require__(281);
-	  const { Number } = __webpack_require__(282);
-	  const { ArrayRep } = __webpack_require__(283);
-	  const { Obj } = __webpack_require__(285);
+	  const { Undefined } = __webpack_require__(279);
+	  const { Null } = __webpack_require__(281);
+	  const { StringRep } = __webpack_require__(282);
+	  const { Number } = __webpack_require__(283);
+	  const { ArrayRep } = __webpack_require__(284);
+	  const { Obj } = __webpack_require__(286);
 	
 	  
-	  const { Attribute } = __webpack_require__(287);
-	  const { DateTime } = __webpack_require__(289);
-	  const { Document } = __webpack_require__(290);
-	  const { Event } = __webpack_require__(292);
-	  const { Func } = __webpack_require__(293);
-	  const { NamedNodeMap } = __webpack_require__(294);
-	  const { RegExp } = __webpack_require__(295);
-	  const { StyleSheet } = __webpack_require__(296);
-	  const { TextNode } = __webpack_require__(297);
-	  const { Window } = __webpack_require__(298);
-	  const { ObjectWithText } = __webpack_require__(299);
-	  const { ObjectWithURL } = __webpack_require__(300);
-	  const { GripArray } = __webpack_require__(301);
-	  const { Grip } = __webpack_require__(302);
+	  const { Attribute } = __webpack_require__(288);
+	  const { DateTime } = __webpack_require__(290);
+	  const { Document } = __webpack_require__(291);
+	  const { Event } = __webpack_require__(293);
+	  const { Func } = __webpack_require__(294);
+	  const { NamedNodeMap } = __webpack_require__(295);
+	  const { RegExp } = __webpack_require__(296);
+	  const { StyleSheet } = __webpack_require__(297);
+	  const { TextNode } = __webpack_require__(298);
+	  const { Window } = __webpack_require__(299);
+	  const { ObjectWithText } = __webpack_require__(300);
+	  const { ObjectWithURL } = __webpack_require__(301);
+	  const { GripArray } = __webpack_require__(302);
+	  const { Grip } = __webpack_require__(303);
 	
 	  
 	  
@@ -34013,8 +34046,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
+	  const { createFactories } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
 	
 	  
 
@@ -34105,8 +34138,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
+	  const { createFactories } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
 	
 	  
 
@@ -34156,8 +34189,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories, cropMultipleLines } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
+	  const { createFactories, cropMultipleLines } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
 	
 	  
 
@@ -34213,8 +34246,8 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
+	  const { createFactories } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
 	
 	  
 
@@ -34265,9 +34298,9 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
-	  const { Caption } = createFactories(__webpack_require__(284));
+	  const { createFactories } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { Caption } = createFactories(__webpack_require__(285));
 	
 	  
 	  const DOM = React.DOM;
@@ -34423,7 +34456,7 @@ var Debugger =
 	    displayName: "ItemRep",
 	
 	    render: function () {
-	      const { Rep } = createFactories(__webpack_require__(276));
+	      const { Rep } = createFactories(__webpack_require__(277));
 	
 	      let object = this.props.object;
 	      let delim = this.props.delim;
@@ -34516,10 +34549,10 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
-	  const { Caption } = createFactories(__webpack_require__(284));
-	  const { PropRep } = createFactories(__webpack_require__(286));
+	  const { createFactories } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { Caption } = createFactories(__webpack_require__(285));
+	  const { PropRep } = createFactories(__webpack_require__(287));
 	  
 	  const { span } = React.DOM;
 	  
@@ -34684,7 +34717,7 @@ var Debugger =
 	
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  const React = __webpack_require__(17);
-	  const { createFactories } = __webpack_require__(277);
+	  const { createFactories } = __webpack_require__(278);
 	
 	  const { span } = React.DOM;
 	
@@ -34705,7 +34738,7 @@ var Debugger =
 	    },
 	
 	    render: function () {
-	      let { Rep } = createFactories(__webpack_require__(276));
+	      let { Rep } = createFactories(__webpack_require__(277));
 	
 	      return (
 	        span({},
@@ -34750,9 +34783,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
-	  const { StringRep } = __webpack_require__(281);
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { StringRep } = __webpack_require__(282);
 	
 	  
 	  const { span } = React.DOM;
@@ -34868,8 +34901,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 	  const { span } = React.DOM;
@@ -34935,9 +34968,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
-	  const { getFileName } = __webpack_require__(291);
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { getFileName } = __webpack_require__(292);
 	
 	  
 	  const { span } = React.DOM;
@@ -35100,8 +35133,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 
@@ -35175,8 +35208,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip, cropString } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip, cropString } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 
@@ -35240,9 +35273,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
-	  const { Caption } = createFactories(__webpack_require__(284));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
+	  const { Caption } = createFactories(__webpack_require__(285));
 	
 	  
 	  const { span } = React.DOM;
@@ -35360,7 +35393,7 @@ var Debugger =
 	    },
 	
 	    render: function () {
-	      const { Rep } = createFactories(__webpack_require__(276));
+	      const { Rep } = createFactories(__webpack_require__(277));
 	
 	      return (
 	        span({},
@@ -35419,8 +35452,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 	  const { span } = React.DOM;
@@ -35494,9 +35527,9 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
-	  const { getFileName } = __webpack_require__(291);
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { getFileName } = __webpack_require__(292);
 	
 	  
 	  const DOM = React.DOM;
@@ -35567,8 +35600,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip, cropMultipleLines } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip, cropMultipleLines } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 	  const DOM = React.DOM;
@@ -35654,8 +35687,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip, cropString } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
+	  const { createFactories, isGrip, cropString } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
 	
 	  
 	  const DOM = React.DOM;
@@ -35722,8 +35755,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 	  const { span } = React.DOM;
@@ -35793,8 +35826,8 @@ var Debugger =
 	  const React = __webpack_require__(17);
 	
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectLink } = createFactories(__webpack_require__(288));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectLink } = createFactories(__webpack_require__(289));
 	
 	  
 	  const { span } = React.DOM;
@@ -35863,9 +35896,9 @@ var Debugger =
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, module) {
 	  
 	  const React = __webpack_require__(17);
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
-	  const { Caption } = createFactories(__webpack_require__(284));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { Caption } = createFactories(__webpack_require__(285));
 	
 	  
 	  const { a, span } = React.DOM;
@@ -35997,7 +36030,7 @@ var Debugger =
 	    },
 	
 	    render: function () {
-	      let { Rep } = createFactories(__webpack_require__(276));
+	      let { Rep } = createFactories(__webpack_require__(277));
 	
 	      return (
 	        span({},
@@ -36057,10 +36090,10 @@ var Debugger =
 	  
 	  const React = __webpack_require__(17);
 	  
-	  const { createFactories, isGrip } = __webpack_require__(277);
-	  const { ObjectBox } = createFactories(__webpack_require__(279));
-	  const { Caption } = createFactories(__webpack_require__(284));
-	  const { PropRep } = createFactories(__webpack_require__(286));
+	  const { createFactories, isGrip } = __webpack_require__(278);
+	  const { ObjectBox } = createFactories(__webpack_require__(280));
+	  const { Caption } = createFactories(__webpack_require__(285));
+	  const { PropRep } = createFactories(__webpack_require__(287));
 	  
 	  const { span } = React.DOM;
 	
@@ -36256,22 +36289,22 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var ImPropTypes = __webpack_require__(227);
-	var actions = __webpack_require__(213);
+	var ImPropTypes = __webpack_require__(228);
+	var actions = __webpack_require__(214);
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getSelectedFrame = _require3.getSelectedFrame;
 	var getLoadedObjects = _require3.getLoadedObjects;
 	var getPause = _require3.getPause;
 	
-	var ObjectInspector = React.createFactory(__webpack_require__(308));
+	var ObjectInspector = React.createFactory(__webpack_require__(309));
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var toPairs = __webpack_require__(312);
+	var toPairs = __webpack_require__(313);
 	
-	__webpack_require__(337);
+	__webpack_require__(338);
 	
 	function info(text) {
 	  return dom.div({ className: "pane-info" }, text);
@@ -36455,10 +36488,10 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var classnames = __webpack_require__(206);
-	var ManagedTree = React.createFactory(__webpack_require__(230));
-	var Arrow = React.createFactory(__webpack_require__(309));
-	var Rep = __webpack_require__(275);
+	var classnames = __webpack_require__(207);
+	var ManagedTree = React.createFactory(__webpack_require__(231));
+	var Arrow = React.createFactory(__webpack_require__(310));
+	var Rep = __webpack_require__(276);
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
@@ -36644,17 +36677,17 @@ var Debugger =
  function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(17);
-	var InlineSVG = __webpack_require__(236);
+	var InlineSVG = __webpack_require__(237);
 	var dom = React.DOM;
 	
-	__webpack_require__(310);
+	__webpack_require__(311);
 	
 	
 	
 	var Arrow = props => {
 	  var className = "arrow " + (props.className || "");
 	  return dom.span(Object.assign({}, props, { className }), React.createElement(InlineSVG, {
-	    src: __webpack_require__(238)
+	    src: __webpack_require__(239)
 	  }));
 	};
 	
@@ -36671,8 +36704,8 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var createToPairs = __webpack_require__(313),
-	    keys = __webpack_require__(323);
+	var createToPairs = __webpack_require__(314),
+	    keys = __webpack_require__(324);
 	
 	
 
@@ -36707,10 +36740,10 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var baseToPairs = __webpack_require__(314),
-	    getTag = __webpack_require__(316),
-	    mapToArray = __webpack_require__(321),
-	    setToPairs = __webpack_require__(322);
+	var baseToPairs = __webpack_require__(315),
+	    getTag = __webpack_require__(317),
+	    mapToArray = __webpack_require__(322),
+	    setToPairs = __webpack_require__(323);
 	
 	
 	var mapTag = '[object Map]',
@@ -36743,7 +36776,7 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var arrayMap = __webpack_require__(315);
+	var arrayMap = __webpack_require__(316);
 	
 	
 
@@ -36794,11 +36827,11 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var DataView = __webpack_require__(317),
+	var DataView = __webpack_require__(318),
 	    Map = __webpack_require__(82),
-	    Promise = __webpack_require__(318),
-	    Set = __webpack_require__(319),
-	    WeakMap = __webpack_require__(320),
+	    Promise = __webpack_require__(319),
+	    Set = __webpack_require__(320),
+	    WeakMap = __webpack_require__(321),
 	    toSource = __webpack_require__(68);
 	
 	
@@ -36970,12 +37003,12 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var baseHas = __webpack_require__(324),
-	    baseKeys = __webpack_require__(325),
-	    indexKeys = __webpack_require__(326),
-	    isArrayLike = __webpack_require__(330),
-	    isIndex = __webpack_require__(335),
-	    isPrototype = __webpack_require__(336);
+	var baseHas = __webpack_require__(325),
+	    baseKeys = __webpack_require__(326),
+	    indexKeys = __webpack_require__(327),
+	    isArrayLike = __webpack_require__(331),
+	    isIndex = __webpack_require__(336),
+	    isPrototype = __webpack_require__(337);
 	
 	
 
@@ -37086,11 +37119,11 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var baseTimes = __webpack_require__(327),
-	    isArguments = __webpack_require__(328),
+	var baseTimes = __webpack_require__(328),
+	    isArguments = __webpack_require__(329),
 	    isArray = __webpack_require__(52),
-	    isLength = __webpack_require__(333),
-	    isString = __webpack_require__(334);
+	    isLength = __webpack_require__(334),
+	    isString = __webpack_require__(335);
 	
 	
 
@@ -37142,7 +37175,7 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var isArrayLikeObject = __webpack_require__(329);
+	var isArrayLikeObject = __webpack_require__(330);
 	
 	
 	var argsTag = '[object Arguments]';
@@ -37194,7 +37227,7 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var isArrayLike = __webpack_require__(330),
+	var isArrayLike = __webpack_require__(331),
 	    isObjectLike = __webpack_require__(7);
 	
 	
@@ -37233,9 +37266,9 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var getLength = __webpack_require__(331),
+	var getLength = __webpack_require__(332),
 	    isFunction = __webpack_require__(62),
-	    isLength = __webpack_require__(333);
+	    isLength = __webpack_require__(334);
 	
 	
 
@@ -37273,7 +37306,7 @@ var Debugger =
 
  function(module, exports, __webpack_require__) {
 
-	var baseProperty = __webpack_require__(332);
+	var baseProperty = __webpack_require__(333);
 	
 	
 
@@ -37474,17 +37507,17 @@ var Debugger =
 	
 	var connect = _require2.connect;
 	
-	var actions = __webpack_require__(213);
+	var actions = __webpack_require__(214);
 	
-	var _require3 = __webpack_require__(175);
+	var _require3 = __webpack_require__(176);
 	
 	var endTruncateStr = _require3.endTruncateStr;
 	
-	var _require4 = __webpack_require__(204);
+	var _require4 = __webpack_require__(205);
 	
 	var basename = _require4.basename;
 	
-	var _require5 = __webpack_require__(198);
+	var _require5 = __webpack_require__(199);
 	
 	var getFrames = _require5.getFrames;
 	var getSelectedFrame = _require5.getSelectedFrame;
@@ -37492,7 +37525,7 @@ var Debugger =
 	
 	
 	if (typeof window == "object") {
-	  __webpack_require__(340);
+	  __webpack_require__(341);
 	}
 	
 	function renderFrameTitle(frame) {
@@ -37550,9 +37583,9 @@ var Debugger =
 	var PropTypes = React.PropTypes;
 	var div = dom.div;
 	
-	var Svg = __webpack_require__(234);
+	var Svg = __webpack_require__(235);
 	
-	__webpack_require__(343);
+	__webpack_require__(344);
 	
 	var Accordion = React.createClass({
 	  propTypes: {
@@ -37625,7 +37658,7 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var ImPropTypes = __webpack_require__(227);
+	var ImPropTypes = __webpack_require__(228);
 	
 	var _require = __webpack_require__(15);
 	
@@ -37635,27 +37668,27 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var Svg = __webpack_require__(234);
+	var Svg = __webpack_require__(235);
 	
-	var _require3 = __webpack_require__(198);
+	var _require3 = __webpack_require__(199);
 	
 	var getSelectedSource = _require3.getSelectedSource;
 	var getSourceTabs = _require3.getSourceTabs;
 	
-	var _require4 = __webpack_require__(175);
+	var _require4 = __webpack_require__(176);
 	
 	var endTruncateStr = _require4.endTruncateStr;
 	
-	var classnames = __webpack_require__(206);
-	var actions = __webpack_require__(213);
+	var classnames = __webpack_require__(207);
+	var actions = __webpack_require__(214);
 	
 	var _require5 = __webpack_require__(46);
 	
 	var isEnabled = _require5.isEnabled;
 	
 	
-	__webpack_require__(348);
-	__webpack_require__(350);
+	__webpack_require__(349);
+	__webpack_require__(351);
 	
 	
 
@@ -37866,34 +37899,34 @@ var Debugger =
 	
 	var bindActionCreators = _require2.bindActionCreators;
 	
-	var actions = __webpack_require__(213);
+	var actions = __webpack_require__(214);
 	
 	var _require3 = __webpack_require__(46);
 	
 	var isEnabled = _require3.isEnabled;
 	
-	var _require4 = __webpack_require__(198);
+	var _require4 = __webpack_require__(199);
 	
 	var getSelectedSource = _require4.getSelectedSource;
 	var getSourceText = _require4.getSourceText;
 	var getPrettySource = _require4.getPrettySource;
 	
-	var Svg = __webpack_require__(234);
-	var ImPropTypes = __webpack_require__(227);
-	var classnames = __webpack_require__(206);
+	var Svg = __webpack_require__(235);
+	var ImPropTypes = __webpack_require__(228);
+	var classnames = __webpack_require__(207);
 	
-	var _require5 = __webpack_require__(215);
+	var _require5 = __webpack_require__(216);
 	
 	var isMapped = _require5.isMapped;
 	var getGeneratedSourceId = _require5.getGeneratedSourceId;
 	var isOriginal = _require5.isOriginal;
 	
-	var _require6 = __webpack_require__(219);
+	var _require6 = __webpack_require__(220);
 	
 	var isPretty = _require6.isPretty;
 	
 	
-	__webpack_require__(353);
+	__webpack_require__(354);
 	
 	function debugBtn(onClick, type) {
 	  var className = arguments.length <= 2 || arguments[2] === undefined ? "active" : arguments[2];
@@ -37992,13 +38025,13 @@ var Debugger =
 	var dom = React.DOM;
 	var PropTypes = React.PropTypes;
 	
-	var _require = __webpack_require__(356);
+	var _require = __webpack_require__(357);
 	
 	var filter = _require.filter;
 	
-	var classnames = __webpack_require__(206);
-	__webpack_require__(362);
-	var Svg = __webpack_require__(234);
+	var classnames = __webpack_require__(207);
+	__webpack_require__(363);
+	var Svg = __webpack_require__(235);
 	
 	var INITIAL_SELECTED_INDEX = 0;
 	
@@ -38115,15 +38148,15 @@ var Debugger =
 	(function() {
 	  var PathSeparator, filter, legacy_scorer, matcher, prepQueryCache, scorer;
 	
-	  scorer = __webpack_require__(357);
+	  scorer = __webpack_require__(358);
 	
-	  legacy_scorer = __webpack_require__(359);
+	  legacy_scorer = __webpack_require__(360);
 	
-	  filter = __webpack_require__(360);
+	  filter = __webpack_require__(361);
 	
-	  matcher = __webpack_require__(361);
+	  matcher = __webpack_require__(362);
 	
-	  PathSeparator = __webpack_require__(358).sep;
+	  PathSeparator = __webpack_require__(359).sep;
 	
 	  prepQueryCache = null;
 	
@@ -38204,7 +38237,7 @@ var Debugger =
 	(function() {
 	  var AcronymResult, PathSeparator, Query, basenameScore, coreChars, countDir, doScore, emptyAcronymResult, file_coeff, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, opt_char_re, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_depth, tau_size, truncatedUpperCase, wm;
 	
-	  PathSeparator = __webpack_require__(358).sep;
+	  PathSeparator = __webpack_require__(359).sep;
 	
 	  wm = 150;
 	
@@ -38828,7 +38861,7 @@ var Debugger =
 	(function() {
 	  var PathSeparator, queryIsLastPathSegment;
 	
-	  PathSeparator = __webpack_require__(358).sep;
+	  PathSeparator = __webpack_require__(359).sep;
 	
 	  exports.basenameScore = function(string, query, score) {
 	    var base, depth, index, lastCharacter, segmentCount, slashCount;
@@ -38962,9 +38995,9 @@ var Debugger =
 	(function() {
 	  var PathSeparator, legacy_scorer, pluckCandidates, scorer, sortCandidates;
 	
-	  scorer = __webpack_require__(357);
+	  scorer = __webpack_require__(358);
 	
-	  legacy_scorer = __webpack_require__(359);
+	  legacy_scorer = __webpack_require__(360);
 	
 	  pluckCandidates = function(a) {
 	    return a.candidate;
@@ -38974,7 +39007,7 @@ var Debugger =
 	    return b.score - a.score;
 	  };
 	
-	  PathSeparator = __webpack_require__(358).sep;
+	  PathSeparator = __webpack_require__(359).sep;
 	
 	  module.exports = function(candidates, query, _arg) {
 	    var allowErrors, bAllowErrors, bKey, candidate, coreQuery, key, legacy, maxInners, maxResults, prepQuery, queryHasSlashes, score, scoredCandidates, spotLeft, string, _i, _j, _len, _len1, _ref;
@@ -39041,9 +39074,9 @@ var Debugger =
 	(function() {
 	  var PathSeparator, scorer;
 	
-	  PathSeparator = __webpack_require__(358).sep;
+	  PathSeparator = __webpack_require__(359).sep;
 	
-	  scorer = __webpack_require__(357);
+	  scorer = __webpack_require__(358);
 	
 	  exports.basenameMatch = function(subject, subject_lw, prepQuery) {
 	    var basePos, depth, end;
@@ -39204,7 +39237,7 @@ var Debugger =
 	
 	"use strict";
 	
-	const { Services } = __webpack_require__(212);
+	const { Services } = __webpack_require__(213);
 	const EventEmitter = __webpack_require__(111);
 	const isOSX = Services.appinfo.OS === "Darwin";
 	
