@@ -443,6 +443,39 @@ public:
 
   class Device {
   public:
+    
+    class SynTP
+    {
+    public:
+      static bool IsDriverInstalled()
+      {
+        return sMajorVersion != 0;
+      }
+      
+
+
+
+      static int32_t GetDriverMajorVersion()
+      {
+        return sMajorVersion;
+      }
+      
+
+
+
+      static int32_t GetDriverMinorVersion()
+      {
+        return sMinorVersion;
+      }
+
+      static void Init();
+
+    private:
+      static bool sInitialized;
+      static int32_t sMajorVersion;
+      static int32_t sMinorVersion;
+    };
+
     class Elantech {
     public:
       
