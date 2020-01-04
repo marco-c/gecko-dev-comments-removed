@@ -468,6 +468,9 @@ private:
     RefPtr<nsShmImage>  mBackShmImage;
 #endif
 
+    
+    cairo_surface_t* mFallbackSurface;
+
 #ifdef ACCESSIBILITY
     RefPtr<mozilla::a11y::Accessible> mRootAccessible;
 
