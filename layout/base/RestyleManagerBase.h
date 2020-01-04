@@ -121,7 +121,12 @@ private:
   bool mObservingRefreshDriver;
 
 protected:
+  
+  bool mInStyleRefresh;
+
   OverflowChangedTracker mOverflowChangedTracker;
+
+  void PostRestyleEventInternal(bool aForLazyConstruction);
 
   
 

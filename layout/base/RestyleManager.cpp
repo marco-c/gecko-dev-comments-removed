@@ -86,7 +86,6 @@ RestyleManager::RestyleManager(nsPresContext* aPresContext)
   : RestyleManagerBase(aPresContext)
   , mDoRebuildAllStyleData(false)
   , mInRebuildAllStyleData(false)
-  , mInStyleRefresh(false)
   , mSkipAnimationRules(false)
   , mHavePendingNonAnimationRestyles(false)
   , mRebuildAllExtraHint(nsChangeHint(0))
@@ -948,25 +947,6 @@ RestyleManager::PostRestyleEvent(Element* aElement,
   }
 
   PostRestyleEventInternal(false);
-}
-
-void
-RestyleManager::PostRestyleEventInternal(bool aForLazyConstruction)
-{
-  
-  
-  
-  bool inRefresh = !aForLazyConstruction && mInStyleRefresh;
-  nsIPresShell* presShell = PresContext()->PresShell();
-  if (!ObservingRefreshDriver() && !inRefresh) {
-    SetObservingRefreshDriver(PresContext()->RefreshDriver()->
-        AddStyleFlushObserver(presShell));
-  }
-
-  
-  
-  
-  presShell->GetDocument()->SetNeedStyleFlush();
 }
 
 void

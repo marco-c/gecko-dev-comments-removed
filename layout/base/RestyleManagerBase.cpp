@@ -15,6 +15,7 @@ RestyleManagerBase::RestyleManagerBase(nsPresContext* aPresContext)
   , mRestyleGeneration(1)
   , mHoverGeneration(0)
   , mObservingRefreshDriver(false)
+  , mInStyleRefresh(false)
 {
   MOZ_ASSERT(mPresContext);
 }
@@ -133,6 +134,25 @@ RestyleManagerBase::RestyleHintToString(nsRestyleHint aHint)
     }
   }
   return result;
+}
+
+void
+RestyleManagerBase::PostRestyleEventInternal(bool aForLazyConstruction)
+{
+  
+  
+  
+  bool inRefresh = !aForLazyConstruction && mInStyleRefresh;
+  nsIPresShell* presShell = PresContext()->PresShell();
+  if (!ObservingRefreshDriver() && !inRefresh) {
+    SetObservingRefreshDriver(PresContext()->RefreshDriver()->
+        AddStyleFlushObserver(presShell));
+  }
+
+  
+  
+  
+  presShell->GetDocument()->SetNeedStyleFlush();
 }
 
 

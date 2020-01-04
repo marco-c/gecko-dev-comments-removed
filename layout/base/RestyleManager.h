@@ -384,9 +384,6 @@ public:
   static nsCString ChangeHintToString(nsChangeHint aHint);
 #endif
 
-private:
-  void PostRestyleEventInternal(bool aForLazyConstruction);
-
 public:
   
 
@@ -490,8 +487,6 @@ private:
   bool mDoRebuildAllStyleData : 1;
   
   bool mInRebuildAllStyleData : 1;
-  
-  bool mInStyleRefresh : 1;
   
   bool mSkipAnimationRules : 1;
   bool mHavePendingNonAnimationRestyles : 1;
