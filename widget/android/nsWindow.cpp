@@ -200,6 +200,20 @@ class nsWindow::Natives final
                 return Base::Run();
             }
         }
+
+        nsAppShell::Event::Type ActivityType() const override
+        {
+            
+            if (Base::lambda.IsTarget(&Natives::OnKeyEvent) ||
+                Base::lambda.IsTarget(&Natives::OnImeReplaceText) ||
+                Base::lambda.IsTarget(&Natives::OnImeSetSelection) ||
+                Base::lambda.IsTarget(&Natives::OnImeRemoveComposition) ||
+                Base::lambda.IsTarget(&Natives::OnImeUpdateComposition))
+            {
+                return nsAppShell::Event::Type::kUIActivity;
+            }
+            return Base::ActivityType();
+        }
     };
 
 public:

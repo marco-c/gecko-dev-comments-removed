@@ -356,14 +356,14 @@ public:
     ProxyNativeCall(const ProxyNativeCall&) = default;
 
     
-    typename ThisArgClass::Param GetThisArg() { return mThisArg; }
+    typename ThisArgClass::Param GetThisArg() const { return mThisArg; }
 
     
     
     
     
-    bool IsTarget(NativeCallType call) { return call == mNativeCall; }
-    template<typename T> bool IsTarget(T&&) { return false; }
+    bool IsTarget(NativeCallType call) const { return call == mNativeCall; }
+    template<typename T> bool IsTarget(T&&) const { return false; }
 
     void operator()()
     {
