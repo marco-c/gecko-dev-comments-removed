@@ -38,6 +38,12 @@ nsShmImage::nsShmImage(Display* aDisplay,
 {
   mConnection = XGetXCBConnection(aDisplay);
   mozilla::PodZero(&mLastRequest);
+  if (aDisplay == mozilla::DefaultXDisplay()) {
+    
+    
+    
+    NS_WARNING("Main thread X display used with nsShmImage!");
+  }
 }
 
 nsShmImage::~nsShmImage()
