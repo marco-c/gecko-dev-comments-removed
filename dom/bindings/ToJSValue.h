@@ -19,6 +19,8 @@
 namespace mozilla {
 namespace dom {
 
+class Promise;
+
 
 
 
@@ -303,6 +305,14 @@ ToJSValue(JSContext* aCx,
 {
   return ToJSValue(aCx, *aArgument, aValue);
 }
+
+#ifdef SPIDERMONKEY_PROMISE
+
+MOZ_WARN_UNUSED_RESULT bool
+ToJSValue(JSContext* aCx,
+          Promise& aArgument,
+          JS::MutableHandle<JS::Value> aValue);
+#endif 
 
 
 template <typename T>

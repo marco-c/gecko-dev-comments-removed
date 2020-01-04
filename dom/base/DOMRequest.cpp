@@ -231,7 +231,7 @@ DOMRequest::Then(JSContext* aCx, AnyCallback* aResolveCallback,
   }
 
   
-  JS::Rooted<JSObject*> global(aCx, mPromise->GetWrapper());
+  JS::Rooted<JSObject*> global(aCx, mPromise->PromiseObj());
   global = js::GetGlobalForObjectCrossCompartment(global);
   mPromise->Then(aCx, global, aResolveCallback, aRejectCallback, aRetval, aRv);
 }

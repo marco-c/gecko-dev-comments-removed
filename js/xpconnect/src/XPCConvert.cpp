@@ -13,6 +13,7 @@
 #include "nsIAtom.h"
 #include "nsWrapperCache.h"
 #include "nsJSUtils.h"
+#include "nsQueryObject.h"
 #include "WrapperFactory.h"
 
 #include "nsWrapperCacheInlines.h"
@@ -25,6 +26,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/PrimitiveConversions.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 
 using namespace xpc;
@@ -792,6 +794,21 @@ XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
         return CreateHolderIfNeeded(flat, d, dest);
     }
 
+#ifdef SPIDERMONKEY_PROMISE
+    if (iid->Equals(NS_GET_IID(nsISupports))) {
+        
+        
+        
+        RefPtr<Promise> promise = do_QueryObject(aHelper.Object());
+        if (promise) {
+            flat = promise->PromiseObj();
+            if (!JS_WrapObject(cx, &flat))
+                return false;
+            return CreateHolderIfNeeded(flat, d, dest);
+        }
+    }
+#endif 
+
     
     
     
@@ -938,6 +955,19 @@ XPCConvert::JSObject2NativeInterface(void** dest, HandleObject src,
 
             return false;
         }
+
+#ifdef SPIDERMONKEY_PROMISE
+        
+        
+        if (iid->Equals(NS_GET_IID(nsISupports))) {
+            RootedObject innerObj(cx, inner);
+            if (IsPromiseObject(innerObj)) {
+                nsIGlobalObject* glob = NativeGlobal(innerObj);
+                RefPtr<Promise> p = Promise::CreateFromExisting(glob, innerObj);
+                return p && NS_SUCCEEDED(p->QueryInterface(*iid, dest));
+            }
+        }
+#endif 
     }
 
     RefPtr<nsXPCWrappedJS> wrapper;

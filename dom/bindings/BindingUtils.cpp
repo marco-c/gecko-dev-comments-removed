@@ -2790,6 +2790,7 @@ ConvertExceptionToPromise(JSContext* cx,
                           JSObject* promiseScope,
                           JS::MutableHandle<JS::Value> rval)
 {
+#ifndef SPIDERMONKEY_PROMISE
   GlobalObject global(cx, promiseScope);
   if (global.Failed()) {
     return false;
@@ -2824,6 +2825,33 @@ ConvertExceptionToPromise(JSContext* cx,
   }
 
   return GetOrCreateDOMReflector(cx, promise, rval);
+#else 
+  {
+    JSAutoCompartment ac(cx, promiseScope);
+
+    JS::Rooted<JS::Value> exn(cx);
+    if (!JS_GetPendingException(cx, &exn)) {
+      
+      
+      
+      return false;
+    }
+
+    JS_ClearPendingException(cx);
+
+    JSObject* promise = JS::CallOriginalPromiseReject(cx, exn);
+    if (!promise) {
+      
+      JS_SetPendingException(cx, exn);
+      return false;
+    }
+
+    rval.setObject(*promise);
+  }
+
+  
+  return JS_WrapValue(cx, rval);
+#endif 
 }
 
 

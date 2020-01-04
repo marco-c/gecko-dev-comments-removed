@@ -6350,7 +6350,13 @@ def getWrapTemplateForType(type, descriptorProvider, result, successCode,
                 wrapMethod = "GetOrCreateDOMReflector"
                 wrapArgs = "cx, %s, ${jsvalHandle}" % result
             else:
-                if not returnsNewObject:
+                
+                
+                
+                
+                
+                if (not returnsNewObject and
+                    descriptor.interface.identifier.name != "Promise"):
                     raise MethodNotNewObjectError(descriptor.interface.identifier.name)
                 wrapMethod = "WrapNewBindingNonWrapperCachedObject"
                 wrapArgs = "cx, ${obj}, %s, ${jsvalHandle}" % result

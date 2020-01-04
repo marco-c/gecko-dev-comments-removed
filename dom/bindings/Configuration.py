@@ -540,6 +540,13 @@ class Descriptor(DescriptorProvider):
         self.wrapperCache = (not self.interface.isCallback() and
                              not self.interface.isIteratorInterface() and
                              desc.get('wrapperCache', True))
+        
+        
+        if self.interface.identifier.name == "Promise":
+            assert self.wrapperCache
+            
+            
+            self.wrapperCache = self.interface.hasInterfaceObject()
 
         def make_name(name):
             return name + "_workers" if self.workers else name
