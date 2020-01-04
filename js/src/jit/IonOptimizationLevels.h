@@ -136,6 +136,13 @@ class OptimizationInfo
 
     
     
+    uint32_t compilerSmallFunctionWarmUpThreshold_;
+
+    
+    static const uint32_t CompilerSmallFunctionWarmupThreshold = 100;
+
+    
+    
     double inliningWarmUpThresholdFactor_;
 
     
