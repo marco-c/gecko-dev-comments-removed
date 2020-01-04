@@ -181,16 +181,19 @@ public final class IntentHelper implements GeckoEventListener,
 
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (intent.getPackage() != null) {
+        if (intent.hasExtra(EXTRA_BROWSER_FALLBACK_URL)) {
+            final String fallbackUrl = intent.getStringExtra(EXTRA_BROWSER_FALLBACK_URL);
+            callback.sendError(fallbackUrl);
+
+        } else if (intent.getPackage() != null) {
+            
+            
+            
+            
+            
+            
+            
+            
             final String marketUri = MARKET_INTENT_URI_PACKAGE_PREFIX + intent.getPackage();
             final Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(marketUri));
             marketIntent.addCategory(Intent.CATEGORY_BROWSABLE);
@@ -200,10 +203,6 @@ public final class IntentHelper implements GeckoEventListener,
             
             activity.startActivity(marketIntent);
             callback.sendSuccess(null);
-
-        } else if (intent.hasExtra(EXTRA_BROWSER_FALLBACK_URL)) {
-            final String fallbackUrl = intent.getStringExtra(EXTRA_BROWSER_FALLBACK_URL);
-            callback.sendError(fallbackUrl);
 
         }  else {
             
