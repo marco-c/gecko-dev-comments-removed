@@ -106,7 +106,8 @@ public:
     CONNECT_ERROR = 10,
     ENHANCE_YOUR_CALM = 11,
     INADEQUATE_SECURITY = 12,
-    HTTP_1_1_REQUIRED = 13
+    HTTP_1_1_REQUIRED = 13,
+    UNASSIGNED = 31
   };
 
   
@@ -412,6 +413,10 @@ private:
   
   
   errorType            mGoAwayReason;
+
+  
+  
+  int32_t             mPeerGoAwayReason;
 
   
   
