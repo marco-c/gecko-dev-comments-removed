@@ -57,12 +57,12 @@ namespace mozilla {
 class AutoRules;
 class AutoSelectionRestorer;
 class AutoTransactionsConserveSelection;
+class ChangeAttributeTransaction;
 class ErrorResult;
 class TextComposition;
 struct EditorDOMPoint;
 
 namespace dom {
-class ChangeAttributeTxn;
 class CreateElementTxn;
 class DataTransfer;
 class DeleteTextTxn;
@@ -256,14 +256,14 @@ protected:
   
 
 
-  already_AddRefed<mozilla::dom::ChangeAttributeTxn>
+  already_AddRefed<mozilla::ChangeAttributeTransaction>
   CreateTxnForSetAttribute(Element& aElement, nsIAtom& aAttribute,
                            const nsAString& aValue);
 
   
 
 
-  already_AddRefed<mozilla::dom::ChangeAttributeTxn>
+  already_AddRefed<mozilla::ChangeAttributeTransaction>
   CreateTxnForRemoveAttribute(Element& aElement, nsIAtom& aAttribute);
 
   

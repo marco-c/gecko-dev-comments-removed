@@ -3,8 +3,8 @@
 
 
 
-#ifndef ChangeAttributeTxn_h__
-#define ChangeAttributeTxn_h__
+#ifndef ChangeAttributeTransaction_h
+#define ChangeAttributeTransaction_h
 
 #include "EditTxn.h"                      
 #include "mozilla/Attributes.h"           
@@ -16,36 +16,39 @@
 class nsIAtom;
 
 namespace mozilla {
+
 namespace dom {
-
 class Element;
+} 
 
 
 
 
 
-class ChangeAttributeTxn : public EditTxn
+class ChangeAttributeTransaction final : public EditTxn
 {
 public:
   
 
 
 
-  ChangeAttributeTxn(Element& aElement, nsIAtom& aAttribute,
-                     const nsAString* aValue);
+
+  ChangeAttributeTransaction(dom::Element& aElement,
+                             nsIAtom& aAttribute,
+                             const nsAString* aValue);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeAttributeTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeAttributeTransaction, EditTxn)
 
   NS_DECL_EDITTXN
 
   NS_IMETHOD RedoTransaction() override;
 
 private:
-  virtual ~ChangeAttributeTxn();
+  virtual ~ChangeAttributeTransaction();
 
   
-  nsCOMPtr<Element> mElement;
+  nsCOMPtr<dom::Element> mElement;
 
   
   nsCOMPtr<nsIAtom> mAttribute;
@@ -64,6 +67,5 @@ private:
 };
 
 } 
-} 
 
-#endif
+#endif 
