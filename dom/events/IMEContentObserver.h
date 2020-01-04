@@ -258,6 +258,9 @@ private:
   
   
   bool mIsFlushingPendingNotifications;
+  
+  
+  bool mIsHandlingQueryContentEvent;
 
 
   
