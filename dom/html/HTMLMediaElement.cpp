@@ -5766,22 +5766,12 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
-  if (!HasAudio()) {
-    return false;
-  }
-
-  
   if (!IsActive()) {
     return false;
   }
 
   
   if (HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
-    return true;
-  }
-
-  
-  if (IsCurrentlyPlaying()) {
     return true;
   }
 
@@ -5795,7 +5785,7 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
     return true;
   }
 
-  return false;
+  return true;
 }
 
 void
@@ -6256,7 +6246,6 @@ HTMLMediaElement::CannotDecryptWaitingForKey()
 NS_IMETHODIMP HTMLMediaElement::WindowAudioCaptureChanged(bool aCapture)
 {
   MOZ_ASSERT(mAudioChannelAgent);
-  MOZ_ASSERT(HasAudio());
 
   if (!OwnerDoc()->GetInnerWindow()) {
     return NS_OK;
