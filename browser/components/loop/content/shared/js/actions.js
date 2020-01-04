@@ -202,6 +202,12 @@ loop.shared.actions = (function() {
     
 
 
+    TileShown: Action.define("tileShown", {
+    }),
+
+    
+
+
     GotMediaPermission: Action.define("gotMediaPermission", {
     }),
 
