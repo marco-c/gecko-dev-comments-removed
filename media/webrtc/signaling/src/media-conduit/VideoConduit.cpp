@@ -1288,6 +1288,13 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
                  vie_codec.startBitrate,
                  vie_codec.maxBitrate);
 
+  
+  
+  uint32_t minMinBitrate = 0;
+  uint32_t minStartBitrate = 0;
+  
+  uint32_t totalMaxBitrate = 0;
+
   for (size_t i = vie_codec.numberOfSimulcastStreams; i > 0; --i) {
     webrtc::SimulcastStream& stream(vie_codec.simulcastStream[i - 1]);
     stream.width = width;
@@ -1310,25 +1317,30 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
     }
     
     
-    SelectBitrates(stream.width, stream.height, stream.jsMaxBitrate,
+    SelectBitrates(stream.width, stream.height,
+                   MinIgnoreZero(stream.jsMaxBitrate, vie_codec.maxBitrate),
                    mLastFramerateTenths,
                    stream.minBitrate,
                    stream.targetBitrate,
                    stream.maxBitrate);
 
-    vie_codec.minBitrate = std::min(stream.minBitrate, vie_codec.minBitrate);
-    vie_codec.startBitrate += stream.targetBitrate;
-    vie_codec.maxBitrate = std::max(stream.maxBitrate, vie_codec.maxBitrate);
-
+    
     
     
     if (i == vie_codec.numberOfSimulcastStreams) {
       vie_codec.width = stream.width;
       vie_codec.height = stream.height;
     }
+    minMinBitrate = MinIgnoreZero(stream.minBitrate, minMinBitrate);
+    minStartBitrate = MinIgnoreZero(stream.targetBitrate, minStartBitrate);
+    totalMaxBitrate += stream.maxBitrate;
   }
   if (vie_codec.numberOfSimulcastStreams != 0) {
-    vie_codec.startBitrate /= vie_codec.numberOfSimulcastStreams;
+    vie_codec.minBitrate = std::max(minMinBitrate, vie_codec.minBitrate);
+    vie_codec.maxBitrate = std::min(totalMaxBitrate, vie_codec.maxBitrate);
+    vie_codec.startBitrate = std::max(vie_codec.minBitrate,
+                                      std::min(minStartBitrate,
+                                               vie_codec.maxBitrate));
   }
   if ((err = mPtrViECodec->SetSendCodec(mChannel, vie_codec)) != 0)
   {
