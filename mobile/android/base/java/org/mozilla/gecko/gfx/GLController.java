@@ -293,6 +293,20 @@ public class GLController extends JNIObject {
         }
     }
 
+    @WrapForJNI
+    private void destroy() {
+        
+        mCompositorCreated = false;
+
+        
+        ThreadUtils.postToUiThread(new Runnable() {
+            @Override
+            public void run() {
+                GLController.this.disposeNative();
+            }
+        });
+    }
+
     public static class GLControllerException extends RuntimeException {
         public static final long serialVersionUID = 1L;
 
