@@ -1224,7 +1224,7 @@ public class GeckoAppShell
 
         
         
-        if (!"sms".equals(scheme)) {
+        if (!"sms".equals(scheme) && !"smsto".equals(scheme)) {
             return intent;
         }
 
