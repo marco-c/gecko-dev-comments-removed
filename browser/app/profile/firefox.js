@@ -1637,6 +1637,13 @@ pref("devtools.fontinspector.enabled", true);
 pref("devtools.telemetry.tools.opened.version", "{}");
 
 
+#ifdef MOZ_DEV_EDITION
+  pref("devtools.jsonview.enabled", true);
+#else
+  pref("devtools.jsonview.enabled", false);
+#endif
+
+
 
 pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.properties");
 

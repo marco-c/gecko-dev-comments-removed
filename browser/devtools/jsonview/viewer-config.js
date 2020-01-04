@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+require.config({
+  baseUrl: ".",
+  paths: {
+    "react": [
+      "resource:///modules/devtools/shared/content/react-dev",
+      "resource:///modules/devtools/shared/content/react"
+    ]
+  }
+});
+
+
+requirejs(["json-viewer"]);
