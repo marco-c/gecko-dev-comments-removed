@@ -241,7 +241,6 @@ public:
   bool IsSinglePixel() const;
 
   already_AddRefed<SourceSurface> GetSurface();
-  already_AddRefed<DrawTarget> GetDrawTarget();
 
   void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf, size_t& aHeapSizeOut,
                               size_t& aNonHeapSizeOut) const;
@@ -261,7 +260,6 @@ private:
   void GetImageDataInternal(uint8_t** aData, uint32_t* length) const;
   uint32_t GetImageBytesPerRow() const;
   uint32_t GetImageDataLength() const;
-  int32_t GetStride() const;
   already_AddRefed<SourceSurface> GetSurfaceInternal();
 
   uint32_t PaletteDataLength() const
