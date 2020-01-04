@@ -7,21 +7,15 @@
 #ifndef mozilla_TimelineMarker_h_
 #define mozilla_TimelineMarker_h_
 
-#include "nsString.h"
 #include "nsContentUtils.h"
-#include "TimelineMarkerEnums.h"
-
-class nsDocShell;
+#include "AbstractTimelineMarker.h"
 
 namespace mozilla {
-namespace dom {
-struct ProfileTimelineMarker;
-}
 
 
 
 
-class TimelineMarker
+class TimelineMarker : public AbstractTimelineMarker
 {
 public:
   TimelineMarker(const char* aName,
@@ -33,61 +27,21 @@ public:
                  MarkerTracingType aTracingType,
                  MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
 
-  virtual ~TimelineMarker();
+  virtual bool Equals(const AbstractTimelineMarker& aOther) override;
+  virtual void AddDetails(JSContext* aCx, dom::ProfileTimelineMarker& aMarker) override;
 
-  
-  
-  virtual bool Equals(const TimelineMarker& aOther)
-  {
-    return strcmp(mName, aOther.mName) == 0;
-  }
-
-  
-  
-  
-  
-  virtual void AddDetails(JSContext* aCx, dom::ProfileTimelineMarker& aMarker)
-  {}
-
-  const char* GetName() const { return mName; }
-  DOMHighResTimeStamp GetTime() const { return mTime; }
-  MarkerTracingType GetTracingType() const { return mTracingType; }
-
-  JSObject* GetStack()
-  {
-    if (mStackTrace.initialized()) {
-      return mStackTrace;
-    }
-    return nullptr;
-  }
+  JSObject* GetStack();
 
 protected:
-  void CaptureStack()
-  {
-    JSContext* ctx = nsContentUtils::GetCurrentJSContext();
-    if (ctx) {
-      JS::RootedObject stack(ctx);
-      if (JS::CaptureCurrentStack(ctx, &stack)) {
-        mStackTrace.init(ctx, stack.get());
-      } else {
-        JS_ClearPendingException(ctx);
-      }
-    }
-  }
+  void CaptureStack();
 
 private:
-  const char* mName;
-  DOMHighResTimeStamp mTime;
-  MarkerTracingType mTracingType;
-
   
   
   
   
   JS::PersistentRooted<JSObject*> mStackTrace;
 
-  void SetCurrentTime();
-  void SetCustomTime(const TimeStamp& aTime);
   void CaptureStackIfNecessary(MarkerTracingType aTracingType,
                                MarkerStackRequest aStackRequest);
 };
