@@ -1,150 +1,682 @@
-
-
-
-
-
-
-
-Components.utils.import('resource://test/Utils.jsm');
-
-
-
-
-
-
-define("test/source-map/test-array-set", ["require", "exports", "module"], function (require, exports, module) {
-
-  var ArraySet = require('source-map/array-set').ArraySet;
-
-  function makeTestSet() {
-    var set = new ArraySet();
-    for (var i = 0; i < 100; i++) {
-      set.add(String(i));
-    }
-    return set;
-  }
-
-  exports['test .has() membership'] = function (assert, util) {
-    var set = makeTestSet();
-    for (var i = 0; i < 100; i++) {
-      assert.ok(set.has(String(i)));
-    }
-  };
-
-  exports['test .indexOf() elements'] = function (assert, util) {
-    var set = makeTestSet();
-    for (var i = 0; i < 100; i++) {
-      assert.strictEqual(set.indexOf(String(i)), i);
-    }
-  };
-
-  exports['test .at() indexing'] = function (assert, util) {
-    var set = makeTestSet();
-    for (var i = 0; i < 100; i++) {
-      assert.strictEqual(set.at(i), String(i));
-    }
-  };
-
-  exports['test creating from an array'] = function (assert, util) {
-    var set = ArraySet.fromArray(['foo', 'bar', 'baz', 'quux', 'hasOwnProperty']);
-
-    assert.ok(set.has('foo'));
-    assert.ok(set.has('bar'));
-    assert.ok(set.has('baz'));
-    assert.ok(set.has('quux'));
-    assert.ok(set.has('hasOwnProperty'));
-
-    assert.strictEqual(set.indexOf('foo'), 0);
-    assert.strictEqual(set.indexOf('bar'), 1);
-    assert.strictEqual(set.indexOf('baz'), 2);
-    assert.strictEqual(set.indexOf('quux'), 3);
-
-    assert.strictEqual(set.at(0), 'foo');
-    assert.strictEqual(set.at(1), 'bar');
-    assert.strictEqual(set.at(2), 'baz');
-    assert.strictEqual(set.at(3), 'quux');
-  };
-
-  exports['test that you can add __proto__; see github issue #30'] = function (assert, util) {
-    var set = new ArraySet();
-    set.add('__proto__');
-    assert.ok(set.has('__proto__'));
-    assert.strictEqual(set.at(0), '__proto__');
-    assert.strictEqual(set.indexOf('__proto__'), 0);
-  };
-
-  exports['test .fromArray() with duplicates'] = function (assert, util) {
-    var set = ArraySet.fromArray(['foo', 'foo']);
-    assert.ok(set.has('foo'));
-    assert.strictEqual(set.at(0), 'foo');
-    assert.strictEqual(set.indexOf('foo'), 0);
-    assert.strictEqual(set.toArray().length, 1);
-
-    set = ArraySet.fromArray(['foo', 'foo'], true);
-    assert.ok(set.has('foo'));
-    assert.strictEqual(set.at(0), 'foo');
-    assert.strictEqual(set.at(1), 'foo');
-    assert.strictEqual(set.indexOf('foo'), 0);
-    assert.strictEqual(set.toArray().length, 2);
-  };
-
-  exports['test .add() with duplicates'] = function (assert, util) {
-    var set = new ArraySet();
-    set.add('foo');
-
-    set.add('foo');
-    assert.ok(set.has('foo'));
-    assert.strictEqual(set.at(0), 'foo');
-    assert.strictEqual(set.indexOf('foo'), 0);
-    assert.strictEqual(set.toArray().length, 1);
-
-    set.add('foo', true);
-    assert.ok(set.has('foo'));
-    assert.strictEqual(set.at(0), 'foo');
-    assert.strictEqual(set.at(1), 'foo');
-    assert.strictEqual(set.indexOf('foo'), 0);
-    assert.strictEqual(set.toArray().length, 2);
-  };
-
-  exports['test .size()'] = function (assert, util) {
-    var set = new ArraySet();
-    set.add('foo');
-    set.add('bar');
-    set.add('baz');
-    assert.strictEqual(set.size(), 3);
-  };
-
-  exports['test .size() with disallowed duplicates'] = function (assert, util) {
-    var set = new ArraySet();
-
-    set.add('foo');
-    set.add('foo');
-
-    set.add('bar');
-    set.add('bar');
-
-    set.add('baz');
-    set.add('baz');
-
-    assert.strictEqual(set.size(), 3);
-  };
-
-  exports['test .size() with allowed duplicates'] = function (assert, util) {
-    var set = new ArraySet();
-
-    set.add('foo');
-    set.add('foo', true);
-
-    set.add('bar');
-    set.add('bar', true);
-
-    set.add('baz');
-    set.add('baz', true);
-
-    assert.strictEqual(set.size(), 3);
-  };
-
-});
 function run_test() {
-  runSourceMapTests('test/source-map/test-array-set', do_throw);
+  for (var k in SOURCE_MAP_TEST_MODULE) {
+    if (/^test/.test(k)) {
+      SOURCE_MAP_TEST_MODULE[k](assert);
+    }
+  }
 }
+
+
+var SOURCE_MAP_TEST_MODULE =
+ (function(modules) { 
+ 	
+ 	var installedModules = {};
+
+ 	
+ 	function __webpack_require__(moduleId) {
+
+ 		
+ 		if(installedModules[moduleId])
+ 			return installedModules[moduleId].exports;
+
+ 		
+ 		var module = installedModules[moduleId] = {
+ 			exports: {},
+ 			id: moduleId,
+ 			loaded: false
+ 		};
+
+ 		
+ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+ 		
+ 		module.loaded = true;
+
+ 		
+ 		return module.exports;
+ 	}
+
+
+ 	
+ 	__webpack_require__.m = modules;
+
+ 	
+ 	__webpack_require__.c = installedModules;
+
+ 	
+ 	__webpack_require__.p = "";
+
+ 	
+ 	return __webpack_require__(0);
+ })
+
+ ([
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	{
+	  var ArraySet = __webpack_require__(1).ArraySet;
+	
+	  function makeTestSet() {
+	    var set = new ArraySet();
+	    for (var i = 0; i < 100; i++) {
+	      set.add(String(i));
+	    }
+	    return set;
+	  }
+	
+	  exports['test .has() membership'] = function (assert) {
+	    var set = makeTestSet();
+	    for (var i = 0; i < 100; i++) {
+	      assert.ok(set.has(String(i)));
+	    }
+	  };
+	
+	  exports['test .indexOf() elements'] = function (assert) {
+	    var set = makeTestSet();
+	    for (var i = 0; i < 100; i++) {
+	      assert.strictEqual(set.indexOf(String(i)), i);
+	    }
+	  };
+	
+	  exports['test .at() indexing'] = function (assert) {
+	    var set = makeTestSet();
+	    for (var i = 0; i < 100; i++) {
+	      assert.strictEqual(set.at(i), String(i));
+	    }
+	  };
+	
+	  exports['test creating from an array'] = function (assert) {
+	    var set = ArraySet.fromArray(['foo', 'bar', 'baz', 'quux', 'hasOwnProperty']);
+	
+	    assert.ok(set.has('foo'));
+	    assert.ok(set.has('bar'));
+	    assert.ok(set.has('baz'));
+	    assert.ok(set.has('quux'));
+	    assert.ok(set.has('hasOwnProperty'));
+	
+	    assert.strictEqual(set.indexOf('foo'), 0);
+	    assert.strictEqual(set.indexOf('bar'), 1);
+	    assert.strictEqual(set.indexOf('baz'), 2);
+	    assert.strictEqual(set.indexOf('quux'), 3);
+	
+	    assert.strictEqual(set.at(0), 'foo');
+	    assert.strictEqual(set.at(1), 'bar');
+	    assert.strictEqual(set.at(2), 'baz');
+	    assert.strictEqual(set.at(3), 'quux');
+	  };
+	
+	  exports['test that you can add __proto__; see github issue #30'] = function (assert) {
+	    var set = new ArraySet();
+	    set.add('__proto__');
+	    assert.ok(set.has('__proto__'));
+	    assert.strictEqual(set.at(0), '__proto__');
+	    assert.strictEqual(set.indexOf('__proto__'), 0);
+	  };
+	
+	  exports['test .fromArray() with duplicates'] = function (assert) {
+	    var set = ArraySet.fromArray(['foo', 'foo']);
+	    assert.ok(set.has('foo'));
+	    assert.strictEqual(set.at(0), 'foo');
+	    assert.strictEqual(set.indexOf('foo'), 0);
+	    assert.strictEqual(set.toArray().length, 1);
+	
+	    set = ArraySet.fromArray(['foo', 'foo'], true);
+	    assert.ok(set.has('foo'));
+	    assert.strictEqual(set.at(0), 'foo');
+	    assert.strictEqual(set.at(1), 'foo');
+	    assert.strictEqual(set.indexOf('foo'), 0);
+	    assert.strictEqual(set.toArray().length, 2);
+	  };
+	
+	  exports['test .add() with duplicates'] = function (assert) {
+	    var set = new ArraySet();
+	    set.add('foo');
+	
+	    set.add('foo');
+	    assert.ok(set.has('foo'));
+	    assert.strictEqual(set.at(0), 'foo');
+	    assert.strictEqual(set.indexOf('foo'), 0);
+	    assert.strictEqual(set.toArray().length, 1);
+	
+	    set.add('foo', true);
+	    assert.ok(set.has('foo'));
+	    assert.strictEqual(set.at(0), 'foo');
+	    assert.strictEqual(set.at(1), 'foo');
+	    assert.strictEqual(set.indexOf('foo'), 0);
+	    assert.strictEqual(set.toArray().length, 2);
+	  };
+	
+	  exports['test .size()'] = function (assert) {
+	    var set = new ArraySet();
+	    set.add('foo');
+	    set.add('bar');
+	    set.add('baz');
+	    assert.strictEqual(set.size(), 3);
+	  };
+	
+	  exports['test .size() with disallowed duplicates'] = function (assert) {
+	    var set = new ArraySet();
+	
+	    set.add('foo');
+	    set.add('foo');
+	
+	    set.add('bar');
+	    set.add('bar');
+	
+	    set.add('baz');
+	    set.add('baz');
+	
+	    assert.strictEqual(set.size(), 3);
+	  };
+	
+	  exports['test .size() with allowed duplicates'] = function (assert) {
+	    var set = new ArraySet();
+	
+	    set.add('foo');
+	    set.add('foo', true);
+	
+	    set.add('bar');
+	    set.add('bar', true);
+	
+	    set.add('baz');
+	    set.add('baz', true);
+	
+	    assert.strictEqual(set.size(), 3);
+	  };
+	}
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+	
+
+
+
+
+	{
+	  var util = __webpack_require__(2);
+	
+	  
+
+
+
+
+
+	  function ArraySet() {
+	    this._array = [];
+	    this._set = {};
+	  }
+	
+	  
+
+
+	  ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
+	    var set = new ArraySet();
+	    for (var i = 0, len = aArray.length; i < len; i++) {
+	      set.add(aArray[i], aAllowDuplicates);
+	    }
+	    return set;
+	  };
+	
+	  
+
+
+
+
+
+	  ArraySet.prototype.size = function ArraySet_size() {
+	    return Object.getOwnPropertyNames(this._set).length;
+	  };
+	
+	  
+
+
+
+
+	  ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
+	    var sStr = util.toSetString(aStr);
+	    var isDuplicate = this._set.hasOwnProperty(sStr);
+	    var idx = this._array.length;
+	    if (!isDuplicate || aAllowDuplicates) {
+	      this._array.push(aStr);
+	    }
+	    if (!isDuplicate) {
+	      this._set[sStr] = idx;
+	    }
+	  };
+	
+	  
+
+
+
+
+	  ArraySet.prototype.has = function ArraySet_has(aStr) {
+	    var sStr = util.toSetString(aStr);
+	    return this._set.hasOwnProperty(sStr);
+	  };
+	
+	  
+
+
+
+
+	  ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
+	    var sStr = util.toSetString(aStr);
+	    if (this._set.hasOwnProperty(sStr)) {
+	      return this._set[sStr];
+	    }
+	    throw new Error('"' + aStr + '" is not in the set.');
+	  };
+	
+	  
+
+
+
+
+	  ArraySet.prototype.at = function ArraySet_at(aIdx) {
+	    if (aIdx >= 0 && aIdx < this._array.length) {
+	      return this._array[aIdx];
+	    }
+	    throw new Error('No element indexed by ' + aIdx);
+	  };
+	
+	  
+
+
+
+
+	  ArraySet.prototype.toArray = function ArraySet_toArray() {
+	    return this._array.slice();
+	  };
+	
+	  exports.ArraySet = ArraySet;
+	}
+
+
+ },
+
+ function(module, exports) {
+
+	
+	
+
+
+
+
+	{
+	  
+
+
+
+
+
+
+
+
+
+	  function getArg(aArgs, aName, aDefaultValue) {
+	    if (aName in aArgs) {
+	      return aArgs[aName];
+	    } else if (arguments.length === 3) {
+	      return aDefaultValue;
+	    } else {
+	      throw new Error('"' + aName + '" is a required argument.');
+	    }
+	  }
+	  exports.getArg = getArg;
+	
+	  var urlRegexp = /^(?:([\w+\-.]+):)?\/\/(?:(\w+:\w+)@)?([\w.]*)(?::(\d+))?(\S*)$/;
+	  var dataUrlRegexp = /^data:.+\,.+$/;
+	
+	  function urlParse(aUrl) {
+	    var match = aUrl.match(urlRegexp);
+	    if (!match) {
+	      return null;
+	    }
+	    return {
+	      scheme: match[1],
+	      auth: match[2],
+	      host: match[3],
+	      port: match[4],
+	      path: match[5]
+	    };
+	  }
+	  exports.urlParse = urlParse;
+	
+	  function urlGenerate(aParsedUrl) {
+	    var url = '';
+	    if (aParsedUrl.scheme) {
+	      url += aParsedUrl.scheme + ':';
+	    }
+	    url += '//';
+	    if (aParsedUrl.auth) {
+	      url += aParsedUrl.auth + '@';
+	    }
+	    if (aParsedUrl.host) {
+	      url += aParsedUrl.host;
+	    }
+	    if (aParsedUrl.port) {
+	      url += ":" + aParsedUrl.port
+	    }
+	    if (aParsedUrl.path) {
+	      url += aParsedUrl.path;
+	    }
+	    return url;
+	  }
+	  exports.urlGenerate = urlGenerate;
+	
+	  
+
+
+
+
+
+
+
+
+
+
+	  function normalize(aPath) {
+	    var path = aPath;
+	    var url = urlParse(aPath);
+	    if (url) {
+	      if (!url.path) {
+	        return aPath;
+	      }
+	      path = url.path;
+	    }
+	    var isAbsolute = exports.isAbsolute(path);
+	
+	    var parts = path.split(/\/+/);
+	    for (var part, up = 0, i = parts.length - 1; i >= 0; i--) {
+	      part = parts[i];
+	      if (part === '.') {
+	        parts.splice(i, 1);
+	      } else if (part === '..') {
+	        up++;
+	      } else if (up > 0) {
+	        if (part === '') {
+	          
+	          
+	          
+	          parts.splice(i + 1, up);
+	          up = 0;
+	        } else {
+	          parts.splice(i, 2);
+	          up--;
+	        }
+	      }
+	    }
+	    path = parts.join('/');
+	
+	    if (path === '') {
+	      path = isAbsolute ? '/' : '.';
+	    }
+	
+	    if (url) {
+	      url.path = path;
+	      return urlGenerate(url);
+	    }
+	    return path;
+	  }
+	  exports.normalize = normalize;
+	
+	  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  function join(aRoot, aPath) {
+	    if (aRoot === "") {
+	      aRoot = ".";
+	    }
+	    if (aPath === "") {
+	      aPath = ".";
+	    }
+	    var aPathUrl = urlParse(aPath);
+	    var aRootUrl = urlParse(aRoot);
+	    if (aRootUrl) {
+	      aRoot = aRootUrl.path || '/';
+	    }
+	
+	    
+	    if (aPathUrl && !aPathUrl.scheme) {
+	      if (aRootUrl) {
+	        aPathUrl.scheme = aRootUrl.scheme;
+	      }
+	      return urlGenerate(aPathUrl);
+	    }
+	
+	    if (aPathUrl || aPath.match(dataUrlRegexp)) {
+	      return aPath;
+	    }
+	
+	    
+	    if (aRootUrl && !aRootUrl.host && !aRootUrl.path) {
+	      aRootUrl.host = aPath;
+	      return urlGenerate(aRootUrl);
+	    }
+	
+	    var joined = aPath.charAt(0) === '/'
+	      ? aPath
+	      : normalize(aRoot.replace(/\/+$/, '') + '/' + aPath);
+	
+	    if (aRootUrl) {
+	      aRootUrl.path = joined;
+	      return urlGenerate(aRootUrl);
+	    }
+	    return joined;
+	  }
+	  exports.join = join;
+	
+	  exports.isAbsolute = function (aPath) {
+	    return aPath.charAt(0) === '/' || !!aPath.match(urlRegexp);
+	  };
+	
+	  
+
+
+
+
+
+	  function relative(aRoot, aPath) {
+	    if (aRoot === "") {
+	      aRoot = ".";
+	    }
+	
+	    aRoot = aRoot.replace(/\/$/, '');
+	
+	    
+	    
+	    
+	    
+	    var level = 0;
+	    while (aPath.indexOf(aRoot + '/') !== 0) {
+	      var index = aRoot.lastIndexOf("/");
+	      if (index < 0) {
+	        return aPath;
+	      }
+	
+	      
+	      
+	      
+	      aRoot = aRoot.slice(0, index);
+	      if (aRoot.match(/^([^\/]+:\/)?\/*$/)) {
+	        return aPath;
+	      }
+	
+	      ++level;
+	    }
+	
+	    
+	    return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
+	  }
+	  exports.relative = relative;
+	
+	  
+
+
+
+
+
+
+
+
+	  function toSetString(aStr) {
+	    return '$' + aStr;
+	  }
+	  exports.toSetString = toSetString;
+	
+	  function fromSetString(aStr) {
+	    return aStr.substr(1);
+	  }
+	  exports.fromSetString = fromSetString;
+	
+	  
+
+
+
+
+
+
+
+	  function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
+	    var cmp = mappingA.source - mappingB.source;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.originalLine - mappingB.originalLine;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.originalColumn - mappingB.originalColumn;
+	    if (cmp !== 0 || onlyCompareOriginal) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.generatedLine - mappingB.generatedLine;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    return mappingA.name - mappingB.name;
+	  }
+	  exports.compareByOriginalPositions = compareByOriginalPositions;
+	
+	  
+
+
+
+
+
+
+
+
+	  function compareByGeneratedPositionsDeflated(mappingA, mappingB, onlyCompareGenerated) {
+	    var cmp = mappingA.generatedLine - mappingB.generatedLine;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+	    if (cmp !== 0 || onlyCompareGenerated) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.source - mappingB.source;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.originalLine - mappingB.originalLine;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.originalColumn - mappingB.originalColumn;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    return mappingA.name - mappingB.name;
+	  }
+	  exports.compareByGeneratedPositionsDeflated = compareByGeneratedPositionsDeflated;
+	
+	  function strcmp(aStr1, aStr2) {
+	    if (aStr1 === aStr2) {
+	      return 0;
+	    }
+	
+	    if (aStr1 > aStr2) {
+	      return 1;
+	    }
+	
+	    return -1;
+	  }
+	
+	  
+
+
+
+	  function compareByGeneratedPositionsInflated(mappingA, mappingB) {
+	    var cmp = mappingA.generatedLine - mappingB.generatedLine;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = strcmp(mappingA.source, mappingB.source);
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.originalLine - mappingB.originalLine;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    cmp = mappingA.originalColumn - mappingB.originalColumn;
+	    if (cmp !== 0) {
+	      return cmp;
+	    }
+	
+	    return strcmp(mappingA.name, mappingB.name);
+	  }
+	  exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflated;
+	}
+
+
+ }
+ ]);
