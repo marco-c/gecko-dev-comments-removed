@@ -185,11 +185,11 @@ public class SwitchBoard {
 
         try {
             final JSONObject experiment = new JSONObject(config).getJSONObject(experimentName);
-            if(DEBUG) Log.d(TAG, "experiment " + experimentName + " JSON object: " + experiment.toString());
-
             return experiment != null && experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
         } catch (JSONException e) {
-            Log.e(TAG, "Error getting experiment from config", e);
+            
+            
+            
             return false;
         }
     }
@@ -263,8 +263,6 @@ public class SwitchBoard {
 
 
     @Nullable private static String readFromUrlGET(URL url) {
-        if (DEBUG) Log.d(TAG, "readFromUrl(): " + url);
-
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
@@ -273,15 +271,12 @@ public class SwitchBoard {
             InputStream is = connection.getInputStream();
             InputStreamReader inputStreamReader = new InputStreamReader(is);
             BufferedReader bufferReader = new BufferedReader(inputStreamReader, 8192);
-            String line = "";
+            String line;
             StringBuilder resultContent = new StringBuilder();
             while ((line = bufferReader.readLine()) != null) {
-                if(DEBUG) Log.d(TAG, line);
                 resultContent.append(line);
             }
             bufferReader.close();
-
-            if(DEBUG) Log.d(TAG, "readFromUrl() result: " + resultContent.toString());
 
             return resultContent.toString();
         } catch (IOException e) {
