@@ -56,19 +56,12 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-
-
-
-
-
-
-function Selection(walker, node = null, track = {attributes: true, detached: true}) {
+function Selection(walker) {
   EventEmitter.decorate(this);
 
   this._onMutations = this._onMutations.bind(this);
-  this.track = track;
   this.setWalker(walker);
-  this.setNode(node);
+  this.setNode(null);
 }
 
 exports.Selection = Selection;
