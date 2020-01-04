@@ -151,6 +151,34 @@ GetNextRangeCommonAncestor(nsINode* aNode)
   return aNode;
 }
 
+
+
+
+
+struct IsItemInRangeComparator
+{
+  nsINode* mNode;
+  uint32_t mStartOffset;
+  uint32_t mEndOffset;
+
+  int operator()(const nsRange* const aRange) const
+  {
+    int32_t cmp = nsContentUtils::ComparePoints(mNode, mEndOffset,
+                                                aRange->GetStartParent(),
+                                                aRange->StartOffset());
+    if (cmp == 1) {
+      cmp = nsContentUtils::ComparePoints(mNode, mStartOffset,
+                                          aRange->GetEndParent(),
+                                          aRange->EndOffset());
+      if (cmp == -1) {
+        return 0;
+      }
+      return 1;
+    }
+    return -1;
+  }
+};
+
  bool
 nsRange::IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
                         uint32_t aEndOffset)
@@ -160,24 +188,45 @@ nsRange::IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
   nsINode* n = GetNextRangeCommonAncestor(aNode);
   NS_ASSERTION(n || !aNode->IsSelectionDescendant(),
                "orphan selection descendant");
+
+  
+  RangeHashTable ancestorSelectionRanges;
+  nsTHashtable<nsPtrHashKey<Selection>> ancestorSelections;
+  uint32_t maxRangeCount = 0;
   for (; n; n = GetNextRangeCommonAncestor(n->GetParentNode())) {
     RangeHashTable* ranges =
       static_cast<RangeHashTable*>(n->GetProperty(nsGkAtoms::range));
     for (auto iter = ranges->ConstIter(); !iter.Done(); iter.Next()) {
       nsRange* range = iter.Get()->GetKey();
       if (range->IsInSelection() && !range->Collapsed()) {
-        int32_t cmp = nsContentUtils::ComparePoints(aNode, aEndOffset,
-                                                    range->GetStartParent(),
-                                                    range->StartOffset());
-        if (cmp == 1) {
-          cmp = nsContentUtils::ComparePoints(aNode, aStartOffset,
-                                              range->GetEndParent(),
-                                              range->EndOffset());
-          if (cmp == -1) {
-            return true;
-          }
+        ancestorSelectionRanges.PutEntry(range);
+        Selection* selection = range->mSelection;
+        ancestorSelections.PutEntry(selection);
+        maxRangeCount = std::max(maxRangeCount, selection->RangeCount());
+      }
+    }
+  }
+
+  if (!ancestorSelectionRanges.IsEmpty()) {
+    nsTArray<const nsRange*> sortedRanges(maxRangeCount);
+    for (auto iter = ancestorSelections.ConstIter(); !iter.Done(); iter.Next()) {
+      Selection* selection = iter.Get()->GetKey();
+      
+      
+      for (uint32_t i = 0, len = selection->RangeCount(); i < len; ++i) {
+        nsRange* range = selection->GetRangeAt(i);
+        if (ancestorSelectionRanges.Contains(range)) {
+          sortedRanges.AppendElement(range);
         }
       }
+      MOZ_ASSERT(!sortedRanges.IsEmpty());
+      
+      IsItemInRangeComparator comparator = { aNode, aStartOffset, aEndOffset };
+      size_t unused;
+      if (mozilla::BinarySearchIf(sortedRanges, 0, sortedRanges.Length(), comparator, &unused)) {
+        return true;
+      }
+      sortedRanges.ClearAndRetainStorage();
     }
   }
   return false;
