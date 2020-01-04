@@ -774,9 +774,6 @@ protected:
   Mirror<int64_t> mPlaybackPosition;
 
   
-  Mirror<bool> mIsAudioDataAudible;
-
-  
   Canonical<double> mVolume;
 
   
@@ -871,9 +868,6 @@ public:
   }
 
 private:
-  
-  void NotifyAudibleStateChanged();
-
   
 
   
