@@ -192,7 +192,7 @@ MediaSource::Duration()
     return UnspecifiedNaN<double>();
   }
   MOZ_ASSERT(mDecoder);
-  return mDecoder->GetMediaSourceDuration();
+  return mDecoder->GetDuration();
 }
 
 void
@@ -209,15 +209,15 @@ MediaSource::SetDuration(double aDuration, ErrorResult& aRv)
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
-  SetDuration(aDuration, MSRangeRemovalAction::RUN);
+  DurationChange(aDuration, aRv);
 }
 
 void
-MediaSource::SetDuration(double aDuration, MSRangeRemovalAction aAction)
+MediaSource::SetDuration(double aDuration)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MSE_API("SetDuration(aDuration=%f)", aDuration);
-  mDecoder->SetMediaSourceDuration(aDuration, aAction);
+  mDecoder->SetMediaSourceDuration(aDuration);
 }
 
 already_AddRefed<SourceBuffer>
@@ -323,11 +323,7 @@ MediaSource::EndOfStream(const Optional<MediaSourceEndOfStreamError>& aError, Er
   SetReadyState(MediaSourceReadyState::Ended);
   mSourceBuffers->Ended();
   if (!aError.WasPassed()) {
-    mDecoder->SetMediaSourceDuration(mSourceBuffers->GetHighestBufferedEndTime(),
-                                     MSRangeRemovalAction::SKIP);
-    if (aRv.Failed()) {
-      return;
-    }
+    DurationChange(mSourceBuffers->GetHighestBufferedEndTime(), aRv);
     
     mDecoder->Ended(true);
     return;
@@ -525,16 +521,38 @@ MediaSource::QueueAsyncSimpleEvent(const char* aName)
 }
 
 void
-MediaSource::DurationChange(double aOldDuration, double aNewDuration)
+MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("DurationChange(aOldDuration=%f, aNewDuration=%f)", aOldDuration, aNewDuration);
+  MSE_DEBUG("DurationChange(aNewDuration=%f)", aNewDuration);
 
-  if (aNewDuration < aOldDuration) {
-    
-    mSourceBuffers->RangeRemoval(aNewDuration, PositiveInfinity<double>());
-  }
   
+  if (mDecoder->GetDuration() == aNewDuration) {
+    return;
+  }
+
+  
+  
+  
+  if (aNewDuration < mSourceBuffers->HighestStartTime()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  aNewDuration =
+    std::max(aNewDuration, mSourceBuffers->GetHighestBufferedEndTime());
+
+  
+  
+  mDecoder->SetMediaSourceDuration(aNewDuration);
 }
 
 void

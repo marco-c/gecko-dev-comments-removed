@@ -122,6 +122,7 @@ public:
   
   
   media::TimeIntervals Buffered();
+  media::TimeUnit HighestStartTime();
 
   
   int64_t GetSize() const;
@@ -283,6 +284,10 @@ private:
     
     
     
+    media::TimeUnit mHighestStartTimestamp;
+    
+    
+    
     media::TimeUnit mLongestFrameDuration;
     
     
@@ -345,6 +350,8 @@ private:
   void InsertFrames(TrackBuffer& aSamples,
                     const media::TimeIntervals& aIntervals,
                     TrackData& aTrackData);
+  void UpdateHighestTimestamp(TrackData& aTrackData,
+                              const media::TimeUnit& aHighestTime);
   
   
   

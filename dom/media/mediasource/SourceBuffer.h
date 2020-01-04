@@ -117,6 +117,7 @@ public:
 
   double GetBufferedStart();
   double GetBufferedEnd();
+  double HighestStartTime();
 
   
   void RangeRemoval(double aStart, double aEnd);

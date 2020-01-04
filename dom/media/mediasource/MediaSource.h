@@ -30,11 +30,6 @@ namespace mozilla {
 class ErrorResult;
 template <typename T> class AsyncEventRunner;
 
-enum MSRangeRemovalAction: uint8_t {
-  RUN = 0,
-  SKIP = 1
-};
-
 namespace dom {
 
 class GlobalObject;
@@ -117,9 +112,6 @@ public:
 
 private:
   
-  
-  friend class mozilla::MediaSourceDecoder;
-  
   friend class mozilla::dom::SourceBuffer;
 
   ~MediaSource();
@@ -130,10 +122,10 @@ private:
   void DispatchSimpleEvent(const char* aName);
   void QueueAsyncSimpleEvent(const char* aName);
 
-  void DurationChange(double aOldDuration, double aNewDuration);
+  void DurationChange(double aNewDuration, ErrorResult& aRv);
 
   
-  void SetDuration(double aDuration, MSRangeRemovalAction aAction);
+  void SetDuration(double aDuration);
 
   
   void SourceBufferIsActive(SourceBuffer* aSourceBuffer);
