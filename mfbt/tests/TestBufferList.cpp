@@ -215,12 +215,26 @@ int main(void)
 
   
 
+  bool success;
+  bl2 = bl.MoveFallible<InfallibleAllocPolicy>(&success);
+  MOZ_RELEASE_ASSERT(success);
+  MOZ_RELEASE_ASSERT(bl.Size() == 0);
+  MOZ_RELEASE_ASSERT(bl.Iter().Done());
+  MOZ_RELEASE_ASSERT(bl2.Size() == kSmallWrite * 3);
+
+  iter = bl2.Iter();
+  MOZ_RELEASE_ASSERT(iter.AdvanceAcrossSegments(bl2, kSmallWrite * 3));
+  MOZ_RELEASE_ASSERT(iter.Done());
+
+  bl = bl2.MoveFallible<InfallibleAllocPolicy>(&success);
+
+  
+
   const size_t kBorrowStart = 4;
   const size_t kBorrowSize = 24;
 
   iter = bl.Iter();
   iter.Advance(bl, kBorrowStart);
-  bool success;
   bl2 = bl.Borrow<InfallibleAllocPolicy>(iter, kBorrowSize, &success);
   MOZ_RELEASE_ASSERT(success);
   MOZ_RELEASE_ASSERT(bl2.Size() == kBorrowSize);
