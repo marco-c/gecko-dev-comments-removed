@@ -240,7 +240,6 @@ typedef NSInteger NSEventGestureAxis;
 #ifdef __LP64__
   
   BOOL* mCancelSwipeAnimation;
-  uint32_t mCurrentSwipeDir;
 #endif
 
   
