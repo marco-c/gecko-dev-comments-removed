@@ -12,6 +12,7 @@
 #include "nsCOMPtr.h"
 #include "nsIFrame.h"
 #include "nsINode.h"
+#include "nsISelectionController.h"
 #include "nsRange.h"
 
 class nsPresContext;
@@ -69,7 +70,14 @@ public:
 protected:
   nsPresContext* mPresContext;
   nsCOMPtr<nsIPresShell> mPresShell;
+  
+  
+  
   RefPtr<Selection> mSelection;
+  
+  
+  
+  
   RefPtr<nsRange> mFirstSelectedRange;
   nsCOMPtr<nsIContent> mRootContent;
 
@@ -77,7 +85,14 @@ protected:
   nsresult Init(WidgetSelectionEvent* aEvent);
 
   nsresult InitBasic();
-  nsresult InitCommon();
+  nsresult InitCommon(SelectionType aSelectionType = SelectionType::eNormal);
+  
+
+
+
+
+
+  nsresult InitRootContent(Selection* aNormalSelection);
 
 public:
   

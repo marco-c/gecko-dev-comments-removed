@@ -20,7 +20,6 @@
 #include "nsIContentIterator.h"
 #include "nsIPresShell.h"
 #include "nsISelection.h"
-#include "nsISelectionController.h"
 #include "nsIFrame.h"
 #include "nsIObjectFrame.h"
 #include "nsLayoutUtils.h"
@@ -126,27 +125,21 @@ ContentEventHandler::InitBasic()
 }
 
 nsresult
-ContentEventHandler::InitCommon()
+ContentEventHandler::InitRootContent(Selection* aNormalSelection)
 {
-  if (mSelection) {
-    return NS_OK;
-  }
+  MOZ_ASSERT(aNormalSelection);
 
-  nsresult rv = InitBasic();
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+  MOZ_ASSERT(aNormalSelection->Type() == SelectionType::eNormal);
 
-  nsCOMPtr<nsISelection> sel;
-  nsCopySupport::GetSelectionForCopy(mPresShell->GetDocument(),
-                                     getter_AddRefs(sel));
-  mSelection = static_cast<Selection*>(sel.get());
-  if (NS_WARN_IF(!mSelection)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  if (!mSelection->RangeCount()) {
+  if (!aNormalSelection->RangeCount()) {
     
     
-    rv = mSelection->GetAncestorLimiter(getter_AddRefs(mRootContent));
+    nsresult rv =
+      aNormalSelection->GetAncestorLimiter(getter_AddRefs(mRootContent));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return NS_ERROR_FAILURE;
     }
@@ -156,18 +149,11 @@ ContentEventHandler::InitCommon()
         return NS_ERROR_NOT_AVAILABLE;
       }
     }
-
-    
-    rv = nsRange::CreateRange(mRootContent, 0, mRootContent, 0,
-                              getter_AddRefs(mFirstSelectedRange));
-    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!mFirstSelectedRange)) {
-      return NS_ERROR_UNEXPECTED;
-    }
     return NS_OK;
   }
 
-  mFirstSelectedRange = mSelection->GetRangeAt(0);
-  if (NS_WARN_IF(!mFirstSelectedRange)) {
+  RefPtr<nsRange> range(aNormalSelection->GetRangeAt(0));
+  if (NS_WARN_IF(!range)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -177,19 +163,104 @@ ContentEventHandler::InitCommon()
   
   
   
-  nsINode* startNode = mFirstSelectedRange->GetStartParent();
-  NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
-  nsINode* endNode = mFirstSelectedRange->GetEndParent();
-  NS_ENSURE_TRUE(endNode, NS_ERROR_FAILURE);
+  nsINode* startNode = range->GetStartParent();
+  nsINode* endNode = range->GetEndParent();
+  if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
-  NS_ENSURE_TRUE(startNode->GetUncomposedDoc() == mPresShell->GetDocument(),
-                 NS_ERROR_NOT_AVAILABLE);
+  if (NS_WARN_IF(startNode->GetUncomposedDoc() != mPresShell->GetDocument())) {
+    return NS_ERROR_FAILURE;
+  }
+
   NS_ASSERTION(startNode->GetUncomposedDoc() == endNode->GetUncomposedDoc(),
-               "mFirstSelectedRange crosses the document boundary");
+               "firstNormalSelectionRange crosses the document boundary");
 
   mRootContent = startNode->GetSelectionRootContent(mPresShell);
-  NS_ENSURE_TRUE(mRootContent, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!mRootContent)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
+}
+
+nsresult
+ContentEventHandler::InitCommon(SelectionType aSelectionType)
+{
+  if (mSelection && mSelection->Type() == aSelectionType) {
+    return NS_OK;
+  }
+
+  mSelection = nullptr;
+  mFirstSelectedRange = nullptr;
+  mRootContent = nullptr;
+
+  nsresult rv = InitBasic();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsISelectionController> selectionController =
+    mPresShell->GetSelectionControllerForFocusedContent();
+  if (NS_WARN_IF(!selectionController)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  nsCOMPtr<nsISelection> selection;
+  rv = selectionController->GetSelection(ToRawSelectionType(aSelectionType),
+                                         getter_AddRefs(selection));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  mSelection = static_cast<Selection*>(selection.get());
+  if (NS_WARN_IF(!mSelection)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  RefPtr<Selection> normalSelection;
+  if (mSelection->Type() == SelectionType::eNormal) {
+    normalSelection = mSelection;
+  } else {
+    nsCOMPtr<nsISelection> domSelection;
+    nsresult rv =
+      selectionController->GetSelection(
+                             nsISelectionController::SELECTION_NORMAL,
+                             getter_AddRefs(domSelection));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    normalSelection = static_cast<Selection*>(domSelection.get());
+    if (NS_WARN_IF(!normalSelection)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+  }
+
+  rv = InitRootContent(normalSelection);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (mSelection->RangeCount()) {
+    mFirstSelectedRange = mSelection->GetRangeAt(0);
+    if (NS_WARN_IF(!mFirstSelectedRange)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    return NS_OK;
+  }
+
+  
+  
+  if (aSelectionType != SelectionType::eNormal) {
+    MOZ_ASSERT(!mFirstSelectedRange);
+    return NS_OK;
+  }
+
+  
+  
+  rv = nsRange::CreateRange(mRootContent, 0, mRootContent, 0,
+                            getter_AddRefs(mFirstSelectedRange));
+  if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!mFirstSelectedRange)) {
+    return NS_ERROR_UNEXPECTED;
+  }
   return NS_OK;
 }
 
@@ -197,8 +268,19 @@ nsresult
 ContentEventHandler::Init(WidgetQueryContentEvent* aEvent)
 {
   NS_ASSERTION(aEvent, "aEvent must not be null");
+  MOZ_ASSERT(aEvent->mMessage == eQuerySelectedText ||
+             aEvent->mInput.mSelectionType == SelectionType::eNormal);
 
-  nsresult rv = InitCommon();
+  
+  
+  SelectionType selectionType =
+    aEvent->mMessage == eQuerySelectedText ? aEvent->mInput.mSelectionType :
+                                             SelectionType::eNormal;
+  if (NS_WARN_IF(selectionType == SelectionType::eNone)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsresult rv = InitCommon(selectionType);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aEvent->mSucceeded = false;
@@ -1120,6 +1202,15 @@ ContentEventHandler::OnQuerySelectedText(WidgetQueryContentEvent* aEvent)
   nsresult rv = Init(aEvent);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  if (!mFirstSelectedRange) {
+    MOZ_ASSERT(aEvent->mInput.mSelectionType != SelectionType::eNormal);
+    MOZ_ASSERT(aEvent->mReply.mOffset == WidgetQueryContentEvent::NOT_FOUND);
+    MOZ_ASSERT(aEvent->mReply.mString.IsEmpty());
+    MOZ_ASSERT(!aEvent->mReply.mHasSelection);
+    aEvent->mSucceeded = true;
+    return NS_OK;
   }
 
   nsINode* const startNode = mFirstSelectedRange->GetStartParent();

@@ -707,7 +707,9 @@ IMEContentObserver::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
   
   
   
+  
   if (aEvent->mMessage == eQuerySelectedText && aEvent->mUseNativeLineBreak &&
+      aEvent->mInput.mSelectionType == SelectionType::eNormal &&
       mSelectionData.IsValid() && !mNeedsToNotifyIMEOfSelectionChange) {
     aEvent->mReply.mContentsRoot = mRootContent;
     aEvent->mReply.mHasSelection = !mSelectionData.IsCollapsed();
