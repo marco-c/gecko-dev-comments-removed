@@ -1144,6 +1144,10 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
+
+pref("dom.forms.datetime", false);
+
+
 pref("dom.forms.autocomplete.experimental", false);
 
 
