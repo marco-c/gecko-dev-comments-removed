@@ -69,6 +69,14 @@ public:
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
+
+  
+  bool DrainSelfOverflowList() override;
+  void AppendFrames(ChildListID aListID, nsFrameList& aFrameList) override;
+  void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                    nsFrameList& aFrameList) override;
+  void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
+
 #ifdef DEBUG
   void SetInitialChildList(ChildListID  aListID,
                            nsFrameList& aChildList) override;
@@ -157,6 +165,9 @@ protected:
                          IntrinsicISizeType  aConstraint);
 
   
+  void NoteNewChildren(ChildListID aListID, const nsFrameList& aFrameList);
+
+  
   void MergeSortedOverflow(nsFrameList& aList);
   
   void MergeSortedExcessOverflowContainers(nsFrameList& aList);
@@ -231,6 +242,13 @@ private:
 
   nscoord mCachedMinISize;
   nscoord mCachedPrefISize;
+
+#ifdef DEBUG
+  
+  
+  
+  bool mDidPushItemsBitMayLie;
+#endif
 };
 
 #endif 
