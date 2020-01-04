@@ -1008,11 +1008,16 @@ class GetUsageOp final
   : public NormalOriginOperationBase
   , public PQuotaUsageRequestParent
 {
+  
+  
+  
   UsageInfo mUsageInfo;
 
   const UsageParams mParams;
+  nsCString mSuffix;
   nsCString mGroup;
   bool mIsApp;
+  bool mGetGroupUsage;
 
 public:
   explicit GetUsageOp(const UsageRequestParams& aParams);
@@ -4583,6 +4588,40 @@ QuotaManager::GetGroupLimit() const
                             std::max<uint64_t>(x, 10 MB));
 }
 
+void
+QuotaManager::GetGroupUsageAndLimit(const nsACString& aGroup,
+                                    UsageInfo* aUsageInfo)
+{
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aUsageInfo);
+
+  {
+    MutexAutoLock lock(mQuotaMutex);
+
+    aUsageInfo->SetLimit(GetGroupLimit());
+    aUsageInfo->ResetUsage();
+
+    GroupInfoPair* pair;
+    if (!mGroupInfoPairs.Get(aGroup, &pair)) {
+      return;
+    }
+
+    
+    RefPtr<GroupInfo> temporaryGroupInfo =
+      pair->LockedGetGroupInfo(PERSISTENCE_TYPE_TEMPORARY);
+    if (temporaryGroupInfo) {
+      aUsageInfo->AppendToDatabaseUsage(temporaryGroupInfo->mUsage);
+    }
+
+    
+    RefPtr<GroupInfo> defaultGroupInfo =
+      pair->LockedGetGroupInfo(PERSISTENCE_TYPE_DEFAULT);
+    if (defaultGroupInfo) {
+      aUsageInfo->AppendToDatabaseUsage(defaultGroupInfo->mUsage);
+    }
+  }
+}
+
 
 void
 QuotaManager::GetStorageId(PersistenceType aPersistenceType,
@@ -5845,6 +5884,7 @@ GetUsageOp::GetUsageOp(const UsageRequestParams& aParams)
                               OriginScope::FromNull(),
                                false)
   , mParams(aParams.get_UsageParams())
+  , mGetGroupUsage(aParams.get_UsageParams().getGroupUsage())
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aParams.type() == UsageRequestParams::TUsageParams);
@@ -5880,7 +5920,7 @@ GetUsageOp::DoInitOnMainThread()
 
   
   nsCString origin;
-  rv = QuotaManager::GetInfoFromPrincipal(principal, nullptr, &mGroup, &origin,
+  rv = QuotaManager::GetInfoFromPrincipal(principal, &mSuffix, &mGroup, &origin,
                                           &mIsApp);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -5995,12 +6035,34 @@ nsresult
 GetUsageOp::DoDirectoryWork(QuotaManager* aQuotaManager)
 {
   AssertIsOnIOThread();
+  MOZ_ASSERT(mUsageInfo.TotalUsage() == 0);
 
   PROFILER_LABEL("Quota", "GetUsageOp::DoDirectoryWork",
                  js::ProfileEntry::Category::OTHER);
 
-  
   nsresult rv;
+
+  if (mGetGroupUsage) {
+    nsCOMPtr<nsIFile> directory;
+
+    
+    
+    rv = aQuotaManager->EnsureOriginIsInitialized(PERSISTENCE_TYPE_TEMPORARY,
+                                                  mSuffix, mGroup,
+                                                  mOriginScope.GetOrigin(),
+                                                  mIsApp,
+                                                  getter_AddRefs(directory));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    aQuotaManager->GetGroupUsageAndLimit(mGroup, &mUsageInfo);
+
+    return NS_OK;
+  }
+
+  
   for (const PersistenceType type : kAllPersistenceTypes) {
     rv = AddToUsage(aQuotaManager, type);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -6029,8 +6091,17 @@ GetUsageOp::SendResults()
 
     if (NS_SUCCEEDED(mResultCode)) {
       UsageResponse usageResponse;
+
+      
+      
       usageResponse.usage() = mUsageInfo.TotalUsage();
-      usageResponse.fileUsage() = mUsageInfo.FileUsage();
+
+      if (mGetGroupUsage) {
+        usageResponse.limit() = mUsageInfo.Limit();
+      } else {
+        usageResponse.fileUsage() = mUsageInfo.FileUsage();
+      }
+
       response = usageResponse;
     } else {
       response = mResultCode;
