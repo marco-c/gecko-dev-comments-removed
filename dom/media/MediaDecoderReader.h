@@ -62,6 +62,8 @@ class MediaDecoderReader {
   friend class ReRequestVideoWithSkipTask;
   friend class ReRequestAudioTask;
 
+  static const bool IsExclusive = true;
+
 public:
   enum NotDecodedReason {
     END_OF_STREAM,
@@ -70,16 +72,20 @@ public:
     CANCELED
   };
 
-  typedef MozPromise<RefPtr<MetadataHolder>, ReadMetadataFailureReason,  true> MetadataPromise;
-  typedef MozPromise<RefPtr<MediaData>, NotDecodedReason,  true> AudioDataPromise;
-  typedef MozPromise<RefPtr<MediaData>, NotDecodedReason,  true> VideoDataPromise;
-  typedef MozPromise<int64_t, nsresult,  true> SeekPromise;
+  using MetadataPromise =
+    MozPromise<RefPtr<MetadataHolder>, ReadMetadataFailureReason, IsExclusive>;
+  using AudioDataPromise =
+    MozPromise<RefPtr<MediaData>, NotDecodedReason, IsExclusive>;
+  using VideoDataPromise =
+    MozPromise<RefPtr<MediaData>, NotDecodedReason, IsExclusive>;
+  using SeekPromise = MozPromise<int64_t, nsresult, IsExclusive>;
 
   
   
   
   
-  typedef MozPromise<MediaData::Type, WaitForDataRejectValue,  true> WaitForDataPromise;
+  using WaitForDataPromise =
+    MozPromise<MediaData::Type, WaitForDataRejectValue, IsExclusive>;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDecoderReader)
 
@@ -93,7 +99,7 @@ public:
 
   
   
-  virtual void ReleaseMediaResources() {};
+  virtual void ReleaseMediaResources() {}
   
   
   
@@ -145,7 +151,11 @@ public:
   
   
   virtual bool IsWaitForDataSupported() { return false; }
-  virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) { MOZ_CRASH(); }
+
+  virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType)
+  {
+    MOZ_CRASH();
+  }
 
   
   
@@ -165,13 +175,12 @@ public:
 
   
   
-  virtual void ReadUpdatedMetadata(MediaInfo* aInfo) { };
+  virtual void ReadUpdatedMetadata(MediaInfo* aInfo) {}
 
   
   
   
-  virtual RefPtr<SeekPromise>
-  Seek(int64_t aTime, int64_t aEndTime) = 0;
+  virtual RefPtr<SeekPromise> Seek(int64_t aTime, int64_t aEndTime) = 0;
 
   
   
@@ -183,7 +192,7 @@ public:
   
   
   
-  virtual void SetIdle() { }
+  virtual void SetIdle() {}
 
 #ifdef MOZ_EME
   virtual void SetCDMProxy(CDMProxy* aProxy) {}
@@ -223,13 +232,19 @@ public:
   
   
   
-  void DispatchNotifyDataArrived(uint32_t aLength, int64_t aOffset, bool aThrottleUpdates)
+  void DispatchNotifyDataArrived(uint32_t aLength,
+                                 int64_t aOffset,
+                                 bool aThrottleUpdates)
   {
-    RefPtr<nsRunnable> r =
-      NS_NewRunnableMethodWithArg<media::Interval<int64_t>>(this, aThrottleUpdates ? &MediaDecoderReader::ThrottledNotifyDataArrived
-                                                                                   : &MediaDecoderReader::NotifyDataArrived,
-                                                            media::Interval<int64_t>(aOffset, aOffset + aLength));
-    OwnerThread()->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
+    typedef media::Interval<int64_t> Interval;
+    RefPtr<nsRunnable> r = NS_NewRunnableMethodWithArg<Interval>(
+      this,
+      aThrottleUpdates ? &MediaDecoderReader::ThrottledNotifyDataArrived :
+                         &MediaDecoderReader::NotifyDataArrived,
+      Interval(aOffset, aOffset + aLength));
+
+    OwnerThread()->Dispatch(
+      r.forget(), AbstractThread::DontAssertDispatchSuccess);
   }
 
   void NotifyDataArrived(const media::Interval<int64_t>& aInfo)
@@ -241,19 +256,24 @@ public:
   }
 
   
+  
   virtual void NotifyDataRemoved() {}
 
   virtual MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
   virtual MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
 
   
-  AbstractMediaDecoder* GetDecoder() {
+  AbstractMediaDecoder* GetDecoder()
+  {
     return mDecoder;
   }
 
   MediaInfo GetMediaInfo() { return mInfo; }
 
-  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() { return &mBuffered; }
+  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered()
+  {
+    return &mBuffered;
+  }
 
   
   
@@ -273,7 +293,8 @@ public:
     OwnerThread()->Dispatch(r.forget());
   }
 
-  TaskQueue* OwnerThread() const {
+  TaskQueue* OwnerThread() const
+  {
     return mTaskQueue;
   }
 
@@ -289,7 +310,8 @@ public:
 
   virtual void DisableHardwareAcceleration() {}
 
-  TimedMetadataEventSource& TimedMetadataEvent() {
+  TimedMetadataEventSource& TimedMetadataEvent()
+  {
     return mTimedMetadataEvent;
   }
 
@@ -316,7 +338,12 @@ protected:
 
   RefPtr<VideoDataPromise> DecodeToFirstVideoData();
 
-  bool HaveStartTime() { MOZ_ASSERT(OnTaskQueue()); return mStartTime.isSome(); }
+  bool HaveStartTime()
+  {
+    MOZ_ASSERT(OnTaskQueue());
+    return mStartTime.isSome();
+  }
+
   int64_t StartTime() { MOZ_ASSERT(HaveStartTime()); return mStartTime.ref(); }
 
   
@@ -398,14 +425,17 @@ private:
   
   
   
-  virtual nsresult ReadMetadata(MediaInfo* aInfo,
-                                MetadataTags** aTags) { MOZ_CRASH(); }
+  virtual nsresult ReadMetadata(MediaInfo* aInfo, MetadataTags** aTags)
+  {
+    MOZ_CRASH();
+  }
 
   
   virtual void UpdateBuffered();
 
-  virtual void NotifyDataArrivedInternal(uint32_t aLength, int64_t aOffset) { }
+  virtual void NotifyDataArrivedInternal(uint32_t aLength, int64_t aOffset) {}
 
+  
   
   void ThrottledNotifyDataArrived(const media::Interval<int64_t>& aInterval);
   void DoThrottledNotify();
@@ -415,7 +445,8 @@ private:
   
   
   
-  virtual bool DecodeAudioData() {
+  virtual bool DecodeAudioData()
+  {
     return false;
   }
 
@@ -424,7 +455,8 @@ private:
   
   
   
-  virtual bool DecodeVideoFrame(bool &aKeyframeSkip, int64_t aTimeThreshold) {
+  virtual bool DecodeVideoFrame(bool &aKeyframeSkip, int64_t aTimeThreshold)
+  {
     return false;
   }
 
