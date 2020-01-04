@@ -1120,7 +1120,9 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
   
   
   
-  WebVTT.processCues = function(window, cues, overlay) {
+  
+  
+  WebVTT.processCues = function(window, cues, overlay, controls) {
     if (!window || !cues || !overlay) {
       return null;
     }
@@ -1128,6 +1130,15 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
     
     while (overlay.firstChild) {
       overlay.removeChild(overlay.firstChild);
+    }
+
+    var controlBar;
+    var controlBarShown;
+
+    if (controls) {
+      controlBar = controls.ownerDocument.getAnonymousElementByAttribute(
+        controls, "class", "controlBar");
+      controlBarShown = controlBar ? !!controlBar.clientHeight : false;
     }
 
     var paddedOverlay = window.document.createElement("div");
@@ -1143,6 +1154,10 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
     
     
     function shouldCompute(cues) {
+      if (controlBarShown) {
+        return true;
+      }
+
       for (var i = 0; i < cues.length; i++) {
         if (cues[i].hasBeenReset || !cues[i].displayState) {
           return true;
@@ -1168,6 +1183,11 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
 
     (function() {
       var styleBox, cue;
+
+      if (controlBarShown) {
+        
+        boxPositions.push(BoxPosition.getSimpleBoxPosition(controlBar));
+      }
 
       for (var i = 0; i < cues.length; i++) {
         cue = cues[i];
