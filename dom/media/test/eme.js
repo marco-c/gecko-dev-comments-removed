@@ -249,7 +249,7 @@ function LoadTest(test, elem, token, loadParams)
       Log(token, "sourceopen");
       return Promise.all(test.tracks.map(function(track) {
         return AppendTrack(test, ms, track, token, loadParams);
-      })).then(function(){
+      })).then(function() {
         if (loadParams && loadParams.noEndOfStream) {
           Log(token, "Tracks loaded");
         } else {
@@ -257,6 +257,8 @@ function LoadTest(test, elem, token, loadParams)
           ms.endOfStream();
         }
         resolve();
+      }).catch(function() {
+        Log(token, "error while loading tracks");
       });
     })
   });
@@ -299,7 +301,7 @@ function SetupEME(test, token, params)
   
   [ "canplay", "canplaythrough", "ended", "error", "loadeddata",
     "loadedmetadata", "loadstart", "pause", "play", "playing", "progress",
-    "stalled", "suspend", "waiting",
+    "stalled", "suspend", "waiting", "waitingforkey",
   ].forEach(function (e) {
     v.addEventListener(e, function(event) {
       Log(token, "" + e);
@@ -317,10 +319,25 @@ function SetupEME(test, token, params)
   
   
   var initDataQueue = [];
+  function pushInitData(ev)
+  {
+    if (initDataQueue === null) {
+      initDataQueue = [];
+    }
+    initDataQueue.push(ev);
+    if (params && params.onInitDataQueued) {
+      params.onInitDataQueued(ev, ev.initDataType, StringToHex(ArrayBufferToString(ev.initData)));
+    }
+  }
+
   function processInitDataQueue()
   {
     if (initDataQueue === null) { return; }
-    if (initDataQueue.length === 0) { initDataQueue = null; return; }
+    
+    if (initDataQueue.length === 0) {
+      initDataQueue = null;
+      return;
+    }
     var ev = initDataQueue.shift();
 
     var sessionType = (params && params.sessionType) ? params.sessionType : "temporary";
@@ -358,12 +375,17 @@ function SetupEME(test, token, params)
 
   
   
-  var initDataType = null;
+  if (params && params.delaySessions) {
+    params.ProcessSessions = processInitDataQueue;
+  }
+
+  
+  var firstInitData = true;
   v.addEventListener("encrypted", function(ev) {
-    if (initDataType === null) {
+    if (firstInitData) {
       Log(token, "got first encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + "), setup session");
-      initDataType = ev.initDataType;
-      initDataQueue.push(ev);
+      firstInitData = false;
+      pushInitData(ev);
 
       function chain(promise, onReject) {
         return promise.then(function(value) {
@@ -400,20 +422,23 @@ function SetupEME(test, token, params)
 
       .then(function() {
         Log(token, "set MediaKeys on <video> element ok");
-        processInitDataQueue();
+        if (params && params.onMediaKeysSet) {
+          params.onMediaKeysSet();
+        }
+        if (!(params && params.delaySessions)) {
+          processInitDataQueue();
+        }
       })
     } else {
-      if (ev.initDataType !== initDataType) {
-        return bail(token + ": encrypted(" + ev.initDataType + ", " +
-                    StringToHex(ArrayBufferToString(ev.initData)) + ")")
-                   ("expected " + initDataType);
-      }
-      if (initDataQueue !== null) {
+      if (params && params.delaySessions) {
+        Log(token, "got encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") event, queue it in because we're delaying sessions");
+        pushInitData(ev);
+      } else if (initDataQueue !== null) {
         Log(token, "got encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") event, queue it for later session update");
-        initDataQueue.push(ev);
+        pushInitData(ev);
       } else {
         Log(token, "got encrypted(" + ev.initDataType + ", " + StringToHex(ArrayBufferToString(ev.initData)) + ") event, update session now");
-        initDataQueue = [ev];
+        pushInitData(ev);
         processInitDataQueue();
       }
     }
