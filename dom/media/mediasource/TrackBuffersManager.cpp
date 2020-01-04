@@ -1354,11 +1354,11 @@ TrackBuffersManager::ResolveProcessing(bool aResolveValue, const char* aName)
 }
 
 void
-TrackBuffersManager::CheckSequenceDiscontinuity()
+TrackBuffersManager::CheckSequenceDiscontinuity(const TimeUnit& aPresentationTime)
 {
   if (mSourceBufferAttributes->GetAppendMode() == SourceBufferAppendMode::Sequence &&
       mGroupStartTimestamp.isSome()) {
-    mTimestampOffset = mGroupStartTimestamp.ref();
+    mTimestampOffset = mGroupStartTimestamp.ref() - aPresentationTime;
     mGroupEndTimestamp = mGroupStartTimestamp.ref();
     mVideoTracks.mNeedRandomAccessPoint = true;
     mAudioTracks.mNeedRandomAccessPoint = true;
@@ -1374,7 +1374,14 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
   }
 
   
-  CheckSequenceDiscontinuity();
+  
+  
+  
+  TimeUnit presentationTimestamp = mSourceBufferAttributes->mGenerateTimestamps
+    ? TimeUnit() : TimeUnit::FromMicroseconds(aSamples[0]->mTime);
+
+  
+  CheckSequenceDiscontinuity(presentationTimestamp);
 
   
   auto& trackBuffer = aTrackData;
@@ -1482,7 +1489,9 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
       
       
       
-      CheckSequenceDiscontinuity();
+      TimeUnit presentationTimestamp = mSourceBufferAttributes->mGenerateTimestamps
+        ? TimeUnit() : TimeUnit::FromMicroseconds(sample->mTime);
+      CheckSequenceDiscontinuity(presentationTimestamp);
 
       if (!sample->mKeyframe) {
         continue;
