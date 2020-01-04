@@ -62,14 +62,14 @@ enum class StyleBoxSizing : uint8_t {
 
 
 enum class StyleClipShapeSizing : uint8_t {
-    NoBox,
-    Content,
-    Padding,
-    Border,
-    Margin,
-    Fill,
-    Stroke,
-    View,
+  NoBox,
+  Content,
+  Padding,
+  Border,
+  Margin,
+  Fill,
+  Stroke,
+  View,
 };
 
 
