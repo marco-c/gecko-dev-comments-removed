@@ -1742,10 +1742,6 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(nsDocument)
     if (elm) {
       elm->MarkForCC();
     }
-    if (tmp->mExpandoAndGeneration.expando.isObject()) {
-      JS::ExposeObjectToActiveJS(
-        &(tmp->mExpandoAndGeneration.expando.toObject()));
-    }
     return true;
   }
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_END
@@ -1931,13 +1927,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsDocument)
 
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsDocument)
-  if (tmp->PreservingWrapper()) {
-    NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mExpandoAndGeneration.expando)
-  }
-  NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
-
+NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(nsDocument)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDocument)
   tmp->mInUnlinkOrDeletion = true;
@@ -2010,7 +2000,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDocument)
   
 
   tmp->mIdentifierMap.Clear();
-  tmp->mExpandoAndGeneration.Unlink();
+  tmp->mExpandoAndGeneration.OwnerUnlinked();
 
   if (tmp->mAnimationController) {
     tmp->mAnimationController->Unlink();
@@ -12369,39 +12359,6 @@ GetPointerLockError(Element* aElement, Element* aCurrentLock,
   return nullptr;
 }
 
-static void
-ChangePointerLockedElement(Element* aElement, nsIDocument* aDocument,
-                           Element* aPointerLockedElement)
-{
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aDocument);
-  MOZ_ASSERT(aElement != aPointerLockedElement);
-  if (aPointerLockedElement) {
-    MOZ_ASSERT(aPointerLockedElement->GetUncomposedDoc() == aDocument);
-    aPointerLockedElement->ClearPointerLock();
-  }
-  if (aElement) {
-    MOZ_ASSERT(aElement->GetUncomposedDoc() == aDocument);
-    aElement->SetPointerLock();
-    EventStateManager::sPointerLockedElement = do_GetWeakReference(aElement);
-    EventStateManager::sPointerLockedDoc = do_GetWeakReference(aDocument);
-    NS_ASSERTION(EventStateManager::sPointerLockedElement &&
-                 EventStateManager::sPointerLockedDoc,
-                 "aElement and this should support weak references!");
-  } else {
-    EventStateManager::sPointerLockedElement = nullptr;
-    EventStateManager::sPointerLockedDoc = nullptr;
-  }
-  
-  
-  nsIPresShell::SetCapturingContent(aElement, CAPTURE_POINTERLOCK);
-  DispatchPointerLockChange(aDocument);
-}
-
 NS_IMETHODIMP
 PointerLockRequest::Run()
 {
@@ -12423,12 +12380,6 @@ PointerLockRequest::Run()
     }
     
     error = GetPointerLockError(e, pointerLockedElement, true);
-    
-    
-    if (!error && pointerLockedElement) {
-      ChangePointerLockedElement(e, d, pointerLockedElement);
-      return NS_OK;
-    }
   }
   
   
@@ -12443,10 +12394,18 @@ PointerLockRequest::Run()
     return NS_OK;
   }
 
-  ChangePointerLockedElement(e, d, nullptr);
+  e->SetPointerLock();
+  EventStateManager::sPointerLockedElement = do_GetWeakReference(e);
+  EventStateManager::sPointerLockedDoc = do_GetWeakReference(doc);
+  NS_ASSERTION(EventStateManager::sPointerLockedElement &&
+               EventStateManager::sPointerLockedDoc,
+               "aElement and this should support weak references!");
+
   nsContentUtils::DispatchEventOnlyToChrome(
     doc, ToSupports(e), NS_LITERAL_STRING("MozDOMPointerLock:Entered"),
      true,  false,  nullptr);
+
+  DispatchPointerLockChange(d);
   return NS_OK;
 }
 
@@ -12538,12 +12497,19 @@ nsDocument::UnlockPointer(nsIDocument* aDoc)
 
   nsCOMPtr<Element> pointerLockedElement =
     do_QueryReferent(EventStateManager::sPointerLockedElement);
-  ChangePointerLockedElement(nullptr, doc, pointerLockedElement);
+  if (pointerLockedElement) {
+    pointerLockedElement->ClearPointerLock();
+  }
+
+  EventStateManager::sPointerLockedElement = nullptr;
+  EventStateManager::sPointerLockedDoc = nullptr;
 
   nsContentUtils::DispatchEventOnlyToChrome(
     doc, ToSupports(pointerLockedElement),
     NS_LITERAL_STRING("MozDOMPointerLock:Exited"),
      true,  false,  nullptr);
+
+  DispatchPointerLockChange(pointerLockedDoc);
 }
 
 void
