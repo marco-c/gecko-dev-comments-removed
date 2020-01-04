@@ -5,7 +5,7 @@
 
 
 
-#include "nsHTMLReflowMetrics.h"
+#include "mozilla/ReflowOutput.h"
 #include "mozilla/ReflowInput.h"
 
 void
