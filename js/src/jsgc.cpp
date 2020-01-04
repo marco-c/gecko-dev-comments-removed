@@ -6832,7 +6832,7 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
 
     
     
-    RootedObject targetStaticGlobalLexicalScope(rt);
+    Rooted<StaticScope*> targetStaticGlobalLexicalScope(rt);
     targetStaticGlobalLexicalScope = &target->maybeGlobal()->lexicalScope().staticBlock();
 
     for (ZoneCellIter iter(source->zone(), AllocKind::SCRIPT); !iter.done(); iter.next()) {
