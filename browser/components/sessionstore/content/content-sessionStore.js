@@ -219,6 +219,13 @@ var SessionHistoryListener = {
     
     if (!SessionHistory.isEmpty(docShell)) {
       this.collect();
+      
+      
+      
+      
+      
+      
+      MessageQueue.send();
     }
 
     
@@ -712,6 +719,8 @@ var MessageQueue = {
         data[key] = value;
       }
     }
+
+    this._data.clear();
 
     durationMs = Date.now() - durationMs;
     telemetry.FX_SESSION_RESTORE_CONTENT_COLLECT_DATA_LONGEST_OP_MS = durationMs;
