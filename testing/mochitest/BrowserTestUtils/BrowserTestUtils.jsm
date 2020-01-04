@@ -64,7 +64,16 @@ this.BrowserTestUtils = {
 
 
 
+
+
+
   withNewTab: Task.async(function* (options, taskFn) {
+    if (typeof(options) == "string") {
+      options = {
+        gBrowser: Services.wm.getMostRecentWindow("navigator:browser").gBrowser,
+        url: options
+      }
+    }
     let tab = yield BrowserTestUtils.openNewForegroundTab(options.gBrowser, options.url);
     let result = yield taskFn(tab.linkedBrowser);
     options.gBrowser.removeTab(tab);
