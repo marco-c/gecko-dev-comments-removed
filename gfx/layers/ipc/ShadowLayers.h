@@ -129,6 +129,12 @@ public:
 
   virtual ShadowLayerForwarder* AsLayerForwarder() override { return this; }
 
+  
+  
+  
+  
+  virtual TextureForwarder* AsTextureForwarder() override;
+
   virtual LegacySurfaceDescriptorAllocator*
   AsLegacySurfaceDescriptorAllocator() override { return this; }
 
