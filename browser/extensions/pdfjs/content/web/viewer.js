@@ -1552,13 +1552,11 @@ var PDFLinkService = (function () {
           this.page = pageNumber; 
         }
         if ('pagemode' in params) {
-          if (params.pagemode === 'thumbs' || params.pagemode === 'bookmarks' ||
-              params.pagemode === 'attachments') {
-            this.switchSidebarView((params.pagemode === 'bookmarks' ?
-                                   'outline' : params.pagemode), true);
-          } else if (params.pagemode === 'none' && this.sidebarOpen) {
-            document.getElementById('sidebarToggle').click();
-          }
+          var event = document.createEvent('CustomEvent');
+          event.initCustomEvent('pagemode', true, true, {
+            mode: params.pagemode,
+          });
+          this.pdfViewer.container.dispatchEvent(event);
         }
       } else if (/^\d+$/.test(hash)) { 
         this.page = hash;
@@ -6790,29 +6788,27 @@ var PDFViewerApplication = {
         break;
 
       case 'outline':
+        if (outlineButton.disabled) {
+          return;
+        }
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.add('toggled');
         attachmentsButton.classList.remove('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.remove('hidden');
         attachmentsView.classList.add('hidden');
-
-        if (outlineButton.getAttribute('disabled')) {
-          return;
-        }
         break;
 
       case 'attachments':
+        if (attachmentsButton.disabled) {
+          return;
+        }
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.remove('toggled');
         attachmentsButton.classList.add('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.add('hidden');
         attachmentsView.classList.remove('hidden');
-
-        if (attachmentsButton.getAttribute('disabled')) {
-          return;
-        }
         break;
     }
   },
@@ -7195,18 +7191,45 @@ document.addEventListener('textlayerrendered', function (e) {
   }
 }, true);
 
+document.addEventListener('pagemode', function (evt) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
+  
+  var mode = evt.detail.mode;
+  switch (mode) {
+    case 'bookmarks':
+      
+      
+      mode = 'outline';
+      
+    case 'thumbs':
+    case 'attachments':
+      PDFViewerApplication.switchSidebarView(mode, true);
+      break;
+    case 'none':
+      if (PDFViewerApplication.sidebarOpen) {
+        document.getElementById('sidebarToggle').click();
+      }
+      break;
+  }
+}, true);
+
 document.addEventListener('namedaction', function (e) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
   
   
-  var action = e.action;
+  var action = e.detail.action;
   switch (action) {
     case 'GoToPage':
       document.getElementById('pageNumber').focus();
       break;
 
     case 'Find':
-      if (!this.supportsIntegratedFind) {
-        this.findBar.toggle();
+      if (!PDFViewerApplication.supportsIntegratedFind) {
+        PDFViewerApplication.findBar.toggle();
       }
       break;
   }
