@@ -148,10 +148,6 @@ private:
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 
-  
-  
-  
-
   already_AddRefed<CSSValue> GetEllipseRadii(const nsStyleCorners& aRadius,
                                           uint8_t aFullCorner,
                                           bool aIsBorder); 
