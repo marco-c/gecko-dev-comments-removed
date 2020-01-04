@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/SizePrintfMacros.h"
 
 #include "jslibmath.h"
@@ -8212,33 +8213,6 @@ CodeGenerator::generate()
     return !masm.oom();
 }
 
-struct AutoDiscardIonCode
-{
-    JSContext* cx;
-    RecompileInfo* recompileInfo;
-    IonScript* ionScript;
-    bool keep;
-
-    AutoDiscardIonCode(JSContext* cx, RecompileInfo* recompileInfo)
-      : cx(cx), recompileInfo(recompileInfo), ionScript(nullptr), keep(false) {}
-
-    ~AutoDiscardIonCode() {
-        if (keep)
-            return;
-
-        
-        
-        if (ionScript)
-            js_free(ionScript);
-
-        recompileInfo->compilerOutput(cx->zone()->types)->invalidate();
-    }
-
-    void keepIonCode() {
-        keep = true;
-    }
-};
-
 bool
 CodeGenerator::linkSharedStubs(JSContext* cx)
 {
@@ -8309,13 +8283,20 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     
     uint32_t warmUpCount = script->getWarmUpCount();
-    RecompileInfo recompileInfo;
-    bool isValid;
-    if (!FinishCompilation(cx, script, constraints, &recompileInfo, &isValid))
-        return false;
 
-    if (!isValid)
+    
+    
+    
+    RecompileInfo recompileInfo;
+    bool validRecompiledInfo = false;
+    if (!FinishCompilation(cx, script, constraints, &recompileInfo, &validRecompiledInfo))
+        return false;
+    if (!validRecompiledInfo)
         return true;
+    auto guardRecordedConstraints = mozilla::MakeScopeExit([&] {
+        
+        recompileInfo.compilerOutput(cx->zone()->types)->invalidate();
+    });
 
     
     
@@ -8333,8 +8314,6 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     if (!encodeSafepoints())
         return false;
 
-    AutoDiscardIonCode discardIonCode(cx, &recompileInfo);
-
     IonScript* ionScript =
         IonScript::New(cx, recompileInfo,
                        graph.totalSlotCount(), argumentSlots, scriptFrameSize,
@@ -8346,7 +8325,11 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
                        sharedStubs_.length(), optimizationLevel);
     if (!ionScript)
         return false;
-    discardIonCode.ionScript = ionScript;
+    auto guardIonScript = mozilla::MakeScopeExit([&ionScript] {
+        
+        
+        js_free(ionScript);
+    });
 
     
     
@@ -8549,9 +8532,8 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     if (IonScriptCounts* counts = extractScriptCounts())
         script->addIonCounts(counts);
 
-    
-    discardIonCode.keepIonCode();
-
+    guardIonScript.release();
+    guardRecordedConstraints.release();
     return true;
 }
 
