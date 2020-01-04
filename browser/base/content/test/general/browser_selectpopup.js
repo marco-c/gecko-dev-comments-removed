@@ -152,11 +152,11 @@ function doSelectTests(contentType, dtd)
 }
 
 add_task(function*() {
-  yield doSelectTests("text/html", "");
+  
 });
 
 add_task(function*() {
-  yield doSelectTests("application/xhtml+xml", XHTML_DTD);
+  
 });
 
 
