@@ -450,7 +450,6 @@ function Shuffle(array)
 function StartTests()
 {
     var uri;
-#if BOOTSTRAP
     
     try {
         var prefs = Components.classes["@mozilla.org/preferences-service;1"].
@@ -487,24 +486,6 @@ function StartTests()
         gDumpLog("REFTEST TEST-UNEXPECTED-FAIL | | Unable to find reftest.uri pref.  Please ensure your profile is setup properly\n");
         DoneTests();
     }
-#else
-    try {
-        
-        var args = window.arguments[0].wrappedJSObject;
-
-        if ("nocache" in args && args["nocache"])
-            gNoCanvasCache = true;
-
-        if ("skipslowtests" in args && args.skipslowtests)
-            gRunSlowTests = false;
-
-        uri = args.uri;
-    } catch (e) {
-        ++gTestResults.Exception;
-        gDumpLog("REFTEST TEST-UNEXPECTED-FAIL | | EXCEPTION: " + ex + "\n");
-        DoneTests();
-    }
-#endif
 
     if (gShuffle) {
         gNoCanvasCache = true;
