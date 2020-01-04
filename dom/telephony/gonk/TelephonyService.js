@@ -60,12 +60,6 @@ const MMI_PROCEDURE_INTERROGATION = "*#";
 const MMI_PROCEDURE_REGISTRATION = "**";
 const MMI_PROCEDURE_ERASURE = "##";
 
-XPCOMUtils.defineConstant(this, "MMI_PROCEDURE_ACTIVATION", MMI_PROCEDURE_ACTIVATION);
-XPCOMUtils.defineConstant(this, "MMI_PROCEDURE_DEACTIVATION", MMI_PROCEDURE_DEACTIVATION);
-XPCOMUtils.defineConstant(this, "MMI_PROCEDURE_INTERROGATION", MMI_PROCEDURE_INTERROGATION);
-XPCOMUtils.defineConstant(this, "MMI_PROCEDURE_REGISTRATION", MMI_PROCEDURE_REGISTRATION);
-XPCOMUtils.defineConstant(this, "MMI_PROCEDURE_ERASURE", MMI_PROCEDURE_ERASURE);
-
 
 const MMI_SC_CFU = "21";
 const MMI_SC_CF_BUSY = "67";
@@ -1070,14 +1064,22 @@ TelephonyService.prototype = {
 
       
       default:
-        this._sendUSSDInternal(aClientId, aMmi.fullMMI, aResponse => {
-          if (aResponse.errorMsg) {
-            aCallback.notifyDialMMIError(aResponse.errorMsg);
-            return;
-          }
-
-          aCallback.notifyDialMMISuccess("");
-        });
+        if (this._ussdSessions[aClientId]) {
+          
+          this._cancelUSSDInternal(aClientId, aResponse => {
+            
+            
+            if (aResponse.errorMsg) {
+              aCallback.notifyDialMMIError(aResponse.errorMsg);
+              return;
+            }
+            this._sendUSSDInternal(aClientId, aMmi.fullMMI,
+                                   this._defaultMMICallbackHandler.bind(this, aCallback));
+          });
+          return;
+        }
+        this._sendUSSDInternal(aClientId, aMmi.fullMMI,
+                               this._defaultMMICallbackHandler.bind(this, aCallback));
         break;
     }
   },
@@ -1684,6 +1686,14 @@ TelephonyService.prototype = {
     }
   },
 
+  _defaultMMICallbackHandler: function(aCallback, aResponse) {
+    if (aResponse.errorMsg) {
+      aCallback.notifyDialMMIError(aResponse.errorMsg);
+    } else {
+      aCallback.notifyDialMMISuccess("");
+    }
+  },
+
   _getCallsWithState: function(aClientId, aState) {
     let calls = [];
     for (let i in this._currentCalls[aClientId]) {
@@ -2138,24 +2148,9 @@ TelephonyService.prototype = {
   },
 
   _sendUSSDInternal: function(aClientId, aUssd, aCallback) {
-    if (!this._ussdSessions[aClientId]) {
-      this._sendToRilWorker(aClientId, "sendUSSD", { ussd: aUssd }, aResponse => {
-        this._ussdSessions[aClientId] = !aResponse.errorMsg;
-        aCallback(aResponse);
-      });
-      return;
-    }
-
-    
-    this._cancelUSSDInternal(aClientId, aResponse => {
-      
-      
-      if (aResponse.errorMsg) {
-        aCallback(aResponse);
-        return;
-      }
-
-      this._sendUSSDInternal(aClientId, aUssd, aCallback);
+    this._sendToRilWorker(aClientId, "sendUSSD", { ussd: aUssd }, aResponse => {
+      this._ussdSessions[aClientId] = !aResponse.errorMsg;
+      aCallback(aResponse);
     });
   },
 
