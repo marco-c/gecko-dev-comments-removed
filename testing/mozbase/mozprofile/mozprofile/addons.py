@@ -286,7 +286,7 @@ class AddonManager(object):
                     manifest = f.read()
             else:
                 raise IOError('Add-on path is neither an XPI nor a directory: %s' % addon_path)
-        except (IOError, KeyError), e:
+        except (IOError, KeyError) as e:
             raise AddonFormatError, str(e), sys.exc_info()[2]
 
         try:
@@ -307,7 +307,7 @@ class AddonManager(object):
                 entry = node.nodeName.replace(em, "")
                 if entry in details.keys():
                     details.update({entry: get_text(node)})
-        except Exception, e:
+        except Exception as e:
             raise AddonFormatError, str(e), sys.exc_info()[2]
 
         
@@ -339,7 +339,7 @@ class AddonManager(object):
         
         try:
             self.addon_details(path)
-        except AddonFormatError, e:
+        except AddonFormatError as e:
             module_logger.warning('Could not install %s: %s' % (path, str(e)))
 
             

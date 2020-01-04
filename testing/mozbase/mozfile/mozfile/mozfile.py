@@ -147,7 +147,7 @@ def _call_windows_retry(func, args=(), retry_max=5, retry_delay=0.5):
     while True:
         try:
             func(*args)
-        except OSError, e:
+        except OSError as e:
             
             
             if e.errno not in (errno.EACCES, errno.ENOTEMPTY):
@@ -189,7 +189,7 @@ def remove(path):
     def _call_with_windows_retry(*args, **kwargs):
         try:
             _call_windows_retry(*args, **kwargs)
-        except OSError, e:
+        except OSError as e:
             
             if e.errno != errno.ENOENT:
                 raise

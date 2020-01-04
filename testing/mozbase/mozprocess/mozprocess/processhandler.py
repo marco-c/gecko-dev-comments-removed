@@ -150,7 +150,7 @@ class ProcessHandlerMixin(object):
                     if not self._ignore_children:
                         try:
                             os.killpg(self.pid, sig)
-                        except BaseException, e:
+                        except BaseException as e:
                             if getattr(e, "errno", None) != 3:
                                 
                                 print >> sys.stdout, "Could not kill process, could not find pid: %s, assuming it's already dead" % self.pid
@@ -604,7 +604,7 @@ falling back to not using job objects for managing child processes"""
                         if status > 255:
                             return status >> 8
                         return -status
-                    except OSError, e:
+                    except OSError as e:
                         if getattr(e, "errno", None) != 10:
                             
                             
