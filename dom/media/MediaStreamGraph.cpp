@@ -23,6 +23,7 @@
 #include "AudioNodeStream.h"
 #include "AudioNodeExternalInputStream.h"
 #include "mozilla/dom/AudioContextBinding.h"
+#include "mozilla/media/MediaUtils.h"
 #include <algorithm>
 #include "DOMMediaStream.h"
 #include "GeckoProfiler.h"
@@ -1405,16 +1406,19 @@ MediaStreamGraphImpl::ApplyStreamUpdate(StreamUpdate* aUpdate)
 }
 
 void
-MediaStreamGraphImpl::ForceShutDown()
+MediaStreamGraphImpl::ForceShutDown(ShutdownTicket* aShutdownTicket)
 {
   NS_ASSERTION(NS_IsMainThread(), "Must be called on main thread");
   STREAM_LOG(LogLevel::Debug, ("MediaStreamGraph %p ForceShutdown", this));
   {
     MonitorAutoLock lock(mMonitor);
     mForceShutDown = true;
+    mForceShutdownTicket = aShutdownTicket;
     EnsureNextIterationLocked();
   }
 }
+
+ StaticRefPtr<nsIAsyncShutdownBlocker> gMediaStreamGraphShutdownBlocker;
 
 namespace {
 
@@ -1443,6 +1447,13 @@ public:
 
     mGraph->mDriver->Shutdown(); 
                                  
+
+    
+    mGraph->mForceShutdownTicket = nullptr;
+
+    
+    
+    
 
     
     if (mGraph->IsEmpty()) {
@@ -1508,14 +1519,6 @@ public:
     
     Run();
   }
-};
-
-class MediaStreamGraphShutdownObserver final : public nsIObserver
-{
-  ~MediaStreamGraphShutdownObserver() {}
-public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
 };
 
 } 
@@ -2800,26 +2803,6 @@ MediaStreamGraphImpl::Destroy()
   mSelfRef = nullptr;
 }
 
-NS_IMPL_ISUPPORTS(MediaStreamGraphShutdownObserver, nsIObserver)
-
-static bool gShutdownObserverRegistered = false;
-
-NS_IMETHODIMP
-MediaStreamGraphShutdownObserver::Observe(nsISupports *aSubject,
-                                          const char *aTopic,
-                                          const char16_t *aData)
-{
-  if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
-    for (auto iter = gGraphs.Iter(); !iter.Done(); iter.Next()) {
-      MediaStreamGraphImpl* graph = iter.UserData();
-      graph->ForceShutDown();
-    }
-    nsContentUtils::UnregisterShutdownObserver(this);
-    gShutdownObserverRegistered = false;
-  }
-  return NS_OK;
-}
-
 MediaStreamGraph*
 MediaStreamGraph::GetInstance(MediaStreamGraph::GraphDriverType aGraphDriverRequested,
                               dom::AudioChannel aChannel)
@@ -2830,9 +2813,38 @@ MediaStreamGraph::GetInstance(MediaStreamGraph::GraphDriverType aGraphDriverRequ
   MediaStreamGraphImpl* graph = nullptr;
 
   if (!gGraphs.Get(channel, &graph)) {
-    if (!gShutdownObserverRegistered) {
-      gShutdownObserverRegistered = true;
-      nsContentUtils::RegisterShutdownObserver(new MediaStreamGraphShutdownObserver());
+    if (!gMediaStreamGraphShutdownBlocker) {
+
+      class Blocker : public media::ShutdownBlocker
+      {
+      public:
+        Blocker()
+        : media::ShutdownBlocker(NS_LITERAL_STRING(
+            "MediaStreamGraph shutdown: blocking on msg thread")) {}
+
+        NS_IMETHOD
+        BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override
+        {
+          
+          
+          RefPtr<MediaStreamGraphImpl::ShutdownTicket> ticket =
+              new MediaStreamGraphImpl::ShutdownTicket(gMediaStreamGraphShutdownBlocker.get());
+          gMediaStreamGraphShutdownBlocker = nullptr;
+
+          for (auto iter = gGraphs.Iter(); !iter.Done(); iter.Next()) {
+            iter.UserData()->ForceShutDown(ticket);
+          }
+          return NS_OK;
+        }
+      };
+
+      gMediaStreamGraphShutdownBlocker = new Blocker();
+      nsCOMPtr<nsIAsyncShutdownClient> barrier = MediaStreamGraphImpl::GetShutdownBarrier();
+      nsresult rv = barrier->
+          AddBlocker(gMediaStreamGraphShutdownBlocker,
+                     NS_LITERAL_STRING(__FILE__), __LINE__,
+                     NS_LITERAL_STRING("MediaStreamGraph shutdown"));
+      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
     }
 
     CubebUtils::InitPreferredSampleRate();
@@ -2880,7 +2892,7 @@ MediaStreamGraph::DestroyNonRealtimeInstance(MediaStreamGraph* aGraph)
     
     graph->StartNonRealtimeProcessing(0);
   }
-  graph->ForceShutDown();
+  graph->ForceShutDown(nullptr);
 }
 
 NS_IMPL_ISUPPORTS(MediaStreamGraphImpl, nsIMemoryReporter)

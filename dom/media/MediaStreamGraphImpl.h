@@ -13,6 +13,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsIThread.h"
 #include "nsIRunnable.h"
+#include "nsIAsyncShutdown.h"
 #include "Latency.h"
 #include "mozilla/WeakPtr.h"
 #include "GraphDriver.h"
@@ -139,13 +140,48 @@ public:
 
 
   void AppendMessage(ControlMessage* aMessage);
+
+  
+
+  static already_AddRefed<nsIAsyncShutdownClient>
+  GetShutdownBarrier()
+  {
+    nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdown();
+    MOZ_RELEASE_ASSERT(svc);
+
+    nsCOMPtr<nsIAsyncShutdownClient> barrier;
+    nsresult rv = svc->GetProfileBeforeChange(getter_AddRefs(barrier));
+    if (!barrier) {
+      
+      rv = svc->GetContentChildShutdown(getter_AddRefs(barrier));
+    }
+    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+    MOZ_RELEASE_ASSERT(barrier);
+    return barrier.forget();
+  }
+
+  class ShutdownTicket final
+  {
+  public:
+    explicit ShutdownTicket(nsIAsyncShutdownBlocker* aBlocker) : mBlocker(aBlocker) {}
+    NS_INLINE_DECL_REFCOUNTING(ShutdownTicket)
+  private:
+    ~ShutdownTicket()
+    {
+      nsCOMPtr<nsIAsyncShutdownClient> barrier = GetShutdownBarrier();
+      barrier->RemoveBlocker(mBlocker);
+    }
+
+    nsCOMPtr<nsIAsyncShutdownBlocker> mBlocker;
+  };
+
   
 
 
 
 
 
-  void ForceShutDown();
+  void ForceShutDown(ShutdownTicket* aShutdownTicket);
   
 
 
@@ -692,6 +728,12 @@ public:
 
 
   bool mForceShutDown;
+
+  
+
+
+  RefPtr<ShutdownTicket> mForceShutdownTicket;
+
   
 
 
