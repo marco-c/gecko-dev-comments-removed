@@ -54,12 +54,14 @@ public:
 
   void AllocateChannels(uint32_t aChannelCount);
 
+  
+
+
+
   float* ChannelFloatsForWrite(size_t aChannel)
   {
     MOZ_ASSERT(mBufferFormat == AUDIO_FORMAT_FLOAT32);
-#if DEBUG
-    AssertNoLastingShares();
-#endif
+    MOZ_ASSERT(CanWrite());
     return static_cast<float*>(const_cast<void*>(mChannelData[aChannel]));
   }
 
@@ -103,7 +105,7 @@ public:
 
 private:
   void ClearDownstreamMark();
-  void AssertNoLastingShares();
+  bool CanWrite();
 
   
   

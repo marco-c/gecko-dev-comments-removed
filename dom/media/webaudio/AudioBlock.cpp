@@ -124,9 +124,12 @@ AudioBlock::ClearDownstreamMark() {
   }
 }
 
-void
-AudioBlock::AssertNoLastingShares() {
-  MOZ_ASSERT(!mBuffer->AsAudioBlockBuffer()->HasLastingShares());
+bool
+AudioBlock::CanWrite() {
+  
+  
+  return !mBufferIsDownstreamRef &&
+    !mBuffer->AsAudioBlockBuffer()->HasLastingShares();
 }
 
 void
