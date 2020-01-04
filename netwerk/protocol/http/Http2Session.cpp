@@ -2886,7 +2886,10 @@ Http2Session::ProcessSlowConsumer(Http2Stream *slowConsumer,
     rv = NS_BASE_STREAM_CLOSED;
   }
 
-  if (NS_SUCCEEDED(rv)) {
+  if (NS_SUCCEEDED(rv) && (*countWritten > 0)) {
+    
+    
+    
     UpdateLocalRwin(slowConsumer, 0);
     ConnectSlowConsumer(slowConsumer);
   }
