@@ -736,8 +736,7 @@ pref("canvas.hitregions.enabled", false);
 pref("canvas.filters.enabled", false);
 
 pref("canvas.path.enabled", true);
-
-pref("canvas.capturestream.enabled", false);
+pref("canvas.capturestream.enabled", true);
 
 
 
