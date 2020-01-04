@@ -123,5 +123,14 @@ assertEq((({a = 0} = {}) => a)({a: 1}), 1);
     assertEq(j, 2);
 }
 
+
+
+{
+    let f = function(a){
+        return (function({aa = a}){ return aa; })({});
+    };
+    assertEq(f(9999), 9999);
+}
+
 if (typeof reportCompare == "function")
     reportCompare(true, true);
