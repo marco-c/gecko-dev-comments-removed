@@ -324,7 +324,11 @@ APZEventState::ProcessWheelEvent(const WidgetWheelEvent& aEvent,
                                  const ScrollableLayerGuid& aGuid,
                                  uint64_t aInputBlockId)
 {
-  mContentReceivedInputBlockCallback->Run(aGuid, aInputBlockId, aEvent.mFlags.mDefaultPrevented);
+  
+  
+  bool defaultPrevented =
+    aEvent.mFlags.mDefaultPrevented || aEvent.TriggersSwipe();
+  mContentReceivedInputBlockCallback->Run(aGuid, aInputBlockId, defaultPrevented);
 }
 
 void
