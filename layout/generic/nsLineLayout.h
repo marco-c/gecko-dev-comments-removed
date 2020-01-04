@@ -342,7 +342,7 @@ public:
 
 
 
-  nsIFrame* LineContainerFrame() const { return mBlockReflowState->frame; }
+  nsIFrame* LineContainerFrame() const { return mBlockReflowState->mFrame; }
   const ReflowInput* LineContainerRS() const { return mBlockReflowState; }
   const nsLineList::iterator* GetLine() const {
     return mGotLineBox ? &mLineBox : nullptr;

@@ -9083,10 +9083,10 @@ nsFrame::BoxReflow(nsBoxLayoutState&        aState,
     
     
     const ReflowInput *outerReflowState = aState.OuterReflowState();
-    NS_ASSERTION(!outerReflowState || outerReflowState->frame != this,
+    NS_ASSERTION(!outerReflowState || outerReflowState->mFrame != this,
                  "in and out of XUL on a single frame?");
     const ReflowInput* parentRS;
-    if (outerReflowState && outerReflowState->frame == parentFrame) {
+    if (outerReflowState && outerReflowState->mFrame == parentFrame) {
       
       
       
@@ -10224,7 +10224,7 @@ DR_FrameTreeNode* DR_State::CreateTreeNode(nsIFrame*                aFrame,
   nsIFrame* parentFrame;
   if (aReflowState) {
     const ReflowInput* parentRS = aReflowState->mParentReflowState;
-    parentFrame = (parentRS) ? parentRS->frame : nullptr;
+    parentFrame = (parentRS) ? parentRS->mFrame : nullptr;
   } else {
     parentFrame = aFrame->GetParent();
   }

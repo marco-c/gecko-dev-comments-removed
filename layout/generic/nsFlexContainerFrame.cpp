@@ -1675,7 +1675,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowState,
                    nscoord aTentativeCrossSize,
                    nscoord aCrossMinSize, nscoord aCrossMaxSize,
                    const FlexboxAxisTracker& aAxisTracker)
-  : mFrame(aFlexItemReflowState.frame),
+  : mFrame(aFlexItemReflowState.mFrame),
     mFlexGrow(aFlexGrow),
     mFlexShrink(aFlexShrink),
     mIntrinsicRatio(mFrame->GetIntrinsicRatio()),
@@ -1708,7 +1708,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowState,
 
   const ReflowInput* containerRS = aFlexItemReflowState.mParentReflowState;
   if (IsLegacyBox(containerRS->mStyleDisplay,
-                  containerRS->frame->StyleContext())) {
+                  containerRS->mFrame->StyleContext())) {
     
     
     
@@ -1716,7 +1716,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowState,
     
     
     
-    const nsStyleXUL* containerStyleXUL = containerRS->frame->StyleXUL();
+    const nsStyleXUL* containerStyleXUL = containerRS->mFrame->StyleXUL();
     mAlignSelf = ConvertLegacyStyleToAlignItems(containerStyleXUL);
   } else {
     mAlignSelf = aFlexItemReflowState.mStylePosition->ComputedAlignSelf(

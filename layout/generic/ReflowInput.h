@@ -104,7 +104,7 @@ public:
   typedef mozilla::LogicalMargin LogicalMargin;
 
   
-  nsIFrame*           frame;
+  nsIFrame* mFrame;
 
   
   nsRenderingContext* rendContext;
@@ -165,7 +165,7 @@ protected:
 public:
   
   SizeComputationInput(nsIFrame *aFrame, nsRenderingContext *aRenderingContext)
-    : frame(aFrame)
+    : mFrame(aFrame)
     , rendContext(aRenderingContext)
     , mWritingMode(aFrame->GetWritingMode())
   {
@@ -816,10 +816,10 @@ public:
     
     
     
-    return (frame->GetStateBits() & NS_FRAME_IS_DIRTY) ||
+    return (mFrame->GetStateBits() & NS_FRAME_IS_DIRTY) ||
            IsIResize() ||
            (IsBResize() && 
-            (frame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE));
+            (mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE));
   }
 
   
@@ -870,7 +870,7 @@ public:
                                        nsPoint* aPosition);
 
   void ApplyRelativePositioning(nsPoint* aPosition) const {
-    ApplyRelativePositioning(frame, ComputedPhysicalOffsets(), aPosition);
+    ApplyRelativePositioning(mFrame, ComputedPhysicalOffsets(), aPosition);
   }
 
   static void
@@ -896,7 +896,7 @@ public:
 
   void ApplyRelativePositioning(mozilla::LogicalPoint* aPosition,
                                 const nsSize& aContainerSize) const {
-    ApplyRelativePositioning(frame, mWritingMode,
+    ApplyRelativePositioning(mFrame, mWritingMode,
                              ComputedLogicalOffsets(), aPosition,
                              aContainerSize);
   }
