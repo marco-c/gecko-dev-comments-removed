@@ -42,6 +42,22 @@ this.DevTools = function DevTools() {
 };
 
 DevTools.prototype = {
+  registerDefaults() {
+    
+    
+    this.getDefaultTools().forEach(definition => this.registerTool(definition));
+    this.getDefaultThemes().forEach(definition => this.registerTheme(definition));
+  },
+
+  unregisterDefaults() {
+    for (let definition of this.getToolDefinitionArray()) {
+      this.unregisterTool(definition.id);
+    }
+    for (let definition of this.getThemeDefinitionArray()) {
+      this.unregisterTheme(definition.id);
+    }
+  },
+
   
 
 
@@ -83,7 +99,7 @@ DevTools.prototype = {
     
     
     
-    if (DefaultTools && DefaultTools.indexOf(toolDefinition) == -1) {
+    if (DefaultTools.indexOf(toolDefinition) == -1) {
       toolDefinition.visibilityswitch = "devtools." + toolId + ".enabled";
     }
 
@@ -140,6 +156,10 @@ DevTools.prototype = {
       }
     }
     return tools.sort(this.ordinalSort);
+  },
+
+  getDefaultThemes() {
+    return DefaultThemes.sort(this.ordinalSort);
   },
 
   
