@@ -2424,6 +2424,9 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
         clockTime = std::max(int64_t(0), std::max(clockTime, Duration().ToMicroseconds()));
         UpdatePlaybackPosition(clockTime);
 
+        
+        UpdateNextFrameStatus();
+
         nsCOMPtr<nsIRunnable> event =
           NS_NewRunnableMethod(mDecoder, &MediaDecoder::PlaybackEnded);
         AbstractThread::MainThread()->Dispatch(event.forget());
