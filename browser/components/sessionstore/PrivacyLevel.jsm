@@ -9,10 +9,6 @@ this.EXPORTED_SYMBOLS = ["PrivacyLevel"];
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyServiceGetter(this, "gSessionStartup",
-  "@mozilla.org/browser/sessionstartup;1", "nsISessionStartup");
 
 const PREF = "browser.sessionstore.privacy_level";
 
@@ -31,6 +27,17 @@ const PRIVACY_FULL = 2;
 
 
 var PrivacyLevel = Object.freeze({
+  
+
+
+
+
+
+
+  check: function (url) {
+    return PrivacyLevel.canSave({ isHttps: url.startsWith("https:") });
+  },
+
   
 
 

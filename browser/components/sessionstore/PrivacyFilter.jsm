@@ -17,18 +17,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivacyLevel",
 
 
 
-
-
-
-function checkPrivacyLevel(url) {
-  let isHttps = url.startsWith("https:");
-  return PrivacyLevel.canSave({isHttps});
-}
-
-
-
-
-
 this.PrivacyFilter = Object.freeze({
   
 
@@ -42,7 +30,7 @@ this.PrivacyFilter = Object.freeze({
     let retval = {};
 
     for (let host of Object.keys(data)) {
-      if (checkPrivacyLevel(host)) {
+      if (PrivacyLevel.check(host)) {
         retval[host] = data[host];
       }
     }
@@ -62,7 +50,7 @@ this.PrivacyFilter = Object.freeze({
     
     
     
-    if (data.url && !checkPrivacyLevel(data.url)) {
+    if (data.url && !PrivacyLevel.check(data.url)) {
       return;
     }
 
