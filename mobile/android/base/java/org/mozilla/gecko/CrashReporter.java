@@ -134,11 +134,12 @@ public class CrashReporter extends AppCompatActivity
         readStringsFromFile(mPendingExtrasFile.getPath(), mExtrasStringMap);
 
         
-        
-        SharedPreferences.Editor appPrefsEditor = GeckoSharedPrefs.forApp(this).edit();
-        appPrefsEditor.putBoolean(GeckoApp.PREFS_WAS_STOPPED, true);
-        appPrefsEditor.putBoolean(GeckoApp.PREFS_CRASHED, true);
-        appPrefsEditor.apply();
+        try {
+            File crashFlag = new File(GeckoProfileDirectories.getMozillaDirectory(this), "CRASHED");
+            crashFlag.createNewFile();
+        } catch (GeckoProfileDirectories.NoMozillaDirectoryException | IOException e) {
+            Log.e(LOGTAG, "Cannot set crash flag: ", e);
+        }
 
         final CheckBox allowContactCheckBox = (CheckBox) findViewById(R.id.allow_contact);
         final CheckBox includeUrlCheckBox = (CheckBox) findViewById(R.id.include_url);

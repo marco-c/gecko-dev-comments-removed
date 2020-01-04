@@ -6,6 +6,7 @@
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.AppConstants.Versions;
+import org.mozilla.gecko.GeckoProfileDirectories.NoMozillaDirectoryException;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.URLMetadataTable;
 import org.mozilla.gecko.db.UrlAnnotations;
@@ -19,6 +20,7 @@ import org.mozilla.gecko.gfx.PluginLayer;
 import org.mozilla.gecko.health.HealthRecorder;
 import org.mozilla.gecko.health.SessionInformation;
 import org.mozilla.gecko.health.StubbedHealthRecorder;
+import org.mozilla.gecko.home.HomeConfig.PanelType;
 import org.mozilla.gecko.menu.GeckoMenu;
 import org.mozilla.gecko.menu.GeckoMenuInflater;
 import org.mozilla.gecko.menu.MenuPanel;
@@ -153,7 +155,7 @@ public abstract class GeckoApp
     public static final String PREFS_OOM_EXCEPTION         = "OOMException";
     public static final String PREFS_VERSION_CODE          = "versionCode";
     public static final String PREFS_WAS_STOPPED           = "wasStopped";
-    public static final String PREFS_CRASHED               = "crashed";
+    public static final String PREFS_CRASHED_COUNT         = "crashedCount";
     public static final String PREFS_CLEANUP_TEMP_FILES    = "cleanupTempFiles";
 
     public static final String SAVED_STATE_IN_BACKGROUND   = "inBackground";
@@ -192,6 +194,7 @@ public abstract class GeckoApp
 
     private final HashMap<String, PowerManager.WakeLock> mWakeLocks = new HashMap<String, PowerManager.WakeLock>();
 
+    protected boolean mLastSessionCrashed;
     protected boolean mShouldRestore;
     protected boolean mInitialized;
     protected boolean mWindowFocusInitialized;
@@ -478,7 +481,7 @@ public abstract class GeckoApp
             
             
             if (clearObj.has("private.data.history")) {
-                final String sessionRestore = getSessionRestorePreference();
+                final String sessionRestore = getSessionRestorePreference(getSharedPreferences());
                 try {
                     res.put("dontSaveSession", "quit".equals(sessionRestore));
                 } catch (JSONException ex) {
@@ -1257,6 +1260,7 @@ public abstract class GeckoApp
         mTextSelection.create();
 
         
+        mLastSessionCrashed = updateCrashedState();
         mShouldRestore = getSessionRestoreState(savedInstanceState);
         if (mShouldRestore && savedInstanceState != null) {
             boolean wasInBackground =
@@ -1392,10 +1396,16 @@ public abstract class GeckoApp
 
 
 
+
+
     protected void loadStartupTab(final int flags) {
         if (!mShouldRestore) {
-            final String homepage = getHomepage();
-            Tabs.getInstance().loadUrl(!TextUtils.isEmpty(homepage) ? homepage : AboutPages.HOME, flags);
+            if (mLastSessionCrashed) {
+                Tabs.getInstance().loadUrl(AboutPages.getURLForBuiltinPanelType(PanelType.RECENT_TABS), flags);
+            } else {
+                final String homepage = getHomepage();
+                Tabs.getInstance().loadUrl(!TextUtils.isEmpty(homepage) ? homepage : AboutPages.HOME, flags);
+            }
         }
     }
 
@@ -1679,33 +1689,76 @@ public abstract class GeckoApp
 
 
 
+    protected boolean updateCrashedState() {
+        try {
+            File crashFlag = new File(GeckoProfileDirectories.getMozillaDirectory(this), "CRASHED");
+            if (crashFlag.exists() && crashFlag.delete()) {
+                
+                
+                getSharedPreferences().edit().putBoolean(PREFS_WAS_STOPPED, true).apply();
+                return true;
+            }
+        } catch (NoMozillaDirectoryException e) {
+            
+            Log.e(LOGTAG, "Cannot read crash flag: ", e);
+        }
+        return false;
+    }
+
+    
+
+
+
+
 
     protected boolean getSessionRestoreState(Bundle savedInstanceState) {
         final SharedPreferences prefs = getSharedPreferences();
         boolean shouldRestore = false;
 
         final int versionCode = getVersionCode();
-        if (prefs.getInt(PREFS_VERSION_CODE, 0) != versionCode) {
+        if (mLastSessionCrashed) {
+            if (incrementCrashCount(prefs) <= getSessionStoreMaxCrashResumes(prefs) &&
+                    getSessionRestoreAfterCrashPreference(prefs)) {
+                shouldRestore = true;
+            } else {
+                shouldRestore = false;
+            }
+        } else if (prefs.getInt(PREFS_VERSION_CODE, 0) != versionCode) {
             
             
             prefs.edit().putInt(PREFS_VERSION_CODE, versionCode).apply();
             shouldRestore = true;
         } else if (savedInstanceState != null ||
-                   getSessionRestorePreference().equals("always") ||
+                   getSessionRestorePreference(prefs).equals("always") ||
                    getRestartFromIntent()) {
             
             
-            shouldRestore = true;
-        } else if (prefs.getBoolean(GeckoApp.PREFS_CRASHED, false)) {
-            prefs.edit().putBoolean(PREFS_CRASHED, false).apply();
             shouldRestore = true;
         }
 
         return shouldRestore;
     }
 
-    private String getSessionRestorePreference() {
-        return getSharedPreferences().getString(GeckoPreferences.PREFS_RESTORE_SESSION, "always");
+    private int incrementCrashCount(SharedPreferences prefs) {
+        final int crashCount = getSuccessiveCrashesCount(prefs) + 1;
+        prefs.edit().putInt(PREFS_CRASHED_COUNT, crashCount).apply();
+        return crashCount;
+    }
+
+    private int getSuccessiveCrashesCount(SharedPreferences prefs) {
+        return prefs.getInt(PREFS_CRASHED_COUNT, 0);
+    }
+
+    private int getSessionStoreMaxCrashResumes(SharedPreferences prefs) {
+        return prefs.getInt(GeckoPreferences.PREFS_RESTORE_SESSION_MAX_CRASH_RESUMES, 1);
+    }
+
+    private boolean getSessionRestoreAfterCrashPreference(SharedPreferences prefs) {
+        return prefs.getBoolean(GeckoPreferences.PREFS_RESTORE_SESSION_FROM_CRASH, true);
+    }
+
+    private String getSessionRestorePreference(SharedPreferences prefs) {
+        return prefs.getString(GeckoPreferences.PREFS_RESTORE_SESSION, "always");
     }
 
     private boolean getRestartFromIntent() {
@@ -1939,6 +1992,13 @@ public abstract class GeckoApp
                 SharedPreferences prefs = GeckoApp.this.getSharedPreferences();
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putBoolean(GeckoApp.PREFS_WAS_STOPPED, false);
+
+                if (!mLastSessionCrashed) {
+                    
+                    
+                    editor.putInt(GeckoApp.PREFS_CRASHED_COUNT, 0);
+                }
+
                 currentSession.recordBegin(editor);
                 editor.apply();
 
@@ -1989,6 +2049,10 @@ public abstract class GeckoApp
                 if (rec != null) {
                     rec.recordSessionEnd("P", editor);
                 }
+
+                
+                
+                mLastSessionCrashed = false;
 
                 
                 if (prefs.getBoolean(GeckoApp.PREFS_CLEANUP_TEMP_FILES, true)) {
