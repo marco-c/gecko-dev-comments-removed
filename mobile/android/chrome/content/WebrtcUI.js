@@ -202,13 +202,11 @@ var WebrtcUI = {
       }, this);
   },
 
-  _addDevicesToOptions: function(aDevices, aType, aOptions, extraOptions) {
+  _addDevicesToOptions: function(aDevices, aType, aOptions) {
     if (aDevices.length) {
 
       
       let list = this._getList(aDevices, aType);
-      if (extraOptions)
-        list = list.concat(extraOptions);
 
       if (list.length > 0) {
         aOptions.inputs.push({
@@ -281,23 +279,13 @@ var WebrtcUI = {
     let message = Strings.browser.formatStringFromName("getUserMedia.share" + requestType + ".message", [ requestor ], 1);
 
     let options = { inputs: [] };
-    
-    
-    
-    var extraItems = null;
     if (videoDevices.length > 1 || audioDevices.length > 0) {
       
-      if (audioDevices.length > 0)
-        extraItems = [ Strings.browser.GetStringFromName("getUserMedia.videoSource.none") ];
-      
-      this._addDevicesToOptions(videoDevices, "videoSource", options, extraItems);
+      this._addDevicesToOptions(videoDevices, "videoSource", options);
     }
 
     if (audioDevices.length > 1 || videoDevices.length > 0) {
-      
-      if (videoDevices.length > 0)
-        extraItems = [ Strings.browser.GetStringFromName("getUserMedia.audioDevice.none") ];
-      this._addDevicesToOptions(audioDevices, "audioDevice", options, extraItems);
+      this._addDevicesToOptions(audioDevices, "audioDevice", options);
     }
 
     let buttons = this.getDeviceButtons(audioDevices, videoDevices, aCallID, uri);
