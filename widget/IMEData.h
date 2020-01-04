@@ -118,7 +118,6 @@ struct nsIMEUpdatePreference final
 
 
 
-
 namespace mozilla {
 namespace widget {
 
@@ -425,6 +424,7 @@ struct IMENotification final
         mMouseButtonEventData.mButton = -1;
         mMouseButtonEventData.mButtons = 0;
         mMouseButtonEventData.mModifiers = 0;
+        break;
       default:
         break;
     }

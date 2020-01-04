@@ -517,7 +517,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
     ++gMouseOrKeyboardEventCounter;
 
-
     nsCOMPtr<nsINode> node = do_QueryInterface(aTargetContent);
     if (node &&
         (aEvent->mMessage == eKeyUp || aEvent->mMessage == eMouseUp ||
@@ -599,6 +598,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         StopTrackingDragGesture();
         sNormalLMouseEventInProcess = false;
         
+        MOZ_FALLTHROUGH;
       case WidgetMouseEvent::eRightButton:
       case WidgetMouseEvent::eMiddleButton:
         SetClickCount(aPresContext, mouseEvent, aStatus);
@@ -652,6 +652,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       aEvent->mMessage = eVoidEvent;
       break;
     }
+    MOZ_FALLTHROUGH;
   case eMouseMove:
   case ePointerDown:
   case ePointerMove: {
@@ -712,6 +713,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       }
     }
     
+    MOZ_FALLTHROUGH;
   case eBeforeKeyDown:
   case eKeyDown:
   case eAfterKeyDown:
@@ -1199,7 +1201,7 @@ EventStateManager::IsRemoteTarget(nsIContent* target) {
   return false;
 }
 
-bool
+static bool
 CrossProcessSafeEvent(const WidgetEvent& aEvent)
 {
   switch (aEvent.mClass) {
@@ -1235,7 +1237,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
     case eDrop:
       return true;
     default:
-      break;
+      return false;
     }
   default:
     return false;
@@ -1376,7 +1378,6 @@ EventStateManager::CreateClickHoldTimer(nsPresContext* inPresContext,
 
 
 
-
 void
 EventStateManager::KillClickHoldTimer()
 {
@@ -1385,7 +1386,6 @@ EventStateManager::KillClickHoldTimer()
     mClickHoldTimer = nullptr;
   }
 }
-
 
 
 
@@ -1403,7 +1403,6 @@ EventStateManager::sClickHoldCallback(nsITimer* aTimer, void* aESM)
   
 
 } 
-
 
 
 
@@ -1528,7 +1527,6 @@ EventStateManager::FireContextClick()
   KillClickHoldTimer();
 
 } 
-
 
 
 
@@ -3050,6 +3048,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     }
     
     
+    MOZ_FALLTHROUGH;
   }
   case ePointerUp: {
     WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
@@ -4203,8 +4202,8 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
 
       
       sLastRefPoint = aMouseEvent->refPoint;
-
     }
+    MOZ_FALLTHROUGH;
   case ePointerMove:
   case ePointerDown:
     {
@@ -5862,4 +5861,3 @@ AutoHandlingUserInputStatePusher::~AutoHandlingUserInputStatePusher()
 }
 
 } 
-
