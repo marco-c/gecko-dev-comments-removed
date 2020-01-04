@@ -98,7 +98,6 @@ AudioContext::AudioContext(nsPIDOMWindow* aWindow,
   , mSampleRate(GetSampleRateForAudioContext(aIsOffline, aSampleRate))
   , mAudioContextState(AudioContextState::Suspended)
   , mNumberOfChannels(aNumberOfChannels)
-  , mNodeCount(0)
   , mIsOffline(aIsOffline)
   , mIsStarted(!aIsOffline)
   , mIsShutDown(false)
@@ -938,17 +937,27 @@ AudioContext::Close(ErrorResult& aRv)
 }
 
 void
-AudioContext::UpdateNodeCount(int32_t aDelta)
+AudioContext::RegisterNode(AudioNode* aNode)
 {
-  bool firstNode = mNodeCount == 0;
-  mNodeCount += aDelta;
-  MOZ_ASSERT(mNodeCount >= 0);
+  MOZ_ASSERT(!mAllNodes.Contains(aNode));
+  mAllNodes.PutEntry(aNode);
   
   
   
   
-  if (!firstNode && mDestination && !mIsShutDown) {
-    mDestination->SetIsOnlyNodeForContext(mNodeCount == 1);
+  if (mDestination && !mIsShutDown) {
+    mDestination->SetIsOnlyNodeForContext(mAllNodes.Count() == 1);
+  }
+}
+
+void
+AudioContext::UnregisterNode(AudioNode* aNode)
+{
+  MOZ_ASSERT(mAllNodes.Contains(aNode));
+  mAllNodes.RemoveEntry(aNode);
+  
+  if (mDestination) {
+    mDestination->SetIsOnlyNodeForContext(mAllNodes.Count() == 1);
   }
 }
 

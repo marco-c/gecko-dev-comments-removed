@@ -303,7 +303,8 @@ public:
 
   AudioChannel TestAudioChannelInAudioNodeStream();
 
-  void UpdateNodeCount(int32_t aDelta);
+  void RegisterNode(AudioNode* aNode);
+  void UnregisterNode(AudioNode* aNode);
 
   double DOMTimeToStreamTime(double aTime) const
   {
@@ -362,14 +363,14 @@ private:
   
   nsTHashtable<nsRefPtrHashKey<AudioNode> > mActiveNodes;
   
+  nsTHashtable<nsPtrHashKey<AudioNode> > mAllNodes;
+  
   
   nsTHashtable<nsPtrHashKey<PannerNode> > mPannerNodes;
   
   nsRefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
   uint32_t mNumberOfChannels;
-  
-  int32_t mNodeCount;
   bool mIsOffline;
   bool mIsStarted;
   bool mIsShutDown;
