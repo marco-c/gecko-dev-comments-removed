@@ -8116,7 +8116,7 @@
   "VIDEO_INTER_KEYFRAME_MAX_MS" : {
     "alert_emails": ["ajones@mozilla.com", "gsquelart@mozilla.com"],
     "expires_in_version": "55",
-    "description": "Maximum interval between video keyframes in played videos, in milliseconds; '0' means only 1 keyframe found. Keyed by audio presence and by height ranges (boundaries: 240. 480, 576, 720, 1080, 2160), e.g.: 'V,0<h<=240', 'AV,h>2160'; and 'All' will accumulate all percentages. This is reported whenever an HTML Media Element is suspended or resumed, such as when the page is unloaded.",
+    "description": "Maximum interval between video keyframes in played videos, in milliseconds. Keyed by audio presence and by height ranges (boundaries: 240. 480, 576, 720, 1080, 2160), e.g.: 'V,0<h<=240', 'AV,h>2160'; and 'All' will accumulate all percentages. This is reported whenever an HTML Media Element is suspended or resumed, such as when the page is unloaded.",
     "keyed": true,
     "kind": "exponential",
     "high": 60000,
@@ -9861,6 +9861,13 @@
     "bug_numbers": [1284017],
     "description": "When restoring tabs on startup, reading from sessionstore.js failed, even though the file exists and is not containing an explicitly empty window.",
     "cpp_guard": "ANDROID"
+  },
+  "SHARED_WORKER_COUNT": {
+    "alert_emails": ["amarchesini@mozilla.com"],
+    "expires_in_version": "58",
+    "kind": "count",
+    "bug_numbers": [1295980],
+    "description": "Number of the use of SharedWorkers."
   },
   "FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP": {
     "alert_emails": ["jh+bugzilla@buttercookie.de"],
