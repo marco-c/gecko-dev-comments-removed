@@ -927,6 +927,7 @@ ModuleGenerator::finish(ImportVector&& imports, const ShareableBytes& bytecode)
     
     metadata_->memoryUsage = shared_->memoryUsage;
     metadata_->minMemoryLength = shared_->minMemoryLength;
+    metadata_->maxMemoryLength = shared_->maxMemoryLength;
 
     
 #ifdef DEBUG

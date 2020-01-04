@@ -323,55 +323,72 @@ Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
              bytecode_->sizeOfIncludingThisIfNotSeen(mallocSizeOf, seenBytes);
 }
 
+
+
+
 bool
-Module::instantiate(JSContext* cx,
-                    Handle<FunctionVector> funcImports,
-                    HandleArrayBufferObjectMaybeShared asmJSBuffer,
-                    HandleWasmInstanceObject instanceObj) const
+Module::instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) const
 {
-    MOZ_ASSERT(funcImports.length() == metadata_->funcImports.length());
+    if (!metadata_->usesMemory()) {
+        MOZ_ASSERT(!memory);
+        MOZ_ASSERT(dataSegments_.empty());
+        return true;
+    }
 
-    
-    
-    
-
-    RootedWasmMemoryObject memory(cx);
-    uint8_t* memoryBase = nullptr;
-    uint32_t memoryLength = 0;
     RootedArrayBufferObjectMaybeShared buffer(cx);
-    if (metadata_->usesMemory()) {
-        if (metadata_->isAsmJS()) {
-            MOZ_ASSERT(asmJSBuffer);
-            buffer = asmJSBuffer;
-        } else {
-            buffer = ArrayBufferObject::createForWasm(cx, metadata_->minMemoryLength,
-                                                      metadata_->assumptions.usesSignal.forOOB);
-            if (!buffer)
-                return false;
+    if (memory) {
+        buffer = &memory->buffer();
+        uint32_t length = buffer->byteLength();
+        if (length < metadata_->minMemoryLength || length > metadata_->maxMemoryLength) {
+            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_WASM_BAD_MEM_IMP_SIZE);
+            return false;
         }
+
+        
+        if (metadata_->assumptions.usesSignal.forOOB &&
+            !buffer->is<SharedArrayBufferObject>() &&
+            !buffer->as<ArrayBufferObject>().isWasmMapped())
+        {
+            JS_ReportError(cx, "can't access same buffer with and without signals enabled");
+            return false;
+        }
+    } else {
+        buffer = ArrayBufferObject::createForWasm(cx, metadata_->minMemoryLength,
+                                                  metadata_->assumptions.usesSignal.forOOB);
+        if (!buffer)
+            return false;
 
         RootedObject proto(cx);
         if (metadata_->assumptions.newFormat)
             proto = &cx->global()->getPrototype(JSProto_WasmMemory).toObject();
 
-        memory = WasmMemoryObject::create(cx, buffer, proto);
+        memory.set(WasmMemoryObject::create(cx, buffer, proto));
         if (!memory)
             return false;
-
-        memoryBase = buffer->dataPointerEither().unwrap();
-        memoryLength = buffer->byteLength();
-
-        const uint8_t* bytecode = bytecode_->begin();
-        for (const DataSegment& seg : dataSegments_)
-            memcpy(memoryBase + seg.memoryOffset, bytecode + seg.bytecodeOffset, seg.length);
-    } else {
-        MOZ_ASSERT(!asmJSBuffer);
-        MOZ_ASSERT(dataSegments_.empty());
     }
 
-    
+    MOZ_ASSERT(buffer->is<SharedArrayBufferObject>() || buffer->as<ArrayBufferObject>().isWasm());
 
-    auto cs = CodeSegment::create(cx, code_, linkData_, *metadata_, memoryBase, memoryLength);
+    uint8_t* memoryBase = memory->buffer().dataPointerEither().unwrap();
+    for (const DataSegment& seg : dataSegments_)
+        memcpy(memoryBase + seg.memoryOffset, bytecode_->begin() + seg.bytecodeOffset, seg.length);
+
+    return true;
+}
+
+bool
+Module::instantiate(JSContext* cx,
+                    Handle<FunctionVector> funcImports,
+                    HandleWasmMemoryObject memImport,
+                    HandleWasmInstanceObject instanceObj) const
+{
+    MOZ_ASSERT(funcImports.length() == metadata_->funcImports.length());
+
+    RootedWasmMemoryObject memory(cx, memImport);
+    if (!instantiateMemory(cx, &memory))
+        return false;
+
+    auto cs = CodeSegment::create(cx, code_, linkData_, *metadata_, memory);
     if (!cs)
         return false;
 
