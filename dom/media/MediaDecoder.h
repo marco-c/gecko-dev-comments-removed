@@ -542,6 +542,7 @@ protected:
 
   void SetExplicitDuration(double aValue)
   {
+    MOZ_ASSERT(!IsShutdown());
     mExplicitDuration.Set(Some(aValue));
 
     
