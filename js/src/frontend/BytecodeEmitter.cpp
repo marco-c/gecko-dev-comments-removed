@@ -143,25 +143,10 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
     insideEval(insideEval),
     insideNonGlobalEval(insideNonGlobalEval),
     insideModule(false),
-    emitterMode(emitterMode),
-    functionBodyEndPosSet(false)
+    emitterMode(emitterMode)
 {
     MOZ_ASSERT_IF(evalCaller, insideEval);
     MOZ_ASSERT_IF(emitterMode == LazyFunction, lazyScript);
-}
-
-BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
-                                 Parser<FullParseHandler>* parser, SharedContext* sc,
-                                 HandleScript script, Handle<LazyScript*> lazyScript,
-                                 bool insideEval, HandleScript evalCaller,
-                                 bool insideNonGlobalEval, TokenPos bodyPosition,
-                                 EmitterMode emitterMode)
-    : BytecodeEmitter(parent, parser, sc, script, lazyScript, insideEval,
-                      evalCaller, insideNonGlobalEval,
-                      parser->tokenStream.srcCoords.lineNum(bodyPosition.begin),
-                      emitterMode)
-{
-    setFunctionBodyEndPos(bodyPosition);
 }
 
 bool
@@ -2835,8 +2820,13 @@ BytecodeEmitter::emitElemOperands(ParseNode* pn, EmitElemOption opts)
     if (!emitTree(pn->pn_right))
         return false;
 
-    if (opts == EmitElemOption::Set && !emit2(JSOP_PICK, 2))
-        return false;
+    if (opts == EmitElemOption::Set) {
+        if (!emit2(JSOP_PICK, 2))
+            return false;
+    } else if (opts == EmitElemOption::IncDec || opts == EmitElemOption::SelfAssign) {
+        if (!emit1(JSOP_TOID))
+            return false;
+    }
     return true;
 }
 
@@ -2855,8 +2845,10 @@ BytecodeEmitter::emitSuperElemOperands(ParseNode* pn, EmitElemOption opts)
 
     
     
-    if (opts == EmitElemOption::IncDec && !emit1(JSOP_TOID))
-        return false;
+    if (opts == EmitElemOption::IncDec || opts == EmitElemOption::SelfAssign) {
+        if (!emit1(JSOP_TOID))
+            return false;
+    }
 
     if (!emitGetThisForSuperBase(pn->pn_left))
         return false;
@@ -2928,6 +2920,9 @@ BytecodeEmitter::emitElemIncDec(ParseNode* pn)
 
     bool isSuper = pn->pn_kid->as<PropertyByValue>().isSuper();
 
+    
+    
+    
     if (isSuper) {
         if (!emitSuperElemOperands(pn->pn_kid, EmitElemOption::IncDec))
             return false;
@@ -2951,12 +2946,7 @@ BytecodeEmitter::emitElemIncDec(ParseNode* pn)
             return false;
         getOp = JSOP_GETELEM_SUPER;
     } else {
-        
-        
-        
                                                         
-        if (!emit1(JSOP_TOID))                          
-            return false;
         if (!emit1(JSOP_DUP2))                          
             return false;
         getOp = JSOP_GETELEM;
@@ -3613,11 +3603,7 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
         switchToMain();
     }
 
-    setFunctionBodyEndPos(body->pn_pos);
     if (!emitTree(body))
-        return false;
-
-    if (!updateSourceCoordNotes(body->pn_pos.end))
         return false;
 
     if (sc->isFunctionBox()) {
@@ -3719,7 +3705,6 @@ BytecodeEmitter::emitModuleScript(ParseNode* body)
     
     JSScript::linkToModuleFromEmitter(cx, script, modulebox);
 
-    setFunctionBodyEndPos(body->pn_pos);
     if (!emitTree(body))
         return false;
 
@@ -4621,20 +4606,20 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
         if (!makeAtomIndex(lhs->pn_atom, &atomIndex))
             return false;
         break;
-      case PNK_ELEM:
+      case PNK_ELEM: {
         MOZ_ASSERT(lhs->isArity(PN_BINARY));
+        EmitElemOption opt = op == JSOP_NOP ? EmitElemOption::Get : EmitElemOption::SelfAssign;
         if (lhs->as<PropertyByValue>().isSuper()) {
-            if (!emitSuperElemOperands(lhs))
+            if (!emitSuperElemOperands(lhs, opt))
                 return false;
             offset += 3;
         } else {
-            if (!emitTree(lhs->pn_left))
-                return false;
-            if (!emitTree(lhs->pn_right))
+            if (!emitElemOperands(lhs, opt))
                 return false;
             offset += 2;
         }
         break;
+      }
       case PNK_ARRAY:
       case PNK_OBJECT:
         break;
@@ -6446,9 +6431,10 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
             script->bindings = funbox->bindings;
 
+            uint32_t lineNum = parser->tokenStream.srcCoords.lineNum(pn->pn_pos.begin);
             BytecodeEmitter bce2(this, parser, funbox, script,  nullptr,
                                  insideEval, evalCaller,
-                                 insideNonGlobalEval, pn->pn_pos, emitterMode);
+                                 insideNonGlobalEval, lineNum, emitterMode);
             if (!bce2.init())
                 return false;
 
@@ -6818,13 +6804,6 @@ BytecodeEmitter::emitReturn(ParseNode* pn)
         if (!emitFinishIteratorResult(true))
             return false;
     }
-
-    
-    
-    
-    MOZ_ASSERT(functionBodyEndPosSet);
-    if (!updateSourceCoordNotes(functionBodyEndPos))
-        return false;
 
     
 
