@@ -75,6 +75,11 @@ class BasePopup {
     this.browserStyle = browserStyle;
     this.window = viewNode.ownerGlobal;
 
+    this.panel = this.viewNode;
+    while (this.panel.localName != "panel") {
+      this.panel = this.panel.parentNode;
+    }
+
     this.contentReady = new Promise(resolve => {
       this._resolveContentReady = resolve;
     });
@@ -93,6 +98,7 @@ class BasePopup {
       this.browser.removeEventListener("DOMWindowClose", this, true);
       this.browser.removeEventListener("MozScrolledAreaChanged", this, true);
       this.viewNode.removeEventListener(this.DESTROY_EVENT, this);
+      this.viewNode.style.maxHeight = "";
       this.browser.remove();
 
       this.browser = null;
@@ -104,6 +110,10 @@ class BasePopup {
   
   get DESTROY_EVENT() {
     throw new Error("Not implemented");
+  }
+
+  get fixedWidth() {
+    return false;
   }
 
   handleEvent(event) {
@@ -169,11 +179,12 @@ class BasePopup {
     
     
     
-    
+    this.browser.setAttribute("flex", "1");
 
     
     
-    this.browser.setAttribute("flex", "1");
+    
+    
 
     viewNode.appendChild(this.browser);
 
@@ -217,28 +228,76 @@ class BasePopup {
       return;
     }
 
-    let width, height;
-    try {
-      let w = {}, h = {};
-      this.browser.docShell.contentViewer.getContentSize(w, h);
+    if (this.fixedWidth) {
+      
+      
+      
+      
+      
 
-      width = w.value / this.window.devicePixelRatio;
-      height = h.value / this.window.devicePixelRatio;
+      let doc = this.browser.contentDocument;
+      if (!doc || !doc.documentElement) {
+        return;
+      }
+
+      let root = doc.documentElement;
+      let body = doc.body;
+      if (!body || doc.compatMode == "BackCompat") {
+        
+        
+        
+        body = root;
+      }
+
+      
+      
+      let getHeight = elem => elem.getBoundingClientRect(elem).height;
+      let bodyPadding = getHeight(root) - getHeight(body);
+
+      let height = Math.ceil(body.scrollHeight + bodyPadding);
+
+      
+      
+      let side = this.panel.getAttribute("side") == "top" ? "bottom" : "top";
+      let maxHeight = this.viewHeight + this.extraHeight[side];
+
+      height = Math.min(height, maxHeight);
+      this.browser.style.height = `${height}px`;
 
       
       
       
-      width += 1;
-    } catch (e) {
       
-      [width, height] = [400, 400];
+      
+      height = Math.max(height, this.viewHeight);
+      this.viewNode.style.maxHeight = `${height}px`;
+    } else {
+      let width, height;
+      try {
+        let w = {}, h = {};
+        this.browser.docShell.contentViewer.getContentSize(w, h);
+
+        width = w.value / this.window.devicePixelRatio;
+        height = h.value / this.window.devicePixelRatio;
+
+        
+        
+        
+        width += 1;
+      } catch (e) {
+        
+        [width, height] = [400, 400];
+      }
+
+      width = Math.ceil(Math.min(width, 800));
+      height = Math.ceil(Math.min(height, 600));
+
+      this.browser.style.width = `${width}px`;
+      this.browser.style.height = `${height}px`;
     }
 
-    width = Math.ceil(Math.min(width, 800));
-    height = Math.ceil(Math.min(height, 600));
-
-    this.browser.style.width = `${width}px`;
-    this.browser.style.height = `${height}px`;
+    let event = new this.window.CustomEvent("WebExtPopupResized");
+    this.browser.dispatchEvent(event);
 
     this._resolveContentReady();
   }
@@ -283,8 +342,34 @@ global.PanelPopup = class PanelPopup extends BasePopup {
 };
 
 global.ViewPopup = class ViewPopup extends BasePopup {
+  constructor(...args) {
+    super(...args);
+
+    
+    
+    this.viewHeight = this.viewNode.boxObject.height;
+
+    
+    
+    let popupRect = this.panel.getBoundingClientRect();
+
+    let win = this.window;
+    let popupBottom = win.mozInnerScreenY + popupRect.bottom;
+    let popupTop = win.mozInnerScreenY + popupRect.top;
+
+    let screenBottom = win.screen.availTop + win.screen.availHeight;
+    this.extraHeight = {
+      bottom: Math.max(0, screenBottom - popupBottom),
+      top:  Math.max(0, popupTop - win.screen.availTop),
+    };
+  }
+
   get DESTROY_EVENT() {
     return "ViewHiding";
+  }
+
+  get fixedWidth() {
+    return !this.viewNode.classList.contains("cui-widget-panelview");
   }
 
   closePopup() {
