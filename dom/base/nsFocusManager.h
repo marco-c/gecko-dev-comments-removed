@@ -241,7 +241,8 @@ protected:
   bool Blur(nsPIDOMWindowOuter* aWindowToClear,
             nsPIDOMWindowOuter* aAncestorWindowToFocus,
             bool aIsLeavingDocument,
-            bool aAdjustWidget);
+            bool aAdjustWidget,
+            nsIContent* aContentToFocus = nullptr);
 
   
 
@@ -275,7 +276,8 @@ protected:
              bool aIsNewDocument,
              bool aFocusChanged,
              bool aWindowRaised,
-             bool aAdjustWidget);
+             bool aAdjustWidget,
+             nsIContent* aContentLostFocus = nullptr);
 
   
 
@@ -291,7 +293,8 @@ protected:
                             nsISupports* aTarget,
                             uint32_t aFocusMethod,
                             bool aWindowRaised,
-                            bool aIsRefocus = false);
+                            bool aIsRefocus = false,
+                            mozilla::dom::EventTarget* aRelatedTarget = nullptr);
 
   
 
