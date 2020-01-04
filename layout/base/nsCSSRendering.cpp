@@ -2746,15 +2746,15 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
 
     
     if (lineStart.x != lineEnd.x) {
-      rectLen = srcSize.width;
+      rectLen = aPresContext->CSSPixelsToDevPixels(aSrc.width);
       offset = ((double)aSrc.x - lineStart.x) / lineLength;
       lineStart.x = aSrc.x;
-      lineEnd.x = aSrc.x + srcSize.width;
+      lineEnd.x = aSrc.x + rectLen;
     } else {
-      rectLen = srcSize.height;
+      rectLen = aPresContext->CSSPixelsToDevPixels(aSrc.height);
       offset = ((double)aSrc.y - lineStart.y) / lineLength;
       lineStart.y = aSrc.y;
-      lineEnd.y = aSrc.y + srcSize.height;
+      lineEnd.y = aSrc.y + rectLen;
     }
 
     
