@@ -59,7 +59,6 @@ import zipfile
 import pylru
 import taskcluster
 
-import buildconfig
 from mozbuild.util import (
     ensureParentDir,
     FileAvoidWrite,
@@ -378,7 +377,7 @@ class WinArtifactJob(ArtifactJob):
 
 JOB_DETAILS = {
     
-    'android-api-15': (AndroidArtifactJob, ('public/build/fennec-(.*)\.android-arm\.apk',
+    'android-api-11': (AndroidArtifactJob, ('public/build/fennec-(.*)\.android-arm\.apk',
                                             None)),
     'android-x86': (AndroidArtifactJob, ('public/build/fennec-(.*)\.android-i386\.apk',
                                          None)),
@@ -637,9 +636,9 @@ class ArtifactCache(CacheManager):
 class Artifacts(object):
     '''Maintain state to efficiently fetch build artifacts from a Firefox tree.'''
 
-    def __init__(self, tree, job=None, log=None, cache_dir='.', hg='hg'):
+    def __init__(self, tree, job, log=None, cache_dir='.', hg='hg'):
         self._tree = tree
-        self._job = job or self._guess_artifact_job()
+        self._job = job
         self._log = log
         self._hg = hg
         self._cache_dir = cache_dir
@@ -667,26 +666,6 @@ class Artifacts(object):
     def log(self, *args, **kwargs):
         if self._log:
             self._log(*args, **kwargs)
-
-    def _guess_artifact_job(self):
-        if buildconfig.substs.get('MOZ_BUILD_APP', '') == 'mobile/android':
-            if buildconfig.substs['ANDROID_CPU_ARCH'] == 'x86':
-                return 'android-x86'
-            return 'android-api-15'
-
-        target_64bit = False
-        if buildconfig.substs['target_cpu'] == 'x86_64':
-            target_64bit = True
-
-        if buildconfig.defines.get('XP_LINUX', False):
-            return 'linux64' if target_64bit else 'linux'
-        if buildconfig.defines.get('XP_WIN', False):
-            return 'win64' if target_64bit else 'win32'
-        if buildconfig.defines.get('XP_MACOSX', False):
-            
-            
-            return 'macosx64'
-        raise Exception('Cannot determine default job for |mach artifact|!')
 
     def _find_pushheads(self, parent):
         
@@ -750,7 +729,7 @@ class Artifacts(object):
                 return urls
         return None
 
-    def install_from_file(self, filename, distdir, install_callback=None):
+    def install_from_file(self, filename, distdir):
         self.log(logging.INFO, 'artifact',
             {'filename': filename},
             'Installing from {filename}')
@@ -790,19 +769,17 @@ class Artifacts(object):
                     perms = info.external_attr >> 16 
                     perms |= stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH 
                     os.chmod(n, perms)
-                if install_callback:
-                    install_callback(info.filename, file_existed, file_updated)
         return 0
 
-    def install_from_url(self, url, distdir, install_callback=None):
+    def install_from_url(self, url, distdir):
         self.log(logging.INFO, 'artifact',
             {'url': url},
             'Installing from {url}')
         with self._artifact_cache as artifact_cache:  
             filename = artifact_cache.fetch(url)
-        return self.install_from_file(filename, distdir, install_callback=install_callback)
+        return self.install_from_file(filename, distdir)
 
-    def install_from_hg(self, revset, distdir, install_callback=None):
+    def install_from_hg(self, revset, distdir):
         if not revset:
             revset = '.'
         rev_pushheads = self._find_pushheads(revset)
@@ -818,7 +795,7 @@ class Artifacts(object):
                                                     self._job, rev, trees)
                 if urls:
                     for url in urls:
-                        if self.install_from_url(url, distdir, install_callback=install_callback):
+                        if self.install_from_url(url, distdir):
                             return 1
                     return 0
         self.log(logging.ERROR, 'artifact',
@@ -826,21 +803,15 @@ class Artifacts(object):
                  'No built artifacts for {revset} found.')
         return 1
 
-    def install_from(self, source, distdir, install_callback=None):
+    def install_from(self, source, distdir):
         """Install artifacts from a ``source`` into the given ``distdir``.
-
-        If ``callback`` is given, it is called once with arguments ``(path,
-        existed, updated)``, where ``path`` is the file path written relative
-        to ``distdir``; ``existed`` is a boolean indicating whether the file
-        existed; and ``updated`` is a boolean indicating whether the file was
-        updated.
         """
         if source and os.path.isfile(source):
-            return self.install_from_file(source, distdir, install_callback=install_callback)
+            return self.install_from_file(source, distdir)
         elif source and urlparse.urlparse(source).scheme:
-            return self.install_from_url(source, distdir, install_callback=install_callback)
+            return self.install_from_url(source, distdir)
         else:
-            return self.install_from_hg(source, distdir, install_callback=install_callback)
+            return self.install_from_hg(source, distdir)
 
     def print_last(self):
         self.log(logging.INFO, 'artifact',
