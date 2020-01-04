@@ -512,6 +512,11 @@ public:
   
   
   
+  bool mIsScrollParent:1;
+
+  
+  
+  
   
   bool mIsScrollableLayerInRootContainer:1;
 
