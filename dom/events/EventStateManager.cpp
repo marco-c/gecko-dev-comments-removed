@@ -3567,7 +3567,7 @@ EventStateManager::UpdateCursor(nsPresContext* aPresContext,
       hotspotY = framecursor.mHotspotY;
   }
 
-  if (Preferences::GetBool("ui.use_activity_cursor", false)) {
+  if (nsContentUtils::UseActivityCursor()) {
     
     nsCOMPtr<nsIDocShell> docShell(aPresContext->GetDocShell());
     if (!docShell) return;

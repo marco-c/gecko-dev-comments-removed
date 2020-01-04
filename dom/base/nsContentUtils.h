@@ -2065,6 +2065,14 @@ public:
   
 
 
+  static bool UseActivityCursor()
+  {
+    return sUseActivityCursor;
+  }
+
+  
+
+
   static bool IsControlledByServiceWorker(nsIDocument* aDocument);
 
   
@@ -2781,6 +2789,7 @@ private:
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
   static bool sAppendLFInSerialization;
+  static bool sUseActivityCursor;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 
