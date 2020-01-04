@@ -424,6 +424,11 @@ DocAccessible::Shutdown()
     logging::DocDestroy("document shutdown", mDocumentNode, this);
 #endif
 
+  
+  
+  
+  mStateFlags |= eIsDefunct;
+
   if (mNotificationController) {
     mNotificationController->Shutdown();
     mNotificationController = nullptr;
@@ -431,10 +436,6 @@ DocAccessible::Shutdown()
 
   RemoveEventListeners();
 
-  
-  
-  
-  mStateFlags |= eIsDefunct;
   nsCOMPtr<nsIDocument> kungFuDeathGripDoc = mDocumentNode;
   mDocumentNode = nullptr;
 

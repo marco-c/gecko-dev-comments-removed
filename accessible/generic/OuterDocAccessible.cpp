@@ -84,12 +84,6 @@ OuterDocAccessible::ChildAtPoint(int32_t aX, int32_t aY,
 void
 OuterDocAccessible::Shutdown()
 {
-  
-  
-  
-  
-  
-
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eDocDestroy))
     logging::OuterDocDestroy(this);
@@ -104,7 +98,15 @@ OuterDocAccessible::Shutdown()
     }
 #endif
     RemoveChild(child);
-    mDoc->BindChildDocument(child->AsDoc());
+
+    
+    
+    
+    
+    
+    if (!mDoc->IsDefunct()) {
+      mDoc->BindChildDocument(child->AsDoc());
+    }
   }
 
   AccessibleWrap::Shutdown();
