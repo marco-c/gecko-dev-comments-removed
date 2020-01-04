@@ -275,14 +275,13 @@ InternalRequest::MapChannelToRequestMode(nsIChannel* aChannel)
   nsCOMPtr<nsILoadInfo> loadInfo;
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(aChannel->GetLoadInfo(getter_AddRefs(loadInfo))));
 
-  
-  
-  
-  
-  
   nsContentPolicyType contentPolicy = loadInfo->InternalContentPolicyType();
-  if (IsNavigationContentPolicy(contentPolicy) ||
-      IsWorkerContentPolicy(contentPolicy)) {
+  if (IsNavigationContentPolicy(contentPolicy)) {
+    return RequestMode::Navigate;
+  }
+
+  
+  if (IsWorkerContentPolicy(contentPolicy)) {
     return RequestMode::Same_origin;
   }
 
@@ -319,6 +318,7 @@ InternalRequest::MapChannelToRequestMode(nsIChannel* aChannel)
 
   uint32_t corsMode;
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(httpChannel->GetCorsMode(&corsMode)));
+  MOZ_ASSERT(corsMode != nsIHttpChannelInternal::CORS_MODE_NAVIGATE);
 
   
   return static_cast<RequestMode>(corsMode);
