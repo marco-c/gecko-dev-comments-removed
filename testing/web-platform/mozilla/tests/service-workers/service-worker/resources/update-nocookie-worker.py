@@ -10,6 +10,5 @@ def main(request, response):
 
     headers.append(('Content-Type', content_type))
     
-    
-    return headers, '// %s' % (time.clock())
+    return headers, '// %s' % (time.time())
 
