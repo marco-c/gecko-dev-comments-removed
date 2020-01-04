@@ -12,6 +12,14 @@ import android.net.Uri;
 public class ReaderModeUtils {
     private static final String LOGTAG = "ReaderModeUtils";
 
+    
+
+
+
+
+
+
+
     public static String getUrlFromAboutReader(String aboutReaderUrl) {
         return StringUtils.getQueryParameter(aboutReaderUrl, "url");
     }
