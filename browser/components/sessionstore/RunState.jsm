@@ -6,10 +6,6 @@
 
 this.EXPORTED_SYMBOLS = ["RunState"];
 
-const Cu = Components.utils;
-
-Cu.import("resource://gre/modules/Services.jsm", this);
-
 const STATE_STOPPED = 0;
 const STATE_RUNNING = 1;
 const STATE_QUITTING = 2;
