@@ -79,7 +79,6 @@ function testSet() {
 
 function testFilename() {
   var f = new FormData();
-  
   f.append("blob", new Blob(["hi"]));
   ok(f.get("blob") instanceof Blob, "We should have a blob back.");
 
@@ -163,7 +162,7 @@ function testSend(doneCb) {
     }
 
     is(response[0].headers['Content-Disposition'],
-        'form-data; name="empty"; filename="blob"');
+        'form-data; name="empty"; filename=""');
 
     is(response[1].headers['Content-Disposition'],
         'form-data; name="explicit"; filename="explicit-file-name"');
