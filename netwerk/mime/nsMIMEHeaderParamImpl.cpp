@@ -1238,13 +1238,14 @@ nsresult DecodeRFC2047Str(const char *aHeader, const char *aDefaultCharset,
     if (q[1] != '?')
       goto badsyntax;
 
-    r = q;
-    for (r = q + 2; *r != '?'; r++) {
+    
+    
+    
+    
+    for (r = q + 2; *r != '?' || r[1] != '='; r++) {
       if (*r < ' ') goto badsyntax;
     }
-    if (r[1] != '=')
-        goto badsyntax;
-    else if (r == q + 2) {
+    if (r == q + 2) {
         
         begin = r + 2;
         isLastEncodedWord = 1;
