@@ -41,6 +41,7 @@
 #define BASE_METRICS_HISTOGRAM_H_
 #pragma once
 
+#include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
 
 #include <map>
@@ -406,6 +407,12 @@ class Histogram {
   void Subtract(int value);
 
   
+  
+  
+  void SetRecordingEnabled(bool aEnabled) { recording_enabled_ = aEnabled; };
+  bool IsRecordingEnabled() const { return recording_enabled_; };
+
+  
   virtual void AddBoolean(bool value);
 
   
@@ -588,6 +595,9 @@ class Histogram {
   
   
   uint32_t range_checksum_;
+
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> recording_enabled_;
 
   DISALLOW_COPY_AND_ASSIGN(Histogram);
 };
