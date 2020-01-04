@@ -3216,8 +3216,16 @@ var SessionStoreInternal = {
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
 
-    this._maybeUpdateBrowserRemoteness(Object.assign({
-      browser, tabbrowser, tabData }, options));
+    let willRestoreImmediately = restoreImmediately ||
+                                   tabbrowser.selectedBrowser == browser ||
+                                   loadArguments;
+
+    if (!willRestoreImmediately && !forceOnDemand) {
+      TabRestoreQueue.add(tab);
+    }
+
+    this._maybeUpdateBrowserRemoteness({ tabbrowser, tab,
+                                         willRestoreImmediately });
 
     
     this._setWindowStateBusy(window);
@@ -3327,10 +3335,9 @@ var SessionStoreInternal = {
 
     
     
-    if (restoreImmediately || tabbrowser.selectedBrowser == browser || loadArguments) {
+    if (willRestoreImmediately) {
       this.restoreTabContent(tab, loadArguments);
     } else if (!forceOnDemand) {
-      TabRestoreQueue.add(tab);
       this.restoreNextTab();
     }
 
@@ -3628,29 +3635,31 @@ var SessionStoreInternal = {
 
 
 
+  _maybeUpdateBrowserRemoteness({ tabbrowser, tab,
+                                  willRestoreImmediately }) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let browser = tab.linkedBrowser;
 
+    
+    
+    
+    
+    
+    
+    let willRestore = willRestoreImmediately ||
+                      TabRestoreQueue.willRestoreSoon(tab);
 
-
-
-
-
-
-  _maybeUpdateBrowserRemoteness({ browser, tabbrowser, tabData,
-                                  restoreImmediately, forceOnDemand }) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (browser.isRemoteBrowser &&
-        !tabData.pinned &&
-        (!restoreImmediately || forceOnDemand)) {
+    if (browser.isRemoteBrowser && !willRestore) {
       tabbrowser.updateBrowserRemoteness(browser, false);
     }
   },
@@ -4427,7 +4436,36 @@ var TabRestoreQueue = {
       visible.splice(index, 1);
       hidden.push(tab);
     }
-  }
+  },
+
+  
+
+
+
+
+
+
+
+  willRestoreSoon: function (tab) {
+    let { priority, hidden, visible } = this.tabs;
+    let { restoreOnDemand, restorePinnedTabsOnDemand,
+          restoreHiddenTabs } = this.prefs;
+    let restorePinned = !(restoreOnDemand && restorePinnedTabsOnDemand);
+    let candidateSet = [];
+
+    if (restorePinned && priority.length)
+      candidateSet.push(...priority);
+
+    if (!restoreOnDemand) {
+      if (visible.length)
+        candidateSet.push(...visible);
+
+      if (restoreHiddenTabs && hidden.length)
+        candidateSet.push(...hidden);
+    }
+
+    return candidateSet.indexOf(tab) > -1;
+  },
 };
 
 
