@@ -344,13 +344,13 @@ MInstruction::clearResumePoint()
     resumePoint_ = nullptr;
 }
 
-static bool
-MaybeEmulatesUndefined(CompilerConstraintList* constraints, MDefinition* op)
+bool
+MDefinition::maybeEmulatesUndefined(CompilerConstraintList* constraints)
 {
-    if (!op->mightBeType(MIRType_Object))
+    if (!mightBeType(MIRType_Object))
         return false;
 
-    TemporaryTypeSet* types = op->resultTypeSet();
+    TemporaryTypeSet* types = resultTypeSet();
     if (!types)
         return true;
 
@@ -381,8 +381,8 @@ MTest::cacheOperandMightEmulateUndefined(CompilerConstraintList* constraints)
 {
     MOZ_ASSERT(operandMightEmulateUndefined());
 
-    if (!MaybeEmulatesUndefined(constraints, getOperand(0)))
-        markOperandCantEmulateUndefined();
+    if (!getOperand(0)->maybeEmulatesUndefined(constraints))
+        markNoOperandEmulatesUndefined();
 }
 
 MDefinition*
@@ -2702,66 +2702,6 @@ SafelyCoercesToDouble(MDefinition* op)
     return SimpleArithOperand(op) && !op->mightBeType(MIRType_Null);
 }
 
-static bool
-ObjectOrSimplePrimitive(MDefinition* op)
-{
-    
-    return !op->mightBeType(MIRType_String)
-        && !op->mightBeType(MIRType_Symbol)
-        && !op->mightBeType(MIRType_Double)
-        && !op->mightBeType(MIRType_Float32)
-        && !op->mightBeType(MIRType_MagicOptimizedArguments)
-        && !op->mightBeType(MIRType_MagicHole)
-        && !op->mightBeType(MIRType_MagicIsConstructing);
-}
-
-static bool
-CanDoValueBitwiseCmp(CompilerConstraintList* constraints,
-                     MDefinition* lhs, MDefinition* rhs, bool looseEq)
-{
-    
-    
-    if (!ObjectOrSimplePrimitive(lhs) || !ObjectOrSimplePrimitive(rhs))
-        return false;
-
-    
-    if (MaybeEmulatesUndefined(constraints, lhs) || MaybeEmulatesUndefined(constraints, rhs))
-        return false;
-
-    
-    
-    if (looseEq) {
-
-        
-        
-        if ((lhs->mightBeType(MIRType_Undefined) && rhs->mightBeType(MIRType_Null)) ||
-            (lhs->mightBeType(MIRType_Null) && rhs->mightBeType(MIRType_Undefined)))
-        {
-            return false;
-        }
-
-        
-        
-        if ((lhs->mightBeType(MIRType_Int32) && rhs->mightBeType(MIRType_Boolean)) ||
-            (lhs->mightBeType(MIRType_Boolean) && rhs->mightBeType(MIRType_Int32)))
-        {
-            return false;
-        }
-
-        
-        
-        bool simpleLHS = lhs->mightBeType(MIRType_Boolean) || lhs->mightBeType(MIRType_Int32);
-        bool simpleRHS = rhs->mightBeType(MIRType_Boolean) || rhs->mightBeType(MIRType_Int32);
-        if ((lhs->mightBeType(MIRType_Object) && simpleRHS) ||
-            (rhs->mightBeType(MIRType_Object) && simpleLHS))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 MIRType
 MCompare::inputType()
 {
@@ -2810,6 +2750,8 @@ MustBeUInt32(MDefinition* def, MDefinition** pwrapped)
     }
 
     if (def->isConstantValue()) {
+        if (def->isBox())
+            def = def->toBox()->getOperand(0);
         *pwrapped = def;
         return def->constantValue().isInt32()
             && def->constantValue().toInt32() >= 0;
@@ -2818,57 +2760,62 @@ MustBeUInt32(MDefinition* def, MDefinition** pwrapped)
     return false;
 }
 
-bool
-MBinaryInstruction::tryUseUnsignedOperands()
+ bool
+MBinaryInstruction::unsignedOperands(MDefinition* left, MDefinition* right)
 {
-    MDefinition* newlhs;
-    MDefinition* newrhs;
-    if (MustBeUInt32(getOperand(0), &newlhs) && MustBeUInt32(getOperand(1), &newrhs)) {
-        if (newlhs->type() != MIRType_Int32 || newrhs->type() != MIRType_Int32)
-            return false;
-        if (newlhs != getOperand(0)) {
-            getOperand(0)->setImplicitlyUsedUnchecked();
-            replaceOperand(0, newlhs);
-        }
-        if (newrhs != getOperand(1)) {
-            getOperand(1)->setImplicitlyUsedUnchecked();
-            replaceOperand(1, newrhs);
-        }
-        return true;
-    }
-    return false;
+    MDefinition* replace;
+    if (!MustBeUInt32(left, &replace))
+        return false;
+    if (replace->type() != MIRType_Int32)
+        return false;
+    if (!MustBeUInt32(right, &replace))
+        return false;
+    if (replace->type() != MIRType_Int32)
+        return false;
+    return true;
+}
+
+bool
+MBinaryInstruction::unsignedOperands()
+{
+    return unsignedOperands(getOperand(0), getOperand(1));
 }
 
 void
-MCompare::infer(CompilerConstraintList* constraints, BaselineInspector* inspector, jsbytecode* pc)
+MBinaryInstruction::replaceWithUnsignedOperands()
 {
-    MOZ_ASSERT(operandMightEmulateUndefined());
+    MOZ_ASSERT(unsignedOperands());
 
-    if (!MaybeEmulatesUndefined(constraints, getOperand(0)) &&
-        !MaybeEmulatesUndefined(constraints, getOperand(1)))
-    {
-        markNoOperandEmulatesUndefined();
+    for (size_t i = 0; i < numOperands(); i++) {
+        MDefinition* replace;
+        MustBeUInt32(getOperand(i), &replace);
+        if (replace == getOperand(i))
+            continue;
+
+        getOperand(i)->setImplicitlyUsedUnchecked();
+        replaceOperand(i, replace);
     }
+}
 
-    MIRType lhs = getOperand(0)->type();
-    MIRType rhs = getOperand(1)->type();
+MCompare::CompareType
+MCompare::determineCompareType(JSOp op, MDefinition* left, MDefinition* right)
+{
+    MIRType lhs = left->type();
+    MIRType rhs = right->type();
 
-    bool looseEq = jsop() == JSOP_EQ || jsop() == JSOP_NE;
-    bool strictEq = jsop() == JSOP_STRICTEQ || jsop() == JSOP_STRICTNE;
+    bool looseEq = op == JSOP_EQ || op == JSOP_NE;
+    bool strictEq = op == JSOP_STRICTEQ || op == JSOP_STRICTNE;
     bool relationalEq = !(looseEq || strictEq);
 
     
-    if (tryUseUnsignedOperands()) {
-        compareType_ = Compare_UInt32;
-        return;
-    }
+    if (unsignedOperands(left, right))
+        return Compare_UInt32;
 
     
     if ((lhs == MIRType_Int32 && rhs == MIRType_Int32) ||
         (lhs == MIRType_Boolean && rhs == MIRType_Boolean))
     {
-        compareType_ = Compare_Int32MaybeCoerceBoth;
-        return;
+        return Compare_Int32MaybeCoerceBoth;
     }
 
     
@@ -2876,95 +2823,60 @@ MCompare::infer(CompilerConstraintList* constraints, BaselineInspector* inspecto
         (lhs == MIRType_Int32 || lhs == MIRType_Boolean) &&
         (rhs == MIRType_Int32 || rhs == MIRType_Boolean))
     {
-        compareType_ = Compare_Int32MaybeCoerceBoth;
-        return;
+        return Compare_Int32MaybeCoerceBoth;
     }
 
     
-    if (IsNumberType(lhs) && IsNumberType(rhs)) {
-        compareType_ = Compare_Double;
-        return;
-    }
+    if (IsNumberType(lhs) && IsNumberType(rhs))
+        return Compare_Double;
 
     
-    if (!strictEq && IsFloatingPointType(lhs) && SafelyCoercesToDouble(getOperand(1))) {
-        compareType_ = Compare_DoubleMaybeCoerceRHS;
-        return;
-    }
-    if (!strictEq && IsFloatingPointType(rhs) && SafelyCoercesToDouble(getOperand(0))) {
-        compareType_ = Compare_DoubleMaybeCoerceLHS;
-        return;
-    }
+    if (!strictEq && IsFloatingPointType(rhs) && SafelyCoercesToDouble(left))
+        return Compare_DoubleMaybeCoerceLHS;
+    if (!strictEq && IsFloatingPointType(lhs) && SafelyCoercesToDouble(right))
+        return Compare_DoubleMaybeCoerceRHS;
 
     
-    if (!relationalEq && lhs == MIRType_Object && rhs == MIRType_Object) {
-        compareType_ = Compare_Object;
-        return;
-    }
+    if (!relationalEq && lhs == MIRType_Object && rhs == MIRType_Object)
+        return Compare_Object;
 
     
-    if (!relationalEq && lhs == MIRType_String && rhs == MIRType_String) {
-        compareType_ = Compare_String;
-        return;
-    }
-
-    if (strictEq && lhs == MIRType_String) {
-        
-        compareType_ = Compare_StrictString;
-        swapOperands();
-        return;
-    }
-
-    if (strictEq && rhs == MIRType_String) {
-        compareType_ = Compare_StrictString;
-        return;
-    }
+    if (!relationalEq && lhs == MIRType_String && rhs == MIRType_String)
+        return Compare_String;
 
     
-    if (!relationalEq && IsNullOrUndefined(lhs)) {
-        
-        
-        
-        
-        compareType_ = (lhs == MIRType_Null) ? Compare_Null : Compare_Undefined;
-        swapOperands();
-        return;
-    }
+    if (strictEq && lhs == MIRType_String)
+        return Compare_StrictString;
+    if (strictEq && rhs == MIRType_String)
+        return Compare_StrictString;
 
     
-    if (!relationalEq && IsNullOrUndefined(rhs)) {
-        compareType_ = (rhs == MIRType_Null) ? Compare_Null : Compare_Undefined;
-        return;
-    }
+    if (!relationalEq && IsNullOrUndefined(lhs))
+        return (lhs == MIRType_Null) ? Compare_Null : Compare_Undefined;
+    if (!relationalEq && IsNullOrUndefined(rhs))
+        return (rhs == MIRType_Null) ? Compare_Null : Compare_Undefined;
 
     
     if (strictEq && (lhs == MIRType_Boolean || rhs == MIRType_Boolean)) {
         
         MOZ_ASSERT(!(lhs == MIRType_Boolean && rhs == MIRType_Boolean));
-
-        
-        
-        if (lhs == MIRType_Boolean)
-             swapOperands();
-
-        compareType_ = Compare_Boolean;
-        return;
+        return Compare_Boolean;
     }
 
-    
-    if (!relationalEq && CanDoValueBitwiseCmp(constraints, getOperand(0), getOperand(1), looseEq)) {
-        compareType_ = Compare_Value;
+    return Compare_Unknown;
+}
+
+void
+MCompare::cacheOperandMightEmulateUndefined(CompilerConstraintList* constraints)
+{
+    MOZ_ASSERT(operandMightEmulateUndefined());
+
+    if (getOperand(0)->maybeEmulatesUndefined(constraints))
         return;
-    }
+    if (getOperand(1)->maybeEmulatesUndefined(constraints))
+        return;
 
-    
-    
-    
-    
-    
-
-    if (!strictEq)
-        compareType_ = inspector->expectedCompareType(pc);
+    markNoOperandEmulatesUndefined();
 }
 
 MBitNot*
@@ -3053,7 +2965,7 @@ MTypeOf::cacheInputMaybeCallableOrEmulatesUndefined(CompilerConstraintList* cons
 {
     MOZ_ASSERT(inputMaybeCallableOrEmulatesUndefined());
 
-    if (!MaybeEmulatesUndefined(constraints, input()) && !MaybeCallable(constraints, input()))
+    if (!input()->maybeEmulatesUndefined(constraints) && !MaybeCallable(constraints, input()))
         markInputNotCallableOrEmulatesUndefined();
 }
 
@@ -3874,8 +3786,8 @@ MNot::cacheOperandMightEmulateUndefined(CompilerConstraintList* constraints)
 {
     MOZ_ASSERT(operandMightEmulateUndefined());
 
-    if (!MaybeEmulatesUndefined(constraints, getOperand(0)))
-        markOperandCantEmulateUndefined();
+    if (!getOperand(0)->maybeEmulatesUndefined(constraints))
+        markNoOperandEmulatesUndefined();
 }
 
 MDefinition*
