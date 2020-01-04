@@ -2715,7 +2715,10 @@ pref("font.size.fixed.zh-TW", 16);
 
 
 
+pref("font.default.x-math", "serif");
 pref("font.minimum-size.x-math", 0);
+pref("font.size.variable.x-math", 16);
+pref("font.size.fixed.x-math", 13);
 
 
 
