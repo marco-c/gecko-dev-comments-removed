@@ -995,11 +995,9 @@ class MediaInputPort final
 private:
   
   MediaInputPort(MediaStream* aSource, ProcessedMediaStream* aDest,
-                 uint32_t aFlags, uint16_t aInputNumber,
-                 uint16_t aOutputNumber)
+                 uint16_t aInputNumber, uint16_t aOutputNumber)
     : mSource(aSource)
     , mDest(aDest)
-    , mFlags(aFlags)
     , mInputNumber(aInputNumber)
     , mOutputNumber(aOutputNumber)
     , mGraph(nullptr)
@@ -1015,20 +1013,6 @@ private:
 
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaInputPort)
-
-  
-
-
-
-
-  enum {
-    
-    
-    FLAG_BLOCK_INPUT = 0x01,
-    
-    
-    FLAG_BLOCK_OUTPUT = 0x02
-  };
 
   
   
@@ -1093,7 +1077,6 @@ private:
   
   MediaStream* mSource;
   ProcessedMediaStream* mDest;
-  uint32_t mFlags;
   
   
   const uint16_t mInputNumber;
