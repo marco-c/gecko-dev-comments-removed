@@ -52,20 +52,6 @@ public:
 
   virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
 
-  
-
-
-
-
-  bool IsIgnored();
-
-  
-
-
-
-  void GetUnignoredChildren(nsTArray<Accessible*>* aChildrenArray);
-  Accessible* GetUnignoredParent() const;
-
 protected:
 
   
