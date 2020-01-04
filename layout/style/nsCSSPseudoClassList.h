@@ -171,10 +171,6 @@ CSS_STATE_PSEUDO_CLASS(fullscreen, ":fullscreen",
 CSS_STATE_PSEUDO_CLASS(mozFullScreen, ":-moz-full-screen", 0, "", NS_EVENT_STATE_FULL_SCREEN)
 
 
-
-CSS_STATE_PSEUDO_CLASS(mozFullScreenAncestor, ":-moz-full-screen-ancestor", 0, "", NS_EVENT_STATE_FULL_SCREEN_ANCESTOR)
-
-
 CSS_STATE_PSEUDO_CLASS(mozFocusRing, ":-moz-focusring", 0, "", NS_EVENT_STATE_FOCUSRING)
 
 
