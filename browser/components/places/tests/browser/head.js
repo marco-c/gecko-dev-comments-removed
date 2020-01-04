@@ -352,6 +352,8 @@ var withBookmarksDialog = Task.async(function* (autoCancel, openFn, taskFn) {
 
 
 
+
+
 var openContextMenuForContentSelector = Task.async(function* (browser, selector) {
   info("wait for the context menu");
   let contextPromise = BrowserTestUtils.waitForEvent(document.getElementById("contentAreaContextMenu"),
@@ -372,8 +374,6 @@ var openContextMenuForContentSelector = Task.async(function* (browser, selector)
                                   1, 0, false, 0, 0, true);
   });
   yield contextPromise;
-
-  return gContextMenuContentData.popupNode;
 });
 
 
