@@ -24180,10 +24180,6 @@ NormalJSContext::Init()
   }
 
   
-  
-  NS_GetCurrentThread()->SetCanInvokeJS(true);
-
-  
   JS_SetNativeStackQuota(mContext, 128 * sizeof(size_t) * 1024);
 
   if (NS_WARN_IF(!JS::InitSelfHostedCode(mContext))) {

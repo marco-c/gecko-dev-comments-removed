@@ -25,10 +25,6 @@
 
 
 
-#ifdef MOZ_STACKWALKING
-#include "mozilla/StackWalk_windows.h"
-#endif
-
 #include "mozilla/WindowsVersion.h"
 
 #include "jsfriendapi.h"
@@ -169,37 +165,14 @@ RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
     if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect))
         return false;
 
-    
-    
-#ifdef MOZ_STACKWALKING
-    AcquireStackWalkWorkaroundLock();
-#endif
-
-    bool success = RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
-
-#ifdef MOZ_STACKWALKING
-    ReleaseStackWalkWorkaroundLock();
-#endif
-
-    return success;
+    return RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
 }
 
 static void
 UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
 {
     ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
-
-    
-    
-#ifdef MOZ_STACKWALKING
-    AcquireStackWalkWorkaroundLock();
-#endif
-
     RtlDeleteFunctionTable(&r->runtimeFunction);
-
-#ifdef MOZ_STACKWALKING
-    ReleaseStackWalkWorkaroundLock();
-#endif
 }
 #endif
 
