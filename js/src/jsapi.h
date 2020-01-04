@@ -5065,6 +5065,12 @@ JS_SetDefaultLocale(JSContext* cx, const char* locale);
 
 
 
+extern JS_PUBLIC_API(JS::UniqueChars)
+JS_GetDefaultLocale(JSContext* cx);
+
+
+
+
 extern JS_PUBLIC_API(void)
 JS_ResetDefaultLocale(JSContext* cx);
 
