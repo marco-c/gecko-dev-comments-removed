@@ -66,6 +66,7 @@ private:
  MOZ_THREAD_LOCAL(bool)
 FlushRejections::sDispatched;
 
+#ifndef SPIDERMONKEY_PROMISE
 static Promise*
 UnwrapPromise(JS::Handle<JSObject*> aPromise, ErrorResult& aRv)
 {
@@ -103,6 +104,8 @@ PromiseDebugging::GetState(GlobalObject&, JS::Handle<JSObject*> aPromise,
   }
 }
 
+#endif 
+
  nsString
 PromiseDebugging::sIDPrefix;
 
@@ -130,9 +133,14 @@ PromiseDebugging::Shutdown()
  void
 PromiseDebugging::FlushUncaughtRejections()
 {
+  
+#ifndef SPIDERMONKEY_PROMISE
   MOZ_ASSERT(!NS_IsMainThread());
   FlushRejections::FlushSync();
+#endif 
 }
+
+#ifndef SPIDERMONKEY_PROMISE
 
  void
 PromiseDebugging::GetAllocationStack(GlobalObject&, JS::Handle<JSObject*> aPromise,
@@ -210,6 +218,8 @@ PromiseDebugging::GetTimeToSettle(GlobalObject&, JS::Handle<JSObject*> aPromise,
           promise->mCreationTimestamp).ToMilliseconds();
 }
 
+#endif 
+
  void
 PromiseDebugging::AddUncaughtRejectionObserver(GlobalObject&,
                                                UncaughtRejectionObserver& aObserver)
@@ -234,6 +244,8 @@ PromiseDebugging::RemoveUncaughtRejectionObserver(GlobalObject&,
   }
   return false;
 }
+
+#ifndef SPIDERMONKEY_PROMISE
 
  void
 PromiseDebugging::AddUncaughtRejection(Promise& aPromise)
@@ -263,10 +275,13 @@ PromiseDebugging::GetPromiseID(GlobalObject&,
   aID = sIDPrefix;
   aID.AppendInt(promiseID);
 }
+#endif 
 
  void
 PromiseDebugging::FlushUncaughtRejectionsInternal()
 {
+  
+#ifndef SPIDERMONKEY_PROMISE
   CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
 
   
@@ -327,6 +342,7 @@ PromiseDebugging::FlushUncaughtRejectionsInternal()
       obs->OnConsumed(*promise, err); 
     }
   }
+#endif 
 }
 
 } 

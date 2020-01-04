@@ -32,6 +32,7 @@ public:
   static void Init();
   static void Shutdown();
 
+#ifndef SPIDERMONKEY_PROMISE
   static void GetState(GlobalObject&, JS::Handle<JSObject*> aPromise,
                        PromiseDebuggingStateHolder& aState,
                        ErrorResult& aRv);
@@ -58,18 +59,23 @@ public:
 
   static void GetPromiseID(GlobalObject&, JS::Handle<JSObject*>, nsString&,
                            ErrorResult&);
+#endif 
 
+  
   
   static void AddUncaughtRejectionObserver(GlobalObject&,
                                            UncaughtRejectionObserver& aObserver);
   static bool RemoveUncaughtRejectionObserver(GlobalObject&,
                                               UncaughtRejectionObserver& aObserver);
 
+#ifndef SPIDERMONKEY_PROMISE
   
   static void AddUncaughtRejection(Promise&);
   
   
   static void AddConsumedRejection(Promise&);
+#endif 
+  
   
   
   static void FlushUncaughtRejections();
