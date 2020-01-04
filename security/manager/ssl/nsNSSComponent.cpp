@@ -8,54 +8,48 @@
 
 #include "ExtendedValidation.h"
 #include "NSSCertDBTrustDomain.h"
-#include "mozilla/Telemetry.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsCertVerificationThread.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsComponentManagerUtils.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsICertOverrideService.h"
-#include "NSSCertDBTrustDomain.h"
-#include "nsThreadUtils.h"
+#include "SharedSSLState.h"
 #include "mozilla/Preferences.h"
-#include "nsThreadUtils.h"
 #include "mozilla/PublicSSL.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/Telemetry.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsCRT.h"
+#include "nsCertVerificationThread.h"
+#include "nsClientAuthRemember.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIBufEntropyCollector.h"
+#include "nsICertOverrideService.h"
+#include "nsIFile.h"
+#include "nsIObserverService.h"
+#include "nsIPrompt.h"
+#include "nsIProperties.h"
+#include "nsISiteSecurityService.h"
+#include "nsITokenPasswordDialogs.h"
+#include "nsIWindowWatcher.h"
+#include "nsNSSHelper.h"
+#include "nsNSSShutDown.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
+#include "nss.h"
+#include "p12plcy.h"
+#include "pkix/pkixnss.h"
+#include "secerr.h"
+#include "secmod.h"
+#include "ssl.h"
+#include "sslerr.h"
+#include "sslproto.h"
 
 #ifndef MOZ_NO_SMART_CARDS
 #include "nsSmartCardMonitor.h"
 #endif
 
-#include "nsCRT.h"
-#include "nsNTLMAuthModule.h"
-#include "nsIFile.h"
-#include "nsIProperties.h"
-#include "nsIWindowWatcher.h"
-#include "nsIPrompt.h"
-#include "nsIBufEntropyCollector.h"
-#include "nsITokenPasswordDialogs.h"
-#include "nsISiteSecurityService.h"
-#include "nsServiceManagerUtils.h"
-#include "nsNSSShutDown.h"
-#include "SharedSSLState.h"
-#include "NSSErrorsService.h"
-
-#include "nss.h"
-#include "pkix/pkixnss.h"
-#include "ssl.h"
-#include "sslproto.h"
-#include "secmod.h"
-#include "secerr.h"
-#include "sslerr.h"
-
-#include "nsXULAppAPI.h"
-
 #ifdef XP_WIN
 #include "nsILocalFileWin.h"
 #endif
-
-#include "p12plcy.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;
@@ -63,8 +57,6 @@ using namespace mozilla::psm;
 PRLogModuleInfo* gPIPNSSLog = nullptr;
 
 int nsNSSComponent::mInstanceCount = 0;
-
-bool nsPSMInitPanic::isPanic = false;
 
 
 
@@ -104,9 +96,6 @@ bool EnsureNSSInitializedChromeOrContent()
 
 bool EnsureNSSInitialized(EnsureNSSOperator op)
 {
-  if (nsPSMInitPanic::GetPanic())
-    return false;
-
   if (GeckoProcessType_Default != XRE_GetProcessType())
   {
     if (op == nssEnsureOnChromeOnly)
@@ -234,7 +223,6 @@ nsNSSComponent::nsNSSComponent()
   if (!gPIPNSSLog)
     gPIPNSSLog = PR_NewLogModule("pipnss");
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ctor\n"));
-  mObserversRegistered = false;
 
   NS_ASSERTION( (0 == mInstanceCount), "nsNSSComponent is a singleton, but instantiated multiple times!");
   ++mInstanceCount;
@@ -328,26 +316,6 @@ nsNSSComponent::GetPIPNSSBundleString(const char* name, nsAString& outString)
     }
   }
 
-  return rv;
-}
-
-NS_IMETHODIMP
-nsNSSComponent::NSSBundleFormatStringFromName(const char* name,
-                                              const char16_t** params,
-                                              uint32_t numParams,
-                                              nsAString& outString)
-{
-  nsresult rv = NS_ERROR_FAILURE;
-
-  if (mNSSErrorsBundle && name) {
-    nsXPIDLString result;
-    rv = mNSSErrorsBundle->FormatStringFromName(NS_ConvertASCIItoUTF16(name).get(),
-                                                params, numParams,
-                                                getter_Copies(result));
-    if (NS_SUCCEEDED(rv)) {
-      outString = result;
-    }
-  }
   return rv;
 }
 
@@ -1016,7 +984,6 @@ nsNSSComponent::InitializeNSS()
   nsAutoCString profileStr;
   nsresult rv = GetNSSProfilePath(profileStr);
   if (NS_FAILED(rv)) {
-    nsPSMInitPanic::SetPanic();
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1043,7 +1010,6 @@ nsNSSComponent::InitializeNSS()
   }
   if (init_rv != SECSuccess) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("could not initialize NSS - panicking\n"));
-    nsPSMInitPanic::SetPanic();
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1061,7 +1027,6 @@ nsNSSComponent::InitializeNSS()
 
   rv = setEnabledTLSVersions();
   if (NS_FAILED(rv)) {
-    nsPSMInitPanic::SetPanic();
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1166,7 +1131,7 @@ nsNSSComponent::ShutdownNSS()
   }
 }
 
-NS_IMETHODIMP
+nsresult
 nsNSSComponent::Init()
 {
   
@@ -1201,54 +1166,42 @@ nsNSSComponent::Init()
                                         getter_Copies(result));
   }
 
-  
-  RegisterObservers();
 
   rv = InitializeNSS();
   if (NS_FAILED(rv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("Unable to Initialize NSS.\n"));
-
-    DeregisterObservers();
-    mPIPNSSBundle = nullptr;
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error,
+            ("nsNSSComponent::InitializeNSS() failed\n"));
     return rv;
   }
 
   RememberCertErrorsTable::Init();
 
   createBackgroundThreads();
-  if (!mCertVerificationThread)
-  {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS init, could not create threads\n"));
-
-    DeregisterObservers();
-    mPIPNSSBundle = nullptr;
+  if (!mCertVerificationThread) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("nsNSSComponent::createBackgroundThreads() failed\n"));
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  nsCOMPtr<nsIEntropyCollector> ec
-      = do_GetService(NS_ENTROPYCOLLECTOR_CONTRACTID);
-
-  nsCOMPtr<nsIBufEntropyCollector> bec;
-
-  if (ec) {
-    bec = do_QueryInterface(ec);
+  nsCOMPtr<nsIEntropyCollector> ec(
+    do_GetService(NS_ENTROPYCOLLECTOR_CONTRACTID));
+  if (!ec) {
+    return NS_ERROR_FAILURE;
   }
-
-  NS_ASSERTION(bec, "No buffering entropy collector.  "
-                    "This means no entropy will be collected.");
-  if (bec) {
-    bec->ForwardTo(this);
+  nsCOMPtr<nsIBufEntropyCollector> bec(do_QueryInterface(ec));
+  if (!bec) {
+    return NS_ERROR_FAILURE;
   }
+  bec->ForwardTo(this);
 
-  return rv;
+  return RegisterObservers();
 }
 
 
 NS_IMPL_ISUPPORTS(nsNSSComponent,
                   nsIEntropyCollector,
                   nsINSSComponent,
-                  nsIObserver,
-                  nsISupportsWeakReference)
+                  nsIObserver)
 
 NS_IMETHODIMP
 nsNSSComponent::RandomUpdate(void* entropy, int32_t bufLen)
@@ -1454,48 +1407,24 @@ nsNSSComponent::RegisterObservers()
 {
   
 
-  nsCOMPtr<nsIObserverService> observerService(do_GetService("@mozilla.org/observer-service;1"));
-  NS_ASSERTION(observerService, "could not get observer service");
-  if (observerService) {
-    mObserversRegistered = true;
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent: adding observers\n"));
-
-    
-    
-    
-
-    
-    
-
-    observerService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
-
-    observerService->AddObserver(this, PROFILE_BEFORE_CHANGE_TOPIC, false);
-    observerService->AddObserver(this, PROFILE_DO_CHANGE_TOPIC, false);
-    observerService->AddObserver(this, PROFILE_CHANGE_NET_TEARDOWN_TOPIC, false);
-    observerService->AddObserver(this, PROFILE_CHANGE_NET_RESTORE_TOPIC, false);
+  nsCOMPtr<nsIObserverService> observerService(
+    do_GetService("@mozilla.org/observer-service;1"));
+  if (!observerService) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("nsNSSComponent: couldn't get observer service\n"));
+    return NS_ERROR_FAILURE;
   }
-  return NS_OK;
-}
 
-nsresult
-nsNSSComponent::DeregisterObservers()
-{
-  if (!mObserversRegistered)
-    return NS_OK;
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent: adding observers\n"));
+  
+  
+  
+  observerService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
+  observerService->AddObserver(this, PROFILE_BEFORE_CHANGE_TOPIC, false);
+  observerService->AddObserver(this, PROFILE_DO_CHANGE_TOPIC, false);
+  observerService->AddObserver(this, PROFILE_CHANGE_NET_TEARDOWN_TOPIC, false);
+  observerService->AddObserver(this, PROFILE_CHANGE_NET_RESTORE_TOPIC, false);
 
-  nsCOMPtr<nsIObserverService> observerService(do_GetService("@mozilla.org/observer-service;1"));
-  NS_ASSERTION(observerService, "could not get observer service");
-  if (observerService) {
-    mObserversRegistered = false;
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent: removing observers\n"));
-
-    observerService->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
-
-    observerService->RemoveObserver(this, PROFILE_BEFORE_CHANGE_TOPIC);
-    observerService->RemoveObserver(this, PROFILE_DO_CHANGE_TOPIC);
-    observerService->RemoveObserver(this, PROFILE_CHANGE_NET_TEARDOWN_TOPIC);
-    observerService->RemoveObserver(this, PROFILE_CHANGE_NET_RESTORE_TOPIC);
-  }
   return NS_OK;
 }
 
