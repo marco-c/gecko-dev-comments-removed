@@ -343,9 +343,17 @@ this.XPCOMUtils = {
   
 
 
+  get categoryManager() {
+    return Components.classes["@mozilla.org/categorymanager;1"]
+           .getService(Ci.nsICategoryManager);
+  },
+
+  
 
 
-  IterSimpleEnumerator: function* XPCU_IterSimpleEnumerator(e, i)
+
+
+  IterSimpleEnumerator: function XPCU_IterSimpleEnumerator(e, i)
   {
     while (e.hasMoreElements())
       yield e.getNext().QueryInterface(i);
@@ -356,22 +364,10 @@ this.XPCOMUtils = {
 
 
 
-  IterStringEnumerator: function* XPCU_IterStringEnumerator(e)
+  IterStringEnumerator: function XPCU_IterStringEnumerator(e)
   {
     while (e.hasMore())
       yield e.getNext();
-  },
-
-  
-
-
-
-  enumerateCategoryEntries: function* XPCOMUtils_enumerateCategoryEntries(aCategory)
-  {
-    let category = this.categoryManager.enumerateCategory(aCategory);
-    for (let entry of this.IterSimpleEnumerator(category, Ci.nsISupportsCString)) {
-      yield [entry.data, this.categoryManager.getCategoryEntry(aCategory, entry.data)];
-    }
   },
 
   
@@ -447,10 +443,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-
-XPCOMUtils.defineLazyServiceGetter(XPCOMUtils, "categoryManager",
-                                   "@mozilla.org/categorymanager;1",
-                                   "nsICategoryManager");
 
 
 
