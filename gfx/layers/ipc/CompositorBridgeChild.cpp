@@ -11,7 +11,6 @@
 #include "ClientLayerManager.h"         
 #include "base/message_loop.h"          
 #include "base/task.h"                  
-#include "gfxPrefs.h"
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/layers/TextureClient.h"
@@ -40,7 +39,6 @@
 using mozilla::layers::LayerTransactionChild;
 using mozilla::dom::TabChildBase;
 using mozilla::Unused;
-using mozilla::gfx::GPUProcessManager;
 
 namespace mozilla {
 namespace layers {
