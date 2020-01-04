@@ -849,6 +849,13 @@ or run without that action (ie: --no-{action})"
         
         env['MOZ_BUILD_DATE'] = self.query_buildid()
 
+        
+        
+        
+        repo_path = self._query_repo()
+        assert repo_path
+        env['MOZ_SOURCE_REPO'] = repo_path
+
         if self.query_is_nightly() or self.query_is_nightly_promotion():
             if self.query_is_nightly():
                 
