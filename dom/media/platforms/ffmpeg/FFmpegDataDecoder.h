@@ -59,6 +59,7 @@ protected:
   
   
   Atomic<bool> mIsFlushing;
+  AVCodecParserContext* mCodecParser;
 
 private:
   static bool sFFmpegInitDone;
