@@ -415,25 +415,25 @@ public:
       }
     }
 
-    uint8_t* GetData() const
+    uint8_t* GetData()
     {
       MOZ_ASSERT(mIsMapped);
       return mMap.mData;
     }
 
-    int32_t GetStride() const
+    int32_t GetStride()
     {
       MOZ_ASSERT(mIsMapped);
       return mMap.mStride;
     }
 
-    const MappedSurface* GetMappedSurface() const
+    MappedSurface* GetMappedSurface()
     {
       MOZ_ASSERT(mIsMapped);
       return &mMap;
     }
 
-    bool IsMapped() const { return mIsMapped; }
+    bool IsMapped() { return mIsMapped; }
 
   private:
     RefPtr<DataSourceSurface> mSurface;
@@ -527,7 +527,7 @@ class Path : public RefCounted<Path>
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(Path)
   virtual ~Path();
-
+  
   virtual BackendType GetBackendType() const = 0;
 
   
@@ -863,7 +863,7 @@ public:
                       const Pattern &aPattern,
                       const StrokeOptions &aStrokeOptions = StrokeOptions(),
                       const DrawOptions &aOptions = DrawOptions()) = 0;
-
+  
   
 
 
@@ -1170,7 +1170,7 @@ public:
 
   static already_AddRefed<DrawTarget>
     CreateRecordingDrawTarget(DrawEventRecorder *aRecorder, DrawTarget *aDT);
-
+     
   static already_AddRefed<DrawTarget>
     CreateDrawTargetForData(BackendType aBackend, unsigned char* aData, const IntSize &aSize, int32_t aStride, SurfaceFormat aFormat);
 

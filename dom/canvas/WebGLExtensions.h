@@ -38,7 +38,7 @@ public:
     explicit WebGLExtensionBase(WebGLContext* webgl);
 
     WebGLContext* GetParentObject() const {
-        return mContext;
+        return Context();
     }
 
     void MarkLost();
@@ -219,8 +219,6 @@ public:
     explicit WebGLExtensionTextureFloat(WebGLContext*);
     virtual ~WebGLExtensionTextureFloat();
 
-    static bool IsSupported(const WebGLContext*);
-
     DECL_WEBGL_EXTENSION_GOOP
 };
 
@@ -242,8 +240,6 @@ public:
 
     explicit WebGLExtensionTextureHalfFloat(WebGLContext*);
     virtual ~WebGLExtensionTextureHalfFloat();
-
-    static bool IsSupported(const WebGLContext*);
 
     DECL_WEBGL_EXTENSION_GOOP
 };
@@ -292,6 +288,14 @@ public:
     void DrawBuffersWEBGL(const dom::Sequence<GLenum>& buffers);
 
     static bool IsSupported(const WebGLContext*);
+
+    static const size_t kMinColorAttachments = 4;
+    static const size_t kMinDrawBuffers = 4;
+    
+
+
+
+
 
     DECL_WEBGL_EXTENSION_GOOP
 };

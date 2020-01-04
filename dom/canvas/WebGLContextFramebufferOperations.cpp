@@ -137,80 +137,71 @@ WebGLContext::DepthMask(WebGLboolean b)
 void
 WebGLContext::DrawBuffers(const dom::Sequence<GLenum>& buffers)
 {
-    const char funcName[] = "drawBuffers";
     if (IsContextLost())
         return;
 
+    const size_t buffersLength = buffers.Length();
+
+    if (!buffersLength) {
+        return ErrorInvalidValue("drawBuffers: invalid <buffers> (buffers must not be empty)");
+    }
+
     if (!mBoundDrawFramebuffer) {
         
+
         
-        
-        
-        
-        if (buffers.Length() != 1) {
-            ErrorInvalidOperation("%s: For the default framebuffer, `buffers` must have a"
-                                  " length of 1.",
-                                  funcName);
-            return;
+
+
+
+
+
+
+
+        if (buffersLength != 1) {
+            return ErrorInvalidValue("drawBuffers: invalid <buffers> (main framebuffer: buffers.length must be 1)");
         }
 
-        switch (buffers[0]) {
-        case LOCAL_GL_NONE:
-        case LOCAL_GL_BACK:
-            break;
-
-        default:
-            ErrorInvalidOperation("%s: For the default framebuffer, `buffers[0]` must be"
-                                  " BACK or NONE.",
-                                  funcName);
+        if (buffers[0] == LOCAL_GL_NONE || buffers[0] == LOCAL_GL_BACK) {
+            gl->Screen()->SetDrawBuffer(buffers[0]);
             return;
         }
-
-        mDefaultFB_DrawBuffer0 = buffers[0];
-        gl->Screen()->SetDrawBuffer(buffers[0]);
-        return;
+        return ErrorInvalidOperation("drawBuffers: invalid operation (main framebuffer: buffers[0] must be GL_NONE or GL_BACK)");
     }
 
     
 
-    if (buffers.Length() > mImplMaxDrawBuffers) {
+    if (buffersLength > size_t(mGLMaxDrawBuffers)) {
         
-        ErrorInvalidValue("%s: `buffers` must have a length <= MAX_DRAW_BUFFERS.",
-                          funcName);
-        return;
+
+
+
+
+
+
+        return ErrorInvalidValue("drawBuffers: invalid <buffers> (buffers.length > GL_MAX_DRAW_BUFFERS)");
     }
 
-    for (size_t i = 0; i < buffers.Length(); i++) {
-        
-        
-        
+    for (uint32_t i = 0; i < buffersLength; i++)
+    {
         
 
+
+
+
+
+
         
-        
-        
-        
-        
+
+
         if (buffers[i] != LOCAL_GL_NONE &&
-            buffers[i] != LOCAL_GL_COLOR_ATTACHMENT0 + i)
-        {
-            ErrorInvalidOperation("%s: `buffers[i]` must be NONE or COLOR_ATTACHMENTi.",
-                                  funcName);
-            return;
+            buffers[i] != GLenum(LOCAL_GL_COLOR_ATTACHMENT0 + i)) {
+            return ErrorInvalidOperation("drawBuffers: invalid operation (buffers[i] must be GL_NONE or GL_COLOR_ATTACHMENTi)");
         }
     }
 
     MakeContextCurrent();
 
-    const GLenum* ptr = nullptr;
-    if (buffers.Length()) {
-        ptr = buffers.Elements();
-    }
-
-    gl->fDrawBuffers(buffers.Length(), ptr);
-
-    const auto end = ptr + buffers.Length();
-    mBoundDrawFramebuffer->mDrawBuffers.assign(ptr, end);
+    gl->fDrawBuffers(buffersLength, buffers.Elements());
 }
 
 void

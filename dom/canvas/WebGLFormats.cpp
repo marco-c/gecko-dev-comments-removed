@@ -5,19 +5,43 @@
 
 #include "WebGLFormats.h"
 
-#include "gfxPrefs.h"
 #include "GLDefs.h"
 #include "mozilla/StaticMutex.h"
-
-#ifdef FOO
-#error FOO is already defined! We use FOO() macros to keep things succinct in this file.
-#endif
 
 namespace mozilla {
 namespace webgl {
 
+
+
+std::map<EffectiveFormat, const CompressedFormatInfo> gCompressedFormatInfoMap;
+std::map<EffectiveFormat, const FormatInfo> gFormatInfoMap;
+std::map<UnpackTuple, const FormatInfo*> gUnpackTupleMap;
+std::map<GLenum, const FormatInfo*> gSizedFormatMap;
+
+static const CompressedFormatInfo*
+GetCompressedFormatInfo(EffectiveFormat format)
+{
+    MOZ_ASSERT(!gCompressedFormatInfoMap.empty());
+    auto itr = gCompressedFormatInfoMap.find(format);
+    if (itr == gCompressedFormatInfoMap.end())
+        return nullptr;
+
+    return &(itr->second);
+}
+
+static const FormatInfo*
+GetFormatInfo_NoLock(EffectiveFormat format)
+{
+    MOZ_ASSERT(!gFormatInfoMap.empty());
+    auto itr = gFormatInfoMap.find(format);
+    if (itr == gFormatInfoMap.end())
+        return nullptr;
+
+    return &(itr->second);
+}
+
 template<typename K, typename V, typename K2, typename V2>
-static inline void
+static void
 AlwaysInsert(std::map<K,V>& dest, const K2& key, const V2& val)
 {
     auto res = dest.insert({ key, val });
@@ -25,53 +49,12 @@ AlwaysInsert(std::map<K,V>& dest, const K2& key, const V2& val)
     MOZ_ALWAYS_TRUE(didInsert);
 }
 
-template<typename K, typename V, typename K2>
-static inline V*
-FindOrNull(const std::map<K,V*>& dest, const K2& key)
-{
-    auto itr = dest.find(key);
-    if (itr == dest.end())
-        return nullptr;
-
-    return itr->second;
-}
-
-
-template<typename K, typename V, typename K2>
-static inline V*
-FindPtrOrNull(const std::map<K,V>& dest, const K2& key)
-{
-    auto itr = dest.find(key);
-    if (itr == dest.end())
-        return nullptr;
-
-    return &(itr->second);
-}
-
-
-
-std::map<EffectiveFormat, const CompressedFormatInfo> gCompressedFormatInfoMap;
-std::map<EffectiveFormat, const FormatInfo> gFormatInfoMap;
-
-static inline const CompressedFormatInfo*
-GetCompressedFormatInfo(EffectiveFormat format)
-{
-    MOZ_ASSERT(!gCompressedFormatInfoMap.empty());
-    return FindPtrOrNull(gCompressedFormatInfoMap, format);
-}
-
-static inline const FormatInfo*
-GetFormatInfo_NoLock(EffectiveFormat format)
-{
-    MOZ_ASSERT(!gFormatInfoMap.empty());
-    return FindPtrOrNull(gFormatInfoMap, format);
-}
-
 
 
 static void
 AddCompressedFormatInfo(EffectiveFormat format, uint16_t bitsPerBlock, uint8_t blockWidth,
-                        uint8_t blockHeight, CompressionFamily family)
+                        uint8_t blockHeight, bool requirePOT,
+                        SubImageUpdateBehavior subImageUpdateBehavior)
 {
     MOZ_ASSERT(bitsPerBlock % 8 == 0);
     uint16_t bytesPerBlock = bitsPerBlock / 8; 
@@ -80,7 +63,7 @@ AddCompressedFormatInfo(EffectiveFormat format, uint16_t bitsPerBlock, uint8_t b
     MOZ_ASSERT(bytesPerBlock <= 255);
 
     const CompressedFormatInfo info = { format, uint8_t(bytesPerBlock), blockWidth,
-                                        blockHeight, family };
+                                        blockHeight, requirePOT, subImageUpdateBehavior };
     AlwaysInsert(gCompressedFormatInfoMap, format, info);
 }
 
@@ -89,46 +72,45 @@ InitCompressedFormatInfo()
 {
     
     
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB8_ETC2                     ,  64, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_ETC2                    ,  64, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA8_ETC2_EAC                , 128, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC         , 128, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_R11_EAC                       ,  64, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RG11_EAC                      , 128, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SIGNED_R11_EAC                ,  64, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SIGNED_RG11_EAC               , 128, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 ,  64, 4, 4, CompressionFamily::ES3);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2,  64, 4, 4, CompressionFamily::ES3);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB8_ETC2                     ,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_ETC2                    ,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA8_ETC2_EAC                , 128, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC         , 128, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_R11_EAC                       ,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RG11_EAC                      , 128, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SIGNED_R11_EAC                ,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SIGNED_RG11_EAC               , 128, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 ,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
 
     
-    AddCompressedFormatInfo(EffectiveFormat::ATC_RGB_AMD                    ,  64, 4, 4, CompressionFamily::ATC);
-    AddCompressedFormatInfo(EffectiveFormat::ATC_RGBA_EXPLICIT_ALPHA_AMD    , 128, 4, 4, CompressionFamily::ATC);
-    AddCompressedFormatInfo(EffectiveFormat::ATC_RGBA_INTERPOLATED_ALPHA_AMD, 128, 4, 4, CompressionFamily::ATC);
+    AddCompressedFormatInfo(EffectiveFormat::ATC_RGB_AMD                    ,  64, 4, 4, false, SubImageUpdateBehavior::Forbidden);
+    AddCompressedFormatInfo(EffectiveFormat::ATC_RGBA_EXPLICIT_ALPHA_AMD    , 128, 4, 4, false, SubImageUpdateBehavior::Forbidden);
+    AddCompressedFormatInfo(EffectiveFormat::ATC_RGBA_INTERPOLATED_ALPHA_AMD, 128, 4, 4, false, SubImageUpdateBehavior::Forbidden);
 
     
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_S3TC_DXT1_EXT ,  64, 4, 4, CompressionFamily::S3TC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_S3TC_DXT1_EXT,  64, 4, 4, CompressionFamily::S3TC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_S3TC_DXT3_EXT, 128, 4, 4, CompressionFamily::S3TC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_S3TC_DXT5_EXT, 128, 4, 4, CompressionFamily::S3TC);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_S3TC_DXT1 ,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_S3TC_DXT1,  64, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_S3TC_DXT3, 128, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_S3TC_DXT5, 128, 4, 4, false, SubImageUpdateBehavior::BlockAligned);
 
     
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_PVRTC_4BPPV1 , 256,  8, 8, CompressionFamily::PVRTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_PVRTC_4BPPV1, 256,  8, 8, CompressionFamily::PVRTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_PVRTC_2BPPV1 , 256, 16, 8, CompressionFamily::PVRTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_PVRTC_2BPPV1, 256, 16, 8, CompressionFamily::PVRTC);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_PVRTC_4BPPV1 , 256,  8, 8, true, SubImageUpdateBehavior::FullOnly);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_PVRTC_4BPPV1, 256,  8, 8, true, SubImageUpdateBehavior::FullOnly);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_PVRTC_2BPPV1 , 256, 16, 8, true, SubImageUpdateBehavior::FullOnly);
+    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_PVRTC_2BPPV1, 256, 16, 8, true, SubImageUpdateBehavior::FullOnly);
 
     
-    AddCompressedFormatInfo(EffectiveFormat::ETC1_RGB8_OES, 64, 4, 4, CompressionFamily::ETC1);
+    AddCompressedFormatInfo(EffectiveFormat::ETC1_RGB8, 64, 4, 4, false, SubImageUpdateBehavior::Forbidden);
 }
 
 
 
 static void
-AddFormatInfo(EffectiveFormat format, const char* name, GLenum sizedFormat,
-              uint8_t bytesPerPixel, UnsizedFormat unsizedFormat, bool isSRGB,
-              ComponentType componentType)
+AddFormatInfo(EffectiveFormat format, const char* name, uint8_t bytesPerPixel,
+              UnsizedFormat unsizedFormat, ComponentType colorComponentType)
 {
-    bool isColorFormat = false;
+    bool hasColor = false;
     bool hasAlpha = false;
     bool hasDepth = false;
     bool hasStencil = false;
@@ -138,29 +120,26 @@ AddFormatInfo(EffectiveFormat format, const char* name, GLenum sizedFormat,
     case UnsizedFormat::R:
     case UnsizedFormat::RG:
     case UnsizedFormat::RGB:
-        isColorFormat = true;
+        hasColor = true;
         break;
-
-    case UnsizedFormat::A: 
-    case UnsizedFormat::LA:
-    case UnsizedFormat::RGBA:
-        isColorFormat = true;
+    case UnsizedFormat::A:
         hasAlpha = true;
         break;
-
+    case UnsizedFormat::LA:
+    case UnsizedFormat::RGBA:
+        hasColor = true;
+        hasAlpha = true;
+        break;
     case UnsizedFormat::D:
         hasDepth = true;
         break;
-
     case UnsizedFormat::S:
         hasStencil = true;
         break;
-
     case UnsizedFormat::DS:
         hasDepth = true;
         hasStencil = true;
         break;
-
     default:
         MOZ_CRASH("Missing UnsizedFormat case.");
     }
@@ -168,137 +147,280 @@ AddFormatInfo(EffectiveFormat format, const char* name, GLenum sizedFormat,
     const CompressedFormatInfo* compressedFormatInfo = GetCompressedFormatInfo(format);
     MOZ_ASSERT(!bytesPerPixel == bool(compressedFormatInfo));
 
-    const FormatInfo info = { format, name, sizedFormat, unsizedFormat, componentType,
-                              bytesPerPixel, isColorFormat, isSRGB, hasAlpha, hasDepth,
-                              hasStencil, compressedFormatInfo };
+    const FormatInfo info = { format, name, unsizedFormat, colorComponentType,
+                              bytesPerPixel, hasColor, hasAlpha, hasDepth, hasStencil,
+                              compressedFormatInfo };
     AlwaysInsert(gFormatInfoMap, format, info);
 }
 
 static void
-InitFormatInfo()
+InitFormatInfoMap()
 {
-#define FOO(x) EffectiveFormat::x, #x, LOCAL_GL_ ## x
+#ifdef FOO
+#error FOO is already defined!
+#endif
+
+#define FOO(x) EffectiveFormat::x, #x
 
     
-    AddFormatInfo(FOO(R8            ),  1, UnsizedFormat::R   , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(R8_SNORM      ),  1, UnsizedFormat::R   , false, ComponentType::NormInt );
-    AddFormatInfo(FOO(RG8           ),  2, UnsizedFormat::RG  , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RG8_SNORM     ),  2, UnsizedFormat::RG  , false, ComponentType::NormInt );
-    AddFormatInfo(FOO(RGB8          ),  3, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RGB8_SNORM    ),  3, UnsizedFormat::RGB , false, ComponentType::NormInt );
-    AddFormatInfo(FOO(RGB565        ),  2, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RGBA4         ),  2, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RGB5_A1       ),  2, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RGBA8         ),  4, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RGBA8_SNORM   ),  4, UnsizedFormat::RGBA, false, ComponentType::NormInt );
-    AddFormatInfo(FOO(RGB10_A2      ),  4, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(RGB10_A2UI    ),  4, UnsizedFormat::RGBA, false, ComponentType::UInt    );
+    AddFormatInfo(FOO(R8            ),  1, UnsizedFormat::R   , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(R8_SNORM      ),  1, UnsizedFormat::R   , ComponentType::NormInt     );
+    AddFormatInfo(FOO(RG8           ),  2, UnsizedFormat::RG  , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RG8_SNORM     ),  2, UnsizedFormat::RG  , ComponentType::NormInt     );
+    AddFormatInfo(FOO(RGB8          ),  3, UnsizedFormat::RGB , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RGB8_SNORM    ),  3, UnsizedFormat::RGB , ComponentType::NormInt     );
+    AddFormatInfo(FOO(RGB565        ),  2, UnsizedFormat::RGB , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RGBA4         ),  2, UnsizedFormat::RGBA, ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RGB5_A1       ),  2, UnsizedFormat::RGBA, ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RGBA8         ),  4, UnsizedFormat::RGBA, ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RGBA8_SNORM   ),  4, UnsizedFormat::RGBA, ComponentType::NormInt     );
+    AddFormatInfo(FOO(RGB10_A2      ),  4, UnsizedFormat::RGBA, ComponentType::NormUInt    );
+    AddFormatInfo(FOO(RGB10_A2UI    ),  4, UnsizedFormat::RGBA, ComponentType::UInt        );
 
-    AddFormatInfo(FOO(SRGB8         ),  3, UnsizedFormat::RGB , true , ComponentType::NormUInt);
-    AddFormatInfo(FOO(SRGB8_ALPHA8  ),  4, UnsizedFormat::RGBA, true , ComponentType::NormUInt);
+    AddFormatInfo(FOO(SRGB8         ),  3, UnsizedFormat::RGB , ComponentType::NormUIntSRGB);
+    AddFormatInfo(FOO(SRGB8_ALPHA8  ),  4, UnsizedFormat::RGBA, ComponentType::NormUIntSRGB);
 
-    AddFormatInfo(FOO(R16F          ),  2, UnsizedFormat::R   , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RG16F         ),  4, UnsizedFormat::RG  , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RGB16F        ),  6, UnsizedFormat::RGB , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RGBA16F       ),  8, UnsizedFormat::RGBA, false, ComponentType::Float   );
-    AddFormatInfo(FOO(R32F          ),  4, UnsizedFormat::R   , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RG32F         ),  8, UnsizedFormat::RG  , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RGB32F        ), 12, UnsizedFormat::RGB , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RGBA32F       ), 16, UnsizedFormat::RGBA, false, ComponentType::Float   );
+    AddFormatInfo(FOO(R16F          ),  2, UnsizedFormat::R   , ComponentType::Float       );
+    AddFormatInfo(FOO(RG16F         ),  4, UnsizedFormat::RG  , ComponentType::Float       );
+    AddFormatInfo(FOO(RGB16F        ),  6, UnsizedFormat::RGB , ComponentType::Float       );
+    AddFormatInfo(FOO(RGBA16F       ),  8, UnsizedFormat::RGBA, ComponentType::Float       );
+    AddFormatInfo(FOO(R32F          ),  4, UnsizedFormat::R   , ComponentType::Float       );
+    AddFormatInfo(FOO(RG32F         ),  8, UnsizedFormat::RG  , ComponentType::Float       );
+    AddFormatInfo(FOO(RGB32F        ), 12, UnsizedFormat::RGB , ComponentType::Float       );
+    AddFormatInfo(FOO(RGBA32F       ), 16, UnsizedFormat::RGBA, ComponentType::Float       );
 
-    AddFormatInfo(FOO(R11F_G11F_B10F),  4, UnsizedFormat::RGB , false, ComponentType::Float   );
-    AddFormatInfo(FOO(RGB9_E5       ),  4, UnsizedFormat::RGB , false, ComponentType::Float   );
+    AddFormatInfo(FOO(R11F_G11F_B10F),  4, UnsizedFormat::RGB , ComponentType::Float       );
+    AddFormatInfo(FOO(RGB9_E5       ),  4, UnsizedFormat::RGB , ComponentType::SharedExp   );
 
-    AddFormatInfo(FOO(R8I           ),  1, UnsizedFormat::R   , false, ComponentType::Int     );
-    AddFormatInfo(FOO(R8UI          ),  1, UnsizedFormat::R   , false, ComponentType::UInt    );
-    AddFormatInfo(FOO(R16I          ),  2, UnsizedFormat::R   , false, ComponentType::Int     );
-    AddFormatInfo(FOO(R16UI         ),  2, UnsizedFormat::R   , false, ComponentType::UInt    );
-    AddFormatInfo(FOO(R32I          ),  4, UnsizedFormat::R   , false, ComponentType::Int     );
-    AddFormatInfo(FOO(R32UI         ),  4, UnsizedFormat::R   , false, ComponentType::UInt    );
+    AddFormatInfo(FOO(R8I           ),  1, UnsizedFormat::R   , ComponentType::Int         );
+    AddFormatInfo(FOO(R8UI          ),  1, UnsizedFormat::R   , ComponentType::UInt        );
+    AddFormatInfo(FOO(R16I          ),  2, UnsizedFormat::R   , ComponentType::Int         );
+    AddFormatInfo(FOO(R16UI         ),  2, UnsizedFormat::R   , ComponentType::UInt        );
+    AddFormatInfo(FOO(R32I          ),  4, UnsizedFormat::R   , ComponentType::Int         );
+    AddFormatInfo(FOO(R32UI         ),  4, UnsizedFormat::R   , ComponentType::UInt        );
 
-    AddFormatInfo(FOO(RG8I          ),  2, UnsizedFormat::RG  , false, ComponentType::Int     );
-    AddFormatInfo(FOO(RG8UI         ),  2, UnsizedFormat::RG  , false, ComponentType::UInt    );
-    AddFormatInfo(FOO(RG16I         ),  4, UnsizedFormat::RG  , false, ComponentType::Int     );
-    AddFormatInfo(FOO(RG16UI        ),  4, UnsizedFormat::RG  , false, ComponentType::UInt    );
-    AddFormatInfo(FOO(RG32I         ),  8, UnsizedFormat::RG  , false, ComponentType::Int     );
-    AddFormatInfo(FOO(RG32UI        ),  8, UnsizedFormat::RG  , false, ComponentType::UInt    );
+    AddFormatInfo(FOO(RG8I          ),  2, UnsizedFormat::RG  , ComponentType::Int         );
+    AddFormatInfo(FOO(RG8UI         ),  2, UnsizedFormat::RG  , ComponentType::UInt        );
+    AddFormatInfo(FOO(RG16I         ),  4, UnsizedFormat::RG  , ComponentType::Int         );
+    AddFormatInfo(FOO(RG16UI        ),  4, UnsizedFormat::RG  , ComponentType::UInt        );
+    AddFormatInfo(FOO(RG32I         ),  8, UnsizedFormat::RG  , ComponentType::Int         );
+    AddFormatInfo(FOO(RG32UI        ),  8, UnsizedFormat::RG  , ComponentType::UInt        );
 
-    AddFormatInfo(FOO(RGB8I         ),  3, UnsizedFormat::RGB , false, ComponentType::Int     );
-    AddFormatInfo(FOO(RGB8UI        ),  3, UnsizedFormat::RGB , false, ComponentType::UInt    );
-    AddFormatInfo(FOO(RGB16I        ),  6, UnsizedFormat::RGB , false, ComponentType::Int     );
-    AddFormatInfo(FOO(RGB16UI       ),  6, UnsizedFormat::RGB , false, ComponentType::UInt    );
-    AddFormatInfo(FOO(RGB32I        ), 12, UnsizedFormat::RGB , false, ComponentType::Int     );
-    AddFormatInfo(FOO(RGB32UI       ), 12, UnsizedFormat::RGB , false, ComponentType::UInt    );
+    AddFormatInfo(FOO(RGB8I         ),  3, UnsizedFormat::RGB , ComponentType::Int         );
+    AddFormatInfo(FOO(RGB8UI        ),  3, UnsizedFormat::RGB , ComponentType::UInt        );
+    AddFormatInfo(FOO(RGB16I        ),  6, UnsizedFormat::RGB , ComponentType::Int         );
+    AddFormatInfo(FOO(RGB16UI       ),  6, UnsizedFormat::RGB , ComponentType::UInt        );
+    AddFormatInfo(FOO(RGB32I        ), 12, UnsizedFormat::RGB , ComponentType::Int         );
+    AddFormatInfo(FOO(RGB32UI       ), 12, UnsizedFormat::RGB , ComponentType::UInt        );
 
-    AddFormatInfo(FOO(RGBA8I        ),  4, UnsizedFormat::RGBA, false, ComponentType::Int     );
-    AddFormatInfo(FOO(RGBA8UI       ),  4, UnsizedFormat::RGBA, false, ComponentType::UInt    );
-    AddFormatInfo(FOO(RGBA16I       ),  8, UnsizedFormat::RGBA, false, ComponentType::Int     );
-    AddFormatInfo(FOO(RGBA16UI      ),  8, UnsizedFormat::RGBA, false, ComponentType::UInt    );
-    AddFormatInfo(FOO(RGBA32I       ), 16, UnsizedFormat::RGBA, false, ComponentType::Int     );
-    AddFormatInfo(FOO(RGBA32UI      ), 16, UnsizedFormat::RGBA, false, ComponentType::UInt    );
-
-    
-    AddFormatInfo(FOO(DEPTH_COMPONENT16 ), 2, UnsizedFormat::D , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(DEPTH_COMPONENT24 ), 3, UnsizedFormat::D , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(DEPTH_COMPONENT32F), 4, UnsizedFormat::D , false, ComponentType::Float);
-    AddFormatInfo(FOO(DEPTH24_STENCIL8  ), 4, UnsizedFormat::DS, false, ComponentType::Special);
-    AddFormatInfo(FOO(DEPTH32F_STENCIL8 ), 5, UnsizedFormat::DS, false, ComponentType::Special);
+    AddFormatInfo(FOO(RGBA8I        ),  4, UnsizedFormat::RGBA, ComponentType::Int         );
+    AddFormatInfo(FOO(RGBA8UI       ),  4, UnsizedFormat::RGBA, ComponentType::UInt        );
+    AddFormatInfo(FOO(RGBA16I       ),  8, UnsizedFormat::RGBA, ComponentType::Int         );
+    AddFormatInfo(FOO(RGBA16UI      ),  8, UnsizedFormat::RGBA, ComponentType::UInt        );
+    AddFormatInfo(FOO(RGBA32I       ), 16, UnsizedFormat::RGBA, ComponentType::Int         );
+    AddFormatInfo(FOO(RGBA32UI      ), 16, UnsizedFormat::RGBA, ComponentType::UInt        );
 
     
-    AddFormatInfo(FOO(STENCIL_INDEX8), 1, UnsizedFormat::S, false, ComponentType::UInt);
+    AddFormatInfo(FOO(DEPTH_COMPONENT16 ), 2, UnsizedFormat::D , ComponentType::None);
+    AddFormatInfo(FOO(DEPTH_COMPONENT24 ), 3, UnsizedFormat::D , ComponentType::None);
+    AddFormatInfo(FOO(DEPTH_COMPONENT32F), 4, UnsizedFormat::D , ComponentType::None);
+    AddFormatInfo(FOO(DEPTH24_STENCIL8  ), 4, UnsizedFormat::DS, ComponentType::None);
+    AddFormatInfo(FOO(DEPTH32F_STENCIL8 ), 5, UnsizedFormat::DS, ComponentType::None);
+
+    
+    AddFormatInfo(FOO(STENCIL_INDEX8), 1, UnsizedFormat::S, ComponentType::None);
+
+    
+    AddFormatInfo(FOO(Luminance8Alpha8), 2, UnsizedFormat::LA, ComponentType::NormUInt);
+    AddFormatInfo(FOO(Luminance8      ), 1, UnsizedFormat::L , ComponentType::NormUInt);
+    AddFormatInfo(FOO(Alpha8          ), 1, UnsizedFormat::A , ComponentType::None    );
 
     
     
-    AddFormatInfo(FOO(COMPRESSED_RGB8_ETC2                     ), 0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SRGB8_ETC2                    ), 0, UnsizedFormat::RGB , true , ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGBA8_ETC2_EAC                ), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SRGB8_ALPHA8_ETC2_EAC         ), 0, UnsizedFormat::RGBA, true , ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_R11_EAC                       ), 0, UnsizedFormat::R   , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RG11_EAC                      ), 0, UnsizedFormat::RG  , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SIGNED_R11_EAC                ), 0, UnsizedFormat::R   , false, ComponentType::NormInt );
-    AddFormatInfo(FOO(COMPRESSED_SIGNED_RG11_EAC               ), 0, UnsizedFormat::RG  , false, ComponentType::NormInt );
-    AddFormatInfo(FOO(COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 ), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2), 0, UnsizedFormat::RGBA, true , ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGB8_ETC2                     ), 0, UnsizedFormat::RGB , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(COMPRESSED_SRGB8_ETC2                    ), 0, UnsizedFormat::RGB , ComponentType::NormUIntSRGB);
+    AddFormatInfo(FOO(COMPRESSED_RGBA8_ETC2_EAC                ), 0, UnsizedFormat::RGBA, ComponentType::NormUInt    );
+    AddFormatInfo(FOO(COMPRESSED_SRGB8_ALPHA8_ETC2_EAC         ), 0, UnsizedFormat::RGBA, ComponentType::NormUIntSRGB);
+    AddFormatInfo(FOO(COMPRESSED_R11_EAC                       ), 0, UnsizedFormat::R   , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(COMPRESSED_RG11_EAC                      ), 0, UnsizedFormat::RG  , ComponentType::NormUInt    );
+    AddFormatInfo(FOO(COMPRESSED_SIGNED_R11_EAC                ), 0, UnsizedFormat::R   , ComponentType::NormInt     );
+    AddFormatInfo(FOO(COMPRESSED_SIGNED_RG11_EAC               ), 0, UnsizedFormat::RG  , ComponentType::NormInt     );
+    AddFormatInfo(FOO(COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 ), 0, UnsizedFormat::RGBA, ComponentType::NormUInt    );
+    AddFormatInfo(FOO(COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2), 0, UnsizedFormat::RGBA, ComponentType::NormUIntSRGB);
 
     
-    AddFormatInfo(FOO(ATC_RGB_AMD                    ), 0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(ATC_RGBA_EXPLICIT_ALPHA_AMD    ), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(ATC_RGBA_INTERPOLATED_ALPHA_AMD), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
+    AddFormatInfo(FOO(ATC_RGB_AMD                    ), 0, UnsizedFormat::RGB , ComponentType::NormUInt);
+    AddFormatInfo(FOO(ATC_RGBA_EXPLICIT_ALPHA_AMD    ), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
+    AddFormatInfo(FOO(ATC_RGBA_INTERPOLATED_ALPHA_AMD), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
 
     
-    AddFormatInfo(FOO(COMPRESSED_RGB_S3TC_DXT1_EXT ), 0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGBA_S3TC_DXT1_EXT), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGBA_S3TC_DXT3_EXT), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGBA_S3TC_DXT5_EXT), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGB_S3TC_DXT1 ), 0, UnsizedFormat::RGB , ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGBA_S3TC_DXT1), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGBA_S3TC_DXT3), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGBA_S3TC_DXT5), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
 
     
-    AddFormatInfo(FOO(COMPRESSED_RGB_PVRTC_4BPPV1 ), 0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGBA_PVRTC_4BPPV1), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGB_PVRTC_2BPPV1 ), 0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGBA_PVRTC_2BPPV1), 0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGB_PVRTC_4BPPV1 ), 0, UnsizedFormat::RGB , ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGBA_PVRTC_4BPPV1), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGB_PVRTC_2BPPV1 ), 0, UnsizedFormat::RGB , ComponentType::NormUInt);
+    AddFormatInfo(FOO(COMPRESSED_RGBA_PVRTC_2BPPV1), 0, UnsizedFormat::RGBA, ComponentType::NormUInt);
 
     
-    AddFormatInfo(FOO(ETC1_RGB8_OES), 0, UnsizedFormat::RGB, false, ComponentType::NormUInt);
+    AddFormatInfo(FOO(ETC1_RGB8), 0, UnsizedFormat::RGB, ComponentType::NormUInt);
+
+    
+    AddFormatInfo(FOO(Luminance32FAlpha32F), 2, UnsizedFormat::LA, ComponentType::Float);
+    AddFormatInfo(FOO(Luminance32F        ), 1, UnsizedFormat::L , ComponentType::Float);
+    AddFormatInfo(FOO(Alpha32F            ), 1, UnsizedFormat::A , ComponentType::Float);
+
+    
+    AddFormatInfo(FOO(Luminance16FAlpha16F), 2, UnsizedFormat::LA, ComponentType::Float);
+    AddFormatInfo(FOO(Luminance16F        ), 1, UnsizedFormat::L , ComponentType::Float);
+    AddFormatInfo(FOO(Alpha16F            ), 1, UnsizedFormat::A , ComponentType::Float);
 
 #undef FOO
+}
+
+
+
+static void
+AddUnpackTuple(GLenum unpackFormat, GLenum unpackType, EffectiveFormat effectiveFormat)
+{
+    const UnpackTuple unpack = { unpackFormat, unpackType };
+    const FormatInfo* info = GetFormatInfo_NoLock(effectiveFormat);
+    MOZ_ASSERT(info);
+
+    AlwaysInsert(gUnpackTupleMap, unpack, info);
+}
+
+static void
+InitUnpackTupleMap()
+{
+    AddUnpackTuple(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGBA8  );
+    AddUnpackTuple(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_4_4_4_4, EffectiveFormat::RGBA4  );
+    AddUnpackTuple(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_5_5_5_1, EffectiveFormat::RGB5_A1);
+    AddUnpackTuple(LOCAL_GL_RGB , LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGB8   );
+    AddUnpackTuple(LOCAL_GL_RGB , LOCAL_GL_UNSIGNED_SHORT_5_6_5  , EffectiveFormat::RGB565 );
+
+    AddUnpackTuple(LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8Alpha8);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE      , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8      );
+    AddUnpackTuple(LOCAL_GL_ALPHA          , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Alpha8          );
+
+    AddUnpackTuple(LOCAL_GL_RGB            , LOCAL_GL_FLOAT, EffectiveFormat::RGB32F );
+    AddUnpackTuple(LOCAL_GL_RGBA           , LOCAL_GL_FLOAT, EffectiveFormat::RGBA32F);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_FLOAT, EffectiveFormat::Luminance32FAlpha32F);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE      , LOCAL_GL_FLOAT, EffectiveFormat::Luminance32F);
+    AddUnpackTuple(LOCAL_GL_ALPHA          , LOCAL_GL_FLOAT, EffectiveFormat::Alpha32F);
+
+    AddUnpackTuple(LOCAL_GL_RGB            , LOCAL_GL_HALF_FLOAT, EffectiveFormat::RGB16F );
+    AddUnpackTuple(LOCAL_GL_RGBA           , LOCAL_GL_HALF_FLOAT, EffectiveFormat::RGBA16F);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_HALF_FLOAT, EffectiveFormat::Luminance16FAlpha16F);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE      , LOCAL_GL_HALF_FLOAT, EffectiveFormat::Luminance16F);
+    AddUnpackTuple(LOCAL_GL_ALPHA          , LOCAL_GL_HALF_FLOAT, EffectiveFormat::Alpha16F);
 
     
-#define FOO(x) EffectiveFormat::x, #x, 0
+    AddUnpackTuple(LOCAL_GL_RGB            , LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::RGB16F );
+    AddUnpackTuple(LOCAL_GL_RGBA           , LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::RGBA16F);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::Luminance16FAlpha16F);
+    AddUnpackTuple(LOCAL_GL_LUMINANCE      , LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::Luminance16F);
+    AddUnpackTuple(LOCAL_GL_ALPHA          , LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::Alpha16F);
+}
+
+
+
+static void
+AddSizedFormat(GLenum sizedFormat, EffectiveFormat effectiveFormat)
+{
+    const FormatInfo* info = GetFormatInfo_NoLock(effectiveFormat);
+    MOZ_ASSERT(info);
+
+    AlwaysInsert(gSizedFormatMap, sizedFormat, info);
+}
+
+static void
+InitSizedFormatMap()
+{
+    
 
     
-    AddFormatInfo(FOO(Luminance8Alpha8), 2, UnsizedFormat::LA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(Luminance8      ), 1, UnsizedFormat::L , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(Alpha8          ), 1, UnsizedFormat::A , false, ComponentType::NormUInt);
+#ifdef FOO
+#error FOO is already defined!
+#endif
+
+#define FOO(x) AddSizedFormat(LOCAL_GL_ ## x, EffectiveFormat::x)
+
+    FOO(RGBA32I);
+    FOO(RGBA32UI);
+    FOO(RGBA16I);
+    FOO(RGBA16UI);
+    FOO(RGBA8);
+    FOO(RGBA8I);
+    FOO(RGBA8UI);
+    FOO(SRGB8_ALPHA8);
+    FOO(RGB10_A2);
+    FOO(RGB10_A2UI);
+    FOO(RGBA4);
+    FOO(RGB5_A1);
+
+    FOO(RGB8);
+    FOO(RGB565);
+
+    FOO(RG32I);
+    FOO(RG32UI);
+    FOO(RG16I);
+    FOO(RG16UI);
+    FOO(RG8);
+    FOO(RG8I);
+    FOO(RG8UI);
+
+    FOO(R32I);
+    FOO(R32UI);
+    FOO(R16I);
+    FOO(R16UI);
+    FOO(R8);
+    FOO(R8I);
+    FOO(R8UI);
 
     
-    AddFormatInfo(FOO(Luminance32FAlpha32F), 8, UnsizedFormat::LA, false, ComponentType::Float);
-    AddFormatInfo(FOO(Luminance32F        ), 4, UnsizedFormat::L , false, ComponentType::Float);
-    AddFormatInfo(FOO(Alpha32F            ), 4, UnsizedFormat::A , false, ComponentType::Float);
+    FOO(RGBA32F);
+    FOO(RGBA16F);
+    FOO(RGBA8_SNORM);
+
+    FOO(RGB32F);
+    FOO(RGB32I);
+    FOO(RGB32UI);
+
+    FOO(RGB16F);
+    FOO(RGB16I);
+    FOO(RGB16UI);
+
+    FOO(RGB8_SNORM);
+    FOO(RGB8I);
+    FOO(RGB8UI);
+    FOO(SRGB8);
+
+    FOO(R11F_G11F_B10F);
+    FOO(RGB9_E5);
+
+    FOO(RG32F);
+    FOO(RG16F);
+    FOO(RG8_SNORM);
+
+    FOO(R32F);
+    FOO(R16F);
+    FOO(R8_SNORM);
 
     
-    AddFormatInfo(FOO(Luminance16FAlpha16F), 4, UnsizedFormat::LA, false, ComponentType::Float);
-    AddFormatInfo(FOO(Luminance16F        ), 2, UnsizedFormat::L , false, ComponentType::Float);
-    AddFormatInfo(FOO(Alpha16F            ), 2, UnsizedFormat::A , false, ComponentType::Float);
+    FOO(DEPTH_COMPONENT32F);
+    FOO(DEPTH_COMPONENT24);
+    FOO(DEPTH_COMPONENT16);
+
+    
+    FOO(DEPTH32F_STENCIL8);
+    FOO(DEPTH24_STENCIL8);
+
+    
+    FOO(STENCIL_INDEX8);
 
 #undef FOO
 }
@@ -308,7 +430,7 @@ InitFormatInfo()
 bool gAreFormatTablesInitialized = false;
 
 static void
-EnsureInitFormatTables(const StaticMutexAutoLock&) 
+EnsureInitFormatTables()
 {
     if (MOZ_LIKELY(gAreFormatTablesInitialized))
         return;
@@ -316,7 +438,9 @@ EnsureInitFormatTables(const StaticMutexAutoLock&)
     gAreFormatTablesInitialized = true;
 
     InitCompressedFormatInfo();
-    InitFormatInfo();
+    InitFormatInfoMap();
+    InitUnpackTupleMap();
+    InitSizedFormatMap();
 }
 
 
@@ -325,454 +449,127 @@ EnsureInitFormatTables(const StaticMutexAutoLock&)
 StaticMutex gFormatMapMutex;
 
 const FormatInfo*
-GetFormat(EffectiveFormat format)
+GetFormatInfo(EffectiveFormat format)
 {
     StaticMutexAutoLock lock(gFormatMapMutex);
-    EnsureInitFormatTables(lock);
+    EnsureInitFormatTables();
 
     return GetFormatInfo_NoLock(format);
 }
 
-
-
-uint8_t
-BytesPerPixel(const PackingInfo& packing)
+const FormatInfo*
+GetInfoByUnpackTuple(GLenum unpackFormat, GLenum unpackType)
 {
-    uint8_t bytesPerChannel;
-    switch (packing.type) {
-    case LOCAL_GL_UNSIGNED_SHORT_4_4_4_4:
-    case LOCAL_GL_UNSIGNED_SHORT_5_5_5_1:
-    case LOCAL_GL_UNSIGNED_SHORT_5_6_5:
-        return 2;
+    StaticMutexAutoLock lock(gFormatMapMutex);
+    EnsureInitFormatTables();
 
-    case LOCAL_GL_UNSIGNED_INT_10F_11F_11F_REV:
-    case LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV:
-    case LOCAL_GL_UNSIGNED_INT_24_8:
-    case LOCAL_GL_UNSIGNED_INT_5_9_9_9_REV:
-        return 4;
+    const UnpackTuple unpack = { unpackFormat, unpackType };
 
-    case LOCAL_GL_FLOAT_32_UNSIGNED_INT_24_8_REV:
-        return 8;
+    MOZ_ASSERT(!gUnpackTupleMap.empty());
+    auto itr = gUnpackTupleMap.find(unpack);
+    if (itr == gUnpackTupleMap.end())
+        return nullptr;
 
-    
+    return itr->second;
+}
 
-    case LOCAL_GL_BYTE:
-    case LOCAL_GL_UNSIGNED_BYTE:
-        bytesPerChannel = 1;
-        break;
+const FormatInfo*
+GetInfoBySizedFormat(GLenum sizedFormat)
+{
+    StaticMutexAutoLock lock(gFormatMapMutex);
+    EnsureInitFormatTables();
 
-    case LOCAL_GL_SHORT:
-    case LOCAL_GL_UNSIGNED_SHORT:
-    case LOCAL_GL_HALF_FLOAT:
-    case LOCAL_GL_HALF_FLOAT_OES:
-        bytesPerChannel = 2;
-        break;
+    MOZ_ASSERT(!gSizedFormatMap.empty());
+    auto itr = gSizedFormatMap.find(sizedFormat);
+    if (itr == gSizedFormatMap.end())
+        return nullptr;
 
-    case LOCAL_GL_INT:
-    case LOCAL_GL_UNSIGNED_INT:
-    case LOCAL_GL_FLOAT:
-        bytesPerChannel = 4;
-        break;
-
-    default:
-        MOZ_CRASH("invalid PackingInfo");
-    }
-
-    uint8_t channels;
-    switch (packing.format) {
-    case LOCAL_GL_RG:
-    case LOCAL_GL_RG_INTEGER:
-    case LOCAL_GL_LUMINANCE_ALPHA:
-        channels = 2;
-        break;
-
-    case LOCAL_GL_RGB:
-    case LOCAL_GL_RGB_INTEGER:
-        channels = 3;
-        break;
-
-    case LOCAL_GL_RGBA:
-    case LOCAL_GL_RGBA_INTEGER:
-        channels = 4;
-        break;
-
-    default:
-        channels = 1;
-        break;
-    }
-
-    return bytesPerChannel * channels;
+    return itr->second;
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 bool
-FormatUsageInfo::IsUnpackValid(const PackingInfo& key,
-                               const DriverUnpackInfo** const out_value) const
+FormatUsageInfo::CanUnpackWith(GLenum unpackFormat, GLenum unpackType) const
 {
+    const UnpackTuple key = { unpackFormat, unpackType };
     auto itr = validUnpacks.find(key);
-    if (itr == validUnpacks.end())
-        return false;
-
-    *out_value = &(itr->second);
-    return true;
+    return itr != validUnpacks.end();
 }
 
 
 
-static void
-AddSimpleUnsized(FormatUsageAuthority* fua, GLenum unpackFormat, GLenum unpackType,
-                 EffectiveFormat effFormat)
-{
-    auto usage = fua->EditUsage(effFormat);
-    usage->isFilterable = true;
-
-    const PackingInfo pi = {unpackFormat, unpackType};
-    const DriverUnpackInfo dui = {unpackFormat, unpackFormat, unpackType};
-    fua->AddTexUnpack(usage, pi, dui);
-
-    fua->AllowUnsizedTexFormat(pi, usage);
-};
 
 
- const GLint FormatUsageInfo::kLuminanceSwizzleRGBA[4] = { LOCAL_GL_RED,
-                                                                     LOCAL_GL_RED,
-                                                                     LOCAL_GL_RED,
-                                                                     LOCAL_GL_ONE };
- const GLint FormatUsageInfo::kAlphaSwizzleRGBA[4] = { LOCAL_GL_ZERO,
-                                                                 LOCAL_GL_ZERO,
-                                                                 LOCAL_GL_ZERO,
-                                                                 LOCAL_GL_RED };
- const GLint FormatUsageInfo::kLumAlphaSwizzleRGBA[4] = { LOCAL_GL_RED,
-                                                                    LOCAL_GL_RED,
-                                                                    LOCAL_GL_RED,
-                                                                    LOCAL_GL_GREEN };
 
-static void
-AddLegacyFormats_LA8(FormatUsageAuthority* fua, gl::GLContext* gl)
-{
-    if (gl->IsCoreProfile()) {
-        PackingInfo pi;
-        DriverUnpackInfo dui;
 
-        const auto fnAdd = [fua, &pi, &dui](EffectiveFormat effFormat,
-                                            const GLint* swizzle)
-        {
-            auto usage = fua->EditUsage(effFormat);
-            usage->isFilterable = true;
-            usage->textureSwizzleRGBA = swizzle;
 
-            fua->AddTexUnpack(usage, pi, dui);
 
-            fua->AllowUnsizedTexFormat(pi, usage);
-        };
 
-        pi = {LOCAL_GL_LUMINANCE, LOCAL_GL_UNSIGNED_BYTE};
-        dui = {LOCAL_GL_R8, LOCAL_GL_RED, LOCAL_GL_UNSIGNED_BYTE};
-        fnAdd(EffectiveFormat::Luminance8, FormatUsageInfo::kLuminanceSwizzleRGBA);
-
-        pi = {LOCAL_GL_ALPHA, LOCAL_GL_UNSIGNED_BYTE};
-        dui = {LOCAL_GL_R8, LOCAL_GL_RED, LOCAL_GL_UNSIGNED_BYTE};
-        fnAdd(EffectiveFormat::Luminance8, FormatUsageInfo::kAlphaSwizzleRGBA);
-
-        pi = {LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_UNSIGNED_BYTE};
-        dui = {LOCAL_GL_RG8, LOCAL_GL_RG, LOCAL_GL_UNSIGNED_BYTE};
-        fnAdd(EffectiveFormat::Luminance8Alpha8, FormatUsageInfo::kLumAlphaSwizzleRGBA);
-    } else {
-        AddSimpleUnsized(fua, LOCAL_GL_LUMINANCE      , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8      );
-        AddSimpleUnsized(fua, LOCAL_GL_ALPHA          , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Alpha8          );
-        AddSimpleUnsized(fua, LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8Alpha8);
-    }
-}
-
-static void
-AddUnsizedFormats(FormatUsageAuthority* fua, gl::GLContext* gl)
-{
-    
-    AddSimpleUnsized(fua, LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGBA8  );
-    AddSimpleUnsized(fua, LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_4_4_4_4, EffectiveFormat::RGBA4  );
-    AddSimpleUnsized(fua, LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_5_5_5_1, EffectiveFormat::RGB5_A1);
-    AddSimpleUnsized(fua, LOCAL_GL_RGB , LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGB8   );
-    AddSimpleUnsized(fua, LOCAL_GL_RGB , LOCAL_GL_UNSIGNED_SHORT_5_6_5  , EffectiveFormat::RGB565 );
-
-    
-    AddLegacyFormats_LA8(fua, gl);
-}
 
 UniquePtr<FormatUsageAuthority>
-FormatUsageAuthority::CreateForWebGL1(gl::GLContext* gl)
+FormatUsageAuthority::CreateForWebGL1()
 {
     UniquePtr<FormatUsageAuthority> ret(new FormatUsageAuthority);
-    const auto ptr = ret.get();
+
+    
 
     
     
 
-    const auto fnSet = [ptr](EffectiveFormat effFormat, bool isRenderable,
-                             bool isFilterable)
-    {
-        MOZ_ASSERT(!ptr->GetUsage(effFormat));
-
-        auto usage = ptr->EditUsage(effFormat);
-        usage->isRenderable = isRenderable;
-        usage->isFilterable = isFilterable;
-    };
-
     
     
-    
-    
-    fnSet(EffectiveFormat::RGBA8  , true , true);
-    fnSet(EffectiveFormat::RGBA4  , true , true);
-    fnSet(EffectiveFormat::RGB5_A1, true , true);
-    fnSet(EffectiveFormat::RGB8   , false, true);
-    fnSet(EffectiveFormat::RGB565 , true , true);
+    ret->AddFormat(EffectiveFormat::RGBA8  , false, true , true, true);
+    ret->AddFormat(EffectiveFormat::RGBA4  , true , true , true, true);
+    ret->AddFormat(EffectiveFormat::RGB5_A1, true , true , true, true);
+    ret->AddFormat(EffectiveFormat::RGB8   , false, false, true, true);
+    ret->AddFormat(EffectiveFormat::RGB565 , true , true , true, true);
 
-    fnSet(EffectiveFormat::Luminance8Alpha8, false, true);
-    fnSet(EffectiveFormat::Luminance8      , false, true);
-    fnSet(EffectiveFormat::Alpha8          , false, true);
+    ret->AddFormat(EffectiveFormat::Luminance8Alpha8, false, false, true, true);
+    ret->AddFormat(EffectiveFormat::Luminance8      , false, false, true, true);
+    ret->AddFormat(EffectiveFormat::Alpha8          , false, false, true, true);
 
-    fnSet(EffectiveFormat::DEPTH_COMPONENT16, true, false);
-    fnSet(EffectiveFormat::STENCIL_INDEX8   , true, false);
+    ret->AddFormat(EffectiveFormat::DEPTH_COMPONENT16, true, true, false, false);
+    ret->AddFormat(EffectiveFormat::STENCIL_INDEX8   , true, true, false, false);
 
     
-    fnSet(EffectiveFormat::DEPTH24_STENCIL8, true, false);
-
-    
-    
-
-#define FOO(x) ptr->AllowRBFormat(LOCAL_GL_ ## x, ptr->GetUsage(EffectiveFormat::x))
-
-    FOO(RGBA4            );
-    FOO(RGB5_A1          );
-    FOO(RGB565           );
-    FOO(DEPTH_COMPONENT16);
-    FOO(STENCIL_INDEX8   );
-    
-
-#undef FOO
-
-    ptr->AllowRBFormat(LOCAL_GL_DEPTH_STENCIL,
-                       ptr->GetUsage(EffectiveFormat::DEPTH24_STENCIL8));
+    ret->AddFormat(EffectiveFormat::DEPTH24_STENCIL8, true, true, false, false);
 
     
 
-    AddUnsizedFormats(ptr, gl);
+    
+
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGBA8  );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_4_4_4_4, EffectiveFormat::RGBA4  );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_5_5_5_1, EffectiveFormat::RGB5_A1);
+    ret->AddUnpackOption(LOCAL_GL_RGB , LOCAL_GL_UNSIGNED_BYTE         , EffectiveFormat::RGB8   );
+    ret->AddUnpackOption(LOCAL_GL_RGB , LOCAL_GL_UNSIGNED_SHORT_5_6_5  , EffectiveFormat::RGB565 );
+
+    ret->AddUnpackOption(LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8Alpha8);
+    ret->AddUnpackOption(LOCAL_GL_LUMINANCE      , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8      );
+    ret->AddUnpackOption(LOCAL_GL_ALPHA          , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Alpha8          );
+
 
     return Move(ret);
 }
 
+static void
+AddES3TexFormat(FormatUsageAuthority* that, EffectiveFormat format, bool isRenderable,
+                bool isFilterable)
+{
+    bool asRenderbuffer = isRenderable;
+    bool asTexture = true;
+
+    that->AddFormat(format, asRenderbuffer, isRenderable, asTexture, isFilterable);
+}
+
 UniquePtr<FormatUsageAuthority>
-FormatUsageAuthority::CreateForWebGL2(gl::GLContext* gl)
+FormatUsageAuthority::CreateForWebGL2()
 {
     UniquePtr<FormatUsageAuthority> ret(new FormatUsageAuthority);
-    const auto ptr = ret.get();
+    FormatUsageAuthority* const ptr = ret.get();
 
     
-    
-
-    const auto fnAddSizedUnpack = [ptr](EffectiveFormat effFormat, GLenum internalFormat,
-                                        GLenum unpackFormat, GLenum unpackType)
-    {
-        auto usage = ptr->EditUsage(effFormat);
-
-        const PackingInfo pi = {unpackFormat, unpackType};
-        const DriverUnpackInfo dui = {internalFormat, unpackFormat, unpackType};
-        ptr->AddTexUnpack(usage, pi, dui);
-    };
-
-#define FOO(x) EffectiveFormat::x, LOCAL_GL_ ## x
-
-    
-    fnAddSizedUnpack(FOO(RGBA8       ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              );
-    fnAddSizedUnpack(FOO(RGBA4       ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_4_4_4_4     );
-    fnAddSizedUnpack(FOO(RGBA4       ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              );
-    fnAddSizedUnpack(FOO(RGB5_A1     ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_5_5_5_1     );
-    fnAddSizedUnpack(FOO(RGB5_A1     ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              );
-    fnAddSizedUnpack(FOO(RGB5_A1     ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV);
-    fnAddSizedUnpack(FOO(SRGB8_ALPHA8), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              );
-    fnAddSizedUnpack(FOO(RGBA8_SNORM ), LOCAL_GL_RGBA, LOCAL_GL_BYTE                       );
-    fnAddSizedUnpack(FOO(RGB10_A2    ), LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV);
-    fnAddSizedUnpack(FOO(RGBA16F     ), LOCAL_GL_RGBA, LOCAL_GL_HALF_FLOAT                 );
-    fnAddSizedUnpack(FOO(RGBA16F     ), LOCAL_GL_RGBA, LOCAL_GL_FLOAT                      );
-    fnAddSizedUnpack(FOO(RGBA32F     ), LOCAL_GL_RGBA, LOCAL_GL_FLOAT                      );
-
-    
-    fnAddSizedUnpack(FOO(RGBA8UI   ), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_BYTE              );
-    fnAddSizedUnpack(FOO(RGBA8I    ), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_BYTE                       );
-    fnAddSizedUnpack(FOO(RGBA16UI  ), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_SHORT             );
-    fnAddSizedUnpack(FOO(RGBA16I   ), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_SHORT                      );
-    fnAddSizedUnpack(FOO(RGBA32UI  ), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_INT               );
-    fnAddSizedUnpack(FOO(RGBA32I   ), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_INT                        );
-    fnAddSizedUnpack(FOO(RGB10_A2UI), LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV);
-
-    
-    fnAddSizedUnpack(FOO(RGB8          ), LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_BYTE               );
-    fnAddSizedUnpack(FOO(SRGB8         ), LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_BYTE               );
-    fnAddSizedUnpack(FOO(RGB565        ), LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_SHORT_5_6_5        );
-    fnAddSizedUnpack(FOO(RGB565        ), LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_BYTE               );
-    fnAddSizedUnpack(FOO(RGB8_SNORM    ), LOCAL_GL_RGB, LOCAL_GL_BYTE                        );
-    fnAddSizedUnpack(FOO(R11F_G11F_B10F), LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_INT_10F_11F_11F_REV);
-    fnAddSizedUnpack(FOO(R11F_G11F_B10F), LOCAL_GL_RGB, LOCAL_GL_HALF_FLOAT                  );
-    fnAddSizedUnpack(FOO(R11F_G11F_B10F), LOCAL_GL_RGB, LOCAL_GL_FLOAT                       );
-    fnAddSizedUnpack(FOO(RGB16F        ), LOCAL_GL_RGB, LOCAL_GL_HALF_FLOAT                  );
-    fnAddSizedUnpack(FOO(RGB16F        ), LOCAL_GL_RGB, LOCAL_GL_FLOAT                       );
-    fnAddSizedUnpack(FOO(RGB9_E5       ), LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_INT_5_9_9_9_REV    );
-    fnAddSizedUnpack(FOO(RGB9_E5       ), LOCAL_GL_RGB, LOCAL_GL_HALF_FLOAT                  );
-    fnAddSizedUnpack(FOO(RGB9_E5       ), LOCAL_GL_RGB, LOCAL_GL_FLOAT                       );
-    fnAddSizedUnpack(FOO(RGB32F        ), LOCAL_GL_RGB, LOCAL_GL_FLOAT                       );
-
-    
-    fnAddSizedUnpack(FOO(RGB8UI ), LOCAL_GL_RGB_INTEGER, LOCAL_GL_UNSIGNED_BYTE );
-    fnAddSizedUnpack(FOO(RGB8I  ), LOCAL_GL_RGB_INTEGER, LOCAL_GL_BYTE          );
-    fnAddSizedUnpack(FOO(RGB16UI), LOCAL_GL_RGB_INTEGER, LOCAL_GL_UNSIGNED_SHORT);
-    fnAddSizedUnpack(FOO(RGB16I ), LOCAL_GL_RGB_INTEGER, LOCAL_GL_SHORT         );
-    fnAddSizedUnpack(FOO(RGB32UI), LOCAL_GL_RGB_INTEGER, LOCAL_GL_UNSIGNED_INT  );
-    fnAddSizedUnpack(FOO(RGB32I ), LOCAL_GL_RGB_INTEGER, LOCAL_GL_INT           );
-
-    
-    fnAddSizedUnpack(FOO(RG8      ), LOCAL_GL_RG, LOCAL_GL_UNSIGNED_BYTE);
-    fnAddSizedUnpack(FOO(RG8_SNORM), LOCAL_GL_RG, LOCAL_GL_BYTE         );
-    fnAddSizedUnpack(FOO(RG16F    ), LOCAL_GL_RG, LOCAL_GL_HALF_FLOAT   );
-    fnAddSizedUnpack(FOO(RG16F    ), LOCAL_GL_RG, LOCAL_GL_FLOAT        );
-    fnAddSizedUnpack(FOO(RG32F    ), LOCAL_GL_RG, LOCAL_GL_FLOAT        );
-
-    
-    fnAddSizedUnpack(FOO(RG8UI ), LOCAL_GL_RG_INTEGER, LOCAL_GL_UNSIGNED_BYTE );
-    fnAddSizedUnpack(FOO(RG8I  ), LOCAL_GL_RG_INTEGER, LOCAL_GL_BYTE          );
-    fnAddSizedUnpack(FOO(RG16UI), LOCAL_GL_RG_INTEGER, LOCAL_GL_UNSIGNED_SHORT);
-    fnAddSizedUnpack(FOO(RG16I ), LOCAL_GL_RG_INTEGER, LOCAL_GL_SHORT         );
-    fnAddSizedUnpack(FOO(RG32UI), LOCAL_GL_RG_INTEGER, LOCAL_GL_UNSIGNED_INT  );
-    fnAddSizedUnpack(FOO(RG32I ), LOCAL_GL_RG_INTEGER, LOCAL_GL_INT           );
-
-    
-    fnAddSizedUnpack(FOO(R8      ), LOCAL_GL_RED, LOCAL_GL_UNSIGNED_BYTE);
-    fnAddSizedUnpack(FOO(R8_SNORM), LOCAL_GL_RED, LOCAL_GL_BYTE         );
-    fnAddSizedUnpack(FOO(R16F    ), LOCAL_GL_RED, LOCAL_GL_HALF_FLOAT   );
-    fnAddSizedUnpack(FOO(R16F    ), LOCAL_GL_RED, LOCAL_GL_FLOAT        );
-    fnAddSizedUnpack(FOO(R32F    ), LOCAL_GL_RED, LOCAL_GL_FLOAT        );
-
-    
-    fnAddSizedUnpack(FOO(R8UI ), LOCAL_GL_RED_INTEGER, LOCAL_GL_UNSIGNED_BYTE );
-    fnAddSizedUnpack(FOO(R8I  ), LOCAL_GL_RED_INTEGER, LOCAL_GL_BYTE          );
-    fnAddSizedUnpack(FOO(R16UI), LOCAL_GL_RED_INTEGER, LOCAL_GL_UNSIGNED_SHORT);
-    fnAddSizedUnpack(FOO(R16I ), LOCAL_GL_RED_INTEGER, LOCAL_GL_SHORT         );
-    fnAddSizedUnpack(FOO(R32UI), LOCAL_GL_RED_INTEGER, LOCAL_GL_UNSIGNED_INT  );
-    fnAddSizedUnpack(FOO(R32I ), LOCAL_GL_RED_INTEGER, LOCAL_GL_INT           );
-
-    
-    fnAddSizedUnpack(FOO(DEPTH_COMPONENT16 ), LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_UNSIGNED_SHORT);
-    fnAddSizedUnpack(FOO(DEPTH_COMPONENT16 ), LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_UNSIGNED_INT  );
-    fnAddSizedUnpack(FOO(DEPTH_COMPONENT24 ), LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_UNSIGNED_INT  );
-    fnAddSizedUnpack(FOO(DEPTH_COMPONENT32F), LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_FLOAT         );
-
-    
-    fnAddSizedUnpack(FOO(DEPTH24_STENCIL8 ), LOCAL_GL_DEPTH_STENCIL, LOCAL_GL_UNSIGNED_INT_24_8             );
-    fnAddSizedUnpack(FOO(DEPTH32F_STENCIL8), LOCAL_GL_DEPTH_STENCIL, LOCAL_GL_FLOAT_32_UNSIGNED_INT_24_8_REV);
-
-#undef FOO
-
-    
-
-    
-    
-
-    const auto fnAllowES3TexFormat = [ptr](GLenum sizedFormat, EffectiveFormat effFormat,
-                                           bool isRenderable, bool isFilterable)
-    {
-        auto usage = ptr->EditUsage(effFormat);
-        usage->isRenderable = isRenderable;
-        usage->isFilterable = isFilterable;
-
-        ptr->AllowSizedTexFormat(sizedFormat, usage);
-
-        if (isRenderable) {
-            ptr->AllowRBFormat(sizedFormat, usage);
-        }
-    };
-
-#define FOO(x) LOCAL_GL_ ## x, EffectiveFormat::x
-
-    
-    
-    
-    
-    fnAllowES3TexFormat(FOO(R8         ), true , true );
-    fnAllowES3TexFormat(FOO(R8_SNORM   ), false, true );
-    fnAllowES3TexFormat(FOO(RG8        ), true , true );
-    fnAllowES3TexFormat(FOO(RG8_SNORM  ), false, true );
-    fnAllowES3TexFormat(FOO(RGB8       ), true , true );
-    fnAllowES3TexFormat(FOO(RGB8_SNORM ), false, true );
-    fnAllowES3TexFormat(FOO(RGB565     ), true , true );
-    fnAllowES3TexFormat(FOO(RGBA4      ), true , true );
-    fnAllowES3TexFormat(FOO(RGB5_A1    ), true , true );
-    fnAllowES3TexFormat(FOO(RGBA8      ), true , true );
-    fnAllowES3TexFormat(FOO(RGBA8_SNORM), false, true );
-    fnAllowES3TexFormat(FOO(RGB10_A2   ), true , true );
-    fnAllowES3TexFormat(FOO(RGB10_A2UI ), true , false);
-
-    fnAllowES3TexFormat(FOO(SRGB8       ), false, true);
-    fnAllowES3TexFormat(FOO(SRGB8_ALPHA8), true , true);
-
-    fnAllowES3TexFormat(FOO(R16F   ), false, true);
-    fnAllowES3TexFormat(FOO(RG16F  ), false, true);
-    fnAllowES3TexFormat(FOO(RGB16F ), false, true);
-    fnAllowES3TexFormat(FOO(RGBA16F), false, true);
-
-    fnAllowES3TexFormat(FOO(R32F   ), false, false);
-    fnAllowES3TexFormat(FOO(RG32F  ), false, false);
-    fnAllowES3TexFormat(FOO(RGB32F ), false, false);
-    fnAllowES3TexFormat(FOO(RGBA32F), false, false);
-
-    fnAllowES3TexFormat(FOO(R11F_G11F_B10F), false, true);
-    fnAllowES3TexFormat(FOO(RGB9_E5       ), false, true);
-
-    fnAllowES3TexFormat(FOO(R8I  ), true, false);
-    fnAllowES3TexFormat(FOO(R8UI ), true, false);
-    fnAllowES3TexFormat(FOO(R16I ), true, false);
-    fnAllowES3TexFormat(FOO(R16UI), true, false);
-    fnAllowES3TexFormat(FOO(R32I ), true, false);
-    fnAllowES3TexFormat(FOO(R32UI), true, false);
-
-    fnAllowES3TexFormat(FOO(RG8I  ), true, false);
-    fnAllowES3TexFormat(FOO(RG8UI ), true, false);
-    fnAllowES3TexFormat(FOO(RG16I ), true, false);
-    fnAllowES3TexFormat(FOO(RG16UI), true, false);
-    fnAllowES3TexFormat(FOO(RG32I ), true, false);
-    fnAllowES3TexFormat(FOO(RG32UI), true, false);
-
-    fnAllowES3TexFormat(FOO(RGB8I  ), false, false);
-    fnAllowES3TexFormat(FOO(RGB8UI ), false, false);
-    fnAllowES3TexFormat(FOO(RGB16I ), false, false);
-    fnAllowES3TexFormat(FOO(RGB16UI), false, false);
-    fnAllowES3TexFormat(FOO(RGB32I ), false, false);
-    fnAllowES3TexFormat(FOO(RGB32UI), false, false);
-
-    fnAllowES3TexFormat(FOO(RGBA8I  ), true, false);
-    fnAllowES3TexFormat(FOO(RGBA8UI ), true, false);
-    fnAllowES3TexFormat(FOO(RGBA16I ), true, false);
-    fnAllowES3TexFormat(FOO(RGBA16UI), true, false);
-    fnAllowES3TexFormat(FOO(RGBA32I ), true, false);
-    fnAllowES3TexFormat(FOO(RGBA32UI), true, false);
-
-    
-    fnAllowES3TexFormat(FOO(DEPTH_COMPONENT16 ), true, false);
-    fnAllowES3TexFormat(FOO(DEPTH_COMPONENT24 ), true, false);
-    fnAllowES3TexFormat(FOO(DEPTH_COMPONENT32F), true, false);
-    fnAllowES3TexFormat(FOO(DEPTH24_STENCIL8  ), true, false);
-    fnAllowES3TexFormat(FOO(DEPTH32F_STENCIL8 ), true, false);
 
     
     
@@ -781,178 +578,550 @@ FormatUsageAuthority::CreateForWebGL2(gl::GLContext* gl)
     
     
     
-    
-    
-    
-    
-    
-    fnAllowES3TexFormat(FOO(COMPRESSED_RGB8_ETC2                     ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_SRGB8_ETC2                    ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_RGBA8_ETC2_EAC                ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_SRGB8_ALPHA8_ETC2_EAC         ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_R11_EAC                       ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_RG11_EAC                      ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_SIGNED_R11_EAC                ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_SIGNED_RG11_EAC               ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 ), false, true);
-    fnAllowES3TexFormat(FOO(COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2), false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::R8         , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::R8_SNORM   , false, true );
+    AddES3TexFormat(ptr, EffectiveFormat::RG8        , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RG8_SNORM  , false, true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGB8       , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGB8_SNORM , false, true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGB565     , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA4      , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGB5_A1    , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA8      , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA8_SNORM, false, true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGB10_A2   , true , true );
+    AddES3TexFormat(ptr, EffectiveFormat::RGB10_A2UI , true , false);
 
-#undef FOO
+    AddES3TexFormat(ptr, EffectiveFormat::SRGB8       , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::SRGB8_ALPHA8, true , true);
+
+    AddES3TexFormat(ptr, EffectiveFormat::R16F   , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::RG16F  , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB16F , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA16F, false, true);
+
+    AddES3TexFormat(ptr, EffectiveFormat::R32F   , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RG32F  , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB32F , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA32F, false, false);
+
+    AddES3TexFormat(ptr, EffectiveFormat::R11F_G11F_B10F, false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB9_E5       , false, true);
+
+    AddES3TexFormat(ptr, EffectiveFormat::R8I  , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::R8UI , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::R16I , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::R16UI, true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::R32I , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::R32UI, true, false);
+
+    AddES3TexFormat(ptr, EffectiveFormat::RG8I  , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RG8UI , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RG16I , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RG16UI, true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RG32I , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RG32UI, true, false);
+
+    AddES3TexFormat(ptr, EffectiveFormat::RGB8I  , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB8UI , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB16I , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB16UI, false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB32I , false, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGB32UI, false, false);
+
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA8I  , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA8UI , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA16I , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA16UI, true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA32I , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::RGBA32UI, true, false);
+
+    
+    
+    AddES3TexFormat(ptr, EffectiveFormat::DEPTH_COMPONENT16 , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::DEPTH_COMPONENT24 , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::DEPTH_COMPONENT32F, true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::DEPTH24_STENCIL8  , true, false);
+    AddES3TexFormat(ptr, EffectiveFormat::DEPTH32F_STENCIL8 , true, false);
+
+    
+    AddES3TexFormat(ptr, EffectiveFormat::STENCIL_INDEX8, true, false);
+
+    
+    
+    AddES3TexFormat(ptr, EffectiveFormat::Luminance8Alpha8, false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::Luminance8      , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::Alpha8          , false, true);
 
     
     
     
-
-    auto usage = ptr->EditUsage(EffectiveFormat::STENCIL_INDEX8);
-    usage->isRenderable = true;
-    ptr->AllowRBFormat(LOCAL_GL_STENCIL_INDEX8, usage);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_RGB8_ETC2                     , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_SRGB8_ETC2                    , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_RGBA8_ETC2_EAC                , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC         , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_R11_EAC                       , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_RG11_EAC                      , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_SIGNED_R11_EAC                , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_SIGNED_RG11_EAC               , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 , false, true);
+    AddES3TexFormat(ptr, EffectiveFormat::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, false, true);
 
     
     
+    
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              , EffectiveFormat::RGBA8       );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              , EffectiveFormat::RGB5_A1     );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              , EffectiveFormat::RGBA4       );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_BYTE              , EffectiveFormat::SRGB8_ALPHA8);
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_BYTE                       , EffectiveFormat::RGBA8_SNORM );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_4_4_4_4     , EffectiveFormat::RGBA4       );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_SHORT_5_5_5_1     , EffectiveFormat::RGB5_A1     );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV, EffectiveFormat::RGB10_A2    );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV, EffectiveFormat::RGB5_A1     );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_HALF_FLOAT                 , EffectiveFormat::RGBA16F     );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_FLOAT                      , EffectiveFormat::RGBA32F     );
+    ret->AddUnpackOption(LOCAL_GL_RGBA, LOCAL_GL_FLOAT                      , EffectiveFormat::RGBA16F     );
+    
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_BYTE              , EffectiveFormat::RGBA8UI   );
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_BYTE                       , EffectiveFormat::RGBA8I    );
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_SHORT             , EffectiveFormat::RGBA16UI  );
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_SHORT                      , EffectiveFormat::RGBA16I   );
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_INT               , EffectiveFormat::RGBA32UI  );
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_INT                        , EffectiveFormat::RGBA32I   );
+    ret->AddUnpackOption(LOCAL_GL_RGBA_INTEGER, LOCAL_GL_UNSIGNED_INT_2_10_10_10_REV, EffectiveFormat::RGB10_A2UI);
 
-    AddUnsizedFormats(ptr, gl);
+    
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_BYTE               , EffectiveFormat::RGB8          );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_BYTE               , EffectiveFormat::RGB565        );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_BYTE               , EffectiveFormat::SRGB8         );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_BYTE                        , EffectiveFormat::RGB8_SNORM    );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_SHORT_5_6_5        , EffectiveFormat::RGB565        );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_INT_10F_11F_11F_REV, EffectiveFormat::R11F_G11F_B10F);
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_UNSIGNED_INT_5_9_9_9_REV    , EffectiveFormat::RGB9_E5       );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_HALF_FLOAT                  , EffectiveFormat::RGB16F        );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_HALF_FLOAT                  , EffectiveFormat::R11F_G11F_B10F);
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_HALF_FLOAT                  , EffectiveFormat::RGB9_E5       );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_FLOAT                       , EffectiveFormat::RGB32F        );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_FLOAT                       , EffectiveFormat::RGB16F        );
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_FLOAT                       , EffectiveFormat::R11F_G11F_B10F);
+    ret->AddUnpackOption(LOCAL_GL_RGB, LOCAL_GL_FLOAT                       , EffectiveFormat::RGB9_E5       );
 
-    if (gfxPrefs::WebGL2CompatMode()) {
-        AddSimpleUnsized(ptr, LOCAL_GL_RGBA, LOCAL_GL_FLOAT, EffectiveFormat::RGBA32F);
-        AddSimpleUnsized(ptr, LOCAL_GL_RGB , LOCAL_GL_FLOAT, EffectiveFormat::RGB32F );
+    
+    ret->AddUnpackOption(LOCAL_GL_RGB_INTEGER, LOCAL_GL_UNSIGNED_BYTE , EffectiveFormat::RGB8UI );
+    ret->AddUnpackOption(LOCAL_GL_RGB_INTEGER, LOCAL_GL_BYTE          , EffectiveFormat::RGB8I  );
+    ret->AddUnpackOption(LOCAL_GL_RGB_INTEGER, LOCAL_GL_UNSIGNED_SHORT, EffectiveFormat::RGB16UI);
+    ret->AddUnpackOption(LOCAL_GL_RGB_INTEGER, LOCAL_GL_SHORT         , EffectiveFormat::RGB16I );
+    ret->AddUnpackOption(LOCAL_GL_RGB_INTEGER, LOCAL_GL_UNSIGNED_INT  , EffectiveFormat::RGB32UI);
+    ret->AddUnpackOption(LOCAL_GL_RGB_INTEGER, LOCAL_GL_INT           , EffectiveFormat::RGB32I );
 
-        AddSimpleUnsized(ptr, LOCAL_GL_RGBA, LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::RGBA16F);
-        AddSimpleUnsized(ptr, LOCAL_GL_RGB , LOCAL_GL_HALF_FLOAT_OES, EffectiveFormat::RGB16F );
-    }
+
+    
+    ret->AddUnpackOption(LOCAL_GL_RG, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::RG8      );
+    ret->AddUnpackOption(LOCAL_GL_RG, LOCAL_GL_BYTE         , EffectiveFormat::RG8_SNORM);
+    ret->AddUnpackOption(LOCAL_GL_RG, LOCAL_GL_HALF_FLOAT   , EffectiveFormat::RG16F    );
+    ret->AddUnpackOption(LOCAL_GL_RG, LOCAL_GL_FLOAT        , EffectiveFormat::RG32F    );
+    ret->AddUnpackOption(LOCAL_GL_RG, LOCAL_GL_FLOAT        , EffectiveFormat::RG16F    );
+
+    
+    ret->AddUnpackOption(LOCAL_GL_RG_INTEGER, LOCAL_GL_UNSIGNED_BYTE , EffectiveFormat::RG8UI );
+    ret->AddUnpackOption(LOCAL_GL_RG_INTEGER, LOCAL_GL_BYTE          , EffectiveFormat::RG8I  );
+    ret->AddUnpackOption(LOCAL_GL_RG_INTEGER, LOCAL_GL_UNSIGNED_SHORT, EffectiveFormat::RG16UI);
+    ret->AddUnpackOption(LOCAL_GL_RG_INTEGER, LOCAL_GL_SHORT         , EffectiveFormat::RG16I );
+    ret->AddUnpackOption(LOCAL_GL_RG_INTEGER, LOCAL_GL_UNSIGNED_INT  , EffectiveFormat::RG32UI);
+    ret->AddUnpackOption(LOCAL_GL_RG_INTEGER, LOCAL_GL_INT           , EffectiveFormat::RG32I );
+
+    
+    ret->AddUnpackOption(LOCAL_GL_RED, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::R8      );
+    ret->AddUnpackOption(LOCAL_GL_RED, LOCAL_GL_BYTE         , EffectiveFormat::R8_SNORM);
+    ret->AddUnpackOption(LOCAL_GL_RED, LOCAL_GL_HALF_FLOAT   , EffectiveFormat::R16F    );
+    ret->AddUnpackOption(LOCAL_GL_RED, LOCAL_GL_FLOAT        , EffectiveFormat::R32F    );
+    ret->AddUnpackOption(LOCAL_GL_RED, LOCAL_GL_FLOAT        , EffectiveFormat::R16F    );
+
+    
+    ret->AddUnpackOption(LOCAL_GL_RED_INTEGER, LOCAL_GL_UNSIGNED_BYTE , EffectiveFormat::R8UI );
+    ret->AddUnpackOption(LOCAL_GL_RED_INTEGER, LOCAL_GL_BYTE          , EffectiveFormat::R8I  );
+    ret->AddUnpackOption(LOCAL_GL_RED_INTEGER, LOCAL_GL_UNSIGNED_SHORT, EffectiveFormat::R16UI);
+    ret->AddUnpackOption(LOCAL_GL_RED_INTEGER, LOCAL_GL_SHORT         , EffectiveFormat::R16I );
+    ret->AddUnpackOption(LOCAL_GL_RED_INTEGER, LOCAL_GL_UNSIGNED_INT  , EffectiveFormat::R32UI);
+    ret->AddUnpackOption(LOCAL_GL_RED_INTEGER, LOCAL_GL_INT           , EffectiveFormat::R32I );
+
+    
+    ret->AddUnpackOption(LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_UNSIGNED_SHORT, EffectiveFormat::DEPTH_COMPONENT16 );
+    ret->AddUnpackOption(LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_UNSIGNED_INT  , EffectiveFormat::DEPTH_COMPONENT24 );
+    ret->AddUnpackOption(LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_UNSIGNED_INT  , EffectiveFormat::DEPTH_COMPONENT16 );
+    ret->AddUnpackOption(LOCAL_GL_DEPTH_COMPONENT, LOCAL_GL_FLOAT         , EffectiveFormat::DEPTH_COMPONENT32F);
+
+    
+    ret->AddUnpackOption(LOCAL_GL_DEPTH_STENCIL, LOCAL_GL_UNSIGNED_INT_24_8             , EffectiveFormat::DEPTH24_STENCIL8 );
+    ret->AddUnpackOption(LOCAL_GL_DEPTH_STENCIL, LOCAL_GL_FLOAT_32_UNSIGNED_INT_24_8_REV, EffectiveFormat::DEPTH32F_STENCIL8);
+
+    
+    ret->AddUnpackOption(LOCAL_GL_LUMINANCE_ALPHA, LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8Alpha8);
+    ret->AddUnpackOption(LOCAL_GL_LUMINANCE      , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Luminance8      );
+    ret->AddUnpackOption(LOCAL_GL_ALPHA          , LOCAL_GL_UNSIGNED_BYTE, EffectiveFormat::Alpha8          );
 
     return Move(ret);
 }
 
 
-
-void
-FormatUsageAuthority::AddTexUnpack(FormatUsageInfo* usage, const PackingInfo& pi,
-                                   const DriverUnpackInfo& dui)
-{
-    
-    auto res = usage->validUnpacks.insert({ pi, dui });
-    auto itr = res.first;
-
-    if (!usage->idealUnpack) {
-        
-        usage->idealUnpack = &(itr->second);
-    }
-
-    mValidTexUnpackFormats.insert(pi.format);
-    mValidTexUnpackTypes.insert(pi.type);
-}
-
-static bool
-Contains(const std::set<GLenum>& set, GLenum key)
-{
-    return set.find(key) != set.end();
-}
-
-bool
-FormatUsageAuthority::IsInternalFormatEnumValid(GLenum internalFormat) const
-{
-    return Contains(mValidTexInternalFormats, internalFormat);
-}
-
-bool
-FormatUsageAuthority::AreUnpackEnumsValid(GLenum unpackFormat, GLenum unpackType) const
-{
-    return (Contains(mValidTexUnpackFormats, unpackFormat) &&
-            Contains(mValidTexUnpackTypes, unpackType));
-}
-
-
-
-void
-FormatUsageAuthority::AllowRBFormat(GLenum sizedFormat, const FormatUsageInfo* usage)
-{
-    MOZ_ASSERT(!usage->format->compression);
-    MOZ_ASSERT(usage->format->sizedFormat);
-    MOZ_ASSERT(usage->isRenderable);
-
-    AlwaysInsert(mRBFormatMap, sizedFormat, usage);
-}
-
-void
-FormatUsageAuthority::AllowSizedTexFormat(GLenum sizedFormat,
-                                          const FormatUsageInfo* usage)
-{
-    if (usage->format->compression) {
-        MOZ_ASSERT(usage->isFilterable, "Compressed formats should be filterable.");
-    } else {
-        MOZ_ASSERT(usage->validUnpacks.size() && usage->idealUnpack,
-                   "AddTexUnpack() first.");
-    }
-
-    AlwaysInsert(mSizedTexFormatMap, sizedFormat, usage);
-
-    mValidTexInternalFormats.insert(sizedFormat);
-}
-
-void
-FormatUsageAuthority::AllowUnsizedTexFormat(const PackingInfo& pi,
-                                            const FormatUsageInfo* usage)
-{
-    MOZ_ASSERT(!usage->format->compression);
-    MOZ_ASSERT(usage->validUnpacks.size() && usage->idealUnpack, "AddTexUnpack() first.");
-
-    AlwaysInsert(mUnsizedTexFormatMap, pi, usage);
-
-    mValidTexInternalFormats.insert(pi.format);
-    mValidTexUnpackFormats.insert(pi.format);
-    mValidTexUnpackTypes.insert(pi.type);
-}
-
-const FormatUsageInfo*
-FormatUsageAuthority::GetRBUsage(GLenum sizedFormat) const
-{
-    return FindOrNull(mRBFormatMap, sizedFormat);
-}
-
-const FormatUsageInfo*
-FormatUsageAuthority::GetSizedTexUsage(GLenum sizedFormat) const
-{
-    return FindOrNull(mSizedTexFormatMap, sizedFormat);
-}
-
-const FormatUsageInfo*
-FormatUsageAuthority::GetUnsizedTexUsage(const PackingInfo& pi) const
-{
-    return FindOrNull(mUnsizedTexFormatMap, pi);
-}
 
 FormatUsageInfo*
-FormatUsageAuthority::EditUsage(EffectiveFormat format)
+FormatUsageAuthority::GetUsage(EffectiveFormat format)
 {
-    auto itr = mUsageMap.find(format);
+    auto itr = mInfoMap.find(format);
 
-    if (itr == mUsageMap.end()) {
-        const FormatInfo* formatInfo = GetFormat(format);
-        MOZ_RELEASE_ASSERT(formatInfo);
-
-        FormatUsageInfo usage(formatInfo);
-
-        auto res = mUsageMap.insert({ format, usage });
-        DebugOnly<bool> didInsert = res.second;
-        MOZ_ASSERT(didInsert);
-
-        itr = res.first;
-    }
-
-    return &(itr->second);
-}
-
-const FormatUsageInfo*
-FormatUsageAuthority::GetUsage(EffectiveFormat format) const
-{
-    auto itr = mUsageMap.find(format);
-    if (itr == mUsageMap.end())
+    if (itr == mInfoMap.end())
         return nullptr;
 
     return &(itr->second);
 }
 
+void
+FormatUsageAuthority::AddFormat(EffectiveFormat format, bool asRenderbuffer,
+                                bool isRenderable, bool asTexture, bool isFilterable)
+{
+    MOZ_ASSERT_IF(asRenderbuffer, isRenderable);
+    MOZ_ASSERT_IF(isFilterable, asTexture);
 
+    const FormatInfo* formatInfo = GetFormatInfo(format);
+    MOZ_RELEASE_ASSERT(formatInfo);
+
+    FormatUsageInfo usage = { formatInfo, asRenderbuffer, isRenderable, asTexture,
+                              isFilterable, std::set<UnpackTuple>() };
+    AlwaysInsert(mInfoMap, format, usage);
+}
+
+void
+FormatUsageAuthority::AddUnpackOption(GLenum unpackFormat, GLenum unpackType,
+                                      EffectiveFormat effectiveFormat)
+{
+    const UnpackTuple unpack = { unpackFormat, unpackType };
+    FormatUsageInfo* usage = GetUsage(effectiveFormat);
+    MOZ_RELEASE_ASSERT(usage);
+    if (!usage)
+        return;
+
+    MOZ_RELEASE_ASSERT(usage->asTexture);
+
+    auto res = usage->validUnpacks.insert(unpack);
+    bool didInsert = res.second;
+    MOZ_ALWAYS_TRUE(didInsert);
+}
+
+
+
+struct ComponentSizes
+{
+    GLubyte redSize;
+    GLubyte greenSize;
+    GLubyte blueSize;
+    GLubyte alphaSize;
+    GLubyte depthSize;
+    GLubyte stencilSize;
+};
+
+static ComponentSizes kComponentSizes[] = {
+    
+    
+    { 32, 32, 32, 32,  0,  0 }, 
+    { 32, 32, 32, 32,  0,  0 }, 
+    { 16, 16, 16, 16,  0,  0 }, 
+    { 16, 16, 16, 16,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    { 10, 10, 10,  2,  0,  0 }, 
+    { 10, 10, 10,  2,  0,  0 }, 
+    {  4,  4,  4,  4,  0,  0 }, 
+    {  5,  5,  5,  1,  0,  0 }, 
+
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  0,  0,  0 }, 
+
+    { 32, 32,  0,  0,  0,  0 }, 
+    { 32, 32,  0,  0,  0,  0 }, 
+    { 16, 16,  0,  0,  0,  0 }, 
+    { 16, 16,  0,  0,  0,  0 }, 
+    {  8,  8,  0,  0,  0,  0 }, 
+    {  8,  8,  0,  0,  0,  0 }, 
+    {  8,  8,  0,  0,  0,  0 }, 
+
+    { 32,  0,  0,  0,  0,  0 }, 
+    { 32,  0,  0,  0,  0,  0 }, 
+    { 16,  0,  0,  0,  0,  0 }, 
+    { 16,  0,  0,  0,  0,  0 }, 
+    {  8,  0,  0,  0,  0,  0 }, 
+    {  8,  0,  0,  0,  0,  0 }, 
+    {  8,  0,  0,  0,  0,  0 }, 
+
+    
+    { 32, 32, 32, 32,  0,  0 }, 
+    { 16, 16, 16, 16,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+
+    { 32, 32, 32,  0,  0,  0 }, 
+    { 32, 32, 32,  0,  0,  0 }, 
+    { 32, 32, 32,  0,  0,  0 }, 
+
+    { 16, 16, 16,  0,  0,  0 }, 
+    { 16, 16, 16,  0,  0,  0 }, 
+    { 16, 16, 16,  0,  0,  0 }, 
+
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  0,  0,  0 }, 
+
+    { 11, 11, 11,  0,  0,  0 }, 
+    {  9,  9,  9,  0,  0,  0 }, 
+
+    { 32, 32,  0,  0,  0,  0 }, 
+    { 16, 16,  0,  0,  0,  0 }, 
+    {  8,  8,  0,  0,  0,  0 }, 
+
+    { 32,  0,  0,  0,  0,  0 }, 
+    { 16,  0,  0,  0,  0,  0 }, 
+    {  8,  0,  0,  0,  0,  0 }, 
+
+    
+    {  0,  0,  0,  0, 32,  0 }, 
+    {  0,  0,  0,  0, 24,  0 }, 
+    {  0,  0,  0,  0, 16,  0 }, 
+
+    
+    {  0,  0,  0,  0, 32,  8 }, 
+    {  0,  0,  0,  0, 24,  8 }, 
+
+    
+    {  0,  0,  0,  0,  0,  8 }, 
+
+    
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  0,  0,  0,  8,  0,  0 }, 
+
+    
+    
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+
+    
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+
+    
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+
+    
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+    {  8,  8,  8,  0,  0,  0 }, 
+    {  8,  8,  8,  8,  0,  0 }, 
+
+    
+    {  8,  8,  8,  0,  0,  0 }, 
+
+    
+    { 32, 32, 32, 32,  0,  0 }, 
+    { 32, 32, 32,  0,  0,  0 }, 
+    {  0,  0,  0, 32,  0,  0 }, 
+
+    
+    { 16, 16, 16, 16, 0, 0 }, 
+    { 16, 16, 16,  0, 0, 0 }, 
+    {  0,  0,  0, 16, 0, 0 }, 
+
+    {  0, } 
+};
+
+GLint
+GetComponentSize(EffectiveFormat format, GLenum component)
+{
+    ComponentSizes compSize = kComponentSizes[(int) format];
+    switch (component) {
+    case LOCAL_GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE:
+    case LOCAL_GL_RENDERBUFFER_RED_SIZE:
+    case LOCAL_GL_RED_BITS:
+        return compSize.redSize;
+    case LOCAL_GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE:
+    case LOCAL_GL_RENDERBUFFER_GREEN_SIZE:
+    case LOCAL_GL_GREEN_BITS:
+        return compSize.greenSize;
+    case LOCAL_GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE:
+    case LOCAL_GL_RENDERBUFFER_BLUE_SIZE:
+    case LOCAL_GL_BLUE_BITS:
+        return compSize.blueSize;
+    case LOCAL_GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE:
+    case LOCAL_GL_RENDERBUFFER_ALPHA_SIZE:
+    case LOCAL_GL_ALPHA_BITS:
+        return compSize.alphaSize;
+    case LOCAL_GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE:
+    case LOCAL_GL_RENDERBUFFER_DEPTH_SIZE:
+    case LOCAL_GL_DEPTH_BITS:
+        return compSize.depthSize;
+    case LOCAL_GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE:
+    case LOCAL_GL_RENDERBUFFER_STENCIL_SIZE:
+    case LOCAL_GL_STENCIL_BITS:
+        return compSize.stencilSize;
+    }
+
+    return 0;
+}
+
+static GLenum kComponentTypes[] = {
+    
+    
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+
+    
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_SIGNED_NORMALIZED,         
+
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+
+    LOCAL_GL_SIGNED_NORMALIZED,         
+    LOCAL_GL_INT,                       
+    LOCAL_GL_UNSIGNED_INT,              
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_SIGNED_NORMALIZED,         
+
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_SIGNED_NORMALIZED,         
+
+    
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_UNSIGNED_NORMALIZED,       
+
+    
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+
+    
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+    LOCAL_GL_FLOAT,                     
+
+    LOCAL_GL_NONE 
+};
+
+GLenum
+GetComponentType(EffectiveFormat format)
+{
+    return kComponentTypes[(int) format];
+}
+
+GLenum
+GetColorEncoding(EffectiveFormat format)
+{
+    const bool isSRGB = (GetFormatInfo(format)->colorComponentType ==
+                         ComponentType::NormUIntSRGB);
+    return (isSRGB) ? LOCAL_GL_SRGB : LOCAL_GL_LINEAR;
+}
 
 } 
 } 

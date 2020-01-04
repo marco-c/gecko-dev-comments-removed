@@ -33,7 +33,7 @@ public:
 
     
     WebGLContext* GetParentObject() const {
-        return mContext;
+        return Context();
     }
 
     

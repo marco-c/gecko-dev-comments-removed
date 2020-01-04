@@ -29,7 +29,6 @@
 #include "Units.h"
 #include "mozilla/ToString.h"
 #include "nsHTMLReflowMetrics.h"
-#include "ImageContainer.h"
 
 #include <limits>
 #include <algorithm>
@@ -68,7 +67,6 @@ struct IntrinsicSize;
 struct ContainerLayerParameters;
 class WritingMode;
 namespace dom {
-class CanvasRenderingContext2D;
 class DOMRectList;
 class Element;
 class HTMLImageElement;
@@ -80,7 +78,6 @@ namespace gfx {
 struct RectCornerRadii;
 } 
 namespace layers {
-class Image;
 class Layer;
 } 
 } 
@@ -2101,25 +2098,10 @@ public:
   };
 
   struct SurfaceFromElementResult {
-    friend class mozilla::dom::CanvasRenderingContext2D;
-    friend class nsLayoutUtils;
+    SurfaceFromElementResult();
 
     
-
-
-
-
-
-
-    
-    RefPtr<mozilla::layers::Image> mLayersImage;
-
-protected:
-    
-
-    RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
-
-public:
+    RefPtr<SourceSurface> mSourceSurface;
     
     DirectDrawInfo mDrawInfo;
 
@@ -2141,13 +2123,6 @@ public:
     bool mCORSUsed;
     
     bool mIsPremultiplied;
-
-    
-
-    SurfaceFromElementResult();
-
-    
-    const RefPtr<mozilla::gfx::SourceSurface>& GetSourceSurface();
   };
 
   static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::Element *aElement,

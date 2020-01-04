@@ -38,10 +38,23 @@ namespace mozilla {
 
 
 
-enum class FakeBlackType : uint8_t {
-    None,
-    RGBA0001, 
-    RGBA0000, 
+
+
+
+
+
+
+enum class WebGLContextFakeBlackStatus : uint8_t {
+  Unknown,
+  NotNeeded,
+  Needed
+};
+
+enum class WebGLTextureFakeBlackStatus : uint8_t {
+  Unknown,
+  NotNeeded,
+  IncompleteTexture,
+  UninitializedImageData
 };
 
 
@@ -102,7 +115,6 @@ enum class WebGLTexelFormat : uint8_t {
     RA32F, 
     
     RGB8,
-    RGBX8, 
     BGRX8, 
     RGB565,
     RGB16F, 
