@@ -137,9 +137,7 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
 
   mFlingDuration += aDelta.ToMilliseconds();
   mOverScroller->ComputeScrollOffset(mFlingDuration, &shouldContinueFling);
-  
-  
-  
+
   int32_t currentX = 0;
   int32_t currentY = 0;
   mOverScroller->GetCurrX(&currentX);
@@ -157,7 +155,12 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
   
   if (offset != mPreviousOffset) {
     if (aDelta.ToMilliseconds() > 0) {
-      velocity = (offset - mPreviousOffset) / (float)aDelta.ToMilliseconds();
+      mOverScroller->GetCurrSpeedX(&velocity.x);
+      mOverScroller->GetCurrSpeedY(&velocity.y);
+
+      velocity.x /= 1000;
+      velocity.y /= 1000;
+
       mPreviousVelocity = velocity;
     }
   } else if (hitBoundX || hitBoundY) {
