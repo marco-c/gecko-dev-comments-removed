@@ -1195,7 +1195,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
     switch (aEvent.mMessage) {
     case NS_DRAGDROP_OVER:
     case NS_DRAGDROP_EXIT:
-    case NS_DRAGDROP_DROP:
+    case eDrop:
       return true;
     default:
       break;
@@ -3286,7 +3286,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     }
     break;
 
-  case NS_DRAGDROP_DROP:
+  case eDrop:
     {
       
       if (mCurrentTarget && nsEventStatus_eConsumeNoDefault != *aStatus) {

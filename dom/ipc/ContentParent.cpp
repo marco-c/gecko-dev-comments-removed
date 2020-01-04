@@ -5114,7 +5114,7 @@ ContentParent::MaybeInvokeDragSession(TabParent* aParent)
       if (!transfer) {
         
         
-        transfer = new DataTransfer(nullptr, NS_DRAGDROP_DROP, true, -1);
+        transfer = new DataTransfer(nullptr, eDrop, true, -1);
         session->SetDataTransfer(transfer);
       }
       

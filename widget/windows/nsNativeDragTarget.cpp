@@ -229,7 +229,7 @@ nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
     *pdwEffect = DROPEFFECT_NONE;
   }
 
-  if (aEventMessage != NS_DRAGDROP_DROP) {
+  if (aEventMessage != eDrop) {
     
     
     
@@ -439,7 +439,7 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData,
   nsCOMPtr<nsIDragService> serv = mDragService;
 
   
-  ProcessDrag(NS_DRAGDROP_DROP, grfKeyState, aPT, pdwEffect);
+  ProcessDrag(eDrop, grfKeyState, aPT, pdwEffect);
 
   nsCOMPtr<nsIDragSession> currentDragSession;
   serv->GetCurrentSession(getter_AddRefs(currentDragSession));

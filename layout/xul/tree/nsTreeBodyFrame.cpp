@@ -2707,7 +2707,7 @@ nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
     
     if (mSlots->mDropAllowed)
       *aEventStatus = nsEventStatus_eConsumeNoDefault;
-  } else if (aEvent->mMessage == NS_DRAGDROP_DROP) {
+  } else if (aEvent->mMessage == eDrop) {
      
      if (!mSlots)
        return NS_OK;
