@@ -2678,6 +2678,13 @@ WorkerThreadPrimaryRunnable::Run()
 
     
     
+    
+    
+    
+    mWorkerPrivate->ClearDebuggerEventQueue();
+
+    
+    
     JS_DestroyContext(cx);
 
     
