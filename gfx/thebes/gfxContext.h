@@ -78,12 +78,7 @@ public:
 
 
 
-
-
-    already_AddRefed<gfxASurface> CurrentSurface(gfxFloat *dx, gfxFloat *dy);
-    already_AddRefed<gfxASurface> CurrentSurface() {
-        return CurrentSurface(nullptr, nullptr);
-    }
+    already_AddRefed<gfxASurface> CurrentSurface();
 
     mozilla::gfx::DrawTarget *GetDrawTarget() { return mDT; }
 
