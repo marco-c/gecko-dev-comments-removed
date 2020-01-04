@@ -581,7 +581,11 @@ gfxPlatform::Init()
     RegisterStrongMemoryReporter(new GfxMemoryImageReporter());
 
     if (XRE_IsParentProcess()) {
-      gPlatform->mVsyncSource = gPlatform->CreateHardwareVsyncSource();
+      if (gfxPlatform::ForceSoftwareVsync()) {
+        gPlatform->mVsyncSource = (gPlatform)->gfxPlatform::CreateHardwareVsyncSource();
+      } else {
+        gPlatform->mVsyncSource = gPlatform->CreateHardwareVsyncSource();
+      }
     }
 }
 
@@ -2328,6 +2332,13 @@ gfxPlatform::UsesOffMainThreadCompositing()
   return result;
 }
 
+
+
+
+
+
+
+
 already_AddRefed<mozilla::gfx::VsyncSource>
 gfxPlatform::CreateHardwareVsyncSource()
 {
@@ -2345,6 +2356,29 @@ gfxPlatform::IsInLayoutAsapMode()
   
   
   return Preferences::GetInt("layout.frame_rate", -1) == 0;
+}
+
+ bool
+gfxPlatform::ForceSoftwareVsync()
+{
+  return Preferences::GetInt("layout.frame_rate", -1) > 0;
+}
+
+ int
+gfxPlatform::GetSoftwareVsyncRate()
+{
+  int preferenceRate = Preferences::GetInt("layout.frame_rate",
+                                           gfxPlatform::GetDefaultFrameRate());
+  if (preferenceRate <= 0) {
+    return gfxPlatform::GetDefaultFrameRate();
+  }
+  return preferenceRate;
+}
+
+ int
+gfxPlatform::GetDefaultFrameRate()
+{
+  return 60;
 }
 
 static nsString

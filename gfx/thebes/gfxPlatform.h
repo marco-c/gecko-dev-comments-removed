@@ -610,6 +610,21 @@ public:
     
 
 
+    static int GetSoftwareVsyncRate();
+
+    
+
+
+    static bool ForceSoftwareVsync();
+
+    
+
+
+    static int GetDefaultFrameRate();
+
+    
+
+
     virtual bool SupportsApzWheelInput() const {
       return false;
     }
