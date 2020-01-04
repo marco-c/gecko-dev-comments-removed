@@ -27,10 +27,6 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
-namespace js {
-template <typename T> struct DefaultHasher;
-} 
-
 struct jsid
 {
     size_t asBits;

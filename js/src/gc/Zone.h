@@ -428,7 +428,12 @@ struct Zone : public JS::shadow::Zone,
         
         
         
-        return runtimeFromAnyThread()->gc.nursery.addedUniqueIdToCell(cell);
+        if (!runtimeFromAnyThread()->gc.nursery.addedUniqueIdToCell(cell)) {
+            uniqueIds_.remove(cell);
+            return false;
+        }
+
+        return true;
     }
 
     js::HashNumber getHashCodeInfallible(js::gc::Cell* cell) {

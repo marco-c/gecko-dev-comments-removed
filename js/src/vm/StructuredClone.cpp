@@ -277,14 +277,20 @@ struct JSStructuredCloneWriter {
                                      Value tVal)
         : out(cx), objs(out.context()),
           counts(out.context()), entries(out.context()),
-          memory(out.context(), CloneMemory(out.context())), callbacks(cb),
+          memory(out.context()), callbacks(cb),
           closure(cbClosure), transferable(out.context(), tVal),
           transferableObjects(out.context(), GCHashSet<JSObject*>(cx))
     {}
 
     ~JSStructuredCloneWriter();
 
-    bool init() { return memory.init() && parseTransferable() && writeTransferMap(); }
+    bool init() {
+        if (!memory.init()) {
+            ReportOutOfMemory(context());
+            return false;
+        }
+        return parseTransferable() && writeTransferMap();
+    }
 
     bool write(HandleValue v);
 
@@ -342,7 +348,10 @@ struct JSStructuredCloneWriter {
     
     
     
-    using CloneMemory = GCHashMap<JSObject*, uint32_t, MovableCellHasher<JSObject*>>;
+    using CloneMemory = GCHashMap<JSObject*,
+                                  uint32_t,
+                                  MovableCellHasher<JSObject*>,
+                                  SystemAllocPolicy>;
     Rooted<CloneMemory> memory;
 
     
@@ -968,8 +977,10 @@ JSStructuredCloneWriter::startObject(HandleObject obj, bool* backref)
     CloneMemory::AddPtr p = memory.lookupForAdd(obj);
     if ((*backref = p.found()))
         return out.writePair(SCTAG_BACK_REFERENCE_OBJECT, p->value());
-    if (!memory.add(p, obj, memory.count()))
+    if (!memory.add(p, obj, memory.count())) {
+        ReportOutOfMemory(context());
         return false;
+    }
 
     if (memory.count() == UINT32_MAX) {
         JS_ReportErrorNumber(context(), GetErrorMessage, nullptr,
@@ -1268,8 +1279,10 @@ JSStructuredCloneWriter::writeTransferMap()
     for (auto tr = transferableObjects.all(); !tr.empty(); tr.popFront()) {
         obj = tr.front();
 
-        if (!memory.put(obj, memory.count()))
+        if (!memory.put(obj, memory.count())) {
+            ReportOutOfMemory(context());
             return false;
+        }
 
         
         
