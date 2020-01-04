@@ -25,6 +25,7 @@
 #include "nsIDocument.h"
 #include "nsPrintfCString.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ArenaObjectID.h"
 
 #ifdef DEBUG
 
@@ -1178,7 +1179,8 @@ void*
 nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
 {
   
-  return aPresContext->PresShell()->AllocateByObjectID(nsPresArena::nsStyleContext_id, sz);
+  return aPresContext->PresShell()->
+    AllocateByObjectID(eArenaObjectID_nsStyleContext, sz);
 }
 
 
@@ -1194,7 +1196,8 @@ nsStyleContext::Destroy()
 
   
   
-  presContext->PresShell()->FreeByObjectID(nsPresArena::nsStyleContext_id, this);
+  presContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_nsStyleContext, this);
 }
 
 already_AddRefed<nsStyleContext>

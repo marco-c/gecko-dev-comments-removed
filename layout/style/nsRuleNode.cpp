@@ -1402,7 +1402,7 @@ void*
 nsRuleNode::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
 {
   
-  return aPresContext->PresShell()->AllocateByObjectID(nsPresArena::nsRuleNode_id, sz);
+  return aPresContext->PresShell()->AllocateByObjectID(eArenaObjectID_nsRuleNode, sz);
 }
 
 
@@ -1457,7 +1457,7 @@ nsRuleNode::DestroyInternal(nsRuleNode ***aDestroyQueueTail)
 
   
   
-  mPresContext->PresShell()->FreeByObjectID(nsPresArena::nsRuleNode_id, this);
+  mPresContext->PresShell()->FreeByObjectID(eArenaObjectID_nsRuleNode, this);
 }
 
 nsRuleNode* nsRuleNode::CreateRootNode(nsPresContext* aPresContext)
