@@ -736,6 +736,31 @@ TestComparisonOperators()
   return true;
 }
 
+
+
+
+class MySuperClass {
+  virtual void VirtualMethod() {  }
+};
+
+class MyDerivedClass : public MySuperClass {
+  void VirtualMethod() override {  }
+};
+
+static bool
+TestVirtualFunction() {
+  Maybe<MySuperClass> super;
+  super.emplace();
+  super.reset();
+
+  Maybe<MyDerivedClass> derived;
+  derived.emplace();
+  derived.reset();
+
+  
+  return true;
+}
+
 int
 main()
 {
@@ -746,6 +771,7 @@ main()
   RUN_TEST(TestMap);
   RUN_TEST(TestToMaybe);
   RUN_TEST(TestComparisonOperators);
+  RUN_TEST(TestVirtualFunction);
 
   return 0;
 }
