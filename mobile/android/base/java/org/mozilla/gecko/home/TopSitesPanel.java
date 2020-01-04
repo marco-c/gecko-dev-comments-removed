@@ -526,6 +526,19 @@ public class TopSitesPanel extends HomeFragment {
             return super.getItem(position + mMaxGridEntries);
         }
 
+        
+
+
+
+        @Override
+        public long getItemId(int position) {
+            final int adjustedPosition = position + mMaxGridEntries;
+            final Cursor cursor = getCursor();
+
+            cursor.moveToPosition(adjustedPosition);
+            return getItemIdForTopSitesCursor(cursor);
+        }
+
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
             final int position = cursor.getPosition();
@@ -585,23 +598,16 @@ public class TopSitesPanel extends HomeFragment {
             notifyDataSetChanged();
         }
 
+        
+
+
+
         @Override
         public long getItemId(int position) {
-            
-            
-            
-            
-
             final Cursor cursor = getCursor();
             cursor.moveToPosition(position);
 
-            final long historyId = cursor.getLong(cursor.getColumnIndexOrThrow(TopSites.HISTORY_ID));
-            if (historyId != 0) {
-                return historyId;
-            }
-
-            final long bookmarkId = cursor.getLong(cursor.getColumnIndexOrThrow(TopSites.BOOKMARK_ID));
-            return -1 * bookmarkId;
+            return getItemIdForTopSitesCursor(cursor);
         }
 
         @Override
@@ -964,5 +970,26 @@ public class TopSitesPanel extends HomeFragment {
                 mGridAdapter.updateThumbnails(null);
             }
         }
+    }
+
+    
+
+
+
+
+
+
+
+
+    private static long getItemIdForTopSitesCursor(final Cursor cursorInPosition) {
+        final int historyIdCol = cursorInPosition.getColumnIndexOrThrow(TopSites.HISTORY_ID);
+        final long historyId = cursorInPosition.getLong(historyIdCol);
+        if (historyId != 0) {
+            return historyId;
+        }
+
+        final int bookmarkIdCol = cursorInPosition.getColumnIndexOrThrow(TopSites.BOOKMARK_ID);
+        final long bookmarkId = cursorInPosition.getLong(bookmarkIdCol);
+        return -1 * bookmarkId;
     }
 }
