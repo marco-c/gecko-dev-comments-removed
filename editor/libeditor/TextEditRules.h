@@ -253,34 +253,29 @@ protected:
   friend class nsAutoLockRulesSniffing;
 };
 
-} 
-
-class nsTextRulesInfo : public nsRulesInfo
+class TextRulesInfo final : public nsRulesInfo
 {
- public:
-
-  explicit nsTextRulesInfo(EditAction aAction) :
-    nsRulesInfo(aAction),
-    inString(0),
-    outString(0),
-    outputFormat(0),
-    maxLength(-1),
-    collapsedAction(nsIEditor::eNext),
-    stripWrappers(nsIEditor::eStrip),
-    bOrdered(false),
-    entireList(false),
-    bulletType(0),
-    alignType(0),
-    blockType(0),
-    insertElement(0)
-    {}
-
-  virtual ~nsTextRulesInfo() {}
+public:
+  explicit TextRulesInfo(EditAction aAction)
+    : nsRulesInfo(aAction)
+    , inString(nullptr)
+    , outString(nullptr)
+    , outputFormat(nullptr)
+    , maxLength(-1)
+    , collapsedAction(nsIEditor::eNext)
+    , stripWrappers(nsIEditor::eStrip)
+    , bOrdered(false)
+    , entireList(false)
+    , bulletType(nullptr)
+    , alignType(nullptr)
+    , blockType(nullptr)
+    , insertElement(nullptr)
+  {}
 
   
-  const nsAString *inString;
-  nsAString *outString;
-  const nsAString *outputFormat;
+  const nsAString* inString;
+  nsAString* outString;
+  const nsAString* outputFormat;
   int32_t maxLength;
 
   
@@ -290,18 +285,19 @@ class nsTextRulesInfo : public nsRulesInfo
   
   bool bOrdered;
   bool entireList;
-  const nsAString *bulletType;
+  const nsAString* bulletType;
 
   
-  const nsAString *alignType;
+  const nsAString* alignType;
 
   
-  const nsAString *blockType;
+  const nsAString* blockType;
 
   
   const nsIDOMElement* insertElement;
 };
 
+} 
 
 
 

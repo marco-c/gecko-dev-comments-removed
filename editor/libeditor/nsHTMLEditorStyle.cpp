@@ -130,7 +130,7 @@ nsHTMLEditor::SetInlineProperty(nsIAtom* aProperty,
   AutoTransactionsConserveSelection dontSpazMySelection(this);
 
   bool cancel, handled;
-  nsTextRulesInfo ruleInfo(EditAction::setTextProperty);
+  TextRulesInfo ruleInfo(EditAction::setTextProperty);
   
   nsresult res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(res, res);
@@ -1218,7 +1218,7 @@ nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
   AutoTransactionsConserveSelection dontSpazMySelection(this);
 
   bool cancel, handled;
-  nsTextRulesInfo ruleInfo(EditAction::removeTextProperty);
+  TextRulesInfo ruleInfo(EditAction::removeTextProperty);
   
   nsCOMPtr<nsIEditRules> kungFuDeathGrip(mRules);
   nsresult res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
