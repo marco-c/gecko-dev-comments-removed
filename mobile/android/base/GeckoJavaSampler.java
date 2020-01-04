@@ -22,7 +22,6 @@ public class GeckoJavaSampler {
 
     
     
-    @WrapForJNI
     private static native double getProfilerTime();
 
     private static class Sample {
@@ -209,3 +208,6 @@ public class GeckoJavaSampler {
         }
     }
 }
+
+
+
