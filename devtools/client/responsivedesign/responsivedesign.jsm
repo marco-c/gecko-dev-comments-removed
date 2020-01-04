@@ -21,6 +21,7 @@ var { showDoorhanger } = require("devtools/client/shared/doorhanger");
 var { TouchEventSimulator } = require("devtools/shared/touch/simulator");
 var { Task } = require("resource://gre/modules/Task.jsm");
 var promise = require("promise");
+var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 this.EXPORTED_SYMBOLS = ["ResponsiveUIManager"];
 
@@ -36,6 +37,10 @@ const ROUND_RATIO = 10;
 const INPUT_PARSER = /(\d+)[^\d]+(\d+)/;
 
 const SHARED_L10N = new ViewHelpers.L10N("chrome://devtools/locale/shared.properties");
+
+function debug(msg) {
+  
+}
 
 var ActiveTabs = new Map();
 
@@ -92,25 +97,27 @@ var Manager = {
 
 
 
-  handleGcliCommand: function(aWindow, aTab, aCommand, aArgs) {
+  handleGcliCommand: Task.async(function*(aWindow, aTab, aCommand, aArgs) {
     switch (aCommand) {
       case "resize to":
         this.runIfNeeded(aWindow, aTab);
-        ActiveTabs.get(aTab).setSize(aArgs.width, aArgs.height);
+        let ui = ActiveTabs.get(aTab);
+        yield ui.inited;
+        ui.setSize(aArgs.width, aArgs.height);
         break;
       case "resize on":
         this.runIfNeeded(aWindow, aTab);
         break;
       case "resize off":
         if (this.isActiveForTab(aTab)) {
-          ActiveTabs.get(aTab).close();
+          yield ActiveTabs.get(aTab).close();
         }
         break;
       case "resize toggle":
-          this.toggle(aWindow, aTab);
+        this.toggle(aWindow, aTab);
       default:
     }
-  }
+  })
 }
 
 EventEmitter.decorate(Manager);
@@ -126,7 +133,7 @@ if (Services.prefs.getBoolPref("devtools.responsive.html.enabled")) {
   this.ResponsiveUIManager = Manager;
 }
 
-var presets = [
+var defaultPresets = [
   
   {key: "320x480", width: 320, height: 480},    
   {key: "360x640", width: 360, height: 640},    
@@ -155,59 +162,6 @@ function ResponsiveUI(aWindow, aTab)
   this.stack = this.container.querySelector(".browserStack");
   this._telemetry = new Telemetry();
 
-  let childOn = () => {
-    this.mm.removeMessageListener("ResponsiveMode:Start:Done", childOn);
-    ResponsiveUIManager.emit("on", { tab: this.tab });
-  }
-  this.mm.addMessageListener("ResponsiveMode:Start:Done", childOn);
-
-  let requiresFloatingScrollbars = !this.mainWindow.matchMedia("(-moz-overlay-scrollbars)").matches;
-  this.mm.loadFrameScript("resource://devtools/client/responsivedesign/responsivedesign-child.js", true);
-  this.mm.addMessageListener("ResponsiveMode:ChildScriptReady", () => {
-    this.mm.sendAsyncMessage("ResponsiveMode:Start", {
-      requiresFloatingScrollbars: requiresFloatingScrollbars
-    });
-  });
-
-  
-  if (Services.prefs.prefHasUserValue("devtools.responsiveUI.presets")) {
-    try {
-      presets = JSON.parse(Services.prefs.getCharPref("devtools.responsiveUI.presets"));
-    } catch(e) {
-      
-      Cu.reportError("Could not parse pref `devtools.responsiveUI.presets`: " + e);
-    }
-  }
-
-  this.customPreset = {key: "custom", custom: true};
-
-  if (Array.isArray(presets)) {
-    this.presets = [this.customPreset].concat(presets);
-  } else {
-    Cu.reportError("Presets value (devtools.responsiveUI.presets) is malformated.");
-    this.presets = [this.customPreset];
-  }
-
-  try {
-    let width = Services.prefs.getIntPref("devtools.responsiveUI.customWidth");
-    let height = Services.prefs.getIntPref("devtools.responsiveUI.customHeight");
-    this.customPreset.width = Math.min(MAX_WIDTH, width);
-    this.customPreset.height = Math.min(MAX_HEIGHT, height);
-
-    this.currentPresetKey = Services.prefs.getCharPref("devtools.responsiveUI.currentPreset");
-  } catch(e) {
-    
-    let bbox = this.stack.getBoundingClientRect();
-
-    this.customPreset.width = bbox.width - 40; 
-    this.customPreset.height = bbox.height - 80; 
-
-    this.currentPresetKey = this.presets[1].key; 
-  }
-
-  this.container.setAttribute("responsivemode", "true");
-  this.stack.setAttribute("responsivemode", "true");
-
   
   this.bound_presetSelected = this.presetSelected.bind(this);
   this.bound_handleManualInput = this.handleManualInput.bind(this);
@@ -220,34 +174,14 @@ function ResponsiveUI(aWindow, aTab)
   this.bound_startResizing = this.startResizing.bind(this);
   this.bound_stopResizing = this.stopResizing.bind(this);
   this.bound_onDrag = this.onDrag.bind(this);
+  this.bound_onContentResize = this.onContentResize.bind(this);
 
-  
-  this.tab.addEventListener("TabClose", this);
-  this.tabContainer.addEventListener("TabSelect", this);
+  this.mm.addMessageListener("ResponsiveMode:OnContentResize",
+                             this.bound_onContentResize);
 
-  this.buildUI();
-  this.checkMenus();
+  ActiveTabs.set(this.tab, this);
 
-  try {
-    if (Services.prefs.getBoolPref("devtools.responsiveUI.rotate")) {
-      this.rotate();
-    }
-  } catch(e) {}
-
-  ActiveTabs.set(aTab, this);
-
-  this._telemetry.toolOpened("responsive");
-
-  
-  this.touchEnableBefore = false;
-  this.touchEventSimulator = new TouchEventSimulator(this.browser);
-
-  
-  showDoorhanger({
-    window: this.mainWindow,
-    type: "deveditionpromo",
-    anchor: this.chromeDoc.querySelector("#content")
-  });
+  this.inited = this.init();
 }
 
 ResponsiveUI.prototype = {
@@ -264,21 +198,130 @@ ResponsiveUI.prototype = {
     }
   },
 
+  init: Task.async(function*() {
+    debug("INIT BEGINS");
+
+    let ready = this.waitForMessage("ResponsiveMode:ChildScriptReady");
+    this.mm.loadFrameScript("resource://devtools/client/responsivedesign/responsivedesign-child.js", true);
+    yield ready;
+
+    let requiresFloatingScrollbars =
+      !this.mainWindow.matchMedia("(-moz-overlay-scrollbars)").matches;
+    let started = this.waitForMessage("ResponsiveMode:Start:Done");
+    debug("SEND START");
+    this.mm.sendAsyncMessage("ResponsiveMode:Start", {
+      requiresFloatingScrollbars,
+      
+      notifyOnResize: DevToolsUtils.testing,
+    });
+    yield started;
+
+    
+    this.loadPresets();
+
+    
+    this.tab.addEventListener("TabClose", this);
+    this.tabContainer.addEventListener("TabSelect", this);
+
+    
+    this.container.setAttribute("responsivemode", "true");
+    this.stack.setAttribute("responsivemode", "true");
+    this.buildUI();
+    this.checkMenus();
+
+    
+    try {
+      if (Services.prefs.getBoolPref("devtools.responsiveUI.rotate")) {
+        this.rotate();
+      }
+    } catch(e) {}
+
+    
+    this.touchEnableBefore = false;
+    this.touchEventSimulator = new TouchEventSimulator(this.browser);
+
+    
+    
+    showDoorhanger({
+      window: this.mainWindow,
+      type: "deveditionpromo",
+      anchor: this.chromeDoc.querySelector("#content")
+    });
+
+    
+    this._telemetry.toolOpened("responsive");
+    ResponsiveUIManager.emit("on", { tab: this.tab });
+  }),
+
+  loadPresets: function() {
+    
+    let presets = defaultPresets;
+    if (Services.prefs.prefHasUserValue("devtools.responsiveUI.presets")) {
+      try {
+        presets = JSON.parse(Services.prefs.getCharPref("devtools.responsiveUI.presets"));
+      } catch(e) {
+        
+        Cu.reportError("Could not parse pref `devtools.responsiveUI.presets`: " + e);
+      }
+    }
+
+    this.customPreset = {key: "custom", custom: true};
+
+    if (Array.isArray(presets)) {
+      this.presets = [this.customPreset].concat(presets);
+    } else {
+      Cu.reportError("Presets value (devtools.responsiveUI.presets) is malformated.");
+      this.presets = [this.customPreset];
+    }
+
+    try {
+      let width = Services.prefs.getIntPref("devtools.responsiveUI.customWidth");
+      let height = Services.prefs.getIntPref("devtools.responsiveUI.customHeight");
+      this.customPreset.width = Math.min(MAX_WIDTH, width);
+      this.customPreset.height = Math.min(MAX_HEIGHT, height);
+
+      this.currentPresetKey = Services.prefs.getCharPref("devtools.responsiveUI.currentPreset");
+    } catch(e) {
+      
+      let bbox = this.stack.getBoundingClientRect();
+
+      this.customPreset.width = bbox.width - 40; 
+      this.customPreset.height = bbox.height - 80; 
+
+      this.currentPresetKey = this.presets[1].key; 
+    }
+  },
+
   
 
 
-  close: function RUI_close() {
-    if (this.closing)
+  close: Task.async(function*() {
+    debug("CLOSE BEGINS");
+    if (this.closing) {
+      debug("ALREADY CLOSING, ABORT");
       return;
+    }
     this.closing = true;
+
+    
+    debug("CLOSE: WAIT ON INITED");
+    yield this.inited;
+    debug("CLOSE: INITED DONE");
 
     this.unCheckMenus();
     
+    debug(`CURRENT SIZE: ${this.stack.getAttribute("style")}`);
     let style = "max-width: none;" +
                 "min-width: 0;" +
                 "max-height: none;" +
                 "min-height: 0;";
+    debug("RESET STACK SIZE");
     this.stack.setAttribute("style", style);
+
+    
+    if (DevToolsUtils.testing) {
+      yield this.waitForMessage("ResponsiveMode:OnContentResize");
+    }
 
     if (this.isResizing)
       this.stopResizing();
@@ -316,35 +359,33 @@ ResponsiveUI.prototype = {
       this.touchEventSimulator.stop();
     }
     this._telemetry.toolClosed("responsive");
-    let childOff = () => {
-      this.mm.removeMessageListener("ResponsiveMode:Stop:Done", childOff);
-      ResponsiveUIManager.emit("off", { tab: this.tab });
-    }
-    this.mm.addMessageListener("ResponsiveMode:Stop:Done", childOff);
+    let stopped = this.waitForMessage("ResponsiveMode:Stop:Done");
     this.tab.linkedBrowser.messageManager.sendAsyncMessage("ResponsiveMode:Stop");
+    yield stopped;
+
+    this.inited = null;
+    ResponsiveUIManager.emit("off", { tab: this.tab });
+  }),
+
+  waitForMessage(message) {
+    return new Promise(resolve => {
+      let listener = () => {
+        this.mm.removeMessageListener(message, listener);
+        resolve();
+      };
+      this.mm.addMessageListener(message, listener);
+    });
   },
 
   
 
 
-  _test_notifyOnResize: function() {
-    let deferred = promise.defer();
-    let mm = this.mm;
-
-    this.bound_onContentResize = this.onContentResize.bind(this);
-
-    mm.addMessageListener("ResponsiveMode:OnContentResize", this.bound_onContentResize);
-
-    mm.sendAsyncMessage("ResponsiveMode:NotifyOnResize");
-    mm.addMessageListener("ResponsiveMode:NotifyOnResize:Done", function onListeningResize() {
-      mm.removeMessageListener("ResponsiveMode:NotifyOnResize:Done", onListeningResize);
-      deferred.resolve();
+  onContentResize: function(msg) {
+    ResponsiveUIManager.emit("contentResize", {
+      tab: this.tab,
+      width: msg.data.width,
+      height: msg.data.height,
     });
-    return deferred.promise;
-  },
-
-  onContentResize: function() {
-    ResponsiveUIManager.emit("contentResize", { tab: this.tab });
   },
 
   
@@ -866,10 +907,23 @@ ResponsiveUI.prototype = {
   
 
 
+  getSize() {
+    let width = Number(this.stack.style.minWidth.replace("px", ""));
+    let height = Number(this.stack.style.minHeight.replace("px", ""));
+    return {
+      width,
+      height,
+    };
+  },
+
+  
+
+
 
 
 
   setSize: function RUI_setSize(aWidth, aHeight) {
+    debug(`SET SIZE TO ${aWidth} x ${aHeight}`);
     this.setWidth(aWidth);
     this.setHeight(aHeight);
   },
