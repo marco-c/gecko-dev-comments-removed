@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef mozilla_StyleBackendType_h
+#define mozilla_StyleBackendType_h
+
+namespace mozilla {
+
+
+
+
+enum class StyleBackendType : int
+{
+  Gecko,
+  Servo
+};
+
+} 
+
+#endif 
