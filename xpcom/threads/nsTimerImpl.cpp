@@ -77,6 +77,9 @@ GetTimerLog()
 
 
 
+
+
+
 PRLogModuleInfo*
 GetTimerFiringsLog()
 {
