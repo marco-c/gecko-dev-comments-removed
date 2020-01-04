@@ -667,7 +667,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     
     
     
-    if (mouseEvent->exit != WidgetMouseEvent::eTopLevel) {
+    if (mouseEvent->mExitFrom != WidgetMouseEvent::eTopLevel) {
       
       
       
@@ -3958,7 +3958,7 @@ EventStateManager::DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
         nsAutoPtr<WidgetMouseEvent> remoteEvent;
         CreateMouseOrPointerWidgetEvent(aMouseEvent, eMouseExitFromWidget,
                                         aRelatedContent, remoteEvent);
-        remoteEvent->exit = WidgetMouseEvent::eTopLevel;
+        remoteEvent->mExitFrom = WidgetMouseEvent::eTopLevel;
 
         
         
