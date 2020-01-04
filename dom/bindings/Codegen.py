@@ -5006,6 +5006,15 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                 
                 default = CGGeneric("%s.RawSetAs%s();\n" %
                                     (value, name))
+            elif defaultValue.type.isEnum():
+                name = getUnionMemberName(defaultValue.type)
+                
+                value = declLoc + (".SetValue()" if nullable else "")
+                default = CGGeneric(
+                    "%s.RawSetAs%s() = %s::%s;\n" %
+                    (value, name,
+                     defaultValue.type.inner.identifier.name,
+                     getEnumValueName(defaultValue.value)))
             else:
                 default = CGGeneric(
                     handleDefaultStringValue(
