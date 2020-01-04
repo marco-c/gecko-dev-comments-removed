@@ -655,7 +655,7 @@ InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame)
       auto svgTextFrame = static_cast<SVGTextFrame*>(
                             nsLayoutUtils::GetClosestFrameOfType(f,
                             nsGkAtoms::svgTextFrame));
-      svgTextFrame->ScheduleReflowSVGNonDisplayText();
+      svgTextFrame->ScheduleReflowSVGNonDisplayText(nsIPresShell::eResize);
     } else {
       
       

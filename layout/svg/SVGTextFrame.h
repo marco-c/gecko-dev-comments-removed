@@ -403,7 +403,9 @@ public:
 
 
 
-  void ScheduleReflowSVGNonDisplayText();
+
+
+  void ScheduleReflowSVGNonDisplayText(nsIPresShell::IntrinsicDirty aReason);
 
   
 
