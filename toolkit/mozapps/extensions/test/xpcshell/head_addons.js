@@ -1542,7 +1542,7 @@ if ("nsIWindowsRegKey" in AM_Ci) {
 
 
 
-  var MockWindowsRegKey = function MockWindowsRegKey() {
+  function MockWindowsRegKey() {
   }
 
   MockWindowsRegKey.prototype = {
@@ -1729,30 +1729,6 @@ do_register_cleanup(function addon_cleanup() {
 
 
 
-
-
-
-
-
-function createHttpServer(port = -1) {
-  let server = new HttpServer();
-  server.start(port);
-
-  do_register_cleanup(() => {
-    return new Promise(resolve => {
-      server.stop(resolve);
-    });
-  });
-
-  return server;
-}
-
-
-
-
-
-
-
 function interpolateAndServeFile(request, response) {
   try {
     let file = gUrlToFileMap[request.path];
@@ -1920,89 +1896,19 @@ function promiseAddonByID(aId) {
 
 function promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIODIC_UPDATE) {
   return new Promise((resolve, reject) => {
-    let result = {};
     addon.findUpdates({
-      onNoCompatibilityUpdateAvailable: function(addon2) {
-        if ("compatibilityUpdate" in result) {
-          do_throw("Saw multiple compatibility update events");
-        }
-        equal(addon, addon2);
-        addon.compatibilityUpdate = false;
+      install: null,
+
+      onUpdateAvailable: function(addon, install) {
+        this.install = install;
       },
 
-      onCompatibilityUpdateAvailable: function(addon2) {
-        if ("compatibilityUpdate" in result) {
-          do_throw("Saw multiple compatibility update events");
-        }
-        equal(addon, addon2);
-        addon.compatibilityUpdate = true;
-      },
-
-      onNoUpdateAvailable: function(addon2) {
-        if ("updateAvailable" in result) {
-          do_throw("Saw multiple update available events");
-        }
-        equal(addon, addon2);
-        result.updateAvailable = false;
-      },
-
-      onUpdateAvailable: function(addon2, install) {
-        if ("updateAvailable" in result) {
-          do_throw("Saw multiple update available events");
-        }
-        equal(addon, addon2);
-        result.updateAvailable = install;
-      },
-
-      onUpdateFinished: function(addon2, error) {
-        equal(addon, addon2);
-        if (error == AddonManager.UPDATE_STATUS_NO_ERROR) {
-          resolve(result);
-        } else {
-          result.error = error;
-          reject(result);
-        }
+      onUpdateFinished: function(addon, error) {
+        if (error == AddonManager.UPDATE_STATUS_NO_ERROR)
+          resolve(this.install);
+        else
+          reject(error);
       }
     }, reason);
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-var promiseConsoleOutput = Task.async(function*(aTask) {
-  const DONE = "=== xpcshell test console listener done ===";
-
-  let listener, messages = [];
-  let awaitListener = new Promise(resolve => {
-    listener = msg => {
-      if (msg == DONE) {
-        resolve();
-      } else {
-        msg instanceof Components.interfaces.nsIScriptError;
-        messages.push(msg);
-      }
-    }
-  });
-
-  Services.console.registerListener(listener);
-  try {
-    let result = yield aTask();
-
-    Services.console.logStringMessage(DONE);
-    yield awaitListener;
-
-    return { messages, result };
-  }
-  finally {
-    Services.console.unregisterListener(listener);
-  }
-});
