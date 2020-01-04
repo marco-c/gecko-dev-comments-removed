@@ -215,7 +215,6 @@ class LinuxArtifactJob(ArtifactJob):
         'firefox/plugin-container',
         'firefox/updater',
         'firefox/**/*.so',
-        mozpath.join('firefox', buildconfig.substs.get('ICU_DATA_FILE')),
     }
 
     def process_package_artifact(self, filename, processed_filename):
@@ -307,7 +306,6 @@ class MacArtifactJob(ArtifactJob):
                 'gmp-clearkey/0.1/libclearkey.dylib',
                 
                 
-                buildconfig.substs.get('ICU_DATA_FILE'),
             ])
 
             with JarWriter(file=processed_filename, optimize=False, compress_level=5) as writer:
@@ -348,7 +346,6 @@ class WinArtifactJob(ArtifactJob):
         'firefox/application.ini',
         'firefox/**/*.dll',
         'firefox/*.exe',
-        mozpath.join('firefox', buildconfig.substs.get('ICU_DATA_FILE')),
     }
     
     test_artifact_patterns = {
