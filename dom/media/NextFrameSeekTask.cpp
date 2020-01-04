@@ -150,22 +150,10 @@ NextFrameSeekTask::Seek(const media::TimeUnit&)
   DropAllMediaDataBeforeCurrentPosition(mAudioQueue, mVideoQueue,
                                         mCurrentTimeBeforeSeek);
 
-  
-  
-  
-  
-  
-  bool hasPendingRequests = mReader->IsRequestingAudioData() ||
-                            mReader->IsWaitingAudioData() ||
-                            mReader->IsRequestingVideoData() ||
-                            mReader->IsWaitingVideoData();
-
-  bool needMoreVideo = mVideoQueue.GetSize() == 0 && !mVideoQueue.IsFinished();
-
-  if (needMoreVideo) {
+  if (NeedMoreVideo()) {
     EnsureVideoDecodeTaskQueued();
   }
-  if (hasPendingRequests || needMoreVideo) {
+  if (!IsAudioSeekComplete() || !IsVideoSeekComplete()) {
     return mSeekTaskPromise.Ensure(__func__);
   }
 
@@ -188,9 +176,7 @@ NextFrameSeekTask::EnsureVideoDecodeTaskQueued()
   SAMPLE_LOG("EnsureVideoDecodeTaskQueued isDecoding=%d status=%s",
              IsVideoDecoding(), VideoRequestStatus());
 
-  if (!IsVideoDecoding() ||
-      mReader->IsRequestingVideoData() ||
-      mReader->IsWaitingVideoData()) {
+  if (!IsVideoDecoding() || IsVideoRequestPending()) {
     return;
   }
 
