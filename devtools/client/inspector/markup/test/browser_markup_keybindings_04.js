@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 requestLongerTimeout(2);
@@ -17,7 +16,7 @@ add_task(function*() {
   let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
 
   info("Select the test node with the browser ctx menu");
-  yield selectWithBrowserMenu(inspector);
+  yield clickOnInspectMenuItem(testActor, "div");
   assertNodeSelected(inspector, "div");
 
   info("Press arrowUp to focus <body> " +
@@ -45,27 +44,6 @@ function selectPreviousNodeWithArrowUp(inspector) {
   let onUpdated = inspector.once("inspector-updated");
   EventUtils.synthesizeKey("VK_UP", {});
   return Promise.all([onUpdated, onNodeHighlighted]);
-}
-
-function* selectWithBrowserMenu(inspector) {
-  let contentAreaContextMenu = document.querySelector("#contentAreaContextMenu");
-  let contextOpened = once(contentAreaContextMenu, "popupshown");
-
-  yield BrowserTestUtils.synthesizeMouseAtCenter("div", {
-    type: "contextmenu",
-    button: 2
-  }, gBrowser.selectedBrowser);
-
-  yield contextOpened;
-
-  yield gContextMenu.inspectNode();
-
-  let contextClosed = once(contentAreaContextMenu, "popuphidden");
-  contentAreaContextMenu.hidden = true;
-  contentAreaContextMenu.hidePopup();
-
-  yield inspector.once("inspector-updated");
-  yield contextClosed;
 }
 
 function* selectWithElementPicker(inspector, testActor) {
