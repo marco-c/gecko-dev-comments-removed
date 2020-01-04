@@ -176,7 +176,6 @@ function run_test() {
 
   
   
-  testTrailingDotCookie("http://192.168.0.1", "192.168.0.1");
   testTrailingDotCookie("http://localhost", "localhost");
   testTrailingDotCookie("http://foo.com", "foo.com");
 
