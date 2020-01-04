@@ -82,7 +82,7 @@ public:
                     const char** aOutBadConstraint) override
   {
     
-    aOutHandle = nullptr;
+    *aOutHandle = nullptr;
     return NS_OK;
   }
   nsresult Deallocate(AllocationHandle* aHandle) override
