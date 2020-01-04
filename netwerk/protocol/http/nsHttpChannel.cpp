@@ -5206,12 +5206,6 @@ nsHttpChannel::BeginConnect()
         
         
 
-        
-        uint32_t loadFlags = mLoadFlags;
-
-        mLoadFlags |= LOAD_ONLY_FROM_CACHE;
-        mLoadFlags |= LOAD_FROM_CACHE;
-        mLoadFlags &= ~VALIDATE_ALWAYS;
         nsCOMPtr<nsIPackagedAppService> pas =
             do_GetService("@mozilla.org/network/packaged-app-service;1", &rv);
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -5219,12 +5213,18 @@ nsHttpChannel::BeginConnect()
             return rv;
         }
 
-        nsCOMPtr<nsIPrincipal> principal = GetURIPrincipal();
-        nsCOMPtr<nsILoadContextInfo> loadContextInfo = GetLoadContextInfo(this);
-        rv = pas->GetResource(principal, mLoadInfo, loadFlags, loadContextInfo, this);
+        rv = pas->GetResource(this, this);
         if (NS_FAILED(rv)) {
             AsyncAbort(rv);
         }
+
+        
+        
+        
+        mLoadFlags |= LOAD_ONLY_FROM_CACHE;
+        mLoadFlags |= LOAD_FROM_CACHE;
+        mLoadFlags &= ~VALIDATE_ALWAYS;
+
         return rv;
     }
 
