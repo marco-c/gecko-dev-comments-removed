@@ -3,29 +3,15 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
-
 loader.lazyRequireGetter(this, "Services");
 loader.lazyRequireGetter(this, "global",
   "devtools/client/performance/modules/global");
 const demangle = require("devtools/client/shared/demangle");
+const { isChromeScheme, isContentScheme, parseURL } =
+  require("devtools/client/shared/source-utils");
 
 
-const CHAR_CODE_A = "a".charCodeAt(0);
-const CHAR_CODE_C = "c".charCodeAt(0);
-const CHAR_CODE_E = "e".charCodeAt(0);
-const CHAR_CODE_F = "f".charCodeAt(0);
-const CHAR_CODE_H = "h".charCodeAt(0);
-const CHAR_CODE_I = "i".charCodeAt(0);
-const CHAR_CODE_J = "j".charCodeAt(0);
-const CHAR_CODE_L = "l".charCodeAt(0);
-const CHAR_CODE_M = "m".charCodeAt(0);
-const CHAR_CODE_O = "o".charCodeAt(0);
-const CHAR_CODE_P = "p".charCodeAt(0);
 const CHAR_CODE_R = "r".charCodeAt(0);
-const CHAR_CODE_S = "s".charCodeAt(0);
-const CHAR_CODE_T = "t".charCodeAt(0);
-const CHAR_CODE_U = "u".charCodeAt(0);
 const CHAR_CODE_0 = "0".charCodeAt(0);
 const CHAR_CODE_9 = "9".charCodeAt(0);
 const CHAR_CODE_CAP_Z = "Z".charCodeAt(0);
@@ -33,12 +19,8 @@ const CHAR_CODE_CAP_Z = "Z".charCodeAt(0);
 const CHAR_CODE_LPAREN = "(".charCodeAt(0);
 const CHAR_CODE_RPAREN = ")".charCodeAt(0);
 const CHAR_CODE_COLON = ":".charCodeAt(0);
-const CHAR_CODE_SLASH = "/".charCodeAt(0);
 const CHAR_CODE_SPACE = " ".charCodeAt(0);
 const CHAR_CODE_UNDERSCORE = "_".charCodeAt(0);
-
-
-const gNSURLStore = new Map();
 
 
 const gInflatedFrameStore = new WeakMap();
@@ -150,41 +132,31 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
     }
   }
 
-  let uri;
+  let parsedUrl;
   if (lineAndColumnIndex > 0) {
     let resource = location.substring(parenIndex + 1, lineAndColumnIndex);
     url = resource.split(" -> ").pop();
     if (url) {
-      uri = nsIURL(url);
+      parsedUrl = parseURL(url);
     }
   }
 
-  let functionName, fileName, hostName, port, host;
+  let functionName, fileName, port, host;
   line = line || fallbackLine;
   column = column || fallbackColumn;
 
   
-  if (uri) {
+  if (parsedUrl) {
     functionName = location.substring(0, parenIndex - 1);
-    fileName = uri.fileName || "/";
-    hostName = getHost(url, uri.host);
-    
-    
-    
-    if (hostName) {
-      try {
-        port = uri.port === -1 ? null : uri.port;
-        host = port !== null ? `${hostName}:${port}` : hostName;
-      } catch (e) {
-        host = hostName;
-      }
-    }
+    fileName = parsedUrl.fileName;
+    port = parsedUrl.port;
+    host = parsedUrl.host;
   } else {
     functionName = location;
     url = null;
   }
 
-  return { functionName, fileName, hostName, host, port, url, line, column };
+  return { functionName, fileName, host, port, url, line, column };
 };
 
 
@@ -355,129 +327,6 @@ InflatedFrame.prototype.getFrameKey = function getFrameKey(options) {
   
   return "";
 };
-
-
-
-
-function nsIURL(url) {
-  let cached = gNSURLStore.get(url);
-  
-  
-  if (cached !== void 0) {
-    return cached;
-  }
-  let uri = null;
-  try {
-    uri = Services.io.newURI(url, null, null).QueryInterface(Ci.nsIURL);
-    
-    
-    uri.host;
-  } catch(e) {
-    
-    uri = null;
-  }
-
-  gNSURLStore.set(url, uri);
-  return uri;
-};
-
-
-
-
-
-function getHost (url, hostName) {
-  return isChromeScheme(url, 0) ? null : hostName;
-}
-
-
-
-
-
-
-
-function isColonSlashSlash(location, i) {
-  return location.charCodeAt(++i) === CHAR_CODE_COLON &&
-         location.charCodeAt(++i) === CHAR_CODE_SLASH &&
-         location.charCodeAt(++i) === CHAR_CODE_SLASH;
-}
-
-function isContentScheme(location, i) {
-  let firstChar = location.charCodeAt(i);
-
-  switch (firstChar) {
-  case CHAR_CODE_H: 
-    if (location.charCodeAt(++i) === CHAR_CODE_T &&
-        location.charCodeAt(++i) === CHAR_CODE_T &&
-        location.charCodeAt(++i) === CHAR_CODE_P) {
-      if (location.charCodeAt(i + 1) === CHAR_CODE_S) {
-        ++i;
-      }
-      return isColonSlashSlash(location, i);
-    }
-    return false;
-
-  case CHAR_CODE_F: 
-    if (location.charCodeAt(++i) === CHAR_CODE_I &&
-        location.charCodeAt(++i) === CHAR_CODE_L &&
-        location.charCodeAt(++i) === CHAR_CODE_E) {
-      return isColonSlashSlash(location, i);
-    }
-    return false;
-
-  case CHAR_CODE_A: 
-    if (location.charCodeAt(++i) == CHAR_CODE_P &&
-        location.charCodeAt(++i) == CHAR_CODE_P) {
-      return isColonSlashSlash(location, i);
-    }
-    return false;
-
-  default:
-    return false;
-  }
-}
-
-function isChromeScheme(location, i) {
-  let firstChar = location.charCodeAt(i);
-
-  switch (firstChar) {
-  case CHAR_CODE_C: 
-    if (location.charCodeAt(++i) === CHAR_CODE_H &&
-        location.charCodeAt(++i) === CHAR_CODE_R &&
-        location.charCodeAt(++i) === CHAR_CODE_O &&
-        location.charCodeAt(++i) === CHAR_CODE_M &&
-        location.charCodeAt(++i) === CHAR_CODE_E) {
-      return isColonSlashSlash(location, i);
-    }
-    return false;
-
-  case CHAR_CODE_R: 
-    if (location.charCodeAt(++i) === CHAR_CODE_E &&
-        location.charCodeAt(++i) === CHAR_CODE_S &&
-        location.charCodeAt(++i) === CHAR_CODE_O &&
-        location.charCodeAt(++i) === CHAR_CODE_U &&
-        location.charCodeAt(++i) === CHAR_CODE_R &&
-        location.charCodeAt(++i) === CHAR_CODE_C &&
-        location.charCodeAt(++i) === CHAR_CODE_E) {
-      return isColonSlashSlash(location, i);
-    }
-    return false;
-
-  case CHAR_CODE_J: 
-    if (location.charCodeAt(++i) === CHAR_CODE_A &&
-        location.charCodeAt(++i) === CHAR_CODE_R &&
-        location.charCodeAt(++i) === CHAR_CODE_COLON &&
-        location.charCodeAt(++i) === CHAR_CODE_F &&
-        location.charCodeAt(++i) === CHAR_CODE_I &&
-        location.charCodeAt(++i) === CHAR_CODE_L &&
-        location.charCodeAt(++i) === CHAR_CODE_E) {
-      return isColonSlashSlash(location, i);
-    }
-    return false;
-
-  default:
-    return false;
-  }
-}
 
 function isNumeric(c) {
   return c >= CHAR_CODE_0 && c <= CHAR_CODE_9;

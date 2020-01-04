@@ -3,28 +3,38 @@
 
 
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
-const { L10N, parseSource } = require("../utils");
+const { getSourceNames } = require("devtools/client/shared/source-utils");
 
 const Frame = module.exports = createClass({
   displayName: "frame-view",
 
   propTypes: {
+    
     frame: PropTypes.object.isRequired,
-    toolbox: PropTypes.object.isRequired,
+    
+    onClick: PropTypes.func.isRequired,
+    
+    
+    onClickTooltipString: PropTypes.string.isRequired,
+    
+    
+    unknownSourceString: PropTypes.string.isRequired,
   },
 
   render() {
-    let { toolbox, frame } = this.props;
-    const { short, long, host } = parseSource(frame.source);
+    let { onClick, frame, onClickTooltipString, unknownSourceString } = this.props;
+    const { short, long, host } = getSourceNames(frame.source, unknownSourceString);
 
     let func = frame.functionDisplayName || "";
     let tooltip = `${func} (${long}:${frame.line}:${frame.column})`;
-    let viewTooltip = L10N.getFormatStr("viewsourceindebugger", `${long}:${frame.line}:${frame.column}`);
-    let onClick = () => toolbox.viewSourceInDebugger(long, frame.line);
 
     let fields = [
       dom.span({ className: "frame-link-function-display-name" }, func),
-      dom.a({ className: "frame-link-filename", onClick, title: viewTooltip }, short),
+      dom.a({
+        className: "frame-link-filename",
+        onClick,
+        title: onClickTooltipString
+      }, short),
       dom.span({ className: "frame-link-colon" }, ":"),
       dom.span({ className: "frame-link-line" }, frame.line),
       dom.span({ className: "frame-link-colon" }, ":"),

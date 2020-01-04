@@ -1,16 +1,31 @@
 
 
 
-
 "use strict";
 
-loader.lazyRequireGetter(this, "Services");
-loader.lazyImporter(this, "gDevTools", "resource://devtools/client/framework/gDevTools.jsm");
-loader.lazyImporter(this, "Task", "resource://gre/modules/Task.jsm");
-
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const { URL } = require("sdk/url");
 
 
+const CHAR_CODE_A = "a".charCodeAt(0);
+const CHAR_CODE_C = "c".charCodeAt(0);
+const CHAR_CODE_E = "e".charCodeAt(0);
+const CHAR_CODE_F = "f".charCodeAt(0);
+const CHAR_CODE_H = "h".charCodeAt(0);
+const CHAR_CODE_I = "i".charCodeAt(0);
+const CHAR_CODE_J = "j".charCodeAt(0);
+const CHAR_CODE_L = "l".charCodeAt(0);
+const CHAR_CODE_M = "m".charCodeAt(0);
+const CHAR_CODE_O = "o".charCodeAt(0);
+const CHAR_CODE_P = "p".charCodeAt(0);
+const CHAR_CODE_R = "r".charCodeAt(0);
+const CHAR_CODE_S = "s".charCodeAt(0);
+const CHAR_CODE_T = "t".charCodeAt(0);
+const CHAR_CODE_U = "u".charCodeAt(0);
+const CHAR_CODE_COLON = ":".charCodeAt(0);
+const CHAR_CODE_SLASH = "/".charCodeAt(0);
+
+
+const gURLStore = new Map();
 
 
 
@@ -23,119 +38,173 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
-exports.viewSourceInStyleEditor = Task.async(function *(toolbox, sourceURL, sourceLine) {
-  let panel = yield toolbox.loadTool("styleeditor");
+
+
+
+function parseURL(location) {
+  let url = gURLStore.get(location);
+
+  if (url !== void 0) {
+    return url;
+  }
 
   try {
-    yield panel.selectStyleSheet(sourceURL, sourceLine);
-    yield toolbox.selectTool("styleeditor");
-    return true;
-  } catch (e) {
-    exports.viewSource(toolbox, sourceURL, sourceLine);
+    url = new URL(location);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let isChrome = isChromeScheme(location);
+    let fileName = url.fileName || "/";
+    let hostname = isChrome ? null : url.hostname;
+    let host = isChrome ? null :
+               url.port ? `${url.host}:${url.port}` :
+               url.host;
+
+    let parsed = Object.assign({}, url, { host, fileName, hostname });
+    gURLStore.set(location, parsed);
+    return parsed;
+  }
+  catch (e) {
+    gURLStore.set(location, null);
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getSourceNames (source, unknownSourceString) {
+  let short, long, host;
+  const sourceStr = source ? String(source) : "";
+  const parsedUrl = parseURL(sourceStr);
+
+  if (!parsedUrl) {
+    
+    long = sourceStr;
+    short = sourceStr.slice(0, 100);
+  } else {
+    short = parsedUrl.fileName;
+    long = parsedUrl.href;
+    host = parsedUrl.host;
+  }
+
+  if (!short) {
+    if (!long) {
+      long = unknownSourceString;
+    }
+    short = long.slice(0, 100);
+  }
+
+  return { short, long, host };
+}
+
+
+
+
+
+
+
+function isColonSlashSlash(location, i=0) {
+  return location.charCodeAt(++i) === CHAR_CODE_COLON &&
+         location.charCodeAt(++i) === CHAR_CODE_SLASH &&
+         location.charCodeAt(++i) === CHAR_CODE_SLASH;
+}
+
+function isContentScheme(location, i=0) {
+  let firstChar = location.charCodeAt(i);
+
+  switch (firstChar) {
+  case CHAR_CODE_H: 
+    if (location.charCodeAt(++i) === CHAR_CODE_T &&
+        location.charCodeAt(++i) === CHAR_CODE_T &&
+        location.charCodeAt(++i) === CHAR_CODE_P) {
+      if (location.charCodeAt(i + 1) === CHAR_CODE_S) {
+        ++i;
+      }
+      return isColonSlashSlash(location, i);
+    }
+    return false;
+
+  case CHAR_CODE_F: 
+    if (location.charCodeAt(++i) === CHAR_CODE_I &&
+        location.charCodeAt(++i) === CHAR_CODE_L &&
+        location.charCodeAt(++i) === CHAR_CODE_E) {
+      return isColonSlashSlash(location, i);
+    }
+    return false;
+
+  case CHAR_CODE_A: 
+    if (location.charCodeAt(++i) == CHAR_CODE_P &&
+        location.charCodeAt(++i) == CHAR_CODE_P) {
+      return isColonSlashSlash(location, i);
+    }
+    return false;
+
+  default:
     return false;
   }
-});
+}
 
+function isChromeScheme(location, i=0) {
+  let firstChar = location.charCodeAt(i);
 
-
-
-
-
-
-
-
-
-
-
-
-
-exports.viewSourceInDebugger = Task.async(function *(toolbox, sourceURL, sourceLine) {
-  
-  
-  
-  let debuggerAlreadyOpen = toolbox.getPanel("jsdebugger");
-  let { panelWin: dbg } = yield toolbox.loadTool("jsdebugger");
-
-  if (!debuggerAlreadyOpen) {
-    yield dbg.DebuggerController.waitForSourcesLoaded();
-  }
-
-  let { DebuggerView } = dbg;
-  let { Sources } = DebuggerView;
-
-  let item = Sources.getItemForAttachment(a => a.source.url === sourceURL);
-  if (item) {
-    yield toolbox.selectTool("jsdebugger");
-    const isLoading = dbg.DebuggerController.getState().sources.selectedSource !== item.attachment.source.actor;
-    DebuggerView.setEditorLocation(item.attachment.source.actor, sourceLine, { noDebug: true });
-    if (isLoading) {
-      yield dbg.DebuggerController.waitForSourceShown(sourceURL);
+  switch (firstChar) {
+  case CHAR_CODE_C: 
+    if (location.charCodeAt(++i) === CHAR_CODE_H &&
+        location.charCodeAt(++i) === CHAR_CODE_R &&
+        location.charCodeAt(++i) === CHAR_CODE_O &&
+        location.charCodeAt(++i) === CHAR_CODE_M &&
+        location.charCodeAt(++i) === CHAR_CODE_E) {
+      return isColonSlashSlash(location, i);
     }
-    return true;
-  }
+    return false;
 
-  
-  exports.viewSource(toolbox, sourceURL, sourceLine);
-  return false;
-});
-
-
-
-
-
-
-
-
-
-exports.viewSourceInScratchpad = Task.async(function *(sourceURL, sourceLine) {
-  
-  let wins = Services.wm.getEnumerator("devtools:scratchpad");
-
-  while (wins.hasMoreElements()) {
-    let win = wins.getNext();
-
-    if (!win.closed && win.Scratchpad.uniqueName === sourceURL) {
-      win.focus();
-      win.Scratchpad.editor.setCursor({ line: sourceLine, ch: 0 });
-      return;
+  case CHAR_CODE_R: 
+    if (location.charCodeAt(++i) === CHAR_CODE_E &&
+        location.charCodeAt(++i) === CHAR_CODE_S &&
+        location.charCodeAt(++i) === CHAR_CODE_O &&
+        location.charCodeAt(++i) === CHAR_CODE_U &&
+        location.charCodeAt(++i) === CHAR_CODE_R &&
+        location.charCodeAt(++i) === CHAR_CODE_C &&
+        location.charCodeAt(++i) === CHAR_CODE_E) {
+      return isColonSlashSlash(location, i);
     }
-  }
+    return false;
 
-  
-  for (let [, toolbox] of gDevTools) {
-    let scratchpadPanel = toolbox.getPanel("scratchpad");
-    if (scratchpadPanel) {
-      let { scratchpad } = scratchpadPanel;
-      if (scratchpad.uniqueName === sourceURL) {
-        toolbox.selectTool("scratchpad");
-        toolbox.raise();
-        scratchpad.editor.focus();
-        scratchpad.editor.setCursor({ line: sourceLine, ch: 0 });
-        return;
-      }
+  case CHAR_CODE_J: 
+    if (location.charCodeAt(++i) === CHAR_CODE_A &&
+        location.charCodeAt(++i) === CHAR_CODE_R &&
+        location.charCodeAt(++i) === CHAR_CODE_COLON &&
+        location.charCodeAt(++i) === CHAR_CODE_F &&
+        location.charCodeAt(++i) === CHAR_CODE_I &&
+        location.charCodeAt(++i) === CHAR_CODE_L &&
+        location.charCodeAt(++i) === CHAR_CODE_E) {
+      return isColonSlashSlash(location, i);
     }
+    return false;
+
+  default:
+    return false;
   }
-});
+}
 
-
-
-
-
-
-
-
-
-
-exports.viewSource = Task.async(function *(toolbox, sourceURL, sourceLine) {
-  
-  
-  let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
-  if (browserWin) {
-    return browserWin.BrowserViewSourceOfDocument({
-      URL: sourceURL,
-      lineNumber: sourceLine
-    });
-  }
-  let utils = toolbox.gViewSourceUtils;
-  utils.viewSource(sourceURL, null, toolbox.doc, sourceLine || 0);
-});
+exports.parseURL = parseURL;
+exports.getSourceNames = getSourceNames;
+exports.isChromeScheme = isChromeScheme;
+exports.isContentScheme = isContentScheme;

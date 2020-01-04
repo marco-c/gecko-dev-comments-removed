@@ -65,7 +65,7 @@ add_task(function test() {
     }), false),
   ];
 
-  let fields = ["nodeType", "functionName", "fileName", "hostName", "url", "line", "column", "categoryData.abbrev", "isContent", "port"]
+  let fields = ["nodeType", "functionName", "fileName", "host", "url", "line", "column", "categoryData.abbrev", "isContent", "port"]
   let expected = [
     
     ["Frame", "hello/<.world", "bar.js", "foo", "http://foo/bar.js", 123, 987, void 0, true],
@@ -77,7 +77,7 @@ add_task(function test() {
     ["Frame", "EnterJIT", null, null, null, null, null, "js", false],
     ["Frame", "chrome://browser/content/content.js", null, null, null, 456, null, "other", false],
     ["Frame", "hello/<.world", "foo.js", null, "resource://gre/foo.js", 123, 434, "other", false],
-    ["Frame", "main", "file.js", "localhost", "http://localhost:8888/file.js", 123, 987, null, true, 8888],
+    ["Frame", "main", "file.js", "localhost:8888", "http://localhost:8888/file.js", 123, 987, null, true, 8888],
     ["Frame", "main", "timeline.js", null, "resource://devtools/timeline.js", 123, null, "tools", false]
   ];
 

@@ -352,49 +352,6 @@ exports.getSnapshotTotals = function (census) {
 
 
 
-exports.parseSource = function (source) {
-  const sourceStr = source ? String(source) : "";
-
-  let short;
-  let long;
-  let host;
-
-  try {
-    const url = new URL(sourceStr);
-    short = url.fileName;
-    host = url.host;
-    long = url.toString();
-  } catch (e) {
-    
-    long = sourceStr;
-    short = sourceStr.slice(0, 100);
-  }
-
-  if (!short) {
-    
-
-    if (!long) {
-      long = L10N.getStr("unknownSource");
-    }
-
-    short = long.slice(0, 100);
-  }
-
-  return { short, long, host };
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
