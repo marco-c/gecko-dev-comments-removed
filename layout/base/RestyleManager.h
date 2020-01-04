@@ -346,12 +346,14 @@ public:
   
   bool HasPendingRestyles() { return mPendingRestyles.Count() != 0; }
 
+private:
   
   
   
   void BeginProcessingRestyles(RestyleTracker& aRestyleTracker);
   void EndProcessingRestyles();
 
+public:
   
   
   
