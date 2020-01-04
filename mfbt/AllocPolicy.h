@@ -48,6 +48,18 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class MallocAllocPolicy
 {
 public:
@@ -82,6 +94,11 @@ public:
 
   void reportAllocOverflow() const
   {
+  }
+
+  bool checkSimulatedOOM() const
+  {
+    return true;
   }
 };
 
