@@ -104,6 +104,11 @@ namespace {
   
   
   uint64_t sJankLevels[12];
+
+  
+  
+  
+  static uint32_t sRefreshDriverCount = 0;
 }
 
 namespace mozilla {
@@ -890,11 +895,6 @@ GetFirstFrameDelay(imgIRequest* req)
 }
 
  void
-nsRefreshDriver::InitializeStatics()
-{
-}
-
- void
 nsRefreshDriver::Shutdown()
 {
   
@@ -1024,18 +1024,29 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
     mSkippedPaints(false),
     mResizeSuppressed(false)
 {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mPresContext,
+             "Need a pres context to tell us to call Disconnect() later "
+             "and decrement sRefreshDriverCount.");
+
   mMostRecentRefreshEpochTime = JS_Now();
   mMostRecentRefresh = TimeStamp::Now();
   mMostRecentTick = mMostRecentRefresh;
   mNextThrottledFrameRequestTick = mMostRecentTick;
   mNextRecomputeVisibilityTick = mMostRecentTick;
+
+  --sRefreshDriverCount;
 }
 
 nsRefreshDriver::~nsRefreshDriver()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(ObserverCount() == 0,
              "observers should have unregistered");
   MOZ_ASSERT(!mActiveTimer, "timer should be gone");
+  MOZ_ASSERT(!mPresContext,
+             "Should have called Disconnect() and decremented "
+             "sRefreshDriverCount!");
 
   if (mRootRefresh) {
     mRootRefresh->RemoveRefreshObserver(this, Flush_Style);
@@ -2203,6 +2214,21 @@ nsRefreshDriver::CancelPendingEvents(nsIDocument* aDocument)
   for (auto i : Reversed(MakeRange(mPendingEvents.Length()))) {
     if (mPendingEvents[i].mTarget->OwnerDoc() == aDocument) {
       mPendingEvents.RemoveElementAt(i);
+    }
+  }
+}
+
+void
+nsRefreshDriver::Disconnect()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  StopTimer();
+
+  if (mPresContext) {
+    mPresContext = nullptr;
+    if (--sRefreshDriverCount == 0) {
+      Shutdown();
     }
   }
 }
