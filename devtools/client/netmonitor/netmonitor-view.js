@@ -1287,12 +1287,14 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     
     
     
-    if (!upgradeHeader && responseHeaders && Array.isArray(responseHeaders.headers)) {
+    if (!upgradeHeader && responseHeaders &&
+        Array.isArray(responseHeaders.headers)) {
       upgradeHeader = responseHeaders.headers.find(header => {
         return (header.name == "Upgrade");
       });
     }
 
+    
     
     if (!upgradeHeader || upgradeHeader.value != "websocket") {
       return false;
