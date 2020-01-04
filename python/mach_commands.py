@@ -168,16 +168,12 @@ class MachCommands(MachCommandBase):
         description='Run eslint or help configure eslint for optimal development.')
     @CommandArgument('-s', '--setup', default=False, action='store_true',
         help='configure eslint for optimal development.')
-    @CommandArgument('path', nargs='?', default='.',
-        help='Path to files to lint, like "browser/components/loop" '
-            'or "mobile/android". '
-            'Defaults to the current directory if not given.')
     @CommandArgument('-e', '--ext', default='[.js,.jsm,.jsx,.xml]',
-        help='Filename extensions to lint, default: "[.js,.jsm,.jsx,.xml]".')
+        help='Filename extensions to lint, default: "[.js,.jsm,.jsx]".')
     @CommandArgument('-b', '--binary', default=None,
         help='Path to eslint binary.')
     @CommandArgument('args', nargs=argparse.REMAINDER)  
-    def eslint(self, setup, path, ext=None, binary=None, args=[]):
+    def eslint(self, setup, ext=None, binary=None, args=None):
         '''Run eslint.'''
 
         if setup:
@@ -195,25 +191,14 @@ class MachCommands(MachCommandBase):
             print(ESLINT_NOT_FOUND_MESSAGE)
             return 1
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        self.log(logging.INFO, 'eslint', {'binary': binary, 'args': args},
+            'Running {binary}')
 
-        self.log(logging.INFO, 'eslint', {'binary': binary, 'path': path},
-            'Running {binary} in {path}')
+        args = args or ['.']
 
         cmd_args = [binary,
             '--ext', ext,  
         ] + args
-        
-        cmd_args += [path]
 
         return self.run_process(cmd_args,
             pass_thru=True,  
