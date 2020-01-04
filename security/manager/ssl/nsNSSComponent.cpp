@@ -17,6 +17,7 @@
 #include "mozilla/PublicSSL.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/SyncRunnable.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -86,8 +87,30 @@ bool EnsureNSSInitializedChromeOrContent()
     return true;
   }
 
+  
+  
   if (!NS_IsMainThread()) {
-    return false;
+    static Atomic<bool> initialized(false);
+
+    
+    if (initialized) {
+      return true;
+    }
+
+    nsCOMPtr<nsIThread> mainThread;
+    nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    
+    mozilla::SyncRunnable::DispatchToThread(mainThread,
+      new SyncRunnable(NS_NewRunnableFunction([]() {
+        initialized = EnsureNSSInitializedChromeOrContent();
+      }))
+    );
+
+    return initialized;
   }
 
   if (NSS_IsInitialized()) {
