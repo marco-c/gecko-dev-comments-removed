@@ -2490,7 +2490,7 @@ var SessionStoreInternal = {
       global: this._globalState.getState()
     };
 
-    if (Cu.isModuleLoaded("resource:///modules/devtools/scratchpad-manager.jsm")) {
+    if (Cu.isModuleLoaded("resource:///modules/devtools/client/scratchpad/scratchpad-manager.jsm")) {
       
       let scratchpads = ScratchpadManager.getSessionState();
       if (scratchpads && scratchpads.length) {
