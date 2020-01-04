@@ -117,6 +117,11 @@ exports.Worker = Worker;
 
 attach.define(Worker, function(worker, window) {
   
+
+  if (Cu.isCrossProcessWrapper(window))
+    throw new Error("Attaching worker to a window from another " +
+                    "process directly is not supported.");
+
   let model = modelFor(worker);
   if (model.attached)
     detach(worker);
