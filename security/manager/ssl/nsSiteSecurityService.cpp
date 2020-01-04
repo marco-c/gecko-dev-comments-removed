@@ -314,8 +314,7 @@ nsSiteSecurityService::SetHSTSState(uint32_t aType,
                                     nsIURI* aSourceURI,
                                     int64_t maxage,
                                     bool includeSubdomains,
-                                    uint32_t flags,
-                                    SecurityPropertyState aHSTSState)
+                                    uint32_t flags)
 {
   
   
@@ -323,12 +322,8 @@ nsSiteSecurityService::SetHSTSState(uint32_t aType,
     return RemoveState(aType, aSourceURI, flags);
   }
 
-  MOZ_ASSERT((aHSTSState == SecurityPropertySet
-              || aHSTSState == SecurityPropertyNegative),
-      "HSTS State must be SecurityPropertySet or SecurityPropertyNegative");
-
   int64_t expiretime = ExpireTimeFromMaxAge(maxage);
-  SiteHSTSState siteState(expiretime, aHSTSState, includeSubdomains);
+  SiteHSTSState siteState(expiretime, SecurityPropertySet, includeSubdomains);
   nsAutoCString stateString;
   siteState.ToString(stateString);
   nsAutoCString hostname;
@@ -345,14 +340,6 @@ nsSiteSecurityService::SetHSTSState(uint32_t aType,
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSiteSecurityService::CacheNegativeHSTSResult(nsIURI* aSourceURI,
-                                               uint64_t aMaxAge)
-{
-  return SetHSTSState(nsISiteSecurityService::HEADER_HSTS, aSourceURI,
-                      aMaxAge, false, 0, SecurityPropertyNegative);
 }
 
 NS_IMETHODIMP
@@ -877,7 +864,7 @@ nsSiteSecurityService::ProcessSTSHeader(nsIURI* aSourceURI,
 
   
   nsresult rv = SetHSTSState(aType, aSourceURI, maxAge, foundIncludeSubdomains,
-                             aFlags, SecurityPropertySet);
+                             aFlags);
   if (NS_FAILED(rv)) {
     SSSLOG(("SSS: failed to set STS state"));
     if (aFailureResult) {
@@ -901,8 +888,7 @@ nsSiteSecurityService::ProcessSTSHeader(nsIURI* aSourceURI,
 
 NS_IMETHODIMP
 nsSiteSecurityService::IsSecureURI(uint32_t aType, nsIURI* aURI,
-                                   uint32_t aFlags, bool* aCached,
-                                   bool* aResult)
+                                   uint32_t aFlags, bool* aResult)
 {
    
    if (!XRE_IsParentProcess() && aType != nsISiteSecurityService::HEADER_HSTS) {
@@ -926,7 +912,7 @@ nsSiteSecurityService::IsSecureURI(uint32_t aType, nsIURI* aURI,
     return NS_OK;
   }
 
-  return IsSecureHost(aType, hostname.get(), aFlags, aCached, aResult);
+  return IsSecureHost(aType, hostname.get(), aFlags, aResult);
 }
 
 int STSPreloadCompare(const void *key, const void *entry)
@@ -956,8 +942,7 @@ nsSiteSecurityService::GetPreloadListEntry(const char *aHost)
 
 NS_IMETHODIMP
 nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
-                                    uint32_t aFlags, bool* aCached,
-                                    bool* aResult)
+                                    uint32_t aFlags, bool* aResult)
 {
    
    if (!XRE_IsParentProcess() && aType != nsISiteSecurityService::HEADER_HSTS) {
@@ -974,9 +959,6 @@ nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
 
   
   *aResult = false;
-  if (aCached) {
-    *aCached = false;
-  }
 
   
   if (HostIsIPAddress(aHost)) {
@@ -1002,9 +984,6 @@ nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
   nsAutoCString host(PublicKeyPinningService::CanonicalizeHostname(aHost));
   if (host.EqualsLiteral("chart.apis.google.com") ||
       StringEndsWith(host, NS_LITERAL_CSTRING(".chart.apis.google.com"))) {
-    if (aCached) {
-      *aCached = true;
-    }
     return NS_OK;
   }
 
@@ -1028,17 +1007,9 @@ nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
   if (siteState.mHSTSState != SecurityPropertyUnset) {
     SSSLOG(("Found entry for %s", host.get()));
     bool expired = siteState.IsExpired(aType);
-    if (!expired) {
-      if (aCached) {
-        *aCached = true;
-      }
-      if (siteState.mHSTSState == SecurityPropertySet) {
-        *aResult = true;
-        return NS_OK;
-      } else if (siteState.mHSTSState == SecurityPropertyNegative) {
-        *aResult = false;
-        return NS_OK;
-      }
+    if (!expired && siteState.mHSTSState == SecurityPropertySet) {
+      *aResult = true;
+      return NS_OK;
     }
 
     
@@ -1051,9 +1022,6 @@ nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
   else if (GetPreloadListEntry(host.get())) {
     SSSLOG(("%s is a preloaded STS host", host.get()));
     *aResult = true;
-    if (aCached) {
-      *aCached = true;
-    }
     return NS_OK;
   }
 
@@ -1086,17 +1054,9 @@ nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
     if (siteState.mHSTSState != SecurityPropertyUnset) {
       SSSLOG(("Found entry for %s", subdomain));
       bool expired = siteState.IsExpired(aType);
-      if (!expired) {
-        if (aCached) {
-          *aCached = true;
-        }
-        if (siteState.mHSTSState == SecurityPropertySet) {
-          *aResult = siteState.mHSTSIncludeSubdomains;
-          break;
-        } else if (siteState.mHSTSState == SecurityPropertyNegative) {
-          *aResult = false;
-          break;
-        }
+      if (!expired && siteState.mHSTSState == SecurityPropertySet) {
+        *aResult = siteState.mHSTSIncludeSubdomains;
+        break;
       }
 
       
@@ -1110,9 +1070,6 @@ nsSiteSecurityService::IsSecureHost(uint32_t aType, const char* aHost,
       if (preload->mIncludeSubdomains) {
         SSSLOG(("%s is a preloaded STS host", subdomain));
         *aResult = true;
-        if (aCached) {
-          *aCached = true;
-        }
         break;
       }
     }
