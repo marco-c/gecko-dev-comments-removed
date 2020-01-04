@@ -323,10 +323,8 @@ public:
   bool
   Close();
 
-  
-  
   bool
-  ModifyBusyCount(JSContext* , bool aIncrease);
+  ModifyBusyCount(bool aIncrease);
 
   void
   ForgetOverridenLoadGroup(nsCOMPtr<nsILoadGroup>& aLoadGroupOut);
