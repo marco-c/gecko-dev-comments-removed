@@ -578,6 +578,11 @@ class Base {
     
     
     
+    
+    
+    
+    
+    
     using Size = uint64_t;
     virtual Size size(mozilla::MallocSizeOf mallocSizeof) const { return 1; }
 
