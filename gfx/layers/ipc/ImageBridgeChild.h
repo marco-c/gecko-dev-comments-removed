@@ -141,6 +141,15 @@ public:
 
 
   static bool IsCreated();
+  
+
+
+
+
+  static bool IsShutDown()
+  {
+    return sIsShutDown;
+  }
 
   
 
@@ -318,6 +327,7 @@ protected:
 
   CompositableTransaction* mTxn;
   Atomic<bool> mShuttingDown;
+  static Atomic<bool> sIsShutDown;
 };
 
 } 
