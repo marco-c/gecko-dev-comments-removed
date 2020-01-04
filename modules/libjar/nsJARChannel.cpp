@@ -214,7 +214,7 @@ nsJARChannel::nsJARChannel()
 
 nsJARChannel::~nsJARChannel()
 {
-    NS_ReleaseOnMainThread(mLoadInfo);
+    NS_ReleaseOnMainThread(mLoadInfo.forget());
 
     
     nsJARProtocolHandler *handler = gJarHandler;

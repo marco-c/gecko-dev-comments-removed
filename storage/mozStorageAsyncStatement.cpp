@@ -220,10 +220,8 @@ AsyncStatement::~AsyncStatement()
   if (!onCallingThread) {
     
     
-    Connection *forgottenConn = nullptr;
-    mDBConnection.swap(forgottenConn);
-    (void)::NS_ProxyRelease(forgottenConn->threadOpenedOn,
-                            static_cast<mozIStorageConnection *>(forgottenConn));
+    nsCOMPtr<nsIThread> targetThread(mDBConnection->threadOpenedOn);
+    NS_ProxyRelease(targetThread, mDBConnection.forget());
   }
 }
 

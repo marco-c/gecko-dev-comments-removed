@@ -314,7 +314,7 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
     
     
     
-    NS_ReleaseOnMainThread(retiredMessage);
+    NS_ReleaseOnMainThread(retiredMessage.forget());
   }
 
   if (r) {
