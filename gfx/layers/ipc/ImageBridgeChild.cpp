@@ -347,7 +347,7 @@ static void ReleaseImageClientNow(ImageClient* aClient,
   if (aClient) {
     aClient->Release();
   }
-  if (aChild) {
+  if (aChild && ImageBridgeChild::IsCreated()) {
     aChild->SendAsyncDelete();
   }
 }
@@ -410,6 +410,11 @@ void ImageBridgeChild::DispatchReleaseTextureClient(TextureClient* aClient)
 
 static void UpdateImageClientNow(ImageClient* aClient, ImageContainer* aContainer)
 {
+  if (!ImageBridgeChild::IsCreated()) {
+    NS_WARNING("Something is holding on to graphics resources after the shutdown"
+               "of the graphics subsystem!");
+    return;
+  }
   MOZ_ASSERT(aClient);
   MOZ_ASSERT(aContainer);
   sImageBridgeChildSingleton->BeginTransaction();
@@ -421,6 +426,11 @@ static void UpdateImageClientNow(ImageClient* aClient, ImageContainer* aContaine
 void ImageBridgeChild::DispatchImageClientUpdate(ImageClient* aClient,
                                                  ImageContainer* aContainer)
 {
+  if (!ImageBridgeChild::IsCreated()) {
+    NS_WARNING("Something is holding on to graphics resources after the shutdown"
+               "of the graphics subsystem!");
+    return;
+  }
   if (!aClient || !aContainer || !IsCreated()) {
     return;
   }
@@ -440,6 +450,17 @@ void ImageBridgeChild::DispatchImageClientUpdate(ImageClient* aClient,
 static void FlushAllImagesSync(ImageClient* aClient, ImageContainer* aContainer,
                                AsyncTransactionWaiter* aWaiter)
 {
+  if (!ImageBridgeChild::IsCreated()) {
+    
+    
+    
+    
+    
+    NS_WARNING("Something is holding on to graphics resources after the shutdown"
+               "of the graphics subsystem!");
+    aWaiter->DecrementWaitCount();
+    return;
+  }
   MOZ_ASSERT(aClient);
   sImageBridgeChildSingleton->BeginTransaction();
   if (aContainer) {
