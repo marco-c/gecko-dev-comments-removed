@@ -46,6 +46,12 @@ var PrintHelper = {
       webBrowserPrint.print(printSettings, {
         onStateChange: function(webProgress, request, stateFlags, status) {
           
+          if (stateFlags & Ci.nsIWebProgressListener.STATE_START && stateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
+            
+            NativeWindow.toast.show(Strings.browser.GetStringFromName("alertPrintjobToast"), "long");
+          }
+
+          
           if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP && stateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
             if (Components.isSuccessCode(status)) {
               
