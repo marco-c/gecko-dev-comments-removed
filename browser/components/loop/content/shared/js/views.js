@@ -205,9 +205,46 @@ loop.shared.views = (function(_, mozL10n) {
     
 
 
-    handleClick: function(event) {
-      event.preventDefault();
-      this.toggleDropdownMenu();
+
+
+
+
+
+
+
+
+
+
+    _repositionMenu: function() {
+      if (this.refs.menu && this.state.showMenu) {
+        var menuNode = this.refs.menu && this.refs.menu.getDOMNode();
+
+        if (menuNode) {
+          
+          
+          var boundOffset = 4;
+          var menuNodeRect = menuNode.getBoundingClientRect();
+          var menuComputedStyle = window.getComputedStyle(menuNode);
+          var documentBody = this.getDOMNode().ownerDocument.body;
+          var bodyRect = documentBody.getBoundingClientRect();
+          var menuLeft = parseFloat(menuNodeRect.left);
+          var menuRight = parseFloat(menuNodeRect.right);
+          var bodyRight = parseFloat(bodyRect.right);
+
+          menuNode.style.left = "auto";
+
+          
+          if (menuLeft < -boundOffset) {
+            menuNode.style.right =
+              (parseFloat(menuComputedStyle.right) + menuLeft - boundOffset) + "px";
+          }
+          
+          if (menuRight > bodyRight - boundOffset) {
+            menuNode.style.right =
+              (parseFloat(menuComputedStyle.right) + (menuRight - bodyRight) + boundOffset) + "px";
+          }
+        }
+      }
     },
 
     

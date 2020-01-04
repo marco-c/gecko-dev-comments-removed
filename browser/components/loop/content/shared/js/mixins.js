@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 var loop = loop || {};
 loop.shared = loop.shared || {};
 loop.shared.mixins = (function() {
@@ -228,6 +232,11 @@ loop.shared.mixins = (function() {
           menu.style.marginTop = "auto";
         }
 
+        
+        
+        if (this._repositionMenu) {
+          this._repositionMenu();
+        }
         menu.style.visibility = "visible";
       },
 
