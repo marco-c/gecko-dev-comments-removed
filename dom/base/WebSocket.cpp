@@ -15,7 +15,6 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
-#include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -1572,16 +1571,17 @@ WebSocketImpl::Init(JSContext* aCx,
     
     
     
-    nsCOMPtr<nsIContentPolicy> cspService = do_GetService(CSPSERVICE_CONTRACTID);
-    int16_t shouldLoad = nsIContentPolicy::REJECT_REQUEST;
-    aRv = cspService->ShouldLoad(nsIContentPolicy::TYPE_WEBSOCKET,
-                                 uri,
-                                 nullptr, 
-                                 originDoc,
-                                 EmptyCString(), 
-                                 nullptr, 
-                                 aPrincipal,
-                                 &shouldLoad);
+    
+    int16_t shouldLoad = nsIContentPolicy::ACCEPT;
+    aRv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_WEBSOCKET,
+                                    uri,
+                                    aPrincipal,
+                                    originDoc,
+                                    EmptyCString(),
+                                    nullptr,
+                                    &shouldLoad,
+                                    nsContentUtils::GetContentPolicy(),
+                                    nsContentUtils::GetSecurityManager());
 
     if (NS_WARN_IF(aRv.Failed())) {
       return;
