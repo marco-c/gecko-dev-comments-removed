@@ -170,8 +170,9 @@ public:
     
     
     
-    AutoVirtualProtect protect(fn - 5, 7, PAGE_EXECUTE_READWRITE);
-    if (!protect.Protect()) {
+    AutoVirtualProtect protectBefore(fn - 5, 5, PAGE_EXECUTE_READWRITE);
+    AutoVirtualProtect protectAfter(fn, 2, PAGE_EXECUTE_READWRITE);
+    if (!protectBefore.Protect() || !protectAfter.Protect()) {
       
       return false;
     }
