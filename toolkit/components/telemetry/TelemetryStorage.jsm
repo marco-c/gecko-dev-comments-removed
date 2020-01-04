@@ -380,19 +380,6 @@ this.TelemetryStorage = {
 
 
 
-
-
-
-  addPendingPingFromFile: function(pingPath) {
-    return TelemetryStorageImpl.addPendingPingFromFile(pingPath);
-  },
-
-  
-
-
-
-
-
   cleanupPingFile: function(ping) {
     return TelemetryStorageImpl.cleanupPingFile(ping);
   },
@@ -400,22 +387,8 @@ this.TelemetryStorage = {
   
 
 
-
-
-
-  loadHistograms: function loadHistograms(file) {
-    return TelemetryStorageImpl.loadHistograms(file);
-  },
-
-  
-
-
   get pendingPingCount() {
     return TelemetryStorageImpl.pendingPingCount;
-  },
-
-  testLoadHistograms: function(file) {
-    return TelemetryStorageImpl.testLoadHistograms(file);
   },
 
   
@@ -1183,26 +1156,6 @@ var TelemetryStorageImpl = {
 
 
 
-
-  addPendingPingFromFile: function(pingPath) {
-    
-    
-    
-    return this.loadPingFile(pingPath).then(ping => {
-      
-      Telemetry.getHistogramById("READ_SAVED_PING_SUCCESS").add(1);
-      return this.addPendingPing(ping);
-    });
-  },
-
-  
-
-
-
-
-
-
-
   addPendingPing: function(ping) {
     return this.savePendingPing(ping);
   },
@@ -1395,35 +1348,8 @@ var TelemetryStorageImpl = {
     return list;
   },
 
-  
-
-
-
-
-
-
-
-
-  loadHistograms: Task.async(function*(file) {
-    let success = true;
-    try {
-      const ping = yield this.loadPingfile(file);
-      return ping;
-    } catch (ex) {
-      success = false;
-      yield OS.File.remove(file);
-    } finally {
-      const success_histogram = Telemetry.getHistogramById("READ_SAVED_PING_SUCCESS");
-      success_histogram.add(success);
-    }
-  }),
-
   get pendingPingCount() {
     return this._pendingPings.size;
-  },
-
-  testLoadHistograms: function(file) {
-    return this.loadHistograms(file.path);
   },
 
   
