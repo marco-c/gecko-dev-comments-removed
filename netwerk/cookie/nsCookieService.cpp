@@ -4113,8 +4113,6 @@ nsCookieService::GetExpiry(nsCookieAttributes &aCookieAttributes,
 
 
 
-  int64_t delta;
-
   
   if (!aCookieAttributes.maxage.IsEmpty()) {
     
@@ -4126,7 +4124,9 @@ nsCookieService::GetExpiry(nsCookieAttributes &aCookieAttributes,
       return true;
     }
 
-    delta = maxage;
+    
+    
+    aCookieAttributes.expiryTime = aCurrentTime + maxage;
 
   
   } else if (!aCookieAttributes.expires.IsEmpty()) {
@@ -4137,16 +4137,17 @@ nsCookieService::GetExpiry(nsCookieAttributes &aCookieAttributes,
       return true;
     }
 
-    delta = expires / int64_t(PR_USEC_PER_SEC) - aServerTime;
+    
+    
+    
+    
+    
+    aCookieAttributes.expiryTime = expires / int64_t(PR_USEC_PER_SEC);
 
   
   } else {
     return true;
   }
-
-  
-  
-  aCookieAttributes.expiryTime = aCurrentTime + delta;
 
   return false;
 }

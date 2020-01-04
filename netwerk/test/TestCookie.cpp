@@ -33,6 +33,36 @@ static const char kCookiesMaxPerHost[] = "network.cookie.maxPerHost";
 
 static char *sBuffer;
 
+#define OFFSET_ONE_WEEK int64_t(604800) * PR_USEC_PER_SEC
+#define OFFSET_ONE_DAY int64_t(86400) * PR_USEC_PER_SEC
+
+
+void
+SetTime(PRTime offsetTime,nsAutoCString& serverString,nsAutoCString& cookieString,bool expiry)
+{
+    char timeStringPreset[40];
+    PRTime CurrentTime = PR_Now();
+    PRTime SetCookieTime = CurrentTime + offsetTime;
+    PRTime SetExpiryTime;
+    if (expiry) {
+      SetExpiryTime = SetCookieTime - OFFSET_ONE_DAY;
+    } else {
+      SetExpiryTime = SetCookieTime + OFFSET_ONE_DAY;
+    }
+
+    
+    PRExplodedTime explodedTime;
+    PR_ExplodeTime(SetCookieTime , PR_GMTParameters, &explodedTime);
+    PR_FormatTimeUSEnglish(timeStringPreset, 40, "%c GMT", &explodedTime);
+    serverString.Assign(timeStringPreset);
+
+    
+    PR_ExplodeTime(SetExpiryTime , PR_GMTParameters, &explodedTime);
+    PR_FormatTimeUSEnglish(timeStringPreset, 40, "%c GMT", &explodedTime);
+    cookieString.Replace(0, strlen("test=expiry; expires=") + strlen(timeStringPreset) + 1, "test=expiry; expires=");
+    cookieString.Append(timeStringPreset);
+}
+
 nsresult
 SetACookie(nsICookieService *aCookieService, const char *aSpec1, const char *aSpec2, const char* aCookieString, const char *aServerTime)
 {
@@ -463,8 +493,29 @@ main(int32_t argc, char *argv[])
       GetACookie(cookieService, "http://expireme.org/", nullptr, getter_Copies(cookie));
       rv[15] = CheckResult(cookie.get(), MUST_BE_NULL);
 
-      allTestsPassed = PrintResult(rv, 16) && allTestsPassed;
+      nsAutoCString ServerTime;
+      nsAutoCString CookieString;
 
+      SetTime(-OFFSET_ONE_WEEK, ServerTime, CookieString, true);
+      SetACookie(cookieService, "http://expireme.org/", nullptr, CookieString.get(), ServerTime.get());
+      GetACookie(cookieService, "http://expireme.org/", nullptr, getter_Copies(cookie));
+      rv[16] = CheckResult(cookie.get(), MUST_BE_NULL);
+      
+      SetTime(-(OFFSET_ONE_DAY + OFFSET_ONE_WEEK), ServerTime, CookieString, false);
+      SetACookie(cookieService, "http://expireme.org/", nullptr, CookieString.get(), ServerTime.get());
+      GetACookie(cookieService, "http://expireme.org/", nullptr, getter_Copies(cookie));
+      rv[17] = CheckResult(cookie.get(), MUST_BE_NULL);
+      
+      SetTime(OFFSET_ONE_WEEK, ServerTime, CookieString, false);
+      SetACookie(cookieService, "http://expireme.org/", nullptr, CookieString.get(), ServerTime.get());
+      GetACookie(cookieService, "http://expireme.org/", nullptr, getter_Copies(cookie));
+      rv[18] = CheckResult(cookie.get(), MUST_EQUAL, "test=expiry");
+      
+      SetTime((OFFSET_ONE_DAY + OFFSET_ONE_WEEK), ServerTime, CookieString, true);
+      SetACookie(cookieService, "http://expireme.org/", nullptr, CookieString.get(), ServerTime.get());
+      GetACookie(cookieService, "http://expireme.org/", nullptr, getter_Copies(cookie));
+      rv[19] = CheckResult(cookie.get(), MUST_EQUAL, "test=expiry");
+      allTestsPassed = PrintResult(rv, 20) && allTestsPassed;
 
       
       sBuffer = PR_sprintf_append(sBuffer, "*** Beginning multiple cookie tests...\n");
