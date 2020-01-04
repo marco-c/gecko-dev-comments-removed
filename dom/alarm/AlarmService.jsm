@@ -49,6 +49,8 @@ XPCOMUtils.defineLazyGetter(this, "powerManagerService", function() {
 
 
 this.AlarmService = {
+  lastChromeId: 0,
+
   init: function init() {
     debug("init()");
 
@@ -205,6 +207,12 @@ this.AlarmService = {
       };
     }
 
+    
+    if (aId < 0) {
+      aRemoveSuccessCb();
+      return;
+    }
+
     this._db.remove(aId, aManifestURL, aRemoveSuccessCb,
                     function removeErrorCb(aErrorMsg) {
                       throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
@@ -241,11 +249,19 @@ this.AlarmService = {
   _notifyAlarmObserver: function _notifyAlarmObserver(aAlarm) {
     debug("_notifyAlarmObserver()");
 
-    if (aAlarm.manifestURL) {
-      this._fireSystemMessage(aAlarm);
-    } else if (typeof aAlarm.alarmFiredCb === "function") {
-      aAlarm.alarmFiredCb(this._publicAlarm(aAlarm));
-    }
+    let wakeLock = powerManagerService.newWakeLock("cpu");
+
+    let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer.initWithCallback(() => {
+      debug("_notifyAlarmObserver - timeout()");
+      if (aAlarm.manifestURL) {
+        this._fireSystemMessage(aAlarm);
+      } else if (typeof aAlarm.alarmFiredCb === "function") {
+        aAlarm.alarmFiredCb(this._publicAlarm(aAlarm));
+      }
+
+      wakeLock.unlock();
+    }, 0, Ci.nsITimer.TYPE_ONE_SHOT);
   },
 
   _onAlarmFired: function _onAlarmFired() {
@@ -265,8 +281,12 @@ this.AlarmService = {
       }
 
       this._removeAlarmFromDb(this._currentAlarm.id, null);
-      this._notifyAlarmObserver(this._currentAlarm);
+      
+      
+      
+      let firingAlarm = this._currentAlarm;
       this._currentAlarm = null;
+      this._notifyAlarmObserver(firingAlarm);
     }
 
     
@@ -311,13 +331,23 @@ this.AlarmService = {
 
         
         let alarmQueue = this._alarmQueue;
-        alarmQueue.length = 0;
-        this._currentAlarm = null;
+        if (this._currentAlarm) {
+          alarmQueue.unshift(this._currentAlarm);
+          this._currentAlarm = null;
+        }
+        for (let i = 0; i < alarmQueue.length;) {
+          if (alarmQueue[i]['id'] < 0) {
+            ++i;
+            continue;
+          }
+          alarmQueue.splice(i, 1);
+        }
 
         
         
         aAlarms.forEach(function addAlarm(aAlarm) {
-          if (this._getAlarmTime(aAlarm) > Date.now()) {
+          if ("manifestURL" in aAlarm && aAlarm.manifestURL &&
+              this._getAlarmTime(aAlarm) > Date.now()) {
             alarmQueue.push(aAlarm);
           } else {
             this._removeAlarmFromDb(aAlarm.id, null);
@@ -416,55 +446,65 @@ this.AlarmService = {
 
     aNewAlarm['timezoneOffset'] = this._currentTimezoneOffset;
 
-    this._db.add(aNewAlarm,
-      function addSuccessCb(aNewId) {
-        debug("Callback after adding alarm in database.");
+    if ("manifestURL" in aNewAlarm) {
+      this._db.add(aNewAlarm,
+        function addSuccessCb(aNewId) {
+          debug("Callback after adding alarm in database.");
+          this.processNewAlarm(aNewAlarm, aNewId, aAlarmFiredCb, aSuccessCb);
+        }.bind(this),
+        function addErrorCb(aErrorMsg) {
+          aErrorCb(aErrorMsg);
+        }.bind(this));
+    } else {
+      
+      
+      this.processNewAlarm(aNewAlarm, --this.lastChromeId, aAlarmFiredCb,
+                           aSuccessCb);
+    }
+  },
 
-        aNewAlarm['id'] = aNewId;
+  processNewAlarm: function(aNewAlarm, aNewId, aAlarmFiredCb, aSuccessCb) {
+    aNewAlarm['id'] = aNewId;
 
-        
-        
-        aNewAlarm['alarmFiredCb'] = aAlarmFiredCb;
+    
+    
+    aNewAlarm['alarmFiredCb'] = aAlarmFiredCb;
 
-        
-        
-        let aNewAlarmTime = this._getAlarmTime(aNewAlarm);
-        if (aNewAlarmTime < Date.now()) {
-          aSuccessCb(aNewId);
-          this._removeAlarmFromDb(aNewAlarm.id, null);
-          this._notifyAlarmObserver(aNewAlarm);
-          return;
-        }
+    
+    
+    let newAlarmTime = this._getAlarmTime(aNewAlarm);
+    if (newAlarmTime < Date.now()) {
+      aSuccessCb(aNewId);
+      this._removeAlarmFromDb(aNewAlarm.id, null);
+      this._notifyAlarmObserver(aNewAlarm);
+      return;
+    }
 
-        
-        if (this._currentAlarm == null) {
-          this._currentAlarm = aNewAlarm;
-          this._debugCurrentAlarm();
-          aSuccessCb(aNewId);
-          return;
-        }
+    
+    if (this._currentAlarm == null) {
+      this._currentAlarm = aNewAlarm;
+      this._debugCurrentAlarm();
+      aSuccessCb(aNewId);
+      return;
+    }
 
-        
-        
-        let alarmQueue = this._alarmQueue;
-        let currentAlarmTime = this._getAlarmTime(this._currentAlarm);
-        if (aNewAlarmTime < currentAlarmTime) {
-          alarmQueue.unshift(this._currentAlarm);
-          this._currentAlarm = aNewAlarm;
-          this._debugCurrentAlarm();
-          aSuccessCb(aNewId);
-          return;
-        }
+    
+    
+    let alarmQueue = this._alarmQueue;
+    let currentAlarmTime = this._getAlarmTime(this._currentAlarm);
+    if (newAlarmTime < currentAlarmTime) {
+      alarmQueue.unshift(this._currentAlarm);
+      this._currentAlarm = aNewAlarm;
+      this._debugCurrentAlarm();
+      aSuccessCb(aNewId);
+      return;
+    }
 
-        
-        alarmQueue.push(aNewAlarm);
-        alarmQueue.sort(this._sortAlarmByTimeStamps.bind(this));
-        this._debugCurrentAlarm();
-        aSuccessCb(aNewId);
-      }.bind(this),
-      function addErrorCb(aErrorMsg) {
-        aErrorCb(aErrorMsg);
-      }.bind(this));
+    
+    alarmQueue.push(aNewAlarm);
+    alarmQueue.sort(this._sortAlarmByTimeStamps.bind(this));
+    this._debugCurrentAlarm();
+    aSuccessCb(aNewId);
   },
 
   
