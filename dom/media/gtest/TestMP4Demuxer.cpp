@@ -426,3 +426,13 @@ TEST(MP4Demuxer, GetNextKeyframe)
     );
   });
 }
+
+TEST(MP4Demuxer, ZeroInMoov)
+{
+  nsRefPtr<MP4DemuxerBinding> binding = new MP4DemuxerBinding("short-zero-in-moov.mp4");
+  binding->RunTestAndWait([binding] () {
+    
+    binding->mTaskQueue->BeginShutdown();
+  });
+}
+
