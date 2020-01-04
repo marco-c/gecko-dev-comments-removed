@@ -361,7 +361,6 @@ class InterpreterFrame
     mutable uint32_t    flags_;         
     union {                             
         JSScript*       script;        
-        ModuleObject*   module;        
     } exec;
     union {                             
         unsigned        nactual;        
@@ -669,17 +668,6 @@ class InterpreterFrame
     Value* prevsp() {
         MOZ_ASSERT(prev_);
         return prevsp_;
-    }
-
-    
-
-    ModuleObject* module() const {
-        MOZ_ASSERT(isModuleFrame());
-        return exec.module;
-    }
-
-    ModuleObject* maybeModule() const {
-        return isModuleFrame() ? module() : nullptr;
     }
 
     
