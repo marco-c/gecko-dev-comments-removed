@@ -963,7 +963,8 @@ function sanitizeName(aName) {
 
 
 function getMozParamPref(prefName) {
-  return Services.prefs.getCharPref(BROWSER_SEARCH_PREF + "param." + prefName);
+  let branch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF + "param.");
+  return encodeURIComponent(branch.getCharPref(prefName));
 }
 
 
