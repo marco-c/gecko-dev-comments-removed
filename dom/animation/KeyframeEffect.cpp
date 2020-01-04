@@ -15,11 +15,13 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
+#include "nsContentUtils.h"  
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h" 
 #include "nsCSSPseudoElements.h" 
 #include "nsDOMMutationObserver.h" 
 #include "nsIPresShell.h" 
+#include "nsIScriptError.h"
 
 namespace mozilla {
 
@@ -729,15 +731,18 @@ KeyframeEffectOptionsFromUnion(
 template <class OptionsType>
 static KeyframeEffectParams
 KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
+                              nsAString& aInvalidPacedProperty,
                               ErrorResult& aRv)
 {
   KeyframeEffectParams result;
   if (!aOptions.IsUnrestrictedDouble()) {
     const KeyframeEffectOptions& options =
       KeyframeEffectOptionsFromUnion(aOptions);
-    
-    
-    
+    KeyframeEffectParams::ParseSpacing(options.mSpacing,
+                                       result.mSpacingMode,
+                                       result.mPacedProperty,
+                                       aInvalidPacedProperty,
+                                       aRv);
   }
   return result;
 }
@@ -786,8 +791,23 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(
     return nullptr;
   }
 
+  nsAutoString invalidPacedProperty;
   KeyframeEffectParams effectOptions =
-    KeyframeEffectParamsFromUnion(aOptions, aRv);
+    KeyframeEffectParamsFromUnion(aOptions, invalidPacedProperty, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (!invalidPacedProperty.IsEmpty()) {
+    const char16_t* params[] = { invalidPacedProperty.get() };
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                    NS_LITERAL_CSTRING("Animation"),
+                                    doc,
+                                    nsContentUtils::eDOM_PROPERTIES,
+                                    "UnanimatablePacedProperty",
+                                    params, ArrayLength(params));
+  }
+
   Maybe<OwningAnimationTarget> target = ConvertTarget(aTarget);
   RefPtr<KeyframeEffectType> effect =
     new KeyframeEffectType(doc, target, timingParams, effectOptions);

@@ -78,6 +78,15 @@ public:
                                       dom::Element* aElement,
                                       CSSPseudoElementType aPseudoType,
                                       const nsTArray<Keyframe>& aFrames);
+
+  
+
+
+
+
+
+
+  static bool IsAnimatableProperty(nsCSSProperty aProperty);
 };
 
 } 

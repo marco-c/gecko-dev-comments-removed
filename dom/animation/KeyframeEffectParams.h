@@ -32,6 +32,24 @@ struct KeyframeEffectParams
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+  static void ParseSpacing(const nsAString& aSpacing,
+                           SpacingMode& aSpacingMode,
+                           nsCSSProperty& aPacedProperty,
+                           nsAString& aInvalidPacedProperty,
+                           ErrorResult& aRv);
+
+  
   
   SpacingMode mSpacingMode = SpacingMode::distribute;
   nsCSSProperty mPacedProperty = eCSSProperty_UNKNOWN;
