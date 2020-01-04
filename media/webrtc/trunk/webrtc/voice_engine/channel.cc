@@ -61,10 +61,10 @@ class StatisticsProxy : public RtcpStatisticsCallback {
 
   void StatisticsUpdated(const RtcpStatistics& statistics,
                          uint32_t ssrc) override {
+    CriticalSectionScoped cs(stats_lock_.get());
     if (ssrc != ssrc_)
       return;
 
-    CriticalSectionScoped cs(stats_lock_.get());
     stats_.rtcp = statistics;
     if (statistics.jitter > stats_.max_jitter) {
       stats_.max_jitter = statistics.jitter;
@@ -72,6 +72,11 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   }
 
   void CNameChanged(const char* cname, uint32_t ssrc) override {}
+
+  void SetSSRC(uint32_t ssrc) {
+    CriticalSectionScoped cs(stats_lock_.get());
+    ssrc_ = ssrc;
+  }
 
   void ResetStatistics() {
     CriticalSectionScoped cs(stats_lock_.get());
@@ -88,7 +93,7 @@ class StatisticsProxy : public RtcpStatisticsCallback {
   
   
   rtc::scoped_ptr<CriticalSectionWrapper> stats_lock_;
-  const uint32_t ssrc_;
+  uint32_t ssrc_;
   ChannelStatistics stats_;
 };
 
@@ -344,6 +349,8 @@ Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
 
     
     _rtpRtcpModule->SetRemoteSSRC(ssrc);
+    
+    statistics_proxy_->SetSSRC(ssrc);
 }
 
 void Channel::OnIncomingCSRCChanged(int32_t id,
