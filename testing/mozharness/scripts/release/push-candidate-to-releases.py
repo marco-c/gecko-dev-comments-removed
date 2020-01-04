@@ -149,19 +149,30 @@ class ReleasePusher(BaseScript, VirtualenvMixin):
             source, destination = item
 
             def copy_key():
-                dest_key = bucket.get_key(destination)
                 source_key = bucket.get_key(source)
+                dest_key = bucket.get_key(destination)
+                
+                
+                
+                
+                
+                source_md5 = source_key.etag.split("-")[0]
+                if dest_key:
+                    dest_md5 = dest_key.etag.split("-")[0]
+                else:
+                    dest_md5 = None
+
                 if not dest_key:
                     self.info("Copying {} to {}".format(source, destination))
                     bucket.copy_key(destination, self.config["bucket_name"],
                                     source)
-                elif source_key.etag == dest_key.etag:
+                elif source_md5 == dest_md5:
                     self.warning(
                         "{} already exists with the same content ({}), skipping copy".format(
-                            destination, dest_key.etag))
+                            destination, dest_md5))
                 else:
                     self.fatal(
-                        "{} already exists with the different content (src: {}, dest: {}), aborting".format(
+                        "{} already exists with the different content (src ETag: {}, dest ETag: {}), aborting".format(
                             destination, source_key.etag, dest_key.etag))
 
             return retry(copy_key, sleeptime=5, max_sleeptime=60,
