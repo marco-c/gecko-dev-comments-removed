@@ -380,11 +380,11 @@ class nsCSSKeyframeRule final : public mozilla::css::Rule,
 public:
   
   nsCSSKeyframeRule(InfallibleTArray<float>&& aKeys,
-                    mozilla::css::Declaration* aDeclaration,
+                    already_AddRefed<mozilla::css::Declaration>&& aDeclaration,
                     uint32_t aLineNumber, uint32_t aColumnNumber)
     : mozilla::css::Rule(aLineNumber, aColumnNumber)
     , mKeys(mozilla::Move(aKeys))
-    , mDeclaration(aDeclaration)
+    , mDeclaration(mozilla::Move(aDeclaration))
   {
     mDeclaration->SetOwningRule(this);
   }
