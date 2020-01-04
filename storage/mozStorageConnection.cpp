@@ -18,6 +18,7 @@
 #include "mozilla/CondVar.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorNames.h"
+#include "mozilla/unused.h"
 
 #include "mozIStorageAggregateFunction.h"
 #include "mozIStorageCompletionCallback.h"
@@ -1203,22 +1204,81 @@ Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsIEventTarget *asyncThread = getAsyncExecutionTarget();
 
-  if (!mDBConn && !asyncThread)
-    return NS_ERROR_NOT_INITIALIZED;
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIRunnable> completeEvent;
+  if (aCallback) {
+    completeEvent = newCompletionEvent(aCallback);
+  }
+
+  if (!asyncThread) {
+    
+    
+    
+    
+    if (completeEvent) {
+      
+      
+      
+      Unused << NS_DispatchToMainThread(completeEvent.forget());
+    }
+    return Close();
+  }
 
   
   
   sqlite3 *nativeConn = mDBConn;
   nsresult rv = setClosedState();
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsCOMPtr<nsIRunnable> completeEvent;
-  if (aCallback) {
-    completeEvent = newCompletionEvent(aCallback);
-  }
 
   
   nsCOMPtr<nsIRunnable> closeEvent;
@@ -1528,7 +1588,7 @@ Connection::ExecuteAsync(mozIStorageBaseStatement **aStatements,
 {
   nsTArray<StatementData> stmts(aNumStatements);
   for (uint32_t i = 0; i < aNumStatements; i++) {
-    nsCOMPtr<StorageBaseStatementInternal> stmt = 
+    nsCOMPtr<StorageBaseStatementInternal> stmt =
       do_QueryInterface(aStatements[i]);
 
     

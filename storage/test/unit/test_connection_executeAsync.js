@@ -7,13 +7,21 @@
 
 
 
+
+
+
+
 const INTEGER = 1;
 const TEXT = "this is test text";
 const REAL = 3.23;
 const BLOB = [1, 2];
 
-add_test(function test_create_and_add() {
-  getOpenedDatabase().executeSimpleSQL(
+add_task(function* test_first_create_and_add() {
+  
+  
+  let db = getOpenedDatabase();
+  
+  db.executeSimpleSQL(
     "CREATE TABLE test (" +
       "id INTEGER, " +
       "string TEXT, " +
@@ -24,7 +32,7 @@ add_test(function test_create_and_add() {
   );
 
   let stmts = [];
-  stmts[0] = getOpenedDatabase().createStatement(
+  stmts[0] = db.createStatement(
     "INSERT INTO test (id, string, number, nuller, blober) VALUES (?, ?, ?, ?, ?)"
   );
   stmts[0].bindByIndex(0, INTEGER);
@@ -40,62 +48,54 @@ add_test(function test_create_and_add() {
   stmts[1].bindByIndex(2, null);
   stmts[1].bindBlobByIndex(3, BLOB, BLOB.length);
 
-  getOpenedDatabase().executeAsync(stmts, stmts.length, {
-    handleResult: function (aResultSet) {
-      dump("handleResult(" + aResultSet + ")\n");
-      do_throw("unexpected results obtained!");
-    },
-    handleError: function (aError)
-    {
-      dump("handleError(" + aError.result + ")\n");
-      do_throw("unexpected error!");
-    },
-    handleCompletion: function (aReason) {
-      dump("handleCompletion(" + aReason + ")\n");
-      do_check_eq(Ci.mozIStorageStatementCallback.REASON_FINISHED, aReason);
+  
+  let execResult = yield executeMultipleStatementsAsync(
+    db,
+    stmts,
+    function(aResultSet) {
+      ok(false, 'we only did inserts so we should not have gotten results!');
+    });
+  equal(Ci.mozIStorageStatementCallback.REASON_FINISHED, execResult,
+        'execution should have finished successfully.');
 
-      
-      let stmt = getOpenedDatabase().createStatement(
-        "SELECT string, number, nuller, blober FROM test WHERE id = ?"
-      );
-      stmt.bindByIndex(0, INTEGER);
-      try {
-        do_check_true(stmt.executeStep());
-        do_check_eq(TEXT, stmt.getString(0));
-        do_check_eq(REAL, stmt.getDouble(1));
-        do_check_true(stmt.getIsNull(2));
-        let count = { value: 0 };
-        let blob = { value: null };
-        stmt.getBlob(3, count, blob);
-        do_check_eq(BLOB.length, count.value);
-        for (let i = 0; i < BLOB.length; i++)
-          do_check_eq(BLOB[i], blob.value[i]);
-      }
-      finally {
-        stmt.finalize();
-      }
+  
+  let stmt = db.createStatement(
+    "SELECT string, number, nuller, blober FROM test WHERE id = ?"
+  );
+  stmt.bindByIndex(0, INTEGER);
+  try {
+    do_check_true(stmt.executeStep());
+    do_check_eq(TEXT, stmt.getString(0));
+    do_check_eq(REAL, stmt.getDouble(1));
+    do_check_true(stmt.getIsNull(2));
+    let count = { value: 0 };
+    let blob = { value: null };
+    stmt.getBlob(3, count, blob);
+    do_check_eq(BLOB.length, count.value);
+    for (let i = 0; i < BLOB.length; i++)
+      do_check_eq(BLOB[i], blob.value[i]);
+  }
+  finally {
+    stmt.finalize();
+  }
 
-      
-      stmt = getOpenedDatabase().createStatement(
-        "SELECT COUNT(1) FROM test"
-      );
-      try {
-        do_check_true(stmt.executeStep());
-        do_check_eq(2, stmt.getInt32(0));
-      }
-      finally {
-        stmt.finalize();
-      }
+  
+  stmt = db.createStatement(
+    "SELECT COUNT(1) FROM test"
+  );
+  try {
+    do_check_true(stmt.executeStep());
+    do_check_eq(2, stmt.getInt32(0));
+  }
+  finally {
+    stmt.finalize();
+  }
 
-      
-      run_next_test();
-    }
-  });
   stmts[0].finalize();
   stmts[1].finalize();
 });
 
-add_test(function test_multiple_bindings_on_statements() {
+add_task(function* test_last_multiple_bindings_on_statements() {
   
   
   const AMOUNT_TO_ADD = 5;
@@ -140,96 +140,32 @@ add_test(function test_multiple_bindings_on_statements() {
   }
 
   
-  getOpenedDatabase().executeAsync(stmts, stmts.length, {
-    handleResult: function (aResultSet) {
-      do_throw("Unexpected call to handleResult!");
-    },
-    handleError: function (aError) {
-      print("Error code " + aError.result + " with message '" +
-            aError.message + "' returned.");
-      do_throw("Unexpected error!");
-    },
-    handleCompletion: function (aReason) {
-      print("handleCompletion(" + aReason +
-            ") for test_multiple_bindings_on_statements");
-      do_check_eq(Ci.mozIStorageStatementCallback.REASON_FINISHED, aReason);
-
-      
-      try {
-        do_check_true(countStmt.executeStep());
-        do_check_eq(currentRows + (ITERATIONS * AMOUNT_TO_ADD),
-                    countStmt.row.count);
-      }
-      finally {
-        countStmt.finalize();
-      }
-
-      
-      run_next_test();
-    }
-  });
-  stmts.forEach(stmt => stmt.finalize());
-});
-
-add_test(function test_asyncClose_does_not_complete_before_statements() {
-  let stmt = createStatement("SELECT * FROM sqlite_master");
-  let executed = false;
-  stmt.executeAsync({
-    handleResult(aResultSet) {},
-    handleError(aError) {
-      print("Error code " + aError.result + " with message '" +
-            aError.message + "' returned.");
-      do_throw("Unexpected error!");
-    },
-    handleCompletion(aReason) {
-      print("handleCompletion(" + aReason +
-            ") for test_asyncClose_does_not_complete_before_statements");
-      do_check_eq(Ci.mozIStorageStatementCallback.REASON_FINISHED, aReason);
-      executed = true;
-    }
-  });
-  stmt.finalize();
-
-  getOpenedDatabase().asyncClose(function () {
-    
-    do_check_true(executed);
-
-    
-    gDBConn = null;
-    run_next_test();
-  });
-});
-
-add_test(function test_asyncClose_does_not_throw_no_callback() {
-  getOpenedDatabase().asyncClose();
+  let execResult = yield executeMultipleStatementsAsync(
+    db,
+    stmts,
+    function(aResultSet) {
+      ok(false, 'we only did inserts so we should not have gotten results!');
+    });
+  equal(Ci.mozIStorageStatementCallback.REASON_FINISHED, execResult,
+        'execution should have finished successfully.');
 
   
-  gDBConn = null;
-  run_next_test();
-});
-
-add_test(function test_double_asyncClose_throws() {
-  let conn = getOpenedDatabase();
-  conn.asyncClose();
   try {
-    conn.asyncClose();
-    do_throw("should have thrown");
-    
-    
-  } catch (e) {
-    if ("result" in e && e.result == Cr.NS_ERROR_NOT_INITIALIZED) {
-      do_print("NS_ERROR_NOT_INITIALIZED");
-    } else if ("result" in e && e.result == Cr.NS_ERROR_UNEXPECTED) {
-      do_print("NS_ERROR_UNEXPECTED");
-    }
+    do_check_true(countStmt.executeStep());
+    do_check_eq(currentRows + (ITERATIONS * AMOUNT_TO_ADD),
+                countStmt.row.count);
+  }
+  finally {
+    countStmt.finalize();
   }
 
+  stmts.forEach(stmt => stmt.finalize());
+
   
+  
+  yield asyncClose(db);
   gDBConn = null;
-  run_next_test();
 });
 
-function run_test() {
-  cleanup();
-  run_next_test();
-}
+
+
