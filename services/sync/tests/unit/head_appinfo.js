@@ -19,9 +19,9 @@ Services.prefs.setCharPref("identity.sync.tokenserver.uri", "http://token-server
 
 
 var OS = "XPCShell";
-if ("@mozilla.org/windows-registry-key;1" in Cc)
+if (mozinfo.os == "win")
   OS = "WINNT";
-else if ("nsILocalFileMac" in Ci)
+else if (mozinfo.os == "mac")
   OS = "Darwin";
 else
   OS = "Linux";
