@@ -37,7 +37,10 @@ ActivityWrapper.prototype = {
     
     cpmm.sendAsyncMessage("Activity:Ready", { id: aMessage.id });
 
-    let handler = new aWindow.ActivityRequestHandler(aMessage.id, aMessage.payload);
+    
+    
+    
+    let handler = new aWindow.ActivityRequestHandler(aMessage.id, aMessage.payload, aMessage.target.returnValue);
 
     
     
