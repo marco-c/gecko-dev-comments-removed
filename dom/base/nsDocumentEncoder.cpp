@@ -331,12 +331,10 @@ LineHasNonEmptyContentWorker(nsIFrame* aFrame)
   
   
   if (aFrame->GetType() == nsGkAtoms::inlineFrame) {
-    nsIFrame* child = aFrame->PrincipalChildList().FirstChild();
-    while (child) {
+    for (nsIFrame* child : aFrame->PrincipalChildList()) {
       if (LineHasNonEmptyContentWorker(child)) {
         return true;
       }
-      child = child->GetNextSibling();
     }
   } else {
     if (aFrame->GetType() != nsGkAtoms::brFrame &&

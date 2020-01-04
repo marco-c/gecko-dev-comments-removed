@@ -8566,8 +8566,7 @@ nsCSSFrameConstructor::CreateContinuingTableFrame(nsIPresShell*     aPresShell,
 
   
   nsFrameItems  childFrames;
-  nsIFrame* childFrame = aFrame->PrincipalChildList().FirstChild();
-  for ( ; childFrame; childFrame = childFrame->GetNextSibling()) {
+  for (nsIFrame* childFrame : aFrame->PrincipalChildList()) {
     
     nsTableRowGroupFrame* rowGroupFrame =
       static_cast<nsTableRowGroupFrame*>(childFrame);

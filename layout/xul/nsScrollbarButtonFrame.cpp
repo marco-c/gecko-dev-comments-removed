@@ -1,14 +1,14 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//
-// Eric Vaughan
-// Netscape Communications
-//
-// See documentation in associated header file
-//
+
+
+
+
+
+
+
+
+
+
 
 #include "nsScrollbarButtonFrame.h"
 #include "nsPresContext.h"
@@ -25,11 +25,11 @@
 
 using namespace mozilla;
 
-//
-// NS_NewToolbarFrame
-//
-// Creates a new Toolbar frame and returns it
-//
+
+
+
+
+
 nsIFrame*
 NS_NewScrollbarButtonFrame (nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
@@ -45,8 +45,8 @@ nsScrollbarButtonFrame::HandleEvent(nsPresContext* aPresContext,
 {  
   NS_ENSURE_ARG_POINTER(aEventStatus);
 
-  // If a web page calls event.preventDefault() we still want to
-  // scroll when scroll arrow is clicked. See bug 511075.
+  
+  
   if (!mContent->IsInNativeAnonymousSubtree() &&
       nsEventStatus_eConsumeNoDefault == *aEventStatus) {
     return NS_OK;
@@ -55,7 +55,7 @@ nsScrollbarButtonFrame::HandleEvent(nsPresContext* aPresContext,
   switch (aEvent->mMessage) {
     case eMouseDown:
       mCursorOnThis = true;
-      // if we didn't handle the press ourselves, pass it on to the superclass
+      
       if (HandleButtonPress(aPresContext, aEvent, aEventStatus)) {
         return NS_OK;
       }
@@ -85,7 +85,7 @@ nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
                                           WidgetGUIEvent* aEvent,
                                           nsEventStatus* aEventStatus)
 {
-  // Get the desired action for the scrollbar button.
+  
   LookAndFeel::IntID tmpAction;
   uint16_t button = aEvent->AsMouseEvent()->button;
   if (button == WidgetMouseEvent::eLeftButton) {
@@ -98,13 +98,13 @@ nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
     return false;
   }
 
-  // Get the button action metric from the pres. shell.
+  
   int32_t pressedButtonAction;
   if (NS_FAILED(LookAndFeel::GetInt(tmpAction, &pressedButtonAction))) {
     return false;
   }
 
-  // get the scrollbar control
+  
   nsIFrame* scrollbar;
   GetParentWithTag(nsGkAtoms::scrollbar, this, scrollbar);
 
@@ -126,7 +126,7 @@ nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
     return false;
 
   bool repeat = pressedButtonAction != 2;
-  // set this attribute so we can style it later
+  
   nsWeakFrame weakFrame(this);
   mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::active, NS_LITERAL_STRING("true"), true);
 
@@ -160,8 +160,8 @@ nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
       break;
     case 3:
     default:
-      // We were told to ignore this click, or someone assigned a non-standard
-      // value to the button's action.
+      
+      
       return false;
     }
     if (!weakFrame.IsAlive()) {
@@ -186,7 +186,7 @@ nsScrollbarButtonFrame::HandleRelease(nsPresContext* aPresContext,
                                       nsEventStatus* aEventStatus)
 {
   nsIPresShell::SetCapturingContent(nullptr, 0);
-  // we're not active anymore
+  
   mContent->UnsetAttr(kNameSpaceID_None, nsGkAtoms::active, true);
   StopRepeat();
   nsIFrame* scrollbar;
@@ -206,7 +206,7 @@ void nsScrollbarButtonFrame::Notify()
   if (mCursorOnThis ||
       LookAndFeel::GetInt(
         LookAndFeel::eIntID_ScrollbarButtonAutoRepeatBehavior, 0)) {
-    // get the scrollbar control
+    
     nsIFrame* scrollbar;
     GetParentWithTag(nsGkAtoms::scrollbar, this, scrollbar);
     nsScrollbarFrame* sb = do_QueryFrame(scrollbar);
@@ -225,22 +225,21 @@ void
 nsScrollbarButtonFrame::MouseClicked(WidgetGUIEvent* aEvent)
 {
   nsButtonBoxFrame::MouseClicked(aEvent);
-  //MouseClicked();
+  
 }
 
 nsresult
 nsScrollbarButtonFrame::GetChildWithTag(nsIAtom* atom, nsIFrame* start,
                                         nsIFrame*& result)
 {
-  // recursively search our children
-  nsIFrame* childFrame = start->PrincipalChildList().FirstChild();
-  while (nullptr != childFrame) 
-  {    
-    // get the content node
+  
+  for (nsIFrame* childFrame : start->PrincipalChildList())
+  {
+    
     nsIContent* child = childFrame->GetContent();
 
     if (child) {
-      // see if it is the child
+      
        if (child->IsXULElement(atom))
        {
          result = childFrame;
@@ -249,12 +248,10 @@ nsScrollbarButtonFrame::GetChildWithTag(nsIAtom* atom, nsIFrame* start,
        }
     }
 
-     // recursive search the child
+     
      GetChildWithTag(atom, childFrame, result);
      if (result != nullptr) 
        return NS_OK;
-
-    childFrame = childFrame->GetNextSibling();
   }
 
   result = nullptr;
@@ -270,7 +267,7 @@ nsScrollbarButtonFrame::GetParentWithTag(nsIAtom* toFind, nsIFrame* start,
       start = start->GetParent();
 
       if (start) {
-        // get the content node
+        
         nsIContent* child = start->GetContent();
 
         if (child && child->IsXULElement(toFind)) {
@@ -287,8 +284,8 @@ nsScrollbarButtonFrame::GetParentWithTag(nsIAtom* toFind, nsIFrame* start,
 void
 nsScrollbarButtonFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
-  // Ensure our repeat service isn't going... it's possible that a scrollbar can disappear out
-  // from under you while you're in the process of scrolling.
+  
+  
   StopRepeat();
   nsButtonBoxFrame::DestroyFrom(aDestructRoot);
 }

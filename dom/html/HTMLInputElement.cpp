@@ -2917,9 +2917,7 @@ HTMLInputElement::Focus(ErrorResult& aError)
   
   nsIFrame* frame = GetPrimaryFrame();
   if (frame) {
-    for (nsIFrame* childFrame = frame->PrincipalChildList().FirstChild();
-         childFrame;
-         childFrame = childFrame->GetNextSibling()) {
+    for (nsIFrame* childFrame : frame->PrincipalChildList()) {
       
       nsCOMPtr<nsIFormControl> formCtrl =
         do_QueryInterface(childFrame->GetContent());

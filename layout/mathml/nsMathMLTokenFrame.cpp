@@ -132,8 +132,7 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
   aDesiredSize.SetBlockStartAscent(0);
   aDesiredSize.mBoundingMetrics = nsBoundingMetrics();
 
-  nsIFrame* childFrame = PrincipalChildList().FirstChild();
-  while (childFrame) {
+  for (nsIFrame* childFrame : PrincipalChildList()) {
     
     nsHTMLReflowMetrics childDesiredSize(aReflowState.GetWritingMode(),
                                          aDesiredSize.mFlags
@@ -148,8 +147,6 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
     
     SaveReflowAndBoundingMetricsFor(childFrame, childDesiredSize,
                                     childDesiredSize.mBoundingMetrics);
-
-    childFrame = childFrame->GetNextSibling();
   }
 
   
@@ -168,8 +165,7 @@ nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
                           nsHTMLReflowMetrics& aDesiredSize)
 {
   mBoundingMetrics = nsBoundingMetrics();
-  for (nsIFrame* childFrame = PrincipalChildList().FirstChild(); childFrame;
-       childFrame = childFrame->GetNextSibling()) {
+  for (nsIFrame* childFrame :PrincipalChildList()) {
     nsHTMLReflowMetrics childSize(aDesiredSize.GetWritingMode());
     GetReflowAndBoundingMetricsFor(childFrame, childSize,
                                    childSize.mBoundingMetrics, nullptr);
@@ -192,8 +188,7 @@ nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
 
   if (aPlaceOrigin) {
     nscoord dy, dx = 0;
-    for (nsIFrame* childFrame = PrincipalChildList().FirstChild(); childFrame;
-         childFrame = childFrame->GetNextSibling()) {
+    for (nsIFrame* childFrame : PrincipalChildList()) {
       nsHTMLReflowMetrics childSize(aDesiredSize.GetWritingMode());
       GetReflowAndBoundingMetricsFor(childFrame, childSize,
                                      childSize.mBoundingMetrics);

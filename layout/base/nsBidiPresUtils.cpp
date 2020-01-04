@@ -1650,10 +1650,7 @@ nsBidiPresUtils::InitContinuationStates(nsIFrame*              aFrame,
 
   if (!IsBidiLeaf(aFrame) || RubyUtils::IsRubyBox(aFrame->GetType())) {
     
-    nsIFrame* frame;
-    for (frame = aFrame->PrincipalChildList().FirstChild();
-         frame;
-         frame = frame->GetNextSibling()) {
+    for (nsIFrame* frame : aFrame->PrincipalChildList()) {
       InitContinuationStates(frame,
                              aContinuationStates);
     }

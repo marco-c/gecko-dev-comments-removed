@@ -626,8 +626,7 @@ nsMathMLmfencedFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingCon
   }
 
   int32_t i = 0;
-  nsIFrame* childFrame = PrincipalChildList().FirstChild();
-  while (childFrame) {
+  for (nsIFrame* childFrame : PrincipalChildList()) {
     
     
     
@@ -641,8 +640,6 @@ nsMathMLmfencedFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingCon
                         NS_MATHML_OPERATOR_FORM_INFIX, font->mScriptLevel, em);
     }
     i++;
-
-    childFrame = childFrame->GetNextSibling();
   }
 
   if (mCloseChar) {
