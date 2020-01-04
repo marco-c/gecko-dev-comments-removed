@@ -339,7 +339,11 @@ class SimdTypeDescr : public ComplexTypeDescr
         Int32x4   = JS_SIMDTYPEREPR_INT32X4,
         Float32x4 = JS_SIMDTYPEREPR_FLOAT32X4,
         Float64x2 = JS_SIMDTYPEREPR_FLOAT64X2,
-        LAST_TYPE = Float64x2
+        Bool8x16  = JS_SIMDTYPEREPR_BOOL8X16,
+        Bool16x8  = JS_SIMDTYPEREPR_BOOL16X8,
+        Bool32x4  = JS_SIMDTYPEREPR_BOOL32X4,
+        Bool64x2  = JS_SIMDTYPEREPR_BOOL64X2,
+        LAST_TYPE = Bool64x2
     };
 
     static const type::Kind Kind = type::Simd;
@@ -843,6 +847,38 @@ bool GetFloat32x4TypeDescr(JSContext* cx, unsigned argc, Value* vp);
 
 
 bool GetFloat64x2TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetBool8x16TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetBool16x8TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetBool32x4TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetBool64x2TypeDescr(JSContext* cx, unsigned argc, Value* vp);
 
 
 
