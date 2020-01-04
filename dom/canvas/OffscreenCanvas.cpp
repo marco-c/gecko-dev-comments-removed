@@ -70,6 +70,18 @@ OffscreenCanvas::WrapObject(JSContext* aCx,
   return OffscreenCanvasBinding::Wrap(aCx, this, aGivenProto);
 }
 
+ already_AddRefed<OffscreenCanvas>
+OffscreenCanvas::Constructor(const GlobalObject& aGlobal,
+                             uint32_t aWidth,
+                             uint32_t aHeight,
+                             ErrorResult& aRv)
+{
+  RefPtr<OffscreenCanvas> offscreenCanvas =
+    new OffscreenCanvas(aWidth, aHeight,
+                        layers::LayersBackend::LAYERS_NONE, nullptr);
+  return offscreenCanvas.forget();
+}
+
 void
 OffscreenCanvas::ClearResources()
 {
@@ -167,6 +179,12 @@ OffscreenCanvas::CreateContext(CanvasContextType aContextType)
 void
 OffscreenCanvas::CommitFrameToCompositor()
 {
+  if (!mCanvasRenderer) {
+    
+    
+    return;
+  }
+
   
   
   if (mAttrDirty) {
