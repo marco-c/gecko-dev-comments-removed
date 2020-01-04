@@ -795,6 +795,16 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     jsbytecode* pc = catchingException ? excInfo->resumePC() : script->offsetToPC(iter.pcOffset());
     bool resumeAfter = catchingException ? false : iter.resumeAfter();
 
+    
+    
+    
+    
+    
+    
+    
+    if (!js_JitOptions.disablePgo && script->hasScriptCounts())
+        script->incHitCount(pc);
+
     JSOp op = JSOp(*pc);
 
     
