@@ -110,7 +110,7 @@ class LCovCompartment
     LCovSource* lookupOrAdd(JSCompartment* comp, JSObject* sso);
 
   private:
-    typedef Vector<LCovSource, 16, LifoAllocPolicy<Fallible>> LCovSourceVector;
+    typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>> LCovSourceVector;
 
     
     
