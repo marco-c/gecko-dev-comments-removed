@@ -1456,8 +1456,8 @@ nsHTMLReflowState::CalculateHypotheticalPosition
       
       
       
-      boxBSize = ComputeBSizeValue(blockContentSize.BSize(wm),
-                                   insideBoxSizing, styleBSize) +
+      boxBSize = nsLayoutUtils::ComputeBSizeValue(blockContentSize.BSize(wm),
+                                                  insideBoxSizing, styleBSize) +
                  insideBoxSizing + outsideBoxSizing;
     }
 
