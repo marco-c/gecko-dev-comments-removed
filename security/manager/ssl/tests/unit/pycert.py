@@ -329,6 +329,10 @@ class Certificate(object):
         hasher.update(str(self.notBefore))
         hasher.update(str(self.notAfter))
         hasher.update(self.subject)
+        
+        
+        
+        hasher.update(self.signature)
         if self.extensions:
             for extension in self.extensions:
                 hasher.update(str(extension))
