@@ -40,6 +40,7 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
     private Cursor historyCursor;
     private DevicesUpdateHandler devicesUpdateHandler;
     private int deviceCount = 0;
+    private RecentTabsUpdateHandler recentTabsUpdateHandler;
     private int recentTabsCount = 0;
 
     
@@ -72,6 +73,23 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
             };
         }
         return devicesUpdateHandler;
+    }
+
+    public interface RecentTabsUpdateHandler {
+        void onRecentTabsCountUpdated(int count);
+    }
+
+    public RecentTabsUpdateHandler getRecentTabsUpdateHandler() {
+        if (recentTabsUpdateHandler == null) {
+            recentTabsUpdateHandler = new RecentTabsUpdateHandler() {
+                @Override
+                public void onRecentTabsCountUpdated(int count) {
+                    recentTabsCount = count;
+                    notifyItemChanged(RECENT_TABS_SMARTFOLDER_INDEX);
+                }
+            };
+        }
+        return recentTabsUpdateHandler;
     }
 
     @Override

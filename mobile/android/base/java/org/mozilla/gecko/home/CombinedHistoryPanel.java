@@ -115,7 +115,8 @@ public class CombinedHistoryPanel extends HomeFragment implements RemoteClientsD
         
         
         
-        mRecentTabsAdapter = new RecentTabsAdapter(getContext(), getPanelStateUpdateHandler());
+        mRecentTabsAdapter = new RecentTabsAdapter(getContext(),
+                mHistoryAdapter.getRecentTabsUpdateHandler(), getPanelStateUpdateHandler());
 
         mSyncStatusListener = new RemoteTabsSyncListener();
         FirefoxAccounts.addSyncStatusListener(mSyncStatusListener);
