@@ -2236,22 +2236,21 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         return FALSE;
     }
     RefPtr<gfxContext> ctx;
-
-#ifdef MOZ_X11
-    nsIntRect boundsRect; 
-
-    if (shaped) {
-        
-        
-        
-        
-        boundsRect = region.GetBounds().ToUnknownRect();
-        dt->PushClipRect(Rect(boundsRect));
-    } else {
-        gfxUtils::ClipToRegion(dt, region.ToUnknownRegion());
+    IntRect boundsRect = region.GetBounds().ToUnknownRect();
+    IntPoint offset(0, 0);
+    if (dt->GetSize() == boundsRect.Size()) {
+      offset = boundsRect.TopLeft();
+      dt->SetTransform(Matrix::Translation(-offset));
     }
 
+#ifdef MOZ_X11
     if (shaped) {
+        
+        
+        
+        
+        dt->PushClipRect(Rect(boundsRect));
+
         
         
         
@@ -2259,7 +2258,9 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         RefPtr<DrawTarget> destDT = dt->CreateSimilarDrawTarget(boundsRect.Size(), SurfaceFormat::B8G8R8A8);
         ctx = new gfxContext(destDT, boundsRect.TopLeft());
     } else {
-        ctx = new gfxContext(dt);
+        gfxUtils::ClipToRegion(dt, region.ToUnknownRegion());
+
+        ctx = new gfxContext(dt, offset);
     }
 
 #if 0
@@ -2304,7 +2305,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
 
 #  ifdef MOZ_HAVE_SHMIMAGE
     if (mShmImage && MOZ_LIKELY(!mIsDestroyed)) {
-      mShmImage->Put(mXDisplay, mXWindow, region);
+      mShmImage->Put(region);
     }
 #  endif  
 #endif 
@@ -6487,13 +6488,7 @@ nsWindow::GetSurfaceForGdkDrawable(GdkDrawable* aDrawable,
 already_AddRefed<DrawTarget>
 nsWindow::GetDrawTarget(const LayoutDeviceIntRegion& aRegion, BufferMode* aBufferMode)
 {
-  if (!mGdkWindow) {
-    return nullptr;
-  }
-
-  LayoutDeviceIntRect bounds = aRegion.GetBounds();
-  LayoutDeviceIntSize size(bounds.XMost(), bounds.YMost());
-  if (size.width <= 0 || size.height <= 0) {
+  if (!mGdkWindow || aRegion.IsEmpty()) {
     return nullptr;
   }
 
@@ -6502,12 +6497,19 @@ nsWindow::GetDrawTarget(const LayoutDeviceIntRegion& aRegion, BufferMode* aBuffe
 #ifdef MOZ_X11
 #  ifdef MOZ_HAVE_SHMIMAGE
   if (nsShmImage::UseShm()) {
-    dt = nsShmImage::EnsureShmImage(size,
-                                    mXDisplay, mXVisual, mXDepth, mShmImage);
+    if (!mShmImage) {
+      mShmImage = new nsShmImage(mXDisplay, mXWindow, mXVisual, mXDepth);
+    }
+    dt = mShmImage->CreateDrawTarget(aRegion);
     *aBufferMode = BufferMode::BUFFER_NONE;
+    if (!dt) {
+      mShmImage = nullptr;
+    }
   }
 #  endif  
   if (!dt) {
+    LayoutDeviceIntRect bounds = aRegion.GetBounds();
+    LayoutDeviceIntSize size(bounds.XMost(), bounds.YMost());
     RefPtr<gfxXlibSurface> surf = new gfxXlibSurface(mXDisplay, mXWindow, mXVisual, size.ToUnknownSize());
     if (!surf->CairoStatus()) {
       dt = gfxPlatform::GetPlatform()->CreateDrawTargetForSurface(surf.get(), surf->GetSize());
@@ -6535,7 +6537,7 @@ nsWindow::EndRemoteDrawingInRegion(DrawTarget* aDrawTarget,
     return;
   }
 
-  mShmImage->Put(mXDisplay, mXWindow, aInvalidRegion);
+  mShmImage->Put(aInvalidRegion);
 #  endif 
 #endif 
 }

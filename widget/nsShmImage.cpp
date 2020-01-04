@@ -4,13 +4,6 @@
 
 
 
-#if defined(MOZ_WIDGET_GTK)
-#include <gtk/gtk.h>
-#include <gdk/gdkx.h>
-#elif defined(MOZ_WIDGET_QT)
-#include <QWindow>
-#endif
-
 #include "nsShmImage.h"
 #ifdef MOZ_WIDGET_GTK
 #include "gfxPlatformGtk.h"
@@ -35,9 +28,9 @@ static bool gShmAvailable = true;
 bool nsShmImage::UseShm()
 {
 #ifdef MOZ_WIDGET_GTK
-    return (gShmAvailable && !gfxPlatformGtk::GetPlatform()->UseXRender());
+  return (gShmAvailable && !gfxPlatformGtk::GetPlatform()->UseXRender());
 #else
-    return gShmAvailable;
+  return gShmAvailable;
 #endif
 }
 
@@ -47,9 +40,9 @@ static int gShmError = 0;
 static int
 TrapShmError(Display* aDisplay, XErrorEvent* aEvent)
 {
-    
-    gShmError = aEvent->error_code;
-    return 0;
+  
+  gShmError = aEvent->error_code;
+  return 0;
 }
 #endif
 
@@ -68,15 +61,18 @@ nsShmImage::CreateShmSegment()
   }
 
   mInfo.shmaddr = (char *)shmat(mInfo.shmid, nullptr, 0);
+
+  
+  shmctl(mInfo.shmid, IPC_RMID, nullptr);
+
   if (mInfo.shmaddr == (void *)-1) {
+    
+    mInfo.shmid = -1;
+
     nsPrintfCString warning("shmat(): %s (%d)\n", strerror(errno), errno);
     NS_WARNING(warning.get());
     return false;
   }
-
-  
-  
-  shmctl(mInfo.shmid, IPC_RMID, 0);
 
 #ifdef DEBUG
   struct shmid_ds info;
@@ -105,55 +101,25 @@ nsShmImage::DestroyShmSegment()
 }
 
 bool
-nsShmImage::CreateImage(const LayoutDeviceIntSize& aSize,
-                        Display* aDisplay, Visual* aVisual, unsigned int aDepth)
+nsShmImage::CreateImage(const IntSize& aSize)
 {
-  mDisplay = aDisplay;
-  mImage = XShmCreateImage(aDisplay, aVisual, aDepth,
-                           ZPixmap, nullptr,
-                           &mInfo,
-                           aSize.width, aSize.height);
-  if (!mImage || !CreateShmSegment()) {
-    return false;
-  }
+  MOZ_ASSERT(mDisplay && mVisual);
 
-#if defined(MOZ_WIDGET_GTK)
-  gShmError = 0;
-  XErrorHandler previousHandler = XSetErrorHandler(TrapShmError);
-  Status attachOk = XShmAttach(aDisplay, &mInfo);
-  XSync(aDisplay, False);
-  XSetErrorHandler(previousHandler);
-  if (gShmError) {
-    attachOk = 0;
-  }
-#elif defined(MOZ_WIDGET_QT)
-  Status attachOk = XShmAttach(aDisplay, &mInfo);
-#endif
-
-  if (!attachOk) {
-    
-    
-    gShmAvailable = false;
-    return false;
-  }
-
-  mXAttached = true;
-  mSize = aSize;
   mFormat = SurfaceFormat::UNKNOWN;
-  switch (mImage->depth) {
+  switch (mDepth) {
   case 32:
-    if ((mImage->red_mask == 0xff0000) &&
-        (mImage->green_mask == 0xff00) &&
-        (mImage->blue_mask == 0xff)) {
+    if (mVisual->red_mask == 0xff0000 &&
+        mVisual->green_mask == 0xff00 &&
+        mVisual->blue_mask == 0xff) {
       mFormat = SurfaceFormat::B8G8R8A8;
     }
     break;
   case 24:
     
     
-    if ((mImage->red_mask == 0xff0000) &&
-        (mImage->green_mask == 0xff00) &&
-        (mImage->blue_mask == 0xff)) {
+    if (mVisual->red_mask == 0xff0000 &&
+        mVisual->green_mask == 0xff00 &&
+        mVisual->blue_mask == 0xff) {
       mFormat = SurfaceFormat::B8G8R8A8;
     }
     break;
@@ -168,96 +134,108 @@ nsShmImage::CreateImage(const LayoutDeviceIntSize& aSize,
     return false;
   }
 
+  mImage = XShmCreateImage(mDisplay, mVisual, mDepth,
+                           ZPixmap, nullptr,
+                           &mInfo,
+                           aSize.width, aSize.height);
+  if (!mImage || !CreateShmSegment()) {
+    DestroyImage();
+    return false;
+  }
+
+#ifdef MOZ_WIDGET_GTK
+  gShmError = 0;
+  XErrorHandler previousHandler = XSetErrorHandler(TrapShmError);
+  Status attachOk = XShmAttach(mDisplay, &mInfo);
+  XSync(mDisplay, False);
+  XSetErrorHandler(previousHandler);
+  if (gShmError) {
+    attachOk = 0;
+  }
+#else
+  Status attachOk = XShmAttach(mDisplay, &mInfo);
+#endif
+
+  if (!attachOk) {
+    DestroyShmSegment();
+    DestroyImage();
+
+    
+    
+    gShmAvailable = false;
+    return false;
+  }
+
   return true;
 }
 
-nsShmImage::~nsShmImage()
+void
+nsShmImage::DestroyImage()
 {
   if (mImage) {
     mozilla::FinishX(mDisplay);
-    if (mXAttached) {
+    if (mInfo.shmid != -1) {
       XShmDetach(mDisplay, &mInfo);
     }
     XDestroyImage(mImage);
+    mImage = nullptr;
   }
   DestroyShmSegment();
 }
 
 already_AddRefed<DrawTarget>
-nsShmImage::CreateDrawTarget()
+nsShmImage::CreateDrawTarget(const LayoutDeviceIntRegion& aRegion)
 {
+  
+  
+  
+  
+  IntRect bounds = aRegion.GetBounds().ToUnknownRect();
+  IntSize size(bounds.XMost(), bounds.YMost());
+  if (!mImage || size.width > mImage->width || size.height > mImage->height) {
+    DestroyImage();
+    if (!CreateImage(size)) {
+      return nullptr;
+    }
+  }
+
   return gfxPlatform::GetPlatform()->CreateDrawTargetForData(
-    reinterpret_cast<unsigned char*>(mImage->data),
-    mSize.ToUnknownSize(),
+    reinterpret_cast<unsigned char*>(mImage->data)
+      + bounds.y * mImage->bytes_per_line + bounds.x * BytesPerPixel(mFormat),
+    bounds.Size(),
     mImage->bytes_per_line,
     mFormat);
 }
 
-#ifdef MOZ_WIDGET_GTK
 void
-nsShmImage::Put(Display* aDisplay, Drawable aWindow,
-                const LayoutDeviceIntRegion& aRegion)
+nsShmImage::Put(const LayoutDeviceIntRegion& aRegion)
 {
-    GC gc = XCreateGC(aDisplay, aWindow, 0, nullptr);
-    LayoutDeviceIntRegion bounded;
-    bounded.And(aRegion,
-                LayoutDeviceIntRect(0, 0, mImage->width, mImage->height));
-    for (auto iter = bounded.RectIter(); !iter.Done(); iter.Next()) {
-        const LayoutDeviceIntRect& r = iter.Get();
-        XShmPutImage(aDisplay, aWindow, gc, mImage,
-                     r.x, r.y,
-                     r.x, r.y,
-                     r.width, r.height,
-                     False);
-    }
-
-    XFreeGC(aDisplay, gc);
-
-    
-    
-    
-    
-    
-    
-    XSync(aDisplay, False);
-}
-
-#elif defined(MOZ_WIDGET_QT)
-void
-nsShmImage::Put(QWindow* aWindow, QRect& aRect)
-{
-    Display* dpy = gfxQtPlatform::GetXDisplay(aWindow);
-    Drawable d = aWindow->winId();
-
-    GC gc = XCreateGC(dpy, d, 0, nullptr);
-    
-    QRect inter = aRect.intersected(aWindow->geometry());
-    XShmPutImage(dpy, d, gc, mImage,
-                 inter.x(), inter.y(),
-                 inter.x(), inter.y(),
-                 inter.width(), inter.height(),
-                 False);
-    XFreeGC(dpy, gc);
-}
-#endif
-
-already_AddRefed<DrawTarget>
-nsShmImage::EnsureShmImage(const LayoutDeviceIntSize& aSize,
-                           Display* aDisplay, Visual* aVisual, unsigned int aDepth,
-                           RefPtr<nsShmImage>& aImage)
-{
-  if (!aImage || aImage->Size() != aSize) {
-    
-    
-    
-    
-    
-    aImage = new nsShmImage;
-    if (!aImage->CreateImage(aSize, aDisplay, aVisual, aDepth)) {
-      aImage = nullptr;
-    }
+  if (!mImage) {
+    return;
   }
-  return !aImage ? nullptr : aImage->CreateDrawTarget();
+
+  GC gc = XCreateGC(mDisplay, mWindow, 0, nullptr);
+  LayoutDeviceIntRegion bounded;
+  bounded.And(aRegion,
+              LayoutDeviceIntRect(0, 0, mImage->width, mImage->height));
+  for (auto iter = bounded.RectIter(); !iter.Done(); iter.Next()) {
+    const LayoutDeviceIntRect& r = iter.Get();
+    XShmPutImage(mDisplay, mWindow, gc, mImage,
+                 r.x, r.y,
+                 r.x, r.y,
+                 r.width, r.height,
+                 False);
+  }
+
+  XFreeGC(mDisplay, gc);
+
+  
+  
+  
+  
+  
+  
+  XSync(mDisplay, False);
 }
 
 #endif  
