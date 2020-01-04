@@ -3,3 +3,6 @@
 
 
 __version__ = '1.2.0'
+
+import cli_functional
+import cli_update
