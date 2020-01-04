@@ -16,6 +16,7 @@ namespace dom {
 namespace workers {
 
 class ServiceWorkerInfo;
+class KeepAliveToken;
 
 class LifeCycleEventCallback : public nsRunnable
 {
@@ -35,8 +36,29 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ServiceWorkerPrivate final
 {
+  friend class KeepAliveToken;
+
 public:
   NS_INLINE_DECL_REFCOUNTING(ServiceWorkerPrivate)
 
@@ -91,6 +113,12 @@ public:
   void
   TerminateWorker();
 
+  void
+  NoteDeadServiceWorkerInfo();
+
+  void
+  NoteStoppedControllingDocuments();
+
 private:
   enum WakeUpReason {
     FetchEvent = 0,
@@ -102,17 +130,32 @@ private:
   };
 
   
+  static void
+  NoteIdleWorkerCallback(nsITimer* aTimer, void* aPrivate);
+
+  static void
+  TerminateWorkerCallback(nsITimer* aTimer, void *aPrivate);
+
+  void
+  ResetIdleTimeout(WakeUpReason aWhy);
+
+  void
+  AddToken();
+
+  void
+  ReleaseToken();
+
+  
   
   nsresult
   SpawnWorkerIfNeeded(WakeUpReason aWhy,
                       nsIRunnable* aLoadFailedRunnable,
                       nsILoadGroup* aLoadGroup = nullptr);
 
-  ~ServiceWorkerPrivate()
-  {
-    MOZ_ASSERT(!mWorkerPrivate);
-  }
+  ~ServiceWorkerPrivate();
 
+  
+  
   
   ServiceWorkerInfo* MOZ_NON_OWNING_REF mInfo;
 
@@ -120,6 +163,19 @@ private:
   
   
   nsRefPtr<WorkerPrivate> mWorkerPrivate;
+
+  nsCOMPtr<nsITimer> mIdleWorkerTimer;
+
+  
+  
+  
+  bool mIsPushWorker;
+
+  
+  
+  nsRefPtr<KeepAliveToken> mKeepAliveToken;
+
+  uint64_t mTokenCount;
 };
 
 } 
