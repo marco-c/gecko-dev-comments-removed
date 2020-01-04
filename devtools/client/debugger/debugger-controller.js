@@ -82,7 +82,10 @@ const EVENTS = {
   OPTIONS_POPUP_HIDDEN: "Debugger:OptionsPopupHidden",
 
   
-  LAYOUT_CHANGED: "Debugger:LayoutChanged"
+  LAYOUT_CHANGED: "Debugger:LayoutChanged",
+
+  
+  WORKER_SELECTED: "Debugger::WorkerSelected"
 };
 
 
@@ -491,8 +494,8 @@ Workers.prototype = {
 
       for (let workerActor in this._workerForms) {
         if (!(workerActor in workerForms)) {
+          DebuggerView.Workers.removeWorker(this._workerForms[workerActor]);
           delete this._workerForms[workerActor];
-          DebuggerView.Workers.removeWorker(workerActor);
         }
       }
 
@@ -500,7 +503,7 @@ Workers.prototype = {
         if (!(workerActor in this._workerForms)) {
           let workerForm = workerForms[workerActor];
           this._workerForms[workerActor] = workerForm;
-          DebuggerView.Workers.addWorker(workerActor, workerForm.url);
+          DebuggerView.Workers.addWorker(workerForm);
         }
       }
     });
@@ -510,10 +513,11 @@ Workers.prototype = {
     this._updateWorkerList();
   },
 
-  _onWorkerSelect: function (workerActor) {
-    DebuggerController.client.attachWorker(workerActor, (response, workerClient) => {
-      gDevTools.showToolbox(TargetFactory.forWorker(workerClient),
-                            "jsdebugger", Toolbox.HostType.WINDOW);
+  _onWorkerSelect: function (workerForm) {
+    DebuggerController.client.attachWorker(workerForm.actor, (response, workerClient) => {
+      let toolbox = gDevTools.showToolbox(TargetFactory.forWorker(workerClient),
+                                          "jsdebugger", Toolbox.HostType.WINDOW);
+      window.emit(EVENTS.WORKER_SELECTED, toolbox);
     });
   }
 };
