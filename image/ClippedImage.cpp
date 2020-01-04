@@ -128,7 +128,7 @@ public:
   DrawResult GetDrawResult() { return mDrawResult; }
 
 private:
-  RefPtr<ClippedImage>        mImage;
+  nsRefPtr<ClippedImage>        mImage;
   const nsIntSize               mSize;
   const Maybe<SVGImageContext>& mSVGContext;
   const uint32_t                mWhichFrame;
@@ -156,7 +156,7 @@ ClippedImage::ShouldClip()
   
   if (mShouldClip.isNothing()) {
     int32_t width, height;
-    RefPtr<ProgressTracker> progressTracker =
+    nsRefPtr<ProgressTracker> progressTracker =
       InnerImage()->GetProgressTracker();
     if (InnerImage()->HasError()) {
       
@@ -279,19 +279,19 @@ ClippedImage::GetFrameInternal(const nsIntSize& aSize,
       return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
     }
 
-    RefPtr<gfxContext> ctx = new gfxContext(target);
+    nsRefPtr<gfxContext> ctx = new gfxContext(target);
 
     
-    RefPtr<DrawSingleTileCallback> drawTileCallback =
+    nsRefPtr<DrawSingleTileCallback> drawTileCallback =
       new DrawSingleTileCallback(this, aSize, aSVGContext, aWhichFrame, aFlags);
-    RefPtr<gfxDrawable> drawable =
+    nsRefPtr<gfxDrawable> drawable =
       new gfxCallbackDrawable(drawTileCallback, aSize);
 
     
     gfxUtils::DrawPixelSnapped(ctx, drawable, aSize,
                                ImageRegion::Create(aSize),
                                SurfaceFormat::B8G8R8A8,
-                               GraphicsFilter::FILTER_FAST,
+                               GraphicsFilter::FILTER_BEST,
                                imgIContainer::FLAG_CLAMP);
 
     
@@ -374,7 +374,7 @@ ClippedImage::Draw(gfxContext* aContext,
     }
 
     
-    RefPtr<gfxSurfaceDrawable> drawable =
+    nsRefPtr<gfxSurfaceDrawable> drawable =
       new gfxSurfaceDrawable(surface, aSize);
 
     

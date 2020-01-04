@@ -42,7 +42,7 @@ HDC
 gfxWindowsNativeDrawing::BeginNativeDrawing()
 {
     if (mRenderState == RENDER_STATE_INIT) {
-        RefPtr<gfxASurface> surf;
+        nsRefPtr<gfxASurface> surf;
         
         if (mContext->GetCairo()) {
           surf = mContext->CurrentSurface(&mDeviceOffset.x, &mDeviceOffset.y);
@@ -192,7 +192,7 @@ gfxWindowsNativeDrawing::IsDoublePass()
       return true;
     }
 
-    RefPtr<gfxASurface> surf = mContext->CurrentSurface(&mDeviceOffset.x, &mDeviceOffset.y);
+    nsRefPtr<gfxASurface> surf = mContext->CurrentSurface(&mDeviceOffset.x, &mDeviceOffset.y);
     if (!surf || surf->CairoStatus())
         return false;
     if (surf->GetType() != gfxSurfaceType::Win32 &&
@@ -263,8 +263,8 @@ gfxWindowsNativeDrawing::PaintToContext()
         
         mRenderState = RENDER_STATE_DONE;
     } else if (mRenderState == RENDER_STATE_ALPHA_RECOVERY_WHITE_DONE) {
-        RefPtr<gfxImageSurface> black = mBlackSurface->GetAsImageSurface();
-        RefPtr<gfxImageSurface> white = mWhiteSurface->GetAsImageSurface();
+        nsRefPtr<gfxImageSurface> black = mBlackSurface->GetAsImageSurface();
+        nsRefPtr<gfxImageSurface> white = mWhiteSurface->GetAsImageSurface();
         if (!gfxAlphaRecovery::RecoverAlpha(black, white)) {
             NS_ERROR("Alpha recovery failure");
             return;
@@ -281,14 +281,14 @@ gfxWindowsNativeDrawing::PaintToContext()
         mContext->NewPath();
         mContext->Rectangle(gfxRect(gfxPoint(0.0, 0.0), mNativeRect.Size()));
 
-        RefPtr<gfxPattern> pat = new gfxPattern(source, Matrix());
+        nsRefPtr<gfxPattern> pat = new gfxPattern(source, Matrix());
 
         gfxMatrix m;
         m.Scale(mScale.width, mScale.height);
         pat->SetMatrix(m);
 
         if (mNativeDrawFlags & DO_NEAREST_NEIGHBOR_FILTERING)
-            pat->SetFilter(GraphicsFilter::FILTER_FAST);
+            pat->SetFilter(GraphicsFilter::FILTER_BEST);
 
         pat->SetExtend(ExtendMode::CLAMP);
         mContext->SetPattern(pat);
