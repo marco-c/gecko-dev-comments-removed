@@ -146,7 +146,9 @@ MockFilePickerInstance.prototype = {
 
     return null;
   },
-  get domfile()  {
+
+  
+  get domFileOrDirectory()  {
     if (MockFilePicker.returnFiles.length >= 1) {
       
       if (!MockFilePicker.isNsIFile(MockFilePicker.returnFiles[0])) {
@@ -184,7 +186,7 @@ MockFilePickerInstance.prototype = {
       }
     };
   },
-  get domfiles()  {
+  get domFileOrDirectoryEnumerator()  {
     let utils = this.parent.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils);
     return {

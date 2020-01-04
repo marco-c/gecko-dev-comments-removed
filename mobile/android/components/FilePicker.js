@@ -140,7 +140,8 @@ FilePicker.prototype = {
     });
   },
 
-  get domfile() {
+  
+  get domFileOrDirectory() {
     let f = this.file;
     if (!f) {
         return null;
@@ -155,7 +156,7 @@ FilePicker.prototype = {
     return new File(f);
   },
 
-  get domfiles() {
+  get domFileOrDirectoryEnumerator() {
     let win = this._domWin;
     return this.getEnumerator([this.file], function(file) {
       if (win) {
