@@ -7350,6 +7350,11 @@ AddonWrapper.prototype = {
         XPIProvider.enableDefaultTheme();
       }
       else {
+        
+        
+        if (this.hidden) {
+          throw new Error(`Cannot disable hidden add-on ${addon.id}`);
+        }
         XPIProvider.updateAddonDisabledState(addon, val);
       }
     }
