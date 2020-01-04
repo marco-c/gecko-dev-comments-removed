@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+function startup() {}
+function shutdown() {}
+function install() {}
+function uninstall() {}
