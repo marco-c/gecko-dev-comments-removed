@@ -187,9 +187,6 @@ private:
     PrefFontList mDefaultCascadeFamilies;
 
     
-    nsTHashtable<nsCStringHashKey> mDefaultCascadeLangs;
-
-    
     
     
     nsBaseHashtable<nsCStringHashKey,
