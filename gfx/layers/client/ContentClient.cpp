@@ -10,7 +10,6 @@
 #include "gfxEnv.h"                     
 #include "gfxPrefs.h"                   
 #include "gfxPoint.h"                   
-#include "gfxTeeSurface.h"              
 #include "gfxUtils.h"                   
 #include "ipc/ShadowLayers.h"           
 #include "mozilla/ArrayUtils.h"         
