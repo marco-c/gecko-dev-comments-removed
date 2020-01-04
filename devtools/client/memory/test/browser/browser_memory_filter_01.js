@@ -21,11 +21,6 @@ this.test = makeMemoryTest(TEST_URL, function* ({ tab, panel }) {
   const { getState, dispatch } = store;
   const doc = panel.panelWin.document;
 
-  ok(!getState().inverted, "not inverted by default");
-  const invertCheckbox = doc.getElementById("invert-tree-checkbox");
-  EventUtils.synthesizeMouseAtCenter(invertCheckbox, {}, panel.panelWin);
-  yield waitUntilState(store, state => state.inverted === true);
-
   const takeSnapshotButton = doc.getElementById("take-snapshot");
   EventUtils.synthesizeMouseAtCenter(takeSnapshotButton, {}, panel.panelWin);
 

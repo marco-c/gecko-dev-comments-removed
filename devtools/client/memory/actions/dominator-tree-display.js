@@ -1,0 +1,35 @@
+
+
+
+"use strict";
+
+const { assert } = require("devtools/shared/DevToolsUtils");
+const { actions } = require("../constants");
+const { refresh } = require("./refresh");
+
+exports.setDominatorTreeDisplayAndRefresh = function(heapWorker, display) {
+  return function*(dispatch, getState) {
+    
+    dispatch(setDominatorTreeDisplay(display));
+    yield dispatch(refresh(heapWorker));
+  };
+};
+
+
+
+
+
+
+
+const setDominatorTreeDisplay = exports.setDominatorTreeDisplay = function (display) {
+  assert(typeof display === "object"
+         && display
+         && display.breakdown
+         && display.breakdown.by,
+    `Breakdowns must be an object with a \`by\` property, attempted to set: ${uneval(display)}`);
+
+  return {
+    type: actions.SET_DOMINATOR_TREE_DISPLAY,
+    display,
+  };
+};

@@ -49,8 +49,28 @@ function catchAndIgnore(fn) {
 
 
 
-let breakdownModel = exports.breakdown = PropTypes.shape({
-  by: PropTypes.string.isRequired,
+const censusDisplayModel = exports.censusDisplay = PropTypes.shape({
+  displayName: PropTypes.string.isRequired,
+  tooltip: PropTypes.string.isRequired,
+  inverted: PropTypes.bool.isRequired,
+  breakdown: PropTypes.shape({
+    by: PropTypes.string.isRequired,
+  })
+});
+
+
+
+
+
+
+
+
+const dominatorTreeDisplayModel = exports.dominatorTreeDisplay = PropTypes.shape({
+  displayName: PropTypes.string.isRequired,
+  tooltip: PropTypes.string.isRequired,
+  breakdown: PropTypes.shape({
+    by: PropTypes.string.isRequired,
+  })
 });
 
 let censusModel = exports.censusModel = PropTypes.shape({
@@ -59,9 +79,7 @@ let censusModel = exports.censusModel = PropTypes.shape({
   
   parentMap: PropTypes.object,
   
-  breakdown: breakdownModel,
-  
-  inverted: PropTypes.bool,
+  display: censusDisplayModel,
   
   
   filter: PropTypes.string,
@@ -101,7 +119,7 @@ let dominatorTreeModel = exports.dominatorTreeModel = PropTypes.shape({
 
   
   
-  breakdown: breakdownModel,
+  display: dominatorTreeDisplayModel,
 
   
   
@@ -197,7 +215,8 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
     if (shouldHavePath.includes(current) && !snapshot.path) {
       throw new Error(`Snapshots in state ${current} must have a snapshot path.`);
     }
-    if (shouldHaveCensus.includes(current) && (!snapshot.census || !snapshot.census.breakdown)) {
+    if (shouldHaveCensus.includes(current) &&
+        (!snapshot.census || !snapshot.census.display || !snapshot.census.display.breakdown)) {
       throw new Error(`Snapshots in state ${current} must have a census and breakdown.`);
     }
     if (shouldHaveCreationTime.includes(current) && !snapshot.creationTime) {
@@ -270,20 +289,14 @@ let appModel = exports.app = {
   heapWorker: PropTypes.instanceOf(HeapAnalysesClient),
 
   
-  
-  
-  breakdown: breakdownModel.isRequired,
+  censusDisplay: censusDisplayModel.isRequired,
 
   
   
-  
-  dominatorTreeBreakdown: breakdownModel.isRequired,
+  dominatorTreeDisplay: dominatorTreeDisplayModel.isRequired,
 
   
   snapshots: PropTypes.arrayOf(snapshotModel).isRequired,
-
-  
-  inverted: PropTypes.bool.isRequired,
 
   
   filter: PropTypes.string,

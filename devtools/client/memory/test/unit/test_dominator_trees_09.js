@@ -8,11 +8,11 @@ const {
   snapshotState: states,
   dominatorTreeState,
   viewState,
-  dominatorTreeBreakdowns,
+  dominatorTreeDisplays,
 } = require("devtools/client/memory/constants");
 const {
-  setDominatorTreeBreakdownAndRefresh
-} = require("devtools/client/memory/actions/dominatorTreeBreakdown");
+  setDominatorTreeDisplayAndRefresh
+} = require("devtools/client/memory/actions/dominator-tree-display");
 const {
   changeView,
 } = require("devtools/client/memory/actions/view");
@@ -46,31 +46,31 @@ add_task(function *() {
     state.snapshots[0].dominatorTree &&
     state.snapshots[0].dominatorTree.state === dominatorTreeState.FETCHING);
 
-  ok(getState().dominatorTreeBreakdown,
-     "We have a default breakdown for describing nodes in a dominator tree");
-  equal(getState().dominatorTreeBreakdown,
-        dominatorTreeBreakdowns.coarseType.breakdown,
+  ok(getState().dominatorTreeDisplay,
+     "We have a default display for describing nodes in a dominator tree");
+  equal(getState().dominatorTreeDisplay,
+        dominatorTreeDisplays.coarseType,
         "and the default is coarse type");
-  equal(getState().dominatorTreeBreakdown,
-        getState().snapshots[0].dominatorTree.breakdown,
-        "and the newly computed dominator tree has that breakdown");
+  equal(getState().dominatorTreeDisplay,
+        getState().snapshots[0].dominatorTree.display,
+        "and the newly computed dominator tree has that display");
 
   
   
-  dispatch(setDominatorTreeBreakdownAndRefresh(
+  dispatch(setDominatorTreeDisplayAndRefresh(
     heapWorker,
-    dominatorTreeBreakdowns.allocationStack.breakdown));
+    dominatorTreeDisplays.allocationStack));
 
   
   yield waitUntilState(store, state =>
     state.snapshots[0].dominatorTree.state === dominatorTreeState.LOADED);
 
-  equal(getState().snapshots[0].dominatorTree.breakdown,
-        dominatorTreeBreakdowns.allocationStack.breakdown,
-        "The new dominator tree's breakdown is allocationStack");
-  equal(getState().dominatorTreeBreakdown,
-        dominatorTreeBreakdowns.allocationStack.breakdown,
-        "as is our requested dominator tree breakdown");
+  equal(getState().snapshots[0].dominatorTree.display,
+        dominatorTreeDisplays.allocationStack,
+        "The new dominator tree's display is allocationStack");
+  equal(getState().dominatorTreeDisplay,
+        dominatorTreeDisplays.allocationStack,
+        "as is our requested dominator tree display");
 
   heapWorker.destroy();
   yield front.detach();

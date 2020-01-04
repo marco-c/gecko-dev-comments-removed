@@ -1,0 +1,34 @@
+
+
+
+"use strict";
+
+const { assert } = require("devtools/shared/DevToolsUtils");
+const { actions } = require("../constants");
+const { refresh } = require("./refresh");
+
+exports.setCensusDisplayAndRefresh = function(heapWorker, display) {
+  return function*(dispatch, getState) {
+    dispatch(setCensusDisplay(display));
+    yield dispatch(refresh(heapWorker));
+  };
+};
+
+
+
+
+
+
+
+const setCensusDisplay = exports.setCensusDisplay = function(display) {
+  assert(typeof display === "object"
+         && display
+         && display.breakdown
+         && display.breakdown.by,
+    `Breakdowns must be an object with a \`by\` property, attempted to set: ${uneval(display)}`);
+
+  return {
+    type: actions.SET_CENSUS_DISPLAY,
+    display,
+  };
+};

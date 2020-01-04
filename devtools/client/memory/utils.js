@@ -11,14 +11,14 @@ const L10N = exports.L10N = new ViewHelpers.L10N(STRINGS_URI);
 const { OS } = require("resource://gre/modules/osfile.jsm");
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
-const CUSTOM_BREAKDOWN_PREF = "devtools.memory.custom-breakdowns";
-const CUSTOM_DOMINATOR_TREE_BREAKDOWN_PREF = "devtools.memory.custom-dominator-tree-breakdowns";
+const CUSTOM_CENSUS_DISPLAY_PREF = "devtools.memory.custom-census-displays";
+const CUSTOM_DOMINATOR_TREE_DISPLAY_PREF = "devtools.memory.custom-dominator-tree-displays";
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {
   snapshotState: states,
   diffingState,
-  breakdowns,
-  dominatorTreeBreakdowns,
+  censusDisplays,
+  dominatorTreeDisplays,
   dominatorTreeState
 } = require("./constants");
 
@@ -48,54 +48,15 @@ exports.getSnapshotTitle = function (snapshot) {
   });
 };
 
-
-
-
-
-
-
-exports.getBreakdownDisplayData = function () {
-  return exports.getBreakdownNames().map(({ name, tooltip }) => {
-    
-    let preset = breakdowns[name];
-    let displayName = name;
-    if (preset && preset.displayName) {
-      displayName = preset.displayName;
-    }
-    return { name, tooltip, displayName };
-  });
-};
-
-
-
-
-
-
-
-exports.getBreakdownNames = function () {
-  let custom = exports.getCustomBreakdowns();
-  return Object.keys(Object.assign({}, breakdowns, custom))
-    .map(key => {
-      return breakdowns[key]
-        ? { name: key, tooltip: breakdowns[key].tooltip }
-        : { name: key };
-    });
-};
-
-
-
-
-
-
-exports.getCustomBreakdowns = function () {
-  let customBreakdowns = Object.create(null);
+function getCustomDisplaysHelper(pref) {
+  let customDisplays = Object.create(null);
   try {
-    customBreakdowns = JSON.parse(Preferences.get(CUSTOM_BREAKDOWN_PREF)) || Object.create(null);
+    customDisplays = JSON.parse(Preferences.get(pref)) || Object.create(null);
   } catch (e) {
     DevToolsUtils.reportException(
-      `String stored in "${CUSTOM_BREAKDOWN_PREF}" pref cannot be parsed by \`JSON.parse()\`.`);
+      `String stored in "${pref}" pref cannot be parsed by \`JSON.parse()\`.`);
   }
-  return customBreakdowns;
+  return Object.freeze(customDisplays);
 }
 
 
@@ -104,24 +65,8 @@ exports.getCustomBreakdowns = function () {
 
 
 
-
-
-exports.breakdownNameToSpec = function (name) {
-  let customBreakdowns = exports.getCustomBreakdowns();
-
-  
-  if (typeof name === "object") {
-    return name;
-  }
-  
-  else if (name in customBreakdowns) {
-    return customBreakdowns[name];
-  }
-  
-  else if (name in breakdowns) {
-    return breakdowns[name].breakdown;
-  }
-  return Object.create(null);
+exports.getCustomCensusDisplays = function () {
+  return getCustomDisplaysHelper(CUSTOM_CENSUS_DISPLAY_PREF);
 };
 
 
@@ -130,78 +75,8 @@ exports.breakdownNameToSpec = function (name) {
 
 
 
-exports.getDominatorTreeBreakdownDisplayData = function () {
-  return exports.getDominatorTreeBreakdownNames().map(({ name, tooltip }) => {
-    
-    let preset = dominatorTreeBreakdowns[name];
-    let displayName = name;
-    if (preset && preset.displayName) {
-      displayName = preset.displayName;
-    }
-    return { name, tooltip, displayName };
-  });
-};
-
-
-
-
-
-
-
-exports.getDominatorTreeBreakdownNames = function () {
-  let custom = exports.getCustomDominatorTreeBreakdowns();
-  return Object.keys(Object.assign({}, dominatorTreeBreakdowns, custom))
-    .map(key => {
-      return dominatorTreeBreakdowns[key]
-        ? { name: key, tooltip: dominatorTreeBreakdowns[key].tooltip }
-        : { name: key };
-    });
-};
-
-
-
-
-
-
-exports.getCustomDominatorTreeBreakdowns = function () {
-  let customBreakdowns = Object.create(null);
-  try {
-    customBreakdowns = JSON.parse(Preferences.get(CUSTOM_DOMINATOR_TREE_BREAKDOWN_PREF)) || Object.create(null);
-  } catch (e) {
-    DevToolsUtils.reportException(
-      `String stored in "${CUSTOM_BREAKDOWN_PREF}" pref cannot be parsed by \`JSON.parse()\`.`);
-  }
-  return customBreakdowns;
-};
-
-
-
-
-
-
-
-
-
-
-exports.dominatorTreeBreakdownNameToSpec = function (name) {
-  let customBreakdowns = exports.getCustomDominatorTreeBreakdowns();
-
-  
-  if (typeof name === "object") {
-    return name;
-  }
-
-  
-  if (name in customBreakdowns) {
-    return customBreakdowns[name];
-  }
-
-  
-  if (name in dominatorTreeBreakdowns) {
-    return dominatorTreeBreakdowns[name].breakdown;
-  }
-
-  return Object.create(null);
+exports.getCustomDominatorTreeDisplays = function () {
+  return getCustomDisplaysHelper(CUSTOM_DOMINATOR_TREE_DISPLAY_PREF);
 };
 
 
@@ -397,53 +272,11 @@ exports.createSnapshot = function createSnapshot(state) {
 
 
 
-const breakdownEquals = exports.breakdownEquals = function (obj1, obj2) {
-  let type1 = typeof obj1;
-  let type2 = typeof obj2;
 
-  
-  if (type1 !== type2 || (Array.isArray(obj1) !== Array.isArray(obj2))) {
-    return false;
-  }
-
-  if (obj1 === obj2) {
-    return true;
-  }
-
-  if (Array.isArray(obj1)) {
-    if (obj1.length !== obj2.length) { return false; }
-    return obj1.every((_, i) => exports.breakdownEquals(obj[1], obj2[i]));
-  }
-  else if (type1 === "object") {
-    let k1 = Object.keys(obj1);
-    let k2 = Object.keys(obj2);
-
-    if (k1.length !== k2.length) {
-      return false;
-    }
-
-    return k1.every(k => exports.breakdownEquals(obj1[k], obj2[k]));
-  }
-
-  return false;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-exports.censusIsUpToDate = function (inverted, filter, breakdown, census) {
+exports.censusIsUpToDate = function (filter, display, census) {
   return census
-      && inverted === census.inverted
       && filter === census.filter
-      && breakdownEquals(breakdown, census.breakdown);
+      && display === census.display;
 };
 
 

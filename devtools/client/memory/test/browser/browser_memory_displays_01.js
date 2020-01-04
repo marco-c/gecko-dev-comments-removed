@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -9,7 +10,10 @@ const TEST_URL = "http://example.com/browser/devtools/client/memory/test/browser
 
 this.test = makeMemoryTest(TEST_URL, function* ({ tab, panel }) {
   const { gStore, document } = panel.panelWin;
-  const $$ = document.querySelectorAll.bind(document);
+
+  function $$(selector) {
+    return [...document.querySelectorAll(selector)];
+  }
 
   yield takeSnapshot(panel.panelWin);
 
@@ -17,14 +21,15 @@ this.test = makeMemoryTest(TEST_URL, function* ({ tab, panel }) {
     state.snapshots[0].state === states.SAVED_CENSUS);
 
   info("Check coarse type heap view");
-  ["objects", "other", "scripts", "strings"].forEach(findNameCell);
+  ["Function", "js::Shape", "Object", "strings"].forEach(findNameCell);
 
-  yield setBreakdown(panel.panelWin, "allocationStack");
+  yield setCensusDisplay(panel.panelWin, censusDisplays.allocationStack);
   info("Check allocation stack heap view");
   [L10N.getStr("tree-item.nostack")].forEach(findNameCell);
 
-  function findNameCell (name) {
-    let el = Array.prototype.find.call($$(".tree .heap-tree-item-name span"), el => el.textContent === name);
+  function findNameCell(name) {
+    const el = $$(".tree .heap-tree-item-name span")
+      .find(e => e.textContent === name);
     ok(el, `Found heap tree item cell for ${name}.`);
   }
 });

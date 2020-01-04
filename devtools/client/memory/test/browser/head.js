@@ -13,8 +13,8 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/test/shared-redux-head.js",
   this);
 
-var { snapshotState: states } = require("devtools/client/memory/constants");
-var { breakdownEquals, breakdownNameToSpec, L10N } = require("devtools/client/memory/utils");
+var { censusDisplays, snapshotState: states } = require("devtools/client/memory/constants");
+var { L10N } = require("devtools/client/memory/utils");
 
 Services.prefs.setBoolPref("devtools.memory.enabled", true);
 
@@ -120,19 +120,19 @@ function clearSnapshots (window) {
 
 
 
-function setBreakdown (window, type) {
-  info(`Setting breakdown to ${type}...`);
+function setCensusDisplay(window, display) {
+  info(`Setting census display to ${display}...`);
   let { gStore, gHeapAnalysesClient } = window;
   
   
   
-  gStore.dispatch(require("devtools/client/memory/actions/breakdown")
-                         .setBreakdownAndRefresh(gHeapAnalysesClient, breakdownNameToSpec(type)));
+  gStore.dispatch(require("devtools/client/memory/actions/census-display")
+                         .setCensusDisplayAndRefresh(gHeapAnalysesClient, display));
 
   return waitUntilState(window.gStore, () => {
     let selected = window.gStore.getState().snapshots.find(s => s.selected);
     return selected.state === states.SAVED_CENSUS &&
-           breakdownEquals(breakdownNameToSpec(type), selected.census.breakdown);
+      selected.census.display === display;
   });
 }
 

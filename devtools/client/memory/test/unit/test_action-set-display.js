@@ -1,0 +1,49 @@
+
+
+"use strict";
+
+
+
+
+
+
+
+let { censusDisplays, snapshotState: states } = require("devtools/client/memory/constants");
+let { setCensusDisplay } = require("devtools/client/memory/actions/census-display");
+let { takeSnapshotAndCensus } = require("devtools/client/memory/actions/snapshot");
+
+function run_test() {
+  run_next_test();
+}
+
+add_task(function*() {
+  let front = new StubbedMemoryFront();
+  let heapWorker = new HeapAnalysesClient();
+  yield front.attach();
+  let store = Store();
+  let { getState, dispatch } = store;
+
+  
+  equal(getState().censusDisplay.breakdown.by, "coarseType",
+        "default coarseType display selected at start.");
+
+  dispatch(setCensusDisplay(censusDisplays.allocationStack));
+  equal(getState().censusDisplay.breakdown.by, "allocationStack",
+        "display changed with no snapshots");
+
+  
+  try {
+    dispatch(setCensusDisplay({}));
+    ok(false, "Throws when passing in an invalid display object");
+  } catch (e) {
+    ok(true, "Throws when passing in an invalid display object");
+  }
+  equal(getState().censusDisplay.breakdown.by, "allocationStack",
+    "current display unchanged when passing invalid display");
+
+  
+  dispatch(takeSnapshotAndCensus(front, heapWorker));
+  yield waitUntilSnapshotState(store, [states.SAVED_CENSUS]);
+  equal(getState().snapshots[0].census.display, censusDisplays.allocationStack,
+        "New snapshots use the current, non-default display");
+});

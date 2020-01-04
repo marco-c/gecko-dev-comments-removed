@@ -1,7 +1,6 @@
 
 
-
-
+"use strict";
 
 
 
@@ -15,7 +14,6 @@ function run_test() {
 
 add_task(function *() {
   let front = new StubbedMemoryFront();
-  let heapWorker = new HeapAnalysesClient();
   yield front.attach();
   let store = Store();
   const { getState, dispatch } = store;
@@ -39,4 +37,6 @@ add_task(function *() {
 
   equal(getState().allocations.recording, false, "now we are not recording");
   ok(front.recordingAllocations, "front is not recording anymore");
+
+  yield front.detach();
 });
