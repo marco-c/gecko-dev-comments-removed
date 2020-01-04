@@ -2301,7 +2301,6 @@ nsGenericHTMLFormElement::CanBeDisabled() const
   int32_t type = GetType();
   
   return
-    type != NS_FORM_LABEL &&
     type != NS_FORM_OBJECT &&
     type != NS_FORM_OUTPUT;
 }

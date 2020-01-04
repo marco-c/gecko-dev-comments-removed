@@ -64,6 +64,8 @@ HTMLFormControlsCollection::ShouldBeInElements(nsIFormControl* aFormControl)
   
   
   
+  
+  
 
   return false;
 }
