@@ -48,10 +48,16 @@ public:
   DOMHighResTimeStamp GetTime() const { return mTime; }
   MarkerTracingType GetTracingType() const { return mTracingType; }
 
+  const uint8_t GetProcessType() const { return mProcessType; };
+  const bool IsOffMainThread() const { return mIsOffMainThread; };
+
 private:
   const char* mName;
   DOMHighResTimeStamp mTime;
   MarkerTracingType mTracingType;
+
+  uint8_t mProcessType; 
+  bool mIsOffMainThread;
 
 protected:
   void SetCurrentTime();

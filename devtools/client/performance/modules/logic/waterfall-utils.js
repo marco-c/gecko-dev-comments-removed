@@ -32,7 +32,11 @@ function createParentNode (marker) {
 
 
 function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
-  let { getCurrentParentNode, pushNode, popParentNode } = createParentNodeFactory(rootNode);
+  let {
+    getCurrentParentNode,
+    pushNode,
+    popParentNode
+  } = createParentNodeFactory(rootNode);
 
   for (let i = 0, len = markersList.length; i < len; i++) {
     let curr = markersList[i];
@@ -48,7 +52,7 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
     let nestable = "nestable" in blueprint ? blueprint.nestable : true;
     let collapsible = "collapsible" in blueprint ? blueprint.collapsible : true;
 
-    let finalized = null;
+    let finalized = false;
 
     
     
@@ -59,7 +63,12 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
 
     
     
-    if (!nestable) {
+    
+    
+    
+    
+    
+    if (!nestable || curr.isOffMainThread) {
       pushNode(rootNode, curr);
       continue;
     }
@@ -70,7 +79,11 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
       
       
       
-      if (nestable && curr.end <= parentNode.end) {
+      
+      if (nestable &&
+          curr.start >= parentNode.start &&
+          curr.end <= parentNode.end &&
+          curr.processType == parentNode.processType) {
         pushNode(parentNode, curr);
         finalized = true;
         break;
@@ -112,6 +125,7 @@ function createParentNodeFactory (root) {
       }
 
       let lastParent = parentMarkers.pop();
+
       
       
       if (lastParent.end == void 0) {
@@ -131,7 +145,9 @@ function createParentNodeFactory (root) {
     
 
 
-    getCurrentParentNode: () => parentMarkers.length ? parentMarkers[parentMarkers.length - 1] : null,
+    getCurrentParentNode: () => parentMarkers.length
+      ? parentMarkers[parentMarkers.length - 1]
+      : null,
 
     
 
