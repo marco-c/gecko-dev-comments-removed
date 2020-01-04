@@ -14887,7 +14887,7 @@ CSSParserImpl::ParseTextAlign(nsCSSValue& aValue, const KTableEntry aTable[])
     return false;
   }
 
-  if (!nsLayoutUtils::IsTextAlignUnsafeValueEnabled()) {
+  if (!nsLayoutUtils::IsTextAlignTrueValueEnabled()) {
     aValue = left;
     return true;
   }
@@ -14895,14 +14895,14 @@ CSSParserImpl::ParseTextAlign(nsCSSValue& aValue, const KTableEntry aTable[])
   nsCSSValue right;
   if (ParseSingleTokenVariant(right, VARIANT_KEYWORD, aTable)) {
     
-    if (left.GetIntValue() == NS_STYLE_TEXT_ALIGN_UNSAFE &&
-        right.GetIntValue() == NS_STYLE_TEXT_ALIGN_UNSAFE) {
+    if (left.GetIntValue() == NS_STYLE_TEXT_ALIGN_TRUE &&
+        right.GetIntValue() == NS_STYLE_TEXT_ALIGN_TRUE) {
       return false;
     }
     aValue.SetPairValue(left, right);
   } else {
     
-    if (left.GetIntValue() == NS_STYLE_TEXT_ALIGN_UNSAFE) {
+    if (left.GetIntValue() == NS_STYLE_TEXT_ALIGN_TRUE) {
       return false;
     }
     aValue = left;

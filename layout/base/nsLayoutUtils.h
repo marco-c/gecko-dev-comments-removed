@@ -2291,7 +2291,7 @@ public:
 
 
 
-  static bool IsTextAlignUnsafeValueEnabled();
+  static bool IsTextAlignTrueValueEnabled();
 
   
 
