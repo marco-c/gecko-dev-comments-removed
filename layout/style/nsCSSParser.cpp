@@ -747,8 +747,9 @@ protected:
   
   
   
-  bool ParseWebkitPrefixedGradient(nsAString& aPrefixedFuncName,
-                                   nsCSSValue& aValue);
+  
+  bool ParseWebkitPrefixedGradientWithService(nsAString& aPrefixedFuncName,
+                                              nsCSSValue& aValue);
 
   bool ParseProperty(nsCSSProperty aPropID);
   bool ParsePropertyByFunction(nsCSSProperty aPropID);
@@ -6757,8 +6758,9 @@ CSSParserImpl::ParsePropertyWithUnprefixingService(
 }
 
 bool
-CSSParserImpl::ParseWebkitPrefixedGradient(nsAString& aPrefixedFuncName,
-                                           nsCSSValue& aValue)
+CSSParserImpl::ParseWebkitPrefixedGradientWithService(
+  nsAString& aPrefixedFuncName,
+  nsCSSValue& aValue)
 {
   MOZ_ASSERT(ShouldUseUnprefixingService(),
              "Should only call if we're allowed to use unprefixing service");
@@ -7470,7 +7472,7 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
       
       
       nsAutoString prefixedFuncName(tmp);
-      return ParseWebkitPrefixedGradient(prefixedFuncName, aValue);
+      return ParseWebkitPrefixedGradientWithService(prefixedFuncName, aValue);
     }
   }
   if ((aVariantMask & VARIANT_IMAGE_RECT) != 0 &&
