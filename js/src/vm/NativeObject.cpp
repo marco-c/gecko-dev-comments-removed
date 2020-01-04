@@ -1360,7 +1360,7 @@ js::NativeDefineProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleId 
     
     if (!shape) {
         if (!obj->nonProxyIsExtensible())
-            return result.fail(JSMSG_OBJECT_NOT_EXTENSIBLE);
+            return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
 
         
         CompletePropertyDescriptor(&desc);
