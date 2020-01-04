@@ -7,7 +7,7 @@
 
 let test = Task.async(function*() {
   var { target, panel, toolbox } = yield initPerformance(SIMPLE_URL);
-  var { EVENTS, PerformanceController, PerformanceView, DetailsView, DetailsSubview } = panel.panelWin;
+  var { $, EVENTS, PerformanceController, PerformanceView, DetailsView, DetailsSubview } = panel.panelWin;
 
   
   Services.prefs.setBoolPref(ALLOCATIONS_PREF, true);
@@ -44,6 +44,13 @@ let test = Task.async(function*() {
 
   yield exported;
   ok(true, "The recording data appears to have been successfully saved.");
+
+ 
+ 
+
+  let displayedName = $(".recording-item-title").getAttribute("value");
+  ok(/^tmpprofile/.test(displayedName), "File has expected display name after import");
+  ok(!/\.json$/.test(displayedName), "Display name does not have .json in it");
 
   
 
