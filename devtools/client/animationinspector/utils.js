@@ -19,16 +19,14 @@ const L10N = new ViewHelpers.L10N(STRINGS_URI);
 
 const OPTIMAL_TIME_INTERVAL_MAX_ITERS = 100;
 
-const TIME_INTERVAL_MULTIPLE = 25;
-const TIME_INTERVAL_SCALES = 3;
+const OPTIMAL_TIME_INTERVAL_MULTIPLES = [1, 2.5, 5];
 
-const TIME_GRADUATION_MIN_SPACING = 10;
 
 const TIME_INTERVAL_COLOR = [128, 136, 144];
 
-const TIME_INTERVAL_OPACITY_MIN = 32;
+const TIME_INTERVAL_OPACITY_MIN = 64;
 
-const TIME_INTERVAL_OPACITY_ADD = 32;
+const TIME_INTERVAL_OPACITY_MAX = 96;
 
 const MILLIS_TIME_FORMAT_MAX_DURATION = 4000;
 
@@ -74,7 +72,7 @@ exports.createNode = createNode;
 
 
 
-function drawGraphElementBackground(document, id, graphWidth, timeScale) {
+function drawGraphElementBackground(document, id, graphWidth, intervalWidth) {
   let canvas = document.createElement("canvas");
   let ctx = canvas.getContext("2d");
 
@@ -93,17 +91,19 @@ function drawGraphElementBackground(document, id, graphWidth, timeScale) {
 
   
   let [r, g, b] = TIME_INTERVAL_COLOR;
-  let alphaComponent = TIME_INTERVAL_OPACITY_MIN;
-  let interval = findOptimalTimeInterval(timeScale);
+  let opacities = [TIME_INTERVAL_OPACITY_MAX, TIME_INTERVAL_OPACITY_MIN];
 
   
-  for (let i = 1; i <= TIME_INTERVAL_SCALES; i++) {
-    let increment = interval * Math.pow(2, i);
-    for (let x = 0; x < canvas.width; x += increment) {
-      let position = x | 0;
-      view32bit[position] = (alphaComponent << 24) | (b << 16) | (g << 8) | r;
+  for (let i = 0; i <= graphWidth / intervalWidth; i++) {
+    let x = i * intervalWidth;
+    
+    if (x >= graphWidth) {
+      x = graphWidth - 0.5;
     }
-    alphaComponent += TIME_INTERVAL_OPACITY_ADD;
+    let position = x | 0;
+    let alphaComponent = opacities[i % opacities.length];
+
+    view32bit[position] = (alphaComponent << 24) | (b << 16) | (g << 8) | r;
   }
 
   
@@ -120,27 +120,26 @@ exports.drawGraphElementBackground = drawGraphElementBackground;
 
 
 
-
-
-function findOptimalTimeInterval(timeScale,
-                                 minSpacing=TIME_GRADUATION_MIN_SPACING) {
-  let timingStep = TIME_INTERVAL_MULTIPLE;
+function findOptimalTimeInterval(minTimeInterval) {
   let numIters = 0;
+  let multiplier = 1;
 
-  if (timeScale > minSpacing) {
-    return timeScale;
+  if (!minTimeInterval) {
+    return 0;
   }
 
+  let interval;
   while (true) {
-    let scaledStep = timeScale * timingStep;
+    for (let i = 0; i < OPTIMAL_TIME_INTERVAL_MULTIPLES.length; i++) {
+      interval = OPTIMAL_TIME_INTERVAL_MULTIPLES[i] * multiplier;
+      if (minTimeInterval <= interval) {
+        return interval;
+      }
+    }
     if (++numIters > OPTIMAL_TIME_INTERVAL_MAX_ITERS) {
-      return scaledStep;
+      return interval;
     }
-    if (scaledStep < minSpacing) {
-      timingStep *= 2;
-      continue;
-    }
-    return scaledStep;
+    multiplier *= 10;
   }
 }
 
