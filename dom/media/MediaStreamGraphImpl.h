@@ -238,7 +238,7 @@ public:
   
 
 
-  void Process(GraphTime aFrom, GraphTime aTo);
+  void Process(GraphTime aTo);
   
 
 
@@ -340,12 +340,12 @@ public:
 
 
 
-  void CreateOrDestroyAudioStreams(GraphTime aAudioOutputStartTime, MediaStream* aStream);
+  void CreateOrDestroyAudioStreams(MediaStream* aStream);
   
 
 
 
-  StreamTime PlayAudio(MediaStream* aStream, GraphTime aFrom, GraphTime aTo);
+  StreamTime PlayAudio(MediaStream* aStream, GraphTime aTo);
   
 
 
