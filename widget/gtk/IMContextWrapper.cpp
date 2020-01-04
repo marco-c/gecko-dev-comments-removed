@@ -1852,7 +1852,7 @@ IMContextWrapper::SetTextRange(PangoAttrIterator* aPangoAttrIter,
     if (!utf8ClauseStart &&
         utf8ClauseEnd == static_cast<gint>(strlen(aUTF8CompositionString)) &&
         aTextRange.mEndOffset == aUTF16CaretOffset) {
-        aTextRange.mRangeType = TextRangeType::NS_TEXTRANGE_RAWINPUT;
+        aTextRange.mRangeType = TextRangeType::eRawClause;
     }
     
     
