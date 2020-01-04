@@ -54,6 +54,10 @@ DrawTargetTiled::Snapshot()
   return MakeAndAddRef<SnapshotTiled>(mTiles, mRect);
 }
 
+void
+DrawTargetTiled::DetachAllSnapshots()
+{}
+
 
 
 #define TILED_COMMAND(command) \
