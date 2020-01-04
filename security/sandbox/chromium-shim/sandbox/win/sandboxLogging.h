@@ -43,7 +43,7 @@ void LogBlocked(const char* aFunctionName, const char* aContext = nullptr,
 
 void LogBlocked(const char* aFunctionName, const wchar_t* aContext);
 void LogBlocked(const char* aFunctionName, const wchar_t* aContext,
-                uint16_t aLength);
+                uint16_t aLengthInBytes);
 
 
 void LogAllowed(const char* aFunctionName, const char* aContext = nullptr);
@@ -51,7 +51,7 @@ void LogAllowed(const char* aFunctionName, const char* aContext = nullptr);
 
 void LogAllowed(const char* aFunctionName, const wchar_t* aContext);
 void LogAllowed(const char* aFunctionName, const wchar_t* aContext,
-                uint16_t aLength);
+                uint16_t aLengthInBytes);
 
 
 } 
