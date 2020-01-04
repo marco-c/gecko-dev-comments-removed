@@ -549,11 +549,13 @@ MediaCodecDataDecoder::HandleEOS(int32_t aOutputStatus)
   mDecoder->ReleaseOutputBuffer(aOutputStatus, false);
 }
 
-TimeUnit
+Maybe<TimeUnit>
 MediaCodecDataDecoder::GetOutputDuration()
 {
-  MOZ_ASSERT(!mDurations.empty(), "Should have had a duration queued");
-  const TimeUnit duration = mDurations.front();
+  if (mDurations.empty()) {
+    return Nothing();
+  }
+  const Maybe<TimeUnit> duration = Some(mDurations.front());
   mDurations.pop_front();
   return duration;
 }
@@ -564,19 +566,26 @@ MediaCodecDataDecoder::ProcessOutput(
 {
   AutoLocalJNIFrame frame(jni::GetEnvForThread(), 1);
 
-  const TimeUnit duration = GetOutputDuration();
+  const Maybe<TimeUnit> duration = GetOutputDuration();
+  if (!duration) {
+    
+    
+    
+    return NS_OK;
+  }
+
   const auto buffer = jni::Object::LocalRef::Adopt(
       frame.GetEnv()->GetObjectArrayElement(mOutputBuffers.Get(), aStatus));
 
   if (buffer) {
     
     void* directBuffer = frame.GetEnv()->GetDirectBufferAddress(buffer.Get());
-    Output(aInfo, directBuffer, aFormat, duration);
+    Output(aInfo, directBuffer, aFormat, duration.value());
   }
 
   
   mDecoder->ReleaseOutputBuffer(aStatus, true);
-  PostOutput(aInfo, aFormat, duration);
+  PostOutput(aInfo, aFormat, duration.value());
 
   return NS_OK;
 }
