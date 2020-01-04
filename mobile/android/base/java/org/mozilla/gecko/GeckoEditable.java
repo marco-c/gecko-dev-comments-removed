@@ -162,6 +162,8 @@ final class GeckoEditable extends JNIObject
         static final int TYPE_ACKNOWLEDGE_FOCUS = 4;
         
         static final int TYPE_SET_HANDLER = 5;
+        
+        static final int TYPE_UPDATE_COMPOSITION = 6;
 
         final int mType;
         boolean mUpdateComposition;
@@ -215,6 +217,13 @@ final class GeckoEditable extends JNIObject
             action.mHandler = handler;
             return action;
         }
+
+        static Action newUpdateComposition(int start, int end) {
+            final Action action = new Action(TYPE_UPDATE_COMPOSITION);
+            action.mStart = start;
+            action.mEnd = end;
+            return action;
+        }
     }
 
     
@@ -261,8 +270,10 @@ final class GeckoEditable extends JNIObject
             case Action.TYPE_REPLACE_TEXT:
                 
                 
-                if (!icMaybeSendComposition(
+                if (icMaybeSendComposition(
                         action.mSequence,  true,  false)) {
+                    mNeedCompositionUpdate = false;
+                } else {
                     
                     sendCharKeyEvents(action);
                 }
@@ -271,6 +282,10 @@ final class GeckoEditable extends JNIObject
 
             case Action.TYPE_ACKNOWLEDGE_FOCUS:
                 onImeAcknowledgeFocus();
+                break;
+
+            case Action.TYPE_UPDATE_COMPOSITION:
+                onImeUpdateComposition(action.mStart, action.mEnd);
                 break;
 
             default:
@@ -519,7 +534,8 @@ final class GeckoEditable extends JNIObject
             if (found) {
                 icSendComposition(text, selStart, selEnd, composingStart, composingEnd);
                 if (notifyGecko) {
-                    onImeUpdateComposition(composingStart, composingEnd);
+                    mActionQueue.offer(Action.newUpdateComposition(
+                            composingStart, composingEnd));
                 }
                 return true;
             }
@@ -527,7 +543,7 @@ final class GeckoEditable extends JNIObject
 
         if (notifyGecko) {
             
-            onImeUpdateComposition(selStart, selEnd);
+            mActionQueue.offer(Action.newUpdateComposition(selStart, selEnd));
         }
 
         if (DEBUG) {
@@ -1003,7 +1019,7 @@ final class GeckoEditable extends JNIObject
         }
     }
 
-    private boolean isSameText(int start, int oldEnd, CharSequence newText) {
+    private boolean geckoIsSameText(int start, int oldEnd, CharSequence newText) {
         return oldEnd - start == newText.length() &&
                TextUtils.regionMatches(mText, start, newText, 0, oldEnd - start);
     }
@@ -1051,14 +1067,28 @@ final class GeckoEditable extends JNIObject
 
             
             
-            final int indexInText = TextUtils.indexOf(text, action.mSequence);
+            final int startWithinText = action.mStart - start;
+            int indexInText = TextUtils.indexOf(text, action.mSequence, startWithinText);
+            if (indexInText < 0 && startWithinText >= action.mSequence.length()) {
+                indexInText = text.toString().lastIndexOf(action.mSequence.toString(),
+                                                          startWithinText);
+            }
+
             if (indexInText < 0) {
                 
                 geckoReplaceText(start, oldEnd, text);
 
+                
+                
+                mIgnoreSelectionChange = false;
+
             } else if (indexInText == 0 && text.length() == action.mSequence.length()) {
                 
                 geckoReplaceText(start, oldEnd, action.mSequence);
+
+                
+                
+                mIgnoreSelectionChange = true;
 
             } else {
                 
@@ -1076,21 +1106,16 @@ final class GeckoEditable extends JNIObject
                                  text.subSequence(actionEnd - start, text.length()));
             }
 
+        } else if (geckoIsSameText(start, oldEnd, text)) {
             
             
-            mIgnoreSelectionChange = true;
+            
+            mIgnoreSelectionChange = mIgnoreSelectionChange ||
+                    (action != null && action.mType == Action.TYPE_UPDATE_COMPOSITION);
+            return;
 
         } else {
             
-            if (isSameText(start, oldEnd, text)) {
-                
-                
-                
-                
-                mIgnoreSelectionChange = true;
-                return;
-            }
-
             geckoReplaceText(start, oldEnd, text);
         }
 
