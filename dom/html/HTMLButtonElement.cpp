@@ -253,7 +253,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       
       
       InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
-      actEvent.detail = 1;
+      actEvent.mDetail = 1;
 
       nsCOMPtr<nsIPresShell> shell = aVisitor.mPresContext->GetPresShell();
       if (shell) {

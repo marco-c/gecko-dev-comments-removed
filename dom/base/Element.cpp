@@ -3015,7 +3015,7 @@ Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor)
         
         
         InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
-        actEvent.detail = 1;
+        actEvent.mDetail = 1;
 
         rv = shell->HandleDOMEventWithTarget(this, &actEvent, &status);
         if (NS_SUCCEEDED(rv)) {
