@@ -2484,7 +2484,12 @@ nsPrintEngine::DoPrint(nsPrintObject * aPO)
         
         
         
-        nsRenderingContext rc(mPrt->mPrintDC->CreateRenderingContext());
+
+        
+        nsRefPtr<gfxContext> gCtx = mPrt->mPrintDC->CreateRenderingContext();
+        NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
+
+        nsRenderingContext rc(gCtx);
 
         
         

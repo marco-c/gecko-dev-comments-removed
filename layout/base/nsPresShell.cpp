@@ -2911,10 +2911,14 @@ PresShell::CreateReferenceRenderingContext()
     rc = new gfxContext(gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget());
   } else {
     
+    
+    
     rc = devCtx->CreateRenderingContext();
+    if (!rc) {
+      return nullptr;
+    }
   }
 
-  MOZ_ASSERT(rc, "shouldn't break promise to return non-null");
   return rc.forget();
 }
 
@@ -8969,6 +8973,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
 
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
 
+  
   nsRenderingContext rcx(CreateReferenceRenderingContext());
 
 #ifdef DEBUG
@@ -10902,6 +10907,7 @@ nsIPresShell::SyncWindowProperties(nsView* aView)
 {
   nsIFrame* frame = aView->GetFrame();
   if (frame && mPresContext) {
+    
     nsRenderingContext rcx(CreateReferenceRenderingContext());
     nsContainerFrame::SyncWindowProperties(mPresContext, frame, aView, &rcx, 0);
   }
