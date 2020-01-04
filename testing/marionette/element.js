@@ -59,17 +59,21 @@ element.Strategy = {
   AnonAttribute: "anon attribute",
 };
 
-this.ElementManager = class {
+
+
+
+
+
+
+
+element.Store = class {
   constructor() {
-    this.seenItems = {};
+    this.els = {};
     this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   }
 
-  
-
-
   reset() {
-    this.seenItems = {};
+    this.els = {};
   }
 
   
@@ -100,24 +104,25 @@ this.ElementManager = class {
 
 
   add(el) {
-    for (let i in this.seenItems) {
+    for (let i in this.els) {
       let foundEl;
       try {
-        foundEl = this.seenItems[i].get();
+        foundEl = this.els[i].get();
       } catch (e) {}
 
       if (foundEl) {
-        if (XPCNativeWrapper(foundEl) == XPCNativeWrapper(el)) {
+        if (new XPCNativeWrapper(foundEl) == new XPCNativeWrapper(el)) {
           return i;
         }
+
+      
       } else {
-        
-        delete this.seenItems[i];
+        delete this.els[i];
       }
     }
 
     let id = element.generateUUID();
-    this.seenItems[id] = Cu.getWeakReference(el);
+    this.els[id] = Cu.getWeakReference(el);
     return id;
   }
 
@@ -131,34 +136,56 @@ this.ElementManager = class {
 
 
 
+  has(uuid) {
+    return Object.keys(this.els).includes(uuid);
+  }
 
-  getKnownElement(id, container) {
-    let el = this.seenItems[id];
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get(uuid, container) {
+    let el = this.els[uuid];
     if (!el) {
-      throw new JavaScriptError(`Element has not been seen before. Id given was ${id}`);
+      throw new JavaScriptError(`Element reference not seen before: ${uuid}`);
     }
+
     try {
       el = el.get();
-    }
-    catch(e) {
+    } catch (e) {
       el = null;
-      delete this.seenItems[id];
-    }
-    
-    let wrappedFrame = XPCNativeWrapper(container.frame);
-    let wrappedShadowRoot;
-    if (container.shadowRoot) {
-      wrappedShadowRoot = XPCNativeWrapper(container.shadowRoot);
+      delete this.els[id];
     }
 
+    
+    let wrappedFrame = new XPCNativeWrapper(container.frame);
+    let wrappedShadowRoot;
+    if (container.shadowRoot) {
+      wrappedShadowRoot = new XPCNativeWrapper(container.shadowRoot);
+    }
+
+    let wrappedEl = new XPCNativeWrapper(el);
     if (!el ||
-        !(XPCNativeWrapper(el).ownerDocument == wrappedFrame.document) ||
-        this.isDisconnected(XPCNativeWrapper(el), wrappedShadowRoot,
-          wrappedFrame)) {
+        !(wrappedEl.ownerDocument == wrappedFrame.document) ||
+        this.isDisconnected(wrappedEl, wrappedFrame, wrappedShadowRoot)) {
       throw new StaleElementReferenceError(
           "The element reference is stale. Either the element " +
           "is no longer attached to the DOM or the page has been refreshed.");
     }
+
     return el;
   }
 
@@ -174,21 +201,29 @@ this.ElementManager = class {
 
 
 
-  isDisconnected(el, shadowRoot, frame) {
+
+
+
+  isDisconnected(el, frame, shadowRoot = undefined) {
+    
     if (shadowRoot && frame.ShadowRoot) {
       if (el.compareDocumentPosition(shadowRoot) &
-        DOCUMENT_POSITION_DISCONNECTED) {
+          DOCUMENT_POSITION_DISCONNECTED) {
         return true;
       }
+
       
       let parent = shadowRoot.host;
       while (parent && !(parent instanceof frame.ShadowRoot)) {
         parent = parent.parentNode;
       }
       return this.isDisconnected(shadowRoot.host, parent, frame);
+
+    
     } else {
-      return el.compareDocumentPosition(frame.document.documentElement) &
-        DOCUMENT_POSITION_DISCONNECTED;
+      let docEl = frame.document.documentElement;
+      return el.compareDocumentPosition(docEl) &
+          DOCUMENT_POSITION_DISCONNECTED;
     }
   }
 
@@ -288,7 +323,7 @@ this.ElementManager = class {
                  ((typeof(args[element.Key]) === 'string') &&
                      args.hasOwnProperty(element.Key))) {
           let elementUniqueIdentifier = args[element.Key] ? args[element.Key] : args[element.LegacyKey];
-          converted = this.getKnownElement(elementUniqueIdentifier, container);
+          converted = this.get(elementUniqueIdentifier, container);
           if (converted == null) {
             throw new WebDriverError(`Unknown element: ${elementUniqueIdentifier}`);
           }

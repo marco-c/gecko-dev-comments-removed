@@ -42,11 +42,7 @@ browser.Context = class {
     this.mainContentId = null;
     
     this.newSession = true;
-    this.elementManager = new ElementManager([
-      element.Strategy.Name,
-      element.Strategy.LinkText,
-      element.Strategy.PartialLinkText,
-    ]);
+    this.elementManager = new element.Store();
     this.setBrowser(win);
 
     
