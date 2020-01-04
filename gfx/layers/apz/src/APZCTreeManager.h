@@ -6,49 +6,26 @@
 #ifndef mozilla_layers_APZCTreeManager_h
 #define mozilla_layers_APZCTreeManager_h
 
-#include <stdint.h>                     
 #include <map>                          
 
-#include "FrameMetrics.h"               
 #include "gfxPoint.h"                   
 #include "mozilla/Assertions.h"         
-#include "mozilla/EventForwards.h"      
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Matrix.h"         
-#include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/TouchCounter.h"
+#include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/Mutex.h"              
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "nsCOMPtr.h"                   
-#include "nsISupportsImpl.h"            
-#include "nsTArrayForwardDeclare.h"     
-#include "Units.h"                      
+
 
 namespace mozilla {
-class InputData;
 class MultiTouchInput;
 
 namespace layers {
 
-enum AllowedTouchBehavior {
-  NONE =               0,
-  VERTICAL_PAN =       1 << 0,
-  HORIZONTAL_PAN =     1 << 1,
-  PINCH_ZOOM =         1 << 2,
-  DOUBLE_TAP_ZOOM =    1 << 3,
-  UNKNOWN =            1 << 4
-};
-
-enum ZoomToRectBehavior : uint32_t {
-  DEFAULT_BEHAVIOR =   0,
-  DISABLE_ZOOM_OUT =   1 << 0,
-  PAN_INTO_VIEW_ONLY = 1 << 1,
-  ONLY_ZOOM_TO_DEFAULT_SCALE  = 1 << 2
-};
-
 class Layer;
-class AsyncDragMetrics;
 class AsyncPanZoomController;
 class CompositorBridgeParent;
 class OverscrollHandoffChain;
@@ -100,8 +77,7 @@ class HitTestingTreeNode;
 
 
 
-class APZCTreeManager {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZCTreeManager)
+class APZCTreeManager : public IAPZCTreeManager {
 
   typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
   typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
@@ -183,9 +159,32 @@ public:
 
 
 
-  nsEventStatus ReceiveInputEvent(InputData& aEvent,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId);
+  nsEventStatus ReceiveInputEvent(
+      InputData& aEvent,
+      ScrollableLayerGuid* aOutTargetGuid,
+      uint64_t* aOutInputBlockId) override;
+
+  
+
+
+
+
+
+  void ZoomToRect(
+      const ScrollableLayerGuid& aGuid,
+      const CSSRect& aRect,
+      const uint32_t aFlags = DEFAULT_BEHAVIOR) override;
+
+  
+
+
+
+
+
+
+  void ContentReceivedInputBlock(
+      uint64_t aInputBlockId,
+      bool aPreventDefault) override;
 
   
 
@@ -198,47 +197,9 @@ public:
 
 
 
-
-
-
-
-
-  nsEventStatus ReceiveInputEvent(WidgetInputEvent& aEvent,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId);
-
-  
-
-
-
-
-
-  void ZoomToRect(const ScrollableLayerGuid& aGuid,
-                  const CSSRect& aRect,
-                  const uint32_t aFlags = DEFAULT_BEHAVIOR);
-
-  
-
-
-
-
-
-
-  void ContentReceivedInputBlock(uint64_t aInputBlockId, bool aPreventDefault);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void SetTargetAPZC(uint64_t aInputBlockId,
-                     const nsTArray<ScrollableLayerGuid>& aTargets);
+  void SetTargetAPZC(
+      uint64_t aInputBlockId,
+      const nsTArray<ScrollableLayerGuid>& aTargets) override;
 
   
 
@@ -251,15 +212,16 @@ public:
 
 
 
-  void UpdateZoomConstraints(const ScrollableLayerGuid& aGuid,
-                             const Maybe<ZoomConstraints>& aConstraints);
+  void UpdateZoomConstraints(
+      const ScrollableLayerGuid& aGuid,
+      const Maybe<ZoomConstraints>& aConstraints) override;
 
   
 
 
 
 
-  void CancelAnimation(const ScrollableLayerGuid &aGuid);
+  void CancelAnimation(const ScrollableLayerGuid &aGuid) override;
 
   
 
@@ -267,7 +229,7 @@ public:
 
 
 
-  void AdjustScrollForSurfaceShift(const ScreenPoint& aShift);
+  void AdjustScrollForSurfaceShift(const ScreenPoint& aShift) override;
 
   
 
@@ -296,7 +258,7 @@ public:
 
 
 
-  static void SetDPI(float aDpiValue) { sDPI = aDpiValue; }
+  void SetDPI(float aDpiValue) override { sDPI = aDpiValue; }
 
   
 
@@ -318,8 +280,9 @@ public:
 
 
 
-  void SetAllowedTouchBehavior(uint64_t aInputBlockId,
-                               const nsTArray<TouchBehaviorFlags>& aValues);
+  void SetAllowedTouchBehavior(
+      uint64_t aInputBlockId,
+      const nsTArray<TouchBehaviorFlags>& aValues) override;
 
   
 
@@ -401,8 +364,9 @@ public:
   void DispatchFling(AsyncPanZoomController* aApzc,
                      FlingHandoffState& aHandoffState);
 
-  void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
-                          const AsyncDragMetrics& aDragMetrics);
+  void StartScrollbarDrag(
+      const ScrollableLayerGuid& aGuid,
+      const AsyncDragMetrics& aDragMetrics) override;
 
   
 
@@ -415,11 +379,19 @@ public:
 
 
 
-  static void SetLongTapEnabled(bool aTapGestureEnabled);
+  void SetLongTapEnabled(bool aTapGestureEnabled) override;
 
 protected:
   
   virtual ~APZCTreeManager();
+
+  
+  void TransformEventRefPoint(
+      LayoutDeviceIntPoint* aRefPoint,
+      ScrollableLayerGuid* aOutTargetGuid) override;
+  void UpdateWheelTransaction(
+      LayoutDeviceIntPoint aRefPoint,
+      EventMessage aEventMessage) override;
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,
@@ -448,7 +420,7 @@ public:
 
 
 
-  void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY);
+  void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY) override;
 private:
   typedef bool (*GuidComparator)(const ScrollableLayerGuid&, const ScrollableLayerGuid&);
 
@@ -478,16 +450,6 @@ private:
   nsEventStatus ProcessTouchInput(MultiTouchInput& aInput,
                                   ScrollableLayerGuid* aOutTargetGuid,
                                   uint64_t* aOutInputBlockId);
-  nsEventStatus ProcessWheelEvent(WidgetWheelEvent& aEvent,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId);
-  nsEventStatus ProcessEvent(WidgetInputEvent& inputEvent,
-                             ScrollableLayerGuid* aOutTargetGuid,
-                             uint64_t* aOutInputBlockId);
-  nsEventStatus ProcessMouseEvent(WidgetMouseEventBase& aInput,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId);
-  void UpdateWheelTransaction(WidgetInputEvent& aEvent);
   void FlushRepaintsToClearScreenToGeckoTransform();
 
   already_AddRefed<HitTestingTreeNode> RecycleOrCreateNode(TreeBuildingState& aState,

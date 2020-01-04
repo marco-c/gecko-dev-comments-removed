@@ -23,7 +23,7 @@ class nsBaseWidget;
 
 namespace mozilla {
 namespace layers {
-class APZCTreeManager;
+class IAPZCTreeManager;
 class CompositorSession;
 class ClientLayerManager;
 class CompositorUpdateObserver;
@@ -51,9 +51,9 @@ class VsyncIOThreadHolder;
 
 class GPUProcessManager final : public GPUProcessHost::Listener
 {
-  typedef layers::APZCTreeManager APZCTreeManager;
   typedef layers::ClientLayerManager ClientLayerManager;
   typedef layers::CompositorSession CompositorSession;
+  typedef layers::IAPZCTreeManager IAPZCTreeManager;
   typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
   typedef layers::PCompositorBridgeChild PCompositorBridgeChild;
   typedef layers::PImageBridgeChild PImageBridgeChild;
@@ -89,7 +89,7 @@ public:
 
   
   
-  already_AddRefed<APZCTreeManager> GetAPZCTreeManagerForLayers(uint64_t aLayersId);
+  already_AddRefed<IAPZCTreeManager> GetAPZCTreeManagerForLayers(uint64_t aLayersId);
 
   
   
