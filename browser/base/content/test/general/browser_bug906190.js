@@ -70,6 +70,7 @@ registerCleanupFunction(function() {
   
   Services.prefs.setBoolPref(PREF_ACTIVE, origBlockActive);
 });
+requestLongerTimeout(2);
 
 
 
