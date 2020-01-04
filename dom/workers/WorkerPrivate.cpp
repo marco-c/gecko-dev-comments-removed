@@ -1508,16 +1508,16 @@ StartsWithExplicit(nsACString& s)
 }
 #endif
 
-class WorkerJSRuntimeStats : public JS::RuntimeStats
+class MOZ_STACK_CLASS WorkerJSContextStats final : public JS::RuntimeStats
 {
   const nsACString& mRtPath;
 
 public:
-  explicit WorkerJSRuntimeStats(const nsACString& aRtPath)
+  explicit WorkerJSContextStats(const nsACString& aRtPath)
   : JS::RuntimeStats(JsWorkerMallocSizeOf), mRtPath(aRtPath)
   { }
 
-  ~WorkerJSRuntimeStats()
+  ~WorkerJSContextStats()
   {
     for (size_t i = 0; i != zoneStatsVector.length(); i++) {
       delete static_cast<xpc::ZoneStatsExtras*>(zoneStatsVector[i].extra);
@@ -2030,7 +2030,7 @@ public:
     
     
     nsCString path;
-    WorkerJSRuntimeStats rtStats(path);
+    WorkerJSContextStats cxStats(path);
 
     {
       MutexAutoLock lock(mMutex);
@@ -2060,13 +2060,13 @@ public:
 
       TryToMapAddon(path);
 
-      if (!mWorkerPrivate->BlockAndCollectRuntimeStats(&rtStats, aAnonymize)) {
+      if (!mWorkerPrivate->BlockAndCollectRuntimeStats(&cxStats, aAnonymize)) {
         
         return NS_OK;
       }
     }
 
-    xpc::ReportJSRuntimeExplicitTreeStats(rtStats, path, aHandleReport, aData,
+    xpc::ReportJSRuntimeExplicitTreeStats(cxStats, path, aHandleReport, aData,
                                           aAnonymize);
     return NS_OK;
   }

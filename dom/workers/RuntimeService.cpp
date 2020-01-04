@@ -892,11 +892,11 @@ FinishAsyncTaskCallback(JS::AsyncTask* aTask)
   return true;
 }
 
-class WorkerJSRuntime;
+class WorkerJSContext;
 
 class WorkerThreadContextPrivate : private PerThreadAtomCache
 {
-  friend class WorkerJSRuntime;
+  friend class WorkerJSContext;
 
   WorkerPrivate* mWorkerPrivate;
 
@@ -1043,18 +1043,18 @@ static const JSWrapObjectCallbacks WrapObjectCallbacks = {
   nullptr,
 };
 
-class WorkerJSRuntime : public mozilla::CycleCollectedJSContext
+class MOZ_STACK_CLASS WorkerJSContext final : public mozilla::CycleCollectedJSContext
 {
 public:
   
   
-  explicit WorkerJSRuntime(WorkerPrivate* aWorkerPrivate)
+  explicit WorkerJSContext(WorkerPrivate* aWorkerPrivate)
     : mWorkerPrivate(aWorkerPrivate)
   {
     MOZ_ASSERT(aWorkerPrivate);
   }
 
-  ~WorkerJSRuntime()
+  ~WorkerJSContext()
   {
     JSContext* cx = MaybeContext();
     if (!cx) {
@@ -2832,17 +2832,17 @@ WorkerThreadPrimaryRunnable::Run()
   {
     nsCycleCollector_startup();
 
-    WorkerJSRuntime runtime(mWorkerPrivate);
-    nsresult rv = runtime.Initialize(mParentContext);
+    WorkerJSContext context(mWorkerPrivate);
+    nsresult rv = context.Initialize(mParentContext);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    JSContext* cx = runtime.Context();
+    JSContext* cx = context.Context();
 
     if (!InitJSContextForWorker(mWorkerPrivate, cx)) {
       
-      NS_ERROR("Failed to create runtime and context!");
+      NS_ERROR("Failed to create context!");
       return NS_ERROR_FAILURE;
     }
 
