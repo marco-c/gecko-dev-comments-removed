@@ -4,16 +4,17 @@
 
 
 
-#include "MediaDecoderReader.h"
-#include "PlatformDecoderModule.h"
-#include "nsRect.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/CheckedInt.h"
-#include "VideoUtils.h"
 #include "ImageContainer.h"
+#include "MediaDecoderReader.h"
 #include "MediaInfo.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/mozalloc.h" 
+#include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
+#include "nsRect.h"
+#include "PlatformDecoderModule.h"
 #include "TimeUnits.h"
+#include "VideoUtils.h"
 
 namespace mozilla {
 
@@ -58,6 +59,9 @@ public:
         mCreator->Create(media::TimeUnit::FromMicroseconds(mSample->mTime),
                          media::TimeUnit::FromMicroseconds(mSample->mDuration),
                          mSample->mOffset);
+      if (!data) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
       mCallback->Output(data);
       return NS_OK;
     }
@@ -183,7 +187,11 @@ public:
         frames.value() > (UINT32_MAX / mChannelCount)) {
       return nullptr;
     }
-    auto samples = MakeUnique<AudioDataValue[]>(frames.value() * mChannelCount);
+    UniquePtr<AudioDataValue[]> samples(
+      new (fallible) AudioDataValue[frames.value() * mChannelCount]);
+    if (!samples) {
+      return nullptr;
+    }
     
     static const float pi = 3.14159265f;
     static const float noteHz = 440.0f;
