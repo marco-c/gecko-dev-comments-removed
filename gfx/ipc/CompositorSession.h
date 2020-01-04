@@ -14,9 +14,6 @@ namespace mozilla {
 namespace widget {
 class CompositorWidgetProxy;
 } 
-namespace gfx {
-class GPUProcessManager;
-} 
 namespace layers {
 
 class GeckoContentController;
@@ -29,10 +26,16 @@ class ClientLayerManager;
 
 class CompositorSession
 {
-  friend class gfx::GPUProcessManager;
-
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorSession)
+
+  static already_AddRefed<CompositorSession> CreateTopLevel(
+    widget::CompositorWidgetProxy* aWidgetProxy,
+    ClientLayerManager* aLayerManager,
+    CSSToLayoutDeviceScale aScale,
+    bool aUseAPZ,
+    bool aUseExternalSurfaceSize,
+    int aSurfaceWidth, int aSurfaceHeight);
 
   virtual void Shutdown() = 0;
 
@@ -46,7 +49,7 @@ public:
   virtual uint64_t RootLayerTreeId() const = 0;
 
   
-  virtual already_AddRefed<APZCTreeManager> GetAPZCTreeManager() const = 0;
+  virtual APZCTreeManager* GetAPZCTreeManager() const = 0;
 
   
   CompositorBridgeChild* GetCompositorBridgeChild();
@@ -54,14 +57,6 @@ public:
 protected:
   CompositorSession();
   virtual ~CompositorSession();
-
-  static already_AddRefed<CompositorSession> CreateInProcess(
-    widget::CompositorWidgetProxy* aWidgetProxy,
-    ClientLayerManager* aLayerManager,
-    CSSToLayoutDeviceScale aScale,
-    bool aUseAPZ,
-    bool aUseExternalSurfaceSize,
-    int aSurfaceWidth, int aSurfaceHeight);
 
 protected:
   RefPtr<CompositorBridgeChild> mCompositorBridgeChild;

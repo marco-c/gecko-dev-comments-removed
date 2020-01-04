@@ -25,12 +25,12 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
-#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/Hal.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/ipc/DocumentRendererParent.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "mozilla/layers/AsyncDragMetrics.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layout/RenderFrameParent.h"
 #include "mozilla/LookAndFeel.h"
@@ -105,7 +105,6 @@ using namespace mozilla::layout;
 using namespace mozilla::services;
 using namespace mozilla::widget;
 using namespace mozilla::jsipc;
-using namespace mozilla::gfx;
 
 
 
@@ -2979,7 +2978,7 @@ TabParent::RequestNotifyLayerTreeReady()
   if (!frame || !frame->IsInitted()) {
     mNeedLayerTreeReadyNotification = true;
   } else {
-    GPUProcessManager::Get()->RequestNotifyLayerTreeReady(
+    CompositorBridgeParent::RequestNotifyLayerTreeReady(
       frame->GetLayersId(),
       mLayerUpdateObserver);
   }
@@ -2994,7 +2993,7 @@ TabParent::RequestNotifyLayerTreeCleared()
     return false;
   }
 
-  GPUProcessManager::Get()->RequestNotifyLayerTreeCleared(
+  CompositorBridgeParent::RequestNotifyLayerTreeCleared(
     frame->GetLayersId(),
     mLayerUpdateObserver);
   return true;
@@ -3038,7 +3037,7 @@ TabParent::SwapLayerTreeObservers(TabParent* aOther)
   
   
   
-  GPUProcessManager::Get()->SwapLayerTreeObservers(
+  CompositorBridgeParent::SwapLayerTreeObservers(
     rfp->GetLayersId(),
     otherRfp->GetLayersId());
 

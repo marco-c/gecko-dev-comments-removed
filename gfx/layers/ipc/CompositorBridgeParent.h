@@ -48,7 +48,6 @@ class CancelableRunnable;
 
 namespace gfx {
 class DrawTarget;
-class GPUProcessManager;
 } 
 
 namespace ipc {
@@ -67,7 +66,6 @@ class LayerTransactionParent;
 class PAPZParent;
 class CrossProcessCompositorBridgeParent;
 class CompositorThreadHolder;
-class InProcessCompositorSession;
 
 struct ScopedLayerTreeRegistration
 {
@@ -210,8 +208,6 @@ class CompositorBridgeParent final : public PCompositorBridgeParent,
 {
   friend class CompositorVsyncScheduler;
   friend class CompositorThreadHolder;
-  friend class InProcessCompositorSession;
-  friend class gfx::GPUProcessManager;
 
 public:
   explicit CompositorBridgeParent(widget::CompositorWidgetProxy* aWidget,
@@ -387,8 +383,28 @@ public:
 
 
 
+  static uint64_t AllocateLayerTreeId();
+  
+
+
+
+
+  static void DeallocateLayerTreeId(uint64_t aId);
+
+  
+
+
+
+
+
   static void SetControllerForLayerTree(uint64_t aLayersId,
                                         GeckoContentController* aController);
+
+  
+
+
+
+  static APZCTreeManager* GetAPZCTreeManager(uint64_t aLayersId);
 
   
 
@@ -458,40 +474,15 @@ public:
 
   static void PostInsertVsyncProfilerMarker(mozilla::TimeStamp aVsyncTimestamp);
 
+  static void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
+  static void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
+  static void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
+
   float ComputeRenderIntegrity();
 
   widget::CompositorWidgetProxy* GetWidgetProxy() { return mWidgetProxy; }
 
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);
-
-  bool AsyncPanZoomEnabled() const {
-    return !!mApzcTreeManager;
-  }
-
-private:
-  
-
-
-
-  static already_AddRefed<APZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
-
-  
-
-
-
-
-
-  static uint64_t AllocateLayerTreeId();
-  
-
-
-
-
-  static void DeallocateLayerTreeId(uint64_t aId);
-
-  static void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
-  static void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
-  static void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
 
   
 
@@ -506,6 +497,9 @@ private:
                                             dom::ContentParent* aContentParent,
                                             const dom::TabId& aTabId,
                                             dom::TabParent* aBrowserParent);
+  bool AsyncPanZoomEnabled() const {
+    return !!mApzcTreeManager;
+  }
 
 protected:
   
