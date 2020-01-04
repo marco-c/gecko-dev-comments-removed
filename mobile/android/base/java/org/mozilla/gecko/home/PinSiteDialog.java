@@ -12,6 +12,7 @@ import org.mozilla.gecko.db.BrowserContract.URLColumns;
 import org.mozilla.gecko.db.BrowserDB.FilterFlags;
 import org.mozilla.gecko.util.StringUtils;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -27,6 +28,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -128,7 +130,17 @@ class PinSiteDialog extends DialogFragment {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-                    getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                    
+                    
+                    Dialog dialog = getDialog();
+                    if (dialog == null) {
+                        return;
+                    }
+                    Window window = dialog.getWindow();
+                    if (window == null) {
+                        return;
+                    }
+                    window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
                 }
             }
         });
