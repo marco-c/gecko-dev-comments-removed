@@ -436,12 +436,8 @@ TabParent::IsVisible()
 }
 
 void
-TabParent::Destroy()
+TabParent::DestroyInternal()
 {
-  if (mIsDestroyed) {
-    return;
-  }
-
   IMEStateManager::OnTabParentDestroying(this);
 
   RemoveWindowListeners();
@@ -455,11 +451,6 @@ TabParent::Destroy()
     RemoveTabParentFromTable(frame->GetLayersId());
     frame->Destroy();
   }
-  mIsDestroyed = true;
-
-  if (XRE_IsParentProcess()) {
-    Manager()->AsContentParent()->NotifyTabDestroying(this);
-  }
 
   
   
@@ -467,6 +458,24 @@ TabParent::Destroy()
   const nsTArray<PPluginWidgetParent*>& kids = ManagedPPluginWidgetParent();
   for (uint32_t idx = 0; idx < kids.Length(); ++idx) {
       static_cast<mozilla::plugins::PluginWidgetParent*>(kids[idx])->ParentDestroy();
+  }
+}
+
+void
+TabParent::Destroy()
+{
+  if (mIsDestroyed) {
+    return;
+  }
+
+  DestroyInternal();
+
+  mIsDestroyed = true;
+
+  if (XRE_IsParentProcess()) {
+    ContentParent::NotifyTabDestroying(this->GetTabId(), Manager()->AsContentParent()->ChildID());
+  } else {
+    ContentParent::NotifyTabDestroying(this->GetTabId(), Manager()->ChildID());
   }
 
   mMarkedDestroying = true;
@@ -476,12 +485,15 @@ bool
 TabParent::Recv__delete__()
 {
   if (XRE_IsParentProcess()) {
-    Manager()->AsContentParent()->NotifyTabDestroyed(this, mMarkedDestroying);
     ContentParent::DeallocateTabId(mTabId,
-                                   Manager()->AsContentParent()->ChildID());
+                                   Manager()->AsContentParent()->ChildID(),
+                                   mMarkedDestroying);
   }
   else {
-    ContentParent::DeallocateTabId(mTabId, ContentParentId(0));
+    Manager()->AsContentBridgeParent()->NotifyTabDestroyed();
+    ContentParent::DeallocateTabId(mTabId,
+                                   Manager()->ChildID(),
+                                   mMarkedDestroying);
   }
 
   return true;
@@ -493,6 +505,22 @@ TabParent::ActorDestroy(ActorDestroyReason why)
   
   
   IMEStateManager::OnTabParentDestroying(this);
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  if (XRE_IsContentProcess() && why == AbnormalShutdown && !mIsDestroyed) {
+    DestroyInternal();
+    mIsDestroyed = true;
+  }
 
   nsRefPtr<nsFrameLoader> frameLoader = GetFrameLoader(true);
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();

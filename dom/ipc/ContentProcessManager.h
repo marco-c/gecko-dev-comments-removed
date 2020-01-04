@@ -114,6 +114,13 @@ public:
 
 
 
+  nsTArray<TabId>
+  GetTabParentsByProcessId(const ContentParentId& aChildCpId);
+
+  
+
+
+
 
 
   already_AddRefed<TabParent>
@@ -134,6 +141,15 @@ public:
   already_AddRefed<TabParent>
   GetTopLevelTabParentByProcessAndTabId(const ContentParentId& aChildCpId,
                                         const TabId& aChildTabId);
+
+  
+
+
+
+
+  uint32_t
+  GetAppIdByProcessAndTabId(const ContentParentId& aChildCpId,
+                            const TabId& aChildTabId);
 
 private:
   static StaticAutoPtr<ContentProcessManager> sSingleton;
