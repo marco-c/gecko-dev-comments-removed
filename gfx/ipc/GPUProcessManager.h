@@ -7,7 +7,10 @@
 #define _include_mozilla_gfx_ipc_GPUProcessManager_h_
 
 #include "base/basictypes.h"
+#include "base/process.h"
 #include "Units.h"
+#include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/ipc/Transport.h"
 
 namespace mozilla {
 namespace layers {
@@ -15,9 +18,17 @@ class APZCTreeManager;
 class CompositorSession;
 class ClientLayerManager;
 class CompositorUpdateObserver;
+class PCompositorBridgeParent;
 } 
 namespace widget {
 class CompositorWidgetProxy;
+} 
+namespace dom {
+class ContentParent;
+class TabParent;
+} 
+namespace ipc {
+class GeckoChildProcessHost;
 } 
 namespace gfx {
 
@@ -45,6 +56,11 @@ public:
     int aSurfaceWidth,
     int aSurfaceHeight);
 
+  layers::PCompositorBridgeParent* CreateTabCompositorBridge(
+    ipc::Transport* aTransport,
+    base::ProcessId aOtherProcess,
+    ipc::GeckoChildProcessHost* aSubprocess);
+
   
   
   already_AddRefed<APZCTreeManager> GetAPZCTreeManagerForLayers(uint64_t aLayersId);
@@ -63,6 +79,18 @@ public:
   void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
+
+  
+  
+  
+  
+  
+  
+  
+  bool UpdateRemoteContentController(uint64_t aLayersId,
+                                     dom::ContentParent* aContentParent,
+                                     const dom::TabId& aTabId,
+                                     dom::TabParent* aBrowserParent);
 
 private:
   GPUProcessManager();
