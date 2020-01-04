@@ -152,6 +152,10 @@ def remove_caches_from_task(task):
     whitelist = [
         re.compile("^level-[123]-.*-tc-vcs(-public-sources)?$"),
         re.compile("^level-[123]-hg-shared$"),
+        
+        
+        
+        re.compile("^level-[123]-checkouts$"),
         re.compile("^tooltool-cache$"),
     ]
     try:
