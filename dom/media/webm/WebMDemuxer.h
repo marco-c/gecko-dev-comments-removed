@@ -201,6 +201,12 @@ private:
   
   int64_t mLastWebMBlockOffset;
   const bool mIsMediaSource;
+
+  Maybe<uint32_t> mLastSeenFrameWidth;
+  Maybe<uint32_t> mLastSeenFrameHeight;
+  
+  
+  RefPtr<SharedTrackInfo> mSharedVideoTrackInfo;
 };
 
 class WebMTrackDemuxer : public MediaTrackDemuxer
