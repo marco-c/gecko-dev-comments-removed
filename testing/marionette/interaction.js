@@ -86,6 +86,29 @@ this.interaction = {};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 interaction.clickElement = function(el, strict = false, specCompat = false) {
   let a11y = accessibility.get(strict);
   return a11y.getAccessible(el, true).then(acc => {
@@ -139,6 +162,16 @@ interaction.clickElement = function(el, strict = false, specCompat = false) {
     }
   });
 };
+
+
+
+
+
+
+
+
+
+
 
 interaction.calculateCentreCoords = function(el) {
   let rects = el.getClientRects();
