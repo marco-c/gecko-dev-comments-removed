@@ -1,23 +1,27 @@
 
 
 
+"use strict";
+
 
 
 
 add_task(function*() {
-  let [ aTab, aDebuggee, aMonitor ] = yield initNetMonitor(
+  
+  
+  let [ , debuggee, monitor ] = yield initNetMonitor(
     HAR_EXAMPLE_URL + "html_har_post-data-test-page.html");
 
   info("Starting test... ");
 
-  let { NetMonitorView } = aMonitor.panelWin;
+  let { NetMonitorView } = monitor.panelWin;
   let { RequestsMenu } = NetMonitorView;
 
   RequestsMenu.lazyUpdate = false;
 
   
-  aDebuggee.executeTest();
-  yield waitForNetworkEvents(aMonitor, 0, 1);
+  debuggee.executeTest();
+  yield waitForNetworkEvents(monitor, 0, 1);
 
   
   let jsonString = yield RequestsMenu.copyAllAsHar();
@@ -35,5 +39,5 @@ add_task(function*() {
     "Check post data payload");
 
   
-  teardown(aMonitor).then(finish);
+  teardown(monitor).then(finish);
 });
