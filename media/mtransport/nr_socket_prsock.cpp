@@ -1056,7 +1056,6 @@ NS_IMETHODIMP NrUdpSocketIpcProxy::CallListenerOpened() {
 
 NS_IMETHODIMP NrUdpSocketIpcProxy::CallListenerConnected() {
   return socket_->CallListenerConnected();
-  return NS_OK;
 }
 
 
