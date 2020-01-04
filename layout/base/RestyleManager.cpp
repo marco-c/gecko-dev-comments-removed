@@ -299,6 +299,7 @@ RestyleManager::AttributeChanged(Element* aElement,
   
   
   nsCOMPtr<nsIPresShell> shell = PresContext()->GetPresShell();
+  mozilla::Unused << shell; 
 
   
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
@@ -694,6 +695,7 @@ RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
 
   
   RefPtr<nsViewManager> vm = presShell->GetViewManager();
+  mozilla::Unused << vm; 
 
   
   

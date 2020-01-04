@@ -672,9 +672,9 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
   width = p2a * mBounds.width;
   height = p2a * mBounds.height;
   if (aDoInitialReflow) {
-    nsCOMPtr<nsIPresShell> shellGrip = mPresShell;
+    nsCOMPtr<nsIPresShell> shell = mPresShell;
     
-    mPresShell->Initialize(width, height);
+    shell->Initialize(width, height);
   } else {
     
     
@@ -1028,8 +1028,8 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
     
     
     if (mPresShell) {
-      nsCOMPtr<nsIPresShell> shellDeathGrip(mPresShell);
-      mPresShell->UnsuppressPainting();
+      nsCOMPtr<nsIPresShell> shell(mPresShell);
+      shell->UnsuppressPainting();
       
       if (mPresShell) {
         mPresShell->LoadComplete();
@@ -1708,8 +1708,8 @@ nsDocumentViewer::Stop(void)
 
   if (!mLoaded && mPresShell) {
     
-    nsCOMPtr<nsIPresShell> shellDeathGrip(mPresShell); 
-    mPresShell->UnsuppressPainting();
+    nsCOMPtr<nsIPresShell> shell(mPresShell); 
+    shell->UnsuppressPainting();
   }
 
   return NS_OK;
@@ -2070,8 +2070,8 @@ nsDocumentViewer::Show(void)
     
 
     if (mPresShell) {
-      nsCOMPtr<nsIPresShell> shellDeathGrip(mPresShell); 
-      mPresShell->UnsuppressPainting();
+      nsCOMPtr<nsIPresShell> shell(mPresShell); 
+      shell->UnsuppressPainting();
     }
   }
 

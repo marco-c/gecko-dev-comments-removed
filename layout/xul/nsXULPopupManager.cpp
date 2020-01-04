@@ -1509,6 +1509,7 @@ nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
                                         bool aIsCancel)
 {
   nsCOMPtr<nsIPresShell> presShell = aPresContext->PresShell();
+  mozilla::Unused << presShell; 
 
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupHiding, nullptr,
@@ -2745,6 +2746,7 @@ nsXULMenuCommandEvent::Run()
     nsPresContext* presContext = menuFrame->PresContext();
     nsCOMPtr<nsIPresShell> shell = presContext->PresShell();
     RefPtr<nsViewManager> kungFuDeathGrip = shell->GetViewManager();
+    mozilla::Unused << kungFuDeathGrip; 
 
     
     if (mCloseMenuMode != CloseMenuMode_None)
