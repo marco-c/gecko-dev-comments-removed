@@ -1834,11 +1834,10 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
 }
 
 void
-MediaCacheStream::FlushPartialBlockInternal(bool aNotifyAll)
+MediaCacheStream::FlushPartialBlockInternal(bool aNotifyAll,
+                                            ReentrantMonitorAutoEnter& aReentrantMonitor)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-
-  ReentrantMonitorAutoEnter mon(gMediaCache->GetReentrantMonitor());
 
   int32_t blockOffset = int32_t(mChannelOffset%BLOCK_SIZE);
   if (blockOffset > 0) {
@@ -1861,7 +1860,7 @@ MediaCacheStream::FlushPartialBlockInternal(bool aNotifyAll)
   
   if ((blockOffset > 0 || mChannelOffset == 0) && aNotifyAll) {
     
-    mon.NotifyAll();
+    aReentrantMonitor.NotifyAll();
   }
 }
 
@@ -1876,7 +1875,7 @@ MediaCacheStream::FlushPartialBlock()
   
   
   
-  FlushPartialBlockInternal(false);
+  FlushPartialBlockInternal(false, mon);
 
   gMediaCache->QueueUpdate();
 }
@@ -1897,7 +1896,7 @@ MediaCacheStream::NotifyDataEnded(nsresult aStatus)
 
   
   
-  FlushPartialBlockInternal(true);
+  FlushPartialBlockInternal(true, mon);
   mChannelEnded = true;
   gMediaCache->QueueUpdate();
 

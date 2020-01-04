@@ -425,7 +425,7 @@ private:
   
   
   
-  void FlushPartialBlockInternal(bool aNotify);
+  void FlushPartialBlockInternal(bool aNotify, ReentrantMonitorAutoEnter& aReentrantMonitor);
   
   
   
