@@ -96,6 +96,8 @@ public:
     } else {
       if (mLeftOverData != INT32_MIN) {
         mLeftOverData = INT32_MIN;
+        aStream->CheckForInactive();
+
         
         mBuffer.Reset();
 
@@ -104,7 +106,7 @@ public:
         aStream->Graph()->
           DispatchToMainThreadAfterStreamStateUpdate(refchanged.forget());
       }
-      *aOutput = aInput;
+      aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
       return;
     }
 
