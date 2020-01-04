@@ -183,8 +183,7 @@ public:
   static nsresult FormatUnicodeText(nsPresContext*  aPresContext,
                                     char16_t*       aText,
                                     int32_t&        aTextLength,
-                                    nsCharType      aCharType,
-                                    nsBidiDirection aDir);
+                                    nsCharType      aCharType);
 
   
 
@@ -494,7 +493,6 @@ private:
 
 
   static nscoord RepositionInlineFrames(BidiLineData* aBld,
-                                        nsIFrame* aFirstChild,
                                         mozilla::WritingMode aLineWM,
                                         const nsSize& aContainerSize,
                                         nscoord aStart);
@@ -513,11 +511,9 @@ private:
 
 
 
-
   static inline
   nsresult EnsureBidiContinuation(nsIFrame*       aFrame,
                                   nsIFrame**      aNewFrame,
-                                  int32_t&        aFrameIndex,
                                   int32_t         aStart,
                                   int32_t         aEnd);
 

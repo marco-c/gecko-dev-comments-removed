@@ -212,8 +212,7 @@ private:
 class AccMutationEvent: public AccEvent
 {
 public:
-  AccMutationEvent(uint32_t aEventType, Accessible* aTarget,
-                   nsINode* aTargetNode) :
+  AccMutationEvent(uint32_t aEventType, Accessible* aTarget) :
     AccEvent(aEventType, aTarget, eAutoDetect, eCoalesceMutationTextChange)
   {
     
@@ -250,8 +249,7 @@ protected:
 class AccHideEvent: public AccMutationEvent
 {
 public:
-  AccHideEvent(Accessible* aTarget, nsINode* aTargetNode,
-               bool aNeedsShutdown = true);
+  explicit AccHideEvent(Accessible* aTarget, bool aNeedsShutdown = true);
 
   
   static const EventGroup kEventGroup = eHideEvent;
@@ -281,7 +279,7 @@ protected:
 class AccShowEvent: public AccMutationEvent
 {
 public:
-  AccShowEvent(Accessible* aTarget, nsINode* aTargetNode);
+  explicit AccShowEvent(Accessible* aTarget);
 
   
   static const EventGroup kEventGroup = eShowEvent;

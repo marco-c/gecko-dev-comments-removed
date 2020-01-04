@@ -1475,7 +1475,6 @@ private:
                                   nsFrameConstructorState& aState,
                                   FrameConstructionItem&   aItem,
                                   nsContainerFrame*        aParentFrame,
-                                  const nsStyleDisplay*    aDisplay,
                                   nsFrameItems&            aFrameItems,
                                   ContainerFrameCreationFunc aConstructor,
                                   ContainerFrameCreationFunc aInnerConstructor,
@@ -1512,7 +1511,7 @@ private:
 
   const FrameConstructionData*
     FindDisplayData(const nsStyleDisplay* aDisplay, Element* aElement,
-                    nsIFrame* aParentFrame, nsStyleContext* aStyleContext);
+                    nsStyleContext* aStyleContext);
 
   
 
@@ -1816,7 +1815,6 @@ private:
   
 
   void CreateFloatingLetterFrame(nsFrameConstructorState& aState,
-                                 nsContainerFrame*        aBlockFrame,
                                  nsIContent*              aTextContent,
                                  nsIFrame*                aTextFrame,
                                  nsContainerFrame*        aParentFrame,
@@ -1829,14 +1827,10 @@ private:
                          nsContainerFrame*        aParentFrame,
                          nsFrameItems&            aResult);
 
-  void WrapFramesInFirstLetterFrame(nsIContent*       aBlockContent,
-                                    nsContainerFrame* aBlockFrame,
+  void WrapFramesInFirstLetterFrame(nsContainerFrame* aBlockFrame,
                                     nsFrameItems&     aBlockFrames);
 
   
-
-
-
 
 
 
@@ -1879,8 +1873,7 @@ private:
 
   
   nsresult RemoveFloatingFirstLetterFrames(nsIPresShell*    aPresShell,
-                                           nsIFrame*        aBlockFrame,
-                                           bool*          aStopLooking);
+                                           nsIFrame*        aBlockFrame);
 
   
   
