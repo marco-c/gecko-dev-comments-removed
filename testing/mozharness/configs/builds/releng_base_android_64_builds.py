@@ -14,6 +14,7 @@ config = {
         'upload-files',
         'sendchange',
         'multi-l10n',
+        'generate-build-stats',
         'update',  
     ],
     "buildbot_json_path": "buildprops.json",
