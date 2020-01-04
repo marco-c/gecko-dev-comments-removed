@@ -606,6 +606,8 @@ struct NamedConstructor
 
 
 
+
+
 void
 CreateInterfaceObjects(JSContext* cx, JS::Handle<JSObject*> global,
                        JS::Handle<JSObject*> protoProto,
