@@ -6,6 +6,7 @@
 
 const promise = require("promise");
 const { Task } = require("devtools/shared/task");
+const { tunnelToInnerBrowser } = require("./tunnel");
 
 
 
@@ -32,10 +33,14 @@ const { Task } = require("devtools/shared/task");
 function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   let gBrowser = tab.ownerDocument.defaultView.gBrowser;
   let innerBrowser;
+  let tunnel;
 
   return {
 
     start: Task.async(function* () {
+      
+      freezeNavigationState(tab);
+
       
       let containerTab = gBrowser.addTab(containerURL, {
         skipAnimation: true,
@@ -78,9 +83,24 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       gBrowser.swapBrowsersAndCloseOther(tab, containerTab);
+
+      
+      
+      
+      tunnel = tunnelToInnerBrowser(tab.linkedBrowser, innerBrowser);
+      yield tunnel.start();
+
+      
+      thawNavigationState(tab);
+      gBrowser.setTabTitle(tab);
+      gBrowser.updateCurrentBrowser(true);
     }),
 
     stop() {
+      
+      tunnel.stop();
+      tunnel = null;
+
       
       let contentTab = gBrowser.addTab("about:blank", {
         skipAnimation: true,
@@ -111,6 +131,40 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
     },
 
   };
+}
+
+
+
+
+
+
+const NAVIGATION_PROPERTIES = [
+  "currentURI",
+  "contentTitle",
+  "securityUI",
+];
+
+function freezeNavigationState(tab) {
+  
+  
+  
+  for (let property of NAVIGATION_PROPERTIES) {
+    let value = tab.linkedBrowser[property];
+    Object.defineProperty(tab.linkedBrowser, property, {
+      get() {
+        return value;
+      },
+      configurable: true,
+      enumerable: true,
+    });
+  }
+}
+
+function thawNavigationState(tab) {
+  
+  for (let property of NAVIGATION_PROPERTIES) {
+    delete tab.linkedBrowser[property];
+  }
 }
 
 
