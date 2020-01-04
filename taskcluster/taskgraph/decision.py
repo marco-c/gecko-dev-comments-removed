@@ -37,6 +37,11 @@ PER_PROJECT_PARAMETERS = {
         'optimize_target_tasks': False,
     },
 
+    'ash': {
+        'target_tasks_method': 'ash_tasks',
+        'optimize_target_tasks': True,
+    },
+
     
     'default': {
         'target_tasks_method': 'all_builds_and_tests',
