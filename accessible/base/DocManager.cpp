@@ -60,9 +60,6 @@ DocManager::GetDocAccessible(nsIDocument* aDocument)
   if (!aDocument)
     return nullptr;
 
-  
-  ApplicationAcc()->EnsureChildren();
-
   DocAccessible* docAcc = GetExistingDocAccessible(aDocument);
   if (docAcc)
     return docAcc;

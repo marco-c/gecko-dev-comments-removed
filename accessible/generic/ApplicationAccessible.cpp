@@ -155,16 +155,9 @@ ApplicationAccessible::AccessKey() const
   return KeyBinding();
 }
 
-
-
-
 void
-ApplicationAccessible::CacheChildren()
+ApplicationAccessible::Init()
 {
-  
-  
-  
-
   
   
   
