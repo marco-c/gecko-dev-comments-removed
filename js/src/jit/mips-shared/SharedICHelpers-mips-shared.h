@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips32_SharedICHelpers_mips32_h
-#define jit_mips32_SharedICHelpers_mips32_h
+#ifndef jit_mips_shared_SharedICHelpers_mips_shared_h
+#define jit_mips_shared_SharedICHelpers_mips_shared_h
 
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
@@ -80,27 +80,26 @@ EmitChangeICReturnAddress(MacroAssembler& masm, Register reg)
 inline void
 EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 {
-    
-    
-    MOZ_ASSERT(R2 == ValueOperand(t7, t6));
+    Register scratch = R2.scratchReg();
 
     
-    masm.movePtr(BaselineFrameReg, t6);
-    masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), t6);
-    masm.subPtr(BaselineStackReg, t6);
+    masm.movePtr(BaselineFrameReg, scratch);
+    masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), scratch);
+    masm.subPtr(BaselineStackReg, scratch);
 
     
-    masm.ma_subu(t7, t6, Imm32(argSize));
-    masm.storePtr(t7, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+    masm.subPtr(Imm32(argSize), scratch);
+    masm.store32(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+    masm.addPtr(Imm32(argSize), scratch);
 
     
     
     
     
     MOZ_ASSERT(ICTailCallReg == ra);
-    masm.makeFrameDescriptor(t6, JitFrame_BaselineJS, ExitFrameLayout::Size());
+    masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS, ExitFrameLayout::Size());
     masm.subPtr(Imm32(sizeof(CommonFrameLayout)), StackPointer);
-    masm.storePtr(t6, Address(StackPointer, CommonFrameLayout::offsetOfDescriptor()));
+    masm.storePtr(scratch, Address(StackPointer, CommonFrameLayout::offsetOfDescriptor()));
     masm.storePtr(ra, Address(StackPointer, CommonFrameLayout::offsetOfReturnAddress()));
 
     masm.branch(target);
@@ -127,8 +126,9 @@ EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm, Register reg, uint32
 inline void
 EmitBaselineCallVM(JitCode* target, MacroAssembler& masm)
 {
-    EmitBaselineCreateStubFrameDescriptor(masm, t6, ExitFrameLayout::Size());
-    masm.push(t6);
+    Register scratch = R2.scratchReg();
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch, ExitFrameLayout::Size());
+    masm.push(scratch);
     masm.call(target);
 }
 
@@ -158,7 +158,7 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
     masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), scratch);
     masm.subPtr(BaselineStackReg, scratch);
 
-    masm.storePtr(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+    masm.store32(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
 
     
     
@@ -345,7 +345,6 @@ EmitStubGuardFailure(MacroAssembler& masm)
     MOZ_ASSERT(ICTailCallReg == ra);
     masm.branch(R2.scratchReg());
 }
-
 
 } 
 } 
