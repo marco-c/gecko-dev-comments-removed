@@ -1359,13 +1359,12 @@ NS_METHOD nsBaseWidget::MoveClient(double aX, double aY)
 
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels()
-                                    ? GetDefaultScale()
-                                    : CSSToLayoutDeviceScale(1.0);
-  aX -= clientOffset.x * 1.0 / scale.scale;
-  aY -= clientOffset.y * 1.0 / scale.scale;
-
-  return Move(aX, aY);
+  if (BoundsUseDesktopPixels()) {
+    DesktopPoint desktopOffset = clientOffset / GetDesktopToDeviceScale();
+    return Move(aX - desktopOffset.x, aY - desktopOffset.y);
+  } else {
+    return Move(aX - clientOffset.x, aY - clientOffset.y);
+  }
 }
 
 NS_METHOD nsBaseWidget::ResizeClient(double aWidth,
@@ -1380,14 +1379,16 @@ NS_METHOD nsBaseWidget::ResizeClient(double aWidth,
 
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels()
-                                    ? GetDefaultScale()
-                                    : CSSToLayoutDeviceScale(1.0);
-  double invScale = 1.0 / scale.scale;
-  aWidth = mBounds.width * invScale + (aWidth - clientBounds.width * invScale);
-  aHeight = mBounds.height * invScale + (aHeight - clientBounds.height * invScale);
-
-  return Resize(aWidth, aHeight, aRepaint);
+  if (BoundsUseDesktopPixels()) {
+    DesktopSize desktopDelta =
+      (LayoutDeviceIntSize(mBounds.width, mBounds.height) -
+       clientBounds.Size()) / GetDesktopToDeviceScale();
+    return Resize(aWidth + desktopDelta.width, aHeight + desktopDelta.height,
+                  aRepaint);
+  } else {
+    return Resize(mBounds.width + (aWidth - clientBounds.width),
+                  mBounds.height + (aHeight - clientBounds.height), aRepaint);
+  }
 }
 
 NS_METHOD nsBaseWidget::ResizeClient(double aX,
@@ -1402,15 +1403,23 @@ NS_METHOD nsBaseWidget::ResizeClient(double aX,
   LayoutDeviceIntRect clientBounds;
   GetClientBounds(clientBounds);
 
-  double scale = BoundsUseDesktopPixels() ? 1.0 / GetDefaultScale().scale : 1.0;
-  aWidth = mBounds.width * scale + (aWidth - clientBounds.width * scale);
-  aHeight = mBounds.height * scale + (aHeight - clientBounds.height * scale);
-
   LayoutDeviceIntPoint clientOffset(GetClientOffset());
-  aX -= clientOffset.x * scale;
-  aY -= clientOffset.y * scale;
 
-  return Resize(aX, aY, aWidth, aHeight, aRepaint);
+  if (BoundsUseDesktopPixels()) {
+    DesktopToLayoutDeviceScale scale = GetDesktopToDeviceScale();
+    DesktopPoint desktopOffset = clientOffset / scale;
+    DesktopSize desktopDelta =
+      (LayoutDeviceIntSize(mBounds.width, mBounds.height) -
+       clientBounds.Size()) / scale;
+    return Resize(aX - desktopOffset.x, aY - desktopOffset.y,
+                  aWidth + desktopDelta.width, aHeight + desktopDelta.height,
+                  aRepaint);
+  } else {
+    return Resize(aX - clientOffset.x, aY - clientOffset.y,
+                  aWidth + mBounds.width - clientBounds.width,
+                  aHeight + mBounds.height - clientBounds.height,
+                  aRepaint);
+  }
 }
 
 
@@ -1657,7 +1666,7 @@ void nsBaseWidget::SetSizeConstraints(const SizeConstraints& aConstraints)
   
 }
 
-const widget::SizeConstraints& nsBaseWidget::GetSizeConstraints() const
+const widget::SizeConstraints nsBaseWidget::GetSizeConstraints()
 {
   return mSizeConstraints;
 }
@@ -1841,18 +1850,6 @@ nsBaseWidget::StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics)
     NewRunnableMethod(mAPZC.get(), &APZCTreeManager::StartScrollbarDrag, guid, aDragMetrics));
 }
 
-CSSIntRect
-nsBaseWidget::GetScaledScreenBounds()
-{
-  LayoutDeviceIntRect bounds;
-  GetScreenBounds(bounds);
-
-  
-  
-  CSSToLayoutDeviceScale scale = GetDefaultScale();
-  return RoundedToInt(bounds / scale);
-}
-
 already_AddRefed<nsIScreen>
 nsBaseWidget::GetWidgetScreen()
 {
@@ -1862,7 +1859,8 @@ nsBaseWidget::GetWidgetScreen()
     return nullptr;
   }
 
-  CSSIntRect bounds = GetScaledScreenBounds();
+  LayoutDeviceIntRect bounds;
+  GetScreenBounds(bounds);
   nsCOMPtr<nsIScreen> screen;
   screenManager->ScreenForRect(bounds.x, bounds.y,
                                bounds.width, bounds.height,

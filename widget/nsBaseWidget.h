@@ -299,10 +299,6 @@ public:
   }
 
   
-  
-  CSSIntRect GetScaledScreenBounds();
-
-  
   already_AddRefed<nsIScreen> GetWidgetScreen();
 
   
@@ -317,7 +313,7 @@ public:
 
   virtual uint32_t GetGLFrameBufferFormat() override;
 
-  virtual const SizeConstraints& GetSizeConstraints() const override;
+  virtual const SizeConstraints GetSizeConstraints() override;
   virtual void SetSizeConstraints(const SizeConstraints& aConstraints) override;
 
   virtual bool CaptureWidgetOnScreen(RefPtr<mozilla::gfx::DrawTarget> aDT) override {
@@ -471,12 +467,13 @@ protected:
 
 
 
-  void ConstrainSize(int32_t* aWidth, int32_t* aHeight) const
+  void ConstrainSize(int32_t* aWidth, int32_t* aHeight)
   {
-    *aWidth = std::max(mSizeConstraints.mMinSize.width,
-                     std::min(mSizeConstraints.mMaxSize.width, *aWidth));
-    *aHeight = std::max(mSizeConstraints.mMinSize.height,
-                      std::min(mSizeConstraints.mMaxSize.height, *aHeight));
+    SizeConstraints c = GetSizeConstraints();
+    *aWidth = std::max(c.mMinSize.width,
+                       std::min(c.mMaxSize.width, *aWidth));
+    *aHeight = std::max(c.mMinSize.height,
+                        std::min(c.mMaxSize.height, *aHeight));
   }
 
   virtual CompositorChild* GetRemoteRenderer() override;

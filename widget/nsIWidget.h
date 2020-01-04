@@ -2027,7 +2027,7 @@ public:
 
 
 
-    virtual const SizeConstraints& GetSizeConstraints() const = 0;
+    virtual const SizeConstraints GetSizeConstraints() = 0;
 
     
 

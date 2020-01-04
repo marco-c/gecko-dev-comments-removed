@@ -124,7 +124,6 @@
 #include "nsISound.h"
 #include "SystemTimeConverter.h"
 #include "WinTaskbar.h"
-#include "WinUtils.h"
 #include "WidgetUtils.h"
 #include "nsIWidgetListener.h"
 #include "mozilla/dom/Touch.h"
@@ -182,6 +181,10 @@
 
 #if !defined(SM_CONVERTIBLESLATEMODE)
 #define SM_CONVERTIBLESLATEMODE 0x2003
+#endif
+
+#if !defined(WM_DPICHANGED)
+#define WM_DPICHANGED 0x02E0
 #endif
 
 #include "mozilla/layers/APZCTreeManager.h"
@@ -426,6 +429,7 @@ nsWindow::nsWindow()
   DWORD background      = ::GetSysColor(COLOR_BTNFACE);
   mBrush                = ::CreateSolidBrush(NSRGB_2_COLOREF(background));
   mSendingSetText       = false;
+  mDefaultScale         = -1.0; 
 
   mTaskbarPreview = nullptr;
 
@@ -456,6 +460,7 @@ nsWindow::nsWindow()
   mIdleService = nullptr;
 
   ::InitializeCriticalSection(&mPresentLock);
+  mSizeConstraintsScale = GetDefaultScale().scale;
 
   sInstanceCount++;
 }
@@ -1079,6 +1084,9 @@ float nsWindow::GetDPI()
 
 double nsWindow::GetDefaultScaleInternal()
 {
+  if (mDefaultScale <= 0.0) {
+    mDefaultScale = WinUtils::LogToPhysFactor(mWnd);
+  }
   return WinUtils::LogToPhysFactor(mWnd);
 }
 
@@ -1402,8 +1410,33 @@ nsWindow::SetSizeConstraints(const SizeConstraints& aConstraints)
     c.mMinSize.width = std::max(int32_t(::GetSystemMetrics(SM_CXMINTRACK)), c.mMinSize.width);
     c.mMinSize.height = std::max(int32_t(::GetSystemMetrics(SM_CYMINTRACK)), c.mMinSize.height);
   }
+  mSizeConstraintsScale = GetDefaultScale().scale;
 
   nsBaseWidget::SetSizeConstraints(c);
+}
+
+const SizeConstraints
+nsWindow::GetSizeConstraints()
+{
+  double scale = GetDefaultScale().scale;
+  if (mSizeConstraintsScale == scale || mSizeConstraintsScale == 0.0) {
+    return mSizeConstraints;
+  }
+  scale /= mSizeConstraintsScale;
+  SizeConstraints c = mSizeConstraints;
+  if (c.mMinSize.width != NS_UNCONSTRAINEDSIZE) {
+    c.mMinSize.width = NSToIntRound(c.mMinSize.width * scale);
+  }
+  if (c.mMinSize.height != NS_UNCONSTRAINEDSIZE) {
+    c.mMinSize.height = NSToIntRound(c.mMinSize.height * scale);
+  }
+  if (c.mMaxSize.width != NS_UNCONSTRAINEDSIZE) {
+    c.mMaxSize.width = NSToIntRound(c.mMaxSize.width * scale);
+  }
+  if (c.mMaxSize.height != NS_UNCONSTRAINEDSIZE) {
+    c.mMaxSize.height = NSToIntRound(c.mMaxSize.height * scale);
+  }
+  return c;
 }
 
 
@@ -1416,10 +1449,9 @@ NS_METHOD nsWindow::Move(double aX, double aY)
 
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels() ? GetDefaultScale()
-                                    : CSSToLayoutDeviceScale(1.0);
-  int32_t x = NSToIntRound(aX * scale.scale);
-  int32_t y = NSToIntRound(aY * scale.scale);
+  double scale = BoundsUseDesktopPixels() ? GetDesktopToDeviceScale().scale : 1.0;
+  int32_t x = NSToIntRound(aX * scale);
+  int32_t y = NSToIntRound(aY * scale);
 
   
   
@@ -1471,7 +1503,13 @@ NS_METHOD nsWindow::Move(double aX, double aY)
         (mClipRectCount != 1 || !mClipRects[0].IsEqualInterior(LayoutDeviceIntRect(0, 0, mBounds.width, mBounds.height)))) {
       flags |= SWP_NOCOPYBITS;
     }
+    double oldScale = mDefaultScale;
+    mResizeState = IN_SIZEMOVE;
     VERIFY(::SetWindowPos(mWnd, nullptr, x, y, 0, 0, flags));
+    mResizeState = NOT_RESIZING;
+    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+      ChangedDPI();
+    }
 
     SetThemeRegion();
   }
@@ -1484,10 +1522,9 @@ NS_METHOD nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
 {
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels() ? GetDefaultScale()
-                                    : CSSToLayoutDeviceScale(1.0);
-  int32_t width = NSToIntRound(aWidth * scale.scale);
-  int32_t height = NSToIntRound(aHeight * scale.scale);
+  double scale = BoundsUseDesktopPixels() ? GetDesktopToDeviceScale().scale : 1.0;
+  int32_t width = NSToIntRound(aWidth * scale);
+  int32_t height = NSToIntRound(aHeight * scale);
 
   NS_ASSERTION((width >= 0) , "Negative width passed to nsWindow::Resize");
   NS_ASSERTION((height >= 0), "Negative height passed to nsWindow::Resize");
@@ -1519,8 +1556,12 @@ NS_METHOD nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
     }
 
     ClearThemeRegion();
+    double oldScale = mDefaultScale;
     VERIFY(::SetWindowPos(mWnd, nullptr, 0, 0,
                           width, GetHeight(height), flags));
+    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+      ChangedDPI();
+    }
     SetThemeRegion();
   }
 
@@ -1536,12 +1577,11 @@ NS_METHOD nsWindow::Resize(double aX, double aY, double aWidth, double aHeight, 
 {
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels() ? GetDefaultScale()
-                                    : CSSToLayoutDeviceScale(1.0);
-  int32_t x = NSToIntRound(aX * scale.scale);
-  int32_t y = NSToIntRound(aY * scale.scale);
-  int32_t width = NSToIntRound(aWidth * scale.scale);
-  int32_t height = NSToIntRound(aHeight * scale.scale);
+  double scale = BoundsUseDesktopPixels() ? GetDesktopToDeviceScale().scale : 1.0;
+  int32_t x = NSToIntRound(aX * scale);
+  int32_t y = NSToIntRound(aY * scale);
+  int32_t width = NSToIntRound(aWidth * scale);
+  int32_t height = NSToIntRound(aHeight * scale);
 
   NS_ASSERTION((width >= 0),  "Negative width passed to nsWindow::Resize");
   NS_ASSERTION((height >= 0), "Negative height passed to nsWindow::Resize");
@@ -1575,8 +1615,12 @@ NS_METHOD nsWindow::Resize(double aX, double aY, double aWidth, double aHeight, 
     }
 
     ClearThemeRegion();
+    double oldScale = mDefaultScale;
     VERIFY(::SetWindowPos(mWnd, nullptr, x, y,
                           width, GetHeight(height), flags));
+    if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
+      ChangedDPI();
+    }
     if (mTransitionWnd) {
       
       
@@ -1754,14 +1798,16 @@ nsWindow::SetSizeMode(nsSizeMode aMode) {
 
 
 
+
 NS_METHOD nsWindow::ConstrainPosition(bool aAllowSlop,
                                       int32_t *aX, int32_t *aY)
 {
   if (!mIsTopWidgetWindow) 
     return NS_OK;
 
-  double dpiScale = GetDefaultScale().scale;
+  double dpiScale = GetDesktopToDeviceScale().scale;
 
+  
   
   int32_t logWidth = std::max<int32_t>(NSToIntRound(mBounds.width / dpiScale), 1);
   int32_t logHeight = std::max<int32_t>(NSToIntRound(mBounds.height / dpiScale), 1);
@@ -3055,11 +3101,11 @@ nsWindow::PrepareForFullscreenTransition(nsISupports** aData)
   screen->GetRectDisplayPix(&x, &y, &width, &height);
   MOZ_ASSERT(BoundsUseDesktopPixels(),
              "Should only be called on top-level window");
-  CSSToLayoutDeviceScale scale = GetDefaultScale();
-  initData.mBounds.x = NSToIntRound(x * scale.scale);
-  initData.mBounds.y = NSToIntRound(y * scale.scale);
-  initData.mBounds.width = NSToIntRound(width * scale.scale);
-  initData.mBounds.height = NSToIntRound(height * scale.scale);
+  double scale = GetDesktopToDeviceScale().scale; 
+  initData.mBounds.x = NSToIntRound(x * scale);
+  initData.mBounds.y = NSToIntRound(y * scale);
+  initData.mBounds.width = NSToIntRound(width * scale);
+  initData.mBounds.height = NSToIntRound(height * scale);
 
   
   
@@ -3801,7 +3847,7 @@ nsWindow::UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries)
     RECT rect;
     ::GetWindowRect(mWnd, &rect);
     
-    double borderSize = RoundDown(GetDefaultScale().scale);
+    double borderSize = std::min(1, RoundDown(GetDesktopToDeviceScale().scale));
     clearRegion.Or(clearRegion, nsIntRect(0, 0, rect.right - rect.left, borderSize));
   }
 
@@ -5385,13 +5431,12 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_EXITSIZEMOVE:
     {
       if (mResizeState == RESIZING) {
-        mResizeState = NOT_RESIZING;
         nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-
         if (observerService) {
           observerService->NotifyObservers(nullptr, "live-resize-end", nullptr);
         }
       }
+      mResizeState = NOT_RESIZING;
 
       if (!sIsInMouseCapture) {
         NotifySizeMoveDone();
@@ -5596,6 +5641,14 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     UpdateGlass();
     Invalidate(true, true, true);
     break;
+
+  case WM_DPICHANGED:
+  {
+    LPRECT rect = (LPRECT) lParam;
+    OnDPIChanged(rect->left, rect->top, rect->right - rect->left,
+                 rect->bottom - rect->top);
+    break;
+  }
 
   case WM_UPDATEUISTATE:
   {
@@ -6870,6 +6923,37 @@ nsWindow::OnSysColorChanged()
     
     NotifySysColorChanged();
   }
+}
+
+void
+nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
+{
+  if (DefaultScaleOverride() > 0.0) {
+    return;
+  }
+  double oldScale = mDefaultScale;
+  mDefaultScale = -1.0; 
+  double newScale = GetDefaultScaleInternal();
+  if (mResizeState != NOT_RESIZING) {
+    
+    
+    
+    if (oldScale > 0.0) {
+      double ratio = newScale / oldScale;
+      LayoutDeviceIntRect cr, sr;
+      GetClientBounds(cr);
+      GetScreenBounds(sr);
+      int32_t w = sr.width - cr.width + NSToIntRound(cr.width * ratio);
+      int32_t h = sr.height - cr.height + NSToIntRound(cr.height * ratio);
+      
+      x -= (w - width) / 2;
+      y -= (h - height) / 2;
+      width = w;
+      height = h;
+    }
+    Resize(x, y, width, height, true);
+  }
+  ChangedDPI();
 }
 
 
