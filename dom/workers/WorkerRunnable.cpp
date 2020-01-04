@@ -730,10 +730,14 @@ WorkerProxyToMainThreadRunnable::PostDispatchOnMainThread()
       MOZ_ASSERT(aWorkerPrivate);
       aWorkerPrivate->AssertIsOnWorkerThread();
 
-      mRunnable->RunBackOnWorkerThread();
+      if (mRunnable) {
+        mRunnable->RunBackOnWorkerThread();
 
-      
-      mRunnable->ReleaseWorker();
+        
+        mRunnable->ReleaseWorker();
+        mRunnable = nullptr;
+      }
+
       return true;
     }
 
