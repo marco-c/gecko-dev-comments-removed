@@ -512,7 +512,9 @@ struct BluetoothProperty {
 
 
   
+  BluetoothAddress mBdAddress;
 
+  
 
   nsString mString;
 
@@ -520,7 +522,7 @@ struct BluetoothProperty {
   nsTArray<BluetoothUuid> mUuidArray;
 
   
-  nsTArray<nsString> mStringArray;
+  nsTArray<BluetoothAddress> mBdAddressArray;
 
   
 
