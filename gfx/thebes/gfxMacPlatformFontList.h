@@ -106,6 +106,10 @@ public:
                           gfxFontStyle &aFontStyle,
                           float aDevPixPerCSSPixel);
 
+    virtual void
+    AppendLinkedSystemFamilies(nsIAtom* aLanguage,
+                               nsTArray<gfxFontFamily*>& aFamilyList) override;
+
 private:
     friend class gfxPlatformMac;
 
@@ -120,6 +124,10 @@ private:
 
     
     void InitSystemFonts();
+
+    
+    void LookupFontCascadeForLang(const nsACString& aLang,
+                                  nsTArray<gfxFontFamily*>& aCascadeList);
 
     
     gfxFontFamily* FindSystemFontFamily(const nsAString& aFamily);
@@ -170,6 +178,20 @@ private:
     bool mUseSizeSensitiveSystemFont;
     RefPtr<gfxFontFamily> mSystemTextFontFamily;
     RefPtr<gfxFontFamily> mSystemDisplayFontFamily; 
+
+    
+    
+    
+
+    
+    PrefFontList mDefaultCascadeFamilies;
+
+    
+    
+    
+    nsBaseHashtable<nsCStringHashKey,
+                    nsAutoPtr<PrefFontList>,
+                    PrefFontList*> mNonDefaultCascadeFamilies;
 };
 
 #endif 
