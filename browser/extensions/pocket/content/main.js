@@ -135,12 +135,7 @@ var pktUI = (function() {
             openTabWithUrl('https://' + site + '/firefox_learnmore?src=ff_ext&s=ffi&t=buttonclick', true);
 
             
-            
-            
-            
-            setTimeout(function() {
-                getPanel().hidePopup();
-            }, 0);
+            getPanel().hidePopup();
 
             return;
         }
@@ -332,7 +327,9 @@ var pktUI = (function() {
 
 
     function panelDidHide() {
-
+        
+        _currentPanelDidShow = null;
+        _currentPanelDidHide = null;
     }
 
     
