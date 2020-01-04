@@ -143,20 +143,16 @@ CSSAnimation::HasLowerCompositeOrderThan(const Animation& aOther) const
 
   
   
-  
-  if (!IsUsingCustomCompositeOrder()) {
-    return !aOther.IsUsingCustomCompositeOrder() ?
+  if (!IsTiedToMarkup()) {
+    return !otherAnimation->IsTiedToMarkup() ?
            Animation::HasLowerCompositeOrderThan(aOther) :
            false;
   }
-  if (!aOther.IsUsingCustomCompositeOrder()) {
+  if (!otherAnimation->IsTiedToMarkup()) {
     return true;
   }
 
   
-  MOZ_ASSERT(mOwningElement.IsSet() && otherAnimation->mOwningElement.IsSet(),
-             "Animations using custom composite order should have an "
-             "owning element");
   if (!mOwningElement.Equals(otherAnimation->mOwningElement)) {
     return mOwningElement.LessThan(otherAnimation->mOwningElement);
   }

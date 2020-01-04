@@ -133,14 +133,9 @@ public:
   nsCSSProperty TransitionProperty() const;
 
   bool HasLowerCompositeOrderThan(const Animation& aOther) const override;
-  bool IsUsingCustomCompositeOrder() const override
-  {
-    return mOwningElement.IsSet();
-  }
-
   void SetCreationSequence(uint64_t aIndex)
   {
-    MOZ_ASSERT(IsUsingCustomCompositeOrder());
+    MOZ_ASSERT(IsTiedToMarkup());
     mAnimationIndex = aIndex;
   }
 
@@ -152,6 +147,9 @@ public:
   {
     mOwningElement = aElement;
   }
+  
+  
+  bool IsTiedToMarkup() const { return mOwningElement.IsSet(); }
 
 protected:
   virtual ~CSSTransition()

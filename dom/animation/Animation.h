@@ -268,14 +268,6 @@ public:
 
 
   virtual bool HasLowerCompositeOrderThan(const Animation& aOther) const;
-  
-
-
-
-
-
-
-  virtual bool IsUsingCustomCompositeOrder() const { return false; }
 
   void SetIsRunningOnCompositor() { mIsRunningOnCompositor = true; }
   void ClearIsRunningOnCompositor() { mIsRunningOnCompositor = false; }

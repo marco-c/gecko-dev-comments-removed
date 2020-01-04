@@ -199,19 +199,16 @@ CSSTransition::HasLowerCompositeOrderThan(const Animation& aOther) const
 
   
   
-  if (!IsUsingCustomCompositeOrder()) {
-    return !aOther.IsUsingCustomCompositeOrder() ?
+  if (!IsTiedToMarkup()) {
+    return !otherTransition->IsTiedToMarkup() ?
            Animation::HasLowerCompositeOrderThan(aOther) :
            false;
   }
-  if (!aOther.IsUsingCustomCompositeOrder()) {
+  if (!otherTransition->IsTiedToMarkup()) {
     return true;
   }
 
   
-  MOZ_ASSERT(mOwningElement.IsSet() && otherTransition->mOwningElement.IsSet(),
-             "Transitions using custom composite order should have an owning "
-             "element");
   if (!mOwningElement.Equals(otherTransition->mOwningElement)) {
     return mOwningElement.LessThan(otherTransition->mOwningElement);
   }
