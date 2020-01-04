@@ -3270,7 +3270,7 @@ JSTerm.prototype = {
     }
 
     
-    executeString = executeString || this.inputNode.value;
+    executeString = executeString || this.getInputValue();
     if (!executeString) {
       return;
     }
@@ -3867,12 +3867,21 @@ JSTerm.prototype = {
 
 
 
+  getInputValue: function()
+  {
+    return this.inputNode.value || "";
+  },
+
+  
+
+
+
   _inputEventHandler: function JST__inputEventHandler()
   {
-    if (this.lastInputValue != this.inputNode.value) {
+    if (this.lastInputValue != this.getInputValue()) {
       this.resizeInput();
       this.complete(this.COMPLETE_HINT_ONLY);
-      this.lastInputValue = this.inputNode.value;
+      this.lastInputValue = this.getInputValue();
       this._inputChanged = true;
     }
   },
@@ -3897,6 +3906,7 @@ JSTerm.prototype = {
   _keyPress: function JST__keyPress(event)
   {
     let inputNode = this.inputNode;
+    let inputValue = this.getInputValue();
     let inputUpdated = false;
 
     if (event.ctrlKey) {
@@ -3906,12 +3916,12 @@ JSTerm.prototype = {
           if (Services.appinfo.OS == "WINNT") {
             break;
           }
-          let lineEndPos = inputNode.value.length;
+          let lineEndPos = inputValue.length;
           if (this.hasMultilineInput()) {
             
             for (let i = inputNode.selectionEnd; i<lineEndPos; i++) {
-              if (inputNode.value.charAt(i) == "\r" ||
-                  inputNode.value.charAt(i) == "\n") {
+              if (inputValue.charAt(i) == "\r" ||
+                  inputValue.charAt(i) == "\n") {
                 lineEndPos = i;
                 break;
               }
@@ -4060,7 +4070,7 @@ JSTerm.prototype = {
         if (this.autocompletePopup.isOpen) {
           this.autocompletePopup.selectedIndex = 0;
           event.preventDefault();
-        } else if (this.inputNode.value.length <= 0) {
+        } else if (inputValue.length <= 0) {
           this.hud.outputNode.parentNode.scrollTop = 0;
           event.preventDefault();
         }
@@ -4070,7 +4080,7 @@ JSTerm.prototype = {
         if (this.autocompletePopup.isOpen) {
           this.autocompletePopup.selectedIndex = this.autocompletePopup.itemCount - 1;
           event.preventDefault();
-        } else if (this.inputNode.value.length <= 0) {
+        } else if (inputValue.length <= 0) {
           this.hud.outputNode.parentNode.scrollTop = this.hud.outputNode.parentNode.scrollHeight;
           event.preventDefault();
         }
@@ -4086,7 +4096,7 @@ JSTerm.prototype = {
         let cursorAtTheEnd = this.inputNode.selectionStart ==
                              this.inputNode.selectionEnd &&
                              this.inputNode.selectionStart ==
-                             this.inputNode.value.length;
+                             inputValue.length;
         let haveSuggestion = this.autocompletePopup.isOpen ||
                              this.lastCompletion.value;
         let useCompletion = cursorAtTheEnd || this._autocompletePopupNavigated;
@@ -4154,7 +4164,7 @@ JSTerm.prototype = {
       
       
       if (this.historyPlaceHolder+1 == this.historyIndex) {
-        this.history[this.historyIndex] = this.inputNode.value || "";
+        this.history[this.historyIndex] = this.getInputValue() || "";
       }
 
       this.setInputValue(inputVal);
@@ -4183,7 +4193,7 @@ JSTerm.prototype = {
 
   hasMultilineInput: function JST_hasMultilineInput()
   {
-    return /[\r\n]/.test(this.inputNode.value);
+    return /[\r\n]/.test(this.getInputValue());
   },
 
   
@@ -4264,7 +4274,7 @@ JSTerm.prototype = {
   complete: function JSTF_complete(type, callback)
   {
     let inputNode = this.inputNode;
-    let inputValue = inputNode.value;
+    let inputValue = this.getInputValue();
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
 
     
@@ -4328,13 +4338,14 @@ JSTerm.prototype = {
   function JST__updateCompletionResult(type, callback)
   {
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
-    if (this.lastCompletion.value == this.inputNode.value && frameActor == this._lastFrameActorId) {
+    if (this.lastCompletion.value == this.getInputValue() &&
+        frameActor == this._lastFrameActorId) {
       return;
     }
 
     let requestId = gSequenceId();
     let cursor = this.inputNode.selectionStart;
-    let input = this.inputNode.value.substring(0, cursor);
+    let input = this.getInputValue().substring(0, cursor);
     let cache = this._autocompleteCache;
 
     
@@ -4404,7 +4415,7 @@ JSTerm.prototype = {
   function JST__receiveAutocompleteProperties(requestId, callback, message)
   {
     let inputNode = this.inputNode;
-    let inputValue = inputNode.value;
+    let inputValue = this.getInputValue();
     if (this.lastCompletion.value == inputValue ||
         requestId != this.lastCompletion.requestId) {
       return;
@@ -4441,7 +4452,7 @@ JSTerm.prototype = {
     };
 
     if (items.length > 1 && !popup.isOpen) {
-      let str = this.inputNode.value.substr(0, this.inputNode.selectionStart);
+      let str = this.getInputValue().substr(0, this.inputNode.selectionStart);
       let offset = str.length - (str.lastIndexOf("\n") + 1) - lastPart.length;
       let x = offset * this.hud._inputCharWidth;
       popup.openPopup(inputNode, x + this.hud._chevronWidth);
@@ -4475,7 +4486,7 @@ JSTerm.prototype = {
   onAutocompleteSelect: function JSTF_onAutocompleteSelect()
   {
     
-    if (this.inputNode.selectionStart != this.inputNode.value.length) {
+    if (this.inputNode.selectionStart != this.getInputValue().length) {
       return;
     }
 
@@ -4521,7 +4532,7 @@ JSTerm.prototype = {
       let suffix = currentItem.label.substring(this.lastCompletion.
                                                matchProp.length);
       let cursor = this.inputNode.selectionStart;
-      let value = this.inputNode.value;
+      let value = this.getInputValue();
       this.setInputValue(value.substr(0, cursor) + suffix + value.substr(cursor));
       let newCursor = cursor + suffix.length;
       this.inputNode.selectionStart = this.inputNode.selectionEnd = newCursor;
@@ -4542,7 +4553,7 @@ JSTerm.prototype = {
   updateCompleteNode: function JSTF_updateCompleteNode(suffix)
   {
     
-    let prefix = suffix ? this.inputNode.value.replace(/[\S]/g, " ") : "";
+    let prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
     this.completeNode.value = prefix + suffix;
   },
 

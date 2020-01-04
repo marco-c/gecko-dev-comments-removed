@@ -20,7 +20,7 @@ add_task(function* () {
   
   EventUtils.synthesizeKey("a", { ctrlKey: true });
   let inputLength = inputNode.selectionEnd - inputNode.selectionStart;
-  is(inputLength, inputNode.value.length, "Select all of input");
+  is(inputLength, jsterm.getInputValue().length, "Select all of input");
 
   
   jsterm.setInputValue("Ignore These Four Words");
