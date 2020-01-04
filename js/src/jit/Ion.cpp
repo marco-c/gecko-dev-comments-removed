@@ -815,8 +815,11 @@ JitCode::finalize(FreeOp* fop)
     
     
     
-    if (fop->appendJitPoisonRange(JitPoisonRange(pool_, code_, bufferSize_)))
+    if (fop->appendJitPoisonRange(JitPoisonRange(pool_, code_ - headerSize_,
+                                                 headerSize_ + bufferSize_)))
+    {
         pool_->addRef();
+    }
     code_ = nullptr;
 
     
