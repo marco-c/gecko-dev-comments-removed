@@ -13,6 +13,18 @@
 
 using namespace mozilla;
 
+
+
+
+
+
+NS_IMPL_FRAMEARENA_HELPERS(nsRubyContentFrame)
+
+
+
+
+
+
  bool
 nsRubyContentFrame::IsFrameOfType(uint32_t aFlags) const
 {
