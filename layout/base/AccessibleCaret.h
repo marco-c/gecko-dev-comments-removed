@@ -69,6 +69,9 @@ public:
     Right
   };
 
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const Appearance& aAppearance);
+
   Appearance GetAppearance() const
   {
     return mAppearance;
@@ -105,6 +108,10 @@ public:
     
     Invisible
   };
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const PositionChangedResult& aResult);
+
   virtual PositionChangedResult SetPosition(nsIFrame* aFrame, int32_t aOffset);
 
   
@@ -212,6 +219,12 @@ protected:
   static float sBarWidth;
 
 }; 
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const AccessibleCaret::Appearance& aAppearance);
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const AccessibleCaret::PositionChangedResult& aResult);
 
 } 
 
