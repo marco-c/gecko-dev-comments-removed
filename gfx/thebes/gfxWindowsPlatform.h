@@ -114,14 +114,14 @@ public:
         return (gfxWindowsPlatform*) gfxPlatform::GetPlatform();
     }
 
-    virtual gfxPlatformFontList* CreatePlatformFontList();
+    virtual gfxPlatformFontList* CreatePlatformFontList() override;
 
     virtual already_AddRefed<gfxASurface>
       CreateOffscreenSurface(const IntSize& aSize,
                              gfxImageFormat aFormat) override;
 
     virtual already_AddRefed<mozilla::gfx::ScaledFont>
-      GetScaledFontForFont(mozilla::gfx::DrawTarget* aTarget, gfxFont *aFont);
+      GetScaledFontForFont(mozilla::gfx::DrawTarget* aTarget, gfxFont *aFont) override;
 
     enum RenderMode {
         
@@ -171,15 +171,15 @@ public:
 
     nsresult GetFontList(nsIAtom *aLangGroup,
                          const nsACString& aGenericFamily,
-                         nsTArray<nsString>& aListOfFonts);
+                         nsTArray<nsString>& aListOfFonts) override;
 
     nsresult UpdateFontList();
 
     virtual void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
                                         int32_t aRunScript,
-                                        nsTArray<const char*>& aFontList);
+                                        nsTArray<const char*>& aFontList) overide;
 
-    nsresult GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName);
+    nsresult GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName) override;
 
     gfxFontGroup*
     CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
@@ -194,7 +194,7 @@ public:
     virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
                                           uint16_t aWeight,
                                           int16_t aStretch,
-                                          uint8_t aStyle);
+                                          uint8_t aStyle) override;
 
     
 
@@ -204,16 +204,16 @@ public:
                                            int16_t aStretch,
                                            uint8_t aStyle,
                                            const uint8_t* aFontData,
-                                           uint32_t aLength);
+                                           uint32_t aLength) override;
 
     virtual bool CanUseHardwareVideoDecoding() override;
 
     
 
 
-    virtual bool IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags);
+    virtual bool IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags) override;
 
-    virtual bool DidRenderingDeviceReset(DeviceResetReason* aResetReason = nullptr);
+    virtual bool DidRenderingDeviceReset(DeviceResetReason* aResetReason = nullptr) override;
 
     mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) override;
 
@@ -227,7 +227,7 @@ public:
     
     static void GetCleartypeParams(nsTArray<ClearTypeParameterInfo>& aParams);
 
-    virtual void FontsPrefsChanged(const char *aPref);
+    virtual void FontsPrefsChanged(const char *aPref) override;
 
     void SetupClearTypeParams();
 
@@ -304,8 +304,8 @@ protected:
     bool AccelerateLayersByDefault() override {
       return true;
     }
-    void GetAcceleratedCompositorBackends(nsTArray<mozilla::layers::LayersBackend>& aBackends);
-    virtual void GetPlatformCMSOutputProfile(void* &mem, size_t &size);
+    void GetAcceleratedCompositorBackends(nsTArray<mozilla::layers::LayersBackend>& aBackends) override;
+    virtual void GetPlatformCMSOutputProfile(void* &mem, size_t &size) override;
     void SetDeviceInitData(mozilla::gfx::DeviceInitData& aData) override;
 
 protected:
