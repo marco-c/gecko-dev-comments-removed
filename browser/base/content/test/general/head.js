@@ -384,30 +384,11 @@ function promiseHistoryClearedState(aURIs, aShouldBeCleared) {
 
 
 
-
-
-
-
-
-
-
-function waitForDocLoadAndStopIt(aExpectedURL, aBrowser=gBrowser.selectedBrowser, aStopFromProgressListener=true) {
-  function content_script(aStopFromProgressListener) {
+function waitForDocLoadAndStopIt(aExpectedURL, aBrowser=gBrowser.selectedBrowser) {
+  function content_script() {
     let { interfaces: Ci, utils: Cu } = Components;
     Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
     let wp = docShell.QueryInterface(Ci.nsIWebProgress);
-
-    function stopContent(now, uri) {
-      if (now) {
-        
-        content.stop();
-
-        
-        sendAsyncMessage("Test:WaitForDocLoadAndStopIt", { uri });
-      } else {
-        setTimeout(stopContent.bind(null, true, uri), 0);
-      }
-    }
 
     let progressListener = {
       onStateChange: function (webProgress, req, flags, status) {
@@ -420,7 +401,11 @@ function waitForDocLoadAndStopIt(aExpectedURL, aBrowser=gBrowser.selectedBrowser
           let chan = req.QueryInterface(Ci.nsIChannel);
           dump(`waitForDocLoadAndStopIt: Document start: ${chan.URI.spec}\n`);
 
-          stopContent(aStopFromProgressListener, chan.originalURI.spec);
+          
+          content.stop();
+
+          
+          sendAsyncMessage("Test:WaitForDocLoadAndStopIt", { uri: chan.originalURI.spec });
         }
       },
       QueryInterface: XPCOMUtils.generateQI(["nsISupportsWeakReference"])
@@ -447,7 +432,7 @@ function waitForDocLoadAndStopIt(aExpectedURL, aBrowser=gBrowser.selectedBrowser
     }
 
     let mm = aBrowser.messageManager;
-    mm.loadFrameScript("data:,(" + content_script.toString() + ")(" + aStopFromProgressListener + ");", true);
+    mm.loadFrameScript("data:,(" + content_script.toString() + ")();", true);
     mm.addMessageListener("Test:WaitForDocLoadAndStopIt", complete);
     info("waitForDocLoadAndStopIt: Waiting for URL: " + aExpectedURL);
   });
