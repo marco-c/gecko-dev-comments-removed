@@ -7,9 +7,35 @@
 #if !defined(FuzzingWrapper_h_)
 #define FuzzingWrapper_h_
 
+#include "mozilla/Pair.h"
 #include "PlatformDecoderModule.h"
 
 namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class DecoderCallbackFuzzingWrapper : public MediaDataDecoderCallback
 {
@@ -17,6 +43,15 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecoderCallbackFuzzingWrapper)
 
   explicit DecoderCallbackFuzzingWrapper(MediaDataDecoderCallback* aCallback);
+
+  
+  
+  void SetVideoOutputMinimumInterval(TimeDuration aFrameOutputMinimumInterval);
+  
+  
+  
+  
+  void SetDontDelayInputExhausted(bool aDontDelayInputExhausted);
 
 private:
   virtual ~DecoderCallbackFuzzingWrapper();
@@ -30,6 +65,31 @@ private:
   bool OnReaderTaskQueue() override;
 
   MediaDataDecoderCallback* mCallback;
+
+  
+  
+  TimeDuration mFrameOutputMinimumInterval;
+  bool mDontDelayInputExhausted;
+  
+  
+  TimeStamp mPreviousOutput;
+  
+  
+  
+  typedef Pair<nsRefPtr<MediaData>, bool> MediaDataAndInputExhausted;
+  nsTArray<MediaDataAndInputExhausted> mDelayedOutput;
+  nsRefPtr<MediaTimer> mDelayedOutputTimer;
+  
+  
+  bool mDraining;
+  
+  
+  nsRefPtr<TaskQueue> mTaskQueue;
+  void ScheduleOutputDelayedFrame();
+  void OutputDelayedFrame();
+public: 
+  void ClearDelayedOutput();
+  void Shutdown();
 };
 
 class DecoderFuzzingWrapper : public MediaDataDecoder
