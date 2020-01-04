@@ -1604,6 +1604,11 @@ pref("layers.async-pan-zoom.enabled", true);
 pref("extensions.interposition.enabled", true);
 pref("extensions.interposition.prefetching", true);
 
+
+#ifdef RELEASE_BUILD
+pref("extensions.e10sBlocksEnabling", true);
+#endif
+
 pref("browser.defaultbrowser.notificationbar", false);
 
 
