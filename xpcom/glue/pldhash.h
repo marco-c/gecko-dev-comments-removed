@@ -398,9 +398,24 @@ public:
   void MarkImmutable();
 #endif
 
-  void MoveEntryStub(const PLDHashEntryHdr* aFrom, PLDHashEntryHdr* aTo);
+  
+  
+  
+  static const PLDHashTableOps* StubOps();
 
-  void ClearEntryStub(PLDHashEntryHdr* aEntry);
+  
+  static PLDHashNumber HashVoidPtrKeyStub(PLDHashTable* aTable,
+                                          const void* aKey);
+  static bool MatchEntryStub(PLDHashTable* aTable,
+                             const PLDHashEntryHdr* aEntry, const void* aKey);
+  static void MoveEntryStub(PLDHashTable* aTable, const PLDHashEntryHdr* aFrom,
+                            PLDHashEntryHdr* aTo);
+  static void ClearEntryStub(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
+
+  
+  static PLDHashNumber HashStringKey(PLDHashTable* aTable, const void* aKey);
+  static bool MatchStringKey(PLDHashTable* aTable,
+                             const PLDHashEntryHdr* aEntry, const void* aKey);
 
   
   
@@ -583,41 +598,9 @@ struct PLDHashTableOps
 };
 
 
-
-PLDHashNumber
-PL_DHashStringKey(PLDHashTable* aTable, const void* aKey);
-
-
 struct PLDHashEntryStub : public PLDHashEntryHdr
 {
   const void* key;
 };
-
-PLDHashNumber
-PL_DHashVoidPtrKeyStub(PLDHashTable* aTable, const void* aKey);
-
-bool
-PL_DHashMatchEntryStub(PLDHashTable* aTable,
-                       const PLDHashEntryHdr* aEntry,
-                       const void* aKey);
-
-bool
-PL_DHashMatchStringKey(PLDHashTable* aTable,
-                       const PLDHashEntryHdr* aEntry,
-                       const void* aKey);
-
-void
-PL_DHashMoveEntryStub(PLDHashTable* aTable,
-                      const PLDHashEntryHdr* aFrom,
-                      PLDHashEntryHdr* aTo);
-
-void
-PL_DHashClearEntryStub(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
-
-
-
-
-const PLDHashTableOps*
-PL_DHashGetStubOps(void);
 
 #endif 

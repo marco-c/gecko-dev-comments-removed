@@ -77,7 +77,7 @@ TestCrashyOperation(void (*aCrashyOperation)())
 void
 InitCapacityOk_InitialLengthTooBig()
 {
-  PLDHashTable t(PL_DHashGetStubOps(), sizeof(PLDHashEntryStub),
+  PLDHashTable t(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub),
                  PLDHashTable::kMaxInitialLength + 1);
 }
 
@@ -87,7 +87,7 @@ InitCapacityOk_InitialEntryStoreTooBig()
   
   
   
-  PLDHashTable t(PL_DHashGetStubOps(), (uint32_t)1 << 23, (uint32_t)1 << 8);
+  PLDHashTable t(PLDHashTable::StubOps(), (uint32_t)1 << 23, (uint32_t)1 << 8);
 }
 
 TEST(PLDHashTableTest, InitCapacityOk)
@@ -95,12 +95,12 @@ TEST(PLDHashTableTest, InitCapacityOk)
   
   
   
-  PLDHashTable t1(PL_DHashGetStubOps(), sizeof(PLDHashEntryStub),
+  PLDHashTable t1(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub),
                   PLDHashTable::kMaxInitialLength);
 
   
   
-  PLDHashTable t2(PL_DHashGetStubOps(), (uint32_t)1 << 23, (uint32_t)1 << 7);
+  PLDHashTable t2(PLDHashTable::StubOps(), (uint32_t)1 << 23, (uint32_t)1 << 7);
 
   
   TestCrashyOperation(InitCapacityOk_InitialLengthTooBig);
@@ -117,7 +117,7 @@ TEST(PLDHashTableTest, InitCapacityOk)
 
 TEST(PLDHashTableTest, LazyStorage)
 {
-  PLDHashTable t(PL_DHashGetStubOps(), sizeof(PLDHashEntryStub));
+  PLDHashTable t(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub));
 
   
   
@@ -158,9 +158,9 @@ TrivialInitEntry(PLDHashEntryHdr* aEntry, const void* aKey)
 
 static const PLDHashTableOps trivialOps = {
   TrivialHash,
-  PL_DHashMatchEntryStub,
-  PL_DHashMoveEntryStub,
-  PL_DHashClearEntryStub,
+  PLDHashTable::MatchEntryStub,
+  PLDHashTable::MoveEntryStub,
+  PLDHashTable::ClearEntryStub,
   TrivialInitEntry
 };
 

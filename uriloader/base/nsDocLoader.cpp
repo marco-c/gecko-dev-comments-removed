@@ -95,9 +95,9 @@ class nsDefaultComparator <nsDocLoader::nsListenerInfo, nsIWebProgressListener*>
 
  const PLDHashTableOps nsDocLoader::sRequestInfoHashOps =
 {
-  PL_DHashVoidPtrKeyStub,
-  PL_DHashMatchEntryStub,
-  PL_DHashMoveEntryStub,
+  PLDHashTable::HashVoidPtrKeyStub,
+  PLDHashTable::MatchEntryStub,
+  PLDHashTable::MoveEntryStub,
   nsDocLoader::RequestInfoHashClearEntry,
   nsDocLoader::RequestInfoHashInitEntry
 };

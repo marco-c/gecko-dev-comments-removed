@@ -104,7 +104,7 @@ nsRuleNode::ChildrenHashHashKey(PLDHashTable *aTable, const void *aKey)
     static_cast<const nsRuleNode::Key*>(aKey);
   
   
-  return PL_DHashVoidPtrKeyStub(aTable, key->mRule);
+  return PLDHashTable::HashVoidPtrKeyStub(aTable, key->mRule);
 }
 
  bool
@@ -127,8 +127,8 @@ nsRuleNode::ChildrenHashOps = {
   
   ChildrenHashHashKey,
   ChildrenHashMatchEntry,
-  PL_DHashMoveEntryStub,
-  PL_DHashClearEntryStub,
+  PLDHashTable::MoveEntryStub,
+  PLDHashTable::ClearEntryStub,
   nullptr
 };
 
