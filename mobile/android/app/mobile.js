@@ -33,11 +33,7 @@ pref("browser.tabs.expireTime", 900);
 
 
 
-#ifdef NIGHTLY_BUILD
 pref("browser.tabs.useCache", true);
-#else
-pref("browser.tabs.useCache", false);
-#endif
 
 
 pref("zoom.minPercent", 20);
