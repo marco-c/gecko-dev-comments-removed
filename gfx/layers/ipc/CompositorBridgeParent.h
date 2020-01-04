@@ -372,9 +372,6 @@ public:
       bool aScheduleComposite, uint32_t aPaintSequenceNumber,
       bool aIsRepeatTransaction, bool aHitTestUpdate);
 
-  void UpdatePaintTime(LayerTransactionParent* aLayerTree,
-                       const TimeDuration& aPaintTime) override;
-
   
 
 
@@ -632,8 +629,6 @@ protected:
   
   
   RefPtr<CompositorBridgeParent> mSelfRef;
-
-  TimeDuration mPaintTime;
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   

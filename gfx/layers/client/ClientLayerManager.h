@@ -303,7 +303,7 @@ private:
   LayerRefArray mKeepAlive;
 
   nsIWidget* mWidget;
-
+  
   
 
   DrawPaintedLayerCallback mPaintedLayerCallback;
@@ -321,7 +321,6 @@ private:
 
   RefPtr<TransactionIdAllocator> mTransactionIdAllocator;
   uint64_t mLatestTransactionId;
-  TimeDuration mLastPaintTime;
 
   
   
