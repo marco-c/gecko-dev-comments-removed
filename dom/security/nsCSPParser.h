@@ -144,8 +144,6 @@ class nsCSPParser {
     bool atValidSubDelimChar();                             
     bool atValidPctEncodedChar();                           
     bool subPath(nsCSPHostSrc* aCspHost);                   
-    void percentDecodeStr(const nsAString& aEncStr,         
-                          nsAString& outDecStr);
 
     inline bool atEnd()
     {

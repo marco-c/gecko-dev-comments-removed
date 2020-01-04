@@ -191,63 +191,6 @@ nsCSPParser::atEndOfPath()
   return (atEnd() || peek(QUESTIONMARK) || peek(NUMBER_SIGN));
 }
 
-void
-nsCSPParser::percentDecodeStr(const nsAString& aEncStr, nsAString& outDecStr)
-{
-  outDecStr.Truncate();
-
-  
-  struct local {
-    static inline char16_t convertHexDig(char16_t aHexDig) {
-      if (isNumberToken(aHexDig)) {
-        return aHexDig - '0';
-      }
-      if (aHexDig >= 'A' && aHexDig <= 'F') {
-        return aHexDig - 'A' + 10;
-      }
-      
-      
-      return aHexDig - 'a' + 10;
-    }
-  };
-
-  const char16_t *cur, *end, *hexDig1, *hexDig2;
-  cur = aEncStr.BeginReading();
-  end = aEncStr.EndReading();
-
-  while (cur != end) {
-    
-    
-    if (*cur != PERCENT_SIGN) {
-      outDecStr.Append(*cur);
-      cur++;
-      continue;
-    }
-
-    
-    hexDig1 = cur + 1;
-    hexDig2 = cur + 2;
-
-    
-    
-    if (hexDig1 == end || hexDig2 == end ||
-        !isValidHexDig(*hexDig1) ||
-        !isValidHexDig(*hexDig2)) {
-      outDecStr.Append(PERCENT_SIGN);
-      cur++;
-      continue;
-    }
-
-    
-    char16_t decChar = (local::convertHexDig(*hexDig1) << 4) +
-                       local::convertHexDig(*hexDig2);
-    outDecStr.Append(decChar);
-
-    
-    cur = ++hexDig2;
-  }
-}
-
 
 bool
 nsCSPParser::atValidUnreservedChar()
@@ -398,7 +341,7 @@ nsCSPParser::subPath(nsCSPHostSrc* aCspHost)
       
       
       
-      percentDecodeStr(mCurValue, pctDecodedSubPath);
+      CSP_PercentDecodeStr(mCurValue, pctDecodedSubPath);
       aCspHost->appendPath(pctDecodedSubPath);
       
       
@@ -427,7 +370,7 @@ nsCSPParser::subPath(nsCSPHostSrc* aCspHost)
   
   
   
-  percentDecodeStr(mCurValue, pctDecodedSubPath);
+  CSP_PercentDecodeStr(mCurValue, pctDecodedSubPath);
   aCspHost->appendPath(pctDecodedSubPath);
   resetCurValue();
   return true;

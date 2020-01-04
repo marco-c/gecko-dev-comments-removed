@@ -31,6 +31,63 @@ GetCspUtilsLog()
 #define CSPUTILSLOGENABLED() MOZ_LOG_TEST(GetCspUtilsLog(), mozilla::LogLevel::Debug)
 
 void
+CSP_PercentDecodeStr(const nsAString& aEncStr, nsAString& outDecStr)
+{
+  outDecStr.Truncate();
+
+  
+  struct local {
+    static inline char16_t convertHexDig(char16_t aHexDig) {
+      if (isNumberToken(aHexDig)) {
+        return aHexDig - '0';
+      }
+      if (aHexDig >= 'A' && aHexDig <= 'F') {
+        return aHexDig - 'A' + 10;
+      }
+      
+      
+      return aHexDig - 'a' + 10;
+    }
+  };
+
+  const char16_t *cur, *end, *hexDig1, *hexDig2;
+  cur = aEncStr.BeginReading();
+  end = aEncStr.EndReading();
+
+  while (cur != end) {
+    
+    
+    if (*cur != PERCENT_SIGN) {
+      outDecStr.Append(*cur);
+      cur++;
+      continue;
+    }
+
+    
+    hexDig1 = cur + 1;
+    hexDig2 = cur + 2;
+
+    
+    
+    if (hexDig1 == end || hexDig2 == end ||
+        !isValidHexDig(*hexDig1) ||
+        !isValidHexDig(*hexDig2)) {
+      outDecStr.Append(PERCENT_SIGN);
+      cur++;
+      continue;
+    }
+
+    
+    char16_t decChar = (local::convertHexDig(*hexDig1) << 4) +
+                       local::convertHexDig(*hexDig2);
+    outDecStr.Append(decChar);
+
+    
+    cur = ++hexDig2;
+  }
+}
+
+void
 CSP_GetLocalizedStr(const char16_t* aName,
                     const char16_t** aParams,
                     uint32_t aLength,
@@ -567,6 +624,9 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
   nsresult rv = aUri->GetHost(uriHost);
   NS_ENSURE_SUCCESS(rv, false);
 
+  nsString decodedUriHost;
+  CSP_PercentDecodeStr(NS_ConvertUTF8toUTF16(uriHost), decodedUriHost);
+
   
   if (mHost.First() == '*') {
     NS_ASSERTION(mHost[1] == '.', "Second character needs to be '.' whenever host starts with '*'");
@@ -575,12 +635,12 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
     
     nsString wildCardHost = mHost;
     wildCardHost = Substring(wildCardHost, 1, wildCardHost.Length() - 1);
-    if (!StringEndsWith(NS_ConvertUTF8toUTF16(uriHost), wildCardHost)) {
+    if (!StringEndsWith(decodedUriHost, wildCardHost)) {
       return false;
     }
   }
   
-  else if (!mHost.Equals(NS_ConvertUTF8toUTF16(uriHost))) {
+  else if (!mHost.Equals(decodedUriHost)) {
     return false;
   }
 
@@ -604,18 +664,22 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
     nsAutoCString uriPath;
     rv = url->GetFilePath(uriPath);
     NS_ENSURE_SUCCESS(rv, false);
+
+    nsString decodedUriPath;
+    CSP_PercentDecodeStr(NS_ConvertUTF8toUTF16(uriPath), decodedUriPath);
+
     
     
     
     if (mPath.Last() == '/') {
-      if (!StringBeginsWith(NS_ConvertUTF8toUTF16(uriPath), mPath)) {
+      if (!StringBeginsWith(decodedUriPath, mPath)) {
         return false;
       }
     }
     
     
     else {
-      if (!mPath.Equals(NS_ConvertUTF8toUTF16(uriPath))) {
+      if (!mPath.Equals(decodedUriPath)) {
         return false;
       }
     }
