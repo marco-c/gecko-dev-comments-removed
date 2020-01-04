@@ -526,6 +526,12 @@ nsGeolocationRequest::Allow(JS::HandleValue aChoices)
     
     
     Update(lastPosition.position);
+
+    
+    if (!mIsWatchPositionRequest) {
+      return NS_OK;
+    }
+
   } else {
     
     
@@ -534,14 +540,15 @@ nsGeolocationRequest::Allow(JS::HandleValue aChoices)
       return NS_OK;
     }
 
-    
-    nsresult rv = gs->StartDevice(GetPrincipal());
+  }
 
-    if (NS_FAILED(rv)) {
-      
-      NotifyError(nsIDOMGeoPositionError::POSITION_UNAVAILABLE);
-      return NS_OK;
-    }
+  
+  nsresult rv = gs->StartDevice(GetPrincipal());
+
+  if (NS_FAILED(rv)) {
+    
+    NotifyError(nsIDOMGeoPositionError::POSITION_UNAVAILABLE);
+    return NS_OK;
   }
 
   if (mLocator->ContainsRequest(this)) {
