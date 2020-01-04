@@ -6184,7 +6184,7 @@ WorkerPrivate::RunExpiredTimeouts(JSContext* aCx)
 
     { 
       
-      AutoEntryScript aes(global, reason, false, aCx);
+      AutoEntryScript aes(global, reason, false);
       if (!info->mTimeoutCallable.isUndefined()) {
         JS::Rooted<JS::Value> rval(aCx);
         JS::HandleValueArray args =

@@ -134,10 +134,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       return;
     }
 
-    
-    mAutoEntryScript.emplace(globalObject, aExecutionReason, mIsMainThread,
-                             mIsMainThread ? nullptr
-                                           : workers::GetCurrentThreadJSContext());
+    mAutoEntryScript.emplace(globalObject, aExecutionReason, mIsMainThread);
     mAutoEntryScript->SetWebIDLCallerPrincipal(webIDLCallerPrincipal);
     nsIGlobalObject* incumbent = aCallback->IncumbentGlobalOrNull();
     if (incumbent) {

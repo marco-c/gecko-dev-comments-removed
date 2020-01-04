@@ -280,11 +280,7 @@ public:
 protected:
   
   
-  
-  
-  
-  AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, JSContext* aCx,
-            Type aType);
+  AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, Type aType);
 
 private:
   mozilla::Maybe<JSAutoRequest> mAutoRequest;
@@ -313,15 +309,11 @@ class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
 public:
   AutoEntryScript(nsIGlobalObject* aGlobalObject,
                   const char *aReason,
-                  bool aIsMainThread = NS_IsMainThread(),
-                  
-                  JSContext* aCx = nullptr);
+                  bool aIsMainThread = NS_IsMainThread());
 
   AutoEntryScript(JSObject* aObject, 
                   const char *aReason,
-                  bool aIsMainThread = NS_IsMainThread(),
-                  
-                  JSContext* aCx = nullptr);
+                  bool aIsMainThread = NS_IsMainThread());
 
   ~AutoEntryScript();
 
