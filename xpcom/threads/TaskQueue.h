@@ -29,7 +29,26 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 
 
-class TaskQueue : public AbstractThread {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TaskQueue : public AbstractThread
+{
+  class EventTargetWrapper;
+
 public:
   explicit TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
                      bool aSupportsTailDispatch = false);
@@ -75,6 +94,10 @@ public:
   
   
   bool IsCurrentThreadIn() override;
+
+  
+  
+  already_AddRefed<nsIEventTarget> WrapAsEventTarget();
 
 protected:
   virtual ~TaskQueue();
