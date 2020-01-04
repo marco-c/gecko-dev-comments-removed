@@ -40,6 +40,7 @@ namespace dom {
 class ErrorResult;
 class StartRecordingHelper;
 class RecorderPosterHelper;
+class TrackCreatedListener;
 
 #define NS_DOM_CAMERA_CONTROL_CID \
 { 0x3700c096, 0xf920, 0x438d, \
@@ -72,6 +73,10 @@ public:
   nsPIDOMWindow* GetParentObject() const { return mWindow; }
 
   MediaStream* GetCameraStream() const override;
+
+  
+  
+  void TrackCreated(TrackID aTrackID);
 
   
   void GetEffect(nsString& aEffect, ErrorResult& aRv);
@@ -225,6 +230,9 @@ protected:
 
   
   RefPtr<CameraPreviewMediaStream> mInput;
+
+  
+  RefPtr<TrackCreatedListener> mTrackCreatedListener;
 
   
   nsCOMPtr<nsPIDOMWindow>   mWindow;

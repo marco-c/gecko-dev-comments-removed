@@ -37,6 +37,7 @@
 #include "mozilla/dom/CameraFacesDetectedEventBinding.h"
 #include "mozilla/dom/CameraStateChangeEvent.h"
 #include "mozilla/dom/CameraClosedEvent.h"
+#include "mozilla/dom/VideoStreamTrack.h"
 #include "mozilla/dom/BlobEvent.h"
 #include "DOMCameraDetectedFace.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -45,6 +46,45 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
+
+class mozilla::TrackCreatedListener : public MediaStreamListener
+{
+public:
+  explicit TrackCreatedListener(nsDOMCameraControl* aCameraControl)
+    : mCameraControl(aCameraControl) {}
+
+  void Forget() { mCameraControl = nullptr; }
+
+  void DoNotifyTrackCreated(TrackID aTrackID)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    if (!mCameraControl) {
+      return;
+    }
+
+    mCameraControl->TrackCreated(aTrackID);
+  }
+
+  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
+                                StreamTime aTrackOffset, uint32_t aTrackEvents,
+                                const MediaSegment& aQueuedMedia,
+                                MediaStream* aInputStream,
+                                TrackID aInputTrackID) override
+  {
+    if (aTrackEvents & TRACK_EVENT_CREATED) {
+      nsCOMPtr<nsIRunnable> runnable =
+        NS_NewRunnableMethodWithArgs<TrackID>(
+          this, &TrackCreatedListener::DoNotifyTrackCreated, aID);
+      aGraph->DispatchToMainThreadAfterStreamStateUpdate(runnable.forget());
+    }
+  }
+
+protected:
+  ~TrackCreatedListener() {}
+
+  nsDOMCameraControl* mCameraControl;
+};
 
 #ifdef MOZ_WIDGET_GONK
 StaticRefPtr<ICameraControl> nsDOMCameraControl::sCachedCameraControl;
@@ -281,6 +321,11 @@ nsDOMCameraControl::nsDOMCameraControl(uint32_t aCameraId,
 
   
   
+  mTrackCreatedListener = new TrackCreatedListener(this);
+  mInput->AddListener(mTrackCreatedListener);
+
+  
+  
   
   
   
@@ -333,6 +378,10 @@ nsDOMCameraControl::~nsDOMCameraControl()
   if (mInput) {
     mInput->Destroy();
     mInput = nullptr;
+  }
+  if (mTrackCreatedListener) {
+    mTrackCreatedListener->Forget();
+    mTrackCreatedListener = nullptr;
   }
 }
 
@@ -473,6 +522,19 @@ MediaStream*
 nsDOMCameraControl::GetCameraStream() const
 {
   return mInput;
+}
+
+void
+nsDOMCameraControl::TrackCreated(TrackID aTrackID) {
+  
+  MediaInputPort* inputPort = nullptr;
+  dom::VideoStreamTrack* track =
+    new dom::VideoStreamTrack(this, aTrackID);
+  RefPtr<TrackPort> port =
+    new TrackPort(inputPort, track,
+                  TrackPort::InputPortOwnership::OWNED);
+  mTracks.AppendElement(port.forget());
+  NotifyTrackAdded(track);
 }
 
 #define THROW_IF_NO_CAMERACONTROL(...)                                          \
