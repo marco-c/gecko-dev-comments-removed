@@ -10,10 +10,15 @@
 #include "SharedCertVerifier.h"
 #include "cryptohi.h"
 #include "keyhi.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
+#include "nsISupportsPriority.h"
+#include "nsIURI.h"
 #include "nsNSSComponent.h"
 #include "nsSecurityHeaderParser.h"
+#include "nsStreamUtils.h"
 #include "nsWhitespaceTokenizer.h"
 #include "nsXPCOMStrings.h"
 #include "nssb64.h"
@@ -21,7 +26,10 @@
 #include "pkix/pkixtypes.h"
 #include "secerr.h"
 
-NS_IMPL_ISUPPORTS(ContentSignatureVerifier, nsIContentSignatureVerifier)
+NS_IMPL_ISUPPORTS(ContentSignatureVerifier,
+                  nsIContentSignatureVerifier,
+                  nsIInterfaceRequestor,
+                  nsIStreamListener)
 
 using namespace mozilla;
 using namespace mozilla::pkix;
@@ -126,25 +134,16 @@ ReadChainIntoCertList(const nsACString& aCertChain, CERTCertList* aCertList,
   return NS_OK;
 }
 
-
-
-
-
-NS_IMETHODIMP
-ContentSignatureVerifier::CreateContext(const nsACString& aData,
-                                        const nsACString& aCSHeader,
-                                        const nsACString& aCertChain,
-                                        const nsACString& aName)
+nsresult
+ContentSignatureVerifier::CreateContextInternal(const nsACString& aData,
+                                                const nsACString& aCertChain,
+                                                const nsACString& aName)
 {
-  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(NS_IsMainThread());
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
     CSVerifier_LOG(("CSVerifier: nss is already shutdown\n"));
     return NS_ERROR_FAILURE;
-  }
-
-  if (mCx) {
-    return NS_ERROR_ALREADY_INITIALIZED;
   }
 
   UniqueCERTCertList certCertList(CERT_NewCertList());
@@ -215,12 +214,6 @@ ContentSignatureVerifier::CreateContext(const nsACString& aData,
   }
 
   
-  rv = ParseContentSignatureHeader(aCSHeader);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
   UniqueSECItem rawSignatureItem(::SECITEM_AllocItem(nullptr, nullptr, 0));
   if (!rawSignatureItem ||
       !NSSBase64_DecodeBuffer(nullptr, rawSignatureItem.get(),
@@ -261,18 +254,118 @@ ContentSignatureVerifier::CreateContext(const nsACString& aData,
     return NS_ERROR_INVALID_SIGNATURE;
   }
 
-  rv = UpdateInternal(kPREFIX, lock, locker);
+  rv = UpdateInternal(kPREFIX, locker);
   if (NS_FAILED(rv)) {
     return rv;
   }
   
-  return UpdateInternal(aData, lock, locker);
+  return UpdateInternal(aData, locker);
 }
 
 nsresult
-ContentSignatureVerifier::UpdateInternal(const nsACString& aData,
-  MutexAutoLock& ,
-  const nsNSSShutDownPreventionLock& )
+ContentSignatureVerifier::DownloadCertChain()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCertChainURL.IsEmpty()) {
+    return NS_ERROR_INVALID_SIGNATURE;
+  }
+
+  nsCOMPtr<nsIURI> certChainURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(certChainURI), mCertChainURL);
+  if (NS_FAILED(rv) || !certChainURI) {
+    return rv;
+  }
+
+  
+  bool isHttps = false;
+  rv = certChainURI->SchemeIs("https", &isHttps);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!isHttps) {
+    return NS_ERROR_INVALID_SIGNATURE;
+  }
+
+  rv = NS_NewChannel(getter_AddRefs(mChannel), certChainURI,
+                     nsContentUtils::GetSystemPrincipal(),
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                     nsIContentPolicy::TYPE_OTHER);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsISupportsPriority> priorityChannel = do_QueryInterface(mChannel);
+  if (priorityChannel) {
+    priorityChannel->AdjustPriority(nsISupportsPriority::PRIORITY_HIGHEST);
+  }
+
+  rv = mChannel->AsyncOpen2(this);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+
+
+
+NS_IMETHODIMP
+ContentSignatureVerifier::CreateContextWithoutCertChain(
+  nsIContentSignatureReceiverCallback *aCallback, const nsACString& aCSHeader,
+  const nsACString& aName)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mInitialised) {
+    return NS_ERROR_ALREADY_INITIALIZED;
+  }
+  mInitialised = true;
+
+  
+  nsresult rv = ParseContentSignatureHeader(aCSHeader);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  mCallback = aCallback;
+  mName.Assign(aName);
+
+  
+  
+  return DownloadCertChain();
+}
+
+
+
+
+
+NS_IMETHODIMP
+ContentSignatureVerifier::CreateContext(const nsACString& aData,
+                                        const nsACString& aCSHeader,
+                                        const nsACString& aCertChain,
+                                        const nsACString& aName)
+{
+  if (mInitialised) {
+    return NS_ERROR_ALREADY_INITIALIZED;
+  }
+  mInitialised = true;
+  
+  mHasCertChain = true;
+
+  
+  nsresult rv = ParseContentSignatureHeader(aCSHeader);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return CreateContextInternal(aData, aCertChain, aName);
+}
+
+nsresult
+ContentSignatureVerifier::UpdateInternal(
+  const nsACString& aData, const nsNSSShutDownPreventionLock& )
 {
   if (!aData.IsEmpty()) {
     if (VFY_Update(mCx.get(), (const unsigned char*)nsPromiseFlatCString(aData).get(),
@@ -289,13 +382,22 @@ ContentSignatureVerifier::UpdateInternal(const nsACString& aData,
 NS_IMETHODIMP
 ContentSignatureVerifier::Update(const nsACString& aData)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
     CSVerifier_LOG(("CSVerifier: nss is already shutdown\n"));
     return NS_ERROR_FAILURE;
   }
-  MutexAutoLock lock(mMutex);
-  return UpdateInternal(aData, lock, locker);
+
+  
+  if (!mHasCertChain) {
+    MOZ_ASSERT_UNREACHABLE(
+      "Someone called ContentSignatureVerifier::Update before "
+      "downloading the cert chain.");
+    return NS_ERROR_FAILURE;
+  }
+
+  return UpdateInternal(aData, locker);
 }
 
 
@@ -305,10 +407,18 @@ NS_IMETHODIMP
 ContentSignatureVerifier::End(bool* _retval)
 {
   NS_ENSURE_ARG(_retval);
-  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(NS_IsMainThread());
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
     CSVerifier_LOG(("CSVerifier: nss is already shutdown\n"));
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  if (!mHasCertChain) {
+    MOZ_ASSERT_UNREACHABLE(
+      "Someone called ContentSignatureVerifier::End before "
+      "downloading the cert chain.");
     return NS_ERROR_FAILURE;
   }
 
@@ -321,8 +431,10 @@ nsresult
 ContentSignatureVerifier::ParseContentSignatureHeader(
   const nsACString& aContentSignatureHeader)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   
   NS_NAMED_LITERAL_CSTRING(signature_var, "p384ecdsa");
+  NS_NAMED_LITERAL_CSTRING(certChainURL_var, "x5u");
 
   nsSecurityHeaderParser parser(aContentSignatureHeader.BeginReading());
   nsresult rv = parser.Parse();
@@ -346,6 +458,17 @@ ContentSignatureVerifier::ParseContentSignatureHeader(
       CSVerifier_LOG(("CSVerifier: found a ContentSignature directive\n"));
       mSignature = directive->mValue;
     }
+    if (directive->mName.Length() == certChainURL_var.Length() &&
+        directive->mName.EqualsIgnoreCase(certChainURL_var.get(),
+                                          certChainURL_var.Length())) {
+      if (!mCertChainURL.IsEmpty()) {
+        CSVerifier_LOG(("CSVerifier: found two x5u values\n"));
+        return NS_ERROR_INVALID_SIGNATURE;
+      }
+
+      CSVerifier_LOG(("CSVerifier: found an x5u directive\n"));
+      mCertChainURL = directive->mValue;
+    }
   }
 
   
@@ -361,4 +484,82 @@ ContentSignatureVerifier::ParseContentSignatureHeader(
   mSignature.ReplaceChar('_', '/');
 
   return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+ContentSignatureVerifier::OnStartRequest(nsIRequest* aRequest,
+                                         nsISupports* aContext)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ContentSignatureVerifier::OnStopRequest(nsIRequest* aRequest,
+                                        nsISupports* aContext, nsresult aStatus)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIContentSignatureReceiverCallback> callback;
+  callback.swap(mCallback);
+  nsresult rv;
+
+  
+  nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aRequest, &rv);
+  uint32_t httpResponseCode;
+  if (NS_FAILED(rv) || NS_FAILED(http->GetResponseStatus(&httpResponseCode)) ||
+      httpResponseCode != 200) {
+    callback->ContextCreated(false);
+    return NS_OK;
+  }
+
+  if (NS_FAILED(aStatus)) {
+    callback->ContextCreated(false);
+    return NS_OK;
+  }
+
+  nsAutoCString certChain;
+  for (uint32_t i = 0; i < mCertChain.Length(); ++i) {
+    certChain.Append(mCertChain[i]);
+  }
+
+  
+  rv = CreateContextInternal(NS_LITERAL_CSTRING(""), certChain, mName);
+  if (NS_FAILED(rv)) {
+    callback->ContextCreated(false);
+    return NS_OK;
+  }
+
+  mHasCertChain = true;
+  callback->ContextCreated(true);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ContentSignatureVerifier::OnDataAvailable(nsIRequest* aRequest,
+                                          nsISupports* aContext,
+                                          nsIInputStream* aInputStream,
+                                          uint64_t aOffset, uint32_t aCount)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  nsAutoCString buffer;
+
+  nsresult rv = NS_ConsumeStream(aInputStream, aCount, buffer);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (!mCertChain.AppendElement(buffer, fallible)) {
+    mCertChain.TruncateLength(0);
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ContentSignatureVerifier::GetInterface(const nsIID& uuid, void** result)
+{
+  return QueryInterface(uuid, result);
 }

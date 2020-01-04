@@ -7,41 +7,47 @@
 
 #include "mozilla/fallible.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPtr.h"
-#include "nsCharSeparatedTokenizer.h"
+#include "MainThreadUtils.h"
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
-#include "nssb64.h"
-#include "nsSecurityHeaderParser.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringStream.h"
-#include "nsThreadUtils.h"
 
 using namespace mozilla;
 
 static LazyLogModule gContentVerifierPRLog("ContentVerifier");
 #define CSV_LOG(args) MOZ_LOG(gContentVerifierPRLog, LogLevel::Debug, args)
 
-
-const nsLiteralCString kPREFIX = NS_LITERAL_CSTRING("Content-Signature:\x00");
-
-NS_IMPL_ISUPPORTS(ContentVerifier, nsIStreamListener, nsISupports);
+NS_IMPL_ISUPPORTS(ContentVerifier,
+                  nsIContentSignatureReceiverCallback,
+                  nsIStreamListener);
 
 nsresult
-ContentVerifier::Init(const nsAString& aContentSignatureHeader)
+ContentVerifier::Init(const nsACString& aContentSignatureHeader,
+                      nsIRequest* aRequest, nsISupports* aContext)
 {
-  mVks = Preferences::GetString("browser.newtabpage.remote.keys");
-
-  if (aContentSignatureHeader.IsEmpty() || mVks.IsEmpty()) {
-    CSV_LOG(
-      ("Content-Signature header and verification keys must not be empty!\n"));
+  MOZ_ASSERT(NS_IsMainThread());
+  if (aContentSignatureHeader.IsEmpty()) {
+    CSV_LOG(("Content-Signature header must not be empty!\n"));
     return NS_ERROR_INVALID_SIGNATURE;
   }
 
-  nsresult rv = ParseContentSignatureHeader(aContentSignatureHeader);
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_SIGNATURE);
-  return CreateContext();
+  
+  nsresult rv;
+  mVerifier =
+    do_CreateInstance("@mozilla.org/security/contentsignatureverifier;1", &rv);
+  if (NS_FAILED(rv) || !mVerifier) {
+    return NS_ERROR_INVALID_SIGNATURE;
+  }
+
+  
+  
+  mContentRequest = aRequest;
+  mContentContext = aContext;
+
+  return mVerifier->CreateContextWithoutCertChain(
+    this, aContentSignatureHeader,
+    NS_LITERAL_CSTRING("remote-newtab-signer.mozilla.org"));
 }
 
 
@@ -55,7 +61,7 @@ AppendNextSegment(nsIInputStream* aInputStream, void* aClosure,
 {
   FallibleTArray<nsCString>* decodedData =
     static_cast<FallibleTArray<nsCString>*>(aClosure);
-  nsAutoCString segment(aRawSegment, aCount);
+  nsDependentCSubstring segment(aRawSegment, aCount);
   if (!decodedData->AppendElement(segment, fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -63,9 +69,57 @@ AppendNextSegment(nsIInputStream* aInputStream, void* aClosure,
   return NS_OK;
 }
 
+void
+ContentVerifier::FinishSignature()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIStreamListener> nextListener;
+  nextListener.swap(mNextListener);
+
+  
+  
+  
+  
+  bool verified = false;
+  nsresult rv = NS_OK;
+
+  
+  
+  
+  if (NS_FAILED(mVerifier->End(&verified)) || !verified) {
+    CSV_LOG(("failed to verify content\n"));
+    (void)nextListener->OnStopRequest(mContentRequest, mContentContext,
+                                      NS_ERROR_INVALID_SIGNATURE);
+    return;
+  }
+  CSV_LOG(("Successfully verified content signature.\n"));
+
+  
+  
+  uint64_t offset = 0;
+  for (uint32_t i = 0; i < mContent.Length(); ++i) {
+    nsCOMPtr<nsIInputStream> oInStr;
+    rv = NS_NewCStringInputStream(getter_AddRefs(oInStr), mContent[i]);
+    if (NS_FAILED(rv)) {
+      break;
+    }
+    
+    rv = nextListener->OnDataAvailable(mContentRequest, mContentContext, oInStr,
+                                       offset, mContent[i].Length());
+    offset += mContent[i].Length();
+    if (NS_FAILED(rv)) {
+      break;
+    }
+  }
+
+  
+  nextListener->OnStopRequest(mContentRequest, mContentContext, rv);
+}
+
 NS_IMETHODIMP
 ContentVerifier::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
 {
+  MOZ_CRASH("This OnStartRequest should've never been called!");
   return NS_OK;
 }
 
@@ -75,48 +129,26 @@ ContentVerifier::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
 {
   
   
-  
-  
-  CSV_LOG(("VerifySignedContent, b64signature: %s\n", mSignature.get()));
-  CSV_LOG(("VerifySignedContent, key: \n[\n%s\n]\n", mKey.get()));
-  bool verified = false;
-  nsresult rv = End(&verified);
-  if (NS_FAILED(rv) || !verified || NS_FAILED(aStatus)) {
-    
-    if (NS_FAILED(aStatus)) {
-      rv = aStatus;
-    } else {
-      rv = NS_ERROR_INVALID_SIGNATURE;
-    }
-    CSV_LOG(("failed to verify content\n"));
-    mNextListener->OnStartRequest(aRequest, aContext);
-    mNextListener->OnStopRequest(aRequest, aContext, rv);
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  CSV_LOG(("Successfully verified content signature.\n"));
-
-  
-  rv = mNextListener->OnStartRequest(aRequest, aContext);
-  if (NS_SUCCEEDED(rv)) {
-    
-    
-    for (uint32_t i = 0; i < mContent.Length(); ++i) {
-      nsCOMPtr<nsIInputStream> oInStr;
-      rv = NS_NewCStringInputStream(getter_AddRefs(oInStr), mContent[i]);
-      if (NS_FAILED(rv)) {
-        break;
-      }
-      
-      rv = mNextListener->OnDataAvailable(aRequest, aContext, oInStr, 0,
-                                          mContent[i].Length());
-      if (NS_FAILED(rv)) {
-        break;
-      }
-    }
+  if (!mNextListener) {
+    return NS_OK;
   }
 
+  if (NS_FAILED(aStatus)) {
+    CSV_LOG(("Stream failed\n"));
+    nsCOMPtr<nsIStreamListener> nextListener;
+    nextListener.swap(mNextListener);
+    return nextListener->OnStopRequest(aRequest, aContext, aStatus);
+  }
+
+  mContentRead = true;
+
   
-  return mNextListener->OnStopRequest(aRequest, aContext, rv);
+  if (mContextCreated) {
+    FinishSignature();
+    return aStatus;
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -133,243 +165,62 @@ ContentVerifier::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
   }
 
   
-  return Update(mContent[mContent.Length()-1]);
+  if (mContextCreated) {
+    return mVerifier->Update(mContent.LastElement());
+  }
+
+  return NS_OK;
 }
 
-
-
-
-
-nsresult
-ContentVerifier::GetVerificationKey(const nsAString& aKeyId)
+NS_IMETHODIMP
+ContentVerifier::ContextCreated(bool successful)
 {
-  
-  nsCharSeparatedTokenizer tokenizerVK(mVks, ';');
-  while (tokenizerVK.hasMoreTokens()) {
-    nsDependentSubstring token = tokenizerVK.nextToken();
-    nsCharSeparatedTokenizer tokenizerKey(token, '=');
-    nsString prefKeyId;
-    if (tokenizerKey.hasMoreTokens()) {
-      prefKeyId = tokenizerKey.nextToken();
-    }
-    nsString key;
-    if (tokenizerKey.hasMoreTokens()) {
-      key = tokenizerKey.nextToken();
-    }
-    if (prefKeyId.Equals(aKeyId)) {
-      mKey.Assign(NS_ConvertUTF16toUTF8(key));
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!successful) {
+    
+    if (!mNextListener) {
       return NS_OK;
     }
-  }
+    
+    
+    nsCOMPtr<nsIStreamListener> nextListener;
+    nextListener.swap(mNextListener);
 
-  
-  return NS_ERROR_INVALID_SIGNATURE;
-}
+    
+    MOZ_ASSERT(mContentRequest);
 
-nsresult
-ContentVerifier::ParseContentSignatureHeader(
-  const nsAString& aContentSignatureHeader)
-{
-  
-  NS_NAMED_LITERAL_CSTRING(keyid_var, "keyid");
-  NS_NAMED_LITERAL_CSTRING(signature_var, "p384ecdsa");
-
-  nsAutoString contentSignature;
-  nsAutoString keyId;
-  nsAutoCString header = NS_ConvertUTF16toUTF8(aContentSignatureHeader);
-  nsSecurityHeaderParser parser(header.get());
-  nsresult rv = parser.Parse();
-  if (NS_FAILED(rv)) {
-    CSV_LOG(("ContentVerifier: could not parse ContentSignature header\n"));
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  LinkedList<nsSecurityHeaderDirective>* directives = parser.GetDirectives();
-
-  for (nsSecurityHeaderDirective* directive = directives->getFirst();
-       directive != nullptr; directive = directive->getNext()) {
-    CSV_LOG(("ContentVerifier: found directive %s\n", directive->mName.get()));
-    if (directive->mName.Length() == keyid_var.Length() &&
-        directive->mName.EqualsIgnoreCase(keyid_var.get(),
-                                          keyid_var.Length())) {
-      if (!keyId.IsEmpty()) {
-        CSV_LOG(("ContentVerifier: found two keyIds\n"));
-        return NS_ERROR_INVALID_SIGNATURE;
-      }
-
-      CSV_LOG(("ContentVerifier: found a keyid directive\n"));
-      keyId = NS_ConvertUTF8toUTF16(directive->mValue);
-      rv = GetVerificationKey(keyId);
-      NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_SIGNATURE);
+    
+    CSV_LOG(("failed to get a valid cert chain\n"));
+    if (mContentRequest && nextListener) {
+      mContentRequest->Cancel(NS_ERROR_INVALID_SIGNATURE);
+      nsresult rv = nextListener->OnStopRequest(mContentRequest, mContentContext,
+                                                NS_ERROR_INVALID_SIGNATURE);
+      mContentRequest = nullptr;
+      mContentContext = nullptr;
+      return rv;
     }
-    if (directive->mName.Length() == signature_var.Length() &&
-        directive->mName.EqualsIgnoreCase(signature_var.get(),
-                                          signature_var.Length())) {
-      if (!contentSignature.IsEmpty()) {
-        CSV_LOG(("ContentVerifier: found two ContentSignatures\n"));
-        return NS_ERROR_INVALID_SIGNATURE;
-      }
 
-      CSV_LOG(("ContentVerifier: found a ContentSignature directive\n"));
-      contentSignature = NS_ConvertUTF8toUTF16(directive->mValue);
-      mSignature = directive->mValue;
+    
+    MOZ_ASSERT_UNREACHABLE(
+      "ContentVerifier was used without getting OnStartRequest!");
+    return NS_OK;
+  }
+
+  
+  
+  mContextCreated = true;
+  for (size_t i = 0; i < mContent.Length(); ++i) {
+    if (NS_FAILED(mVerifier->Update(mContent[i]))) {
+      
+      
+      break;
     }
   }
 
   
-  if (mKey.IsEmpty()) {
-    CSV_LOG(("ContentVerifier: got a Content-Signature header but didn't find "
-             "an appropriate key.\n"));
-    return NS_ERROR_INVALID_SIGNATURE;
+  if (mContentRead) {
+    FinishSignature();
   }
-  if (mSignature.IsEmpty()) {
-    CSV_LOG(("ContentVerifier: got a Content-Signature header but didn't find "
-             "a signature.\n"));
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-
-nsresult
-ContentVerifier::ParseInput(ScopedSECKEYPublicKey& aPublicKeyOut,
-                            ScopedSECItem& aSignatureItemOut,
-                            SECOidTag& aOidOut,
-                            const nsNSSShutDownPreventionLock&)
-{
-  
-  ScopedSECItem keyItem(::SECITEM_AllocItem(nullptr, nullptr, 0));
-  if (!keyItem ||
-      !NSSBase64_DecodeBuffer(nullptr, keyItem,
-                              mKey.get(),
-                              mKey.Length())) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  ScopedCERTSubjectPublicKeyInfo pki(
-    SECKEY_DecodeDERSubjectPublicKeyInfo(keyItem));
-  if (!pki) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  aPublicKeyOut = SECKEY_ExtractPublicKey(pki.get());
-
-  
-  if (!aPublicKeyOut) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  ScopedSECItem rawSignatureItem(::SECITEM_AllocItem(nullptr, nullptr, 0));
-  if (!rawSignatureItem ||
-      !NSSBase64_DecodeBuffer(nullptr, rawSignatureItem,
-                              mSignature.get(),
-                              mSignature.Length())) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  if (!aSignatureItemOut) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  
-  
-  
-  if (rawSignatureItem->len == 0 || rawSignatureItem->len % 2 != 0) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  if (DSAU_EncodeDerSigWithLen(aSignatureItemOut, rawSignatureItem,
-                               rawSignatureItem->len) != SECSuccess) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  aOidOut = SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE;
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-nsresult
-ContentVerifier::CreateContext()
-{
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  
-  
-  mSignature.ReplaceChar('-', '+');
-  mSignature.ReplaceChar('_', '/');
-
-  ScopedSECKEYPublicKey publicKey;
-  ScopedSECItem signatureItem(::SECITEM_AllocItem(nullptr, nullptr, 0));
-  SECOidTag oid;
-  nsresult rv = ParseInput(publicKey, signatureItem, oid, locker);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  mCx = UniqueVFYContext(VFY_CreateContext(publicKey, signatureItem, oid, NULL));
-  if (!mCx) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  if (VFY_Begin(mCx.get()) != SECSuccess) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  return Update(kPREFIX);
-}
-
-
-
-
-nsresult
-ContentVerifier::Update(const nsACString& aData)
-{
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  if (!aData.IsEmpty()) {
-    if (VFY_Update(mCx.get(),
-                   (const unsigned char*)nsPromiseFlatCString(aData).get(),
-                   aData.Length()) != SECSuccess) {
-      return NS_ERROR_INVALID_SIGNATURE;
-    }
-  }
-
-  return NS_OK;
-}
-
-
-
-
-nsresult
-ContentVerifier::End(bool* _retval)
-{
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  *_retval = (VFY_End(mCx.get()) == SECSuccess);
 
   return NS_OK;
 }
