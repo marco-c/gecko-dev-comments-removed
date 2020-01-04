@@ -25,7 +25,6 @@ Cu.importGlobalProperties(["TextEncoder"]);
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/ExtensionContent.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
@@ -77,7 +76,6 @@ var {
   Messenger,
   injectAPI,
   instanceOf,
-  extend,
   flushJarCache,
 } = ExtensionUtils;
 
@@ -733,36 +731,38 @@ function getExtensionUUID(id) {
 
 
 
-this.ExtensionData = function(rootURI) {
-  this.rootURI = rootURI;
+this.ExtensionData = class {
+  constructor(rootURI) {
+    this.rootURI = rootURI;
 
-  this.manifest = null;
-  this.id = null;
-  this.uuid = null;
-  this.localeData = null;
-  this._promiseLocales = null;
+    this.manifest = null;
+    this.id = null;
+    this.uuid = null;
+    this.localeData = null;
+    this._promiseLocales = null;
 
-  this.errors = [];
-};
+    this.errors = [];
+  }
 
-ExtensionData.prototype = {
-  builtinMessages: null,
+  get builtinMessages() {
+    return null;
+  }
 
   get logger() {
     let id = this.id || "<unknown>";
     return Log.repository.getLogger(LOGGER_ID_BASE + id);
-  },
+  }
 
   
   manifestError(message) {
     this.packagingError(`Reading manifest: ${message}`);
-  },
+  }
 
   
   packagingError(message) {
     this.errors.push(message);
     this.logger.error(`Loading extension '${this.id}': ${message}`);
-  },
+  }
 
   
 
@@ -782,75 +782,77 @@ ExtensionData.prototype = {
       this.uuid = getExtensionUUID(this.id);
     }
     return `moz-extension://${this.uuid}/${path}`;
-  },
+  }
 
-  readDirectory: Task.async(function* (path) {
-    if (this.rootURI instanceof Ci.nsIFileURL) {
-      let uri = NetUtil.newURI(this.rootURI.resolve("./" + path));
-      let fullPath = uri.QueryInterface(Ci.nsIFileURL).file.path;
+  readDirectory(path) {
+    return Task.spawn(function* () {
+      if (this.rootURI instanceof Ci.nsIFileURL) {
+        let uri = NetUtil.newURI(this.rootURI.resolve("./" + path));
+        let fullPath = uri.QueryInterface(Ci.nsIFileURL).file.path;
 
-      let iter = new OS.File.DirectoryIterator(fullPath);
-      let results = [];
+        let iter = new OS.File.DirectoryIterator(fullPath);
+        let results = [];
 
-      try {
-        yield iter.forEach(entry => {
-          results.push(entry);
-        });
-      } catch (e) {
-        
-        
-      }
-      iter.close();
-
-      return results;
-    }
-
-    if (!(this.rootURI instanceof Ci.nsIJARURI &&
-          this.rootURI.JARFile instanceof Ci.nsIFileURL)) {
-      
-      
-      return [];
-    }
-
-    
-
-    let file = this.rootURI.JARFile.file;
-    let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
-    try {
-      zipReader.open(file);
-
-      let results = [];
-
-      
-      path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
-
-      
-      let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
-
-      let enumerator = zipReader.findEntries(pattern + "*");
-      while (enumerator.hasMore()) {
-        let name = enumerator.getNext();
-        if (!name.startsWith(path)) {
-          throw new Error("Unexpected ZipReader entry");
-        }
-
-        
-        
-        
-        name = name.slice(path.length);
-        if (name && !/\/./.test(name)) {
-          results.push({
-            name: name.replace("/", ""),
-            isDir: name.endsWith("/"),
+        try {
+          yield iter.forEach(entry => {
+            results.push(entry);
           });
+        } catch (e) {
+          
+          
         }
+        iter.close();
+
+        return results;
       }
 
-      return results;
-    } finally {
-      zipReader.close();
-    }
-  }),
+      if (!(this.rootURI instanceof Ci.nsIJARURI &&
+            this.rootURI.JARFile instanceof Ci.nsIFileURL)) {
+        
+        
+        return [];
+      }
+
+      
+
+      let file = this.rootURI.JARFile.file;
+      let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
+      try {
+        zipReader.open(file);
+
+        let results = [];
+
+        
+        path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
+
+        
+        let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
+
+        let enumerator = zipReader.findEntries(pattern + "*");
+        while (enumerator.hasMore()) {
+          let name = enumerator.getNext();
+          if (!name.startsWith(path)) {
+            throw new Error("Unexpected ZipReader entry");
+          }
+
+          
+          
+          
+          name = name.slice(path.length);
+          if (name && !/\/./.test(name)) {
+            results.push({
+              name: name.replace("/", ""),
+              isDir: name.endsWith("/"),
+            });
+          }
+        }
+
+        return results;
+      } finally {
+        zipReader.close();
+      }
+    }.bind(this));
+  }
 
   readJSON(path) {
     return new Promise((resolve, reject) => {
@@ -873,7 +875,7 @@ ExtensionData.prototype = {
         }
       });
     });
-  },
+  }
 
   
   
@@ -923,15 +925,15 @@ ExtensionData.prototype = {
 
       return this.manifest;
     });
-  },
+  }
 
   localizeMessage(...args) {
     return this.localeData.localizeMessage(...args);
-  },
+  }
 
   localize(...args) {
     return this.localeData.localize(...args);
-  },
+  }
 
   
   
@@ -941,30 +943,32 @@ ExtensionData.prototype = {
     }
 
     return null;
-  },
+  }
 
   
   
   
   normalizeLocaleCode(locale) {
     return String.replace(locale, /_/g, "-");
-  },
+  }
 
   
   
-  readLocaleFile: Task.async(function* (locale) {
-    let locales = yield this.promiseLocales();
-    let dir = locales.get(locale) || locale;
-    let file = `_locales/${dir}/messages.json`;
+  readLocaleFile(locale) {
+    return Task.spawn(function* () {
+      let locales = yield this.promiseLocales();
+      let dir = locales.get(locale) || locale;
+      let file = `_locales/${dir}/messages.json`;
 
-    try {
-      let messages = yield this.readJSON(file);
-      return this.localeData.addLocale(locale, messages, this);
-    } catch (e) {
-      this.packagingError(`Loading locale file ${file}: ${e}`);
-      return new Map();
-    }
-  }),
+      try {
+        let messages = yield this.readJSON(file);
+        return this.localeData.addLocale(locale, messages, this);
+      } catch (e) {
+        this.packagingError(`Loading locale file ${file}: ${e}`);
+        return new Map();
+      }
+    }.bind(this));
+  }
 
   
   
@@ -996,92 +1000,62 @@ ExtensionData.prototype = {
     }
 
     return this._promiseLocales;
-  },
-
-  
-  
-  
-  
-  initAllLocales: Task.async(function* () {
-    let locales = yield this.promiseLocales();
-
-    yield Promise.all(Array.from(locales.keys(),
-                                 locale => this.readLocaleFile(locale)));
-
-    let defaultLocale = this.defaultLocale;
-    if (defaultLocale) {
-      if (!locales.has(defaultLocale)) {
-        this.manifestError('Value for "default_locale" property must correspond to ' +
-                           'a directory in "_locales/". Not found: ' +
-                           JSON.stringify(`_locales/${this.manifest.default_locale}/`));
-      }
-    } else if (locales.size) {
-      this.manifestError('The "default_locale" property is required when a ' +
-                         '"_locales/" directory is present.');
-    }
-
-    return this.localeData.messages;
-  }),
-
-  
-  
-  
-  
-  
-  
-  
-  
-  initLocale: Task.async(function* (locale = this.defaultLocale) {
-    if (locale == null) {
-      return null;
-    }
-
-    let promises = [this.readLocaleFile(locale)];
-
-    let {defaultLocale} = this;
-    if (locale != defaultLocale && !this.localeData.has(defaultLocale)) {
-      promises.push(this.readLocaleFile(defaultLocale));
-    }
-
-    let results = yield Promise.all(promises);
-
-    this.localeData.selectedLocale = locale;
-    return results[0];
-  }),
-};
-
-
-
-this.Extension = function(addonData) {
-  ExtensionData.call(this, addonData.resourceURI);
-
-  this.uuid = getExtensionUUID(addonData.id);
-
-  if (addonData.cleanupFile) {
-    Services.obs.addObserver(this, "xpcom-shutdown", false);
-    this.cleanupFile = addonData.cleanupFile || null;
-    delete addonData.cleanupFile;
   }
 
-  this.addonData = addonData;
-  this.id = addonData.id;
-  this.baseURI = NetUtil.newURI(this.getURL("")).QueryInterface(Ci.nsIURL);
-  this.principal = this.createPrincipal();
+  
+  
+  
+  
+  initAllLocales() {
+    return Task.spawn(function* () {
+      let locales = yield this.promiseLocales();
 
-  this.views = new Set();
+      yield Promise.all(Array.from(locales.keys(),
+                                   locale => this.readLocaleFile(locale)));
 
-  this.onStartup = null;
+      let defaultLocale = this.defaultLocale;
+      if (defaultLocale) {
+        if (!locales.has(defaultLocale)) {
+          this.manifestError('Value for "default_locale" property must correspond to ' +
+                             'a directory in "_locales/". Not found: ' +
+                             JSON.stringify(`_locales/${this.manifest.default_locale}/`));
+        }
+      } else if (locales.size) {
+        this.manifestError('The "default_locale" property is required when a ' +
+                           '"_locales/" directory is present.');
+      }
 
-  this.hasShutdown = false;
-  this.onShutdown = new Set();
+      return this.localeData.messages;
+    }.bind(this));
+  }
 
-  this.uninstallURL = null;
+  
+  
+  
+  
+  
+  
+  
+  
+  initLocale(locale = this.defaultLocale) {
+    return Task.spawn(function* () {
+      if (locale == null) {
+        return null;
+      }
 
-  this.permissions = new Set();
-  this.whiteListedHosts = null;
-  this.webAccessibleResources = null;
+      let promises = [this.readLocaleFile(locale)];
 
-  this.emitter = new EventEmitter();
+      let {defaultLocale} = this;
+      if (locale != defaultLocale && !this.localeData.has(defaultLocale)) {
+        promises.push(this.readLocaleFile(defaultLocale));
+      }
+
+      let results = yield Promise.all(promises);
+
+      this.localeData.selectedLocale = locale;
+      return results[0];
+    }.bind(this));
+  }
 };
 
 
@@ -1095,161 +1069,45 @@ this.Extension = function(addonData) {
 
 
 
+class MockExtension {
+  constructor(id, file, rootURI, installType) {
+    this.id = id;
+    this.file = file;
+    this.rootURI = rootURI;
+    this.installType = installType;
 
+    let promiseEvent = eventName => new Promise(resolve => {
+      let onstartup = (msg, extension) => {
+        if (extension.id == this.id) {
+          Management.off(eventName, onstartup);
 
+          this._extension = extension;
+          resolve(extension);
+        }
+      };
+      Management.on(eventName, onstartup);
+    });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-this.Extension.generateXPI = function(id, data) {
-  let manifest = data.manifest;
-  if (!manifest) {
-    manifest = {};
+    this._extension = null;
+    this._extensionPromise = promiseEvent("startup");
+    this._readyPromise = promiseEvent("ready");
   }
 
-  let files = data.files;
-  if (!files) {
-    files = {};
-  }
-
-  function provide(obj, keys, value, override = false) {
-    if (keys.length == 1) {
-      if (!(keys[0] in obj) || override) {
-        obj[keys[0]] = value;
-      }
-    } else {
-      if (!(keys[0] in obj)) {
-        obj[keys[0]] = {};
-      }
-      provide(obj[keys[0]], keys.slice(1), value, override);
-    }
-  }
-
-  provide(manifest, ["applications", "gecko", "id"], id);
-
-  provide(manifest, ["name"], "Generated extension");
-  provide(manifest, ["manifest_version"], 2);
-  provide(manifest, ["version"], "1.0");
-
-  if (data.background) {
-    let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-    let bgScript = uuidGenerator.generateUUID().number + ".js";
-
-    provide(manifest, ["background", "scripts"], [bgScript], true);
-    files[bgScript] = data.background;
-  }
-
-  provide(files, ["manifest.json"], manifest);
-
-  let ZipWriter = Components.Constructor("@mozilla.org/zipwriter;1", "nsIZipWriter");
-  let zipW = new ZipWriter();
-
-  let file = FileUtils.getFile("TmpD", ["generated-extension.xpi"]);
-  file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-
-  const MODE_WRONLY = 0x02;
-  const MODE_TRUNCATE = 0x20;
-  zipW.open(file, MODE_WRONLY | MODE_TRUNCATE);
-
-  
-  let time = Date.now() * 1000;
-
-  function generateFile(filename) {
-    let components = filename.split("/");
-    let path = "";
-    for (let component of components.slice(0, -1)) {
-      path += component + "/";
-      if (!zipW.hasEntry(path)) {
-        zipW.addEntryDirectory(path, time, false);
-      }
-    }
-  }
-
-  for (let filename in files) {
-    let script = files[filename];
-    if (typeof(script) == "function") {
-      script = "(" + script.toString() + ")()";
-    } else if (instanceOf(script, "Object")) {
-      script = JSON.stringify(script);
-    }
-
-    if (!instanceOf(script, "ArrayBuffer")) {
-      script = new TextEncoder("utf-8").encode(script).buffer;
-    }
-
-    let stream = Cc["@mozilla.org/io/arraybuffer-input-stream;1"].createInstance(Ci.nsIArrayBufferInputStream);
-    stream.setData(script, 0, script.byteLength);
-
-    generateFile(filename);
-    zipW.addEntryStream(filename, time, 0, stream, false);
-  }
-
-  zipW.close();
-
-  return file;
-};
-
-
-
-
-
-
-
-
-
-
-
-function MockExtension(id, file, rootURI, installType) {
-  this.id = id;
-  this.file = file;
-  this.rootURI = rootURI;
-  this.installType = installType;
-
-  let promiseEvent = eventName => new Promise(resolve => {
-    let onstartup = (msg, extension) => {
-      if (extension.id == this.id) {
-        Management.off(eventName, onstartup);
-
-        this._extension = extension;
-        resolve(extension);
-      }
-    };
-    Management.on(eventName, onstartup);
-  });
-
-  this._extension = null;
-  this._extensionPromise = promiseEvent("startup");
-  this._readyPromise = promiseEvent("ready");
-}
-
-MockExtension.prototype = {
   testMessage(...args) {
     return this._extension.testMessage(...args);
-  },
+  }
 
   on(...args) {
     this._extensionPromise.then(extension => {
       extension.on(...args);
     });
-  },
+  }
 
   off(...args) {
     this._extensionPromise.then(extension => {
       extension.off(...args);
     });
-  },
+  }
 
   startup() {
     if (this.installType == "temporary") {
@@ -1274,69 +1132,220 @@ MockExtension.prototype = {
       });
     }
     throw new Error("installType must be one of: temporary, permanent");
-  },
+  }
 
   shutdown() {
     this.addon.uninstall(true);
     return this.cleanupGeneratedFile();
-  },
+  }
 
   cleanupGeneratedFile() {
     flushJarCache(this.file);
     return OS.File.remove(this.file.path);
-  },
-};
+  }
+}
 
 
 
+this.Extension = class extends ExtensionData {
+  constructor(addonData) {
+    super(addonData.resourceURI);
 
+    this.uuid = getExtensionUUID(addonData.id);
 
+    if (addonData.cleanupFile) {
+      Services.obs.addObserver(this, "xpcom-shutdown", false);
+      this.cleanupFile = addonData.cleanupFile || null;
+      delete addonData.cleanupFile;
+    }
 
+    this.addonData = addonData;
+    this.id = addonData.id;
+    this.baseURI = NetUtil.newURI(this.getURL("")).QueryInterface(Ci.nsIURL);
+    this.principal = this.createPrincipal();
 
+    this.views = new Set();
 
+    this.onStartup = null;
 
-this.Extension.generate = function(id, data) {
-  let file = this.generateXPI(id, data);
+    this.hasShutdown = false;
+    this.onShutdown = new Set();
 
-  flushJarCache(file);
-  Services.ppmm.broadcastAsyncMessage("Extension:FlushJarCache", {path: file.path});
+    this.uninstallURL = null;
 
-  let fileURI = Services.io.newFileURI(file);
-  let jarURI = Services.io.newURI("jar:" + fileURI.spec + "!/", null, null);
+    this.permissions = new Set();
+    this.whiteListedHosts = null;
+    this.webAccessibleResources = null;
 
-  
-  if (data.useAddonManager) {
-    return new MockExtension(id, file, jarURI, data.useAddonManager);
+    this.emitter = new EventEmitter();
   }
 
-  return new Extension({
-    id,
-    resourceURI: jarURI,
-    cleanupFile: file,
-  });
-};
+  
 
-Extension.prototype = extend(Object.create(ExtensionData.prototype), {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static generateXPI(id, data) {
+    let manifest = data.manifest;
+    if (!manifest) {
+      manifest = {};
+    }
+
+    let files = data.files;
+    if (!files) {
+      files = {};
+    }
+
+    function provide(obj, keys, value, override = false) {
+      if (keys.length == 1) {
+        if (!(keys[0] in obj) || override) {
+          obj[keys[0]] = value;
+        }
+      } else {
+        if (!(keys[0] in obj)) {
+          obj[keys[0]] = {};
+        }
+        provide(obj[keys[0]], keys.slice(1), value, override);
+      }
+    }
+
+    provide(manifest, ["applications", "gecko", "id"], id);
+
+    provide(manifest, ["name"], "Generated extension");
+    provide(manifest, ["manifest_version"], 2);
+    provide(manifest, ["version"], "1.0");
+
+    if (data.background) {
+      let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+      let bgScript = uuidGenerator.generateUUID().number + ".js";
+
+      provide(manifest, ["background", "scripts"], [bgScript], true);
+      files[bgScript] = data.background;
+    }
+
+    provide(files, ["manifest.json"], manifest);
+
+    let ZipWriter = Components.Constructor("@mozilla.org/zipwriter;1", "nsIZipWriter");
+    let zipW = new ZipWriter();
+
+    let file = FileUtils.getFile("TmpD", ["generated-extension.xpi"]);
+    file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+
+    const MODE_WRONLY = 0x02;
+    const MODE_TRUNCATE = 0x20;
+    zipW.open(file, MODE_WRONLY | MODE_TRUNCATE);
+
+    
+    let time = Date.now() * 1000;
+
+    function generateFile(filename) {
+      let components = filename.split("/");
+      let path = "";
+      for (let component of components.slice(0, -1)) {
+        path += component + "/";
+        if (!zipW.hasEntry(path)) {
+          zipW.addEntryDirectory(path, time, false);
+        }
+      }
+    }
+
+    for (let filename in files) {
+      let script = files[filename];
+      if (typeof(script) == "function") {
+        script = "(" + script.toString() + ")()";
+      } else if (instanceOf(script, "Object")) {
+        script = JSON.stringify(script);
+      }
+
+      if (!instanceOf(script, "ArrayBuffer")) {
+        script = new TextEncoder("utf-8").encode(script).buffer;
+      }
+
+      let stream = Cc["@mozilla.org/io/arraybuffer-input-stream;1"].createInstance(Ci.nsIArrayBufferInputStream);
+      stream.setData(script, 0, script.byteLength);
+
+      generateFile(filename);
+      zipW.addEntryStream(filename, time, 0, stream, false);
+    }
+
+    zipW.close();
+
+    return file;
+  }
+
+  
+
+
+
+
+
+
+
+  static generate(id, data) {
+    let file = this.generateXPI(id, data);
+
+    flushJarCache(file);
+    Services.ppmm.broadcastAsyncMessage("Extension:FlushJarCache", {path: file.path});
+
+    let fileURI = Services.io.newFileURI(file);
+    let jarURI = Services.io.newURI("jar:" + fileURI.spec + "!/", null, null);
+
+    
+    if (data.useAddonManager) {
+      return new MockExtension(id, file, jarURI, data.useAddonManager);
+    }
+
+    return new Extension({
+      id,
+      resourceURI: jarURI,
+      cleanupFile: file,
+    });
+  }
+
   on(hook, f) {
     return this.emitter.on(hook, f);
-  },
+  }
 
   off(hook, f) {
     return this.emitter.off(hook, f);
-  },
+  }
 
   emit(...args) {
     return this.emitter.emit(...args);
-  },
+  }
 
   testMessage(...args) {
     Management.emit("test-message", this, ...args);
-  },
+  }
 
   createPrincipal(uri = this.baseURI) {
     return Services.scriptSecurityManager.createCodebasePrincipal(
       uri, {addonId: this.id});
-  },
+  }
 
   
   isExtensionURL(url) {
@@ -1344,7 +1353,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
 
     let common = this.baseURI.getCommonBaseSpec(uri);
     return common == this.baseURI.spec;
-  },
+  }
 
   
   
@@ -1362,7 +1371,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       localeData: this.localeData.serialize(),
       permissions: this.permissions,
     };
-  },
+  }
 
   broadcast(msg, data) {
     return new Promise(resolve => {
@@ -1376,7 +1385,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       });
       Services.ppmm.broadcastAsyncMessage(msg, data);
     });
-  },
+  }
 
   runManifest(manifest) {
     let permissions = manifest.permissions || [];
@@ -1415,39 +1424,44 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
     return this.broadcast("Extension:Startup", serial).then(() => {
       return Promise.all(promises);
     });
-  },
+  }
 
   callOnClose(obj) {
     this.onShutdown.add(obj);
-  },
+  }
 
   forgetOnClose(obj) {
     this.onShutdown.delete(obj);
-  },
+  }
 
   get builtinMessages() {
     return new Map([
       ["@@extension_id", this.uuid],
     ]);
-  },
+  }
 
   
   
   
-  initLocale: Task.async(function* (locale = undefined) {
-    if (locale === undefined) {
-      let locales = yield this.promiseLocales();
+  initLocale(locale = undefined) {
+    
+    let super_ = super.initLocale.bind(this);
 
-      let localeList = Array.from(locales.keys(), locale => {
-        return {name: locale, locales: [locale]};
-      });
+    return Task.spawn(function* () {
+      if (locale === undefined) {
+        let locales = yield this.promiseLocales();
 
-      let match = Locale.findClosestLocale(localeList);
-      locale = match ? match.name : this.defaultLocale;
-    }
+        let localeList = Array.from(locales.keys(), locale => {
+          return {name: locale, locales: [locale]};
+        });
 
-    return ExtensionData.prototype.initLocale.call(this, locale);
-  }),
+        let match = Locale.findClosestLocale(localeList);
+        locale = match ? match.name : this.defaultLocale;
+      }
+
+      return super_(locale);
+    }.bind(this));
+  }
 
   startup() {
     let started = false;
@@ -1490,7 +1504,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
 
       throw e;
     });
-  },
+  }
 
   cleanupGeneratedFile() {
     if (!this.cleanupFile) {
@@ -1509,7 +1523,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       
       file.remove(false);
     });
-  },
+  }
 
   shutdown() {
     this.hasShutdown = true;
@@ -1539,19 +1553,19 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
     ExtensionManagement.shutdownExtension(this.uuid);
 
     this.cleanupGeneratedFile();
-  },
+  }
 
   observe(subject, topic, data) {
     if (topic == "xpcom-shutdown") {
       this.cleanupGeneratedFile();
     }
-  },
+  }
 
   hasPermission(perm) {
     return this.permissions.has(perm);
-  },
+  }
 
   get name() {
     return this.localize(this.manifest.name);
-  },
-});
+  }
+};
