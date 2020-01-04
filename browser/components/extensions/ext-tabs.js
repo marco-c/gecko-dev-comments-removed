@@ -477,32 +477,12 @@ extensions.registerAPI((extension, context) => {
         let tab = tabId ? TabManager.getTab(tabId) : TabManager.activeTab;
         let mm = tab.linkedBrowser.messageManager;
 
-        let options = {
-          js: [],
-          css: [],
-
-          
-          
-          
-          
-          
-          
-          
-          innerWindowID: tab.linkedBrowser.innerWindowID,
-
-          matchesHost: extension.whiteListedHosts.serialize(),
-        };
-
+        let options = {js: [], css: []};
         if (details.code) {
           options[kind + 'Code'] = details.code;
         }
         if (details.file) {
-          let url = context.uri.resolve(details.file);
-          if (extension.isExtensionURL(url)) {
-            
-            
-            options[kind].push(url);
-          }
+          options[kind].push(extension.baseURI.resolve(details.file));
         }
         if (details.allFrames) {
           options.all_frames = details.allFrames;

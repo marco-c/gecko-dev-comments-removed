@@ -55,19 +55,14 @@ var WebProgressListener = {
   },
 
   _setupJSON: function setupJSON(aWebProgress, aRequest) {
-    let innerWindowID = null;
     if (aWebProgress) {
-      let domWindowID = null;
+      let domWindowID;
       try {
-        let utils = aWebProgress.DOMWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                                .getInterface(Ci.nsIDOMWindowUtils);
-        domWindowID = utils.outerWindowID;
-        innerWindowID = utils.currentInnerWindowID;
+        domWindowID = aWebProgress && aWebProgress.DOMWindowID;
       } catch (e) {
         
         
-        
-        
+        domWindowID = null;
       }
 
       aWebProgress = {
@@ -82,8 +77,7 @@ var WebProgressListener = {
       webProgress: aWebProgress || null,
       requestURI: this._requestSpec(aRequest, "URI"),
       originalRequestURI: this._requestSpec(aRequest, "originalURI"),
-      documentContentType: content.document && content.document.contentType,
-      innerWindowID,
+      documentContentType: content.document && content.document.contentType
     };
   },
 
