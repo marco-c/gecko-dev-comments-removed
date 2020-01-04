@@ -80,6 +80,7 @@ public class SuggestedSites {
         BrowserContract.SuggestedSites._ID,
         BrowserContract.SuggestedSites.URL,
         BrowserContract.SuggestedSites.TITLE,
+        BrowserContract.Combined.HISTORY_ID
     };
 
     private static final String JSON_KEY_URL = "url";
@@ -478,7 +479,15 @@ public class SuggestedSites {
         Log.d(LOGTAG, "Number of suggested sites: " + sitesCount);
 
         final int maxCount = Math.min(limit, sitesCount);
+        
+        
+        int id = -1;
         for (Site site : cachedSites.values()) {
+            
+            
+            
+            
+            --id;
             if (cursor.getCount() == maxCount) {
                 break;
             }
@@ -491,9 +500,10 @@ public class SuggestedSites {
 
             if (restrictedProfile == site.restricted) {
                 final RowBuilder row = cursor.newRow();
-                row.add(-1);
+                row.add(id);
                 row.add(site.url);
                 row.add(site.title);
+                row.add(id);
             }
         }
 
