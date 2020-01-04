@@ -370,6 +370,12 @@ typedef GenericFlingAnimation FlingAnimation;
 
 
 
+
+
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -703,6 +709,7 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mState(NOTHING),
      mNotificationBlockers(0),
      mInputQueue(aInputQueue),
+     mPinchPaintTimerSet(false),
      mAPZCId(sAsyncPanZoomControllerCount++),
      mSharedLock(nullptr),
      mAsyncTransformAppliedToContent(false),
@@ -1281,6 +1288,7 @@ nsEventStatus AsyncPanZoomController::OnTouchCancel(const MultiTouchInput& aEven
 nsEventStatus AsyncPanZoomController::OnScaleBegin(const PinchGestureInput& aEvent) {
   APZC_LOG("%p got a scale-begin in state %d\n", this, mState);
 
+  mPinchPaintTimerSet = false;
   
   
   if (HasReadyTouchBlock() && !CurrentTouchBlock()->TouchActionAllowsPinchZoom()) {
@@ -1375,8 +1383,21 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
       }
 
       ScheduleComposite();
+
       
-      
+      if (!mPinchPaintTimerSet) {
+        const int delay = gfxPrefs::APZScaleRepaintDelay();
+        if (delay >= 0) {
+          if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+            mPinchPaintTimerSet = true;
+            controller->PostDelayedTask(
+              NewRunnableMethod(this,
+                                &AsyncPanZoomController::DoDelayedRequestContentRepaint),
+              delay);
+          }
+        }
+      }
+
       UpdateSharedCompositorFrameMetrics();
     }
 
@@ -1388,6 +1409,8 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
 
 nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent) {
   APZC_LOG("%p got a scale-end in state %d\n", this, mState);
+
+  mPinchPaintTimerSet = false;
 
   if (HasReadyTouchBlock() && !CurrentTouchBlock()->TouchActionAllowsPinchZoom()) {
     return nsEventStatus_eIgnore;
@@ -1611,6 +1634,15 @@ AsyncPanZoomController::AllowScrollHandoffInCurrentBlock() const
     }
   }
   return result;
+}
+
+void AsyncPanZoomController::DoDelayedRequestContentRepaint()
+{
+  if (!IsDestroyed() && mPinchPaintTimerSet) {
+    ReentrantMonitorAutoEnter lock(mMonitor);
+    RequestContentRepaint();
+  }
+  mPinchPaintTimerSet = false;
 }
 
 static ScrollInputMethod

@@ -898,6 +898,8 @@ private:
   ParentLayerPoint mLastFlingVelocity;
   
   TimeStamp mLastFlingTime;
+  
+  bool mPinchPaintTimerSet;
 
   
   
@@ -920,6 +922,9 @@ private:
 
   
   bool AllowScrollHandoffInCurrentBlock() const;
+
+  
+  void DoDelayedRequestContentRepaint();
 
   
 
