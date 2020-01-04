@@ -4542,18 +4542,20 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   pctTotal += pctOutsideSize;
 
   nscoord size;
-  if (GetAbsoluteCoord(aStyleSize, size) ||
-      GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
-                        PROP_WIDTH, size)) {
-    result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
-                                        pctOutsideSize);
-  } else if (aType == nsLayoutUtils::MIN_ISIZE &&
-             (aStyleSize.HasPercent() ||
-              aStyleMaxSize.HasPercent()) &&
-             aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) {
+  if (aType == nsLayoutUtils::MIN_ISIZE &&
+      (aStyleSize.HasPercent() ||
+       aStyleMaxSize.HasPercent()) &&
+      aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) {
+    
+    
     
     
     result = 0; 
+  } else if (GetAbsoluteCoord(aStyleSize, size) ||
+             GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
+                               PROP_WIDTH, size)) {
+    result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
+                                        pctOutsideSize);
   } else {
     
     
