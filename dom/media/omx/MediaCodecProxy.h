@@ -163,6 +163,8 @@ private:
   bool mCodecEncoder;
 
   mozilla::MozPromiseHolder<CodecPromise> mCodecPromise;
+  
+  mozilla::Monitor mPromiseMonitor;
 
   
   RefPtr<mozilla::MediaSystemResourceClient> mResourceClient;
@@ -174,9 +176,6 @@ private:
   
   Vector<sp<ABuffer> > mInputBuffers;
   Vector<sp<ABuffer> > mOutputBuffers;
-
-  mozilla::Monitor mMediaCodecLock;
-  bool mPendingRequestMediaResource;
 };
 
 } 

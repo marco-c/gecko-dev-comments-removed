@@ -64,6 +64,13 @@ OMXCodecProxy::OMXCodecProxy(
 
 OMXCodecProxy::~OMXCodecProxy()
 {
+  
+  
+  if (mResourceClient) {
+    mResourceClient->ReleaseResource();
+    mResourceClient = nullptr;
+  }
+
   mState = ResourceState::END;
   mCodecPromise.RejectIfExists(true, __func__);
 
@@ -77,11 +84,6 @@ OMXCodecProxy::~OMXCodecProxy()
   }
   
   IPCThreadState::self()->flushCommands();
-
-  if (mResourceClient) {
-    mResourceClient->ReleaseResource();
-    mResourceClient = nullptr;
-  }
 
   mSource.clear();
   free(mComponentName);
