@@ -134,7 +134,6 @@ protected:
   virtual ~DecodedStream();
 
 private:
-  ReentrantMonitor& GetReentrantMonitor() const;
   void CreateData(MozPromiseHolder<GenericPromise>&& aPromise);
   void DestroyData(UniquePtr<DecodedStreamData> aData);
   void OnDataCreated(UniquePtr<DecodedStreamData> aData);
@@ -160,15 +159,6 @@ private:
   OutputStreamManager mOutputStreamManager;
   
   bool mShuttingDown;
-
-  
-  
-  
-  
-  
-  
-  
-  mutable ReentrantMonitor mMonitor;
 
   
 
