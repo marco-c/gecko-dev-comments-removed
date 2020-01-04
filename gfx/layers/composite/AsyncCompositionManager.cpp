@@ -623,7 +623,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 
   Matrix4x4 combinedAsyncTransform;
   bool hasAsyncTransform = false;
-  ScreenMargin fixedLayerMargins(0, 0, 0, 0);
+  ScreenMargin fixedLayerMargins;
 
   
   
@@ -666,9 +666,6 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     }
 
     const FrameMetrics& metrics = aLayer->GetFrameMetrics(i);
-    
-    
-    
 
 #if defined(MOZ_ANDROID_APZ)
     
@@ -682,16 +679,27 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             (aLayer->GetParent() == nullptr &&          
              i + 1 >= aLayer->GetFrameMetricsCount());
       if (*aOutFoundRoot) {
+        CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
         if (mIsFirstPaint) {
-          CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
           LayerIntPoint scrollOffsetLayerPixels = RoundedToInt(metrics.GetScrollOffset() * geckoZoom);
           mContentRect = metrics.GetScrollableRect();
           SetFirstPaintViewport(scrollOffsetLayerPixels,
                                 geckoZoom,
                                 mContentRect);
+        } else {
+          
+          CSSRect displayPort(metrics.GetCriticalDisplayPort().IsEmpty() ?
+              metrics.GetDisplayPort() :
+              metrics.GetCriticalDisplayPort());
+          displayPort += metrics.GetScrollOffset();
+          SyncFrameMetrics(scrollOffset,
+              geckoZoom * asyncTransformWithoutOverscroll.mScale,
+              metrics.GetScrollableRect(), displayPort, geckoZoom, mLayersUpdated,
+              mPaintSyncId, fixedLayerMargins);
         }
         mIsFirstPaint = false;
         mLayersUpdated = false;
+        mPaintSyncId = 0;
       }
     }
 #endif
@@ -769,6 +777,8 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 
     appliedTransform = true;
   }
+
+  ExpandRootClipRect(aLayer, fixedLayerMargins);
 
   if (aLayer->GetScrollbarDirection() != Layer::NONE) {
     ApplyAsyncTransformToScrollbar(aLayer);
@@ -1242,18 +1252,18 @@ AsyncCompositionManager::SyncViewportInfo(const LayerIntRect& aDisplayPort,
 
 void
 AsyncCompositionManager::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset,
-                                          float aZoom,
+                                          const CSSToParentLayerScale& aZoom,
                                           const CSSRect& aCssPageRect,
-                                          bool aLayersUpdated,
                                           const CSSRect& aDisplayPort,
-                                          const CSSToLayerScale& aDisplayResolution,
-                                          bool aIsFirstPaint,
+                                          const CSSToLayerScale& aPaintedResolution,
+                                          bool aLayersUpdated,
+                                          int32_t aPaintSyncId,
                                           ScreenMargin& aFixedLayerMargins)
 {
 #ifdef MOZ_WIDGET_ANDROID
   AndroidBridge::Bridge()->SyncFrameMetrics(aScrollOffset, aZoom, aCssPageRect,
-                                            aLayersUpdated, aDisplayPort,
-                                            aDisplayResolution, aIsFirstPaint,
+                                            aDisplayPort, aPaintedResolution,
+                                            aLayersUpdated, aPaintSyncId,
                                             aFixedLayerMargins);
 #endif
 }

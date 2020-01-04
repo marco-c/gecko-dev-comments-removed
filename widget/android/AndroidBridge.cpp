@@ -1479,9 +1479,13 @@ AndroidBridge::SyncViewportInfo(const LayerIntRect& aDisplayPort, const CSSToLay
     aFixedLayerMargins.left = viewTransform->FixedLayerMarginLeft();
 }
 
-void AndroidBridge::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset, float aZoom, const CSSRect& aCssPageRect,
-                                     bool aLayersUpdated, const CSSRect& aDisplayPort, const CSSToLayerScale& aDisplayResolution,
-                                     bool aIsFirstPaint, ScreenMargin& aFixedLayerMargins)
+void AndroidBridge::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset,
+                                     const CSSToParentLayerScale& aZoom,
+                                     const CSSRect& aCssPageRect,
+                                     const CSSRect& aDisplayPort,
+                                     const CSSToLayerScale& aPaintedResolution,
+                                     bool aLayersUpdated, int32_t aPaintSyncId,
+                                     ScreenMargin& aFixedLayerMargins)
 {
     if (!mLayerClient) {
         ALOG_BRIDGE("Exceptional Exit: %s", __PRETTY_FUNCTION__);
@@ -1489,15 +1493,13 @@ void AndroidBridge::SyncFrameMetrics(const ParentLayerPoint& aScrollOffset, floa
     }
 
     
-    LayerRect dpUnrounded = aDisplayPort * aDisplayResolution;
-    dpUnrounded += LayerPoint::FromUnknownPoint(aScrollOffset.ToUnknownPoint());
-    LayerIntRect dp = gfx::RoundedToInt(dpUnrounded);
-
+    
+    LayerIntRect dp = gfx::RoundedToInt(aDisplayPort * aPaintedResolution);
     ViewTransform::LocalRef viewTransform = mLayerClient->SyncFrameMetrics(
-            aScrollOffset.x, aScrollOffset.y, aZoom,
+            aScrollOffset.x, aScrollOffset.y, aZoom.scale,
             aCssPageRect.x, aCssPageRect.y, aCssPageRect.XMost(), aCssPageRect.YMost(),
-            aLayersUpdated, dp.x, dp.y, dp.width, dp.height, aDisplayResolution.scale,
-            aIsFirstPaint);
+            dp.x, dp.y, dp.width, dp.height, aPaintedResolution.scale,
+            aLayersUpdated, aPaintSyncId);
 
     MOZ_ASSERT(viewTransform, "No view transform object!");
 
