@@ -18,7 +18,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
-#include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/ReverseIterator.h"
 #include "mozilla/TypeTraits.h"
 
@@ -505,7 +504,7 @@ public:
     
     
     
-    new (mozilla::KnownNotNull, static_cast<void*>(aE)) E;
+    new (static_cast<void*>(aE)) E;
   }
   
   template<class A>
@@ -516,7 +515,7 @@ public:
     static_assert(!mozilla::IsSame<E_NoCV*, A_NoCV>::value,
                   "For safety, we disallow constructing nsTArray<E> elements "
                   "from E* pointers. See bug 960591.");
-    new (mozilla::KnownNotNull, static_cast<void*>(aE)) E(mozilla::Forward<A>(aArg));
+    new (static_cast<void*>(aE)) E(mozilla::Forward<A>(aArg));
   }
   
   static inline void Destruct(E* aE) { aE->~E(); }
