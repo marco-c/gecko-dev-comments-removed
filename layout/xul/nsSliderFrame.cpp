@@ -943,6 +943,10 @@ nsSliderFrame::StartAPZDrag(WidgetGUIEvent* aEvent)
                                IsHorizontal() ? AsyncDragMetrics::HORIZONTAL :
                                                 AsyncDragMetrics::VERTICAL);
 
+  if (!nsLayoutUtils::GetDisplayPort(scrollableContent)) {
+    return false;
+  }
+
   
   
   this->GetNearestWidget()->StartAsyncScrollbarDrag(dragMetrics);

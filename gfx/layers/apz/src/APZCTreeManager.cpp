@@ -708,7 +708,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
       
       
-      if (!apzc) {
+      if (!apzc && mRootNode) {
         apzc = mRootNode->GetApzc();
       }
 
