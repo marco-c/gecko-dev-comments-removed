@@ -149,10 +149,11 @@ const Utils = {
 
     
     
-    
-    
-    if (uri.scheme != "http" && uri.scheme != "https")
-      throw("Permission denied to add " + uri.spec + " as a content or protocol handler");
+    if (uri.scheme != "http" && uri.scheme != "https") {
+      throw this.getSecurityError(
+        "Permission denied to add " + uri.spec + " as a content or protocol handler",
+        aContentWindow);
+    }
 
     
     
@@ -160,7 +161,9 @@ const Utils = {
     if (!pb.getBoolPref(PREF_ALLOW_DIFFERENT_HOST) &&
         (!["http:", "https:"].includes(aContentWindow.location.protocol) ||
          aContentWindow.location.hostname != uri.host)) {
-      throw("Permission denied to add " + uri.spec + " as a content or protocol handler");
+      throw this.getSecurityError(
+        "Permission denied to add " + uri.spec + " as a content or protocol handler",
+        aContentWindow);
     }
 
     
@@ -171,15 +174,15 @@ const Utils = {
   },
 
   
-  checkProtocolHandlerAllowed(aProtocol, aURIString) {
+  checkProtocolHandlerAllowed(aProtocol, aURIString, aWindowOrNull) {
     
     
     let handler = Services.io.getProtocolHandler(aProtocol);
     if (!(handler instanceof Ci.nsIExternalProtocolHandler)) {
       
-      
-      
-      throw(`Permission denied to add ${aURIString} as a protocol handler`);
+      throw this.getSecurityError(
+        `Permission denied to add ${aURIString} as a protocol handler`,
+        aWindowOrNull);
     }
 
     
@@ -192,9 +195,21 @@ const Utils = {
       allowed = pb.getBoolPref(PREF_HANDLER_EXTERNAL_PREFIX + "-default");
     }
     if (!allowed) {
-      
-      throw(`Not allowed to register a protocol handler for ${aProtocol}`);
+      throw this.getSecurityError(
+        `Not allowed to register a protocol handler for ${aProtocol}`,
+        aWindowOrNull);
     }
+  },
+
+  
+  
+  
+  getSecurityError(errorString, aWindowOrNull) {
+    if (!aWindowOrNull) {
+      return errorString;
+    }
+
+    return new aWindowOrNull.DOMException(errorString, "SecurityError");
   },
 
   
@@ -404,7 +419,8 @@ WebContentConverterRegistrar.prototype = {
       return;
     }
 
-    Utils.checkProtocolHandlerAllowed(aProtocol, aURIString);
+    Utils.checkProtocolHandlerAllowed(aProtocol, aURIString,
+                                      haveWindow ? aBrowserOrWindow : null);
 
     
     let message = this._getFormattedString("addProtocolHandler",
@@ -472,11 +488,12 @@ WebContentConverterRegistrar.prototype = {
     }
 
     
-    
-    
     let contentType = Utils.resolveContentType(aContentType);
-    if (contentType != TYPE_MAYBE_FEED)
+    
+    
+    if (contentType != TYPE_MAYBE_FEED) {
       return;
+    }
 
     if (aWindowOrBrowser) {
       let notificationBox;
@@ -998,6 +1015,8 @@ WebContentConverterRegistrarContent.prototype = {
                                          .messageManager;
 
     let uri = Utils.checkAndGetURI(aURIString, aBrowserOrWindow);
+    
+    
     if (Utils.resolveContentType(aContentType) != TYPE_MAYBE_FEED) {
       return;
     }
@@ -1018,7 +1037,7 @@ WebContentConverterRegistrarContent.prototype = {
                                          .messageManager;
 
     let uri = Utils.checkAndGetURI(aURIString, aBrowserOrWindow);
-    Utils.checkProtocolHandlerAllowed(aProtocol, aURIString);
+    Utils.checkProtocolHandlerAllowed(aProtocol, aURIString, aBrowserOrWindow);
 
     messageManager.sendAsyncMessage("WCCR:registerProtocolHandler",
                                     { protocol: aProtocol,
