@@ -67,19 +67,6 @@ class BaseProcess {
 
 
 
-  awaitFinished() {
-    return Promise.all([
-      this.exitPromise,
-      ...this.pipes.map(pipe => pipe.closedPromise),
-    ]);
-  }
-
-  
-
-
-
-
-
 
 
 
@@ -143,11 +130,8 @@ let requests = {
 
     process.wait();
 
-    process.awaitFinished().then(() => {
-      io.cleanupProcess(process);
-    });
-
     return process.exitPromise.then(exitCode => {
+      io.cleanupProcess(process);
       return {data: {exitCode}};
     });
   },
@@ -179,8 +163,7 @@ let requests = {
   },
 
   waitForNoProcesses() {
-    return Promise.all(Array.from(io.processes.values(),
-                                  proc => proc.awaitFinished()));
+    return Promise.all(Array.from(io.processes.values(), proc => proc.exitPromise));
   },
 };
 
