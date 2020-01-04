@@ -211,6 +211,11 @@ protected:
   nsresult AddPostDataStream();
 
 private:
+  void AddDataChunk(const nsACString& aName,
+                    const nsACString& aFilename,
+                    const nsACString& aContentType,
+                    nsIInputStream* aInputStream,
+                    uint64_t aInputStreamSize);
   
 
 

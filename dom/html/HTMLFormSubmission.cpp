@@ -70,6 +70,19 @@ RetrieveFileName(Blob* aBlob, nsAString& aFilename)
   }
 }
 
+void
+RetrieveDirectoryName(Directory* aDirectory, nsAString& aDirname)
+{
+  MOZ_ASSERT(aDirectory);
+
+  ErrorResult rv;
+  aDirectory->GetName(aDirname, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    rv.SuppressException();
+    aDirname.Truncate();
+  }
+}
+
 
 
 class FSURLEncoded : public EncodingFormSubmission
@@ -202,7 +215,10 @@ FSURLEncoded::AddNameDirectoryPair(const nsAString& aName,
                                    Directory* aDirectory)
 {
   
-  return NS_OK;
+
+  nsAutoString dirname;
+  RetrieveDirectoryName(aDirectory, dirname);
+  return AddNameValuePair(aName, dirname);
 }
 
 void
@@ -479,6 +495,9 @@ FSMultipartFormData::AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob)
   nsresult rv = EncodeVal(aName, nameStr, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  ErrorResult error;
+
+  uint64_t size = 0;
   nsAutoCString filename;
   nsAutoCString contentType;
   nsCOMPtr<nsIInputStream> fileStream;
@@ -516,10 +535,16 @@ FSMultipartFormData::AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob)
                                         nsLinebreakConverter::eLinebreakSpace));
 
     
-    ErrorResult error;
     aBlob->GetInternalStream(getter_AddRefs(fileStream), error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
+    }
+
+    
+    size = aBlob->GetSize(error);
+    if (error.Failed()) {
+      error.SuppressException();
+      fileStream = nullptr;
     }
 
     if (fileStream) {
@@ -535,6 +560,55 @@ FSMultipartFormData::AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob)
     contentType.AssignLiteral("application/octet-stream");
   }
 
+  AddDataChunk(nameStr, filename, contentType, fileStream, size);
+  return NS_OK;
+}
+
+nsresult
+FSMultipartFormData::AddNameDirectoryPair(const nsAString& aName,
+                                          Directory* aDirectory)
+{
+  if (!Directory::WebkitBlinkDirectoryPickerEnabled(nullptr, nullptr)) {
+    return NS_OK;
+  }
+
+  
+  nsAutoCString nameStr;
+  nsresult rv = EncodeVal(aName, nameStr, true);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString dirname;
+  nsAutoString dirname16;
+
+  ErrorResult error;
+  nsAutoString path;
+  aDirectory->GetPath(path, error);
+  if (NS_WARN_IF(error.Failed())) {
+    error.SuppressException();
+  } else {
+    dirname16 = path;
+  }
+
+  if (dirname16.IsEmpty()) {
+    RetrieveDirectoryName(aDirectory, dirname16);
+  }
+
+  rv = EncodeVal(dirname16, dirname, true);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  AddDataChunk(nameStr, dirname,
+               NS_LITERAL_CSTRING("application/octet-stream"),
+               nullptr, 0);
+  return NS_OK;
+}
+
+void
+FSMultipartFormData::AddDataChunk(const nsACString& aName,
+                                  const nsACString& aFilename,
+                                  const nsACString& aContentType,
+                                  nsIInputStream* aInputStream,
+                                  uint64_t aInputStreamSize)
+{
   
   
   
@@ -546,40 +620,24 @@ FSMultipartFormData::AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob)
   
   mPostDataChunk +=
          NS_LITERAL_CSTRING("Content-Disposition: form-data; name=\"")
-       + nameStr + NS_LITERAL_CSTRING("\"; filename=\"")
-       + filename + NS_LITERAL_CSTRING("\"" CRLF)
+       + aName + NS_LITERAL_CSTRING("\"; filename=\"")
+       + aFilename + NS_LITERAL_CSTRING("\"" CRLF)
        + NS_LITERAL_CSTRING("Content-Type: ")
-       + contentType + NS_LITERAL_CSTRING(CRLF CRLF);
+       + aContentType + NS_LITERAL_CSTRING(CRLF CRLF);
 
   
   
-  if (fileStream) {
-    ErrorResult error;
-    uint64_t size = aBlob->GetSize(error);
-    if (error.Failed()) {
-      error.SuppressException();
-    } else {
-      
-      
-      AddPostDataStream();
+  if (aInputStream) {
+    
+    
+    AddPostDataStream();
 
-      mPostDataStream->AppendStream(fileStream);
-      mTotalLength += size;
-    }
+    mPostDataStream->AppendStream(aInputStream);
+    mTotalLength += aInputStreamSize;
   }
 
   
   mPostDataChunk.AppendLiteral(CRLF);
-
-  return NS_OK;
-}
-
-nsresult
-FSMultipartFormData::AddNameDirectoryPair(const nsAString& aName,
-                                          Directory* aDirectory)
-{
-  
-  return NS_OK;
 }
 
 nsresult
@@ -677,7 +735,9 @@ nsresult
 FSTextPlain::AddNameDirectoryPair(const nsAString& aName,
                                   Directory* aDirectory)
 {
-  
+  nsAutoString dirname;
+  RetrieveDirectoryName(aDirectory, dirname);
+  AddNameValuePair(aName, dirname);
   return NS_OK;
 }
 
