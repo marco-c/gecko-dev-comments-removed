@@ -138,8 +138,8 @@ extensions.registerPrivilegedAPI("notifications", (extension, context) => {
       }).api(),
 
       
-      onButtonClicked: ignoreEvent(),
-      onClicked: ignoreEvent(),
+      onButtonClicked: ignoreEvent(context, "notifications.onButtonClicked"),
+      onClicked: ignoreEvent(context, "notifications.onClicked"),
     },
   };
 });
