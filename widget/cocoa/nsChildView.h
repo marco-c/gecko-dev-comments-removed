@@ -677,6 +677,14 @@ protected:
   nsRefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
 
+  
+  
+  
+  
+  
+  
+  bool mCurrentPanGestureBelongsToSwipe;
+
   static uint32_t sLastInputEventCount;
 
   void ReleaseTitlebarCGContext();
