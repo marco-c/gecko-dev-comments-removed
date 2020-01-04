@@ -28,26 +28,74 @@ namespace mozilla {
 
 using dom::URLParams;
 
-void OriginAttributes::InheritFromDocShellParent(const OriginAttributes& aParent)
+void
+PrincipalOriginAttributes::InheritFromDocShellToDoc(const DocShellOriginAttributes& aAttrs,
+                                                    const nsIURI* aURI)
 {
-  mAppId = aParent.mAppId;
-  mInBrowser = aParent.mInBrowser;
-  mUserContextId = aParent.mUserContextId;
-  mSignedPkg = aParent.mSignedPkg;
+  mAppId = aAttrs.mAppId;
+  mInBrowser = aAttrs.mInBrowser;
+
+  
+  mUserContextId = aAttrs.mUserContextId;
+
+  
+  
+  
+  mSignedPkg = aAttrs.mSignedPkg;
 }
 
-bool OriginAttributes::CopyFromLoadContext(nsILoadContext* aLoadContext)
+void
+PrincipalOriginAttributes::InheritFromNecko(const NeckoOriginAttributes& aAttrs)
 {
-  OriginAttributes attrs;
-  bool result = aLoadContext->GetOriginAttributes(attrs);
-  NS_ENSURE_TRUE(result, false);
+  mAppId = aAttrs.mAppId;
+  mInBrowser = aAttrs.mInBrowser;
 
-  mAppId = attrs.mAppId;
-  mInBrowser = attrs.mInBrowser;
-  mAddonId = attrs.mAddonId;
-  mUserContextId = attrs.mUserContextId;
-  mSignedPkg = attrs.mSignedPkg;
-  return true;
+  
+  mUserContextId = aAttrs.mUserContextId;
+  mSignedPkg = aAttrs.mSignedPkg;
+}
+
+void
+DocShellOriginAttributes::InheritFromDocToChildDocShell(const PrincipalOriginAttributes& aAttrs)
+{
+  mAppId = aAttrs.mAppId;
+  mInBrowser = aAttrs.mInBrowser;
+
+  
+  mUserContextId = aAttrs.mUserContextId;
+
+  
+  
+  
+  mSignedPkg = aAttrs.mSignedPkg;
+}
+
+void
+NeckoOriginAttributes::InheritFromDocToNecko(const PrincipalOriginAttributes& aAttrs)
+{
+  mAppId = aAttrs.mAppId;
+  mInBrowser = aAttrs.mInBrowser;
+
+  
+  mUserContextId = aAttrs.mUserContextId;
+
+  
+  
+  
+}
+
+void
+NeckoOriginAttributes::InheritFromDocShellToNecko(const DocShellOriginAttributes& aAttrs)
+{
+  mAppId = aAttrs.mAppId;
+  mInBrowser = aAttrs.mInBrowser;
+
+  
+  mUserContextId = aAttrs.mUserContextId;
+
+  
+  
+  
 }
 
 void
@@ -454,7 +502,7 @@ BasePrincipal::GetUnknownAppId(bool* aUnknownAppId)
 }
 
 already_AddRefed<BasePrincipal>
-BasePrincipal::CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs)
+BasePrincipal::CreateCodebasePrincipal(nsIURI* aURI, const PrincipalOriginAttributes& aAttrs)
 {
   
   
@@ -495,7 +543,7 @@ BasePrincipal::CreateCodebasePrincipal(const nsACString& aOrigin)
              "CreateCodebasePrincipal does not support nsNullPrincipal");
 
   nsAutoCString originNoSuffix;
-  mozilla::OriginAttributes attrs;
+  mozilla::PrincipalOriginAttributes attrs;
   if (!attrs.PopulateFromOrigin(aOrigin, originNoSuffix)) {
     return nullptr;
   }

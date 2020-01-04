@@ -43,7 +43,7 @@ namespace net {
 static void
 GetOriginAttributesSuffix(nsIChannel* aChan, nsACString &aSuffix)
 {
-    OriginAttributes oa;
+    NeckoOriginAttributes oa;
 
     
     if (aChan) {

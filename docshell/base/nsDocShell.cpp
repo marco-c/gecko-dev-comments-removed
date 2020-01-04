@@ -19,7 +19,6 @@
 #include "mozilla/dom/ProfileTimelineMarkerBinding.h"
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/dom/ToJSValue.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/workers/ServiceWorkerManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/LoadInfo.h"
@@ -9304,11 +9303,9 @@ public:
 
   nsCopyFaviconCallback(mozIAsyncFavicons* aSvc,
                         nsIURI* aNewURI,
-                        nsIPrincipal* aLoadingPrincipal,
                         bool aInPrivateBrowsing)
     : mSvc(aSvc)
     , mNewURI(aNewURI)
-    , mLoadingPrincipal(aLoadingPrincipal)
     , mInPrivateBrowsing(aInPrivateBrowsing)
   {
   }
@@ -9329,7 +9326,7 @@ public:
       mNewURI, aFaviconURI, false,
       mInPrivateBrowsing ? nsIFaviconService::FAVICON_LOAD_PRIVATE :
                            nsIFaviconService::FAVICON_LOAD_NON_PRIVATE,
-      nullptr, mLoadingPrincipal);
+      nullptr);
   }
 
 private:
@@ -9337,7 +9334,6 @@ private:
 
   nsCOMPtr<mozIAsyncFavicons> mSvc;
   nsCOMPtr<nsIURI> mNewURI;
-  nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
   bool mInPrivateBrowsing;
 };
 
@@ -9349,7 +9345,6 @@ NS_IMPL_ISUPPORTS(nsCopyFaviconCallback, nsIFaviconDataCallback)
 void
 nsDocShell::CopyFavicon(nsIURI* aOldURI,
                         nsIURI* aNewURI,
-                        nsIPrincipal* aLoadingPrincipal,
                         bool aInPrivateBrowsing)
 {
   if (XRE_IsContentProcess()) {
@@ -9358,9 +9353,7 @@ nsDocShell::CopyFavicon(nsIURI* aOldURI,
       mozilla::ipc::URIParams oldURI, newURI;
       SerializeURI(aOldURI, oldURI);
       SerializeURI(aNewURI, newURI);
-      contentChild->SendCopyFavicon(oldURI, newURI,
-                                    IPC::Principal(aLoadingPrincipal),
-                                    aInPrivateBrowsing);
+      contentChild->SendCopyFavicon(oldURI, newURI, aInPrivateBrowsing);
     }
     return;
   }
@@ -9370,9 +9363,7 @@ nsDocShell::CopyFavicon(nsIURI* aOldURI,
     do_GetService("@mozilla.org/browser/favicon-service;1");
   if (favSvc) {
     nsCOMPtr<nsIFaviconDataCallback> callback =
-      new nsCopyFaviconCallback(favSvc, aNewURI,
-                                aLoadingPrincipal,
-                                aInPrivateBrowsing);
+      new nsCopyFaviconCallback(favSvc, aNewURI, aInPrivateBrowsing);
     favSvc->GetFaviconURLForPage(aOldURI, callback);
   }
 #endif
@@ -9471,7 +9462,8 @@ nsresult
 nsDocShell::CreatePrincipalFromReferrer(nsIURI* aReferrer,
                                         nsIPrincipal** aResult)
 {
-  OriginAttributes attrs = GetOriginAttributes();
+  PrincipalOriginAttributes attrs;
+  attrs.InheritFromDocShellToDoc(GetOriginAttributes(), aReferrer);
   nsCOMPtr<nsIPrincipal> prin =
     BasePrincipal::CreateCodebasePrincipal(aReferrer, attrs);
   prin.forget(aResult);
@@ -10077,7 +10069,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
       
       
-      CopyFavicon(currentURI, aURI, doc->NodePrincipal(), mInPrivateBrowsing);
+      CopyFavicon(currentURI, aURI, mInPrivateBrowsing);
 
       RefPtr<nsGlobalWindow> win = mScriptGlobal ?
         mScriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
@@ -11692,7 +11684,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
     
     
-    CopyFavicon(oldURI, newURI, document->NodePrincipal(), mInPrivateBrowsing);
+    CopyFavicon(oldURI, newURI, mInPrivateBrowsing);
   } else {
     FireDummyOnLocationChange();
   }
@@ -13834,13 +13826,19 @@ nsDocShell::GetAppId(uint32_t* aAppId)
   return parent->GetAppId(aAppId);
 }
 
-OriginAttributes
+DocShellOriginAttributes
 nsDocShell::GetOriginAttributes()
 {
-  OriginAttributes attrs;
+  DocShellOriginAttributes attrs;
   RefPtr<nsDocShell> parent = GetParentDocshell();
   if (parent) {
-    attrs.InheritFromDocShellParent(parent->GetOriginAttributes());
+    nsCOMPtr<nsIPrincipal> parentPrin = parent->GetDocument()->NodePrincipal();
+    PrincipalOriginAttributes poa = BasePrincipal::Cast(parentPrin)->OriginAttributesRef();
+    attrs.InheritFromDocToChildDocShell(poa);
+  } else {
+    
+    
+    attrs.mSignedPkg = mSignedPkg;
   }
 
   if (mOwnOrContainingAppId != nsIScriptSecurityManager::UNKNOWN_APP_ID) {
@@ -13851,9 +13849,6 @@ nsDocShell::GetOriginAttributes()
     attrs.mInBrowser = true;
   }
 
-  
-  attrs.mSignedPkg = mSignedPkg;
-
   return attrs;
 }
 
@@ -13863,8 +13858,7 @@ nsDocShell::GetOriginAttributes(JS::MutableHandle<JS::Value> aVal)
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
   MOZ_ASSERT(cx);
 
-  OriginAttributes attrs = GetOriginAttributes();
-  bool ok = ToJSValue(cx, attrs, aVal);
+  bool ok = ToJSValue(cx, GetOriginAttributes(), aVal);
   NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
   return NS_OK;
 }
@@ -14063,7 +14057,8 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, bool aIsNonSubresourceReques
   }
 
   if (aIsNonSubresourceRequest) {
-    OriginAttributes attrs(GetAppId(), GetIsInBrowserElement());
+    PrincipalOriginAttributes attrs;
+    attrs.InheritFromDocShellToDoc(GetOriginAttributes(), aURI);
     *aShouldIntercept = swm->IsAvailable(attrs, aURI);
     return NS_OK;
   }
@@ -14154,7 +14149,12 @@ nsDocShell::ChannelIntercepted(nsIInterceptedChannel* aChannel,
 
   bool isReload = mLoadType & LOAD_CMD_RELOAD;
 
-  OriginAttributes attrs(GetAppId(), GetIsInBrowserElement());
+  nsCOMPtr<nsIURI> uri;
+  rv = channel->GetURI(getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  PrincipalOriginAttributes attrs;
+  attrs.InheritFromDocShellToDoc(GetOriginAttributes(), uri);
 
   ErrorResult error;
   nsCOMPtr<nsIRunnable> runnable =

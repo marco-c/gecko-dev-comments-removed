@@ -1185,7 +1185,7 @@ ParsePrincipal(JSContext* cx, HandleString codebase, nsIPrincipal** principal)
     
     
     
-    OriginAttributes attrs;
+    PrincipalOriginAttributes attrs;
     nsCOMPtr<nsIPrincipal> prin =
         BasePrincipal::CreateCodebasePrincipal(uri, attrs);
     prin.forget(principal);

@@ -126,7 +126,7 @@ NS_IMETHODIMP AppCacheStorage::AsyncEvictStorage(nsICacheEntryDoomCallback* aCal
   if (!mAppCache) {
     
     
-    const OriginAttributes* oa = LoadInfo()->OriginAttributesPtr();
+    const NeckoOriginAttributes* oa = LoadInfo()->OriginAttributesPtr();
     if (oa->mAppId == nsILoadContextInfo::NO_APP_ID && !oa->mInBrowser) {
       
       nsCOMPtr<nsICacheService> serv =

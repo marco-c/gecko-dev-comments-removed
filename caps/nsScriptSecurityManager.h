@@ -28,7 +28,7 @@ class nsIStringBundle;
 class nsSystemPrincipal;
 
 namespace mozilla {
-class OriginAttributes;
+class PrincipalOriginAttributes;
 } 
 
 
@@ -121,7 +121,7 @@ private:
     AddSitesToFileURIWhitelist(const nsCString& aSiteList);
 
     
-    nsresult MaybeSetAddonIdFromURI(mozilla::OriginAttributes& aAttrs, nsIURI* aURI);
+    nsresult MaybeSetAddonIdFromURI(mozilla::PrincipalOriginAttributes& aAttrs, nsIURI* aURI);
 
     nsCOMPtr<nsIPrincipal> mSystemPrincipal;
     bool mPrefInitialized;

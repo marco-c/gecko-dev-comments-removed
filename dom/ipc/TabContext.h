@@ -108,7 +108,7 @@ public:
 
 
 
-  const OriginAttributes& OriginAttributesRef() const;
+  const DocShellOriginAttributes& OriginAttributesRef() const;
 
   
 
@@ -142,7 +142,7 @@ protected:
 
   bool SetTabContext(mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
-                     const OriginAttributes& aOriginAttributes,
+                     const DocShellOriginAttributes& aOriginAttributes,
                      const nsACString& aSignedPkgOriginNoSuffix);
 
 private:
@@ -172,7 +172,7 @@ private:
   
 
 
-  OriginAttributes mOriginAttributes;
+  DocShellOriginAttributes mOriginAttributes;
 
   
 
@@ -198,7 +198,7 @@ public:
 
   bool SetTabContext(mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
-                     const OriginAttributes& aOriginAttributes,
+                     const DocShellOriginAttributes& aOriginAttributes,
                      const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
   {
     return TabContext::SetTabContext(aOwnApp,

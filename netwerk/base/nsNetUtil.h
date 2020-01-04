@@ -45,7 +45,7 @@ class nsIStreamLoaderObserver;
 class nsIUnicharStreamLoader;
 class nsIUnicharStreamLoaderObserver;
 
-namespace mozilla { class OriginAttributes; }
+namespace mozilla { class NeckoOriginAttributes; }
 
 template <class> class nsCOMPtr;
 template <typename> struct already_AddRefed;
@@ -684,7 +684,7 @@ bool NS_UsePrivateBrowsing(nsIChannel *channel);
 
 
 bool NS_GetOriginAttributes(nsIChannel *aChannel,
-                            mozilla::OriginAttributes &aAttributes);
+                            mozilla::NeckoOriginAttributes &aAttributes);
 
 
 

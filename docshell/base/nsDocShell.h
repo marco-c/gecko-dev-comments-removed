@@ -270,7 +270,7 @@ public:
   }
   bool InFrameSwap();
 
-  mozilla::OriginAttributes GetOriginAttributes();
+  mozilla::DocShellOriginAttributes GetOriginAttributes();
 
 private:
   
@@ -294,7 +294,6 @@ public:
   
   static void CopyFavicon(nsIURI* aOldURI,
                           nsIURI* aNewURI,
-                          nsIPrincipal* aLoadingPrincipal,
                           bool aInPrivateBrowsing);
 
   static nsDocShell* Cast(nsIDocShell* aDocShell)

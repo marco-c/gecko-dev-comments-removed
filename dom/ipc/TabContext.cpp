@@ -152,7 +152,7 @@ TabContext::SetTabContext(const TabContext& aContext)
   return true;
 }
 
-const OriginAttributes&
+const DocShellOriginAttributes&
 TabContext::OriginAttributesRef() const
 {
   return mOriginAttributes;
@@ -167,7 +167,7 @@ TabContext::SignedPkgOriginNoSuffix() const
 bool
 TabContext::SetTabContext(mozIApplication* aOwnApp,
                           mozIApplication* aAppFrameOwnerApp,
-                          const OriginAttributes& aOriginAttributes,
+                          const DocShellOriginAttributes& aOriginAttributes,
                           const nsACString& aSignedPkgOriginNoSuffix)
 {
   NS_ENSURE_FALSE(mInitialized, false);
@@ -228,7 +228,7 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
   : mInvalidReason(nullptr)
 {
   uint32_t containingAppId = NO_APP_ID;
-  OriginAttributes originAttributes = OriginAttributes();
+  DocShellOriginAttributes originAttributes;
   nsAutoCString originSuffix;
   nsAutoCString signedPkgOriginNoSuffix;
 
@@ -267,9 +267,6 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
       
       
       
-      
-      
-
       
       
       originAttributes = context->mOriginAttributes;

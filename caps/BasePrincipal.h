@@ -14,26 +14,19 @@
 #include "mozilla/dom/ChromeUtilsBinding.h"
 
 class nsIContentSecurityPolicy;
-class nsILoadContext;
 class nsIObjectOutputStream;
 class nsIObjectInputStream;
+class nsIURI;
 
 class nsExpandedPrincipal;
 
 namespace mozilla {
 
+
+
 class OriginAttributes : public dom::OriginAttributesDictionary
 {
 public:
-  OriginAttributes() {}
-  OriginAttributes(uint32_t aAppId, bool aInBrowser)
-  {
-    mAppId = aAppId;
-    mInBrowser = aInBrowser;
-  }
-  explicit OriginAttributes(const OriginAttributesDictionary& aOther)
-    : OriginAttributesDictionary(aOther) {}
-
   bool operator==(const OriginAttributes& aOther) const
   {
     return mAppId == aOther.mAppId &&
@@ -50,28 +43,6 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void InheritFromDocShellParent(const OriginAttributes& aParent);
-
-  
-  bool CopyFromLoadContext(nsILoadContext* aLoadContext);
-
-  
-  
-  
   void CreateSuffix(nsACString& aStr) const;
   bool PopulateFromSuffix(const nsACString& aStr);
 
@@ -79,6 +50,92 @@ public:
   
   bool PopulateFromOrigin(const nsACString& aOrigin,
                           nsACString& aOriginNoSuffix);
+
+protected:
+  OriginAttributes() {}
+  explicit OriginAttributes(const OriginAttributesDictionary& aOther)
+    : OriginAttributesDictionary(aOther) {}
+};
+
+class PrincipalOriginAttributes;
+class DocShellOriginAttributes;
+class NeckoOriginAttributes;
+
+
+
+
+
+
+
+
+
+
+
+class PrincipalOriginAttributes : public OriginAttributes
+{
+public:
+  PrincipalOriginAttributes() {}
+  PrincipalOriginAttributes(uint32_t aAppId, bool aInBrowser)
+  {
+    mAppId = aAppId;
+    mInBrowser = aInBrowser;
+  }
+
+  
+  
+  
+  
+  void InheritFromDocShellToDoc(const DocShellOriginAttributes& aAttrs,
+                                const nsIURI* aURI);
+
+  
+  void InheritFromNecko(const NeckoOriginAttributes& aAttrs);
+};
+
+
+class DocShellOriginAttributes : public OriginAttributes
+{
+public:
+  DocShellOriginAttributes() {}
+  DocShellOriginAttributes(uint32_t aAppId, bool aInBrowser)
+  {
+    mAppId = aAppId;
+    mInBrowser = aInBrowser;
+  }
+
+  
+  
+  
+  
+  void
+  InheritFromDocToChildDocShell(const PrincipalOriginAttributes& aAttrs);
+};
+
+
+class NeckoOriginAttributes : public OriginAttributes
+{
+public:
+  NeckoOriginAttributes() {}
+  NeckoOriginAttributes(uint32_t aAppId, bool aInBrowser)
+  {
+    mAppId = aAppId;
+    mInBrowser = aInBrowser;
+  }
+
+  
+  
+  void InheritFromDocToNecko(const PrincipalOriginAttributes& aAttrs);
+
+  void InheritFromDocShellToNecko(const DocShellOriginAttributes& aAttrs);
+};
+
+
+class GenericOriginAttributes : public OriginAttributes
+{
+public:
+  GenericOriginAttributes() {}
+  explicit GenericOriginAttributes(const OriginAttributesDictionary& aOther)
+    : OriginAttributes(aOther) {}
 };
 
 class OriginAttributesPattern : public dom::OriginAttributesPatternDictionary
@@ -168,10 +225,10 @@ public:
 
   static BasePrincipal* Cast(nsIPrincipal* aPrin) { return static_cast<BasePrincipal*>(aPrin); }
   static already_AddRefed<BasePrincipal>
-  CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs);
+  CreateCodebasePrincipal(nsIURI* aURI, const PrincipalOriginAttributes& aAttrs);
   static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(const nsACString& aOrigin);
 
-  const OriginAttributes& OriginAttributesRef() { return mOriginAttributes; }
+  const PrincipalOriginAttributes& OriginAttributesRef() { return mOriginAttributes; }
   uint32_t AppId() const { return mOriginAttributes.mAppId; }
   uint32_t UserContextId() const { return mOriginAttributes.mUserContextId; }
   bool IsInBrowserElement() const { return mOriginAttributes.mInBrowser; }
@@ -203,7 +260,7 @@ protected:
 
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
-  OriginAttributes mOriginAttributes;
+  PrincipalOriginAttributes mOriginAttributes;
 };
 
 } 
