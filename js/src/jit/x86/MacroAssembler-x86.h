@@ -949,7 +949,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     
     void handleFailureWithHandlerTail(void* handler);
 
-    void branchPtrInNurseryRange(Condition cond, Register ptr, Register temp, Label* label);
     void branchValueIsNurseryObject(Condition cond, ValueOperand value, Register temp, Label* label);
 
     
