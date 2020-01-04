@@ -138,11 +138,6 @@ public:
     MOZ_ASSERT(IsTiedToMarkup());
     mAnimationIndex = aIndex;
   }
-  void CopyAnimationIndex(const CSSAnimation& aOther)
-  {
-    MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup());
-    mAnimationIndex = aOther.mAnimationIndex;
-  }
 
   
   
@@ -347,6 +342,7 @@ protected:
 private:
   void BuildAnimations(nsStyleContext* aStyleContext,
                        mozilla::dom::Element* aTarget,
+                       mozilla::AnimationCollection* aCollection,
                        mozilla::AnimationPtrArray& aAnimations);
 };
 

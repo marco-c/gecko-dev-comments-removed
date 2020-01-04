@@ -304,44 +304,51 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsAnimationManager, Release)
 
 
 static already_AddRefed<CSSAnimation>
-PullOutOldAnimationInCollection(const nsAString& aName,
-                                AnimationCollection* aCollection)
+PopExistingAnimation(const nsAString& aName,
+                     AnimationCollection* aCollection)
 {
+  if (!aCollection) {
+    return nullptr;
+  }
+
   
   
   
   
-  
-  
-  size_t oldIdx = aCollection->mAnimations.Length();
-  while (oldIdx-- != 0) {
-    CSSAnimation* a = aCollection->mAnimations[oldIdx]->AsCSSAnimation();
-    MOZ_ASSERT(a, "All animations in the CSS Animation collection should"
-      " be CSSAnimation objects");
-    if (a->AnimationName() == aName) {
-      RefPtr<CSSAnimation> old = a;
-      aCollection->mAnimations.RemoveElementAt(oldIdx);
-      return old.forget();
+  for (size_t idx = 0, length = aCollection->mAnimations.Length();
+       idx != length; ++ idx) {
+    CSSAnimation* cssAnim = aCollection->mAnimations[idx]->AsCSSAnimation();
+    MOZ_ASSERT(cssAnim,
+               "All animations stored by the animation manager should "
+               "be CSSAnimation objects");
+    if (cssAnim->AnimationName() == aName) {
+      RefPtr<CSSAnimation> match = cssAnim;
+      aCollection->mAnimations.RemoveElementAt(idx);
+      return match.forget();
     }
   }
+
   return nullptr;
 }
 
 static void
-UpdateOldAnimationPropertiesWithNew(CSSAnimation& aOld, Animation& aNew)
+UpdateOldAnimationPropertiesWithNew(
+    CSSAnimation& aOld,
+    TimingParams& aNewTiming,
+    InfallibleTArray<AnimationProperty>& aNewProperties,
+    bool aNewIsStylePaused)
 {
   bool animationChanged = false;
 
   
   
-  if (aOld.GetEffect() && aNew.GetEffect()) {
+  if (aOld.GetEffect()) {
     KeyframeEffectReadOnly* oldEffect = aOld.GetEffect();
-    KeyframeEffectReadOnly* newEffect = aNew.GetEffect();
     animationChanged =
-      oldEffect->SpecifiedTiming() != newEffect->SpecifiedTiming();
-    oldEffect->SetSpecifiedTiming(newEffect->SpecifiedTiming());
+      oldEffect->SpecifiedTiming() != aNewTiming;
+    oldEffect->SetSpecifiedTiming(aNewTiming);
     animationChanged |=
-      oldEffect->UpdateProperties(newEffect->Properties());
+      oldEffect->UpdateProperties(aNewProperties);
   }
 
   
@@ -354,16 +361,14 @@ UpdateOldAnimationPropertiesWithNew(CSSAnimation& aOld, Animation& aNew)
     
     
     
-    if (!aOld.IsStylePaused() && aNew.IsPausedOrPausing()) {
+    if (!aOld.IsStylePaused() && aNewIsStylePaused) {
       aOld.PauseFromStyle();
       animationChanged = true;
-    } else if (aOld.IsStylePaused() && !aNew.IsPausedOrPausing()) {
+    } else if (aOld.IsStylePaused() && !aNewIsStylePaused) {
       aOld.PlayFromStyle();
       animationChanged = true;
     }
   }
-
-  aOld.CopyAnimationIndex(*aNew.AsCSSAnimation());
 
   
   
@@ -402,9 +407,10 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
   nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
 
   
+  
   AnimationPtrArray newAnimations;
   if (!aStyleContext->IsInDisplayNoneSubtree()) {
-    BuildAnimations(aStyleContext, aElement, newAnimations);
+    BuildAnimations(aStyleContext, aElement, collection, newAnimations);
   }
 
   if (newAnimations.IsEmpty()) {
@@ -420,63 +426,10 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
     if (effectSet) {
       effectSet->UpdateAnimationGeneration(mPresContext);
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!collection->mAnimations.IsEmpty()) {
-
-      for (size_t newIdx = newAnimations.Length(); newIdx-- != 0;) {
-        Animation* newAnim = newAnimations[newIdx];
-
-        
-        
-        
-        
-        
-        
-        
-        RefPtr<CSSAnimation> oldAnim =
-          PullOutOldAnimationInCollection(
-            newAnim->AsCSSAnimation()->AnimationName(), collection);
-        if (!oldAnim) {
-          
-          
-          
-          
-          
-          
-          newAnim->AsCSSAnimation()->QueueEvents();
-          continue;
-        }
-        UpdateOldAnimationPropertiesWithNew(*oldAnim, *newAnim);
-
-        
-        
-        
-        
-        newAnim->CancelFromStyle();
-        newAnim = nullptr;
-        newAnimations.ReplaceElementAt(newIdx, oldAnim);
-      }
-    }
   } else {
     collection = GetAnimationCollection(aElement,
                                         aStyleContext->GetPseudoType(),
                                         true );
-    for (Animation* animation : newAnimations) {
-      
-      
-      
-      animation->AsCSSAnimation()->QueueEvents();
-    }
   }
   collection->mAnimations.SwapElements(newAnimations);
 
@@ -581,15 +534,21 @@ ResolvedStyleCache::Get(nsPresContext *aPresContext,
 class MOZ_STACK_CLASS CSSAnimationBuilder final {
 public:
   CSSAnimationBuilder(nsStyleContext* aStyleContext,
-                      dom::Element* aTarget)
+                      dom::Element* aTarget,
+                      AnimationCollection* aCollection)
     : mStyleContext(aStyleContext)
     , mTarget(aTarget)
+    , mCollection(aCollection)
   {
     MOZ_ASSERT(aStyleContext);
     MOZ_ASSERT(aTarget);
     mTimeline = mTarget->OwnerDoc()->Timeline();
   }
 
+  
+  
+  
+  
   already_AddRefed<CSSAnimation>
   Build(nsPresContext* aPresContext,
         const StyleAnimation& aSrc,
@@ -628,6 +587,8 @@ private:
 
   ResolvedStyleCache mResolvedStyles;
   RefPtr<nsStyleContext> mStyleWithoutAnimation;
+  
+  AnimationCollection* mCollection;
 };
 
 already_AddRefed<CSSAnimation>
@@ -639,12 +600,38 @@ CSSAnimationBuilder::Build(nsPresContext* aPresContext,
   MOZ_ASSERT(aRule);
 
   TimingParams timing = TimingParamsFrom(aSrc);
+
+  InfallibleTArray<AnimationProperty> animationProperties;
+  BuildAnimationProperties(aPresContext, aSrc, aRule, animationProperties);
+
+  bool isStylePaused =
+    aSrc.GetPlayState() == NS_STYLE_ANIMATION_PLAY_STATE_PAUSED;
+
+  
+  
+  RefPtr<CSSAnimation> oldAnim =
+    PopExistingAnimation(aSrc.GetName(), mCollection);
+
+  if (oldAnim) {
+    
+    
+    
+    
+    
+    
+    
+    
+    UpdateOldAnimationPropertiesWithNew(*oldAnim,
+                                        timing,
+                                        animationProperties,
+                                        isStylePaused);
+    return oldAnim.forget();
+  }
+
   RefPtr<KeyframeEffectReadOnly> effect =
     new KeyframeEffectReadOnly(aPresContext->Document(), mTarget,
                                mStyleContext->GetPseudoType(), timing);
 
-  InfallibleTArray<AnimationProperty> animationProperties;
-  BuildAnimationProperties(aPresContext, aSrc, aRule, animationProperties);
   effect->Properties() = Move(animationProperties);
 
   RefPtr<CSSAnimation> animation =
@@ -655,6 +642,19 @@ CSSAnimationBuilder::Build(nsPresContext* aPresContext,
 
   animation->SetTimeline(mTimeline);
   animation->SetEffect(effect);
+
+  if (isStylePaused) {
+    animation->PauseFromStyle();
+  } else {
+    animation->PlayFromStyle();
+  }
+  
+  
+  
+  
+  
+  
+  animation->AsCSSAnimation()->QueueEvents();
 
   return animation.forget();
 }
@@ -874,16 +874,16 @@ CSSAnimationBuilder::BuildSegment(InfallibleTArray<AnimationPropertySegment>&
 void
 nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
                                     dom::Element* aTarget,
+                                    AnimationCollection* aCollection,
                                     AnimationPtrArray& aAnimations)
 {
   MOZ_ASSERT(aAnimations.IsEmpty(), "expect empty array");
 
   const nsStyleDisplay *disp = aStyleContext->StyleDisplay();
 
-  CSSAnimationBuilder builder(aStyleContext, aTarget);
+  CSSAnimationBuilder builder(aStyleContext, aTarget, aCollection);
 
-  for (size_t animIdx = 0, animEnd = disp->mAnimationNameCount;
-       animIdx != animEnd; ++animIdx) {
+  for (size_t animIdx = disp->mAnimationNameCount; animIdx-- != 0;) {
     const StyleAnimation& src = disp->mAnimations[animIdx];
 
     
@@ -905,12 +905,6 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
     RefPtr<CSSAnimation> dest = builder.Build(mPresContext, src, rule);
     dest->SetAnimationIndex(static_cast<uint64_t>(animIdx));
     aAnimations.AppendElement(dest);
-
-    if (src.GetPlayState() == NS_STYLE_ANIMATION_PLAY_STATE_PAUSED) {
-      dest->PauseFromStyle();
-    } else {
-      dest->PlayFromStyle();
-    }
   }
 }
 
