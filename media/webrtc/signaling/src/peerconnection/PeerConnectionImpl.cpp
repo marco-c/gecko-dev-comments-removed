@@ -9,7 +9,6 @@
 #include <sstream>
 #include <vector>
 
-#include "base/histogram.h"
 #include "CSFLog.h"
 #include "timecard.h"
 
@@ -3901,12 +3900,7 @@ PeerConnectionImpl::startCallTelem() {
 
   
   
-  int &cnt = PeerConnectionCtx::GetInstance()->mConnectionCounter;
-  if (cnt > 0) {
-    Telemetry::GetHistogramById(Telemetry::WEBRTC_CALL_COUNT)->Subtract(cnt);
-  }
-  cnt++;
-  Telemetry::GetHistogramById(Telemetry::WEBRTC_CALL_COUNT)->Add(cnt);
+  Telemetry::Accumulate(Telemetry::WEBRTC_CALL_COUNT_2, 1);
 }
 #endif
 
