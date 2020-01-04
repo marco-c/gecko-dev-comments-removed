@@ -112,6 +112,43 @@ let Messaging = {
       this.sendRequest(aMessage);
     });
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  handleRequest: Task.async(function* (aTopic, aData, aListener) {
+    let wrapper = JSON.parse(aData);
+
+    try {
+      let response = yield aListener(wrapper.data);
+      if (typeof response !== "object" || response === null) {
+        throw new Error("Gecko request listener did not return an object");
+      }
+
+      Messaging.sendRequest({
+        type: "Gecko:Request" + wrapper.id,
+        response: response
+      });
+    } catch (e) {
+      Cu.reportError("Error in Messaging handler for " + aTopic + ": " + e);
+
+      Messaging.sendRequest({
+        type: "Gecko:Request" + wrapper.id,
+        error: {
+          message: e.message || (e && e.toString()),
+          stack: e.stack || Components.stack.formattedStack,
+        }
+      });
+    }
+  })
 };
 
 let requestHandler = {
@@ -139,30 +176,8 @@ let requestHandler = {
     Services.obs.removeObserver(this, aMessage);
   },
 
-  observe: Task.async(function* (aSubject, aTopic, aData) {
-    let wrapper = JSON.parse(aData);
+  observe: function(aSubject, aTopic, aData) {
     let listener = this._listeners[aTopic];
-
-    try {
-      let response = yield listener(wrapper.data);
-      if (typeof response !== "object" || response === null) {
-        throw new Error("Gecko request listener did not return an object");
-      }
-
-      Messaging.sendRequest({
-        type: "Gecko:Request" + wrapper.id,
-        response: response
-      });
-    } catch (e) {
-      Cu.reportError("Error in Messaging handler for " + aTopic + ": " + e);
-
-      Messaging.sendRequest({
-        type: "Gecko:Request" + wrapper.id,
-        error: {
-          message: e.message || (e && e.toString()),
-          stack: e.stack || Components.stack.formattedStack,
-        }
-      });
-    }
-  })
+    Messaging.handleRequest(aTopic, aData, listener);
+  }
 };
