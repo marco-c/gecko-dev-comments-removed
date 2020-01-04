@@ -252,13 +252,6 @@ function scriptErrorFlagsToKind(aFlags) {
 }
 
 
-function dbg_assert(cond, e) {
-  if (!cond) {
-    throw e;
-  }
-}
-
-
 
 var errorCount = 0;
 var listener = {

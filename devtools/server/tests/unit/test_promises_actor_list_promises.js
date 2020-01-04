@@ -15,6 +15,8 @@ add_task(function*() {
   let client = yield startTestDebuggerServer("promises-actor-test");
   let chromeActors = yield getChromeActors(client);
 
+  
+  yield attachTab(client, chromeActors);
   yield testListPromises(client, chromeActors, v =>
     new Promise(resolve => resolve(v)));
 

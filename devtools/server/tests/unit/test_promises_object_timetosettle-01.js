@@ -18,6 +18,8 @@ add_task(function*() {
 
   ok(Promise.toString().contains("native code"), "Expect native DOM Promise.");
 
+  
+  yield attachTab(client, chromeActors);
   yield testGetTimeToSettle(client, chromeActors, () => {
     let p = new Promise(() => {});
     p.name = "p";

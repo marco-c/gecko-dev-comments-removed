@@ -406,7 +406,8 @@ function _setupDebuggerServer(breakpointFiles, callback) {
           
           let threadActor = subject.wrappedJSObject;
           for (let file of breakpointFiles) {
-            let sourceActor = threadActor.sources.source({originalUrl: file});
+            
+            let sourceActor = threadActor.sources.source({originalUrl: file, source: {}});
             sourceActor._getOrCreateBreakpointActor(new OriginalLocation(sourceActor, 1));
           }
         } catch (ex) {

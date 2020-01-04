@@ -7,7 +7,7 @@
 const { Ci, Cu } = require("chrome");
 const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { dbg_assert, fetch } = DevToolsUtils;
+const { assert, fetch } = DevToolsUtils;
 const EventEmitter = require("devtools/shared/event-emitter");
 const { OriginalLocation, GeneratedLocation } = require("devtools/server/actors/common");
 const { resolve } = require("promise");
@@ -102,9 +102,9 @@ TabSources.prototype = {
 
 
   source: function  ({ source, originalUrl, generatedSource,
-              isInlineSource, contentType }) {
-    dbg_assert(source || (originalUrl && generatedSource),
-               "TabSources.prototype.source needs an originalUrl or a source");
+                       isInlineSource, contentType }) {
+    assert(source || (originalUrl && generatedSource),
+           "TabSources.prototype.source needs an originalUrl or a source");
 
     if (source) {
       
@@ -765,7 +765,7 @@ TabSources.prototype = {
 
 
   _normalize: function (...aURLs) {
-    dbg_assert(aURLs.length > 1, "Should have more than 1 URL");
+    assert(aURLs.length > 1, "Should have more than 1 URL");
     let base = Services.io.newURI(aURLs.pop(), null, null);
     let url;
     while ((url = aURLs.pop())) {
