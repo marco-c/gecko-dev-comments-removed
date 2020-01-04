@@ -372,7 +372,11 @@ class SimdConstant {
         MOZ_ASSERT(defined() && rhs.defined());
         if (type() != rhs.type())
             return false;
+        
         return memcmp(&u, &rhs.u, sizeof(u)) == 0;
+    }
+    bool operator!=(const SimdConstant& rhs) const {
+        return !operator==(rhs);
     }
 
     
