@@ -38,7 +38,6 @@ class nsCocoaWindow;
 
 namespace {
 class GLPresenter;
-class RectTextureImage;
 } 
 
 namespace mozilla {
@@ -50,6 +49,9 @@ class VibrancyManager;
 namespace layers {
 class GLManager;
 class APZCTreeManager;
+} 
+namespace widget {
+class RectTextureImage;
 } 
 } 
 
@@ -599,10 +601,10 @@ protected:
   CGContextRef mTitlebarCGContext;
 
   
-  mozilla::UniquePtr<RectTextureImage> mResizerImage;
-  mozilla::UniquePtr<RectTextureImage> mCornerMaskImage;
-  mozilla::UniquePtr<RectTextureImage> mTitlebarImage;
-  mozilla::UniquePtr<RectTextureImage> mBasicCompositorImage;
+  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mResizerImage;
+  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mCornerMaskImage;
+  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mTitlebarImage;
+  mozilla::UniquePtr<mozilla::widget::RectTextureImage> mBasicCompositorImage;
 
   
   
