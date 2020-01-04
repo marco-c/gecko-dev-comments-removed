@@ -104,6 +104,16 @@ public:
 
     bool isWaiting();
 
+    
+    
+    bool canWait() {
+        return canWait_;
+    }
+
+    void setCanWait(bool flag) {
+        canWait_ = flag;
+    }
+
   private:
     enum FutexState {
         Idle,                        
@@ -133,6 +143,9 @@ public:
     
     static mozilla::Atomic<PRThread*> lockHolder_;
 #endif
+
+    
+    bool canWait_;
 };
 
 JSObject*
