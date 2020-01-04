@@ -140,14 +140,17 @@ BatteryManager::UpdateFromBatteryInfo(const hal::BatteryInformation& aBatteryInf
     doc->NodePrincipal()->GetAppStatus(&status);
   }
 
+  mCharging = aBatteryInfo.charging();
+  mRemainingTime = aBatteryInfo.remainingTime();
+
   if (!nsContentUtils::IsChromeDoc(doc) &&
       status != nsIPrincipal::APP_STATUS_CERTIFIED)
   {
     mLevel = lround(mLevel * 10.0) / 10.0;
+    if (mLevel == 1.0) {
+      mRemainingTime = mCharging ? kDefaultRemainingTime : kUnknownRemainingTime;
+    }
   }
-
-  mCharging = aBatteryInfo.charging();
-  mRemainingTime = aBatteryInfo.remainingTime();
 
   
   if (mLevel == 1.0 && mCharging == true &&
