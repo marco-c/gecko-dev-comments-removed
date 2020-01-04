@@ -27,6 +27,10 @@
 #include <fcntl.h>
 #include "stdint.h"
 
+#if MOZ_WIDGET_GTK == 2
+#include <glib.h>
+#endif
+
 #ifdef __SUNPRO_CC
 #include <stdio.h>
 #endif
@@ -69,6 +73,11 @@ extern pid_t glxtest_pid;
 
 
 static int write_end_of_the_pipe = -1;
+
+#if MOZ_WIDGET_GTK == 2
+static int gtk_write_end_of_the_pipe = -1;
+int gtk_read_end_of_the_pipe = -1;
+#endif
 
 
 
@@ -119,6 +128,36 @@ void glxtest()
   for (int i = 1; i < fd; i++)
     dup2(fd, i);
   close(fd);
+
+#if MOZ_WIDGET_GTK == 2
+  
+  
+  
+  
+  void *gtk3 = dlopen("libgtk-3.so.0", RTLD_LOCAL | RTLD_LAZY);
+  if (gtk3) {
+    auto gtk_get_major_version = reinterpret_cast<guint (*)(void)>(
+      dlsym(gtk3, "gtk_get_major_version"));
+    auto gtk_get_minor_version = reinterpret_cast<guint (*)(void)>(
+      dlsym(gtk3, "gtk_get_minor_version"));
+    auto gtk_get_micro_version = reinterpret_cast<guint (*)(void)>(
+      dlsym(gtk3, "gtk_get_micro_version"));
+
+    if (gtk_get_major_version && gtk_get_minor_version &&
+        gtk_get_micro_version) {
+      
+      
+      char gtkver[64];
+      int len = snprintf(gtkver, sizeof(gtkver), "GTK %u.%u.%u",
+                         gtk_get_major_version(), gtk_get_minor_version(),
+                         gtk_get_micro_version());
+      if (len > 0 && size_t(len) < sizeof(gtkver)) {
+        mozilla::Unused << write(gtk_write_end_of_the_pipe, gtkver, len);
+      }
+    }
+  }
+#endif
+
 
   if (getenv("MOZ_AVOID_OPENGL_ALTOGETHER"))
     fatal_error("The MOZ_AVOID_OPENGL_ALTOGETHER environment variable is defined");
@@ -264,11 +303,22 @@ bool fire_glxtest_process()
       perror("pipe");
       return false;
   }
+#if MOZ_WIDGET_GTK == 2
+  int gtkpfd[2];
+  if (pipe(gtkpfd) == -1) {
+      perror("pipe");
+      return false;
+  }
+#endif
   pid_t pid = fork();
   if (pid < 0) {
       perror("fork");
       close(pfd[0]);
       close(pfd[1]);
+#if MOZ_WIDGET_GTK == 2
+      close(gtkpfd[0]);
+      close(gtkpfd[1]);
+#endif
       return false;
   }
   
@@ -276,13 +326,24 @@ bool fire_glxtest_process()
   if (pid == 0) {
       close(pfd[0]);
       write_end_of_the_pipe = pfd[1];
+#if MOZ_WIDGET_GTK == 2
+      close(gtkpfd[0]);
+      gtk_write_end_of_the_pipe = gtkpfd[1];
+#endif
       glxtest();
       close(pfd[1]);
+#if MOZ_WIDGET_GTK == 2
+      close(gtkpfd[1]);
+#endif
       _exit(0);
   }
 
   close(pfd[1]);
   mozilla::widget::glxtest_pipe = pfd[0];
   mozilla::widget::glxtest_pid = pid;
+#if MOZ_WIDGET_GTK == 2
+  close(gtkpfd[1]);
+  gtk_read_end_of_the_pipe = gtkpfd[0];
+#endif
   return false;
 }
