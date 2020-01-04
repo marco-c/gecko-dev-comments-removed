@@ -984,6 +984,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   {
     base::LaunchApp(cmdLine, false, false, &process);
 
+#ifdef MOZ_SANDBOX
     
     
     if (mProcessType == GeckoProcessType_Content) {
@@ -991,6 +992,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         NS_WARNING("Failed to add content process as target peer.");
       }
     }
+#endif
   }
 
 #else
