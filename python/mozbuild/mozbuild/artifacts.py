@@ -79,6 +79,7 @@ MAX_CACHED_ARTIFACTS = 6
 JOB_DETAILS = {
     
     'android-api-11': {'re': re.compile('public/build/fennec-(.*)\.android-arm\.apk')},
+    'android-x86': {'re': re.compile('public/build/fennec-(.*)\.android-i386\.apk')},
     
     
     
