@@ -2360,7 +2360,7 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
           
           nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
           TrivialFunctor functor;
-          nsDOMSubtreeIterator iter;
+          DOMSubtreeIterator iter;
           nsresult res = iter.Init(*range);
           NS_ENSURE_SUCCESS(res, res);
           iter.AppendList(functor, arrayOfNodes);
@@ -5625,7 +5625,7 @@ nsHTMLEditRules::GetNodesForOperation(nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
   }
   
   for (auto& range : aArrayOfRanges) {
-    nsDOMSubtreeIterator iter;
+    DOMSubtreeIterator iter;
     res = iter.Init(*range);
     NS_ENSURE_SUCCESS(res, res);
     if (aOutArrayOfNodes.Length() == 0) {
