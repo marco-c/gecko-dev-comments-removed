@@ -7,6 +7,8 @@ package org.mozilla.gecko;
 
 import android.os.Bundle;
 
+import org.mozilla.gecko.tabs.TabsPanel;
+
 
 
 
@@ -46,4 +48,14 @@ public abstract class BrowserAppDelegate {
 
 
     public void onDestroy(BrowserApp browserApp) {}
+
+    
+
+
+    public void onTabsTrayShown(BrowserApp browserApp, TabsPanel tabsPanel) {}
+
+    
+
+
+    public void onTabsTrayHidden(BrowserApp browserApp, TabsPanel tabsPanel) {}
 }
