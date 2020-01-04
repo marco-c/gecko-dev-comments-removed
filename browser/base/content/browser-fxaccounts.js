@@ -10,6 +10,11 @@ var gFxAccounts = {
 
   _initialized: false,
   _inCustomizationMode: false,
+  
+  
+  
+  
+  _expectingNotifyClose: false,
 
   get weave() {
     delete this.weave;
@@ -31,6 +36,7 @@ var gFxAccounts = {
       this.FxAccountsCommon.ONLOGIN_NOTIFICATION,
       this.FxAccountsCommon.ONVERIFIED_NOTIFICATION,
       this.FxAccountsCommon.ONLOGOUT_NOTIFICATION,
+      "weave:notification:removed",
       this.FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION,
     ];
   },
@@ -101,6 +107,10 @@ var gFxAccounts = {
     gNavToolbox.addEventListener("customizationstarting", this);
     gNavToolbox.addEventListener("customizationending", this);
 
+    
+    
+    Services.obs.notifyObservers(null, "fxa-migration:state-request", null);
+
     EnsureFxAccountsWebChannel();
     this._initialized = true;
 
@@ -130,6 +140,16 @@ var gFxAccounts = {
       case "fxa-migration:state-changed":
         this.onMigrationStateChanged(data, subject);
         break;
+      case "weave:notification:removed":
+        
+        
+        let notif = subject.wrappedJSObject.object;
+        if (notif.title == this.SYNC_MIGRATION_NOTIFICATION_TITLE &&
+            !this._expectingNotifyClose) {
+          
+          this.fxaMigrator.recordTelemetry(this.fxaMigrator.TELEMETRY_DECLINED);
+        }
+        break;
       case this.FxAccountsCommon.ONPROFILE_IMAGE_CHANGE_NOTIFICATION:
         this.updateUI();
         break;
@@ -156,25 +176,12 @@ var gFxAccounts = {
     }
   },
 
-  onMigrationStateChanged: function () {
-    
-    
-    
-    let msg = this.strings.GetStringFromName("autoDisconnectDescription")
-    let signInLabel = this.strings.GetStringFromName("autoDisconnectSignIn.label");
-    let signInAccessKey = this.strings.GetStringFromName("autoDisconnectSignIn.accessKey");
-    let learnMoreLink = this.fxaMigrator.learnMoreLink;
-    let note = new Weave.Notification(
-          undefined, msg, undefined, Weave.Notifications.PRIORITY_WARNING, [
-            new Weave.NotificationButton(signInLabel, signInAccessKey, () => {
-              this.openPreferences();
-            }),
-          ], learnMoreLink
-        );
-    note.title = this.SYNC_MIGRATION_NOTIFICATION_TITLE;
-    Weave.Notifications.replaceTitle(note);
-    
-    this.updateAppMenuItem();
+  onMigrationStateChanged: function (newState, email) {
+    this._migrationInfo = !newState ? null : {
+      state: newState,
+      email: email ? email.QueryInterface(Ci.nsISupportsString).data : null,
+    };
+    this.updateUI();
   },
 
   handleEvent: function (event) {
@@ -208,15 +215,17 @@ var gFxAccounts = {
   },
 
   updateUI: function () {
-    
-    
-    
-    Weave.Notifications.removeAll(this.SYNC_MIGRATION_NOTIFICATION_TITLE);
     this.updateAppMenuItem();
+    this.updateMigrationNotification();
   },
 
   
   updateAppMenuItem: function () {
+    if (this._migrationInfo) {
+      this.updateAppMenuItemForMigration();
+      return Promise.resolve();
+    }
+
     let profileInfoEnabled = false;
     try {
       profileInfoEnabled = Services.prefs.getBoolPref("identity.fxaccounts.profile_image.enabled");
@@ -224,6 +233,12 @@ var gFxAccounts = {
 
     
     if (!this.weave.fxAccountsEnabled) {
+      
+      
+      
+      
+      this.panelUIFooter.hidden = true;
+      this.panelUIFooter.removeAttribute("fxastatus");
       return Promise.resolve();
     }
 
@@ -343,6 +358,90 @@ var gFxAccounts = {
     });
   },
 
+  updateAppMenuItemForMigration: Task.async(function* () {
+    let status = null;
+    let label = null;
+    switch (this._migrationInfo.state) {
+      case this.fxaMigrator.STATE_USER_FXA:
+        status = "migrate-signup";
+        label = this.strings.formatStringFromName("needUserShort",
+          [this.panelUILabel.getAttribute("fxabrandname")], 1);
+        break;
+      case this.fxaMigrator.STATE_USER_FXA_VERIFIED:
+        status = "migrate-verify";
+        label = this.strings.formatStringFromName("needVerifiedUserShort",
+                                                  [this._migrationInfo.email],
+                                                  1);
+        break;
+    }
+    this.panelUILabel.label = label;
+    this.panelUIFooter.setAttribute("fxastatus", status);
+  }),
+
+  updateMigrationNotification: Task.async(function* () {
+    if (!this._migrationInfo) {
+      this._expectingNotifyClose = true;
+      Weave.Notifications.removeAll(this.SYNC_MIGRATION_NOTIFICATION_TITLE);
+      
+      
+      
+      
+      this._expectingNotifyClose = false;
+      return;
+    }
+    let note = null;
+    switch (this._migrationInfo.state) {
+      case this.fxaMigrator.STATE_USER_FXA: {
+        
+        
+        
+        
+        let msg, upgradeLabel, upgradeAccessKey, learnMoreLink;
+        if (this._migrationInfo.email) {
+          msg = this.strings.formatStringFromName("signInAfterUpgradeOnOtherDevice.description",
+                                                  [this._migrationInfo.email],
+                                                  1);
+          upgradeLabel = this.strings.GetStringFromName("signInAfterUpgradeOnOtherDevice.label");
+          upgradeAccessKey = this.strings.GetStringFromName("signInAfterUpgradeOnOtherDevice.accessKey");
+        } else {
+          msg = this.strings.GetStringFromName("needUserLong");
+          upgradeLabel = this.strings.GetStringFromName("upgradeToFxA.label");
+          upgradeAccessKey = this.strings.GetStringFromName("upgradeToFxA.accessKey");
+          learnMoreLink = this.fxaMigrator.learnMoreLink;
+        }
+        note = new Weave.Notification(
+          undefined, msg, undefined, Weave.Notifications.PRIORITY_WARNING, [
+            new Weave.NotificationButton(upgradeLabel, upgradeAccessKey, () => {
+              this._expectingNotifyClose = true;
+              this.fxaMigrator.createFxAccount(window);
+            }),
+          ], learnMoreLink
+        );
+        break;
+      }
+      case this.fxaMigrator.STATE_USER_FXA_VERIFIED: {
+        let msg =
+          this.strings.formatStringFromName("needVerifiedUserLong",
+                                            [this._migrationInfo.email], 1);
+        let resendLabel =
+          this.strings.GetStringFromName("resendVerificationEmail.label");
+        let resendAccessKey =
+          this.strings.GetStringFromName("resendVerificationEmail.accessKey");
+        note = new Weave.Notification(
+          undefined, msg, undefined, Weave.Notifications.PRIORITY_INFO, [
+            new Weave.NotificationButton(resendLabel, resendAccessKey, () => {
+              this._expectingNotifyClose = true;
+              this.fxaMigrator.resendVerificationMail();
+            }),
+          ]
+        );
+        break;
+      }
+    }
+    note.title = this.SYNC_MIGRATION_NOTIFICATION_TITLE;
+    Weave.Notifications.replaceTitle(note);
+  }),
+
   onMenuPanelCommand: function () {
 
     switch (this.panelUIFooter.getAttribute("fxastatus")) {
@@ -355,6 +454,12 @@ var gFxAccounts = {
       } else {
         this.openSignInAgainPage("menupanel");
       }
+      break;
+    case "migrate-signup":
+    case "migrate-verify":
+      
+      
+      this.openPreferences();
       break;
     default:
       this.openPreferences();
