@@ -133,9 +133,9 @@ exports.setDefaults = setDefaults;
 
 
 function injectOptions({ preferences, preferencesBranch, document, parent, id }) {
-  for (let { name, type, hidden, title, description, label, options, on, off } of preferences) {
+  preferences.forEach(({name, type, hidden, title, description, label, options, on, off}) => {
     if (hidden) {
-      continue;
+      return;
     }
 
     let setting = document.createElementNS(XUL_NS, 'setting');
@@ -188,6 +188,6 @@ function injectOptions({ preferences, preferencesBranch, document, parent, id })
     }
 
     parent.appendChild(setting);
-  }
+  });
 }
 exports.injectOptions = injectOptions;
