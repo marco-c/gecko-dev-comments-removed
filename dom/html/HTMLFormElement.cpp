@@ -709,7 +709,8 @@ HTMLFormElement::BuildSubmission(HTMLFormSubmission** aFormSubmission,
   
   
   
-  rv = GetSubmissionFromForm(this, originatingElement, aFormSubmission);
+  rv = HTMLFormSubmission::GetFromForm(this, originatingElement,
+                                       aFormSubmission);
   NS_ENSURE_SUBMIT_SUCCESS(rv);
 
   

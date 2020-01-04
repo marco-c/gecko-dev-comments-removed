@@ -30,6 +30,19 @@ class Blob;
 class HTMLFormSubmission
 {
 public:
+  
+
+
+
+
+
+
+
+  static nsresult
+  GetFromForm(nsGenericHTMLElement* aForm,
+              nsGenericHTMLElement* aOriginatingElement,
+              HTMLFormSubmission** aFormSubmission);
+
   virtual ~HTMLFormSubmission()
   {
     MOZ_COUNT_DTOR(HTMLFormSubmission);
@@ -211,17 +224,6 @@ private:
 
   uint64_t mTotalLength;
 };
-
-
-
-
-
-
-
-
-nsresult GetSubmissionFromForm(nsGenericHTMLElement* aForm,
-                               nsGenericHTMLElement* aOriginatingElement,
-                               HTMLFormSubmission** aFormSubmission);
 
 } 
 } 

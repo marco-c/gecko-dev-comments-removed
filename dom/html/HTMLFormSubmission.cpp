@@ -812,10 +812,10 @@ GetEnumAttr(nsGenericHTMLElement* aContent,
 
 } 
 
-nsresult
-GetSubmissionFromForm(nsGenericHTMLElement* aForm,
-                      nsGenericHTMLElement* aOriginatingElement,
-                      HTMLFormSubmission** aFormSubmission)
+ nsresult
+HTMLFormSubmission::GetFromForm(nsGenericHTMLElement* aForm,
+                                nsGenericHTMLElement* aOriginatingElement,
+                                HTMLFormSubmission** aFormSubmission)
 {
   
   NS_ASSERTION(aForm->GetComposedDoc(),
