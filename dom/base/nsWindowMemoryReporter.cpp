@@ -789,37 +789,6 @@ CheckForGhostWindowsEnumerator(nsISupports *aKey, TimeStamp& aTimeStamp,
   return PL_DHASH_NEXT;
 }
 
-struct GetNonDetachedWindowDomainsEnumeratorData
-{
-  nsTHashtable<nsCStringHashKey> *nonDetachedDomains;
-  nsIEffectiveTLDService *tldService;
-};
-
-static PLDHashOperator
-GetNonDetachedWindowDomainsEnumerator(const uint64_t& aId, nsGlobalWindow* aWindow,
-                                      void* aClosure)
-{
-  GetNonDetachedWindowDomainsEnumeratorData *data =
-    static_cast<GetNonDetachedWindowDomainsEnumeratorData*>(aClosure);
-
-  
-  
-  if (!aWindow->GetOuterWindow() || !aWindow->GetTopInternal()) {
-    
-    return PL_DHASH_NEXT;
-  }
-
-  nsCOMPtr<nsIURI> uri = GetWindowURI(aWindow);
-
-  nsAutoCString domain;
-  if (uri) {
-    data->tldService->GetBaseDomain(uri, 0, domain);
-  }
-
-  data->nonDetachedDomains->PutEntry(domain);
-  return PL_DHASH_NEXT;
-}
-
 
 
 
@@ -861,10 +830,22 @@ nsWindowMemoryReporter::CheckForGhostWindows(
   nsTHashtable<nsCStringHashKey> nonDetachedWindowDomains;
 
   
-  GetNonDetachedWindowDomainsEnumeratorData nonDetachedEnumData =
-    { &nonDetachedWindowDomains, tldService };
-  windowsById->EnumerateRead(GetNonDetachedWindowDomainsEnumerator,
-                             &nonDetachedEnumData);
+  for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
+    
+    
+    nsGlobalWindow* window = iter.UserData();
+    if (!window->GetOuterWindow() || !window->GetTopInternal()) {
+      
+      continue;
+    }
+
+    nsCOMPtr<nsIURI> uri = GetWindowURI(window);
+    nsAutoCString domain;
+    if (uri) {
+      tldService->GetBaseDomain(uri, 0, domain);
+    }
+    nonDetachedWindowDomains.PutEntry(domain);
+  }
 
   
   
