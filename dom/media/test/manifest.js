@@ -76,7 +76,7 @@ var gPlayedTests = [
   { name:"seek.ogv", type:"video/ogg", duration:3.966 },
   { name:"seek.webm", type:"video/webm", duration:3.966 },
   { name:"gizmo.mp4", type:"video/mp4", duration:5.56 },
-  { name:"owl.mp3", type:"audio/mpeg", duration:3.29 },
+  { name:"owl.mp3", type:"audio/mpeg", duration:3.343 },
   
   
   
@@ -237,13 +237,13 @@ var gPlayTests = [
 
   { name:"small-shot.m4a", type:"audio/mp4", duration:0.29 },
   { name:"small-shot.mp3", type:"audio/mpeg", duration:0.27 },
-  { name:"owl.mp3", type:"audio/mpeg", duration:3.29 },
+  { name:"owl.mp3", type:"audio/mpeg", duration:3.343 },
   
   
-  { name:"owl-funny-id3.mp3", type:"audio/mpeg", duration:3.29 },
+  { name:"owl-funny-id3.mp3", type:"audio/mpeg", duration:3.343 },
   
   
-  { name:"owl-funnier-id3.mp3", type:"audio/mpeg", duration:3.29 },
+  { name:"owl-funnier-id3.mp3", type:"audio/mpeg", duration:3.343 },
   
   
   
@@ -469,7 +469,7 @@ var gSeekTests = [
   { name:"split.webm", type:"video/webm", duration:1.967 },
   { name:"detodos.opus", type:"audio/ogg; codecs=opus", duration:2.9135 },
   { name:"gizmo.mp4", type:"video/mp4", duration:5.56 },
-  { name:"owl.mp3", type:"audio/mpeg", duration:3.29 },
+  { name:"owl.mp3", type:"audio/mpeg", duration:3.343 },
   { name:"bogus.duh", type:"bogus/duh", duration:123 }
 ];
 
@@ -523,7 +523,7 @@ if (getAndroidVersion() >= 18) {
 var gAudioTests = [
   { name:"r11025_s16_c1.wav", type:"audio/x-wav", duration:1.0 },
   { name:"sound.ogg", type:"audio/ogg" },
-  { name:"owl.mp3", type:"audio/mpeg", duration:3.29 },
+  { name:"owl.mp3", type:"audio/mpeg", duration:3.343 },
   { name:"small-shot.m4a", type:"audio/mp4", duration:0.29 },
   { name:"bogus.duh", type:"bogus/duh", duration:123 }
 ];
