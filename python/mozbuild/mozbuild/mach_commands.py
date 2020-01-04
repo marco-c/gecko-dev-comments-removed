@@ -386,8 +386,7 @@ class Build(MachCommandBase):
                 
                 
                 
-                self._run_make(directory=self.topobjdir,
-                    target='backend.RecursiveMakeBackend',
+                self._run_make(directory=self.topobjdir, target='backend',
                     line_handler=output.on_line, log=False,
                     print_directory=False)
 

@@ -825,19 +825,6 @@ class RecursiveMakeBackend(CommonBackend):
         self._fill_root_mk()
 
         
-        
-        inputs = sorted(p.replace(os.sep, '/') for p in self.backend_input_files)
-
-        
-        
-        
-        with self._write_file('%s.pp' % self._backend_output_list_file) as backend_deps:
-            backend_deps.write('$(DEPTH)/backend.%s: %s\n' %
-                (self.__class__.__name__, ' '.join(inputs)))
-            for path in inputs:
-                backend_deps.write('%s:\n' % path)
-
-        
         for flavor, t in self._test_manifests.items():
             install_prefix, manifests = t
             manifest_stem = mozpath.join(install_prefix, '%s.ini' % flavor)
