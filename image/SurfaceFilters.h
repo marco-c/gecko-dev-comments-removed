@@ -157,9 +157,6 @@ protected:
     while (nextOutputRow >= InputSize().height) {
       
       if (!advancedPass) {
-        DuplicateRows(HaeberliOutputUntilRow(mPass, mProgressiveDisplay,
-                                             InputSize(), mOutputRow),
-                      InputSize().height);
         OutputRows(HaeberliOutputUntilRow(mPass, mProgressiveDisplay,
                                           InputSize(), mOutputRow),
                    InputSize().height);
