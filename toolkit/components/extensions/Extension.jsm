@@ -891,7 +891,10 @@ ExtensionData.prototype = {
       }
 
       try {
-        this.id = this.manifest.applications.gecko.id;
+        
+        if (!this.id && this.manifest.applications.gecko.id) {
+          this.id = this.manifest.applications.gecko.id;
+        }
       } catch (e) {
         
       }
