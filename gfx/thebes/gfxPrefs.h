@@ -260,7 +260,6 @@ private:
   
   DECL_GFX_PREF(Once, "gfx.vsync.compositor.unobserve-count",  CompositorUnobserveCount, int32_t, 10);
   
-  DECL_GFX_PREF(Once, "gfx.vsync.refreshdriver",               VsyncAlignedRefreshDriver, bool, false);
   DECL_GFX_PREF(Once, "gfx.work-around-driver-bugs",           WorkAroundDriverBugs, bool, true);
   DECL_GFX_PREF(Once, "gfx.screen-mirroring.enabled",          ScreenMirroringEnabled, bool, false);
 

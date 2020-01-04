@@ -147,10 +147,6 @@ TEST_F(VsyncTester, CompositorGetVsyncNotifications)
 
 TEST_F(VsyncTester, ParentRefreshDriverGetVsyncNotifications)
 {
-  if (!gfxPrefs::VsyncAlignedRefreshDriver()) {
-    return;
-  }
-
   VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
   globalDisplay.DisableVsync();
   ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
@@ -177,10 +173,6 @@ TEST_F(VsyncTester, ParentRefreshDriverGetVsyncNotifications)
 
 TEST_F(VsyncTester, ChildRefreshDriverGetVsyncNotifications)
 {
-  if (!gfxPrefs::VsyncAlignedRefreshDriver()) {
-    return;
-  }
-
   VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
   globalDisplay.DisableVsync();
   ASSERT_FALSE(globalDisplay.IsVsyncEnabled());

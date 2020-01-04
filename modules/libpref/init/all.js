@@ -5047,11 +5047,6 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.audiochannel.mutedByDefault", false);
 
 
-
-
-pref("gfx.vsync.refreshdriver", true);
-
-
 #ifdef MOZ_SECUREELEMENT
 pref("dom.secureelement.enabled", false);
 #endif

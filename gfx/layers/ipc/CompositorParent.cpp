@@ -580,9 +580,7 @@ CompositorParent::CompositorParent(nsIWidget* aWidget,
     mApzcTreeManager = new APZCTreeManager();
   }
 
-  gfxDebugOnce() << "Enabling vsync compositor";
   mCompositorScheduler = new CompositorVsyncScheduler(this, aWidget);
-
   LayerScope::SetPixelScale(mWidget->GetDefaultScale().scale);
 }
 
@@ -831,9 +829,7 @@ CompositorParent::PauseComposition()
     mPaused = true;
 
     mCompositor->Pause();
-
-    TimeStamp now = TimeStamp::Now();
-    DidComposite(now, now);
+    DidComposite();
   }
 
   
@@ -1036,8 +1032,7 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
 #endif
 
   if (!CanComposite()) {
-    TimeStamp end = TimeStamp::Now();
-    DidComposite(start, end);
+    DidComposite();
     return;
   }
 
@@ -1080,8 +1075,7 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
   mLayerManager->EndTransaction(time);
 
   if (!aTarget) {
-    TimeStamp end = TimeStamp::Now();
-    DidComposite(start, end);
+    DidComposite();
   }
 
   
@@ -1197,8 +1191,7 @@ CompositorParent::ShadowLayersUpdated(LayerTransactionParent* aLayerTree,
   if (aScheduleComposite) {
     ScheduleComposition();
     if (mPaused) {
-      TimeStamp now = TimeStamp::Now();
-      DidComposite(now, now);
+      DidComposite();
     }
   }
   mLayerManager->NotifyShadowTreeTransaction();
@@ -1231,8 +1224,7 @@ CompositorParent::SetTestSampleTime(LayerTransactionParent* aLayerTree,
     if (!requestNextFrame) {
       CancelCurrentCompositeTask();
       
-      TimeStamp now = TimeStamp::Now();
-      DidComposite(now, now);
+      DidComposite();
     }
   }
 
@@ -1264,8 +1256,7 @@ CompositorParent::ApplyAsyncProperties(LayerTransactionParent* aLayerTree)
     if (!requestNextFrame) {
       CancelCurrentCompositeTask();
       
-      TimeStamp now = TimeStamp::Now();
-      DidComposite(now, now);
+      DidComposite();
     }
   }
 }
@@ -1724,9 +1715,7 @@ public:
 
   virtual AsyncCompositionManager* GetCompositionManager(LayerTransactionParent* aParent) override;
 
-  void DidComposite(uint64_t aId,
-                    TimeStamp& aCompositeStart,
-                    TimeStamp& aCompositeEnd);
+  void DidComposite(uint64_t aId);
 
 private:
   
@@ -1747,11 +1736,10 @@ private:
 };
 
 void
-CompositorParent::DidComposite(TimeStamp& aCompositeStart,
-                               TimeStamp& aCompositeEnd)
+CompositorParent::DidComposite()
 {
   if (mPendingTransaction) {
-    unused << SendDidComposite(0, mPendingTransaction, aCompositeStart, aCompositeEnd);
+    unused << SendDidComposite(0, mPendingTransaction);
     mPendingTransaction = 0;
   }
   if (mLayerManager) {
@@ -1767,8 +1755,7 @@ CompositorParent::DidComposite(TimeStamp& aCompositeStart,
        it != sIndirectLayerTrees.end(); it++) {
     LayerTreeState* lts = &it->second;
     if (lts->mParent == this && lts->mCrossProcessParent) {
-      static_cast<CrossProcessCompositorParent*>(lts->mCrossProcessParent)->DidComposite(
-        it->first, aCompositeStart, aCompositeEnd);
+      static_cast<CrossProcessCompositorParent*>(lts->mCrossProcessParent)->DidComposite(it->first);
     }
   }
 }
@@ -2052,14 +2039,12 @@ UpdatePluginWindowState(uint64_t aId)
 #endif 
 
 void
-CrossProcessCompositorParent::DidComposite(uint64_t aId,
-                                           TimeStamp& aCompositeStart,
-                                           TimeStamp& aCompositeEnd)
+CrossProcessCompositorParent::DidComposite(uint64_t aId)
 {
   sIndirectLayerTreesLock->AssertCurrentThreadOwns();
   LayerTransactionParent *layerTree = sIndirectLayerTrees[aId].mLayerTree;
   if (layerTree && layerTree->GetPendingTransactionId()) {
-    unused << SendDidComposite(aId, layerTree->GetPendingTransactionId(), aCompositeStart, aCompositeEnd);
+    unused << SendDidComposite(aId, layerTree->GetPendingTransactionId());
     layerTree->SetPendingTransactionId(0);
   }
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)

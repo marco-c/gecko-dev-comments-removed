@@ -735,12 +735,9 @@ CreateVsyncRefreshTimer()
   
   gfxPrefs::GetSingleton();
 
-  if (!gfxPrefs::VsyncAlignedRefreshDriver()
-        || gfxPlatform::IsInLayoutAsapMode()) {
+  if (gfxPlatform::IsInLayoutAsapMode()) {
     return;
   }
-
-  NS_WARNING("Enabling vsync refresh driver");
 
   if (XRE_IsParentProcess()) {
     
