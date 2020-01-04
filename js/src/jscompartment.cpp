@@ -456,7 +456,7 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     RootedObject existing(cx, existingArg);
     if (existing) {
         
-        if (existing->hasStaticPrototype() ||
+        if (!existing->getTaggedProto().isLazy() ||
             
             existing->isCallable() ||
             obj->isCallable())

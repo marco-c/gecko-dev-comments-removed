@@ -422,14 +422,12 @@ GeneratePrototypeGuards(JSContext* cx, IonScript* ion, MacroAssembler& masm, JSO
         
         masm.loadPtr(Address(objectReg, JSObject::offsetOfGroup()), scratchReg);
         Address proto(scratchReg, ObjectGroup::offsetOfProto());
-        masm.branchPtr(Assembler::NotEqual, proto, ImmGCPtr(obj->staticPrototype()), failures);
+        masm.branchPtr(Assembler::NotEqual, proto, ImmGCPtr(obj->getProto()), failures);
     }
 
-    MOZ_ASSERT(obj->isNative() != IsCacheableDOMProxy(obj),
-               "only regular objects, or DOM proxies with static prototype, "
-               "should be observed here");
-
-    JSObject* pobj = obj->staticPrototype();
+    JSObject* pobj = IsCacheableDOMProxy(obj)
+                     ? obj->getTaggedProto().toObjectOrNull()
+                     : obj->getProto();
     if (!pobj)
         return;
     while (pobj != holder) {
@@ -440,14 +438,12 @@ GeneratePrototypeGuards(JSContext* cx, IonScript* ion, MacroAssembler& masm, JSO
                 
                 masm.loadPtr(groupAddr, scratchReg);
                 Address protoAddr(scratchReg, ObjectGroup::offsetOfProto());
-                masm.branchPtr(Assembler::NotEqual, protoAddr, ImmGCPtr(pobj->staticPrototype()),
-                              failures);
+                masm.branchPtr(Assembler::NotEqual, protoAddr, ImmGCPtr(pobj->getProto()), failures);
             } else {
                 masm.branchPtr(Assembler::NotEqual, groupAddr, ImmGCPtr(pobj->group()), failures);
             }
         }
-
-        pobj = pobj->staticPrototype();
+        pobj = pobj->getProto();
     }
 }
 
@@ -463,7 +459,7 @@ jit::IsCacheableProtoChainForIonOrCacheIR(JSObject* obj, JSObject* holder)
 
 
 
-        JSObject* proto = obj->staticPrototype();
+        JSObject* proto = obj->getProto();
         if (!proto || !proto->isNative())
             return false;
         obj = proto;
@@ -504,7 +500,7 @@ IsCacheableNoProperty(JSObject* obj, JSObject* holder, Shape* shape, jsbytecode*
     while (obj2) {
         if (!obj2->isNative())
             return false;
-        obj2 = obj2->staticPrototype();
+        obj2 = obj2->getProto();
     }
 
     
@@ -823,20 +819,19 @@ GenerateReadSlot(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         } else {
             
             
-            JSObject* proto = obj->staticPrototype();
+            JSObject* proto = obj->getTaggedProto().toObjectOrNull();
             Register lastReg = object;
             MOZ_ASSERT(scratchReg != object);
             while (proto) {
                 masm.loadObjProto(lastReg, scratchReg);
 
                 
-                MOZ_ASSERT(proto->hasStaticPrototype());
                 masm.branchPtr(Assembler::NotEqual,
                                Address(scratchReg, JSObject::offsetOfShape()),
                                ImmGCPtr(proto->as<NativeObject>().lastProperty()),
                                &prototypeFailures);
 
-                proto = proto->staticPrototype();
+                proto = proto->getProto();
                 lastReg = scratchReg;
             }
 
@@ -1808,7 +1803,7 @@ GetPropertyIC::tryAttachDOMProxyUnshadowed(JSContext* cx, HandleScript outerScri
     MOZ_ASSERT(monitoredResult());
     MOZ_ASSERT(output().hasValue());
 
-    RootedObject checkObj(cx, obj->staticPrototype());
+    RootedObject checkObj(cx, obj->getTaggedProto().toObjectOrNull());
     RootedNativeObject holder(cx);
     RootedShape shape(cx);
 
@@ -2911,7 +2906,7 @@ IsCacheableDOMProxyUnshadowedSetterCall(JSContext* cx, HandleObject obj, HandleI
 {
     MOZ_ASSERT(IsCacheableDOMProxy(obj));
 
-    RootedObject checkObj(cx, obj->staticPrototype());
+    RootedObject checkObj(cx, obj->getTaggedProto().toObjectOrNull());
     if (!checkObj)
         return false;
 
@@ -3034,7 +3029,7 @@ GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
         CheckTypeSetForWrite(masm, obj, newShape->propid(), tempReg, value, failures);
 
     
-    JSObject* proto = obj->staticPrototype();
+    JSObject* proto = obj->getProto();
     Register protoReg = tempReg;
     bool first = true;
     while (proto) {
@@ -3047,7 +3042,7 @@ GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
         
         masm.branchTestObjShape(Assembler::NotEqual, protoReg, protoShape, failures);
 
-        proto = proto->staticPrototype();
+        proto = proto->getProto();
     }
 
     
@@ -3253,7 +3248,7 @@ PrototypeChainShadowsPropertyAdd(JSContext* cx, JSObject* obj, jsid id)
     
     
     
-    for (JSObject* proto = obj->staticPrototype(); proto; proto = proto->staticPrototype()) {
+    for (JSObject* proto = obj->getProto(); proto; proto = proto->getProto()) {
         
         if (!proto->isNative())
             return true;
@@ -3854,7 +3849,7 @@ GetPropertyIC::canAttachDenseElementHole(JSObject* obj, HandleValue idval, Typed
         if (ClassCanHaveExtraProperties(obj->getClass()))
             return false;
 
-        JSObject* proto = obj->staticPrototype();
+        JSObject* proto = obj->getProto();
         if (!proto)
             break;
 
@@ -3890,10 +3885,10 @@ GenerateDenseElementHole(JSContext* cx, MacroAssembler& masm, IonCache::StubAtta
     if (obj->hasUncacheableProto()) {
         masm.loadPtr(Address(object, JSObject::offsetOfGroup()), scratchReg);
         Address proto(scratchReg, ObjectGroup::offsetOfProto());
-        masm.branchPtr(Assembler::NotEqual, proto, ImmGCPtr(obj->staticPrototype()), &failures);
+        masm.branchPtr(Assembler::NotEqual, proto, ImmGCPtr(obj->getProto()), &failures);
     }
 
-    JSObject* pobj = obj->staticPrototype();
+    JSObject* pobj = obj->getProto();
     while (pobj) {
         MOZ_ASSERT(pobj->as<NativeObject>().lastProperty());
 
@@ -3919,7 +3914,7 @@ GenerateDenseElementHole(JSContext* cx, MacroAssembler& masm, IonCache::StubAtta
         Address initLength(scratchReg, ObjectElements::offsetOfInitializedLength());
         masm.branch32(Assembler::NotEqual, initLength, Imm32(0), &failures);
 
-        pobj = pobj->staticPrototype();
+        pobj = pobj->getProto();
     }
 
     
@@ -4331,7 +4326,7 @@ IsDenseElementSetInlineable(JSObject* obj, const Value& idval, ConstantOrRegiste
         if (curObj->isIndexed())
             return false;
 
-        curObj = curObj->staticPrototype();
+        curObj = curObj->getProto();
     }
 
     *checkTypeset = false;

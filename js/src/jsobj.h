@@ -265,9 +265,6 @@ class JSObject : public js::gc::Cell
     
     inline bool hasUncacheableProto() const;
     bool setUncacheableProto(js::ExclusiveContext* cx) {
-        MOZ_ASSERT(hasStaticPrototype(),
-                   "uncacheability as a concept is only applicable to static "
-                   "(not dynamically-computed) prototypes");
         return setFlags(cx, js::BaseShape::UNCACHEABLE_PROTO, GENERATE_SHAPE);
     }
 
@@ -371,13 +368,7 @@ class JSObject : public js::gc::Cell
 
 
 
-
-
-
-
-
-
-    js::TaggedProto taggedProto() const {
+    js::TaggedProto getTaggedProto() const {
         return group_->proto();
     }
 
@@ -385,9 +376,9 @@ class JSObject : public js::gc::Cell
 
     bool uninlinedIsProxy() const;
 
-    JSObject* staticPrototype() const {
-        MOZ_ASSERT(hasStaticPrototype());
-        return taggedProto().toObjectOrNull();
+    JSObject* getProto() const {
+        MOZ_ASSERT(!hasLazyPrototype());
+        return getTaggedProto().toObjectOrNull();
     }
 
     
@@ -395,24 +386,27 @@ class JSObject : public js::gc::Cell
     
     
     
-    bool hasStaticPrototype() const {
-        return !hasDynamicPrototype();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool hasLazyPrototype() const {
+        bool lazy = getTaggedProto().isLazy();
+        MOZ_ASSERT_IF(lazy, uninlinedIsProxy());
+        return lazy;
     }
 
     
     
-    
-    
-    bool hasDynamicPrototype() const {
-        bool dynamic = taggedProto().isDynamic();
-        MOZ_ASSERT_IF(dynamic, uninlinedIsProxy());
-        MOZ_ASSERT_IF(dynamic, !isNative());
-        return dynamic;
-    }
-
-    
-    
-    inline bool staticPrototypeIsImmutable() const;
+    inline bool nonLazyPrototypeIsImmutable() const;
 
     inline void setGroup(js::ObjectGroup* group);
 

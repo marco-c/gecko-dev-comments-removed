@@ -1133,7 +1133,7 @@ JS_MayResolveStandardClass(const JSAtomState& names, jsid id, JSObject* maybeObj
     
     
     
-    if (!maybeObj || !maybeObj->staticPrototype())
+    if (!maybeObj || !maybeObj->getProto())
         return true;
 
     if (!JSID_IS_ATOM(id))

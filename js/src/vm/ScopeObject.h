@@ -897,7 +897,7 @@ class NestedScopeObject : public ScopeObject
   public:
     
     inline NestedStaticScope* staticScope() {
-        return &staticPrototype()->as<NestedStaticScope>();
+        return &getProto()->as<NestedStaticScope>();
     }
 
     void initEnclosingScope(JSObject* obj) {
@@ -927,7 +927,7 @@ class DynamicWithObject : public NestedScopeObject
            WithKind kind = SyntacticWith);
 
     StaticWithScope& staticWith() const {
-        return staticPrototype()->as<StaticWithScope>();
+        return getProto()->as<StaticWithScope>();
     }
 
     
@@ -1007,7 +1007,7 @@ class ClonedBlockObject : public NestedScopeObject
   public:
     
     StaticBlockScope& staticBlock() const {
-        return staticPrototype()->as<StaticBlockScope>();
+        return getProto()->as<StaticBlockScope>();
     }
 
     
@@ -1387,7 +1387,7 @@ template<>
 inline bool
 JSObject::is<js::StaticBlockScope>() const
 {
-    return hasClass(&js::ClonedBlockObject::class_) && !staticPrototype();
+    return hasClass(&js::ClonedBlockObject::class_) && !getProto();
 }
 
 template<>
@@ -1411,7 +1411,7 @@ template<>
 inline bool
 JSObject::is<js::ClonedBlockObject>() const
 {
-    return hasClass(&js::ClonedBlockObject::class_) && staticPrototype();
+    return hasClass(&js::ClonedBlockObject::class_) && !!getProto();
 }
 
 template<>

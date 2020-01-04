@@ -530,8 +530,7 @@ class TypedObject : public JSObject
 
   public:
     TypedProto& typedProto() const {
-        
-        return staticPrototype()->as<TypedProto>();
+        return getProto()->as<TypedProto>();
     }
 
     TypeDescr& typeDescr() const {

@@ -396,7 +396,7 @@ BaseProxyHandler::weakmapKeyDelegate(JSObject* proxy) const
 bool
 BaseProxyHandler::getPrototype(JSContext* cx, HandleObject proxy, MutableHandleObject protop) const
 {
-    MOZ_CRASH("must override getPrototype with dynamic prototype");
+    MOZ_CRASH("must override getPrototype with lazy prototype");
 }
 
 bool
@@ -415,7 +415,7 @@ bool
 BaseProxyHandler::getPrototypeIfOrdinary(JSContext* cx, HandleObject proxy, bool* isOrdinary,
                                          MutableHandleObject protop) const
 {
-    MOZ_CRASH("must override getPrototypeIfOrdinary with dynamic prototype");
+    MOZ_CRASH("must override getPrototypeIfOrdinary with lazy prototype");
 }
 
 bool
