@@ -38,13 +38,11 @@
 
 
 
-var std_Array_indexOf = ArrayIndexOf;
-var std_String_substring = String_substring;
+
 
 var std_WeakMap = WeakMap;
 
 var std_StopIteration = StopIteration;
-var std_Map_iterator_next = MapIteratorNext;
 
 
 

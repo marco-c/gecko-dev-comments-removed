@@ -25,7 +25,7 @@ function MapForEach(callbackfn, thisArg = undefined) {
     
     var entries = callFunction(std_Map_iterator, M);
     while (true) {
-        var result = callFunction(std_Map_iterator_next, entries);
+        var result = callFunction(MapIteratorNext, entries);
         if (result.done)
             break;
         var entry = result.value;
