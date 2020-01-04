@@ -394,7 +394,7 @@ GMPDecryptsAndGeckoDecodesAAC(mozIGeckoMediaPluginService* aGMPService,
     
     return false;
   }
-#if defined(MOZ_WIDEVINE_EME) && defined(XP_WIN)
+#if defined(XP_WIN)
   
   
   
@@ -536,10 +536,7 @@ IsSupportedInitDataType(const nsString& aCandidate, const nsAString& aKeySystem)
   
   return aCandidate.EqualsLiteral("cenc") ||
     ((aKeySystem.EqualsLiteral("org.w3.clearkey")
-#ifdef MOZ_WIDEVINE_EME
-    || aKeySystem.EqualsLiteral("com.widevine.alpha")
-#endif
-    ) &&
+    || aKeySystem.EqualsLiteral("com.widevine.alpha")) &&
     (aCandidate.EqualsLiteral("keyids") || aCandidate.EqualsLiteral("webm")));
 }
 
@@ -592,7 +589,7 @@ GetSupportedConfig(mozIGeckoMediaPluginService* aGMPService,
     config.mVideoCapabilities.Value().Assign(caps);
   }
 
-#if defined(MOZ_WIDEVINE_EME) && defined(XP_WIN)
+#if defined(XP_WIN)
   
   
   if (aKeySystem.EqualsLiteral("com.widevine.alpha") &&
