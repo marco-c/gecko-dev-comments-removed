@@ -9,7 +9,7 @@ var { interfaces: Ci } = Components;
 
 
 
-addEventListener("TalosQuitApplication", () => {
+addEventListener("TalosQuitApplication", event => {
   
   
   
@@ -19,6 +19,6 @@ addEventListener("TalosQuitApplication", () => {
                          .QueryInterface(Ci.nsISupportsPriority)
                          .priority;
   if (priority != Ci.nsISupportsPriority.PRIORITY_LOWEST) {
-    sendAsyncMessage("Talos:ForceQuit");
+    sendAsyncMessage("Talos:ForceQuit", event.detail);
   }
 });

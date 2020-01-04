@@ -332,8 +332,14 @@ this.SafeBrowsing = {
     let dummyListener = {
       updateUrlRequested: function() { },
       streamFinished:     function() { },
-      updateError:        function() { },
-      updateSuccess:      function() { }
+      
+      
+      updateError:        function() {
+        Services.obs.notifyObservers(db, "mozentries-update-finished", "error");
+      },
+      updateSuccess:      function() {
+        Services.obs.notifyObservers(db, "mozentries-update-finished", "success");
+      }
     };
 
     try {
@@ -346,6 +352,18 @@ this.SafeBrowsing = {
     } catch(ex) {
       
       log("addMozEntries failed!", ex);
+      Services.obs.notifyObservers(db, "mozentries-update-finished", "exception");
     }
   },
+
+  addMozEntriesFinishedPromise: new Promise(resolve => {
+    let finished = (subject, topic, data) => {
+      Services.obs.removeObserver(finished, "mozentries-update-finished");
+      if (data == "error") {
+        Cu.reportError("addMozEntries failed to update the db!");
+      }
+      resolve();
+    };
+    Services.obs.addObserver(finished, "mozentries-update-finished", false);
+  }),
 };
