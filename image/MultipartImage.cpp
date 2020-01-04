@@ -71,6 +71,16 @@ public:
     }
 
     
+    int32_t width = 0;
+    int32_t height = 0;
+    mImage->GetWidth(&width);
+    mImage->GetHeight(&height);
+
+    
+    mImage->RequestDecodeForSize(IntSize(width, height),
+                                 imgIContainer::DECODE_FLAGS_DEFAULT);
+
+    
     
     RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
     if (tracker->GetProgress() & FLAG_HAS_ERROR) {
@@ -125,7 +135,6 @@ MultipartImage::Init()
   RefPtr<ProgressTracker> firstPartTracker =
     InnerImage()->GetProgressTracker();
   firstPartTracker->AddObserver(this);
-  InnerImage()->RequestDecode();
   InnerImage()->IncrementAnimationConsumers();
 }
 
@@ -154,7 +163,6 @@ MultipartImage::BeginTransitionToPart(Image* aNextPart)
   
   
   mNextPartObserver->BeginObserving(mNextPart);
-  mNextPart->RequestDecode();
   mNextPart->IncrementAnimationConsumers();
 }
 
