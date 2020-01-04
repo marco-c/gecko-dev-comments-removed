@@ -3325,10 +3325,7 @@ Call(JSContext* cx, JS::HandleValue thisv, JS::HandleObject funObj, const JS::Ha
 
 extern JS_PUBLIC_API(bool)
 Construct(JSContext* cx, JS::HandleValue fun, HandleObject newTarget,
-          const JS::HandleValueArray &args, MutableHandleValue rval);
-
-
-
+          const JS::HandleValueArray &args, MutableHandleObject objp);
 
 
 
@@ -3339,7 +3336,7 @@ Construct(JSContext* cx, JS::HandleValue fun, HandleObject newTarget,
 
 extern JS_PUBLIC_API(bool)
 Construct(JSContext* cx, JS::HandleValue fun, const JS::HandleValueArray& args,
-          MutableHandleValue rval);
+          MutableHandleObject objp);
 
 } 
 
