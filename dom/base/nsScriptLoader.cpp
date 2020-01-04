@@ -87,6 +87,13 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsScriptLoadRequest)
 nsScriptLoadRequest::~nsScriptLoadRequest()
 {
   js_free(mScriptTextBuf);
+
+  
+  MOZ_ASSERT(!mOffThreadToken);
+
+  
+  
+  MaybeCancelOffThreadScript();
 }
 
 void
@@ -94,6 +101,27 @@ nsScriptLoadRequest::SetReady()
 {
   MOZ_ASSERT(mProgress != Progress::Ready);
   mProgress = Progress::Ready;
+}
+
+void
+nsScriptLoadRequest::Cancel()
+{
+  MaybeCancelOffThreadScript();
+  mIsCanceled = true;
+}
+
+void
+nsScriptLoadRequest::MaybeCancelOffThreadScript()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mOffThreadToken) {
+    return;
+  }
+
+  JSContext* cx = JS_GetContext(xpc::GetJSRuntime());
+  JS::CancelOffThreadScript(cx, mOffThreadToken);
+  mOffThreadToken = nullptr;
 }
 
 
@@ -1829,9 +1857,7 @@ nsScriptLoader::ProcessRequest(nsScriptLoadRequest* aRequest)
     
     
     MOZ_ASSERT(!aRequest->IsModuleRequest());
-    JSContext* cx = JS_GetContext(xpc::GetJSRuntime());
-    JS::CancelOffThreadScript(cx, aRequest->mOffThreadToken);
-    aRequest->mOffThreadToken = nullptr;
+    aRequest->MaybeCancelOffThreadScript();
   }
 
   
