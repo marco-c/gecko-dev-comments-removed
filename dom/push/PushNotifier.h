@@ -46,24 +46,43 @@ private:
 
 
 
-
-class PushMessage final : public nsIPushMessage
+class PushData final : public nsIPushData
 {
 public:
-  explicit PushMessage(const nsTArray<uint8_t>& aData);
+  explicit PushData(const nsTArray<uint8_t>& aData);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushMessage,
-                                           nsIPushMessage)
-  NS_DECL_NSIPUSHMESSAGE
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushData, nsIPushData)
+  NS_DECL_NSIPUSHDATA
 
 private:
-  virtual ~PushMessage();
+  virtual ~PushData();
 
   nsresult EnsureDecodedText();
 
   nsTArray<uint8_t> mData;
   nsString mDecodedText;
+};
+
+
+
+
+
+
+class PushMessage final : public nsIPushMessage
+{
+public:
+  PushMessage(nsIPrincipal* aPrincipal, nsIPushData* aData);
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushMessage, nsIPushMessage)
+  NS_DECL_NSIPUSHMESSAGE
+
+private:
+  virtual ~PushMessage();
+
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsIPushData> mData;
 };
 
 } 
