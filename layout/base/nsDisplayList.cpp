@@ -2168,6 +2168,14 @@ static bool IsCSSOrderLEQ(nsDisplayItem* aItem1, nsDisplayItem* aItem2, void*) {
 
 static bool IsZOrderLEQ(nsDisplayItem* aItem1, nsDisplayItem* aItem2,
                         void* aClosure) {
+  {
+    
+    nsIFrame* f2 = aItem2->Frame();
+    if (!f2 || !f2->StyleContext()) {
+      NS_RUNTIMEABORT(nsPrintfCString("bad display item %p type %s frame %p",
+                                      aItem2, aItem2->Name(), f2).get());
+    }
+  }
   
   
   return aItem1->ZIndex() <= aItem2->ZIndex();
