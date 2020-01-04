@@ -70,6 +70,12 @@ window.addEventListener("unload", function onUnload() {
 window.dispatch = action => bootstrap.dispatch(action);
 
 
+Object.defineProperty(window, "store", {
+  get: () => bootstrap.store,
+  enumerable: true,
+});
+
+
 
 
 window.addInitialViewport = contentURI => {

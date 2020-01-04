@@ -31,15 +31,11 @@ exports.ResponsiveUIManager = {
 
 
 
+
+
   toggle(window, tab) {
-    if (this.isActiveForTab(tab)) {
-      this.activeTabs.get(tab).destroy();
-      this.activeTabs.delete(tab);
-    } else {
-      this.runIfNeeded(window, tab);
-    }
-    
-    return promise.resolve();
+    let action = this.isActiveForTab(tab) ? "close" : "open";
+    return this[action + "IfNeeded"](window, tab);
   },
 
   
@@ -50,10 +46,36 @@ exports.ResponsiveUIManager = {
 
 
 
-  runIfNeeded(window, tab) {
+
+
+
+  openIfNeeded: Task.async(function*(window, tab) {
     if (!this.isActiveForTab(tab)) {
-      this.activeTabs.set(tab, new ResponsiveUI(window, tab));
+      let ui = new ResponsiveUI(window, tab);
+      this.activeTabs.set(tab, ui);
+      yield ui.inited;
+      this.emit("on", { tab });
     }
+    return this.getResponsiveUIForTab(tab);
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+  closeIfNeeded(window, tab) {
+    if (this.isActiveForTab(tab)) {
+      this.activeTabs.get(tab).destroy();
+      this.activeTabs.delete(tab);
+      this.emit("off", { tab });
+    }
+    return promise.resolve();
   },
 
   
@@ -92,26 +114,25 @@ exports.ResponsiveUIManager = {
 
 
   handleGcliCommand: function(window, tab, command, args) {
+    let completed;
     switch (command) {
       case "resize to":
-        this.runIfNeeded(window, tab);
+        completed = this.openIfNeeded(window, tab);
         
         this.activeTabs.get(tab).setSize(args.width, args.height);
         break;
       case "resize on":
-        this.runIfNeeded(window, tab);
+        completed = this.openIfNeeded(window, tab);
         break;
       case "resize off":
-        if (this.isActiveForTab(tab)) {
-          this.activeTabs.get(tab).destroy();
-          this.activeTabs.delete(tab);
-        }
+        completed = this.closeIfNeeded(window, tab);
         break;
       case "resize toggle":
-        this.toggle(window, tab);
+        completed = this.toggle(window, tab);
         break;
       default:
     }
+    completed.catch(e => console.error(e));
   }
 };
 
@@ -126,9 +147,9 @@ EventEmitter.decorate(exports.ResponsiveUIManager);
 
 
 function ResponsiveUI(window, tab) {
-  this.window = window;
+  this.browserWindow = window;
   this.tab = tab;
-  this.init();
+  this.inited = this.init();
 }
 
 ResponsiveUI.prototype = {
@@ -136,12 +157,26 @@ ResponsiveUI.prototype = {
   
 
 
-  window: null,
+  browserWindow: null,
 
   
 
 
   tab: null,
+
+  
+
+
+  inited: null,
+
+  
+
+
+
+
+
+
+  toolWindow: null,
 
   
 
@@ -161,7 +196,7 @@ ResponsiveUI.prototype = {
     let contentURI = tabBrowser.documentURI.spec;
     tabBrowser.loadURI(TOOL_URL);
     yield tabLoaded(this.tab);
-    let toolWindow = tabBrowser.contentWindow;
+    let toolWindow = this.toolWindow = tabBrowser.contentWindow;
     toolWindow.addInitialViewport(contentURI);
   }),
 
@@ -170,6 +205,8 @@ ResponsiveUI.prototype = {
     tabBrowser.goBack();
     this.window = null;
     this.tab = null;
+    this.inited = null;
+    this.toolWindow = null;
   },
 
 };
