@@ -81,8 +81,25 @@ function matchRequest(channel, filters) {
 
   if (filters.topFrame) {
     let topFrame = NetworkHelper.getTopFrameForRequest(channel);
-    if (topFrame && topFrame === filters.topFrame) {
-      return true;
+    while (topFrame) {
+      
+      
+      if (topFrame === filters.topFrame) {
+        return true;
+      }
+      
+      
+      
+      
+      
+      
+      if (!topFrame.ownerGlobal) {
+        break;
+      }
+      topFrame = topFrame.ownerGlobal
+                         .QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDOMWindowUtils)
+                         .containerElement;
     }
   }
 
@@ -1583,8 +1600,9 @@ NetworkEventActorProxy.prototype = {
 
 function NetworkMonitorManager(frame, id) {
   this.id = id;
-  let mm = frame.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader
-      .messageManager;
+  
+  
+  let mm = frame.messageManager || frame.frameLoader.messageManager;
   this.messageManager = mm;
   this.frame = frame;
   this.onNetMonitorMessage = this.onNetMonitorMessage.bind(this);

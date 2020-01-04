@@ -6,13 +6,14 @@
 
 
 const TEST_URL = "http://example.com/";
+
 add_task(function* () {
   let tab = yield addTab(TEST_URL);
 
   let { ui } = yield openRDM(tab);
 
   closeRDM(tab, {
-    reason: "beforeunload",
+    reason: "TabClose",
   });
 
   
@@ -21,4 +22,17 @@ add_task(function* () {
   is(ui.destroyed, true, "RDM closed synchronously");
 
   yield removeTab(tab);
+});
+
+add_task(function* () {
+  let tab = yield addTab(TEST_URL);
+
+  let { ui } = yield openRDM(tab);
+
+  yield removeTab(tab);
+
+  
+  
+  
+  is(ui.destroyed, true, "RDM closed synchronously");
 });

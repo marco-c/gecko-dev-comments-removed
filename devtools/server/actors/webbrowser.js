@@ -2262,8 +2262,10 @@ RemoteBrowserTabActor.prototype = {
   },
 
   get _mm() {
-    return this._browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader
-           .messageManager;
+    
+    
+    return this._browser.messageManager ||
+           this._browser.frameLoader.messageManager;
   },
 
   update() {

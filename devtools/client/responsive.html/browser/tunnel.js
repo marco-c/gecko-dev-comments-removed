@@ -93,12 +93,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       mmTunnel = new MessageManagerTunnel(outer, inner);
-      Object.defineProperty(outer, "messageManager", {
-        value: mmTunnel,
-        writable: false,
-        configurable: true,
-        enumerable: true,
-      });
 
       
       
@@ -211,7 +205,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      delete outer.messageManager;
       delete outer.isRemoteBrowser;
       delete outer.hasContentOpener;
       delete outer.docShellIsActive;
@@ -268,6 +261,7 @@ function MessageManagerTunnel(outer, inner) {
   }
   this.outer = outer;
   this.inner = inner;
+  this.tunneledMessageNames = new Set();
   this.init();
 }
 
@@ -277,10 +271,7 @@ MessageManagerTunnel.prototype = {
 
 
 
-
   PASS_THROUGH_METHODS: [
-    "addMessageListener",
-    "loadFrameScript",
     "killChild",
     "assertPermission",
     "assertContainApp",
@@ -291,9 +282,18 @@ MessageManagerTunnel.prototype = {
     "loadProcessScript",
     "removeDelayedProcessScript",
     "getDelayedProcessScripts",
-    "removeMessageListener",
     "addWeakMessageListener",
     "removeWeakMessageListener",
+  ],
+
+  
+
+
+  OVERRIDDEN_METHODS: [
+    "loadFrameScript",
+    "addMessageListener",
+    "removeMessageListener",
+    "sendAsyncMessage",
   ],
 
   OUTER_TO_INNER_MESSAGES: [
@@ -338,7 +338,25 @@ MessageManagerTunnel.prototype = {
     "browser-test-utils:loadEvent",
   ],
 
+  OUTER_TO_INNER_MESSAGE_PREFIXES: [
+    
+    "debug:",
+  ],
+
+  INNER_TO_OUTER_MESSAGE_PREFIXES: [
+    
+    "debug:",
+  ],
+
+  OUTER_TO_INNER_FRAME_SCRIPTS: [
+    
+    "resource://devtools/server/child.js"
+  ],
+
   get outerParentMM() {
+    if (!this.outer.frameLoader) {
+      return null;
+    }
     return this.outer.frameLoader.messageManager;
   },
 
@@ -352,13 +370,133 @@ MessageManagerTunnel.prototype = {
   },
 
   get innerParentMM() {
+    if (!this.inner.frameLoader) {
+      return null;
+    }
     return this.inner.frameLoader.messageManager;
+  },
+
+  init() {
+    for (let method of this.PASS_THROUGH_METHODS) {
+      
+      let _method = method;
+      this[_method] = (...args) => {
+        if (!this.outerParentMM) {
+          return null;
+        }
+        return this.outerParentMM[_method](...args);
+      };
+    }
+
+    for (let name of this.INNER_TO_OUTER_MESSAGES) {
+      this.innerParentMM.addMessageListener(name, this);
+      this.tunneledMessageNames.add(name);
+    }
+
+    Services.obs.addObserver(this, "message-manager-close", false);
+
+    
+    Object.defineProperty(this.outer, "messageManager", {
+      value: this,
+      writable: false,
+      configurable: true,
+      enumerable: true,
+    });
+  },
+
+  destroy() {
+    if (this.destroyed) {
+      return;
+    }
+    this.destroyed = true;
+    debug("Destroy tunnel");
+
+    
+    
+    
+    Services.obs.removeObserver(this, "message-manager-close");
+
+    
+    
+    delete this.outer.messageManager;
+
+    for (let name of this.tunneledMessageNames) {
+      this.innerParentMM.removeMessageListener(name, this);
+    }
+
+    
+    
+    
+    for (let method of this.OVERRIDDEN_METHODS) {
+      
+      let _method = method;
+      this[_method] = (...args) => {
+        if (!this.outerParentMM) {
+          return null;
+        }
+        return this.outerParentMM[_method](...args);
+      };
+    }
+  },
+
+  observe(subject, topic, data) {
+    if (topic != "message-manager-close") {
+      return;
+    }
+    if (subject == this.innerParentMM) {
+      debug("Inner messageManager has closed");
+      this.destroy();
+    }
+    if (subject == this.outerParentMM) {
+      debug("Outer messageManager has closed");
+      this.destroy();
+    }
+  },
+
+  loadFrameScript(url, ...args) {
+    debug(`Calling loadFrameScript for ${url}`);
+
+    if (!this.OUTER_TO_INNER_FRAME_SCRIPTS.includes(url)) {
+      debug(`Should load ${url} into inner?`);
+      this.outerParentMM.loadFrameScript(url, ...args);
+      return;
+    }
+
+    debug(`Load ${url} into inner`);
+    this.innerParentMM.loadFrameScript(url, ...args);
+  },
+
+  addMessageListener(name, ...args) {
+    debug(`Calling addMessageListener for ${name}`);
+
+    debug(`Add outer listener for ${name}`);
+    
+    this.outerParentMM.addMessageListener(name, ...args);
+
+    
+    
+    if (this.INNER_TO_OUTER_MESSAGE_PREFIXES.some(prefix => name.startsWith(prefix))) {
+      debug(`Add inner listener for ${name}`);
+      this.innerParentMM.addMessageListener(name, this);
+      this.tunneledMessageNames.add(name);
+    }
+  },
+
+  removeMessageListener(name, ...args) {
+    debug(`Calling removeMessageListener for ${name}`);
+
+    debug(`Remove outer listener for ${name}`);
+    
+    this.outerParentMM.removeMessageListener(name, ...args);
+
+    
+    
   },
 
   sendAsyncMessage(name, ...args) {
     debug(`Calling sendAsyncMessage for ${name}`);
 
-    if (!this.OUTER_TO_INNER_MESSAGES.includes(name)) {
+    if (!this._shouldTunnelOuterToInner(name)) {
       debug(`Should ${name} go to inner?`);
       this.outerParentMM.sendAsyncMessage(name, ...args);
       return;
@@ -368,34 +506,24 @@ MessageManagerTunnel.prototype = {
     this.innerParentMM.sendAsyncMessage(name, ...args);
   },
 
-  init() {
-    for (let method of this.PASS_THROUGH_METHODS) {
-      
-      let _method = method;
-      this[_method] = (...args) => {
-        return this.outerParentMM[_method](...args);
-      };
-    }
-
-    for (let message of this.INNER_TO_OUTER_MESSAGES) {
-      this.innerParentMM.addMessageListener(message, this);
-    }
-  },
-
-  destroy() {
-    for (let message of this.INNER_TO_OUTER_MESSAGES) {
-      this.innerParentMM.removeMessageListener(message, this);
-    }
-  },
-
   receiveMessage({ name, data, objects, principal }) {
-    if (!this.INNER_TO_OUTER_MESSAGES.includes(name)) {
+    if (!this._shouldTunnelInnerToOuter(name)) {
       debug(`Received unexpected message ${name}`);
       return;
     }
 
     debug(`${name} inner -> outer`);
     this.outerChildMM.sendAsyncMessage(name, data, objects, principal);
+  },
+
+  _shouldTunnelOuterToInner(name) {
+    return this.OUTER_TO_INNER_MESSAGES.includes(name) ||
+           this.OUTER_TO_INNER_MESSAGE_PREFIXES.some(prefix => name.startsWith(prefix));
+  },
+
+  _shouldTunnelInnerToOuter(name) {
+    return this.INNER_TO_OUTER_MESSAGES.includes(name) ||
+           this.INNER_TO_OUTER_MESSAGE_PREFIXES.some(prefix => name.startsWith(prefix));
   },
 
 };

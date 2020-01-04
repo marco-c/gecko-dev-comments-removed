@@ -262,10 +262,9 @@ ResponsiveUI.prototype = {
 
   init: Task.async(function* () {
     let ui = this;
-    let toolViewportContentBrowser;
 
     
-    this.tab.linkedBrowser.addEventListener("beforeunload", this, true);
+    this.tab.addEventListener("TabClose", this);
 
     
     this.swap = swapToInnerBrowser({
@@ -277,8 +276,7 @@ ResponsiveUI.prototype = {
         yield message.request(toolWindow, "init");
         toolWindow.addInitialViewport("about:blank");
         yield message.wait(toolWindow, "browser-mounted");
-        toolViewportContentBrowser = ui.getViewportBrowser();
-        return toolViewportContentBrowser;
+        return ui.getViewportBrowser();
       })
     });
     yield this.swap.start();
@@ -286,8 +284,7 @@ ResponsiveUI.prototype = {
     
     yield message.request(this.toolWindow, "start-frame-script");
 
-    this.touchEventSimulator =
-      new TouchEventSimulator(toolViewportContentBrowser);
+    this.touchEventSimulator = new TouchEventSimulator(this.getViewportBrowser());
   }),
 
   
@@ -308,23 +305,23 @@ ResponsiveUI.prototype = {
     
     
     
-    let isBeforeUnload = options && options.reason == "beforeunload";
+    let isTabClosing = options && options.reason == "TabClose";
 
     
-    if (!isBeforeUnload) {
+    if (!isTabClosing) {
       yield this.inited;
     }
 
-    this.tab.linkedBrowser.removeEventListener("beforeunload", this, true);
+    this.tab.removeEventListener("TabClose", this);
     this.toolWindow.removeEventListener("message", this);
 
     
-    if (!isBeforeUnload) {
+    if (!isTabClosing) {
       yield this.touchEventSimulator.stop();
     }
 
     
-    if (!isBeforeUnload) {
+    if (!isTabClosing) {
       yield message.request(this.toolWindow, "stop-frame-script");
     }
 
@@ -352,19 +349,7 @@ ResponsiveUI.prototype = {
       case "message":
         this.handleMessage(event);
         break;
-      case "beforeunload":
-        
-        if (event.target.location != TOOL_URL) {
-          return;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
+      case "TabClose":
         ResponsiveUIManager.closeIfNeeded(browserWindow, tab, {
           reason: event.type,
         });
@@ -428,6 +413,13 @@ ResponsiveUI.prototype = {
 
   getViewportBrowser() {
     return this.toolWindow.getViewportBrowser();
+  },
+
+  
+
+
+  getViewportMessageManager() {
+    return this.getViewportBrowser().messageManager;
   },
 
 };

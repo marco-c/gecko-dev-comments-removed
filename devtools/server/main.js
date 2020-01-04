@@ -982,7 +982,9 @@ var DebuggerServer = {
   connectToChild(connection, frame, onDestroy) {
     let deferred = SyncPromise.defer();
 
-    let mm = frame.frameLoader.messageManager;
+    
+    
+    let mm = frame.messageManager || frame.frameLoader.messageManager;
     mm.loadFrameScript("resource://devtools/server/child.js", false);
     this._childMessageManagers.add(mm);
 

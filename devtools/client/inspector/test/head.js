@@ -29,6 +29,11 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/test-actor-registry.js",
   this);
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/shared-head.js",
+  this);
+
 DevToolsUtils.testing = true;
 registerCleanupFunction(() => {
   DevToolsUtils.testing = false;
@@ -128,24 +133,6 @@ function selectAndHighlightNode(selector, inspector) {
 
 
 
-
-
-
-var selectNode = Task.async(function* (selector, inspector, reason = "test") {
-  info("Selecting the node for '" + selector + "'");
-  let nodeFront = yield getNodeFront(selector, inspector);
-  let updated = inspector.once("inspector-updated");
-  inspector.selection.setNodeFront(nodeFront, reason);
-  yield updated;
-});
-
-
-
-
-
-
-
-
 function* focusNode(selector, inspector) {
   getContainerForNodeFront(inspector.walker.rootNode, inspector).elt.focus();
   let nodeFront = yield getNodeFront(selector, inspector);
@@ -180,32 +167,6 @@ var openInspectorForURL = Task.async(function* (url, hostType) {
   let tab = yield addTab(url);
   let { inspector, toolbox, testActor } = yield openInspector(hostType);
   return { tab, inspector, toolbox, testActor };
-});
-
-
-
-
-
-
-var openInspector = Task.async(function* (hostType) {
-  info("Opening the inspector");
-
-  let toolbox = yield openToolboxForTab(gBrowser.selectedTab, "inspector",
-                                        hostType);
-  let inspector = toolbox.getPanel("inspector");
-
-  if (inspector._updateProgress) {
-    info("Need to wait for the inspector to update");
-    yield inspector.once("inspector-updated");
-  }
-
-  info("Waiting for actor features to be detected");
-  yield inspector._detectingActorFeatures;
-
-  yield registerTestActor(toolbox.target.client);
-  let testActor = yield getTestActor(toolbox);
-
-  return {toolbox, inspector, testActor};
 });
 
 function getActiveInspector() {
@@ -243,103 +204,6 @@ var clickOnInspectMenuItem = Task.async(function* (testActor, selector) {
 
   return getActiveInspector();
 });
-
-
-
-
-
-
-
-
-
-
-var openInspectorSidebarTab = Task.async(function* (id) {
-  let {toolbox, inspector, testActor} = yield openInspector();
-
-  info("Selecting the " + id + " sidebar");
-  inspector.sidebar.select(id);
-
-  return {
-    toolbox,
-    inspector,
-    testActor
-  };
-});
-
-
-
-
-
-
-
-
-function openRuleView() {
-  return openInspectorSidebarTab("ruleview").then(data => {
-    return {
-      toolbox: data.toolbox,
-      inspector: data.inspector,
-      testActor: data.testActor,
-      view: data.inspector.ruleview.view
-    };
-  });
-}
-
-
-
-
-
-
-
-
-function openComputedView() {
-  return openInspectorSidebarTab("computedview").then(data => {
-    return {
-      toolbox: data.toolbox,
-      inspector: data.inspector,
-      testActor: data.testActor,
-      view: data.inspector.computedview.computedView
-    };
-  });
-}
-
-
-
-
-
-
-
-
-function selectRuleView(inspector) {
-  inspector.sidebar.select("ruleview");
-  return inspector.ruleview.view;
-}
-
-
-
-
-
-
-
-
-function selectComputedView(inspector) {
-  inspector.sidebar.select("computedview");
-  return inspector.computedview.computedView;
-}
-
-
-
-
-
-
-
-
-
-function getNodeFront(selector, {walker}) {
-  if (selector._form) {
-    return selector;
-  }
-  return walker.querySelector(walker.rootNode, selector);
-}
 
 
 
