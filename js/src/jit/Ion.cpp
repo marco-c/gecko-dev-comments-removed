@@ -1116,14 +1116,10 @@ IonScript::copyPatchableBackedges(JSContext* cx, JitCode* code,
         PatchableBackedgeInfo& info = backedges[i];
         PatchableBackedge* patchableBackedge = &backedgeList()[i];
 
-        
         info.backedge.fixup(&masm);
-        uint32_t loopHeaderOffset = masm.actualOffset(info.loopHeader->offset());
-        uint32_t interruptCheckOffset = masm.actualOffset(info.interruptCheck->offset());
-
         CodeLocationJump backedge(code, info.backedge);
-        CodeLocationLabel loopHeader(code, CodeOffsetLabel(loopHeaderOffset));
-        CodeLocationLabel interruptCheck(code, CodeOffsetLabel(interruptCheckOffset));
+        CodeLocationLabel loopHeader(code, CodeOffsetLabel(info.loopHeader->offset()));
+        CodeLocationLabel interruptCheck(code, CodeOffsetLabel(info.interruptCheck->offset()));
         new(patchableBackedge) PatchableBackedge(backedge, loopHeader, interruptCheck);
 
         
@@ -1147,16 +1143,12 @@ IonScript::copySafepointIndices(const SafepointIndex* si, MacroAssembler& masm)
     
     SafepointIndex* table = safepointIndices();
     memcpy(table, si, safepointIndexEntries_ * sizeof(SafepointIndex));
-    for (size_t i = 0; i < safepointIndexEntries_; i++)
-        table[i].adjustDisplacement(masm.actualOffset(table[i].displacement()));
 }
 
 void
 IonScript::copyOsiIndices(const OsiIndex* oi, MacroAssembler& masm)
 {
     memcpy(osiIndices(), oi, osiIndexEntries_ * sizeof(OsiIndex));
-    for (unsigned i = 0; i < osiIndexEntries_; i++)
-        osiIndices()[i].fixUpOffset(masm);
 }
 
 void
