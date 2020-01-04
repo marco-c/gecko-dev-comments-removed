@@ -2038,7 +2038,7 @@ nsStyleImage::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->RemoveImage(mImage, nsIDocument::REQUEST_DISCARD);
+    doc->RemoveImage(mImage);
   }
 
   
@@ -3414,7 +3414,7 @@ nsStyleContentData::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->RemoveImage(mContent.mImage, nsIDocument::REQUEST_DISCARD);
+    doc->RemoveImage(mContent.mImage);
   }
 
   
