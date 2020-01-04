@@ -1864,7 +1864,7 @@ IMContextWrapper::SetTextRange(PangoAttrIterator* aPangoAttrIter,
     
     
     else {
-        aTextRange.mRangeType = TextRangeType::NS_TEXTRANGE_CONVERTEDTEXT;
+        aTextRange.mRangeType = TextRangeType::eConvertedClause;
     }
 
     MOZ_LOG(gGtkIMLog, LogLevel::Debug,
