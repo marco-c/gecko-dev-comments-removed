@@ -310,7 +310,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   }
 
   int16_t decision = REJECT_REQUEST;
-  rv = ShouldLoad(nsContentUtils::InternalContentPolicyTypeToExternalOrMCBInternal(contentPolicyType),
+  rv = ShouldLoad(contentPolicyType,
                   newUri,
                   requestingLocation,
                   loadInfo->LoadingNode(),
@@ -378,10 +378,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(aContentType == nsContentUtils::InternalContentPolicyTypeToExternalOrMCBInternal(aContentType),
-             "We should only see external content policy types here.");
-
-   bool isPreload = nsContentUtils::IsPreloadType(aContentType);
+  bool isPreload = nsContentUtils::IsPreloadType(aContentType);
 
   
   
@@ -897,8 +894,7 @@ nsMixedContentBlocker::ShouldProcess(uint32_t aContentType,
                                      nsIPrincipal* aRequestPrincipal,
                                      int16_t* aDecision)
 {
-  MOZ_ASSERT(aContentType == nsContentUtils::InternalContentPolicyTypeToExternal(aContentType),
-             "We should only see external content policy types here.");
+  aContentType = nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
 
   if (!aContentLocation) {
     

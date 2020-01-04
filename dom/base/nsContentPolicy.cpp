@@ -116,12 +116,6 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
     nsContentPolicyType externalType =
         nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
-    nsContentPolicyType externalTypeOrMCBInternal =
-        nsContentUtils::InternalContentPolicyTypeToExternalOrMCBInternal(contentType);
-
-    nsContentPolicyType externalTypeOrCSPInternal =
-       nsContentUtils::InternalContentPolicyTypeToExternalOrCSPInternal(contentType);
-
     nsCOMPtr<nsIContentPolicy> mixedContentBlocker =
         do_GetService(NS_MIXEDCONTENTBLOCKER_CONTRACTID);
 
@@ -139,26 +133,9 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
     for (int32_t i = 0; i < count; i++) {
         
         
-        
-        
-        
-        
-        bool isMixedContentBlocker = mixedContentBlocker == entries[i];
         nsContentPolicyType type = externalType;
-        if (isMixedContentBlocker) {
-            type = externalTypeOrMCBInternal;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        bool isCSP = cspService == entries[i];
-        if (isCSP) {
-          type = externalTypeOrCSPInternal;
+        if (mixedContentBlocker == entries[i] || cspService == entries[i]) {
+          type = contentType;
         }
         rv = (entries[i]->*policyMethod)(type, contentLocation,
                                          requestingLocation, requestingContext,

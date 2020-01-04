@@ -993,34 +993,7 @@ public:
 
 
 
-
-
-
-
-  static nsContentPolicyType InternalContentPolicyTypeToExternalOrMCBInternal(nsContentPolicyType aType);
-
-  
-
-
-
-
-
-
-
   static nsContentPolicyType InternalContentPolicyTypeToExternalOrPreload(nsContentPolicyType aType);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static nsContentPolicyType InternalContentPolicyTypeToExternalOrCSPInternal(nsContentPolicyType aType);
 
   
 
