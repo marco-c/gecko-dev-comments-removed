@@ -43,6 +43,9 @@ enum class SurfaceFormat : int8_t {
   A8R8G8B8,     
   X8R8G8B8,     
 
+  R8G8B8,
+  B8G8R8,
+
   
   
   
@@ -55,6 +58,9 @@ enum class SurfaceFormat : int8_t {
   YUV,
   NV12,
   YUV422,
+  HSV,
+  Lab,
+  Depth,
 
   
   UNKNOWN,
