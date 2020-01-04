@@ -144,11 +144,6 @@ public:
     
     static mozilla::Atomic<js::Mutex*> lock_;
 
-#ifdef DEBUG
-    
-    static mozilla::Atomic<PRThread*> lockHolder_;
-#endif
-
     
     bool canWait_;
 };
