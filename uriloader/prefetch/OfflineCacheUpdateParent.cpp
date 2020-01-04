@@ -52,11 +52,9 @@ NS_IMPL_ISUPPORTS(OfflineCacheUpdateParent,
 
 
 
-
-OfflineCacheUpdateParent::OfflineCacheUpdateParent(uint32_t aAppId,
-                                                   bool aIsInBrowser)
+OfflineCacheUpdateParent::OfflineCacheUpdateParent(const OriginAttributes& aAttrs)
     : mIPCClosed(false)
-    , mOriginAttributes(aAppId, aIsInBrowser)
+    , mOriginAttributes(aAttrs)
 {
     
     nsOfflineCacheUpdateService::EnsureService();
