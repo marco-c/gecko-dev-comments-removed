@@ -124,7 +124,7 @@ pub unsafe extern "C" fn mp4parse_read(context: *mut MediaContext, buffer: *cons
     
     
     
-    match task.join().or(Err(Error::AssertCaught)) {
+    match task.join().unwrap_or(Err(Error::AssertCaught)) {
         Ok(_) => MP4PARSE_OK,
         Err(Error::InvalidData) => MP4PARSE_ERROR_INVALID,
         Err(Error::Unsupported) => MP4PARSE_ERROR_UNSUPPORTED,
