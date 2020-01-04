@@ -165,6 +165,9 @@ public interface TelemetryContract {
         PAGEACTION("pageaction"),
 
         
+        PANEL("panel"),
+
+        
         SETTINGS("settings"),
 
         
@@ -206,6 +209,9 @@ public interface TelemetryContract {
     public enum Session {
         
         AWESOMESCREEN("awesomescreen.1"),
+
+        
+        EXPERIMENT("experiment.1"),
 
         
         FIRSTRUN("firstrun.1"),
