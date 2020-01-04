@@ -746,6 +746,11 @@ var Impl = {
         
         TelemetryStorage.runCleanPingArchiveTask();
 
+        
+        
+        
+        TelemetryStorage.removeFHRDatabase();
+
         this._delayedInitTaskDeferred.resolve();
       } catch (e) {
         this._delayedInitTaskDeferred.reject(e);

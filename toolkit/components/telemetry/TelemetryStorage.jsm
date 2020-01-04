@@ -20,6 +20,7 @@ Cu.import("resource://gre/modules/osfile.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
+Cu.import("resource://gre/modules/Preferences.jsm", this);
 
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetryStorage::";
@@ -412,6 +413,15 @@ this.TelemetryStorage = {
   loadPingFile: Task.async(function* (aFilePath) {
     return TelemetryStorageImpl.loadPingFile(aFilePath);
   }),
+
+  
+
+
+
+
+  removeFHRDatabase: function() {
+    return TelemetryStorageImpl.removeFHRDatabase();
+  },
 
   
 
@@ -1718,6 +1728,42 @@ var TelemetryStorageImpl = {
 
     return true;
   },
+
+  
+
+
+
+
+  removeFHRDatabase: Task.async(function*() {
+    this._log.trace("removeFHRDatabase");
+
+    
+    const FHR_DB_DEFAULT_FILENAME = "healthreport.sqlite";
+
+    
+    
+    let FILES_TO_REMOVE = [
+      OS.Path.join(OS.Constants.Path.profileDir, FHR_DB_DEFAULT_FILENAME),
+      OS.Path.join(OS.Constants.Path.profileDir, FHR_DB_DEFAULT_FILENAME + "-wal"),
+      OS.Path.join(OS.Constants.Path.profileDir, FHR_DB_DEFAULT_FILENAME + "-shm"),
+    ];
+
+    
+    
+    const FHR_DB_CUSTOM_FILENAME =
+      Preferences.get("datareporting.healthreport.dbName", undefined);
+    if (FHR_DB_CUSTOM_FILENAME) {
+      FILES_TO_REMOVE.push(
+        OS.Path.join(OS.Constants.Path.profileDir, FHR_DB_CUSTOM_FILENAME),
+        OS.Path.join(OS.Constants.Path.profileDir, FHR_DB_CUSTOM_FILENAME + "-wal"),
+        OS.Path.join(OS.Constants.Path.profileDir, FHR_DB_CUSTOM_FILENAME + "-shm"));
+    }
+
+    for (let f of FILES_TO_REMOVE) {
+      yield OS.File.remove(f, {ignoreAbsent: true})
+                   .catch(e => this._log.error("removeFHRDatabase - failed to remove " + f, e));
+    }
+  }),
 };
 
 
