@@ -2682,6 +2682,12 @@ public class BrowserApp extends GeckoApp
 
         @Override
         public boolean onInterceptTouchEvent(View view, MotionEvent event) {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN
+                    && mSnackbar != null
+                    && mSnackbar.isShown()) {
+                mSnackbar.dismiss();
+            }
+
             
             
             
