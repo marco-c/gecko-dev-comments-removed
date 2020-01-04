@@ -688,11 +688,11 @@ private:
   SeekJob mQueuedSeek;
 
   
-  RefPtr<media::SeekTask> mSeekTask;
-  MozPromiseRequestHolder<media::SeekTask::SeekTaskPromise> mSeekTaskRequest;
+  RefPtr<SeekTask> mSeekTask;
+  MozPromiseRequestHolder<SeekTask::SeekTaskPromise> mSeekTaskRequest;
 
-  void OnSeekTaskResolved(media::SeekTaskResolveValue aValue);
-  void OnSeekTaskRejected(media::SeekTaskRejectValue aValue);
+  void OnSeekTaskResolved(SeekTaskResolveValue aValue);
+  void OnSeekTaskRejected(SeekTaskRejectValue aValue);
 
   
   int64_t mFragmentEndTime;
