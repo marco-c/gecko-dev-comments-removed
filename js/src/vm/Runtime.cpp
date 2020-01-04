@@ -515,7 +515,10 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
     
     AutoLockForExclusiveAccess lock(this);
 
-    rtSizes->object += mallocSizeOf(this);
+    
+    
+    
+    rtSizes->object += mallocSizeOf(context_);
 
     rtSizes->atomsTable += atoms(lock).sizeOfIncludingThis(mallocSizeOf);
 
@@ -525,7 +528,7 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
         rtSizes->atomsTable += permanentAtoms->sizeOfIncludingThis(mallocSizeOf);
     }
 
-    rtSizes->contexts += context_->sizeOfIncludingThis(mallocSizeOf);
+    rtSizes->contexts += context_->sizeOfExcludingThis(mallocSizeOf);
 
     rtSizes->temporary += tempLifoAlloc.sizeOfExcludingThis(mallocSizeOf);
 

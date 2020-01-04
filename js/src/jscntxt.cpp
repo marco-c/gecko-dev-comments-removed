@@ -1022,14 +1022,14 @@ JSContext::updateJITEnabled()
 }
 
 size_t
-JSContext::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
+JSContext::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
 {
     
 
 
 
 
-    return mallocSizeOf(this) + cycleDetectorSet.sizeOfExcludingThis(mallocSizeOf);
+    return cycleDetectorSet.sizeOfExcludingThis(mallocSizeOf);
 }
 
 void
