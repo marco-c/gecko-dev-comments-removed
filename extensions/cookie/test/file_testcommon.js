@@ -1,43 +1,45 @@
-const SCRIPT_URL = SimpleTest.getTestFileURL("file_chromecommon.js");
-
 var gExpectedCookies;
 var gExpectedLoads;
 
 var gPopup;
-
-var gScript;
 
 var gLoads = 0;
 
 function setupTest(uri, cookies, loads) {
   SimpleTest.waitForExplicitFinish();
 
-  var prefSet = new Promise(resolve => {
-    SpecialPowers.pushPrefEnv({ set: [["network.cookie.cookieBehavior", 1]] }, resolve);
-  });
+  SpecialPowers.Cc["@mozilla.org/preferences-service;1"]
+               .getService(SpecialPowers.Ci.nsIPrefBranch)
+               .setIntPref("network.cookie.cookieBehavior", 1);
 
-  gScript = SpecialPowers.loadChromeScript(SCRIPT_URL);
+  var cs = SpecialPowers.Cc["@mozilla.org/cookiemanager;1"]
+                        .getService(SpecialPowers.Ci.nsICookieManager2);
+  cs.removeAll();
+
   gExpectedCookies = cookies;
   gExpectedLoads = loads;
 
   
   window.addEventListener("message", messageReceiver, false);
 
-  prefSet.then(() => {
-    
-    
-    gPopup = window.open(uri, 'hai', 'width=100,height=100');
-  });
+  
+  
+  gPopup = window.open(uri, 'hai', 'width=100,height=100');
 }
 
-function finishTest() {
-  gScript.destroy();
+function finishTest()
+{
+  SpecialPowers.Cc["@mozilla.org/preferences-service;1"]
+               .getService(SpecialPowers.Ci.nsIPrefBranch)
+               .clearUserPref("network.cookie.cookieBehavior");
+
   SimpleTest.finish();
 }
 
 
 
-function messageReceiver(evt) {
+function messageReceiver(evt)
+{
   is(evt.data, "message", "message data received from popup");
   if (evt.data != "message") {
     gPopup.close();
@@ -62,9 +64,13 @@ function runTest() {
   
   document.cookie = "oh=hai";
 
-  gScript.addMessageListener("getCookieCountAndClear:return", ({ count }) => {
-    is(count, gExpectedCookies, "total number of cookies");
-    finishTest();
-  });
-  gScript.sendAsyncMessage("getCookieCountAndClear");
+  var cs = SpecialPowers.Cc["@mozilla.org/cookiemanager;1"]
+                        .getService(SpecialPowers.Ci.nsICookieManager);
+  var count = 0;
+  for(var list = cs.enumerator; list.hasMoreElements(); list.getNext())
+    ++count;
+  is(count, gExpectedCookies, "total number of cookies");
+  cs.removeAll();
+
+  finishTest();
 }
