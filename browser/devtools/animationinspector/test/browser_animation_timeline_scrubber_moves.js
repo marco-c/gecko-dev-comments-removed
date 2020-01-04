@@ -1,0 +1,32 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+add_task(function*() {
+  yield addTab(TEST_URL_ROOT + "doc_simple_animation.html");
+
+  let {panel} = yield openAnimationInspectorNewUI();
+  yield waitForAllAnimationTargets(panel);
+
+  let timeline = panel.animationsTimelineComponent;
+  let win = timeline.win;
+  let timeHeaderEl = timeline.timeHeaderEl;
+  let scrubberEl = timeline.scrubberEl;
+
+  let startPos = scrubberEl.getBoundingClientRect().left;
+
+  info("Wait for some time to check that the scrubber moves");
+  yield new Promise(r => setTimeout(r, 2000));
+
+  let endPos = scrubberEl.getBoundingClientRect().left;
+
+  ok(endPos > startPos, "The scrubber has moved");
+});

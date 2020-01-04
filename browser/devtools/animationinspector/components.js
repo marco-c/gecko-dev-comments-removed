@@ -564,9 +564,13 @@ let TimeScale = {
 
 
 
-  addAnimation: function({startTime, delay, duration, iterationCount}) {
+  addAnimation: function(state) {
+    let {startTime, delay, duration, iterationCount, playbackRate} = state;
+
     this.minStartTime = Math.min(this.minStartTime, startTime);
-    let length = delay + (duration * (!iterationCount ? 1 : iterationCount));
+    let length = (delay / playbackRate) +
+                 ((duration / playbackRate) *
+                  (!iterationCount ? 1 : iterationCount));
     this.maxEndTime = Math.max(this.maxEndTime, startTime + length);
   },
 
@@ -709,6 +713,7 @@ AnimationsTimeline.prototype = {
   },
 
   destroy: function() {
+    this.stopAnimatingScrubber();
     this.unrender();
 
     this.timeHeaderEl.removeEventListener("mousedown",
@@ -772,6 +777,8 @@ AnimationsTimeline.prototype = {
   },
 
   moveScrubberTo: function(pageX) {
+    this.stopAnimatingScrubber();
+
     let offset = pageX - this.scrubberEl.offsetWidth;
     if (offset < 0) {
       offset = 0;
@@ -836,6 +843,39 @@ AnimationsTimeline.prototype = {
 
       
       this.targetNodes.push(targetNode);
+    }
+
+    
+    
+    
+    
+    let time = this.animations[0].state.documentCurrentTime;
+    if (!time) {
+      this.scrubberEl.style.display = "none";
+    } else {
+      this.scrubberEl.style.display = "block";
+      this.startAnimatingScrubber(time);
+    }
+  },
+
+  startAnimatingScrubber: function(time) {
+    let x = TimeScale.startTimeToDistance(time, this.timeHeaderEl.offsetWidth);
+    this.scrubberEl.style.left = x + "px";
+
+    if (time < TimeScale.minStartTime ||
+        time > TimeScale.maxEndTime) {
+      return;
+    }
+
+    let now = this.win.performance.now();
+    this.rafID = this.win.requestAnimationFrame(() => {
+      this.startAnimatingScrubber(time + this.win.performance.now() - now);
+    });
+  },
+
+  stopAnimatingScrubber: function() {
+    if (this.rafID) {
+      this.win.cancelAnimationFrame(this.rafID);
     }
   },
 

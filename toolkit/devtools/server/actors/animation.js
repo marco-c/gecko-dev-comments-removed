@@ -268,7 +268,11 @@ let AnimationPlayerActor = ActorClass({
       
       
       
-      isRunningOnCompositor: this.player.isRunningOnCompositor
+      isRunningOnCompositor: this.player.isRunningOnCompositor,
+      
+      
+      
+      documentCurrentTime: this.node.ownerDocument.timeline.currentTime
     };
 
     
@@ -420,7 +424,8 @@ let AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
       duration: this._form.duration,
       delay: this._form.delay,
       iterationCount: this._form.iterationCount,
-      isRunningOnCompositor: this._form.isRunningOnCompositor
+      isRunningOnCompositor: this._form.isRunningOnCompositor,
+      documentCurrentTime: this._form.documentCurrentTime
     };
   },
 
@@ -622,6 +627,7 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
 
   onAnimationMutation: function(mutations) {
     let eventData = [];
+    let readyPromises = [];
 
     for (let {addedAnimations, removedAnimations} of mutations) {
       for (let player of removedAnimations) {
@@ -675,11 +681,16 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
           type: "added",
           player: actor
         });
+        readyPromises.push(player.ready);
       }
     }
 
     if (eventData.length) {
-      events.emit(this, "mutations", eventData);
+      
+      
+      Promise.all(readyPromises).then(() => {
+        events.emit(this, "mutations", eventData);
+      });
     }
   },
 
