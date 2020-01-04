@@ -248,6 +248,7 @@ class MacArtifactJob(ArtifactJob):
             
 
             
+            
             bundle_name = 'Nightly.app'
             source = mozpath.join(tempdir, bundle_name)
 
@@ -353,7 +354,8 @@ JOB_DETAILS = {
                                  'public/build/firefox-(.*)\.common\.tests\.zip')),
     'linux64': (LinuxArtifactJob, ('public/build/firefox-(.*)\.linux-x86_64\.tar\.bz2',
                                    'public/build/firefox-(.*)\.common\.tests\.zip')),
-    'macosx64': (MacArtifactJob, 'public/build/firefox-(.*)\.mac\.dmg', None),
+    'macosx64': (MacArtifactJob, ('public/build/firefox-(.*)\.mac\.dmg',
+                                  'public/build/firefox-(.*)\.common\.tests\.zip')),
     'win32': (WinArtifactJob, 'public/build/firefox-(.*)\.win32.zip', None),
     'win64': (WinArtifactJob, 'public/build/firefox-(.*)\.win64.zip', None),
 }
