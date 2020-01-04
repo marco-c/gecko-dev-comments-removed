@@ -632,7 +632,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   }
 
   NS_ASSERTION(aEventMessage == eCut || aEventMessage == eCopy ||
-               aEventMessage == NS_PASTE,
+               aEventMessage == ePaste,
                "Invalid clipboard event type");
 
   nsCOMPtr<nsIPresShell> presShell = aPresShell;
@@ -688,7 +688,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   nsRefPtr<DataTransfer> clipboardData;
   if (chromeShell || Preferences::GetBool("dom.event.clipboardevents.enabled", true)) {
     clipboardData =
-      new DataTransfer(piWindow, aEventMessage, aEventMessage == NS_PASTE,
+      new DataTransfer(piWindow, aEventMessage, aEventMessage == ePaste,
                        aClipboardType);
 
     nsEventStatus status = nsEventStatus_eIgnore;
@@ -703,7 +703,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   
   
   
-  if (aEventMessage == NS_PASTE) {
+  if (aEventMessage == ePaste) {
     
     
     if (clipboardData) {
