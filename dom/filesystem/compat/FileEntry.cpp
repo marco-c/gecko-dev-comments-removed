@@ -75,6 +75,16 @@ void
 FileEntry::GetFullPath(nsAString& aPath, ErrorResult& aRv) const
 {
   mFile->GetPath(aPath);
+  if (aPath.IsEmpty()) {
+    
+    
+    
+    
+    nsAutoString name;
+    mFile->GetName(name);
+    aPath.AssignLiteral(FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL);
+    aPath.Append(name);
+  }
 }
 
 void
