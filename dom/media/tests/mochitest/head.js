@@ -102,6 +102,17 @@ AudioStreamAnalyser.prototype = {
 
 
 
+  disconnect: function() {
+    this.disableDebugCanvas();
+    this.sourceNodes.forEach(n => n.disconnect());
+    this.sourceNodes = [];
+  },
+
+  
+
+
+
+
 
 
 
