@@ -2008,7 +2008,9 @@ gfxFont::Draw(gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
             
             
             
-            mat = ToMatrix(*reinterpret_cast<gfxMatrix*>(&matrix));
+            mat = Matrix(matrix.xx, matrix.yx,
+                         matrix.xy, matrix.yy,
+                         matrix.x0, matrix.y0);
 
             mat._11 = mat._22 = 1.0;
             mat._21 /= GetAdjustedSize();
