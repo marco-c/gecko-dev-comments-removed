@@ -427,18 +427,27 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   searchLogins : function(count, matchData) {
     let realMatchData = {};
+    let options = {};
     
     let propEnum = matchData.enumerator;
     while (propEnum.hasMoreElements()) {
       let prop = propEnum.getNext().QueryInterface(Ci.nsIProperty);
-      realMatchData[prop.name] = prop.value;
+      switch (prop.name) {
+        
+        case "schemeUpgrades": {
+          options[prop.name] = prop.value;
+          break;
+        }
+        default: {
+          realMatchData[prop.name] = prop.value;
+          break;
+        }
+      }
     }
 
-    let [logins, ids] = this._searchLogins(realMatchData);
+    let [logins, ids] = this._searchLogins(realMatchData, options);
 
     
     logins = this._decryptLogins(logins);
@@ -456,23 +465,40 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
-  _searchLogins : function (matchData) {
+  _searchLogins : function (matchData, aOptions = {
+    schemeUpgrades: false,
+  }) {
     let conditions = [], params = {};
 
     for (let field in matchData) {
       let value = matchData[field];
+      let condition = "";
       switch (field) {
-        
         case "formSubmitURL":
           if (value != null) {
-              conditions.push("formSubmitURL = :formSubmitURL OR formSubmitURL = ''");
-              params["formSubmitURL"] = value;
-              break;
+            
+            condition = "formSubmitURL = '' OR ";
           }
-        
+          
         case "hostname":
+          if (value != null) {
+            condition += `${field} = :${field}`;
+            params[field] = value;
+            let valueURI;
+            try {
+              if (aOptions.schemeUpgrades && (valueURI = Services.io.newURI(value, null, null)) &&
+                  valueURI.scheme == "https") {
+                condition += ` OR ${field} = :http${field}`;
+                params["http" + field] = "http://" + valueURI.hostPort;
+              }
+            } catch (ex) {
+              
+              
+            }
+            break;
+          }
+          
+        
         case "httpRealm":
         case "id":
         case "usernameField":
@@ -486,15 +512,18 @@ LoginManagerStorage_mozStorage.prototype = {
         case "timePasswordChanged":
         case "timesUsed":
           if (value == null) {
-              conditions.push(field + " isnull");
+            condition = field + " isnull";
           } else {
-              conditions.push(field + " = :" + field);
-              params[field] = value;
+            condition = field + " = :" + field;
+            params[field] = value;
           }
           break;
         
         default:
           throw new Error("Unexpected field: " + field);
+      }
+      if (condition) {
+        conditions.push(condition);
       }
     }
 

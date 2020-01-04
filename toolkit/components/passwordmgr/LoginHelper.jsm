@@ -40,7 +40,7 @@ this.LoginHelper = {
 
   createLogger(aLogPrefix) {
     let getMaxLogLevel = () => {
-      return this.debug ? "debug" : "error";
+      return this.debug ? "debug" : "warn";
     };
 
     
@@ -131,6 +131,79 @@ this.LoginHelper = {
     if (aLogin.hostname.indexOf(" (") != -1) {
       throw new Error("bad parens in hostname");
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  newPropertyBag(aProperties) {
+    let propertyBag = Cc["@mozilla.org/hash-property-bag;1"]
+                      .createInstance(Ci.nsIWritablePropertyBag);
+    if (aProperties) {
+      for (let [name, value] of Iterator(aProperties)) {
+        propertyBag.setProperty(name, value);
+      }
+    }
+    return propertyBag.QueryInterface(Ci.nsIPropertyBag)
+                      .QueryInterface(Ci.nsIPropertyBag2)
+                      .QueryInterface(Ci.nsIWritablePropertyBag2);
+  },
+
+  
+
+
+
+
+
+
+  searchLoginsWithObject(aSearchOptions) {
+    return Services.logins.searchLogins({}, this.newPropertyBag(aSearchOptions));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  isOriginMatching(aLoginOrigin, aSearchOrigin, aOptions = {
+    schemeUpgrades: false,
+  }) {
+    if (aLoginOrigin == aSearchOrigin) {
+      return true;
+    }
+
+    if (!aOptions) {
+      return false;
+    }
+
+    if (aOptions.schemeUpgrades) {
+      try {
+        let loginURI = Services.io.newURI(aLoginOrigin, null, null);
+        let searchURI = Services.io.newURI(aSearchOrigin, null, null);
+        if (loginURI.scheme == "http" && searchURI.scheme == "https" &&
+            loginURI.hostPort == searchURI.hostPort) {
+          return true;
+        }
+      } catch (ex) {
+        
+        return false;
+      }
+    }
+
+    return false;
   },
 
   

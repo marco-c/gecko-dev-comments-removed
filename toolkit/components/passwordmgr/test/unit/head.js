@@ -2,17 +2,12 @@
 
 
 
-
-
-
-
-
 "use strict";
 
 
 
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -37,6 +32,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginTestUtils",
                                   "resource://testing-common/LoginTestUtils.jsm");
 LoginTestUtils.Assert = Assert;
 const TestData = LoginTestUtils.testData;
+const newPropertyBag = LoginHelper.newPropertyBag;
 
 
 
@@ -57,7 +53,7 @@ function run_test()
 
 
 
-var gFileCounter = Math.floor(Math.random() * 1000000);
+let gFileCounter = Math.floor(Math.random() * 1000000);
 
 
 
@@ -91,30 +87,6 @@ function getTempFile(aLeafName)
   });
 
   return file;
-}
-
-
-
-
-
-
-
-
-
-
-
-function newPropertyBag(aProperties)
-{
-  let propertyBag = Cc["@mozilla.org/hash-property-bag;1"]
-                      .createInstance(Ci.nsIWritablePropertyBag);
-  if (aProperties) {
-    for (let [name, value] of Iterator(aProperties)) {
-      propertyBag.setProperty(name, value);
-    }
-  }
-  return propertyBag.QueryInterface(Ci.nsIPropertyBag)
-                    .QueryInterface(Ci.nsIPropertyBag2)
-                    .QueryInterface(Ci.nsIWritablePropertyBag2);
 }
 
 
