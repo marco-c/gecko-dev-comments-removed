@@ -1084,7 +1084,7 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   
   nsRect expandedScrollableRect =
     nsLayoutUtils::CalculateExpandedScrollableRect(frame);
-  result = result.ForceInside(expandedScrollableRect - scrollPos);
+  result = result.MoveInsideAndClamp(expandedScrollableRect - scrollPos);
 
   return result;
 }

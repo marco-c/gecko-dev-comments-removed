@@ -534,7 +534,7 @@ struct BaseRect {
 
 
 
-  MOZ_WARN_UNUSED_RESULT Sub ForceInside(const Sub& aRect) const
+  MOZ_WARN_UNUSED_RESULT Sub MoveInsideAndClamp(const Sub& aRect) const
   {
     Sub rect(std::max(aRect.x, x),
              std::max(aRect.y, y),
