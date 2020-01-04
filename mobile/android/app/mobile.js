@@ -482,9 +482,6 @@ pref("breakpad.reportURL", "https://crash-stats.mozilla.com/report/index/");
 pref("app.support.baseURL", "http://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
 
 
-pref("app.feedback.postURL", "https://input.mozilla.org/api/v1/feedback/");
-
-
 
 pref("app.feedbackURL", "https://input.mozilla.org/feedback/android/%VERSION%/%CHANNEL%/?utm_source=feedback-prompt");
 
