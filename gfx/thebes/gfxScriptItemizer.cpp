@@ -175,7 +175,7 @@ gfxScriptItemizer::Next(uint32_t& aRunStart, uint32_t& aRunLimit,
 
 
 
-            GetGeneralCategory(ch);
+            gc = GetGeneralCategory(ch);
             if (gc == HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION) {
                 uint32_t endPairChar = mozilla::unicode::GetMirroredChar(ch);
                 if (endPairChar != ch) {
