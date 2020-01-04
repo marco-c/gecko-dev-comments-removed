@@ -233,3 +233,7 @@ function replaceExperiments(experiment, list) {
     },
   });
 }
+
+
+
+Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
