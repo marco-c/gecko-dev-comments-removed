@@ -427,13 +427,6 @@ public:
   operator JSContext*() const;
 
 protected:
-  explicit AutoJSContext(bool aSafe MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-
-  
-  
-  
-  void Init(bool aSafe MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-
   JSContext* mCx;
   dom::AutoJSAPI mJSAPI;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -461,11 +454,16 @@ private:
 
 
 
-class MOZ_RAII AutoSafeJSContext : public AutoJSContext {
+class MOZ_RAII AutoSafeJSContext : public dom::AutoJSAPI {
 public:
   explicit AutoSafeJSContext(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
+  operator JSContext*() const
+  {
+    return cx();
+  }
+
 private:
-  JSAutoCompartment mAc;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 } 
