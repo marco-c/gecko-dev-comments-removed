@@ -13559,10 +13559,10 @@ CSSParserImpl::ParseFont()
   
   nsCSSValue  lineHeight;
   if (ExpectSymbol('/', true)) {
-    if (!ParseSingleTokenNonNegativeVariant(lineHeight,
-                                            VARIANT_NUMBER | VARIANT_LP |
-                                              VARIANT_NORMAL,
-                                            nullptr)) {
+    if (ParseNonNegativeVariant(lineHeight,
+                                VARIANT_NUMBER | VARIANT_LP |
+                                  VARIANT_NORMAL | VARIANT_CALC,
+                                nullptr) != CSSParseResult::Ok) {
       return false;
     }
   }
