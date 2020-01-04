@@ -250,7 +250,7 @@ nsVideoFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
   }
 
   layer->SetContainer(container);
-  layer->SetFilter(nsLayoutUtils::GetGraphicsFilterForFrame(this));
+  layer->SetSamplingFilter(nsLayoutUtils::GetSamplingFilterForFrame(this));
   
   gfxPoint p = destGFXRect.TopLeft() + aContainerParameters.mOffset;
 
