@@ -124,6 +124,7 @@ typedef std::wstring xpstring;
 #define CRASH_REPORTER_FILENAME "crashreporter.exe"
 #define PATH_SEPARATOR "\\"
 #define XP_PATH_SEPARATOR L"\\"
+#define XP_PATH_SEPARATOR_CHAR L'\\'
 #define XP_PATH_MAX (MAX_PATH + 1)
 
 #define CMDLINE_SIZE ((XP_PATH_MAX * 2) + 6)
@@ -141,6 +142,7 @@ typedef std::string xpstring;
 #define CRASH_REPORTER_FILENAME "crashreporter"
 #define PATH_SEPARATOR "/"
 #define XP_PATH_SEPARATOR "/"
+#define XP_PATH_SEPARATOR_CHAR '/'
 #define XP_PATH_MAX PATH_MAX
 #ifdef XP_LINUX
 #define XP_STRLEN(x) my_strlen(x)
@@ -267,9 +269,9 @@ static bool isSafeToDump = false;
 
 static CrashGenerationServer* crashServer; 
 
-#if (defined(XP_MACOSX) || defined(XP_WIN)) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_MACOSX) || defined(XP_WIN))
 
-static xpstring* contentProcessTmpDir = nullptr;
+static xpstring* childProcessTmpDir = nullptr;
 #endif
 
 #  if defined(XP_WIN) || defined(XP_MACOSX)
@@ -1116,11 +1118,11 @@ bool MinidumpCallback(
 
 #if defined(XP_MACOSX) || defined(__ANDROID__)
 static size_t
-EnsureTrailingSlash(char* aBuf, size_t aBufLen)
+EnsureTrailingSlash(XP_CHAR* aBuf, size_t aBufLen)
 {
   size_t len = XP_STRLEN(aBuf);
-  if ((len + 2) < aBufLen && aBuf[len - 1] != '/') {
-    aBuf[len] = '/';
+  if ((len + 2) < aBufLen && aBuf[len - 1] != XP_PATH_SEPARATOR_CHAR) {
+    aBuf[len] = XP_PATH_SEPARATOR_CHAR;
     ++len;
     aBuf[len] = 0;
   }
@@ -1233,22 +1235,35 @@ PrepareChildExceptionTimeAnnotations()
   static XP_CHAR tempPath[XP_PATH_MAX] = {0};
 
   
+  int charsAvailable = XP_PATH_MAX;
+  XP_CHAR* p = tempPath;
+#if (defined(XP_MACOSX) || defined(XP_WIN))
+  if (!childProcessTmpDir || childProcessTmpDir->empty()) {
+    return;
+  }
+  p = Concat(p, childProcessTmpDir->c_str(), &charsAvailable);
+  
+  if (p > tempPath && *(p - 1) != XP_PATH_SEPARATOR_CHAR) {
+    p = Concat(p, XP_PATH_SEPARATOR, &charsAvailable);
+  }
+#else
   size_t tempPathLen = BuildTempPath(tempPath);
   if (!tempPathLen) {
     return;
   }
+  p += tempPathLen;
+  charsAvailable -= tempPathLen;
+#endif
 
   
-  int size = XP_PATH_MAX - tempPathLen;
-  XP_CHAR* p = tempPath + tempPathLen;
-  p = Concat(p, childCrashAnnotationBaseName, &size);
+  p = Concat(p, childCrashAnnotationBaseName, &charsAvailable);
   XP_CHAR pidBuffer[32] = XP_TEXT("");
 #if defined(XP_WIN32)
   _ui64tow(GetCurrentProcessId(), pidBuffer, 10);
 #else
   XP_STOA(getpid(), pidBuffer, 10);
 #endif
-  p = Concat(p, pidBuffer, &size);
+  p = Concat(p, pidBuffer, &charsAvailable);
 
   
   PlatformWriter apiData;
@@ -2909,7 +2924,7 @@ AppendExtraData(nsIFile* extraFile, const AnnotationTable& data)
 }
 
 static bool
-GetExtraFileForChildPid(nsIFile* aMinidump, uint32_t aPid, nsIFile** aExtraFile)
+GetExtraFileForChildPid(uint32_t aPid, nsIFile** aExtraFile)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -2917,20 +2932,13 @@ GetExtraFileForChildPid(nsIFile* aMinidump, uint32_t aPid, nsIFile** aExtraFile)
   nsresult rv;
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
-#  if defined(MOZ_CONTENT_SANDBOX)
-  if (!contentProcessTmpDir) {
+  if (!childProcessTmpDir) {
     return false;
   }
-  CreateFileFromPath(*contentProcessTmpDir, getter_AddRefs(extraFile));
+  CreateFileFromPath(*childProcessTmpDir, getter_AddRefs(extraFile));
   if (!extraFile) {
     return false;
   }
-#  else
-  rv = aMinidump->Clone(getter_AddRefs(extraFile));
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-#  endif 
 #elif defined(XP_UNIX)
   rv = NS_NewLocalFile(NS_LITERAL_STRING("/tmp"), false,
                        getter_AddRefs(extraFile));
@@ -2950,26 +2958,10 @@ GetExtraFileForChildPid(nsIFile* aMinidump, uint32_t aPid, nsIFile** aExtraFile)
                         extraFileExtension);
 #endif
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
-#  if defined(MOZ_CONTENT_SANDBOX)
   rv = extraFile->Append(leafName);
   if (NS_FAILED(rv)) {
     return false;
   }
-#  else
-  rv = extraFile->SetLeafName(leafName);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-#  endif 
-#elif defined(XP_UNIX)
-  rv = extraFile->Append(leafName);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-#else
-#error "Implement this for your platform"
-#endif
 
   extraFile.forget(aExtraFile);
   return true;
@@ -3051,8 +3043,7 @@ WriteExtraForMinidump(nsIFile* minidump,
 
   nsCOMPtr<nsIFile> exceptionTimeExtra;
   FILE* fd;
-  if (pid && GetExtraFileForChildPid(minidump, pid,
-                                     getter_AddRefs(exceptionTimeExtra)) &&
+  if (pid && GetExtraFileForChildPid(pid, getter_AddRefs(exceptionTimeExtra)) &&
       NS_SUCCEEDED(exceptionTimeExtra->OpenANSIFileDesc("r", &fd))) {
     AnnotationTable exceptionTimeAnnotations;
     ReadAndValidateExceptionTimeAnnotations(fd, exceptionTimeAnnotations);
@@ -3189,13 +3180,25 @@ OOPInit()
   MOZ_ASSERT(gExceptionHandler != nullptr,
              "attempt to initialize OOP crash reporter before in-process crashreporter!");
 
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX))
   nsCOMPtr<nsIFile> tmpDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmpDir));
-  if (NS_SUCCEEDED(rv)) {
-    contentProcessTmpDir = CreatePathFromFile(tmpDir);
+# if defined(MOZ_CONTENT_SANDBOX)
+  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
+                                       getter_AddRefs(tmpDir));
+  if (NS_FAILED(rv) && PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
+    
+    rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmpDir));
   }
-#endif
+  if (NS_SUCCEEDED(rv)) {
+    childProcessTmpDir = CreatePathFromFile(tmpDir);
+  }
+# else
+  if (NS_SUCCEEDED(NS_GetSpecialDirectory(NS_OS_TEMP_DIR,
+                                          getter_AddRefs(tmpDir)))) {
+    childProcessTmpDir = CreatePathFromFile(tmpDir);
+  }
+# endif 
+#endif 
 
 #if defined(XP_WIN)
   childCrashNotifyPipe =
@@ -3429,6 +3432,21 @@ GetLastRunCrashID(nsAString& id)
   id = *lastRunCrashID;
   return true;
 }
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
+void
+InitChildProcessTmpDir()
+{
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  
+  
+  nsCOMPtr<nsIFile> tmpDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmpDir));
+  if (NS_SUCCEEDED(rv)) {
+    childProcessTmpDir = CreatePathFromFile(tmpDir);
+  }
+}
+#endif 
 
 #if defined(XP_WIN)
 
