@@ -23,6 +23,9 @@ add_task(function* () {
     
     message: prepareMessage(packet)
   };
+  
+  action.message = action.message.remove('id');
+  expected.message = expected.message.remove('id');
   deepEqual(action, expected,
     "messageAdd action creator returns expected action object");
 });

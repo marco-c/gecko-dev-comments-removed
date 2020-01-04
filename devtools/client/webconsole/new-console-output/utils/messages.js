@@ -22,6 +22,12 @@ const STRINGS_URI = "chrome://devtools/locale/webconsole.properties";
 const l10n = new WebConsoleUtils.L10n(STRINGS_URI);
 const { ConsoleMessage } = require("../types");
 
+let messageId = 0;
+function getNextMessageId() {
+  
+  return "" + messageId++;
+}
+
 function prepareMessage(packet) {
   
   if (packet.source) {
@@ -74,6 +80,7 @@ function transformPacket(packet) {
         repeatId: getRepeatId(message),
         category: CATEGORY_WEBDEV,
         severity: level,
+        id: getNextMessageId(),
       });
     }
 
@@ -93,6 +100,7 @@ function transformPacket(packet) {
         repeatId: getRepeatId(pageError),
         category: CATEGORY_JS,
         severity: level,
+        id: getNextMessageId(),
       });
     }
 
@@ -108,6 +116,7 @@ function transformPacket(packet) {
         repeatId: getRepeatId(result),
         category: CATEGORY_OUTPUT,
         severity: SEVERITY_LOG,
+        id: getNextMessageId(),
       });
     }
   }
@@ -116,8 +125,8 @@ function transformPacket(packet) {
 
 function getRepeatId(message) {
   let clonedMessage = JSON.parse(JSON.stringify(message));
+  delete clonedMessage.id;
   delete clonedMessage.timeStamp;
-  delete clonedMessage.uniqueID;
   return JSON.stringify(clonedMessage);
 }
 
