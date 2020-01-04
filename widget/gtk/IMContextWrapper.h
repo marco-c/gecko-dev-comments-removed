@@ -18,6 +18,7 @@
 #include "nsIWidget.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/TextEventDispatcherListener.h"
 #include "WritingModes.h"
 
 class nsWindow;
@@ -25,15 +26,27 @@ class nsWindow;
 namespace mozilla {
 namespace widget {
 
-class IMContextWrapper final
+class IMContextWrapper final : public TextEventDispatcherListener
 {
+public:
+    
+    NS_DECL_ISUPPORTS
+
+    NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
+                         const IMENotification& aNotification) override;
+    NS_IMETHOD_(void) OnRemovedFrom(
+                          TextEventDispatcher* aTextEventDispatcher) override;
+    NS_IMETHOD_(void) WillDispatchKeyboardEvent(
+                          TextEventDispatcher* aTextEventDispatcher,
+                          WidgetKeyboardEvent& aKeyboardEvent,
+                          uint32_t aIndexOfKeypress,
+                          void* aData) override;
+
 public:
     
     
     
     explicit IMContextWrapper(nsWindow* aOwnerWindow);
-
-    NS_INLINE_DECL_REFCOUNTING(IMContextWrapper)
 
     
     
