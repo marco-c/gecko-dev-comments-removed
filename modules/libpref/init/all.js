@@ -113,6 +113,9 @@ pref("offline-apps.quota.warn",        51200);
 pref("browser.cache.compression_level", 0);
 
 
+pref("dom.abortablepromise.enabled", false);
+
+
 pref("dom.quotaManager.testing", false);
 
 
@@ -324,11 +327,7 @@ pref("media.wmf.low-latency.enabled", false);
 pref("media.wmf.skip-blacklist", false);
 #endif
 #if defined(MOZ_FFMPEG)
-#if defined(XP_MACOSX)
-pref("media.ffmpeg.enabled", false);
-#else
 pref("media.ffmpeg.enabled", true);
-#endif
 #endif
 #if defined(MOZ_FFVPX)
 pref("media.ffvpx.enabled", true);
@@ -2619,12 +2618,7 @@ pref("dom.ipc.plugins.reportCrashURL", true);
 pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 
-
-#ifdef E10S_TESTING_ONLY
 pref("dom.ipc.plugins.asyncInit.enabled", false);
-#else
-pref("dom.ipc.plugins.asyncInit.enabled", true);
-#endif
 
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
