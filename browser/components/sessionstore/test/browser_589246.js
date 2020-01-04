@@ -40,7 +40,7 @@ function checkOSX34Generator(num) {
     expectedState[0].tabs.shift();
     
     
-    WINDOW_ATTRIBUTES.forEach(function (attr) delete expectedState[0][attr]);
+    WINDOW_ATTRIBUTES.forEach(attr => delete expectedState[0][attr]);
 
     is(aCurState, JSON.stringify(expectedState),
        "test #" + num + ": closedWindowState is as expected");

@@ -16,8 +16,9 @@ function test() {
   ] }] };
   let remember_count = 2;
 
-  function countByTitle(aClosedTabList, aTitle)
-    aClosedTabList.filter(function(aData) aData.title == aTitle).length;
+  function countByTitle(aClosedTabList, aTitle) {
+    return aClosedTabList.filter(aData => aData.title == aTitle).length;
+  }
 
   function testForError(aFunction) {
     try {
@@ -46,11 +47,11 @@ function test() {
        "Everything is set up.");
 
     
-    ok(testForError(function() ss.forgetClosedTab({}, 0)),
+    ok(testForError(() => ss.forgetClosedTab({}, 0)),
        "Invalid window for forgetClosedTab throws");
-    ok(testForError(function() ss.forgetClosedTab(newWin, -1)),
+    ok(testForError(() => ss.forgetClosedTab(newWin, -1)),
        "Invalid tab for forgetClosedTab throws");
-    ok(testForError(function() ss.forgetClosedTab(newWin, test_state.windows[0]._closedTabs.length + 1)),
+    ok(testForError(() => ss.forgetClosedTab(newWin, test_state.windows[0]._closedTabs.length + 1)),
        "Invalid tab for forgetClosedTab throws");
 
     

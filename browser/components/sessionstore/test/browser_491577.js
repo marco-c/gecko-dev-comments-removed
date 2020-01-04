@@ -65,8 +65,9 @@ function test() {
   };
   let remember_count = 1;
 
-  function countByTitle(aClosedWindowList, aTitle)
-    aClosedWindowList.filter(function(aData) aData.title == aTitle).length;
+  function countByTitle(aClosedWindowList, aTitle) {
+    return aClosedWindowList.filter(aData => aData.title == aTitle).length;
+  }
 
   function testForError(aFunction) {
     try {
@@ -95,9 +96,9 @@ function test() {
        "Everything is set up.");
 
     
-    ok(testForError(function() ss.forgetClosedWindow(-1)),
+    ok(testForError(() => ss.forgetClosedWindow(-1)),
        "Invalid window for forgetClosedWindow throws");
-    ok(testForError(function() ss.forgetClosedWindow(test_state._closedWindows.length + 1)),
+    ok(testForError(() => ss.forgetClosedWindow(test_state._closedWindows.length + 1)),
        "Invalid window for forgetClosedWindow throws");
 
     
