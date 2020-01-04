@@ -223,6 +223,10 @@ private:
   
   void ClearSurfaceForUnboundedSource(const CompositionOp &aOperator);
 
+  
+  
+  void SetFontOptions();
+
 private: 
   cairo_t* mContext;
   cairo_surface_t* mSurface;
@@ -230,6 +234,8 @@ private:
   bool mTransformSingular;
 
   uint8_t* mLockedBits;
+
+  cairo_font_options_t* mFontOptions;
 
   struct PushedLayer
   {

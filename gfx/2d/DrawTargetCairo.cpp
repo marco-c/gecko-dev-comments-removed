@@ -601,6 +601,7 @@ DrawTargetCairo::DrawTargetCairo()
   , mSurface(nullptr)
   , mTransformSingular(false)
   , mLockedBits(nullptr)
+  , mFontOptions(nullptr)
 {
 }
 
@@ -610,6 +611,10 @@ DrawTargetCairo::~DrawTargetCairo()
   if (mSurface) {
     cairo_surface_destroy(mSurface);
     mSurface = nullptr;
+  }
+  if (mFontOptions) {
+    cairo_font_options_destroy(mFontOptions);
+    mFontOptions = nullptr;
   }
   MOZ_ASSERT(!mLockedBits);
 }
@@ -1289,6 +1294,46 @@ DrawTargetCairo::IsCurrentGroupOpaque()
 }
 
 void
+DrawTargetCairo::SetFontOptions()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  if (mPermitSubpixelAA) {
+    return;
+  }
+
+  if (!mFontOptions) {
+    mFontOptions = cairo_font_options_create();
+    if (!mFontOptions) {
+      gfxWarning() << "Failed allocating Cairo font options";
+      return;
+    }
+  }
+
+  
+  
+  cairo_get_font_options(mContext, mFontOptions);
+  cairo_antialias_t antialias = cairo_font_options_get_antialias(mFontOptions);
+  if (antialias == CAIRO_ANTIALIAS_SUBPIXEL) {
+    cairo_font_options_set_antialias(mFontOptions, CAIRO_ANTIALIAS_GRAY);
+    cairo_set_font_options(mContext, mFontOptions);
+  }
+}
+
+void
 DrawTargetCairo::SetPermitSubpixelAA(bool aPermitSubpixelAA)
 {
   DrawTarget::SetPermitSubpixelAA(aPermitSubpixelAA);
@@ -1333,6 +1378,9 @@ DrawTargetCairo::FillGlyphs(ScaledFont *aFont,
   cairo_pattern_destroy(pat);
 
   cairo_set_antialias(mContext, GfxAntialiasToCairoAntialias(aOptions.mAntialiasMode));
+
+  
+  SetFontOptions();
 
   
   
