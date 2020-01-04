@@ -1372,20 +1372,20 @@ BytecodeEmitter::emitVarIncDec(ParseNode* pn)
 }
 
 bool
-BytecodeEmitter::atBodyLevel(StmtInfoBCE* stmt) const
+BytecodeEmitter::atBodyLevel() const
 {
     
     
     
     if (sc->staticScope()->is<StaticEvalObject>()) {
-        bool bl = !stmt->enclosing;
-        MOZ_ASSERT_IF(bl, stmt->type == StmtType::BLOCK);
-        MOZ_ASSERT_IF(bl, stmt->staticScope
-                              ->as<StaticBlockObject>()
-                              .enclosingStaticScope() == sc->staticScope());
+        bool bl = !innermostStmt()->enclosing;
+        MOZ_ASSERT_IF(bl, innermostStmt()->type == StmtType::BLOCK);
+        MOZ_ASSERT_IF(bl, innermostStmt()->staticScope
+                                         ->as<StaticBlockObject>()
+                                         .enclosingStaticScope() == sc->staticScope());
         return bl;
     }
-    return !stmt || sc->isModuleBox();
+    return !innermostStmt() || sc->isModuleBox();
 }
 
 uint32_t
@@ -1738,7 +1738,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
         MOZ_ASSERT(dn->isDefn());
         pn->pn_dflags |= (dn->pn_dflags & PND_CONST);
     } else if (pn->isDefn()) {
-        dn = &pn->as<Definition>();
+        dn = (Definition*) pn;
     } else {
         return true;
     }
@@ -2343,10 +2343,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         MOZ_ASSERT(pn->isArity(PN_LIST));
         MOZ_ASSERT(pn->pn_count == 1);
         return checkSideEffects(pn->pn_head, answer);
-
-      case PNK_ANNEXB_FUNCTION:
-        MOZ_ASSERT(pn->isArity(PN_BINARY));
-        return checkSideEffects(pn->pn_left, answer);
 
       case PNK_ARGSBODY:
         *answer = true;
@@ -3098,23 +3094,11 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         if (!enterBlockScope(&stmtInfo, cases->pn_objbox, JSOP_UNINITIALIZED, 0))
             return false;
 
-        
-        cases = cases->expr();
-
-        
-        
-        
-        if (cases->pn_xflags & PNX_FUNCDEFS) {
-            for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
-                if (caseNode->pn_right->pn_xflags & PNX_FUNCDEFS) {
-                    if (!emitHoistedFunctionsInList(caseNode->pn_right))
-                        return false;
-                }
-            }
-        }
-
         stmtInfo.type = StmtType::SWITCH;
         stmtInfo.update = top = offset();
+
+        
+        cases = cases->expr();
     } else {
         MOZ_ASSERT(cases->isKind(PNK_STATEMENTLIST));
         top = offset();
@@ -4414,24 +4398,12 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption)
 
             MOZ_ASSERT(binding->isOp(JSOP_NOP));
             MOZ_ASSERT(emitOption != DefineVars);
-            MOZ_ASSERT_IF(emitOption == AnnexB, binding->pn_left->isKind(PNK_NAME));
 
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+
+
+
+
             if (binding->pn_left->isKind(PNK_NAME)) {
                 if (!emitSingleVariable(pn, binding->pn_left, binding->pn_right, emitOption))
                     return false;
@@ -4486,18 +4458,13 @@ BytecodeEmitter::emitSingleVariable(ParseNode* pn, ParseNode* binding, ParseNode
             op == JSOP_STRICTSETGNAME)
         {
             MOZ_ASSERT(emitOption != PushInitialValues);
-            if (op == JSOP_SETGNAME || op == JSOP_STRICTSETGNAME) {
-                if (!emitIndex32(JSOP_BINDGNAME, atomIndex))
-                    return false;
-            } else if (emitOption == AnnexB) {
-                
-                
-                if (!emit1(JSOP_BINDVAR))
-                    return false;
-            } else {
-                if (!emitIndex32(JSOP_BINDNAME, atomIndex))
-                    return false;
-            }
+            JSOp bindOp;
+            if (op == JSOP_SETNAME || op == JSOP_STRICTSETNAME)
+                bindOp = JSOP_BINDNAME;
+            else
+                bindOp = JSOP_BINDGNAME;
+            if (!emitIndex32(bindOp, atomIndex))
+                return false;
         }
 
         bool oldEmittingForInit = emittingForInit;
@@ -4521,7 +4488,7 @@ BytecodeEmitter::emitSingleVariable(ParseNode* pn, ParseNode* binding, ParseNode
 
     
     
-    if (emitOption == InitializeVars || emitOption == AnnexB) {
+    if (emitOption == InitializeVars) {
         MOZ_ASSERT_IF(binding->isDefn(), initializer == binding->pn_expr);
         if (!binding->pn_scopecoord.isFree()) {
             if (!emitVarOp(binding, op))
@@ -5359,28 +5326,6 @@ BytecodeEmitter::emitLetBlock(ParseNode* pnLet)
     return true;
 }
 
-bool
-BytecodeEmitter::emitHoistedFunctionsInList(ParseNode* list)
-{
-    MOZ_ASSERT(list->pn_xflags & PNX_FUNCDEFS);
-
-    for (ParseNode* pn = list->pn_head; pn; pn = pn->pn_next) {
-        if (!sc->strict()) {
-            while (pn->isKind(PNK_LABEL))
-                pn = pn->as<LabeledStatement>().statement();
-        }
-
-        if (pn->isKind(PNK_ANNEXB_FUNCTION) ||
-            (pn->isKind(PNK_FUNCTION) && pn->functionIsHoisted()))
-        {
-            if (!emitTree(pn))
-                return false;
-        }
-    }
-
-    return true;
-}
-
 
 
 MOZ_NEVER_INLINE bool
@@ -5392,17 +5337,7 @@ BytecodeEmitter::emitLexicalScope(ParseNode* pn)
     if (!enterBlockScope(&stmtInfo, pn->pn_objbox, JSOP_UNINITIALIZED, 0))
         return false;
 
-    ParseNode* body = pn->pn_expr;
-
-    if (body->isKind(PNK_STATEMENTLIST) && body->pn_xflags & PNX_FUNCDEFS) {
-        
-        
-        
-        if (!emitHoistedFunctionsInList(body))
-            return false;
-    }
-
-    if (!emitTree(body))
+    if (!emitTree(pn->pn_expr))
         return false;
 
     if (!leaveNestedScope(&stmtInfo))
@@ -6263,12 +6198,6 @@ BytecodeEmitter::emitComprehensionFor(ParseNode* compFor)
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 {
-    ParseNode* assignmentForAnnexB = nullptr;
-    if (pn->isKind(PNK_ANNEXB_FUNCTION)) {
-        assignmentForAnnexB = pn->pn_right;
-        pn = pn->pn_left;
-    }
-
     FunctionBox* funbox = pn->pn_funbox;
     RootedFunction fun(cx, funbox->function());
     MOZ_ASSERT_IF(fun->isInterpretedLazy(), fun->lazyScript());
@@ -6279,25 +6208,9 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
     if (funbox->wasEmitted) {
-        
-        
-        
-        
-        if (assignmentForAnnexB) {
-            if (assignmentForAnnexB->isKind(PNK_VAR)) {
-                if (!emitVariables(assignmentForAnnexB, AnnexB))
-                    return false;
-            } else {
-                MOZ_ASSERT(assignmentForAnnexB->isKind(PNK_ASSIGN));
-                if (!emitTree(assignmentForAnnexB))
-                    return false;
-                if (!emit1(JSOP_POP))
-                    return false;
-            }
-        }
-
         MOZ_ASSERT_IF(fun->hasScript(), fun->nonLazyScript());
         MOZ_ASSERT(pn->functionIsHoisted());
+        MOZ_ASSERT(sc->isFunctionBox());
         return true;
     }
 
@@ -6405,28 +6318,10 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
 
-
-    
-    
-    bool blockScopedFunction = !atBodyLevel();
-    if (!sc->strict() && blockScopedFunction) {
-        StmtInfoBCE* stmt = innermostStmt();
-        while (stmt && stmt->type == StmtType::LABEL)
-            stmt = stmt->enclosing;
-        blockScopedFunction = !atBodyLevel(stmt);
-    }
-
-    if (blockScopedFunction) {
-        if (!emitIndexOp(JSOP_LAMBDA, index))
-            return false;
-        MOZ_ASSERT(pn->getOp() == JSOP_INITLEXICAL);
-        if (!emitVarOp(pn, pn->getOp()))
-            return false;
-        if (!emit1(JSOP_POP))
-            return false;
-    } else if (sc->isGlobalContext()) {
+    if (sc->isGlobalContext()) {
         MOZ_ASSERT(pn->pn_scopecoord.isFree());
         MOZ_ASSERT(pn->getOp() == JSOP_NOP);
+        MOZ_ASSERT(atBodyLevel());
         switchToPrologue();
         if (!emitIndex32(JSOP_DEFFUN, index))
             return false;
@@ -8063,6 +7958,7 @@ BytecodeEmitter::emitArgsBody(ParseNode *pn)
     
     
     
+    ParseNode* pnchild = pnlast->pn_head;
     bool hasDefaults = sc->asFunctionBox()->hasDefaults();
     ParseNode* rest = nullptr;
     bool restIsDefn = false;
@@ -8126,8 +8022,18 @@ BytecodeEmitter::emitArgsBody(ParseNode *pn)
         
         
         
-        if (!emitHoistedFunctionsInList(pnlast))
-            return false;
+        
+        
+        
+        
+        
+        
+        for (ParseNode* pn2 = pnchild; pn2; pn2 = pn2->pn_next) {
+            if (pn2->isKind(PNK_FUNCTION) && pn2->functionIsHoisted()) {
+                if (!emitTree(pn2))
+                    return false;
+            }
+        }
     }
     return emitTree(pnlast);
 }
@@ -8346,7 +8252,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
 
     switch (pn->getKind()) {
       case PNK_FUNCTION:
-      case PNK_ANNEXB_FUNCTION:
         if (!emitFunction(pn))
             return false;
         break;

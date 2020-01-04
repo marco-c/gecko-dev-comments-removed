@@ -121,12 +121,7 @@ enum VarEmitOption {
     
     
     
-    PushInitialValues,
-
-    
-    
-    
-    AnnexB,
+    PushInitialValues
 };
 
 struct BytecodeEmitter
@@ -254,10 +249,7 @@ struct BytecodeEmitter
         return parser->blockScopes[dn->pn_blockid];
     }
 
-    bool atBodyLevel(StmtInfoBCE* stmt) const;
-    bool atBodyLevel() const {
-        return atBodyLevel(innermostStmt());
-    }
+    bool atBodyLevel() const;
     uint32_t computeHops(ParseNode* pn, BytecodeEmitter** bceOfDefOut);
     bool isAliasedName(BytecodeEmitter* bceOfDef, ParseNode* pn);
     bool computeDefinitionIsAliased(BytecodeEmitter* bceOfDef, Definition* dn, JSOp* op);
@@ -471,8 +463,6 @@ struct BytecodeEmitter
 
     MOZ_NEVER_INLINE bool emitFunction(ParseNode* pn, bool needsProto = false);
     MOZ_NEVER_INLINE bool emitObject(ParseNode* pn);
-
-    bool emitHoistedFunctionsInList(ParseNode* pn);
 
     bool emitPropertyList(ParseNode* pn, MutableHandlePlainObject objp, PropListType type);
 

@@ -165,7 +165,6 @@ class PackedScopeCoordinate
     F(FORIN) \
     F(FOROF) \
     F(FORHEAD) \
-    F(ANNEXB_FUNCTION) \
     F(ARGSBODY) \
     F(SPREAD) \
     F(MUTATEPROTO) \
@@ -258,9 +257,6 @@ IsDeleteKind(ParseNodeKind kind)
 {
     return PNK_DELETENAME <= kind && kind <= PNK_DELETEEXPR;
 }
-
-
-
 
 
 
@@ -784,8 +780,7 @@ class ParseNode
                    isOp(JSOP_DEFFUN) ||        
                    isOp(JSOP_NOP) ||           
                    isOp(JSOP_GETLOCAL) ||      
-                   isOp(JSOP_GETARG) ||        
-                   isOp(JSOP_INITLEXICAL));    
+                   isOp(JSOP_GETARG));         
         return !isOp(JSOP_LAMBDA) && !isOp(JSOP_LAMBDA_ARROW) && !isOp(JSOP_DEFFUN);
     }
 
@@ -1612,8 +1607,6 @@ struct Definition : public ParseNode
         IMPORT
     };
 
-    static bool test(const ParseNode& pn) { return pn.isDefn(); }
-
     bool canHaveInitializer() { return int(kind()) <= int(ARG); }
 
     static const char* kindString(Kind kind);
@@ -1622,8 +1615,6 @@ struct Definition : public ParseNode
         if (getKind() == PNK_FUNCTION) {
             if (isOp(JSOP_GETARG))
                 return ARG;
-            if (isOp(JSOP_INITLEXICAL))
-                return LET;
             return VAR;
         }
         MOZ_ASSERT(getKind() == PNK_NAME);
