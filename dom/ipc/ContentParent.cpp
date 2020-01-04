@@ -103,11 +103,12 @@
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "mozilla/ProfileGatherer.h"
 #endif
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/WebBrowserPersistDocumentParent.h"
-#include "mozilla/Unused.h"
+#include "mozilla/unused.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsAppRunner.h"
 #include "nsCDefaultURIFixup.h"
@@ -5003,6 +5004,14 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 
   TabParent* newTab = TabParent::GetFrom(aNewTab);
   MOZ_ASSERT(newTab);
+
+  auto destroyNewTabOnError = MakeScopeExit([&] {
+    if (!*aWindowIsNew || NS_FAILED(*aResult)) {
+      if (newTab) {
+        newTab->Destroy();
+      }
+    }
+  });
 
   
   
