@@ -5,11 +5,8 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
-const CSSCompleter =
-      require("devtools/client/sourceeditor/css-autocompleter");
-const { AutocompletePopup } =
-      require("devtools/client/shared/autocomplete-popup");
+const CSSCompleter = require("devtools/client/sourceeditor/css-autocompleter");
+const { AutocompletePopup } = require("devtools/client/shared/autocomplete-popup");
 
 const CM_TERN_SCRIPTS = [
   "chrome://devtools/content/sourceeditor/codemirror/addon/tern/tern.js",
@@ -17,9 +14,6 @@ const CM_TERN_SCRIPTS = [
 ];
 
 const autocompleteMap = new WeakMap();
-
-
-let autocompleteCounter = 0;
 
 
 
@@ -124,23 +118,21 @@ function initializeAutoCompletion(ctx, options = {}) {
       insertPopupItem(ed, popup.selectedItem);
     }
 
+    popup.once("popup-closed", () => {
+      
+      ed.emit("popup-hidden");
+    });
     popup.hidePopup();
-    
-    ed.emit("popup-hidden");
     return true;
   }
 
   
-  let panelId = "devtools_sourceEditorCompletePopup" + autocompleteCounter;
-  ++autocompleteCounter;
 
-  let popup = new AutocompletePopup(win.parent.document, {
-    position: "after_start",
-    fixedWidth: true,
+  let popup = new AutocompletePopup({ doc: win.parent.document }, {
+    position: "bottom",
     theme: "auto",
     autoSelect: true,
-    onClick: insertSelectedPopupItem,
-    panelId: panelId
+    onClick: insertSelectedPopupItem
   });
 
   let cycle = reverse => {
@@ -217,30 +209,33 @@ function autoComplete({ ed, cm }) {
     return;
   }
   let cur = ed.getCursor();
-  completer.complete(cm.getRange({line: 0, ch: 0}, cur), cur)
-    .then(suggestions => {
-      if (!suggestions || !suggestions.length ||
-          suggestions[0].preLabel == null) {
-        autocompleteOpts.suggestionInsertedOnce = false;
-        popup.hidePopup();
-        ed.emit("after-suggest");
-        return;
-      }
-      
-      
-      
-      
-
-      let cursorElement =
-        cm.display.cursorDiv.querySelector(".CodeMirror-cursor");
-      let left = suggestions[0].preLabel.length * cm.defaultCharWidth() + 4;
-      popup.hidePopup();
-      popup.setItems(suggestions);
-      popup.openPopup(cursorElement, -1 * left, 0);
+  completer.complete(cm.getRange({line: 0, ch: 0}, cur), cur).then(suggestions => {
+    if (!suggestions || !suggestions.length || suggestions[0].preLabel == null) {
       autocompleteOpts.suggestionInsertedOnce = false;
+      popup.once("popup-closed", () => {
+        
+        ed.emit("after-suggest");
+      });
+      popup.hidePopup();
+      return;
+    }
+    
+    
+    
+    
+
+    let cursorElement = cm.display.cursorDiv.querySelector(".CodeMirror-cursor");
+    let left = suggestions[0].preLabel.length * cm.defaultCharWidth() + 4;
+    popup.hidePopup();
+    popup.setItems(suggestions);
+
+    popup.once("popup-opened", () => {
       
       ed.emit("after-suggest");
-    }).then(null, e => console.error(e));
+    });
+    popup.openPopup(cursorElement, -1 * left, 0);
+    autocompleteOpts.suggestionInsertedOnce = false;
+  }).then(null, e => console.error(e));
 }
 
 

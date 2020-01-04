@@ -107,6 +107,7 @@
   background: transparent;
   pointer-events: none;
   overflow: hidden;
+  filter: drop-shadow(0 3px 4px var(--theme-tooltip-shadow));
 }
 
 .tooltip-xul-wrapper {
@@ -144,11 +145,7 @@
 
 
 
-.tooltip-container[type="arrow"] {
-  filter: drop-shadow(0 3px 4px var(--theme-tooltip-shadow));
-}
-
-.tooltip-xul-wrapper .tooltip-container[type="arrow"] {
+.tooltip-xul-wrapper .tooltip-container {
   
   filter: none;
 }

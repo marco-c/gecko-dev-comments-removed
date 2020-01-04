@@ -699,7 +699,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     
     this._cbTextbox.value = expr;
 
-
     function openPopup() {
       
       

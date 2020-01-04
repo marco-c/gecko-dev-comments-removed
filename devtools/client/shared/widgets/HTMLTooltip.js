@@ -420,6 +420,7 @@ HTMLTooltip.prototype = {
   hide: Task.async(function* () {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     if (!this.isVisible()) {
+      this.emit("hidden");
       return;
     }
 
@@ -500,7 +501,7 @@ HTMLTooltip.prototype = {
     }
 
     
-    while (win.parent && win.parent != win) {
+    while (win.parent && win.parent !== win) {
       if (win.parent === tooltipWindow) {
         
         
