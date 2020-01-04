@@ -1532,6 +1532,11 @@ pref("media.eme.apiVisible", true);
 
 
 
+pref("media.gmp.decoder.enabled", true);
+
+
+
+
 pref("media.gmp.decoder.aac", 2);
 pref("media.gmp.decoder.h264", 2);
 
