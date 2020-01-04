@@ -17,6 +17,7 @@ const Heritage = require("sdk/core/heritage");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {HTMLTooltip} = require("devtools/client/shared/widgets/HTMLTooltip");
 const {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
+const {Task} = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "beautify", "devtools/shared/jsbeautify/beautify");
 loader.lazyRequireGetter(this, "setNamedTimeout", "devtools/client/shared/widgets/view-helpers", true);
@@ -558,6 +559,7 @@ Tooltip.prototype = {
 
 
 function SwatchBasedEditorTooltip(toolbox, stylesheet) {
+  EventEmitter.decorate(this);
   
   
   
@@ -605,8 +607,15 @@ function SwatchBasedEditorTooltip(toolbox, stylesheet) {
 }
 
 SwatchBasedEditorTooltip.prototype = {
+  
+
+
+
+
+
   show: function () {
     if (this.activeSwatch) {
+      let onShown = this.tooltip.once("shown");
       this.tooltip.show(this.activeSwatch, "topcenter bottomleft");
 
       
@@ -622,7 +631,11 @@ SwatchBasedEditorTooltip.prototype = {
           this.activeSwatch = null;
         }
       });
+
+      return onShown;
     }
+
+    return Promise.resolve();
   },
 
   hide: function () {
@@ -797,9 +810,9 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
 
 
-  show: function () {
+  show: Task.async(function* () {
     
-    SwatchBasedEditorTooltip.prototype.show.call(this);
+    yield SwatchBasedEditorTooltip.prototype.show.call(this);
     
     if (this.activeSwatch) {
       this.currentSwatchColor = this.activeSwatch.nextSibling;
@@ -820,8 +833,9 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
       } else {
         eyeButton.style.display = "none";
       }
+      this.emit("ready");
     }, e => console.error(e));
-  },
+  }),
 
   _onSpectrumColorChange: function (event, rgba, cssColor) {
     this._selectColor(cssColor);
@@ -944,9 +958,9 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
 
 
-  show: function () {
+  show: Task.async(function* () {
     
-    SwatchBasedEditorTooltip.prototype.show.call(this);
+    yield SwatchBasedEditorTooltip.prototype.show.call(this);
     
     if (this.activeSwatch) {
       this.currentBezierValue = this.activeSwatch.nextSibling;
@@ -954,9 +968,10 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
         widget.off("updated", this._onUpdate);
         widget.cssCubicBezierValue = this.currentBezierValue.textContent;
         widget.on("updated", this._onUpdate);
+        this.emit("ready");
       });
     }
-  },
+  }),
 
   _onUpdate: function (event, bezier) {
     if (!this.activeSwatch) {
@@ -1016,9 +1031,9 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
     return new CSSFilterEditorWidget(container, filter);
   },
 
-  show: function () {
+  show: Task.async(function* () {
     
-    SwatchBasedEditorTooltip.prototype.show.call(this);
+    yield SwatchBasedEditorTooltip.prototype.show.call(this);
     
     if (this.activeSwatch) {
       this.currentFilterValue = this.activeSwatch.nextSibling;
@@ -1026,8 +1041,9 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
       this.widget.on("updated", this._onUpdate);
       this.widget.setCssValue(this.currentFilterValue.textContent);
       this.widget.render();
+      this.emit("ready");
     }
-  },
+  }),
 
   _onUpdate: function (event, filters) {
     if (!this.activeSwatch) {
