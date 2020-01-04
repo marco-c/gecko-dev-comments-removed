@@ -73,7 +73,7 @@ public:
 
     Mutex        addr_info_lock;
     int          addr_info_gencnt; 
-    mozilla::net::AddrInfo *addr_info;
+    RefPtr<mozilla::net::AddrInfo> addr_info;
     mozilla::net::NetAddr  *addr;
     bool         negative;   
 
