@@ -35,24 +35,6 @@ using JS::GenericNaN;
 using JS::ToInt32;
 
 
-Address
-CodeGeneratorMIPSShared::ToAddress(const LAllocation& a)
-{
-    MOZ_ASSERT(a.isMemory());
-    int32_t offset = ToStackOffset(&a);
-
-    return Address(StackPointer, offset);
-}
-
-
-Address
-CodeGeneratorMIPSShared::ToAddress(const LAllocation* a)
-{
-    return ToAddress(*a);
-}
-
-
-
 CodeGeneratorMIPSShared::CodeGeneratorMIPSShared(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm)
   : CodeGeneratorShared(gen, graph, masm)
 {
