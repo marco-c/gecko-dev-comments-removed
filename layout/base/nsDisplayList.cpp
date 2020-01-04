@@ -2361,9 +2361,8 @@ bool
 nsDisplayBackgroundImage::ShouldFixToViewport(LayerManager* aManager)
 {
   
-  
-  if (nsLayoutUtils::UsesAsyncScrolling(mFrame) ||
-      (aManager && aManager->ShouldAvoidComponentAlphaLayers())) {
+  if (!nsLayoutUtils::UsesAsyncScrolling(mFrame) &&
+      aManager && aManager->ShouldAvoidComponentAlphaLayers()) {
     return false;
   }
 
