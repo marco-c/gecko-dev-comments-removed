@@ -2042,6 +2042,14 @@ pref("clipboard.autocopy", false);
 
 pref("clipboard.plainTextOnly", false);
 
+#ifdef XP_WIN
+
+
+
+pref("mousebutton.4th.enabled", true);
+pref("mousebutton.5th.enabled", true);
+#endif
+
 
 pref("mousewheel.transaction.timeout", 1500);
 
