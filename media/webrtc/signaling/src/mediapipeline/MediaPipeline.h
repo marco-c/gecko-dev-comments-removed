@@ -30,6 +30,9 @@ class nsIPrincipal;
 namespace mozilla {
 class MediaPipelineFilter;
 class PeerIdentity;
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+class VideoFrameConverter;
+#endif
 
 #ifndef USE_FAKE_MEDIA_STREAMS
 namespace dom {
@@ -334,9 +337,17 @@ public:
 
   
   class PipelineListener;
+  class VideoFrameFeeder;
+
+ protected:
+  ~MediaPipelineTransmit();
 
  private:
   RefPtr<PipelineListener> listener_;
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+  RefPtr<VideoFrameFeeder> feeder_;
+  RefPtr<VideoFrameConverter> converter_;
+#endif
   dom::MediaStreamTrack* domtrack_;
 };
 
