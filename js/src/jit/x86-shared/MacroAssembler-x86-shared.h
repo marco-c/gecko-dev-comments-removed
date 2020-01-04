@@ -922,9 +922,6 @@ class MacroAssemblerX86Shared : public Assembler
         
         vxorps(scratch, reg, reg); 
     }
-    void mulDouble(FloatRegister src, FloatRegister dest) {
-        vmulsd(src, dest, dest);
-    }
     void divDouble(FloatRegister src, FloatRegister dest) {
         vdivsd(src, dest, dest);
     }
