@@ -141,15 +141,33 @@ TextEventDispatcher::DispatchEvent(nsIWidget* aWidget,
                                    WidgetGUIEvent& aEvent,
                                    nsEventStatus& aStatus)
 {
+  MOZ_ASSERT(!aEvent.AsInputEvent(), "Use DispatchInputEvent()");
+
+  nsRefPtr<TextEventDispatcher> kungFuDeathGrip(this);
+  nsCOMPtr<nsIWidget> widget(aWidget);
+  mDispatchingEvent++;
+  nsresult rv = widget->DispatchEvent(&aEvent, aStatus);
+  mDispatchingEvent--;
+  return rv;
+}
+
+nsresult
+TextEventDispatcher::DispatchInputEvent(nsIWidget* aWidget,
+                                        WidgetInputEvent& aEvent,
+                                        nsEventStatus& aStatus,
+                                        DispatchTo aDispatchTo)
+{
   nsRefPtr<TextEventDispatcher> kungFuDeathGrip(this);
   nsCOMPtr<nsIWidget> widget(aWidget);
   mDispatchingEvent++;
 
+  
+  
+  
+  
   nsresult rv = NS_OK;
-  if (aEvent.AsInputEvent() &&
-      (!aEvent.mFlags.mIsSynthesizedForTests || gfxPrefs::TestEventsAsyncEnabled()))
-  {
-    aStatus = widget->DispatchInputEvent(aEvent.AsInputEvent());
+  if (aDispatchTo == eDispatchToParentProcess) {
+    aStatus = widget->DispatchInputEvent(&aEvent);
   } else {
     rv = widget->DispatchEvent(&aEvent, aStatus);
   }
@@ -286,9 +304,11 @@ bool
 TextEventDispatcher::DispatchKeyboardEvent(
                        uint32_t aMessage,
                        const WidgetKeyboardEvent& aKeyboardEvent,
-                       nsEventStatus& aStatus)
+                       nsEventStatus& aStatus,
+                       DispatchTo aDispatchTo)
 {
-  return DispatchKeyboardEventInternal(aMessage, aKeyboardEvent, aStatus);
+  return DispatchKeyboardEventInternal(aMessage, aKeyboardEvent, aStatus,
+                                       aDispatchTo);
 }
 
 bool
@@ -296,6 +316,7 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
                        uint32_t aMessage,
                        const WidgetKeyboardEvent& aKeyboardEvent,
                        nsEventStatus& aStatus,
+                       DispatchTo aDispatchTo,
                        uint32_t aIndexOfKeypress)
 {
   MOZ_ASSERT(aMessage == NS_KEY_DOWN || aMessage == NS_KEY_UP ||
@@ -374,14 +395,15 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
   keyEvent.mPluginEvent.Clear();
   
 
-  DispatchEvent(mWidget, keyEvent, aStatus);
+  DispatchInputEvent(mWidget, keyEvent, aStatus, aDispatchTo);
   return true;
 }
 
 bool
 TextEventDispatcher::MaybeDispatchKeypressEvents(
                        const WidgetKeyboardEvent& aKeyboardEvent,
-                       nsEventStatus& aStatus)
+                       nsEventStatus& aStatus,
+                       DispatchTo aDispatchTo)
 {
   
   if (aStatus == nsEventStatus_eConsumeNoDefault) {
@@ -401,7 +423,7 @@ TextEventDispatcher::MaybeDispatchKeypressEvents(
   for (size_t i = 0; i < keypressCount; i++) {
     aStatus = nsEventStatus_eIgnore;
     if (!DispatchKeyboardEventInternal(NS_KEY_PRESS, aKeyboardEvent,
-                                       aStatus, i)) {
+                                       aStatus, aDispatchTo, i)) {
       
       break;
     }
