@@ -48,11 +48,11 @@ class ScreenCaptureTestCase(MarionetteTestCase):
 class Chrome(ScreenCaptureTestCase):
     @property
     def primary_window_dimensions(self):
-        current_window = self.marionette.current_window_handle
+        current_window = self.marionette.current_chrome_window_handle
         self.marionette.switch_to_window(self.original_window)
         with self.marionette.using_context("chrome"):
             rv = tuple(self.marionette.execute_script("""
-                let el = document.getElementsByTagName("window")[0];
+                let el = document.documentElement;
                 let rect = el.getBoundingClientRect();
                 return [rect.width, rect.height];
                 """))
@@ -62,7 +62,7 @@ class Chrome(ScreenCaptureTestCase):
     def setUp(self):
         ScreenCaptureTestCase.setUp(self)
         self.marionette.set_context("chrome")
-        self.original_window = self.marionette.current_window_handle
+        self.original_window = self.marionette.current_chrome_window_handle
 
     def tearDown(self):
         self.marionette.switch_to_window(self.original_window)
@@ -86,21 +86,27 @@ class Chrome(ScreenCaptureTestCase):
     
     
     def test_secondary_windows(self):
+        self.assertEqual(len(self.marionette.chrome_window_handles), 1)
         ss = self.marionette.screenshot()
         self.marionette.execute_script("""
-            window.open('chrome://marionette/content/doesnotexist.xul',
-            'foo',
-            'chrome');
+            window.open('chrome://marionette/content/test_dialog.xul', 'foo',
+                        'dialog,height=200,width=300');
             """)
-        self.marionette.switch_to_window("foo")
+        self.assertEqual(len(self.marionette.chrome_window_handles), 2)
         
         
-        
-        time.sleep(0.002)
+        new_win = None
+        for win in self.marionette.chrome_window_handles:
+            if win != self.original_window:
+                new_win = win
+                break
+        self.marionette.switch_to_window(new_win)
         ss = self.marionette.screenshot()
         size = self.get_image_dimensions(ss)
         self.assert_png(ss)
         self.assertNotEqual(self.primary_window_dimensions, size)
+
+        self.marionette.close_chrome_window()
 
 
 class Content(ScreenCaptureTestCase):
