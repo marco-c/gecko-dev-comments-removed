@@ -570,7 +570,7 @@ HTMLTooltip.prototype = {
     
     panel.setAttribute("type", "arrow");
 
-    panel.setAttribute("level", "float");
+    panel.setAttribute("level", "top");
     panel.setAttribute("class", "tooltip-xul-wrapper");
 
     return panel;
