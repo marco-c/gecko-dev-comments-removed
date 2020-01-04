@@ -58,6 +58,7 @@ public:
   NS_IMETHOD GetFeatures(JSContext*, JS::MutableHandle<JS::Value>) override;
   NS_IMETHOD GetFeatureLog(JSContext*, JS::MutableHandle<JS::Value>) override;
   NS_IMETHOD GetActiveCrashGuards(JSContext*, JS::MutableHandle<JS::Value>) override;
+  NS_IMETHOD GetContentBackend(nsAString & aContentBackend) override;
 
   
   
