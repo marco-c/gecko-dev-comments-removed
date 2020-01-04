@@ -35,6 +35,7 @@
 
 
 
+
 function MenuItem({
     accesskey = null,
     checked = false,
@@ -44,6 +45,7 @@ function MenuItem({
     id = null,
     submenu = null,
     type = "normal",
+    visible = true,
 } = { }) {
   this.accesskey = accesskey;
   this.checked = checked;
@@ -53,6 +55,7 @@ function MenuItem({
   this.label = label;
   this.submenu = submenu;
   this.type = type;
+  this.visible = visible;
 }
 
 module.exports = MenuItem;
