@@ -7,6 +7,8 @@
 #define MOZILLA_MEDIASEGMENT_H_
 
 #include "nsTArray.h"
+#include "nsIPrincipal.h"
+#include "nsProxyRelease.h"
 #ifdef MOZILLA_INTERNAL_API
 #include "mozilla/TimeStamp.h"
 #endif
@@ -60,6 +62,50 @@ const GraphTime GRAPH_TIME_MAX = MEDIA_TIME_MAX;
 
 
 
+typedef nsMainThreadPtrHandle<nsIPrincipal> PrincipalHandle;
+
+inline PrincipalHandle MakePrincipalHandle(nsIPrincipal* aPrincipal)
+{
+  RefPtr<nsMainThreadPtrHolder<nsIPrincipal>> holder =
+    new nsMainThreadPtrHolder<nsIPrincipal>(aPrincipal);
+  return PrincipalHandle(holder);
+}
+
+const PrincipalHandle PRINCIPAL_HANDLE_NONE(nullptr);
+
+inline nsIPrincipal* GetPrincipalFromHandle(PrincipalHandle& aPrincipalHandle)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  return aPrincipalHandle.get();
+}
+
+inline bool PrincipalHandleMatches(PrincipalHandle& aPrincipalHandle,
+                                   nsIPrincipal* aOther)
+{
+  if (!aOther) {
+    return false;
+  }
+
+  nsIPrincipal* principal = GetPrincipalFromHandle(aPrincipalHandle);
+  if (!principal) {
+    return false;
+  }
+
+  bool result;
+  if (NS_FAILED(principal->Equals(aOther, &result))) {
+    NS_ERROR("Principal check failed");
+    return false;
+  }
+
+  return result;
+}
+
+
+
+
+
+
+
 
 
 
@@ -84,6 +130,19 @@ public:
 
   StreamTime GetDuration() const { return mDuration; }
   Type GetType() const { return mType; }
+
+  
+
+
+  PrincipalHandle GetLastPrincipalHandle() const { return mLastPrincipalHandle; }
+  
+
+
+
+  void SetLastPrincipalHandle(PrincipalHandle aLastPrincipalHandle)
+  {
+    mLastPrincipalHandle = aLastPrincipalHandle;
+  }
 
   
 
@@ -134,13 +193,18 @@ public:
   }
 
 protected:
-  explicit MediaSegment(Type aType) : mDuration(0), mType(aType)
+  explicit MediaSegment(Type aType)
+    : mDuration(0), mType(aType), mLastPrincipalHandle(PRINCIPAL_HANDLE_NONE)
   {
     MOZ_COUNT_CTOR(MediaSegment);
   }
 
   StreamTime mDuration; 
   Type mType;
+
+  
+  
+  PrincipalHandle mLastPrincipalHandle;
 };
 
 

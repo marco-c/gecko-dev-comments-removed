@@ -126,9 +126,11 @@ class GetUserMediaCallbackMediaStreamListener : public MediaStreamListener
 public:
   
   GetUserMediaCallbackMediaStreamListener(base::Thread *aThread,
-    uint64_t aWindowID)
+    uint64_t aWindowID,
+    const PrincipalHandle& aPrincipalHandle)
     : mMediaThread(aThread)
     , mWindowID(aWindowID)
+    , mPrincipalHandle(aPrincipalHandle)
     , mStopped(false)
     , mFinished(false)
     , mRemoved(false)
@@ -260,11 +262,11 @@ public:
     
     if (mAudioDevice) {
       mAudioDevice->GetSource()->NotifyPull(aGraph, mStream, kAudioTrack,
-                                            aDesiredTime);
+                                            aDesiredTime, mPrincipalHandle);
     }
     if (mVideoDevice) {
       mVideoDevice->GetSource()->NotifyPull(aGraph, mStream, kVideoTrack,
-                                            aDesiredTime);
+                                            aDesiredTime, mPrincipalHandle);
     }
   }
 
@@ -301,10 +303,13 @@ public:
   void
   NotifyDirectListeners(MediaStreamGraph* aGraph, bool aHasListeners);
 
+  PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
+
 private:
   
   base::Thread* mMediaThread;
   uint64_t mWindowID;
+  const PrincipalHandle mPrincipalHandle;
 
   
   bool mStopped;

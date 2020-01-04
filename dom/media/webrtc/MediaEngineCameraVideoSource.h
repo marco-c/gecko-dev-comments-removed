@@ -70,7 +70,8 @@ protected:
   virtual bool AppendToTrack(SourceMediaStream* aSource,
                              layers::Image* aImage,
                              TrackID aID,
-                             StreamTime delta);
+                             StreamTime delta,
+                             const PrincipalHandle& aPrincipalHandle);
   uint32_t GetFitnessDistance(const webrtc::CaptureCapability& aCandidate,
                               const dom::MediaTrackConstraintSet &aConstraints,
                               bool aAdvanced,
@@ -101,6 +102,7 @@ protected:
   
   Monitor mMonitor; 
   nsTArray<RefPtr<SourceMediaStream>> mSources; 
+  nsTArray<PrincipalHandle> mPrincipalHandles; 
   RefPtr<layers::Image> mImage;
   RefPtr<layers::ImageContainer> mImageContainer;
   int mWidth, mHeight; 

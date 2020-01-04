@@ -145,6 +145,8 @@ DownmixAndInterleave(const nsTArray<const SrcT*>& aChannelData,
 struct AudioChunk {
   typedef mozilla::AudioSampleFormat SampleFormat;
 
+  AudioChunk() : mPrincipalHandle(PRINCIPAL_HANDLE_NONE) {}
+
   
   void SliceTo(StreamTime aStart, StreamTime aEnd)
   {
@@ -190,6 +192,7 @@ struct AudioChunk {
     mDuration = aDuration;
     mVolume = 1.0f;
     mBufferFormat = AUDIO_FORMAT_SILENCE;
+    mPrincipalHandle = PRINCIPAL_HANDLE_NONE;
   }
 
   size_t ChannelCount() const { return mChannelData.Length(); }
@@ -224,6 +227,8 @@ struct AudioChunk {
     return *reinterpret_cast<nsTArray<const T*>*>(&mChannelData);
   }
 
+  PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
+
   StreamTime mDuration; 
   RefPtr<ThreadSharedObject> mBuffer; 
   nsTArray<const void*> mChannelData; 
@@ -232,6 +237,9 @@ struct AudioChunk {
 #ifdef MOZILLA_INTERNAL_API
   mozilla::TimeStamp mTimeStamp;           
 #endif
+  
+  
+  PrincipalHandle mPrincipalHandle;
 };
 
 
@@ -301,7 +309,7 @@ public:
 
   void AppendFrames(already_AddRefed<ThreadSharedObject> aBuffer,
                     const nsTArray<const float*>& aChannelData,
-                    int32_t aDuration)
+                    int32_t aDuration, const PrincipalHandle& aPrincipalHandle)
   {
     AudioChunk* chunk = AppendChunk(aDuration);
     chunk->mBuffer = aBuffer;
@@ -313,10 +321,11 @@ public:
 #ifdef MOZILLA_INTERNAL_API
     chunk->mTimeStamp = TimeStamp::Now();
 #endif
+    chunk->mPrincipalHandle = aPrincipalHandle;
   }
   void AppendFrames(already_AddRefed<ThreadSharedObject> aBuffer,
                     const nsTArray<const int16_t*>& aChannelData,
-                    int32_t aDuration)
+                    int32_t aDuration, const PrincipalHandle& aPrincipalHandle)
   {
     AudioChunk* chunk = AppendChunk(aDuration);
     chunk->mBuffer = aBuffer;
@@ -328,6 +337,7 @@ public:
 #ifdef MOZILLA_INTERNAL_API
     chunk->mTimeStamp = TimeStamp::Now();
 #endif
+    chunk->mPrincipalHandle = aPrincipalHandle;
   }
   
   
@@ -341,6 +351,7 @@ public:
 #ifdef MOZILLA_INTERNAL_API
     chunk->mTimeStamp = TimeStamp::Now();
 #endif
+    chunk->mPrincipalHandle = aChunk->mPrincipalHandle;
     return chunk;
   }
   void ApplyVolume(float aVolume);

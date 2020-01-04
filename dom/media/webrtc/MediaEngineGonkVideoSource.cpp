@@ -67,7 +67,8 @@ void
 MediaEngineGonkVideoSource::NotifyPull(MediaStreamGraph* aGraph,
                                        SourceMediaStream* aSource,
                                        TrackID aID,
-                                       StreamTime aDesiredTime)
+                                       StreamTime aDesiredTime,
+                                       const PrincipalID& aPrincipalHandle)
 {
   VideoSegment segment;
 
@@ -95,10 +96,10 @@ MediaEngineGonkVideoSource::NotifyPull(MediaStreamGraph* aGraph,
   if (delta > 0) {
     
     IntSize size(image ? mWidth : 0, image ? mHeight : 0);
-    segment.AppendFrame(image.forget(), delta, size);
+    segment.AppendFrame(image.forget(), delta, size, aPrincipalHandle);
     
     
-    aSource->AppendToTrack(aID, &(segment));
+    aSource->AppendToTrack(aID, &(segment), aPrincipalHandle);
   }
 }
 
@@ -883,7 +884,7 @@ MediaEngineGonkVideoSource::OnNewMediaBufferFrame(MediaBuffer* aBuffer)
         
         
         
-        AppendToTrack(mSources[i], mImage, mTrackID, 1);
+        AppendToTrack(mSources[i], mImage, mTrackID, 1, mPrincipalHandles[i]);
       }
     }
     if (mImage->AsGrallocImage()) {

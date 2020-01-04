@@ -121,7 +121,7 @@ public:
   
 
 
-  virtual nsresult Start(SourceMediaStream*, TrackID) = 0;
+  virtual nsresult Start(SourceMediaStream*, TrackID, const PrincipalHandle&) = 0;
 
   
   virtual void SetDirectListeners(bool) = 0;
@@ -130,7 +130,8 @@ public:
   virtual void NotifyPull(MediaStreamGraph* aGraph,
                           SourceMediaStream *aSource,
                           TrackID aId,
-                          StreamTime aDesiredTime) = 0;
+                          StreamTime aDesiredTime,
+                          const PrincipalHandle& aPrincipalHandle) = 0;
 
   
   virtual nsresult Stop(SourceMediaStream *aSource, TrackID aID) = 0;

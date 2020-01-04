@@ -40,6 +40,8 @@ public:
   Image* GetImage() const { return mImage; }
   void SetForceBlack(bool aForceBlack) { mForceBlack = aForceBlack; }
   bool GetForceBlack() const { return mForceBlack; }
+  void SetPrincipalHandle(const PrincipalHandle& aPrincipalHandle) { mPrincipalHandle = aPrincipalHandle; }
+  PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
   const gfx::IntSize& GetIntrinsicSize() const { return mIntrinsicSize; }
   void SetNull();
   void TakeFrom(VideoFrame* aFrame);
@@ -54,6 +56,9 @@ protected:
   
   gfx::IntSize mIntrinsicSize;
   bool mForceBlack;
+  
+  
+  PrincipalHandle mPrincipalHandle;
 };
 
 struct VideoChunk {
@@ -86,6 +91,8 @@ struct VideoChunk {
     return 0;
   }
 
+  PrincipalHandle GetPrincipalHandle() const { return mFrame.GetPrincipalHandle(); }
+
   StreamTime mDuration;
   VideoFrame mFrame;
   mozilla::TimeStamp mTimeStamp;
@@ -102,6 +109,7 @@ public:
   void AppendFrame(already_AddRefed<Image>&& aImage,
                    StreamTime aDuration,
                    const IntSize& aIntrinsicSize,
+                   const PrincipalHandle& aPrincipalHandle,
                    bool aForceBlack = false);
   const VideoFrame* GetLastFrame(StreamTime* aStart = nullptr)
   {

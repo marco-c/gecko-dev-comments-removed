@@ -145,7 +145,8 @@ static void ReleaseFrame(layers::PlanarYCbCrData& aData)
 }
 
 nsresult
-MediaEngineDefaultVideoSource::Start(SourceMediaStream* aStream, TrackID aID)
+MediaEngineDefaultVideoSource::Start(SourceMediaStream* aStream, TrackID aID,
+                                     const PrincipalHandle& aPrincipalHandle)
 {
   if (mState != kAllocated) {
     return NS_ERROR_FAILURE;
@@ -272,7 +273,8 @@ void
 MediaEngineDefaultVideoSource::NotifyPull(MediaStreamGraph* aGraph,
                                           SourceMediaStream *aSource,
                                           TrackID aID,
-                                          StreamTime aDesiredTime)
+                                          StreamTime aDesiredTime,
+                                          const PrincipalHandle& aPrincipalHandle)
 {
   
   VideoSegment segment;
@@ -288,7 +290,7 @@ MediaEngineDefaultVideoSource::NotifyPull(MediaStreamGraph* aGraph,
   if (delta > 0) {
     
     IntSize size(image ? mOpts.mWidth : 0, image ? mOpts.mHeight : 0);
-    segment.AppendFrame(image.forget(), delta, size);
+    segment.AppendFrame(image.forget(), delta, size, aPrincipalHandle);
     
     
     aSource->AppendToTrack(aID, &segment);
@@ -358,6 +360,7 @@ NS_IMPL_ISUPPORTS(MediaEngineDefaultAudioSource, nsITimerCallback)
 
 MediaEngineDefaultAudioSource::MediaEngineDefaultAudioSource()
   : MediaEngineAudioSource(kReleased)
+  , mPrincipalHandle(PRINCIPAL_HANDLE_NONE)
   , mTimer(nullptr)
 {
 }
@@ -422,7 +425,8 @@ MediaEngineDefaultAudioSource::Deallocate()
 }
 
 nsresult
-MediaEngineDefaultAudioSource::Start(SourceMediaStream* aStream, TrackID aID)
+MediaEngineDefaultAudioSource::Start(SourceMediaStream* aStream, TrackID aID,
+                                     const PrincipalHandle& aPrincipalHandle)
 {
   if (mState != kAllocated) {
     return NS_ERROR_FAILURE;
@@ -455,6 +459,9 @@ MediaEngineDefaultAudioSource::Start(SourceMediaStream* aStream, TrackID aID)
 
   
   mTrackID = aID;
+
+  
+  mPrincipalHandle = aPrincipalHandle;
 
   mLastNotify = TimeStamp::Now();
 
@@ -514,7 +521,7 @@ MediaEngineDefaultAudioSource::AppendToSegment(AudioSegment& aSegment,
   mSineGenerator->generate(dest, aSamples);
   AutoTArray<const int16_t*,1> channels;
   channels.AppendElement(dest);
-  aSegment.AppendFrames(buffer.forget(), channels, aSamples);
+  aSegment.AppendFrames(buffer.forget(), channels, aSamples, mPrincipalHandle);
 }
 
 NS_IMETHODIMP

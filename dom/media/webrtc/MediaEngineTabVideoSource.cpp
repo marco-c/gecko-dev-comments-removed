@@ -184,7 +184,8 @@ MediaEngineTabVideoSource::Deallocate()
 }
 
 nsresult
-MediaEngineTabVideoSource::Start(SourceMediaStream* aStream, TrackID aID)
+MediaEngineTabVideoSource::Start(SourceMediaStream* aStream, TrackID aID,
+                                 const PrincipalHandle& aPrincipalHandle)
 {
   nsCOMPtr<nsIRunnable> runnable;
   if (!mWindow)
@@ -200,7 +201,8 @@ MediaEngineTabVideoSource::Start(SourceMediaStream* aStream, TrackID aID)
 void
 MediaEngineTabVideoSource::NotifyPull(MediaStreamGraph*,
                                       SourceMediaStream* aSource,
-                                      TrackID aID, StreamTime aDesiredTime)
+                                      TrackID aID, StreamTime aDesiredTime,
+                                      const PrincipalHandle& aPrincipalHandle)
 {
   VideoSegment segment;
   MonitorAutoLock mon(mMonitor);
@@ -211,7 +213,8 @@ MediaEngineTabVideoSource::NotifyPull(MediaStreamGraph*,
   if (delta > 0) {
     
     gfx::IntSize size = image ? image->GetSize() : IntSize(0, 0);
-    segment.AppendFrame(image.forget().downcast<layers::Image>(), delta, size);
+    segment.AppendFrame(image.forget().downcast<layers::Image>(), delta, size,
+                        aPrincipalHandle);
     
     
     aSource->AppendToTrack(aID, &(segment));
