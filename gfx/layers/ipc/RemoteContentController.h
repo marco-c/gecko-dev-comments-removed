@@ -19,7 +19,7 @@ class TabParent;
 
 namespace layers {
 
-class APZCTreeManager;
+class IAPZCTreeManager;
 
 
 
@@ -98,7 +98,7 @@ private:
     MOZ_ASSERT(NS_IsMainThread());
     return !!mBrowserParent;
   }
-  already_AddRefed<APZCTreeManager> GetApzcTreeManager();
+  already_AddRefed<IAPZCTreeManager> GetApzcTreeManager();
 
   MessageLoop* mUILoop;
   uint64_t mLayersId;
@@ -107,7 +107,7 @@ private:
   
   mozilla::Mutex mMutex;
 
-  RefPtr<APZCTreeManager> mApzcTreeManager;
+  RefPtr<IAPZCTreeManager> mApzcTreeManager;
   nsRegion mTouchSensitiveRegion;
 };
 
