@@ -21,16 +21,13 @@ class nsPresContext;
 
 namespace mozilla {
 
-class CommonAnimationManager;
 typedef InfallibleTArray<RefPtr<dom::Animation>> AnimationPtrArray;
 
 struct AnimationCollection : public LinkedListElement<AnimationCollection>
 {
-  AnimationCollection(dom::Element *aElement, nsIAtom *aElementProperty,
-                      CommonAnimationManager *aManager)
+  AnimationCollection(dom::Element* aElement, nsIAtom* aElementProperty)
     : mElement(aElement)
     , mElementProperty(aElementProperty)
-    , mManager(aManager)
     , mCheckGeneration(0)
 #ifdef DEBUG
     , mCalledPropertyDtor(false)
@@ -91,8 +88,6 @@ public:
   
   
   nsIAtom *mElementProperty;
-
-  CommonAnimationManager *mManager;
 
   AnimationPtrArray mAnimations;
 
