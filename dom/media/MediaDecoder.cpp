@@ -1816,6 +1816,21 @@ MediaDecoder::RemoveMediaTracks()
   mMediaTracksConstructed = false;
 }
 
+MediaDecoderOwner::NextFrameStatus
+MediaDecoder::NextFrameBufferedStatus()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  media::TimeUnit currentPosition =
+    media::TimeUnit::FromMicroseconds(CurrentPosition());
+  media::TimeInterval interval(currentPosition,
+                               currentPosition + media::TimeUnit::FromMicroseconds(DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED));
+  return GetBuffered().Contains(interval)
+    ? MediaDecoderOwner::NEXT_FRAME_AVAILABLE
+    : MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
+}
+
 MediaMemoryTracker::MediaMemoryTracker()
 {
 }

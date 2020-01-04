@@ -719,6 +719,7 @@ private:
   }
 
   virtual MediaDecoderOwner::NextFrameStatus NextFrameStatus() { return mNextFrameStatus; }
+  virtual MediaDecoderOwner::NextFrameStatus NextFrameBufferedStatus();
 
 protected:
   virtual ~MediaDecoder();
@@ -791,6 +792,11 @@ protected:
 
   
   RefPtr<MediaResource> mResource;
+
+  
+  
+  
+  static const int DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED = 250000;
 
 private:
   
