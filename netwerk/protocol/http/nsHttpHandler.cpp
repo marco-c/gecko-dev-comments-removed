@@ -732,7 +732,7 @@ nsHttpHandler::InitUserAgentComponents()
 #endif
 
 
-#if defined(ANDROID) || defined(FXOS_SIMULATOR)
+#ifdef ANDROID
     nsCOMPtr<nsIPropertyBag2> infoService = do_GetService("@mozilla.org/system-info;1");
     MOZ_ASSERT(infoService, "Could not find a system info service");
     nsresult rv;
@@ -754,14 +754,34 @@ nsHttpHandler::InitUserAgentComponents()
     }
 #endif
     
-    
     bool isTablet;
     rv = infoService->GetPropertyAsBool(NS_LITERAL_STRING("tablet"), &isTablet);
-    if (NS_SUCCEEDED(rv) && isTablet)
+    if (NS_SUCCEEDED(rv) && isTablet) {
         mCompatDevice.AssignLiteral("Tablet");
-    else
-        mCompatDevice.AssignLiteral("Mobile");
-#endif
+    } else {
+        bool isTV;
+        rv = infoService->GetPropertyAsBool(NS_LITERAL_STRING("tv"), &isTV);
+        if (NS_SUCCEEDED(rv) && isTV) {
+            mCompatDevice.AssignLiteral("TV");
+        } else {
+            mCompatDevice.AssignLiteral("Mobile");
+        }
+    }
+#endif 
+
+#ifdef FXOS_SIMULATOR
+    {
+        
+        
+        nsCString deviceType;
+        nsresult rv = Preferences::GetCString("devtools.useragent.device_type", &deviceType);
+        if (NS_SUCCEEDED(rv)) {
+            mCompatDevice.Assign(deviceType);
+        } else {
+            mCompatDevice.AssignLiteral("Mobile");
+        }
+    }
+#endif 
 
 #if defined(MOZ_WIDGET_GONK)
     
