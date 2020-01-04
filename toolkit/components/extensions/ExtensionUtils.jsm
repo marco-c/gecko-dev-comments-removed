@@ -115,6 +115,8 @@ DefaultWeakMap.prototype = {
 class BaseContext {
   constructor() {
     this.onClose = new Set();
+    this.checkedLastError = false;
+    this._lastError = null;
   }
 
   get cloneScope() {
@@ -150,6 +152,87 @@ class BaseContext {
 
   forgetOnClose(obj) {
     this.onClose.delete(obj);
+  }
+
+  get lastError() {
+    this.checkedLastError = true;
+    return this._lastError;
+  }
+
+  set lastError(val) {
+    this.checkedLastError = false;
+    this._lastError = val;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  withLastError(error, callback) {
+    if (!(error instanceof this.cloneScope.Error)) {
+      error = new this.cloneScope.Error(error.message);
+    }
+    this.lastError = error;
+    try {
+      return callback();
+    } finally {
+      if (!this.checkedLastError) {
+        Cu.reportError(`Unchecked lastError value: ${error}`);
+      }
+      this.lastError = null;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  wrapPromise(promise, callback = null) {
+    if (callback) {
+      promise.then(
+        args => {
+          runSafeSync(this, callback, ...args);
+        },
+        error => {
+          this.withLastError(error, () => {
+            runSafeSync(this, callback);
+          });
+        });
+    } else {
+      return new this.cloneScope.Promise((resolve, reject) => {
+        promise.then(
+          value => { runSafeSync(this, resolve, value); },
+          value => {
+            if (!(value instanceof this.cloneScope.Error)) {
+              value = new this.cloneScope.Error(value.message);
+            }
+            runSafeSyncWithoutClone(reject, value);
+          });
+      });
+    }
   }
 
   unload() {
@@ -493,14 +576,14 @@ function injectAPI(source, dest) {
       continue;
     }
 
-    let value = source[prop];
-    if (typeof(value) == "function") {
-      Cu.exportFunction(value, dest, {defineAs: prop});
-    } else if (typeof(value) == "object") {
+    let desc = Object.getOwnPropertyDescriptor(source, prop);
+    if (typeof(desc.value) == "function") {
+      Cu.exportFunction(desc.value, dest, {defineAs: prop});
+    } else if (typeof(desc.value) == "object") {
       let obj = Cu.createObjectIn(dest, {defineAs: prop});
-      injectAPI(value, obj);
+      injectAPI(desc.value, obj);
     } else {
-      dest[prop] = value;
+      Object.defineProperty(dest, prop, desc);
     }
   }
 }
