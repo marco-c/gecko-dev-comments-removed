@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 
 #include "nsIOService.h"
@@ -30,6 +31,7 @@
 #include "nsIConsoleService.h"
 #include "nsIUploadChannel2.h"
 #include "nsXULAppAPI.h"
+#include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIProtocolProxyCallback.h"
 #include "nsICancelable.h"
@@ -51,6 +53,7 @@
 #include "CaptivePortalService.h"
 #include "ReferrerPolicy.h"
 #include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
 
 #ifdef MOZ_WIDGET_GONK
 #include "nsINetworkManager.h"
@@ -662,6 +665,41 @@ nsIOService::NewChannelFromURI2(nsIURI* aURI,
                                             result);
 }
 
+
+
+
+
+
+
+
+
+
+
+NS_IMETHODIMP
+nsIOService::NewChannelFromURI(nsIURI *aURI, nsIChannel **result)
+{
+  NS_ASSERTION(false, "Deprecated, use NewChannelFromURI2 providing loadInfo arguments!");
+
+  const char16_t* params[] = {
+    MOZ_UTF16("nsIOService::NewChannelFromURI()"),
+    MOZ_UTF16("nsIOService::NewChannelFromURI2()")
+  };
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("Security by Default"),
+                                  nullptr, 
+                                  nsContentUtils::eNECKO_PROPERTIES,
+                                  "APIDeprecationWarning",
+                                  params, ArrayLength(params));
+
+  return NewChannelFromURI2(aURI,
+                            nullptr, 
+                            nsContentUtils::GetSystemPrincipal(),
+                            nullptr, 
+                            nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                            nsIContentPolicy::TYPE_OTHER,
+                            result);
+}
+
 NS_IMETHODIMP
 nsIOService::NewChannelFromURIWithLoadInfo(nsIURI* aURI,
                                            nsILoadInfo* aLoadInfo,
@@ -841,6 +879,46 @@ nsIOService::NewChannelFromURIWithProxyFlags2(nsIURI* aURI,
                                                    result);
 }
 
+
+
+
+
+
+
+
+
+
+
+NS_IMETHODIMP
+nsIOService::NewChannelFromURIWithProxyFlags(nsIURI *aURI,
+                                             nsIURI *aProxyURI,
+                                             uint32_t aProxyFlags,
+                                             nsIChannel **result)
+{
+  NS_ASSERTION(false, "Deprecated, use NewChannelFromURIWithProxyFlags2 providing loadInfo arguments!");
+
+  const char16_t* params[] = {
+    MOZ_UTF16("nsIOService::NewChannelFromURIWithProxyFlags()"),
+    MOZ_UTF16("nsIOService::NewChannelFromURIWithProxyFlags2()")
+  };
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("Security by Default"),
+                                  nullptr, 
+                                  nsContentUtils::eNECKO_PROPERTIES,
+                                  "APIDeprecationWarning",
+                                  params, ArrayLength(params));
+
+  return NewChannelFromURIWithProxyFlags2(aURI,
+                                          aProxyURI,
+                                          aProxyFlags,
+                                          nullptr, 
+                                          nsContentUtils::GetSystemPrincipal(),
+                                          nullptr, 
+                                          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                                          nsIContentPolicy::TYPE_OTHER,
+                                          result);
+}
+
 NS_IMETHODIMP
 nsIOService::NewChannel2(const nsACString& aSpec,
                          const char* aCharset,
@@ -864,6 +942,44 @@ nsIOService::NewChannel2(const nsACString& aSpec,
                               aSecurityFlags,
                               aContentPolicyType,
                               result);
+}
+
+
+
+
+
+
+
+
+
+
+
+NS_IMETHODIMP
+nsIOService::NewChannel(const nsACString &aSpec, const char *aCharset, nsIURI *aBaseURI, nsIChannel **result)
+{
+  NS_ASSERTION(false, "Deprecated, use NewChannel2 providing loadInfo arguments!");
+
+  const char16_t* params[] = {
+    MOZ_UTF16("nsIOService::NewChannel()"),
+    MOZ_UTF16("nsIOService::NewChannel2()")
+  };
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("Security by Default"),
+                                  nullptr, 
+                                  nsContentUtils::eNECKO_PROPERTIES,
+                                  "APIDeprecationWarning",
+                                  params, ArrayLength(params));
+
+  
+  return NewChannel2(aSpec,
+                     aCharset,
+                     aBaseURI,
+                     nullptr, 
+                     nsContentUtils::GetSystemPrincipal(), 
+                     nullptr, 
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                     nsIContentPolicy::TYPE_OTHER,
+                     result);
 }
 
 bool
