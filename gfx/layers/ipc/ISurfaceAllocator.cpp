@@ -147,7 +147,11 @@ ISurfaceAllocator::AllocSurfaceDescriptorWithCaps(const gfx::IntSize& aSize,
     bufferDesc = shmem;
   }
 
-  *aBuffer = SurfaceDescriptorBuffer(RGBDescriptor(aSize, format), bufferDesc);
+  
+  
+  const bool hasIntermediateBuffer = true;
+  *aBuffer = SurfaceDescriptorBuffer(RGBDescriptor(aSize, format, hasIntermediateBuffer),
+                                     bufferDesc);
 
   return true;
 }

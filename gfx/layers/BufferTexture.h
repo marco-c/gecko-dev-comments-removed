@@ -55,7 +55,7 @@ public:
 
   virtual bool SupportsMoz2D() const override;
 
-  virtual bool HasInternalBuffer() const override { return true; }
+  virtual bool HasInternalBuffer() const override;
 
   
   virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) override;

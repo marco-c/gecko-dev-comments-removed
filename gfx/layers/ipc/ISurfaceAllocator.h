@@ -41,6 +41,7 @@ class DataSourceSurface;
 namespace layers {
 
 class MaybeMagicGrallocBufferHandle;
+class CompositableForwarder;
 
 enum BufferCapabilities {
   DEFAULT_BUFFER_CAPS = 0,
@@ -160,6 +161,7 @@ public:
   
   static bool IsShmem(SurfaceDescriptor* aSurface);
 
+  virtual CompositableForwarder* AsCompositableForwarder() { return nullptr; }
 protected:
 
   virtual bool IsOnCompositorSide() const = 0;
