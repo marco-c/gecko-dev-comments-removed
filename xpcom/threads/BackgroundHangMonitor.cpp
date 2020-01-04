@@ -33,7 +33,7 @@
 
 
 
-static const size_t kMaxThreadHangStackDepth = 11;
+static const size_t kMaxThreadHangStackDepth = 30;
 
 
 
