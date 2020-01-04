@@ -1288,6 +1288,15 @@ struct JSRuntime : public JS::shadow::Runtime,
     js::MathCache* maybeGetMathCache() {
         return mathCache_;
     }
+
+    
+    
+    js::SharedImmutableStringsCache* maybeThisRuntimeSharedImmutableStrings() {
+        return sharedImmutableStrings_.isSome() ? &*sharedImmutableStrings_ : nullptr;
+    }
+
+    
+    
     js::SharedImmutableStringsCache& sharedImmutableStrings() {
         MOZ_ASSERT_IF(parentRuntime, !sharedImmutableStrings_);
         MOZ_ASSERT_IF(!parentRuntime, sharedImmutableStrings_);
