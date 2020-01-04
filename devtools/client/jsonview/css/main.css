@@ -3,8 +3,9 @@
 
 
 
+@import "resource://devtools/client/shared/components/reps/reps.css";
+
 @import "general.css";
-@import "reps.css";
 @import "dom-tree.css";
 @import "search-box.css";
 @import "tabs.css";
