@@ -58,6 +58,17 @@ public:
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
+  void SetBlockLeadings(nscoord aStart, nscoord aEnd)
+  {
+    mBStartLeading = aStart;
+    mBEndLeading = aEnd;
+  }
+  void GetBlockLeadings(nscoord* aStart, nscoord* aEnd) const
+  {
+    *aStart = mBStartLeading;
+    *aEnd = mBEndLeading;
+  }
+
 protected:
   friend nsContainerFrame*
     NS_NewRubyBaseContainerFrame(nsIPresShell* aPresShell,
@@ -83,6 +94,11 @@ protected:
                      bool& aIsComplete);
 
   nscoord mBaseline;
+
+  
+  
+  nscoord mBStartLeading;
+  nscoord mBEndLeading;
 };
 
 #endif 

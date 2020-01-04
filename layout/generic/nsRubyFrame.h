@@ -45,12 +45,6 @@ public:
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  void GetBlockLeadings(nscoord& aStartLeading, nscoord& aEndLeading)
-  {
-    aStartLeading = mBStartLeading;
-    aEndLeading = mBEndLeading;
-  }
-
 protected:
   friend nsContainerFrame* NS_NewRubyFrame(nsIPresShell* aPresShell,
                                            nsStyleContext* aContext);
@@ -63,11 +57,6 @@ protected:
                      nsReflowStatus& aStatus);
 
   nsRubyBaseContainerFrame* PullOneSegment(ContinuationTraversingState& aState);
-
-  
-  
-  nscoord mBStartLeading;
-  nscoord mBEndLeading;
 };
 
 #endif 
