@@ -101,6 +101,74 @@ function getRowByLabel(panel, text) {
 
 
 
+function getAllRowsForLabel(panel, text) {
+  let rootObjectLevel;
+  let node;
+  let result = [];
+  let doc = panel.panelWin.document;
+  let nodes = [...doc.querySelectorAll(".treeLabel")];
+
+  
+  
+  
+  while (true) {
+    node = nodes.shift();
+
+    if (!node || node.textContent === text) {
+      rootObjectLevel = node.getAttribute("data-level");
+      break;
+    }
+  }
+
+  
+  if (!node) {
+    return result;
+  }
+
+  
+  for (node of nodes) {
+    let level = node.getAttribute("data-level");
+
+    if (level > rootObjectLevel) {
+      result.push({
+        name: normalizeTreeValue(node.textContent),
+        value: normalizeTreeValue(node.parentNode.nextElementSibling.textContent)
+      });
+    } else {
+      break;
+    }
+  }
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+function normalizeTreeValue(value) {
+  if (value === `""`) {
+    return "";
+  }
+  if (value.startsWith(`"`) && value.endsWith(`"`)) {
+    return value.substr(1, value.length - 2);
+  }
+  if (isFinite(value) && parseInt(value, 10) == value) {
+    return parseInt(value, 10);
+  }
+
+  return value;
+}
+
+
+
+
+
 function expandRow(panel, labelText) {
   let row = getRowByLabel(panel, labelText);
   return synthesizeMouseClickSoon(panel, row).then(() => {
