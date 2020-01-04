@@ -34,7 +34,6 @@ var testSwitchToTab = Task.async(function* (url, options) {
 
   
   switchToTabHavingURI(url, false, options);
-  ok(!tab.hasAttribute("pending"), "tab is no longer pending");
 
   
   yield promiseTabRestored(tab);
