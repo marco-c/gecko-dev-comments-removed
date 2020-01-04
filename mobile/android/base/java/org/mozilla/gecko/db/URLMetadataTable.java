@@ -43,8 +43,6 @@ public class URLMetadataTable extends BaseTable {
             TILE_IMAGE_URL_COLUMN + " STRING, " +
             TILE_COLOR_COLUMN + " STRING);";
         db.execSQL(create);
-
-        db.execSQL("CREATE INDEX metadata_url_idx ON " + TABLE + " (" + URL_COLUMN + ")");
     }
 
     @Override
@@ -52,6 +50,11 @@ public class URLMetadataTable extends BaseTable {
         
         if (newVersion >= 21 && oldVersion < 21) {
             onCreate(db);
+        }
+
+        
+        if (newVersion >= 26 && oldVersion < 26) {
+            db.execSQL("DROP INDEX IF EXISTS metadata_url_idx");
         }
     }
 
