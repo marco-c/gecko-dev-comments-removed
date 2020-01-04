@@ -197,6 +197,9 @@ var PrintUtils = {
       this._sourceBrowser = aListenerObj.getSourceBrowser();
       this._originalTitle = this._sourceBrowser.contentTitle;
       this._originalURL = this._sourceBrowser.currentURI.spec;
+
+      
+      this.logTelemetry("PRINT_PREVIEW_OPENED_COUNT");
     } else {
       
       
@@ -530,6 +533,9 @@ var PrintUtils = {
           URL: this._listener.getSourceBrowser().currentURI.spec,
           windowID: this._listener.getSourceBrowser().outerWindowID,
         });
+
+        
+        this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_OPENED_COUNT");
       }
     } else {
       sendEnterPreviewMessage(this._listener.getSourceBrowser(), false);
@@ -633,6 +639,12 @@ var PrintUtils = {
     this.setSimplifiedMode(false);
 
     this._listener.onExit();
+  },
+
+  logTelemetry: function (ID)
+  {
+    let histogram = Services.telemetry.getHistogramById(ID);
+    histogram.add(true);
   },
 
   onKeyDownPP: function (aEvent)
