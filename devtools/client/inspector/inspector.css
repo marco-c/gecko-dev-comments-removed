@@ -26,3 +26,10 @@
 #searchbox-panel-listbox > richlistitem > .autocomplete-value {
   max-width: 150px;
 }
+
+.inspector-tabpanel {
+  
+
+
+  -moz-user-focus: normal;
+}
