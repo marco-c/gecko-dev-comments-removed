@@ -1734,9 +1734,6 @@ typedef enum JSGCParamKey {
     JSGC_NUMBER = 4,
 
     
-    JSGC_MAX_CODE_CACHE_BYTES = 5,
-
-    
     JSGC_MODE = 6,
 
     
@@ -1801,7 +1798,7 @@ typedef enum JSGCParamKey {
     JSGC_MAX_EMPTY_CHUNK_COUNT = 22,
 
     
-    JSGC_COMPACTING_ENABLED = 23
+    JSGC_COMPACTING_ENABLED = 23,
 } JSGCParamKey;
 
 extern JS_PUBLIC_API(void)
@@ -1809,12 +1806,6 @@ JS_SetGCParameter(JSRuntime* rt, JSGCParamKey key, uint32_t value);
 
 extern JS_PUBLIC_API(uint32_t)
 JS_GetGCParameter(JSRuntime* rt, JSGCParamKey key);
-
-extern JS_PUBLIC_API(void)
-JS_SetGCParameterForThread(JSContext* cx, JSGCParamKey key, uint32_t value);
-
-extern JS_PUBLIC_API(uint32_t)
-JS_GetGCParameterForThread(JSContext* cx, JSGCParamKey key);
 
 extern JS_PUBLIC_API(void)
 JS_SetGCParametersBasedOnAvailableMemory(JSRuntime* rt, uint32_t availMem);
