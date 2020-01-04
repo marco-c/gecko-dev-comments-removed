@@ -3795,7 +3795,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     if (frame == caretFrame && ShouldPaintCaret(run, caret)) {
       
       
-      caret->PaintCaret(nullptr, aDrawTarget, frame, nsPoint());
+      caret->PaintCaret(aDrawTarget, frame, nsPoint());
       aContext.NewPath();
     }
 

@@ -137,8 +137,7 @@ class nsCaret final : public nsISelectionListener
     
 
 
-    void PaintCaret(nsDisplayListBuilder *aBuilder,
-                    DrawTarget& aDrawTarget,
+    void PaintCaret(DrawTarget& aDrawTarget,
                     nsIFrame *aForFrame,
                     const nsPoint &aOffset);
 

@@ -304,9 +304,7 @@ public:
                                 nsIFrame*         aPrevFrame,
                                 nsIContent*       aChild,
                                 nsIFrame**        aResult,
-                                bool              aIsAppend,
-                                bool              aIsScrollbar,
-                                nsILayoutHistoryState* aFrameState);
+                                bool              aIsAppend);
 
   
   
@@ -1740,7 +1738,6 @@ private:
   
   
   void ConstructBlock(nsFrameConstructorState& aState,
-                      const nsStyleDisplay*    aDisplay,
                       nsIContent*              aContent,
                       nsContainerFrame*        aParentFrame,
                       nsContainerFrame*        aContentParentFrame,
