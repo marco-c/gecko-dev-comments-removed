@@ -178,9 +178,6 @@
 
 
 
-
-
-
 #include "jsgcinlines.h"
 
 #include "mozilla/ArrayUtils.h"

@@ -227,9 +227,6 @@ GCForReason(JSRuntime* rt, JSGCInvocationKind gckind, gcreason::Reason reason);
 
 
 
-
-
-
 extern JS_PUBLIC_API(void)
 StartIncrementalGC(JSRuntime* rt, JSGCInvocationKind gckind, gcreason::Reason reason,
                    int64_t millis = 0);
