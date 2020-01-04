@@ -1127,9 +1127,6 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
     masm.loadPtr(Address(codePointer, JitCode::offsetOfCode()), codePointer);
 
     
-    masm.branchPtr(Assembler::NotEqual, AbsoluteAddress(res->addressOfBufferLink()), ImmWord(0), failure);
-
-    
     if (mode == RegExpShared::Normal) {
         masm.computeEffectiveAddress(Address(masm.getStackPointer(), matchPairsStartOffset), temp2);
         masm.storePtr(temp2, matchesPointerAddress);
