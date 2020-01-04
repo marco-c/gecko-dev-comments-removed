@@ -1036,11 +1036,7 @@ protected:
   
 
 
-  bool DoesValueAsNumberApply() const
-  {
-    
-    return DoesMinMaxApply() && mType != NS_FORM_INPUT_MONTH;
-  }
+  bool DoesValueAsNumberApply() const { return DoesMinMaxApply(); }
 
   
 
@@ -1204,6 +1200,12 @@ protected:
 
 
   uint32_t NumberOfDaysInMonth(uint32_t aMonth, uint32_t aYear) const;
+
+  
+
+
+
+  int32_t MonthsSinceJan1970(uint32_t aYear, uint32_t aMonth) const;
 
   
 
@@ -1437,6 +1439,11 @@ protected:
 
   
   static const Decimal kStepAny;
+
+  
+  static const double kMaximumYear;
+  
+  static const double kMinimumYear;
 
   
 
