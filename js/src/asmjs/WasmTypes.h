@@ -1042,18 +1042,6 @@ enum ModuleKind
 
 
 
-
-struct FuncImportExit
-{
-    void* code;
-    jit::BaselineScript* baselineScript;
-    GCPtrFunction fun;
-    static_assert(sizeof(GCPtrFunction) == sizeof(void*), "for JIT access");
-};
-
-
-
-
 struct ExportArg
 {
     uint64_t lo;
@@ -1093,6 +1081,19 @@ struct TlsData
 };
 
 typedef int32_t (*ExportFuncPtr)(ExportArg* args, TlsData* tls);
+
+
+
+
+
+
+struct FuncImportTls
+{
+    void* code;
+    jit::BaselineScript* baselineScript;
+    GCPtrFunction fun;
+    static_assert(sizeof(GCPtrFunction) == sizeof(void*), "for JIT access");
+};
 
 
 

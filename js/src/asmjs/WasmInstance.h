@@ -52,7 +52,7 @@ class Instance
     
     void** addressOfTableBase(size_t tableIndex) const;
     const void** addressOfSigId(const SigIdDesc& sigId) const;
-    FuncImportExit& funcImportToExit(const FuncImport& fi);
+    FuncImportTls& funcImportTls(const FuncImport& fi);
 
     
     friend void* AddressOf(SymbolicAddress, ExclusiveContext*);
