@@ -86,7 +86,7 @@ define(function (require, exports, module) {
           key: "more",
           object: objectLink({
             object: object
-          }, "more...")
+          }, "more…")
         }));
       } else if (props.length > 0) {
         
