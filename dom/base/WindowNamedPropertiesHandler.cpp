@@ -180,22 +180,24 @@ WindowNamedPropertiesHandler::ownPropNames(JSContext* aCx,
   nsGlobalWindow* outer = win->GetOuterWindowInternal();
   if (outer) {
     nsDOMWindowList* childWindows = outer->GetWindowList();
-    uint32_t length = childWindows->GetLength();
-    for (uint32_t i = 0; i < length; ++i) {
-      nsCOMPtr<nsIDocShellTreeItem> item =
-        childWindows->GetDocShellTreeItemAt(i);
-      
-      
-      
-      
-      
-      nsString name;
-      item->GetName(name);
-      if (!names.Contains(name)) {
+    if (childWindows) {
+      uint32_t length = childWindows->GetLength();
+      for (uint32_t i = 0; i < length; ++i) {
+        nsCOMPtr<nsIDocShellTreeItem> item =
+          childWindows->GetDocShellTreeItemAt(i);
         
-        nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(name);
-        if (childWin && ShouldExposeChildWindow(name, childWin)) {
-          names.AppendElement(name);
+        
+        
+        
+        
+        nsString name;
+        item->GetName(name);
+        if (!names.Contains(name)) {
+          
+          nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(name);
+          if (childWin && ShouldExposeChildWindow(name, childWin)) {
+            names.AppendElement(name);
+          }
         }
       }
     }
