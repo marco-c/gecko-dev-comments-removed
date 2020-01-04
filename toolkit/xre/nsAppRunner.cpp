@@ -4453,6 +4453,8 @@ XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
   mozilla::ShutdownEventTracing();
 #endif
 
+  gAbsoluteArgv0Path.Truncate();
+
   
   
   if (rv == NS_SUCCESS_RESTART_APP
