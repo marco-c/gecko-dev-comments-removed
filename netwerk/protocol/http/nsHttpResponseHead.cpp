@@ -463,6 +463,8 @@ nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t *result) const
         if (date2 <= date) {
             
             *result = (date - date2) / 10;
+            const uint32_t kOneWeek = 60 * 60 * 24 * 7;
+            *result = std::min(kOneWeek, *result);
             return NS_OK;
         }
     }
