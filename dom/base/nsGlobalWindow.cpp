@@ -2161,8 +2161,10 @@ nsGlobalWindow::SetInitialPrincipalToSubject()
 
   
   
-  if (nsContentUtils::IsSystemOrExpandedPrincipal(newWindowPrincipal) &&
-      GetDocShell()->ItemType() != nsIDocShellTreeItem::typeChrome) {
+  
+  if (nsContentUtils::IsExpandedPrincipal(newWindowPrincipal) ||
+      (nsContentUtils::IsSystemPrincipal(newWindowPrincipal) &&
+       GetDocShell()->ItemType() != nsIDocShellTreeItem::typeChrome)) {
     newWindowPrincipal = nullptr;
   }
 
