@@ -1017,8 +1017,9 @@ nsBaseWidget::ProcessUntransformedAPZEvent(WidgetInputEvent* aEvent,
   
   
   
-  if (aGuid.mLayersId == mCompositorParent->RootLayerTreeId()) {
-    APZCCallbackHelper::ApplyCallbackTransform(*aEvent, aGuid,
+  
+  if (aEvent->AsTouchEvent() && aGuid.mLayersId == mCompositorParent->RootLayerTreeId()) {
+    APZCCallbackHelper::ApplyCallbackTransform(*aEvent->AsTouchEvent(), aGuid,
         GetDefaultScale());
   }
 
@@ -1029,7 +1030,7 @@ nsBaseWidget::ProcessUntransformedAPZEvent(WidgetInputEvent* aEvent,
   UniquePtr<WidgetEvent> original(aEvent->Duplicate());
   DispatchEvent(aEvent, status);
 
-  if (mAPZC && !context.WasRoutedToChildProcess() && aInputBlockId) {
+  if (mAPZC && !context.WasRoutedToChildProcess()) {
     
     
     
@@ -1060,6 +1061,21 @@ nsBaseWidget::ProcessUntransformedAPZEvent(WidgetInputEvent* aEvent,
     }
   }
 
+  return status;
+}
+
+nsEventStatus
+nsBaseWidget::DispatchInputEvent(WidgetInputEvent* aEvent)
+{
+  if (mAPZC) {
+    nsEventStatus result = mAPZC->ReceiveInputEvent(*aEvent, nullptr, nullptr);
+    if (result == nsEventStatus_eConsumeNoDefault) {
+      return result;
+    }
+  }
+
+  nsEventStatus status;
+  DispatchEvent(aEvent, status);
   return status;
 }
 
@@ -1130,7 +1146,7 @@ private:
 };
 
 nsEventStatus
-nsBaseWidget::DispatchInputEvent(WidgetInputEvent* aEvent)
+nsBaseWidget::DispatchAPZAwareEvent(WidgetInputEvent* aEvent)
 {
   MOZ_ASSERT(NS_IsMainThread());
   if (mAPZC) {

@@ -3928,7 +3928,7 @@ bool nsWindow::DispatchContentCommandEvent(WidgetContentCommandEvent* aEvent)
 
 bool nsWindow::DispatchWheelEvent(WidgetWheelEvent* aEvent)
 {
-  nsEventStatus status = DispatchInputEvent(aEvent->AsInputEvent());
+  nsEventStatus status = DispatchAPZAwareEvent(aEvent->AsInputEvent());
   return ConvertStatus(status);
 }
 
@@ -4266,7 +4266,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
       }
     }
 
-    result = ConvertStatus(DispatchInputEvent(&event));
+    result = ConvertStatus(DispatchAPZAwareEvent(&event));
 
     
     
@@ -6507,13 +6507,13 @@ bool nsWindow::OnTouch(WPARAM wParam, LPARAM lParam)
     if (!touchInput.mTimeStamp.IsNull()) {
       
       WidgetTouchEvent widgetTouchEvent = touchInput.ToWidgetTouchEvent(this);
-      DispatchInputEvent(&widgetTouchEvent);
+      DispatchAPZAwareEvent(&widgetTouchEvent);
     }
     
     if (!touchEndInput.mTimeStamp.IsNull()) {
       
       WidgetTouchEvent widgetTouchEvent = touchEndInput.ToWidgetTouchEvent(this);
-      DispatchInputEvent(&widgetTouchEvent);
+      DispatchAPZAwareEvent(&widgetTouchEvent);
     }
   }
 
