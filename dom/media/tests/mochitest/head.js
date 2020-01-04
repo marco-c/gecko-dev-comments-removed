@@ -324,7 +324,7 @@ function setupEnvironment() {
 
   
   
-  SpecialPowers.exactGC(window);
+  SpecialPowers.exactGC();
 }
 
 

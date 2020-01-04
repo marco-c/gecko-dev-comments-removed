@@ -1489,13 +1489,12 @@ SpecialPowersAPI.prototype = {
   
   
   
-  exactGC: function(win, callback) {
-    var self = this;
+  exactGC: function(callback) {
     let count = 0;
 
     function genGCCallback(cb) {
       return function() {
-        self.getDOMWindowUtils(win).cycleCollect();
+        Cu.forceCC();
         if (++count < 2) {
           Cu.schedulePreciseGC(genGCCallback(cb));
         } else if (cb) {
