@@ -171,15 +171,21 @@ public:
                      mozilla::NonOwningStyleContextSource aSource,
                      mozilla::NonOwningStyleContextSource aSourceIfVisited,
                      bool aRelevantLinkVisited);
+  
+
+
+  nsCSSProperty GetTextFillColorProp() {
+    return StyleText()->mWebkitTextFillColorForeground
+           ? eCSSProperty_color : eCSSProperty__webkit_text_fill_color;
+  }
 
   
 
 
 
   nscolor GetTextFillColor() {
-    const nsStyleText* textStyle = StyleText();
-    return textStyle->mWebkitTextFillColorForeground
-           ? StyleColor()->mColor : textStyle->mWebkitTextFillColor;
+    return (GetTextFillColorProp() == eCSSProperty_color)
+           ? StyleColor()->mColor : StyleText()->mWebkitTextFillColor;
   }
 
   
