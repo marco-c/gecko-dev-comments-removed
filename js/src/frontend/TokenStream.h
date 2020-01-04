@@ -1039,10 +1039,6 @@ class MOZ_STACK_CLASS TokenStream
     StrictModeGetter*   strictModeGetter;  
 };
 
-
-
-#define JSREPORT_UC 0x100
-
 extern const char*
 TokenKindToDesc(TokenKind tt);
 
