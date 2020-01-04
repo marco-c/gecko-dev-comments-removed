@@ -18,6 +18,11 @@ loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
 loader.lazyImporter(this, "VariablesView", "resource://devtools/client/shared/widgets/VariablesView.jsm");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
+XPCOMUtils.defineLazyServiceGetter(this,
+                                   "swm",
+                                   "@mozilla.org/serviceworkers/manager;1",
+                                   "nsIServiceWorkerManager");
+
 
 
 
@@ -124,29 +129,6 @@ var WebConsoleUtils = {
     aTo.style.fontSize = style.getPropertyCSSValue("font-size").cssText;
     aTo.style.fontWeight = style.getPropertyCSSValue("font-weight").cssText;
     aTo.style.fontStyle = style.getPropertyCSSValue("font-style").cssText;
-  },
-
-  
-
-
-
-
-
-
-
-  getLocationsForFrames: function(aWindow)
-  {
-    let location = aWindow.location.toString();
-    let locations = [location];
-
-    if (aWindow.frames) {
-      for (let i = 0; i < aWindow.frames.length; i++) {
-        let frame = aWindow.frames[i];
-        locations = locations.concat(this.getLocationsForFrames(frame));
-      }
-    }
-
-    return locations;
   },
 
   
@@ -994,9 +976,8 @@ ConsoleAPIListener.prototype =
       
       
       let scope = message.ID;
-      let locations = WebConsoleUtils.getLocationsForFrames(this.window);
 
-      if (!locations.some(loc => loc.startsWith(scope))) {
+      if (!swm.shouldReportToWindow(this.window, scope)) {
         return false;
       }
     }
