@@ -73,11 +73,6 @@ public:
   
   void AddStyleUpdatesTo(RestyleTracker& aTracker);
 
-  AnimationCollection*
-  GetAnimations(dom::Element *aElement,
-                nsCSSPseudoElements::Type aPseudoType,
-                bool aCreateIfNeeded);
-
   
   
   static bool ContentOrAncestorHasAnimation(nsIContent* aContent) {
@@ -120,6 +115,13 @@ protected:
   virtual nsIAtom* GetAnimationsAfterAtom() = 0;
 
 public:
+  
+  
+  AnimationCollection*
+  GetAnimationCollection(dom::Element *aElement,
+                         nsCSSPseudoElements::Type aPseudoType,
+                         bool aCreateIfNeeded);
+
   
   
   

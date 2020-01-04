@@ -403,7 +403,9 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
 
   const nsStyleDisplay* disp = aStyleContext->StyleDisplay();
   AnimationCollection* collection =
-    GetAnimations(aElement, aStyleContext->GetPseudoType(), false);
+    GetAnimationCollection(aElement,
+                           aStyleContext->GetPseudoType(),
+                           false );
   if (!collection &&
       disp->mAnimationNameCount == 1 &&
       disp->mAnimations[0].GetName().IsEmpty()) {
@@ -536,8 +538,9 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
       }
     }
   } else {
-    collection =
-      GetAnimations(aElement, aStyleContext->GetPseudoType(), true);
+    collection = GetAnimationCollection(aElement,
+                                        aStyleContext->GetPseudoType(),
+                                        true );
     for (Animation* animation : newAnimations) {
       
       
@@ -575,7 +578,7 @@ nsAnimationManager::StopAnimationsForElement(
 {
   MOZ_ASSERT(aElement);
   AnimationCollection* collection =
-    GetAnimations(aElement, aPseudoType, false);
+    GetAnimationCollection(aElement, aPseudoType, false );
   if (!collection) {
     return;
   }
