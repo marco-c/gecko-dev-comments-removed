@@ -370,11 +370,11 @@ var ScrollPositionListener = {
   },
 
   handleEvent: function (event) {
-    let frame = event.target && event.target.defaultView;
+    let frame = event.target.defaultView;
 
     
     
-    if (frame && gFrameTree.contains(frame)) {
+    if (gFrameTree.contains(frame)) {
       MessageQueue.push("scroll", () => this.collect());
     }
   },
@@ -417,12 +417,11 @@ var FormDataListener = {
   },
 
   handleEvent: function (event) {
-    let frame = event.target &&
-                event.target.ownerGlobal;
+    let frame = event.target.ownerGlobal;
 
     
     
-    if (frame && gFrameTree.contains(frame)) {
+    if (gFrameTree.contains(frame)) {
       MessageQueue.push("formdata", () => this.collect());
     }
   },
