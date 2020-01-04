@@ -7135,7 +7135,10 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
   if (aEvent->mClass == eMouseEventClass) {
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
     
-    if (!mouseEvent->convertToPointer) {
+    
+    
+    if (!mouseEvent->convertToPointer ||
+        !aEvent->IsAllowedToDispatchDOMEvent()) {
       return NS_OK;
     }
     int16_t button = mouseEvent->button;
