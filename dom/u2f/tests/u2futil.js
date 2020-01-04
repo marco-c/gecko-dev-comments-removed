@@ -130,29 +130,33 @@ function assembleRegistrationSignedData(appParam, challengeParam, keyHandle, pub
   return signedData;
 }
 
-function verifySignature(key, data, derSig) {
-  if (derSig.byteLength < 70) {
-    console.log("bad sig: " + hexEncode(derSig))
-    throw "Invalid signature length: " + derSig.byteLength;
+function sanitizeSigArray(arr) {
+  
+  
+  
+  if (arr.length > 32) {
+    arr = arr.slice(arr.length - 32)
   }
+  var ret = new Uint8Array(32);
+  ret.set(arr, ret.length - arr.length);
+  return ret;
+}
+
+function verifySignature(key, data, derSig) {
+  var sigAsn1 = org.pkijs.fromBER(derSig.buffer);
+  var sigR = new Uint8Array(sigAsn1.result.value_block.value[0].value_block.value_hex);
+  var sigS = new Uint8Array(sigAsn1.result.value_block.value[1].value_block.value_hex);
 
   
   
   
-  var lenR = derSig[3];
-  var lenS = derSig[3 + lenR + 2];
-  var padR = lenR - 32;
-  var padS = lenS - 32;
-  var sig = new Uint8Array(64);
-  derSig.slice(4 + padR, 4 + lenR).map((x, i) => sig[i] = x);
-  derSig.slice(4 + lenR + 2 + padS, 4 + lenR + 2 + lenS).map(
-    (x, i) => sig[32 + i] = x
-  );
+  var R = sanitizeSigArray(sigR);
+  var S = sanitizeSigArray(sigS);
 
-  console.log("data: " + hexEncode(data));
-  console.log("der:  " + hexEncode(derSig));
-  console.log("raw:  " + hexEncode(sig));
+  var sigData = new Uint8Array(R.length + S.length);
+  sigData.set(R);
+  sigData.set(S, R.length);
 
   var alg = {name: "ECDSA", hash: "SHA-256"};
-  return crypto.subtle.verify(alg, key, sig, data);
+  return crypto.subtle.verify(alg, key, sigData, data);
 }
