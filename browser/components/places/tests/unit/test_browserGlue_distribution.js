@@ -77,11 +77,39 @@ add_task(function* () {
   Assert.equal(menuItem.title, "Menu Link After");
 
   
+  yield Assert.rejects(waitForResolvedPromise(() => {
+    return PlacesUtils.promiseFaviconData(menuItem.url.href);
+  }, "Favicon not found", 10), /Favicon\snot\sfound/, "Favicon not found");
+
+  let keywordItem = yield PlacesUtils.keywords.fetch({
+    url: menuItem.url.href
+  });
+  Assert.strictEqual(keywordItem, null);
+
+  
   let toolbarItem = yield PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: 0
   });
   Assert.equal(toolbarItem.title, "Toolbar Link Before");
+
+  
+  let faviconItem = yield waitForResolvedPromise(() => {
+    return PlacesUtils.promiseFaviconData(toolbarItem.url.href);
+  }, "Favicon not found", 10);
+  Assert.equal(faviconItem.uri.spec, "https://example.org/favicon.png");
+  Assert.greater(faviconItem.dataLen, 0);
+  Assert.equal(faviconItem.mimeType, "image/png");
+
+  let base64Icon = "data:image/png;base64," +
+      base64EncodeString(String.fromCharCode.apply(String, faviconItem.data));
+  Assert.equal(base64Icon, SMALLPNG_DATA_URI.spec);
+
+  keywordItem = yield PlacesUtils.keywords.fetch({
+    url: toolbarItem.url.href
+  });
+  Assert.notStrictEqual(keywordItem, null);
+  Assert.equal(keywordItem.keyword, "e:t:b");
 
   toolbarItem = yield PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
