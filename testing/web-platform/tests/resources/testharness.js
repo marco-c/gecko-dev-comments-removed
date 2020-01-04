@@ -830,7 +830,7 @@
         
         default:
             try {
-                return typeof val + ' "' + truncate(String(val), 60) + '"';
+                return typeof val + ' "' + truncate(String(val), 1000) + '"';
             } catch(e) {
                 return ("[stringifying object threw " + String(e) +
                         " with type " + String(typeof e) + "]");
@@ -2464,7 +2464,11 @@
 
         
         
-        var re = new RegExp((get_script_url() || "\\btestharness.js") + ":\\d+:\\d+");
+        
+        
+        var script_url = get_script_url();
+        var re_text = script_url ? script_url.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : "\\btestharness.js";
+        var re = new RegExp(re_text + ":\\d+:\\d+");
 
         
         
