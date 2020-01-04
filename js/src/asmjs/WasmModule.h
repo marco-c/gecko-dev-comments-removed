@@ -305,11 +305,20 @@ typedef Vector<CacheableChars, 0, SystemAllocPolicy> CacheableCharsVector;
 
 
 
+
+
+
+
+
+
+
 struct ExportMap
 {
-    Uint32Vector exportFuncIndices;
+    static const uint32_t MemoryExport = UINT32_MAX;
+
     CacheableCharsVector fieldNames;
     Uint32Vector fieldsToExports;
+    Uint32Vector exportFuncIndices;
 
     WASM_DECLARE_SERIALIZABLE(ExportMap)
 };
