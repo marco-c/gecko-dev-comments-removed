@@ -3523,19 +3523,27 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   if (mComposition.IsComposing() && mComposition.mStart < acpEnd &&
       mLockedContent.IsLayoutChangedAfter(acpEnd)) {
     const Selection& currentSel = CurrentSelection();
-    if ((sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar ||
-         sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret) &&
-        kSink->IsMSJapaneseIMEActive()) {
+    
+    
+    
+    
+    const bool kIsMSOfficeJapaneseIME2010 =
+      kSink->IsMSOfficeJapaneseIME2010Active();
+    if (kIsMSOfficeJapaneseIME2010 ||
+        ((sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar ||
+          sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret) &&
+         kSink->IsMSJapaneseIMEActive())) {
       
       
       
-      if (IsWin8OrLater()) {
+      if (IsWin8OrLater() || kIsMSOfficeJapaneseIME2010) {
         
         
         
         
         
-        if (sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar &&
+        if ((kIsMSOfficeJapaneseIME2010 ||
+             sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar) &&
             !mLockedContent.IsLayoutChangedAfter(acpStart) &&
             acpStart < acpEnd) {
           acpEnd = acpStart;
@@ -3549,7 +3557,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
         
         
         
-        else if (sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret &&
+        else if ((kIsMSOfficeJapaneseIME2010 ||
+                  sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret) &&
                  acpStart == acpEnd &&
                  currentSel.IsCollapsed() && currentSel.EndOffset() == acpEnd) {
           acpEnd = acpStart = mLockedContent.MinOffsetOfLayoutChanged();
