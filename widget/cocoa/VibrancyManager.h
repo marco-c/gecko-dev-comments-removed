@@ -68,7 +68,8 @@ public:
 
 
 
-  void UpdateVibrantRegion(VibrancyType aType, const nsIntRegion& aRegion);
+  void UpdateVibrantRegion(VibrancyType aType,
+                           const LayoutDeviceIntRegion& aRegion);
 
   
 
@@ -102,7 +103,7 @@ public:
   
   
   struct VibrantRegion {
-    nsIntRegion region;
+    LayoutDeviceIntRegion region;
     nsTArray<NSView*> effectViews;
   };
   void ClearVibrantRegion(const VibrantRegion& aVibrantRegion) const;
