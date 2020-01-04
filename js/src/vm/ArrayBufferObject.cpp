@@ -624,12 +624,12 @@ WasmArrayRawBuffer::Release(void* mem)
     MOZ_RELEASE_ASSERT(header->mappedSize() <= SIZE_MAX - gc::SystemPageSize());
     size_t mappedSizeWithHeader = header->mappedSize() + gc::SystemPageSize();
 
+    MemProfiler::RemoveNative(base);
 # ifdef XP_WIN
     VirtualFree(base, 0, MEM_RELEASE);
 # else  
     munmap(base, mappedSizeWithHeader);
 # endif  
-    MemProfiler::RemoveNative(base);
 
 #  if defined(MOZ_VALGRIND) && defined(VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE)
     VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(base, mappedSizeWithHeader);
