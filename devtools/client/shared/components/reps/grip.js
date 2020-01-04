@@ -16,7 +16,10 @@ define(function (require, exports, module) {
   const { PropRep } = createFactories(require("./prop-rep"));
   
   const { span } = React.DOM;
+
   
+
+
 
 
   const Grip = React.createClass({
@@ -139,7 +142,9 @@ define(function (require, exports, module) {
 
     render: function () {
       let object = this.props.object;
-      let props = this.shortPropIterator(object);
+      let props = (this.props.mode == "long") ?
+        this.longPropIterator(object) :
+        this.shortPropIterator(object);
 
       if (this.props.mode == "tiny" || !props.length) {
         return (
@@ -159,6 +164,7 @@ define(function (require, exports, module) {
       );
     },
   });
+
   
   function supportsObject(object, type) {
     if (!isGrip(object)) {
