@@ -1,0 +1,22 @@
+
+
+
+
+
+#include "GPUChild.h"
+
+namespace mozilla {
+namespace gfx {
+
+GPUChild::GPUChild()
+{
+  MOZ_COUNT_CTOR(GPUChild);
+}
+
+GPUChild::~GPUChild()
+{
+  MOZ_COUNT_DTOR(GPUChild);
+}
+
+} 
+} 
