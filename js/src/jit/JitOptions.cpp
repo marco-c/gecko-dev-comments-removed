@@ -17,7 +17,7 @@ using mozilla::Maybe;
 namespace js {
 namespace jit {
 
-JitOptions js_JitOptions;
+DefaultJitOptions JitOptions;
 
 static void Warn(const char* env, const char* value)
 {
@@ -57,7 +57,7 @@ T overrideDefault(const char* param, T dflt) {
     return dflt;
 }
 #define SET_DEFAULT(var, dflt) var = overrideDefault("JIT_OPTION_" #var, dflt)
-JitOptions::JitOptions()
+DefaultJitOptions::DefaultJitOptions()
 {
     
     
@@ -187,19 +187,19 @@ JitOptions::JitOptions()
 }
 
 bool
-JitOptions::isSmallFunction(JSScript* script) const
+DefaultJitOptions::isSmallFunction(JSScript* script) const
 {
     return script->length() <= smallFunctionMaxBytecodeLength_;
 }
 
 void
-JitOptions::enableGvn(bool enable)
+DefaultJitOptions::enableGvn(bool enable)
 {
     disableGvn = !enable;
 }
 
 void
-JitOptions::setEagerCompilation()
+DefaultJitOptions::setEagerCompilation()
 {
     eagerCompilation = true;
     baselineWarmUpThreshold = 0;
@@ -208,27 +208,27 @@ JitOptions::setEagerCompilation()
 }
 
 void
-JitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold)
+DefaultJitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold)
 {
     forcedDefaultIonWarmUpThreshold.reset();
     forcedDefaultIonWarmUpThreshold.emplace(warmUpThreshold);
 
     
     if (eagerCompilation && warmUpThreshold != 0) {
-        jit::JitOptions defaultValues;
+        jit::DefaultJitOptions defaultValues;
         eagerCompilation = false;
         baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
     }
 }
 
 void
-JitOptions::resetCompilerWarmUpThreshold()
+DefaultJitOptions::resetCompilerWarmUpThreshold()
 {
     forcedDefaultIonWarmUpThreshold.reset();
 
     
     if (eagerCompilation) {
-        jit::JitOptions defaultValues;
+        jit::DefaultJitOptions defaultValues;
         eagerCompilation = false;
         baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
     }

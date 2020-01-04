@@ -277,7 +277,7 @@ jit::CheckFrequentBailouts(JSContext* cx, JSScript* script, BailoutKind bailoutK
         
         IonScript* ionScript = script->ionScript();
 
-        if (ionScript->numBailouts() >= js_JitOptions.frequentBailoutThreshold) {
+        if (ionScript->numBailouts() >= JitOptions.frequentBailoutThreshold) {
             
             
             

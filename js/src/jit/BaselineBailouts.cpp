@@ -802,7 +802,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     
     
     
-    if (!js_JitOptions.disablePgo && script->hasScriptCounts())
+    if (!JitOptions.disablePgo && script->hasScriptCounts())
         script->incHitCount(pc);
 
     JSOp op = JSOp(*pc);

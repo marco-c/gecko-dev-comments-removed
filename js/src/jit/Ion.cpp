@@ -1516,7 +1516,7 @@ OptimizeMIR(MIRGenerator* mir)
     if (mir->shouldCancel("Start"))
         return false;
 
-    if (!js_JitOptions.disablePgo && !mir->compilingAsmJS()) {
+    if (!JitOptions.disablePgo && !mir->compilingAsmJS()) {
         AutoTraceLog log(logger, TraceLogger_PruneUnusedBranches);
         if (!PruneUnusedBranches(mir, graph))
             return false;
@@ -2333,7 +2333,7 @@ CheckScript(JSContext* cx, JSScript* script, bool osr)
 static MethodStatus
 CheckScriptSize(JSContext* cx, JSScript* script)
 {
-    if (!js_JitOptions.limitScriptSize)
+    if (!JitOptions.limitScriptSize)
         return Method_Compiled;
 
     uint32_t numLocalsAndArgs = NumLocalsAndArgs(script);
@@ -2484,7 +2484,7 @@ jit::CanEnterAtBranch(JSContext* cx, HandleScript script, BaselineFrame* osrFram
         return Method_Skipped;
 
     
-    if (!js_JitOptions.osr)
+    if (!JitOptions.osr)
         return Method_Skipped;
 
     
@@ -2503,7 +2503,7 @@ jit::CanEnterAtBranch(JSContext* cx, HandleScript script, BaselineFrame* osrFram
     bool force = false;
     if (script->hasIonScript() && pc != script->ionScript()->osrPc()) {
         uint32_t count = script->ionScript()->incrOsrPcMismatchCounter();
-        if (count <= js_JitOptions.osrPcMismatchesBeforeRecompile)
+        if (count <= JitOptions.osrPcMismatchesBeforeRecompile)
             return Method_Skipped;
         force = true;
     }
@@ -2582,7 +2582,7 @@ jit::CanEnter(JSContext* cx, RunState& state)
 
     
     
-    if (js_JitOptions.eagerCompilation && !rscript->hasBaselineScript()) {
+    if (JitOptions.eagerCompilation && !rscript->hasBaselineScript()) {
         MethodStatus status = CanEnterBaselineMethod(cx, state);
         if (status != Method_Compiled)
             return status;
@@ -2848,7 +2848,7 @@ InvalidateActivation(FreeOp* fop, const JitActivationIterator& activations, bool
     JitSpew(JitSpew_IonInvalidate, "BEGIN invalidating activation");
 
 #ifdef CHECK_OSIPOINT_REGISTERS
-    if (js_JitOptions.checkOsiPointRegisters)
+    if (JitOptions.checkOsiPointRegisters)
         activations->asJit()->setCheckRegs(false);
 #endif
 

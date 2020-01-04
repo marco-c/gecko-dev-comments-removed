@@ -2439,7 +2439,7 @@ IonBuilder::restartLoop(CFGState state)
 {
     spew("New types at loop header, restarting loop body");
 
-    if (js_JitOptions.limitScriptSize) {
+    if (JitOptions.limitScriptSize) {
         if (++numLoopRestarts_ >= MAX_LOOP_RESTARTS)
             return ControlStatus_Abort;
     }
@@ -4788,7 +4788,7 @@ IonBuilder::arithTrySharedStub(bool* emitted, JSOp op,
 
     
 
-    if (js_JitOptions.disableSharedStubs)
+    if (JitOptions.disableSharedStubs)
         return true;
 
     
@@ -5269,7 +5269,7 @@ IonBuilder::makeInliningDecision(JSObject* targetArg, CallInfo& callInfo)
     
 
     uint32_t maxInlineDepth;
-    if (js_JitOptions.isSmallFunction(targetScript)) {
+    if (JitOptions.isSmallFunction(targetScript)) {
         maxInlineDepth = optimizationInfo().smallFunctionMaxInlineDepth();
     } else {
         maxInlineDepth = optimizationInfo().maxInlineDepth();
@@ -7020,7 +7020,7 @@ IonBuilder::compareTrySharedStub(bool* emitted, JSOp op, MDefinition* left, MDef
 
     
 
-    if (js_JitOptions.disableSharedStubs)
+    if (JitOptions.disableSharedStubs)
         return true;
 
     if (JSOp(*pc) == JSOP_CASE)
@@ -11910,7 +11910,7 @@ IonBuilder::getPropTrySharedStub(bool* emitted, MDefinition* obj)
 
     
 
-    if (js_JitOptions.disableSharedStubs)
+    if (JitOptions.disableSharedStubs)
         return true;
 
     MInstruction* stub = MUnarySharedStub::New(alloc(), obj);
