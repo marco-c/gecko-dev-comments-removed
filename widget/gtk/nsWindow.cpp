@@ -270,7 +270,7 @@ TimeConverter() {
 
 namespace mozilla {
 
-class MOZ_STACK_CLASS CurrentX11TimeGetter
+class CurrentX11TimeGetter
 {
 public:
     CurrentX11TimeGetter(GdkWindow* aWindow) : mWindow(aWindow) { }
@@ -286,6 +286,8 @@ public:
     }
 
 private:
+    
+    
     GdkWindow* mWindow;
 };
 
@@ -2904,9 +2906,20 @@ nsWindow::GetEventTimeStamp(guint32 aEventTime)
         
         return TimeStamp::Now();
     }
-    CurrentX11TimeGetter getCurrentTime = CurrentX11TimeGetter(mGdkWindow);
+    CurrentX11TimeGetter* getCurrentTime = GetCurrentTimeGetter();
+    MOZ_ASSERT(getCurrentTime,
+               "Null current time getter despite having a window");
     return TimeConverter().GetTimeStampFromSystemTime(aEventTime,
-                                                      getCurrentTime);
+                                                      *getCurrentTime);
+}
+
+mozilla::CurrentX11TimeGetter*
+nsWindow::GetCurrentTimeGetter() {
+    MOZ_ASSERT(mGdkWindow, "Expected mGdkWindow to be set");
+    if (MOZ_UNLIKELY(!mCurrentTimeGetter)) {
+        mCurrentTimeGetter = new CurrentX11TimeGetter(mGdkWindow);
+    }
+    return mCurrentTimeGetter;
 }
 
 gboolean
