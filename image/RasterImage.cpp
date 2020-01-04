@@ -377,7 +377,7 @@ RasterImage::LookupFrame(const IntSize& aSize,
   return Move(result.Surface());
 }
 
-bool
+NS_IMETHODIMP_(bool)
 RasterImage::IsOpaque()
 {
   if (mError) {
@@ -393,39 +393,6 @@ RasterImage::IsOpaque()
 
   
   return !(progress & FLAG_HAS_TRANSPARENCY);
-}
-
-NS_IMETHODIMP_(bool)
-RasterImage::WillDrawOpaqueNow()
-{
-  if (!IsOpaque()) {
-    return false;
-  }
-
-  if (mAnimationState) {
-    
-    return true;
-  }
-
-  
-  
-  
-  if (IsUnlocked()) {
-    return false;
-  }
-
-  LookupResult result =
-    SurfaceCache::LookupBestMatch(ImageKey(this),
-                                  RasterSurfaceKey(mSize,
-                                                   DefaultSurfaceFlags(),
-                                                   PlaybackType::eStatic));
-  MatchType matchType = result.Type();
-  if (matchType == MatchType::NOT_FOUND || matchType == MatchType::PENDING ||
-      !result.Surface()->IsFinished()) {
-    return false;
-  }
-
-  return true;
 }
 
 void
