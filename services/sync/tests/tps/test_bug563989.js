@@ -88,7 +88,8 @@ Phase('phase2', [
   [Sync],
   [Bookmarks.verify, bookmarks_initial],
   [Bookmarks.delete, bookmarks_to_delete],
-  [Bookmarks.verifyNot, bookmarks_to_delete]
+  [Bookmarks.verifyNot, bookmarks_to_delete],
+  [Bookmarks.skipValidation]
 ]);
 
 

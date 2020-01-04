@@ -18,11 +18,12 @@ Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/main.js");
 Cu.import("resource://services-sync/util.js");
-
+Cu.import("resource://services-sync/bookmark_validator.js");
 
 Cu.import("resource://tps/logger.jsm");
 
@@ -111,6 +112,7 @@ var TPS = {
   _triggeredSync: false,
   _usSinceEpoch: 0,
   _requestedQuit: false,
+  shouldValidateBookmarks: false,
 
   _init: function TPS__init() {
     
@@ -492,6 +494,7 @@ var TPS = {
   },
 
   HandleBookmarks: function (bookmarks, action) {
+    this.shouldValidateBookmarks = true;
     try {
       let items = [];
       for (let folder in bookmarks) {
@@ -583,10 +586,81 @@ var TPS = {
     Logger.logInfo("mozmill setTest: " + obj.name);
   },
 
+
+
+  
+
+
+  ValidateBookmarks() {
+
+    let getServerBookmarkState = () => {
+      let bookmarkEngine = Weave.Service.engineManager.get('bookmarks');
+      let collection = bookmarkEngine._itemSource();
+      let collectionKey = bookmarkEngine.service.collectionKeys.keyForCollection(bookmarkEngine.name);
+      collection.full = true;
+      let items = [];
+      collection.recordHandler = function(item) {
+        item.decrypt(collectionKey);
+        items.push(item.cleartext);
+      };
+      collection.get();
+      return items;
+    };
+    let serverRecordDumpStr;
+    try {
+      Logger.logInfo("About to perform bookmark validation");
+      let clientTree = Async.promiseSpinningly(PlacesUtils.promiseBookmarksTree("", {
+        includeItemIds: true
+      }));
+      let serverRecords = getServerBookmarkState();
+      
+      serverRecordDumpStr = JSON.stringify(serverRecords);
+
+      let validator = new BookmarkValidator();
+      let {problemData} = validator.compareServerWithClient(serverRecords, clientTree);
+
+      for (let {name, count} of problemData.getSummary()) {
+        
+        
+        if (name === "serverUnexpected" && problemData.serverUnexpected.indexOf("mobile") >= 0) {
+          --count;
+        } else if (name === "differences") {
+          
+          
+          let newCount = problemData.differences.filter(diffInfo =>
+            !diffInfo.differences.every(diff =>
+              diff === "parentName")).length
+          count = newCount;
+        } else if (name === "wrongParentName") {
+          continue;
+        }
+        if (count) {
+          
+          
+          Logger.logInfo(`Validation problem: "${name}": ${JSON.stringify(problemData[name])}`);
+        }
+        Logger.AssertEqual(count, 0, `Bookmark validation error of type ${name}`);
+      }
+    } catch (e) {
+      
+      DumpBookmarks();
+      
+      if (serverRecordDumpStr) {
+        Logger.logInfo("Server bookmark records:\n" + serverRecordDumpStr + "\n");
+      }
+      this.DumpError("Bookmark validation failed", e);
+    }
+    Logger.logInfo("Bookmark validation finished");
+  },
+
   RunNextTestAction: function() {
     try {
       if (this._currentAction >=
           this._phaselist["phase" + this._currentPhase].length) {
+        if (this.shouldValidateBookmarks) {
+          
+          this.ValidateBookmarks();
+        }
         
         Logger.logInfo("test phase " + this._currentPhase + ": " +
                        (this._errors ? "FAIL" : "PASS"));
@@ -675,6 +749,9 @@ var TPS = {
       if (!Weave.Status.ready) {
         this.waitForEvent("weave:service:ready");
       }
+
+      
+      this.shouldValidateBookmarks = false;
 
       
       
@@ -974,6 +1051,9 @@ var Bookmarks = {
   },
   verifyNot: function Bookmarks__verifyNot(bookmarks) {
     TPS.HandleBookmarks(bookmarks, ACTION_VERIFY_NOT);
+  },
+  skipValidation() {
+    TPS.shouldValidateBookmarks = false;
   }
 };
 
