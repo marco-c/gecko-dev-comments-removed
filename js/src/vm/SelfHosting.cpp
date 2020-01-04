@@ -1545,30 +1545,15 @@ js::ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args)
     
 
     
-    
-    
-    
-    
-    
     ScriptFrameIter iter(cx);
     MOZ_ASSERT(iter.isFunctionFrame());
 
-    while (!iter.done()) {
-        MOZ_ASSERT(iter.callee(cx)->isSelfHostedOrIntrinsic() &&
-                   !iter.callee(cx)->isBoundFunction());
-        JSAutoByteString funNameBytes;
-        const char* funName = GetFunctionNameBytes(cx, iter.callee(cx), &funNameBytes);
-        if (!funName)
-            return false;
-        if (strcmp(funName, "IsTypedArrayEnsuringArrayBuffer") != 0) {
-            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_METHOD,
-                                 funName, "method", InformalValueTypeName(args.thisv()));
-            return false;
-        }
-        ++iter;
+    JSAutoByteString funNameBytes;
+    if (const char* funName = GetFunctionNameBytes(cx, iter.callee(cx), &funNameBytes)) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_METHOD,
+                             funName, "method", InformalValueTypeName(args.thisv()));
     }
 
-    MOZ_ASSERT_UNREACHABLE("How did we not find a useful self-hosted frame?");
     return false;
 }
 
@@ -1681,11 +1666,9 @@ intrinsic_ConstructorForTypedArray(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 1);
     MOZ_ASSERT(args[0].isObject());
+    MOZ_ASSERT(args[0].toObject().is<TypedArrayObject>());
 
     RootedObject object(cx, &args[0].toObject());
-    object = CheckedUnwrap(object);
-    MOZ_ASSERT(object->is<TypedArrayObject>());
-
     JSProtoKey protoKey = StandardProtoKeyOrNull(object);
     MOZ_ASSERT(protoKey);
 
