@@ -161,7 +161,7 @@ CamerasParent::DeliverFrameOverIPC(CaptureEngine cap_engine,
     ShmemBuffer shMemBuff = mShmemPool.Get(this, size);
 
     if (!shMemBuff.Valid()) {
-      LOG(("Video shmem is not writeable in DeliverFrame"));
+      LOG(("No usable Video shmem in DeliverFrame (out of buffers?)"));
       
       return 0;
     }
@@ -175,6 +175,7 @@ CamerasParent::DeliverFrameOverIPC(CaptureEngine cap_engine,
       return -1;
     }
   } else {
+    MOZ_ASSERT(buffer.Valid());
     
     
     if (!SendDeliverFrame(cap_engine, cap_id,
@@ -205,7 +206,7 @@ CallbackHelper::DeliverFrame(unsigned char* buffer,
   ShmemBuffer shMemBuffer = mParent->GetBuffer(size);
   if (!shMemBuffer.Valid()) {
     
-    LOG(("Video shmem is not available in DeliverFrame"));
+    LOG(("Correctly sized Video shmem not available in DeliverFrame"));
     
     
   } else {
