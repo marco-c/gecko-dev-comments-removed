@@ -130,10 +130,16 @@ public class GeckoThread extends Thread {
         return false;
     }
 
-    private static boolean canUseProfile(final GeckoProfile profile, final String profileName,
-                                         final File profileDir) {
+    private static boolean canUseProfile(final Context context, final GeckoProfile profile,
+                                         final String profileName, final File profileDir) {
+        if (profileDir != null && !profileDir.isDirectory()) {
+            return false;
+        }
+
         if (profile == null) {
-            return true;
+            
+            return GuestSession.shouldUse(context) ==
+                    GeckoProfile.isGuestProfile(context, profileName, profileDir);
         }
 
         
@@ -150,7 +156,8 @@ public class GeckoThread extends Thread {
         if (profileName == null) {
             throw new IllegalArgumentException("Null profile name");
         }
-        return canUseProfile(getActiveProfile(), profileName, profileDir);
+        return canUseProfile(GeckoAppShell.getApplicationContext(), getActiveProfile(),
+                             profileName, profileDir);
     }
 
     public static boolean initWithProfile(final String profileName, final File profileDir) {
@@ -158,13 +165,20 @@ public class GeckoThread extends Thread {
             throw new IllegalArgumentException("Null profile name");
         }
 
+        final Context context = GeckoAppShell.getApplicationContext();
         final GeckoProfile profile = getActiveProfile();
+
+        if (!canUseProfile(context, profile, profileName, profileDir)) {
+            
+            return false;
+        }
+
         if (profile != null) {
-            return canUseProfile(profile, profileName, profileDir);
+            
+            return true;
         }
 
         
-        final Context context = GeckoAppShell.getApplicationContext();
         return init(GeckoProfile.get(context, profileName, profileDir),
                      null,  null,  false);
     }
