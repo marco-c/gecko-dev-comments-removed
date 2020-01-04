@@ -1055,7 +1055,8 @@ void
 MacroAssembler::checkAllocatorState(Label* fail)
 {
     
-    if (js::gc::TraceEnabled())
+    
+    if (js::gc::TraceEnabled() || MemProfiler::enabled())
         jump(fail);
 
 # ifdef JS_GC_ZEAL
