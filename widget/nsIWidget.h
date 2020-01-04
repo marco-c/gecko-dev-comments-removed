@@ -1695,7 +1695,7 @@ class nsIWidget : public nsISupports {
 
     virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
                                                 TouchPointerState aPointerState,
-                                                ScreenIntPoint aPointerScreenPoint,
+                                                LayoutDeviceIntPoint aPoint,
                                                 double aPointerPressure,
                                                 uint32_t aPointerOrientation,
                                                 nsIObserver* aObserver) = 0;
@@ -1708,7 +1708,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual nsresult SynthesizeNativeTouchTap(ScreenIntPoint aPointerScreenPoint,
+    virtual nsresult SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
                                               bool aLongTap,
                                               nsIObserver* aObserver);
 
@@ -1727,7 +1727,7 @@ private:
   class LongTapInfo
   {
   public:
-    LongTapInfo(int32_t aPointerId, ScreenIntPoint& aPoint,
+    LongTapInfo(int32_t aPointerId, LayoutDeviceIntPoint& aPoint,
                 mozilla::TimeDuration aDuration,
                 nsIObserver* aObserver) :
       mPointerId(aPointerId),
@@ -1739,7 +1739,7 @@ private:
     }
 
     int32_t mPointerId;
-    ScreenIntPoint mPosition;
+    LayoutDeviceIntPoint mPosition;
     mozilla::TimeDuration mDuration;
     nsCOMPtr<nsIObserver> mObserver;
     mozilla::TimeStamp mStamp;
