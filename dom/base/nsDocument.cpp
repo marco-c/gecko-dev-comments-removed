@@ -12030,15 +12030,12 @@ nsDocument::IsFullScreenEnabled(bool aCallerIsChrome, bool aLogFailure)
   
   
   nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
-  bool allowed = false;
-  if (docShell) {
-    docShell->GetFullscreenAllowed(&allowed);
-  }
-  if (!allowed) {
-    LogFullScreenDenied(aLogFailure, "FullScreenDeniedIframeNotAllowed", this);
+  if (!docShell || !docShell->GetFullscreenAllowed()) {
+    LogFullScreenDenied(aLogFailure, "FullScreenDeniedContainerNotAllowed", this);
+    return false;
   }
 
-  return allowed;
+  return true;
 }
 
 uint16_t
