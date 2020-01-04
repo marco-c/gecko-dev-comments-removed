@@ -86,7 +86,7 @@ nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
 
     
     if (mThreads.Count() < (int32_t)mThreadLimit &&
-        !(aFlags & NS_DISPATCH_TAIL) &&
+        !(aFlags & NS_DISPATCH_AT_END) &&
         
         
         mEvents.Count(lock) >= mIdleCount) {
@@ -270,7 +270,7 @@ nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
     }
   } else {
     NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL ||
-                 aFlags == NS_DISPATCH_TAIL, "unexpected dispatch flags");
+                 aFlags == NS_DISPATCH_AT_END, "unexpected dispatch flags");
     PutEvent(Move(aEvent), aFlags);
   }
   return NS_OK;

@@ -58,7 +58,10 @@ public:
   
   
   
-  nsresult TailDispatch(nsIRunnable *event) { return Dispatch(event, NS_DISPATCH_TAIL); }
+  nsresult DispatchFromEndOfTaskInThisPool(nsIRunnable *event)
+  {
+    return Dispatch(event, NS_DISPATCH_AT_END);
+  }
 
   NS_IMETHOD DispatchFromScript(nsIRunnable *event, uint32_t flags) override {
       return Dispatch(event, flags);
