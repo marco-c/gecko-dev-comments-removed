@@ -13,15 +13,13 @@
 
 class nsLineLayout;
 
-typedef nsContainerFrame nsInlineFrameBase;
 
 
 
 
 
 
-
-class nsInlineFrame : public nsInlineFrameBase
+class nsInlineFrame : public nsContainerFrame
 {
 public:
   NS_DECL_QUERYFRAME_TARGET(nsInlineFrame)
