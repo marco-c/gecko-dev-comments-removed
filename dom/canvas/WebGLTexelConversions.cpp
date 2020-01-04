@@ -47,6 +47,7 @@ class WebGLImageConverter
             case WebGLTexelFormat::R16F:
             case WebGLTexelFormat::R32F:
             case WebGLTexelFormat::RGB565:
+            case WebGLTexelFormat::RGB11F11F10F:
             case WebGLTexelFormat::RGBA4444:
             case WebGLTexelFormat::RGBA5551:
                 return 1;
@@ -266,6 +267,7 @@ class WebGLImageConverter
         
         WEBGLIMAGECONVERTER_CASE_DSTFORMAT(WebGLTexelFormat::RGB565)
         WEBGLIMAGECONVERTER_CASE_DSTFORMAT(WebGLTexelFormat::RGB8)
+        WEBGLIMAGECONVERTER_CASE_DSTFORMAT(WebGLTexelFormat::RGB11F11F10F)
         WEBGLIMAGECONVERTER_CASE_DSTFORMAT(WebGLTexelFormat::RGB16F)
         WEBGLIMAGECONVERTER_CASE_DSTFORMAT(WebGLTexelFormat::RGB32F)
         
