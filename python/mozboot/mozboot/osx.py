@@ -334,7 +334,6 @@ class OSXBootstrapper(BaseBootstrapper):
 
         
         packages = [
-            ('ant', 'ant'),
             ('brew-cask', 'caskroom/cask/brew-cask'),  
             ('wget', 'wget'),
         ]
