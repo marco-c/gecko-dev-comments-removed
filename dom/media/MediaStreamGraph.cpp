@@ -1489,10 +1489,12 @@ public:
                                  
 
     
-    NS_ASSERTION(mGraph->mForceShutdownTicket,
-                 "AudioCallbackDriver took too long to shut down and we let shutdown"
-                 " continue - freezing and leaking");
     if (!mGraph->mForceShutdownTicket) {
+      
+      NS_WARNING(
+        "AudioCallbackDriver took too long to shut down and we let shutdown"
+        " continue - freezing and leaking");
+
       
       
       return NS_OK;
