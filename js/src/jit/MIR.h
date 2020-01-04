@@ -5518,6 +5518,10 @@ class MToString :
     {
         setResultType(MIRType_String);
         setMovable();
+
+        
+        if (def->mightBeType(MIRType_Object) || def->mightBeType(MIRType_Symbol))
+            setGuard();
     }
 
   public:
