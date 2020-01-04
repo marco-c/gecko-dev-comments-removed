@@ -147,6 +147,20 @@ this.MigratorPrototype = {
 
 
 
+  getLastUsedDate() {
+    return Promise.resolve(new Date(0));
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
   get startupOnlyMigrator() {
     return false;
