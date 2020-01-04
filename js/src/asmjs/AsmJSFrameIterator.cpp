@@ -19,13 +19,11 @@
 #include "asmjs/AsmJSFrameIterator.h"
 
 #include "asmjs/AsmJSModule.h"
-#include "asmjs/AsmJSValidate.h"
-#include "jit/MacroAssembler.h"
-
 #include "jit/MacroAssembler-inl.h"
 
 using namespace js;
 using namespace js::jit;
+using namespace js::wasm;
 
 using mozilla::DebugOnly;
 
@@ -169,7 +167,7 @@ PushRetAddr(MacroAssembler& masm)
 
 static void
 GenerateProfilingPrologue(MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
-                          Label* begin)
+                          AsmJSProfilingOffsets* offsets, Label* maybeEntry = nullptr)
 {
 #if !defined (JS_CODEGEN_ARM)
     Register scratch = ABIArgGenerator::NonArg_VolatileReg;
@@ -190,18 +188,20 @@ GenerateProfilingPrologue(MacroAssembler& masm, unsigned framePushed, AsmJSExit:
 #if defined(JS_CODEGEN_ARM)
         AutoForbidPools afp(&masm,  5);
 #endif
-        DebugOnly<uint32_t> offsetAtBegin = masm.currentOffset();
-        masm.bind(begin);
+
+        offsets->begin = masm.currentOffset();
+        if (maybeEntry)
+            masm.bind(maybeEntry);
 
         PushRetAddr(masm);
-        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - offsetAtBegin);
+        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - offsets->begin);
 
         masm.loadAsmJSActivation(scratch);
         masm.push(Address(scratch, AsmJSActivation::offsetOfFP()));
-        MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - offsetAtBegin);
+        MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - offsets->begin);
 
         masm.storePtr(masm.getStackPointer(), Address(scratch, AsmJSActivation::offsetOfFP()));
-        MOZ_ASSERT_IF(!masm.oom(), StoredFP == masm.currentOffset() - offsetAtBegin);
+        MOZ_ASSERT_IF(!masm.oom(), StoredFP == masm.currentOffset() - offsets->begin);
     }
 
     if (reason != AsmJSExit::None)
@@ -218,7 +218,7 @@ GenerateProfilingPrologue(MacroAssembler& masm, unsigned framePushed, AsmJSExit:
 
 static void
 GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
-                          Label* profilingReturn)
+                          AsmJSProfilingOffsets* offsets)
 {
     Register scratch = ABIArgGenerator::NonReturn_VolatileReg0;
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
@@ -258,7 +258,7 @@ GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, AsmJSExit:
         MOZ_ASSERT(PostStorePrePopFP == 0);
 #endif
 
-        masm.bind(profilingReturn);
+        offsets->profilingReturn = masm.currentOffset();
         masm.ret();
     }
 }
@@ -272,7 +272,7 @@ GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, AsmJSExit:
 
 void
 js::GenerateAsmJSFunctionPrologue(MacroAssembler& masm, unsigned framePushed,
-                                  AsmJSFunctionLabels* labels)
+                                  AsmJSFunctionOffsets* offsets)
 {
 #if defined(JS_CODEGEN_ARM)
     
@@ -282,31 +282,19 @@ js::GenerateAsmJSFunctionPrologue(MacroAssembler& masm, unsigned framePushed,
 
     masm.haltingAlign(CodeAlignment);
 
-    GenerateProfilingPrologue(masm, framePushed, AsmJSExit::None, &labels->profilingEntry);
+    GenerateProfilingPrologue(masm, framePushed, AsmJSExit::None, offsets);
     Label body;
     masm.jump(&body);
 
     
     masm.haltingAlign(CodeAlignment);
-    masm.bind(&labels->nonProfilingEntry);
+    offsets->nonProfilingEntry = masm.currentOffset();
     PushRetAddr(masm);
     masm.subFromStackPtr(Imm32(framePushed + AsmJSFrameBytesAfterReturnAddress));
 
     
     masm.bind(&body);
     masm.setFramePushed(framePushed);
-
-    
-    
-    
-    if (labels->overflowThunk) {
-        
-        Label* target = framePushed ? labels->overflowThunk.ptr() : &labels->overflowExit;
-        masm.branchPtr(Assembler::AboveOrEqual,
-                       AsmJSAbsoluteAddress(AsmJSImm_StackLimit),
-                       masm.getStackPointer(),
-                       target);
-    }
 }
 
 
@@ -316,7 +304,7 @@ js::GenerateAsmJSFunctionPrologue(MacroAssembler& masm, unsigned framePushed,
 
 void
 js::GenerateAsmJSFunctionEpilogue(MacroAssembler& masm, unsigned framePushed,
-                                  AsmJSFunctionLabels* labels)
+                                  AsmJSFunctionOffsets* offsets)
 {
     MOZ_ASSERT(masm.framePushed() == framePushed);
 
@@ -327,6 +315,8 @@ js::GenerateAsmJSFunctionEpilogue(MacroAssembler& masm, unsigned framePushed,
     masm.flushBuffer();
 #endif
 
+    
+    
     {
 #if defined(JS_CODEGEN_ARM)
         
@@ -336,7 +326,7 @@ js::GenerateAsmJSFunctionEpilogue(MacroAssembler& masm, unsigned framePushed,
 
         
         
-        masm.bind(&labels->profilingJump);
+        offsets->profilingJump = masm.currentOffset();
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
         masm.twoByteNop();
 #elif defined(JS_CODEGEN_ARM)
@@ -362,60 +352,26 @@ js::GenerateAsmJSFunctionEpilogue(MacroAssembler& masm, unsigned framePushed,
     masm.setFramePushed(0);
 
     
-    masm.bind(&labels->profilingEpilogue);
-    GenerateProfilingEpilogue(masm, framePushed, AsmJSExit::None, &labels->profilingReturn);
-
-    if (labels->overflowThunk && labels->overflowThunk->used()) {
-        
-        
-        
-        masm.bind(labels->overflowThunk.ptr());
-        masm.addToStackPtr(Imm32(framePushed));
-        masm.jump(&labels->overflowExit);
-    }
-}
-
-void
-js::GenerateAsmJSStackOverflowExit(MacroAssembler& masm, Label* overflowExit, Label* throwLabel)
-{
-    masm.bind(overflowExit);
-
-    
-    
-    
-    
-    
-    
-    Register activation = ABIArgGenerator::NonArgReturnReg0;
-    masm.loadAsmJSActivation(activation);
-    masm.storePtr(masm.getStackPointer(), Address(activation, AsmJSActivation::offsetOfFP()));
-
-    
-    if (uint32_t d = StackDecrementForCall(ABIStackAlignment, sizeof(AsmJSFrame), ShadowStackSpace))
-        masm.subFromStackPtr(Imm32(d));
-
-    
-    masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(AsmJSImmPtr(AsmJSImm_ReportOverRecursed));
-    masm.jump(throwLabel);
+    offsets->profilingEpilogue = masm.currentOffset();
+    GenerateProfilingEpilogue(masm, framePushed, AsmJSExit::None, offsets);
 }
 
 void
 js::GenerateAsmJSExitPrologue(MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
-                              Label* begin)
+                              AsmJSProfilingOffsets* offsets, Label* maybeEntry)
 {
     masm.haltingAlign(CodeAlignment);
-    GenerateProfilingPrologue(masm, framePushed, reason, begin);
+    GenerateProfilingPrologue(masm, framePushed, reason, offsets, maybeEntry);
     masm.setFramePushed(framePushed);
 }
 
 void
 js::GenerateAsmJSExitEpilogue(MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
-                              Label* profilingReturn)
+                              AsmJSProfilingOffsets* offsets)
 {
     
     MOZ_ASSERT(masm.framePushed() == framePushed);
-    GenerateProfilingEpilogue(masm, framePushed, reason, profilingReturn);
+    GenerateProfilingEpilogue(masm, framePushed, reason, offsets);
     masm.setFramePushed(0);
 }
 

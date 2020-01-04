@@ -38,8 +38,6 @@ class MIRGenerator
     MIRGenerator(CompileCompartment* compartment, const JitCompileOptions& options,
                  TempAllocator* alloc, MIRGraph* graph,
                  const CompileInfo* info, const OptimizationInfo* optimizationInfo,
-                 Label* outOfBoundsLabel = nullptr,
-                 Label* conversionErrorLabel = nullptr,
                  bool usesSignalHandlersForAsmJSOOB = false);
 
     TempAllocator& alloc() {
@@ -198,11 +196,6 @@ class MIRGenerator
 
     void addAbortedPreliminaryGroup(ObjectGroup* group);
 
-    Label* outOfBoundsLabel_;
-    
-    
-    
-    Label* conversionErrorLabel_;
 #if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
     bool usesSignalHandlersForAsmJSOOB_;
 #endif
@@ -224,14 +217,6 @@ class MIRGenerator
   public:
     const JitCompileOptions options;
 
-    Label* conversionErrorLabel() const {
-        MOZ_ASSERT((conversionErrorLabel_ != nullptr) == compilingAsmJS());
-        return conversionErrorLabel_;
-    }
-    Label* outOfBoundsLabel() const {
-        MOZ_ASSERT(compilingAsmJS());
-        return outOfBoundsLabel_;
-    }
     bool needsAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* access) const;
     size_t foldableOffsetRange(const MAsmJSHeapAccess* access) const;
 

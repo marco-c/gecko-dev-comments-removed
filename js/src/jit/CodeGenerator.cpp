@@ -17,7 +17,6 @@
 #include "jsnum.h"
 #include "jsprf.h"
 
-#include "asmjs/AsmJSModule.h"
 #include "builtin/Eval.h"
 #include "builtin/TypedObject.h"
 #include "gc/Nursery.h"
@@ -7873,20 +7872,41 @@ CodeGenerator::visitRest(LRest* lir)
 }
 
 bool
-CodeGenerator::generateAsmJS(AsmJSFunctionLabels* labels)
+CodeGenerator::generateAsmJS(AsmJSFunctionOffsets* offsets)
 {
     JitSpew(JitSpew_Codegen, "# Emitting asm.js code");
 
-    if (!omitOverRecursedCheck())
-        labels->overflowThunk.emplace();
+    GenerateAsmJSFunctionPrologue(masm, frameSize(), offsets);
 
-    GenerateAsmJSFunctionPrologue(masm, frameSize(), labels);
+    
+    
+    
+    Label onOverflow;
+    if (!omitOverRecursedCheck()) {
+        
+        Label* target = frameSize() > 0 ? &onOverflow : masm.asmStackOverflowLabel();
+        masm.branchPtr(Assembler::AboveOrEqual,
+                       AsmJSAbsoluteAddress(AsmJSImm_StackLimit),
+                       masm.getStackPointer(),
+                       target);
+    }
+
 
     if (!generateBody())
         return false;
 
     masm.bind(&returnLabel_);
-    GenerateAsmJSFunctionEpilogue(masm, frameSize(), labels);
+    GenerateAsmJSFunctionEpilogue(masm, frameSize(), offsets);
+
+    if (onOverflow.used()) {
+        
+        
+        
+        masm.bind(&onOverflow);
+        masm.addToStackPtr(Imm32(frameSize()));
+        masm.jump(masm.asmStackOverflowLabel());
+    }
+
 
 #if defined(JS_ION_PERF)
     
@@ -7896,7 +7916,7 @@ CodeGenerator::generateAsmJS(AsmJSFunctionLabels* labels)
     if (!generateOutOfLineCode())
         return false;
 
-    masm.bind(&labels->endAfterOOL);
+    offsets->end = masm.currentOffset();
 
     
     

@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef asmjs_wasm_compile_args_h
+#define asmjs_wasm_compile_args_h
+
+namespace js {
+
+namespace jit {
+    class CompileRuntime;
+}
+
+namespace wasm {
+
+struct CompileArgs
+{
+    jit::CompileRuntime* runtime;
+    bool usesSignalHandlersForOOB;
+
+    CompileArgs(jit::CompileRuntime* runtime,
+                bool usesSignalHandlersForOOB)
+      : runtime(runtime),
+        usesSignalHandlersForOOB(usesSignalHandlersForOOB)
+    {}
+};
+
+} 
+} 
+
+#endif 

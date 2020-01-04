@@ -16,8 +16,8 @@
 
 
 
-#ifndef jit_AsmJS_h
-#define jit_AsmJS_h
+#ifndef asmjs_AsmJSValidate_h
+#define asmjs_AsmJSValidate_h
 
 #include "mozilla/MathAlgorithms.h"
 

@@ -29,7 +29,6 @@ namespace js {
 
 class AsmJSActivation;
 class AsmJSModule;
-struct AsmJSFunctionLabels;
 namespace jit { class CallSite; class MacroAssembler; class Label; }
 
 
@@ -157,22 +156,70 @@ class AsmJSProfilingFrameIterator
 
 
 
-void
-GenerateAsmJSFunctionPrologue(jit::MacroAssembler& masm, unsigned framePushed,
-                              AsmJSFunctionLabels* labels);
-void
-GenerateAsmJSFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
-                              AsmJSFunctionLabels* labels);
-void
-GenerateAsmJSStackOverflowExit(jit::MacroAssembler& masm, jit::Label* overflowExit,
-                               jit::Label* throwLabel);
+struct AsmJSOffsets
+{
+    MOZ_IMPLICIT AsmJSOffsets(uint32_t begin = 0,
+                              uint32_t end = 0)
+      : begin(begin), end(end)
+    {}
+
+    
+    
+    uint32_t begin;
+    uint32_t end;
+};
+
+struct AsmJSProfilingOffsets : AsmJSOffsets
+{
+    MOZ_IMPLICIT AsmJSProfilingOffsets(uint32_t profilingReturn = 0)
+      : AsmJSOffsets(), profilingReturn(profilingReturn)
+    {}
+
+    
+    
+    uint32_t profilingEntry() const { return begin; }
+
+    
+    
+    
+    uint32_t profilingReturn;
+};
+
+struct AsmJSFunctionOffsets : AsmJSProfilingOffsets
+{
+    MOZ_IMPLICIT AsmJSFunctionOffsets(uint32_t nonProfilingEntry = 0,
+                                      uint32_t profilingJump = 0,
+                                      uint32_t profilingEpilogue = 0)
+      : AsmJSProfilingOffsets(),
+        nonProfilingEntry(nonProfilingEntry),
+        profilingJump(profilingJump),
+        profilingEpilogue(profilingEpilogue)
+    {}
+
+    
+    
+    
+    uint32_t nonProfilingEntry;
+
+    
+    
+    uint32_t profilingJump;
+    uint32_t profilingEpilogue;
+};
 
 void
 GenerateAsmJSExitPrologue(jit::MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
-                          jit::Label* begin);
+                          AsmJSProfilingOffsets* offsets, jit::Label* maybeEntry = nullptr);
 void
 GenerateAsmJSExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, AsmJSExit::Reason reason,
-                          jit::Label* profilingReturn);
+                          AsmJSProfilingOffsets* offsets);
+
+void
+GenerateAsmJSFunctionPrologue(jit::MacroAssembler& masm, unsigned framePushed,
+                              AsmJSFunctionOffsets* offsets);
+void
+GenerateAsmJSFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
+                              AsmJSFunctionOffsets* offsets);
 
 } 
 
