@@ -180,14 +180,14 @@ function getString( stringId ) {
            elem.childNodes[0]
            &&
            elem.childNodes[0].nodeValue ) {
-         dialog.strings[ stringId ] = elem.childNodes[0].nodeValue;
+         dialog.strings[stringId] = elem.childNodes[0].nodeValue;
         } else {
           
-          dialog.strings[ stringId ] = "";
+          dialog.strings[stringId] = "";
         }
-      } catch (e) { dialog.strings[ stringId ] = ""; }
+      } catch (e) { dialog.strings[stringId] = ""; }
    }
-   return dialog.strings[ stringId ];
+   return dialog.strings[stringId];
 }
 
 function loadDialog()
