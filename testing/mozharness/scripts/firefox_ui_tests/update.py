@@ -1,0 +1,23 @@
+
+
+
+
+
+
+"""firefox_ui_updates.py
+
+Author: Armen Zambrano G.
+        Henrik Skupin
+"""
+import os
+import sys
+
+
+sys.path.insert(1, os.path.dirname(os.path.dirname(sys.path[0])))
+
+from mozharness.mozilla.testing.firefox_ui_tests import FirefoxUIUpdateTests
+
+
+if __name__ == '__main__':
+    myScript = FirefoxUIUpdateTests()
+    myScript.run_and_exit()
