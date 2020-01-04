@@ -22,6 +22,7 @@ public class PermissionBlock {
     private boolean onUIThread;
     private Runnable onPermissionsGranted;
     private Runnable onPermissionsDenied;
+    private boolean doNotPrompt;
 
      PermissionBlock(Activity activity, PermissionsHelper helper) {
         this.activity = activity;
@@ -47,12 +48,34 @@ public class PermissionBlock {
     
 
 
+    public PermissionBlock doNotPrompt() {
+        doNotPrompt = true;
+        return this;
+    }
+
+    
+
+
+
+    public PermissionBlock doNotPromptIf(boolean condition) {
+        if (condition) {
+            doNotPrompt();
+        }
+
+        return this;
+    }
+
+    
+
+
 
     public void run(@NonNull Runnable onPermissionsGranted) {
         this.onPermissionsGranted = onPermissionsGranted;
 
         if (hasPermissions(activity)) {
             onPermissionsGranted();
+        } else if (doNotPrompt) {
+            onPermissionsDenied();
         } else {
             Permissions.prompt(activity, this);
         }
