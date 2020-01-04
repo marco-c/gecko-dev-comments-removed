@@ -1316,7 +1316,7 @@ Messenger.prototype = {
 
         filterMessage: (sender, recipient) => {
           
-          return !MessageChannel.matchesFilter(this.sender, sender);
+          return sender.contextId !== this.context.contextId;
         },
 
         receiveMessage: ({target, data: message, sender, recipient}) => {
@@ -1376,7 +1376,7 @@ Messenger.prototype = {
 
         filterMessage: (sender, recipient) => {
           
-          return !MessageChannel.matchesFilter(this.sender, sender);
+          return sender.contextId !== this.context.contextId;
         },
 
         receiveMessage: ({target, data: message, sender, recipient}) => {
