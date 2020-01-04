@@ -3262,6 +3262,16 @@ pref("ui.panel.default_level_parent", false);
 pref("mousewheel.system_scroll_override_on_root_content.enabled", true);
 
 
+
+
+
+pref("mousewheel.system_settings_cache.enabled", true);
+
+
+
+pref("mousewheel.system_settings_cache.force_enabled", false);
+
+
 pref("mousewheel.enable_pixel_scrolling", true);
 
 

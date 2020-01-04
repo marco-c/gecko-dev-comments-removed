@@ -273,6 +273,14 @@ private:
     void MarkDirty();
     void NotifyUserPrefsMayOverrideSystemSettings();
 
+    
+    
+    
+    
+    
+    
+    void TrustedScrollSettingsDriver(bool aIsVertical);
+
     int32_t GetScrollAmount(bool aForVertical) const
     {
       MOZ_ASSERT(mInitialized, "SystemSettings must be initialized");
@@ -290,6 +298,12 @@ private:
     bool mInitialized;
     int32_t mScrollLines;
     int32_t mScrollChars;
+
+    
+    bool InitScrollLines();
+    bool InitScrollChars();
+
+    void RefreshCache(bool aForVertical);
   };
 
   SystemSettings mSystemSettings;
@@ -305,6 +319,18 @@ private:
     {
       Init();
       return mScrollMessageHandledAsWheelMessage;
+    }
+
+    bool IsSystemSettingCacheEnabled()
+    {
+      Init();
+      return mEnableSystemSettingCache;
+    }
+
+    bool IsSystemSettingCacheForciblyEnabled()
+    {
+      Init();
+      return mForceEnableSystemSettingCache;
     }
 
     int32_t GetOverriddenVerticalScrollAmout()
@@ -335,6 +361,8 @@ private:
 
     bool mInitialized;
     bool mScrollMessageHandledAsWheelMessage;
+    bool mEnableSystemSettingCache;
+    bool mForceEnableSystemSettingCache;
     int32_t mOverriddenVerticalScrollAmount;
     int32_t mOverriddenHorizontalScrollAmount;
     int32_t mMouseScrollTransactionTimeout;
