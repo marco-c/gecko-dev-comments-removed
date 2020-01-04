@@ -4,153 +4,45 @@
 
 
 
-
-
-
-
-
-
 "use strict";
 
 const DOMUtils = Components.classes["@mozilla.org/inspector/dom-utils;1"]
                            .getService(Components.interfaces.inIDOMUtils);
 
-const {PSEUDO_ELEMENTS, CSS_PROPERTIES, PREFERENCES} = require("devtools/shared/css/generated/properties-db");
+const {PSEUDO_ELEMENTS, CSS_PROPERTIES} = require("devtools/shared/css/properties-db");
 const {generateCssProperties} = require("devtools/server/actors/css-properties");
-const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 
 function run_test() {
+  
+  deepEqual(PSEUDO_ELEMENTS, DOMUtils.getCSSPseudoElementNames(),
+            "If this assertion fails, then the client side CSS pseudo elements list in " +
+            "devtools is out of date with the pseudo elements on the platform. To fix " +
+            "this assertion open devtools/shared/css/properties-db.js and follow the " +
+            "instructions above the CSS_PSEUDO_ELEMENTS on how to re-generate the list.");
+
   const propertiesErrorMessage = "If this assertion fails, then the client side CSS " +
-                                 "properties list in devtools is out of sync with the " +
+                                 "properties list in devtools is out of date with the " +
                                  "CSS properties on the platform. To fix this " +
-                                 "assertion run `mach generate-css-db` to re-generate " +
-                                 "the client side properties.";
+                                 "assertion open devtools/shared/css/properties-db.js " +
+                                 "and follow the instructions above the CSS_PROPERTIES " +
+                                 "on how to re-generate the list.";
 
   
-  deepEqual(PSEUDO_ELEMENTS, DOMUtils.getCSSPseudoElementNames(), `The pseudo elements ` +
-            `match on the client and platform. ${propertiesErrorMessage}`);
-
   
-
-
-
-
-
   const platformProperties = generateCssProperties();
-
   for (let propertyName in CSS_PROPERTIES) {
     const platformProperty = platformProperties[propertyName];
     const clientProperty = CSS_PROPERTIES[propertyName];
-    const deepEqual = isJsonDeepEqual(platformProperty, clientProperty);
-
-    if (deepEqual) {
-      ok(true, `The static database and platform match for "${propertyName}".`);
-    } else {
-      const prefMessage = `The static database and platform do not match ` +
-                          `for "${propertyName}".`;
-      if (getPreference(propertyName) === false) {
-        ok(true, `${prefMessage} However, there is a preference for disabling this ` +
-                 `property on the current build.`);
-      } else {
-        ok(false, `${prefMessage} ${propertiesErrorMessage}`);
-      }
-    }
+    deepEqual(platformProperty, clientProperty,
+      `Client and server match for "${propertyName}". ${propertiesErrorMessage}\n`);
   }
 
   
+  const platformPropertyNames = Object.keys(platformProperties).filter(
+    name => name.indexOf("-moz-osx-") === -1);
+  const clientPlatformNames = Object.keys(CSS_PROPERTIES);
 
-
-
-
-  const mismatches = getKeyMismatches(platformProperties, CSS_PROPERTIES)
-    
-    .filter(name => name.indexOf("-moz-osx-") === -1);
-
-  if (mismatches.length === 0) {
-    ok(true, "No client and platform CSS property database mismatches were found.");
-  }
-
-  mismatches.forEach(propertyName => {
-    if (getPreference(propertyName) === false) {
-      ok(true, `The static database and platform do not agree on the property ` +
-               `"${propertyName}" This is ok because it is currently disabled through ` +
-               `a preference.`);
-    } else {
-      ok(false, `The static database and platform do not agree on the property ` +
-                `"${propertyName}" ${propertiesErrorMessage}`);
-    }
-  });
-}
-
-
-
-
-function isJsonDeepEqual(a, b) {
-  
-  if (a === b) {
-    return true;
-  }
-
-  
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) {
-      return false;
-    }
-    for (let i = 0; i < a.length; i++) {
-      if (!isJsonDeepEqual(a[i], b[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  
-  if (typeof a === "object" && typeof b === "object") {
-    for (let key in a) {
-      if (!isJsonDeepEqual(a[key], b[key])) {
-        return false;
-      }
-    }
-
-    return Object.keys(a).length === Object.keys(b).length;
-  }
-
-  
-  return false;
-}
-
-
-
-
-
-
-
-
-function getPreference(propertyName) {
-  const preference = PREFERENCES.find(([prefPropertyName, preferenceKey]) => {
-    return prefPropertyName === propertyName && !!preferenceKey;
-  });
-
-  if (preference) {
-    return Preferences.get(preference[1]);
-  }
-  return undefined;
-}
-
-
-
-
-
-
-
-
-function getKeyMismatches(a, b) {
-  const aNames = Object.keys(a);
-  const bNames = Object.keys(b);
-  const aMismatches = aNames.filter(key => !bNames.includes(key));
-  const bMismatches = bNames.filter(key => {
-    return !aNames.includes(key) && !aMismatches.includes(name);
-  });
-
-  return aMismatches.concat(bMismatches);
+  deepEqual(platformPropertyNames, clientPlatformNames,
+        `The client side CSS properties database names match those found on the ` +
+        `platform. ${propertiesErrorMessage}`);
 }
