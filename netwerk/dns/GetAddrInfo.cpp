@@ -345,7 +345,7 @@ GetAddrInfo(const char* aHost, uint16_t aAddressFamily, uint16_t aFlags,
     
     const char *name = nullptr;
     if (*aAddrInfo != nullptr && (*aAddrInfo)->mCanonicalName) {
-      name = (*aAddrInfo)->mCanonicalName.get();
+      name = (*aAddrInfo)->mCanonicalName;
     } else {
       name = aHost;
     }
