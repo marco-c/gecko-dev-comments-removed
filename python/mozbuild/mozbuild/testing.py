@@ -279,12 +279,13 @@ TEST_MANIFESTS = dict(
 REFTEST_FLAVORS = ('crashtest', 'reftest')
 
 
-WEB_PATFORM_TESTS_FLAVORS = ('web-platform-tests',)
+WEB_PLATFORM_TESTS_FLAVORS = ('web-platform-tests',)
 
 def all_test_flavors():
     return ([v[0] for v in TEST_MANIFESTS.values()] +
             list(REFTEST_FLAVORS) +
-            list(WEB_PATFORM_TESTS_FLAVORS))
+            list(WEB_PLATFORM_TESTS_FLAVORS) +
+            ['python'])
 
 
 def read_manifestparser_manifest(context, manifest_path):
