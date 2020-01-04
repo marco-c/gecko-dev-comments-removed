@@ -382,7 +382,7 @@ nsStandardURL::InvalidateCache(bool invalidateCachedFile)
     mSpecEncoding = eEncoding_Unknown;
 }
 
-bool
+nsresult
 nsStandardURL::NormalizeIDN(const nsCSubstring &host, nsCString &result)
 {
     
@@ -406,16 +406,16 @@ nsStandardURL::NormalizeIDN(const nsCSubstring &host, nsCString &result)
         }
     }
 
-    if (gIDN &&
-        NS_SUCCEEDED(gIDN->ConvertToDisplayIDN(host, &isASCII, result))) {
-        if (!isASCII)
+    result.Truncate();
+    nsresult rv = NS_ERROR_UNEXPECTED;
+    if (gIDN) {
+        rv = gIDN->ConvertToDisplayIDN(host, &isASCII, result);
+        if (NS_SUCCEEDED(rv) && !isASCII) {
           mHostEncoding = eEncoding_UTF8;
-
-        return true;
+        }
     }
 
-    result.Truncate();
-    return false;
+    return rv;
 }
 
 bool
@@ -445,6 +445,8 @@ nsStandardURL::ValidIPv6orHostname(const char *host, uint32_t length)
 
     const char *end = host + length;
     if (end != net_FindCharInSet(host, end, "\t\n\v\f\r #/:?@[\\]")) {
+        
+        
         
         return false;
     }
@@ -573,19 +575,22 @@ nsStandardURL::BuildNormalizedSpec(const char *spec)
     mHostEncoding = eEncoding_ASCII;
     
     if (mHost.mLen > 0) {
-        const nsCSubstring& tempHost =
-            Substring(spec + mHost.mPos, spec + mHost.mPos + mHost.mLen);
+        nsAutoCString tempHost;
+        NS_UnescapeURL(spec + mHost.mPos, mHost.mLen, esc_AlwaysCopy | esc_Host, tempHost);
         if (tempHost.Contains('\0'))
             return NS_ERROR_MALFORMED_URI;  
         if (tempHost.Contains(' '))
             return NS_ERROR_MALFORMED_URI;  
-        if ((useEncHost = NormalizeIDN(tempHost, encHost)))
-            approxLen += encHost.Length();
-        else
-            approxLen += mHost.mLen;
+        nsresult rv = NormalizeIDN(tempHost, encHost);
+        if (NS_FAILED(rv)) {
+            return rv;
+        }
 
-        if ((useEncHost && !ValidIPv6orHostname(encHost.BeginReading(), encHost.Length())) ||
-            (!useEncHost && !ValidIPv6orHostname(tempHost.BeginReading(), tempHost.Length()))) {
+        
+        useEncHost = true;
+        approxLen += encHost.Length();
+
+        if (!ValidIPv6orHostname(encHost.BeginReading(), encHost.Length())) {
             return NS_ERROR_MALFORMED_URI;
         }
     }
@@ -1589,7 +1594,11 @@ nsStandardURL::SetHost(const nsACString &input)
 
     FindHostLimit(start, end);
 
-    const nsCString flat(Substring(start, end));
+    const nsCString unescapedHost(Substring(start, end));
+    
+    nsAutoCString flat;
+    NS_UnescapeURL(unescapedHost.BeginReading(), unescapedHost.Length(),
+                   esc_AlwaysCopy | esc_Host, flat);
     const char *host = flat.get();
 
     LOG(("nsStandardURL::SetHost [host=%s]\n", host));
@@ -1620,12 +1629,14 @@ nsStandardURL::SetHost(const nsACString &input)
 
     uint32_t len;
     nsAutoCString hostBuf;
-    if (NormalizeIDN(flat, hostBuf)) {
-        host = hostBuf.get();
-        len = hostBuf.Length();
+    nsresult rv = NormalizeIDN(flat, hostBuf);
+    if (NS_FAILED(rv)) {
+        return rv;
     }
-    else
-        len = flat.Length();
+
+    
+    host = hostBuf.get();
+    len = hostBuf.Length();
 
     if (!ValidIPv6orHostname(host, len)) {
         return NS_ERROR_MALFORMED_URI;
