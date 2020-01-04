@@ -77,7 +77,7 @@ private:
 
   
   
-  nsTArray<Directory::BlobImplOrDirectoryPath> mTargetData;
+  FallibleTArray<Directory::BlobImplOrDirectoryPath> mTargetData;
 };
 
 } 
