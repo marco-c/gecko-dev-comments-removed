@@ -830,6 +830,10 @@ exports.BrowserTabList = BrowserTabList;
 
 
 
+
+
+
+
 function TabActor(connection) {
   this.conn = connection;
   this._tabActorPool = null;
@@ -2040,6 +2044,7 @@ TabActor.prototype = {
     this._styleSheetActors.set(styleSheet, actor);
 
     this._tabPool.addActor(actor);
+    events.emit(this, "stylesheet-added", actor);
 
     return actor;
   },
