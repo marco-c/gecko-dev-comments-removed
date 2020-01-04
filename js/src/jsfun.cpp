@@ -1673,10 +1673,14 @@ FunctionNameFromDisplayName(JSContext* cx, TextChar* text, size_t textLen, Strin
             
             
             for (size_t j = 0; j < index; j++) {
-                if (text[(index - j) - 1] == (TextChar)'[') {
+                TextChar numeral = text[(index - j) - 1];
+                if (numeral == (TextChar)'[') {
                     start = index - j;
                     end = index;
                     break;
+                } else if (numeral > (TextChar)'9' || numeral < (TextChar)'0') {
+                    
+                    return false;
                 }
             }
             break;
