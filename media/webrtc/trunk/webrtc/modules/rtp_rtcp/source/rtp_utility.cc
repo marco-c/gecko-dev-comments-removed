@@ -279,12 +279,6 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
     return false;
   }
 
-  const size_t CSRCocts = CC * 4;
-
-  if ((ptr + CSRCocts) > _ptrRTPDataEnd) {
-    return false;
-  }
-
   header.markerBit      = M;
   header.payloadType    = PT;
   header.sequenceNumber = sequenceNumber;
@@ -293,13 +287,20 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
   header.numCSRCs       = CC;
   header.paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
+  
+  header.headerLength   = 12 + (CC * 4);
+  
+  
+  if (header.paddingLength + header.headerLength > length) {
+    return false;
+  }
+
   for (uint8_t i = 0; i < CC; ++i) {
     uint32_t CSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
     ptr += 4;
     header.arrOfCSRCs[i] = CSRC;
   }
-
-  header.headerLength   = 12 + CSRCocts;
+  assert((ptr - _ptrRTPDataBegin) == header.headerLength);
 
   
   
@@ -328,8 +329,9 @@ bool RtpHeaderParser::Parse(RTPHeader& header,
 
 
 
-    const ptrdiff_t remain = _ptrRTPDataEnd - ptr;
-    if (remain < 4) {
+    
+    const ptrdiff_t remain = (_ptrRTPDataEnd - ptr) - header.paddingLength;
+    if (remain < 4) { 
       return false;
     }
 
