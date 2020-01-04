@@ -109,7 +109,8 @@ this.SearchSuggestionController.prototype = {
 
 
 
-  fetch: function(searchTerm, privateMode, engine) {
+
+  fetch: function(searchTerm, privateMode, engine, userContextId) {
     
     
     
@@ -139,7 +140,7 @@ this.SearchSuggestionController.prototype = {
     
     if (searchTerm && gRemoteSuggestionsEnabled && this.maxRemoteResults &&
         engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON)) {
-      this._deferredRemoteResult = this._fetchRemote(searchTerm, engine, privateMode);
+      this._deferredRemoteResult = this._fetchRemote(searchTerm, engine, privateMode, userContextId);
       promises.push(this._deferredRemoteResult.promise);
     }
 
@@ -230,7 +231,7 @@ this.SearchSuggestionController.prototype = {
   
 
 
-  _fetchRemote: function(searchTerm, engine, privateMode) {
+  _fetchRemote: function(searchTerm, engine, privateMode, userContextId) {
     let deferredResponse = Promise.defer();
     this._request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
                     createInstance(Ci.nsIXMLHttpRequest);
@@ -238,9 +239,10 @@ this.SearchSuggestionController.prototype = {
                                           SEARCH_RESPONSE_SUGGESTION_JSON);
     let method = (submission.postData ? "POST" : "GET");
     this._request.open(method, submission.uri.spec, true);
-    if (this._request.channel instanceof Ci.nsIPrivateBrowsingChannel) {
-      this._request.channel.setPrivate(privateMode);
-    }
+
+    this._request.setOriginAttributes({userContextId,
+                                       privateBrowsingId: privateMode ? 1 : 0});
+
     this._request.mozBackgroundRequest = true; 
 
     this._request.addEventListener("load", this._onRemoteLoaded.bind(this, deferredResponse));
