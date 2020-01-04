@@ -186,7 +186,7 @@ extensions.on("shutdown", (type, extension) => {
 
 
 
-extensions.registerAPI((extension, context) => {
+extensions.registerSchemaAPI("pageAction", null, (extension, context) => {
   return {
     pageAction: {
       onClicked: new EventManager(context, "pageAction.onClicked", fire => {
