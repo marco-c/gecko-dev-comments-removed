@@ -7,7 +7,7 @@
 "use strict";
 
 const Services = require("Services");
-const { Cc, Ci, Cu, components, ChromeWorker } = require("chrome");
+const { Cc, Ci, Cu, Cr, components, ChromeWorker } = require("chrome");
 const { ActorPool, OriginalLocation, GeneratedLocation } = require("devtools/server/actors/common");
 const { BreakpointActor } = require("devtools/server/actors/breakpoint");
 const { FrameActor } = require("devtools/server/actors/frame");
@@ -1843,6 +1843,13 @@ ThreadActor.prototype = {
     }
 
     if (willBeCaught && this._options.ignoreCaughtExceptions) {
+      return undefined;
+    }
+
+    
+    
+    
+    if (aValue == Cr.NS_ERROR_NO_INTERFACE) {
       return undefined;
     }
 
