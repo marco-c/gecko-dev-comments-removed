@@ -518,7 +518,14 @@ RecomputePosition(nsIFrame* aFrame)
         
         
         
-        cont->SetPosition(cont->GetNormalPosition() +
+        
+        nsPoint normalPosition = cont->GetNormalPosition();
+        auto props = cont->Properties();
+        const auto& prop = nsIFrame::NormalPositionProperty();
+        if (!props.Get(prop)) {
+          props.Set(prop, new nsPoint(normalPosition));
+        }
+        cont->SetPosition(normalPosition +
                           nsPoint(newOffsets.left, newOffsets.top));
       }
     }
