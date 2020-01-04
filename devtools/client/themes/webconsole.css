@@ -112,6 +112,12 @@ a {
   max-width: 40%;
 }
 
+.stack-trace {
+  
+
+  white-space: normal;
+}
+
 .stack-trace .frame-link-source,
 .message-location .frame-link-source {
   
