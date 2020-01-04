@@ -19,6 +19,14 @@ self.addEventListener('fetch', function (event) {
     caches.open(name).then(function(cache) {
       return cache.match(event.request);
     }).then(function(response) {
+      
+      
+      
+      if (response && event.request.cache !== 'no-cache') {
+        dump('### ### FetchEvent.request.cache is "' + event.request.cache +
+             '" instead of expected "no-cache"\n');
+        return Response.error();
+      }
       return response || fetch(event.request);
     })
   );
