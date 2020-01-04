@@ -7,11 +7,14 @@
 "use strict";
 
 const {Cu} = require("chrome");
+Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 var {loader} = Cu.import("resource://devtools/shared/Loader.jsm");
 loader.lazyRequireGetter(this, "EventEmitter",
                                "devtools/shared/event-emitter");
 
+const STRINGS_URI = "chrome://devtools/locale/animationinspector.properties";
+const L10N = new ViewHelpers.L10N(STRINGS_URI);
 
 
 const OPTIMAL_TIME_INTERVAL_MAX_ITERS = 100;
@@ -26,6 +29,8 @@ const TIME_INTERVAL_COLOR = [128, 136, 144];
 const TIME_INTERVAL_OPACITY_MIN = 32;
 
 const TIME_INTERVAL_OPACITY_ADD = 32;
+
+const MILLIS_TIME_FORMAT_MAX_DURATION = 4000;
 
 
 
@@ -208,3 +213,139 @@ function formatStopwatchTime(time) {
 }
 
 exports.formatStopwatchTime = formatStopwatchTime;
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TimeScale = {
+  minStartTime: Infinity,
+  maxEndTime: 0,
+
+  
+
+
+
+  addAnimation: function(state) {
+    let {previousStartTime, delay, duration,
+         iterationCount, playbackRate} = state;
+
+    
+    
+    
+    let relevantDelay = delay < 0 ? delay / playbackRate : 0;
+    previousStartTime = previousStartTime || 0;
+
+    this.minStartTime = Math.min(this.minStartTime,
+                                 previousStartTime + relevantDelay);
+    let length = (delay / playbackRate) +
+                 ((duration / playbackRate) *
+                  (!iterationCount ? 1 : iterationCount));
+    let endTime = previousStartTime + length;
+    this.maxEndTime = Math.max(this.maxEndTime, endTime);
+  },
+
+  
+
+
+  reset: function() {
+    this.minStartTime = Infinity;
+    this.maxEndTime = 0;
+  },
+
+  
+
+
+
+
+  startTimeToDistance: function(time) {
+    time -= this.minStartTime;
+    return this.durationToDistance(time);
+  },
+
+  
+
+
+
+
+  durationToDistance: function(duration) {
+    return duration * 100 / this.getDuration();
+  },
+
+  
+
+
+
+
+  distanceToTime: function(distance) {
+    return this.minStartTime + (this.getDuration() * distance / 100);
+  },
+
+  
+
+
+
+
+
+  distanceToRelativeTime: function(distance) {
+    let time = this.distanceToTime(distance);
+    return time - this.minStartTime;
+  },
+
+  
+
+
+
+
+
+  formatTime: function(time) {
+    
+    if (this.getDuration() <= MILLIS_TIME_FORMAT_MAX_DURATION) {
+      return L10N.getFormatStr("timeline.timeGraduationLabel", time.toFixed(0));
+    }
+
+    
+    return L10N.getFormatStr("player.timeLabel", (time / 1000).toFixed(1));
+  },
+
+  getDuration: function() {
+    return this.maxEndTime - this.minStartTime;
+  },
+
+  
+
+
+
+  getAnimationDimensions: function({state}) {
+    let start = state.previousStartTime || 0;
+    let duration = state.duration;
+    let rate = state.playbackRate;
+    let count = state.iterationCount;
+    let delay = state.delay || 0;
+
+    
+    let x = this.startTimeToDistance(start + (delay / rate));
+    
+    let w = this.durationToDistance(duration / rate);
+    
+    let iterationW = w * (count || 1);
+    
+    let delayX = this.durationToDistance((delay < 0 ? 0 : delay) / rate);
+    
+    let delayW = this.durationToDistance(Math.abs(delay) / rate);
+    
+    let negativeDelayW = delay < 0 ? delayW : 0;
+
+    return {x, w, iterationW, delayX, delayW, negativeDelayW};
+  }
+};
+
+exports.TimeScale = TimeScale;
