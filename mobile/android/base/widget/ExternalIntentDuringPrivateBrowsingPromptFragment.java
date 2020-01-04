@@ -41,14 +41,13 @@ public class ExternalIntentDuringPrivateBrowsingPromptFragment extends DialogFra
         final CharSequence matchingApplicationName = args.getCharSequence(KEY_APPLICATION_NAME);
         final Intent intent = args.getParcelable(KEY_INTENT);
 
-        final Context context = getActivity();
-        final String promptMessage = context.getString(R.string.intent_uri_private_browsing_prompt, matchingApplicationName);
-
+        final String promptMessage = getString(R.string.intent_uri_private_browsing_prompt, matchingApplicationName);
         final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setMessage(promptMessage)
                 .setTitle(intent.getDataString())
                 .setPositiveButton(R.string.button_yes, new DialogInterface.OnClickListener() {
                     public void onClick(final DialogInterface dialog, final int id) {
+                        final Context context = getActivity();
                         context.startActivity(intent);
                     }
                 })
@@ -82,7 +81,12 @@ public class ExternalIntentDuringPrivateBrowsingPromptFragment extends DialogFra
         } else if (matchingActivities.size() > 1) {
             
             
-            return ActivityHandlerHelper.startIntentAndCatch(context, intent);
+            
+            
+            final String androidChooserTitle =
+                    context.getResources().getString(R.string.intent_uri_private_browsing_multiple_match_title);
+            final Intent chooserIntent = Intent.createChooser(intent, androidChooserTitle);
+            return ActivityHandlerHelper.startIntentAndCatch(context, chooserIntent);
         } else {
             
             
