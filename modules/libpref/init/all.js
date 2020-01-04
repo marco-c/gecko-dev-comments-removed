@@ -2413,11 +2413,7 @@ pref("layout.css.prefixes.font-features", true);
 pref("layout.css.prefixes.gradients", true);
 
 
-#ifdef RELEASE_BUILD
-pref("layout.css.prefixes.webkit", false);
-#else
 pref("layout.css.prefixes.webkit", true);
-#endif
 
 
 
