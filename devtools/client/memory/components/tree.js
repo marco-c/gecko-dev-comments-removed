@@ -130,7 +130,11 @@ const Tree = module.exports = createClass({
     
     filter: PropTypes.func,
     
-    autoExpandDepth: PropTypes.number
+    autoExpandDepth: PropTypes.number,
+    
+    
+    
+    reuseCachedTraversal: PropTypes.func,
   },
 
   getDefaultProps() {
@@ -139,7 +143,8 @@ const Tree = module.exports = createClass({
       expanded: new Set(),
       seen: new Set(),
       focused: undefined,
-      autoExpandDepth: AUTO_EXPAND_DEPTH
+      autoExpandDepth: AUTO_EXPAND_DEPTH,
+      reuseCachedTraversal: null,
     };
   },
 
@@ -149,7 +154,8 @@ const Tree = module.exports = createClass({
       height: window.innerHeight,
       expanded: new Set(),
       seen: new Set(),
-      focused: undefined
+      focused: undefined,
+      cachedTraversal: undefined,
     };
   },
 
@@ -273,10 +279,23 @@ const Tree = module.exports = createClass({
 
 
   _dfsFromRoots(maxDepth = Infinity) {
+    const cached = this.state.cachedTraversal;
+    if (cached
+        && maxDepth === Infinity
+        && this.props.reuseCachedTraversal
+        && this.props.reuseCachedTraversal(cached)) {
+      return cached;
+    }
+
     const traversal = [];
     for (let root of this.props.getRoots()) {
       this._dfs(root, maxDepth, traversal);
     }
+
+    if (this.props.reuseCachedTraversal) {
+      this.state.cachedTraversal = traversal;
+    }
+
     return traversal;
   },
 
@@ -296,7 +315,8 @@ const Tree = module.exports = createClass({
     }
 
     this.setState({
-      expanded: this.state.expanded
+      expanded: this.state.expanded,
+      cachedTraversal: null,
     });
   },
 
@@ -308,7 +328,8 @@ const Tree = module.exports = createClass({
   _onCollapse(item) {
     this.state.expanded.delete(item);
     this.setState({
-      expanded: this.state.expanded
+      expanded: this.state.expanded,
+      cachedTraversal: null,
     });
   },
 
