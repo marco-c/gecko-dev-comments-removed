@@ -239,6 +239,41 @@ var snapshotFormatters = {
     };
 
     
+    
+    
+    
+    function buildRow(key, value) {
+      let title;
+      if (key[0] == "#") {
+        title = key.substr(1);
+      } else {
+        try {
+          title = strings.GetStringFromName(key);
+        } catch (e) {
+          title = key;
+        }
+      }
+      return $.new("tr", [
+        $.new("th", title, "column"),
+        $.new("td", value),
+      ]);
+    }
+
+    
+    
+    function addRows(where, trs) {
+      $.append($('graphics-' + where + '-tbody'), trs);
+    }
+
+    
+    
+    
+    function addRow(where, key, value) {
+      addRows(where, [buildRow(key, value)]);
+    }
+    if (data.clearTypeParameters !== undefined) {
+      addRow("diagnostics", "clearTypeParameters", data.clearTypeParameters);
+    }
     if ("info" in data) {
       apzInfo = formatApzInfo(data.info);
 
@@ -248,7 +283,8 @@ var snapshotFormatters = {
           $.new("td", String(val)),
         ]);
       });
-      $.append($("graphics-info-properties"), trs);
+      addRows("diagnostics", trs);
+
       delete data.info;
     }
 
@@ -279,76 +315,115 @@ var snapshotFormatters = {
                           return $.new("p", val);
                        }))])]);
       }
+    } else {
+      $("graphics-failures-tbody").style.display = "none";
+    }
 
-      delete data.failures;
+    
+    
+    
+    
+    
+    function addRowFromKey(where, key, colKey) {
+      if (!(key in data))
+        return;
+      colKey = colKey || key;
+
+      let value;
+      let messageKey = key + "Message";
+      if (messageKey in data) {
+        value = localizedMsg(data[messageKey]);
+        delete data[messageKey];
+      } else {
+        value = data[key];
+      }
+      delete data[key];
+
+      if (value) {
+        addRow(where, colKey, value);
+      }
     }
 
     
 
-    let out = Object.create(data);
-
-    if (apzInfo.length == 0)
-      out.asyncPanZoom = localizedMsg(["apzNone"]);
-    else
-      out.asyncPanZoom = apzInfo.join("; ");
-
-    out.acceleratedWindows =
-      data.numAcceleratedWindows + "/" + data.numTotalWindows;
-    if (data.windowLayerManagerType)
-      out.acceleratedWindows += " " + data.windowLayerManagerType;
-    if (data.windowLayerManagerRemote)
-      out.acceleratedWindows += " (OMTC)";
-    if (data.numAcceleratedWindowsMessage)
-      out.acceleratedWindows +=
-        " " + localizedMsg(data.numAcceleratedWindowsMessage);
-    delete data.numAcceleratedWindows;
-    delete data.numTotalWindows;
+    let compositor = data.windowLayerManagerRemote
+                     ? data.windowLayerManagerType
+                     : "BasicLayers (" + strings.GetStringFromName("mainThreadNoOMTC") + ")";
+    addRow("features", "compositing", compositor);
+    delete data.windowLayerManagerRemote;
     delete data.windowLayerManagerType;
-    delete data.numAcceleratedWindowsMessage;
+    delete data.numTotalWindows;
+    delete data.numAcceleratedWindows;
 
-    if ("direct2DEnabledMessage" in data) {
-      out.direct2DEnabled = localizedMsg(data.direct2DEnabledMessage);
-      delete data.direct2DEnabledMessage;
-      delete data.direct2DEnabled;
-    }
+    addRow("features", "asyncPanZoom",
+           apzInfo.length
+           ? apzInfo.join("; ")
+           : localizedMsg(["apzNone"]));
+    addRowFromKey("features", "webglRenderer");
+    addRowFromKey("features", "supportsHardwareH264", "hardwareH264");
+    addRowFromKey("features", "direct2DEnabled", "#Direct2D");
 
     if ("directWriteEnabled" in data) {
-      out.directWriteEnabled = data.directWriteEnabled;
+      let message = data.directWriteEnabled;
       if ("directWriteVersion" in data)
-        out.directWriteEnabled += " (" + data.directWriteVersion + ")";
+        message += " (" + data.directWriteVersion + ")";
+      addRow("features", "#DirectWrite", message);
       delete data.directWriteEnabled;
       delete data.directWriteVersion;
     }
 
-    if ("webglRendererMessage" in data) {
-      out.webglRenderer = localizedMsg(data.webglRendererMessage);
-      delete data.webglRendererMessage;
-      delete data.webglRenderer;
-    }
+    
+    let adapterKeys = [
+      ["adapterDescription"],
+      ["adapterVendorID"],
+      ["adapterDeviceID"],
+      ["driverVersion"],
+      ["driverDate"],
+      ["adapterDrivers"],
+      ["adapterSubsysID"],
+      ["adapterRAM"],
+    ];
 
-    let localizedOut = {};
-    for (let prop in out) {
-      let val = out[prop];
-      if (typeof(val) == "string" && !val)
-        
-        continue;
-      try {
-        var localizedName = strings.GetStringFromName(prop);
+    function showGpu(id, suffix) {
+      function get(prop) {
+        return data[prop + suffix];
       }
-      catch (err) {
-        
-        
-        localizedName = prop;
+
+      let trs = [];
+      for (let key of adapterKeys) {
+        let value = get(key);
+        if (value === undefined || value === "")
+          continue;
+        trs.push(buildRow(key, value));
       }
-      localizedOut[localizedName] = val;
+
+      if (trs.length == 0) {
+        $("graphics-" + id + "-tbody").style.display = "none";
+        return;
+      }
+
+      let active = "yes";
+      if ("isGPU2Active" in data && ((suffix == "2") != data.isGPU2Active)) {
+        active = "no";
+      }
+      addRow(id, "active", strings.GetStringFromName(active));
+      addRows(id, trs);
+    };
+    showGpu("gpu-1", "");
+    showGpu("gpu-2", "2");
+
+    
+    for (let key of adapterKeys) {
+      delete data[key];
+      delete data[key + "2"];
     }
-    let trs = sortedArrayFromObject(localizedOut).map(function ([prop, val]) {
-      return $.new("tr", [
-        $.new("th", prop, "column"),
-        $.new("td", val),
-      ]);
-    });
-    $.append($("graphics-tbody"), trs);
+    delete data.isGPU2Active;
+
+    
+    
+    for (let key in data) {
+      addRow("diagnostics", key, data[key]);
+    }
   },
 
   javaScript: function javaScript(data) {
