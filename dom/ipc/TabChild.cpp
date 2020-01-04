@@ -546,6 +546,9 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mDidSetRealShowInfo(false)
   , mDidLoadURLInit(false)
   , mAPZChild(nullptr)
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  , mNativeWindowHandle(0)
+#endif
 {
   
   
@@ -2529,6 +2532,17 @@ TabChild::RecvPrint(const uint64_t& aOuterWindowID, const PrintData& aPrintData)
 
 #endif
   return true;
+}
+
+bool
+TabChild::RecvUpdateNativeWindowHandle(const uintptr_t& aNewHandle)
+{
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  mNativeWindowHandle = aNewHandle;
+  return true;
+#else
+  return false;
+#endif
 }
 
 bool
