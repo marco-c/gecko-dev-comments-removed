@@ -12,6 +12,18 @@
 #include "nsTArray.h"
 #include "nsStringGlue.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
 namespace mozilla {
 namespace HangMonitor {
   class HangAnnotations;
