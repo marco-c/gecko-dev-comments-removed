@@ -227,17 +227,6 @@ void log_print(const LogModule* aModule,
 
 
 
-
-
-
-#ifdef _MSC_VER
-#  if _MSC_VER < 1900
-#    define __func__ __FUNCTION__
-#  endif
-#endif
-
-
-
 #undef MOZ_LOGGING_ENABLED
 
 #endif 
