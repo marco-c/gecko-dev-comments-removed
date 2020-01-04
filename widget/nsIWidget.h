@@ -655,6 +655,14 @@ class nsIWidget : public nsISupports
     
 
 
+    virtual bool IsRunningAppModal()
+    {
+      return false;
+    }
+
+    
+
+
 
 
 
