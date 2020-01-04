@@ -229,7 +229,7 @@ var gFxAccounts = {
       this.panelUIFooter.removeAttribute("fxaprofileimage");
       this.panelUIAvatar.style.removeProperty("list-style-image");
       let showErrorBadge = false;
-      if (!this._inCustomizationMode && userData) {
+      if (userData) {
         
         if (this.loginFailed) {
           let tooltipDescription = this.strings.formatStringFromName("reconnectDescription", [userData.email], 1);
@@ -260,7 +260,7 @@ var gFxAccounts = {
     }
 
     let updateWithProfile = (profile) => {
-      if (!this._inCustomizationMode && profileInfoEnabled) {
+      if (profileInfoEnabled) {
         if (profile.displayName) {
           this.panelUILabel.setAttribute("label", profile.displayName);
         }
