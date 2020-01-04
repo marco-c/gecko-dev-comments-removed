@@ -35,10 +35,10 @@ function LoginManager() {
 LoginManager.prototype = {
 
   classID: Components.ID("{cb9e0de8-3598-4ed7-857b-827f011ad5d8}"),
-  QueryInterface : XPCOMUtils.generateQI([Ci.nsILoginManager,
-                                          Ci.nsISupportsWeakReference,
-                                          Ci.nsIInterfaceRequestor]),
-  getInterface : function(aIID) {
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsILoginManager,
+                                         Ci.nsISupportsWeakReference,
+                                         Ci.nsIInterfaceRequestor]),
+  getInterface(aIID) {
     if (aIID.equals(Ci.mozIStorageConnection) && this._storage) {
       let ir = this._storage.QueryInterface(Ci.nsIInterfaceRequestor);
       return ir.getInterface(aIID);
@@ -56,19 +56,19 @@ LoginManager.prototype = {
   
 
 
-  __formFillService : null, 
+  __formFillService: null, 
   get _formFillService() {
-    if (!this.__formFillService)
-      this.__formFillService =
-                      Cc["@mozilla.org/satchel/form-fill-controller;1"].
-                      getService(Ci.nsIFormFillController);
+    if (!this.__formFillService) {
+      this.__formFillService = Cc["@mozilla.org/satchel/form-fill-controller;1"].
+                               getService(Ci.nsIFormFillController);
+    }
     return this.__formFillService;
   },
 
 
-  _storage : null, 
-  _prefBranch  : null, 
-  _remember : true,  
+  _storage: null, 
+  _prefBranch: null, 
+  _remember: true,  
 
 
   
@@ -78,9 +78,7 @@ LoginManager.prototype = {
 
 
 
-
-
-  init : function () {
+  init() {
 
     
     this._observer._pwmgr            = this;
@@ -107,15 +105,15 @@ LoginManager.prototype = {
   },
 
 
-  _initStorage : function () {
-    var contractID;
+  _initStorage() {
+    let contractID;
     if (AppConstants.platform == "android") {
       contractID = "@mozilla.org/login-manager/storage/mozStorage;1";
     } else {
       contractID = "@mozilla.org/login-manager/storage/json;1";
     }
     try {
-      var catMan = Cc["@mozilla.org/categorymanager;1"].
+      let catMan = Cc["@mozilla.org/categorymanager;1"].
                    getService(Ci.nsICategoryManager);
       contractID = catMan.getCategoryEntry("login-manager-storage",
                                            "nsILoginManagerStorage");
@@ -137,17 +135,14 @@ LoginManager.prototype = {
 
 
 
+  _observer: {
+    _pwmgr: null,
 
-
-  _observer : {
-    _pwmgr : null,
-
-    QueryInterface : XPCOMUtils.generateQI([Ci.nsIObserver,
-                                            Ci.nsISupportsWeakReference]),
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
+                                           Ci.nsISupportsWeakReference]),
 
     
-    observe : function (subject, topic, data) {
-
+    observe(subject, topic, data) {
       if (topic == "nsPref:changed") {
         var prefName = data;
         log.debug("got change to", prefName, "preference");
@@ -194,7 +189,7 @@ LoginManager.prototype = {
 
 
 
-  _gatherTelemetry : function (referenceTimeMs) {
+  _gatherTelemetry(referenceTimeMs) {
     function clearAndGetHistogram(histogramId) {
       let histogram = Services.telemetry.getHistogramById(histogramId);
       histogram.clear();
@@ -261,35 +256,37 @@ LoginManager.prototype = {
 
 
 
-
-  initializationPromise : null,
+  initializationPromise: null,
 
 
   
 
 
-
-
-  addLogin : function (login) {
+  addLogin(login) {
     
-    if (login.hostname == null || login.hostname.length == 0)
+    if (login.hostname == null || login.hostname.length == 0) {
       throw new Error("Can't add a login with a null or empty hostname.");
+    }
 
     
-    if (login.username == null)
+    if (login.username == null) {
       throw new Error("Can't add a login with a null username.");
+    }
 
-    if (login.password == null || login.password.length == 0)
+    if (login.password == null || login.password.length == 0) {
       throw new Error("Can't add a login with a null or empty password.");
+    }
 
     if (login.formSubmitURL || login.formSubmitURL == "") {
       
-      if (login.httpRealm != null)
+      if (login.httpRealm != null) {
         throw new Error("Can't add a login with both a httpRealm and formSubmitURL.");
+      }
     } else if (login.httpRealm) {
       
-      if (login.formSubmitURL != null)
+      if (login.formSubmitURL != null) {
         throw new Error("Can't add a login with both a httpRealm and formSubmitURL.");
+      }
     } else {
       
       throw new Error("Can't add a login without a httpRealm or formSubmitURL.");
@@ -300,8 +297,9 @@ LoginManager.prototype = {
     var logins = this.findLogins({}, login.hostname, login.formSubmitURL,
                                  login.httpRealm);
 
-    if (logins.some(l => login.matches(l, true)))
+    if (logins.some(l => login.matches(l, true))) {
       throw new Error("This login already exists.");
+    }
 
     log.debug("Adding login");
     return this._storage.addLogin(login);
@@ -310,9 +308,7 @@ LoginManager.prototype = {
   
 
 
-
-
-  removeLogin : function (login) {
+  removeLogin(login) {
     log.debug("Removing login");
     return this._storage.removeLogin(login);
   },
@@ -321,9 +317,7 @@ LoginManager.prototype = {
   
 
 
-
-
-  modifyLogin : function (oldLogin, newLogin) {
+  modifyLogin(oldLogin, newLogin) {
     log.debug("Modifying login");
     return this._storage.modifyLogin(oldLogin, newLogin);
   },
@@ -335,10 +329,7 @@ LoginManager.prototype = {
 
 
 
-
-
-
-  getAllLogins : function (count) {
+  getAllLogins(count) {
     log.debug("Getting a list of all logins");
     return this._storage.getAllLogins(count);
   },
@@ -347,9 +338,7 @@ LoginManager.prototype = {
   
 
 
-
-
-  removeAllLogins : function () {
+  removeAllLogins() {
     log.debug("Removing all logins");
     this._storage.removeAllLogins();
   },
@@ -362,10 +351,8 @@ LoginManager.prototype = {
 
 
 
-
-
-  getAllDisabledHosts : function (count) {
-    log.debug("Getting a list of all disabled hosts");
+  getAllDisabledHosts(count) {
+    log.debug("Getting a list of all disabled origins");
     return this._storage.getAllDisabledHosts(count);
   },
 
@@ -373,13 +360,11 @@ LoginManager.prototype = {
   
 
 
+  findLogins(count, origin, formActionOrigin, httpRealm) {
+    log.debug("Searching for logins matching origin:", origin,
+              "formActionOrigin:", formActionOrigin, "httpRealm:", httpRealm);
 
-
-  findLogins : function (count, hostname, formSubmitURL, httpRealm) {
-    log.debug("Searching for logins matching host:", hostname,
-        "formSubmitURL:", formSubmitURL, "httpRealm:", httpRealm);
-
-    return this._storage.findLogins(count, hostname, formSubmitURL,
+    return this._storage.findLogins(count, origin, formActionOrigin,
                                     httpRealm);
   },
 
@@ -390,10 +375,8 @@ LoginManager.prototype = {
 
 
 
-
-
-  searchLogins : function(count, matchData) {
-   log.debug("Searching for logins");
+  searchLogins(count, matchData) {
+    log.debug("Searching for logins");
 
     return this._storage.searchLogins(count, matchData);
   },
@@ -403,25 +386,17 @@ LoginManager.prototype = {
 
 
 
+  countLogins(origin, formActionOrigin, httpRealm) {
+    log.debug("Counting logins matching origin:", origin,
+              "formActionOrigin:", formActionOrigin, "httpRealm:", httpRealm);
 
-
-  countLogins : function (hostname, formSubmitURL, httpRealm) {
-    log.debug("Counting logins matching host:", hostname,
-        "formSubmitURL:", formSubmitURL, "httpRealm:", httpRealm);
-
-    return this._storage.countLogins(hostname, formSubmitURL, httpRealm);
+    return this._storage.countLogins(origin, formActionOrigin, httpRealm);
   },
-
-
-  
 
 
   get uiBusy() {
     return this._storage.uiBusy;
   },
-
-
-  
 
 
   get isLoggedIn() {
@@ -432,29 +407,27 @@ LoginManager.prototype = {
   
 
 
-
-
-  getLoginSavingEnabled : function (host) {
-    log.debug("Checking if logins to", host, "can be saved.");
-    if (!this._remember)
+  getLoginSavingEnabled(origin) {
+    log.debug("Checking if logins to", origin, "can be saved.");
+    if (!this._remember) {
       return false;
+    }
 
-    return this._storage.getLoginSavingEnabled(host);
+    return this._storage.getLoginSavingEnabled(origin);
   },
 
 
   
 
 
-
-
-  setLoginSavingEnabled : function (hostname, enabled) {
+  setLoginSavingEnabled(origin, enabled) {
     
-    if (hostname.indexOf("\0") != -1)
+    if (origin.indexOf("\0") != -1) {
       throw new Error("Invalid hostname");
+    }
 
-    log.debug("Login saving for", hostname, "now enabled?", enabled);
-    return this._storage.setLoginSavingEnabled(hostname, enabled);
+    log.debug("Login saving for", origin, "now enabled?", enabled);
+    return this._storage.setLoginSavingEnabled(origin, enabled);
   },
 
   
@@ -465,10 +438,8 @@ LoginManager.prototype = {
 
 
 
-
-
-  autoCompleteSearchAsync : function (aSearchString, aPreviousResult,
-                                      aElement, aCallback) {
+  autoCompleteSearchAsync(aSearchString, aPreviousResult,
+                          aElement, aCallback) {
     
     
 
@@ -481,7 +452,7 @@ LoginManager.prototype = {
 
     log.debug("AutoCompleteSearch invoked. Search is:", aSearchString);
 
-    var previousResult;
+    let previousResult;
     if (aPreviousResult) {
       previousResult = { searchString: aPreviousResult.searchString,
                          logins: aPreviousResult.wrappedJSObject.logins };
