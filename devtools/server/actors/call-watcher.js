@@ -284,6 +284,23 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
     this.finalize();
   },
 
+  events: {
+    
+
+
+    "call": {
+      type: "call",
+      function: Arg(0, "function-call")
+    }
+  },
+
+  
+
+
+
+
+  onCall: null,
+
   
 
 
@@ -384,13 +401,6 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   eraseRecording: method(function() {
     this._functionCalls = [];
   }),
-
-  
-
-
-
-
-  onCall: null,
 
   
 
