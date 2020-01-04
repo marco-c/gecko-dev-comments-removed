@@ -153,18 +153,20 @@ function defer() {
 
 
 function* test_basics() {
-  
-  let prefDeferred = defer();
-  SpecialPowers.pushPrefEnv(
-    { set: [ ['dom.mozTCPSocket.enabled', true] ] },
-    prefDeferred.resolve);
-  yield prefDeferred.promise;
+  if (enablePrefsAndPermissions()) {
+    
+    let prefDeferred = defer();
+    SpecialPowers.pushPrefEnv(
+      { set: [ ['dom.mozTCPSocket.enabled', true] ] },
+      prefDeferred.resolve);
+    yield prefDeferred.promise;
 
-  let permDeferred = defer();
-  SpecialPowers.pushPermissions(
-    [ { type: 'tcp-socket', allow: true, context: document } ],
-    permDeferred.resolve);
-  yield permDeferred.promise;
+    let permDeferred = defer();
+    SpecialPowers.pushPermissions(
+      [ { type: 'tcp-socket', allow: true, context: document } ],
+      permDeferred.resolve);
+    yield permDeferred.promise;
+  }
 
   
   
@@ -172,15 +174,15 @@ function* test_basics() {
   let serverPort = 8085;
 
   
-  let listeningServer = new TCPServerSocket(serverPort,
-                                            { binaryType: 'arraybuffer' },
-                                            SERVER_BACKLOG);
+  let listeningServer = createServer(serverPort,
+                                     { binaryType: 'arraybuffer' },
+                                     SERVER_BACKLOG);
 
   let connectedPromise = waitForConnection(listeningServer);
 
   
-  let clientSocket = new TCPSocket('127.0.0.1', serverPort,
-                                   { binaryType: 'arraybuffer' });
+  let clientSocket = createSocket('127.0.0.1', serverPort,
+                                  { binaryType: 'arraybuffer' });
   let clientQueue = listenForEventsOnSocket(clientSocket, 'client');
 
   
@@ -286,8 +288,8 @@ function* test_basics() {
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = new TCPSocket('127.0.0.1', serverPort,
-                               { binaryType: 'arraybuffer' });
+  clientSocket = createSocket('127.0.0.1', serverPort,
+                              { binaryType: 'arraybuffer' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'open', 'got open event');
 
@@ -313,8 +315,8 @@ function* test_basics() {
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = new TCPSocket('127.0.0.1', serverPort,
-                               { binaryType: 'arraybuffer' });
+  clientSocket = createSocket('127.0.0.1', serverPort,
+                              { binaryType: 'arraybuffer' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'open', 'got open event');
 
@@ -347,8 +349,8 @@ function* test_basics() {
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = new TCPSocket('127.0.0.1', serverPort,
-                               { binaryType: 'string' });
+  clientSocket = createSocket('127.0.0.1', serverPort,
+                              { binaryType: 'string' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'open', 'got open event');
 
@@ -375,8 +377,8 @@ function* test_basics() {
   listeningServer.close();
 
   
-  clientSocket = new TCPSocket('127.0.0.1', serverPort,
-                               { binaryType: 'arraybuffer' });
+  clientSocket = createSocket('127.0.0.1', serverPort,
+                              { binaryType: 'arraybuffer' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'error', 'fail to connect');
   is(clientSocket.readyState, 'closed',
