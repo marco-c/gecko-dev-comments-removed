@@ -123,7 +123,7 @@ SVGMPathElement::ParseAttribute(int32_t aNamespaceID,
                                           aValue, aResult);
   if (aNamespaceID == kNameSpaceID_XLink &&
       aAttribute == nsGkAtoms::href &&
-      IsInDoc()) {
+      IsInUncomposedDoc()) {
     
     
     UpdateHrefTarget(GetParent(), aValue);

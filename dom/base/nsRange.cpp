@@ -2927,14 +2927,14 @@ nsRange::CollectClientRects(nsLayoutUtils::RectCallback* aCollector,
   nsCOMPtr<nsINode> endContainer = aEndParent;
 
   
-  if (!aStartParent->IsInDoc()) {
+  if (!aStartParent->IsInUncomposedDoc()) {
     return;
   }
 
   if (aFlushLayout) {
     aStartParent->OwnerDoc()->FlushPendingNotifications(Flush_Layout);
     
-    if (!aStartParent->IsInDoc()) {
+    if (!aStartParent->IsInUncomposedDoc()) {
       return;
     }
   }
@@ -3062,7 +3062,7 @@ nsRange::GetUsedFontFaces(nsIDOMFontFaceList** aResult)
   doc->FlushPendingNotifications(Flush_Frames);
 
   
-  NS_ENSURE_TRUE(mStartParent->IsInDoc(), NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(mStartParent->IsInUncomposedDoc(), NS_ERROR_UNEXPECTED);
 
   RefPtr<nsFontFaceList> fontFaceList = new nsFontFaceList();
 

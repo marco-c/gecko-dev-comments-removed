@@ -1669,7 +1669,7 @@ HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   
   
   
-  if (!IsInDoc()) {
+  if (!IsInUncomposedDoc()) {
     return NS_OK; 
   }
 

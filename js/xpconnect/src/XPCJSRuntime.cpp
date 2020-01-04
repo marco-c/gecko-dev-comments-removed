@@ -2733,7 +2733,7 @@ class OrphanReporter : public JS::ObjectPrivateVisitor
         
         
         
-        if (node && !node->IsInDoc() &&
+        if (node && !node->IsInUncomposedDoc() &&
             !(node->IsElement() && node->AsElement()->IsInNamespace(kNameSpaceID_XBL)))
         {
             

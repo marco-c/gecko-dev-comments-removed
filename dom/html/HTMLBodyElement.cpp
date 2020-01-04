@@ -410,7 +410,7 @@ HTMLBodyElement::WalkContentStyleRules(nsRuleWalker* aRuleWalker)
 {
   nsGenericHTMLElement::WalkContentStyleRules(aRuleWalker);
 
-  if (!mContentStyleRule && IsInDoc()) {
+  if (!mContentStyleRule && IsInUncomposedDoc()) {
     
     
     mContentStyleRule = new BodyRule(this);

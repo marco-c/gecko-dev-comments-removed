@@ -5993,7 +5993,7 @@ HTMLInputElement::AddedToRadioGroup()
 {
   
   
-  if (!mForm && !IsInDoc()) {
+  if (!mForm && !IsInUncomposedDoc()) {
     return;
   }
 

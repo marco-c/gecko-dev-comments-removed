@@ -723,7 +723,7 @@ txMozillaXMLOutput::startHTMLElement(nsIContent* aElement, bool aIsHTML)
         NS_ENSURE_SUCCESS(rv, rv);
 
         
-        NS_ASSERTION(!aElement->IsInDoc(), "should not be in doc");
+        NS_ASSERTION(!aElement->IsInUncomposedDoc(), "should not be in doc");
         rv = aElement->AppendChildTo(meta, false);
         NS_ENSURE_SUCCESS(rv, rv);
     }
