@@ -70,13 +70,12 @@ function performTest(HUD, [result]) {
 
   
   
-  
   let selectionText = (HUD.iframeWindow.getSelection() + "")
-    .replace(/\r?\n|\r| /g, "");
+    .replace(/\r?\n|\r/g, " ");
   isnot(selectionText.indexOf("foobarBazBug613280"), -1,
         "selection text includes 'foobarBazBug613280'");
 
   waitForClipboard((str) => {
-    return selectionText.trim() === str.trim().replace(/ /g, "");
+    return str.trim() == selectionText.trim();
   }, clipboardSetup, clipboardCopyDone, clipboardCopyDone);
 }
