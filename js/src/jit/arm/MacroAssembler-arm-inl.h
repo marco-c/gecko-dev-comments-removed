@@ -587,9 +587,33 @@ void
 MacroAssembler::lshift64(Imm32 imm, Register64 dest)
 {
     MOZ_ASSERT(0 <= imm.value && imm.value < 64);
-    as_mov(dest.high, lsl(dest.high, imm.value));
-    as_orr(dest.high, dest.high, lsr(dest.low, 32 - imm.value));
-    as_mov(dest.low, lsl(dest.low, imm.value));
+    if (imm.value == 0) {
+        return;
+    } else if (imm.value < 32) {
+        as_mov(dest.high, lsl(dest.high, imm.value));
+        as_orr(dest.high, dest.high, lsr(dest.low, 32 - imm.value));
+        as_mov(dest.low, lsl(dest.low, imm.value));
+    } else {
+        as_mov(dest.high, lsl(dest.low, imm.value - 32));
+        ma_mov(Imm32(0), dest.low);
+    }
+}
+
+void
+MacroAssembler::lshift64(Register unmaskedShift, Register64 dest)
+{
+    
+    
+
+    ScratchRegisterScope shift(*this);
+    ma_and(Imm32(0x3f), unmaskedShift, shift);
+    as_mov(dest.high, lsl(dest.high, shift));
+    ma_sub(shift, Imm32(32), shift);
+    as_orr(dest.high, dest.high, lsl(dest.low, shift));
+    ma_neg(shift, shift);
+    as_orr(dest.high, dest.high, lsr(dest.low, shift));
+    ma_and(Imm32(0x3f), unmaskedShift, shift);
+    as_mov(dest.low, lsl(dest.low, shift));
 }
 
 void
@@ -633,6 +657,51 @@ MacroAssembler::rshiftPtrArithmetic(Imm32 imm, Register dest)
 }
 
 void
+MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 dest)
+{
+    MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+
+    if (imm.value < 32) {
+        as_mov(dest.low, lsr(dest.low, imm.value));
+        as_orr(dest.low, dest.low, lsl(dest.high, 32 - imm.value));
+        as_mov(dest.high, asr(dest.high, imm.value));
+    } else if (imm.value == 32) {
+        as_mov(dest.low, O2Reg(dest.high));
+        as_mov(dest.high, asr(dest.high, 31));
+    } else {
+        as_mov(dest.low, asr(dest.high, imm.value - 32));
+        as_mov(dest.high, asr(dest.high, 31));
+    }
+}
+
+void
+MacroAssembler::rshift64Arithmetic(Register unmaskedShift, Register64 dest)
+{
+    Label proceed;
+
+    
+    
+    
+    
+    
+    
+
+    ScratchRegisterScope shift(*this);
+    ma_and(Imm32(0x3f), unmaskedShift, shift);
+    as_mov(dest.low, lsr(dest.low, shift));
+    ma_rsb(shift, Imm32(32), shift);
+    as_orr(dest.low, dest.low, lsl(dest.high, shift));
+    ma_neg(shift, shift, SetCC);
+    ma_b(&proceed, Signed);
+
+    as_orr(dest.low, dest.low, asr(dest.high, shift));
+
+    bind(&proceed);
+    ma_and(Imm32(0x3f), unmaskedShift, shift);
+    as_mov(dest.high, asr(dest.high, shift));
+}
+
+void
 MacroAssembler::rshift32Arithmetic(Register src, Register dest)
 {
     ma_asr(src, dest, dest);
@@ -649,9 +718,35 @@ void
 MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 {
     MOZ_ASSERT(0 <= imm.value && imm.value < 64);
-    as_mov(dest.low, lsr(dest.low, imm.value));
-    as_orr(dest.low, dest.low, lsl(dest.high, 32 - imm.value));
-    as_mov(dest.high, lsr(dest.high, imm.value));
+    MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+    if (imm.value < 32) {
+        as_mov(dest.low, lsr(dest.low, imm.value));
+        as_orr(dest.low, dest.low, lsl(dest.high, 32 - imm.value));
+        as_mov(dest.high, lsr(dest.high, imm.value));
+    } else if (imm.value == 32) {
+        ma_mov(dest.high, dest.low);
+        ma_mov(Imm32(0), dest.high);
+    } else {
+        ma_lsr(Imm32(imm.value - 32), dest.high, dest.low);
+        ma_mov(Imm32(0), dest.high);
+    }
+}
+
+void
+MacroAssembler::rshift64(Register unmaskedShift, Register64 dest)
+{
+    
+    
+
+    ScratchRegisterScope shift(*this);
+    ma_and(Imm32(0x3f), unmaskedShift, shift);
+    as_mov(dest.low, lsr(dest.low, shift));
+    ma_sub(shift, Imm32(32), shift);
+    as_orr(dest.low, dest.low, lsr(dest.high, shift));
+    ma_neg(shift, shift);
+    as_orr(dest.low, dest.low, lsl(dest.high, shift));
+    ma_and(Imm32(0x3f), unmaskedShift, shift);
+    as_mov(dest.high, lsr(dest.high, shift));
 }
 
 
