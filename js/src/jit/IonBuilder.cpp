@@ -858,6 +858,18 @@ IonBuilder::build()
     rewriteParameters();
 
     
+    if (!info().funMaybeLazy() && !info().module() &&
+        script()->bindings.numBodyLevelLocals() > 0)
+    {
+        MGlobalNameConflictsCheck* redeclCheck = MGlobalNameConflictsCheck::New(alloc());
+        current->add(redeclCheck);
+        MResumePoint* entryRpCopy = MResumePoint::Copy(alloc(), current->entryResumePoint());
+        if (!entryRpCopy)
+            return false;
+        redeclCheck->setResumePoint(entryRpCopy);
+    }
+
+    
     if (!initScopeChain())
         return false;
 
@@ -1239,16 +1251,6 @@ IonBuilder::initScopeChain(MDefinition* callee)
         MOZ_ASSERT(!script()->isForEval());
         MOZ_ASSERT(!script()->hasNonSyntacticScope());
         scope = constant(ObjectValue(script()->global().lexicalScope()));
-
-        
-        if (script()->bindings.numBodyLevelLocals() > 0) {
-            MGlobalNameConflictsCheck* redeclCheck = MGlobalNameConflictsCheck::New(alloc());
-            current->add(redeclCheck);
-            MResumePoint* entryRpCopy = MResumePoint::Copy(alloc(), current->entryResumePoint());
-            if (!entryRpCopy)
-                return false;
-            redeclCheck->setResumePoint(entryRpCopy);
-        }
     }
 
     current->setScopeChain(scope);
