@@ -19,317 +19,384 @@
 
 this.EXPORTED_SYMBOLS = ["loadKinto"];
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.loadKinto = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _base = require("../src/adapters/base");
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _base2 = _interopRequireDefault(_base);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+Components.utils.import("resource://gre/modules/Sqlite.jsm"); 
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var _srcAdaptersBase = require("../src/adapters/base");
 
-var _srcAdaptersBase2 = _interopRequireDefault(_srcAdaptersBase);
 
-Components.utils["import"]("resource://gre/modules/Sqlite.jsm");
-Components.utils["import"]("resource://gre/modules/Task.jsm");
 
-var statements = {
-  "createCollectionData": "\n    CREATE TABLE collection_data (\n      collection_name TEXT,\n      record_id TEXT,\n      record TEXT\n    );",
 
-  "createCollectionMetadata": "\n    CREATE TABLE collection_metadata (\n      collection_name TEXT PRIMARY KEY,\n      last_modified INTEGER\n    ) WITHOUT ROWID;",
 
-  "createCollectionDataRecordIdIndex": "\n    CREATE UNIQUE INDEX unique_collection_record\n      ON collection_data(collection_name, record_id);",
 
-  "clearData": "\n    DELETE FROM collection_data\n      WHERE collection_name = :collection_name;",
 
-  "createData": "\n    INSERT INTO collection_data (collection_name, record_id, record)\n      VALUES (:collection_name, :record_id, :record);",
 
-  "updateData": "\n    UPDATE collection_data\n      SET record = :record\n        WHERE collection_name = :collection_name\n        AND record_id = :record_id;",
 
-  "deleteData": "\n    DELETE FROM collection_data\n      WHERE collection_name = :collection_name\n      AND record_id = :record_id;",
 
-  "saveLastModified": "\n    REPLACE INTO collection_metadata (collection_name, last_modified)\n      VALUES (:collection_name, :last_modified);",
+Components.utils.import("resource://gre/modules/Task.jsm");
 
-  "getLastModified": "\n    SELECT last_modified\n      FROM collection_metadata\n        WHERE collection_name = :collection_name;",
+const statements = {
+  "createCollectionData": `
+    CREATE TABLE collection_data (
+      collection_name TEXT,
+      record_id TEXT,
+      record TEXT
+    );`,
 
-  "getRecord": "\n    SELECT record\n      FROM collection_data\n        WHERE collection_name = :collection_name\n        AND record_id = :record_id;",
+  "createCollectionMetadata": `
+    CREATE TABLE collection_metadata (
+      collection_name TEXT PRIMARY KEY,
+      last_modified INTEGER
+    ) WITHOUT ROWID;`,
 
-  "listRecords": "\n    SELECT record\n      FROM collection_data\n        WHERE collection_name = :collection_name;",
+  "createCollectionDataRecordIdIndex": `
+    CREATE UNIQUE INDEX unique_collection_record
+      ON collection_data(collection_name, record_id);`,
 
-  "importData": "\n    REPLACE INTO collection_data (collection_name, record_id, record)\n      VALUES (:collection_name, :record_id, :record);"
+  "clearData": `
+    DELETE FROM collection_data
+      WHERE collection_name = :collection_name;`,
+
+  "createData": `
+    INSERT INTO collection_data (collection_name, record_id, record)
+      VALUES (:collection_name, :record_id, :record);`,
+
+  "updateData": `
+    UPDATE collection_data
+      SET record = :record
+        WHERE collection_name = :collection_name
+        AND record_id = :record_id;`,
+
+  "deleteData": `
+    DELETE FROM collection_data
+      WHERE collection_name = :collection_name
+      AND record_id = :record_id;`,
+
+  "saveLastModified": `
+    REPLACE INTO collection_metadata (collection_name, last_modified)
+      VALUES (:collection_name, :last_modified);`,
+
+  "getLastModified": `
+    SELECT last_modified
+      FROM collection_metadata
+        WHERE collection_name = :collection_name;`,
+
+  "getRecord": `
+    SELECT record
+      FROM collection_data
+        WHERE collection_name = :collection_name
+        AND record_id = :record_id;`,
+
+  "listRecords": `
+    SELECT record
+      FROM collection_data
+        WHERE collection_name = :collection_name;`,
+
+  "importData": `
+    REPLACE INTO collection_data (collection_name, record_id, record)
+      VALUES (:collection_name, :record_id, :record);`
 
 };
 
-var createStatements = ["createCollectionData", "createCollectionMetadata", "createCollectionDataRecordIdIndex"];
+const createStatements = ["createCollectionData", "createCollectionMetadata", "createCollectionDataRecordIdIndex"];
 
-var currentSchemaVersion = 1;
+const currentSchemaVersion = 1;
 
-var FirefoxAdapter = (function (_BaseAdapter) {
-  _inherits(FirefoxAdapter, _BaseAdapter);
-
-  function FirefoxAdapter(collection) {
-    _classCallCheck(this, FirefoxAdapter);
-
-    _get(Object.getPrototypeOf(FirefoxAdapter.prototype), "constructor", this).call(this);
+class FirefoxAdapter extends _base2.default {
+  constructor(collection) {
+    super();
     this.collection = collection;
   }
 
-  _createClass(FirefoxAdapter, [{
-    key: "_init",
-    value: function _init(connection) {
-      return Task.spawn(function* () {
-        yield connection.executeTransaction(function* doSetup() {
-          var schema = yield connection.getSchemaVersion();
+  _init(connection) {
+    return Task.spawn(function* () {
+      yield connection.executeTransaction(function* doSetup() {
+        const schema = yield connection.getSchemaVersion();
 
-          if (schema == 0) {
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-
-              for (var _iterator = createStatements[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var statementName = _step.value;
-
-                yield connection.execute(statements[statementName]);
-              }
-            } catch (err) {
-              _didIteratorError = true;
-              _iteratorError = err;
-            } finally {
-              try {
-                if (!_iteratorNormalCompletion && _iterator["return"]) {
-                  _iterator["return"]();
-                }
-              } finally {
-                if (_didIteratorError) {
-                  throw _iteratorError;
-                }
-              }
-            }
-
-            yield connection.setSchemaVersion(currentSchemaVersion);
-          } else if (schema != 1) {
-            throw new Error("Unknown database schema: " + schema);
-          }
-        });
-        return connection;
-      });
-    }
-  }, {
-    key: "_executeStatement",
-    value: function _executeStatement(statement, params) {
-      if (!this._connection) {
-        throw new Error("The storage adapter is not open");
-      }
-      return this._connection.executeCached(statement, params);
-    }
-  }, {
-    key: "open",
-    value: function open() {
-      var self = this;
-      return Task.spawn(function* () {
-        var opts = { path: "kinto.sqlite", sharedMemoryCache: false };
-        if (!self._connection) {
-          self._connection = yield Sqlite.openConnection(opts).then(self._init);
-        }
-      });
-    }
-  }, {
-    key: "close",
-    value: function close() {
-      if (this._connection) {
-        var promise = this._connection.close();
-        this._connection = null;
-        return promise;
-      }
-      return Promise.resolve();
-    }
-  }, {
-    key: "clear",
-    value: function clear() {
-      var params = { collection_name: this.collection };
-      return this._executeStatement(statements.clearData, params);
-    }
-  }, {
-    key: "create",
-    value: function create(record) {
-      var params = {
-        collection_name: this.collection,
-        record_id: record.id,
-        record: JSON.stringify(record)
-      };
-      return this._executeStatement(statements.createData, params).then(() => record);
-    }
-  }, {
-    key: "update",
-    value: function update(record) {
-      var params = {
-        collection_name: this.collection,
-        record_id: record.id,
-        record: JSON.stringify(record)
-      };
-      return this._executeStatement(statements.updateData, params).then(() => record);
-    }
-  }, {
-    key: "get",
-    value: function get(id) {
-      var params = {
-        collection_name: this.collection,
-        record_id: id
-      };
-      return this._executeStatement(statements.getRecord, params).then(result => {
-        if (result.length == 0) {
-          return;
-        }
-        return JSON.parse(result[0].getResultByName("record"));
-      });
-    }
-  }, {
-    key: "delete",
-    value: function _delete(id) {
-      var params = {
-        collection_name: this.collection,
-        record_id: id
-      };
-      return this._executeStatement(statements.deleteData, params).then(() => id);
-    }
-  }, {
-    key: "list",
-    value: function list() {
-      var params = {
-        collection_name: this.collection
-      };
-      return this._executeStatement(statements.listRecords, params).then(result => {
-        var records = [];
-        for (var k = 0; k < result.length; k++) {
-          var row = result[k];
-          records.push(JSON.parse(row.getResultByName("record")));
-        }
-        return records;
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "loadDump",
-    value: function loadDump(records) {
-      var connection = this._connection;
-      var collection_name = this.collection;
-      return Task.spawn(function* () {
-        yield connection.executeTransaction(function* doImport() {
-          var _iteratorNormalCompletion2 = true;
-          var _didIteratorError2 = false;
-          var _iteratorError2 = undefined;
+        if (schema == 0) {
+          var _iteratorNormalCompletion = true;
+          var _didIteratorError = false;
+          var _iteratorError = undefined;
 
           try {
-            for (var _iterator2 = records[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-              var record = _step2.value;
 
-              var _params = {
-                collection_name: collection_name,
-                record_id: record.id,
-                record: JSON.stringify(record)
-              };
-              yield connection.execute(statements.importData, _params);
+            for (var _iterator = createStatements[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+              const statementName = _step.value;
+
+              yield connection.execute(statements[statementName]);
             }
           } catch (err) {
-            _didIteratorError2 = true;
-            _iteratorError2 = err;
+            _didIteratorError = true;
+            _iteratorError = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion2 && _iterator2["return"]) {
-                _iterator2["return"]();
+              if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
               }
             } finally {
-              if (_didIteratorError2) {
-                throw _iteratorError2;
+              if (_didIteratorError) {
+                throw _iteratorError;
               }
             }
           }
 
-          var lastModified = Math.max.apply(Math, _toConsumableArray(records.map(record => record.last_modified)));
-          var params = {
-            collection_name: collection_name
-          };
-          var previousLastModified = yield connection.execute(statements.getLastModified, params).then(result => {
-            return result ? result[0].getResultByName('last_modified') : -1;
-          });
-          if (lastModified > previousLastModified) {
-            var _params2 = {
-              collection_name: collection_name,
-              last_modified: lastModified
-            };
-            yield connection.execute(statements.saveLastModified, _params2);
-          }
-        });
-        return records;
-      });
-    }
-  }, {
-    key: "saveLastModified",
-    value: function saveLastModified(lastModified) {
-      var parsedLastModified = parseInt(lastModified, 10) || null;
-      var params = {
-        collection_name: this.collection,
-        last_modified: parsedLastModified
-      };
-      return this._executeStatement(statements.saveLastModified, params).then(() => parsedLastModified);
-    }
-  }, {
-    key: "getLastModified",
-    value: function getLastModified() {
-      var params = {
-        collection_name: this.collection
-      };
-      return this._executeStatement(statements.getLastModified, params).then(result => {
-        if (result.length == 0) {
-          return 0;
+          yield connection.setSchemaVersion(currentSchemaVersion);
+        } else if (schema != 1) {
+          throw new Error("Unknown database schema: " + schema);
         }
-        return result[0].getResultByName("last_modified");
       });
+      return connection;
+    });
+  }
+
+  _executeStatement(statement, params) {
+    if (!this._connection) {
+      throw new Error("The storage adapter is not open");
     }
-  }]);
+    return this._connection.executeCached(statement, params);
+  }
 
-  return FirefoxAdapter;
-})(_srcAdaptersBase2["default"]);
+  open() {
+    const self = this;
+    return Task.spawn(function* () {
+      const opts = { path: "kinto.sqlite", sharedMemoryCache: false };
+      if (!self._connection) {
+        self._connection = yield Sqlite.openConnection(opts).then(self._init);
+      }
+    });
+  }
 
-exports["default"] = FirefoxAdapter;
-module.exports = exports["default"];
+  close() {
+    if (this._connection) {
+      const promise = this._connection.close();
+      this._connection = null;
+      return promise;
+    }
+    return Promise.resolve();
+  }
+
+  clear() {
+    const params = { collection_name: this.collection };
+    return this._executeStatement(statements.clearData, params);
+  }
+
+  execute(callback, options = { preload: [] }) {
+    if (!this._connection) {
+      throw new Error("The storage adapter is not open");
+    }
+    const preloaded = options.preload.reduce((acc, record) => {
+      acc[record.id] = record;
+      return acc;
+    }, {});
+
+    const proxy = transactionProxy(this.collection, preloaded);
+    let result;
+    try {
+      result = callback(proxy);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+    const conn = this._connection;
+    return conn.executeTransaction(function* doExecuteTransaction() {
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
+
+      try {
+        for (var _iterator2 = proxy.operations[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          const { statement, params } = _step2.value;
+
+          yield conn.executeCached(statement, params);
+        }
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+    }).then(_ => result);
+  }
+
+  get(id) {
+    const params = {
+      collection_name: this.collection,
+      record_id: id
+    };
+    return this._executeStatement(statements.getRecord, params).then(result => {
+      if (result.length == 0) {
+        return;
+      }
+      return JSON.parse(result[0].getResultByName("record"));
+    });
+  }
+
+  list() {
+    const params = {
+      collection_name: this.collection
+    };
+    return this._executeStatement(statements.listRecords, params).then(result => {
+      const records = [];
+      for (let k = 0; k < result.length; k++) {
+        const row = result[k];
+        records.push(JSON.parse(row.getResultByName("record")));
+      }
+      return records;
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  loadDump(records) {
+    const connection = this._connection;
+    const collection_name = this.collection;
+    return Task.spawn(function* () {
+      yield connection.executeTransaction(function* doImport() {
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
+
+        try {
+          for (var _iterator3 = records[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            const record = _step3.value;
+
+            const params = {
+              collection_name: collection_name,
+              record_id: record.id,
+              record: JSON.stringify(record)
+            };
+            yield connection.execute(statements.importData, params);
+          }
+        } catch (err) {
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+              _iterator3.return();
+            }
+          } finally {
+            if (_didIteratorError3) {
+              throw _iteratorError3;
+            }
+          }
+        }
+
+        const lastModified = Math.max(...records.map(record => record.last_modified));
+        const params = {
+          collection_name: collection_name
+        };
+        const previousLastModified = yield connection.execute(statements.getLastModified, params).then(result => {
+          return result ? result[0].getResultByName('last_modified') : -1;
+        });
+        if (lastModified > previousLastModified) {
+          const params = {
+            collection_name: collection_name,
+            last_modified: lastModified
+          };
+          yield connection.execute(statements.saveLastModified, params);
+        }
+      });
+      return records;
+    });
+  }
+
+  saveLastModified(lastModified) {
+    const parsedLastModified = parseInt(lastModified, 10) || null;
+    const params = {
+      collection_name: this.collection,
+      last_modified: parsedLastModified
+    };
+    return this._executeStatement(statements.saveLastModified, params).then(() => parsedLastModified);
+  }
+
+  getLastModified() {
+    const params = {
+      collection_name: this.collection
+    };
+    return this._executeStatement(statements.getLastModified, params).then(result => {
+      if (result.length == 0) {
+        return 0;
+      }
+      return result[0].getResultByName("last_modified");
+    });
+  }
+}
+
+exports.default = FirefoxAdapter;
+function transactionProxy(collection, preloaded) {
+  const _operations = [];
+
+  return {
+    get operations() {
+      return _operations;
+    },
+
+    create(record) {
+      _operations.push({
+        statement: statements.createData,
+        params: {
+          collection_name: collection,
+          record_id: record.id,
+          record: JSON.stringify(record)
+        }
+      });
+    },
+
+    update(record) {
+      _operations.push({
+        statement: statements.updateData,
+        params: {
+          collection_name: collection,
+          record_id: record.id,
+          record: JSON.stringify(record)
+        }
+      });
+    },
+
+    delete(id) {
+      _operations.push({
+        statement: statements.deleteData,
+        params: {
+          collection_name: collection,
+          record_id: id
+        }
+      });
+    },
+
+    get(id) {
+      
+      return id in preloaded ? preloaded[id] : undefined;
+    }
+  };
+}
 
 },{"../src/adapters/base":11}],2:[function(require,module,exports){
 
@@ -352,77 +419,59 @@ module.exports = exports["default"];
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = loadKinto;
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _base = require("../src/adapters/base");
 
-var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _base2 = _interopRequireDefault(_base);
 
-exports["default"] = loadKinto;
+var _KintoBase = require("../src/KintoBase");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var _srcAdaptersBase = require("../src/adapters/base");
-
-var _srcAdaptersBase2 = _interopRequireDefault(_srcAdaptersBase);
-
-var _srcKintoBase = require("../src/KintoBase");
-
-var _srcKintoBase2 = _interopRequireDefault(_srcKintoBase);
+var _KintoBase2 = _interopRequireDefault(_KintoBase);
 
 var _FirefoxStorage = require("./FirefoxStorage");
 
 var _FirefoxStorage2 = _interopRequireDefault(_FirefoxStorage);
 
-var Cu = Components.utils;
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const Cu = Components.utils;
 
 function loadKinto() {
-  var _Cu$import = Cu["import"]("resource://devtools/shared/event-emitter.js", {});
+  const { EventEmitter } = Cu.import("resource://devtools/shared/event-emitter.js", {});
 
-  var EventEmitter = _Cu$import.EventEmitter;
-
-  Cu["import"]("resource://gre/modules/Timer.jsm");
+  Cu.import("resource://gre/modules/Timer.jsm");
   Cu.importGlobalProperties(['fetch']);
 
-  var KintoFX = (function (_KintoBase) {
-    _inherits(KintoFX, _KintoBase);
+  class KintoFX extends _KintoBase2.default {
+    static get adapters() {
+      return {
+        BaseAdapter: _base2.default,
+        FirefoxAdapter: _FirefoxStorage2.default
+      };
+    }
 
-    _createClass(KintoFX, null, [{
-      key: "adapters",
-      get: function get() {
-        return {
-          BaseAdapter: _srcAdaptersBase2["default"],
-          FirefoxAdapter: _FirefoxStorage2["default"]
-        };
-      }
-    }]);
-
-    function KintoFX() {
-      var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-      _classCallCheck(this, KintoFX);
-
-      var emitter = {};
+    constructor(options = {}) {
+      const emitter = {};
       EventEmitter.decorate(emitter);
 
-      var defaults = {
+      const defaults = {
         events: emitter
       };
 
-      var expandedOptions = Object.assign(defaults, options);
-      _get(Object.getPrototypeOf(KintoFX.prototype), "constructor", this).call(this, expandedOptions);
+      const expandedOptions = Object.assign(defaults, options);
+      super(expandedOptions);
     }
-
-    return KintoFX;
-  })(_srcKintoBase2["default"]);
+  }
 
   return KintoFX;
 }
 
-module.exports = exports["default"];
+
+
+if (typeof module === "object") {
+  module.exports = loadKinto;
+}
 
 },{"../src/KintoBase":10,"../src/adapters/base":11,"./FirefoxStorage":1}],3:[function(require,module,exports){
 
@@ -1727,12 +1776,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var _api = require("./api");
 
 var _api2 = _interopRequireDefault(_api);
@@ -1741,34 +1784,32 @@ var _collection = require("./collection");
 
 var _collection2 = _interopRequireDefault(_collection);
 
-var _adaptersBase = require("./adapters/base");
+var _base = require("./adapters/base");
 
-var _adaptersBase2 = _interopRequireDefault(_adaptersBase);
+var _base2 = _interopRequireDefault(_base);
 
-var DEFAULT_BUCKET_NAME = "default";
-var DEFAULT_REMOTE = "http://localhost:8888/v1";
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const DEFAULT_BUCKET_NAME = "default";
+const DEFAULT_REMOTE = "http://localhost:8888/v1";
 
 
 
 
-
-var KintoBase = (function () {
-  _createClass(KintoBase, null, [{
-    key: "adapters",
-
-    
+class KintoBase {
+  
 
 
 
 
 
-    get: function get() {
-      return {
-        BaseAdapter: _adaptersBase2["default"]
-      };
-    }
+  static get adapters() {
+    return {
+      BaseAdapter: _base2.default
+    };
+  }
 
-    
+  
 
 
 
@@ -1777,13 +1818,11 @@ var KintoBase = (function () {
 
 
 
-  }, {
-    key: "syncStrategy",
-    get: function get() {
-      return _collection2["default"].strategy;
-    }
+  static get syncStrategy() {
+    return _collection2.default.strategy;
+  }
 
-    
+  
 
 
 
@@ -1797,14 +1836,8 @@ var KintoBase = (function () {
 
 
 
-  }]);
-
-  function KintoBase() {
-    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-    _classCallCheck(this, KintoBase);
-
-    var defaults = {
+  constructor(options = {}) {
+    const defaults = {
       bucket: DEFAULT_BUCKET_NAME,
       remote: DEFAULT_REMOTE
     };
@@ -1813,13 +1846,8 @@ var KintoBase = (function () {
       throw new Error("No adapter provided");
     }
 
-    var _options = this._options;
-    var remote = _options.remote;
-    var events = _options.events;
-    var headers = _options.headers;
-    var requestMode = _options.requestMode;
-
-    this._api = new _api2["default"](remote, events, { headers: headers, requestMode: requestMode });
+    const { remote, events, headers, requestMode } = this._options;
+    this._api = new _api2.default(remote, events, { headers, requestMode });
 
     
     
@@ -1838,32 +1866,22 @@ var KintoBase = (function () {
 
 
 
-
-  _createClass(KintoBase, [{
-    key: "collection",
-    value: function collection(collName) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-      if (!collName) {
-        throw new Error("missing collection name");
-      }
-
-      var bucket = this._options.bucket;
-      return new _collection2["default"](bucket, collName, this._api, {
-        events: this._options.events,
-        adapter: this._options.adapter,
-        dbPrefix: this._options.dbPrefix,
-        idSchema: options.idSchema,
-        remoteTransformers: options.remoteTransformers
-      });
+  collection(collName, options = {}) {
+    if (!collName) {
+      throw new Error("missing collection name");
     }
-  }]);
 
-  return KintoBase;
-})();
-
-exports["default"] = KintoBase;
-module.exports = exports["default"];
+    const bucket = this._options.bucket;
+    return new _collection2.default(bucket, collName, this._api, {
+      events: this._options.events,
+      adapter: this._options.adapter,
+      dbPrefix: this._options.dbPrefix,
+      idSchema: options.idSchema,
+      remoteTransformers: options.remoteTransformers
+    });
+  }
+}
+exports.default = KintoBase;
 
 },{"./adapters/base":11,"./api":12,"./collection":13}],11:[function(require,module,exports){
 "use strict";
@@ -1873,165 +1891,106 @@ module.exports = exports["default"];
 
 
 
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+class BaseAdapter {
+  
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var BaseAdapter = (function () {
-  function BaseAdapter() {
-    _classCallCheck(this, BaseAdapter);
+
+
+  open() {
+    return Promise.resolve();
   }
 
-  _createClass(BaseAdapter, [{
-    key: "open",
+  
 
-    
 
 
 
 
+  close() {
+    return Promise.resolve();
+  }
 
-    value: function open() {
-      return Promise.resolve();
-    }
+  
 
-    
 
 
 
 
+  clear() {
+    throw new Error("Not Implemented.");
+  }
 
-  }, {
-    key: "close",
-    value: function close() {
-      return Promise.resolve();
-    }
+  
 
-    
 
 
 
 
 
-  }, {
-    key: "clear",
-    value: function clear() {
-      throw new Error("Not Implemented.");
-    }
 
-    
+  execute(callback, options = { preload: [] }) {
+    throw new Error("Not Implemented.");
+  }
 
+  
 
 
 
 
 
 
+  get(id) {
+    throw new Error("Not Implemented.");
+  }
 
-  }, {
-    key: "create",
-    value: function create(record) {
-      throw new Error("Not Implemented.");
-    }
+  
 
-    
 
 
 
 
+  list() {
+    throw new Error("Not Implemented.");
+  }
 
+  
 
-  }, {
-    key: "update",
-    value: function update(record) {
-      throw new Error("Not Implemented.");
-    }
 
-    
 
 
 
 
+  saveLastModified(lastModified) {
+    throw new Error("Not Implemented.");
+  }
 
+  
 
-  }, {
-    key: "get",
-    value: function get(id) {
-      throw new Error("Not Implemented.");
-    }
 
-    
 
 
 
+  getLastModified() {
+    throw new Error("Not Implemented.");
+  }
 
+  
 
 
-  }, {
-    key: "delete",
-    value: function _delete(id) {
-      throw new Error("Not Implemented.");
-    }
 
-    
 
 
-
-
-
-  }, {
-    key: "list",
-    value: function list() {
-      throw new Error("Not Implemented.");
-    }
-
-    
-
-
-
-
-
-
-  }, {
-    key: "saveLastModified",
-    value: function saveLastModified(lastModified) {
-      throw new Error("Not Implemented.");
-    }
-
-    
-
-
-
-
-
-  }, {
-    key: "getLastModified",
-    value: function getLastModified() {
-      throw new Error("Not Implemented.");
-    }
-
-    
-
-
-
-
-
-  }, {
-    key: "loadDump",
-    value: function loadDump(records) {
-      throw new Error("Not Implemented.");
-    }
-  }]);
-
-  return BaseAdapter;
-})();
-
-exports["default"] = BaseAdapter;
-module.exports = exports["default"];
+  loadDump(records) {
+    throw new Error("Not Implemented.");
+  }
+}
+exports.default = BaseAdapter;
 
 },{}],12:[function(require,module,exports){
 "use strict";
@@ -2039,29 +1998,23 @@ module.exports = exports["default"];
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+exports.SUPPORTED_PROTOCOL_VERSION = undefined;
 exports.cleanRecord = cleanRecord;
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+var _utils = require("./utils.js");
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+var _http = require("./http.js");
 
-var _utilsJs = require("./utils.js");
+var _http2 = _interopRequireDefault(_http);
 
-var _httpJs = require("./http.js");
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _httpJs2 = _interopRequireDefault(_httpJs);
-
-var RECORD_FIELDS_TO_CLEAN = ["_status", "last_modified"];
+const RECORD_FIELDS_TO_CLEAN = ["_status", "last_modified"];
 
 
 
 
-var SUPPORTED_PROTOCOL_VERSION = "v1";
-
-exports.SUPPORTED_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSION;
+const SUPPORTED_PROTOCOL_VERSION = exports.SUPPORTED_PROTOCOL_VERSION = "v1";
 
 
 
@@ -2070,9 +2023,7 @@ exports.SUPPORTED_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSION;
 
 
 
-function cleanRecord(record) {
-  var excludeFields = arguments.length <= 1 || arguments[1] === undefined ? RECORD_FIELDS_TO_CLEAN : arguments[1];
-
+function cleanRecord(record, excludeFields = RECORD_FIELDS_TO_CLEAN) {
   return Object.keys(record).reduce((acc, key) => {
     if (excludeFields.indexOf(key) === -1) {
       acc[key] = record[key];
@@ -2084,8 +2035,7 @@ function cleanRecord(record) {
 
 
 
-
-var Api = (function () {
+class Api {
   
 
 
@@ -2097,12 +2047,7 @@ var Api = (function () {
 
 
 
-
-  function Api(remote, events) {
-    var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-    _classCallCheck(this, Api);
-
+  constructor(remote, events, options = {}) {
     if (typeof remote !== "string" || !remote.length) {
       throw new Error("Invalid remote URL: " + remote);
     }
@@ -2110,12 +2055,9 @@ var Api = (function () {
       remote = remote.slice(0, -1);
     }
     this._backoffReleaseTime = null;
-    
-    
-
-
-
     this.remote = remote;
+
+    
     
 
 
@@ -2134,24 +2076,67 @@ var Api = (function () {
       throw new Error("No events handler provided");
     }
     this.events = events;
-    try {
-      
 
-
-
-      this.version = remote.match(/\/(v\d+)\/?$/)[1];
-    } catch (err) {
-      throw new Error("The remote URL must contain the version: " + remote);
-    }
-    if (this.version !== SUPPORTED_PROTOCOL_VERSION) {
-      throw new Error("Unsupported protocol version: " + this.version);
-    }
     
 
 
 
-    this.http = new _httpJs2["default"](this.events, { requestMode: options.requestMode });
+    this.http = new _http2.default(this.events, { requestMode: options.requestMode });
     this._registerHTTPEvents();
+  }
+
+  
+
+
+
+
+  get remote() {
+    return this._remote;
+  }
+
+  set remote(url) {
+    let version;
+    try {
+      version = url.match(/\/(v\d+)\/?$/)[1];
+    } catch (err) {
+      throw new Error("The remote URL must contain the version: " + url);
+    }
+    if (version !== SUPPORTED_PROTOCOL_VERSION) {
+      throw new Error(`Unsupported protocol version: ${ version }`);
+    }
+    this._remote = url;
+    this._version = version;
+  }
+
+  
+
+
+
+  get version() {
+    return this._version;
+  }
+
+  
+
+
+
+
+
+  get backoff() {
+    const currentTime = new Date().getTime();
+    if (this._backoffReleaseTime && currentTime < this._backoffReleaseTime) {
+      return this._backoffReleaseTime - currentTime;
+    }
+    return 0;
+  }
+
+  
+
+
+  _registerHTTPEvents() {
+    this.events.on("backoff", backoffMs => {
+      this._backoffReleaseTime = backoffMs;
+    });
   }
 
   
@@ -2161,246 +2146,196 @@ var Api = (function () {
 
 
 
-  _createClass(Api, [{
-    key: "_registerHTTPEvents",
-
-    
 
 
-    value: function _registerHTTPEvents() {
-      this.events.on("backoff", backoffMs => {
-        this._backoffReleaseTime = backoffMs;
-      });
+  endpoints(options = { fullUrl: true }) {
+    const root = options.fullUrl ? this.remote : `/${ this.version }`;
+    const urls = {
+      root: () => `${ root }/`,
+      batch: () => `${ root }/batch`,
+      bucket: bucket => `${ root }/buckets/${ bucket }`,
+      collection: (bucket, coll) => `${ urls.bucket(bucket) }/collections/${ coll }`,
+      records: (bucket, coll) => `${ urls.collection(bucket, coll) }/records`,
+      record: (bucket, coll, id) => `${ urls.records(bucket, coll) }/${ id }`
+    };
+    return urls;
+  }
+
+  
+
+
+
+
+  fetchServerSettings() {
+    if (this.serverSettings) {
+      return Promise.resolve(this.serverSettings);
+    }
+    return this.http.request(this.endpoints().root()).then(res => {
+      this.serverSettings = res.json.settings;
+      return this.serverSettings;
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  fetchChangesSince(bucketName, collName, options = { lastModified: null, headers: {} }) {
+    const recordsUrl = this.endpoints().records(bucketName, collName);
+    let queryString = "";
+    const headers = Object.assign({}, this.optionHeaders, options.headers);
+
+    if (options.lastModified) {
+      queryString = "?_since=" + options.lastModified;
+      headers["If-None-Match"] = (0, _utils.quote)(options.lastModified);
     }
 
-    
-
-
-
-
-
-
-
-
-  }, {
-    key: "endpoints",
-    value: function endpoints() {
-      var options = arguments.length <= 0 || arguments[0] === undefined ? { fullUrl: true } : arguments[0];
-
-      var _root = options.fullUrl ? this.remote : "/" + this.version;
-      var urls = {
-        root: () => _root + "/",
-        batch: () => _root + "/batch",
-        bucket: _bucket => _root + "/buckets/" + _bucket,
-        collection: (bucket, coll) => urls.bucket(bucket) + "/collections/" + coll,
-        records: (bucket, coll) => urls.collection(bucket, coll) + "/records",
-        record: (bucket, coll, id) => urls.records(bucket, coll) + "/" + id
-      };
-      return urls;
-    }
-
-    
-
-
-
-
-  }, {
-    key: "fetchServerSettings",
-    value: function fetchServerSettings() {
-      if (this.serverSettings) {
-        return Promise.resolve(this.serverSettings);
-      }
-      return this.http.request(this.endpoints().root()).then(res => {
-        this.serverSettings = res.json.settings;
-        return this.serverSettings;
-      });
-    }
-
-    
-
-
-
-
-
-
-
-  }, {
-    key: "fetchChangesSince",
-    value: function fetchChangesSince(bucketName, collName) {
-      var options = arguments.length <= 2 || arguments[2] === undefined ? { lastModified: null, headers: {} } : arguments[2];
-
-      var recordsUrl = this.endpoints().records(bucketName, collName);
-      var queryString = "";
-      var headers = Object.assign({}, this.optionHeaders, options.headers);
-
-      if (options.lastModified) {
-        queryString = "?_since=" + options.lastModified;
-        headers["If-None-Match"] = (0, _utilsJs.quote)(options.lastModified);
-      }
-
-      return this.fetchServerSettings().then(_ => this.http.request(recordsUrl + queryString, { headers: headers })).then(res => {
-        
-        if (res.status === 304) {
-          return {
-            lastModified: options.lastModified,
-            changes: []
-          };
-        }
-        
-        
-        var etag = res.headers.get("ETag"); 
-        etag = etag ? parseInt((0, _utilsJs.unquote)(etag), 10) : options.lastModified;
-        var records = res.json.data;
-
-        
-        var localSynced = options.lastModified;
-        var serverChanged = etag > options.lastModified;
-        var emptyCollection = records ? records.length === 0 : true;
-        if (localSynced && serverChanged && emptyCollection) {
-          throw Error("Server has been flushed.");
-        }
-
-        return { lastModified: etag, changes: records };
-      });
-    }
-
-    
-
-
-
-
-
-
-
-  }, {
-    key: "_buildRecordBatchRequest",
-    value: function _buildRecordBatchRequest(record, path, safe) {
-      var isDeletion = record._status === "deleted";
-      var method = isDeletion ? "DELETE" : "PUT";
-      var body = isDeletion ? undefined : { data: cleanRecord(record) };
-      var headers = {};
-      if (safe) {
-        if (record.last_modified) {
-          
-          headers["If-Match"] = (0, _utilsJs.quote)(record.last_modified);
-        } else if (!isDeletion) {
-          
-          headers["If-None-Match"] = "*";
-        }
-      }
-      return { method: method, headers: headers, path: path, body: body };
-    }
-
-    
-
-
-
-
-
-
-
-  }, {
-    key: "_processBatchResponses",
-    value: function _processBatchResponses(results, records, response) {
+    return this.fetchServerSettings().then(_ => this.http.request(recordsUrl + queryString, { headers })).then(res => {
       
-      response.json.responses.forEach((response, index) => {
-        
-        
-        if (response.status && response.status >= 200 && response.status < 400) {
-          results.published.push(response.body.data);
-        } else if (response.status === 404) {
-          results.skipped.push(response.body);
-        } else if (response.status === 412) {
-          results.conflicts.push({
-            type: "outgoing",
-            local: records[index],
-            remote: response.body.details && response.body.details.existing || null
-          });
-        } else {
-          results.errors.push({
-            path: response.path,
-            sent: records[index],
-            error: response.body
-          });
-        }
-      });
-      return results;
-    }
+      if (res.status === 304) {
+        return {
+          lastModified: options.lastModified,
+          changes: []
+        };
+      }
+      
+      
+      let etag = res.headers.get("ETag"); 
+      etag = etag ? parseInt((0, _utils.unquote)(etag), 10) : options.lastModified;
+      const records = res.json.data;
 
+      
+      const localSynced = options.lastModified;
+      const serverChanged = etag > options.lastModified;
+      const emptyCollection = records ? records.length === 0 : true;
+      if (localSynced && serverChanged && emptyCollection) {
+        throw Error("Server has been flushed.");
+      }
+
+      return { lastModified: etag, changes: records };
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  _buildRecordBatchRequest(record, path, safe) {
+    const isDeletion = record._status === "deleted";
+    const method = isDeletion ? "DELETE" : "PUT";
+    const body = isDeletion ? undefined : { data: cleanRecord(record) };
+    const headers = {};
+    if (safe) {
+      if (record.last_modified) {
+        
+        headers["If-Match"] = (0, _utils.quote)(record.last_modified);
+      } else if (!isDeletion) {
+        
+        headers["If-None-Match"] = "*";
+      }
+    }
+    return { method, headers, path, body };
+  }
+
+  
+
+
+
+
+
+
+
+  _processBatchResponses(results, records, response) {
     
-
-
-
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "batch",
-    value: function batch(bucketName, collName, records) {
-      var options = arguments.length <= 3 || arguments[3] === undefined ? { headers: {} } : arguments[3];
-
-      var safe = options.safe || true;
-      var headers = Object.assign({}, this.optionHeaders, options.headers);
-      var results = {
-        errors: [],
-        published: [],
-        conflicts: [],
-        skipped: []
-      };
-      if (!records.length) {
-        return Promise.resolve(results);
+    response.json.responses.forEach((response, index) => {
+      
+      
+      if (response.status && response.status >= 200 && response.status < 400) {
+        results.published.push(response.body.data);
+      } else if (response.status === 404) {
+        results.skipped.push(records[index]);
+      } else if (response.status === 412) {
+        results.conflicts.push({
+          type: "outgoing",
+          local: records[index],
+          remote: response.body.details && response.body.details.existing || null
+        });
+      } else {
+        results.errors.push({
+          path: response.path,
+          sent: records[index],
+          error: response.body
+        });
       }
-      return this.fetchServerSettings().then(serverSettings => {
-        
-        var maxRequests = serverSettings["batch_max_requests"] || serverSettings["cliquet.batch_max_requests"];
-        if (maxRequests && records.length > maxRequests) {
-          return Promise.all((0, _utilsJs.partition)(records, maxRequests).map(chunk => {
-            return this.batch(bucketName, collName, chunk, options);
-          })).then(batchResults => {
-            
-            
-            return batchResults.reduce((acc, batchResult) => {
-              Object.keys(batchResult).forEach(key => {
-                acc[key] = results[key].concat(batchResult[key]);
-              });
-              return acc;
-            }, results);
-          });
-        }
-        return this.http.request(this.endpoints().batch(), {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify({
-            defaults: { headers: headers },
-            requests: records.map(record => {
-              var path = this.endpoints({ full: false }).record(bucketName, collName, record.id);
-              return this._buildRecordBatchRequest(record, path, safe);
-            })
+    });
+    return results;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  batch(bucketName, collName, records, options = { headers: {} }) {
+    const safe = options.safe || true;
+    const headers = Object.assign({}, this.optionHeaders, options.headers);
+    const results = {
+      errors: [],
+      published: [],
+      conflicts: [],
+      skipped: []
+    };
+    if (!records.length) {
+      return Promise.resolve(results);
+    }
+    return this.fetchServerSettings().then(serverSettings => {
+      
+      const maxRequests = serverSettings["batch_max_requests"] || serverSettings["cliquet.batch_max_requests"];
+      if (maxRequests && records.length > maxRequests) {
+        return Promise.all((0, _utils.partition)(records, maxRequests).map(chunk => {
+          return this.batch(bucketName, collName, chunk, options);
+        })).then(batchResults => {
+          
+          
+          return batchResults.reduce((acc, batchResult) => {
+            Object.keys(batchResult).forEach(key => {
+              acc[key] = results[key].concat(batchResult[key]);
+            });
+            return acc;
+          }, results);
+        });
+      }
+      return this.http.request(this.endpoints().batch(), {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          defaults: { headers },
+          requests: records.map(record => {
+            const path = this.endpoints({ full: false }).record(bucketName, collName, record.id);
+            return this._buildRecordBatchRequest(record, path, safe);
           })
-        }).then(res => this._processBatchResponses(results, records, res));
-      });
-    }
-  }, {
-    key: "backoff",
-    get: function get() {
-      var currentTime = new Date().getTime();
-      if (this._backoffReleaseTime && currentTime < this._backoffReleaseTime) {
-        return this._backoffReleaseTime - currentTime;
-      }
-      return 0;
-    }
-  }]);
-
-  return Api;
-})();
-
-exports["default"] = Api;
+        })
+      }).then(res => this._processBatchResponses(results, records, res));
+    });
+  }
+}
+exports.default = Api;
 
 },{"./http.js":15,"./utils.js":16}],13:[function(require,module,exports){
 "use strict";
@@ -2408,18 +2343,11 @@ exports["default"] = Api;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.SyncResultObject = undefined;
 
-var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+var _base = require("./adapters/base");
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _adaptersBase = require("./adapters/base");
-
-var _adaptersBase2 = _interopRequireDefault(_adaptersBase);
+var _base2 = _interopRequireDefault(_base);
 
 var _utils = require("./utils");
 
@@ -2427,41 +2355,35 @@ var _api = require("./api");
 
 var _uuid = require("uuid");
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
 
-var SyncResultObject = (function () {
-  _createClass(SyncResultObject, null, [{
-    key: "defaults",
-
-    
+class SyncResultObject {
+  
 
 
 
-    get: function get() {
-      return {
-        ok: true,
-        lastModified: null,
-        errors: [],
-        created: [],
-        updated: [],
-        deleted: [],
-        published: [],
-        conflicts: [],
-        skipped: [],
-        resolved: []
-      };
-    }
+  static get defaults() {
+    return {
+      ok: true,
+      lastModified: null,
+      errors: [],
+      created: [],
+      updated: [],
+      deleted: [],
+      published: [],
+      conflicts: [],
+      skipped: [],
+      resolved: []
+    };
+  }
 
-    
+  
 
 
-  }]);
-
-  function SyncResultObject() {
-    _classCallCheck(this, SyncResultObject);
-
+  constructor() {
     
 
 
@@ -2478,48 +2400,51 @@ var SyncResultObject = (function () {
 
 
 
-
-  _createClass(SyncResultObject, [{
-    key: "add",
-    value: function add(type, entries) {
-      if (!Array.isArray(this[type])) {
-        return;
-      }
-      this[type] = this[type].concat(entries);
-      this.ok = this.errors.length + this.conflicts.length === 0;
-      return this;
+  add(type, entries) {
+    if (!Array.isArray(this[type])) {
+      return;
     }
+    this[type] = this[type].concat(entries);
+    this.ok = this.errors.length + this.conflicts.length === 0;
+    return this;
+  }
 
-    
+  
 
 
 
 
 
-  }, {
-    key: "reset",
-    value: function reset(type) {
-      this[type] = SyncResultObject.defaults[type];
-      this.ok = this.errors.length + this.conflicts.length === 0;
-      return this;
-    }
-  }]);
-
-  return SyncResultObject;
-})();
+  reset(type) {
+    this[type] = SyncResultObject.defaults[type];
+    this.ok = this.errors.length + this.conflicts.length === 0;
+    return this;
+  }
+}
 
 exports.SyncResultObject = SyncResultObject;
-
 function createUUIDSchema() {
   return {
-    generate: function generate() {
+    generate() {
       return (0, _uuid.v4)();
     },
 
-    validate: function validate(id) {
+    validate(id) {
       return (0, _utils.isUUID)(id);
     }
   };
+}
+
+function markStatus(record, status) {
+  return Object.assign({}, record, { _status: status });
+}
+
+function markDeleted(record) {
+  return markStatus(record, "deleted");
+}
+
+function markSynced(record) {
+  return markStatus(record, "synced");
 }
 
 
@@ -2527,7 +2452,55 @@ function createUUIDSchema() {
 
 
 
-var Collection = (function () {
+
+
+function importChange(transaction, remote) {
+  const local = transaction.get(remote.id);
+  if (!local) {
+    
+    
+    if (remote.deleted) {
+      return { type: "skipped", data: remote };
+    }
+    const synced = markSynced(remote);
+    transaction.create(synced);
+    return { type: "created", data: synced };
+  }
+  const identical = (0, _utils.deepEquals)((0, _api.cleanRecord)(local), (0, _api.cleanRecord)(remote));
+  if (local._status !== "synced") {
+    
+    if (local._status === "deleted") {
+      return { type: "skipped", data: local };
+    }
+    if (identical) {
+      
+      
+      
+      const synced = markSynced(remote);
+      transaction.update(synced);
+      return { type: "updated", data: synced };
+    }
+    return {
+      type: "conflicts",
+      data: { type: "incoming", local: local, remote: remote }
+    };
+  }
+  if (remote.deleted) {
+    transaction.delete(remote.id);
+    return { type: "deleted", data: { id: local.id } };
+  }
+  const synced = markSynced(remote);
+  transaction.update(synced);
+  
+  const type = identical ? "void" : "updated";
+  return { type, data: synced };
+}
+
+
+
+
+
+class Collection {
   
 
 
@@ -2540,23 +2513,18 @@ var Collection = (function () {
 
 
 
-
-  function Collection(bucket, name, api) {
-    var options = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
-
-    _classCallCheck(this, Collection);
-
+  constructor(bucket, name, api, options = {}) {
     this._bucket = bucket;
     this._name = name;
     this._lastModified = null;
 
-    var DBAdapter = options.adapter;
+    const DBAdapter = options.adapter;
     if (!DBAdapter) {
       throw new Error("No adapter provided");
     }
-    var dbPrefix = options.dbPrefix || "";
-    var db = new DBAdapter("" + dbPrefix + bucket + "/" + name);
-    if (!(db instanceof _adaptersBase2["default"])) {
+    const dbPrefix = options.dbPrefix || "";
+    const db = new DBAdapter(`${ dbPrefix }${ bucket }/${ name }`);
+    if (!(db instanceof _base2.default)) {
       throw new Error("Unsupported adapter.");
     }
     
@@ -2591,816 +2559,713 @@ var Collection = (function () {
 
 
 
+  get name() {
+    return this._name;
+  }
 
-  _createClass(Collection, [{
-    key: "_validateIdSchema",
-
-    
-
-
+  
 
 
 
-    value: function _validateIdSchema(idSchema) {
-      if (typeof idSchema === "undefined") {
-        return createUUIDSchema();
-      }
-      if (typeof idSchema !== "object") {
-        throw new Error("idSchema must be an object.");
-      } else if (typeof idSchema.generate !== "function") {
-        throw new Error("idSchema must provide a generate function.");
-      } else if (typeof idSchema.validate !== "function") {
-        throw new Error("idSchema must provide a validate function.");
-      }
-      return idSchema;
+  get bucket() {
+    return this._bucket;
+  }
+
+  
+
+
+
+  get lastModified() {
+    return this._lastModified;
+  }
+
+  
+
+
+
+
+
+
+
+
+  static get strategy() {
+    return {
+      CLIENT_WINS: "client_wins",
+      SERVER_WINS: "server_wins",
+      MANUAL: "manual"
+    };
+  }
+
+  
+
+
+
+
+
+  _validateIdSchema(idSchema) {
+    if (typeof idSchema === "undefined") {
+      return createUUIDSchema();
     }
+    if (typeof idSchema !== "object") {
+      throw new Error("idSchema must be an object.");
+    } else if (typeof idSchema.generate !== "function") {
+      throw new Error("idSchema must provide a generate function.");
+    } else if (typeof idSchema.validate !== "function") {
+      throw new Error("idSchema must provide a validate function.");
+    }
+    return idSchema;
+  }
 
-    
+  
 
 
 
 
 
-  }, {
-    key: "_validateRemoteTransformers",
-    value: function _validateRemoteTransformers(remoteTransformers) {
-      if (typeof remoteTransformers === "undefined") {
-        return [];
+  _validateRemoteTransformers(remoteTransformers) {
+    if (typeof remoteTransformers === "undefined") {
+      return [];
+    }
+    if (!Array.isArray(remoteTransformers)) {
+      throw new Error("remoteTransformers should be an array.");
+    }
+    return remoteTransformers.map(transformer => {
+      if (typeof transformer !== "object") {
+        throw new Error("A transformer must be an object.");
+      } else if (typeof transformer.encode !== "function") {
+        throw new Error("A transformer must provide an encode function.");
+      } else if (typeof transformer.decode !== "function") {
+        throw new Error("A transformer must provide a decode function.");
       }
-      if (!Array.isArray(remoteTransformers)) {
-        throw new Error("remoteTransformers should be an array.");
+      return transformer;
+    });
+  }
+
+  
+
+
+
+
+
+  clear() {
+    return this.db.clear().then(_ => this.db.saveLastModified(null)).then(_ => ({ data: [], permissions: {} }));
+  }
+
+  
+
+
+
+
+
+
+  _encodeRecord(type, record) {
+    if (!this[`${ type }Transformers`].length) {
+      return Promise.resolve(record);
+    }
+    return (0, _utils.waterfall)(this[`${ type }Transformers`].map(transformer => {
+      return record => transformer.encode(record);
+    }), record);
+  }
+
+  
+
+
+
+
+
+
+  _decodeRecord(type, record) {
+    if (!this[`${ type }Transformers`].length) {
+      return Promise.resolve(record);
+    }
+    return (0, _utils.waterfall)(this[`${ type }Transformers`].reverse().map(transformer => {
+      return record => transformer.decode(record);
+    }), record);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  create(record, options = { useRecordId: false, synced: false }) {
+    const reject = msg => Promise.reject(new Error(msg));
+    if (typeof record !== "object") {
+      return reject("Record is not an object.");
+    }
+    if ((options.synced || options.useRecordId) && !record.id) {
+      return reject("Missing required Id; synced and useRecordId options require one");
+    }
+    if (!options.synced && !options.useRecordId && record.id) {
+      return reject("Extraneous Id; can't create a record having one set.");
+    }
+    const newRecord = Object.assign({}, record, {
+      id: options.synced || options.useRecordId ? record.id : this.idSchema.generate(),
+      _status: options.synced ? "synced" : "created"
+    });
+    if (!this.idSchema.validate(newRecord.id)) {
+      return reject(`Invalid Id: ${ newRecord.id }`);
+    }
+    return this.db.execute(transaction => {
+      transaction.create(newRecord);
+      return { data: newRecord, permissions: {} };
+    }).catch(err => {
+      if (options.useRecordId) {
+        throw new Error("Couldn't create record. It may have been virtually deleted.");
       }
-      return remoteTransformers.map(transformer => {
-        if (typeof transformer !== "object") {
-          throw new Error("A transformer must be an object.");
-        } else if (typeof transformer.encode !== "function") {
-          throw new Error("A transformer must provide an encode function.");
-        } else if (typeof transformer.decode !== "function") {
-          throw new Error("A transformer must provide a decode function.");
+      throw err;
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  update(record, options = { synced: false, patch: false }) {
+    if (typeof record !== "object") {
+      return Promise.reject(new Error("Record is not an object."));
+    }
+    if (!record.id) {
+      return Promise.reject(new Error("Cannot update a record missing id."));
+    }
+    if (!this.idSchema.validate(record.id)) {
+      return Promise.reject(new Error(`Invalid Id: ${ record.id }`));
+    }
+    return this.get(record.id).then(res => {
+      const existing = res.data;
+      let newStatus = "updated";
+      if (record._status === "deleted") {
+        newStatus = "deleted";
+      } else if (options.synced) {
+        newStatus = "synced";
+      }
+      return this.db.execute(transaction => {
+        const source = options.patch ? Object.assign({}, existing, record) : record;
+        const updated = markStatus(source, newStatus);
+        if (existing.last_modified && !updated.last_modified) {
+          updated.last_modified = existing.last_modified;
         }
-        return transformer;
+        transaction.update(updated);
+        return { data: updated, permissions: {} };
       });
+    });
+  }
+
+  
+
+
+
+
+
+
+  get(id, options = { includeDeleted: false }) {
+    if (!this.idSchema.validate(id)) {
+      return Promise.reject(Error(`Invalid Id: ${ id }`));
     }
-
-    
-
-
-
-
-
-  }, {
-    key: "clear",
-    value: function clear() {
-      return this.db.clear().then(_ => this.db.saveLastModified(null)).then(_ => ({ data: [], permissions: {} }));
-    }
-
-    
-
-
-
-
-
-
-  }, {
-    key: "_encodeRecord",
-    value: function _encodeRecord(type, record) {
-      if (!this[type + "Transformers"].length) {
-        return Promise.resolve(record);
-      }
-      return (0, _utils.waterfall)(this[type + "Transformers"].map(transformer => {
-        return record => transformer.encode(record);
-      }), record);
-    }
-
-    
-
-
-
-
-
-
-  }, {
-    key: "_decodeRecord",
-    value: function _decodeRecord(type, record) {
-      if (!this[type + "Transformers"].length) {
-        return Promise.resolve(record);
-      }
-      return (0, _utils.waterfall)(this[type + "Transformers"].reverse().map(transformer => {
-        return record => transformer.decode(record);
-      }), record);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "create",
-    value: function create(record) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? { useRecordId: false, synced: false } : arguments[1];
-
-      var reject = msg => Promise.reject(new Error(msg));
-      if (typeof record !== "object") {
-        return reject("Record is not an object.");
-      }
-      if ((options.synced || options.useRecordId) && !record.id) {
-        return reject("Missing required Id; synced and useRecordId options require one");
-      }
-      if (!options.synced && !options.useRecordId && record.id) {
-        return reject("Extraneous Id; can't create a record having one set.");
-      }
-      var newRecord = Object.assign({}, record, {
-        id: options.synced || options.useRecordId ? record.id : this.idSchema.generate(),
-        _status: options.synced ? "synced" : "created"
-      });
-      if (!this.idSchema.validate(newRecord.id)) {
-        return reject("Invalid Id: " + newRecord.id);
-      }
-      return this.db.create(newRecord).then(record => {
-        return { data: record, permissions: {} };
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "update",
-    value: function update(record) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? { synced: false } : arguments[1];
-
-      if (typeof record !== "object") {
-        return Promise.reject(new Error("Record is not an object."));
-      }
-      if (!record.id) {
-        return Promise.reject(new Error("Cannot update a record missing id."));
-      }
-      if (!this.idSchema.validate(record.id)) {
-        return Promise.reject(new Error("Invalid Id: " + record.id));
-      }
-      return this.get(record.id).then(_ => {
-        var newStatus = "updated";
-        if (record._status === "deleted") {
-          newStatus = "deleted";
-        } else if (options.synced) {
-          newStatus = "synced";
-        }
-        var updatedRecord = Object.assign({}, record, { _status: newStatus });
-        return this.db.update(updatedRecord).then(record => {
-          return { data: record, permissions: {} };
-        });
-      });
-    }
-
-    
-
-
-
-
-
-
-  }, {
-    key: "get",
-    value: function get(id) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? { includeDeleted: false } : arguments[1];
-
-      if (!this.idSchema.validate(id)) {
-        return Promise.reject(Error("Invalid Id: " + id));
-      }
-      return this.db.get(id).then(record => {
-        if (!record || !options.includeDeleted && record._status === "deleted") {
-          throw new Error("Record with id=" + id + " not found.");
-        } else {
-          return { data: record, permissions: {} };
-        }
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "delete",
-    value: function _delete(id) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? { virtual: true } : arguments[1];
-
-      if (!this.idSchema.validate(id)) {
-        return Promise.reject(new Error("Invalid Id: " + id));
-      }
-      
-      return this.get(id, { includeDeleted: true }).then(res => {
-        if (options.virtual) {
-          if (res.data._status === "deleted") {
-            
-            return Promise.resolve({
-              data: { id: id },
-              permissions: {}
-            });
-          } else {
-            return this.update(Object.assign({}, res.data, {
-              _status: "deleted"
-            }));
-          }
-        }
-        return this.db["delete"](id).then(id => {
-          return { data: { id: id }, permissions: {} };
-        });
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "list",
-    value: function list() {
-      var params = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-      var options = arguments.length <= 1 || arguments[1] === undefined ? { includeDeleted: false } : arguments[1];
-
-      params = Object.assign({ order: "-last_modified", filters: {} }, params);
-      return this.db.list().then(results => {
-        var reduced = (0, _utils.reduceRecords)(params.filters, params.order, results);
-        if (!options.includeDeleted) {
-          reduced = reduced.filter(record => record._status !== "deleted");
-        }
-        return { data: reduced, permissions: {} };
-      });
-    }
-
-    
-
-
-
-
-
-
-
-  }, {
-    key: "_processChangeImport",
-    value: function _processChangeImport(local, remote) {
-      var identical = (0, _utils.deepEquals)((0, _api.cleanRecord)(local), (0, _api.cleanRecord)(remote));
-      if (local._status !== "synced") {
-        
-        if (local._status === "deleted") {
-          return { type: "skipped", data: local };
-        }
-        if (identical) {
-          
-          
-          
-          return this.update(remote, { synced: true }).then(res => {
-            return { type: "updated", data: res.data };
-          });
-        }
-        return {
-          type: "conflicts",
-          data: { type: "incoming", local: local, remote: remote }
-        };
-      }
-      if (remote.deleted) {
-        return this["delete"](remote.id, { virtual: false }).then(res => {
-          return { type: "deleted", data: res.data };
-        });
-      }
-      return this.update(remote, { synced: true }).then(updated => {
-        
-        var type = identical ? "void" : "updated";
-        return { type: type, data: updated.data };
-      });
-    }
-
-    
-
-
-
-
-
-  }, {
-    key: "_importChange",
-    value: function _importChange(change) {
-      var _decodedChange = undefined,
-          decodePromise = undefined;
-      
-      if (change.deleted) {
-        decodePromise = Promise.resolve(change);
+    return this.db.get(id).then(record => {
+      if (!record || !options.includeDeleted && record._status === "deleted") {
+        throw new Error(`Record with id=${ id } not found.`);
       } else {
-        decodePromise = this._decodeRecord("remote", change);
+        return { data: record, permissions: {} };
       }
-      return decodePromise.then(change => {
-        _decodedChange = change;
-        return this.get(_decodedChange.id, { includeDeleted: true });
-      })
-      
-      .then(res => this._processChangeImport(res.data, _decodedChange))["catch"](err => {
-        if (!/not found/i.test(err.message)) {
-          err.type = "incoming";
-          return { type: "errors", data: err };
-        }
-        
-        
-        if (_decodedChange.deleted) {
-          return { type: "skipped", data: _decodedChange };
-        }
-        return this.create(_decodedChange, { synced: true })
-        
-        .then(res => ({ type: "created", data: res.data }))
-        
-        ["catch"](err => ({ type: "errors", data: err }));
-      });
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  delete(id, options = { virtual: true }) {
+    if (!this.idSchema.validate(id)) {
+      return Promise.reject(new Error(`Invalid Id: ${ id }`));
     }
-
     
-
-
-
-
-
-
-  }, {
-    key: "importChanges",
-    value: function importChanges(syncResultObject, changeObject) {
-      return Promise.all(changeObject.changes.map(change => {
-        return this._importChange(change);
-      })).then(imports => {
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-          for (var _iterator = imports[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var imported = _step.value;
-
-            if (imported.type !== "void") {
-              syncResultObject.add(imported.type, imported.data);
-            }
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion && _iterator["return"]) {
-              _iterator["return"]();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
-        }
-
-        return syncResultObject;
-      }).then(syncResultObject => {
-        syncResultObject.lastModified = changeObject.lastModified;
+    return this.get(id, { includeDeleted: true }).then(res => {
+      const existing = res.data;
+      return this.db.execute(transaction => {
         
-        if (!syncResultObject.ok) {
-          return syncResultObject;
+        if (options.virtual) {
+          transaction.update(markDeleted(existing));
+        } else {
+          
+          transaction.delete(id);
         }
-        
-        return this.db.saveLastModified(syncResultObject.lastModified).then(lastModified => {
-          this._lastModified = lastModified;
-          return syncResultObject;
+        return { data: { id: id }, permissions: {} };
+      });
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  list(params = {}, options = { includeDeleted: false }) {
+    params = Object.assign({ order: "-last_modified", filters: {} }, params);
+    return this.db.list().then(results => {
+      let reduced = (0, _utils.reduceRecords)(params.filters, params.order, results);
+      if (!options.includeDeleted) {
+        reduced = reduced.filter(record => record._status !== "deleted");
+      }
+      return { data: reduced, permissions: {} };
+    });
+  }
+
+  
+
+
+
+
+
+
+  importChanges(syncResultObject, changeObject) {
+    return Promise.all(changeObject.changes.map(change => {
+      if (change.deleted) {
+        return Promise.resolve(change);
+      }
+      return this._decodeRecord("remote", change);
+    })).then(decodedChanges => {
+      
+      return this.list({ order: "" }, { includeDeleted: true }).then(res => {
+        return { decodedChanges, existingRecords: res.data };
+      });
+    }).then(({ decodedChanges, existingRecords }) => {
+      return this.db.execute(transaction => {
+        return decodedChanges.map(remote => {
+          
+          return importChange(transaction, remote);
         });
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-  }, {
-    key: "resetSyncStatus",
-    value: function resetSyncStatus() {
-      var _count = undefined;
-      return this.list({}, { includeDeleted: true }).then(res => {
-        return Promise.all(res.data.map(r => {
-          
-          if (r._status === "deleted") {
-            return this.db["delete"](r.id);
-          }
-          
-          return this.db.update(Object.assign({}, r, {
-            last_modified: undefined,
-            _status: "created"
-          }));
-        }));
-      }).then(res => {
-        _count = res.length;
-        return this.db.saveLastModified(null);
-      }).then(_ => _count);
-    }
-
-    
-
-
-
-
-
-
-
-  }, {
-    key: "gatherLocalChanges",
-    value: function gatherLocalChanges() {
-      var _toDelete = undefined;
-      return this.list({}, { includeDeleted: true }).then(res => {
-        return res.data.reduce((acc, record) => {
-          if (record._status === "deleted" && !record.last_modified) {
-            acc.toDelete.push(record);
-          } else if (record._status !== "synced") {
-            acc.toSync.push(record);
-          }
-          return acc;
-          
-        }, { toDelete: [], toSync: [] });
-      }).then(_ref => {
-        var toDelete = _ref.toDelete;
-        var toSync = _ref.toSync;
-
-        _toDelete = toDelete;
-        return Promise.all(toSync.map(this._encodeRecord.bind(this, "remote")));
-      }).then(toSync => ({ toDelete: _toDelete, toSync: toSync }));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "pullChanges",
-    value: function pullChanges(syncResultObject) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-      if (!syncResultObject.ok) {
-        return Promise.resolve(syncResultObject);
-      }
-      options = Object.assign({
-        strategy: Collection.strategy.MANUAL,
-        lastModified: this.lastModified,
-        headers: {}
-      }, options);
+      }, { preload: existingRecords });
+    }).catch(err => {
       
-      return this.api.fetchChangesSince(this.bucket, this.name, {
-        lastModified: options.lastModified,
-        headers: options.headers
-      })
+      err.type = "incoming";
       
-      .then(changes => this.importChanges(syncResultObject, changes))
-      
-      .then(result => this._handleConflicts(result, options.strategy));
-    }
-
-    
-
-
-
-
-
-
-
-  }, {
-    key: "pushChanges",
-    value: function pushChanges(syncResultObject) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-      if (!syncResultObject.ok) {
-        return Promise.resolve(syncResultObject);
-      }
-      var safe = options.strategy === Collection.SERVER_WINS;
-      options = Object.assign({ safe: safe }, options);
-
-      
-      return this.gatherLocalChanges().then(_ref2 => {
-        var toDelete = _ref2.toDelete;
-        var toSync = _ref2.toSync;
-
-        return Promise.all([
-        
-        Promise.all(toDelete.map(record => {
-          return this["delete"](record.id, { virtual: false });
-        })),
-        
-        this.api.batch(this.bucket, this.name, toSync, options)]);
-      })
-      
-      .then(_ref3 => {
-        var _ref32 = _slicedToArray(_ref3, 2);
-
-        var deleted = _ref32[0];
-        var synced = _ref32[1];
-
-        
-        syncResultObject.add("errors", synced.errors.map(error => {
-          error.type = "outgoing";
-          return error;
-        }));
-        
-        syncResultObject.add("conflicts", synced.conflicts);
-        
-        return Promise.all(synced.published.map(record => {
-          if (record.deleted) {
-            
-            return this["delete"](record.id, { virtual: false }).then(res => {
-              
-              return { data: { id: res.data.id, deleted: true } };
-            });
-          } else {
-            
-            return this._decodeRecord("remote", record).then(record => this.update(record, { synced: true }));
-          }
-        })).then(published => {
-          syncResultObject.add("published", published.map(res => res.data));
-          return syncResultObject;
-        });
-      })
-      
-      .then(result => this._handleConflicts(result, options.strategy)).then(result => {
-        var resolvedUnsynced = result.resolved.filter(record => record._status !== "synced");
-        
-        if (resolvedUnsynced.length === 0 || options.resolved) {
-          return result;
-        } else if (options.strategy === Collection.strategy.CLIENT_WINS && !options.resolved) {
-          
-          return this.pushChanges(result, Object.assign({}, options, { resolved: true }));
-        } else if (options.strategy === Collection.strategy.SERVER_WINS) {
-          
-          
-          return Promise.all(resolvedUnsynced.map(record => {
-            return this.update(record, { synced: true });
-          })).then(_ => result);
-        }
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-  }, {
-    key: "resolve",
-    value: function resolve(conflict, resolution) {
-      return this.update(Object.assign({}, resolution, {
-        
-        last_modified: conflict.remote.last_modified
-      }));
-    }
-
-    
-
-
-
-
-
-
-  }, {
-    key: "_handleConflicts",
-    value: function _handleConflicts(result) {
-      var strategy = arguments.length <= 1 || arguments[1] === undefined ? Collection.strategy.MANUAL : arguments[1];
-
-      if (strategy === Collection.strategy.MANUAL || result.conflicts.length === 0) {
-        return Promise.resolve(result);
-      }
-      return Promise.all(result.conflicts.map(conflict => {
-        var resolution = strategy === Collection.strategy.CLIENT_WINS ? conflict.local : conflict.remote;
-        return this.resolve(conflict, resolution);
-      })).then(imports => {
-        return result.reset("conflicts").add("resolved", imports.map(res => res.data));
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "sync",
-    value: function sync() {
-      var options = arguments.length <= 0 || arguments[0] === undefined ? { strategy: Collection.strategy.MANUAL, headers: {}, ignoreBackoff: false } : arguments[0];
-
-      if (!options.ignoreBackoff && this.api.backoff > 0) {
-        var seconds = Math.ceil(this.api.backoff / 1000);
-        return Promise.reject(new Error("Server is backed off; retry in " + seconds + "s or use the ignoreBackoff option."));
-      }
-      var result = new SyncResultObject();
-      return this.db.getLastModified().then(lastModified => this._lastModified = lastModified).then(_ => this.pullChanges(result, options)).then(result => this.pushChanges(result, options)).then(result => {
-        
-        if (result.published.length === 0) {
-          return result;
-        }
-        return this.pullChanges(result, options);
-      });
-    }
-
-    
-
-
-
-
-
-
-
-
-
-  }, {
-    key: "loadDump",
-    value: function loadDump(records) {
-      var reject = msg => Promise.reject(new Error(msg));
-      if (!Array.isArray(records)) {
-        return reject("Records is not an array.");
-      }
-
-      var _iteratorNormalCompletion2 = true;
-      var _didIteratorError2 = false;
-      var _iteratorError2 = undefined;
+      return [{ type: "errors", data: err }];
+    }).then(imports => {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
 
       try {
-        for (var _iterator2 = records[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var record = _step2.value;
+        for (var _iterator = imports[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          const imported = _step.value;
 
-          if (!record.id || !this.idSchema.validate(record.id)) {
-            return reject("Record has invalid ID: " + JSON.stringify(record));
-          }
-
-          if (!record.last_modified) {
-            return reject("Record has no last_modified value: " + JSON.stringify(record));
+          if (imported.type !== "void") {
+            syncResultObject.add(imported.type, imported.data);
           }
         }
-
-        
-        
       } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
+        _didIteratorError = true;
+        _iteratorError = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion2 && _iterator2["return"]) {
-            _iterator2["return"]();
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
           }
         } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
+          if (_didIteratorError) {
+            throw _iteratorError;
           }
         }
       }
 
-      return this.list({}, { includeDeleted: true }).then(res => {
-        return res.data.reduce((acc, record) => {
-          acc[record.id] = record;
-          return acc;
-        }, {});
-      }).then(existingById => {
-        return records.filter(record => {
-          var localRecord = existingById[record.id];
-          var shouldKeep =
+      return syncResultObject;
+    }).then(syncResultObject => {
+      syncResultObject.lastModified = changeObject.lastModified;
+      
+      if (!syncResultObject.ok) {
+        return syncResultObject;
+      }
+      
+      return this.db.saveLastModified(syncResultObject.lastModified).then(lastModified => {
+        this._lastModified = lastModified;
+        return syncResultObject;
+      });
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+  resetSyncStatus() {
+    let _count;
+    
+    return this.list({}, { includeDeleted: true }).then(result => {
+      return this.db.execute(transaction => {
+        _count = result.data.length;
+        result.data.forEach(r => {
           
-          localRecord === undefined ||
-          
-          localRecord._status === "synced" &&
-          
-          localRecord.last_modified !== undefined &&
-          
-          record.last_modified > localRecord.last_modified;
-          return shouldKeep;
+          if (r._status === "deleted") {
+            transaction.delete(r.id);
+          } else {
+            
+            transaction.update(Object.assign({}, r, {
+              last_modified: undefined,
+              _status: "created"
+            }));
+          }
         });
-      }).then(newRecords => {
-        return newRecords.map(record => {
-          return Object.assign({}, record, {
-            _status: "synced"
+      });
+    }).then(() => this.db.saveLastModified(null)).then(() => _count);
+  }
+
+  
+
+
+
+
+
+
+
+  gatherLocalChanges() {
+    let _toDelete;
+    
+    return this.list({}, { includeDeleted: true }).then(res => {
+      return res.data.reduce((acc, record) => {
+        if (record._status === "deleted" && !record.last_modified) {
+          acc.toDelete.push(record);
+        } else if (record._status !== "synced") {
+          acc.toSync.push(record);
+        }
+        return acc;
+        
+      }, { toDelete: [], toSync: [] });
+    }).then(({ toDelete, toSync }) => {
+      _toDelete = toDelete;
+      return Promise.all(toSync.map(this._encodeRecord.bind(this, "remote")));
+    }).then(toSync => ({ toDelete: _toDelete, toSync }));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  pullChanges(syncResultObject, options = {}) {
+    if (!syncResultObject.ok) {
+      return Promise.resolve(syncResultObject);
+    }
+    options = Object.assign({
+      strategy: Collection.strategy.MANUAL,
+      lastModified: this.lastModified,
+      headers: {}
+    }, options);
+    
+    return this.api.fetchChangesSince(this.bucket, this.name, {
+      lastModified: options.lastModified,
+      headers: options.headers
+    })
+    
+    .then(changes => this.importChanges(syncResultObject, changes))
+    
+    .then(result => this._handleConflicts(result, options.strategy));
+  }
+
+  
+
+
+
+
+
+
+
+  pushChanges(syncResultObject, options = {}) {
+    if (!syncResultObject.ok) {
+      return Promise.resolve(syncResultObject);
+    }
+    const safe = options.strategy === Collection.SERVER_WINS;
+    options = Object.assign({ safe }, options);
+
+    
+    return this.gatherLocalChanges().then(({ toDelete, toSync }) => {
+      return Promise.all([
+      
+      this.db.execute(transaction => {
+        toDelete.forEach(record => {
+          transaction.delete(record.id);
+        });
+      }),
+      
+      this.api.batch(this.bucket, this.name, toSync, options)]);
+    })
+    
+    .then(([deleted, synced]) => {
+      const { errors, conflicts, published, skipped } = synced;
+      
+      syncResultObject.add("errors", errors.map(error => {
+        error.type = "outgoing";
+        return error;
+      }));
+      
+      syncResultObject.add("conflicts", conflicts);
+      
+      const missingRemotely = skipped.map(r => Object.assign({}, r, { deleted: true }));
+      const toApplyLocally = published.concat(missingRemotely);
+      
+      const toDeleteLocally = toApplyLocally.filter(r => r.deleted);
+      const toUpdateLocally = toApplyLocally.filter(r => !r.deleted);
+      
+      return Promise.all(toUpdateLocally.map(record => {
+        return this._decodeRecord("remote", record);
+      }))
+      
+      .then(results => {
+        return this.db.execute(transaction => {
+          const updated = results.map(record => {
+            const synced = markSynced(record);
+            transaction.update(synced);
+            return { data: synced };
           });
+          const deleted = toDeleteLocally.map(record => {
+            transaction.delete(record.id);
+            
+            return { data: { id: record.id, deleted: true } };
+          });
+          return updated.concat(deleted);
         });
-      }).then(newRecords => this.db.loadDump(newRecords));
-    }
-  }, {
-    key: "name",
-    get: function get() {
-      return this._name;
-    }
-
+      }).then(published => {
+        syncResultObject.add("published", published.map(res => res.data));
+        return syncResultObject;
+      });
+    })
     
+    .then(result => this._handleConflicts(result, options.strategy)).then(result => {
+      const resolvedUnsynced = result.resolved.filter(record => record._status !== "synced");
+      
+      if (resolvedUnsynced.length === 0 || options.resolved) {
+        return result;
+      } else if (options.strategy === Collection.strategy.CLIENT_WINS && !options.resolved) {
+        
+        return this.pushChanges(result, Object.assign({}, options, { resolved: true }));
+      } else if (options.strategy === Collection.strategy.SERVER_WINS) {
+        
+        
+        return this.db.execute(transaction => {
+          resolvedUnsynced.forEach(record => {
+            transaction.update(markSynced(record));
+          });
+          return result;
+        });
+      }
+    });
+  }
+
+  
 
 
 
-  }, {
-    key: "bucket",
-    get: function get() {
-      return this._bucket;
+
+
+
+
+
+  resolve(conflict, resolution) {
+    return this.update(Object.assign({}, resolution, {
+      
+      last_modified: conflict.remote.last_modified
+    }));
+  }
+
+  
+
+
+
+
+
+
+  _handleConflicts(result, strategy = Collection.strategy.MANUAL) {
+    if (strategy === Collection.strategy.MANUAL || result.conflicts.length === 0) {
+      return Promise.resolve(result);
     }
+    return Promise.all(result.conflicts.map(conflict => {
+      const resolution = strategy === Collection.strategy.CLIENT_WINS ? conflict.local : conflict.remote;
+      return this.resolve(conflict, resolution);
+    })).then(imports => {
+      return result.reset("conflicts").add("resolved", imports.map(res => res.data));
+    });
+  }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sync(options = {
+    strategy: Collection.strategy.MANUAL,
+    headers: {},
+    ignoreBackoff: false,
+    remote: null
+  }) {
+    const previousRemote = this.api.remote;
+    if (options.remote) {
+      
+      this.api.remote = options.remote;
+    }
+    if (!options.ignoreBackoff && this.api.backoff > 0) {
+      const seconds = Math.ceil(this.api.backoff / 1000);
+      return Promise.reject(new Error(`Server is backed off; retry in ${ seconds }s or use the ignoreBackoff option.`));
+    }
+    const result = new SyncResultObject();
+    const syncPromise = this.db.getLastModified().then(lastModified => this._lastModified = lastModified).then(_ => this.pullChanges(result, options)).then(result => this.pushChanges(result, options)).then(result => {
+      
+      if (result.published.length === 0) {
+        return result;
+      }
+      return this.pullChanges(result, options);
+    });
     
+    return (0, _utils.pFinally)(syncPromise, () => this.api.remote = previousRemote);
+  }
+
+  
 
 
 
-  }, {
-    key: "lastModified",
-    get: function get() {
-      return this._lastModified;
+
+
+
+
+
+  loadDump(records) {
+    const reject = msg => Promise.reject(new Error(msg));
+    if (!Array.isArray(records)) {
+      return reject("Records is not an array.");
     }
 
-    
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
 
+    try {
+      for (var _iterator2 = records[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        const record = _step2.value;
 
+        if (!record.id || !this.idSchema.validate(record.id)) {
+          return reject("Record has invalid ID: " + JSON.stringify(record));
+        }
 
+        if (!record.last_modified) {
+          return reject("Record has no last_modified value: " + JSON.stringify(record));
+        }
+      }
 
+      
+      
 
-
-
-
-  }], [{
-    key: "strategy",
-    get: function get() {
-      return {
-        CLIENT_WINS: "client_wins",
-        SERVER_WINS: "server_wins",
-        MANUAL: "manual"
-      };
+      
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
     }
-  }]);
 
-  return Collection;
-})();
-
-exports["default"] = Collection;
+    return this.list({}, { includeDeleted: true }).then(res => {
+      return res.data.reduce((acc, record) => {
+        acc[record.id] = record;
+        return acc;
+      }, {});
+    }).then(existingById => {
+      return records.filter(record => {
+        const localRecord = existingById[record.id];
+        const shouldKeep =
+        
+        localRecord === undefined ||
+        
+        localRecord._status === "synced" &&
+        
+        localRecord.last_modified !== undefined &&
+        
+        record.last_modified > localRecord.last_modified;
+        return shouldKeep;
+      });
+    }).then(newRecords => newRecords.map(markSynced)).then(newRecords => this.db.loadDump(newRecords));
+  }
+}
+exports.default = Collection;
 
 },{"./adapters/base":11,"./api":12,"./utils":16,"uuid":9}],14:[function(require,module,exports){
-
-
-
-
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = {
+
+
+
+
+exports.default = {
   104: "Missing Authorization Token",
   105: "Invalid Authorization Token",
   106: "Request body was not valid JSON",
@@ -3421,7 +3286,6 @@ exports["default"] = {
   202: "Service deprecated",
   999: "Internal Server Error"
 };
-module.exports = exports["default"];
 
 },{}],15:[function(require,module,exports){
 "use strict";
@@ -3430,48 +3294,38 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _errors = require("./errors.js");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+var _errors2 = _interopRequireDefault(_errors);
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _errorsJs = require("./errors.js");
-
-var _errorsJs2 = _interopRequireDefault(_errorsJs);
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
 
-
-var HTTP = (function () {
-  _createClass(HTTP, null, [{
-    key: "DEFAULT_REQUEST_HEADERS",
-
-    
+class HTTP {
+  
 
 
 
 
-    get: function get() {
-      return {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      };
-    }
+  static get DEFAULT_REQUEST_HEADERS() {
+    return {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    };
+  }
 
-    
-
-
+  
 
 
-  }, {
-    key: "defaultOptions",
-    get: function get() {
-      return { timeout: 5000, requestMode: "cors" };
-    }
 
-    
+
+  static get defaultOptions() {
+    return { timeout: 5000, requestMode: "cors" };
+  }
+
+  
 
 
 
@@ -3481,13 +3335,7 @@ var HTTP = (function () {
 
 
 
-  }]);
-
-  function HTTP(events) {
-    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-    _classCallCheck(this, HTTP);
-
+  constructor(events, options = {}) {
     
     
 
@@ -3529,113 +3377,96 @@ var HTTP = (function () {
 
 
 
-
-  _createClass(HTTP, [{
-    key: "request",
-    value: function request(url) {
-      var options = arguments.length <= 1 || arguments[1] === undefined ? { headers: {} } : arguments[1];
-
-      var response = undefined,
-          status = undefined,
-          statusText = undefined,
-          headers = undefined,
-          _timeoutId = undefined,
-          hasTimedout = undefined;
-      
-      options.headers = Object.assign({}, HTTP.DEFAULT_REQUEST_HEADERS, options.headers);
-      options.mode = this.requestMode;
-      return new Promise((resolve, reject) => {
-        _timeoutId = setTimeout(() => {
-          hasTimedout = true;
-          reject(new Error("Request timeout."));
-        }, this.timeout);
-        fetch(url, options).then(res => {
-          if (!hasTimedout) {
-            clearTimeout(_timeoutId);
-            resolve(res);
-          }
-        })["catch"](err => {
-          if (!hasTimedout) {
-            clearTimeout(_timeoutId);
-            reject(err);
-          }
-        });
-      }).then(res => {
-        response = res;
-        headers = res.headers;
-        status = res.status;
-        statusText = res.statusText;
-        this._checkForDeprecationHeader(headers);
-        this._checkForBackoffHeader(status, headers);
-        return res.text();
-      })
-      
-      .then(text => {
-        if (text.length === 0) {
-          return null;
+  request(url, options = { headers: {} }) {
+    let response, status, statusText, headers, _timeoutId, hasTimedout;
+    
+    options.headers = Object.assign({}, HTTP.DEFAULT_REQUEST_HEADERS, options.headers);
+    options.mode = this.requestMode;
+    return new Promise((resolve, reject) => {
+      _timeoutId = setTimeout(() => {
+        hasTimedout = true;
+        reject(new Error("Request timeout."));
+      }, this.timeout);
+      fetch(url, options).then(res => {
+        if (!hasTimedout) {
+          clearTimeout(_timeoutId);
+          resolve(res);
         }
-        
-        return JSON.parse(text);
-      })["catch"](err => {
-        var error = new Error("HTTP " + (status || 0) + "; " + err);
-        error.response = response;
-        error.stack = err.stack;
-        throw error;
-      }).then(json => {
-        if (json && status >= 400) {
-          var message = "HTTP " + status + "; ";
-          if (json.errno && json.errno in _errorsJs2["default"]) {
-            message += _errorsJs2["default"][json.errno];
-            if (json.message) {
-              message += ": " + json.message;
-            }
-          } else {
-            message += statusText || "";
-          }
-          var error = new Error(message.trim());
-          error.response = response;
-          error.data = json;
-          throw error;
+      }).catch(err => {
+        if (!hasTimedout) {
+          clearTimeout(_timeoutId);
+          reject(err);
         }
-        return { status: status, json: json, headers: headers };
       });
-    }
-  }, {
-    key: "_checkForDeprecationHeader",
-    value: function _checkForDeprecationHeader(headers) {
-      var alertHeader = headers.get("Alert");
-      if (!alertHeader) {
-        return;
+    }).then(res => {
+      response = res;
+      headers = res.headers;
+      status = res.status;
+      statusText = res.statusText;
+      this._checkForDeprecationHeader(headers);
+      this._checkForBackoffHeader(status, headers);
+      return res.text();
+    })
+    
+    .then(text => {
+      if (text.length === 0) {
+        return null;
       }
-      var alert = undefined;
-      try {
-        alert = JSON.parse(alertHeader);
-      } catch (err) {
-        console.warn("Unable to parse Alert header message", alertHeader);
-        return;
+      
+      return JSON.parse(text);
+    }).catch(err => {
+      const error = new Error(`HTTP ${ status || 0 }; ${ err }`);
+      error.response = response;
+      error.stack = err.stack;
+      throw error;
+    }).then(json => {
+      if (json && status >= 400) {
+        let message = `HTTP ${ status }; `;
+        if (json.errno && json.errno in _errors2.default) {
+          message += _errors2.default[json.errno];
+          if (json.message) {
+            message += `: ${ json.message }`;
+          }
+        } else {
+          message += statusText || "";
+        }
+        const error = new Error(message.trim());
+        error.response = response;
+        error.data = json;
+        throw error;
       }
-      console.warn(alert.message, alert.url);
-      this.events.emit("deprecated", alert);
-    }
-  }, {
-    key: "_checkForBackoffHeader",
-    value: function _checkForBackoffHeader(status, headers) {
-      var backoffMs = undefined;
-      var backoffSeconds = parseInt(headers.get("Backoff"), 10);
-      if (backoffSeconds > 0) {
-        backoffMs = new Date().getTime() + backoffSeconds * 1000;
-      } else {
-        backoffMs = 0;
-      }
-      this.events.emit("backoff", backoffMs);
-    }
-  }]);
+      return { status, json, headers };
+    });
+  }
 
-  return HTTP;
-})();
+  _checkForDeprecationHeader(headers) {
+    const alertHeader = headers.get("Alert");
+    if (!alertHeader) {
+      return;
+    }
+    let alert;
+    try {
+      alert = JSON.parse(alertHeader);
+    } catch (err) {
+      console.warn("Unable to parse Alert header message", alertHeader);
+      return;
+    }
+    console.warn(alert.message, alert.url);
+    this.events.emit("deprecated", alert);
+  }
 
-exports["default"] = HTTP;
-module.exports = exports["default"];
+  _checkForBackoffHeader(status, headers) {
+    let backoffMs;
+    const backoffSeconds = parseInt(headers.get("Backoff"), 10);
+    if (backoffSeconds > 0) {
+      backoffMs = new Date().getTime() + backoffSeconds * 1000;
+    } else {
+      backoffMs = 0;
+    }
+    this.events.emit("backoff", backoffMs);
+  }
+}
+exports.default = HTTP;
 
 },{"./errors.js":14}],16:[function(require,module,exports){
 "use strict";
@@ -3652,11 +3483,11 @@ exports.reduceRecords = reduceRecords;
 exports.partition = partition;
 exports.isUUID = isUUID;
 exports.waterfall = waterfall;
+exports.pFinally = pFinally;
 
 var _assert = require("assert");
 
-var RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
+const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 
 
@@ -3680,11 +3511,9 @@ function deepEquals(a, b) {
 
 
 
-
 function quote(str) {
-  return "\"" + str + "\"";
+  return `"${ str }"`;
 }
-
 
 
 
@@ -3712,11 +3541,10 @@ function _isUndefined(value) {
 
 
 
-
 function sortObjects(order, list) {
-  var hasDash = order[0] === "-";
-  var field = hasDash ? order.slice(1) : order;
-  var direction = hasDash ? -1 : 1;
+  const hasDash = order[0] === "-";
+  const field = hasDash ? order.slice(1) : order;
+  const direction = hasDash ? -1 : 1;
   return list.slice().sort((a, b) => {
     if (a[field] && _isUndefined(b[field])) {
       return direction;
@@ -3730,7 +3558,6 @@ function sortObjects(order, list) {
     return a[field] > b[field] ? direction : -direction;
   });
 }
-
 
 
 
@@ -3755,11 +3582,10 @@ function filterObjects(filters, list) {
 
 
 
-
 function reduceRecords(filters, order, list) {
-  return sortObjects(order, filterObjects(filters, list));
+  const filtered = filters ? filterObjects(filters, list) : list;
+  return order ? sortObjects(order, filtered) : filtered;
 }
-
 
 
 
@@ -3788,11 +3614,9 @@ function partition(array, n) {
 
 
 
-
 function isUUID(uuid) {
   return RE_UUID.test(uuid);
 }
-
 
 
 
@@ -3809,6 +3633,20 @@ function waterfall(fns, init) {
   return fns.reduce((promise, nextFn) => {
     return promise.then(nextFn);
   }, Promise.resolve(init));
+}
+
+
+
+
+
+
+
+
+
+function pFinally(promise, fn) {
+  return promise.then(value => Promise.resolve(fn()).then(() => value), reason => Promise.resolve(fn()).then(() => {
+    throw reason;
+  }));
 }
 
 },{"assert":3}]},{},[2])(2)
