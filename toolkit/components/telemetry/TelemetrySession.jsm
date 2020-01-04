@@ -320,6 +320,12 @@ var TelemetryScheduler = {
     idleService.addIdleObserver(this, IDLE_TIMEOUT_SECONDS);
   },
 
+  _clearTimeout: function() {
+    if (this._schedulerTimer) {
+      Policy.clearSchedulerTickTimeout(this._schedulerTimer);
+    }
+  },
+
   
 
 
@@ -330,9 +336,7 @@ var TelemetryScheduler = {
       return;
     }
 
-    if (this._schedulerTimer) {
-      Policy.clearSchedulerTickTimeout(this._schedulerTimer);
-    }
+    this._clearTimeout();
 
     const now = Policy.now();
     let timeout = SCHEDULER_TICK_INTERVAL_MS;
@@ -421,6 +425,10 @@ var TelemetryScheduler = {
 
 
   _onSchedulerTick: function() {
+    
+    
+    this._clearTimeout();
+
     if (this._shuttingDown) {
       this._log.warn("_onSchedulerTick - already shutdown.");
       return Promise.reject(new Error("Already shutdown."));
