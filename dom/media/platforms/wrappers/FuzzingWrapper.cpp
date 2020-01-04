@@ -50,11 +50,12 @@ DecoderFuzzingWrapper::Input(MediaRawData* aData)
 nsresult
 DecoderFuzzingWrapper::Flush()
 {
-  DFW_LOGV("");
+  DFW_LOGV("Calling mDecoder[%p]->Flush()", mDecoder.get());
   MOZ_ASSERT(mDecoder);
   
   
   nsresult result = mDecoder->Flush();
+  DFW_LOGV("mDecoder[%p]->Flush() -> result=%u", mDecoder.get(), uint32_t(result));
   
   mCallbackWrapper->ClearDelayedOutput();
   return result;
@@ -254,13 +255,28 @@ void
 DecoderCallbackFuzzingWrapper::ScheduleOutputDelayedFrame()
 {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
+  if (mDelayedOutputRequest.Exists()) {
+    
+    return;
+  }
   RefPtr<DecoderCallbackFuzzingWrapper> self = this;
-  mDelayedOutputTimer->WaitUntil(
-    mPreviousOutput + mFrameOutputMinimumInterval,
-    __func__)
-  ->Then(mTaskQueue, __func__,
-         [self] () -> void { self->OutputDelayedFrame(); },
-         [self] () -> void { self->OutputDelayedFrame(); });
+  mDelayedOutputRequest.Begin(
+    mDelayedOutputTimer->WaitUntil(
+      mPreviousOutput + mFrameOutputMinimumInterval,
+      __func__)
+    ->Then(mTaskQueue, __func__,
+           [self] () -> void {
+             if (self->mDelayedOutputRequest.Exists()) {
+               self->mDelayedOutputRequest.Complete();
+               self->OutputDelayedFrame();
+             }
+           },
+           [self] () -> void {
+             if (self->mDelayedOutputRequest.Exists()) {
+               self->mDelayedOutputRequest.Complete();
+               self->ClearDelayedOutput();
+             }
+           }));
 }
 
 void
@@ -300,11 +316,16 @@ void
 DecoderCallbackFuzzingWrapper::ClearDelayedOutput()
 {
   if (!mTaskQueue->IsCurrentThreadIn()) {
+    DFW_LOGV("(dispatching self)");
     nsCOMPtr<nsIRunnable> task =
       NS_NewRunnableMethod(this, &DecoderCallbackFuzzingWrapper::ClearDelayedOutput);
     mTaskQueue->Dispatch(task.forget());
     return;
   }
+  DFW_LOGV("");
+  
+  
+  mDelayedOutputRequest.DisconnectIfExists();
   mDelayedOutputTimer = nullptr;
   mDelayedOutput.clear();
 }
@@ -312,10 +333,16 @@ DecoderCallbackFuzzingWrapper::ClearDelayedOutput()
 void
 DecoderCallbackFuzzingWrapper::Shutdown()
 {
-  DFW_LOGV("Shutting down mTaskQueue");
+  CFW_LOGV("Clear delayed output (if any) before shutting down mTaskQueue");
+  ClearDelayedOutput();
+  
+  
+  mTaskQueue->AwaitIdle();
+
+  CFW_LOGV("Shutting down mTaskQueue");
   mTaskQueue->BeginShutdown();
   mTaskQueue->AwaitIdle();
-  DFW_LOGV("mTaskQueue shut down");
+  CFW_LOGV("mTaskQueue shut down");
 }
 
 } 
