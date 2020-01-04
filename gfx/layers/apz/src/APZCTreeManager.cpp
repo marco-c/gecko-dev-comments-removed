@@ -1417,6 +1417,14 @@ void
 APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
                                FlingHandoffState& aHandoffState)
 {
+  
+  
+  if (aHandoffState.mIsHandoff &&
+      !gfxPrefs::APZAllowImmediateHandoff() &&
+      aHandoffState.mScrolledApzc == aPrev) {
+    return;
+  }
+
   const OverscrollHandoffChain* chain = aHandoffState.mChain;
   RefPtr<AsyncPanZoomController> current;
   uint32_t overscrollHandoffChainLength = chain->Length();

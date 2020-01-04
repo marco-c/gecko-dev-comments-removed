@@ -143,6 +143,11 @@ struct FlingHandoffState {
   
   
   bool mIsHandoff;
+
+  
+  
+  
+  RefPtr<const AsyncPanZoomController> mScrolledApzc;
 };
 
 } 

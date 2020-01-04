@@ -867,7 +867,8 @@ private:
   
   
   void HandleFlingOverscroll(const ParentLayerPoint& aVelocity,
-                             const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain);
+                             const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+                             const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
 
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
 
