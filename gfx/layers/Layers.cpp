@@ -1055,7 +1055,7 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
       gfx::Matrix siblingMatrix;
       if (!sibling->GetLocalTransform().Is2D(&siblingMatrix) ||
           !siblingMatrix.IsTranslation()) {
-        return false;
+        continue;
       }
 
       
