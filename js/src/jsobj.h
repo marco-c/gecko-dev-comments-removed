@@ -1089,17 +1089,6 @@ GetInitialHeap(NewObjectKind newKind, const Class* clasp)
     return gc::DefaultHeap;
 }
 
-bool
-NewObjectWithTaggedProtoIsCachable(ExclusiveContext* cxArg, Handle<TaggedProto> proto,
-                                   NewObjectKind newKind, const Class* clasp);
-
-
-extern bool
-GetPrototypeFromConstructor(JSContext* cx, js::HandleObject newTarget, js::MutableHandleObject proto);
-
-extern bool
-GetPrototypeFromCallableConstructor(JSContext* cx, const CallArgs& args, js::MutableHandleObject proto);
-
 
 
 extern JSObject*

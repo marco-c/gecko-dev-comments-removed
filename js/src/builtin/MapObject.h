@@ -92,7 +92,7 @@ class MapObject : public NativeObject {
                                             JS::AutoValueVector* entries);
     static bool entries(JSContext* cx, unsigned argc, Value* vp);
     static bool has(JSContext* cx, unsigned argc, Value* vp);
-    static MapObject* create(JSContext* cx, HandleObject proto = nullptr);
+    static MapObject* create(JSContext* cx);
 
     
     
@@ -181,7 +181,7 @@ class SetObject : public NativeObject {
 
     
     
-    static SetObject* create(JSContext *cx, HandleObject proto = nullptr);
+    static SetObject* create(JSContext *cx);
     static uint32_t size(JSContext *cx, HandleObject obj);
     static bool has(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
     static bool clear(JSContext *cx, HandleObject obj);
