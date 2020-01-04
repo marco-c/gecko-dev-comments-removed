@@ -49,9 +49,6 @@ class CompileRuntime
 #endif
 
     
-    const void* addressOfJSContext();
-
-    
     const void* addressOfActivation();
 
     
@@ -62,6 +59,10 @@ class CompileRuntime
 #endif
 
     const void* addressOfInterruptUint32();
+
+    
+    
+    const void* getJSContext();
 
     const JitRuntime* jitRuntime();
 

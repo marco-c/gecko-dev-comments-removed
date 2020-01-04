@@ -582,6 +582,8 @@ class PerThreadData : public PerThreadDataFriendFields
     inline JSRuntime* runtimeFromMainThread();
     inline JSRuntime* runtimeIfOnOwnerThread();
 
+    JSContext* contextFromMainThread();
+
     inline bool exclusiveThreadsPresent();
     inline void addActiveCompilation(AutoLockForExclusiveAccess& lock);
     inline void removeActiveCompilation(AutoLockForExclusiveAccess& lock);
@@ -636,13 +638,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
     uint8_t*            jitTop;
-
-    
-
-
-
-
-    JSContext*          jitJSContext;
 
      
 
@@ -1642,17 +1637,10 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 namespace js {
 
-
-
-
-
-
 static inline JSContext*
-GetJSContextFromJitCode()
+GetJSContextFromMainThread()
 {
-    JSContext* cx = js::TlsPerThreadData.get()->runtimeFromMainThread()->jitJSContext;
-    MOZ_ASSERT(cx);
-    return cx;
+    return js::TlsPerThreadData.get()->contextFromMainThread();
 }
 
 

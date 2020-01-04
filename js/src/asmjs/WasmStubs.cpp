@@ -629,11 +629,8 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
         
         
         
-        
-        
         size_t offsetOfActivation = JSRuntime::offsetOfActivation();
         size_t offsetOfJitTop = offsetof(JSRuntime, jitTop);
-        size_t offsetOfJitJSContext = offsetof(JSRuntime, jitJSContext);
         size_t offsetOfJitActivation = offsetof(JSRuntime, jitActivation);
         size_t offsetOfProfilingActivation = JSRuntime::offsetOfProfilingActivation();
         masm.loadWasmActivation(reg0);
@@ -647,12 +644,6 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
         
         masm.loadPtr(Address(reg0, offsetOfJitTop), reg2);
         masm.storePtr(reg2, Address(reg1, JitActivation::offsetOfPrevJitTop()));
-
-        
-        masm.loadPtr(Address(reg0, offsetOfJitJSContext), reg2);
-        masm.storePtr(reg2, Address(reg1, JitActivation::offsetOfPrevJitJSContext()));
-        
-        masm.storePtr(reg3, Address(reg0, offsetOfJitJSContext));
 
         
         masm.loadPtr(Address(reg0, offsetOfJitActivation), reg2);
@@ -688,10 +679,8 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
         
         
         
-        
         size_t offsetOfActivation = JSRuntime::offsetOfActivation();
         size_t offsetOfJitTop = offsetof(JSRuntime, jitTop);
-        size_t offsetOfJitJSContext = offsetof(JSRuntime, jitJSContext);
         size_t offsetOfJitActivation = offsetof(JSRuntime, jitActivation);
         size_t offsetOfProfilingActivation = JSRuntime::offsetOfProfilingActivation();
 
@@ -708,10 +697,6 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
 
         
         masm.store8(Imm32(0), Address(reg1, JitActivation::offsetOfActiveUint8()));
-
-        
-        masm.loadPtr(Address(reg1, JitActivation::offsetOfPrevJitJSContext()), reg2);
-        masm.storePtr(reg2, Address(reg0, offsetOfJitJSContext));
 
         
         masm.loadPtr(Address(reg1, JitActivation::offsetOfPrevJitActivation()), reg2);
