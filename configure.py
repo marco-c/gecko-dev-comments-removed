@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     
     
-    os.chmod('config.status', 0755)
+    os.chmod('config.status', 0o755)
     if config.get('MOZ_BUILD_APP') != 'js' or config.get('JS_STANDALONE'):
         os.environ['WRITE_MOZINFO'] = '1'
         
