@@ -658,7 +658,7 @@ nsGrid::GetRowOffsets(int32_t aIndex, nscoord& aTop, nscoord& aBottom, bool aIsH
        
        
        box->GetXULBorder(border);
-       box->GetPadding(padding);
+       box->GetXULPadding(padding);
 
        totalBorderPadding += border;
        totalBorderPadding += padding;
@@ -727,7 +727,7 @@ nsGrid::GetRowOffsets(int32_t aIndex, nscoord& aTop, nscoord& aBottom, bool aIsH
            
            
            box->GetXULBorder(border);
-           box->GetPadding(padding);
+           box->GetXULPadding(padding);
            totalChildBorderPadding += border;
            totalChildBorderPadding += padding;
            totalChildBorderPadding += margin;
