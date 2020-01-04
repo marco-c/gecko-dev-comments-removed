@@ -1011,7 +1011,12 @@ static bool test_fallible()
   const unsigned numArrays = 36;
   FallibleTArray<char> arrays[numArrays];
   for (size_t i = 0; i < numArrays; i++) {
-    bool success = arrays[i].SetCapacity(128 * 1024 * 1024, fallible);
+    
+    
+    
+    
+    
+    bool success = arrays[i].SetCapacity(128 * 1024 * 1024 - 1024, fallible);
     if (!success) {
       
       if (i < 8) {
