@@ -217,7 +217,7 @@ nsPrefetchNode::OnStopRequest(nsIRequest *aRequest,
 {
     LOG(("done prefetching [status=%x]\n", aStatus));
 
-    if (mBytesRead == 0 && aStatus == NS_OK) {
+    if (mBytesRead == 0 && aStatus == NS_OK && mChannel) {
         
         
         
