@@ -5922,50 +5922,20 @@ class LCallDeleteElement : public LCallInstructionHelper<1, 2 * BOX_PIECES, 0>
 };
 
 
-
-class LSetPropertyCacheV : public LInstructionHelper<0, 1 + BOX_PIECES, 1>
+class LSetPropertyCache : public LInstructionHelper<0, 1 + BOX_PIECES, 1>
 {
   public:
-    LIR_HEADER(SetPropertyCacheV)
+    LIR_HEADER(SetPropertyCache)
 
-    LSetPropertyCacheV(const LAllocation& object, const LDefinition& slots) {
+    LSetPropertyCache(const LAllocation& object, const LDefinition& temp) {
         setOperand(0, object);
-        setTemp(0, slots);
+        setTemp(0, temp);
     }
 
     static const size_t Value = 1;
 
     const MSetPropertyCache* mir() const {
         return mir_->toSetPropertyCache();
-    }
-};
-
-
-
-class LSetPropertyCacheT : public LInstructionHelper<0, 2, 1>
-{
-    MIRType valueType_;
-
-  public:
-    LIR_HEADER(SetPropertyCacheT)
-
-    LSetPropertyCacheT(const LAllocation& object, const LDefinition& slots,
-                       const LAllocation& value, MIRType valueType)
-        : valueType_(valueType)
-    {
-        setOperand(0, object);
-        setOperand(1, value);
-        setTemp(0, slots);
-    }
-
-    const MSetPropertyCache* mir() const {
-        return mir_->toSetPropertyCache();
-    }
-    MIRType valueType() {
-        return valueType_;
-    }
-    const char* extraName() const {
-        return StringFromMIRType(valueType_);
     }
 };
 

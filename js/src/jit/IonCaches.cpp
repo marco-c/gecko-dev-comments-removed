@@ -2240,10 +2240,9 @@ IonCache::reset(ReprotectCode reprotect)
 }
 
 
-
 static void
 CheckTypeSetForWrite(MacroAssembler& masm, JSObject* obj, jsid id,
-                     Register object, ConstantOrRegister value, Label* failure)
+                     Register scratch, ConstantOrRegister value, Label* failure)
 {
     TypedOrValueRegister valReg = value.reg();
     ObjectGroup* group = obj->group();
@@ -2255,16 +2254,15 @@ CheckTypeSetForWrite(MacroAssembler& masm, JSObject* obj, jsid id,
     
     TypeSet::readBarrier(propTypes);
 
-    Register scratch = object;
     masm.guardTypeSet(valReg, propTypes, BarrierKind::TypeSet, scratch, failure);
 }
 
 static void
 GenerateSetSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& attacher,
-                JSObject* obj, Shape* shape, Register object, ConstantOrRegister value,
-                bool needsTypeBarrier, bool checkTypeset)
+                JSObject* obj, Shape* shape, Register object, Register tempReg,
+                ConstantOrRegister value, bool needsTypeBarrier, bool checkTypeset)
 {
-    Label failures, failurePopObject;
+    Label failures;
 
     TestMatchingReceiver(masm, attacher, object, obj, &failures, needsTypeBarrier);
 
@@ -2273,18 +2271,16 @@ GenerateSetSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
     if (needsTypeBarrier) {
         
         
-        if (checkTypeset) {
-            masm.push(object);
-            CheckTypeSetForWrite(masm, obj, shape->propid(), object, value, &failurePopObject);
-            masm.pop(object);
-        }
+        if (checkTypeset)
+            CheckTypeSetForWrite(masm, obj, shape->propid(), tempReg, value, &failures);
     }
 
     NativeObject::slotsSizeMustNotOverflow();
 
     if (obj->is<UnboxedPlainObject>()) {
         obj = obj->as<UnboxedPlainObject>().maybeExpando();
-        masm.loadPtr(Address(object, UnboxedPlainObject::offsetOfExpando()), object);
+        masm.loadPtr(Address(object, UnboxedPlainObject::offsetOfExpando()), tempReg);
+        object = tempReg;
     }
 
     if (obj->as<NativeObject>().isFixedSlot(shape->slot())) {
@@ -2295,10 +2291,9 @@ GenerateSetSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
 
         masm.storeConstantOrRegister(value, addr);
     } else {
-        Register slotsReg = object;
-        masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), slotsReg);
+        masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), tempReg);
 
-        Address addr(slotsReg, obj->as<NativeObject>().dynamicSlotIndex(shape->slot()) * sizeof(Value));
+        Address addr(tempReg, obj->as<NativeObject>().dynamicSlotIndex(shape->slot()) * sizeof(Value));
 
         if (cx->zone()->needsIncrementalBarrier())
             masm.callPreBarrier(addr, MIRType_Value);
@@ -2307,11 +2302,6 @@ GenerateSetSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
     }
 
     attacher.jumpRejoin(masm);
-
-    if (failurePopObject.used()) {
-        masm.bind(&failurePopObject);
-        masm.pop(object);
-    }
 
     masm.bind(&failures);
     attacher.jumpNextStub(masm);
@@ -2323,7 +2313,7 @@ SetPropertyIC::attachSetSlot(JSContext* cx, HandleScript outerScript, IonScript*
 {
     MacroAssembler masm(cx, ion, outerScript, profilerLeavePc_);
     StubAttacher attacher(*this);
-    GenerateSetSlot(cx, masm, attacher, obj, shape, object(), value(), needsTypeBarrier(),
+    GenerateSetSlot(cx, masm, attacher, obj, shape, object(), temp(), value(), needsTypeBarrier(),
                     checkTypeset);
     return linkAndAttachStub(cx, masm, attacher, ion, "setting",
                              JS::TrackedOutcome::ICSetPropStub_Slot);
@@ -2518,31 +2508,12 @@ SetPropertyIC::attachGenericProxy(JSContext* cx, HandleScript outerScript, IonSc
 
     Label failures;
     {
-        Label proxyFailures;
-        Label proxySuccess;
-
-        AllocatableRegisterSet regSet(RegisterSet::All());
-        regSet.take(AnyRegister(object()));
-        if (!value().constant())
-            regSet.takeUnchecked(value().reg());
-
-        Register scratch = regSet.takeAnyGeneral();
-        masm.push(scratch);
-
-        masm.branchTestObjectIsProxy(false, object(), scratch, &proxyFailures);
+        masm.branchTestObjectIsProxy(false, object(), temp(), &failures);
 
         
         
-        masm.branchTestProxyHandlerFamily(Assembler::NotEqual, object(), scratch,
-                                          GetDOMProxyHandlerFamily(), &proxySuccess);
-
-        masm.bind(&proxyFailures);
-        masm.pop(scratch);
-        
-        masm.jump(&failures);
-
-        masm.bind(&proxySuccess);
-        masm.pop(scratch);
+        masm.branchTestProxyHandlerFamily(Assembler::Equal, object(), temp(),
+                                          GetDOMProxyHandlerFamily(), &failures);
     }
 
     RootedId propId(cx, AtomToId(name()));
@@ -2603,42 +2574,22 @@ SetPropertyIC::attachDOMProxyShadowed(JSContext* cx, HandleScript outerScript, I
 
 static bool
 GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
-                   IonCache::StubAttacher& attacher, HandleObject obj,
-                   HandleObject holder, HandleShape shape, bool strict, Register object,
+                   IonCache::StubAttacher& attacher, HandleObject obj, HandleObject holder,
+                   HandleShape shape, bool strict, Register object, Register tempReg,
                    ConstantOrRegister value, Label* failure, LiveRegisterSet liveRegs,
                    void* returnAddr)
 {
     
-    
     {
-        AllocatableRegisterSet regSet(RegisterSet::All());
-        regSet.take(AnyRegister(object));
-        if (!value.constant())
-            regSet.takeUnchecked(value.reg());
-        Register scratchReg = regSet.takeAnyGeneral();
-        masm.push(scratchReg);
-
-        Label protoFailure;
-        Label protoSuccess;
-
         
         if (obj != holder)
-            GeneratePrototypeGuards(cx, ion, masm, obj, holder, object, scratchReg, &protoFailure);
+            GeneratePrototypeGuards(cx, ion, masm, obj, holder, object, tempReg, failure);
 
-        masm.movePtr(ImmGCPtr(holder), scratchReg);
+        masm.movePtr(ImmGCPtr(holder), tempReg);
         masm.branchPtr(Assembler::NotEqual,
-                       Address(scratchReg, JSObject::offsetOfShape()),
+                       Address(tempReg, JSObject::offsetOfShape()),
                        ImmGCPtr(holder->as<NativeObject>().lastProperty()),
-                       &protoFailure);
-
-        masm.jump(&protoSuccess);
-
-        masm.bind(&protoFailure);
-        masm.pop(scratchReg);
-        masm.jump(failure);
-
-        masm.bind(&protoSuccess);
-        masm.pop(scratchReg);
+                       failure);
     }
 
     
@@ -2652,6 +2603,8 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
     if (!value.constant())
         regSet.takeUnchecked(value.reg());
 
+    regSet.takeUnchecked(tempReg);
+
     
     
     
@@ -2659,7 +2612,6 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
     
     
     
-    Register scratchReg = regSet.takeAnyGeneral();
 
     if (IsCacheableSetPropCallNative(obj, holder, shape)) {
         Register argJSContextReg = regSet.takeAnyGeneral();
@@ -2698,7 +2650,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         masm.enterFakeExitFrame(IonOOLNativeExitFrameLayoutToken);
 
         
-        masm.setupUnalignedABICall(scratchReg);
+        masm.setupUnalignedABICall(tempReg);
         masm.passABIArg(argJSContextReg);
         masm.passABIArg(argUintNReg);
         masm.passABIArg(argVpReg);
@@ -2715,7 +2667,6 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         
         
         Register argResultReg = regSet.takeAnyGeneral();
-
 
         SetterOp target = shape->setterOp();
         MOZ_ASSERT(target);
@@ -2762,7 +2713,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         masm.enterFakeExitFrame(IonOOLSetterOpExitFrameLayoutToken);
 
         
-        masm.setupUnalignedABICall(scratchReg);
+        masm.setupUnalignedABICall(tempReg);
         masm.passABIArg(argJSContextReg);
         masm.passABIArg(argObjReg);
         masm.passABIArg(argIdReg);
@@ -2776,7 +2727,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         
         
         EmitObjectOpResultCheck<IonOOLSetterOpExitFrameLayout>(masm, masm.exceptionLabel(),
-                                                               strict, scratchReg,
+                                                               strict, tempReg,
                                                                argJSContextReg, argObjReg,
                                                                argIdReg, argValueReg,
                                                                argResultReg);
@@ -2810,11 +2761,11 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         masm.Push(value);
         masm.Push(TypedOrValueRegister(MIRType_Object, AnyRegister(object)));
 
-        masm.movePtr(ImmGCPtr(target), scratchReg);
+        masm.movePtr(ImmGCPtr(target), tempReg);
 
         descriptor = MakeFrameDescriptor(argSize + padding, JitFrame_IonAccessorIC);
         masm.Push(Imm32(1)); 
-        masm.Push(scratchReg);
+        masm.Push(tempReg);
         masm.Push(Imm32(descriptor));
 
         
@@ -2824,9 +2775,9 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         
         
         MOZ_ASSERT(target->hasJITCode());
-        masm.loadPtr(Address(scratchReg, JSFunction::offsetOfNativeOrScript()), scratchReg);
-        masm.loadBaselineOrIonRaw(scratchReg, scratchReg, nullptr);
-        masm.callJit(scratchReg);
+        masm.loadPtr(Address(tempReg, JSFunction::offsetOfNativeOrScript()), tempReg);
+        masm.loadBaselineOrIonRaw(tempReg, tempReg, nullptr);
+        masm.callJit(tempReg);
 
         masm.freeStack(masm.framePushed() - framePushedBefore);
     }
@@ -2879,7 +2830,7 @@ SetPropertyIC::attachDOMProxyUnshadowed(JSContext* cx, HandleScript outerScript,
     RootedShape shape(cx);
     if (IsCacheableDOMProxyUnshadowedSetterCall(cx, obj, propName, &holder, &shape)) {
         if (!GenerateCallSetter(cx, ion, masm, attacher, obj, holder, shape, strict(),
-                                object(), value(), &failures, liveRegs_, returnAddr))
+                                object(), temp(), value(), &failures, liveRegs_, returnAddr))
         {
             return false;
         }
@@ -2917,7 +2868,7 @@ SetPropertyIC::attachCallSetter(JSContext* cx, HandleScript outerScript, IonScri
     TestMatchingReceiver(masm, attacher, object(), obj, &failure);
 
     if (!GenerateCallSetter(cx, ion, masm, attacher, obj, holder, shape, strict(),
-                            object(), value(), &failure, liveRegs_, returnAddr))
+                            object(), temp(), value(), &failure, liveRegs_, returnAddr))
     {
         return false;
     }
@@ -2936,10 +2887,10 @@ SetPropertyIC::attachCallSetter(JSContext* cx, HandleScript outerScript, IonScri
 static void
 GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& attacher,
                 JSObject* obj, Shape* oldShape, ObjectGroup* oldGroup,
-                Register object, ConstantOrRegister value,
+                Register object, Register tempReg, ConstantOrRegister value,
                 bool checkTypeset)
 {
-    Label failures, failuresPopObject;
+    Label failures;
 
     
     masm.branchTestObjGroup(Assembler::NotEqual, object, oldGroup, &failures);
@@ -2951,41 +2902,35 @@ GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
         Address expandoAddress(object, UnboxedPlainObject::offsetOfExpando());
         masm.branchPtr(Assembler::Equal, expandoAddress, ImmWord(0), &failures);
 
-        masm.push(object);
-        masm.loadPtr(expandoAddress, object);
-        masm.branchTestObjShape(Assembler::NotEqual, object, oldShape, &failuresPopObject);
-        masm.pop(object);
+        masm.loadPtr(expandoAddress, tempReg);
+        masm.branchTestObjShape(Assembler::NotEqual, tempReg, oldShape, &failures);
     }
 
     Shape* newShape = obj->maybeShape();
     if (!newShape)
         newShape = obj->as<UnboxedPlainObject>().maybeExpando()->lastProperty();
 
-    masm.push(object);    
-
     
     
-    if (checkTypeset) {
-        CheckTypeSetForWrite(masm, obj, newShape->propid(), object, value, &failuresPopObject);
-        masm.loadPtr(Address(masm.getStackPointer(), 0), object);
-    }
+    if (checkTypeset)
+        CheckTypeSetForWrite(masm, obj, newShape->propid(), tempReg, value, &failures);
 
     
     JSObject* proto = obj->getProto();
-    Register protoReg = object;
+    Register protoReg = tempReg;
+    bool first = true;
     while (proto) {
         Shape* protoShape = proto->as<NativeObject>().lastProperty();
 
         
-        masm.loadObjProto(protoReg, protoReg);
+        masm.loadObjProto(first ? object : protoReg, protoReg);
+        first = false;
 
         
-        masm.branchTestObjShape(Assembler::NotEqual, protoReg, protoShape, &failuresPopObject);
+        masm.branchTestObjShape(Assembler::NotEqual, protoReg, protoShape, &failures);
 
         proto = proto->getProto();
     }
-
-    masm.pop(object);     
 
     
     uint32_t newNumDynamicSlots = obj->is<UnboxedPlainObject>()
@@ -3035,7 +2980,11 @@ GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
         masm.PopRegsInMask(save);
     }
 
+    bool popObject = false;
+
     if (obj->is<UnboxedPlainObject>()) {
+        masm.push(object);
+        popObject = true;
         obj = obj->as<UnboxedPlainObject>().maybeExpando();
         masm.loadPtr(Address(object, UnboxedPlainObject::offsetOfExpando()), object);
     }
@@ -3054,23 +3003,18 @@ GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
         
         Label noTypeChange, skipPop;
 
-        masm.push(object);
-        masm.loadPtr(Address(object, JSObject::offsetOfGroup()), object);
+        masm.loadPtr(Address(object, JSObject::offsetOfGroup()), tempReg);
         masm.branchPtr(Assembler::Equal,
-                       Address(object, ObjectGroup::offsetOfAddendum()),
+                       Address(tempReg, ObjectGroup::offsetOfAddendum()),
                        ImmWord(0),
                        &noTypeChange);
-        masm.pop(object);
 
         Address groupAddr(object, JSObject::offsetOfGroup());
         if (cx->zone()->needsIncrementalBarrier())
             masm.callPreBarrier(groupAddr, MIRType_ObjectGroup);
         masm.storePtr(ImmGCPtr(obj->group()), groupAddr);
 
-        masm.jump(&skipPop);
         masm.bind(&noTypeChange);
-        masm.pop(object);
-        masm.bind(&skipPop);
     }
 
     
@@ -3080,20 +3024,19 @@ GenerateAddSlot(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& att
         Address addr(object, NativeObject::getFixedSlotOffset(newShape->slot()));
         masm.storeConstantOrRegister(value, addr);
     } else {
-        Register slotsReg = object;
+        masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), tempReg);
 
-        masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), slotsReg);
-
-        Address addr(slotsReg, obj->as<NativeObject>().dynamicSlotIndex(newShape->slot()) * sizeof(Value));
+        Address addr(tempReg, obj->as<NativeObject>().dynamicSlotIndex(newShape->slot()) * sizeof(Value));
         masm.storeConstantOrRegister(value, addr);
     }
+
+    if (popObject)
+        masm.pop(object);
 
     
     attacher.jumpRejoin(masm);
 
     
-    masm.bind(&failuresPopObject);
-    masm.pop(object);
     masm.bind(&failures);
 
     attacher.jumpNextStub(masm);
@@ -3108,7 +3051,8 @@ SetPropertyIC::attachAddSlot(JSContext* cx, HandleScript outerScript, IonScript*
 
     MacroAssembler masm(cx, ion, outerScript, profilerLeavePc_);
     StubAttacher attacher(*this);
-    GenerateAddSlot(cx, masm, attacher, obj, oldShape, oldGroup, object(), value(), checkTypeset);
+    GenerateAddSlot(cx, masm, attacher, obj, oldShape, oldGroup, object(), temp(), value(),
+                    checkTypeset);
     return linkAndAttachStub(cx, masm, attacher, ion, "adding",
                              JS::TrackedOutcome::ICSetPropStub_AddSlot);
 }
@@ -3289,20 +3233,17 @@ CanAttachNativeSetProp(JSContext* cx, HandleObject obj, HandleId id, ConstantOrR
 static void
 GenerateSetUnboxed(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& attacher,
                    JSObject* obj, jsid id, uint32_t unboxedOffset, JSValueType unboxedType,
-                   Register object, ConstantOrRegister value, bool checkTypeset)
+                   Register object, Register tempReg, ConstantOrRegister value, bool checkTypeset)
 {
-    Label failure, failurePopObject;
+    Label failure;
 
     
     masm.branchPtr(Assembler::NotEqual,
                    Address(object, JSObject::offsetOfGroup()),
                    ImmGCPtr(obj->group()), &failure);
 
-    if (checkTypeset) {
-        masm.push(object);
-        CheckTypeSetForWrite(masm, obj, id, object, value, &failurePopObject);
-        masm.pop(object);
-    }
+    if (checkTypeset)
+        CheckTypeSetForWrite(masm, obj, id, tempReg, value, &failure);
 
     Address address(object, UnboxedPlainObject::offsetOfData() + unboxedOffset);
 
@@ -3319,10 +3260,7 @@ GenerateSetUnboxed(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& 
 
     attacher.jumpRejoin(masm);
 
-    masm.bind(&failurePopObject);
-    masm.pop(object);
     masm.bind(&failure);
-
     attacher.jumpNextStub(masm);
 }
 
@@ -3415,7 +3353,7 @@ SetPropertyIC::tryAttachUnboxed(JSContext* cx, HandleScript outerScript, IonScri
     MacroAssembler masm(cx, ion, outerScript, profilerLeavePc_);
     StubAttacher attacher(*this);
     GenerateSetUnboxed(cx, masm, attacher, obj, id, unboxedOffset, unboxedType,
-                       object(), value(), checkTypeset);
+                       object(), temp(), value(), checkTypeset);
     return linkAndAttachStub(cx, masm, attacher, ion, "set_unboxed",
                              JS::TrackedOutcome::ICSetPropStub_SetUnboxed);
 }
@@ -3551,6 +3489,9 @@ SetPropertyIC::tryAttachAddSlot(JSContext* cx, HandleScript outerScript, IonScri
                                 HandleShape oldShape, bool tryNativeAddSlot, bool* emitted)
 {
     MOZ_ASSERT(!*emitted);
+
+    if (!canAttachStub())
+        return true;
 
     
     
