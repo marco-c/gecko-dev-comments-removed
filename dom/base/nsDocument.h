@@ -1767,6 +1767,8 @@ private:
   
   void MaybeRescheduleAnimationFrameNotifications();
 
+  void ClearAllBoxObjects();
+
   
   bool IsAboutPage();
 
