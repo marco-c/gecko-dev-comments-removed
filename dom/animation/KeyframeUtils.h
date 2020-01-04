@@ -78,6 +78,16 @@ public:
 
 
 
+  static void ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes);
+
+  
+
+
+
+
+
+
+
 
 
 
