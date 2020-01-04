@@ -229,29 +229,37 @@ Shape::fixupDictionaryShapeAfterMovingGC()
     
     
     
-    Cell* cell = reinterpret_cast<Cell*>(uintptr_t(listp) & ~CellMask);
-
-    
-    
-    
-    if (IsInsideNursery(cell)) {
+    if (IsInsideNursery(reinterpret_cast<Cell*>(listp))) {
         listp = nullptr;
         return;
     }
 
+    
+    
+    
+    
+    
+    bool listpPointsIntoShape = !base()->isOwned();
+
+#ifdef DEBUG
+    
+    
+    
+    
+    Cell* cell = reinterpret_cast<Cell*>(uintptr_t(listp) & ~CellMask);
     AllocKind kind = TenuredCell::fromPointer(cell)->getAllocKind();
-    MOZ_ASSERT(kind == AllocKind::SHAPE ||
-               kind == AllocKind::ACCESSOR_SHAPE ||
-               IsObjectAllocKind(kind));
-    if (kind == AllocKind::SHAPE || kind == AllocKind::ACCESSOR_SHAPE) {
+    MOZ_ASSERT_IF(listpPointsIntoShape,
+                  kind == AllocKind::SHAPE || kind == AllocKind::ACCESSOR_SHAPE);
+    MOZ_ASSERT_IF(!listpPointsIntoShape, IsObjectAllocKind(kind));
+#endif
+
+    if (listpPointsIntoShape) {
         
-        Shape* next = reinterpret_cast<Shape*>(uintptr_t(listp) -
-                                                offsetof(Shape, parent));
+        Shape* next = reinterpret_cast<Shape*>(uintptr_t(listp) - offsetof(Shape, parent));
         listp = &gc::MaybeForwarded(next)->parent;
     } else {
         
-        JSObject* last = reinterpret_cast<JSObject*>(uintptr_t(listp) -
-                                                      JSObject::offsetOfShape());
+        JSObject* last = reinterpret_cast<JSObject*>(uintptr_t(listp) - JSObject::offsetOfShape());
         listp = &gc::MaybeForwarded(last)->as<NativeObject>().shape_;
     }
 }
