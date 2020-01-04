@@ -905,7 +905,7 @@ DrawTargetD2D1::Init(const IntSize &aSize, SurfaceFormat aFormat)
   if (mDC->GetMaximumBitmapSize() < UINT32(aSize.width) ||
       mDC->GetMaximumBitmapSize() < UINT32(aSize.height)) {
     
-    gfxCriticalError(CriticalLog::DefaultOptions(false)) << "[D2D1.1] Attempt to use unsupported surface size " << aSize;
+    gfxCriticalNote << "[D2D1.1] Attempt to use unsupported surface size " << aSize;
     return false;
   }
 

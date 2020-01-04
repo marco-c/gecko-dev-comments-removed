@@ -1912,7 +1912,7 @@ bool DoesD3D11TextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT forma
 
   
   if (FAILED(device->CreateShaderResourceView(sharedTexture, NULL, getter_AddRefs(sharedView)))) {
-    gfxCriticalError(CriticalLog::DefaultOptions(false)) << "CreateShaderResourceView failed for format" << format;
+    gfxCriticalNote << "CreateShaderResourceView failed for format" << format;
     return false;
   }
 
