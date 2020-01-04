@@ -529,15 +529,9 @@ TabParent::ShouldSwitchProcess(nsIChannel* aChannel, const nsACString& aSignedPk
     return false;
   }
 
-  
-  
-  
-  
-  
-  nsCString loadingOriginNoSuffix;
-  loadingPrincipal->GetOriginNoSuffix(loadingOriginNoSuffix);
-  if (loadingOriginNoSuffix.EqualsLiteral("moz-safe-about:blank")) {
-    LOG("The content is already loaded by a brand new process.\n");
+  DocShellOriginAttributes attrs = OriginAttributesRef();
+  if (attrs.mSignedPkg == NS_ConvertUTF8toUTF16(aSignedPkg)) {
+    
     return false;
   }
 
