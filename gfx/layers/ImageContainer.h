@@ -554,6 +554,12 @@ public:
 
   static ProducerID AllocateProducerID();
 
+  
+  static void AsyncDestroyActor(PImageContainerChild* aActor);
+
+  
+  static void DeallocActor(PImageContainerChild* aActor);
+
 private:
   typedef mozilla::ReentrantMonitor ReentrantMonitor;
 

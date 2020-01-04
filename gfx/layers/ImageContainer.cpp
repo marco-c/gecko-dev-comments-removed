@@ -103,7 +103,12 @@ BufferRecycleBin::GetBuffer(uint32_t aSize)
 class ImageContainerChild : public PImageContainerChild {
 public:
   explicit ImageContainerChild(ImageContainer* aImageContainer)
-    : mLock("ImageContainerChild"), mImageContainer(aImageContainer) {}
+    : mLock("ImageContainerChild")
+    , mImageContainer(aImageContainer)
+    , mImageContainerReleased(false)
+    , mIPCOpen(true)
+  {}
+
   void ForgetImageContainer()
   {
     MutexAutoLock lock(mLock);
@@ -114,7 +119,55 @@ public:
   
   Mutex mLock;
   ImageContainer* mImageContainer;
+  
+  
+  
+  bool mImageContainerReleased;
+  
+  
+  
+  
+  
+  
+  bool mIPCOpen;
 };
+
+
+void
+ImageContainer::DeallocActor(PImageContainerChild* aActor)
+{
+  MOZ_ASSERT(aActor);
+  MOZ_ASSERT(InImageBridgeChildThread());
+
+  auto actor = static_cast<ImageContainerChild*>(aActor);
+  if (actor->mImageContainerReleased) {
+    delete actor;
+  } else {
+    actor->mIPCOpen = false;
+  }
+}
+
+
+void
+ImageContainer::AsyncDestroyActor(PImageContainerChild* aActor)
+{
+  MOZ_ASSERT(aActor);
+  MOZ_ASSERT(InImageBridgeChildThread());
+
+  auto actor = static_cast<ImageContainerChild*>(aActor);
+
+  
+  
+  actor->mImageContainerReleased = true;
+
+  if (actor->mIPCOpen && ImageBridgeChild::IsCreated() && !ImageBridgeChild::IsShutDown()) {
+    actor->SendAsyncDelete();
+  } else {
+    
+    
+    DeallocActor(actor);
+  }
+}
 
 ImageContainer::ImageContainer(Mode flag)
 : mReentrantMonitor("ImageContainer.mReentrantMonitor"),
