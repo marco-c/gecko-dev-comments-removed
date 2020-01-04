@@ -12321,6 +12321,7 @@ class CGDictionary(CGThing):
                 Maybe<JS::Rooted<JSObject *> > object;
                 Maybe<JS::Rooted<JS::Value> > temp;
                 if (!isNull) {
+                  MOZ_ASSERT(cx);
                   object.emplace(cx, &val.toObject());
                   temp.emplace(cx);
                 }
@@ -13291,13 +13292,9 @@ class CGBindingRoot(CGThing):
 
         bindingDeclareHeaders.update(dict.fromkeys(unionHeaders, True))
         bindingHeaders.update(dict.fromkeys(unionImplheaders, True))
+
         bindingDeclareHeaders["mozilla/dom/UnionMember.h"] = len(unionStructs) > 0
-        bindingDeclareHeaders["mozilla/dom/FakeString.h"] = len(unionStructs) > 0
-        
-        
-        
-        bindingDeclareHeaders["mozilla/dom/BindingUtils.h"] = any(d.isObject() for t in unionTypes
-                                                                  for d in t.flatMemberTypes)
+        bindingDeclareHeaders["mozilla/dom/BindingUtils.h"] = len(unionStructs) > 0
         bindingDeclareHeaders["mozilla/dom/IterableIterator.h"] = any(d.interface.isIteratorInterface() or
                                                                       d.interface.isIterable() for d in descriptors)
 
@@ -16363,8 +16360,6 @@ class GlobalGenRoots():
         includes.add("mozilla/OwningNonNull.h")
         includes.add("mozilla/dom/UnionMember.h")
         includes.add("mozilla/dom/BindingDeclarations.h")
-        
-        
         
         includes.add("mozilla/dom/BindingUtils.h")
         implincludes.add("mozilla/dom/PrimitiveConversions.h")
