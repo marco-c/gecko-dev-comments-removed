@@ -232,6 +232,7 @@ public:
   NS_IMETHOD GetUseRemoteTabs(bool*) override;
   NS_IMETHOD SetRemoteTabs(bool) override;
   NS_IMETHOD GetOriginAttributes(JS::MutableHandle<JS::Value>) override;
+  NS_IMETHOD IsTrackingProtectionOn(bool*) override;
 
   
   
