@@ -23,7 +23,7 @@ public:
     
 
 
-    explicit DocumentFunctionCall(const nsAString& aBaseURI);
+    explicit DocumentFunctionCall(nsIURI* aBaseURI);
 
     TX_DECL_FUNCTION
 
