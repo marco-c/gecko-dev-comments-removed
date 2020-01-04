@@ -331,8 +331,11 @@ struct PerformanceData {
 
 
 
-class nsPerformanceGroupDetails {
+class nsPerformanceGroupDetails: public nsIPerformanceGroupDetails {
 public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPERFORMANCEGROUPDETAILS
+
   nsPerformanceGroupDetails(const nsAString& aName,
                             const nsAString& aGroupId,
                             const nsAString& aAddonId,
@@ -356,6 +359,8 @@ public:
   bool IsWindow() const;
   bool IsSystem() const;
 private:
+  virtual ~nsPerformanceGroupDetails() {}
+
   const nsString mName;
   const nsString mGroupId;
   const nsString mAddonId;
@@ -397,9 +402,7 @@ enum class PerformanceGroupScope {
 
 
 
-class nsPerformanceGroup final: public js::PerformanceGroup,
-                                public nsPerformanceGroupDetails
-{
+class nsPerformanceGroup final: public js::PerformanceGroup {
 public:
 
   
@@ -457,6 +460,11 @@ public:
   
 
 
+  nsPerformanceGroupDetails* Details() const;
+
+  
+
+
   void Dispose();
 protected:
   nsPerformanceGroup(nsPerformanceStatsService* service,
@@ -482,6 +490,11 @@ protected:
   virtual ~nsPerformanceGroup();
 
 private:
+  
+
+
+  RefPtr<nsPerformanceGroupDetails> mDetails;
+
   
 
 
