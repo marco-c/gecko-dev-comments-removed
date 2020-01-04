@@ -361,7 +361,7 @@ public class StringHelper {
 
         
         IMPORT = res.getString(R.string.bookmarkhistory_button_import);
-        BOOKMARKS = res.getString(R.string.bookmark);
+        BOOKMARKS = res.getString(R.string.bookmarks_title);
 
         
         
