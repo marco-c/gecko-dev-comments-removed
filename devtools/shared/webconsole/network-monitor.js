@@ -527,8 +527,7 @@ NetworkMonitor.prototype = {
 
 
 
-
-  saveRequestAndResponseBodies: false,
+  saveRequestAndResponseBodies: true,
 
   
 
@@ -1243,7 +1242,7 @@ NetworkMonitorChild.prototype = {
   appId: null,
   owner: null,
   _netEvents: null,
-  _saveRequestAndResponseBodies: false,
+  _saveRequestAndResponseBodies: true,
 
   get saveRequestAndResponseBodies() {
     return this._saveRequestAndResponseBodies;

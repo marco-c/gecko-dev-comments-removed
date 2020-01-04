@@ -367,41 +367,12 @@ WebConsoleFrame.prototype = {
 
   _destroyer: null,
 
-  
-  _saveRequestAndResponseBodies: false,
+  _saveRequestAndResponseBodies: true,
 
   
   _chevronWidth: 0,
   
   _inputCharWidth: 0,
-
-  
-
-
-
-
-
-
-  getSaveRequestAndResponseBodies:
-  function WCF_getSaveRequestAndResponseBodies() {
-    let deferred = promise.defer();
-    let toGet = [
-      "NetworkMonitor.saveRequestAndResponseBodies"
-    ];
-
-    
-    this.webConsoleClient.getPreferences(toGet, response => {
-      if (!response.error) {
-        this._saveRequestAndResponseBodies = response.preferences[toGet[0]];
-        deferred.resolve(this._saveRequestAndResponseBodies);
-      }
-      else {
-        deferred.reject(response.error);
-      }
-    });
-
-    return deferred.promise;
-  },
 
   
 
@@ -559,47 +530,6 @@ WebConsoleFrame.prototype = {
     
     
     this._updateCharSize();
-
-    let updateSaveBodiesPrefUI = (element) => {
-      this.getSaveRequestAndResponseBodies().then(value => {
-        element.setAttribute("checked", value);
-        this.emit("save-bodies-ui-toggled");
-      });
-    }
-
-    let reverseSaveBodiesPref = ({ target: element }) => {
-      this.getSaveRequestAndResponseBodies().then(value => {
-        this.setSaveRequestAndResponseBodies(!value);
-        element.setAttribute("checked", value);
-        this.emit("save-bodies-pref-reversed");
-      });
-    }
-
-    let saveBodiesDisabled = !this.getFilterState("networkinfo") &&
-                             !this.getFilterState("netxhr") &&
-                             !this.getFilterState("network");
-
-    let saveBodies = doc.getElementById("saveBodies");
-    saveBodies.addEventListener("command", reverseSaveBodiesPref);
-    saveBodies.disabled = saveBodiesDisabled;
-
-    let saveBodiesContextMenu = doc.getElementById("saveBodiesContextMenu");
-    saveBodiesContextMenu.addEventListener("command", reverseSaveBodiesPref);
-    saveBodiesContextMenu.disabled = saveBodiesDisabled;
-
-    saveBodies.parentNode.addEventListener("popupshowing", () => {
-      updateSaveBodiesPrefUI(saveBodies);
-      saveBodies.disabled = !this.getFilterState("networkinfo") &&
-                            !this.getFilterState("netxhr") &&
-                            !this.getFilterState("network");
-    });
-
-    saveBodiesContextMenu.parentNode.addEventListener("popupshowing", () => {
-      updateSaveBodiesPrefUI(saveBodiesContextMenu);
-      saveBodiesContextMenu.disabled = !this.getFilterState("networkinfo") &&
-                                       !this.getFilterState("netxhr") &&
-                                       !this.getFilterState("network");
-    });
 
     let clearButton = doc.getElementsByClassName("webconsole-clear-console-button")[0];
     clearButton.addEventListener("command", () => {
@@ -950,15 +880,6 @@ WebConsoleFrame.prototype = {
 
         let prefKey = target.getAttribute("prefKey");
         this.setFilterState(prefKey, state);
-
-        
-        if (prefKey == "networkinfo" || prefKey == "netxhr" || prefKey == "network") {
-          let checkState = !this.getFilterState("networkinfo") &&
-                           !this.getFilterState("netxhr") &&
-                           !this.getFilterState("network");
-          this.document.getElementById("saveBodies").disabled = checkState;
-          this.document.getElementById("saveBodiesContextMenu").disabled = checkState;
-        }
 
         
         let menuPopup = target.parentNode;
@@ -5089,8 +5010,13 @@ WebConsoleConnectionProxy.prototype = {
     }
 
     this.webConsoleClient = webConsoleClient;
-
     this._hasNativeConsoleAPI = response.nativeConsoleAPI;
+
+    
+    
+    let saveBodies = !this.webConsoleFrame.owner._browserConsole;
+    this.webConsoleFrame.setSaveRequestAndResponseBodies(saveBodies);
+
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);
     this.webConsoleClient.on("networkEventUpdate", this._onNetworkEventUpdate);
 

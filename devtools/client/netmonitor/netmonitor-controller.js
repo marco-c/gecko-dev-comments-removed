@@ -10,7 +10,6 @@ var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 const NET_STRINGS_URI = "chrome://devtools/locale/netmonitor.properties";
 const PKI_STRINGS_URI = "chrome://pippki/locale/pippki.properties";
 const LISTENERS = [ "NetworkActivity" ];
-const NET_PREFS = { "NetworkMonitor.saveRequestAndResponseBodies": true };
 
 
 const EVENTS = {
@@ -223,13 +222,6 @@ var NetMonitorController = {
       this.tabClient = this._target.activeTab;
     }
 
-    let connectWebConsole = () => {
-      let deferred = promise.defer();
-      this.webConsoleClient = this._target.activeConsole;
-      this.webConsoleClient.setPreferences(NET_PREFS, deferred.resolve);
-      return deferred.promise;
-    };
-
     let connectTimeline = () => {
       
       
@@ -239,7 +231,7 @@ var NetMonitorController = {
       }
     };
 
-    yield connectWebConsole();
+    this.webConsoleClient = this._target.activeConsole;
     yield connectTimeline();
 
     this.TargetEventsHandler.connect();
