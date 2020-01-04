@@ -803,7 +803,9 @@ RuleRewriter.prototype = {
 
 
 
-  internalCreateProperty: Task.async(function* (index, name, value, priority) {
+
+
+  internalCreateProperty: Task.async(function* (index, name, value, priority, enabled) {
     this.completeInitialization(index);
     let newIndentation = "";
     if (this.hasNewLine) {
@@ -833,13 +835,18 @@ RuleRewriter.prototype = {
       }
     }
 
-    this.result += newIndentation + CSS.escape(name) + ": " +
-      this.sanitizeText(value, index);
-
+    let newText = CSS.escape(name) + ": " + this.sanitizeText(value, index);
     if (priority === "important") {
-      this.result += " !important";
+      newText += " !important";
     }
-    this.result += ";";
+    newText += ";";
+
+    if (!enabled) {
+      newText = "/*" + COMMENT_PARSING_HEURISTIC_BYPASS_CHAR + " " +
+        escapeCSSComment(newText) + " */";
+    }
+
+    this.result += newIndentation + newText;
     if (this.hasNewLine) {
       this.result += "\n";
     }
@@ -861,9 +868,11 @@ RuleRewriter.prototype = {
 
 
 
-  createProperty: function (index, name, value, priority) {
+
+
+  createProperty: function (index, name, value, priority, enabled) {
     this.editPromise = this.internalCreateProperty(index, name, value,
-                                                   priority);
+                                                   priority, enabled);
   },
 
   
@@ -884,7 +893,7 @@ RuleRewriter.prototype = {
     
     
     if (!this.decl) {
-      this.createProperty(index, name, value, priority);
+      this.createProperty(index, name, value, priority, true);
       return;
     }
 

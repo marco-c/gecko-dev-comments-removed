@@ -189,7 +189,7 @@ Rule.prototype = {
     }
 
     this.applyProperties((modifications) => {
-      modifications.createProperty(ind, name, value, priority);
+      modifications.createProperty(ind, name, value, priority, enabled);
       
       
       prop.updateEditor();
