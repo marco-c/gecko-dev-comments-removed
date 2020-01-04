@@ -568,7 +568,9 @@ MoveBoxedOrUnboxedDenseElements(JSContext* cx, JSObject* obj, uint32_t dstStart,
         uint8_t* data = obj->as<UnboxedArrayObject>().elements();
         size_t elementSize = UnboxedTypeSize(Type);
 
-        if (UnboxedTypeNeedsPreBarrier(Type)) {
+        if (UnboxedTypeNeedsPreBarrier(Type) &&
+            JS::shadow::Zone::asShadowZone(obj->zone())->needsIncrementalBarrier())
+        {
             
             
             
