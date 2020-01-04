@@ -69,11 +69,22 @@ public:
   
   
   
+  enum class ReportAction {
+    Forget,
+    Save
+  };
+
+  
+  
+  
+  
+  
   
   
   
   virtual void
-  FlushConsoleReports(nsIDocument* aDocument) = 0;
+  FlushConsoleReports(nsIDocument* aDocument,
+                      ReportAction aAction = ReportAction::Forget) = 0;
 
   
   
@@ -82,6 +93,21 @@ public:
   
   virtual void
   FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual void
+  FlushReportsByWindowId(uint64_t aWindowId,
+                         ReportAction aAction = ReportAction::Forget) = 0;
+
+  
+  virtual void
+  ClearConsoleReports() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIConsoleReportCollector, NS_NSICONSOLEREPORTCOLLECTOR_IID)
