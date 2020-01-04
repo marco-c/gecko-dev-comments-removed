@@ -154,7 +154,7 @@ add_test(function test_partialUpdateV4() {
   
   
   let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
-                                                [NEW_CLIENT_STATE],
+                                                [btoa(NEW_CLIENT_STATE)],
                                                 1);
   gExpectedQueryV4 = "&$req=" + btoa(requestV4);
 
@@ -311,24 +311,12 @@ function readFileToString(aFilename) {
   return buf;
 }
 
-function buildUpdateRequestV4InBase64() {
-
-  let request =  urlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
-                                              [""],
-                                              1);
-  return btoa(request);
-}
-
 function waitUntilStateSavedToPref(expectedState, callback) {
   const STATE_PREF_NAME_PREFIX = 'browser.safebrowsing.provider.google4.state.';
 
   let stateBase64 = '';
 
   try {
-    
-    
-    
-    
     stateBase64 =
       prefBranch.getCharPref(STATE_PREF_NAME_PREFIX + 'test-phish-proto');
   } catch (e) {}
