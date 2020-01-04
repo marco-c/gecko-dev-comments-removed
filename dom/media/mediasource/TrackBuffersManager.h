@@ -258,6 +258,9 @@ private:
     
     media::TimeIntervals mBufferedRanges;
     
+    
+    media::TimeIntervals mSanitizedBufferedRanges;
+    
     uint32_t mSizeBuffer;
     
     RefPtr<SharedTrackInfo> mInfo;
