@@ -309,8 +309,10 @@ GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind
     
     
     AutoLockHelperThreadState lock;
-    while (rt->isHeapBusy())
+    while (rt->isHeapBusy()) {
         HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
+        HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
+    }
 
     return arenas->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
 }
