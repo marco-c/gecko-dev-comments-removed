@@ -20,7 +20,7 @@ public class URLMetadataTable extends BaseTable {
     private static final int TABLE_ID_NUMBER = 1200;
 
     
-    static final Uri CONTENT_URI = Uri.withAppendedPath(BrowserContract.AUTHORITY_URI, "metadata");
+    public static final Uri CONTENT_URI = Uri.withAppendedPath(BrowserContract.AUTHORITY_URI, "metadata");
 
     
     public static final String ID_COLUMN = "id";
