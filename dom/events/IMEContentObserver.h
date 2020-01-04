@@ -94,6 +94,7 @@ public:
                          nsIEditor* aEditor);
   bool IsManaging(nsPresContext* aPresContext, nsIContent* aContent) const;
   bool IsManaging(const TextComposition* aTextComposition) const;
+  bool WasInitializedWithPlugin() const;
   bool IsEditorHandlingEventForComposition() const;
   bool KeepAliveDuringDeactive() const
   {
@@ -183,7 +184,6 @@ private:
   }
 
   
-
 
 
 

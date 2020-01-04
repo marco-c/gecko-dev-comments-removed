@@ -351,6 +351,8 @@ IMEContentObserver::InitWithEditor(nsPresContext* aPresContext,
     return false;
   }
 
+  MOZ_ASSERT(!WasInitializedWithPlugin());
+
   return true;
 }
 
@@ -386,7 +388,15 @@ IMEContentObserver::InitWithPlugin(nsPresContext* aPresContext,
     return false;
   }
 
+  MOZ_ASSERT(WasInitializedWithPlugin());
+
   return true;
+}
+
+bool
+IMEContentObserver::WasInitializedWithPlugin() const
+{
+  return mDocShell && !mEditor;
 }
 
 void
@@ -424,7 +434,9 @@ IMEContentObserver::ObserveEditableNode()
   }
 
   mUpdatePreference = mWidget->GetIMEUpdatePreference();
-  if (mUpdatePreference.WantSelectionChange()) {
+  if (!WasInitializedWithPlugin()) {
+    
+    
     
     nsCOMPtr<nsISelectionPrivate> selPrivate(do_QueryInterface(mSelection));
     NS_ENSURE_TRUE_VOID(selPrivate);
@@ -494,7 +506,7 @@ IMEContentObserver::UnregisterObservers()
     mEditor->RemoveEditorObserver(this);
   }
 
-  if (mUpdatePreference.WantSelectionChange() && mSelection) {
+  if (mSelection) {
     nsCOMPtr<nsISelectionPrivate> selPrivate(do_QueryInterface(mSelection));
     if (selPrivate) {
       selPrivate->RemoveSelectionListener(this);
@@ -1285,7 +1297,7 @@ IMEContentObserver::UpdateSelectionCache()
 {
   MOZ_ASSERT(IsSafeToNotifyIME());
 
-  if (!mUpdatePreference.WantSelectionChange()) {
+  if (WasInitializedWithPlugin()) {
     return false;
   }
 
