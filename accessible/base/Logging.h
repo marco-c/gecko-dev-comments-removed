@@ -35,20 +35,28 @@ enum EModules {
 
   eEvents = 1 << 3,
   ePlatforms = 1 << 4,
-  eStack = 1 << 5,
-  eText = 1 << 6,
-  eTree = 1 << 7,
+  eText = 1 << 5,
+  eTree = 1 << 6,
 
-  eDOMEvents = 1 << 8,
-  eFocus = 1 << 9,
-  eSelection = 1 << 10,
-  eNotifications = eDOMEvents | eSelection | eFocus
+  eDOMEvents = 1 << 7,
+  eFocus = 1 << 8,
+  eSelection = 1 << 9,
+  eNotifications = eDOMEvents | eSelection | eFocus,
+
+  
+  eStack = 1 << 10,
+  eVerbose = 1 << 11
 };
 
 
 
 
 bool IsEnabled(uint32_t aModules);
+
+
+
+
+bool IsEnabledAll(uint32_t aModules);
 
 
 
@@ -124,6 +132,15 @@ void SelChange(nsISelection* aSelection, DocAccessible* aDocument,
 
 
 
+void TreeInfo(const char* aMsg, uint32_t aExtraFlags, ...);
+void TreeInfo(const char* aMsg, uint32_t aExtraFlags,
+              const char* aMsg1, Accessible* aAcc,
+              const char* aMsg2, nsINode* aNode);
+void TreeInfo(const char* aMsg, uint32_t aExtraFlags, Accessible* aParent);
+
+
+
+
 
 
 void MsgBegin(const char* aTitle, const char* aMsgText, ...);
@@ -164,6 +181,7 @@ void Document(DocAccessible* aDocument);
 
 
 
+void AccessibleInfo(const char* aDescr, Accessible* aAccessible);
 void AccessibleNNode(const char* aDescr, Accessible* aAccessible);
 void AccessibleNNode(const char* aDescr, nsINode* aNode);
 
@@ -190,6 +208,7 @@ void Enable(const nsAFlatCString& aModules);
 void CheckEnv();
 
 } 
+
 } 
 } 
 
