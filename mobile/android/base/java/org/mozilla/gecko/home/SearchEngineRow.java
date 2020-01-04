@@ -25,6 +25,7 @@ import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.graphics.Typeface;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.text.style.StyleSpan;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -170,7 +171,15 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
     private void refreshOccurrencesWith(String pattern, String string) {
         mOccurrences.clear();
+
+        
+        
+        if (TextUtils.isEmpty(pattern)) {
+            return;
+        }
+
         final int patternLength = pattern.length();
+
         int indexOfMatch = 0;
         int lastIndexOfMatch = 0;
         while(indexOfMatch != -1) {
