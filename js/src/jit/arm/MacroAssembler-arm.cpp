@@ -405,7 +405,18 @@ MacroAssemblerARM::ma_alu(Register src1, Imm32 imm, Register dest,
         alu_dbl(src1, negImm, negDest, negOp, s, c))
         return;
 
-    ScratchRegisterScope scratch(asMasm());
+    
+    
+    const Register& scratch = ScratchRegister;
+    MOZ_ASSERT(src1 != scratch);
+#ifdef DEBUG
+    if (dest != scratch) {
+        
+        
+        
+        ScratchRegisterScope assertScratch(asMasm());
+    }
+#endif
 
     
     
