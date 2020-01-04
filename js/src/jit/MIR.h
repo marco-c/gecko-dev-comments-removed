@@ -7593,6 +7593,22 @@ class MAsmJSInterruptCheck
 };
 
 
+class MAsmThrowUnreachable
+  : public MAryControlInstruction<0, 0>,
+    public NoTypePolicy::Data
+{
+  public:
+    INSTRUCTION_HEADER(AsmThrowUnreachable)
+    static MAsmThrowUnreachable* New(TempAllocator& alloc) {
+        return new(alloc) MAsmThrowUnreachable;
+    }
+
+    AliasSet getAliasSet() const override {
+        return AliasSet::None();
+    }
+};
+
+
 
 class MLexicalCheck
   : public MUnaryInstruction,

@@ -777,6 +777,7 @@ GenerateErrorStub(MacroAssembler& masm, SymbolicAddress address)
 
     
     
+    
     masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
 
     masm.assertStackAlignment(ABIStackAlignment);
@@ -832,6 +833,8 @@ wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
         return GenerateErrorStub(masm, SymbolicAddress::OnOutOfBounds);
       case JumpTarget::BadIndirectCall:
         return GenerateErrorStub(masm, SymbolicAddress::BadIndirectCall);
+      case JumpTarget::UnreachableTrap:
+        return GenerateErrorStub(masm, SymbolicAddress::UnreachableTrap);
       case JumpTarget::Throw:
         return GenerateThrow(masm);
       case JumpTarget::Limit:
