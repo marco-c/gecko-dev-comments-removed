@@ -274,8 +274,9 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     void changeContents(JSContext* cx, BufferContents newContents);
 
     
+    
     static MOZ_WARN_UNUSED_RESULT bool
-    neuter(JSContext* cx, Handle<ArrayBufferObject*> buffer, BufferContents newContents);
+    detach(JSContext* cx, Handle<ArrayBufferObject*> buffer, BufferContents newContents);
 
   private:
     void neuterView(JSContext* cx, ArrayBufferViewObject* view,

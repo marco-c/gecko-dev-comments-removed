@@ -250,7 +250,7 @@ ArrayBufferObject::neuterView(JSContext* cx, ArrayBufferViewObject* view,
 }
 
  bool
-ArrayBufferObject::neuter(JSContext* cx, Handle<ArrayBufferObject*> buffer,
+ArrayBufferObject::detach(JSContext* cx, Handle<ArrayBufferObject*> buffer,
                           BufferContents newContents)
 {
     if (buffer->isAsmJS()) {
@@ -273,7 +273,7 @@ ArrayBufferObject::neuter(JSContext* cx, Handle<ArrayBufferObject*> buffer,
         
         AutoEnterOOMUnsafeRegion oomUnsafe;
         if (!cx->global()->getGroup(cx))
-            oomUnsafe.crash("ArrayBufferObject::neuter");
+            oomUnsafe.crash("ArrayBufferObject::detach");
         MarkObjectGroupFlags(cx, cx->global(), OBJECT_FLAG_TYPED_OBJECT_HAS_DETACHED_BUFFER);
         cx->compartment()->detachedTypedObjects = 1;
     }
@@ -691,7 +691,7 @@ ArrayBufferObject::stealContents(JSContext* cx, Handle<ArrayBufferObject*> buffe
         
         
         buffer->setOwnsData(DoesntOwnData);
-        if (!ArrayBufferObject::neuter(cx, buffer, newContents)) {
+        if (!ArrayBufferObject::detach(cx, buffer, newContents)) {
             js_free(newContents.data());
             return BufferContents::createPlain(nullptr);
         }
@@ -701,7 +701,7 @@ ArrayBufferObject::stealContents(JSContext* cx, Handle<ArrayBufferObject*> buffe
     
     
     memcpy(newContents.data(), oldContents.data(), buffer->byteLength());
-    if (!ArrayBufferObject::neuter(cx, buffer, oldContents)) {
+    if (!ArrayBufferObject::detach(cx, buffer, oldContents)) {
         js_free(newContents.data());
         return BufferContents::createPlain(nullptr);
     }
@@ -1142,12 +1142,12 @@ JS_DetachArrayBuffer(JSContext* cx, HandleObject obj,
             AllocateArrayBufferContents(cx, buffer->byteLength());
         if (!newContents)
             return false;
-        if (!ArrayBufferObject::neuter(cx, buffer, newContents)) {
+        if (!ArrayBufferObject::detach(cx, buffer, newContents)) {
             js_free(newContents.data());
             return false;
         }
     } else {
-        if (!ArrayBufferObject::neuter(cx, buffer, buffer->contents()))
+        if (!ArrayBufferObject::detach(cx, buffer, buffer->contents()))
             return false;
     }
 
