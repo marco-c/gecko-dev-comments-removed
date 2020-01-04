@@ -859,55 +859,34 @@ VectorImage::Draw(gfxContext* aContext,
   SVGDrawingParameters params(aContext, aSize, aRegion, aSamplingFilter,
                               svgContext, animTime, aFlags);
 
-  
-  
-  RefPtr<gfxDrawable> svgDrawable = LookupCachedSurface(params);
-  if (svgDrawable) {
-    Show(svgDrawable, params);
+  if (aFlags & FLAG_BYPASS_SURFACE_CACHE) {
+    CreateSurfaceAndShow(params);
     return DrawResult::SUCCESS;
-  }
-
-  
-  CreateSurfaceAndShow(params);
-  return DrawResult::SUCCESS;
-}
-
-already_AddRefed<gfxDrawable>
-VectorImage::LookupCachedSurface(const SVGDrawingParameters& aParams)
-{
-  
-  if (aParams.flags & FLAG_BYPASS_SURFACE_CACHE) {
-    return nullptr;
   }
 
   LookupResult result =
     SurfaceCache::Lookup(ImageKey(this),
-                         VectorSurfaceKey(aParams.size,
-                                          aParams.svgContext,
-                                          aParams.animationTime));
-  if (!result) {
-    return nullptr;  
-  }
+                         VectorSurfaceKey(params.size,
+                                          params.svgContext,
+                                          params.animationTime));
 
-  DrawableFrameRef drawableRef = result.Provider()->DrawableRef();
-  if (!drawableRef) {
-    
+  
+  if (result) {
+    RefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
+    if (surface) {
+      RefPtr<gfxDrawable> svgDrawable =
+        new gfxSurfaceDrawable(surface, result.DrawableRef()->GetSize());
+      Show(svgDrawable, params);
+      return DrawResult::SUCCESS;
+    }
+
     
     RecoverFromLossOfSurfaces();
-    return nullptr;
   }
 
-  RefPtr<SourceSurface> surface = drawableRef->GetSurface();
-  if (!surface) {
-    
-    
-    RecoverFromLossOfSurfaces();
-    return nullptr;
-  }
+  CreateSurfaceAndShow(params);
 
-  RefPtr<gfxDrawable> svgDrawable =
-    new gfxSurfaceDrawable(surface, drawableRef->GetSize());
-  return svgDrawable.forget();
+  return DrawResult::SUCCESS;
 }
 
 void

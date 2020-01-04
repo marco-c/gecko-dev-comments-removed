@@ -13,7 +13,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Move.h"
-#include "ISurfaceProvider.h"
+#include "imgFrame.h"
 
 namespace mozilla {
 namespace image {
@@ -44,35 +44,35 @@ public:
   }
 
   LookupResult(LookupResult&& aOther)
-    : mProvider(Move(aOther.mProvider))
+    : mDrawableRef(Move(aOther.mDrawableRef))
     , mMatchType(aOther.mMatchType)
   { }
 
-  LookupResult(RefPtr<ISurfaceProvider>&& aProvider, MatchType aMatchType)
-    : mProvider(Move(aProvider))
+  LookupResult(DrawableFrameRef&& aDrawableRef, MatchType aMatchType)
+    : mDrawableRef(Move(aDrawableRef))
     , mMatchType(aMatchType)
   {
-    MOZ_ASSERT(!mProvider || !(mMatchType == MatchType::NOT_FOUND ||
-                               mMatchType == MatchType::PENDING),
+    MOZ_ASSERT(!mDrawableRef || !(mMatchType == MatchType::NOT_FOUND ||
+                                  mMatchType == MatchType::PENDING),
                "Only NOT_FOUND or PENDING make sense with no surface");
-    MOZ_ASSERT(mProvider || mMatchType == MatchType::NOT_FOUND ||
-                            mMatchType == MatchType::PENDING,
+    MOZ_ASSERT(mDrawableRef || mMatchType == MatchType::NOT_FOUND ||
+                               mMatchType == MatchType::PENDING,
                "NOT_FOUND or PENDING do not make sense with a surface");
   }
 
   LookupResult& operator=(LookupResult&& aOther)
   {
     MOZ_ASSERT(&aOther != this, "Self-move-assignment is not supported");
-    mProvider = Move(aOther.mProvider);
+    mDrawableRef = Move(aOther.mDrawableRef);
     mMatchType = aOther.mMatchType;
     return *this;
   }
 
-  ISurfaceProvider* Provider() { return mProvider.get(); }
-  const ISurfaceProvider* Provider() const { return mProvider.get(); }
+  DrawableFrameRef& DrawableRef() { return mDrawableRef; }
+  const DrawableFrameRef& DrawableRef() const { return mDrawableRef; }
 
   
-  explicit operator bool() const { return bool(mProvider); }
+  explicit operator bool() const { return bool(mDrawableRef); }
 
   
   MatchType Type() const { return mMatchType; }
@@ -80,7 +80,7 @@ public:
 private:
   LookupResult(const LookupResult&) = delete;
 
-  RefPtr<ISurfaceProvider> mProvider;
+  DrawableFrameRef mDrawableRef;
   MatchType mMatchType;
 };
 
