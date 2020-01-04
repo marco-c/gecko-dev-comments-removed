@@ -400,7 +400,7 @@ ReparentFrameViewTo(nsIFrame*       aFrame,
     
     nsView* insertBefore = nsLayoutUtils::FindSiblingViewFor(aNewParentView, aFrame);
     aViewManager->InsertChild(aNewParentView, view, insertBefore, insertBefore != nullptr);
-  } else {
+  } else if (aFrame->GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW) {
     nsIFrame::ChildListIterator lists(aFrame);
     for (; !lists.IsDone(); lists.Next()) {
       
