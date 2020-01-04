@@ -154,7 +154,7 @@ var MessageListener = {
     }
   },
 
-  restoreHistory({epoch, tabData, loadArguments}) {
+  restoreHistory({epoch, tabData, loadArguments, isRemotenessUpdate}) {
     gContentRestore.restoreHistory(tabData, loadArguments, {
       
       
@@ -179,7 +179,7 @@ var MessageListener = {
     
     
     
-    sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch});
+    sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch, isRemotenessUpdate});
   },
 
   restoreTabContent({loadArguments, isRemotenessUpdate}) {
