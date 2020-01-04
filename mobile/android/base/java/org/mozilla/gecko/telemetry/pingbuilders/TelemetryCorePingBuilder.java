@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
+import android.util.Log;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.Locales;
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
+    private static final String LOGTAG = StringUtils.safeSubstring(TelemetryCorePingBuilder.class.getSimpleName(), 0, 23);
 
     private static final String NAME = "core";
     private static final int VERSION_VALUE = 6; 
@@ -165,7 +167,9 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
     public TelemetryCorePingBuilder setSequenceNumber(final int seq) {
         if (seq < 0) {
-            throw new IllegalArgumentException("Expected positive sequence number. Recived: " + seq);
+            
+            
+            Log.w(LOGTAG, "Expected positive sequence number. Received: " + seq);
         }
         payload.put(SEQ, seq);
         return this;
