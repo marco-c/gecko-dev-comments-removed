@@ -366,6 +366,58 @@ MediaSource::Enabled(JSContext* cx, JSObject* aGlobal)
   return Preferences::GetBool("media.mediasource.enabled");
 }
 
+void
+MediaSource::SetLiveSeekableRange(double aStart, double aEnd, ErrorResult& aRv)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  if (mReadyState != MediaSourceReadyState::Open ||
+      mSourceBuffers->AnyUpdating()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  
+  
+  if (aStart < 0 || aStart > aEnd) {
+    aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
+    return;
+  }
+
+  
+  
+  
+  mLiveSeekableRange =
+    Some(media::TimeInterval(media::TimeUnit::FromSeconds(aStart),
+                             media::TimeUnit::FromSeconds(aEnd)));
+}
+
+void
+MediaSource::ClearLiveSeekableRange(ErrorResult& aRv)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  if (mReadyState != MediaSourceReadyState::Open ||
+      mSourceBuffers->AnyUpdating()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  
+  
+  mLiveSeekableRange.reset();
+}
+
 bool
 MediaSource::Attach(MediaSourceDecoder* aDecoder)
 {

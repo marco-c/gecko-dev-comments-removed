@@ -82,6 +82,21 @@ MediaSourceDecoder::GetSeekable()
     
   } else if (duration > 0 && mozilla::IsInfinite(duration)) {
     media::TimeIntervals buffered = GetBuffered();
+
+    
+    if (mMediaSource->HasLiveSeekableRange()) {
+      
+      
+      media::TimeIntervals unionRanges =
+        buffered + mMediaSource->LiveSeekableRange();
+      
+      
+      
+      seekable +=
+        media::TimeInterval(unionRanges.GetStart(), unionRanges.GetEnd());
+      return seekable;
+    }
+
     if (buffered.Length()) {
       seekable +=
         media::TimeInterval(media::TimeUnit::FromSeconds(0), buffered.GetEnd());
