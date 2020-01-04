@@ -1,74 +1,116 @@
 
 
 
-"use strict";
 
 
 
 
 
-
-add_task(function* () {
+function test() {
   requestLongerTimeout(2);
-  let { PluralForm } = Cu.import("resource://gre/modules/PluralForm.jsm", {});
+  let { PluralForm } = require("devtools/shared/plural-form");
 
-  let { tab, monitor } = yield initNetMonitor(FILTERING_URL);
-  info("Starting test... ");
+  initNetMonitor(FILTERING_URL).then(([aTab, aDebuggee, aMonitor]) => {
+    info("Starting test... ");
 
-  let { $, L10N, NetMonitorView } = monitor.panelWin;
-  let { RequestsMenu } = NetMonitorView;
+    let { $, L10N, NetMonitorView } = aMonitor.panelWin;
+    let { RequestsMenu } = NetMonitorView;
 
-  RequestsMenu.lazyUpdate = false;
-  testStatus();
-
-  for (let i = 0; i < 2; i++) {
-    info(`Performing requests in batch #${i}`);
-    let wait = waitForNetworkEvents(monitor, 8);
-    yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
-      content.wrappedJSObject.performRequests('{ "getMedia": true, "getFlash": true }');
-    });
-    yield wait;
-
+    RequestsMenu.lazyUpdate = false;
     testStatus();
 
-    let buttons = ["html", "css", "js", "xhr", "fonts", "images", "media", "flash"];
-    for (let button of buttons) {
-      let buttonEl = $(`#requests-menu-filter-${button}-button`);
-      EventUtils.sendMouseEvent({ type: "click" }, buttonEl);
+    waitForNetworkEvents(aMonitor, 8).then(() => {
       testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-html-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-css-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-js-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-xhr-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-fonts-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-images-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-media-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-flash-button"));
+      testStatus();
+
+      info("Performing more requests.");
+      aDebuggee.performRequests('{ "getMedia": true, "getFlash": true }');
+      return waitForNetworkEvents(aMonitor, 8);
+    })
+    .then(() => {
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-html-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-css-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-js-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-xhr-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-fonts-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-images-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-media-button"));
+      testStatus();
+
+      EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-flash-button"));
+      testStatus();
+
+      teardown(aMonitor).then(finish);
+    });
+
+    function testStatus() {
+      let summary = $("#requests-menu-network-summary-button");
+      let value = summary.getAttribute("label");
+      info("Current summary: " + value);
+
+      let visibleItems = RequestsMenu.visibleItems;
+      let visibleRequestsCount = visibleItems.length;
+      let totalRequestsCount = RequestsMenu.itemCount;
+      info("Current requests: " + visibleRequestsCount + " of " + totalRequestsCount + ".");
+
+      if (!totalRequestsCount || !visibleRequestsCount) {
+        is(value, L10N.getStr("networkMenu.empty"),
+          "The current summary text is incorrect, expected an 'empty' label.");
+        return;
+      }
+
+      let totalBytes = RequestsMenu._getTotalBytesOfRequests(visibleItems);
+      let totalMillis =
+        RequestsMenu._getNewestRequest(visibleItems).attachment.endedMillis -
+        RequestsMenu._getOldestRequest(visibleItems).attachment.startedMillis;
+
+      info("Computed total bytes: " + totalBytes);
+      info("Computed total millis: " + totalMillis);
+
+      is(value, PluralForm.get(visibleRequestsCount, L10N.getStr("networkMenu.summary"))
+        .replace("#1", visibleRequestsCount)
+        .replace("#2", L10N.numberWithDecimals((totalBytes || 0) / 1024, 2))
+        .replace("#3", L10N.numberWithDecimals((totalMillis || 0) / 1000, 2))
+      , "The current summary text is incorrect.");
     }
-  }
 
-  yield teardown(monitor);
-
-  function testStatus() {
-    let summary = $("#requests-menu-network-summary-button");
-    let value = summary.getAttribute("label");
-    info("Current summary: " + value);
-
-    let visibleItems = RequestsMenu.visibleItems;
-    let visibleRequestsCount = visibleItems.length;
-    let totalRequestsCount = RequestsMenu.itemCount;
-    info("Current requests: " + visibleRequestsCount + " of " + totalRequestsCount + ".");
-
-    if (!totalRequestsCount || !visibleRequestsCount) {
-      is(value, L10N.getStr("networkMenu.empty"),
-        "The current summary text is incorrect, expected an 'empty' label.");
-      return;
-    }
-
-    let totalBytes = RequestsMenu._getTotalBytesOfRequests(visibleItems);
-    let totalMillis =
-      RequestsMenu._getNewestRequest(visibleItems).attachment.endedMillis -
-      RequestsMenu._getOldestRequest(visibleItems).attachment.startedMillis;
-
-    info("Computed total bytes: " + totalBytes);
-    info("Computed total millis: " + totalMillis);
-
-    is(value, PluralForm.get(visibleRequestsCount, L10N.getStr("networkMenu.summary"))
-      .replace("#1", visibleRequestsCount)
-      .replace("#2", L10N.numberWithDecimals((totalBytes || 0) / 1024, 2))
-      .replace("#3", L10N.numberWithDecimals((totalMillis || 0) / 1000, 2))
-    , "The current summary text is incorrect.");
-  }
-});
+    aDebuggee.performRequests('{ "getMedia": true, "getFlash": true }');
+  });
+}
