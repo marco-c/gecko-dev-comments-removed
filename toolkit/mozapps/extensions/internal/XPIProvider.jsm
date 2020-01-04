@@ -3923,6 +3923,9 @@ this.XPIProvider = {
 
 
   installTemporaryAddon: Task.async(function*(aFile) {
+    if (aFile.exists() && aFile.isFile()) {
+      flushJarCache(aFile);
+    }
     let addon = yield loadManifestFromFile(aFile, TemporaryInstallLocation);
 
     if (!addon.bootstrap) {
