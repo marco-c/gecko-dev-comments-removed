@@ -1,7 +1,6 @@
 
 
 
-var {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
 var isOSX = Services.appinfo.OS === "Darwin";
 
 add_task(function* () {
