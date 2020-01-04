@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(2);
+
 const kObservedTopics = [
   "getUserMedia:response:allow",
   "getUserMedia:revoke",
