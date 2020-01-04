@@ -52,6 +52,10 @@ const SPECIALVALUES = new Set([
 
 
 
+
+
+
+
 function CssColor(colorValue) {
   this.newColor(colorValue);
 }
@@ -152,7 +156,7 @@ CssColor.prototype = {
       let tuple = this._getRGBATuple();
 
       if (tuple.a !== 1) {
-        return this.rgb;
+        return this.hex;
       }
       let {r, g, b} = tuple;
       return rgbToColorName(r, g, b);
@@ -167,7 +171,7 @@ CssColor.prototype = {
       return invalidOrSpecialValue;
     }
     if (this.hasAlpha) {
-      return this.rgba;
+      return this.alphaHex;
     }
 
     let hex = this.longHex;
@@ -179,18 +183,47 @@ CssColor.prototype = {
     return hex;
   },
 
+  get alphaHex() {
+    let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    if (invalidOrSpecialValue !== false) {
+      return invalidOrSpecialValue;
+    }
+
+    let alphaHex = this.longAlphaHex;
+    if (alphaHex.charAt(1) == alphaHex.charAt(2) &&
+        alphaHex.charAt(3) == alphaHex.charAt(4) &&
+        alphaHex.charAt(5) == alphaHex.charAt(6) &&
+        alphaHex.charAt(7) == alphaHex.charAt(8)) {
+      alphaHex = "#" + alphaHex.charAt(1) + alphaHex.charAt(3) +
+        alphaHex.charAt(5) + alphaHex.charAt(7);
+    }
+    return alphaHex;
+  },
+
   get longHex() {
     let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
     if (this.hasAlpha) {
-      return this.rgba;
+      return this.longAlphaHex;
     }
 
     let tuple = this._getRGBATuple();
     return "#" + ((1 << 24) + (tuple.r << 16) + (tuple.g << 8) +
                   (tuple.b << 0)).toString(16).substr(-6);
+  },
+
+  get longAlphaHex() {
+    let invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    if (invalidOrSpecialValue !== false) {
+      return invalidOrSpecialValue;
+    }
+
+    let tuple = this._getRGBATuple();
+    return "#" + ((1 << 24) + (tuple.r << 16) + (tuple.g << 8) +
+                  (tuple.b << 0)).toString(16).substr(-6) +
+                  Math.round(tuple.a * 255).toString(16).padEnd(2, "0");
   },
 
   get rgb() {
@@ -547,27 +580,35 @@ function hslToRGB([h, s, l]) {
 
 
 function hexToRGBA(name) {
-  let r, g, b;
+  let r, g, b, a = 1;
 
   if (name.length === 3) {
-    let val = parseInt(name, 16);
-    b = ((val & 15) << 4) + (val & 15);
-    val >>= 4;
-    g = ((val & 15) << 4) + (val & 15);
-    val >>= 4;
-    r = ((val & 15) << 4) + (val & 15);
+    
+    r = parseInt(name.charAt(0) + name.charAt(0), 16);
+    g = parseInt(name.charAt(1) + name.charAt(1), 16);
+    b = parseInt(name.charAt(2) + name.charAt(2), 16);
+  } else if (name.length === 4) {
+    
+    r = parseInt(name.charAt(0) + name.charAt(0), 16);
+    g = parseInt(name.charAt(1) + name.charAt(1), 16);
+    b = parseInt(name.charAt(2) + name.charAt(2), 16);
+    a = parseInt(name.charAt(3) + name.charAt(3), 16) / 255;
   } else if (name.length === 6) {
-    let val = parseInt(name, 16);
-    b = val & 255;
-    val >>= 8;
-    g = val & 255;
-    val >>= 8;
-    r = val & 255;
+    
+    r = parseInt(name.charAt(0) + name.charAt(1), 16);
+    g = parseInt(name.charAt(2) + name.charAt(3), 16);
+    b = parseInt(name.charAt(4) + name.charAt(5), 16);
+  } else if (name.length === 8) {
+    
+    r = parseInt(name.charAt(0) + name.charAt(1), 16);
+    g = parseInt(name.charAt(2) + name.charAt(3), 16);
+    b = parseInt(name.charAt(4) + name.charAt(5), 16);
+    a = parseInt(name.charAt(6) + name.charAt(7), 16) / 255;
   } else {
     return null;
   }
-
-  return {r, g, b, a: 1};
+  a = Math.round(a * 10) / 10;
+  return {r, g, b, a};
 }
 
 
