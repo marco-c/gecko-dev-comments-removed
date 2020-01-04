@@ -36,119 +36,101 @@ namespace layers {
 
 
 
-
-
-class GrallocTextureClientOGL : public TextureClient
-{
+class GrallocTextureData : public TextureData {
 public:
-  GrallocTextureClientOGL(ISurfaceAllocator* aAllocator,
-                          gfx::SurfaceFormat aFormat,
-                          gfx::BackendType aMoz2dBackend,
-                          TextureFlags aFlags = TextureFlags::DEFAULT);
+  typedef uint32_t AndroidFormat;
 
-  ~GrallocTextureClientOGL();
+  virtual bool Serialize(SurfaceDescriptor& aOutDescriptor) override;
 
-  virtual bool Lock(OpenMode aMode) override;
+  virtual bool Lock(OpenMode aMode, FenceHandle* aFence) override;
 
   virtual void Unlock() override;
 
-  virtual bool ImplementsLocking() const override { return true; }
+  virtual gfx::IntSize GetSize() const override { return mSize; }
+
+  virtual gfx::SurfaceFormat GetFormat() const override { return mFormat; }
+
+  virtual already_AddRefed<gfx::DrawTarget> BorrowDrawTarget() override;
+
+  virtual bool CanExposeMappedData() const override { return true; }
+
+  virtual bool BorrowMappedData(MappedTextureData& aMap) override;
+
+  virtual bool SupportsMoz2D() const override { return true; }
 
   virtual bool HasInternalBuffer() const override { return false; }
 
-  virtual bool IsAllocated() const override;
+  virtual bool HasSynchronization() const override { return true; }
 
-  virtual bool ToSurfaceDescriptor(SurfaceDescriptor& aOutDescriptor) override;
+  virtual void Deallocate(ISurfaceAllocator*) override;
 
-  virtual void SetRemoveFromCompositableWaiter(AsyncTransactionWaiter* aWaiter) override;
+  virtual void Forget(ISurfaceAllocator*) override;
 
-  virtual void WaitForBufferOwnership(bool aWaitReleaseFence = true) override;
+  static GrallocTextureData* CreateForDrawing(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+                                              gfx::BackendType aMoz2dBackend,
+                                              ISurfaceAllocator* aAllocator);
 
-  GrallocTextureClientOGL* AsGrallocTextureClientOGL() override {
-    return this;
-  }
+  static GrallocTextureData* CreateForYCbCr(gfx::IntSize aYSize, gfx::IntSize aCbCrSize,
+                                            ISurfaceAllocator* aAllocator);
 
-  void SetTextureFlags(TextureFlags aFlags) { AddFlags(aFlags); }
+  static GrallocTextureData* CreateForGLRendering(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+                                                  ISurfaceAllocator* aAllocator);
 
-  gfx::IntSize GetSize() const override { return mSize; }
-
-  android::sp<android::GraphicBuffer> GetGraphicBuffer()
-  {
-    return mGraphicBuffer;
-  }
-
-  android::PixelFormat GetPixelFormat()
-  {
-    return mGraphicBuffer->getPixelFormat();
-  }
-
-  virtual gfx::DrawTarget* BorrowDrawTarget() override;
-
-  virtual void UpdateFromSurface(gfx::SourceSurface* aSurface) override;
-
-  virtual bool AllocateForSurface(gfx::IntSize aSize,
-                                  TextureAllocationFlags aFlags = ALLOC_DEFAULT) override;
-
-  virtual bool AllocateForYCbCr(gfx::IntSize aYSize,
-                                gfx::IntSize aCbCrSize,
-                                StereoMode aStereoMode);
-
-  bool AllocateForGLRendering(gfx::IntSize aSize);
-
-  bool AllocateGralloc(gfx::IntSize aYSize, uint32_t aAndroidFormat, uint32_t aUsage);
-
-  void SetIsOpaque(bool aIsOpaque) { mIsOpaque = aIsOpaque; }
-
-  
+  static GrallocTextureData* Create(gfx::IntSize aSize, AndroidFormat aFormat,
+                                    gfx::BackendType aMoz2DBackend, uint32_t aUsage,
+                                    ISurfaceAllocator* aAllocator);
 
 
+  static already_AddRefed<TextureClient>
+  TextureClientFromSharedSurface(gl::SharedSurface* abstractSurf, TextureFlags flags);
 
-
-  void SetMediaBuffer(android::MediaBuffer* aMediaBuffer)
-  {
-    mMediaBuffer = aMediaBuffer;
-  }
-
-  android::MediaBuffer* GetMediaBuffer()
-  {
-    return mMediaBuffer;
-  }
-
-  virtual already_AddRefed<TextureClient>
-  CreateSimilar(TextureFlags aFlags = TextureFlags::DEFAULT,
+  virtual TextureData*
+  CreateSimilar(ISurfaceAllocator* aAllocator,
+                TextureFlags aFlags = TextureFlags::DEFAULT,
                 TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const override;
 
-  static already_AddRefed<TextureClient> FromSharedSurface(gl::SharedSurface* surf,
-                                                       TextureFlags flags);
-
-protected:
-  gfx::SurfaceFormat mFormat;
-  gfx::IntSize mSize;
-  gfx::BackendType mBackend;
-  OpenMode mOpenMode;
+  
+  virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) override;
 
   
+  
+  
+  
+  
+  
+  void SetMediaBuffer(android::MediaBuffer* aMediaBuffer) { mMediaBuffer = aMediaBuffer; }
+  android::MediaBuffer* GetMediaBuffer() { return mMediaBuffer; }
 
+  android::sp<android::GraphicBuffer> GetGraphicBuffer() { return mGraphicBuffer; }
+
+  virtual void WaitForFence(FenceHandle* aFence) override;
+
+  ~GrallocTextureData();
+
+protected:
+  GrallocTextureData(MaybeMagicGrallocBufferHandle aGrallocHandle,
+                     gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+                     gfx::BackendType aMoz2DBackend);
+
+  gfx::IntSize mSize;
+  gfx::SurfaceFormat mFormat;
+  gfx::BackendType mMoz2DBackend;
 
   MaybeMagicGrallocBufferHandle mGrallocHandle;
-
-  RefPtr<AsyncTransactionWaiter> mRemoveFromCompositableWaiter;
-
   android::sp<android::GraphicBuffer> mGraphicBuffer;
 
   
-
-
-
+  
   uint8_t* mMappedBuffer;
 
-  RefPtr<gfx::DrawTarget> mDrawTarget;
-
   android::MediaBuffer* mMediaBuffer;
-
-  bool mIsOpaque;
-  bool mLocked;
 };
+
+gfx::SurfaceFormat SurfaceFormatForPixelFormat(android::PixelFormat aFormat);
+
+already_AddRefed<TextureClient> CreateGrallocTextureClientForDrawing(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+                                                                     gfx::BackendType aMoz2dBackend, TextureFlags aFlags,
+                                                                     ISurfaceAllocator* aAllocator);
 
 } 
 } 

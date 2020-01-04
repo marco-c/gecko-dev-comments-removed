@@ -39,6 +39,10 @@ namespace mozilla {
 #define GFX_DEBUG_TRACK_CLIENTS_IN_POOL 1
 #endif
 
+namespace gl {
+class SharedSurface_Gralloc;
+}
+
 namespace layers {
 
 class AsyncTransactionWaiter;
@@ -49,6 +53,7 @@ struct PlanarYCbCrData;
 class Image;
 class PTextureChild;
 class TextureChild;
+class TextureData;
 struct RawTextureBuffer;
 class RawYCbCrTextureBuffer;
 class TextureClient;
@@ -57,7 +62,6 @@ class TextureClientRecycleAllocator;
 class TextureClientPool;
 #endif
 class KeepAlive;
-class GrallocTextureClientOGL;
 
 
 
@@ -246,8 +250,6 @@ public:
   {
     return false;
   }
-
-  virtual GrallocTextureClientOGL* AsGrallocTextureClientOGL() { return nullptr; }
 
   
 
@@ -490,7 +492,7 @@ public:
   
 
 
-  virtual void SetRemoveFromCompositableWaiter(AsyncTransactionWaiter* aWaiter) {}
+  virtual void SetRemoveFromCompositableWaiter(AsyncTransactionWaiter* aWaiter);
 
   
 
@@ -505,20 +507,20 @@ public:
      mWasteTracker.Update(aWasteArea, BytesPerPixel(GetFormat()));
    }
 
-   
+  
 
 
 
 
-   virtual void SetReadbackSink(TextureReadbackSink* aReadbackSink) {
-     mReadbackSink = aReadbackSink;
-   }
+  virtual void SetReadbackSink(TextureReadbackSink* aReadbackSink) {
+    mReadbackSink = aReadbackSink;
+  }
 
-   virtual void SyncWithObject(SyncObject* aSyncObject) { }
+  virtual void SyncWithObject(SyncObject* aSyncObject) { }
 
-   void MarkShared() {
-     mShared = true;
-   }
+  void MarkShared() {
+    mShared = true;
+  }
 
   ISurfaceAllocator* GetAllocator()
   {
@@ -527,6 +529,9 @@ public:
 
    TextureClientRecycleAllocator* GetRecycleAllocator() { return mRecycleAllocator; }
    void SetRecycleAllocator(TextureClientRecycleAllocator* aAllocator);
+
+  
+  virtual TextureData* GetInternalData() { return nullptr; }
 
 private:
   static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
@@ -547,7 +552,7 @@ private:
   virtual void FinalizeOnIPDLThread() {}
 
   friend class AtomicRefCountedWithFinalize<TextureClient>;
-
+  friend class gl::SharedSurface_Gralloc;
 protected:
   
 
@@ -568,6 +573,8 @@ protected:
   RefPtr<TextureChild> mActor;
   RefPtr<ISurfaceAllocator> mAllocator;
   RefPtr<TextureClientRecycleAllocator> mRecycleAllocator;
+  RefPtr<AsyncTransactionWaiter> mRemoveFromCompositableWaiter;
+
   TextureFlags mFlags;
   FenceHandle mReleaseFenceHandle;
   FenceHandle mAcquireFenceHandle;
@@ -600,7 +607,7 @@ public:
 
   virtual gfx::SurfaceFormat GetFormat() const = 0;
 
-  virtual bool Lock(OpenMode aMode) = 0;
+  virtual bool Lock(OpenMode aMode, FenceHandle* aFence) = 0;
 
   virtual void Unlock() = 0;
 
@@ -620,6 +627,9 @@ public:
 
   virtual void Deallocate(ISurfaceAllocator* aAllocator) = 0;
 
+  
+  virtual void Forget(ISurfaceAllocator* aAllocator) {}
+
   virtual bool Serialize(SurfaceDescriptor& aDescriptor) = 0;
 
   virtual TextureData*
@@ -628,6 +638,10 @@ public:
                 TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const { return nullptr; }
 
   virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) { return false; };
+
+  
+  
+  virtual void WaitForFence(FenceHandle* aFence) {};
 };
 
 
@@ -671,8 +685,13 @@ public:
   virtual void UpdateFromSurface(gfx::SourceSurface* aSurface) override;
 
   
+  virtual void WaitForBufferOwnership(bool aWaitReleaseFence = true) override;
+
+  
   virtual bool IsAllocated() const override { return true; }
 
+  
+  virtual TextureData* GetInternalData() override { return mData; }
 protected:
   TextureData* mData;
   RefPtr<gfx::DrawTarget> mBorrowedDrawTarget;
