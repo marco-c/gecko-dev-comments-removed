@@ -719,13 +719,26 @@ public:
 
 
 
-  ParentLayerPoint GetCurrentAsyncScrollOffset() const;
+
+
+  enum AsyncMode {
+    NORMAL,
+    RESPECT_FORCE_DISABLE,
+  };
 
   
 
 
 
-  AsyncTransformComponentMatrix GetOverscrollTransform() const;
+
+
+  ParentLayerPoint GetCurrentAsyncScrollOffset(AsyncMode aMode) const;
+
+  
+
+
+
+  AsyncTransformComponentMatrix GetOverscrollTransform(AsyncMode aMode) const;
 
   
 
@@ -733,13 +746,13 @@ public:
 
 
 
-  AsyncTransform GetCurrentAsyncTransform() const;
+  AsyncTransform GetCurrentAsyncTransform(AsyncMode aMode) const;
 
   
 
 
 
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll() const;
+  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncMode aMode) const;
 
 
 

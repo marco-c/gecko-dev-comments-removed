@@ -96,7 +96,7 @@ protected:
 
       
       
-      apzc->GetOverscrollTransform();
+      apzc->GetOverscrollTransform(AsyncPanZoomController::NORMAL);
 
       if (!apzc->IsOverscrolled()) {
         recoveredFromOverscroll = true;

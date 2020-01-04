@@ -845,8 +845,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 
     hasAsyncTransform = true;
 
-    AsyncTransform asyncTransformWithoutOverscroll = controller->GetCurrentAsyncTransform();
-    AsyncTransformComponentMatrix overscrollTransform = controller->GetOverscrollTransform();
+    AsyncTransform asyncTransformWithoutOverscroll =
+        controller->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+    AsyncTransformComponentMatrix overscrollTransform =
+        controller->GetOverscrollTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
     AsyncTransformComponentMatrix asyncTransform =
         AsyncTransformComponentMatrix(asyncTransformWithoutOverscroll)
       * overscrollTransform;
@@ -879,7 +881,8 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                                 geckoZoom,
                                 mContentRect);
         } else {
-          ParentLayerPoint scrollOffset = controller->GetCurrentAsyncScrollOffset();
+          ParentLayerPoint scrollOffset = controller->GetCurrentAsyncScrollOffset(
+              AsyncPanZoomController::RESPECT_FORCE_DISABLE);
           
           CSSRect displayPort(metrics.GetCriticalDisplayPort().IsEmpty() ?
               metrics.GetDisplayPort() :
@@ -1030,7 +1033,8 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   const FrameMetrics& metrics = aContent.Metrics();
   AsyncPanZoomController* apzc = aContent.GetApzc();
 
-  AsyncTransformComponentMatrix asyncTransform = apzc->GetCurrentAsyncTransform();
+  AsyncTransformComponentMatrix asyncTransform =
+    apzc->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
 
   
   
@@ -1145,7 +1149,9 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   
   
   if (aScrollbarIsDescendant) {
-    Matrix4x4 asyncUntransform = (asyncTransform * apzc->GetOverscrollTransform()).Inverse().ToUnknownMatrix();
+    AsyncTransformComponentMatrix overscroll =
+        apzc->GetOverscrollTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+    Matrix4x4 asyncUntransform = (asyncTransform * overscroll).Inverse().ToUnknownMatrix();
     Matrix4x4 contentTransform = aContent.GetTransform();
     Matrix4x4 contentUntransform = contentTransform.Inverse();
 
