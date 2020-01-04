@@ -1366,7 +1366,6 @@ pref("browser.tabs.crashReporting.email", "");
 #ifndef MOZ_MULET
 pref("layers.async-pan-zoom.enabled", true);
 #endif
-pref("apz.velocity_bias", "0.0");
 
 
 pref("extensions.interposition.enabled", true);
