@@ -300,11 +300,9 @@ SetNameOperation(JSContext* cx, JSScript* script, jsbytecode* pc, HandleObject s
 }
 
 inline bool
-DefLexicalOperation(JSContext* cx, Handle<ClonedBlockObject*> lexicalScope,
-                    HandleObject varObj, HandlePropertyName name, unsigned attrs)
+CheckLexicalNameConflict(JSContext* cx, Handle<ClonedBlockObject*> lexicalScope,
+                         HandleObject varObj, HandlePropertyName name)
 {
-    
-    
     mozilla::Maybe<frontend::Definition::Kind> redeclKind;
     RootedId id(cx, NameToId(name));
     RootedShape shape(cx);
@@ -321,11 +319,127 @@ DefLexicalOperation(JSContext* cx, Handle<ClonedBlockObject*> lexicalScope,
         if (desc.object() && desc.hasConfigurable() && !desc.configurable())
             redeclKind = mozilla::Some(frontend::Definition::VAR);
     }
+
     if (redeclKind.isSome()) {
         ReportRuntimeRedeclaration(cx, name, *redeclKind);
         return false;
     }
 
+    return true;
+}
+
+inline bool
+CheckVarNameConflict(JSContext* cx, Handle<ClonedBlockObject*> lexicalScope,
+                     HandlePropertyName name)
+{
+    if (Shape* shape = lexicalScope->lookup(cx, name)) {
+        ReportRuntimeRedeclaration(cx, name, shape->writable() ? frontend::Definition::LET
+                                                               : frontend::Definition::CONSTANT);
+        return false;
+    }
+    return true;
+}
+
+inline bool
+CheckVarNameConflict(JSContext* cx, Handle<CallObject*> callObj, HandlePropertyName name)
+{
+    RootedFunction fun(cx, &callObj->callee());
+    RootedScript script(cx, fun->nonLazyScript());
+    uint32_t bodyLevelLexicalsStart = script->bindings.numVars();
+
+    for (BindingIter bi(script); !bi.done(); bi++) {
+        if (name == bi->name() &&
+            bi.isBodyLevelLexical() &&
+            bi.localIndex() >= bodyLevelLexicalsStart)
+        {
+            ReportRuntimeRedeclaration(cx, name,
+                                       bi->kind() == Binding::CONSTANT
+                                       ? frontend::Definition::CONSTANT
+                                       : frontend::Definition::LET);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+inline bool
+CheckGlobalDeclarationConflicts(JSContext* cx, HandleScript script,
+                                Handle<ClonedBlockObject*> lexicalScope,
+                                HandleObject varObj)
+{
+    
+    
+    
+    
+    
+    
+    RootedPropertyName name(cx);
+    BindingIter bi(script);
+
+    for (uint32_t i = 0; i < script->bindings.numVars(); i++, bi++) {
+        name = bi->name();
+        if (!CheckVarNameConflict(cx, lexicalScope, name))
+            return false;
+    }
+
+    for (uint32_t i = 0; i < script->bindings.numBodyLevelLexicals(); i++, bi++) {
+        name = bi->name();
+        if (!CheckLexicalNameConflict(cx, lexicalScope, varObj, name))
+            return false;
+    }
+
+    return true;
+}
+
+inline bool
+CheckEvalDeclarationConflicts(JSContext* cx, HandleScript script,
+                              HandleObject scopeChain, HandleObject varObj)
+{
+    MOZ_ASSERT(script->bindings.numBodyLevelLexicals() == 0);
+
+    if (script->bindings.numVars() == 0)
+        return true;
+
+    RootedPropertyName name(cx);
+    RootedObject obj(cx, scopeChain);
+    Rooted<ClonedBlockObject*> lexicalScope(cx);
+
+    
+    
+    
+    
+    while (obj != varObj) {
+        if (obj->is<ClonedBlockObject>()) {
+            lexicalScope = &obj->as<ClonedBlockObject>();
+            for (BindingIter bi(script); !bi.done(); bi++) {
+                name = bi->name();
+                if (!CheckVarNameConflict(cx, lexicalScope, name))
+                    return false;
+            }
+        }
+        obj = obj->enclosingScope();
+    }
+
+    if (varObj->is<CallObject>()) {
+        Rooted<CallObject*> callObj(cx, &varObj->as<CallObject>());
+        for (BindingIter bi(script); !bi.done(); bi++) {
+            name = bi->name();
+            if (!CheckVarNameConflict(cx, callObj, name))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+inline bool
+DefLexicalOperation(JSContext* cx, Handle<ClonedBlockObject*> lexicalScope,
+                    HandleObject varObj, HandlePropertyName name, unsigned attrs)
+{
+    
+    MOZ_ASSERT(CheckLexicalNameConflict(cx, lexicalScope, varObj, name));
+    RootedId id(cx, NameToId(name));
     RootedValue uninitialized(cx, MagicValue(JS_UNINITIALIZED_LEXICAL));
     return NativeDefineProperty(cx, lexicalScope, id, uninitialized, nullptr, nullptr, attrs);
 }
@@ -380,15 +494,15 @@ DefVarOperation(JSContext* cx, HandleObject varobj, HandlePropertyName dn, unsig
 {
     MOZ_ASSERT(varobj->isQualifiedVarObj());
 
+#ifdef DEBUG
     
     
-    if (varobj == cx->global()) {
-        if (Shape* shape = cx->global()->lexicalScope().lookup(cx, dn)) {
-            ReportRuntimeRedeclaration(cx, dn, shape->writable() ? frontend::Definition::LET
-                                                                 : frontend::Definition::CONSTANT);
-            return false;
-        }
+    if (JS_HasExtensibleLexicalScope(varobj)) {
+        Rooted<ClonedBlockObject*> lexicalScope(cx);
+        lexicalScope = &JS_ExtensibleLexicalScope(varobj)->as<ClonedBlockObject>();
+        MOZ_ASSERT(CheckVarNameConflict(cx, lexicalScope, dn));
     }
+#endif
 
     RootedShape prop(cx);
     RootedObject obj2(cx);

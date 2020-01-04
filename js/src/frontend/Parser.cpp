@@ -242,13 +242,22 @@ ParseContext<FullParseHandler>::define(TokenStream& ts,
         break;
 
       case Definition::VAR:
-        if (!sc->isGlobalContext()) {
+        
+        
+        
+        
+        
+        
+        if (!vars_.append(dn))
+            return false;
+
+        
+        
+        
+        if (!sc->isGlobalContext() && !dn->isDeoptimized()) {
             dn->setOp((js_CodeSpec[dn->getOp()].format & JOF_SET) ? JSOP_SETLOCAL : JSOP_GETLOCAL);
-            dn->pn_blockid = bodyid;
             dn->pn_dflags |= PND_BOUND;
-            if (!dn->pn_scopecoord.setSlot(ts, vars_.length()))
-                return false;
-            if (!vars_.append(dn))
+            if (!dn->pn_scopecoord.setSlot(ts, vars_.length() - 1))
                 return false;
             if (!checkLocalsOverflow(ts))
                 return false;
@@ -336,7 +345,7 @@ ParseContext<ParseHandler>::prepareToAddDuplicateArg(HandlePropertyName name, De
 
 template <typename ParseHandler>
 void
-ParseContext<ParseHandler>::updateDecl(JSAtom* atom, Node pn)
+ParseContext<ParseHandler>::updateDecl(TokenStream& ts, JSAtom* atom, Node pn)
 {
     Definition* oldDecl = decls_.lookupFirst(atom);
 
@@ -344,8 +353,24 @@ ParseContext<ParseHandler>::updateDecl(JSAtom* atom, Node pn)
     Definition* newDecl = (Definition*)pn;
     decls_.updateFirst(atom, newDecl);
 
-    if (sc->isGlobalContext()) {
+    if (sc->isGlobalContext() || oldDecl->isDeoptimized()) {
         MOZ_ASSERT(newDecl->isFreeVar());
+        
+        
+        for (uint32_t i = 0; i < vars_.length(); i++) {
+            if (vars_[i] == oldDecl) {
+                
+                
+                
+                if (oldDecl->isDeoptimized() && !newDecl->isDeoptimized()) {
+                    newDecl->pn_dflags |= PND_BOUND;
+                    newDecl->pn_scopecoord.setSlot(ts, i);
+                    newDecl->setOp(JSOP_GETLOCAL);
+                }
+                vars_[i] = newDecl;
+                break;
+            }
+        }
         return;
     }
 
@@ -440,6 +465,12 @@ ParseContext<ParseHandler>::generateBindings(ExclusiveContext* cx, TokenStream& 
 
     
     
+    
+    for (size_t i = 0; i < vars_.length(); i++)
+        vars_[i]->pn_blockid = bodyid;
+
+    
+    
     for (size_t i = 0; i < bodyLevelLexicals_.length(); i++) {
         Definition* dn = bodyLevelLexicals_[i];
         if (!dn->pn_scopecoord.setSlot(ts, vars_.length() + i))
@@ -465,6 +496,32 @@ ParseContext<ParseHandler>::generateBindings(ExclusiveContext* cx, TokenStream& 
                                               bodyLevelLexicals_.length(), blockScopeDepth,
                                               numUnaliasedVars, numUnaliasedBodyLevelLexicals,
                                               packedBindings, sc->isModuleBox());
+}
+
+template <>
+bool
+ParseContext<FullParseHandler>::drainGlobalOrEvalBindings(ExclusiveContext* cx,
+                                                          MutableHandle<TraceableVector<Binding>> vars,
+                                                          MutableHandle<TraceableVector<Binding>> lexicals)
+{
+    MOZ_ASSERT(sc->isGlobalContext());
+
+    uint32_t newVarsPos = vars.length();
+    uint32_t newLexicalsPos = lexicals.length();
+
+    if (!vars.growBy(vars_.length()))
+        return false;
+    AppendPackedBindings(this, vars_, vars.begin() + newVarsPos);
+    vars_.clear();
+
+    if (!sc->staticScope()->is<StaticEvalObject>()) {
+        if (!lexicals.growBy(bodyLevelLexicals_.length()))
+            return false;
+        AppendPackedBindings(this, bodyLevelLexicals_, lexicals.begin() + newLexicalsPos);
+    }
+    bodyLevelLexicals_.clear();
+
+    return true;
 }
 
 template <typename ParseHandler>
@@ -1224,10 +1281,10 @@ Parser<ParseHandler>::functionBody(InHandling inHandling, YieldHandling yieldHan
 
 template <>
 bool
-Parser<FullParseHandler>::makeDefIntoUse(Definition* dn, ParseNode* pn, JSAtom* atom)
+Parser<FullParseHandler>::makeDefIntoUse(Definition* dn, ParseNode* pn, HandleAtom atom)
 {
     
-    pc->updateDecl(atom, pn);
+    pc->updateDecl(tokenStream, atom, pn);
 
     
     for (ParseNode* pnu = dn->dn_uses; pnu; pnu = pnu->pn_link) {
@@ -3263,7 +3320,7 @@ Parser<FullParseHandler>::bindLexical(BindData<FullParseHandler>* data,
     ExclusiveContext* cx = parser->context;
     Rooted<StaticBlockObject*> blockObj(cx, data->letData().blockObj);
 
-    uint32_t index;
+    uint32_t index = StaticBlockObject::LOCAL_INDEX_LIMIT;
     if (blockObj) {
         
         
@@ -3310,7 +3367,10 @@ Parser<FullParseHandler>::bindLexical(BindData<FullParseHandler>* data,
 
 
     if (data->letData().varContext == HoistVars) {
-        if (dn && dn->pn_blockid == pc->blockid())
+        
+        
+        
+        if (dn && dn->pn_blockid >= pc->blockid())
             return parser->reportRedeclaration(pn, dn->kind(), name);
         if (!pc->define(parser->tokenStream, name, pn, bindingKind))
             return false;
@@ -3522,17 +3582,23 @@ Parser<ParseHandler>::bindVar(BindData<ParseHandler>* data,
 
 
 
-
-
         if (name == cx->names().arguments)
             pc->sc->setHasDebuggerStatement();
 
-        return true;
+        
+        
+        while (stmt && stmt->type == StmtType::WITH) {
+            if (stmt->enclosingScope)
+                stmt = LexicalLookup(pc, name, stmt->enclosingScope);
+            else
+                stmt = nullptr;
+        }
     }
 
     DefinitionList::Range defs = pc->decls().lookupMulti(name);
     MOZ_ASSERT_IF(stmt, !defs.empty());
 
+    
     if (defs.empty())
         return pc->define(parser->tokenStream, name, pn, Definition::VAR);
 

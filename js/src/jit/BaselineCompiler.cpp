@@ -430,12 +430,12 @@ BaselineCompiler::emitPrologue()
 
     
     
-    if (!initScopeChain())
-        return false;
+    emitIsDebuggeeCheck();
 
     
     
-    emitIsDebuggeeCheck();
+    if (!initScopeChain())
+        return false;
 
     if (!emitStackCheck())
         return false;
@@ -639,9 +639,9 @@ BaselineCompiler::emitDebugPrologue()
     return true;
 }
 
-typedef bool (*InitStrictEvalScopeObjectsFn)(JSContext*, BaselineFrame*);
-static const VMFunction InitStrictEvalScopeObjectsInfo =
-    FunctionInfo<InitStrictEvalScopeObjectsFn>(jit::InitStrictEvalScopeObjects);
+typedef bool (*InitGlobalOrEvalScopeObjectsFn)(JSContext*, BaselineFrame*);
+static const VMFunction InitGlobalOrEvalScopeObjectsInfo =
+    FunctionInfo<InitGlobalOrEvalScopeObjectsFn>(jit::InitGlobalOrEvalScopeObjects);
 
 typedef bool (*InitFunctionScopeObjectsFn)(JSContext*, BaselineFrame*);
 static const VMFunction InitFunctionScopeObjectsInfo =
@@ -683,17 +683,16 @@ BaselineCompiler::initScopeChain()
     } else {
         
         
+        
+        
+        
 
-        if (script->isForEval() && script->strict()) {
-            
-            prepareVMCall();
+        prepareVMCall();
+        masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+        pushArg(R0.scratchReg());
 
-            masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
-            pushArg(R0.scratchReg());
-
-            if (!callVMNonOp(InitStrictEvalScopeObjectsInfo, phase))
-                return false;
-        }
+        if (!callVMNonOp(InitGlobalOrEvalScopeObjectsInfo, phase))
+            return false;
     }
 
     return true;

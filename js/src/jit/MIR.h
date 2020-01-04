@@ -7280,6 +7280,21 @@ class MThrowUninitializedLexical : public MNullaryInstruction
 };
 
 
+class MGlobalNameConflictsCheck : public MNullaryInstruction
+{
+    MGlobalNameConflictsCheck() {
+        setGuard();
+    }
+
+  public:
+    INSTRUCTION_HEADER(GlobalNameConflictsCheck)
+
+    static MGlobalNameConflictsCheck* New(TempAllocator& alloc) {
+        return new(alloc) MGlobalNameConflictsCheck();
+    }
+};
+
+
 class MDefVar
   : public MUnaryInstruction,
     public NoTypePolicy::Data
