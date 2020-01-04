@@ -244,10 +244,10 @@ HTMLScriptElement::SetInnerHTML(const nsAString& aInnerHTML,
 
 
 
-void
+bool
 HTMLScriptElement::GetScriptType(nsAString& type)
 {
-  GetType(type);
+  return GetAttr(kNameSpaceID_None, nsGkAtoms::type, type);
 }
 
 void

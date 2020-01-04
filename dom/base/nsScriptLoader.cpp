@@ -1276,7 +1276,8 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   
   
   nsAutoString type;
-  aElement->GetScriptType(type);
+  bool hasType = aElement->GetScriptType(type);
+
   nsScriptKind scriptKind = nsScriptKind::Classic;
   if (!type.IsEmpty()) {
     
@@ -1285,7 +1286,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     } else {
       NS_ENSURE_TRUE(ParseTypeAttribute(type, &version), false);
     }
-  } else {
+  } else if (!hasType) {
     
     
     

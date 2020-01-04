@@ -52,8 +52,9 @@ public:
 
 
 
-  virtual void GetScriptType(nsAString& type) = 0;
-    
+
+  virtual bool GetScriptType(nsAString& type) = 0;
+
   
 
 
@@ -63,7 +64,7 @@ public:
     NS_PRECONDITION(mFrozen, "Not ready for this call yet!");
     return mUri;
   }
-  
+
   
 
 
@@ -93,7 +94,7 @@ public:
   bool GetScriptAsync()
   {
     NS_PRECONDITION(mFrozen, "Not ready for this call yet!");
-    return mAsync;  
+    return mAsync;
   }
 
   
@@ -198,7 +199,7 @@ public:
       parser->EndEvaluatingParserInsertedScript();
     }
   }
-  
+
   
 
 
@@ -264,17 +265,17 @@ protected:
 
 
   uint32_t mLineNumber;
-  
+
   
 
 
   bool mAlreadyStarted;
-  
+
   
 
 
   bool mMalformed;
-  
+
   
 
 
@@ -290,17 +291,17 @@ protected:
 
 
   bool mFrozen;
-  
+
   
 
 
   bool mDefer;
-  
+
   
 
 
   bool mAsync;
-  
+
   
 
 
@@ -316,7 +317,7 @@ protected:
 
 
   nsCOMPtr<nsIURI> mUri;
-  
+
   
 
 
