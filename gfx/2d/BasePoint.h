@@ -82,6 +82,10 @@ struct BasePoint {
     return hypot(x, y);
   }
 
+  T LengthSquare() const {
+    return x * x + y * y;
+  }
+
   
   
   

@@ -11,6 +11,7 @@
 #include "mozilla/RestyleManager.h"
 
 #include <algorithm> 
+#include "mozilla/EffectSet.h"
 #include "mozilla/EventStates.h"
 #include "nsLayoutUtils.h"
 #include "AnimationCommon.h" 
