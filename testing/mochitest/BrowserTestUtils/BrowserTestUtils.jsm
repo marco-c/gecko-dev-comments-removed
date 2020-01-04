@@ -458,31 +458,5 @@ this.BrowserTestUtils = {
         tab.ownerDocument.defaultView.gBrowser.removeTab(tab);
       }
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  sendChar(char, browser) {
-    return new Promise(resolve => {
-      let mm = browser.messageManager;
-      mm.addMessageListener("Test:SendCharDone", function charMsg(message) {
-        mm.removeMessageListener("Test:SendCharDone", charMsg);
-        resolve(message.data.sendCharResult);
-      });
-
-      mm.sendAsyncMessage("Test:SendChar", { char: char });
-    });
   }
 };
