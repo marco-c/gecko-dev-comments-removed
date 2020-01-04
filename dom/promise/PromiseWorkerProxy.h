@@ -64,6 +64,52 @@ class WorkerPrivate;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class PromiseWorkerProxy : public PromiseNativeHandler,
                            public workers::WorkerFeature
 {
@@ -77,20 +123,29 @@ public:
          Promise* aWorkerPromise,
          const JSStructuredCloneCallbacks* aCallbacks = nullptr);
 
+  
+  
+  
   workers::WorkerPrivate* GetWorkerPrivate() const;
 
-  Promise* GetWorkerPromise() const;
+  
+  
+  Promise* WorkerPromise() const;
 
   void StoreISupports(nsISupports* aSupports);
 
+  
+  
+  
+  
   void CleanUp(JSContext* aCx);
 
-  Mutex& GetCleanUpLock()
+  Mutex& Lock()
   {
     return mCleanUpLock;
   }
 
-  bool IsClean() const
+  bool CleanedUp() const
   {
     mCleanUpLock.AssertCurrentThreadOwns();
     return mCleanedUp;
@@ -112,6 +167,11 @@ private:
 
   virtual ~PromiseWorkerProxy();
 
+  bool AddRefObject();
+
+  
+  void CleanProperties();
+
   
   typedef void (Promise::*RunCallbackFunc)(JSContext*,
                                            JS::Handle<JS::Value>);
@@ -120,11 +180,15 @@ private:
                    JS::Handle<JS::Value> aValue,
                    RunCallbackFunc aFunc);
 
+  
   workers::WorkerPrivate* mWorkerPrivate;
 
   
   nsRefPtr<Promise> mWorkerPromise;
 
+  
+  
+  
   bool mCleanedUp; 
 
   const JSStructuredCloneCallbacks* mCallbacks;
@@ -135,32 +199,10 @@ private:
 
   
   Mutex mCleanUpLock;
+
+  
+  DebugOnly<bool> mFeatureAdded;
 };
-
-
-
-
-class PromiseWorkerProxyControlRunnable final : public workers::WorkerControlRunnable
-{
-  nsRefPtr<PromiseWorkerProxy> mProxy;
-
-public:
-  PromiseWorkerProxyControlRunnable(workers::WorkerPrivate* aWorkerPrivate,
-                                    PromiseWorkerProxy* aProxy)
-    : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
-    , mProxy(aProxy)
-  {
-    MOZ_ASSERT(aProxy);
-  }
-
-  virtual bool
-  WorkerRun(JSContext* aCx, workers::WorkerPrivate* aWorkerPrivate) override;
-
-private:
-  ~PromiseWorkerProxyControlRunnable()
-  {}
-};
-
 } 
 } 
 

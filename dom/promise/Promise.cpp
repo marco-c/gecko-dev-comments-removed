@@ -1509,8 +1509,7 @@ public:
     MOZ_ASSERT(aWorkerPrivate == mWorkerPrivate);
 
     MOZ_ASSERT(mPromiseWorkerProxy);
-    nsRefPtr<Promise> workerPromise = mPromiseWorkerProxy->GetWorkerPromise();
-    MOZ_ASSERT(workerPromise);
+    nsRefPtr<Promise> workerPromise = mPromiseWorkerProxy->WorkerPromise();
 
     
     JS::Rooted<JS::Value> value(aCx);
@@ -1553,11 +1552,10 @@ PromiseWorkerProxy::Create(workers::WorkerPrivate* aWorkerPrivate,
 
   
   
-  if (!aWorkerPrivate->AddFeature(aWorkerPrivate->GetJSContext(), proxy)) {
+  if (!proxy->AddRefObject()) {
     
     
-    proxy->mCleanedUp = true;
-    proxy->mWorkerPromise = nullptr;
+    proxy->CleanProperties();
     return nullptr;
   }
 
@@ -1574,40 +1572,76 @@ PromiseWorkerProxy::PromiseWorkerProxy(workers::WorkerPrivate* aWorkerPrivate,
   , mCleanedUp(false)
   , mCallbacks(aCallbacks)
   , mCleanUpLock("cleanUpLock")
+  , mFeatureAdded(false)
 {
 }
 
 PromiseWorkerProxy::~PromiseWorkerProxy()
 {
   MOZ_ASSERT(mCleanedUp);
+  MOZ_ASSERT(!mFeatureAdded);
   MOZ_ASSERT(!mWorkerPromise);
+  MOZ_ASSERT(!mWorkerPrivate);
 }
 
-workers::WorkerPrivate*
-PromiseWorkerProxy::GetWorkerPrivate() const
+void
+PromiseWorkerProxy::CleanProperties()
 {
-  
-  
-  MOZ_ASSERT(!mCleanedUp);
-
-#ifdef DEBUG
-  if (NS_IsMainThread()) {
-    mCleanUpLock.AssertCurrentThreadOwns();
-  }
-#endif
-
-  return mWorkerPrivate;
-}
-
-Promise*
-PromiseWorkerProxy::GetWorkerPromise() const
-{
-
 #ifdef DEBUG
   workers::WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(worker);
   worker->AssertIsOnWorkerThread();
 #endif
+  
+  
+  mCleanedUp = true;
+  mWorkerPromise = nullptr;
+  mWorkerPrivate = nullptr;
+}
+
+bool
+PromiseWorkerProxy::AddRefObject()
+{
+  MOZ_ASSERT(mWorkerPrivate);
+  mWorkerPrivate->AssertIsOnWorkerThread();
+  MOZ_ASSERT(!mFeatureAdded);
+  if (!mWorkerPrivate->AddFeature(mWorkerPrivate->GetJSContext(),
+                                  this)) {
+    return false;
+  }
+
+  mFeatureAdded = true;
+  
+  
+  AddRef();
+  return true;
+}
+
+workers::WorkerPrivate*
+PromiseWorkerProxy::GetWorkerPrivate() const
+{
+#ifdef DEBUG
+  if (NS_IsMainThread()) {
+    mCleanUpLock.AssertCurrentThreadOwns();
+  }
+#endif
+  
+  
+  MOZ_ASSERT(!mCleanedUp);
+  MOZ_ASSERT(mFeatureAdded);
+
+  return mWorkerPrivate;
+}
+
+Promise*
+PromiseWorkerProxy::WorkerPromise() const
+{
+#ifdef DEBUG
+  workers::WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT(worker);
+  worker->AssertIsOnWorkerThread();
+#endif
+  MOZ_ASSERT(mWorkerPromise);
   return mWorkerPromise;
 }
 
@@ -1621,14 +1655,6 @@ PromiseWorkerProxy::StoreISupports(nsISupports* aSupports)
   mSupportsArray.AppendElement(supports);
 }
 
-bool
-PromiseWorkerProxyControlRunnable::WorkerRun(JSContext* aCx,
-                                             workers::WorkerPrivate* aWorkerPrivate)
-{
-  mProxy->CleanUp(aCx);
-  return true;
-}
-
 void
 PromiseWorkerProxy::RunCallback(JSContext* aCx,
                                 JS::Handle<JS::Value> aValue,
@@ -1636,9 +1662,9 @@ PromiseWorkerProxy::RunCallback(JSContext* aCx,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  MutexAutoLock lock(GetCleanUpLock());
+  MutexAutoLock lock(Lock());
   
-  if (IsClean()) {
+  if (CleanedUp()) {
     return;
   }
 
@@ -1657,11 +1683,7 @@ PromiseWorkerProxy::RunCallback(JSContext* aCx,
                                    Move(buffer),
                                    aFunc);
 
-  if (!runnable->Dispatch(aCx)) {
-    nsRefPtr<WorkerControlRunnable> runnable =
-      new PromiseWorkerProxyControlRunnable(mWorkerPrivate, this);
-    mWorkerPrivate->DispatchControlRunnable(runnable.forget());
-  }
+  runnable->Dispatch(aCx);
 }
 
 void
@@ -1681,10 +1703,6 @@ PromiseWorkerProxy::RejectedCallback(JSContext* aCx,
 bool
 PromiseWorkerProxy::Notify(JSContext* aCx, Status aStatus)
 {
-  MOZ_ASSERT(mWorkerPrivate);
-  mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(mWorkerPrivate->GetJSContext() == aCx);
-
   if (aStatus >= Canceling) {
     CleanUp(aCx);
   }
@@ -1695,24 +1713,29 @@ PromiseWorkerProxy::Notify(JSContext* aCx, Status aStatus)
 void
 PromiseWorkerProxy::CleanUp(JSContext* aCx)
 {
-  MutexAutoLock lock(mCleanUpLock);
+  
+  {
+    MutexAutoLock lock(Lock());
 
-  
-  
-  if (mCleanedUp) {
-    return;
+    
+    
+    if (CleanedUp()) {
+      return;
+    }
+
+    MOZ_ASSERT(mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(mWorkerPrivate->GetJSContext() == aCx);
+
+    
+    
+    
+    MOZ_ASSERT(mFeatureAdded);
+    mWorkerPrivate->RemoveFeature(mWorkerPrivate->GetJSContext(), this);
+    mFeatureAdded = false;
+    CleanProperties();
   }
-
-  MOZ_ASSERT(mWorkerPrivate);
-  mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(mWorkerPrivate->GetJSContext() == aCx);
-
-  
-  
-  
-  mWorkerPromise = nullptr;
-  mWorkerPrivate->RemoveFeature(aCx, this);
-  mCleanedUp = true;
+  Release();
 }
 
 
