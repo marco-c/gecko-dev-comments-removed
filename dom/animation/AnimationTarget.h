@@ -26,6 +26,12 @@ struct OwningAnimationTarget
   explicit OwningAnimationTarget(dom::Element* aElement)
     : mElement(aElement) { }
 
+  bool operator==(const OwningAnimationTarget& aOther) const
+  {
+     return mElement == aOther.mElement &&
+            mPseudoType == aOther.mPseudoType;
+  }
+
   
   
   RefPtr<dom::Element> mElement;

@@ -353,6 +353,7 @@ protected:
                           ErrorResult& aRv);
 
   void ResetIsRunningOnCompositor();
+  void ResetWinsInCascade();
 
   
   
@@ -437,10 +438,21 @@ public:
 
   void NotifySpecifiedTimingUpdated();
 
+  
+  
+  
+  
+  
   void SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
 
 protected:
   ~KeyframeEffect() override;
+
+  
+  
+  
+  
+  void MaybeUpdateProperties();
 };
 
 } 
