@@ -665,7 +665,7 @@ protected:
 
 
 
-  void ReturnTarget();
+  void ReturnTarget(bool aForceReset = false);
 
   
 

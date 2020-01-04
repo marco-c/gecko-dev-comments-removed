@@ -1156,7 +1156,8 @@ CanvasRenderingContext2D::Reset()
     gCanvasAzureMemoryUsed -= mWidth * mHeight * 4;
   }
 
-  ReturnTarget();
+  bool forceReset = true;
+  ReturnTarget(forceReset);
   mTarget = nullptr;
   mBufferProvider = nullptr;
 
@@ -1645,25 +1646,28 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
       Redraw();
     }
 
-    
-    mTarget->SetTransform(Matrix());
+    if (mBufferProvider != oldBufferProvider || !mBufferProvider ||
+        !mBufferProvider->PreservesDrawingState()) {
+      
+      mTarget->SetTransform(Matrix());
 
-    if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
-      
-      
-      
-      
-      
-      
-      mTarget->PushClipRect(canvasRect);
-    }
+      if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
+        
+        
+        
+        
+        
+        
+        mTarget->PushClipRect(canvasRect);
+      }
 
-    for (const auto& style : mStyleStack) {
-      for (const auto& clipOrTransform : style.clipsAndTransforms) {
-        if (clipOrTransform.IsClip()) {
-          mTarget->PushClip(clipOrTransform.clip);
-        } else {
-          mTarget->SetTransform(clipOrTransform.transform);
+      for (const auto& style : mStyleStack) {
+        for (const auto& clipOrTransform : style.clipsAndTransforms) {
+          if (clipOrTransform.IsClip()) {
+            mTarget->PushClip(clipOrTransform.clip);
+          } else {
+            mTarget->SetTransform(clipOrTransform.transform);
+          }
         }
       }
     }
@@ -1772,22 +1776,24 @@ CanvasRenderingContext2D::ClearTarget(bool aRetainBuffer)
 }
 
 void
-CanvasRenderingContext2D::ReturnTarget()
+CanvasRenderingContext2D::ReturnTarget(bool aForceReset)
 {
   if (mTarget && mBufferProvider && mTarget != sErrorTarget) {
     CurrentState().transform = mTarget->GetTransform();
-    for (const auto& style : mStyleStack) {
-      for (const auto& clipOrTransform : style.clipsAndTransforms) {
-        if (clipOrTransform.IsClip()) {
-          mTarget->PopClip();
+    if (aForceReset || !mBufferProvider->PreservesDrawingState()) {
+      for (const auto& style : mStyleStack) {
+        for (const auto& clipOrTransform : style.clipsAndTransforms) {
+          if (clipOrTransform.IsClip()) {
+            mTarget->PopClip();
+          }
         }
       }
-    }
 
-    if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
-      
-      
-      mTarget->PopClip();
+      if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
+        
+        
+        mTarget->PopClip();
+      }
     }
 
     mBufferProvider->ReturnDrawTarget(mTarget.forget());
