@@ -801,7 +801,7 @@ frontend::CompileModule(JSContext* cx, const ReadOnlyCompileOptions& options,
 
     
     
-    if (!ModuleObject::FreezeArrayProperties(cx->asJSContext(), module))
+    if (!ModuleObject::Freeze(cx->asJSContext(), module))
         return nullptr;
 
     return module;
