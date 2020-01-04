@@ -372,6 +372,11 @@ NS_EVENT_MESSAGE(eDeviceLight)
 NS_EVENT_MESSAGE(eOrientationChange)
 #endif
 
+
+NS_EVENT_MESSAGE(eVRDisplayConnect)
+NS_EVENT_MESSAGE(eVRDisplayDisconnect)
+NS_EVENT_MESSAGE(eVRDisplayPresentChange)
+
 NS_EVENT_MESSAGE(eShow)
 
 

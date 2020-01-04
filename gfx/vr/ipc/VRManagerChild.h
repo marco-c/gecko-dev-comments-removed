@@ -19,6 +19,7 @@ namespace mozilla {
 namespace dom {
 class Navigator;
 class VRDisplay;
+class VREventObserver;
 } 
 namespace layers {
 class PCompositableChild;
@@ -34,6 +35,11 @@ class VRManagerChild : public PVRManagerChild
 {
 public:
   static VRManagerChild* Get();
+
+  
+  void AddListener(dom::VREventObserver* aObserver);
+  
+  void RemoveListener(dom::VREventObserver* aObserver);
 
   int GetInputFrameID();
   bool GetVRDisplays(nsTArray<RefPtr<VRDisplayClient> >& aDisplays);
@@ -66,8 +72,8 @@ public:
   void CancelFrameRequestCallback(int32_t aHandle);
   void RunFrameRequestCallbacks();
 
-  void FireDOMVRDisplayConnectedEvent();
-  void FireDOMVRDisplayDisconnectedEvent();
+  void FireDOMVRDisplayConnectEvent();
+  void FireDOMVRDisplayDisconnectEvent();
   void FireDOMVRDisplayPresentChangeEvent();
 
 protected:
@@ -124,6 +130,10 @@ protected:
 
 private:
 
+  void FireDOMVRDisplayConnectEventInternal();
+  void FireDOMVRDisplayDisconnectEventInternal();
+  void FireDOMVRDisplayPresentChangeEventInternal();
+
   void DeliverFence(uint64_t aTextureId, FenceHandle& aReleaseFenceHandle);
   
 
@@ -146,6 +156,9 @@ private:
 
   int32_t mFrameRequestCallbackCounter;
   mozilla::TimeStamp mStartTimeStamp;
+
+  
+  nsTArray<dom::VREventObserver*> mListeners;
 
   
 
