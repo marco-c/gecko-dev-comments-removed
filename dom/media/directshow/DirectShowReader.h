@@ -110,6 +110,8 @@ private:
 
   
   int64_t mDuration;
+
+  NotifyDataArrivedFilter mFilter;
 };
 
 } 
