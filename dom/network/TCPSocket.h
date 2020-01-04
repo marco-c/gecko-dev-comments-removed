@@ -99,6 +99,7 @@ public:
   void Suspend();
   void Resume(ErrorResult& aRv);
   void Close();
+  void CloseImmediately();
   bool Send(JSContext* aCx, const nsACString& aData, ErrorResult& aRv);
   bool Send(JSContext* aCx,
             const ArrayBuffer& aData,
@@ -186,6 +187,8 @@ private:
   
   nsresult FireDataEvent(JSContext* aCx, const nsAString& aType,
                          JS::Handle<JS::Value> aData);
+  
+  void CloseHelper(bool waitForUnsentData);
 
   TCPReadyState mReadyState;
   
