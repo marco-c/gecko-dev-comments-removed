@@ -138,23 +138,21 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 {
   forbidCPOW(aURL, "saveImageURL", "aURL");
   forbidCPOW(aReferrer, "saveImageURL", "aReferrer");
-  
-  
-  
-  if (aDoc && Components.utils.isCrossProcessWrapper(aDoc)) {
-    Deprecated.warning("saveImageURL should not be passed document CPOWs. " +
-                       "The caller should pass in the content type and " +
-                       "disposition themselves",
-                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1243643");
-    if (aIsContentWindowPrivate == undefined) {
-      
-      
-      Deprecated.warning("saveImageURL should be passed the private state of " +
-                         "the containing window.",
+
+  if (aDoc && aIsContentWindowPrivate == undefined) {
+    if (Components.utils.isCrossProcessWrapper(aDoc)) {
+      Deprecated.warning("saveImageURL should not be passed document CPOWs. " +
+                         "The caller should pass in the content type and " +
+                         "disposition themselves",
                          "https://bugzilla.mozilla.org/show_bug.cgi?id=1243643");
-      aIsContentWindowPrivate =
-        PrivateBrowsingUtils.isContentWindowPrivate(aDoc.defaultView);
     }
+    
+    
+    Deprecated.warning("saveImageURL should be passed the private state of " +
+                       "the containing window.",
+                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1243643");
+    aIsContentWindowPrivate =
+      PrivateBrowsingUtils.isContentWindowPrivate(aDoc.defaultView);
   }
 
   
