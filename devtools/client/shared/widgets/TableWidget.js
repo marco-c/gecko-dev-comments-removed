@@ -800,7 +800,7 @@ TableWidget.prototype = {
 
 
   remove: function (item) {
-    if (typeof item == "string") {
+    if (typeof item != "object") {
       item = this.items.get(item);
     }
     if (!item) {
