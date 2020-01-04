@@ -3367,6 +3367,10 @@ void HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags)
     mMediaStreamListener->Forget();
     mMediaStreamListener = nullptr;
   }
+
+  
+  
+  NotifyAudibleStateChanged(shouldPlay);
 }
 
 void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream)
@@ -5061,8 +5065,15 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
   AutoNoJSAPI nojsapi;
 
   if (aPlaying) {
+    
+    
+    
+    
+    
+    
     AudioPlaybackConfig config;
-    nsresult rv = mAudioChannelAgent->NotifyStartedPlaying(&config);
+    nsresult rv = mAudioChannelAgent->NotifyStartedPlaying(&config,
+                                                           mIsAudioTrackAudible);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
@@ -5618,7 +5629,15 @@ HTMLMediaElement::NotifyAudibleStateChanged(bool aAudible)
 {
   if (mIsAudioTrackAudible != aAudible) {
     mIsAudioTrackAudible = aAudible;
-    
+    NotifyAudioPlaybackChanged();
+  }
+}
+
+void
+HTMLMediaElement::NotifyAudioPlaybackChanged()
+{
+  if (mAudioChannelAgent) {
+    mAudioChannelAgent->NotifyStartedAudible(mIsAudioTrackAudible);
   }
 }
 

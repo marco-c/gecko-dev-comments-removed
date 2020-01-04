@@ -449,7 +449,11 @@ public:
   virtual void ResetConnectionState() final override;
 
   
+  
   virtual void NotifyAudibleStateChanged(bool aAudible) final override;
+
+  
+  void NotifyAudioPlaybackChanged();
 
   
   void SetPreload(const nsAString& aValue, ErrorResult& aRv)
