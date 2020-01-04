@@ -813,6 +813,7 @@ nsSocketTransport::Init(const char **types, uint32_t typeCount,
     }
 
     const char *proxyType = nullptr;
+    mProxyInfo = proxyInfo;
     if (proxyInfo) {
         mProxyPort = proxyInfo->Port();
         mProxyHost = proxyInfo->Host();
@@ -1105,8 +1106,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
         
         const char *host       = mOriginHost.get();
         int32_t     port       = (int32_t) mOriginPort;
-        const char *proxyHost  = mProxyHost.IsEmpty() ? nullptr : mProxyHost.get();
-        int32_t     proxyPort  = (int32_t) mProxyPort;
+        nsCOMPtr<nsIProxyInfo> proxyInfo = mProxyInfo;
         uint32_t    controlFlags = 0;
 
         uint32_t i;
@@ -1140,9 +1140,9 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                 
 
                 rv = provider->NewSocket(mNetAddr.raw.family,
-                                         mHttpsProxy ? proxyHost : host,
-                                         mHttpsProxy ? proxyPort : port,
-                                         proxyHost, proxyPort,
+                                         mHttpsProxy ? mProxyHost.get() : host,
+                                         mHttpsProxy ? mProxyPort : port,
+                                         proxyInfo,
                                          controlFlags, &fd,
                                          getter_AddRefs(secinfo));
 
@@ -1156,7 +1156,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                 
                 
                 rv = provider->AddToSocket(mNetAddr.raw.family,
-                                           host, port, proxyHost, proxyPort,
+                                           host, port, proxyInfo,
                                            controlFlags, fd,
                                            getter_AddRefs(secinfo));
             }
@@ -1186,8 +1186,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
                      (strcmp(mTypes[i], "socks4") == 0)) {
                 
                 
-                proxyHost = nullptr;
-                proxyPort = -1;
+                proxyInfo = nullptr;
                 proxyTransparent = true;
             }
         }
