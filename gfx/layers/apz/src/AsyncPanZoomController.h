@@ -168,21 +168,6 @@ public:
 
 
 
-  void SampleContentTransformForFrame(AsyncTransform* aOutTransform,
-                                      ParentLayerPoint& aScrollOffset);
-
-  
-
-
-
-  AsyncTransformComponentMatrix GetOverscrollTransform() const;
-
-  
-
-
-
-
-
 
   void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata, bool aIsFirstPaint,
                            bool aThisLayerTreeUpdated);
@@ -221,20 +206,6 @@ public:
 
 
   bool IsDestroyed() const;
-
-  
-
-
-
-
-
-  AsyncTransform GetCurrentAsyncTransform() const;
-
-  
-
-
-
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll() const;
 
   
 
@@ -735,6 +706,40 @@ private:
   RefPtr<AsyncPanZoomAnimation> mAnimation;
 
   friend class Axis;
+
+
+  
+
+
+
+public:
+  
+
+
+
+
+
+  ParentLayerPoint GetCurrentAsyncScrollOffset() const;
+
+  
+
+
+
+  AsyncTransformComponentMatrix GetOverscrollTransform() const;
+
+  
+
+
+
+
+
+  AsyncTransform GetCurrentAsyncTransform() const;
+
+  
+
+
+
+  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll() const;
 
 
 
