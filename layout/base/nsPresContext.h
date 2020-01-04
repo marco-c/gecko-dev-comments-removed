@@ -895,8 +895,8 @@ public:
   void UpdateIsChrome();
 
   
-  virtual bool HasAuthorSpecifiedRules(const nsIFrame *aFrame,
-                                       uint32_t ruleTypeMask) const;
+  bool HasAuthorSpecifiedRules(const nsIFrame *aFrame,
+                               uint32_t ruleTypeMask) const;
 
   
   bool UseDocumentColors() const {
