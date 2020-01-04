@@ -696,17 +696,6 @@ public:
   }
 
   
-  BlobImplFile()
-    : BlobImplBase(EmptyString(), EmptyString(), UINT64_MAX, INT64_MAX)
-    , mWholeFile(true)
-    , mIsTemporary(false)
-  {
-    
-    mContentType.SetIsVoid(true);
-    mName.SetIsVoid(true);
-  }
-
-  
   virtual uint64_t GetSize(ErrorResult& aRv) override;
   virtual void GetType(nsAString& aType) override;
   virtual int64_t GetLastModified(ErrorResult& aRv) override;
