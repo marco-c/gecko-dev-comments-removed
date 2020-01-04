@@ -51,9 +51,8 @@ public:
 
 
 
-
-  virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
-                                         mozilla::dom::Blob* aBlob) = 0;
+  virtual nsresult AddNameBlobPair(const nsAString& aName,
+                                   mozilla::dom::Blob* aBlob) = 0;
 
   
 
@@ -161,8 +160,8 @@ public:
  
   virtual nsresult AddNameValuePair(const nsAString& aName,
                                     const nsAString& aValue) override;
-  virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
-                                         mozilla::dom::Blob* aBlob) override;
+  virtual nsresult AddNameBlobPair(const nsAString& aName,
+                                   mozilla::dom::Blob* aBlob) override;
   virtual nsresult GetEncodedSubmission(nsIURI* aURI,
                                         nsIInputStream** aPostDataStream) override;
 
