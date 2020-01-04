@@ -137,7 +137,9 @@ class ADBAndroid(ADBDevice):
                  * ADBError
         """
         try:
-            self.shell_output('svc power stayon true', timeout=timeout)
+            self.shell_output('svc power stayon true',
+                              timeout=timeout,
+                              root=True)
         except ADBError, e:
             
             
