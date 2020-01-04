@@ -18,6 +18,7 @@
 #include "nsStringGlue.h"
 #include "nsCRTGlue.h"
 #include "nsUnicharUtils.h"
+#include "nsPointerHashKeys.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -363,36 +364,6 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 
 
 
-template<class T>
-class nsPtrHashKey : public PLDHashEntryHdr
-{
-public:
-  typedef T* KeyType;
-  typedef const T* KeyTypePointer;
-
-  explicit nsPtrHashKey(const T* aKey) : mKey(const_cast<T*>(aKey)) {}
-  nsPtrHashKey(const nsPtrHashKey<T>& aToCopy) : mKey(aToCopy.mKey) {}
-  ~nsPtrHashKey() {}
-
-  KeyType GetKey() const { return mKey; }
-  bool KeyEquals(KeyTypePointer aKey) const { return aKey == mKey; }
-
-  static KeyTypePointer KeyToPointer(KeyType aKey) { return aKey; }
-  static PLDHashNumber HashKey(KeyTypePointer aKey)
-  {
-    return NS_PTR_TO_UINT32(aKey) >> 2;
-  }
-  enum { ALLOW_MEMMOVE = true };
-
-protected:
-  T* MOZ_NON_OWNING_REF mKey;
-};
-
-
-
-
-
-
 
 
 
@@ -408,7 +379,6 @@ public:
   ~nsClearingPtrHashKey() { nsPtrHashKey<T>::mKey = nullptr; }
 };
 
-typedef nsPtrHashKey<const void> nsVoidPtrHashKey;
 typedef nsClearingPtrHashKey<const void> nsClearingVoidPtrHashKey;
 
 
