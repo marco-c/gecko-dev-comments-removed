@@ -583,6 +583,10 @@ public:
     uint32_t mTentativeCaretOffset;
     nsString mString;
     
+    
+    
+    
+    
     mozilla::LayoutDeviceIntRect mRect;
     
     nsIWidget* mFocusedWidget;

@@ -137,8 +137,9 @@ protected:
                                   nsIFrame*& aFrame,
                                   int32_t& aOffsetInFrame);
   
-  nsresult ConvertToRootViewRelativeOffset(nsIFrame* aFrame,
-                                           nsRect& aRect);
+  
+  nsresult ConvertToRootRelativeOffset(nsIFrame* aFrame,
+                                       nsRect& aRect);
   
   
   nsresult ExpandToClusterBoundary(nsIContent* aContent, bool aForward,
