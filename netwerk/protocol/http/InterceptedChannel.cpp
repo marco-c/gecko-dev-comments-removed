@@ -134,6 +134,16 @@ InterceptedChannelChrome::NotifyController()
   DoNotifyController();
 }
 
+nsIConsoleReportCollector*
+InterceptedChannelChrome::GetConsoleReportCollector() const
+{
+  
+  
+  
+  MOZ_ASSERT(mChannel);
+  return mChannel;
+}
+
 NS_IMETHODIMP
 InterceptedChannelChrome::GetChannel(nsIChannel** aChannel)
 {
@@ -310,6 +320,16 @@ InterceptedChannelContent::NotifyController()
   NS_ENSURE_SUCCESS_VOID(rv);
 
   DoNotifyController();
+}
+
+nsIConsoleReportCollector*
+InterceptedChannelContent::GetConsoleReportCollector() const
+{
+  
+  
+  
+  MOZ_ASSERT(mChannel);
+  return mChannel;
 }
 
 NS_IMETHODIMP
