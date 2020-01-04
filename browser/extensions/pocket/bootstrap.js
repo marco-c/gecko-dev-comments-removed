@@ -325,6 +325,8 @@ var PocketReader = {
     switch (message.name) {
       case "Reader:OnSetup": {
         
+        if (this.hidden)
+          break;
         message.target.messageManager.
           sendAsyncMessage("Reader:AddButton", { id: "pocket-button",
                                                  title: gPocketBundle.GetStringFromName("pocket-button.tooltiptext"),
@@ -428,6 +430,7 @@ var PocketOverlay = {
   updateWindow: function(window) {
     
     let document = window.document;
+    let hidden = !CustomizableUI.getPlacementOfWidget("pocket-button");
 
     
     let sib = document.getElementById("menu_bookmarkThisPage");
@@ -436,10 +439,12 @@ var PocketOverlay = {
         "id": "menu_pocket",
         "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
         "class": "menuitem-iconic", 
-        "oncommand": "openUILink(Pocket.listURL, event);"
+        "oncommand": "openUILink(Pocket.listURL, event);",
+        "hidden": hidden
       });
       let sep = createElementWithAttrs(document, "menuseparator", {
-        "id": "menu_pocketSeparator"
+        "id": "menu_pocketSeparator",
+        "hidden": hidden
       });
       sib.parentNode.insertBefore(menu, sib);
       sib.parentNode.insertBefore(sep, sib);
@@ -452,10 +457,12 @@ var PocketOverlay = {
         "id": "BMB_pocket",
         "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
         "class": "menuitem-iconic bookmark-item subviewbutton",
-        "oncommand": "openUILink(Pocket.listURL, event);"
+        "oncommand": "openUILink(Pocket.listURL, event);",
+        "hidden": hidden
       });
       let sep = createElementWithAttrs(document, "menuseparator", {
-        "id": "BMB_pocketSeparator"
+        "id": "BMB_pocketSeparator",
+        "hidden": hidden
       });
       sib.parentNode.insertBefore(menu, sib);
       sib.parentNode.insertBefore(sep, sib);
@@ -468,10 +475,12 @@ var PocketOverlay = {
         "id": "panelMenu_pocket",
         "label": gPocketBundle.GetStringFromName("pocketMenuitem.label"),
         "class": "subviewbutton cui-withicon",
-        "oncommand": "openUILink(Pocket.listURL, event);"
+        "oncommand": "openUILink(Pocket.listURL, event);",
+        "hidden": hidden
       });
       let sep = createElementWithAttrs(document, "toolbarseparator", {
-        "id": "panelMenu_pocketSeparator"
+        "id": "panelMenu_pocketSeparator",
+        "hidden": hidden
       });
       
       
