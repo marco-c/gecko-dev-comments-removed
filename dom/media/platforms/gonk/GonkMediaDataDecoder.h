@@ -36,7 +36,7 @@ public:
   nsresult Flush();
 
   
-  nsresult Shutdown();
+  virtual nsresult Shutdown();
 
   
   bool HasQueuedSample();
