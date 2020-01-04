@@ -43,7 +43,6 @@ private:
   RefPtr<FlushableTaskQueue> mDecoderTaskQueue;
   RefPtr<MediaDataDecoder> mDecoder;
 
-  RefPtr<TaskQueue> mTaskQueue;
   
   RefPtr<MediaDataDemuxer> mDemuxer;
   RefPtr<MediaTrackDemuxer> mTrackDemuxer;
