@@ -173,7 +173,7 @@ public:
 
   void RawRemoveEntry(EntryType* aEntry)
   {
-    PL_DHashTableRawRemove(&mTable, aEntry);
+    mTable.RawRemove(aEntry);
   }
 
   

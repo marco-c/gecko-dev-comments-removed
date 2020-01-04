@@ -1845,7 +1845,7 @@ nsNPObjWrapper::OnDestroy(NPObject *npobj)
     ::JS_SetPrivate(entry->mJSObj, nullptr);
 
     
-    PL_DHashTableRawRemove(sNPObjWrappers, entry);
+    sNPObjWrappers->RawRemove(entry);
 
     
   }
@@ -1926,7 +1926,7 @@ nsNPObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, NPObject *npobj)
   if (!obj) {
     
 
-    PL_DHashTableRawRemove(sNPObjWrappers, entry);
+    sNPObjWrappers->RawRemove(entry);
 
     return nullptr;
   }

@@ -678,7 +678,7 @@ PLDHashTable::RemoveEntry(PLDHashEntryHdr* aEntry)
   ShrinkIfAppropriate();
 }
 
-MOZ_ALWAYS_INLINE void
+void
 PLDHashTable::RawRemove(PLDHashEntryHdr* aEntry)
 {
   
@@ -700,12 +700,6 @@ PLDHashTable::RawRemove(PLDHashEntryHdr* aEntry)
     MarkEntryFree(aEntry);
   }
   mEntryCount--;
-}
-
-void
-PL_DHashTableRawRemove(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
-{
-  aTable->RawRemove(aEntry);
 }
 
 

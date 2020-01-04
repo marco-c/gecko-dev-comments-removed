@@ -4192,7 +4192,7 @@ nsContentUtils::RemoveListenerManager(nsINode *aNode)
       listenerManager.swap(entry->mListenerManager);
       
       
-      PL_DHashTableRawRemove(sEventListenerManagersHash, entry);
+      sEventListenerManagersHash->RawRemove(entry);
       if (listenerManager) {
         listenerManager->Disconnect();
       }
