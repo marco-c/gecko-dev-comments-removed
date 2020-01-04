@@ -195,8 +195,7 @@ private:
   
 
 
-
-  bool mRequirePhonebookSize;
+  bool mPhonebookSizeRequired;
 };
 
 END_BLUETOOTH_NAMESPACE

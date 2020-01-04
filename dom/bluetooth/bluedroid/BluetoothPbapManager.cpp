@@ -78,7 +78,7 @@ BluetoothPbapManager::HandleShutdown()
 
 BluetoothPbapManager::BluetoothPbapManager() : mConnected(false)
                                              , mRemoteMaxPacketLength(0)
-                                             , mRequirePhonebookSize(false)
+                                             , mPhonebookSizeRequired(false)
 {
   mDeviceAddress.AssignLiteral(BLUETOOTH_ADDRESS_NONE);
   mCurrentPath.AssignLiteral("");
@@ -273,7 +273,7 @@ BluetoothPbapManager::ReceiveSocketData(BluetoothSocket* aSocket,
       
       
       
-      BT_WARNING("PBAP shall always uses OBEX GetFinal instead of Get.");
+      BT_LOGR("PBAP shall always uses OBEX GetFinal instead of Get.");
 
       
     case ObexRequestCode::GetFinal: {
@@ -283,7 +283,7 @@ BluetoothPbapManager::ReceiveSocketData(BluetoothSocket* aSocket,
       
       if (mVCardDataStream) {
         if (!ReplyToGet()) {
-          BT_WARNING("Failed to reply to PBAP GET request.");
+          BT_LOGR("Failed to reply to PBAP GET request.");
           ReplyError(ObexResponseCode::InternalServerError);
         }
         return;
@@ -541,7 +541,7 @@ BluetoothPbapManager::AppendBtNamedValueByTagId(
       if (order < MOZ_ARRAY_LENGTH(sOrderStr)) {
         BT_APPEND_NAMED_VALUE(aValues, "order", sOrderStr[order]);
       } else {
-        BT_WARNING("%s: Unexpected value '%d' of 'Order'", __FUNCTION__, order);
+        BT_LOGR("Unexpected value %d of 'Order'", order);
       }
       break;
     }
@@ -572,8 +572,7 @@ BluetoothPbapManager::AppendBtNamedValueByTagId(
       if (searchKey < MOZ_ARRAY_LENGTH(sSearchKeyStr)) {
         BT_APPEND_NAMED_VALUE(aValues, "searchKey", sSearchKeyStr[searchKey]);
       } else {
-        BT_WARNING("%s: Unexpected value '%d' of 'SearchProperty'",
-                   __FUNCTION__, searchKey);
+        BT_LOGR("Unexpected value %d of 'SearchProperty'", searchKey);
       }
       break;
     }
@@ -590,7 +589,7 @@ BluetoothPbapManager::AppendBtNamedValueByTagId(
       
       
       
-      mRequirePhonebookSize = !maxListCount;
+      mPhonebookSizeRequired = !maxListCount;
 
       BT_APPEND_NAMED_VALUE(aValues, "maxListCount", (uint32_t) maxListCount);
       break;
@@ -697,7 +696,7 @@ BluetoothPbapManager::AfterPbapDisconnected()
   mConnected = false;
 
   mRemoteMaxPacketLength = 0;
-  mRequirePhonebookSize = false;
+  mPhonebookSizeRequired = false;
 
   if (mVCardDataStream) {
     mVCardDataStream->Close();
@@ -896,7 +895,7 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
   unsigned int index = kObexRespHeaderSize;
 
   
-  if (mRequirePhonebookSize) {
+  if (mPhonebookSizeRequired) {
     
     uint8_t phonebookSize[2];
     phonebookSize[0] = (aPhonebookSize & 0xFF00) >> 8;
@@ -916,7 +915,7 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
                                        mRemoteMaxPacketLength,
                                        appParameters,
                                        sizeof(appParameters));
-    mRequirePhonebookSize = false;
+    mPhonebookSizeRequired = false;
   }
 
   
@@ -929,7 +928,8 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
   nsAutoArrayPtr<char> buffer(new char[remainingPacketSize]);
   nsresult rv = mVCardDataStream->Read(buffer, remainingPacketSize, &numRead);
   if (NS_FAILED(rv)) {
-    BT_WARNING("Failed to read from input stream.");
+    BT_LOGR("Failed to read from input stream. rv=0x%x",
+            static_cast<uint32_t>(rv));
     return false;
   }
 
@@ -965,14 +965,16 @@ BluetoothPbapManager::GetInputStreamFromBlob(Blob* aBlob)
 {
   
   if (mVCardDataStream) {
-    BT_WARNING("Shouldn't handle multiple PBAP responses at the same time");
+    BT_LOGR("Shouldn't handle multiple PBAP responses simultaneously");
     mVCardDataStream->Close();
     mVCardDataStream = nullptr;
   }
 
   ErrorResult rv;
   aBlob->GetInternalStream(getter_AddRefs(mVCardDataStream), rv);
-  if (NS_WARN_IF(rv.Failed())) {
+  if (rv.Failed()) {
+    BT_LOGR("Failed to get internal stream from blob. rv=0x%x",
+            rv.ErrorCodeAsInt());
     return false;
   }
 
@@ -1041,11 +1043,12 @@ BluetoothPbapManager::OnSocketDisconnect(BluetoothSocket* aSocket)
 void
 BluetoothPbapManager::Disconnect(BluetoothProfileController* aController)
 {
-  if (mSocket) {
-    mSocket->Close();
-  } else {
-    BT_WARNING("%s: No ongoing connection to disconnect", __FUNCTION__);
+  if (!mSocket) {
+    BT_LOGR("No ongoing connection to disconnect");
+    return;
   }
+
+  mSocket->Close();
 }
 
 NS_IMPL_ISUPPORTS(BluetoothPbapManager, nsIObserver)
