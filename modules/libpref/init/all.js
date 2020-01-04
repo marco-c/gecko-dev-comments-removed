@@ -403,6 +403,7 @@ pref("media.navigator.video.default_minfps",10);
 pref("media.navigator.video.use_remb", true);
 pref("media.navigator.video.use_tmmbr", false);
 pref("media.navigator.audio.use_fec", true);
+pref("media.navigator.video.red_ulpfec_enabled", false);
 
 pref("media.webrtc.debug.trace_mask", 0);
 pref("media.webrtc.debug.multi_log", false);
@@ -2412,6 +2413,9 @@ pref("layout.css.dpi", -1);
 
 
 pref("layout.css.devPixelsPerPx", "-1.0");
+
+
+pref("layout.css.initial-letter.enabled", false);
 
 
 pref("layout.css.masking.enabled", true);
@@ -4669,6 +4673,7 @@ pref("full-screen-api.warning.timeout", 3000);
 pref("full-screen-api.warning.delay", 500);
 
 
+pref("pointer-lock-api.prefixed.enabled", false);
 
 pref("pointer-lock-api.warning.timeout", 3000);
 
