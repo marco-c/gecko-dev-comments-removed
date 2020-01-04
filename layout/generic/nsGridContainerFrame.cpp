@@ -3247,10 +3247,11 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
       
       
       
-      nsRect dummyRect(0, 0, VERY_LIKELY_A_GRID_CONTAINER, 0);
+      nsRect dummyRect;
       AbsPosReflowFlags flags =
         AbsPosReflowFlags::eCBWidthAndHeightChanged; 
       flags |= AbsPosReflowFlags::eConstrainHeight;
+      flags |= AbsPosReflowFlags::eIsGridContainerCB;
       GetAbsoluteContainingBlock()->Reflow(this, pc, *aState.mReflowState,
                                            aStatus, dummyRect, flags,
                                            &aDesiredSize.mOverflowAreas);
