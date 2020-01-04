@@ -25,8 +25,8 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.v4.util.LruCache;
 import android.util.Log;
+import android.util.LruCache;
 
 
 public class LocalURLMetadata implements URLMetadata {
