@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/TabParent.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/unused.h"
 #include "nsIContent.h"
 #include "nsIDocument.h"
@@ -111,11 +112,31 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  
+  bool printSilently;
+  rv = settings->GetPrintSilent(&printSilently);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   rv = mPrintSettingsSvc->DeserializeToPrintSettings(aData, settings);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = pps->ShowPrintDialog(parentWin, wbp, settings);
+  rv = settings->SetPrintSilent(printSilently);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  if (printSilently ||
+      Preferences::GetBool("print.always_print_silent", printSilently)) {
+    nsXPIDLString printerName;
+    rv = settings->GetPrinterName(getter_Copies(printerName));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    settings->SetIsInitializedFromPrinter(false);
+    mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
+  } else {
+    rv = pps->ShowPrintDialog(parentWin, wbp, settings);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   rv = SerializeAndEnsureRemotePrintJob(settings, nullptr, remotePrintJob,
                                         aResult);

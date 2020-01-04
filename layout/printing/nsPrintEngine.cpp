@@ -571,8 +571,10 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
   mPrt->mPrintSettings->SetPrintOptions(nsIPrintSettings::kEnableSelectionRB,
                                         isSelection || mPrt->mIsIFrameSelected);
 
+  bool printingViaParent = XRE_IsContentProcess() &&
+                           Preferences::GetBool("print.print_via_parent");
   nsCOMPtr<nsIDeviceContextSpec> devspec;
-  if (XRE_IsContentProcess() && Preferences::GetBool("print.print_via_parent")) {
+  if (printingViaParent) {
     devspec = new nsDeviceContextSpecProxy();
   } else {
     devspec = do_CreateInstance("@mozilla.org/gfx/devicecontextspec;1", &rv);
@@ -596,7 +598,9 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
     
     
     
-    if (!printSilently) {
+    
+    
+    if (!printSilently || printingViaParent) {
       nsCOMPtr<nsIPrintingPromptService> printPromptService(do_GetService(kPrintingPromptService));
       if (printPromptService) {
         nsPIDOMWindowOuter* domWin = mDocument->GetWindow(); 
