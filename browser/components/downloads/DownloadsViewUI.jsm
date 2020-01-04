@@ -270,6 +270,25 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
 
 
 
+
+
+  confirmUnblock(window) {
+    let verdict = this.download.error.reputationCheckVerdict;
+    DownloadsCommon.confirmUnblockDownload(verdict, window).then(action => {
+      if (action == "unblock") {
+        return this.download.unblock();
+      } else if (action == "confirmBlock") {
+        return this.download.confirmBlock();
+      }
+    }).catch(Cu.reportError);
+  },
+
+  
+
+
+
+
+
   get currentDefaultCommandName() {
     switch (DownloadsCommon.stateOfDownload(this.download)) {
       case Ci.nsIDownloadManager.DOWNLOAD_NOTSTARTED:
