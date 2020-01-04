@@ -22,8 +22,8 @@ if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.1.469';
-PDFJS.build = 'f06aa6a';
+PDFJS.version = '1.1.527';
+PDFJS.build = '2096a2a';
 
 (function pdfjsWrapper() {
   
@@ -339,6 +339,38 @@ function shadow(obj, prop, value) {
   return value;
 }
 PDFJS.shadow = shadow;
+
+var LinkTarget = PDFJS.LinkTarget = {
+  NONE: 0, 
+  SELF: 1,
+  BLANK: 2,
+  PARENT: 3,
+  TOP: 4,
+};
+var LinkTargetStringMap = [
+  '',
+  '_self',
+  '_blank',
+  '_parent',
+  '_top'
+];
+
+function isExternalLinkTargetSet() {
+  switch (PDFJS.externalLinkTarget) {
+    case LinkTarget.NONE:
+      return false;
+    case LinkTarget.SELF:
+    case LinkTarget.BLANK:
+    case LinkTarget.PARENT:
+    case LinkTarget.TOP:
+      return true;
+  }
+  warn('PDFJS.externalLinkTarget is invalid: ' + PDFJS.externalLinkTarget);
+  
+  PDFJS.externalLinkTarget = LinkTarget.NONE;
+  return false;
+}
+PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
 
 var PasswordResponses = PDFJS.PasswordResponses = {
   NEED_PASSWORD: 1,
@@ -1442,6 +1474,19 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
 PDFJS.openExternalLinksInNewWindow = (
   PDFJS.openExternalLinksInNewWindow === undefined ?
     false : PDFJS.openExternalLinksInNewWindow);
+
+
+
+
+
+
+
+
+
+
+
+PDFJS.externalLinkTarget = (PDFJS.externalLinkTarget === undefined ?
+                            PDFJS.LinkTarget.NONE : PDFJS.externalLinkTarget);
 
 
 
@@ -4082,12 +4127,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           ctx.fill();
           ctx.mozFillRule = 'nonzero';
         } else {
-          try {
-            ctx.fill('evenodd');
-          } catch (ex) {
-            
-            ctx.fill();
-          }
+          ctx.fill('evenodd');
         }
         this.pendingEOFill = false;
       } else {
@@ -4541,8 +4581,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var pattern;
       if (IR[0] === 'TilingPattern') {
         var color = IR[1];
+        var baseTransform = this.baseTransform ||
+                            this.ctx.mozCurrentTransform.slice();
         pattern = new TilingPattern(IR, color, this.ctx, this.objs,
-                                    this.commonObjs, this.baseTransform);
+                                    this.commonObjs, baseTransform);
       } else {
         pattern = getShadingPatternFromIR(IR);
       }
@@ -5098,12 +5140,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.clip();
             ctx.mozFillRule = 'nonzero';
           } else {
-            try {
-              ctx.clip('evenodd');
-            } catch (ex) {
-              
-              ctx.clip();
-            }
+            ctx.clip('evenodd');
           }
         } else {
           ctx.clip();
@@ -6329,8 +6366,9 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
 
     var link = document.createElement('a');
     link.href = link.title = item.url || '';
-    if (item.url && PDFJS.openExternalLinksInNewWindow) {
-      link.target = '_blank';
+
+    if (item.url && isExternalLinkTargetSet()) {
+      link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
     }
 
     container.appendChild(link);

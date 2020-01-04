@@ -998,18 +998,8 @@ PdfStreamConverter.prototype = {
     var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-    
-    
-    
-    
-    var resourcePrincipal
-    if ('createCodebasePrincipal' in ssm) {
-      resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
-    } else if ('getNoAppCodebasePrincipal' in ssm) {
-      resourcePrincipal = ssm.getNoAppCodebasePrincipal(uri)
-    } else {
-      resourcePrincipal = ssm.getCodebasePrincipal(uri);
-    }
+    var resourcePrincipal;
+    resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
     aRequest.owner = resourcePrincipal;
     channel.asyncOpen(proxy, aContext);
   },
