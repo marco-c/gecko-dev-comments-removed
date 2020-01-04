@@ -63,6 +63,11 @@ struct PropertyValuePair
   
   
   nsCSSValue    mValue;
+
+  bool operator==(const PropertyValuePair& aOther) const {
+    return mProperty == aOther.mProperty &&
+           mValue == aOther.mValue;
+  }
 };
 
 
@@ -274,6 +279,7 @@ public:
   void SetAnimation(Animation* aAnimation);
   Animation* GetAnimation() const { return mAnimation; }
 
+  void SetFrames(nsTArray<Keyframe>&& aFrames, nsStyleContext* aStyleContext);
   const AnimationProperty*
   GetAnimationOfProperty(nsCSSProperty aProperty) const;
   bool HasAnimationOfProperty(nsCSSProperty aProperty) const {
@@ -293,6 +299,10 @@ public:
   
   bool UpdateProperties(
     const InfallibleTArray<AnimationProperty>& aProperties);
+
+  
+  
+  void UpdateProperties(nsStyleContext* aStyleContext);
 
   
   
@@ -363,7 +373,11 @@ protected:
   OwningNonNull<AnimationEffectTimingReadOnly> mTiming;
   CSSPseudoElementType mPseudoType;
 
-  InfallibleTArray<AnimationProperty> mProperties;
+  
+  nsTArray<Keyframe>          mFrames;
+
+  
+  nsTArray<AnimationProperty> mProperties;
 
   
   
