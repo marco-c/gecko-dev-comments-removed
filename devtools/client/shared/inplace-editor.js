@@ -33,6 +33,7 @@ const CONTENT_TYPES = {
   CSS_MIXED: 2,
   CSS_PROPERTY: 3,
 };
+const AUTOCOMPLETE_POPUP_CLASSNAME = "inplace-editor-autocomplete-popup";
 
 
 
@@ -244,6 +245,7 @@ function InplaceEditor(options, event) {
   this._onKeyPress = this._onKeyPress.bind(this);
   this._onInput = this._onInput.bind(this);
   this._onKeyup = this._onKeyup.bind(this);
+  this._onAutocompletePopupClick = this._onAutocompletePopupClick.bind(this);
 
   this._createInput();
 
@@ -952,55 +954,66 @@ InplaceEditor.prototype = {
 
   _onBlur: function(event) {
     if (event && this.popup && this.popup.isOpen &&
-        this.popup.selectedIndex >= 0) {
-      let label, preLabel;
+      this.popup.selectedIndex >= 0) {
+      this._acceptPopupSuggestion();
+    } else {
+      this._apply();
+      this._clear();
+    }
+  },
 
-      if (this._selectedIndex === undefined) {
-        ({label, preLabel} =
-          this.popup.getItemAtIndex(this.popup.selectedIndex));
-      } else {
-        ({label, preLabel} = this.popup.getItemAtIndex(this._selectedIndex));
-      }
+  
 
-      let input = this.input;
-      let pre = "";
 
-      
-      
-      
-      
-      
-      if (input.selectionStart < input.selectionEnd ||
-          this.contentType !== CONTENT_TYPES.CSS_MIXED) {
-        pre = input.value.slice(0, input.selectionStart);
-      } else {
-        pre = input.value.slice(0, input.selectionStart - label.length +
-                                preLabel.length);
-      }
-      let post = input.value.slice(input.selectionEnd, input.value.length);
-      let item = this.popup.selectedItem;
-      this._selectedIndex = this.popup.selectedIndex;
-      let toComplete = item.label.slice(item.preLabel.length);
-      input.value = pre + toComplete + post;
-      input.setSelectionRange(pre.length + toComplete.length,
-                              pre.length + toComplete.length);
-      this._updateSize();
-      
-      
-      let onPopupHidden = () => {
-        this.popup._panel.removeEventListener("popuphidden", onPopupHidden);
-        this.doc.defaultView.setTimeout(()=> {
-          input.focus();
-          this.emit("after-suggest");
-        }, 0);
-      };
-      this.popup._panel.addEventListener("popuphidden", onPopupHidden);
-      this.popup.hidePopup();
-      return;
+
+  _onAutocompletePopupClick: function() {
+    this._acceptPopupSuggestion();
+  },
+
+  _acceptPopupSuggestion: function() {
+    let label, preLabel;
+
+    if (this._selectedIndex === undefined) {
+      ({label, preLabel} =
+        this.popup.getItemAtIndex(this.popup.selectedIndex));
+    } else {
+      ({label, preLabel} = this.popup.getItemAtIndex(this._selectedIndex));
     }
 
-    this._apply();
-    this._clear();
+    let input = this.input;
+    let pre = "";
+
+    
+    
+    
+    
+    
+    if (input.selectionStart < input.selectionEnd ||
+        this.contentType !== CONTENT_TYPES.CSS_MIXED) {
+      pre = input.value.slice(0, input.selectionStart);
+    } else {
+      pre = input.value.slice(0, input.selectionStart - label.length +
+                              preLabel.length);
+    }
+    let post = input.value.slice(input.selectionEnd, input.value.length);
+    let item = this.popup.selectedItem;
+    this._selectedIndex = this.popup.selectedIndex;
+    let toComplete = item.label.slice(item.preLabel.length);
+    input.value = pre + toComplete + post;
+    input.setSelectionRange(pre.length + toComplete.length,
+                            pre.length + toComplete.length);
+    this._updateSize();
+    
+    
+    let onPopupHidden = () => {
+      this.popup._panel.removeEventListener("popuphidden", onPopupHidden);
+      this.doc.defaultView.setTimeout(()=> {
+        input.focus();
+        this.emit("after-suggest");
+      }, 0);
+    };
+    this.popup._panel.addEventListener("popuphidden", onPopupHidden);
+    this._hideAutocompletePopup();
   },
 
   
@@ -1042,7 +1055,7 @@ InplaceEditor.prototype = {
 
     if (isKeyIn(key, "BACK_SPACE", "DELETE", "LEFT", "RIGHT")) {
       if (isPopupOpen) {
-        this.popup.hidePopup();
+        this._hideAutocompletePopup();
       }
     } else if (!cycling && !multilineNavigation &&
       !event.metaKey && !event.altKey && !event.ctrlKey) {
@@ -1093,7 +1106,7 @@ InplaceEditor.prototype = {
 
       
       if (this.popup && this.popup.isOpen) {
-        this.popup.hidePopup();
+        this._hideAutocompletePopup();
       }
 
       if (direction !== null && focusManager.focusedElement === input) {
@@ -1117,7 +1130,7 @@ InplaceEditor.prototype = {
       this._preventSuggestions = true;
       
       if (this.popup && this.popup.isOpen) {
-        this.popup.hidePopup();
+        this._hideAutocompletePopup();
       }
       prevent = true;
       this.cancelled = true;
@@ -1134,6 +1147,31 @@ InplaceEditor.prototype = {
     if (prevent) {
       event.preventDefault();
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+  _openAutocompletePopup: function(offset, selectedIndex) {
+    this.popup._panel.classList.add(AUTOCOMPLETE_POPUP_CLASSNAME);
+    this.popup.on("popup-click", this._onAutocompletePopupClick);
+    this.popup.openPopup(this.input, offset, 0, selectedIndex);
+  },
+
+  
+
+
+
+  _hideAutocompletePopup: function() {
+    this.popup._panel.classList.remove(AUTOCOMPLETE_POPUP_CLASSNAME);
+    this.popup.off("popup-click", this._onAutocompletePopupClick);
+    this.popup.hidePopup();
   },
 
   
@@ -1383,9 +1421,9 @@ InplaceEditor.prototype = {
 
         
         this.popup.setItems(finalList);
-        this.popup.openPopup(this.input, offset, 0, selectedIndex);
+        this._openAutocompletePopup(offset, selectedIndex);
       } else {
-        this.popup.hidePopup();
+        this._hideAutocompletePopup();
       }
       
       this.emit("after-suggest");

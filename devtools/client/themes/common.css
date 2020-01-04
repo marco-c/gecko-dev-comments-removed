@@ -61,6 +61,12 @@
   padding: 2px;
 }
 
+.inplace-editor-autocomplete-popup .devtools-autocomplete-listbox {
+  
+
+  -moz-user-focus: ignore;
+}
+
 .devtools-autocomplete-listbox > richlistitem,
 .devtools-autocomplete-listbox > richlistitem[selected] {
   width: 100%;
