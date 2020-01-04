@@ -216,7 +216,7 @@ public:
     TYPE_UI,
     TYPE_IO,
     TYPE_MOZILLA_CHILD,
-    TYPE_MOZILLA_UI,
+    TYPE_MOZILLA_PARENT,
     TYPE_MOZILLA_NONMAINTHREAD,
     TYPE_MOZILLA_NONMAINUITHREAD
   };
@@ -473,7 +473,7 @@ class MessageLoopForUI : public MessageLoop {
       return NULL;
     Type type = loop->type();
     DCHECK(type == MessageLoop::TYPE_UI ||
-           type == MessageLoop::TYPE_MOZILLA_UI ||
+           type == MessageLoop::TYPE_MOZILLA_PARENT ||
            type == MessageLoop::TYPE_MOZILLA_CHILD);
     return static_cast<MessageLoopForUI*>(loop);
   }

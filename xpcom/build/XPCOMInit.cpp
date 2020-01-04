@@ -523,7 +523,7 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
 
   MessageLoop* messageLoop = MessageLoop::current();
   if (!messageLoop) {
-    sMessageLoop = new MessageLoopForUI(MessageLoop::TYPE_MOZILLA_UI);
+    sMessageLoop = new MessageLoopForUI(MessageLoop::TYPE_MOZILLA_PARENT);
     sMessageLoop->set_thread_name("Gecko");
     
     
