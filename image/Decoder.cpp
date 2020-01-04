@@ -445,7 +445,7 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
 
   
   
-  if (!ShouldSendPartialInvalidations() && !HasAnimation()) {
+  if (!ShouldSendPartialInvalidations() && mFrameCount == 1) {
     mInvalidRect.UnionRect(mInvalidRect,
                            gfx::IntRect(gfx::IntPoint(0, 0), GetSize()));
   }
@@ -462,7 +462,7 @@ Decoder::PostInvalidation(const nsIntRect& aRect,
 
   
   
-  if (ShouldSendPartialInvalidations() && !HasAnimation()) {
+  if (ShouldSendPartialInvalidations() && mFrameCount == 1) {
     mInvalidRect.UnionRect(mInvalidRect, aRect);
     mCurrentFrame->ImageUpdated(aRectAtTargetSize.valueOr(aRect));
   }
