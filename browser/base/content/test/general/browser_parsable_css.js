@@ -11,8 +11,6 @@
 
 const kWhitelist = [
   
-  {sourceName: /cleopatra.*(tree|ui)\.css/i},
-  
   {sourceName: /codemirror\.css/i},
   
   {sourceName: /web\/viewer\.css/i,
@@ -24,6 +22,13 @@ const kWhitelist = [
   
   {sourceName: /loop\/.*\.css/i,
    errorMessage: /Unknown pseudo-class.*placeholder/i},
+  
+  {sourceName: /loop\/.*shared\/css\/conversation.css/i,
+   errorMessage: /Error in parsing value for 'display'/i},
+  {sourceName: /loop\/.*shared\/css\/common.css/i,
+   errorMessage: /Unknown property 'user-select'/i},
+  {sourceName: /loop\/.*css\/panel.css/i,
+   errorMessage: /Expected color but found 'none'/i},
   
   {sourceName: /highlighter\.css/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i},
@@ -65,6 +70,21 @@ function once(target, name) {
   });
 }
 
+function messageIsCSSError(msg, innerWindowID, outerWindowID) {
+  
+  if ((msg instanceof Ci.nsIScriptError) &&
+      msg.category.includes("CSS") &&
+      msg.innerWindowID === innerWindowID && msg.outerWindowID === outerWindowID) {
+    
+    if (!ignoredError(msg)) {
+      ok(false, "Got error message for " + msg.sourceName + ": " + msg.errorMessage);
+      return true;
+    }
+    info("Ignored error for " + msg.sourceName + " because of filter.");
+  }
+  return false;
+}
+
 add_task(function checkAllTheCSS() {
   let appDir = Services.dirsvc.get("XCurProcD", Ci.nsIFile);
   
@@ -86,32 +106,14 @@ add_task(function checkAllTheCSS() {
   iframe.contentWindow.location = testFile;
   yield iframeLoaded;
   let doc = iframe.contentWindow.document;
-
-  
-  let errorListener = {
-    observe: function(aMessage) {
-      if (!aMessage || !(aMessage instanceof Ci.nsIScriptError)) {
-        return;
-      }
-      
-      if (aMessage.category.includes("CSS") && aMessage.innerWindowID === 0 && aMessage.outerWindowID === 0) {
-        
-        if (!ignoredError(aMessage)) {
-          ok(false, "Got error message for " + aMessage.sourceName + ": " + aMessage.errorMessage);
-          errors++;
-        } else {
-          info("Ignored error for " + aMessage.sourceName + " because of filter.");
-        }
-      }
-    }
-  };
+  let windowUtils = iframe.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                                        .getInterface(Ci.nsIDOMWindowUtils);
+  let innerWindowID = windowUtils.currentInnerWindowID;
+  let outerWindowID = windowUtils.outerWindowID;
 
   
   
   let allPromises = [];
-  let errors = 0;
-  
-  Services.console.registerListener(errorListener);
   for (let uri of uris) {
     let linkEl = doc.createElement("link");
     linkEl.setAttribute("rel", "stylesheet");
@@ -122,7 +124,8 @@ add_task(function checkAllTheCSS() {
       linkEl.removeEventListener("error", onError);
     };
     let onError = (e) => {
-      promiseForThisSpec.reject({error: e, href: linkEl.getAttribute("href")});
+      ok(false, "Loading " + linkEl.getAttribute("href") + " threw an error!");
+      promiseForThisSpec.resolve();
       linkEl.removeEventListener("load", onLoad);
       linkEl.removeEventListener("error", onError);
     };
@@ -136,12 +139,14 @@ add_task(function checkAllTheCSS() {
 
   
   yield Promise.all(allPromises);
+
+  let messages = Services.console.getMessageArray();
   
   
-  is(errors, 0, "All the styles (" + allPromises.length + ") loaded without errors.");
+  let errors = messages.filter(m => messageIsCSSError(m, innerWindowID, outerWindowID));
+  is(errors.length, 0, "All the styles (" + allPromises.length + ") loaded without errors.");
 
   
-  Services.console.unregisterListener(errorListener);
   iframe.remove();
   doc.head.innerHTML = '';
   doc = null;

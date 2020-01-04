@@ -3,7 +3,7 @@
 
 
 
-@import url("floating-scrollbars.css");
+@import url("chrome://browser/skin/devtools/floating-scrollbars.css");
 
 scrollbar thumb {
   background-color: rgba(170,170,170,0.2) !important;
