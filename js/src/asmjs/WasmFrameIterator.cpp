@@ -515,6 +515,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
     codeRange_(nullptr),
     callerFP_(nullptr),
     callerPC_(nullptr),
+    stackAddress_(nullptr),
     exitReason_(ExitReason::None)
 {
     
