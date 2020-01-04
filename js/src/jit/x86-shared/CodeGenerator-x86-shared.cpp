@@ -2702,6 +2702,7 @@ CodeGeneratorX86Shared::emitSimdExtractLane8x16(FloatRegister input, Register ou
 
     
     
+    
     switch (signedness) {
       case SimdSign::Signed:
         masm.movsbl(output, output);
@@ -2810,20 +2811,44 @@ CodeGeneratorX86Shared::visitSimdInsertElementI(LSimdInsertElementI* ins)
     FloatRegister output = ToFloatRegister(ins->output());
     MOZ_ASSERT(vector == output); 
 
-    unsigned component = unsigned(ins->lane());
+    unsigned lane = ins->lane();
+    unsigned length = ins->length();
+
+    if (length == 8) {
+        
+        masm.vpinsrw(lane, value, vector, output);
+        return;
+    }
 
     
     
     
     if (AssemblerX86Shared::HasSSE41()) {
         
-        masm.vpinsrd(component, value, vector, output);
-        return;
+        switch (length) {
+          case 4:
+            masm.vpinsrd(lane, value, vector, output);
+            return;
+          case 16:
+            masm.vpinsrb(lane, value, vector, output);
+            return;
+        }
     }
 
     masm.reserveStack(Simd128DataSize);
     masm.storeAlignedSimd128Int(vector, Address(StackPointer, 0));
-    masm.store32(value, Address(StackPointer, component * sizeof(int32_t)));
+    switch (length) {
+      case 4:
+        masm.store32(value, Address(StackPointer, lane * sizeof(int32_t)));
+        break;
+      case 16:
+        
+        
+        masm.store8(value, Address(StackPointer, lane * sizeof(int8_t)));
+        break;
+      default:
+        MOZ_CRASH("Unsupported SIMD length");
+    }
     masm.loadAlignedSimd128Int(Address(StackPointer, 0), output);
     masm.freeStack(Simd128DataSize);
 }

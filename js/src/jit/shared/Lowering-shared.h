@@ -271,6 +271,8 @@ class LIRGeneratorShared : public MDefinitionVisitor
     
     
     
+    void visitSimdInsertElement(MSimdInsertElement*) override { MOZ_CRASH("NYI"); }
+    void visitSimdExtractElement(MSimdExtractElement*) override { MOZ_CRASH("NYI"); }
     void visitSimdBinaryArith(MSimdBinaryArith*) override { MOZ_CRASH("NYI"); }
     void visitSimdSelect(MSimdSelect*) override { MOZ_CRASH("NYI"); }
     void visitSimdSplat(MSimdSplat*) override { MOZ_CRASH("NYI"); }
