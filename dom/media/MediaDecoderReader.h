@@ -21,7 +21,6 @@
 namespace mozilla {
 
 class MediaDecoderReader;
-class SharedDecoderManager;
 
 struct WaitForDataRejectValue
 {
@@ -103,7 +102,6 @@ public:
   
   
   virtual void ReleaseMediaResources() {};
-  virtual void SetSharedDecoderManager(SharedDecoderManager* aManager) {}
   
   
   
