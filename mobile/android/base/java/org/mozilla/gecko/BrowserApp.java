@@ -9,6 +9,8 @@ import android.Manifest;
 import android.app.DownloadManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
 import org.json.JSONArray;
 import org.mozilla.gecko.adjust.AdjustHelperInterface;
 import org.mozilla.gecko.annotation.RobocopTarget;
@@ -290,7 +292,8 @@ public class BrowserApp extends GeckoApp
     private final DynamicToolbar mDynamicToolbar = new DynamicToolbar();
     private final ScreenshotObserver mScreenshotObserver = new ScreenshotObserver();
 
-    private SearchEngineManager searchEngineManager;
+    @NonNull
+    private SearchEngineManager searchEngineManager; 
 
     @Override
     public View onCreateView(final String name, final Context context, final AttributeSet attrs) {
@@ -1070,17 +1073,17 @@ public class BrowserApp extends GeckoApp
                     
                     GuestSession.hideNotification(BrowserApp.this);
                 }
-
-                
-                
-                
-                
-                
-                
-                
-                uploadTelemetry(profile);
             }
         });
+
+        
+        
+        
+        
+        
+        
+        
+        searchEngineManager.getEngine(new UploadTelemetryCallback(BrowserApp.this));
     }
 
     @Override
@@ -1421,8 +1424,7 @@ public class BrowserApp extends GeckoApp
             mZoomedView.destroy();
         }
 
-        searchEngineManager.destroy();
-        searchEngineManager = null;
+        searchEngineManager.unregisterListeners();
 
         EventDispatcher.getInstance().unregisterGeckoThreadListener((GeckoEventListener) this,
             "Gecko:DelayedStartup",
@@ -4020,48 +4022,59 @@ public class BrowserApp extends GeckoApp
         mDynamicToolbar.setTemporarilyVisible(false, VisibilityTransition.IMMEDIATE);
     }
 
-    private void uploadTelemetry(final GeckoProfile profile) {
-        if (!TelemetryUploadService.isUploadEnabledByProfileConfig(this, profile)) {
+    @WorkerThread 
+    private static void uploadTelemetry(final Context context, final GeckoProfile profile,
+            final org.mozilla.gecko.search.SearchEngine defaultEngine) {
+        if (!TelemetryUploadService.isUploadEnabledByProfileConfig(context, profile)) {
             return;
         }
 
-        final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(this, profile.getName());
+        final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(context, profile.getName());
         final int seq = sharedPrefs.getInt(TelemetryConstants.PREF_SEQ_COUNT, 1);
 
         
         sharedPrefs.edit().putInt(TelemetryConstants.PREF_SEQ_COUNT, seq + 1).commit();
 
-        searchEngineManager.getEngine(new UploadTelemetryCallback(getContext(), seq, profile.getName(), profile.getDir()));
+        final Intent i = new Intent(TelemetryConstants.ACTION_UPLOAD_CORE);
+        i.setClass(context, TelemetryUploadService.class);
+        i.putExtra(TelemetryConstants.EXTRA_DEFAULT_SEARCH_ENGINE, defaultEngine.getIdentifier());
+        i.putExtra(TelemetryConstants.EXTRA_DOC_ID, UUID.randomUUID().toString());
+        i.putExtra(TelemetryConstants.EXTRA_PROFILE_NAME, profile.getName());
+        i.putExtra(TelemetryConstants.EXTRA_PROFILE_PATH, profile.getDir().getAbsolutePath());
+        i.putExtra(TelemetryConstants.EXTRA_SEQ, seq);
+        context.startService(i);
     }
 
     private static class UploadTelemetryCallback implements SearchEngineManager.SearchEngineCallback {
-        private final WeakReference<Context> contextWeakReference;
-        private final int seq;
-        private final String profileName;
-        private final String profileDirPath;
+        private final WeakReference<BrowserApp> activityWeakReference;
 
-        public UploadTelemetryCallback(final Context context, final int seq, final String profileName, final File profileDir) {
-            this.contextWeakReference = new WeakReference<>(context);
-            this.seq = seq;
-            this.profileName = profileName;
-            this.profileDirPath = profileDir.toString();
+        public UploadTelemetryCallback(final BrowserApp activity) {
+            this.activityWeakReference = new WeakReference<>(activity);
         }
 
+        
         @Override
         public void execute(final org.mozilla.gecko.search.SearchEngine engine) {
-            final Context context = this.contextWeakReference.get();
-            if (context == null) {
+            
+            if (this.activityWeakReference.get() == null) {
                 return;
             }
 
-            final Intent i = new Intent(TelemetryConstants.ACTION_UPLOAD_CORE);
-            i.setClass(context, TelemetryUploadService.class);
-            i.putExtra(TelemetryConstants.EXTRA_DEFAULT_SEARCH_ENGINE, engine.getIdentifier());
-            i.putExtra(TelemetryConstants.EXTRA_DOC_ID, UUID.randomUUID().toString());
-            i.putExtra(TelemetryConstants.EXTRA_PROFILE_NAME, this.profileName);
-            i.putExtra(TelemetryConstants.EXTRA_PROFILE_PATH, this.profileDirPath);
-            i.putExtra(TelemetryConstants.EXTRA_SEQ, this.seq);
-            context.startService(i);
+            
+            
+            
+            
+            ThreadUtils.postToBackgroundThread(new Runnable() {
+                @WorkerThread
+                @Override
+                public void run() {
+                    final BrowserApp activity = activityWeakReference.get();
+                    if (activity == null) {
+                        return;
+                    }
+                    uploadTelemetry(activity, activity.getProfile(), engine);
+                }
+            });
         }
     }
 

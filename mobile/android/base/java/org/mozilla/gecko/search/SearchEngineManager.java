@@ -7,6 +7,8 @@ package org.mozilla.gecko.search;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
+import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
 import org.json.JSONException;
@@ -33,11 +35,17 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
+
+
+
+
+
 
 public class SearchEngineManager implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String LOG_TAG = "GeckoSearchEngineManager";
@@ -62,10 +70,10 @@ public class SearchEngineManager implements SharedPreferences.OnSharedPreference
     private static final String USER_AGENT = HardwareUtils.isTablet() ?
         AppConstants.USER_AGENT_FENNEC_TABLET : AppConstants.USER_AGENT_FENNEC_MOBILE;
 
-    private Context context;
-    private Distribution distribution;
-    @Nullable private SearchEngineCallback changeCallback;
-    private SearchEngine engine;
+    private final Context context;
+    private final Distribution distribution;
+    @Nullable private volatile SearchEngineCallback changeCallback;
+    @Nullable private volatile SearchEngine engine;
 
     
     
@@ -111,16 +119,16 @@ public class SearchEngineManager implements SharedPreferences.OnSharedPreference
         }
     }
 
-    public void destroy() {
+    
+
+
+    public void unregisterListeners() {
         GeckoSharedPrefs.forApp(context).unregisterOnSharedPreferenceChangeListener(this);
-        context = null;
-        distribution = null;
-        changeCallback = null;
-        engine = null;
     }
 
-    private int ignorePreferenceChange = 0;
+    private volatile int ignorePreferenceChange = 0;
 
+    @UiThread 
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences, final String key) {
         if (!TextUtils.equals(PREF_DEFAULT_ENGINE_KEY, key)) {
@@ -139,16 +147,37 @@ public class SearchEngineManager implements SharedPreferences.OnSharedPreference
 
 
     private void runCallback(final SearchEngine engine, @Nullable final SearchEngineCallback callback) {
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                
-                SearchEngineManager.this.engine = engine;
-                if (callback != null) {
-                    callback.execute(engine);
-                }
+        ThreadUtils.postToUiThread(new RunCallbackUiThreadRunnable(this, engine, callback));
+    }
+
+    
+    private static class RunCallbackUiThreadRunnable implements Runnable {
+        private final WeakReference<SearchEngineManager> searchEngineManagerWeakReference;
+        private final SearchEngine searchEngine;
+        private final SearchEngineCallback callback;
+
+        public RunCallbackUiThreadRunnable(final SearchEngineManager searchEngineManager, final SearchEngine searchEngine,
+                final SearchEngineCallback callback) {
+            this.searchEngineManagerWeakReference = new WeakReference<>(searchEngineManager);
+            this.searchEngine = searchEngine;
+            this.callback = callback;
+        }
+
+        @UiThread
+        @Override
+        public void run() {
+            final SearchEngineManager searchEngineManager = searchEngineManagerWeakReference.get();
+            if (searchEngineManager == null) {
+                return;
             }
-        });
+
+            
+            searchEngineManager.engine = searchEngine;
+            if (callback != null) {
+                callback.execute(searchEngine);
+            }
+
+        }
     }
 
     
@@ -164,72 +193,95 @@ public class SearchEngineManager implements SharedPreferences.OnSharedPreference
 
     private void getDefaultEngine(final SearchEngineCallback callback) {
         
-        distribution.addOnDistributionReadyCallback(new Distribution.ReadyCallback() {
-            @Override
-            public void distributionNotFound() {
-                defaultBehavior();
+        distribution.addOnDistributionReadyCallback(new GetDefaultEngineDistributionCallbacks(this, callback));
+    }
+
+    
+    private static class GetDefaultEngineDistributionCallbacks implements Distribution.ReadyCallback {
+        private final WeakReference<SearchEngineManager> searchEngineManagerWeakReference;
+        private final SearchEngineCallback callback;
+
+        public GetDefaultEngineDistributionCallbacks(final SearchEngineManager searchEngineManager,
+                final SearchEngineCallback callback) {
+            this.searchEngineManagerWeakReference = new WeakReference<>(searchEngineManager);
+            this.callback = callback;
+        }
+
+        @Override
+        public void distributionNotFound() {
+            defaultBehavior();
+        }
+
+        @Override
+        public void distributionFound(Distribution distribution) {
+            defaultBehavior();
+        }
+
+        @Override
+        public void distributionArrivedLate(Distribution distribution) {
+            final SearchEngineManager searchEngineManager = searchEngineManagerWeakReference.get();
+            if (searchEngineManager == null) {
+                return;
             }
 
-            @Override
-            public void distributionFound(Distribution distribution) {
-                defaultBehavior();
+            
+            
+            final String name = searchEngineManager.getDefaultEngineNameFromDistribution();
+
+            if (name == null) {
+                return;
             }
 
-            @Override
-            public void distributionArrivedLate(Distribution distribution) {
-                
-                
-                final String name = getDefaultEngineNameFromDistribution();
+            
+            
+            
+            searchEngineManager.ignorePreferenceChange++;
+            GeckoSharedPrefs.forApp(searchEngineManager.context)
+                    .edit()
+                    .putString(PREF_DEFAULT_ENGINE_KEY, name)
+                    .apply();
 
+            final SearchEngine engine = searchEngineManager.createEngineFromName(name);
+            searchEngineManager.runCallback(engine, callback);
+        }
+
+        @WorkerThread 
+        private void defaultBehavior() {
+            final SearchEngineManager searchEngineManager = searchEngineManagerWeakReference.get();
+            if (searchEngineManager == null) {
+                return;
+            }
+
+            
+            String name = GeckoSharedPrefs.forApp(searchEngineManager.context).getString(PREF_DEFAULT_ENGINE_KEY, null);
+
+            
+            
+            String region = GeckoSharedPrefs.forApp(searchEngineManager.context).getString(PREF_REGION_KEY, null);
+
+            if (name != null && region != null) {
+                Log.d(LOG_TAG, "Found default engine name in SharedPreferences: " + name);
+            } else {
+                
+                name = searchEngineManager.getDefaultEngineNameFromDistribution();
                 if (name == null) {
-                    return;
+                    
+                    name = searchEngineManager.getDefaultEngineNameFromLocale();
                 }
 
                 
                 
                 
-                ignorePreferenceChange++;
-                GeckoSharedPrefs.forApp(context)
+                searchEngineManager.ignorePreferenceChange++;
+                GeckoSharedPrefs.forApp(searchEngineManager.context)
                         .edit()
                         .putString(PREF_DEFAULT_ENGINE_KEY, name)
                         .apply();
-
-                final SearchEngine engine = createEngineFromName(name);
-                runCallback(engine, callback);
             }
 
-            private void defaultBehavior() {
-                
-                String name = GeckoSharedPrefs.forApp(context).getString(PREF_DEFAULT_ENGINE_KEY, null);
-
-                
-                
-                String region = GeckoSharedPrefs.forApp(context).getString(PREF_REGION_KEY, null);
-
-                if (name != null && region != null) {
-                    Log.d(LOG_TAG, "Found default engine name in SharedPreferences: " + name);
-                } else {
-                    
-                    name = getDefaultEngineNameFromDistribution();
-                    if (name == null) {
-                        
-                        name = getDefaultEngineNameFromLocale();
-                    }
-
-                    
-                    
-                    
-                    ignorePreferenceChange++;
-                    GeckoSharedPrefs.forApp(context)
-                                    .edit()
-                                    .putString(PREF_DEFAULT_ENGINE_KEY, name)
-                                    .apply();
-                }
-
-                final SearchEngine engine = createEngineFromName(name);
-                runCallback(engine, callback);
-            }
-        });
+            final SearchEngine engine = searchEngineManager.createEngineFromName(name);
+            searchEngineManager.runCallback(engine, callback);
+        }
     }
 
     
