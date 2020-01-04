@@ -132,6 +132,15 @@ public:
       return true;
     }
 
+    bool AccelerateLayersByDefault() override {
+#ifdef NIGHTLY_BUILD
+      
+      
+      return true;
+#endif
+      return false;
+    }
+
 #ifdef GL_PROVIDER_GLX
     already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource() override;
 #endif
