@@ -165,7 +165,7 @@ function processStsHeader(host, header, status, securityInfo) {
 }
 
 
-function RedirectAndAuthStopper() {};
+function RedirectAndAuthStopper() {}
 
 RedirectAndAuthStopper.prototype = {
   

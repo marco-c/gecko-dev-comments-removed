@@ -39,7 +39,6 @@ parser/**
 probes/**
 python/**
 rdf/**
-security/**
 services/**
 startupcache/**
 testing/**
@@ -85,6 +84,7 @@ browser/extensions/loop/**
 
 # devtools/ exclusions
 devtools/*.js
+devtools/client/*.js
 devtools/client/aboutdebugging/**
 devtools/client/animationinspector/**
 devtools/client/canvasdebugger/**

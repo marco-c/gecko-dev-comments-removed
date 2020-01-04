@@ -166,14 +166,14 @@ function getLabelForCert(cert) {
   }
 
   
-  label = label.replace( /[^[:ascii:]]/g, "_");
+  label = label.replace(/[^[:ascii:]]/g, "_");
   
-  label = label.replace(/[^A-Za-z0-9]/g ,"_");
+  label = label.replace(/[^A-Za-z0-9]/g, "_");
   return label;
 }
 
 
-function insertTrustAnchorsFromDatabase(){
+function insertTrustAnchorsFromDatabase() {
   
   const CERT_TYPE = Ci.nsIX509Cert.CA_CERT;
   const TRUST_TYPE = Ci.nsIX509CertDB.TRUSTED_SSL;

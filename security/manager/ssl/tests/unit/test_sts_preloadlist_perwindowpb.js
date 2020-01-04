@@ -88,7 +88,7 @@ function test_part1() {
 
   
   
-  var uri = Services.io.newURI("http://subdomain.www.torproject.org", null, null);
+  uri = Services.io.newURI("http://subdomain.www.torproject.org", null, null);
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=0", sslStatus, 0);
   ok(gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
@@ -96,7 +96,7 @@ function test_part1() {
   ok(!gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
                               "subdomain.www.torproject.org", 0));
 
-  var uri = Services.io.newURI("http://subdomain.bugzilla.mozilla.org", null, null);
+  uri = Services.io.newURI("http://subdomain.bugzilla.mozilla.org", null, null);
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=0", sslStatus, 0);
   
@@ -139,7 +139,7 @@ function test_part1() {
   
   ok(gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
                              "login.persona.org", 0));
-  var uri = Services.io.newURI("http://login.persona.org", null, null);
+  uri = Services.io.newURI("http://login.persona.org", null, null);
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=1", sslStatus, 0);
   do_timeout(1250, function() {
@@ -192,7 +192,7 @@ function test_private_browsing1() {
   
   ok(gSSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
                              "login.persona.org", IS_PRIVATE));
-  var uri = Services.io.newURI("http://login.persona.org", null, null);
+  uri = Services.io.newURI("http://login.persona.org", null, null);
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=1", sslStatus, IS_PRIVATE);
   do_timeout(1250, function() {

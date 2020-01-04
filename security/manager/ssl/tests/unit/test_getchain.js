@@ -44,7 +44,7 @@ function check_matching_issuer_and_getchain(expected_issuer_serial, cert) {
         "Serial numbers via cert.issuer and via getChain() should match");
 }
 
-function check_getchain(ee_cert, ssl_ca, email_ca){
+function check_getchain(ee_cert, ssl_ca, email_ca) {
   
   
   

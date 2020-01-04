@@ -63,7 +63,7 @@ function test() {
       
       executeSoon(function() { aCallback(aWin); });
     });
-  };
+  }
 
    
   registerCleanupFunction(function() {
