@@ -430,7 +430,11 @@ TimerThread::Run()
     bool forceRunThisTimer = forceRunNextTimer;
     forceRunNextTimer = false;
 
-    if (mSleeping) {
+    if (mSleeping
+#ifdef MOZ_NUWA_PROCESS
+        || IsNuwaProcess() 
+#endif
+        ) {
       
       uint32_t milliseconds = 100;
       if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
