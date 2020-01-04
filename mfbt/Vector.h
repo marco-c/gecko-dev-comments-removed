@@ -229,6 +229,20 @@ struct VectorImpl<T, N, AP, true>
     aV.mCapacity = aNewCap;
     return true;
   }
+
+  static inline void
+  podResizeToFit(Vector<T, N, AP>& aV)
+  {
+    if (aV.usingInlineStorage() || aV.mLength == aV.mCapacity) {
+      return;
+    }
+    T* newbuf = aV.template pod_realloc<T>(aV.mBegin, aV.mCapacity, aV.mLength);
+    if (MOZ_UNLIKELY(!newbuf)) {
+      return;
+    }
+    aV.mBegin = newbuf;
+    aV.mCapacity = aV.mLength;
+  }
 };
 
 
@@ -558,6 +572,13 @@ public:
 
   
   void clearAndFree();
+
+  
+
+
+
+
+  void podResizeToFit();
 
   
 
@@ -1101,6 +1122,15 @@ Vector<T, N, AP>::clearAndFree()
 #ifdef DEBUG
   mReserved = 0;
 #endif
+}
+
+template<typename T, size_t N, class AP>
+inline void
+Vector<T, N, AP>::podResizeToFit()
+{
+  
+  
+  Impl::podResizeToFit(*this);
 }
 
 template<typename T, size_t N, class AP>
