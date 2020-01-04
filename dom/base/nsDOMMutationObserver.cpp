@@ -885,6 +885,11 @@ nsDOMMutationObserver::HandleMutationsInternal()
     return;
   }
 
+  
+  
+  
+  AutoSafeJSContext cx;
+
   nsTArray<RefPtr<nsDOMMutationObserver> >* suppressedObservers = nullptr;
 
   while (sScheduledMutationObservers) {
@@ -905,6 +910,7 @@ nsDOMMutationObserver::HandleMutationsInternal()
       }
     }
     delete observers;
+    JS_CheckForInterrupt(cx);
   }
 
   if (suppressedObservers) {
