@@ -30,8 +30,7 @@ add_task(function* () {
       category: CATEGORY_SERVER,
       severity: SEVERITY_LOG,
     }],
-  })
-
+  });
   
   hud.setFilterState("serverlog", false);
   yield updateServerLoggingListener(hud);
@@ -49,11 +48,10 @@ add_task(function* () {
   yield updateServerLoggingListener(hud);
 
   BrowserReloadSkipCache();
-
   
   
-  let text = "Object { best: \"Firefox\", reckless: \"Chrome\", new_ie: \"Safari\", new_new_ie: \"Edge\" }";
-
+  let text = "Object { best: \"Firefox\", reckless: \"Chrome\", " +
+    "new_ie: \"Safari\", new_new_ie: \"Edge\" }";
   yield waitForMessages({
     webconsole: hud,
     messages: [{
@@ -61,8 +59,7 @@ add_task(function* () {
       category: CATEGORY_SERVER,
       severity: SEVERITY_LOG,
     }],
-  })
-
+  });
   
   hud.setFilterState("serverlog", false);
   yield updateServerLoggingListener(hud);
