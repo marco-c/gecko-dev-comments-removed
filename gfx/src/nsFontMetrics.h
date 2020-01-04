@@ -77,6 +77,11 @@ public:
     
 
 
+    nscoord CapHeight();
+
+    
+
+
 
 
     nscoord SuperscriptOffset();

@@ -3461,10 +3461,16 @@ gfxFont::InitMetricsFromSfntTables(Metrics& aMetrics)
             reinterpret_cast<const OS2Table*>(hb_blob_get_data(os2Table, &len));
         
         
-        if (len >= offsetof(OS2Table, sxHeight) + sizeof(int16_t) &&
-            uint16_t(os2->version) >= 2 && int16_t(os2->sxHeight) > 0) {
+        if (uint16_t(os2->version) >= 2) {
             
-            SET_SIGNED(xHeight, os2->sxHeight);
+            if (len >= offsetof(OS2Table, sxHeight) + sizeof(int16_t) &&
+                int16_t(os2->sxHeight) > 0) {
+                SET_SIGNED(xHeight, os2->sxHeight);
+            }
+            if (len >= offsetof(OS2Table, sCapHeight) + sizeof(int16_t) &&
+                int16_t(os2->sCapHeight) > 0) {
+                SET_SIGNED(capHeight, os2->sCapHeight);
+            }
         }
         
         if (len >= offsetof(OS2Table, sTypoLineGap) + sizeof(int16_t)) {
@@ -3510,6 +3516,12 @@ void gfxFont::CalculateDerivedMetrics(Metrics& aMetrics)
         
         
         aMetrics.xHeight = aMetrics.maxAscent * DEFAULT_XHEIGHT_FACTOR;
+    }
+
+    
+    
+    if (aMetrics.capHeight <= 0) {
+        aMetrics.capHeight = aMetrics.maxAscent;
     }
 
     aMetrics.maxHeight = aMetrics.maxAscent + aMetrics.maxDescent;
@@ -3774,6 +3786,7 @@ gfxFont::CreateVerticalMetrics()
     metrics->zeroOrAveCharWidth = metrics->aveCharWidth;
     metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
     metrics->xHeight = metrics->emHeight / 2;
+    metrics->capHeight = metrics->maxAscent;
 
     return metrics;
 }
