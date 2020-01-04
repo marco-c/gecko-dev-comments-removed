@@ -30,24 +30,12 @@ class ChildProcess {
   ChildThread* child_thread() { return child_thread_.get(); }
 
   
-  
-  
-  
-  void AddRefProcess();
-  void ReleaseProcess();
-
-  
   static ChildProcess* current() { return child_process_; }
 
  private:
   
   
   mozilla::UniquePtr<ChildThread> child_thread_;
-
-  int ref_count_;
-
-  
-  base::WaitableEvent shutdown_event_;
 
   
   static ChildProcess* child_process_;
