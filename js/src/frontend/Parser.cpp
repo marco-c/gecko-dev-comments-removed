@@ -170,15 +170,49 @@ ParseContext::Scope::removeVarForAnnexBLexicalFunction(ParseContext* pc, JSAtom*
     pc->removeInnerFunctionBoxesForAnnexB(name);
 }
 
+#ifdef DEBUG
+static bool
+DeclarationKindIsCatchParameter(DeclarationKind kind)
+{
+    return kind == DeclarationKind::SimpleCatchParameter ||
+           kind == DeclarationKind::CatchParameter;
+}
+#endif
+
+bool
+ParseContext::Scope::addCatchParameters(ParseContext* pc, Scope& catchParamScope)
+{
+    if (pc->useAsmOrInsideUseAsm())
+        return true;
+
+    for (DeclaredNameMap::Range r = catchParamScope.declared_->all(); !r.empty(); r.popFront()) {
+        DeclarationKind kind = r.front().value()->kind();
+        MOZ_ASSERT(DeclarationKindIsCatchParameter(kind));
+        JSAtom* name = r.front().key();
+        AddDeclaredNamePtr p = lookupDeclaredNameForAdd(name);
+        MOZ_ASSERT(!p);
+        if (!addDeclaredName(pc, p, name, kind))
+            return false;
+    }
+
+    return true;
+}
+
 void
-ParseContext::Scope::removeSimpleCatchParameter(ParseContext* pc, JSAtom* name)
+ParseContext::Scope::removeCatchParameters(ParseContext* pc, Scope& catchParamScope)
 {
     if (pc->useAsmOrInsideUseAsm())
         return;
 
-    DeclaredNamePtr p = declared_->lookup(name);
-    MOZ_ASSERT(p && p->value()->kind() == DeclarationKind::SimpleCatchParameter);
-    declared_->remove(p);
+    for (DeclaredNameMap::Range r = catchParamScope.declared_->all(); !r.empty(); r.popFront()) {
+        DeclaredNamePtr p = declared_->lookup(r.front().key());
+        MOZ_ASSERT(p);
+
+        
+        
+        if (DeclarationKindIsCatchParameter(r.front().value()->kind()))
+            declared_->remove(p);
+    }
 }
 
 void
@@ -5974,8 +6008,6 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
 
             MUST_MATCH_TOKEN(TOK_LP, JSMSG_PAREN_BEFORE_CATCH);
 
-            RootedPropertyName simpleCatchParam(context);
-
             if (!tokenStream.getToken(&tt))
                 return null();
             Node catchName;
@@ -5998,17 +6030,15 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
                 if (!checkYieldNameValidity())
                     return null();
                 MOZ_FALLTHROUGH;
-              case TOK_NAME:
-                simpleCatchParam = tokenStream.currentName();
-                catchName = newName(simpleCatchParam);
+              case TOK_NAME: {
+                RootedPropertyName param(context, tokenStream.currentName());
+                catchName = newName(param);
                 if (!catchName)
                     return null();
-                if (!noteDeclaredName(simpleCatchParam, DeclarationKind::SimpleCatchParameter,
-                                      pos()))
-                {
+                if (!noteDeclaredName(param, DeclarationKind::SimpleCatchParameter, pos()))
                     return null();
-                }
                 break;
+              }
 
               default:
                 report(ParseError, false, null(), JSMSG_CATCH_IDENTIFIER);
@@ -6035,7 +6065,7 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
 
             MUST_MATCH_TOKEN(TOK_LC, JSMSG_CURLY_BEFORE_CATCH);
 
-            Node catchBody = catchBlockStatement(yieldHandling, simpleCatchParam);
+            Node catchBody = catchBlockStatement(yieldHandling, scope);
             if (!catchBody)
                 return null();
 
@@ -6089,7 +6119,7 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
 template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::catchBlockStatement(YieldHandling yieldHandling,
-                                          HandlePropertyName simpleCatchParam)
+                                          ParseContext::Scope& catchParamScope)
 {
     ParseContext::Statement stmt(pc, StatementKind::Block);
 
@@ -6097,35 +6127,25 @@ Parser<ParseHandler>::catchBlockStatement(YieldHandling yieldHandling,
     
     
     
-    Node body;
-    if (simpleCatchParam) {
-        ParseContext::Scope scope(this);
-        if (!scope.init(pc))
-            return null();
+    ParseContext::Scope scope(this);
+    if (!scope.init(pc))
+        return null();
 
-        
-        
-        if (!noteDeclaredName(simpleCatchParam, DeclarationKind::SimpleCatchParameter, pos()))
-            return null();
+    
+    
+    if (!scope.addCatchParameters(pc, catchParamScope))
+        return null();
 
-        Node list = statementList(yieldHandling);
-        if (!list)
-            return null();
-
-        
-        
-        scope.removeSimpleCatchParameter(pc, simpleCatchParam);
-
-        body = finishLexicalScope(scope, list);
-    } else {
-        body = statementList(yieldHandling);
-    }
-    if (!body)
+    Node list = statementList(yieldHandling);
+    if (!list)
         return null();
 
     MUST_MATCH_TOKEN_MOD(TOK_RC, TokenStream::Operand, JSMSG_CURLY_AFTER_CATCH);
 
-    return body;
+    
+    
+    scope.removeCatchParameters(pc, catchParamScope);
+    return finishLexicalScope(scope, list);
 }
 
 template <typename ParseHandler>

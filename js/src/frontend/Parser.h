@@ -156,7 +156,8 @@ class ParseContext : public Nestable<ParseContext>
 
         
         
-        void removeSimpleCatchParameter(ParseContext* pc, JSAtom* name);
+        bool addCatchParameters(ParseContext* pc, Scope& catchParamScope);
+        void removeCatchParameters(ParseContext* pc, Scope& catchParamScope);
 
         void useAsVarScope(ParseContext* pc) {
             MOZ_ASSERT(!pc->varScope_);
@@ -1042,7 +1043,7 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     Node withStatement(YieldHandling yieldHandling);
     Node throwStatement(YieldHandling yieldHandling);
     Node tryStatement(YieldHandling yieldHandling);
-    Node catchBlockStatement(YieldHandling yieldHandling, HandlePropertyName simpleCatchParam);
+    Node catchBlockStatement(YieldHandling yieldHandling, ParseContext::Scope& catchParamScope);
     Node debuggerStatement();
 
     Node variableStatement(YieldHandling yieldHandling);
