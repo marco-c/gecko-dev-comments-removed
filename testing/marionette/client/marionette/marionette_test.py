@@ -691,10 +691,17 @@ class MarionetteTestCase(CommonTestCase):
 
     def tearDown(self):
         if not self.marionette.check_for_crash():
-           self.marionette.clear_imported_scripts()
-           self.marionette.execute_script("log('TEST-END: %s:%s')" %
-                                          (self.filepath.replace('\\', '\\\\'), self.methodName))
-        self.marionette.test_name = None
+            try:
+                self.marionette.clear_imported_scripts()
+                self.marionette.execute_script("log('TEST-END: %s:%s')" %
+                                               (self.filepath.replace('\\', '\\\\'),
+                                                self.methodName))
+                self.marionette.test_name = None
+            except:
+                
+                
+                pass
+
         CommonTestCase.tearDown(self)
 
     def get_new_emulator(self):
