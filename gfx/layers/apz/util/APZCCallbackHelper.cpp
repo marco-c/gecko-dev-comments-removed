@@ -210,7 +210,7 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
     
     
 
-    float presShellResolution = nsLayoutUtils::GetResolution(shell);
+    float presShellResolution = shell->GetResolution();
 
     
     
@@ -224,7 +224,7 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
     
     presShellResolution = aMetrics.GetPresShellResolution()
                         * aMetrics.GetAsyncZoom().scale;
-    nsLayoutUtils::SetResolutionAndScaleTo(shell, presShellResolution);
+    shell->SetResolutionAndScaleTo(presShellResolution);
   }
 
   

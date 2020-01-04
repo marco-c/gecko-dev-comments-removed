@@ -2740,19 +2740,6 @@ public:
 
 
 
-  static float GetResolution(nsIPresShell* aPresShell);
-
-  
-
-
-
-
-  static void SetResolutionAndScaleTo(nsIPresShell* aPresShell, float aResolution);
-
-  
-
-
-
 
   static void SetScrollPositionClampingScrollPortSize(nsIPresShell* aPresShell,
                                                       CSSSize aSize);
