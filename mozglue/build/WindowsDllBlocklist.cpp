@@ -183,6 +183,10 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "nlsp.dll", MAKE_VERSION(6, 23, 2012, 19) },
 
+  
+  { "grabdll.dll", MAKE_VERSION(2, 6, 1, 0) },
+  { "grabkernel.dll", MAKE_VERSION(1, 0, 0, 1) },
+
   { nullptr, 0 }
 };
 
