@@ -98,6 +98,12 @@ class MessageListener
         return RIPChildWins;
     }
 
+    
+
+
+
+    virtual bool HandleWindowsMessages(const Message& aMsg) const { return true; }
+
     virtual void OnEnteredSyncSend() {
     }
     virtual void OnExitedSyncSend() {

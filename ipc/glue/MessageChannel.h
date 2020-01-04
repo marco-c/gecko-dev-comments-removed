@@ -278,7 +278,7 @@ class MessageChannel : HasResultCodes
     
     
     
-    bool WaitForSyncNotify();
+    bool WaitForSyncNotify(bool aHandleWindowsMessages);
     bool WaitForInterruptNotify();
 
     bool WaitResponse(bool aWaitTimedOut);

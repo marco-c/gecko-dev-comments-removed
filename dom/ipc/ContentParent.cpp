@@ -24,6 +24,7 @@
 
 #include <set>
 
+#include "mozilla/a11y/PDocAccessible.h"
 #include "AppProcessChecker.h"
 #include "AudioChannelService.h"
 #include "BlobParent.h"
@@ -5475,4 +5476,20 @@ ParentIdleListener::Observe(nsISupports*, const char* aTopic, const char16_t* aD
                                                        nsDependentCString(aTopic),
                                                        nsDependentString(aData));
     return NS_OK;
+}
+
+bool
+ContentParent::HandleWindowsMessages(const Message& aMsg) const
+{
+  MOZ_ASSERT(aMsg.is_sync());
+
+  
+  
+  
+  if (a11y::PDocAccessible::PDocAccessibleStart < aMsg.type() &&
+      a11y::PDocAccessible::PDocAccessibleEnd > aMsg.type()) {
+    return false;
+  }
+
+  return true;
 }
