@@ -3716,7 +3716,7 @@ nsIDocument::ShouldThrottleFrameRequests()
     return false;
   }
 
-  if (Hidden()) {
+  if (!mIsShowing) {
     
     return true;
   }
