@@ -33,7 +33,7 @@ protected:
   virtual ~nsCheckSummedOutputStream() { nsSafeFileOutputStream::Close(); }
 
   nsCOMPtr<nsICryptoHash> mHash;
-  nsAutoCString mCheckSum;
+  nsCString mCheckSum;
 };
 
 

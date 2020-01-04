@@ -433,7 +433,7 @@ private:
   
 
 
-  nsAutoCString mHash;
+  nsCString mHash;
 
   
 
