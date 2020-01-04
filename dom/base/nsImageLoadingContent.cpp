@@ -757,6 +757,13 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
     return NS_OK;
   }
 
+  if (aNewURI.IsEmpty()) {
+    
+    CancelImageRequests(aNotify);
+    FireEvent(NS_LITERAL_STRING("error"));
+    return NS_OK;
+  }
+
   
   nsCOMPtr<nsIURI> imageURI;
   nsresult rv = StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
@@ -765,24 +772,6 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
     CancelImageRequests(aNotify);
     FireEvent(NS_LITERAL_STRING("error"));
     FireEvent(NS_LITERAL_STRING("loadend"));
-    return NS_OK;
-  }
-
-  bool equal;
-
-  if (aNewURI.IsEmpty() &&
-      doc->GetDocumentURI() &&
-      NS_SUCCEEDED(doc->GetDocumentURI()->EqualsExceptRef(imageURI, &equal)) &&
-      equal)  {
-
-    
-    
-    
-    
-    
-    
-    
-    CancelImageRequests(aNotify);
     return NS_OK;
   }
 
