@@ -1843,11 +1843,10 @@ nsLayoutUtils::GetAnimatedGeometryRootForFrame(nsDisplayListBuilder* aBuilder,
 
 nsIFrame*
 nsLayoutUtils::GetAnimatedGeometryRootFor(nsDisplayItem* aItem,
-                                          nsDisplayListBuilder* aBuilder,
-                                          LayerManager* aManager)
+                                          nsDisplayListBuilder* aBuilder)
 {
   nsIFrame* f = aItem->Frame();
-  if (aItem->ShouldFixToViewport(aManager)) {
+  if (aItem->ShouldFixToViewport(aBuilder)) {
     
     
     
