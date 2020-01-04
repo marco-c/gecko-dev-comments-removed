@@ -10543,7 +10543,7 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
                  "ProcessChildren() codepath for this frame");
 #endif
     
-    MOZ_ASSERT_IF(content->IsStyledByServo(), !!content->GetServoNodeData());
+    MOZ_ASSERT_IF(content->IsStyledByServo(), !!content->ServoData());
     
     MOZ_ASSERT_IF(!content->IsStyledByServo(),
                   !content->IsElement() ||
