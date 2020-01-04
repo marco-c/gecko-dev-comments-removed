@@ -972,6 +972,15 @@ SpecialPowersAPI.prototype = {
 
 
 
+  _resolveAndCallOptionalCallback(resolveFn, callback = null) {
+    resolveFn();
+
+    if (callback) {
+      callback();
+    }
+  },
+
+  
 
 
 
@@ -997,7 +1006,10 @@ SpecialPowersAPI.prototype = {
 
 
 
-  pushPrefEnv: function(inPrefs, callback) {
+
+
+
+  pushPrefEnv: function(inPrefs, callback = null) {
     var prefs = Services.prefs;
 
     var pref_string = [];
@@ -1065,40 +1077,49 @@ SpecialPowersAPI.prototype = {
       }
     }
 
-    if (pendingActions.length > 0) {
-      
-      
-      
-      
-      
-      
-      
-      this._prefEnvUndoStack.push(cleanupActions);
-      this._pendingPrefs.push([pendingActions,
-                               this._delayCallbackTwice(callback)]);
-      this._applyPrefs();
-    } else {
-      this._setTimeout(callback);
-    }
+    return new Promise(resolve => {
+      let done = this._resolveAndCallOptionalCallback.bind(this, resolve, callback);
+      if (pendingActions.length > 0) {
+        
+        
+        
+        
+        
+        
+        
+        this._prefEnvUndoStack.push(cleanupActions);
+        this._pendingPrefs.push([pendingActions,
+                                 this._delayCallbackTwice(done)]);
+        this._applyPrefs();
+      } else {
+        this._setTimeout(done);
+      }
+    });
   },
 
-  popPrefEnv: function(callback) {
-    if (this._prefEnvUndoStack.length > 0) {
-      
-      let cb = callback ? this._delayCallbackTwice(callback) : null;
-      
-      this._pendingPrefs.push([this._prefEnvUndoStack.pop(), cb]);
-      this._applyPrefs();
-    } else {
-      this._setTimeout(callback);
-    }
+  popPrefEnv: function(callback = null) {
+    return new Promise(resolve => {
+      let done = this._resolveAndCallOptionalCallback.bind(this, resolve, callback);
+      if (this._prefEnvUndoStack.length > 0) {
+        
+        let cb = this._delayCallbackTwice(done);
+        
+        this._pendingPrefs.push([this._prefEnvUndoStack.pop(), cb]);
+        this._applyPrefs();
+      } else {
+        this._setTimeout(done);
+      }
+    });
   },
 
-  flushPrefEnv: function(callback) {
+  flushPrefEnv: function(callback = null) {
     while (this._prefEnvUndoStack.length > 1)
       this.popPrefEnv(null);
 
-    this.popPrefEnv(callback);
+    return new Promise(resolve => {
+      let done = this._resolveAndCallOptionalCallback.bind(this, resolve, callback);
+      this.popPrefEnv(done);
+    });
   },
 
   
