@@ -331,6 +331,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     virtual nsContentPolicyType GetContentPolicyType() const = 0;
 
+    
+    
+    
+    
+    bool                        mRewrittenYoutubeEmbed : 1;
+
   private:
 
     
@@ -519,7 +525,27 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     nsPluginFrame* GetExistingFrame();
 
-    bool IsYoutubeEmbed();
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool ShouldRewriteYoutubeEmbed(nsIURI* uri);
 
     
     class SetupProtoChainRunner final : public nsIRunnable

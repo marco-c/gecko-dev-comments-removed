@@ -5146,3 +5146,7 @@ pref("webextensions.tests", false);
 
 
 pref("dom.input.fallbackUploadDir", "");
+
+
+pref("plugins.rewrite_youtube_embeds", true);
+
