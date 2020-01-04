@@ -311,7 +311,11 @@ def main(argv):
     file_count = 0
     t_start = time.time()
     with open(args.outputfile, 'wb') as fh:
-        with JarWriter(fileobj=fh, optimize=False) as writer:
+        
+        
+        
+        
+        with JarWriter(fileobj=fh, optimize=False, compress_level=5) as writer:
             res = find_files(args.archive)
             for p, f in res:
                 file_count += 1
