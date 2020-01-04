@@ -1324,10 +1324,13 @@ public:
 
 
 
-  enum IntrinsicISizeType { MIN_ISIZE, PREF_ISIZE };
+  enum class IntrinsicISizeType { MIN_ISIZE, PREF_ISIZE };
+  static const auto MIN_ISIZE = IntrinsicISizeType::MIN_ISIZE;
+  static const auto PREF_ISIZE = IntrinsicISizeType::PREF_ISIZE;
   enum {
     IGNORE_PADDING = 0x01,
     BAIL_IF_REFLOW_NEEDED = 0x02, 
+    MIN_INTRINSIC_ISIZE = 0x04, 
   };
   static nscoord IntrinsicForAxis(mozilla::PhysicalAxis aAxis,
                                   nsRenderingContext*   aRenderingContext,
@@ -1343,6 +1346,16 @@ public:
                                        uint32_t            aFlags = 0);
 
   
+
+
+
+
+
+
+
+
+
+
 
 
 
