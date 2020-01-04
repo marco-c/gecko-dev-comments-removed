@@ -327,9 +327,12 @@ Animation::Finish(ErrorResult& aRv)
     return;
   }
 
+  AutoMutationBatchForAnimation mb(*this);
+
+  
   TimeDuration limit =
     mPlaybackRate > 0 ? TimeDuration(EffectEnd()) : TimeDuration(0);
-
+  bool didChange = GetCurrentTime() != Nullable<TimeDuration>(limit);
   SilentlySetCurrentTime(limit);
 
   
@@ -344,6 +347,7 @@ Animation::Finish(ErrorResult& aRv)
       !mTimeline->GetCurrentTime().IsNull()) {
     mStartTime.SetValue(mTimeline->GetCurrentTime().Value() -
                         limit.MultDouble(1.0 / mPlaybackRate));
+    didChange = true;
   }
 
   
@@ -357,11 +361,15 @@ Animation::Finish(ErrorResult& aRv)
       mHoldTime.SetNull();
     }
     CancelPendingTasks();
+    didChange = true;
     if (mReady) {
       mReady->MaybeResolve(this);
     }
   }
   UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Sync);
+  if (didChange && IsRelevant()) {
+    nsNodeUtils::AnimationChanged(this);
+  }
   PostUpdate();
 }
 
