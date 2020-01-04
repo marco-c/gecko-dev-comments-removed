@@ -12,6 +12,10 @@ function snapshotWindow(win, withCaret) {
   return SpecialPowers.snapshotWindow(win, withCaret);
 }
 
+function snapshotRect(win, rect) {
+  return SpecialPowers.snapshotRect(win, rect);
+}
+
 
 
 
