@@ -32,8 +32,13 @@
 #include "nsIChannelEventSink.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "mozilla/LoadInfo.h"
+#include "nsISiteSecurityService.h"
 
 #include "mozilla/Logging.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/URIUtils.h"
+
 
 using namespace mozilla;
 
@@ -381,7 +386,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   *aDecision = REJECT_REQUEST;
 
-
   
   
   
@@ -719,6 +723,33 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   nsresult stateRV = securityUI->GetState(&state);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool active = (classification == eMixedScript);
+  if (!aHadInsecureImageRedirect) {
+    if (XRE_IsParentProcess()) {
+      AccumulateMixedContentHSTS(aContentLocation, active);
+    } else {
+      
+      mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
+      if (cc) {
+        mozilla::ipc::URIParams uri;
+        SerializeURI(aContentLocation, uri);
+        cc->SendAccumulateMixedContentHSTS(uri, active);
+      }
+    }
+  }
+
+  
   if (sBlockMixedDisplay && classification == eMixedDisplay) {
     if (allowMixedContent) {
       LogMixedContentMessage(classification, aContentLocation, rootDoc, eUserOverride);
@@ -856,4 +887,55 @@ nsMixedContentBlocker::ShouldProcess(uint32_t aContentType,
   return ShouldLoad(aContentType, aContentLocation, aRequestingLocation,
                     aRequestingContext, aMimeGuess, aExtra, aRequestPrincipal,
                     aDecision);
+}
+
+enum MixedContentHSTSState {
+  MCB_HSTS_PASSIVE_NO_HSTS   = 0,
+  MCB_HSTS_PASSIVE_WITH_HSTS = 1,
+  MCB_HSTS_ACTIVE_NO_HSTS    = 2,
+  MCB_HSTS_ACTIVE_WITH_HSTS  = 3
+};
+
+
+
+void
+nsMixedContentBlocker::AccumulateMixedContentHSTS(nsIURI* aURI, bool aActive)
+{
+  
+  
+  if (!XRE_IsParentProcess()) {
+    MOZ_ASSERT(false);
+    return;
+  }
+
+  bool hsts;
+  nsresult rv;
+  nsCOMPtr<nsISiteSecurityService> sss = do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, 0, &hsts);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (!aActive) {
+    if (!hsts) {
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
+                            MCB_HSTS_PASSIVE_NO_HSTS);
+    }
+    else {
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
+                            MCB_HSTS_PASSIVE_WITH_HSTS);
+    }
+  } else {
+    if (!hsts) {
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
+                            MCB_HSTS_ACTIVE_NO_HSTS);
+    }
+    else {
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
+                            MCB_HSTS_ACTIVE_WITH_HSTS);
+    }
+  }
 }
