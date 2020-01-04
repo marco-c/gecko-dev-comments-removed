@@ -19,6 +19,7 @@
 #include "jswrapper.h"
 
 #include "asmjs/WasmJS.h"
+#include "builtin/Promise.h"
 #include "ds/TraceableFifo.h"
 #include "gc/Barrier.h"
 #include "js/Debug.h"
@@ -1309,6 +1310,9 @@ class DebuggerObject : public NativeObject
 #endif 
     JSAtom* name() const;
     JSAtom* displayName() const;
+#ifdef SPIDERMONKEY_PROMISE
+    JS::PromiseState promiseState() const;
+#endif 
 
   private:
     enum {
@@ -1333,8 +1337,15 @@ class DebuggerObject : public NativeObject
 
     Debugger* owner() const;
 
+#ifdef SPIDERMONKEY_PROMISE
+    PromiseObject* promise() const;
+#endif 
+
     static DebuggerObject* checkThis(JSContext* cx, const CallArgs& args, const char* fnname);
     static MOZ_MUST_USE bool requireGlobal(JSContext* cx, HandleDebuggerObject object);
+#ifdef SPIDERMONKEY_PROMISE
+    static MOZ_MUST_USE bool requirePromise(JSContext* cx, HandleDebuggerObject object);
+#endif 
 
     static MOZ_MUST_USE bool construct(JSContext* cx, unsigned argc, Value* vp);
 
