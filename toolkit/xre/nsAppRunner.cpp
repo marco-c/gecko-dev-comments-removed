@@ -93,6 +93,8 @@
 #include "mozilla/scache/StartupCache.h"
 #include "gfxPrefs.h"
 
+#include "base/histogram.h"
+
 #include "mozilla/unused.h"
 
 #ifdef XP_WIN
@@ -4569,7 +4571,10 @@ XRE_CreateStatsObject()
 {
   
   
-  Telemetry::CreateStatisticsRecorder();
+  
+  base::StatisticsRecorder* statistics_recorder = new base::StatisticsRecorder();
+  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(statistics_recorder);
+  Unused << statistics_recorder;
 }
 
 int

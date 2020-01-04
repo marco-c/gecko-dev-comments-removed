@@ -45,6 +45,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Mutex.h"
 
 #include <map>
 #include <string>
@@ -54,6 +55,9 @@
 #include "base/lock.h"
 
 namespace base {
+
+using mozilla::OffTheBooksMutex;
+using mozilla::OffTheBooksMutexAutoLock;
 
 
 
@@ -325,6 +329,18 @@ class Histogram {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
 
     
     void Resize(const Histogram& histogram);
@@ -337,19 +353,37 @@ class Histogram {
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-    Count counts(size_t i) const {
+    
+    
+    
+    
+
+    Count counts(const OffTheBooksMutexAutoLock& ev, size_t i) const {
        return counts_[i];
     }
-    Count TotalCount() const;
-    int64_t sum() const {
+    Count TotalCount(const OffTheBooksMutexAutoLock& ev) const;
+    int64_t sum(const OffTheBooksMutexAutoLock& ev) const {
        return sum_;
     }
-    int64_t redundant_count() const {
+    int64_t redundant_count(const OffTheBooksMutexAutoLock& ev) const {
        return redundant_count_;
     }
-    size_t size() const {
+    size_t size(const OffTheBooksMutexAutoLock& ev) const {
        return counts_.size();
     }
+
+    
+    
+    const SampleSet& operator=(const SampleSet& other) {
+       counts_          = other.counts_;
+       sum_             = other.sum_;
+       redundant_count_ = other.redundant_count_;
+       return *this;
+    }
+
+   private:
+    void Accumulate(const OffTheBooksMutexAutoLock& ev,
+                    Sample value, Count count, size_t index);
 
    protected:
     
@@ -368,6 +402,13 @@ class Histogram {
     
     
     int64_t redundant_count_;
+
+   private:
+    
+    mutable OffTheBooksMutex mutex_;
+
+   public:
+    OffTheBooksMutex& mutex() const { return mutex_; }
   };
 
   
@@ -425,7 +466,9 @@ class Histogram {
   
   
   
-  virtual Inconsistencies FindCorruption(const SampleSet& snapshot) const;
+  virtual Inconsistencies FindCorruption(const SampleSet& snapshot,
+                                         const OffTheBooksMutexAutoLock&
+                                               snapshotLockEvidence) const;
 
   
   
@@ -516,10 +559,13 @@ class Histogram {
   
 
   
-  double GetPeakBucketSize(const SampleSet& snapshot) const;
+  double GetPeakBucketSize(const SampleSet& snapshot,
+                           const OffTheBooksMutexAutoLock&
+                                 snapshotLockEvidence) const;
 
   
   void WriteAsciiHeader(const SampleSet& snapshot,
+                        const OffTheBooksMutexAutoLock& snapshotLockEvidence,
                         Count sample_count, std::string* output) const;
 
   
