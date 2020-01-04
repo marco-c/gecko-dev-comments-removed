@@ -55,6 +55,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 Components.utils.import("resource://gre/modules/Sqlite.jsm");
 Components.utils.import("resource://gre/modules/Task.jsm");
 
+const SQLITE_PATH = "kinto.sqlite";
+
 const statements = {
   "createCollectionData": `
     CREATE TABLE collection_data (
@@ -158,7 +160,7 @@ class FirefoxAdapter extends _base2.default {
   open() {
     const self = this;
     return Task.spawn(function* () {
-      const opts = { path: "kinto.sqlite", sharedMemoryCache: false };
+      const opts = { path: SQLITE_PATH, sharedMemoryCache: false };
       if (!self._connection) {
         self._connection = yield Sqlite.openConnection(opts).then(self._init);
       }
@@ -346,7 +348,7 @@ function transactionProxy(collection, preloaded) {
   };
 }
 
-},{"../src/adapters/base":6,"../src/utils":8}],2:[function(require,module,exports){
+},{"../src/adapters/base":5,"../src/utils":7}],2:[function(require,module,exports){
 
 
 
@@ -444,135 +446,9 @@ if (typeof module === "object") {
   module.exports = loadKinto;
 }
 
-},{"../src/KintoBase":5,"../src/adapters/base":6,"../src/utils":8,"./FirefoxStorage":1}],3:[function(require,module,exports){
+},{"../src/KintoBase":4,"../src/adapters/base":5,"../src/utils":7,"./FirefoxStorage":1}],3:[function(require,module,exports){
 
 },{}],4:[function(require,module,exports){
-'use strict'
-
-function isArguments (object) {
-  return Object.prototype.toString.call(object) === '[object Arguments]'
-}
-
-function deeper (a, b) {
-  return deeper_(a, b, [], [])
-}
-
-module.exports = deeper
-
-try {
-  deeper.fastEqual = require('buffertools').equals
-} catch (e) {
-  
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function deeper_ (a, b, ca, cb) {
-  if (a === b) {
-    return true
-  } else if (typeof a !== 'object' || typeof b !== 'object') {
-    return false
-  } else if (a === null || b === null) {
-    return false
-  } else if (Buffer.isBuffer(a) && Buffer.isBuffer(b)) {
-    if (a.equals) {
-      return a.equals(b)
-    } else if (deeper.fastEqual) {
-      return deeper.fastEqual.call(a, b)
-    } else {
-      if (a.length !== b.length) return false
-
-      for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
-
-      return true
-    }
-  } else if (a instanceof Date && b instanceof Date) {
-    return a.getTime() === b.getTime()
-  } else if (a instanceof RegExp && b instanceof RegExp) {
-    return a.source === b.source &&
-    a.global === b.global &&
-    a.multiline === b.multiline &&
-    a.lastIndex === b.lastIndex &&
-    a.ignoreCase === b.ignoreCase
-  } else if (isArguments(a) || isArguments(b)) {
-    if (!(isArguments(a) && isArguments(b))) return false
-
-    var slice = Array.prototype.slice
-    return deeper_(slice.call(a), slice.call(b), ca, cb)
-  } else {
-    if (a.constructor !== b.constructor) return false
-
-    var ka = Object.keys(a)
-    var kb = Object.keys(b)
-    
-    if (ka.length === 0 && kb.length === 0) return true
-    if (ka.length !== kb.length) return false
-
-    var cal = ca.length
-    while (cal--) if (ca[cal] === a) return cb[cal] === b
-    ca.push(a); cb.push(b)
-
-    ka.sort(); kb.sort()
-    for (var j = ka.length - 1; j >= 0; j--) if (ka[j] !== kb[j]) return false
-
-    var key
-    for (var k = ka.length - 1; k >= 0; k--) {
-      key = ka[k]
-      if (!deeper_(a[key], b[key], ca, cb)) return false
-    }
-
-    ca.pop(); cb.pop()
-
-    return true
-  }
-}
-
-},{"buffertools":3}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -683,7 +559,7 @@ class KintoBase {
 }
 exports.default = KintoBase;
 
-},{"./adapters/base":6,"./collection":7}],6:[function(require,module,exports){
+},{"./adapters/base":5,"./collection":6}],5:[function(require,module,exports){
 "use strict";
 
 
@@ -793,7 +669,7 @@ class BaseAdapter {
 }
 exports.default = BaseAdapter;
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -809,10 +685,6 @@ var _base2 = _interopRequireDefault(_base);
 var _utils = require("./utils");
 
 var _uuid = require("uuid");
-
-var _deeper = require("deeper");
-
-var _deeper2 = _interopRequireDefault(_deeper);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -944,7 +816,7 @@ function importChange(transaction, remote) {
     transaction.create(synced);
     return { type: "created", data: synced };
   }
-  const identical = (0, _deeper2.default)(cleanRecord(local), cleanRecord(remote));
+  const identical = (0, _utils.deepEqual)(cleanRecord(local), cleanRecord(remote));
   if (local._status !== "synced") {
     
     if (local._status === "deleted") {
@@ -1401,10 +1273,13 @@ class Collection {
           });
         }, { preload: existingRecords });
       }).catch(err => {
+        const data = {
+          type: "incoming",
+          message: err.message,
+          stack: err.stack
+        };
         
-        err.type = "incoming";
-        
-        return [{ type: "errors", data: err }];
+        return [{ type: "errors", data }];
       }).then(imports => {
         for (let imported of imports) {
           if (imported.type !== "void") {
@@ -1778,7 +1653,7 @@ class Collection {
 }
 exports.default = Collection;
 
-},{"./adapters/base":6,"./utils":8,"deeper":4,"uuid":3}],8:[function(require,module,exports){
+},{"./adapters/base":5,"./utils":7,"uuid":3}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1790,6 +1665,7 @@ exports.reduceRecords = reduceRecords;
 exports.isUUID = isUUID;
 exports.waterfall = waterfall;
 exports.pFinally = pFinally;
+exports.deepEqual = deepEqual;
 const RE_UUID = exports.RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 
@@ -1897,6 +1773,35 @@ function pFinally(promise, fn) {
   return promise.then(value => Promise.resolve(fn()).then(() => value), reason => Promise.resolve(fn()).then(() => {
     throw reason;
   }));
+}
+
+
+
+
+
+
+
+
+
+function deepEqual(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (typeof a !== typeof b) {
+    return false;
+  }
+  if (!(a instanceof Object) || !(b instanceof Object)) {
+    return false;
+  }
+  if (Object.keys(a).length !== Object.keys(b).length) {
+    return false;
+  }
+  for (let k in a) {
+    if (!deepEqual(a[k], b[k])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 },{}]},{},[2])(2)
