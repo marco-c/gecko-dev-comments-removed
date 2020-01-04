@@ -204,7 +204,7 @@ LoopUnroller::go(LoopIterationBound* bound)
 
     
     
-    CompileInfo& info = oldPreheader->info();
+    const CompileInfo& info = oldPreheader->info();
     if (header->trackedPc()) {
         unrolledHeader =
             MBasicBlock::New(graph, nullptr, info,
