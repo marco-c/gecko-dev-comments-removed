@@ -108,7 +108,7 @@ public:
 private:
   
   static bool IsEnvSet(const char* aName) {
-    char* val = PR_GetEnv(aName);
+    const char* val = PR_GetEnv(aName);
     return (val != 0 && *val != '\0');
   }
 
