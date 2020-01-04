@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 
-
 public class CommandProcessor {
   private static final String LOG_TAG = "Command";
   private static final AtomicInteger currentId = new AtomicInteger();
