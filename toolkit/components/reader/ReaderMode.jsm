@@ -238,10 +238,10 @@ this.ReaderMode = {
         
         
         try {
-          responseURL = Services.io.newURI(responseURL, null, null).spec;
+          responseURL = Services.io.newURI(responseURL, null, null).specIgnoringRef;
         } catch (ex) {  }
         try {
-          givenURL = Services.io.newURI(givenURL, null, null).spec;
+          givenURL = Services.io.newURI(givenURL, null, null).specIgnoringRef;
         } catch (ex) {  }
 
         if (responseURL != givenURL) {
