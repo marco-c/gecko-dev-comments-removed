@@ -192,18 +192,6 @@ var ignoreFunctions = {
     
     "void js::AutoCompartment::~AutoCompartment(int32)" : true,
     "void JSAutoCompartment::~JSAutoCompartment(int32)" : true,
-    "void js::AutoClearTypeInferenceStateOnOOM::~AutoClearTypeInferenceStateOnOOM()" : true,
-
-    
-    
-    
-    
-    "void mozilla::AutoJSContext::AutoJSContext(mozilla::detail::GuardObjectNotifier*)" : true,
-    "void mozilla::AutoSafeJSContext::~AutoSafeJSContext(int32)" : true,
-
-    
-    
-    "void js::AutoCompartment::AutoCompartment(js::ExclusiveContext*, JSCompartment*)": true,
 
     
     
