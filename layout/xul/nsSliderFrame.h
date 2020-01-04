@@ -195,6 +195,10 @@ private:
   
   bool mScrollingWithAPZ;
 
+  
+  
+  bool mSuppressionActive;
+
   static bool gMiddlePref;
   static int32_t gSnapMultiplier;
 }; 
