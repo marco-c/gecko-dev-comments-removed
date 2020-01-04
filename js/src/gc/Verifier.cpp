@@ -498,6 +498,8 @@ CheckHeapTracer::onChild(const JS::GCCellPtr& thing)
 bool
 CheckHeapTracer::check()
 {
+    
+    JS::AutoSuppressGCAnalysis nogc(rt);
     rt->gc.markRuntime(this, GCRuntime::TraceRuntime);
 
     while (!stack.empty()) {
