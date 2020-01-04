@@ -449,7 +449,7 @@ Rule.prototype = {
 
     
     let props = this.style.declarations;
-    if (!props) {
+    if (!props.length) {
       props = parseDeclarations(this.cssProperties.isKnown,
                                 this.style.authoredText, true);
     }
