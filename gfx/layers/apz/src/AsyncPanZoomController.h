@@ -841,9 +841,6 @@ private:
 
 
 private:
-  UniquePtr<InputBlockState> mPanGestureState;
-
-
   
 
 
