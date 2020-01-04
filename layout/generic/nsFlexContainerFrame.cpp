@@ -3484,13 +3484,9 @@ nsFlexContainerFrame::GetMainSizeFromReflowInput(
   if (aAxisTracker.IsRowOriented()) {
     
     
-    
-    
-    
-
-
-
-
+    NS_WARN_IF_FALSE(aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
+                     "Unconstrained inline size; this should only result from "
+                     "huge sizes (not intrinsic sizing w/ orthogonal flows)");
     return aReflowInput.ComputedISize();
   }
 
@@ -3510,8 +3506,6 @@ GetLargestLineMainSize(const FlexLine* aFirstLine)
   }
   return largestLineOuterSize;
 }
-
-
 
 
 
@@ -3593,13 +3587,9 @@ nsFlexContainerFrame::ComputeCrossSize(const ReflowInput& aReflowInput,
   if (aAxisTracker.IsColumnOriented()) {
     
     
-    
-    
-    
-
-
-
-
+    NS_WARN_IF_FALSE(aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
+                     "Unconstrained inline size; this should only result from "
+                     "huge sizes (not intrinsic sizing w/ orthogonal flows)");
     *aIsDefinite = true;
     return aReflowInput.ComputedISize();
   }
