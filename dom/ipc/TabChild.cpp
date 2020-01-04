@@ -1499,11 +1499,6 @@ void
 TabChild::MaybeRequestPreinitCamera()
 {
     
-    
-    if (IsBrowserElement()) {
-      return;
-    }
-
     nsCOMPtr<nsIAppsService> appsService = do_GetService("@mozilla.org/AppsService;1");
     if (NS_WARN_IF(!appsService)) {
       return;
@@ -2254,6 +2249,27 @@ TabChild::RecvHandleAccessKey(nsTArray<uint32_t>&& aCharCodes,
     if (pc) {
       pc->EventStateManager()->HandleAccessKey(pc, aCharCodes, aIsTrusted, aModifierMask);
     }
+  }
+
+  return true;
+}
+
+bool
+TabChild::RecvAudioChannelChangeNotification(const uint32_t& aAudioChannel,
+                                             const float& aVolume,
+                                             const bool& aMuted)
+{
+  nsCOMPtr<nsPIDOMWindow> window = do_GetInterface(WebNavigation());
+  if (window) {
+    RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
+    MOZ_ASSERT(service);
+
+    service->SetAudioChannelVolume(window,
+                                   static_cast<AudioChannel>(aAudioChannel),
+                                   aVolume);
+    service->SetAudioChannelMuted(window,
+                                  static_cast<AudioChannel>(aAudioChannel),
+                                  aMuted);
   }
 
   return true;
