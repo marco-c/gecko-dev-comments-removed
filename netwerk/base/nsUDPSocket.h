@@ -57,6 +57,8 @@ private:
 
   void SaveNetworkStats(bool aEnforce);
 
+  void CloseSocket();
+
   
   
   mozilla::Mutex                       mLock;

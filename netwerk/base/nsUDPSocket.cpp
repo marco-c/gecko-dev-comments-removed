@@ -273,11 +273,7 @@ nsUDPSocket::nsUDPSocket()
 
 nsUDPSocket::~nsUDPSocket()
 {
-  if (mFD) {
-    PR_Close(mFD);
-    mFD = nullptr;
-  }
-
+  CloseSocket();
   MOZ_COUNT_DTOR(nsUDPSocket);
 }
 
@@ -520,8 +516,7 @@ nsUDPSocket::OnSocketDetached(PRFileDesc *fd)
   if (mFD)
   {
     NS_ASSERTION(mFD == fd, "wrong file descriptor");
-    PR_Close(mFD);
-    mFD = nullptr;
+    CloseSocket();
   }
   SaveNetworkStats(true);
 
@@ -719,13 +714,10 @@ nsUDPSocket::Close()
     
     if (!mListener)
     {
-      if (mFD)
-      {
-        
-        
-        PR_Close(mFD);
-        mFD = nullptr;
-      }
+      
+      
+      CloseSocket();
+
       SaveNetworkStats(true);
       return NS_OK;
     }
@@ -780,6 +772,22 @@ nsUDPSocket::SaveNetworkStats(bool aEnforce)
     mByteWriteCount = 0;
   }
 #endif
+}
+
+void
+nsUDPSocket::CloseSocket()
+{
+  if (mFD) {
+    if (gIOService->IsNetTearingDown() &&
+        ((PR_IntervalNow() - gIOService->NetTearingDownStarted()) >
+         gSocketTransportService->MaxTimeForPrClosePref())) {
+      
+      UDPSOCKET_LOG(("Intentional leak"));
+    } else {
+      PR_Close(mFD);
+    }
+    mFD = nullptr;
+  }
 }
 
 NS_IMETHODIMP
