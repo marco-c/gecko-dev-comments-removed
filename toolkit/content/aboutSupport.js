@@ -419,44 +419,6 @@ var snapshotFormatters = {
     }
     delete data.isGPU2Active;
 
-    let featureLog = data.featureLog;
-    delete data.featureLog;
-
-    let features = [];
-    for (let feature of featureLog.features) {
-      
-      
-      if (feature.log.length > 1 || feature.log[0].status != "available") {
-        features.push(feature);
-      }
-    }
-
-    if (features.length) {
-      for (let feature of features) {
-        let trs = [];
-        for (let entry of feature.log) {
-          if (entry.type == "default" && entry.status == "available")
-            continue;
-
-          let text = entry.status + " by " + entry.type + ": " + entry.message;
-          trs.push($.new("tr", [
-            $.new("td", text),
-          ]));
-        }
-        addRow("decisions", feature.name, [$.new("table", trs)]);
-      }
-    } else {
-      $("graphics-decisions-tbody").style.display = "none";
-    }
-
-    if (featureLog.fallbacks.length) {
-      for (let fallback of featureLog.fallbacks) {
-        addRow("workarounds", fallback.name, fallback.message);
-      }
-    } else {
-      $("graphics-workarounds-tbody").style.display = "none";
-    }
-
     
     
     for (let key in data) {
@@ -830,18 +792,8 @@ Serializer.prototype = {
       if (children[0].classList.contains("title-column")) {
         if (!this._isHiddenSubHeading(children[0]))
           this._appendText(rowHeading);
-      } else if (children.length == 1) {
-        
-        this._appendText(rowHeading);
       } else {
-        let childTables = trs[i].querySelectorAll("table");
-        if (childTables.length) {
-          
-          
-          this._appendText(rowHeading + ": ");
-        } else {
-          this._appendText(rowHeading + ": " + this._nodeText(children[1]).trim());
-        }
+        this._appendText(rowHeading + ": " + this._nodeText(children[1]).trim());
       }
       this._startNewLine();
     }

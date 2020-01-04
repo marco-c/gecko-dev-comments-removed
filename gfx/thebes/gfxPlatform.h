@@ -450,8 +450,13 @@ public:
     static bool OffMainThreadCompositingEnabled();
 
     static bool CanUseDirect3D9();
+    static bool CanUseDirect3D11();
     virtual bool CanUseHardwareVideoDecoding();
     static bool CanUseDirect3D11ANGLE();
+
+    
+    
+    bool ShouldUseLayersAcceleration();
 
     
     void GetCompositorBackends(bool useAcceleration, nsTArray<mozilla::layers::LayersBackend>& aBackends);
@@ -660,8 +665,6 @@ protected:
     gfxPlatform();
     virtual ~gfxPlatform();
 
-    virtual void InitAcceleration();
-
     
 
 
@@ -685,13 +688,18 @@ protected:
     
 
 
-
-    virtual bool UpdateDeviceInitData();
+    void UpdateDeviceInitData();
 
     
 
 
     void BumpDeviceCounter();
+
+    
+
+
+    virtual void SetDeviceInitData(mozilla::gfx::DeviceInitData& aData)
+    {}
 
     
 
@@ -720,8 +728,6 @@ protected:
 
     static already_AddRefed<mozilla::gfx::ScaledFont>
       GetScaledFontForFontWithCairoSkia(mozilla::gfx::DrawTarget* aTarget, gfxFont* aFont);
-
-    static mozilla::gfx::DeviceInitData& GetParentDevicePrefs();
 
     int8_t  mAllowDownloadableFonts;
     int8_t  mGraphiteShapingEnabled;
@@ -771,8 +777,6 @@ private:
 
 
     void PopulateScreenInfo();
-
-    void InitCompositorAccelerationPrefs();
 
     RefPtr<gfxASurface> mScreenReferenceSurface;
     nsCOMPtr<nsIObserver> mSRGBOverrideObserver;

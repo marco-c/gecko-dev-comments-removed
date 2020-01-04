@@ -22,7 +22,6 @@
 #include "gfxPrefs.h"
 #include "gfxEnv.h"
 #include "gfxTextRun.h"
-#include "gfxConfig.h"
 
 #ifdef XP_WIN
 #include <process.h>
@@ -152,7 +151,6 @@ void ShutdownTileCache();
 using namespace mozilla;
 using namespace mozilla::layers;
 using namespace mozilla::gl;
-using namespace mozilla::gfx;
 
 gfxPlatform *gPlatform = nullptr;
 static bool gEverInitialized = false;
@@ -170,15 +168,13 @@ static qcms_transform *gCMSRGBATransform = nullptr;
 static bool gCMSInitialized = false;
 static eCMSMode gCMSMode = eCMSMode_Off;
 
-
-
-static DeviceInitData sDeviceInitDataDoNotUseDirectly;
-
 static void ShutdownCMS();
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/SourceSurfaceCairo.h"
 using namespace mozilla::gfx;
+
+void InitLayersAccelerationPrefs();
 
 
 
@@ -605,8 +601,8 @@ gfxPlatform::Init()
       
       forcedPrefs.AppendPrintf("-L%d%d%d%d%d",
                                gfxPrefs::LayersAMDSwitchableGfxEnabled(),
-                               gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly(),
-                               gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly(),
+                               gfxPrefs::LayersAccelerationDisabled(),
+                               gfxPrefs::LayersAccelerationForceEnabled(),
                                gfxPrefs::LayersD3D11DisableWARP(),
                                gfxPrefs::LayersD3D11ForceWARP());
       
@@ -661,7 +657,6 @@ gfxPlatform::Init()
 #else
     #error "No gfxPlatform implementation available"
 #endif
-    gPlatform->InitAcceleration();
 
 #ifdef USE_SKIA
     SkGraphics::Init();
@@ -671,6 +666,7 @@ gfxPlatform::Init()
     GLContext::StaticInit();
 #endif
 
+    InitLayersAccelerationPrefs();
     InitLayersIPC();
 
     gPlatform->PopulateScreenInfo();
@@ -2056,6 +2052,7 @@ gfxPlatform::OptimalFormatForContent(gfxContentType aContent)
 
 
 static bool sLayersSupportsD3D9 = false;
+static bool sLayersSupportsD3D11 = false;
 bool gANGLESupportsD3D11 = false;
 static bool sLayersSupportsHardwareVideoDecoding = false;
 static bool sLayersHardwareVideoDecodingFailed = false;
@@ -2065,93 +2062,66 @@ static bool sPrefBrowserTabsRemoteAutostart = false;
 static bool sLayersAccelerationPrefsInitialized = false;
 
 void
-gfxPlatform::InitAcceleration()
+InitLayersAccelerationPrefs()
 {
-  if (sLayersAccelerationPrefsInitialized) {
-    return;
-  }
-
-  InitCompositorAccelerationPrefs();
-
-  
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread(), "can only initialize prefs on the main thread");
-
-  gfxPrefs::GetSingleton();
-  sPrefBrowserTabsRemoteAutostart = BrowserTabsRemoteAutostart();
-
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsCString discardFailureId;
-  int32_t status;
-#ifdef XP_WIN
-  if (gfxConfig::IsForcedOnByUser(Feature::HW_COMPOSITING)) {
-    sLayersSupportsD3D9 = true;
-  } else if (!gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly() && gfxInfo) {
-    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS, discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-        MOZ_ASSERT(!sPrefBrowserTabsRemoteAutostart || IsVistaOrLater());
-        sLayersSupportsD3D9 = true;
-      }
-    }
-    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE, discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-        gANGLESupportsD3D11 = true;
-      }
-    }
-  }
-#endif
-
-  if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
-#ifdef XP_WIN
-    Preferences::GetBool("media.windows-media-foundation.use-dxva", true) &&
-#endif
-      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
-                                               discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK || gfxPrefs::HardwareVideoDecodingForceEnabled()) {
-         sLayersSupportsHardwareVideoDecoding = true;
-    }
-  }
-
-  Preferences::AddBoolVarCache(&sLayersHardwareVideoDecodingFailed,
-                               "media.hardware-video-decoding.failed",
-                               false);
-
-  sLayersAccelerationPrefsInitialized = true;
-}
-
-void
-gfxPlatform::InitCompositorAccelerationPrefs()
-{
-  const char *acceleratedEnv = PR_GetEnv("MOZ_ACCELERATED");
-
-  FeatureState& feature = gfxConfig::GetFeature(Feature::HW_COMPOSITING);
-
-  
-  if (feature.SetDefault(AccelerateLayersByDefault(),
-                         FeatureStatus::Blocked,
-                         "Acceleration blocked by platform"))
+  if (!sLayersAccelerationPrefsInitialized)
   {
-    if (gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly()) {
-      feature.UserDisable("Disabled by pref");
-    } else if (acceleratedEnv && *acceleratedEnv == '0') {
-      feature.UserDisable("Disabled by envvar");
-    }
-  } else {
-    if (acceleratedEnv && *acceleratedEnv == '1') {
-      feature.UserEnable("Enabled by envvar");
-    }
-  }
+    
+    
+    
+    
+    MOZ_ASSERT(NS_IsMainThread(), "can only initialize prefs on the main thread");
 
-  
-  if (gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
-    feature.UserForceEnable("Force-enabled by pref");
-  }
+    gfxPrefs::GetSingleton();
+    sPrefBrowserTabsRemoteAutostart = BrowserTabsRemoteAutostart();
 
-  
-  if (InSafeMode()) {
-    feature.ForceDisable(FeatureStatus::Blocked, "Acceleration blocked by safe-mode");
+    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+    nsCString discardFailureId;
+    int32_t status;
+#ifdef XP_WIN
+    if (gfxPrefs::LayersAccelerationForceEnabled()) {
+      sLayersSupportsD3D9 = true;
+      sLayersSupportsD3D11 = true;
+    } else if (!gfxPrefs::LayersAccelerationDisabled() && gfxInfo) {
+      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS, discardFailureId, &status))) {
+        if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
+          MOZ_ASSERT(!sPrefBrowserTabsRemoteAutostart || IsVistaOrLater());
+          sLayersSupportsD3D9 = true;
+        }
+      }
+      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS, discardFailureId, &status))) {
+        if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
+          sLayersSupportsD3D11 = true;
+        }
+      }
+      if (!gfxPrefs::LayersD3D11DisableWARP()) {
+        
+        sLayersSupportsD3D11 = true;
+      }
+      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE, discardFailureId, &status))) {
+        if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
+          gANGLESupportsD3D11 = true;
+        }
+      }
+    }
+#endif
+
+    if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
+#ifdef XP_WIN
+        Preferences::GetBool("media.windows-media-foundation.use-dxva", true) &&
+#endif
+        NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
+                                               discardFailureId, &status))) {
+        if (status == nsIGfxInfo::FEATURE_STATUS_OK || gfxPrefs::HardwareVideoDecodingForceEnabled()) {
+           sLayersSupportsHardwareVideoDecoding = true;
+      }
+    }
+
+    Preferences::AddBoolVarCache(&sLayersHardwareVideoDecodingFailed,
+                                 "media.hardware-video-decoding.failed",
+                                 false);
+
+    sLayersAccelerationPrefsInitialized = true;
   }
 }
 
@@ -2162,6 +2132,15 @@ gfxPlatform::CanUseDirect3D9()
   
   MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
   return sLayersSupportsD3D9;
+}
+
+bool
+gfxPlatform::CanUseDirect3D11()
+{
+  
+  
+  MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
+  return sLayersSupportsD3D11;
 }
 
 bool
@@ -2178,6 +2157,28 @@ gfxPlatform::CanUseDirect3D11ANGLE()
 {
   MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
   return gANGLESupportsD3D11;
+}
+
+bool
+gfxPlatform::ShouldUseLayersAcceleration()
+{
+  const char *acceleratedEnv = PR_GetEnv("MOZ_ACCELERATED");
+  if (gfxPrefs::LayersAccelerationDisabled() ||
+      InSafeMode() ||
+      (acceleratedEnv && *acceleratedEnv == '0'))
+  {
+    return false;
+  }
+  if (gfxPrefs::LayersAccelerationForceEnabled()) {
+    return true;
+  }
+  if (AccelerateLayersByDefault()) {
+    return true;
+  }
+  if (acceleratedEnv && *acceleratedEnv != '0') {
+    return true;
+  }
+  return false;
 }
 
 bool
@@ -2219,13 +2220,6 @@ gfxPlatform::GetScaledFontForFontWithCairoSkia(DrawTarget* aTarget, gfxFont* aFo
     return nullptr;
 }
 
- DeviceInitData&
-gfxPlatform::GetParentDevicePrefs()
-{
-  MOZ_ASSERT(XRE_IsContentProcess());
-  return sDeviceInitDataDoNotUseDirectly;
-}
-
  bool
 gfxPlatform::UsesOffMainThreadCompositing()
 {
@@ -2233,13 +2227,13 @@ gfxPlatform::UsesOffMainThreadCompositing()
   static bool result = false;
 
   if (firstTime) {
-    MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
+    InitLayersAccelerationPrefs();
     result =
       sPrefBrowserTabsRemoteAutostart ||
       !gfxPrefs::LayersOffMainThreadCompositionForceDisabled();
 #if defined(MOZ_WIDGET_GTK)
     
-    result |= gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly();
+    result |= gfxPrefs::LayersAccelerationForceEnabled();
 
 #endif
     firstTime = false;
@@ -2369,7 +2363,7 @@ AllowOpenGL(bool* aWhitelisted)
     }
   }
 
-  return gfxConfig::IsForcedOnByUser(Feature::HW_COMPOSITING);
+  return gfxPrefs::LayersAccelerationForceEnabled();
 }
 
 void
@@ -2432,29 +2426,21 @@ void
 gfxPlatform::GetDeviceInitData(mozilla::gfx::DeviceInitData* aOut)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
-  aOut->useHwCompositing() = gfxConfig::IsEnabled(Feature::HW_COMPOSITING);
+  aOut->useAcceleration() = ShouldUseLayersAcceleration();
 }
 
-bool
+void
 gfxPlatform::UpdateDeviceInitData()
 {
   if (XRE_IsParentProcess()) {
     
-    return false;
+    return;
   }
 
   mozilla::gfx::DeviceInitData data;
   mozilla::dom::ContentChild::GetSingleton()->SendGetGraphicsDeviceInitData(&data);
 
-  sDeviceInitDataDoNotUseDirectly = data;
-
-  
-  gfxConfig::InitOrUpdate(
-    Feature::HW_COMPOSITING,
-    GetParentDevicePrefs().useHwCompositing(),
-    FeatureStatus::Blocked,
-    "Hardware-accelerated compositing disabled in parent process");
-  return true;
+  SetDeviceInitData(data);
 }
 
 bool

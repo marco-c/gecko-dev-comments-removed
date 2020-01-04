@@ -22,8 +22,7 @@ enum class FeatureStatus
   Unavailable,
 
   
-  
-  CrashedInHandler,
+  Crashed,
 
   
   
@@ -39,21 +38,11 @@ enum class FeatureStatus
   Disabled,
 
   
-  Available,
-
-  
-  ForceEnabled,
-
-  
-  CrashedOnStartup,
-
-  
-  Broken
+  Available
 };
 
 const char* FeatureStatusToString(FeatureStatus aStatus);
 bool IsFeatureStatusFailure(FeatureStatus aStatus);
-bool IsFeatureStatusSuccess(FeatureStatus aStatus);
 
 } 
 } 
