@@ -1572,6 +1572,14 @@ gfxWindowsPlatform::InitializeDevices()
   MOZ_ASSERT(!InSafeMode());
 
   
+  
+  
+  
+  if (gfxConfig::IsEnabled(Feature::GPU_PROCESS) && XRE_IsParentProcess()) {
+    return;
+  }
+
+  
   D3D11LayersCrashGuard detectCrashes;
   if (detectCrashes.Crashed()) {
     gfxConfig::SetFailed(Feature::HW_COMPOSITING,
