@@ -60,7 +60,7 @@ using namespace mozilla::net;
 
 
 #define DEFAULT_APP_KEY(baseDomain) \
-        nsCookieKey(baseDomain, NECKO_NO_APP_ID, false)
+        nsCookieKey(baseDomain, OriginAttributes())
 
 
 
@@ -74,7 +74,7 @@ static nsCookieService *gCookieService;
 #define HTTP_ONLY_PREFIX "#HttpOnly_"
 
 #define COOKIES_FILE "cookies.sqlite"
-#define COOKIES_SCHEMA_VERSION 5
+#define COOKIES_SCHEMA_VERSION 6
 
 
 
@@ -88,8 +88,7 @@ static nsCookieService *gCookieService;
 #define IDX_SECURE 7
 #define IDX_HTTPONLY 8
 #define IDX_BASE_DOMAIN 9
-#define IDX_APP_ID 10
-#define IDX_BROWSER_ELEM 11
+#define IDX_ORIGIN_ATTRIBUTES 10
 
 static const int64_t kCookiePurgeAge =
   int64_t(30 * 24 * 60 * 60) * PR_USEC_PER_SEC; 
@@ -493,8 +492,11 @@ public:
 
       CookieDomainTuple *tuple = mDBState->hostArray.AppendElement();
       row->GetUTF8String(IDX_BASE_DOMAIN, tuple->key.mBaseDomain);
-      tuple->key.mAppId = static_cast<uint32_t>(row->AsInt32(IDX_APP_ID));
-      tuple->key.mInBrowserElement = static_cast<bool>(row->AsInt32(IDX_BROWSER_ELEM));
+
+      nsAutoCString suffix;
+      row->GetUTF8String(IDX_ORIGIN_ATTRIBUTES, suffix);
+      tuple->key.mOriginAttributes.PopulateFromSuffix(suffix);
+
       tuple->cookie = gCookieService->GetCookieFromRow(row);
     }
 
@@ -572,20 +574,21 @@ public:
 
   
   NS_IMETHODIMP
-  Observe(nsISupports *aSubject, const char *aTopic, const char16_t *data) override
+  Observe(nsISupports *aSubject, const char *aTopic, const char16_t *aData) override
   {
-    MOZ_ASSERT(!nsCRT::strcmp(aTopic, TOPIC_WEB_APP_CLEAR_DATA));
+    MOZ_ASSERT(!nsCRT::strcmp(aTopic, TOPIC_CLEAR_ORIGIN_DATA));
 
-    uint32_t appId = NECKO_UNKNOWN_APP_ID;
-    bool browserOnly = false;
-    nsresult rv = NS_GetAppInfoFromClearDataNotification(aSubject, &appId,
-                                                         &browserOnly);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_ASSERT(XRE_IsParentProcess());
+    OriginAttributes attrs;
+    MOZ_ALWAYS_TRUE(attrs.Init(nsDependentString(aData)));
 
     nsCOMPtr<nsICookieManager2> cookieManager
       = do_GetService(NS_COOKIEMANAGER_CONTRACTID);
     MOZ_ASSERT(cookieManager);
-    return cookieManager->RemoveCookiesForApp(appId, browserOnly);
+
+    
+    
+    return cookieManager->RemoveCookiesForApp(attrs.mAppId, attrs.mInBrowser);
   }
 };
 
@@ -685,7 +688,7 @@ nsCookieService::AppClearDataObserverInit()
 {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   nsCOMPtr<nsIObserver> obs = new AppClearDataObserver();
-  observerService->AddObserver(obs, TOPIC_WEB_APP_CLEAR_DATA,
+  observerService->AddObserver(obs, TOPIC_CLEAR_ORIGIN_DATA,
                                 false);
 }
 
@@ -809,6 +812,49 @@ nsCookieService::InitDBStates()
     CleanupDefaultDBConnection();
   }
 }
+
+namespace {
+
+class ConvertAppIdToOriginAttrsSQLFunction final : public mozIStorageFunction
+{
+  ~ConvertAppIdToOriginAttrsSQLFunction() {}
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+};
+
+NS_IMPL_ISUPPORTS(ConvertAppIdToOriginAttrsSQLFunction, mozIStorageFunction);
+
+NS_IMETHODIMP
+ConvertAppIdToOriginAttrsSQLFunction::OnFunctionCall(
+    mozIStorageValueArray* aFunctionArguments, nsIVariant** aResult)
+{
+  nsresult rv;
+  int32_t appId, inBrowser;
+
+  rv = aFunctionArguments->GetInt32(0, &appId);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = aFunctionArguments->GetInt32(1, &inBrowser);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  OriginAttributes attrs(appId, (inBrowser ? 1 : 0));
+  nsAutoCString suffix;
+  attrs.CreateSuffix(suffix);
+
+  nsCOMPtr<nsIWritableVariant> outVar(do_CreateInstance(
+    NS_VARIANT_CONTRACTID, &rv));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = outVar->SetAsAUTF8String(suffix);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  outVar.forget(aResult);
+  return NS_OK;
+}
+
+} 
 
 
 
@@ -1075,7 +1121,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = CreateTable();
+        rv = CreateTableForSchemaVersion5();
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
@@ -1093,8 +1139,69 @@ nsCookieService::TryInitDB(bool aRecreateDB)
           "DROP TABLE moz_cookies_old"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        COOKIE_LOGSTRING(LogLevel::Debug, 
+        COOKIE_LOGSTRING(LogLevel::Debug,
           ("Upgraded database to schema version 5"));
+      }
+      
+
+    case 5:
+      {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+             "ALTER TABLE moz_cookies RENAME TO moz_cookies_old"));
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+             "DROP INDEX moz_basedomain"));
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        
+        rv = CreateTable();
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        
+        
+        nsCOMPtr<mozIStorageFunction>
+          convertToOriginAttrs(new ConvertAppIdToOriginAttrsSQLFunction());
+        NS_ENSURE_TRUE(convertToOriginAttrs, RESULT_RETRY);
+
+        rv = mDefaultDBState->dbConn->CreateFunction(
+             NS_LITERAL_CSTRING("CONVERT_TO_ORIGIN_ATTRIBUTES"), 2,
+             convertToOriginAttrs);
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+          "INSERT INTO moz_cookies "
+          "(baseDomain, originAttributes, name, value, host, path, expiry,"
+          " lastAccessed, creationTime, isSecure, isHttpOnly) "
+          "SELECT baseDomain, "
+          " CONVERT_TO_ORIGIN_ATTRIBUTES(appId, inBrowserElement),"
+          " name, value, host, path, expiry, lastAccessed, creationTime, "
+          " isSecure, isHttpOnly "
+          "FROM moz_cookies_old"));
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+             "DROP TABLE moz_cookies_old"));
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        COOKIE_LOGSTRING(LogLevel::Debug,
+          ("Upgraded database to schema version 6"));
       }
 
       
@@ -1132,8 +1239,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
           "SELECT "
             "id, "
             "baseDomain, "
-            "appId, "
-            "inBrowserElement, "
+            "originAttributes, "
             "name, "
             "value, "
             "host, "
@@ -1174,8 +1280,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
   rv = mDefaultDBState->dbConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
     "INSERT INTO moz_cookies ("
       "baseDomain, "
-      "appId, "
-      "inBrowserElement, "
+      "originAttributes, "
       "name, "
       "value, "
       "host, "
@@ -1187,8 +1292,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
       "isHttpOnly"
     ") VALUES ("
       ":baseDomain, "
-      ":appId, "
-      ":inBrowserElement, "
+      ":originAttributes, "
       ":name, "
       ":value, "
       ":host, "
@@ -1247,6 +1351,42 @@ nsCookieService::CreateTable()
   
   nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(
     COOKIES_SCHEMA_VERSION);
+  if (NS_FAILED(rv)) return rv;
+
+  
+  
+  
+  
+  rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "CREATE TABLE moz_cookies ("
+      "id INTEGER PRIMARY KEY, "
+      "baseDomain TEXT, "
+      "originAttributes TEXT NOT NULL DEFAULT '', "
+      "name TEXT, "
+      "value TEXT, "
+      "host TEXT, "
+      "path TEXT, "
+      "expiry INTEGER, "
+      "lastAccessed INTEGER, "
+      "creationTime INTEGER, "
+      "isSecure INTEGER, "
+      "isHttpOnly INTEGER, "
+      "CONSTRAINT moz_uniqueid UNIQUE (name, host, path, originAttributes)"
+    ")"));
+  if (NS_FAILED(rv)) return rv;
+
+  
+  return mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "CREATE INDEX moz_basedomain ON moz_cookies (baseDomain, "
+                                                "originAttributes)"));
+}
+
+
+nsresult
+nsCookieService::CreateTableForSchemaVersion5()
+{
+  
+  nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(5);
   if (NS_FAILED(rv)) return rv;
 
   
@@ -1604,17 +1744,16 @@ nsCookieService::GetCookieStringCommon(nsIURI *aHostURI,
   mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
 
   
-  uint32_t appId = NECKO_NO_APP_ID;
-  bool inBrowserElement = false;
+  OriginAttributes attrs;
   if (aChannel) {
-    NS_GetAppInfo(aChannel, &appId, &inBrowserElement);
+    NS_GetOriginAttributes(aChannel, attrs);
   }
 
   bool isPrivate = aChannel && NS_UsePrivateBrowsing(aChannel);
 
   nsAutoCString result;
-  GetCookieStringInternal(aHostURI, isForeign, aHttpBound, appId,
-                          inBrowserElement, isPrivate, result);
+  GetCookieStringInternal(aHostURI, isForeign, aHttpBound, attrs,
+                          isPrivate, result);
   *aCookie = result.IsEmpty() ? nullptr : ToNewCString(result);
   return NS_OK;
 }
@@ -1678,10 +1817,9 @@ nsCookieService::SetCookieStringCommon(nsIURI *aHostURI,
   mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
 
   
-  uint32_t appId = NECKO_NO_APP_ID;
-  bool inBrowserElement = false;
+  OriginAttributes attrs;
   if (aChannel) {
-    NS_GetAppInfo(aChannel, &appId, &inBrowserElement);
+    NS_GetOriginAttributes(aChannel, attrs);
   }
 
   bool isPrivate = aChannel && NS_UsePrivateBrowsing(aChannel);
@@ -1689,21 +1827,20 @@ nsCookieService::SetCookieStringCommon(nsIURI *aHostURI,
   nsDependentCString cookieString(aCookieHeader);
   nsDependentCString serverTime(aServerTime ? aServerTime : "");
   SetCookieStringInternal(aHostURI, isForeign, cookieString,
-                          serverTime, aFromHttp, appId, inBrowserElement,
+                          serverTime, aFromHttp, attrs,
                           isPrivate, aChannel);
   return NS_OK;
 }
 
 void
-nsCookieService::SetCookieStringInternal(nsIURI             *aHostURI,
-                                         bool                aIsForeign,
-                                         nsDependentCString &aCookieHeader,
-                                         const nsCString    &aServerTime,
-                                         bool                aFromHttp,
-                                         uint32_t            aAppId,
-                                         bool                aInBrowserElement,
-                                         bool                aIsPrivate,
-                                         nsIChannel         *aChannel)
+nsCookieService::SetCookieStringInternal(nsIURI                 *aHostURI,
+                                         bool                    aIsForeign,
+                                         nsDependentCString     &aCookieHeader,
+                                         const nsCString        &aServerTime,
+                                         bool                    aFromHttp,
+                                         const OriginAttributes &aOriginAttrs,
+                                         bool                    aIsPrivate,
+                                         nsIChannel             *aChannel)
 {
   NS_ASSERTION(aHostURI, "null host!");
 
@@ -1724,12 +1861,12 @@ nsCookieService::SetCookieStringInternal(nsIURI             *aHostURI,
   nsAutoCString baseDomain;
   nsresult rv = GetBaseDomain(aHostURI, baseDomain, requireHostMatch);
   if (NS_FAILED(rv)) {
-    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader, 
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                       "couldn't get base domain from URI");
     return;
   }
 
-  nsCookieKey key(baseDomain, aAppId, aInBrowserElement);
+  nsCookieKey key(baseDomain, aOriginAttrs);
 
   
   CookieStatus cookieStatus = CheckPrefs(aHostURI, aIsForeign, requireHostMatch,
@@ -2012,9 +2149,9 @@ nsCookieService::Add(const nsACString &aHost,
 
 
 nsresult
-nsCookieService::Remove(const nsACString& aHost, uint32_t aAppId,
-                        bool aInBrowserElement, const nsACString& aName,
-                        const nsACString& aPath, bool aBlocked)
+nsCookieService::Remove(const nsACString& aHost, const OriginAttributes& aAttrs,
+                        const nsACString& aName, const nsACString& aPath,
+                        bool aBlocked)
 {
   if (!mDBState) {
     NS_WARNING("No DBState! Profile already closed?");
@@ -2032,7 +2169,7 @@ nsCookieService::Remove(const nsACString& aHost, uint32_t aAppId,
 
   nsListIter matchIter;
   nsRefPtr<nsCookie> cookie;
-  if (FindCookie(nsCookieKey(baseDomain, aAppId, aInBrowserElement),
+  if (FindCookie(nsCookieKey(baseDomain, aAttrs),
                  host,
                  PromiseFlatCString(aName),
                  PromiseFlatCString(aPath),
@@ -2070,7 +2207,8 @@ nsCookieService::Remove(const nsACString &aHost,
                         const nsACString &aPath,
                         bool             aBlocked)
 {
-  return Remove(aHost, NECKO_NO_APP_ID, false, aName, aPath, aBlocked);
+  OriginAttributes attrs;
+  return Remove(aHost, attrs, aName, aPath, aBlocked);
 }
 
 
@@ -2097,8 +2235,7 @@ nsCookieService::Read()
       "isSecure, "
       "isHttpOnly, "
       "baseDomain, "
-      "appId,  "
-      "inBrowserElement "
+      "originAttributes "
     "FROM moz_cookies "
     "WHERE baseDomain NOTNULL"), getter_AddRefs(stmtRead));
   NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
@@ -2270,8 +2407,7 @@ nsCookieService::EnsureReadDomain(const nsCookieKey &aKey)
         "isHttpOnly "
       "FROM moz_cookies "
       "WHERE baseDomain = :baseDomain "
-      "  AND appId = :appId "
-      "  AND inBrowserElement = :inBrowserElement"),
+      "  AND originAttributes = :originAttributes"),
       getter_AddRefs(mDefaultDBState->stmtReadDomain));
 
     if (NS_FAILED(rv)) {
@@ -2291,13 +2427,12 @@ nsCookieService::EnsureReadDomain(const nsCookieKey &aKey)
   rv = mDefaultDBState->stmtReadDomain->BindUTF8StringByName(
     NS_LITERAL_CSTRING("baseDomain"), aKey.mBaseDomain);
   NS_ASSERT_SUCCESS(rv);
-  rv = mDefaultDBState->stmtReadDomain->BindInt32ByName(
-    NS_LITERAL_CSTRING("appId"), aKey.mAppId);
-  NS_ASSERT_SUCCESS(rv);
-  rv = mDefaultDBState->stmtReadDomain->BindInt32ByName(
-    NS_LITERAL_CSTRING("inBrowserElement"), aKey.mInBrowserElement ? 1 : 0);
-  NS_ASSERT_SUCCESS(rv);
 
+  nsAutoCString suffix;
+  aKey.mOriginAttributes.CreateSuffix(suffix);
+  rv = mDefaultDBState->stmtReadDomain->BindUTF8StringByName(
+    NS_LITERAL_CSTRING("originAttributes"), suffix);
+  NS_ASSERT_SUCCESS(rv);
 
   bool hasResult;
   nsCString name, value, host, path;
@@ -2330,8 +2465,8 @@ nsCookieService::EnsureReadDomain(const nsCookieKey &aKey)
 
   COOKIE_LOGSTRING(LogLevel::Debug,
     ("EnsureReadDomain(): %ld cookies read for base domain %s, "
-     " appId=%u, inBrowser=%d", array.Length(), aKey.mBaseDomain.get(),
-     (unsigned)aKey.mAppId, (int)aKey.mInBrowserElement));
+     " originAttributes = %s", array.Length(), aKey.mBaseDomain.get(),
+     suffix.get()));
 }
 
 void
@@ -2362,8 +2497,7 @@ nsCookieService::EnsureReadComplete()
       "isSecure, "
       "isHttpOnly, "
       "baseDomain, "
-      "appId,  "
-      "inBrowserElement "
+      "originAttributes  "
     "FROM moz_cookies "
     "WHERE baseDomain NOTNULL"), getter_AddRefs(stmt));
 
@@ -2377,8 +2511,7 @@ nsCookieService::EnsureReadComplete()
   }
 
   nsCString baseDomain, name, value, host, path;
-  uint32_t appId;
-  bool inBrowserElement, hasResult;
+  bool hasResult;
   nsAutoTArray<CookieDomainTuple, kMaxNumberOfCookies> array;
   while (1) {
     rv = stmt->ExecuteStep(&hasResult);
@@ -2396,9 +2529,13 @@ nsCookieService::EnsureReadComplete()
 
     
     stmt->GetUTF8String(IDX_BASE_DOMAIN, baseDomain);
-    appId = static_cast<uint32_t>(stmt->AsInt32(IDX_APP_ID));
-    inBrowserElement = static_cast<bool>(stmt->AsInt32(IDX_BROWSER_ELEM));
-    nsCookieKey key(baseDomain, appId, inBrowserElement);
+
+    nsAutoCString suffix;
+    OriginAttributes attrs;
+    stmt->GetUTF8String(IDX_ORIGIN_ATTRIBUTES, suffix);
+    attrs.PopulateFromSuffix(suffix);
+
+    nsCookieKey key(baseDomain, attrs);
     if (mDefaultDBState->readSet.GetEntry(key))
       continue;
 
@@ -2543,6 +2680,7 @@ nsCookieService::ImportCookies(nsIFile *aCookieFile)
       continue;
 
     
+    
     nsCookieKey key = DEFAULT_APP_KEY(baseDomain);
 
     
@@ -2633,8 +2771,7 @@ void
 nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
                                          bool aIsForeign,
                                          bool aHttpBound,
-                                         uint32_t aAppId,
-                                         bool aInBrowserElement,
+                                         const OriginAttributes aOriginAttrs,
                                          bool aIsPrivate,
                                          nsCString &aCookieString)
 {
@@ -2691,7 +2828,7 @@ nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
   int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
   bool stale = false;
 
-  nsCookieKey key(baseDomain, aAppId, aInBrowserElement);
+  nsCookieKey key(baseDomain, aOriginAttrs);
   EnsureReadDomain(key);
 
   
@@ -3989,8 +4126,8 @@ nsCookieService::GetCookiesForApp(uint32_t aAppId, bool aOnlyBrowserElement,
   for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
     nsCookieEntry* entry = iter.Get();
 
-    if (entry->mAppId != aAppId ||
-        (aOnlyBrowserElement && !entry->mInBrowserElement)) {
+    if (entry->mOriginAttributes.mAppId != aAppId ||
+        (aOnlyBrowserElement && !entry->mOriginAttributes.mInBrowser)) {
       continue;
     }
 
@@ -4042,9 +4179,11 @@ nsCookieService::RemoveCookiesForApp(uint32_t aAppId, bool aOnlyBrowserElement)
     
     
     
-    Remove(host, aAppId, true, name, path, false);
+    OriginAttributes attrs(aAppId, true);
+    Remove(host, attrs, name, path, false);
     if (!aOnlyBrowserElement) {
-      Remove(host, aAppId, false, name, path, false);
+      attrs.mInBrowser = false;
+      Remove(host, attrs, name, path, false);
     }
   }
 
@@ -4158,12 +4297,10 @@ bindCookieParameters(mozIStorageBindingParamsArray *aParamsArray,
                                     aKey.mBaseDomain);
   NS_ASSERT_SUCCESS(rv);
 
-  rv = params->BindInt32ByName(NS_LITERAL_CSTRING("appId"),
-                               aKey.mAppId);
-  NS_ASSERT_SUCCESS(rv);
-
-  rv = params->BindInt32ByName(NS_LITERAL_CSTRING("inBrowserElement"),
-                               aKey.mInBrowserElement ? 1 : 0);
+  nsAutoCString suffix;
+  aKey.mOriginAttributes.CreateSuffix(suffix);
+  rv = params->BindUTF8StringByName(NS_LITERAL_CSTRING("originAttributes"),
+                                    suffix);
   NS_ASSERT_SUCCESS(rv);
 
   rv = params->BindUTF8StringByName(NS_LITERAL_CSTRING("name"),
