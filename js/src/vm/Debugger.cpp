@@ -1933,6 +1933,19 @@ Debugger::slowPathOnLogAllocationSite(JSContext* cx, HandleObject obj, HandleSav
     MOZ_ASSERT(!dbgs.empty());
     mozilla::DebugOnly<Debugger**> begin = dbgs.begin();
 
+    
+    
+    
+    
+    
+    
+    
+    Rooted<GCVector<JSObject*>> activeDebuggers(cx, GCVector<JSObject*>(cx));
+    for (Debugger** dbgp = dbgs.begin(); dbgp < dbgs.end(); dbgp++) {
+        if (!activeDebuggers.append((*dbgp)->object))
+            return false;
+    }
+
     for (Debugger** dbgp = dbgs.begin(); dbgp < dbgs.end(); dbgp++) {
         
         
