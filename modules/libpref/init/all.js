@@ -1261,7 +1261,7 @@ pref("network.warnOnAboutNetworking", true);
 
 pref("network.manage-offline-status", true);
 
-pref("network.offline-mirrors-connectivity", true);
+pref("network.offline-mirrors-connectivity", false);
 
 
 pref("network.http.version", "1.1");      

@@ -6144,12 +6144,6 @@ var BrowserOffline = {
   {
     var ioService = Services.io;
 
-    
-    try {
-      ioService.manageOfflineStatus = false;
-    } catch (ex) {
-    }
-
     if (!ioService.offline && !this._canGoOffline()) {
       this._updateOfflineUI(false);
       return;
@@ -6165,7 +6159,9 @@ var BrowserOffline = {
     if (aTopic != "network:offline-status-changed")
       return;
 
-    this._updateOfflineUI(aState == "offline");
+    
+    
+    this._updateOfflineUI(Services.io.offline);
   },
 
   
