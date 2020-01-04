@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import android.view.ViewGroup;
 import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.gfx.ImmutableViewportMetrics;
 import org.mozilla.gecko.gfx.LayerView;
@@ -19,7 +20,6 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 
 
@@ -57,7 +57,7 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
     private PointF mGeckoPoint;
     private PointF mTouchStart;
 
-    private RelativeLayout.LayoutParams mLayoutParams;
+    private ViewGroup.MarginLayoutParams mLayoutParams;
 
     private static final int IMAGE_LEVEL_LTR = 0;
     private static final int IMAGE_LEVEL_RTL = 1;
@@ -204,7 +204,7 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
 
     private void setLayoutPosition() {
         if (mLayoutParams == null) {
-            mLayoutParams = (RelativeLayout.LayoutParams) getLayoutParams();
+            mLayoutParams = (ViewGroup.MarginLayoutParams) getLayoutParams();
             
             
             
