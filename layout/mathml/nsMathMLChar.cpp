@@ -30,7 +30,7 @@
 
 #include "mozilla/LookAndFeel.h"
 #include "nsCSSRendering.h"
-#include "prprf.h"         
+#include "mozilla/Snprintf.h"
 
 #include "nsDisplayList.h"
 
@@ -314,7 +314,7 @@ nsPropertiesTable::ElementAt(gfxContext*   ,
   if (mCharCache != aChar) {
     
     
-    char key[10]; PR_snprintf(key, sizeof(key), "\\u%04X", aChar);
+    char key[10]; snprintf_literal(key, "\\u%04X", aChar);
     nsAutoString value;
     nsresult rv = mGlyphProperties->GetStringProperty(nsDependentCString(key),
                                                       value);

@@ -18,7 +18,6 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsUnicodeProperties.h"
-#include "prprf.h"
 
 namespace mozilla {
 
@@ -212,8 +211,7 @@ DecimalToText(CounterValue aOrdinal, nsSubstring& aResult)
 {
   
   char cbuf[std::numeric_limits<CounterValue>::digits10 + 3];
-  PR_snprintf(cbuf, sizeof(cbuf), "%ld", aOrdinal);
-  aResult.AssignASCII(cbuf);
+  aResult.AppendInt(aOrdinal);
   return true;
 }
 
