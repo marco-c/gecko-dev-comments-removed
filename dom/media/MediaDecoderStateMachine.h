@@ -170,13 +170,6 @@ public:
 
   RefPtr<ShutdownPromise> BeginShutdown();
 
-  void DispatchStartBuffering()
-  {
-    nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::StartBuffering);
-    OwnerThread()->Dispatch(runnable.forget());
-  }
-
   
   
   

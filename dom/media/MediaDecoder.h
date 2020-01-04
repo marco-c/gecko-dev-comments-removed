@@ -502,9 +502,7 @@ public:
   
   
   
-  
-  
-  virtual void Resume(bool aForceBuffering);
+  virtual void Resume();
 
   
   

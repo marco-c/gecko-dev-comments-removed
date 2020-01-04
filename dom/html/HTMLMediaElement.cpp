@@ -2184,7 +2184,7 @@ void HTMLMediaElement::StopSuspendingAfterFirstFrame()
     return;
   mSuspendedAfterFirstFrame = false;
   if (mDecoder) {
-    mDecoder->Resume(true);
+    mDecoder->Resume();
   }
 }
 
@@ -4191,7 +4191,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
       MOZ_ASSERT(!mMediaKeys);
 #endif
       if (mDecoder) {
-        mDecoder->Resume(false);
+        mDecoder->Resume();
         if (!mPaused && !mDecoder->IsEndedOrShutdown()) {
           mDecoder->Play();
         }
