@@ -39,6 +39,8 @@
 #define DETECT_SIZE 200
 
 typedef struct {
+   int arch;
+#define TONALITY_ANALYSIS_RESET_START angle
    float angle[240];
    float d_angle[240];
    float d2_angle[240];
@@ -78,10 +80,24 @@ typedef struct {
    AnalysisInfo info[DETECT_SIZE];
 } TonalityAnalysisState;
 
+
+
+
+
+
+
+void tonality_analysis_init(TonalityAnalysisState *analysis);
+
+
+
+
+
+void tonality_analysis_reset(TonalityAnalysisState *analysis);
+
 void tonality_get_info(TonalityAnalysisState *tonal, AnalysisInfo *info_out, int len);
 
 void run_analysis(TonalityAnalysisState *analysis, const CELTMode *celt_mode, const void *analysis_pcm,
                  int analysis_frame_size, int frame_size, int c1, int c2, int C, opus_int32 Fs,
-                 int lsb_depth, downmix_func downmix, AnalysisInfo *analysis_info, int arch);
+                 int lsb_depth, downmix_func downmix, AnalysisInfo *analysis_info);
 
 #endif
