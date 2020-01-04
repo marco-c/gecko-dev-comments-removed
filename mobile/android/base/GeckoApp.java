@@ -638,7 +638,7 @@ public abstract class GeckoApp
                 final String url = ReaderModeUtils.stripAboutReaderUrl(tab.getURL());
                 text += "\n\n" + url;
             }
-            GeckoAppShell.openUriExternal(text, "text/plain", "", "", Intent.ACTION_SEND, title);
+            GeckoAppShell.openUriExternal(text, "text/plain", "", "", Intent.ACTION_SEND, title, false);
 
             
             Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST);
