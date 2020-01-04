@@ -567,6 +567,15 @@ BlacklistEntryToDriverInfo(nsIDOMNode* aBlacklistEntry,
   }
 
   
+  if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("driverVersionMax"),
+                                  getter_AddRefs(dataNode))) {
+    BlacklistNodeToTextValue(dataNode, dataValue);
+    uint64_t version;
+    if (ParseDriverVersion(dataValue, &version))
+      aDriverInfo.mDriverVersionMax = version;
+  }
+
+  
   if (BlacklistNodeGetChildByName(element, NS_LITERAL_STRING("driverVersionComparator"),
                                   getter_AddRefs(dataNode))) {
     BlacklistNodeToTextValue(dataNode, dataValue);
