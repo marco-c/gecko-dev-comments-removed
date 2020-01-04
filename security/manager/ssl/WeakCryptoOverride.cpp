@@ -8,6 +8,7 @@
 
 #include "MainThreadUtils.h"
 #include "SharedSSLState.h"
+#include "nss.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;
@@ -57,6 +58,10 @@ WeakCryptoOverride::RemoveWeakCryptoOverride(const nsACString& aHostName,
   }
   const nsPromiseFlatCString& host = PromiseFlatCString(aHostName);
   sharedState->IOLayerHelpers().removeInsecureFallbackSite(host, aPort);
+
+  
+  
+  SSL_ClearSessionCache();
 
   return NS_OK;
 }
