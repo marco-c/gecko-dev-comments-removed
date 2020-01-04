@@ -2564,6 +2564,16 @@ pref("dom.animations-api.core.enabled", true);
 #endif
 
 
+
+
+
+#ifdef RELEASE_BUILD
+pref("dom.animations-api.element-animate.enabled", false);
+#else
+pref("dom.animations-api.element-animate.enabled", true);
+#endif
+
+
 pref("capability.policy.default.SOAPCall.invokeVerifySourceHeader", "allAccess");
 
 
