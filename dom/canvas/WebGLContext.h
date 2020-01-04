@@ -101,6 +101,7 @@ class WebGLSampler;
 class WebGLShader;
 class WebGLShaderPrecisionFormat;
 class WebGLTexture;
+class WebGLTimerQuery;
 class WebGLTransformFeedback;
 class WebGLUniformLocation;
 class WebGLVertexArray;
@@ -1394,18 +1395,17 @@ protected:
     WebGLRefPtr<WebGLTransformFeedback> mBoundTransformFeedback;
     WebGLRefPtr<WebGLVertexArray> mBoundVertexArray;
 
-    LinkedList<WebGLTexture> mTextures;
     LinkedList<WebGLBuffer> mBuffers;
+    LinkedList<WebGLFramebuffer> mFramebuffers;
     LinkedList<WebGLProgram> mPrograms;
     LinkedList<WebGLQuery> mQueries;
-    LinkedList<WebGLShader> mShaders;
     LinkedList<WebGLRenderbuffer> mRenderbuffers;
-    LinkedList<WebGLFramebuffer> mFramebuffers;
-    LinkedList<WebGLVertexArray> mVertexArrays;
-
-    
     LinkedList<WebGLSampler> mSamplers;
+    LinkedList<WebGLShader> mShaders;
+    LinkedList<WebGLTexture> mTextures;
+    LinkedList<WebGLTimerQuery> mTimerQueries;
     LinkedList<WebGLTransformFeedback> mTransformFeedbacks;
+    LinkedList<WebGLVertexArray> mVertexArrays;
 
     WebGLRefPtr<WebGLTransformFeedback> mDefaultTransformFeedback;
     WebGLRefPtr<WebGLVertexArray> mDefaultVertexArray;
