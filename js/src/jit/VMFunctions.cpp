@@ -167,25 +167,14 @@ CheckOverRecursedWithExtra(JSContext* cx, BaselineFrame* frame,
 }
 
 bool
-DefVarOrConst(JSContext* cx, HandlePropertyName dn, unsigned attrs, HandleObject scopeChain)
+DefVar(JSContext* cx, HandlePropertyName dn, unsigned attrs, HandleObject scopeChain)
 {
     
     RootedObject obj(cx, scopeChain);
     while (!obj->isQualifiedVarObj())
         obj = obj->enclosingScope();
 
-    return DefVarOrConstOperation(cx, obj, dn, attrs);
-}
-
-bool
-SetConst(JSContext* cx, HandlePropertyName name, HandleObject scopeChain, HandleValue rval)
-{
-    
-    RootedObject obj(cx, scopeChain);
-    while (!obj->isQualifiedVarObj())
-        obj = obj->enclosingScope();
-
-    return SetConstOperation(cx, obj, name, rval);
+    return DefVarOperation(cx, obj, dn, attrs);
 }
 
 bool

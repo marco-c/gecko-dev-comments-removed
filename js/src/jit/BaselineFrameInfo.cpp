@@ -17,7 +17,10 @@ bool
 FrameInfo::init(TempAllocator& alloc)
 {
     
-    size_t nstack = Max(script->nslots() - script->nfixed(), size_t(1));
+    
+    
+    
+    size_t nstack = Max(script->nslots() - script->nfixed(), size_t(2));
     if (!stack.init(alloc, nstack))
         return false;
 

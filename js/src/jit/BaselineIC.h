@@ -2101,46 +2101,36 @@ class ICGetName_Fallback : public ICMonitoredFallbackStub
 };
 
 
-class ICGetName_Global : public ICMonitoredStub
+class ICGetName_GlobalLexical : public ICMonitoredStub
 {
     friend class ICStubSpace;
 
   protected: 
-    HeapPtrShape shape_;
     uint32_t slot_;
 
-    ICGetName_Global(JitCode* stubCode, ICStub* firstMonitorStub, Shape* shape, uint32_t slot);
+    ICGetName_GlobalLexical(JitCode* stubCode, ICStub* firstMonitorStub, uint32_t slot);
 
   public:
-    HeapPtrShape& shape() {
-        return shape_;
-    }
-    static size_t offsetOfShape() {
-        return offsetof(ICGetName_Global, shape_);
-    }
     static size_t offsetOfSlot() {
-        return offsetof(ICGetName_Global, slot_);
+        return offsetof(ICGetName_GlobalLexical, slot_);
     }
 
     class Compiler : public ICStubCompiler {
         ICStub* firstMonitorStub_;
-        RootedShape shape_;
         uint32_t slot_;
 
       protected:
         bool generateStubCode(MacroAssembler& masm);
 
       public:
-        Compiler(JSContext* cx, ICStub* firstMonitorStub, Shape* shape, uint32_t slot)
-          : ICStubCompiler(cx, ICStub::GetName_Global, Engine::Baseline),
+        Compiler(JSContext* cx, ICStub* firstMonitorStub, uint32_t slot)
+          : ICStubCompiler(cx, ICStub::GetName_GlobalLexical, Engine::Baseline),
             firstMonitorStub_(firstMonitorStub),
-            shape_(cx, shape),
             slot_(slot)
         {}
 
         ICStub* getStub(ICStubSpace* space) {
-            return newStub<ICGetName_Global>(space, getStubCode(), firstMonitorStub_, shape_,
-                                             slot_);
+            return newStub<ICGetName_GlobalLexical>(space, getStubCode(), firstMonitorStub_, slot_);
         }
     };
 };
@@ -2577,27 +2567,16 @@ class ICGetProp_Native : public ICGetPropNativeStub
                                    ICGetProp_Native& other);
 };
 
-
-
-
-class ICGetProp_NativePrototype : public ICGetPropNativeStub
+class ICGetPropNativePrototypeStub : public ICGetPropNativeStub
 {
-    friend class ICStubSpace;
-
-  protected:
     
     HeapPtrObject holder_;
     HeapPtrShape holderShape_;
 
-    ICGetProp_NativePrototype(JitCode* stubCode, ICStub* firstMonitorStub,
-                              ReceiverGuard guard,
-                              uint32_t offset, JSObject* holder, Shape* holderShape);
-
-  public:
-    static ICGetProp_NativePrototype* Clone(JSContext* cx,
-                                            ICStubSpace* space,
-                                            ICStub* firstMonitorStub,
-                                            ICGetProp_NativePrototype& other);
+  protected:
+    ICGetPropNativePrototypeStub(ICStub::Kind kind, JitCode* stubCode, ICStub* firstMonitorStub,
+                                 ReceiverGuard guard, uint32_t offset, JSObject* holder,
+                                 Shape* holderShape);
 
   public:
     HeapPtrObject& holder() {
@@ -2607,10 +2586,59 @@ class ICGetProp_NativePrototype : public ICGetPropNativeStub
         return holderShape_;
     }
     static size_t offsetOfHolder() {
-        return offsetof(ICGetProp_NativePrototype, holder_);
+        return offsetof(ICGetPropNativePrototypeStub, holder_);
     }
     static size_t offsetOfHolderShape() {
-        return offsetof(ICGetProp_NativePrototype, holderShape_);
+        return offsetof(ICGetPropNativePrototypeStub, holderShape_);
+    }
+};
+
+
+
+
+class ICGetProp_NativePrototype : public ICGetPropNativePrototypeStub
+{
+    friend class ICStubSpace;
+
+  protected:
+    ICGetProp_NativePrototype(JitCode* stubCode, ICStub* firstMonitorStub, ReceiverGuard guard,
+                              uint32_t offset, JSObject* holder, Shape* holderShape)
+      : ICGetPropNativePrototypeStub(GetProp_NativePrototype, stubCode, firstMonitorStub, guard,
+                                     offset, holder, holderShape)
+    { }
+
+  public:
+    static ICGetProp_NativePrototype* Clone(JSContext* cx,
+                                            ICStubSpace* space,
+                                            ICStub* firstMonitorStub,
+                                            ICGetProp_NativePrototype& other);
+};
+
+
+
+
+
+
+
+class ICGetName_Global : public ICGetPropNativePrototypeStub
+{
+    friend class ICStubSpace;
+
+  protected:
+    HeapPtrShape globalShape_;
+
+    ICGetName_Global(JitCode* stubCode, ICStub* firstMonitorStub, ReceiverGuard guard,
+                     uint32_t slot, JSObject* holder, Shape* holderShape, Shape* globalShape);
+
+  public:
+    static ICGetName_Global* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
+                                   ICGetName_Global& other);
+
+    HeapPtrShape& globalShape() {
+        return globalShape_;
+    }
+    static size_t offsetOfGlobalShape() {
+        return offsetof(ICGetName_Global, globalShape_);
     }
 };
 
@@ -2977,7 +3005,8 @@ class ICGetPropCallGetter : public ICMonitoredStub
             outerClass_(outerClass)
         {
             MOZ_ASSERT(kind == ICStub::GetProp_CallScripted ||
-                       kind == ICStub::GetProp_CallNative);
+                       kind == ICStub::GetProp_CallNative ||
+                       kind == ICStub::GetProp_CallNativeGlobal);
         }
     };
 };
@@ -3042,36 +3071,61 @@ class ICGetProp_CallNative : public ICGetPropCallGetter
     static ICGetProp_CallNative* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
                                        ICGetProp_CallNative& other);
 
-    class Compiler : public ICGetPropCallGetter::Compiler
-    {
-        bool inputDefinitelyObject_;
-      protected:
-        bool generateStubCode(MacroAssembler& masm);
+};
 
-        virtual int32_t getKey() const {
-            int32_t baseKey = ICGetPropCallGetter::Compiler::getKey();
-            MOZ_ASSERT((baseKey >> 21) == 0);
-            return baseKey | (static_cast<int32_t>(inputDefinitelyObject_) << 21);
-        }
 
-      public:
-        Compiler(JSContext* cx, ICStub* firstMonitorStub, HandleObject receiver,
-                 HandleObject holder, HandleFunction getter, uint32_t pcOffset,
-                 const Class* outerClass, bool inputDefinitelyObject = false)
-          : ICGetPropCallGetter::Compiler(cx, ICStub::GetProp_CallNative,
-                                          firstMonitorStub, receiver, holder,
-                                          getter, pcOffset, outerClass),
-            inputDefinitelyObject_(inputDefinitelyObject)
-        {}
+class ICGetProp_CallNativeGlobal : public ICGetPropCallGetter
+{
+    friend class ICStubSpace;
 
-        ICStub* getStub(ICStubSpace* space) {
-            ReceiverGuard guard(receiver_);
-            Shape* holderShape = holder_->as<NativeObject>().lastProperty();
-            return newStub<ICGetProp_CallNative>(space, getStubCode(), firstMonitorStub_,
-                                                     guard, holder_, holderShape,
-                                                     getter_, pcOffset_);
-        }
-    };
+  protected:
+    HeapPtrShape globalShape_;
+
+    ICGetProp_CallNativeGlobal(JitCode* stubCode, ICStub* firstMonitorStub,
+                               ReceiverGuard receiverGuard,
+                               JSObject* holder, Shape* holderShape, Shape* globalShape,
+                               JSFunction* getter, uint32_t pcOffset)
+      : ICGetPropCallGetter(GetProp_CallNativeGlobal, stubCode, firstMonitorStub,
+                            receiverGuard, holder, holderShape, getter, pcOffset),
+        globalShape_(globalShape)
+    { }
+
+  public:
+    static ICGetProp_CallNativeGlobal* Clone(JSContext* cx, ICStubSpace* space,
+                                             ICStub* firstMonitorStub,
+                                             ICGetProp_CallNativeGlobal& other);
+
+    HeapPtrShape& globalShape() {
+        return globalShape_;
+    }
+    static size_t offsetOfGlobalShape() {
+        return offsetof(ICGetProp_CallNativeGlobal, globalShape_);
+    }
+};
+
+class ICGetPropCallNativeCompiler : public ICGetPropCallGetter::Compiler
+{
+    bool inputDefinitelyObject_;
+  protected:
+    bool generateStubCode(MacroAssembler& masm);
+
+    virtual int32_t getKey() const {
+        int32_t baseKey = ICGetPropCallGetter::Compiler::getKey();
+        MOZ_ASSERT((baseKey >> 21) == 0);
+        return baseKey | (static_cast<int32_t>(inputDefinitelyObject_) << 21);
+    }
+
+  public:
+    ICGetPropCallNativeCompiler(JSContext* cx, ICStub::Kind kind, ICStub* firstMonitorStub,
+                                HandleObject receiver, HandleObject holder, HandleFunction getter,
+                                uint32_t pcOffset, const Class* outerClass,
+                                bool inputDefinitelyObject = false)
+      : ICGetPropCallGetter::Compiler(cx, kind, firstMonitorStub, receiver, holder,
+                                      getter, pcOffset, outerClass),
+        inputDefinitelyObject_(inputDefinitelyObject)
+    {}
+
+    ICStub* getStub(ICStubSpace* space);
 };
 
 class ICGetPropCallDOMProxyNativeStub : public ICGetPropCallGetter
