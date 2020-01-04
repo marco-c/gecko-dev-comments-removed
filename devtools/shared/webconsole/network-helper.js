@@ -270,24 +270,6 @@ var NetworkHelper = {
 
 
 
-  isTopLevelLoad: function(aRequest)
-  {
-    if (aRequest instanceof Ci.nsIChannel) {
-      let loadInfo = aRequest.loadInfo;
-      if (loadInfo && loadInfo.parentOuterWindowID == loadInfo.outerWindowID) {
-        return (aRequest.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI);
-      }
-    }
-
-    return false;
-  },
-
-  
-
-
-
-
-
 
 
 
