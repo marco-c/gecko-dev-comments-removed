@@ -68,7 +68,10 @@ class ProfileEntry
         OSR = 0x08,
 
         
-        CATEGORY_MASK = ~IS_CPP_ENTRY & ~FRAME_LABEL_COPY & ~BEGIN_PSEUDO_JS & ~OSR
+        ALL = IS_CPP_ENTRY|FRAME_LABEL_COPY|BEGIN_PSEUDO_JS|OSR,
+
+        
+        CATEGORY_MASK = ~ALL
     };
 
     
@@ -86,6 +89,9 @@ class ProfileEntry
         FIRST    = OTHER,
         LAST     = EVENTS
     };
+
+    static_assert((static_cast<int>(Category::FIRST) & Flags::ALL) == 0,
+                  "The category bitflags should not intersect with the other flags!");
 
     
     
