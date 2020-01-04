@@ -14,14 +14,12 @@
 #if defined(XP_UNIX)
 #include "unistd.h"
 #include "dirent.h"
-#include "poll.h"
 #include "sys/stat.h"
 #if defined(ANDROID)
 #include <sys/vfs.h>
 #define statvfs statfs
 #else
 #include "sys/statvfs.h"
-#include "sys/wait.h"
 #include <spawn.h>
 #endif 
 #endif 
@@ -406,9 +404,6 @@ static const dom::ConstantSpec gLibcProperties[] =
 {
   
   INT_CONSTANT(O_APPEND),
-#if defined(O_CLOEXEC)
-  INT_CONSTANT(O_CLOEXEC),
-#endif 
   INT_CONSTANT(O_CREAT),
 #if defined(O_DIRECTORY)
   INT_CONSTANT(O_DIRECTORY),
@@ -445,10 +440,6 @@ static const dom::ConstantSpec gLibcProperties[] =
 #endif 
   INT_CONSTANT(O_TRUNC),
   INT_CONSTANT(O_WRONLY),
-
-#if defined(FD_CLOEXEC)
-  INT_CONSTANT(FD_CLOEXEC),
-#endif 
 
 #if defined(AT_EACCESS)
   INT_CONSTANT(AT_EACCESS),
@@ -491,27 +482,13 @@ static const dom::ConstantSpec gLibcProperties[] =
   INT_CONSTANT(SEEK_END),
   INT_CONSTANT(SEEK_SET),
 
+ 
 #if defined(XP_UNIX)
-  
-  INT_CONSTANT(POLLERR),
-  INT_CONSTANT(POLLHUP),
-  INT_CONSTANT(POLLIN),
-  INT_CONSTANT(POLLNVAL),
-  INT_CONSTANT(POLLOUT),
-
-  
-#if defined(WNOHANG)
-  INT_CONSTANT(WNOHANG),
-#endif 
-
-  
   INT_CONSTANT(F_GETLK),
-  INT_CONSTANT(F_SETFD),
-  INT_CONSTANT(F_SETFL),
   INT_CONSTANT(F_SETLK),
   INT_CONSTANT(F_SETLKW),
 
-  
+ 
   INT_CONSTANT(F_RDLCK),
   INT_CONSTANT(F_WRLCK),
   INT_CONSTANT(F_UNLCK),
