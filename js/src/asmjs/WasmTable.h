@@ -33,13 +33,21 @@ class Table : public ShareableBase<Table>
     TableKind kind_;
     UniquePtr<void*> array_;
     uint32_t length_;
+    bool initialized_;
 
   public:
     static RefPtr<Table> create(JSContext* cx, TableKind kind, uint32_t length);
 
+    
+
     bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
     void** array() const { return array_.get(); }
     uint32_t length() const { return length_; }
+
+    
+
+    bool initialized() const { return initialized_; }
+    void init(const CodeSegment& codeSegment);
 
     
 

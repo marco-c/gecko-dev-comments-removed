@@ -1677,6 +1677,7 @@ class MOZ_STACK_CLASS ModuleValidator
         importMap_(cx),
         arrayViews_(cx),
         atomicsPresent_(false),
+        mg_(ImportVector()),
         errorString_(nullptr),
         errorOffset_(UINT32_MAX),
         errorOverRecursed_(false)
@@ -2305,15 +2306,11 @@ class MOZ_STACK_CLASS ModuleValidator
 
         
         
-        ImportVector imports;
-
-        
-        
         SharedBytes bytes = js_new<ShareableBytes>();
         if (!bytes)
             return nullptr;
 
-        return mg_.finish(Move(imports), *bytes);
+        return mg_.finish(*bytes);
     }
 };
 
