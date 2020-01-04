@@ -97,8 +97,6 @@ BuiltinProvider.prototype = {
         
         "acorn/util/walk": "resource://gre/modules/devtools/acorn/walk.js",
         
-        "tern": "resource://gre/modules/devtools/tern",
-        
         "source-map": "resource://gre/modules/devtools/sourcemap/source-map.js",
         
         
@@ -146,7 +144,6 @@ SrcdirProvider.prototype = {
                                                "Promise-backend.js"));
     let acornURI = this.fileURI(OS.Path.join(sharedDir, "acorn"));
     let acornWalkURI = OS.Path.join(acornURI, "walk.js");
-    let ternURI = OS.Path.join(sharedDir, "tern");
     let sourceMapURI = this.fileURI(OS.Path.join(sharedDir,
                                                  "sourcemap", "source-map.js"));
     this.loader = new Loader.Loader({
@@ -165,8 +162,6 @@ SrcdirProvider.prototype = {
         "acorn": acornURI,
         
         "acorn/util/walk": acornWalkURI,
-        
-        "tern": ternURI,
         
         "source-map": sourceMapURI,
         
