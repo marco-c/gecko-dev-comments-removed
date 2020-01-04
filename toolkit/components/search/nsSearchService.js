@@ -1311,7 +1311,11 @@ function Engine(aLocation, aIsReadOnly) {
 
     
     
-    if (this._isDefault) {
+    if (this._isDefault ||
+        (uri && uri.spec.startsWith(APP_SEARCH_PREFIX))) {
+      
+      
+      
       this._id = "[app]/" + this._shortName + ".xml";
     }
     else if (!aIsReadOnly) {
