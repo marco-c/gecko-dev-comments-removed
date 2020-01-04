@@ -1325,47 +1325,106 @@ Promise::All(const GlobalObject& aGlobal,
   return promise.forget();
 }
 
- already_AddRefed<Promise>
+ void
 Promise::Race(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-              const Sequence<JS::Value>& aIterable, ErrorResult& aRv)
+              JS::Handle<JS::Value> aIterable, JS::MutableHandle<JS::Value> aRetval,
+              ErrorResult& aRv)
 {
+  
   nsCOMPtr<nsIGlobalObject> global =
     do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
+    return;
   }
 
   JSContext* cx = aGlobal.Context();
 
-  JS::Rooted<JSObject*> obj(cx, JS::CurrentGlobalOrNull(cx));
-  if (!obj) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
+  
+  
+  PromiseCapability capability(cx);
 
-  RefPtr<Promise> promise = Create(global, aRv);
+  
+  NewPromiseCapability(cx, global, aThisv, true, capability, aRv);
+  
   if (aRv.Failed()) {
-    return nullptr;
+    return;
   }
 
-  RefPtr<PromiseCallback> resolveCb =
-    new ResolvePromiseCallback(promise, obj);
+  MOZ_ASSERT(aThisv.isObject(), "How did NewPromiseCapability succeed?");
+  JS::Rooted<JSObject*> constructorObj(cx, &aThisv.toObject());
 
-  RefPtr<PromiseCallback> rejectCb = new RejectPromiseCallback(promise, obj);
-
-  for (uint32_t i = 0; i < aIterable.Length(); ++i) {
-    JS::Rooted<JS::Value> value(cx, aIterable.ElementAt(i));
-    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, aThisv, value, aRv);
-    
-    
-    
-    
-    MOZ_ASSERT(!aRv.Failed());
-    nextPromise->AppendCallbacks(resolveCb, rejectCb);
+  
+  
+  
+  aRetval.set(capability.PromiseValue());
+  if (!MaybeWrapValue(cx, aRetval)) {
+    aRv.NoteJSContextException();
+    return;
   }
 
-  return promise.forget();
+  
+  JS::AutoValueArray<2> callbackFunctions(cx);
+  callbackFunctions[0].set(capability.mResolve);
+  callbackFunctions[1].set(capability.mReject);
+
+  
+  JS::ForOfIterator iter(cx);
+  if (!iter.init(aIterable, JS::ForOfIterator::AllowNonIterable)) {
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  if (!iter.valueIsIterable()) {
+    ThrowErrorMessage(cx, MSG_PROMISE_ARG_NOT_ITERABLE,
+                      "Argument of Promise.race");
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  
+  
+
+  
+  
+  
+  JS::Rooted<JS::Value> nextValue(cx);
+  while (true) {
+    bool done;
+    
+    if (!iter.next(&nextValue, &done)) {
+      capability.RejectWithException(cx, aRv);
+      return;
+    }
+
+    
+    if (done) {
+      
+      return;
+    }
+
+    
+    
+    
+    JS::Rooted<JS::Value> nextPromise(cx);
+    if (!JS_CallFunctionName(cx, constructorObj, "resolve",
+                             JS::HandleValueArray(nextValue), &nextPromise)) {
+      
+      capability.RejectWithException(cx, aRv);
+      return;
+    }
+
+    
+    
+    JS::Rooted<JSObject*> nextPromiseObj(cx);
+    JS::Rooted<JS::Value> ignored(cx);
+    if (!JS_ValueToObject(cx, nextPromise, &nextPromiseObj) ||
+        !JS_CallFunctionName(cx, nextPromiseObj, "then", callbackFunctions,
+                             &ignored)) {
+      
+      capability.RejectWithException(cx, aRv);
+    }
+  }
 }
 
 
