@@ -470,14 +470,9 @@ Instance::create(JSContext* cx,
                  HandleArrayBufferObjectMaybeShared heap,
                  Handle<FunctionVector> funcImports,
                  const ExportMap& exportMap,
-                 MutableHandleWasmInstanceObject instanceObj)
+                 HandleWasmInstanceObject instanceObj)
 {
     
-    
-
-    instanceObj.set(WasmInstanceObject::create(cx));
-    if (!instanceObj)
-        return false;
 
     {
         auto instance = cx->make_unique<Instance>(Move(codeSegment), metadata, maybeBytecode,

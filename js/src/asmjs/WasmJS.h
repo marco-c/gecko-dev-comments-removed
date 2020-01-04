@@ -39,6 +39,8 @@ typedef UniquePtr<Instance> UniqueInstance;
 
 
 
+
+
 bool
 HasCompilerSupport(ExclusiveContext* cx);
 
@@ -53,10 +55,18 @@ Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
 
 
 
+
 extern const Class WasmClass;
 
 JSObject*
 InitWasmClass(JSContext* cx, HandleObject global);
+
+
+
+extern const Class WebAssemblyClass;
+
+JSObject*
+InitWebAssemblyClass(JSContext* cx, HandleObject global);
 
 
 
@@ -70,7 +80,9 @@ class WasmModuleObject : public NativeObject
     static const unsigned RESERVED_SLOTS = 1;
     static const Class class_;
 
-    static WasmModuleObject* create(ExclusiveContext* cx, wasm::UniqueModule module);
+    static WasmModuleObject* create(ExclusiveContext* cx,
+                                    wasm::UniqueModule module,
+                                    HandleObject proto = nullptr);
     wasm::Module& module() const;
 };
 
@@ -93,7 +105,8 @@ class WasmInstanceObject : public NativeObject
     static const unsigned RESERVED_SLOTS = 2;
     static const Class class_;
 
-    static WasmInstanceObject* create(ExclusiveContext* cx);
+    static WasmInstanceObject* create(ExclusiveContext* cx,
+                                      HandleObject proto = nullptr);
     void init(wasm::UniqueInstance module);
     void initExportsObject(HandleObject exportObj);
     wasm::Instance& instance() const;
