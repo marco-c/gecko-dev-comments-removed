@@ -947,8 +947,8 @@ GLContextGLX::MakeCurrentImpl(bool aForce)
             
             
             
-            int interval = gfxPlatform::IsInLayoutAsapMode() ? 0 : 1;
-            mGLX->xSwapInterval(mDisplay, mDrawable, interval);
+            const bool isASAP = (gfxPrefs::LayoutFrameRate() == 0);
+            mGLX->xSwapInterval(mDisplay, mDrawable, isASAP ? 0 : 1);
         }
     }
 
