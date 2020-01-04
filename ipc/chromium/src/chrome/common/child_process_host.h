@@ -12,7 +12,6 @@
 #include <list>
 
 #include "base/basictypes.h"
-#include "chrome/common/child_process_info.h"
 #include "chrome/common/ipc_channel.h"
 #include "mozilla/UniquePtr.h"
 
@@ -24,14 +23,12 @@ class FileDescriptor;
 
 
 
-class ChildProcessHost :
-                         public ChildProcessInfo,
-                         public IPC::Channel::Listener {
+class ChildProcessHost : public IPC::Channel::Listener {
  public:
   virtual ~ChildProcessHost();
 
  protected:
-  explicit ChildProcessHost(ProcessType type);
+  explicit ChildProcessHost();
 
   
   virtual bool CanShutdown() = 0;
@@ -40,10 +37,6 @@ class ChildProcessHost :
   bool CreateChannel();
 
   bool CreateChannel(mozilla::ipc::FileDescriptor& aFileDescriptor);
-
-  
-  
-  void SetHandle(base::ProcessHandle handle);
 
   
   virtual void OnMessageReceived(IPC::Message&& msg) { }

@@ -93,8 +93,7 @@ GeckoChildProcessHost::DefaultChildPrivileges()
 
 GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
                                              ChildPrivileges aPrivileges)
-  : ChildProcessHost(RENDER_PROCESS), 
-    mProcessType(aProcessType),
+  : mProcessType(aProcessType),
     mPrivileges(aPrivileges),
     mMonitor("mozilla.ipc.GeckChildProcessHost.mMonitor"),
     mProcessState(CREATING_CHANNEL),
@@ -1138,7 +1137,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   
   
   
-  SetHandle(process);
 #if defined(MOZ_WIDGET_COCOA)
   mChildTask = child_task;
 #endif
