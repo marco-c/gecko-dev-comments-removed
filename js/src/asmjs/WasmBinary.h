@@ -234,8 +234,6 @@ enum class Expr : uint16_t
     F64StoreMem,
 
     
-    Ternary,        
-
     While,          
     DoWhile,
 
