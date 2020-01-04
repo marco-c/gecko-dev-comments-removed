@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { DOM: dom, createClass, PropTypes, addons } =
+const { DOM: dom, createClass, addons } =
   require("devtools/client/shared/vendor/react");
 
 const Types = require("../types");
@@ -15,31 +15,28 @@ module.exports = createClass({
 
   mixins: [ addons.PureRenderMixin ],
 
+  
+
+
+
+
+
   propTypes: {
     location: Types.location.isRequired,
-    width: Types.viewport.width.isRequired,
-    height: Types.viewport.height.isRequired,
-    isResizing: PropTypes.bool.isRequired,
   },
 
   render() {
     let {
       location,
-      width,
-      height,
-      isResizing,
     } = this.props;
-
-    let className = "browser";
-    if (isResizing) {
-      className += " resizing";
-    }
 
     
     location = location.replace(/&/g, "&amp;");
 
     return dom.div(
       {
+        className: "browser-container",
+
         
 
 
@@ -49,9 +46,9 @@ module.exports = createClass({
 
 
         dangerouslySetInnerHTML: {
-          __html: `<iframe class="${className}" mozbrowser="true" remote="true"
+          __html: `<iframe class="browser" mozbrowser="true" remote="true"
                            noisolation="true" src="${location}"
-                           width="${width}" height="${height}"></iframe>`
+                           width="100%" height="100%"></iframe>`
         }
       }
     );
