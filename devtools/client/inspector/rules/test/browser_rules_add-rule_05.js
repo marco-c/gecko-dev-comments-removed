@@ -39,13 +39,32 @@ add_task(function*() {
   for (let data of TEST_DATA) {
     let {node, expected} = data;
     yield selectNode(node, inspector);
-    yield addNewRule(inspector, view);
+    yield addNewRuleFromContextMenu(inspector, view);
     yield testNewRule(view, expected, 1);
 
     info("Resetting page content");
     content.document.body.innerHTML = TEST_URI;
   }
 });
+
+function* addNewRuleFromContextMenu(inspector, view) {
+  info("Waiting for context menu to be shown");
+  let onPopup = once(view._contextmenu._menupopup, "popupshown");
+  let win = view.styleWindow;
+
+  EventUtils.synthesizeMouseAtCenter(view.element,
+    {button: 2, type: "contextmenu"}, win);
+  yield onPopup;
+
+  ok(!view._contextmenu.menuitemAddRule.hidden, "Add rule is visible");
+
+  info("Adding the new rule");
+  view._contextmenu.menuitemAddRule.click();
+  view._contextmenu._menupopup.hidePopup();
+
+  info("Waiting for rule view to change");
+  yield view.once("ruleview-changed");
+}
 
 function* testNewRule(view, expected, index) {
   let idRuleEditor = getRuleViewRuleEditor(view, index);

@@ -659,3 +659,20 @@ function reloadPage(inspector) {
     inspector.markup._waitForChildren();
   });
 }
+
+
+
+
+
+
+
+
+
+
+function* addNewRule(inspector, view) {
+  info("Adding the new rule using the button");
+  view.addRuleButton.click();
+
+  info("Waiting for rule view to change");
+  yield view.once("ruleview-changed");
+}
