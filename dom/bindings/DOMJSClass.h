@@ -53,6 +53,18 @@ struct ConstantSpec
 
 typedef bool (*PropertyEnabled)(JSContext* cx, JSObject* global);
 
+namespace GlobalNames {
+
+
+
+static const uint32_t Window = 1u << 0;
+static const uint32_t BackstagePass = 1u << 1;
+static const uint32_t DedicatedWorkerGlobalScope = 1u << 2;
+static const uint32_t SharedWorkerGlobalScope = 1u << 3;
+static const uint32_t ServiceWorkerGlobalScope = 1u << 4;
+static const uint32_t WorkerDebuggerGlobalScope = 1u << 5;
+} 
+
 template<typename T>
 struct Prefable {
   inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
@@ -85,6 +97,8 @@ struct Prefable {
 
   
   bool enabled;
+  
+  uint32_t nonExposedGlobals;
   
   
   
