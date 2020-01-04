@@ -269,7 +269,9 @@ private:
     
     Maybe<media::TimeUnit> mHighestEndTimestamp;
     
-    Maybe<media::TimeUnit> mLongestFrameDuration;
+    
+    
+    media::TimeUnit mLongestFrameDuration;
     
     
     
@@ -318,7 +320,6 @@ private:
       mHighestEndTimestamp.reset();
       mNeedRandomAccessPoint = true;
 
-      mLongestFrameDuration.reset();
       mNextInsertionIndex.reset();
     }
 
