@@ -40,9 +40,6 @@
 
 namespace JS {
 
-extern JS_PUBLIC_API(void)
-ResetTimeZone();
-
 class TwoByteChars;
 
 #ifdef JS_DEBUG
@@ -961,41 +958,6 @@ JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_Init(void);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_ShutDown(void);
-
 extern JS_PUBLIC_API(JSRuntime*)
 JS_NewRuntime(uint32_t maxbytes,
               uint32_t maxNurseryBytes = JS::DefaultNurseryBytes,
@@ -1003,20 +965,6 @@ JS_NewRuntime(uint32_t maxbytes,
 
 extern JS_PUBLIC_API(void)
 JS_DestroyRuntime(JSRuntime* rt);
-
-
-
-
-typedef void* (*JS_ICUAllocFn)(const void*, size_t size);
-typedef void* (*JS_ICUReallocFn)(const void*, void* p, size_t size);
-typedef void (*JS_ICUFreeFn)(const void*, void* p);
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn, JS_ICUReallocFn reallocFn, JS_ICUFreeFn freeFn);
 
 typedef double (*JS_CurrentEmbedderTimeFunction)();
 
@@ -4991,13 +4939,6 @@ JS_NewDateObject(JSContext* cx, int year, int mon, int mday, int hour, int min, 
 
 extern JS_PUBLIC_API(bool)
 JS_ObjectIsDate(JSContext* cx, JS::HandleObject obj, bool* isDate);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_ClearDateCaches(JSContext* cx);
 
 
 

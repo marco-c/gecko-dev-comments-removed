@@ -62,14 +62,10 @@
 #include "js/CharacterEncoding.h"
 #include "js/Conversions.h"
 #include "js/Date.h"
+#include "js/Initialization.h"
 #include "js/Proxy.h"
 #include "js/SliceBudget.h"
 #include "js/StructuredClone.h"
-#if ENABLE_INTL_API
-#include "unicode/timezone.h"
-#include "unicode/uclean.h"
-#include "unicode/utypes.h"
-#endif 
 #include "vm/DateObject.h"
 #include "vm/Debugger.h"
 #include "vm/ErrorObject.h"
@@ -445,129 +441,6 @@ JS_IsBuiltinFunctionConstructor(JSFunction* fun)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum InitState { Uninitialized, Running, ShutDown };
-static InitState jsInitState = Uninitialized;
-
-#ifdef DEBUG
-static unsigned
-MessageParameterCount(const char* format)
-{
-    unsigned numfmtspecs = 0;
-    for (const char* fmt = format; *fmt != '\0'; fmt++) {
-        if (*fmt == '{' && isdigit(fmt[1]))
-            ++numfmtspecs;
-    }
-    return numfmtspecs;
-}
-
-static void
-CheckMessageParameterCounts()
-{
-    
-    
-# define MSG_DEF(name, count, exception, format)           \
-        MOZ_ASSERT(MessageParameterCount(format) == count);
-# include "js.msg"
-# undef MSG_DEF
-}
-#endif 
-
-JS_PUBLIC_API(bool)
-JS_Init(void)
-{
-    MOZ_ASSERT(jsInitState == Uninitialized,
-               "must call JS_Init once before any JSAPI operation except "
-               "JS_SetICUMemoryFunctions");
-    MOZ_ASSERT(!JSRuntime::hasLiveRuntimes(),
-               "how do we have live runtimes before JS_Init?");
-
-    PRMJ_NowInit();
-
-#ifdef DEBUG
-    CheckMessageParameterCounts();
-#endif
-
-    using js::TlsPerThreadData;
-    if (!TlsPerThreadData.initialized() && !TlsPerThreadData.init())
-        return false;
-
-#if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
-    if (!js::oom::InitThreadType())
-        return false;
-    js::oom::SetThreadType(js::oom::THREAD_TYPE_MAIN);
-#endif
-
-    jit::ExecutableAllocator::initStatic();
-
-    if (!jit::InitializeIon())
-        return false;
-
-#if EXPOSE_INTL_API
-    UErrorCode err = U_ZERO_ERROR;
-    u_init(&err);
-    if (U_FAILURE(err))
-        return false;
-#endif 
-
-    if (!CreateHelperThreadsState())
-        return false;
-
-    if (!FutexRuntime::initialize())
-        return false;
-
-    jsInitState = Running;
-    return true;
-}
-
-JS_PUBLIC_API(void)
-JS_ShutDown(void)
-{
-    MOZ_ASSERT(jsInitState == Running,
-               "JS_ShutDown must only be called after JS_Init and can't race with it");
-#ifdef DEBUG
-    if (JSRuntime::hasLiveRuntimes()) {
-        
-        fprintf(stderr,
-                "WARNING: YOU ARE LEAKING THE WORLD (at least one JSRuntime "
-                "and everything alive inside it, that is) AT JS_ShutDown "
-                "TIME.  FIX THIS!\n");
-    }
-#endif
-
-    FutexRuntime::destroy();
-
-    DestroyHelperThreadsState();
-
-#ifdef JS_TRACE_LOGGING
-    DestroyTraceLoggerThreadState();
-    DestroyTraceLoggerGraphState();
-#endif
-
-    PRMJ_NowShutdown();
-
-#if EXPOSE_INTL_API
-    u_cleanup();
-#endif 
-
-    jsInitState = ShutDown;
-}
-
 #ifdef DEBUG
 JS_FRIEND_API(bool)
 JS::isGCEnabled()
@@ -581,7 +454,7 @@ JS_FRIEND_API(bool) JS::isGCEnabled() { return true; }
 JS_PUBLIC_API(JSRuntime*)
 JS_NewRuntime(uint32_t maxbytes, uint32_t maxNurseryBytes, JSRuntime* parentRuntime)
 {
-    MOZ_ASSERT(jsInitState == Running,
+    MOZ_ASSERT(JS::detail::libraryInitState == JS::detail::InitState::Running,
                "must call JS_Init prior to creating any JSRuntimes");
 
     
@@ -604,22 +477,6 @@ JS_PUBLIC_API(void)
 JS_DestroyRuntime(JSRuntime* rt)
 {
     js_delete(rt);
-}
-
-JS_PUBLIC_API(bool)
-JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn, JS_ICUReallocFn reallocFn, JS_ICUFreeFn freeFn)
-{
-    MOZ_ASSERT(jsInitState == Uninitialized,
-               "must call JS_SetICUMemoryFunctions before any other JSAPI "
-               "operation (including JS_Init)");
-
-#if EXPOSE_INTL_API
-    UErrorCode status = U_ZERO_ERROR;
-    u_setMemoryFunctions( nullptr, allocFn, reallocFn, freeFn, &status);
-    return U_SUCCESS(status);
-#else
-    return true;
-#endif
 }
 
 static JS_CurrentEmbedderTimeFunction currentEmbedderTimeFunction;
@@ -5573,14 +5430,6 @@ JS_ObjectIsDate(JSContext* cx, HandleObject obj, bool* isDate)
     return true;
 }
 
-JS_PUBLIC_API(void)
-JS_ClearDateCaches(JSContext* cx)
-{
-    AssertHeapIsIdle(cx);
-    CHECK_REQUEST(cx);
-    cx->runtime()->dateTimeInfo.updateTimeZoneAdjustment();
-}
-
 
 
 
@@ -6352,12 +6201,4 @@ JS_PUBLIC_API(Zone*)
 JS::GetObjectZone(JSObject* obj)
 {
     return obj->zone();
-}
-
-JS_PUBLIC_API(void)
-JS::ResetTimeZone()
-{
-#if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
-    icu::TimeZone::recreateDefault();
-#endif
 }
