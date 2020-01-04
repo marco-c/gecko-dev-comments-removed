@@ -87,9 +87,7 @@ HTMLImageMapAccessible::UpdateChildAreas(bool aDoFireEvents)
   if (!imageMapObj)
     return;
 
-  bool treeChanged = false;
-  AutoTreeMutation mt(this);
-  RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(this);
+  TreeMutation mt(this, TreeMutation::kNoEvents & !aDoFireEvents);
 
   
   for (int32_t childIdx = mChildren.Length() - 1; childIdx >= 0; childIdx--) {
@@ -97,15 +95,8 @@ HTMLImageMapAccessible::UpdateChildAreas(bool aDoFireEvents)
     if (area->GetContent()->GetPrimaryFrame())
       continue;
 
-    if (aDoFireEvents) {
-      RefPtr<AccHideEvent> event = new AccHideEvent(area, area->GetContent());
-      mDoc->FireDelayedEvent(event);
-      reorderEvent->AddSubMutationEvent(event);
-    }
-
     mt.BeforeRemoval(area);
     RemoveChild(area);
-    treeChanged = true;
   }
 
   
@@ -123,22 +114,10 @@ HTMLImageMapAccessible::UpdateChildAreas(bool aDoFireEvents)
       }
 
       mt.AfterInsertion(area);
-
-      if (aDoFireEvents) {
-        RefPtr<AccShowEvent> event = new AccShowEvent(area);
-        mDoc->FireDelayedEvent(event);
-        reorderEvent->AddSubMutationEvent(event);
-      }
-
-      treeChanged = true;
     }
   }
 
   mt.Done();
-
-  
-  if (treeChanged && aDoFireEvents)
-    mDoc->FireDelayedEvent(reorderEvent);
 }
 
 Accessible*

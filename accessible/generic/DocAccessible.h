@@ -8,8 +8,8 @@
 
 #include "nsIAccessiblePivot.h"
 
-#include "AccEvent.h"
 #include "HyperTextAccessibleWrap.h"
+#include "AccEvent.h"
 
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
@@ -187,9 +187,7 @@ public:
 
   void FireDelayedEvent(AccEvent* aEvent);
   void FireDelayedEvent(uint32_t aEventType, Accessible* aTarget);
-  void FireEventsOnInsertion(Accessible* aContainer,
-                             AccReorderEvent* aReorderEvent,
-                             uint32_t aUpdateFlags);
+  void FireEventsOnInsertion(Accessible* aContainer, uint32_t aUpdateFlags);
 
   
 
@@ -375,6 +373,11 @@ public:
   
 
 
+  NotificationController* Controller() const { return mNotificationController; }
+
+  
+
+
 
   DocAccessibleChild* IPCDoc() const { return mIPCDoc; }
 
@@ -522,9 +525,7 @@ protected:
     eAccessible = 1,
     eAlertAccessible = 2
   };
-
-  uint32_t UpdateTreeInternal(Accessible* aChild, bool aIsInsert,
-                              AccReorderEvent* aReorderEvent);
+  uint32_t UpdateTreeInternal(Accessible* aChild, bool aIsInsert);
 
   
 
@@ -703,7 +704,7 @@ protected:
 
 
   RefPtr<NotificationController> mNotificationController;
-  friend class EventQueue;
+  friend class EventTree;
   friend class NotificationController;
 
 private:

@@ -81,28 +81,6 @@ AccTextChangeEvent::
 
 
 
-
-uint32_t
-AccReorderEvent::IsShowHideEventTarget(const Accessible* aTarget) const
-{
-  uint32_t count = mDependentEvents.Length();
-  for (uint32_t index = count - 1; index < count; index--) {
-    if (mDependentEvents[index]->mAccessible == aTarget) {
-      uint32_t eventType = mDependentEvents[index]->mEventType;
-      if (eventType == nsIAccessibleEvent::EVENT_SHOW ||
-          eventType == nsIAccessibleEvent::EVENT_HIDE) {
-        return mDependentEvents[index]->mEventType;
-      }
-    }
-  }
-
-  return 0;
-}
-
-
-
-
-
 AccHideEvent::
   AccHideEvent(Accessible* aTarget, bool aNeedsShutdown) :
   AccMutationEvent(::nsIAccessibleEvent::EVENT_HIDE, aTarget),

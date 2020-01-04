@@ -39,20 +39,25 @@ EventQueue::PushEvent(AccEvent* aEvent)
   
   CoalesceEvents();
 
-  
-  
-  
-  Accessible* target = aEvent->mAccessible;
   if (aEvent->mEventRule != AccEvent::eDoNotEmit &&
-      target->HasNameDependentParent() &&
       (aEvent->mEventType == nsIAccessibleEvent::EVENT_NAME_CHANGE ||
        aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
-       aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED ||
-       aEvent->mEventType == nsIAccessibleEvent::EVENT_SHOW ||
-       aEvent->mEventType == nsIAccessibleEvent::EVENT_HIDE)) {
+       aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED)) {
+    PushNameChange(aEvent->mAccessible);
+  }
+  return true;
+}
+
+bool
+EventQueue::PushNameChange(Accessible* aTarget)
+{
+  
+  
+  
+  if (aTarget->HasNameDependentParent()) {
     
     
-    Accessible* parent = target->Parent();
+    Accessible* parent = aTarget->Parent();
     while (parent &&
            nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
       
@@ -63,21 +68,14 @@ EventQueue::PushEvent(AccEvent* aEvent)
         if (nameFlag == eNameFromSubtree) {
           RefPtr<AccEvent> nameChangeEvent =
             new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
-          PushEvent(nameChangeEvent);
+          return PushEvent(nameChangeEvent);
         }
         break;
       }
       parent = parent->Parent();
     }
   }
-
-  
-  
-  AccMutationEvent* showOrHideEvent = downcast_accEvent(aEvent);
-  if (showOrHideEvent && !showOrHideEvent->mTextChangeEvent)
-    CreateTextChangeEventFor(showOrHideEvent);
-
-  return true;
+  return false;
 }
 
 
@@ -92,45 +90,11 @@ EventQueue::CoalesceEvents()
 
   switch(tailEvent->mEventRule) {
     case AccEvent::eCoalesceReorder:
-      CoalesceReorderEvents(tailEvent);
+      MOZ_ASSERT(tailEvent->mAccessible->IsApplication() ||
+                 tailEvent->mAccessible->IsOuterDoc() ||
+                 tailEvent->mAccessible->IsXULTree(),
+                 "Only app or outerdoc accessible reorder events are in the queue");
       break; 
-
-    case AccEvent::eCoalesceMutationTextChange:
-    {
-      for (uint32_t index = tail - 1; index < tail; index--) {
-        AccEvent* thisEvent = mEvents[index];
-        if (thisEvent->mEventRule != tailEvent->mEventRule)
-          continue;
-
-        
-        if (thisEvent->mEventType != tailEvent->mEventType)
-          continue;
-
-        
-        
-        
-        if (thisEvent->mAccessible == tailEvent->mAccessible)
-          thisEvent->mEventRule = AccEvent::eDoNotEmit;
-
-        AccMutationEvent* tailMutationEvent = downcast_accEvent(tailEvent);
-        AccMutationEvent* thisMutationEvent = downcast_accEvent(thisEvent);
-        if (tailMutationEvent->mParent != thisMutationEvent->mParent)
-          continue;
-
-        
-        if (thisMutationEvent->IsHide()) {
-          AccHideEvent* tailHideEvent = downcast_accEvent(tailEvent);
-          AccHideEvent* thisHideEvent = downcast_accEvent(thisEvent);
-          CoalesceTextChangeEventsFor(tailHideEvent, thisHideEvent);
-          break;
-        }
-
-        AccShowEvent* tailShowEvent = downcast_accEvent(tailEvent);
-        AccShowEvent* thisShowEvent = downcast_accEvent(thisEvent);
-        CoalesceTextChangeEventsFor(tailShowEvent, thisShowEvent);
-        break;
-      }
-    } break; 
 
     case AccEvent::eCoalesceOfSameType:
     {
@@ -227,93 +191,6 @@ EventQueue::CoalesceEvents()
 }
 
 void
-EventQueue::CoalesceReorderEvents(AccEvent* aTailEvent)
-{
-  uint32_t count = mEvents.Length();
-  for (uint32_t index = count - 2; index < count; index--) {
-    AccEvent* thisEvent = mEvents[index];
-
-    
-    if (thisEvent->mEventType != aTailEvent->mEventType ||
-        thisEvent->mAccessible->IsApplication())
-      continue;
-
-    
-    
-    if (!thisEvent->mAccessible->IsDoc() &&
-        !thisEvent->mAccessible->IsInDocument()) {
-      thisEvent->mEventRule = AccEvent::eDoNotEmit;
-      continue;
-    }
-
-    
-    if (thisEvent->mAccessible == aTailEvent->mAccessible) {
-      thisEvent->mEventRule = AccEvent::eDoNotEmit;
-
-      return;
-    }
-
-    
-    
-    
-    
-    
-    Accessible* thisParent = thisEvent->mAccessible;
-    while (thisParent && thisParent != mDocument) {
-      if (thisParent->Parent() == aTailEvent->mAccessible) {
-        AccReorderEvent* tailReorder = downcast_accEvent(aTailEvent);
-        uint32_t eventType = tailReorder->IsShowHideEventTarget(thisParent);
-
-        
-        
-        if (eventType == nsIAccessibleEvent::EVENT_SHOW ||
-            eventType == nsIAccessibleEvent::EVENT_HIDE) {
-          AccReorderEvent* thisReorder = downcast_accEvent(thisEvent);
-          thisReorder->DoNotEmitAll();
-        } else {
-          thisEvent->mEventRule = AccEvent::eDoNotEmit;
-        }
-
-        return;
-      }
-
-      thisParent = thisParent->Parent();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    Accessible* tailParent = aTailEvent->mAccessible;
-    while (tailParent && tailParent != mDocument) {
-      if (tailParent->Parent() == thisEvent->mAccessible) {
-        AccReorderEvent* thisReorder = downcast_accEvent(thisEvent);
-        AccReorderEvent* tailReorder = downcast_accEvent(aTailEvent);
-        uint32_t eventType = thisReorder->IsShowHideEventTarget(tailParent);
-        if (eventType == nsIAccessibleEvent::EVENT_SHOW) {
-          tailReorder->DoNotEmitAll();
-        }
-        else if (eventType == nsIAccessibleEvent::EVENT_HIDE) {
-          NS_ERROR("Accessible tree was modified after it was removed! Huh?");
-        }
-        else {
-          aTailEvent->mEventRule = AccEvent::eDoNotEmit;
-          mEvents[index].swap(mEvents[count - 1]);
-        }
-
-        return;
-      }
-
-      tailParent = tailParent->Parent();
-    }
-
-  } 
-}
-
-void
 EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
                                     AccSelChangeEvent* aThisEvent,
                                     uint32_t aThisIndex)
@@ -393,90 +270,6 @@ EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
     aTailEvent->mEventType = nsIAccessibleEvent::EVENT_SELECTION_ADD;
 }
 
-void
-EventQueue::CoalesceTextChangeEventsFor(AccHideEvent* aTailEvent,
-                                        AccHideEvent* aThisEvent)
-{
-  
-  
-
-  AccTextChangeEvent* textEvent = aThisEvent->mTextChangeEvent;
-  if (!textEvent)
-    return;
-
-  if (aThisEvent->mNextSibling == aTailEvent->mAccessible) {
-    aTailEvent->mAccessible->AppendTextTo(textEvent->mModifiedText);
-
-  } else if (aThisEvent->mPrevSibling == aTailEvent->mAccessible) {
-    uint32_t oldLen = textEvent->GetLength();
-    aTailEvent->mAccessible->AppendTextTo(textEvent->mModifiedText);
-    textEvent->mStart -= textEvent->GetLength() - oldLen;
-  }
-
-  aTailEvent->mTextChangeEvent.swap(aThisEvent->mTextChangeEvent);
-}
-
-void
-EventQueue::CoalesceTextChangeEventsFor(AccShowEvent* aTailEvent,
-                                        AccShowEvent* aThisEvent)
-{
-  AccTextChangeEvent* textEvent = aThisEvent->mTextChangeEvent;
-  if (!textEvent)
-    return;
-
-  if (aTailEvent->mAccessible->IndexInParent() ==
-      aThisEvent->mAccessible->IndexInParent() + 1) {
-    
-    
-    aTailEvent->mAccessible->AppendTextTo(textEvent->mModifiedText);
-
-  } else if (aTailEvent->mAccessible->IndexInParent() ==
-             aThisEvent->mAccessible->IndexInParent() -1) {
-    
-    
-    nsAutoString startText;
-    aTailEvent->mAccessible->AppendTextTo(startText);
-    textEvent->mModifiedText = startText + textEvent->mModifiedText;
-    textEvent->mStart -= startText.Length();
-  }
-
-  aTailEvent->mTextChangeEvent.swap(aThisEvent->mTextChangeEvent);
-}
-
-void
-EventQueue::CreateTextChangeEventFor(AccMutationEvent* aEvent)
-{
-  Accessible* container = aEvent->mAccessible->Parent();
-  if (!container)
-    return;
-
-  HyperTextAccessible* textAccessible = container->AsHyperText();
-  if (!textAccessible)
-    return;
-
-  
-  if (aEvent->mAccessible->Role() == roles::WHITESPACE) {
-    nsCOMPtr<nsIEditor> editor = textAccessible->GetEditor();
-    if (editor) {
-      bool isEmpty = false;
-      editor->GetDocumentIsEmpty(&isEmpty);
-      if (isEmpty)
-        return;
-    }
-  }
-
-  int32_t offset = textAccessible->GetChildOffset(aEvent->mAccessible);
-
-  nsAutoString text;
-  aEvent->mAccessible->AppendTextTo(text);
-  if (text.IsEmpty())
-    return;
-
-  aEvent->mTextChangeEvent =
-    new AccTextChangeEvent(textAccessible, offset, text, aEvent->IsShow(),
-                           aEvent->mIsFromUserInput ? eFromUserInput : eNoUserInput);
-}
-
 
 
 
@@ -539,18 +332,6 @@ EventQueue::ProcessEventQueue()
       }
 
       nsEventShell::FireEvent(event);
-
-      
-      AccMutationEvent* mutationEvent = downcast_accEvent(event);
-      if (mutationEvent) {
-        if (mutationEvent->mTextChangeEvent)
-          nsEventShell::FireEvent(mutationEvent->mTextChangeEvent);
-      }
-    }
-
-    AccHideEvent* hideEvent = downcast_accEvent(event);
-    if (hideEvent && hideEvent->NeedsShutdown()) {
-      mDocument->ShutdownChildrenInSubtree(event->mAccessible);
     }
 
     if (!mDocument)

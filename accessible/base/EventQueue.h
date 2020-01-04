@@ -29,6 +29,11 @@ protected:
   
 
 
+  bool PushNameChange(Accessible* aTarget);
+
+  
+
+
   void ProcessEventQueue();
 
 private:
@@ -53,23 +58,7 @@ private:
                                AccSelChangeEvent* aThisEvent,
                                uint32_t aThisIndex);
 
-  
-
-
-  void CoalesceTextChangeEventsFor(AccHideEvent* aTailEvent,
-                                   AccHideEvent* aThisEvent);
-  void CoalesceTextChangeEventsFor(AccShowEvent* aTailEvent,
-                                   AccShowEvent* aThisEvent);
-
-  
-
-
-
-
-   void CreateTextChangeEventFor(AccMutationEvent* aEvent);
-
 protected:
-
   
 
 
@@ -79,7 +68,7 @@ protected:
 
 
 
-  nsTArray<RefPtr<AccEvent> > mEvents;
+  nsTArray<RefPtr<AccEvent>> mEvents;
 };
 
 } 

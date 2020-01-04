@@ -97,6 +97,17 @@ NotificationController::Shutdown()
   mNotifications.Clear();
   mEvents.Clear();
   mRelocations.Clear();
+  mEventTree.Clear();
+}
+
+EventTree*
+NotificationController::QueueMutation(Accessible* aContainer)
+{
+  EventTree* tree = mEventTree.FindOrInsert(aContainer);
+  if (tree) {
+    ScheduleProcessing();
+  }
+  return tree;
 }
 
 void
@@ -387,6 +398,9 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   
   
   mObservingState = eRefreshProcessing;
+
+  mEventTree.Process();
+  mEventTree.Clear();
 
   ProcessEventQueue();
 

@@ -7,6 +7,7 @@
 #define mozilla_a11y_NotificationController_h_
 
 #include "EventQueue.h"
+#include "EventTree.h"
 
 #include "mozilla/IndexSequence.h"
 #include "mozilla/Tuple.h"
@@ -108,9 +109,32 @@ public:
 
   void QueueEvent(AccEvent* aEvent)
   {
-    if (PushEvent(aEvent))
+    if (PushEvent(aEvent)) {
       ScheduleProcessing();
+    }
   }
+
+  
+
+
+
+
+  void QueueNameChange(Accessible* aChangeTarget)
+  {
+    if (PushNameChange(aChangeTarget)) {
+      ScheduleProcessing();
+    }
+  }
+
+  
+
+
+
+  EventTree* QueueMutation(Accessible* aContainer);
+
+#ifdef A11Y_LOG
+  const EventTree& RootEventTree() const { return mEventTree; };
+#endif
 
   
 
@@ -291,6 +315,11 @@ private:
 
 
   nsTArray<RefPtr<Accessible> > mRelocations;
+
+  
+
+
+  EventTree mEventTree;
 };
 
 } 
