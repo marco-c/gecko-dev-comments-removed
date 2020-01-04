@@ -1397,6 +1397,11 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
   TrackBuffer samples; 
                        
 
+  
+  
+  
+  bool needDiscontinuityCheck = true;
+
   if (aSamples.Length()) {
     aTrackData.mLastParsedEndTime = TimeUnit();
   }
@@ -1461,7 +1466,7 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
     
     
 
-    if (trackBuffer.mLastDecodeTimestamp.isSome() &&
+    if (needDiscontinuityCheck && trackBuffer.mLastDecodeTimestamp.isSome() &&
         (decodeTimestamp < trackBuffer.mLastDecodeTimestamp.ref() ||
          (decodeTimestamp - trackBuffer.mLastDecodeTimestamp.ref()
           > 2 * trackBuffer.mLongestFrameDuration))) {
@@ -1512,6 +1517,7 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
             : timestampOffset + sampleTimecode;
       }
       trackBuffer.mNeedRandomAccessPoint = false;
+      needDiscontinuityCheck = false;
     }
 
     
@@ -1530,6 +1536,7 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
         sizeNewSamples = 0;
       }
       trackBuffer.mNeedRandomAccessPoint = true;
+      needDiscontinuityCheck = true;
       continue;
     }
 
