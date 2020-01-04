@@ -1329,10 +1329,25 @@ void nsWindow::SetThemeRegion()
 
 
 
+void nsWindow::ConfigureAPZCTreeManager()
+{
+  nsBaseWidget::ConfigureAPZCTreeManager();
+
+  
+  
+  
+  
+  
+  
+  RegisterTouchWindow();
+}
+
 void nsWindow::RegisterTouchWindow() {
-  mTouchWindow = true;
-  mGesture.RegisterTouchWindow(mWnd);
-  ::EnumChildWindows(mWnd, nsWindow::RegisterTouchForDescendants, 0);
+  if (Preferences::GetInt("dom.w3c_touch_events.enabled", 0)) {
+    mTouchWindow = true;
+    mGesture.RegisterTouchWindow(mWnd);
+    ::EnumChildWindows(mWnd, nsWindow::RegisterTouchForDescendants, 0);
+  }
 }
 
 BOOL CALLBACK nsWindow::RegisterTouchForDescendants(HWND aWnd, LPARAM aMsg) {

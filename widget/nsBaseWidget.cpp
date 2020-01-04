@@ -910,14 +910,6 @@ void nsBaseWidget::ConfigureAPZCTreeManager()
     uint64_t rootLayerTreeId = mCompositorParent->RootLayerTreeId();
     CompositorParent::SetControllerForLayerTree(rootLayerTreeId, controller);
   }
-
-  
-  
-  
-  if (Preferences::GetInt("dom.w3c_touch_events.enabled", 0) ||
-      Preferences::GetBool("dom.w3c_pointer_events.enabled", false)) {
-    RegisterTouchWindow();
-  }
 }
 
 void nsBaseWidget::ConfigureAPZControllerThread()
