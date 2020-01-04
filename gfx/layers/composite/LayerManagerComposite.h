@@ -278,6 +278,11 @@ public:
     aNotifications->AppendElements(Move(mImageCompositeNotifications));
   }
 
+  
+  
+  
+  void SetWindowOverlayChanged() { mWindowOverlayChanged = true; }
+
 private:
   
   nsIntRegion mClippingRegion;
@@ -356,6 +361,8 @@ private:
   
   
   bool mLastFrameMissedHWC;
+
+  bool mWindowOverlayChanged;
 };
 
 
