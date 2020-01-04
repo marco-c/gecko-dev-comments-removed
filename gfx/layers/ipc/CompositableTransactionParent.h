@@ -25,7 +25,7 @@ typedef std::vector<mozilla::layers::EditReply> EditReplyVector;
 
 
 
-class CompositableParentManager : public ISurfaceAllocator
+class CompositableParentManager : public HostIPCAllocator
 {
 public:
   virtual void SendFenceHandleIfPresent(PTextureParent* aTexture) = 0;
@@ -33,11 +33,6 @@ public:
   virtual void SendAsyncMessage(const InfallibleTArray<AsyncParentMessageData>& aMessage) = 0;
 
   void SendPendingAsyncMessages();
-
-  
-
-
-  virtual base::ProcessId GetChildProcessId() = 0;
 
   void DestroyActor(const OpDestroy& aOp);
 

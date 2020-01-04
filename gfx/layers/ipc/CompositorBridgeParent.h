@@ -203,7 +203,7 @@ protected:
 
 class CompositorBridgeParent final : public PCompositorBridgeParent,
                                      public ShadowLayersManager,
-                                     public ISurfaceAllocator,
+                                     public HostIPCAllocator,
                                      public ShmemAllocator
 {
   friend class CompositorVsyncScheduler;
@@ -301,6 +301,10 @@ public:
 
   virtual void DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
+  virtual base::ProcessId GetChildProcessId() override
+  {
+    return OtherPid();
+  }
   
 
 
