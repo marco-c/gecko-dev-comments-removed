@@ -324,6 +324,34 @@ public:
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+class StoreLastInsertedIdFunction final : public mozIStorageFunction
+{
+  ~StoreLastInsertedIdFunction();
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection *aDBConn);
+};
+
 } 
 } 
 

@@ -69,7 +69,7 @@ public:
 
 
 
-  nsresult InsertPlace(const VisitData& aVisitData);
+  nsresult InsertPlace(VisitData& aVisitData);
 
   
 
