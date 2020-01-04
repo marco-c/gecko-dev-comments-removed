@@ -92,6 +92,20 @@ CssColor.prototype = {
     this._colorUnit = unit;
   },
 
+  
+
+
+
+
+
+
+  setAuthoredUnitFromColor: function(color) {
+    if (Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
+        CssColor.COLORUNIT.authored) {
+      this._colorUnit = classifyColor(color);
+    }
+  },
+
   get hasAlpha() {
     if (!this.valid) {
       return false;
