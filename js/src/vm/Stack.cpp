@@ -1401,7 +1401,7 @@ ActivationEntryMonitor::ActivationEntryMonitor(JSContext* cx, InterpreterFrame* 
         
         gc::AutoSuppressGC suppressGC(cx);
         RootedValue stack(cx, asyncStack(cx));
-        RootedString asyncCause(cx, cx->runtime()->asyncCauseForNewActivations);
+        const char* asyncCause = cx->runtime()->asyncCauseForNewActivations;
         if (entryFrame->isFunctionFrame())
             entryMonitor_->Entry(cx, &entryFrame->callee(), stack, asyncCause);
         else
@@ -1417,7 +1417,7 @@ ActivationEntryMonitor::ActivationEntryMonitor(JSContext* cx, jit::CalleeToken e
         
         gc::AutoSuppressGC suppressGC(cx);
         RootedValue stack(cx, asyncStack(cx));
-        RootedString asyncCause(cx, cx->runtime()->asyncCauseForNewActivations);
+        const char* asyncCause = cx->runtime()->asyncCauseForNewActivations;
         if (jit::CalleeTokenIsFunction(entryToken))
             entryMonitor_->Entry(cx_, jit::CalleeTokenToFunction(entryToken), stack, asyncCause);
         else

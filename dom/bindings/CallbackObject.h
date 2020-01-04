@@ -247,7 +247,6 @@ protected:
 
     
     Maybe<JS::Rooted<JSObject*>> mAsyncStack;
-    Maybe<JS::Rooted<JSString*>> mAsyncCause;
     Maybe<JS::AutoSetAsyncStackForNewCalls> mAsyncStackSetter;
 
     
