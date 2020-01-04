@@ -26,8 +26,8 @@ class ByteBufferInputStream extends InputStream {
 
     @Override
     public void close() {
-        mBuf = null;
-        mNativeRef.release();
+        
+        
     }
 
     @Override
