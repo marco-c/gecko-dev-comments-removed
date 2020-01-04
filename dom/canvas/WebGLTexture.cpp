@@ -338,18 +338,7 @@ WebGLTexture::IsComplete(uint32_t texUnit, const char** const out_reason) const
         auto formatUsage = baseImageInfo.mFormat;
         auto format = formatUsage->format;
 
-        
-        
-        
-        
-        
-        
-        if (format->IsColorFormat() && !formatUsage->isFilterable) {
-            *out_reason = "Because minification or magnification filtering is not NEAREST"
-                          " or NEAREST_MIPMAP_NEAREST, and the texture's format is a"
-                          " color format, its format must be \"texture-filterable\".";
-            return false;
-        }
+        bool isFilterable = formatUsage->isFilterable;
 
         
         
@@ -360,16 +349,21 @@ WebGLTexture::IsComplete(uint32_t texUnit, const char** const out_reason) const
         
         
         
+        if (format->d && mTexCompareMode != LOCAL_GL_NONE) {
+            isFilterable = true;
+        }
+
         
         
         
-        if (!mContext->IsExtensionEnabled(WebGLExtensionID::WEBGL_depth_texture)) {
-            if (format->d && mTexCompareMode != LOCAL_GL_NONE) {
-                *out_reason = "A depth or depth-stencil format with TEXTURE_COMPARE_MODE"
-                              " of NONE must have minification or magnification filtering"
-                              " of NEAREST or NEAREST_MIPMAP_NEAREST.";
-                return false;
-            }
+        
+        
+        
+        if (!isFilterable) {
+            *out_reason = "Because minification or magnification filtering is not NEAREST"
+                          " or NEAREST_MIPMAP_NEAREST, and the texture's format must be"
+                          " \"texture-filterable\".";
+            return false;
         }
     }
 
