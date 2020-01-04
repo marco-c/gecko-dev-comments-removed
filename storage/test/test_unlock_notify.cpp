@@ -37,10 +37,17 @@ public:
 
   void RunInBackground()
   {
-    (void)NS_NewThread(getter_AddRefs(mThread));
+    (void)NS_NewNamedThread("DatabaseLocker", getter_AddRefs(mThread));
     do_check_true(mThread);
 
     do_check_success(mThread->Dispatch(this, NS_DISPATCH_NORMAL));
+  }
+
+  void Shutdown()
+  {
+    if (mThread) {
+      mThread->Shutdown();
+    }
   }
 
   NS_IMETHOD Run()
@@ -165,17 +172,20 @@ test_step_locked_does_not_block_main_thread()
 
   RefPtr<DatabaseLocker> locker(new DatabaseLocker("SELECT * FROM test"));
   do_check_true(locker);
-  mozilla::ReentrantMonitorAutoEnter lock(locker->monitor);
-  locker->RunInBackground();
+  {
+    mozilla::ReentrantMonitorAutoEnter lock(locker->monitor);
+    locker->RunInBackground();
 
-  
-  locker->WaitFor(WRITE_LOCK);
+    
+    locker->WaitFor(WRITE_LOCK);
 
-  bool hasResult;
-  rv = stmt->ExecuteStep(&hasResult);
-  do_check_eq(rv, NS_ERROR_FILE_IS_LOCKED);
+    bool hasResult;
+    rv = stmt->ExecuteStep(&hasResult);
+    do_check_eq(rv, NS_ERROR_FILE_IS_LOCKED);
 
-  locker->Notify(TEST_DONE);
+    locker->Notify(TEST_DONE);
+  }
+  locker->Shutdown();
 }
 
 void
@@ -194,18 +204,21 @@ test_drop_index_does_not_loop()
   RefPtr<DatabaseTester> tester =
     new DatabaseTester(db, "DROP INDEX unique_data");
   do_check_true(tester);
-  mozilla::ReentrantMonitorAutoEnter lock(tester->monitor);
-  tester->RunInBackground();
+  {
+    mozilla::ReentrantMonitorAutoEnter lock(tester->monitor);
+    tester->RunInBackground();
 
-  
-  bool hasResult;
-  rv = stmt->ExecuteStep(&hasResult);
-  do_check_success(rv);
-  do_check_true(hasResult);
-  tester->Notify(READ_LOCK);
+    
+    bool hasResult;
+    rv = stmt->ExecuteStep(&hasResult);
+    do_check_success(rv);
+    do_check_true(hasResult);
+    tester->Notify(READ_LOCK);
 
-  
-  tester->WaitFor(TEST_DONE);
+    
+    tester->WaitFor(TEST_DONE);
+  }
+  tester->Shutdown();
 }
 
 void
@@ -223,18 +236,21 @@ test_drop_table_does_not_loop()
 
   RefPtr<DatabaseTester> tester(new DatabaseTester(db, "DROP TABLE test"));
   do_check_true(tester);
-  mozilla::ReentrantMonitorAutoEnter lock(tester->monitor);
-  tester->RunInBackground();
+  {
+    mozilla::ReentrantMonitorAutoEnter lock(tester->monitor);
+    tester->RunInBackground();
 
-  
-  bool hasResult;
-  rv = stmt->ExecuteStep(&hasResult);
-  do_check_success(rv);
-  do_check_true(hasResult);
-  tester->Notify(READ_LOCK);
+    
+    bool hasResult;
+    rv = stmt->ExecuteStep(&hasResult);
+    do_check_success(rv);
+    do_check_true(hasResult);
+    tester->Notify(READ_LOCK);
 
-  
-  tester->WaitFor(TEST_DONE);
+    
+    tester->WaitFor(TEST_DONE);
+  }
+  tester->Shutdown();
 }
 
 void (*gTests[])(void) = {
