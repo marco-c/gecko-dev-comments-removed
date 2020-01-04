@@ -937,7 +937,7 @@ chatbox[customSize] {
 
 chatbox[customSize="loopChatEnabled"] {
   
-  height: 430px;
+  height: 325px;
 }
 
 #chat-window[customSize="loopChatEnabled"] {
@@ -947,12 +947,7 @@ chatbox[customSize="loopChatEnabled"] {
 
 chatbox[customSize="loopChatMessageAppended"] {
   
-  height: 430px;
-}
-
-chatbox[customSize="loopChatDisabledMessageAppended"] {
-  
-  height: 388px;
+  height: 400px;
 }
 
 #chat-window[customSize="loopChatMessageAppended"] {
@@ -977,7 +972,7 @@ chatbar {
 
 chatbar[customSize] > .chatbar-innerbox {
   
-  margin-top: -450px;
+  margin-top: -425px;
 }
 
 
