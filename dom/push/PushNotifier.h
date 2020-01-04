@@ -10,25 +10,9 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIPrincipal.h"
 #include "nsString.h"
-#include "nsTArray.h"
-
-#include "mozilla/Maybe.h"
-
-#define PUSHNOTIFIER_CONTRACTID \
-  "@mozilla.org/push/Notifier;1"
-
-
-#define OBSERVER_TOPIC_PUSH "push-message"
-#define OBSERVER_TOPIC_SUBSCRIPTION_CHANGE "push-subscription-change"
-#define OBSERVER_TOPIC_SUBSCRIPTION_LOST "push-subscription-lost"
 
 namespace mozilla {
 namespace dom {
-
-class ContentParent;
-class ContentChild;
-
-
 
 
 
@@ -38,9 +22,6 @@ class ContentChild;
 
 class PushNotifier final : public nsIPushNotifier
 {
-  friend class ContentParent;
-  friend class ContentChild;
-
 public:
   PushNotifier();
 
@@ -54,19 +35,6 @@ private:
   nsresult NotifyPush(const nsACString& aScope, nsIPrincipal* aPrincipal,
                       const nsAString& aMessageId,
                       const Maybe<nsTArray<uint8_t>>& aData);
-  nsresult NotifyPushWorkers(const nsACString& aScope,
-                             nsIPrincipal* aPrincipal,
-                             const nsAString& aMessageId,
-                             const Maybe<nsTArray<uint8_t>>& aData);
-  nsresult NotifySubscriptionChangeWorkers(const nsACString& aScope,
-                                           nsIPrincipal* aPrincipal);
-  void NotifyErrorWorkers(const nsACString& aScope, const nsAString& aMessage,
-                          uint32_t aFlags);
-  nsresult NotifyPushObservers(const nsACString& aScope,
-                               const Maybe<nsTArray<uint8_t>>& aData);
-  nsresult NotifySubscriptionChangeObservers(const nsACString& aScope);
-  nsresult NotifySubscriptionLostObservers(const nsACString& aScope,
-                                           uint16_t aReason);
   nsresult DoNotifyObservers(nsISupports *aSubject, const char *aTopic,
                              const nsACString& aScope);
   bool ShouldNotifyWorkers(nsIPrincipal* aPrincipal);
@@ -88,10 +56,9 @@ public:
                                            nsIPushMessage)
   NS_DECL_NSIPUSHMESSAGE
 
-protected:
+private:
   virtual ~PushMessage();
 
-private:
   nsresult EnsureDecodedText();
 
   nsTArray<uint8_t> mData;
