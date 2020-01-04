@@ -25,7 +25,7 @@
 
 
 
-#define MAX_ICON_FILESIZE(s) ((uint32_t) s*s*4)
+#define MAX_FAVICON_FILESIZE 3072 /* 3 KiB */
 
 
 class mozIStorageStatementCallback;
@@ -85,7 +85,6 @@ public:
   nsresult OptimizeFaviconImage(const uint8_t* aData, uint32_t aDataLen,
                                 const nsACString& aMimeType,
                                 nsACString& aNewData, nsACString& aNewMimeType);
-  int32_t GetOptimizedIconDimension() { return mOptimizedIconDimension; }
 
   
 
@@ -134,12 +133,6 @@ private:
 
 
   nsCOMPtr<nsIURI> mDefaultIcon;
-
-  
-  
-  
-  
-  int32_t mOptimizedIconDimension;
 
   uint32_t mFailedFaviconSerial;
   nsDataHashtable<nsCStringHashKey, uint32_t> mFailedFavicons;

@@ -37,7 +37,7 @@
 #include "imgIContainer.h"
 
 
-#define OPTIMIZED_FAVICON_DIMENSION 16
+#define OPTIMIZED_FAVICON_DIMENSION 32
 
 #define MAX_FAILED_FAVICONS 256
 #define FAVICON_CACHE_REDUCE_COUNT 64
@@ -79,8 +79,7 @@ NS_IMPL_ISUPPORTS_CI(
 )
 
 nsFaviconService::nsFaviconService()
-  : mOptimizedIconDimension(OPTIMIZED_FAVICON_DIMENSION)
-  , mFailedFaviconSerial(0)
+  : mFailedFaviconSerial(0)
   , mFailedFavicons(MAX_FAILED_FAVICONS / 2)
   , mUnassociatedIcons(UNASSOCIATED_FAVICONS_LENGTH)
 {
@@ -104,10 +103,6 @@ nsFaviconService::Init()
 {
   mDB = Database::GetDatabase();
   NS_ENSURE_STATE(mDB);
-
-  mOptimizedIconDimension = Preferences::GetInt(
-    "places.favicons.optimizeToDimension", OPTIMIZED_FAVICON_DIMENSION
-  );
 
   mExpireUnassociatedIconsTimer = do_CreateInstance("@mozilla.org/timer;1");
   NS_ENSURE_STATE(mExpireUnassociatedIconsTimer);
@@ -343,11 +338,11 @@ nsFaviconService::ReplaceFaviconData(nsIURI* aFaviconURI,
   
   
   
-  if (aDataLen > MAX_ICON_FILESIZE(mOptimizedIconDimension)) {
+  if (aDataLen > MAX_FAVICON_FILESIZE) {
     rv = OptimizeFaviconImage(aData, aDataLen, aMimeType, iconData->data, iconData->mimeType);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (iconData->data.Length() > nsIFaviconService::MAX_FAVICON_SIZE) {
+    if (iconData->data.Length() > nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
       
       
       mUnassociatedIcons.RemoveEntry(aFaviconURI);
@@ -660,8 +655,8 @@ nsFaviconService::OptimizeFaviconImage(const uint8_t* aData, uint32_t aDataLen,
   
   nsCOMPtr<nsIInputStream> iconStream;
   rv = imgtool->EncodeScaledImage(container, aNewMimeType,
-                                  mOptimizedIconDimension,
-                                  mOptimizedIconDimension,
+                                  OPTIMIZED_FAVICON_DIMENSION,
+                                  OPTIMIZED_FAVICON_DIMENSION,
                                   EmptyString(),
                                   getter_AddRefs(iconStream));
   NS_ENSURE_SUCCESS(rv, rv);
