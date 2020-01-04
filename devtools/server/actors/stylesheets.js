@@ -451,6 +451,22 @@ var StyleSheetActor = protocol.ActorClass({
   
 
 
+  get safeHref() {
+    let href = this.href;
+    if (!href) {
+      if (this.ownerNode instanceof Ci.nsIDOMHTMLDocument) {
+        href = this.ownerNode.location.href;
+      } else if (this.ownerNode.ownerDocument &&
+                 this.ownerNode.ownerDocument.location) {
+        href = this.ownerNode.ownerDocument.location.href;
+      }
+    }
+    return href;
+  },
+
+  
+
+
 
 
   get styleSheetIndex()
@@ -742,7 +758,7 @@ var StyleSheetActor = protocol.ActorClass({
         return;
       }
 
-      url = normalize(url, this.href);
+      url = normalize(url, this.safeHref);
       let options = {
         loadFromCache: false,
         policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
@@ -760,7 +776,7 @@ var StyleSheetActor = protocol.ActorClass({
             `Source map at ${url} not found or invalid`));
           return null;
         }
-        this._setSourceMapRoot(consumer, url, this.href);
+        this._setSourceMapRoot(consumer, url, this.safeHref);
         this._sourceMap = promise.resolve(consumer);
 
         deferred.resolve(consumer);
