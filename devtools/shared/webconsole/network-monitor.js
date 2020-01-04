@@ -1576,11 +1576,8 @@ NetworkEventActorProxy.prototype = {
 
 
 
-function NetworkMonitorManager(frame, id) {
+function NetworkMonitorManager(mm, id) {
   this.id = id;
-  
-  
-  let mm = frame.messageManager || frame.frameLoader.messageManager;
   this.messageManager = mm;
   this.onNetMonitorMessage = this.onNetMonitorMessage.bind(this);
   this.onNetworkEvent = this.onNetworkEvent.bind(this);
