@@ -169,6 +169,10 @@ struct MappedYCbCrTextureData {
   }
 };
 
+#ifdef XP_WIN
+class D3D11TextureData;
+#endif
+
 class TextureData {
 public:
   TextureData() { MOZ_COUNT_CTOR(TextureData); }
@@ -220,6 +224,12 @@ public:
   virtual void SyncWithObject(SyncObject* aFence) {};
 
   virtual TextureFlags GetTextureFlags() const { return TextureFlags::NO_FLAGS; }
+
+#ifdef XP_WIN
+  virtual D3D11TextureData* AsD3D11TextureData() {
+    return nullptr;
+  }
+#endif
 };
 
 
@@ -534,9 +544,9 @@ public:
 
 
 
-   void SetWaste(int aWasteArea) {
-     mWasteTracker.Update(aWasteArea, BytesPerPixel(GetFormat()));
-   }
+  void SetWaste(int aWasteArea) {
+    mWasteTracker.Update(aWasteArea, BytesPerPixel(GetFormat()));
+  }
 
   
 
@@ -551,8 +561,8 @@ public:
 
   ISurfaceAllocator* GetAllocator() { return mAllocator; }
 
-   TextureClientRecycleAllocator* GetRecycleAllocator() { return mRecycleAllocator; }
-   void SetRecycleAllocator(TextureClientRecycleAllocator* aAllocator);
+  TextureClientRecycleAllocator* GetRecycleAllocator() { return mRecycleAllocator; }
+  void SetRecycleAllocator(TextureClientRecycleAllocator* aAllocator);
 
   
   TextureData* GetInternalData() { return mData; }
