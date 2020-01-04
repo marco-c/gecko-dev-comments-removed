@@ -117,22 +117,14 @@ AudioContext::AudioContext(nsPIDOMWindow* aWindow,
   }
 }
 
-nsresult
+void
 AudioContext::Init()
 {
   
   
   
-  if (mIsOffline) {
-    mDestination->SetIsOnlyNodeForContext(true);
-  } else {
-    nsresult rv = mDestination->CreateAudioChannelAgent();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  return NS_OK;
+  mDestination->CreateAudioChannelAgent();
+  mDestination->SetIsOnlyNodeForContext(true);
 }
 
 AudioContext::~AudioContext()
@@ -168,10 +160,7 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
   nsRefPtr<AudioContext> object =
     new AudioContext(window, false,
                      AudioChannelService::GetDefaultAudioChannel());
-  aRv = object->Init();
-  if (NS_WARN_IF(aRv.Failed())) {
-     return nullptr;
-  }
+  object->Init();
 
   RegisterWeakMemoryReporter(object);
 
@@ -190,10 +179,7 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
   }
 
   nsRefPtr<AudioContext> object = new AudioContext(window, false, aChannel);
-  aRv = object->Init();
-  if (NS_WARN_IF(aRv.Failed())) {
-     return nullptr;
-  }
+  object->Init();
 
   RegisterWeakMemoryReporter(object);
 
