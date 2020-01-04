@@ -173,9 +173,7 @@ public:
 
 
 
-
-  void ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion,
-                             const Maybe<ParentLayerIntRect>& aClipFromAncestors);
+  void ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion);
 
   
 
