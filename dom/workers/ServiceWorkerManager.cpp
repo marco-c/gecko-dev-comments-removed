@@ -1079,7 +1079,7 @@ public:
 
     
     nsCOMPtr<nsIRunnable> upr =
-      NS_NewRunnableMethodWithArg<ServiceWorkerRegistrationInfo*>(
+      NS_NewRunnableMethodWithArg<RefPtr<ServiceWorkerRegistrationInfo>>(
         swm,
         &ServiceWorkerManager::FireUpdateFoundOnServiceWorkerRegistrations,
         mRegistration);
@@ -1767,9 +1767,8 @@ ServiceWorkerRegistrationInfo::Activate()
 
   
   nsCOMPtr<nsIRunnable> controllerChangeRunnable =
-    NS_NewRunnableMethodWithArg<ServiceWorkerRegistrationInfo*>(swm,
-                                                                &ServiceWorkerManager::FireControllerChange,
-                                                                this);
+    NS_NewRunnableMethodWithArg<RefPtr<ServiceWorkerRegistrationInfo>>(
+      swm, &ServiceWorkerManager::FireControllerChange, this);
   NS_DispatchToMainThread(controllerChangeRunnable);
 
   nsCOMPtr<nsIRunnable> failRunnable =
