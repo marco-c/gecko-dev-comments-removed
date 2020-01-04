@@ -27,8 +27,8 @@
 class nsAsyncInstantiateEvent;
 class nsStopPluginRunnable;
 class AutoSetInstantiatingToFalse;
-class nsPluginFrame;
 class nsFrameLoader;
+class nsPluginFrame;
 class nsXULElement;
 class nsPluginInstanceOwner;
 
@@ -36,6 +36,7 @@ namespace mozilla {
 namespace dom {
 template<typename T> class Sequence;
 struct MozPluginParameter;
+class HTMLIFrameElement;
 } 
 } 
 
@@ -207,7 +208,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     {
       return mURI;
     }
-  
+
     
 
 
@@ -222,7 +223,13 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     {
       return !!mInstanceOwner;
     }
-    void SwapFrameLoaders(nsXULElement& aOtherOwner, mozilla::ErrorResult& aRv)
+    void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
+                          mozilla::ErrorResult& aRv)
+    {
+      aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    }
+    void SwapFrameLoaders(nsXULElement& aOtherLoaderOwner,
+                          mozilla::ErrorResult& aRv)
     {
       aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
     }
