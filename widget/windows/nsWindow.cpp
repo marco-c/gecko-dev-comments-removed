@@ -1257,15 +1257,7 @@ NS_METHOD nsWindow::Show(bool bState)
             if (CanTakeFocus()) {
               ::ShowWindow(mWnd, SW_SHOWNORMAL);
             } else {
-              
-              
-              HWND wndAfter = ::GetForegroundWindow();
-              if (!wndAfter)
-                wndAfter = HWND_BOTTOM;
-              else if (GetWindowLongPtrW(wndAfter, GWL_EXSTYLE) & WS_EX_TOPMOST)
-                wndAfter = HWND_TOP;
-              ::SetWindowPos(mWnd, wndAfter, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | 
-                             SWP_NOMOVE | SWP_NOACTIVATE);
+              ::ShowWindow(mWnd, SW_SHOWNOACTIVATE);
               GetAttention(2);
             }
             break;
