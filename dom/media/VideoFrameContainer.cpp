@@ -93,7 +93,24 @@ void VideoFrameContainer::ClearCurrentFrame()
   mImageContainer->GetCurrentImages(&kungFuDeathGrip);
 
   mImageContainer->ClearAllImages();
-  mImageSizeChanged = false;
+}
+
+void VideoFrameContainer::ClearFutureFrames()
+{
+  MutexAutoLock lock(mMutex);
+
+  
+  
+  nsTArray<ImageContainer::OwningImage> kungFuDeathGrip;
+  mImageContainer->GetCurrentImages(&kungFuDeathGrip);
+
+  if (!kungFuDeathGrip.IsEmpty()) {
+    nsTArray<ImageContainer::NonOwningImage> currentFrame;
+    const ImageContainer::OwningImage& img = kungFuDeathGrip[0];
+    currentFrame.AppendElement(ImageContainer::NonOwningImage(img.mImage,
+        img.mTimeStamp, img.mFrameID, img.mProducerID));
+    mImageContainer->SetCurrentImages(currentFrame);
+  }
 }
 
 ImageContainer* VideoFrameContainer::GetImageContainer() {

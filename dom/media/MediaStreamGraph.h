@@ -461,6 +461,9 @@ public:
   }
   void RemoveVideoOutputImpl(VideoFrameContainer* aContainer)
   {
+    
+    
+    aContainer->ClearFutureFrames();
     mVideoOutputs.RemoveElement(aContainer);
   }
   void ChangeExplicitBlockerCountImpl(GraphTime aTime, int32_t aDelta)

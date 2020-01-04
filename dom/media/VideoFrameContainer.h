@@ -54,6 +54,9 @@ public:
   void ClearCurrentFrame();
   
   
+  void ClearFutureFrames();
+  
+  
   
   double GetFrameDelay();
 

@@ -347,14 +347,14 @@ public:
 
   virtual void FireTimeUpdate(bool aPeriodic) final override;
 
+  
+
+
+
+
   MediaStream* GetSrcMediaStream() const
   {
-    NS_ASSERTION(mSrcStream, "Don't call this when not playing a stream");
-    if (!mPlaybackStream) {
-      
-      return mSrcStream->GetStream();
-    }
-    return mPlaybackStream->GetStream();
+    return mSrcStream ? mSrcStream->GetStream() : nullptr;
   }
 
   
@@ -747,6 +747,11 @@ protected:
 
 
   void EndSrcMediaStreamPlayback();
+  
+
+
+  enum { REMOVING_SRC_STREAM = 0x1 };
+  void UpdateSrcMediaStreamPlaying(uint32_t aFlags = 0);
 
   
 
@@ -1082,7 +1087,8 @@ protected:
   nsRefPtr<DOMMediaStream> mSrcStream;
 
   
-  nsRefPtr<MediaInputPort> mPlaybackStreamInputPort;
+  
+  double mSrcStreamPausedCurrentTime;
 
   
   nsRefPtr<MediaInputPort> mCaptureStreamPort;
@@ -1369,6 +1375,9 @@ protected:
   
   
   bool mSuspendedForPreloadNone;
+
+  
+  bool mSrcStreamIsPlaying;
 
   
   bool mMediaSecurityVerified;
