@@ -1239,10 +1239,12 @@ Accessible::ApplyARIAState(uint64_t* aState) const
 
     if (mContent->HasID()) {
       
-      nsIContent *ancestorContent = mContent;
-      while ((ancestorContent = ancestorContent->GetParent()) != nullptr) {
-        if (ancestorContent->HasAttr(kNameSpaceID_None, nsGkAtoms::aria_activedescendant)) {
-            
+      
+      const Accessible* ancestor = this;
+      while ((ancestor = ancestor->Parent()) && !ancestor->IsDoc()) {
+        dom::Element* el = ancestor->Elm();
+        if (el &&
+            el->HasAttr(kNameSpaceID_None, nsGkAtoms::aria_activedescendant)) {
           *aState |= states::FOCUSABLE;
           break;
         }
@@ -1252,11 +1254,11 @@ Accessible::ApplyARIAState(uint64_t* aState) const
 
   if (*aState & states::FOCUSABLE) {
     
-    nsIContent *ancestorContent = mContent;
-    while ((ancestorContent = ancestorContent->GetParent()) != nullptr) {
-      if (ancestorContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_disabled,
-                                       nsGkAtoms::_true, eCaseMatters)) {
-          
+    const Accessible* ancestor = this;
+    while ((ancestor = ancestor->Parent()) && !ancestor->IsDoc()) {
+      dom::Element* el = ancestor->Elm();
+      if (el && el->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_disabled,
+                                nsGkAtoms::_true, eCaseMatters)) {
         *aState |= states::UNAVAILABLE;
         break;
       }
