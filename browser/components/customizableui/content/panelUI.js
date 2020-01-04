@@ -303,7 +303,7 @@ const PanelUI = {
 
 
 
-  showSubView: function(aViewId, aAnchor, aPlacementArea) {
+  showSubView: Task.async(function*(aViewId, aAnchor, aPlacementArea) {
     this._ensureEventListenersAdded();
     let viewNode = document.getElementById(aViewId);
     if (!viewNode) {
@@ -322,10 +322,28 @@ const PanelUI = {
       aAnchor.open = true;
       
       
-      let evt = document.createEvent("CustomEvent");
-      evt.initCustomEvent("ViewShowing", true, true, viewNode);
+      let detail = {
+        blockers: new Set(),
+        addBlocker(aPromise) {
+          this.blockers.add(aPromise);
+        },
+      };
+
+      let evt = new CustomEvent("ViewShowing", { bubbles: true, cancelable: true, detail });
       viewNode.dispatchEvent(evt);
-      if (evt.defaultPrevented) {
+
+      let cancel = evt.defaultPrevented;
+      if (detail.blockers.size) {
+        try {
+          let results = yield Promise.all(detail.blockers);
+          cancel = cancel || results.some(val => val === false);
+        } catch (e) {
+          Components.utils.reportError(e);
+          cancel = true;
+        }
+      }
+
+      if (cancel) {
         aAnchor.open = false;
         return;
       }
@@ -335,9 +353,6 @@ const PanelUI = {
       tempPanel.setAttribute("id", "customizationui-widget-panel");
       tempPanel.setAttribute("class", "cui-widget-panel");
       tempPanel.setAttribute("viewId", aViewId);
-      if (aAnchor.getAttribute("tabspecific")) {
-        tempPanel.setAttribute("tabspecific", true);
-      }
       if (this._disableAnimations) {
         tempPanel.setAttribute("animate", "false");
       }
@@ -378,7 +393,7 @@ const PanelUI = {
       }
       tempPanel.openPopup(iconAnchor || aAnchor, "bottomcenter topright");
     }
-  },
+  }),
 
   
 
