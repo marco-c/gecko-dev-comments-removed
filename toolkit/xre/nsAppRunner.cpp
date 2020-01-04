@@ -603,30 +603,47 @@ CanShowProfileManager()
 }
 
 #if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+static const char*
+SandboxTempDirParent()
+{
+  return NS_WIN_LOW_INTEGRITY_TEMP_BASE;
+}
+#endif
+
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+static const char*
+SandboxTempDirParent()
+{
+  return NS_OS_TEMP_DIR;
+}
+#endif
+
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
 static already_AddRefed<nsIFile>
-GetAndCleanLowIntegrityTemp(const nsAString& aTempDirSuffix)
+GetAndCleanTempDir(const nsAString& aTempDirSuffix)
 {
   
-  nsCOMPtr<nsIFile> lowIntegrityTemp;
-  nsresult rv = NS_GetSpecialDirectory(NS_WIN_LOW_INTEGRITY_TEMP_BASE,
-                                       getter_AddRefs(lowIntegrityTemp));
+  
+  nsCOMPtr<nsIFile> tempDir;
+  nsresult rv = NS_GetSpecialDirectory(SandboxTempDirParent(),
+      getter_AddRefs(tempDir));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }
 
   
-  rv = lowIntegrityTemp->Append(NS_LITERAL_STRING("Temp-") + aTempDirSuffix);
+  rv = tempDir->Append(NS_LITERAL_STRING("Temp-") + aTempDirSuffix);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }
 
-  rv = lowIntegrityTemp->Remove( true);
+  rv = tempDir->Remove( true);
   if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
-    NS_WARNING("Failed to delete low integrity temp directory.");
+    NS_WARNING("Failed to delete temp directory.");
     return nullptr;
   }
 
-  return lowIntegrityTemp.forget();
+  return tempDir.forget();
 }
 
 static void
@@ -634,10 +651,27 @@ SetUpSandboxEnvironment()
 {
   
   
-  if (!IsVistaOrLater() || !BrowserTabsRemoteAutostart() ||
-      Preferences::GetInt("security.sandbox.content.level") < 1) {
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
     return;
   }
+
+#if defined(XP_WIN)
+  
+  
+  if (!IsVistaOrLater() ||
+      (Preferences::GetInt("security.sandbox.content.level") < 1)) {
+    return;
+  }
+#endif
+
+#if defined(XP_MACOSX)
+  
+  if (Preferences::GetInt("security.sandbox.content.level") < 1) {
+    return;
+  }
+#endif
 
   
   nsresult rv;
@@ -679,13 +713,13 @@ SetUpSandboxEnvironment()
   }
 
   
-  nsCOMPtr<nsIFile> lowIntegrityTemp = GetAndCleanLowIntegrityTemp(tempDirSuffix);
-  if (!lowIntegrityTemp) {
-    NS_WARNING("Failed to get or clean low integrity Mozilla temp directory.");
+  nsCOMPtr<nsIFile> tempDir = GetAndCleanTempDir(tempDirSuffix);
+  if (!tempDir) {
+    NS_WARNING("Failed to get or clean sandboxed temp directory.");
     return;
   }
 
-  rv = lowIntegrityTemp->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  rv = tempDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -694,10 +728,12 @@ SetUpSandboxEnvironment()
 static void
 CleanUpSandboxEnvironment()
 {
+#if defined(XP_WIN)
   
   if (!IsVistaOrLater()) {
     return;
   }
+#endif
 
   
   nsAdoptingString tempDirSuffix =
@@ -708,7 +744,7 @@ CleanUpSandboxEnvironment()
 
   
   
-  nsCOMPtr<nsIFile> lowIntegrityTemp = GetAndCleanLowIntegrityTemp(tempDirSuffix);
+  nsCOMPtr<nsIFile> tempDir = GetAndCleanTempDir(tempDirSuffix);
 }
 #endif
 
@@ -4273,7 +4309,7 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   SetUpSandboxEnvironment();
 #endif
 
@@ -4285,7 +4321,7 @@ XREMain::XRE_mainRun()
     }
   }
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   CleanUpSandboxEnvironment();
 #endif
 

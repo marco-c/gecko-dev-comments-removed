@@ -1201,10 +1201,6 @@ pref("security.sandbox.content.level", 2);
 pref("security.sandbox.content.level", 0);
 #endif
 
-
-
-pref("security.sandbox.content.tempDirSuffix", "");
-
 #if defined(MOZ_STACKWALKING)
 
 
@@ -1225,6 +1221,15 @@ pref("security.sandbox.windows.log.stackTraceDepth", 0);
 
 
 pref("security.sandbox.content.level", 1);
+#endif
+
+#if defined(XP_MACOSX) || defined(XP_WIN)
+#if defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
+
+
+
+pref("security.sandbox.content.tempDirSuffix", "");
+#endif
 #endif
 
 

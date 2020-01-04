@@ -9,8 +9,11 @@
 #include "ContentProcess.h"
 
 #if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/Preferences.h"
 #include "mozilla/WindowsVersion.h"
+#endif
+
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+#include "mozilla/Preferences.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
 #endif
@@ -21,29 +24,60 @@ namespace mozilla {
 namespace dom {
 
 #if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+static bool
+IsSandboxTempDirRequired()
+{
+  
+  
+  return (IsVistaOrLater() &&
+    (Preferences::GetInt("security.sandbox.content.level") >= 1));
+}
+
+static const char*
+SandboxTempDirParent()
+{
+  
+  
+  return NS_WIN_LOW_INTEGRITY_TEMP_BASE;
+}
+#endif
+
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+static bool
+IsSandboxTempDirRequired()
+{
+  
+  return (Preferences::GetInt("security.sandbox.content.level") >= 1);
+}
+
+static const char*
+SandboxTempDirParent()
+{
+  return NS_OS_TEMP_DIR;
+}
+#endif
+
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
 static void
 SetUpSandboxEnvironment()
 {
   MOZ_ASSERT(nsDirectoryService::gService,
     "SetUpSandboxEnvironment relies on nsDirectoryService being initialized");
 
-  
-  
-  if (!IsVistaOrLater() ||
-      Preferences::GetInt("security.sandbox.content.level") < 1) {
+  if (!IsSandboxTempDirRequired()) {
     return;
   }
 
   nsAdoptingString tempDirSuffix =
     Preferences::GetString("security.sandbox.content.tempDirSuffix");
   if (tempDirSuffix.IsEmpty()) {
-    NS_WARNING("Low integrity temp suffix pref not set.");
+    NS_WARNING("Sandbox-writable temp directory suffix pref not set.");
     return;
   }
 
   
   nsCOMPtr<nsIFile> lowIntegrityTemp;
-  nsresult rv = nsDirectoryService::gService->Get(NS_WIN_LOW_INTEGRITY_TEMP_BASE,
+  nsresult rv = nsDirectoryService::gService->Get(SandboxTempDirParent(),
                                                   NS_GET_IID(nsIFile),
                                                   getter_AddRefs(lowIntegrityTemp));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -82,10 +116,10 @@ ContentProcess::Init()
     mContent.InitXPCOM();
     mContent.InitGraphicsDeviceData();
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
     SetUpSandboxEnvironment();
 #endif
-    
+
     return true;
 }
 
