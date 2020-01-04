@@ -304,6 +304,8 @@ public:
 
     static TimeZone* U_EXPORT2 createDefault(void);
 
+    static void U_EXPORT2 recreateDefault();
+
     
 
 
