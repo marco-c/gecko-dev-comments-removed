@@ -67,6 +67,9 @@ public:
               const Optional<Sequence<JS::Value>>& aTransferable,
               ErrorResult& aRv);
 
+  WorkerPrivate*
+  GetWorkerPrivate() const;
+
 private:
   
   ServiceWorker(nsPIDOMWindow* aWindow, ServiceWorkerInfo* aInfo);
