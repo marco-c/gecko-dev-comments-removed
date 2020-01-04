@@ -250,23 +250,27 @@ class ZoneCellIter : public ZoneCellIterImpl
     ZoneCellIter(JS::Zone* zone, AllocKind kind) {
         JSRuntime* rt = zone->runtimeFromMainThread();
 
-        
+        if (zone->runtimeFromAnyThread()->isHeapBusy()) {
+            MOZ_ASSERT(zone->runtimeFromAnyThread()->gc.nursery.isEmpty());
+        } else {
+            
 
 
 
 
 
-        if (IsBackgroundFinalized(kind) &&
-            zone->arenas.needBackgroundFinalizeWait(kind))
-        {
-            rt->gc.waitBackgroundSweepEnd();
+            if (IsBackgroundFinalized(kind) &&
+                zone->arenas.needBackgroundFinalizeWait(kind))
+            {
+                rt->gc.waitBackgroundSweepEnd();
+            }
+
+            
+            rt->gc.evictNursery();
+
+            
+            noAlloc.disallowAlloc(rt);
         }
-
-        
-        rt->gc.evictNursery();
-
-        
-        noAlloc.disallowAlloc(rt);
 
         init(zone, kind);
     }
