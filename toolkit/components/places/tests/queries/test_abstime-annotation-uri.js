@@ -54,24 +54,6 @@ var testData = [
    lastVisit: jan14_2130, title: "moz"},
 
   
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz mozilla",
-   uri: "http://foo.com/begin.html", lastVisit: beginTime},
-
-  
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz mozilla",
-   uri: "http://foo.com/end.html", lastVisit: endTime},
-
-  
-  {isInQuery: true, isVisit: true, isDetails: true, title: "moz",
-   isRedirect: true, uri: "http://foo.com/redirect", lastVisit: jan11_800,
-   transType: PlacesUtils.history.TRANSITION_LINK},
-
-  
-  {isInQuery: true, isVisit: true, isDetails: true, title: "taggariffic",
-   uri: "http://foo.com/tagging/test.html", lastVisit: beginTime, isTag: true,
-   tagArray: ["moz"] },
-
-  
   
   {isInQuery: false, isVisit: true, isDetails: true, isPageAnnotation: true,
    uri: "http://www.foo.com/yiihah", annoName: goodAnnoName, annoVal: val,
@@ -136,7 +118,6 @@ add_task(function* test_abstime_annotation_uri()
   query.endTimeReference = PlacesUtils.history.TIME_RELATIVE_EPOCH;
   query.searchTerms = "moz";
   query.uri = uri("http://foo.com");
-  query.uriIsPrefix = true;
   query.annotation = "text/foo";
   query.annotationIsNot = true;
 
@@ -157,52 +138,25 @@ add_task(function* test_abstime_annotation_uri()
   compareArrayToResult(testData, root);
 
   
-  
-  var addItem = [{isInQuery: true, isVisit: true, isDetails: true, title: "moz",
-                 uri: "http://foo.com/i-am-added.html", lastVisit: jan11_800}];
-  yield task_populateDB(addItem);
-  do_print("Adding item foo.com/i-am-added.html");
-  do_check_eq(isInResult(addItem, root), true);
-
-  
-  var change1 = [{isDetails: true, uri: "http://foo.com/changeme1",
-                  lastVisit: jan12_1730, title: "moz moz mozzie"}];
+  do_print("change title");
+  var change1 = [{isDetails: true, uri:"http://foo.com/",
+                  title: "mo"},];
   yield task_populateDB(change1);
-  do_print("LiveUpdate by changing title");
-  do_check_eq(isInResult(change1, root), true);
+  do_check_false(isInResult({uri: "http://foo.com/"}, root));
+
+  var change2 = [{isDetails: true, uri:"http://foo.com/",
+                  title: "moz", lastvisit: endTime},];
+  yield task_populateDB(change2);
+  dump_table("moz_places");
+  do_check_false(isInResult({uri: "http://foo.com/"}, root));
 
   
-  
-  
-  
-  
-  
-  
-
-
-
-
-
-  
-  var change3 = [{isDetails: true, uri: "http://foo.com/changeme3.htm",
-                  title: "moz", lastVisit: jan15_2045}];
+  var change3 = [{isPageAnnotation: true,
+                  uri: "http://foo.com/",
+                  annoName: badAnnoName, annoVal: "test"}];
   yield task_populateDB(change3);
-  do_print("LiveUpdate by adding visit within timerange");
-  do_check_eq(isInResult(change3, root), true);
-
-  
-  
-  
-
-
-
-
-
-  
-  var change5 = [{isDetails: true, uri: "http://foo.com/end.html", title: "deleted"}];
-  yield task_populateDB(change5);
-  do_print("LiveUpdate by deleting item by changing title");
-  do_check_eq(isInResult(change5, root), false);
+  do_print("LiveUpdate by removing annotation");
+  do_check_false(isInResult({uri: "http://foo.com/"}, root));
 
   root.containerOpen = false;
 });

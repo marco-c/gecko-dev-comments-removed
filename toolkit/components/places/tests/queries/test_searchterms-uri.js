@@ -14,16 +14,6 @@
      lastVisit: lastweek, title: "you know, moz is cool"},
 
     
-    {isInQuery: true, isVisit: true, isDetails: true, title: "amozzie",
-     isRedirect: true, uri: "http://foo.com/redirect", lastVisit: old,
-     referrer: "http://myreferrer.com", transType: PlacesUtils.history.TRANSITION_LINK},
-
-    
-    {isInQuery: true, isVisit: true, isDetails: true, isTag: true,
-     uri: "http://foo.com/yiihah", tagArray: ["moz"], lastVisit: yesterday,
-     title: "foo"},
-
-    
     {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
      uri: "https://foo.com/", lastVisit: today},
 
@@ -62,7 +52,6 @@ add_task(function* test_searchterms_uri()
    var query = PlacesUtils.history.getNewQuery();
    query.searchTerms = "moz";
    query.uri = uri("http://foo.com");
-   query.uriIsPrefix = true;
 
    
    var options = PlacesUtils.history.getNewQueryOptions();
@@ -83,40 +72,16 @@ add_task(function* test_searchterms_uri()
    compareArrayToResult(testData, root);
 
    
-   
-   do_print("Adding item to query");
-   var change1 = [{isVisit: true, isDetails: true, uri: "http://foo.com/added.htm",
-                   title: "moz", transType: PlacesUtils.history.TRANSITION_LINK}];
+   do_print("change title");
+   var change1 = [{isDetails: true, uri:"http://foo.com/",
+                   title: "mo"},];
    yield task_populateDB(change1);
-   do_check_true(isInResult(change1, root));
 
-   
-   do_print("Updating Item");
-   var change2 = [{isDetails: true, uri: "http://foo.com/changeme1.htm",
-                   title: "moz" }];
+   do_check_false(isInResult({uri: "http://foo.com/"}, root));
+   var change2 = [{isDetails: true, uri:"http://foo.com/",
+                   title: "moz"},];
    yield task_populateDB(change2);
-   do_check_true(isInResult(change2, root));
-
-   
-   
-   do_print("Updating More Items");
-   var change3 = [{isDetails: true, uri:"http://foo.com/changeme2.htm",
-                   title: "moz"},
-                  {isDetails: true, uri: "http://foo.com/yiihah",
-                   title: "moz now updated"},
-                  {isDetails: true, uri: "http://foo.com/redirect",
-                   title: "gone"}];
-   yield task_populateDB(change3);
-   do_check_true(isInResult({uri: "http://foo.com/changeme2.htm"}, root));
-   do_check_true(isInResult({uri: "http://foo.com/yiihah"}, root));
-   do_check_false(isInResult({uri: "http://foo.com/redirect"}, root));
-
-   
-   do_print("Deleting items");
-   var change4 = [{isDetails: true, uri: "http://foo.com/",
-                   title: "mo,z"}];
-   yield task_populateDB(change4);
-   do_check_false(isInResult(change4, root));
+   do_check_true(isInResult({uri: "http://foo.com/"}, root));
 
    root.containerOpen = false;
 });

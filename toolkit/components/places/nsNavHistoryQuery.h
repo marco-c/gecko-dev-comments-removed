@@ -42,7 +42,6 @@ public:
   bool OnlyBookmarked() { return mOnlyBookmarked; }
   bool DomainIsHost() { return mDomainIsHost; }
   const nsCString& Domain() { return mDomain; }
-  bool UriIsPrefix() { return mUriIsPrefix; }
   nsIURI* Uri() { return mUri; } 
   bool AnnotationIsNot() { return mAnnotationIsNot; }
   const nsCString& Annotation() { return mAnnotation; }
@@ -82,7 +81,6 @@ protected:
   bool mOnlyBookmarked;
   bool mDomainIsHost;
   nsCString mDomain; 
-  bool mUriIsPrefix;
   nsCOMPtr<nsIURI> mUri;
   bool mAnnotationIsNot;
   nsCString mAnnotation;

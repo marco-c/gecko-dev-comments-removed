@@ -12,7 +12,7 @@ module.metadata = {
   }
 };
 
-const { Cc, Ci } = require('chrome');
+const { Cc, Ci, Cu } = require('chrome');
 const { Class } = require('../core/heritage');
 const { method } = require('../lang/functional');
 const { defer, promised, all } = require('../core/promise');
@@ -21,6 +21,8 @@ const { EventTarget } = require('../event/target');
 const { merge } = require('../util/object');
 const bmsrv = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
                 getService(Ci.nsINavBookmarksService);
+
+Cu.importGlobalProperties(["URL"]);
 
 
 
@@ -139,8 +141,21 @@ function urlQueryParser (query, url) {
   if (/^https?:\/\//.test(url)) {
     query.uri = url.charAt(url.length - 1) === '/' ? url : url + '/';
     if (/\*$/.test(url)) {
-      query.uri = url.replace(/\*$/, '');
-      query.uriIsPrefix = true;
+      
+      
+      url = url.replace(/\*$/, '');
+      try {
+        query.domain = new URL(url).hostname;
+        query.domainIsHost = true;
+        
+        
+        
+        
+        query.uri = url;
+      } catch (ex) {
+        
+        
+      }
     }
   } else {
     if (/^\*/.test(url)) {
