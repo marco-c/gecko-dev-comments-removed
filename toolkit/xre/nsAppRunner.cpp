@@ -4722,8 +4722,6 @@ mozilla::BrowserTabsRemoteAutostart()
   
   if (Preferences::GetBool(kForceEnableE10sPref, false)) {
     gBrowserTabsRemoteAutostart = true;
-    prefEnabled = true;
-    status = kE10sEnabledByUser;
   }
 
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::E10S_AUTOSTART, gBrowserTabsRemoteAutostart);
