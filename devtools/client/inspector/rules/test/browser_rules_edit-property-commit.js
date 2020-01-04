@@ -72,15 +72,13 @@ function* runTestData(view, {value, commitKey, modifiers, expected}) {
   info("Entering test data " + value);
   let onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.sendString(value, view.styleWindow);
-
-  info("Waiting for focus on the field");
-  let onBlur = once(editor.input, "blur");
+  yield onRuleViewChanged;
 
   info("Entering the commit key " + commitKey + " " + modifiers);
+  onRuleViewChanged = view.once("ruleview-changed");
+  let onBlur = once(editor.input, "blur");
   EventUtils.synthesizeKey(commitKey, modifiers);
   yield onBlur;
-  
-  
   yield onRuleViewChanged;
 
   if (commitKey === "VK_ESCAPE") {
