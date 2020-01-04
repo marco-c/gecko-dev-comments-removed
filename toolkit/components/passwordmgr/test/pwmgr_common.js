@@ -302,6 +302,24 @@ function resetRecipes() {
   });
 }
 
+function promiseStorageChanged(expectedChangeTypes) {
+  return new Promise((resolve, reject) => {
+    let onStorageChanged = SpecialPowers.wrapCallback(function osc(subject, topic, data) {
+      let changeType = expectedChangeTypes.shift();
+      is(data, changeType, "Check expected passwordmgr-storage-changed type");
+      if (expectedChangeTypes.length === 0) {
+        SpecialPowers.removeObserver(onStorageChanged, "passwordmgr-storage-changed");
+        resolve(subject);
+      }
+    });
+    SpecialPowers.addObserver(onStorageChanged, "passwordmgr-storage-changed", false);
+  });
+}
+
+function countLogins(chromeScript, formOrigin, submitOrigin, httpRealm) {
+  return chromeScript.sendSyncMessage("countLogins", {formOrigin, submitOrigin, httpRealm})[0][0];
+}
+
 
 
 
@@ -341,6 +359,7 @@ if (this.addMessageListener) {
   
   ok = is = () => {}; 
 
+  Cu.import("resource://gre/modules/Services.jsm");
   Cu.import("resource://gre/modules/Task.jsm");
 
   addMessageListener("setupParent", ({selfFilling = false} = {selfFilling: false}) => {
@@ -361,6 +380,10 @@ if (this.addMessageListener) {
     yield recipeParent.reset();
     sendAsyncMessage("recipesReset");
   }));
+
+  addMessageListener("countLogins", ({formOrigin, submitOrigin, httpRealm}) => {
+    return Services.logins.countLogins(formOrigin, submitOrigin, httpRealm);
+  });
 
   var globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
   globalMM.addMessageListener("RemoteLogins:onFormSubmit", function onFormSubmit(message) {

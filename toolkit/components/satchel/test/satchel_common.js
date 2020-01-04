@@ -2,6 +2,7 @@
 
 
 
+var gPopupShownExpected = false;
 var gPopupShownListener;
 var gLastAutoCompleteResults;
 var gChromeScript;
@@ -225,13 +226,23 @@ function getPopupState(then = null) {
   });
 }
 
+function listenForUnexpectedPopupShown() {
+  gChromeScript.addMessageListener("onpopupshown", function onPopupShown() {
+    if (!gPopupShownExpected) {
+      ok(false, "Unexpected autocomplete popupshown event");
+    }
+  });
+}
+
 
 
 
 
 function promiseACShown() {
+  gPopupShownExpected = true;
   return new Promise(resolve => {
     gChromeScript.addMessageListener("onpopupshown", ({ results }) => {
+      gPopupShownExpected = false;
       resolve(results);
     });
   });
