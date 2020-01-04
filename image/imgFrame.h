@@ -274,7 +274,6 @@ private:
   nsresult LockImageData();
   nsresult UnlockImageData();
   nsresult Optimize();
-  nsresult Deoptimize();
 
   void AssertImageDataLocked() const;
 
@@ -436,6 +435,9 @@ private:
   nsRefPtr<imgFrame> mFrame;
   VolatileBufferPtr<uint8_t> mRef;
 };
+
+
+
 
 
 
