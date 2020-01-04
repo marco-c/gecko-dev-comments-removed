@@ -23,7 +23,7 @@ bool JobScheduler::Init(uint32_t aNumThreads, uint32_t aNumQueues)
   }
 
   for (uint32_t i = 0; i < aNumThreads; ++i) {
-    sSingleton->mWorkerThreads.push_back(WorkerThread::Create(sSingleton->mDrawingQueues[i%aNumQueues]));
+    sSingleton->mWorkerThreads.push_back(new WorkerThread(sSingleton->mDrawingQueues[i%aNumQueues]));
   }
   return true;
 }
@@ -84,8 +84,7 @@ JobScheduler::GetQueueForJob(Job* aJob)
 }
 
 Job::Job(SyncObject* aStart, SyncObject* aCompletion, WorkerThread* aThread)
-: mNextWaitingJob(nullptr)
-, mStartSync(aStart)
+: mStartSync(aStart)
 , mCompletionSync(aCompletion)
 , mPinToThread(aThread)
 {
@@ -125,7 +124,6 @@ SetEventJob::~SetEventJob()
 
 SyncObject::SyncObject(uint32_t aNumPrerequisites)
 : mSignals(aNumPrerequisites)
-, mFirstWaitingJob(nullptr)
 #ifdef DEBUG
 , mNumPrerequisites(aNumPrerequisites)
 , mAddedPrerequisites(0)
@@ -134,7 +132,7 @@ SyncObject::SyncObject(uint32_t aNumPrerequisites)
 
 SyncObject::~SyncObject()
 {
-  MOZ_ASSERT(mFirstWaitingJob == nullptr);
+  MOZ_ASSERT(mWaitingJobs.size() == 0);
 }
 
 bool
@@ -186,41 +184,28 @@ SyncObject::Signal()
 void
 SyncObject::AddWaitingJob(Job* aJob)
 {
-  
-  for (;;) {
-    Job* first = mFirstWaitingJob;
-    aJob->mNextWaitingJob = first;
-    if (mFirstWaitingJob.compareExchange(first, aJob)) {
-      break;
-    }
-  }
+  MutexAutoLock lock(&mMutex);
+  mWaitingJobs.push_back(aJob);
 }
 
 void SyncObject::SubmitWaitingJobs()
 {
-  
-  
-  
-  
-  
-  RefPtr<SyncObject> kungFuDeathGrip(this);
+  std::vector<Job*> tasksToSubmit;
+  {
+    
+    
+    
+    
+    
+    RefPtr<SyncObject> kungFuDeathGrip(this);
 
-  
-  Job* waitingJobs = nullptr;
-  for (;;) {
-    waitingJobs = mFirstWaitingJob;
-    if (mFirstWaitingJob.compareExchange(waitingJobs, nullptr)) {
-      break;
-    }
+    MutexAutoLock lock(&mMutex);
+    tasksToSubmit = Move(mWaitingJobs);
+    mWaitingJobs.clear();
   }
 
-  
-  
-  while (waitingJobs) {
-    Job* next = waitingJobs->mNextWaitingJob;
-    waitingJobs->mNextWaitingJob = nullptr;
-    JobScheduler::GetQueueForJob(waitingJobs)->SubmitJob(waitingJobs);
-    waitingJobs = next;
+  for (Job* task : tasksToSubmit) {
+    JobScheduler::GetQueueForJob(task)->SubmitJob(task);
   }
 }
 
@@ -245,34 +230,6 @@ SyncObject::AddPrerequisite(Job* aJob)
 void
 SyncObject::AddSubsequent(Job* aJob)
 {
-}
-
-WorkerThread::WorkerThread(MultiThreadedJobQueue* aJobQueue)
-: mQueue(aJobQueue)
-{
-  aJobQueue->RegisterThread();
-}
-
-void
-WorkerThread::Run()
-{
-  SetName("gfx worker");
-
-  for (;;) {
-    Job* commands = nullptr;
-    if (!mQueue->WaitForJob(commands)) {
-      mQueue->UnregisterThread();
-      return;
-    }
-
-    JobStatus status = JobScheduler::ProcessJob(commands);
-
-    if (status == JobStatus::Error) {
-      
-      
-      MOZ_CRASH();
-    }
-  }
 }
 
 } 

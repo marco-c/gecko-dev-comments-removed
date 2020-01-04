@@ -15,14 +15,11 @@
 #include "mozilla/gfx/JobScheduler_posix.h"
 #endif
 
-#include <vector>
-
 namespace mozilla {
 namespace gfx {
 
 class MultiThreadedJobQueue;
 class SyncObject;
-class WorkerThread;
 
 class JobScheduler {
 public:
@@ -109,16 +106,9 @@ public:
   WorkerThread* GetWorkerThread() { return mPinToThread; }
 
 protected:
-  
-  
-  
-  Job* mNextWaitingJob;
-
   RefPtr<SyncObject> mStartSync;
   RefPtr<SyncObject> mCompletionSync;
   WorkerThread* mPinToThread;
-
-  friend class SyncObject;
 };
 
 class EventObject;
@@ -212,8 +202,9 @@ private:
 
   void SubmitWaitingJobs();
 
+  std::vector<Job*> mWaitingJobs;
+  Mutex mMutex; 
   Atomic<int32_t> mSignals;
-  Atomic<Job*> mFirstWaitingJob;
 
 #ifdef DEBUG
   uint32_t mNumPrerequisites;
@@ -225,24 +216,14 @@ private:
 };
 
 
-class WorkerThread
-{
-public:
-  static WorkerThread* Create(MultiThreadedJobQueue* aJobQueue);
 
-  virtual ~WorkerThread() {}
-
-  void Run();
-
-  MultiThreadedJobQueue* GetJobQueue() { return mQueue; }
-
+struct MutexAutoLock {
+    MutexAutoLock(Mutex* aMutex) : mMutex(aMutex) { mMutex->Lock(); }
+    ~MutexAutoLock() { mMutex->Unlock(); }
 protected:
-  explicit WorkerThread(MultiThreadedJobQueue* aJobQueue);
-
-  virtual void SetName(const char* aName) {}
-
-  MultiThreadedJobQueue* mQueue;
+    Mutex* mMutex;
 };
+
 
 } 
 } 
