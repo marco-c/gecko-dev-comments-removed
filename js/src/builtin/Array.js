@@ -196,6 +196,36 @@ function ArrayStaticSome(list, callbackfn) {
 }
 
 
+function ArraySort(comparefn) {
+    
+    var O = ToObject(this);
+
+    
+    var len = TO_UINT32(O.length);
+
+    
+    var wrappedCompareFn = comparefn;
+    comparefn = function(x, y) {
+        
+        if (x === undefined) {
+            if (y === undefined)
+                return 0;
+           return 1;
+        }
+        if (y === undefined)
+            return -1;
+
+        
+        var v = ToNumber(wrappedCompareFn(x, y));
+
+        
+        return v !== v ? 0 : v;
+    }
+
+    return MergeSort(O, len, comparefn);
+}
+
+
 function ArrayForEach(callbackfn) {
     
     var O = ToObject(this);

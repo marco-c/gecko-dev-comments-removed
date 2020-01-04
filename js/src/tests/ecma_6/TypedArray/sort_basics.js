@@ -6,27 +6,13 @@ const SEED = (Math.random() * 10) + 1;
 
 
 
-function *xorShiftGenerator(seed, size) {
-    let x = seed;
-    for (let i = 0; i < size; i++) {
-        x ^= x >> 12;
-        x ^= x << 25;
-        x ^= x >> 27;
-        yield x % 256;
-    }
-}
-
-
-
-
-
 function genRandomArrayBuffer(size, width, seed) {
     let buf = new ArrayBuffer((width / 8) * size);
     let arr = new Uint8Array(buf);
     let len = 0;
     
     
-    for (let n of xorShiftGenerator(seed, buf.byteLength))
+    for (let n of XorShiftGenerator(seed, buf.byteLength))
         arr[len++] = n;
     return buf;
 }
