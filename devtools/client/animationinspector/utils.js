@@ -309,6 +309,31 @@ var TimeScale = {
     let negativeDelayW = delay < 0 ? delayW : 0;
 
     return {x, w, iterationW, delayX, delayW, negativeDelayW};
+  },
+
+  
+
+
+
+
+
+
+
+  getIterationsBackgroundData: function({state}) {
+    let iterationCount = state.iterationCount || 1;
+    let iterationStartW = state.iterationStart % 1 * 100;
+    let background = {};
+    if (iterationCount == 1) {
+      background.size = 100 - iterationStartW;
+      background.position = 0;
+      background.repeat = "no-repeat";
+    } else {
+      background.size = 1 / iterationCount * 100;
+      background.position = -iterationStartW * background.size /
+                              (100 - background.size);
+      background.repeat = "repeat-x";
+    }
+    return background;
   }
 };
 
