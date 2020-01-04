@@ -725,11 +725,9 @@ LayerTransactionParent::RecvLeaveTestMode()
 }
 
 bool
-LayerTransactionParent::RecvGetAnimationOpacity(PLayerParent* aParent,
-                                                float* aOpacity,
-                                                bool* aHasAnimationOpacity)
+LayerTransactionParent::RecvGetOpacity(PLayerParent* aParent,
+                                       float* aOpacity)
 {
-  *aHasAnimationOpacity = false;
   if (mDestroyed || !layer_manager() || layer_manager()->IsDestroyed()) {
     return false;
   }
@@ -741,12 +739,7 @@ LayerTransactionParent::RecvGetAnimationOpacity(PLayerParent* aParent,
 
   mShadowLayersManager->ApplyAsyncProperties(this);
 
-  if (!layer->AsLayerComposite()->GetShadowOpacitySetByAnimation()) {
-    return true;
-  }
-
   *aOpacity = layer->GetLocalOpacity();
-  *aHasAnimationOpacity = true;
   return true;
 }
 
@@ -1047,13 +1040,13 @@ LayerTransactionParent::SendAsyncMessage(const InfallibleTArray<AsyncParentMessa
 void
 LayerTransactionParent::SendPendingAsyncMessages()
 {
-  mShadowLayersManager->AsCompositorBridgeParentIPCAllocator()->SendPendingAsyncMessages();
+  mShadowLayersManager->GetIPCAllocator()->SendPendingAsyncMessages();
 }
 
 void
 LayerTransactionParent::SetAboutToSendAsyncMessages()
 {
-  mShadowLayersManager->AsCompositorBridgeParentIPCAllocator()->SetAboutToSendAsyncMessages();
+  mShadowLayersManager->GetIPCAllocator()->SetAboutToSendAsyncMessages();
 }
 
 void

@@ -170,14 +170,6 @@ protected:
 };
 
 
-class CompositorBridgeParentIPCAllocator : public HostIPCAllocator
-{
-public:
-  CompositorBridgeParentIPCAllocator() {}
-  virtual void NotifyNotUsed(PTextureParent* aTexture, uint64_t aTransactionId) override;
-};
-
-
 
 
 
