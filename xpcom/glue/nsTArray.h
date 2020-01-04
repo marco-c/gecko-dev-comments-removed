@@ -336,6 +336,8 @@ struct nsTArray_SafeElementAtHelper<mozilla::OwningNonNull<E>, Derived>
   }
 };
 
+extern "C" void Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize);
+
 
 
 
@@ -349,6 +351,7 @@ class nsTArray_base
   
   template<class Allocator, class Copier>
   friend class nsTArray_base;
+  friend void Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize);
 
 protected:
   typedef nsTArrayHeader Header;

@@ -184,6 +184,11 @@ void Gecko_UnsetNodeFlags(RawGeckoNode* node, uint32_t flags);
 
 
 
+void Gecko_EnsureTArrayCapacity(void* array, size_t capacity, size_t elem_size);
+
+
+
+
 
 RawServoStyleSheet* Servo_StylesheetFromUTF8Bytes(
     const uint8_t* bytes, uint32_t length,
