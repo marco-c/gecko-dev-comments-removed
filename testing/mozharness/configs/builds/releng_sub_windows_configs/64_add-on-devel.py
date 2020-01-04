@@ -14,6 +14,7 @@ config = {
 
     ],
     'stage_platform': 'win64-add-on-devel',
+    'build_type': 'add-on-devel',
     'enable_talos_sendchange': False,
     
     'env': {
