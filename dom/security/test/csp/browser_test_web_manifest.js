@@ -15,11 +15,9 @@ const path = '/tests/dom/security/test/csp/';
 const testFile = `file=${path}file_web_manifest.html`;
 const remoteFile = `file=${path}file_web_manifest_remote.html`;
 const httpsManifest = `file=${path}file_web_manifest_https.html`;
-const mixedContent = `file=${path}file_web_manifest_mixed_content.html`;
 const server = 'file_testserver.sjs';
 const defaultURL = `http://example.org${path}${server}`;
-const remoteURL = `http://mochi.test:8888`;
-const secureURL = `https://example.com${path}${server}`;
+const secureURL = `https://example.com:443${path}${server}`;
 const tests = [
   
   
@@ -103,7 +101,7 @@ const tests = [
     expected: `CSP manifest-src allows self`,
     get tabURL() {
       let queryParts = [
-        `manifest-src 'self'`,
+        `csp=manifest-src 'self'`,
         testFile
       ];
       return `${defaultURL}?${queryParts.join('&')}`;
@@ -117,7 +115,7 @@ const tests = [
     expected: `CSP manifest-src allows http://example.org`,
     get tabURL() {
       let queryParts = [
-        `manifest-src http://example.org`,
+        `csp=manifest-src http://example.org`,
         testFile
       ];
       return `${defaultURL}?${queryParts.join('&')}`;
@@ -126,42 +124,11 @@ const tests = [
       is(manifest.name, 'loaded', this.expected);
     }
   },
-  
-  
-  {
-    expected: `CSP manifest-src overrides default-src of elsewhere.com`,
-    get tabURL() {
-      let queryParts = [
-        `default-src: http://elsewhere.com; manifest-src http://example.org`,
-        testFile
-      ];
-      return `${defaultURL}?${queryParts.join('&')}`;
-    },
-    run(manifest) {
-      is(manifest.name, 'loaded', this.expected);
-    }
-  },
-  
-  
-  {
-    expected: `CSP manifest-src overrides default-src`,
-    get tabURL() {
-      let queryParts = [
-        `default-src: 'none'; manifest-src 'self'`,
-        testFile
-      ];
-      return `${defaultURL}?${queryParts.join('&')}`;
-    },
-    run(manifest) {
-      is(manifest.name, 'loaded', this.expected);
-    }
-  },
-  
-  
   {
     expected: `CSP manifest-src allows mochi.test:8888`,
     get tabURL() {
       let queryParts = [
+        `cors=*`,
         `csp=default-src *; manifest-src http://mochi.test:8888`,
         remoteFile
       ];
@@ -202,63 +169,81 @@ const tests = [
     run(topic) {
       is(topic, 'csp-on-violate-policy', this.expected);
     }
-  }
+  },
+  
+  {
+    expected: `CSP manifest-src allows example.com over TLS`,
+    get tabURL() {
+      let queryParts = [
+        'cors=*',
+        'csp=manifest-src https://example.com:443',
+        httpsManifest
+      ];
+      
+      
+      return `${secureURL}?${queryParts.join('&')}`;
+    },
+    run(manifest) {
+      is(manifest.name, 'loaded', this.expected);
+    }
+  },
 ];
 
 add_task(function* () {
   
-  for (let test of tests) {
-    let tabOptions = {
-      gBrowser: gBrowser,
-      url: test.tabURL,
-    };
-    yield BrowserTestUtils.withNewTab(
-      tabOptions,
-      browser => testObtainingManifest(browser, test)
+  var testPromises = tests.map(
+      (test) => ([test, {gBrowser, url: test.tabURL, skipAnimation: true}])
+    ).map(
+      ([test, tabOptions]) => BrowserTestUtils.withNewTab(tabOptions, (browser) => testObtainingManifest(browser, test))
     );
-  }
-
-  function* testObtainingManifest(aBrowser, aTest) {
-    const observer = (/blocks/.test(aTest.expected)) ? new NetworkObserver(aTest) : null;
-    let manifest;
-    
-    
-    try {
-      manifest = yield ManifestObtainer.browserObtainManifest(aBrowser);
-    } catch (e) {
-      const msg = `Expected promise rejection obtaining.`;
-      ok(/blocked the loading of a resource/.test(e.message), msg);
-      if (observer) {
-        yield observer.finished;
-      }
-      return;
-    }
-    
-    if (manifest) {
-      aTest.run(manifest);
-    }
-  }
+  yield Promise.all(testPromises);
 });
 
+function* testObtainingManifest(aBrowser, aTest) {
+  const expectsBlocked = aTest.expected.includes('block');
+  const observer = (expectsBlocked) ? createNetObserver(aTest) : null;
+  
+  
+  try {
+    const manifest = yield ManifestObtainer.browserObtainManifest(aBrowser);
+    aTest.run(manifest);
+  } catch (e) {
+    const wasBlocked = e.message.includes('blocked the loading of a resource');
+    ok(wasBlocked,`Expected promise rejection obtaining ${aTest.tabURL}: ${e.message}`);
+    if (observer) {
+      yield observer.untilFinished;
+      return;
+    }
+    throw e;
+  }
+}
 
 
-function NetworkObserver(test) {
+
+function createNetObserver(test) {
   let finishedTest;
   let success = false;
-  this.finished = new Promise((resolver) => {
+  const finished = new Promise((resolver) => {
     finishedTest = resolver;
-  })
-  this.observe = function observer(subject, topic) {
-    SpecialPowers.removeObserver(this, 'csp-on-violate-policy');
-    test.run(topic);
-    finishedTest();
-    success = true;
-  };
-  SpecialPowers.addObserver(this, 'csp-on-violate-policy', false);
-  setTimeout(() => {
+  });
+  const timeoutId = setTimeout(() => {
     if (!success) {
       test.run('This test timed out.');
       finishedTest();
     }
   }, 1000);
+  var observer = {
+    get untilFinished(){
+      return finished;
+    },
+    observe(subject, topic) {
+      SpecialPowers.removeObserver(observer, 'csp-on-violate-policy');
+      test.run(topic);
+      finishedTest();
+      clearTimeout(timeoutId);
+      success = true;
+    },
+  };
+  SpecialPowers.addObserver(observer, 'csp-on-violate-policy', false);
+  return observer;
 }
