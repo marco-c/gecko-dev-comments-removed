@@ -200,6 +200,8 @@ struct BytecodeEmitter
     const bool      insideNonGlobalEval:1;  
 
 
+    bool            insideModule:1;     
+
     enum EmitterMode {
         Normal,
 

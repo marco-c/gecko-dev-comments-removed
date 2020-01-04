@@ -292,6 +292,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            hasDestructuringArgs:1; 
     bool            useAsm:1;               
     bool            insideUseAsm:1;         
+    bool            wasEmitted:1;           
 
     
     bool            usesArguments:1;  

@@ -144,6 +144,7 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
     emittingRunOnceLambda(false),
     insideEval(insideEval),
     insideNonGlobalEval(insideNonGlobalEval),
+    insideModule(false),
     emitterMode(emitterMode)
 {
     MOZ_ASSERT_IF(evalCaller, insideEval);
@@ -1428,6 +1429,7 @@ BytecodeEmitter::isAliasedName(BytecodeEmitter* bceOfDef, ParseNode* pn)
       case Definition::PLACEHOLDER:
       case Definition::NAMED_LAMBDA:
       case Definition::MISSING:
+      case Definition::IMPORT:
         MOZ_CRASH("unexpected dn->kind");
     }
     return false;
@@ -1588,6 +1590,11 @@ BytecodeEmitter::tryConvertFreeName(ParseNode* pn)
     
     
     if (insideNonGlobalEval)
+        return false;
+
+    
+    
+    if (insideModule)
         return false;
 
     
@@ -1841,10 +1848,11 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
       }
 
       case Definition::PLACEHOLDER:
+      case Definition::IMPORT:
         return true;
 
       case Definition::MISSING:
-        MOZ_CRASH("missing");
+        MOZ_CRASH("unexpected definition kind");
     }
 
     
@@ -1862,7 +1870,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
 
 
-    if (bceOfDef != this && !bceOfDef->sc->isFunctionBox())
+    if (bceOfDef != this && bceOfDef->sc->isGlobalContext())
         return true;
 
     if (!pn->pn_scopecoord.set(parser->tokenStream, hops, slot))
@@ -3355,6 +3363,16 @@ BytecodeEmitter::emitYieldOp(JSOp op)
     return emit1(JSOP_DEBUGAFTERYIELD);
 }
 
+static bool
+IsModuleOnScopeChain(JSObject* obj)
+{
+    for (StaticScopeIter<NoGC> ssi(obj); !ssi.done(); ssi++) {
+        if (ssi.type() == StaticScopeIter<NoGC>::Module)
+            return true;
+    }
+    return false;
+}
+
 bool
 BytecodeEmitter::emitFunctionScript(ParseNode* body)
 {
@@ -3373,6 +3391,9 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
     
     
     JSScript::linkToFunctionFromEmitter(cx, script, funbox);
+
+    
+    insideModule = IsModuleOnScopeChain(sc->staticScope());
 
     if (funbox->argumentsHasLocalBinding()) {
         MOZ_ASSERT(offset() == 0);  
@@ -3484,6 +3505,8 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
 bool
 BytecodeEmitter::emitModuleScript(ParseNode* body)
 {
+    insideModule = true;
+
     if (!updateLocalsToFrameSlots())
         return false;
 
@@ -5736,14 +5759,14 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
 
-    if (pn->pn_dflags & PND_EMITTEDFUNCTION) {
+    if (funbox->wasEmitted) {
         MOZ_ASSERT_IF(fun->hasScript(), fun->nonLazyScript());
         MOZ_ASSERT(pn->functionIsHoisted());
         MOZ_ASSERT(sc->isFunctionBox());
         return true;
     }
 
-    pn->pn_dflags |= PND_EMITTEDFUNCTION;
+    funbox->wasEmitted = true;
 
     
 

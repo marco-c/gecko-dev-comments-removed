@@ -516,7 +516,7 @@ class ParseNode
 {
     uint32_t            pn_type   : 16, 
                         pn_op     : 8,  
-                        pn_arity  : 5,  
+                        pn_arity  : 4,  
                         pn_parens : 1,  
                         pn_used   : 1,  
                         pn_defn   : 1;  
@@ -750,9 +750,9 @@ class ParseNode
                                            'arguments' that has been converted
                                            into a definition after the function
                                            body has been parsed. */
-#define PND_EMITTEDFUNCTION    0x200    /* hoisted function that was emitted */
+#define PND_IMPORT             0x200    /* the definition is a module import. */
 
-    static_assert(PND_EMITTEDFUNCTION < (1 << NumDefinitionFlagBits), "Not enough bits");
+    static_assert(PND_IMPORT < (1 << NumDefinitionFlagBits), "Not enough bits");
 
 
 #define PND_USE2DEF_FLAGS (PND_ASSIGNED | PND_CLOSED)
@@ -821,6 +821,7 @@ class ParseNode
     bool isImplicitArguments() const { return test(PND_IMPLICITARGUMENTS); }
     bool isHoistedLexicalUse() const { return test(PND_LEXICAL) && isUsed(); }
     bool isKnownAliased() const { return test(PND_KNOWNALIASED); }
+    bool isImport() const       { return test(PND_IMPORT); }
 
     
     bool isLiteral() const {
@@ -1567,7 +1568,17 @@ struct Definition : public ParseNode
         return pn_scopecoord.isFree();
     }
 
-    enum Kind { MISSING = 0, VAR, GLOBALCONST, CONST, LET, ARG, NAMED_LAMBDA, PLACEHOLDER };
+    enum Kind {
+        MISSING = 0,
+        VAR,
+        GLOBALCONST,
+        CONST,
+        LET,
+        ARG,
+        NAMED_LAMBDA,
+        PLACEHOLDER,
+        IMPORT
+    };
 
     bool canHaveInitializer() { return int(kind()) <= int(ARG); }
 
@@ -1586,6 +1597,8 @@ struct Definition : public ParseNode
             return PLACEHOLDER;
         if (isOp(JSOP_GETARG))
             return ARG;
+        if (isImport())
+            return IMPORT;
         if (isLexical())
             return isConst() ? CONST : LET;
         if (isConst())
