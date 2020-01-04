@@ -99,7 +99,8 @@ public class IconDownloader implements IconLoader {
 
         
         try {
-            return decodeImageFromResponse(context, connection.getInputStream(), connection.getHeaderFieldInt("Content-Length", -1));
+            stream = connection.getInputStream();
+            return decodeImageFromResponse(context, stream, connection.getHeaderFieldInt("Content-Length", -1));
         } finally {
             
             IOUtils.safeStreamClose(stream);
