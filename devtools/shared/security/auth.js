@@ -102,6 +102,13 @@ Prompt.Client.prototype = {
 
 
 
+  validateSettings() {},
+
+  
+
+
+
+
 
 
 
@@ -260,6 +267,17 @@ OOBCert.Client = function () {};
 OOBCert.Client.prototype = {
 
   mode: OOBCert.mode,
+
+  
+
+
+
+
+  validateSettings({ encryption }) {
+    if (!encryption) {
+      throw new Error(`${OOBCert.mode} authentication requires encryption.`);
+    }
+  },
 
   
 

@@ -16,8 +16,12 @@ var promise = require("promise");
 var defer = require("devtools/shared/defer");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn, dumpv } = DevToolsUtils;
+loader.lazyRequireGetter(this, "WebSocketServer",
+  "devtools/server/websocket-server");
 loader.lazyRequireGetter(this, "DebuggerTransport",
   "devtools/shared/transport/transport", true);
+loader.lazyRequireGetter(this, "WebSocketDebuggerTransport",
+  "devtools/shared/transport/websocket-transport");
 loader.lazyRequireGetter(this, "DebuggerServer",
   "devtools/server/main", true);
 loader.lazyRequireGetter(this, "discovery",
@@ -69,11 +73,14 @@ var DebuggerSocket = {};
 
 
 
+
+
 DebuggerSocket.connect = Task.async(function* (settings) {
   
   if (!settings.authenticator) {
     settings.authenticator = new (Authenticators.get().Client)();
   }
+  _validateSettings(settings);
   let { host, port, encryption, authenticator, cert } = settings;
   let transport = yield _getTransport(settings);
   yield authenticator.authenticate({
@@ -87,6 +94,16 @@ DebuggerSocket.connect = Task.async(function* (settings) {
 });
 
 
+
+
+function _validateSettings(settings) {
+  let { encryption, webSocket, authenticator } = settings;
+
+  if (webSocket && encryption) {
+    throw new Error("Encryption not supported on WebSocket transport");
+  }
+  authenticator.validateSettings(settings);
+}
 
 
 
@@ -110,7 +127,19 @@ DebuggerSocket.connect = Task.async(function* (settings) {
 
 
 var _getTransport = Task.async(function* (settings) {
-  let { host, port, encryption } = settings;
+  let { host, port, encryption, webSocket } = settings;
+
+  if (webSocket) {
+    
+    let socket = yield new Promise((resolve, reject) => {
+      let s = new WebSocket(`ws://${host}:${port}`);
+      s.onopen = () => resolve(s);
+      s.onerror = err => reject(err);
+    });
+
+    return new WebSocketDebuggerTransport(socket);
+  }
+
   let attempt = yield _attemptTransport(settings);
   if (attempt.transport) {
     return attempt.transport; 
@@ -378,6 +407,9 @@ SocketListener.prototype = {
     if (this.discoverable && !Number(this.portOrPath)) {
       throw new Error("Discovery only supported for TCP sockets.");
     }
+    if (this.encryption && this.webSocket) {
+      throw new Error("Encryption not supported on WebSocket transport");
+    }
     this.authenticator.validateOptions(this);
   },
 
@@ -596,7 +628,7 @@ ServerSocketConnection.prototype = {
     let self = this;
     Task.spawn(function* () {
       self._listenForTLSHandshake();
-      self._createTransport();
+      yield self._createTransport();
       yield self._awaitTLSHandshake();
       yield self._authenticate();
     }).then(() => this.allow()).catch(e => this.deny(e));
@@ -606,10 +638,17 @@ ServerSocketConnection.prototype = {
 
 
 
-  _createTransport() {
+  _createTransport: Task.async(function* () {
     let input = this._socketTransport.openInputStream(0, 0, 0);
     let output = this._socketTransport.openOutputStream(0, 0, 0);
-    this._transport = new DebuggerTransport(input, output);
+
+    if (this._listener.webSocket) {
+      let socket = yield WebSocketServer.accept(this._socketTransport, input, output);
+      this._transport = new WebSocketDebuggerTransport(socket);
+    } else {
+      this._transport = new DebuggerTransport(input, output);
+    }
+
     
     
     this._transport.hooks = {
@@ -618,7 +657,7 @@ ServerSocketConnection.prototype = {
       }
     };
     this._transport.ready();
-  },
+  }),
 
   
 
@@ -717,8 +756,10 @@ ServerSocketConnection.prototype = {
     }
     dumpn("Debugging connection denied on " + this.address +
           " (" + errorName + ")");
-    this._transport.hooks = null;
-    this._transport.close(result);
+    if (this._transport) {
+      this._transport.hooks = null;
+      this._transport.close(result);
+    }
     this._socketTransport.close(result);
     this.destroy();
   },
