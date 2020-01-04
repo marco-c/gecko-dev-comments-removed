@@ -541,9 +541,18 @@ public:
   
 
 
-  virtual already_AddRefed<PathBuilder> CopyToBuilder(FillRule aFillRule = FillRule::FILL_WINDING) const = 0;
+  inline already_AddRefed<PathBuilder> CopyToBuilder() const {
+    return CopyToBuilder(GetFillRule());
+  }
+  inline already_AddRefed<PathBuilder> TransformedCopyToBuilder(const Matrix &aTransform) const {
+    return TransformedCopyToBuilder(aTransform, GetFillRule());
+  }
+  
+
+
+  virtual already_AddRefed<PathBuilder> CopyToBuilder(FillRule aFillRule) const = 0;
   virtual already_AddRefed<PathBuilder> TransformedCopyToBuilder(const Matrix &aTransform,
-                                                             FillRule aFillRule = FillRule::FILL_WINDING) const = 0;
+                                                             FillRule aFillRule) const = 0;
 
   
 
