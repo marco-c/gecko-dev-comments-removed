@@ -334,7 +334,7 @@ public:
 
 private:
   
-  class DocshellEntryMonitor : public JS::dbg::AutoEntryMonitor
+  class DocshellEntryMonitor final : public JS::dbg::AutoEntryMonitor
   {
   public:
     DocshellEntryMonitor(JSContext* aCx, const char* aReason);
