@@ -182,16 +182,6 @@ var gEnvLdLibraryPath;
 
 var DEBUG_AUS_TEST = true;
 
-
-
-
-var DEBUG_TEST_LOG = false;
-
-var gDeleteLogFile = true;
-var gRealDump;
-var gTestLogText = "";
-var gPassed;
-
 const DATA_URI_SPEC = Services.io.newFileURI(do_get_file("../data", false)).spec;
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "shared.js", this);
 
@@ -840,25 +830,6 @@ function setupTestCommon() {
     }
   }
 
-  if (DEBUG_TEST_LOG) {
-    let logFile = do_get_file(gTestID + ".log", true);
-    if (logFile.exists()) {
-      gPassed = false;
-      logTestInfo("start - dumping previous test run log");
-      logTestInfo("\n" + readFile(logFile) + "\n");
-      logTestInfo("finish - dumping previous test run log");
-      if (gDeleteLogFile) {
-        logFile.remove(false);
-      }
-      do_throw("The parallel run of this test failed. Failing non-parallel " +
-               "test so the log from the parallel run can be displayed in " +
-               "non-parallel log.");
-    } else {
-      gRealDump = dump;
-      dump = dumpOverride;
-    }
-  }
-
   if (IS_WIN) {
     Services.prefs.setBoolPref(PREF_APP_UPDATE_SERVICE_ENABLED,
                                IS_SERVICE_TEST ? true : false);
@@ -1011,42 +982,6 @@ function cleanupTestCommon() {
   resetEnvironment();
 
   debugDump("finish - general test cleanup");
-
-  if (gRealDump) {
-    dump = gRealDump;
-    gRealDump = null;
-  }
-
-  if (DEBUG_TEST_LOG && !gPassed) {
-    let fos = Cc["@mozilla.org/network/file-output-stream;1"].
-              createInstance(Ci.nsIFileOutputStream);
-    let logFile = do_get_file(gTestID + ".log", true);
-    if (!logFile.exists()) {
-      logFile.create(Ci.nsILocalFile.NORMAL_FILE_TYPE, PERMS_FILE);
-    }
-    fos.init(logFile, MODE_WRONLY | MODE_CREATE | MODE_APPEND, PERMS_FILE, 0);
-    fos.write(gTestLogText, gTestLogText.length);
-    fos.close();
-  }
-
-  if (DEBUG_TEST_LOG) {
-    gTestLogText = null;
-  } else {
-    let logFile = do_get_file(gTestID + ".log", true);
-    if (logFile.exists()) {
-      logFile.remove(false);
-    }
-  }
-}
-
-
-
-
-
-
-function dumpOverride(aText) {
-  gTestLogText += aText;
-  gRealDump(aText);
 }
 
 
@@ -1055,9 +990,6 @@ function dumpOverride(aText) {
 
 
 function doTestFinish() {
-  if (gPassed === undefined) {
-    gPassed = true;
-  }
   if (DEBUG_AUS_TEST) {
     
     
