@@ -5809,6 +5809,17 @@ Parser<ParseHandler>::labeledItem(YieldHandling yieldHandling)
         return null();
 
     if (tt == TOK_FUNCTION) {
+        TokenKind next;
+        if (!tokenStream.peekToken(&next))
+            return null();
+
+        
+        
+        if (next == TOK_MUL) {
+            report(ParseError, false, null(), JSMSG_GENERATOR_LABEL);
+            return null();
+        }
+
         
         
         

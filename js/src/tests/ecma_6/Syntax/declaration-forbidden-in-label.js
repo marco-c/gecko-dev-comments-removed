@@ -24,10 +24,7 @@ assertThrowsInstanceOf(() => Function("'use strict'; d: function w() {};"), Synt
 
 Function("e: function x() {};");
 
-
-
-
-Function("f: function* y() {}");
+assertThrowsInstanceOf(() => Function("f: function* y() {}"), SyntaxError);
 
 
 
