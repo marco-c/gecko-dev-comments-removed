@@ -112,6 +112,46 @@ public:
 
 
 
+
+  void
+  DistributeSignal(const nsAString& aName, const BluetoothAddress& aAddress);
+
+  
+
+
+
+
+
+
+  void
+  DistributeSignal(const nsAString& aName, const BluetoothAddress& aAddress,
+                   const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+  void
+  DistributeSignal(const nsAString& aName, const BluetoothUuid& aUuid);
+
+  
+
+
+
+
+
+
+  void
+  DistributeSignal(const nsAString& aName, const BluetoothUuid& aUuid,
+                   const BluetoothValue& aValue);
+
+  
+
+
+
+
   void
   DistributeSignal(const BluetoothSignal& aSignal);
 

@@ -198,7 +198,51 @@ RegisterBluetoothSignalHandler(const nsAString& aPath,
 
 
 void
+RegisterBluetoothSignalHandler(const BluetoothAddress& aAddress,
+                               BluetoothSignalObserver* aHandler);
+
+
+
+
+
+
+
+
+void
+RegisterBluetoothSignalHandler(const BluetoothUuid& aUuid,
+                               BluetoothSignalObserver* aHandler);
+
+
+
+
+
+
+
+
+void
 UnregisterBluetoothSignalHandler(const nsAString& aPath,
+                                 BluetoothSignalObserver* aHandler);
+
+
+
+
+
+
+
+
+void
+UnregisterBluetoothSignalHandler(const BluetoothAddress& aAddress,
+                                 BluetoothSignalObserver* aHandler);
+
+
+
+
+
+
+
+
+void
+UnregisterBluetoothSignalHandler(const BluetoothUuid& aUuid,
                                  BluetoothSignalObserver* aHandler);
 
 
