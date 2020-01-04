@@ -756,7 +756,13 @@ TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec, const char* f
     
 
     RefPtr<gfx::DataSourceSurface> dataSurf = mSurf->GetDataSurface();
-    MOZ_ASSERT(dataSurf);
+
+    if (!dataSurf) {
+        
+        
+        *out_glError = LOCAL_GL_OUT_OF_MEMORY;
+        return;
+    }
 
     GLenum error;
     if (UploadDataSurface(isSubImage, webgl, target, level, dui, xOffset, yOffset,
