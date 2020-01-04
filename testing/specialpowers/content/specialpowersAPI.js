@@ -360,10 +360,13 @@ function wrapCallbackObject(obj) {
   obj = Cu.waiveXrays(obj);
   var wrapper = {};
   for (var i in obj) {
-    if (typeof obj[i] == 'function')
-      wrapper[i] = wrapCallback(obj[i]);
-    else
-      wrapper[i] = obj[i];
+    var property = Object.getOwnPropertyDescriptor(obj, i);
+    for (var key in property) {
+      if (typeof property[key] == 'function') {
+        property[key] = wrapCallback(property[key]);
+      }
+    }
+    Object.defineProperty(wrapper, i, property);
   }
   return wrapper;
 }
