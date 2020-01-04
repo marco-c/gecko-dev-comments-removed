@@ -353,28 +353,40 @@ SubstitutingProtocolHandler::ResolveURI(nsIURI *uri, nsACString &result)
     return NS_OK;
   }
 
-  
-  nsAutoCString unescapedPath(path);
-  NS_UnescapeURL(unescapedPath);
-
-  
-  if (unescapedPath.FindChar(':') != -1)
-    return NS_ERROR_MALFORMED_URI;
-
-  if (unescapedPath.FindChar('\\') != -1)
-    return NS_ERROR_MALFORMED_URI;
-
-  const char *p = path.get() + 1; 
-  NS_ASSERTION(*(p-1) == '/', "Path did not begin with a slash!");
-
-  if (*p == '/')
-    return NS_ERROR_MALFORMED_URI;
-
   nsCOMPtr<nsIURI> baseURI;
   rv = GetSubstitution(host, getter_AddRefs(baseURI));
   if (NS_FAILED(rv)) return rv;
 
-  rv = baseURI->Resolve(nsDependentCString(p, path.Length()-1), result);
+  
+  nsCOMPtr<nsIURL> url = do_QueryInterface(uri);
+  if (!url) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
+  nsAutoCString unescapedPath;
+  rv = url->GetFilePath(unescapedPath);
+  if (NS_FAILED(rv)) return rv;
+
+  NS_UnescapeURL(unescapedPath);
+  if (unescapedPath.FindChar('\\') != -1) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
+  
+  
+  NS_ASSERTION(path.CharAt(0) == '/', "Path must begin with '/'");
+  if (path.Length() == 1) {
+    rv = baseURI->GetSpec(result);
+  } else {
+    
+    path.InsertLiteral(".", 0);
+
+    rv = baseURI->Resolve(path, result);
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   if (MOZ_LOG_TEST(gResLog, LogLevel::Debug)) {
     nsAutoCString spec;
