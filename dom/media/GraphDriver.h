@@ -153,10 +153,6 @@ public:
     return mIterationEnd;
   }
 
-  virtual void GetAudioBuffer(float** aBuffer, long& aFrames) {
-    MOZ_CRASH("This is not an Audio GraphDriver!");
-  }
-
   virtual AudioCallbackDriver* AsAudioCallbackDriver() {
     return nullptr;
   }
@@ -391,7 +387,7 @@ public:
 
   
   static long DataCallback_s(cubeb_stream * aStream,
-                             void * aUser, void * aBuffer,
+                             void * aUser, void * aInputBuffer, void * aOutputBuffer,
                              long aFrames);
   static void StateCallback_s(cubeb_stream* aStream, void * aUser,
                               cubeb_state aState);
@@ -401,7 +397,7 @@ public:
 
 
 
-  long DataCallback(AudioDataValue* aBuffer, long aFrames);
+  long DataCallback(AudioDataValue* aInputBuffer, AudioDataValue* aOutputBuffer, long aFrames);
   
 
   void StateCallback(cubeb_state aState);
