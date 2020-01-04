@@ -51,6 +51,7 @@ class SharedArrayBufferObject;
 class StructTypeDescr;
 class UnownedBaseShape;
 class WasmInstanceObject;
+class WasmMemoryObject;
 namespace jit {
 class JitCode;
 } 
@@ -107,6 +108,7 @@ class JitCode;
     D(js::StructTypeDescr*) \
     D(js::UnownedBaseShape*) \
     D(js::WasmInstanceObject*) \
+    D(js::WasmMemoryObject*) \
     D(js::jit::JitCode*)
 
 

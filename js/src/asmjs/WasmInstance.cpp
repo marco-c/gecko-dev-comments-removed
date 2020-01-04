@@ -385,7 +385,7 @@ NewExportedFunction(JSContext* cx, Handle<WasmInstanceObject*> instanceObj, uint
 static bool
 CreateExportObject(JSContext* cx,
                    HandleWasmInstanceObject instanceObj,
-                   HandleArrayBufferObjectMaybeShared memoryObj,
+                   HandleObject memoryObj,
                    const ExportMap& exportMap,
                    const ExportVector& exports,
                    MutableHandleObject exportObj)
@@ -450,12 +450,12 @@ Instance::Instance(UniqueCodeSegment codeSegment,
                    const Metadata& metadata,
                    const ShareableBytes* maybeBytecode,
                    TypedFuncTableVector&& typedFuncTables,
-                   HandleArrayBufferObjectMaybeShared heap)
+                   HandleWasmMemoryObject memory)
   : codeSegment_(Move(codeSegment)),
     metadata_(&metadata),
     maybeBytecode_(maybeBytecode),
     typedFuncTables_(Move(typedFuncTables)),
-    heap_(heap),
+    memory_(memory),
     profilingEnabled_(false)
 {}
 
@@ -467,7 +467,7 @@ Instance::create(JSContext* cx,
                  const Metadata& metadata,
                  const ShareableBytes* maybeBytecode,
                  TypedFuncTableVector&& typedFuncTables,
-                 HandleArrayBufferObjectMaybeShared heap,
+                 HandleWasmMemoryObject memory,
                  Handle<FunctionVector> funcImports,
                  const ExportMap& exportMap,
                  HandleWasmInstanceObject instanceObj)
@@ -476,7 +476,7 @@ Instance::create(JSContext* cx,
 
     {
         auto instance = cx->make_unique<Instance>(Move(codeSegment), metadata, maybeBytecode,
-                                                  Move(typedFuncTables), heap);
+                                                  Move(typedFuncTables), memory);
         if (!instance)
             return false;
 
@@ -495,13 +495,19 @@ Instance::create(JSContext* cx,
         exit.baselineScript = nullptr;
     }
 
-    if (heap)
-        *instance.addressOfMemoryBase() = heap->dataPointerEither().unwrap();
+    if (memory)
+        *instance.addressOfMemoryBase() = memory->buffer().dataPointerEither().unwrap();
 
     
 
+    RootedObject memoryObj(cx);
+    if (metadata.assumptions.newFormat)
+        memoryObj = memory;
+    else
+        memoryObj = memory ? &memory->buffer() : nullptr;
+
     RootedObject exportObj(cx);
-    if (!CreateExportObject(cx, instanceObj, heap, exportMap, metadata.exports, &exportObj))
+    if (!CreateExportObject(cx, instanceObj, memoryObj, exportMap, metadata.exports, &exportObj))
         return false;
 
     
@@ -538,21 +544,21 @@ Instance::trace(JSTracer* trc)
 {
     for (const Import& import : metadata_->imports)
         TraceNullableEdge(trc, &importToExit(import).fun, "wasm function import");
-    TraceNullableEdge(trc, &heap_, "wasm buffer");
+    TraceNullableEdge(trc, &memory_, "wasm buffer");
 }
 
 SharedMem<uint8_t*>
 Instance::memoryBase() const
 {
     MOZ_ASSERT(metadata_->usesMemory());
-    MOZ_ASSERT(*addressOfMemoryBase() == heap_->dataPointerEither());
-    return heap_->dataPointerEither();
+    MOZ_ASSERT(*addressOfMemoryBase() == memory_->buffer().dataPointerEither());
+    return memory_->buffer().dataPointerEither();
 }
 
 size_t
 Instance::memoryLength() const
 {
-    return heap_->byteLength();
+    return memory_->buffer().byteLength();
 }
 
 bool

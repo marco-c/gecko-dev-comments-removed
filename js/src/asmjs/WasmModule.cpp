@@ -326,30 +326,48 @@ Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
 bool
 Module::instantiate(JSContext* cx,
                     Handle<FunctionVector> funcImports,
-                    Handle<ArrayBufferObjectMaybeShared*> asmJSHeap,
+                    HandleArrayBufferObjectMaybeShared asmJSBuffer,
                     HandleWasmInstanceObject instanceObj) const
 {
     MOZ_ASSERT(funcImports.length() == metadata_->imports.length());
-    MOZ_ASSERT_IF(asmJSHeap, metadata_->isAsmJS());
 
     
     
+    
 
-    Rooted<ArrayBufferObjectMaybeShared*> heap(cx, asmJSHeap);
-    if (metadata_->usesMemory() && !heap) {
-        MOZ_ASSERT(!metadata_->isAsmJS());
-        heap = ArrayBufferObject::createForWasm(cx, metadata_->minMemoryLength, 
-                                                metadata_->assumptions.usesSignal.forOOB);
-        if (!heap)
+    RootedWasmMemoryObject memory(cx);
+    uint8_t* memoryBase = nullptr;
+    uint32_t memoryLength = 0;
+    RootedArrayBufferObjectMaybeShared buffer(cx);
+    if (metadata_->usesMemory()) {
+        if (metadata_->isAsmJS()) {
+            MOZ_ASSERT(asmJSBuffer);
+            buffer = asmJSBuffer;
+        } else {
+            buffer = ArrayBufferObject::createForWasm(cx, metadata_->minMemoryLength,
+                                                      metadata_->assumptions.usesSignal.forOOB);
+            if (!buffer)
+                return false;
+        }
+
+        RootedObject proto(cx);
+        if (metadata_->assumptions.newFormat)
+            proto = &cx->global()->getPrototype(JSProto_WasmMemory).toObject();
+
+        memory = WasmMemoryObject::create(cx, buffer, proto);
+        if (!memory)
             return false;
+
+        memoryBase = buffer->dataPointerEither().unwrap();
+        memoryLength = buffer->byteLength();
+
+        const uint8_t* bytecode = bytecode_->begin();
+        for (const DataSegment& seg : dataSegments_)
+            memcpy(memoryBase + seg.memoryOffset, bytecode + seg.bytecodeOffset, seg.length);
+    } else {
+        MOZ_ASSERT(!asmJSBuffer);
+        MOZ_ASSERT(dataSegments_.empty());
     }
-
-    uint8_t* memoryBase = heap ? heap->dataPointerEither().unwrap() : nullptr;
-    uint32_t memoryLength = heap ? heap->byteLength() : 0;
-
-    const uint8_t* bytecode = bytecode_->begin();
-    for (const DataSegment& seg : dataSegments_)
-        memcpy(memoryBase + seg.memoryOffset, bytecode + seg.bytecodeOffset, seg.length);
 
     
 
@@ -379,5 +397,5 @@ Module::instantiate(JSContext* cx,
     }
 
     return Instance::create(cx, Move(cs), *metadata_, maybeBytecode, Move(typedFuncTables),
-                            heap, funcImports, exportMap_, instanceObj);
+                            memory, funcImports, exportMap_, instanceObj);
 }

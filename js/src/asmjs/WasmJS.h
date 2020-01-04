@@ -71,6 +71,7 @@ InitWebAssemblyClass(JSContext* cx, HandleObject global);
 
 
 
+
 class WasmModuleObject : public NativeObject
 {
     static const unsigned MODULE_SLOT = 0;
@@ -80,6 +81,7 @@ class WasmModuleObject : public NativeObject
     static const JSProtoKey KEY = JSProto_WasmModule;
     static const unsigned RESERVED_SLOTS = 1;
     static const Class class_;
+    static const JSPropertySpec properties[];
 
     static WasmModuleObject* create(ExclusiveContext* cx,
                                     wasm::UniqueModule module,
@@ -90,6 +92,7 @@ class WasmModuleObject : public NativeObject
 typedef Rooted<WasmModuleObject*> RootedWasmModuleObject;
 typedef Handle<WasmModuleObject*> HandleWasmModuleObject;
 typedef MutableHandle<WasmModuleObject*> MutableHandleWasmModuleObject;
+
 
 
 
@@ -106,6 +109,7 @@ class WasmInstanceObject : public NativeObject
     static const JSProtoKey KEY = JSProto_WasmInstance;
     static const unsigned RESERVED_SLOTS = 2;
     static const Class class_;
+    static const JSPropertySpec properties[];
 
     static WasmInstanceObject* create(ExclusiveContext* cx,
                                       HandleObject proto = nullptr);
@@ -119,6 +123,29 @@ typedef GCVector<WasmInstanceObject*> WasmInstanceObjectVector;
 typedef Rooted<WasmInstanceObject*> RootedWasmInstanceObject;
 typedef Handle<WasmInstanceObject*> HandleWasmInstanceObject;
 typedef MutableHandle<WasmInstanceObject*> MutableHandleWasmInstanceObject;
+
+
+
+
+class WasmMemoryObject : public NativeObject
+{
+    static const unsigned BUFFER_SLOT = 0;
+    static const ClassOps classOps_;
+  public:
+    static const JSProtoKey KEY = JSProto_WasmMemory;
+    static const unsigned RESERVED_SLOTS = 1;
+    static const Class class_;
+    static const JSPropertySpec properties[];
+
+    static WasmMemoryObject* create(ExclusiveContext* cx,
+                                    Handle<ArrayBufferObjectMaybeShared*> buffer,
+                                    HandleObject proto);
+    ArrayBufferObjectMaybeShared& buffer() const;
+};
+
+typedef GCPtr<WasmMemoryObject*> GCPtrWasmMemoryObject;
+typedef Rooted<WasmMemoryObject*> RootedWasmMemoryObject;
+typedef Handle<WasmMemoryObject*> HandleWasmMemoryObject;
 
 } 
 
