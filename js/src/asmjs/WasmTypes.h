@@ -659,6 +659,9 @@ enum class Trap
     
     InvalidConversionToInteger,
     
+    IntegerDivideByZero,
+
+    
     
     ImpreciseSimdConversion,
 
@@ -676,6 +679,7 @@ enum class JumpTarget
     Unreachable = unsigned(Trap::Unreachable),
     IntegerOverflow = unsigned(Trap::IntegerOverflow),
     InvalidConversionToInteger = unsigned(Trap::InvalidConversionToInteger),
+    IntegerDivideByZero = unsigned(Trap::IntegerDivideByZero),
     ImpreciseSimdConversion = unsigned(Trap::ImpreciseSimdConversion),
     
     StackOverflow,

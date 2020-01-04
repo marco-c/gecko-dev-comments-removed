@@ -433,28 +433,20 @@ CodeGeneratorX64::visitDivOrModI64(LDivOrModI64* lir)
         masm.mov(lhs, rax);
 
     
-    
     if (lir->canBeDivideByZero()) {
-        Label nonZero;
-        masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
-        masm.xorl(output, output);
-        masm.jump(&done);
-        masm.bind(&nonZero);
+        masm.testPtr(rhs, rhs);
+        masm.j(Assembler::Zero, wasm::JumpTarget::IntegerDivideByZero);
     }
 
-    
-    
     
     if (lir->canBeNegativeOverflow()) {
         Label notmin;
         masm.branchPtr(Assembler::NotEqual, lhs, ImmWord(INT64_MIN), &notmin);
         masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(-1), &notmin);
-        if (lir->mir()->isMod()) {
+        if (lir->mir()->isMod())
             masm.xorl(output, output);
-        } else {
-            if (lhs != output)
-                masm.mov(lhs, output);
-        }
+        else
+            masm.jump(wasm::JumpTarget::IntegerOverflow);
         masm.jump(&done);
         masm.bind(&notmin);
     }
@@ -485,13 +477,9 @@ CodeGeneratorX64::visitUDivOrMod64(LUDivOrMod64* lir)
     Label done;
 
     
-    
     if (lir->canBeDivideByZero()) {
-        Label nonZero;
-        masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
-        masm.xorl(output, output);
-        masm.jump(&done);
-        masm.bind(&nonZero);
+        masm.testPtr(rhs, rhs);
+        masm.j(Assembler::Zero, wasm::JumpTarget::IntegerDivideByZero);
     }
 
     
