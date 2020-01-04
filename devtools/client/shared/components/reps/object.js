@@ -96,7 +96,8 @@ define(function (require, exports, module) {
         return props;
       }
 
-      let mode = this.props.mode;
+      
+      let mode = "tiny";
 
       try {
         for (let name in object) {
