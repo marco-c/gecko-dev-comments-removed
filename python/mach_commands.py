@@ -200,11 +200,16 @@ class MachCommands(MachCommandBase):
             '--ext', ext,  
         ] + args
 
-        return self.run_process(cmd_args,
+        success = self.run_process(cmd_args,
             pass_thru=True,  
             ensure_exit_code=False,  
             require_unix_environment=True 
         )
+
+        self.log(logging.INFO, 'eslint', {'msg': ('No errors' if success == 0 else 'Errors')},
+            'Finished eslint. {msg} encountered.')
+        return success
+
     def eslint_setup(self, update_only=False):
         """Ensure eslint is optimally configured.
 
