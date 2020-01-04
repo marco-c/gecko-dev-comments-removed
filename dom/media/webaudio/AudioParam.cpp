@@ -91,7 +91,8 @@ AudioParam::Stream()
   AudioNodeEngine* engine = new AudioNodeEngine(nullptr);
   RefPtr<AudioNodeStream> stream =
     AudioNodeStream::Create(mNode->Context(), engine,
-                            AudioNodeStream::NO_STREAM_FLAGS);
+                            AudioNodeStream::NO_STREAM_FLAGS,
+                            mNode->Context()->Graph());
 
   
   
