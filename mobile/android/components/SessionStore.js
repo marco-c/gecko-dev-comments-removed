@@ -993,12 +993,18 @@ SessionStore.prototype = {
 
 
   _restoreTab: function ss_restoreTab(aTabData, aBrowser) {
+    
+    
+    if (!aTabData || aTabData.entries.length == 0) {
+      Cu.reportError("SessionStore.js: Error trying to restore tab with empty tabdata");
+      return;
+    }
     this._restoreHistory(aTabData, aBrowser.sessionHistory);
 
     
     
     
-    aBrowser.__SS_restore_data = aTabData || {};
+    aBrowser.__SS_restore_data = aTabData;
   },
 
   
