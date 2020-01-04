@@ -395,9 +395,21 @@ public:
     LayoutDeviceRect dirtyRect;
     gfxTextContextPaint* contextPaint = nullptr;
     DrawPathCallbacks* callbacks = nullptr;
-    bool generateTextMask = false;
-    bool paintSelectionBackground = false;
+    enum {
+      PaintText,           
+      PaintTextBGColor,    
+                           
+      GenerateTextMask     
+                           
+                           
+                           
+    };
+    uint8_t state = PaintText;
     explicit PaintTextParams(gfxContext* aContext) : context(aContext) {}
+
+    bool IsPaintText() const { return state == PaintText; }
+    bool IsGenerateTextMask() const { return state == GenerateTextMask; }
+    bool IsPaintBGColor() const { return state == PaintTextBGColor; }
   };
 
   struct PaintTextSelectionParams : PaintTextParams
