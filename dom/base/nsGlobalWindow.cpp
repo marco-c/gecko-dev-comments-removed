@@ -2745,8 +2745,16 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
     aDocument->NodePrincipal()->Equals(existing, &sameOrigin);
     MOZ_ASSERT(sameOrigin);
 #endif
-    JS_SetCompartmentPrincipals(compartment,
-                                nsJSPrincipals::get(aDocument->NodePrincipal()));
+    MOZ_ASSERT_IF(aDocument == oldDoc,
+                  xpc::GetCompartmentPrincipal(compartment) ==
+                  aDocument->NodePrincipal());
+    if (aDocument != oldDoc) {
+      JS_SetCompartmentPrincipals(compartment,
+                                  nsJSPrincipals::get(aDocument->NodePrincipal()));
+      
+      
+      xpc::ClearContentXBLScope(newInnerGlobal);
+    }
   } else {
     if (aState) {
       newInnerWindow = wsh->GetInnerWindow();
@@ -11833,7 +11841,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
       
       rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
                                 options_ptr,  true,
-                                aDialog, aNavigate, argv,
+                                aDialog, aNavigate, nullptr, argv,
                                 1.0f, 0, getter_AddRefs(domReturn));
     } else {
       
@@ -11853,7 +11861,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
       rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
                                 options_ptr,  false,
-                                aDialog, aNavigate, aExtraArgument,
+                                aDialog, aNavigate, nullptr, aExtraArgument,
                                 1.0f, 0, getter_AddRefs(domReturn));
 
     }

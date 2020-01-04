@@ -123,6 +123,11 @@ AllowContentXBLScope(JSCompartment* c);
 bool
 UseContentXBLScope(JSCompartment* c);
 
+
+
+void
+ClearContentXBLScope(JSObject* global);
+
 bool
 IsInAddonScope(JSObject* obj);
 
