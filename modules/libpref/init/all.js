@@ -4862,6 +4862,8 @@ pref("dom.vr.oculus050.enabled", true);
 
 pref("dom.vr.cardboard.enabled", false);
 
+pref("dom.vr.osvr.enabled", false);
+
 pref("dom.vr.add-test-devices", 0);
 
 
@@ -4871,6 +4873,11 @@ pref("dom.vr.poseprediction.enabled", false);
 
 
 pref("gfx.vr.mirror-textures", false);
+
+pref("gfx.vr.osvr.utilLibPath", "");
+pref("gfx.vr.osvr.commonLibPath", "");
+pref("gfx.vr.osvr.clientLibPath", "");
+pref("gfx.vr.osvr.clientKitLibPath", "");
 
 
 pref("wap.UAProf.url", "");
