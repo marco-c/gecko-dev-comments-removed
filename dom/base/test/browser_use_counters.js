@@ -11,7 +11,12 @@ const gHttpTestRoot = "http://example.com/browser/dom/base/test/";
 
 var gOldContentCanRecord = false;
 add_task(function* test_initialize() {
-   gOldContentCanRecord = yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function () {
+  
+  
+  
+  yield SpecialPowers.pushPrefEnv({ set: [[ "dom.ipc.processCount", 1 ]] });
+
+  gOldContentCanRecord = yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function () {
     let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
     let old = telemetry.canRecordExtended;
     telemetry.canRecordExtended = true;
