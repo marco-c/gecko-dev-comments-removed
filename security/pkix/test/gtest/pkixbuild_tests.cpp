@@ -459,17 +459,23 @@ struct IssuerNameCheckParams
   const char* subjectIssuerCN; 
   const char* issuerSubjectCN; 
   bool matches;
+  Result expectedError;
 };
 
 static const IssuerNameCheckParams ISSUER_NAME_CHECK_PARAMS[] =
 {
-  { "foo", "foo", true },
-  { "foo", "bar", false },
-  { "f", "foo", false }, 
-  { "foo", "f", false }, 
-  { "foo", "Foo", false }, 
-  { "", "", true },
-  { nullptr, nullptr, true }, 
+  { "foo", "foo", true, Success },
+  { "foo", "bar", false, Result::ERROR_UNKNOWN_ISSUER },
+  { "f", "foo", false, Result::ERROR_UNKNOWN_ISSUER }, 
+  { "foo", "f", false, Result::ERROR_UNKNOWN_ISSUER }, 
+  { "foo", "Foo", false, Result::ERROR_UNKNOWN_ISSUER }, 
+  { "", "", true, Success },
+  { nullptr, nullptr, false, Result::ERROR_EMPTY_ISSUER_NAME }, 
+
+  
+  
+  { "foo", nullptr, false, Result::ERROR_UNKNOWN_ISSUER },
+  { nullptr, "foo", false, Result::ERROR_UNKNOWN_ISSUER }
 };
 
 class pkixbuild_IssuerNameCheck
@@ -497,7 +503,7 @@ TEST_P(pkixbuild_IssuerNameCheck, MatchingName)
                                               subjectCertDER.length()));
 
   IssuerNameCheckTrustDomain trustDomain(issuerCertDER, !params.matches);
-  ASSERT_EQ(params.matches ? Success : Result::ERROR_UNKNOWN_ISSUER,
+  ASSERT_EQ(params.expectedError,
             BuildCertChain(trustDomain, subjectCertDERInput, Now(),
                            EndEntityOrCA::MustBeEndEntity,
                            KeyUsage::noParticularKeyUsageRequired,

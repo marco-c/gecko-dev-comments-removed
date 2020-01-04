@@ -127,6 +127,25 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
 
 
 Result
+CheckIssuer(Input encodedIssuer)
+{
+  
+  Reader issuer(encodedIssuer);
+  Input encodedRDNs;
+  ExpectTagAndGetValue(issuer, der::SEQUENCE, encodedRDNs);
+  Reader rdns(encodedRDNs);
+  
+  
+  
+  if (rdns.AtEnd()) {
+    return Result::ERROR_EMPTY_ISSUER_NAME;
+  }
+  return Success;
+}
+
+
+
+Result
 ParseValidity(Input encodedValidity,
                Time* notBeforeOut,
                Time* notAfterOut)
@@ -984,6 +1003,12 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
   
   rv = CheckSubjectPublicKeyInfo(cert.GetSubjectPublicKeyInfo(), trustDomain,
                                  endEntityOrCA);
+  if (rv != Success) {
+    return rv;
+  }
+
+  
+  rv = CheckIssuer(cert.GetIssuer());
   if (rv != Success) {
     return rv;
   }

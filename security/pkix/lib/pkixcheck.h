@@ -45,6 +45,8 @@ Result CheckNameConstraints(Input encodedNameConstraints,
                             const BackCert& firstChild,
                             KeyPurposeId requiredEKUIfPresent);
 
+Result CheckIssuer(Input encodedIssuer);
+
 
 
 
