@@ -1004,6 +1004,9 @@ pref("dom.mozPermissionSettings.enabled", true);
 pref("dom.mozTCPSocket.enabled", true);
 
 
+pref("dom.mozContacts.enabled", true);
+
+
 pref("dom.ipc.tabs.disabled", true);
 pref("dom.ipc.processCount", 100000);
 
