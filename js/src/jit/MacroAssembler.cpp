@@ -1058,28 +1058,11 @@ JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPED_ARRAY)
     }
 
     nbytes = JS_ROUNDUP(nbytes, sizeof(Value));
-
-    
-    
-    
-    
-    if (nbytes > Nursery::MaxNurseryBufferSize)
-        return;
-
     Nursery& nursery = cx->runtime()->gc.nursery;
-    void* buf = nursery.allocateBuffer(obj->zone(), nbytes);
+    void* buf = nursery.allocateBuffer(obj, nbytes);
     if (buf) {
-        if (nursery.isInside(buf) || obj->isTenured()) {
-            obj->initPrivate(buf);
-            memset(buf, 0, nbytes);
-        } else {
-            
-            
-            
-            
-            nursery.removeMallocedBuffer(buf);
-            js_free(buf);
-        }
+        obj->initPrivate(buf);
+        memset(buf, 0, nbytes);
     }
 }
 

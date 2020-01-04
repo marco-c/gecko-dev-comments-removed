@@ -85,9 +85,11 @@ TypedArrayObject::notifyBufferDetached(JSContext* cx, void* newData)
     setFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT, Int32Value(0));
 
     
+    
     Nursery& nursery = cx->runtime()->gc.nursery;
-    if (!hasBuffer() && !hasInlineElements() && !nursery.isInside(elements())) {
-        nursery.removeMallocedBuffer(elements());
+    if (isTenured() && !hasBuffer() && !hasInlineElements() &&
+        !nursery.isInside(elements()))
+    {
         js_free(elements());
     }
 
@@ -117,9 +119,11 @@ TypedArrayObject::ensureHasBuffer(JSContext* cx, Handle<TypedArrayObject*> tarra
     memcpy(buffer->dataPointer(), tarray->viewDataUnshared(), tarray->byteLength());
 
     
+    
     Nursery& nursery = cx->runtime()->gc.nursery;
-    if (!tarray->hasInlineElements() && !nursery.isInside(tarray->elements())) {
-        nursery.removeMallocedBuffer(tarray->elements());
+    if (tarray->isTenured() && !tarray->hasInlineElements() &&
+        !nursery.isInside(tarray->elements()))
+    {
         js_free(tarray->elements());
     }
 
