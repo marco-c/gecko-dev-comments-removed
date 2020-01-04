@@ -6,11 +6,15 @@
 
 
 
-#ifndef MOZILLA_AVCPU_PERMS_H
-#define MOZILLA_AVCPU_PERMS_H
+#ifndef MOZILLA_AVUTIL_VISIBILITY_H
+#define MOZILLA_AVUTIL_VISIBILITY_H
 
 #pragma GCC visibility push(default)
 #include "libavutil/cpu.h"
+
+
+#include "libavutil/log.h"
+
 #pragma GCC visibility pop
 
 #endif 
