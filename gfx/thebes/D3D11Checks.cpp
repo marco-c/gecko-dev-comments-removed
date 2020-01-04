@@ -121,7 +121,7 @@ D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device *aDevice)
 }
 
  bool
-D3D11Checks::DoesD3D11DeviceWork()
+D3D11Checks::DoesDeviceWork()
 {
   static bool checked = false;
   static bool result = false;
