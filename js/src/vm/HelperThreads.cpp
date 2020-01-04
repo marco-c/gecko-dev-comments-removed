@@ -307,6 +307,12 @@ js::CancelOffThreadParses(JSRuntime* rt)
     if (!HelperThreadState().threads)
         return;
 
+#ifdef DEBUG
+    GlobalHelperThreadState::ParseTaskVector& waitingOnGC = HelperThreadState().parseWaitingOnGC();
+    for (size_t i = 0; i < waitingOnGC.length(); i++)
+        MOZ_ASSERT(!waitingOnGC[i]->runtimeMatches(rt));
+#endif
+
     
     
     
