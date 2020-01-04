@@ -2022,6 +2022,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   bool mTextAlignLastTrue : 1;          
   bool mTextEmphasisColorForeground : 1;
   bool mWebkitTextFillColorForeground : 1;    
+  bool mWebkitTextStrokeColorForeground : 1;  
   uint8_t mTextTransform;               
   uint8_t mWhiteSpace;                  
   uint8_t mWordBreak;                   
@@ -2038,11 +2039,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   int32_t mTabSize;                     
   nscolor mTextEmphasisColor;           
   nscolor mWebkitTextFillColor;         
+  nscolor mWebkitTextStrokeColor;       
 
   nsStyleCoord mWordSpacing;            
   nsStyleCoord mLetterSpacing;          
   nsStyleCoord mLineHeight;             
   nsStyleCoord mTextIndent;             
+  nsStyleCoord mWebkitTextStrokeWidth;  
 
   RefPtr<nsCSSShadowArray> mTextShadow; 
 

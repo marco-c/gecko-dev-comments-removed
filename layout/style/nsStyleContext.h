@@ -189,6 +189,16 @@ public:
   }
 
   
+
+
+
+  nscolor GetTextStrokeColor() {
+    const nsStyleText* textStyle = StyleText();
+    return textStyle->mWebkitTextStrokeColorForeground
+           ? StyleColor()->mColor : textStyle->mWebkitTextStrokeColor;
+  }
+
+  
   
   
   
