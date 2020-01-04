@@ -30,7 +30,7 @@ updateAppInfo();
 
 
 add_task(function* test_firstRun() {
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
   let metadata = TelemetrySession.getMetadata();
   do_check_false("previousBuildID" in metadata);
   let appBuildID = getAppInfo().appBuildID;
@@ -41,7 +41,7 @@ add_task(function* test_firstRun() {
 
 
 add_task(function* test_secondRun() {
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
   let metadata = TelemetrySession.getMetadata();
   do_check_false("previousBuildID" in metadata);
 });
@@ -54,7 +54,7 @@ add_task(function* test_newBuild() {
   let info = getAppInfo();
   let oldBuildID = info.appBuildID;
   info.appBuildID = NEW_BUILD_ID;
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
   let metadata = TelemetrySession.getMetadata();
   do_check_eq(metadata.previousBuildId, oldBuildID);
   let buildIDPref = Services.prefs.getCharPref(TelemetrySession.Constants.PREF_PREVIOUS_BUILDID);

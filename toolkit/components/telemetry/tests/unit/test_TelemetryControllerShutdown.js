@@ -37,18 +37,25 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_sendTimeout() {
-  const TIMEOUT = 100;
+
+
+
+
+
+add_task(function* test_sendTelemetryShutsDownWithinReasonableTimeout() {
+  const CRASH_TIMEOUT_MS = 5 * 1000;
   
   
   Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
-  Services.prefs.setIntPref("toolkit.asyncshutdown.crash_timeout", TIMEOUT);
+  
+  
+  Services.prefs.setIntPref("toolkit.asyncshutdown.crash_timeout", CRASH_TIMEOUT_MS);
 
   let httpServer = new HttpServer();
   httpServer.registerPrefixHandler("/", contentHandler);
   httpServer.start(-1);
 
-  yield TelemetryController.setup();
+  yield TelemetryController.testSetup();
   TelemetrySend.setServer("http://localhost:" + httpServer.identity.primaryPort);
   let submissionPromise = TelemetryController.submitExternalPing("test-ping-type", {});
 
