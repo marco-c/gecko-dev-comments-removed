@@ -1,0 +1,32 @@
+
+
+
+
+
+
+"use strict";
+
+const { ActorClass } = require("devtools/server/protocol");
+const { ThreadActor } = require("devtools/server/actors/script");
+
+
+
+
+
+let ChromeDebuggerActor = ActorClass({
+  typeName: "chromeDebugger",
+  extends: ThreadActor,
+
+  
+
+
+
+
+
+
+  initialize: function(parent) {
+    ThreadActor.call(this, parent);
+  }
+});
+
+exports.ChromeDebuggerActor = ChromeDebuggerActor;
