@@ -14,6 +14,21 @@
 
 
 
+.theme-firebug #toolbox-dock-buttons > toolbarbutton > image,
+.theme-firebug .devtools-closebutton > image,
+.theme-firebug .devtools-option-toolbarbutton > image,
+.theme-firebug .command-button-invertable > image,
+.theme-firebug #sources-toolbar image,
+.theme-firebug [id$="pane-toggle"] > image,
+.theme-firebug #global-toolbar .devtools-button::before,
+.theme-firebug #element-picker::before,
+.theme-firebug #debugger-controls .toolbarbutton-icon,
+.theme-firebug #filter-button .toolbarbutton-icon {
+  filter: none !important;
+}
+
+
+
 .theme-firebug .cm-keyword {color: BlueViolet; font-weight: bold;}
 .theme-firebug .cm-atom {color: #219;}
 .theme-firebug .cm-number {color: #164;}
