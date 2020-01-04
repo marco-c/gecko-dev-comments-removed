@@ -32,9 +32,6 @@ var WebappRT = {
     pref("extensions.autoDisableScopes", 1),
     
     pref("xpinstall.enabled", false),
-    
-    pref("toolkit.telemetry.prompted", 999),
-    pref("toolkit.telemetry.notifiedOptOut", 999),
     pref("media.useAudioChannelAPI", true),
     pref("dom.mozTCPSocket.enabled", true),
 

@@ -139,9 +139,6 @@ class MuletReftest(RefTest):
         prefs["network.dns.localDomains"] = "app://test-container.gaiamobile.org"
         prefs["reftest.browser.iframe.enabled"] = False
         prefs["reftest.remote"] = False
-        
-        prefs["toolkit.telemetry.prompted"] = 999
-        prefs["toolkit.telemetry.notifiedOptOut"] = 999
 
         
         profile.set_preferences(prefs)
