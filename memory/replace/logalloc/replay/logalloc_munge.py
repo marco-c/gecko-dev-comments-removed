@@ -61,8 +61,12 @@ class Ignored(Exception): pass
 
 def split_log_line(line):
     try:
-        pid, func_call = line.split(' ', 1)
         
+        
+        
+        
+        
+        pid, func_call = line.split(' ', 1)
         call, result = func_call.split(')')
         func, args = call.split('(')
         args = args.split(',') if args else []
@@ -70,7 +74,11 @@ def split_log_line(line):
             if result[0] != '=':
                 raise Ignored('Malformed input')
             result = result[1:]
-        return pid, func, args, result
+        if ' ' in func:
+            tid, func = func.split(' ', 1)
+        else:
+            tid = pid
+        return pid, tid, func, args, result
     except:
         raise Ignored('Malformed input')
 
@@ -91,14 +99,16 @@ NUM_ARGUMENTS = {
 def main():
     process_pointers = defaultdict(IdMapping)
     pids = IdMapping()
+    tids = IdMapping()
     for line in sys.stdin:
         line = line.strip()
 
         try:
-            pid, func, args, result = split_log_line(line)
+            pid, tid, func, args, result = split_log_line(line)
 
             
             pid = pids[int(pid)]
+            tid = tids[int(tid)]
 
             pointers = process_pointers[pid]
 
@@ -124,7 +134,7 @@ def main():
                     raise Ignored('Result is NULL')
                 result = "#%d" % pointers[result]
 
-            print('%d %s(%s)%s' % (pid, func, ','.join(args),
+            print('%d %d %s(%s)%s' % (pid, tid, func, ','.join(args),
                 '=%s' % result if result else ''))
 
         except Exception as e:

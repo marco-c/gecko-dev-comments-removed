@@ -509,6 +509,10 @@ main()
       continue;
     }
 
+    
+
+    parseNumber(line.SplitChar(' '));
+
     Buffer func = line.SplitChar('(');
     Buffer args = line.SplitChar(')');
 
