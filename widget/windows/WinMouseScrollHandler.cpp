@@ -228,7 +228,7 @@ MouseScrollHandler::ProcessMessage(nsWindowBase* aWidget, UINT msg,
                     msg == WM_KEYUP ? "WM_KEYUP" : "Unknown", msg, wParam,
          ::GetMessageTime()));
       LOG_KEYSTATE();
-      if (Device::Elantech::HandleKeyMessage(aWidget, msg, wParam)) {
+      if (Device::Elantech::HandleKeyMessage(aWidget, msg, wParam, lParam)) {
         aResult.mResult = 0;
         aResult.mConsumed = true;
         return true;
@@ -1183,8 +1183,15 @@ MouseScrollHandler::Device::Elantech::IsHelperWindow(HWND aWnd)
 bool
 MouseScrollHandler::Device::Elantech::HandleKeyMessage(nsWindowBase* aWidget,
                                                        UINT aMsg,
-                                                       WPARAM aWParam)
+                                                       WPARAM aWParam,
+                                                       LPARAM aLParam)
 {
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1207,6 +1214,7 @@ MouseScrollHandler::Device::Elantech::HandleKeyMessage(nsWindowBase* aWidget,
   
   if (sUseSwipeHack &&
       (aWParam == VK_NEXT || aWParam == VK_PRIOR) &&
+      WinUtils::GetScanCode(aLParam) == 0 &&
       (IS_VK_DOWN(0xFF) || IS_VK_DOWN(0xCC))) {
     if (aMsg == WM_KEYDOWN) {
       MOZ_LOG(gMouseScrollLog, LogLevel::Info,
