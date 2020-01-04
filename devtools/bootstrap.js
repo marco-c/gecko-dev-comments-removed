@@ -74,11 +74,27 @@ function reload(event) {
   
   
   let top = getTopLevelWindow(event.view)
-  let isBrowser = top.location.href.includes("/browser.xul") && top.gDevToolsBrowser;
+  let isBrowser = top.location.href.includes("/browser.xul");
   let reloadToolbox = false;
-  if (isBrowser && top.gDevToolsBrowser.hasToolboxOpened) {
-    reloadToolbox = top.gDevToolsBrowser.hasToolboxOpened(top);
+  if (isBrowser && top.gBrowser) {
+    
+    
+    
+    let nbox = top.gBrowser.getNotificationBox();
+    reloadToolbox =
+      top.document.getAnonymousElementByAttribute(nbox, "class",
+        "devtools-toolbox-bottom-iframe") ||
+      top.document.getAnonymousElementByAttribute(nbox, "class",
+        "devtools-toolbox-side-iframe") ||
+      Services.wm.getMostRecentWindow("devtools:toolbox");
   }
+  let browserConsole = Services.wm.getMostRecentWindow("devtools:webconsole");
+  let reopenBrowserConsole = false;
+  if (browserConsole) {
+    browserConsole.close();
+    reopenBrowserConsole = true;
+  }
+
   dump("Reload DevTools.  (reload-toolbox:"+reloadToolbox+")\n");
 
   
@@ -133,15 +149,6 @@ function reload(event) {
       }
     } else if (windowtype === "devtools:webide") {
       window.location.reload();
-    } else if (windowtype === "devtools:webconsole") {
-      
-      
-      
-      let HUDService = devtools.require("devtools/client/webconsole/hudservice");
-      HUDService.toggleBrowserConsole()
-        .then(() => {
-          HUDService.toggleBrowserConsole();
-        });
     }
   }
 
@@ -157,6 +164,14 @@ function reload(event) {
       let target = TargetFactory.forTab(top.gBrowser.selectedTab);
       gDevTools.showToolbox(target);
     }, 1000);
+  }
+
+  
+  
+  
+  if (reopenBrowserConsole) {
+    let HUDService = devtools.require("devtools/client/webconsole/hudservice");
+    HUDService.toggleBrowserConsole();
   }
 
   actionOccurred("reloadAddonReload");
