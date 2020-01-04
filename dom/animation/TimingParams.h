@@ -97,6 +97,21 @@ struct TimingParams
   dom::FillMode mFill = dom::FillMode::Auto;
   Maybe<ComputedTimingFunction> mFunction;
 
+  
+  
+  StickyTimeDuration ActiveDuration() const
+  {
+    
+    
+    
+    static const StickyTimeDuration zeroDuration;
+    if (!mDuration || *mDuration == zeroDuration || mIterations == 0.0) {
+      return zeroDuration;
+    }
+
+    return mDuration->MultDouble(mIterations);
+  }
+
   bool operator==(const TimingParams& aOther) const;
   bool operator!=(const TimingParams& aOther) const
   {

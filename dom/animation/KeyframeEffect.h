@@ -274,12 +274,6 @@ public:
   void
   GetComputedTimingAsDict(ComputedTimingProperties& aRetVal) const override;
 
-  
-  
-  static StickyTimeDuration
-  ActiveDuration(const StickyTimeDuration& aIterationDuration,
-                 double aIterationCount);
-
   bool IsInPlay() const;
   bool IsCurrent() const;
   bool IsInEffect() const;
