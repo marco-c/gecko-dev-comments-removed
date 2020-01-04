@@ -184,6 +184,31 @@ Gecko_UnsetNodeFlags(RawGeckoNode* aNode, uint32_t aFlags)
   aNode->UnsetFlags(aFlags);
 }
 
+nsChangeHint
+Gecko_CalcAndStoreStyleDifference(RawGeckoElement* aElement,
+                                  ServoComputedValues* aComputedValues)
+{
+#ifdef MOZ_STYLO
+  nsStyleContext* oldContext = aElement->GetPrimaryFrame()->StyleContext();
+
+  
+  
+  nsChangeHint forDescendants = nsChangeHint_Hints_NotHandledForDescendants;
+
+  
+  
+  
+  uint32_t equalStructs, samePointerStructs;
+  nsChangeHint result =
+    oldContext->CalcStyleDifference(aComputedValues, forDescendants,
+                                    &equalStructs, &samePointerStructs);
+  return result;
+#else
+  MOZ_CRASH("stylo: Shouldn't call Gecko_CalcAndStoreStyleDifference in "
+            "non-stylo build");
+#endif
+}
+
 ServoDeclarationBlock*
 Gecko_GetServoDeclarationBlock(RawGeckoElement* aElement)
 {
