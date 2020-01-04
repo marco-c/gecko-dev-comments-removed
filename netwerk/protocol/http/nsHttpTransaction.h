@@ -162,6 +162,8 @@ public:
     mozilla::TimeStamp GetResponseStart();
     mozilla::TimeStamp GetResponseEnd();
 
+    int64_t GetTransferSize() { return mTransferSize; }
+
 private:
     friend class DeleteHttpTransaction;
     virtual ~nsHttpTransaction();
@@ -242,6 +244,7 @@ private:
 
     int64_t                         mContentLength;   
     int64_t                         mContentRead;     
+    int64_t                         mTransferSize; 
 
     
     

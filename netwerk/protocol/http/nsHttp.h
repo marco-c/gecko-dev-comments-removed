@@ -168,6 +168,9 @@ struct nsHttp
     static bool IsPermanentRedirect(uint32_t httpStatus);
 
     
+    static const char* GetProtocolVersion(uint32_t pv);
+
+    
     
     
     

@@ -1174,6 +1174,10 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
   mChannel->GetAsyncOpen(&timing.fetchStart);
   mChannel->GetRedirectStart(&timing.redirectStart);
   mChannel->GetRedirectEnd(&timing.redirectEnd);
+  mChannel->GetTransferSize(&timing.transferSize);
+  mChannel->GetEncodedBodySize(&timing.encodedBodySize);
+  
+  
 
   if (mIPCClosed || !SendOnStopRequest(aStatusCode, timing))
     return NS_ERROR_UNEXPECTED;

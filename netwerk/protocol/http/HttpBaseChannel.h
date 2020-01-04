@@ -164,9 +164,13 @@ public:
   NS_IMETHOD GetRequestSucceeded(bool *aValue) override;
   NS_IMETHOD RedirectTo(nsIURI *newURI) override;
   NS_IMETHOD GetSchedulingContextID(nsID *aSCID) override;
+  NS_IMETHOD GetTransferSize(uint64_t *aTransferSize) override;
+  NS_IMETHOD GetDecodedBodySize(uint64_t *aDecodedBodySize) override;
+  NS_IMETHOD GetEncodedBodySize(uint64_t *aEncodedBodySize) override;
   NS_IMETHOD SetSchedulingContextID(const nsID aSCID) override;
   NS_IMETHOD GetIsMainDocumentChannel(bool* aValue) override;
   NS_IMETHOD SetIsMainDocumentChannel(bool aValue) override;
+  NS_IMETHOD GetProtocolVersion(nsACString & aProtocolVersion) override;
 
   
   NS_IMETHOD GetDocumentURI(nsIURI **aDocumentURI) override;
@@ -355,6 +359,9 @@ protected:
   nsCOMPtr<nsIURI>                  mReferrer;
   nsCOMPtr<nsIApplicationCache>     mApplicationCache;
 
+  
+  nsCOMPtr<nsIStreamListener>       mCompressListener;
+
   nsHttpRequestHead                 mRequestHead;
   nsCOMPtr<nsIInputStream>          mUploadStream;
   nsCOMPtr<nsIRunnable>             mUploadCloneableCallback;
@@ -470,6 +477,10 @@ protected:
   
   
   bool mOnStartRequestCalled;
+
+  uint64_t mTransferSize;
+  uint64_t mDecodedBodySize;
+  uint64_t mEncodedBodySize;
 
   
   nsCString mNetworkInterfaceId;
