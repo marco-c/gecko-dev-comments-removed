@@ -110,6 +110,15 @@ var healthReportWrapper = {
   },
 
   handleRemoteCommand: function (evt) {
+    
+    let allowedPrincipal = Services.scriptSecurityManager.getCodebasePrincipal(this._getReportURI());
+    let targetPrincipal = evt.target.nodePrincipal;
+    if (!allowedPrincipal.equals(targetPrincipal)) {
+      Cu.reportError(`Origin check failed for message "${evt.detail.command}": ` +
+                     `target origin is "${targetPrincipal.origin}", expected "${allowedPrincipal.origin}"`);
+      return;
+    }
+
     switch (evt.detail.command) {
       case "DisableDataSubmission":
         this.setDataSubmission(false);
