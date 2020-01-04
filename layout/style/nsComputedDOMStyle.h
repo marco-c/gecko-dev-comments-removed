@@ -484,6 +484,7 @@ private:
   mozilla::dom::CSSValue* DoGetAlignSelf();
   mozilla::dom::CSSValue* DoGetJustifyContent();
   mozilla::dom::CSSValue* DoGetJustifyItems();
+  mozilla::dom::CSSValue* DoGetJustifySelf();
 
   
   mozilla::dom::CSSValue* DoGetFill();

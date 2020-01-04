@@ -939,6 +939,7 @@ protected:
   bool ParseAlignJustifyPosition(nsCSSValue& aResult,
                                  const KTableValue aTable[]);
   bool ParseJustifyItems();
+  bool ParseJustifySelf();
 
   
   bool ParseRect(nsCSSProperty aPropID);
@@ -9449,6 +9450,24 @@ CSSParserImpl::ParseJustifyItems()
 }
 
 
+
+bool
+CSSParserImpl::ParseJustifySelf()
+{
+  nsCSSValue value;
+  if (!ParseSingleTokenVariant(value, VARIANT_INHERIT, nullptr)) {
+    if (!ParseEnum(value, nsCSSProps::kAlignAutoStretchBaseline)) {
+      if (!ParseAlignJustifyPosition(value, nsCSSProps::kAlignSelfPosition) ||
+          value.GetUnit() == eCSSUnit_Null) {
+        return false;
+      }
+    }
+  }
+  AppendValue(eCSSProperty_justify_self, value);
+  return true;
+}
+
+
 bool
 CSSParserImpl::ParseColorStop(nsCSSValueGradient* aGradient)
 {
@@ -10573,6 +10592,8 @@ CSSParserImpl::ParsePropertyByFunction(nsCSSProperty aPropID)
     return ParseRect(eCSSProperty_image_region);
   case eCSSProperty_justify_items:
     return ParseJustifyItems();
+  case eCSSProperty_justify_self:
+    return ParseJustifySelf();
   case eCSSProperty_list_style:
     return ParseListStyle();
   case eCSSProperty_margin:
