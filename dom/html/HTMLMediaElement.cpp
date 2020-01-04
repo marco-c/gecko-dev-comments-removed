@@ -383,13 +383,12 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest,
 
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
   if (channel &&
-      element &&
       NS_SUCCEEDED(rv = element->InitializeDecoderForChannel(channel, getter_AddRefs(mNextListener))) &&
       mNextListener) {
     rv = mNextListener->OnStartRequest(aRequest, aContext);
   } else {
     
-    if (NS_FAILED(rv) && !mNextListener && element) {
+    if (NS_FAILED(rv) && !mNextListener) {
       
       
       element->NotifyLoadError();
