@@ -88,7 +88,6 @@ enum ThreadType {
 
 
 
-
 # if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
 extern bool InitThreadType(void);
 extern void SetThreadType(ThreadType);
@@ -126,23 +125,22 @@ namespace oom {
 extern JS_PUBLIC_DATA(uint32_t) targetThread;
 
 static inline bool
-OOMThreadCheck()
+IsThreadSimulatingOOM()
 {
-    return (!js::oom::targetThread
-            || js::oom::targetThread == js::oom::GetThreadType());
+    return !js::oom::targetThread || js::oom::targetThread == js::oom::GetThreadType();
 }
 
 static inline bool
 IsSimulatedOOMAllocation()
 {
-    return OOMThreadCheck() && (OOM_counter == OOM_maxAllocations ||
+    return IsThreadSimulatingOOM() && (OOM_counter == OOM_maxAllocations ||
            (OOM_counter > OOM_maxAllocations && OOM_failAlways));
 }
 
 static inline bool
 ShouldFailWithOOM()
 {
-    if (!OOMThreadCheck())
+    if (!IsThreadSimulatingOOM())
         return false;
 
     OOM_counter++;
@@ -195,7 +193,8 @@ struct MOZ_RAII AutoEnterOOMUnsafeRegion
 
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
     AutoEnterOOMUnsafeRegion()
-      : oomEnabled_(OOM_maxAllocations != UINT32_MAX), oomAfter_(0)
+      : oomEnabled_(oom::IsThreadSimulatingOOM() && OOM_maxAllocations != UINT32_MAX),
+        oomAfter_(0)
     {
         if (oomEnabled_) {
             oomAfter_ = int64_t(OOM_maxAllocations) - OOM_counter;
