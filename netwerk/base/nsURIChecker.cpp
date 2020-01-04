@@ -4,6 +4,7 @@
 
 
 #include "nsURIChecker.h"
+#include "nsIURI.h"
 #include "nsIAuthPrompt.h"
 #include "nsIHttpChannel.h"
 #include "nsContentUtils.h"
