@@ -129,7 +129,8 @@ BEGIN_TEST(testIncrementalRoots)
 
     
     JS::AutoObjectVector vec(cx);
-    vec.append(root);
+    if (!vec.append(root))
+        return false;
 
     
     

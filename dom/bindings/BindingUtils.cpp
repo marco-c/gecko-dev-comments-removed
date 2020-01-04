@@ -3159,9 +3159,15 @@ ForEachHandler(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
   JS::AutoValueVector newArgs(aCx);
   
   
-  newArgs.append(args.get(0));
-  newArgs.append(args.get(1));
-  newArgs.append(maplikeOrSetlikeObj);
+  if (!newArgs.append(args.get(0))) {
+    return false;
+  }
+  if (!newArgs.append(args.get(1))) {
+    return false;
+  }
+  if (!newArgs.append(maplikeOrSetlikeObj)) {
+    return false;
+  }
   JS::Rooted<JS::Value> rval(aCx, JS::UndefinedValue());
   
   return JS::Call(aCx, args.thisv(), callbackFn, newArgs, &rval);
