@@ -1110,6 +1110,7 @@ nsViewManager::ProcessPendingUpdates()
   if (mPresShell) {
     mPresShell->GetPresContext()->RefreshDriver()->RevokeViewManagerFlush();
 
+    RefPtr<nsViewManager> strongThis(this);
     CallWillPaintOnObservers();
 
     ProcessPendingUpdatesForView(mRootView, true);
@@ -1126,6 +1127,7 @@ nsViewManager::UpdateWidgetGeometry()
 
   if (mHasPendingWidgetGeometryChanges) {
     mHasPendingWidgetGeometryChanges = false;
+    RefPtr<nsViewManager> strongThis(this);
     ProcessPendingUpdatesForView(mRootView, false);
   }
 }
