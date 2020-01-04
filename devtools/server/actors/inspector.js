@@ -3028,15 +3028,22 @@ var imageToImageData = Task.async(function* (node, maxDim) {
   }
 
   
+  let imageData;
   
-  let canvas = node.ownerDocument.createElementNS(XHTML_NS, "canvas");
-  canvas.width = imgWidth * resizeRatio;
-  canvas.height = imgHeight * resizeRatio;
-  let ctx = canvas.getContext("2d");
+  
+  if (isImg && node.src.startsWith("data:")) {
+    imageData = node.src;
+  } else {
+    
+    let canvas = node.ownerDocument.createElementNS(XHTML_NS, "canvas");
+    canvas.width = imgWidth * resizeRatio;
+    canvas.height = imgHeight * resizeRatio;
+    let ctx = canvas.getContext("2d");
 
-  
-  ctx.drawImage(node, 0, 0, canvas.width, canvas.height);
-  let imageData = canvas.toDataURL("image/png");
+    
+    ctx.drawImage(node, 0, 0, canvas.width, canvas.height);
+    imageData = canvas.toDataURL("image/png");
+  }
 
   return {
     data: imageData,
