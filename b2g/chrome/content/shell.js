@@ -23,7 +23,6 @@ Cu.import('resource://gre/modules/SystemUpdateService.jsm');
 Cu.import('resource://gre/modules/NetworkStatsService.jsm');
 Cu.import('resource://gre/modules/ResourceStatsService.jsm');
 #endif
-Cu.import('resource://gre/modules/KillSwitchMain.jsm');
 
 
 Cu.import('resource://gre/modules/SignInToWebsite.jsm');
@@ -232,6 +231,11 @@ var shell = {
   },
 
   bootstrap: function() {
+#ifdef MOZ_B2GDROID
+    Cc["@mozilla.org/b2g/b2gdroid-setup;1"]
+      .getService(Ci.nsIObserver).observe(window, "shell-startup", null);
+#endif
+
     window.performance.mark('gecko-shell-bootstrap');
     let startManifestURL =
       Cc['@mozilla.org/commandlinehandler/general-startup;1?type=b2gbootstrap']
@@ -698,7 +702,8 @@ var shell = {
   },
 
   handleCmdLine: function shell_handleCmdLine() {
-#ifndef MOZ_WIDGET_GONK
+  
+#ifndef ANDROID
     let b2gcmds = Cc["@mozilla.org/commandlinehandler/general-startup;1?type=b2gcmds"]
                     .getService(Ci.nsISupports);
     let args = b2gcmds.wrappedJSObject.cmdLine;
@@ -1054,6 +1059,7 @@ window.addEventListener('ContentStart', function update_onContentStart() {
   Cu.import('resource://gre/modules/WebappsUpdater.jsm');
   WebappsUpdater.handleContentStart(shell);
 
+#ifdef MOZ_UPDATER
   let promptCc = Cc["@mozilla.org/updates/update-prompt;1"];
   if (!promptCc) {
     return;
@@ -1065,6 +1071,7 @@ window.addEventListener('ContentStart', function update_onContentStart() {
   }
 
   updatePrompt.wrappedJSObject.handleContentStart(shell);
+#endif
 });
 
 (function geolocationStatusTracker() {
