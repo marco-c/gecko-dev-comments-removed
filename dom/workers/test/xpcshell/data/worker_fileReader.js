@@ -1,0 +1,8 @@
+
+
+
+
+self.onmessage = function(msg) {
+  var fr = new FileReader();
+  self.postMessage("OK");
+};
