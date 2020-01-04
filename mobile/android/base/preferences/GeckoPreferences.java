@@ -287,8 +287,8 @@ OnSharedPreferenceChangeListener
                 updateActionBarTitle(R.string.settings_title);
             }
 
-            updateTitle(R.string.pref_header_language);
-            updateBreadcrumbTitle(R.string.pref_header_language);
+            
+            updateTitle(R.string.pref_header_general);
 
             
             
@@ -494,12 +494,7 @@ OnSharedPreferenceChangeListener
             while (iterator.hasNext()) {
                 Header header = iterator.next();
 
-                if (header.id == R.id.pref_header_language && !localeSwitchingIsEnabled) {
-                    
-                    
-                    
-                    iterator.remove();
-                } else if (header.id == R.id.pref_header_advanced && !RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_DEVELOPER_TOOLS)) {
+                if (header.id == R.id.pref_header_advanced && !RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_DEVELOPER_TOOLS)) {
                     iterator.remove();
                 } else if (header.id == R.id.pref_header_accessibility && !RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_DISPLAY_SETTINGS)) {
                     iterator.remove();

@@ -92,10 +92,6 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
 
     private String getTitle() {
         final int res = getResource();
-        if (res == R.xml.preferences_locale) {
-            return getString(R.string.pref_category_language);
-        }
-
         if (res == R.xml.preferences) {
             return getString(R.string.settings_title);
         }
