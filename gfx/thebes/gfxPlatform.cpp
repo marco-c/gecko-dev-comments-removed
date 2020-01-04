@@ -1062,7 +1062,9 @@ gfxPlatform::ComputeTileSize()
     if (screenSize.width > 0) {
       
       
-      w = h = std::max(std::min(NextPowerOfTwo(screenSize.width) / 2, 1024), 256);
+      
+      
+      w = h = screenSize.width >= 512 ? 512 : 256;
     }
 
 #ifdef MOZ_WIDGET_GONK
