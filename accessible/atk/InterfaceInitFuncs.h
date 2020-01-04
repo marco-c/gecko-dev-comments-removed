@@ -34,9 +34,9 @@ void valueInterfaceInitCB(AtkValueIface *aIface);
 
 
 
-AtkObject* refAccessibleAtPointHelper(mozilla::a11y::AccessibleWrap* aAccWrap,
+AtkObject* refAccessibleAtPointHelper(AtkObject* aAtkObj,
                                       gint aX, gint aY, AtkCoordType aCoordType);
-void getExtentsHelper(mozilla::a11y::AccessibleWrap* aAccWrap,
+void getExtentsHelper(AtkObject* aAtkObj,
                       gint* aX, gint* aY, gint* aWidth, gint* aHeight,
                       AtkCoordType aCoordType);
 
