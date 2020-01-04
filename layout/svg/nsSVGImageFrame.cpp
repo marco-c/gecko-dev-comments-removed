@@ -54,8 +54,13 @@ class nsSVGImageFrame : public nsSVGImageFrameBase,
   NS_NewSVGImageFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
 protected:
-  explicit nsSVGImageFrame(nsStyleContext* aContext) : nsSVGImageFrameBase(aContext),
-                                                       mReflowCallbackPosted(false) {}
+  explicit nsSVGImageFrame(nsStyleContext* aContext)
+    : nsSVGImageFrameBase(aContext)
+    , mReflowCallbackPosted(false)
+  {
+    EnableVisibilityTracking();
+  }
+
   virtual ~nsSVGImageFrame();
 
 public:
@@ -75,6 +80,10 @@ public:
   virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
                                      nsIAtom*        aAttribute,
                                      int32_t         aModType) override;
+
+  void OnVisibilityChange(Visibility aNewVisibility,
+                          Maybe<OnNonvisible> aNonvisibleAction = Nothing()) override;
+
   virtual void Init(nsIContent*       aContent,
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
@@ -220,6 +229,20 @@ nsSVGImageFrame::AttributeChanged(int32_t         aNameSpaceID,
 
   return nsSVGImageFrameBase::AttributeChanged(aNameSpaceID,
                                                aAttribute, aModType);
+}
+
+void
+nsSVGImageFrame::OnVisibilityChange(Visibility aNewVisibility,
+                                    Maybe<OnNonvisible> aNonvisibleAction)
+{
+  nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
+  if (!imageLoader) {
+    return;
+  }
+
+  imageLoader->OnVisibilityChange(aNewVisibility, aNonvisibleAction);
+
+  nsSVGImageFrameBase::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 }
 
 gfx::Matrix
@@ -526,7 +549,16 @@ nsSVGImageFrame::ReflowFinished()
 {
   mReflowCallbackPosted = false;
 
-  nsLayoutUtils::UpdateImageVisibilityForFrame(this);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  UpdateVisibilitySynchronously();
 
   return false;
 }

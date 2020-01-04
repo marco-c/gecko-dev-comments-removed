@@ -2548,14 +2548,6 @@ public:
 
 
 
-  static void
-  UpdateImageVisibilityForFrame(nsIFrame* aImageFrame);
-
-  
-
-
-
-
   static bool
   GetContentViewerSize(nsPresContext* aPresContext,
                        LayoutDeviceIntSize& aOutSize);

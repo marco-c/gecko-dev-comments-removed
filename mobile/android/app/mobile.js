@@ -803,8 +803,8 @@ pref("app.orientation.default", "");
 
 pref("memory.free_dirty_pages", true);
 
-pref("layout.imagevisibility.numscrollportwidths", 1);
-pref("layout.imagevisibility.numscrollportheights", 1);
+pref("layout.framevisibility.numscrollportwidths", 1);
+pref("layout.framevisibility.numscrollportheights", 1);
 
 pref("layers.enable-tiles", true);
 

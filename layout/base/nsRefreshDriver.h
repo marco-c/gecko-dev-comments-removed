@@ -241,6 +241,12 @@ public:
 
 
 
+  void ScheduleFrameVisibilityUpdate() { mNeedToRecomputeVisibility = true; }
+
+  
+
+
+
 
   void Disconnect() {
     StopTimer();

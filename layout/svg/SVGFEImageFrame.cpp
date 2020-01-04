@@ -27,6 +27,12 @@ protected:
     : SVGFEImageFrameBase(aContext)
   {
     AddStateBits(NS_FRAME_SVG_LAYOUT | NS_FRAME_IS_NONDISPLAY);
+
+    
+    
+    
+    
+    EnableVisibilityTracking();
   }
 
 public:
@@ -60,6 +66,9 @@ public:
                                     nsIAtom* aAttribute,
                                     int32_t  aModType) override;
 
+  void OnVisibilityChange(Visibility aNewVisibility,
+                          Maybe<OnNonvisible> aNonvisibleAction = Nothing()) override;
+
   virtual bool UpdateOverflow() override {
     
     return false;
@@ -77,13 +86,12 @@ NS_IMPL_FRAMEARENA_HELPERS(SVGFEImageFrame)
  void
 SVGFEImageFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
+  DecApproximateVisibleCount();
+
   nsCOMPtr<nsIImageLoadingContent> imageLoader =
     do_QueryInterface(SVGFEImageFrameBase::mContent);
-
   if (imageLoader) {
     imageLoader->FrameDestroyed(this);
-    imageLoader
-      ->DecrementVisibleCount(nsIImageLoadingContent::ON_NONVISIBLE_NO_ACTION);
   }
 
   SVGFEImageFrameBase::DestroyFrom(aDestructRoot);
@@ -99,14 +107,13 @@ SVGFEImageFrame::Init(nsIContent*       aContent,
                "content element that doesn't support the right interfaces");
 
   SVGFEImageFrameBase::Init(aContent, aParent, aPrevInFlow);
+
+  
+  IncApproximateVisibleCount();
+
   nsCOMPtr<nsIImageLoadingContent> imageLoader =
     do_QueryInterface(SVGFEImageFrameBase::mContent);
-
   if (imageLoader) {
-    
-    
-    
-    imageLoader->IncrementVisibleCount();
     imageLoader->FrameCreated(this);
   }
 }
@@ -139,4 +146,20 @@ SVGFEImageFrame::AttributeChanged(int32_t  aNameSpaceID,
 
   return SVGFEImageFrameBase::AttributeChanged(aNameSpaceID,
                                                aAttribute, aModType);
+}
+
+void
+SVGFEImageFrame::OnVisibilityChange(Visibility aNewVisibility,
+                                    Maybe<OnNonvisible> aNonvisibleAction)
+{
+  nsCOMPtr<nsIImageLoadingContent> imageLoader =
+    do_QueryInterface(SVGFEImageFrameBase::mContent);
+  if (!imageLoader) {
+    MOZ_ASSERT_UNREACHABLE("Should have an nsIImageLoadingContent");
+    return;
+  }
+
+  imageLoader->OnVisibilityChange(aNewVisibility, aNonvisibleAction);
+
+  SVGFEImageFrameBase::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 }

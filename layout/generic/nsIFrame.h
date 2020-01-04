@@ -26,6 +26,7 @@
 #include "CaretAssociationHint.h"
 #include "FramePropertyTable.h"
 #include "mozilla/layout/FrameChildList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"
 #include "nsDirection.h"
 #include "nsFrameList.h"
@@ -37,6 +38,7 @@
 #include "nsStringGlue.h"
 #include "nsStyleContext.h"
 #include "nsStyleStruct.h"
+#include "Visibility.h"
 
 #ifdef ACCESSIBILITY
 #include "mozilla/a11y/AccTypes.h"
@@ -416,8 +418,12 @@ static void ReleaseValue(T* aPropertyValue)
 class nsIFrame : public nsQueryFrame
 {
 public:
+  template <typename T> using Maybe = mozilla::Maybe<T>;
+  using Nothing = mozilla::Nothing;
+  using OnNonvisible = mozilla::OnNonvisible;
   template<typename T=void>
   using PropertyDescriptor = const mozilla::FramePropertyDescriptor<T>*;
+  using Visibility = mozilla::Visibility;
 
   typedef mozilla::FrameProperties FrameProperties;
   typedef mozilla::layers::Layer Layer;
@@ -1080,6 +1086,94 @@ public:
   virtual nscoord GetCaretBaseline() const {
     return GetLogicalBaseline(GetWritingMode());
   }
+
+  
+  
+  
+
+  
+  bool TrackingVisibility() const
+  {
+    return bool(GetStateBits() & NS_FRAME_VISIBILITY_IS_TRACKED);
+  }
+
+  
+  
+  Visibility GetVisibility() const;
+
+  
+  
+  
+  
+  
+  
+  void UpdateVisibilitySynchronously();
+
+  
+  
+  
+  
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, uint32_t);
+
+protected:
+
+  
+
+
+
+
+
+  void EnableVisibilityTracking();
+
+  
+
+
+
+
+
+  void DisableVisibilityTracking();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void OnVisibilityChange(Visibility aNewVisibility,
+                                  Maybe<OnNonvisible> aNonvisibleAction = Nothing());
+
+public:
+
+  
+  
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void DecApproximateVisibleCount(Maybe<OnNonvisible> aNonvisibleAction = Nothing());
+  void IncApproximateVisibleCount();
+
 
   
 

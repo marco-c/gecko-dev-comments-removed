@@ -724,7 +724,8 @@ TextOverflow::CanHaveTextOverflow(nsDisplayListBuilder* aBuilder,
   
   if (HasClippedOverflow(aBlockFrame) ||
       IsInlineAxisOverflowVisible(aBlockFrame) ||
-      aBuilder->IsForEventDelivery() || aBuilder->IsForImageVisibility()) {
+      aBuilder->IsForEventDelivery() ||
+      aBuilder->IsForFrameVisibility()) {
     return false;
   }
 

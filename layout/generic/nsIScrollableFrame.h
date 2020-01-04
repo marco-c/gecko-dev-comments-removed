@@ -455,14 +455,14 @@ public:
   
 
 
-  virtual void NotifyImageVisibilityUpdate() = 0;
+  virtual void NotifyApproximateFrameVisibilityUpdate() = 0;
 
   
 
 
 
 
-  virtual bool GetDisplayPortAtLastImageVisibilityUpdate(nsRect* aDisplayPort) = 0;
+  virtual bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* aDisplayPort) = 0;
 
   
 

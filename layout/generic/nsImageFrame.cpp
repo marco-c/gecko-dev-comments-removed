@@ -144,6 +144,8 @@ nsImageFrame::nsImageFrame(nsStyleContext* aContext) :
   mReflowCallbackPosted(false),
   mForceSyncDecoding(false)
 {
+  EnableVisibilityTracking();
+
   
   
   mIntrinsicSize.width.SetCoordValue(0);
@@ -712,9 +714,7 @@ nsImageFrame::MaybeDecodeForPredictedSize()
     return;  
   }
 
-  nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
-  MOZ_ASSERT(imageLoader);
-  if (imageLoader->GetVisibleCount() == 0) {
+  if (GetVisibility() != Visibility::APPROXIMATELY_VISIBLE) {
     return;  
   }
 
@@ -1041,7 +1041,16 @@ nsImageFrame::ReflowFinished()
 {
   mReflowCallbackPosted = false;
 
-  nsLayoutUtils::UpdateImageVisibilityForFrame(this);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  UpdateVisibilitySynchronously();
 
   return false;
 }
@@ -2133,6 +2142,25 @@ nsImageFrame::AttributeChanged(int32_t aNameSpaceID,
   }
 
   return NS_OK;
+}
+
+void
+nsImageFrame::OnVisibilityChange(Visibility aNewVisibility,
+                                 Maybe<OnNonvisible> aNonvisibleAction)
+{
+  nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
+  if (!imageLoader) {
+    MOZ_ASSERT_UNREACHABLE("Should have an nsIImageLoadingContent");
+    return;
+  }
+
+  imageLoader->OnVisibilityChange(aNewVisibility, aNonvisibleAction);
+
+  if (aNewVisibility == Visibility::APPROXIMATELY_VISIBLE) {
+    MaybeDecodeForPredictedSize();
+  }
+
+  ImageFrameSuper::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 }
 
 nsIAtom*

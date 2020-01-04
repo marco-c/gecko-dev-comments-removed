@@ -140,8 +140,8 @@ typedef struct CapturingContentInfo {
 
 
 #define NS_IPRESSHELL_IID \
-{ 0xf17842ee, 0xf1f0, 0x4193, \
-  { 0x81, 0x4f, 0x70, 0xd7, 0x06, 0xb6, 0x70, 0x60 } }
+{ 0xa75573d6, 0x34c8, 0x4485, \
+  { 0x8f, 0xb7, 0xed, 0xcb, 0x6f, 0xc7, 0x0e, 0x12 } }
 
 
 #define VERIFY_REFLOW_ON                    0x01
@@ -1564,23 +1564,38 @@ public:
   void InvalidatePresShellIfHidden();
   void CancelInvalidatePresShellIfHidden();
 
-  
-  virtual void ScheduleImageVisibilityUpdate() = 0;
 
   
   
-  virtual void RebuildImageVisibilityDisplayList(const nsDisplayList& aList) = 0;
-  virtual void RebuildImageVisibility(nsRect* aRect = nullptr,
-                                      bool aRemoveOnly = false) = 0;
+  
 
   
-  virtual void EnsureImageInVisibleList(nsIImageLoadingContent* aImage) = 0;
+  
+  
+  
+  virtual void ScheduleApproximateFrameVisibilityUpdateSoon() = 0;
 
   
-  virtual void RemoveImageFromVisibleList(nsIImageLoadingContent* aImage) = 0;
+  
+  
+  
+  virtual void ScheduleApproximateFrameVisibilityUpdateNow() = 0;
 
   
-  virtual bool AssumeAllImagesVisible() = 0;
+  
+  virtual void RebuildApproximateFrameVisibilityDisplayList(const nsDisplayList& aList) = 0;
+  virtual void RebuildApproximateFrameVisibility(nsRect* aRect = nullptr,
+                                                 bool aRemoveOnly = false) = 0;
+
+  
+  virtual void EnsureFrameInApproximatelyVisibleList(nsIFrame* aFrame) = 0;
+
+  
+  virtual void RemoveFrameFromApproximatelyVisibleList(nsIFrame* aFrame) = 0;
+
+  
+  virtual bool AssumeAllFramesVisible() = 0;
+
 
   
 

@@ -41,6 +41,11 @@ class imgRequestProxy;
 class nsImageLoadingContent : public nsIImageLoadingContent,
                               public imgIOnloadBlocker
 {
+  template <typename T> using Maybe = mozilla::Maybe<T>;
+  using Nothing = mozilla::Nothing;
+  using OnNonvisible = mozilla::OnNonvisible;
+  using Visibility = mozilla::Visibility;
+
   
 public:
   nsImageLoadingContent();
@@ -318,8 +323,10 @@ protected:
 
 
 
-  void ClearCurrentRequest(nsresult aReason, uint32_t aNonvisibleAction);
-  void ClearPendingRequest(nsresult aReason, uint32_t aNonvisibleAction);
+  void ClearCurrentRequest(nsresult aReason,
+                           const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
+  void ClearPendingRequest(nsresult aReason,
+                           const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
   
 
@@ -353,9 +360,11 @@ protected:
 
 
 
+
+
   void TrackImage(imgIRequest* aImage);
   void UntrackImage(imgIRequest* aImage,
-                    uint32_t aNonvisibleAction = ON_NONVISIBLE_NO_ACTION);
+                    const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
   
   RefPtr<imgRequestProxy> mCurrentRequest;
@@ -439,8 +448,6 @@ private:
 
   
   bool mFrameCreateCalled;
-
-  uint32_t mVisibleCount;
 };
 
 #endif 

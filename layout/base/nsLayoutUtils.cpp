@@ -1217,32 +1217,32 @@ nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
   
   
   hadDisplayPort =
-    scrollableFrame->GetDisplayPortAtLastImageVisibilityUpdate(&oldDisplayPort);
+    scrollableFrame->GetDisplayPortAtLastApproximateFrameVisibilityUpdate(&oldDisplayPort);
 
-  bool needImageVisibilityUpdate = !hadDisplayPort;
+  bool needVisibilityUpdate = !hadDisplayPort;
   
-  if (!needImageVisibilityUpdate) {
+  if (!needVisibilityUpdate) {
     if ((newDisplayPort.width > 2 * oldDisplayPort.width) ||
         (oldDisplayPort.width > 2 * newDisplayPort.width) ||
         (newDisplayPort.height > 2 * oldDisplayPort.height) ||
         (oldDisplayPort.height > 2 * newDisplayPort.height)) {
-      needImageVisibilityUpdate = true;
+      needVisibilityUpdate = true;
     }
   }
   
-  if (!needImageVisibilityUpdate) {
+  if (!needVisibilityUpdate) {
     if (nsRect* baseData = static_cast<nsRect*>(aContent->GetProperty(nsGkAtoms::DisplayPortBase))) {
       nsRect base = *baseData;
       if ((std::abs(newDisplayPort.X() - oldDisplayPort.X()) > base.width) ||
           (std::abs(newDisplayPort.XMost() - oldDisplayPort.XMost()) > base.width) ||
           (std::abs(newDisplayPort.Y() - oldDisplayPort.Y()) > base.height) ||
           (std::abs(newDisplayPort.YMost() - oldDisplayPort.YMost()) > base.height)) {
-        needImageVisibilityUpdate = true;
+        needVisibilityUpdate = true;
       }
     }
   }
-  if (needImageVisibilityUpdate) {
-    aPresShell->ScheduleImageVisibilityUpdate();
+  if (needVisibilityUpdate) {
+    aPresShell->ScheduleApproximateFrameVisibilityUpdateNow();
   }
 
   return true;
@@ -8052,77 +8052,6 @@ nsLayoutUtils::GetBoxShadowRectForFrame(nsIFrame* aFrame,
     shadows.UnionRect(shadows, tmpRect);
   }
   return shadows;
-}
-
- void
-nsLayoutUtils::UpdateImageVisibilityForFrame(nsIFrame* aImageFrame)
-{
-#ifdef DEBUG
-  nsIAtom* type = aImageFrame->GetType();
-  MOZ_ASSERT(type == nsGkAtoms::imageFrame ||
-             type == nsGkAtoms::imageControlFrame ||
-             type == nsGkAtoms::svgImageFrame, "wrong type of frame");
-#endif
-
-  nsCOMPtr<nsIImageLoadingContent> content = do_QueryInterface(aImageFrame->GetContent());
-  if (!content) {
-    return;
-  }
-
-  nsIPresShell* presShell = aImageFrame->PresContext()->PresShell();
-  if (presShell->AssumeAllImagesVisible()) {
-    presShell->EnsureImageInVisibleList(content);
-    return;
-  }
-
-  bool visible = true;
-  nsIFrame* f = aImageFrame->GetParent();
-  nsRect rect = aImageFrame->GetContentRectRelativeToSelf();
-  nsIFrame* rectFrame = aImageFrame;
-  while (f) {
-    nsIScrollableFrame* sf = do_QueryFrame(f);
-    if (sf) {
-      nsRect transformedRect =
-        nsLayoutUtils::TransformFrameRectToAncestor(rectFrame, rect, f);
-      if (!sf->IsRectNearlyVisible(transformedRect)) {
-        visible = false;
-        break;
-      }
-      
-      
-      nsRect scrollPort = sf->GetScrollPortRect();
-      if (transformedRect.XMost() > scrollPort.XMost()) {
-        transformedRect.x -= transformedRect.XMost() - scrollPort.XMost();
-      }
-      if (transformedRect.x < scrollPort.x) {
-        transformedRect.x = scrollPort.x;
-      }
-      if (transformedRect.YMost() > scrollPort.YMost()) {
-        transformedRect.y -= transformedRect.YMost() - scrollPort.YMost();
-      }
-      if (transformedRect.y < scrollPort.y) {
-        transformedRect.y = scrollPort.y;
-      }
-      transformedRect.width = std::min(transformedRect.width, scrollPort.width);
-      transformedRect.height = std::min(transformedRect.height, scrollPort.height);
-      rect = transformedRect;
-      rectFrame = f;
-    }
-    nsIFrame* parent = f->GetParent();
-    if (!parent) {
-      parent = nsLayoutUtils::GetCrossDocParentFrame(f);
-      if (parent && parent->PresContext()->IsChrome()) {
-        break;
-      }
-    }
-    f = parent;
-  }
-
-  if (visible) {
-    presShell->EnsureImageInVisibleList(content);
-  } else {
-    presShell->RemoveImageFromVisibleList(content);
-  }
 }
 
  bool

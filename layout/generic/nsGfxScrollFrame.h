@@ -393,8 +393,8 @@ public:
   bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
                              nsRect* aDirtyRect,
                              bool aAllowCreateDisplayPort);
-  void NotifyImageVisibilityUpdate();
-  bool GetDisplayPortAtLastImageVisibilityUpdate(nsRect* aDisplayPort);
+  void NotifyApproximateFrameVisibilityUpdate();
+  bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* aDisplayPort);
 
   bool AllowDisplayPortExpiration();
   void TriggerDisplayPortExpiration();
@@ -493,9 +493,9 @@ public:
   nsPoint mScrollPosForLayerPixelAlignment;
 
   
-  nsPoint mLastUpdateImagesPos;
-  bool mHadDisplayPortAtLastImageUpdate;
-  nsRect mDisplayPortAtLastImageUpdate;
+  nsPoint mLastUpdateFramesPos;
+  bool mHadDisplayPortAtLastFrameUpdate;
+  nsRect mDisplayPortAtLastFrameUpdate;
 
   nsRect mPrevScrolledRect;
 
@@ -625,8 +625,8 @@ protected:
   AsyncScrollEventType mAsyncScrollEvent;
   bool HasPluginFrames();
 
-  static void EnsureImageVisPrefsCached();
-  static bool sImageVisPrefsCached;
+  static void EnsureFrameVisPrefsCached();
+  static bool sFrameVisPrefsCached;
   
   static uint32_t sHorzExpandScrollPort;
   static uint32_t sVertExpandScrollPort;
@@ -926,11 +926,11 @@ public:
                                      bool aAllowCreateDisplayPort) override {
     return mHelper.DecideScrollableLayer(aBuilder, aDirtyRect, aAllowCreateDisplayPort);
   }
-  virtual void NotifyImageVisibilityUpdate() override {
-    mHelper.NotifyImageVisibilityUpdate();
+  virtual void NotifyApproximateFrameVisibilityUpdate() override {
+    mHelper.NotifyApproximateFrameVisibilityUpdate();
   }
-  virtual bool GetDisplayPortAtLastImageVisibilityUpdate(nsRect* aDisplayPort) override {
-    return mHelper.GetDisplayPortAtLastImageVisibilityUpdate(aDisplayPort);
+  virtual bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* aDisplayPort) override {
+    return mHelper.GetDisplayPortAtLastApproximateFrameVisibilityUpdate(aDisplayPort);
   }
   void TriggerDisplayPortExpiration() override {
     mHelper.TriggerDisplayPortExpiration();
@@ -1419,11 +1419,11 @@ public:
                                      bool aAllowCreateDisplayPort) override {
     return mHelper.DecideScrollableLayer(aBuilder, aDirtyRect, aAllowCreateDisplayPort);
   }
-  virtual void NotifyImageVisibilityUpdate() override {
-    mHelper.NotifyImageVisibilityUpdate();
+  virtual void NotifyApproximateFrameVisibilityUpdate() override {
+    mHelper.NotifyApproximateFrameVisibilityUpdate();
   }
-  virtual bool GetDisplayPortAtLastImageVisibilityUpdate(nsRect* aDisplayPort) override {
-    return mHelper.GetDisplayPortAtLastImageVisibilityUpdate(aDisplayPort);
+  virtual bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* aDisplayPort) override {
+    return mHelper.GetDisplayPortAtLastApproximateFrameVisibilityUpdate(aDisplayPort);
   }
   void TriggerDisplayPortExpiration() override {
     mHelper.TriggerDisplayPortExpiration();

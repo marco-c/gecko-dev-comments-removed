@@ -953,10 +953,10 @@ pref("nglayout.debug.widget_update_flashing", false);
 pref("nglayout.debug.invalidation", false);
 
 
+pref("layout.framevisibility.enabled", true);
 
-pref("layout.imagevisibility.enabled", true);
-pref("layout.imagevisibility.numscrollportwidths", 0);
-pref("layout.imagevisibility.numscrollportheights", 1);
+pref("layout.framevisibility.numscrollportwidths", 0);
+pref("layout.framevisibility.numscrollportheights", 1);
 
 
 
