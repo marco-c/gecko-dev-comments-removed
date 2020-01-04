@@ -15,6 +15,7 @@ import static org.mozilla.gecko.tests.helpers.WaitHelper.waitFor;
 
 import org.mozilla.gecko.tests.components.GeckoViewComponent.InputConnectionTest;
 import org.mozilla.gecko.tests.helpers.GeckoHelper;
+import org.mozilla.gecko.tests.helpers.JavascriptBridge;
 import org.mozilla.gecko.tests.helpers.NavigationHelper;
 
 import com.jayway.android.robotium.solo.Condition;
@@ -30,20 +31,40 @@ public class testInputConnection extends UITest {
 
     private static final String INITIAL_TEXT = "foo";
 
+    private JavascriptBridge js;
+
+    @Override 
+    public void setUp() throws Exception {
+        super.setUp();
+        js = new JavascriptBridge(this);
+    }
+
+    @Override 
+    public void tearDown() throws Exception {
+        js.disconnect();
+        super.tearDown();
+    }
+
     public void testInputConnection() throws InterruptedException {
         GeckoHelper.blockForReady();
 
-        final String url = mStringHelper.ROBOCOP_INPUT_URL + "#" + INITIAL_TEXT;
+        final String url = mStringHelper.ROBOCOP_INPUT_URL;
         NavigationHelper.enterAndLoadUrl(url);
         mToolbar.assertTitle(url);
 
+        
+        js.syncCall("focus_input", INITIAL_TEXT);
         mGeckoView.mTextInput
             .waitForInputConnection()
-            
-            .testInputConnection(new BasicInputConnectionTest())
-            
-            .testInputConnection(new FocusNextInputFieldTest())
+            .testInputConnection(new BasicInputConnectionTest());
+
+        
+        js.syncCall("focus_resetting_input", "");
+        mGeckoView.mTextInput
+            .waitForInputConnection()
             .testInputConnection(new ResettingInputConnectionTest());
+
+        js.syncCall("finish_test");
     }
 
     private class BasicInputConnectionTest extends InputConnectionTest {
@@ -157,35 +178,10 @@ public class testInputConnection extends UITest {
 
             ic.deleteSurroundingText(1, 0);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
-        }
-    }
-
-    
-
-
-
-    private class FocusNextInputFieldTest extends InputConnectionTest {
-        @Override
-        public void test(final InputConnection ic, EditorInfo info) {
-            
-            ic.setSelection(0, 0);
-            assertSelectionAt("Can set selection to start", ic, 0);
-
-            ic.deleteSurroundingText(0, Integer.MAX_VALUE);
-            assertTextAndSelectionAt("Can clear all text", ic, "", 0);
-
-            
-            final String dummyText = "dummy switch input text";
-            ic.commitText(dummyText, 1);
-            assertTextAndSelectionAt("Can commit text", ic, dummyText, dummyText.length());
 
             
             processGeckoEvents(ic);
             processInputConnectionEvents();
-
-            final KeyEvent tabKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_TAB);
-            ic.sendKeyEvent(tabKey);
-            ic.sendKeyEvent(KeyEvent.changeAction(tabKey, KeyEvent.ACTION_UP));
         }
     }
 
