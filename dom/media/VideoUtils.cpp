@@ -25,20 +25,29 @@ namespace mozilla {
 
 using layers::PlanarYCbCrImage;
 
+static inline CheckedInt64 SaferMultDiv(int64_t aValue, uint32_t aMul, uint32_t aDiv) {
+  int64_t major = aValue / aDiv;
+  int64_t remainder = aValue % aDiv;
+  return CheckedInt64(remainder) * aMul / aDiv + major * aMul;
+}
+
 
 
 CheckedInt64 FramesToUsecs(int64_t aFrames, uint32_t aRate) {
-  return (CheckedInt64(aFrames) * USECS_PER_S) / aRate;
+  return SaferMultDiv(aFrames, USECS_PER_S, aRate);
 }
 
 media::TimeUnit FramesToTimeUnit(int64_t aFrames, uint32_t aRate) {
-  return (media::TimeUnit::FromMicroseconds(aFrames) * USECS_PER_S) / aRate;
+  int64_t major = aFrames / aRate;
+  int64_t remainder = aFrames % aRate;
+  return media::TimeUnit::FromMicroseconds(major) * USECS_PER_S +
+    (media::TimeUnit::FromMicroseconds(remainder) * USECS_PER_S) / aRate;
 }
 
 
 
 CheckedInt64 UsecsToFrames(int64_t aUsecs, uint32_t aRate) {
-  return (CheckedInt64(aUsecs) * aRate) / USECS_PER_S;
+  return SaferMultDiv(aUsecs, aRate, USECS_PER_S);
 }
 
 
