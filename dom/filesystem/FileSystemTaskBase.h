@@ -20,6 +20,10 @@ class FileSystemBase;
 class FileSystemParams;
 class PBlobParent;
 
+#define DIRECTORY_READ_PERMISSION "read"
+#define DIRECTORY_WRITE_PERMISSION "write"
+#define DIRECTORY_CREATE_PERMISSION "create"
+
 
 
 

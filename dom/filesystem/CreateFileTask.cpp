@@ -5,8 +5,6 @@
 
 
 #include "CreateFileTask.h"
-#include "CreateDirectoryTask.h"
-#include "RemoveTask.h"
 
 #include <algorithm>
 
@@ -27,10 +25,10 @@
 
 #define GET_PERMISSION_ACCESS_TYPE(aAccess)                \
   if (mReplace) {                                          \
-    aAccess.AssignLiteral(REMOVE_TASK_PERMISSION);         \
+    aAccess.AssignLiteral(DIRECTORY_WRITE_PERMISSION);     \
     return;                                                \
   }                                                        \
-  aAccess.AssignLiteral(CREATE_DIRECTORY_TASK_PERMISSION);
+  aAccess.AssignLiteral(DIRECTORY_CREATE_PERMISSION);
 
 namespace mozilla {
 namespace dom {
