@@ -554,6 +554,24 @@ GetRootDocumentElementFor(nsIWidget* aWidget)
   return nullptr;
 }
 
+static nsIFrame*
+UpdateRootFrameForTouchTargetDocument(nsIFrame* aRootFrame)
+{
+#if defined(MOZ_ANDROID_APZ)
+  
+  
+  
+  if (nsIDocument* doc = aRootFrame->PresContext()->PresShell()->GetTouchEventTargetDocument()) {
+    if (nsIPresShell* shell = doc->GetShell()) {
+      if (nsIFrame* frame = shell->GetRootFrame()) {
+        return frame;
+      }
+    }
+  }
+#endif
+  return aRootFrame;
+}
+
 
 
 
@@ -564,19 +582,6 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
                                     const LayoutDeviceIntPoint& aRefPoint,
                                     nsTArray<ScrollableLayerGuid>* aTargets)
 {
-#if defined(MOZ_ANDROID_APZ)
-  
-  
-  
-  if (nsIDocument* doc = aRootFrame->PresContext()->PresShell()->GetTouchEventTargetDocument()) {
-    if (nsIPresShell* shell = doc->GetShell()) {
-      if(nsIFrame* frame = shell->GetRootFrame()) {
-        aRootFrame = frame;
-      }
-    }
-  }
-#endif
-
   ScrollableLayerGuid guid(aGuid.mLayersId, 0, FrameMetrics::NULL_SCROLL_ID);
   nsPoint point =
     nsLayoutUtils::GetEventCoordinatesRelativeTo(aWidget, aRefPoint, aRootFrame);
@@ -739,6 +744,8 @@ APZCCallbackHelper::SendSetTargetAPZCNotification(nsIWidget* aWidget,
   sLastTargetAPZCNotificationInputBlock = aInputBlockId;
   if (nsIPresShell* shell = aDocument->GetShell()) {
     if (nsIFrame* rootFrame = shell->GetRootFrame()) {
+      rootFrame = UpdateRootFrameForTouchTargetDocument(rootFrame);
+
       bool waitForRefresh = false;
       nsTArray<ScrollableLayerGuid> targets;
 
