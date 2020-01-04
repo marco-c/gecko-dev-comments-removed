@@ -70,7 +70,7 @@ typedef ucontext_t tickcontext_t;
 pid_t gettid();
 #endif
 
-#if defined(SPS_ARCH_arm) && defined(MOZ_WIDGET_GONK)
+#if defined(__arm__) && defined(ANDROID)
  
  #define USE_EHABI_STACKWALK
 #endif
