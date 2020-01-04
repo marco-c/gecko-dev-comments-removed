@@ -598,14 +598,18 @@ FinderHighlighter.prototype = {
 
 
 
-  _getRootBounds(window) {
+
+
+
+  _getRootBounds(window, includeScroll = true) {
     let dwu = this._getDWU(window);
     let cssPageRect = Rect.fromRect(dwu.getRootBounds());
-
     let scrollX = {};
     let scrollY = {};
-    dwu.getScrollXY(false, scrollX, scrollY);
-    cssPageRect.translate(scrollX.value, scrollY.value);
+    if (includeScroll) {
+      dwu.getScrollXY(false, scrollX, scrollY);
+      cssPageRect.translate(scrollX.value, scrollY.value);
+    }
 
     
     let currWin = window;
@@ -617,9 +621,10 @@ FinderHighlighter.prototype = {
       dwu = this._getDWU(currWin);
       let parentRect = Rect.fromRect(dwu.getBoundsWithoutFlushing(el));
 
-      
-      dwu.getScrollXY(false, scrollX, scrollY);
-      parentRect.translate(scrollX.value, scrollY.value);
+      if (includeScroll) {
+        dwu.getScrollXY(false, scrollX, scrollY);
+        parentRect.translate(scrollX.value, scrollY.value);
+      }
 
       cssPageRect.translate(parentRect.left, parentRect.top);
     }
@@ -784,17 +789,18 @@ FinderHighlighter.prototype = {
     } else
       bounds = this._getRootBounds(window);
 
+    let topBounds = this._getRootBounds(window.top, false);
     let rects = new Set();
     
     
     
-    for (let dims of range.getClientRects()) {
-      rects.add({
-        height: dims.bottom - dims.top,
-        width: dims.right - dims.left,
-        y: dims.top + bounds.top,
-        x: dims.left + bounds.left
-      });
+    for (let rect of range.getClientRects()) {
+      rect = Rect.fromRect(rect);
+      rect.x += bounds.x;
+      rect.y += bounds.y;
+      
+      if (rect.intersects(topBounds))
+        rects.add(rect);
     }
 
     dict = dict || this.getForWindow(window.top);
@@ -894,6 +900,8 @@ FinderHighlighter.prototype = {
         
         this._repaintHighlightAllMask(window, false);
         this._scheduleRepaintOfMask(window);
+      } else {
+        this._scheduleRepaintOfMask(window, { scrollOnly: true });
       }
       return;
     }
@@ -1049,22 +1057,20 @@ FinderHighlighter.prototype = {
     dict.modalRepaintScheduler = window.setTimeout(() => {
       dict.modalRepaintScheduler = null;
 
-      if (dict.unconditionalRepaintRequested) {
+      let { width: previousWidth, height: previousHeight } = dict.lastWindowDimensions;
+      let { width, height } = dict.lastWindowDimensions = this._getWindowDimensions(window);
+      let pageContentChanged = (Math.abs(previousWidth - width) > kContentChangeThresholdPx ||
+                                Math.abs(previousHeight - height) > kContentChangeThresholdPx);
+      
+      
+      if (pageContentChanged)
+        this.iterator.restart(this.finder);
+
+      if (dict.unconditionalRepaintRequested ||
+          (dict.modalHighlightRectsMap.size && pageContentChanged)) {
         dict.unconditionalRepaintRequested = false;
         this._repaintHighlightAllMask(window);
-        return;
       }
-
-      let { width, height } = this._getWindowDimensions(window);
-      if (!dict.modalHighlightRectsMap.size ||
-          (Math.abs(dict.lastWindowDimensions.width - width) < kContentChangeThresholdPx &&
-           Math.abs(dict.lastWindowDimensions.height - height) < kContentChangeThresholdPx)) {
-        return;
-      }
-
-      this.iterator.restart(this.finder);
-      dict.lastWindowDimensions = { width, height };
-      this._repaintHighlightAllMask(window);
     }, kModalHighlightRepaintFreqMs);
   },
 
