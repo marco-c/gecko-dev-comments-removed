@@ -31,7 +31,7 @@ nsresult
 NS_NewElement(mozilla::dom::Element** aResult,
               already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
               mozilla::dom::FromParser aFromParser,
-              nsAString* aIs = nullptr);
+              const nsAString* aIs = nullptr);
 
 nsresult
 NS_NewXMLElement(mozilla::dom::Element** aResult,
@@ -41,7 +41,7 @@ nsresult
 NS_NewHTMLElement(mozilla::dom::Element** aResult,
                   already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                   mozilla::dom::FromParser aFromParser,
-                  nsAString* aIs = nullptr);
+                  const nsAString* aIs = nullptr);
 
 
 
