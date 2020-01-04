@@ -38,6 +38,15 @@
 
 #include "jsobjinlines.h"
 
+#if defined(XP_WIN)
+
+
+
+# define SystemFunction036 NTAPI SystemFunction036
+# include <NTSecAPI.h>
+# undef SystemFunction036
+#endif
+
 #if defined(ANDROID) || defined(XP_DARWIN) || defined(__DragonFly__) || \
     defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 # include <stdlib.h>
@@ -732,85 +741,27 @@ js::math_pow(JSContext* cx, unsigned argc, Value* vp)
     return math_pow_handle(cx, args.get(0), args.get(1), args.rval());
 }
 
-static void
-GenerateSeed(uint64_t* seedBuffer, size_t length)
+static uint64_t
+GenerateSeed()
 {
-    MOZ_ASSERT(length > 0);
+    uint64_t seed = 0;
 
 #if defined(XP_WIN)
-    
-
-
-
-    HMODULE oldWay = LoadLibraryW(L"ADVAPI32.DLL");
-    HMODULE newWay = LoadLibraryExW(L"ADVAPI32.DLL",
-                                    nullptr,
-                                    LOAD_LIBRARY_SEARCH_SYSTEM32);
-    
-    if (!newWay && GetLastError() == ERROR_INVALID_PARAMETER)
-        newWay = LoadLibraryExW(L"ADVAPI32.DLL", nullptr, 0);
-
-    if (oldWay && !newWay)
-        MOZ_CRASH();
-
-    union {
-        uint32_t    u32[2];
-        uint64_t    u64;
-    } seed;
-    seed.u64 = 0;
-
-    errno_t error = rand_s(&seed.u32[0]);
-
-    if (oldWay)
-        FreeLibrary(oldWay);
-    if (newWay)
-        FreeLibrary(newWay);
-
-    MOZ_ASSERT(error == 0, "rand_s() error?!");
-
-    error = rand_s(&seed.u32[1]);
-    MOZ_ASSERT(error == 0, "rand_s() error?!");
-
-    seedBuffer[0] = seed.u64 ^= PRMJ_Now();
-    for (size_t i = 1; i < length; i++) {
-        error = rand_s(&seed.u32[0]);
-        MOZ_ASSERT(error == 0, "rand_s() error?!");
-
-        error = rand_s(&seed.u32[1]);
-        MOZ_ASSERT(error == 0, "rand_s() error?!");
-
-        seedBuffer[i] = seed.u64 ^ PRMJ_Now();
-    }
-
+    MOZ_ALWAYS_TRUE(RtlGenRandom(&seed, sizeof(seed)));
 #elif defined(HAVE_ARC4RANDOM)
-    union {
-        uint32_t    u32[2];
-        uint64_t    u64;
-    } seed;
-    seed.u64 = 0;
-
-    for (size_t i = 0; i < length; i++) {
-        seed.u32[0] = arc4random();
-        seed.u32[1] = arc4random();
-        seedBuffer[i] = seed.u64 ^ PRMJ_Now();
-    }
-
+    seed = (static_cast<uint64_t>(arc4random()) << 32) | arc4random();
 #elif defined(XP_UNIX)
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd >= 0) {
-        ssize_t size = length * sizeof(seedBuffer[0]);
-        ssize_t nread = read(fd, (char *) seedBuffer, size);
+        read(fd, static_cast<void*>(&seed), sizeof(seed));
         close(fd);
-        if (nread == size)
-            return;
     }
+#else
+# error "Platform needs to implement GenerateSeed()"
+#endif
 
     
-    for (size_t i = 0; i < length; i++)
-        seedBuffer[i] = PRMJ_Now();
-#else
-# error "Platform needs to implement random_generateSeed()"
-#endif
+    return seed ^ PRMJ_Now();
 }
 
 void
@@ -818,7 +769,8 @@ js::GenerateXorShift128PlusSeed(mozilla::Array<uint64_t, 2>& seed)
 {
     
     do {
-        GenerateSeed(seed.begin(), mozilla::ArrayLength(seed));
+        seed[0] = GenerateSeed();
+        seed[1] = GenerateSeed();
     } while (seed[0] == 0 && seed[1] == 0);
 }
 
