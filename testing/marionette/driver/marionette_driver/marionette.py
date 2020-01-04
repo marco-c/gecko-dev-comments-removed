@@ -723,7 +723,7 @@ class Marionette(object):
         return self._send_emulator_result(id, result)
 
     def _emulator_shell(self, id, args):
-        if not isinstance(args, list) or not self.emulator:
+        if not self.emulator:
             raise errors.MarionetteException(
                 "No emulator in this test to run shell command against")
         buf = StringIO.StringIO()
@@ -733,9 +733,9 @@ class Marionette(object):
         return self._send_emulator_result(id, result)
 
     def _send_emulator_result(self, id, result):
-        return self.client.send(json.dumps({"name": "emulatorCmdResult",
-                                            "id": id,
-                                            "result": result}))
+        return self.client.send({"name": "emulatorCmdResult",
+                                 "id": id,
+                                 "result": result})
 
     def _handle_error(self, resp):
         if self.protocol == 1:
@@ -809,9 +809,10 @@ class Marionette(object):
                 Components.utils.import("resource://gre/modules/Services.jsm");
                 let perm = arguments[0];
                 let secMan = Services.scriptSecurityManager;
-                let principal = secMan.getAppCodebasePrincipal(
+                let attrs = {appId: perm.appId, inBrowser: perm.isInBrowserElement};
+                let principal = secMan.createCodebasePrincipal(
                                 Services.io.newURI(perm.url, null, null),
-                                perm.appId, perm.isInBrowserElement);
+                                attrs);
                 let testPerm = Services.perms.testPermissionFromPrincipal(
                                principal, perm.type);
                 return testPerm;
@@ -870,8 +871,9 @@ class Marionette(object):
                 Components.utils.import("resource://gre/modules/Services.jsm");
                 let perm = arguments[0];
                 let secMan = Services.scriptSecurityManager;
-                let principal = secMan.getAppCodebasePrincipal(Services.io.newURI(perm.url, null, null),
-                                perm.appId, perm.isInBrowserElement);
+                let attrs = {appId: perm.appId, inBrowser: perm.isInBrowserElement};
+                let principal = secMan.createCodebasePrincipal(Services.io.newURI(perm.url, null, null),
+                                                               attrs);
                 Services.perms.addFromPrincipal(principal, perm.type, perm.action);
                 return true;
                 """, script_args=[perm])

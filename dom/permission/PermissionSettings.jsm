@@ -67,9 +67,13 @@ this.PermissionSettingsModule = {
 
 
   _internalAddPermission: function _internalAddPermission(aData, aAllowAllChanges, aCallbacks) {
+    
     let uri = Services.io.newURI(aData.origin, null, null);
     let app = appsService.getAppByManifestURL(aData.manifestURL);
-    let principal = Services.scriptSecurityManager.getAppCodebasePrincipal(uri, app.localId, aData.browserFlag);
+    let principal =
+      Services.scriptSecurityManager.createCodebasePrincipal(uri,
+                                                             {appId: app.localId,
+                                                              inBrowser: aData.browserFlag});
 
     let action;
     switch (aData.value)
@@ -103,10 +107,14 @@ this.PermissionSettingsModule = {
   },
 
   getPermission: function getPermission(aPermName, aManifestURL, aOrigin, aBrowserFlag) {
+    
     debug("getPermission: " + aPermName + ", " + aManifestURL + ", " + aOrigin);
     let uri = Services.io.newURI(aOrigin, null, null);
     let appID = appsService.getAppLocalIdByManifestURL(aManifestURL);
-    let principal = Services.scriptSecurityManager.getAppCodebasePrincipal(uri, appID, aBrowserFlag);
+    let principal =
+      Services.scriptSecurityManager.createCodebasePrincipal(uri,
+                                                             {appId: appID,
+                                                              inBrowser: aBrowserFlag});
     let result = Services.perms.testExactPermissionFromPrincipal(principal, aPermName);
 
     switch (result)
