@@ -126,7 +126,7 @@ CommandList.prototype = {
     
     keyElement.addEventListener("command", (event) => {
       if (name == "_execute_page_action") {
-        let win = event.target.ownerGlobal;
+        let win = event.target.ownerDocument.defaultView;
         pageActionFor(this.extension).triggerAction(win);
       } else {
         this.emit("command", name);
