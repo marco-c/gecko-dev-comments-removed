@@ -256,11 +256,6 @@ public:
   void NotifyHostCreateWidget();
   void NotifyDestroyPending();
 
-#if defined(XP_WIN)
-  
-  void ResetWidgetCursorCaching();
-#endif
-
 private:
   virtual ~nsPluginInstanceOwner();
 

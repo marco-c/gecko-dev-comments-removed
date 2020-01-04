@@ -352,9 +352,6 @@ public:
     static PluginInstanceParent* Cast(NPP instance,
                                       PluginAsyncSurrogate** aSurrogate = nullptr);
 
-    virtual bool
-    RecvPluginDidSetCursor() override;
-
 private:
     
     
