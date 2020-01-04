@@ -306,24 +306,6 @@ U2F::ValidAppID( nsString& aAppId) const
     return true;
   }
 
-  nsAutoCString appIdTld;
-  nsAutoCString facetTld;
-
-  rv = tldService->GetBaseDomainFromHost(appIdAuth, 0, appIdTld);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-  rv = tldService->GetBaseDomainFromHost(facetAuth, 0, facetTld);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  
-  if (!facetTld.IsEmpty() && !appIdTld.IsEmpty() &&
-      (facetTld == appIdTld)) {
-    return true;
-  }
-
   
   return false;
 }
