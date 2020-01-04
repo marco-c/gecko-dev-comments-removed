@@ -30,7 +30,6 @@
 #include "nsIDNSRecord.h"
 #include "nsIDNSService.h"
 #include "nsICancelable.h"
-#include "ClosingService.h"
 
 #ifdef MOZ_WIDGET_GONK
 #include "NetStatistics.h"
@@ -666,7 +665,6 @@ nsUDPSocket::InitWithAddress(const NetAddr *aAddr, nsIPrincipal *aPrincipal,
 
   
   NetworkActivityMonitor::AttachIOLayer(mFD);
-  ClosingService::AttachIOLayer(mFD);
 
   
   
