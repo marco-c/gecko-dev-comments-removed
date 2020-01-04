@@ -2,12 +2,9 @@
 
 
 
-
-
 "use strict";
 
-loader.lazyRequireGetter(this, "React",
-  "devtools/client/shared/vendor/react");
+const React = require("devtools/client/shared/vendor/react");
 
 exports.TabMenuEntry = React.createClass({
   displayName: "TabMenuEntry",

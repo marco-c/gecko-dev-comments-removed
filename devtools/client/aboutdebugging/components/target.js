@@ -4,21 +4,20 @@
 
 
 
-
 "use strict";
 
-loader.lazyRequireGetter(this, "React",
-  "devtools/client/shared/vendor/react");
 loader.lazyRequireGetter(this, "TargetFactory",
-  "devtools/client/framework/target", true);
+      "devtools/client/framework/target", true);
+loader.lazyRequireGetter(this, "gDevTools",
+      "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "Toolbox",
-  "devtools/client/framework/toolbox", true);
-loader.lazyRequireGetter(this, "Services");
+      "devtools/client/framework/toolbox", true);
 
 loader.lazyImporter(this, "BrowserToolboxProcess",
-  "resource://devtools/client/framework/ToolboxProcess.jsm");
-loader.lazyRequireGetter(this, "gDevTools",
-  "devtools/client/framework/devtools", true);
+      "resource://devtools/client/framework/ToolboxProcess.jsm");
+
+const Services = require("Services");
+const React = require("devtools/client/shared/vendor/react");
 
 const Strings = Services.strings.createBundle(
   "chrome://devtools/locale/aboutdebugging.properties");
@@ -67,7 +66,7 @@ exports.Target = React.createClass({
         this.openWorkerToolbox(target.workerActor);
         break;
       default:
-        alert("Not implemented yet!");
+        window.alert("Not implemented yet!");
         break;
     }
   },

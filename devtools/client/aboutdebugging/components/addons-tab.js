@@ -6,18 +6,13 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "React",
-  "devtools/client/shared/vendor/react");
-loader.lazyRequireGetter(this, "TargetList",
-  "devtools/client/aboutdebugging/components/target-list", true);
-loader.lazyRequireGetter(this, "TabHeader",
-  "devtools/client/aboutdebugging/components/tab-header", true);
-loader.lazyRequireGetter(this, "AddonsControls",
-  "devtools/client/aboutdebugging/components/addons-controls", true);
-loader.lazyRequireGetter(this, "Services");
+const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
+const Services = require("Services");
 
-loader.lazyImporter(this, "AddonManager",
-  "resource://gre/modules/AddonManager.jsm");
+const React = require("devtools/client/shared/vendor/react");
+const { AddonsControls } = require("./addons-controls");
+const { TabHeader } = require("./tab-header");
+const { TargetList } = require("./target-list");
 
 const ExtensionIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
 const Strings = Services.strings.createBundle(

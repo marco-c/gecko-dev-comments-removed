@@ -6,13 +6,13 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "Ci", "chrome", true);
-loader.lazyRequireGetter(this, "Cc", "chrome", true);
-loader.lazyRequireGetter(this, "React", "devtools/client/shared/vendor/react");
-loader.lazyRequireGetter(this, "Services");
-
 loader.lazyImporter(this, "AddonManager",
   "resource://gre/modules/AddonManager.jsm");
+
+const { Cc, Ci } = require("chrome");
+const Services = require("Services");
+
+const React = require("devtools/client/shared/vendor/react");
 
 const Strings = Services.strings.createBundle(
   "chrome://devtools/locale/aboutdebugging.properties");
@@ -58,11 +58,9 @@ exports.AddonsControls = React.createClass({
     Services.prefs.setBoolPref("devtools.debugger.remote-enabled", enabled);
   },
 
-  loadAddonFromFile(event) {
-    let win = event.target.ownerDocument.defaultView;
-
+  loadAddonFromFile() {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    fp.init(win,
+    fp.init(window,
       Strings.GetStringFromName("selectAddonFromFile"),
       Ci.nsIFilePicker.modeOpen);
     let res = fp.show();
@@ -78,7 +76,7 @@ exports.AddonsControls = React.createClass({
     try {
       AddonManager.installTemporaryAddon(file);
     } catch (e) {
-      win.alert("Error while installing the addon:\n" + e.message + "\n");
+      window.alert("Error while installing the addon:\n" + e.message + "\n");
       throw e;
     }
   },

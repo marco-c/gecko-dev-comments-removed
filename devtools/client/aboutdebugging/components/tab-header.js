@@ -2,12 +2,9 @@
 
 
 
-
-
 "use strict";
 
-loader.lazyRequireGetter(this, "React",
-  "devtools/client/shared/vendor/react");
+const React = require("devtools/client/shared/vendor/react");
 
 exports.TabHeader = React.createClass({
   displayName: "TabHeader",
