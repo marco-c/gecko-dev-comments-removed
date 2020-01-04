@@ -1055,8 +1055,14 @@ SimpleTest.finish = function() {
                                + "SimpleTest.waitForExplicitFinish() if you need "
                                + "it.)");
         }
-        if (SpecialPowers.isServiceWorkerRegistered()) {
-            SimpleTest.ok(false, "This test left a service worker registered without cleaning it up");
+        if (SimpleTest._expectingRegisteredServiceWorker) {
+            if (!SpecialPowers.isServiceWorkerRegistered()) {
+                SimpleTest.ok(false, "This test is expected to leave a service worker registered");
+            }
+        } else {
+            if (SpecialPowers.isServiceWorkerRegistered()) {
+                SimpleTest.ok(false, "This test left a service worker registered without cleaning it up");
+            }
         }
 
         if (parentRunner) {
@@ -1284,10 +1290,19 @@ SimpleTest.isIgnoringAllUncaughtExceptions = function () {
 
 
 
+SimpleTest.expectRegisteredServiceWorker = function () {
+    SimpleTest._expectingRegisteredServiceWorker = true;
+};
+
+
+
+
+
 
 SimpleTest.reset = function () {
     SimpleTest._ignoringAllUncaughtExceptions = false;
     SimpleTest._expectingUncaughtException = false;
+    SimpleTest._expectingRegisteredServiceWorker = false;
     SimpleTest._bufferedMessages = [];
 };
 
