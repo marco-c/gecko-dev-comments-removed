@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -12,7 +14,6 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.defaultColorUnit");
 });
 
-var {CssLogic} = require("devtools/shared/inspector/css-logic");
 var {getInplaceEditorForSpan: inplaceEditor} =
   require("devtools/client/shared/inplace-editor");
 
@@ -38,7 +39,7 @@ addTab = function(url) {
     browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
     return tab;
   });
-}
+};
 
 
 
@@ -149,7 +150,8 @@ function waitForContentMessage(name) {
 
 
 
-function executeInContent(name, data={}, objects={}, expectResponse=true) {
+function executeInContent(name, data = {}, objects = {},
+                          expectResponse = true) {
   info("Sending message " + name + " to content");
   let mm = gBrowser.selectedBrowser.messageManager;
 
@@ -223,8 +225,8 @@ function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 
-var focusEditableField = Task.async(function*(ruleView, editable, xOffset=1,
-    yOffset=1, options={}) {
+var focusEditableField = Task.async(function*(ruleView, editable, xOffset = 1,
+    yOffset = 1, options = {}) {
   let onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,

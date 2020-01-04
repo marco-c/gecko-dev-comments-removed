@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -15,7 +16,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {CssLogic} = require("devtools/shared/inspector/css-logic");
@@ -85,7 +86,8 @@ addMessageListener("Test:GetStyleSheetsInfoForNode", function(msg) {
 addMessageListener("Test:GetComputedStylePropertyValue", function(msg) {
   let {selector, pseudo, name} = msg.data;
   let element = content.document.querySelector(selector);
-  let value = content.document.defaultView.getComputedStyle(element, pseudo).getPropertyValue(name);
+  let value = content.document.defaultView.getComputedStyle(element, pseudo)
+                                          .getPropertyValue(name);
   sendAsyncMessage("Test:GetComputedStylePropertyValue", value);
 });
 
@@ -108,9 +110,8 @@ addMessageListener("Test:WaitForComputedStylePropertyValue", function(msg) {
     return value === expected;
   }).then(() => {
     sendAsyncMessage("Test:WaitForComputedStylePropertyValue");
-  })
+  });
 });
-
 
 var dumpn = msg => dump(msg + "\n");
 
@@ -123,16 +124,14 @@ var dumpn = msg => dump(msg + "\n");
 
 
 
-
-
-function waitForSuccess(validatorFn, name="untitled") {
+function waitForSuccess(validatorFn) {
   let def = promise.defer();
 
-  function wait(validatorFn) {
-    if (validatorFn()) {
+  function wait(fn) {
+    if (fn()) {
       def.resolve();
     } else {
-      setTimeout(() => wait(validatorFn), 200);
+      setTimeout(() => wait(fn), 200);
     }
   }
   wait(validatorFn);
