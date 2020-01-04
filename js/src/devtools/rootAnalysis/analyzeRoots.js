@@ -687,13 +687,6 @@ var each = Math.floor(N/numBatches);
 var start = minStream + each * (batch - 1);
 var end = Math.min(minStream + each * batch - 1, maxStream);
 
-
-
-
-
-var theFunctionNameToFind;
-
-
 function process(name, json) {
     functionName = name;
     functionBodies = JSON.parse(json);
