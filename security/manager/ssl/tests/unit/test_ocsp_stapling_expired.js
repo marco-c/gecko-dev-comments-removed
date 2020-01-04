@@ -24,18 +24,18 @@ function add_ocsp_test(aHost, aExpectedResult, aOCSPResponseToServe,
     function() {
       equal(gOCSPRequestCount, aExpectedRequestCount,
             "Should have made " + aExpectedRequestCount +
-            " fallback OCSP request" + (aExpectedRequestCount == 1 ? "" : "s"));
+            " fallback OCSP request" + aExpectedRequestCount == 1 ? "" : "s");
     });
 }
 
 do_get_profile();
 Services.prefs.setBoolPref("security.ssl.enable_ocsp_stapling", true);
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
-var args = [["good", "default-ee", "unused"],
-             ["expiredresponse", "default-ee", "unused"],
-             ["oldvalidperiod", "default-ee", "unused"],
-             ["revoked", "default-ee", "unused"],
-             ["unknown", "default-ee", "unused"],
+var args = [["good", "localhostAndExampleCom", "unused"],
+             ["expiredresponse", "localhostAndExampleCom", "unused"],
+             ["oldvalidperiod", "localhostAndExampleCom", "unused"],
+             ["revoked", "localhostAndExampleCom", "unused"],
+             ["unknown", "localhostAndExampleCom", "unused"],
             ];
 var ocspResponses = generateOCSPResponses(args, "tlsserver");
 
@@ -55,7 +55,7 @@ var willNotRetry = 1;
 
 
 
-var willRetry = 8;
+var willRetry = 4;
 
 function run_test() {
   let ocspResponder = new HttpServer();

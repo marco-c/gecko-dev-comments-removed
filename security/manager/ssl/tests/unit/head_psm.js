@@ -435,7 +435,7 @@ function _setupTLSServerTest(serverBinName)
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                   .getService(Ci.nsIX509CertDB);
   
-  addCertFromFile(certdb, "tlsserver/test-ca.pem", "CTu,u,u");
+  addCertFromFile(certdb, "tlsserver/test-ca.der", "CTu,u,u");
 
   const CALLBACK_PORT = 8444;
 
@@ -641,6 +641,7 @@ FakeSSLStatus.prototype = {
 
 
 
+
 function add_cert_override(aHost, aExpectedBits, aSecurityInfo) {
   let sslstatus = aSecurityInfo.QueryInterface(Ci.nsISSLStatusProvider)
                                .SSLStatus;
@@ -671,32 +672,10 @@ function add_cert_override_test(aHost, aExpectedBits, aExpectedError) {
 
 
 
-function attempt_adding_cert_override(aHost, aExpectedBits, aSecurityInfo) {
-  let sslstatus = aSecurityInfo.QueryInterface(Ci.nsISSLStatusProvider)
-                               .SSLStatus;
-  if (sslstatus) {
-    let bits =
-      (sslstatus.isUntrusted ? Ci.nsICertOverrideService.ERROR_UNTRUSTED : 0) |
-      (sslstatus.isDomainMismatch ? Ci.nsICertOverrideService.ERROR_MISMATCH : 0) |
-      (sslstatus.isNotValidAtThisTime ? Ci.nsICertOverrideService.ERROR_TIME : 0);
-    Assert.equal(bits, aExpectedBits,
-                 "Actual and expected override bits should match");
-    let cert = sslstatus.serverCert;
-    let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
-                                .getService(Ci.nsICertOverrideService);
-    certOverrideService.rememberValidityOverride(aHost, 8443, cert, aExpectedBits,
-                                                 true);
-  }
-}
-
-
-
-
-
 
 
 function add_prevented_cert_override_test(aHost, aExpectedBits, aExpectedError) {
   add_connection_test(aHost, aExpectedError, null,
-                      attempt_adding_cert_override.bind(this, aHost, aExpectedBits));
+                      add_cert_override.bind(this, aHost, aExpectedBits));
   add_connection_test(aHost, aExpectedError);
 }

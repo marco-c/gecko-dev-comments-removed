@@ -21,7 +21,7 @@ function add_ocsp_test(aHost, aExpectedResult, aStaplingEnabled) {
     });
 }
 
-function add_tests() {
+function add_tests(certDB, otherTestCA) {
   
   add_ocsp_test("ocsp-stapling-good.example.com",
                 PRErrorCodeSuccess, false);
@@ -73,9 +73,6 @@ function add_tests() {
 
   
   
-  let certDB = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
-  let otherTestCA = constructCertFromFile("tlsserver/other-test-ca.pem");
   add_test(function() {
     certDB.setCertTrust(otherTestCA, Ci.nsIX509Cert.CA_CERT,
                         Ci.nsIX509CertDB.UNTRUSTED);
@@ -189,6 +186,11 @@ function check_ocsp_stapling_telemetry() {
 function run_test() {
   do_get_profile();
 
+  let certDB = Cc["@mozilla.org/security/x509certdb;1"]
+                  .getService(Ci.nsIX509CertDB);
+  let otherTestCAFile = do_get_file("tlsserver/other-test-ca.der", false);
+  let otherTestCADER = readFile(otherTestCAFile);
+  let otherTestCA = certDB.constructX509(otherTestCADER, otherTestCADER.length);
 
   let fakeOCSPResponder = new HttpServer();
   fakeOCSPResponder.registerPrefixHandler("/", function (request, response) {
@@ -200,7 +202,7 @@ function run_test() {
 
   add_tls_server_setup("OCSPStaplingServer");
 
-  add_tests();
+  add_tests(certDB, otherTestCA);
 
   add_test(function () {
     fakeOCSPResponder.stop(check_ocsp_stapling_telemetry);

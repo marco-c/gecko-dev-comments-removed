@@ -14,7 +14,7 @@
 if (arguments.length != 3) {
   throw "Usage: genHPKPStaticPins.js " +
         "<absolute path to PreloadedHPKPins.json> " +
-        "<an unused argument - see bug 1205406> " +
+        "<absolute path to default-ee.der> " +
         "<absolute path to StaticHPKPins.h>";
 }
 
@@ -68,8 +68,7 @@ const PINSETDEF = "/* Pinsets are each an ordered list by the actual value of th
 
 
 var gStaticPins = parseJson(arguments[0]);
-
-
+var gTestCertFile = arguments[1];
 
 
 var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
@@ -351,7 +350,7 @@ function downloadAndParseChromePins(filename,
 
 
 
-function loadNSSCertinfo(extraCertificates) {
+function loadNSSCertinfo(derTestFile, extraCertificates) {
   let allCerts = gCertDB.getCerts();
   let enumerator = allCerts.getEnumerator();
   let certNameToSKD = {};
@@ -376,9 +375,12 @@ function loadNSSCertinfo(extraCertificates) {
 
   {
     
+    let der = readFileToString(derTestFile);
+    let testCert = gCertDB.constructX509(der, der.length);
+    
     
     let name = "End Entity Test Cert";
-    let SKD = "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=";
+    let SKD  = testCert.sha256SubjectPublicKeyInfoDigest;
     certNameToSKD[name] = SKD;
     certSKDToName[SKD] = name;
   }
@@ -597,7 +599,8 @@ function loadExtraCertificates(certStringList) {
 }
 
 var extraCertificates = loadExtraCertificates(gStaticPins.extra_certificates);
-var [ certNameToSKD, certSKDToName ] = loadNSSCertinfo(extraCertificates);
+var [ certNameToSKD, certSKDToName ] = loadNSSCertinfo(gTestCertFile,
+                                                       extraCertificates);
 var [ chromeNameToHash, chromeNameToMozName ] = downloadAndParseChromeCerts(
   gStaticPins.chromium_data.cert_file_url, certSKDToName);
 var [ chromeImportedPinsets, chromeImportedEntries ] =

@@ -16,7 +16,7 @@ function run_test() {
   
   add_tls_server_setup("OCSPStaplingServer");
 
-  let args = [["good", "default-ee", "unused"]];
+  let args = [["good", "localhostAndExampleCom", "unused"]];
   let ocspResponses = generateOCSPResponses(args, "tlsserver");
   let goodOCSPResponse = ocspResponses[0];
 
