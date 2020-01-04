@@ -248,7 +248,7 @@ function callProviderAsync(aProvider, aMethod, ...aArgs) {
   let callback = aArgs[aArgs.length - 1];
   if (!(aMethod in aProvider)) {
     callback(undefined);
-    return undefined;
+    return;
   }
   try {
     return aProvider[aMethod].apply(aProvider, aArgs);
@@ -256,7 +256,7 @@ function callProviderAsync(aProvider, aMethod, ...aArgs) {
   catch (e) {
     reportProviderError(aProvider, aMethod, e);
     callback(undefined);
-    return undefined;
+    return;
   }
 }
 
@@ -688,53 +688,6 @@ var AddonManagerInternal = {
   
   telemetryDetails: {},
 
-  
-  typesProxy: Proxy.create({
-    getOwnPropertyDescriptor: function(aName) {
-      if (!(aName in AddonManagerInternal.types))
-        return undefined;
-
-      return {
-        value: AddonManagerInternal.types[aName].type,
-        writable: false,
-        configurable: false,
-        enumerable: true
-      }
-    },
-
-    getPropertyDescriptor: function(aName) {
-      return this.getOwnPropertyDescriptor(aName);
-    },
-
-    getOwnPropertyNames: function() {
-      return Object.keys(AddonManagerInternal.types);
-    },
-
-    getPropertyNames: function() {
-      return this.getOwnPropertyNames();
-    },
-
-    delete: function(aName) {
-      
-      return false;
-    },
-
-    defineProperty: function(aName, aProperty) {
-      
-    },
-
-    fix: function(){
-      return undefined;
-    },
-
-    
-    
-    enumerate: function() {
-      
-      return this.getPropertyNames();
-    }
-  }),
-
   recordTimestamp: function(name, value) {
     this.TelemetryTimestamps.add(name, value);
   },
@@ -981,7 +934,7 @@ var AddonManagerInternal = {
             AddonManagerPrivate.recordException("AMI", "provider " + url + " load failed", e);
             logger.error("Exception loading default provider \"" + url + "\"", e);
           }
-        }
+        };
       }
 
       
@@ -2697,7 +2650,53 @@ var AddonManagerInternal = {
   },
 
   get addonTypes() {
-    return this.typesProxy;
+    
+    return new Proxy(this.types, {
+      defineProperty(target, property, descriptor) {
+        
+        return false;
+      },
+
+      deleteProperty(target, property) {
+        
+        return false;
+      },
+
+      get(target, property, receiver) {
+        if (!target.hasOwnProperty(property))
+          return undefined;
+
+        return target[property].type;
+      },
+
+      getOwnPropertyDescriptor(target, property) {
+        if (!target.hasOwnProperty(property))
+          return undefined;
+
+        return {
+          value: target[property].type,
+          writable: false,
+          
+          configurable: true,
+          enumerable: true
+        }
+      },
+
+      preventExtensions(target) {
+        
+        return false;
+      },
+
+      set(target, property, value, receiver) {
+        
+        return false;
+      },
+
+      setPrototypeOf(target, prototype) {
+        
+        return false;
+      }
+    });
   },
 
   get autoUpdateDefault() {
