@@ -24,10 +24,10 @@ const uint32_t kMagicInt = 0xc001feed;
 
 
 
-const uint16_t kMajorRevision = 3;
+const uint16_t kMajorRevision = 4;
 
 
-const uint16_t kMinorRevision = 2;
+const uint16_t kMinorRevision = 0;
 
 struct ReferencePtr
 {
@@ -1034,6 +1034,7 @@ public:
     ARGTYPE_RECT,
     ARGTYPE_INTRECT,
     ARGTYPE_POINT,
+    ARGTYPE_MATRIX,
     ARGTYPE_MATRIX5X4,
     ARGTYPE_POINT3D,
     ARGTYPE_COLOR,
