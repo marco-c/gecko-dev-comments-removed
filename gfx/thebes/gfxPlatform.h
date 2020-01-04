@@ -531,7 +531,7 @@ public:
     
 
 
-    static PRLogModuleInfo* GetLog(eGfxLog aWhichLog);
+    static mozilla::LogModule* GetLog(eGfxLog aWhichLog);
 
     int GetScreenDepth() const { return mScreenDepth; }
     mozilla::gfx::IntSize GetScreenSize() const { return mScreenSize; }

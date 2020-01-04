@@ -1006,7 +1006,7 @@ LogTextPerfStats(gfxTextPerfMetrics* aTextPerf,
                  const gfxTextPerfMetrics::TextCounts& aCounts,
                  float aTime, TextPerfLogType aLogType, const char* aURL)
 {
-  PRLogModuleInfo* tpLog = gfxPlatform::GetLog(eGfxLog_textperf);
+  LogModule* tpLog = gfxPlatform::GetLog(eGfxLog_textperf);
 
   
   mozilla::LogLevel logLevel = LogLevel::Warning;
