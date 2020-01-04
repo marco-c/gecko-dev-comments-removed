@@ -7,7 +7,6 @@
 
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/dom/Text.h"           
-#include "mozilla/Preferences.h"        
 #include "nsAString.h"                  
 #include "nsDebug.h"                    
 #include "nsEditor.h"                   
@@ -18,10 +17,6 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
-
- bool
-IMETextTxn::sCaretsExtendedVisibility = false;
-
 
 IMETextTxn::IMETextTxn(Text& aTextNode, uint32_t aOffset,
                        uint32_t aReplaceLength,
@@ -37,12 +32,6 @@ IMETextTxn::IMETextTxn(Text& aTextNode, uint32_t aOffset,
   , mEditor(aEditor)
   , mFixed(false)
 {
-  static bool addedPrefs = false;
-  if (!addedPrefs) {
-    mozilla::Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
-                                          "layout.accessiblecaret.extendedvisibility");
-    addedPrefs = true;
-  }
 }
 
 IMETextTxn::~IMETextTxn()
@@ -311,10 +300,7 @@ IMETextTxn::SetIMESelection(nsEditor& aEditor,
 
     
     
-    
-    if (!sCaretsExtendedVisibility) {
-      aEditor.HideCaret(true);
-    }
+    aEditor.HideCaret(true);
   }
 
   rv = selection->EndBatchChangesInternal();
