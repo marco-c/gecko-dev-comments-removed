@@ -47,6 +47,9 @@ nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue)
   }
 
   
+  bool hadTransform = HasTransform();
+
+  
   
   
 
@@ -57,6 +60,7 @@ nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue)
     domWrapper->InternalBaseValListWillChangeLengthTo(mBaseVal.Length());
   } else {
     mIsAttrSet = true;
+    mHadTransformBeforeLastBaseValChange = hadTransform;
   }
   return rv;
 }
@@ -64,6 +68,8 @@ nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue)
 void
 nsSVGAnimatedTransformList::ClearBaseValue()
 {
+  mHadTransformBeforeLastBaseValChange = HasTransform();
+
   SVGAnimatedTransformList *domWrapper =
     SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {

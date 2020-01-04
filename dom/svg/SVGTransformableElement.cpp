@@ -72,7 +72,8 @@ SVGTransformableElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
       MOZ_ASSERT(aModType == nsIDOMMutationEvent::MODIFICATION,
                  "Unknown modification type.");
       if (!mTransforms ||
-          !mTransforms->HasTransform()) {
+          !mTransforms->HasTransform() ||
+          !mTransforms->HadTransformBeforeLastBaseValChange()) {
         
         isAdditionOrRemoval = true;
       }

@@ -44,7 +44,9 @@ class nsSVGAnimatedTransformList
   friend class DOMSVGTransformList;
 
 public:
-  nsSVGAnimatedTransformList() : mIsAttrSet(false) { }
+  nsSVGAnimatedTransformList()
+    : mIsAttrSet(false),
+      mHadTransformBeforeLastBaseValChange(false) { }
 
   
 
@@ -93,6 +95,21 @@ public:
   }
 
   
+
+
+
+
+
+
+
+
+
+
+  bool HadTransformBeforeLastBaseValChange() const {
+    return mHadTransformBeforeLastBaseValChange;
+  }
+
+  
   nsISMILAttr* ToSMILAttr(nsSVGElement* aSVGElement);
 
 private:
@@ -105,6 +122,8 @@ private:
   SVGTransformList mBaseVal;
   nsAutoPtr<SVGTransformList> mAnimVal;
   bool mIsAttrSet;
+   
+  bool mHadTransformBeforeLastBaseValChange;
 
   struct SMILAnimatedTransformList : public nsISMILAttr
   {
