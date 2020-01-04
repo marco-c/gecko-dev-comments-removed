@@ -2286,7 +2286,7 @@ static CK_SLOT_ID_PTR nscSlotList[2] = {NULL, NULL};
 static CK_ULONG nscSlotListSize[2] = {0, 0};
 static PLHashTable *nscSlotHashTable[2] = {NULL, NULL};
 
-static int
+static unsigned int
 sftk_GetModuleIndex(CK_SLOT_ID slotID)
 {
     if ((slotID == FIPS_SLOT_ID) || (slotID >= SFTK_MIN_FIPS_USER_SLOT_ID)) {
@@ -2330,7 +2330,7 @@ static CK_RV
 sftk_RegisterSlot(SFTKSlot *slot, int moduleIndex)
 {
     PLHashEntry *entry;
-    int index;
+    unsigned int index;
 
     index = sftk_GetModuleIndex(slot->slotID);
 
@@ -2457,7 +2457,12 @@ SFTK_SlotReInit(SFTKSlot *slot, char *configdir, char *updatedir,
 	if ((slot->minimumPinLen == 0) && (params->pwRequired)) {
 	    slot->minimumPinLen = 1;
 	}
-	if ((moduleIndex == NSC_FIPS_MODULE) &&
+	
+
+
+
+	if ((sftkdb_HasPasswordSet(slot->keyDB) == SECSuccess) && 
+		(moduleIndex == NSC_FIPS_MODULE) &&
 		(slot->minimumPinLen < FIPS_MIN_PIN)) {
 	    slot->minimumPinLen = FIPS_MIN_PIN;
 	}
@@ -3590,6 +3595,14 @@ CK_RV NSC_InitPIN(CK_SESSION_HANDLE hSession,
     
     if (rv == SECSuccess) {
 	if (ulPinLen == 0) slot->needLogin = PR_FALSE;
+	
+
+
+
+	if ((sftk_GetModuleIndex(slot->slotID) == NSC_FIPS_MODULE) &&
+		(slot->minimumPinLen < FIPS_MIN_PIN)) {
+	    slot->minimumPinLen = FIPS_MIN_PIN;
+	}
 	return CKR_OK;
     }
     crv = CKR_PIN_INCORRECT;

@@ -10,93 +10,7 @@
 #include "prerror.h"
 #include "prinit.h"
 #include "prenv.h"
-
-static const char* default_name =
-    SHLIB_PREFIX"freebl"SHLIB_VERSION"."SHLIB_SUFFIX;
-
-
-
-#if defined(SOLARIS) && defined(__sparc)
-#include <stddef.h>
-#include <strings.h>
-#include <sys/systeminfo.h>
-
-
-#if defined(NSS_USE_64)
-
-const static char fpu_hybrid_shared_lib[] = "libfreebl_64fpu_3.so";
-const static char int_hybrid_shared_lib[] = "libfreebl_64int_3.so";
-const static char non_hybrid_shared_lib[] = "libfreebl_64fpu_3.so";
-
-const static char int_hybrid_isa[] = "sparcv9";
-const static char fpu_hybrid_isa[] = "sparcv9+vis";
-
-#else
-
-const static char fpu_hybrid_shared_lib[] = "libfreebl_32fpu_3.so";
-const static char int_hybrid_shared_lib[] = "libfreebl_32int64_3.so";
-
-const static char *const non_hybrid_shared_lib = NULL;
-
-const static char int_hybrid_isa[] = "sparcv8plus";
-const static char fpu_hybrid_isa[] = "sparcv8plus+vis";
-
-#endif
-
-static const char *
-getLibName(void)
-{
-    char * found_int_hybrid;
-    char * found_fpu_hybrid;
-    long buflen;
-    char buf[256];
-
-    buflen = sysinfo(SI_ISALIST, buf, sizeof buf);
-    if (buflen <= 0) 
-	return NULL;
-    
-    if (buflen < sizeof buf) 
-    	buf[buflen] = '\0';
-    else
-    	buf[(sizeof buf) - 1] = '\0';
-    
-
-
-
-
-
-
-    found_int_hybrid = strstr(buf, int_hybrid_isa);
-    found_fpu_hybrid = strstr(buf, fpu_hybrid_isa);
-    if (found_fpu_hybrid && 
-	(!found_int_hybrid ||
-	 (found_int_hybrid - found_fpu_hybrid) >= 0)) {
-	return fpu_hybrid_shared_lib;
-    }
-    if (found_int_hybrid) {
-	return int_hybrid_shared_lib;
-    }
-    return non_hybrid_shared_lib;
-}
-
-#elif defined(HPUX) && !defined(NSS_USE_64) && !defined(__ia64)
-#include <unistd.h>
-
-
-
-
-static const char *
-getLibName(void)
-{
-    long cpu = sysconf(_SC_CPU_VERSION);
-    return (cpu == CPU_PA_RISC2_0) 
-		? "libfreebl_32fpu_3.sl"
-	        : "libfreebl_32int_3.sl" ;
-}
-#else
-
-static const char * getLibName(void) { return default_name; }
-#endif
+#include "blname.c"
 
 #include "prio.h"
 #include "prprf.h"
@@ -106,7 +20,7 @@ static const char * getLibName(void) { return default_name; }
 static const char *NameOfThisSharedLib = 
   SHLIB_PREFIX"softokn"SOFTOKEN_SHLIB_VERSION"."SHLIB_SUFFIX;
 
-static PRLibrary* blLib;
+static PRLibrary* blLib = NULL;
 
 #define LSB(x) ((x)&0xff)
 #define MSB(x) ((x)>>8)
@@ -149,12 +63,12 @@ freebl_LoadDSO( void )
       }
     }
 #ifdef DEBUG
-    {
+    if (blLib) {
       PRStatus status = PR_UnloadLibrary(blLib);
       PORT_Assert(PR_SUCCESS == status);
     }
 #else
-    PR_UnloadLibrary(blLib);
+    if (blLib) PR_UnloadLibrary(blLib);
 #endif
   }
   return PR_FAILURE;
@@ -2184,3 +2098,4 @@ ChaCha20Poly1305_Open(const ChaCha20Poly1305Context *ctx,
       ctx, output, outputLen, maxOutputLen, input, inputLen,
       nonce, nonceLen, ad, adLen);
 }
+
