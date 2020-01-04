@@ -591,7 +591,7 @@ class Base {
     
     
     
-    virtual js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const = 0;
+    virtual js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const = 0;
 
     
     
@@ -792,8 +792,8 @@ class Node {
         return size;
     }
 
-    js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames = true) const {
-        return base()->edges(rt, wantNames);
+    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames = true) const {
+        return base()->edges(cx, wantNames);
     }
 
     bool hasAllocationStack() const { return base()->hasAllocationStack(); }
@@ -973,11 +973,11 @@ class MOZ_STACK_CLASS RootList {
     Maybe<AutoCheckCannotGC>& noGC;
 
   public:
-    JSRuntime* rt;
+    JSContext* cx;
     EdgeVector edges;
     bool       wantNames;
 
-    RootList(JSRuntime* rt, Maybe<AutoCheckCannotGC>& noGC, bool wantNames = false);
+    RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC, bool wantNames = false);
 
     
     MOZ_MUST_USE bool init();
@@ -1009,7 +1009,7 @@ class Concrete<RootList> : public Base {
   public:
     static void construct(void* storage, RootList* ptr) { new (storage) Concrete(ptr); }
 
-    js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const override;
+    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
 
     const char16_t* typeName() const override { return concreteTypeName; }
     static const char16_t concreteTypeName[];
@@ -1019,7 +1019,7 @@ class Concrete<RootList> : public Base {
 
 template<typename Referent>
 class TracerConcrete : public Base {
-    js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const override;
+    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
     JS::Zone* zone() const override;
 
   protected:
@@ -1118,7 +1118,7 @@ template<>
 class Concrete<void> : public Base {
     const char16_t* typeName() const override;
     Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-    js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const override;
+    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
     JS::Zone* zone() const override;
     JSCompartment* compartment() const override;
     CoarseType coarseType() const final;

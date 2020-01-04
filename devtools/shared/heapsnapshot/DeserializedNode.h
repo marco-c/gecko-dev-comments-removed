@@ -270,7 +270,7 @@ public:
 
   
   
-  js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool) const override;
+  js::UniquePtr<EdgeRange> edges(JSContext* cx, bool) const override;
 
   static const char16_t concreteTypeName[];
 };

@@ -83,8 +83,8 @@ struct BreadthFirst {
     
     
     
-    BreadthFirst(JSRuntime* rt, Handler& handler, const JS::AutoCheckCannotGC& noGC)
-      : wantNames(true), rt(rt), visited(), handler(handler), pending(),
+    BreadthFirst(JSContext* cx, Handler& handler, const JS::AutoCheckCannotGC& noGC)
+      : wantNames(true), cx(cx), visited(), handler(handler), pending(),
         traversalBegun(false), stopRequested(false), abandonRequested(false)
     { }
 
@@ -126,7 +126,7 @@ struct BreadthFirst {
             pending.popFront();
 
             
-            auto range = origin.edges(rt, wantNames);
+            auto range = origin.edges(cx, wantNames);
             if (!range)
                 return false;
 
@@ -182,7 +182,7 @@ struct BreadthFirst {
     void abandonReferent() { abandonRequested = true; }
 
     
-    JSRuntime* rt;
+    JSContext* cx;
 
     
     

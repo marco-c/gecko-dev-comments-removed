@@ -323,7 +323,7 @@ class JS_PUBLIC_API(DominatorTree)
 
     
     
-    static MOZ_MUST_USE bool doTraversal(JSRuntime* rt, AutoCheckCannotGC& noGC, const Node& root,
+    static MOZ_MUST_USE bool doTraversal(JSContext* cx, AutoCheckCannotGC& noGC, const Node& root,
                                          JS::ubi::Vector<Node>& postOrder,
                                          PredecessorSets& predecessorSets) {
         uint32_t nodeCount = 0;
@@ -349,7 +349,7 @@ class JS_PUBLIC_API(DominatorTree)
             return p->value()->put(origin);
         };
 
-        PostOrder traversal(rt, noGC);
+        PostOrder traversal(cx, noGC);
         return traversal.init() &&
                traversal.addStart(root) &&
                traversal.traverse(onNode, onEdge);
@@ -513,10 +513,10 @@ class JS_PUBLIC_API(DominatorTree)
 
 
     static mozilla::Maybe<DominatorTree>
-    Create(JSRuntime* rt, AutoCheckCannotGC& noGC, const Node& root) {
+    Create(JSContext* cx, AutoCheckCannotGC& noGC, const Node& root) {
         JS::ubi::Vector<Node> postOrder;
         PredecessorSets predecessorSets;
-        if (!predecessorSets.init() || !doTraversal(rt, noGC, root, postOrder, predecessorSets))
+        if (!predecessorSets.init() || !doTraversal(cx, noGC, root, postOrder, predecessorSets))
             return mozilla::Nothing();
 
         MOZ_ASSERT(postOrder.length() < UINT32_MAX);
