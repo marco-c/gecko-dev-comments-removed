@@ -19,23 +19,6 @@ var _fromByTestLists =
                            { fromComp: "rgb(50, 50, 50)",
                              midComp:  "rgb(65, 60, 55)",
                              toComp:   "rgb(80, 70, 60)"}),
-    new AnimTestcaseFromBy("rgba(10, 20, 30, 0.2)", "rgba(50, 50, 50, 1)",
-                             
-                           { midComp: "rgba(45, 48, 52, 0.6)",
-                             
-                             toComp:  "rgb(52, 54, 56)"}),
-    
-    
-    
-    
-    
-    
-    
-    new AnimTestcaseFromBy("rgba(100, 100, 100, 0.8)", "rgba(240, 240, 240, 1)",
-                             
-                           { midComp: "rgba(186, 186, 186, 0.9)",
-                             
-                             toComp:  "rgb(255, 255, 255)"}),
   ],
   lengthNoUnits: [
     new AnimTestcaseFromBy("0", "50",  { fromComp: "0px", 
