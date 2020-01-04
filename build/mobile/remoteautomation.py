@@ -88,7 +88,15 @@ class RemoteAutomation(Automation):
 
         
         
+        
+        
         env.setdefault('MOZ_DISABLE_SWITCHBOARD', '1')
+
+        
+        
+        
+        
+        env.setdefault('MOZ_DISABLE_TELEMETRY', '1')
 
         
         
