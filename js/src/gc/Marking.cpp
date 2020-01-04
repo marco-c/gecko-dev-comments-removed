@@ -184,7 +184,8 @@ js::CheckTracedThing(JSTracer* trc, T* thing)
     if (!trc->checkEdges())
         return;
 
-    thing = MaybeForwarded(thing);
+    if (IsForwarded(thing))
+        thing = Forwarded(thing);
 
     
     if (IsInsideNursery(thing))
@@ -236,7 +237,12 @@ js::CheckTracedThing(JSTracer* trc, T* thing)
 
 
 
-    MOZ_ASSERT_IF(IsThingPoisoned(thing) && rt->isHeapBusy() && !rt->gc.isBackgroundSweeping(),
+
+
+
+    MOZ_ASSERT_IF(rt->isHeapBusy() && !zone->isGCCompacting() &&
+                  !rt->gc.isBackgroundSweeping() &&
+                  IsThingPoisoned(thing),
                   !InFreeList(thing->asTenured().arena(), thing));
 #endif
 }
