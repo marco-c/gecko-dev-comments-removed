@@ -5081,10 +5081,6 @@ pref("dom.voicemail.defaultServiceId", 0);
 pref("dom.mapped_arraybuffer.enabled", true);
 
 
-
-pref("dom.fire_extra_xhr_loading_readystatechanges", false);
-
-
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
 
 #ifdef MOZILLA_OFFICIAL
