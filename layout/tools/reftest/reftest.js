@@ -495,7 +495,7 @@ function StartTests()
         
         manifestURLs.sort(function(a,b) {return a.length - b.length})
         manifestURLs.forEach(function(manifestURL) {
-            gDumpLog("Readings manifest" + manifestURL + "\n");
+            gDumpLog("Reading manifest " + manifestURL + "\n");
             var filter = manifests[manifestURL] ? new RegExp(manifests[manifestURL]) : null;
             ReadTopManifest(manifestURL, [globalFilter, filter, false]);
         });
