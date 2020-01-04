@@ -8,8 +8,7 @@
 
 define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
-  const { DOM } = React;
-  const { findDOMNode } = require("devtools/client/shared/vendor/react-dom");
+  const DOM = React.DOM;
 
   
 
@@ -52,30 +51,17 @@ define(function (require, exports, module) {
 
     getDefaultProps: function () {
       return {
-        tabActive: 0
+        tabActive: 1
       };
     },
 
     getInitialState: function () {
       return {
-        tabActive: this.props.tabActive,
-
-        
-        
-        
-        
-        
-        
-        
-        
-        created: [],
+        tabActive: this.props.tabActive
       };
     },
 
     componentDidMount: function () {
-      let node = findDOMNode(this);
-      node.addEventListener("keydown", this.onKeyDown, false);
-
       let index = this.state.tabActive;
       if (this.props.onMount) {
         this.props.onMount(index);
@@ -84,54 +70,11 @@ define(function (require, exports, module) {
 
     componentWillReceiveProps: function (newProps) {
       if (newProps.tabActive) {
-        let created = [...this.state.created];
-        created[newProps.tabActive] = true;
-
-        this.setState(Object.assign({}, this.state, {
-          tabActive: newProps.tabActive,
-          created: created,
-        }));
+        this.setState({tabActive: newProps.tabActive});
       }
     },
 
-    componentWillUnmount: function () {
-      let node = findDOMNode(this);
-      node.removeEventListener("keydown", this.onKeyDown, false);
-    },
-
-    
-
-    onKeyDown: function (event) {
-      
-      if (!event.target.closest(".tabs-menu-item")) {
-        return;
-      }
-
-      let tabActive = this.state.tabActive;
-      let tabCount = this.props.children.length;
-
-      switch (event.code) {
-        case "ArrowRight":
-          tabActive = Math.min(tabCount - 1, tabActive + 1);
-          break;
-        case "ArrowLeft":
-          tabActive = Math.max(0, tabActive - 1);
-          break;
-      }
-
-      if (this.state.tabActive != tabActive) {
-        this.setActive(tabActive);
-      }
-    },
-
-    onClickTab: function (index, event) {
-      this.setActive(index);
-      event.preventDefault();
-    },
-
-    
-
-    setActive: function (index) {
+    setActive: function (index, e) {
       let onAfterChange = this.props.onAfterChange;
       let onBeforeChange = this.props.onBeforeChange;
 
@@ -142,125 +85,69 @@ define(function (require, exports, module) {
         }
       }
 
-      let created = [...this.state.created];
-      created[index] = true;
-
-      let newState = Object.assign({}, this.state, {
-        tabActive: index,
-        created: created
-      });
+      let newState = {
+        tabActive: index
+      };
 
       this.setState(newState, () => {
-        
-        let node = findDOMNode(this);
-        let selectedTab = node.querySelector(".is-active > a");
-        if (selectedTab) {
-          selectedTab.focus();
-        }
-
         if (onAfterChange) {
           onAfterChange(index);
         }
       });
+
+      e.preventDefault();
     },
 
-    
-
-    renderMenuItems: function () {
+    getMenuItems: function () {
       if (!this.props.children) {
-        throw new Error("There must be at least one Tab");
+        throw new Error("Tabs must contain at least one Panel");
       }
 
       if (!Array.isArray(this.props.children)) {
         this.props.children = [this.props.children];
       }
 
-      let tabs = this.props.children
-        .map(tab => {
-          return typeof tab === "function" ? tab() : tab;
-        }).filter(tab => {
-          return tab;
-        }).map((tab, index) => {
-          let ref = ("tab-menu-" + index);
-          let title = tab.props.title;
-          let tabClassName = tab.props.className;
+      let menuItems = this.props.children
+        .map(function (panel) {
+          return typeof panel === "function" ? panel() : panel;
+        }).filter(function (panel) {
+          return panel;
+        }).map(function (panel, index) {
+          let ref = ("tab-menu-" + (index + 1));
+          let title = panel.props.title;
+          let tabClassName = panel.props.className;
 
           let classes = [
             "tabs-menu-item",
             tabClassName,
-            this.state.tabActive === index ? "is-active" : ""
+            this.state.tabActive === (index + 1) && "is-active"
           ].join(" ");
 
-          
-          
-          
-          
-          
           return (
-            DOM.li({
-              ref: ref,
-              key: index,
-              className: classes},
-              DOM.a({
-                href: "#",
-                tabIndex: this.state.tabActive === index ? 0 : -1,
-                onClick: this.onClickTab.bind(this, index)},
+            DOM.li({ref: ref, key: index, className: classes},
+              DOM.a({href: "#", onClick: this.setActive.bind(this, index + 1)},
                 title
               )
             )
           );
-        });
+        }.bind(this));
 
       return (
         DOM.nav({className: "tabs-navigation"},
           DOM.ul({className: "tabs-menu"},
-            tabs
+            menuItems
           )
         )
       );
     },
 
-    renderPanels: function () {
-      if (!this.props.children) {
-        throw new Error("There must be at least one Tab");
-      }
-
-      if (!Array.isArray(this.props.children)) {
-        this.props.children = [this.props.children];
-      }
-
-      let selectedIndex = this.state.tabActive;
-
-      let panels = this.props.children
-        .map(tab => {
-          return typeof tab === "function" ? tab() : tab;
-        }).filter(tab => {
-          return tab;
-        }).map((tab, index) => {
-          let selected = selectedIndex == index;
-
-          
-          
-          
-          let style = {
-            visibility: selected ? "visible" : "hidden",
-            height: selected ? "100%" : "0",
-            width: selected ? "100%" : "0",
-          };
-
-          return (
-            DOM.div({
-              key: index,
-              style: style,
-              className: "tab-panel-box"},
-              (selected || this.state.created[index]) ? tab : null
-            )
-          );
-        });
+    getSelectedPanel: function () {
+      let index = this.state.tabActive - 1;
+      let panel = this.props.children[index];
 
       return (
-        DOM.div({className: "panels"},
-          panels
+        DOM.article({ref: "tab-panel", className: "tab-panel"},
+          panel
         )
       );
     },
@@ -270,8 +157,8 @@ define(function (require, exports, module) {
 
       return (
         DOM.div({className: classNames},
-          this.renderMenuItems(),
-          this.renderPanels()
+          this.getMenuItems(),
+          this.getSelectedPanel()
         )
       );
     },
@@ -292,7 +179,7 @@ define(function (require, exports, module) {
     },
 
     render: function () {
-      return DOM.div({className: "tab-panel"},
+      return DOM.div({},
         this.props.children
       );
     }

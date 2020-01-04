@@ -34,7 +34,7 @@ loader.lazyRequireGetter(this, "InspectorSearch", "devtools/client/inspector/ins
 loader.lazyRequireGetter(this, "LayoutView", "devtools/client/inspector/layout/layout", true);
 loader.lazyRequireGetter(this, "MarkupView", "devtools/client/inspector/markup/markup", true);
 loader.lazyRequireGetter(this, "RuleViewTool", "devtools/client/inspector/rules/rules", true);
-loader.lazyRequireGetter(this, "ToolSidebar", "devtools/client/inspector/toolsidebar", true);
+loader.lazyRequireGetter(this, "ToolSidebar", "devtools/client/framework/sidebar", true);
 loader.lazyRequireGetter(this, "ViewHelpers", "devtools/client/shared/widgets/view-helpers", true);
 
 loader.lazyGetter(this, "strings", () => {
@@ -412,22 +412,6 @@ InspectorPanel.prototype = {
       defaultTab = "ruleview";
     }
 
-    
-    this.sidebar.addExistingTab(
-      "ruleview",
-      strings.GetStringFromName("inspector.sidebar.ruleViewTitle"),
-      defaultTab == "ruleview");
-
-    this.sidebar.addExistingTab(
-      "computedview",
-      strings.GetStringFromName("inspector.sidebar.computedViewTitle"),
-      defaultTab == "computedview");
-
-    this.sidebar.addExistingTab(
-      "layoutview",
-      strings.GetStringFromName("inspector.sidebar.layoutViewTitle"),
-      defaultTab == "layoutview");
-
     this._setDefaultSidebar = (event, toolId) => {
       Services.prefs.setCharPref("devtools.inspector.activeSidebar", toolId);
     };
@@ -439,63 +423,21 @@ InspectorPanel.prototype = {
     this.layoutview = new LayoutView(this, this.panelWin);
 
     if (this.target.form.animationsActor) {
-      this.sidebar.addFrameTab(
-        "animationinspector",
-        strings.GetStringFromName("inspector.sidebar.animationInspectorTitle"),
-        "chrome://devtools/content/animationinspector/animation-inspector.xhtml",
-        defaultTab == "animationinspector");
+      this.sidebar.addTab("animationinspector",
+                          "chrome://devtools/content/animationinspector/animation-inspector.xhtml",
+                          {selected: defaultTab == "animationinspector",
+                           insertBefore: "fontinspector"});
     }
 
     if (Services.prefs.getBoolPref("devtools.fontinspector.enabled") &&
         this.canGetUsedFontFaces) {
-      this.sidebar.addExistingTab(
-        "fontinspector",
-        strings.GetStringFromName("inspector.sidebar.fontInspectorTitle"),
-        defaultTab == "fontinspector");
-
       this.fontInspector = new FontInspector(this, this.panelWin);
       this.sidebar.toggleTab(true, "fontinspector");
     }
 
-    this.setupSidebarToggle();
-    this.setupSidebarWidth();
-
     this.sidebar.show(defaultTab);
-  },
 
-  
-
-
-
-
-
-
-
-
-  setupSidebarWidth: function () {
-    let sidePaneContainer = this.panelDoc.querySelector(
-      "#inspector-sidebar-container");
-
-    this.sidebar.on("show", () => {
-      try {
-        sidePaneContainer.width = Services.prefs.getIntPref(
-          "devtools.toolsidebar-width.inspector");
-      } catch (e) {
-        
-        
-        sidePaneContainer.width = 450;
-      }
-    });
-
-    this.sidebar.on("hide", () => {
-      Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
-        sidePaneContainer.width);
-    });
-
-    this.sidebar.on("destroy", () => {
-      Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
-        sidePaneContainer.width);
-    });
+    this.setupSidebarToggle();
   },
 
   
@@ -1228,52 +1170,31 @@ InspectorPanel.prototype = {
 
 
   onPaneToggleButtonActivated: function (e) {
-    let sidePaneContainer = this.panelDoc.querySelector("#inspector-sidebar-container");
+    let sidePane = this.panelDoc.querySelector("#inspector-sidebar");
     let isVisible = !this._sidebarToggle.state.collapsed;
-    let sidePane = this.panelDoc.querySelector(
-      "#inspector-sidebar .devtools-sidebar-tabs");
 
     
     
     if (isVisible) {
-      let rect = sidePaneContainer.getBoundingClientRect();
-      if (!sidePaneContainer.hasAttribute("width")) {
-        sidePaneContainer.setAttribute("width", rect.width);
-
-        sidePane.style.width = rect.width + "px";
+      let rect = sidePane.getBoundingClientRect();
+      if (!sidePane.hasAttribute("width")) {
+        sidePane.setAttribute("width", rect.width);
       }
       
       
-      sidePaneContainer.setAttribute("height", rect.height);
-      sidePane.style.height = rect.height + "px";
+      sidePane.setAttribute("height", rect.height);
     }
-
-    let onAnimationDone = () => {
-      if (isVisible) {
-        this._sidebarToggle.setState({collapsed: true});
-      } else {
-        this._sidebarToggle.setState({collapsed: false});
-      }
-
-      
-      
-      
-      if (isVisible) {
-        this.sidebar.toggle();
-      }
-    };
 
     ViewHelpers.togglePane({
       visible: !isVisible,
       animated: true,
-      delayed: true,
-      callback: onAnimationDone
-    }, sidePaneContainer);
+      delayed: true
+    }, sidePane);
 
-    
-    
-    if (!isVisible) {
-      this.sidebar.toggle();
+    if (isVisible) {
+      this._sidebarToggle.setState({collapsed: true});
+    } else {
+      this._sidebarToggle.setState({collapsed: false});
     }
   },
 

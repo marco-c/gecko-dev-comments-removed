@@ -18,10 +18,6 @@ add_task(function* () {
   info("Selecting computed view.");
   inspector.sidebar.select("computedview");
 
-  
-  
-  yield waitForTick();
-
   info("Closing inspector.");
   yield toolbox.destroy();
 
