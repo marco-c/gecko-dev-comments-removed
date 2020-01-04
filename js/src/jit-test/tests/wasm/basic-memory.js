@@ -75,6 +75,9 @@ function testStoreError(type, ext, base, offset, align, errorMsg) {
 
 testLoad('i32', '', 0, 0, 0, 0x03020100);
 
+testLoad('i32', '', 1, 0, 0, 0x03020100);   
+
+
 
 
 
