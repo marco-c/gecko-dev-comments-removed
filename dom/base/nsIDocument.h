@@ -634,6 +634,30 @@ public:
   
 
 
+  void SetHasCSP(bool aHasCSP)
+  {
+    mHasCSP = aHasCSP;
+  }
+
+  
+
+
+  void SetHasUnsafeInlineCSP(bool aHasUnsafeInlineCSP)
+  {
+    mHasUnsafeInlineCSP = aHasUnsafeInlineCSP;
+  }
+
+  
+
+
+  void SetHasUnsafeEvalCSP(bool aHasUnsafeEvalCSP)
+  {
+    mHasUnsafeEvalCSP = aHasUnsafeEvalCSP;
+  }
+
+  
+
+
   bool GetHasTrackingContentBlocked()
   {
     return mHasTrackingContentBlocked;
@@ -2933,6 +2957,15 @@ protected:
 
   
   bool mHasMixedContentObjectSubrequest : 1;
+
+  
+  bool mHasCSP : 1;
+
+  
+  bool mHasUnsafeEvalCSP : 1;
+
+  
+  bool mHasUnsafeInlineCSP : 1;
 
   
   bool mHasTrackingContentBlocked : 1;

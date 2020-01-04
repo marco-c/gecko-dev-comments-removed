@@ -614,6 +614,9 @@ nsCSPContext::SetRequestContext(nsIDOMDocument* aDOMDocument,
     
     mQueueUpMessages = !mInnerWindowID;
     mCallingChannelLoadGroup = doc->GetDocumentLoadGroup();
+
+    
+    doc->SetHasCSP(true);
   }
   else {
     NS_WARNING("No Document in SetRequestContext; can not query loadgroup; sending reports may fail.");
