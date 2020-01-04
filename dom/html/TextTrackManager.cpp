@@ -527,6 +527,11 @@ TextTrackManager::TimeMarchesOn()
 
   mTimeMarchesOnDispatched = false;
 
+  
+  if (mTextTracks->Length() == 0) {
+    return;
+  }
+
   nsISupports* parentObject =
     mMediaElement->OwnerDoc()->GetParentObject();
   if (NS_WARN_IF(!parentObject)) {
@@ -564,6 +569,11 @@ TextTrackManager::TimeMarchesOn()
   }
   
   if (hasNormalPlayback) {
+    if (currentPlaybackTime < mLastTimeMarchesOnCalled) {
+      
+      
+      mLastTimeMarchesOnCalled = currentPlaybackTime;
+    }
     media::Interval<double> interval(mLastTimeMarchesOnCalled,
                                      currentPlaybackTime);
     otherCues = mNewCues->GetCueListByTimeInterval(interval);;
@@ -716,6 +726,12 @@ TextTrackManager::NotifyCueUpdated(TextTrackCue *aCue)
 {
   
   DispatchTimeMarchesOn();
+}
+
+void
+TextTrackManager::NotifyReset()
+{
+  mLastTimeMarchesOnCalled = 0.0;
 }
 
 } 

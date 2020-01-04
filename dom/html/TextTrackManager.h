@@ -100,6 +100,8 @@ public:
 
   void NotifyCueUpdated(TextTrackCue *aCue);
 
+  void NotifyReset();
+
 private:
   
 
