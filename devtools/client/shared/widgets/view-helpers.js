@@ -5,8 +5,6 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
-
 const PANE_APPEARANCE_DELAY = 50;
 const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
 const WIDGET_FOCUSABLE_NODES = new Set(["vbox", "hbox"]);
@@ -128,7 +126,7 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
   dispatchEvent: function (target, type, detail) {
-    if (!(target instanceof Ci.nsIDOMNode)) {
+    if (!(target instanceof Node)) {
       
       return true;
     }
@@ -190,9 +188,9 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
   isNode: function (object) {
-    return object instanceof Ci.nsIDOMNode ||
-           object instanceof Ci.nsIDOMElement ||
-           object instanceof Ci.nsIDOMDocumentFragment;
+    return object instanceof Node ||
+           object instanceof Element ||
+           object instanceof DocumentFragment;
   },
 
   
@@ -792,12 +790,12 @@ const WidgetMethods = exports.WidgetMethods = {
     
     
     
-    if (firstPrebuiltTarget instanceof Ci.nsIDOMDocumentFragment) {
+    if (firstPrebuiltTarget instanceof DocumentFragment) {
       for (let node of firstTarget.childNodes) {
         firstPrebuiltTarget.appendChild(node.cloneNode(true));
       }
     }
-    if (secondPrebuiltTarget instanceof Ci.nsIDOMDocumentFragment) {
+    if (secondPrebuiltTarget instanceof DocumentFragment) {
       for (let node of secondTarget.childNodes) {
         secondPrebuiltTarget.appendChild(node.cloneNode(true));
       }

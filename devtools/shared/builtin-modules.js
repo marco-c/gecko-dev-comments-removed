@@ -234,6 +234,10 @@ const globals = exports.globals = {
            .createInstance(Ci.nsIXMLHttpRequest);
   },
 
+  Node: Ci.nsIDOMNode,
+  Element: Ci.nsIDOMElement,
+  DocumentFragment: Ci.nsIDOMDocumentFragment,
+
   
   
   
