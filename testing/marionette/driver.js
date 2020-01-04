@@ -19,12 +19,12 @@ XPCOMUtils.defineLazyServiceGetter(
 
 Cu.import("chrome://marionette/content/action.js");
 Cu.import("chrome://marionette/content/atom.js");
+Cu.import("chrome://marionette/content/browser.js");
 Cu.import("chrome://marionette/content/element.js");
 Cu.import("chrome://marionette/content/emulator.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
-Cu.import("chrome://marionette/content/frame.js");
 Cu.import("chrome://marionette/content/interaction.js");
 Cu.import("chrome://marionette/content/logging.js");
 Cu.import("chrome://marionette/content/modal.js");
@@ -35,7 +35,6 @@ this.EXPORTED_SYMBOLS = ["GeckoDriver", "Context"];
 
 var FRAME_SCRIPT = "chrome://marionette/content/listener.js";
 const BROWSER_STARTUP_FINISHED = "browser-delayed-startup-finished";
-const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const CLICK_TO_START_PREF = "marionette.debugging.clicktostart";
 const CONTENT_LISTENER_PREF = "marionette.contentListener";
 
@@ -282,11 +281,13 @@ GeckoDriver.prototype.addFrameCloseListener = function(action) {
 
 
 GeckoDriver.prototype.addBrowser = function(win) {
-  let browser = new BrowserObj(win, this);
+  logger.info("addBrowser");
+  let bc = new browser.Context(win, this);
+  logger.info("bc=" + bc);
   let winId = win.QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
   winId = winId + ((this.appName == "B2G") ? "-b2g" : "");
-  this.browsers[winId] = browser;
+  this.browsers[winId] = bc;
   this.curBrowser = this.browsers[winId];
   if (typeof this.curBrowser.elementManager.seenItems[winId] == "undefined") {
     
@@ -2777,242 +2778,4 @@ GeckoDriver.prototype.commands = {
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
   "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog,
   "quitApplication": GeckoDriver.prototype.quitApplication,
-};
-
-
-
-
-
-
-
-
-
-
-var BrowserObj = function(win, driver) {
-  this.browser = undefined;
-  this.window = win;
-  this.driver = driver;
-  this.knownFrames = [];
-  this.startPage = "about:blank";
-  
-  this.mainContentId = null;
-  
-  this.newSession = true;
-  this.elementManager = new ElementManager([
-    element.Strategy.Name,
-    element.Strategy.LinkText,
-    element.Strategy.PartialLinkText,
-  ]);
-  this.setBrowser(win);
-
-  
-  this.tab = null;
-  this.pendingCommands = [];
-
-  
-  this.frameManager = new frame.Manager(driver);
-  this.frameRegsPending = 0;
-
-  
-  this.frameManager.addMessageManagerListeners(driver.mm);
-  this.getIdForBrowser = driver.getIdForBrowser.bind(driver);
-  this.updateIdForBrowser = driver.updateIdForBrowser.bind(driver);
-  this._curFrameId = null;
-  this._browserWasRemote = null;
-  this._hasRemotenessChange = false;
-};
-
-Object.defineProperty(BrowserObj.prototype, "browserForTab", {
-  get() {
-    return this.browser.getBrowserForTab(this.tab);
-  }
-});
-
-
-
-
-
-
-Object.defineProperty(BrowserObj.prototype, "curFrameId", {
-  get() {
-    let rv = null;
-    if (this.driver.appName != "Firefox") {
-      rv = this._curFrameId;
-    } else if (this.tab) {
-      rv = this.getIdForBrowser(this.browserForTab);
-    }
-    return rv;
-  },
-
-  set(id) {
-    if (this.driver.appName != "Firefox") {
-      this._curFrameId = id;
-    }
-  }
-});
-
-
-
-
-
-BrowserObj.prototype.getTabModalUI = function() {
-  let br = this.browserForTab;
-  if (!br.hasAttribute("tabmodalPromptShowing")) {
-    return null;
-  }
-
-  
-  
-  let modals = br.parentNode.getElementsByTagNameNS(
-      XUL_NS, "tabmodalprompt");
-  return modals[0].ui;
-};
-
-
-
-
-
-
-
-BrowserObj.prototype.setBrowser = function(win) {
-  switch (this.driver.appName) {
-    case "Firefox":
-      this.browser = win.gBrowser;
-      break;
-
-    case "Fennec":
-      this.browser = win.BrowserApp;
-      break;
-  }
-};
-
-
-BrowserObj.prototype.startSession = function(newSession, win, callback) {
-  callback(win, newSession);
-};
-
-
-BrowserObj.prototype.closeTab = function() {
-  if (this.browser &&
-      this.browser.removeTab &&
-      this.tab !== null && (this.driver.appName != "B2G")) {
-    this.browser.removeTab(this.tab);
-  }
-};
-
-
-
-
-
-
-
-BrowserObj.prototype.addTab = function(uri) {
-  return this.browser.addTab(uri, true);
-};
-
-
-
-
-
-
-BrowserObj.prototype.switchToTab = function(ind, win) {
-  if (win) {
-    this.window = win;
-    this.setBrowser(win);
-  }
-
-  this.browser.selectTabAtIndex(ind);
-  this.tab = this.browser.selectedTab;
-  this._browserWasRemote = this.browserForTab.isRemoteBrowser;
-  this._hasRemotenessChange = false;
-};
-
-
-
-
-
-
-
-
-
-
-BrowserObj.prototype.register = function(uid, target) {
-  let remotenessChange = this.hasRemotenessChange();
-  if (this.curFrameId === null || remotenessChange) {
-    if (this.browser) {
-      
-      
-      if (!this.tab) {
-        this.switchToTab(this.browser.selectedIndex);
-      }
-
-      if (target == this.browserForTab) {
-        this.updateIdForBrowser(this.browserForTab, uid);
-        this.mainContentId = uid;
-      }
-    } else {
-      this._curFrameId = uid;
-      this.mainContentId = uid;
-    }
-  }
-
-  
-  this.knownFrames.push(uid);
-  return remotenessChange;
-};
-
-
-
-
-
-
-BrowserObj.prototype.hasRemotenessChange = function() {
-  
-  
-  if (this.driver.appName != "Firefox" || this.tab === null) {
-    return false;
-  }
-
-  if (this._hasRemotenessChange) {
-    return true;
-  }
-
-  
-  let currentTab = this.browser.selectedTab;
-  let currentIsRemote = this.browser.getBrowserForTab(currentTab).isRemoteBrowser;
-  this._hasRemotenessChange = this._browserWasRemote !== currentIsRemote;
-  this._browserWasRemote = currentIsRemote;
-  return this._hasRemotenessChange;
-};
-
-
-
-
-
-BrowserObj.prototype.flushPendingCommands = function() {
-  if (!this._hasRemotenessChange) {
-    return;
-  }
-
-  this._hasRemotenessChange = false;
-  this.pendingCommands.forEach(cb => cb());
-  this.pendingCommands = [];
-};
-
-
-
-
-
-
-
-
-
-
-
-BrowserObj.prototype.executeWhenReady = function(cb) {
-  if (this.hasRemotenessChange()) {
-    this.pendingCommands.push(cb);
-  } else {
-    cb();
-  }
 };
