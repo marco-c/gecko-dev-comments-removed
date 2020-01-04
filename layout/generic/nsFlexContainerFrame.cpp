@@ -904,13 +904,13 @@ GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
     
     if (MOZ_UNLIKELY(aFrame->GetType() == nsGkAtoms::tableOuterFrame)) {
       nsIFrame* captionDescendant =
-        GetFirstNonAnonBoxDescendant(aFrame->GetFirstChild(kCaptionList));
+        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kCaptionList).FirstChild());
       if (captionDescendant) {
         return captionDescendant;
       }
     } else if (MOZ_UNLIKELY(aFrame->GetType() == nsGkAtoms::tableFrame)) {
       nsIFrame* colgroupDescendant =
-        GetFirstNonAnonBoxDescendant(aFrame->GetFirstChild(kColGroupList));
+        GetFirstNonAnonBoxDescendant(aFrame->GetChildList(kColGroupList).FirstChild());
       if (colgroupDescendant) {
         return colgroupDescendant;
       }

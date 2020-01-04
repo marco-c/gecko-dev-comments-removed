@@ -8765,7 +8765,7 @@ nsCSSFrameConstructor::ReplicateFixedFrames(nsPageContentFrame* aParentFrame)
   }
 
   nsFrameItems fixedPlaceholders;
-  nsIFrame* firstFixed = prevPageContentFrame->GetFirstChild(nsIFrame::kFixedList);
+  nsIFrame* firstFixed = prevPageContentFrame->GetChildList(nsIFrame::kFixedList).FirstChild();
   if (!firstFixed) {
     return NS_OK;
   }
@@ -9048,10 +9048,10 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
         
         
         (inFlowFrame->GetType() == nsGkAtoms::tableColGroupFrame &&
-         parent->GetFirstChild(nsIFrame::kColGroupList) == inFlowFrame) ||
+         parent->GetChildList(nsIFrame::kColGroupList).FirstChild() == inFlowFrame) ||
         
         (inFlowFrame->IsTableCaption() &&
-         parent->GetFirstChild(nsIFrame::kCaptionList) == inFlowFrame)) {
+         parent->GetChildList(nsIFrame::kCaptionList).FirstChild() == inFlowFrame)) {
       
       
       *aResult = RecreateFramesForContent(parent->GetContent(), true, aFlags,
