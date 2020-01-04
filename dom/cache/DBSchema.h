@@ -117,7 +117,8 @@ nsresult
 IncrementalVacuum(mozIStorageConnection* aConn);
 
 
-extern const int32_t kMaxWipeSchemaVersion;
+
+extern const int32_t kFirstShippedSchemaVersion;
 
 } 
 } 
