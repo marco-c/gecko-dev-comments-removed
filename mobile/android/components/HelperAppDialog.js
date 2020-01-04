@@ -8,7 +8,6 @@
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 const APK_MIME_TYPE = "application/vnd.android.package-archive";
-const OMA_DOWNLOAD_DESCRIPTOR_MIME_TYPE = "application/vnd.oma.dd+xml";
 const PREF_BD_USEDOWNLOADDIR = "browser.download.useDownloadDir";
 const URI_GENERIC_ICON_DOWNLOAD = "drawable://alert_download";
 
@@ -86,23 +85,25 @@ HelperAppLauncherDialog.prototype = {
     let mimeType = this._getMimeTypeFromLauncher(launcher);
 
     
-    return APK_MIME_TYPE == mimeType || OMA_DOWNLOAD_DESCRIPTOR_MIME_TYPE == mimeType;
-  },
-
-  
-
-
-
-  _shouldAddSaveToDiskIntent: function(launcher) {
-      let mimeType = this._getMimeTypeFromLauncher(launcher);
-
-      
-      return mimeType != OMA_DOWNLOAD_DESCRIPTOR_MIME_TYPE;
+    return APK_MIME_TYPE == mimeType;
   },
 
   show: function hald_show(aLauncher, aContext, aReason) {
     if (!this._canDownload(aLauncher.source)) {
-      this._refuseDownload(aLauncher);
+      aLauncher.cancel(Cr.NS_BINDING_ABORTED);
+
+      let win = this.getNativeWindow();
+      if (!win) {
+        
+        Services.console.logStringMessage("Refusing download, but can't show a toast.");
+        return;
+      }
+
+      Services.console.logStringMessage("Refusing download of non-downloadable file.");
+      let bundle = Services.strings.createBundle("chrome://browser/locale/handling.properties");
+      let failedText = bundle.GetStringFromName("download.blocked");
+      win.toast.show(failedText, "long");
+
       return;
     }
 
@@ -113,27 +114,19 @@ HelperAppLauncherDialog.prototype = {
       mimeType: aLauncher.MIMEInfo.MIMEType,
     });
 
-    if (this._shouldAddSaveToDiskIntent(aLauncher)) {
-      
-      apps.unshift({
-        name: bundle.GetStringFromName("helperapps.saveToDisk"),
-        packageName: "org.mozilla.gecko.Download",
-        iconUri: "drawable://icon",
-        selected: true, 
-        launch: function() {
-          
-          aLauncher.MIMEInfo.preferredAction = Ci.nsIMIMEInfo.saveToDisk;
-          aLauncher.saveToDisk(null, false);
-          return true;
-        }
-      });
-    }
-
     
-    if (apps.length === 0) {
-      this._refuseDownload(aLauncher);
-      return;
-    }
+    apps.unshift({
+      name: bundle.GetStringFromName("helperapps.saveToDisk"),
+      packageName: "org.mozilla.gecko.Download",
+      iconUri: "drawable://icon",
+      selected: true, 
+      launch: function() {
+        
+        aLauncher.MIMEInfo.preferredAction = Ci.nsIMIMEInfo.saveToDisk;
+        aLauncher.saveToDisk(null, false);
+        return true;
+      }
+    });
 
     let callback = function(app) {
       aLauncher.MIMEInfo.preferredAction = Ci.nsIMIMEInfo.useHelperApp;
@@ -183,16 +176,6 @@ HelperAppLauncherDialog.prototype = {
         this._setPreferredApp(aLauncher, apps[data.icongrid0]);
       }
     });
-  },
-
-  _refuseDownload: function(aLauncher) {
-    aLauncher.cancel(Cr.NS_BINDING_ABORTED);
-
-    Services.console.logStringMessage("Refusing download of non-downloadable file.");
-
-    let bundle = Services.strings.createBundle("chrome://browser/locale/handling.properties");
-
-    Snackbars.show(bundle.GetStringFromName("download.blocked"), Snackbars.LENGTH_LONG);
   },
 
   _getPrefName: function getPrefName(mimetype) {
