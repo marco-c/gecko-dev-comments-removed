@@ -1,6 +1,9 @@
 
 
 
+"use strict";
+
+const { flatten } = require("resource://devtools/shared/ThreadSafeDevToolsUtils.js");
 
 
 
@@ -62,6 +65,10 @@ Visitor.prototype.count = function (breakdown, report, edge) { }
 const EDGES = Object.create(null);
 
 EDGES.count = function (breakdown, report) {
+  return [];
+};
+
+EDGES.bucket = function (breakdown, report) {
   return [];
 };
 
@@ -460,4 +467,23 @@ exports.getReportLeaves = function(indices, breakdown, report) {
   const visitor = new GetLeavesVisitor(indices);
   walk(breakdown, report, visitor);
   return visitor.leaves();
+};
+
+
+
+
+
+
+
+
+
+
+
+exports.getCensusIndividuals = function(indices, countBreakdown, snapshot) {
+  const bucketBreakdown = exports.countToBucketBreakdown(countBreakdown);
+  const bucketReport = snapshot.takeCensus({ breakdown: bucketBreakdown });
+  const buckets = exports.getReportLeaves(indices,
+                                          bucketBreakdown,
+                                          bucketReport);
+  return flatten(buckets);
 };
