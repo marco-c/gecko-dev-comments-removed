@@ -165,7 +165,6 @@ HashStore::HashStore(const nsACString& aTableName, nsIFile* aStoreDir)
   : mTableName(aTableName)
   , mStoreDirectory(aStoreDir)
   , mInUpdate(false)
-  , mFileSize(0)
 {
 }
 
@@ -188,18 +187,13 @@ HashStore::Reset()
   rv = storeFile->Remove(false);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mFileSize = 0;
-
   return NS_OK;
 }
 
 nsresult
-HashStore::CheckChecksum(uint32_t aFileSize)
+HashStore::CheckChecksum(nsIFile* aStoreFile,
+                         uint32_t aFileSize)
 {
-  if (!mInputStream) {
-    return NS_OK;
-  }
-
   
   
   nsAutoCString hash;
@@ -261,13 +255,19 @@ HashStore::Open()
     return NS_ERROR_FAILURE;
   }
 
-  mFileSize = static_cast<uint32_t>(fileSize);
-  mInputStream = NS_BufferInputStream(origStream, mFileSize);
+  uint32_t fileSize32 = static_cast<uint32_t>(fileSize);
+  mInputStream = NS_BufferInputStream(origStream, fileSize32);
+
+  rv = CheckChecksum(storeFile, fileSize32);
+  SUCCESS_OR_RESET(rv);
 
   rv = ReadHeader();
   SUCCESS_OR_RESET(rv);
 
   rv = SanityCheck();
+  SUCCESS_OR_RESET(rv);
+
+  rv = ReadChunkNumbers();
   SUCCESS_OR_RESET(rv);
 
   return NS_OK;
@@ -363,9 +363,7 @@ HashStore::UpdateHeader()
 nsresult
 HashStore::ReadChunkNumbers()
 {
-  if (!mInputStream || AlreadyReadChunkNumbers()) {
-    return NS_OK;
-  }
+  NS_ENSURE_STATE(mInputStream);
 
   nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mInputStream);
   nsresult rv = seekable->Seek(nsISeekableStream::NS_SEEK_SET,
@@ -405,65 +403,11 @@ HashStore::ReadHashes()
   rv = ReadSubPrefixes();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  if (AlreadyReadCompletions()) {
-    return NS_OK;
-  }
-
   rv = ReadTArray(mInputStream, &mAddCompletes, mHeader.numAddCompletes);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = ReadTArray(mInputStream, &mSubCompletes, mHeader.numSubCompletes);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-
-nsresult
-HashStore::ReadCompletions()
-{
-  if (!mInputStream || AlreadyReadCompletions()) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIFile> storeFile;
-  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(storeFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = storeFile->AppendNative(mTableName + NS_LITERAL_CSTRING(STORE_SUFFIX));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  uint32_t offset = mFileSize -
-                    sizeof(struct AddComplete) * mHeader.numAddCompletes -
-                    sizeof(struct SubComplete) * mHeader.numSubCompletes -
-                    nsCheckSummedOutputStream::CHECKSUM_SIZE;
-
-  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mInputStream);
-
-  rv = seekable->Seek(nsISeekableStream::NS_SEEK_SET, offset);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = ReadTArray(mInputStream, &mAddCompletes, mHeader.numAddCompletes);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = ReadTArray(mInputStream, &mSubCompletes, mHeader.numSubCompletes);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-nsresult
-HashStore::PrepareForUpdate()
-{
-  nsresult rv = CheckChecksum(mFileSize);
-  SUCCESS_OR_RESET(rv);
-
-  rv = ReadChunkNumbers();
-  SUCCESS_OR_RESET(rv);
-
-  rv = ReadHashes();
-  SUCCESS_OR_RESET(rv);
 
   return NS_OK;
 }
@@ -472,9 +416,8 @@ nsresult
 HashStore::BeginUpdate()
 {
   
-  
-  nsresult rv = PrepareForUpdate();
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = ReadHashes();
+  SUCCESS_OR_RESET(rv);
 
   
   
@@ -1121,62 +1064,6 @@ HashStore::AugmentAdds(const nsTArray<uint32_t>& aPrefixes)
     mAddPrefixes[i].prefix.FromUint32(aPrefixes[i]);
   }
   return NS_OK;
-}
-
-ChunkSet&
-HashStore::AddChunks()
-{
-  ReadChunkNumbers();
-
-  return mAddChunks;
-}
-
-ChunkSet&
-HashStore::SubChunks()
-{
-  ReadChunkNumbers();
-
-  return mSubChunks;
-}
-
-AddCompleteArray&
-HashStore::AddCompletes()
-{
-  ReadCompletions();
-
-  return mAddCompletes;
-}
-
-SubCompleteArray&
-HashStore::SubCompletes()
-{
-  ReadCompletions();
-
-  return mSubCompletes;
-}
-
-bool
-HashStore::AlreadyReadChunkNumbers()
-{
-  
-  
-  if ((mHeader.numAddChunks != 0 && mAddChunks.Length() == 0) ||
-      (mHeader.numSubChunks != 0 && mSubChunks.Length() == 0)) {
-    return false;
-  }
-  return true;
-}
-
-bool
-HashStore::AlreadyReadCompletions()
-{
-  
-  
-  if ((mHeader.numAddCompletes != 0 && mAddCompletes.Length() == 0) ||
-      (mHeader.numSubCompletes != 0 && mSubCompletes.Length() == 0)) {
-    return false;
-  }
-  return true;
 }
 
 } 

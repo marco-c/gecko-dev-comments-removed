@@ -108,13 +108,10 @@ public:
   
   nsresult Build(AddPrefixArray& aAddPrefixes,
                  AddCompleteArray& aAddCompletes);
-  nsresult AddCompletionsToCache(AddCompleteArray& aAddCompletes);
   nsresult GetPrefixes(FallibleTArray<uint32_t>& aAddPrefixes);
-  void ClearUpdatedCompletions();
-  void ClearCache();
+  void ClearCompleteCache();
 
 #if DEBUG
-  void DumpCache();
   void Dump();
 #endif
   nsresult WriteFile();
@@ -125,22 +122,28 @@ public:
 private:
   void ClearAll();
   nsresult Reset();
-  nsresult ReadCompletions();
+  void UpdateHeader();
+  nsresult ReadHeader(nsIInputStream* aInputStream);
+  nsresult ReadCompletions(nsIInputStream* aInputStream);
+  nsresult EnsureSizeConsistent();
   nsresult LoadPrefixSet();
-  nsresult LoadCompletions();
   
   
   nsresult ConstructPrefixSet(AddPrefixArray& aAddPrefixes);
 
+  struct Header {
+    uint32_t magic;
+    uint32_t version;
+    uint32_t numCompletions;
+  };
+  Header mHeader;
+
   bool mPrimed;
   nsCString mTableName;
   nsCOMPtr<nsIFile> mStoreDirectory;
+  CompletionArray mCompletions;
   
   RefPtr<nsUrlClassifierPrefixSet> mPrefixSet;
-  
-  CompletionArray mUpdateCompletions;
-  
-  CompletionArray mGetHashCache;
 };
 
 } 

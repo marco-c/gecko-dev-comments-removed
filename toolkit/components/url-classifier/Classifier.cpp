@@ -308,7 +308,7 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
     if ((*aUpdates)[i]) {
       
       nsCString updateTable(aUpdates->ElementAt(i)->TableName());
-      rv = UpdateHashStore(aUpdates, updateTable);
+      rv = ApplyTableUpdates(aUpdates, updateTable);
       if (NS_FAILED(rv)) {
         if (rv != NS_ERROR_OUT_OF_MEMORY) {
           Reset();
@@ -345,25 +345,6 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
 }
 
 nsresult
-Classifier::ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates)
-{
-  LOG(("Applying %d table gethashes.", aUpdates->Length()));
-
-  for (uint32_t i = 0; i < aUpdates->Length(); i++) {
-    TableUpdate *update = aUpdates->ElementAt(i);
-
-    nsresult rv = UpdateCache(update);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    aUpdates->ElementAt(i) = nullptr;
-    delete update;
-  }
-  aUpdates->Clear();
-
-  return NS_OK;
-}
-
-nsresult
 Classifier::MarkSpoiled(nsTArray<nsCString>& aTables)
 {
   for (uint32_t i = 0; i < aTables.Length(); i++) {
@@ -373,18 +354,10 @@ Classifier::MarkSpoiled(nsTArray<nsCString>& aTables)
     
     LookupCache *cache = GetLookupCache(aTables[i]);
     if (cache) {
-      cache->ClearCache();
+      cache->ClearCompleteCache();
     }
   }
   return NS_OK;
-}
-
-int64_t
-Classifier::GetLastUpdateTime(const nsACString& aTableName)
-{
-  int64_t age;
-  bool found = mTableFreshness.Get(aTableName, &age);
-  return found ? (age * PR_MSEC_PER_SEC) : 0;
 }
 
 void
@@ -577,17 +550,24 @@ Classifier::RecoverBackups()
   return NS_OK;
 }
 
-bool
-Classifier::CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
-                             const nsACString& aTable)
+
+
+
+nsresult
+Classifier::ApplyTableUpdates(nsTArray<TableUpdate*>* aUpdates,
+                              const nsACString& aTable)
 {
+  LOG(("Classifier::ApplyTableUpdates(%s)", PromiseFlatCString(aTable).get()));
+
+  HashStore store(aTable, mStoreDirectory);
+
   
   
   uint32_t validupdates = 0;
 
   for (uint32_t i = 0; i < aUpdates->Length(); i++) {
     TableUpdate *update = aUpdates->ElementAt(i);
-    if (!update || !update->TableName().Equals(aTable))
+    if (!update || !update->TableName().Equals(store.TableName()))
       continue;
     if (update->Empty()) {
       aUpdates->ElementAt(i) = nullptr;
@@ -599,24 +579,6 @@ Classifier::CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
 
   if (!validupdates) {
     
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
-nsresult
-Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
-                            const nsACString& aTable)
-{
-  LOG(("Classifier::UpdateHashStore(%s)", PromiseFlatCString(aTable).get()));
-
-  HashStore store(aTable, mStoreDirectory);
-
-  if (!CheckValidUpdate(aUpdates, store.TableName())) {
     return NS_OK;
   }
 
@@ -626,22 +588,20 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  LookupCache *lookupCache = GetLookupCache(store.TableName());
-  if (!lookupCache) {
+  LookupCache *prefixSet = GetLookupCache(store.TableName());
+  if (!prefixSet) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  lookupCache->ClearCache();
-
   FallibleTArray<uint32_t> AddPrefixHashes;
-  rv = lookupCache->GetPrefixes(AddPrefixHashes);
+  rv = prefixSet->GetPrefixes(AddPrefixHashes);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = store.AugmentAdds(AddPrefixHashes);
   NS_ENSURE_SUCCESS(rv, rv);
   AddPrefixHashes.Clear();
 
   uint32_t applied = 0;
+  bool updateFreshness = false;
+  bool hasCompletes = false;
 
   for (uint32_t i = 0; i < aUpdates->Length(); i++) {
     TableUpdate *update = aUpdates->ElementAt(i);
@@ -663,6 +623,17 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
     LOG(("  %d add expirations", update->AddExpirations().Length()));
     LOG(("  %d sub expirations", update->SubExpirations().Length()));
 
+    if (!update->IsLocalUpdate()) {
+      updateFreshness = true;
+      LOG(("Remote update, updating freshness"));
+    }
+
+    if (update->AddCompletes().Length() > 0
+        || update->SubCompletes().Length() > 0) {
+      hasCompletes = true;
+      LOG(("Contains Completes, keeping cache."));
+    }
+
     aUpdates->ElementAt(i) = nullptr;
     delete update;
   }
@@ -671,6 +642,11 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
 
   rv = store.Rebuild();
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  if (!hasCompletes) {
+    store.ClearCompletes();
+  }
 
   LOG(("Table %s now has:", store.TableName().get()));
   LOG(("  %d add chunks", store.AddChunks().Length()));
@@ -685,40 +661,20 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
 
   
   
-  rv = lookupCache->Build(store.AddPrefixes(), store.AddCompletes());
+  rv = prefixSet->Build(store.AddPrefixes(), store.AddCompletes());
   NS_ENSURE_SUCCESS(rv, rv);
 
 #if defined(DEBUG)
-  lookupCache->Dump();
+  prefixSet->Dump();
 #endif
-  rv = lookupCache->WriteFile();
+  rv = prefixSet->WriteFile();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  int64_t now = (PR_Now() / PR_USEC_PER_SEC);
-  LOG(("Successfully updated %s", store.TableName().get()));
-  mTableFreshness.Put(store.TableName(), now);
-
-  return NS_OK;
-}
-
-nsresult
-Classifier::UpdateCache(TableUpdate* aUpdate)
-{
-  if (!aUpdate) {
-    return NS_OK;
+  if (updateFreshness) {
+    int64_t now = (PR_Now() / PR_USEC_PER_SEC);
+    LOG(("Successfully updated %s", store.TableName().get()));
+    mTableFreshness.Put(store.TableName(), now);
   }
-
-  nsAutoCString table(aUpdate->TableName());
-  LOG(("Classifier::UpdateCache(%s)", table.get()));
-
-  LookupCache *lookupCache = GetLookupCache(table);
-  NS_ENSURE_TRUE(lookupCache, NS_ERROR_FAILURE);
-
-  lookupCache->AddCompletionsToCache(aUpdate->AddCompletes());
-
-#if defined(DEBUG)
-  lookupCache->DumpCache();
-#endif
 
   return NS_OK;
 }
