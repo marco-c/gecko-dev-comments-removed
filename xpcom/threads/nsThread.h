@@ -222,9 +222,6 @@ protected:
   
   bool mEventsAreDoomed;
   MainThreadFlag mIsMainThread;
-
-  
-  bool mCanInvokeJS;
 };
 
 #if defined(XP_UNIX) && !defined(ANDROID) && !defined(DEBUG) && HAVE_UALARM \
