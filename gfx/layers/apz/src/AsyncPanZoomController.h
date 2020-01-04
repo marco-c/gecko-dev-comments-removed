@@ -1156,8 +1156,12 @@ private:
   
   
   
-  bool MaybeAdjustDeltaForScrollSnapping(ParentLayerPoint& aDelta,
-                                         const ScrollWheelInput& aEvent);
+  
+  
+  
+  bool MaybeAdjustDeltaForScrollSnapping(const ScrollWheelInput& aEvent,
+                                         ParentLayerPoint& aDelta,
+                                         CSSPoint& aStartPosition);
 
   
   void ScrollSnap();

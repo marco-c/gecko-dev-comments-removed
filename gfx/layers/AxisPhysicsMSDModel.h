@@ -27,7 +27,7 @@ public:
   
 
 
-  double GetDestination();
+  double GetDestination() const;
 
   
 
