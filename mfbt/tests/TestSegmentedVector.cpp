@@ -99,6 +99,25 @@ void TestBasics()
   v.Clear();
   MOZ_RELEASE_ASSERT(v.IsEmpty());
   MOZ_RELEASE_ASSERT(v.Length() == 0);
+
+  
+  for (i = 0; i < 1000; ++i) {
+    v.InfallibleAppend(mozilla::Move(i));
+  }
+  MOZ_RELEASE_ASSERT(!v.IsEmpty());
+  MOZ_RELEASE_ASSERT(v.Length() == 1000);
+
+  
+  v.PopLastN(300);
+  MOZ_RELEASE_ASSERT(v.Length() == 700);
+
+  
+  n = 0;
+  for (auto iter = v.Iter(); !iter.Done(); iter.Next()) {
+    MOZ_RELEASE_ASSERT(iter.Get() == n);
+    n++;
+  }
+  MOZ_RELEASE_ASSERT(n == 700);
 }
 
 static size_t gNumDefaultCtors;
@@ -127,10 +146,12 @@ void TestConstructorsAndDestructors()
   size_t dtorCalls = 0;
 
   {
+    static const size_t segmentSize = 64;
+
     
     NonPOD x(1);                          
     explicitCtorCalls++;
-    SegmentedVector<NonPOD, 64, InfallibleAllocPolicy> v;
+    SegmentedVector<NonPOD, segmentSize, InfallibleAllocPolicy> v;
                                           
     MOZ_RELEASE_ASSERT(v.IsEmpty());
     gDummy = v.Append(x);                 
@@ -148,6 +169,70 @@ void TestConstructorsAndDestructors()
     MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
     v.Clear();                            
     dtorCalls += 2;
+
+    
+    
+    
+    
+    
+    
+    static_assert(sizeof(NonPOD) == 1, "Fix length calculations!");
+
+    size_t nonFullLastSegmentSize = segmentSize - 1;
+    for (size_t i = 0; i < nonFullLastSegmentSize; ++i) {
+      gDummy = v.Append(x);     
+      copyCtorCalls++;
+    }
+    MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
+
+    
+    {
+      size_t partialPopAmount = 5;
+      MOZ_RELEASE_ASSERT(nonFullLastSegmentSize > partialPopAmount);
+      v.PopLastN(partialPopAmount); 
+      dtorCalls += partialPopAmount;
+      MOZ_RELEASE_ASSERT(v.Length() == nonFullLastSegmentSize - partialPopAmount);
+      MOZ_RELEASE_ASSERT(!v.IsEmpty());
+      MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
+    }
+
+    
+    {
+      size_t length = v.Length();
+      v.PopLastN(length);
+      dtorCalls += length;
+      
+      
+      
+      MOZ_RELEASE_ASSERT(v.Length() == 0);
+      MOZ_RELEASE_ASSERT(v.IsEmpty());
+      MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
+    }
+
+    size_t multipleSegmentsSize = (segmentSize * 3) / 2;
+    for (size_t i = 0; i < multipleSegmentsSize; ++i) {
+      gDummy = v.Append(x);     
+      copyCtorCalls++;
+    }
+    MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
+
+    
+    {
+      v.PopLastN(segmentSize);
+      dtorCalls += segmentSize;
+      MOZ_RELEASE_ASSERT(v.Length() == (multipleSegmentsSize - segmentSize));
+      MOZ_RELEASE_ASSERT(!v.IsEmpty());
+      MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
+    }
+
+    
+    {
+      size_t length = v.Length();
+      v.Clear();
+      dtorCalls += length;
+      MOZ_RELEASE_ASSERT(v.IsEmpty());
+      MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
+    }
 
     MOZ_RELEASE_ASSERT(gNumDefaultCtors  == defaultCtorCalls);
     MOZ_RELEASE_ASSERT(gNumExplicitCtors == explicitCtorCalls);
