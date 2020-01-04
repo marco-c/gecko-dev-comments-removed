@@ -20,7 +20,7 @@ const DEVICE_PREF="sanity-test.device-id";
 const VERSION_PREF="sanity-test.version";
 const DISABLE_VIDEO_PREF="media.hardware-video-decoding.failed";
 const RUNNING_PREF="sanity-test.running";
-const TIMEOUT_SEC=6;
+const TIMEOUT_SEC=20;
 
 
 const TEST_PASSED=0;
@@ -220,11 +220,14 @@ var listener = {
     this.utils = null;
     this.canvas = null;
 
-    this.messages.forEach((msgName) => {
-      this.mm.removeMessageListener(msgName, this);
-    });
+    if (this.mm) {
+      
+      this.messages.forEach((msgName) => {
+        this.mm.removeMessageListener(msgName, this);
+      });
 
-    this.mm = null;
+      this.mm = null;
+    }
   
     
     
