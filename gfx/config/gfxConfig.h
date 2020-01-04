@@ -63,7 +63,8 @@ public:
                          const char* aDisableMessage);
   static void DisableByDefault(Feature aFeature,
                                FeatureStatus aDisableStatus,
-                               const char* aDisableMessage);
+                               const char* aDisableMessage,
+                               const nsACString& aFailureId = EmptyCString());
   static void EnableByDefault(Feature aFeature);
 
   
@@ -73,7 +74,8 @@ public:
   
   static void Disable(Feature aFeature,
                       FeatureStatus aStatus,
-                      const char* aMessage);
+                      const char* aMessage,
+                      const nsACString& aFailureId = EmptyCString());
 
   
   
@@ -88,25 +90,28 @@ public:
   
   static void SetFailed(Feature aFeature,
                         FeatureStatus aStatus,
-                        const char* aMessage);
+                        const char* aMessage,
+                        const nsACString& aFailureId = EmptyCString());
 
   
   
   static void ForceDisable(Feature aFeature,
                            FeatureStatus aStatus,
-                           const char* aMessage)
+                           const char* aMessage,
+                           const nsACString& aFailureId = EmptyCString())
   {
-    SetFailed(aFeature, aStatus, aMessage);
+    SetFailed(aFeature, aStatus, aMessage, aFailureId);
   }
 
   
   static bool MaybeSetFailed(Feature aFeature,
                              bool aEnable,
                              FeatureStatus aDisableStatus,
-                             const char* aDisableMessage)
+                             const char* aDisableMessage,
+                             const nsACString& aFailureId = EmptyCString())
   {
     if (!aEnable) {
-      SetFailed(aFeature, aDisableStatus, aDisableMessage);
+      SetFailed(aFeature, aDisableStatus, aDisableMessage, aFailureId);
       return false;
     }
     return true;
@@ -115,14 +120,15 @@ public:
   
   static bool MaybeSetFailed(Feature aFeature,
                              FeatureStatus aStatus,
-                             const char* aDisableMessage)
+                             const char* aDisableMessage,
+                             const nsACString& aFailureId = EmptyCString())
   {
     return MaybeSetFailed(
       aFeature,
       (aStatus != FeatureStatus::Available &&
        aStatus != FeatureStatus::ForceEnabled),
       aStatus,
-      aDisableMessage);
+      aDisableMessage, aFailureId);
   }
 
   
@@ -144,7 +150,7 @@ public:
   
   static void UserEnable(Feature aFeature, const char* aMessage);
   static void UserForceEnable(Feature aFeature, const char* aMessage);
-  static void UserDisable(Feature aFeature, const char* aMessage);
+  static void UserDisable(Feature aFeature, const char* aMessage, const nsACString& aFailureId = EmptyCString());
 
   
   static bool UseFallback(Fallback aFallback);
@@ -162,6 +168,12 @@ public:
   typedef mozilla::function<void(const char* aName, const char* aMsg)> 
     FallbackIterCallback;
   static void ForEachFallback(const FallbackIterCallback& aCallback);
+
+  
+  static const nsACString& GetFailureId(Feature aFeature);
+
+  static void Init();
+  static void Shutdown();
 
 private:
   void ForEachFallbackImpl(const FallbackIterCallback& aCallback);
