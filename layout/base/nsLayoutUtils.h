@@ -169,7 +169,7 @@ public:
 
 
 
-  static bool GetDisplayPortRelativeToScrollPort(nsIContent* aContent, nsRect *aResult);
+  static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult);
 
   
 

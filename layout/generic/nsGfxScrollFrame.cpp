@@ -2540,7 +2540,7 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
   }
 
   nsRect oldDisplayPort;
-  nsLayoutUtils::GetDisplayPortRelativeToScrollPort(mOuter->GetContent(), &oldDisplayPort);
+  nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &oldDisplayPort);
   oldDisplayPort.MoveBy(-mScrolledFrame->GetPosition());
 
   
@@ -2557,7 +2557,7 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
     
     nsRect displayPort;
     DebugOnly<bool> usingDisplayPort =
-      nsLayoutUtils::GetDisplayPortRelativeToScrollPort(mOuter->GetContent(), &displayPort);
+      nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
     NS_ASSERTION(usingDisplayPort, "Must have a displayport for apz scrolls!");
 
     displayPort.MoveBy(-mScrolledFrame->GetPosition());
