@@ -128,8 +128,6 @@ struct OverscrollHandoffState {
   ScrollSource mScrollSource;
 };
 
-#undef NS_INLINE_DECL_THREADSAFE_MUTABLE_REFCOUNTING
-
 } 
 } 
 
