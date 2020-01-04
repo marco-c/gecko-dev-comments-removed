@@ -951,6 +951,7 @@ protected:
   bool mDeviceSizeIsPageSize : 1;
   bool mWindowDraggingAllowed : 1;
   bool mInFrameSwap : 1;
+  bool mInheritPrivateBrowsingId : 1;
 
   
   
