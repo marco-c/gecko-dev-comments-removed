@@ -51,10 +51,12 @@ var chunk6 = chunk6Urls.join("\n");
 
 
 
+
 var phishExpected = {};
 var phishUnexpected = {};
 var malwareExpected = {};
 var unwantedExpected = {};
+var forbiddenExpected = {};
 for (var i = 0; i < chunk2Urls.length; i++) {
   phishExpected[chunk2Urls[i]] = true;
   malwareExpected[chunk2Urls[i]] = true;
@@ -69,6 +71,7 @@ for (var i = 0; i < chunk1Urls.length; i++) {
   phishUnexpected[chunk1Urls[i]] = true;
 }
 for (var i = 0; i < chunk4Urls.length; i++) {
+  forbiddenExpected[chunk4Urls[i]] = true;
   
   phishUnexpected[chunk4Urls[i]] = true;
 }
@@ -117,7 +120,7 @@ function tablesCallbackWithoutSub(tables)
   
   
   do_check_eq(parts.join("\n"),
-              "\ntest-malware-simple;a:1\ntest-phish-simple;a:2\ntest-unwanted-simple;a:1");
+              "\ntest-forbid-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2\ntest-unwanted-simple;a:1");
 
   checkNoHost();
 }
@@ -135,7 +138,7 @@ function tablesCallbackWithSub(tables)
   
   
   do_check_eq(parts.join("\n"),
-              "\ntest-malware-simple;a:1\ntest-phish-simple;a:2:s:3\ntest-unwanted-simple;a:1");
+              "\ntest-forbid-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2:s:3\ntest-unwanted-simple;a:1");
 
   
   var data =
@@ -194,6 +197,16 @@ function unwantedExists(result) {
   }
 }
 
+function forbiddenExists(result) {
+  dumpn("forbiddenExists: " + result);
+
+  try {
+    do_check_true(result.indexOf("test-forbid-simple") != -1);
+  } finally {
+    checkDone();
+  }
+}
+
 function checkState()
 {
   numExpecting = 0;
@@ -220,6 +233,12 @@ function checkState()
   for (var key in unwantedExpected) {
     var principal = secMan.createCodebasePrincipal(iosvc.newURI("http://" + key, null, null), {});
     dbservice.lookup(principal, allTables, unwantedExists, true);
+    numExpecting++;
+  }
+
+  for (var key in forbiddenExpected) {
+    var principal = secMan.createCodebasePrincipal(iosvc.newURI("http://" + key, null, null), {});
+    dbservice.lookup(principal, allTables, forbiddenExists, true);
     numExpecting++;
   }
 }
@@ -268,10 +287,13 @@ function do_adds() {
     chunk6 + "\n" +
     "i:test-malware-simple\n" +
     "a:1:32:" + chunk2.length + "\n" +
-      chunk2 + "\n" +
+    chunk2 + "\n" +
     "i:test-unwanted-simple\n" +
     "a:1:32:" + chunk3.length + "\n" +
-      chunk3 + "\n";
+    chunk3 + "\n" +
+    "i:test-forbid-simple\n" +
+    "a:1:32:" + chunk4.length + "\n" +
+    chunk4 + "\n";
 
   doSimpleUpdate(data, testAddSuccess, testFailure);
 }
