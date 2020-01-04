@@ -19,7 +19,7 @@ function test() {
 
       
       let group = contentWindow.GroupItems.groupItems[0];
-      hideGroupItem(group, function () restore(group.id));
+      hideGroupItem(group, () => restore(group.id));
     },
     function(newWin) {
       win = newWin;
