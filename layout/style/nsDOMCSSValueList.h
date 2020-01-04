@@ -27,7 +27,7 @@ public:
   
 
 
-  void AppendCSSValue(CSSValue* aValue);
+  void AppendCSSValue(already_AddRefed<CSSValue> aValue);
 
   virtual void GetCssText(nsString& aText, mozilla::ErrorResult& aRv)
     override final;

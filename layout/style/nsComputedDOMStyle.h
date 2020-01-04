@@ -607,7 +607,7 @@ private:
 
   
   void SetCssTextToCoord(nsAString& aCssText, const nsStyleCoord& aCoord);
-  mozilla::dom::CSSValue* CreatePrimitiveValueForStyleFilter(
+  already_AddRefed<mozilla::dom::CSSValue> CreatePrimitiveValueForStyleFilter(
     const nsStyleFilter& aStyleFilter);
 
   
