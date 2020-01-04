@@ -358,7 +358,7 @@ public:
 
 
 
-  static Layer* GetDebugSingleOldLayerForFrame(nsIFrame* aFrame);
+  static PaintedLayer* GetDebugSingleOldPaintedLayerForFrame(nsIFrame* aFrame);
 
   
 
