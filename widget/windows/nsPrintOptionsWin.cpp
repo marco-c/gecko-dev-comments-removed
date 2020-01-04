@@ -126,23 +126,27 @@ nsPrintOptionsWin::DeserializeToPrintSettings(const PrintData& data,
     nsXPIDLString printerName;
     settings->GetPrinterName(getter_Copies(printerName));
 
-    DEVMODEW* devModeRaw = (DEVMODEW*)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY,
-                                                  data.devModeData().Length());
-    if (!devModeRaw) {
-      return NS_ERROR_OUT_OF_MEMORY;
+    if (data.devModeData().IsEmpty()) {
+      psWin->SetDevMode(nullptr);
+    } else {
+      
+      auto devModeDataLength = data.devModeData().Length();
+      if (devModeDataLength < sizeof(DEVMODEW)) {
+        NS_WARNING("DEVMODE data is too short.");
+        return NS_ERROR_FAILURE;
+      }
+
+      DEVMODEW* devMode = reinterpret_cast<DEVMODEW*>(
+        const_cast<uint8_t*>(data.devModeData().Elements()));
+
+      
+      if ((devMode->dmSize + devMode->dmDriverExtra) != devModeDataLength) {
+        NS_WARNING("DEVMODE length is incorrect.");
+        return NS_ERROR_FAILURE;
+      }
+
+      psWin->SetDevMode(devMode); 
     }
-
-    nsAutoDevMode devMode(devModeRaw);
-    devModeRaw = nullptr;
-
-    
-    
-    
-    
-    
-    memcpy(devMode.get(), data.devModeData().Elements(), data.devModeData().Length());
-
-    psWin->SetDevMode(devMode); 
   }
 
   return NS_OK;
