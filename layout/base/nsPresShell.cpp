@@ -4569,6 +4569,24 @@ PresShell::GetPlaceholderFrameFor(nsIFrame* aFrame) const
   return mFrameConstructor->GetPlaceholderFrameFor(aFrame);
 }
 
+static void
+SendUpdateVisibleRegion(CompositorBridgeChild* aCompositorChild,
+                        const VisibleRegions& aRegions,
+                        VisibilityCounter aCounter,
+                        uint64_t aLayersId,
+                        uint32_t aPresShellId)
+{
+  for (auto iter = aRegions.ConstIter(); !iter.Done(); iter.Next()) {
+    const ViewID viewId = iter.Key();
+    const CSSIntRegion* region = iter.UserData();
+    MOZ_ASSERT(region);
+
+    const ScrollableLayerGuid guid(aLayersId, aPresShellId, viewId);
+
+    aCompositorChild->SendUpdateVisibleRegion(aCounter, guid, *region);
+  }
+}
+
 void
 PresShell::NotifyCompositorOfVisibleRegionsChange()
 {
@@ -4588,7 +4606,8 @@ PresShell::NotifyCompositorOfVisibleRegionsChange()
   const uint32_t presShellId = GetPresShellId();
 
   
-  LayerManager* layerManager = GetLayerManager();
+  
+  LayerManager* layerManager = GetRootLayerManager();
   if (!layerManager) {
     return;
   }
@@ -4607,31 +4626,15 @@ PresShell::NotifyCompositorOfVisibleRegionsChange()
   compositorChild->SendClearVisibleRegions(layersId, presShellId);
 
   
-  for (auto iter = mVisibleRegions->mApproximate.ConstIter();
-      !iter.Done();
-      iter.Next()) {
-    const ViewID viewId = iter.Key();
-    const CSSIntRegion* region = iter.UserData();
-    MOZ_ASSERT(region);
+  SendUpdateVisibleRegion(compositorChild,
+                          mVisibleRegions->mApproximate,
+                          VisibilityCounter::MAY_BECOME_VISIBLE,
+                          layersId, presShellId);
 
-    const ScrollableLayerGuid guid(layersId, presShellId, viewId);
-
-    compositorChild->SendUpdateVisibleRegion(VisibilityCounter::MAY_BECOME_VISIBLE,
-                                             guid, *region);
-  }
-
-  for (auto iter = mVisibleRegions->mInDisplayPort.ConstIter();
-      !iter.Done();
-      iter.Next()) {
-    const ViewID viewId = iter.Key();
-    const CSSIntRegion* region = iter.UserData();
-    MOZ_ASSERT(region);
-
-    const ScrollableLayerGuid guid(layersId, presShellId, viewId);
-
-    compositorChild->SendUpdateVisibleRegion(VisibilityCounter::IN_DISPLAYPORT,
-                                             guid, *region);
-  }
+  SendUpdateVisibleRegion(compositorChild,
+                          mVisibleRegions->mInDisplayPort,
+                          VisibilityCounter::IN_DISPLAYPORT,
+                          layersId, presShellId);
 }
 
 nsresult
@@ -5341,6 +5344,28 @@ LayerManager* PresShell::GetLayerManager()
       return widget->GetLayerManager();
     }
   }
+  return nullptr;
+}
+
+LayerManager*
+PresShell::GetRootLayerManager()
+{
+  MOZ_ASSERT(mViewManager);
+  nsViewManager* viewManager = mViewManager;
+
+  while (nsView* view = viewManager->GetRootView()) {
+    if (nsIWidget* widget = view->GetWidget()) {
+      return widget->GetLayerManager();
+    }
+
+    nsView* parentView = view->GetParent();
+    if (!parentView) {
+      return nullptr;
+    }
+
+    viewManager = parentView->GetViewManager();
+  }
+
   return nullptr;
 }
 
