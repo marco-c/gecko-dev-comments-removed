@@ -75,7 +75,12 @@ public:
 
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
-  bool HasPendingRestyles() { return !mModifiedElements.IsEmpty(); }
+  bool HasPendingRestyles()
+  {
+    return !mModifiedElements.IsEmpty() ||
+           PresContext()->Document()->HasDirtyDescendantsForServo();
+  }
+
 
   
 
