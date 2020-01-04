@@ -267,13 +267,6 @@ PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> v
     if (!values.growBy(keys.length()))
         return false;
 
-    RootedAtom capabilitiesAtom(cx, Atomize(cx, "capabilities", strlen("capabilities")));
-    if (!capabilitiesAtom)
-        return false;
-    RootedId capabilitiesId(cx, AtomToId(capabilitiesAtom));
-
-    
-    
     
     
     
@@ -289,10 +282,7 @@ PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> v
         if (!GetProperty(cx, rejectReactions, rejectReactions, keys[i], val))
             return false;
         RootedObject reaction(cx, &val.toObject());
-        if (!GetProperty(cx, reaction, reaction, capabilitiesId, val))
-            return false;
-        RootedObject capabilities(cx, &val.toObject());
-        if (!GetProperty(cx, capabilities, capabilities, cx->runtime()->commonNames->promise, val))
+        if (!GetProperty(cx, reaction, reaction, cx->runtime()->commonNames->promise, val))
             return false;
     }
 
