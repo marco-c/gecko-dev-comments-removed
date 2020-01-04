@@ -93,6 +93,9 @@ add_task(function* testPathObj() {
   };
   let localWrapper = {
     shouldInject(ns, name) {
+      if (name === null) {
+        return true;  
+      }
       if (ns == "ret_obj") {
         return localApi;
       } else if (ns == "dot.obj") {

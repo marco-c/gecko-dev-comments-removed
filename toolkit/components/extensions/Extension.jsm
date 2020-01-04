@@ -75,6 +75,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "uuidGen",
 const BASE_SCHEMA = "chrome://extensions/content/schemas/manifest.json";
 const CATEGORY_EXTENSION_SCHEMAS = "webextension-schemas";
 const CATEGORY_EXTENSION_SCRIPTS = "webextension-scripts";
+const CATEGORY_EXTENSION_SCRIPTS_CONTENT = "webextension-scripts-content";
 
 let schemaURLs = new Set();
 
@@ -139,6 +140,14 @@ var Management = new class extends SchemaAPIManager {
     });
 
     for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS)) {
+      this.loadScript(value);
+    }
+
+    
+    
+    
+    
+    for (let [, value] of XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS_CONTENT)) {
       this.loadScript(value);
     }
 
@@ -604,7 +613,12 @@ GlobalManager = {
         return context.wrapPromise(promise || Promise.resolve(), callback);
       },
 
-      shouldInject(namespace, name) {
+      shouldInject(namespace, name, restrictions) {
+        
+        if (context.envType === "content_parent" &&
+            (!restrictions || !restrictions.includes("content"))) {
+          return false;
+        }
         return findPathInObject(apis, [namespace]) != null;
       },
 
