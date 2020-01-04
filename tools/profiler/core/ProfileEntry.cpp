@@ -471,6 +471,8 @@ void UniqueStacks::StreamFrame(const OnStackFrameKey& aFrame)
     if (aFrame.mCategory.isSome()) {
       if (aFrame.mLine.isNothing()) {
         mFrameTableWriter.NullElement(); 
+        mFrameTableWriter.NullElement(); 
+        mFrameTableWriter.NullElement(); 
       }
       mFrameTableWriter.IntElement(*aFrame.mCategory);
     }
