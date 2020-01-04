@@ -220,9 +220,12 @@ protected:
   GraphTime StateComputedTime() const;
 
   
+  
   GraphTime mIterationStart;
   
+  
   GraphTime mIterationEnd;
+  
   
   
   MediaStreamGraphImpl* mGraphImpl;
@@ -240,13 +243,24 @@ protected:
     
     WAITSTATE_WAKING_UP
   };
+  
   WaitState mWaitState;
 
+  
+  
+  
   TimeStamp mCurrentTimeStamp;
   
   
   
+  
+  
+  
+  
+  
+  
   RefPtr<GraphDriver> mPreviousDriver;
+  
   
   
   RefPtr<GraphDriver> mNextDriver;
@@ -304,6 +318,8 @@ public:
 
 
 private:
+  
+  
   TimeStamp mInitialTimeStamp;
   TimeStamp mLastTimeStamp;
 };
@@ -461,16 +477,20 @@ private:
 
 
 
+
   SpillBuffer<AudioDataValue, WEBAUDIO_BLOCK_SIZE * 2, ChannelCount> mScratchBuffer;
   
+
 
   AudioCallbackBufferWrapper<AudioDataValue, ChannelCount> mBuffer;
   
 
   nsAutoRef<cubeb_stream> mAudioStream;
   
+
   uint32_t mSampleRate;
   
+
 
   uint32_t mIterationDurationMS;
   
@@ -499,8 +519,12 @@ private:
   
 
   nsCOMPtr<nsIThread> mInitShutdownThread;
+  
   nsAutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
+  
   dom::AudioChannel mAudioChannel;
+  
+
   Atomic<bool> mInCallback;
   
 
