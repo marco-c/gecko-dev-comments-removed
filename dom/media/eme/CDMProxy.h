@@ -8,23 +8,15 @@
 #define CDMProxy_h_
 
 #include "mozilla/CDMCaps.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 
+#include "mozilla/dom/MediaKeyMessageEvent.h"
 #include "mozilla/dom/MediaKeys.h"
 
 #include "nsIThread.h"
-#include "nsString.h"
-#include "nsAutoPtr.h"
-#include "GMPDecryptorProxy.h"
 
 namespace mozilla {
 class MediaRawData;
-class GMPCDMCallbackProxy;
-
-namespace dom {
-class MediaKeySession;
-} 
 
 struct DecryptResult {
   DecryptResult(GMPErr aStatus, MediaRawData* aSample)
@@ -40,59 +32,62 @@ struct DecryptResult {
 
 
 class CDMProxy {
+protected:
   typedef dom::PromiseId PromiseId;
   typedef dom::SessionType SessionType;
 public:
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CDMProxy)
+  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) = 0;
+  NS_IMETHOD_(MozExternalRefCountType) Release(void) = 0;
 
   typedef MozPromise<DecryptResult, DecryptResult,  true> DecryptPromise;
 
   
-  CDMProxy(dom::MediaKeys* aKeys, const nsAString& aKeySystem);
+  CDMProxy(dom::MediaKeys* aKeys, const nsAString& aKeySystem)
+  : mKeys(aKeys), mKeySystem(aKeySystem)
+  {}
 
   
   
   
-  void Init(PromiseId aPromiseId,
-            const nsAString& aOrigin,
-            const nsAString& aTopLevelOrigin,
-            const nsAString& aGMPName,
-            bool aInPrivateBrowsing,
-            GMPCrashHelper* aHelper);
-
-  
-  
-  
-  
-  void CreateSession(uint32_t aCreateSessionToken,
-                     dom::SessionType aSessionType,
-                     PromiseId aPromiseId,
-                     const nsAString& aInitDataType,
-                     nsTArray<uint8_t>& aInitData);
-
-  
-  
-  
-  void LoadSession(PromiseId aPromiseId,
-                   const nsAString& aSessionId);
+  virtual void Init(PromiseId aPromiseId,
+                    const nsAString& aOrigin,
+                    const nsAString& aTopLevelOrigin,
+                    const nsAString& aName,
+                    bool aInPrivateBrowsing) = 0;
 
   
   
   
   
+  virtual void CreateSession(uint32_t aCreateSessionToken,
+                             dom::SessionType aSessionType,
+                             PromiseId aPromiseId,
+                             const nsAString& aInitDataType,
+                             nsTArray<uint8_t>& aInitData) = 0;
+
   
-  void SetServerCertificate(PromiseId aPromiseId,
-                            nsTArray<uint8_t>& aCert);
+  
+  
+  virtual void LoadSession(PromiseId aPromiseId,
+                           const nsAString& aSessionId) = 0;
 
   
   
   
   
   
-  void UpdateSession(const nsAString& aSessionId,
-                     PromiseId aPromiseId,
-                     nsTArray<uint8_t>& aResponse);
+  virtual void SetServerCertificate(PromiseId aPromiseId,
+                                    nsTArray<uint8_t>& aCert) = 0;
+
+  
+  
+  
+  
+  
+  virtual void UpdateSession(const nsAString& aSessionId,
+                             PromiseId aPromiseId,
+                             nsTArray<uint8_t>& aResponse) = 0;
 
   
   
@@ -100,200 +95,90 @@ public:
   
   
   
-  void CloseSession(const nsAString& aSessionId,
-                    PromiseId aPromiseId);
+  virtual void CloseSession(const nsAString& aSessionId,
+                            PromiseId aPromiseId) = 0;
 
   
   
   
   
-  void RemoveSession(const nsAString& aSessionId,
-                     PromiseId aPromiseId);
+  virtual void RemoveSession(const nsAString& aSessionId,
+                             PromiseId aPromiseId) = 0;
 
   
-  void Shutdown();
+  virtual void Shutdown() = 0;
 
   
-  void Terminated();
+  virtual void Terminated() = 0;
 
   
-  const nsCString& GetNodeId() const;
+  virtual const nsCString& GetNodeId() const = 0;
 
   
-  void OnSetSessionId(uint32_t aCreateSessionToken,
-                      const nsAString& aSessionId);
+  virtual void OnSetSessionId(uint32_t aCreateSessionToken,
+                              const nsAString& aSessionId) = 0;
 
   
-  void OnResolveLoadSessionPromise(uint32_t aPromiseId, bool aSuccess);
+  virtual void OnResolveLoadSessionPromise(uint32_t aPromiseId,
+                                           bool aSuccess) = 0;
 
   
-  void OnSessionMessage(const nsAString& aSessionId,
-                        GMPSessionMessageType aMessageType,
-                        nsTArray<uint8_t>& aMessage);
+  virtual void OnSessionMessage(const nsAString& aSessionId,
+                                dom::MediaKeyMessageType aMessageType,
+                                nsTArray<uint8_t>& aMessage) = 0;
 
   
-  void OnExpirationChange(const nsAString& aSessionId,
-                          GMPTimestamp aExpiryTime);
+  virtual void OnExpirationChange(const nsAString& aSessionId,
+                                  int64_t aExpiryTime) = 0;
 
   
-  void OnSessionClosed(const nsAString& aSessionId);
+  virtual void OnSessionClosed(const nsAString& aSessionId) = 0;
 
   
-  void OnSessionError(const nsAString& aSessionId,
-                      nsresult aException,
-                      uint32_t aSystemCode,
-                      const nsAString& aMsg);
+  virtual void OnSessionError(const nsAString& aSessionId,
+                              nsresult aException,
+                              uint32_t aSystemCode,
+                              const nsAString& aMsg) = 0;
 
   
-  void OnRejectPromise(uint32_t aPromiseId,
-                       nsresult aDOMException,
-                       const nsCString& aMsg);
+  virtual void OnRejectPromise(uint32_t aPromiseId,
+                               nsresult aDOMException,
+                               const nsCString& aMsg) = 0;
 
-  RefPtr<DecryptPromise> Decrypt(MediaRawData* aSample);
+  virtual RefPtr<DecryptPromise> Decrypt(MediaRawData* aSample) = 0;
+
+  
+  virtual void OnDecrypted(uint32_t aId,
+                           GMPErr aResult,
+                           const nsTArray<uint8_t>& aDecryptedData) = 0;
 
   
   
-  void RejectPromise(PromiseId aId, nsresult aExceptionCode,
-                     const nsCString& aReason);
+  virtual void RejectPromise(PromiseId aId,
+                             nsresult aExceptionCode,
+                             const nsCString& aReason) = 0;
 
   
   
-  void ResolvePromise(PromiseId aId);
+  virtual void ResolvePromise(PromiseId aId) = 0;
 
   
-  const nsString& KeySystem() const;
+  virtual const nsString& KeySystem() const = 0;
+
+  virtual  CDMCaps& Capabilites() = 0;
 
   
-  void gmp_Decrypted(uint32_t aId,
-                     GMPErr aResult,
-                     const nsTArray<uint8_t>& aDecryptedData);
+  virtual void OnKeyStatusesChange(const nsAString& aSessionId) = 0;
 
-  CDMCaps& Capabilites();
-
-  
-  void OnKeyStatusesChange(const nsAString& aSessionId);
-
-  void GetSessionIdsForKeyId(const nsTArray<uint8_t>& aKeyId,
-                             nsTArray<nsCString>& aSessionIds);
+  virtual void GetSessionIdsForKeyId(const nsTArray<uint8_t>& aKeyId,
+                                     nsTArray<nsCString>& aSessionIds) = 0;
 
 #ifdef DEBUG
-  bool IsOnGMPThread();
+  virtual bool IsOnOwnerThread() = 0;
 #endif
 
-private:
-  friend class gmp_InitDoneCallback;
-  friend class gmp_InitGetGMPDecryptorCallback;
-
-  struct InitData {
-    uint32_t mPromiseId;
-    nsString mOrigin;
-    nsString mTopLevelOrigin;
-    nsString mGMPName;
-    RefPtr<GMPCrashHelper> mCrashHelper;
-    bool mInPrivateBrowsing;
-  };
-
-  
-  void gmp_Init(nsAutoPtr<InitData>&& aData);
-  void gmp_InitDone(GMPDecryptorProxy* aCDM, nsAutoPtr<InitData>&& aData);
-  void gmp_InitGetGMPDecryptor(nsresult aResult,
-                               const nsACString& aNodeId,
-                               nsAutoPtr<InitData>&& aData);
-
-  
-  void gmp_Shutdown();
-
-  
-  void OnCDMCreated(uint32_t aPromiseId);
-
-  struct CreateSessionData {
-    dom::SessionType mSessionType;
-    uint32_t mCreateSessionToken;
-    PromiseId mPromiseId;
-    nsCString mInitDataType;
-    nsTArray<uint8_t> mInitData;
-  };
-  
-  void gmp_CreateSession(nsAutoPtr<CreateSessionData> aData);
-
-  struct SessionOpData {
-    PromiseId mPromiseId;
-    nsCString mSessionId;
-  };
-  
-  void gmp_LoadSession(nsAutoPtr<SessionOpData> aData);
-
-  struct SetServerCertificateData {
-    PromiseId mPromiseId;
-    nsTArray<uint8_t> mCert;
-  };
-  
-  void gmp_SetServerCertificate(nsAutoPtr<SetServerCertificateData> aData);
-
-  struct UpdateSessionData {
-    PromiseId mPromiseId;
-    nsCString mSessionId;
-    nsTArray<uint8_t> mResponse;
-  };
-  
-  void gmp_UpdateSession(nsAutoPtr<UpdateSessionData> aData);
-
-  
-  void gmp_CloseSession(nsAutoPtr<SessionOpData> aData);
-
-  
-  void gmp_RemoveSession(nsAutoPtr<SessionOpData> aData);
-
-  class DecryptJob {
-  public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecryptJob)
-
-    explicit DecryptJob(MediaRawData* aSample)
-      : mId(0)
-      , mSample(aSample)
-    {
-    }
-
-    void PostResult(GMPErr aResult, const nsTArray<uint8_t>& aDecryptedData);
-    void PostResult(GMPErr aResult);
-
-    RefPtr<DecryptPromise> Ensure() {
-      return mPromise.Ensure(__func__);
-    }
-
-    uint32_t mId;
-    RefPtr<MediaRawData> mSample;
-  private:
-    ~DecryptJob() {}
-    MozPromiseHolder<DecryptPromise> mPromise;
-  };
-  
-  void gmp_Decrypt(RefPtr<DecryptJob> aJob);
-
-  class RejectPromiseTask : public Runnable {
-  public:
-    RejectPromiseTask(CDMProxy* aProxy,
-                      PromiseId aId,
-                      nsresult aCode,
-                      const nsCString& aReason)
-      : mProxy(aProxy)
-      , mId(aId)
-      , mCode(aCode)
-      , mReason(aReason)
-    {
-    }
-    NS_METHOD Run() {
-      mProxy->RejectPromise(mId, mCode, mReason);
-      return NS_OK;
-    }
-  private:
-    RefPtr<CDMProxy> mProxy;
-    PromiseId mId;
-    nsresult mCode;
-    nsCString mReason;
-  };
-
-  ~CDMProxy();
+protected:
+  virtual ~CDMProxy() {}
 
   
   template<class Type>
@@ -332,28 +217,11 @@ private:
 
   
   
-  RefPtr<nsIThread> mGMPThread;
+  RefPtr<nsIThread> mOwnerThread;
 
   nsCString mNodeId;
 
-  GMPDecryptorProxy* mCDM;
   CDMCaps mCapabilites;
-  nsAutoPtr<GMPCDMCallbackProxy> mCallback;
-
-  
-  
-  nsTArray<RefPtr<DecryptJob>> mDecryptionJobs;
-
-  
-  
-  
-  
-  
-  uint32_t mDecryptionJobCount;
-
-  
-  
-  bool mShutdownCalled;
 };
 
 
