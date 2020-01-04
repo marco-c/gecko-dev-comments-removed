@@ -583,8 +583,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
     }
 
     TimingParams timing;
-    timing.mDuration.SetAsUnrestrictedDouble() =
-      animation.duration().ToMilliseconds();
+    timing.mDuration.emplace(animation.duration());
     
     
     timing.mDelay = TimeDuration(0);

@@ -45,8 +45,7 @@ struct TimingParams
     const Nullable<dom::ElementOrCSSPseudoElement>& aTarget);
 
   
-  
-  dom::OwningUnrestrictedDoubleOrString mDuration;
+  Maybe<StickyTimeDuration> mDuration;
   TimeDuration mDelay;      
   TimeDuration mEndDelay;
   double mIterations = 1.0; 
