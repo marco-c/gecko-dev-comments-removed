@@ -63,7 +63,6 @@
 #include "nsStyleStruct.h"              
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
-#include "prsystem.h"                   
 #include "SharedMemoryBasic.h"          
 #include "WheelScrollAnimation.h"
 
@@ -338,27 +337,12 @@ using mozilla::gfx::PointTyped;
 
 
 
-
-
-
-
-
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
 
 
 StaticAutoPtr<ComputedTimingFunction> gVelocityCurveFunction;
-
-
-
-
-
-static bool gIsHighMemSystem = false;
-static bool IsHighMemSystem()
-{
-  return gIsHighMemSystem;
-}
 
 
 
@@ -818,10 +802,6 @@ AsyncPanZoomController::InitializeGlobalState()
                      gfxPrefs::APZCurveFunctionX2(),
                      gfxPrefs::APZCurveFunctionY2()));
   ClearOnShutdown(&gVelocityCurveFunction);
-
-  uint64_t sysmem = PR_GetPhysicalMemorySize();
-  uint64_t threshold = 1LL << 32; 
-  gIsHighMemSystem = sysmem >= threshold;
 }
 
 AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
@@ -2447,11 +2427,6 @@ CalculateDisplayPortSize(const CSSSize& aCompositionSize,
   float yMultiplier = fabsf(aVelocity.y) < gfxPrefs::APZMinSkateSpeed()
                         ? gfxPrefs::APZYStationarySizeMultiplier()
                         : gfxPrefs::APZYSkateSizeMultiplier();
-
-  if (IsHighMemSystem()) {
-    xMultiplier += gfxPrefs::APZXSkateHighMemAdjust();
-    yMultiplier += gfxPrefs::APZYSkateHighMemAdjust();
-  }
 
   
   
