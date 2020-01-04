@@ -3800,6 +3800,15 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   
   aVisitor.mItemFlags |= mType;
 
+  if (aVisitor.mEvent->mMessage == eFocus &&
+      aVisitor.mEvent->IsTrusted() &&
+      MayFireChangeOnBlur() &&
+      
+      
+      !mIsDraggingRange) {
+    GetValue(mFocusedValue);
+  }
+
   
   if (aVisitor.mEvent->mMessage == eBlur) {
     
@@ -4235,12 +4244,6 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
   if (aVisitor.mEvent->mMessage == eFocus ||
       aVisitor.mEvent->mMessage == eBlur) {
-    if (aVisitor.mEvent->mMessage == eFocus &&
-        MayFireChangeOnBlur() &&
-        !mIsDraggingRange) { 
-      GetValue(mFocusedValue);
-    }
-
     if (aVisitor.mEvent->mMessage == eBlur) {
       if (mIsDraggingRange) {
         FinishRangeThumbDrag();
