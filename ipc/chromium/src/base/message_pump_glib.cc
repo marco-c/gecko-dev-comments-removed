@@ -124,7 +124,8 @@ namespace base {
 MessagePumpForUI::MessagePumpForUI()
     : state_(NULL),
       context_(g_main_context_default()),
-      wakeup_gpollfd_(new GPollFD) {
+      wakeup_gpollfd_(new GPollFD),
+      pipe_full_(false) {
   
   int fds[2];
   CHECK(pipe(fds) == 0);
@@ -234,6 +235,8 @@ bool MessagePumpForUI::HandleCheck() {
   
   
   if (wakeup_gpollfd_->revents & G_IO_IN) {
+    pipe_full_ = false;
+
     char msg;
     if (HANDLE_EINTR(read(wakeup_pipe_read_, &msg, 1)) != 1 || msg != '!') {
       NOTREACHED() << "Error reading from the wakeup pipe.";
@@ -297,6 +300,11 @@ void MessagePumpForUI::Quit() {
 }
 
 void MessagePumpForUI::ScheduleWork() {
+  bool was_full = pipe_full_.exchange(true);
+  if (was_full) {
+    return;
+  }
+
   
   
   
