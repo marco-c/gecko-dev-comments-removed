@@ -491,6 +491,17 @@ SpecialPowersObserverAPI.prototype = {
         return undefined;	
       }
 
+      case "SPImportInMainProcess": {
+        var message = { hadError: false, errorMessage: null };
+        try {
+          Components.utils.import(aMessage.data);
+        } catch (e) {
+          message.hadError = true;
+          message.errorMessage = e.toString();
+        }
+        return message;
+      }
+
       case 'SPQuotaManager': {
         let qm = Cc['@mozilla.org/dom/quota/manager;1']
                    .getService(Ci.nsIQuotaManager);
