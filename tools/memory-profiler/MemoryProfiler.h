@@ -9,7 +9,12 @@
 
 #include "nsIMemoryProfiler.h"
 
-#include "nsString.h"
+#include "mozilla/TimeStamp.h"
+
+#include "CompactTraceTable.h"
+#include "UncensoredAllocator.h"
+
+#include "prlock.h"
 
 #define MEMORY_PROFILER_CID                                     \
   { 0xf976eaa2, 0xcc1f, 0x47ee,                                 \
@@ -17,19 +22,131 @@
 
 #define MEMORY_PROFILER_CONTRACT_ID "@mozilla.org/tools/memory-profiler;1"
 
-class MemoryProfiler : public nsIMemoryProfiler
+struct JSRuntime;
+
+namespace mozilla {
+
+class NativeProfilerImpl;
+class GCHeapProfilerImpl;
+
+struct ProfilerForJSRuntime
+{
+  ProfilerForJSRuntime()
+    : mProfiler(nullptr)
+    , mEnabled(false)
+  {}
+  GCHeapProfilerImpl* mProfiler;
+  bool mEnabled;
+};
+using JSRuntimeProfilerMap = u_unordered_map<JSRuntime*, ProfilerForJSRuntime>;
+
+class MemoryProfiler final : public nsIMemoryProfiler
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMEMORYPROFILER
 
-  MemoryProfiler();
-
 private:
-  virtual ~MemoryProfiler();
+  static void InitOnce();
+  ~MemoryProfiler() {}
+
+  
+  
+  static PRLock* sLock;
+  static uint32_t sProfileRuntimeCount;
+
+  static NativeProfilerImpl* sNativeProfiler;
+  static JSRuntimeProfilerMap* sJSRuntimeProfilerMap;
+  static TimeStamp sStartTime;
+};
+
+
+struct AllocEvent {
+  TimeStamp mTimestamp;
+  
+  uint32_t mTraceIdx;
+  
+  int32_t mSize;
+
+  AllocEvent(uint32_t aTraceIdx, int32_t aSize, TimeStamp aTimestamp)
+    : mTimestamp(aTimestamp)
+    , mTraceIdx(aTraceIdx)
+    , mSize(aSize)
+  {}
+};
+
+
+struct AllocEntry {
+  uint32_t mEventIdx : 31;
+  bool mMarked : 1;
+
+  AllocEntry(int aEventIdx)
+    : mEventIdx(aEventIdx)
+    , mMarked(false)
+  {}
+};
+
+using AllocMap = u_unordered_map<void*, AllocEntry>;
+
+class ProfilerImpl
+{
+public:
+  static u_vector<u_string> GetStacktrace();
+  static double DRandom();
+
+  ProfilerImpl();
+  virtual u_vector<u_string> GetNames() const = 0;
+  virtual u_vector<TrieNode> GetTraces() const = 0;
+  virtual const u_vector<AllocEvent>& GetEvents() const = 0;
 
 protected:
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+  size_t AddBytesSampled(uint32_t aBytes);
+
+  uint32_t mSampleSize;
+
+private:
+  uint32_t mRemainingBytes;
+  double mLog1minusP;
 };
+
+
+
+
+
+
+class AutoMPLock
+{
+public:
+  explicit AutoMPLock(PRLock* aLock)
+  {
+    MOZ_ASSERT(aLock);
+    mLock = aLock;
+    PR_Lock(mLock);
+  }
+
+  ~AutoMPLock()
+  {
+    PR_Unlock(mLock);
+  }
+
+private:
+  PRLock* mLock;
+};
+
+} 
 
 #endif
