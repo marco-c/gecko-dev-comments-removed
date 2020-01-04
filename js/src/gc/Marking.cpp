@@ -2140,7 +2140,13 @@ js::TenuringTracer::moveObjectToTenured(JSObject* dst, JSObject* src, AllocKind 
     if (src->is<ArrayObject>())
         tenuredSize = srcSize = sizeof(NativeObject);
 
+    
     js_memcpy(dst, src, srcSize);
+
+    
+    src->zone()->transferUniqueId(dst, src);
+
+    
     if (src->isNative()) {
         NativeObject* ndst = &dst->as<NativeObject>();
         NativeObject* nsrc = &src->as<NativeObject>();
