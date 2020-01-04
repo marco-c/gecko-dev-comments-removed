@@ -227,7 +227,9 @@ public:
 
   
   
-  virtual void Init(GMPDecryptorCallback* aCallback) = 0;
+  virtual void Init(GMPDecryptorCallback* aCallback,
+                    bool aDistinctiveIdentifierRequired,
+                    bool aPersistentStateRequired) = 0;
 
   
   
