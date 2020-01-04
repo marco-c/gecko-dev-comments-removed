@@ -200,7 +200,6 @@ Navigator::Init()
 
 Navigator::Navigator(nsPIDOMWindowInner* aWindow)
   : mWindow(aWindow)
-  , mBatteryTelemetryReported(false)
 {
   MOZ_ASSERT(aWindow->IsInnerWindow(), "Navigator must get an inner window!");
 }
@@ -304,7 +303,6 @@ Navigator::Invalidate()
   }
 
   mBatteryPromise = nullptr;
-  mBatteryTelemetryReported = false;
 
 #ifdef MOZ_B2G_FM
   if (mFMRadio) {
@@ -1603,35 +1601,6 @@ Navigator::GetBattery(ErrorResult& aRv)
   mBatteryPromise->MaybeResolve(mBatteryManager);
 
   return mBatteryPromise;
-}
-
-battery::BatteryManager*
-Navigator::GetDeprecatedBattery(ErrorResult& aRv)
-{
-  if (!mBatteryManager) {
-    if (!mWindow) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-    NS_ENSURE_TRUE(mWindow->GetDocShell(), nullptr);
-
-    mBatteryManager = new battery::BatteryManager(mWindow);
-    mBatteryManager->Init();
-  }
-
-  nsIDocument* doc = mWindow->GetDoc();
-  if (doc) {
-    doc->WarnOnceAbout(nsIDocument::eNavigatorBattery);
-  }
-
-  
-  if (!mBatteryTelemetryReported) {
-    
-    Telemetry::Accumulate(Telemetry::BATTERY_STATUS_COUNT, 0);
-    mBatteryTelemetryReported = true;
-  }
-
-  return mBatteryManager;
 }
 
 already_AddRefed<Promise>
