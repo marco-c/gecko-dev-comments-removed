@@ -5037,11 +5037,6 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             return JSToNativeConversionInfo(template, declType=declType,
                                             dealWithOptional=isOptional)
 
-        if descriptor.interface.identifier.name == "AbortablePromise":
-            raise TypeError("Need to figure out what argument conversion "
-                            "should look like for AbortablePromise: %s" %
-                            sourceDescription)
-
         
         
 
@@ -7149,8 +7144,7 @@ class CGPerSignatureCall(CGThing):
 
         
         if (not static and
-            (descriptor.name == "Promise" or
-             descriptor.name == "MozAbortablePromise") and
+            descriptor.name == "Promise" and
             idlNode.isMethod() and
             idlNode.identifier.name == "then"):
             cgThings.append(CGGeneric(dedent(
@@ -7162,7 +7156,7 @@ class CGPerSignatureCall(CGThing):
         needsUnwrap = False
         argsPost = []
         if isConstructor:
-            if descriptor.name == "Promise" or descriptor.name == "MozAbortablePromise":
+            if descriptor.name == "Promise":
                 
                 
                 argsPost.append("desiredProto")
