@@ -132,8 +132,6 @@ protected:
   static void FireScrollEnd(nsITimer* aTimer, void* aAccessibleCaretEventHub);
 
   
-  bool mInitialized = false;
-
   State* mState = NoActionState();
 
   
@@ -155,6 +153,12 @@ protected:
 
   
   int32_t mActiveTouchId = kInvalidTouchId;
+
+  
+  bool mInitialized = false;
+
+  
+  bool mIsInReflowCallback = false;
 
   
   static bool sUseLongTapInjector;
