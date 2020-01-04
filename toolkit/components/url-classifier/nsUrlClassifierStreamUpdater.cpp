@@ -20,6 +20,7 @@
 #include "mozilla/Logging.h"
 #include "nsIInterfaceRequestor.h"
 #include "mozilla/LoadContext.h"
+#include "mozilla/Telemetry.h"
 #include "nsContentUtils.h"
 
 static const char* gQuitApplicationMessage = "quit-application";
@@ -445,6 +446,114 @@ nsUrlClassifierStreamUpdater::AddRequestBody(const nsACString &aRequestBody)
 }
 
 
+static uint32_t HTTPStatusToBucket(uint32_t status)
+{
+  uint32_t statusBucket;
+  switch (status) {
+  case 100:
+  case 101:
+    
+    statusBucket = 0;
+    break;
+  case 200:
+    
+    statusBucket = 1;
+    break;
+  case 201:
+  case 202:
+  case 203:
+  case 205:
+  case 206:
+    
+    statusBucket = 2;
+    break;
+  case 204:
+    
+    statusBucket = 3;
+    break;
+  case 300:
+  case 301:
+  case 302:
+  case 303:
+  case 304:
+  case 305:
+  case 307:
+  case 308:
+    
+    statusBucket = 4;
+    break;
+  case 400:
+    
+    
+    statusBucket = 5;
+    break;
+  case 401:
+  case 402:
+  case 405:
+  case 406:
+  case 407:
+  case 409:
+  case 410:
+  case 411:
+  case 412:
+  case 414:
+  case 415:
+  case 416:
+  case 417:
+  case 421:
+  case 426:
+  case 428:
+  case 429:
+  case 431:
+  case 451:
+    
+    statusBucket = 6;
+    break;
+  case 403:
+    
+    statusBucket = 7;
+    break;
+  case 404:
+    
+    statusBucket = 8;
+    break;
+  case 408:
+    
+    statusBucket = 9;
+    break;
+  case 413:
+    
+    statusBucket = 10;
+    break;
+  case 500:
+  case 501:
+  case 510:
+    
+    statusBucket = 11;
+    break;
+  case 502:
+  case 504:
+  case 511:
+    
+    statusBucket = 12;
+    break;
+  case 503:
+    
+    
+    
+    statusBucket = 13;
+    break;
+  case 505:
+    
+    
+    statusBucket = 14;
+    break;
+  default:
+    statusBucket = 15;
+  };
+  return statusBucket;
+}
+
 
 
 
@@ -479,6 +588,9 @@ nsUrlClassifierStreamUpdater::OnStartRequest(nsIRequest *request,
     if (NS_FAILED(status)) {
       
       downloadError = true;
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::URLCLASSIFIER_UPDATE_REMOTE_STATUS,
+                                     15 );
+
     } else {
       bool succeeded = false;
       rv = httpChannel->GetRequestSucceeded(&succeeded);
@@ -487,6 +599,8 @@ nsUrlClassifierStreamUpdater::OnStartRequest(nsIRequest *request,
       uint32_t requestStatus;
       rv = httpChannel->GetResponseStatus(&requestStatus);
       NS_ENSURE_SUCCESS(rv, rv);
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::URLCLASSIFIER_UPDATE_REMOTE_STATUS,
+                                     HTTPStatusToBucket(requestStatus));
       LOG(("nsUrlClassifierStreamUpdater::OnStartRequest %s (%d)", succeeded ?
            "succeeded" : "failed", requestStatus));
       if (!succeeded) {
