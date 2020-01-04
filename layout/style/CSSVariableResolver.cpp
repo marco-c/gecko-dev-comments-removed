@@ -12,6 +12,7 @@
 #include "CSSVariableDeclarations.h"
 #include "CSSVariableValues.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/UniquePtr.h"
 #include <algorithm>
 
 namespace mozilla {
@@ -25,7 +26,7 @@ class EnumerateVariableReferencesData
 public:
   explicit EnumerateVariableReferencesData(CSSVariableResolver& aResolver)
     : mResolver(aResolver)
-    , mReferences(new bool[aResolver.mVariables.Length()])
+    , mReferences(MakeUnique<bool[]>(aResolver.mVariables.Length()))
   {
   }
 
@@ -66,7 +67,7 @@ private:
   
   
   
-  nsAutoArrayPtr<bool> mReferences;
+  const UniquePtr<bool[]> mReferences;
 
   
   
