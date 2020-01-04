@@ -68,18 +68,6 @@ static const int sRetryInterval = 100;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class BluetoothDaemonProtocol final
   : public DaemonSocketIOConsumer
   , public BluetoothDaemonSetupModule
@@ -94,13 +82,6 @@ public:
   BluetoothDaemonProtocol();
 
   void SetConnection(DaemonSocket* aConnection);
-
-  nsresult RegisterModule(BluetoothSetupServiceId aId,
-                          uint8_t aMode, uint32_t aMaxNumClients,
-                          BluetoothSetupResultHandler* aRes);
-
-  nsresult UnregisterModule(BluetoothSetupServiceId aId,
-                            BluetoothSetupResultHandler* aRes);
 
   
   
@@ -152,22 +133,6 @@ void
 BluetoothDaemonProtocol::SetConnection(DaemonSocket* aConnection)
 {
   mConnection = aConnection;
-}
-
-nsresult
-BluetoothDaemonProtocol::RegisterModule(BluetoothSetupServiceId aId,
-                                        uint8_t aMode, uint32_t aMaxNumClients,
-                                        BluetoothSetupResultHandler* aRes)
-{
-  return BluetoothDaemonSetupModule::RegisterModuleCmd(aId, aMode,
-                                                       aMaxNumClients, aRes);
-}
-
-nsresult
-BluetoothDaemonProtocol::UnregisterModule(BluetoothSetupServiceId aId,
-                                          BluetoothSetupResultHandler* aRes)
-{
-  return BluetoothDaemonSetupModule::UnregisterModuleCmd(aId, aRes);
 }
 
 nsresult
