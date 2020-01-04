@@ -6,7 +6,6 @@ package org.mozilla.gecko.util;
 
 import android.content.Context;
 
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.text.TextUtils;
 
@@ -16,7 +15,6 @@ import org.mozilla.gecko.GeckoSharedPrefs;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 
 
@@ -24,8 +22,6 @@ import java.util.Map;
 
 public class Experiments {
     private static final String LOGTAG = "GeckoExperiments";
-
-    private static final String ENVVAR_DISABLED = "MOZ_DISABLE_SWITCHBOARD";
 
     
     public static final String WHATSNEW_NOTIFICATION = "whatsnew-notification";
@@ -58,26 +54,17 @@ public class Experiments {
     
     public static final String URLBAR_SHOW_EV_CERT_OWNER = "urlbar-show-ev-cert-owner";
 
-    private static volatile Boolean disabled = null;
+    private static boolean isDisabled = false;
 
-    
-
-
-    public static void setDisabledFromEnvVar(@NonNull final Map<String, String> envVarMap) {
-        if (disabled != null) {
-            throw new IllegalStateException("Disabled state already set");
-        }
-        disabled = !TextUtils.isEmpty(envVarMap.get(ENVVAR_DISABLED));
-        if (disabled) {
-            Log.d(LOGTAG, "Switchboard disabled by environment variable: " + ENVVAR_DISABLED);
+    public static void setIsDisabled(final boolean isDisabled) {
+        Experiments.isDisabled = isDisabled;
+        if (isDisabled) {
+            Log.d(LOGTAG, "Switchboard disabled (env var?)");
         }
     }
 
     public static boolean isDisabled() {
-        if (disabled == null) {
-            throw new IllegalStateException("Disabled state not yet set.");
-        }
-        return disabled;
+        return isDisabled;
     }
 
     

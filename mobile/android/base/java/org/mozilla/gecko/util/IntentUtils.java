@@ -19,6 +19,8 @@ import java.util.regex.Pattern;
 
 
 public class IntentUtils {
+    public static final String ENV_VAR_IN_AUTOMATION = "MOZ_IN_AUTOMATION";
+
     private static final String ENV_VAR_REGEX = "(.+)=(.*)";
 
     private IntentUtils() {}
