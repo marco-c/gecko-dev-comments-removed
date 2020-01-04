@@ -1086,7 +1086,8 @@ Parser<FullParseHandler>::checkFunctionArguments()
 
 
 
-        if (pc->sc->needStrictChecks()) {
+
+        if (!funbox->hasMappedArgsObj()) {
             for (AtomDefnListMap::Range r = pc->decls().all(); !r.empty(); r.popFront()) {
                 DefinitionList& dlist = r.front().value();
                 for (DefinitionList::Range dr = dlist.all(); !dr.empty(); dr.popFront()) {

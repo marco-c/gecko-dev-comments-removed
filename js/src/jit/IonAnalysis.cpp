@@ -3446,9 +3446,10 @@ ArgumentsUseCanBeLazy(JSContext* cx, JSScript* script, MInstruction* ins, size_t
 
     
     
+    
     if (ins->isCallGetProperty() && index == 0 &&
         (ins->toCallGetProperty()->name() == cx->names().length ||
-         (!script->strict() && ins->toCallGetProperty()->name() == cx->names().callee)))
+         (script->hasMappedArgsObj() && ins->toCallGetProperty()->name() == cx->names().callee)))
     {
         return true;
     }

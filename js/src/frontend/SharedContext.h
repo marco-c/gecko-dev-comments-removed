@@ -240,7 +240,7 @@ class SharedContext
 
     inline bool allLocalsAliased();
 
-    bool strict() {
+    bool strict() const {
         return strictScript || localStrict;
     }
     bool setLocalStrictMode(bool strict) {
@@ -250,7 +250,7 @@ class SharedContext
     }
 
     
-    bool needStrictChecks() {
+    bool needStrictChecks() const {
         return strict() || extraWarnings;
     }
 
@@ -345,6 +345,10 @@ class FunctionBox : public ObjectBox, public SharedContext
 
     bool hasDefaults() const {
         return length != function()->nargs() - function()->hasRest();
+    }
+
+    bool hasMappedArgsObj() const {
+        return !strict() && !function()->hasRest() && !hasDefaults() && !hasDestructuringArgs;
     }
 
     

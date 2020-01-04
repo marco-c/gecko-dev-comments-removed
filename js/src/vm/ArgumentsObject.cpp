@@ -207,7 +207,7 @@ template <typename CopyArgs>
  ArgumentsObject*
 ArgumentsObject::create(JSContext* cx, HandleFunction callee, unsigned numActuals, CopyArgs& copy)
 {
-    bool strict = callee->strict();
+    bool strict = !callee->nonLazyScript()->hasMappedArgsObj(); 
     ArgumentsObject* templateObj = cx->compartment()->getOrCreateArgumentsTemplateObject(cx, strict);
     if (!templateObj)
         return nullptr;

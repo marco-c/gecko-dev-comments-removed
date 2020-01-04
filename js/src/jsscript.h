@@ -1137,6 +1137,10 @@ class JSScript : public js::gc::TenuredCell
 
     
     
+    bool hasMappedArgsObj_:1;
+
+    
+    
     
     
     
@@ -1404,7 +1408,7 @@ class JSScript : public js::gc::TenuredCell
     jsbytecode* argumentsBytecode() const { MOZ_ASSERT(code()[0] == JSOP_ARGUMENTS); return code(); }
     void setArgumentsHasVarBinding();
     bool argumentsAliasesFormals() const {
-        return argumentsHasVarBinding() && !strict();
+        return argumentsHasVarBinding() && hasMappedArgsObj();
     }
 
     js::GeneratorKind generatorKind() const {
@@ -1450,6 +1454,10 @@ class JSScript : public js::gc::TenuredCell
     void setNeedsArgsObj(bool needsArgsObj);
     static bool argumentsOptimizationFailed(JSContext* cx, js::HandleScript script);
 
+    bool hasMappedArgsObj() const {
+        return hasMappedArgsObj_;
+    }
+
     
 
 
@@ -1458,9 +1466,8 @@ class JSScript : public js::gc::TenuredCell
 
 
 
-
     bool argsObjAliasesFormals() const {
-        return needsArgsObj() && !strict();
+        return needsArgsObj() && hasMappedArgsObj();
     }
 
     uint32_t typesGeneration() const {

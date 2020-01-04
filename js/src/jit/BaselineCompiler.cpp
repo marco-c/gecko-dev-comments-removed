@@ -2623,7 +2623,7 @@ BaselineCompiler::emitFormalArgAccess(uint32_t arg, bool get)
 {
     
     
-    if (!script->argumentsHasVarBinding() || script->strict()) {
+    if (!script->argumentsAliasesFormals()) {
         if (get) {
             frame.pushArg(arg);
         } else {
