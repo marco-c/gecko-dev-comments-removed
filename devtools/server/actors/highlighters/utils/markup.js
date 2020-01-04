@@ -268,24 +268,16 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     
     
-    if (doc.hidden) {
-      
-      
-      let onVisibilityChange = () => {
-        doc.removeEventListener("visibilitychange", onVisibilityChange);
-        this._insert();
-      };
-      doc.addEventListener("visibilitychange", onVisibilityChange);
-      return;
-    }
+    
+    installHelperSheet(this.highlighterEnv.window,
+      "@import url('" + STYLESHEET_URI + "');");
+    let node = this.nodeBuilder();
 
     
     
     
     
-    installHelperSheet(this.highlighterEnv.window,
-      "@import url('" + STYLESHEET_URI + "');");
-    let node = this.nodeBuilder();
+    
     this._content = doc.insertAnonymousContent(node);
   },
 
