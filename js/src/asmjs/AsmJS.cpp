@@ -2699,6 +2699,7 @@ class MOZ_STACK_CLASS FunctionValidator
         MOZ_ASSERT(expr == Expr::Br || expr == Expr::BrIf);
         MOZ_ASSERT(absolute < blockDepth_);
         return encoder().writeExpr(expr) &&
+               encoder().writeVarU32(0) &&  
                encoder().writeVarU32(blockDepth_ - 1 - absolute);
     }
     void removeLabel(PropertyName* label, LabelMap* map) {
@@ -4387,12 +4388,18 @@ CheckInternalCall(FunctionValidator& f, ParseNode* callNode, PropertyName* calle
     if (!CheckCallArgs<CheckIsArgType>(f, callNode, &args))
         return false;
 
+    uint32_t arity = args.length();
     Sig sig(Move(args), ret.canonicalToExprType());
+
     ModuleValidator::Func* callee;
     if (!CheckFunctionSignature(f.m(), callNode, Move(sig), calleeName, &callee))
         return false;
 
     if (!f.writeCall(callNode, Expr::Call))
+        return false;
+
+    
+    if (!f.encoder().writeVarU32(arity))
         return false;
 
     
@@ -4470,6 +4477,7 @@ CheckFuncPtrCall(FunctionValidator& f, ParseNode* callNode, Type ret, Type* type
     if (!CheckCallArgs<CheckIsArgType>(f, callNode, &args))
         return false;
 
+    uint32_t arity = args.length();
     Sig sig(Move(args), ret.canonicalToExprType());
 
     uint32_t tableIndex;
@@ -4477,6 +4485,10 @@ CheckFuncPtrCall(FunctionValidator& f, ParseNode* callNode, Type ret, Type* type
         return false;
 
     if (!f.writeCall(callNode, Expr::CallIndirect))
+        return false;
+
+    
+    if (!f.encoder().writeVarU32(arity))
         return false;
 
     
@@ -4511,12 +4523,18 @@ CheckFFICall(FunctionValidator& f, ParseNode* callNode, unsigned ffiIndex, Type 
     if (!CheckCallArgs<CheckIsExternType>(f, callNode, &args))
         return false;
 
+    uint32_t arity = args.length();
     Sig sig(Move(args), ret.canonicalToExprType());
+
     uint32_t importIndex;
     if (!f.m().declareImport(calleeName, Move(sig), ffiIndex, &importIndex))
         return false;
 
     if (!f.writeCall(callNode, Expr::CallImport))
+        return false;
+
+    
+    if (!f.encoder().writeVarU32(arity))
         return false;
 
     
@@ -5990,9 +6008,6 @@ CheckLoopConditionOnEntry(FunctionValidator& f, ParseNode* cond)
     if (IsLiteralInt(f.m(), cond, &maybeLit) && maybeLit)
         return true;
 
-    if (!f.encoder().writeExpr(Expr::Nop))
-        return false;
-
     Type condType;
     if (!CheckExpr(f, cond, &condType))
         return false;
@@ -6145,9 +6160,6 @@ CheckDoWhile(FunctionValidator& f, ParseNode* whileStmt, const NameVector* label
         if (!f.popContinuableBlock())
             return false;
     }
-
-    if (!f.encoder().writeExpr(Expr::Nop))
-        return false;
 
     Type condType;
     if (!CheckExpr(f, cond, &condType))
@@ -6407,10 +6419,6 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
     uint32_t defaultDepth = numCases;
 
     
-    if (!f.encoder().writeExpr(Expr::Nop))
-        return false;
-
-    
     if (low) {
         if (!CheckSwitchExpr(f, switchExpr))
             return false;
@@ -6425,6 +6433,10 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
 
     
     if (!f.encoder().writeExpr(Expr::BrTable))
+        return false;
+
+    
+    if (!f.encoder().writeVarU32(0))
         return false;
 
     
@@ -6489,9 +6501,6 @@ CheckReturn(FunctionValidator& f, ParseNode* returnStmt)
     ParseNode* expr = ReturnExpr(returnStmt);
 
     if (!expr) {
-        if (!f.encoder().writeExpr(Expr::Nop))
-            return false;
-
         if (!CheckReturnType(f, returnStmt, Type::Void))
             return false;
     } else {
@@ -6507,6 +6516,9 @@ CheckReturn(FunctionValidator& f, ParseNode* returnStmt)
     }
 
     if (!f.encoder().writeExpr(Expr::Return))
+        return false;
+
+    if (!f.encoder().writeVarU32(expr ? 1 : 0))
         return false;
 
     return true;
