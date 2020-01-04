@@ -222,9 +222,6 @@ PresentationSessionInfo::Init(nsIPresentationControlChannel* aControlChannel)
  void
 PresentationSessionInfo::Shutdown(nsresult aReason)
 {
-  PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
-
   NS_WARN_IF(NS_FAILED(aReason));
 
   
@@ -403,9 +400,6 @@ PresentationSessionInfo::ContinueTermination()
 NS_IMETHODIMP
 PresentationSessionInfo::NotifyTransportReady()
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   MOZ_ASSERT(NS_IsMainThread());
 
   mIsTransportReady = true;
@@ -429,9 +423,6 @@ PresentationSessionInfo::NotifyTransportReady()
 NS_IMETHODIMP
 PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 {
-  PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
-
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -482,9 +473,6 @@ PresentationSessionInfo::NotifyData(const nsACString& aData)
 NS_IMETHODIMP
 PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* transport)
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   SetBuilder(nullptr);
 
   
@@ -507,13 +495,10 @@ PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* tra
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::OnError(nsresult aReason)
+PresentationSessionInfo::OnError(nsresult reason)
 {
-  PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
-
   SetBuilder(nullptr);
-  return ReplyError(aReason);
+  return ReplyError(reason);
 }
 
 NS_IMETHODIMP
@@ -607,6 +592,8 @@ PresentationControllingInfo::Shutdown(nsresult aReason)
     NS_WARN_IF(NS_FAILED(mServerSocket->Close()));
     mServerSocket = nullptr;
   }
+
+  mIsReconnecting = false;
 }
 
 nsresult
@@ -682,6 +669,13 @@ PresentationControllingInfo::OnGetAddress(const nsACString& aAddress)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  if (NS_WARN_IF(!mServerSocket)) {
+    return NS_ERROR_FAILURE;
+  }
+  if (NS_WARN_IF(!mControlChannel)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   int32_t port;
   nsresult rv = mServerSocket->GetPort(&port);
@@ -753,13 +747,14 @@ PresentationControllingInfo::OnAnswer(nsIPresentationChannelDescription* aDescri
 NS_IMETHODIMP
 PresentationControllingInfo::NotifyConnected()
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   MOZ_ASSERT(NS_IsMainThread());
 
   switch (mState) {
     case nsIPresentationSessionListener::STATE_CONNECTING: {
+      if (mIsReconnecting) {
+        return ContinueReconnect();
+      }
+
       nsresult rv = mControlChannel->Launch(GetSessionId(), GetUrl());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -781,17 +776,13 @@ PresentationControllingInfo::NotifyConnected()
 NS_IMETHODIMP
 PresentationControllingInfo::NotifyReconnected()
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mReconnectCallback);
 
-  if (NS_WARN_IF(mState == nsIPresentationSessionListener::STATE_TERMINATED)) {
+  if (NS_WARN_IF(mState != nsIPresentationSessionListener::STATE_CONNECTING)) {
     return NS_ERROR_FAILURE;
   }
 
-  SetStateWithReason(nsIPresentationSessionListener::STATE_CONNECTING, NS_OK);
   return mReconnectCallback->NotifySuccess();
 }
 
@@ -856,9 +847,6 @@ PresentationControllingInfo::BuildTransport()
 NS_IMETHODIMP
 PresentationControllingInfo::NotifyDisconnected(nsresult aReason)
 {
-  PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
-
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransportType == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
@@ -915,8 +903,6 @@ NS_IMETHODIMP
 PresentationControllingInfo::OnStopListening(nsIServerSocket* aServerSocket,
                                            nsresult aStatus)
 {
-  PRES_DEBUG("controller %s:status[%x]\n",__func__, aStatus);
-
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aStatus == NS_BINDING_ABORTED) { 
@@ -936,6 +922,24 @@ PresentationControllingInfo::OnStopListening(nsIServerSocket* aServerSocket,
   return NS_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 nsresult
 PresentationControllingInfo::Reconnect(nsIPresentationServiceCallback* aCallback)
 {
@@ -949,6 +953,8 @@ PresentationControllingInfo::Reconnect(nsIPresentationServiceCallback* aCallback
     return mReconnectCallback->NotifyError(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
 
+  SetStateWithReason(nsIPresentationSessionListener::STATE_CONNECTING, NS_OK);
+
   nsresult rv = NS_OK;
   if (!mControlChannel) {
     nsCOMPtr<nsIPresentationControlChannel> ctrlChannel;
@@ -961,11 +967,26 @@ PresentationControllingInfo::Reconnect(nsIPresentationServiceCallback* aCallback
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return mReconnectCallback->NotifyError(NS_ERROR_DOM_OPERATION_ERR);
     }
+
+    mIsReconnecting = true;
+  } else {
+    return ContinueReconnect();
   }
 
-  rv = mControlChannel->Reconnect(mSessionId, GetUrl());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return mReconnectCallback->NotifyError(rv);
+  return NS_OK;
+}
+
+nsresult
+PresentationControllingInfo::ContinueReconnect()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mControlChannel);
+  MOZ_ASSERT(mReconnectCallback);
+
+  mIsReconnecting = false;
+  if (NS_WARN_IF(NS_FAILED(mControlChannel->Reconnect(mSessionId, GetUrl()))) &&
+      mReconnectCallback) {
+    return mReconnectCallback->NotifyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   return NS_OK;
@@ -1259,9 +1280,6 @@ PresentationPresentingInfo::IsAccessible(base::ProcessId aProcessId)
 nsresult
 PresentationPresentingInfo::NotifyResponderReady()
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   if (mTimer) {
     mTimer->Cancel();
     mTimer = nullptr;
@@ -1284,9 +1302,6 @@ PresentationPresentingInfo::NotifyResponderReady()
 nsresult
 PresentationPresentingInfo::NotifyResponderFailure()
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   if (mTimer) {
     mTimer->Cancel();
     mTimer = nullptr;
@@ -1349,9 +1364,6 @@ PresentationPresentingInfo::OnIceCandidate(const nsAString& aCandidate)
 NS_IMETHODIMP
 PresentationPresentingInfo::NotifyConnected()
 {
-  PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
-
   if (nsIPresentationSessionListener::STATE_TERMINATED == mState) {
     ContinueTermination();
   }
@@ -1369,9 +1381,6 @@ PresentationPresentingInfo::NotifyReconnected()
 NS_IMETHODIMP
 PresentationPresentingInfo::NotifyDisconnected(nsresult aReason)
 {
-  PRES_DEBUG("%s:id[%s], reason[%x], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), aReason, mRole);
-
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransportType == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
