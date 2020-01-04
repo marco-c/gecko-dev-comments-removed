@@ -191,10 +191,37 @@ const Tab = Class({
     if (isDestroyed(this))
       return;
 
+    let { Worker } = require('../content/worker');
+    let { connect, makeChildOptions } = require('../content/utils');
+
+    let worker = Worker(options);
+    worker.once("detach", () => {
+      worker.destroy();
+    });
+
+    let attach = frame => {
+      let childOptions = makeChildOptions(options);
+      frame.port.emit("sdk/tab/attach", childOptions);
+      connect(worker, frame, { id: childOptions.id, url: this.url });
+    };
+
     
-    
-    let { Worker } = require('./worker');
-    return Worker(options, browser(this).contentWindow);
+    let frame = frames.getFrameForBrowser(browser(this));
+    if (frame) {
+      attach(frame);
+    }
+    else {
+      let listener = (frame) => {
+        if (frame.frameElement != browser(this))
+          return;
+
+        listener.off("attach", listener);
+        attach(frame);
+      };
+      frames.on("attach", listener);
+    }
+
+    return worker;
   },
 
   destroy: function() {
