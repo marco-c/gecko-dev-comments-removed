@@ -30,8 +30,7 @@ MediaSourceDemuxer::MediaSourceDemuxer()
 
 
 
-
-const TimeUnit MediaSourceDemuxer::EOS_FUZZ = media::TimeUnit::FromMicroseconds(125000);
+const TimeUnit MediaSourceDemuxer::EOS_FUZZ = media::TimeUnit::FromMicroseconds(500000);
 
 RefPtr<MediaSourceDemuxer::InitPromise>
 MediaSourceDemuxer::Init()
