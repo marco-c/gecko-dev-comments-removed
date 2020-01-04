@@ -1400,6 +1400,12 @@ struct nsStylePosition {
 
 
 
+  uint8_t ComputedAlignItems(const nsStyleDisplay* aDisplay) const;
+
+  
+
+
+
   uint16_t ComputedJustifyContent(const nsStyleDisplay* aDisplay) const;
 
   
@@ -1432,7 +1438,6 @@ struct nsStylePosition {
   uint8_t       mGridAutoFlow;          
   uint8_t       mBoxSizing;             
   uint8_t       mAlignContent;          
-  uint8_t       mAlignItems;            
   uint8_t       mAlignSelf;             
 private:
   friend class nsRuleNode;
@@ -1440,6 +1445,7 @@ private:
   uint8_t MapLeftRightToStart(uint8_t aAlign, mozilla::LogicalAxis aAxis,
                               const nsStyleDisplay* aDisplay) const;
 
+  uint8_t       mAlignItems;            
   uint16_t      mJustifyContent;        
   uint8_t       mJustifyItems;          
   uint8_t       mJustifySelf;           

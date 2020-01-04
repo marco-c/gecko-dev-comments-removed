@@ -7802,11 +7802,22 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
               NS_STYLE_ALIGN_CONTENT_STRETCH, 0, 0, 0, 0);
 
   
-  SetDiscrete(*aRuleData->ValueForAlignItems(),
-              pos->mAlignItems, conditions,
-              SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
-              parentPos->mAlignItems,
-              NS_STYLE_ALIGN_ITEMS_INITIAL_VALUE, 0, 0, 0, 0);
+  const auto& alignItemsValue = *aRuleData->ValueForAlignItems();
+  if (MOZ_UNLIKELY(alignItemsValue.GetUnit() == eCSSUnit_Inherit)) {
+    if (MOZ_LIKELY(parentContext)) {
+      pos->mAlignItems =
+        parentPos->ComputedAlignItems(parentContext->StyleDisplay());
+    } else {
+      pos->mAlignItems = NS_STYLE_ALIGN_AUTO;
+    }
+    conditions.SetUncacheable();
+  } else {
+    SetDiscrete(alignItemsValue,
+                pos->mAlignItems, conditions,
+                SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
+                parentPos->mAlignItems, 
+                NS_STYLE_ALIGN_AUTO, 0, 0, 0, 0);
+  }
 
   
   
@@ -7828,7 +7839,7 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
       if (!parentContext) {
         
         
-        inheritedAlignSelf = NS_STYLE_ALIGN_ITEMS_INITIAL_VALUE;
+        inheritedAlignSelf = NS_STYLE_ALIGN_AUTO; 
       } else {
         
         
@@ -7836,13 +7847,13 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
         if (!grandparentContext) {
           
           
-          inheritedAlignSelf = NS_STYLE_ALIGN_ITEMS_INITIAL_VALUE;
+          inheritedAlignSelf = NS_STYLE_ALIGN_AUTO; 
         } else {
           
           
           const nsStylePosition* grandparentPos =
             grandparentContext->StylePosition();
-          inheritedAlignSelf = grandparentPos->mAlignItems;
+          inheritedAlignSelf = grandparentPos->ComputedAlignItems(grandparentContext->StyleDisplay());
           aContext->AddStyleBit(NS_STYLE_USES_GRANDANCESTOR_STYLE);
         }
       }

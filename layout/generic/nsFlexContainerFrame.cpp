@@ -1594,8 +1594,9 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
 
   
   if (mAlignSelf == NS_STYLE_ALIGN_SELF_AUTO) {
+    auto parent = mFrame->StyleContext()->GetParent();
     mAlignSelf =
-      mFrame->StyleContext()->GetParent()->StylePosition()->mAlignItems;
+      parent->StylePosition()->ComputedAlignItems(parent->StyleDisplay());
   }
 
   
