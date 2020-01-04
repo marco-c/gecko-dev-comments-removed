@@ -670,22 +670,22 @@ private:
   
   
   
-  enum RestyleResult {
+  enum class RestyleResult : uint8_t {
     
-    eRestyleResult_None,
+    eNone,
 
     
-    eRestyleResult_Stop,
+    eStop,
 
     
     
-    eRestyleResult_StopWithStyleChange,
+    eStopWithStyleChange,
 
     
-    eRestyleResult_Continue,
+    eContinue,
 
     
-    eRestyleResult_ContinueAndForceDescendants
+    eContinueAndForceDescendants
   };
 
   struct SwapInstruction
