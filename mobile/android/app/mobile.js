@@ -433,7 +433,13 @@ pref("font.size.inflation.minTwips", 0);
 
 pref("browser.ui.zoom.force-user-scalable", false);
 
+
+
+#ifdef NIGHTLY_BUILD
 pref("ui.zoomedview.enabled", true);
+#else
+pref("ui.zoomedview.enabled", false);
+#endif
 pref("ui.zoomedview.keepLimitSize", 16); 
 pref("ui.zoomedview.limitReadableSize", 8); 
 pref("ui.zoomedview.defaultZoomFactor", 2);

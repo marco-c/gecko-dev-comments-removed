@@ -1871,7 +1871,7 @@ public class BrowserApp extends GeckoApp
                         
                         
                         ensureTabsPanelExists();
-                        if (mZoomedView == null) {
+                        if (AppConstants.NIGHTLY_BUILD && mZoomedView == null) {
                             ViewStub stub = (ViewStub) findViewById(R.id.zoomed_view_stub);
                             mZoomedView = (ZoomedView) stub.inflate();
                         }
