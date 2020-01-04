@@ -1678,8 +1678,7 @@ nsGenericHTMLElement::IsScrollGrabAllowed(JSContext*, JSObject*)
 {
   
   nsIPrincipal* prin = nsContentUtils::SubjectPrincipal();
-  return nsContentUtils::IsSystemPrincipal(prin) ||
-    prin->GetAppStatus() == nsIPrincipal::APP_STATUS_CERTIFIED;
+  return nsContentUtils::IsSystemPrincipal(prin);
 }
 
 nsresult
