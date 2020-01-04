@@ -19,8 +19,6 @@ XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function() {
   return OS.Path.join(OS.Constants.Path.profileDir, "datareporting", "archived");
 });
 
-const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
-
 
 
 

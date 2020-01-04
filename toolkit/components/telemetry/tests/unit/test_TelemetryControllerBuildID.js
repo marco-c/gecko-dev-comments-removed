@@ -26,7 +26,7 @@ XPCOMUtils.defineLazyGetter(this, "gDatareportingService",
           .wrappedJSObject);
 
 
-Services.prefs.setBoolPref(TelemetryController.Constants.PREF_ENABLED, true);
+Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
 
 
 Cu.import("resource://testing-common/AppInfo.jsm", this);
