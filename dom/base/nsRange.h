@@ -252,6 +252,14 @@ public:
                                      bool *outNodeBefore,
                                      bool *outNodeAfter);
 
+  
+
+
+
+
+
+
+
   static bool IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
                              uint32_t aEndOffset);
 
@@ -297,6 +305,14 @@ protected:
 
 
   nsINode* GetRegisteredCommonAncestor();
+
+  
+  static bool IsNodeInSortedRanges(nsINode* aNode,
+                                   uint32_t aStartOffset,
+                                   uint32_t aEndOffset,
+                                   const nsTArray<const nsRange*>& aRanges,
+                                   size_t aRangeStart,
+                                   size_t aRangeEnd);
 
   struct MOZ_STACK_CLASS AutoInvalidateSelection
   {
