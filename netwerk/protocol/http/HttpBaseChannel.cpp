@@ -1506,6 +1506,12 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   }
 
   
+  if (userReferrerTrimmingPolicy) {
+    rv = NS_NewURI(getter_AddRefs(clone), spec);
+    if (NS_FAILED(rv)) return rv;
+  }
+
+  
   rv = SetRequestHeader(NS_LITERAL_CSTRING("Referer"), spec, false);
   if (NS_FAILED(rv)) return rv;
 
