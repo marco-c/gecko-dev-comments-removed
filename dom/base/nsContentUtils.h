@@ -1916,7 +1916,7 @@ public:
 
 
   static already_AddRefed<mozilla::layers::LayerManager>
-  LayerManagerForDocument(const nsIDocument *aDoc, bool *aAllowRetaining = nullptr);
+  LayerManagerForDocument(const nsIDocument *aDoc);
 
   
 
@@ -1933,7 +1933,7 @@ public:
 
 
   static already_AddRefed<mozilla::layers::LayerManager>
-  PersistentLayerManagerForDocument(nsIDocument *aDoc, bool *aAllowRetaining = nullptr);
+  PersistentLayerManagerForDocument(nsIDocument *aDoc);
 
   
 

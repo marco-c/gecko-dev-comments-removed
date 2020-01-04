@@ -1205,20 +1205,16 @@ class nsIWidget : public nsISupports
 
 
 
-
-
-
-    inline LayerManager* GetLayerManager(bool* aAllowRetaining = nullptr)
+    inline LayerManager* GetLayerManager()
     {
         return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
-                               LAYER_MANAGER_CURRENT, aAllowRetaining);
+                               LAYER_MANAGER_CURRENT);
     }
 
-    inline LayerManager* GetLayerManager(LayerManagerPersistence aPersistence,
-                                         bool* aAllowRetaining = nullptr)
+    inline LayerManager* GetLayerManager(LayerManagerPersistence aPersistence)
     {
         return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
-                               aPersistence, aAllowRetaining);
+                               aPersistence);
     }
 
     
@@ -1228,8 +1224,7 @@ class nsIWidget : public nsISupports
 
     virtual LayerManager* GetLayerManager(PLayerTransactionChild* aShadowManager,
                                           LayersBackend aBackendHint,
-                                          LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT,
-                                          bool* aAllowRetaining = nullptr) = 0;
+                                          LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) = 0;
 
     
 

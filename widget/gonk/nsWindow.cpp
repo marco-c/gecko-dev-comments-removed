@@ -671,12 +671,8 @@ nsWindow::GetDefaultScaleInternal()
 LayerManager *
 nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
                           LayersBackend aBackendHint,
-                          LayerManagerPersistence aPersistence,
-                          bool* aAllowRetaining)
+                          LayerManagerPersistence aPersistence)
 {
-    if (aAllowRetaining) {
-        *aAllowRetaining = true;
-    }
     if (mLayerManager) {
         
         

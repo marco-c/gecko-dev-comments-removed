@@ -248,7 +248,7 @@ public:
     mMode = nsDisplayListBuilderMode::PLUGIN_GEOMETRY;
   }
 
-  mozilla::layers::LayerManager* GetWidgetLayerManager(nsView** aView = nullptr, bool* aAllowRetaining = nullptr);
+  mozilla::layers::LayerManager* GetWidgetLayerManager(nsView** aView = nullptr);
 
   
 
