@@ -247,8 +247,6 @@ public:
     aPseudoType = mPseudoType;
   }
 
-  void SetParentTime(Nullable<TimeDuration> aParentTime);
-
   const AnimationTiming& Timing() const {
     return mTiming;
   }
@@ -257,11 +255,7 @@ public:
   }
   void SetTiming(const AnimationTiming& aTiming);
 
-  Nullable<TimeDuration> GetLocalTime() const {
-    
-    
-    return mParentTime;
-  }
+  Nullable<TimeDuration> GetLocalTime() const;
 
   
   
@@ -323,7 +317,6 @@ protected:
 
   nsCOMPtr<Element> mTarget;
   nsRefPtr<Animation> mAnimation;
-  Nullable<TimeDuration> mParentTime;
 
   AnimationTiming mTiming;
   nsCSSPseudoElements::Type mPseudoType;

@@ -144,12 +144,6 @@ KeyframeEffectReadOnly::WrapObject(JSContext* aCx,
 }
 
 void
-KeyframeEffectReadOnly::SetParentTime(Nullable<TimeDuration> aParentTime)
-{
-  mParentTime = aParentTime;
-}
-
-void
 KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming)
 {
   if (mTiming == aTiming) {
@@ -159,6 +153,18 @@ KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming)
   if (mAnimation) {
     mAnimation->NotifyEffectTimingUpdated();
   }
+}
+
+Nullable<TimeDuration>
+KeyframeEffectReadOnly::GetLocalTime() const
+{
+  
+  
+  Nullable<TimeDuration> result;
+  if (mAnimation) {
+    result = mAnimation->GetCurrentTime();
+  }
+  return result;
 }
 
 ComputedTiming
