@@ -492,8 +492,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    void callAndPushReturnAddress(Register reg) DEFINED_ON(mips32, x86_shared);
-    void callAndPushReturnAddress(Label* label) DEFINED_ON(mips32, x86_shared);
+    void callAndPushReturnAddress(Register reg) DEFINED_ON(mips_shared, x86_shared);
+    void callAndPushReturnAddress(Label* label) DEFINED_ON(mips_shared, x86_shared);
 
     void pushReturnAddress() DEFINED_ON(arm, arm64);
 

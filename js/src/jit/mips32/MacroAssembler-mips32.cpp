@@ -2566,27 +2566,6 @@ MacroAssembler::reserveStack(uint32_t amount)
 
 
 void
-MacroAssembler::callAndPushReturnAddress(Register callee)
-{
-    
-    subPtr(Imm32(sizeof(intptr_t)), StackPointer);
-    as_jalr(callee);
-    storePtr(ra, Address(StackPointer, 0));
-}
-
-void
-MacroAssembler::callAndPushReturnAddress(Label* label)
-{
-    
-    subPtr(Imm32(sizeof(intptr_t)), StackPointer);
-    ma_bal(label, DontFillDelaySlot);
-    storePtr(ra, Address(StackPointer, 0));
-}
-
-
-
-
-void
 MacroAssembler::setupUnalignedABICall(Register scratch)
 {
     setupABICall();
