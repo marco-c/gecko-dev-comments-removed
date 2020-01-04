@@ -879,9 +879,12 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   MOZ_ASSERT(OnTaskQueue());
   mDemuxerInitRequest.Complete();
 
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(mInputDemuxer);
+  if (!mInputDemuxer) {
+    
+    
+    NS_WARNING("mInputDemuxer has been destroyed");
+    RejectAppend(NS_ERROR_ABORT, __func__);
+  }
 
   MediaInfo info;
 
