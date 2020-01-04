@@ -582,9 +582,11 @@ function stripHttpAndTrim(spec) {
 
 
 function makeActionURL(action, params) {
-  let url = "moz-action:" + action + "," + JSON.stringify(params);
-  
-  return NetUtil.newURI(url).spec;
+  let encodedParams = {};
+  for (let key in params) {
+    encodedParams[key] = encodeURIComponent(params[key]);
+  }
+  return "moz-action:" + action + "," + JSON.stringify(encodedParams);
 }
 
 
@@ -1307,14 +1309,22 @@ Search.prototype = {
       return false;
     }
 
+    
+    
+    
+    
+    
+    let escapedURL = uri.spec;
+    let displayURL = textURIService.unEscapeURIForUI("UTF-8", uri.spec);
+
     let value = makeActionURL("visiturl", {
-      url: uri.spec,
+      url: escapedURL,
       input: this._originalSearchString,
     });
 
     let match = {
       value: value,
-      comment: uri.spec,
+      comment: displayURL,
       style: "action visiturl",
       frecency: 0,
     };
