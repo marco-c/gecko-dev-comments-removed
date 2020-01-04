@@ -3,14 +3,25 @@
 
 
 
-#inspector-sidebar {
-  min-width: 250px;
+
+
+
+#inspector-sidebar-container {
+  overflow: hidden;
+  min-width: 450px;
+  position: relative;
 }
 
+#inspector-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+
 .inspector-tabpanel > * {
-  
-
-
   -moz-user-focus: normal;
 }
 

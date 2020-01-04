@@ -44,6 +44,12 @@
 
 
 
+.theme-firebug .tabs .tabs-navigation {
+  font-size: 14px;
+}
+
+
+
 
 .theme-dark .panelContent,
 .theme-light .panelContent {
