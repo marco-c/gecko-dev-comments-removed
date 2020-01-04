@@ -4771,7 +4771,9 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
     }
 
     MaybeRescheduleAnimationFrameNotifications();
-    mRegistry = new Registry();
+    if (Preferences::GetBool("dom.webcomponents.enabled")) {
+      mRegistry = new Registry();
+    }
   }
 
   
@@ -5667,7 +5669,9 @@ nsDocument::CreateElement(const nsAString& aTagName,
     return nullptr;
   }
 
-  if (!aTagName.Equals(aTypeExtension)) {
+  if (!aTypeExtension.IsVoid() &&
+      !aTagName.Equals(aTypeExtension)) {
+    
     
     SetupCustomElement(elem, GetDefaultNamespaceID(), &aTypeExtension);
   }
@@ -5725,6 +5729,13 @@ nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
     return nullptr;
   }
 
+  if (aTypeExtension.IsVoid() ||
+      aQualifiedName.Equals(aTypeExtension)) {
+    
+    
+    return elem.forget();
+  }
+
   int32_t nameSpaceId = kNameSpaceID_Wildcard;
   if (!aNamespaceURI.EqualsLiteral("*")) {
     rv = nsContentUtils::NameSpaceManager()->RegisterNameSpace(aNamespaceURI,
@@ -5734,10 +5745,7 @@ nsDocument::CreateElementNS(const nsAString& aNamespaceURI,
     }
   }
 
-  if (!aQualifiedName.Equals(aTypeExtension)) {
-    
-    SetupCustomElement(elem, nameSpaceId, &aTypeExtension);
-  }
+  SetupCustomElement(elem, nameSpaceId, &aTypeExtension);
 
   return elem.forget();
 }
