@@ -26,6 +26,9 @@ const CLIENTS_TTL_REFRESH = 604800;
 const SUPPORTED_PROTOCOL_VERSIONS = ["1.1", "1.5"];
 
 function hasDupeCommand(commands, action) {
+  if (!commands) {
+    return false;
+  }
   return commands.some(other => other.command == action.command &&
     Utils.deepEquals(other.args, action.args));
 }
@@ -188,6 +191,11 @@ ClientEngine.prototype = {
     }
   },
 
+  _uploadOutgoing() {
+    this._clearedCommands = null;
+    SyncEngine.prototype._uploadOutgoing.call(this);
+  },
+
   _syncFinish() {
     
     for (let [deviceType, count] of this.deviceTypes) {
@@ -233,6 +241,7 @@ ClientEngine.prototype = {
 
   _wipeClient: function _wipeClient() {
     SyncEngine.prototype._resetClient.call(this);
+    delete this.localCommands;
     this._store.wipe();
   },
 
@@ -275,6 +284,12 @@ ClientEngine.prototype = {
 
 
   clearCommands: function clearCommands() {
+    if (!this._clearedCommands) {
+      this._clearedCommands = [];
+    }
+    
+    
+    this._clearedCommands = this._clearedCommands.concat(this.localCommands);
     delete this.localCommands;
     this._tracker.addChangedID(this.localID);
   },
@@ -474,21 +489,56 @@ ClientStore.prototype = {
   },
 
   update: function update(record) {
-    
-    if (record.id == this.engine.localID)
-      this.engine.localCommands = record.commands;
-    else {
-      let currentRecord = this._remoteClients[record.id];
-      if (currentRecord && currentRecord.commands) {
-        
-        for (let action of currentRecord.commands) {
-          if (!hasDupeCommand(record.cleartext.commands, action)) {
-            record.cleartext.commands.push(action);
-          }
-        }
-      }
-      this._remoteClients[record.id] = record.cleartext;
+    if (record.id == this.engine.localID) {
+      this._updateLocalRecord(record);
+    } else {
+      this._updateRemoteRecord(record);
     }
+  },
+
+  _updateLocalRecord(record) {
+    
+    
+    let incomingCommands = record.commands;
+    if (incomingCommands) {
+      
+      incomingCommands = incomingCommands.filter(action =>
+        !hasDupeCommand(this.engine._clearedCommands, action));
+      if (!incomingCommands.length) {
+        
+        
+        incomingCommands = undefined;
+      }
+    }
+    
+    this.engine.localCommands = incomingCommands;
+  },
+
+  _updateRemoteRecord(record) {
+    let currentRecord = this._remoteClients[record.id];
+    if (!currentRecord || !currentRecord.commands ||
+        !(record.id in this.engine._modified)) {
+
+      
+      
+      this._remoteClients[record.id] = record.cleartext;
+      return;
+    }
+
+    
+    
+    for (let action of currentRecord.commands) {
+      if (hasDupeCommand(record.cleartext.commands, action)) {
+        
+        continue;
+      }
+      if (record.cleartext.commands) {
+        record.cleartext.commands.push(action);
+      } else {
+        record.cleartext.commands = [action];
+      }
+    }
+    this._remoteClients[record.id] = record.cleartext;
   },
 
   createRecord: function createRecord(id, collection) {
