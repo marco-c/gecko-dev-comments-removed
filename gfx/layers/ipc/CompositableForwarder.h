@@ -40,7 +40,7 @@ class PTextureChild;
 
 
 
-class CompositableForwarder : public ClientIPCAllocator
+class CompositableForwarder : public ISurfaceAllocator
 {
 public:
 
@@ -140,6 +140,8 @@ public:
   {
     return mTextureFactoryIdentifier.mMaxTextureSize;
   }
+
+  bool IsOnCompositorSide() const override { return false; }
 
   
 

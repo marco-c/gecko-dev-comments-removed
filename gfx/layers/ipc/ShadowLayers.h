@@ -22,13 +22,11 @@
 #include "nsRegion.h"                   
 #include "nsTArrayForwardDeclare.h"     
 #include "nsIWidget.h"
-#include <vector>
 
 namespace mozilla {
 namespace layers {
 
 class EditReply;
-class FixedSizeSmallShmemSectionAllocator;
 class ImageContainer;
 class Layer;
 class PLayerChild;
@@ -114,23 +112,13 @@ class Transaction;
 
 
 
+
 class ShadowLayerForwarder final : public CompositableForwarder
-                                 , public ShmemAllocator
-                                 , public LegacySurfaceDescriptorAllocator
 {
   friend class ClientLayerManager;
 
 public:
   virtual ~ShadowLayerForwarder();
-
-  virtual ShmemAllocator* AsShmemAllocator() override { return this; }
-
-  virtual ShadowLayerForwarder* AsLayerForwarder() override { return this; }
-
-  virtual LegacySurfaceDescriptorAllocator*
-  AsLegacySurfaceDescriptorAllocator() override { return this; }
-
-  FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator();
 
   
 
@@ -334,7 +322,7 @@ public:
 
 
 
-
+  
   virtual bool AllocUnsafeShmem(size_t aSize,
                                 mozilla::ipc::SharedMemory::SharedMemoryType aType,
                                 mozilla::ipc::Shmem* aShmem) override;
@@ -344,12 +332,8 @@ public:
   virtual void DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   virtual bool IPCOpen() const override;
-
   virtual bool IsSameProcess() const override;
-
-  virtual MessageLoop* GetMessageLoop() const override { return mMessageLoop; }
-
-  base::ProcessId GetParentPid() const;
+  virtual base::ProcessId ParentPid() const override;
 
   
 
@@ -365,20 +349,6 @@ public:
   void SetPaintSyncId(int32_t aSyncId) { mPaintSyncId = aSyncId; }
 
   static void PlatformSyncBeforeUpdate();
-
-  virtual bool AllocSurfaceDescriptor(const gfx::IntSize& aSize,
-                                      gfxContentType aContent,
-                                      SurfaceDescriptor* aBuffer) override;
-
-  virtual bool AllocSurfaceDescriptorWithCaps(const gfx::IntSize& aSize,
-                                              gfxContentType aContent,
-                                              uint32_t aCaps,
-                                              SurfaceDescriptor* aBuffer) override;
-
-  virtual void DestroySurfaceDescriptor(SurfaceDescriptor* aSurface) override;
-
-  
-  static bool IsShmem(SurfaceDescriptor* aSurface);
 
 protected:
   ShadowLayerForwarder();
@@ -396,14 +366,12 @@ protected:
 private:
 
   Transaction* mTxn;
-  MessageLoop* mMessageLoop;
   std::vector<AsyncChildMessageData> mPendingAsyncMessages;
   DiagnosticTypes mDiagnosticTypes;
   bool mIsFirstPaint;
   bool mWindowOverlayChanged;
   int32_t mPaintSyncId;
   InfallibleTArray<PluginWindowData> mPluginWindowData;
-  FixedSizeSmallShmemSectionAllocator* mSectionAllocator;
 };
 
 class CompositableClient;
@@ -438,50 +406,6 @@ protected:
   ShadowableLayer() : mShadow(nullptr) {}
 
   PLayerChild* mShadow;
-};
-
-
-
-
-class FixedSizeSmallShmemSectionAllocator final : public ShmemSectionAllocator
-{
-public:
-  enum AllocationStatus
-  {
-    STATUS_ALLOCATED,
-    STATUS_FREED
-  };
-
-  struct ShmemSectionHeapHeader
-  {
-    Atomic<uint32_t> mTotalBlocks;
-    Atomic<uint32_t> mAllocatedBlocks;
-  };
-
-  struct ShmemSectionHeapAllocation
-  {
-    Atomic<uint32_t> mStatus;
-    uint32_t mSize;
-  };
-
-  explicit FixedSizeSmallShmemSectionAllocator(ShmemAllocator* aShmProvider);
-
-  ~FixedSizeSmallShmemSectionAllocator();
-
-  virtual bool AllocShmemSection(uint32_t aSize, ShmemSection* aShmemSection) override;
-
-  virtual void DeallocShmemSection(ShmemSection& aShmemSection) override;
-
-  virtual void MemoryPressure() override { ShrinkShmemSectionHeap(); }
-
-  
-  static void FreeShmemSection(ShmemSection& aShmemSection);
-
-  void ShrinkShmemSectionHeap();
-
-protected:
-  std::vector<mozilla::ipc::Shmem> mUsedShmems;
-  ShmemAllocator* mShmProvider;
 };
 
 } 
