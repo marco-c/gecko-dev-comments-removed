@@ -145,6 +145,7 @@
 #include "mozilla/LateWriteChecks.h"
 
 #include <stdlib.h>
+#include <locale.h>
 
 #ifdef XP_UNIX
 #include <sys/stat.h>
@@ -4150,6 +4151,8 @@ XREMain::XRE_mainRun()
 
   mDirProvider.DoStartup();
 
+  OverrideDefaultLocaleIfNeeded();
+
 #ifdef MOZ_CRASHREPORTER
   nsCString userAgentLocale;
   
@@ -4807,4 +4810,16 @@ SetupErrorHandling(const char* progname)
 
   
   setbuf(stdout, 0);
+}
+
+void
+OverrideDefaultLocaleIfNeeded() {
+  
+  if (mozilla::Preferences::GetBool("javascript.use_us_english_locale", false)) {
+    
+    
+    
+    
+    setlocale(LC_ALL, "C.UTF-8") || setlocale(LC_ALL, "C");
+  }
 }
