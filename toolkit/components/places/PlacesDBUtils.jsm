@@ -859,21 +859,9 @@ this.PlacesDBUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-  telemetry: function PDBU_telemetry(aTasks, aHealthReportCallback=null)
+  telemetry: function PDBU_telemetry(aTasks)
   {
     let tasks = new Tasks(aTasks);
-
-    let isTelemetry = !aHealthReportCallback;
 
     
     
@@ -895,15 +883,11 @@ this.PlacesDBUtils = {
     
     
     
-    
-    
     let probes = [
       { histogram: "PLACES_PAGES_COUNT",
-        healthreport: true,
         query:     "SELECT count(*) FROM moz_places" },
 
       { histogram: "PLACES_BOOKMARKS_COUNT",
-        healthreport: true,
         query:     `SELECT count(*) FROM moz_bookmarks b
                     JOIN moz_bookmarks t ON t.id = b.parent
                     AND t.parent <> :tags_folder
@@ -989,14 +973,8 @@ this.PlacesDBUtils = {
       places_root: PlacesUtils.placesRootId
     };
 
-    let outstandingProbes = [];
-
     for (let i = 0; i < probes.length; i++) {
       let probe = probes[i];
-
-      if (!isTelemetry && !probe.healthreport) {
-        continue;
-      }
 
       let promiseDone = new Promise((resolve, reject) => {
         if (!("query" in probe)) {
@@ -1027,7 +1005,7 @@ this.PlacesDBUtils = {
 
       
       
-      promiseDone = promiseDone.then(
+      promiseDone.then(
         
         ([aProbe, aValue]) => {
           let value = aValue;
@@ -1045,14 +1023,6 @@ this.PlacesDBUtils = {
         },
         
         this._handleError);
-
-      outstandingProbes.push(promiseDone);
-    }
-
-    if (aHealthReportCallback) {
-      Promise.all(outstandingProbes).then(() =>
-        aHealthReportCallback(probeValues)
-      );
     }
 
     PlacesDBUtils._executeTasks(tasks);
