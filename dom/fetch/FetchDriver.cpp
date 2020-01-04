@@ -132,20 +132,19 @@ FetchDriver::SetTaintingAndGetNextOp()
   
   
 
-  nsAutoCString scheme;
-  rv = requestURI->GetScheme(scheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return MainFetchOp(NETWORK_ERROR);
-  }
+  MOZ_ASSERT_IF(mRequest->Mode() == RequestMode::Same_origin ||
+                mRequest->Mode() == RequestMode::No_cors, !mCORSFlagEverSet);
 
   
   
   
-  rv = mPrincipal->CheckMayLoad(requestURI, false ,
-                                false );
-  if ((!mCORSFlagEverSet && NS_SUCCEEDED(rv)) ||
-      (scheme.EqualsLiteral("data") && mRequest->SameOriginDataURL()) ||
-      scheme.EqualsLiteral("about")) {
+
+  
+  
+  if (!mCORSFlagEverSet &&
+      (NS_IsAboutBlank(requestURI) ||
+       NS_SUCCEEDED(mPrincipal->CheckMayLoad(requestURI, false ,
+                                             true )))) {
     return MainFetchOp(BASIC_FETCH);
   }
 
