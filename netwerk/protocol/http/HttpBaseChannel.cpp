@@ -1778,15 +1778,14 @@ HttpBaseChannel::GetRequestSucceeded(bool *aValue)
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::RedirectTo(nsIURI *targetURI)
+HttpBaseChannel::RedirectTo(nsIURI *newURI)
 {
   
-  
-  
-  
-  NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
+  ENSURE_CALLED_BEFORE_CONNECT();
 
-  mAPIRedirectToURI = targetURI;
+  
+  mAPIRedirectToURI = newURI;
+
   return NS_OK;
 }
 
