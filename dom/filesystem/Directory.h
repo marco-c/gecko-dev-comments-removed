@@ -41,14 +41,37 @@ class Directory final
   , public nsWrapperCache
 {
 public:
+  struct BlobImplOrDirectoryPath
+  {
+    RefPtr<BlobImpl> mBlobImpl;
+    nsString mDirectoryPath;
+
+    enum {
+      eBlobImpl,
+      eDirectoryPath
+    } mType;
+  };
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Directory)
 
-public:
   static already_AddRefed<Promise>
   GetRoot(FileSystemBase* aFileSystem, ErrorResult& aRv);
 
-  Directory(FileSystemBase* aFileSystem, const nsAString& aPath);
+  enum DirectoryType {
+    
+    
+    
+    
+    eDOMRootDirectory,
+
+    
+    eNotDOMRootDirectory
+  };
+
+  static already_AddRefed<Directory>
+  Create(nsPIDOMWindowInner* aWindow, nsIFile* aDirectory,
+         DirectoryType aType, FileSystemBase* aFileSystem = 0);
 
   
 
@@ -59,7 +82,7 @@ public:
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   void
-  GetName(nsAString& aRetval) const;
+  GetName(nsAString& aRetval, ErrorResult& aRv);
 
   already_AddRefed<Promise>
   CreateFile(const nsAString& aPath, const CreateFileOptions& aOptions,
@@ -80,10 +103,13 @@ public:
   
 
   void
-  GetPath(nsAString& aRetval) const;
+  GetPath(nsAString& aRetval, ErrorResult& aRv);
+
+  nsresult
+  GetFullRealPath(nsAString& aPath);
 
   already_AddRefed<Promise>
-  GetFilesAndDirectories();
+  GetFilesAndDirectories(ErrorResult& aRv);
 
   
 
@@ -113,8 +139,12 @@ public:
   SetContentFilters(const nsAString& aFilters);
 
   FileSystemBase*
-  GetFileSystem() const;
+  GetFileSystem(ErrorResult& aRv);
+
 private:
+  Directory(nsPIDOMWindowInner* aWindow,
+            nsIFile* aFile, DirectoryType aType,
+            FileSystemBase* aFileSystem = nullptr);
   ~Directory();
 
   static bool
@@ -123,16 +153,18 @@ private:
   
 
 
-
-  bool
-  DOMPathToRealPath(const nsAString& aPath, nsAString& aRealPath) const;
+  nsresult
+  DOMPathToRealPath(const nsAString& aPath, nsIFile** aFile) const;
 
   already_AddRefed<Promise>
   RemoveInternal(const StringOrFileOrDirectory& aPath, bool aRecursive,
                  ErrorResult& aRv);
 
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
   RefPtr<FileSystemBase> mFileSystem;
-  nsString mPath;
+  nsCOMPtr<nsIFile> mFile;
+  DirectoryType mType;
+
   nsString mFilters;
 };
 

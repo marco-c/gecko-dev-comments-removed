@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_GetDirectoryListing_h
 #define mozilla_dom_GetDirectoryListing_h
 
+#include "mozilla/dom/Directory.h"
 #include "mozilla/dom/FileSystemTaskBase.h"
 #include "mozilla/ErrorResult.h"
 #include "nsAutoPtr.h"
@@ -16,18 +17,21 @@ namespace dom {
 
 class BlobImpl;
 
-class GetDirectoryListingTask final
-  : public FileSystemTaskBase
+class GetDirectoryListingTask final : public FileSystemTaskBase
 {
 public:
-  
-  GetDirectoryListingTask(FileSystemBase* aFileSystem,
-                          const nsAString& aTargetPath,
-                          const nsAString& aFilters,
-                          ErrorResult& aRv);
-  GetDirectoryListingTask(FileSystemBase* aFileSystem,
-                          const FileSystemGetDirectoryListingParams& aParam,
-                          FileSystemRequestParent* aParent);
+  static already_AddRefed<GetDirectoryListingTask>
+  Create(FileSystemBase* aFileSystem,
+         nsIFile* aTargetPath,
+         Directory::DirectoryType aType,
+         const nsAString& aFilters,
+         ErrorResult& aRv);
+
+  static already_AddRefed<GetDirectoryListingTask>
+  Create(FileSystemBase* aFileSystem,
+         const FileSystemGetDirectoryListingParams& aParam,
+         FileSystemRequestParent* aParent,
+         ErrorResult& aRv);
 
   virtual
   ~GetDirectoryListingTask();
@@ -37,15 +41,28 @@ public:
 
   virtual void
   GetPermissionAccessType(nsCString& aAccess) const override;
-protected:
+
+private:
+  
+  GetDirectoryListingTask(FileSystemBase* aFileSystem,
+                          nsIFile* aTargetPath,
+                          Directory::DirectoryType aType,
+                          const nsAString& aFilters);
+
+  GetDirectoryListingTask(FileSystemBase* aFileSystem,
+                          const FileSystemGetDirectoryListingParams& aParam,
+                          FileSystemRequestParent* aParent);
+
   virtual FileSystemParams
-  GetRequestParams(const nsString& aFileSystem) const override;
+  GetRequestParams(const nsString& aSerializedDOMPath,
+                   ErrorResult& aRv) const override;
 
   virtual FileSystemResponseValue
-  GetSuccessRequestResult() const override;
+  GetSuccessRequestResult(ErrorResult& aRv) const override;
 
   virtual void
-  SetSuccessRequestResult(const FileSystemResponseValue& aValue) override;
+  SetSuccessRequestResult(const FileSystemResponseValue& aValue,
+                          ErrorResult& aRv) override;
 
   virtual nsresult
   Work() override;
@@ -53,14 +70,18 @@ protected:
   virtual void
   HandlerCallback() override;
 
-private:
+  void
+  CreateNormalizedRelativePath(const nsAString& aPath,
+                               nsAString& aRelativePath) const;
+
   RefPtr<Promise> mPromise;
-  nsString mTargetRealPath;
+  nsCOMPtr<nsIFile> mTargetPath;
   nsString mFilters;
+  Directory::DirectoryType mType;
 
   
   
-  nsTArray<RefPtr<BlobImpl>> mTargetBlobImpls;
+  nsTArray<Directory::BlobImplOrDirectoryPath> mTargetData;
 };
 
 } 
