@@ -9,6 +9,7 @@
 #include "base/process.h"               
 #include "base/task.h"                  
 #include "base/thread.h"
+#include "mozilla/Sprintf.h"            
 #include "mozilla/ipc/MessageChannel.h" 
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/Transport.h"      
