@@ -13,10 +13,16 @@ this.PromptUtils = {
     
     
     
-    fireDialogEvent : function (domWin, eventName, maybeTarget) {
+    
+    
+    
+    fireDialogEvent : function (domWin, eventName, maybeTarget, detail) {
         let target = maybeTarget || domWin;
-        let event = domWin.document.createEvent("Events");
-        event.initEvent(eventName, true, true);
+        let eventOptions = {cancelable: true, bubbles: true};
+        if (detail) {
+          eventOptions.detail = detail;
+        }
+        let event = new domWin.CustomEvent(eventName, eventOptions);
         let winUtils = domWin.QueryInterface(Ci.nsIInterfaceRequestor)
                              .getInterface(Ci.nsIDOMWindowUtils);
         winUtils.dispatchEventToChromeOnly(target, event);
