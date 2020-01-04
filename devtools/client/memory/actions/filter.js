@@ -3,6 +3,7 @@
 
 "use strict";
 
+const { clearTimeout, setTimeout } = require("sdk/timers");
 const { actions } = require("../constants");
 const { refresh } = require("./refresh");
 
