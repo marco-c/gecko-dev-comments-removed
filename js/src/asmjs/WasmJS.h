@@ -23,13 +23,31 @@
 #include "vm/NativeObject.h"
 
 namespace js {
+
+class TypedArrayObject;
+class WasmInstanceObject;
+
 namespace wasm {
+
+
 
 class Module;
 class Instance;
 
 typedef UniquePtr<Module> UniqueModule;
 typedef UniquePtr<Instance> UniqueInstance;
+
+
+
+bool
+HasCompilerSupport(ExclusiveContext* cx);
+
+
+
+
+MOZ_MUST_USE bool
+Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
+     MutableHandle<WasmInstanceObject*> instanceObj);
 
 } 
 

@@ -23,7 +23,7 @@
 #endif
 
 #include "asmjs/AsmJS.h"
-#include "asmjs/Wasm.h"
+#include "asmjs/WasmTypes.h"
 #include "vm/SharedMem.h"
 #include "vm/TypedArrayCommon.h"
 
