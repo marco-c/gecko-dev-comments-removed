@@ -20,8 +20,6 @@ import org.mozilla.gecko.home.HomeConfig.OnReloadListener;
 import org.mozilla.gecko.home.HomeConfig.PanelConfig;
 import org.mozilla.gecko.home.HomeConfig.PanelType;
 import org.mozilla.gecko.home.HomeConfig.State;
-import org.mozilla.gecko.restrictions.Restrictable;
-import org.mozilla.gecko.restrictions.Restrictions;
 import org.mozilla.gecko.util.HardwareUtils;
 
 import android.content.BroadcastReceiver;
@@ -37,7 +35,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
     private static final String LOGTAG = "GeckoHomeConfigBackend";
 
     
-    private static final int VERSION = 3;
+    private static final int VERSION = 4;
 
     
     public static final String PREFS_CONFIG_KEY_OLD = "home_panels";
@@ -153,6 +151,71 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
 
 
 
+
+
+
+    private static JSONArray combineHistoryAndSyncPanels(Context context, JSONArray jsonPanels) throws JSONException {
+        EnumSet<PanelConfig.Flags> historyFlags = null;
+        EnumSet<PanelConfig.Flags> syncFlags = null;
+
+        int historyIndex = -1;
+        int syncIndex = -1;
+
+        
+        for (int i = 0; i < jsonPanels.length(); i++) {
+            JSONObject panelObj = jsonPanels.getJSONObject(i);
+            final PanelConfig panelConfig = new PanelConfig(panelObj);
+            final PanelType type = panelConfig.getType();
+            if (type == PanelType.HISTORY) {
+                historyIndex = i;
+                historyFlags = panelConfig.getFlags();
+            } else if (type == PanelType.REMOTE_TABS) {
+                syncIndex = i;
+                syncFlags = panelConfig.getFlags();
+            }
+        }
+
+        if (historyIndex == -1 || syncIndex == -1) {
+            throw new IllegalArgumentException("Missing default panels");
+        }
+
+        PanelConfig newPanel;
+        int replaceIndex;
+        int removeIndex;
+        if (historyFlags.contains(PanelConfig.Flags.DISABLED_PANEL) && !syncFlags.contains(PanelConfig.Flags.DISABLED_PANEL)) {
+            
+            replaceIndex = syncIndex;
+            removeIndex = historyIndex;
+            newPanel = createBuiltinPanelConfig(context, PanelType.COMBINED_HISTORY, syncFlags);
+        } else {
+            
+            replaceIndex = historyIndex;
+            removeIndex = syncIndex;
+            newPanel = createBuiltinPanelConfig(context, PanelType.COMBINED_HISTORY, historyFlags);
+        }
+
+        
+        final JSONArray newArray = new JSONArray();
+        for (int i = 0; i < jsonPanels.length(); i++) {
+            if (i == replaceIndex) {
+                newArray.put(newPanel.toJSON());
+            } else if (i == removeIndex) {
+                continue;
+            } else {
+                newArray.put(jsonPanels.get(i));
+            }
+        }
+
+        return newArray;
+    }
+
+    
+
+
+
+
+
+
     private static boolean readingListPanelExists(JSONArray jsonPanels) {
         final int count = jsonPanels.length();
         for (int i = 0; i < count; i++) {
@@ -189,7 +252,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         
         sMigrationDone = true;
 
-        final JSONArray jsonPanels;
+        JSONArray jsonPanels;
         final int version;
 
         final SharedPreferences prefs = GeckoSharedPrefs.forProfile(context);
@@ -241,6 +304,13 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                         addBuiltinPanelConfig(context, jsonPanels,
                                 PanelType.READING_LIST, Position.BACK, Position.BACK);
                     }
+                    break;
+
+                case 4:
+                    
+                    
+                    
+                    jsonPanels = combineHistoryAndSyncPanels(context, jsonPanels);
                     break;
             }
         }
