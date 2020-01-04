@@ -3766,7 +3766,7 @@ pref("font.name.fantasy.x-math", "Papyrus");
 
 
 
-pref("font.single-face-list", "Osaka-Mono");
+pref("font.single-face-list", "Osaka-Mono:Osaka");
 
 
 
