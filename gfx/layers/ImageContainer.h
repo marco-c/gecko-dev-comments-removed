@@ -392,6 +392,18 @@ public:
 
 
 
+  void NotifyAttached();
+  void NotifyDetached();
+
+  bool IsAttached() {
+    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    return !!mAttachCount;
+  }
+
+  
+
+
+
 
   bool HasCurrentImage();
 
@@ -518,6 +530,8 @@ private:
   
   
   uint32_t mPaintCount;
+
+  int32_t mAttachCount;
 
   
   TimeDuration mPaintDelay;
