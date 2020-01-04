@@ -11,7 +11,7 @@
 
 #define LOG(msg) fprintf(stderr, "%s\n", msg);
 
-int main(int argc, char * argv[])
+int main(int , char * [])
 {
 #ifdef CUBEB_GECKO_BUILD
   ScopedXPCOM xpcom("test_latency");
