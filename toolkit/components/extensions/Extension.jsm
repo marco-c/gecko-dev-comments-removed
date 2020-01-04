@@ -118,7 +118,12 @@ var ExtensionContext, GlobalManager;
 var Management = {
   initialized: null,
   scopes: [],
-  schemaApis: [],
+  schemaApis: {
+    addon_parent: [],
+    addon_child: [],
+    content_parent: [],
+    content_child: [],
+  },
   emitter: new EventEmitter(),
 
   
@@ -165,12 +170,25 @@ var Management = {
 
 
 
-  registerSchemaAPI(namespace, getAPI) {
-    this.schemaApis.push({namespace, getAPI});
+
+
+
+
+
+
+  registerSchemaAPI(namespace, envType, getAPI) {
+    this.schemaApis[envType].push({namespace, getAPI});
+    if (envType === "addon_child") {
+      
+      
+      
+      
+      this.schemaApis.addon_parent.push({namespace, getAPI});
+    }
   },
 
   
-  generateAPIs(context, apis, obj, namespaces = null) {
+  generateAPIs(context, apis, obj) {
     
     function copy(dest, source) {
       for (let prop in source) {
@@ -187,9 +205,6 @@ var Management = {
     }
 
     for (let api of apis) {
-      if (namespaces && !namespaces.includes(api.namespace)) {
-        continue;
-      }
       if (api.permission) {
         if (!context.extension.hasPermission(api.permission)) {
           continue;
@@ -229,7 +244,9 @@ var Management = {
 
 ExtensionContext = class extends BaseContext {
   constructor(extension, params) {
-    super(extension);
+    
+    
+    super("addon_parent", extension);
 
     let {type, uri} = params;
     this.type = type;
@@ -305,11 +322,14 @@ class ProxyContext extends ExtensionContext {
     params.uri = NetUtil.newURI(params.url);
 
     super(extension, params);
+    
+    
+    this.envType = "content_parent";
     this.messageManager = messageManager;
     this.principal_ = principal;
 
     this.apiObj = {};
-    GlobalManager.injectInObject(this, null, this.apiObj, ["storage", "test"]);
+    GlobalManager.injectInObject(this, null, this.apiObj);
 
     this.listenerProxies = new Map();
 
@@ -609,12 +629,12 @@ GlobalManager = {
     return this.extensionMap.get(extensionId);
   },
 
-  injectInObject(context, defaultCallback, dest, namespaces = null) {
+  injectInObject(context, defaultCallback, dest) {
     let apis = {
       extensionTypes: {},
     };
-    Management.generateAPIs(context, Management.schemaApis, apis, namespaces);
-    Management.generateAPIs(context, context.extension.apis, apis, namespaces);
+    Management.generateAPIs(context, Management.schemaApis[context.envType], apis);
+    Management.generateAPIs(context, context.extension.apis, apis);
 
     let schemaWrapper = {
       get principal() {
@@ -656,9 +676,6 @@ GlobalManager = {
       },
 
       shouldInject(namespace, name) {
-        if (namespaces && !namespaces.includes(namespace)) {
-          return false;
-        }
         return findPathInObject(apis, [namespace]) != null;
       },
 

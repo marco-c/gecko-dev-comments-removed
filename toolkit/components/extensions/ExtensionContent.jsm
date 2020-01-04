@@ -315,7 +315,7 @@ var ExtensionManager;
 
 class ExtensionContext extends BaseContext {
   constructor(extension, contentWindow, contextOptions = {}) {
-    super(extension);
+    super("content_child", extension);
 
     let {isExtensionPage} = contextOptions;
 

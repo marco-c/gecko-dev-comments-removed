@@ -93,7 +93,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("alarms", context => {
+extensions.registerSchemaAPI("alarms", "addon_parent", context => {
   let {extension} = context;
   return {
     alarms: {

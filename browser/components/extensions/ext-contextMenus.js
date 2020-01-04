@@ -485,7 +485,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("contextMenus", context => {
+extensions.registerSchemaAPI("contextMenus", "addon_parent", context => {
   let {extension} = context;
   return {
     contextMenus: {
