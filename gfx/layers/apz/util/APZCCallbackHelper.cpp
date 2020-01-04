@@ -5,7 +5,7 @@
 
 #include "APZCCallbackHelper.h"
 
-#include "ContentHelper.h"
+#include "TouchActionHelper.h"
 #include "gfxPlatform.h" 
 #include "gfxPrefs.h"
 #include "LayersLogging.h"  
@@ -787,7 +787,7 @@ APZCCallbackHelper::SendSetAllowedTouchBehaviorNotification(
   nsTArray<TouchBehaviorFlags> flags;
   for (uint32_t i = 0; i < aEvent.mTouches.Length(); i++) {
     flags.AppendElement(
-      widget::ContentHelper::GetAllowedTouchBehavior(
+      widget::TouchActionHelper::GetAllowedTouchBehavior(
                                aWidget, aEvent.mTouches[i]->mRefPoint));
   }
   aCallback(aInputBlockId, Move(flags));

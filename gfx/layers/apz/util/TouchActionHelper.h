@@ -1,0 +1,39 @@
+
+
+
+
+
+#ifndef __mozilla_layers_TouchActionHelper_h__
+#define __mozilla_layers_TouchActionHelper_h__
+
+#include "nsIFrame.h"
+#include "nsIWidget.h"
+#include "mozilla/layers/APZCTreeManager.h"
+#include "mozilla/layers/APZUtils.h"  
+
+namespace mozilla {
+namespace widget {
+
+
+
+
+class TouchActionHelper
+{
+  typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
+
+private:
+  static void UpdateAllowedBehavior(uint32_t aTouchActionValue, bool aConsiderPanning, mozilla::layers::TouchBehaviorFlags& aOutBehavior);
+
+public:
+  
+
+
+
+
+  static mozilla::layers::TouchBehaviorFlags GetAllowedTouchBehavior(nsIWidget* aWidget, const LayoutDeviceIntPoint& aPoint);
+};
+
+} 
+} 
+
+#endif 
