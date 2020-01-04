@@ -37,6 +37,12 @@ add_task(function* () {
   yield ContentTask.spawn(tab2.linkedBrowser, {}, function* () {
     Assert.equal(content.document.documentURI, "http://test1.example.com/");
     Assert.equal(content.document.nodePrincipal.originAttributes.userContextId, 0);
+
+    
+    
+    
+    
+    Assert.equal(content.document.referrer, "", "referrer should be empty");
   });
 
   yield BrowserTestUtils.removeTab(tab);
@@ -78,6 +84,12 @@ add_task(function* () {
   yield ContentTask.spawn(tab2.linkedBrowser, {}, function* () {
     Assert.equal(content.document.documentURI, "http://test1.example.com/");
     Assert.equal(content.document.nodePrincipal.originAttributes.userContextId, 1);
+
+    
+    
+    
+    
+    Assert.equal(content.document.referrer, "", "referrer should be empty");
   });
 
   yield BrowserTestUtils.removeTab(tab);
@@ -109,6 +121,12 @@ add_task(function* () {
   yield ContentTask.spawn(tab2.linkedBrowser, {}, function* () {
     Assert.equal(content.document.documentURI, "http://test1.example.com/");
     Assert.equal(content.document.nodePrincipal.originAttributes.userContextId, 2);
+
+    
+    
+    
+    
+    Assert.equal(content.document.referrer, "", "referrer should be empty");
   });
 
   yield BrowserTestUtils.removeTab(tab);
