@@ -201,6 +201,10 @@ public:
   nsHttpRequestHead *RequestHead() override final;
   void Close(nsresult reason) override final;
 
+  
+  
+  bool ConnectedReadyForInput();
+
 private:
   friend class InputStreamShim;
   friend class OutputStreamShim;
