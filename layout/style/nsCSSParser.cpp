@@ -107,6 +107,12 @@ struct CSSParserInputState {
   bool mHavePushBack;
 };
 
+static_assert(eAuthorSheetFeatures == 0 &&
+              eUserSheetFeatures == 1 &&
+              eAgentSheetFeatures == 2,
+              "sheet parsing mode constants won't fit "
+              "in CSSParserImpl::mParsingMode");
+
 
 
 
@@ -131,7 +137,7 @@ public:
                       nsIURI*          aBaseURI,
                       nsIPrincipal*    aSheetPrincipal,
                       uint32_t         aLineNumber,
-                      bool             aAllowUnsafeRules,
+                      SheetParsingMode aParsingMode,
                       LoaderReusableStyleSheets* aReusableSheets);
 
   nsresult ParseStyleAttribute(const nsAString&  aAttributeValue,
@@ -316,12 +322,20 @@ public:
                                            uint32_t aLineNumber,
                                            uint32_t aLineOffset);
 
+  bool AgentRulesEnabled() const {
+    return mParsingMode == eAgentSheetFeatures;
+  }
+  bool UserRulesEnabled() const {
+    return mParsingMode == eAgentSheetFeatures ||
+           mParsingMode == eUserSheetFeatures;
+  }
+
   nsCSSProps::EnabledState PropertyEnabledState() const {
     static_assert(nsCSSProps::eEnabledForAllContent == 0,
                   "nsCSSProps::eEnabledForAllContent should be zero for "
                   "this bitfield to work");
     nsCSSProps::EnabledState enabledState = nsCSSProps::eEnabledForAllContent;
-    if (mUnsafeRulesEnabled) {
+    if (AgentRulesEnabled()) {
       enabledState |= nsCSSProps::eEnabledInUASheets;
     }
     if (mIsChrome) {
@@ -1216,7 +1230,11 @@ protected:
   bool mUnitlessLengthQuirk : 1;
 
   
-  bool mUnsafeRulesEnabled : 1;
+  
+  
+  
+  
+  SheetParsingMode mParsingMode : 3;
 
   
   bool mIsChrome : 1;
@@ -1346,7 +1364,7 @@ CSSParserImpl::CSSParserImpl()
     mNavQuirkMode(false),
     mHashlessColorQuirk(false),
     mUnitlessLengthQuirk(false),
-    mUnsafeRulesEnabled(false),
+    mParsingMode(eAuthorSheetFeatures),
     mIsChrome(false),
     mViewportUnitsEnabled(true),
     mHTMLMediaMode(false),
@@ -1453,7 +1471,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
                           nsIURI*          aBaseURI,
                           nsIPrincipal*    aSheetPrincipal,
                           uint32_t         aLineNumber,
-                          bool             aAllowUnsafeRules,
+                          SheetParsingMode aParsingMode,
                           LoaderReusableStyleSheets* aReusableSheets)
 {
   NS_PRECONDITION(aSheetPrincipal, "Must have principal here!");
@@ -1499,7 +1517,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
     mSection = eCSSSection_Charset; 
   }
 
-  mUnsafeRulesEnabled = aAllowUnsafeRules;
+  mParsingMode = aParsingMode;
   mIsChrome = nsContentUtils::IsSystemPrincipal(aSheetPrincipal);
   mReusableSheets = aReusableSheets;
 
@@ -1524,7 +1542,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   }
   ReleaseScanner();
 
-  mUnsafeRulesEnabled = false;
+  mParsingMode = eAuthorSheetFeatures;
   mIsChrome = false;
   mReusableSheets = nullptr;
 
@@ -5604,7 +5622,7 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
   bool pseudoClassIsUserAction =
     nsCSSPseudoClasses::IsUserActionPseudoClass(pseudoClassType);
 
-  if (!mUnsafeRulesEnabled &&
+  if (!AgentRulesEnabled() &&
       ((pseudoElementType < nsCSSPseudoElements::ePseudo_PseudoElementCount &&
         nsCSSPseudoElements::PseudoElementIsUASheetOnly(pseudoElementType)) ||
        (pseudoClassType != nsCSSPseudoClasses::ePseudoClass_NotPseudoClass &&
@@ -5643,7 +5661,7 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
   
   bool isAnonBox = isTreePseudo ||
     (pseudoElementType == nsCSSPseudoElements::ePseudo_AnonBox &&
-     mUnsafeRulesEnabled);
+     AgentRulesEnabled());
   bool isPseudoClass =
     (pseudoClassType != nsCSSPseudoClasses::ePseudoClass_NotPseudoClass);
 
@@ -15820,12 +15838,12 @@ nsCSSParser::ParseSheet(const nsAString& aInput,
                         nsIURI*          aBaseURI,
                         nsIPrincipal*    aSheetPrincipal,
                         uint32_t         aLineNumber,
-                        bool             aAllowUnsafeRules,
+                        SheetParsingMode aParsingMode,
                         LoaderReusableStyleSheets* aReusableSheets)
 {
   return static_cast<CSSParserImpl*>(mImpl)->
     ParseSheet(aInput, aSheetURI, aBaseURI, aSheetPrincipal, aLineNumber,
-               aAllowUnsafeRules, aReusableSheets);
+               aParsingMode, aReusableSheets);
 }
 
 nsresult

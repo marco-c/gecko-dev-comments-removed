@@ -183,6 +183,33 @@ enum StyleSheetState {
   eSheetComplete
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum SheetParsingMode {
+  eAuthorSheetFeatures = 0,
+  eUserSheetFeatures,
+  eAgentSheetFeatures
+};
+
 class Loader final {
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
@@ -314,23 +341,21 @@ public:
 
 
 
-
-
-
-
-
-  nsresult LoadSheetSync(nsIURI* aURL, bool aEnableUnsafeRules,
+  nsresult LoadSheetSync(nsIURI* aURL,
+                         SheetParsingMode aParsingMode,
                          bool aUseSystemPrincipal,
                          CSSStyleSheet** aSheet);
 
   
 
 
+
   nsresult LoadSheetSync(nsIURI* aURL, CSSStyleSheet** aSheet) {
-    return LoadSheetSync(aURL, false, false, aSheet);
+    return LoadSheetSync(aURL, eAuthorSheetFeatures, false, aSheet);
   }
 
   
+
 
 
 
@@ -495,7 +520,7 @@ private:
 
   nsresult InternalLoadNonDocumentSheet(nsIURI* aURL,
                                         bool aIsPreload,
-                                        bool aAllowUnsafeRules,
+                                        SheetParsingMode aParsingMode,
                                         bool aUseSystemPrincipal,
                                         nsIPrincipal* aOriginPrincipal,
                                         const nsCString& aCharset,
