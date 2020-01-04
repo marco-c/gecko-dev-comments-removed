@@ -3084,13 +3084,6 @@ BrowserObj.prototype.setBrowser = function(win) {
     case "Fennec":
       this.browser = win.BrowserApp;
       break;
-
-    case "B2G":
-      
-      
-      
-      this.driver.sessionCapabilities.b2g = true;
-      break;
   }
 };
 
