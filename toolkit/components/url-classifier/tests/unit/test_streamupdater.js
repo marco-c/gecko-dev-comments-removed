@@ -195,6 +195,21 @@ QueryInterface: function(iid)
 
 
 function testReset() {
+  
+  
+  
+  var mozAddUrls = [ "moz-reset.com/a" ];
+  var mozUpdate = buildMozPhishingUpdate(
+    [
+      { "chunkNum" : 1,
+        "urls" : mozAddUrls
+      }]);
+
+  var dataUpdate = "data:," + encodeURIComponent(mozUpdate);
+
+  streamUpdater.downloadUpdates(mozTables, "", true,
+                                dataUpdate, () => {}, updateError, updateError);
+
   var addUrls1 = [ "foo-reset.com/a", "foo-reset.com/b" ];
   var update1 = buildPhishingUpdate(
     [
@@ -212,11 +227,15 @@ function testReset() {
       }]);
 
   var assertions = {
-    "tableData" : "test-phish-simple;a:3",
-    "urlsExist" : addUrls3,
-    "urlsDontExist" : addUrls1
+    "tableData" : "moz-phish-simple;a:1\ntest-phish-simple;a:3", 
+    "mozPhishingUrlsExist" : mozAddUrls,                         
+                                                                 
+    "urlsExist" : addUrls3,                                      
+    "urlsDontExist" : addUrls1                                   
   };
 
+  
+  
   doTest([update1, update2, update3], assertions, false);
 }
 
