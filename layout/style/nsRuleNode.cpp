@@ -2348,11 +2348,12 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
     
     
     PropagateDependentBit(aSID, ruleNode, startStruct);
-    if (isReset) {
-      
-      
-      aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
-    }
+    
+    
+    
+    
+    
+    aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
     return startStruct;
   }
   if ((!startStruct && !isReset &&
@@ -2724,8 +2725,8 @@ nsRuleNode::SetDefaultOnRoot(const nsStyleStructID aSID, nsStyleContext* aContex
     /* Tell the style context that it doesn't own the data */                 \
     aContext->AddStyleBit(NS_STYLE_INHERIT_BIT(type_));                       \
   }                                                                           \
-  /* Always cache inherited data on the style context */                      \
-  aContext->SetStyle##type_(data_);                                           \
+  /* For inherited structs, our caller will cache the data on the */          \
+  /* style context */                                                         \
                                                                               \
   return data_;
 
@@ -9415,9 +9416,10 @@ nsRuleNode::GetStyleData(nsStyleStructID aSID,
     if (MOZ_LIKELY(data != nullptr)) {
       
       
-      if (nsCachedStyleData::IsReset(aSID)) {
-        aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
-      }
+      
+      
+      
+      aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
       return data; 
     }
   }

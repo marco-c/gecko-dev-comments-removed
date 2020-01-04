@@ -417,7 +417,14 @@ const void* nsStyleContext::StyleData(nsStyleStructID aSID)
   const void* cachedData = GetCachedStyleData(aSID);
   if (cachedData)
     return cachedData; 
-  return mRuleNode->GetStyleData(aSID, this, true); 
+  
+  const void* newData = mRuleNode->GetStyleData(aSID, this, true);
+  if (!nsCachedStyleData::IsReset(aSID)) {
+    
+    
+    mCachedInheritedData.mStyleStructs[aSID] = const_cast<void*>(newData);
+  }
+  return newData;
 }
 
 
