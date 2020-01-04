@@ -39,6 +39,20 @@ and in IntelliJ select File > Import project... and choose
 
 @CommandProvider
 class MachCommands(MachCommandBase):
+    @Command('android', category='devenv',
+        description='Run the Android package manager tool.',
+        conditions=[conditions.is_android])
+    @CommandArgument('args', nargs=argparse.REMAINDER)
+    def android(self, args):
+        
+        self.log_manager.terminal_handler.setLevel(logging.CRITICAL)
+
+        return self.run_process(
+            [os.path.join(self.substs['ANDROID_TOOLS'], 'android')] + args,
+            pass_thru=True, 
+            ensure_exit_code=False, 
+            cwd=mozpath.join(self.topsrcdir))
+
     @Command('gradle', category='devenv',
         description='Run gradle.',
         conditions=[conditions.is_android])
