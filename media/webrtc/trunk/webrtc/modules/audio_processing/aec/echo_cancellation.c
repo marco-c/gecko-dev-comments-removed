@@ -929,7 +929,7 @@ OpenDebugFiles(Aec* aecpc,
       return; 
     }
     if (filename > path) {
-#ifdef XP_WIN
+#ifdef WEBRTC_WIN
       if (*(filename-1) != '\\') {
         *filename++ = '\\';
       }
