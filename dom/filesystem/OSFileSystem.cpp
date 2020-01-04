@@ -19,7 +19,7 @@ namespace dom {
 
 OSFileSystem::OSFileSystem(const nsAString& aRootDir)
 {
-  mLocalRootPath = aRootDir;
+  mLocalOrDeviceStorageRootPath = aRootDir;
 
   
   
@@ -33,7 +33,7 @@ OSFileSystem::OSFileSystem(const nsAString& aRootDir)
 already_AddRefed<FileSystemBase>
 OSFileSystem::Clone()
 {
-  RefPtr<OSFileSystem> fs = new OSFileSystem(mLocalRootPath);
+  RefPtr<OSFileSystem> fs = new OSFileSystem(mLocalOrDeviceStorageRootPath);
   if (mParent) {
     fs->Init(mParent);
   }
@@ -104,7 +104,7 @@ OSFileSystem::Traverse(nsCycleCollectionTraversalCallback &cb)
 void
 OSFileSystem::SerializeDOMPath(nsAString& aOutput) const
 {
-  aOutput = mLocalRootPath;
+  aOutput = mLocalOrDeviceStorageRootPath;
 }
 
 } 

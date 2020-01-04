@@ -47,10 +47,16 @@ public:
   virtual void
   GetRootName(nsAString& aRetval) const = 0;
 
+  
+
+
+
+
+
   const nsAString&
-  GetLocalRootPath() const
+  LocalOrDeviceStorageRootPath() const
   {
-    return mLocalRootPath;
+    return mLocalOrDeviceStorageRootPath;
   }
 
   bool
@@ -94,7 +100,15 @@ protected:
   
   
   
-  nsString mLocalRootPath;
+  
+  
+  
+  
+  
+  
+  
+  
+  nsString mLocalOrDeviceStorageRootPath;
 
   bool mShutdown;
 

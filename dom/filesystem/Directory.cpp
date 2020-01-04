@@ -118,7 +118,7 @@ Directory::GetRoot(FileSystemBase* aFileSystem, ErrorResult& aRv)
   MOZ_ASSERT(aFileSystem);
 
   nsCOMPtr<nsIFile> path;
-  aRv = NS_NewNativeLocalFile(NS_ConvertUTF16toUTF8(aFileSystem->GetLocalRootPath()),
+  aRv = NS_NewNativeLocalFile(NS_ConvertUTF16toUTF8(aFileSystem->LocalOrDeviceStorageRootPath()),
                               true, getter_AddRefs(path));
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -402,19 +402,12 @@ FileSystemBase*
 Directory::GetFileSystem(ErrorResult& aRv)
 {
   if (!mFileSystem) {
-    nsCOMPtr<nsIFile> parent;
-    aRv = mFile->GetParent(getter_AddRefs(parent));
-    if (NS_WARN_IF(aRv.Failed())) {
-      return nullptr;
-    }
-
     
-    if (!parent) {
-      parent = mFile;
-    }
+    
+    MOZ_ASSERT(mType == eDOMRootDirectory);
 
     nsAutoString path;
-    aRv = parent->GetPath(path);
+    aRv = mFile->GetPath(path);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
