@@ -4,6 +4,10 @@
 
 %include ../shared/devedition.inc.css
 
+:root {
+  --forwardbutton-width: 29px;
+}
+
 :root[devtoolstheme="dark"],
 :root[devtoolstheme="light"] {
    
