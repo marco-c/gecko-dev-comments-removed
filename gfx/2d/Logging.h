@@ -14,6 +14,7 @@
 #ifdef MOZ_LOGGING
 #include "mozilla/Logging.h"
 #endif
+#include "mozilla/Tuple.h"
 
 #if defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)
 #include "nsDebug.h"
@@ -222,6 +223,13 @@ struct CriticalLogger {
 
 
 
+
+
+typedef mozilla::Tuple<int32_t,std::string,double> LoggingRecordEntry;
+
+
+
+typedef std::vector<LoggingRecordEntry> LoggingRecord;
 class LogForwarder {
 public:
   virtual ~LogForwarder() {}
@@ -229,10 +237,7 @@ public:
   virtual void CrashAction(LogReason aReason) = 0;
 
   
-  
-  
-  
-  virtual std::vector<std::pair<int32_t,std::string> > StringsVectorCopy() = 0;
+  virtual LoggingRecord LoggingRecordCopy() = 0;
 };
 
 class NoLog

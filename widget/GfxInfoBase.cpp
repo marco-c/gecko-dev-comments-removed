@@ -1075,7 +1075,7 @@ NS_IMETHODIMP GfxInfoBase::GetFailures(uint32_t* failureCount,
   
   
   
-  std::vector<std::pair<int32_t,std::string> > loggedStrings = logForwarder->StringsVectorCopy();
+  LoggingRecord loggedStrings = logForwarder->LoggingRecordCopy();
   *failureCount = loggedStrings.size();
 
   if (*failureCount != 0) {
@@ -1093,11 +1093,11 @@ NS_IMETHODIMP GfxInfoBase::GetFailures(uint32_t* failureCount,
     }
 
     
-    std::vector<std::pair<int32_t, std::string> >::const_iterator it;
+    LoggingRecord::const_iterator it;
     uint32_t i=0;
     for(it = loggedStrings.begin() ; it != loggedStrings.end(); ++it, i++) {
-      (*failures)[i] = (char*)nsMemory::Clone((*it).second.c_str(), (*it).second.size() + 1);
-      if (indices) (*indices)[i] = (*it).first;
+      (*failures)[i] = (char*)nsMemory::Clone(Get<1>(*it).c_str(), Get<1>(*it).size() + 1);
+      if (indices) (*indices)[i] = Get<0>(*it);
 
       if (!(*failures)[i]) {
         
