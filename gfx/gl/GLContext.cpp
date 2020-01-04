@@ -2083,7 +2083,7 @@ GLContext::ChooseGLFormats(const SurfaceCaps& caps) const
 
     
     formats.depthStencil = 0;
-    if (!IsGLES() || IsExtensionSupported(OES_packed_depth_stencil)) {
+    if (IsSupported(GLFeature::packed_depth_stencil)) {
         formats.depthStencil = LOCAL_GL_DEPTH24_STENCIL8;
     }
 
