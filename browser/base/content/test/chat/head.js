@@ -11,28 +11,28 @@ function promiseOpenChat(url, mode, focus, buttonSet = null) {
   let uri = Services.io.newURI(url, null, null);
   let origin = uri.prePath;
   let title = origin;
-  let deferred = Promise.defer();
-  
-  
-  let callback = function(chatbox) {
-    let mm = chatbox.content.messageManager;
-    mm.sendAsyncMessage("WaitForDOMContentLoaded");
-    mm.addMessageListener("DOMContentLoaded", function cb() {
-      mm.removeMessageListener("DOMContentLoaded", cb);
-      deferred.resolve(chatbox);
-    });
-  }
-  let chatbox = Chat.open(null, {
-    origin: origin,
-    title: title,
-    url: url,
-    mode: mode,
-    focus: focus
-  }, callback);
-  if (buttonSet) {
-    chatbox.setAttribute("buttonSet", buttonSet);
-  }
-  return deferred.promise;
+  return new Promise(resolve => {
+    
+    
+    let callback = function(chatbox) {
+      let mm = chatbox.content.messageManager;
+      mm.sendAsyncMessage("WaitForDOMContentLoaded");
+      mm.addMessageListener("DOMContentLoaded", function cb() {
+        mm.removeMessageListener("DOMContentLoaded", cb);
+        resolve(chatbox);
+      });
+    }
+    let chatbox = Chat.open(null, {
+      origin: origin,
+      title: title,
+      url: url,
+      mode: mode,
+      focus: focus
+    }, callback);
+    if (buttonSet) {
+      chatbox.setAttribute("buttonSet", buttonSet);
+    }
+  });
 }
 
 
@@ -40,26 +40,20 @@ function promiseOpenChatCallback(url, mode) {
   let uri = Services.io.newURI(url, null, null);
   let origin = uri.prePath;
   let title = origin;
-  let deferred = Promise.defer();
-  let callback = deferred.resolve;
-  Chat.open(null, {
-    origin: origin,
-    title: title,
-    url: url,
-    mode: mode
-  }, callback);
-  return deferred.promise;
+  return new Promise(resolve => {
+    Chat.open(null, { origin, title, url, mode }, resolve);
+  });
 }
 
 
 
 function promiseOneEvent(target, eventName, capture) {
-  let deferred = Promise.defer();
-  target.addEventListener(eventName, function handler(event) {
-    target.removeEventListener(eventName, handler, capture);
-    deferred.resolve();
-  }, capture);
-  return deferred.promise;
+  return new Promise(resolve => {
+    target.addEventListener(eventName, function handler(event) {
+      target.removeEventListener(eventName, handler, capture);
+      resolve();
+    }, capture);
+  });
 }
 
 function promiseOneMessage(target, messageName) {
@@ -79,9 +73,7 @@ function numChatsInWindow(win) {
 }
 
 function promiseWaitForFocus() {
-  let deferred = Promise.defer();
-  waitForFocus(deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => waitForFocus(resolve));
 }
 
 

@@ -2,30 +2,28 @@
 
 
 
-Components.utils.import("resource://gre/modules/Promise.jsm", this);
-
 var chatbar = document.getElementById("pinnedchats");
 
 function promiseNewWindowLoaded() {
-  let deferred = Promise.defer();
-  Services.wm.addListener({
-    onWindowTitleChange: function() {},
-    onCloseWindow: function(xulwindow) {},
-    onOpenWindow: function(xulwindow) {
-      var domwindow = xulwindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                            .getInterface(Components.interfaces.nsIDOMWindow);
-      Services.wm.removeListener(this);
-      
-      domwindow.addEventListener("load", function _load(event) {
-        let doc = domwindow.document;
-        if (event.target != doc)
-          return;
-        domwindow.removeEventListener("load", _load);
-        deferred.resolve(domwindow);
-      });
-    },
+  return new Promise(resolve => {
+    Services.wm.addListener({
+      onWindowTitleChange: function() {},
+      onCloseWindow: function(xulwindow) {},
+      onOpenWindow: function(xulwindow) {
+        var domwindow = xulwindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                              .getInterface(Components.interfaces.nsIDOMWindow);
+        Services.wm.removeListener(this);
+        
+        domwindow.addEventListener("load", function _load(event) {
+          let doc = domwindow.document;
+          if (event.target != doc)
+            return;
+          domwindow.removeEventListener("load", _load);
+          resolve(domwindow);
+        });
+      },
+    });
   });
-  return deferred.promise;
 }
 
 add_chat_task(function* testTearoffChat() {

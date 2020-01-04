@@ -4,7 +4,7 @@
 
 
 
-Components.utils.import("resource://gre/modules/Promise.jsm", this);
+Cu.import("resource://testing-common/ContentTask.jsm", this);
 const CHAT_URL = "https://example.com/browser/browser/base/content/test/chat/chat.html";
 
 requestLongerTimeout(2);
@@ -33,9 +33,12 @@ function* setUp() {
   
   let html = '<input id="theinput"><button id="chat-opener"></button>';
   let url = "data:text/html;charset=utf-8," + encodeURI(html);
-  let tab = gBrowser.selectedTab = gBrowser.addTab(url, {skipAnimation: true});
-  yield promiseOneEvent(tab.linkedBrowser, "load", true);
-  tab.linkedBrowser.contentDocument.getElementById("theinput").focus();
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  let browser = tab.linkedBrowser;
+  yield ContentTask.spawn(browser, null, function* () {
+    content.document.getElementById("theinput").focus();
+  });
+
   registerCleanupFunction(function() {
     gBrowser.removeTab(tab);
   });
@@ -62,10 +65,11 @@ add_chat_task(function* testDefaultFocusUserInput() {
   let browser = gBrowser.selectedTab.linkedBrowser;
   let mm = browser.messageManager;
 
-  let deferred = Promise.defer();
-  mm.addMessageListener("ChatOpenerClicked", function handler() {
-    mm.removeMessageListener("ChatOpenerClicked", handler);
-    promiseOpenChat("http://example.com").then(chat => deferred.resolve(chat));
+  let promise = new Promise(resolve => {
+    mm.addMessageListener("ChatOpenerClicked", function handler() {
+      mm.removeMessageListener("ChatOpenerClicked", handler);
+      promiseOpenChat("http://example.com").then(resolve);
+    });
   });
 
   yield ContentTask.spawn(browser, null, function* () {
@@ -79,7 +83,7 @@ add_chat_task(function* testDefaultFocusUserInput() {
   
   
   yield BrowserTestUtils.synthesizeMouseAtCenter("#chat-opener", {}, browser);
-  let chat = yield deferred.promise;
+  let chat = yield promise;
 
   
   
@@ -243,8 +247,8 @@ add_chat_task(function* testFocusedElement() {
 
   
   let tabb = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-  let promise = promiseOneEvent(tabb.contentWindow, "focus");
-  Services.focus.moveFocus(tabb.contentWindow, null, Services.focus.MOVEFOCUS_ROOT, 0);
+  let promise = promiseOneEvent(window, "focus");
+  Services.focus.moveFocus(window, null, Services.focus.MOVEFOCUS_ROOT, 0);
   yield promise;
 
   promise = promiseOneMessage(chat.content, "Social:FocusEnsured");
