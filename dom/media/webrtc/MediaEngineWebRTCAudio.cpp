@@ -730,11 +730,7 @@ MediaEngineWebRTCMicrophoneSource::Process(int channel,
 
       
       
-      
-      
-      RUN_ON_THREAD(mThread, WrapRunnable(mSources[i], &SourceMediaStream::AppendToTrack,
-                                          mTrackID, segment, (AudioSegment *) nullptr),
-                    NS_DISPATCH_NORMAL);
+      mSources[i]->AppendToTrack(mTrackID, segment);
     }
   }
 
