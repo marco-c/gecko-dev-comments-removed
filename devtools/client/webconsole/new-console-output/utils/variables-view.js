@@ -12,6 +12,6 @@
 
 
 
-exports.openVariablesView = (objectActor) => {
-  window.jsterm.openVariablesView({objectActor});
+exports.openVariablesView = (object) => {
+  window.jsterm.openVariablesView({objectActor: object});
 };
