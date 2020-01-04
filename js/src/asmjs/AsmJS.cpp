@@ -2057,14 +2057,14 @@ class MOZ_STACK_CLASS ModuleValidator
 
         
         
-        uint32_t exportIndex;
-        if (!mg_.declareExport(Move(fieldChars), func.index(), &exportIndex))
+        uint32_t funcExportIndex;
+        if (!mg_.declareFuncExport(Move(fieldChars), func.index(), &funcExportIndex))
             return false;
 
         
         
-        MOZ_ASSERT(exportIndex <= asmJSMetadata_->asmJSExports.length());
-        return exportIndex < asmJSMetadata_->asmJSExports.length() ||
+        MOZ_ASSERT(funcExportIndex <= asmJSMetadata_->asmJSExports.length());
+        return funcExportIndex < asmJSMetadata_->asmJSExports.length() ||
                asmJSMetadata_->asmJSExports.emplaceBack(func.srcBegin() - asmJSMetadata_->srcStart,
                                                         func.srcEnd() - asmJSMetadata_->srcStart);
     }

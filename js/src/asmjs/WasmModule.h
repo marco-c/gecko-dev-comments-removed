@@ -112,39 +112,28 @@ typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
 
 
 
-
-
-
-
-
-static const uint32_t MemoryExport = UINT32_MAX;
-
-static const uint32_t NO_START_FUNCTION = UINT32_MAX;
-
-class ExportMap
+class Export
 {
-    uint32_t startExportIndex;
+    CacheableChars fieldName_;
+    struct CacheablePod {
+        DefinitionKind kind_;
+        uint32_t funcExportIndex_;
+    } pod;
 
   public:
-    CacheableCharsVector fieldNames;
-    Uint32Vector fieldsToExports;
+    Export() = default;
+    explicit Export(UniqueChars fieldName, uint32_t funcExportIndex);
+    explicit Export(UniqueChars fieldName, DefinitionKind kind);
 
-    ExportMap() : startExportIndex(NO_START_FUNCTION) {}
+    const char* fieldName() const { return fieldName_.get(); }
 
-    bool hasStartFunction() const {
-        return startExportIndex != NO_START_FUNCTION;
-    }
-    void setStartFunction(uint32_t index) {
-        MOZ_ASSERT(!hasStartFunction());
-        startExportIndex = index;
-    }
-    uint32_t startFunctionExportIndex() const {
-        MOZ_ASSERT(hasStartFunction());
-        return startExportIndex;
-    }
+    DefinitionKind kind() const { return pod.kind_; }
+    uint32_t funcExportIndex() const;
 
-    WASM_DECLARE_SERIALIZABLE(ExportMap)
+    WASM_DECLARE_SERIALIZABLE(Export)
 };
+
+typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
 
 
 
@@ -194,7 +183,7 @@ class Module
     const Bytes             code_;
     const LinkData          linkData_;
     const ImportVector      imports_;
-    const ExportMap         exportMap_;
+    const ExportVector      exports_;
     const DataSegmentVector dataSegments_;
     const ElemSegmentVector elemSegments_;
     const SharedMetadata    metadata_;
@@ -207,7 +196,7 @@ class Module
     Module(Bytes&& code,
            LinkData&& linkData,
            ImportVector&& imports,
-           ExportMap&& exportMap,
+           ExportVector&& exports,
            DataSegmentVector&& dataSegments,
            ElemSegmentVector&& elemSegments,
            const Metadata& metadata,
@@ -215,7 +204,7 @@ class Module
       : code_(Move(code)),
         linkData_(Move(linkData)),
         imports_(Move(imports)),
-        exportMap_(Move(exportMap)),
+        exports_(Move(exports)),
         dataSegments_(Move(dataSegments)),
         elemSegments_(Move(elemSegments)),
         metadata_(&metadata),
