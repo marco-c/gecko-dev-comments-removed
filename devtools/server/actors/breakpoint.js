@@ -13,6 +13,26 @@ const { ActorClass, method } = require("devtools/server/protocol");
 
 
 
+
+
+
+
+function setBreakpointAtEntryPoints(actor, entryPoints) {
+  for (let { script, offsets } of entryPoints) {
+    actor.addScript(script);
+    for (let offset of offsets) {
+      script.setBreakpoint(offset, actor);
+    }
+  }
+}
+
+exports.setBreakpointAtEntryPoints = setBreakpointAtEntryPoints;
+
+
+
+
+
+
 let BreakpointActor = ActorClass({
   typeName: "breakpoint",
 
