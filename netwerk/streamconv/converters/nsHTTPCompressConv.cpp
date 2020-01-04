@@ -261,7 +261,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request,
       return NS_OK;
     }
 
-    
+    MOZ_FALLTHROUGH;
 
   case HTTP_COMPRESS_DEFLATE:
 

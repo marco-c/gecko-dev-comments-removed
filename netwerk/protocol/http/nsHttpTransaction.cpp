@@ -1583,7 +1583,8 @@ nsHttpTransaction::HandleContentStart()
         
         switch (mResponseHead->Status()) {
         case 101:
-            mPreserveStream = true;    
+            mPreserveStream = true;
+            MOZ_FALLTHROUGH; 
         case 204:
         case 205:
         case 304:

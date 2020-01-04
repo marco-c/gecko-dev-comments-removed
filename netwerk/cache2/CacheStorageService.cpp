@@ -420,7 +420,7 @@ private:
         }
 
         mPass = ITERATE_METADATA;
-        
+        MOZ_FALLTHROUGH;
 
       case ITERATE_METADATA:
         

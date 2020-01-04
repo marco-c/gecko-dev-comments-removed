@@ -995,6 +995,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
       
+      MOZ_FALLTHROUGH;
 
     case 2:
       {
@@ -1053,6 +1054,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
       
+      MOZ_FALLTHROUGH;
 
     case 3:
       {
@@ -1149,6 +1151,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
       
+      MOZ_FALLTHROUGH;
 
     case 4:
       {
@@ -1196,6 +1199,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
           ("Upgraded database to schema version 5"));
       }
       
+      MOZ_FALLTHROUGH;
 
     case 5:
       {
@@ -1261,6 +1265,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         COOKIE_LOGSTRING(LogLevel::Debug,
           ("Upgraded database to schema version 6"));
       }
+      MOZ_FALLTHROUGH;
 
     case 6:
       {
@@ -1320,6 +1325,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
       
       rv = mDefaultDBState->dbConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
       NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+      MOZ_FALLTHROUGH;
 
     case COOKIES_SCHEMA_VERSION:
       break;
@@ -1327,7 +1333,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
     case 0:
       {
         NS_WARNING("couldn't get schema version!");
-          
+
         
         
         
@@ -1337,6 +1343,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
       
+      MOZ_FALLTHROUGH;
 
     
     
