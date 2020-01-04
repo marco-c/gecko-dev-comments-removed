@@ -114,12 +114,34 @@ typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
 
 
 
+
+
+
 static const uint32_t MemoryExport = UINT32_MAX;
 
-struct ExportMap
+static const uint32_t NO_START_FUNCTION = UINT32_MAX;
+
+class ExportMap
 {
+    uint32_t startExportIndex;
+
+  public:
     CacheableCharsVector fieldNames;
     Uint32Vector fieldsToExports;
+
+    ExportMap() : startExportIndex(NO_START_FUNCTION) {}
+
+    bool hasStartFunction() const {
+        return startExportIndex != NO_START_FUNCTION;
+    }
+    void setStartFunction(uint32_t index) {
+        MOZ_ASSERT(!hasStartFunction());
+        startExportIndex = index;
+    }
+    uint32_t startFunctionExportIndex() const {
+        MOZ_ASSERT(hasStartFunction());
+        return startExportIndex;
+    }
 
     WASM_DECLARE_SERIALIZABLE(ExportMap)
 };
