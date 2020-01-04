@@ -200,13 +200,17 @@ nsChangeHint nsStyleFont::CalcDifference(const nsStyleFont& aOther) const
  nscoord
 nsStyleFont::ZoomText(nsPresContext *aPresContext, nscoord aSize)
 {
-  return nscoord(float(aSize) * aPresContext->TextZoom());
+  
+  
+  return NSCoordSaturatingMultiply(aSize, aPresContext->TextZoom());
 }
 
  nscoord
 nsStyleFont::UnZoomText(nsPresContext *aPresContext, nscoord aSize)
 {
-  return nscoord(float(aSize) / aPresContext->TextZoom());
+  
+  
+  return NSCoordSaturatingMultiply(aSize, 1.0 / aPresContext->TextZoom());
 }
 
  already_AddRefed<nsIAtom>
