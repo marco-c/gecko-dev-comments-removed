@@ -7,8 +7,8 @@
 #include "mozilla/dom/KeyframeEffect.h"
 
 #include "mozilla/dom/AnimatableBinding.h"
+#include "mozilla/dom/BaseKeyframeTypesBinding.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
-#include "mozilla/dom/PropertyIndexedKeyframesBinding.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/FloatingPoint.h"
@@ -995,7 +995,7 @@ struct PropertyValuesPair
 
 struct OffsetIndexedKeyframe
 {
-  binding_detail::FastKeyframe mKeyframeDict;
+  binding_detail::FastBaseKeyframe mKeyframeDict;
   nsTArray<PropertyValuesPair> mPropertyValuePairs;
 };
 
@@ -1555,8 +1555,8 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
 
   
   
-  binding_detail::FastPropertyIndexedKeyframes keyframes;
-  if (!keyframes.Init(aCx, aValue, "PropertyIndexedKeyframes argument",
+  binding_detail::FastBasePropertyIndexedKeyframe keyframes;
+  if (!keyframes.Init(aCx, aValue, "BasePropertyIndexedKeyframe argument",
                       false)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
@@ -1701,7 +1701,6 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
     }
   }
 }
-
 
 
 
@@ -1947,7 +1946,7 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
     OrderedKeyframeValueEntry* previousEntry = nullptr;
 
     
-    ComputedKeyframe keyframeDict;
+    BaseComputedKeyframe keyframeDict;
     keyframeDict.mOffset.SetValue(entry->mOffset);
     keyframeDict.mComputedOffset.Construct(entry->mOffset);
     if (entry->mTimingFunction && entry->mTimingFunction->isSome()) {
