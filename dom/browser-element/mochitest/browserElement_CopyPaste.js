@@ -344,8 +344,9 @@ function testCut2(e) {
 
 var principal = SpecialPowers.wrap(document).nodePrincipal;
 var context = { 'url': SpecialPowers.wrap(principal.URI).spec,
-                'appId': principal.appId,
-                'isInBrowserElement': true };
+                'originAttributes': {
+                   'appId': principal.appId,
+                   'inBrowser': true }};
 
 addEventListener('testready', function() {
   SpecialPowers.pushPermissions([
