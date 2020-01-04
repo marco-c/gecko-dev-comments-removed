@@ -40,6 +40,31 @@ function freePortal(aSuccess) {
 
 
 
+
+
+
+
+
+
+
+
+function waitForXulWindowVisible() {
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observe() {
+      Services.obs.removeObserver(observe, "xul-window-visible");
+      resolve();
+    }, "xul-window-visible", false);
+  });
+}
+
+function* closeWindowAndWaitForXulWindowVisible(win) {
+  let p = waitForXulWindowVisible();
+  yield BrowserTestUtils.closeWindow(win);
+  yield p;
+}
+
+
+
 let testCasesForBothSuccessAndAbort = [
   
 
@@ -53,7 +78,7 @@ let testCasesForBothSuccessAndAbort = [
     freePortal(aSuccess);
     is(win.gBrowser.tabs.length, 1,
       "The captive portal tab should have been closed.");
-    yield BrowserTestUtils.closeWindow(win);
+    yield closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
@@ -71,7 +96,7 @@ let testCasesForBothSuccessAndAbort = [
     });
     is(win.gBrowser.tabs.length, 1,
       "No captive portal tab should have been opened.");
-    yield BrowserTestUtils.closeWindow(win);
+    yield closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
@@ -129,7 +154,7 @@ let singleRunTestCases = [
     freePortal(true);
     is(win.gBrowser.tabs.length, 2,
       "The captive portal tab should not have been closed.");
-    yield BrowserTestUtils.closeWindow(win);
+    yield closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
