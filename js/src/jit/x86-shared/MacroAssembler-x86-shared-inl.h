@@ -17,6 +17,12 @@ namespace jit {
 
 
 void
+MacroAssembler::not32(Register reg)
+{
+    notl(reg);
+}
+
+void
 MacroAssembler::and32(Register src, Register dest)
 {
     andl(src, dest);
