@@ -208,8 +208,10 @@ CreateAndAddFilter(IGraphBuilder* aGraph,
 }
 
 HRESULT
-CreateMP3DMOWrapperFilter(IBaseFilter **aOutFilter)
+AddMP3DMOWrapperFilter(IGraphBuilder* aGraph,
+                       IBaseFilter **aOutFilter)
 {
+  NS_ENSURE_TRUE(aGraph, E_POINTER);
   NS_ENSURE_TRUE(aOutFilter, E_POINTER);
   HRESULT hr;
 
@@ -243,22 +245,6 @@ CreateMP3DMOWrapperFilter(IBaseFilter **aOutFilter)
     return hr;
   }
 
-  return S_OK;
-}
-
-HRESULT
-AddMP3DMOWrapperFilter(IGraphBuilder* aGraph,
-                       IBaseFilter **aOutFilter)
-{
-  NS_ENSURE_TRUE(aGraph, E_POINTER);
-  NS_ENSURE_TRUE(aOutFilter, E_POINTER);
-  HRESULT hr;
-
-  
-  nsRefPtr<IBaseFilter> filter;
-  hr = CreateMP3DMOWrapperFilter(getter_AddRefs(filter));
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
   
   hr = aGraph->AddFilter(filter, L"MP3 Decoder DMO");
   if (FAILED(hr)) {
@@ -269,35 +255,6 @@ AddMP3DMOWrapperFilter(IGraphBuilder* aGraph,
   filter.forget(aOutFilter);
 
   return S_OK;
-}
-
-bool
-CanDecodeMP3UsingDirectShow()
-{
-  nsRefPtr<IBaseFilter> filter;
-
-  
-  if (FAILED(CoCreateInstance(CLSID_MPEG1Splitter,
-                              nullptr,
-                              CLSCTX_INPROC_SERVER,
-                              IID_IBaseFilter,
-                              getter_AddRefs(filter)))) {
-    return false;
-  }
-
-  
-  if (FAILED(CoCreateInstance(CLSID_MPEG_LAYER_3_DECODER_FILTER,
-                              nullptr,
-                              CLSCTX_INPROC_SERVER,
-                              IID_IBaseFilter,
-                              getter_AddRefs(filter))) &&
-      FAILED(CreateMP3DMOWrapperFilter(getter_AddRefs(filter)))) {
-    return false;
-  }
-
-  
-  
-  return true;
 }
 
 
