@@ -861,6 +861,12 @@ TypedArrayObject::staticFunctions[] = {
     JS_FS_END
 };
 
+ const JSPropertySpec
+TypedArrayObject::staticProperties[] = {
+    JS_SELF_HOSTED_SYM_GET(species, "TypedArraySpecies", 0),
+    JS_PS_END
+};
+
  const Class
 TypedArrayObject::sharedTypedArrayPrototypeClass = {
     
@@ -887,7 +893,7 @@ TypedArrayObject::sharedTypedArrayPrototypeClass = {
         GenericCreateConstructor<TypedArrayConstructor, 3, gc::AllocKind::FUNCTION>,
         GenericCreatePrototype,
         TypedArrayObject::staticFunctions,
-        nullptr,
+        TypedArrayObject::staticProperties,
         TypedArrayObject::protoFunctions,
         TypedArrayObject::protoAccessors,
         nullptr,
