@@ -420,6 +420,14 @@ def setup_argument_parser():
 
         from mochitest_options import MochitestArgumentParser
 
+    if conditions.is_android(build_obj):
+        
+        
+        
+        
+        from mozrunner.devices.android_device import verify_android_device
+        verify_android_device(build_obj, install=True)
+
     return MochitestArgumentParser()
 
 
