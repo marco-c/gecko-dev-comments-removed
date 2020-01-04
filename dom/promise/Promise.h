@@ -26,7 +26,7 @@
 
 
 
-#define DOM_PROMISE_DEPRECATED_REPORTING 1
+#define DOM_PROMISE_DEPRECATED_REPORTING !SPIDERMONKEY_PROMISE
 
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
 #include "mozilla/dom/workers/bindings/WorkerFeature.h"
@@ -112,6 +112,9 @@ public:
 #ifdef SPIDERMONKEY_PROMISE
   static already_AddRefed<Promise>
   Create(nsIGlobalObject* aGlobal, ErrorResult& aRv);
+
+  
+  static void ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise);
 #else
   static already_AddRefed<Promise>
   Create(nsIGlobalObject* aGlobal, ErrorResult& aRv,

@@ -26,6 +26,8 @@ class GlobalObject;
 class UncaughtRejectionObserver;
 class FlushRejections;
 
+void TriggerFlushRejections();
+
 class PromiseDebugging
 {
 public:
@@ -63,20 +65,24 @@ public:
 #endif 
 
   
-  
   static void AddUncaughtRejectionObserver(GlobalObject&,
                                            UncaughtRejectionObserver& aObserver);
   static bool RemoveUncaughtRejectionObserver(GlobalObject&,
                                               UncaughtRejectionObserver& aObserver);
 
-#ifndef SPIDERMONKEY_PROMISE
+#ifdef SPIDERMONKEY_PROMISE
+  
+  static void AddUncaughtRejection(JS::HandleObject);
+  
+  
+  static void AddConsumedRejection(JS::HandleObject);
+#else
   
   static void AddUncaughtRejection(Promise&);
   
   
   static void AddConsumedRejection(Promise&);
 #endif 
-  
   
   
   static void FlushUncaughtRejections();

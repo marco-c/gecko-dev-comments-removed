@@ -230,11 +230,8 @@ PromiseDebugging::Shutdown()
  void
 PromiseDebugging::FlushUncaughtRejections()
 {
-  
-#ifndef SPIDERMONKEY_PROMISE
   MOZ_ASSERT(!NS_IsMainThread());
   FlushRejections::FlushSync();
-#endif 
 }
 
 #ifndef SPIDERMONKEY_PROMISE
@@ -342,7 +339,90 @@ PromiseDebugging::RemoveUncaughtRejectionObserver(GlobalObject&,
   return false;
 }
 
-#ifndef SPIDERMONKEY_PROMISE
+#ifdef SPIDERMONKEY_PROMISE
+
+ void
+PromiseDebugging::AddUncaughtRejection(JS::HandleObject aPromise)
+{
+  
+  if (CycleCollectedJSRuntime::Get()->mUncaughtRejections.append(aPromise)) {
+    FlushRejections::DispatchNeeded();
+  }
+}
+
+ void
+PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise)
+{
+  
+  
+  
+  auto& uncaughtRejections = CycleCollectedJSRuntime::Get()->mUncaughtRejections;
+  for (size_t i = 0; i < uncaughtRejections.length(); i++) {
+    if (uncaughtRejections[i] == aPromise) {
+      
+      
+      uncaughtRejections[i].set(nullptr);
+      return;
+    }
+  }
+  
+  if (CycleCollectedJSRuntime::Get()->mConsumedRejections.append(aPromise)) {
+    FlushRejections::DispatchNeeded();
+  }
+}
+
+ void
+PromiseDebugging::FlushUncaughtRejectionsInternal()
+{
+  CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
+
+  auto& uncaught = storage->mUncaughtRejections;
+  auto& consumed = storage->mConsumedRejections;
+
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  JSContext* cx = jsapi.cx();
+
+  
+  auto& observers = storage->mUncaughtRejectionObservers;
+
+  for (size_t i = 0; i < uncaught.length(); i++) {
+    JS::RootedObject promise(cx, uncaught[i]);
+    
+    
+    if (!promise) {
+      continue;
+    }
+
+    for (size_t j = 0; j < observers.Length(); ++j) {
+      RefPtr<UncaughtRejectionObserver> obs =
+        static_cast<UncaughtRejectionObserver*>(observers[j].get());
+
+      IgnoredErrorResult err;
+      obs->OnLeftUncaught(promise, err);
+    }
+    JSAutoCompartment ac(cx, promise);
+    Promise::ReportRejectedPromise(cx, promise);
+  }
+  storage->mUncaughtRejections.clear();
+
+  
+
+  for (size_t i = 0; i < consumed.length(); i++) {
+    JS::RootedObject promise(cx, consumed[i]);
+
+    for (size_t j = 0; j < observers.Length(); ++j) {
+      RefPtr<UncaughtRejectionObserver> obs =
+        static_cast<UncaughtRejectionObserver*>(observers[j].get());
+
+      IgnoredErrorResult err;
+      obs->OnConsumed(promise, err);
+    }
+  }
+  storage->mConsumedRejections.clear();
+}
+
+#else
 
  void
 PromiseDebugging::AddUncaughtRejection(Promise& aPromise)
@@ -372,13 +452,10 @@ PromiseDebugging::GetPromiseID(GlobalObject&,
   aID = sIDPrefix;
   aID.AppendInt(promiseID);
 }
-#endif 
 
  void
 PromiseDebugging::FlushUncaughtRejectionsInternal()
 {
-  
-#ifndef SPIDERMONKEY_PROMISE
   CycleCollectedJSRuntime* storage = CycleCollectedJSRuntime::Get();
 
   
@@ -439,8 +516,8 @@ PromiseDebugging::FlushUncaughtRejectionsInternal()
       obs->OnConsumed(*promise, err); 
     }
   }
-#endif 
 }
+#endif 
 
 } 
 } 
