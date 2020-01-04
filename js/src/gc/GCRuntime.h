@@ -654,11 +654,6 @@ class GCRuntime
 
     size_t maxMallocBytesAllocated() { return maxMallocBytes; }
 
-    uint64_t nextCellUniqueId() {
-        MOZ_ASSERT(nextCellUniqueId_ > 0);
-        return nextCellUniqueId_++;
-    }
-
   public:
     
     js::gc::State state() const { return incrementalState; }
@@ -1012,9 +1007,6 @@ class GCRuntime
     RootedValueMap rootsHash;
 
     size_t maxMallocBytes;
-
-    
-    uint64_t nextCellUniqueId_;
 
     
 

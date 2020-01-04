@@ -824,7 +824,9 @@ Chunk::init(JSRuntime* rt)
 
     
     info.init();
-    new (&info.trailer) ChunkTrailer(rt);
+    info.trailer.storeBuffer = nullptr;
+    info.trailer.location = ChunkLocationBitTenuredHeap;
+    info.trailer.runtime = rt;
 
     
 }
@@ -1098,7 +1100,6 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     marker(rt),
     usage(nullptr),
     maxMallocBytes(0),
-    nextCellUniqueId_(LargestTaggedNullCellPointer + 1), 
     numArenasFreeCommitted(0),
     verifyPreData(nullptr),
     chunkAllocationSinceLastGC(false),
@@ -2020,9 +2021,6 @@ RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind, size_t thingSize
 
     
     memcpy(dst, src, thingSize);
-
-    
-    src->zone()->transferUniqueId(dst, src);
 
     if (IsObjectAllocKind(thingKind)) {
         JSObject* srcObj = static_cast<JSObject*>(static_cast<Cell*>(src));
@@ -7315,12 +7313,6 @@ JS_PUBLIC_API(bool)
 JS::IsGenerationalGCEnabled(JSRuntime* rt)
 {
     return rt->gc.isGenerationalGCEnabled();
-}
-
-uint64_t
-js::gc::NextCellUniqueId(JSRuntime* rt)
-{
-    return rt->gc.nextCellUniqueId();
 }
 
 namespace js {
