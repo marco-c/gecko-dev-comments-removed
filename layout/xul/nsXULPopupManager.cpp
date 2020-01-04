@@ -2252,13 +2252,17 @@ nsXULPopupManager::HandleKeyboardEventWithKeyCode(
 #ifndef XP_MACOSX
     case nsIDOMKeyEvent::DOM_VK_F10:
 #endif
-      
-      if (aTopVisibleMenuItem) {
+      if (aTopVisibleMenuItem &&
+          !aTopVisibleMenuItem->Frame()->GetContent()->AttrValueIs(kNameSpaceID_None,
+           nsGkAtoms::activateontab, nsGkAtoms::_true, eCaseMatters)) {
+        
         Rollup(0, false, nullptr, nullptr);
+        break;
       } else if (mActiveMenuBar) {
         mActiveMenuBar->MenuClosed();
+        break;
       }
-      break;
+      
 
     case nsIDOMKeyEvent::DOM_VK_RETURN: {
       
