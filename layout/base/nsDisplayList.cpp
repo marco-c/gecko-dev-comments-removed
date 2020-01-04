@@ -493,7 +493,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSProperty aProperty,
 
 static void
 ClipBackgroundByText(nsIFrame* aFrame, nsRenderingContext* aContext,
-                     const gfxRect& aFillRect)
+                     const nsRect& aFillRect)
 {
   
   
@@ -504,37 +504,17 @@ ClipBackgroundByText(nsIFrame* aFrame, nsRenderingContext* aContext,
   
   
 
-  nsDisplayListBuilder builder(aFrame, nsDisplayListBuilderMode::GENERATE_GLYPH, false);
-
-  builder.EnterPresShell(aFrame);
-  nsDisplayList list;
-  aFrame->BuildDisplayListForStackingContext(&builder,
-                                      nsRect(nsPoint(0, 0), aFrame->GetSize()),
-                                      &list);
-  builder.LeavePresShell(aFrame);
-
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  for (nsDisplayItem* i = list.GetBottom(); i; i = i->GetAbove()) {
-    MOZ_ASSERT(nsDisplayItem::TYPE_BACKGROUND != i->GetType() &&
-               nsDisplayItem::TYPE_BACKGROUND_COLOR != i->GetType());
-  }
-#endif
-
   gfxContext* ctx = aContext->ThebesContext();
   gfxContextMatrixAutoSaveRestore save(ctx);
-  ctx->SetMatrix(ctx->CurrentMatrix().Translate(aFillRect.TopLeft()));
+  gfxRect bounds = nsLayoutUtils::RectToGfxRect(aFillRect, aFrame->PresContext()->AppUnitsPerDevPixel());
+  ctx->SetMatrix(ctx->CurrentMatrix().Translate(bounds.TopLeft()));
   ctx->NewPath();
 
-  RefPtr<LayerManager> layerManager =
-    list.PaintRoot(&builder, aContext, nsDisplayList::PAINT_DEFAULT);
+  nsLayoutUtils::PaintFrame(aContext, aFrame, aFrame->GetRect(),
+                            NS_RGB(255, 255, 255),
+                            nsDisplayListBuilderMode::GENERATE_GLYPH, 0);
 
   ctx->Clip();
-  list.DeleteAll();
 }
 
  void
@@ -2955,9 +2935,8 @@ nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
   uint8_t clip = mBackgroundStyle->mImage.mLayers[mLayer].mClip;
 
   if (clip == NS_STYLE_IMAGELAYER_CLIP_TEXT) {
-    gfxRect bounds = nsLayoutUtils::RectToGfxRect(borderBox, mFrame->PresContext()->AppUnitsPerDevPixel());
     ctx->Save();
-    ClipBackgroundByText(mFrame, aCtx, bounds);
+    ClipBackgroundByText(mFrame, aCtx, borderBox);
   }
 
   image::DrawResult result =
@@ -3386,19 +3365,19 @@ nsDisplayBackgroundColor::Paint(nsDisplayListBuilder* aBuilder,
 #else
   gfxContext* ctx = aCtx->ThebesContext();
 
-  gfxRect bounds =
-    nsLayoutUtils::RectToGfxRect(borderBox, mFrame->PresContext()->AppUnitsPerDevPixel());
-
   uint8_t clip = mBackgroundStyle->mImage.mLayers[0].mClip;
   if (clip == NS_STYLE_IMAGELAYER_CLIP_TEXT) {
     gfxContextAutoSaveRestore save(ctx);
 
-    ClipBackgroundByText(mFrame, aCtx, bounds);
+    ClipBackgroundByText(mFrame, aCtx, borderBox);
     ctx->SetColor(mColor);
     ctx->Fill();
 
     return;
   }
+
+  gfxRect bounds =
+    nsLayoutUtils::RectToGfxRect(borderBox, mFrame->PresContext()->AppUnitsPerDevPixel());
 
   ctx->SetColor(mColor);
   ctx->NewPath();
