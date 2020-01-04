@@ -953,30 +953,39 @@ void MediaPipelineTransmit::PipelineListener::ProcessAudioChunk(
   
   
   uint32_t outputChannels = chunk.ChannelCount() == 1 ? 1 : 2;
-  
-  
-  nsAutoArrayPtr<int16_t> convertedSamples(
-      new int16_t[chunk.mDuration * outputChannels]);
+  const int16_t* samples = nullptr;
+  nsAutoArrayPtr<int16_t> convertedSamples;
 
   
   if (!enabled_) {
     chunk.mBufferFormat = AUDIO_FORMAT_SILENCE;
   }
 
-  switch (chunk.mBufferFormat) {
-      case AUDIO_FORMAT_FLOAT32:
-        DownmixAndInterleave(chunk.ChannelData<float>(),
-                             chunk.mDuration, chunk.mVolume, outputChannels,
-                             convertedSamples.get());
-        break;
-      case AUDIO_FORMAT_S16:
-        DownmixAndInterleave(chunk.ChannelData<int16_t>(),
-                             chunk.mDuration, chunk.mVolume, outputChannels,
-                             convertedSamples.get());
-        break;
-      case AUDIO_FORMAT_SILENCE:
-        PodZero(convertedSamples.get(), chunk.mDuration * outputChannels);
-        break;
+  
+  
+  
+  
+  if (outputChannels == 1 && chunk.mBufferFormat == AUDIO_FORMAT_S16) {
+    samples = chunk.ChannelData<int16_t>().Elements()[0];
+  } else {
+    convertedSamples = new int16_t[chunk.mDuration * outputChannels];
+
+    switch (chunk.mBufferFormat) {
+        case AUDIO_FORMAT_FLOAT32:
+          DownmixAndInterleave(chunk.ChannelData<float>(),
+                               chunk.mDuration, chunk.mVolume, outputChannels,
+                               convertedSamples.get());
+          break;
+        case AUDIO_FORMAT_S16:
+          DownmixAndInterleave(chunk.ChannelData<int16_t>(),
+                               chunk.mDuration, chunk.mVolume, outputChannels,
+                               convertedSamples.get());
+          break;
+        case AUDIO_FORMAT_SILENCE:
+          PodZero(convertedSamples.get(), chunk.mDuration * outputChannels);
+          break;
+    }
+    samples = convertedSamples.get();
   }
 
   MOZ_ASSERT(!(rate%100)); 
@@ -995,12 +1004,13 @@ void MediaPipelineTransmit::PipelineListener::ProcessAudioChunk(
     packetizer_ = new AudioPacketizer<int16_t, int16_t>(audio_10ms, outputChannels);
    }
 
-  packetizer_->Input(convertedSamples, chunk.mDuration);
+  packetizer_->Input(samples, chunk.mDuration);
 
   while (packetizer_->PacketsAvailable()) {
     uint32_t samplesPerPacket = packetizer_->PacketSize() *
                                 packetizer_->Channels();
 
+    
     
     
     
