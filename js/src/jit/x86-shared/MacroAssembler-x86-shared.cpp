@@ -112,7 +112,7 @@ MacroAssemblerX86Shared::branchNegativeZero(FloatRegister reg,
 
     
     
-    branchTest32(NonZero, scratch, Imm32(1), label);
+    asMasm().branchTest32(NonZero, scratch, Imm32(1), label);
 
     bind(&nonZero);
 #elif defined(JS_CODEGEN_X64)
