@@ -2335,6 +2335,16 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   if (!httpChannel)
     return NS_OK; 
 
+  
+  nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(newChannel);
+  if (mRequireCORSPreflight && httpInternal) {
+    rv = httpInternal->SetCorsPreflightParameters(mUnsafeHeaders, mWithCredentials,
+                                                  mPreflightPrincipal);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
   if (preserveMethod) {
     nsCOMPtr<nsIUploadChannel> uploadChannel =
       do_QueryInterface(httpChannel);
@@ -2404,7 +2414,6 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     }
   }
 
-  nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(newChannel);
   if (httpInternal) {
     
     httpInternal->SetThirdPartyFlags(mThirdPartyFlags);
