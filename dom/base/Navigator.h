@@ -167,11 +167,6 @@ public:
   Promise* GetBattery(ErrorResult& aRv);
   battery::BatteryManager* GetDeprecatedBattery(ErrorResult& aRv);
 
-  static already_AddRefed<Promise> GetDataStores(nsPIDOMWindowInner* aWindow,
-                                                 const nsAString& aName,
-                                                 const nsAString& aOwner,
-                                                 ErrorResult& aRv);
-
   static void AppName(nsAString& aAppName, bool aUsePrefOverriddenValue);
 
   static nsresult GetPlatform(nsAString& aPlatform,
@@ -188,10 +183,6 @@ public:
   
   
   void ClearUserAgentCache();
-
-  already_AddRefed<Promise> GetDataStores(const nsAString& aName,
-                                          const nsAString& aOwner,
-                                          ErrorResult& aRv);
 
   
   already_AddRefed<Promise> GetFeature(const nsAString& aName,
@@ -328,10 +319,6 @@ public:
 #endif 
   static bool HasUserMediaSupport(JSContext* ,
                                   JSObject* );
-
-  static bool HasDataStoreSupport(nsIPrincipal* aPrincipal);
-
-  static bool HasDataStoreSupport(JSContext* cx, JSObject* aGlobal);
 
 #ifdef MOZ_B2G
   static bool HasMobileIdSupport(JSContext* aCx, JSObject* aGlobal);

@@ -12,10 +12,6 @@
 #include "nsString.h"
 #include "nsWrapperCache.h"
 
-
-
-#include "mozilla/dom/Navigator.h"
-
 namespace mozilla {
 namespace dom {
 class Promise;
@@ -103,11 +99,6 @@ public:
   }
 
   void SetLanguages(const nsTArray<nsString>& aLanguages);
-
-  already_AddRefed<Promise> GetDataStores(JSContext* aCx,
-                                          const nsAString& aName,
-                                          const nsAString& aOwner,
-                                          ErrorResult& aRv);
 
   uint64_t HardwareConcurrency() const;
 };

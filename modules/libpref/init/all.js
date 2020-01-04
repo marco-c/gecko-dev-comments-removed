@@ -4900,9 +4900,6 @@ pref("dom.forms.inputmode", true);
 pref("dom.mozInputMethod.enabled", false);
 
 
-pref("dom.datastore.enabled", false);
-
-
 #ifdef MOZ_B2G_RIL
 pref("dom.telephony.enabled", true);
 #else

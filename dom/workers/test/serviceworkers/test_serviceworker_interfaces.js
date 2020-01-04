@@ -93,10 +93,6 @@ var interfaceNamesInGlobalScope =
 
     "CustomEvent",
 
-    { name: "DataStore", b2g: true },
-
-    { name: "DataStoreCursor", b2g: true },
-
     "Directory",
 
     "DOMCursor",

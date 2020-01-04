@@ -96,7 +96,6 @@
 #endif
 
 #include "nsIDOMGlobalPropertyInitializer.h"
-#include "mozilla/dom/DataStoreService.h"
 #include "nsJSUtils.h"
 
 #include "nsScriptNameSpaceManager.h"
@@ -1519,38 +1518,6 @@ Navigator::GetDeprecatedBattery(ErrorResult& aRv)
   return mBatteryManager;
 }
 
- already_AddRefed<Promise>
-Navigator::GetDataStores(nsPIDOMWindowInner* aWindow,
-                         const nsAString& aName,
-                         const nsAString& aOwner,
-                         ErrorResult& aRv)
-{
-  if (!aWindow || !aWindow->GetDocShell()) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  RefPtr<DataStoreService> service = DataStoreService::GetOrCreate();
-  if (!service) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  nsCOMPtr<nsISupports> promise;
-  aRv = service->GetDataStores(aWindow, aName, aOwner, getter_AddRefs(promise));
-
-  RefPtr<Promise> p = static_cast<Promise*>(promise.get());
-  return p.forget();
-}
-
-already_AddRefed<Promise>
-Navigator::GetDataStores(const nsAString& aName,
-                         const nsAString& aOwner,
-                         ErrorResult& aRv)
-{
-  return GetDataStores(mWindow, aName, aOwner, aRv);
-}
-
 already_AddRefed<Promise>
 Navigator::GetFeature(const nsAString& aName, ErrorResult& aRv)
 {
@@ -2308,75 +2275,6 @@ Navigator::HasUserMediaSupport(JSContext* ,
   
   return Preferences::GetBool("media.navigator.enabled", false) ||
          Preferences::GetBool("media.peerconnection.enabled", false);
-}
-
-
-bool
-Navigator::HasDataStoreSupport(nsIPrincipal* aPrincipal)
-{
-  workers::AssertIsOnMainThread();
-
-  return DataStoreService::CheckPermission(aPrincipal);
-}
-
-
-
-class HasDataStoreSupportRunnable final
-  : public workers::WorkerCheckAPIExposureOnMainThreadRunnable
-{
-public:
-  bool mResult;
-
-  explicit HasDataStoreSupportRunnable(workers::WorkerPrivate* aWorkerPrivate)
-    : workers::WorkerCheckAPIExposureOnMainThreadRunnable(aWorkerPrivate)
-    , mResult(false)
-  {
-    MOZ_ASSERT(aWorkerPrivate);
-    aWorkerPrivate->AssertIsOnWorkerThread();
-  }
-
-protected:
-  virtual bool
-  MainThreadRun() override
-  {
-    workers::AssertIsOnMainThread();
-
-    mResult = Navigator::HasDataStoreSupport(mWorkerPrivate->GetPrincipal());
-
-    return true;
-  }
-};
-
-
-bool
-Navigator::HasDataStoreSupport(JSContext* aCx, JSObject* aGlobal)
-{
-  
-  if (!NS_IsMainThread()) {
-    workers::WorkerPrivate* workerPrivate =
-      workers::GetWorkerPrivateFromContext(aCx);
-    workerPrivate->AssertIsOnWorkerThread();
-
-    RefPtr<HasDataStoreSupportRunnable> runnable =
-      new HasDataStoreSupportRunnable(workerPrivate);
-    return runnable->Dispatch() && runnable->mResult;
-  }
-
-  workers::AssertIsOnMainThread();
-
-  JS::Rooted<JSObject*> global(aCx, aGlobal);
-
-  nsCOMPtr<nsPIDOMWindowInner> win = GetWindowFromGlobal(global);
-  if (!win) {
-    return false;
-  }
-
-  nsIDocument* doc = win->GetExtantDoc();
-  if (!doc || !doc->NodePrincipal()) {
-    return false;
-  }
-
-  return HasDataStoreSupport(doc->NodePrincipal());
 }
 
 #ifdef MOZ_B2G
