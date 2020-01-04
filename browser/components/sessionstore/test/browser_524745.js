@@ -35,8 +35,7 @@ function test() {
 
         
         window.restore();
-        window_B.close();
-        finish();
+        BrowserTestUtils.closeWindow(window_B).then(finish);
       });
     }, window_B);
   });

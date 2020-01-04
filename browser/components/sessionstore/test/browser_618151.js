@@ -27,16 +27,19 @@ function runNextTest() {
     
     
     var windowsEnum = Services.wm.getEnumerator("navigator:browser");
+    let closeWinPromises = [];
     while (windowsEnum.hasMoreElements()) {
       var currentWindow = windowsEnum.getNext();
       if (currentWindow != window) {
-        currentWindow.close();
+        closeWinPromises.push(BrowserTestUtils.closeWindow(currentWindow));
       }
     }
 
-    let currentTest = tests.shift();
-    info("running " + currentTest.name);
-    waitForBrowserState(testState, currentTest);
+    Promise.all(closeWinPromises).then(() => {
+      let currentTest = tests.shift();
+      info("running " + currentTest.name);
+      waitForBrowserState(testState, currentTest);
+    });
   }
   else {
     ss.setBrowserState(stateBackup);
