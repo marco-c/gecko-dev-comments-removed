@@ -222,7 +222,7 @@ private:
     const CheckedInt<size_t> sizeNeeded =
       CheckedInt<size_t>(aLength) * sizeof(Type) + AlignmentPaddingSize();
 
-    if (!sizeNeeded.isValid()) {
+    if (!sizeNeeded.isValid() || sizeNeeded.value() >= INT32_MAX) {
       
       return false;
     }
