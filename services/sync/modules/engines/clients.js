@@ -14,6 +14,7 @@ Cu.import("resource://services-common/stringbundle.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/record.js");
+Cu.import("resource://services-sync/resource.js");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://gre/modules/Services.jsm");
 
@@ -22,6 +23,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
 
 const CLIENTS_TTL = 1814400; 
 const CLIENTS_TTL_REFRESH = 604800; 
+const STALE_CLIENT_REMOTE_AGE = 604800; 
 
 const SUPPORTED_PROTOCOL_VERSIONS = ["1.1", "1.5"];
 
@@ -173,7 +175,7 @@ ClientEngine.prototype = {
   _processIncoming() {
     
     this.lastSync = 0;
-    this._incomingClients = [];
+    this._incomingClients = {};
     try {
       SyncEngine.prototype._processIncoming.call(this);
       
@@ -181,10 +183,28 @@ ClientEngine.prototype = {
       
       
       
-      let remoteClientIDs = Object.keys(this._store._remoteClients);
-      let staleIDs = Utils.arraySub(remoteClientIDs, this._incomingClients);
-      for (let staleID of staleIDs) {
-        this._removeRemoteClient(staleID);
+      for (let id in this._store._remoteClients) {
+        if (!this._incomingClients[id]) {
+          this._log.info(`Removing local state for deleted client ${id}`);
+          this._removeRemoteClient(id);
+        }
+      }
+      
+      
+      
+      delete this._incomingClients[this.localID];
+      let names = new Set([this.localName]);
+      for (let id in this._incomingClients) {
+        let record = this._store._remoteClients[id];
+        if (!names.has(record.name)) {
+          names.add(record.name);
+          continue;
+        }
+        let remoteAge = AsyncResource.serverTime - this._incomingClients[id];
+        if (remoteAge > STALE_CLIENT_REMOTE_AGE) {
+          this._log.info(`Hiding stale client ${id} with age ${remoteAge}`);
+          this._removeRemoteClient(id);
+        }
       }
     } finally {
       this._incomingClients = null;
@@ -219,7 +239,7 @@ ClientEngine.prototype = {
   _reconcile: function _reconcile(item) {
     
     
-    this._incomingClients.push(item.id);
+    this._incomingClients[item.id] = item.modified;
 
     if (!this._store.itemExists(item.id)) {
       return true;
