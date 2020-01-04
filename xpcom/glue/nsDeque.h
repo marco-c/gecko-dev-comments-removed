@@ -143,6 +143,11 @@ public:
   
 
 
+  void Empty();
+
+  
+
+
 
 
   void Erase();
@@ -155,6 +160,8 @@ public:
 
 
   void ForEach(nsDequeFunctor& aFunctor) const;
+
+  void SetDeallocator(nsDequeFunctor* aDeallocator);
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -185,11 +192,5 @@ private:
   nsDeque& operator=(const nsDeque& aOther);
 
   bool GrowCapacity();
-  void SetDeallocator(nsDequeFunctor* aDeallocator);
-
-  
-
-
-  void Empty();
 };
 #endif
