@@ -260,6 +260,10 @@ void ScaleYCbCrToRGB32(const uint8* y_buf,
                        ScaleFilter filter) {
 
   bool use_deprecated = gfxPrefs::YCbCrAccurateConversion() ||
+#if defined(XP_WIN) && defined(_M_X64)
+                        
+                        supports_sse3() ||
+#endif
                         (supports_mmx() && supports_sse() && !supports_sse3());
   if (use_deprecated) {
     ScaleYCbCrToRGB32_deprecated(y_buf, u_buf, v_buf,

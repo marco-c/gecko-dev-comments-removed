@@ -486,6 +486,11 @@ AttemptVideoConvertAndScale(TextureSource* aSource, const SourceSurface* aSource
                             const gfx::Rect& aClipRect,
                             DrawTarget* aDest, const DrawTarget* aBuffer)
 {
+#if defined(XP_WIN) && defined(_M_X64)
+  
+  return false;
+#endif
+
   WrappingTextureSourceYCbCrBasic* wrappingSource = aSource->AsWrappingTextureSourceYCbCrBasic();
   if (!wrappingSource)
     return false;
