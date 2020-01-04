@@ -13,12 +13,19 @@
 #ifdef HAVE_JPEG
 #include <assert.h>
 
-#if !defined(__pnacl__) && !defined(__CLR_VER) && !defined(COVERAGE_ENABLED) &&\
-    !defined(TARGET_IPHONE_SIMULATOR)
+#if !defined(__pnacl__) && !defined(__CLR_VER) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 
 #include <setjmp.h>
 #define HAVE_SETJMP
+
+#if defined(_MSC_VER)
+
+#pragma warning(disable:4324)
 #endif
+
+#endif
+struct FILE;  
 
 
 #ifdef __cplusplus
@@ -49,6 +56,13 @@ const int MJpegDecoder::kColorSpaceYCbCr = JCS_YCbCr;
 const int MJpegDecoder::kColorSpaceCMYK = JCS_CMYK;
 const int MJpegDecoder::kColorSpaceYCCK = JCS_YCCK;
 
+
+boolean fill_input_buffer(jpeg_decompress_struct* cinfo);
+void init_source(jpeg_decompress_struct* cinfo);
+void skip_input_data(jpeg_decompress_struct* cinfo, long num_bytes);  
+void term_source(jpeg_decompress_struct* cinfo);
+void ErrorHandler(jpeg_common_struct* cinfo);
+
 MJpegDecoder::MJpegDecoder()
     : has_scanline_padding_(LIBYUV_FALSE),
       num_outbufs_(0),
@@ -63,9 +77,6 @@ MJpegDecoder::MJpegDecoder()
   decompress_struct_->err = jpeg_std_error(&error_mgr_->base);
   
   error_mgr_->base.error_exit = &ErrorHandler;
-#ifndef DEBUG_MJPEG
-  error_mgr_->base.output_message = &OutputHandler;
-#endif
 #endif
   decompress_struct_->client_data = NULL;
   source_mgr_->init_source = &init_source;
@@ -95,7 +106,7 @@ LIBYUV_BOOL MJpegDecoder::LoadFrame(const uint8* src, size_t src_len) {
   }
 
   buf_.data = src;
-  buf_.len = (int)(src_len);
+  buf_.len = static_cast<int>(src_len);
   buf_vec_.pos = 0;
   decompress_struct_->client_data = &buf_vec_;
 #ifdef HAVE_SETJMP
@@ -400,12 +411,12 @@ LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn, void* opaque,
   return FinishDecode();
 }
 
-void MJpegDecoder::init_source(j_decompress_ptr cinfo) {
+void init_source(j_decompress_ptr cinfo) {
   fill_input_buffer(cinfo);
 }
 
-boolean MJpegDecoder::fill_input_buffer(j_decompress_ptr cinfo) {
-  BufferVector* buf_vec = (BufferVector*)(cinfo->client_data);
+boolean fill_input_buffer(j_decompress_ptr cinfo) {
+  BufferVector* buf_vec = reinterpret_cast<BufferVector*>(cinfo->client_data);
   if (buf_vec->pos >= buf_vec->len) {
     assert(0 && "No more data");
     
@@ -417,17 +428,16 @@ boolean MJpegDecoder::fill_input_buffer(j_decompress_ptr cinfo) {
   return TRUE;
 }
 
-void MJpegDecoder::skip_input_data(j_decompress_ptr cinfo,
-                                   long num_bytes) {  
+void skip_input_data(j_decompress_ptr cinfo, long num_bytes) {  
   cinfo->src->next_input_byte += num_bytes;
 }
 
-void MJpegDecoder::term_source(j_decompress_ptr cinfo) {
+void term_source(j_decompress_ptr cinfo) {
   
 }
 
 #ifdef HAVE_SETJMP
-void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
+void ErrorHandler(j_common_ptr cinfo) {
   
   
   
@@ -441,18 +451,12 @@ void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
   
 #endif
 
-  SetJmpErrorMgr* mgr = (SetJmpErrorMgr*)(cinfo->err);
+  SetJmpErrorMgr* mgr = reinterpret_cast<SetJmpErrorMgr*>(cinfo->err);
   
   
   longjmp(mgr->setjmp_buffer, 1);
 }
-
-#ifndef DEBUG_MJPEG
-void MJpegDecoder::OutputHandler(j_common_ptr cinfo) {
-  
-}
 #endif
-#endif 
 
 void MJpegDecoder::AllocOutputBuffers(int num_outbufs) {
   if (num_outbufs != num_outbufs_) {
@@ -499,11 +503,11 @@ LIBYUV_BOOL MJpegDecoder::StartDecode() {
   decompress_struct_->dct_method = JDCT_IFAST;  
   decompress_struct_->dither_mode = JDITHER_NONE;
   
-  decompress_struct_->do_fancy_upsampling = LIBYUV_FALSE;
+  decompress_struct_->do_fancy_upsampling = (boolean)(LIBYUV_FALSE);
   
-  decompress_struct_->enable_2pass_quant = LIBYUV_FALSE;
+  decompress_struct_->enable_2pass_quant = (boolean)(LIBYUV_FALSE);
   
-  decompress_struct_->do_block_smoothing = LIBYUV_FALSE;
+  decompress_struct_->do_block_smoothing = (boolean)(LIBYUV_FALSE);
 
   if (!jpeg_start_decompress(decompress_struct_)) {
     

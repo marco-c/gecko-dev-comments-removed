@@ -10,16 +10,40 @@
 
 #include "libyuv/mjpeg_decoder.h"
 
+#include <string.h>  
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
 
 
+static LIBYUV_BOOL ScanEOI(const uint8* sample, size_t sample_size) {
+  if (sample_size >= 2) {
+    const uint8* end = sample + sample_size - 1;
+    const uint8* it = sample;
+    while (it < end) {
+      
+      it = static_cast<const uint8 *>(memchr(it, 0xff, end - it));
+      if (it == NULL) {
+        break;
+      }
+      if (it[1] == 0xd9) {
+        return LIBYUV_TRUE;  
+      }
+      ++it;  
+    }
+  }
+  
+  return LIBYUV_FALSE;
+}
+
 
 LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
-  size_t i;
-  if (sample_size < 64) {
+  
+  const size_t kMaxJpegSize = 0x7fffffffull;
+  const size_t kBackSearchSize = 1024;
+  if (sample_size < 64 || sample_size > kMaxJpegSize || !sample) {
     
     return LIBYUV_FALSE;
   }
@@ -27,17 +51,17 @@ LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
     
     return LIBYUV_FALSE;
   }
-  for (i = sample_size - 2; i > 1;) {
-    if (sample[i] != 0xd9) {
-      if (sample[i] == 0xff && sample[i + 1] == 0xd9) {  
-        return LIBYUV_TRUE;  
-      }
-      --i;
+
+  
+  if (sample_size > kBackSearchSize) {
+    if (ScanEOI(sample + sample_size - kBackSearchSize, kBackSearchSize)) {
+      return LIBYUV_TRUE;  
     }
-    --i;
+    
+    sample_size = sample_size - kBackSearchSize + 1;
   }
   
-  return LIBYUV_FALSE;
+  return ScanEOI(sample + 2, sample_size - 2);
 }
 
 #ifdef __cplusplus
