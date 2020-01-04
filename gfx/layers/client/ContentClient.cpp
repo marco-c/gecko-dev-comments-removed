@@ -114,9 +114,10 @@ ContentClient::PrintInfo(std::stringstream& aStream, const char* aPrefix)
 
 
 
-ContentClientBasic::ContentClientBasic()
+ContentClientBasic::ContentClientBasic(gfx::BackendType aBackend)
   : ContentClient(nullptr)
   , RotatedContentBuffer(ContainsVisibleBounds)
+  , mBackend(aBackend)
 {}
 
 void
@@ -131,7 +132,8 @@ ContentClientBasic::CreateBuffer(ContentType aType,
     gfxDevCrash(LogReason::AlphaWithBasicClient) << "Asking basic content client for component alpha";
   }
 
-  *aBlackDT = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
+  *aBlackDT = gfxPlatform::GetPlatform()->CreateDrawTargetForBackend(
+    mBackend,
     IntSize(aRect.width, aRect.height),
     gfxPlatform::GetPlatform()->Optimal2DFormatForContent(aType));
 }

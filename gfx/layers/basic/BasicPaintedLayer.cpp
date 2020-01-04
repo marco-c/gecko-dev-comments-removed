@@ -137,7 +137,7 @@ BasicPaintedLayer::Validate(LayerManager::DrawPaintedLayerCallback aCallback,
   if (!mContentClient) {
     
     
-    mContentClient = new ContentClientBasic();
+    mContentClient = new ContentClientBasic(mBackend);
   }
 
   if (!BasicManager()->IsRetained()) {
@@ -229,7 +229,16 @@ already_AddRefed<PaintedLayer>
 BasicLayerManager::CreatePaintedLayer()
 {
   NS_ASSERTION(InConstruction(), "Only allowed in construction phase");
-  RefPtr<PaintedLayer> layer = new BasicPaintedLayer(this);
+
+  BackendType backend = gfxPlatform::GetPlatform()->GetDefaultContentBackend();
+
+  if (mDefaultTarget) {
+    backend = mDefaultTarget->GetDrawTarget()->GetBackendType();
+  } else if (mType == BLM_WIDGET) {
+    backend = gfxPlatform::GetPlatform()->GetContentBackendFor(LayersBackend::LAYERS_BASIC);
+  }
+
+  RefPtr<PaintedLayer> layer = new BasicPaintedLayer(this, backend);
   return layer.forget();
 }
 
