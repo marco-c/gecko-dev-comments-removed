@@ -764,7 +764,6 @@ var Impl = {
         
         TelemetryStorage.runCleanPingArchiveTask();
 
-        Telemetry.asyncFetchTelemetryData(function () {});
         this._delayedInitTaskDeferred.resolve();
       } catch (e) {
         this._delayedInitTaskDeferred.reject(e);
