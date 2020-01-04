@@ -2537,16 +2537,6 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
     }
 
     
-
-
-
-    if (!strcmp(obj->getClass()->name, "Location")) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_PROTO_OF,
-                             "incompatible Location object");
-        return false;
-    }
-
-    
     bool extensible;
     if (!IsExtensible(cx, obj, &extensible))
         return false;
