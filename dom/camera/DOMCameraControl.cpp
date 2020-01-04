@@ -530,7 +530,7 @@ nsDOMCameraControl::TrackCreated(TrackID aTrackID) {
   
   MediaInputPort* inputPort = nullptr;
   dom::VideoStreamTrack* track =
-    new dom::VideoStreamTrack(this, aTrackID, aTrackID, nsString(),
+    new dom::VideoStreamTrack(this, aTrackID, aTrackID,
                               new BasicUnstoppableTrackSource(principal));
   RefPtr<TrackPort> port =
     new TrackPort(inputPort, track,

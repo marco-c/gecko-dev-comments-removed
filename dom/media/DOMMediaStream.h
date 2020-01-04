@@ -522,7 +522,6 @@ public:
 
 
   MediaStreamTrack* CreateDOMTrack(TrackID aTrackID, MediaSegment::Type aType,
-                                   const nsString& aLabel,
                                    MediaStreamTrackSource* aSource);
 
   
