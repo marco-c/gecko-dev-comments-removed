@@ -1256,11 +1256,6 @@ class DebuggerObject : public NativeObject
                                                     MutableHandleDebuggerObject result);
     static MOZ_MUST_USE bool getScriptedProxyHandler(JSContext* cx, HandleDebuggerObject object,
                                                      MutableHandleDebuggerObject result);
-#ifdef SPIDERMONKEY_PROMISE
-    static MOZ_MUST_USE bool getIsPromise(JSContext* cx, HandleDebuggerObject object,
-                                          bool& result);
-#endif 
-
     
     static MOZ_MUST_USE bool isExtensible(JSContext* cx, HandleDebuggerObject object,
                                           bool& result);
@@ -1309,6 +1304,9 @@ class DebuggerObject : public NativeObject
     bool isArrowFunction() const;
     bool isGlobal() const;
     bool isScriptedProxy() const;
+#ifdef SPIDERMONKEY_PROMISE
+    bool isPromise() const;
+#endif 
     JSAtom* name() const;
     JSAtom* displayName() const;
 
