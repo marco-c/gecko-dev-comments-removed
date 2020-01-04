@@ -18,7 +18,7 @@ add_task(function*() {
   let front = TimelineFront(client, form);
 
   info("Start timeline marker recording");
-  yield front.start();
+  yield front.start({ withMarkers: true });
 
   
   

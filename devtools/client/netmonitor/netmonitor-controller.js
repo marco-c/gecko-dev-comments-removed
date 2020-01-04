@@ -22,6 +22,7 @@ const EVENTS = {
   
   
   NETWORK_EVENT: "NetMonitor:NetworkEvent",
+  TIMELINE_EVENT: "NetMonitor:TimelineEvent",
 
   
   REQUEST_ADDED: "NetMonitor:RequestAdded",
@@ -124,6 +125,7 @@ const Editor = require("devtools/client/sourceeditor/editor");
 const {Tooltip} = require("devtools/client/shared/widgets/Tooltip");
 const {ToolSidebar} = require("devtools/client/framework/sidebar");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const {TimelineFront} = require("devtools/server/actors/timeline");
 
 XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
 XPCOMUtils.defineConstant(this, "ACTIVITY_TYPE", ACTIVITY_TYPE);
@@ -168,16 +170,17 @@ var NetMonitorController = {
 
 
 
-  startupNetMonitor: function() {
+  startupNetMonitor: Task.async(function*() {
     if (this._startup) {
-      return this._startup;
+      return this._startup.promise;
     }
-
-    NetMonitorView.initialize();
-
-    
-    return this._startup = promise.resolve();
-  },
+    this._startup = promise.defer();
+    {
+      NetMonitorView.initialize();
+      yield this.connect();
+    }
+    this._startup.resolve();
+  }),
 
   
 
@@ -185,19 +188,19 @@ var NetMonitorController = {
 
 
 
-  shutdownNetMonitor: function() {
+  shutdownNetMonitor: Task.async(function*() {
     if (this._shutdown) {
-      return this._shutdown;
+      return this._shutdown.promise;
     }
-
-    NetMonitorView.destroy();
-    this.TargetEventsHandler.disconnect();
-    this.NetworkEventsHandler.disconnect();
-    this.disconnect();
-
-    
-    return this._shutdown = promise.resolve();
-  },
+    this._shutdown = promise.defer();;
+    {
+      NetMonitorView.destroy();
+      this.TargetEventsHandler.disconnect();
+      this.NetworkEventsHandler.disconnect();
+      yield this.disconnect();
+    }
+    this._shutdown.resolve();
+  }),
 
   
 
@@ -210,47 +213,78 @@ var NetMonitorController = {
 
   connect: Task.async(function*() {
     if (this._connection) {
-      return this._connection;
+      return this._connection.promise;
     }
+    this._connection = promise.defer();
 
-    let deferred = promise.defer();
-    this._connection = deferred.promise;
-
-    this.client = this._target.client;
     
     
     if (this._target.isTabActor) {
       this.tabClient = this._target.activeTab;
     }
-    this.webConsoleClient = this._target.activeConsole;
-    this.webConsoleClient.setPreferences(NET_PREFS, () => {
-      this.TargetEventsHandler.connect();
-      this.NetworkEventsHandler.connect();
-      deferred.resolve();
-    });
 
-    yield deferred.promise;
+    let connectWebConsole = () => {
+      let deferred = promise.defer();
+      this.webConsoleClient = this._target.activeConsole;
+      this.webConsoleClient.setPreferences(NET_PREFS, deferred.resolve);
+      return deferred.promise;
+    };
+
+    let connectTimeline = () => {
+      
+      
+      if (this._target.getTrait("documentLoadingMarkers")) {
+        this.timelineFront = new TimelineFront(this._target.client, this._target.form);
+        return this.timelineFront.start({ withDocLoadingEvents: true });
+      }
+    };
+
+    yield connectWebConsole();
+    yield connectTimeline();
+
+    this.TargetEventsHandler.connect();
+    this.NetworkEventsHandler.connect();
+
     window.emit(EVENTS.CONNECTED);
+
+    this._connection.resolve();
+    this._connected = true;
   }),
 
   
 
 
-  disconnect: function() {
+  disconnect: Task.async(function*() {
+    if (this._disconnection) {
+      return this._disconnection.promise;
+    }
+    this._disconnection = promise.defer();
+
+    
+    yield this._connection.promise;
+
     
     
-    this._connection = null;
-    this.client = null;
     this.tabClient = null;
     this.webConsoleClient = null;
-  },
+
+    
+    
+    if (this._target.getTrait("documentLoadingMarkers")) {
+      yield this.timelineFront.destroy();
+      this.timelineFront = null;
+    }
+
+    this._disconnection.resolve();
+    this._connected = false;
+  }),
 
   
 
 
 
   isConnected: function() {
-    return !!this.client;
+    return !!this._connected;
   },
 
   
@@ -391,15 +425,7 @@ var NetMonitorController = {
   get supportsPerfStats() {
     return this.tabClient &&
            (this.tabClient.traits.reconfigure || !this._target.isApp);
-  },
-
-  _startup: null,
-  _shutdown: null,
-  _connection: null,
-  _currentActivity: null,
-  client: null,
-  tabClient: null,
-  webConsoleClient: null
+  }
 };
 
 
@@ -458,6 +484,8 @@ TargetEventsHandler.prototype = {
         if (NetMonitorController.getCurrentActivity() == ACTIVITY_TYPE.NONE) {
           NetMonitorView.showNetworkInspectorView();
         }
+        
+        NetMonitorController.NetworkEventsHandler.clearMarkers();
 
         window.emit(EVENTS.TARGET_WILL_NAVIGATE);
         break;
@@ -481,8 +509,11 @@ TargetEventsHandler.prototype = {
 
 
 function NetworkEventsHandler() {
+  this._markers = [];
+
   this._onNetworkEvent = this._onNetworkEvent.bind(this);
   this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
+  this._onDocLoadingMarker = this._onDocLoadingMarker.bind(this);
   this._onRequestHeaders = this._onRequestHeaders.bind(this);
   this._onRequestCookies = this._onRequestCookies.bind(this);
   this._onRequestPostData = this._onRequestPostData.bind(this);
@@ -501,6 +532,20 @@ NetworkEventsHandler.prototype = {
     return NetMonitorController.webConsoleClient;
   },
 
+  get timelineFront() {
+    return NetMonitorController.timelineFront;
+  },
+
+  get firstDocumentDOMContentLoadedTimestamp() {
+    let marker = this._markers.filter(e => e.name == "document::DOMContentLoaded")[0];
+    return marker ? marker.unixTime / 1000 : -1;
+  },
+
+  get firstDocumentLoadTimestamp() {
+    let marker = this._markers.filter(e => e.name == "document::Load")[0];
+    return marker ? marker.unixTime / 1000 : -1;
+  },
+
   
 
 
@@ -508,7 +553,28 @@ NetworkEventsHandler.prototype = {
     dumpn("NetworkEventsHandler is connecting...");
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);
     this.webConsoleClient.on("networkEventUpdate", this._onNetworkEventUpdate);
+
+    if (this.timelineFront) {
+      this.timelineFront.on("doc-loading", this._onDocLoadingMarker);
+    }
+
     this._displayCachedEvents();
+  },
+
+  
+
+
+  disconnect: function() {
+    if (!this.client) {
+      return;
+    }
+    dumpn("NetworkEventsHandler is disconnecting...");
+    this.webConsoleClient.off("networkEvent", this._onNetworkEvent);
+    this.webConsoleClient.off("networkEventUpdate", this._onNetworkEventUpdate);
+
+    if (this.timelineFront) {
+      this.timelineFront.off("doc-loading", this._onDocLoadingMarker);
+    }
   },
 
   
@@ -533,13 +599,10 @@ NetworkEventsHandler.prototype = {
   
 
 
-  disconnect: function() {
-    if (!this.client) {
-      return;
-    }
-    dumpn("NetworkEventsHandler is disconnecting...");
-    this.webConsoleClient.off("networkEvent", this._onNetworkEvent);
-    this.webConsoleClient.off("networkEventUpdate", this._onNetworkEventUpdate);
+
+  _onDocLoadingMarker: function(marker) {
+    window.emit(EVENTS.TIMELINE_EVENT, marker);
+    this._markers.push(marker);
   },
 
   
@@ -739,6 +802,13 @@ NetworkEventsHandler.prototype = {
     }, () => {
       window.emit(EVENTS.RECEIVED_EVENT_TIMINGS, aResponse.from);
     });
+  },
+
+  
+
+
+  clearMarkers: function() {
+    this._markers.length = 0;
   },
 
   

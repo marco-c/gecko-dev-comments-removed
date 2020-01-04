@@ -176,6 +176,9 @@ RootActor.prototype = {
     
     
     heapSnapshots: true,
+    
+    
+    documentLoadingMarkers: true
   },
 
   

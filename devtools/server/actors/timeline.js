@@ -46,6 +46,15 @@ var TimelineActor = exports.TimelineActor = protocol.ActorClass({
     
 
 
+    "doc-loading" : {
+      type: "doc-loading",
+      marker: Arg(0, "json"),
+      endTime: Arg(0, "number")
+    },
+
+    
+
+
 
 
     "markers" : {
@@ -139,8 +148,12 @@ var TimelineActor = exports.TimelineActor = protocol.ActorClass({
 
   start: actorBridge("start", {
     request: {
+      withMarkers: Option(0, "boolean"),
+      withTicks: Option(0, "boolean"),
       withMemory: Option(0, "boolean"),
-      withTicks: Option(0, "boolean")
+      withFrames: Option(0, "boolean"),
+      withGCEvents: Option(0, "boolean"),
+      withDocLoadingEvents: Option(0, "boolean")
     },
     response: {
       value: RetVal("number")
