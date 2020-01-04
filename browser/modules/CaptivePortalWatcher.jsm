@@ -47,10 +47,14 @@ this.CaptivePortalWatcher = {
     Services.obs.addObserver(this, "captive-portal-login-abort", false);
     Services.obs.addObserver(this, "captive-portal-login-success", false);
     this._initialized = true;
+
     if (cps.state == cps.LOCKED_PORTAL) {
       
       this._addCaptivePortalTab();
+      return;
     }
+
+    cps.recheckCaptivePortal();
   },
 
   uninit() {
@@ -110,7 +114,7 @@ this.CaptivePortalWatcher = {
     }
 
     let win = RecentWindow.getMostRecentBrowserWindow();
-    if (!win.document.hasFocus()) {
+    if (win != Services.ww.activeWindow) {
       
       return;
     }
