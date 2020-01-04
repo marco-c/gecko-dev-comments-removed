@@ -45,6 +45,12 @@ PCMappingSlotInfo::ToSlotLocation(const StackValue* stackVal)
     return SlotIgnore;
 }
 
+void
+ICStubSpace::freeAllAfterMinorGC(JSRuntime* rt)
+{
+    rt->gc.freeAllLifoBlocksAfterMinorGC(&allocator_);
+}
+
 BaselineScript::BaselineScript(uint32_t prologueOffset, uint32_t epilogueOffset,
                                uint32_t profilerEnterToggleOffset,
                                uint32_t profilerExitToggleOffset,
@@ -482,6 +488,10 @@ BaselineScript::Trace(JSTracer* trc, BaselineScript* script)
 void
 BaselineScript::Destroy(FreeOp* fop, BaselineScript* script)
 {
+    MOZ_ASSERT(!script->hasPendingIonBuilder());
+
+    script->unlinkDependentWasmModules(fop);
+
     
 
 
@@ -489,13 +499,16 @@ BaselineScript::Destroy(FreeOp* fop, BaselineScript* script)
 
 
 
-    MOZ_ASSERT(fop->runtime()->gc.nursery.isEmpty());
 
-    MOZ_ASSERT(!script->hasPendingIonBuilder());
-
-    script->unlinkDependentWasmModules(fop);
+    script->fallbackStubSpace_.freeAllAfterMinorGC(fop->runtime());
 
     fop->delete_(script);
+}
+
+void
+JS::DeletePolicy<js::jit::BaselineScript>::operator()(const js::jit::BaselineScript* script)
+{
+    BaselineScript::Destroy(rt_->defaultFreeOp(), const_cast<BaselineScript*>(script));
 }
 
 void

@@ -1220,7 +1220,24 @@ void
 IonScript::Destroy(FreeOp* fop, IonScript* script)
 {
     script->unlinkFromRuntime(fop);
+
+    
+
+
+
+
+
+
+
+    script->fallbackStubSpace_.freeAllAfterMinorGC(fop->runtime());
+
     fop->delete_(script);
+}
+
+void
+JS::DeletePolicy<js::jit::IonScript>::operator()(const js::jit::IonScript* script)
+{
+    IonScript::Destroy(rt_->defaultFreeOp(), const_cast<IonScript*>(script));
 }
 
 void

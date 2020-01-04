@@ -2267,9 +2267,6 @@ UpdateExecutionObservabilityOfScriptsInZone(JSContext* cx, Zone* zone,
 {
     using namespace js::jit;
 
-    
-    cx->runtime()->gc.evictNursery();
-
     AutoSuppressProfilerSampling suppressProfilerSampling(cx);
 
     JSRuntime* rt = cx->runtime();

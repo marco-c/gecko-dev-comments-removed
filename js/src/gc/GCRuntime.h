@@ -856,6 +856,7 @@ class GCRuntime
     
     void freeUnusedLifoBlocksAfterSweeping(LifoAlloc* lifo);
     void freeAllLifoBlocksAfterSweeping(LifoAlloc* lifo);
+    void freeAllLifoBlocksAfterMinorGC(LifoAlloc* lifo);
 
     
     void releaseArena(Arena* arena, const AutoLockGC& lock);
@@ -1171,7 +1172,13 @@ class GCRuntime
 
 
 
-    LifoAlloc freeLifoAlloc;
+    LifoAlloc blocksToFreeAfterSweeping;
+
+    
+
+
+
+    LifoAlloc blocksToFreeAfterMinorGC;
 
     
     unsigned zoneGroupIndex;

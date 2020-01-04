@@ -872,9 +872,6 @@ jit::RecompileOnStackBaselineScriptsForDebugMode(JSContext* cx,
         return true;
 
     
-    cx->runtime()->gc.evictNursery();
-
-    
     
     MOZ_ASSERT(!cx->runtime()->isProfilerSamplingEnabled());
 
