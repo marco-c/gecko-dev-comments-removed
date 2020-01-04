@@ -51,6 +51,9 @@ user_pref("dom.undo_manager.enabled", true);
 user_pref("dom.webcomponents.enabled", true);
 user_pref("dom.htmlimports.enabled", true);
 
+user_pref("toolkit.telemetry.prompted", 999);
+user_pref("toolkit.telemetry.notifiedOptOut", 999);
+
 user_pref("font.size.inflation.emPerLine", 0);
 user_pref("font.size.inflation.minTwips", 0);
 
@@ -343,4 +346,5 @@ user_pref("dom.audiochannel.mutedByDefault", false);
 
 user_pref("webextensions.tests", true);
 user_pref("startup.homepage_welcome_url", "about:blank");
+user_pref("startup.homepage_welcome_url.additional", "");
 user_pref("browser.usedOnWindows10.introURL", "");
