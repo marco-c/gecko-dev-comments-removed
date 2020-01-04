@@ -3,6 +3,7 @@
 
 
 
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/TextEventDispatcher.h"
 
@@ -1910,31 +1911,6 @@ nsIWidget::LookupRegisteredPluginWindow(uintptr_t aWindowID)
 #endif
 }
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-struct VisEnumContext {
-  uintptr_t parentWidget;
-  const nsTArray<uintptr_t>* list;
-  bool widgetVisibilityFlag;
-};
-
-static PLDHashOperator
-RegisteredPluginEnumerator(const void* aWindowId, nsIWidget* aWidget, void* aUserArg)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aWindowId);
-  MOZ_ASSERT(aWidget);
-  MOZ_ASSERT(aUserArg);
-
-  if (!aWidget->Destroyed()) {
-    VisEnumContext* pctx = static_cast<VisEnumContext*>(aUserArg);
-    if ((uintptr_t)aWidget->GetParent() == pctx->parentWidget) {
-      aWidget->Show(pctx->list->Contains((uintptr_t)aWindowId));
-    }
-  }
-  return PLDHashOperator::PL_DHASH_NEXT;
-}
-#endif
-
 
 void
 nsIWidget::UpdateRegisteredPluginWindowVisibility(uintptr_t aOwnerWidget,
@@ -1946,11 +1922,23 @@ nsIWidget::UpdateRegisteredPluginWindowVisibility(uintptr_t aOwnerWidget,
 #else
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sPluginWidgetList);
+
   
   
   
-  VisEnumContext ctx = { aOwnerWidget, &aPluginIds };
-  sPluginWidgetList->EnumerateRead(RegisteredPluginEnumerator, static_cast<void*>(&ctx));
+  for (auto iter = sPluginWidgetList->Iter(); !iter.Done(); iter.Next()) {
+    const void* windowId = iter.Key();
+    nsIWidget* widget = iter.UserData();
+
+    MOZ_ASSERT(windowId);
+    MOZ_ASSERT(widget);
+
+    if (!widget->Destroyed()) {
+      if ((uintptr_t)widget->GetParent() == aOwnerWidget) {
+        widget->Show(aPluginIds.Contains((uintptr_t)windowId));
+      }
+    }
+  }
 #endif
 }
 
