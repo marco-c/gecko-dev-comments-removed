@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.gfx;
 
+import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.GeckoAppShell;
@@ -150,6 +151,8 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         return mGeckoIsReady;
     }
 
+    
+    @ReflectionTarget
     public void onGeckoReady() {
         mGeckoIsReady = true;
 
@@ -753,7 +756,10 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     
     @Override
     public void renderRequested() {
-        mView.getGLController().syncInvalidateAndScheduleComposite();
+        final GLController glController = mView.getGLController();
+        if (glController != null) {
+            glController.invalidateAndScheduleComposite();
+        }
     }
 
     
