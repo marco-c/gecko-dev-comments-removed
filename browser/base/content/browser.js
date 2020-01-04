@@ -885,6 +885,17 @@ addEventListener("DOMContentLoaded", function onDCL() {
 
   let initBrowser =
     document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
+
+  
+  
+  
+  if (window.arguments) {
+    let tabToOpen = window.arguments[0];
+    if (tabToOpen instanceof XULElement && tabToOpen.hasAttribute("usercontextid")) {
+      initBrowser.setAttribute("usercontextid", tabToOpen.getAttribute("usercontextid"));
+    }
+  }
+
   gBrowser.updateBrowserRemoteness(initBrowser, gMultiProcessBrowser);
 });
 
