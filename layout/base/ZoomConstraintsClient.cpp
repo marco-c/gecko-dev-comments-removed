@@ -207,9 +207,8 @@ ZoomConstraintsClient::RefreshZoomConstraints()
   if (zoomConstraints.mAllowDoubleTapZoom) {
     
     
-    int32_t auPerDevPixel = mPresShell->GetPresContext()->AppUnitsPerDevPixel();
-    CSSToLayoutDeviceScale scale(
-      (float)nsPresContext::AppUnitsPerCSSPixel() / auPerDevPixel);
+    CSSToLayoutDeviceScale scale =
+        mPresShell->GetPresContext()->CSSToDevPixelScale();
     if ((viewportInfo.GetSize() * scale).width <= screenSize.width) {
       zoomConstraints.mAllowDoubleTapZoom = false;
     }
