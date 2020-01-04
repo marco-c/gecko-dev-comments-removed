@@ -8,7 +8,6 @@ var Cu = Components.utils;
 var {gDevTools} = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {TargetFactory} = require("devtools/client/framework/target");
-var {CssComputedView} = require("devtools/client/styleinspector/computed-view");
 var {CssRuleView, _ElementStyle} = require("devtools/client/styleinspector/rule-view");
 var {CssLogic, CssSelector} = require("devtools/shared/styleinspector/css-logic");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -148,24 +147,6 @@ function getNode(nodeOrSelector) {
 function getNodeFront(selector, {walker}) {
   return walker.querySelector(walker.rootNode, selector);
 }
-
-
-
-
-
-
-
-
-
-
-var selectAndHighlightNode = Task.async(function*(selector, inspector) {
-  info("Highlighting and selecting the node for " + selector);
-
-  let nodeFront = yield getNodeFront(selector, inspector);
-  let updated = inspector.toolbox.once("highlighter-ready");
-  inspector.selection.setNodeFront(nodeFront, "test-highlight");
-  yield updated;
-});
 
 
 
@@ -521,47 +502,6 @@ function assertHoverTooltipOn(tooltip, element) {
 
 
 
-function assertNoHoverTooltipOn(tooltip, element) {
-  return isHoverTooltipTarget(tooltip, element).then(() => {
-    ok(false, "A tooltip is defined on hover of the given element");
-  }, () => {
-    ok(true, "No tooltip is defined on hover of the given element");
-  });
-}
-
-
-
-
-
-
-
-
-function waitForWindow() {
-  let def = promise.defer();
-
-  info("Waiting for a window to open");
-  Services.ww.registerNotification(function onWindow(subject, topic) {
-    if (topic != "domwindowopened") {
-      return;
-    }
-    info("A window has been opened");
-    let win = subject.QueryInterface(Ci.nsIDOMWindow);
-    once(win, "load").then(() => {
-      info("The window load completed");
-      Services.ww.unregisterNotification(onWindow);
-      def.resolve(win);
-    });
-  });
-
-  return def.promise;
-}
-
-
-
-
-
-
-
 var waitForTab = Task.async(function*() {
   info("Waiting for a tab to open");
   yield once(gBrowser.tabContainer, "TabOpen");
@@ -587,15 +527,6 @@ function waitForClipboard(setup, expected) {
   let def = promise.defer();
   SimpleTest.waitForClipboard(expected, setup, def.resolve, def.reject);
   return def.promise;
-}
-
-
-
-
-function fireCopyEvent(element) {
-  let evt = element.ownerDocument.createEvent("Event");
-  evt.initEvent("copy", true, true);
-  element.dispatchEvent(evt);
 }
 
 
@@ -989,104 +920,10 @@ function getComputedViewProperty(view, name) {
 
 
 
-function getComputedViewPropertyView(view, name) {
-  let propView;
-  for (let propertyView of view.propertyViews) {
-    if (propertyView._propertyInfo.name === name) {
-      propView = propertyView;
-      break;
-    }
-  }
-  return propView;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var getComputedViewMatchedRules = Task.async(function*(view, name) {
-  let expander;
-  let propertyContent;
-  for (let property of view.styleDocument.querySelectorAll(".property-view")) {
-    let nameSpan = property.querySelector(".property-name");
-    if (nameSpan.textContent === name) {
-      expander = property.querySelector(".expandable");
-      propertyContent = property.nextSibling;
-      break;
-    }
-  }
-
-  if (!expander.hasAttribute("open")) {
-    
-    let onExpand = view.inspector.once("computed-view-property-expanded");
-    expander.click();
-    yield onExpand;
-  }
-
-  return propertyContent;
-});
-
-
-
-
-
-
-
-
-
-
 
 function getComputedViewPropertyValue(view, name, propertyName) {
   return getComputedViewProperty(view, name, propertyName)
     .valueSpan.textContent;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function expandComputedViewPropertyByIndex(view, index) {
-  info("Expanding property " + index + " in the computed view");
-  let expandos = view.styleDocument.querySelectorAll(".expandable");
-  if (!expandos.length || !expandos[index]) {
-    return promise.reject();
-  }
-
-  let onExpand = view.inspector.once("computed-view-property-expanded");
-  expandos[index].click();
-  return onExpand;
-}
-
-
-
-
-
-
-
-
-
-
-function getComputedViewLinkByIndex(view, index) {
-  let links = view.styleDocument.querySelectorAll(".rule-link .link");
-  return links[index];
 }
 
 
