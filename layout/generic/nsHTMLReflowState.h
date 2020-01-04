@@ -558,10 +558,10 @@ public:
     uint16_t mAssumingVScrollbar:1;  
                                      
 
-    uint16_t mIsHResize:1;           
+    uint16_t mIsIResize:1;           
                                      
 
-    uint16_t mIsVResize:1;           
+    uint16_t mIsBResize:1;           
                                      
                                      
                                      
@@ -592,39 +592,40 @@ public:
   
   
   bool IsHResize() const {
-    return mFlags.mIsHResize;
+    return mWritingMode.IsVertical() ? mFlags.mIsBResize : mFlags.mIsIResize;
   }
   bool IsVResize() const {
-    return mFlags.mIsVResize;
+    return mWritingMode.IsVertical() ? mFlags.mIsIResize : mFlags.mIsBResize;
   }
   bool IsIResize() const {
-    return mWritingMode.IsVertical() ? mFlags.mIsVResize : mFlags.mIsHResize;
+    return mFlags.mIsIResize;
   }
   bool IsBResize() const {
-    return mWritingMode.IsVertical() ? mFlags.mIsHResize : mFlags.mIsVResize;
+    return mFlags.mIsBResize;
   }
   bool IsBResizeForWM(mozilla::WritingMode aWM) const {
-    return aWM.IsVertical() ? mFlags.mIsHResize : mFlags.mIsVResize;
+    return aWM.IsOrthogonalTo(mWritingMode) ? mFlags.mIsIResize
+                                            : mFlags.mIsBResize;
   }
   void SetHResize(bool aValue) {
-    mFlags.mIsHResize = aValue;
+    if (mWritingMode.IsVertical()) {
+      mFlags.mIsBResize = aValue;
+    } else {
+      mFlags.mIsIResize = aValue;
+    }
   }
   void SetVResize(bool aValue) {
-    mFlags.mIsVResize = aValue;
+    if (mWritingMode.IsVertical()) {
+      mFlags.mIsIResize = aValue;
+    } else {
+      mFlags.mIsBResize = aValue;
+    }
   }
   void SetIResize(bool aValue) {
-    if (mWritingMode.IsVertical()) {
-      mFlags.mIsVResize = aValue;
-    } else {
-      mFlags.mIsHResize = aValue;
-    }
+    mFlags.mIsIResize = aValue;
   }
   void SetBResize(bool aValue) {
-    if (mWritingMode.IsVertical()) {
-      mFlags.mIsHResize = aValue;
-    } else {
-      mFlags.mIsVResize = aValue;
-    }
+    mFlags.mIsBResize = aValue;
   }
 
   
