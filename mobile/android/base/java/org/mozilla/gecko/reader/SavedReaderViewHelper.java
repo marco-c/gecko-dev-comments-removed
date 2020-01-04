@@ -89,7 +89,10 @@ public class SavedReaderViewHelper {
 
 
     public synchronized void loadItems() {
-        ThreadUtils.assertNotOnUiThread();
+        
+        
+        
+        
 
         if (mItems != null) {
             return;
