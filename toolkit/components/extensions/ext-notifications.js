@@ -47,7 +47,7 @@ Notification.prototype = {
     } catch (e) {
       
     }
-    notificationsMap.get(this.extension).delete(this.id);
+    notificationsMap.get(this.extension).delete(this);
   },
 
   observe(subject, topic, data) {
@@ -59,18 +59,18 @@ Notification.prototype = {
       callback(this);
     }
 
-    notificationsMap.get(this.extension).delete(this.id);
+    notificationsMap.get(this.extension).delete(this);
   },
 };
 
 
 extensions.on("startup", (type, extension) => {
-  notificationsMap.set(extension, new Map());
+  notificationsMap.set(extension, new Set());
   notificationCallbacksMap.set(extension, new Set());
 });
 
 extensions.on("shutdown", (type, extension) => {
-  for (let notification of notificationsMap.get(extension).values()) {
+  for (let notification of notificationsMap.get(extension)) {
     notification.clear();
   }
   notificationsMap.delete(extension);
@@ -80,39 +80,47 @@ extensions.on("shutdown", (type, extension) => {
 
 var nextId = 0;
 
-extensions.registerSchemaAPI("notifications", "notifications", (extension, context) => {
+extensions.registerPrivilegedAPI("notifications", (extension, context) => {
   return {
     notifications: {
-      create: function(notificationId, options) {
-        if (!notificationId) {
-          notificationId = String(nextId++);
+      create: function(...args) {
+        let notificationId, options, callback;
+        if (args.length == 1) {
+          options = args[0];
+        } else {
+          [notificationId, options, callback] = args;
         }
 
-        let notifications = notificationsMap.get(extension);
-        if (notifications.has(notificationId)) {
-          notifications.get(notificationId).clear();
+        if (!notificationId) {
+          notificationId = nextId++;
         }
 
         
         
         let notification = new Notification(extension, notificationId, options);
-        notificationsMap.get(extension).set(notificationId, notification);
+        notificationsMap.get(extension).add(notification);
 
-        return Promise.resolve(notificationId);
+        return context.wrapPromise(Promise.resolve(notificationId), callback);
       },
 
-      clear: function(notificationId) {
+      clear: function(notificationId, callback) {
         let notifications = notificationsMap.get(extension);
-        if (notifications.has(notificationId)) {
-          notifications.get(notificationId).clear();
-          return Promise.resolve(true);
+        let cleared = false;
+        for (let notification of notifications) {
+          if (notification.id == notificationId) {
+            notification.clear();
+            cleared = true;
+            break;
+          }
         }
-        return Promise.resolve(false);
+
+        return context.wrapPromise(Promise.resolve(cleared), callback);
       },
 
-      getAll: function() {
-        let result = Array.from(notificationsMap.get(extension).keys());
-        return Promise.resolve(result);
+      getAll: function(callback) {
+        let notifications = notificationsMap.get(extension);
+        notifications = Array.from(notifications, notification => notification.id);
+        return context.wrapPromise(Promise.resolve(notifications), callback);
       },
 
       onClosed: new EventManager(context, "notifications.onClosed", fire => {
