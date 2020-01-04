@@ -184,12 +184,15 @@ class MachCommands(MachCommandBase):
         mach timestamp.
         """
         
-        self.log_manager.replace_terminal_handler(None)
+        old = self.log_manager.replace_terminal_handler(None)
 
         
         if not quiet:
             level = logging.DEBUG if verbose else logging.INFO
-            self.log_manager.add_terminal_logging(fh=sys.stderr, level=level)
+            self.log_manager.add_terminal_logging(
+                fh=sys.stderr, level=level,
+                write_interval=old.formatter.write_interval,
+                write_times=old.formatter.write_times)
 
         
         self.log_manager.enable_unstructured()
