@@ -1,76 +1,57 @@
 
 
+function onDOMContentLoaded(callback) {
+  function complete({ data }) {
+    mm.removeMessageListener("Test:DOMContentLoaded", complete);
+    callback(data);
+  }
+
+  let mm = gBrowser.selectedBrowser.messageManager;
+  mm.addMessageListener("Test:DOMContentLoaded", complete);
+
+  function contentScript() {
+    let listener = function () {
+      removeEventListener("DOMContentLoaded", listener);
+
+      let button = content.document.getElementById("ignoreWarningButton");
+
+      sendAsyncMessage("Test:DOMContentLoaded", { buttonPresent: !!button });
+    };
+    addEventListener("DOMContentLoaded", listener);
+  }
+  mm.loadFrameScript("data:,(" + contentScript.toString() + ")();", true);
+}
+
 function test() {
   waitForExplicitFinish();
 
-  gBrowser.selectedTab = gBrowser.addTab();
-
-  
-  
-  
-  
-  gBrowser.addTabsProgressListener({
-    onLocationChange: function(aTab, aWebProgress, aRequest, aLocation, aFlags) {
-      if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
-        gBrowser.removeTabsProgressListener(this);
-        window.addEventListener("DOMContentLoaded", testMalware, true);
-      }
-    }
-  });
-  content.location = "http://www.itisatrap.org/firefox/its-an-attack.html";
+  gBrowser.selectedTab = gBrowser.addTab("http://www.itisatrap.org/firefox/its-an-attack.html");
+  onDOMContentLoaded(testMalware);
 }
 
-function testMalware(event) {
-  if (event.target != gBrowser.selectedBrowser.contentDocument) {
-    return;
-  }
-
-  window.removeEventListener("DOMContentLoaded", testMalware, true);
-
-  
-  var el = content.document.getElementById("ignoreWarningButton");
-  ok(el, "Ignore warning button should be present for malware");
-
-  var style = content.getComputedStyle(el, null);
-  is(style.display, "inline-block", "Ignore Warning button should be display:inline-block for malware");
+function testMalware(data) {
+  ok(data.buttonPresent, "Ignore warning button should be present for malware");
 
   Services.prefs.setBoolPref("browser.safebrowsing.allowOverride", false);
 
   
-  window.addEventListener("DOMContentLoaded", testUnwanted, true);
-  content.location = "http://www.itisatrap.org/firefox/unwanted.html";
+  onDOMContentLoaded(testUnwanted);
+  gBrowser.loadURI("http://www.itisatrap.org/firefox/unwanted.html");
 }
 
-function testUnwanted(event) {
-  if (event.target != gBrowser.selectedBrowser.contentDocument) {
-    return;
-  }
-
-  window.removeEventListener("DOMContentLoaded", testUnwanted, true);
-
+function testUnwanted(data) {
   
-  var el = content.document.getElementById("ignoreWarningButton");
-  ok(!el, "Ignore warning button should be missing for unwanted software");
+  ok(!data.buttonPresent, "Ignore warning button should be missing for unwanted software");
 
   Services.prefs.setBoolPref("browser.safebrowsing.allowOverride", true);
 
   
-  window.addEventListener("DOMContentLoaded", testPhishing, true);
-  content.location = "http://www.itisatrap.org/firefox/its-a-trap.html";
+  onDOMContentLoaded(testPhishing);
+  gBrowser.loadURI("http://www.itisatrap.org/firefox/its-a-trap.html");
 }
 
-function testPhishing(event) {
-  if (event.target != gBrowser.selectedBrowser.contentDocument) {
-    return;
-  }
-
-  window.removeEventListener("DOMContentLoaded", testPhishing, true);
-
-  var el = content.document.getElementById("ignoreWarningButton");
-  ok(el, "Ignore warning button should be present for phishing");
-
-  var style = content.getComputedStyle(el, null);
-  is(style.display, "inline-block", "Ignore Warning button should be display:inline-block for phishing");
+function testPhishing(data) {
+  ok(data.buttonPresent, "Ignore warning button should be present for phishing");
 
   gBrowser.removeCurrentTab();
   finish();
