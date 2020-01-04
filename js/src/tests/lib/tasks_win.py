@@ -3,7 +3,6 @@
 
 from __future__ import print_function, unicode_literals, division
 
-import os
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -22,9 +21,6 @@ class TaskFinishedMarker:
 
 
 def _do_work(qTasks, qResults, qWatch, prefix, run_skipped, timeout):
-    env = os.environ.copy()
-    env[b'XRE_NO_WINDOWS_CRASH_DIALOG'] = b'1'
-
     while True:
         test = qTasks.get(block=True, timeout=sys.maxint)
         if test is EndMarker:
@@ -41,8 +37,7 @@ def _do_work(qTasks, qResults, qWatch, prefix, run_skipped, timeout):
         tStart = datetime.now()
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                env=env)
+                                stderr=subprocess.PIPE)
 
         
         
