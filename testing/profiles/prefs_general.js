@@ -272,8 +272,6 @@ user_pref("browser.translation.engine", "bing");
 user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
 
 
-user_pref("dom.mozApps.debug", true);
-
 user_pref("dom.apps.customization.enabled", true);
 
 

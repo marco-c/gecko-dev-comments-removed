@@ -1,10 +1,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
 Cu.import("resource:///modules/AppsUtils.jsm");
-Cu.import("resource:///modules/Services.jsm");
 
 add_test(function test_has_widget_criterion() {
 
