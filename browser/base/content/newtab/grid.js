@@ -52,7 +52,7 @@ var gGrid = {
     this._createSiteFragment();
 
     gLinks.populateCache(() => {
-      this.refresh();
+      this._refreshGrid();
       this._ready = true;
 
       
@@ -111,7 +111,18 @@ var gGrid = {
   
 
 
+
+
+
   refresh() {
+    this._refreshGrid();
+    this._resizeGrid();
+  },
+
+  
+
+
+  _refreshGrid() {
     let cell = document.createElementNS(HTML_NAMESPACE, "div");
     cell.classList.add("newtab-cell");
 
