@@ -236,8 +236,6 @@ public:
 
 
 
-
-
   bool IsLineInverted() const { return !!(mWritingMode & eLineOrientMask); }
 
   
@@ -318,6 +316,10 @@ public:
 
   mozilla::Side PhysicalSideForInlineAxis(LogicalEdge aEdge) const
   {
+    
+    
+    
+    
     
     
     
