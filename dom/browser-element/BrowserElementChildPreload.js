@@ -1258,7 +1258,7 @@ BrowserElementChild.prototype = {
   },
 
   _buildMenuObj: function(menu, idPrefix, copyableElements) {
-    var menuObj = {type: 'menu', items: [], sysItems: []};
+    var menuObj = {type: 'menu', items: []};
     
     if (menu) {
       this._maybeCopyAttribute(menu, menuObj, 'label');
@@ -1280,11 +1280,11 @@ BrowserElementChild.prototype = {
     
     
     if (copyableElements.link) {
-      menuObj.sysItems.push({id: 'copy-link'});
+      menuObj.items.push({id: 'copy-link'});
     }
     
     if (copyableElements.image) {
-      menuObj.sysItems.push({id: 'copy-image'});
+      menuObj.items.push({id: 'copy-image'});
     }
 
     return menuObj;
