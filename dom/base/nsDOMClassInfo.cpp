@@ -2275,8 +2275,7 @@ struct InterfaceShimEntry {
 
 
 const InterfaceShimEntry kInterfaceShimMap[] =
-{ { "nsIDOMFileReader", "FileReader" },
-  { "nsIXMLHttpRequest", "XMLHttpRequest" },
+{ { "nsIXMLHttpRequest", "XMLHttpRequest" },
   { "nsIDOMDOMException", "DOMException" },
   { "nsIDOMNode", "Node" },
   { "nsIDOMCSSPrimitiveValue", "CSSPrimitiveValue" },

@@ -851,8 +851,7 @@ WebappsActor.prototype = {
       }
 
       
-      let reader = Cc["@mozilla.org/files/filereader;1"]
-                     .createInstance(Ci.nsIDOMFileReader);
+      let reader = new FileReader();
       reader.onload = function () {
         deferred.resolve({
           url: reader.result
