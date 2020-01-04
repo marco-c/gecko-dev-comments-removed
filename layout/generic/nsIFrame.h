@@ -844,24 +844,16 @@ public:
 
   static void DestroyContentArray(void* aPropertyValue);
 
-#ifdef _MSC_VER
-
-
-#define NS_PROPERTY_DESCRIPTOR_CONST
-#else
-#define NS_PROPERTY_DESCRIPTOR_CONST const
-#endif
-
-#define NS_DECLARE_FRAME_PROPERTY(prop, dtor)                                                  \
-  static const FramePropertyDescriptor* prop() {                                               \
-    static NS_PROPERTY_DESCRIPTOR_CONST FramePropertyDescriptor descriptor = { dtor, nullptr }; \
-    return &descriptor;                                                                        \
+#define NS_DECLARE_FRAME_PROPERTY(prop, dtor)                            \
+  static const FramePropertyDescriptor* prop() {                         \
+    static const FramePropertyDescriptor descriptor = { dtor, nullptr }; \
+    return &descriptor;                                                  \
   }
 
-#define NS_DECLARE_FRAME_PROPERTY_WITH_FRAME_IN_DTOR(prop, dtor)                               \
-  static const FramePropertyDescriptor* prop() {                                               \
-    static NS_PROPERTY_DESCRIPTOR_CONST FramePropertyDescriptor descriptor = { nullptr, dtor }; \
-    return &descriptor;                                                                        \
+#define NS_DECLARE_FRAME_PROPERTY_WITH_FRAME_IN_DTOR(prop, dtor)         \
+  static const FramePropertyDescriptor* prop() {                         \
+    static const FramePropertyDescriptor descriptor = { nullptr, dtor }; \
+    return &descriptor;                                                  \
   }
 
   NS_DECLARE_FRAME_PROPERTY(IBSplitSibling, nullptr)
