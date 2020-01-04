@@ -2017,13 +2017,6 @@ public:
 
 
   void SortByContentOrder(nsIContent* aCommonAncestor);
-  
-
-
-
-
-
-  void SortByCSSOrder();
 
   
 
