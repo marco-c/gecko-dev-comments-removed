@@ -282,6 +282,8 @@ public:
   
   
   
+  
+  
   bool GetOffsetForTime(uint64_t aTime, int64_t* aOffset);
 
   

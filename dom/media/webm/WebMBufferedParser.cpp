@@ -332,16 +332,22 @@ bool WebMBufferedState::GetOffsetForTime(uint64_t aTime, int64_t* aOffset)
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
+  if(mTimeMapping.IsEmpty()) {
+    return false;
+  }
+
   uint64_t time = aTime;
   if (time > 0) {
     time = time - 1;
   }
   uint32_t idx = mTimeMapping.IndexOfFirstElementGt(time, TimeComparator());
   if (idx == mTimeMapping.Length()) {
-    return false;
+    
+    *aOffset = mTimeMapping[mTimeMapping.Length() - 1].mSyncOffset;
+  } else {
+    
+    *aOffset = mTimeMapping[idx].mSyncOffset;
   }
-
-  *aOffset = mTimeMapping[idx].mSyncOffset;
   return true;
 }
 
