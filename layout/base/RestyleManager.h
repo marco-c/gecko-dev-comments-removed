@@ -488,6 +488,8 @@ public:
 #endif
 
 private:
+  inline nsStyleSet* StyleSet() const;
+
   
   
   void RestyleElement(Element*        aElement,
@@ -682,6 +684,8 @@ public:
 #endif
 
 private:
+  inline nsStyleSet* StyleSet() const;
+
   
   
   
