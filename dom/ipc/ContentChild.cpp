@@ -3075,6 +3075,24 @@ ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure)
 bool
 ContentChild::RecvShutdown()
 {
+  
+  
+  
+  
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
+  if (NS_SUCCEEDED(rv) && thread) {
+    RefPtr<nsThread> mainThread(thread.forget().downcast<nsThread>());
+    if (mainThread->RecursionDepth() > 1) {
+      
+      
+      
+      MessageLoop::current()->PostDelayedTask(
+        NewRunnableMethod(this, &ContentChild::RecvShutdown), 100);
+      return true;
+    }
+  }
+
   if (mPolicy) {
     mPolicy->Deactivate();
     mPolicy = nullptr;
