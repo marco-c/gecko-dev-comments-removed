@@ -44,6 +44,28 @@ AnimationState::SetAnimationMode(uint16_t aAnimationMode)
 }
 
 void
+AnimationState::UpdateKnownFrameCount(uint32_t aFrameCount)
+{
+  if (aFrameCount <= mFrameCount) {
+    
+    
+    
+    return;
+  }
+
+  MOZ_ASSERT(!mDoneDecoding, "Adding new frames after decoding is finished?");
+  MOZ_ASSERT(aFrameCount <= mFrameCount + 1, "Skipped a frame?");
+
+  mFrameCount = aFrameCount;
+}
+
+Maybe<uint32_t>
+AnimationState::FrameCount() const
+{
+  return mDoneDecoding ? Some(mFrameCount) : Nothing();
+}
+
+void
 AnimationState::SetFirstFrameRefreshArea(const IntRect& aRefreshArea)
 {
   mFirstFrameRefreshArea = aRefreshArea;
@@ -129,26 +151,9 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
   uint32_t currentFrameIndex = aState.mCurrentAnimationFrameIndex;
   uint32_t nextFrameIndex = currentFrameIndex + 1;
 
-  if (mImage->GetNumFrames() == nextFrameIndex) {
-    
-    
-    if (!aState.mDoneDecoding) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      aState.mCurrentAnimationFrameTime = aTime;
-      return ret;
-    }
-
-    
-
+  
+  
+  if (aState.FrameCount() == Some(nextFrameIndex)) {
     
     if (aState.mLoopRemainingCount < 0 && aState.LoopCount() >= 0) {
       aState.mLoopRemainingCount = aState.LoopCount();
@@ -173,12 +178,27 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     }
   }
 
+  if (nextFrameIndex >= aState.KnownFrameCount()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aState.mCurrentAnimationFrameTime = aTime;
+    return ret;
+  }
+
   
   
   
   
   
-  MOZ_ASSERT(nextFrameIndex < mImage->GetNumFrames());
+  MOZ_ASSERT(nextFrameIndex < aState.KnownFrameCount());
   RawAccessFrameRef nextFrame = GetRawFrame(nextFrameIndex);
 
   

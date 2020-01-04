@@ -162,9 +162,6 @@ public:
   
   virtual void OnSurfaceDiscarded() override;
 
-  
-  uint32_t GetNumFrames() const { return mFrameCount; }
-
   virtual size_t SizeOfSourceWithComputedFallback(MallocSizeOf aMallocSizeOf)
     const override;
   virtual void CollectSizeOfSurfaces(nsTArray<SurfaceMemoryCounter>& aCounters,
@@ -178,8 +175,6 @@ public:
   
   
 
-  void OnAddedFrame(uint32_t aNewFrameCount);
-
   
 
 
@@ -191,8 +186,13 @@ public:
 
 
 
+
+
+
+
   void NotifyProgress(Progress aProgress,
-                      const nsIntRect& aInvalidRect = nsIntRect(),
+                      const gfx::IntRect& aInvalidRect = nsIntRect(),
+                      const Maybe<uint32_t>& aFrameCount = Nothing(),
                       SurfaceFlags aSurfaceFlags = DefaultSurfaceFlags());
 
   
@@ -383,9 +383,6 @@ private:
 
   
   NotNull<RefPtr<SourceBuffer>>  mSourceBuffer;
-
-  
-  uint32_t                   mFrameCount;
 
   
   bool                       mHasSize:1;       

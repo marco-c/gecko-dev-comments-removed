@@ -58,6 +58,7 @@ Decoder::Decoder(RasterImage* aImage)
   , mInitialized(false)
   , mMetadataDecode(false)
   , mInFrame(false)
+  , mFinishedNewFrame(false)
   , mReachedTerminalState(false)
   , mDecodeDone(false)
   , mError(false)
@@ -246,6 +247,14 @@ Decoder::GetTargetSize()
   return mDownscaler ? Some(mDownscaler->TargetSize()) : Nothing();
 }
 
+Maybe<uint32_t>
+Decoder::TakeCompleteFrameCount()
+{
+  const bool finishedNewFrame = mFinishedNewFrame;
+  mFinishedNewFrame = false;
+  return finishedNewFrame ? Some(GetCompleteFrameCount()) : Nothing();
+}
+
 nsresult
 Decoder::AllocateFrame(uint32_t aFrameNum,
                        const nsIntSize& aTargetSize,
@@ -367,10 +376,6 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
 
   mFrameCount++;
 
-  if (mImage) {
-    mImage->OnAddedFrame(mFrameCount);
-  }
-
   return ref;
 }
 
@@ -433,6 +438,7 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
 
   
   mInFrame = false;
+  mFinishedNewFrame = true;
 
   mCurrentFrame->Finish(aFrameOpacity, aDisposalMethod, aTimeout,
                         aBlendMethod, aBlendRect);

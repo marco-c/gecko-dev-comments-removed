@@ -25,7 +25,8 @@ class AnimationState
 {
 public:
   explicit AnimationState(uint16_t aAnimationMode)
-    : mCurrentAnimationFrameIndex(0)
+    : mFrameCount(0)
+    , mCurrentAnimationFrameIndex(0)
     , mLoopRemainingCount(-1)
     , mLoopCount(-1)
     , mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0))
@@ -51,6 +52,16 @@ public:
 
 
   void SetAnimationMode(uint16_t aAnimationMode);
+
+  
+  void UpdateKnownFrameCount(uint32_t aFrameCount);
+
+  
+  uint32_t KnownFrameCount() const { return mFrameCount; }
+
+  
+  
+  Maybe<uint32_t> FrameCount() const;
 
   
 
@@ -107,6 +118,9 @@ private:
 
   
   TimeStamp mCurrentAnimationFrameTime;
+
+  
+  uint32_t mFrameCount;
 
   
   uint32_t mCurrentAnimationFrameIndex;

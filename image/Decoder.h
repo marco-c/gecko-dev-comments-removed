@@ -93,7 +93,7 @@ public:
 
   bool HasProgress() const
   {
-    return mProgress != NoProgress || !mInvalidRect.IsEmpty();
+    return mProgress != NoProgress || !mInvalidRect.IsEmpty() || mFinishedNewFrame;
   }
 
   
@@ -186,14 +186,15 @@ public:
   }
 
   
-  
-  uint32_t GetFrameCount() { return mFrameCount; }
+
+
+
+
+  Maybe<uint32_t> TakeCompleteFrameCount();
 
   
   
-  uint32_t GetCompleteFrameCount() {
-    return mInFrame ? mFrameCount - 1 : mFrameCount;
-  }
+  uint32_t GetFrameCount() { return mFrameCount; }
 
   
   bool HasAnimation() const { return mImageMetadata.HasAnimation(); }
@@ -403,6 +404,17 @@ private:
 
   void CompleteDecode();
 
+  
+  
+  uint32_t GetCompleteFrameCount()
+  {
+    if (mFrameCount == 0) {
+      return 0;
+    }
+
+    return mInFrame ? mFrameCount - 1 : mFrameCount;
+  }
+
   RawAccessFrameRef AllocateFrameInternal(uint32_t aFrameNum,
                                           const nsIntSize& aTargetSize,
                                           const nsIntRect& aFrameRect,
@@ -440,6 +452,8 @@ private:
   bool mInitialized : 1;
   bool mMetadataDecode : 1;
   bool mInFrame : 1;
+  bool mFinishedNewFrame : 1;  
+                               
   bool mReachedTerminalState : 1;
   bool mDecodeDone : 1;
   bool mError : 1;
