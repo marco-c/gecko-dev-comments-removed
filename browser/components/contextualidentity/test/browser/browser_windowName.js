@@ -13,16 +13,11 @@ const BASE_URI = "http://mochi.test:8888/browser/browser/components/"
 
 add_task(function* setup() {
   
-  SpecialPowers.pushPrefEnv({"set": [
-    ["privacy.userContext.enabled", true],
-    ["browser.link.open_newwindow", 3],
-  ]});
-});
-
-add_task(function* cleanup() {
-  
-  registerCleanupFunction(function() {
-    SpecialPowers.popPrefEnv();
+  yield new Promise(resolve => {
+    SpecialPowers.pushPrefEnv({"set": [
+      ["privacy.userContext.enabled", true],
+      ["browser.link.open_newwindow", 3],
+    ]}, resolve);
   });
 });
 
