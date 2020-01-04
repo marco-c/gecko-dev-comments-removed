@@ -242,7 +242,7 @@ class TraceLoggerThread
 
         
         
-        if (lastIteration == iteration_ - 1 && lastSize == CONTINUOUSSPACE_LIMIT)
+        if (lastIteration == iteration_ - 1 && lastSize == events.maxSize())
             return false;
 
         return true;
