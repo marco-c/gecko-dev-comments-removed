@@ -138,10 +138,6 @@ function checkGetOffsetsCoverage(fun) {
 
 checkGetOffsetsCoverage(function () { 
   ",".split(','); 
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -149,10 +145,6 @@ checkGetOffsetsCoverage(function () {
     ",".split(','); 
   }
   ",".split(',');   
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -160,10 +152,6 @@ checkGetOffsetsCoverage(function () {
     ",".split(','); 
   }
   f();              
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -172,12 +160,6 @@ checkGetOffsetsCoverage(function () {
     l.push('');           
   else
     l.pop();              
-  
-  
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -186,12 +168,6 @@ checkGetOffsetsCoverage(function () {
     l.push('');           
   else
     l.pop();              
-  
-  
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -202,12 +178,6 @@ checkGetOffsetsCoverage(function () {
     if (l.length == 1)    
       l.pop();            
   }
-  
-  
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -219,14 +189,10 @@ checkGetOffsetsCoverage(function () {
       x = x / 2;  
     }
     return x;     
-    
-    
   }
 
   f(5);           
   f(5);           
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -240,13 +206,6 @@ checkGetOffsetsCoverage(function () {
   } catch (x) {             
     x.pop();                
   }
-  
-  
-  
-         
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -263,12 +222,6 @@ checkGetOffsetsCoverage(function () {
     }
   } catch (x) {             
   }
-  
-  
-  
-  
-  
-  
 });
 
 checkGetOffsetsCoverage(function () { 
@@ -282,12 +235,6 @@ checkGetOffsetsCoverage(function () {
     f();                    
   } catch (x) {             
   }
-  
-  
-  
-  
-  
-  
 });
 
 
