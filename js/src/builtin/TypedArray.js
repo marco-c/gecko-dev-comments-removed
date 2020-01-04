@@ -12,7 +12,7 @@ function TypedArrayCopyWithin(target, start, end = undefined) {
                             "TypedArrayCopyWithin");
     }
 
-    
+    GetAttachedArrayBuffer(this);
 
     
     var obj = this;
@@ -86,6 +86,7 @@ function TypedArrayEntries() {
     }
 
     
+    GetAttachedArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
@@ -98,6 +99,8 @@ function TypedArrayEvery(callbackfn, thisArg = undefined) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
                             "TypedArrayEvery");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -139,6 +142,8 @@ function TypedArrayFill(value, start = 0, end = undefined) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, value, start, end,
                             "TypedArrayFill");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -182,6 +187,8 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
                            "TypedArrayFilter");
     }
+
+    GetAttachedArrayBuffer(O);
 
     
     var len = TypedArrayLength(O);
@@ -243,6 +250,8 @@ function TypedArrayFind(predicate, thisArg = undefined) {
                             "TypedArrayFind");
     }
 
+    GetAttachedArrayBuffer(this);
+
     
     var O = this;
 
@@ -280,6 +289,8 @@ function TypedArrayFindIndex(predicate, thisArg = undefined) {
                             "TypedArrayFindIndex");
     }
 
+    GetAttachedArrayBuffer(this);
+
     
     var O = this;
 
@@ -315,6 +326,8 @@ function TypedArrayForEach(callbackfn, thisArg = undefined) {
                             "TypedArrayForEach");
     }
 
+    GetAttachedArrayBuffer(this);
+
     
     var O = this;
 
@@ -349,6 +362,8 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, fromIndex,
                             "TypedArrayIndexOf");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -398,6 +413,8 @@ function TypedArrayJoin(separator) {
     if (!IsObject(this) || !IsTypedArray(this)) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, separator, "TypedArrayJoin");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -449,7 +466,7 @@ function TypedArrayKeys() {
         return callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayKeys");
     }
 
-    
+    GetAttachedArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_KEY);
@@ -462,6 +479,8 @@ function TypedArrayLastIndexOf(searchElement, fromIndex = undefined) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, fromIndex,
                             "TypedArrayLastIndexOf");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -502,6 +521,8 @@ function TypedArrayMap(callbackfn, thisArg = undefined) {
                             "TypedArrayMap");
     }
 
+    GetAttachedArrayBuffer(O);
+
     
     var len = TypedArrayLength(O);
 
@@ -540,6 +561,8 @@ function TypedArrayReduce(callbackfn) {
     
     if (!IsObject(this) || !IsTypedArray(this))
         return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, "TypedArrayReduce");
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -580,6 +603,8 @@ function TypedArrayReduceRight(callbackfn) {
     if (!IsObject(this) || !IsTypedArray(this))
         return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, "TypedArrayReduceRight");
 
+    GetAttachedArrayBuffer(this);
+
     
     var O = this;
 
@@ -619,6 +644,8 @@ function TypedArrayReverse() {
     if (!IsObject(this) || !IsTypedArray(this)) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayReverse");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -680,6 +707,13 @@ function IsDetachedBuffer(buffer) {
 
     var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
     return (flags & JS_ARRAYBUFFER_NEUTERED_FLAG) !== 0;
+}
+
+function GetAttachedArrayBuffer(tarray) {
+    var buffer = ViewedArrayBufferIfReified(tarray);
+    if (IsDetachedBuffer(buffer))
+        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+    return buffer;
 }
 
 
@@ -789,9 +823,7 @@ function TypedArraySet(overloaded, offset) {
         ThrowRangeError(JSMSG_TYPED_ARRAY_NEGATIVE_ARG, "2");
 
     
-    var targetBuffer = ViewedArrayBufferIfReified(target);
-    if (IsDetachedBuffer(targetBuffer))
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+    var targetBuffer = GetAttachedArrayBuffer(target);
 
     
     var targetLength = TypedArrayLength(target);
@@ -813,6 +845,8 @@ function TypedArraySlice(start, end) {
     if (!IsObject(O) || !IsTypedArray(O)) {
         return callFunction(CallTypedArrayMethodIfWrapped, O, start, end, "TypedArraySlice");
     }
+
+    GetAttachedArrayBuffer(O);
 
     
     var len = TypedArrayLength(O);
@@ -869,6 +903,8 @@ function TypedArraySome(callbackfn, thisArg = undefined) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
                             "TypedArraySome");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
@@ -1050,9 +1086,7 @@ function TypedArraySort(comparefn) {
     var obj = this;
 
     
-    var buffer = TypedArrayBuffer(obj);
-    if (IsDetachedBuffer(buffer))
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+    var buffer = GetAttachedArrayBuffer(obj);
 
     
     var len = TypedArrayLength(obj);
@@ -1136,6 +1170,7 @@ function TypedArrayValues() {
     }
 
     
+    GetAttachedArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_VALUE);
@@ -1150,6 +1185,8 @@ function TypedArrayIncludes(searchElement, fromIndex = 0) {
         return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement,
                             fromIndex, "TypedArrayIncludes");
     }
+
+    GetAttachedArrayBuffer(this);
 
     
     var O = this;
