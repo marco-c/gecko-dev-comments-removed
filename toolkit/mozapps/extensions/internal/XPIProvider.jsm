@@ -3887,6 +3887,29 @@ this.XPIProvider = {
 
 
 
+
+
+
+   getAddonByInstanceID: function(aInstanceID) {
+     if (!aInstanceID || typeof aInstanceID != "symbol")
+       throw Components.Exception("aInstanceID must be a Symbol()",
+                                  Cr.NS_ERROR_INVALID_ARG);
+
+     for (let [id, val] of this.activeAddons) {
+       if (aInstanceID == val.instanceID) {
+         return new Promise(resolve => this.getAddonByID(id, resolve));
+       }
+     }
+
+     return Promise.resolve(null);
+   },
+
+  
+
+
+
+
+
   removeActiveInstall: function(aInstall) {
     let where = this.installs.indexOf(aInstall);
     if (where == -1) {
@@ -4451,6 +4474,8 @@ this.XPIProvider = {
 
     this.activeAddons.set(aId, {
       bootstrapScope: null,
+      
+      instanceID: Symbol(aId),
     });
     let activeAddon = this.activeAddons.get(aId);
 
@@ -4596,6 +4621,15 @@ this.XPIProvider = {
                                 aAddon.multiprocessCompatible || false,
                                 runInSafeMode);
         activeAddon = this.activeAddons.get(aAddon.id);
+      }
+
+      if (aAddon.bootstrap) {
+        if (aMethod == "startup" || aMethod == "shutdown") {
+          if (!aExtraParams) {
+            aExtraParams = {};
+          }
+          aExtraParams["instanceID"] = this.activeAddons.get(aAddon.id).instanceID;
+        }
       }
 
       

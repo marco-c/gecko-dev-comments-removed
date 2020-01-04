@@ -2246,6 +2246,28 @@ var AddonManagerInternal = {
                                .installTemporaryAddon(aFile);
   },
 
+  
+
+
+
+
+
+
+
+
+
+   getAddonByInstanceID: function(aInstanceID) {
+     if (!gStarted)
+       throw Components.Exception("AddonManager is not initialized",
+                                  Cr.NS_ERROR_NOT_INITIALIZED);
+
+     if (!aInstanceID || typeof aInstanceID != "symbol")
+       throw Components.Exception("aInstanceID must be a Symbol()",
+                                  Cr.NS_ERROR_INVALID_ARG);
+
+     return AddonManagerInternal._getProviderByName("XPIProvider")
+                                .getAddonByInstanceID(aInstanceID);
+   },
 
   
 
@@ -3196,6 +3218,10 @@ this.AddonManager = {
 
   installTemporaryAddon: function(aDirectory) {
     return AddonManagerInternal.installTemporaryAddon(aDirectory);
+  },
+
+  getAddonByInstanceID: function(aInstanceID) {
+    return AddonManagerInternal.getAddonByInstanceID(aInstanceID);
   },
 
   addManagerListener: function(aListener) {
