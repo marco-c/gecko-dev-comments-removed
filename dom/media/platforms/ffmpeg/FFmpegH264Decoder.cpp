@@ -125,17 +125,20 @@ FFmpegH264Decoder<LIBAV_VER>::InitCodecContext()
   
   
   
-  int decode_threads = 2;
-  if (mCodecID != AV_CODEC_ID_VP8) {
-    if (mDisplay.width >= 2048) {
-      decode_threads = 8;
-    } else if (mDisplay.width >= 1024) {
-      decode_threads = 4;
-    }
+  int decode_threads = 1;
+  if (mDisplay.width >= 2048) {
+    decode_threads = 8;
+  } else if (mDisplay.width >= 1024) {
+    decode_threads = 4;
+  } else if (mDisplay.width >= 320) {
+    decode_threads = 2;
   }
+
   decode_threads = std::min(decode_threads, PR_GetNumberOfProcessors());
   mCodecContext->thread_count = decode_threads;
-  mCodecContext->thread_type = FF_THREAD_SLICE | FF_THREAD_FRAME;
+  if (decode_threads > 1) {
+    mCodecContext->thread_type = FF_THREAD_SLICE | FF_THREAD_FRAME;
+  }
 
   
   mCodecContext->get_format = ChoosePixelFormat;
