@@ -7,6 +7,7 @@
 const l10n = require("gcli/l10n");
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 const {EyeDropper, HighlighterEnvironment} = require("devtools/server/actors/highlighters");
+const Telemetry = require("devtools/client/shared/telemetry");
 
 exports.items = [{
   item: "command",
@@ -30,10 +31,31 @@ exports.items = [{
   }
 }, {
   item: "command",
-  runAt: "server",
+  runAt: "client",
   name: "eyedropper",
   description: l10n.lookup("eyedropperDesc"),
   manual: l10n.lookup("eyedropperManual"),
+  params: [{
+    
+    
+    
+    group: "hiddengroup",
+    params: [{
+      name: "frommenu",
+      type: "boolean",
+      hidden: true
+    }]
+  }],
+  exec: function (args, context) {
+    let telemetry = new Telemetry();
+    telemetry.toolOpened(args.frommenu ? "menueyedropper" : "eyedropper");
+    context.updateExec("eyedropper_server").catch(e => console.error(e));
+  }
+}, {
+  item: "command",
+  runAt: "server",
+  name: "eyedropper_server",
+  hidden: true,
   exec: function (args, {environment}) {
     let env = new HighlighterEnvironment();
     env.initFromWindow(environment.window);

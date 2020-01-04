@@ -20,6 +20,7 @@ var {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
 var {Task} = require("devtools/shared/task");
 const {initCssProperties} = require("devtools/shared/fronts/css-properties");
 const nodeConstants = require("devtools/shared/dom-node-constants");
+const Telemetry = require("devtools/client/shared/telemetry");
 
 const Menu = require("devtools/client/framework/menu");
 const MenuItem = require("devtools/client/framework/menu-item");
@@ -88,6 +89,8 @@ function InspectorPanel(iframeWindow, toolbox) {
   this.panelDoc = iframeWindow.document;
   this.panelWin = iframeWindow;
   this.panelWin.inspector = this;
+
+  this.telemetry = new Telemetry();
 
   this.nodeMenuTriggerInfo = null;
 
@@ -1295,16 +1298,27 @@ InspectorPanel.prototype = {
     this.stopEyeDropperListeners();
   },
 
+  
+
+
+
   showEyeDropper: function () {
+    this.telemetry.toolOpened("toolbareyedropper");
     this.eyeDropperButton.setAttribute("checked", "true");
-    this.inspector.pickColorFromPage({copyOnSelect: true}).catch(e => console.error(e));
     this.startEyeDropperListeners();
+    return this.inspector.pickColorFromPage({copyOnSelect: true})
+                         .catch(e => console.error(e));
   },
+
+  
+
+
 
   hideEyeDropper: function () {
     this.eyeDropperButton.removeAttribute("checked");
-    this.inspector.cancelPickColorFromPage().catch(e => console.error(e));
     this.stopEyeDropperListeners();
+    return this.inspector.cancelPickColorFromPage()
+                         .catch(e => console.error(e));
   },
 
   
