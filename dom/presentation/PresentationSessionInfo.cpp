@@ -163,6 +163,14 @@ PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
 
   if (mListener) {
     
+    if (mTransport) {
+      nsresult rv = mTransport->EnableDataNotification();
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+
+    
     
     uint16_t state = IsSessionReady() ?
                      nsIPresentationSessionListener::STATE_CONNECTED :
@@ -534,6 +542,11 @@ PresentationRequesterInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
     return rv;
   }
 
+  
+  if (mListener) {
+    return mTransport->EnableDataNotification();
+  }
+
   return NS_OK;
 }
 
@@ -635,6 +648,14 @@ PresentationResponderInfo::InitTransportAndSendAnswer()
   nsresult rv = mTransport->InitWithChannelDescription(mRequesterDescription, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  
+  if (mListener) {
+    rv = mTransport->EnableDataNotification();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
