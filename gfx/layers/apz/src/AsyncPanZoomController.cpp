@@ -3381,10 +3381,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
 
   if ((aLayerMetrics == mLastContentPaintMetrics) && !isDefault) {
     
-    
-    
-    
-    
     APZC_LOG("%p NotifyLayersUpdated short-circuit\n", this);
     return;
   }
@@ -3583,35 +3579,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     RequestContentRepaint();
   }
   UpdateSharedCompositorFrameMetrics();
-}
-
-void
-AsyncPanZoomController::NotifyScrollUpdated(uint32_t aScrollGeneration,
-                                            const CSSPoint& aScrollOffset)
-{
-  APZThreadUtils::AssertOnCompositorThread();
-  ReentrantMonitorAutoEnter lock(mMonitor);
-
-  APZC_LOG("%p NotifyScrollUpdated(%d, %s)\n", this, aScrollGeneration,
-      Stringify(aScrollOffset).c_str());
-
-  bool scrollOffsetUpdated = aScrollGeneration != mFrameMetrics.GetScrollGeneration();
-  if (!scrollOffsetUpdated) {
-    return;
-  }
-  APZC_LOG("%p updating scroll offset from %s to %s\n", this,
-      Stringify(mFrameMetrics.GetScrollOffset()).c_str(),
-      Stringify(aScrollOffset).c_str());
-
-  mFrameMetrics.UpdateScrollInfo(aScrollGeneration, aScrollOffset);
-  AcknowledgeScrollUpdate();
-  mExpectedGeckoMetrics.UpdateScrollInfo(aScrollGeneration, aScrollOffset);
-  CancelAnimation();
-  RequestContentRepaint();
-  UpdateSharedCompositorFrameMetrics();
-  
-  
-  
 }
 
 void
