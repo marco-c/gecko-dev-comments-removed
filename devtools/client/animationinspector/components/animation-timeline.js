@@ -73,7 +73,7 @@ AnimationsTimeline.prototype = {
 
     let scrubberContainer = createNode({
       parent: this.rootWrapperEl,
-      attributes: {"class": "scrubber-wrapper track-container"}
+      attributes: {"class": "scrubber-wrapper"}
     });
 
     this.scrubberEl = createNode({
@@ -92,14 +92,29 @@ AnimationsTimeline.prototype = {
     this.scrubberHandleEl.addEventListener("mousedown",
       this.onScrubberMouseDown);
 
-    this.timeHeaderEl = createNode({
+    this.headerWrapper = createNode({
       parent: this.rootWrapperEl,
+      attributes: {
+        "class": "header-wrapper"
+      }
+    });
+
+    this.timeHeaderEl = createNode({
+      parent: this.headerWrapper,
       attributes: {
         "class": "time-header track-container"
       }
     });
+
     this.timeHeaderEl.addEventListener("mousedown",
       this.onScrubberMouseDown);
+
+    this.timeTickEl = createNode({
+      parent: this.rootWrapperEl,
+      attributes: {
+        "class": "time-body track-container"
+      }
+    });
 
     this.animationsEl = createNode({
       parent: this.rootWrapperEl,
@@ -454,18 +469,33 @@ AnimationsTimeline.prototype = {
 
     
     this.timeHeaderEl.innerHTML = "";
+    this.timeTickEl.innerHTML = "";
 
     for (let i = 0; i <= width / intervalWidth; i++) {
       let pos = 100 * i * intervalWidth / width;
 
+      
+      
       createNode({
         parent: this.timeHeaderEl,
         nodeType: "span",
         attributes: {
-          "class": "time-tick",
+          "class": "header-item",
           "style": `left:${pos}%`
         },
         textContent: TimeScale.formatTime(TimeScale.distanceToRelativeTime(pos))
+      });
+
+      
+      
+      
+      createNode({
+        parent: this.timeTickEl,
+        nodeType: "span",
+        attributes: {
+          "class": "time-tick",
+          "style": `left:${pos}%`
+        }
       });
     }
   }
