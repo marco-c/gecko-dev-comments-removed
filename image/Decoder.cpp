@@ -126,6 +126,7 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
 
   
   
+  Maybe<TerminalState> terminalState;
   do {
     switch (mIterator->AdvanceOrScheduleResume(aOnResume.get())) {
       case SourceBufferIterator::WAITING:
@@ -135,7 +136,7 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
         
         return NS_OK;
 
-      case SourceBufferIterator::COMPLETE: {
+      case SourceBufferIterator::COMPLETE:
         mDataDone = true;
 
         
@@ -143,14 +144,16 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
         
         
         
-        nsresult finalStatus = mIterator->CompletionStatus();
-        if (NS_FAILED(finalStatus)) {
+        terminalState = NS_SUCCEEDED(mIterator->CompletionStatus())
+                      ? Some(TerminalState::SUCCESS)
+                      : Some(TerminalState::FAILURE);
+
+        if (terminalState == Some(TerminalState::FAILURE)) {
           PostDataError();
         }
 
         CompleteDecode();
-        return finalStatus;
-      }
+        return terminalState == Some(TerminalState::SUCCESS) ? NS_OK : NS_ERROR_FAILURE;
 
       case SourceBufferIterator::READY: {
         PROFILER_LABEL("ImageDecoder", "Decode",
@@ -159,7 +162,7 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
         AutoRecordDecoderTelemetry telemetry(this, mIterator->Length());
 
         
-        Maybe<TerminalState> terminalState = DoDecode(*mIterator);
+        terminalState = DoDecode(*mIterator);
 
         if (terminalState == Some(TerminalState::FAILURE)) {
           PostDataError();
@@ -170,7 +173,7 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
 
       default:
         MOZ_ASSERT_UNREACHABLE("Unknown SourceBufferIterator state");
-        Maybe<TerminalState> terminalState = Some(TerminalState::FAILURE);
+        terminalState = Some(TerminalState::FAILURE);
     }
   } while (!GetDecodeDone() && !HasError());
 
