@@ -278,7 +278,6 @@ GMPVideoDecoderParent::ActorDestroy(ActorDestroyReason aWhy)
 
   mIsOpen = false;
   mActorDestroyed = true;
-  mVideoHost.DoneWithAPI();
 
   
   
