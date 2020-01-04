@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_NativeObject_h
 #define vm_NativeObject_h
@@ -29,12 +29,12 @@ namespace js {
 class Shape;
 class TenuringTracer;
 
-
-
-
-
-
-
+/*
+ * To really poison a set of values, using 'magic' or 'undefined' isn't good
+ * enough since often these will just be ignored by buggy code (see bug 629974)
+ * in debug builds and crash in release builds. Instead, we use a safe-for-crash
+ * pointer.
+ */
 static MOZ_ALWAYS_INLINE void
 Debug_SetValueRangeToCrashOnTouch(Value* beg, Value* end)
 {
@@ -78,103 +78,103 @@ Debug_SetSlotRangeToCrashOnTouch(HeapSlot* begin, HeapSlot* end)
 
 class ArrayObject;
 
-
-
-
-
-
-
-
+/*
+ * ES6 20130308 draft 8.4.2.4 ArraySetLength.
+ *
+ * |id| must be "length", |attrs| are the attributes to be used for the newly-
+ * changed length property, |value| is the value for the new length, and
+ * |result| receives an error code if the change is invalid.
+ */
 extern bool
 ArraySetLength(JSContext* cx, Handle<ArrayObject*> obj, HandleId id,
                unsigned attrs, HandleValue value, ObjectOpResult& result);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Elements header used for native objects. The elements component of such objects
+ * offers an efficient representation for all or some of the indexed properties
+ * of the object, using a flat array of Values rather than a shape hierarchy
+ * stored in the object's slots. This structure is immediately followed by an
+ * array of elements, with the elements member in an object pointing to the
+ * beginning of that array (the end of this structure).
+ * See below for usage of this structure.
+ *
+ * The sets of properties represented by an object's elements and slots
+ * are disjoint. The elements contain only indexed properties, while the slots
+ * can contain both named and indexed properties; any indexes in the slots are
+ * distinct from those in the elements. If isIndexed() is false for an object,
+ * all indexed properties (if any) are stored in the dense elements.
+ *
+ * Indexes will be stored in the object's slots instead of its elements in
+ * the following case:
+ *  - there are more than MIN_SPARSE_INDEX slots total and the load factor
+ *    (COUNT / capacity) is less than 0.25
+ *  - a property is defined that has non-default property attributes.
+ *
+ * We track these pieces of metadata for dense elements:
+ *  - The length property as a uint32_t, accessible for array objects with
+ *    ArrayObject::{length,setLength}().  This is unused for non-arrays.
+ *  - The number of element slots (capacity), gettable with
+ *    getDenseCapacity().
+ *  - The array's initialized length, accessible with
+ *    getDenseInitializedLength().
+ *
+ * Holes in the array are represented by MagicValue(JS_ELEMENTS_HOLE) values.
+ * These indicate indexes which are not dense properties of the array. The
+ * property may, however, be held by the object's properties.
+ *
+ * The capacity and length of an object's elements are almost entirely
+ * unrelated!  In general the length may be greater than, less than, or equal
+ * to the capacity.  The first case occurs with |new Array(100)|.  The length
+ * is 100, but the capacity remains 0 (indices below length and above capacity
+ * must be treated as holes) until elements between capacity and length are
+ * set.  The other two cases are common, depending upon the number of elements
+ * in an array and the underlying allocator used for element storage.
+ *
+ * The only case in which the capacity and length of an object's elements are
+ * related is when the object is an array with non-writable length.  In this
+ * case the capacity is always less than or equal to the length.  This permits
+ * JIT code to optimize away the check for non-writable length when assigning
+ * to possibly out-of-range elements: such code already has to check for
+ * |index < capacity|, and fallback code checks for non-writable length.
+ *
+ * The initialized length of an object specifies the number of elements that
+ * have been initialized. All elements above the initialized length are
+ * holes in the object, and the memory for all elements between the initialized
+ * length and capacity is left uninitialized. The initialized length is some
+ * value less than or equal to both the object's length and the object's
+ * capacity.
+ *
+ * There is flexibility in exactly the value the initialized length must hold,
+ * e.g. if an array has length 5, capacity 10, completely empty, it is valid
+ * for the initialized length to be any value between zero and 5, as long as
+ * the in memory values below the initialized length have been initialized with
+ * a hole value. However, in such cases we want to keep the initialized length
+ * as small as possible: if the object is known to have no hole values below
+ * its initialized length, then it is "packed" and can be accessed much faster
+ * by JIT code.
+ *
+ * Elements do not track property creation order, so enumerating the elements
+ * of an object does not necessarily visit indexes in the order they were
+ * created.
+ */
 class ObjectElements
 {
   public:
     enum Flags {
-        
+        // Integers written to these elements must be converted to doubles.
         CONVERT_DOUBLE_ELEMENTS     = 0x1,
 
-        
-        
+        // Present only if these elements correspond to an array with
+        // non-writable length; never present for non-arrays.
         NONWRITABLE_ARRAY_LENGTH    = 0x2,
 
-        
-        
-        
-        
-        
-        
-        
+        // These elements are shared with another object and must be copied
+        // before they can be changed. A pointer to the original owner of the
+        // elements, which is immutable, is stored immediately after the
+        // elements data. There is one case where elements can be written to
+        // before being copied: when setting the CONVERT_DOUBLE_ELEMENTS flag
+        // the shared elements may change (from ints to doubles) without
+        // making a copy first.
         COPY_ON_WRITE               = 0x4
     };
 
@@ -190,28 +190,28 @@ class ObjectElements
     ArraySetLength(JSContext* cx, Handle<ArrayObject*> obj, HandleId id,
                    unsigned attrs, HandleValue value, ObjectOpResult& result);
 
-    
+    /* See Flags enum above. */
     uint32_t flags;
 
-    
-
-
-
-
-
+    /*
+     * Number of initialized elements. This is <= the capacity, and for arrays
+     * is <= the length. Memory for elements above the initialized length is
+     * uninitialized, but values between the initialized length and the proper
+     * length are conceptually holes.
+     */
     uint32_t initializedLength;
 
-    
+    /* Number of allocated slots. */
     uint32_t capacity;
 
-    
+    /* 'length' property of array objects, unused for other objects. */
     uint32_t length;
 
     bool shouldConvertDoubleElements() const {
         return flags & CONVERT_DOUBLE_ELEMENTS;
     }
     void setShouldConvertDoubleElements() {
-        
+        // Note: allow isCopyOnWrite() here, see comment above.
         flags |= CONVERT_DOUBLE_ELEMENTS;
     }
     void clearShouldConvertDoubleElements() {
@@ -269,15 +269,15 @@ class ObjectElements
     static bool ConvertElementsToDoubles(JSContext* cx, uintptr_t elements);
     static bool MakeElementsCopyOnWrite(ExclusiveContext* cx, NativeObject* obj);
 
-    
-    
+    // This is enough slots to store an object of this class. See the static
+    // assertion below.
     static const size_t VALUES_PER_HEADER = 2;
 };
 
 static_assert(ObjectElements::VALUES_PER_HEADER * sizeof(HeapSlot) == sizeof(ObjectElements),
               "ObjectElements doesn't fit in the given number of slots");
 
-
+/* Shared singleton for objects with no elements. */
 extern HeapSlot* const emptyObjectElements;
 
 struct Class;
@@ -291,56 +291,56 @@ static inline bool
 IsObjectValueInCompartment(Value v, JSCompartment* comp);
 #endif
 
-
-
-
-
-
+// Operations which change an object's dense elements can either succeed, fail,
+// or be unable to complete. For native objects, the latter is used when the
+// object's elements must become sparse instead. The enum below is used for
+// such operations, and for similar operations on unboxed arrays and methods
+// that work on both kinds of objects.
 enum class DenseElementResult {
     Failure,
     Success,
     Incomplete
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * NativeObject specifies the internal implementation of a native object.
+ *
+ * Native objects extend the base implementation of an object with storage
+ * for the object's named properties and indexed elements.
+ *
+ * These are stored separately from one another. Objects are followed by a
+ * variable-sized array of values for inline storage, which may be used by
+ * either properties of native objects (fixed slots), by elements (fixed
+ * elements), or by other data for certain kinds of objects, such as
+ * ArrayBufferObjects and TypedArrayObjects.
+ *
+ * Two native objects with the same shape are guaranteed to have the same
+ * number of fixed slots.
+ *
+ * Named property storage can be split between fixed slots and a dynamically
+ * allocated array (the slots member). For an object with N fixed slots, shapes
+ * with slots [0..N-1] are stored in the fixed slots, and the remainder are
+ * stored in the dynamic array. If all properties fit in the fixed slots, the
+ * 'slots_' member is nullptr.
+ *
+ * Elements are indexed via the 'elements_' member. This member can point to
+ * either the shared emptyObjectElements singleton, into the inline value array
+ * (the address of the third value, to leave room for a ObjectElements header;
+ * in this case numFixedSlots() is zero) or to a dynamically allocated array.
+ *
+ * Slots and elements may both be non-empty. The slots may be either names or
+ * indexes; no indexed property will be in both the slots and elements.
+ */
 class NativeObject : public JSObject
 {
   protected:
-    
+    // Property layout description and other state.
     HeapPtrShape shape_;
 
-    
+    /* Slots for object properties. */
     js::HeapSlot* slots_;
 
-    
+    /* Slots for object dense elements. */
     js::HeapSlot* elements_;
 
     friend class ::JSObject;
@@ -387,7 +387,7 @@ class NativeObject : public JSObject
         return HeapSlotArray(elements_, !getElementsHeader()->isCopyOnWrite());
     }
     HeapSlotArray getDenseElementsAllowCopyOnWrite() {
-        
+        // Backdoor allowing direct access to copy on write elements.
         return HeapSlotArray(elements_, true);
     }
     const Value& getDenseElement(uint32_t idx) {
@@ -404,24 +404,24 @@ class NativeObject : public JSObject
         return getElementsHeader()->capacity;
     }
 
-    
-    
+    // Update the last property, keeping the number of allocated slots in sync
+    // with the object's new slot span.
     bool setLastProperty(ExclusiveContext* cx, Shape* shape);
 
-    
-    
-    
-    
+    // As for setLastProperty(), but allows the number of fixed slots to
+    // change. This can only be used when fixed slots are being erased from the
+    // object, and only when the object will not require dynamic slots to cover
+    // the new properties.
     void setLastPropertyShrinkFixedSlots(Shape* shape);
 
-    
-    
-    
+    // As for setLastProperty(), but changes the class associated with the
+    // object to a non-native one. This leaves the object with a type and shape
+    // that are (temporarily) inconsistent.
     void setLastPropertyMakeNonNative(Shape* shape);
 
-    
-    
-    
+    // As for setLastProperty(), but changes the class associated with the
+    // object to a native one. The object's type has already been changed, and
+    // this brings the shape into sync with it.
     void setLastPropertyMakeNative(ExclusiveContext* cx, Shape* shape);
 
   protected:
@@ -436,18 +436,18 @@ class NativeObject : public JSObject
                                   Shape* existingShape, Shape* newShape = nullptr,
                                   bool accessorShape = false);
 
-    
-
-
-
-
+    /*
+     * Remove the last property of an object, provided that it is safe to do so
+     * (the shape and previous shape do not carry conflicting information about
+     * the object itself).
+     */
     inline void removeLastProperty(ExclusiveContext* cx);
     inline bool canRemoveLastProperty();
 
-    
-
-
-
+    /*
+     * Update the slot span directly for a dictionary object, and allocate
+     * slots to cover the new span if necessary.
+     */
     bool setSlotSpan(ExclusiveContext* cx, uint32_t span);
 
     bool toDictionaryMode(ExclusiveContext* cx);
@@ -455,10 +455,10 @@ class NativeObject : public JSObject
   private:
     friend class TenuringTracer;
 
-    
-
-
-
+    /*
+     * Get internal pointers to the range of values starting at start and
+     * running for length.
+     */
     void getSlotRangeUnchecked(uint32_t start, uint32_t length,
                                HeapSlot** fixedStart, HeapSlot** fixedEnd,
                                HeapSlot** slotsStart, HeapSlot** slotsEnd)
@@ -507,21 +507,21 @@ class NativeObject : public JSObject
         getSlotRange(start, length, &fixedStart, &fixedEnd, &slotsStart, &slotsEnd);
         Debug_SetSlotRangeToCrashOnTouch(fixedStart, fixedEnd);
         Debug_SetSlotRangeToCrashOnTouch(slotsStart, slotsEnd);
-#endif 
+#endif /* DEBUG */
     }
 
     void initializeSlotRange(uint32_t start, uint32_t count);
 
-    
-
-
-
+    /*
+     * Initialize a flat array of slots to this object at a start slot.  The
+     * caller must ensure that are enough slots.
+     */
     void initSlotRange(uint32_t start, const Value* vector, uint32_t length);
 
-    
-
-
-
+    /*
+     * Copy a flat array of slots to this object at a start slot. Caller must
+     * ensure there are enough slots in this object.
+     */
     void copySlotRange(uint32_t start, const Value* vector, uint32_t length);
 
 #ifdef DEBUG
@@ -530,18 +530,18 @@ class NativeObject : public JSObject
         SENTINEL_ALLOWED
     };
 
-    
-
-
-
+    /*
+     * Check that slot is in range for the object's allocated slots.
+     * If sentinelAllowed then slot may equal the slot capacity.
+     */
     bool slotInRange(uint32_t slot, SentinelAllowed sentinel = SENTINEL_NOT_ALLOWED) const;
 #endif
 
-    
-
-
-
-
+    /*
+     * Minimum size for dynamically allocated slots in normal Objects.
+     * ArrayObjects don't use this limit and can have a lower slot capacity,
+     * since they normally don't have a lot of slots.
+     */
     static const uint32_t SLOT_CAPACITY_MIN = 8;
 
     HeapSlot* fixedSlots() const {
@@ -556,8 +556,13 @@ class NativeObject : public JSObject
     bool shadowingShapeChange(ExclusiveContext* cx, const Shape& shape);
     bool clearFlag(ExclusiveContext* cx, BaseShape::Flag flag);
 
+    // The maximum number of slots in an object.
+    // |MAX_SLOTS_COUNT * sizeof(JS::Value)| shouldn't overflow
+    // int32_t (see slotsSizeMustNotOverflow).
+    static const uint32_t MAX_SLOTS_COUNT = (1 << 28) - 1;
+
     static void slotsSizeMustNotOverflow() {
-        static_assert((NativeObject::NELEMENTS_LIMIT - 1) <= INT32_MAX / sizeof(JS::Value),
+        static_assert(NativeObject::MAX_SLOTS_COUNT <= INT32_MAX / sizeof(JS::Value),
                       "every caller of this method requires that a slot "
                       "number (or slot count) count multiplied by "
                       "sizeof(Value) can't overflow uint32_t (and sometimes "
@@ -578,31 +583,31 @@ class NativeObject : public JSObject
         return lastProperty()->slotSpan();
     }
 
-    
+    /* Whether a slot is at a fixed offset from this object. */
     bool isFixedSlot(size_t slot) {
         return slot < numFixedSlots();
     }
 
-    
+    /* Index into the dynamic slots array to use for a dynamic slot. */
     size_t dynamicSlotIndex(size_t slot) {
         MOZ_ASSERT(slot >= numFixedSlots());
         return slot - numFixedSlots();
     }
 
-    
-
-
-
-
+    /*
+     * Grow or shrink slots immediately before changing the slot span.
+     * The number of allocated slots is not stored explicitly, and changes to
+     * the slots must track changes in the slot span.
+     */
     bool growSlots(ExclusiveContext* cx, uint32_t oldCount, uint32_t newCount);
     void shrinkSlots(ExclusiveContext* cx, uint32_t oldCount, uint32_t newCount);
 
-    
+    /* This method is static because it's called from JIT code. */
     static bool growSlotsStatic(ExclusiveContext* cx, NativeObject* obj, uint32_t newCount);
 
     bool hasDynamicSlots() const { return !!slots_; }
 
-    
+    /* Compute dynamicSlotsCount() for this object. */
     uint32_t numDynamicSlots() const {
         return dynamicSlotsCount(numFixedSlots(), slotSpan(), getClass());
     }
@@ -632,7 +637,7 @@ class NativeObject : public JSObject
         return contains(cx, id);
     }
 
-    
+    /* Contextless; can be called from other pure code. */
     Shape* lookupPure(jsid id);
     Shape* lookupPure(PropertyName* name) {
         return lookupPure(NameToId(name));
@@ -648,13 +653,13 @@ class NativeObject : public JSObject
         return lookupPure(shape->propid()) == shape;
     }
 
-    
-
-
-
-
-
-
+    /*
+     * Allocate and free an object slot.
+     *
+     * FIXME: bug 593129 -- slot allocation should be done by object methods
+     * after calling object-parameter-free shape methods, avoiding coupling
+     * logic across the object vs. shape module wall.
+     */
     static bool allocSlot(ExclusiveContext* cx, HandleNativeObject obj, uint32_t* slotp);
     void freeSlot(uint32_t slot);
 
@@ -665,19 +670,19 @@ class NativeObject : public JSObject
                                    HandleShape parent, MutableHandle<StackShape> child);
 
   public:
-    
+    /* Add a property whose id is not yet in this scope. */
     static Shape* addProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleId id,
                               JSGetterOp getter, JSSetterOp setter,
                               uint32_t slot, unsigned attrs, unsigned flags,
                               bool allowDictionary = true);
 
-    
+    /* Add a data property whose id is not yet in this scope. */
     Shape* addDataProperty(ExclusiveContext* cx,
                            jsid id_, uint32_t slot, unsigned attrs);
     Shape* addDataProperty(ExclusiveContext* cx, HandlePropertyName name,
                            uint32_t slot, unsigned attrs);
 
-    
+    /* Add or overwrite a property for id in this scope. */
     static Shape*
     putProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleId id,
                 JSGetterOp getter, JSSetterOp setter,
@@ -689,25 +694,25 @@ class NativeObject : public JSObject
                 uint32_t slot, unsigned attrs,
                 unsigned flags);
 
-    
+    /* Change the given property into a sibling with the same id in this scope. */
     static Shape*
     changeProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleShape shape,
                    unsigned attrs, JSGetterOp getter, JSSetterOp setter);
 
-    
+    /* Remove the property named by id from this object. */
     bool removeProperty(ExclusiveContext* cx, jsid id);
 
-    
+    /* Clear the scope, making it empty. */
     static void clear(ExclusiveContext* cx, HandleNativeObject obj);
 
   protected:
-    
-
-
-
-
-
-
+    /*
+     * Internal helper that adds a shape not yet mapped by this object.
+     *
+     * Notes:
+     * 1. getter and setter must be normalized based on flags (see jsscope.cpp).
+     * 2. Checks for non-extensibility must be done by callers.
+     */
     static Shape*
     addPropertyInternal(ExclusiveContext* cx, HandleNativeObject obj, HandleId id,
                         JSGetterOp getter, JSSetterOp setter, uint32_t slot, unsigned attrs,
@@ -716,9 +721,9 @@ class NativeObject : public JSObject
     bool fillInAfterSwap(JSContext* cx, const Vector<Value>& values, void* priv);
 
   public:
-    
-    
-    
+    // Return true if this object has been converted from shared-immutable
+    // prototype-rooted shape storage to dictionary-shapes in a doubly-linked
+    // list.
     bool inDictionaryMode() const {
         return lastProperty()->inDictionary();
     }
@@ -746,21 +751,21 @@ class NativeObject : public JSObject
     }
 
     HeapSlot* getSlotAddress(uint32_t slot) {
-        
-
-
-
-
+        /*
+         * This can be used to get the address of the end of the slots for the
+         * object, which may be necessary when fetching zero-length arrays of
+         * slots (e.g. for callObjVarArray).
+         */
         MOZ_ASSERT(slotInRange(slot, SENTINEL_ALLOWED));
         return getSlotAddressUnchecked(slot);
     }
 
     const HeapSlot* getSlotAddress(uint32_t slot) const {
-        
-
-
-
-
+        /*
+         * This can be used to get the address of the end of the slots for the
+         * object, which may be necessary when fetching zero-length arrays of
+         * slots (e.g. for callObjVarArray).
+         */
         MOZ_ASSERT(slotInRange(slot, SENTINEL_ALLOWED));
         return getSlotAddressUnchecked(slot);
     }
@@ -792,18 +797,18 @@ class NativeObject : public JSObject
         getSlotAddressUnchecked(slot)->init(this, HeapSlot::Slot, slot, value);
     }
 
-    
-    
+    // MAX_FIXED_SLOTS is the biggest number of fixed slots our GC
+    // size classes will give an object.
     static const uint32_t MAX_FIXED_SLOTS = 16;
 
   protected:
     inline bool updateSlotsForSpan(ExclusiveContext* cx, size_t oldSpan, size_t newSpan);
 
   public:
-    
-
-
-
+    /*
+     * Trigger the write barrier on a range of slots that will no longer be
+     * reachable.
+     */
     void prepareSlotRangeForOverwrite(size_t start, size_t end) {
         for (size_t i = start; i < end; i++)
             getSlotAddressUnchecked(i)->HeapSlot::~HeapSlot();
@@ -847,7 +852,7 @@ class NativeObject : public JSObject
         setSlot(index, v);
     }
 
-    
+    /* For slots which are known to always be fixed, due to the way they are allocated. */
 
     HeapSlot& getFixedSlotRef(uint32_t slot) {
         MOZ_ASSERT(slot < numFixedSlots());
@@ -869,24 +874,32 @@ class NativeObject : public JSObject
         fixedSlots()[slot].init(this, HeapSlot::Slot, slot, value);
     }
 
-    
-
-
-
-
-
+    /*
+     * Get the number of dynamic slots to allocate to cover the properties in
+     * an object with the given number of fixed slots and slot span. The slot
+     * capacity is not stored explicitly, and the allocated size of the slot
+     * array is kept in sync with this count.
+     */
     static uint32_t dynamicSlotsCount(uint32_t nfixed, uint32_t span, const Class* clasp);
     static uint32_t dynamicSlotsCount(Shape* shape) {
         return dynamicSlotsCount(shape->numFixedSlots(), shape->slotSpan(), shape->getObjectClass());
     }
 
-    
+    /* Elements accessors. */
 
-    
-    static const uint32_t NELEMENTS_LIMIT = JS_BIT(28);
+    // The maximum size, in sizeof(Value), of the allocation used for an
+    // object's dense elements.  (This includes space used to store an
+    // ObjectElements instance.)
+    // |MAX_DENSE_ELEMENTS_ALLOCATION * sizeof(JS::Value)| shouldn't overflow
+    // int32_t (see elementsSizeMustNotOverflow).
+    static const uint32_t MAX_DENSE_ELEMENTS_ALLOCATION = (1 << 28) - 1;
+
+    // The maximum number of usable dense elements in an object.
+    static const uint32_t MAX_DENSE_ELEMENTS_COUNT =
+        MAX_DENSE_ELEMENTS_ALLOCATION - ObjectElements::VALUES_PER_HEADER;
 
     static void elementsSizeMustNotOverflow() {
-        static_assert((NativeObject::NELEMENTS_LIMIT - 1) <= INT32_MAX / sizeof(JS::Value),
+        static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= INT32_MAX / sizeof(JS::Value),
                       "every caller of this method require that an element "
                       "count multiplied by sizeof(Value) can't overflow "
                       "uint32_t (and sometimes int32_t ,too)");
@@ -896,7 +909,7 @@ class NativeObject : public JSObject
         return ObjectElements::fromElements(elements_);
     }
 
-    
+    /* Accessors for elements. */
     bool ensureElements(ExclusiveContext* cx, uint32_t capacity) {
         MOZ_ASSERT(!denseElementsAreCopyOnWrite());
         if (capacity > getDenseCapacity())
@@ -904,7 +917,7 @@ class NativeObject : public JSObject
         return true;
     }
 
-    static uint32_t goodAllocated(uint32_t n, uint32_t length);
+    static uint32_t goodElementsAllocationAmount(uint32_t n, uint32_t length);
     bool growElements(ExclusiveContext* cx, uint32_t newcap);
     void shrinkElements(ExclusiveContext* cx, uint32_t cap);
     void setDynamicElements(ObjectElements* header) {
@@ -925,8 +938,8 @@ class NativeObject : public JSObject
     inline void ensureDenseInitializedLengthNoPackedCheck(ExclusiveContext* cx,
                                                           uint32_t index, uint32_t extra);
 
-    
-    
+    // Run a post write barrier that encompasses multiple contiguous elements in a
+    // single step.
     inline void elementsRangeWriteBarrierPost(uint32_t start, uint32_t count) {
         for (size_t i = 0; i < count; i++) {
             const Value& v = elements_[start + i];
@@ -1002,18 +1015,18 @@ class NativeObject : public JSObject
         MOZ_ASSERT(srcStart + count <= getDenseInitializedLength());
         MOZ_ASSERT(!denseElementsAreCopyOnWrite());
 
-        
-
-
-
-
-
-
-
-
-
-
-
+        /*
+         * Using memmove here would skip write barriers. Also, we need to consider
+         * an array containing [A, B, C], in the following situation:
+         *
+         * 1. Incremental GC marks slot 0 of array (i.e., A), then returns to JS code.
+         * 2. JS code moves slots 1..2 into slots 0..1, so it contains [B, C, C].
+         * 3. Incremental GC finishes by marking slots 1 and 2 (i.e., C).
+         *
+         * Since normal marking never happens on B, it is very important that the
+         * write barrier is invoked here on B, despite the fact that it exists in
+         * the array before and after the move.
+        */
         if (JS::shadow::Zone::asShadowZone(zone())->needsIncrementalBarrier()) {
             if (dstStart < srcStart) {
                 HeapSlot* dst = elements_ + dstStart;
@@ -1054,47 +1067,47 @@ class NativeObject : public JSObject
         return getElementsHeader()->isCopyOnWrite();
     }
 
-    
+    /* Packed information for this object's elements. */
     inline bool writeToIndexWouldMarkNotPacked(uint32_t index);
     inline void markDenseElementsNotPacked(ExclusiveContext* cx);
 
-    
-    
-    
-    
-    
+    // Ensures that the object can hold at least index + extra elements. This
+    // returns DenseElement_Success on success, DenseElement_Failed on failure
+    // to grow the array, or DenseElement_Incomplete when the object is too
+    // sparse to grow (this includes the case of index + extra overflow). In
+    // the last two cases the object is kept intact.
     inline DenseElementResult ensureDenseElements(ExclusiveContext* cx,
                                                   uint32_t index, uint32_t extra);
 
     inline DenseElementResult extendDenseElements(ExclusiveContext* cx,
                                                   uint32_t requiredCapacity, uint32_t extra);
 
-    
+    /* Convert a single dense element to a sparse property. */
     static bool sparsifyDenseElement(ExclusiveContext* cx,
                                      HandleNativeObject obj, uint32_t index);
 
-    
+    /* Convert all dense elements to sparse properties. */
     static bool sparsifyDenseElements(ExclusiveContext* cx, HandleNativeObject obj);
 
-    
+    /* Small objects are dense, no matter what. */
     static const uint32_t MIN_SPARSE_INDEX = 1000;
 
-    
-
-
-
+    /*
+     * Element storage for an object will be sparse if fewer than 1/8 indexes
+     * are filled in.
+     */
     static const unsigned SPARSE_DENSITY_RATIO = 8;
 
-    
-
-
-
+    /*
+     * Check if after growing the object's elements will be too sparse.
+     * newElementsHint is an estimated number of elements to be added.
+     */
     bool willBeSparseElements(uint32_t requiredCapacity, uint32_t newElementsHint);
 
-    
-
-
-
+    /*
+     * After adding a sparse index to obj, see if it should be converted to use
+     * dense elements.
+     */
     static DenseElementResult maybeDensifySparseElements(ExclusiveContext* cx,
                                                          HandleNativeObject obj);
 
@@ -1115,13 +1128,13 @@ class NativeObject : public JSObject
     }
 
     inline bool hasDynamicElements() const {
-        
-
-
-
-
-
-
+        /*
+         * Note: for objects with zero fixed slots this could potentially give
+         * a spurious 'true' result, if the end of this object is exactly
+         * aligned with the end of its arena and dynamic slots are allocated
+         * immediately afterwards. Such cases cannot occur for dense arrays
+         * (which have at least two fixed slots) and can only result in a leak.
+         */
         return !hasEmptyElements() && elements_ != fixedElements();
     }
 
@@ -1133,11 +1146,11 @@ class NativeObject : public JSObject
         return elements_ == emptyObjectElements;
     }
 
-    
-
-
-
-
+    /*
+     * Get a pointer to the unused data in the object's allocation immediately
+     * following this object, for use with objects which allocate a larger size
+     * class than they need and store non-elements data inline.
+     */
     inline uint8_t* fixedData(size_t nslots) const;
 
     inline void privateWriteBarrierPre(void** oldval);
@@ -1151,14 +1164,14 @@ class NativeObject : public JSObject
             storeBuffer->putCellFromAnyThread(cellp);
     }
 
-    
+    /* Private data accessors. */
 
-    inline void*& privateRef(uint32_t nfixed) const { 
-        
-
-
-
-
+    inline void*& privateRef(uint32_t nfixed) const { /* XXX should be private, not protected! */
+        /*
+         * The private pointer of an object can hold any word sized value.
+         * Private pointers are stored immediately after the last fixed slot of
+         * the object.
+         */
         MOZ_ASSERT(nfixed == numFixedSlots());
         MOZ_ASSERT(hasPrivate());
         HeapSlot* end = &fixedSlots()[nfixed];
@@ -1192,7 +1205,7 @@ class NativeObject : public JSObject
         privateRef(numFixedSlots()) = data;
     }
 
-    
+    /* Access private data for an object with a known number of fixed slots. */
     inline void* getPrivate(uint32_t nfixed) const {
         return privateRef(nfixed);
     }
@@ -1201,7 +1214,7 @@ class NativeObject : public JSObject
     copy(ExclusiveContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
          HandleNativeObject templateObject);
 
-    
+    /* JIT Accessors */
     static size_t offsetOfElements() { return offsetof(NativeObject, elements_); }
     static size_t offsetOfFixedElements() {
         return sizeof(NativeObject) + sizeof(ObjectElements);
@@ -1214,8 +1227,8 @@ class NativeObject : public JSObject
     static size_t offsetOfSlots() { return offsetof(NativeObject, slots_); }
 };
 
-
-
+// Object class for plain native objects created using '{}' object literals,
+// 'new Object()', 'Object.create', etc.
 class PlainObject : public NativeObject
 {
   public:
@@ -1243,16 +1256,16 @@ IsObjectValueInCompartment(Value v, JSCompartment* comp)
 #endif
 
 
+/*** Standard internal methods *******************************************************************/
 
-
-
-
-
-
-
-
-
-
+/*
+ * These functions should follow the algorithms in ES6 draft rev 29 section 9.1
+ * ("Ordinary Object Internal Methods"). It's an ongoing project.
+ *
+ * Many native objects are not "ordinary" in ES6, so these functions also have
+ * to serve some of the special needs of Functions (9.2, 9.3, 9.4.1), Arrays
+ * (9.4.2), Strings (9.4.3), and so on.
+ */
 
 extern bool
 NativeDefineProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleId id,
@@ -1274,7 +1287,7 @@ NativeDefineElement(ExclusiveContext* cx, HandleNativeObject obj, uint32_t index
                     JSGetterOp getter, JSSetterOp setter, unsigned attrs,
                     ObjectOpResult& result);
 
-
+/* If the result out-param is omitted, throw on failure. */
 extern bool
 NativeDefineProperty(ExclusiveContext* cx, HandleNativeObject obj, HandleId id, HandleValue value,
                      JSGetterOp getter, JSSetterOp setter, unsigned attrs);
@@ -1320,13 +1333,13 @@ bool
 SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue v,
                    HandleValue receiver, ObjectOpResult& result);
 
-
-
-
-
-
-
-
+/*
+ * Indicates whether an assignment operation is qualified (`x.y = 0`) or
+ * unqualified (`y = 0`). In strict mode, the latter is an error if no such
+ * variable already exists.
+ *
+ * Used as an argument to NativeSetProperty.
+ */
 enum QualifiedBool {
     Unqualified = 0,
     Qualified = 1
@@ -1344,7 +1357,7 @@ extern bool
 NativeDeleteProperty(JSContext* cx, HandleNativeObject obj, HandleId id, ObjectOpResult& result);
 
 
-
+/*** SpiderMonkey nonstandard internal methods ***************************************************/
 
 template <AllowGC allowGC>
 extern bool
@@ -1353,23 +1366,23 @@ NativeLookupOwnProperty(ExclusiveContext* cx,
                         typename MaybeRooted<jsid, allowGC>::HandleType id,
                         typename MaybeRooted<Shape*, allowGC>::MutableHandleType propp);
 
-
-
-
-
-
-
-
+/*
+ * Get a property from `receiver`, after having already done a lookup and found
+ * the property on a native object `obj`.
+ *
+ * `shape` must not be null and must not be an implicit dense property. It must
+ * be present in obj's shape chain.
+ */
 extern bool
 NativeGetExistingProperty(JSContext* cx, HandleObject receiver, HandleNativeObject obj,
                           HandleShape shape, MutableHandleValue vp);
 
+/* * */
 
-
-
-
-
-
+/*
+ * If obj has an already-resolved data property for id, return true and
+ * store the property value in *vp.
+ */
 extern bool
 HasDataProperty(JSContext* cx, NativeObject* obj, jsid id, Value* vp);
 
@@ -1382,7 +1395,7 @@ HasDataProperty(JSContext* cx, NativeObject* obj, PropertyName* name, Value* vp)
 extern bool
 GetPropertyForNameLookup(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp);
 
-} 
+} /* namespace js */
 
 template <>
 inline bool
@@ -1390,17 +1403,17 @@ JSObject::is<js::NativeObject>() const { return isNative(); }
 
 namespace js {
 
-
+// Alternate to JSObject::as<NativeObject>() that tolerates null pointers.
 inline NativeObject*
 MaybeNativeObject(JSObject* obj)
 {
     return obj ? &obj->as<NativeObject>() : nullptr;
 }
 
-} 
+} // namespace js
 
 
-
+/*** Inline functions declared in jsobj.h that use the native declarations above *****************/
 
 inline bool
 js::HasProperty(JSContext* cx, HandleObject obj, HandleId id, bool* foundp)
@@ -1445,4 +1458,4 @@ js::SetElement(JSContext* cx, HandleObject obj, uint32_t index, HandleValue v,
     return NativeSetElement(cx, obj.as<NativeObject>(), index, v, receiver, result);
 }
 
-#endif 
+#endif /* vm_NativeObject_h */
