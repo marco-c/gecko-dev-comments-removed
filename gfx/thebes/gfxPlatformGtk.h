@@ -123,6 +123,8 @@ public:
       return true;
     }
 
+    bool SupportsApzTouchInput() const override;
+
     void FontsPrefsChanged(const char *aPref) override;
 
     
