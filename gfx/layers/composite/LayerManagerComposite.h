@@ -527,7 +527,7 @@ public:
 
 
 
-  nsIntRegion GetFullyRenderedRegion();
+  virtual nsIntRegion GetFullyRenderedRegion();
 
 protected:
   gfx::Matrix4x4 mShadowTransform;
