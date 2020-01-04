@@ -31,11 +31,6 @@
 
 #define NS_APP_DEFAULTS_50_DIR                  "DefRt"         // The root dir of all defaults dirs
 #define NS_APP_PREF_DEFAULTS_50_DIR             "PrfDef"
-#define NS_APP_PROFILE_DEFAULTS_50_DIR          "profDef"       // The profile defaults of the "current"
-                                                                
-#define NS_APP_PROFILE_DEFAULTS_NLOC_50_DIR     "ProfDefNoLoc"  // The profile defaults of the "default"
-                                                                
-                                                                
                                                                                                                        
 #define NS_APP_USER_PROFILES_ROOT_DIR           "DefProfRt"     // The dir where user profile dirs live.
 #define NS_APP_USER_PROFILES_LOCAL_ROOT_DIR     "DefProfLRt"  // The dir where user profile temp dirs live.
