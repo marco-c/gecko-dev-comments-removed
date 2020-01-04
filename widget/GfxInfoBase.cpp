@@ -1136,7 +1136,7 @@ nsresult GfxInfoBase::GetInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aResu
 const nsCString&
 GfxInfoBase::GetApplicationVersion()
 {
-  static nsAutoCString version;
+  static nsCString version;
   static bool versionInitialized = false;
   if (!versionInitialized) {
     
