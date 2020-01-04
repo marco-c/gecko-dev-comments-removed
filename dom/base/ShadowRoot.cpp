@@ -316,7 +316,7 @@ ShadowRoot::DistributeSingleNode(nsIContent* aContent)
     if (!isIndexFound) {
       
       
-      MOZ_ASSERT(childIterator.Seek(aContent),
+      MOZ_ASSERT(childIterator.Seek(aContent, nullptr),
                  "Trying to match a node that is not a candidate to be matched");
       insertionPoint->AppendMatchedNode(aContent);
     }

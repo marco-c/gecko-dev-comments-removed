@@ -64,12 +64,20 @@ public:
   
   
   
-  bool Seek(nsIContent* aChildToFind, nsIContent* aBound = nullptr)
+  void Seek(nsIContent* aChildToFind);
+
+  
+  
+  
+  
+  bool Seek(nsIContent* aChildToFind, nsIContent* aBound)
   {
     
     
     
 
+    
+    
     nsIContent* child;
     do {
       child = GetNextChild();

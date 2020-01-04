@@ -190,6 +190,30 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
   }
 }
 
+void
+ExplicitChildIterator::Seek(nsIContent* aChildToFind)
+{
+  if (aChildToFind->GetParent() == mParent &&
+      !aChildToFind->IsRootOfAnonymousSubtree()) {
+    
+    
+    MOZ_ASSERT(!ShadowRoot::IsShadowInsertionPoint(aChildToFind));
+    MOZ_ASSERT(!nsContentUtils::IsContentInsertionPoint(aChildToFind));
+    mChild = aChildToFind;
+    mIndexInInserted = 0;
+    mShadowIterator = nullptr;
+    mDefaultChild = nullptr;
+    mIsFirst = false;
+    return;
+  }
+
+  
+  
+
+  
+  Seek(aChildToFind, nullptr);
+}
+
 nsIContent*
 ExplicitChildIterator::Get()
 {
