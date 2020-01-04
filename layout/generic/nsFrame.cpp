@@ -2441,11 +2441,20 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
   if (usingSVGEffects) {
+    MOZ_ASSERT(StyleEffects()->HasFilters() ||
+               nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this));
+
     if (clipCapturedBy == ContainerItemType::eSVGEffects) {
       clipState.ExitStackingContextContents(&containerItemScrollClip);
     }
     
     buildingDisplayList.SetDirtyRect(dirtyRectOutsideSVGEffects);
+
+    if (StyleEffects()->HasFilters()) {
+      
+      resultList.AppendNewToTop(
+          new (aBuilder) nsDisplayFilter(aBuilder, this, &resultList, useOpacity));
+    }
 
     if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this)) {
       
