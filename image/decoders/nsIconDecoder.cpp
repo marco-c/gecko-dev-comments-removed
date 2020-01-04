@@ -19,13 +19,15 @@ using std::min;
 namespace mozilla {
 namespace image {
 
+static const uint32_t ICON_HEADER_SIZE = 2;
+
 nsIconDecoder::nsIconDecoder(RasterImage* aImage)
  : Decoder(aImage)
- , mExpectedDataLength(0)
- , mPixBytesRead(0)
- , mState(iconStateStart)
- , mWidth(-1)
- , mHeight(-1)
+ , mLexer(Transition::To(State::HEADER, ICON_HEADER_SIZE))
+ , mWidth()         
+ , mHeight()        
+ , mBytesPerRow()   
+ , mCurrentRow(0)
 {
   
 }
@@ -37,149 +39,110 @@ void
 nsIconDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 {
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aCount > 0);
+
+  Maybe<State> terminalState =
+    mLexer.Lex(aBuffer, aCount, [=](State aState,
+                                    const char* aData, size_t aLength) {
+      switch (aState) {
+        case State::HEADER:
+          return ReadHeader(aData);
+        case State::ROW_OF_PIXELS:
+          return ReadRowOfPixels(aData, aLength);
+        case State::FINISH:
+          return Finish();
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unknown State");
+          return Transition::Terminate(State::FAILURE);
+      }
+    });
+
+  if (!terminalState) {
+    return;  
+  }
+
+  if (*terminalState == State::FAILURE) {
+    PostDataError();
+    return;
+  }
+
+  MOZ_ASSERT(*terminalState == State::SUCCESS);
+}
+
+LexerTransition<nsIconDecoder::State>
+nsIconDecoder::ReadHeader(const char* aData)
+{
+  
+  mWidth  = uint8_t(aData[0]);
+  mHeight = uint8_t(aData[1]);
 
   
-  while (aCount > 0) {
-    switch (mState) {
-      case iconStateStart:
+  mBytesPerRow = mWidth * 4;
 
-        
-        mWidth = (uint8_t)*aBuffer;
+  
+  PostSize(mWidth, mHeight);
 
-        
-        aBuffer++;
-        aCount--;
-        mState = iconStateHaveHeight;
-        break;
+  
+  PostHasTransparency();
 
-      case iconStateHaveHeight:
+  
+  if (IsMetadataDecode()) {
+    return Transition::Terminate(State::SUCCESS);
+  }
 
-        
-        mHeight = (uint8_t)*aBuffer;
+  MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
+  IntSize targetSize = mDownscaler ? mDownscaler->TargetSize() : GetSize();
+  nsresult rv = AllocateFrame(0, targetSize,
+                              IntRect(IntPoint(), targetSize),
+                              gfx::SurfaceFormat::B8G8R8A8);
+  if (NS_FAILED(rv)) {
+    return Transition::Terminate(State::FAILURE);
+  }
+  MOZ_ASSERT(mImageData, "Should have a buffer now");
 
-        
-        PostSize(mWidth, mHeight);
-
-        PostHasTransparency();
-
-        if (HasError()) {
-          
-          mState = iconStateFinished;
-          return;
-        }
-
-        
-        if (IsMetadataDecode()) {
-          mState = iconStateFinished;
-          break;
-        }
-
-        
-        mExpectedDataLength = mWidth * mHeight * 4;
-
-        {
-          MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
-          IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
-                                           : GetSize();
-          nsresult rv = AllocateFrame(0, targetSize,
-                                      IntRect(IntPoint(), targetSize),
-                                      gfx::SurfaceFormat::B8G8R8A8);
-          if (NS_FAILED(rv)) {
-            mState = iconStateFinished;
-            return;
-          }
-        }
-
-        MOZ_ASSERT(mImageData, "Should have a buffer now");
-
-        if (mDownscaler) {
-          nsresult rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
-                                                mImageData,
-                                                 true);
-          if (NS_FAILED(rv)) {
-            mState = iconStateFinished;
-            return;
-          }
-        }
-
-        
-        aBuffer++;
-        aCount--;
-        mState = iconStateReadPixels;
-        break;
-
-      case iconStateReadPixels: {
-
-        
-        uint32_t bytesToRead = min(aCount, mExpectedDataLength - mPixBytesRead);
-
-        if (mDownscaler) {
-          uint8_t* row = mDownscaler->RowBuffer();
-          const uint32_t bytesPerRow = mWidth * 4;
-          const uint32_t rowOffset = mPixBytesRead % bytesPerRow;
-
-          
-          aCount -= bytesToRead;
-          mPixBytesRead += bytesToRead;
-
-          if (rowOffset > 0) {
-            
-            const uint32_t remaining = bytesPerRow - rowOffset;
-            memcpy(row + rowOffset, aBuffer, remaining);
-            aBuffer += remaining;
-            bytesToRead -= remaining;
-            mDownscaler->CommitRow();
-          }
-
-          
-          while (bytesToRead > bytesPerRow) {
-            memcpy(row, aBuffer, bytesPerRow);
-            aBuffer += bytesPerRow;
-            bytesToRead -= bytesPerRow;
-            mDownscaler->CommitRow();
-          }
-
-          
-          if (bytesToRead > 0) {
-            memcpy(row, aBuffer, bytesToRead);
-            aBuffer += bytesPerRow;
-            bytesToRead -= bytesPerRow;
-          }
-
-          if (mDownscaler->HasInvalidation()) {
-            DownscalerInvalidRect invalidRect = mDownscaler->TakeInvalidRect();
-            PostInvalidation(invalidRect.mOriginalSizeRect,
-                             Some(invalidRect.mTargetSizeRect));
-          }
-        } else {
-          
-          memcpy(mImageData + mPixBytesRead, aBuffer, bytesToRead);
-          aBuffer += bytesToRead;
-          aCount -= bytesToRead;
-          mPixBytesRead += bytesToRead;
-
-          
-          
-          PostInvalidation(IntRect(0, 0, mWidth, mHeight));
-        }
-
-        
-        if (mPixBytesRead == mExpectedDataLength) {
-          PostFrameStop();
-          PostDecodeDone();
-          mState = iconStateFinished;
-        }
-        break;
-      }
-
-      case iconStateFinished:
-
-        
-        aCount = 0;
-
-        break;
+  if (mDownscaler) {
+    nsresult rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
+                                          mImageData,  true);
+    if (NS_FAILED(rv)) {
+      return Transition::Terminate(State::FAILURE);
     }
   }
+
+  return Transition::To(State::ROW_OF_PIXELS, mBytesPerRow);
+}
+
+LexerTransition<nsIconDecoder::State>
+nsIconDecoder::ReadRowOfPixels(const char* aData, size_t aLength)
+{
+  if (mDownscaler) {
+    memcpy(mDownscaler->RowBuffer(), aData, mBytesPerRow);
+    mDownscaler->CommitRow();
+
+    if (mDownscaler->HasInvalidation()) {
+      DownscalerInvalidRect invalidRect = mDownscaler->TakeInvalidRect();
+      PostInvalidation(invalidRect.mOriginalSizeRect,
+                       Some(invalidRect.mTargetSizeRect));
+    }
+  } else {
+    memcpy(mImageData + mCurrentRow * mBytesPerRow, aData, mBytesPerRow);
+
+    PostInvalidation(IntRect(0, mCurrentRow, mWidth, 1));
+  }
+  mCurrentRow++;
+
+  return (mCurrentRow < mHeight)
+       ? Transition::To(State::ROW_OF_PIXELS, mBytesPerRow)
+       : Transition::To(State::FINISH, 0);
+}
+
+LexerTransition<nsIconDecoder::State>
+nsIconDecoder::Finish()
+{
+  PostFrameStop();
+  PostDecodeDone();
+
+  return Transition::Terminate(State::SUCCESS);
 }
 
 } 
