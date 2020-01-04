@@ -430,8 +430,13 @@
   
   padding-inline-end: 8px;
   
-  margin-inline-start: -20px;
+  margin-inline-start: -4px;
   margin-inline-end: -8px;
+}
+
+.side-menu-widget-group-title + .side-menu-widget-group-list .side-menu-widget-item-other {
+  
+  margin-inline-start: -20px;
 }
 
 .side-menu-widget-item.selected .side-menu-widget-item-other:not(.selected) {
