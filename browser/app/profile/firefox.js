@@ -1318,7 +1318,18 @@ pref("ui.key.menuAccessKeyFocuses", true);
 #endif
 
 
+#ifdef XP_LINUX
+
+
+
+
+
+
+
+pref("media.eme.enabled", false);
+#else
 pref("media.eme.enabled", true);
+#endif
 pref("media.eme.apiVisible", true);
 
 
@@ -1350,16 +1361,7 @@ pref("media.gmp-eme-adobe.enabled", true);
 
 #ifdef MOZ_WIDEVINE_EME
 pref("media.gmp-widevinecdm.visible", true);
-
-
-
-
-
-#ifdef XP_LINUX
-pref("media.gmp-widevinecdm.enabled", false);
-#else
 pref("media.gmp-widevinecdm.enabled", true);
-#endif
 #endif
 
 
