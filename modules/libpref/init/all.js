@@ -579,11 +579,7 @@ pref("media.video_stats.enabled", true);
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
-pref("layers.async-pan-zoom.enabled", false);
-
-#ifdef MOZ_WIDGET_UIKIT
 pref("layers.async-pan-zoom.enabled", true);
-#endif
 
 
 pref("layout.event-regions.enabled", false);
