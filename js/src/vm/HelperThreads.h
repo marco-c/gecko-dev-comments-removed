@@ -69,8 +69,7 @@ class GlobalHelperThreadState
     typedef Vector<GCParallelTask*, 0, SystemAllocPolicy> GCParallelTaskVector;
 
     
-    using HelperThreadVector = Vector<HelperThread, 0, SystemAllocPolicy>;
-    UniquePtr<HelperThreadVector> threads;
+    HelperThread* threads;
 
   private:
     
@@ -275,7 +274,7 @@ HelperThreadState()
 struct HelperThread
 {
     mozilla::Maybe<PerThreadData> threadData;
-    mozilla::Maybe<Thread> thread;
+    PRThread* thread;
 
     
 
