@@ -356,6 +356,9 @@ class nsXMLContentSerializer : public nsIContentSerializer {
   bool mDoWrap;
 
   
+  bool mAllowLineBreaking;
+
+  
   uint32_t   mMaxColumn;
 
   
