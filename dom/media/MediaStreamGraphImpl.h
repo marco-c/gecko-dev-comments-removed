@@ -157,7 +157,8 @@ public:
     nsresult rv = svc->GetProfileBeforeChange(getter_AddRefs(barrier));
     if (!barrier) {
       
-      rv = svc->GetContentChildShutdown(getter_AddRefs(barrier));
+      
+      rv = svc->GetXpcomWillShutdown(getter_AddRefs(barrier));
     }
     MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
     MOZ_RELEASE_ASSERT(barrier);

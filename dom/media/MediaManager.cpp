@@ -111,7 +111,8 @@ already_AddRefed<nsIAsyncShutdownClient> GetShutdownPhase() {
   nsresult rv = svc->GetProfileBeforeChange(getter_AddRefs(shutdownPhase));
   if (!shutdownPhase) {
     
-    rv = svc->GetContentChildShutdown(getter_AddRefs(shutdownPhase));
+    
+    rv = svc->GetXpcomWillShutdown(getter_AddRefs(shutdownPhase));
   }
   MOZ_RELEASE_ASSERT(shutdownPhase);
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
