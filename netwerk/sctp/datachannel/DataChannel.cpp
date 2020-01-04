@@ -613,7 +613,7 @@ DataChannelConnection::CompleteConnect(TransportFlow *flow, TransportLayer::Stat
       } else {
         
         paddrparams.spp_pathmtu = 1200; 
-        paddrparams.spp_flags &= !SPP_PMTUD_ENABLE;
+        paddrparams.spp_flags &= ~SPP_PMTUD_ENABLE;
         paddrparams.spp_flags |= SPP_PMTUD_DISABLE;
         opt_len = (socklen_t)sizeof(struct sctp_paddrparams);
         r = usrsctp_setsockopt(mMasterSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
