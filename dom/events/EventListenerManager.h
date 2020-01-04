@@ -467,6 +467,8 @@ protected:
 
   nsIDocShell* GetDocShellForTarget();
 
+  void ProcessApzAwareEventListenerAdd();
+
   
 
 
