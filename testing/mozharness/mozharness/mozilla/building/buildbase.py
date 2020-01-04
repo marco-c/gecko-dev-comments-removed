@@ -949,28 +949,6 @@ or run without that action (ie: --no-{action})"
                 check_test_env[env_var] = env_value % dirs
         return check_test_env
 
-    def _query_moz_symbols_buildid(self):
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        c = self.config
-        moz_symbols_extra_buildid = ''
-        if c.get('use_platform_in_symbols_extra_buildid'):
-            moz_symbols_extra_buildid += self.stage_platform
-        if c.get('use_branch_in_symbols_extra_buildid'):
-            if moz_symbols_extra_buildid:
-                moz_symbols_extra_buildid += '-%s' % (self.branch,)
-            else:
-                moz_symbols_extra_buildid = self.branch
-        return moz_symbols_extra_buildid
-
     def _query_who(self):
         """ looks for who triggered the build with a change.
 
@@ -1629,9 +1607,6 @@ or run without that action (ie: --no-{action})"
         """builds application."""
         env = self.query_build_env()
         env.update(self.query_mach_build_env())
-        symbols_extra_buildid = self._query_moz_symbols_buildid()
-        if symbols_extra_buildid:
-            env['MOZ_SYMBOLS_EXTRA_BUILDID'] = symbols_extra_buildid
 
         
         
