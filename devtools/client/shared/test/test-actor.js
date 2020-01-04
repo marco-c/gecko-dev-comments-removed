@@ -82,6 +82,21 @@ var TestActor = exports.TestActor = protocol.ActorClass({
     }
     return node;
   },
+  
+
+
+
+  getNumberOfElementMatches: protocol.method(function (selector,
+                                                       root=this.content.document) {
+    return root.querySelectorAll(selector).length;
+  }, {
+    request: {
+      selector: Arg(0, "string"),
+    },
+    response: {
+      value: RetVal("number")
+    }
+  }),
 
   
 
