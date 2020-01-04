@@ -411,7 +411,7 @@ nsFrame::~nsFrame()
 {
   MOZ_COUNT_DTOR(nsFrame);
 
-  MOZ_ASSERT(GetVisibility() != Visibility::APPROXIMATELY_VISIBLE,
+  MOZ_ASSERT(!IsVisibleOrMayBecomeVisibleSoon(),
              "Visible nsFrame is being destroyed");
 
   NS_IF_RELEASE(mContent);
@@ -550,7 +550,7 @@ nsFrame::Init(nsIContent*       aContent,
 
     if (HasAnyStateBits(NS_FRAME_IN_POPUP) && TrackingVisibility()) {
       
-      IncApproximateVisibleCount();
+      IncVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
     }
   }
   const nsStyleDisplay *disp = StyleDisplay();
@@ -603,7 +603,7 @@ nsFrame::Init(nsIContent*       aContent,
 
   if (PresContext()->PresShell()->AssumeAllFramesVisible() &&
       TrackingVisibility()) {
-    IncApproximateVisibleCount();
+    IncVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
   }
 
   DidSetStyleContext(nullptr);
@@ -724,7 +724,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
   DisableVisibilityTracking();
 
   
-  PresContext()->GetPresShell()->RemoveFrameFromApproximatelyVisibleList(this);
+  PresContext()->GetPresShell()->MarkFrameNonvisible(this);
 
   shell->NotifyDestroyingFrame(this);
 
@@ -1466,6 +1466,18 @@ nsIFrame::GetCrossDocChildLists(nsTArray<ChildList>* aLists)
   GetChildLists(aLists);
 }
 
+static Visibility
+VisibilityStateAsVisibility(const nsIFrame::VisibilityState& aState)
+{
+  if (aState.mInDisplayPortCounter > 0) {
+    return Visibility::IN_DISPLAYPORT;  
+  }
+  if (aState.mApproximateCounter > 0) {
+    return Visibility::MAY_BECOME_VISIBLE;
+  }
+  return Visibility::NONVISIBLE;
+}
+
 Visibility
 nsIFrame::GetVisibility() const
 {
@@ -1475,14 +1487,12 @@ nsIFrame::GetVisibility() const
 
   bool isSet = false;
   FrameProperties props = Properties();
-  uint32_t visibleCount = props.Get(VisibilityStateProperty(), &isSet);
+  VisibilityState state = props.Get(VisibilityStateProperty(), &isSet);
 
   MOZ_ASSERT(isSet, "Should have a VisibilityStateProperty value "
                     "if NS_FRAME_VISIBILITY_IS_TRACKED is set");
 
-  return visibleCount > 0
-       ? Visibility::APPROXIMATELY_VISIBLE
-       : Visibility::APPROXIMATELY_NONVISIBLE;
+  return VisibilityStateAsVisibility(state);
 }
 
 void
@@ -1494,7 +1504,7 @@ nsIFrame::UpdateVisibilitySynchronously()
   }
 
   if (presShell->AssumeAllFramesVisible()) {
-    presShell->EnsureFrameInApproximatelyVisibleList(this);
+    presShell->MarkFrameVisibleInDisplayPort(this);
     return;
   }
 
@@ -1535,9 +1545,9 @@ nsIFrame::UpdateVisibilitySynchronously()
   }
 
   if (visible) {
-    presShell->EnsureFrameInApproximatelyVisibleList(this);
+    presShell->MarkFrameVisibleInDisplayPort(this);
   } else {
-    presShell->RemoveFrameFromApproximatelyVisibleList(this);
+    presShell->MarkFrameNonvisible(this);
   }
 }
 
@@ -1556,7 +1566,7 @@ nsIFrame::EnableVisibilityTracking()
   
   
   AddStateBits(NS_FRAME_VISIBILITY_IS_TRACKED);
-  props.Set(VisibilityStateProperty(), 0);
+  props.Set(VisibilityStateProperty(), VisibilityState{0, 0});
 
   nsIPresShell* presShell = PresContext()->PresShell();
   if (!presShell) {
@@ -1579,66 +1589,87 @@ nsIFrame::DisableVisibilityTracking()
 
   bool isSet = false;
   FrameProperties props = Properties();
-  uint32_t visibleCount = props.Remove(VisibilityStateProperty(), &isSet);
+  VisibilityState state = props.Remove(VisibilityStateProperty(), &isSet);
 
   MOZ_ASSERT(isSet, "Should have a VisibilityStateProperty value "
                     "if NS_FRAME_VISIBILITY_IS_TRACKED is set");
 
   RemoveStateBits(NS_FRAME_VISIBILITY_IS_TRACKED);
 
-  if (visibleCount == 0) {
+  Visibility previousVisibility = VisibilityStateAsVisibility(state);
+  if (previousVisibility == Visibility::NONVISIBLE) {
     return;  
   }
 
   
-  OnVisibilityChange(Visibility::APPROXIMATELY_NONVISIBLE);
+  OnVisibilityChange(Visibility::NONVISIBLE);
 }
 
 void
-nsIFrame::DecApproximateVisibleCount(Maybe<OnNonvisible> aNonvisibleAction
-                                       )
+nsIFrame::DecVisibilityCount(VisibilityCounter aCounter,
+                             Maybe<OnNonvisible> aNonvisibleAction )
 {
   MOZ_ASSERT(GetStateBits() & NS_FRAME_VISIBILITY_IS_TRACKED);
 
   bool isSet = false;
   FrameProperties props = Properties();
-  uint32_t visibleCount = props.Get(VisibilityStateProperty(), &isSet);
+  VisibilityState state = props.Get(VisibilityStateProperty(), &isSet);
 
   MOZ_ASSERT(isSet, "Should have a VisibilityStateProperty value "
                     "if NS_FRAME_VISIBILITY_IS_TRACKED is set");
-  MOZ_ASSERT(visibleCount > 0, "Frame is already nonvisible and we're "
-                               "decrementing its visible count?");
+  MOZ_ASSERT_IF(aCounter == VisibilityCounter::MAY_BECOME_VISIBLE,
+                state.mApproximateCounter > 0);
+  MOZ_ASSERT_IF(aCounter == VisibilityCounter::IN_DISPLAYPORT,
+                state.mInDisplayPortCounter > 0);
 
-  visibleCount--;
-  props.Set(VisibilityStateProperty(), visibleCount);
-  if (visibleCount > 0) {
-    return;
+  Visibility previousVisibility = VisibilityStateAsVisibility(state);
+
+  if (aCounter == VisibilityCounter::MAY_BECOME_VISIBLE) {
+    state.mApproximateCounter--;
+  } else {
+    state.mInDisplayPortCounter--;
+  }
+
+  props.Set(VisibilityStateProperty(), state);
+
+  Visibility newVisibility = VisibilityStateAsVisibility(state);
+  if (newVisibility == previousVisibility) {
+    return;  
   }
 
   
-  OnVisibilityChange(Visibility::APPROXIMATELY_NONVISIBLE, aNonvisibleAction);
+  OnVisibilityChange(newVisibility, aNonvisibleAction);
 }
 
 void
-nsIFrame::IncApproximateVisibleCount()
+nsIFrame::IncVisibilityCount(VisibilityCounter aCounter)
 {
   MOZ_ASSERT(GetStateBits() & NS_FRAME_VISIBILITY_IS_TRACKED);
 
   bool isSet = false;
   FrameProperties props = Properties();
-  uint32_t visibleCount = props.Get(VisibilityStateProperty(), &isSet);
+  VisibilityState state = props.Get(VisibilityStateProperty(), &isSet);
 
   MOZ_ASSERT(isSet, "Should have a VisibilityStateProperty value "
                     "if NS_FRAME_VISIBILITY_IS_TRACKED is set");
 
-  visibleCount++;
-  props.Set(VisibilityStateProperty(), visibleCount);
-  if (visibleCount > 1) {
-    return;
+  Visibility previousVisibility = VisibilityStateAsVisibility(state);
+
+  if (aCounter == VisibilityCounter::MAY_BECOME_VISIBLE) {
+    state.mApproximateCounter++;
+  } else {
+    state.mInDisplayPortCounter++;
+  }
+
+  props.Set(VisibilityStateProperty(), state);
+
+  Visibility newVisibility = VisibilityStateAsVisibility(state);
+  if (newVisibility == previousVisibility) {
+    return;  
   }
 
   
-  OnVisibilityChange(Visibility::APPROXIMATELY_VISIBLE);
+  OnVisibilityChange(newVisibility);
 }
 
 void
@@ -9158,7 +9189,7 @@ nsIFrame::AddInPopupStateBitToDescendants(nsIFrame* aFrame)
   if (!aFrame->HasAnyStateBits(NS_FRAME_IN_POPUP) &&
       aFrame->TrackingVisibility()) {
     
-    aFrame->IncApproximateVisibleCount();
+    aFrame->IncVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
   }
 
   aFrame->AddStateBits(NS_FRAME_IN_POPUP);
@@ -9188,7 +9219,7 @@ nsIFrame::RemoveInPopupStateBitFromDescendants(nsIFrame* aFrame)
   if (aFrame->TrackingVisibility()) {
     
     
-    aFrame->DecApproximateVisibleCount();
+    aFrame->DecVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
   }
 
   AutoTArray<nsIFrame::ChildList,4> childListArray;

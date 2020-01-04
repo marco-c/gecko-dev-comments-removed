@@ -424,6 +424,7 @@ public:
   template<typename T=void>
   using PropertyDescriptor = const mozilla::FramePropertyDescriptor<T>*;
   using Visibility = mozilla::Visibility;
+  using VisibilityCounter = mozilla::VisibilityCounter;
 
   typedef mozilla::FrameProperties FrameProperties;
   typedef mozilla::layers::Layer Layer;
@@ -1104,17 +1105,32 @@ public:
 
   
   
+  bool IsVisibleOrMayBecomeVisibleSoon() const
+  {
+    Visibility visibility = GetVisibility();
+    return visibility == Visibility::MAY_BECOME_VISIBLE ||
+           visibility == Visibility::IN_DISPLAYPORT;
+  }
+
+  
+  
   
   
   
   
   void UpdateVisibilitySynchronously();
 
+  struct VisibilityState
+  {
+    unsigned int mApproximateCounter : 16;
+    unsigned int mInDisplayPortCounter : 16;
+  };
+
   
   
   
   
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, uint32_t);
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, VisibilityState);
 
 protected:
 
@@ -1172,8 +1188,16 @@ public:
 
 
 
-  void DecApproximateVisibleCount(Maybe<OnNonvisible> aNonvisibleAction = Nothing());
-  void IncApproximateVisibleCount();
+
+
+
+
+
+
+
+  void DecVisibilityCount(VisibilityCounter aCounter,
+                          Maybe<OnNonvisible> aNonvisibleAction = Nothing());
+  void IncVisibilityCount(VisibilityCounter aCounter);
 
 
   

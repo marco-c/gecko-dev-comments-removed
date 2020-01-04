@@ -277,9 +277,8 @@ nsImageLoadingContent::OnUnlockedDraw()
     return;
   }
 
-  if (frame->GetVisibility() == Visibility::APPROXIMATELY_VISIBLE) {
-    
-    return;
+  if (frame->IsVisibleOrMayBecomeVisibleSoon()) {
+    return;  
   }
 
   nsPresContext* presContext = frame->PresContext();
@@ -292,7 +291,7 @@ nsImageLoadingContent::OnUnlockedDraw()
     return;
   }
 
-  presShell->EnsureFrameInApproximatelyVisibleList(frame);
+  presShell->MarkFrameVisibleInDisplayPort(frame);
 }
 
 nsresult
@@ -519,7 +518,7 @@ nsImageLoadingContent::FrameDestroyed(nsIFrame* aFrame)
 
   nsIPresShell* presShell = presContext ? presContext->GetPresShell() : nullptr;
   if (presShell) {
-    presShell->RemoveFrameFromApproximatelyVisibleList(aFrame);
+    presShell->MarkFrameNonvisible(aFrame);
   }
 }
 
@@ -1430,12 +1429,13 @@ nsImageLoadingContent::OnVisibilityChange(Visibility aNewVisibility,
                                           const Maybe<OnNonvisible>& aNonvisibleAction)
 {
   switch (aNewVisibility) {
-    case Visibility::APPROXIMATELY_VISIBLE:
+    case Visibility::MAY_BECOME_VISIBLE:
+    case Visibility::IN_DISPLAYPORT:
       TrackImage(mCurrentRequest);
       TrackImage(mPendingRequest);
       break;
 
-    case Visibility::APPROXIMATELY_NONVISIBLE:
+    case Visibility::NONVISIBLE:
       UntrackImage(mCurrentRequest, aNonvisibleAction);
       UntrackImage(mPendingRequest, aNonvisibleAction);
       break;
@@ -1465,7 +1465,7 @@ nsImageLoadingContent::TrackImage(imgIRequest* aImage)
   
   
   nsIFrame* frame = GetOurPrimaryFrame();
-  if ((frame && frame->GetVisibility() == Visibility::APPROXIMATELY_NONVISIBLE) ||
+  if ((frame && !frame->IsVisibleOrMayBecomeVisibleSoon()) ||
       (!frame && !mFrameCreateCalled)) {
     return;
   }
