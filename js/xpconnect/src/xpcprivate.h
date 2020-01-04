@@ -553,7 +553,7 @@ public:
                                 const JS::GCDescription& desc);
     static void FinalizeCallback(JSFreeOp* fop,
                                  JSFinalizeStatus status,
-                                 bool isZoneGC,
+                                 bool isCompartmentGC,
                                  void* data);
     static void WeakPointerZoneGroupCallback(JSContext* cx, void* data);
     static void WeakPointerCompartmentCallback(JSContext* cx, JSCompartment* comp, void* data);
@@ -1301,9 +1301,7 @@ class XPCNativeSet final
   public:
     static XPCNativeSet* GetNewOrUsed(const nsIID* iid);
     static XPCNativeSet* GetNewOrUsed(nsIClassInfo* classInfo);
-    static XPCNativeSet* GetNewOrUsed(XPCNativeSet* otherSet,
-                                      XPCNativeInterface* newInterface,
-                                      uint16_t position);
+    static XPCNativeSet* GetNewOrUsed(XPCNativeSetKey* key);
 
     
     
@@ -1380,9 +1378,7 @@ class XPCNativeSet final
 
   protected:
     static XPCNativeSet* NewInstance(nsTArray<RefPtr<XPCNativeInterface>>&& array);
-    static XPCNativeSet* NewInstanceMutate(XPCNativeSet*       otherSet,
-                                           XPCNativeInterface* newInterface,
-                                           uint16_t            position);
+    static XPCNativeSet* NewInstanceMutate(XPCNativeSetKey* key);
     XPCNativeSet()
       : mMemberCount(0), mInterfaceCount(0), mMarked(0)
     {
