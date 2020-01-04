@@ -27,10 +27,6 @@ config = {
     'download_tooltool': True,
 
     
-    'firefox_media_repo': 'https://github.com/mjzffr/firefox-media-tests.git',
-    'firefox_media_branch': 'master',
-
-    
     'test_suite': 'media-tests',
 
     'suite_definitions': {
@@ -46,7 +42,6 @@ config = {
 
     'default_actions': [
         'clobber',
-        'checkout',
         'download-and-extract',
         'create-virtualenv',
         'install',
@@ -55,18 +50,3 @@ config = {
 
 }
 
-
-
-if platform.system() == 'windows':
-    gittool = [
-        sys.executable,
-        os.path.join(external_tools_path, 'gittool.py')
-    ]
-else:
-    gittool = os.path.join(external_tools_path, 'gittool.py')
-
-exes = {
-    'gittool.py' : gittool,
-}
-
-config['exes'] = exes
