@@ -271,7 +271,7 @@ struct FixedBuffer
     buffer[0] = '\0';
   }
 
-  char buffer[1000];
+  char buffer[500];
   uint32_t curlen;
 };
 
@@ -306,6 +306,7 @@ EXPORT_XPCOM_API(void)
 NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
               const char* aFile, int32_t aLine)
 {
+  FixedBuffer nonPIDBuf;
   FixedBuffer buf;
   const char* sevString = "WARNING";
 
@@ -326,32 +327,31 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
       aSeverity = NS_DEBUG_WARNING;
   }
 
-#  define PrintToBuffer(...) PR_sxprintf(StuffFixedBuffer, &buf, __VA_ARGS__)
-
-  
-  PrintToBuffer("[");
-  if (sMultiprocessDescription) {
-    PrintToBuffer("%s ", sMultiprocessDescription);
-  }
-
-  PrintToBuffer("%d] ", base::GetCurrentProcId());
-
-  PrintToBuffer("%s: ", sevString);
-
+#define PRINT_TO_NONPID_BUFFER(...) PR_sxprintf(StuffFixedBuffer, &nonPIDBuf, __VA_ARGS__)
+  PRINT_TO_NONPID_BUFFER("%s: ", sevString);
   if (aStr) {
-    PrintToBuffer("%s: ", aStr);
+    PRINT_TO_NONPID_BUFFER("%s: ", aStr);
   }
   if (aExpr) {
-    PrintToBuffer("'%s', ", aExpr);
+    PRINT_TO_NONPID_BUFFER("'%s', ", aExpr);
   }
   if (aFile) {
-    PrintToBuffer("file %s, ", aFile);
+    PRINT_TO_NONPID_BUFFER("file %s, ", aFile);
   }
   if (aLine != -1) {
-    PrintToBuffer("line %d", aLine);
+    PRINT_TO_NONPID_BUFFER("line %d", aLine);
   }
+#undef PRINT_TO_NONPID_BUFFER
 
-#  undef PrintToBuffer
+  
+#define PRINT_TO_BUFFER(...) PR_sxprintf(StuffFixedBuffer, &buf, __VA_ARGS__)
+  PRINT_TO_BUFFER("[");
+  if (sMultiprocessDescription) {
+    PRINT_TO_BUFFER("%s ", sMultiprocessDescription);
+  }
+  PRINT_TO_BUFFER("%d] %s", base::GetCurrentProcId(), nonPIDBuf.buffer);
+#undef PRINT_TO_BUFFER
+
 
   
 #if !defined(XP_WIN)
@@ -385,12 +385,14 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
       
       
       if (XRE_IsParentProcess()) {
+        
+        
         nsCString note("xpcom_runtime_abort(");
-        note += buf.buffer;
+        note += nonPIDBuf.buffer;
         note += ")";
         CrashReporter::AppendAppNotesToCrashReport(note);
         CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AbortMessage"),
-                                           nsDependentCString(buf.buffer));
+                                           nsDependentCString(nonPIDBuf.buffer));
       }
 #endif  
 
