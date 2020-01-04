@@ -2,6 +2,7 @@
 
 
 
+#include "EditorUtils.h"
 #include "TypeInState.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/Selection.h"
@@ -15,7 +16,6 @@
 #include "nsDebug.h"
 #include "nsEditRules.h"
 #include "nsEditor.h"
-#include "nsEditorUtils.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLCSSUtils.h"

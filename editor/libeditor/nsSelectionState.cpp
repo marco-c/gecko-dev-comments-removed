@@ -5,13 +5,13 @@
 
 #include "nsSelectionState.h"
 
+#include "EditorUtils.h"                
 #include "mozilla/Assertions.h"         
 #include "mozilla/dom/Selection.h"      
 #include "nsAString.h"                  
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"                    
 #include "nsEditor.h"                   
-#include "nsEditorUtils.h"              
 #include "nsError.h"                    
 #include "nsIContent.h"                 
 #include "nsIDOMCharacterData.h"        
@@ -278,14 +278,15 @@ nsRangeUpdater::SelAdjDeleteNode(nsINode* aNode)
 
     
     nsCOMPtr<nsINode> oldStart;
-    if (nsEditorUtils::IsDescendantOf(item->startNode, aNode)) {
+    if (EditorUtils::IsDescendantOf(item->startNode, aNode)) {
       oldStart = item->startNode;  
       item->startNode   = parent;
       item->startOffset = offset;
     }
 
     
-    if ((item->endNode == oldStart) || nsEditorUtils::IsDescendantOf(item->endNode, aNode))
+    if (item->endNode == oldStart ||
+        EditorUtils::IsDescendantOf(item->endNode, aNode))
     {
       item->endNode   = parent;
       item->endOffset = offset;

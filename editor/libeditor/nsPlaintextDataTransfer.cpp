@@ -3,6 +3,7 @@
 
 
 
+#include "EditorUtils.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/Selection.h"
@@ -13,7 +14,6 @@
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsEditor.h"
-#include "nsEditorUtils.h"
 #include "nsError.h"
 #include "nsIClipboard.h"
 #include "nsIContent.h"

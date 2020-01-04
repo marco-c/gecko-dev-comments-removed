@@ -16,6 +16,7 @@
 #include "DeleteRangeTxn.h"             
 #include "DeleteTextTxn.h"              
 #include "EditAggregateTxn.h"           
+#include "EditorUtils.h"                
 #include "EditTxn.h"                    
 #include "IMETextTxn.h"                 
 #include "InsertNodeTxn.h"              
@@ -47,7 +48,6 @@
 #include "nsDOMString.h"                
 #include "nsDebug.h"                    
 #include "nsEditorEventListener.h"      
-#include "nsEditorUtils.h"              
 #include "nsError.h"                    
 #include "nsFocusManager.h"             
 #include "nsFrameSelection.h"           
@@ -3811,7 +3811,7 @@ nsEditor::SplitNodeDeep(nsIContent& aNode,
                         nsIContent** aOutRightNode)
 {
   MOZ_ASSERT(&aSplitPointParent == &aNode ||
-             nsEditorUtils::IsDescendantOf(&aSplitPointParent, &aNode));
+             EditorUtils::IsDescendantOf(&aSplitPointParent, &aNode));
   int32_t offset = aSplitPointOffset;
 
   nsCOMPtr<nsIContent> leftNode, rightNode;
