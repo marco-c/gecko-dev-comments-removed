@@ -29,11 +29,8 @@ public:
   
   
   
-  static bool CanHandleMediaType(const nsACString& aMIMEType,
-                                 const nsAString& aCodecs,
-                                 bool& aOutContainsAAC,
-                                 bool& aOutContainsH264,
-                                 bool& aOutContainsMP3);
+  static bool CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
+                                 const nsAString& aCodecs);
 
   static bool CanHandleMediaType(const nsAString& aMIMEType);
 
