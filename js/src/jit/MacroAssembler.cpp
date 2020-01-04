@@ -718,12 +718,12 @@ MacroAssembler::checkAllocatorState(Label* fail)
     if (js::gc::TraceEnabled() || MemProfiler::enabled())
         jump(fail);
 
-# ifdef JS_GC_ZEAL
+#ifdef JS_GC_ZEAL
     
     branch32(Assembler::NotEqual,
-             AbsoluteAddress(GetJitContext()->runtime->addressOfGCZeal()), Imm32(0),
+             AbsoluteAddress(GetJitContext()->runtime->addressOfGCZealModeBits()), Imm32(0),
              fail);
-# endif
+#endif
 
     
     

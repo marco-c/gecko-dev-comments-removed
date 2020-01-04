@@ -1092,7 +1092,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     bool                gcInitialized;
 
-    int gcZeal() { return gc.zeal(); }
+    bool hasZealMode(js::gc::ZealMode mode) { return gc.hasZealMode(mode); }
 
     void lockGC() {
         assertCanLock(js::GCLock);
