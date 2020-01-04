@@ -271,7 +271,7 @@ this.IsolationTestTools = {
 
 
 
-  runTests(aURL, aGetResultFunc, aCompareResultFunc) {
+  runTests(aURL, aGetResultFuncs, aCompareResultFunc) {
     let pageURL;
     let firstFrameSetting;
     let secondFrameSetting;
@@ -282,6 +282,10 @@ this.IsolationTestTools = {
       pageURL = aURL.url;
       firstFrameSetting = aURL.firstFrameSetting;
       secondFrameSetting = aURL.secondFrameSetting;
+    }
+
+    if (!Array.isArray(aGetResultFuncs)) {
+      aGetResultFuncs = [aGetResultFuncs];
     }
 
     let tabSettings = [
@@ -303,32 +307,34 @@ this.IsolationTestTools = {
                                                         tabSettings[tabSettingB],
                                                         secondFrameSetting);
 
-        
-        let resultA = yield aGetResultFunc(tabInfoA.browser);
-        let resultB = yield aGetResultFunc(tabInfoB.browser);
+        for (let getResultFunc of aGetResultFuncs) {
+          
+          let resultA = yield getResultFunc(tabInfoA.browser);
+          let resultB = yield getResultFunc(tabInfoB.browser);
+
+          
+          let result = false;
+          let shouldIsolate = (aMode !== TEST_MODE_NO_ISOLATION) &&
+                              tabSettingA !== tabSettingB;
+          if (aCompareResultFunc) {
+            result = yield aCompareResultFunc(shouldIsolate, resultA, resultB);
+          } else {
+            result = shouldIsolate ? resultA !== resultB :
+                                     resultA === resultB;
+          }
+
+          let msg = `Testing ${TEST_MODE_NAMES[aMode]} for ` +
+            `isolation ${shouldIsolate ? "on" : "off"} with TabSettingA ` +
+            `${tabSettingA} and tabSettingB ${tabSettingB}` +
+            `, resultA = ${resultA}, resultB = ${resultB}`;
+
+          ok(result, msg);
+        }
 
         
         yield BrowserTestUtils.removeTab(tabInfoA.tab);
         yield BrowserTestUtils.removeTab(tabInfoB.tab);
-
-        
-        let result = false;
-        let shouldIsolate = (aMode !== TEST_MODE_NO_ISOLATION) &&
-                            tabSettingA !== tabSettingB;
-        if (aCompareResultFunc) {
-          result = yield aCompareResultFunc(shouldIsolate, resultA, resultB);
-        } else {
-          result = shouldIsolate ? resultA !== resultB :
-                                   resultA === resultB;
-        }
-
-        let msg = `Testing ${TEST_MODE_NAMES[aMode]} for ` +
-                  `isolation ${shouldIsolate ? "on" : "off"} with TabSettingA ` +
-                  `${tabSettingA} and tabSettingB ${tabSettingB}`;
-
-        ok(result, msg);
       }
-
     });
   }
 };
