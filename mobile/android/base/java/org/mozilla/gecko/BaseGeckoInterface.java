@@ -53,12 +53,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     
     @Override
-    public LocationListener getLocationListener() {
-        return null;
-    }
-
-    
-    @Override
     public void doRestart() {}
 
     @Override
