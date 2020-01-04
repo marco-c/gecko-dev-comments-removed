@@ -1878,6 +1878,28 @@ function synthesizeQueryTextRect(aOffset, aLength, aWindow)
 
 
 
+
+
+
+
+function synthesizeQueryTextRectArray(aOffset, aLength, aWindow)
+{
+  var utils = _getDOMWindowUtils(aWindow);
+  if (!utils) {
+    return nullptr;
+  }
+  return utils.sendQueryContentEvent(utils.QUERY_TEXT_RECT_ARRAY,
+                                     aOffset, aLength, 0, 0,
+                                     QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK);
+}
+
+
+
+
+
+
+
+
 function synthesizeQueryEditorRect(aWindow)
 {
   var utils = _getDOMWindowUtils(aWindow);
