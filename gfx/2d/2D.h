@@ -1007,14 +1007,14 @@ public:
                          SourceSurface* aMask,
                          const Matrix& aMaskTransform,
                          const IntRect& aBounds = IntRect(),
-                         bool aCopyBackground = false) { MOZ_CRASH(); }
+                         bool aCopyBackground = false) { MOZ_CRASH("GFX: PushLayer"); }
 
   
 
 
 
 
-  virtual void PopLayer() { MOZ_CRASH(); }
+  virtual void PopLayer() { MOZ_CRASH("GFX: PopLayer"); }
 
   
 
@@ -1179,7 +1179,7 @@ public:
                                  const IntSize &aSize,
                                  SurfaceFormat aFormat)
   {
-    MOZ_CRASH();
+    MOZ_CRASH("GFX: InitWithGrContext");
   }
 #endif
 

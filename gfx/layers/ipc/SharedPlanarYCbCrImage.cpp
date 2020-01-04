@@ -192,7 +192,6 @@ SharedPlanarYCbCrImage::Allocate(PlanarYCbCrData& aData)
   
   if (!mTextureClient->Lock(OpenMode::OPEN_READ) || !mTextureClient->BorrowMappedYCbCrData(mapped)) {
     MOZ_CRASH("GFX: Cannot lock or borrow mapped YCbCr");
-    return false;
   }
 
   aData.mYChannel = mapped.y.data;

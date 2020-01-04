@@ -112,7 +112,8 @@ public:
 
   virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override
   {
-    MOZ_CRASH(); 
+    MOZ_CRASH("GFX: TextureHostFileMapping::GetAsSurface not implemented");
+                 
                  
                  
   }
