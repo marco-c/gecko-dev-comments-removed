@@ -697,7 +697,9 @@ FetchEvent::RespondWith(JSContext* aCx, Promise& aArg, ErrorResult& aRv)
                            spec, line, column);
   aArg.AppendNativeHandler(handler);
 
-  WaitUntil(aArg, aRv);
+  
+  
+  mPromises.AppendElement(&aArg);
 }
 
 void
@@ -739,6 +741,94 @@ FetchEvent::ReportCanceled()
              NS_LITERAL_CSTRING("InterceptionCanceledWithURL"), &requestURL);
 }
 
+namespace {
+
+class WaitUntilHandler final : public PromiseNativeHandler
+{
+  WorkerPrivate* mWorkerPrivate;
+  const nsCString mScope;
+  nsCString mSourceSpec;
+  uint32_t mLine;
+  uint32_t mColumn;
+  nsString mRejectValue;
+
+  ~WaitUntilHandler()
+  {
+  }
+
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  WaitUntilHandler(WorkerPrivate* aWorkerPrivate, JSContext* aCx)
+    : mWorkerPrivate(aWorkerPrivate)
+    , mScope(mWorkerPrivate->WorkerName())
+    , mLine(0)
+    , mColumn(0)
+  {
+    mWorkerPrivate->AssertIsOnWorkerThread();
+
+    
+    
+    nsJSUtils::GetCallingLocation(aCx, mSourceSpec, &mLine, &mColumn);
+  }
+
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    
+  }
+
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    mWorkerPrivate->AssertIsOnWorkerThread();
+
+    nsCString spec;
+    uint32_t line = 0;
+    uint32_t column = 0;
+    ExtractErrorValues(aCx, aValue, spec, &line, &column, mRejectValue);
+
+    
+    if (!spec.IsEmpty()) {
+      mSourceSpec = spec;
+      mLine = line;
+      mColumn = column;
+    }
+
+    nsCOMPtr<nsIRunnable> runnable =
+      NS_NewRunnableMethod(this, &WaitUntilHandler::ReportOnMainThread);
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
+      NS_DispatchToMainThread(runnable.forget())));
+  }
+
+  void
+  ReportOnMainThread()
+  {
+    AssertIsOnMainThread();
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+
+    
+    nsString message;
+    message.AppendLiteral("Service worker event waitUntil() was passed a "
+                          "promise that rejected with '");
+    message.Append(mRejectValue);
+    message.AppendLiteral("'.");
+
+    
+    
+    
+    
+    
+    
+
+    swm->ReportToAllClients(mScope, message, NS_ConvertUTF8toUTF16(mSourceSpec),
+                            EmptyString(), mLine, mColumn,
+                            nsIScriptError::errorFlag);
+  }
+};
+
+NS_IMPL_ISUPPORTS0(WaitUntilHandler)
+
+} 
+
 NS_IMPL_ADDREF_INHERITED(FetchEvent, ExtendableEvent)
 NS_IMPL_RELEASE_INHERITED(FetchEvent, ExtendableEvent)
 
@@ -753,7 +843,7 @@ ExtendableEvent::ExtendableEvent(EventTarget* aOwner)
 }
 
 void
-ExtendableEvent::WaitUntil(Promise& aPromise, ErrorResult& aRv)
+ExtendableEvent::WaitUntil(JSContext* aCx, Promise& aPromise, ErrorResult& aRv)
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
@@ -761,6 +851,12 @@ ExtendableEvent::WaitUntil(Promise& aPromise, ErrorResult& aRv)
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
+
+  
+  
+  RefPtr<WaitUntilHandler> handler =
+    new WaitUntilHandler(GetCurrentThreadWorkerPrivate(), aCx);
+  aPromise.AppendNativeHandler(handler);
 
   mPromises.AppendElement(&aPromise);
 }
