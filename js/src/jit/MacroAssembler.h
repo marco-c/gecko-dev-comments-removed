@@ -932,7 +932,10 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void branchTestString(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
     inline void branchTestSymbol(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
     inline void branchTestNull(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
+    inline void branchTestObject(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
 
+    
+    
     
     
     inline void branchTestUndefined(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
@@ -972,6 +975,12 @@ class MacroAssembler : public MacroAssemblerSpecific
         DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
     
+    inline void branchTestObject(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
+    inline void branchTestObject(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
+    inline void branchTestObject(Condition cond, const ValueOperand& value, Label* label)
+        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+
+    
     
     inline void branchTestInt32Truthy(bool truthy, const ValueOperand& value, Label* label)
         DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
@@ -1006,6 +1015,9 @@ class MacroAssembler : public MacroAssemblerSpecific
         DEFINED_ON(arm, arm64, x86_shared);
     template <typename T>
     inline void branchTestNullImpl(Condition cond, const T& t, Label* label)
+        DEFINED_ON(arm, arm64, x86_shared);
+    template <typename T>
+    inline void branchTestObjectImpl(Condition cond, const T& t, Label* label)
         DEFINED_ON(arm, arm64, x86_shared);
 
     

@@ -1328,29 +1328,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         return jumpWithPatch(label, Always, documentation);
     }
 
-    void branchTestObject(Condition cond, Register tag, Label* label) {
-        Condition c = testObject(cond, tag);
-        B(label, c);
-    }
-
-    void branchTestObject(Condition cond, const Address& address, Label* label) {
-        Condition c = testObject(cond, address);
-        B(label, c);
-    }
-
-    
-    
-    void branchTestObject(Condition cond, const ValueOperand& src, Label* label) {
-        Condition c = testObject(cond, src);
-        B(label, c);
-    }
-
-    
-    
-    void branchTestObject(Condition cond, const BaseIndex& address, Label* label) {
-        Condition c = testObject(cond, address);
-        B(label, c);
-    }
     template <typename T>
     void branchTestGCThing(Condition cond, const T& src, Label* label) {
         Condition c = testGCThing(cond, src);

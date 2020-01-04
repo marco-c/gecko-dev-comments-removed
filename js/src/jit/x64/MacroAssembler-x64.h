@@ -683,34 +683,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
         cmp32(reg, tag);
     }
 
-    void branchTestObject(Condition cond, Register tag, Label* label) {
-        cond = testObject(cond, tag);
-        j(cond, label);
-    }
-
-    
-    
-    
-    
-    void branchTestObject(Condition cond, const Address& src, Label* label) {
-        cond = testObject(cond, src);
-        j(cond, label);
-    }
-
-    
-    
-    void branchTestObject(Condition cond, const ValueOperand& src, Label* label) {
-        cond = testObject(cond, src);
-        j(cond, label);
-    }
-
-    
-    
-    void branchTestObject(Condition cond, const BaseIndex& address, Label* label) {
-        cond = testObject(cond, address);
-        j(cond, label);
-    }
-
     template <typename T>
     void branchTestGCThing(Condition cond, const T& src, Label* label) {
         cond = testGCThing(cond, src);
