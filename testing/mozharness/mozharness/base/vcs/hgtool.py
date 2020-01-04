@@ -79,10 +79,10 @@ class HgtoolVCS(ScriptMixin, LogMixin, TransferMixin):
         if self._is_windows():
             
             if 'SYSTEMROOT' not in env:
-                env['SYSTEMROOT'] = os.environ.get('SYSTEMROOT')
+                env['SYSTEMROOT'] = os.environ.get('SYSTEMROOT', '')
             
             if 'HOME' not in env:
-                env['HOME'] = os.environ.get('HOME')
+                env['HOME'] = os.environ.get('HOME', '')
 
         cmd = self.hgtool[:]
 
