@@ -5273,7 +5273,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(false)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(false)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5323,13 +5322,16 @@ nsDisplayTransform::Init(nsDisplayListBuilder* aBuilder)
   mHasBounds = false;
   mStoredList.SetClip(aBuilder, DisplayItemClip::NoClip());
   mStoredList.SetVisibleRect(mChildrenVisibleRect);
+  
+  
+  
+  mPrerender = ShouldPrerenderTransformedContent(aBuilder, mFrame);
 }
 
 nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        nsIFrame *aFrame, nsDisplayList *aList,
                                        const nsRect& aChildrenVisibleRect,
-                                       uint32_t aIndex,
-                                       bool aIsFullyVisible)
+                                       uint32_t aIndex)
   : nsDisplayItem(aBuilder, aFrame)
   , mStoredList(aBuilder, aFrame, aList)
   , mTransformGetter(nullptr)
@@ -5340,7 +5342,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(false)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(aIsFullyVisible)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5363,7 +5364,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(false)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(false)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5387,7 +5387,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   , mNoExtendContext(false)
   , mIsTransformSeparator(true)
   , mTransformPreserves3DInited(false)
-  , mIsFullyVisible(false)
 {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
@@ -5789,9 +5788,14 @@ nsDisplayOpacity::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 }
 
 bool
+nsDisplayTransform::ShouldPrerender() {
+  return mPrerender;
+}
+
+bool
 nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 {
-  return mIsFullyVisible;
+  return mPrerender;
 }
 
  bool
@@ -5935,7 +5939,7 @@ nsDisplayTransform::ShouldBuildLayerEvenIfInvisible(nsDisplayListBuilder* aBuild
   
   
   
-  return MayBeAnimated(aBuilder) || mFrame->Combines3DTransformWithAncestors();
+  return ShouldPrerender() || mFrame->Combines3DTransformWithAncestors();
 }
 
 already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBuilder,
@@ -5948,7 +5952,9 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
 
   const Matrix4x4& newTransformMatrix = GetTransformForRendering();
 
-  uint32_t flags = FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR;
+  uint32_t flags = ShouldPrerender() ?
+    FrameLayerBuilder::CONTAINER_NOT_CLIPPED_BY_ANCESTORS : 0;
+  flags |= FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR;
   RefPtr<ContainerLayer> container = aManager->GetLayerBuilder()->
     BuildContainerLayerFor(aBuilder, aManager, mFrame, this, mStoredList.GetChildren(),
                            aContainerParameters, &newTransformMatrix, flags);
@@ -5968,7 +5974,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
   nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(container, aBuilder,
                                                            this, mFrame,
                                                            eCSSProperty_transform);
-  if (mIsFullyVisible) {
+  if (ShouldPrerender()) {
     if (MayBeAnimated(aBuilder)) {
       
       
@@ -6036,7 +6042,8 @@ bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder *aBuilder,
 
 
   nsRect untransformedVisibleRect;
-  if (!UntransformVisibleRect(aBuilder, &untransformedVisibleRect))
+  if (ShouldPrerender() ||
+      !UntransformVisibleRect(aBuilder, &untransformedVisibleRect))
   {
     untransformedVisibleRect = mFrame->GetVisualOverflowRectRelativeToSelf();
   }
@@ -6181,7 +6188,9 @@ nsDisplayTransform::GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap)
     return nsRect();
   }
 
-  nsRect untransformedBounds = mStoredList.GetBounds(aBuilder, aSnap);
+  nsRect untransformedBounds = ShouldPrerender() ?
+    mFrame->GetVisualOverflowRectRelativeToSelf() :
+    mStoredList.GetBounds(aBuilder, aSnap);
   
   float factor = mFrame->PresContext()->AppUnitsPerDevPixel();
   mBounds = nsLayoutUtils::MatrixTransformRect(untransformedBounds,
@@ -6218,7 +6227,9 @@ nsDisplayTransform::ComputeBounds(nsDisplayListBuilder* aBuilder)
 
 
   bool snap;
-  nsRect untransformedBounds = mStoredList.GetBounds(aBuilder, &snap);
+  nsRect untransformedBounds = ShouldPrerender() ?
+    mFrame->GetVisualOverflowRectRelativeToSelf() :
+    mStoredList.GetBounds(aBuilder, &snap);
   
   float factor = mFrame->PresContext()->AppUnitsPerDevPixel();
   nsRect rect =
@@ -6250,7 +6261,14 @@ nsRegion nsDisplayTransform::GetOpaqueRegion(nsDisplayListBuilder *aBuilder,
 {
   *aSnap = false;
   nsRect untransformedVisible;
-  if (!UntransformVisibleRect(aBuilder, &untransformedVisible)) {
+  
+  
+  
+  
+  
+  
+  if (ShouldPrerender() ||
+      !UntransformVisibleRect(aBuilder, &untransformedVisible)) {
       return nsRegion();
   }
 
@@ -6578,7 +6596,8 @@ nsDisplayVR::BuildLayer(nsDisplayListBuilder* aBuilder,
                         const ContainerLayerParameters& aContainerParameters)
 {
   ContainerLayerParameters newContainerParameters = aContainerParameters;
-  uint32_t flags = FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR;
+  uint32_t flags = FrameLayerBuilder::CONTAINER_NOT_CLIPPED_BY_ANCESTORS |
+                   FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR;
   RefPtr<ContainerLayer> container = aManager->GetLayerBuilder()->
     BuildContainerLayerFor(aBuilder, aManager, mFrame, this, &mList,
                            newContainerParameters, nullptr, flags);
