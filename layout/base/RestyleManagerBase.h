@@ -64,6 +64,13 @@ public:
     mOverflowChangedTracker.RemoveFrame(aFrame);
   }
 
+  
+  
+  
+  
+  
+  nsresult ProcessRestyledFrames(nsStyleChangeList& aChangeList);
+
 protected:
   void ContentStateChangedInternal(Element* aElement,
                                    EventStates aStateMask,
@@ -125,11 +132,6 @@ protected:
 
   static nsIFrame*
   GetNextBlockInInlineSibling(FramePropertyTable* aPropTable, nsIFrame* aFrame);
-
-  static nsresult
-  ProcessRestyledFrames(nsStyleChangeList& aChangeList,
-                        nsPresContext& aPresContext,
-                        OverflowChangedTracker& aOverflowChangedTracker);
 
   
 

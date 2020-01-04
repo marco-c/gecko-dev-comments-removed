@@ -137,17 +137,6 @@ private:
 public:
 
   
-  
-  
-  
-  
-  nsresult ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
-    return base_type::ProcessRestyledFrames(aChangeList,
-                                            *PresContext(),
-                                            mOverflowChangedTracker);
-  }
-
-  
 
 
 
