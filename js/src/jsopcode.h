@@ -772,9 +772,32 @@ GetBytecodeInteger(jsbytecode* pc)
 
 class PCCounts
 {
+    
+
+
+
+    size_t pcOffset_;
+
+    
+
+
+
     uint64_t numExec_;
 
  public:
+    explicit PCCounts(size_t off)
+      : pcOffset_(off),
+        numExec_(0)
+    {}
+
+    size_t pcOffset() const {
+        return pcOffset_;
+    }
+
+    
+    bool operator<(const PCCounts& rhs) {
+        return pcOffset_ < rhs.pcOffset_;
+    }
 
     uint64_t& numExec() {
         return numExec_;
