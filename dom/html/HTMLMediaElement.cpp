@@ -514,7 +514,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(HTMLMediaElement)
   NS_INTERFACE_MAP_ENTRY(nsIDOMHTMLMediaElement)
-  NS_INTERFACE_MAP_ENTRY(nsIObserver)
   NS_INTERFACE_MAP_ENTRY(nsIAudioChannelAgentCallback)
 NS_INTERFACE_MAP_END_INHERITING(nsGenericHTMLElement)
 
@@ -2250,10 +2249,48 @@ HTMLMediaElement::LookupMediaElementURITable(nsIURI* aURI)
   return nullptr;
 }
 
+class HTMLMediaElement::ShutdownObserver : public nsIObserver {
+public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD Observe(nsISupports*, const char* aTopic, const char16_t*) override {
+    MOZ_DIAGNOSTIC_ASSERT(mWeak);
+    if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
+      mWeak->NotifyShutdownEvent();
+    }
+    return NS_OK;
+  }
+  void Subscribe(HTMLMediaElement* aPtr) {
+    MOZ_DIAGNOSTIC_ASSERT(!mWeak);
+    mWeak = aPtr;
+    nsContentUtils::RegisterShutdownObserver(this);
+  }
+  void Unsubscribe() {
+    MOZ_DIAGNOSTIC_ASSERT(mWeak);
+    mWeak = nullptr;
+    nsContentUtils::UnregisterShutdownObserver(this);
+  }
+  void AddRefMediaElement() {
+    mWeak->AddRef();
+  }
+  void ReleaseMediaElement() {
+    mWeak->Release();
+  }
+private:
+  virtual ~ShutdownObserver() {
+    MOZ_DIAGNOSTIC_ASSERT(!mWeak);
+  }
+  
+  HTMLMediaElement* mWeak = nullptr;
+};
+
+NS_IMPL_ISUPPORTS(HTMLMediaElement::ShutdownObserver, nsIObserver)
+
 HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : nsGenericHTMLElement(aNodeInfo),
     mWatchManager(this, AbstractThread::MainThread()),
     mSrcStreamPausedCurrentTime(-1),
+    mShutdownObserver(new ShutdownObserver),
     mCurrentLoadID(0),
     mNetworkState(nsIDOMHTMLMediaElement::NETWORK_EMPTY),
     mReadyState(nsIDOMHTMLMediaElement::HAVE_NOTHING, "HTMLMediaElement::mReadyState"),
@@ -2330,12 +2367,16 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   
   
   mWatchManager.Watch(mReadyState, &HTMLMediaElement::UpdateReadyStateInternal);
+
+  mShutdownObserver->Subscribe(this);
 }
 
 HTMLMediaElement::~HTMLMediaElement()
 {
   NS_ASSERTION(!mHasSelfReference,
                "How can we be destroyed if we're still holding a self reference?");
+
+  mShutdownObserver->Unsubscribe();
 
   if (mVideoFrameContainer) {
     mVideoFrameContainer->ForgetElement();
@@ -4248,6 +4289,10 @@ bool HTMLMediaElement::IsHidden() const
 
 VideoFrameContainer* HTMLMediaElement::GetVideoFrameContainer()
 {
+  if (mShuttingDown) {
+    return nullptr;
+  }
+
   if (mVideoFrameContainer)
     return mVideoFrameContainer;
 
@@ -4608,7 +4653,7 @@ void HTMLMediaElement::AddRemoveSelfReference()
       
       
       
-      nsContentUtils::RegisterShutdownObserver(this);
+      mShutdownObserver->AddRefMediaElement();
     } else {
       
       
@@ -4623,19 +4668,14 @@ void HTMLMediaElement::AddRemoveSelfReference()
 
 void HTMLMediaElement::DoRemoveSelfReference()
 {
-  
-  
-  nsContentUtils::UnregisterShutdownObserver(this);
+  mShutdownObserver->ReleaseMediaElement();
 }
 
-nsresult HTMLMediaElement::Observe(nsISupports* aSubject,
-                                   const char* aTopic, const char16_t* aData)
+void HTMLMediaElement::NotifyShutdownEvent()
 {
-  if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
-    mShuttingDown = true;
-    AddRemoveSelfReference();
-  }
-  return NS_OK;
+  mShuttingDown = true;
+  ResetState();
+  AddRemoveSelfReference();
 }
 
 bool

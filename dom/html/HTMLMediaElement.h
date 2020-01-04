@@ -79,7 +79,6 @@ class VideoTrackList;
 
 class HTMLMediaElement : public nsGenericHTMLElement,
                          public nsIDOMHTMLMediaElement,
-                         public nsIObserver,
                          public MediaDecoderOwner,
                          public nsIAudioChannelAgentCallback,
                          public PrincipalChangeObserver<DOMMediaStream>
@@ -113,8 +112,6 @@ public:
 
   
   NS_DECL_NSIDOMHTMLMEDIAELEMENT
-
-  NS_DECL_NSIOBSERVER
 
   NS_DECL_NSIAUDIOCHANNELAGENTCALLBACK
 
@@ -740,6 +737,7 @@ protected:
   class MediaStreamTrackListener;
   class StreamListener;
   class StreamSizeListener;
+  class ShutdownObserver;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
   void SetDecoder(MediaDecoder* aDecoder) {
@@ -986,6 +984,11 @@ protected:
 
 
   void DoRemoveSelfReference();
+
+  
+
+
+  void NotifyShutdownEvent();
 
   
 
@@ -1239,6 +1242,8 @@ protected:
   
   
   RefPtr<StreamSizeListener> mMediaStreamSizeListener;
+
+  const RefPtr<ShutdownObserver> mShutdownObserver;
 
   
   
