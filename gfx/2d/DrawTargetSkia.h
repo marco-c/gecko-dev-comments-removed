@@ -117,6 +117,11 @@ public:
                          SurfaceFormat aFormat) override;
 #endif
 
+  
+  static size_t GetMaxSurfaceSize() {
+    return 32767;
+  }
+
   operator std::string() const {
     std::stringstream stream;
     stream << "DrawTargetSkia(" << this << ")";
