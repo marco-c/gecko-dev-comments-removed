@@ -683,9 +683,10 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
   if (mDownscaler) {
     
     
+    
     rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
                                  mImageData, mMayHaveTransparency,
-                                  true);
+                                  mH.mHeight >= 0);
     if (NS_FAILED(rv)) {
       return Transition::TerminateFailure();
     }
