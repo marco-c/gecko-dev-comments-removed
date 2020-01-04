@@ -539,10 +539,6 @@ StorageActors.createActor({
       case "cleared":
         this.storageActor.update("cleared", "cookies", hosts);
         break;
-
-      case "reload":
-        this.storageActor.update("reloaded", "cookies", hosts);
-        break;
     }
     return null;
   },
@@ -2249,7 +2245,7 @@ let StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
 
 
   update(action, storeType, data) {
-    if (action == "cleared" || action == "reloaded") {
+    if (action == "cleared") {
       let toSend = {};
       toSend[storeType] = data;
       events.emit(this, "stores-" + action, toSend);
