@@ -139,8 +139,8 @@ typedef struct CapturingContentInfo {
 
 
 #define NS_IPRESSHELL_IID \
-{ 0x6654f67f, 0xc5aa, 0x4934, \
-  { 0xb6, 0x11, 0x6d, 0x8d, 0x01, 0xe6, 0x19, 0x3f } }
+{ 0xf17842ee, 0xf1f0, 0x4193, \
+  { 0x81, 0x4f, 0x70, 0xd7, 0x06, 0xb6, 0x70, 0x60 } }
 
 
 #define VERIFY_REFLOW_ON                    0x01
@@ -907,6 +907,20 @@ public:
 
 
   bool IsPaintingSuppressed() const { return mPaintingSuppressed; }
+
+  
+
+
+
+
+  virtual void PausePainting() = 0;
+
+  
+
+
+
+
+  virtual void ResumePainting() = 0;
 
   
 
@@ -1781,6 +1795,7 @@ protected:
   bool mFontSizeInflationForceEnabled;
   bool mFontSizeInflationDisabledInMasterProcess;
   bool mFontSizeInflationEnabled;
+  bool mPaintingIsFrozen;
 
   
   bool mFontSizeInflationEnabledIsDirty;
