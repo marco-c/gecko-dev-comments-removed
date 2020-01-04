@@ -60,7 +60,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS AutoStackArena {
+class MOZ_RAII AutoStackArena {
 public:
   AutoStackArena()
     : mOwnsStackArena(false)

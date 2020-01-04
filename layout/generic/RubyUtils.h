@@ -96,7 +96,7 @@ public:
 
 
 
-class MOZ_STACK_CLASS AutoRubyTextContainerArray final
+class MOZ_RAII AutoRubyTextContainerArray final
   : public AutoTArray<nsRubyTextContainerFrame*, RTC_ARRAY_SIZE>
 {
 public:

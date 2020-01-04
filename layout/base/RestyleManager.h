@@ -919,7 +919,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS AutoDisplayContentsAncestorPusher final
+class MOZ_RAII AutoDisplayContentsAncestorPusher final
 {
  public:
   typedef mozilla::dom::Element Element;
