@@ -7,6 +7,7 @@ def test(mod, path, entity = None):
   import re
   
   if mod not in ("netwerk", "dom", "toolkit", "security/manager",
+                 "devtools/shared",
                  "mobile",
                  "b2g"):
     return "ignore"

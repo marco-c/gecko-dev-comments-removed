@@ -5,7 +5,7 @@
 
 
 
-const URL_FOUND = "chrome://global/locale/devtools/debugger.properties";
+const URL_FOUND = "chrome://devtools-shared/locale/debugger.properties";
 const URL_NOT_FOUND = "chrome://this/is/not/here.js";
 
 
