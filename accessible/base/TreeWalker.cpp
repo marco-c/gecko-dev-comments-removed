@@ -288,7 +288,14 @@ TreeWalker::AccessibleFor(nsIContent* aNode, uint32_t aFlags, bool* aSkipSubtree
 
   
   if (!(aFlags & eWalkCache) && mContext->IsAcceptableChild(aNode)) {
-    if (mDoc->RelocateARIAOwnedIfNeeded(aNode)) {
+    
+    
+    
+    
+    
+    
+    
+    if (mDoc->RelocateARIAOwnedIfNeeded(aNode) && !aNode->IsXULElement()) {
       *aSkipSubtree = true;
       return nullptr;
     }
