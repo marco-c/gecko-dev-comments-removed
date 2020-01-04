@@ -600,11 +600,7 @@ DOMMediaStream::RemoveTrack(MediaStreamTrack& aTrack)
   
   
   
-  
-  
-  if (!aTrack.Ended()) {
-    BlockPlaybackTrack(toRemove);
-  }
+  BlockPlaybackTrack(toRemove);
 
   DebugOnly<bool> removed = mTracks.RemoveElement(toRemove);
   MOZ_ASSERT(removed);
