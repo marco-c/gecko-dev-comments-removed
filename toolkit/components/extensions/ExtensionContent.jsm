@@ -429,7 +429,7 @@ var DocumentManager = {
 
       
       if (this.extensionPageWindows.has(windowId)) {
-        let context = this.extensionWindows.get(windowId);
+        let context = this.extensionPageWindows.get(windowId);
         context.close();
         this.extensionPageWindows.delete(windowId);
       }
