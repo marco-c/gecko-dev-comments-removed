@@ -29,7 +29,7 @@
 #include "AudioOutput.h"
 #include "AudioOffloadPlayerBase.h"
 #include "MediaDecoderOwner.h"
-#include "MediaOmxCommonDecoder.h"
+#include "MediaEventSource.h"
 
 namespace mozilla {
 
@@ -58,6 +58,8 @@ class WakeLock;
 
 
 
+class MediaOmxCommonDecoder;
+
 class AudioOffloadPlayer : public AudioOffloadPlayerBase
 {
   typedef android::Mutex Mutex;
@@ -73,7 +75,7 @@ public:
     SEEK_COMPLETE
   };
 
-  AudioOffloadPlayer(MediaOmxCommonDecoder* aDecoder = nullptr);
+  AudioOffloadPlayer(MediaOmxCommonDecoder* aDecoder);
 
   ~AudioOffloadPlayer();
 
@@ -175,9 +177,6 @@ private:
   
   MediaBuffer* mInputBuffer;
 
-  
-  MediaOmxCommonDecoder* mObserver;
-
   TimeStamp mLastFireUpdateTime;
 
   
@@ -191,6 +190,15 @@ private:
   
   
   RefPtr<mozilla::dom::WakeLock> mWakeLock;
+
+  MediaEventProducer<void> mOnPositionChanged;
+  MediaEventProducer<void> mOnPlaybackEnded;
+  MediaEventProducer<void> mOnPlayerTearDown;
+  MediaEventProducer<MediaDecoderEventVisibility> mOnSeekingStarted;
+  MediaEventListener mPositionChanged;
+  MediaEventListener mPlaybackEnded;
+  MediaEventListener mPlayerTearDown;
+  MediaEventListener mSeekingStarted;
 
   
   
