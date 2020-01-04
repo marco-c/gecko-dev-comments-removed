@@ -8259,8 +8259,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
         MOZ_ASSERT(script->ionScript()->isRecompiling());
         
         
-        if (!Invalidate(cx, script,  false,  false))
-            return false;
+        Invalidate(cx, script,  false,  false);
     }
 
     if (scriptCounts_ && !script->hasScriptCounts() && !script->initScriptCounts(cx))
