@@ -144,6 +144,20 @@ var selectNode = Task.async(function*(selector, inspector, reason="test") {
 
 
 
+function clearCurrentNodeSelection(inspector) {
+  info("Clearing the current selection");
+  let updated = inspector.once("inspector-updated");
+  inspector.selection.setNodeFront(null);
+  return updated;
+}
+
+
+
+
+
+
+
+
 var openInspectorForURL = Task.async(function*(url, hostType) {
   let tab = yield addTab(url);
   let { inspector, toolbox, testActor } = yield openInspector(hostType);
@@ -671,4 +685,34 @@ function containsFocus(doc, container) {
     elm = elm.parentNode;
   }
   return false;
+}
+
+
+
+
+
+
+
+var waitForTab = Task.async(function*() {
+  info("Waiting for a tab to open");
+  yield once(gBrowser.tabContainer, "TabOpen");
+  let tab = gBrowser.selectedTab;
+  let browser = tab.linkedBrowser;
+  yield once(browser, "load", true);
+  info("The tab load completed");
+  return tab;
+});
+
+
+
+
+
+
+
+
+
+function synthesizeKeys(input, win) {
+  for (let key of input.split("")) {
+    EventUtils.synthesizeKey(key, {}, win);
+  }
 }

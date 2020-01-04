@@ -173,10 +173,15 @@ function synthesizeKeyFromKeyTag(key) {
 
 
 
-function once(target, eventName, useCapture = false) {
+
+
+
+
+function waitForNEvents(target, eventName, numTimes, useCapture = false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
 
   let deferred = promise.defer();
+  let count = 0;
 
   for (let [add, remove] of [
     ["addEventListener", "removeEventListener"],
@@ -186,14 +191,31 @@ function once(target, eventName, useCapture = false) {
     if ((add in target) && (remove in target)) {
       target[add](eventName, function onEvent(...aArgs) {
         info("Got event: '" + eventName + "' on " + target + ".");
-        target[remove](eventName, onEvent, useCapture);
-        deferred.resolve.apply(deferred, aArgs);
+        if (++count == numTimes) {
+          target[remove](eventName, onEvent, useCapture);
+          deferred.resolve.apply(deferred, aArgs);
+        }
       }, useCapture);
       break;
     }
   }
 
   return deferred.promise;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function once(target, eventName, useCapture = false) {
+  return waitForNEvents(target, eventName, 1, useCapture);
 }
 
 
@@ -220,6 +242,20 @@ function waitForTick() {
   let deferred = promise.defer();
   executeSoon(deferred.resolve);
   return deferred.promise;
+}
+
+
+
+
+
+
+
+
+
+function wait(ms) {
+  let def = promise.defer();
+  content.setTimeout(def.resolve, ms);
+  return def.promise;
 }
 
 

@@ -66,58 +66,6 @@ function openRuleView() {
 
 
 
-function clearCurrentNodeSelection(inspector) {
-  info("Clearing the current selection");
-  let updated = inspector.once("inspector-updated");
-  inspector.selection.setNodeFront(null);
-  return updated;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForNEvents(target, eventName, numTimes, useCapture = false) {
-  info("Waiting for event: '" + eventName + "' on " + target + ".");
-
-  let deferred = promise.defer();
-  let count = 0;
-
-  for (let [add, remove] of [
-    ["addEventListener", "removeEventListener"],
-    ["addListener", "removeListener"],
-    ["on", "off"]
-  ]) {
-    if ((add in target) && (remove in target)) {
-      target[add](eventName, function onEvent(...aArgs) {
-        if (++count == numTimes) {
-          target[remove](eventName, onEvent, useCapture);
-          deferred.resolve.apply(deferred, aArgs);
-        }
-      }, useCapture);
-      break;
-    }
-  }
-
-  return deferred.promise;
-}
-
-
-
-
-
-
-
-
 
 
 function waitForContentMessage(name) {
@@ -290,22 +238,6 @@ function* hideTooltipAndWaitForRuleViewChanged(tooltip, view) {
 
 
 
-var waitForTab = Task.async(function* () {
-  info("Waiting for a tab to open");
-  yield once(gBrowser.tabContainer, "TabOpen");
-  let tab = gBrowser.selectedTab;
-  let browser = tab.linkedBrowser;
-  yield once(browser, "load", true);
-  info("The tab load completed");
-  return tab;
-});
-
-
-
-
-
-
-
 
 
 
@@ -347,20 +279,6 @@ var getFontFamilyDataURL = Task.async(function* (font, nodeFront) {
   let dataURL = yield data.string();
   return dataURL;
 });
-
-
-
-
-
-
-
-
-
-function synthesizeKeys(input, win) {
-  for (let key of input.split("")) {
-    EventUtils.synthesizeKey(key, {}, win);
-  }
-}
 
 
 
