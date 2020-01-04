@@ -1556,7 +1556,9 @@ CssRuleView.prototype = {
     
     let refreshOnPrefs = [PREF_UA_STYLES, PREF_DEFAULT_COLOR_UNIT];
     if (refreshOnPrefs.indexOf(pref) > -1) {
-      this.selectElement(this._viewedElement, true);
+      let element = this._viewedElement;
+      this._viewedElement = null;
+      this.selectElement(element);
     }
   },
 
@@ -1770,11 +1772,8 @@ CssRuleView.prototype = {
 
 
 
-
-
-  selectElement: function(element, allowRefresh = false) {
-    let refresh = (this._viewedElement === element);
-    if (refresh && !allowRefresh) {
+  selectElement: function(element) {
+    if (this._viewedElement === element) {
       return promise.resolve(undefined);
     }
 
@@ -1782,14 +1781,13 @@ CssRuleView.prototype = {
       this.popup.hidePopup();
     }
 
-    this.clear(false);
-    this._viewedElement = element;
-
+    this.clear();
     this.clearPseudoClassPanel();
+
+    this._viewedElement = element;
     this.refreshAddRuleButtonState();
 
     if (!this._viewedElement) {
-      this._clearRules();
       this._showEmpty();
       this.refreshPseudoClassPanel();
       return promise.resolve(undefined);
@@ -1804,17 +1802,11 @@ CssRuleView.prototype = {
       }
     }).then(() => {
       if (this._viewedElement === element) {
-        if (!refresh) {
-          this.element.scrollTop = 0;
-        }
         this._elementStyle.onChanged = () => {
           this._changed();
         };
       }
-    }).then(null, e => {
-      this._clearRules();
-      console.error(e);
-    });
+    }).then(null, console.error);
   },
 
   
@@ -1835,7 +1827,7 @@ CssRuleView.prototype = {
     }
 
     return promise.all(promises).then(() => {
-      return this._populate();
+      return this._populate(true);
     });
   },
 
@@ -1878,14 +1870,16 @@ CssRuleView.prototype = {
     }
   },
 
-  _populate: function() {
+  _populate: function(clearRules = false) {
     let elementStyle = this._elementStyle;
     return this._elementStyle.populate().then(() => {
       if (this._elementStyle !== elementStyle || this.isDestroyed) {
         return;
       }
 
-      this._clearRules();
+      if (clearRules) {
+        this._clearRules();
+      }
       this._createEditors();
 
       this.refreshPseudoClassPanel();
@@ -1913,18 +1907,18 @@ CssRuleView.prototype = {
 
 
   _clearRules: function() {
-    this.element.innerHTML = "";
+    while (this.element.hasChildNodes()) {
+      this.element.removeChild(this.element.lastChild);
+    }
   },
 
   
 
 
-  clear: function(clearDom = true) {
+  clear: function() {
     this.lastSelectorIcon = null;
 
-    if (clearDom) {
-      this._clearRules();
-    }
+    this._clearRules();
     this._viewedElement = null;
 
     if (this._elementStyle) {
