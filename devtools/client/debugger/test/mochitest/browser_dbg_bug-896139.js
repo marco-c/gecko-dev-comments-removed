@@ -28,12 +28,23 @@ function test() {
     
     
     
-    let onSource = waitForSourceAndCaret(panel, SCRIPT_URL, 1);
     yield navigateActiveTabTo(panel,
                               TAB_URL,
                               win.EVENTS.SOURCE_SHOWN);
-    yield onSource;
 
+    if (Sources.selectedItem.attachment.source.url.indexOf(SCRIPT_URL) === -1) {
+      
+      if (Sources.itemCount == 1) {
+        yield waitForDebuggerEvents(panel, win.EVENTS.NEW_SOURCE);
+        
+        yield waitForTick();
+      }
+      
+      let onSource = waitForSourceAndCaret(panel, SCRIPT_URL, 1);
+      Sources.selectedValue = getSourceActor(win.DebuggerView.Sources,
+                                             EXAMPLE_URL + SCRIPT_URL);
+      yield onSource;
+    }
 
     yield panel.addBreakpoint({
       actor: getSourceActor(win.DebuggerView.Sources, EXAMPLE_URL + SCRIPT_URL),
