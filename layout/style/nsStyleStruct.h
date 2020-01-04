@@ -1442,35 +1442,30 @@ struct nsStylePosition {
   
 
 
-
-  uint8_t ComputedAlignItems(const nsStyleDisplay* aDisplay) const;
-
-  
-
-
-
-  uint8_t ComputedAlignSelf(const nsStyleDisplay* aDisplay,
-                            nsStyleContext* aParent) const;
+  uint8_t ComputedAlignItems() const { return mAlignItems; }
 
   
 
 
 
-  uint16_t ComputedJustifyContent(const nsStyleDisplay* aDisplay) const;
+  uint8_t ComputedAlignSelf(nsStyleContext* aParent) const;
+
+  
+
+
+  uint16_t ComputedJustifyContent() const { return mJustifyContent; }
 
   
 
 
 
-  uint8_t ComputedJustifyItems(const nsStyleDisplay* aDisplay,
-                               nsStyleContext* aParent) const;
+  uint8_t ComputedJustifyItems(nsStyleContext* aParent) const;
 
   
 
 
 
-  uint8_t ComputedJustifySelf(const nsStyleDisplay* aDisplay,
-                              nsStyleContext* aParent) const;
+  uint8_t ComputedJustifySelf(nsStyleContext* aParent) const;
 
   Position      mObjectPosition;        
   nsStyleSides  mOffset;                

@@ -1571,11 +1571,8 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
              "out-of-flow frames should not be treated as flex items");
 
   mAlignSelf = aFlexItemReflowState.mStylePosition->ComputedAlignSelf(
-                 aFlexItemReflowState.mStyleDisplay,
                  mFrame->StyleContext()->GetParent());
-  if (MOZ_UNLIKELY(mAlignSelf == NS_STYLE_ALIGN_AUTO)) {
-    
-    
+  if (MOZ_LIKELY(mAlignSelf == NS_STYLE_ALIGN_NORMAL)) {
     mAlignSelf = NS_STYLE_ALIGN_STRETCH;
   }
 
@@ -2433,7 +2430,10 @@ MainAxisPositionTracker::
     mJustifyContent(aJustifyContent)
 {
   
-  if (mJustifyContent == NS_STYLE_JUSTIFY_AUTO) {
+  
+  
+  if (mJustifyContent == NS_STYLE_JUSTIFY_NORMAL ||
+      mJustifyContent == NS_STYLE_JUSTIFY_STRETCH) {
     mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
   }
 
@@ -2608,7 +2608,7 @@ CrossAxisPositionTracker::
   MOZ_ASSERT(aFirstLine, "null first line pointer");
 
   
-  if (mAlignContent == NS_STYLE_ALIGN_AUTO) {
+  if (mAlignContent == NS_STYLE_ALIGN_NORMAL) {
     mAlignContent = NS_STYLE_ALIGN_STRETCH;
   }
 
@@ -3839,8 +3839,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
 
     
     
-    auto justifyContent =
-      aReflowState.mStylePosition->ComputedJustifyContent(aReflowState.mStyleDisplay);
+    auto justifyContent = aReflowState.mStylePosition->ComputedJustifyContent();
     line->PositionItemsInMainAxis(justifyContent,
                                   aContentBoxMainSize,
                                   aAxisTracker);

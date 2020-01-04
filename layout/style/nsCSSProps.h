@@ -727,8 +727,9 @@ public:
   static const KTableEntry kAlignSelfPosition[];     
   static const KTableEntry kAlignLegacy[];           
   static const KTableEntry kAlignLegacyPosition[];   
-  static const KTableEntry kAlignAutoStretchBaseline[]; 
-  static const KTableEntry kAlignAutoBaseline[]; 
+  static const KTableEntry kAlignAutoNormalStretchBaseline[]; 
+  static const KTableEntry kAlignNormalStretchBaseline[]; 
+  static const KTableEntry kAlignNormalBaseline[]; 
   static const KTableEntry kAlignContentDistribution[]; 
   static const KTableEntry kAlignContentPosition[]; 
   static const KTableEntry kAlignSelfKTable[];

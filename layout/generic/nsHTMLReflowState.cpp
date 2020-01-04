@@ -2306,11 +2306,10 @@ nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
         
         
         auto inlineAxisAlignment = wm.IsOrthogonalTo(cbwm) ?
-          mStylePosition->ComputedAlignSelf(mStyleDisplay,
-                                            frame->StyleContext()->GetParent()) :
-          mStylePosition->ComputedJustifySelf(mStyleDisplay,
-                                              frame->StyleContext()->GetParent());
-        if (inlineAxisAlignment != NS_STYLE_ALIGN_STRETCH ||
+          mStylePosition->ComputedAlignSelf(frame->StyleContext()->GetParent()) :
+          mStylePosition->ComputedJustifySelf(frame->StyleContext()->GetParent());
+        if ((inlineAxisAlignment != NS_STYLE_ALIGN_STRETCH &&
+             inlineAxisAlignment != NS_STYLE_ALIGN_NORMAL) ||
             mStyleMargin->mMargin.GetIStartUnit(wm) == eStyleUnit_Auto ||
             mStyleMargin->mMargin.GetIEndUnit(wm) == eStyleUnit_Auto) {
           computeSizeFlags =
