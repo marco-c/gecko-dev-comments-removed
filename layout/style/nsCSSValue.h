@@ -396,7 +396,8 @@ enum nsCSSUnit {
   eCSSUnit_Millimeter   = 902,    
   eCSSUnit_Centimeter   = 903,    
   eCSSUnit_Pica         = 904,    
-  eCSSUnit_Pixel        = 905,    
+  eCSSUnit_Quarter      = 905,    
+  eCSSUnit_Pixel        = 906,    
 
   
   eCSSUnit_Degree       = 1000,    
