@@ -123,6 +123,8 @@ class nsCSPParser {
     void                directiveValue(nsTArray<nsCSPBaseSrc*>& outSrcs);
     void                requireSRIForDirectiveValue(nsRequireSRIForDirective* aDir);
     void                referrerDirectiveValue(nsCSPDirective* aDir);
+    void                reportURIList(nsCSPDirective* aDir);
+    void                sandboxFlagList(nsCSPDirective* aDir);
     void                sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs);
     nsCSPBaseSrc*       sourceExpression();
     nsCSPSchemeSrc*     schemeSource();
@@ -142,10 +144,8 @@ class nsCSPParser {
     bool atValidSubDelimChar();                             
     bool atValidPctEncodedChar();                           
     bool subPath(nsCSPHostSrc* aCspHost);                   
-    void reportURIList(nsTArray<nsCSPBaseSrc*>& outSrcs);   
     void percentDecodeStr(const nsAString& aEncStr,         
                           nsAString& outDecStr);
-    void sandboxFlagList(nsTArray<nsCSPBaseSrc*>& outSrcs); 
 
     inline bool atEnd()
     {

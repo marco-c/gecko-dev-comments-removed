@@ -928,7 +928,10 @@ nsCSPParser::referrerDirectiveValue(nsCSPDirective* aDir)
 }
 
 void
-nsCSPParser::requireSRIForDirectiveValue(nsRequireSRIForDirective* aDir) {
+nsCSPParser::requireSRIForDirectiveValue(nsRequireSRIForDirective* aDir)
+{
+  CSPPARSERLOG(("nsCSPParser::requireSRIForDirectiveValue"));
+
   
   
   for (uint32_t i = 1; i < mCurDir.Length(); i++) {
@@ -956,20 +959,25 @@ nsCSPParser::requireSRIForDirectiveValue(nsRequireSRIForDirective* aDir) {
                     NS_ConvertUTF16toUTF8(mCurValue).get()));
     }
   }
+
   if (!(aDir->hasType(nsIContentPolicy::TYPE_STYLESHEET)) &&
       !(aDir->hasType(nsIContentPolicy::TYPE_SCRIPT))) {
     const char16_t* directiveName[] = { mCurToken.get() };
     logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringDirectiveWithNoValues",
                                directiveName, ArrayLength(directiveName));
+    delete aDir;
     return;
-  } else {
-    mPolicy->addDirective(aDir);
   }
+  
+  mPolicy->addDirective(aDir);
 }
 
 void
-nsCSPParser::reportURIList(nsTArray<nsCSPBaseSrc*>& outSrcs)
+nsCSPParser::reportURIList(nsCSPDirective* aDir)
 {
+  CSPPARSERLOG(("nsCSPParser::reportURIList"));
+
+  nsTArray<nsCSPBaseSrc*> srcs;
   nsCOMPtr<nsIURI> uri;
   nsresult rv;
 
@@ -993,8 +1001,19 @@ nsCSPParser::reportURIList(nsTArray<nsCSPBaseSrc*>& outSrcs)
 
     
     nsCSPReportURI* reportURI = new nsCSPReportURI(uri);
-    outSrcs.AppendElement(reportURI);
+    srcs.AppendElement(reportURI);
   }
+
+  if (srcs.Length() == 0) {
+    const char16_t* directiveName[] = { mCurToken.get() };
+    logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringDirectiveWithNoValues",
+                             directiveName, ArrayLength(directiveName));
+    delete aDir;
+    return;
+  }
+
+  aDir->addSrcs(srcs);
+  mPolicy->addDirective(aDir);
 }
 
 
@@ -1002,8 +1021,10 @@ nsCSPParser::reportURIList(nsTArray<nsCSPBaseSrc*>& outSrcs)
 
 
 void
-nsCSPParser::sandboxFlagList(nsTArray<nsCSPBaseSrc*>& outSrcs)
+nsCSPParser::sandboxFlagList(nsCSPDirective* aDir)
 {
+  CSPPARSERLOG(("nsCSPParser::sandboxFlagList"));
+
   nsAutoString flags;
 
   
@@ -1028,8 +1049,12 @@ nsCSPParser::sandboxFlagList(nsTArray<nsCSPBaseSrc*>& outSrcs)
     }
   }
 
-  nsCSPSandboxFlags* sandboxFlags = new nsCSPSandboxFlags(flags);
-  outSrcs.AppendElement(sandboxFlags);
+  
+  
+  nsTArray<nsCSPBaseSrc*> srcs;
+  srcs.AppendElement(new nsCSPSandboxFlags(flags));
+  aDir->addSrcs(srcs);
+  mPolicy->addDirective(aDir);
 }
 
 
@@ -1037,21 +1062,6 @@ void
 nsCSPParser::directiveValue(nsTArray<nsCSPBaseSrc*>& outSrcs)
 {
   CSPPARSERLOG(("nsCSPParser::directiveValue"));
-
-  
-  
-  
-  if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::REPORT_URI_DIRECTIVE)) {
-    reportURIList(outSrcs);
-    return;
-  }
-
-  
-  
-  if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::SANDBOX_DIRECTIVE)) {
-    sandboxFlagList(outSrcs);
-    return;
-  }
 
   
   sourceList(outSrcs);
@@ -1209,6 +1219,20 @@ nsCSPParser::directive()
   
   if (cspDir->equals(nsIContentSecurityPolicy::REFERRER_DIRECTIVE)) {
     referrerDirectiveValue(cspDir);
+    return;
+  }
+
+  
+  
+  if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::REPORT_URI_DIRECTIVE)) {
+    reportURIList(cspDir);
+    return;
+  }
+
+  
+  
+  if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::SANDBOX_DIRECTIVE)) {
+    sandboxFlagList(cspDir);
     return;
   }
 
