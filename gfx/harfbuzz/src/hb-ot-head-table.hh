@@ -61,9 +61,9 @@ struct head
   }
 
   protected:
-  FixedVersion	version;		
+  FixedVersion<>version;		
 
-  FixedVersion	fontRevision;		
+  FixedVersion<>fontRevision;		
   ULONG		checkSumAdjustment;	
 
 

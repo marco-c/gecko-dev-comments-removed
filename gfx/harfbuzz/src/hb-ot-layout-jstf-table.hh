@@ -218,7 +218,7 @@ struct JSTF
   }
 
   protected:
-  FixedVersion	version;	
+  FixedVersion<>version;	
 
   RecordArrayOf<JstfScript>
 		scriptList;  	

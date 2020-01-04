@@ -140,7 +140,7 @@ struct TTCHeaderVersion1
 
   protected:
   Tag		ttcTag;		
-  FixedVersion	version;	
+  FixedVersion<>version;	
 
   ArrayOf<OffsetTo<OffsetTable, ULONG>, ULONG>
 		table;		
@@ -187,7 +187,7 @@ struct TTCHeader
   union {
   struct {
   Tag		ttcTag;		
-  FixedVersion	version;	
+  FixedVersion<>version;	
 
   }			header;
   TTCHeaderVersion1	version1;

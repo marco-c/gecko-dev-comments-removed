@@ -409,7 +409,7 @@ struct GDEF
 
 
   protected:
-  FixedVersion	version;		
+  FixedVersion<>version;		
 
   OffsetTo<ClassDef>
 		glyphClassDef;		

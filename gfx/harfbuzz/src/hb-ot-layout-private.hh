@@ -101,19 +101,18 @@ hb_ot_layout_substitute_lookup (OT::hb_apply_context_t *c,
 
 
 HB_INTERNAL void
-hb_ot_layout_substitute_finish (hb_font_t    *font,
-				hb_buffer_t  *buffer);
-
-
-
-HB_INTERNAL void
 hb_ot_layout_position_start (hb_font_t    *font,
 			     hb_buffer_t  *buffer);
 
 
 HB_INTERNAL void
-hb_ot_layout_position_finish (hb_font_t    *font,
-			      hb_buffer_t  *buffer);
+hb_ot_layout_position_finish_advances (hb_font_t    *font,
+				       hb_buffer_t  *buffer);
+
+
+HB_INTERNAL void
+hb_ot_layout_position_finish_offsets (hb_font_t    *font,
+				      hb_buffer_t  *buffer);
 
 
 
@@ -257,8 +256,11 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
       if (u == 0x200Cu) props |= UPROPS_MASK_ZWNJ;
       if (u == 0x200Du) props |= UPROPS_MASK_ZWJ;
     }
-    else if (unlikely (HB_UNICODE_GENERAL_CATEGORY_IS_NON_ENCLOSING_MARK (gen_cat)))
+    else if (unlikely (HB_UNICODE_GENERAL_CATEGORY_IS_NON_ENCLOSING_MARK_OR_MODIFIER_SYMBOL (gen_cat)))
     {
+      
+
+
       
 
 
@@ -273,6 +275,16 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
 
 
       props |= unicode->modified_combining_class (info->codepoint)<<8;
+
+      
+
+
+
+
+      if (unlikely (hb_in_range (u, 0x1F3FBu, 0x1F3FFu)))
+      {
+	props = gen_cat = HB_UNICODE_GENERAL_CATEGORY_ENCLOSING_MARK;
+      }
     }
   }
 
@@ -351,6 +363,12 @@ static inline hb_bool_t
 _hb_glyph_info_is_zwj (const hb_glyph_info_t *info)
 {
   return !!(info->unicode_props() & UPROPS_MASK_ZWJ);
+}
+
+static inline hb_bool_t
+_hb_glyph_info_is_joiner (const hb_glyph_info_t *info)
+{
+  return !!(info->unicode_props() & (UPROPS_MASK_ZWNJ | UPROPS_MASK_ZWJ));
 }
 
 static inline void

@@ -56,7 +56,7 @@ struct _hea
   }
 
   public:
-  FixedVersion	version;		
+  FixedVersion<>version;		
   FWORD		ascender;		
   FWORD		descender;		
   FWORD		lineGap;		
