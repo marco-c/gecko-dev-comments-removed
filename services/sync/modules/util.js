@@ -614,30 +614,12 @@ this.Utils = {
 
 
   getSyncCredentialsHostsFxA: function() {
-    
-    if (this._syncCredentialsHostsFxA) {
-      return this._syncCredentialsHostsFxA;
-    }
     let result = new Set();
     
     result.add(FxAccountsCommon.FXA_PWDMGR_HOST);
     
     
-    
-    for (let prefName of ["identity.fxaccounts.remote.force_auth.uri",
-                          "identity.fxaccounts.remote.signup.uri",
-                          "identity.fxaccounts.remote.signin.uri",
-                          "identity.fxaccounts.settings.uri"]) {
-      let prefVal;
-      try {
-        prefVal = Services.prefs.getCharPref(prefName);
-      } catch (_) {
-        continue;
-      }
-      let uri = Services.io.newURI(prefVal, null, null);
-      result.add(uri.prePath);
-    }
-    return this._syncCredentialsHostsFxA = result;
+    return result;
   },
 
   getDefaultDeviceName() {
