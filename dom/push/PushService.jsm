@@ -878,10 +878,9 @@ this.PushService = {
 
 
 
-
-  _decryptAndNotifyApp(record, messageID, data, cryptoParams) {
+  _decryptMessage(data, record, cryptoParams) {
     if (!cryptoParams) {
-      return this._notifyApp(record, messageID, null);
+      return Promise.resolve(null);
     }
     return PushCrypto.decodeMsg(
       data,
@@ -892,13 +891,29 @@ this.PushService = {
       cryptoParams.rs,
       record.authenticationSecret,
       cryptoParams.padSize
-    ).then(message => this._notifyApp(record, messageID, message), error => {
-      let message = gDOMBundle.formatStringFromName(
-        "PushMessageDecryptionFailure", [record.scope, String(error)], 2);
-      gPushNotifier.notifyError(record.scope, record.principal, message,
-                                Ci.nsIScriptError.errorFlag);
-      return Ci.nsIPushErrorReporter.ACK_DECRYPTION_ERROR;
-    });
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+  _decryptAndNotifyApp(record, messageID, data, cryptoParams) {
+    return this._decryptMessage(data, record, cryptoParams)
+      .then(
+        message => this._notifyApp(record, messageID, message),
+        error => {
+          let message = gDOMBundle.formatStringFromName(
+            "PushMessageDecryptionFailure", [record.scope, String(error)], 2);
+          gPushNotifier.notifyError(record.scope, record.principal, message,
+                                    Ci.nsIScriptError.errorFlag);
+          return Ci.nsIPushErrorReporter.ACK_DECRYPTION_ERROR;
+        });
   },
 
   _updateQuota: function(keyID) {

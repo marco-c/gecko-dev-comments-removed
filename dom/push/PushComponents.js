@@ -499,6 +499,11 @@ PushSubscription.prototype = {
   },
 
   
+  get p256dhPrivateKey() {
+    return this._props.p256dhPrivateKey;
+  },
+
+  
 
 
 
