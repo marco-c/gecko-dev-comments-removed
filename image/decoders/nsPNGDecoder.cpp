@@ -5,6 +5,10 @@
 
 
 #include "ImageLogging.h" 
+
+#include <algorithm>
+#include <cstdint>
+
 #include "gfxColor.h"
 #include "gfxPlatform.h"
 #include "imgFrame.h"
@@ -19,8 +23,6 @@
 #include "SurfacePipeFactory.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Telemetry.h"
-
-#include <algorithm>
 
 using namespace mozilla::gfx;
 
@@ -94,6 +96,9 @@ nsPNGDecoder::pngSignatureBytes[] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
 nsPNGDecoder::nsPNGDecoder(RasterImage* aImage)
  : Decoder(aImage)
+ , mLexer(Transition::ToUnbuffered(State::FINISHED_PNG_DATA,
+                                   State::PNG_DATA,
+                                   SIZE_MAX))
  , mPNG(nullptr)
  , mInfo(nullptr)
  , mCMSLine(nullptr)
@@ -347,23 +352,58 @@ void
 nsPNGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 {
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aCount > 0);
 
+  Maybe<TerminalState> terminalState =
+    mLexer.Lex(aBuffer, aCount, [=](State aState,
+                                    const char* aData, size_t aLength) {
+      switch (aState) {
+        case State::PNG_DATA:
+          return ReadPNGData(aData, aLength);
+        case State::FINISHED_PNG_DATA:
+          return FinishedPNGData();
+      }
+      MOZ_CRASH("Unknown State");
+    });
+
+  if (terminalState == Some(TerminalState::FAILURE)) {
+    PostDataError();
+  }
+}
+
+LexerTransition<nsPNGDecoder::State>
+nsPNGDecoder::ReadPNGData(const char* aData, size_t aLength)
+{
   
   if (setjmp(png_jmpbuf(mPNG))) {
-
-    
-    
-    if (!HasError()) {
-      PostDataError();
-    }
-
-    return;
+    return Transition::TerminateFailure();
   }
 
   
   png_process_data(mPNG, mInfo,
-                   reinterpret_cast<unsigned char*>(const_cast<char*>((aBuffer))),
-                   aCount);
+                   reinterpret_cast<unsigned char*>(const_cast<char*>((aData))),
+                   aLength);
+
+  if (HasError()) {
+    return Transition::TerminateFailure();
+  }
+
+  if (GetDecodeDone()) {
+    return Transition::TerminateSuccess();
+  }
+
+  
+  return Transition::ContinueUnbuffered(State::PNG_DATA);
+}
+
+LexerTransition<nsPNGDecoder::State>
+nsPNGDecoder::FinishedPNGData()
+{
+  
+  
+  MOZ_ASSERT_UNREACHABLE("Read the entire address space?");
+  return Transition::TerminateFailure();
 }
 
 
