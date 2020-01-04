@@ -56,7 +56,7 @@ public:
     
     
     void* forget() {
-        void* p = mPtr;
+        void* p = moz_xrealloc(mPtr, mOff);
         mPtr = nullptr;
         return p;
     }
@@ -251,14 +251,14 @@ gfxUserFontEntry::SanitizeOpenTypeData(const uint8_t* aData,
     ExpandingMemoryStream output(lengthHint, 1024 * 1024 * 256);
 
     gfxOTSContext otsContext(this);
-
-    if (otsContext.Process(&output, aData, aLength)) {
-        aSaneLength = output.Tell();
-        return static_cast<uint8_t*>(output.forget());
-    } else {
+    if (!otsContext.Process(&output, aData, aLength)) {
+        
         aSaneLength = 0;
         return nullptr;
     }
+
+    aSaneLength = output.Tell();
+    return static_cast<const uint8_t*>(output.forget());
 }
 
 void
