@@ -7,12 +7,13 @@
 const {Cu, Ci} = require("chrome");
 
 const promise = require("promise");
+
+loader.lazyGetter(this, "system", () => require("devtools/shared/system"));
 loader.lazyGetter(this, "EventEmitter", () => require("devtools/shared/event-emitter"));
 loader.lazyGetter(this, "AutocompletePopup", () => require("devtools/client/shared/autocomplete-popup").AutocompletePopup);
 
 
 const MAX_SUGGESTIONS = 15;
-
 
 
 
@@ -108,7 +109,11 @@ InspectorSearch.prototype = {
     }
     if (event.keyCode === event.DOM_VK_RETURN) {
       this._onSearch(event.shiftKey);
-    } if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_G && event.metaKey) {
+    }
+
+    const modifierKey = system.constants.platform === "macosx" ? event.metaKey :
+event.ctrlKey;
+    if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_G && modifierKey) {
       this._onSearch(event.shiftKey);
       event.preventDefault();
     }
