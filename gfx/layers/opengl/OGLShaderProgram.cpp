@@ -8,6 +8,7 @@
 #include "gfxEnv.h"
 #include "gfxRect.h"                    
 #include "mozilla/DebugOnly.h"          
+#include "mozilla/layers/Compositor.h"  
 #include "nsAString.h"
 #include "nsAutoPtr.h"                  
 #include "nsString.h"                   
@@ -162,7 +163,7 @@ ShaderConfigOGL::SetDEAA(bool aEnabled)
 }
 
 void
-ShaderConfigOGL::SetCompositionOp(CompositionOp aOp)
+ShaderConfigOGL::SetCompositionOp(gfx::CompositionOp aOp)
 {
   mCompositionOp = aOp;
 }
@@ -175,7 +176,7 @@ ProgramProfileOGL::GetProfileFor(ShaderConfigOGL aConfig)
 
   AddUniforms(result);
 
-  CompositionOp blendOp = aConfig.mCompositionOp;
+  gfx::CompositionOp blendOp = aConfig.mCompositionOp;
 
   vs << "#ifdef GL_ES" << endl;
   vs << "#define EDGE_PRECISION mediump" << endl;
