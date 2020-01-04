@@ -8,23 +8,12 @@ const ADDON_NAME = "test-devtools";
 add_task(function* () {
   let { tab, document } = yield openAboutDebugging("addons");
 
-  yield installAddon(document, "addons/unpacked/install.rdf", "test-devtools");
+  
+  yield installAddon(document, "addons/unpacked/install.rdf", ADDON_NAME,
+                     "test-devtools");
 
   
-  let names = [...document.querySelectorAll("#addons .target-name")];
-  names = names.map(element => element.textContent);
-  ok(names.includes(ADDON_NAME),
-    "The addon name appears in the list of addons: " + names);
-
-  
-  yield uninstallAddon(ADDON_ID);
-
-  
-  names = [...document.querySelectorAll("#addons .target-name")];
-  names = names.map(element => element.textContent);
-  ok(!names.includes(ADDON_NAME),
-    "After uninstall, the addon name disappears from the list of addons: "
-    + names);
+  yield uninstallAddon(document, ADDON_ID, ADDON_NAME);
 
   yield closeAboutDebugging(tab);
 });
