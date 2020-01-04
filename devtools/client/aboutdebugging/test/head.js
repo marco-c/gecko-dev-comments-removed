@@ -6,6 +6,7 @@
 var {utils: Cu, classes: Cc, interfaces: Ci} = Components;
 
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
 const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 DevToolsUtils.testing = true;
@@ -27,7 +28,6 @@ function openAboutDebugging(page) {
     return {
       tab,
       document: browser.contentDocument,
-      window: browser.contentWindow
     };
   });
 }
@@ -79,4 +79,62 @@ function get_supports_file(path) {
   getService(Ci.nsIChromeRegistry);
   let fileurl = cr.convertChromeURL(Services.io.newURI(CHROME_ROOT + path, null, null));
   return fileurl.QueryInterface(Ci.nsIFileURL);
+}
+
+function installAddon(document, path, evt) {
+  
+  let MockFilePicker = SpecialPowers.MockFilePicker;
+  MockFilePicker.init(null);
+  let file = get_supports_file(path);
+  MockFilePicker.returnFiles = [file.file];
+
+  
+  let onAddonInstalled = new Promise(done => {
+    Services.obs.addObserver(function listener() {
+      Services.obs.removeObserver(listener, evt, false);
+      ok(true, "Addon installed and running its bootstrap.js file");
+      done();
+    }, evt, false);
+  });
+  
+  document.getElementById("load-addon-from-file").click();
+
+  
+  return onAddonInstalled;
+}
+
+function uninstallAddon(addonId) {
+  
+  return new Promise(done => {
+    AddonManager.getAddonByID(addonId, addon => {
+      let listener = {
+        onUninstalled: function(uninstalledAddon) {
+          if (uninstalledAddon != addon) {
+            return;
+          }
+          AddonManager.removeAddonListener(listener);
+          done();
+        }
+      };
+      AddonManager.addAddonListener(listener);
+      addon.uninstall();
+    });
+  });
+}
+
+
+
+
+
+
+
+
+function waitForMutation(target, mutationOptions) {
+  return new Promise(resolve => {
+    let observer = new MutationObserver(() => {
+      observer.disconnect();
+      resolve();
+    });
+    observer.observe(target, mutationOptions);
+  });
 }

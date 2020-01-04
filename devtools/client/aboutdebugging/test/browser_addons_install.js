@@ -2,33 +2,13 @@
 
 "use strict";
 
-var {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
-
 const ADDON_ID = "test-devtools@mozilla.org";
 const ADDON_NAME = "test-devtools";
 
 add_task(function *() {
   let { tab, document } = yield openAboutDebugging("addons");
 
-  
-  let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(null);
-  let file = get_supports_file("addons/unpacked/install.rdf");
-  MockFilePicker.returnFiles = [file.file];
-
-  
-  let promise = new Promise(done => {
-    Services.obs.addObserver(function listener() {
-      Services.obs.removeObserver(listener, "test-devtools", false);
-      ok(true, "Addon installed and running its bootstrap.js file");
-      done();
-    }, "test-devtools", false);
-  });
-  
-  document.getElementById("load-addon-from-file").click();
-
-  
-  yield promise;
+  yield installAddon(document, "addons/unpacked/install.rdf", "test-devtools");
 
   
   let names = [...document.querySelectorAll("#addons .target-name")];
@@ -36,21 +16,7 @@ add_task(function *() {
   ok(names.includes(ADDON_NAME), "The addon name appears in the list of addons: " + names);
 
   
-  yield new Promise(done => {
-    AddonManager.getAddonByID(ADDON_ID, addon => {
-      let listener = {
-        onUninstalled: function(aUninstalledAddon) {
-          if (aUninstalledAddon != addon) {
-            return;
-          }
-          AddonManager.removeAddonListener(listener);
-          done();
-        }
-      };
-      AddonManager.addAddonListener(listener);
-      addon.uninstall();
-    });
-  });
+  yield uninstallAddon(ADDON_ID);
 
   
   names = [...document.querySelectorAll("#addons .target-name")];
