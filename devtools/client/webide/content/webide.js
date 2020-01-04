@@ -24,7 +24,9 @@ const utils = require("devtools/client/webide/modules/utils");
 const Telemetry = require("devtools/client/shared/telemetry");
 const {RuntimeScanners} = require("devtools/client/webide/modules/runtimes");
 const {showDoorhanger} = require("devtools/client/shared/doorhanger");
+const ProjectList = require("devtools/client/webide/modules/project-list");
 const {Simulators} = require("devtools/client/webide/modules/simulators");
+const RuntimeList = require("devtools/client/webide/modules/runtime-list");
 
 const Strings = Services.strings.createBundle("chrome://browser/locale/devtools/webide.properties");
 
@@ -35,6 +37,16 @@ const MAX_ZOOM = 1.4;
 const MIN_ZOOM = 0.6;
 
 const MS_PER_DAY = 86400000;
+
+[["AppManager", AppManager],
+ ["AppProjects", AppProjects],
+ ["Connection", Connection]].forEach(([key, value]) => {
+   Object.defineProperty(this, key, {
+     value: value,
+     enumerable: true,
+     writable: false
+   });
+ });
 
 
 getJSON("devtools.webide.addonsURL", true);
@@ -56,6 +68,9 @@ window.addEventListener("unload", function onUnload() {
   UI.destroy();
 });
 
+var projectList;
+var runtimeList;
+
 var UI = {
   init: function() {
     this._telemetry = new Telemetry();
@@ -69,8 +84,26 @@ var UI = {
     this.appManagerUpdate = this.appManagerUpdate.bind(this);
     AppManager.on("app-manager-update", this.appManagerUpdate);
 
-    Cmds.showProjectPanel();
-    Cmds.showRuntimePanel();
+    projectList = new ProjectList(window, window);
+    if (projectList.sidebarsEnabled) {
+      ProjectPanel.toggleSidebar();
+
+      
+      let toolbarNode = document.querySelector("#main-toolbar");
+      toolbarNode.classList.add("sidebar-layout");
+      let projectNode = document.querySelector("#project-panel-button");
+      projectNode.setAttribute("hidden", "true");
+      let runtimeNode = document.querySelector("#runtime-panel-button");
+      runtimeNode.setAttribute("hidden", "true");
+      let openAppNode = document.querySelector("#menuitem-show_projectPanel");
+      openAppNode.setAttribute("hidden", "true");
+    }
+    runtimeList = new RuntimeList(window, window);
+    if (runtimeList.sidebarsEnabled) {
+      Cmds.showRuntimePanel();
+    } else {
+      runtimeList.update();
+    }
 
     this.updateCommands();
 
@@ -79,6 +112,9 @@ var UI = {
 
     AppProjects.load().then(() => {
       this.autoSelectProject();
+      if (!projectList.sidebarsEnabled) {
+        projectList.update();
+      }
     }, e => {
       console.error(e);
       this.reportError("error_appProjectsLoadFailed");
@@ -126,6 +162,8 @@ var UI = {
     AppManager.off("app-manager-update", this.appManagerUpdate);
     AppManager.destroy();
     Simulators.off("configure", this.configureSimulator);
+    projectList.destroy();
+    runtimeList.destroy();
     window.removeEventListener("message", this.onMessage);
     this.updateConnectionTelemetry();
     this._telemetry.toolClosed("webide");
@@ -180,6 +218,7 @@ var UI = {
           UI.updateTitle();
           yield UI.destroyToolbox();
           UI.updateCommands();
+          UI.updateProjectButton();
           UI.openProject();
           yield UI.autoStartProject();
           UI.autoOpenToolbox();
@@ -211,6 +250,7 @@ var UI = {
       case "project-validated":
         this.updateTitle();
         this.updateCommands();
+        this.updateProjectButton();
         this.updateProjectEditorHeader();
         break;
       case "install-progress":
@@ -252,6 +292,15 @@ var UI = {
   },
 
   
+  hidePanels: function() {
+    let panels = document.querySelectorAll("panel");
+    for (let p of panels) {
+      
+      p.hidePopup && p.hidePopup();
+    }
+  },
+
+  
 
   _busyTimeout: null,
   _busyOperationDescription: null,
@@ -265,6 +314,7 @@ var UI = {
   },
 
   busy: function() {
+    this.hidePanels();
     let win = document.querySelector("window");
     win.classList.add("busy");
     win.classList.add("busy-undetermined");
@@ -469,10 +519,14 @@ var UI = {
 
     if (AppManager.connected) {
       runtimePanelButton.setAttribute("active", "true");
-      runtimePanelButton.removeAttribute("hidden");
+      if (projectList.sidebarsEnabled) {
+        runtimePanelButton.removeAttribute("hidden");
+      }
     } else {
       runtimePanelButton.removeAttribute("active");
-      runtimePanelButton.setAttribute("hidden", "true");
+      if (projectList.sidebarsEnabled) {
+        runtimePanelButton.setAttribute("hidden", "true");
+      }
     }
 
     projectPanelCmd.removeAttribute("disabled");
@@ -612,6 +666,28 @@ var UI = {
   },
 
   
+
+  
+
+  updateProjectButton: function() {
+    let buttonNode = document.querySelector("#project-panel-button");
+    let labelNode = buttonNode.querySelector(".panel-button-label");
+    let imageNode = buttonNode.querySelector(".panel-button-image");
+
+    let project = AppManager.selectedProject;
+
+    if (!projectList.sidebarsEnabled) {
+      if (!project) {
+        buttonNode.classList.add("no-project");
+        labelNode.setAttribute("value", Strings.GetStringFromName("projectButton_label"));
+        imageNode.removeAttribute("src");
+      } else {
+        buttonNode.classList.remove("no-project");
+        labelNode.setAttribute("value", project.name);
+        imageNode.setAttribute("src", project.icon);
+      }
+    }
+  },
 
   
 
@@ -870,6 +946,7 @@ var UI = {
       
       return;
     }
+    this.hidePanels();
     this.resetFocus();
     let panel = deck.querySelector("#deck-panel-" + id);
     let lazysrc = panel.getAttribute("lazysrc");
@@ -879,6 +956,7 @@ var UI = {
     }
     deck.selectedPanel = panel;
     this.onChangeProjectEditorSelected();
+    this.updateToolboxFullscreenState();
   },
 
   resetDeck: function() {
@@ -985,7 +1063,25 @@ var UI = {
 
     document.querySelector("#action-button-debug").setAttribute("active", "true");
 
+    this.updateToolboxFullscreenState();
     return gDevTools.showToolbox(target, null, host, options);
+  },
+
+  updateToolboxFullscreenState: function() {
+    if (projectList.sidebarsEnabled) {
+      return;
+    }
+
+    let panel = document.querySelector("#deck").selectedPanel;
+    let nbox = document.querySelector("#notificationbox");
+    if (panel && panel.id == "deck-panel-details" &&
+        AppManager.selectedProject &&
+        AppManager.selectedProject.type != "packaged" &&
+        this.toolboxIframe) {
+      nbox.setAttribute("toolboxfullscreen", "true");
+    } else {
+      nbox.removeAttribute("toolboxfullscreen");
+    }
   },
 
   _closeToolboxUI: function() {
@@ -1004,6 +1100,7 @@ var UI = {
     let splitter = document.querySelector(".devtools-horizontal-splitter");
     splitter.setAttribute("hidden", "true");
     document.querySelector("#action-button-debug").removeAttribute("active");
+    this.updateToolboxFullscreenState();
   },
 
   prePackageLog: function (msg) {
@@ -1022,14 +1119,48 @@ var Cmds = {
     }
   },
 
+  
+
+
+
+
+
+
+  newApp: function(testOptions) {
+    projectList.newApp(testOptions);
+  },
+
+  importPackagedApp: function(location) {
+    projectList.importPackagedApp(location);
+  },
+
+  importHostedApp: function(location) {
+    projectList.importHostedApp(location);
+  },
+
   showProjectPanel: function() {
-    ProjectPanel.toggleSidebar();
+    if (projectList.sidebarsEnabled) {
+      ProjectPanel.toggleSidebar();
+    } else {
+      ProjectPanel.showPopup();
+    }
+
+    
+    if (!projectList.sidebarsEnabled && AppManager.connected) {
+      projectList.refreshTabs();
+    }
+
     return promise.resolve();
   },
 
   showRuntimePanel: function() {
     RuntimeScanners.scan();
-    RuntimePanel.toggleSidebar();
+
+    if (runtimeList.sidebarsEnabled) {
+      RuntimePanel.toggleSidebar();
+    } else {
+      RuntimePanel.showPopup();
+    }
   },
 
   disconnectRuntime: function() {
@@ -1038,6 +1169,10 @@ var Cmds = {
       yield AppManager.disconnectRuntime();
     });
     return UI.busyUntil(disconnecting, "disconnecting from runtime");
+  },
+
+  takeScreenshot: function() {
+    runtimeList.takeScreenshot();
   },
 
   showPermissionsTable: function() {

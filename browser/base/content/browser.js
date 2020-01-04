@@ -3722,6 +3722,8 @@ const BrowserSearch = {
   }
 };
 
+XPCOMUtils.defineConstant(this, "BrowserSearch", BrowserSearch);
+
 function FillHistoryMenu(aParent) {
   
   if (!aParent.hasStatusListener) {

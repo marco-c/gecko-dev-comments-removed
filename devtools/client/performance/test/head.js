@@ -48,6 +48,9 @@ const JIT_PREF = "devtools.performance.ui.enable-jit-optimizations";
 const EXPERIMENTAL_PREF = "devtools.performance.ui.experimental";
 
 
+const FRAMERATE_GRAPH_HIGH_RES_INTERVAL = 16; 
+
+
 waitForExplicitFinish();
 
 DevToolsUtils.testing = true;
@@ -423,7 +426,7 @@ function* stopRecording(panel, options = {
   
   while (!overviewRendered && options.waitForOverview) {
     let [_, res] = yield onceSpread(win.OverviewView, win.EVENTS.OVERVIEW_RENDERED);
-    if (res === win.FRAMERATE_GRAPH_HIGH_RES_INTERVAL) {
+    if (res === FRAMERATE_GRAPH_HIGH_RES_INTERVAL) {
       overviewRendered = true;
     }
   }

@@ -11,6 +11,11 @@ const { Heritage, ViewHelpers, WidgetMethods } = require("resource:///modules/de
 
 
 const EVENTS = require("devtools/client/performance/events");
+Object.defineProperty(this, "EVENTS", {
+  value: EVENTS,
+  enumerable: true,
+  writable: false
+});
 
 loader.lazyRequireGetter(this, "Services");
 loader.lazyRequireGetter(this, "promise");

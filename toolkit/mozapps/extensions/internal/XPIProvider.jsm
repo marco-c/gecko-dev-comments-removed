@@ -157,6 +157,7 @@ const XPI_SIGNATURE_CHECK_PERIOD      = 24 * 60 * 60;
 
 
 #expand const DB_SCHEMA                       = __MOZ_EXTENSIONS_DB_SCHEMA__;
+XPCOMUtils.defineConstant(this, "DB_SCHEMA", DB_SCHEMA);
 const NOTIFICATION_TOOLBOXPROCESS_LOADED      = "ToolboxProcessLoaded";
 
 
@@ -2808,11 +2809,7 @@ this.XPIProvider = {
                                !XPIDatabase.writeAddonsList());
   },
 
-  updateSystemAddons: Task.async(function* XPI_updateSystemAddons() {
-    let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
-    if (!systemAddonLocation)
-      return;
-
+  updateSystemAddons: Task.async(function XPI_updateSystemAddons() {
     
     if (Services.appinfo.inSafeMode)
       return;
@@ -2820,7 +2817,7 @@ this.XPIProvider = {
     
     let url = Preferences.get(PREF_SYSTEM_ADDON_UPDATE_URL, null);
     if (!url)
-      return systemAddonLocation.cleanDirectories();
+      return;
 
     url = UpdateUtils.formatUpdateURL(url);
 
@@ -2830,7 +2827,7 @@ this.XPIProvider = {
     
     if (!addonList) {
       logger.info("No system add-ons list was returned.");
-      return systemAddonLocation.cleanDirectories();
+      return;
     }
 
     addonList = new Map([for (spec of addonList) [spec.id, { spec, path: null, addon: null }]]);
@@ -2857,11 +2854,13 @@ this.XPIProvider = {
       return true;
     };
 
+    let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
+
     
     let updatedAddons = addonMap(yield getAddonsInLocation(KEY_APP_SYSTEM_ADDONS));
     if (setMatches(addonList, updatedAddons)) {
       logger.info("Retaining existing updated system add-ons.");
-      return systemAddonLocation.cleanDirectories();
+      return;
     }
 
     
@@ -2870,7 +2869,7 @@ this.XPIProvider = {
     if (setMatches(addonList, defaultAddons)) {
       logger.info("Resetting system add-ons.");
       systemAddonLocation.resetAddonSet();
-      return systemAddonLocation.cleanDirectories();
+      return;
     }
 
     
@@ -2953,8 +2952,6 @@ this.XPIProvider = {
           }
         }
       }
-
-      yield systemAddonLocation.cleanDirectories();
     }
   }),
 
@@ -7510,7 +7507,6 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 function SystemAddonInstallLocation(aName, aDirectory, aScope, aResetSet) {
   this._baseDir = aDirectory;
-  this._nextDir = null;
 
   if (aResetSet)
     this.resetAddonSet();
@@ -7635,58 +7631,6 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-
-  cleanDirectories: Task.async(function*() {
-    let iterator;
-    try {
-      iterator = new OS.File.DirectoryIterator(this._baseDir.path);
-    }
-    catch (e) {
-      logger.error("Failed to clean updated system add-ons directories.", e);
-      return;
-    }
-
-    try {
-      let entries = [];
-
-      yield iterator.forEach(entry => {
-        
-        if (this._directory && this._directory.path == entry.path)
-          return;
-
-        
-        if (this._nextDir && this._nextDir.path == entry.path)
-          return;
-
-        entries.push(entry);
-      });
-
-      for (let entry of entries) {
-        if (entry.isDir) {
-          yield OS.File.removeDir(entry.path, {
-            ignoreAbsent: true,
-            ignorePermissions: true,
-          });
-        }
-        else {
-          yield OS.File.remove(entry.path, {
-            ignoreAbsent: true,
-          });
-        }
-      }
-    }
-    catch (e) {
-      logger.error("Failed to clean updated system add-ons directories.", e);
-    }
-    finally {
-      iterator.close();
-    }
-  }),
-
-  
-
-
-
   installAddonSet: Task.async(function(aAddons) {
     
     yield OS.File.makeDir(this._baseDir.path, { ignoreExisting: true });
@@ -7744,7 +7688,6 @@ Object.assign(SystemAddonInstallLocation.prototype, {
     }
 
     this._saveAddonSet(state);
-    this._nextDir = newDir;
   }),
 });
 

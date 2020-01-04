@@ -2,10 +2,6 @@
 
 
 
-var tempScope = {};
-Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
-var NetUtil = tempScope.NetUtil;
-
 
 var gScratchpad;
 

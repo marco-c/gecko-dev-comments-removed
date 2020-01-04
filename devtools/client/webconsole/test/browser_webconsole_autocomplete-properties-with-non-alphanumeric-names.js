@@ -28,7 +28,11 @@ var test = asyncTest(function*() {
   let { jsterm } = yield openConsole();
   let popup = jsterm.autocompletePopup;
 
-  yield jsterm.execute("let testObject = {$$aaab: '', $$aaac: ''}");
+  yield jsterm.execute("var testObject = {$$aaab: '', $$aaac: ''}");
+
+  
+  
+  
 
   
   yield autocomplete("Object.__d");

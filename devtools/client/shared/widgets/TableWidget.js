@@ -20,6 +20,11 @@ const EVENTS = {
   HEADER_CONTEXT_MENU: "header-context-menu",
   ROW_CONTEXT_MENU: "row-context-menu"
 };
+Object.defineProperty(this, "EVENTS", {
+  value: EVENTS,
+  enumerable: true,
+  writable: false
+});
 
 
 
