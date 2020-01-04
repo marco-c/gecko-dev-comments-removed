@@ -155,7 +155,6 @@ def old_configure_options(*options):
 
 @old_configure_options(
     '--cache-file',
-    '--datadir',
     '--enable-accessibility',
     '--enable-address-sanitizer',
     '--enable-alsa',
@@ -257,8 +256,6 @@ def old_configure_options(*options):
     '--enable-webspeechtestbackend',
     '--enable-xul',
     '--enable-zipwriter',
-    '--includedir',
-    '--libdir',
     '--no-create',
     '--prefix',
     '--with-android-cxx-stl',
@@ -318,8 +315,6 @@ def old_configure_options(*options):
     '--enable-mapi',
     '--enable-calendar',
     '--enable-incomplete-external-linkage',
-
-    '--enable-ipc-fuzzer',
 )
 @imports(_from='__builtin__', _import='compile')
 @imports(_from='__builtin__', _import='open')
