@@ -729,6 +729,10 @@ public:
     return This();
   }
 
+  
+  
+  
+  
   Derived& Transform (const mozilla::gfx::Matrix4x4 &aTransform)
   {
     mImpl.Transform(aTransform);
