@@ -100,15 +100,7 @@ public:
 
   ~SourceBufferIterator();
 
-  SourceBufferIterator& operator=(SourceBufferIterator&& aOther)
-  {
-    mOwner = Move(aOther.mOwner);
-    mState = aOther.mState;
-    mData = aOther.mData;
-    mChunkCount = aOther.mChunkCount;
-    mByteCount = aOther.mByteCount;
-    return *this;
-  }
+  SourceBufferIterator& operator=(SourceBufferIterator&& aOther);
 
   
 
