@@ -421,6 +421,7 @@ class Nursery
     void runSweepActions();
 
     
+    void maybeResizeNursery(JS::gcreason::Reason reason, size_t usedSpace, double promotionRate);
     void growAllocableSpace();
     void shrinkAllocableSpace();
 
