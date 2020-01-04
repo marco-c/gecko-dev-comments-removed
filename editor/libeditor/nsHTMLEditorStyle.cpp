@@ -145,7 +145,7 @@ nsHTMLEditor::SetInlineProperty(nsIAtom* aProperty,
 
       
       
-      res = PromoteInlineRange(range);
+      res = PromoteInlineRange(*range);
       NS_ENSURE_SUCCESS(res, res);
 
       
@@ -899,90 +899,74 @@ nsHTMLEditor::PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange* inRange)
 }
 
 nsresult
-nsHTMLEditor::PromoteInlineRange(nsRange* inRange)
+nsHTMLEditor::PromoteInlineRange(nsRange& aRange)
 {
-  NS_ENSURE_TRUE(inRange, NS_ERROR_NULL_POINTER);
-  nsresult res;
-  nsCOMPtr<nsIDOMNode> startNode, endNode, parent;
-  int32_t startOffset, endOffset;
+  nsCOMPtr<nsINode> startNode = aRange.GetStartParent();
+  int32_t startOffset = aRange.StartOffset();
+  nsCOMPtr<nsINode> endNode = aRange.GetEndParent();
+  int32_t endOffset = aRange.EndOffset();
 
-  res = inRange->GetStartContainer(getter_AddRefs(startNode));
-  NS_ENSURE_SUCCESS(res, res);
-  res = inRange->GetStartOffset(&startOffset);
-  NS_ENSURE_SUCCESS(res, res);
-  res = inRange->GetEndContainer(getter_AddRefs(endNode));
-  NS_ENSURE_SUCCESS(res, res);
-  res = inRange->GetEndOffset(&endOffset);
-  NS_ENSURE_SUCCESS(res, res);
-
-  while ( startNode &&
-          !nsTextEditUtils::IsBody(startNode) &&
-          IsEditable(startNode) &&
-          IsAtFrontOfNode(startNode, startOffset) )
-  {
-    parent = GetNodeLocation(startNode, &startOffset);
+  while (startNode && !startNode->IsHTMLElement(nsGkAtoms::body) &&
+         IsEditable(startNode) && IsAtFrontOfNode(*startNode, startOffset)) {
+    nsCOMPtr<nsINode> parent = startNode->GetParentNode();
+    NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
+    startOffset = parent->IndexOf(startNode);
     startNode = parent;
   }
-  NS_ENSURE_TRUE(startNode, NS_ERROR_NULL_POINTER);
 
-  while ( endNode &&
-          !nsTextEditUtils::IsBody(endNode) &&
-          IsEditable(endNode) &&
-          IsAtEndOfNode(endNode, endOffset) )
-  {
-    parent = GetNodeLocation(endNode, &endOffset);
+  while (endNode && !endNode->IsHTMLElement(nsGkAtoms::body) &&
+         IsEditable(endNode) && IsAtEndOfNode(*endNode, endOffset)) {
+    nsCOMPtr<nsINode> parent = endNode->GetParentNode();
+    NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
+    
+    endOffset = 1 + parent->IndexOf(endNode);
     endNode = parent;
-    endOffset++;  
   }
-  NS_ENSURE_TRUE(endNode, NS_ERROR_NULL_POINTER);
 
-  res = inRange->SetStart(startNode, startOffset);
+  nsresult res = aRange.SetStart(startNode, startOffset);
   NS_ENSURE_SUCCESS(res, res);
-  res = inRange->SetEnd(endNode, endOffset);
-  return res;
+  res = aRange.SetEnd(endNode, endOffset);
+  NS_ENSURE_SUCCESS(res, res);
+
+  return NS_OK;
 }
 
-bool nsHTMLEditor::IsAtFrontOfNode(nsIDOMNode *aNode, int32_t aOffset)
+bool
+nsHTMLEditor::IsAtFrontOfNode(nsINode& aNode, int32_t aOffset)
 {
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(node, false);
   if (!aOffset) {
     return true;
   }
 
-  if (IsTextNode(aNode))
-  {
+  if (IsTextNode(&aNode)) {
     return false;
   }
-  else
-  {
-    nsCOMPtr<nsIContent> firstNode = GetFirstEditableChild(*node);
-    NS_ENSURE_TRUE(firstNode, true);
-    int32_t offset = node->IndexOf(firstNode);
-    if (offset < aOffset) return false;
-    return true;
+
+  nsCOMPtr<nsIContent> firstNode = GetFirstEditableChild(aNode);
+  NS_ENSURE_TRUE(firstNode, true);
+  if (aNode.IndexOf(firstNode) < aOffset) {
+    return false;
   }
+  return true;
 }
 
-bool nsHTMLEditor::IsAtEndOfNode(nsIDOMNode *aNode, int32_t aOffset)
+bool
+nsHTMLEditor::IsAtEndOfNode(nsINode& aNode, int32_t aOffset)
 {
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(node, false);
-  uint32_t len = node->Length();
-  if (aOffset == (int32_t)len) return true;
+  if (aOffset == (int32_t)aNode.Length()) {
+    return true;
+  }
 
-  if (IsTextNode(aNode))
-  {
+  if (IsTextNode(&aNode)) {
     return false;
   }
-  else
-  {
-    nsCOMPtr<nsIContent> lastNode = GetLastEditableChild(*node);
-    NS_ENSURE_TRUE(lastNode, true);
-    int32_t offset = node->IndexOf(lastNode);
-    if (offset < aOffset) return true;
-    return false;
+
+  nsCOMPtr<nsIContent> lastNode = GetLastEditableChild(aNode);
+  NS_ENSURE_TRUE(lastNode, true);
+  if (aNode.IndexOf(lastNode) < aOffset) {
+    return true;
   }
+  return false;
 }
 
 
@@ -1265,7 +1249,7 @@ nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
       } else {
         
         
-        res = PromoteInlineRange(range);
+        res = PromoteInlineRange(*range);
       }
       NS_ENSURE_SUCCESS(res, res);
 
@@ -1402,7 +1386,7 @@ nsHTMLEditor::RelativeFontChange(FontSize aDir)
     RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
 
     
-    nsresult res = PromoteInlineRange(range);
+    nsresult res = PromoteInlineRange(*range);
     NS_ENSURE_SUCCESS(res, res);
 
     
