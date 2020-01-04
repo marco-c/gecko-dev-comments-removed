@@ -148,6 +148,42 @@ receive_cb(struct socket* sock, union sctp_sockstore addr,
   return connection->ReceiveCallback(sock, data, datalen, rcv, flags);
 }
 
+static
+DataChannelConnection *
+GetConnectionFromSocket(struct socket* sock)
+{
+  struct sockaddr *addrs = nullptr;
+  int naddrs = usrsctp_getladdrs(sock, 0, &addrs);
+  if (naddrs <= 0 || addrs[0].sa_family != AF_CONN) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  
+  struct sockaddr_conn *sconn = reinterpret_cast<struct sockaddr_conn *>(&addrs[0]);
+  DataChannelConnection *connection =
+    reinterpret_cast<DataChannelConnection *>(sconn->sconn_addr);
+  usrsctp_freeladdrs(addrs);
+
+  return connection;
+}
+
+
+static int
+threshold_event(struct socket* sock, uint32_t sb_free)
+{
+  DataChannelConnection *connection = GetConnectionFromSocket(sock);
+  if (connection) {
+    LOG(("SendDeferred()"));
+    connection->SendDeferredMessages();
+  } else {
+    LOG(("Can't find connection for socket %p", sock));
+  }
+  return 0;
+}
+
 static void
 debug_printf(const char *format, ...)
 {
@@ -176,8 +212,6 @@ DataChannelConnection::DataChannelConnection(DataConnectionListener *listener) :
   mListener = listener;
   mLocalPort = 0;
   mRemotePort = 0;
-  mDeferTimeout = 10;
-  mTimerRunning = false;
   LOG(("Constructor DataChannelConnection=%p, listener=%p", this, mListener.get()));
   mInternalIOThread = nullptr;
 }
@@ -267,9 +301,6 @@ void DataChannelConnection::DestroyOnSTS(struct socket *aMasterSocket,
   disconnect_all();
 }
 
-NS_IMPL_ISUPPORTS(DataChannelConnection,
-                  nsITimerCallback)
-
 bool
 DataChannelConnection::Init(unsigned short aPort, uint16_t aNumStreams, bool aUsingDtls)
 {
@@ -334,7 +365,8 @@ DataChannelConnection::Init(unsigned short aPort, uint16_t aNumStreams, bool aUs
   
   if ((mMasterSocket = usrsctp_socket(
          aUsingDtls ? AF_CONN : AF_INET,
-         SOCK_STREAM, IPPROTO_SCTP, receive_cb, nullptr, 0, this)) == nullptr) {
+         SOCK_STREAM, IPPROTO_SCTP, receive_cb, threshold_event,
+         usrsctp_sysctl_get_sctp_sendspace() / 2, this)) == nullptr) {
     return false;
   }
 
@@ -443,60 +475,6 @@ error_cleanup:
   mMasterSocket = nullptr;
   mUsingDtls = false;
   return false;
-}
-
-void
-DataChannelConnection::StartDefer()
-{
-  nsresult rv;
-  if (!NS_IsMainThread()) {
-    NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
-                                        DataChannelOnMessageAvailable::START_DEFER,
-                                        this, (DataChannel *) nullptr)));
-    return;
-  }
-
-  ASSERT_WEBRTC(NS_IsMainThread());
-  if (!mDeferredTimer) {
-    mDeferredTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
-    MOZ_ASSERT(mDeferredTimer);
-  }
-
-  if (!mTimerRunning) {
-    rv = mDeferredTimer->InitWithCallback(this, mDeferTimeout,
-                                          nsITimer::TYPE_ONE_SHOT);
-    NS_ENSURE_TRUE_VOID(rv == NS_OK);
-
-    mTimerRunning = true;
-  }
-}
-
-
-
-NS_IMETHODIMP
-DataChannelConnection::Notify(nsITimer *timer)
-{
-  ASSERT_WEBRTC(NS_IsMainThread());
-  LOG(("%s: %p [%p] (%dms), sending deferred messages", __FUNCTION__, this, timer, mDeferTimeout));
-
-  if (timer == mDeferredTimer) {
-    if (SendDeferredMessages()) {
-      
-      
-      nsresult rv = mDeferredTimer->InitWithCallback(this, mDeferTimeout,
-                                                     nsITimer::TYPE_ONE_SHOT);
-      if (NS_FAILED(rv)) {
-        LOG(("%s: cannot initialize open timer", __FUNCTION__));
-        
-        return rv;
-      }
-      mTimerRunning = true;
-    } else {
-      LOG(("Turned off deferred send timer"));
-      mTimerRunning = false;
-    }
-  }
-  return NS_OK;
 }
 
 #ifdef MOZ_PEERCONNECTION
@@ -1030,7 +1008,6 @@ DataChannelConnection::SendDeferredMessages()
   uint32_t i;
   RefPtr<DataChannel> channel; 
   bool still_blocked = false;
-  bool sent = false;
 
   
   MutexAutoLock lock(mLock);
@@ -1056,7 +1033,6 @@ DataChannelConnection::SendDeferredMessages()
         NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
                                   DataChannelOnMessageAvailable::ON_CHANNEL_OPEN, this,
                                   channel)));
-        sent = true;
       } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           still_blocked = true;
@@ -1077,7 +1053,6 @@ DataChannelConnection::SendDeferredMessages()
     if (channel->mFlags & DATA_CHANNEL_FLAGS_SEND_ACK) {
       if (SendOpenAckMessage(channel->mStream)) {
         channel->mFlags &= ~DATA_CHANNEL_FLAGS_SEND_ACK;
-        sent = true;
       } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           still_blocked = true;
@@ -1099,7 +1074,7 @@ DataChannelConnection::SendDeferredMessages()
         channel->mBufferedData.Clear();
       }
 
-      uint32_t buffered_amount = channel->GetBufferedAmount();
+      uint32_t buffered_amount = channel->GetBufferedAmountLocked();
       uint32_t threshold = channel->GetBufferedAmountLowThreshold();
       bool was_over_threshold = buffered_amount >= threshold;
 
@@ -1126,7 +1101,6 @@ DataChannelConnection::SendDeferredMessages()
           }
         } else {
           LOG(("Resent buffer of %d bytes (%d)", len, result));
-          sent = true;
           
           
           buffered_amount -= channel->mBufferedData[0]->mLength;
@@ -1160,18 +1134,7 @@ DataChannelConnection::SendDeferredMessages()
       break;
   }
 
-  if (!still_blocked) {
-    
-    return false;
-  }
-  
-  
-  if (!sent && mDeferTimeout < 50)
-    mDeferTimeout++;
-  else if (sent && mDeferTimeout > 10)
-    mDeferTimeout--;
-
-  return true;
+  return still_blocked;
 }
 
 void
@@ -1268,7 +1231,8 @@ DataChannelConnection::HandleOpenRequestMessage(const struct rtcweb_datachannel_
   if (!SendOpenAckMessage(stream)) {
     
     channel->mFlags |= DATA_CHANNEL_FLAGS_SEND_ACK;
-    StartDefer();
+    
+    
   }
 
   
@@ -1883,7 +1847,7 @@ DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_e
           mStreams[stream] = channel;
           channel->mFlags |= DATA_CHANNEL_FLAGS_SEND_REQ;
           
-          StartDefer();
+          
         } else {
           
           break;
@@ -2147,8 +2111,8 @@ DataChannelConnection::OpenFinish(already_AddRefed<DataChannel>&& aChannel)
       LOG(("SendOpenRequest failed, errno = %d", errno));
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         channel->mFlags |= DATA_CHANNEL_FLAGS_SEND_REQ;
-        StartDefer();
-
+        
+        
         return channel.forget();
       } else {
         if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
@@ -2237,6 +2201,19 @@ DataChannelConnection::SendMsgInternal(DataChannel *channel, const char *data,
 
   
   
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  MutexAutoLock lock(mLock);
   if (channel->mBufferedData.IsEmpty()) {
     result = usrsctp_sendv(mSocket, data, length,
                            nullptr, 0,
@@ -2250,12 +2227,12 @@ DataChannelConnection::SendMsgInternal(DataChannel *channel, const char *data,
   }
   if (result < 0) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
+
       
       BufferedMsg *buffered = new BufferedMsg(spa, data, length); 
       channel->mBufferedData.AppendElement(buffered); 
       channel->mFlags |= DATA_CHANNEL_FLAGS_SEND_DATA;
       LOG(("Queued %u buffers (len=%u)", channel->mBufferedData.Length(), length));
-      StartDefer();
       return 0;
     }
     LOG(("error %d sending string", errno));
@@ -2624,9 +2601,10 @@ DataChannel::AppReady()
 }
 
 uint32_t
-DataChannel::GetBufferedAmount()
+DataChannel::GetBufferedAmountLocked() const
 {
   size_t buffered = 0;
+
   for (auto& buffer : mBufferedData) {
     buffered += buffer->mLength;
   }
