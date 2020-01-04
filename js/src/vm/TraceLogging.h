@@ -205,11 +205,11 @@ class TraceLoggerThread
     EventEntry* getEventsStartingAt(uint32_t* lastIteration, uint32_t* lastEntryId, size_t* num) {
         EventEntry* start;
         if (iteration_ == *lastIteration) {
-            MOZ_ASSERT(events.lastEntryId() >= *lastEntryId);
+            MOZ_ASSERT(*lastEntryId < events.size());
             *num = events.lastEntryId() - *lastEntryId;
             start = events.data() + *lastEntryId + 1;
         } else {
-            *num = events.lastEntryId() + 1;
+            *num = events.size();
             start = events.data();
         }
 
@@ -227,7 +227,7 @@ class TraceLoggerThread
     bool lostEvents(uint32_t lastIteration, uint32_t lastEntryId) {
         
         if (lastIteration == iteration_) {
-            MOZ_ASSERT(lastEntryId <= events.lastEntryId());
+            MOZ_ASSERT(lastEntryId < events.size());
             return false;
         }
 
