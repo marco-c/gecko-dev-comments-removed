@@ -308,6 +308,7 @@ user_pref("media.decoder.heuristic.dormant.timeout", 0);
 #endif
 
 
+user_pref("browser.displayedE10SNotice", 5);
 user_pref("browser.displayedE10SPrompt.1", 5);
 
 user_pref("browser.tabs.remote.autostart.1", false);
