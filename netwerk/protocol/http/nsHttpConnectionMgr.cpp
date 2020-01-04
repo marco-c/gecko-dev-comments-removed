@@ -885,58 +885,6 @@ nsHttpConnectionMgr::PruneNoTrafficCB(const nsACString &key,
     return PL_DHASH_NEXT;
 }
 
-PLDHashOperator
-nsHttpConnectionMgr::ShutdownPassCB(const nsACString &key,
-                                    nsAutoPtr<nsConnectionEntry> &ent,
-                                    void *closure)
-{
-    nsHttpConnectionMgr *self = (nsHttpConnectionMgr *) closure;
-
-    nsHttpTransaction *trans;
-    nsHttpConnection *conn;
-
-    
-    while (ent->mActiveConns.Length()) {
-        conn = ent->mActiveConns[0];
-
-        ent->mActiveConns.RemoveElementAt(0);
-        self->DecrementActiveConnCount(conn);
-
-        conn->Close(NS_ERROR_ABORT, true);
-        NS_RELEASE(conn);
-    }
-
-    
-    while (ent->mIdleConns.Length()) {
-        conn = ent->mIdleConns[0];
-
-        ent->mIdleConns.RemoveElementAt(0);
-        self->mNumIdleConns--;
-
-        conn->Close(NS_ERROR_ABORT);
-        NS_RELEASE(conn);
-    }
-    
-    
-    self->ConditionallyStopPruneDeadConnectionsTimer();
-
-    
-    while (ent->mPendingQ.Length()) {
-        trans = ent->mPendingQ[0];
-
-        ent->mPendingQ.RemoveElementAt(0);
-
-        trans->Close(NS_ERROR_ABORT);
-        NS_RELEASE(trans);
-    }
-
-    
-    for (int32_t i = ((int32_t) ent->mHalfOpens.Length()) - 1; i >= 0; i--)
-        ent->mHalfOpens[i]->Abandon();
-
-    return PL_DHASH_REMOVE;
-}
-
 
 
 bool
@@ -1187,16 +1135,6 @@ nsHttpConnectionMgr::ClosePersistentConnections(nsConnectionEntry *ent)
     int32_t activeCount = ent->mActiveConns.Length();
     for (int32_t i=0; i < activeCount; i++)
         ent->mActiveConns[i]->DontReuse();
-}
-
-PLDHashOperator
-nsHttpConnectionMgr::ClosePersistentConnectionsCB(const nsACString &key,
-                                                  nsAutoPtr<nsConnectionEntry> &ent,
-                                                  void *closure)
-{
-    nsHttpConnectionMgr *self = static_cast<nsHttpConnectionMgr *>(closure);
-    self->ClosePersistentConnections(ent);
-    return PL_DHASH_NEXT;
 }
 
 bool
@@ -2214,7 +2152,53 @@ nsHttpConnectionMgr::OnMsgShutdown(int32_t, ARefBase *param)
     LOG(("nsHttpConnectionMgr::OnMsgShutdown\n"));
 
     gHttpHandler->StopRequestTokenBucket();
-    mCT.Enumerate(ShutdownPassCB, this);
+
+    for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+        nsAutoPtr<nsConnectionEntry>& ent = iter.Data();
+
+        
+        while (ent->mActiveConns.Length()) {
+            nsHttpConnection* conn = ent->mActiveConns[0];
+
+            ent->mActiveConns.RemoveElementAt(0);
+            DecrementActiveConnCount(conn);
+
+            conn->Close(NS_ERROR_ABORT, true);
+            NS_RELEASE(conn);
+        }
+
+        
+        while (ent->mIdleConns.Length()) {
+            nsHttpConnection* conn = ent->mIdleConns[0];
+
+            ent->mIdleConns.RemoveElementAt(0);
+            mNumIdleConns--;
+
+            conn->Close(NS_ERROR_ABORT);
+            NS_RELEASE(conn);
+        }
+
+        
+        
+        ConditionallyStopPruneDeadConnectionsTimer();
+
+        
+        while (ent->mPendingQ.Length()) {
+            nsHttpTransaction* trans = ent->mPendingQ[0];
+
+            ent->mPendingQ.RemoveElementAt(0);
+
+            trans->Close(NS_ERROR_ABORT);
+            NS_RELEASE(trans);
+        }
+
+        
+        for (int32_t i = int32_t(ent->mHalfOpens.Length()) - 1; i >= 0; i--) {
+            ent->mHalfOpens[i]->Abandon();
+        }
+
+        iter.Remove();
+    }
 
     if (mTimeoutTick) {
         mTimeoutTick->Cancel();
@@ -2555,7 +2539,10 @@ nsHttpConnectionMgr::OnMsgDoShiftReloadConnectionCleanup(int32_t, ARefBase *para
 
     nsHttpConnectionInfo *ci = static_cast<nsHttpConnectionInfo *>(param);
 
-    mCT.Enumerate(ClosePersistentConnectionsCB, this);
+    for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+        ClosePersistentConnections(iter.Data());
+    }
+
     if (ci)
         ResetIPFamilyPreference(ci);
 }
