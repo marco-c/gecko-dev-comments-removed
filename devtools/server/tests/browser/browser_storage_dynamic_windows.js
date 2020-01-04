@@ -148,6 +148,9 @@ function testAddIframe(front) {
         
         
         "https://sectest1.example.org": []
+      },
+      Cache: {
+        "https://sectest1.example.org":[]
       }
     };
 
@@ -209,6 +212,12 @@ function testRemoveIframe(front) {
         "http://sectest1.example.org": []
       },
       sessionStorage: {
+        "http://sectest1.example.org": []
+      },
+      Cache: {
+        "http://sectest1.example.org": []
+      },
+      indexedDB: {
         "http://sectest1.example.org": []
       }
     };
