@@ -57,6 +57,8 @@ public:
 
 protected:
 
+  nsICSSDeclaration* GetExistingStyle();
+
   
 
 
