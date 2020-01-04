@@ -193,8 +193,16 @@ class ZoneCellIterImpl
 
   public:
     ZoneCellIterImpl(JS::Zone* zone, AllocKind kind) {
+        JSRuntime* rt = zone->runtimeFromAnyThread();
         MOZ_ASSERT(zone);
-        MOZ_ASSERT(zone->runtimeFromAnyThread()->gc.nursery.isEmpty());
+        MOZ_ASSERT(rt->gc.nursery.isEmpty());
+
+        
+        
+        
+        
+        if (IsBackgroundFinalized(kind) && zone->arenas.needBackgroundFinalizeWait(kind))
+            rt->gc.waitBackgroundSweepEnd();
 
         arenaIter.init(zone, kind);
         if (!arenaIter.done())
@@ -248,13 +256,6 @@ class ZoneCellIter
         
         JSRuntime* rt = zone->runtimeFromMainThread();
         if (!rt->isHeapBusy()) {
-            
-            
-            
-            
-            if (IsBackgroundFinalized(kind) && zone->arenas.needBackgroundFinalizeWait(kind))
-                rt->gc.waitBackgroundSweepEnd();
-
             
             rt->gc.evictNursery();
 
