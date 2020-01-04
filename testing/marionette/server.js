@@ -21,10 +21,6 @@ Cu.import("chrome://marionette/content/simpletest.js");
 
 loader.loadSubScript("resource://devtools/shared/transport/transport.js");
 
-
-var events = {};
-loader.loadSubScript("chrome://marionette/content/ChromeUtils.js", events);
-
 const logger = Log.repository.getLogger("Marionette");
 
 this.EXPORTED_SYMBOLS = ["MarionetteServer"];
