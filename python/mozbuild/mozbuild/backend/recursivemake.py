@@ -229,8 +229,6 @@ class BackendMakeFile(object):
 
     def close(self):
         if self.xpt_name:
-            self.fh.write('XPT_NAME := %s\n' % self.xpt_name)
-
             
             
             self.fh.write('NONRECURSIVE_TARGETS += export\n')
