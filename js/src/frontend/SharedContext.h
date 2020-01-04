@@ -330,6 +330,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            usesArguments:1;  
     bool            usesApply:1;      
     bool            usesThis:1;       
+    bool            usesReturn:1;     
 
     FunctionContextFlags funCxFlags;
 
@@ -342,6 +343,10 @@ class FunctionBox : public ObjectBox, public SharedContext
     JSFunction* function() const { return &object->as<JSFunction>(); }
     JSObject* staticScope() const override { return function(); }
     JSObject* enclosingStaticScope() const { return enclosingStaticScope_; }
+
+    bool isLikelyConstructorWrapper() const {
+        return usesArguments && usesApply && usesThis && !usesReturn;
+    }
 
     GeneratorKind generatorKind() const { return GeneratorKindFromBits(generatorKindBits_); }
     bool isGenerator() const { return generatorKind() != NotGenerator; }
