@@ -259,7 +259,7 @@ nsNSSCertificateDB::getCertsFromPackage(const UniquePLArenaPool& arena,
 }
 
 nsresult
-nsNSSCertificateDB::handleCACertDownload(nsIArray *x509Certs,
+nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
                                          nsIInterfaceRequestor *ctx,
                                          const nsNSSShutDownPreventionLock &proofOfLock)
 {
@@ -284,7 +284,6 @@ nsNSSCertificateDB::handleCACertDownload(nsIArray *x509Certs,
     return NS_OK; 
 
   nsCOMPtr<nsIX509Cert> certToShow;
-  nsCOMPtr<nsISupports> isupports;
   uint32_t selCertIndex;
   if (numCerts == 1) {
     
@@ -337,28 +336,12 @@ nsNSSCertificateDB::handleCACertDownload(nsIArray *x509Certs,
   nsresult rv = ::getNSSDialogs(getter_AddRefs(dialogs), 
                                 NS_GET_IID(nsICertificateDialogs),
                                 NS_CERTIFICATEDIALOGS_CONTRACTID);
-                       
-  if (NS_FAILED(rv))
+  if (NS_FAILED(rv)) {
     return rv;
- 
-  SECItem der;
-  rv=certToShow->GetRawDER(&der.len, (uint8_t **)&der.data);
-
-  if (NS_FAILED(rv))
-    return rv;
-
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Creating temp cert\n"));
-  CERTCertDBHandle *certdb = CERT_GetDefaultCertDB();
-  UniqueCERTCertificate tmpCert(CERT_FindCertByDERCert(certdb, &der));
-  if (!tmpCert) {
-    tmpCert.reset(CERT_NewTempCertificate(certdb, &der, nullptr, false, true));
   }
-  free(der.data);
-  der.data = nullptr;
-  der.len = 0;
 
+  UniqueCERTCertificate tmpCert(certToShow->GetCert());
   if (!tmpCert) {
-    NS_ERROR("Couldn't create cert from DER blob");
     return NS_ERROR_FAILURE;
   }
 
@@ -392,12 +375,10 @@ nsNSSCertificateDB::handleCACertDownload(nsIArray *x509Certs,
                    !!(trustBits & nsIX509CertDB::TRUSTED_EMAIL),
                    !!(trustBits & nsIX509CertDB::TRUSTED_OBJSIGN));
 
-  SECStatus srv = __CERT_AddTempCertToPerm(tmpCert.get(),
-                                           const_cast<char*>(nickname.get()),
-                                           trust.GetTrust());
-
-  if (srv != SECSuccess)
+  if (CERT_AddTempCertToPerm(tmpCert.get(), nickname.get(),
+                             trust.GetTrust()) != SECSuccess) {
     return NS_ERROR_FAILURE;
+  }
 
   
 
@@ -415,22 +396,21 @@ nsNSSCertificateDB::handleCACertDownload(nsIArray *x509Certs,
       continue;
     }
 
-    certToShow = do_QueryElementAt(x509Certs, i);
-    certToShow->GetRawDER(&der.len, (uint8_t **)&der.data);
+    nsCOMPtr<nsIX509Cert> remainingCert = do_QueryElementAt(x509Certs, i);
+    if (!remainingCert) {
+      continue;
+    }
 
-    CERTCertificate *tmpCert2 = 
-      CERT_NewTempCertificate(certdb, &der, nullptr, false, true);
-
-    free(der.data);
-    der.data = nullptr;
-    der.len = 0;
-
+    UniqueCERTCertificate tmpCert2(remainingCert->GetCert());
     if (!tmpCert2) {
-      NS_ERROR("Couldn't create temp cert from DER blob");
       continue;  
     }
 
-    CERT_AddCertToListTail(certList.get(), tmpCert2);
+    if (CERT_AddCertToListTail(certList.get(), tmpCert2.get()) != SECSuccess) {
+      continue;
+    }
+
+    Unused << tmpCert2.release();
   }
 
   return ImportValidCACertsInList(certList, ctx, proofOfLock);
@@ -481,7 +461,7 @@ nsNSSCertificateDB::ImportCertificates(uint8_t* data, uint32_t length,
     }
   }
 
-  return handleCACertDownload(array, ctx, locker);
+  return handleCACertDownload(WrapNotNull(array), ctx, locker);
 }
 
 
@@ -1360,12 +1340,12 @@ nsNSSCertificateDB::get_default_nickname(CERTCertificate *cert,
   }
 }
 
-NS_IMETHODIMP nsNSSCertificateDB::AddCertFromBase64(const char* aBase64,
-                                                    const char* aTrust,
-                                                    const char* aName)
+NS_IMETHODIMP
+nsNSSCertificateDB::AddCertFromBase64(const char* aBase64, const char* aTrust,
+                                      const char* )
 {
   NS_ENSURE_ARG_POINTER(aBase64);
-  nsCOMPtr <nsIX509Cert> newCert;
+  NS_ENSURE_ARG_POINTER(aTrust);
 
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown()) {
@@ -1373,37 +1353,21 @@ NS_IMETHODIMP nsNSSCertificateDB::AddCertFromBase64(const char* aBase64,
   }
 
   nsNSSCertTrust trust;
+  if (CERT_DecodeTrustString(trust.GetTrust(), aTrust) != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
 
-  
-  SECStatus stat = CERT_DecodeTrustString(trust.GetTrust(),
-    (char *) aTrust);
-  NS_ENSURE_STATE(stat == SECSuccess); 
-
-
+  nsCOMPtr<nsIX509Cert> newCert;
   nsresult rv = ConstructX509FromBase64(aBase64, getter_AddRefs(newCert));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  SECItem der;
-  rv = newCert->GetRawDER(&der.len, (uint8_t **)&der.data);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Creating temp cert\n"));
-  CERTCertDBHandle *certdb = CERT_GetDefaultCertDB();
-  UniqueCERTCertificate tmpCert(CERT_FindCertByDERCert(certdb, &der));
+  UniqueCERTCertificate tmpCert(newCert->GetCert());
   if (!tmpCert) {
-    tmpCert.reset(CERT_NewTempCertificate(certdb, &der, nullptr, false, true));
-  }
-  free(der.data);
-  der.data = nullptr;
-  der.len = 0;
-
-  if (!tmpCert) {
-    NS_ERROR("Couldn't create cert from DER blob");
-    return MapSECStatus(SECFailure);
+    return NS_ERROR_FAILURE;
   }
 
-   
-   
+  
+  
   if (tmpCert->isperm) {
     return SetCertTrustFromString(newCert, aTrust);
   }
@@ -1417,9 +1381,8 @@ NS_IMETHODIMP nsNSSCertificateDB::AddCertFromBase64(const char* aBase64,
     return rv;
   }
 
-  SECStatus srv = __CERT_AddTempCertToPerm(tmpCert.get(),
-                                           const_cast<char*>(nickname.get()),
-                                           trust.GetTrust());
+  SECStatus srv = CERT_AddTempCertToPerm(tmpCert.get(), nickname.get(),
+                                         trust.GetTrust());
   return MapSECStatus(srv);
 }
 
