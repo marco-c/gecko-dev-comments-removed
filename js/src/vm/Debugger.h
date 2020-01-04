@@ -1537,12 +1537,5 @@ MOZ_MUST_USE bool ReportObjectRequired(JSContext* cx);
 
 } 
 
-namespace JS {
-
-template <>
-struct DeletePolicy<js::Debugger> : public js::GCManagedDeletePolicy<js::Debugger>
-{};
-
-} 
 
 #endif 
