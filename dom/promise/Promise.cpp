@@ -1115,35 +1115,236 @@ Promise::Reject(nsIGlobalObject* aGlobal, JSContext* aCx,
   return promise.forget();
 }
 
-already_AddRefed<Promise>
-Promise::Then(JSContext* aCx, AnyCallback* aResolveCallback,
-              AnyCallback* aRejectCallback, ErrorResult& aRv)
+namespace {
+void
+SpeciesConstructor(JSContext* aCx,
+                   JS::Handle<JSObject*> promise,
+                   JS::Handle<JS::Value> defaultCtor,
+                   JS::MutableHandle<JS::Value> ctor,
+                   ErrorResult& aRv)
 {
-  RefPtr<Promise> promise = Create(GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
+  
+  
+
+  
+  MOZ_ASSERT(promise);
+
+  
+  JS::Rooted<JS::Value> constructorVal(aCx);
+  if (!JS_GetProperty(aCx, promise, "constructor", &constructorVal)) {
+    
+    aRv.NoteJSContextException();
+    return;
   }
 
+  
+  if (constructorVal.isUndefined()) {
+    ctor.set(defaultCtor);
+    return;
+  }
+
+  
+  if (!constructorVal.isObject()) {
+    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
+    return;
+  }
+
+  
+  JS::Rooted<jsid> species(aCx,
+    SYMBOL_TO_JSID(JS::GetWellKnownSymbol(aCx, JS::SymbolCode::species)));
+  JS::Rooted<JS::Value> speciesVal(aCx);
+  JS::Rooted<JSObject*> constructorObj(aCx, &constructorVal.toObject());
+  if (!JS_GetPropertyById(aCx, constructorObj, species, &speciesVal)) {
+    
+    aRv.NoteJSContextException();
+    return;
+  }
+
+  
+  if (speciesVal.isNullOrUndefined()) {
+    ctor.set(defaultCtor);
+    return;
+  }
+
+  
+  if (speciesVal.isObject() && JS::IsConstructor(&speciesVal.toObject())) {
+    ctor.set(speciesVal);
+    return;
+  }
+
+  
+  aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
+}
+} 
+
+void
+Promise::Then(JSContext* aCx, JS::Handle<JSObject*> aCalleeGlobal,
+              AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
+              JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
+{
+  
+  
+
+  
+  JS::Rooted<JS::Value> promiseVal(aCx, JS::ObjectValue(*GetWrapper()));
+  if (!MaybeWrapObjectValue(aCx, &promiseVal)) {
+    aRv.NoteJSContextException();
+    return;
+  }
+  JS::Rooted<JSObject*> promiseObj(aCx, &promiseVal.toObject());
+  MOZ_ASSERT(promiseObj);
+
+  
+
+  
+  
+  
+  JS::Rooted<JSObject*> calleeGlobal(aCx, aCalleeGlobal);
+  JS::Rooted<JS::Value> defaultCtorVal(aCx);
+  { 
+    JSAutoCompartment ac(aCx, aCalleeGlobal);
+    JSObject* defaultCtor =
+      PromiseBinding::GetConstructorObject(aCx, calleeGlobal);
+    if (!defaultCtor) {
+      aRv.NoteJSContextException();
+      return;
+    }
+    defaultCtorVal.setObject(*defaultCtor);
+  }
+  if (!MaybeWrapObjectValue(aCx, &defaultCtorVal)) {
+    aRv.NoteJSContextException();
+    return;
+  }
+
+  JS::Rooted<JS::Value> constructor(aCx);
+  SpeciesConstructor(aCx, promiseObj, defaultCtorVal, &constructor, aRv);
+  if (aRv.Failed()) {
+    
+    return;
+  }
+
+  
+  GlobalObject globalObj(aCx, GetWrapper());
+  if (globalObj.Failed()) {
+    aRv.NoteJSContextException();
+    return;
+  }
+  nsCOMPtr<nsIGlobalObject> globalObject =
+    do_QueryInterface(globalObj.GetAsSupports());
+  if (!globalObject) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+  PromiseCapability capability(aCx);
+  NewPromiseCapability(aCx, globalObject, constructor, false, capability, aRv);
+  if (aRv.Failed()) {
+    
+    return;
+  }
+
+  
+  
+
+  
+
+  
+  
+
+  
+  
   JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
+  if (capability.mNativePromise) {
+    Promise* promise = capability.mNativePromise;
 
-  RefPtr<PromiseCallback> resolveCb =
-    PromiseCallback::Factory(promise, global, aResolveCallback,
-                             PromiseCallback::Resolve);
+    RefPtr<PromiseCallback> resolveCb =
+      PromiseCallback::Factory(promise, global, aResolveCallback,
+                               PromiseCallback::Resolve);
 
-  RefPtr<PromiseCallback> rejectCb =
-    PromiseCallback::Factory(promise, global, aRejectCallback,
-                             PromiseCallback::Reject);
+    RefPtr<PromiseCallback> rejectCb =
+      PromiseCallback::Factory(promise, global, aRejectCallback,
+                               PromiseCallback::Reject);
 
-  AppendCallbacks(resolveCb, rejectCb);
+    AppendCallbacks(resolveCb, rejectCb);
+  } else {
+    JS::Rooted<JSObject*> resolveObj(aCx, &capability.mResolve.toObject());
+    RefPtr<AnyCallback> resolveFunc =
+      new AnyCallback(aCx, resolveObj, GetIncumbentGlobal());
 
-  return promise.forget();
+    JS::Rooted<JSObject*> rejectObj(aCx, &capability.mReject.toObject());
+    RefPtr<AnyCallback> rejectFunc =
+      new AnyCallback(aCx, rejectObj, GetIncumbentGlobal());
+
+    if (!capability.mPromise.isObject()) {
+      aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
+      return;
+    }
+    JS::Rooted<JSObject*> newPromiseObj(aCx, &capability.mPromise.toObject());
+    
+    newPromiseObj = js::CheckedUnwrap(newPromiseObj);
+    if (!newPromiseObj) {
+      
+      aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
+      return;
+    }
+
+    RefPtr<PromiseCallback> resolveCb;
+    if (aResolveCallback) {
+      resolveCb = new WrapperPromiseCallback(global, aResolveCallback,
+                                             newPromiseObj,
+                                             resolveFunc, rejectFunc);
+    } else {
+      resolveCb = new InvokePromiseFuncCallback(global, newPromiseObj,
+                                                resolveFunc);
+    }
+
+    RefPtr<PromiseCallback> rejectCb;
+    if (aRejectCallback) {
+      rejectCb = new WrapperPromiseCallback(global, aRejectCallback,
+                                            newPromiseObj,
+                                            resolveFunc, rejectFunc);
+    } else {
+      rejectCb = new InvokePromiseFuncCallback(global, newPromiseObj,
+                                               rejectFunc);
+    }
+
+    AppendCallbacks(resolveCb, rejectCb);
+  }
+
+  aRetval.set(capability.PromiseValue());
 }
 
-already_AddRefed<Promise>
-Promise::Catch(JSContext* aCx, AnyCallback* aRejectCallback, ErrorResult& aRv)
+void
+Promise::Catch(JSContext* aCx, AnyCallback* aRejectCallback,
+               JS::MutableHandle<JS::Value> aRetval,
+               ErrorResult& aRv)
 {
-  RefPtr<AnyCallback> resolveCb;
-  return Then(aCx, resolveCb, aRejectCallback, aRv);
+  
+  
+
+  
+  
+  JS::Rooted<JS::Value> promiseVal(aCx, JS::ObjectValue(*GetWrapper()));
+  if (!MaybeWrapObjectValue(aCx, &promiseVal)) {
+    aRv.NoteJSContextException();
+    return;
+  }
+  JS::Rooted<JSObject*> promiseObj(aCx, &promiseVal.toObject());
+  MOZ_ASSERT(promiseObj);
+  JS::AutoValueArray<2> callbacks(aCx);
+  callbacks[0].setUndefined();
+  if (aRejectCallback) {
+    callbacks[1].setObject(*aRejectCallback->Callable());
+    
+    if (!MaybeWrapObjectValue(aCx, callbacks[1])) {
+      aRv.NoteJSContextException();
+      return;
+    }
+  } else {
+    callbacks[1].setNull();
+  }
+  if (!JS_CallFunctionName(aCx, promiseObj, "then", callbacks, aRetval)) {
+    aRv.NoteJSContextException();
+  }
 }
 
 
