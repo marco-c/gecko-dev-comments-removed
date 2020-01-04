@@ -862,7 +862,6 @@ Transform3D(RefPtr<SourceSurface> aSource,
   aDestRect.RoundOut();
 
   
-  RefPtr<gfxASurface> dest = aDest->CurrentSurface();
   RefPtr<gfxImageSurface> destImage = new gfxImageSurface(IntSize(aDestRect.width,
                                                                     aDestRect.height),
                                                             SurfaceFormat::A8R8G8B8_UINT32);
