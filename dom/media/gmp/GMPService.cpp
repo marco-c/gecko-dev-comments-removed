@@ -357,6 +357,8 @@ GeckoMediaPluginService::GetThread(nsIThread** aThread)
       return rv;
     }
 
+    mAbstractGMPThread = CreateXPCOMAbstractThreadWrapper(mGMPThread, false);
+
     
     InitializePlugins();
   }
@@ -365,6 +367,12 @@ GeckoMediaPluginService::GetThread(nsIThread** aThread)
   copy.forget(aThread);
 
   return NS_OK;
+}
+
+RefPtr<AbstractThread>
+GeckoMediaPluginService::GetAbstractGMPThread()
+{
+  return mAbstractGMPThread;
 }
 
 class GetGMPContentParentForAudioDecoderDone : public GetGMPContentParentCallback
