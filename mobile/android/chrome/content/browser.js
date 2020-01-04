@@ -3473,16 +3473,19 @@ Tab.prototype = {
 
     Services.obs.addObserver(this, "before-first-paint", false);
 
+    
+    
+    this.browser.__SS_data = {
+      entries: [{
+        url: aURL,
+        title: truncate(title, MAX_TITLE_LENGTH)
+      }],
+      index: 1
+    };
+
     if (aParams.delayLoad) {
       
       
-      this.browser.__SS_data = {
-        entries: [{
-          url: aURL,
-          title: truncate(title, MAX_TITLE_LENGTH)
-        }],
-        index: 1
-      };
       this.browser.__SS_restore = true;
     } else {
       let flags = "flags" in aParams ? aParams.flags : Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
