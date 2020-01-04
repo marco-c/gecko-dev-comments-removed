@@ -65,15 +65,6 @@
     }
 
     let oldThemeDef = gDevTools.getThemeDefinition(oldTheme);
-
-    
-    if (oldThemeDef) {
-      for (let sheet of devtoolsStyleSheets.get(oldThemeDef) || []) {
-        sheet.remove();
-      }
-    }
-
-    
     let newThemeDef = gDevTools.getThemeDefinition(newTheme);
 
     
@@ -110,28 +101,35 @@
       forceStyle();
     }
 
-    if (oldThemeDef) {
-      for (let name of oldThemeDef.classList) {
-        documentElement.classList.remove(name);
+    Promise.all(loadEvents).then(() => {
+      
+      if (oldThemeDef) {
+        for (let name of oldThemeDef.classList) {
+          documentElement.classList.remove(name);
+        }
+
+        for (let sheet of devtoolsStyleSheets.get(oldThemeDef) || []) {
+          sheet.remove();
+        }
+
+        if (oldThemeDef.onUnapply) {
+          oldThemeDef.onUnapply(window, newTheme);
+        }
       }
 
-      if (oldThemeDef.onUnapply) {
-        oldThemeDef.onUnapply(window, newTheme);
+      
+      for (let name of newThemeDef.classList) {
+        documentElement.classList.add(name);
       }
-    }
 
-    for (let name of newThemeDef.classList) {
-      documentElement.classList.add(name);
-    }
+      if (newThemeDef.onApply) {
+        newThemeDef.onApply(window, oldTheme);
+      }
 
-    if (newThemeDef.onApply) {
-      newThemeDef.onApply(window, oldTheme);
-    }
-
-    
-    gDevTools.emit("theme-switched", window, newTheme, oldTheme);
-
-    Promise.all(loadEvents).then(notifyWindow, console.error.bind(console));
+      
+      gDevTools.emit("theme-switched", window, newTheme, oldTheme);
+      notifyWindow();
+    }, console.error.bind(console));
   }
 
   function handlePrefChange(event, data) {
