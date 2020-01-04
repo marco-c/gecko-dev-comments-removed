@@ -542,7 +542,42 @@ WebGLContext::FramebufferTexture2D(GLenum target,
         return;
     }
 
-    if (!IsWebGL2() && level != 0) {
+    if (textarget != LOCAL_GL_TEXTURE_2D &&
+        (textarget < LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X ||
+         textarget > LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z))
+    {
+        return ErrorInvalidEnumInfo("framebufferTexture2D: textarget:",
+                                    textarget);
+    }
+
+    if (IsWebGL2()) {
+        
+
+
+
+
+
+
+
+
+
+
+
+        if (textarget == LOCAL_GL_TEXTURE_2D) {
+            if (uint32_t(level) > FloorLog2(mImplMaxTextureSize)) {
+                ErrorInvalidValue("framebufferTexture2D: level is too large.");
+                return;
+            }
+        } else {
+            MOZ_ASSERT(textarget >= LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
+                       textarget <= LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+
+            if (uint32_t(level) > FloorLog2(mImplMaxCubeMapTextureSize)) {
+                ErrorInvalidValue("framebufferTexture2D: level is too large.");
+                return;
+            }
+        }
+    } else if (level != 0) {
         ErrorInvalidValue("framebufferTexture2D: level must be 0.");
         return;
     }
@@ -565,14 +600,6 @@ WebGLContext::FramebufferTexture2D(GLenum target,
     if (!fb) {
         return ErrorInvalidOperation("framebufferTexture2D: cannot modify"
                                      " framebuffer 0.");
-    }
-
-    if (textarget != LOCAL_GL_TEXTURE_2D &&
-        (textarget < LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X ||
-         textarget > LOCAL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z))
-    {
-        return ErrorInvalidEnumInfo("framebufferTexture2D: textarget:",
-                                    textarget);
     }
 
     if (!ValidateFramebufferAttachment(fb, attachment, "framebufferTexture2D"))
