@@ -29,59 +29,10 @@
 #include "mozilla/MacroForEach.h"
 #include "mozilla/TypeTraits.h"
 
-#if defined(__clang__)
-   
-   
-   
-   
-#  define MOZ_CAN_USE_IS_DESTRUCTIBLE_FALLBACK
-#elif defined(__GNUC__)
-   
-#  if MOZ_USING_LIBSTDCXX
-#    define MOZ_HAVE_STD_IS_DESTRUCTIBLE
-#  endif
-   
-   
-#  define MOZ_CAN_USE_IS_DESTRUCTIBLE_FALLBACK
-#endif
-
-#ifdef MOZ_HAVE_STD_IS_DESTRUCTIBLE
-#  include <type_traits>
-#  define MOZ_IS_DESTRUCTIBLE(X) (std::is_destructible<X>::value)
-#elif defined MOZ_CAN_USE_IS_DESTRUCTIBLE_FALLBACK
-  namespace mozilla {
-    struct IsDestructibleFallbackImpl
-    {
-      template<typename T, typename = decltype(DeclVal<T>().~T())>
-      static TrueType Test(int);
-
-      template<typename>
-      static FalseType Test(...);
-
-      template<typename T>
-      struct Selector
-      {
-        typedef decltype(Test<T>(0)) type;
-      };
-    };
-
-    template<typename T>
-    struct IsDestructibleFallback
-      : IsDestructibleFallbackImpl::Selector<T>::type
-    {
-    };
-  } 
-#  define MOZ_IS_DESTRUCTIBLE(X) (mozilla::IsDestructibleFallback<X>::value)
-#endif
-
-#ifdef MOZ_IS_DESTRUCTIBLE
 #define MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(X) \
-  static_assert(!MOZ_IS_DESTRUCTIBLE(X), \
+  static_assert(!mozilla::IsDestructible<X>::value, \
                 "Reference-counted class " #X " should not have a public destructor. " \
                 "Make this class's destructor non-public");
-#else
-#define MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(X)
-#endif
 
 inline nsISupports*
 ToSupports(nsISupports* aSupports)
