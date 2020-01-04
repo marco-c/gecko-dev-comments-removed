@@ -767,13 +767,7 @@ pref("gfx.font_rendering.opentype_svg.enabled", true);
 
 
 pref("gfx.canvas.azure.backends", "direct2d1.1,skia,cairo");
-
-#ifdef NIGHTLY_BUILD
-pref("gfx.content.azure.backends", "direct2d1.1,skia,cairo");
-#else
 pref("gfx.content.azure.backends", "direct2d1.1,cairo");
-#endif
-
 #else
 #ifdef XP_MACOSX
 pref("gfx.content.azure.backends", "skia");
@@ -5087,6 +5081,10 @@ pref("dom.voicemail.defaultServiceId", 0);
 
 
 pref("dom.mapped_arraybuffer.enabled", true);
+
+
+
+pref("dom.fire_extra_xhr_loading_readystatechanges", false);
 
 
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
