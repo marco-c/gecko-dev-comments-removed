@@ -642,7 +642,13 @@ FakeSSLStatus.prototype = {
 
 
 
-function add_cert_override(aHost, aExpectedBits, aSecurityInfo) {
+function add_cert_override(aHost, aExpectedBits, aExpectedErrorRegexp,
+                           aSecurityInfo) {
+  if (aExpectedErrorRegexp) {
+    do_print(aSecurityInfo.errorMessage);
+    Assert.ok(aExpectedErrorRegexp.test(aSecurityInfo.errorMessage),
+              "Actual error message should match expected error regexp");
+  }
   let sslstatus = aSecurityInfo.QueryInterface(Ci.nsISSLStatusProvider)
                                .SSLStatus;
   let bits =
@@ -662,9 +668,12 @@ function add_cert_override(aHost, aExpectedBits, aSecurityInfo) {
 
 
 
-function add_cert_override_test(aHost, aExpectedBits, aExpectedError) {
+
+function add_cert_override_test(aHost, aExpectedBits, aExpectedError,
+                                aExpectedErrorRegexp = undefined) {
   add_connection_test(aHost, aExpectedError, null,
-                      add_cert_override.bind(this, aHost, aExpectedBits));
+                      add_cert_override.bind(this, aHost, aExpectedBits,
+                                             aExpectedErrorRegexp));
   add_connection_test(aHost, PRErrorCodeSuccess, null, aSecurityInfo => {
     Assert.ok(aSecurityInfo.securityState &
               Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN,

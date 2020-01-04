@@ -622,37 +622,29 @@ AppendErrorTextUntrusted(PRErrorCode errTrust,
 
 
 
-static bool
-GetSubjectAltNames(CERTCertificate *nssCert,
-                   nsINSSComponent *component,
-                   nsString &allNames,
-                   uint32_t &nameCount)
+static uint32_t
+GetSubjectAltNames(CERTCertificate* nssCert, nsString& allNames)
 {
   allNames.Truncate();
-  nameCount = 0;
 
-  SECItem altNameExtension = {siBuffer, nullptr, 0 };
-  CERTGeneralName *sanNameList = nullptr;
-
+  ScopedAutoSECItem altNameExtension;
   SECStatus rv = CERT_FindCertExtension(nssCert, SEC_OID_X509_SUBJECT_ALT_NAME,
                                         &altNameExtension);
   if (rv != SECSuccess) {
-    return false;
+    return 0;
   }
-
   UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
   if (!arena) {
-    return false;
+    return 0;
   }
-
-  sanNameList = CERT_DecodeAltNameExtension(arena.get(), &altNameExtension);
+  CERTGeneralName* sanNameList(CERT_DecodeAltNameExtension(arena.get(),
+                                                           &altNameExtension));
   if (!sanNameList) {
-    return false;
+    return 0;
   }
 
-  SECITEM_FreeItem(&altNameExtension, false);
-
-  CERTGeneralName *current = sanNameList;
+  uint32_t nameCount = 0;
+  CERTGeneralName* current = sanNameList;
   do {
     nsAutoString name;
     switch (current->type) {
@@ -707,97 +699,62 @@ GetSubjectAltNames(CERTCertificate *nssCert,
     current = CERT_GetNextGeneralName(current);
   } while (current != sanNameList); 
 
-  return true;
+  return nameCount;
 }
 
-static void
-AppendErrorTextMismatch(const nsString &host,
-                        nsIX509Cert* ix509,
-                        nsINSSComponent *component,
-                        bool wantsHtml,
-                        nsString &returnedMessage)
+static nsresult
+AppendErrorTextMismatch(const nsString& host, nsIX509Cert* ix509,
+                        nsINSSComponent* component, bool wantsHtml,
+                        nsString& returnedMessage)
 {
-  const char16_t *params[1];
-  nsresult rv;
+  
+  
+  nsAutoString notValidForHostnameString;
+  const char16_t* params[1];
+  params[0] = host.get();
+  nsresult rv = component->PIPBundleFormatStringFromName(
+    "certErrorMismatch", params, 1, notValidForHostnameString);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  notValidForHostnameString.Append('\n');
 
   ScopedCERTCertificate nssCert(ix509->GetCert());
-
   if (!nssCert) {
-    
-    params[0] = host.get();
-    nsString formattedString;
-    rv = component->PIPBundleFormatStringFromName("certErrorMismatch", 
-                                                  params, 1, 
-                                                  formattedString);
-    if (NS_SUCCEEDED(rv)) {
-      returnedMessage.Append(formattedString);
-      returnedMessage.Append('\n');
-    }
-    return;
+    returnedMessage.Append(notValidForHostnameString);
+    return NS_OK;
   }
 
-  nsString allNames;
-  uint32_t nameCount = 0;
-  bool useSAN = false;
-
-  if (nssCert)
-    useSAN = GetSubjectAltNames(nssCert.get(), component, allNames, nameCount);
-
-  if (!useSAN) {
-    char *certName = CERT_GetCommonName(&nssCert->subject);
-    if (certName) {
-      nsDependentCSubstring commonName(certName, strlen(certName));
-      if (IsUTF8(commonName)) {
-        
-        
-        
-        
-        ++nameCount;
-        allNames.Assign(NS_ConvertUTF8toUTF16(commonName));
-      }
-      PORT_Free(certName);
-    }
-  }
-
-  if (nameCount > 1) {
+  nsAutoString allNames;
+  uint32_t nameCount = GetSubjectAltNames(nssCert.get(), allNames);
+  if (nameCount == 0) {
+    returnedMessage.Append(notValidForHostnameString);
+  } else if (nameCount > 1) {
     nsString message;
-    rv = component->GetPIPNSSBundleString("certErrorMismatchMultiple", 
-                                          message);
-    if (NS_SUCCEEDED(rv)) {
-      returnedMessage.Append(message);
-      returnedMessage.AppendLiteral("\n  ");
-      returnedMessage.Append(allNames);
-      returnedMessage.AppendLiteral("  \n");
+    rv = component->GetPIPNSSBundleString("certErrorMismatchMultiple", message);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
-  }
-  else if (nameCount == 1) {
-    const char16_t *params[1];
+    returnedMessage.Append(message);
+    returnedMessage.AppendLiteral("\n  ");
+    returnedMessage.Append(allNames);
+    returnedMessage.AppendLiteral("  \n");
+  } else if (nameCount == 1) {
     params[0] = allNames.get();
-    
-    const char *stringID;
-    if (wantsHtml)
-      stringID = "certErrorMismatchSingle2";
-    else
-      stringID = "certErrorMismatchSinglePlain";
 
-    nsString formattedString;
-    rv = component->PIPBundleFormatStringFromName(stringID, 
-                                                  params, 1, 
+    const char* stringID = wantsHtml ? "certErrorMismatchSingle2"
+                                     : "certErrorMismatchSinglePlain";
+    nsAutoString formattedString;
+    rv = component->PIPBundleFormatStringFromName(stringID, params, 1,
                                                   formattedString);
-    if (NS_SUCCEEDED(rv)) {
-      returnedMessage.Append(formattedString);
-      returnedMessage.Append('\n');
+    if (NS_FAILED(rv)) {
+      return rv;
     }
+    returnedMessage.Append(formattedString);
+    returnedMessage.Append('\n');
   }
-  else { 
-    nsString message;
-    nsresult rv = component->GetPIPNSSBundleString("certErrorMismatchNoNames",
-                                                   message);
-    if (NS_SUCCEEDED(rv)) {
-      returnedMessage.Append(message);
-      returnedMessage.Append('\n');
-    }
-  }
+
+  return NS_OK;
 }
 
 static void
@@ -967,7 +924,9 @@ formatOverridableCertErrorMessage(nsISSLStatus & sslStatus,
   rv = sslStatus.GetIsDomainMismatch(&isDomainMismatch);
   NS_ENSURE_SUCCESS(rv, rv);
   if (isDomainMismatch) {
-    AppendErrorTextMismatch(hostWithoutPort, ix509, component, wantsHtml, returnedMessage);
+    rv = AppendErrorTextMismatch(hostWithoutPort, ix509, component, wantsHtml,
+                                 returnedMessage);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   bool isNotValidAtThisTime;
