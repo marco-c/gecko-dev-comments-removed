@@ -3380,6 +3380,54 @@ Widgets.ObjectRenderers.add({
 
 
 
+
+function WrappedPrimitiveRenderer() {
+  let { ownProperties, safeGetterValues } = this.objectActor.preview || {};
+  if ((!ownProperties && !safeGetterValues) || this.options.concise) {
+    this._renderConciseObject();
+    return;
+  }
+
+  this._renderObjectPrefix();
+
+  let elem =
+      this.message._renderValueGrip(this.objectActor.preview.wrappedValue);
+  this.element.appendChild(elem);
+
+  this._renderObjectProperties(this.element, true);
+  this._renderObjectSuffix();
+}
+
+
+
+
+Widgets.ObjectRenderers.add({
+  byClass: "Boolean",
+
+  render: WrappedPrimitiveRenderer,
+});
+
+
+
+
+Widgets.ObjectRenderers.add({
+  byClass: "Number",
+
+  render: WrappedPrimitiveRenderer,
+});
+
+
+
+
+Widgets.ObjectRenderers.add({
+  byClass: "String",
+
+  render: WrappedPrimitiveRenderer,
+});
+
+
+
+
 Widgets.ObjectRenderers.add({
   byKind: "Object",
 

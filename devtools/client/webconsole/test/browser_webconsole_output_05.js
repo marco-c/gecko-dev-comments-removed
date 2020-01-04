@@ -50,8 +50,10 @@ var inputTests = [
   
   {
     input: "new Boolean(false)",
-    output: "false",
+    output: "Boolean { false }",
+    printOutput: "false",
     inspectable: true,
+    variablesViewLabel: "Boolean { false }"
   },
 
   
@@ -83,17 +85,39 @@ var inputTests = [
   
   {
     input: "new Number(43)",
-    output: "43",
+    output: "Number { 43 }",
+    printOutput: "43",
     inspectable: true,
+    variablesViewLabel: "Number { 43 }"
   },
 
   
   {
     input: "new String('hello')",
-    output: 'String [ "h", "e", "l", "l", "o" ]',
+    output: /String { "hello", 6 more.* }/,
     printOutput: "hello",
     inspectable: true,
-    variablesViewLabel: "String[5]"
+    variablesViewLabel: "String"
+  },
+
+  
+  {
+    input: "(function () { var s = new String('hello'); s.whatever = 23; " +
+           " return s;})()",
+    output: /String { "hello", whatever: 23, 6 more.* }/,
+    printOutput: "hello",
+    inspectable: true,
+    variablesViewLabel: "String"
+  },
+
+  
+  {
+    input: "(function () { var s = new String('hello'); s[8] = 'x'; " +
+           " return s;})()",
+    output: /String { "hello", 8: "x", 6 more.* }/,
+    printOutput: "hello",
+    inspectable: true,
+    variablesViewLabel: "String"
   },
 
   
