@@ -2701,7 +2701,7 @@ var BrowserOnClick = {
       case "Browser:CertExceptionError":
         this.onAboutCertError(msg.target, msg.data.elementId,
                               msg.data.isTopFrame, msg.data.location,
-                              msg.data.sslStatusAsString);
+                              msg.data.securityInfoAsString);
       break;
       case "Browser:SiteBlockedError":
         this.onAboutBlocked(msg.data.elementId, msg.data.reason,
@@ -2789,19 +2789,6 @@ var BrowserOnClick = {
 
     
     
-    function getDERString(cert)
-    {
-      var length = {};
-      var derArray = cert.getRawDER(length);
-      var derString = '';
-      for (var i = 0; i < derArray.length; i++) {
-        derString += String.fromCharCode(derArray[i]);
-      }
-      return derString;
-    }
-
-    
-    
     let asciiCertChain = [];
 
     if (transportSecurityInfo.failedCertChain) {
@@ -2856,7 +2843,7 @@ var BrowserOnClick = {
     xhr.send(JSON.stringify(report));
   },
 
-  onAboutCertError: function (browser, elementId, isTopFrame, location, sslStatusAsString) {
+  onAboutCertError: function (browser, elementId, isTopFrame, location, securityInfoAsString) {
     let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
 
     switch (elementId) {
@@ -2867,8 +2854,9 @@ var BrowserOnClick = {
 
         let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
                            .getService(Ci.nsISerializationHelper);
-        let sslStatus = serhelper.deserializeObject(sslStatusAsString);
-        sslStatus.QueryInterface(Components.interfaces.nsISSLStatus);
+        let securityInfo = serhelper.deserializeObject(securityInfoAsString);
+        let sslStatus = securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
+                                    .SSLStatus;
         let params = { exceptionAdded : false,
                        sslStatus : sslStatus };
 
@@ -2903,6 +2891,19 @@ var BrowserOnClick = {
         if (isTopFrame) {
           secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_BAD_CERT_TOP_UNDERSTAND_RISKS);
         }
+
+        let errorInfo = getDetailedCertErrorInfo(location,
+                                                 securityInfoAsString);
+        browser.messageManager.sendAsyncMessage("AboutCertErrorDetails",
+                                                { info: errorInfo });
+        break;
+
+      case "copyToClipboard":
+        const gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"]
+                                    .getService(Ci.nsIClipboardHelper);
+        let detailedInfo = getDetailedCertErrorInfo(location,
+                                                    securityInfoAsString);
+        gClipboardHelper.copyString(detailedInfo);
         break;
 
     }
@@ -3155,6 +3156,76 @@ function BrowserReloadWithFlags(reloadFlags) {
           .sendAsyncMessage("Browser:Reload",
                             { flags: reloadFlags,
                               handlingUserInput: windowUtils.isHandlingUserInput });
+}
+
+
+
+
+
+function getDetailedCertErrorInfo(location, securityInfoAsString) {
+  if (!securityInfoAsString)
+    return "";
+
+  let details = [];
+  details.push(location);
+
+  const serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
+                       .getService(Ci.nsISerializationHelper);
+  let securityInfo = serhelper.deserializeObject(securityInfoAsString);
+  securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+
+  let errors = Cc["@mozilla.org/nss_errors_service;1"]
+                  .getService(Ci.nsINSSErrorsService);
+  let code = securityInfo.errorCode;
+  details.push(errors.getErrorMessage(errors.getXPCOMFromNSSError(code)));
+
+  const sss = Cc["@mozilla.org/ssservice;1"]
+                 .getService(Ci.nsISiteSecurityService);
+  
+  
+  
+  let flags = PrivateBrowsingUtils.isWindowPrivate(window) ?
+              Ci.nsISocketProvider.NO_PERMANENT_STORAGE : 0;
+
+  let uri = Services.io.newURI(location, null, null);
+  details.push(sss.isSecureHost(sss.HEADER_HSTS, uri.host, flags));
+  details.push(sss.isSecureHost(sss.HEADER_HPKP, uri.host, flags));
+
+  let certChain = "";
+  if (securityInfo.failedCertChain) {
+    let certs = securityInfo.failedCertChain.getEnumerator();
+    while (certs.hasMoreElements()) {
+      let cert = certs.getNext();
+      cert.QueryInterface(Ci.nsIX509Cert);
+      certChain += getPEMString(cert);
+    }
+  }
+  details.push(certChain);
+  return gNavigatorBundle.getFormattedString("certErrorDetails.label", details, 5);
+}
+
+
+
+function getDERString(cert)
+{
+  var length = {};
+  var derArray = cert.getRawDER(length);
+  var derString = '';
+  for (var i = 0; i < derArray.length; i++) {
+    derString += String.fromCharCode(derArray[i]);
+  }
+  return derString;
+}
+
+function getPEMString(cert)
+{
+  var derb64 = btoa(getDERString(cert));
+  
+  
+  var wrapped = derb64.replace(/(\S{64}(?!$))/g, "$1\r\n");
+  return "-----BEGIN CERTIFICATE-----\r\n"
+         + wrapped
+         + "\r\n-----END CERTIFICATE-----\r\n";
 }
 
 var PrintPreviewListener = {
@@ -7945,4 +8016,3 @@ TabModalPromptBox.prototype = {
     return browser;
   },
 };
-
