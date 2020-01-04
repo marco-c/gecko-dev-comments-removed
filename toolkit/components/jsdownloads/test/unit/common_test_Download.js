@@ -32,7 +32,7 @@ function promiseStartDownload(aSourceUrl) {
   }
 
   return promiseNewDownload(aSourceUrl).then(download => {
-    download.start().catch(() => {});
+    download.start();
     return download;
   });
 }
@@ -64,7 +64,7 @@ function promiseStartDownload_tryToKeepPartialData() {
                   partFilePath: targetFilePath + ".part" },
       });
       download.tryToKeepPartialData = true;
-      download.start().catch(() => {});
+      download.start();
     } else {
       
       
@@ -435,7 +435,7 @@ add_task(function* test_empty_progress_tryToKeepPartialData()
                 partFilePath: targetFilePath + ".part" },
     });
     download.tryToKeepPartialData = true;
-    download.start().catch(() => {});
+    download.start();
   } else {
     
     
@@ -491,7 +491,7 @@ add_task(function* test_empty_noprogress()
       }
     };
 
-    download.start().catch(() => {});
+    download.start();
   } else {
     
     
@@ -856,7 +856,7 @@ add_task(function* test_cancel_midway_restart_tryToKeepPartialData_false()
 
   
   mustInterruptResponses();
-  download.start().catch(() => {});
+  download.start();
 
   yield promiseDownloadMidway(download);
   yield promisePartFileReady(download);
@@ -1143,7 +1143,7 @@ add_task(function* test_whenSucceeded_after_restart()
     
     download = yield promiseNewDownload(httpUrl("interruptible.txt"));
     promiseSucceeded = download.whenSucceeded();
-    download.start().catch(() => {});
+    download.start();
   } else {
     
     
@@ -1156,7 +1156,7 @@ add_task(function* test_whenSucceeded_after_restart()
 
   
   continueResponses();
-  download.start().catch(() => {});
+  download.start();
 
   
   yield promiseSucceeded;
@@ -1343,7 +1343,7 @@ add_task(function* test_error_restart()
         source: httpUrl("source.txt"),
         target: targetFile,
       });
-      download.start().catch(() => {});
+      download.start();
     } else {
       download = yield promiseStartLegacyDownload(null,
                                                   { targetFile: targetFile });
@@ -2186,7 +2186,7 @@ add_task(function* test_platform_integration()
         source: httpUrl("source.txt"),
         target: targetFile,
       });
-      download.start().catch(() => {});
+      download.start();
     }
 
     
