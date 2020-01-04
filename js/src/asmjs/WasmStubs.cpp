@@ -994,7 +994,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.ret();                   
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     
-    masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
+    masm.subFromStackPtr(Imm32(2 * sizeof(intptr_t)));
     
     masm.setFramePushed(0);
     static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
@@ -1010,6 +1010,8 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.loadWasmActivationFromSymbolicAddress(IntArgReg0);
     masm.loadPtr(Address(IntArgReg0, WasmActivation::offsetOfResumePC()), IntArgReg1);
     masm.storePtr(IntArgReg1, Address(s0, masm.framePushed()));
+    
+    masm.storePtr(HeapReg, Address(s0, masm.framePushed() + sizeof(intptr_t)));
 
 # ifdef USES_O32_ABI
     
@@ -1031,9 +1033,11 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
 
     
     
-    masm.pop(HeapReg);
+    masm.loadPtr(Address(StackPointer, 0), HeapReg);
+    
+    masm.addToStackPtr(Imm32(2 * sizeof(intptr_t)));
     masm.as_jr(HeapReg);
-    masm.loadAsmJSHeapRegisterFromGlobalData();
+    masm.loadPtr(Address(StackPointer, -sizeof(intptr_t)), HeapReg);
 #elif defined(JS_CODEGEN_ARM)
     masm.setFramePushed(0);         
 
