@@ -382,8 +382,6 @@ pref("browser.search.openintab", false);
 
 pref("browser.search.context.loadInBackground", false);
 
-pref("browser.search.showOneOffButtons", true);
-
 
 pref("browser.search.hiddenOneOffs", "");
 

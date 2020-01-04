@@ -159,10 +159,6 @@ let AboutHomeListener = {
     addEventListener("click", this, true);
     addEventListener("pagehide", this, true);
 
-    if (!Services.prefs.getBoolPref("browser.search.showOneOffButtons")) {
-      doc.documentElement.setAttribute("searchUIConfiguration", "oldsearchui");
-    }
-
     sendAsyncMessage("AboutHome:RequestUpdate");
   },
 
