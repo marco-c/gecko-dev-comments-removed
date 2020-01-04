@@ -6,6 +6,7 @@
 Cu.import("resource://gre/modules/Services.jsm");
 
 const {PushDB, PushService, PushServiceHttp2} = serviceExports;
+const {base64UrlDecode} = Cu.import('resource://gre/modules/PushCrypto.jsm', {});
 
 var prefs;
 var tlsProfile;
@@ -50,6 +51,8 @@ function run_test() {
 
 add_task(function* test_pushNotifications() {
 
+  
+  
   
   
   
@@ -121,6 +124,26 @@ add_task(function* test_pushNotifications() {
       { appId: Ci.nsIScriptSecurityManager.NO_APP_ID, inIsolatedMozBrowser: false }),
     quota: Infinity,
     systemRecord: true,
+  }, {
+    subscriptionUri: serverURL + '/pushNotifications/subscription4',
+    pushEndpoint: serverURL + '/pushEndpoint4',
+    pushReceiptEndpoint: serverURL + '/pushReceiptEndpoint4',
+    scope: 'https://example.com/page/4',
+    p256dhPublicKey: base64UrlDecode('BEcvDzkWCrUtjU_wygL98sbQCQrW1lY9irtgGnlCc4B0JJXLCHB9MTM73qD6GZYfL0YOvKo8XLOflh-J4dMGklU'),
+    p256dhPrivateKey: {
+      crv: 'P-256',
+      d: 'fWi7tZaX0Pk6WnLrjQ3kiRq_g5XStL5pdH4pllNCqXw',
+      ext: true,
+      key_ops: ["deriveBits"],
+      kty: 'EC',
+      x: 'Ry8PORYKtS2NT_DKAv3yxtAJCtbWVj2Ku2AaeUJzgHQ',
+      y: 'JJXLCHB9MTM73qD6GZYfL0YOvKo8XLOflh-J4dMGklU'
+    },
+    authenticationSecret: base64UrlDecode('cwDVC1iwAn8E37mkR3tMSg'),
+    originAttributes: ChromeUtils.originAttributesToSuffix(
+      { appId: Ci.nsIScriptSecurityManager.NO_APP_ID, inIsolatedMozBrowser: false }),
+    quota: Infinity,
+    systemRecord: true,
   }];
 
   for (let record of records) {
@@ -148,7 +171,14 @@ add_task(function* test_pushNotifications() {
         equal(message.text(), "Some message", "decoded message is incorrect");
         return true;
       }
-    })
+    }),
+    promiseObserverNotification(PushServiceComponent.pushTopic, function(subject, data) {
+      var message = subject.QueryInterface(Ci.nsIPushMessage);
+      if (message && (data == "https://example.com/page/4")){
+        equal(message.text(), "Yet another message", "decoded message is incorrect");
+        return true;
+      }
+    }),
   ]);
 
   PushService.init({
