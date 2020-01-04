@@ -21,7 +21,7 @@ specTests.push("forward.wast");
 
 specTests.push("functions.wast");
 specTests.push("i32.wast");
-
+specTests.push("i64.wast");
 specTests.push("imports.wast");
 specTests.push("int_exprs.wast");
 specTests.push("int_literals.wast");
