@@ -253,7 +253,7 @@ final class GeckoEditable extends JNIObject
             if (mActions.isEmpty()) {
                 mActionsActive.acquireUninterruptibly();
                 mActions.offer(action);
-            } else synchronized(this) {
+            } else synchronized (this) {
                 
                 mActionsActive.tryAcquire();
                 mActions.offer(action);
@@ -350,7 +350,7 @@ final class GeckoEditable extends JNIObject
                 throw new IllegalStateException("empty actions queue");
             }
 
-            synchronized(this) {
+            synchronized (this) {
                 if (mActions.isEmpty()) {
                     mActionsActive.release();
                 }

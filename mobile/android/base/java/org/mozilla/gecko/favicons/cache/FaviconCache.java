@@ -451,7 +451,7 @@ public class FaviconCache {
 
 
     private boolean setMostRecentlyUsedWithinRead(FaviconCacheElement element) {
-        synchronized(reorderingLock) {
+        synchronized (reorderingLock) {
             boolean contained = ordering.remove(element);
             ordering.offer(element);
             return contained;

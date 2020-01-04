@@ -381,7 +381,7 @@ public class LoadFaviconTask {
         Bitmap image;
         
         
-        synchronized(loadsInFlight) {
+        synchronized (loadsInFlight) {
             
             LoadFaviconTask existingTask = loadsInFlight.get(faviconURL);
             if (existingTask != null && !existingTask.isCancelled()) {
@@ -565,7 +565,7 @@ public class LoadFaviconTask {
     void onCancelled() {
         Favicons.removeLoadTask(id);
 
-        synchronized(loadsInFlight) {
+        synchronized (loadsInFlight) {
             
             
             final LoadFaviconTask primary = loadsInFlight.get(faviconURL);
