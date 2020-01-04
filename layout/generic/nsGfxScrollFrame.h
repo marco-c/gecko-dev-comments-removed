@@ -629,8 +629,6 @@ protected:
   AsyncScrollEventType mAsyncScrollEvent;
   bool HasPluginFrames();
   bool HasPerspective() const;
-  bool HasBgAttachmentLocal() const;
-  uint8_t GetScrolledFrameDir() const;
 
   static void EnsureFrameVisPrefsCached();
   static bool sFrameVisPrefsCached;
