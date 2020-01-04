@@ -3433,9 +3433,7 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
 public:
     nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                             nsDisplayList* aList,
-                            BlendModeSet& aContainedBlendModes);
-    nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                            nsDisplayList* aList);
+                            const BlendModeSet& aContainedBlendModes = BlendModeSet());
 #ifdef NS_BUILD_REFCNT_LOGGING
     virtual ~nsDisplayBlendContainer();
 #endif
@@ -3460,8 +3458,6 @@ private:
     
     
     uint32_t mIndex;
-    
-    BlendModeSet mContainedBlendModes;
     
     
     bool mCanBeActive;
