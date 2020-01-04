@@ -446,7 +446,7 @@ nsViewManager::ProcessPendingUpdatesPaint(nsIWidget* aWidget)
   if (aWidget->NeedsPaint()) {
     
     
-    for (nsViewManager *vm = this; vm;
+    for (RefPtr<nsViewManager> vm = this; vm;
          vm = vm->mRootView->GetParent()
            ? vm->mRootView->GetParent()->GetViewManager()
            : nullptr) {
