@@ -4297,7 +4297,8 @@ Tab.prototype = {
         Messaging.sendRequest({
           type: "Content:PageShow",
           tabID: this.id,
-          userRequested: this.userRequested
+          userRequested: this.userRequested,
+          fromCache: Tabs.useCache
         });
 
         this.isSearch = false;
@@ -7377,25 +7378,6 @@ var Tabs = {
         
         this._domains.clear();
 
-        
-        if (this._useCache) {
-          let targetDoc = aEvent.originalTarget;
-          let isTopLevel = (targetDoc.defaultView.parent === targetDoc.defaultView);
-
-          
-          let targetURI = targetDoc.documentURI;
-          if (isTopLevel && !targetURI.startsWith("about:")) {
-            UITelemetry.addEvent("neterror.1", "toast", null, "usecache");
-            Snackbars.show(
-              Strings.browser.GetStringFromName("networkOffline.message2"),
-              Snackbars.LENGTH_INDEFINITE,
-              {
-                
-                backgroundColor: "#0096DD"
-              }
-            );
-          }
-        }
         break;
       case "TabOpen":
         

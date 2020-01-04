@@ -105,6 +105,9 @@ public interface TelemetryContract {
         UNSAVE("unsave.1"),
 
         
+        NETERROR("neterror.1"),
+
+        
         _TEST1("_test_event_1.1"),
         _TEST2("_test_event_2.1"),
         _TEST3("_test_event_3.1"),
