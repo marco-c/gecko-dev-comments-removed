@@ -257,7 +257,6 @@ loop.store.ActiveRoomStore = (function() {
         "mediaStreamDestroyed",
         "remoteVideoStatus",
         "videoDimensionsChanged",
-        "startScreenShare",
         "startBrowserShare",
         "endScreenShare",
         "updateSocialShareInfo",
@@ -925,7 +924,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-    startScreenShare: function(actionData) {
+    startBrowserShare: function(actionData) {
       
       
       
@@ -935,28 +934,16 @@ loop.store.ActiveRoomStore = (function() {
       }));
 
       var options = {
-        videoSource: actionData.type
+        videoSource: "browser"
       };
-      if (options.videoSource === "browser") {
-        this._browserSharingListener = this._handleSwitchBrowserShare.bind(this);
+      this._browserSharingListener = this._handleSwitchBrowserShare.bind(this);
 
-        
-        
-        
-        loop.request("AddBrowserSharingListener").then(this._browserSharingListener);
-        loop.subscribe("BrowserSwitch", this._browserSharingListener);
-      } else {
-        this._sdkDriver.startScreenShare(options);
-      }
-    },
-
-    
-
-
-
-
-    startBrowserShare: function(actionData) {
-      this.startScreenShare({ type: "browser" });
+      
+      
+      
+      loop.request("AddBrowserSharingListener", this.getStoreState().windowId)
+        .then(this._browserSharingListener);
+      loop.subscribe("BrowserSwitch", this._browserSharingListener);
     },
 
     

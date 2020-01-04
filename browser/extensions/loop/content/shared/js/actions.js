@@ -207,14 +207,6 @@ loop.shared.actions = (function() {
     
 
 
-    StartScreenShare: Action.define("startScreenShare", {
-      
-      type: String
-    }),
-
-    
-
-
     StartBrowserShare: Action.define("startBrowserShare", {
     }),
 

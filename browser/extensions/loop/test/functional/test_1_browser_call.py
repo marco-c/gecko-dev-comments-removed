@@ -186,12 +186,6 @@ class Test1BrowserCall(MarionetteTestCase):
         self.switch_to_chatbox()
         self.check_received_message("test2")
 
-    def local_enable_screenshare(self):
-        self.switch_to_chatbox()
-        button = self.marionette.find_element(By.CLASS_NAME, "btn-screen-share")
-
-        button.click()
-
     def standalone_check_remote_screenshare(self):
         self.switch_to_standalone()
         self.check_video(".screen-share-video")
@@ -294,9 +288,7 @@ class Test1BrowserCall(MarionetteTestCase):
         self.local_check_media_start_time_initialized()
 
         
-        
-        
-        
+        self.standalone_check_remote_screenshare()
 
         
         
