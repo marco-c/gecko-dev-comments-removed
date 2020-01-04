@@ -1,0 +1,59 @@
+
+
+
+
+
+
+#ifndef mozilla_layers_AndroidAPZ_h_
+#define mozilla_layers_AndroidAPZ_h_
+
+#include "AsyncPanZoomAnimation.h"
+#include "AsyncPanZoomController.h"
+#include "GeneratedJNIWrappers.h"
+#include "OverScroller.h"
+
+namespace mozilla {
+namespace layers {
+
+class AndroidSpecificState : public PlatformSpecificStateBase {
+public:
+  AndroidSpecificState();
+
+  virtual AndroidSpecificState* AsAndroidSpecificState() override {
+    return this;
+  }
+
+  widget::sdk::OverScroller::GlobalRef mOverScroller;
+};
+
+class AndroidFlingAnimation: public AsyncPanZoomAnimation {
+public:
+  AndroidFlingAnimation(AsyncPanZoomController& aApzc,
+                        PlatformSpecificStateBase* aPlatformSpecificState,
+                        const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+                        bool aFlingIsHandoff ,
+                        const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
+  virtual bool DoSample(FrameMetrics& aFrameMetrics,
+                        const TimeDuration& aDelta) override;
+private:
+  
+  bool CheckBounds(Axis& aAxis, float aValue, float* aClamped);
+
+  AsyncPanZoomController& mApzc;
+  widget::sdk::OverScroller::GlobalRef mOverScroller;
+  RefPtr<const OverscrollHandoffChain> mOverscrollHandoffChain;
+  RefPtr<const AsyncPanZoomController> mScrolledApzc;
+  bool mSentBounceX;
+  bool mSentBounceY;
+  ParentLayerPoint mStartOffset;
+  ParentLayerPoint mPreviousOffset;
+  
+  ParentLayerPoint mFlingDirection;
+  int32_t mOverScrollCount;
+};
+
+
+} 
+} 
+
+#endif 

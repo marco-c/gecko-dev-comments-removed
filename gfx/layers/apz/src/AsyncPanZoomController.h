@@ -29,9 +29,6 @@
 #include "nsRegion.h"
 #include "nsTArray.h"
 #include "PotentialCheckerboardDurationTracker.h"
-#if defined(MOZ_ANDROID_APZ)
-#include "OverScroller.h"
-#endif 
 
 #include "base/message_loop.h"
 
@@ -52,11 +49,8 @@ class GestureEventListener;
 class PCompositorBridgeParent;
 struct AsyncTransform;
 class AsyncPanZoomAnimation;
-#if defined(MOZ_ANDROID_APZ)
-class FlingOverScrollerAnimation;
-#else
+class AndroidFlingAnimation;
 class GenericFlingAnimation;
-#endif
 class InputBlockState;
 class TouchBlockState;
 class PanGestureBlockState;
@@ -66,6 +60,14 @@ class CheckerboardEvent;
 class OverscrollEffectBase;
 class WidgetOverscrollEffect;
 class GenericOverscrollEffect;
+class AndroidSpecificState;
+
+
+class PlatformSpecificStateBase {
+public:
+  virtual ~PlatformSpecificStateBase() {}
+  virtual AndroidSpecificState* AsAndroidSpecificState() { return nullptr; }
+};
 
 
 
@@ -654,6 +656,8 @@ protected:
 
   PCompositorBridgeParent* GetSharedFrameMetricsCompositor();
 
+  PlatformSpecificStateBase* GetPlatformSpecificState();
+
 protected:
   
   
@@ -711,6 +715,10 @@ private:
   RefPtr<AsyncPanZoomAnimation> mAnimation;
 
   UniquePtr<OverscrollEffectBase> mOverscrollEffect;
+
+  
+  
+  UniquePtr<PlatformSpecificStateBase> mPlatformSpecificState;
 
   friend class Axis;
 
@@ -877,11 +885,8 @@ public:
   bool AttemptFling(FlingHandoffState& aHandoffState);
 
 private:
-#if defined(MOZ_ANDROID_APZ)
-  friend class FlingOverScrollerAnimation;
-#else
+  friend class AndroidFlingAnimation;
   friend class GenericFlingAnimation;
-#endif
   friend class OverscrollAnimation;
   friend class SmoothScrollAnimation;
   friend class WheelScrollAnimation;
@@ -1192,9 +1197,6 @@ private:
   
   Maybe<CSSPoint> FindSnapPointNear(const CSSPoint& aDestination,
                                     nsIScrollableFrame::ScrollUnit aUnit);
-#if defined(MOZ_ANDROID_APZ)
-  widget::sdk::OverScroller::GlobalRef mOverScroller;
-#endif 
 };
 
 } 
