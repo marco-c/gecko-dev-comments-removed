@@ -68,6 +68,16 @@ public:
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIAUDIOCHANNELSERVICE
 
+  enum AudibleState : bool {
+    eAudible = true,
+    eNotAudible = false
+  };
+
+  enum AudioCaptureState : bool {
+    eCapturing = true,
+    eNotCapturing = false
+  };
+
   
 
 
@@ -83,8 +93,7 @@ public:
 
 
 
-  void RegisterAudioChannelAgent(AudioChannelAgent* aAgent,
-                                 AudioChannel aChannel);
+  void RegisterAudioChannelAgent(AudioChannelAgent* aAgent);
 
   
 
@@ -104,6 +113,13 @@ public:
 
   AudioPlaybackConfig GetMediaConfig(nsPIDOMWindowOuter* aWindow,
                                      uint32_t aAudioChannel) const;
+
+  
+
+
+
+
+  void AudioAudibleChanged(AudioChannelAgent* aAgent, AudibleState aAudible);
 
   
   float GetAudioChannelVolume(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel);
@@ -215,8 +231,9 @@ private:
     uint32_t mNumberOfAgents;
   };
 
-  struct AudioChannelWindow final
+  class AudioChannelWindow final
   {
+  public:
     explicit AudioChannelWindow(uint64_t aWindowID)
       : mWindowID(aWindowID),
         mIsAudioCaptured(false)
@@ -225,12 +242,36 @@ private:
       mChannels[(int16_t)AudioChannel::System].mMuted = false;
     }
 
+    void AudioAudibleChanged(AudioChannelAgent* aAgent, AudibleState aAudible);
+
+    void AppendAgent(AudioChannelAgent* aAgent);
+    void RemoveAgent(AudioChannelAgent* aAgent);
+
     uint64_t mWindowID;
     bool mIsAudioCaptured;
     AudioChannelConfig mChannels[NUMBER_OF_AUDIO_CHANNELS];
 
     
     nsTObserverArray<AudioChannelAgent*> mAgents;
+    nsTObserverArray<AudioChannelAgent*> mAudibleAgents;
+
+  private:
+    void AudioCapturedChanged(AudioChannelAgent* aAgent,
+                              AudioCaptureState aCapture);
+
+    void AppendAudibleAgentIfNotContained(AudioChannelAgent* aAgent);
+    void RemoveAudibleAgentIfContained(AudioChannelAgent* aAgent);
+
+    void AppendAgentAndIncreaseAgentsNum(AudioChannelAgent* aAgent);
+    void RemoveAgentAndReduceAgentsNum(AudioChannelAgent* aAgent);
+
+    bool IsFirstAudibleAgent() const;
+    bool IsLastAudibleAgent() const;
+
+    void NotifyAudioAudibleChanged(nsPIDOMWindowOuter* aWindow,
+                                   AudibleState aAudible);
+    void NotifyChannelActive(uint64_t aWindowID, AudioChannel aChannel,
+                             bool aActive);
   };
 
   AudioChannelWindow*
