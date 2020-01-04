@@ -595,9 +595,6 @@ protected:
   void RemoveSheet(mozilla::SheetType aType, nsISupports* aSheet);
 
   
-  LayerManager* GetRootLayerManager();
-
-  
   void HideViewIfPopup(nsView* aView);
 
   
