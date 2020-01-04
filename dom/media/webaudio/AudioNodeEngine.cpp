@@ -10,6 +10,7 @@
 #include "AudioNodeEngineNEON.h"
 #endif
 #ifdef USE_SSE2
+#include "AlignmentUtils.h"
 #include "AudioNodeEngineSSE2.h"
 #endif
 
@@ -76,7 +77,10 @@ void AudioBufferAddWithScale(const float* aInput,
 #endif
 
 #ifdef USE_SSE2
-  if (mozilla::supports_sse2()) {
+  
+  
+  
+  if (mozilla::supports_sse2() && IS_ALIGNED16(aInput) && IS_ALIGNED16(aOutput)) {
     AudioBufferAddWithScale_SSE(aInput, aScale, aOutput, aSize);
     return;
   }
@@ -117,10 +121,13 @@ AudioBlockCopyChannelWithScale(const float* aInput,
 #endif
 
 #ifdef USE_SSE2
-  if (mozilla::supports_sse2()) {
-    AudioBlockCopyChannelWithScale_SSE(aInput, aScale, aOutput);
-    return;
-  }
+    
+    
+    
+    if (mozilla::supports_sse2() && IS_ALIGNED16(aInput) && IS_ALIGNED16(aOutput)) {
+      AudioBlockCopyChannelWithScale_SSE(aInput, aScale, aOutput);
+      return;
+    }
 #endif
 
     for (uint32_t i = 0; i < WEBAUDIO_BLOCK_SIZE; ++i) {
