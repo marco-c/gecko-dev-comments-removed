@@ -497,6 +497,14 @@ class ConfigureSandbox(dict):
                           for k, v in kwargs.iteritems()}
                 ret = template(*args, **kwargs)
                 if isfunction(ret):
+                    
+                    
+                    
+                    
+                    
+                    
+                    if len(args) == 1 and not kwargs and isfunction(args[0]):
+                        ret = wraps(args[0])(ret)
                     return wrap_template(ret)
                 return ret
             return wrapper
