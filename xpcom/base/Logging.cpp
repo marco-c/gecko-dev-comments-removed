@@ -12,6 +12,9 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "nsClassHashtable.h"
+#include "NSPRLogModulesParser.h"
+
+#include "prenv.h"
 
 
 
@@ -42,21 +45,23 @@ public:
     
   }
 
+  
+
+
+  void Init()
+  {
+    const char* modules = PR_GetEnv("NSPR_LOG_MODULES");
+    NSPRLogModulesParser(modules, [] (const char* aName, LogLevel aLevel) {
+        LogModule::Get(aName)->SetLevel(aLevel);
+    });
+  }
+
   LogModule* CreateOrGetModule(const char* aName)
   {
     OffTheBooksMutexAutoLock guard(mModulesLock);
     LogModule* module = nullptr;
     if (!mModules.Get(aName, &module)) {
-      
-      
-      
-      PRLogModuleInfo* prModule = PR_NewLogModule(aName);
-
-      
-      
-      
-      LogLevel logLevel = ToLogLevel(prModule->level);
-      module = new LogModule(logLevel);
+      module = new LogModule(LogLevel::Disabled);
       mModules.Put(aName, module);
     }
 
@@ -93,6 +98,7 @@ LogModule::Init()
   
   
   sLogModuleManager = new LogModuleManager();
+  sLogModuleManager->Init();
 }
 
 } 
