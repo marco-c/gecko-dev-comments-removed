@@ -77,6 +77,17 @@ error.isWebDriverError = function(obj) {
 
 
 
+error.wrap = function(err) {
+  if (error.isWebDriverError(err)) {
+    return err;
+  }
+  return new WebDriverError(`${err.name}: ${err.message}`, err.stack);
+};
+
+
+
+
+
 error.report = function(err) {
   let msg = `Marionette threw an error: ${error.stringify(err)}`;
   dump(msg + "\n");
@@ -151,11 +162,12 @@ error.fromJson = function(json) {
 
 
 
-this.WebDriverError = function(msg) {
+this.WebDriverError = function(msg, stack = undefined) {
   Error.call(this, msg);
   this.name = "WebDriverError";
   this.message = msg;
   this.status = "webdriver error";
+  this.stack = stack;
 };
 WebDriverError.prototype = Object.create(Error.prototype);
 
