@@ -49,14 +49,9 @@ bool OpenProcessHandle(ProcessId pid, ProcessHandle* handle) {
   return true;
 }
 
-bool OpenPrivilegedProcessHandle(ProcessId pid,
-                                 ProcessHandle* handle,
-                                 int64_t* error) {
+bool OpenPrivilegedProcessHandle(ProcessId pid, ProcessHandle* handle) {
   
   
-  if (error) {
-    *error = 0;
-  }
   return OpenProcessHandle(pid, handle);
 }
 
