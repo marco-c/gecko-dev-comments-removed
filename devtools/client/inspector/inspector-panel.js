@@ -36,6 +36,14 @@ const INSPECTOR_L10N = new LocalizationHelper("devtools/locale/inspector.propert
 const TOOLBOX_L10N = new LocalizationHelper("devtools/locale/toolbox.properties");
 
 
+const INITIAL_SIDEBAR_SIZE = 350;
+const MIN_SIDEBAR_SIZE = 50;
+
+
+
+const PORTRAIT_MODE_WIDTH = 700;
+
+
 
 
 
@@ -94,6 +102,9 @@ function InspectorPanel(iframeWindow, toolbox) {
   this.onDetached = this.onDetached.bind(this);
   this.onPaneToggleButtonClicked = this.onPaneToggleButtonClicked.bind(this);
   this._onMarkupFrameLoad = this._onMarkupFrameLoad.bind(this);
+  this.onPanelWindowResize = this.onPanelWindowResize.bind(this);
+  this.onSidebarShown = this.onSidebarShown.bind(this);
+  this.onSidebarHidden = this.onSidebarHidden.bind(this);
 
   this._target.on("will-navigate", this._onBeforeNavigate);
   this._detectingActorFeatures = this._detectActorFeatures();
@@ -400,6 +411,98 @@ InspectorPanel.prototype = {
     return this._toolbox.browserRequire;
   },
 
+  get InspectorTabPanel() {
+    if (!this._InspectorTabPanel) {
+      this._InspectorTabPanel =
+        this.React.createFactory(this.browserRequire(
+        "devtools/client/inspector/components/inspector-tab-panel"));
+    }
+    return this._InspectorTabPanel;
+  },
+
+  
+
+
+
+  setupSplitter: function () {
+    let SplitBox = this.React.createFactory(this.browserRequire(
+      "devtools/client/shared/components/splitter/split-box"));
+
+    this.panelWin.addEventListener("resize", this.onPanelWindowResize, true);
+
+    let splitter = SplitBox({
+      className: "inspector-sidebar-splitter",
+      initialWidth: INITIAL_SIDEBAR_SIZE,
+      initialHeight: INITIAL_SIDEBAR_SIZE,
+      minSize: MIN_SIDEBAR_SIZE,
+      splitterSize: 1,
+      endPanelControl: true,
+      startPanel: this.InspectorTabPanel({
+        id: "inspector-main-content"
+      }),
+      endPanel: this.InspectorTabPanel({
+        id: "inspector-sidebar-container"
+      })
+    });
+
+    this._splitter = this.ReactDOM.render(splitter,
+      this.panelDoc.getElementById("inspector-splitter-box"));
+
+    
+    this.sidebar.on("show", this.onSidebarShown);
+    this.sidebar.on("hide", this.onSidebarHidden);
+    this.sidebar.on("destroy", this.onSidebarHidden);
+  },
+
+  
+
+
+  teardownSplitter: function () {
+    this.panelWin.removeEventListener("resize", this.onPanelWindowResize, true);
+
+    this.sidebar.off("show", this.onSidebarShown);
+    this.sidebar.off("hide", this.onSidebarHidden);
+    this.sidebar.off("destroy", this.onSidebarHidden);
+  },
+
+  
+
+
+
+  onPanelWindowResize: function () {
+    let box = this.panelDoc.getElementById("inspector-splitter-box");
+    this._splitter.setState({
+      vert: (box.clientWidth > PORTRAIT_MODE_WIDTH)
+    });
+  },
+
+  onSidebarShown: function () {
+    let width;
+    let height;
+
+    
+    try {
+      width = Services.prefs.getIntPref("devtools.toolsidebar-width.inspector");
+      height = Services.prefs.getIntPref("devtools.toolsidebar-height.inspector");
+    } catch (e) {
+      
+      
+      
+      
+      width = INITIAL_SIDEBAR_SIZE;
+      height = INITIAL_SIDEBAR_SIZE;
+    }
+
+    this._splitter.setState({width, height});
+  },
+
+  onSidebarHidden: function () {
+    
+    let state = this._splitter.state;
+    Services.prefs.setIntPref("devtools.toolsidebar-width.inspector", state.width);
+    Services.prefs.setIntPref("devtools.toolsidebar-height.inspector", state.height);
+  },
+
   
 
 
@@ -455,54 +558,11 @@ InspectorPanel.prototype = {
       this.sidebar.toggleTab(true, "fontinspector");
     }
 
-    this.setupSidebarSize();
+    
+    
+    this.setupSplitter();
 
     this.sidebar.show(defaultTab);
-  },
-
-  
-
-
-
-
-
-
-
-
-  setupSidebarSize: function () {
-    let sidePaneContainer = this.panelDoc.querySelector(
-      "#inspector-sidebar-container");
-
-    this.sidebar.on("show", () => {
-      try {
-        sidePaneContainer.width = Services.prefs.getIntPref(
-          "devtools.toolsidebar-width.inspector");
-        sidePaneContainer.height = Services.prefs.getIntPref(
-          "devtools.toolsidebar-height.inspector");
-      } catch (e) {
-        
-        
-        
-        
-        
-        sidePaneContainer.width = 450;
-        sidePaneContainer.height = 450;
-      }
-    });
-
-    this.sidebar.on("hide", () => {
-      Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
-        sidePaneContainer.width);
-      Services.prefs.setIntPref("devtools.toolsidebar-height.inspector",
-        sidePaneContainer.height);
-    });
-
-    this.sidebar.on("destroy", () => {
-      Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
-        sidePaneContainer.width);
-      Services.prefs.setIntPref("devtools.toolsidebar-height.inspector",
-        sidePaneContainer.height);
-    });
   },
 
   setupToolbar: function () {
@@ -798,6 +858,9 @@ InspectorPanel.prototype = {
 
     this.sidebar.off("select", this._setDefaultSidebar);
     let sidebarDestroyer = this.sidebar.destroy();
+
+    this.teardownSplitter();
+
     this.sidebar = null;
 
     this.teardownToolbar();
@@ -1251,7 +1314,8 @@ InspectorPanel.prototype = {
 
 
   onPaneToggleButtonClicked: function (e) {
-    let sidePaneContainer = this.panelDoc.querySelector("#inspector-sidebar-container");
+    let sidePaneContainer = this.panelDoc.querySelector(
+      "#inspector-splitter-box .controlled");
     let isVisible = !this._sidebarToggle.state.collapsed;
 
     

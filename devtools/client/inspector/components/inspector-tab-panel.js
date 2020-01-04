@@ -15,16 +15,28 @@ const { div } = DOM;
 
 
 
+
 var InspectorTabPanel = createClass({
   displayName: "InspectorTabPanel",
 
   propTypes: {
+    
+    id: PropTypes.string.isRequired,
+    
+    idPrefix: PropTypes.string,
+    
     onMount: PropTypes.func,
+  },
+
+  getDefaultProps: function () {
+    return {
+      idPrefix: "",
+    };
   },
 
   componentDidMount: function () {
     let doc = this.refs.content.ownerDocument;
-    let panel = doc.getElementById("sidebar-panel-" + this.props.id);
+    let panel = doc.getElementById(this.props.idPrefix + this.props.id);
 
     
     this.refs.content.appendChild(panel);
