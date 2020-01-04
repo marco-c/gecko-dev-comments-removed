@@ -1252,6 +1252,11 @@ AccessibleWrap::HandleAccEvent(AccEvent* aEvent)
       break;
     }
 
+    case nsIAccessibleEvent::EVENT_ALERT:
+      
+      atk_object_notify_state_change(atkObj, ATK_STATE_SHOWING, true);
+      break;
+
     case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED:
         g_signal_emit_by_name(atkObj, "text_selection_changed");
         break;
