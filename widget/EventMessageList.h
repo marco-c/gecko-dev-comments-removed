@@ -385,7 +385,10 @@ NS_EVENT_MESSAGE(NS_POINTERLOCKERROR,    NS_POINTERLOCK_START + 1)
 NS_EVENT_MESSAGE(eWheelEventFirst,       5400)
 
 NS_EVENT_MESSAGE(eWheel,                 eWheelEventFirst)
-NS_EVENT_MESSAGE(NS_WHEEL_START,         eWheelEventFirst + 1)
+
+
+
+NS_EVENT_MESSAGE(eWheelOperationStart,   eWheelEventFirst + 1)
 NS_EVENT_MESSAGE(NS_WHEEL_STOP,          eWheelEventFirst + 2)
 
 

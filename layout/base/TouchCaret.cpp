@@ -787,7 +787,7 @@ TouchCaret::HandleEvent(WidgetEvent* aEvent)
     case eKeyDown:
     case eKeyPress:
     case eWheel:
-    case NS_WHEEL_START:
+    case eWheelOperationStart:
     case NS_WHEEL_STOP:
       
       TOUCHCARET_LOG("Receive key/wheel event %d", aEvent->mMessage);
