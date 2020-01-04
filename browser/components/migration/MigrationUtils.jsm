@@ -13,6 +13,7 @@ const TOPIC_DID_IMPORT_BOOKMARKS = "initial-migration-did-import-default-bookmar
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
@@ -552,6 +553,15 @@ this.MigrationUtils = Object.freeze({
 
 
 
+
+
+
+
+
+
+
+
+
   showMigrationWizard:
   function MU_showMigrationWizard(aOpener, aParams) {
     let features = "chrome,dialog,modal,centerscreen,titlebar,resizable=no";
@@ -636,18 +646,18 @@ this.MigrationUtils = Object.freeze({
       }
     }
 
-    let params = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-    let keyCSTR = Cc["@mozilla.org/supports-cstring;1"].
-                  createInstance(Ci.nsISupportsCString);
-    keyCSTR.data = migratorKey;
-    let skipImportSourcePageBool = Cc["@mozilla.org/supports-PRBool;1"].
-                                   createInstance(Ci.nsISupportsPRBool);
-    skipImportSourcePageBool.data = skipSourcePage;
-    params.appendElement(keyCSTR, false);
-    params.appendElement(migrator, false);
-    params.appendElement(aProfileStartup, false);
-    params.appendElement(skipImportSourcePageBool, false);
+    let migrationEntryPoint = this.MIGRATION_ENTRYPOINT_FIRSTRUN;
+    if (migrator && skipSourcePage && migratorKey == AppConstants.MOZ_APP_NAME) {
+      migrationEntryPoint = this.MIGRATION_ENTRYPOINT_FXREFRESH;
+    }
 
+    let params = [
+      migrationEntryPoint,
+      migratorKey,
+      migrator,
+      aProfileStartup,
+      skipSourcePage
+    ];
     this.showMigrationWizard(null, params);
   },
 
@@ -658,5 +668,26 @@ this.MigrationUtils = Object.freeze({
     gMigrators = null;
     gProfileStartup = null;
     gMigrationBundle = null;
-  }
+  },
+
+  MIGRATION_ENTRYPOINT_UNKNOWN: 0,
+  MIGRATION_ENTRYPOINT_FIRSTRUN: 1,
+  MIGRATION_ENTRYPOINT_FXREFRESH: 2,
+  MIGRATION_ENTRYPOINT_PLACES: 3,
+  MIGRATION_ENTRYPOINT_PASSWORDS: 4,
+
+  _sourceNameToIdMapping: {
+    "nothing":    1,
+    "firefox":    2,
+    "edge":       3,
+    "ie":         4,
+    "chrome":     5,
+    "chromium":   6,
+    "canary":     7,
+    "safari":     8,
+    "360se":      9,
+  },
+  getSourceIdForTelemetry(sourceName) {
+    return this._sourceNameToIdMapping[sourceName] || 0;
+  },
 });
