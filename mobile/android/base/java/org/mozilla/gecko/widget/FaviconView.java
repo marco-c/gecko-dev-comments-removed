@@ -16,6 +16,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.widget.ImageView;
 
 
@@ -24,6 +26,9 @@ import android.widget.ImageView;
 
 public class FaviconView extends ImageView {
     private static String DEFAULT_FAVICON_KEY = FaviconView.class.getSimpleName() + "DefaultFavicon";
+
+    
+    private static final int DEFAULT_CORNER_RADIUS_DP = 4;
 
     private Bitmap mIconBitmap;
 
@@ -46,19 +51,13 @@ public class FaviconView extends ImageView {
     private int mDominantColor;
 
     
-    private static float sStrokeWidth;
-
-    
-    private static final Paint sStrokePaint;
-
-    
     private static final Paint sBackgroundPaint;
 
     
-    private final RectF mStrokeRect;
+    private final RectF mBackgroundRect;
 
     
-    private final RectF mBackgroundRect;
+    private final float mBackgroundCornerRadius;
 
     
     private final boolean isDominantBorderEnabled;
@@ -68,9 +67,6 @@ public class FaviconView extends ImageView {
 
     
     static {
-        sStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        sStrokePaint.setStyle(Paint.Style.STROKE);
-
         sBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         sBackgroundPaint.setStyle(Paint.Style.FILL);
     }
@@ -90,16 +86,10 @@ public class FaviconView extends ImageView {
             setScaleType(ImageView.ScaleType.CENTER);
         }
 
-        mStrokeRect = new RectF();
-        mBackgroundRect = new RectF();
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
 
-        if (sStrokeWidth == 0) {
-            sStrokeWidth = getResources().getDisplayMetrics().density;
-            sStrokePaint.setStrokeWidth(sStrokeWidth);
-        }
-
-        mStrokeRect.left = mStrokeRect.top = sStrokeWidth;
-        mBackgroundRect.left = mBackgroundRect.top = sStrokeWidth * 2.0f;
+        mBackgroundRect = new RectF(0, 0, 0, 0);
+        mBackgroundCornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, DEFAULT_CORNER_RADIUS_DP, metrics);
     }
 
     @Override
@@ -114,26 +104,21 @@ public class FaviconView extends ImageView {
         mActualWidth = w;
         mActualHeight = h;
 
-        mStrokeRect.right = w - sStrokeWidth;
-        mStrokeRect.bottom = h - sStrokeWidth;
-        mBackgroundRect.right = mStrokeRect.right - sStrokeWidth;
-        mBackgroundRect.bottom = mStrokeRect.bottom - sStrokeWidth;
+        mBackgroundRect.right = w;
+        mBackgroundRect.bottom = h;
 
         formatImage();
     }
 
     @Override
     public void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-
         if (isDominantBorderEnabled) {
-            
-            sBackgroundPaint.setColor(mDominantColor & 0x46FFFFFF);
-            canvas.drawRect(mStrokeRect, sBackgroundPaint);
+            sBackgroundPaint.setColor(mDominantColor & 0x7FFFFFFF);
 
-            sStrokePaint.setColor(mDominantColor);
-            canvas.drawRoundRect(mStrokeRect, sStrokeWidth, sStrokeWidth, sStrokePaint);
+            canvas.drawRoundRect(mBackgroundRect, mBackgroundCornerRadius, mBackgroundCornerRadius, sBackgroundPaint);
         }
+
+        super.onDraw(canvas);
     }
 
     
