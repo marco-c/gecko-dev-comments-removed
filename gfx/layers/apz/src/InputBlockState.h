@@ -48,6 +48,9 @@ public:
 
   bool IsTargetConfirmed() const;
 
+  void SetScrolledApzc(AsyncPanZoomController* aApzc);
+  AsyncPanZoomController* GetScrolledApzc() const;
+
 protected:
   virtual void UpdateTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc);
 
@@ -55,6 +58,13 @@ private:
   RefPtr<AsyncPanZoomController> mTargetApzc;
   bool mTargetConfirmed;
   const uint64_t mBlockId;
+
+  
+  
+  
+  
+  
+  RefPtr<AsyncPanZoomController> mScrolledApzc;
 protected:
   RefPtr<const OverscrollHandoffChain> mOverscrollHandoffChain;
 

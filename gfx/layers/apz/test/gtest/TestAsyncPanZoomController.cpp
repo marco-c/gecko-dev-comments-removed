@@ -3089,6 +3089,31 @@ TEST_F(APZOverscrollHandoffTester, ScrollgrabFlingAcceleration2) {
   TestFlingAcceleration();
 }
 
+TEST_F(APZOverscrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
+  SCOPED_GFX_PREF(APZAllowImmediateHandoff, bool, false);
+
+  CreateOverscrollHandoffLayerTree1();
+
+  RefPtr<TestAsyncPanZoomController> parentApzc = ApzcOf(root);
+  RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
+
+  
+  
+  
+  Pan(childApzc, mcc, 60, 5);
+
+  
+  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(0, parentApzc->GetFrameMetrics().GetScrollOffset().y);
+
+  
+  
+  Pan(childApzc, mcc, 60, 50);
+
+  
+  EXPECT_EQ(10, parentApzc->GetFrameMetrics().GetScrollOffset().y);
+}
+
 class APZEventRegionsTester : public APZCTreeManagerTester {
 protected:
   UniquePtr<ScopedLayerTreeRegistration> registration;
