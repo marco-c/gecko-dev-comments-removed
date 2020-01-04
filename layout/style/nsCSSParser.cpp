@@ -9896,8 +9896,14 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
   if (haveGradientLine) {
     
     cssGradient->mIsLegacySyntax = true;
+    
+    
+    int32_t angleFlags = (aFlags & eGradient_WebkitLegacy) ?
+      VARIANT_ANGLE | VARIANT_ZERO_ANGLE :
+      VARIANT_ANGLE;
+
     bool haveAngle =
-      ParseSingleTokenVariant(cssGradient->mAngle, VARIANT_ANGLE, nullptr);
+      ParseSingleTokenVariant(cssGradient->mAngle, angleFlags, nullptr);
 
     
     bool haveAngleComma = haveAngle && ExpectSymbol(',', true);
