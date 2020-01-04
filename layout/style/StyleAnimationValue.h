@@ -275,6 +275,7 @@ public:
                 
     eUnit_ObjectPosition, 
                           
+    eUnit_URL, 
     eUnit_CSSValuePair, 
     eUnit_CSSValueTriplet, 
     eUnit_CSSRect, 
@@ -458,7 +459,8 @@ private:
   }
   static bool IsCSSValueUnit(Unit aUnit) {
     return aUnit == eUnit_Calc ||
-           aUnit == eUnit_ObjectPosition;
+           aUnit == eUnit_ObjectPosition ||
+           aUnit == eUnit_URL;
   }
   static bool IsCSSValuePairUnit(Unit aUnit) {
     return aUnit == eUnit_CSSValuePair;
