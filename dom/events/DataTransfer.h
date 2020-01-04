@@ -32,17 +32,28 @@ class EventStateManager;
 
 namespace dom {
 
-class DataTransferItem;
-class DataTransferItemList;
 class DOMStringList;
 class Element;
 class FileList;
 class Promise;
 template<typename T> class Optional;
 
+
+
+
+
+
+
+
+struct TransferItem {
+  nsString mFormat;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsIVariant> mData;
+};
+
 #define NS_DATATRANSFER_IID \
-{ 0x6c5f90d1, 0xa886, 0x42c8, \
-  { 0x85, 0x06, 0x10, 0xbe, 0x5c, 0x0d, 0xc6, 0x77 } }
+{ 0x43ee0327, 0xde5d, 0x463d, \
+  { 0x9b, 0xd0, 0xf1, 0x79, 0x09, 0x69, 0xf2, 0xfb } }
 
 class DataTransfer final : public nsIDOMDataTransfer,
                            public nsWrapperCache
@@ -77,7 +88,7 @@ protected:
                bool aUserCancelled,
                bool aIsCrossDomainSubFrameDrop,
                int32_t aClipboardType,
-               DataTransferItemList* aItems,
+               nsTArray<nsTArray<TransferItem> >& aItems,
                Element* aDragImage,
                uint32_t aDragImageX,
                uint32_t aDragImageY);
@@ -87,6 +98,7 @@ protected:
   static const char sEffects[8][9];
 
 public:
+
   
   
   
@@ -137,7 +149,7 @@ public:
   void SetDragImage(Element& aElement, int32_t aX, int32_t aY,
                     ErrorResult& aRv);
 
-  already_AddRefed<DOMStringList> GetTypes(ErrorResult& rv) const;
+  already_AddRefed<DOMStringList> Types() const;
 
   void GetData(const nsAString& aFormat, nsAString& aData, ErrorResult& aRv);
 
@@ -153,7 +165,10 @@ public:
 
   void AddElement(Element& aElement, mozilla::ErrorResult& aRv);
 
-  uint32_t MozItemCount() const;
+  uint32_t MozItemCount() const
+  {
+    return mItems.Length();
+  }
 
   void GetMozCursor(nsString& aCursor)
   {
@@ -195,13 +210,7 @@ public:
 
   
   
-  DataTransferItemList* Items() const { return mItems; }
-
-  bool IsReadOnly() const { return mReadOnly; }
   void SetReadOnly() { mReadOnly = true; }
-
-  int32_t ClipboardType() const { return mClipboardType; }
-  EventMessage GetEventMessage() const { return mEventMessage; }
 
   
   
@@ -251,11 +260,11 @@ public:
                  bool aUserCancelled, bool aIsCrossDomainSubFrameDrop,
                  DataTransfer** aResult);
 
+protected:
+
   
   
   void GetRealFormat(const nsAString& aInFormat, nsAString& aOutFormat) const;
-
-protected:
 
   
   
@@ -269,7 +278,14 @@ protected:
   
   void CacheExternalClipboardFormats();
 
-  FileList* GetFilesInternal(ErrorResult& aRv, nsIPrincipal* aSubjectPrincipal);
+  
+  
+  void FillInExternalData(TransferItem& aItem, uint32_t aIndex);
+
+
+  FileList* GetFileListInternal(ErrorResult& aRv,
+                                nsIPrincipal* aSubjectPrincipal);
+
   nsresult GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
                              nsIPrincipal* aSubjectPrincipal,
                              nsIVariant** aData);
@@ -322,7 +338,11 @@ protected:
   int32_t mClipboardType;
 
   
-  RefPtr<DataTransferItemList> mItems;
+  nsTArray<nsTArray<TransferItem> > mItems;
+
+  
+  
+  RefPtr<FileList> mFileList;
 
   
   nsCOMPtr<mozilla::dom::Element> mDragTarget;
