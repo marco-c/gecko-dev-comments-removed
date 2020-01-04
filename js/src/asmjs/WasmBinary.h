@@ -27,7 +27,7 @@ class PropertyName;
 
 namespace wasm {
 
-enum class Stmt : uint8_t
+enum class Expr : uint8_t
 {
     Ret,
 
@@ -57,8 +57,6 @@ enum class Stmt : uint8_t
 
     AtomicsFence,
 
-    
-    
     I32Expr,
     F32Expr,
     F64Expr,
@@ -66,354 +64,334 @@ enum class Stmt : uint8_t
     F32X4Expr,
     B32X4Expr,
 
+    
     Id,
     Noop,
     InterruptCheckHead,
     InterruptCheckLoop,
 
     DebugCheckPoint,
-
-    Bad
-};
-
-enum class I32 : uint8_t
-{
-    
-    GetLocal,
-    SetLocal,
-    GetGlobal,
-    SetGlobal,
-
-    CallInternal,
-    CallIndirect,
-    CallImport,
-
-    Conditional,
-    Comma,
-
-    Literal,
+    Bad,
 
     
-    Add,
-    Sub,
-    Mul,
-    SDiv,
-    SMod,
-    UDiv,
-    UMod,
-    Min,
-    Max,
+    I32GetLocal,
+    I32SetLocal,
+    I32GetGlobal,
+    I32SetGlobal,
+
+    I32CallInternal,
+    I32CallIndirect,
+    I32CallImport,
+
+    I32Conditional,
+    I32Comma,
+
+    I32Literal,
 
     
-    Not,
-    Neg,
+    I32Add,
+    I32Sub,
+    I32Mul,
+    I32SDiv,
+    I32SMod,
+    I32UDiv,
+    I32UMod,
+    I32Min,
+    I32Max,
 
     
-    BitOr,
-    BitAnd,
-    BitXor,
-    BitNot,
-
-    Lsh,
-    ArithRsh,
-    LogicRsh,
+    I32Not,
+    I32Neg,
 
     
-    FromF32,
-    FromF64,
+    I32BitOr,
+    I32BitAnd,
+    I32BitXor,
+    I32BitNot,
+
+    I32Lsh,
+    I32ArithRsh,
+    I32LogicRsh,
 
     
-    Clz,
-    Abs,
+    I32FromF32,
+    I32FromF64,
+
+    
+    I32Clz,
+    I32Abs,
 
     
     
     
-    EqI32,
-    NeI32,
-    SLtI32,
-    SLeI32,
-    SGtI32,
-    SGeI32,
-    ULtI32,
-    ULeI32,
-    UGtI32,
-    UGeI32,
+    I32EqI32,
+    I32NeI32,
+    I32SLtI32,
+    I32SLeI32,
+    I32SGtI32,
+    I32SGeI32,
+    I32ULtI32,
+    I32ULeI32,
+    I32UGtI32,
+    I32UGeI32,
 
-    EqF32,
-    NeF32,
-    LtF32,
-    LeF32,
-    GtF32,
-    GeF32,
+    I32EqF32,
+    I32NeF32,
+    I32LtF32,
+    I32LeF32,
+    I32GtF32,
+    I32GeF32,
 
-    EqF64,
-    NeF64,
-    LtF64,
-    LeF64,
-    GtF64,
-    GeF64,
-
-    
-    SLoad8,
-    SLoad16,
-    SLoad32,
-    ULoad8,
-    ULoad16,
-    ULoad32,
-    Store8,
-    Store16,
-    Store32,
+    I32EqF64,
+    I32NeF64,
+    I32LtF64,
+    I32LeF64,
+    I32GtF64,
+    I32GeF64,
 
     
-    AtomicsCompareExchange,
-    AtomicsExchange,
-    AtomicsLoad,
-    AtomicsStore,
-    AtomicsBinOp,
+    I32SLoad8,
+    I32SLoad16,
+    I32SLoad32,
+    I32ULoad8,
+    I32ULoad16,
+    I32ULoad32,
+    I32Store8,
+    I32Store16,
+    I32Store32,
 
     
-    I32X4ExtractLane,
-    B32X4ExtractLane,
-    B32X4AllTrue,
-    B32X4AnyTrue,
+    I32AtomicsCompareExchange,
+    I32AtomicsExchange,
+    I32AtomicsLoad,
+    I32AtomicsStore,
+    I32AtomicsBinOp,
 
     
-    Id,
-
-    Bad
-};
-
-enum class F32 : uint8_t
-{
-    
-    GetLocal,
-    SetLocal,
-    GetGlobal,
-    SetGlobal,
-
-    CallInternal,
-    CallIndirect,
-    CallImport,
-
-    Conditional,
-    Comma,
-
-    Literal,
+    I32I32X4ExtractLane,
+    I32B32X4ExtractLane,
+    I32B32X4AllTrue,
+    I32B32X4AnyTrue,
 
     
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Min,
-    Max,
-    Neg,
+    I32Id,
 
     
-    Abs,
-    Sqrt,
-    Ceil,
-    Floor,
+    
+    F32GetLocal,
+    F32SetLocal,
+    F32GetGlobal,
+    F32SetGlobal,
+
+    F32CallInternal,
+    F32CallIndirect,
+    F32CallImport,
+
+    F32Conditional,
+    F32Comma,
+
+    F32Literal,
 
     
-    FromF64,
-    FromS32,
-    FromU32,
+    F32Add,
+    F32Sub,
+    F32Mul,
+    F32Div,
+    F32Min,
+    F32Max,
+    F32Neg,
 
     
-    Load,
-    StoreF32,
-    StoreF64,
+    F32Abs,
+    F32Sqrt,
+    F32Ceil,
+    F32Floor,
 
     
-    F32X4ExtractLane,
+    F32FromF64,
+    F32FromS32,
+    F32FromU32,
 
     
-    Id,
-    Bad
-};
-
-enum class F64 : uint8_t
-{
-    
-    GetLocal,
-    SetLocal,
-    GetGlobal,
-    SetGlobal,
-
-    CallInternal,
-    CallIndirect,
-    CallImport,
-
-    Conditional,
-    Comma,
-
-    Literal,
+    F32Load,
+    F32StoreF32,
+    F32StoreF64,
 
     
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Min,
-    Max,
-    Mod,
-    Neg,
+    F32F32X4ExtractLane,
 
     
-    Abs,
-    Sqrt,
-    Ceil,
-    Floor,
-    Sin,
-    Cos,
-    Tan,
-    Asin,
-    Acos,
-    Atan,
-    Exp,
-    Log,
-    Pow,
-    Atan2,
+    F32Id,
 
     
-    FromF32,
-    FromS32,
-    FromU32,
+    
+    F64GetLocal,
+    F64SetLocal,
+    F64GetGlobal,
+    F64SetGlobal,
+
+    F64CallInternal,
+    F64CallIndirect,
+    F64CallImport,
+
+    F64Conditional,
+    F64Comma,
+
+    F64Literal,
 
     
-    Load,
-    StoreF32,
-    StoreF64,
+    F64Add,
+    F64Sub,
+    F64Mul,
+    F64Div,
+    F64Min,
+    F64Max,
+    F64Mod,
+    F64Neg,
 
     
-    Id,
-    Bad
-};
-
-enum class I32X4 : uint8_t
-{
-    
-    GetLocal,
-    SetLocal,
-
-    GetGlobal,
-    SetGlobal,
-
-    CallInternal,
-    CallIndirect,
-    CallImport,
-
-    Conditional,
-    Comma,
-
-    Literal,
+    F64Abs,
+    F64Sqrt,
+    F64Ceil,
+    F64Floor,
+    F64Sin,
+    F64Cos,
+    F64Tan,
+    F64Asin,
+    F64Acos,
+    F64Atan,
+    F64Exp,
+    F64Log,
+    F64Pow,
+    F64Atan2,
 
     
-    Ctor,
-
-    Unary,
-
-    Binary,
-    BinaryBitwise,
-    BinaryShift,
-
-    ReplaceLane,
-
-    FromF32X4,
-    FromF32X4Bits,
-
-    Swizzle,
-    Shuffle,
-    Select,
-    Splat,
-
-    Load,
-    Store,
+    F64FromF32,
+    F64FromS32,
+    F64FromU32,
 
     
-    Id,
-    Bad
-};
-
-enum class F32X4 : uint8_t
-{
-    
-    GetLocal,
-    SetLocal,
-
-    GetGlobal,
-    SetGlobal,
-
-    CallInternal,
-    CallIndirect,
-    CallImport,
-
-    Conditional,
-    Comma,
-
-    Literal,
+    F64Load,
+    F64StoreF32,
+    F64StoreF64,
 
     
-    Ctor,
-
-    Unary,
-
-    Binary,
-
-    ReplaceLane,
-
-    FromI32X4,
-    FromI32X4Bits,
-    Swizzle,
-    Shuffle,
-    Select,
-    Splat,
-
-    Load,
-    Store,
+    F64Id,
 
     
-    Id,
-    Bad
-};
-
-enum class B32X4 : uint8_t
-{
     
-    GetLocal,
-    SetLocal,
+    I32X4GetLocal,
+    I32X4SetLocal,
 
-    GetGlobal,
-    SetGlobal,
+    I32X4GetGlobal,
+    I32X4SetGlobal,
 
-    CallInternal,
-    CallIndirect,
-    CallImport,
+    I32X4CallInternal,
+    I32X4CallIndirect,
+    I32X4CallImport,
 
-    Conditional,
-    Comma,
+    I32X4Conditional,
+    I32X4Comma,
 
-    Literal,
+    I32X4Literal,
 
     
-    Ctor,
+    I32X4Ctor,
 
-    Unary,
+    I32X4Unary,
 
-    Binary,
-    BinaryCompI32X4,
-    BinaryCompF32X4,
-    BinaryBitwise,
+    I32X4Binary,
+    I32X4BinaryBitwise,
+    I32X4BinaryShift,
 
-    ReplaceLane,
+    I32X4ReplaceLane,
 
-    Splat,
+    I32X4FromF32X4,
+    I32X4FromF32X4Bits,
+
+    I32X4Swizzle,
+    I32X4Shuffle,
+    I32X4Select,
+    I32X4Splat,
+
+    I32X4Load,
+    I32X4Store,
 
     
-    Id,
-    Bad
+    I32X4Id,
+
+    
+    
+    F32X4GetLocal,
+    F32X4SetLocal,
+
+    F32X4GetGlobal,
+    F32X4SetGlobal,
+
+    F32X4CallInternal,
+    F32X4CallIndirect,
+    F32X4CallImport,
+
+    F32X4Conditional,
+    F32X4Comma,
+
+    F32X4Literal,
+
+    
+    F32X4Ctor,
+
+    F32X4Unary,
+
+    F32X4Binary,
+
+    F32X4ReplaceLane,
+
+    F32X4FromI32X4,
+    F32X4FromI32X4Bits,
+    F32X4Swizzle,
+    F32X4Shuffle,
+    F32X4Select,
+    F32X4Splat,
+
+    F32X4Load,
+    F32X4Store,
+
+    
+    F32X4Id,
+
+    
+    
+    B32X4GetLocal,
+    B32X4SetLocal,
+
+    B32X4GetGlobal,
+    B32X4SetGlobal,
+
+    B32X4CallInternal,
+    B32X4CallIndirect,
+    B32X4CallImport,
+
+    B32X4Conditional,
+    B32X4Comma,
+
+    B32X4Literal,
+
+    
+    B32X4Ctor,
+
+    B32X4Unary,
+
+    B32X4Binary,
+    B32X4BinaryCompI32X4,
+    B32X4BinaryCompF32X4,
+    B32X4BinaryBitwise,
+
+    B32X4ReplaceLane,
+
+    B32X4Splat,
+
+    
+    B32X4Id
 };
 
 enum NeedsBoundsCheck : uint8_t
@@ -501,7 +479,7 @@ class Encoder
     bool pcIsPatchable(size_t pc, unsigned size) const {
         bool patchable = true;
         for (unsigned i = 0; patchable && i < size; i++)
-            patchable &= Stmt((*bytecode_)[pc]) == Stmt::Bad;
+            patchable &= Expr((*bytecode_)[pc]) == Expr::Bad;
         return patchable;
     }
 #endif
