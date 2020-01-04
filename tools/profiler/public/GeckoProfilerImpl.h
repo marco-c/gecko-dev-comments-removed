@@ -411,26 +411,23 @@ protected:
   const char* mInfo;
 };
 
-class MOZ_RAII SamplerStackFrameRAII {
+class MOZ_STACK_CLASS SamplerStackFrameRAII {
 public:
   
   SamplerStackFrameRAII(const char *aInfo,
-    js::ProfileEntry::Category aCategory, uint32_t line
-    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    js::ProfileEntry::Category aCategory, uint32_t line)
   {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     mHandle = mozilla_sampler_call_enter(aInfo, aCategory, this, false, line);
   }
   ~SamplerStackFrameRAII() {
     mozilla_sampler_call_exit(mHandle);
   }
 private:
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   void* mHandle;
 };
 
 static const int SAMPLER_MAX_STRING = 128;
-class MOZ_RAII SamplerStackFramePrintfRAII {
+class MOZ_STACK_CLASS SamplerStackFramePrintfRAII {
 public:
   
   SamplerStackFramePrintfRAII(const char *aInfo,
