@@ -2462,6 +2462,16 @@ JS_FreezeObject(JSContext* cx, JS::Handle<JSObject*> obj);
 extern JS_PUBLIC_API(bool)
 JS_PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result);
 
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded);
+
 extern JS_PUBLIC_API(JSObject*)
 JS_New(JSContext* cx, JS::HandleObject ctor, const JS::HandleValueArray& args);
 
