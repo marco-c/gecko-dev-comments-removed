@@ -132,17 +132,21 @@ private:
 class DeviceManagerD3D9 final
 {
 public:
-  DeviceManagerD3D9();
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DeviceManagerD3D9)
 
   
 
 
+  static void Init();
+  static void Shutdown();
+
+  
 
 
 
-
-  bool Init();
+  static RefPtr<DeviceManagerD3D9> Get();
+  static RefPtr<IDirect3DDevice9> GetDevice();
+  static void OnDeviceManagerDestroy(DeviceManagerD3D9* aDeviceManager);
 
   
 
@@ -216,7 +220,18 @@ public:
 private:
   friend class SwapChainD3D9;
 
+  DeviceManagerD3D9();
   ~DeviceManagerD3D9();
+
+  
+
+
+
+
+
+
+  bool Initialize();
+
   void DestroyDevice();
 
   
