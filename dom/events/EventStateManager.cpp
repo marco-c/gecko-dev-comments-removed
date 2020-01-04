@@ -3001,7 +3001,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       SetActiveManager(this, activeContent);
     }
     break;
-  case NS_POINTER_CANCEL: {
+  case ePointerCancel: {
     if(WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
       GenerateMouseEnterExit(mouseEvent);
     }
@@ -4185,7 +4185,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
     }
     break;
   case NS_POINTER_LEAVE:
-  case NS_POINTER_CANCEL:
+  case ePointerCancel:
   case eMouseExitFromWidget:
     {
       

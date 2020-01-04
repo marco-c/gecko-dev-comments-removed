@@ -6707,7 +6707,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       pointerMessage = NS_POINTER_DOWN;
       break;
     case NS_TOUCH_CANCEL:
-      pointerMessage = NS_POINTER_CANCEL;
+      pointerMessage = ePointerCancel;
       break;
     default:
       return NS_OK;
@@ -7466,7 +7466,8 @@ PresShell::HandleEvent(nsIFrame* aFrame,
           }
 
           if (pointerEvent->mMessage == NS_POINTER_UP ||
-              pointerEvent->mMessage == NS_POINTER_CANCEL) {
+              pointerEvent->mMessage == ePointerCancel) {
+            
             
             
             releasePointerCaptureCaller.SetTarget(pointerId, pointerCapturingContent);
@@ -8982,7 +8983,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
 
   nsDocShell* docShell = static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
   if (docShell) {
-    TimelineConsumers::AddMarkerForDocShell(docShell, "Reflow", MarkerTracingType::START);
+    TimelineConsumers::AddMarkerForDocShell(docShell, "Reflow", TRACING_INTERVAL_START);
   }
 
   if (mReflowContinueTimer) {
@@ -9159,7 +9160,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
   }
 
   if (docShell) {
-    TimelineConsumers::AddMarkerForDocShell(docShell, "Reflow", MarkerTracingType::END);
+    TimelineConsumers::AddMarkerForDocShell(docShell, "Reflow", TRACING_INTERVAL_END);
   }
   return !interrupted;
 }
