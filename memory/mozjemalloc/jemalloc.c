@@ -238,7 +238,7 @@
 
 #ifndef NO_TLS
 static unsigned long tlsIndex = 0xffffffff;
-#endif 
+#endif
 
 #define	__thread
 #define	_pthread_self() __threadid()
@@ -5618,7 +5618,7 @@ malloc_init_hard(void)
 				"", "");
 		abort();
 	}
-#else	
+#else
 	pagesize = (size_t) result;
 	pagesize_mask = (size_t) result - 1;
 	pagesize_2pow = ffs((int)result) - 1;
@@ -6464,7 +6464,7 @@ MOZ_MEMORY_API void
 free_impl(void *ptr)
 {
 	size_t offset;
-	
+
 	DARWIN_ONLY((szone->free)(szone, ptr); return);
 
 	UTRACE(ptr, 0, 0);
@@ -7176,8 +7176,8 @@ MOZ_MEMORY_API void *(*__memalign_hook)(size_t alignment, size_t size) = MEMALIG
 
 
 
-BOOL APIENTRY DllMain(HINSTANCE hModule, 
-                      DWORD reason, 
+BOOL APIENTRY DllMain(HINSTANCE hModule,
+                      DWORD reason,
                       LPVOID lpReserved)
 {
   switch (reason) {
@@ -7188,7 +7188,7 @@ BOOL APIENTRY DllMain(HINSTANCE hModule,
       
       malloc_init_hard();
       break;
-    
+
     case DLL_PROCESS_DETACH:
       break;
 
