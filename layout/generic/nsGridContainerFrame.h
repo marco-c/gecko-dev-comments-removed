@@ -152,6 +152,11 @@ protected:
   nscoord IntrinsicISize(nsRenderingContext* aRenderingContext,
                          IntrinsicISizeType  aConstraint);
 
+  
+  void MergeSortedOverflow(nsFrameList& aList);
+  
+  void MergeSortedExcessOverflowContainers(nsFrameList& aList);
+
 #ifdef DEBUG
   void SanityCheckAnonymousGridItems() const;
 #endif 
