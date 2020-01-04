@@ -1270,7 +1270,7 @@ public abstract class GeckoApp
         
         mMainLayout.getViewTreeObserver().addOnGlobalLayoutListener(this);
 
-        if (Versions.preMarshmallow || !AppConstants.NIGHTLY_BUILD) {
+        if (Versions.preMarshmallow) {
             mTextSelection = new ActionBarTextSelection(
                     (TextSelectionHandle) findViewById(R.id.anchor_handle),
                     (TextSelectionHandle) findViewById(R.id.caret_handle),
