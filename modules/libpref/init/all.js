@@ -4963,7 +4963,7 @@ pref("layout.accessiblecaret.margin-left", "-18.5");
 pref("layout.accessiblecaret.bar.width", "2.0");
 
 
-pref("layout.accessiblecaret.bar.enabled", true);
+pref("layout.accessiblecaret.bar.enabled", false);
 
 
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", false);

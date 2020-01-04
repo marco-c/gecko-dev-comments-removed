@@ -1055,6 +1055,10 @@ pref("dom.apps.reviewer_paths", "/reviewers/,/extension/reviewers/");
 pref("layout.accessiblecaret.enabled", true);
 
 
+
+pref("layout.accessiblecaret.bar.enabled", true);
+
+
 #ifdef MOZ_WIDGET_GONK
 pref("layout.accessiblecaret.use_long_tap_injector", false);
 #endif
