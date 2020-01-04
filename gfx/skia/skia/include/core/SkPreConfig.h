@@ -192,7 +192,7 @@
 
 
 
-#if !defined(SK_ARM_HAS_NEON) && !defined(SK_BUILD_FOR_IOS) && defined(__ARM_NEON)
+#if !defined(SK_ARM_HAS_NEON) && !defined(SK_BUILD_FOR_IOS) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
     #define SK_ARM_HAS_NEON
 #endif
 
