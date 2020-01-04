@@ -133,7 +133,8 @@ OggDemuxer::OggDemuxer(MediaResource* aResource)
   , mTheoraSerial(0)
   , mOpusPreSkip(0)
   , mIsChained(false)
-  , mDecodedAudioFrames(0)
+  , mTimedMetadataEvent(nullptr)
+  , mOnSeekableEvent(nullptr)
 {
   MOZ_COUNT_CTOR(OggDemuxer);
   PodZero(&mTheoraInfo);
@@ -155,6 +156,15 @@ OggDemuxer::~OggDemuxer()
     AbstractThread::MainThread()->Dispatch(task.forget());
   }
 }
+
+void
+OggDemuxer::SetChainingEvents(TimedMetadataEventProducer* aMetadataEvent,
+                              MediaEventProducer<void>* aOnSeekableEvent)
+{
+  mTimedMetadataEvent = aMetadataEvent;
+  mOnSeekableEvent = aOnSeekableEvent;
+}
+
 
 bool
 OggDemuxer::HasAudio()
@@ -715,12 +725,13 @@ OggDemuxer::SetChained() {
     }
     mIsChained = true;
   }
-  
-  
+  if (mOnSeekableEvent) {
+    mOnSeekableEvent->Notify();
+  }
 }
 
 bool
-OggDemuxer::ReadOggChain()
+OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime)
 {
   bool chained = false;
   OpusState* newOpusState = nullptr;
@@ -814,15 +825,14 @@ OggDemuxer::ReadOggChain()
 
   if (chained) {
     SetChained();
+    mInfo.mMediaSeekable = false;
+    mDecodedAudioDuration += aLastEndTime;
+    if (mTimedMetadataEvent)
     {
-      
-      
-
-
-
-
-
-
+      mTimedMetadataEvent->Notify(
+        TimedMetadata(mDecodedAudioDuration,
+                      Move(tags),
+                      nsAutoPtr<MediaInfo>(new MediaInfo(mInfo))));
     }
     return true;
   }
@@ -1424,7 +1434,7 @@ OggTrackDemuxer::NextSample()
   if (eos) {
     
     
-    mParent->ReadOggChain();
+    mParent->ReadOggChain(TimeUnit::FromMicroseconds(data->GetEndTime()));
   }
   return data;
 }

@@ -10,6 +10,7 @@
 #include "MediaDataDemuxer.h"
 #include "OggCodecState.h"
 #include "OggCodecStore.h"
+#include "MediaMetadataManager.h"
 
 namespace mozilla {
 
@@ -34,6 +35,9 @@ public:
 
   UniquePtr<EncryptionInfo> GetCrypto() override;
 
+  
+  void SetChainingEvents(TimedMetadataEventProducer* aMetadataEvent,
+                         MediaEventProducer<void>* aOnSeekableEvent);
 
 private:
 
@@ -199,7 +203,7 @@ private:
   bool ReadHeaders(TrackInfo::TrackType aType, OggCodecState* aState, OggHeaders& aHeaders);
 
   
-  bool ReadOggChain();
+  bool ReadOggChain(const media::TimeUnit& aLastEndTime);
 
   
   
@@ -317,7 +321,11 @@ private:
   bool mIsChained;
 
   
-  int64_t mDecodedAudioFrames;
+  media::TimeUnit mDecodedAudioDuration;
+
+  
+  TimedMetadataEventProducer* mTimedMetadataEvent;
+  MediaEventProducer<void>* mOnSeekableEvent;
 
   friend class OggTrackDemuxer;
 };
