@@ -4122,33 +4122,6 @@ extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
          const char* filename, JS::MutableHandleValue rval);
 
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-EvaluateSelfHosted(JSRuntime* rt, const char16_t* chars, size_t length, const char* filename);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-EvaluateSelfHosted(JSRuntime* rt, const char* bytes, size_t length, const char* filename);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-EvaluateSelfHosted(JSRuntime* rt, const char* filename);
-
 } 
 
 extern JS_PUBLIC_API(bool)
