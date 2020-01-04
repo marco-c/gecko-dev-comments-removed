@@ -1500,7 +1500,6 @@ pref("network.http.bypass-cachelock-threshold", 250);
 
 
 pref("network.http.spdy.enabled", true);
-pref("network.http.spdy.enabled.v3-1", false);
 pref("network.http.spdy.enabled.http2", true);
 pref("network.http.spdy.enabled.deps", true);
 pref("network.http.spdy.enforce-tls-profile", true);
@@ -4343,6 +4342,9 @@ pref("image.http.accept", "*/*");
 pref("image.infer-src-animation.threshold-ms", 2000);
 
 
+pref("image.single-color-optimization.enabled", true);
+
+
 
 
 
@@ -4418,7 +4420,11 @@ pref("webgl.disable-fail-if-major-performance-caveat", false);
 pref("webgl.disable-DOM-blit-uploads", false);
 pref("webgl.webgl2-compat-mode", false);
 
-pref("webgl.enable-webgl2", true);
+#ifdef NIGHTLY_BUILD
+pref("webgl.enable-prototype-webgl2", true);
+#else
+pref("webgl.enable-prototype-webgl2", false);
+#endif
 
 #ifdef RELEASE_BUILD
 

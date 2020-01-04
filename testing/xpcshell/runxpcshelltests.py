@@ -984,7 +984,7 @@ class XPCShellTests(object):
 
     def trySetupNode(self):
         """
-          Run node for SPDY tests, if available, and updates mozinfo as appropriate.
+          Run node for HTTP/2 tests, if available, and updates mozinfo as appropriate.
         """
         nodeMozInfo = {'hasNode': False} 
         nodeBin = None
@@ -1014,9 +1014,6 @@ class XPCShellTests(object):
                         msg = process.stdout.readline()
                         if 'server listening' in msg:
                             nodeMozInfo['hasNode'] = True
-                            searchObj = re.search( r'SPDY server listening on port (.*)', msg, 0)
-                            if searchObj:
-                              self.env["MOZSPDY_PORT"] = searchObj.group(1)
                             searchObj = re.search( r'HTTP2 server listening on port (.*)', msg, 0)
                             if searchObj:
                               self.env["MOZHTTP2_PORT"] = searchObj.group(1)
@@ -1025,7 +1022,6 @@ class XPCShellTests(object):
                         self.log.error('Could not run %s server: %s' % (name, str(e)))
 
             myDir = os.path.split(os.path.abspath(__file__))[0]
-            startServer('moz-spdy', os.path.join(myDir, 'moz-spdy', 'moz-spdy.js'))
             startServer('moz-http2', os.path.join(myDir, 'moz-http2', 'moz-http2.js'))
         elif os.getenv('MOZ_ASSUME_NODE_RUNNING', None):
             self.log.info('Assuming required node servers are already running')

@@ -34,7 +34,6 @@ class nsCString;
 namespace mozilla {
 namespace net {
 
-class SpdyPushedStream31;
 class Http2PushedStream;
 
 
@@ -44,17 +43,6 @@ public:
   
   SpdyPushCache();
   virtual ~SpdyPushCache();
-
-
-public:
-  bool               RegisterPushedStreamSpdy31(nsCString key,
-                                                SpdyPushedStream31 *stream);
-  SpdyPushedStream31 *RemovePushedStreamSpdy31(nsCString key);
-private:
-  nsDataHashtable<nsCStringHashKey, SpdyPushedStream31 *> mHashSpdy31;
-
-
-public:
   bool               RegisterPushedStreamHttp2(nsCString key,
                                                Http2PushedStream *stream);
   Http2PushedStream *RemovePushedStreamHttp2(nsCString key);

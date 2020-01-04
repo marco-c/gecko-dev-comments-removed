@@ -95,7 +95,7 @@ public:
   SpdyInformation();
   ~SpdyInformation() {}
 
-  static const uint32_t kCount = 2;
+  static const uint32_t kCount = 1;
 
   
   
@@ -107,7 +107,6 @@ public:
   uint8_t   Version[kCount]; 
   nsCString VersionString[kCount]; 
 
-  
   
   
   
