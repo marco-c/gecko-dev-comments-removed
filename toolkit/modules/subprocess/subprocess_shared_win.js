@@ -22,6 +22,7 @@ var win32 = {
   BYTE: ctypes.uint8_t,
   WORD: ctypes.uint16_t,
   DWORD: ctypes.uint32_t,
+  LONG: ctypes.long,
 
   UINT: ctypes.unsigned_int,
   UCHAR: ctypes.unsigned_char,
@@ -219,6 +220,15 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.PROCESS_INFORMATION.ptr, 
   ],
 
+  CreateSemaphoreW: [
+    win32.WINAPI,
+    win32.HANDLE,
+    win32.SECURITY_ATTRIBUTES.ptr, 
+    win32.LONG, 
+    win32.LONG, 
+    win32.LPCWSTR, 
+  ],
+
   DeleteProcThreadAttributeList: [
     win32.WINAPI,
     win32.VOID,
@@ -297,6 +307,14 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.DWORD, 
     win32.LPDWORD, 
     win32.OVERLAPPED.ptr, 
+  ],
+
+  ReleaseSemaphore: [
+    win32.WINAPI,
+    win32.BOOL,
+    win32.HANDLE, 
+    win32.LONG, 
+    win32.LONG.ptr, 
   ],
 
   TerminateProcess: [
