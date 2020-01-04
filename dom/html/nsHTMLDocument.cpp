@@ -947,6 +947,11 @@ nsHTMLDocument::SetDomain(const nsAString& aDomain, ErrorResult& rv)
     return;
   }
 
+  
+  
+  
+  newURI->SetPort(-1);
+
   rv2 = newURI->SetHostPort(NS_ConvertUTF16toUTF8(aDomain));
   if (NS_FAILED(rv2)) {
     rv.Throw(rv2);
