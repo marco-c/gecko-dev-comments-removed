@@ -1444,8 +1444,11 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
 
     
     nsGlobalWindow::SlowScriptResponse response = win->ShowSlowScriptDialog();
-    if (response == nsGlobalWindow::KillSlowScript)
+    if (response == nsGlobalWindow::KillSlowScript) {
+        if (Preferences::GetBool("dom.global_stop_script", true))
+            xpc::Scriptability::Get(global).Block();
         return false;
+    }
 
     
     
