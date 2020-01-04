@@ -17,20 +17,20 @@
 
 
 
-require("imports?require=>false!shared/libs/sdk.js");
+require("imports?require=>false!shared/vendor/sdk.js");
 
 
 
 
 
 
-require("exports?_!shared/libs/lodash-3.9.3.js");
+require("exports?_!shared/vendor/lodash-3.9.3.js");
 
 
 
 
 
-require("expose?Backbone!imports?define=>false!shared/libs/backbone-1.2.1.js");
+require("expose?Backbone!imports?define=>false!shared/vendor/backbone-1.2.1.js");
 
 
 if (typeof __PROD__ !== "undefined") {
@@ -41,8 +41,8 @@ if (typeof __PROD__ !== "undefined") {
   require("expose?classNames!classnames");
 } else {
   
-  require("shared/libs/react-0.13.3.js");
-  require("shared/libs/classnames-2.2.0.js");
+  require("shared/vendor/react-0.13.3.js");
+  require("shared/vendor/classnames-2.2.0.js");
 }
 
 
