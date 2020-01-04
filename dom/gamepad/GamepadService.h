@@ -39,6 +39,7 @@ class GamepadService : public nsIObserver
   static bool IsAPIEnabled();
 
   void BeginShutdown();
+  void StopMonitoring();
 
   
   void AddListener(nsGlobalWindow* aWindow);
