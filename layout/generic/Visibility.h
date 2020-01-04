@@ -25,28 +25,14 @@ enum class Visibility : uint8_t
   
   
   
-  NONVISIBLE,
+  
+  APPROXIMATELY_NONVISIBLE,
 
   
   
   
   
-  MAY_BECOME_VISIBLE,
-
-  
-  
-  
-  
-  
-  IN_DISPLAYPORT
-};
-
-
-
-enum class VisibilityCounter : uint8_t
-{
-  MAY_BECOME_VISIBLE,
-  IN_DISPLAYPORT
+  APPROXIMATELY_VISIBLE
 };
 
 

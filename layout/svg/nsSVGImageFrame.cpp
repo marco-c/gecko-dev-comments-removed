@@ -159,7 +159,7 @@ nsSVGImageFrame::Init(nsIContent*       aContent,
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
     
     
-    IncVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
+    IncApproximateVisibleCount();
   }
 
   mListener = new nsSVGImageListener(this);
@@ -179,7 +179,7 @@ nsSVGImageFrame::Init(nsIContent*       aContent,
 nsSVGImageFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
-    DecVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
+    DecApproximateVisibleCount();
   }
 
   if (mReflowCallbackPosted) {

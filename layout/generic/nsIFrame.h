@@ -428,7 +428,6 @@ public:
   using ReflowInput = mozilla::ReflowInput;
   using ReflowOutput = mozilla::ReflowOutput;
   using Visibility = mozilla::Visibility;
-  using VisibilityCounter = mozilla::VisibilityCounter;
 
   typedef mozilla::FrameProperties FrameProperties;
   typedef mozilla::layers::Layer Layer;
@@ -1117,32 +1116,17 @@ public:
 
   
   
-  bool IsVisibleOrMayBecomeVisibleSoon() const
-  {
-    Visibility visibility = GetVisibility();
-    return visibility == Visibility::MAY_BECOME_VISIBLE ||
-           visibility == Visibility::IN_DISPLAYPORT;
-  }
-
-  
-  
   
   
   
   
   void UpdateVisibilitySynchronously();
 
-  struct VisibilityState
-  {
-    unsigned int mApproximateCounter : 16;
-    unsigned int mInDisplayPortCounter : 16;
-  };
-
   
   
   
   
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, VisibilityState);
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, uint32_t);
 
 protected:
 
@@ -1200,16 +1184,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-  void DecVisibilityCount(VisibilityCounter aCounter,
-                          Maybe<OnNonvisible> aNonvisibleAction = Nothing());
-  void IncVisibilityCount(VisibilityCounter aCounter);
+  void DecApproximateVisibleCount(Maybe<OnNonvisible> aNonvisibleAction = Nothing());
+  void IncApproximateVisibleCount();
 
 
   

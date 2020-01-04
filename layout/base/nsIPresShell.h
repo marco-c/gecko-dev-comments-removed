@@ -46,6 +46,7 @@
 #include "nsRefPtrHashtable.h"
 #include "nsClassHashtable.h"
 #include "nsPresArena.h"
+#include "nsIImageLoadingContent.h"
 #include "nsMargin.h"
 #include "nsFrameState.h"
 #include "Units.h"
@@ -1607,11 +1608,10 @@ public:
                                                  bool aRemoveOnly = false) = 0;
 
   
-  
-  virtual void MarkFrameVisibleInDisplayPort(nsIFrame* aFrame) = 0;
+  virtual void EnsureFrameInApproximatelyVisibleList(nsIFrame* aFrame) = 0;
 
   
-  virtual void MarkFrameNonvisible(nsIFrame* aFrame) = 0;
+  virtual void RemoveFrameFromApproximatelyVisibleList(nsIFrame* aFrame) = 0;
 
   
   virtual bool AssumeAllFramesVisible() = 0;

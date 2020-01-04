@@ -718,7 +718,7 @@ nsImageFrame::MaybeDecodeForPredictedSize()
     return;  
   }
 
-  if (!IsVisibleOrMayBecomeVisibleSoon()) {
+  if (GetVisibility() != Visibility::APPROXIMATELY_VISIBLE) {
     return;  
   }
 
@@ -2105,8 +2105,7 @@ nsImageFrame::OnVisibilityChange(Visibility aNewVisibility,
 
   imageLoader->OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 
-  if (aNewVisibility == Visibility::MAY_BECOME_VISIBLE ||
-      aNewVisibility == Visibility::IN_DISPLAYPORT) {
+  if (aNewVisibility == Visibility::APPROXIMATELY_VISIBLE) {
     MaybeDecodeForPredictedSize();
   }
 
