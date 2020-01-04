@@ -178,18 +178,6 @@ nsControllerCommandTable::GetCommandState(const char* aCommandName,
                                                aCommandRefCon);
 }
 
-static PLDHashOperator
-AddCommand(const nsACString& aKey, nsIControllerCommand* aData, void* aArg)
-{
-  
-  
-  
-  char*** commands = static_cast<char***>(aArg);
-  (**commands) = ToNewCString(aKey);
-  (*commands)++;
-  return PL_DHASH_NEXT;
-}
-
 NS_IMETHODIMP
 nsControllerCommandTable::GetSupportedCommands(uint32_t* aCount,
                                                char*** aCommands)
@@ -199,7 +187,10 @@ nsControllerCommandTable::GetSupportedCommands(uint32_t* aCount,
   *aCount = mCommandsTable.Count();
   *aCommands = commands;
 
-  mCommandsTable.EnumerateRead(AddCommand, &commands);
+  for (auto iter = mCommandsTable.Iter(); !iter.Done(); iter.Next()) {
+    *commands = ToNewCString(iter.Key());
+    commands++;
+  }
   return NS_OK;
 }
 
