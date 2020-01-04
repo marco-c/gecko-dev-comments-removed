@@ -1219,14 +1219,7 @@ Messenger.prototype = {
       .catch(error => {
         if (error.result == MessageChannel.RESULT_NO_HANDLER) {
           return Promise.reject({message: "Could not establish connection. Receiving end does not exist."});
-        } else if (error.result == MessageChannel.RESULT_NO_RESPONSE) {
-          if (responseCallback) {
-            
-            
-            
-            return new Promise(() => {});
-          }
-        } else {
+        } else if (error.result != MessageChannel.RESULT_NO_RESPONSE) {
           return Promise.reject({message: error.message});
         }
       });
