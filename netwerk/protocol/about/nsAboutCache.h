@@ -65,7 +65,9 @@ protected:
 
         
         
-        void FlushBuffer();
+        
+        
+        nsresult FlushBuffer();
 
         
         
@@ -74,6 +76,9 @@ protected:
         
         
         bool mEntriesHeaderAdded;
+
+        
+        bool mCancel;
 
         
         nsCOMPtr<nsILoadContextInfo> mLoadInfo;
