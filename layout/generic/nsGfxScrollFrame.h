@@ -382,7 +382,7 @@ public:
     Layer* aLayer, nsIFrame* aContainerReferenceFrame,
     const ContainerLayerParameters& aParameters,
     bool aIsForCaret) const;
-  virtual const mozilla::DisplayItemClip* ComputeScrollClip(bool aIsForCaret) const;
+  virtual mozilla::Maybe<mozilla::DisplayItemClip> ComputeScrollClip(bool aIsForCaret) const;
 
   
   void ScrollByPage(nsScrollbarFrame* aScrollbar, int32_t aDirection,
@@ -462,8 +462,8 @@ public:
   FrameMetrics::ViewID mScrollParentID;
 
   
-  const DisplayItemClip* mAncestorClip;
-  const DisplayItemClip* mAncestorClipForCaret;
+  Maybe<DisplayItemClip> mAncestorClip;
+  Maybe<DisplayItemClip> mAncestorClipForCaret;
 
   bool mNeverHasVerticalScrollbar:1;
   bool mNeverHasHorizontalScrollbar:1;
@@ -845,7 +845,7 @@ public:
   {
     return mHelper.ComputeFrameMetrics(aLayer, aContainerReferenceFrame, aParameters, aIsForCaret);
   }
-  virtual const mozilla::DisplayItemClip* ComputeScrollClip(bool aIsForCaret) const override
+  virtual mozilla::Maybe<mozilla::DisplayItemClip> ComputeScrollClip(bool aIsForCaret) const override
   {
     return mHelper.ComputeScrollClip(aIsForCaret);
   }
@@ -1245,7 +1245,7 @@ public:
   {
     return mHelper.ComputeFrameMetrics(aLayer, aContainerReferenceFrame, aParameters, aIsForCaret);
   }
-  virtual const mozilla::DisplayItemClip* ComputeScrollClip(bool aIsForCaret) const override
+  virtual mozilla::Maybe<mozilla::DisplayItemClip> ComputeScrollClip(bool aIsForCaret) const override
   {
     return mHelper.ComputeScrollClip(aIsForCaret);
   }
