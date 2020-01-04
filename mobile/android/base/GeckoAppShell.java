@@ -317,9 +317,9 @@ public class GeckoAppShell
         }
     }
 
-    private static LayerView sLayerView;
+    private static GeckoView sLayerView;
 
-    public static void setLayerView(LayerView lv) {
+    public static void setLayerView(GeckoView lv) {
         if (sLayerView == lv) {
             return;
         }
@@ -338,7 +338,7 @@ public class GeckoAppShell
     }
 
     @RobocopTarget
-    public static LayerView getLayerView() {
+    public static GeckoView getLayerView() {
         return sLayerView;
     }
 
@@ -2381,42 +2381,31 @@ public class GeckoAppShell
         SmsManager.getInstance().deleteMessage(aMessageId, aRequestId);
     }
 
-    @WrapForJNI(stubName = "CreateMessageCursorWrapper")
-    public static void createMessageCursor(long aStartDate, long aEndDate, String[] aNumbers, int aNumbersCount, String aDelivery, boolean aHasRead, boolean aRead, boolean aHasThreadId, long aThreadId, boolean aReverse, int aRequestId) {
+    @WrapForJNI(stubName = "CreateMessageListWrapper")
+    public static void createMessageList(long aStartDate, long aEndDate, String[] aNumbers, int aNumbersCount, String aDelivery, boolean aHasRead, boolean aRead, long aThreadId, boolean aReverse, int aRequestId) {
         if (!SmsManager.isEnabled()) {
             return;
         }
 
-        SmsManager.getInstance().createMessageCursor(aStartDate, aEndDate, aNumbers, aNumbersCount, aDelivery, aHasRead, aRead, aHasThreadId, aThreadId, aReverse, aRequestId);
+        SmsManager.getInstance().createMessageList(aStartDate, aEndDate, aNumbers, aNumbersCount, aDelivery, aHasRead, aRead, aThreadId, aReverse, aRequestId);
     }
 
-    @WrapForJNI(stubName = "GetNextMessageWrapper")
-    public static void getNextMessage(int aRequestId) {
+    @WrapForJNI(stubName = "GetNextMessageInListWrapper")
+    public static void getNextMessageInList(int aListId, int aRequestId) {
         if (!SmsManager.isEnabled()) {
             return;
         }
 
-        SmsManager.getInstance().getNextMessage(aRequestId);
+        SmsManager.getInstance().getNextMessageInList(aListId, aRequestId);
     }
 
-    @WrapForJNI(stubName = "CreateThreadCursorWrapper")
-    public static void createThreadCursor(int aRequestId) {
-        Log.i("GeckoAppShell", "CreateThreadCursorWrapper!");
-
+    @WrapForJNI
+    public static void clearMessageList(int aListId) {
         if (!SmsManager.isEnabled()) {
             return;
         }
 
-        SmsManager.getInstance().createThreadCursor(aRequestId);
-    }
-
-    @WrapForJNI(stubName = "GetNextThreadWrapper")
-    public static void getNextThread(int aRequestId) {
-        if (!SmsManager.isEnabled()) {
-            return;
-        }
-
-        SmsManager.getInstance().getNextThread(aRequestId);
+        SmsManager.getInstance().clearMessageList(aListId);
     }
 
     
@@ -2428,7 +2417,7 @@ public class GeckoAppShell
 
     private static boolean sImeWasEnabledOnLastResize = false;
     public static void viewSizeChanged() {
-        LayerView v = getLayerView();
+        GeckoView v = getLayerView();
         if (v == null) {
             return;
         }

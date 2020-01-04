@@ -2,14 +2,17 @@
 
 
 
-package org.mozilla.gecko.gfx;
+package org.mozilla.gecko;
 
 import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 
-public interface InputConnectionHandler
+
+
+
+interface InputConnectionListener
 {
     Handler getHandler(Handler defHandler);
     InputConnection onCreateInputConnection(EditorInfo outAttrs);
