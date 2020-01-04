@@ -159,7 +159,7 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id)
       APPEND_DEVICE(0x2e12); 
       APPEND_DEVICE(0x2e13); 
       break;
-    case IntelHDGraphicsToIvyBridge:
+    case IntelHDGraphicsToSandyBridge:
       APPEND_DEVICE(0x0042); 
       APPEND_DEVICE(0x0046); 
       APPEND_DEVICE(0x0102); 
@@ -169,7 +169,6 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id)
       APPEND_DEVICE(0x0122); 
       APPEND_DEVICE(0x0126); 
       APPEND_DEVICE(0x010a); 
-      APPEND_DEVICE(0x0080); 
       break;
     case IntelHD3000:
       APPEND_DEVICE(0x0126);
