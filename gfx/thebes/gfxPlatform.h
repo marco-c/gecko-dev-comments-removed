@@ -616,11 +616,6 @@ public:
     virtual void SchedulePaintIfDeviceReset() {}
 
     
-    
-    
-    virtual void UpdateRenderModeIfDeviceReset() {}
-
-    
 
 
 
