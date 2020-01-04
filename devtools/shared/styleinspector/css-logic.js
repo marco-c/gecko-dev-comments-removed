@@ -978,11 +978,13 @@ CssLogic.prettifyCSS = function(text, ruleCount) {
 
   
   text = text.replace(/(?:^\s*<!--[\r\n]*)|(?:\s*-->\s*$)/g, "");
+  let originalText = text;
+  text = text.trim();
 
   
   let lineCount = text.split("\n").length - 1;
   if (ruleCount !== null && lineCount >= ruleCount) {
-    return text;
+    return originalText;
   }
 
   
@@ -1139,7 +1141,7 @@ CssLogic.prettifyCSS = function(text, ruleCount) {
     
     if (pushbackToken && token && token.tokenType === "whitespace" &&
         /\n/g.test(text.substring(token.startOffset, token.endOffset))) {
-      return text;
+      return originalText;
     }
 
     
