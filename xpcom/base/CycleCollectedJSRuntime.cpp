@@ -442,6 +442,7 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime()
   , mPrevGCNurseryCollectionCallback(nullptr)
   , mJSHolders(256)
   , mDoingStableStates(false)
+  , mDisableMicroTaskCheckpoint(false)
   , mOutOfMemoryState(OOMState::OK)
   , mLargeAllocationFailureState(OOMState::OK)
 {
@@ -1384,11 +1385,13 @@ CycleCollectedJSRuntime::AfterProcessTask(uint32_t aRecursionDepth)
   ProcessMetastableStateQueue(aRecursionDepth);
 
   
-  if (NS_IsMainThread()) {
-    nsContentUtils::PerformMainThreadMicroTaskCheckpoint();
-    Promise::PerformMicroTaskCheckpoint();
-  } else {
-    Promise::PerformWorkerMicroTaskCheckpoint();
+  if (!mDisableMicroTaskCheckpoint) {
+    if (NS_IsMainThread()) {
+      nsContentUtils::PerformMainThreadMicroTaskCheckpoint();
+      Promise::PerformMicroTaskCheckpoint();
+    } else {
+      Promise::PerformWorkerMicroTaskCheckpoint();
+    }
   }
 
   
