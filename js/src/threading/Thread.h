@@ -55,27 +55,13 @@ public:
   };
 
   
-  
-  Thread() : id_(Id()) {}
-
-  
   template <typename F, typename... Args>
   explicit Thread(F&& f, Args&&... args) {
-    MOZ_RELEASE_ASSERT(init(mozilla::Forward<F>(f),
-                            mozilla::Forward<Args>(args)...));
-  }
-
-  
-  
-  
-  template <typename F, typename... Args>
-  MOZ_MUST_USE bool init(F&& f, Args&&... args) {
-    MOZ_RELEASE_ASSERT(!joinable());
     using Trampoline = detail::ThreadTrampoline<F, Args...>;
     auto trampoline = new Trampoline(mozilla::Forward<F>(f),
                                      mozilla::Forward<Args>(args)...);
     MOZ_RELEASE_ASSERT(trampoline);
-    return create(Trampoline::Start, trampoline);
+    create(Trampoline::Start, trampoline);
   }
 
   
@@ -122,7 +108,7 @@ private:
   Id id_;
 
   
-  MOZ_MUST_USE bool create(THREAD_RETURN_TYPE (THREAD_CALL_API *aMain)(void*), void* aArg);
+  void create(THREAD_RETURN_TYPE (THREAD_CALL_API *aMain)(void*), void* aArg);
 };
 
 namespace ThisThread {
