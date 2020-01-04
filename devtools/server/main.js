@@ -1026,15 +1026,15 @@ var DebuggerServer = {
 
     let actor, childTransport;
     let prefix = connection.allocID("child");
-    let netMonitor = null;
+    
+    let connPrefix = prefix + "/";
 
     
     
     let onSetupInParent = function (msg) {
       
       
-      
-      if (!msg.json.prefix.includes(prefix)) {
+      if (msg.json.prefix != connPrefix) {
         return false;
       }
 
@@ -1049,7 +1049,7 @@ var DebuggerServer = {
           return false;
         }
 
-        m[setupParent]({ mm, prefix });
+        m[setupParent]({ mm, prefix: connPrefix });
 
         return true;
       } catch (e) {
@@ -1081,10 +1081,6 @@ var DebuggerServer = {
       dumpn("establishing forwarding for app with prefix " + prefix);
 
       actor = msg.json.actor;
-
-      let { NetworkMonitorManager } = require("devtools/shared/webconsole/network-monitor");
-      netMonitor = new NetworkMonitorManager(mm, actor.actor);
-
       deferred.resolve(actor);
     }).bind(this);
 
@@ -1108,7 +1104,8 @@ var DebuggerServer = {
     let destroy = DevToolsUtils.makeInfallible(function () {
       
       
-      DebuggerServer.emit("disconnected-from-child:" + prefix, { mm, prefix });
+      DebuggerServer.emit("disconnected-from-child:" + connPrefix,
+                          { mm, prefix: connPrefix });
 
       if (childTransport) {
         
@@ -1137,11 +1134,6 @@ var DebuggerServer = {
         
         connection.send({ from: actor.actor, type: "tabDetached" });
         actor = null;
-      }
-
-      if (netMonitor) {
-        netMonitor.destroy();
-        netMonitor = null;
       }
 
       if (onDestroy) {

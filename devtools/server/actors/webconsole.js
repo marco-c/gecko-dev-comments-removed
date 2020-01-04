@@ -616,7 +616,7 @@ WebConsoleActor.prototype =
               
               this.networkMonitor =
                 new NetworkMonitorChild(appId, this.parentActor.outerWindowID,
-                                        messageManager, this.parentActor.actorID, this);
+                                        messageManager, this.conn, this);
               this.networkMonitor.init();
               
               this.networkMonitorChild = new NetworkMonitor({ window }, this);
