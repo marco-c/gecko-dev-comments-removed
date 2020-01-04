@@ -162,7 +162,7 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
     
-    bool haveSpec = clasp && clasp->spec.defined();
+    bool haveSpec = clasp && clasp->specDefined();
     if (!init && !haveSpec)
         return true;
 
@@ -195,8 +195,8 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
     RootedObject proto(cx);
-    if (clasp->spec.createPrototypeHook()) {
-        proto = clasp->spec.createPrototypeHook()(cx, key);
+    if (ClassObjectCreationOp createPrototype = clasp->specCreatePrototypeHook()) {
+        proto = createPrototype(cx, key);
         if (!proto)
             return false;
 
@@ -211,12 +211,12 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     }
 
     
-    RootedObject ctor(cx, clasp->spec.createConstructorHook()(cx, key));
+    RootedObject ctor(cx, clasp->specCreateConstructorHook()(cx, key));
     if (!ctor)
         return false;
 
     RootedId id(cx, NameToId(ClassName(key, cx)));
-    if (clasp->spec.shouldDefineConstructor()) {
+    if (clasp->specShouldDefineConstructor()) {
         if (!global->addDataProperty(cx, id, constructorPropertySlot(key), 0))
             return false;
     }
@@ -229,19 +229,19 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
     if (!StandardClassIsDependent(key) && !cx->runtime()->isSelfHostingGlobal(global)) {
-        if (const JSFunctionSpec* funs = clasp->spec.prototypeFunctions()) {
+        if (const JSFunctionSpec* funs = clasp->specPrototypeFunctions()) {
             if (!JS_DefineFunctions(cx, proto, funs))
                 return false;
         }
-        if (const JSPropertySpec* props = clasp->spec.prototypeProperties()) {
+        if (const JSPropertySpec* props = clasp->specPrototypeProperties()) {
             if (!JS_DefineProperties(cx, proto, props))
                 return false;
         }
-        if (const JSFunctionSpec* funs = clasp->spec.constructorFunctions()) {
+        if (const JSFunctionSpec* funs = clasp->specConstructorFunctions()) {
             if (!JS_DefineFunctions(cx, ctor, funs))
                 return false;
         }
-        if (const JSPropertySpec* props = clasp->spec.constructorProperties()) {
+        if (const JSPropertySpec* props = clasp->specConstructorProperties()) {
             if (!JS_DefineProperties(cx, ctor, props))
                 return false;
         }
@@ -252,10 +252,12 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
         return false;
 
     
-    if (clasp->spec.finishInitHook() && !clasp->spec.finishInitHook()(cx, ctor, proto))
-        return false;
+    if (FinishClassInitOp finishInit = clasp->specFinishInitHook()) {
+        if (!finishInit(cx, ctor, proto))
+            return false;
+    }
 
-    if (clasp->spec.shouldDefineConstructor()) {
+    if (clasp->specShouldDefineConstructor()) {
         
         
         AddTypePropertyId(cx, global, id, ObjectValue(*ctor));
@@ -416,11 +418,11 @@ InitBareBuiltinCtor(JSContext* cx, Handle<GlobalObject*> global, JSProtoKey prot
     MOZ_ASSERT(cx->runtime()->isSelfHostingGlobal(global));
     const Class* clasp = ProtoKeyToClass(protoKey);
     RootedObject proto(cx);
-    proto = clasp->spec.createPrototypeHook()(cx, protoKey);
+    proto = clasp->specCreatePrototypeHook()(cx, protoKey);
     if (!proto)
         return false;
 
-    RootedObject ctor(cx, clasp->spec.createConstructorHook()(cx, protoKey));
+    RootedObject ctor(cx, clasp->specCreateConstructorHook()(cx, protoKey));
     if (!ctor)
         return false;
 
