@@ -93,7 +93,9 @@ public:
     if (mozilla::IsInfinite<double>(aValue)) {
       return FromInfinity();
     }
-    double val = aValue * USECS_PER_S;
+    
+    
+    double val = (aValue + .0000005) * USECS_PER_S;
     if (val >= double(INT64_MAX)) {
       return FromMicroseconds(INT64_MAX);
     } else if (val <= double(INT64_MIN)) {
