@@ -586,6 +586,11 @@ class TestManifest(ContextDerived):
         
         
         'dupe_manifest',
+
+        
+        
+        
+        'default_support_files',
     )
 
     def __init__(self, context, path, manifest, flavor=None,
@@ -607,6 +612,7 @@ class TestManifest(ContextDerived):
         self.tests = []
         self.external_installs = set()
         self.deferred_installs = set()
+        self.default_support_files = None
 
 
 class LocalInclude(ContextDerived):
