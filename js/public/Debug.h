@@ -260,12 +260,12 @@ class BuilderOrigin : public Builder {
 
 
 JS_PUBLIC_API(void)
-SetDebuggerMallocSizeOf(JSRuntime* runtime, mozilla::MallocSizeOf mallocSizeOf);
+SetDebuggerMallocSizeOf(JSContext* cx, mozilla::MallocSizeOf mallocSizeOf);
 
 
 
 JS_PUBLIC_API(mozilla::MallocSizeOf)
-GetDebuggerMallocSizeOf(JSRuntime* runtime);
+GetDebuggerMallocSizeOf(JSContext* cx);
 
 
 
