@@ -572,7 +572,11 @@ var PrintUtils = {
 
       
       
-      this._sourceBrowser.docShellIsActive = true;
+      if (this._listener.activateBrowser) {
+        this._listener.activateBrowser(this._sourceBrowser);
+      } else {
+        this._sourceBrowser.docShellIsActive = true;
+      }
 
       
       
