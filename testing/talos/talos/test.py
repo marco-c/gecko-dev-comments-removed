@@ -239,6 +239,29 @@ class PageloaderTest(Test):
 
 
 @register_test()
+class tabpaint(PageloaderTest):
+    """
+    Tests the amount of time it takes to open new tabs, triggered from
+    both the parent process and the content process.
+    """
+    extensions = '${talos}/tests/tabpaint/tabpaint-signed.xpi'
+    tpmanifest = '${talos}/tests/tabpaint/tabpaint.manifest'
+    tppagecycles = 20
+    sps_profile_entries = 1000000
+    tploadnocache = True
+    unit = 'ms'
+    preferences = {
+        
+        
+        
+        
+        
+        'browser.link.open_newwindow': 3,
+        'browser.link.open_newwindow.restriction': 2,
+    }
+
+
+@register_test()
 class tps(PageloaderTest):
     """
     Tests the amount of time it takes to switch between tabs
