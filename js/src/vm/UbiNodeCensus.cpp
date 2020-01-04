@@ -281,24 +281,72 @@ static int compareEntries(const void* lhsVoid, const void* rhsVoid) {
 }
 
 
+struct CStringHashPolicy {
+    using Lookup = const char*;
+    static js::HashNumber hash(Lookup l) { return mozilla::HashString(l); }
+    static bool match(const char* key, Lookup lookup) {
+        return strcmp(key, lookup) == 0;
+    }
+};
+
+
+using CStringCountMap = HashMap<const char*, CountBasePtr, CStringHashPolicy, SystemAllocPolicy>;
+
+
+
+
+static PlainObject*
+cStringCountMapToObject(JSContext* cx, CStringCountMap& map) {
+    
+    
+    
+
+    mozilla::Vector<CStringCountMap::Entry*> entries;
+    if (!entries.reserve(map.count())) {
+        ReportOutOfMemory(cx);
+        return nullptr;
+    }
+
+    for (auto r = map.all(); !r.empty(); r.popFront())
+        entries.infallibleAppend(&r.front());
+
+    qsort(entries.begin(), entries.length(), sizeof(*entries.begin()),
+          compareEntries<CStringCountMap::Entry>);
+
+    RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+    if (!obj)
+        return nullptr;
+
+    for (auto& entry : entries) {
+        CountBasePtr& thenCount = entry->value();
+        RootedValue thenReport(cx);
+        if (!thenCount->report(&thenReport))
+            return nullptr;
+
+        const char* name = entry->key();
+        MOZ_ASSERT(name);
+        JSAtom* atom = Atomize(cx, name, strlen(name));
+        if (!atom)
+            return nullptr;
+
+        RootedId entryId(cx, AtomToId(atom));
+        if (!DefineProperty(cx, obj, entryId, thenReport))
+            return nullptr;
+    }
+
+    return obj;
+}
+
+
 
 
 class ByObjectClass : public CountType {
     
-    struct HashPolicy {
-        using Lookup = const char*;
-        static js::HashNumber hash(Lookup l) { return mozilla::HashString(l); }
-        static bool match(const char* key, Lookup lookup) {
-            return strcmp(key, lookup) == 0;
-        }
-    };
-
     
     
     
     
-    
-    using Table = HashMap<const char*, CountBasePtr, HashPolicy, SystemAllocPolicy>;
+    using Table = CStringCountMap;
     using Entry = Table::Entry;
 
     struct Count : public CountBase {
@@ -384,51 +432,9 @@ ByObjectClass::report(CountBase& countBase, MutableHandleValue report)
     Count& count = static_cast<Count&>(countBase);
     JSContext* cx = census.cx;
 
-    
-    
-    
-    mozilla::Vector<Entry*> entries;
-    if (!entries.reserve(count.table.count()))
-        return false;
-    for (Table::Range r = count.table.all(); !r.empty(); r.popFront())
-        entries.infallibleAppend(&r.front());
-    qsort(entries.begin(), entries.length(), sizeof(*entries.begin()), compareEntries<Entry>);
-
-    
-    RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+    RootedPlainObject obj(cx, cStringCountMapToObject(cx, count.table));
     if (!obj)
         return false;
-    for (Entry** entryPtr = entries.begin(); entryPtr < entries.end(); entryPtr++) {
-        Entry& entry = **entryPtr;
-        CountBasePtr& classCount = entry.value();
-        RootedValue classReport(cx);
-        if (!classCount->report(&classReport))
-            return false;
-
-        const char* name = entry.key();
-        MOZ_ASSERT(name);
-        JSAtom* atom = Atomize(cx, name, strlen(name));
-        if (!atom)
-            return false;
-        RootedId entryId(cx, AtomToId(atom));
-
-#ifdef DEBUG
-        
-        
-        
-        
-        bool has;
-        if (!HasOwnProperty(cx, obj, entryId, &has))
-            return false;
-        if (has) {
-            fprintf(stderr, "already has own property '%s'\n", name);
-            MOZ_ASSERT(!has);
-        }
-#endif
-
-        if (!DefineProperty(cx, obj, entryId, classReport))
-            return false;
-    }
 
     RootedValue otherReport(cx);
     if (!count.other->report(&otherReport) ||
@@ -736,6 +742,118 @@ ByAllocationStack::report(CountBase& countBase, MutableHandleValue report)
 }
 
 
+class ByFilename : public CountType {
+    
+    
+    
+    using Table = CStringCountMap;
+    using Entry = Table::Entry;
+
+    struct Count : public CountBase {
+        Table table;
+        CountBasePtr then;
+        CountBasePtr noFilename;
+
+        Count(CountType& type, CountBasePtr&& then, CountBasePtr&& noFilename)
+          : CountBase(type)
+          , then(Move(then))
+          , noFilename(Move(noFilename))
+        { }
+
+        bool init() { return table.init(); }
+    };
+
+    CountTypePtr thenType;
+    CountTypePtr noFilenameType;
+
+  public:
+    ByFilename(Census& census,
+                  CountTypePtr& thenType,
+                  CountTypePtr& noFilenameType)
+        : CountType(census),
+          thenType(Move(thenType)),
+          noFilenameType(Move(noFilenameType))
+    { }
+
+    void destructCount(CountBase& countBase) override {
+        Count& count = static_cast<Count&>(countBase);
+        count.~Count();
+    }
+
+    CountBasePtr makeCount() override;
+    void traceCount(CountBase& countBase, JSTracer* trc) override;
+    bool count(CountBase& countBase, const Node& node) override;
+    bool report(CountBase& countBase, MutableHandleValue report) override;
+};
+
+CountBasePtr
+ByFilename::makeCount()
+{
+    CountBasePtr thenCount(thenType->makeCount());
+    if (!thenCount)
+        return nullptr;
+
+    CountBasePtr noFilenameCount(noFilenameType->makeCount());
+    if (!noFilenameCount)
+        return nullptr;
+
+    UniquePtr<Count> count(census.new_<Count>(*this, Move(thenCount), Move(noFilenameCount)));
+    if (!count || !count->init())
+        return nullptr;
+
+    return CountBasePtr(count.release());
+}
+
+void
+ByFilename::traceCount(CountBase& countBase, JSTracer* trc)
+{
+    Count& count = static_cast<Count&>(countBase);
+    for (Table::Range r = count.table.all(); !r.empty(); r.popFront())
+        r.front().value()->trace(trc);
+    count.noFilename->trace(trc);
+}
+
+bool
+ByFilename::count(CountBase& countBase, const Node& node)
+{
+    Count& count = static_cast<Count&>(countBase);
+    count.total_++;
+
+    const char* filename = node.scriptFilename();
+    if (!filename)
+        return count.noFilename->count(node);
+
+    Table::AddPtr p = count.table.lookupForAdd(filename);
+    if (!p) {
+        CountBasePtr thenCount(thenType->makeCount());
+        if (!thenCount || !count.table.add(p, filename, Move(thenCount)))
+            return false;
+    }
+    return p->value()->count(node);
+}
+
+bool
+ByFilename::report(CountBase& countBase, MutableHandleValue report)
+{
+    Count& count = static_cast<Count&>(countBase);
+    JSContext* cx = census.cx;
+
+    RootedPlainObject obj(cx, cStringCountMapToObject(cx, count.table));
+    if (!obj)
+        return false;
+
+    RootedValue noFilenameReport(cx);
+    if (!count.noFilename->report(&noFilenameReport) ||
+        !DefineProperty(cx, obj, cx->names().noFilename, noFilenameReport))
+    {
+        return false;
+    }
+
+    report.setObject(*obj);
+    return true;
+}
+
+
 
 
 bool
@@ -906,6 +1024,18 @@ ParseBreakdown(Census& census, HandleValue breakdownValue)
             return nullptr;
 
         return CountTypePtr(census.new_<ByAllocationStack>(census, thenType, noStackType));
+    }
+
+    if (StringEqualsAscii(by, "filename")) {
+        CountTypePtr thenType(ParseChildBreakdown(census, breakdown, cx->names().then));
+        if (!thenType)
+            return nullptr;
+
+        CountTypePtr noFilenameType(ParseChildBreakdown(census, breakdown, cx->names().noFilename));
+        if (!noFilenameType)
+            return nullptr;
+
+        return CountTypePtr(census.new_<ByFilename>(census, thenType, noFilenameType));
     }
 
     
