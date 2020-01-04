@@ -58,13 +58,11 @@ public class ReferrerReceiver extends BroadcastReceiver {
         ReferrerDescriptor referrer = new ReferrerDescriptor(intent.getStringExtra("referrer"));
 
         if (!TextUtils.equals(referrer.source, MOZILLA_UTM_SOURCE)) {
-            if (AppConstants.MOZ_INSTALL_TRACKING) {
-                
-                try {
-                    AdjustConstants.getAdjustHelper().onReceive(context, intent);
-                } catch (Exception e) {
-                    Log.e(LOGTAG, "Got exception in Adjust's onReceive; ignoring referrer intent.", e);
-                }
+            
+            try {
+                AdjustConstants.getAdjustHelper().onReceive(context, intent);
+            } catch (Exception e) {
+                Log.e(LOGTAG, "Got exception in Adjust's onReceive; ignoring referrer intent.", e);
             }
             return;
         }
