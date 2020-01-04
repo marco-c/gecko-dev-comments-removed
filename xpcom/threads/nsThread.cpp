@@ -405,16 +405,16 @@ nsThread::ThreadFunc(void* aArg)
 
     
     
+
+    
+    
     
     
     
     
     while (true) {
       
-      while (self->mRequestedShutdownContexts.Length()) {
-        
-        NS_ProcessNextEvent(self, true);
-      }
+      self->WaitForAllAsynchronousShutdowns();
 
       {
         MutexAutoLock lock(self->mLock);
@@ -776,6 +776,14 @@ nsThread::ShutdownComplete(nsThreadShutdownContext* aContext)
   
   MOZ_ALWAYS_TRUE(
     aContext->joiningThread->mRequestedShutdownContexts.RemoveElement(aContext));
+}
+
+void
+nsThread::WaitForAllAsynchronousShutdowns()
+{
+  while (mRequestedShutdownContexts.Length()) {
+    NS_ProcessNextEvent(this, true);
+  }
 }
 
 NS_IMETHODIMP
