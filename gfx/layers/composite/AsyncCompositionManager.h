@@ -26,6 +26,7 @@ class AsyncPanZoomController;
 class Layer;
 class LayerManagerComposite;
 class AutoResolveRefLayers;
+class CompositorParent;
 
 
 struct ViewTransform {
@@ -119,10 +120,6 @@ public:
 
   
   
-  bool HasRemoteContent() { return mHasRemoteContent; }
-
-  
-  
   bool IsFirstPaint() { return mIsFirstPaint; }
 
   
@@ -190,7 +187,14 @@ private:
 
 
 
-  void ResolveRefLayers(bool aResolvePlugins);
+
+
+
+
+
+
+  void ResolveRefLayers(CompositorParent* aCompositor, bool* aHasRemoteContent,
+                        bool* aResolvePlugins);
 
   
 
@@ -220,7 +224,6 @@ private:
   int32_t mPaintSyncId;
 
   bool mReadyForCompose;
-  bool mHasRemoteContent;
 
   gfx::Matrix mWorldTransform;
   LayerTransformRecorder mLayerTransformRecorder;
@@ -231,11 +234,13 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AsyncCompositionManager::TransformsToSkip)
 class MOZ_STACK_CLASS AutoResolveRefLayers {
 public:
   explicit AutoResolveRefLayers(AsyncCompositionManager* aManager,
-                                bool aResolvePlugins = false) :
+                                CompositorParent* aCompositor = nullptr,
+                                bool* aHasRemoteContent = nullptr,
+                                bool* aResolvePlugins = nullptr) :
     mManager(aManager)
   {
     if (mManager) {
-      mManager->ResolveRefLayers(aResolvePlugins);
+      mManager->ResolveRefLayers(aCompositor, aHasRemoteContent, aResolvePlugins);
     }
   }
 
