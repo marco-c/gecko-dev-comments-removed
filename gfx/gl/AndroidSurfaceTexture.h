@@ -44,8 +44,6 @@ public:
   
   static already_AddRefed<AndroidSurfaceTexture> Create();
 
-  static AndroidSurfaceTexture* Find(int aId);
-
   
   
   
@@ -70,17 +68,12 @@ public:
   void UpdateTexImage();
 
   void GetTransformMatrix(mozilla::gfx::Matrix4x4& aMatrix) const;
-  int ID() const { return mID; }
 
   void SetDefaultSize(mozilla::gfx::IntSize size);
 
   
   
   void SetFrameAvailableCallback(nsIRunnable* aRunnable);
-
-  
-  
-  void NotifyFrameAvailable();
 
   GLuint Texture() const { return mTexture; }
   const java::sdk::Surface::Ref& JavaSurface() const { return mSurface; }
@@ -98,8 +91,6 @@ private:
   GLContext* mAttachedContext;
 
   ANativeWindow* mNativeWindow;
-  int mID;
-  nsCOMPtr<nsIRunnable> mFrameAvailableCallback;
 
   mutable Monitor mMonitor;
 };
