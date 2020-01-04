@@ -92,6 +92,7 @@
 #include "PLDHashTable.h"
 #include "mozilla/dom/BeforeAfterKeyboardEventBinding.h"
 #include "mozilla/dom/Touch.h"
+#include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/PointerEventBinding.h"
 #include "nsIObserverService.h"
 #include "nsDocShell.h"        
@@ -734,17 +735,29 @@ static bool sSynthMouseMove = true;
 static uint32_t sNextPresShellId;
 static bool sPointerEventEnabled = true;
 static bool sAccessibleCaretEnabled = false;
+static bool sAccessibleCaretOnTouch = false;
 static bool sBeforeAfterKeyboardEventEnabled = false;
 
  bool
-PresShell::AccessibleCaretEnabled()
+PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell)
 {
   static bool initialized = false;
   if (!initialized) {
     Preferences::AddBoolVarCache(&sAccessibleCaretEnabled, "layout.accessiblecaret.enabled");
+    Preferences::AddBoolVarCache(&sAccessibleCaretOnTouch, "layout.accessiblecaret.enabled_on_touch");
     initialized = true;
   }
-  return sAccessibleCaretEnabled;
+  
+  if (sAccessibleCaretEnabled) {
+    return true;
+  }
+  
+  
+  if (sAccessibleCaretOnTouch && dom::TouchEvent::PrefEnabled(aDocShell)) {
+    return true;
+  }
+  
+  return false;
 }
 
  bool
@@ -898,7 +911,7 @@ PresShell::Init(nsIDocument* aDocument,
   
   UpdatePreferenceStyles();
 
-  if (AccessibleCaretEnabled()) {
+  if (AccessibleCaretEnabled(mDocument->GetDocShell())) {
     
     mAccessibleCaretEventHub = new AccessibleCaretEventHub(this);
   }
@@ -6830,16 +6843,14 @@ PresShell::UpdateActivePointerState(WidgetGUIEvent* aEvent)
     
     if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
       gActivePointersIds->Put(mouseEvent->pointerId,
-                              new PointerInfo(false, mouseEvent->inputSource,
-                                              true));
+                              new PointerInfo(false, mouseEvent->inputSource, true));
     }
     break;
   case ePointerDown:
     
     if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
       gActivePointersIds->Put(pointerEvent->pointerId,
-                              new PointerInfo(true, pointerEvent->inputSource,
-                                              pointerEvent->mIsPrimary));
+                              new PointerInfo(true, pointerEvent->inputSource, pointerEvent->isPrimary));
     }
     break;
   case ePointerUp:
@@ -6847,16 +6858,13 @@ PresShell::UpdateActivePointerState(WidgetGUIEvent* aEvent)
     if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
       if(pointerEvent->inputSource != nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
         gActivePointersIds->Put(pointerEvent->pointerId,
-                                new PointerInfo(false,
-                                                pointerEvent->inputSource,
-                                                pointerEvent->mIsPrimary));
+                                new PointerInfo(false, pointerEvent->inputSource, pointerEvent->isPrimary));
       } else {
         gActivePointersIds->Remove(pointerEvent->pointerId);
       }
     }
     break;
   case eMouseExitFromWidget:
-    
     
     if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
       gActivePointersIds->Remove(mouseEvent->pointerId);
@@ -7201,12 +7209,12 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
 
       WidgetPointerEvent event(touchEvent->IsTrusted(), pointerMessage,
                                touchEvent->mWidget);
-      event.mIsPrimary = i == 0;
+      event.isPrimary = i == 0;
       event.pointerId = touch->Identifier();
       event.mRefPoint = touch->mRefPoint;
       event.mModifiers = touchEvent->mModifiers;
-      event.mWidth = touch->RadiusX();
-      event.mHeight = touch->RadiusY();
+      event.width = touch->RadiusX();
+      event.height = touch->RadiusY();
       event.tiltX = touch->tiltX;
       event.tiltY = touch->tiltY;
       event.mTime = touchEvent->mTime;
@@ -7608,7 +7616,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
   RecordMouseLocation(aEvent);
 
-  if (AccessibleCaretEnabled()) {
+  if (AccessibleCaretEnabled(mDocument->GetDocShell())) {
     
     
     nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
