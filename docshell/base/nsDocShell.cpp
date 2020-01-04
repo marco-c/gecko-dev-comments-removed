@@ -9471,8 +9471,7 @@ nsresult
 nsDocShell::CreatePrincipalFromReferrer(nsIURI* aReferrer,
                                         nsIPrincipal** aResult)
 {
-  PrincipalOriginAttributes attrs;
-  attrs.InheritFromDocShellToDoc(GetOriginAttributes(), aReferrer);
+  OriginAttributes attrs = GetOriginAttributes();
   nsCOMPtr<nsIPrincipal> prin =
     BasePrincipal::CreateCodebasePrincipal(aReferrer, attrs);
   prin.forget(aResult);
@@ -13745,6 +13744,13 @@ nsDocShell::SetIsSignedPackage(const nsAString& aSignedPkg)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsDocShell::SetUserContextId(uint32_t aUserContextId)
+{
+  mUserContextId = aUserContextId;
+  return NS_OK;
+}
+
  NS_IMETHODIMP
 nsDocShell::GetIsBrowserElement(bool* aIsBrowser)
 {
@@ -13835,28 +13841,27 @@ nsDocShell::GetAppId(uint32_t* aAppId)
   return parent->GetAppId(aAppId);
 }
 
-DocShellOriginAttributes
+OriginAttributes
 nsDocShell::GetOriginAttributes()
 {
-  DocShellOriginAttributes attrs;
+  OriginAttributes attrs;
   RefPtr<nsDocShell> parent = GetParentDocshell();
   if (parent) {
-    nsCOMPtr<nsIPrincipal> parentPrin = parent->GetDocument()->NodePrincipal();
-    PrincipalOriginAttributes poa = BasePrincipal::Cast(parentPrin)->OriginAttributesRef();
-    attrs.InheritFromDocToChildDocShell(poa);
-  } else {
-    
-    
-    attrs.mSignedPkg = mSignedPkg;
+    attrs.InheritFromDocShellParent(parent->GetOriginAttributes());
   }
 
   if (mOwnOrContainingAppId != nsIScriptSecurityManager::UNKNOWN_APP_ID) {
     attrs.mAppId = mOwnOrContainingAppId;
   }
 
+  attrs.mUserContextId = mUserContextId;
+
   if (mFrameType == eFrameTypeBrowser) {
     attrs.mInBrowser = true;
   }
+
+  
+  attrs.mSignedPkg = mSignedPkg;
 
   return attrs;
 }
@@ -13867,7 +13872,8 @@ nsDocShell::GetOriginAttributes(JS::MutableHandle<JS::Value> aVal)
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
   MOZ_ASSERT(cx);
 
-  bool ok = ToJSValue(cx, GetOriginAttributes(), aVal);
+  OriginAttributes attrs = GetOriginAttributes();
+  bool ok = ToJSValue(cx, attrs, aVal);
   NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
   return NS_OK;
 }
@@ -14066,9 +14072,7 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, bool aIsNonSubresourceReques
   }
 
   if (aIsNonSubresourceRequest) {
-    PrincipalOriginAttributes attrs;
-    attrs.InheritFromDocShellToDoc(GetOriginAttributes(), aURI);
-    *aShouldIntercept = swm->IsAvailable(attrs, aURI);
+    *aShouldIntercept = swm->IsAvailable(GetOriginAttributes(), aURI);
     return NS_OK;
   }
 
@@ -14158,16 +14162,9 @@ nsDocShell::ChannelIntercepted(nsIInterceptedChannel* aChannel,
 
   bool isReload = mLoadType & LOAD_CMD_RELOAD;
 
-  nsCOMPtr<nsIURI> uri;
-  rv = channel->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  PrincipalOriginAttributes attrs;
-  attrs.InheritFromDocShellToDoc(GetOriginAttributes(), uri);
-
   ErrorResult error;
   nsCOMPtr<nsIRunnable> runnable =
-    swm->PrepareFetchEvent(attrs, doc, aChannel, isReload, isSubresourceLoad, error);
+    swm->PrepareFetchEvent(GetOriginAttributes(), doc, aChannel, isReload, isSubresourceLoad, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }

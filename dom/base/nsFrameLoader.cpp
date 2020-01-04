@@ -236,7 +236,7 @@ nsFrameLoader::LoadFrame()
   if (NS_SUCCEEDED(rv)) {
     rv = LoadURI(uri);
   }
-  
+
   if (NS_FAILED(rv)) {
     FireErrorEvent();
 
@@ -282,10 +282,18 @@ nsFrameLoader::LoadURI(nsIURI* aURI)
 NS_IMETHODIMP
 nsFrameLoader::SwitchProcessAndLoadURI(nsIURI* aURI, const nsACString& aPackageId)
 {
+  nsCOMPtr<nsIURI> URIToLoad = aURI;
   RefPtr<TabParent> tp = nullptr;
 
+  nsCString signedPkgOrigin;
+  if (!aPackageId.IsEmpty()) {
+    
+    
+    nsPrincipal::GetOriginForURI(aURI, signedPkgOrigin);
+  }
+
   MutableTabContext context;
-  nsresult rv = GetNewTabContext(&context, aURI, aPackageId);
+  nsresult rv = GetNewTabContext(&context, signedPkgOrigin, aPackageId);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<Element> ownerElement = mOwnerContent;
@@ -299,7 +307,7 @@ nsFrameLoader::SwitchProcessAndLoadURI(nsIURI* aURI, const nsACString& aPackageI
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  LoadURI(aURI);
+  LoadURI(URIToLoad);
   return NS_OK;
 }
 
@@ -319,7 +327,7 @@ nsFrameLoader::ReallyStartLoading()
   if (NS_FAILED(rv)) {
     FireErrorEvent();
   }
-  
+
   return rv;
 }
 
@@ -339,7 +347,7 @@ nsFrameLoader::ReallyStartLoadingInternal()
 
     
     mRemoteBrowser->LoadURL(mURIToLoad);
-    
+
     if (!mRemoteBrowserShown && !ShowRemoteFrame(ScreenIntSize(0, 0))) {
       NS_WARNING("[nsFrameLoader] ReallyStartLoadingInternal tried but couldn't show remote browser.\n");
     }
@@ -372,7 +380,7 @@ nsFrameLoader::ReallyStartLoadingInternal()
   loadInfo->SetOwner(mOwnerContent->NodePrincipal());
 
   nsCOMPtr<nsIURI> referrer;
-  
+
   nsAutoString srcdoc;
   bool isSrcdoc = mOwnerContent->IsHTMLElement(nsGkAtoms::iframe) &&
                   mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::srcdoc,
@@ -546,7 +554,7 @@ nsFrameLoader::AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
 {
   NS_PRECONDITION(aItem, "Must have docshell treeitem");
   NS_PRECONDITION(mOwnerContent, "Must have owning content");
-  
+
   nsAutoString value;
   bool isContent = false;
   mOwnerContent->GetAttr(kNameSpaceID_None, TypeAttrName(), value);
@@ -1127,7 +1135,7 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
        !AllDescendantsOfType(otherDocshell, otherType))) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
-  
+
   
   
   nsCOMPtr<nsIDocShellTreeOwner> ourOwner, otherOwner;
@@ -1237,7 +1245,7 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
     ourOwner->ContentShellRemoved(ourDocshell);
     otherOwner->ContentShellRemoved(otherDocshell);
   }
-  
+
   ourParentItem->AddChild(otherDocshell);
   otherParentItem->AddChild(ourDocshell);
 
@@ -1789,6 +1797,23 @@ nsFrameLoader::MaybeCreateDocShell()
   }
 
   
+  nsAutoString userContextIdStr;
+  if (namespaceID == kNameSpaceID_XUL) {
+    if (mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::usercontextid)) {
+      mOwnerContent->GetAttr(kNameSpaceID_None,
+                             nsGkAtoms::usercontextid,
+                             userContextIdStr);
+    }
+  }
+
+  if (!userContextIdStr.IsEmpty()) {
+    nsresult err;
+    nsDocShell * ds = nsDocShell::Cast(mDocShell);
+    ds->SetUserContextId(userContextIdStr.ToInteger(&err));
+    NS_ENSURE_SUCCESS(err, err);
+  }
+
+  
   
   
 
@@ -1961,7 +1986,7 @@ nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI)
   NS_WARN_IF_FALSE(treeOwner,
                    "Trying to load a new url to a docshell without owner!");
   NS_ENSURE_STATE(treeOwner);
-  
+
   if (mDocShell->ItemType() != nsIDocShellTreeItem::typeContent) {
     
     
@@ -1975,7 +2000,7 @@ nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI)
   int32_t depth = 0;
   while (parentAsItem) {
     ++depth;
-    
+
     if (depth >= MAX_DEPTH_CONTENT_FRAMES) {
       mDepthTooGreat = true;
       NS_WARNING("Too many nested content frames so giving up");
@@ -2016,7 +2041,7 @@ nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI)
         bool equal;
         rv = aURI->EqualsExceptRef(parentURI, &equal);
         NS_ENSURE_SUCCESS(rv, rv);
-        
+
         if (equal) {
           matchCount++;
           if (matchCount >= MAX_SAME_URL_CONTENT_FRAMES) {
@@ -3033,20 +3058,13 @@ nsFrameLoader::MaybeUpdatePrimaryTabParent(TabParentChange aChange)
 
 nsresult
 nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
-                                nsIURI* aURI,
+                                const nsACString& aSignedPkgOriginNoSuffix,
                                 const nsACString& aPackageId)
 {
   nsCOMPtr<mozIApplication> ownApp = GetOwnApp();
   nsCOMPtr<mozIApplication> containingApp = GetContainingApp();
-  DocShellOriginAttributes attrs;
+  OriginAttributes attrs = OriginAttributes();
   attrs.mInBrowser = OwnerIsBrowserFrame();
-
-  nsCString signedPkgOrigin;
-  if (!aPackageId.IsEmpty()) {
-    
-    
-    nsPrincipal::GetOriginForURI(aURI, signedPkgOrigin);
-  }
 
   
   uint32_t appId = nsIScriptSecurityManager::NO_APP_ID;
@@ -3064,8 +3082,25 @@ nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
   
   attrs.mSignedPkg = NS_ConvertUTF8toUTF16(aPackageId);
 
-  bool tabContextUpdated =
-    aTabContext->SetTabContext(ownApp, containingApp, attrs, signedPkgOrigin);
+  
+  
+  if (mOwnerContent) {
+    nsAutoString userContextIdStr;
+    if (mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::usercontextid)) {
+      mOwnerContent->GetAttr(kNameSpaceID_None,
+                             nsGkAtoms::usercontextid,
+                             userContextIdStr);
+    }
+    if (!userContextIdStr.IsEmpty()) {
+      nsresult err;
+      uint32_t userContextId = userContextIdStr.ToInteger(&err);
+      NS_ENSURE_SUCCESS(err, err);
+      attrs.mUserContextId = userContextId;
+    }
+  }
+
+  bool tabContextUpdated = aTabContext->SetTabContext(ownApp, containingApp,
+                                                      attrs, aSignedPkgOriginNoSuffix);
   NS_ENSURE_STATE(tabContextUpdated);
 
   return NS_OK;
