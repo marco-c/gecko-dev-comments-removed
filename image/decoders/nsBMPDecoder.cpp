@@ -461,7 +461,8 @@ nsBMPDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       if (mDownscaler) {
         
         
-        rv = mDownscaler->BeginFrame(GetSize(), mImageData, hasTransparency,
+        rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
+                                     mImageData, hasTransparency,
                                       true);
         if (NS_FAILED(rv)) {
           return;

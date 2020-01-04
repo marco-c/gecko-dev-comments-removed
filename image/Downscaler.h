@@ -12,9 +12,9 @@
 #ifndef mozilla_image_Downscaler_h
 #define mozilla_image_Downscaler_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "nsRect.h"
-
 
 namespace skia {
   class ConvolutionFilter1D;
@@ -74,13 +74,20 @@ public:
 
 
 
+
+
+
   nsresult BeginFrame(const nsIntSize& aOriginalSize,
+                      const Maybe<nsIntRect>& aFrameRect,
                       uint8_t* aOutputBuffer,
                       bool aHasAlpha,
                       bool aFlipVertically = false);
 
   
-  uint8_t* RowBuffer() { return mRowBuffer.get(); }
+  uint8_t* RowBuffer()
+  {
+    return mRowBuffer.get() + mFrameRect.x * sizeof(uint32_t);
+  }
 
   
   void ClearRow(uint32_t aStartingAtCol = 0);
@@ -104,9 +111,11 @@ public:
 private:
   void DownscaleInputLine();
   void ReleaseWindow();
+  void SkipToRow(int32_t aRow);
 
   nsIntSize mOriginalSize;
   nsIntSize mTargetSize;
+  nsIntRect mFrameRect;
   gfxSize mScale;
 
   uint8_t* mOutputBuffer;
