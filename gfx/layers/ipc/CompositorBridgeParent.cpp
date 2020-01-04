@@ -697,6 +697,9 @@ CompositorBridgeParent::StopAndClearResources()
     mCompositor->Destroy();
     mCompositor = nullptr;
   }
+
+  
+  mWidgetProxy = nullptr;
 }
 
 bool
