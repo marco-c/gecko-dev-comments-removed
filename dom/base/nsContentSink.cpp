@@ -1066,6 +1066,12 @@ nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec)
 
   
   
+  if (nsContentUtils::IsControlledByServiceWorker(mDocument)) {
+    return;
+  }
+
+  
+  
   nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(mDocShell);
   if (loadContext->UsePrivateBrowsing()) {
     return;

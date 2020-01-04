@@ -1958,6 +1958,14 @@ public:
   
 
 
+  static bool ServiceWorkerInterceptionEnabled()
+  {
+    return sSWInterceptionEnabled;
+  }
+
+  
+
+
   static bool IsFrameTimingEnabled();
 
   
@@ -1994,6 +2002,11 @@ public:
 
 
   static bool HasPluginWithUncontrolledEventDispatch(nsIDocument* aDoc);
+
+  
+
+
+  static bool IsControlledByServiceWorker(nsIDocument* aDocument);
 
   
 
@@ -2607,6 +2620,7 @@ private:
   static bool sGettersDecodeURLHash;
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
+  static bool sSWInterceptionEnabled;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 

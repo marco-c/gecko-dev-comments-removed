@@ -2897,7 +2897,8 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
 
     
     
-    if (!mApplicationCache && mInheritApplicationCache) {
+    if (!PossiblyIntercepted() && !mApplicationCache &&
+        mInheritApplicationCache) {
         nsCOMPtr<nsIApplicationCacheContainer> appCacheContainer;
         GetCallback(appCacheContainer);
 
