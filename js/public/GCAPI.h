@@ -588,6 +588,7 @@ class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoAssertOnGC
 
 
 
+
 extern JS_FRIEND_API(bool)
 UnmarkGrayGCThingRecursively(GCCellPtr thing);
 

@@ -110,7 +110,7 @@ class Nursery
     {}
     ~Nursery();
 
-    bool init(uint32_t maxNurseryBytes);
+    MOZ_MUST_USE bool init(uint32_t maxNurseryBytes);
 
     bool exists() const { return numNurseryChunks_ != 0; }
     size_t numChunks() const { return numNurseryChunks_; }
@@ -171,7 +171,7 @@ class Nursery
 
 
 
-    MOZ_ALWAYS_INLINE bool getForwardedPointer(JSObject** ref) const;
+    MOZ_ALWAYS_INLINE MOZ_MUST_USE bool getForwardedPointer(JSObject** ref) const;
 
     
     void forwardBufferPointer(HeapSlot** pSlotsElems);
@@ -188,7 +188,7 @@ class Nursery
 
     void waitBackgroundFreeEnd();
 
-    bool addedUniqueIdToCell(gc::Cell* cell) {
+    MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
         if (!IsInsideNursery(cell) || !isEnabled())
             return true;
         MOZ_ASSERT(cellsWithUid_.initialized());
