@@ -10,11 +10,13 @@
 #include <ostream>
 #include <sstream>
 #include <cstring>
-#include "RecordingTypes.h"
-#include "PathRecording.h"
+#include <vector>
 
 namespace mozilla {
 namespace gfx {
+
+struct PathOp;
+class PathRecording;
 
 
 
