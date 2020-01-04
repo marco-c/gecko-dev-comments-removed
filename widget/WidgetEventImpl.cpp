@@ -277,7 +277,7 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
       
       
       const WidgetWheelEvent* wheelEvent = AsWheelEvent();
-      return wheelEvent->mDeltaX != 0.0 || wheelEvent->deltaY != 0.0 ||
+      return wheelEvent->mDeltaX != 0.0 || wheelEvent->mDeltaY != 0.0 ||
              wheelEvent->deltaZ != 0.0;
     }
 
@@ -394,9 +394,9 @@ double
 WidgetWheelEvent::OverriddenDeltaY() const
 {
   if (!mAllowToOverrideSystemScrollSpeed) {
-    return deltaY;
+    return mDeltaY;
   }
-  return ComputeOverriddenDelta(deltaY, true);
+  return ComputeOverriddenDelta(mDeltaY, true);
 }
 
 

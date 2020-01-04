@@ -449,7 +449,7 @@ private:
 
   WidgetWheelEvent()
     : mDeltaX(0.0)
-    , deltaY(0.0)
+    , mDeltaY(0.0)
     , deltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
@@ -472,7 +472,7 @@ public:
   WidgetWheelEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget)
     : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, eWheelEventClass)
     , mDeltaX(0.0)
-    , deltaY(0.0)
+    , mDeltaY(0.0)
     , deltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
@@ -516,7 +516,7 @@ public:
   
   
   double mDeltaX;
-  double deltaY;
+  double mDeltaY;
   double deltaZ;
 
   
@@ -611,7 +611,7 @@ public:
     AssignMouseEventBaseData(aEvent, aCopyTargets);
 
     mDeltaX = aEvent.mDeltaX;
-    deltaY = aEvent.deltaY;
+    mDeltaY = aEvent.mDeltaY;
     deltaZ = aEvent.deltaZ;
     deltaMode = aEvent.deltaMode;
     customizedByUserPrefs = aEvent.customizedByUserPrefs;
