@@ -27,11 +27,10 @@ import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.util.Log;
+import android.util.Pair;
 
 public final class HomeConfig {
-    public static final String PREF_KEY_BOOKMARKS_PANEL_ENABLED = "bookmarksPanelEnabled";
-    public static final String PREF_KEY_HISTORY_PANEL_ENABLED = "historyPanelEnabled";
-
     
 
 
@@ -1142,9 +1141,11 @@ public final class HomeConfig {
         private final HomeConfig mHomeConfig;
         private final Map<String, PanelConfig> mConfigMap;
         private final List<String> mConfigOrder;
-        private final List<GeckoEvent> mEventQueue;
         private final Thread mOriginalThread;
 
+        
+        
+        private List<Pair<String, String>> mNotificationQueue;
         private PanelConfig mDefaultPanel;
         private int mEnabledCount;
 
@@ -1156,7 +1157,7 @@ public final class HomeConfig {
             mOriginalThread = Thread.currentThread();
             mConfigMap = new HashMap<String, PanelConfig>();
             mConfigOrder = new LinkedList<String>();
-            mEventQueue = new LinkedList<GeckoEvent>();
+            mNotificationQueue = new ArrayList<>();
 
             mIsFromDefault = configState.isDefault();
 
@@ -1368,7 +1369,8 @@ public final class HomeConfig {
                 installed = true;
 
                 
-                mEventQueue.add(GeckoEvent.createBroadcastEvent("HomePanels:Installed", panelConfig.getId()));
+                mNotificationQueue.add(new Pair<String, String>(
+                        "HomePanels:Installed", panelConfig.getId()));
             }
 
             mHasChanged = true;
@@ -1404,7 +1406,7 @@ public final class HomeConfig {
             }
 
             
-            mEventQueue.add(GeckoEvent.createBroadcastEvent("HomePanels:Uninstalled", panelId));
+            mNotificationQueue.add(new Pair<String, String>("HomePanels:Uninstalled", panelId));
 
             mHasChanged = true;
             return true;
@@ -1478,8 +1480,8 @@ public final class HomeConfig {
 
             
             
-            final LinkedList<GeckoEvent> eventQueueCopy = new LinkedList<GeckoEvent>(mEventQueue);
-            mEventQueue.clear();
+            final List<Pair<String, String>> copiedQueue = mNotificationQueue;
+            mNotificationQueue = new ArrayList<>();
 
             ThreadUtils.getBackgroundHandler().post(new Runnable() {
                 @Override
@@ -1487,7 +1489,7 @@ public final class HomeConfig {
                     mHomeConfig.save(newConfigState);
 
                     
-                    sendEventsToGecko(eventQueueCopy);
+                    sendNotificationsToGecko(copiedQueue);
                 }
             });
 
@@ -1511,8 +1513,8 @@ public final class HomeConfig {
             mHomeConfig.save(newConfigState);
 
             
-            sendEventsToGecko(mEventQueue);
-            mEventQueue.clear();
+            sendNotificationsToGecko(mNotificationQueue);
+            mNotificationQueue.clear();
 
             return newConfigState;
         }
@@ -1531,9 +1533,9 @@ public final class HomeConfig {
             return mConfigMap.isEmpty();
         }
 
-        private void sendEventsToGecko(List<GeckoEvent> events) {
-            for (GeckoEvent e : events) {
-                GeckoAppShell.sendEventToGecko(e);
+        private void sendNotificationsToGecko(List<Pair<String, String>> notifications) {
+            for (Pair<String, String> p : notifications) {
+                GeckoAppShell.notifyObservers(p.first, p.second);
             }
         }
 
