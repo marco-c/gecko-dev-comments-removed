@@ -12,8 +12,6 @@
 
 #include "nsDebug.h"
 
-class NotificationService;
-
 namespace mozilla {
 namespace ipc {
 
@@ -53,8 +51,6 @@ private:
   
   
   ID mIdentifier;
-
-  NotificationService* mNotificationService;
 
   
   

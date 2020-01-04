@@ -23,8 +23,6 @@ class FileDescriptor;
 }
 }
 
-class NotificationType;
-
 
 
 class ChildProcessHost :
@@ -85,10 +83,6 @@ class ChildProcessHost :
 
   const IPC::Channel& channel() const { return *channel_; }
   IPC::Channel* channelp() const { return channel_.get(); }
-
- private:
-  
-  void Notify(NotificationType type);
 
  protected:
   
