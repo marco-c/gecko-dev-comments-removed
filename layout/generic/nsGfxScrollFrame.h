@@ -318,8 +318,8 @@ public:
 
 
 
-  nsRect GetScrolledRectInternal(const nsRect& aScrolledOverflowArea,
-                                 const nsSize& aScrollPortSize) const;
+  nsRect GetUnsnappedScrolledRectInternal(const nsRect& aScrolledOverflowArea,
+                                          const nsSize& aScrollPortSize) const;
 
   uint32_t GetScrollbarVisibility() const {
     return (mHasVerticalScrollbar ? nsIScrollableFrame::VERTICAL : 0) |
@@ -622,6 +622,7 @@ protected:
   bool HasPluginFrames();
   bool HasPerspective() const;
   bool HasBgAttachmentLocal() const;
+  uint8_t GetScrolledFrameDir() const;
 
   static void EnsureFrameVisPrefsCached();
   static bool sFrameVisPrefsCached;

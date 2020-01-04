@@ -130,6 +130,9 @@ struct nsRect :
   }
 
   
+  bool Overflows() const;
+
+  
 
 
 
