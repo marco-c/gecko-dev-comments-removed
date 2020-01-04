@@ -107,6 +107,9 @@ public:
   nsRefPtrHashtable<nsISupportsHashKey, ServiceWorkerRegistrationInfo> mControlledDocuments;
 
   
+  nsTHashtable<nsISupportsHashKey> mAllDocuments;
+
+  
   
   typedef nsTArray<nsCOMPtr<nsIWeakReference>> WeakDocumentList;
   nsClassHashtable<nsCStringHashKey, WeakDocumentList> mRegisteringDocuments;
