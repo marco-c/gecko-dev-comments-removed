@@ -53,11 +53,20 @@ public:
 
 
 
+  bool Seek(nsIContent* aChildNode);
+
+  
+
+
+
 
 
 
   Accessible* Next();
   Accessible* Prev();
+
+  Accessible* Context() const { return mContext; }
+  DocAccessible* Document() const { return mDoc; }
 
 private:
   TreeWalker();
@@ -70,10 +79,17 @@ private:
 
 
 
+
   dom::AllChildrenIterator* PushState(nsIContent* aContent,
                                       bool aStartAtBeginning)
   {
     return mStateStack.AppendElement(
+      dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
+  }
+  dom::AllChildrenIterator* PrependState(nsIContent* aContent,
+                                         bool aStartAtBeginning)
+  {
+    return mStateStack.InsertElementAt(0,
       dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
   }
 
