@@ -220,6 +220,13 @@ ViewSourceChrome.prototype = {
   
 
 
+  get webNav() {
+    return this.browser.webNavigation;
+  },
+
+  
+
+
   goForward() {
     this.browser.goForward();
   },
