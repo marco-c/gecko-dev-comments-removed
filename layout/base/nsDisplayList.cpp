@@ -1181,6 +1181,13 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     return;
   }
 
+  const nsStyleUIReset* styleUI = aFrame->StyleUIReset();
+  if (styleUI->mWindowDragging == NS_STYLE_WINDOW_DRAGGING_DEFAULT) {
+    
+    
+    return;
+  }
+
   LayoutDeviceToLayoutDeviceMatrix4x4 referenceFrameToRootReferenceFrame;
 
   
@@ -1230,14 +1237,21 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     transformedDevPixelBorderBox.Round();
     LayoutDeviceIntRect transformedDevPixelBorderBoxInt;
     if (transformedDevPixelBorderBox.ToIntRect(&transformedDevPixelBorderBoxInt)) {
-      const nsStyleUserInterface* styleUI = aFrame->StyleUserInterface();
       if (styleUI->mWindowDragging == NS_STYLE_WINDOW_DRAGGING_DRAG) {
         mWindowDraggingRegion.OrWith(transformedDevPixelBorderBoxInt);
       } else {
-        mWindowDraggingRegion.SubOut(transformedDevPixelBorderBoxInt);
+        mWindowNoDraggingRegion.OrWith(transformedDevPixelBorderBoxInt);
       }
     }
   }
+}
+
+LayoutDeviceIntRegion
+nsDisplayListBuilder::GetWindowDraggingRegion() const
+{
+  LayoutDeviceIntRegion result;
+  result.Sub(mWindowDraggingRegion, mWindowNoDraggingRegion);;
+  return result;
 }
 
 const uint32_t gWillChangeAreaMultiplier = 3;
