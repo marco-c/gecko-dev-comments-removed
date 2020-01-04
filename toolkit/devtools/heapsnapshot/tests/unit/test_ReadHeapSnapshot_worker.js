@@ -4,11 +4,8 @@
 
 
 add_task(function* () {
-  const filePath = getFilePath("core-dump-" + Math.random() + ".tmp", true, true);
-  ok(filePath, "Should get a file path");
-
   const worker = new ChromeWorker("resource://test/heap-snapshot-worker.js");
-  worker.postMessage({ filePath });
+  worker.postMessage({});
 
   let assertionCount = 0;
   worker.onmessage = e => {

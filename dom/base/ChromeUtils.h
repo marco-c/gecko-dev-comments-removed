@@ -26,8 +26,8 @@ public:
   
   static void SaveHeapSnapshot(GlobalObject& global,
                                JSContext* cx,
-                               const nsAString& filePath,
                                const HeapSnapshotBoundaries& boundaries,
+                               nsAString& filePath,
                                ErrorResult& rv);
 
   

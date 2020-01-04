@@ -25,10 +25,7 @@ function run_test() {
   
   
 
-  const filePath = getFilePath("core-dump-" + Math.random() + ".tmp", true, true);
-  ok(filePath, "Should get a file path");
-
-  ChromeUtils.saveHeapSnapshot(filePath, { runtime: true });
+  const filePath = ChromeUtils.saveHeapSnapshot({ runtime: true });
   ok(true, "Should be able to save a snapshot.");
 
   const snapshot = ChromeUtils.readHeapSnapshot(filePath);
