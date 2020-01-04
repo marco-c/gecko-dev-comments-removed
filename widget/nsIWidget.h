@@ -429,10 +429,8 @@ class nsIWidget : public nsISupports {
                       const DesktopIntRect& aRect,
                       nsWidgetInitData* aInitData = nullptr)
     {
-        
-        
-        mozilla::DesktopToLayoutDeviceScale scale(GetDefaultScaleInternal());
-        LayoutDeviceIntRect devPixRect = RoundedToInt(aRect * scale);
+        LayoutDeviceIntRect devPixRect =
+          RoundedToInt(aRect * GetDesktopToDeviceScale());
         return Create(aParent, aNativeParent, devPixRect, aInitData);
     }
 
@@ -545,6 +543,13 @@ class nsIWidget : public nsISupports {
 
 
     virtual float GetDPI() = 0;
+
+    
+
+
+
+
+    virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() = 0;
 
     
 
@@ -878,7 +883,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetRestoredBounds(mozilla::LayoutDeviceIntRect& aRect) = 0;
+    NS_IMETHOD GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
 
     
 
@@ -889,7 +894,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetClientBounds(mozilla::LayoutDeviceIntRect& aRect) = 0;
+    NS_IMETHOD GetClientBounds(LayoutDeviceIntRect& aRect) = 0;
 
     
 

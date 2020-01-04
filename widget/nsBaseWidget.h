@@ -186,6 +186,11 @@ public:
   bool                    BoundsUseDesktopPixels() const {
     return mWindowType <= eWindowType_popup;
   }
+  
+  
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override {
+    return mozilla::DesktopToLayoutDeviceScale(1.0);
+  }
   NS_IMETHOD              MoveClient(double aX, double aY) override;
   NS_IMETHOD              ResizeClient(double aWidth, double aHeight, bool aRepaint) override;
   NS_IMETHOD              ResizeClient(double aX, double aY, double aWidth, double aHeight, bool aRepaint) override;
@@ -514,7 +519,7 @@ protected:
   nsCursor          mCursor;
   nsBorderStyle     mBorderStyle;
   nsIntRect         mBounds;
-  CSSIntRect*       mOriginalBounds;
+  LayoutDeviceIntRect* mOriginalBounds;
   
   mozilla::UniquePtr<LayoutDeviceIntRect[]> mClipRects;
   uint32_t          mClipRectCount;
