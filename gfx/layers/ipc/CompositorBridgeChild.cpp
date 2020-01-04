@@ -419,9 +419,7 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
   
   
   nsIWidget::UpdateRegisteredPluginWindowVisibility((uintptr_t)parent, visiblePluginIds);
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   SendRemotePluginsReady();
-#endif
   return true;
 #endif 
 }

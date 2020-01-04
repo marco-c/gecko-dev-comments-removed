@@ -636,6 +636,10 @@ protected:
   nsIntRegion mPluginsLayerVisibleRegion;
   nsTArray<PluginWindowData> mCachedPluginData;
   
+  TimeStamp mWaitForPluginsUntil;
+  
+  bool mHaveBlockedForPlugins = false;
+  
   
   bool mDeferPluginWindows;
   
