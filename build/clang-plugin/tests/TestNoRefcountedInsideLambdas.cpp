@@ -67,9 +67,9 @@ void foo() {
     take(argsp);
     take(localsp);
   });
-  take([ptr](R* argptr) {
+  take([ptr](R* argptr) { 
     R* localptr;
-    ptr->method(); 
+    ptr->method();
     argptr->method();
     localptr->method();
   });
@@ -79,9 +79,9 @@ void foo() {
     argsp->method();
     localsp->method();
   });
-  take([ptr](R* argptr) {
+  take([ptr](R* argptr) { 
     R* localptr;
-    take(ptr); 
+    take(ptr);
     take(argptr);
     take(localptr);
   });

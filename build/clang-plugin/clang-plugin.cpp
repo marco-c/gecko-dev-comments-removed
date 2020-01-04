@@ -1019,13 +1019,7 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
   
   
   
-  astMatcher.addMatcher(
-      lambdaExpr(hasDescendant(
-                     declRefExpr(hasType(pointerType(pointee(isRefCounted()))),
-                                 to(decl().bind("decl")))
-                         .bind("declref")),
-                 unless(hasDescendant(decl(equalsBoundNode("decl"))))),
-      &refCountedInsideLambdaChecker);
+  astMatcher.addMatcher(lambdaExpr().bind("lambda"), &refCountedInsideLambdaChecker);
 
   
   
@@ -1252,11 +1246,19 @@ void DiagnosticsMatcher::RefCountedInsideLambdaChecker::run(
       "Refcounted variable %0 of type %1 cannot be captured by a lambda");
   unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "Please consider using a smart pointer");
-  const DeclRefExpr *declref = Result.Nodes.getNodeAs<DeclRefExpr>("declref");
+  const LambdaExpr *Lambda = Result.Nodes.getNodeAs<LambdaExpr>("lambda");
 
-  Diag.Report(declref->getLocStart(), errorID)
-      << declref->getFoundDecl() << declref->getType()->getPointeeType();
-  Diag.Report(declref->getLocStart(), noteID);
+  for (const LambdaCapture Capture : Lambda->captures()) {
+    if (Capture.capturesVariable()) {
+      QualType Pointee = Capture.getCapturedVar()->getType()->getPointeeType();
+
+      if (!Pointee.isNull() && isClassRefCounted(Pointee)) {
+        Diag.Report(Capture.getLocation(), errorID)
+          << Capture.getCapturedVar() << Pointee;
+        Diag.Report(Capture.getLocation(), noteID);
+      }
+    }
+  }
 }
 
 void DiagnosticsMatcher::ExplicitOperatorBoolChecker::run(
