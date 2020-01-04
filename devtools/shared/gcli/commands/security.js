@@ -27,6 +27,7 @@ const POLICY_REPORT_ONLY = "report-only"
 
 
 const DIR_UPGRADE_INSECURE = "upgrade-insecure-requests";
+const DIR_BLOCK_ALL_MIXED_CONTENT = "block-all-mixed-content";
 
 
 const SRC_UNSAFE_INLINE = "'unsafe-inline'";
@@ -91,7 +92,9 @@ exports.items = [
 
           
           
-          if (dir === DIR_UPGRADE_INSECURE) {
+          
+          if (dir === DIR_UPGRADE_INSECURE ||
+              dir === DIR_BLOCK_ALL_MIXED_CONTENT) {
             outSrcs.push({
               icon: GOOD_IMG_SRC,
               src: "", 
