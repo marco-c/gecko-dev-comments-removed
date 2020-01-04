@@ -221,6 +221,17 @@ struct cubeb_stream
   
   IAudioStreamVolume * audio_stream_volume;
   
+  IAudioClock * audio_clock;
+  
+
+  UINT64 frames_written;
+  
+
+  UINT64 total_frames_written;
+  
+
+  UINT64 prev_position;
+  
 
   IMMDeviceEnumerator * device_enumerator;
   
@@ -238,7 +249,8 @@ struct cubeb_stream
   
   HANDLE thread;
   
-  LONG64 clock;
+
+
   owned_critical_section * stream_reset_lock;
   
   uint32_t buffer_frame_count;
@@ -343,16 +355,6 @@ private:
 };
 
 namespace {
-void clock_add(cubeb_stream * stm, LONG64 value)
-{
-  InterlockedExchangeAdd64(&stm->clock, value);
-}
-
-LONG64 clock_get(cubeb_stream * stm)
-{
-  return InterlockedExchangeAdd64(&stm->clock, 0);
-}
-
 bool should_upmix(cubeb_stream * stream)
 {
   return stream->mix_params.channels > stream->stream_params.channels;
@@ -363,10 +365,10 @@ bool should_downmix(cubeb_stream * stream)
   return stream->mix_params.channels < stream->stream_params.channels;
 }
 
-float stream_to_mix_samplerate_ratio(cubeb_stream * stream)
+double stream_to_mix_samplerate_ratio(cubeb_stream * stream)
 {
-  auto_lock lock(stream->stream_reset_lock);
-  return float(stream->stream_params.rate) / stream->mix_params.rate;
+  stream->stream_reset_lock->assert_current_thread_owns();
+  return double(stream->stream_params.rate) / stream->mix_params.rate;
 }
 
 
@@ -452,7 +454,10 @@ refill(cubeb_stream * stm, float * data, long frames_needed)
 
   long out_frames = cubeb_resampler_fill(stm->resampler, dest, frames_needed);
 
-  clock_add(stm, roundf(frames_needed * stream_to_mix_samplerate_ratio(stm)));
+  {
+    auto_lock lock(stm->stream_reset_lock);
+    stm->frames_written += out_frames;
+  }
 
   
   if (out_frames < 0) {
@@ -687,6 +692,33 @@ HRESULT get_default_endpoint(IMMDevice ** device)
   SafeRelease(enumerator);
 
   return ERROR_SUCCESS;
+}
+
+double
+current_stream_delay(cubeb_stream * stm)
+{
+  stm->stream_reset_lock->assert_current_thread_owns();
+
+  UINT64 freq;
+  HRESULT hr = stm->audio_clock->GetFrequency(&freq);
+  if (FAILED(hr)) {
+    LOG("GetFrequency failed: %x\n", hr);
+    return 0;
+  }
+
+  UINT64 pos;
+  hr = stm->audio_clock->GetPosition(&pos, NULL);
+  if (FAILED(hr)) {
+    LOG("GetPosition failed: %x\n", hr);
+    return 0;
+  }
+
+  double cur_pos = static_cast<double>(pos) / freq;
+  double max_pos = static_cast<double>(stm->frames_written)  / stm->mix_params.rate;
+  double delay = max_pos - cur_pos;
+  XASSERT(delay >= 0);
+
+  return delay;
 }
 } 
 
@@ -1069,6 +1101,14 @@ int setup_wasapi_stream(cubeb_stream * stm)
     return CUBEB_ERROR;
   }
 
+  XASSERT(stm->frames_written == 0);
+  hr = stm->client->GetService(__uuidof(IAudioClock),
+                               (void **)&stm->audio_clock);
+  if (FAILED(hr)) {
+    LOG("Could not get the IAudioClock %x.\n", hr);
+    return CUBEB_ERROR;
+  }
+
   
 
 
@@ -1113,15 +1153,6 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
   stm->stream_params = stream_params;
   stm->draining = false;
   stm->latency = latency;
-  stm->clock = 0;
-
-  
-  stm->resampler = NULL;
-  stm->client = NULL;
-  stm->render_client = NULL;
-  stm->audio_stream_volume = NULL;
-  stm->device_enumerator = NULL;
-  stm->notification_client = NULL;
 
   stm->stream_reset_lock = new owned_critical_section();
 
@@ -1177,6 +1208,11 @@ void close_wasapi_stream(cubeb_stream * stm)
 
   SafeRelease(stm->audio_stream_volume);
   stm->audio_stream_volume = NULL;
+
+  SafeRelease(stm->audio_clock);
+  stm->audio_clock = NULL;
+  stm->total_frames_written += round(stm->frames_written * stream_to_mix_samplerate_ratio(stm));
+  stm->frames_written = 0;
 
   if (stm->resampler) {
     cubeb_resampler_destroy(stm->resampler);
@@ -1283,8 +1319,24 @@ int wasapi_stream_stop(cubeb_stream * stm)
 int wasapi_stream_get_position(cubeb_stream * stm, uint64_t * position)
 {
   XASSERT(stm && position);
+  auto_lock lock(stm->stream_reset_lock);
 
-  *position = clock_get(stm);
+  
+  uint64_t stream_delay = current_stream_delay(stm) * stm->stream_params.rate;
+
+  
+  uint64_t max_pos = stm->total_frames_written +
+                     round(stm->frames_written * stream_to_mix_samplerate_ratio(stm));
+
+  *position = max_pos;
+  if (stream_delay <= *position) {
+    *position -= stream_delay;
+  }
+
+  if (*position < stm->prev_position) {
+    *position = stm->prev_position;
+  }
+  stm->prev_position = *position;
 
   return CUBEB_OK;
 }
