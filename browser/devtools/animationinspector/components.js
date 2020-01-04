@@ -939,7 +939,8 @@ AnimationsTimeline.prototype = {
     createNode({
       parent: iterations,
       attributes: {
-        "class": "name"
+        "class": "name",
+        "title": state.name
       },
       textContent: state.name
     });
