@@ -881,62 +881,41 @@ class ErrorCopier
 
 
 
-struct WrapperValue
+
+
+
+
+
+
+
+class MOZ_RAII NonEscapingWrapperVector
+  : public mozilla::LinkedListElement<NonEscapingWrapperVector>
 {
+    using Vec = js::GCVector<Value, 1, RuntimeAllocPolicy>;
+    Vec storage;
+
+  public:
+    explicit NonEscapingWrapperVector(JSRuntime* rt) : storage(rt) {
+        rt->gc.registerStackWrapperVector(this);
+    }
+
+    bool reserve(size_t aRequest) { return storage.reserve(aRequest); }
+
+    Value& operator[](size_t aIndex) { return storage[aIndex]; }
+    Value* begin() { return storage.begin(); }
+    Value* end() { return storage.end(); }
+
     
-
-
-
-
-
-    explicit WrapperValue(const WrapperMap::Ptr& ptr)
-      : value(*ptr->value().unsafeGet())
-    {}
-
-    explicit WrapperValue(const WrapperMap::Enum& e)
-      : value(*e.front().value().unsafeGet())
-    {}
-
-    Value& get() { return value; }
-    Value get() const { return value; }
-    operator const Value&() const { return value; }
-    JSObject& toObject() const { return value.toObject(); }
-
-  private:
-    Value value;
-};
-
-class MOZ_RAII AutoWrapperVector : public JS::AutoVectorRooterBase<WrapperValue>
-{
-  public:
-    explicit AutoWrapperVector(JSContext* cx
-                               MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-        : AutoVectorRooterBase<WrapperValue>(cx, WRAPVECTOR)
-    {
-        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    
+    void infallibleAppend(const WrapperMap::Enum& e) {
+        storage.infallibleAppend(*e.front().value().unsafeGet());
     }
-
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
-class MOZ_RAII AutoWrapperRooter : private JS::AutoGCRooter {
-  public:
-    AutoWrapperRooter(JSContext* cx, WrapperValue v
-                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : JS::AutoGCRooter(cx, WRAPPER), value(v)
-    {
-        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    void infallibleAppend(const WrapperMap::Ptr& p) {
+        storage.infallibleAppend(*p->value().unsafeGet());
     }
-
-    operator JSObject*() const {
-        return value.get().toObjectOrNull();
+    bool append(const WrapperMap::Enum& e) {
+        return storage.append(*e.front().value().unsafeGet());
     }
-
-    friend void JS::AutoGCRooter::trace(JSTracer* trc);
-
-  private:
-    WrapperValue value;
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 } 
