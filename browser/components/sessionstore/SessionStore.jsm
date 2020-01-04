@@ -1299,7 +1299,6 @@ var SessionStoreInternal = {
         
         this.saveStateDelayed();
       });
-
     } else {
       this.cleanUpWindow(aWindow, winData);
     }

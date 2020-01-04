@@ -65,7 +65,7 @@ add_task(function () {
 
   
   gPrefService.clearUserPref("browser.sessionstore.max_tabs_undo");
-  win.close();
+  yield BrowserTestUtils.closeWindow(win);
 });
 
 
