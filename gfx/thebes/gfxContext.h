@@ -431,6 +431,11 @@ public:
 
 
     void PushGroup(gfxContentType content = gfxContentType::COLOR);
+
+    void PushGroupForBlendBack(gfxContentType content, mozilla::gfx::Float aOpacity = 1.0f,
+                               mozilla::gfx::SourceSurface* aMask = nullptr,
+                               const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
+
     
 
 
@@ -445,6 +450,7 @@ public:
     void PushGroupAndCopyBackground(gfxContentType content = gfxContentType::COLOR);
     already_AddRefed<gfxPattern> PopGroup();
     void PopGroupToSource();
+    void PopGroupAndBlend();
 
     already_AddRefed<mozilla::gfx::SourceSurface>
     PopGroupToSurface(mozilla::gfx::Matrix* aMatrix);
@@ -527,6 +533,11 @@ private:
     Color fontSmoothingBackgroundColor;
     
     mozilla::gfx::Point deviceOffset;
+    
+    mozilla::gfx::Float mBlendOpacity;
+    RefPtr<SourceSurface> mBlendMask;
+    Matrix mBlendMaskTransform;
+    mozilla::DebugOnly<bool> mWasPushedForBlendBack;
   };
 
   
