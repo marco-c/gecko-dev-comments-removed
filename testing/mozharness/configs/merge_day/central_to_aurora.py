@@ -86,7 +86,6 @@ config = {
         8,  
         10,  
         18,  
-        106,  
     ],
     "balrog_credentials_file": "oauth.txt",
 
