@@ -423,6 +423,12 @@ public:
     }
   }
 
+  bool IsScrollbarContainer() const
+  {
+    MOZ_ASSERT(IsValid());
+    return mLayer->IsScrollbarContainer();
+  }
+
   
   
   
