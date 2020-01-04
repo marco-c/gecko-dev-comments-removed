@@ -889,6 +889,7 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onResume() {
         super.onResume();
+        AdjustConstants.getAdjustHelper().onResume();
 
         final String args = ContextUtils.getStringExtra(getIntent(), "args");
         
@@ -910,6 +911,7 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onPause() {
         super.onPause();
+        AdjustConstants.getAdjustHelper().onPause();
         
         EventDispatcher.getInstance().registerGeckoThreadListener((GeckoEventListener) this,
             "Prompt:ShowTop");
