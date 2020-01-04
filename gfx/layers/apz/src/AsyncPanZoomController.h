@@ -374,7 +374,7 @@ public:
 
   
   
-  bool CanScrollWithWheel(const LayoutDevicePoint& aDelta) const;
+  bool CanScrollWithWheel(const ParentLayerPoint& aDelta) const;
 
   
   
@@ -450,7 +450,7 @@ protected:
 
   nsEventStatus OnScrollWheel(const ScrollWheelInput& aEvent);
 
-  LayoutDevicePoint GetScrollWheelDelta(const ScrollWheelInput& aEvent) const;
+  ParentLayerPoint GetScrollWheelDelta(const ScrollWheelInput& aEvent) const;
 
   
 

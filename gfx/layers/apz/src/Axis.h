@@ -163,7 +163,7 @@ public:
   
 
 
-  bool CanScroll(double aDelta) const;
+  bool CanScroll(ParentLayerCoord aDelta) const;
 
   
 
