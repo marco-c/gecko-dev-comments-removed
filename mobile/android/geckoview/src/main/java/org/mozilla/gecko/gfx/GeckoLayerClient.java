@@ -362,10 +362,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
             setViewportMetrics(newMetrics);
 
-            if (tab != null) {
-                mView.setBackgroundColor(tab.getBackgroundColor());
-            }
-
             
             
             if (mView.getPaintState() == LayerView.PAINT_START) {
