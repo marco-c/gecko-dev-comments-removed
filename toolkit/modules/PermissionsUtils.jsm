@@ -7,8 +7,6 @@ this.EXPORTED_SYMBOLS = ["PermissionsUtils"];
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/BrowserUtils.jsm")
-
 
 var gImportedPrefBranches = new Set();
 
@@ -29,7 +27,7 @@ function importPrefBranch(aPrefBranch, aPermission, aAction) {
     for (let origin of origins) {
       let principals = [];
       try {
-        principals = [ BrowserUtils.principalFromOrigin(origin) ];
+        principals = [ Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin) ];
       } catch (e) {
         
         

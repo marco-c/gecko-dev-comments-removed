@@ -164,7 +164,8 @@ this.PermissionsInstaller = {
               PermissionSettingsModule.getPermission(expandedPermNames[idx],
                                                      aApp.manifestURL,
                                                      aApp.origin,
-                                                     false);
+                                                     false,
+                                                     aApp.isCachedPackage);
             if (permValue === "unknown") {
               permValue = PERM_TO_STRING[permission];
             }
@@ -201,7 +202,9 @@ this.PermissionsInstaller = {
       origin: aApp.origin,
       manifestURL: aApp.manifestURL,
       value: aPermValue,
-      browserFlag: false
+      browserFlag: false,
+      localId: aApp.localId,
+      isCachedPackage: aApp.isCachedPackage,
     });
   }
 };
