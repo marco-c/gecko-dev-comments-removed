@@ -85,6 +85,20 @@ public:
                             PrefixArray* aNoiseEntries);
   static void SplitTables(const nsACString& str, nsTArray<nsCString>& tables);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult GetPrivateStoreDirectory(nsIFile* aRootStoreDirectory,
+                                           const nsACString& aTableName,
+                                           nsIFile** aPrivateStoreDirectory);
+
 private:
   void DropStores();
   void DeleteTables(const nsTArray<nsCString>& aTables);
@@ -111,7 +125,7 @@ private:
   
   nsCOMPtr<nsIFile> mCacheDirectory;
   
-  nsCOMPtr<nsIFile> mStoreDirectory;
+  nsCOMPtr<nsIFile> mRootStoreDirectory;
   
   nsCOMPtr<nsIFile> mBackupDirectory;
   nsCOMPtr<nsIFile> mToDeleteDirectory;

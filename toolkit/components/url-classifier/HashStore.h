@@ -180,7 +180,7 @@ private:
 
 class HashStore {
 public:
-  HashStore(const nsACString& aTableName, nsIFile* aStoreFile);
+  HashStore(const nsACString& aTableName, nsIFile* aRootStoreFile);
   ~HashStore();
 
   const nsCString& TableName() const { return mTableName; }

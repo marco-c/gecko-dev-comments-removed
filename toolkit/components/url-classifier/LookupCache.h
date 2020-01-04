@@ -104,7 +104,7 @@ public:
   nsresult Open();
   
   
-  nsresult UpdateDirHandle(nsIFile* aStoreDirectory);
+  nsresult UpdateRootDirHandle(nsIFile* aRootStoreDirectory);
   
   nsresult Build(AddPrefixArray& aAddPrefixes,
                  AddCompleteArray& aAddCompletes);
@@ -134,6 +134,7 @@ private:
 
   bool mPrimed;
   nsCString mTableName;
+  nsCOMPtr<nsIFile> mRootStoreDirectory;
   nsCOMPtr<nsIFile> mStoreDirectory;
   
   RefPtr<nsUrlClassifierPrefixSet> mPrefixSet;
