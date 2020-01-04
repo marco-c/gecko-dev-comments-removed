@@ -5416,7 +5416,9 @@ nsDisplayTransform::GetLayerState(nsDisplayListBuilder* aBuilder,
                                   const ContainerLayerParameters& aParameters) {
   
   
-  if (!GetTransform().Is2D() || mFrame->Combines3DTransformWithAncestors()) {
+  
+  if (!GetTransform().Is2D() || mFrame->Combines3DTransformWithAncestors() ||
+      mIsTransformSeparator) {
     return LAYER_ACTIVE_FORCE;
   }
   
@@ -5587,7 +5589,7 @@ nsDisplayTransform::GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap)
     return mBounds;
   }
 
-  if (mFrame->Extend3DContext()) {
+  if (mFrame->Extend3DContext() && !mIsTransformSeparator) {
     return nsRect();
   }
 

@@ -1902,6 +1902,39 @@ CheckForApzAwareEventHandlers(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
   }
 }
 
+
+
+
+static bool
+Participate3DContextFrame(nsIFrame* aAncestor, nsIFrame* aDescendant) {
+  MOZ_ASSERT(aAncestor != aDescendant);
+  MOZ_ASSERT(aAncestor->Extend3DContext());
+  nsIFrame* frame;
+  for (frame = nsLayoutUtils::GetCrossDocParentFrame(aDescendant);
+       frame && aAncestor != frame;
+       frame = nsLayoutUtils::GetCrossDocParentFrame(frame)) {
+    if (!frame->Extend3DContext()) {
+      return false;
+    }
+  }
+  MOZ_ASSERT(frame == aAncestor);
+  return true;
+}
+
+static void
+WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                       nsRect& aDirtyRect,
+                       nsDisplayList* aSource, nsDisplayList* aTarget,
+                       int aIndex) {
+  if (!aSource->IsEmpty()) {
+    nsDisplayTransform *sepIdItem =
+      new (aBuilder) nsDisplayTransform(aBuilder, aFrame, aSource,
+                                        aDirtyRect, Matrix4x4(), aIndex);
+    sepIdItem->SetNoExtendContext();
+    aTarget->AppendToTop(sepIdItem);
+  }
+}
+
 void
 nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                              const nsRect&         aDirtyRect,
@@ -2161,6 +2194,36 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
   if (isTransformed && !resultList.IsEmpty()) {
+    if (!resultList.IsEmpty() && Extend3DContext()) {
+      
+      
+      nsDisplayList nonparticipants;
+      nsDisplayList participants;
+      int index = 1;
+
+      while (nsDisplayItem* item = resultList.RemoveBottom()) {
+        if (item->GetType() == nsDisplayItem::TYPE_TRANSFORM &&
+            Participate3DContextFrame(this, item->Frame())) {
+          
+          WrapSeparatorTransform(aBuilder, this, dirtyRect,
+                                 &nonparticipants, &participants, index++);
+          participants.AppendToTop(item);
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          nonparticipants.AppendToTop(item);
+        }
+      }
+      WrapSeparatorTransform(aBuilder, this, dirtyRect,
+                             &nonparticipants, &participants, index++);
+      resultList.AppendToTop(&participants);
+    }
+
     
     clipState.Restore();
     
@@ -2177,51 +2240,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     nsDisplayTransform *transformItem =
       new (aBuilder) nsDisplayTransform(aBuilder, this, &resultList, dirtyRect);
     resultList.AppendNewToTop(transformItem);
-
-    
-
-
-
-
-
-
-    {
-      bool needAdditionalTransform = false;
-      if (Extend3DContext()) {
-        if (outerReferenceFrame->Extend3DContext()) {
-          for (nsIFrame *f = nsLayoutUtils::GetCrossDocParentFrame(this);
-               f && f != outerReferenceFrame && !f->IsTransformed();
-               f = nsLayoutUtils::GetCrossDocParentFrame(f)) {
-            if (!f->Extend3DContext()) {
-              
-              
-              
-              needAdditionalTransform = true;
-              break;
-            }
-          }
-        }
-      } else if (outerReferenceFrame->Extend3DContext() &&
-                 outerReferenceFrame != nsLayoutUtils::GetCrossDocParentFrame(this)) {
-        
-        
-        
-        needAdditionalTransform = true;
-      }
-      if (needAdditionalTransform) {
-        nsRect sepDirty = dirtyRectOutsideTransform;
-        
-        
-        
-        sepDirty.MoveBy(toOuterReferenceFrame);
-        nsDisplayTransform *sepIdItem =
-          new (aBuilder) nsDisplayTransform(aBuilder, this, &resultList,
-                                            sepDirty,
-                                            Matrix4x4(), 1);
-        sepIdItem->SetNoExtendContext();
-        resultList.AppendNewToTop(sepIdItem);
-      }
-    }
   }
 
   
