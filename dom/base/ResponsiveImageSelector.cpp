@@ -277,7 +277,9 @@ ResponsiveImageSelector::AppendCandidateIfUnique(const ResponsiveImageCandidate 
 void
 ResponsiveImageSelector::MaybeAppendDefaultCandidate()
 {
-  NS_ENSURE_TRUE(!mDefaultSourceURL.IsEmpty(), );
+  if (mDefaultSourceURL.IsEmpty()) {
+    return;
+  }
 
   int numCandidates = mCandidates.Length();
 
