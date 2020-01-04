@@ -1014,7 +1014,7 @@ NativeInterface2JSObjectAndThrowIfFailed(JSContext* aCx,
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!XPCConvert::NativeInterface2JSObject(aRetval, nullptr, aHelper, aIID,
-                                            nullptr, aAllowNativeWrapper, &rv)) {
+                                            aAllowNativeWrapper, &rv)) {
     
     
     
