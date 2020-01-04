@@ -34,13 +34,16 @@ function SourceMapService(target) {
   target.on("source-updated", this._onSourceUpdated);
   target.on("navigate", this.reset);
   target.on("will-navigate", this.reset);
-  target.on("close", this.destroy);
 }
 
 
 
 
 SourceMapService.prototype.reset = function () {
+  
+  if (!this._locationStore) {
+    return;
+  }
   this._locationStore.clear();
   this._isNotSourceMapped.clear();
 };
@@ -84,9 +87,10 @@ SourceMapService.prototype.unsubscribe = function (location, callback) {
   
   
   
-  if (this._locationStore) {
-    this._locationStore.clearByURL(location.url);
+  if (!this._locationStore) {
+    return;
   }
+  this._locationStore.clearByURL(location.url);
 };
 
 
