@@ -799,7 +799,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
   }
 
   
-  if (effectProperties.HasValidFilter()) {
+  if (effectProperties.HasValidFilter() && !aParams.builder->IsForGenerateGlyphMask()) {
     RegularFramePaintCallback callback(aParams.builder, aParams.layerManager,
                                        offsetToUserSpace);
 
