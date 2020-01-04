@@ -17,7 +17,6 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.favicons.Favicons;
 import org.mozilla.gecko.util.ThreadUtils;
 
@@ -38,14 +37,14 @@ public class LocalURLMetadata implements URLMetadata {
     }
 
     
-    @SuppressWarnings("serial")
-    private final Set<String> getModel() {
-        return new HashSet<String>() {{
-            add(URLMetadataTable.URL_COLUMN);
-            add(URLMetadataTable.TILE_IMAGE_URL_COLUMN);
-            add(URLMetadataTable.TILE_COLOR_COLUMN);
-            add(URLMetadataTable.TOUCH_ICON_COLUMN);
-        }};
+    private static final Set<String> COLUMNS;
+    static {
+        final HashSet<String> tempModel = new HashSet<>(4);
+        tempModel.add(URLMetadataTable.URL_COLUMN);
+        tempModel.add(URLMetadataTable.TILE_IMAGE_URL_COLUMN);
+        tempModel.add(URLMetadataTable.TILE_COLOR_COLUMN);
+        tempModel.add(URLMetadataTable.TOUCH_ICON_COLUMN);
+        COLUMNS = Collections.unmodifiableSet(tempModel);
     }
 
     
@@ -61,14 +60,11 @@ public class LocalURLMetadata implements URLMetadata {
 
 
 
-
-
     @Override
     public Map<String, Object> fromJSON(JSONObject obj) {
         Map<String, Object> data = new HashMap<String, Object>();
 
-        Set<String> model = getModel();
-        for (String key : model) {
+        for (String key : COLUMNS) {
             if (obj.has(key)) {
                 data.put(key, obj.optString(key));
             }
@@ -108,10 +104,9 @@ public class LocalURLMetadata implements URLMetadata {
     private Map<String, Object> fromCursor(Cursor c) {
         Map<String, Object> data = new HashMap<String, Object>();
 
-        Set<String> model = getModel();
         String[] columns = c.getColumnNames();
         for (String column : columns) {
-            if (model.contains(column)) {
+            if (COLUMNS.contains(column)) {
                 try {
                     data.put(column, c.getString(c.getColumnIndexOrThrow(column)));
                 } catch (Exception ex) {
@@ -221,8 +216,7 @@ public class LocalURLMetadata implements URLMetadata {
         try {
             ContentValues values = new ContentValues();
 
-            Set<String> model = getModel();
-            for (String key : model) {
+            for (String key : COLUMNS) {
                 if (data.containsKey(key)) {
                     values.put(key, (String) data.get(key));
                 }
