@@ -39,8 +39,16 @@ class MediaStreamTrackSource : public nsISupports
   NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackSource)
 
 public:
-  explicit MediaStreamTrackSource(const bool aIsRemote)
-    : mNrSinks(0), mIsRemote(aIsRemote), mStopped(false)
+  class Sink
+  {
+  public:
+    virtual void PrincipalChanged() = 0;
+  };
+
+  MediaStreamTrackSource(nsIPrincipal* aPrincipal, const bool aIsRemote)
+    : mPrincipal(aPrincipal),
+      mIsRemote(aIsRemote),
+      mStopped(false)
   {
     MOZ_COUNT_CTOR(MediaStreamTrackSource);
   }
@@ -49,6 +57,11 @@ public:
 
 
   virtual MediaSourceEnum GetMediaSource() const = 0;
+
+  
+
+
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
 
   
 
@@ -71,24 +84,23 @@ public:
   
 
 
-  void RegisterSink()
+  void RegisterSink(Sink* aSink)
   {
     MOZ_ASSERT(NS_IsMainThread());
     if (mStopped) {
       return;
     }
-    ++mNrSinks;
+    mSinks.AppendElement(aSink);
   }
 
   
 
 
-  void UnregisterSink()
+
+  void UnregisterSink(Sink* aSink)
   {
     MOZ_ASSERT(NS_IsMainThread());
-    NS_ASSERTION(mNrSinks > 0, "Unmatched UnregisterSink()");
-    --mNrSinks;
-    if (mNrSinks == 0 && !IsRemote()) {
+    if (mSinks.RemoveElement(aSink) && mSinks.IsEmpty() && !IsRemote()) {
       Stop();
       mStopped = true;
     }
@@ -98,11 +110,24 @@ protected:
   virtual ~MediaStreamTrackSource()
   {
     MOZ_COUNT_DTOR(MediaStreamTrackSource);
-    NS_ASSERTION(mNrSinks == 0, "Some sinks did not unregister");
   }
 
   
-  size_t mNrSinks;
+
+
+
+  void PrincipalChanged()
+  {
+    for (Sink* sink : mSinks) {
+      sink->PrincipalChanged();
+    }
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  
+  nsTArray<Sink*> mSinks;
 
   
   const bool mIsRemote;
@@ -120,7 +145,7 @@ class BasicUnstoppableTrackSource : public MediaStreamTrackSource
 public:
   explicit BasicUnstoppableTrackSource(const MediaSourceEnum aMediaSource =
                                          MediaSourceEnum::Other)
-    : MediaStreamTrackSource(true), mMediaSource(aMediaSource) {}
+    : MediaStreamTrackSource(nullptr, true), mMediaSource(aMediaSource) {}
 
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
 
@@ -135,7 +160,9 @@ protected:
 
 
 
-class MediaStreamTrack : public DOMEventTargetHelper {
+class MediaStreamTrack : public DOMEventTargetHelper,
+                         public MediaStreamTrackSource::Sink
+{
 public:
   
 
@@ -188,7 +215,7 @@ public:
   
 
 
-  nsIPrincipal* GetPrincipal() const { return nullptr; }
+  nsIPrincipal* GetPrincipal() const { return GetSource().GetPrincipal(); }
 
   MediaStreamGraph* Graph();
 
@@ -201,6 +228,9 @@ public:
   
   
   void AssignId(const nsAString& aID) { mID = aID; }
+
+  
+  void PrincipalChanged() override;
 
   
 
