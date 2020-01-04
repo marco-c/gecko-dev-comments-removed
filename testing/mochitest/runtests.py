@@ -2381,11 +2381,8 @@ class MochitestDesktop(MochitestBase):
                 timeout = 330.0  
 
             
-            
-            detectShutdownLeaks = False
-            if options.jscov_dir_prefix is None:
-                detectShutdownLeaks = mozinfo.info[
-                    "debug"] and options.flavor == 'browser'
+            detectShutdownLeaks = mozinfo.info[
+                "debug"] and options.flavor == 'browser'
 
             self.start_script_args.append(self.normflavor(options.flavor))
             marionette_args = {
@@ -2430,20 +2427,10 @@ class MochitestDesktop(MochitestBase):
         finally:
             self.stopServers()
 
-        ignoreMissingLeaks = options.ignoreMissingLeaks
-        leakThresholds = options.leakThresholds
-
-        
-        
-        if options.jscov_dir_prefix:
-            for processType in leakThresholds:
-                ignoreMissingLeaks.append(processType)
-                leakThresholds[processType] = sys.maxsize
-
         mozleak.process_leak_log(
             self.leak_report_file,
-            leak_thresholds=leakThresholds,
-            ignore_missing_leaks=ignoreMissingLeaks,
+            leak_thresholds=options.leakThresholds,
+            ignore_missing_leaks=options.ignoreMissingLeaks,
             log=self.log,
             stack_fixer=get_stack_fixer_function(options.utilityPath,
                                                  options.symbolsPath),

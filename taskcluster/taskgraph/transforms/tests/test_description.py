@@ -29,16 +29,10 @@ from voluptuous import (
 
 test_description_schema = Schema({
     
-    Required('description'): Any(
-        basestring,
-        {'by-test-platform': {basestring: basestring}},
-    ),
+    'description': basestring,
 
     
-    Required('suite'): Any(
-        basestring,
-        {'by-test-platform': {basestring: basestring}},
-    ),
+    'suite': basestring,
 
     
     
@@ -144,10 +138,7 @@ test_description_schema = Schema({
 
         
         
-        Required('extra-options', default=[]): Any(
-            [basestring],
-            {'by-test-platform': {basestring: [basestring]}},
-        ),
+        Required('extra-options', default=[]): [basestring],
 
         
         
