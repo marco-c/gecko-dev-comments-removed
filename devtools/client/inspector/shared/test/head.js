@@ -432,23 +432,6 @@ function getRuleViewLinkTextByIndex(view, index) {
 
 
 
-
-
-
-function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
-  return nodeIndex !== undefined ?
-    view.element.children[childrenIndex].childNodes[nodeIndex]._ruleEditor :
-    view.element.children[childrenIndex]._ruleEditor;
-}
-
-
-
-
-
-
-
-
-
 var focusNewRuleViewProperty = Task.async(function* (ruleEditor) {
   info("Clicking on a close ruleEditor brace to start editing a new property");
   ruleEditor.closeBrace.scrollIntoView();

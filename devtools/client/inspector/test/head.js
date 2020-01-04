@@ -826,3 +826,20 @@ function openContextMenuAndGetAllItems(inspector, options) {
 
   return allItems;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
+  return nodeIndex !== undefined ?
+    view.element.children[childrenIndex].childNodes[nodeIndex]._ruleEditor :
+    view.element.children[childrenIndex]._ruleEditor;
+}
