@@ -273,7 +273,7 @@ struct SeekTarget {
   MediaDecoderEventVisibility mEventVisibility;
 };
 
-class MediaDecoder : public AbstractMediaDecoder, public MediaResourceCallback
+class MediaDecoder : public AbstractMediaDecoder
 {
 public:
   struct SeekResolveValue {
@@ -281,6 +281,35 @@ public:
       : mAtEnd(aAtEnd), mEventVisibility(aEventVisibility) {}
     bool mAtEnd;
     MediaDecoderEventVisibility mEventVisibility;
+  };
+
+  
+  
+  class ResourceCallback : public MediaResourceCallback {
+  public:
+    
+    void Connect(MediaDecoder* aDecoder);
+    
+    void Disconnect();
+
+  private:
+    
+    MediaDecoderOwner* GetMediaOwner() const override;
+    void SetInfinite(bool aInfinite) override;
+    void SetMediaSeekable(bool aMediaSeekable) override;
+    void ResetConnectionState() override;
+    nsresult FinishDecoderSetup(MediaResource* aResource) override;
+    void NotifyNetworkError() override;
+    void NotifyDecodeError() override;
+    void NotifyDataArrived() override;
+    void NotifyBytesDownloaded() override;
+    void NotifyDataEnded(nsresult aStatus) override;
+    void NotifyPrincipalChanged() override;
+    void NotifySuspendedStatusChanged() override;
+    void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) override;
+
+    
+    MediaDecoder* mDecoder = nullptr;
   };
 
   typedef MozPromise<SeekResolveValue, bool ,  true> SeekPromise;
@@ -304,7 +333,8 @@ public:
 
   
   
-  virtual void ResetConnectionState() override;
+  MediaResourceCallback* GetResourceCallback() const;
+
   
   
   virtual MediaDecoder* Clone(MediaDecoderOwner* aOwner) = 0;
@@ -325,7 +355,7 @@ public:
   nsresult OpenResource(nsIStreamListener** aStreamListener);
 
   
-  virtual void NetworkError();
+  void NetworkError();
 
   
   
@@ -404,45 +434,15 @@ public:
   virtual double GetDuration();
 
   
-  
-  
-  
-  
-  
-  
-  
-  virtual void SetInfinite(bool aInfinite) override;
-
-  
   virtual bool IsInfinite();
 
   
   
-  
-  
-  virtual void NotifySuspendedStatusChanged() override;
-
-  
-  
-  virtual void NotifyBytesDownloaded() override;
-
-  
-  
-  
-  virtual void NotifyDownloadEnded(nsresult aStatus);
+  virtual void NotifyBytesDownloaded();
 
   
   
   virtual void NotifyDataArrived() override;
-
-  
-  
-  virtual void NotifyPrincipalChanged() override;
-
-  
-  
-  
-  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) final override;
 
   
   
@@ -509,7 +509,7 @@ public:
   void SetLoadInBackground(bool aLoadInBackground);
 
   
-  MediaDecoderOwner* GetMediaOwner() const override;
+  MediaDecoderOwner* GetMediaOwner() const;
 
   MediaDecoderStateMachine* GetStateMachine() const;
   void SetStateMachine(MediaDecoderStateMachine* aStateMachine);
@@ -673,7 +673,7 @@ private:
   virtual void BreakCycles();
 
   
-  virtual void DecodeError();
+  void DecodeError();
 
   
   void UpdateSameOriginStatus(bool aSameOrigin);
@@ -831,6 +831,8 @@ private:
   
   
   RefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
+
+  RefPtr<ResourceCallback> mResourceCallback;
 
 #ifdef MOZ_EME
   MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
@@ -1055,10 +1057,42 @@ public:
 
 private:
   
-  virtual nsresult FinishDecoderSetup(MediaResource* aResource) override;
-  virtual void NotifyNetworkError() override;
-  virtual void NotifyDecodeError() override;
-  virtual void NotifyDataEnded(nsresult aStatus) override;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetInfinite(bool aInfinite);
+
+  
+  
+  void ResetConnectionState();
+
+  nsresult FinishDecoderSetup(MediaResource* aResource);
+
+  
+  
+  void NotifyPrincipalChanged();
+
+  
+  
+  
+  
+  void NotifySuspendedStatusChanged();
+
+  
+  
+  
+  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) final override;
+
+  
+  
+  
+  void NotifyDownloadEnded(nsresult aStatus);
 };
 
 } 

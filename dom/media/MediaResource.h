@@ -16,6 +16,7 @@
 #include "nsIInterfaceRequestor.h"
 #include "MediaCache.h"
 #include "MediaData.h"
+#include "MediaResourceCallback.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
@@ -43,7 +44,6 @@ class nsIPrincipal;
 
 namespace mozilla {
 
-class MediaResourceCallback;
 class MediaChannelStatistics;
 
 
@@ -513,10 +513,7 @@ protected:
   
   void DispatchBytesConsumed(int64_t aNumBytes, int64_t aOffset);
 
-  
-  
-  
-  MediaResourceCallback* mCallback;
+  RefPtr<MediaResourceCallback> mCallback;
 
   
   
