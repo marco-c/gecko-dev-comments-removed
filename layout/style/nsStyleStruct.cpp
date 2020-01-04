@@ -203,7 +203,7 @@ nsStyleFont::ZoomText(nsPresContext *aPresContext, nscoord aSize)
 {
   
   
-  return NSCoordSaturatingMultiply(aSize, aPresContext->TextZoom());
+  return NSToCoordTruncClamped(float(aSize) * aPresContext->TextZoom());
 }
 
  nscoord
@@ -211,7 +211,7 @@ nsStyleFont::UnZoomText(nsPresContext *aPresContext, nscoord aSize)
 {
   
   
-  return NSCoordSaturatingMultiply(aSize, 1.0 / aPresContext->TextZoom());
+  return NSToCoordTruncClamped(float(aSize) / aPresContext->TextZoom());
 }
 
  already_AddRefed<nsIAtom>
