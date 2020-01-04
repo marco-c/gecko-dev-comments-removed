@@ -46,17 +46,17 @@ DeviceStorageFileSystem::DeviceStorageFileSystem(
   NS_WARN_IF(NS_FAILED(rv));
 
   
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
   nsCOMPtr<nsIFile> rootFile;
   DeviceStorageFile::GetRootDirectoryForType(aStorageType,
                                              aStorageName,
                                              getter_AddRefs(rootFile));
 
   NS_WARN_IF(!rootFile || NS_FAILED(rootFile->GetPath(mLocalRootPath)));
+
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
   FileSystemUtils::LocalPathToNormalizedPath(mLocalRootPath,
     mNormalizedLocalRootPath);
 
@@ -132,8 +132,14 @@ DeviceStorageFileSystem::IsSafeDirectory(Directory* aDir) const
 {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread!");
   MOZ_ASSERT(aDir);
-  RefPtr<FileSystemBase> fs = aDir->GetFileSystem();
-  MOZ_ASSERT(fs);
+
+  ErrorResult rv;
+  RefPtr<FileSystemBase> fs = aDir->GetFileSystem(rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    rv.SuppressException();
+    return false;
+  }
+
   
   return fs->ToString() == mString;
 }

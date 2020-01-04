@@ -73,13 +73,8 @@ public:
   virtual bool
   IsSafeDirectory(Directory* aDir) const;
 
-  
-
-
-
-
   bool
-  GetRealPath(BlobImpl* aFile, nsAString& aRealPath) const;
+  GetRealPath(BlobImpl* aFile, nsIFile** aPath) const;
 
   
 

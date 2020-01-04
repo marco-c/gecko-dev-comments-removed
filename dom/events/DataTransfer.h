@@ -252,7 +252,7 @@ protected:
   void FillInExternalData(TransferItem& aItem, uint32_t aIndex);
 
 
-  FileList* GetFilesInternal(ErrorResult& aRv, nsIPrincipal* aSubjectPrincipal);
+  FileList* GetFileListInternal(ErrorResult& aRv, nsIPrincipal* aSubjectPrincipal);
   nsresult GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
                              nsIPrincipal* aSubjectPrincipal, nsIVariant** aData);
   nsresult SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData, uint32_t aIndex,
@@ -301,7 +301,8 @@ protected:
   nsTArray<nsTArray<TransferItem> > mItems;
 
   
-  RefPtr<FileList> mFiles;
+  
+  RefPtr<FileList> mFileList;
 
   
   nsCOMPtr<mozilla::dom::Element> mDragTarget;
