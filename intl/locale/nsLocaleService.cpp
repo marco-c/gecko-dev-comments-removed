@@ -3,11 +3,6 @@
 
 
 
-#ifdef MOZ_WIDGET_QT
-#include <QString>
-#include <QtCore/QLocale>
-#endif
-
 #include "nsCOMPtr.h"
 #include "nsILocale.h"
 #include "nsILocaleService.h"
@@ -122,12 +117,8 @@ nsLocaleService::nsLocaleService(void)
     RefPtr<nsLocale> resultLocale(new nsLocale());
     NS_ENSURE_TRUE_VOID(resultLocale);
 
-#ifdef MOZ_WIDGET_QT
-    const char* lang = QLocale::system().name().toUtf8();
-#else
     
     const char* lang = getenv("LANG");
-#endif
 
     nsAutoString xpLocale, platformLocale;
     nsAutoString category, category_platform;

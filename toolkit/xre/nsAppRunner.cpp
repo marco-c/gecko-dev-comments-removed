@@ -3,12 +3,6 @@
 
 
 
-#if defined(MOZ_WIDGET_QT)
-#include <QGuiApplication>
-#include <QStringList>
-#include "nsQAppInstance.h"
-#endif 
-
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -236,11 +230,6 @@ char **gRestartArgv;
 bool gIsGtest = false;
 
 nsString gAbsoluteArgv0Path;
-
-#ifdef MOZ_WIDGET_QT
-static int    gQtOnlyArgc;
-static char **gQtOnlyArgv;
-#endif
 
 #if defined(MOZ_WIDGET_GTK)
 #include <glib.h>
@@ -1724,14 +1713,8 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
 #endif
 
   if (aBlankCommandLine) {
-#if defined(MOZ_WIDGET_QT)
-    
-    gRestartArgc = gQtOnlyArgc;
-    gRestartArgv = gQtOnlyArgv;
-#else
     gRestartArgc = 1;
     gRestartArgv[gRestartArgc] = nullptr;
-#endif
   }
 
   SaveToEnv("MOZ_LAUNCHED_CHILD=1");
@@ -3581,25 +3564,6 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   }
 #endif
 
-#if defined(MOZ_WIDGET_QT)
-  nsQAppInstance::AddRef(gArgc, gArgv, true);
-
-  QStringList nonQtArguments = qApp->arguments();
-  gQtOnlyArgc = 1;
-  gQtOnlyArgv = (char**) malloc(sizeof(char*)
-                * (gRestartArgc - nonQtArguments.size() + 2));
-
-  
-  gQtOnlyArgv[0] = gRestartArgv[0];
-
-  for (int i = 1; i < gRestartArgc; ++i) {
-    if (!nonQtArguments.contains(gRestartArgv[i])) {
-      
-      gQtOnlyArgv[gQtOnlyArgc++] = gRestartArgv[i];
-    }
-  }
-  gQtOnlyArgv[gQtOnlyArgc] = nullptr;
-#endif
 #if defined(MOZ_WIDGET_GTK)
   
   
@@ -4403,10 +4367,6 @@ XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
   
   mProfileLock->Unlock();
   gProfileLock = nullptr;
-
-#if defined(MOZ_WIDGET_QT)
-  nsQAppInstance::Release();
-#endif
 
   
   if (appInitiatedRestart) {

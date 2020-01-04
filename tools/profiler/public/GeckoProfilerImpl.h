@@ -23,13 +23,6 @@
 #include "ProfilerBacktrace.h"
 
 
-
-
-#ifdef MOZ_WIDGET_QT
-#undef slots
-#endif
-
-
 #ifdef min
 #undef min
 #endif
