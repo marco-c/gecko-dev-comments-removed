@@ -316,6 +316,8 @@ function copyRowProperties(aRow, aProperties, aTarget) {
 
 
 function DBAddonInternal(aLoaded) {
+  AddonInternal.call(this);
+
   copyProperties(aLoaded, PROP_JSON_FIELDS, this);
 
   if (aLoaded._installLocation) {
