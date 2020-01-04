@@ -19,7 +19,7 @@ function check(code, expectedType, expectedCallee) {
   assertEq(hits, 1);
 }
 
-check('debugger;', 'object', null);
+check('debugger;', 'declarative', null);
 check('with({}) { debugger; };', 'with', null);
 check('let (x=1) { debugger; };', 'declarative', null);
 
@@ -36,10 +36,7 @@ g.eval('function j() { "use strict"; eval("debugger;"); }');
 check('j()', 'declarative', null);
 
 
-
-check('eval("debugger");', 'object', null);
-g.eval('function k() { eval("debugger;"); }');
-check('k()', 'declarative', gw.makeDebuggeeValue(g.k));
+check('eval("debugger");', 'declarative', null);
 
 g.eval('function m() { debugger; yield true; }');
 check('m().next();', 'declarative', gw.makeDebuggeeValue(g.m));
