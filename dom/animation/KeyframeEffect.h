@@ -284,12 +284,8 @@ public:
   bool CanThrottle() const;
 
   
-  
-  
-  
-  static bool CanAnimateTransformOnCompositor(const nsIFrame* aFrame,
-                                              const nsIContent* aContent);
-  static bool IsGeometricProperty(const nsCSSProperty aProperty);
+  static bool CanAnimatePropertyOnCompositor(const nsIFrame* aFrame,
+                                             nsCSSProperty aProperty);
 protected:
   virtual ~KeyframeEffectReadOnly();
   void ResetIsRunningOnCompositor();
@@ -324,6 +320,13 @@ protected:
 
 private:
   nsIFrame* GetAnimationFrame() const;
+  
+  
+  
+  
+  static bool CanAnimateTransformOnCompositor(const nsIFrame* aFrame,
+                                              const nsIContent* aContent);
+  static bool IsGeometricProperty(const nsCSSProperty aProperty);
 };
 
 } 
