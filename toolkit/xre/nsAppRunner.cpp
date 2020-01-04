@@ -97,7 +97,6 @@
 #include <math.h>
 #include "cairo/cairo-features.h"
 #include "mozilla/WindowsVersion.h"
-#include "mozilla/mscom/MainThreadRuntime.h"
 #include "mozilla/widget/AudioSession.h"
 
 #ifndef PROCESS_DEP_ENABLE
@@ -4303,14 +4302,6 @@ XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
   NS_ENSURE_SUCCESS(rv, 1);
 
   mozilla::IOInterposerInit ioInterposerGuard;
-
-#if defined(XP_WIN)
-  
-  
-  
-  
-  mozilla::mscom::MainThreadRuntime msCOMRuntime;
-#endif
 
 #if MOZ_WIDGET_GTK == 2
   XRE_GlibInit();
