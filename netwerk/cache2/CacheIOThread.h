@@ -13,11 +13,20 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/UniquePtr.h"
 
 class nsIRunnable;
 
 namespace mozilla {
 namespace net {
+
+namespace detail {
+
+
+
+
+class BlockingIOWatcher;
+}
 
 class CacheIOThread : public nsIThreadObserver
 {
@@ -72,8 +81,21 @@ public:
     return sSelf ? sSelf->YieldInternal() : false;
   }
 
-  nsresult Shutdown();
+  void Shutdown();
+  
+  
+  
+  void CancelBlockingIO();
   already_AddRefed<nsIEventTarget> Target();
+
+  
+  class Cancelable
+  {
+    bool mCancelable;
+  public:
+    explicit Cancelable(bool aCancelable);
+    ~Cancelable();
+  };
 
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -91,15 +113,23 @@ private:
 
   mozilla::Monitor mMonitor;
   PRThread* mThread;
+  UniquePtr<detail::BlockingIOWatcher> mBlockingIOWatcher;
   Atomic<nsIThread *> mXPCOMThread;
   Atomic<uint32_t, Relaxed> mLowestLevelWaiting;
   uint32_t mCurrentlyExecutingLevel;
 
   EventQueue mEventQueue[LAST_LEVEL];
-
+  
   Atomic<bool, Relaxed> mHasXPCOMEvents;
+  
   bool mRerunCurrentEvent;
+  
+  
   bool mShutdown;
+  
+  
+  
+  Atomic<uint32_t, Relaxed> mIOCancelableEvents;
 #ifdef DEBUG
   bool mInsideLoop;
 #endif
