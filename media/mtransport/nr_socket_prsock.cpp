@@ -114,7 +114,7 @@
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
 
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
 
 #ifdef LOG_INFO
 #define LOG_TEMP_INFO LOG_INFO
@@ -172,7 +172,7 @@ extern "C" {
 
 namespace mozilla {
 
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
 class SingletonThreadHolder final
 {
 private:
@@ -260,7 +260,7 @@ static void ClearSingletonOnShutdown()
 static nsIThread* GetIOThreadAndAddUse_s()
 {
   
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
   
   if (!sThread) {
     sThread = new SingletonThreadHolder(NS_LITERAL_CSTRING("mtransport"));
@@ -1076,7 +1076,7 @@ NrUdpSocketIpc::~NrUdpSocketIpc()
   
   
 
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
   
   RUN_ON_THREAD(io_thread_,
                 mozilla::WrapRunnableNM(&NrUdpSocketIpc::release_child_i,
@@ -1544,7 +1544,7 @@ void NrUdpSocketIpc::close_i() {
   }
 }
 
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
 
 
 void NrUdpSocketIpc::release_child_i(nsIUDPSocketChild* aChild,
@@ -1583,7 +1583,7 @@ void NrUdpSocketIpc::recv_callback_s(RefPtr<nr_udp_message> msg) {
   }
 }
 
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
 
 class NrTcpSocketIpc::TcpSocketReadyRunner: public nsRunnable
 {
@@ -2078,7 +2078,7 @@ NrSocketBase::CreateSocket(nr_transport_addr *addr, RefPtr<NrSocketBase> *sock)
         *sock = new NrUdpSocketIpc();
         break;
       case IPPROTO_TCP:
-#if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
+#if defined(MOZILLA_INTERNAL_API)
         {
           nsCOMPtr<nsIThread> main_thread;
           NS_GetMainThread(getter_AddRefs(main_thread));
