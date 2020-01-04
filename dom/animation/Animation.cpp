@@ -478,13 +478,19 @@ Animation::Tick()
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 
   
-  
-  
   AnimationCollection* collection = GetCollection();
   if (collection) {
     collection->RequestRestyle(CanThrottle() ?
       AnimationCollection::RestyleType::Throttled :
       AnimationCollection::RestyleType::Standard);
+  }
+
+  
+  if (mEffect &&
+      !mEffect->Properties().IsEmpty() &&
+      !mFinishedAtLastComposeStyle &&
+      PlayState() == AnimationPlayState::Finished) {
+    PostUpdate();
   }
 }
 
@@ -682,14 +688,6 @@ Animation::CanThrottle() const
   
   if (!mEffect || mEffect->Properties().IsEmpty()) {
     return true;
-  }
-
-  
-  
-  
-  
-  if (PlayState() == AnimationPlayState::Finished) {
-    return mFinishedAtLastComposeStyle;
   }
 
   
