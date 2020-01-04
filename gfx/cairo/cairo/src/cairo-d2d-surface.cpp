@@ -46,8 +46,7 @@
 
 #include <new>
 
-
-#include "moz-d2d1-1.h"
+#include "d2d1_1.h"
 
 #define CAIRO_INT_STATUS_SUCCESS (cairo_int_status_t)CAIRO_STATUS_SUCCESS
 
