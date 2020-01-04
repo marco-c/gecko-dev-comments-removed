@@ -14,12 +14,6 @@ from ipdl.type import Actor, ActorType, ProcessGraph, TypeVisitor, builtinHeader
 
 
 
-
-EMIT_LOGGING_CODE = ('win32' == sys.platform)
-
-
-
-
 class LowerToCxx:
     def lower(self, tu):
         '''returns |[ header: File ], [ cpp : File ]| representing the
