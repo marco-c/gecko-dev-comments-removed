@@ -499,15 +499,6 @@ public:
 
 
 
-
-
-
-  virtual nsIFrame* GetRealPrimaryFrameFor(nsIContent* aContent) const = 0;
-
-  
-
-
-
   virtual nsIFrame* GetPlaceholderFrameFor(nsIFrame* aFrame) const = 0;
 
   

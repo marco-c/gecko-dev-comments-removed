@@ -2463,42 +2463,24 @@ nsDocumentViewer::FindContainerView()
         return nullptr;
       }
 
-      nsCOMPtr<nsIPresShell> parentPresShell;
-      nsCOMPtr<nsIDocument> parentDoc = containerElement->GetCurrentDoc();
-      if (parentDoc) {
-        parentPresShell = parentDoc->GetShell();
-      }
-
-      if (!parentPresShell) {
-        nsCOMPtr<nsIDocShellTreeItem> parentDocShellItem;
-        docShell->GetParent(getter_AddRefs(parentDocShellItem));
-        if (parentDocShellItem) {
-          nsCOMPtr<nsIDocShell> parentDocShell = do_QueryInterface(parentDocShellItem);
-          parentPresShell = parentDocShell->GetPresShell();
-        }
-      }
-      if (!parentPresShell) {
-        NS_WARNING("Subdocument container has no presshell");
-      } else {
-        nsIFrame* subdocFrame = parentPresShell->GetRealPrimaryFrameFor(containerElement);
-        if (subdocFrame) {
-          
-          
-          
-          
-          if (subdocFrame->GetType() == nsGkAtoms::subDocumentFrame) {
-            NS_ASSERTION(subdocFrame->GetView(), "Subdoc frames must have views");
-            nsView* innerView =
-              static_cast<nsSubDocumentFrame*>(subdocFrame)->EnsureInnerView();
-            containerView = innerView;
-          } else {
-            NS_WARN_IF_FALSE(!subdocFrame->GetType(),
-                             "Subdocument container has non-subdocument frame");
-          }
+      nsIFrame* subdocFrame = nsLayoutUtils::GetRealPrimaryFrameFor(containerElement);
+      if (subdocFrame) {
+        
+        
+        
+        
+        if (subdocFrame->GetType() == nsGkAtoms::subDocumentFrame) {
+          NS_ASSERTION(subdocFrame->GetView(), "Subdoc frames must have views");
+          nsView* innerView =
+            static_cast<nsSubDocumentFrame*>(subdocFrame)->EnsureInnerView();
+          containerView = innerView;
         } else {
-          
-          LAYOUT_WARNING("Subdocument container has no frame");
+          NS_WARN_IF_FALSE(!subdocFrame->GetType(),
+                           "Subdocument container has non-subdocument frame");
         }
+      } else {
+        
+        LAYOUT_WARNING("Subdocument container has no frame");
       }
     }
   }
