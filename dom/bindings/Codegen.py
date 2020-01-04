@@ -1008,6 +1008,8 @@ class CGHeaders(CGWrapper):
                                   d.interface.hasInterfaceObject() and
                                   NeedsGeneratedHasInstance(d) and
                                   d.interface.hasInterfacePrototypeObject())
+        if len(hasInstanceIncludes) > 0:
+            hasInstanceIncludes.add("nsContentUtils.h")
 
         
         
@@ -13120,7 +13122,11 @@ class CGBindingRoot(CGThing):
                     
                     (desc.interface.hasInterfaceObject() and
                      (desc.interface.isJSImplemented() or
-                      (ctor and isChromeOnly(ctor)))))
+                      (ctor and isChromeOnly(ctor)))) or
+                    
+                    
+                    (desc.interface.isJSImplemented() and
+                     any(clearableCachedAttrs(desc))))
 
         bindingHeaders["nsContentUtils.h"] = any(
             descriptorHasChromeOnly(d) for d in descriptors)
