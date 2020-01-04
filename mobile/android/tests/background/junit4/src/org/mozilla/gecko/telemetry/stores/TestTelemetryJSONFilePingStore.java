@@ -120,6 +120,14 @@ public class TestTelemetryJSONFilePingStore {
         }
     }
 
+    @Test 
+    public void testGetAllPingsHandlesEmptyFiles() throws Exception {
+        final int expectedPingCount = 3;
+        writeTestPingsToStore(expectedPingCount, "whatever");
+        assertTrue("Empty file is created", testStore.getPingFile(getDocID()).createNewFile());
+        assertEquals("Returned pings only contains valid files", expectedPingCount, testStore.getAllPings().size());
+    }
+
     @Test
     public void testMaybePrunePingsDoesNothingIfAtMax() throws Exception {
         final int pingCount = TelemetryJSONFilePingStore.MAX_PING_COUNT;
