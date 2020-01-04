@@ -3,6 +3,8 @@
 
 "use strict";
 
+
+
 const MIN_INSPECTOR_WIDTH = 300;
 
 
