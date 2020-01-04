@@ -492,8 +492,8 @@ public:
 
 
 
-  nsIntRegion mScaledHitRegion;
-  nsIntRegion mScaledMaybeHitRegion;
+  nsIntRect mScaledHitRegionBounds;
+  nsIntRect mScaledMaybeHitRegionBounds;
   
 
 
@@ -2595,10 +2595,11 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
         
         
         
-        ContainerState& contState = mTree.ContState();
-        if (!contState.IsInInactiveLayer()) {
-          visibleRegion.OrWith(data.mScaledHitRegion);
-          visibleRegion.OrWith(data.mScaledMaybeHitRegion);
+        
+        if (!mTree.ContState().IsInInactiveLayer() &&
+            (data.mScaledHitRegionBounds.Intersects(aVisibleRect) ||
+             data.mScaledMaybeHitRegionBounds.Intersects(aVisibleRect))) {
+          break;
         }
         if (visibleRegion.Intersects(aVisibleRect)) {
           break;
@@ -3451,13 +3452,8 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
 
   
   
-  
-  mMaybeHitRegion.SimplifyOutward(8);
-
-  
-  
-  mScaledHitRegion = aState->ScaleRegionToOutsidePixels(mHitRegion);
-  mScaledMaybeHitRegion = aState->ScaleRegionToOutsidePixels(mMaybeHitRegion);
+  mScaledHitRegionBounds = aState->ScaleToOutsidePixels(mHitRegion.GetBounds());
+  mScaledMaybeHitRegionBounds = aState->ScaleToOutsidePixels(mMaybeHitRegion.GetBounds());
 }
 
 PaintedLayerData
