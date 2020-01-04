@@ -251,6 +251,9 @@ class B2GRemoteReftest(RefTest):
         prefs["reftest.remote"] = True
 
         
+        prefs["toolkit.telemetry.prompted"] = 999
+        prefs["toolkit.telemetry.notifiedOptOut"] = 999
+        
         prefs["app.update.enabled"] = False
         prefs["app.update.url"] = ""
         prefs["app.update.url.override"] = ""
