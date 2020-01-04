@@ -128,6 +128,12 @@ private:
 
   RefPtr<TextureClient> mBackBuffer;
   RefPtr<TextureClient> mFrontBuffer;
+  
+  
+  
+  
+  
+  RefPtr<TextureClient> mBufferProviderTexture;
 };
 
 

@@ -11,6 +11,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/Vector.h"
 
 namespace mozilla {
 
@@ -117,9 +118,7 @@ public:
 
   virtual void ReturnSnapshot(already_AddRefed<gfx::SourceSurface> aSnapshot) override;
 
-  TextureClient* GetTextureClient() override {
-    return mFront;
-  }
+  virtual TextureClient* GetTextureClient() override;
 
   virtual void NotifyInactive() override;
 
@@ -132,17 +131,20 @@ protected:
 
   ~PersistentBufferProviderShared();
 
+  TextureClient* GetTexture(Maybe<uint32_t> aIndex);
+  bool CheckIndex(uint32_t aIndex) { return aIndex < mTextures.length(); }
+
   void Destroy();
 
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
   RefPtr<CompositableForwarder> mFwd;
+  Vector<RefPtr<TextureClient>, 4> mTextures;
   
-  RefPtr<TextureClient> mFront;
+  Maybe<uint32_t> mBack;
   
-  RefPtr<TextureClient> mBack;
-  
-  RefPtr<TextureClient> mBuffer;
+  Maybe<uint32_t> mFront;
+
   RefPtr<gfx::DrawTarget> mDrawTarget;
   RefPtr<gfx::SourceSurface > mSnapshot;
 };
