@@ -98,6 +98,14 @@ StringToUuid(const nsAString& aString, BluetoothUuid& aUuid);
 
 
 nsresult
+GenerateUuid(BluetoothUuid &aUuid);
+
+
+
+
+
+
+nsresult
 GenerateUuid(nsAString &aUuidString);
 
 
