@@ -106,10 +106,6 @@ struct TileClient;
 
 
 
-
-
-
-
 struct nsTArrayFallibleResult
 {
   
@@ -2311,9 +2307,6 @@ class nsAutoArrayBase<TArrayBase, 0> : public TArrayBase
 
 
 
-
-
-
 template<class E, size_t N>
 class AutoTArray : public nsAutoArrayBase<nsTArray<E>, N>
 {
@@ -2339,48 +2332,6 @@ public:
   {
     Base::operator=(other);
     return *this;
-  }
-
-  operator const AutoFallibleTArray<E, N>&() const
-  {
-    return *reinterpret_cast<const AutoFallibleTArray<E, N>*>(this);
-  }
-};
-
-
-
-
-
-template<class E, size_t N>
-class AutoFallibleTArray : public nsAutoArrayBase<FallibleTArray<E>, N>
-{
-  typedef AutoFallibleTArray<E, N> self_type;
-  typedef nsAutoArrayBase<FallibleTArray<E>, N> Base;
-
-public:
-  AutoFallibleTArray() {}
-
-  template<typename Allocator>
-  explicit AutoFallibleTArray(const nsTArray_Impl<E, Allocator>& aOther)
-  {
-    Base::AppendElements(aOther);
-  }
-  template<typename Allocator>
-  explicit AutoFallibleTArray(nsTArray_Impl<E, Allocator>&& aOther)
-    : Base(mozilla::Move(aOther))
-  {
-  }
-
-  template<typename Allocator>
-  self_type& operator=(const nsTArray_Impl<E, Allocator>& other)
-  {
-    Base::operator=(other);
-    return *this;
-  }
-
-  operator const AutoTArray<E, N>&() const
-  {
-    return *reinterpret_cast<const AutoTArray<E, N>*>(this);
   }
 };
 
