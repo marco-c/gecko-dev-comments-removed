@@ -114,12 +114,7 @@ Reflect_construct(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    RootedObject obj(cx);
-    if (!Construct(cx, args.get(0), constructArgs, newTarget, &obj))
-        return false;
-
-    args.rval().setObject(*obj);
-    return true;
+    return Construct(cx, args.get(0), constructArgs, newTarget, args.rval());
 }
 
 
