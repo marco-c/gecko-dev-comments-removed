@@ -440,25 +440,31 @@ pref("media.getusermedia.agc_enabled", false);
 pref("media.getusermedia.agc", 1);
 
 
+
 #if defined(XP_MACOSX)
 pref("media.peerconnection.capture_delay", 50);
 pref("media.getusermedia.playout_delay", 10);
+pref("media.navigator.audio.full_duplex", false);
 #elif defined(XP_WIN)
 pref("media.peerconnection.capture_delay", 50);
 pref("media.getusermedia.playout_delay", 40);
+pref("media.navigator.audio.full_duplex", false);
 #elif defined(ANDROID)
 pref("media.peerconnection.capture_delay", 100);
 pref("media.getusermedia.playout_delay", 100);
+pref("media.navigator.audio.full_duplex", false);
 
 pref("media.navigator.hardware.vp8_encode.acceleration_enabled", false);
 pref("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
 #elif defined(XP_LINUX)
 pref("media.peerconnection.capture_delay", 70);
 pref("media.getusermedia.playout_delay", 50);
+pref("media.navigator.audio.full_duplex", false);
 #else
 
 pref("media.peerconnection.capture_delay", 50);
 pref("media.getusermedia.playout_delay", 50);
+pref("media.navigator.audio.full_duplex", false);
 #endif
 #endif
 
