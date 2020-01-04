@@ -2,6 +2,8 @@
 
 
 
+const remoteClientsFixture = [ { id: 1, name: "Foo"}, { id: 2, name: "Bar"} ];
+
 add_task(function* test() {
   
   let [origTab] = gBrowser.visibleTabs;
@@ -13,6 +15,21 @@ add_task(function* test() {
   updateTabContextMenu(origTab);
   is(document.getElementById("context_closeTab").disabled, false, "Close Tab is enabled");
   is(document.getElementById("context_reloadAllTabs").disabled, false, "Reload All Tabs is enabled");
+
+
+  if (gFxAccounts.sendTabToDeviceEnabled) {
+    
+    const oldGetter = setupRemoteClientsFixture(remoteClientsFixture);
+    yield updateTabContextMenu(origTab, function* () {
+      yield openMenuItemSubmenu("context_sendTabToDevice");
+    });
+    is(document.getElementById("context_sendTabToDevice").hidden, false, "Send tab to device is shown");
+    let targets = document.getElementById("context_sendTabToDevicePopupMenu").childNodes;
+    is(targets[0].getAttribute("label"), "Foo", "Foo target is present");
+    is(targets[1].getAttribute("label"), "Bar", "Bar target is present");
+    is(targets[3].getAttribute("label"), "All Devices", "All Devices target is present");
+    restoreRemoteClients(oldGetter);
+  }
 
   
   gBrowser.selectedTab = testTab;

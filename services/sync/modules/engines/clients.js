@@ -75,6 +75,10 @@ ClientEngine.prototype = {
     Svc.Prefs.set(this.name + ".lastRecordUpload", Math.floor(value));
   },
 
+  get remoteClients() {
+    return Object.values(this._store._remoteClients);
+  },
+
   
   get stats() {
     let stats = {
