@@ -345,8 +345,7 @@ BrowserTabList.prototype._getActorForBrowser = function(browser) {
     this._checkListening();
     return actor.connect();
   } else {
-    actor = new BrowserTabActor(this._connection, browser,
-                                browser.getTabBrowser());
+    actor = new BrowserTabActor(this._connection, browser);
     this._actorByBrowser.set(browser, actor);
     this._checkListening();
     return promise.resolve(actor);
@@ -1855,12 +1854,13 @@ exports.TabActor = TabActor;
 
 
 
-
-function BrowserTabActor(aConnection, aBrowser, aTabBrowser)
+function BrowserTabActor(aConnection, aBrowser)
 {
   TabActor.call(this, aConnection, aBrowser);
   this._browser = aBrowser;
-  this._tabbrowser = aTabBrowser;
+  if (typeof(aBrowser.getTabBrowser) == "function") {
+    this._tabbrowser = aBrowser.getTabBrowser();
+  }
 
   Object.defineProperty(this, "docShell", {
     value: this._browser.docShell,
