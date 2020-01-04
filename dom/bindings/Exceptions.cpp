@@ -25,36 +25,29 @@
 namespace mozilla {
 namespace dom {
 
-bool
+void
 ThrowExceptionObject(JSContext* aCx, nsIException* aException)
 {
   
   nsCOMPtr<Exception> exception = do_QueryInterface(aException);
   if (exception) {
-    return ThrowExceptionObject(aCx, exception);
+    ThrowExceptionObject(aCx, exception);
+    return;
   }
 
   
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  JS::Rooted<JSObject*> glob(aCx, JS::CurrentGlobalOrNull(aCx));
-  if (!glob) {
-    
-    return false;
-  }
-
   JS::Rooted<JS::Value> val(aCx);
   if (!WrapObject(aCx, aException, &NS_GET_IID(nsIException), &val)) {
-    return false;
+    return;
   }
 
   JS_SetPendingException(aCx, val);
-
-  return true;
 }
 
-bool
+void
 ThrowExceptionObject(JSContext* aCx, Exception* aException)
 {
   JS::Rooted<JS::Value> thrown(aCx);
@@ -76,33 +69,22 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
       nsresult exceptionResult;
       if (NS_SUCCEEDED(aException->GetResult(&exceptionResult)) &&
           double(exceptionResult) == thrown.toNumber()) {
-        
-        
-        
-        
         Throw(aCx, exceptionResult);
-        return true;
+        return;
       }
     }
     if (!JS_WrapValue(aCx, &thrown)) {
-      return false;
+      return;
     }
     JS_SetPendingException(aCx, thrown);
-    return true;
-  }
-
-  JS::Rooted<JSObject*> glob(aCx, JS::CurrentGlobalOrNull(aCx));
-  if (!glob) {
-    
-    return false;
+    return;
   }
 
   if (!GetOrCreateDOMReflector(aCx, aException, &thrown)) {
-    return false;
+    return;
   }
 
   JS_SetPendingException(aCx, thrown);
-  return true;
 }
 
 bool
@@ -132,24 +114,15 @@ Throw(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
     if (NS_SUCCEEDED(existingException->GetResult(&nr)) &&
         aRv == nr) {
       
-      if (!ThrowExceptionObject(aCx, existingException)) {
-        
-        
-        JS_ReportOutOfMemory(aCx);
-      }
+      ThrowExceptionObject(aCx, existingException);
       return false;
     }
   }
 
   RefPtr<Exception> finalException = CreateException(aCx, aRv, aMessage);
-
   MOZ_ASSERT(finalException);
-  if (!ThrowExceptionObject(aCx, finalException)) {
-    
-    
-    JS_ReportOutOfMemory(aCx);
-  }
 
+  ThrowExceptionObject(aCx, finalException);
   return false;
 }
 

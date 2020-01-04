@@ -34,10 +34,11 @@ Throw(JSContext* cx, nsresult rv, const nsACString& message = EmptyCString());
 void
 ThrowAndReport(nsPIDOMWindowInner* aWindow, nsresult aRv);
 
-bool
-ThrowExceptionObject(JSContext* aCx, Exception* aException);
 
-bool
+
+void
+ThrowExceptionObject(JSContext* aCx, Exception* aException);
+void
 ThrowExceptionObject(JSContext* aCx, nsIException* aException);
 
 
