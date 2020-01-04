@@ -197,7 +197,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
   
   
   if (redrawStart > -1) {
-    aBox->Redraw(aState);
+    aBox->XULRedraw(aState);
   }
 
   return NS_OK;

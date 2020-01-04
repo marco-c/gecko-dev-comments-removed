@@ -468,7 +468,7 @@ nsSliderFrame::DoLayout(nsBoxLayoutState& aState)
 
   
   if (!oldThumbRect.IsEqualInterior(thumbRect))
-    Redraw(aState);
+    XULRedraw(aState);
 
   return NS_OK;
 }
