@@ -661,25 +661,34 @@ static bool
 FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
                                          uint32_t aPositionMask)
 {
-  const nsIFrame::ChildListIDs skip(nsIFrame::kAbsoluteList |
-                                    nsIFrame::kFixedList);
+  MOZ_ASSERT(aPositionMask & (1 << NS_STYLE_POSITION_FIXED));
+
   for (nsIFrame::ChildListIterator lists(aFrame); !lists.IsDone(); lists.Next()) {
-    if (!skip.Contains(lists.CurrentID())) {
-      for (nsIFrame* f : lists.CurrentList()) {
-        if (f->GetType() == nsGkAtoms::placeholderFrame) {
-          nsIFrame* outOfFlow =
-            nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
-          
-          
-          NS_ASSERTION(!outOfFlow->IsSVGText(),
-                       "SVG text frames can't be out of flow");
-          if (aPositionMask & (1 << outOfFlow->StyleDisplay()->mPosition)) {
-            return true;
-          }
-        }
-        if (FrameHasPositionedPlaceholderDescendants(f, aPositionMask)) {
+    for (nsIFrame* f : lists.CurrentList()) {
+      if (f->GetType() == nsGkAtoms::placeholderFrame) {
+        nsIFrame* outOfFlow =
+          nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
+        
+        
+        NS_ASSERTION(!outOfFlow->IsSVGText(),
+                     "SVG text frames can't be out of flow");
+        if (aPositionMask & (1 << outOfFlow->StyleDisplay()->mPosition)) {
           return true;
         }
+      }
+      uint32_t positionMask = aPositionMask;
+      
+      
+      if (f->IsAbsPosContainingBlock()) {
+        if (f->IsFixedPosContainingBlock()) {
+          continue;
+        }
+        
+        
+        positionMask = (1 << NS_STYLE_POSITION_FIXED);
+      }
+      if (FrameHasPositionedPlaceholderDescendants(f, positionMask)) {
+        return true;
       }
     }
   }
