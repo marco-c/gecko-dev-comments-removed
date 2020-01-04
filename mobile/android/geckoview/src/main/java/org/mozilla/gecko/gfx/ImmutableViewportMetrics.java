@@ -51,7 +51,7 @@ public class ImmutableViewportMetrics {
     
 
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI(calledFrom = "gecko")
     public ImmutableViewportMetrics(float aPageRectLeft, float aPageRectTop,
         float aPageRectRight, float aPageRectBottom, float aCssPageRectLeft,
         float aCssPageRectTop, float aCssPageRectRight, float aCssPageRectBottom,

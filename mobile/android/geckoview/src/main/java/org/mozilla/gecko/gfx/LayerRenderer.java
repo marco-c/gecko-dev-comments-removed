@@ -441,7 +441,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
 
         
-        @WrapForJNI(allowMultithread = true)
+        @WrapForJNI
         public void beginDrawing() {
             mFrameStartTime = System.nanoTime();
 
@@ -500,7 +500,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
 
         
-        @WrapForJNI(allowMultithread = true)
+        @WrapForJNI
         public void drawBackground() {
             
             
@@ -514,7 +514,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
             clear(mBackgroundColor);
         }
 
-        @WrapForJNI(allowMultithread = true)
+        @WrapForJNI
         public void drawForeground() {
             
             
@@ -577,7 +577,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
 
         
-        @WrapForJNI(allowMultithread = true)
+        @WrapForJNI
         public void endDrawing() {
             
             if (!mUpdated)

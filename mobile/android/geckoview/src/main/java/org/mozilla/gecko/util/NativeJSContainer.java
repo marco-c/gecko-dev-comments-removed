@@ -15,7 +15,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
-@WrapForJNI
+@WrapForJNI(calledFrom = "gecko")
 public final class NativeJSContainer extends NativeJSObject
 {
     private NativeJSContainer() {

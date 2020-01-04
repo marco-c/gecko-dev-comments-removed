@@ -15,7 +15,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
-@WrapForJNI(allowMultithread = true, catchException = true)
+@WrapForJNI(exceptionMode = "nsresult")
 public class StackScroller {
     private int mMode;
 

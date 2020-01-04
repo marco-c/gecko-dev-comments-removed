@@ -15,7 +15,7 @@ import android.os.Bundle;
 
 
 
-@WrapForJNI
+@WrapForJNI(calledFrom = "gecko")
 public class NativeJSObject extends JNIObject
 {
     @SuppressWarnings("serial")

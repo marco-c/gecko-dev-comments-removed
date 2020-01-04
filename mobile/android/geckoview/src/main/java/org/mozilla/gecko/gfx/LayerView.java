@@ -81,31 +81,38 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     private volatile boolean mCompositorCreated;
 
 
-    @WrapForJNI(allowMultithread = true)
     protected class Compositor extends JNIObject {
         public Compositor() {
         }
 
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
         @Override protected native void disposeNative();
 
         
+        @WrapForJNI(calledFrom = "any", dispatchTo = "proxy")
          native void attachToJava(GeckoLayerClient layerClient,
                                                NativePanZoomController npzc);
 
+        @WrapForJNI(calledFrom = "any", dispatchTo = "proxy")
          native void onSizeChanged(int windowWidth, int windowHeight,
                                                 int screenWidth, int screenHeight);
 
         
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
          native void createCompositor(int width, int height);
 
         
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
          native void syncPauseCompositor();
 
         
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
          native void syncResumeResizeCompositor(int width, int height);
 
+        @WrapForJNI(calledFrom = "any", dispatchTo = "current")
          native void syncInvalidateAndScheduleComposite();
 
+        @WrapForJNI
         private synchronized Object getSurface() {
             if (LayerView.this.mServerSurfaceValid) {
                 return LayerView.this.getSurface();
@@ -113,6 +120,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             return null;
         }
 
+        @WrapForJNI(calledFrom = "gecko")
         private void destroy() {
             
             LayerView.this.mCompositorCreated = false;
@@ -675,8 +683,8 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     }
 
     
-    @WrapForJNI(allowMultithread = true)
-    public static void updateZoomedView(ByteBuffer data) {
+    @WrapForJNI(calledFrom = "gecko")
+    private static void updateZoomedView(ByteBuffer data) {
         LayerView layerView = GeckoAppShell.getLayerView();
         if (layerView != null) {
             LayerRenderer layerRenderer = layerView.getRenderer();

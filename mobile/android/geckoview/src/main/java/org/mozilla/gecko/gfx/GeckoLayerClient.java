@@ -156,7 +156,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     }
 
     
-    @WrapForJNI
+    @WrapForJNI(calledFrom = "gecko")
     private void onGeckoReady() {
         mGeckoIsReady = true;
 
@@ -427,7 +427,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         return mDisplayPort;
     }
 
-    @WrapForJNI
+    @WrapForJNI(calledFrom = "gecko")
     DisplayPortMetrics getDisplayPort(boolean pageSizeUpdate, boolean isBrowserContentDisplayed, int tabId, ImmutableViewportMetrics metrics) {
         Tabs tabs = Tabs.getInstance();
         if (isBrowserContentDisplayed && tabs.isSelectedTabId(tabId)) {
@@ -444,12 +444,12 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         }
     }
 
-    @WrapForJNI
+    @WrapForJNI(calledFrom = "gecko")
     void contentDocumentChanged() {
         mContentDocumentIsDisplayed = false;
     }
 
-    @WrapForJNI
+    @WrapForJNI(calledFrom = "gecko")
     boolean isContentDocumentDisplayed() {
         return mContentDocumentIsDisplayed;
     }
@@ -459,7 +459,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     
     
     
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public ProgressiveUpdateData progressiveUpdateCallback(boolean aHasPendingNewThebesContent,
                                                            float x, float y, float width, float height,
                                                            float resolution, boolean lowPrecision) {
@@ -573,7 +573,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public void setFirstPaintViewport(float offsetX, float offsetY, float zoom,
             float cssPageLeft, float cssPageTop, float cssPageRight, float cssPageBottom) {
         synchronized (getLock()) {
@@ -633,7 +633,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public void setPageRect(float cssPageLeft, float cssPageTop, float cssPageRight, float cssPageBottom) {
         synchronized (getLock()) {
             RectF cssPageRect = new RectF(cssPageLeft, cssPageTop, cssPageRight, cssPageBottom);
@@ -654,7 +654,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public ViewTransform syncViewportInfo(int x, int y, int width, int height, float resolution, boolean layersUpdated,
                                           int paintSyncId) {
         
@@ -698,7 +698,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         return mCurrentViewTransform;
     }
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public ViewTransform syncFrameMetrics(float scrollX, float scrollY, float zoom,
                 float cssPageLeft, float cssPageTop, float cssPageRight, float cssPageBottom,
                 int dpX, int dpY, int dpWidth, int dpHeight, float paintedResolution,
@@ -913,7 +913,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         }
     }
 
-    @WrapForJNI
+    @WrapForJNI(calledFrom = "gecko")
     public void synthesizeNativeTouchPoint(int pointerId, int eventType, int screenX,
             int screenY, double pressure, int orientation)
     {
@@ -924,13 +924,13 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             eventType, screenX, screenY, pressure, orientation);
     }
 
-    @WrapForJNI
+    @WrapForJNI(calledFrom = "gecko")
     public void synthesizeNativeMouseEvent(int eventType, int screenX, int screenY) {
         synthesizeNativePointer(InputDevice.SOURCE_MOUSE, PointerInfo.RESERVED_MOUSE_POINTER_ID,
             eventType, screenX, screenY, 0, 0);
     }
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public LayerRenderer.Frame createFrame() {
         
         if (!mLayerRendererInitialized) {
@@ -949,12 +949,12 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         }
     }
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public void activateProgram() {
         mLayerRenderer.activateDefaultProgram();
     }
 
-    @WrapForJNI(allowMultithread = true)
+    @WrapForJNI
     public void deactivateProgramAndRestoreState(boolean enableScissor,
             int scissorX, int scissorY, int scissorW, int scissorH)
     {
