@@ -90,11 +90,11 @@ dprint("Sleeping for 2 seconds");
 sleep(2);
 dprint("Waking the main thread now");
 setSharedArrayBuffer(null);
-assertEq(Atomics.futexWake(mem, 0, 1), 1); 
+assertEq(Atomics.wake(mem, 0, 1), 1); 
 `);
 
 var then = Date.now();
-assertEq(Atomics.futexWait(mem, 0, 42), Atomics.OK);
+assertEq(Atomics.wait(mem, 0, 42), Atomics.OK);
 dprint("Woke up as I should have in " + (Date.now() - then)/1000 + "s");
 assertEq(mem[1], 1337); 
 assertEq(getSharedArrayBuffer(), null); 
@@ -108,12 +108,12 @@ setSharedArrayBuffer(mem.buffer);
 evalInWorker(`
 var mem = new Int32Array(getSharedArrayBuffer());
 sleep(2);				
-assertEq(Atomics.futexWake(mem, 0), 1);	
+assertEq(Atomics.wake(mem, 0), 1);	
 `);
 
 var then = Date.now();
 dprint("Main thread waiting on wakeup (2s)");
-assertEq(Atomics.futexWait(mem, 0, 42), Atomics.OK);
+assertEq(Atomics.wait(mem, 0, 42), Atomics.OK);
 dprint("Woke up as I should have in " + (Date.now() - then)/1000 + "s");
 
 
@@ -124,12 +124,12 @@ dprint("Woke up as I should have in " + (Date.now() - then)/1000 + "s");
 
 timeout(2, function () {
     dprint("In the interrupt, starting inner wait with timeout 2s");
-    Atomics.futexWait(mem, 0, 42); 
+    Atomics.wait(mem, 0, 42); 
 });
 var exn = false;
 try {
     dprint("Starting outer wait");
-    assertEq(Atomics.futexWait(mem, 0, 42, 5000), Atomics.OK);
+    assertEq(Atomics.wait(mem, 0, 42, 5000), Atomics.OK);
 }
 catch (e) {
     dprint("Got the timeout exception!");

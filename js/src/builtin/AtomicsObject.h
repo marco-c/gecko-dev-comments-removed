@@ -20,8 +20,6 @@ class AtomicsObject : public JSObject
     static bool toString(JSContext* cx, unsigned int argc, Value* vp);
 
     
-    
-    
     enum FutexWaitResult : int32_t {
         FutexOK = 0,
         FutexNotequal = -1,
@@ -39,8 +37,8 @@ bool atomics_and(JSContext* cx, unsigned argc, Value* vp);
 bool atomics_or(JSContext* cx, unsigned argc, Value* vp);
 bool atomics_xor(JSContext* cx, unsigned argc, Value* vp);
 bool atomics_isLockFree(JSContext* cx, unsigned argc, Value* vp);
-bool atomics_futexWait(JSContext* cx, unsigned argc, Value* vp);
-bool atomics_futexWake(JSContext* cx, unsigned argc, Value* vp);
+bool atomics_wait(JSContext* cx, unsigned argc, Value* vp);
+bool atomics_wake(JSContext* cx, unsigned argc, Value* vp);
 
 
 int32_t atomics_add_asm_callout(int32_t vt, int32_t offset, int32_t value);

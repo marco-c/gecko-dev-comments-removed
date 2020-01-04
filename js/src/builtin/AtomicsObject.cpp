@@ -748,7 +748,7 @@ class AutoUnlockFutexAPI
 } 
 
 bool
-js::atomics_futexWait(JSContext* cx, unsigned argc, Value* vp)
+js::atomics_wait(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     HandleValue objv = args.get(0);
@@ -826,7 +826,7 @@ js::atomics_futexWait(JSContext* cx, unsigned argc, Value* vp)
 }
 
 bool
-js::atomics_futexWake(JSContext* cx, unsigned argc, Value* vp)
+js::atomics_wake(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     HandleValue objv = args.get(0);
@@ -1109,8 +1109,10 @@ const JSFunctionSpec AtomicsMethods[] = {
     JS_INLINABLE_FN("or",                 atomics_or,                 3,0, AtomicsOr),
     JS_INLINABLE_FN("xor",                atomics_xor,                3,0, AtomicsXor),
     JS_INLINABLE_FN("isLockFree",         atomics_isLockFree,         1,0, AtomicsIsLockFree),
-    JS_FN("futexWait",                    atomics_futexWait,          4,0),
-    JS_FN("futexWake",                    atomics_futexWake,          3,0),
+    JS_FN("wait",                         atomics_wait,               4,0),
+    JS_FN("futexWait",                    atomics_wait,               4,0),
+    JS_FN("wake",                         atomics_wake,               3,0),
+    JS_FN("futexWake",                    atomics_wake,               3,0),
     JS_FS_END
 };
 
