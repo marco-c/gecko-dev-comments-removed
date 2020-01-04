@@ -1,5 +1,5 @@
 
 
-setJitCompilerOption('signals.enable', 0);
+suppressSignalHandlers(true);
 timeout(1);
 for(;;);

@@ -978,23 +978,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 #endif
 
   private:
-    
-    
-    bool signalHandlersInstalled_;
-
-    
-    
-    bool canUseSignalHandlers_;
-
-  public:
-    bool canUseSignalHandlers() const {
-        return canUseSignalHandlers_;
-    }
-    void setCanUseSignalHandlers(bool enable) {
-        canUseSignalHandlers_ = signalHandlersInstalled_ && enable;
-    }
-
-  private:
     js::FreeOp          defaultFreeOp_;
 
   public:

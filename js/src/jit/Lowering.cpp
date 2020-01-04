@@ -8,6 +8,7 @@
 
 #include "mozilla/DebugOnly.h"
 
+#include "asmjs/WasmSignalHandlers.h"
 #include "jit/JitSpewer.h"
 #include "jit/LIR.h"
 #include "jit/MIR.h"
@@ -93,7 +94,7 @@ static void
 TryToUseImplicitInterruptCheck(MIRGraph& graph, MBasicBlock* backedge)
 {
     
-    if (!GetJitContext()->runtime->canUseSignalHandlers())
+    if (!wasm::HaveSignalHandlers())
         return;
 
     

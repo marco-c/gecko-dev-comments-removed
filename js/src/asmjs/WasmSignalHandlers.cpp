@@ -1261,23 +1261,20 @@ JitInterruptHandler(int signum, siginfo_t* info, void* context)
 }
 #endif
 
-bool
-wasm::EnsureSignalHandlersInstalled(JSRuntime* rt)
+static bool
+ProcessHasSignalHandlers()
 {
-#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
-    
-    if (!rt->wasmMachExceptionHandler.installed() && !rt->wasmMachExceptionHandler.install(rt))
-        return false;
-#endif
-
-    
-    
     
     static bool sTried = false;
     static bool sResult = false;
     if (sTried)
         return sResult;
     sTried = true;
+
+    
+    
+    if (getenv("JS_DISABLE_SLOW_SCRIPT_SIGNALS") || getenv("JS_NO_SIGNALS"))
+        return false;
 
 #if defined(ANDROID)
     
@@ -1357,6 +1354,39 @@ wasm::EnsureSignalHandlersInstalled(JSRuntime* rt)
     return true;
 }
 
+bool
+wasm::EnsureSignalHandlers(JSRuntime* rt)
+{
+    
+    if (!ProcessHasSignalHandlers())
+        return true;
+
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
+    
+    if (!rt->wasmMachExceptionHandler.installed() && !rt->wasmMachExceptionHandler.install(rt))
+        return false;
+#endif
+
+    return true;
+}
+
+static bool sHandlersSuppressedForTesting = false;
+
+bool
+wasm::HaveSignalHandlers()
+{
+    if (!ProcessHasSignalHandlers())
+        return false;
+
+    return !sHandlersSuppressedForTesting;
+}
+
+void
+wasm::SuppressSignalHandlersForTesting(bool suppress)
+{
+    sHandlersSuppressedForTesting = suppress;
+}
+
 
 
 
@@ -1371,7 +1401,7 @@ js::InterruptRunningJitCode(JSRuntime* rt)
 {
     
     
-    if (!rt->canUseSignalHandlers())
+    if (!HaveSignalHandlers())
         return;
 
     
