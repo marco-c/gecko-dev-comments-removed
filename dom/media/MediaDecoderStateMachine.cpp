@@ -1161,8 +1161,8 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
         
         
         
-        if (mSeekTask->GetSeekJob().mTarget.IsVideoOnly()) {
-          mSeekTask->GetSeekJob().mTarget.SetType(SeekTarget::Accurate);
+        if (mSeekTask->GetSeekTarget().IsVideoOnly()) {
+          mSeekTask->GetSeekTarget().SetType(SeekTarget::Accurate);
         }
         mQueuedSeek = Move(mSeekTask->GetSeekJob());
         mSeekTaskRequest.DisconnectIfExists();
@@ -1648,9 +1648,9 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   
   
   StopPlayback();
-  UpdatePlaybackPositionInternal(mSeekTask->GetSeekJob().mTarget.GetTime().ToMicroseconds());
+  UpdatePlaybackPositionInternal(mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
 
-  mOnSeekingStart.Notify(mSeekTask->GetSeekJob().mTarget.mEventVisibility);
+  mOnSeekingStart.Notify(mSeekTask->GetSeekTarget().mEventVisibility);
 
   
   if (mSeekTask->NeedToResetMDSM()) { Reset(); }
@@ -2136,7 +2136,7 @@ MediaDecoderStateMachine::SeekCompleted()
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mState == DECODER_STATE_SEEKING);
 
-  int64_t seekTime = mSeekTask->GetSeekJob().mTarget.GetTime().ToMicroseconds();
+  int64_t seekTime = mSeekTask->GetSeekTarget().GetTime().ToMicroseconds();
   int64_t newCurrentTime = seekTime;
 
   

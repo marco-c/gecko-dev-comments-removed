@@ -52,8 +52,7 @@ AccurateSeekTask::AccurateSeekTask(const void* aDecoderID,
 
   
   NS_ASSERTION(aEnd.ToMicroseconds() != -1, "Should know end time by now");
-  mSeekJob.mTarget.SetTime(
-    std::max(media::TimeUnit(), std::min(mSeekJob.mTarget.GetTime(), aEnd)));
+  mTarget.SetTime(std::max(media::TimeUnit(), std::min(mTarget.GetTime(), aEnd)));
 
   
   SetCallbacks();
@@ -96,7 +95,7 @@ AccurateSeekTask::Seek(const media::TimeUnit& aDuration)
   AssertOwnerThread();
 
   
-  mSeekRequest.Begin(mReader->Seek(mSeekJob.mTarget, aDuration)
+  mSeekRequest.Begin(mReader->Seek(mTarget, aDuration)
     ->Then(OwnerThread(), __func__, this,
            &AccurateSeekTask::OnSeekResolved, &AccurateSeekTask::OnSeekRejected));
 
@@ -129,20 +128,20 @@ AccurateSeekTask::DropAudioUpToSeekTarget(MediaData* aSample)
   AssertOwnerThread();
 
   RefPtr<AudioData> audio(aSample->As<AudioData>());
-  MOZ_ASSERT(audio && mSeekJob.Exists() && mSeekJob.mTarget.IsAccurate());
+  MOZ_ASSERT(audio && mSeekJob.Exists() && mTarget.IsAccurate());
 
   CheckedInt64 sampleDuration = FramesToUsecs(audio->mFrames, mAudioRate);
   if (!sampleDuration.isValid()) {
     return NS_ERROR_FAILURE;
   }
 
-  if (audio->mTime + sampleDuration.value() <= mSeekJob.mTarget.GetTime().ToMicroseconds()) {
+  if (audio->mTime + sampleDuration.value() <= mTarget.GetTime().ToMicroseconds()) {
     
     
     return NS_OK;
   }
 
-  if (audio->mTime > mSeekJob.mTarget.GetTime().ToMicroseconds()) {
+  if (audio->mTime > mTarget.GetTime().ToMicroseconds()) {
     
     
     
@@ -159,13 +158,13 @@ AccurateSeekTask::DropAudioUpToSeekTarget(MediaData* aSample)
   
   
   
-  NS_ASSERTION(mSeekJob.mTarget.GetTime().ToMicroseconds() >= audio->mTime,
+  NS_ASSERTION(mTarget.GetTime().ToMicroseconds() >= audio->mTime,
                "Target must at or be after data start.");
-  NS_ASSERTION(mSeekJob.mTarget.GetTime().ToMicroseconds() < audio->mTime + sampleDuration.value(),
+  NS_ASSERTION(mTarget.GetTime().ToMicroseconds() < audio->mTime + sampleDuration.value(),
                "Data must end after target.");
 
   CheckedInt64 framesToPrune =
-    UsecsToFrames(mSeekJob.mTarget.GetTime().ToMicroseconds() - audio->mTime, mAudioRate);
+    UsecsToFrames(mTarget.GetTime().ToMicroseconds() - audio->mTime, mAudioRate);
   if (!framesToPrune.isValid()) {
     return NS_ERROR_FAILURE;
   }
@@ -190,7 +189,7 @@ AccurateSeekTask::DropAudioUpToSeekTarget(MediaData* aSample)
     return NS_ERROR_FAILURE;
   }
   RefPtr<AudioData> data(new AudioData(audio->mOffset,
-                                       mSeekJob.mTarget.GetTime().ToMicroseconds(),
+                                       mTarget.GetTime().ToMicroseconds(),
                                        duration.value(),
                                        frames,
                                        Move(audioData),
@@ -213,7 +212,7 @@ AccurateSeekTask::DropVideoUpToSeekTarget(MediaData* aSample)
   DECODER_LOG("DropVideoUpToSeekTarget() frame [%lld, %lld]",
               video->mTime, video->GetEndTime());
   MOZ_ASSERT(mSeekJob.Exists());
-  const int64_t target = mSeekJob.mTarget.GetTime().ToMicroseconds();
+  const int64_t target = mTarget.GetTime().ToMicroseconds();
 
   
   
@@ -281,8 +280,8 @@ void
 AccurateSeekTask::AdjustFastSeekIfNeeded(MediaData* aSample)
 {
   AssertOwnerThread();
-  if (mSeekJob.mTarget.IsFast() &&
-      mSeekJob.mTarget.GetTime() > mCurrentTimeBeforeSeek &&
+  if (mTarget.IsFast() &&
+      mTarget.GetTime() > mCurrentTimeBeforeSeek &&
       aSample->mTime < mCurrentTimeBeforeSeek.ToMicroseconds()) {
     
     
@@ -290,7 +289,7 @@ AccurateSeekTask::AdjustFastSeekIfNeeded(MediaData* aSample)
     
     
     
-    mSeekJob.mTarget.SetType(SeekTarget::Accurate);
+    mTarget.SetType(SeekTarget::Accurate);
   }
 }
 
@@ -324,7 +323,7 @@ AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
 
   AdjustFastSeekIfNeeded(audio);
 
-  if (mSeekJob.mTarget.IsFast()) {
+  if (mTarget.IsFast()) {
     
     mSeekedAudioData = audio;
     mDoneAudioSeeking = true;
@@ -415,7 +414,7 @@ AccurateSeekTask::OnVideoDecoded(MediaData* aVideoSample)
 
   AdjustFastSeekIfNeeded(video);
 
-  if (mSeekJob.mTarget.IsFast()) {
+  if (mTarget.IsFast()) {
     
     mSeekedVideoData = video;
     mDoneVideoSeeking = true;
