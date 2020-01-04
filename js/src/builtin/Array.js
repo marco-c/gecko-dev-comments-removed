@@ -691,15 +691,17 @@ function ArrayIteratorNext() {
         return callFunction(CallArrayIteratorMethodIfWrapped, this,
                             "ArrayIteratorNext");
     }
-
     var a = UnsafeGetObjectFromReservedSlot(this, ITERATOR_SLOT_TARGET);
     
     var index = UnsafeGetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX);
     var itemKind = UnsafeGetInt32FromReservedSlot(this, ITERATOR_SLOT_ITEM_KIND);
     var result = { value: undefined, done: false };
+    var len = IsPossiblyWrappedTypedArray(a)
+              ? PossiblyWrappedTypedArrayLength(a)
+              : TO_UINT32(a.length);
 
     
-    if (index >= TO_UINT32(a.length)) {
+    if (index >= len) {
         
         
         UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, 0xffffffff);
