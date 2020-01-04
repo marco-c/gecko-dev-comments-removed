@@ -2024,7 +2024,6 @@ JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoChe
 
 
 
-
 extern JS_FRIEND_API(JSObject*)
 JS_GetArrayBufferViewBuffer(JSContext* cx, JS::HandleObject obj, bool* isSharedMemory);
 
@@ -2054,7 +2053,7 @@ JS_DetachArrayBuffer(JSContext* cx, JS::HandleObject obj,
 
 
 extern JS_FRIEND_API(bool)
-JS_IsNeuteredArrayBufferObject(JSObject* obj);
+JS_IsDetachedArrayBufferObject(JSObject* obj);
 
 
 
