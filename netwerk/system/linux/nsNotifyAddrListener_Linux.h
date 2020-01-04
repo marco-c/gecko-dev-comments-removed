@@ -82,9 +82,6 @@ private:
     bool mAllowChangedEvent;
 
     
-    mozilla::Atomic<bool, mozilla::Relaxed> mChildThreadShutdown;
-
-    
     bool mCoalescingActive;
 
     
