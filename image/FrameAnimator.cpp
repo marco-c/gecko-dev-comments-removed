@@ -137,13 +137,10 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
   if (nextFrameIndex == 0) {
     ret.dirtyRect = mFirstFrameRefreshArea;
   } else {
-    
-    if (nextFrameIndex != currentFrameIndex + 1) {
-      nextFrame = GetRawFrame(nextFrameIndex);
-    }
+    MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
 
-    if (!DoBlend(&ret.dirtyRect, currentFrameIndex,
-                               nextFrameIndex)) {
+    
+    if (!DoBlend(&ret.dirtyRect, currentFrameIndex, nextFrameIndex)) {
       
       NS_WARNING("FrameAnimator::AdvanceFrame(): Compositing of frame failed");
       nextFrame->SetCompositingFailed(true);
