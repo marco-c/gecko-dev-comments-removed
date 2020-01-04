@@ -1287,7 +1287,7 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
     break;
   case FontType::GDI:
   {
-    if (!shouldLCDRenderText) {
+    if (!shouldLCDRenderText && aaEnabled) {
       
       
       
