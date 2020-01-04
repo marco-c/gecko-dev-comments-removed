@@ -41,8 +41,8 @@ public:
     return static_cast<nsMemoryReporterManager*>(imgr.get());
   }
 
-  typedef nsTHashtable<nsRefPtrHashKey<nsIMemoryReporter>> StrongReportersTable;
-  typedef nsTHashtable<nsPtrHashKey<nsIMemoryReporter>> WeakReportersTable;
+  typedef nsDataHashtable<nsRefPtrHashKey<nsIMemoryReporter>, bool> StrongReportersTable;
+  typedef nsDataHashtable<nsPtrHashKey<nsIMemoryReporter>, bool> WeakReportersTable;
 
   
   
@@ -184,7 +184,7 @@ public:
 
 private:
   nsresult RegisterReporterHelper(nsIMemoryReporter* aReporter,
-                                  bool aForce, bool aStrongRef);
+                                  bool aForce, bool aStrongRef, bool aIsAsync);
   nsresult StartGettingReports();
   nsresult FinishReporting();
 
