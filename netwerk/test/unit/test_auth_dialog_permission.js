@@ -11,6 +11,11 @@ Cu.import("resource://testing-common/httpd.js");
 var prefs = Cc["@mozilla.org/preferences-service;1"].
               getService(Ci.nsIPrefBranch);
 
+
+
+
+prefs.setBoolPref("network.loadinfo.skip_type_assertion", true);
+
 function authHandler(metadata, response) {
   
   var expectedHeader = "Basic Z3Vlc3Q6Z3Vlc3Q=";
