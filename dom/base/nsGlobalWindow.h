@@ -1131,7 +1131,10 @@ public:
   {
     MOZ_ASSERT(IsOuterWindow());
     mozilla::ErrorResult ignored;
-    return GetContentInternal(ignored,  false);
+    nsCOMPtr<nsIDOMWindow> win =
+      GetContentInternal(ignored,  false);
+    ignored.SuppressException();
+    return win.forget();
   }
 
   void Get_content(JSContext* aCx,

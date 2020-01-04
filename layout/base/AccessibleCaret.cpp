@@ -236,6 +236,7 @@ AccessibleCaret::RemoveCaretElement(nsIDocument* aDocument)
   ErrorResult rv;
   aDocument->RemoveAnonymousContent(*mCaretElementHolder, rv);
   
+  rv.SuppressException();
 }
 
 AccessibleCaret::PositionChangedResult

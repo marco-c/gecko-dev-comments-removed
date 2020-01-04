@@ -496,6 +496,9 @@ private:
     ErrorResult rv;
     scriptloader::LoadMainScript(aCx, mScriptURL, WorkerScript, rv);
     if (NS_WARN_IF(rv.Failed())) {
+      
+      
+      rv.SuppressException();
       return false;
     }
 
@@ -532,6 +535,9 @@ private:
     JSAutoCompartment ac(aCx, global);
     scriptloader::LoadMainScript(aCx, mScriptURL, DebuggerScript, rv);
     if (NS_WARN_IF(rv.Failed())) {
+      
+      
+      rv.SuppressException();
       return false;
     }
 

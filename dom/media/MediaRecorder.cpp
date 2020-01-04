@@ -1162,6 +1162,7 @@ MediaRecorder::NotifyOwnerDocumentActivityChanged()
     
     ErrorResult result;
     Stop(result);
+    result.SuppressException();
   }
 }
 
