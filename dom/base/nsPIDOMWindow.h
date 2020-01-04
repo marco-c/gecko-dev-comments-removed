@@ -849,6 +849,12 @@ public:
   }
 
   
+
+
+  void SetInitialKeyboardIndicators(UIStateChangeType aShowAccelerators,
+                                    UIStateChangeType aShowFocusRings);
+
+  
   
   
   mozilla::dom::Element* GetFrameElementInternal() const;

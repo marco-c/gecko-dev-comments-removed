@@ -842,7 +842,12 @@ TabChild::Init()
     do_QueryInterface(window->GetChromeEventHandler());
   docShell->SetChromeEventHandler(chromeHandler);
 
-  window->SetKeyboardIndicators(ShowAccelerators(), ShowFocusRings());
+  if (window->GetCurrentInnerWindow()) {
+    window->SetKeyboardIndicators(ShowAccelerators(), ShowFocusRings());
+  } else {
+    
+    window->SetInitialKeyboardIndicators(ShowAccelerators(), ShowFocusRings());
+  }
 
   
   if (mIsPrerendered) {
