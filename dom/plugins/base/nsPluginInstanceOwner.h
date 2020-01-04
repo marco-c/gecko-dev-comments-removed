@@ -218,6 +218,8 @@ public:
   
   already_AddRefed<mozilla::layers::ImageContainer> GetImageContainer();
 
+  void DidComposite();
+
   
 
 

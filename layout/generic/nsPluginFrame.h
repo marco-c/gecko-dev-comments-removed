@@ -44,9 +44,12 @@ class LayerManager;
 
 typedef nsFrame nsPluginFrameSuper;
 
+class PluginFrameDidCompositeObserver;
+
 class nsPluginFrame : public nsPluginFrameSuper,
                       public nsIObjectFrame,
-                      public nsIReflowCallback {
+                      public nsIReflowCallback
+{
 public:
   typedef mozilla::LayerState LayerState;
   typedef mozilla::layers::Layer Layer;
@@ -322,6 +325,8 @@ private:
   
   
   RefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
+
+  nsAutoPtr<PluginFrameDidCompositeObserver> mDidCompositeObserver;
 
   
   
