@@ -82,6 +82,16 @@ public:
     aURL.Assign(mURL);
   }
 
+  void
+  GetUnfilteredUrl(nsCString& aURL) const
+  {
+    if (mWrappedResponse) {
+      return mWrappedResponse->GetUrl(aURL);
+    }
+
+    return GetUrl(aURL);
+  }
+
   
   void
   SetUrl(const nsACString& aURL)
