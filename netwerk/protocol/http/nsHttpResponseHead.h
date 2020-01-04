@@ -78,7 +78,9 @@ public:
     
     
     
+    
     void     Flatten(nsACString &, bool pruneTransients);
+    void     FlattenOriginalHeader(nsACString &buf);
 
     
     

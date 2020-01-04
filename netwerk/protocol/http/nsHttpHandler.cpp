@@ -238,6 +238,7 @@ nsHttpHandler::nsHttpHandler()
     , mTCPKeepaliveLongLivedEnabled(false)
     , mTCPKeepaliveLongLivedIdleTimeS(600)
     , mEnforceH1Framing(FRAMECHECK_BARELY)
+    , mKeepEmptyResponseHeadersAsEmtpyString(false)
 {
     LOG(("Creating nsHttpHandler [this=%p].\n", this));
 
@@ -455,7 +456,7 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpRequestHead *request, bool isSecu
 
     
     rv = request->SetHeader(nsHttp::User_Agent, UserAgent(),
-                            false, nsHttpHeaderArray::eVarietyDefault);
+                            false, nsHttpHeaderArray::eVarietyRequestDefault);
     if (NS_FAILED(rv)) return rv;
 
     
@@ -463,7 +464,7 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpRequestHead *request, bool isSecu
     
     
     rv = request->SetHeader(nsHttp::Accept, mAccept,
-                            false, nsHttpHeaderArray::eVarietyOverride);
+                            false, nsHttpHeaderArray::eVarietyRequestOverride);
     if (NS_FAILED(rv)) return rv;
 
     
@@ -471,31 +472,36 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpRequestHead *request, bool isSecu
     if (!mAcceptLanguages.IsEmpty()) {
         
         rv = request->SetHeader(nsHttp::Accept_Language, mAcceptLanguages,
-                                false, nsHttpHeaderArray::eVarietyOverride);
+                                false,
+                                nsHttpHeaderArray::eVarietyRequestOverride);
         if (NS_FAILED(rv)) return rv;
     }
 
     
     if (isSecure) {
         rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
-                                false, nsHttpHeaderArray::eVarietyDefault);
+                                false,
+                                nsHttpHeaderArray::eVarietyRequestDefault);
     } else {
         rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
-                                false, nsHttpHeaderArray::eVarietyDefault);
+                                false,
+                                nsHttpHeaderArray::eVarietyRequestDefault);
     }
     if (NS_FAILED(rv)) return rv;
 
     
     if (mDoNotTrackEnabled) {
       rv = request->SetHeader(nsHttp::DoNotTrack, NS_LITERAL_CSTRING("1"),
-                              false, nsHttpHeaderArray::eVarietyDefault);
+                              false,
+                              nsHttpHeaderArray::eVarietyRequestDefault);
       if (NS_FAILED(rv)) return rv;
     }
 
     
     if (mSafeHintEnabled || mParentalControlEnabled) {
       rv = request->SetHeader(nsHttp::Prefer, NS_LITERAL_CSTRING("safe"),
-                              false, nsHttpHeaderArray::eVarietyDefault);
+                              false,
+                              nsHttpHeaderArray::eVarietyRequestDefault);
       if (NS_FAILED(rv)) return rv;
     }
     return NS_OK;
@@ -1692,6 +1698,14 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
             mNewTabContentSignaturesDisabled = true;
         } else {
             mNewTabContentSignaturesDisabled = false;
+        }
+    }
+
+    if (PREF_CHANGED(HTTP_PREF("keep_empty_response_headers_as_empty_string"))) {
+        rv = prefs->GetBoolPref(HTTP_PREF("keep_empty_response_headers_as_empty_string"),
+                                &cVar);
+        if (NS_SUCCEEDED(rv)) {
+            mKeepEmptyResponseHeadersAsEmtpyString = cVar;
         }
     }
 

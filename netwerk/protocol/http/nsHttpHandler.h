@@ -359,6 +359,11 @@ public:
 
     void ShutdownConnectionManager();
 
+    bool KeepEmptyResponseHeadersAsEmtpyString() const
+    {
+        return mKeepEmptyResponseHeadersAsEmtpyString;
+    }
+
 private:
     virtual ~nsHttpHandler();
 
@@ -571,6 +576,13 @@ private:
 
     
     bool mNewTabContentSignaturesDisabled;
+
+    
+    
+    
+    
+    
+    bool mKeepEmptyResponseHeadersAsEmtpyString;
 
 private:
     

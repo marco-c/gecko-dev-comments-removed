@@ -26,24 +26,44 @@ class nsHttpHeaderArray
 public:
     const char *PeekHeader(nsHttpAtom header) const;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     enum HeaderVariety
     {
-        eVarietyOverride,
-        eVarietyDefault,
+        eVarietyUnknown,
+        
+        eVarietyRequestOverride,
+        eVarietyRequestDefault,
+        
+        eVarietyResponseNetOriginalAndResponse,
+        eVarietyResponseNetOriginal,
+        eVarietyResponse
     };
 
     
     nsresult SetHeader(nsHttpAtom header, const nsACString &value,
-                       bool merge = false, HeaderVariety variety = eVarietyOverride);
+                       bool merge, HeaderVariety variety);
 
     
-    nsresult SetEmptyHeader(nsHttpAtom header);
+    nsresult SetEmptyHeader(nsHttpAtom header, HeaderVariety variety);
 
     
     
-    nsresult SetHeaderFromNet(nsHttpAtom header, const nsACString &value);
+    
+    nsresult SetHeaderFromNet(nsHttpAtom header, const nsACString &value,
+                              bool response);
 
     nsresult GetHeader(nsHttpAtom header, nsACString &value) const;
+    nsresult GetOriginalHeader(nsHttpAtom aHeader,
+                               nsIHttpHeaderVisitor *aVisitor);
     void     ClearHeader(nsHttpAtom h);
 
     
@@ -65,19 +85,20 @@ public:
     {
         eFilterAll,
         eFilterSkipDefault,
+        eFilterResponse,
+        eFilterResponseOriginal
     };
 
     nsresult VisitHeaders(nsIHttpHeaderVisitor *visitor, VisitorFilter filter = eFilterAll);
 
     
     
-    nsresult ParseHeaderLine(const char *line,
-                             nsHttpAtom *header=nullptr,
-                             char **value=nullptr);
+    static nsresult ParseHeaderLine(const char *line,
+                                    nsHttpAtom *header=nullptr,
+                                    char **value=nullptr);
 
-    void Flatten(nsACString &, bool pruneProxyHeaders=false);
-
-    void ParseHeaderSet(char *buffer);
+    void Flatten(nsACString &, bool pruneProxyHeaders, bool pruneTransients);
+    void FlattenOriginalHeader(nsACString &);
 
     uint32_t Count() const { return mHeaders.Length(); }
 
@@ -90,7 +111,7 @@ public:
     {
         nsHttpAtom header;
         nsCString value;
-        HeaderVariety variety = eVarietyOverride;
+        HeaderVariety variety = eVarietyUnknown;
 
         struct MatchHeader {
           bool Equals(const nsEntry &entry, const nsHttpAtom &header) const {
@@ -110,9 +131,14 @@ public:
     }
 
 private:
+    
+    
     int32_t LookupEntry(nsHttpAtom header, const nsEntry **) const;
     int32_t LookupEntry(nsHttpAtom header, nsEntry **);
-    void MergeHeader(nsHttpAtom header, nsEntry *entry, const nsACString &value);
+    nsresult MergeHeader(nsHttpAtom header, nsEntry *entry,
+                         const nsACString &value, HeaderVariety variety);
+    nsresult SetHeader_internal(nsHttpAtom header, const nsACString &value,
+                                HeaderVariety variety);
 
     
     bool    IsSingletonHeader(nsHttpAtom header);
@@ -139,18 +165,35 @@ private:
 inline int32_t
 nsHttpHeaderArray::LookupEntry(nsHttpAtom header, const nsEntry **entry) const
 {
-    uint32_t index = mHeaders.IndexOf(header, 0, nsEntry::MatchHeader());
-    if (index != UINT32_MAX)
-        *entry = &mHeaders[index];
+    uint32_t index = 0;
+    while (index != UINT32_MAX) {
+        index = mHeaders.IndexOf(header, index, nsEntry::MatchHeader());
+        if (index != UINT32_MAX) {
+            if ((&mHeaders[index])->variety != eVarietyResponseNetOriginal) {
+                *entry = &mHeaders[index];
+                return index;
+            }
+            index++;
+        }
+    }
+
     return index;
 }
 
 inline int32_t
 nsHttpHeaderArray::LookupEntry(nsHttpAtom header, nsEntry **entry)
 {
-    uint32_t index = mHeaders.IndexOf(header, 0, nsEntry::MatchHeader());
-    if (index != UINT32_MAX)
-        *entry = &mHeaders[index];
+    uint32_t index = 0;
+    while (index != UINT32_MAX) {
+        index = mHeaders.IndexOf(header, index, nsEntry::MatchHeader());
+        if (index != UINT32_MAX) {
+            if ((&mHeaders[index])->variety != eVarietyResponseNetOriginal) {
+                *entry = &mHeaders[index];
+                return index;
+            }
+            index++;
+        }
+    }
     return index;
 }
 
@@ -179,15 +222,17 @@ nsHttpHeaderArray::TrackEmptyHeader(nsHttpAtom header)
            header == nsHttp::Location;
 }
 
-inline void
+inline nsresult
 nsHttpHeaderArray::MergeHeader(nsHttpAtom header,
                                nsEntry *entry,
-                               const nsACString &value)
+                               const nsACString &value,
+                               nsHttpHeaderArray::HeaderVariety variety)
 {
     if (value.IsEmpty())
-        return;   
+        return NS_OK;   
 
-    if (!entry->value.IsEmpty()) {
+    nsCString newValue = entry->value;
+    if (!newValue.IsEmpty()) {
         
         if (header == nsHttp::Set_Cookie ||
             header == nsHttp::WWW_Authenticate ||
@@ -196,14 +241,26 @@ nsHttpHeaderArray::MergeHeader(nsHttpAtom header,
             
             
             
-            entry->value.Append('\n');
+            newValue.Append('\n');
         } else {
             
-            entry->value.AppendLiteral(", ");
+            newValue.AppendLiteral(", ");
         }
     }
-    entry->value.Append(value);
-    entry->variety = eVarietyOverride;
+
+    newValue.Append(value);
+    if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
+        MOZ_ASSERT(variety == eVarietyResponse);
+        entry->variety = eVarietyResponseNetOriginal;
+        nsresult rv = SetHeader_internal(header, newValue, eVarietyResponse);
+        if (NS_FAILED(rv)) {
+            return rv;
+        }
+    } else {
+        entry->value = newValue;
+        entry->variety = variety;
+    }
+    return NS_OK;
 }
 
 inline bool

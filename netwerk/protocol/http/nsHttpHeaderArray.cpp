@@ -23,6 +23,11 @@ nsHttpHeaderArray::SetHeader(nsHttpAtom header,
                              bool merge,
                              nsHttpHeaderArray::HeaderVariety variety)
 {
+    MOZ_ASSERT((variety == eVarietyResponse) ||
+               (variety == eVarietyRequestDefault) ||
+               (variety == eVarietyRequestOverride),
+               "Net original headers can only be set using SetHeader_internal().");
+
     nsEntry *entry = nullptr;
     int32_t index;
 
@@ -31,71 +36,120 @@ nsHttpHeaderArray::SetHeader(nsHttpAtom header,
     
     
     if (value.IsEmpty()) {
-        if (!merge && entry)
-            mHeaders.RemoveElementAt(index);
+        if (!merge && entry) {
+            if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
+                MOZ_ASSERT(variety == eVarietyResponse);
+                entry->variety = eVarietyResponseNetOriginal;
+            } else {
+                mHeaders.RemoveElementAt(index);
+            }
+        }
         return NS_OK;
     }
 
-    MOZ_ASSERT(!entry || variety != eVarietyDefault,
+    MOZ_ASSERT(!entry || variety != eVarietyRequestDefault,
                "Cannot set default entry which overrides existing entry!");
     if (!entry) {
-        entry = mHeaders.AppendElement(); 
-        if (!entry)
-            return NS_ERROR_OUT_OF_MEMORY;
-        entry->header = header;
-        entry->value = value;
-        entry->variety = variety;
+        return SetHeader_internal(header, value, variety);
     } else if (merge && !IsSingletonHeader(header)) {
-        MergeHeader(header, entry, value);
+        return MergeHeader(header, entry, value, variety);
     } else {
         
-        entry->value = value;
-        entry->variety = eVarietyOverride;
+        if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
+            MOZ_ASSERT(variety == eVarietyResponse);
+            entry->variety = eVarietyResponseNetOriginal;
+            return SetHeader_internal(header, value, variety);
+        } else {
+            entry->value = value;
+            entry->variety = variety;
+        }
     }
 
     return NS_OK;
 }
 
 nsresult
-nsHttpHeaderArray::SetEmptyHeader(nsHttpAtom header)
+nsHttpHeaderArray::SetHeader_internal(nsHttpAtom header,
+                                      const nsACString &value,
+                                      nsHttpHeaderArray::HeaderVariety variety)
 {
+    nsEntry *entry =  mHeaders.AppendElement();
+    if (!entry) {
+        return NS_ERROR_OUT_OF_MEMORY;
+    }
+    entry->header = header;
+    entry->value = value;
+    entry->variety = variety;
+    return NS_OK;
+}
+
+nsresult
+nsHttpHeaderArray::SetEmptyHeader(nsHttpAtom header, HeaderVariety variety)
+{
+    MOZ_ASSERT((variety == eVarietyResponse) ||
+               (variety == eVarietyRequestDefault) ||
+               (variety == eVarietyRequestOverride),
+               "Original headers can only be set using SetHeader_internal().");
     nsEntry *entry = nullptr;
 
     LookupEntry(header, &entry);
 
-    if (!entry) {
-        entry = mHeaders.AppendElement(); 
-        if (!entry)
-            return NS_ERROR_OUT_OF_MEMORY;
-        entry->header = header;
-    } else {
+    if (entry &&
+        entry->variety != eVarietyResponseNetOriginalAndResponse) {
         entry->value.Truncate();
+        return NS_OK;
+    } else if (entry) {
+        MOZ_ASSERT(variety == eVarietyResponse);
+        entry->variety = eVarietyResponseNetOriginal;
     }
 
-    return NS_OK;
+    return SetHeader_internal(header, EmptyCString(), variety);
 }
 
 nsresult
-nsHttpHeaderArray::SetHeaderFromNet(nsHttpAtom header, const nsACString &value)
+nsHttpHeaderArray::SetHeaderFromNet(nsHttpAtom header,
+                                    const nsACString &value,
+                                    bool response)
 {
+    
+    
     nsEntry *entry = nullptr;
 
     LookupEntry(header, &entry);
 
     if (!entry) {
         if (value.IsEmpty()) {
-            if (!TrackEmptyHeader(header)) {
+            if (!gHttpHandler->KeepEmptyResponseHeadersAsEmtpyString() &&
+                !TrackEmptyHeader(header)) {
                 LOG(("Ignoring Empty Header: %s\n", header.get()));
+                if (response) {
+                    
+                    return SetHeader_internal(header, value,
+                                              eVarietyResponseNetOriginal);
+                }
                 return NS_OK; 
             }
         }
-        entry = mHeaders.AppendElement(); 
-        if (!entry)
-            return NS_ERROR_OUT_OF_MEMORY;
-        entry->header = header;
-        entry->value = value;
+        HeaderVariety variety = eVarietyRequestOverride;
+        if (response) {
+            variety = eVarietyResponseNetOriginalAndResponse;
+        }
+        return SetHeader_internal(header, value, variety);
+
     } else if (!IsSingletonHeader(header)) {
-        MergeHeader(header, entry, value);
+        HeaderVariety variety = eVarietyRequestOverride;
+        if (response) {
+            variety = eVarietyResponse;
+        }
+        nsresult rv = MergeHeader(header, entry, value, variety);
+        if (NS_FAILED(rv)) {
+            return rv;
+        }
+        if (response) {
+            rv = SetHeader_internal(header, value,
+                                    eVarietyResponseNetOriginal);
+        }
+        return rv;
     } else {
         
         
@@ -106,6 +160,11 @@ nsHttpHeaderArray::SetHeaderFromNet(nsHttpAtom header, const nsACString &value)
             } 
             LOG(("Header %s silently dropped as non mergeable header\n",
                  header.get()));
+
+        }
+        if (response) {
+            return SetHeader_internal(header, value,
+                                      eVarietyResponseNetOriginal);
         }
     }
 
@@ -115,7 +174,15 @@ nsHttpHeaderArray::SetHeaderFromNet(nsHttpAtom header, const nsACString &value)
 void
 nsHttpHeaderArray::ClearHeader(nsHttpAtom header)
 {
-    mHeaders.RemoveElement(header, nsEntry::MatchHeader());
+    nsEntry *entry = nullptr;
+    int32_t index = LookupEntry(header, &entry);
+    if (entry) {
+        if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
+            entry->variety = eVarietyResponseNetOriginal;
+        } else {
+            mHeaders.RemoveElementAt(index);
+        }
+    }
 }
 
 const char *
@@ -137,6 +204,40 @@ nsHttpHeaderArray::GetHeader(nsHttpAtom header, nsACString &result) const
     return NS_OK;
 }
 
+nsresult
+nsHttpHeaderArray::GetOriginalHeader(nsHttpAtom aHeader,
+                                     nsIHttpHeaderVisitor *aVisitor)
+{
+    NS_ENSURE_ARG_POINTER(aVisitor);
+    uint32_t index = 0;
+    nsresult rv = NS_ERROR_NOT_AVAILABLE;
+    while (true) {
+        index = mHeaders.IndexOf(aHeader, index, nsEntry::MatchHeader());
+        if (index != UINT32_MAX) {
+            const nsEntry &entry = mHeaders[index];
+
+            MOZ_ASSERT((entry.variety == eVarietyResponseNetOriginalAndResponse) ||
+                       (entry.variety == eVarietyResponseNetOriginal) ||
+                       (entry.variety == eVarietyResponse),
+                       "This must be a response header.");
+            index++;
+            if (entry.variety == eVarietyResponse) {
+                continue;
+            }
+            rv = NS_OK;
+            if (NS_FAILED(aVisitor->VisitHeader(nsDependentCString(entry.header),
+                                                entry.value))) {
+                break;
+            }
+        } else {
+            
+            
+            return rv;
+        }
+    }
+    return NS_OK;
+}
+
 bool
 nsHttpHeaderArray::HasHeader(nsHttpAtom header) const
 {
@@ -152,17 +253,22 @@ nsHttpHeaderArray::VisitHeaders(nsIHttpHeaderVisitor *visitor, nsHttpHeaderArray
     uint32_t i, count = mHeaders.Length();
     for (i = 0; i < count; ++i) {
         const nsEntry &entry = mHeaders[i];
-        if (filter == eFilterSkipDefault && entry.variety == eVarietyDefault) {
+        if (filter == eFilterSkipDefault && entry.variety == eVarietyRequestDefault) {
+            continue;
+        } else if (filter == eFilterResponse && entry.variety == eVarietyResponseNetOriginal) {
+            continue;
+        } else if (filter == eFilterResponseOriginal && entry.variety == eVarietyResponse) {
             continue;
         }
         if (NS_FAILED(visitor->VisitHeader(nsDependentCString(entry.header),
-                                           entry.value)))
+                                           entry.value))) {
             break;
+        }
     }
     return NS_OK;
 }
 
-nsresult
+ nsresult
 nsHttpHeaderArray::ParseHeaderLine(const char *line,
                                    nsHttpAtom *hdr,
                                    char **val)
@@ -180,17 +286,16 @@ nsHttpHeaderArray::ParseHeaderLine(const char *line,
 
     
     
-
     char *p = (char *) strchr(line, ':');
     if (!p) {
         LOG(("malformed header [%s]: no colon\n", line));
-        return NS_OK;
+        return NS_ERROR_FAILURE;
     }
 
     
     if (!nsHttp::IsValidToken(line, p)) {
         LOG(("malformed header [%s]: field-name not a token\n", line));
-        return NS_OK;
+        return NS_ERROR_FAILURE;
     }
 
     *p = 0; 
@@ -198,7 +303,7 @@ nsHttpHeaderArray::ParseHeaderLine(const char *line,
     nsHttpAtom atom = nsHttp::ResolveAtom(line);
     if (!atom) {
         LOG(("failed to resolve atom [%s]\n", line));
-        return NS_OK;
+        return NS_ERROR_FAILURE;
     }
 
     
@@ -215,39 +320,60 @@ nsHttpHeaderArray::ParseHeaderLine(const char *line,
     if (hdr) *hdr = atom;
     if (val) *val = p;
 
-    
-    return SetHeaderFromNet(atom, nsDependentCString(p, p2 - p));
+    return NS_OK;
 }
 
 void
-nsHttpHeaderArray::ParseHeaderSet(char *buffer)
-{
-    nsHttpAtom hdr;
-    char *val;
-    while (buffer) {
-        char *eof = strchr(buffer, '\r');
-        if (!eof) {
-            break;
-        }
-        *eof = '\0';
-        ParseHeaderLine(buffer, &hdr, &val);
-        buffer = eof + 1;
-        if (*buffer == '\n') {
-            buffer++;
-        }
-    }
-}
-
-void
-nsHttpHeaderArray::Flatten(nsACString &buf, bool pruneProxyHeaders)
+nsHttpHeaderArray::Flatten(nsACString &buf, bool pruneProxyHeaders,
+                           bool pruneTransients)
 {
     uint32_t i, count = mHeaders.Length();
     for (i = 0; i < count; ++i) {
         const nsEntry &entry = mHeaders[i];
         
-        if (pruneProxyHeaders && ((entry.header == nsHttp::Proxy_Authorization) ||
-                                  (entry.header == nsHttp::Proxy_Connection)))
+        if (entry.variety == eVarietyResponseNetOriginal) {
             continue;
+        }
+        
+        if (pruneProxyHeaders &&
+            ((entry.header == nsHttp::Proxy_Authorization) ||
+             (entry.header == nsHttp::Proxy_Connection))) {
+            continue;
+        }
+        if (pruneTransients &&
+            (entry.value.IsEmpty() ||
+             entry.header == nsHttp::Connection ||
+             entry.header == nsHttp::Proxy_Connection ||
+             entry.header == nsHttp::Keep_Alive ||
+             entry.header == nsHttp::WWW_Authenticate ||
+             entry.header == nsHttp::Proxy_Authenticate ||
+             entry.header == nsHttp::Trailer ||
+             entry.header == nsHttp::Transfer_Encoding ||
+             entry.header == nsHttp::Upgrade ||
+             
+             
+             entry.header == nsHttp::Set_Cookie)) {
+            continue;
+        }
+
+        buf.Append(entry.header);
+        buf.AppendLiteral(": ");
+        buf.Append(entry.value);
+        buf.AppendLiteral("\r\n");
+    }
+}
+
+void
+nsHttpHeaderArray::FlattenOriginalHeader(nsACString &buf)
+{
+    uint32_t i, count = mHeaders.Length();
+    for (i = 0; i < count; ++i) {
+        const nsEntry &entry = mHeaders[i];
+        
+        if (entry.variety == eVarietyResponse) {
+            continue;
+        }
+
         buf.Append(entry.header);
         buf.AppendLiteral(": ");
         buf.Append(entry.value);
