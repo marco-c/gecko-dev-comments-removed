@@ -285,7 +285,7 @@ public:
     eUnit_Shape,  
     eUnit_Filter, 
     eUnit_Transform, 
-    eUnit_BackgroundPosition, 
+    eUnit_BackgroundPositionCoord, 
     eUnit_CSSValuePairList, 
     eUnit_UnparsedString 
   };
@@ -486,7 +486,7 @@ private:
   static bool IsCSSValueListUnit(Unit aUnit) {
     return aUnit == eUnit_Dasharray || aUnit == eUnit_Filter ||
            aUnit == eUnit_Shadow ||
-           aUnit == eUnit_BackgroundPosition;
+           aUnit == eUnit_BackgroundPositionCoord;
   }
   static bool IsCSSValueSharedListValue(Unit aUnit) {
     return aUnit == eUnit_Transform;
