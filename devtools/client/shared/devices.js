@@ -5,10 +5,10 @@
 "use strict";
 
 const { getJSON } = require("devtools/client/shared/getjson");
-const Services = require("Services");
 
 const DEVICES_URL = "devtools.devices.url";
-const Strings = Services.strings.createBundle("chrome://devtools/locale/device.properties");
+const {LocalizationHelper} = require("devtools/client/shared/l10n");
+const L10N = new LocalizationHelper("devtools/locale/device.properties");
 
 
 
@@ -63,6 +63,6 @@ exports.GetDevices = GetDevices;
 
 
 function GetDeviceString(deviceType) {
-  return Strings.GetStringFromName("device." + deviceType);
+  return L10N.getStr("device." + deviceType);
 }
 exports.GetDeviceString = GetDeviceString;
