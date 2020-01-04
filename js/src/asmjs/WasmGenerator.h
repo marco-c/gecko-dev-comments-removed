@@ -202,8 +202,8 @@ class MOZ_STACK_CLASS ModuleGenerator
     Vector<IonCompileTask*>         freeTasks_;
 
     
-    DebugOnly<FunctionGenerator*>   activeFunc_;
-    DebugOnly<bool>                 finishedFuncs_;
+    FunctionGenerator*              activeFunc_;
+    bool                            finishedFuncs_;
 
     bool finishOutstandingTask();
     bool funcIsDefined(uint32_t funcIndex) const;
@@ -288,13 +288,13 @@ class MOZ_STACK_CLASS FunctionGenerator
 {
     friend class ModuleGenerator;
 
-    ModuleGenerator*   m_;
-    IonCompileTask*    task_;
+    ModuleGenerator* m_;
+    IonCompileTask*  task_;
 
     
     
-    UniqueBytecode     bytecode_;
-    Uint32Vector       callSiteLineNums_;
+    Bytes            bytes_;
+    Uint32Vector     callSiteLineNums_;
 
     uint32_t lineOrBytecode_;
 
@@ -303,8 +303,8 @@ class MOZ_STACK_CLASS FunctionGenerator
       : m_(nullptr), task_(nullptr), lineOrBytecode_(0)
     {}
 
-    Bytecode& bytecode() const {
-        return *bytecode_;
+    Bytes& bytes() {
+        return bytes_;
     }
     bool addCallSiteLineNum(uint32_t lineno) {
         return callSiteLineNums_.append(lineno);

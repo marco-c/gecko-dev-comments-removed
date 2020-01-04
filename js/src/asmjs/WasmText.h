@@ -29,8 +29,8 @@ namespace wasm {
 
 
 
-extern UniqueBytecode
-TextToBinary(const char16_t* text, UniqueChars* error);
+extern bool
+TextToBinary(const char16_t* text, Bytes* bytes, UniqueChars* error);
 
 } 
 } 
