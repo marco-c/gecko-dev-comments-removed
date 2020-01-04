@@ -14,6 +14,7 @@
 #include "WinUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/WindowsVersion.h"
 
@@ -313,6 +314,8 @@ protected:
 
   
   RefPtr<nsWindowBase>       mWidget;
+  
+  RefPtr<TextEventDispatcher> mDispatcher;
   
   RefPtr<ITfDocumentMgr>     mDocumentMgr;
   

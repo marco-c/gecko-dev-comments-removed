@@ -20,6 +20,8 @@
 class nsWindowBase : public nsBaseWidget
 {
 public:
+  typedef mozilla::WidgetEventTime WidgetEventTime;
+
   
 
 
@@ -44,6 +46,12 @@ public:
 
   virtual void InitEvent(mozilla::WidgetGUIEvent& aEvent,
                          LayoutDeviceIntPoint* aPoint = nullptr) = 0;
+
+  
+
+
+
+  virtual WidgetEventTime CurrentMessageWidgetEventTime() const = 0;
 
   
 
