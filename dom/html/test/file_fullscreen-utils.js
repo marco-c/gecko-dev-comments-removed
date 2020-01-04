@@ -3,16 +3,16 @@
 
 
 function inFullscreenMode(win) {
-  return win.outerWidth == win.screen.width &&
-         win.outerHeight == win.screen.height;
+  return win.innerWidth == win.screen.width &&
+         win.innerHeight == win.screen.height;
 }
 
 
 
 
 function inNormalMode(win) {
-  return win.outerWidth == win.normalSize.w &&
-         win.outerHeight == win.normalSize.h;
+  return win.innerWidth == win.normalSize.w &&
+         win.innerHeight == win.normalSize.h;
 }
 
 
@@ -30,8 +30,8 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
   
   if (!topWin.normalSize) {
     topWin.normalSize = {
-      w: window.outerWidth,
-      h: window.outerHeight
+      w: window.innerWidth,
+      h: window.innerHeight
     };
   }
   function checkCondition() {
