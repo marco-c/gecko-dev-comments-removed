@@ -32,8 +32,6 @@ public:
 
   void EmptyTracks() override;
 
-  VideoTrack* GetSelectedTrack();
-
   
   int32_t SelectedIndex() const
   {
