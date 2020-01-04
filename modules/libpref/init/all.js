@@ -1696,13 +1696,6 @@ pref("network.dnsCacheExpirationGracePeriod", 60);
 pref("network.dns.disablePrefetch", false);
 
 
-
-pref("network.dns.blockDotOnion", true);
-
-
-pref("network.dns.localDomains", "");
-
-
 pref("network.dns.offline-localhost", true);
 
 
