@@ -96,7 +96,7 @@ static const unsigned FramePushedForEntrySP = FramePushedAfterSave + sizeof(void
 
 
 Offsets
-wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe, bool usesHeap)
+wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -573,7 +573,7 @@ static const unsigned SavedTlsReg = sizeof(void*);
 
 
 ProfilingOffsets
-wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
+wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi)
 {
     const Sig& sig = fi.sig();
 
@@ -607,18 +607,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
     Register scratch = ABINonArgReturnReg1;  
 
     
-    uint32_t globalDataOffset = fi.exitGlobalDataOffset();
-#if defined(JS_CODEGEN_X64)
-    masm.append(GlobalAccess(masm.leaRipRelative(callee), globalDataOffset));
-#elif defined(JS_CODEGEN_X86)
-    masm.append(GlobalAccess(masm.movlWithPatch(Imm32(0), callee), globalDataOffset));
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-      defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    masm.computeEffectiveAddress(Address(GlobalReg, globalDataOffset - AsmJSGlobalRegBias), callee);
-#endif
-
-    
-    masm.loadPtr(Address(callee, offsetof(FuncImportExit, fun)), callee);
+    masm.loadWasmGlobalPtr(fi.exitGlobalDataOffset() + offsetof(FuncImportExit, fun), callee);
 
     
     masm.storePtr(callee, Address(masm.getStackPointer(), argOffset));
