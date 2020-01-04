@@ -54,7 +54,10 @@ class WebMDemuxer : public MediaDataDemuxer
 {
 public:
   explicit WebMDemuxer(MediaResource* aResource);
-
+  
+  
+  WebMDemuxer(MediaResource* aResource, bool aIsMediaSource);
+  
   nsRefPtr<InitPromise> Init() override;
 
   already_AddRefed<MediaDataDemuxer> Clone() const override;
@@ -91,10 +94,14 @@ public:
     return &mResource;
   }
 
-  int64_t GetEndDataOffset()
+  int64_t GetEndDataOffset() const
   {
-    return mLastWebMBlockOffset < 0 || mIsExpectingMoreData
+    return (!mIsMediaSource || mLastWebMBlockOffset < 0)
       ? mResource.GetLength() : mLastWebMBlockOffset;
+  }
+  int64_t IsMediaSource() const
+  {
+    return mIsMediaSource;
   }
 
 private:
@@ -169,7 +176,7 @@ private:
   
   
   int64_t mLastWebMBlockOffset;
-  bool mIsExpectingMoreData;
+  const bool mIsMediaSource;
 };
 
 class WebMTrackDemuxer : public MediaTrackDemuxer
