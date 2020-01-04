@@ -191,6 +191,24 @@ struct TrackBound
 
 
 
+enum class DisabledTrackMode
+{
+  ENABLED, SILENCE_BLACK, SILENCE_FREEZE
+};
+struct DisabledTrack {
+  DisabledTrack(TrackID aTrackID, DisabledTrackMode aMode)
+    : mTrackID(aTrackID), mMode(aMode) {}
+  TrackID mTrackID;
+  DisabledTrackMode mMode;
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -338,7 +356,7 @@ public:
 
   
   
-  void SetTrackEnabled(TrackID aTrackID, bool aEnabled);
+  void SetTrackEnabled(TrackID aTrackID, DisabledTrackMode aMode);
 
   
   
@@ -442,7 +460,8 @@ public:
                                           TrackID aTrackID);
   virtual void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
                                              TrackID aTrackID);
-  virtual void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled);
+  virtual void SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode);
+  DisabledTrackMode GetDisabledTrackMode(TrackID aTrackID);
 
   void AddConsumer(MediaInputPort* aPort)
   {
@@ -598,7 +617,10 @@ protected:
   nsTArray<RefPtr<MediaStreamListener> > mListeners;
   nsTArray<TrackBound<MediaStreamTrackListener>> mTrackListeners;
   nsTArray<MainThreadMediaStreamListener*> mMainThreadListeners;
-  nsTArray<TrackID> mDisabledTrackIDs;
+  
+  
+  
+  nsTArray<DisabledTrack> mDisabledTracks;
 
   
   
@@ -782,7 +804,7 @@ public:
   }
 
   
-  void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled) override;
+  void SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode) override;
 
   
   void
@@ -1252,8 +1274,6 @@ public:
     SYSTEM_THREAD_DRIVER,
     OFFLINE_THREAD_DRIVER
   };
-  static const uint32_t AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT = 20*1000;
-
   
   static MediaStreamGraph* GetInstance(GraphDriverType aGraphDriverRequested,
                                        dom::AudioChannel aChannel);

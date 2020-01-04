@@ -5,7 +5,7 @@
 
 #include "MediaStreamGraphImpl.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/Unused.h"
+#include "mozilla/unused.h"
 
 #include "AudioSegment.h"
 #include "VideoSegment.h"
@@ -29,7 +29,7 @@
 #include <algorithm>
 #include "GeckoProfiler.h"
 #include "VideoFrameContainer.h"
-#include "mozilla/Unused.h"
+#include "mozilla/unused.h"
 #include "mozilla/media/MediaUtils.h"
 #ifdef MOZ_WEBRTC
 #include "AudioOutputObserver.h"
@@ -1448,14 +1448,11 @@ MediaStreamGraphImpl::ForceShutDown(ShutdownTicket* aShutdownTicket)
 
 namespace {
 
-class MediaStreamGraphShutDownRunnable : public Runnable
-                                       , public nsITimerCallback {
+class MediaStreamGraphShutDownRunnable : public Runnable {
 public:
   explicit MediaStreamGraphShutDownRunnable(MediaStreamGraphImpl* aGraph)
     : mGraph(aGraph)
   {}
-  NS_DECL_ISUPPORTS_INHERITED
-
   NS_IMETHOD Run() override
   {
     NS_ASSERTION(mGraph->mDetectedNotRunning,
@@ -1474,33 +1471,10 @@ public:
     }
 #endif
 
-    if (mGraph->mForceShutdownTicket) {
-      
-      
-      
-      mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-      if (!mTimer) {
-        return NS_ERROR_FAILURE;
-      }
-      mTimer->InitWithCallback(this,
-                               MediaStreamGraph::AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT,
-                               nsITimer::TYPE_ONE_SHOT);
-    }
-
     mGraph->mDriver->Shutdown(); 
                                  
 
     
-    if (mTimer && !mGraph->mForceShutdownTicket) {
-      MOZ_ASSERT(false,
-        "AudioCallbackDriver took too long to shut down and we let shutdown"
-        " continue - freezing and leaking");
-
-      
-      
-      return NS_OK;
-    }
-    mTimer = nullptr;
     mGraph->mForceShutdownTicket = nullptr;
 
     
@@ -1533,29 +1507,9 @@ public:
     }
     return NS_OK;
   }
-
-  NS_IMETHOD Notify(nsITimer* aTimer) override
-  {
-    
-    
-    
-    NS_ASSERTION(!(mGraph->mForceShutdownTicket),
-                 "AudioCallbackDriver took too long to shut down - probably hung");
-
-    mGraph->mForceShutdownTicket = nullptr;
-    return NS_OK;
-  }
-
 private:
-  ~MediaStreamGraphShutDownRunnable() {}
-
-  nsCOMPtr<nsITimer> mTimer;
   RefPtr<MediaStreamGraphImpl> mGraph;
 };
-
-NS_IMPL_ISUPPORTS_INHERITED(MediaStreamGraphShutDownRunnable, Runnable, nsITimerCallback)
-
-
 
 class MediaStreamGraphStableStateRunnable : public Runnable {
 public:
@@ -1872,7 +1826,7 @@ MediaStream::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   amount += mVideoOutputs.ShallowSizeOfExcludingThis(aMallocSizeOf);
   amount += mListeners.ShallowSizeOfExcludingThis(aMallocSizeOf);
   amount += mMainThreadListeners.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  amount += mDisabledTrackIDs.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  amount += mDisabledTracks.ShallowSizeOfExcludingThis(aMallocSizeOf);
   amount += mConsumers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   return amount;
@@ -2485,43 +2439,75 @@ MediaStream::RunAfterPendingUpdates(already_AddRefed<nsIRunnable> aRunnable)
 }
 
 void
-MediaStream::SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled)
+MediaStream::SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode)
 {
-  if (aEnabled) {
-    mDisabledTrackIDs.RemoveElement(aTrackID);
-  } else {
-    if (!mDisabledTrackIDs.Contains(aTrackID)) {
-      mDisabledTrackIDs.AppendElement(aTrackID);
+  if (aMode == DisabledTrackMode::ENABLED) {
+    for (int32_t i = mDisabledTracks.Length() - 1; i >= 0; --i) {
+      if (aTrackID == mDisabledTracks[i].mTrackID) {
+        mDisabledTracks.RemoveElementAt(i);
+        return;
+      }
     }
+  } else {
+    for (const DisabledTrack& t : mDisabledTracks) {
+      if (aTrackID == t.mTrackID) {
+        NS_ERROR("Changing disabled track mode for a track is not allowed");
+        return;
+      }
+    }
+    mDisabledTracks.AppendElement(Move(DisabledTrack(aTrackID, aMode)));
   }
 }
 
+DisabledTrackMode
+MediaStream::GetDisabledTrackMode(TrackID aTrackID)
+{
+  for (const DisabledTrack& t : mDisabledTracks) {
+    if (t.mTrackID == aTrackID) {
+      return t.mMode;
+    }
+  }
+  return DisabledTrackMode::ENABLED;
+}
+
 void
-MediaStream::SetTrackEnabled(TrackID aTrackID, bool aEnabled)
+MediaStream::SetTrackEnabled(TrackID aTrackID, DisabledTrackMode aMode)
 {
   class Message : public ControlMessage {
   public:
-    Message(MediaStream* aStream, TrackID aTrackID, bool aEnabled) :
-      ControlMessage(aStream), mTrackID(aTrackID), mEnabled(aEnabled) {}
+    Message(MediaStream* aStream, TrackID aTrackID, DisabledTrackMode aMode) :
+      ControlMessage(aStream),
+      mTrackID(aTrackID),
+      mMode(aMode) {}
     void Run() override
     {
-      mStream->SetTrackEnabledImpl(mTrackID, mEnabled);
+      mStream->SetTrackEnabledImpl(mTrackID, mMode);
     }
     TrackID mTrackID;
-    bool mEnabled;
+    DisabledTrackMode mMode;
   };
-  GraphImpl()->AppendMessage(MakeUnique<Message>(this, aTrackID, aEnabled));
+  GraphImpl()->AppendMessage(MakeUnique<Message>(this, aTrackID, aMode));
 }
 
 void
 MediaStream::ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment, MediaSegment* aRawSegment)
 {
-  if (!mDisabledTrackIDs.Contains(aTrackID)) {
+  DisabledTrackMode mode = GetDisabledTrackMode(aTrackID);
+  if (mode == DisabledTrackMode::ENABLED) {
     return;
   }
-  aSegment->ReplaceWithDisabled();
-  if (aRawSegment) {
-    aRawSegment->ReplaceWithDisabled();
+  if (mode == DisabledTrackMode::SILENCE_BLACK) {
+    aSegment->ReplaceWithDisabled();
+    if (aRawSegment) {
+      aRawSegment->ReplaceWithDisabled();
+    }
+  } else if (mode == DisabledTrackMode::SILENCE_FREEZE) {
+    aSegment->ReplaceWithNull();
+    if (aRawSegment) {
+      aRawSegment->ReplaceWithNull();
+    }
+  } else {
+    MOZ_CRASH("Unsupported mode");
   }
 }
 
@@ -2939,19 +2925,21 @@ SourceMediaStream::FinishWithLockHeld()
 }
 
 void
-SourceMediaStream::SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled)
+SourceMediaStream::SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode)
 {
   {
     MutexAutoLock lock(mMutex);
     for (TrackBound<DirectMediaStreamTrackListener>& l: mDirectTrackListeners) {
       if (l.mTrackID == aTrackID) {
-        bool oldEnabled = !mDisabledTrackIDs.Contains(aTrackID);
-        if (!oldEnabled && aEnabled) {
+        MOZ_ASSERT(l.mListener->mMedia->GetType() == MediaSegment::AUDIO,
+                   "Must implement DisabledTrackMode support for MediaStreamTrackDirectListener for video");
+        bool oldEnabled = GetDisabledTrackMode(aTrackID) == DisabledTrackMode::ENABLED;
+        if (!oldEnabled && aMode == DisabledTrackMode::ENABLED) {
           STREAM_LOG(LogLevel::Debug, ("SourceMediaStream %p track %d setting "
                                        "direct listener enabled",
                                        this, aTrackID));
           l.mListener->DecreaseDisabled();
-        } else if (oldEnabled && !aEnabled) {
+        } else if (oldEnabled && aMode != DisabledTrackMode::ENABLED) {
           STREAM_LOG(LogLevel::Debug, ("SourceMediaStream %p track %d setting "
                                        "direct listener disabled",
                                        this, aTrackID));
@@ -2960,7 +2948,7 @@ SourceMediaStream::SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled)
       }
     }
   }
-  MediaStream::SetTrackEnabledImpl(aTrackID, aEnabled);
+  MediaStream::SetTrackEnabledImpl(aTrackID, aMode);
 }
 
 void
@@ -3309,8 +3297,7 @@ MediaStreamGraph::GetInstance(MediaStreamGraph::GraphDriverType aGraphDriverRequ
       public:
         Blocker()
         : media::ShutdownBlocker(NS_LITERAL_STRING(
-            "MediaStreamGraph shutdown: blocking on msg thread"))
-        {}
+            "MediaStreamGraph shutdown: blocking on msg thread")) {}
 
         NS_IMETHOD
         BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override

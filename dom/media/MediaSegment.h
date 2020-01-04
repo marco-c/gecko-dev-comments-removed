@@ -180,6 +180,10 @@ public:
   
 
 
+  virtual void ReplaceWithNull() = 0;
+  
+
+
   virtual void Clear() = 0;
 
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
@@ -313,6 +317,10 @@ public:
     if (GetType() != AUDIO) {
       MOZ_CRASH("Disabling unknown segment type");
     }
+    ReplaceWithNull();
+  }
+  void ReplaceWithNull() override
+  {
     StreamTime duration = GetDuration();
     Clear();
     AppendNullData(duration);
