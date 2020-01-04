@@ -703,6 +703,9 @@ public:
   virtual DrawTargetType GetType() const = 0;
 
   virtual BackendType GetBackendType() const = 0;
+
+  virtual bool IsRecording() const { return false; }
+
   
 
 
