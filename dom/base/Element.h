@@ -660,7 +660,7 @@ public:
                          ErrorResult& aError);
   bool HasAttribute(const nsAString& aName) const
   {
-    return InternalGetExistingAttrNameFromQName(aName) != nullptr;
+    return InternalGetAttrNameFromQName(aName) != nullptr;
   }
   bool HasAttributeNS(const nsAString& aNamespaceURI,
                       const nsAString& aLocalName) const;
@@ -1275,7 +1275,11 @@ protected:
   
 
 
-  virtual const nsAttrName* InternalGetExistingAttrNameFromQName(const nsAString& aStr) const;
+
+
+  const nsAttrName*
+  InternalGetAttrNameFromQName(const nsAString& aStr,
+                               nsAutoString* aNameToUse = nullptr) const;
 
   nsIFrame* GetStyledFrame();
 
