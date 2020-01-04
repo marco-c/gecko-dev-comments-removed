@@ -6848,33 +6848,31 @@ var gIdentityHandler = {
         this._identityBox.classList.add("mixedActiveBlocked");
       }
 
-      
-      let iData = this.getIdentityData();
-      tooltip = gNavigatorBundle.getFormattedString("identity.identified.verifier",
-                                                    [iData.caOrg]);
-      icon_label = iData.subjectOrg;
-      if (iData.country)
-        icon_country_label = "(" + iData.country + ")";
+      if (!this._isCertUserOverridden) {
+        
+        let iData = this.getIdentityData();
+        tooltip = gNavigatorBundle.getFormattedString("identity.identified.verifier",
+                                                      [iData.caOrg]);
+        icon_label = iData.subjectOrg;
+        if (iData.country)
+          icon_country_label = "(" + iData.country + ")";
 
-      
-      
-      
-      
-      
-      
-      icon_labels_dir = /^[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]/.test(icon_label) ?
-                        "rtl" : "ltr";
+        
+        
+        
+        
+        
+        
+        icon_labels_dir = /^[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]/.test(icon_label) ?
+                          "rtl" : "ltr";
+      }
 
     } else if (this._uriHasHost && this._isSecure) {
       this._identityBox.className = "verifiedDomain";
       if (this._isMixedActiveContentBlocked) {
         this._identityBox.classList.add("mixedActiveBlocked");
       }
-      if (this._isCertUserOverridden) {
-        this._identityBox.classList.add("certUserOverridden");
-        
-        tooltip = gNavigatorBundle.getString("identity.identified.verified_by_you");
-      } else {
+      if (!this._isCertUserOverridden) {
         
         tooltip = gNavigatorBundle.getFormattedString("identity.identified.verifier",
                                                       [this.getIdentityData().caOrg]);
@@ -6898,6 +6896,12 @@ var gIdentityHandler = {
         this._identityBox.classList.add("insecureLoginForms");
       }
       tooltip = gNavigatorBundle.getString("identity.unknown.tooltip");
+    }
+
+    if (this._isCertUserOverridden) {
+      this._identityBox.classList.add("certUserOverridden");
+      
+      tooltip = gNavigatorBundle.getString("identity.identified.verified_by_you");
     }
 
     if (SitePermissions.hasGrantedPermissions(this._uri)) {
@@ -7063,7 +7067,7 @@ var gIdentityHandler = {
     }
 
     
-    if (this._isSecure) {
+    if (this._isSecure || this._isCertUserOverridden) {
       verifier = this._identityBox.tooltipText;
     }
 

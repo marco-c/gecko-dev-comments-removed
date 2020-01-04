@@ -9,49 +9,15 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
-  whenNewTabLoaded(window, loadBadCertPage);
-}
-
-
-function loadBadCertPage() {
-  Services.obs.addObserver(certExceptionDialogObserver,
-                           "cert-exception-ui-ready", false);
-  let startedLoad = BrowserTestUtils.loadURI(gBrowser.selectedBrowser,
-                                             "https://expired.example.com");
-  startedLoad.then(() => promiseErrorPageLoaded(gBrowser.selectedBrowser)).then(function() {
-    ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
-      content.document.getElementById("exceptionDialogButton").click();
-    });
-  });
-}
-
-
-
-const EXCEPTION_DIALOG_URI = "chrome://pippki/content/exceptionDialog.xul";
-var certExceptionDialogObserver = {
-  observe: function(aSubject, aTopic, aData) {
-    if (aTopic == "cert-exception-ui-ready") {
-      Services.obs.removeObserver(this, "cert-exception-ui-ready");
-      let certExceptionDialog = getDialog(EXCEPTION_DIALOG_URI);
-      ok(certExceptionDialog, "found exception dialog");
-      executeSoon(function() {
-        BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(realPageLoaded);
-        certExceptionDialog.documentElement.getButton("extra1").click();
-      });
-    }
-  }
-};
-
-
-function realPageLoaded() {
+add_task(function* () {
+  yield BrowserTestUtils.openNewForegroundTab(gBrowser);
+  yield loadBadCertPage("https://expired.example.com");
   checkControlPanelIcons();
   let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
                               .getService(Ci.nsICertOverrideService);
   certOverrideService.clearValidityOverride("expired.example.com", -1);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab).then(finish);
-};
+  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
 
 
 function checkControlPanelIcons() {
@@ -82,30 +48,3 @@ function checkControlPanelIcons() {
   gIdentityHandler._identityPopup.hidden = true;
 }
 
-
-
-function getDialog(aLocation) {
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-             .getService(Ci.nsIWindowMediator);
-  let enumerator = wm.getXULWindowEnumerator(null);
-
-  while (enumerator.hasMoreElements()) {
-    let win = enumerator.getNext();
-    let windowDocShell = win.QueryInterface(Ci.nsIXULWindow).docShell;
-
-    let containedDocShells = windowDocShell.getDocShellEnumerator(
-                                      Ci.nsIDocShellTreeItem.typeChrome,
-                                      Ci.nsIDocShell.ENUMERATE_FORWARDS);
-    while (containedDocShells.hasMoreElements()) {
-      
-      let childDocShell = containedDocShells.getNext();
-      let childDoc = childDocShell.QueryInterface(Ci.nsIDocShell)
-                                  .contentViewer
-                                  .DOMDocument;
-
-      if (childDoc.location.href == aLocation) {
-        return childDoc;
-      }
-    }
-  }
-}

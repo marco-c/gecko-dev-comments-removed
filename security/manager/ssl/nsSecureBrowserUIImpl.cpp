@@ -226,9 +226,6 @@ nsSecureBrowserUIImpl::MapInternalToExternalState(uint32_t* aState, lockIconStat
     if (ev) {
       *aState |= nsIWebProgressListener::STATE_IDENTITY_EV_TOPLEVEL;
     }
-    if (mCertUserOverridden) {
-      *aState |= nsIWebProgressListener::STATE_CERT_USER_OVERRIDDEN;
-    }
   }
   
   
@@ -249,6 +246,10 @@ nsSecureBrowserUIImpl::MapInternalToExternalState(uint32_t* aState, lockIconStat
   } else if (docShell->GetHasMixedDisplayContentLoaded()) {
       *aState = tempState |
                 nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
+  }
+
+  if (mCertUserOverridden) {
+    *aState |= nsIWebProgressListener::STATE_CERT_USER_OVERRIDDEN;
   }
 
   
