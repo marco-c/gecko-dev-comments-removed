@@ -166,7 +166,7 @@ public:
 
   void StopSharing();
 
-  void StopTrack(TrackID aID, bool aIsAudio);
+  void StopTrack(TrackID aID);
 
   typedef media::Pledge<bool, dom::MediaStreamError*> PledgeVoid;
 
@@ -225,7 +225,7 @@ public:
 
   
   
-  void Invalidate();
+  void Stop();
 
   void
   AudioConfig(bool aEchoOn, uint32_t aEcho,

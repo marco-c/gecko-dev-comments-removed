@@ -333,11 +333,8 @@ public:
             mVideoDevice->GetSource()->Stop(source, kVideoTrack);
             mVideoDevice->GetSource()->Deallocate();
           }
-          
-          
-          if (mBool || ((!mAudioDevice || mAudioDevice->GetSource()->IsAvailable()) &&
-                        (!mVideoDevice || mVideoDevice->GetSource()->IsAvailable()))) {
-            source->Finish();
+          if (mType == MEDIA_STOP) {
+            source->EndAllTrackAndFinish();
           }
 
           nsIRunnable *event =
@@ -683,26 +680,6 @@ public:
 
     if (GetSourceStream()) {
       GetSourceStream()->Destroy();
-    }
-  }
-
-  
-  
-  
-  
-  void StopTrack(TrackID aTrackID) override
-  {
-    if (GetSourceStream()) {
-      GetSourceStream()->EndTrack(aTrackID);
-      
-      
-      
-      RefPtr<dom::MediaStreamTrack> ownedTrack = FindOwnedDOMTrack(mOwnedStream, aTrackID);
-      if (ownedTrack) {
-        mListener->StopTrack(aTrackID, !!ownedTrack->AsAudioStreamTrack());
-      } else {
-        LOG(("StopTrack(%d) on non-existent track", aTrackID));
-      }
     }
   }
 
@@ -2442,7 +2419,7 @@ StopSharingCallback(MediaManager *aThis,
       GetUserMediaCallbackMediaStreamListener *listener = aListeners->ElementAt(i);
 
       if (listener->Stream()) { 
-        listener->Invalidate();
+        listener->Stop();
       }
       listener->Remove();
       listener->StopSharing();
@@ -3092,7 +3069,7 @@ MediaManager::IsActivelyCapturingOrHasAPermission(uint64_t aWindowId)
 }
 
 void
-GetUserMediaCallbackMediaStreamListener::Invalidate()
+GetUserMediaCallbackMediaStreamListener::Stop()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
   if (mStopped) {
@@ -3108,7 +3085,7 @@ GetUserMediaCallbackMediaStreamListener::Invalidate()
                            this, nullptr, nullptr,
                            !mAudioStopped ? mAudioDevice.get() : nullptr,
                            !mVideoStopped ? mVideoDevice.get() : nullptr,
-                           mFinished, mWindowID, nullptr));
+                           false, mWindowID, nullptr));
   mStopped = mAudioStopped = mVideoStopped = true;
 }
 
@@ -3117,21 +3094,14 @@ void
 GetUserMediaCallbackMediaStreamListener::StopSharing()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mVideoDevice && !mStopped &&
+  if (mVideoDevice &&
       (mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Screen ||
        mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Application ||
        mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Window)) {
     
-    if (!mAudioDevice) {
-      Invalidate();
-    } else if (!mVideoStopped) {
-      MediaManager::PostTask(FROM_HERE,
-        new MediaOperationTask(MEDIA_STOP_TRACK,
-                               this, nullptr, nullptr,
-                               nullptr, mVideoDevice,
-                               mFinished, mWindowID, nullptr));
-      mVideoStopped = true;
-    }
+    
+    
+    StopTrack(kVideoTrack);
   } else if (mAudioDevice &&
              mAudioDevice->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
     nsCOMPtr<nsPIDOMWindowInner> window = nsGlobalWindow::GetInnerWindowWithId(mWindowID)->AsInner();
@@ -3241,28 +3211,43 @@ GetUserMediaCallbackMediaStreamListener::ApplyConstraintsToTrack(
 
 
 void
-GetUserMediaCallbackMediaStreamListener::StopTrack(TrackID aTrackID, bool aIsAudio)
+GetUserMediaCallbackMediaStreamListener::StopTrack(TrackID aTrackID)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (((aIsAudio && mAudioDevice) ||
-       (!aIsAudio && mVideoDevice)) && !mStopped)
+  MOZ_ASSERT(aTrackID == kAudioTrack || aTrackID == kVideoTrack);
+
+  
+  
+
+  bool stopAudio = aTrackID == kAudioTrack;
+  bool stopVideo = aTrackID == kVideoTrack;
+
+  if (mStopped ||
+      (stopAudio && (mAudioStopped || !mAudioDevice)) ||
+      (stopVideo && (mVideoStopped || !mVideoDevice)))
   {
-    
-    
-    bool stopAudio = aIsAudio && !mAudioStopped;
-    bool stopVideo = !aIsAudio && !mVideoStopped;
-    MediaManager::PostTask(FROM_HERE,
-      new MediaOperationTask(MEDIA_STOP_TRACK,
-                             this, nullptr, nullptr,
-                             stopAudio ? mAudioDevice.get() : nullptr,
-                             stopVideo ? mVideoDevice.get() : nullptr,
-                             mFinished, mWindowID, nullptr));
-    mAudioStopped |= stopAudio;
-    mVideoStopped |= stopVideo;
-  } else {
-    LOG(("gUM track %d ended, but we don't have type %s",
-         aTrackID, aIsAudio ? "audio" : "video"));
+    LOG(("Can't stop gUM track %d (%s), exists=%d, stopped=%d",
+         aTrackID,
+         aTrackID == kAudioTrack ? "audio" : "video",
+         aTrackID == kAudioTrack ? !!mAudioDevice : !!mVideoDevice,
+         aTrackID == kAudioTrack ? mAudioStopped : mVideoStopped));
+    return;
   }
+
+  if ((stopAudio || mAudioStopped || !mAudioDevice) &&
+      (stopVideo || mVideoStopped || !mVideoDevice)) {
+    Stop();
+    return;
+  }
+
+  MediaManager::PostTask(FROM_HERE,
+    new MediaOperationTask(MEDIA_STOP_TRACK,
+                           this, nullptr, nullptr,
+                           stopAudio ? mAudioDevice.get() : nullptr,
+                           stopVideo ? mVideoDevice.get() : nullptr,
+                           false , mWindowID, nullptr));
+  mAudioStopped |= stopAudio;
+  mVideoStopped |= stopVideo;
 }
 
 void
@@ -3270,7 +3255,7 @@ GetUserMediaCallbackMediaStreamListener::NotifyFinished()
 {
   MOZ_ASSERT(NS_IsMainThread());
   mFinished = true;
-  Invalidate(); 
+  Stop(); 
 
   RefPtr<MediaManager> manager(MediaManager::GetInstance());
   manager->RemoveFromWindowList(mWindowID, this);
