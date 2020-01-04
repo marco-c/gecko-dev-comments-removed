@@ -5,10 +5,22 @@ const PREF_SYSTEM_ADDON_SET = "extensions.systemAddonSet";
 
 Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
 
-const featureDir = gProfD.clone();
-featureDir.append("features");
+const featureDir = FileUtils.getDir("ProfD", ["features"]);
 
-const distroDir = do_get_file("data/system_addons/app0");
+
+let dir = FileUtils.getDir("ProfD", ["sysfeatures", "app1", "features"], true);
+do_get_file("data/system_addons/system1_1.xpi").copyTo(dir, "system1@tests.mozilla.org.xpi");
+do_get_file("data/system_addons/system2_1.xpi").copyTo(dir, "system2@tests.mozilla.org.xpi");
+
+dir = FileUtils.getDir("ProfD", ["sysfeatures", "app2", "features"], true);
+do_get_file("data/system_addons/system1_2.xpi").copyTo(dir, "system1@tests.mozilla.org.xpi");
+do_get_file("data/system_addons/system3_1.xpi").copyTo(dir, "system3@tests.mozilla.org.xpi");
+
+dir = FileUtils.getDir("ProfD", ["sysfeatures", "app3", "features"], true);
+do_get_file("data/system_addons/system1_1_badcert.xpi").copyTo(dir, "system1@tests.mozilla.org.xpi");
+do_get_file("data/system_addons/system3_1.xpi").copyTo(dir, "system3@tests.mozilla.org.xpi");
+
+const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"], true);
 registerDirectory("XREAppDist", distroDir);
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "0");
@@ -136,10 +148,10 @@ add_task(function* test_updated() {
   featureDir.append(dirname);
 
   
-  let file = do_get_file("data/system_addons/app1/features/system2@tests.mozilla.org.xpi");
-  file.copyTo(featureDir, file.leafName);
-  file = do_get_file("data/system_addons/app2/features/system3@tests.mozilla.org.xpi");
-  file.copyTo(featureDir, file.leafName);
+  let file = do_get_file("data/system_addons/system2_1.xpi");
+  file.copyTo(featureDir, "system2@tests.mozilla.org.xpi");
+  file = do_get_file("data/system_addons/system3_1.xpi");
+  file.copyTo(featureDir, "system3@tests.mozilla.org.xpi");
 
   
   let addonSet = {
@@ -166,8 +178,8 @@ add_task(function* test_updated() {
 
 add_task(function* test_skips_additional() {
   
-  let file = do_get_file("data/system_addons/app1/features/system1@tests.mozilla.org.xpi");
-  file.copyTo(featureDir, file.leafName);
+  let file = do_get_file("data/system_addons/system1_1.xpi");
+  file.copyTo(featureDir, "system1@tests.mozilla.org.xpi");
 
   startupManager(false);
 
@@ -191,8 +203,8 @@ add_task(function* test_revert() {
 
 
 add_task(function* test_reuse() {
-  let file = do_get_file("data/system_addons/app1/features/system2@tests.mozilla.org.xpi");
-  file.copyTo(featureDir, file.leafName);
+  let file = do_get_file("data/system_addons/system2_1.xpi");
+  file.copyTo(featureDir, "system2@tests.mozilla.org.xpi");
 
   startupManager(false);
 
@@ -214,8 +226,8 @@ add_task(function* test_corrupt_pref() {
 
 
 add_task(function* test_bad_profile_cert() {
-  let file = do_get_file("data/system_addons/app3/features/system1@tests.mozilla.org.xpi");
-  file.copyTo(featureDir, file.leafName);
+  let file = do_get_file("data/system_addons/system1_1_badcert.xpi");
+  file.copyTo(featureDir, "system1@tests.mozilla.org.xpi");
 
   
   let addonSet = {
