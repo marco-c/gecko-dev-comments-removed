@@ -2840,8 +2840,7 @@ nsHTMLEditor::AddOverrideStyleSheet(const nsAString& aURL)
   nsRefPtr<CSSStyleSheet> sheet;
   
   rv = ps->GetDocument()->CSSLoader()->
-    LoadSheetSync(uaURI, mozilla::css::eAgentSheetFeatures, true,
-                  getter_AddRefs(sheet));
+    LoadSheetSync(uaURI, true, true, getter_AddRefs(sheet));
 
   
   NS_ENSURE_TRUE(sheet, NS_ERROR_NULL_POINTER);

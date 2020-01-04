@@ -105,12 +105,6 @@ struct CSSParserInputState {
   bool mHavePushBack;
 };
 
-static_assert(eAuthorSheetFeatures == 0 &&
-              eUserSheetFeatures == 1 &&
-              eAgentSheetFeatures == 2,
-              "sheet parsing mode constants won't fit "
-              "in CSSParserImpl::mParsingMode");
-
 
 
 
@@ -135,7 +129,7 @@ public:
                       nsIURI*          aBaseURI,
                       nsIPrincipal*    aSheetPrincipal,
                       uint32_t         aLineNumber,
-                      SheetParsingMode aParsingMode);
+                      bool             aAllowUnsafeRules);
 
   nsresult ParseStyleAttribute(const nsAString&  aAttributeValue,
                                nsIURI*           aDocURL,
@@ -319,20 +313,12 @@ public:
                                            uint32_t aLineNumber,
                                            uint32_t aLineOffset);
 
-  bool AgentRulesEnabled() const {
-    return mParsingMode == eAgentSheetFeatures;
-  }
-  bool UserRulesEnabled() const {
-    return mParsingMode == eAgentSheetFeatures ||
-           mParsingMode == eUserSheetFeatures;
-  }
-
   nsCSSProps::EnabledState PropertyEnabledState() const {
     static_assert(nsCSSProps::eEnabledForAllContent == 0,
                   "nsCSSProps::eEnabledForAllContent should be zero for "
                   "this bitfield to work");
     nsCSSProps::EnabledState enabledState = nsCSSProps::eEnabledForAllContent;
-    if (AgentRulesEnabled()) {
+    if (mUnsafeRulesEnabled) {
       enabledState |= nsCSSProps::eEnabledInUASheets;
     }
     if (mIsChromeOrCertifiedApp) {
@@ -1219,11 +1205,7 @@ protected:
   bool mUnitlessLengthQuirk : 1;
 
   
-  
-  
-  
-  
-  SheetParsingMode mParsingMode : 3;
+  bool mUnsafeRulesEnabled : 1;
 
   
   
@@ -1352,7 +1334,7 @@ CSSParserImpl::CSSParserImpl()
     mNavQuirkMode(false),
     mHashlessColorQuirk(false),
     mUnitlessLengthQuirk(false),
-    mParsingMode(eAuthorSheetFeatures),
+    mUnsafeRulesEnabled(false),
     mIsChromeOrCertifiedApp(false),
     mViewportUnitsEnabled(true),
     mHTMLMediaMode(false),
@@ -1459,7 +1441,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
                           nsIURI*          aBaseURI,
                           nsIPrincipal*    aSheetPrincipal,
                           uint32_t         aLineNumber,
-                          SheetParsingMode aParsingMode)
+                          bool             aAllowUnsafeRules)
 {
   NS_PRECONDITION(aSheetPrincipal, "Must have principal here!");
   NS_PRECONDITION(aBaseURI, "need base URI");
@@ -1504,7 +1486,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
     mSection = eCSSSection_Charset; 
   }
 
-  mParsingMode = aParsingMode;
+  mUnsafeRulesEnabled = aAllowUnsafeRules;
   mIsChromeOrCertifiedApp =
     dom::IsChromeURI(aSheetURI) ||
     aSheetPrincipal->GetAppStatus() == nsIPrincipal::APP_STATUS_CERTIFIED;
@@ -1530,7 +1512,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   }
   ReleaseScanner();
 
-  mParsingMode = eAuthorSheetFeatures;
+  mUnsafeRulesEnabled = false;
   mIsChromeOrCertifiedApp = false;
 
   
@@ -1708,7 +1690,7 @@ CSSParserImpl::ParseProperty(const nsCSSProperty aPropID,
   
   if (eCSSProperty_UNKNOWN == aPropID ||
       !(nsCSSProps::IsEnabled(aPropID) ||
-        (AgentRulesEnabled() &&
+        (mUnsafeRulesEnabled &&
          nsCSSProps::PropHasFlags(aPropID,
                                   CSS_PROPERTY_ALWAYS_ENABLED_IN_UA_SHEETS)))) {
     NS_ConvertASCIItoUTF16 propName(nsCSSProps::GetStringValue(aPropID));
@@ -2999,14 +2981,8 @@ CSSParserImpl::ParseAtRule(RuleAppendFunc aAppendFunc,
     newSection = eCSSSection_General;
 
   } else if (mToken.mIdent.LowerCaseEqualsLiteral("-moz-document")) {
-    if (UserRulesEnabled()) {
-      parseFunc = &CSSParserImpl::ParseMozDocumentRule;
-      newSection = eCSSSection_General;
-    } else {
-      REPORT_UNEXPECTED_TOKEN(PEMozDocumentRuleNotAllowed);
-      OUTPUT_ERROR();
-      return SkipAtRule(aInAtRule);
-    }
+    parseFunc = &CSSParserImpl::ParseMozDocumentRule;
+    newSection = eCSSSection_General;
 
   } else if (mToken.mIdent.LowerCaseEqualsLiteral("font-face")) {
     parseFunc = &CSSParserImpl::ParseFontFaceRule;
@@ -5614,7 +5590,7 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
   bool pseudoClassIsUserAction =
     nsCSSPseudoClasses::IsUserActionPseudoClass(pseudoClassType);
 
-  if (!AgentRulesEnabled() &&
+  if (!mUnsafeRulesEnabled &&
       ((pseudoElementType < nsCSSPseudoElements::ePseudo_PseudoElementCount &&
         nsCSSPseudoElements::PseudoElementIsUASheetOnly(pseudoElementType)) ||
        (pseudoClassType != nsCSSPseudoClasses::ePseudoClass_NotPseudoClass &&
@@ -5653,7 +5629,7 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
   
   bool isAnonBox = isTreePseudo ||
     (pseudoElementType == nsCSSPseudoElements::ePseudo_AnonBox &&
-     AgentRulesEnabled());
+     mUnsafeRulesEnabled);
   bool isPseudoClass =
     (pseudoClassType != nsCSSPseudoClasses::ePseudoClass_NotPseudoClass);
 
@@ -10489,7 +10465,7 @@ CSSParserImpl::ParseSingleValueProperty(nsCSSValue& aValue,
   
   
   
-  if (!AgentRulesEnabled() &&
+  if (!mUnsafeRulesEnabled &&
       (aPropID == eCSSProperty_script_level ||
        aPropID == eCSSProperty_math_display))
     return false;
@@ -15805,11 +15781,11 @@ nsCSSParser::ParseSheet(const nsAString& aInput,
                         nsIURI*          aBaseURI,
                         nsIPrincipal*    aSheetPrincipal,
                         uint32_t         aLineNumber,
-                        SheetParsingMode aParsingMode)
+                        bool             aAllowUnsafeRules)
 {
   return static_cast<CSSParserImpl*>(mImpl)->
     ParseSheet(aInput, aSheetURI, aBaseURI, aSheetPrincipal, aLineNumber,
-               aParsingMode);
+               aAllowUnsafeRules);
 }
 
 nsresult
