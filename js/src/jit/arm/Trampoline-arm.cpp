@@ -1152,7 +1152,7 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
     
     
     
-    masm.ma_and(Imm32((1 << FRAMESIZE_SHIFT) - 1), scratch1, scratch2);
+    masm.ma_and(Imm32((1 << FRAMETYPE_BITS) - 1), scratch1, scratch2);
     masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch1);
 
     
