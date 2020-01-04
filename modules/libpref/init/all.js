@@ -2297,6 +2297,14 @@ pref("layout.css.unicode-range.enabled", true);
 pref("layout.css.text-align-true-value.enabled", false);
 
 
+
+#if defined(MOZ_B2G) || defined(NIGHTLY_BUILD)
+pref("layout.css.float-logical-values.enabled", true);
+#else
+pref("layout.css.float-logical-values.enabled", false);
+#endif
+
+
 pref("layout.css.image-orientation.enabled", true);
 
 
