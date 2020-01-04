@@ -793,7 +793,12 @@ AnimationsTimeline.prototype = {
 
     let time = TimeScale.distanceToRelativeTime(offset,
       this.timeHeaderEl.offsetWidth);
-    this.emit("current-time-changed", time);
+
+    this.emit("timeline-data-changed", {
+      isPaused: true,
+      isMoving: false,
+      time: time
+    });
   },
 
   render: function(animations, documentCurrentTime) {
@@ -868,11 +873,27 @@ AnimationsTimeline.prototype = {
 
     if (time < TimeScale.minStartTime ||
         time > TimeScale.maxEndTime) {
+      this.stopAnimatingScrubber();
+      this.emit("timeline-data-changed", {
+        isPaused: false,
+        isMoving: false,
+        time: TimeScale.distanceToRelativeTime(x, this.timeHeaderEl.offsetWidth)
+      });
       return;
     }
 
+    this.emit("timeline-data-changed", {
+      isPaused: false,
+      isMoving: true,
+      time: TimeScale.distanceToRelativeTime(x, this.timeHeaderEl.offsetWidth)
+    });
+
     let now = this.win.performance.now();
     this.rafID = this.win.requestAnimationFrame(() => {
+      if (!this.rafID) {
+        
+        return;
+      }
       this.startAnimatingScrubber(time + this.win.performance.now() - now);
     });
   },
@@ -880,6 +901,7 @@ AnimationsTimeline.prototype = {
   stopAnimatingScrubber: function() {
     if (this.rafID) {
       this.win.cancelAnimationFrame(this.rafID);
+      this.rafID = null;
     }
   },
 
