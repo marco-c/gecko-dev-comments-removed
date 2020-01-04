@@ -76,7 +76,7 @@ HeapAnalysesClient.prototype.readHeapSnapshot = function (snapshotFilePath) {
 
 
 HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
-                                                    censusOptions={},
+                                                    censusOptions,
                                                     requestOptions={}) {
   return this._worker.performTask("takeCensus", {
     snapshotFilePath,
@@ -84,3 +84,42 @@ HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
     requestOptions,
   });
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HeapAnalysesClient.prototype.takeCensusDiff = function (firstSnapshotFilePath,
+                                                        secondSnapshotFilePath,
+                                                        censusOptions,
+                                                        requestOptions = {}) {
+  return this._worker.performTask("takeCensusDiff", {
+    firstSnapshotFilePath,
+    secondSnapshotFilePath,
+    censusOptions,
+    requestOptions
+  });
+}
