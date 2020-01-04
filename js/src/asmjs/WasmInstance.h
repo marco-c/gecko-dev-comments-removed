@@ -87,7 +87,7 @@ class Instance
     
     
 
-    MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t funcExportIndex, CallArgs args);
+    MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t funcIndex, CallArgs args);
 
     
     
