@@ -14,6 +14,7 @@
 #include "mozilla/RefPtr.h"
 #include "GMPService.h"
 #include <queue>
+#include "MediaResult.h"
 
 namespace mozilla {
 class TrackInfo;
@@ -154,11 +155,6 @@ protected:
   CreateAudioDecoder(const CreateDecoderParams& aParams) = 0;
 };
 
-enum class MediaDataDecoderError : uint8_t{
-  FATAL_ERROR,
-  DECODE_ERROR
-};
-
 
 
 
@@ -171,7 +167,7 @@ public:
 
   
   
-  virtual void Error(MediaDataDecoderError aError) = 0;
+  virtual void Error(const MediaResult& aError) = 0;
 
   
   
