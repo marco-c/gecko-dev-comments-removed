@@ -71,45 +71,19 @@ function doConfirm(msg)
 
 function RefreshDeviceList()
 {
-  var modules = secmoddb.listModules();
-  var done = false;
-
-  try {
-    modules.isDone();
-  } catch (e) { done = true; }
-  while (!done) {
-    var module = modules.currentItem().QueryInterface(nsIPKCS11Module);
-    if (module) {
-      var slotnames = [];
-      var slots = module.listSlots();
-      var slots_done = false;
-      try {
-        slots.isDone();
-      } catch (e) { slots_done = true; }
-      while (!slots_done) {
-        var slot = null;
-        try {
-          slot = slots.currentItem().QueryInterface(nsIPKCS11Slot);
-        } catch (e) { slot = null; }
-        
-        
-        
-        
-        
-        if (slot != null) {
-          slotnames[slotnames.length] = slot.tokenName ? slot.tokenName
-                                                       : slot.name;
-        }
-        try {
-          slots.next();
-        } catch (e) { slots_done = true; }
-      }
-      AddModule(module.name, slotnames);
+  let modules = secmoddb.listModules();
+  while (modules.hasMoreElements()) {
+    let module = modules.getNext().QueryInterface(nsIPKCS11Module);
+    let slotnames = [];
+    let slots = module.listSlots();
+    while (slots.hasMoreElements()) {
+      let slot = slots.getNext().QueryInterface(nsIPKCS11Slot);
+      
+      slotnames.push(slot.tokenName ? slot.tokenName : slot.name);
     }
-    try {
-      modules.next();
-    } catch (e) { done = true; }
+    AddModule(module.name, slotnames);
   }
+
   
   SetFIPSButton();
 }

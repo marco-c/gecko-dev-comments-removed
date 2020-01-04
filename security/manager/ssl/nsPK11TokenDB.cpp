@@ -3,16 +3,16 @@
 
 
 
-#include "nsISupports.h"
-#include "nsISupportsArray.h"
-#include "nsIPK11TokenDB.h"
-#include "prerror.h"
-#include "secerr.h"
-#include "nsReadableUtils.h"
-#include "nsNSSComponent.h"
-#include "nsServiceManagerUtils.h"
-
 #include "nsPK11TokenDB.h"
+
+#include "nsIMutableArray.h"
+#include "nsISupports.h"
+#include "nsNSSComponent.h"
+#include "nsReadableUtils.h"
+#include "nsServiceManagerUtils.h"
+#include "prerror.h"
+#include "ScopedNSSTypes.h"
+#include "secerr.h"
 
 extern PRLogModuleInfo* gPIPNSSLog;
 
@@ -447,37 +447,31 @@ done:
   return rv;
 }
 
-NS_IMETHODIMP nsPK11TokenDB::ListTokens(nsIEnumerator* *_retval)
+NS_IMETHODIMP
+nsPK11TokenDB::ListTokens(nsISimpleEnumerator** _retval)
 {
   nsNSSShutDownPreventionLock locker;
-  nsCOMPtr<nsISupportsArray> array;
-  PK11SlotList *list = 0;
-  PK11SlotListElement *le;
+  nsCOMPtr<nsIMutableArray> array = do_CreateInstance(NS_ARRAY_CONTRACTID);
+  if (!array) {
+    return NS_ERROR_FAILURE;
+  }
 
   *_retval = nullptr;
-  nsresult rv = NS_NewISupportsArray(getter_AddRefs(array));
-  if (NS_FAILED(rv)) { goto done; }
 
-  
+  UniquePK11SlotList list(
+    PK11_GetAllTokens(CKM_INVALID_MECHANISM, false, false, 0));
+  if (!list) {
+    return NS_ERROR_FAILURE;
+  }
 
-
-  list = PK11_GetAllTokens(CKM_INVALID_MECHANISM, false, false, 0);
-  if (!list) { rv = NS_ERROR_FAILURE; goto done; }
-
-  for (le = PK11_GetFirstSafe(list); le; le = PK11_GetNextSafe(list, le, false)) {
+  for (PK11SlotListElement* le = PK11_GetFirstSafe(list.get()); le;
+       le = PK11_GetNextSafe(list.get(), le, false)) {
     nsCOMPtr<nsIPK11Token> token = new nsPK11Token(le->slot);
-    rv = array->AppendElement(token);
+    nsresult rv = array->AppendElement(token, false);
     if (NS_FAILED(rv)) {
-      PK11_FreeSlotListElement(list, le);
-      rv = NS_ERROR_OUT_OF_MEMORY;
-      goto done;
+      return rv;
     }
   }
 
-  rv = array->Enumerate(_retval);
-
-done:
-  if (list) PK11_FreeSlotList(list);
-  return rv;
+  return array->Enumerate(_retval);
 }
-
