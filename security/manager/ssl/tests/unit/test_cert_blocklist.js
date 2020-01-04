@@ -82,8 +82,7 @@ var certDB = Cc["@mozilla.org/security/x509certdb;1"]
 
 var testserver = new HttpServer();
 
-var blocklist_contents =
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+var initialBlocklist = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
     "<blocklist xmlns=\"http://www.mozilla.org/2006/addons-blocklist\">" +
     
     "<certItems><certItem issuerName='Some nonsense in issuer'>" +
@@ -117,10 +116,28 @@ var blocklist_contents =
     "</certItem><certItem subject='MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5'"+
     " pubKeyHash='VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8='>" +
     "</certItem></certItems></blocklist>";
-testserver.registerPathHandler("/push_blocked_cert/",
-  function serveResponse(request, response) {
-    response.write(blocklist_contents);
-  });
+
+var updatedBlocklist = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+    "<blocklist xmlns=\"http://www.mozilla.org/2006/addons-blocklist\">" +
+    "<certItems>" +
+    "<certItem issuerName='something new in both the issuer'>" +
+    "<serialNumber>and the serial number</serialNumber></certItem>" +
+    "</certItems></blocklist>"
+
+
+var blocklists = {
+  "/initialBlocklist/" : initialBlocklist,
+  "/updatedBlocklist/" : updatedBlocklist
+}
+
+function serveResponse(request, response) {
+  do_print("Serving for path " + request.path + "\n");
+  response.write(blocklists[request.path]);
+}
+
+for (path in blocklists) {
+  testserver.registerPathHandler(path, serveResponse);
+}
 
 
 testserver.start(-1);
@@ -170,6 +187,43 @@ function test_is_revoked(certList, issuerString, serialString, subjectString,
                                 pubKeyString ? pubKeyString.length : 0);
 }
 
+function fetch_blocklist(blocklistPath) {
+  do_print("path is " + blocklistPath + "\n");
+  let certblockObserver = {
+    observe: function(aSubject, aTopic, aData) {
+      Services.obs.removeObserver(this, "blocklist-updated");
+      run_next_test();
+    }
+  }
+
+  Services.obs.addObserver(certblockObserver, "blocklist-updated", false);
+  Services.prefs.setCharPref("extensions.blocklist.url",
+                              `http://localhost:${port}/${blocklistPath}`);
+  let blocklist = Cc["@mozilla.org/extensions/blocklist;1"]
+                    .getService(Ci.nsITimerCallback);
+  blocklist.notify(null);
+}
+
+function check_revocations_txt_contents(expected) {
+  let profile = do_get_profile();
+  let revocations = profile.clone();
+  revocations.append("revocations.txt");
+  ok(revocations.exists(), "the revocations file should exist");
+  let inputStream = Cc["@mozilla.org/network/file-input-stream;1"]
+                      .createInstance(Ci.nsIFileInputStream);
+  inputStream.init(revocations,-1, -1, 0);
+  inputStream.QueryInterface(Ci.nsILineInputStream);
+  let contents = "";
+  let hasmore = false;
+  do {
+    var line = {};
+    hasmore = inputStream.readLine(line);
+    contents = contents + (contents.length == 0 ? "" : "\n") + line.value;
+  } while (hasmore);
+
+  equal(contents, expected, "revocations.txt should be as expected");
+}
+
 function run_test() {
   
   load_cert("test-ca", "CTu,CTu,CTu");
@@ -177,61 +231,64 @@ function run_test() {
   load_cert("other-test-ca", "CTu,CTu,CTu");
 
   let certList = Cc["@mozilla.org/security/certblocklist;1"]
-                   .getService(Ci.nsICertBlocklist);
+                  .getService(Ci.nsICertBlocklist);
 
-  
-  
-  
-  
-  
-  
-  ok(test_is_revoked(certList, "some imaginary issuer", "serial."),
-     "issuer / serial pair should be blocked");
+  let expected = "# Auto generated contents. Do not edit.\n" +
+                 "MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5\n"+
+                 "\tVCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=\n"+
+                 "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=\n" +
+                 " BVio/iQ21GCi2iUven8oJ/gae74=\n" +
+                 "MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E=\n" +
+                 " exJUIJpq50jgqOwQluhVrAzTF74=\n" +
+                 "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy\n" +
+                 " YW5vdGhlciBzZXJpYWwu\n" +
+                 " c2VyaWFsMi4=";
 
-  
-  
-  
-  ok(test_is_revoked(certList, "another imaginary issuer", "serial."),
-     "issuer / serial pair should be blocked");
+  add_test(function () {
+    
+    
+    
+    
+    
+    
+    ok(test_is_revoked(certList, "some imaginary issuer", "serial."),
+      "issuer / serial pair should be blocked");
 
-  
-  
-  
-  
-  ok(test_is_revoked(certList, "another imaginary issuer", "serial2."),
-     "issuer / serial pair should be blocked");
+    
+    
+    
+    ok(test_is_revoked(certList, "another imaginary issuer", "serial."),
+      "issuer / serial pair should be blocked");
 
-  
-  
-  
-  let file = "test_onecrl/test-int-ee.pem";
-  verify_cert(file, PRErrorCodeSuccess);
+    
+    
+    
+    
+    ok(test_is_revoked(certList, "another imaginary issuer", "serial2."),
+      "issuer / serial pair should be blocked");
 
-  
-  
-  file = "bad_certs/other-issuer-ee.pem";
-  verify_cert(file, PRErrorCodeSuccess);
+    
+    
+    
+    let file = "test_onecrl/test-int-ee.pem";
+    verify_cert(file, PRErrorCodeSuccess);
 
-  
-  
-  file = "test_onecrl/same-issuer-ee.pem";
-  verify_cert(file, PRErrorCodeSuccess);
+    
+    
+    file = "bad_certs/other-issuer-ee.pem";
+    verify_cert(file, PRErrorCodeSuccess);
+
+    
+    
+    file = "test_onecrl/same-issuer-ee.pem";
+    verify_cert(file, PRErrorCodeSuccess);
+
+    run_next_test();
+  });
 
   
   add_test(function() {
-    let certblockObserver = {
-      observe: function(aSubject, aTopic, aData) {
-        Services.obs.removeObserver(this, "blocklist-updated");
-        run_next_test();
-      }
-    }
-
-    Services.obs.addObserver(certblockObserver, "blocklist-updated", false);
-    Services.prefs.setCharPref("extensions.blocklist.url", "http://localhost:" +
-                               port + "/push_blocked_cert/");
-    let blocklist = Cc["@mozilla.org/extensions/blocklist;1"]
-                      .getService(Ci.nsITimerCallback);
-    blocklist.notify(null);
+    fetch_blocklist("initialBlocklist/");
   });
 
   add_test(function() {
@@ -255,32 +312,7 @@ function run_test() {
 
     
     
-    let profile = do_get_profile();
-    let revocations = profile.clone();
-    revocations.append("revocations.txt");
-    ok(revocations.exists(), "the revocations file should exist");
-    let inputStream = Cc["@mozilla.org/network/file-input-stream;1"]
-                        .createInstance(Ci.nsIFileInputStream);
-    inputStream.init(revocations,-1, -1, 0);
-    inputStream.QueryInterface(Ci.nsILineInputStream);
-    let contents = "";
-    let hasmore = false;
-    do {
-      var line = {};
-      hasmore = inputStream.readLine(line);
-      contents = contents + (contents.length == 0 ? "" : "\n") + line.value;
-    } while (hasmore);
-    let expected = "# Auto generated contents. Do not edit.\n" +
-                  "MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5\n"+
-                  "\tVCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=\n"+
-                  "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=\n" +
-                  " BVio/iQ21GCi2iUven8oJ/gae74=\n" +
-                  "MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E=\n" +
-                  " exJUIJpq50jgqOwQluhVrAzTF74=\n" +
-                  "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy\n" +
-                  " YW5vdGhlciBzZXJpYWwu\n" +
-                  " c2VyaWFsMi4=";
-    equal(contents, expected, "revocations.txt should be as expected");
+    check_revocations_txt_contents(expected);
 
     
     let file = "test_onecrl/test-int-ee.pem";
@@ -316,5 +348,17 @@ function run_test() {
   });
 
   
+  
+  add_test(function() {
+    Services.prefs.setBoolPref("security.onecrl.via.amo", false);
+    fetch_blocklist("updatedBlocklist/");
+  });
+
+  add_test(function() {
+    
+    check_revocations_txt_contents(expected);
+    run_next_test();
+  });
+
   run_next_test();
 }
