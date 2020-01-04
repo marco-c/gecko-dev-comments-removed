@@ -80,16 +80,25 @@ private:
   virtual ~CacheFileHandle();
 
   const SHA1Sum::Hash *mHash;
-  mozilla::Atomic<bool,ReleaseAcquire> mIsDoomed;
-  bool                 mPriority;
-  bool                 mClosed;
-  bool                 mSpecialFile;
-  bool                 mInvalid;
-  bool                 mFileExists; 
-                                    
-                                    
-                                    
+  mozilla::Atomic<bool, ReleaseAcquire> mIsDoomed;
+  mozilla::Atomic<bool, ReleaseAcquire> mClosed;
+  bool const           mPriority : 1;
+  bool const           mSpecialFile : 1;
 
+  
+  bool                 mInvalid : 1;
+  bool                 mFileExists : 1; 
+                                        
+                                        
+                                        
+  bool                 mLeakIt : 1; 
+
+  
+  
+  
+  
+  bool                 mDoomWhenFoundPinned : 1;
+  bool                 mDoomWhenFoundNonPinned : 1;
   
   
   
@@ -98,12 +107,6 @@ private:
   
   
   PinningStatus        mPinning;
-  
-  
-  
-  
-  bool                 mDoomWhenFoundPinned : 1;
-  bool                 mDoomWhenFoundNonPinned : 1;
 
   nsCOMPtr<nsIFile>    mFile;
   int64_t              mFileSize;
