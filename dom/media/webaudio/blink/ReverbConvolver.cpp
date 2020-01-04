@@ -51,7 +51,14 @@ const int InputBufferSize = 8 * 16384;
 
 const size_t RealtimeFrameLimit = 8192 + 4096 
                                   - WEBAUDIO_BLOCK_SIZE;
-const size_t MinFFTSize = 128;
+
+
+const size_t MinFFTSize = 256;
+
+
+
+
+
 const size_t MaxRealtimeFFTSize = 4096;
 
 ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
@@ -62,20 +69,12 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
     : m_impulseResponseLength(impulseResponseLength)
     , m_accumulationBuffer(impulseResponseLength + WEBAUDIO_BLOCK_SIZE)
     , m_inputBuffer(InputBufferSize)
-    , m_minFFTSize(MinFFTSize) 
-    , m_maxFFTSize(maxFFTSize) 
     , m_backgroundThread("ConvolverWorker")
     , m_backgroundThreadCondition(&m_backgroundThreadLock)
     , m_useBackgroundThreads(useBackgroundThreads)
     , m_wantsToExit(false)
     , m_moreInputBuffered(false)
 {
-    
-    
-    
-    
-    m_maxRealtimeFFTSize = MaxRealtimeFFTSize;
-
     
     
     bool hasRealtimeConstraint = useBackgroundThreads;
@@ -89,7 +88,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
 
     size_t stageOffset = 0;
     size_t stagePhase = 0;
-    size_t fftSize = m_minFFTSize;
+    size_t fftSize = MinFFTSize;
     while (stageOffset < totalResponseLength) {
         size_t stageSize = fftSize / 2;
 
@@ -117,16 +116,14 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
         } else
             m_stages.AppendElement(stage.forget());
 
-        if (stageOffset != 0) {
-            
-            fftSize *= 2;
-        }
+        
+        fftSize *= 2;
 
         stageOffset += stageSize;
 
         if (hasRealtimeConstraint && !isBackgroundStage
-            && fftSize > m_maxRealtimeFFTSize) {
-            fftSize = m_maxRealtimeFFTSize;
+            && fftSize > MaxRealtimeFFTSize) {
+            fftSize = MaxRealtimeFFTSize;
             
             
             
@@ -134,11 +131,11 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
             
             
             
-            const uint32_t phaseLookup[] = { 10, 4, 14, 0 };
+            const uint32_t phaseLookup[] = { 14, 0, 10, 4 };
             stagePhase = WEBAUDIO_BLOCK_SIZE *
                 phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
-        } else if (fftSize > m_maxFFTSize) {
-            fftSize = m_maxFFTSize;
+        } else if (fftSize > maxFFTSize) {
+            fftSize = maxFFTSize;
             
             
             
