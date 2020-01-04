@@ -89,8 +89,8 @@ class BackgroundFileHandleChild
   FileHandleBase* mFileHandle;
 
 public:
-  BackgroundFileHandleChild(DEBUGONLY(PRThread* aOwningThread,)
-                            FileHandleBase* aFileHandle);
+  explicit BackgroundFileHandleChild(DEBUGONLY(PRThread* aOwningThread,)
+                                     FileHandleBase* aFileHandle);
 
   void
   SendDeleteMeInternal();
@@ -136,8 +136,8 @@ class BackgroundFileRequestChild final
 
 private:
   
-  BackgroundFileRequestChild(DEBUGONLY(PRThread* aOwningThread,)
-                             FileRequestBase* aFileRequest);
+  explicit BackgroundFileRequestChild(DEBUGONLY(PRThread* aOwningThread,)
+                                      FileRequestBase* aFileRequest);
 
   
   ~BackgroundFileRequestChild();
