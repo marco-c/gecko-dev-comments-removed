@@ -6,6 +6,8 @@
 
 #include "WebBrowserPersistResourcesParent.h"
 
+#include "nsThreadUtils.h"
+
 namespace mozilla {
 
 NS_IMPL_ISUPPORTS(WebBrowserPersistResourcesParent,
@@ -29,7 +31,13 @@ void
 WebBrowserPersistResourcesParent::ActorDestroy(ActorDestroyReason aWhy)
 {
     if (aWhy != Deletion && mVisitor) {
-        mVisitor->EndVisit(mDocument, NS_ERROR_FAILURE);
+        
+        
+        nsCOMPtr<nsIRunnable> errorLater = NS_NewRunnableMethodWithArgs
+            <nsCOMPtr<nsIWebBrowserPersistDocument>, nsresult>
+            (mVisitor, &nsIWebBrowserPersistResourceVisitor::EndVisit,
+             mDocument, NS_ERROR_FAILURE);
+        NS_DispatchToCurrentThread(errorLater);
     }
     mVisitor = nullptr;
 }

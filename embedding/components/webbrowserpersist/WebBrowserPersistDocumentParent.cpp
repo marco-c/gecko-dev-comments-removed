@@ -37,7 +37,16 @@ WebBrowserPersistDocumentParent::ActorDestroy(ActorDestroyReason aWhy)
         mReflection = nullptr;
     }
     if (mOnReady) {
-        mOnReady->OnError(NS_ERROR_FAILURE);
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIRunnable> errorLater = NS_NewRunnableMethodWithArg
+            <nsresult>(mOnReady, &nsIWebBrowserPersistDocumentReceiver::OnError,
+                       NS_ERROR_FAILURE);
+        NS_DispatchToCurrentThread(errorLater);
         mOnReady = nullptr;
     }
 }
