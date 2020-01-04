@@ -296,8 +296,6 @@ function editableTextTest(aID)
       invoke: aInvokeFunc,
       finalCheck: function finalCheck()
       {
-        
-
         aChecker.check();
         et.unwrapNextTest(); 
       },
