@@ -1065,6 +1065,9 @@ pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com
 pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox.com/v1");
 
 
+pref("identity.fxaccounts.skipDeviceRegistration", true);
+
+
 #ifndef XP_WIN
 pref("dom.mapped_arraybuffer.enabled", true);
 #endif
