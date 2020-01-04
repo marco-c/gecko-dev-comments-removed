@@ -68,8 +68,6 @@ BackendTypeBit(BackendType b)
     } \
   } while (0)
 
-extern cairo_user_data_key_t kDrawTarget;
-
 enum eCMSMode {
     eCMSMode_Off          = 0,     
     eCMSMode_All          = 1,     
