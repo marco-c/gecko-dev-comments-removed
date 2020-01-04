@@ -100,13 +100,30 @@ loop.shared.mixins = (function() {
         };
       },
 
+      
+
+
+
       _onBodyClick: function(event) {
         var menuButton = this.refs["menu-button"] && this.refs["menu-button"].getDOMNode();
+
         if (this.refs.anchor) {
           menuButton = this.refs.anchor.getDOMNode();
         }
+
         
-        
+
+
+
+
+
+
+
+        if (event.target.classList.contains("dropdown-menu-item") ||
+            event.target.classList.contains("dropdown-menu-button")) {
+          return;
+        }
+
         if (event.target !== menuButton) {
           this.setState({ showMenu: false });
         }

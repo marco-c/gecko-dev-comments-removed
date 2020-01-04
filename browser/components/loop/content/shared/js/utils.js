@@ -754,6 +754,31 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     return str;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  function findParentNode(node, selector) {
+    var parentNode = node.parentNode;
+
+    while (parentNode) {
+      if (parentNode.classList.contains(selector)) {
+        return parentNode;
+      }
+
+      parentNode = parentNode.parentNode;
+    }
+
+    return node;
+  }
+
   this.utils = {
     CALL_TYPES: CALL_TYPES,
     FAILURE_DETAILS: FAILURE_DETAILS,
@@ -764,6 +789,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     ROOM_INFO_FAILURES: ROOM_INFO_FAILURES,
     setRootObjects: setRootObjects,
     composeCallUrlEmail: composeCallUrlEmail,
+    findParentNode: findParentNode,
     formatDate: formatDate,
     formatURL: formatURL,
     getBoolPreference: getBoolPreference,
