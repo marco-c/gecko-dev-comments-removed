@@ -9,7 +9,7 @@ function load_cert(name, trust) {
   addCertFromFile(certdb, filename, trust);
 }
 
-function test_cert_for_usages(certChainNicks, expected_usages_string) {
+function test_cert_for_usages(certChainNicks, expected_usages) {
   let certs = [];
   for (let i in certChainNicks) {
     let certNick = certChainNicks[i];
@@ -20,93 +20,92 @@ function test_cert_for_usages(certChainNicks, expected_usages_string) {
   }
 
   let cert = certs[0];
-  let verified = {};
-  let usages = {};
-  cert.getUsagesString(true, verified, usages);
-  equal(expected_usages_string, usages.value,
-        "Expected and actual usages string should match");
+  return asyncTestCertificateUsages(certdb, cert, expected_usages);
 }
 
-function run_test() {
-  let ee_usage1 = 'Client,Server,Sign,Encrypt,Object Signer';
-  let ca_usage1 = "SSL CA";
+add_task(function* () {
+  let ee_usages = [ certificateUsageSSLClient, certificateUsageSSLServer,
+                    certificateUsageEmailSigner, certificateUsageEmailRecipient,
+                    certificateUsageObjectSigner ];
+  let ca_usages = [ certificateUsageSSLCA, certificateUsageVerifyCA ];
+  let eku_usages = [ certificateUsageSSLClient, certificateUsageSSLServer ];
 
   
   let ca_name = "ca";
   load_cert(ca_name, "CTu,CTu,CTu");
-  do_print("ca_name = " + ca_name);
-  test_cert_for_usages([ca_name], ca_usage1);
+  yield test_cert_for_usages([ca_name], ca_usages);
 
   
-  test_cert_for_usages(["int-no-extensions"], ee_usage1);
-
-  
-  
-  test_cert_for_usages(["ee-int-no-extensions", "int-no-extensions"], "");
-
-  
-  test_cert_for_usages(["int-not-a-ca"], ee_usage1);
-
-  
-  test_cert_for_usages(["ee-int-not-a-ca", "int-not-a-ca"], "");
+  yield test_cert_for_usages(["int-no-extensions"], ee_usages);
 
   
   
-  test_cert_for_usages(["int-cA-FALSE-asserts-keyCertSign"], ee_usage1);
-  test_cert_for_usages(["ee-int-cA-FALSE-asserts-keyCertSign",
-                        "int-cA-FALSE-asserts-keyCertSign"], "");
-
+  yield test_cert_for_usages(["ee-int-no-extensions", "int-no-extensions"], []);
 
   
-  test_cert_for_usages(["int-limited-depth"], ca_usage1);
+  yield test_cert_for_usages(["int-not-a-ca"], ee_usages);
 
   
-  
-  test_cert_for_usages(["ee-int-limited-depth", "int-limited-depth"],
-                       ee_usage1);
+  yield test_cert_for_usages(["ee-int-not-a-ca", "int-not-a-ca"], []);
 
   
   
-  
-  
-  test_cert_for_usages(["int-limited-depth-invalid", "int-limited-depth"], "");
-  test_cert_for_usages(["ee-int-limited-depth-invalid",
-                        "int-limited-depth-invalid",
-                        "int-limited-depth"],
-                       "");
+  yield test_cert_for_usages(["int-cA-FALSE-asserts-keyCertSign"], ee_usages);
+  yield test_cert_for_usages(["ee-int-cA-FALSE-asserts-keyCertSign",
+                              "int-cA-FALSE-asserts-keyCertSign"], []);
+
 
   
-  test_cert_for_usages(["int-valid-ku-no-eku"], "SSL CA");
-  test_cert_for_usages(["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
-                       ee_usage1);
+  yield test_cert_for_usages(["int-limited-depth"], ca_usages);
+
+  
+  
+  yield test_cert_for_usages(["ee-int-limited-depth", "int-limited-depth"],
+                             ee_usages);
 
   
   
   
   
-  test_cert_for_usages(["int-bad-ku-no-eku"], "");
-  test_cert_for_usages(["ee-int-bad-ku-no-eku", "int-bad-ku-no-eku"], "");
+  yield test_cert_for_usages(["int-limited-depth-invalid", "int-limited-depth"],
+                             []);
+  yield test_cert_for_usages(["ee-int-limited-depth-invalid",
+                              "int-limited-depth-invalid", "int-limited-depth"],
+                             []);
+
+  
+  yield test_cert_for_usages(["int-valid-ku-no-eku"], ca_usages);
+  yield test_cert_for_usages(["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
+                             ee_usages);
 
   
   
-  test_cert_for_usages(["int-no-ku-no-eku"], ca_usage1);
-  test_cert_for_usages(["ee-int-no-ku-no-eku", "int-no-ku-no-eku"], ee_usage1);
+  
+  
+  yield test_cert_for_usages(["int-bad-ku-no-eku"], []);
+  yield test_cert_for_usages(["ee-int-bad-ku-no-eku", "int-bad-ku-no-eku"], []);
 
   
   
-  test_cert_for_usages(["int-valid-ku-server-eku"], "SSL CA");
-  test_cert_for_usages(["ee-int-valid-ku-server-eku",
-                        "int-valid-ku-server-eku"], "Client,Server");
+  yield test_cert_for_usages(["int-no-ku-no-eku"], ca_usages);
+  yield test_cert_for_usages(["ee-int-no-ku-no-eku", "int-no-ku-no-eku"],
+                             ee_usages);
 
   
   
-  test_cert_for_usages(["int-bad-ku-server-eku"], "");
-  test_cert_for_usages(["ee-int-bad-ku-server-eku", "int-bad-ku-server-eku"],
-                       "");
+  yield test_cert_for_usages(["int-valid-ku-server-eku"], ca_usages);
+  yield test_cert_for_usages(["ee-int-valid-ku-server-eku",
+                              "int-valid-ku-server-eku"], eku_usages);
 
   
   
-  test_cert_for_usages(["int-no-ku-server-eku"], "SSL CA");
-  test_cert_for_usages(["ee-int-no-ku-server-eku", "int-no-ku-server-eku"],
-                       "Client,Server");
-}
+  yield test_cert_for_usages(["int-bad-ku-server-eku"], []);
+  yield test_cert_for_usages(["ee-int-bad-ku-server-eku",
+                              "int-bad-ku-server-eku"], []);
+
+  
+  
+  yield test_cert_for_usages(["int-no-ku-server-eku"], ca_usages);
+  yield test_cert_for_usages(["ee-int-no-ku-server-eku",
+                              "int-no-ku-server-eku"], eku_usages);
+});
