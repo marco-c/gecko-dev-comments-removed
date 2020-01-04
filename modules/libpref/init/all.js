@@ -382,6 +382,7 @@ pref("media.navigator.video.h264.level", 12);
 pref("media.navigator.video.h264.max_br", 700); 
 pref("media.navigator.video.h264.max_mbps", 11880); 
 pref("media.peerconnection.video.h264_enabled", false);
+pref("media.peerconnection.video.vp9_enabled", false);
 pref("media.getusermedia.aec", 4);
 
 
