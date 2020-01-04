@@ -4245,7 +4245,6 @@ pref("signon.storeWhenAutocompleteOff",     true);
 pref("signon.ui.experimental",              false);
 pref("signon.debug",                        false);
 pref("signon.recipes.path",                 "chrome://passwordmgr/content/recipes.json");
-pref("signon.schemeUpgrades",               false);
 
 
 pref("browser.formfill.debug",            false);
@@ -5393,4 +5392,12 @@ pref("layout.css.color-adjust.enabled", true);
 pref("dom.node.rootNode.enabled", false);
 #else
 pref("dom.node.rootNode.enabled", true);
+#endif
+
+
+
+#ifdef RELEASE_BUILD
+pref("media.seekToNextFrame.enabled", false);
+#else
+pref("media.seekToNextFrame.enabled", false);
 #endif
