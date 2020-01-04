@@ -73,7 +73,7 @@ public:
   
   void SetIsOnlyNodeForContext(bool aIsOnlyNode);
 
-  nsresult CreateAudioChannelAgent();
+  void CreateAudioChannelAgent();
   void DestroyAudioChannelAgent();
 
   virtual const char* NodeType() const override
