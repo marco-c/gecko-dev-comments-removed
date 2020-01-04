@@ -53,6 +53,10 @@ int BrotliBuildHuffmanTable(HuffmanCode* root_table,
                             const uint16_t* const symbol_lists,
                             uint16_t *count_arg);
 
+
+
+
+
 int BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
                                   int root_bits,
                                   uint16_t *symbols,

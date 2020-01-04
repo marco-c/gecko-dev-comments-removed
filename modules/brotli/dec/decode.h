@@ -151,6 +151,7 @@ void BrotliSetCustomDictionary(
     size_t size, const uint8_t* dict, BrotliState* s);
 
 
+
 void InverseMoveToFrontTransformForTesting(uint8_t* v, int l, BrotliState* s);
 
 #if defined(__cplusplus) || defined(c_plusplus)
