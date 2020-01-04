@@ -32,6 +32,8 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   breakdown: breakdownModel,
   
+  inverted: PropTypes.bool,
+  
   
   state: function (props, propName) {
     let stateNames = Object.keys(states);
@@ -63,7 +65,7 @@ let appModel = exports.app = {
   
   front: PropTypes.instanceOf(MemoryFront),
   
-  allocations: allocationsModel,
+  allocations: allocationsModel.isRequired,
   
   heapWorker: PropTypes.instanceOf(HeapAnalysesClient),
   
@@ -72,4 +74,6 @@ let appModel = exports.app = {
   breakdown: breakdownModel.isRequired,
   
   snapshots: PropTypes.arrayOf(snapshotModel).isRequired,
+  
+  inverted: PropTypes.bool.isRequired,
 };

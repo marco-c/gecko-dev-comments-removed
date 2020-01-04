@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+const { actions } = require("../constants");
+
+module.exports = function (inverted = false, action) {
+  return action.type === actions.TOGGLE_INVERTED ? !inverted : inverted;
+};
