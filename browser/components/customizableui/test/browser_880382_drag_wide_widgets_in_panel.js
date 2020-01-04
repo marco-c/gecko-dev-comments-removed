@@ -7,7 +7,7 @@
 requestLongerTimeout(5);
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let printButton = document.getElementById("print-button");
@@ -35,7 +35,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let savePageButton = document.getElementById("save-page-button");
@@ -61,7 +61,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let newWindowButton = document.getElementById("new-window-button");
@@ -86,7 +86,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let historyPanelMenu = document.getElementById("history-panelmenu");
@@ -115,7 +115,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let preferencesButton = document.getElementById("preferences-button");
@@ -143,7 +143,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let openFileButton = document.getElementById("open-file-button");
   let zoomControls = document.getElementById("zoom-controls");
@@ -184,7 +184,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let openFileButton = document.getElementById("open-file-button");
   let editControls = document.getElementById("edit-controls");
@@ -223,7 +223,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let zoomControls = document.getElementById("zoom-controls");
@@ -249,7 +249,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let newWindowButton = document.getElementById("new-window-button");
@@ -278,7 +278,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let privateBrowsingButton = document.getElementById("privatebrowsing-button");
@@ -307,7 +307,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let savePageButton = document.getElementById("save-page-button");
@@ -335,7 +335,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
@@ -363,7 +363,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let palette = document.getElementById("customization-palette");
@@ -399,7 +399,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
@@ -437,7 +437,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let openFileButton = document.getElementById("open-file-button");
   is(openFileButton.parentNode.tagName, "toolbarpaletteitem",
@@ -452,7 +452,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   
   
   
@@ -491,7 +491,7 @@ add_task(function() {
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield endCustomizing();
   yield resetCustomization();
 });

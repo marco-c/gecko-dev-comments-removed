@@ -18,7 +18,7 @@ const kStarBtn = "bookmarks-menu-button";
 var originalWindowWidth;
 
 
-add_task(function() {
+add_task(function*() {
   originalWindowWidth = window.outerWidth;
   createDummyXULButton(kTestBtn1, "Test");
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
@@ -59,7 +59,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   createDummyXULButton(kTestBtn2, "Test");
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
@@ -90,7 +90,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   originalWindowWidth = window.outerWidth;
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
@@ -125,7 +125,7 @@ add_task(function() {
   window.resizeTo(originalWindowWidth, window.outerHeight);
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   window.resizeTo(originalWindowWidth, window.outerHeight);
   yield resetCustomization();
 });

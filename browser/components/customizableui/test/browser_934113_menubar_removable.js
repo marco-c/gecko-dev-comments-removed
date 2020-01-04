@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let menuItems = document.getElementById("menubar-items");
   let navbar = document.getElementById("nav-bar");
@@ -24,7 +24,7 @@ add_task(function() {
   yield endCustomizing();
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield endCustomizing();
   yield resetCustomization();
 });

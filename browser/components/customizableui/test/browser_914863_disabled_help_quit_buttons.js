@@ -3,7 +3,7 @@
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let helpButton = document.getElementById("PanelUI-help");
   let quitButton = document.getElementById("PanelUI-quit");

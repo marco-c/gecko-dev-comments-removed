@@ -13,7 +13,7 @@ const kTestWidgetPrefix = "test-widget-for-insertNodeInWindow-placements-";
 
 
 
-add_task(function() {
+add_task(function*() {
   let testWidgetExists = [true, false, false, true];
   let widgetIds = [];
   for (let i = 0; i < testWidgetExists.length; i++) {
@@ -50,7 +50,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -99,7 +99,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -149,7 +149,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -200,7 +200,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -259,7 +259,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let widgetIds = [];
   let missingId = 2;
   let nonOverflowableId = 3;
@@ -316,7 +316,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let widgetIds = [];
   let missingId = 1;
   for (let i = 0; i < 5; i++) {
@@ -365,7 +365,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let widgetIds = [];
   let missingId = 3;
   for (let i = 0; i < 5; i++) {
@@ -409,6 +409,6 @@ add_task(function() {
 });
 
 
-add_task(function asyncCleanUp() {
+add_task(function* asyncCleanUp() {
   yield resetCustomization();
 });

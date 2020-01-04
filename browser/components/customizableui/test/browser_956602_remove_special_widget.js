@@ -6,7 +6,7 @@
 
 
 
-add_task(function() {
+add_task(function*() {
   try {
     let navbar = document.getElementById("nav-bar");
     let separatorSelector = "toolbarseparator[id^=customizableui-special-separator]";
@@ -26,6 +26,6 @@ add_task(function() {
   }
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   resetCustomization();
 });

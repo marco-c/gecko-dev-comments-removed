@@ -9,7 +9,7 @@
 
 
 
-add_task(function() {
+add_task(function*() {
   let shownPromise = promisePanelShown(window);
   PanelUI.show();
   yield shownPromise;
@@ -26,7 +26,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let shownPromise = promisePanelShown(window);
   PanelUI.toggle({type: "command"});
   yield shownPromise;

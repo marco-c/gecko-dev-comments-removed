@@ -10,7 +10,7 @@ var draggedItem;
 
 
 
-add_task(function() {
+add_task(function*() {
   draggedItem = document.createElement("toolbarbutton");
   draggedItem.id = "test-dragEnd-after-move1";
   draggedItem.setAttribute("label", "Test");
@@ -25,7 +25,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   draggedItem = document.createElement("toolbarbutton");
   draggedItem.id = "test-dragEnd-after-move2";
   draggedItem.setAttribute("label", "Test");
@@ -40,7 +40,7 @@ add_task(function() {
   yield endCustomizing();
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield endCustomizing();
   yield resetCustomization();
 });

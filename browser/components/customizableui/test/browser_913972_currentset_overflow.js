@@ -7,7 +7,7 @@
 var navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
 
-add_task(function() {
+add_task(function*() {
   let originalWindowWidth = window.outerWidth;
   let oldCurrentSet = navbar.currentSet;
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
@@ -39,7 +39,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let oldCurrentSet = navbar.currentSet;
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
   yield startCustomizing();
@@ -50,6 +50,6 @@ add_task(function() {
   is(navbar.currentSet, oldCurrentSet, "Currentset should be the same after customization mode.");
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield resetCustomization();
 });

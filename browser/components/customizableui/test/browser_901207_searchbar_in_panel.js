@@ -27,7 +27,7 @@ function* waitForSearchBarFocus()
 }
 
 
-add_task(function() {
+add_task(function*() {
   let searchbar = document.getElementById("searchbar");
   gCustomizeMode.addToPanel(searchbar);
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
@@ -46,7 +46,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let searchbar = document.getElementById("searchbar");
   gCustomizeMode.addToPanel(searchbar);
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
@@ -67,7 +67,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   this.originalWindowWidth = window.outerWidth;
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
@@ -96,7 +96,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
   is(placement.area, CustomizableUI.AREA_NAVBAR, "Should be in nav-bar");
 
@@ -106,7 +106,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   try {
     expectOpenUILinkInCall = true;
     CustomizableUI.removeWidgetFromArea("search-container");

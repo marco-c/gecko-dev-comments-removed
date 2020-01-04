@@ -7,7 +7,7 @@
 const kTimeoutInMS = 20000;
 
 
-add_task(function() {
+add_task(function*() {
   CustomizableUI.addWidgetToArea("zoom-controls", CustomizableUI.AREA_NAVBAR);
   let tab1 = gBrowser.addTab("about:mozilla");
   yield BrowserTestUtils.browserLoaded(tab1.linkedBrowser);

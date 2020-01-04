@@ -9,7 +9,7 @@ const kWidgetId = "test-private-browsing-customize-mode-widget";
 
 
 
-add_task(function testPrivateBrowsingCustomizeModeWidget() {
+add_task(function* testPrivateBrowsingCustomizeModeWidget() {
   CustomizableUI.createWidget({
     id: kWidgetId,
     showInPrivateBrowsing: false
@@ -30,6 +30,6 @@ add_task(function testPrivateBrowsingCustomizeModeWidget() {
   CustomizableUI.destroyWidget(kWidgetId); 
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield resetCustomization();
 });

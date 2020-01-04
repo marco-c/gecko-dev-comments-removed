@@ -12,7 +12,7 @@ var navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
 
 
-add_task(function() {
+add_task(function*() {
   ok(CustomizableUI.inDefaultState, "Should be in the default state");
 
   

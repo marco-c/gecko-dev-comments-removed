@@ -30,7 +30,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let plain1 = yield openAndLoadWindow();
   let private1 = yield openAndLoadWindow({private: true});
   CustomizableUI.createWidget({
@@ -80,7 +80,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let plain1 = yield openAndLoadWindow();
   let private1 = yield openAndLoadWindow({private: true});
 
@@ -129,6 +129,6 @@ add_task(function() {
   CustomizableUI.destroyWidget("some-widget");
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield resetCustomization();
 });

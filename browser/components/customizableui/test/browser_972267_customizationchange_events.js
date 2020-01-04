@@ -6,7 +6,7 @@
 
 
 
-add_task(function() {
+add_task(function*() {
   let newWindow = yield openAndLoadWindow();
   let otherToolbox = newWindow.gNavToolbox;
 
@@ -41,7 +41,6 @@ add_task(function() {
   yield promiseWindowClosed(newWindow);
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield resetCustomization();
 });
-

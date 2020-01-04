@@ -10,7 +10,7 @@ function isFullscreenSizeMode() {
 }
 
 
-add_task(function() {
+add_task(function*() {
   
   
   let shownPanelPromise = promisePanelShown(window);

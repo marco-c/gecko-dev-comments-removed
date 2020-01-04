@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let devButton = document.getElementById("developer-button");
   let downloadsButton = document.getElementById("downloads-button");
@@ -20,6 +20,6 @@ add_task(function() {
   yield endCustomizing();
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield resetCustomization();
 });

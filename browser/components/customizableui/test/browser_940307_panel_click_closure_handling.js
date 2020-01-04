@@ -6,7 +6,7 @@
 
 var button, menuButton;
 
-add_task(function() {
+add_task(function*() {
   button = document.createElement("toolbarbutton");
   button.id = "browser_940307_button";
   button.setAttribute("label", "Button");
@@ -19,7 +19,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   menuButton = document.createElement("toolbarbutton");
   menuButton.setAttribute("type", "menu-button");
   menuButton.id = "browser_940307_menubutton";

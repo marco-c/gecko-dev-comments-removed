@@ -11,7 +11,7 @@ var navbar = document.getElementById("nav-bar");
 var tabsToolbar = document.getElementById("TabsToolbar");
 
 
-add_task(function() {
+add_task(function*() {
   is(navbar.collapsed, false, "Test should start with navbar visible");
   setToolbarVisibility(navbar, false);
   is(navbar.collapsed, true, "navbar should be hidden now");
@@ -22,7 +22,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   ok(CustomizableUI.inDefaultState, "Everything should be in its default state");
 
   is(bookmarksToolbar.collapsed, true, "Test should start with bookmarks toolbar collapsed");
@@ -48,7 +48,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let menubar = document.getElementById("toolbar-menubar");
   const canMenubarCollapse = CustomizableUI.isToolbarDefaultCollapsed(menubar.id);
   if (!canMenubarCollapse) {
@@ -74,7 +74,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   ok(CustomizableUI.inDefaultState, "Everything should be in its default state");
   ok(bookmarksToolbar.collapsed, "bookmarksToolbar should be collapsed");
   ok(!tabsToolbar.collapsed, "TabsToolbar should not be collapsed");
@@ -100,7 +100,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let menubar = document.getElementById("toolbar-menubar");
   const canMenubarCollapse = CustomizableUI.isToolbarDefaultCollapsed(menubar.id);
   if (!canMenubarCollapse) {

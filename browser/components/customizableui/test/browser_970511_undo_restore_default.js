@@ -7,7 +7,7 @@
 requestLongerTimeout(2);
 
 
-add_task(function() {
+add_task(function*() {
   let homeButtonId = "home-button";
   CustomizableUI.removeWidgetFromArea(homeButtonId);
   yield startCustomizing();
@@ -31,7 +31,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let homeButtonId = "home-button";
   CustomizableUI.removeWidgetFromArea(homeButtonId);
   ok(!CustomizableUI.inDefaultState, "Not in default state to begin with");
@@ -49,7 +49,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let undoResetButton = document.getElementById("customization-undo-reset-button");
   is(undoResetButton.hidden, true, "The undo button is hidden before a reset");
   ok(!CustomizableUI.inDefaultState, "The browser should not be in default state");
@@ -62,7 +62,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   if (Services.appinfo.OS != "WINNT" &&
       Services.appinfo.OS != "Darwin") {
     return;
@@ -103,7 +103,7 @@ add_task(function() {
   is(undoResetButton.hidden, true, "Undo reset button should be hidden at end of test");
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield gCustomizeMode.reset();
   yield endCustomizing();
 });

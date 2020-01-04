@@ -8,7 +8,7 @@ const kTestWidget1 = "test-customize-mode-create-destroy1";
 const kTestWidget2 = "test-customize-mode-create-destroy2";
 
 
-add_task(function testWrapUnwrap() {
+add_task(function* testWrapUnwrap() {
   yield startCustomizing();
   CustomizableUI.createWidget({id: kTestWidget1, label: 'Pretty label', tooltiptext: 'Pretty tooltip'});
   let elem = document.getElementById(kTestWidget1);
@@ -25,7 +25,7 @@ add_task(function testWrapUnwrap() {
 });
 
 
-add_task(function testPanelPlaceholders() {
+add_task(function* testPanelPlaceholders() {
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
   
   
@@ -49,7 +49,7 @@ add_task(function testPanelPlaceholders() {
   yield endCustomizing();
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield endCustomizing();
   try {
     CustomizableUI.destroyWidget(kTestWidget1);

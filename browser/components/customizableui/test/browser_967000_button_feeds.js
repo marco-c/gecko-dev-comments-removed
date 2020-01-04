@@ -10,7 +10,7 @@ const TEST_FEED = "http://mochi.test:8888/browser/browser/components/customizabl
 var newTab = null;
 var initialLocation = gBrowser.currentURI.spec;
 
-add_task(function() {
+add_task(function*() {
   info("Check Subscribe button functionality");
 
   
@@ -49,7 +49,7 @@ add_task(function() {
   }
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   
   yield resetCustomization();
   ok(CustomizableUI.inDefaultState, "The UI is in default state again.");

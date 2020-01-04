@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(function() {
+add_task(function*() {
   let originalWindowWidth = window.outerWidth;
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
@@ -26,6 +26,6 @@ add_task(function() {
   ok(!navbar.hasAttribute("overflowing"), "Should no longer have an overflowing toolbar.");
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield resetCustomization();
 });

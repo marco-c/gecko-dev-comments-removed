@@ -11,7 +11,7 @@ const {FxAccounts, AccountState} = Cu.import("resource://gre/modules/FxAccounts.
 
 Preferences.set("services.sync.log.appender.dump", "Debug");
 
-add_task(function() {
+add_task(function*() {
   yield PanelUI.show({type: "command"});
 
   let historyButton = document.getElementById("history-panelmenu");

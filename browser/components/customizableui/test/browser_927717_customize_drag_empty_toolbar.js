@@ -7,7 +7,7 @@
 const kTestToolbarId = "test-empty-drag";
 
 
-add_task(function() {
+add_task(function*() {
   yield createToolbarWithPlacements(kTestToolbarId, []);
   yield startCustomizing();
   let downloadButton = document.getElementById("downloads-button");
@@ -20,7 +20,7 @@ add_task(function() {
   removeCustomToolbars();
 });
 
-add_task(function asyncCleanup() {
+add_task(function* asyncCleanup() {
   yield endCustomizing();
   yield resetCustomization();
 });

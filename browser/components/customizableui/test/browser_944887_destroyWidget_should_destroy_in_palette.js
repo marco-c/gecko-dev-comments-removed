@@ -7,7 +7,7 @@
 const kWidgetId = "test-destroy-in-palette";
 
 
-add_task(function() {
+add_task(function*() {
   CustomizableUI.createWidget({id: kWidgetId, label: "Test destroying widgets in palette."});
   yield startCustomizing();
   yield endCustomizing();

@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(function() {
+add_task(function*() {
   ok(CustomizableUI.inDefaultState, "Default state to begin");
 
   const kWidgetId = "bug982656-add-on-widget-should-not-restore-to-default-area";
@@ -27,7 +27,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   const kToolbarId = "bug982656-toolbar-with-defaultset";
   const kWidgetId = "bug982656-add-on-widget-should-restore-to-default-area-when-area-is-not-builtin";
   ok(CustomizableUI.inDefaultState, "Everything should be in its default state.");

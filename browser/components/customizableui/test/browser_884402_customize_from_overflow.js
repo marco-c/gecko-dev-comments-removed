@@ -12,7 +12,7 @@ registerCleanupFunction(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
 
   overflowPanel.setAttribute("animate", "false");
 

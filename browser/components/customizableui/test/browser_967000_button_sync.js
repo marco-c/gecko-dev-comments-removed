@@ -46,7 +46,7 @@ add_task(function* setup() {
 });
 
 
-function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
+function* openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   info("Check Sync button functionality");
   Services.prefs.setCharPref("identity.fxaccounts.remote.signup.uri", "http://example.com/");
 
@@ -102,7 +102,7 @@ function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   }
 }
 
-function asyncCleanup() {
+function* asyncCleanup() {
   Services.prefs.clearUserPref("identity.fxaccounts.remote.signup.uri");
   
   yield resetCustomization();

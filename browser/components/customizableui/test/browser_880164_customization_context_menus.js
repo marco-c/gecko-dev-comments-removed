@@ -10,7 +10,7 @@ const isOSX = (Services.appinfo.OS === "Darwin");
 
 
 
-add_task(function() {
+add_task(function*() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let homeButton = document.getElementById("home-button");
@@ -40,7 +40,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   
   let extraTab = gBrowser.selectedTab = gBrowser.addTab();
   yield promiseTabLoadEvent(extraTab, "http://example.com/");
@@ -78,7 +78,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let toolbar = createToolbarWithPlacements("880164_empty_toolbar", []);
@@ -112,7 +112,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let urlBarContainer = document.getElementById("urlbar-container");
@@ -143,7 +143,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let searchbar = document.getElementById("searchbar");
   gCustomizeMode.addToPanel(searchbar);
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
@@ -169,7 +169,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let shownPanelPromise = promisePanelShown(window);
   PanelUI.toggle({type: "command"});
   yield shownPanelPromise;
@@ -202,7 +202,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
@@ -232,7 +232,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let contextMenu = document.getElementById("customizationPaletteItemContextMenu");
   let shownPromise = popupShown(contextMenu);
   let openFileButton = document.getElementById("wrapper-open-file-button");
@@ -252,7 +252,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let contextMenu = document.getElementById("customizationPanelItemContextMenu");
   let shownPromise = popupShown(contextMenu);
   let newWindowButton = document.getElementById("wrapper-new-window-button");
@@ -275,7 +275,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   this.otherWin = yield openAndLoadWindow(null, true);
 
   yield new Promise(resolve => waitForFocus(resolve, this.otherWin));
@@ -308,7 +308,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   let contextMenu = document.getElementById("customizationPanelItemContextMenu");
   let shownPromise = popupShown(contextMenu);
@@ -352,7 +352,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   yield startCustomizing();
   yield endCustomizing();
 
@@ -386,7 +386,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function*() {
   let widgetId = "custom-context-menu-toolbarbutton";
   let expectedContext = "myfancycontext";
   let widget = createDummyXULButton(widgetId, "Test ctxt menu");

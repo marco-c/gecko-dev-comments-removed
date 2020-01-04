@@ -6,7 +6,7 @@
 
 
 
-add_task(function() {
+add_task(function*() {
   const buttonId = "bookmarks-toolbar-placeholder";
   yield startCustomizing();
   CustomizableUI.addWidgetToArea("personal-bookmarks", CustomizableUI.AREA_PANEL);
@@ -58,7 +58,7 @@ add_task(function() {
   yield promiseWindowClosed(newWin);
 });
 
-add_task(function asyncCleanUp() {
+add_task(function* asyncCleanUp() {
   yield endCustomizing();
   CustomizableUI.reset();
 });
