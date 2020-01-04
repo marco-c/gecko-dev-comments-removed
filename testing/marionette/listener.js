@@ -893,7 +893,7 @@ function coordinates(target, x, y) {
 function singleTap(id, corx, cory) {
   let el = elementManager.getKnownElement(id, curContainer);
   
-  let visible = elements.checkVisible(el, curContainer.frame, corx, cory);
+  let visible = element.checkVisible(el, curContainer.frame, corx, cory);
   if (!visible) {
     throw new ElementNotVisibleError("Element is not currently visible and may not be manipulated");
   }
