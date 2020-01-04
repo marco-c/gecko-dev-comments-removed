@@ -3,14 +3,15 @@
 
 
 
-
 "use strict";
 
 
 define(function(require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
-  const { createFactories } = require("./rep-utils");
+
+  
+  const { createFactories, isGrip } = require("./rep-utils");
   const { ObjectBox } = createFactories(require("./object-box"));
   const { Caption } = createFactories(require("./caption"));
 
@@ -20,14 +21,13 @@ define(function(require, exports, module) {
   
 
 
-
-  const Obj = React.createClass({
+  const Grip = React.createClass({
     propTypes: {
-      object: React.PropTypes.object,
+      object: React.PropTypes.object.isRequired,
       mode: React.PropTypes.string,
     },
 
-    displayName: "Obj",
+    displayName: "Grip",
 
     getTitle: function() {
       return "";
@@ -52,15 +52,15 @@ define(function(require, exports, module) {
     },
 
     propIterator: function(object, max) {
-      let isInterestingProp = (t, value) => {
-        
-        return (t == "boolean" || t == "number" || (t == "string" && value));
-      };
-
       
-      if (Object.prototype.toString.call(object) === "[object Generator]") {
-        object = Object.getPrototypeOf(object);
-      }
+      let isInterestingProp = (type, value) => {
+        return (
+          type == "boolean" ||
+          type == "number" ||
+          type == "string" ||
+          type == "object"
+        );
+      };
 
       
       
@@ -75,6 +75,9 @@ define(function(require, exports, module) {
         }));
       }
 
+      
+      
+      
       if (props.length > max) {
         props.pop();
         props.push(Caption({
@@ -83,8 +86,12 @@ define(function(require, exports, module) {
         }));
       } else if (props.length > 0) {
         
-        props[props.length - 1] = React.cloneElement(
-          props[props.length - 1], { delim: "" });
+        
+        
+        let last = props.length - 1;
+        props[last] = React.cloneElement(props[last], {
+          delim: ""
+        });
       }
 
       return props;
@@ -98,31 +105,31 @@ define(function(require, exports, module) {
         return props;
       }
 
-      let mode = this.props.mode;
-
       try {
-        for (let name in object) {
+        let ownProperties = object.preview ? object.preview.ownProperties : [];
+        for (let name in ownProperties) {
           if (props.length > max) {
             return props;
           }
 
-          let value;
-          try {
-            value = object[name];
-          } catch (exc) {
-            continue;
-          }
+          let prop = ownProperties[name];
+          let value = prop.value || {};
 
-          let t = typeof value;
-          if (filter(t, value)) {
-            props.push(PropRep({
+          
+          
+          let type = (value.class || typeof value);
+          type = type.toLowerCase();
+
+          
+          if (filter(type, value)) {
+            props.push(PropRep(Object.assign({}, this.props, {
               key: name,
-              mode: mode,
+              mode: "tiny",
               name: name,
               object: value,
               equal: ": ",
               delim: ", ",
-            }));
+            })));
           }
         }
       } catch (err) {
@@ -135,6 +142,15 @@ define(function(require, exports, module) {
     render: function() {
       let object = this.props.object;
       let props = this.shortPropIterator(object);
+
+      if (this.props.mode == "tiny" || !props.length) {
+        return (
+          ObjectBox({className: "object"},
+            span({className: "objectTitle"}, this.getTitle(object)),
+            span({className: "objectLeftBrace", role: "presentation"}, "{}")
+          )
+        );
+      }
 
       return (
         ObjectBox({className: "object"},
@@ -152,8 +168,6 @@ define(function(require, exports, module) {
 
   let PropRep = React.createFactory(React.createClass({
     propTypes: {
-      object: React.PropTypes.any,
-      mode: React.PropTypes.string,
       name: React.PropTypes.string,
       equal: React.PropTypes.string,
       delim: React.PropTypes.string,
@@ -163,24 +177,18 @@ define(function(require, exports, module) {
 
     render: function() {
       let { Rep } = createFactories(require("./rep"));
-      let object = this.props.object;
-      let mode = this.props.mode;
 
       return (
         span({},
           span({
             "className": "nodeName"},
-            this.props.name
-          ),
+            this.props.name),
           span({
             "className": "objectEqual",
             role: "presentation"},
             this.props.equal
           ),
-          Rep({
-            object: object,
-            mode: mode
-          }),
+          Rep(this.props),
           span({
             "className": "objectComma",
             role: "presentation"},
@@ -191,14 +199,19 @@ define(function(require, exports, module) {
     }
   }));
 
+  
+
   function supportsObject(object, type) {
-    return true;
+    if (!isGrip(object)) {
+      return false;
+    }
+
+    return (object.preview && object.preview.ownProperties);
   }
 
   
-
-  exports.Obj = {
-    rep: Obj,
+  exports.Grip = {
+    rep: Grip,
     supportsObject: supportsObject
   };
 });

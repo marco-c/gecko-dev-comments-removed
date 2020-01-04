@@ -25,5 +25,13 @@ define(function(require, exports, module) {
   }
 
   
+
+
+  function isGrip(object) {
+    return object && object.actor;
+  }
+
+  
   exports.createFactories = createFactories;
+  exports.isGrip = isGrip;
 });
