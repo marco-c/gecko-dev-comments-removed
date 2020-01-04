@@ -4,6 +4,8 @@
 
 
 
+#ifdef JS_JITSPEW
+
 #include "jit/JSONSpewer.h"
 
 #include <stdarg.h>
@@ -403,11 +405,4 @@ JSONSpewer::endFunction()
     endObject();
 }
 
-void
-JSONSpewer::spewDebuggerGraph(MIRGraph* graph)
-{
-    beginObject();
-    spewMIR(graph);
-    spewLIR(graph);
-    endObject();
-}
+#endif 

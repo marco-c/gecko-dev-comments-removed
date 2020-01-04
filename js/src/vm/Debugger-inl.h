@@ -66,29 +66,6 @@ js::Debugger::onExceptionUnwind(JSContext* cx, AbstractFramePtr frame)
     return slowPathOnExceptionUnwind(cx, frame);
 }
 
- bool
-js::Debugger::observesIonCompilation(JSContext* cx)
-{
-    
-    if (!cx->compartment()->isDebuggee())
-        return false;
-
-    
-    if (!Debugger::hasLiveHook(cx->global(), Debugger::OnIonCompilation))
-        return false;
-
-    return true;
-}
-
- void
-js::Debugger::onIonCompilation(JSContext* cx, Handle<ScriptVector> scripts, LSprinter& graph)
-{
-    if (!observesIonCompilation(cx))
-        return;
-
-    slowPathOnIonCompilation(cx, scripts, graph);
-}
-
  void
 js::Debugger::onNewWasmModule(JSContext* cx, Handle<WasmModuleObject*> wasmModule)
 {
