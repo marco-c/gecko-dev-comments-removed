@@ -20,6 +20,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
 
 
 
@@ -112,7 +113,7 @@ public:
   
 
   
-  nsresult GetBuffer(const char* id, char** outbuf, uint32_t* length);
+  nsresult GetBuffer(const char* id, UniquePtr<char[]>* outbuf, uint32_t* length);
 
   
   nsresult PutBuffer(const char* id, const char* inbuf, uint32_t length);
