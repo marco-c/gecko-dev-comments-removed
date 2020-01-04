@@ -161,18 +161,8 @@ WebGLContext::IsExtensionSupported(WebGLExtensionID ext) const
                gl->IsExtensionSupported(gl::GLContext::ANGLE_texture_compression_dxt5);
 
     case WebGLExtensionID::WEBGL_debug_renderer_info:
-        {
-            bool isEnabled = true;
+        return Preferences::GetBool("webgl.enable-debug-renderer-info", false);
 
-#ifdef RELEASE_BUILD
-            
-            isEnabled = false;
-#endif
-            if (Preferences::GetBool("webgl.disable-debug-renderer-info", false))
-                isEnabled = false;
-
-            return isEnabled;
-        }
     case WebGLExtensionID::WEBGL_depth_texture:
         
         if (!gl->IsSupported(gl::GLFeature::packed_depth_stencil))

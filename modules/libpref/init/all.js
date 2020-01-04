@@ -4152,7 +4152,14 @@ pref("webgl.enable-privileged-extensions", false);
 pref("webgl.bypass-shader-validation", false);
 pref("webgl.enable-prototype-webgl2", false);
 pref("webgl.disable-fail-if-major-performance-caveat", false);
-pref("webgl.disable-debug-renderer-info", false);
+
+#ifdef RELEASE_BUILD
+
+pref("webgl.enable-debug-renderer-info", false);
+#else
+pref("webgl.enable-debug-renderer-info", true);
+#endif
+
 pref("webgl.renderer-string-override", "");
 pref("webgl.vendor-string-override", "");
 
