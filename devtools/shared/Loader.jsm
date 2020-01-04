@@ -394,6 +394,22 @@ DevToolsLoader.prototype = {
         id: this.id,
         main: this.main
       },
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      define(factory) {
+        factory(this.require, this.exports, this.module);
+      },
     };
     
     XPCOMUtils.defineLazyGetter(this._provider.globals, "console", () => {

@@ -111,10 +111,21 @@ function BrowserLoader(baseURI, window) {
       
       console: window.console,
       
-      define: function(callback) {
-        callback(this.require, this.exports, this.module);
-        return this.exports;
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      define(factory) {
+        factory(this.require, this.exports, this.module);
+      },
     }
   };
 
