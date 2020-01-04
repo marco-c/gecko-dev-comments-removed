@@ -578,7 +578,7 @@ ErrorHandler.prototype = {
         let exception = subject;  
         let engine_name = data;   
 
-        this.checkServerError(exception, "engines/" + engine_name);
+        this.checkServerError(exception);
 
         Status.engines = [engine_name, exception.failureCode || ENGINE_UNKNOWN_FAIL];
         this._log.debug(engine_name + " failed", exception);
@@ -831,7 +831,7 @@ ErrorHandler.prototype = {
 
 
 
-  checkServerError: function (resp, cause) {
+  checkServerError: function (resp) {
     switch (resp.status) {
       case 200:
       case 404:
