@@ -719,8 +719,6 @@ nsBlockReflowState::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   AutoRestore<nscoord> restoreBCoord(mBCoord);
-  
-  const nscoord saveBCoord = mBCoord;
 
   
   const nsStyleDisplay* floatDisplay = aFloat->StyleDisplay();
@@ -904,7 +902,7 @@ nsBlockReflowState::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   if (!earlyFloatReflow) {
-    bool pushedDown = mBCoord != saveBCoord;
+    bool pushedDown = mBCoord != restoreBCoord.SavedValue();
     mBlock->ReflowFloat(*this, adjustedAvailableSpace, aFloat, floatMargin,
                         floatOffsets, pushedDown, reflowStatus);
   }
