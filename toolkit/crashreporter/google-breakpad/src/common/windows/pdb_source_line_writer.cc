@@ -975,6 +975,16 @@ bool PDBSourceLineWriter::GetSymbolFunctionName(IDiaSymbol *function,
       fprintf(stderr, "failed to get function name\n");
       return false;
     }
+
+    
+    
+    if (wcscmp(*name, L"") == 0) {
+      SysFreeString(*name);
+      
+      *name = SysAllocString(L"<name omitted>");
+      return true;
+    }
+
     
     
     
