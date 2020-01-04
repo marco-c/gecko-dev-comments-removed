@@ -485,6 +485,9 @@ class RegExpObject : public NativeObject
 
     void initIgnoringLastIndex(HandleAtom source, RegExpFlag flags);
 
+    
+    
+    
     void initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, ExclusiveContext* cx);
 
   private:

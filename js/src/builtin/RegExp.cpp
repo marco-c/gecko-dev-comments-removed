@@ -24,8 +24,8 @@
 using namespace js;
 using namespace js::unicode;
 
-using mozilla::CheckedInt;
 using mozilla::ArrayLength;
+using mozilla::CheckedInt;
 using mozilla::Maybe;
 
 
@@ -190,6 +190,16 @@ enum RegExpSharedUse {
 
 
 
+
+
+
+
+
+
+
+
+
+
 static bool
 RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
                                   HandleValue patternValue, HandleValue flagsValue,
@@ -347,6 +357,10 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
             return false;
     }
 
+    
+    
+    
+    
     if (regexp->lookupPure(cx->names().lastIndex)->writable()) {
         regexp->zeroLastIndex(cx);
     } else {
