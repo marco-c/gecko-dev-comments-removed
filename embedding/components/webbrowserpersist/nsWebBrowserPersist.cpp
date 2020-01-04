@@ -2300,16 +2300,16 @@ void
 nsWebBrowserPersist::EndDownload(nsresult aResult)
 {
     
+    if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult))
+    {
+        mPersistResult = aResult;
+    }
+
+    
     if (mProgressListener) {
         mProgressListener->OnStateChange(nullptr, nullptr,
             nsIWebProgressListener::STATE_STOP
             | nsIWebProgressListener::STATE_IS_NETWORK, mPersistResult);
-    }
-
-    
-    if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult))
-    {
-        mPersistResult = aResult;
     }
 
     
