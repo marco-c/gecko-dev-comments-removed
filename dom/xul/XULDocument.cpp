@@ -3245,19 +3245,6 @@ XULDocument::LoadScript(nsXULPrototypeScript* aScriptProto, bool* aBlock)
     }
 
     
-    
-    rv = nsScriptLoader::ShouldLoadScript(
-                            this,
-                            static_cast<nsIDocument*>(this),
-                            aScriptProto->mSrcURI,
-                            NS_LITERAL_STRING("application/x-javascript"),
-                            false);
-    if (NS_FAILED(rv)) {
-      *aBlock = false;
-      return rv;
-    }
-
-    
     aScriptProto->UnlinkJSObjects();
 
     
@@ -3266,7 +3253,7 @@ XULDocument::LoadScript(nsXULPrototypeScript* aScriptProto, bool* aBlock)
                  "still loading a script when starting another load?");
     mCurrentScriptProto = aScriptProto;
 
-    if (aScriptProto->mSrcLoading) {
+    if (isChromeDoc && aScriptProto->mSrcLoading) {
         
         
         mNextSrcLoadWaiter = aScriptProto->mSrcLoadWaiters;
@@ -3282,9 +3269,8 @@ XULDocument::LoadScript(nsXULPrototypeScript* aScriptProto, bool* aBlock)
                                 aScriptProto->mSrcURI,
                                 this, 
                                 this, 
-                                nsILoadInfo::SEC_NORMAL,
-                                nsIContentPolicy::TYPE_OTHER,
-                                nullptr, 
+                                nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
+                                nsIContentPolicy::TYPE_INTERNAL_SCRIPT,
                                 group);
 
         if (NS_FAILED(rv)) {
