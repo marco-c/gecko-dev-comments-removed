@@ -25,16 +25,42 @@ struct ColorTableEntry {
   uint8_t mBlue;
 };
 
-struct BitFields {
-  uint32_t red;
-  uint32_t green;
-  uint32_t blue;
-  uint8_t redLeftShift;
-  uint8_t redRightShift;
-  uint8_t greenLeftShift;
-  uint8_t greenRightShift;
-  uint8_t blueLeftShift;
-  uint8_t blueRightShift;
+
+
+class BitFields {
+  class Value {
+    friend class BitFields;
+
+    uint32_t mMask;       
+    uint8_t mRightShift;  
+    uint8_t mBitWidth;    
+
+    
+    void Set(uint32_t aMask);
+
+  public:
+    
+    uint8_t Get(uint32_t aVal) const;
+
+    
+    
+    uint8_t Get5(uint32_t aVal) const;
+  };
+
+public:
+  
+  Value mRed;
+  Value mGreen;
+  Value mBlue;
+
+  
+  void SetR5G5B5();
+
+  
+  bool IsR5G5B5() const;
+
+  
+  void ReadFromHeader(const char* aData);
 
   
   static const size_t LENGTH = 12;
@@ -90,12 +116,6 @@ private:
   
   
   explicit nsBMPDecoder(RasterImage* aImage);
-
-  
-  
-  void CalcBitShift();
-
-  void DoReadBitfields(const char* aData);
 
   uint32_t* RowBuffer();
 
