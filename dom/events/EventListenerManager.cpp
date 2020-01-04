@@ -32,7 +32,6 @@
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "nsDocShell.h"
 #include "nsDOMCID.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
@@ -1199,15 +1198,14 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
 
             
             
-            nsDocShell* docShell;
+            nsCOMPtr<nsIDocShell> docShell;
             RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
             bool needsEndEventMarker = false;
 
             if (mIsMainThreadELM &&
                 listener->mListenerType != Listener::eNativeListener) {
-              nsCOMPtr<nsIDocShell> docShellComPtr = GetDocShellForTarget();
-              if (docShellComPtr) {
-                docShell = static_cast<nsDocShell*>(docShellComPtr.get());
+              docShell = GetDocShellForTarget();
+              if (docShell) {
                 if (timelines && timelines->HasConsumer(docShell)) {
                   needsEndEventMarker = true;
                   nsAutoString typeStr;
