@@ -70,6 +70,7 @@ function setPrefDefaults() {
   Services.prefs.setBoolPref("devtools.scratchpad.enabled", true);
   
   Services.prefs.setBoolPref("devtools.debugger.source-maps-enabled", false);
+  Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
 }
 
 window.addEventListener("load", function() {
