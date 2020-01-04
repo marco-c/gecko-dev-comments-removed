@@ -59,19 +59,6 @@ const reProfileDir = new RegExp(
         OS.Constants.Path.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
         "gi");
 
-
-function isBrowerIdAuthError(error) {
-  
-  
-  
-  try {
-    if (String(error).startsWith("AuthenticationError")) {
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
-
 function transformError(error, engineName) {
   if (Async.isShutdownException(error)) {
     return { name: "shutdownerror" };
