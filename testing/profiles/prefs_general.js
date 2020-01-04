@@ -163,6 +163,9 @@ user_pref("layout.css.object-fit-and-position.enabled", true);
 user_pref("layout.css.prefixes.webkit", true);
 
 
+user_pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
+
+
 user_pref("layout.spammy_warnings.enabled", false);
 
 
