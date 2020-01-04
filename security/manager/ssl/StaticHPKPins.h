@@ -718,7 +718,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "domains.google.com", true, false, false, -1, &kPinset_google_root_pems },
   { "doubleclick.net", true, false, false, -1, &kPinset_google_root_pems },
   { "drive.google.com", true, false, false, -1, &kPinset_google_root_pems },
-  { "dropbox.com", false, false, false, -1, &kPinset_dropbox },
+  { "dropbox.com", true, false, false, -1, &kPinset_dropbox },
   { "dropboxstatic.com", false, true, false, -1, &kPinset_dropbox },
   { "dropboxusercontent.com", false, true, false, -1, &kPinset_dropbox },
   { "edit.yahoo.com", true, true, false, -1, &kPinset_yahoo },
@@ -1093,7 +1093,6 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "wf-trial-hrd.appspot.com", true, false, false, -1, &kPinset_google_root_pems },
   { "withgoogle.com", true, false, false, -1, &kPinset_google_root_pems },
   { "withyoutube.com", true, false, false, -1, &kPinset_google_root_pems },
-  { "www.dropbox.com", true, false, false, -1, &kPinset_dropbox },
   { "www.facebook.com", true, false, false, -1, &kPinset_facebook },
   { "www.gmail.com", false, false, false, -1, &kPinset_google_root_pems },
   { "www.googlemail.com", false, false, false, -1, &kPinset_google_root_pems },
@@ -1114,4 +1113,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1461596756879000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1462019163550000);
