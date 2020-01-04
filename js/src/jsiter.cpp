@@ -181,6 +181,7 @@ EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags
         enumerateSymbols = true;
     } else {
         
+        size_t firstElemIndex = props->length();
         size_t initlen = pobj->getDenseInitializedLength();
         const Value* vp = pobj->getDenseElements();
         bool hasHoles = false;
@@ -206,7 +207,10 @@ EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags
         
         bool isIndexed = pobj->isIndexed();
         if (isIndexed) {
-            size_t numElements = props->length();
+            
+            
+            if (!hasHoles)
+                firstElemIndex = props->length();
 
             for (Shape::Range<NoGC> r(pobj->lastProperty()); !r.empty(); r.popFront()) {
                 Shape& shape = r.front();
@@ -218,12 +222,10 @@ EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags
                 }
             }
 
-            
-            
-            size_t startIndex = hasHoles ? 0 : numElements;
+            MOZ_ASSERT(firstElemIndex <= props->length());
 
-            jsid* ids = props->begin() + startIndex;
-            size_t n = props->length() - startIndex;
+            jsid* ids = props->begin() + firstElemIndex;
+            size_t n = props->length() - firstElemIndex;
 
             AutoIdVector tmp(cx);
             if (!tmp.resize(n))
