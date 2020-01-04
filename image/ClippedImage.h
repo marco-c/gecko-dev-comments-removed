@@ -64,7 +64,8 @@ public:
                                     uint32_t aFlags) override;
 
 protected:
-  ClippedImage(Image* aImage, nsIntRect aClip);
+  ClippedImage(Image* aImage, nsIntRect aClip,
+               const Maybe<nsSize>& aSVGViewportSize);
 
   virtual ~ClippedImage();
 
@@ -86,9 +87,10 @@ private:
   
   UniquePtr<ClippedImageCachedSurface> mCachedSurface;
 
-  nsIntRect   mClip;              
-  Maybe<bool> mShouldClip;        
-
+  nsIntRect        mClip;            
+  Maybe<bool>      mShouldClip;      
+  Maybe<nsIntSize> mSVGViewportSize; 
+                                     
   friend class DrawSingleTileCallback;
   friend class ImageOps;
 };

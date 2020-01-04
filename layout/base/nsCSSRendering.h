@@ -232,6 +232,10 @@ public:
 
 
 
+
+
+
+
   DrawResult
   DrawBorderImageComponent(nsPresContext*       aPresContext,
                            nsRenderingContext&  aRenderingContext,
@@ -241,7 +245,8 @@ public:
                            uint8_t              aHFill,
                            uint8_t              aVFill,
                            const nsSize&        aUnitSize,
-                           uint8_t              aIndex);
+                           uint8_t              aIndex,
+                           const mozilla::Maybe<nsSize>& aSVGViewportSize);
 
   bool IsRasterImage();
   bool IsAnimatedImage();

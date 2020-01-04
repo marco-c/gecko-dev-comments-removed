@@ -43,9 +43,16 @@ public:
 
 
 
-  static already_AddRefed<Image> Clip(Image* aImage, nsIntRect aClip);
+
+
+
+  static already_AddRefed<Image> Clip(Image* aImage, nsIntRect aClip,
+                                      const Maybe<nsSize>& aSVGViewportSize =
+                                        Nothing());
   static already_AddRefed<imgIContainer> Clip(imgIContainer* aImage,
-                                              nsIntRect aClip);
+                                              nsIntRect aClip,
+                                              const Maybe<nsSize>& aSVGViewportSize =
+                                                Nothing());
 
   
 
