@@ -841,8 +841,9 @@ AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState)
   }
 
 #ifndef WIN32 
-
+#ifndef XP_MACOSX
 #ifdef DEBUG
+
   if (!((mAudioContextState == AudioContextState::Suspended &&
        aNewState == AudioContextState::Running)   ||
       (mAudioContextState == AudioContextState::Running   &&
@@ -858,6 +859,7 @@ AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState)
     MOZ_ASSERT(false);
   }
 
+#endif 
 #endif 
 #endif 
 
