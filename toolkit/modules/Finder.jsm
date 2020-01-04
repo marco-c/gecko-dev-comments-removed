@@ -592,9 +592,12 @@ Finder.prototype = {
   onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
     if (!aWebProgress.isTopLevel)
       return;
+    
+    if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)
+      return;
 
     
-    this._previousLink = this._currentFoundRange = null;
+    this._lastFindResult = this._previousLink = this._currentFoundRange = null;
     this.highlighter.onLocationChange();
     this.iterator.reset();
   },
