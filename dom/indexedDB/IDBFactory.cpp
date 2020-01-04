@@ -362,8 +362,13 @@ IDBFactory::AllowedForWindowInternal(nsPIDOMWindow* aWindow,
     return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
   }
 
-  nsIDocument* document = aWindow->GetExtantDoc();
-  if (document->GetSandboxFlags() & SANDBOXED_ORIGIN) {
+  nsContentUtils::StorageAccess access =
+    nsContentUtils::StorageAllowedForWindow(aWindow);
+
+  
+  
+  
+  if (access == nsContentUtils::StorageAccess::eDeny) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
@@ -373,26 +378,21 @@ IDBFactory::AllowedForWindowInternal(nsPIDOMWindow* aWindow,
   nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
   if (NS_WARN_IF(!principal)) {
     return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
+
   }
 
-  bool isSystemPrincipal;
-  if (!AllowedForPrincipal(principal, &isSystemPrincipal)) {
-    return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-  }
-
-  if (isSystemPrincipal) {
+  if (nsContentUtils::IsSystemPrincipal(principal)) {
     principal.forget(aPrincipal);
     return NS_OK;
   }
 
   
   
-  bool skipThirdPartyCheck = false;
-
   nsCOMPtr<nsIURI> uri;
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(principal->GetURI(getter_AddRefs(uri))));
+  MOZ_ASSERT(uri);
 
-  bool isAbout;
+  bool isAbout = false;
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(uri->SchemeIs("about", &isAbout)));
 
   if (isAbout) {
@@ -400,29 +400,13 @@ IDBFactory::AllowedForWindowInternal(nsPIDOMWindow* aWindow,
     if (NS_SUCCEEDED(NS_GetAboutModule(uri, getter_AddRefs(module)))) {
       uint32_t flags;
       if (NS_SUCCEEDED(module->GetURIFlags(uri, &flags))) {
-        skipThirdPartyCheck = flags & nsIAboutModule::ENABLE_INDEXED_DB;
+        if (!(flags & nsIAboutModule::ENABLE_INDEXED_DB)) {
+          return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+        }
       } else {
-        NS_WARNING("GetURIFlags failed!");
+        return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
       }
     } else {
-      NS_WARNING("NS_GetAboutModule failed!");
-    }
-  }
-
-  if (!skipThirdPartyCheck) {
-    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-      do_GetService(THIRDPARTYUTIL_CONTRACTID);
-    MOZ_ASSERT(thirdPartyUtil);
-
-    bool isThirdParty;
-    if (NS_WARN_IF(NS_FAILED(
-          thirdPartyUtil->IsThirdPartyWindow(aWindow,
-                                             nullptr,
-                                             &isThirdParty)))) {
-      return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-    }
-
-    if (isThirdParty) {
       return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
     }
   }
