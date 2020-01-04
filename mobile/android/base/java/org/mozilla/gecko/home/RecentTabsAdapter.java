@@ -124,11 +124,13 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
 
     private void readPreviousSessionData() {
         
-        GeckoProfile.get(context).waitForOldSessionDataProcessing();
-
-        ThreadUtils.postToBackgroundThread(new Runnable() {
+        
+        final Thread parseThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                
+                GeckoProfile.get(context).waitForOldSessionDataProcessing();
+
                 final String jsonString = GeckoProfile.get(context).readSessionFile(true);
                 if (jsonString == null) {
                     
@@ -175,7 +177,9 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
                     }
                 });
             }
-        });
+        }, "LastSessionTabsThread");
+
+        parseThread.start();
     }
 
     public void clearLastSessionData() {
