@@ -119,9 +119,7 @@ struct nsStyleFont {
   }
   static nsChangeHint CalcFontDifference(const nsFont& aFont1, const nsFont& aFont2);
 
-  
   static nscoord ZoomText(nsPresContext* aPresContext, nscoord aSize);
-  
   static nscoord UnZoomText(nsPresContext* aPresContext, nscoord aSize);
   static already_AddRefed<nsIAtom> GetLanguage(nsPresContext* aPresContext);
 
