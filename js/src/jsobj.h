@@ -618,14 +618,16 @@ struct JSObject_Slots16 : JSObject { void* data[3]; js::Value fslots[16]; };
  MOZ_ALWAYS_INLINE void
 JSObject::readBarrier(JSObject* obj)
 {
-    if (!isNullLike(obj) && obj->isTenured())
+    MOZ_ASSERT_IF(obj, !isNullLike(obj));
+    if (obj && obj->isTenured())
         obj->asTenured().readBarrier(&obj->asTenured());
 }
 
  MOZ_ALWAYS_INLINE void
 JSObject::writeBarrierPre(JSObject* obj)
 {
-    if (!isNullLike(obj) && obj->isTenured())
+    MOZ_ASSERT_IF(obj, !isNullLike(obj));
+    if (obj && obj->isTenured())
         obj->asTenured().writeBarrierPre(&obj->asTenured());
 }
 
@@ -633,13 +635,15 @@ JSObject::writeBarrierPre(JSObject* obj)
 JSObject::writeBarrierPost(void* cellp, JSObject* prev, JSObject* next)
 {
     MOZ_ASSERT(cellp);
+    MOZ_ASSERT_IF(next, !IsNullTaggedPointer(next));
+    MOZ_ASSERT_IF(prev, !IsNullTaggedPointer(prev));
 
     
     js::gc::StoreBuffer* buffer;
-    if (!IsNullTaggedPointer(next) && (buffer = next->storeBuffer())) {
+    if (next && (buffer = next->storeBuffer())) {
         
         
-        if (!IsNullTaggedPointer(prev) && prev->storeBuffer()) {
+        if (prev && prev->storeBuffer()) {
             buffer->assertHasCellEdge(static_cast<js::gc::Cell**>(cellp));
             return;
         }
@@ -648,7 +652,7 @@ JSObject::writeBarrierPost(void* cellp, JSObject* prev, JSObject* next)
     }
 
     
-    if (!IsNullTaggedPointer(prev) && (buffer = prev->storeBuffer()))
+    if (prev && (buffer = prev->storeBuffer()))
         buffer->unputCellFromAnyThread(static_cast<js::gc::Cell**>(cellp));
 }
 
