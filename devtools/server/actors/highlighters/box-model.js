@@ -7,11 +7,10 @@
 const { extend } = require("sdk/core/heritage");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
-  CanvasFrameAnonymousContentHelper,
+  CanvasFrameAnonymousContentHelper, moveInfobar,
   getBindingElementAndPseudo, hasPseudoClassLock, getComputedStyle,
   createSVGNode, createNode, isNodeValid } = require("./utils/markup");
-const { getCurrentZoom,
-  setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
+const { setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
 const inspector = require("devtools/server/actors/inspector");
 
 
@@ -20,10 +19,6 @@ const BOX_MODEL_REGIONS = ["margin", "border", "padding", "content"];
 const BOX_MODEL_SIDES = ["top", "right", "bottom", "left"];
 
 const GUIDE_STROKE_WIDTH = 1;
-
-const NODE_INFOBAR_HEIGHT = 34;
-
-const NODE_INFOBAR_ARROW_SIZE = 9;
 
 const PSEUDO_CLASSES = [":hover", ":active", ":focus"];
 
@@ -186,26 +181,26 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let infobarContainer = createNode(this.win, {
       parent: rootWrapper,
       attributes: {
-        "class": "nodeinfobar-container",
-        "id": "nodeinfobar-container",
+        "class": "infobar-container",
+        "id": "infobar-container",
         "position": "top",
         "hidden": "true"
       },
       prefix: this.ID_CLASS_PREFIX
     });
 
-    let nodeInfobar = createNode(this.win, {
+    let infobar = createNode(this.win, {
       parent: infobarContainer,
       attributes: {
-        "class": "nodeinfobar"
+        "class": "infobar"
       },
       prefix: this.ID_CLASS_PREFIX
     });
 
     let texthbox = createNode(this.win, {
-      parent: nodeInfobar,
+      parent: infobar,
       attributes: {
-        "class": "nodeinfobar-text"
+        "class": "infobar-text"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -213,8 +208,8 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       nodeType: "span",
       parent: texthbox,
       attributes: {
-        "class": "nodeinfobar-tagname",
-        "id": "nodeinfobar-tagname"
+        "class": "infobar-tagname",
+        "id": "infobar-tagname"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -222,8 +217,8 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       nodeType: "span",
       parent: texthbox,
       attributes: {
-        "class": "nodeinfobar-id",
-        "id": "nodeinfobar-id"
+        "class": "infobar-id",
+        "id": "infobar-id"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -231,8 +226,8 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       nodeType: "span",
       parent: texthbox,
       attributes: {
-        "class": "nodeinfobar-classes",
-        "id": "nodeinfobar-classes"
+        "class": "infobar-classes",
+        "id": "infobar-classes"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -240,8 +235,8 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       nodeType: "span",
       parent: texthbox,
       attributes: {
-        "class": "nodeinfobar-pseudo-classes",
-        "id": "nodeinfobar-pseudo-classes"
+        "class": "infobar-pseudo-classes",
+        "id": "infobar-pseudo-classes"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -249,8 +244,8 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       nodeType: "span",
       parent: texthbox,
       attributes: {
-        "class": "nodeinfobar-dimensions",
-        "id": "nodeinfobar-dimensions"
+        "class": "infobar-dimensions",
+        "id": "infobar-dimensions"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -350,14 +345,14 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   _hideInfobar: function () {
-    this.getElement("nodeinfobar-container").setAttribute("hidden", "true");
+    this.getElement("infobar-container").setAttribute("hidden", "true");
   },
 
   
 
 
   _showInfobar: function () {
-    this.getElement("nodeinfobar-container").removeAttribute("hidden");
+    this.getElement("infobar-container").removeAttribute("hidden");
     this._updateInfobar();
   },
 
@@ -676,11 +671,11 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
               " \u00D7 " +
               parseFloat(rect.height.toPrecision(6));
 
-    this.getElement("nodeinfobar-tagname").setTextContent(displayName);
-    this.getElement("nodeinfobar-id").setTextContent(id);
-    this.getElement("nodeinfobar-classes").setTextContent(classList);
-    this.getElement("nodeinfobar-pseudo-classes").setTextContent(pseudos);
-    this.getElement("nodeinfobar-dimensions").setTextContent(dim);
+    this.getElement("infobar-tagname").setTextContent(displayName);
+    this.getElement("infobar-id").setTextContent(id);
+    this.getElement("infobar-classes").setTextContent(classList);
+    this.getElement("infobar-pseudo-classes").setTextContent(pseudos);
+    this.getElement("infobar-dimensions").setTextContent(dim);
 
     this._moveInfobar();
   },
@@ -690,57 +685,9 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   _moveInfobar: function () {
     let bounds = this._getOuterBounds();
-    let winHeight = this.win.innerHeight * getCurrentZoom(this.win);
-    let winWidth = this.win.innerWidth * getCurrentZoom(this.win);
-    let winScrollY = this.win.scrollY;
+    let container = this.getElement("infobar-container");
 
-    
-    
-    let containerBottom = Math.max(0, bounds.bottom) + NODE_INFOBAR_ARROW_SIZE;
-    let containerTop = Math.min(winHeight, bounds.top);
-    let container = this.getElement("nodeinfobar-container");
-
-    
-    let top;
-    if (containerTop < NODE_INFOBAR_HEIGHT) {
-      
-      if (containerBottom + NODE_INFOBAR_HEIGHT > winHeight) {
-        
-        if (containerTop < winScrollY) {
-          
-          top = 0;
-        } else {
-          
-          top = containerTop;
-        }
-        container.setAttribute("position", "overlap");
-      } else {
-        
-        top = containerBottom;
-        container.setAttribute("position", "bottom");
-      }
-    } else {
-      
-      top = containerTop - NODE_INFOBAR_HEIGHT;
-      container.setAttribute("position", "top");
-    }
-
-    
-    let left = bounds.right - bounds.width / 2;
-    
-    let buffer = 100;
-    if (left < buffer) {
-      left = buffer;
-      container.setAttribute("hide-arrow", "true");
-    } else if (left > winWidth - buffer) {
-      left = winWidth - buffer;
-      container.setAttribute("hide-arrow", "true");
-    } else {
-      container.removeAttribute("hide-arrow");
-    }
-
-    let style = "top:" + top + "px;left:" + left + "px;";
-    container.setAttribute("style", style);
+    moveInfobar(container, bounds, this.win);
   }
 });
 exports.BoxModelHighlighter = BoxModelHighlighter;
