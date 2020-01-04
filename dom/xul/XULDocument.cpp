@@ -2558,22 +2558,9 @@ XULDocument::LoadOverlayInternal(nsIURI* aURI, bool aIsDynamic,
     
     
     
-
-    bool documentIsChrome = IsChromeURI(mDocumentURI);
-    if (!documentIsChrome) {
-        
-        rv = NodePrincipal()->CheckMayLoad(aURI, true, false);
-        if (NS_FAILED(rv)) {
-            *aFailureFromContent = true;
-            return rv;
-        }
-    }
-
-    
-    
-    
     
     bool overlayIsChrome = IsChromeURI(aURI);
+    bool documentIsChrome = IsChromeURI(mDocumentURI);
     mCurrentPrototype = overlayIsChrome && documentIsChrome ?
         nsXULPrototypeCache::GetInstance()->GetPrototype(aURI) : nullptr;
 
@@ -2657,12 +2644,13 @@ XULDocument::LoadOverlayInternal(nsIURI* aURI, bool aIsDynamic,
         rv = NS_NewChannel(getter_AddRefs(channel),
                            aURI,
                            NodePrincipal(),
+                           nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS |
                            nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
                            nsIContentPolicy::TYPE_OTHER,
                            group);
 
         if (NS_SUCCEEDED(rv)) {
-            rv = channel->AsyncOpen(listener, nullptr);
+            rv = channel->AsyncOpen2(listener);
         }
 
         if (NS_FAILED(rv)) {
