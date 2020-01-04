@@ -133,6 +133,10 @@ private:
   
   
   bool mReset;
+
+  
+  
+  const media::TimeUnit mPreRoll;
 };
 
 } 
