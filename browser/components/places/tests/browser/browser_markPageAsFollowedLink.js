@@ -2,60 +2,85 @@
 
 
 
+
+
+
+
 const BASE_URL = "http://mochi.test:8888/browser/browser/components/places/tests/browser";
 const PAGE_URL = BASE_URL + "/framedPage.html";
 const LEFT_URL = BASE_URL + "/frameLeft.html";
 const RIGHT_URL = BASE_URL + "/frameRight.html";
 
-add_task(function* test() {
-  
-  let deferredLeftFrameVisit = PromiseUtils.defer();
-  let deferredRightFrameVisit = PromiseUtils.defer();
+var gTabLoaded = false;
+var gLeftFrameVisited = false;
 
-  Services.obs.addObserver(function observe(subject) {
-    Task.spawn(function* () {
-      let url = subject.QueryInterface(Ci.nsIURI).spec;
-      if (url == LEFT_URL ) {
-        is((yield getTransitionForUrl(url)), null,
-           "Embed visits should not get a database entry.");
-        deferredLeftFrameVisit.resolve();
-      }
-      else if (url == RIGHT_URL ) {
-        is((yield getTransitionForUrl(url)),
-           PlacesUtils.history.TRANSITION_FRAMED_LINK,
-           "User activated visits should get a FRAMED_LINK transition.");
-        Services.obs.removeObserver(observe, "uri-visit-saved");
-        deferredRightFrameVisit.resolve();
-      }
-    });
-  }, "uri-visit-saved", false);
+var observer = {
+  observe: function(aSubject, aTopic, aData)
+  {
+    let url = aSubject.QueryInterface(Ci.nsIURI).spec;
+    if (url == LEFT_URL ) {
+      is(getTransitionForUrl(url), null,
+         "Embed visits should not get a database entry.");
+      gLeftFrameVisited = true;
+      maybeClickLink();
+    }
+    else if (url == RIGHT_URL ) {
+      is(getTransitionForUrl(url), PlacesUtils.history.TRANSITION_FRAMED_LINK,
+         "User activated visits should get a FRAMED_LINK transition.");
+      finish();
+    }
+  },
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
+};
+Services.obs.addObserver(observer, "uri-visit-saved", false);
 
-  let tab = gBrowser.selectedTab = gBrowser.addTab(PAGE_URL);
-  
-  yield BrowserTestUtils.browserLoaded(tab.linkedBrowser, true);
-  
-  yield deferredLeftFrameVisit.promise;
-
-  
-  
-  yield BrowserTestUtils.synthesizeMouseAtCenter(
-    () => content.frames[0].document.getElementById("clickme"), {}, tab.linkedBrowser);
-
-  
-  yield deferredRightFrameVisit.promise;
-
-  yield BrowserTestUtils.removeTab(tab);
-});
-
-function* getTransitionForUrl(url) {
-  let db = yield PlacesUtils.promiseDBConnection();
-  let rows = yield db.execute(`
-    SELECT visit_type
-    FROM moz_historyvisits
-    WHERE place_id = (SELECT id FROM moz_places WHERE url = :url)`,
-    { url });
-  if (rows.length) {
-    return rows[0].getResultByName("visit_type");
-  }
-  return null;
+function test()
+{
+  waitForExplicitFinish();
+  gBrowser.selectedTab = gBrowser.addTab(PAGE_URL);
+  let frameCount = 0;
+  gBrowser.selectedBrowser.addEventListener("DOMContentLoaded",
+    function (event)
+    {
+      
+      if (frameCount++ < 2)
+        return;
+      gBrowser.selectedBrowser.removeEventListener("DOMContentLoaded", arguments.callee, false)
+      gTabLoaded = true;
+      maybeClickLink();
+    }, false
+  );
 }
+
+function maybeClickLink() {
+  if (gTabLoaded && gLeftFrameVisited) {
+    
+    
+    EventUtils.sendMouseEvent({type: "click"}, "clickme", content.frames[0]);
+  }
+}
+
+function getTransitionForUrl(aUrl)
+{
+  let dbConn = PlacesUtils.history
+                          .QueryInterface(Ci.nsPIPlacesDatabase).DBConnection;
+  let stmt = dbConn.createStatement(
+    "SELECT visit_type FROM moz_historyvisits WHERE place_id = " +
+      "(SELECT id FROM moz_places WHERE url = :page_url)");
+  stmt.params.page_url = aUrl;
+  try {
+    if (!stmt.executeStep()) {
+      return null;
+    }
+    return stmt.row.visit_type;
+  }
+  finally {
+    stmt.finalize();
+  }
+}
+
+registerCleanupFunction(function ()
+{
+  gBrowser.removeTab(gBrowser.selectedTab);
+  Services.obs.removeObserver(observer, "uri-visit-saved");
+})

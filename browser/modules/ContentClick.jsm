@@ -63,14 +63,16 @@ var ContentClick = {
 
     
     var where = window.whereToOpenLink(json);
+    if (where == "current")
+      return;
+
     
-    if (where != "current") {
-      let params = { charset: browser.characterSet,
-                     referrerURI: browser.documentURI,
-                     referrerPolicy: json.referrerPolicy,
-                     noReferrer: json.noReferrer };
-      window.openLinkIn(json.href, where, params);
-    }
+
+    let params = { charset: browser.characterSet,
+                   referrerURI: browser.documentURI,
+                   referrerPolicy: json.referrerPolicy,
+                   noReferrer: json.noReferrer };
+    window.openLinkIn(json.href, where, params);
 
     
     
