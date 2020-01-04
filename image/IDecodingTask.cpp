@@ -24,8 +24,9 @@ namespace image {
 
 
 
-static void
-NotifyProgress(NotNull<RasterImage*> aImage, NotNull<Decoder*> aDecoder)
+ void
+IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
+                              NotNull<Decoder*> aDecoder)
 {
   MOZ_ASSERT(aDecoder->HasProgress() && !aDecoder->IsMetadataDecode());
 
@@ -56,8 +57,9 @@ NotifyProgress(NotNull<RasterImage*> aImage, NotNull<Decoder*> aDecoder)
   }));
 }
 
-static void
-NotifyDecodeComplete(NotNull<RasterImage*> aImage, NotNull<Decoder*> aDecoder)
+ void
+IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
+                                    NotNull<Decoder*> aDecoder)
 {
   
   if (NS_IsMainThread() &&
