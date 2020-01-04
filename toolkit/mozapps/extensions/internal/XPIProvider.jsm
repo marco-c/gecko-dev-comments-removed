@@ -86,8 +86,6 @@ XPCOMUtils.defineLazyGetter(this, "CertUtils", function() {
   return certUtils;
 });
 
-Cu.importGlobalProperties(["URL"]);
-
 const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile",
                                        "initWithPath");
 
@@ -7249,12 +7247,7 @@ AddonWrapper.prototype = {
     let addon = addonFor(this);
     if (addon.optionsURL) {
       if (this.isWebExtension) {
-        
-        
-        
-        
-        let base = ExtensionManagement.getURLForExtension(addon.id);
-        return new URL(addon.optionsURL, base).href;
+        return ExtensionManagement.getURLForExtension(addon.id, addon.optionsURL);
       }
       return addon.optionsURL;
     }
