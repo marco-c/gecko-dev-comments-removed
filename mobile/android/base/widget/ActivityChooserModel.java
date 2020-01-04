@@ -773,9 +773,21 @@ public class ActivityChooserModel extends DataSetObservable {
                 
 
 
+
+
+
+
+
+
                 if (shareDialogClassName.equals(resolveInfo.activityInfo.name) &&
                         channelToRemoveLabel.equals(resolveInfo.loadLabel(packageManager))) {
-                    continue;
+                    
+                    if (!hasOtherSyncClients()) {
+                        continue;
+                    }
+
+                    resolveInfo.labelRes = R.string.overlay_share_send_other;
+                    resolveInfo.icon = R.drawable.icon_shareplane;
                 }
 
                 mActivities.add(new ActivityResolveInfo(resolveInfo));
