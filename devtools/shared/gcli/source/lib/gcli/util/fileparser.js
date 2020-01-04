@@ -105,7 +105,7 @@ var RANK_OPTIONS = { noSort: true, prefixZero: true };
 
 
 
-exports.supportsPredictions = true;
+exports.supportsPredictions = false;
 
 
 
