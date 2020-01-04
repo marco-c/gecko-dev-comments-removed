@@ -468,6 +468,15 @@ public:
 
     static mozilla::LogModule* GetUserFontsLog();
 
+    
+    virtual void RecordFontLoadDone(uint32_t aFontSize,
+                                    mozilla::TimeStamp aDoneTime) {}
+
+    void GetLoadStatistics(uint32_t& aLoadCount, uint64_t& aLoadSize) const {
+        aLoadCount = mDownloadCount;
+        aLoadSize = mDownloadSize;
+    }
+
 protected:
     
     virtual ~gfxUserFontSet();
@@ -513,6 +522,10 @@ protected:
 
     
     bool mLocalRulesUsed;
+
+    
+    uint32_t mDownloadCount;
+    uint64_t mDownloadSize;
 };
 
 
