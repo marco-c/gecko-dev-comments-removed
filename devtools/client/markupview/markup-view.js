@@ -2631,7 +2631,7 @@ ElementEditor.prototype = {
       } else {
         
         
-        let attribute = this._createAttribute(attr);
+        let attribute = this._createAttribute(attr, el);
         attribute.style.removeProperty("display");
 
         
