@@ -14,6 +14,7 @@
 #include "nsCOMPtr.h"
 #include "nsWidgetInitData.h" 
 #include "nsIWidgetListener.h"
+#include "Units.h"
 #include "mozilla/EventForwards.h"
 
 class nsViewManager;
@@ -56,6 +57,8 @@ class nsView final : public nsIWidgetListener
 {
 public:
   friend class nsViewManager;
+
+  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
 
   NS_DECL_AND_IMPL_ZEROING_OPERATOR_NEW
 
@@ -326,7 +329,7 @@ public:
 
   bool IsRoot() const;
 
-  nsIntRect CalcWidgetBounds(nsWindowType aType);
+  LayoutDeviceIntRect CalcWidgetBounds(nsWindowType aType);
 
   
   

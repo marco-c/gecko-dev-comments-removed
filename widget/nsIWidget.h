@@ -395,10 +395,10 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD Create(nsIWidget        *aParent,
-                      nsNativeWidget   aNativeParent,
-                      const nsIntRect  &aRect,
-                      nsWidgetInitData *aInitData = nullptr) = 0;
+    NS_IMETHOD Create(nsIWidget* aParent,
+                      nsNativeWidget aNativeParent,
+                      const LayoutDeviceIntRect& aRect,
+                      nsWidgetInitData* aInitData = nullptr) = 0;
 
     
 
@@ -417,9 +417,9 @@ class nsIWidget : public nsISupports {
 
 
     virtual already_AddRefed<nsIWidget>
-    CreateChild(const nsIntRect  &aRect,
-                nsWidgetInitData *aInitData = nullptr,
-                bool             aForceUseIWidgetParent = false) = 0;
+    CreateChild(const LayoutDeviceIntRect& aRect,
+                nsWidgetInitData* aInitData = nullptr,
+                bool aForceUseIWidgetParent = false) = 0;
 
     
 

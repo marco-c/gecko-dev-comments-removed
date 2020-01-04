@@ -3498,10 +3498,10 @@ CreateGdkWindow(GdkWindow *parent, GtkWidget *widget)
 }
 
 nsresult
-nsWindow::Create(nsIWidget        *aParent,
-                 nsNativeWidget    aNativeParent,
-                 const nsIntRect  &aRect,
-                 nsWidgetInitData *aInitData)
+nsWindow::Create(nsIWidget* aParent,
+                 nsNativeWidget aNativeParent,
+                 const LayoutDeviceIntRect& aRect,
+                 nsWidgetInitData* aInitData)
 {
     
     
@@ -3531,7 +3531,7 @@ nsWindow::Create(nsIWidget        *aParent,
     CommonCreate(aParent, listenForResizes);
 
     
-    mBounds = aRect;
+    mBounds = aRect.ToUnknownRect();
     ConstrainSize(&mBounds.width, &mBounds.height);
 
     

@@ -133,10 +133,10 @@ nsWindow::~nsWindow()
 }
 
 nsresult
-nsWindow::Create(nsIWidget        *aParent,
-                 nsNativeWidget    aNativeParent,
-                 const nsIntRect  &aRect,
-                 nsWidgetInitData *aInitData)
+nsWindow::Create(nsIWidget* aParent,
+                 nsNativeWidget aNativeParent,
+                 const LayoutDeviceIntRect& aRect,
+                 nsWidgetInitData* aInitData)
 {
     
     
@@ -151,7 +151,7 @@ nsWindow::Create(nsIWidget        *aParent,
     mParent = (nsWindow *)aParent;
 
     
-    mBounds = aRect;
+    mBounds = aRect.ToUnknownRect();
 
     
     MozQWidget *parent = nullptr;
