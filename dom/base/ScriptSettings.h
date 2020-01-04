@@ -40,15 +40,12 @@ public:
   explicit AutoCxPusher(JSContext *aCx, bool aAllowNull = false);
   ~AutoCxPusher();
 
-  nsIScriptContext* GetScriptContext() { return mScx; }
-
   
   
   bool IsStackTop() const;
 
 private:
   mozilla::Maybe<JSAutoRequest> mAutoRequest;
-  nsCOMPtr<nsIScriptContext> mScx;
   uint32_t mStackDepthAfterPush;
 #ifdef DEBUG
   JSContext* mPushedContext;

@@ -764,12 +764,6 @@ danger::AutoCxPusher::AutoCxPusher(JSContext* cx, bool allowNull)
 {
   MOZ_ASSERT_IF(!allowNull, cx);
 
-  
-  
-  
-  if (cx)
-    mScx = GetScriptContextFromJSContext(cx);
-
   XPCJSContextStack *stack = XPCJSRuntime::Get()->GetJSContextStack();
   stack->Push(cx);
   mStackDepthAfterPush = stack->Count();
@@ -801,7 +795,6 @@ danger::AutoCxPusher::~AutoCxPusher()
   DebugOnly<JSContext*> stackTop;
   MOZ_ASSERT(mPushedContext == nsXPConnect::XPConnect()->GetCurrentJSContext());
   XPCJSRuntime::Get()->GetJSContextStack()->Pop();
-  mScx = nullptr;
 }
 
 bool
