@@ -2087,13 +2087,9 @@ public:
 
 
 
-
-
-
   bool ComputeVisibilityForSublist(nsDisplayListBuilder* aBuilder,
                                    nsRegion* aVisibleRegion,
-                                   const nsRect& aListVisibleBounds,
-                                   nsIFrame* aDisplayPortFrame = nullptr);
+                                   const nsRect& aListVisibleBounds);
 
   
 
@@ -2102,10 +2098,8 @@ public:
 
 
 
-
   bool ComputeVisibilityForRoot(nsDisplayListBuilder* aBuilder,
-                                nsRegion* aVisibleRegion,
-                                nsIFrame* aDisplayPortFrame = nullptr);
+                                nsRegion* aVisibleRegion);
 
   
 
@@ -2716,7 +2710,7 @@ public:
                               const ContainerLayerParameters& aParameters) override;
 
   static nsRegion GetInsideClipRegion(nsDisplayItem* aItem, uint8_t aClip,
-                                      const nsRect& aRect, bool* aSnap);
+                                      const nsRect& aRect);
 
   virtual bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) override;
 
