@@ -1219,6 +1219,7 @@ protected:
     
     
     
+    
     if (!imageBitmap) {
       return false;
     }
@@ -1279,7 +1280,7 @@ private:
     RefPtr<layers::Image> data = DecodeAndCropBlob(*mBlob, mCropRect, sourceSize);
 
     if (NS_WARN_IF(!data)) {
-      mPromise->MaybeRejectWithNull();
+      mPromise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
       return nullptr;
     }
 
@@ -1375,7 +1376,7 @@ private:
     }
 
     if (NS_WARN_IF(!data)) {
-      mPromise->MaybeRejectWithNull();
+      mPromise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
       return nullptr;
     }
 
