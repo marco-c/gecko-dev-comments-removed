@@ -199,6 +199,16 @@ var ResponseTab = React.createClass({
     return group;
   },
 
+  componentDidMount() {
+    let { actions, data: file } = this.props;
+    let content = file.response.content;
+
+    if (!content || typeof (content.text) == "undefined") {
+      
+      actions.requestData("responseContent");
+    }
+  },
+
   
 
 
@@ -206,8 +216,7 @@ var ResponseTab = React.createClass({
 
 
   render() {
-    let actions = this.props.actions;
-    let file = this.props.data;
+    let { actions, data: file } = this.props;
 
     
     
@@ -224,9 +233,6 @@ var ResponseTab = React.createClass({
     
     let content = file.response.content;
     if (!content || typeof (content.text) == "undefined") {
-      
-      actions.requestData("responseContent");
-
       return (
         Spinner()
       );

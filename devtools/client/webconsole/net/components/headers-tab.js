@@ -26,10 +26,10 @@ var HeadersTab = React.createClass({
 
   displayName: "HeadersTab",
 
-  render() {
-    let {data, actions} = this.props;
-    let responseHeaders = data.response.headers;
+  componentDidMount() {
+    let { actions, data } = this.props;
     let requestHeaders = data.request.headers;
+    let responseHeaders = data.response.headers;
 
     
     
@@ -40,6 +40,12 @@ var HeadersTab = React.createClass({
     if (!responseHeaders) {
       actions.requestData("responseHeaders");
     }
+  },
+
+  render() {
+    let { data } = this.props;
+    let requestHeaders = data.request.headers;
+    let responseHeaders = data.response.headers;
 
     
     

@@ -47,6 +47,7 @@ NetRequest.prototype = {
     this.file = log.response;
     this.parentNode = log.node;
     this.file.request.queryString = parseURLParams(this.file.request.url);
+    this.hasCookies = false;
 
     
     this.cachedResponses = new Map();
@@ -112,6 +113,16 @@ NetRequest.prototype = {
     }
   },
 
+  updateCookies: function(method, response) {
+    
+    let result;
+    if (response.cookies > 0 &&
+        ["requestCookies", "responseCookies"].includes(method)) {
+      this.hasCookies = true;
+      this.refresh();
+    }
+  },
+
   
 
 
@@ -121,8 +132,8 @@ NetRequest.prototype = {
     
     
     let method = response.updateType;
-    let cached = this.cachedResponses.get(method);
-    if (cached) {
+    this.updateCookies(method, response);
+    if (this.cachedResponses.get(method)) {
       this.cachedResponses.delete(method);
       this.requestData(method);
     }
@@ -172,7 +183,8 @@ NetRequest.prototype = {
     
     
     let newState = Object.assign({}, this.body.state, {
-      data: this.file
+      data: this.file,
+      hasCookies: this.hasCookies
     });
 
     this.body.setState(newState);
