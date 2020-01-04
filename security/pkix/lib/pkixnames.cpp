@@ -1,38 +1,38 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This code is made available to you under your choice of the following sets
+ * of licensing terms:
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+/* Copyright 2014 Mozilla Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// This code implements RFC6125-ish name matching, RFC5280-ish name constraint
+// checking, and related things.
+//
+// In this code, identifiers are classified as either "presented" or
+// "reference" identifiers are defined in
+// http://tools.ietf.org/html/rfc6125#section-1.8. A "presented identifier" is
+// one in the subjectAltName of the certificate, or sometimes within a CN of
+// the certificate's subject. The "reference identifier" is the one we are
+// being asked to match the certificate against. When checking name
+// constraints, the reference identifier is the entire encoded name constraint
+// extension value.
 
 #include "pkixcheck.h"
 #include "pkixutil.h"
@@ -41,21 +41,21 @@ namespace mozilla { namespace pkix {
 
 namespace {
 
-
-
-
-
-
-
-
-
-
-
+// GeneralName ::= CHOICE {
+//      otherName                       [0]     OtherName,
+//      rfc822Name                      [1]     IA5String,
+//      dNSName                         [2]     IA5String,
+//      x400Address                     [3]     ORAddress,
+//      directoryName                   [4]     Name,
+//      ediPartyName                    [5]     EDIPartyName,
+//      uniformResourceIdentifier       [6]     IA5String,
+//      iPAddress                       [7]     OCTET STRING,
+//      registeredID                    [8]     OBJECT IDENTIFIER }
 enum class GeneralNameType : uint8_t
 {
-  
-  
-  
+  // Note that these values are NOT contiguous. Some values have the
+  // der::CONSTRUCTED bit set while others do not.
+  // (The der::CONSTRUCTED bit is for types where the value is a SEQUENCE.)
   otherName = der::CONTEXT_SPECIFIC | der::CONSTRUCTED | 0,
   rfc822Name = der::CONTEXT_SPECIFIC | 1,
   dNSName = der::CONTEXT_SPECIFIC | 2,
@@ -65,15 +65,15 @@ enum class GeneralNameType : uint8_t
   uniformResourceIdentifier = der::CONTEXT_SPECIFIC | 6,
   iPAddress = der::CONTEXT_SPECIFIC | 7,
   registeredID = der::CONTEXT_SPECIFIC | 8,
-  
-  
+  // nameConstraints is a pseudo-GeneralName used to signify that a
+  // reference ID is actually the entire name constraint extension.
   nameConstraints = 0xff
 };
 
 inline Result
 ReadGeneralName(Reader& reader,
-                 GeneralNameType& generalNameType,
-                 Input& value)
+                /*out*/ GeneralNameType& generalNameType,
+                /*out*/ Input& value)
 {
   uint8_t tag;
   Result rv = der::ReadTagAndGetValue(reader, tag, value);
@@ -114,8 +114,6 @@ ReadGeneralName(Reader& reader,
   return Success;
 }
 
-enum class FallBackToSearchWithinSubject { No = 0, Yes = 1 };
-
 enum class MatchResult
 {
   NoNamesOfGivenType = 0,
@@ -127,13 +125,13 @@ Result SearchNames(const Input* subjectAltName, Input subject,
                    GeneralNameType referenceIDType,
                    Input referenceID,
                    FallBackToSearchWithinSubject fallBackToCommonName,
-                    MatchResult& match);
+                   /*out*/ MatchResult& match);
 Result SearchWithinRDN(Reader& rdn,
                        GeneralNameType referenceIDType,
                        Input referenceID,
                        FallBackToSearchWithinSubject fallBackToEmailAddress,
                        FallBackToSearchWithinSubject fallBackToCommonName,
-                        MatchResult& match);
+                       /*in/out*/ MatchResult& match);
 Result MatchAVA(Input type,
                 uint8_t valueEncodingTag,
                 Input presentedID,
@@ -141,22 +139,22 @@ Result MatchAVA(Input type,
                 Input referenceID,
                 FallBackToSearchWithinSubject fallBackToEmailAddress,
                 FallBackToSearchWithinSubject fallBackToCommonName,
-                 MatchResult& match);
+                /*in/out*/ MatchResult& match);
 Result ReadAVA(Reader& rdn,
-                Input& type,
-                uint8_t& valueTag,
-                Input& value);
+               /*out*/ Input& type,
+               /*out*/ uint8_t& valueTag,
+               /*out*/ Input& value);
 void MatchSubjectPresentedIDWithReferenceID(GeneralNameType presentedIDType,
                                             Input presentedID,
                                             GeneralNameType referenceIDType,
                                             Input referenceID,
-                                             MatchResult& match);
+                                            /*in/out*/ MatchResult& match);
 
 Result MatchPresentedIDWithReferenceID(GeneralNameType presentedIDType,
                                        Input presentedID,
                                        GeneralNameType referenceIDType,
                                        Input referenceID,
-                                        MatchResult& matchResult);
+                                       /*in/out*/ MatchResult& matchResult);
 Result CheckPresentedIDConformsToConstraints(GeneralNameType referenceIDType,
                                              Input presentedID,
                                              Input nameConstraints);
@@ -173,11 +171,11 @@ enum class IDRole
 
 enum class AllowWildcards { No = 0, Yes = 1 };
 
-
-
-
-
-
+// DNSName constraints implicitly allow subdomain matching when there is no
+// leading dot ("foo.example.com" matches a constraint of "example.com"), but
+// RFC822Name constraints only allow subdomain matching when there is a leading
+// dot ("foo.example.com" does not match "example.com" but does match
+// ".example.com").
 enum class AllowDotlessSubdomainMatches { No = 0, Yes = 1 };
 
 bool IsValidDNSID(Input hostname, IDRole idRole,
@@ -189,24 +187,24 @@ Result MatchPresentedDNSIDWithReferenceDNSID(
          AllowDotlessSubdomainMatches allowDotlessSubdomainMatches,
          IDRole referenceDNSIDRole,
          Input referenceDNSID,
-          bool& matches);
+         /*out*/ bool& matches);
 
 Result MatchPresentedRFC822NameWithReferenceRFC822Name(
          Input presentedRFC822Name, IDRole referenceRFC822NameRole,
-         Input referenceRFC822Name,  bool& matches);
+         Input referenceRFC822Name, /*out*/ bool& matches);
 
-} 
+} // namespace
 
 bool IsValidReferenceDNSID(Input hostname);
 bool IsValidPresentedDNSID(Input hostname);
-bool ParseIPv4Address(Input hostname,  uint8_t (&out)[4]);
-bool ParseIPv6Address(Input hostname,  uint8_t (&out)[16]);
+bool ParseIPv4Address(Input hostname, /*out*/ uint8_t (&out)[4]);
+bool ParseIPv6Address(Input hostname, /*out*/ uint8_t (&out)[16]);
 
-
+// This is used by the pkixnames_tests.cpp tests.
 Result
 MatchPresentedDNSIDWithReferenceDNSID(Input presentedDNSID,
                                       Input referenceDNSID,
-                                       bool& matches)
+                                      /*out*/ bool& matches)
 {
   return MatchPresentedDNSIDWithReferenceDNSID(
            presentedDNSID, AllowWildcards::Yes,
@@ -214,12 +212,13 @@ MatchPresentedDNSIDWithReferenceDNSID(Input presentedDNSID,
            referenceDNSID, matches);
 }
 
-
-
-
-
+// Verify that the given end-entity cert, which is assumed to have been already
+// validated with BuildCertChain, is valid for the given hostname. hostname is
+// assumed to be a string representation of an IPv4 address, an IPv6 addresss,
+// or a normalized ASCII (possibly punycode) DNS name.
 Result
-CheckCertHostname(Input endEntityCertDER, Input hostname)
+CheckCertHostname(Input endEntityCertDER, Input hostname,
+                  NameMatchingPolicy& nameMatchingPolicy)
 {
   BackCert cert(endEntityCertDER, EndEntityOrCA::MustBeEndEntity, nullptr);
   Result rv = cert.Init();
@@ -227,30 +226,42 @@ CheckCertHostname(Input endEntityCertDER, Input hostname)
     return rv;
   }
 
+  Time notBefore(Time::uninitialized);
+  rv = ParseValidity(cert.GetValidity(), &notBefore);
+  if (rv != Success) {
+    return rv;
+  }
+  FallBackToSearchWithinSubject fallBackToSearchWithinSubject;
+  rv = nameMatchingPolicy.FallBackToCommonName(notBefore,
+                                               fallBackToSearchWithinSubject);
+  if (rv != Success) {
+    return rv;
+  }
+
   const Input* subjectAltName(cert.GetSubjectAltName());
   Input subject(cert.GetSubject());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // For backward compatibility with legacy certificates, we may fall back to
+  // searching for a name match in the subject common name for DNS names and
+  // IPv4 addresses. We don't do so for IPv6 addresses because we do not think
+  // there are many certificates that would need such fallback, and because
+  // comparisons of string representations of IPv6 addresses are particularly
+  // error prone due to the syntactic flexibility that IPv6 addresses have.
+  //
+  // IPv4 and IPv6 addresses are represented using the same type of GeneralName
+  // (iPAddress); they are differentiated by the lengths of the values.
   MatchResult match;
   uint8_t ipv6[16];
   uint8_t ipv4[4];
   if (IsValidReferenceDNSID(hostname)) {
     rv = SearchNames(subjectAltName, subject, GeneralNameType::dNSName,
-                     hostname, FallBackToSearchWithinSubject::Yes, match);
+                     hostname, fallBackToSearchWithinSubject, match);
   } else if (ParseIPv6Address(hostname, ipv6)) {
     rv = SearchNames(subjectAltName, subject, GeneralNameType::iPAddress,
                      Input(ipv6), FallBackToSearchWithinSubject::No, match);
   } else if (ParseIPv4Address(hostname, ipv4)) {
     rv = SearchNames(subjectAltName, subject, GeneralNameType::iPAddress,
-                     Input(ipv4), FallBackToSearchWithinSubject::Yes, match);
+                     Input(ipv4), fallBackToSearchWithinSubject, match);
   } else {
     return Result::ERROR_BAD_CERT_DOMAIN;
   }
@@ -258,7 +269,7 @@ CheckCertHostname(Input endEntityCertDER, Input hostname)
     return rv;
   }
   switch (match) {
-    case MatchResult::NoNamesOfGivenType: 
+    case MatchResult::NoNamesOfGivenType: // fall through
     case MatchResult::Mismatch:
       return Result::ERROR_BAD_CERT_DOMAIN;
     case MatchResult::Match:
@@ -267,7 +278,7 @@ CheckCertHostname(Input endEntityCertDER, Input hostname)
   }
 }
 
-
+// 4.2.1.10. Name Constraints
 Result
 CheckNameConstraints(Input encodedNameConstraints,
                      const BackCert& firstChild,
@@ -289,7 +300,7 @@ CheckNameConstraints(Input encodedNameConstraints,
       return rv;
     }
     switch (match) {
-      case MatchResult::Match: 
+      case MatchResult::Match: // fall through
       case MatchResult::NoNamesOfGivenType:
         break;
       case MatchResult::Mismatch:
@@ -302,49 +313,49 @@ CheckNameConstraints(Input encodedNameConstraints,
 
 namespace {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// SearchNames is used by CheckCertHostname and CheckNameConstraints.
+//
+// When called during name constraint checking, referenceIDType is
+// GeneralNameType::nameConstraints and referenceID is the entire encoded name
+// constraints extension value.
+//
+// The main benefit of using the exact same code paths for both is that we
+// ensure consistency between name validation and name constraint enforcement
+// regarding thing like "Which CN attributes should be considered as potential
+// CN-IDs" and "Which character sets are acceptable for CN-IDs?" If the name
+// matching and the name constraint enforcement logic were out of sync on these
+// issues (e.g. if name matching were to consider all subject CN attributes,
+// but name constraints were only enforced on the most specific subject CN),
+// trivial name constraint bypasses could result.
 
 Result
-SearchNames( const Input* subjectAltName,
+SearchNames(/*optional*/ const Input* subjectAltName,
             Input subject,
             GeneralNameType referenceIDType,
             Input referenceID,
             FallBackToSearchWithinSubject fallBackToCommonName,
-             MatchResult& match)
+            /*out*/ MatchResult& match)
 {
   Result rv;
 
   match = MatchResult::NoNamesOfGivenType;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // RFC 6125 says "A client MUST NOT seek a match for a reference identifier
+  // of CN-ID if the presented identifiers include a DNS-ID, SRV-ID, URI-ID, or
+  // any application-specific identifier types supported by the client."
+  // Accordingly, we only consider CN-IDs if there are no DNS-IDs in the
+  // subjectAltName.
+  //
+  // RFC 6125 says that IP addresses are out of scope, but for backward
+  // compatibility we accept them, by considering IP addresses to be an
+  // "application-specific identifier type supported by the client."
+  //
+  // TODO(bug XXXXXXX): Consider strengthening this check to "A client MUST NOT
+  // seek a match for a reference identifier of CN-ID if the certificate
+  // contains a subjectAltName extension."
+  //
+  // TODO(bug XXXXXXX): Consider dropping support for IP addresses as
+  // identifiers completely.
 
   if (subjectAltName) {
     Reader altNames;
@@ -354,9 +365,9 @@ SearchNames( const Input* subjectAltName,
       return rv;
     }
 
-    
-    
-    
+    // According to RFC 5280, "If the subjectAltName extension is present, the
+    // sequence MUST contain at least one entry." For compatibility reasons, we
+    // do not enforce this. See bug 1143085.
     while (!altNames.AtEnd()) {
       GeneralNameType presentedIDType;
       Input presentedID;
@@ -399,78 +410,78 @@ SearchNames( const Input* subjectAltName,
     fallBackToEmailAddress = FallBackToSearchWithinSubject::No;
   }
 
-  
-  
+  // Short-circuit the parsing of the subject name if we're not going to match
+  // any names in it
   if (fallBackToEmailAddress == FallBackToSearchWithinSubject::No &&
       fallBackToCommonName == FallBackToSearchWithinSubject::No) {
     return Success;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Attempt to match the reference ID against the CN-ID, which we consider to
+  // be the most-specific CN AVA in the subject field.
+  //
+  // https://tools.ietf.org/html/rfc6125#section-2.3.1 says:
+  //
+  //   To reduce confusion, in this specification we avoid such terms and
+  //   instead use the terms provided under Section 1.8; in particular, we
+  //   do not use the term "(most specific) Common Name field in the subject
+  //   field" from [HTTP-TLS] and instead state that a CN-ID is a Relative
+  //   Distinguished Name (RDN) in the certificate subject containing one
+  //   and only one attribute-type-and-value pair of type Common Name (thus
+  //   removing the possibility that an RDN might contain multiple AVAs
+  //   (Attribute Value Assertions) of type CN, one of which could be
+  //   considered "most specific").
+  //
+  // https://tools.ietf.org/html/rfc6125#section-7.4 says:
+  //
+  //   [...] Although it would be preferable to
+  //   forbid multiple CN-IDs entirely, there are several reasons at this
+  //   time why this specification states that they SHOULD NOT (instead of
+  //   MUST NOT) be included [...]
+  //
+  // Consequently, it is unclear what to do when there are multiple CNs in the
+  // subject, regardless of whether there "SHOULD NOT" be.
+  //
+  // NSS's CERT_VerifyCertName mostly follows RFC2818 in this instance, which
+  // says:
+  //
+  //   If a subjectAltName extension of type dNSName is present, that MUST
+  //   be used as the identity. Otherwise, the (most specific) Common Name
+  //   field in the Subject field of the certificate MUST be used.
+  //
+  //   [...]
+  //
+  //   In some cases, the URI is specified as an IP address rather than a
+  //   hostname. In this case, the iPAddress subjectAltName must be present
+  //   in the certificate and must exactly match the IP in the URI.
+  //
+  // (The main difference from RFC2818 is that NSS's CERT_VerifyCertName also
+  // matches IP addresses in the most-specific CN.)
+  //
+  // NSS's CERT_VerifyCertName finds the most specific CN via
+  // CERT_GetCommoName, which uses CERT_GetLastNameElement. Note that many
+  // NSS-based applications, including Gecko, also use CERT_GetCommonName. It
+  // is likely that other, non-NSS-based, applications also expect only the
+  // most specific CN to be matched against the reference ID.
+  //
+  // "A Layman's Guide to a Subset of ASN.1, BER, and DER" and other sources
+  // agree that an RDNSequence is ordered from most significant (least
+  // specific) to least significant (most specific), as do other references.
+  //
+  // However, Chromium appears to use the least-specific (first) CN instead of
+  // the most-specific; see https://crbug.com/366957. Also, MSIE and some other
+  // popular implementations apparently attempt to match the reference ID
+  // against any/all CNs in the subject. Since we're trying to phase out the
+  // use of CN-IDs, we intentionally avoid trying to match MSIE's more liberal
+  // behavior.
 
-  
-  
-  
-  
-  
-  
-  
+  // Name ::= CHOICE { -- only one possibility for now --
+  //   rdnSequence  RDNSequence }
+  //
+  // RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
+  //
+  // RelativeDistinguishedName ::=
+  //   SET SIZE (1..MAX) OF AttributeTypeAndValue
   Reader subjectReader(subject);
   return der::NestedOf(subjectReader, der::SEQUENCE, der::SET,
                        der::EmptyAllowed::Yes, [&](Reader& r) {
@@ -479,19 +490,19 @@ SearchNames( const Input* subjectAltName,
   });
 }
 
-
-
-
-
-
-
+// RelativeDistinguishedName ::=
+//   SET SIZE (1..MAX) OF AttributeTypeAndValue
+//
+// AttributeTypeAndValue ::= SEQUENCE {
+//   type     AttributeType,
+//   value    AttributeValue }
 Result
 SearchWithinRDN(Reader& rdn,
                 GeneralNameType referenceIDType,
                 Input referenceID,
                 FallBackToSearchWithinSubject fallBackToEmailAddress,
                 FallBackToSearchWithinSubject fallBackToCommonName,
-                 MatchResult& match)
+                /*in/out*/ MatchResult& match)
 {
   do {
     Input type;
@@ -511,76 +522,76 @@ SearchWithinRDN(Reader& rdn,
   return Success;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// AttributeTypeAndValue ::= SEQUENCE {
+//   type     AttributeType,
+//   value    AttributeValue }
+//
+// AttributeType ::= OBJECT IDENTIFIER
+//
+// AttributeValue ::= ANY -- DEFINED BY AttributeType
+//
+// DirectoryString ::= CHOICE {
+//       teletexString           TeletexString (SIZE (1..MAX)),
+//       printableString         PrintableString (SIZE (1..MAX)),
+//       universalString         UniversalString (SIZE (1..MAX)),
+//       utf8String              UTF8String (SIZE (1..MAX)),
+//       bmpString               BMPString (SIZE (1..MAX)) }
 Result
 MatchAVA(Input type, uint8_t valueEncodingTag, Input presentedID,
          GeneralNameType referenceIDType,
          Input referenceID,
          FallBackToSearchWithinSubject fallBackToEmailAddress,
          FallBackToSearchWithinSubject fallBackToCommonName,
-          MatchResult& match)
+         /*in/out*/ MatchResult& match)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Try to match the  CN as a DNSName or an IPAddress.
+  //
+  // id-at-commonName        AttributeType ::= { id-at 3 }
+  //
+  // -- Naming attributes of type X520CommonName:
+  // --   X520CommonName ::= DirectoryName (SIZE (1..ub-common-name))
+  // --
+  // -- Expanded to avoid parameterized type:
+  // X520CommonName ::= CHOICE {
+  //       teletexString     TeletexString   (SIZE (1..ub-common-name)),
+  //       printableString   PrintableString (SIZE (1..ub-common-name)),
+  //       universalString   UniversalString (SIZE (1..ub-common-name)),
+  //       utf8String        UTF8String      (SIZE (1..ub-common-name)),
+  //       bmpString         BMPString       (SIZE (1..ub-common-name)) }
+  //
+  // python DottedOIDToCode.py id-at-commonName 2.5.4.3
   static const uint8_t id_at_commonName[] = {
     0x55, 0x04, 0x03
   };
   if (fallBackToCommonName == FallBackToSearchWithinSubject::Yes &&
       InputsAreEqual(type, Input(id_at_commonName))) {
-    
-    
-    
+    // We might have previously found a match. Now that we've found another CN,
+    // we no longer consider that previous match to be a match, so "forget" about
+    // it.
     match = MatchResult::NoNamesOfGivenType;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // PrintableString is a subset of ASCII that contains all the characters
+    // allowed in CN-IDs except '*'. Although '*' is illegal, there are many
+    // real-world certificates that are encoded this way, so we accept it.
+    //
+    // In the case of UTF8String, we rely on the fact that in UTF-8 the octets in
+    // a multi-byte encoding of a code point are always distinct from ASCII. Any
+    // non-ASCII byte in a UTF-8 string causes us to fail to match. We make no
+    // attempt to detect or report malformed UTF-8 (e.g. incomplete or overlong
+    // encodings of code points, or encodings of invalid code points).
+    //
+    // TeletexString is supported as long as it does not contain any escape
+    // sequences, which are not supported. We'll reject escape sequences as
+    // invalid characters in names, which means we only accept strings that are
+    // in the default character set, which is a superset of ASCII. Note that NSS
+    // actually treats TeletexString as ISO-8859-1. Many certificates that have
+    // wildcard CN-IDs (e.g. "*.example.com") use TeletexString because
+    // PrintableString is defined to not allow '*' and because, at one point in
+    // history, UTF8String was too new to use for compatibility reasons.
+    //
+    // UniversalString and BMPString are also deprecated, and they are a little
+    // harder to support because they are not single-byte ASCII superset
+    // encodings, so we don't bother.
     if (valueEncodingTag != der::PrintableString &&
         valueEncodingTag != der::UTF8String &&
         valueEncodingTag != der::TeletexString) {
@@ -592,10 +603,10 @@ MatchAVA(Input type, uint8_t valueEncodingTag, Input presentedID,
                                              presentedID, referenceIDType,
                                              referenceID, match);
     } else {
-      
-      
-      
-      
+      // We don't match CN-IDs for IPv6 addresses.
+      // MatchSubjectPresentedIDWithReferenceID ensures that it won't match an
+      // IPv4 address with an IPv6 address, so we don't need to check that
+      // referenceID is an IPv4 address here.
       uint8_t ipv4[4];
       if (ParseIPv4Address(presentedID, ipv4)) {
         MatchSubjectPresentedIDWithReferenceID(GeneralNameType::iPAddress,
@@ -604,21 +615,21 @@ MatchAVA(Input type, uint8_t valueEncodingTag, Input presentedID,
       }
     }
 
-    
-    
-    
+    // Regardless of whether there was a match, we keep going in case we find
+    // another CN later. If we do find another one, then this match/mismatch
+    // will be ignored, because we only care about the most specific CN.
 
     return Success;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Match an email address against an emailAddress attribute in the
+  // subject.
+  //
+  // id-emailAddress      AttributeType ::= { pkcs-9 1 }
+  //
+  // EmailAddress ::=     IA5String (SIZE (1..ub-emailaddress-length))
+  //
+  // python DottedOIDToCode.py id-emailAddress 1.2.840.113549.1.9.1
   static const uint8_t id_emailAddress[] = {
     0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x01
   };
@@ -626,7 +637,7 @@ MatchAVA(Input type, uint8_t valueEncodingTag, Input presentedID,
       InputsAreEqual(type, Input(id_emailAddress))) {
     if (referenceIDType == GeneralNameType::rfc822Name &&
         match == MatchResult::Match) {
-      
+      // We already found a match; we don't need to match another one
       return Success;
     }
     if (valueEncodingTag != der::IA5String) {
@@ -645,7 +656,7 @@ MatchSubjectPresentedIDWithReferenceID(GeneralNameType presentedIDType,
                                        Input presentedID,
                                        GeneralNameType referenceIDType,
                                        Input referenceID,
-                                        MatchResult& match)
+                                       /*in/out*/ MatchResult& match)
 {
   Result rv = MatchPresentedIDWithReferenceID(presentedIDType, presentedID,
                                               referenceIDType, referenceID,
@@ -660,11 +671,11 @@ MatchPresentedIDWithReferenceID(GeneralNameType presentedIDType,
                                 Input presentedID,
                                 GeneralNameType referenceIDType,
                                 Input referenceID,
-                                 MatchResult& matchResult)
+                                /*out*/ MatchResult& matchResult)
 {
   if (referenceIDType == GeneralNameType::nameConstraints) {
-    
-    
+    // matchResult is irrelevant when checking name constraints; only the
+    // pass/fail result of CheckPresentedIDConformsToConstraints matters.
     return CheckPresentedIDConformsToConstraints(presentedIDType, presentedID,
                                                  referenceID);
   }
@@ -696,14 +707,14 @@ MatchPresentedIDWithReferenceID(GeneralNameType presentedIDType,
       break;
 
     case GeneralNameType::directoryName:
-      
-      
+      // TODO: At some point, we may add APIs for matching DirectoryNames.
+      // fall through
 
-    case GeneralNameType::otherName: 
-    case GeneralNameType::x400Address: 
-    case GeneralNameType::ediPartyName: 
-    case GeneralNameType::uniformResourceIdentifier: 
-    case GeneralNameType::registeredID: 
+    case GeneralNameType::otherName: // fall through
+    case GeneralNameType::x400Address: // fall through
+    case GeneralNameType::ediPartyName: // fall through
+    case GeneralNameType::uniformResourceIdentifier: // fall through
+    case GeneralNameType::registeredID: // fall through
     case GeneralNameType::nameConstraints:
       return NotReached("unexpected nameType for SearchType::Match",
                         Result::FATAL_ERROR_INVALID_ARGS);
@@ -731,10 +742,10 @@ Result CheckPresentedIDConformsToNameConstraintsSubtrees(
          NameConstraintsSubtrees subtreesType);
 Result MatchPresentedIPAddressWithConstraint(Input presentedID,
                                              Input iPAddressConstraint,
-                                              bool& foundMatch);
+                                             /*out*/ bool& foundMatch);
 Result MatchPresentedDirectoryNameWithConstraint(
          NameConstraintsSubtrees subtreesType, Input presentedID,
-         Input directoryNameConstraint,  bool& matches);
+         Input directoryNameConstraint, /*out*/ bool& matches);
 
 Result
 CheckPresentedIDConformsToConstraints(
@@ -742,9 +753,9 @@ CheckPresentedIDConformsToConstraints(
   Input presentedID,
   Input encodedNameConstraints)
 {
-  
-  
-  
+  // NameConstraints ::= SEQUENCE {
+  //      permittedSubtrees       [0]     GeneralSubtrees OPTIONAL,
+  //      excludedSubtrees        [1]     GeneralSubtrees OPTIONAL }
   Reader nameConstraints;
   Result rv = der::ExpectTagAndGetValueAtEnd(encodedNameConstraints,
                                              der::SEQUENCE, nameConstraints);
@@ -752,9 +763,9 @@ CheckPresentedIDConformsToConstraints(
     return rv;
   }
 
-  
-  
-  
+  // RFC 5280 says "Conforming CAs MUST NOT issue certificates where name
+  // constraints is an empty sequence. That is, either the permittedSubtrees
+  // field or the excludedSubtrees MUST be present."
   if (nameConstraints.AtEnd()) {
     return Result::ERROR_BAD_DER;
   }
@@ -798,14 +809,14 @@ CheckPresentedIDConformsToNameConstraintsSubtrees(
   bool hasPermittedSubtreesMatch = false;
   bool hasPermittedSubtreesMismatch = false;
 
-  
-  
-  
+  // GeneralSubtrees ::= SEQUENCE SIZE (1..MAX) OF GeneralSubtree
+  //
+  // do { ... } while(...) because subtrees isn't allowed to be empty.
   do {
-    
-    
-    
-    
+    // GeneralSubtree ::= SEQUENCE {
+    //      base                    GeneralName,
+    //      minimum         [0]     BaseDistance DEFAULT 0,
+    //      maximum         [1]     BaseDistance OPTIONAL }
     Reader subtree;
     rv = ExpectTagAndGetValue(subtrees, der::SEQUENCE, subtree);
     if (rv != Success) {
@@ -817,13 +828,13 @@ CheckPresentedIDConformsToNameConstraintsSubtrees(
     if (rv != Success) {
       return rv;
     }
-    
-    
-    
-    
-    
-    
-    
+    // http://tools.ietf.org/html/rfc5280#section-4.2.1.10: "Within this
+    // profile, the minimum and maximum fields are not used with any name
+    // forms, thus, the minimum MUST be zero, and maximum MUST be absent."
+    //
+    // Since the default value isn't allowed to be encoded according to the DER
+    // encoding rules for DEFAULT, this is equivalent to saying that neither
+    // minimum or maximum must be encoded.
     rv = der::End(subtree);
     if (rv != Success) {
       return rv;
@@ -868,21 +879,21 @@ CheckPresentedIDConformsToNameConstraintsSubtrees(
           }
           break;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        case GeneralNameType::otherName: 
-        case GeneralNameType::x400Address: 
-        case GeneralNameType::ediPartyName: 
-        case GeneralNameType::uniformResourceIdentifier: 
-        case GeneralNameType::registeredID: 
+        // RFC 5280 says "Conforming CAs [...] SHOULD NOT impose name
+        // constraints on the x400Address, ediPartyName, or registeredID
+        // name forms. It also says "Applications conforming to this profile
+        // [...] SHOULD be able to process name constraints that are imposed
+        // on [...] uniformResourceIdentifier [...]", but we don't bother.
+        //
+        // TODO: Ask to have spec updated to say ""Conforming CAs [...] SHOULD
+        // NOT impose name constraints on the otherName, x400Address,
+        // ediPartyName, uniformResourceIdentifier, or registeredID name
+        // forms."
+        case GeneralNameType::otherName: // fall through
+        case GeneralNameType::x400Address: // fall through
+        case GeneralNameType::ediPartyName: // fall through
+        case GeneralNameType::uniformResourceIdentifier: // fall through
+        case GeneralNameType::registeredID: // fall through
           return Result::ERROR_CERT_NOT_IN_NAME_SPACE;
 
         case GeneralNameType::nameConstraints:
@@ -910,135 +921,135 @@ CheckPresentedIDConformsToNameConstraintsSubtrees(
   } while (!subtrees.AtEnd());
 
   if (hasPermittedSubtreesMismatch && !hasPermittedSubtreesMatch) {
-    
-    
-    
+    // If there was any entry of the given type in permittedSubtrees, then it
+    // required that at least one of them must match. Since none of them did,
+    // we have a failure.
     return Result::ERROR_CERT_NOT_IN_NAME_SPACE;
   }
 
   return Success;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// We do not distinguish between a syntactically-invalid presentedDNSID and one
+// that is syntactically valid but does not match referenceDNSID; in both
+// cases, the result is false.
+//
+// We assume that both presentedDNSID and referenceDNSID are encoded in such a
+// way that US-ASCII (7-bit) characters are encoded in one byte and no encoding
+// of a non-US-ASCII character contains a code point in the range 0-127. For
+// example, UTF-8 is OK but UTF-16 is not.
+//
+// RFC6125 says that a wildcard label may be of the form <x>*<y>.<DNSID>, where
+// <x> and/or <y> may be empty. However, NSS requires <y> to be empty, and we
+// follow NSS's stricter policy by accepting wildcards only of the form
+// <x>*.<DNSID>, where <x> may be empty.
+//
+// An relative presented DNS ID matches both an absolute reference ID and a
+// relative reference ID. Absolute presented DNS IDs are not supported:
+//
+//      Presented ID   Reference ID  Result
+//      -------------------------------------
+//      example.com    example.com   Match
+//      example.com.   example.com   Mismatch
+//      example.com    example.com.  Match
+//      example.com.   example.com.  Mismatch
+//
+// There are more subtleties documented inline in the code.
+//
+// Name constraints ///////////////////////////////////////////////////////////
+//
+// This is all RFC 5280 has to say about DNSName constraints:
+//
+//     DNS name restrictions are expressed as host.example.com.  Any DNS
+//     name that can be constructed by simply adding zero or more labels to
+//     the left-hand side of the name satisfies the name constraint.  For
+//     example, www.host.example.com would satisfy the constraint but
+//     host1.example.com would not.
+//
+// This lack of specificity has lead to a lot of uncertainty regarding
+// subdomain matching. In particular, the following questions have been
+// raised and answered:
+//
+//     Q: Does a presented identifier equal (case insensitive) to the name
+//        constraint match the constraint? For example, does the presented
+//        ID "host.example.com" match a "host.example.com" constraint?
+//     A: Yes. RFC5280 says "by simply adding zero or more labels" and this
+//        is the case of adding zero labels.
+//
+//     Q: When the name constraint does not start with ".", do subdomain
+//        presented identifiers match it? For example, does the presented
+//        ID "www.host.example.com" match a "host.example.com" constraint?
+//     A: Yes. RFC5280 says "by simply adding zero or more labels" and this
+//        is the case of adding more than zero labels. The example is the
+//        one from RFC 5280.
+//
+//     Q: When the name constraint does not start with ".", does a
+//        non-subdomain prefix match it? For example, does "bigfoo.bar.com"
+//        match "foo.bar.com"? [4]
+//     A: No. We interpret RFC 5280's language of "adding zero or more labels"
+//        to mean that whole labels must be prefixed.
+//
+//     (Note that the above three scenarios are the same as the RFC 6265
+//     domain matching rules [0].)
+//
+//     Q: Is a name constraint that starts with "." valid, and if so, what
+//        semantics does it have? For example, does a presented ID of
+//        "www.example.com" match a constraint of ".example.com"? Does a
+//        presented ID of "example.com" match a constraint of ".example.com"?
+//     A: This implementation, NSS[1], and SChannel[2] all support a
+//        leading ".", but OpenSSL[3] does not yet. Amongst the
+//        implementations that support it, a leading "." is legal and means
+//        the same thing as when the "." is omitted, EXCEPT that a
+//        presented identifier equal (case insensitive) to the name
+//        constraint is not matched; i.e. presented DNSName identifiers
+//        must be subdomains. Some CAs in Mozilla's CA program (e.g. HARICA)
+//        have name constraints with the leading "." in their root
+//        certificates. The name constraints imposed on DCISS by Mozilla also
+//        have the it, so supporting this is a requirement for backward
+//        compatibility, even if it is not yet standardized. So, for example, a
+//        presented ID of "www.example.com" matches a constraint of
+//        ".example.com" but a presented ID of "example.com" does not.
+//
+//     Q: Is there a way to prevent subdomain matches?
+//     A: Yes.
+//
+//        Some people have proposed that dNSName constraints that do not
+//        start with a "." should be restricted to exact (case insensitive)
+//        matches. However, such a change of semantics from what RFC5280
+//        specifies would be a non-backward-compatible change in the case of
+//        permittedSubtrees constraints, and it would be a security issue for
+//        excludedSubtrees constraints.
+//
+//        However, it can be done with a combination of permittedSubtrees and
+//        excludedSubtrees, e.g. "example.com" in permittedSubtrees and
+//        ".example.com" in excudedSubtrees.
+//
+//     Q: Are name constraints allowed to be specified as absolute names?
+//        For example, does a presented ID of "example.com" match a name
+//        constraint of "example.com." and vice versa.
+//     A: Absolute names are not supported as presented IDs or name
+//        constraints. Only reference IDs may be absolute.
+//
+//     Q: Is "" a valid DNSName constraints? If so, what does it mean?
+//     A: Yes. Any valid presented DNSName can be formed "by simply adding zero
+//        or more labels to the left-hand side" of "". In particular, an
+//        excludedSubtrees DNSName constraint of "" forbids all DNSNames.
+//
+//     Q: Is "." a valid DNSName constraints? If so, what does it mean?
+//     A: No, because absolute names are not allowed (see above).
+//
+// [0] RFC 6265 (Cookies) Domain Matching rules:
+//     http://tools.ietf.org/html/rfc6265#section-5.1.3
+// [1] NSS source code:
+//     https://mxr.mozilla.org/nss/source/lib/certdb/genname.c?rev=2a7348f013cb#1209
+// [2] Description of SChannel's behavior from Microsoft:
+//     http://www.imc.org/ietf-pkix/mail-archive/msg04668.html
+// [3] Proposal to add such support to OpenSSL:
+//     http://www.mail-archive.com/openssl-dev%40openssl.org/msg36204.html
+//     https://rt.openssl.org/Ticket/Display.html?id=3562
+// [4] Feedback on the lack of clarify in the definition that never got
+//     incorporated into the spec:
+//     https://www.ietf.org/mail-archive/web/pkix/current/msg21192.html
 Result
 MatchPresentedDNSIDWithReferenceDNSID(
   Input presentedDNSID,
@@ -1046,7 +1057,7 @@ MatchPresentedDNSIDWithReferenceDNSID(
   AllowDotlessSubdomainMatches allowDotlessSubdomainMatches,
   IDRole referenceDNSIDRole,
   Input referenceDNSID,
-   bool& matches)
+  /*out*/ bool& matches)
 {
   if (!IsValidDNSID(presentedDNSID, IDRole::PresentedID, allowWildcards)) {
     return Result::ERROR_BAD_DER;
@@ -1068,33 +1079,33 @@ MatchPresentedDNSIDWithReferenceDNSID(
     {
       if (presentedDNSID.GetLength() > referenceDNSID.GetLength()) {
         if (referenceDNSID.GetLength() == 0) {
-          
+          // An empty constraint matches everything.
           matches = true;
           return Success;
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // If the reference ID starts with a dot then skip the prefix of
+        // of the presented ID and start the comparison at the position of that
+        // dot. Examples:
+        //
+        //                                       Matches     Doesn't Match
+        //     -----------------------------------------------------------
+        //       original presented ID:  www.example.com    badexample.com
+        //                     skipped:  www                ba
+        //     presented ID w/o prefix:     .example.com      dexample.com
+        //                reference ID:     .example.com      .example.com
+        //
+        // If the reference ID does not start with a dot then we skip the
+        // prefix of the presented ID but also verify that the prefix ends with
+        // a dot. Examples:
+        //
+        //                                       Matches     Doesn't Match
+        //     -----------------------------------------------------------
+        //       original presented ID:  www.example.com    badexample.com
+        //                     skipped:  www                ba
+        //                 must be '.':     .                 d
+        //     presented ID w/o prefix:      example.com       example.com
+        //                reference ID:      example.com       example.com
+        //
         if (reference.Peek('.')) {
           if (presented.Skip(static_cast<Input::size_type>(
                                presentedDNSID.GetLength() -
@@ -1124,19 +1135,19 @@ MatchPresentedDNSIDWithReferenceDNSID(
       break;
     }
 
-    case IDRole::PresentedID: 
+    case IDRole::PresentedID: // fall through
       return NotReached("IDRole::PresentedID is not a valid referenceDNSIDRole",
                         Result::FATAL_ERROR_INVALID_ARGS);
   }
 
-  
+  // We only allow wildcard labels that consist only of '*'.
   if (presented.Peek('*')) {
     if (presented.Skip(1) != Success) {
       return NotReached("Skipping '*' failed",
                         Result::FATAL_ERROR_LIBRARY_FAILURE);
     }
     do {
-      
+      // This will happen if reference is a single, relative label
       if (reference.AtEnd()) {
         matches = false;
         return Success;
@@ -1166,7 +1177,7 @@ MatchPresentedDNSIDWithReferenceDNSID(
       return Success;
     }
     if (presented.AtEnd()) {
-      
+      // Don't allow presented IDs to be absolute.
       if (presentedByte == '.') {
         return Result::ERROR_BAD_DER;
       }
@@ -1174,8 +1185,8 @@ MatchPresentedDNSIDWithReferenceDNSID(
     }
   }
 
-  
-  
+  // Allow a relative presented DNS ID to match an absolute reference DNS ID,
+  // unless we're matching a name constraint.
   if (!reference.AtEnd()) {
     if (referenceDNSIDRole != IDRole::NameConstraint) {
       uint8_t referenceByte;
@@ -1198,19 +1209,19 @@ MatchPresentedDNSIDWithReferenceDNSID(
   return Success;
 }
 
-
-
-
-
-
-
-
-
-
+// https://tools.ietf.org/html/rfc5280#section-4.2.1.10 says:
+//
+//     For IPv4 addresses, the iPAddress field of GeneralName MUST contain
+//     eight (8) octets, encoded in the style of RFC 4632 (CIDR) to represent
+//     an address range [RFC4632].  For IPv6 addresses, the iPAddress field
+//     MUST contain 32 octets similarly encoded.  For example, a name
+//     constraint for "class C" subnet 192.0.2.0 is represented as the
+//     octets C0 00 02 00 FF FF FF 00, representing the CIDR notation
+//     192.0.2.0/24 (mask 255.255.255.0).
 Result
 MatchPresentedIPAddressWithConstraint(Input presentedID,
                                       Input iPAddressConstraint,
-                                       bool& foundMatch)
+                                      /*out*/ bool& foundMatch)
 {
   if (presentedID.GetLength() != 4 && presentedID.GetLength() != 16) {
     return Result::ERROR_BAD_DER;
@@ -1220,7 +1231,7 @@ MatchPresentedIPAddressWithConstraint(Input presentedID,
     return Result::ERROR_BAD_DER;
   }
 
-  
+  // an IPv4 address never matches an IPv6 constraint, and vice versa.
   if (presentedID.GetLength() * 2 != iPAddressConstraint.GetLength()) {
     foundMatch = false;
     return Success;
@@ -1267,18 +1278,18 @@ MatchPresentedIPAddressWithConstraint(Input presentedID,
   return Success;
 }
 
-
-
-
-
-
-
-
+// AttributeTypeAndValue ::= SEQUENCE {
+//   type     AttributeType,
+//   value    AttributeValue }
+//
+// AttributeType ::= OBJECT IDENTIFIER
+//
+// AttributeValue ::= ANY -- DEFINED BY AttributeType
 Result
 ReadAVA(Reader& rdn,
-         Input& type,
-         uint8_t& valueTag,
-         Input& value)
+        /*out*/ Input& type,
+        /*out*/ uint8_t& valueTag,
+        /*out*/ Input& value)
 {
   return der::Nested(rdn, der::SEQUENCE, [&](Reader& ava) -> Result {
     Result rv = der::ExpectTagAndGetValue(ava, der::OIDTag, type);
@@ -1293,51 +1304,51 @@ ReadAVA(Reader& rdn,
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Names are sequences of RDNs. RDNS are sets of AVAs. That means that RDNs are
+// unordered, so in theory we should match RDNs with equivalent AVAs that are
+// in different orders. Within the AVAs are DirectoryNames that are supposed to
+// be compared according to LDAP stringprep normalization rules (e.g.
+// normalizing whitespace), consideration of different character encodings,
+// etc. Indeed, RFC 5280 says we MUST deal with all of that.
+//
+// In practice, many implementations, including NSS, only match Names in a way
+// that only meets a subset of the requirements of RFC 5280. Those
+// normalization and character encoding conversion steps appear to be
+// unnecessary for processing real-world certificates, based on experience from
+// having used NSS in Firefox for many years.
+//
+// RFC 5280 also says "CAs issuing certificates with a restriction of the form
+// directoryName SHOULD NOT rely on implementation of the full
+// ISO DN name comparison algorithm. This implies name restrictions MUST
+// be stated identically to the encoding used in the subject field or
+// subjectAltName extension." It goes on to say, in the security
+// considerations:
+//
+//     In addition, name constraints for distinguished names MUST be stated
+//     identically to the encoding used in the subject field or
+//     subjectAltName extension.  If not, then name constraints stated as
+//     excludedSubtrees will not match and invalid paths will be accepted
+//     and name constraints expressed as permittedSubtrees will not match
+//     and valid paths will be rejected.  To avoid acceptance of invalid
+//     paths, CAs SHOULD state name constraints for distinguished names as
+//     permittedSubtrees wherever possible.
+//
+// For permittedSubtrees, the MUST-level requirement is relaxed for
+// compatibility in the case of PrintableString and UTF8String. That is, if a
+// name constraint has been encoded using UTF8String and the presented ID has
+// been encoded with a PrintableString (or vice-versa), they are considered to
+// match if they are equal everywhere except for the tag identifying the
+// encoding. See bug 1150114.
+//
+// For excludedSubtrees, we simply prohibit any non-empty directoryName
+// constraint to ensure we are not being too lenient. We support empty
+// DirectoryName constraints in excludedSubtrees so that a CA can say "Do not
+// allow any DirectoryNames in issued certificates."
 Result
 MatchPresentedDirectoryNameWithConstraint(NameConstraintsSubtrees subtreesType,
                                           Input presentedID,
                                           Input directoryNameConstraint,
-                                           bool& matches)
+                                          /*out*/ bool& matches)
 {
   Reader constraintRDNs;
   Result rv = der::ExpectTagAndGetValueAtEnd(directoryNameConstraint,
@@ -1354,7 +1365,7 @@ MatchPresentedDirectoryNameWithConstraint(NameConstraintsSubtrees subtreesType,
 
   switch (subtreesType) {
     case NameConstraintsSubtrees::permittedSubtrees:
-      break; 
+      break; // dealt with below
     case NameConstraintsSubtrees::excludedSubtrees:
       if (!constraintRDNs.AtEnd() || !presentedRDNs.AtEnd()) {
         return Result::ERROR_CERT_NOT_IN_NAME_SPACE;
@@ -1364,8 +1375,8 @@ MatchPresentedDirectoryNameWithConstraint(NameConstraintsSubtrees subtreesType,
   }
 
   for (;;) {
-    
-    
+    // The AVAs have to be fully equal, but the constraint RDNs just need to be
+    // a prefix of the presented RDNs.
     if (constraintRDNs.AtEnd()) {
       matches = true;
       return Success;
@@ -1401,8 +1412,8 @@ MatchPresentedDirectoryNameWithConstraint(NameConstraintsSubtrees subtreesType,
       if (rv != Success) {
         return rv;
       }
-      
-      
+      // TODO (bug 1155767): verify that if an AVA is a PrintableString it
+      // consists only of characters valid for PrintableStrings.
       bool avasMatch =
         InputsAreEqual(constraintType, presentedType) &&
         InputsAreEqual(constraintValue, presentedValue) &&
@@ -1423,37 +1434,37 @@ MatchPresentedDirectoryNameWithConstraint(NameConstraintsSubtrees subtreesType,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// RFC 5280 says:
+//
+//     The format of an rfc822Name is a "Mailbox" as defined in Section 4.1.2
+//     of [RFC2821]. A Mailbox has the form "Local-part@Domain".  Note that a
+//     Mailbox has no phrase (such as a common name) before it, has no comment
+//     (text surrounded in parentheses) after it, and is not surrounded by "<"
+//     and ">".  Rules for encoding Internet mail addresses that include
+//     internationalized domain names are specified in Section 7.5.
+//
+// and:
+//
+//     A name constraint for Internet mail addresses MAY specify a
+//     particular mailbox, all addresses at a particular host, or all
+//     mailboxes in a domain.  To indicate a particular mailbox, the
+//     constraint is the complete mail address.  For example,
+//     "root@example.com" indicates the root mailbox on the host
+//     "example.com".  To indicate all Internet mail addresses on a
+//     particular host, the constraint is specified as the host name.  For
+//     example, the constraint "example.com" is satisfied by any mail
+//     address at the host "example.com".  To specify any address within a
+//     domain, the constraint is specified with a leading period (as with
+//     URIs).  For example, ".example.com" indicates all the Internet mail
+//     addresses in the domain "example.com", but not Internet mail
+//     addresses on the host "example.com".
 
 bool
 IsValidRFC822Name(Input input)
 {
   Reader reader(input);
 
-  
+  // Local-part@.
   bool startOfAtom = true;
   for (;;) {
     uint8_t presentedByte;
@@ -1461,7 +1472,7 @@ IsValidRFC822Name(Input input)
       return false;
     }
     switch (presentedByte) {
-      
+      // atext is defined in https://tools.ietf.org/html/rfc2822#section-3.2.4
       case 'A': case 'a': case 'N': case 'n': case '0': case '!': case '#':
       case 'B': case 'b': case 'O': case 'o': case '1': case '$': case '%':
       case 'C': case 'c': case 'P': case 'p': case '2': case '&': case '\'':
@@ -1507,7 +1518,7 @@ Result
 MatchPresentedRFC822NameWithReferenceRFC822Name(Input presentedRFC822Name,
                                                 IDRole referenceRFC822NameRole,
                                                 Input referenceRFC822Name,
-                                                 bool& matches)
+                                                /*out*/ bool& matches)
 {
   if (!IsValidRFC822Name(presentedRFC822Name)) {
     return Result::ERROR_BAD_DER;
@@ -1525,13 +1536,13 @@ MatchPresentedRFC822NameWithReferenceRFC822Name(Input presentedRFC822Name,
     case IDRole::NameConstraint:
     {
       if (InputContains(referenceRFC822Name, '@')) {
-        
+        // The constraint is of the form "Local-part@Domain".
         break;
       }
 
-      
+      // The constraint is of the form "example.com" or ".example.com".
 
-      
+      // Skip past the '@' in the presented ID.
       for (;;) {
         uint8_t presentedByte;
         if (presented.Read(presentedByte) != Success) {
@@ -1579,12 +1590,12 @@ MatchPresentedRFC822NameWithReferenceRFC822Name(Input presentedRFC822Name,
   }
 }
 
-
-
+// We avoid isdigit because it is locale-sensitive. See
+// http://pubs.opengroup.org/onlinepubs/009695399/functions/tolower.html.
 inline uint8_t
 LocaleInsensitveToLower(uint8_t a)
 {
-  if (a >= 'A' && a <= 'Z') { 
+  if (a >= 'A' && a <= 'Z') { // unlikely
     return static_cast<uint8_t>(
              static_cast<uint8_t>(a - static_cast<uint8_t>('A')) +
              static_cast<uint8_t>('a'));
@@ -1611,10 +1622,10 @@ StartsWithIDNALabel(Input id)
 
 bool
 ReadIPv4AddressComponent(Reader& input, bool lastComponent,
-                          uint8_t& valueOut)
+                         /*out*/ uint8_t& valueOut)
 {
   size_t length = 0;
-  unsigned int value = 0; 
+  unsigned int value = 0; // Must be larger than uint8_t.
 
   for (;;) {
     if (input.AtEnd() && lastComponent) {
@@ -1628,35 +1639,35 @@ ReadIPv4AddressComponent(Reader& input, bool lastComponent,
 
     if (b >= '0' && b <= '9') {
       if (value == 0 && length > 0) {
-        return false; 
+        return false; // Leading zeros are not allowed.
       }
       value = (value * 10) + (b - '0');
       if (value > 255) {
-        return false; 
+        return false; // Component's value is too large.
       }
       ++length;
     } else if (!lastComponent && b == '.') {
       break;
     } else {
-      return false; 
+      return false; // Invalid character.
     }
   }
 
   if (length == 0) {
-    return false; 
+    return false; // empty components not allowed
   }
 
   valueOut = static_cast<uint8_t>(value);
   return true;
 }
 
-} 
+} // namespace
 
-
-
-
+// On Windows and maybe other platforms, OS-provided IP address parsing
+// functions might fail if the protocol (IPv4 or IPv6) has been disabled, so we
+// can't rely on them.
 bool
-ParseIPv4Address(Input hostname,  uint8_t (&out)[4])
+ParseIPv4Address(Input hostname, /*out*/ uint8_t (&out)[4])
 {
   Reader input(hostname);
   return ReadIPv4AddressComponent(input, false, out[0]) &&
@@ -1668,7 +1679,7 @@ ParseIPv4Address(Input hostname,  uint8_t (&out)[4])
 namespace {
 
 bool
-FinishIPv6Address( uint8_t (&address)[16], int numComponents,
+FinishIPv6Address(/*in/out*/ uint8_t (&address)[16], int numComponents,
                   int contractionIndex)
 {
   assert(numComponents >= 0);
@@ -1685,34 +1696,34 @@ FinishIPv6Address( uint8_t (&address)[16], int numComponents,
   }
 
   if (contractionIndex == -1) {
-    
+    // no contraction
     return numComponents == 8;
   }
 
   if (numComponents >= 8) {
-    return false; 
+    return false; // no room left to expand the contraction.
   }
 
-  
+  // Shift components that occur after the contraction over.
   size_t componentsToMove = static_cast<size_t>(numComponents -
                                                 contractionIndex);
   memmove(address + (2u * static_cast<size_t>(8 - componentsToMove)),
           address + (2u * static_cast<size_t>(contractionIndex)),
           componentsToMove * 2u);
-  
+  // Fill in the contracted area with zeros.
   std::fill_n(address + 2u * static_cast<size_t>(contractionIndex),
               (8u - static_cast<size_t>(numComponents)) * 2u, static_cast<uint8_t>(0u));
 
   return true;
 }
 
-} 
+} // namespace
 
-
-
-
+// On Windows and maybe other platforms, OS-provided IP address parsing
+// functions might fail if the protocol (IPv4 or IPv6) has been disabled, so we
+// can't rely on them.
 bool
-ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
+ParseIPv6Address(Input hostname, /*out*/ uint8_t (&out)[16])
 {
   Reader input(hostname);
 
@@ -1720,8 +1731,8 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
   int contractionIndex = -1;
 
   if (input.Peek(':')) {
-    
-    
+    // A valid input can only start with ':' if there is a contraction at the
+    // beginning.
     uint8_t b;
     if (input.Read(b) != Success || b != ':') {
       assert(false);
@@ -1737,8 +1748,8 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
   }
 
   for (;;) {
-    
-    
+    // If we encounter a '.' then we'll have to backtrack to parse the input
+    // from startOfComponent to the end of the input as an IPv4 address.
     Reader::Mark startOfComponent(input.GetMark());
     uint16_t componentValue = 0;
     size_t componentLength = 0;
@@ -1764,12 +1775,12 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
           break;
         case '.':
         {
-          
-          
-          
+          // A dot indicates we hit a IPv4-syntax component. Backtrack, parsing
+          // the input from startOfComponent to the end of the input as an IPv4
+          // address, and then combine it with the other components.
 
           if (currentComponentIndex > 6) {
-            return false; 
+            return false; // Too many components before the IPv4 component
           }
 
           input.SkipToEnd();
@@ -1792,7 +1803,7 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
           return false;
       }
       if (componentLength >= 4) {
-        
+        // component too long
         return false;
       }
       ++componentLength;
@@ -1800,13 +1811,13 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
     }
 
     if (currentComponentIndex >= 8) {
-      return false; 
+      return false; // too many components
     }
 
     if (componentLength == 0) {
       if (input.AtEnd() && currentComponentIndex == contractionIndex) {
         if (contractionIndex == 0) {
-          
+          // don't accept "::"
           return false;
         }
         return FinishIPv6Address(out, currentComponentIndex,
@@ -1834,9 +1845,9 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
     }
 
     if (input.Peek(':')) {
-      
+      // Contraction
       if (contractionIndex != -1) {
-        return false; 
+        return false; // multiple contractions are not allowed.
       }
       if (input.Read(b) != Success || b != ':') {
         assert(false);
@@ -1844,7 +1855,7 @@ ParseIPv6Address(Input hostname,  uint8_t (&out)[16])
       }
       contractionIndex = currentComponentIndex;
       if (input.AtEnd()) {
-        
+        // "::" at the end of the input.
         return FinishIPv6Address(out, currentComponentIndex,
                                  contractionIndex);
       }
@@ -1866,10 +1877,10 @@ IsValidPresentedDNSID(Input hostname)
 
 namespace {
 
-
-
-
-
+// RFC 5280 Section 4.2.1.6 says that a dNSName "MUST be in the 'preferred name
+// syntax', as specified by Section 3.5 of [RFC1034] and as modified by Section
+// 2.1 of [RFC1123]" except "a dNSName of ' ' MUST NOT be used." Additionally,
+// we allow underscores for compatibility with existing practice.
 bool
 IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
 {
@@ -1888,9 +1899,9 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
   bool labelIsAllNumeric = false;
   bool labelEndsWithHyphen = false;
 
-  
-  
-  
+  // Only presented IDs are allowed to have wildcard labels. And, like
+  // Chromium, be stricter than RFC 6125 requires by insisting that a
+  // wildcard label consist only of '*'.
   bool isWildcard = allowWildcards == AllowWildcards::Yes && input.Peek('*');
   bool isFirstByte = !isWildcard;
   if (isWildcard) {
@@ -1921,7 +1932,7 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
     switch (b) {
       case '-':
         if (labelLength == 0) {
-          return false; 
+          return false; // Labels must not start with a hyphen.
         }
         labelIsAllNumeric = false;
         labelEndsWithHyphen = true;
@@ -1931,8 +1942,8 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
         }
         break;
 
-      
-      
+      // We avoid isdigit because it is locale-sensitive. See
+      // http://pubs.opengroup.org/onlinepubs/009695399/functions/isdigit.html
       case '0': case '5':
       case '1': case '6':
       case '2': case '7':
@@ -1948,9 +1959,9 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
         }
         break;
 
-      
-      
-      
+      // We avoid using islower/isupper/tolower/toupper or similar things, to
+      // avoid any possibility of this code being locale-sensitive. See
+      // http://pubs.opengroup.org/onlinepubs/009695399/functions/isupper.html
       case 'a': case 'A': case 'n': case 'N':
       case 'b': case 'B': case 'o': case 'O':
       case 'c': case 'C': case 'p': case 'P':
@@ -1964,8 +1975,8 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
       case 'k': case 'K': case 'x': case 'X':
       case 'l': case 'L': case 'y': case 'Y':
       case 'm': case 'M': case 'z': case 'Z':
-      
-      
+      // We allow underscores for compatibility with existing practices.
+      // See bug 1136616.
       case '_':
         labelIsAllNumeric = false;
         labelEndsWithHyphen = false;
@@ -1982,58 +1993,58 @@ IsValidDNSID(Input hostname, IDRole idRole, AllowWildcards allowWildcards)
           return false;
         }
         if (labelEndsWithHyphen) {
-          return false; 
+          return false; // Labels must not end with a hyphen.
         }
         labelLength = 0;
         break;
 
       default:
-        return false; 
+        return false; // Invalid character.
     }
     isFirstByte = false;
   } while (!input.AtEnd());
 
-  
-  
+  // Only reference IDs, not presented IDs or name constraints, may be
+  // absolute.
   if (labelLength == 0 && idRole != IDRole::ReferenceID) {
     return false;
   }
 
   if (labelEndsWithHyphen) {
-    return false; 
+    return false; // Labels must not end with a hyphen.
   }
 
   if (labelIsAllNumeric) {
-    return false; 
+    return false; // Last label must not be all numeric.
   }
 
   if (isWildcard) {
-    
+    // If the DNS ID ends with a dot, the last dot signifies an absolute ID.
     size_t labelCount = (labelLength == 0) ? dotCount : (dotCount + 1);
 
-    
-    
-    
-    
-    
+    // Like NSS, require at least two labels to follow the wildcard label.
+    //
+    // TODO(bug XXXXXXX): Allow the TrustDomain to control this on a
+    // per-eTLD+1 basis, similar to Chromium. Even then, it might be better to
+    // still enforce that there are at least two labels after the wildcard.
     if (labelCount < 3) {
       return false;
     }
-    
-    
-    
+    // XXX: RFC6125 says that we shouldn't accept wildcards within an IDN
+    // A-Label. The consequence of this is that we effectively discriminate
+    // against users of languages that cannot be encoded with ASCII.
     if (StartsWithIDNALabel(hostname)) {
       return false;
     }
 
-    
-    
-    
+    // TODO(bug XXXXXXX): Wildcards are not allowed for EV certificates.
+    // Provide an option to indicate whether wildcards should be matched, for
+    // the purpose of helping the application enforce this.
   }
 
   return true;
 }
 
-} 
+} // namespace
 
-} } 
+} } // namespace mozilla::pkix

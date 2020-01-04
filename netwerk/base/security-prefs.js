@@ -49,6 +49,20 @@ pref("security.pki.cert_short_lifetime_in_days", 10);
 
 pref("security.pki.sha1_enforcement_level", 3);
 
+
+
+
+
+
+
+
+
+#ifdef RELEASE_BUILD
+pref("security.pki.name_matching_mode", 1);
+#else
+pref("security.pki.name_matching_mode", 2);
+#endif
+
 pref("security.webauth.u2f", false);
 pref("security.webauth.u2f.softtoken", false);
 pref("security.webauth.u2f.usbtoken", false);
