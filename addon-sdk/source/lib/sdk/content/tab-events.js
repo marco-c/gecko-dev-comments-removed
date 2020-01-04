@@ -3,12 +3,15 @@
 
 "use strict";
 
+const { Ci } = require('chrome');
 const system = require('sdk/system/events');
 const { frames } = require('sdk/remote/child');
 const { WorkerChild } = require('sdk/content/worker-child');
 
 
 const EVENTS = {
+  'content-document-global-created': 'create',
+  'chrome-document-global-created': 'create',
   'content-document-interactive': 'ready',
   'chrome-document-interactive': 'ready',
   'content-document-loaded': 'load',
@@ -17,12 +20,18 @@ const EVENTS = {
 }
 
 function topicListener({ subject, type }) {
-  let window = subject.defaultView;
-  if (!window)
+  
+  
+  
+  let window = subject instanceof Ci.nsIDOMWindow ? subject : subject.defaultView;
+  if (!window){
     return;
-  let frame = frames.getFrameForWindow(subject.defaultView);
-  if (frame)
-    frame.port.emit('sdk/tab/event', EVENTS[type]);
+  }
+  let frame = frames.getFrameForWindow(window);
+  if (frame) {
+    let readyState = frame.content.document.readyState;
+    frame.port.emit('sdk/tab/event', EVENTS[type], { readyState });
+  }
 }
 
 for (let topic in EVENTS)
@@ -31,8 +40,9 @@ for (let topic in EVENTS)
 
 function eventListener({target, type, persisted}) {
   let frame = this;
-  if (target === frame.content.document)
+  if (target === frame.content.document) {
     frame.port.emit('sdk/tab/event', type, persisted);
+  }
 }
 frames.addEventListener('pageshow', eventListener, true);
 
@@ -40,3 +50,9 @@ frames.port.on('sdk/tab/attach', (frame, options) => {
   options.window = frame.content;
   new WorkerChild(options);
 });
+
+
+for (let frame of frames) {
+  let readyState = frame.content.document.readyState;
+  frame.port.emit('sdk/tab/event', 'init', { readyState });
+}

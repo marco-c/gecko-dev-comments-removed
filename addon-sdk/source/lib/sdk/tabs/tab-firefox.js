@@ -44,6 +44,9 @@ function isClosed(tab) {
   return viewsFor.get(tab).closing;
 }
 
+
+const remoteReadyStateCached = Symbol("remoteReadyStateCached");
+
 const Tab = Class({
   implements: [EventTarget],
   initialize: function(tabElement, options = null) {
@@ -125,8 +128,7 @@ const Tab = Class({
   },
 
   get readyState() {
-    
-    return isDestroyed(this) ? undefined : browser(this).contentDocument.readyState;
+    return isDestroyed(this) ? undefined : this[remoteReadyStateCached] || "uninitialized";
   },
 
   pin: function() {
@@ -306,11 +308,21 @@ function tabEventListener(event, tabElement, ...args) {
       removeListItem(window.tabs, tab);
     
   }
-  else if (event == "ready" || event == "load") {
+  else if (event == "init" || event == "create" || event == "ready" || event == "load") {
     
     
     if (isBrowser(domWindow) && !domWindow.gBrowserInit.delayedStartupFinished)
       return;
+
+    
+    let { readyState } = args[0] || {};
+    tab[remoteReadyStateCached] = readyState;
+  }
+
+  if (event == "init") {
+    
+    
+    return;
   }
 
   tabEmit(tab, event, ...args);
