@@ -71,6 +71,9 @@ Decoder::Init()
   MOZ_ASSERT(!mInitialized, "Can't re-initialize a decoder!");
 
   
+  MOZ_ASSERT(mIterator);
+
+  
   
   
   MOZ_ASSERT(ShouldUseSurfaceCache() || IsFirstFrameDecode());

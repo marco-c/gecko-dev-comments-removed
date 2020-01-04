@@ -54,6 +54,7 @@ nsICODecoder::GetNumColors()
 nsICODecoder::nsICODecoder(RasterImage* aImage)
   : Decoder(aImage)
   , mLexer(Transition::To(ICOState::HEADER, ICOHEADERSIZE))
+  , mDoNotResume(WrapNotNull(new DoNotResume))
   , mBiggestResourceColorDepth(0)
   , mBestResourceDelta(INT_MIN)
   , mBestResourceColorDepth(0)
@@ -88,9 +89,18 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
     return;
   }
 
-  
-  mContainedDecoder->CompleteDecode();
+  MOZ_ASSERT(mContainedSourceBuffer,
+             "Should have a SourceBuffer if we have a decoder");
 
+  
+  if (!mContainedSourceBuffer->IsComplete()) {
+    mContainedSourceBuffer->Complete(NS_OK);
+    if (NS_FAILED(mContainedDecoder->Decode(mDoNotResume))) {
+      PostDataError();
+    }
+  }
+
+  
   mDecodeDone = mContainedDecoder->GetDecodeDone();
   mDataError = mDataError || mContainedDecoder->HasDataError();
   mFailCode = NS_SUCCEEDED(mFailCode) ? mContainedDecoder->GetDecoderError()
@@ -292,6 +302,7 @@ nsICODecoder::SniffResource(const char* aData)
   if (isPNG) {
     
     mContainedSourceBuffer = new SourceBuffer();
+    mContainedSourceBuffer->ExpectLength(mDirEntry.mBytesInRes);
     mContainedDecoder =
       DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
                                                   WrapNotNull(mContainedSourceBuffer),
@@ -369,6 +380,7 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   mContainedSourceBuffer = new SourceBuffer();
+  mContainedSourceBuffer->ExpectLength(mDirEntry.mBytesInRes);
   mContainedDecoder =
     DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
                                                 WrapNotNull(mContainedSourceBuffer),
@@ -635,7 +647,22 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 bool
 nsICODecoder::WriteToContainedDecoder(const char* aBuffer, uint32_t aCount)
 {
-  mContainedDecoder->Write(aBuffer, aCount);
+  MOZ_ASSERT(mContainedDecoder);
+  MOZ_ASSERT(mContainedSourceBuffer);
+
+  
+  
+  mContainedSourceBuffer->Append(aBuffer, aCount);
+
+  
+  
+  
+  
+  if (NS_FAILED(mContainedDecoder->Decode(mDoNotResume))) {
+    PostDataError();
+  }
+
+  
   mProgress |= mContainedDecoder->TakeProgress();
   mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
   if (mContainedDecoder->HasDataError()) {
@@ -644,6 +671,7 @@ nsICODecoder::WriteToContainedDecoder(const char* aBuffer, uint32_t aCount)
   if (mContainedDecoder->HasDecoderError()) {
     PostDecoderError(mContainedDecoder->GetDecoderError());
   }
+
   return !HasError();
 }
 

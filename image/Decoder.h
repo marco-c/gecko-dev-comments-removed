@@ -138,8 +138,6 @@ public:
 
 
 
-
-
   void SetIterator(SourceBufferIterator&& aIterator)
   {
     MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
@@ -272,17 +270,6 @@ public:
                          : RawAccessFrameRef();
   }
 
-  
-
-
-
-
-
-
-
-
-  void Write(const char* aBuffer, uint32_t aCount);
-
 
 protected:
   friend class nsICODecoder;
@@ -371,6 +358,16 @@ protected:
   
   void PostDataError();
   void PostDecoderError(nsresult aFailCode);
+
+  
+
+
+
+
+
+
+
+  void Write(const char* aBuffer, uint32_t aCount);
 
   
 

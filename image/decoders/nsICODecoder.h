@@ -10,10 +10,11 @@
 #include "StreamingLexer.h"
 #include "Decoder.h"
 #include "imgFrame.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/NotNull.h"
 #include "nsBMPDecoder.h"
 #include "nsPNGDecoder.h"
 #include "ICOFileHeaders.h"
-#include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 namespace image {
@@ -110,9 +111,22 @@ private:
   LexerTransition<ICOState> FinishMask();
   LexerTransition<ICOState> FinishResource();
 
+  
+  
+  class DoNotResume final : public IResumable
+  {
+  public:
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DoNotResume, override)
+    void Resume() override { }
+
+  private:
+    virtual ~DoNotResume() { }
+  };
+
   StreamingLexer<ICOState, 32> mLexer; 
   RefPtr<Decoder> mContainedDecoder; 
   RefPtr<SourceBuffer> mContainedSourceBuffer;  
+  NotNull<RefPtr<IResumable>> mDoNotResume;  
   UniquePtr<uint8_t[]> mMaskBuffer;    
   char mBIHraw[bmp::InfoHeaderLength::WIN_ICO]; 
   IconDirEntry mDirEntry;              
