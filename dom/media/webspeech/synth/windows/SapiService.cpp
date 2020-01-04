@@ -369,7 +369,8 @@ SapiService::Speak(const nsAString& aText, const nsAString& aUri,
   
   nsAutoString xml;
   xml.AssignLiteral("<pitch absmiddle=\"");
-  xml.AppendFloat(aPitch * 10.0f - 10.0f);
+  
+  xml.AppendInt(static_cast<int32_t>(aPitch * 10.0f - 10.0f));
   xml.AppendLiteral("\">");
   uint32_t textOffset = xml.Length();
 
