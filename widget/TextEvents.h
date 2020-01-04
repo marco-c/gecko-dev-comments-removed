@@ -366,6 +366,7 @@ public:
   WidgetCompositionEvent(bool aIsTrusted, EventMessage aMessage,
                          nsIWidget* aWidget)
     : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eCompositionEventClass)
+    , mNativeIMEContext(aWidget)
     , mOriginalMessage(eVoidEvent)
   {
     
@@ -392,6 +393,10 @@ public:
   nsString mData;
 
   RefPtr<TextRangeArray> mRanges;
+
+  
+  
+  widget::NativeIMEContext mNativeIMEContext;
 
   
   

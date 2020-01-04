@@ -10,6 +10,8 @@
 #include "nsRect.h"
 #include "nsStringGlue.h"
 
+class nsIWidget;
+
 namespace mozilla {
 
 class WritingMode;
@@ -227,6 +229,49 @@ struct IMEState final
 
 #define NS_ONLY_ONE_NATIVE_IME_CONTEXT \
   (reinterpret_cast<void*>(static_cast<intptr_t>(-1)))
+
+struct NativeIMEContext final
+{
+  
+  
+  
+  uintptr_t mRawNativeIMEContext;
+  
+  uint64_t mOriginProcessID;
+
+  NativeIMEContext()
+  {
+    Init(nullptr);
+  }
+
+  explicit NativeIMEContext(nsIWidget* aWidget)
+  {
+    Init(aWidget);
+  }
+
+  bool IsValid() const
+  {
+    return mRawNativeIMEContext &&
+           mOriginProcessID != static_cast<uintptr_t>(-1);
+  }
+
+  void Init(nsIWidget* aWidget);
+  void InitWithRawNativeIMEContext(const void* aRawNativeIMEContext)
+  {
+    InitWithRawNativeIMEContext(const_cast<void*>(aRawNativeIMEContext));
+  }
+  void InitWithRawNativeIMEContext(void* aRawNativeIMEContext);
+
+  bool operator==(const NativeIMEContext& aOther) const
+  {
+    return mRawNativeIMEContext == aOther.mRawNativeIMEContext &&
+           mOriginProcessID == aOther.mOriginProcessID;
+  }
+  bool operator!=(const NativeIMEContext& aOther) const
+  {
+    return !(*this == aOther);
+  }
+};
 
 struct InputContext final
 {

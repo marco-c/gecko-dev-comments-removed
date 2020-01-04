@@ -179,6 +179,7 @@ public:
   NS_IMETHOD_(void) SetInputContext(const InputContext& aContext,
                                     const InputContextAction& aAction) override;
   NS_IMETHOD_(InputContext) GetInputContext() override;
+  NS_IMETHOD_(NativeIMEContext) GetNativeIMEContext() override;
   virtual nsIMEUpdatePreference GetIMEUpdatePreference() override;
 
   NS_IMETHOD SetCursor(nsCursor aCursor) override;
@@ -254,9 +255,6 @@ public:
 
   virtual void StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) override;
 protected:
-  bool mEnabled;
-  bool mVisible;
-
   virtual nsresult NotifyIMEInternal(
                      const IMENotification& aIMENotification) override;
 
@@ -322,21 +320,33 @@ private:
   
   nsIMEUpdatePreference mIMEPreferenceOfParent;
   InputContext mInputContext;
+  
+  
+  
+  
+  
+  NativeIMEContext mNativeIMEContext;
   ContentCacheInChild mContentCache;
-  bool mNeedIMEStateInit;
 
   
   float mDPI;
   double mDefaultScale;
 
   
-  bool mNativeKeyCommandsValid;
   InfallibleTArray<mozilla::CommandInt> mSingleLineCommands;
   InfallibleTArray<mozilla::CommandInt> mMultiLineCommands;
   InfallibleTArray<mozilla::CommandInt> mRichTextCommands;
 
   nsCOMPtr<imgIContainer> mCustomCursor;
   uint32_t mCursorHotspotX, mCursorHotspotY;
+
+protected:
+  bool mEnabled;
+  bool mVisible;
+
+private:
+  bool mNeedIMEStateInit;
+  bool mNativeKeyCommandsValid;
 };
 
 struct AutoCacheNativeKeyCommands

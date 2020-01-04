@@ -109,7 +109,9 @@ typedef void* nsNativeWidget;
 
 
 
-#define NS_NATIVE_IME_CONTEXT      14
+
+
+#define NS_RAW_NATIVE_IME_CONTEXT  14
 #ifdef XP_MACOSX
 #define NS_NATIVE_PLUGIN_PORT_QD    100
 #define NS_NATIVE_PLUGIN_PORT_CG    101
@@ -128,8 +130,8 @@ typedef void* nsNativeWidget;
 #endif
 
 #define NS_IWIDGET_IID \
-{ 0xd953b7a1, 0x6981, 0x4ed7, \
-  { 0xbc, 0xf0, 0xed, 0x96, 0x70, 0xee, 0x23, 0x28 } }
+{ 0xaaa79c8d, 0xc99d, 0x4fe1, \
+  { 0xa5, 0x11, 0xd3, 0xeb, 0xb1, 0x61, 0x9e, 0x26 } }
 
 
 
@@ -334,6 +336,7 @@ class nsIWidget : public nsISupports {
     typedef mozilla::widget::IMEState IMEState;
     typedef mozilla::widget::InputContext InputContext;
     typedef mozilla::widget::InputContextAction InputContextAction;
+    typedef mozilla::widget::NativeIMEContext NativeIMEContext;
     typedef mozilla::widget::SizeConstraints SizeConstraints;
     typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
     typedef mozilla::CompositorVsyncDispatcher CompositorVsyncDispatcher;
@@ -1795,6 +1798,13 @@ public:
 
 
     NS_IMETHOD_(InputContext) GetInputContext() = 0;
+
+    
+
+
+
+
+    NS_IMETHOD_(NativeIMEContext) GetNativeIMEContext();
 
     
 

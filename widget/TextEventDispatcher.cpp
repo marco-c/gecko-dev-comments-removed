@@ -134,6 +134,17 @@ TextEventDispatcher::InitEvent(WidgetGUIEvent& aEvent) const
   aEvent.time = PR_IntervalNow();
   aEvent.refPoint = LayoutDeviceIntPoint(0, 0);
   aEvent.mFlags.mIsSynthesizedForTests = mForTests;
+  if (aEvent.mClass != eCompositionEventClass) {
+    return;
+  }
+  
+  
+  
+  
+  if (XRE_IsContentProcess()) {
+    aEvent.AsCompositionEvent()->
+      mNativeIMEContext.InitWithRawNativeIMEContext(mWidget);
+  }
 }
 
 nsresult

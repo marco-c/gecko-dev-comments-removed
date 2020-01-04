@@ -76,7 +76,10 @@ public:
   
   bool IsSynthesizedForTests() const { return mIsSynthesizedForTests; }
 
-  bool MatchesNativeContext(nsIWidget* aWidget) const;
+  const widget::NativeIMEContext& GetNativeIMEContext() const
+  {
+    return mNativeContext;
+  }
 
   
 
@@ -191,7 +194,7 @@ private:
 
   
   
-  void* mNativeContext;
+  widget::NativeIMEContext mNativeContext;
 
   
   nsWeakPtr mEditorWeak;
@@ -400,6 +403,7 @@ class TextCompositionArray final :
   public nsAutoTArray<RefPtr<TextComposition>, 2>
 {
 public:
+  index_type IndexOf(const widget::NativeIMEContext& aNativeIMEContext);
   index_type IndexOf(nsIWidget* aWidget);
   index_type IndexOf(nsPresContext* aPresContext);
   index_type IndexOf(nsPresContext* aPresContext, nsINode* aNode);
