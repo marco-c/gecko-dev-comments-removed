@@ -1666,7 +1666,7 @@ nsPresContext::UpdateViewportScrollbarStylesOverride()
     GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
 
   nsIDocument* document = Document();
-  if (Element* fullscreenElement = document->GetFullScreenElement()) {
+  if (Element* fullscreenElement = document->GetFullscreenElement()) {
     
     
     

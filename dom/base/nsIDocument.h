@@ -1132,14 +1132,6 @@ public:
   
 
 
-
-
-
-  virtual Element* GetFullScreenElement() = 0;
-
-  
-
-
   virtual nsTArray<Element*> GetFullscreenStack() const = 0;
 
   
@@ -2503,13 +2495,13 @@ public:
                                   Element* aElement) = 0;
   nsIURI* GetDocumentURIObject() const;
   
-  virtual bool MozFullScreenEnabled() = 0;
-  virtual Element* GetMozFullScreenElement() = 0;
+  virtual bool FullscreenEnabled() = 0;
+  virtual Element* GetFullscreenElement() = 0;
   bool MozFullScreen()
   {
     return IsFullScreenDoc();
   }
-  void MozCancelFullScreen();
+  void ExitFullscreen();
   Element* GetMozPointerLockElement();
   void MozExitPointerLock()
   {
