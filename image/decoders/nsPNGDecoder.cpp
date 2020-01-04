@@ -16,6 +16,8 @@
 #include "nspr.h"
 #include "png.h"
 #include "RasterImage.h"
+#include "SurfacePipeFactory.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Telemetry.h"
 
 #include <algorithm>
@@ -91,18 +93,23 @@ const uint8_t
 nsPNGDecoder::pngSignatureBytes[] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
 nsPNGDecoder::nsPNGDecoder(RasterImage* aImage)
- : Decoder(aImage),
-   mPNG(nullptr), mInfo(nullptr),
-   mCMSLine(nullptr), interlacebuf(nullptr),
-   mInProfile(nullptr), mTransform(nullptr),
-   format(gfx::SurfaceFormat::UNKNOWN),
-   mHeaderBytesRead(0), mCMSMode(0),
-   mChannels(0), mFrameIsHidden(false),
-   mDisablePremultipliedAlpha(false),
-   mSuccessfulEarlyFinish(false),
-   mNumFrames(0)
-{
-}
+ : Decoder(aImage)
+ , mPNG(nullptr)
+ , mInfo(nullptr)
+ , mCMSLine(nullptr)
+ , interlacebuf(nullptr)
+ , mInProfile(nullptr)
+ , mTransform(nullptr)
+ , format(gfx::SurfaceFormat::UNKNOWN)
+ , mHeaderBytesRead(0)
+ , mCMSMode(0)
+ , mChannels(0)
+ , mPass(0)
+ , mFrameIsHidden(false)
+ , mDisablePremultipliedAlpha(false)
+ , mSuccessfulEarlyFinish(false)
+ , mNumFrames(0)
+{ }
 
 nsPNGDecoder::~nsPNGDecoder()
 {
@@ -125,55 +132,98 @@ nsPNGDecoder::~nsPNGDecoder()
   }
 }
 
-void
-nsPNGDecoder::CheckForTransparency(SurfaceFormat aFormat,
-                                   const IntRect& aFrameRect)
+nsPNGDecoder::TransparencyType
+nsPNGDecoder::GetTransparencyType(SurfaceFormat aFormat,
+                                  const IntRect& aFrameRect)
 {
   
   if (aFormat == SurfaceFormat::B8G8R8A8) {
-    PostHasTransparency();
+    return TransparencyType::eAlpha;
+  }
+  if (!IntRect(IntPoint(), GetSize()).IsEqualEdges(aFrameRect)) {
+    MOZ_ASSERT(HasAnimation());
+    return TransparencyType::eFrameRect;
   }
 
-  
-  
-  if (mNumFrames == 0 && !IntRect(IntPoint(), GetSize()).IsEqualEdges(aFrameRect)) {
-    MOZ_ASSERT(HasAnimation());
-    PostHasTransparency();
+  return TransparencyType::eNone;
+}
+
+void
+nsPNGDecoder::PostHasTransparencyIfNeeded(TransparencyType aTransparencyType)
+{
+  switch (aTransparencyType) {
+    case TransparencyType::eNone:
+      return;
+
+    case TransparencyType::eAlpha:
+      PostHasTransparency();
+      return;
+
+    case TransparencyType::eFrameRect:
+      
+      
+      
+      
+      if (mNumFrames == 0) {
+        PostHasTransparency();
+      }
+      return;
   }
 }
 
 
 nsresult
-nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
-                          int32_t aWidth, int32_t aHeight,
-                          gfx::SurfaceFormat aFormat)
+nsPNGDecoder::CreateFrame(SurfaceFormat aFormat,
+                          const IntRect& aFrameRect,
+                          bool aIsInterlaced)
 {
   MOZ_ASSERT(HasSize());
   MOZ_ASSERT(!IsMetadataDecode());
 
-  IntRect frameRect(aXOffset, aYOffset, aWidth, aHeight);
-  CheckForTransparency(aFormat, frameRect);
+  
+  auto transparency = GetTransparencyType(aFormat, aFrameRect);
+  PostHasTransparencyIfNeeded(transparency);
+  SurfaceFormat format = transparency == TransparencyType::eNone
+                       ? SurfaceFormat::B8G8R8X8
+                       : SurfaceFormat::B8G8R8A8;
 
   
+  MOZ_ASSERT_IF(mDownscaler, mNumFrames == 0);
   MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
-  MOZ_ASSERT_IF(mDownscaler,
-                IntRect(IntPoint(), GetSize()).IsEqualEdges(frameRect));
+  MOZ_ASSERT_IF(mDownscaler, transparency != TransparencyType::eFrameRect);
 
   IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
                                    : GetSize();
-  IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
-                                        : frameRect;
-  nsresult rv = AllocateFrame(mNumFrames, targetSize, targetFrameRect, aFormat);
-  if (NS_FAILED(rv)) {
-    return rv;
+
+  
+  
+  SurfacePipeFlags pipeFlags = aIsInterlaced
+                             ? SurfacePipeFlags::ADAM7_INTERPOLATE
+                             : SurfacePipeFlags();
+
+  if (mNumFrames == 0) {
+    
+    pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
   }
 
-  mFrameRect = frameRect;
+  Maybe<SurfacePipe> pipe =
+    SurfacePipeFactory::CreateSurfacePipe(this, mNumFrames, GetSize(), targetSize,
+                                          aFrameRect, format, pipeFlags);
+
+  if (!pipe) {
+    mPipe = SurfacePipe();
+    return NS_ERROR_FAILURE;
+  }
+
+  mPipe = Move(*pipe);
+
+  mFrameRect = aFrameRect;
+  mPass = 0;
 
   MOZ_LOG(sPNGDecoderAccountingLog, LogLevel::Debug,
          ("PNGDecoderAccounting: nsPNGDecoder::CreateFrame -- created "
           "image frame with %dx%d pixels for decoder %p",
-          aWidth, aHeight, this));
+          aFrameRect.width, aFrameRect.height, this));
 
 #ifdef PNG_APNG_SUPPORTED
   if (png_get_valid(mPNG, mInfo, PNG_INFO_acTL)) {
@@ -186,15 +236,6 @@ nsPNGDecoder::CreateFrame(png_uint_32 aXOffset, png_uint_32 aYOffset,
     }
   }
 #endif
-
-  if (mDownscaler) {
-    bool hasAlpha = aFormat != SurfaceFormat::B8G8R8X8;
-    rv = mDownscaler->BeginFrame(frameRect.Size(), Nothing(),
-                                 mImageData, hasAlpha);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
 
   return NS_OK;
 }
@@ -215,7 +256,7 @@ nsPNGDecoder::EndImageFrame()
   }
 
   PostFrameStop(opacity, mAnimInfo.mDispose, mAnimInfo.mTimeout,
-                mAnimInfo.mBlend);
+                mAnimInfo.mBlend, Some(mFrameRect));
 }
 
 void
@@ -458,7 +499,6 @@ PNGGetColorProfile(png_structp png_ptr, png_infop info_ptr,
 void
 nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
 {
-
   png_uint_32 width, height;
   int bit_depth, color_type, interlace_type, compression_type, filter_type;
   unsigned int channels;
@@ -478,8 +518,10 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     png_longjmp(decoder->mPNG, 1);
   }
 
+  const IntRect frameRect(0, 0, width, height);
+
   
-  decoder->PostSize(width, height);
+  decoder->PostSize(frameRect.width, frameRect.height);
   if (decoder->HasError()) {
     
     png_longjmp(decoder->mPNG, 1);
@@ -565,8 +607,8 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
   }
 
   
-  if (interlace_type == PNG_INTERLACE_ADAM7) {
-    
+  const bool isInterlaced = interlace_type == PNG_INTERLACE_ADAM7;
+  if (isInterlaced) {
     png_set_interlace_handling(png_ptr);
   }
 
@@ -595,7 +637,7 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     if (decoder->mDownscaler && !decoder->IsFirstFrameDecode()) {
       MOZ_ASSERT_UNREACHABLE("Doing downscale-during-decode "
                              "for an animated image?");
-      decoder->mDownscaler.reset();
+      png_longjmp(decoder->mPNG, 1);  
     }
   }
 #endif
@@ -607,8 +649,8 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     
     
     
-    decoder->CheckForTransparency(decoder->format,
-                                  IntRect(0, 0, width, height));
+    auto transparency = decoder->GetTransparencyType(decoder->format, frameRect);
+    decoder->PostHasTransparencyIfNeeded(transparency);
 
     
     
@@ -626,7 +668,7 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     decoder->mFrameIsHidden = true;
   } else {
 #endif
-    nsresult rv = decoder->CreateFrame(0, 0, width, height, decoder->format);
+    nsresult rv = decoder->CreateFrame(decoder->format, frameRect, isInterlaced);
     if (NS_FAILED(rv)) {
       png_longjmp(decoder->mPNG, 5); 
     }
@@ -635,19 +677,19 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
   }
 #endif
 
-  if (decoder->mTransform &&
-      (channels <= 2 || interlace_type == PNG_INTERLACE_ADAM7)) {
+  if (decoder->mTransform && (channels <= 2 || isInterlaced)) {
     uint32_t bpp[] = { 0, 3, 4, 3, 4 };
     decoder->mCMSLine =
-      (uint8_t*)malloc(bpp[channels] * width);
+      static_cast<uint8_t*>(malloc(bpp[channels] * frameRect.width));
     if (!decoder->mCMSLine) {
       png_longjmp(decoder->mPNG, 5); 
     }
   }
 
   if (interlace_type == PNG_INTERLACE_ADAM7) {
-    if (height < INT32_MAX / (width * channels)) {
-      decoder->interlacebuf = (uint8_t*)malloc(channels * width * height);
+    if (frameRect.height < INT32_MAX / (frameRect.width * int32_t(channels))) {
+      const size_t bufferSize = channels * frameRect.width * frameRect.height;
+      decoder->interlacebuf = static_cast<uint8_t*>(malloc(bufferSize));
     }
     if (!decoder->interlacebuf) {
       png_longjmp(decoder->mPNG, 5); 
@@ -656,106 +698,44 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
 }
 
 void
-nsPNGDecoder::PostPartialInvalidation(const IntRect& aInvalidRegion)
+nsPNGDecoder::PostInvalidationIfNeeded()
 {
-  if (!mDownscaler) {
-    PostInvalidation(aInvalidRegion);
+  Maybe<SurfaceInvalidRect> invalidRect = mPipe.TakeInvalidRect();
+  if (!invalidRect) {
     return;
   }
 
-  if (!mDownscaler->HasInvalidation()) {
-    return;
-  }
-
-  DownscalerInvalidRect invalidRect = mDownscaler->TakeInvalidRect();
-  PostInvalidation(invalidRect.mOriginalSizeRect,
-                   Some(invalidRect.mTargetSizeRect));
+  PostInvalidation(invalidRect->mInputSpaceRect,
+                   Some(invalidRect->mOutputSpaceRect));
 }
 
-void
-nsPNGDecoder::PostFullInvalidation()
+static NextPixel<uint32_t>
+PackRGBPixelAndAdvance(uint8_t*& aRawPixelInOut)
 {
-  PostInvalidation(mFrameRect);
-
-  if (mDownscaler) {
-    mDownscaler->ResetForNextProgressivePass();
-  }
+  const uint32_t pixel =
+    gfxPackedPixel(0xFF, aRawPixelInOut[0], aRawPixelInOut[1], aRawPixelInOut[2]);
+  aRawPixelInOut += 3;
+  return AsVariant(pixel);
 }
 
-static void
-InterpolateInterlacedPNG(const int aPass, const bool aHasAlpha,
-                         const uint32_t aWidth, const uint32_t aHeight,
-                         uint8_t* aImageData)
+static NextPixel<uint32_t>
+PackRGBAPixelAndAdvance(uint8_t*& aRawPixelInOut)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if ((aPass != 0 && aPass != 2 && aPass != 4) || aWidth < 8 || aHeight < 8) {
-    return;
-  }
+  const uint32_t pixel =
+    gfxPackedPixel(aRawPixelInOut[3], aRawPixelInOut[0],
+                   aRawPixelInOut[1], aRawPixelInOut[2]);
+  aRawPixelInOut += 4;
+  return AsVariant(pixel);
+}
 
-  
-  uint32_t block_width[]  = { 8, 4, 4, 2, 2 };
-  uint32_t bw = block_width[aPass];
-  uint32_t bh = bw;
-
-  bool first_component = aHasAlpha ? 0: 1;
-
-  
-  
-  uint32_t divisor_shift = 3 - (aPass >> 1);
-
-  
-  for (uint32_t y = 0; y < aHeight - bh; y += bh) {
-    for (uint32_t x = 0; x < aWidth - bw; x += bw) {
-      
-      
-      uint8_t* topleft = aImageData + 4 * (x + aWidth * y);
-
-      
-      for (uint32_t component = first_component; component < 4; component++) {
-        if (x == 0) {
-          
-          uint32_t top = *(topleft + component);
-          uint32_t bottom = *(topleft + component + (bh * 4 * aWidth));
-          for (uint32_t j = 1; j < bh; j++) {
-            *(topleft + component + j * 4 * aWidth) =
-              ((top * (bh - j) + bottom * j) >> divisor_shift) & 0xff;
-          }
-        }
-
-        
-        uint32_t top = *(topleft + component + 4 * bw);
-        uint32_t bottom = *(topleft + component + 4 * (bw + (bh * aWidth)));
-        for (uint32_t j = 1; j < bh; j++) {
-          *(topleft + component + 4 * (bw + j * aWidth)) =
-          ((top * (bh - j) + bottom * j) >> divisor_shift) & 0xff;
-        }
-
-        
-        
-        for (uint32_t j = 0; j < bh; j++) {
-          uint32_t left = *(topleft + component + 4 * j * aWidth);
-          uint32_t right = *(topleft + component + 4 * (bw + j * aWidth));
-          for (uint32_t i = 1; i < bw; i++) {
-            *(topleft + component + 4 * (i + j * aWidth)) =
-            ((left * (bw - i) + right * i) >> divisor_shift) & 0xff;
-          } 
-        } 
-      } 
-    } 
-  } 
+static NextPixel<uint32_t>
+PackUnpremultipliedRGBAPixelAndAdvance(uint8_t*& aRawPixelInOut)
+{
+  const uint32_t pixel =
+    gfxPackedPixelNoPreMultiply(aRawPixelInOut[3], aRawPixelInOut[0],
+                                aRawPixelInOut[1], aRawPixelInOut[2]);
+  aRawPixelInOut += 4;
+  return AsVariant(pixel);
 }
 
 void
@@ -790,127 +770,102 @@ nsPNGDecoder::row_callback(png_structp png_ptr, png_bytep new_row,
 
 
   nsPNGDecoder* decoder =
-               static_cast<nsPNGDecoder*>(png_get_progressive_ptr(png_ptr));
+    static_cast<nsPNGDecoder*>(png_get_progressive_ptr(png_ptr));
+
+  if (decoder->mFrameIsHidden) {
+    return;  
+  }
+
+  while (pass > decoder->mPass) {
+    
+    
+    
+    
+    decoder->mPipe.ResetToFirstRow();
+    decoder->mPass++;
+  }
+
+  const png_uint_32 height = static_cast<png_uint_32>(decoder->mFrameRect.height);
+
+  if (row_num >= height) {
+    
+    
+    MOZ_ASSERT_UNREACHABLE("libpng producing extra rows?");
+    return;
+  }
 
   
-  if (decoder->mFrameIsHidden) {
-    return;
-  }
+  
+  MOZ_ASSERT_IF(!new_row, decoder->interlacebuf);
+  uint8_t* rowToWrite = new_row;
 
-  if (row_num >= static_cast<png_uint_32>(decoder->mFrameRect.height)) {
-    return;
-  }
-
-  bool lastRow =
-    row_num == static_cast<png_uint_32>(decoder->mFrameRect.height) - 1;
-
-  if (!new_row && !decoder->mDownscaler && !lastRow) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
-  int32_t width = decoder->mFrameRect.width;
-  uint32_t iwidth = decoder->mFrameRect.width;
-
-  png_bytep line = new_row;
   if (decoder->interlacebuf) {
-    line = decoder->interlacebuf + (row_num * decoder->mChannels * width);
-    png_progressive_combine_row(png_ptr, line, new_row);
+    uint32_t width = uint32_t(decoder->mFrameRect.width);
+
+    
+    rowToWrite = decoder->interlacebuf + (row_num * decoder->mChannels * width);
+
+    
+    png_progressive_combine_row(png_ptr, rowToWrite, new_row);
   }
 
-  uint32_t bpr = width * sizeof(uint32_t);
-  uint32_t* cptr32 = decoder->mDownscaler
-    ? reinterpret_cast<uint32_t*>(decoder->mDownscaler->RowBuffer())
-    : reinterpret_cast<uint32_t*>(decoder->mImageData + (row_num*bpr));
+  decoder->WriteRow(rowToWrite);
+}
 
-  if (decoder->mTransform) {
-    if (decoder->mCMSLine) {
-      qcms_transform_data(decoder->mTransform, line, decoder->mCMSLine,
-                          iwidth);
+void
+nsPNGDecoder::WriteRow(uint8_t* aRow)
+{
+  MOZ_ASSERT(aRow);
+
+  uint8_t* rowToWrite = aRow;
+  uint32_t width = uint32_t(mFrameRect.width);
+
+  
+  if (mTransform) {
+    if (mCMSLine) {
+      qcms_transform_data(mTransform, rowToWrite, mCMSLine, width);
+
       
-      uint32_t channels = decoder->mChannels;
-      if (channels == 2 || channels == 4) {
-        for (uint32_t i = 0; i < iwidth; i++)
-          decoder->mCMSLine[4 * i + 3] = line[channels * i + channels - 1];
+      if (mChannels == 2 || mChannels == 4) {
+        for (uint32_t i = 0; i < width; ++i) {
+          mCMSLine[4 * i + 3] = rowToWrite[mChannels * i + mChannels - 1];
+        }
       }
-      line = decoder->mCMSLine;
+
+      rowToWrite = mCMSLine;
     } else {
-      qcms_transform_data(decoder->mTransform, line, line, iwidth);
+      qcms_transform_data(mTransform, rowToWrite, rowToWrite, width);
     }
   }
 
-  switch (decoder->format) {
-    case gfx::SurfaceFormat::B8G8R8X8: {
-      
-      uint32_t idx = iwidth;
+  
+  DebugOnly<WriteState> result = WriteState::FAILURE;
+  switch (format) {
+    case SurfaceFormat::B8G8R8X8:
+      result = mPipe.WritePixelsToRow<uint32_t>([&]{
+        return PackRGBPixelAndAdvance(rowToWrite);
+      });
+      break;
 
-      
-      for (; (NS_PTR_TO_UINT32(line) & 0x3) && idx; --idx) {
-        *cptr32++ = gfxPackedPixel(0xFF, line[0], line[1], line[2]);
-        line += 3;
-      }
-
-      
-      while (idx >= 4) {
-        GFX_BLOCK_RGB_TO_FRGB(line, cptr32);
-        idx    -=  4;
-        line   += 12;
-        cptr32 +=  4;
-      }
-
-      
-      while (idx--) {
-        
-        *cptr32++ = gfxPackedPixel(0xFF, line[0], line[1], line[2]);
-        line += 3;
-      }
-    }
-    break;
-    case gfx::SurfaceFormat::B8G8R8A8: {
-      if (!decoder->mDisablePremultipliedAlpha) {
-        for (uint32_t x=width; x>0; --x) {
-          *cptr32++ = gfxPackedPixel(line[3], line[0], line[1], line[2]);
-          line += 4;
-        }
+    case SurfaceFormat::B8G8R8A8:
+      if (mDisablePremultipliedAlpha) {
+        result = mPipe.WritePixelsToRow<uint32_t>([&]{
+          return PackUnpremultipliedRGBAPixelAndAdvance(rowToWrite);
+        });
       } else {
-        for (uint32_t x=width; x>0; --x) {
-          *cptr32++ = gfxPackedPixelNoPreMultiply(line[3], line[0], line[1],
-                                                  line[2]);
-          line += 4;
-        }
+        result = mPipe.WritePixelsToRow<uint32_t>([&]{
+          return PackRGBAPixelAndAdvance(rowToWrite);
+        });
       }
-    }
-    break;
+      break;
+
     default:
-      png_longjmp(decoder->mPNG, 1);
+      png_longjmp(mPNG, 1);  
   }
 
-  if (decoder->mDownscaler) {
-    decoder->mDownscaler->CommitRow();
-  }
+  MOZ_ASSERT(result != WriteState::FAILURE);
 
-  if (!decoder->interlacebuf) {
-    
-    decoder->PostPartialInvalidation(IntRect(0, row_num, width, 1));
-  } else if (lastRow) {
-    
-    if (decoder->mDownscaler) {
-      decoder->PostFullInvalidation();
-    } else if (pass % 2 == 0) {
-
-      const bool hasAlpha = decoder->format != SurfaceFormat::B8G8R8X8;
-      InterpolateInterlacedPNG(pass, hasAlpha,
-                               static_cast<uint32_t>(width),
-                               decoder->mFrameRect.height,
-                               decoder->mImageData);
-      decoder->PostFullInvalidation();
-    }
-  }
+  PostInvalidationIfNeeded();
 }
 
 #ifdef PNG_APNG_SUPPORTED
@@ -918,9 +873,6 @@ nsPNGDecoder::row_callback(png_structp png_ptr, png_bytep new_row,
 void
 nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
 {
-  png_uint_32 x_offset, y_offset;
-  int32_t width, height;
-
   nsPNGDecoder* decoder =
                static_cast<nsPNGDecoder*>(png_get_progressive_ptr(png_ptr));
 
@@ -938,13 +890,14 @@ nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
   
   decoder->mFrameIsHidden = false;
 
-  x_offset = png_get_next_frame_x_offset(png_ptr, decoder->mInfo);
-  y_offset = png_get_next_frame_y_offset(png_ptr, decoder->mInfo);
-  width = png_get_next_frame_width(png_ptr, decoder->mInfo);
-  height = png_get_next_frame_height(png_ptr, decoder->mInfo);
+  const IntRect frameRect(png_get_next_frame_x_offset(png_ptr, decoder->mInfo),
+                          png_get_next_frame_y_offset(png_ptr, decoder->mInfo),
+                          png_get_next_frame_width(png_ptr, decoder->mInfo),
+                          png_get_next_frame_height(png_ptr, decoder->mInfo));
 
-  nsresult rv =
-    decoder->CreateFrame(x_offset, y_offset, width, height, decoder->format);
+  const bool isInterlaced = bool(decoder->interlacebuf);
+
+  nsresult rv = decoder->CreateFrame(decoder->format, frameRect, isInterlaced);
   if (NS_FAILED(rv)) {
     png_longjmp(decoder->mPNG, 5); 
   }

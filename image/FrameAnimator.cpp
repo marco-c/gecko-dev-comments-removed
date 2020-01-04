@@ -625,7 +625,8 @@ FrameAnimator::DoBlend(nsIntRect* aDirtyRect,
                         prevFrameData.mHasAlpha,
                         compositingFrameData.mRawData,
                         compositingFrameData.mRect,
-                        prevFrameData.mBlendMethod);
+                        prevFrameData.mBlendMethod,
+                        prevFrameData.mBlendRect);
           }
         }
     }
@@ -673,7 +674,8 @@ FrameAnimator::DoBlend(nsIntRect* aDirtyRect,
               nextFrameData.mHasAlpha,
               compositingFrameData.mRawData,
               compositingFrameData.mRect,
-              nextFrameData.mBlendMethod);
+              nextFrameData.mBlendMethod,
+              nextFrameData.mBlendRect);
 
   
   mCompositingFrame->Finish();
@@ -742,7 +744,7 @@ nsresult
 FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const nsIntRect& aSrcRect,
                            uint32_t aSrcPaletteLength, bool aSrcHasAlpha,
                            uint8_t* aDstPixels, const nsIntRect& aDstRect,
-                           BlendMethod aBlendMethod)
+                           BlendMethod aBlendMethod, const Maybe<nsIntRect>& aBlendRect)
 {
   NS_ENSURE_ARG_POINTER(aSrcData);
   NS_ENSURE_ARG_POINTER(aDstPixels);
@@ -822,16 +824,53 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const nsIntRect& aSrcRect,
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     auto op = aBlendMethod == BlendMethod::SOURCE ? PIXMAN_OP_SRC
                                                   : PIXMAN_OP_OVER;
-    pixman_image_composite32(op,
-                             src,
-                             nullptr,
-                             dst,
-                             0, 0,
-                             0, 0,
-                             aSrcRect.x, aSrcRect.y,
-                             aSrcRect.width, aSrcRect.height);
+
+    if (aBlendMethod == BlendMethod::OVER || !aBlendRect ||
+        (aBlendMethod == BlendMethod::SOURCE && aSrcRect.IsEqualEdges(*aBlendRect))) {
+      
+      
+      pixman_image_composite32(op,
+                               src,
+                               nullptr,
+                               dst,
+                               0, 0,
+                               0, 0,
+                               aSrcRect.x, aSrcRect.y,
+                               aSrcRect.width, aSrcRect.height);
+    } else {
+      
+      pixman_image_composite32(PIXMAN_OP_OVER,
+                               src,
+                               nullptr,
+                               dst,
+                               0, 0,
+                               0, 0,
+                               aSrcRect.x, aSrcRect.y,
+                               aSrcRect.width, aSrcRect.height);
+      pixman_image_composite32(PIXMAN_OP_SRC,
+                               src,
+                               nullptr,
+                               dst,
+                               aBlendRect->x, aBlendRect->y,
+                               0, 0,
+                               aBlendRect->x, aBlendRect->y,
+                               aBlendRect->width, aBlendRect->height);
+    }
 
     pixman_image_unref(src);
     pixman_image_unref(dst);

@@ -638,7 +638,8 @@ void
 imgFrame::Finish(Opacity aFrameOpacity ,
                  DisposalMethod aDisposalMethod ,
                  int32_t aRawTimeout ,
-                 BlendMethod aBlendMethod )
+                 BlendMethod aBlendMethod ,
+                 const Maybe<IntRect>& aBlendRect )
 {
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
@@ -650,6 +651,7 @@ imgFrame::Finish(Opacity aFrameOpacity ,
   mDisposalMethod = aDisposalMethod;
   mTimeout = aRawTimeout;
   mBlendMethod = aBlendMethod;
+  mBlendRect = aBlendRect;
   ImageUpdatedInternal(GetRect());
   mFinished = true;
 
@@ -925,7 +927,7 @@ imgFrame::GetAnimationData() const
   bool hasAlpha = mFormat == SurfaceFormat::B8G8R8A8;
 
   return AnimationData(data, PaletteDataLength(), mTimeout, GetRect(),
-                       mBlendMethod, mDisposalMethod, hasAlpha);
+                       mBlendMethod, mBlendRect, mDisposalMethod, hasAlpha);
 }
 
 void
