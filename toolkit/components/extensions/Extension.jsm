@@ -351,36 +351,73 @@ GlobalManager = {
 
   observe(contentWindow, topic, data) {
     let inject = (extension, context) => {
-      let chromeObj = Cu.createObjectIn(contentWindow, {defineAs: "browser"});
-      contentWindow.wrappedJSObject.chrome = contentWindow.wrappedJSObject.browser;
-      let api = Management.generateAPIs(extension, context, Management.apis);
-      injectAPI(api, chromeObj);
+      
+      
+      
+      
+      let injectObject = (name, defaultCallback) => {
+        let browserObj = Cu.createObjectIn(contentWindow, {defineAs: name});
 
-      let schemaApi = Management.generateAPIs(extension, context, Management.schemaApis);
-      let schemaWrapper = {
-        callFunction(ns, name, args) {
-          return schemaApi[ns][name].apply(null, args);
-        },
+        let api = Management.generateAPIs(extension, context, Management.apis);
+        injectAPI(api, browserObj);
 
-        getProperty(ns, name) {
-          return schemaApi[ns][name];
-        },
+        let schemaApi = Management.generateAPIs(extension, context, Management.schemaApis);
+        let schemaWrapper = {
+          callFunction(ns, name, args) {
+            return schemaApi[ns][name](...args);
+          },
 
-        setProperty(ns, name, value) {
-          schemaApi[ns][name] = value;
-        },
+          callAsyncFunction(ns, name, args, callback) {
+            
+            
+            
+            if (callback === null) {
+              callback = defaultCallback;
+            }
 
-        addListener(ns, name, listener, args) {
-          return schemaApi[ns][name].addListener.call(null, listener, ...args);
-        },
-        removeListener(ns, name, listener) {
-          return schemaApi[ns][name].removeListener.call(null, listener);
-        },
-        hasListener(ns, name, listener) {
-          return schemaApi[ns][name].hasListener.call(null, listener);
-        },
+            let promise;
+            try {
+              
+              
+              promise = schemaApi[ns][name](...args, callback);
+            } catch (e) {
+              promise = Promise.reject(e);
+              
+              
+              throw e;
+            }
+
+            
+            
+            if (promise) {
+              return context.wrapPromise(promise, callback);
+            }
+            return undefined;
+          },
+
+          getProperty(ns, name) {
+            return schemaApi[ns][name];
+          },
+
+          setProperty(ns, name, value) {
+            schemaApi[ns][name] = value;
+          },
+
+          addListener(ns, name, listener, args) {
+            return schemaApi[ns][name].addListener.call(null, listener, ...args);
+          },
+          removeListener(ns, name, listener) {
+            return schemaApi[ns][name].removeListener.call(null, listener);
+          },
+          hasListener(ns, name, listener) {
+            return schemaApi[ns][name].hasListener.call(null, listener);
+          },
+        };
+        Schemas.inject(browserObj, schemaWrapper);
       };
-      Schemas.inject(chromeObj, schemaWrapper);
+
+      injectObject("browser", null);
+      injectObject("chrome", () => {});
     };
 
     let id = ExtensionManagement.getAddonIdForWindow(contentWindow);

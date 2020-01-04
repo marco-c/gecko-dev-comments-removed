@@ -112,6 +112,13 @@ DefaultWeakMap.prototype = {
   },
 };
 
+class SpreadArgs extends Array {
+  constructor(args) {
+    super();
+    this.push(...args);
+  }
+}
+
 class BaseContext {
   constructor() {
     this.onClose = new Set();
@@ -214,7 +221,11 @@ class BaseContext {
     if (callback) {
       promise.then(
         args => {
-          runSafeSync(this, callback, ...args);
+          if (args instanceof SpreadArgs) {
+            runSafeSync(this, callback, ...args);
+          } else {
+            runSafeSync(this, callback, args);
+          }
         },
         error => {
           this.withLastError(error, () => {
@@ -925,6 +936,7 @@ this.ExtensionUtils = {
   injectAPI,
   MessageBroker,
   Messenger,
+  SpreadArgs,
   extend,
   flushJarCache,
   instanceOf,
