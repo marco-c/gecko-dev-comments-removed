@@ -903,8 +903,14 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual nsIntPoint GetClientOffset() = 0;
 
+
+
+    virtual mozilla::LayoutDeviceIntPoint GetClientOffset() {
+      nsIntPoint tmp = GetClientOffsetUntyped();
+      return mozilla::LayoutDeviceIntPoint::FromUnknownPoint(tmp);
+    }
+    virtual nsIntPoint GetClientOffsetUntyped() = 0;
 
     
 

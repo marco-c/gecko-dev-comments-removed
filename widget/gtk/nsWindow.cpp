@@ -1515,7 +1515,7 @@ nsWindow::GetClientBoundsUntyped(nsIntRect &aRect)
     
     
     GetBoundsUntyped(aRect);
-    aRect.MoveBy(GetClientOffset());
+    aRect.MoveBy(GetClientOffsetUntyped());
 
     return NS_OK;
 }
@@ -1563,7 +1563,7 @@ nsWindow::UpdateClientOffset()
 }
 
 nsIntPoint
-nsWindow::GetClientOffset()
+nsWindow::GetClientOffsetUntyped()
 {
     return mClientOffset;
 }

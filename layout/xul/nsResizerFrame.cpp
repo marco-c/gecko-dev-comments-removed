@@ -253,7 +253,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
             widget->GetScreenBounds(oldRect);
 
           
-          nsIntPoint clientOffset = widget->GetClientOffset();
+          LayoutDeviceIntPoint clientOffset = widget->GetClientOffset();
           rect.x -= clientOffset.x;
           rect.y -= clientOffset.y;
         }
