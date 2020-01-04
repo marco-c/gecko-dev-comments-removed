@@ -49,7 +49,7 @@ function promiseLoadEvent(browser, url, eventType="load") {
 }
 
 
-const PENDING_VISIT_WAIT = 4000;
+const PENDING_VISIT_WAIT = 6000;
 
 
 var gVisitURLs = [];
