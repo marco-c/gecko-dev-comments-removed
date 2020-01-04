@@ -1254,6 +1254,8 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
 
     NS_LogInit();
 
+    mozilla::LogModule::Init();
+
     
     
     UniquePtr<base::StatisticsRecorder> telStats =
