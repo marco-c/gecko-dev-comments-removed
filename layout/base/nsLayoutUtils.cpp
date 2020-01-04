@@ -947,7 +947,7 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   
   ScreenSize alignment;
 
-  if (gfxPrefs::LayersTilesEnabled()) {
+  if (gfxPrefs::LayersTilesEnabled() && !APZCCallbackHelper::IsDisplayportSuppressed()) {
     alignment = ScreenSize(gfxPlatform::GetPlatform()->GetTileWidth(),
                            gfxPlatform::GetPlatform()->GetTileHeight());
   } else {
