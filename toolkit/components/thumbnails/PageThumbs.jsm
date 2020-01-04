@@ -368,17 +368,26 @@ this.PageThumbs = {
     let originalURL;
     let channelError = false;
 
-    if (!aBrowser.isRemoteBrowser) {
-      let channel = aBrowser.docShell.currentDocumentChannel;
-      originalURL = channel.originalURI.spec;
-      
-      channelError = this._isChannelErrorResponse(channel);
-    } else {
-      
-      originalURL = url;
-    }
-
     Task.spawn((function* task() {
+      if (!aBrowser.isRemoteBrowser) {
+        let channel = aBrowser.docShell.currentDocumentChannel;
+        originalURL = channel.originalURI.spec;
+        
+        channelError = PageThumbUtils.isChannelErrorResponse(channel);
+      } else {
+        let resp = yield new Promise(resolve => {
+          let mm = aBrowser.messageManager;
+          let respName = "Browser:Thumbnail:GetOriginalURL:Response";
+          mm.addMessageListener(respName, function onResp(msg) {
+            mm.removeMessageListener(respName, onResp);
+            resolve(msg.data);
+          });
+          mm.sendAsyncMessage("Browser:Thumbnail:GetOriginalURL");
+        });
+        originalURL = resp.originalURL || url;
+        channelError = resp.channelError;
+      }
+
       let isSuccess = true;
       try {
         let blob = yield this.captureToBlob(aBrowser);
@@ -493,25 +502,6 @@ this.PageThumbs = {
 
   createCanvas: function PageThumbs_createCanvas(aWindow) {
     return PageThumbUtils.createCanvas(aWindow);
-  },
-
-  
-
-
-
-  _isChannelErrorResponse: function(channel) {
-    
-    if (!channel)
-      return true;
-    if (!(channel instanceof Ci.nsIHttpChannel))
-      
-      return false;
-    try {
-      return !channel.requestSucceeded;
-    } catch (_) {
-      
-      return true;
-    }
   },
 
   _prefEnabled: function PageThumbs_prefEnabled() {

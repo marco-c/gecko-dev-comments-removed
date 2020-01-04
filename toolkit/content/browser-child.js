@@ -551,6 +551,22 @@ addMessageListener("Browser:Thumbnail:CheckState", function (aMessage) {
 
 
 
+
+addMessageListener("Browser:Thumbnail:GetOriginalURL", function (aMessage) {
+  let channel = docShell.currentDocumentChannel;
+  let channelError = PageThumbUtils.isChannelErrorResponse(channel);
+  let originalURL;
+  try {
+    originalURL = channel.originalURI.spec;
+  } catch (ex) {}
+  sendAsyncMessage("Browser:Thumbnail:GetOriginalURL:Response", {
+    channelError: channelError,
+    originalURL: originalURL,
+  });
+});
+
+
+
 var AddonsChild = RemoteAddonsChild.init(this);
 if (AddonsChild) {
   addEventListener("unload", () => {

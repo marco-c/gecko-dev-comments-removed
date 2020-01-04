@@ -16,9 +16,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm");
-
 this.PageThumbUtils = {
   
   THUMBNAIL_BG_COLOR: "#fff",
@@ -266,10 +263,6 @@ this.PageThumbUtils = {
   },
 
   shouldStoreContentThumbnail: function (aDocument, aDocShell) {
-    if (BrowserUtils.isToolbarVisible(aDocShell, "findbar")) {
-      return false;
-    }
-
     
     
     if (aDocument instanceof Ci.nsIDOMXMLDocument) {
@@ -331,5 +324,24 @@ this.PageThumbUtils = {
       }
     } 
     return true;
-  }
+  },
+
+  
+
+
+
+  isChannelErrorResponse: function(channel) {
+    
+    if (!channel)
+      return true;
+    if (!(channel instanceof Ci.nsIHttpChannel))
+      
+      return false;
+    try {
+      return !channel.requestSucceeded;
+    } catch (_) {
+      
+      return true;
+    }
+  },
 };
