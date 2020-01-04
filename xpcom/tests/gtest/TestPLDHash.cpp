@@ -56,6 +56,7 @@ TestCrashyOperation(void (*aCrashyOperation)())
 #endif
 
     
+    fprintf(stderr, "TestCrashyOperation: The following crash is expected. Do not panic.\n");
     aCrashyOperation();
     fprintf(stderr, "TestCrashyOperation: didn't crash?!\n");
     ASSERT_TRUE(false);   
