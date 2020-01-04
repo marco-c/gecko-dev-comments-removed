@@ -77,6 +77,8 @@ public:
     static void NotifyScreenInitialized();
     static void NotifyScreenRotation();
 
+    void CheckPowerKey();
+
 protected:
     virtual ~nsAppShell();
 
@@ -101,6 +103,9 @@ private:
     android::sp<GeckoInputDispatcher>   mDispatcher;
     android::sp<android::InputReader>            mReader;
     android::sp<android::InputReaderThread>      mReaderThread;
+
+    
+    bool mPowerKeyChecked;
 };
 
 #endif 
