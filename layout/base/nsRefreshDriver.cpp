@@ -1189,6 +1189,15 @@ nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags)
   
   
   
+  if (aFlags & eNeverAdjustTimer) {
+    return;
+  }
+
+  
+  
+  
+  
+  
   
   
   
@@ -2108,7 +2117,7 @@ nsRefreshDriver::ScheduleViewManagerFlush()
   NS_ASSERTION(mPresContext->IsRoot(),
                "Should only schedule view manager flush on root prescontexts");
   mViewManagerFlushIsPending = true;
-  EnsureTimerStarted();
+  EnsureTimerStarted(eNeverAdjustTimer);
 }
 
 void
