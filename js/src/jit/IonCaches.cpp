@@ -3099,6 +3099,9 @@ IsPropertySetInlineable(NativeObject* obj, HandleId id, MutableHandleShape pshap
                         ConstantOrRegister val, bool needsTypeBarrier, bool* checkTypeset)
 {
     
+    MOZ_ASSERT(!obj->hasLazyGroup());
+
+    
     
     pshape.set(obj->lookupPure(id));
 
@@ -3533,15 +3536,12 @@ SetPropertyIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex
     RootedPropertyName name(cx, cache.name());
     RootedId id(cx, AtomToId(name));
 
-    bool emitted = false;
-    bool tryNativeAddSlot = false;
-    if (!cache.tryAttachStub(cx, outerScript, ion, obj, id, &emitted, &tryNativeAddSlot))
-        return false;
-
+    
+    
     
     RootedObjectGroup oldGroup(cx);
     RootedShape oldShape(cx);
-    if (!emitted) {
+    if (cache.canAttachStub()) {
         oldGroup = obj->getGroup(cx);
         if (!oldGroup)
             return false;
@@ -3553,6 +3553,11 @@ SetPropertyIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex
                 oldShape = expando->lastProperty();
         }
     }
+
+    bool emitted = false;
+    bool tryNativeAddSlot = false;
+    if (!cache.tryAttachStub(cx, outerScript, ion, obj, id, &emitted, &tryNativeAddSlot))
+        return false;
 
     
     if (JSOp(*cache.pc()) == JSOP_INITGLEXICAL) {
