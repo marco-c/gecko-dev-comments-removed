@@ -1377,11 +1377,9 @@ nsProtocolProxyService::GetFailoverForProxy(nsIProxyInfo  *aProxy,
                                             nsresult       aStatus,
                                             nsIProxyInfo **aResult)
 {
-    
-    
-    if (mProxyConfig != PROXYCONFIG_PAC && mProxyConfig != PROXYCONFIG_WPAD &&
-        mProxyConfig != PROXYCONFIG_SYSTEM)
+    if (mProxyConfig == PROXYCONFIG_DIRECT) {
         return NS_ERROR_NOT_AVAILABLE;
+    }
 
     
     nsCOMPtr<nsProxyInfo> pi = do_QueryInterface(aProxy);
@@ -1979,50 +1977,40 @@ nsProtocolProxyService::PruneProxyInfo(const nsProtocolInfo &info,
 
     
     
-    
 
     bool allDisabled = true;
-
     nsProxyInfo *iter;
-    for (iter = head; iter; iter = iter->mNext) {
-        if (!IsProxyDisabled(iter)) {
-            allDisabled = false;
-            break;
+
+    
+    nsProxyInfo *last = nullptr;
+    for (iter = head; iter; ) {
+        if (IsProxyDisabled(iter)) {
+            
+            nsProxyInfo *reject = iter;
+
+            iter = iter->mNext;
+            if (last)
+                last->mNext = iter;
+            else
+                head = iter;
+
+            reject->mNext = nullptr;
+            NS_RELEASE(reject);
+            continue;
         }
+
+        allDisabled = false;
+        EnableProxy(iter);
+
+        last = iter;
+        iter = iter->mNext;
     }
 
-    if (allDisabled)
-        LOG(("All proxies are disabled, so trying all again"));
-    else {
-        
-        nsProxyInfo *last = nullptr;
-        for (iter = head; iter; ) {
-            if (IsProxyDisabled(iter)) {
-                
-                nsProxyInfo *reject = iter;
-
-                iter = iter->mNext;
-                if (last)
-                    last->mNext = iter;
-                else
-                    head = iter;
-
-                reject->mNext = nullptr;
-                NS_RELEASE(reject);
-                continue;
-            }
-
-            
-            
-            
-            
-            
-            
-            EnableProxy(iter);
-
-            last = iter;
-            iter = iter->mNext;
-        }
+    if (allDisabled) {
+        LOG(("All proxies are disabled, try a DIRECT rule!"));
+        NS_RELEASE(head);
+        *list = nullptr;
+        return;
     }
 
     
