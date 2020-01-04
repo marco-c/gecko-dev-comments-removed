@@ -1305,6 +1305,8 @@ BookmarksStore.prototype = {
 };
 
 function BookmarksTracker(name, engine) {
+  this._batchDepth = 0;
+  this._batchSawScoreIncrement = false;
   Tracker.call(this, name, engine);
 
   Svc.Obs.add("places-shutdown", this);
@@ -1369,8 +1371,13 @@ BookmarksTracker.prototype = {
   },
 
   
+
   _upScore: function BMT__upScore() {
-    this.score += SCORE_INCREMENT_XLARGE;
+    if (this._batchDepth == 0) {
+      this.score += SCORE_INCREMENT_XLARGE;
+    } else {
+      this._batchSawScoreIncrement = true;
+    }
   },
 
   
@@ -1523,7 +1530,13 @@ BookmarksTracker.prototype = {
     PlacesUtils.annotations.removeItemAnnotation(itemId, BookmarkAnnos.PARENT_ANNO);
   },
 
-  onBeginUpdateBatch: function () {},
-  onEndUpdateBatch: function () {},
+  onBeginUpdateBatch: function () {
+    ++this._batchDepth;
+  },
+  onEndUpdateBatch: function () {
+    if (--this._batchDepth === 0 && this._batchSawScoreIncrement) {
+      this.score += SCORE_INCREMENT_XLARGE;
+    }
+  },
   onItemVisited: function () {}
 };
