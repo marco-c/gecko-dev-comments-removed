@@ -1796,6 +1796,12 @@ CSSStyleSheet::SubjectSubsumesInnerPrincipal()
   
   
   
+  
+  
+  
+  
+  
+  
   if (!mInner->mComplete) {
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
