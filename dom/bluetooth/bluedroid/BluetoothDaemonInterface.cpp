@@ -28,6 +28,9 @@ using namespace mozilla::ipc;
 
 static const int sRetryInterval = 100; 
 
+BluetoothNotificationHandler*
+  BluetoothDaemonInterface::sNotificationHandler;
+
 
 
 
@@ -311,6 +314,18 @@ BluetoothDaemonInterface::BluetoothDaemonInterface()
 BluetoothDaemonInterface::~BluetoothDaemonInterface()
 { }
 
+void
+BluetoothDaemonInterface::SetNotificationHandler(
+  BluetoothCoreNotificationHandler* aNotificationHandler)
+{
+  MOZ_ASSERT(mProtocol);
+
+  auto protocol = mProtocol.get();
+
+  static_cast<BluetoothDaemonCoreModule*>(protocol)->SetNotificationHandler(
+    aNotificationHandler);
+}
+
 class BluetoothDaemonInterface::StartDaemonTask final : public Task
 {
 public:
@@ -437,6 +452,10 @@ BluetoothDaemonInterface::Init(
 
   
   
+  sNotificationHandler = aNotificationHandler;
+
+  
+  
   
   Unused << NS_WARN_IF(property_set("ctl.stop", "bluetoothd"));
 
@@ -445,8 +464,6 @@ BluetoothDaemonInterface::Init(
   if (!mProtocol) {
     mProtocol = new BluetoothDaemonProtocol();
   }
-  static_cast<BluetoothDaemonCoreModule*>(mProtocol)->SetNotificationHandler(
-    aNotificationHandler);
 
   if (!mListenSocket) {
     mListenSocket = new ListenSocket(this, LISTEN_SOCKET);
@@ -556,8 +573,7 @@ private:
 void
 BluetoothDaemonInterface::Cleanup(BluetoothResultHandler* aRes)
 {
-  static_cast<BluetoothDaemonCoreModule*>(mProtocol)->SetNotificationHandler(
-    nullptr);
+  sNotificationHandler = nullptr;
 
   
   nsresult rv = mProtocol->UnregisterModuleCmd(
@@ -1081,22 +1097,17 @@ BluetoothDaemonInterface::OnDisconnect(int aIndex)
       break;
   }
 
-  BluetoothNotificationHandler* notificationHandler =
-    static_cast<BluetoothDaemonCoreModule*>(mProtocol)->
-      GetNotificationHandler();
-
   
 
 
-  if (notificationHandler && mResultHandlerQ.IsEmpty()) {
+  if (sNotificationHandler && mResultHandlerQ.IsEmpty()) {
     if (mListenSocket->GetConnectionStatus() == SOCKET_DISCONNECTED &&
         mCmdChannel->GetConnectionStatus() == SOCKET_DISCONNECTED &&
         mNtfChannel->GetConnectionStatus() == SOCKET_DISCONNECTED) {
       
       
-      notificationHandler->BackendErrorNotification(true);
-      static_cast<BluetoothDaemonCoreModule*>(mProtocol)->
-        SetNotificationHandler(nullptr);
+      sNotificationHandler->BackendErrorNotification(true);
+      sNotificationHandler = nullptr;
     }
   }
 }
