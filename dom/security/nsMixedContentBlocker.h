@@ -28,6 +28,8 @@ enum MixedContentTypes {
 #include "nsIChannelEventSink.h"
 #include "imgRequest.h"
 
+class nsILoadInfo; 
+
 class nsMixedContentBlocker : public nsIContentPolicy,
                               public nsIChannelEventSink
 {
@@ -59,9 +61,25 @@ public:
                              nsISupports* aExtra,
                              nsIPrincipal* aRequestPrincipal,
                              int16_t* aDecision);
-  static void AccumulateMixedContentHSTS(nsIURI* aURI, bool aActive);
+  static void AccumulateMixedContentHSTS(nsIURI* aURI,
+                                         bool aActive,
+                                         bool aHasHSTSPriming);
+  
+
+
+
+
+
+
+
+  static nsresult MarkLoadInfoForPriming(nsIURI* aURI,
+                                         nsISupports* aRequestingContext,
+                                         nsILoadInfo* aLoadInfo);
+
   static bool sBlockMixedScript;
   static bool sBlockMixedDisplay;
+  static bool sUseHSTS;
+  static bool sSendHSTSPriming;
 };
 
 #endif 
