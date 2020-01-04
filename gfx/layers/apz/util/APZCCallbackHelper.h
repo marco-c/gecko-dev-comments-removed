@@ -164,6 +164,17 @@ public:
 
     static void SuppressDisplayport(const bool& aEnabled,
                                     const nsCOMPtr<nsIPresShell>& aShell);
+
+    
+
+
+
+
+
+    static void RespectDisplayPortSuppression(bool aEnabled,
+                                              const nsCOMPtr<nsIPresShell>& aShell);
+
+    
     static bool IsDisplayportSuppressed();
 
     static void
