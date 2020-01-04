@@ -35,6 +35,7 @@ function RegExpFlagsGetter() {
     
     return result;
 }
+_SetCanonicalName(RegExpFlagsGetter, "get flags");
 
 
 function RegExpToString()
@@ -53,3 +54,4 @@ function RegExpToString()
     
     return '/' + pattern + '/' + flags;
 }
+_SetCanonicalName(RegExpToString, "toString");

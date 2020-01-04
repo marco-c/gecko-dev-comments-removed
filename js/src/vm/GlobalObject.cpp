@@ -658,16 +658,37 @@ GlobalObject::getSelfHostedFunction(JSContext* cx, Handle<GlobalObject*> global,
                                     HandlePropertyName selfHostedName, HandleAtom name,
                                     unsigned nargs, MutableHandleValue funVal)
 {
-    if (GlobalObject::maybeGetIntrinsicValue(cx, global, selfHostedName, funVal))
-        return true;
+    if (GlobalObject::maybeGetIntrinsicValue(cx, global, selfHostedName, funVal)) {
+        RootedFunction fun(cx, &funVal.toObject().as<JSFunction>());
+        if (fun->atom() == name)
+            return true;
 
-    JSFunction* fun =
-        NewScriptedFunction(cx, nargs, JSFunction::INTERPRETED_LAZY,
-                            name, gc::AllocKind::FUNCTION_EXTENDED, SingletonObject);
-    if (!fun)
+        if (fun->atom() == selfHostedName) {
+            
+            
+            
+            
+            
+            
+            
+            
+            fun->initAtom(name);
+            return true;
+        }
+
+
+        
+        
+        
+        
+        
+        cx->runtime()->assertSelfHostedFunctionHasCanonicalName(cx, selfHostedName);
+        return true;
+    }
+
+    RootedFunction fun(cx);
+    if (!cx->runtime()->createLazySelfHostedFunctionClone(cx, selfHostedName, name, nargs, &fun))
         return false;
-    fun->setIsSelfHostedBuiltin();
-    fun->setExtendedSlot(LAZY_FUNCTION_NAME_SLOT, StringValue(selfHostedName));
     funVal.setObject(*fun);
 
     return GlobalObject::addIntrinsicValue(cx, global, selfHostedName, funVal);
