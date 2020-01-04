@@ -176,7 +176,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
         while(indexOfMatch != -1) {
             indexOfMatch = string.indexOf(pattern, lastIndexOfMatch);
             lastIndexOfMatch = indexOfMatch + patternLength;
-            
             if(indexOfMatch != -1) {
                 mOccurrences.add(indexOfMatch);
             }
@@ -211,7 +210,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
             int nextStartSpanIndex = 0;
             
             mOccurrences.add(suggestion.length());
-            for(int occurrence : mOccurrences) {
+            for (int occurrence : mOccurrences) {
                 
                 StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
                 sb.setSpan(boldSpan, nextStartSpanIndex, occurrence, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
