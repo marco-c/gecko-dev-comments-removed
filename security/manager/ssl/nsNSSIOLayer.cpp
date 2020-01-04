@@ -2099,10 +2099,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
   char** caNameStrings;
   UniqueCERTCertificate cert;
   UniqueSECKEYPrivateKey privKey;
-  UniqueCERTCertList certList;
-  CERTCertListNode* node;
   UniqueCERTCertNicknames nicknames;
-  int keyError = 0; 
   int32_t NumberOfCerts = 0;
   void* wincx = mSocketInfo;
   nsresult rv;
@@ -2152,30 +2149,31 @@ ClientAuthDataRunnable::RunOnTargetThread()
     
 
     
-    certList.reset(CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(),
-                                             certUsageSSLClient, false, true,
-                                             wincx));
+    UniqueCERTCertList certList(
+      CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(), certUsageSSLClient,
+                                false, true, wincx));
     if (!certList) {
-      goto noCert;
+      goto loser;
     }
 
     
     mRV = CERT_FilterCertListByCANames(certList.get(), mCANames->nnames,
                                        caNameStrings, certUsageSSLClient);
     if (mRV != SECSuccess) {
-      goto noCert;
+      goto loser;
     }
 
     
-    node = CERT_LIST_HEAD(certList);
-    if (CERT_LIST_END(node, certList)) {
-      goto noCert;
+    if (CERT_LIST_END(CERT_LIST_HEAD(certList), certList)) {
+      goto loser;
     }
 
     UniqueCERTCertificate lowPrioNonrepCert;
 
     
-    while (!CERT_LIST_END(node, certList)) {
+    for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
+         !CERT_LIST_END(node, certList);
+         node = CERT_LIST_NEXT(node)) {
       
       
       privKey.reset(PK11_FindKeyByAnyCert(node->cert, wincx));
@@ -2192,13 +2190,10 @@ ClientAuthDataRunnable::RunOnTargetThread()
           break;
         }
       }
-      keyError = PR_GetError();
-      if (keyError == SEC_ERROR_BAD_PASSWORD) {
+      if (PR_GetError() == SEC_ERROR_BAD_PASSWORD) {
         
         goto loser;
       }
-
-      node = CERT_LIST_NEXT(node);
     }
 
     if (!cert && lowPrioNonrepCert) {
@@ -2207,7 +2202,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
     }
 
     if (!cert) {
-      goto noCert;
+      goto loser;
     }
   } else { 
     
@@ -2229,30 +2224,22 @@ ClientAuthDataRunnable::RunOnTargetThread()
       }
     }
 
-    bool canceled = false;
-
-    if (hasRemembered) {
-      if (rememberedDBKey.IsEmpty()) {
-        canceled = true;
-      } else {
-        nsCOMPtr<nsIX509CertDB> certdb;
-        certdb = do_GetService(NS_X509CERTDB_CONTRACTID);
-        if (certdb) {
-          nsCOMPtr<nsIX509Cert> found_cert;
-          nsresult find_rv =
-            certdb->FindCertByDBKey(rememberedDBKey.get(),
-            getter_AddRefs(found_cert));
-          if (NS_SUCCEEDED(find_rv) && found_cert) {
-            nsNSSCertificate* obj_cert =
-              BitwiseCast<nsNSSCertificate*, nsIX509Cert*>(found_cert.get());
-            if (obj_cert) {
-              cert.reset(obj_cert->GetCert());
-            }
+    if (hasRemembered && !rememberedDBKey.IsEmpty()) {
+      nsCOMPtr<nsIX509CertDB> certdb = do_GetService(NS_X509CERTDB_CONTRACTID);
+      if (certdb) {
+        nsCOMPtr<nsIX509Cert> foundCert;
+        rv = certdb->FindCertByDBKey(rememberedDBKey.get(),
+                                     getter_AddRefs(foundCert));
+        if (NS_SUCCEEDED(rv) && foundCert) {
+          nsNSSCertificate* objCert =
+            BitwiseCast<nsNSSCertificate*, nsIX509Cert*>(foundCert.get());
+          if (objCert) {
+            cert.reset(objCert->GetCert());
           }
+        }
 
-          if (!cert) {
-            hasRemembered = false;
-          }
+        if (!cert) {
+          hasRemembered = false;
         }
       }
     }
@@ -2260,17 +2247,16 @@ ClientAuthDataRunnable::RunOnTargetThread()
     if (!hasRemembered) {
       
       nsCOMPtr<nsIClientAuthDialogs> dialogs;
-      int32_t selectedIndex = -1;
       char16_t** certNicknameList = nullptr;
       char16_t** certDetailsList = nullptr;
 
       
       
-      certList.reset(CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(),
-                                               certUsageSSLClient, false,
-                                               false, wincx));
+      UniqueCERTCertList certList(
+        CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(), certUsageSSLClient,
+                                  false, false, wincx));
       if (!certList) {
-        goto noCert;
+        goto loser;
       }
 
       if (mCANames->nnames != 0) {
@@ -2286,17 +2272,14 @@ ClientAuthDataRunnable::RunOnTargetThread()
 
       if (CERT_LIST_END(CERT_LIST_HEAD(certList), certList)) {
         
-        goto noCert;
+        goto loser;
       }
 
       
-      node = CERT_LIST_HEAD(certList.get());
-      while (!CERT_LIST_END(node, certList.get())) {
+      for (CERTCertListNode* node = CERT_LIST_HEAD(certList.get());
+           !CERT_LIST_END(node, certList.get());
+           node = CERT_LIST_NEXT(node)) {
         ++NumberOfCerts;
-        node = CERT_LIST_NEXT(node);
-      }
-      if (CERT_LIST_END(CERT_LIST_HEAD(certList.get()), certList.get())) {
-        goto noCert;
       }
 
       nicknames.reset(getNSSCertNicknamesFromCertList(certList));
@@ -2314,7 +2297,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
       int32_t port;
       mSocketInfo->GetPort(&port);
 
-      nsString cn_host_port;
+      nsAutoString cn_host_port;
       if (ccn && strcmp(ccn.get(), hostname) == 0) {
         cn_host_port.Append(cn);
         cn_host_port.Append(':');
@@ -2344,11 +2327,10 @@ ClientAuthDataRunnable::RunOnTargetThread()
         goto loser;
       }
 
-      int32_t CertsToUse;
-      for (CertsToUse = 0, node = CERT_LIST_HEAD(certList);
-        !CERT_LIST_END(node, certList) && CertsToUse < nicknames->numnicknames;
-        node = CERT_LIST_NEXT(node)
-        ) {
+      int32_t CertsToUse = 0;
+      for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
+           !CERT_LIST_END(node, certList) && CertsToUse < nicknames->numnicknames;
+           node = CERT_LIST_NEXT(node)) {
         RefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
 
         if (!tempCert)
@@ -2373,9 +2355,9 @@ ClientAuthDataRunnable::RunOnTargetThread()
       }
 
       
-      nsresult rv = getNSSDialogs(getter_AddRefs(dialogs),
-                                  NS_GET_IID(nsIClientAuthDialogs),
-                                  NS_CLIENTAUTHDIALOGS_CONTRACTID);
+      rv = getNSSDialogs(getter_AddRefs(dialogs),
+                         NS_GET_IID(nsIClientAuthDialogs),
+                         NS_CLIENTAUTHDIALOGS_CONTRACTID);
 
       if (NS_FAILED(rv)) {
         NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(CertsToUse, certNicknameList);
@@ -2383,40 +2365,41 @@ ClientAuthDataRunnable::RunOnTargetThread()
         goto loser;
       }
 
-      rv = dialogs->ChooseCertificate(mSocketInfo, cn_host_port.get(),
-                                      org.get(), issuer.get(),
+      uint32_t selectedIndex = 0;
+      bool certChosen = false;
+      rv = dialogs->ChooseCertificate(mSocketInfo, cn_host_port, org, issuer,
                                       (const char16_t**)certNicknameList,
                                       (const char16_t**)certDetailsList,
-                                      CertsToUse, &selectedIndex, &canceled);
+                                      CertsToUse, &selectedIndex, &certChosen);
 
       NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(CertsToUse, certNicknameList);
       NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(CertsToUse, certDetailsList);
 
-      if (NS_FAILED(rv)) goto loser;
+      if (NS_FAILED(rv)) {
+        goto loser;
+      }
 
       
       bool wantRemember = false;
       mSocketInfo->GetRememberClientAuthCertificate(&wantRemember);
 
-      int i;
-      if (!canceled)
-      for (i = 0, node = CERT_LIST_HEAD(certList);
-        !CERT_LIST_END(node, certList);
-        ++i, node = CERT_LIST_NEXT(node)) {
-
-        if (i == selectedIndex) {
-          cert.reset(CERT_DupCertificate(node->cert));
-          break;
+      if (certChosen) {
+        uint32_t i = 0;
+        for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
+             !CERT_LIST_END(node, certList);
+             ++i, node = CERT_LIST_NEXT(node)) {
+          if (i == selectedIndex) {
+            cert.reset(CERT_DupCertificate(node->cert));
+            break;
+          }
         }
       }
 
       if (cars && wantRemember) {
         cars->RememberDecision(hostname, mServerCert,
-          canceled ? nullptr : cert.get());
+                               certChosen ? cert.get() : nullptr);
       }
     }
-
-    if (canceled) { rv = NS_ERROR_NOT_AVAILABLE; goto loser; }
 
     if (!cert) {
       goto loser;
@@ -2425,18 +2408,11 @@ ClientAuthDataRunnable::RunOnTargetThread()
     
     privKey.reset(PK11_FindKeyByAnyCert(cert.get(), wincx));
     if (!privKey) {
-      keyError = PR_GetError();
-      if (keyError == SEC_ERROR_BAD_PASSWORD) {
-        
-        goto loser;
-      } else {
-        goto noCert;
-      }
+      goto loser;
     }
   }
   goto done;
 
-noCert:
 loser:
   if (mRV == SECSuccess) {
     mRV = SECFailure;
