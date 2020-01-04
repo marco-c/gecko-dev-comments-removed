@@ -120,6 +120,8 @@ ContentAreaDropListener.prototype =
     
     
     if (sourceDocument && eventDocument) {
+      if (sourceDocument.defaultView == null)
+        return true;
       let sourceRoot = sourceDocument.defaultView.top;
       if (sourceRoot && sourceRoot == eventDocument.defaultView.top)
         return false;
