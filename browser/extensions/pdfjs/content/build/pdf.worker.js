@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdfWorker = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.4.258';
-var pdfjsBuild = '990150c';
+var pdfjsVersion = '1.5.216';
+var pdfjsBuild = '3cbaa9a';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -451,7 +451,7 @@ exports.ArithmeticDecoder = ArithmeticDecoder;
           types[j] = 'EN';
         }
         
-        for (j = i + 1; j < strLength; --j) {
+        for (j = i + 1; j < strLength; ++j) {
           if (types[j] !== 'ET') {
             break;
           }
@@ -34156,6 +34156,12 @@ var XRef = (function XRefClosure() {
             error('Invalid entry in XRef subsection: ' + first + ', ' + count);
           }
 
+          
+          
+          if (i === 0 && entry.free && first === 1) {
+            first = 0;
+          }
+
           if (!this.entries[i + first]) {
             this.entries[i + first] = entry;
           }
@@ -34167,12 +34173,6 @@ var XRef = (function XRefClosure() {
         tableState.parserBuf2 = parser.buf2;
         delete tableState.firstEntryNum;
         delete tableState.entryCount;
-      }
-
-      
-      if (first === 1 && this.entries[1] && this.entries[1].free) {
-        
-        this.entries.shift();
       }
 
       
@@ -41542,11 +41542,8 @@ exports.setPDFNetworkStreamClass = setPDFNetworkStreamClass;
 exports.WorkerTask = WorkerTask;
 exports.WorkerMessageHandler = WorkerMessageHandler;
 }));
-
-
   }).call(pdfjsLibs);
 
   exports.WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
 }));
-
 
