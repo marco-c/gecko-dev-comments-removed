@@ -398,6 +398,7 @@ public:
   }
   virtual void DeviceChanged() override
   {
+    MutexAutoLock lock(mMutex);
     if (mAudioSource) {
       mAudioSource->DeviceChanged();
     }
@@ -570,8 +571,6 @@ class MediaEngineWebRTC : public MediaEngine
   typedef MediaEngine Super;
 public:
   explicit MediaEngineWebRTC(MediaEnginePrefs& aPrefs);
-
-  virtual void SetFakeDeviceChangeEvents() override;
 
   
   

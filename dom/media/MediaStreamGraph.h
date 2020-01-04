@@ -1374,8 +1374,7 @@ protected:
   
 
 
-
-  nsTArray<AudioDataListener *> mAudioInputs;
+  nsTArray<RefPtr<AudioDataListener>> mAudioInputs;
 };
 
 } 
