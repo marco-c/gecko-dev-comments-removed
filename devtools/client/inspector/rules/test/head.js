@@ -48,11 +48,11 @@ addTab = function(url) {
 
 
 function openRuleView() {
-  return openInspectorSidebarTab("ruleview").then(objects => {
+  return openInspectorSidebarTab("ruleview").then(({toolbox, inspector}) => {
     return {
-      toolbox: objects.toolbox,
-      inspector: objects.inspector,
-      view: objects.view.view
+      toolbox,
+      inspector,
+      view: inspector.ruleview.view
     };
   });
 }

@@ -52,7 +52,7 @@ function selectAndHighlightNode(nodeOrSelector, inspector) {
 
 
 function openLayoutView() {
-  return openInspectorSidebarTab("layoutview").then(objects => {
+  return openInspectorSidebarTab("layoutview").then(({toolbox, inspector}) => {
     
     
     function mockHighlighter({highlighter}) {
@@ -63,9 +63,13 @@ function openLayoutView() {
         return promise.resolve();
       };
     }
-    mockHighlighter(objects.toolbox);
+    mockHighlighter(toolbox);
 
-    return objects;
+    return {
+      toolbox,
+      inspector,
+      view: inspector.layoutview
+    };
   });
 }
 
