@@ -44,7 +44,10 @@ const chromeRDPEnums = {
     
     RESULT: "result",
     
-    COMMAND: "command"
+    COMMAND: "command",
+    
+    
+    NULL_MESSAGE: "nullMessage",
   },
   MESSAGE_LEVEL: {
     LOG: "log",

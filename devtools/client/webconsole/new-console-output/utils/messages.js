@@ -45,6 +45,7 @@ function transformPacket(packet) {
       let type = message.level;
       let level = getLevelFromType(type);
       let messageText = null;
+      const timer = message.timer;
 
       
       switch (type) {
@@ -59,6 +60,23 @@ function transformPacket(packet) {
           let label = counter.label ? counter.label : l10n.getStr("noCounterLabel");
           messageText = `${label}: ${counter.count}`;
           parameters = null;
+          break;
+        case "time":
+          
+          parameters = null;
+          type = MESSAGE_TYPE.NULL_MESSAGE;
+          break;
+        case "timeEnd":
+          parameters = null;
+          if (timer) {
+            
+            
+            let duration = Math.round(timer.duration * 100) / 100;
+            messageText = l10n.getFormatStr("timeEnd", [timer.name, duration]);
+          } else {
+            
+            type = MESSAGE_TYPE.NULL_MESSAGE;
+          }
           break;
       }
 
