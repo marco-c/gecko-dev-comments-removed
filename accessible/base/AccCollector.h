@@ -28,11 +28,6 @@ protected:
   
 
 
-  int32_t EnsureNGetIndex(Accessible* aAccessible);
-
-  
-
-
   virtual void AppendObject(Accessible* aAccessible);
 
   filters::FilterFuncPtr mFilterFunc;
@@ -77,6 +72,11 @@ protected:
 
 
   Accessible* EnsureNGetObject(uint32_t aIndex);
+
+  
+
+
+  int32_t EnsureNGetIndex(Accessible* aAccessible);
 
   
   explicit EmbeddedObjCollector(Accessible* aRoot) :
