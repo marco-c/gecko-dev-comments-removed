@@ -403,6 +403,7 @@ Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
         
         
         
+        MOZ_ASSERT(load->IsLDR());
         
         
         
@@ -413,9 +414,11 @@ Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
         
         
         
+        MOZ_ASSERT(load->IsADR() || load->IsLDR());
+        MOZ_ASSERT(call->IsNOP());
         
         
-
+        
         int32_t offset = (int)load->ImmPCRawOffset();
         MOZ_ASSERT(vixl::is_int19(offset));
         ldr(load, ScratchReg2_64, int32_t(offset));
