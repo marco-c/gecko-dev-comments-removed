@@ -34,8 +34,8 @@
 #include "avcodec.h"
 #include "internal.h"
 #include "mathops.h"
+#include "get_bits.h"
 #include "put_bits.h"
-#include "vlc.h"
 
 const uint8_t ff_log2_run[41]={
  0, 0, 0, 0, 1, 1, 1, 1,
@@ -317,7 +317,7 @@ int ff_init_vlc_sparse(VLC *vlc_arg, int nb_bits, int nb_codes,
         }                                                                   \
         GET_DATA(buf[j].code, codes, i, codes_wrap, codes_size);            \
         if (buf[j].code >= (1LL<<buf[j].bits)) {                            \
-            av_log(NULL, AV_LOG_ERROR, "Invalid code %x for %d in init_vlc\n", buf[j].code, i);\
+            av_log(NULL, AV_LOG_ERROR, "Invalid code in init_vlc\n");       \
             if (!(flags & INIT_VLC_USE_NEW_STATIC))                         \
                 av_free(buf);                                               \
             return -1;                                                      \

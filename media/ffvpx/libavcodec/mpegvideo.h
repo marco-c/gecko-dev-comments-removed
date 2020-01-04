@@ -261,10 +261,10 @@ typedef struct MpegEncContext {
     int mv_dir;
 #define MV_DIR_FORWARD   1
 #define MV_DIR_BACKWARD  2
-#define MV_DIRECT        4 ///< bidirectional mode where the difference equals the MV of the last P/S/I-Frame (MPEG-4)
+#define MV_DIRECT        4 ///< bidirectional mode where the difference equals the MV of the last P/S/I-Frame (mpeg4)
     int mv_type;
 #define MV_TYPE_16X16       0   ///< 1 vector for the whole mb
-#define MV_TYPE_8X8         1   ///< 4 vectors (H.263, MPEG-4 4MV)
+#define MV_TYPE_8X8         1   ///< 4 vectors (h263, mpeg4 4MV)
 #define MV_TYPE_16X8        2   ///< 2 vectors, one per 16x8 block
 #define MV_TYPE_FIELD       3   ///< 2 vectors, one per field
 #define MV_TYPE_DMV         4   ///< 2 vectors, special mpeg2 Dual Prime Vectors

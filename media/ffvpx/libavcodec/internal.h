@@ -160,19 +160,6 @@ typedef struct AVCodecInternal {
 
 
     void *hwaccel_priv_data;
-
-    
-
-
-    int draining;
-
-    
-
-
-    AVPacket *buffer_pkt;
-    int buffer_pkt_valid; 
-    AVFrame *buffer_frame;
-    int draining_done;
 } AVCodecInternal;
 
 struct AVCodecDefault {
@@ -306,8 +293,6 @@ const uint8_t *avpriv_find_start_code(const uint8_t *p,
                                       const uint8_t *end,
                                       uint32_t *state);
 
-int avpriv_codec_get_cap_skip_frame_fill_param(const AVCodec *codec);
-
 
 
 
@@ -344,20 +329,5 @@ int ff_decode_frame_props(AVCodecContext *avctx, AVFrame *frame);
 AVCPBProperties *ff_add_cpb_side_data(AVCodecContext *avctx);
 
 int ff_side_data_set_encoder_stats(AVPacket *pkt, int quality, int64_t *error, int error_count, int pict_type);
-
-
-
-
-
-
-
-
-
-
-
-
-
-int ff_alloc_a53_sei(const AVFrame *frame, size_t prefix_len,
-                     void **data, size_t *sei_size);
 
 #endif 

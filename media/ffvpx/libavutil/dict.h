@@ -27,12 +27,14 @@
 
 
 
+
 #ifndef AVUTIL_DICT_H
 #define AVUTIL_DICT_H
 
 #include <stdint.h>
 
 #include "version.h"
+
 
 
 
@@ -76,7 +78,6 @@
 #define AV_DICT_DONT_OVERWRITE 16   
 #define AV_DICT_APPEND         32   
 
-#define AV_DICT_MULTIKEY       64   
 
 typedef struct AVDictionaryEntry {
     char *key;
@@ -110,9 +111,6 @@ AVDictionaryEntry *av_dict_get(const AVDictionary *m, const char *key,
 
 
 int av_dict_count(const AVDictionary *m);
-
-
-
 
 
 

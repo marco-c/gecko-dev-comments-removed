@@ -39,13 +39,8 @@
 
 
 
+
 int av_base64_decode(uint8_t *out, const char *in, int out_size);
-
-
-
-
-
-#define AV_BASE64_DECODE_SIZE(x) ((x) * 3LL / 4)
 
 
 

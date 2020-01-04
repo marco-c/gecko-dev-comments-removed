@@ -26,6 +26,7 @@
 
 
 
+
 #include "libavutil/avconfig.h"
 #include "version.h"
 
@@ -241,12 +242,6 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_D3D11VA_VLD,  
 
-    
-
-
-
-    AV_PIX_FMT_CUDA,
-
     AV_PIX_FMT_0RGB=0x123+4,
     AV_PIX_FMT_RGB0,        
     AV_PIX_FMT_0BGR,        
@@ -296,12 +291,6 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_P010LE, 
     AV_PIX_FMT_P010BE, 
-
-    AV_PIX_FMT_GBRAP12BE,  
-    AV_PIX_FMT_GBRAP12LE,  
-
-    AV_PIX_FMT_GBRAP10BE,  
-    AV_PIX_FMT_GBRAP10LE,  
 
     AV_PIX_FMT_NB,        
 };
@@ -358,8 +347,6 @@ enum AVPixelFormat {
 #define AV_PIX_FMT_GBRP12    AV_PIX_FMT_NE(GBRP12BE,    GBRP12LE)
 #define AV_PIX_FMT_GBRP14    AV_PIX_FMT_NE(GBRP14BE,    GBRP14LE)
 #define AV_PIX_FMT_GBRP16    AV_PIX_FMT_NE(GBRP16BE,    GBRP16LE)
-#define AV_PIX_FMT_GBRAP10   AV_PIX_FMT_NE(GBRAP10BE,   GBRAP10LE)
-#define AV_PIX_FMT_GBRAP12   AV_PIX_FMT_NE(GBRAP12BE,   GBRAP12LE)
 #define AV_PIX_FMT_GBRAP16   AV_PIX_FMT_NE(GBRAP16BE,   GBRAP16LE)
 
 #define AV_PIX_FMT_BAYER_BGGR16 AV_PIX_FMT_NE(BAYER_BGGR16BE,    BAYER_BGGR16LE)
@@ -424,7 +411,6 @@ enum AVColorTransferCharacteristic {
     AVCOL_TRC_BT2020_12    = 15, 
     AVCOL_TRC_SMPTEST2084  = 16, 
     AVCOL_TRC_SMPTEST428_1 = 17, 
-    AVCOL_TRC_ARIB_STD_B67 = 18, 
     AVCOL_TRC_NB,                
 };
 
@@ -439,7 +425,7 @@ enum AVColorSpace {
     AVCOL_SPC_FCC         = 4,  
     AVCOL_SPC_BT470BG     = 5,  
     AVCOL_SPC_SMPTE170M   = 6,  
-    AVCOL_SPC_SMPTE240M   = 7,  
+    AVCOL_SPC_SMPTE240M   = 7,
     AVCOL_SPC_YCOCG       = 8,  
     AVCOL_SPC_BT2020_NCL  = 9,  
     AVCOL_SPC_BT2020_CL   = 10, 

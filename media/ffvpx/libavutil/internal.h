@@ -244,7 +244,6 @@ void avpriv_request_sample(void *avc,
 #endif
 
 #define avpriv_open ff_open
-#define avpriv_tempfile ff_tempfile
 #define PTRDIFF_SPECIFIER "Id"
 #define SIZE_SPECIFIER "Iu"
 #else
@@ -297,21 +296,44 @@ static av_always_inline av_const int64_t ff_rint64_clip(double a, int64_t amin, 
 
 
 
+
+
+
+
+
+
+
+static av_always_inline double ff_exp10(double x)
+{
+    return exp2(M_LOG2_10 * x);
+}
+
+static av_always_inline float ff_exp10f(float x)
+{
+    return exp2f(M_LOG2_10 * x);
+}
+
+
+
+
+
+
+
+
+
+
+
+static av_always_inline float ff_fast_powf(float x, float y)
+{
+    return expf(logf(x) * y);
+}
+
+
+
+
+
 av_warn_unused_result
 int avpriv_open(const char *filename, int flags, ...);
-
-
-
-
-
-
-
-
-
-
-
-
-int avpriv_tempfile(const char *prefix, char **filename, int log_offset, void *log_ctx);
 
 int avpriv_set_systematic_pal2(uint32_t pal[256], enum AVPixelFormat pix_fmt);
 
