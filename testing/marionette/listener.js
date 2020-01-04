@@ -211,6 +211,7 @@ let isElementSelectedFn = dispatch(isElementSelected);
 let getElementLocationFn = dispatch(getElementLocation);
 let clearElementFn = dispatch(clearElement);
 let isElementDisplayedFn = dispatch(isElementDisplayed);
+let getElementValueOfCssPropertyFn = dispatch(getElementValueOfCssProperty);
 
 
 
@@ -241,7 +242,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getElementText", getElementTextFn);
   addMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
   addMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
-  addMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssProperty);
+  addMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssPropertyFn);
   addMessageListenerId("Marionette:getElementSize", getElementSizeFn);  
   addMessageListenerId("Marionette:getElementRect", getElementRectFn);
   addMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
@@ -346,7 +347,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getElementText", getElementTextFn);
   removeMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
   removeMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
-  removeMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssProperty);
+  removeMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssPropertyFn);
   removeMessageListenerId("Marionette:getElementSize", getElementSizeFn); 
   removeMessageListenerId("Marionette:getElementRect", getElementRectFn);
   removeMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
@@ -1526,16 +1527,14 @@ function isElementDisplayed(id) {
 
 
 
-function getElementValueOfCssProperty(msg) {
-  let command_id = msg.json.command_id;
-  let propertyName = msg.json.propertyName;
-  try {
-    let el = elementManager.getKnownElement(msg.json.id, curFrame);
-    sendResponse({value: curFrame.document.defaultView.getComputedStyle(el, null).getPropertyValue(propertyName)},
-                 command_id);
-  } catch (e) {
-    sendError(e, command_id);
-  }
+
+
+
+
+function getElementValueOfCssProperty(id, prop) {
+  let el = elementManager.getKnownElement(id, curFrame);
+  let st = curFrame.document.defaultView.getComputedStyle(el, null);
+  return st.getPropertyValue(prop);
 }
 
 
