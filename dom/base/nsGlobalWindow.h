@@ -1435,9 +1435,6 @@ private:
 
 
 
-
-
-
   nsresult OpenInternal(const nsAString& aUrl,
                         const nsAString& aName,
                         const nsAString& aOptions,
@@ -1448,7 +1445,6 @@ private:
                         bool aNavigate,
                         nsIArray *argv,
                         nsISupports *aExtraArgument,
-                        JSContext *aJSCallerContext,
                         nsPIDOMWindowOuter **aReturn);
 
 public:
