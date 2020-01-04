@@ -323,7 +323,7 @@ pref("devtools.editor.enableCodeFolding", true);
 pref("devtools.editor.autocomplete", true);
 
 
-pref("devtools.fontinspector.enabled", false);
+pref("devtools.fontinspector.enabled", true);
 
 
 
