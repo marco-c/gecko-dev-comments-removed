@@ -193,6 +193,7 @@ nsRuleNode::EnsureBlockDisplay(uint8_t& display,
   case NS_STYLE_DISPLAY_TABLE :
   case NS_STYLE_DISPLAY_BLOCK :
   case NS_STYLE_DISPLAY_FLEX :
+  case NS_STYLE_DISPLAY_WEBKIT_BOX :
   case NS_STYLE_DISPLAY_GRID :
     
     
@@ -209,6 +210,11 @@ nsRuleNode::EnsureBlockDisplay(uint8_t& display,
   case NS_STYLE_DISPLAY_INLINE_FLEX:
     
     display = NS_STYLE_DISPLAY_FLEX;
+    break;
+
+  case NS_STYLE_DISPLAY_WEBKIT_INLINE_BOX:
+    
+    display = NS_STYLE_DISPLAY_WEBKIT_BOX;
     break;
 
   case NS_STYLE_DISPLAY_INLINE_GRID:
@@ -239,6 +245,9 @@ nsRuleNode::EnsureInlineDisplay(uint8_t& display)
       break;
     case NS_STYLE_DISPLAY_FLEX :
       display = NS_STYLE_DISPLAY_INLINE_FLEX;
+      break;
+    case NS_STYLE_DISPLAY_WEBKIT_BOX :
+      display = NS_STYLE_DISPLAY_WEBKIT_INLINE_BOX;
       break;
     case NS_STYLE_DISPLAY_GRID :
       display = NS_STYLE_DISPLAY_INLINE_GRID;

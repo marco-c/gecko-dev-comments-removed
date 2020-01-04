@@ -1265,6 +1265,9 @@ KTableEntry nsCSSProps::kDisplayKTable[] = {
   { eCSSKeyword_grid,                NS_STYLE_DISPLAY_GRID },
   { eCSSKeyword_inline_grid,         NS_STYLE_DISPLAY_INLINE_GRID },
   
+  { eCSSKeyword__webkit_box,         NS_STYLE_DISPLAY_WEBKIT_BOX },
+  { eCSSKeyword__webkit_inline_box,  NS_STYLE_DISPLAY_WEBKIT_INLINE_BOX },
+  
   
   { eCSSKeyword_contents,            NS_STYLE_DISPLAY_CONTENTS },
   { eCSSKeyword_UNKNOWN,             -1 }
