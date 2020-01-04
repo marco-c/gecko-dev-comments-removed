@@ -213,7 +213,7 @@ public class PushService implements BundleEventListener {
             if ("PushServiceAndroidGCM:Configure".equals(event)) {
                 final String endpoint = message.getString("endpoint");
                 if (endpoint == null) {
-                    Log.e(LOG_TAG, "endpoint must not be null in " + event);
+                    callback.sendError("endpoint must not be null in " + event);
                     return;
                 }
                 final boolean debug = message.getBoolean("debug", false);
@@ -222,6 +222,8 @@ public class PushService implements BundleEventListener {
                 return;
             }
             if ("PushServiceAndroidGCM:DumpRegistration".equals(event)) {
+                
+                
                 callback.sendError("Not yet implemented!");
                 return;
             }
@@ -250,6 +252,10 @@ public class PushService implements BundleEventListener {
                 return;
             }
             if ("PushServiceAndroidGCM:UnregisterUserAgent".equals(event)) {
+                
+                
+                
+                
                 callback.sendError("Not yet implemented!");
                 return;
             }
@@ -288,7 +294,20 @@ public class PushService implements BundleEventListener {
                 return;
             }
             if ("PushServiceAndroidGCM:UnsubscribeChannel".equals(event)) {
-                callback.sendError("Not yet implemented!");
+                final String channelID = message.getString("channelID");
+                if (channelID == null) {
+                    callback.sendError("channelID must not be null in " + event);
+                    return;
+                }
+
+                
+                final PushSubscription pushSubscription = pushManager.unsubscribeChannel(channelID);
+                if (pushSubscription != null) {
+                    callback.sendSuccess(null);
+                    return;
+                }
+
+                callback.sendError("Could not unsubscribe from channel: " + channelID);
                 return;
             }
         } catch (GcmTokenClient.NeedsGooglePlayServicesException e) {
