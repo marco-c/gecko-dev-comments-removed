@@ -185,6 +185,8 @@ def test_environment(xrePath, env=None, crashreporter=True, debugger=False,
                 log.info("LSan enabled.")
                 asanOptions.append('detect_leaks=1')
                 lsanOptions = ["exitcode=0"]
+                
+                
                 suppressionsFile = os.path.join(
                     lsanPath, 'lsan_suppressions.txt')
                 if os.path.exists(suppressionsFile):
