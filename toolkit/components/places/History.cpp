@@ -2011,7 +2011,7 @@ History::NotifyVisited(nsIURI* aURI)
   }
 
   
-  mObservers.RemoveEntry(aURI);
+  mObservers.RemoveEntry(key);
   return NS_OK;
 }
 

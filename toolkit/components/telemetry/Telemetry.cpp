@@ -2188,7 +2188,7 @@ TelemetryImpl::UnregisterAddonHistograms(const nsACString &id)
     
     
     delete addonEntry->mData;
-    mAddonMap.RemoveEntry(id);
+    mAddonMap.RemoveEntry(addonEntry);
   }
 
   return NS_OK;
