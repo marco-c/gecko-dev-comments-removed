@@ -95,7 +95,7 @@ class Fifo
     
     
     template <typename U>
-    bool pushBack(U&& u) {
+    MOZ_MUST_USE bool pushBack(U&& u) {
         if (!rear_.append(mozilla::Forward<U>(u)))
             return false;
         if (!fixup()) {
@@ -107,7 +107,7 @@ class Fifo
 
     
     template <typename... Args>
-    bool emplaceBack(Args&&... args) {
+    MOZ_MUST_USE bool emplaceBack(Args&&... args) {
         if (!rear_.emplaceBack(mozilla::Forward<Args>(args)...))
             return false;
         if (!fixup()) {
@@ -128,7 +128,7 @@ class Fifo
     }
 
     
-    bool popFront() {
+    MOZ_MUST_USE bool popFront() {
         MOZ_ASSERT(!empty());
         T t(mozilla::Move(front()));
         front_.popBack();
