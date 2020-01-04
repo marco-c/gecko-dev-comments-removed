@@ -2663,6 +2663,7 @@ var BrowserOnClick = {
     mm.addMessageListener("Browser:SetSSLErrorReportAuto", this);
     mm.addMessageListener("Browser:SSLErrorReportTelemetry", this);
     mm.addMessageListener("Browser:OverrideWeakCrypto", this);
+    mm.addMessageListener("Browser:SSLErrorGoBack", this);
   },
 
   uninit: function () {
@@ -2674,6 +2675,7 @@ var BrowserOnClick = {
     mm.removeMessageListener("Browser:SetSSLErrorReportAuto", this);
     mm.removeMessageListener("Browser:SSLErrorReportTelemetry", this);
     mm.removeMessageListener("Browser:OverrideWeakCrypto", this);
+    mm.removeMessageListener("Browser:SSLErrorGoBack", this);
   },
 
   handleEvent: function (event) {
@@ -2737,6 +2739,9 @@ var BrowserOnClick = {
         weakCryptoOverride.addWeakCryptoOverride(
           msg.data.location.hostname,
           PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser));
+      break;
+      case "Browser:SSLErrorGoBack":
+        goBackFromErrorPage();
       break;
     }
   },
@@ -4456,11 +4461,8 @@ var XULBrowserWindow = {
 
       try {
         gCrashReporter.annotateCrashReport("URL", uri.spec);
-      } catch (ex) {
+      } catch (ex if ex.result == Components.results.NS_ERROR_NOT_INITIALIZED) {
         
-        if (ex.result != Components.results.NS_ERROR_NOT_INITIALIZED) {
-          throw ex;
-        }
       }
     }
   },
@@ -6474,7 +6476,7 @@ function isTabEmpty(aTab) {
 }
 
 function BrowserOpenSyncTabs() {
-  gSyncUI.openSyncedTabsPanel();
+  switchToTabHavingURI("about:sync-tabs", true);
 }
 
 
