@@ -325,11 +325,6 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
            i++) {
         
         
-        if (pinningTelemetryInfo) {
-          pinningTelemetryInfo->Reset();
-        }
-        
-        
         
         
         
@@ -337,6 +332,13 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
         if (SHA1ModeMoreRestrictiveThanGivenMode(sha1ModeConfigurations[i])) {
           continue;
         }
+
+        
+        
+        if (pinningTelemetryInfo) {
+          pinningTelemetryInfo->Reset();
+        }
+
         NSSCertDBTrustDomain
           trustDomain(trustSSL, evOCSPFetching,
                       mOCSPCache, pinArg, ocspGETConfig,
@@ -413,11 +415,6 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
         for (size_t j = 0; j < sha1ModeConfigurationsCount && rv != Success;
              j++) {
           
-          if (pinningTelemetryInfo) {
-            pinningTelemetryInfo->Reset();
-          }
-
-          
           
           
           
@@ -425,6 +422,11 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
           
           if (SHA1ModeMoreRestrictiveThanGivenMode(sha1ModeConfigurations[j])) {
             continue;
+          }
+
+          
+          if (pinningTelemetryInfo) {
+            pinningTelemetryInfo->Reset();
           }
 
           NSSCertDBTrustDomain trustDomain(trustSSL, defaultOCSPFetching,
@@ -484,7 +486,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
       
       
       
-      if (sha1ModeResult && mSHA1Mode == SHA1Mode::Allowed) {
+      if (sha1ModeResult && mSHA1Mode == SHA1Mode::ImportedRoot) {
         *sha1ModeResult = SHA1ModeResult::Failed;
       }
 

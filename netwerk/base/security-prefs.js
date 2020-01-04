@@ -45,6 +45,10 @@ pref("security.OCSP.GET.enabled", false);
 
 pref("security.pki.cert_short_lifetime_in_days", 10);
 
+
+
+pref("security.pki.sha1_enforcement_level", 3);
+
 pref("security.webauth.u2f", false);
 pref("security.webauth.u2f.softtoken", false);
 pref("security.webauth.u2f.usbtoken", false);

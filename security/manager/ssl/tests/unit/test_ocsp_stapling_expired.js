@@ -31,6 +31,7 @@ function add_ocsp_test(aHost, aExpectedResult, aOCSPResponseToServe,
 do_get_profile();
 Services.prefs.setBoolPref("security.ssl.enable_ocsp_stapling", true);
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
+Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 3);
 var args = [["good", "default-ee", "unused"],
              ["expiredresponse", "default-ee", "unused"],
              ["oldvalidperiod", "default-ee", "unused"],
@@ -55,7 +56,7 @@ var willNotRetry = 1;
 
 
 
-var willRetry = 8;
+var willRetry = 6;
 
 function run_test() {
   let ocspResponder = new HttpServer();
