@@ -55,7 +55,7 @@ CookieServiceChild::CookieServiceChild()
   
   nsCOMPtr<nsIPrefBranch> prefBranch =
     do_GetService(NS_PREFSERVICE_CONTRACTID);
-  NS_WARN_IF_FALSE(prefBranch, "no prefservice");
+  NS_WARNING_ASSERTION(prefBranch, "no prefservice");
   if (prefBranch) {
     prefBranch->AddObserver(kPrefCookieBehavior, this, true);
     prefBranch->AddObserver(kPrefThirdPartySession, this, true);

@@ -21,7 +21,8 @@ SameProcessMessageQueue::~SameProcessMessageQueue()
   
   
   
-  NS_WARN_IF_FALSE(mQueue.IsEmpty(), "Shouldn't send messages during shutdown");
+  NS_WARNING_ASSERTION(mQueue.IsEmpty(),
+                       "Shouldn't send messages during shutdown");
   sSingleton = nullptr;
 }
 

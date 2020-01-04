@@ -277,7 +277,7 @@ LocalStoreImpl::Flush()
     
     
     
-    NS_WARN_IF_FALSE(remote != nullptr, "not an nsIRDFRemoteDataSource");
+    NS_WARNING_ASSERTION(remote != nullptr, "not an nsIRDFRemoteDataSource");
 	if (! remote)
         return NS_ERROR_UNEXPECTED;
 

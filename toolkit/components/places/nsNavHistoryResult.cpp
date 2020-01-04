@@ -2914,8 +2914,11 @@ nsNavHistoryQueryResultNode::OnItemChanged(int64_t aItemId,
   else {
     
     
-    NS_WARN_IF_FALSE(mResult && (mResult->mIsAllBookmarksObserver || mResult->mIsBookmarkFolderObserver),
-                     "history observers should not get OnItemChanged, but should get the corresponding history notifications instead");
+    NS_WARNING_ASSERTION(
+      mResult && (mResult->mIsAllBookmarksObserver ||
+                  mResult->mIsBookmarkFolderObserver),
+      "history observers should not get OnItemChanged, but should get the "
+      "corresponding history notifications instead");
 
     
     
@@ -2951,8 +2954,11 @@ nsNavHistoryQueryResultNode::OnItemVisited(int64_t aItemId,
   
   
   if (mLiveUpdate != QUERYUPDATE_COMPLEX_WITH_BOOKMARKS)
-    NS_WARN_IF_FALSE(mResult && (mResult->mIsAllBookmarksObserver || mResult->mIsBookmarkFolderObserver),
-                     "history observers should not get OnItemVisited, but should get OnVisit instead");
+    NS_WARNING_ASSERTION(
+      mResult && (mResult->mIsAllBookmarksObserver ||
+                  mResult->mIsBookmarkFolderObserver),
+      "history observers should not get OnItemVisited, but should get OnVisit "
+      "instead");
   return NS_OK;
 }
 

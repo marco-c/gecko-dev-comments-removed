@@ -203,8 +203,9 @@ BasicPaintedLayer::Validate(LayerManager::DrawPaintedLayerCallback aCallback,
     
     
     
-    NS_WARN_IF_FALSE(state.mRegionToDraw.IsEmpty(),
-                     "No context when we have something to draw, resource exhaustion?");
+    NS_WARNING_ASSERTION(
+      state.mRegionToDraw.IsEmpty(),
+      "No context when we have something to draw, resource exhaustion?");
   }
 
   for (uint32_t i = 0; i < readbackUpdates.Length(); ++i) {

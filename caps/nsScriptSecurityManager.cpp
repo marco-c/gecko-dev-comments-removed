@@ -257,8 +257,10 @@ nsScriptSecurityManager::AppStatusForPrincipal(nsIPrincipal *aPrin)
     
     bool inIsolatedMozBrowser = aPrin->GetIsInIsolatedMozBrowserElement();
 
-    NS_WARN_IF_FALSE(appId != nsIScriptSecurityManager::UNKNOWN_APP_ID,
-                     "Asking for app status on a principal with an unknown app id");
+    NS_WARNING_ASSERTION(
+      appId != nsIScriptSecurityManager::UNKNOWN_APP_ID,
+      "Asking for app status on a principal with an unknown app id");
+
     
     
     if (appId == nsIScriptSecurityManager::NO_APP_ID ||

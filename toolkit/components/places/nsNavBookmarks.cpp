@@ -630,7 +630,7 @@ nsNavBookmarks::RemoveItem(int64_t aItemId, uint16_t aSource)
     
     (void)NS_NewURI(getter_AddRefs(uri), bookmark.url);
     
-    NS_WARN_IF_FALSE(uri, "Invalid URI in RemoveItem");
+    NS_WARNING_ASSERTION(uri, "Invalid URI in RemoveItem");
   }
 
   NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
@@ -1115,7 +1115,7 @@ nsNavBookmarks::RemoveFolderChildren(int64_t aFolderId, uint16_t aSource)
       
       (void)NS_NewURI(getter_AddRefs(uri), child.url);
       
-      NS_WARN_IF_FALSE(uri, "Invalid URI in RemoveFolderChildren");
+      NS_WARNING_ASSERTION(uri, "Invalid URI in RemoveFolderChildren");
     }
 
     NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,

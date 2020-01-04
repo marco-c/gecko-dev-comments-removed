@@ -3489,9 +3489,10 @@ nsFlexContainerFrame::GetMainSizeFromReflowInput(
   if (aAxisTracker.IsRowOriented()) {
     
     
-    NS_WARN_IF_FALSE(aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
-                     "Unconstrained inline size; this should only result from "
-                     "huge sizes (not intrinsic sizing w/ orthogonal flows)");
+    NS_WARNING_ASSERTION(
+      aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
+      "Unconstrained inline size; this should only result from huge sizes "
+      "(not intrinsic sizing w/ orthogonal flows)");
     return aReflowInput.ComputedISize();
   }
 
@@ -3592,9 +3593,10 @@ nsFlexContainerFrame::ComputeCrossSize(const ReflowInput& aReflowInput,
   if (aAxisTracker.IsColumnOriented()) {
     
     
-    NS_WARN_IF_FALSE(aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
-                     "Unconstrained inline size; this should only result from "
-                     "huge sizes (not intrinsic sizing w/ orthogonal flows)");
+    NS_WARNING_ASSERTION(
+      aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE,
+      "Unconstrained inline size; this should only result from huge sizes "
+      "(not intrinsic sizing w/ orthogonal flows)");
     *aIsDefinite = true;
     return aReflowInput.ComputedISize();
   }
@@ -3755,8 +3757,9 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
     
     
     
-    NS_WARN_IF_FALSE(!aItem.Frame()->GetType(),
-                     "Child should at least request space for border/padding");
+    NS_WARNING_ASSERTION(
+      !aItem.Frame()->GetType(),
+      "Child should at least request space for border/padding");
     aItem.SetCrossSize(0);
   } else {
     
@@ -4199,9 +4202,10 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     
     
     
-    NS_WARN_IF_FALSE(lines.getFirst()->IsEmpty(),
-                     "Have flex items but didn't get an ascent - that's odd "
-                     "(or there are just gigantic sizes involved)");
+    NS_WARNING_ASSERTION(
+      lines.getFirst()->IsEmpty(),
+      "Have flex items but didn't get an ascent - that's odd (or there are "
+      "just gigantic sizes involved)");
     
     
     

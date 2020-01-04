@@ -365,8 +365,9 @@ public:
   void Mix(AudioMixer& aMixer, uint32_t aChannelCount, uint32_t aSampleRate);
 
   int ChannelCount() {
-    NS_WARN_IF_FALSE(!mChunks.IsEmpty(),
-        "Cannot query channel count on a AudioSegment with no chunks.");
+    NS_WARNING_ASSERTION(
+      !mChunks.IsEmpty(),
+      "Cannot query channel count on a AudioSegment with no chunks.");
     
     
     for (ChunkIterator ci(*this); !ci.IsEnded(); ci.Next()) {

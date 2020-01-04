@@ -631,8 +631,8 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(nsIPrincipal* aPrincipa
   
   
   
-  NS_WARN_IF_FALSE(!scheme.EqualsLiteral("blob"),
-                   "IsOriginPotentiallyTrustworthy ignoring blob scheme");
+  NS_WARNING_ASSERTION(!scheme.EqualsLiteral("blob"),
+                       "IsOriginPotentiallyTrustworthy ignoring blob scheme");
 
   
   

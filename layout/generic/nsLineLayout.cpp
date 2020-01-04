@@ -328,11 +328,11 @@ nsLineLayout::UpdateBand(WritingMode aWM,
 #endif
 
   
-  NS_WARN_IF_FALSE(mRootSpan->mIEnd != NS_UNCONSTRAINEDSIZE &&
-                   availSpace.ISize(lineWM) != NS_UNCONSTRAINEDSIZE,
-                   "have unconstrained inline size; this should only result "
-                   "from very large sizes, not attempts at intrinsic width "
-                   "calculation");
+  NS_WARNING_ASSERTION(
+    mRootSpan->mIEnd != NS_UNCONSTRAINEDSIZE &&
+    availSpace.ISize(lineWM) != NS_UNCONSTRAINEDSIZE,
+    "have unconstrained inline size; this should only result from very large "
+    "sizes, not attempts at intrinsic width calculation");
   
   nscoord deltaICoord = availSpace.IStart(lineWM) - mRootSpan->mIStart;
   
@@ -1193,10 +1193,10 @@ nsLineLayout::AllowForStartMargin(PerFrameData* pfd,
     
     pfd->mMargin.IStart(lineWM) = 0;
   } else if (NS_UNCONSTRAINEDSIZE == aReflowInput.ComputedISize()) {
-    NS_WARN_IF_FALSE(NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableISize(),
-                     "have unconstrained inline-size; this should only result "
-                     "from very large sizes, not attempts at intrinsic "
-                     "inline-size calculation");
+    NS_WARNING_ASSERTION(
+      NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableISize(),
+      "have unconstrained inline-size; this should only result from very "
+      "large sizes, not attempts at intrinsic inline-size calculation");
     
     
     
@@ -2971,7 +2971,7 @@ FindNearestRubyBaseAncestor(nsIFrame* aFrame)
   
   
   
-  NS_WARN_IF_FALSE(aFrame, "no ruby base ancestor?");
+  NS_WARNING_ASSERTION(aFrame, "no ruby base ancestor?");
   return aFrame;
 }
 

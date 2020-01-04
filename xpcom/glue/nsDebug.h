@@ -57,17 +57,17 @@ inline bool NS_warn_if_impl(bool aCondition, const char* aExpr,
 
 
 
+
 #ifdef DEBUG
-#define NS_WARN_IF_FALSE(_expr,_msg)                          \
+#define NS_WARNING_ASSERTION(_expr, _msg)                     \
   do {                                                        \
     if (!(_expr)) {                                           \
       NS_DebugBreak(NS_DEBUG_WARNING, _msg, #_expr, __FILE__, __LINE__); \
     }                                                         \
   } while(0)
 #else
-#define NS_WARN_IF_FALSE(_expr, _msg)  do { /* nothing */ } while(0)
+#define NS_WARNING_ASSERTION(_expr, _msg)  do { /* nothing */ } while(0)
 #endif
-
 
 
 

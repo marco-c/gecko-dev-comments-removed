@@ -180,9 +180,9 @@ MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
       
       
       
-      NS_WARN_IF_FALSE(!aCharsToMerge[mergeRunStart],
-                       "unable to merge across a glyph run boundary, "
-                       "glyph(s) discarded");
+      NS_WARNING_ASSERTION(
+        !aCharsToMerge[mergeRunStart],
+        "unable to merge across a glyph run boundary, glyph(s) discarded");
       if (!aCharsToMerge[mergeRunStart]) {
         if (anyMissing) {
           mergedGlyph.SetMissing(glyphs.Length());

@@ -61,7 +61,9 @@ ScopedXErrorHandler::ScopedXErrorHandler()
 {
     
     
-    NS_WARN_IF_FALSE(NS_IsMainThread(), "ScopedXErrorHandler being called off main thread, may cause issues");
+    NS_WARNING_ASSERTION(
+        NS_IsMainThread(),
+        "ScopedXErrorHandler being called off main thread, may cause issues");
     
     
     mOldXErrorPtr = sXErrorPtr;

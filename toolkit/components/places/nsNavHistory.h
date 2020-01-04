@@ -417,7 +417,8 @@ public:
         return mReloadVisitBonus;
       default:
         
-        NS_WARN_IF_FALSE(!aTransitionType, "new transition but no bonus for frecency");
+        NS_WARNING_ASSERTION(!aTransitionType,
+                             "new transition but no bonus for frecency");
         return mDefaultVisitBonus;
     }
   }

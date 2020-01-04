@@ -122,7 +122,7 @@ TextEditRules::Init(TextEditor* aTextEditor)
   
   mTextEditor = aTextEditor;
   RefPtr<Selection> selection = mTextEditor->GetSelection();
-  NS_WARN_IF_FALSE(selection, "editor cannot get selection");
+  NS_WARNING_ASSERTION(selection, "editor cannot get selection");
 
   
   

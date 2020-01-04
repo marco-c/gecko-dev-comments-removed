@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=2 sts=2 expandtab
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PeerIdentity.h"
 
@@ -50,7 +50,7 @@ PeerIdentity::Equals(const nsAString& aOtherString) const
   return normHost == normOtherHost;
 }
 
- void
+/* static */ void
 PeerIdentity::GetUser(const nsAString& aPeerIdentity, nsAString& aUser)
 {
   int32_t at = aPeerIdentity.FindChar('@');
@@ -61,7 +61,7 @@ PeerIdentity::GetUser(const nsAString& aPeerIdentity, nsAString& aUser)
   }
 }
 
- void
+/* static */ void
 PeerIdentity::GetHost(const nsAString& aPeerIdentity, nsAString& aHost)
 {
   int32_t at = aPeerIdentity.FindChar('@');
@@ -72,14 +72,15 @@ PeerIdentity::GetHost(const nsAString& aPeerIdentity, nsAString& aHost)
   }
 }
 
- void
+/* static */ void
 PeerIdentity::GetNormalizedHost(const nsCOMPtr<nsIIDNService>& aIdnService,
                                 const nsAString& aHost,
                                 nsACString& aNormalizedHost)
 {
   const nsCString chost = NS_ConvertUTF16toUTF8(aHost);
   DebugOnly<nsresult> rv = aIdnService->ConvertUTF8toACE(chost, aNormalizedHost);
-  NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to convert UTF-8 host to ASCII");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "Failed to convert UTF-8 host to ASCII");
 }
 
-} 
+} /* namespace mozilla */

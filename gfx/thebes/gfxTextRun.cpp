@@ -1316,10 +1316,12 @@ gfxTextRun::CopyGlyphDataFrom(gfxTextRun *aSource, Range aRange, uint32_t aDest)
         
         
         
-        NS_WARN_IF_FALSE(aSource->IsClusterStart(start),
-                         "Started font run in the middle of a cluster");
-        NS_WARN_IF_FALSE(end == aSource->GetLength() || aSource->IsClusterStart(end),
-                         "Ended font run in the middle of a cluster");
+        NS_WARNING_ASSERTION(
+          aSource->IsClusterStart(start),
+          "Started font run in the middle of a cluster");
+        NS_WARNING_ASSERTION(
+          end == aSource->GetLength() || aSource->IsClusterStart(end),
+          "Ended font run in the middle of a cluster");
 
         nsresult rv = AddGlyphRun(font, iter.GetGlyphRun()->mMatchType,
                                   start - aRange.start + aDest, false,

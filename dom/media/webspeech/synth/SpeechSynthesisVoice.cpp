@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SpeechSynthesis.h"
 #include "nsSynthVoiceRegistry.h"
@@ -53,7 +53,8 @@ SpeechSynthesisVoice::GetName(nsString& aRetval) const
 {
   DebugOnly<nsresult> rv =
     nsSynthVoiceRegistry::GetInstance()->GetVoiceName(mUri, aRetval);
-  NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to get SpeechSynthesisVoice.name");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "Failed to get SpeechSynthesisVoice.name");
 }
 
 void
@@ -61,7 +62,8 @@ SpeechSynthesisVoice::GetLang(nsString& aRetval) const
 {
   DebugOnly<nsresult> rv =
     nsSynthVoiceRegistry::GetInstance()->GetVoiceLang(mUri, aRetval);
-  NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to get SpeechSynthesisVoice.lang");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "Failed to get SpeechSynthesisVoice.lang");
 }
 
 bool
@@ -70,7 +72,7 @@ SpeechSynthesisVoice::LocalService() const
   bool isLocal;
   DebugOnly<nsresult> rv =
     nsSynthVoiceRegistry::GetInstance()->IsLocalVoice(mUri, &isLocal);
-  NS_WARN_IF_FALSE(
+  NS_WARNING_ASSERTION(
     NS_SUCCEEDED(rv), "Failed to get SpeechSynthesisVoice.localService");
 
   return isLocal;
@@ -82,11 +84,11 @@ SpeechSynthesisVoice::Default() const
   bool isDefault;
   DebugOnly<nsresult> rv =
     nsSynthVoiceRegistry::GetInstance()->IsDefaultVoice(mUri, &isDefault);
-  NS_WARN_IF_FALSE(
+  NS_WARNING_ASSERTION(
     NS_SUCCEEDED(rv), "Failed to get SpeechSynthesisVoice.default");
 
   return isDefault;
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

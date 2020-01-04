@@ -159,8 +159,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBOffset,
   if (aBSize == nscoord_MAX) {
     
     
-    NS_WARN_IF_FALSE(aInfoType == BAND_FROM_POINT,
-                     "bad height");
+    NS_WARNING_ASSERTION(aInfoType == BAND_FROM_POINT, "bad height");
     blockEnd = nscoord_MAX;
   } else {
     blockEnd = blockStart + aBSize;

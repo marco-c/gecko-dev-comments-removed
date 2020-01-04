@@ -133,7 +133,7 @@ MessageLoopTimerCallback::Notify(nsITimer* aTimer)
   
   
   
-  NS_WARN_IF_FALSE(mTask, "This timer shouldn't have fired.");
+  NS_WARNING_ASSERTION(mTask, "This timer shouldn't have fired.");
 
   if (mTask) {
     mTask->Run();

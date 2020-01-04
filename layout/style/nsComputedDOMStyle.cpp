@@ -5426,10 +5426,10 @@ nsComputedDOMStyle::StyleCoordToNSCoord(const nsStyleCoord& aCoord,
         
         
         
-        NS_WARN_IF_FALSE(percentageBase >= 0,
-                         "percentage base value overflowed to become "
-                         "negative for a property that disallows negative "
-                         "values");
+        NS_WARNING_ASSERTION(
+          percentageBase >= 0,
+          "percentage base value overflowed to become negative for a property "
+          "that disallows negative values");
         MOZ_ASSERT(aCoord.IsCalcUnit() ||
                    (aCoord.HasPercent() && percentageBase < 0),
                    "parser should have rejected value");
