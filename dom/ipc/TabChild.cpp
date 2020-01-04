@@ -2287,7 +2287,7 @@ TabChild::RecvAppOfflineStatus(const uint32_t& aId, const bool& aOffline)
 }
 
 bool
-TabChild::RecvSwappedWithOtherRemoteLoader()
+TabChild::RecvSwappedWithOtherRemoteLoader(const IPCTabContext& aContext)
 {
   nsCOMPtr<nsIDocShell> ourDocShell = do_GetInterface(WebNavigation());
   if (NS_WARN_IF(!ourDocShell)) {
@@ -2307,6 +2307,29 @@ TabChild::RecvSwappedWithOtherRemoteLoader()
 
   nsContentUtils::FirePageShowEvent(ourDocShell, ourEventTarget, false);
   nsContentUtils::FirePageHideEvent(ourDocShell, ourEventTarget);
+
+  
+  
+  MaybeInvalidTabContext maybeContext(aContext);
+  if (!maybeContext.IsValid()) {
+    NS_ERROR(nsPrintfCString("Received an invalid TabContext from "
+                             "the parent process. (%s)",
+                             maybeContext.GetInvalidReason()).get());
+    MOZ_CRASH("Invalid TabContext received from the parent process.");
+  }
+
+  if (!UpdateTabContextAfterSwap(maybeContext.GetTabContext())) {
+    MOZ_CRASH("Update to TabContext after swap was denied.");
+  }
+  NotifyTabContextUpdated();
+
+  
+  mTriedBrowserInit = true;
+  
+  if (IsMozBrowserOrApp()) {
+    RecvLoadRemoteScript(BROWSER_ELEMENT_CHILD_SCRIPT, true);
+  }
+
   nsContentUtils::FirePageShowEvent(ourDocShell, ourEventTarget, true);
 
   docShell->SetInFrameSwap(false);

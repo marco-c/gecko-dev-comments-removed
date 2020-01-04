@@ -160,6 +160,17 @@ protected:
                      const DocShellOriginAttributes& aOriginAttributes,
                      const nsACString& aSignedPkgOriginNoSuffix);
 
+  
+
+
+
+
+
+
+
+
+  bool UpdateTabContextAfterSwap(const TabContext& aContext);
+
 private:
   
 

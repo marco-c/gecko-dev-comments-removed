@@ -159,6 +159,25 @@ TabContext::SetTabContext(const TabContext& aContext)
   return true;
 }
 
+bool
+TabContext::UpdateTabContextAfterSwap(const TabContext& aContext)
+{
+  
+  MOZ_ASSERT(mInitialized);
+
+  
+  
+  if (aContext.OwnAppId() != OwnAppId() ||
+      aContext.mContainingAppId != mContainingAppId ||
+      aContext.mOriginAttributes != mOriginAttributes ||
+      aContext.mSignedPkgOriginNoSuffix != mSignedPkgOriginNoSuffix) {
+    return false;
+  }
+
+  mIsMozBrowserElement = aContext.mIsMozBrowserElement;
+  return true;
+}
+
 const DocShellOriginAttributes&
 TabContext::OriginAttributesRef() const
 {
