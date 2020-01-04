@@ -38,8 +38,8 @@ using namespace mozilla::dom::workers;
 namespace mozilla {
 namespace dom {
 
-bool
-ServiceWorkerRegistrationVisible(JSContext* aCx, JSObject* aObj)
+ bool
+ServiceWorkerRegistration::Visible(JSContext* aCx, JSObject* aObj)
 {
   if (NS_IsMainThread()) {
     return Preferences::GetBool("dom.serviceWorkers.enabled", false);
@@ -54,8 +54,8 @@ ServiceWorkerRegistrationVisible(JSContext* aCx, JSObject* aObj)
   return workerPrivate->ServiceWorkersEnabled();
 }
 
-bool
-ServiceWorkerNotificationAPIVisible(JSContext* aCx, JSObject* aObj)
+ bool
+ServiceWorkerRegistration::NotificationAPIVisible(JSContext* aCx, JSObject* aObj)
 {
   if (NS_IsMainThread()) {
     return Preferences::GetBool("dom.webnotifications.serviceworker.enabled", false);
@@ -70,38 +70,120 @@ ServiceWorkerNotificationAPIVisible(JSContext* aCx, JSObject* aObj)
   return workerPrivate->DOMServiceWorkerNotificationEnabled();
 }
 
-NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistrationBase, DOMEventTargetHelper)
-NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistrationBase, DOMEventTargetHelper)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationBase)
-NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
-
-ServiceWorkerRegistrationBase::ServiceWorkerRegistrationBase(nsPIDOMWindowInner* aWindow,
-                                                             const nsAString& aScope)
-  : DOMEventTargetHelper(aWindow)
-  , mScope(aScope)
-{}
 
 
 
-NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistrationMainThread, ServiceWorkerRegistrationBase)
-NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistrationMainThread, ServiceWorkerRegistrationBase)
+class ServiceWorkerRegistrationMainThread final : public ServiceWorkerRegistration,
+                                                  public ServiceWorkerRegistrationListener
+{
+  friend nsPIDOMWindowInner;
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServiceWorkerRegistrationMainThread,
+                                           ServiceWorkerRegistration)
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationMainThread)
-NS_INTERFACE_MAP_END_INHERITING(ServiceWorkerRegistrationBase)
+  ServiceWorkerRegistrationMainThread(nsPIDOMWindowInner* aWindow,
+                                      const nsAString& aScope);
+
+  already_AddRefed<Promise>
+  Update(ErrorResult& aRv) override;
+
+  already_AddRefed<Promise>
+  Unregister(ErrorResult& aRv) override;
+
+  
+  already_AddRefed<Promise>
+  ShowNotification(JSContext* aCx,
+                   const nsAString& aTitle,
+                   const NotificationOptions& aOptions,
+                   ErrorResult& aRv) override;
+
+  already_AddRefed<Promise>
+  GetNotifications(const GetNotificationOptions& aOptions,
+                   ErrorResult& aRv) override;
+
+  already_AddRefed<ServiceWorker>
+  GetInstalling() override;
+
+  already_AddRefed<ServiceWorker>
+  GetWaiting() override;
+
+  already_AddRefed<ServiceWorker>
+  GetActive() override;
+
+  already_AddRefed<PushManager>
+  GetPushManager(JSContext* aCx, ErrorResult& aRv) override;
+
+  
+  void DisconnectFromOwner() override
+  {
+    StopListeningForEvents();
+    ServiceWorkerRegistration::DisconnectFromOwner();
+  }
+
+  
+  void
+  UpdateFound() override;
+
+  void
+  InvalidateWorkers(WhichServiceWorker aWhichOnes) override;
+
+  void
+  RegistrationRemoved() override;
+
+  void
+  GetScope(nsAString& aScope) const override
+  {
+    aScope = mScope;
+  }
+
+private:
+  ~ServiceWorkerRegistrationMainThread();
+
+  already_AddRefed<ServiceWorker>
+  GetWorkerReference(WhichServiceWorker aWhichOne);
+
+  void
+  StartListeningForEvents();
+
+  void
+  StopListeningForEvents();
+
+  bool mListeningForEvents;
+
+  
+  
+  
+  
+  RefPtr<ServiceWorker> mInstallingWorker;
+  RefPtr<ServiceWorker> mWaitingWorker;
+  RefPtr<ServiceWorker> mActiveWorker;
 
 #ifndef MOZ_SIMPLEPUSH
-NS_IMPL_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationMainThread, ServiceWorkerRegistrationBase,
+  RefPtr<PushManager> mPushManager;
+#endif
+};
+
+NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistrationMainThread, ServiceWorkerRegistration)
+NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistrationMainThread, ServiceWorkerRegistration)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationMainThread)
+NS_INTERFACE_MAP_END_INHERITING(ServiceWorkerRegistration)
+
+#ifndef MOZ_SIMPLEPUSH
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationMainThread,
+                                   ServiceWorkerRegistration,
                                    mPushManager,
                                    mInstallingWorker, mWaitingWorker, mActiveWorker);
 #else
-NS_IMPL_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationMainThread, ServiceWorkerRegistrationBase,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationMainThread,
+                                   ServiceWorkerRegistration,
                                    mInstallingWorker, mWaitingWorker, mActiveWorker);
 #endif
 
 ServiceWorkerRegistrationMainThread::ServiceWorkerRegistrationMainThread(nsPIDOMWindowInner* aWindow,
                                                                          const nsAString& aScope)
-  : ServiceWorkerRegistrationBase(aWindow, aScope)
+  : ServiceWorkerRegistration(aWindow, aScope)
   , mListeningForEvents(false)
 {
   AssertIsOnMainThread();
@@ -117,7 +199,7 @@ ServiceWorkerRegistrationMainThread::~ServiceWorkerRegistrationMainThread()
 }
 
 
-already_AddRefed<workers::ServiceWorker>
+already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationMainThread::GetWorkerReference(WhichServiceWorker aWhichOne)
 {
   nsCOMPtr<nsPIDOMWindowInner> window = GetOwner();
@@ -187,14 +269,7 @@ ServiceWorkerRegistrationMainThread::StopListeningForEvents()
   mListeningForEvents = false;
 }
 
-JSObject*
-ServiceWorkerRegistrationMainThread::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
-  AssertIsOnMainThread();
-  return ServiceWorkerRegistrationBinding::Wrap(aCx, this, aGivenProto);
-}
-
-already_AddRefed<workers::ServiceWorker>
+already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationMainThread::GetInstalling()
 {
   AssertIsOnMainThread();
@@ -206,7 +281,7 @@ ServiceWorkerRegistrationMainThread::GetInstalling()
   return ret.forget();
 }
 
-already_AddRefed<workers::ServiceWorker>
+already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationMainThread::GetWaiting()
 {
   AssertIsOnMainThread();
@@ -218,7 +293,7 @@ ServiceWorkerRegistrationMainThread::GetWaiting()
   return ret.forget();
 }
 
-already_AddRefed<workers::ServiceWorker>
+already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationMainThread::GetActive()
 {
   AssertIsOnMainThread();
@@ -722,7 +797,7 @@ ServiceWorkerRegistrationMainThread::ShowNotification(JSContext* aCx,
     return nullptr;
   }
 
-  RefPtr<workers::ServiceWorker> worker = GetActive();
+  RefPtr<ServiceWorker> worker = GetActive();
   if (!worker) {
     aRv.ThrowTypeError<MSG_NO_ACTIVE_WORKER>(mScope);
     return nullptr;
@@ -783,6 +858,79 @@ ServiceWorkerRegistrationMainThread::GetPushManager(JSContext* aCx,
 }
 
 
+
+
+class ServiceWorkerRegistrationWorkerThread final : public ServiceWorkerRegistration
+                                                  , public WorkerFeature
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServiceWorkerRegistrationWorkerThread,
+                                           ServiceWorkerRegistration)
+
+  ServiceWorkerRegistrationWorkerThread(WorkerPrivate* aWorkerPrivate,
+                                        const nsAString& aScope);
+
+  already_AddRefed<Promise>
+  Update(ErrorResult& aRv) override;
+
+  already_AddRefed<Promise>
+  Unregister(ErrorResult& aRv) override;
+
+  
+  already_AddRefed<Promise>
+  ShowNotification(JSContext* aCx,
+                   const nsAString& aTitle,
+                   const NotificationOptions& aOptions,
+                   ErrorResult& aRv) override;
+
+  already_AddRefed<Promise>
+  GetNotifications(const GetNotificationOptions& aOptions,
+                   ErrorResult& aRv) override;
+
+  already_AddRefed<ServiceWorker>
+  GetInstalling() override;
+
+  already_AddRefed<ServiceWorker>
+  GetWaiting() override;
+
+  already_AddRefed<ServiceWorker>
+  GetActive() override;
+
+  void
+  GetScope(nsAString& aScope) const override
+  {
+    aScope = mScope;
+  }
+
+  bool
+  Notify(Status aStatus) override;
+
+  already_AddRefed<PushManager>
+  GetPushManager(JSContext* aCx, ErrorResult& aRv) override;
+
+private:
+  enum Reason
+  {
+    RegistrationIsGoingAway = 0,
+    WorkerIsGoingAway,
+  };
+
+  ~ServiceWorkerRegistrationWorkerThread();
+
+  void
+  InitListener();
+
+  void
+  ReleaseListener(Reason aReason);
+
+  WorkerPrivate* mWorkerPrivate;
+  RefPtr<WorkerListener> mListener;
+
+#ifndef MOZ_SIMPLEPUSH
+  RefPtr<PushManager> mPushManager;
+#endif
+};
 
 class WorkerListener final : public ServiceWorkerRegistrationListener
 {
@@ -892,24 +1040,24 @@ private:
   }
 };
 
-NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistrationWorkerThread, ServiceWorkerRegistrationBase)
-NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistrationWorkerThread, ServiceWorkerRegistrationBase)
+NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistrationWorkerThread, ServiceWorkerRegistration)
+NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistrationWorkerThread, ServiceWorkerRegistration)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistrationWorkerThread)
-NS_INTERFACE_MAP_END_INHERITING(ServiceWorkerRegistrationBase)
+NS_INTERFACE_MAP_END_INHERITING(ServiceWorkerRegistration)
 
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(ServiceWorkerRegistrationWorkerThread)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServiceWorkerRegistrationWorkerThread,
-                                                  ServiceWorkerRegistrationBase)
+                                                  ServiceWorkerRegistration)
 #ifndef MOZ_SIMPLEPUSH
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPushManager)
 #endif
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ServiceWorkerRegistrationWorkerThread,
-                                                ServiceWorkerRegistrationBase)
+                                                ServiceWorkerRegistration)
 #ifndef MOZ_SIMPLEPUSH
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPushManager)
 #endif
@@ -918,7 +1066,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 ServiceWorkerRegistrationWorkerThread::ServiceWorkerRegistrationWorkerThread(WorkerPrivate* aWorkerPrivate,
                                                                              const nsAString& aScope)
-  : ServiceWorkerRegistrationBase(nullptr, aScope)
+  : ServiceWorkerRegistration(nullptr, aScope)
   , mWorkerPrivate(aWorkerPrivate)
 {
   InitListener();
@@ -930,12 +1078,6 @@ ServiceWorkerRegistrationWorkerThread::~ServiceWorkerRegistrationWorkerThread()
   MOZ_ASSERT(!mListener);
 }
 
-JSObject*
-ServiceWorkerRegistrationWorkerThread::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
-  return ServiceWorkerRegistrationBinding_workers::Wrap(aCx, this, aGivenProto);
-}
-
 already_AddRefed<workers::ServiceWorker>
 ServiceWorkerRegistrationWorkerThread::GetInstalling()
 {
@@ -943,14 +1085,14 @@ ServiceWorkerRegistrationWorkerThread::GetInstalling()
   return nullptr;
 }
 
-already_AddRefed<workers::ServiceWorker>
+already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationWorkerThread::GetWaiting()
 {
   
   return nullptr;
 }
 
-already_AddRefed<workers::ServiceWorker>
+already_AddRefed<ServiceWorker>
 ServiceWorkerRegistrationWorkerThread::GetActive()
 {
   
@@ -1131,7 +1273,7 @@ ServiceWorkerRegistrationWorkerThread::ReleaseListener(Reason aReason)
 }
 
 bool
-ServiceWorkerRegistrationWorkerThread::Notify(workers::Status aStatus)
+ServiceWorkerRegistrationWorkerThread::Notify(Status aStatus)
 {
   ReleaseListener(WorkerIsGoingAway);
   return true;
@@ -1199,13 +1341,14 @@ ServiceWorkerRegistrationWorkerThread::ShowNotification(JSContext* aCx,
 }
 
 already_AddRefed<Promise>
-ServiceWorkerRegistrationWorkerThread::GetNotifications(const GetNotificationOptions& aOptions, ErrorResult& aRv)
+ServiceWorkerRegistrationWorkerThread::GetNotifications(const GetNotificationOptions& aOptions,
+                                                        ErrorResult& aRv)
 {
   return Notification::WorkerGet(mWorkerPrivate, aOptions, mScope, aRv);
 }
 
 already_AddRefed<PushManager>
-ServiceWorkerRegistrationWorkerThread::GetPushManager(ErrorResult& aRv)
+ServiceWorkerRegistrationWorkerThread::GetPushManager(JSContext* aCx, ErrorResult& aRv)
 {
 #ifdef MOZ_SIMPLEPUSH
   return nullptr;
@@ -1219,6 +1362,54 @@ ServiceWorkerRegistrationWorkerThread::GetPushManager(ErrorResult& aRv)
   return ret.forget();
 
 #endif 
+}
+
+
+
+
+NS_IMPL_ADDREF_INHERITED(ServiceWorkerRegistration, DOMEventTargetHelper)
+NS_IMPL_RELEASE_INHERITED(ServiceWorkerRegistration, DOMEventTargetHelper)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServiceWorkerRegistration)
+NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
+
+ServiceWorkerRegistration::ServiceWorkerRegistration(nsPIDOMWindowInner* aWindow,
+                                                     const nsAString& aScope)
+  : DOMEventTargetHelper(aWindow)
+  , mScope(aScope)
+{}
+
+JSObject*
+ServiceWorkerRegistration::WrapObject(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto)
+{
+  return ServiceWorkerRegistrationBinding::Wrap(aCx, this, aGivenProto);
+}
+
+ already_AddRefed<ServiceWorkerRegistration>
+ServiceWorkerRegistration::CreateForMainThread(nsPIDOMWindowInner* aWindow,
+                                               const nsAString& aScope)
+{
+  MOZ_ASSERT(aWindow);
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<ServiceWorkerRegistration> registration =
+    new ServiceWorkerRegistrationMainThread(aWindow, aScope);
+
+  return registration.forget();
+}
+
+ already_AddRefed<ServiceWorkerRegistration>
+ServiceWorkerRegistration::CreateForWorker(workers::WorkerPrivate* aWorkerPrivate,
+                                           const nsAString& aScope)
+{
+  MOZ_ASSERT(aWorkerPrivate);
+  aWorkerPrivate->AssertIsOnWorkerThread();
+
+  RefPtr<ServiceWorkerRegistration> registration =
+    new ServiceWorkerRegistrationWorkerThread(aWorkerPrivate, aScope);
+
+  return registration.forget();
 }
 
 } 
