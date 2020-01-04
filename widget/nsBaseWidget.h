@@ -22,6 +22,14 @@
 #include "nsPIDOMWindow.h"
 #include "nsWeakReference.h"
 #include <algorithm>
+
+#if defined(XP_WIN)
+
+const uint32_t kScrollCaptureFillColor = 0xFFa0a0a0; 
+const mozilla::gfx::SurfaceFormat kScrollCaptureFormat =
+  mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32;
+#endif
+
 class nsIContent;
 class nsAutoRollup;
 class gfxContext;
@@ -36,6 +44,7 @@ class Accessible;
 
 namespace gfx {
 class DrawTarget;
+class SourceSurface;
 } 
 
 namespace layers {
@@ -46,6 +55,7 @@ class APZCTreeManager;
 class GeckoContentController;
 class APZEventState;
 class CompositorSession;
+class ImageContainer;
 struct ScrollableLayerGuid;
 } 
 
@@ -104,6 +114,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference
 protected:
   typedef base::Thread Thread;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::layers::BasicLayerManager BasicLayerManager;
   typedef mozilla::layers::BufferMode BufferMode;
   typedef mozilla::layers::CompositorBridgeChild CompositorBridgeChild;
@@ -118,6 +129,7 @@ protected:
   typedef mozilla::ScreenRotation ScreenRotation;
   typedef mozilla::widget::CompositorWidgetDelegate CompositorWidgetDelegate;
   typedef mozilla::layers::CompositorSession CompositorSession;
+  typedef mozilla::layers::ImageContainer ImageContainer;
 
   virtual ~nsBaseWidget();
 
@@ -354,6 +366,10 @@ public:
 
   void Shutdown();
 
+#if defined(XP_WIN)
+  uint64_t CreateScrollCaptureContainer() override;
+#endif
+
 protected:
   
   
@@ -541,6 +557,29 @@ protected:
   void OnRenderingDeviceReset();
 
   bool UseAPZ();
+
+
+#if defined(XP_WIN)
+  void UpdateScrollCapture() override;
+
+  
+
+
+
+
+  virtual already_AddRefed<SourceSurface> CreateScrollSnapshot()
+  {
+    return nullptr;
+  };
+
+  
+
+
+
+  void DefaultFillScrollCapture(DrawTarget* aSnapshotDrawTarget);
+
+  RefPtr<ImageContainer> mScrollCaptureContainer;
+#endif
 
 protected:
   

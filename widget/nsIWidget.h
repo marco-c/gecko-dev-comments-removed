@@ -1085,6 +1085,28 @@ class nsIWidget : public nsISupports
     static void UpdateRegisteredPluginWindowVisibility(uintptr_t aOwnerWidget,
                                                        nsTArray<uintptr_t>& aPluginIds);
 
+#if defined(XP_WIN)
+    
+
+
+
+
+
+    static void CaptureRegisteredPlugins(uintptr_t aOwnerWidget);
+
+    
+
+
+    virtual void UpdateScrollCapture() = 0;
+
+    
+
+
+
+
+    virtual uint64_t CreateScrollCaptureContainer() = 0;
+#endif
+
     
 
 
