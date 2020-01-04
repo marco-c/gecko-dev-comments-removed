@@ -291,7 +291,10 @@ void
 DecodedAudioDataSink::Drained()
 {
   SINK_LOG("Drained");
-  mEndPromise.Resolve(true, __func__);
+  
+  
+  
+  mEndPromise.ResolveIfExists(true, __func__);
 }
 
 } 
