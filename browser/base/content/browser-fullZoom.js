@@ -283,20 +283,19 @@ var FullZoom = {
 
 
 
+
+
   reset: function FullZoom_reset(browser = gBrowser.selectedBrowser) {
     let token = this._getBrowserToken(browser);
-    this._getGlobalValue(browser, function (value) {
+    let result = this._getGlobalValue(browser).then(value => {
       if (token.isCurrent) {
         ZoomManager.setZoomForBrowser(browser, value === undefined ? 1 : value);
         this._ignorePendingZoomAccesses(browser);
-        this._executeSoon(function () {
-          
-          
-          Services.obs.notifyObservers(null, "browser-fullZoom:zoomReset", "");
-        });
+        Services.obs.notifyObservers(null, "browser-fullZoom:zoomReset", "");
       }
     });
     this._removePref(browser);
+    return result;
   },
 
   
@@ -344,7 +343,7 @@ var FullZoom = {
     }
 
     let token = this._getBrowserToken(aBrowser);
-    this._getGlobalValue(aBrowser, function (value) {
+    this._getGlobalValue(aBrowser).then(value => {
       if (token.isCurrent) {
         ZoomManager.setZoomForBrowser(aBrowser, value === undefined ? 1 : value);
         this._ignorePendingZoomAccesses(aBrowser);
@@ -482,28 +481,23 @@ var FullZoom = {
 
 
 
-
-
-
-
-
-
-
-  _getGlobalValue: function FullZoom__getGlobalValue(browser, callback) {
+  _getGlobalValue: function FullZoom__getGlobalValue(browser) {
     
     
     
-    if ("_globalValue" in this) {
-      callback.call(this, this._globalValue, true);
-      return;
-    }
-    let value = undefined;
-    this._cps2.getGlobal(this.name, this._loadContextFromBrowser(browser), {
-      handleResult: function (pref) { value = pref.value; },
-      handleCompletion: function (reason) {
-        this._globalValue = this._ensureValid(value);
-        callback.call(this, this._globalValue);
-      }.bind(this)
+    return new Promise(resolve => {
+      if ("_globalValue" in this) {
+        resolve(this._globalValue);
+        return;
+      }
+      let value = undefined;
+      this._cps2.getGlobal(this.name, this._loadContextFromBrowser(browser), {
+        handleResult: function (pref) { value = pref.value; },
+        handleCompletion: (reason) => {
+          this._globalValue = this._ensureValid(value);
+          resolve(this._globalValue);
+        }
+      });
     });
   },
 
