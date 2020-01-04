@@ -403,6 +403,13 @@ moz_gtk_get_arrow_size(GtkThemeWidgetType widgetType,
 
 
 
+void moz_gtk_get_entry_min_height(gint* height);
+
+
+
+
+
+
 
 gint moz_gtk_get_toolbar_separator_width(gint* size);
 
