@@ -234,6 +234,9 @@ function ModuleDeclarationInstantiation()
             CreateImportBinding(env, imp.localName, resolution.module, resolution.bindingName);
         }
     }
+
+    
+    InstantiateModuleFunctionDeclarations(module);
 }
 
 

@@ -5872,6 +5872,9 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
 
+
+
+
     if (sc->isGlobalContext()) {
         MOZ_ASSERT(pn->pn_scopecoord.isFree());
         MOZ_ASSERT(pn->getOp() == JSOP_NOP);
@@ -5882,7 +5885,7 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
         if (!updateSourceCoordNotes(pn->pn_pos.begin))
             return false;
         switchToMain();
-    } else {
+    } else if (sc->isFunctionBox()) {
 #ifdef DEBUG
         BindingIter bi(script);
         while (bi->name() != fun->atom())
@@ -5898,6 +5901,11 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
         if (!emitVarOp(pn, setOp))
             return false;
         if (!emit1(JSOP_POP))
+            return false;
+    } else {
+        RootedModuleObject module(cx, sc->asModuleBox()->module());
+        RootedAtom name(cx, fun->atom());
+        if (!module->noteFunctionDeclaration(cx, name, fun))
             return false;
     }
 
