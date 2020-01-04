@@ -44,6 +44,8 @@ struct RawServoStyleSet;
 class nsHTMLCSSStyleSheet;
 struct nsStyleList;
 struct nsStyleImage;
+struct nsStyleImageLayers;
+struct nsStyleImageLayers_Layer;
 struct nsStyleGradientStop;
 class nsStyleGradient;
 class nsStyleCoord;
@@ -186,6 +188,11 @@ void Gecko_UnsetNodeFlags(RawGeckoNode* node, uint32_t flags);
 
 void Gecko_EnsureTArrayCapacity(void* array, size_t capacity, size_t elem_size);
 
+
+void Gecko_EnsureImageLayersLength(nsStyleImageLayers* layers, size_t len);
+
+
+void Gecko_InitializeImageLayer(nsStyleImageLayers_Layer* layer, uint8_t layer_type);
 
 
 
