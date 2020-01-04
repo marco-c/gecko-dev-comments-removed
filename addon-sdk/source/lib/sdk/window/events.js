@@ -45,20 +45,24 @@ function eventsFor(window) {
 
 
 
-var opened = windows(null, { includePrivate: true });
-var currentEvents = merge(opened.map(eventsFor));
+function makeEvents() {
+  
+  
+  var opened = windows(null, { includePrivate: true });
+  var currentEvents = merge(opened.map(eventsFor));
 
+  
+  function rename({type, target, data}) {
+    return { type: rename[type], target: target, data: data }
+  }
+  rename.domwindowopened = "open";
+  rename.domwindowclosed = "close";
 
-function rename({type, target, data}) {
-  return { type: rename[type], target: target, data: data }
+  var openEvents = map(observe("domwindowopened"), rename);
+  var closeEvents = map(observe("domwindowclosed"), rename);
+  var futureEvents = expand(openEvents, ({target}) => eventsFor(target));
+
+  return merge([currentEvents, futureEvents, openEvents, closeEvents]);
 }
-rename.domwindowopened = "open";
-rename.domwindowclosed = "close";
 
-var openEvents = map(observe("domwindowopened"), rename);
-var closeEvents = map(observe("domwindowclosed"), rename);
-var futureEvents = expand(openEvents, ({target}) => eventsFor(target));
-
-var channel = merge([currentEvents, futureEvents,
-                     openEvents, closeEvents]);
-exports.events = channel;
+exports.events = makeEvents();
