@@ -496,7 +496,7 @@ jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph)
             
             
             
-            if (ins->isImplicitlyUsed())
+            if (ins->isImplicitlyUsed() || ins->isUseRemoved())
                 continue;
 
             
@@ -609,7 +609,7 @@ IsPhiObservable(MPhi* phi, Observability observe)
 {
     
     
-    if (phi->isImplicitlyUsed())
+    if (phi->isImplicitlyUsed() || phi->isUseRemoved())
         return true;
 
     

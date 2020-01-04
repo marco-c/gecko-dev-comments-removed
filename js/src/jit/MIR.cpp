@@ -602,6 +602,11 @@ MDefinition::justReplaceAllUsesWith(MDefinition* dom)
     MOZ_ASSERT(dom != nullptr);
     MOZ_ASSERT(dom != this);
 
+    
+    
+    if (isUseRemoved())
+        dom->setUseRemovedUnchecked();
+
     for (MUseIterator i(usesBegin()), e(usesEnd()); i != e; ++i)
         i->setProducerUnchecked(dom);
     dom->uses_.takeElements(uses_);
@@ -612,6 +617,11 @@ MDefinition::justReplaceAllUsesWithExcept(MDefinition* dom)
 {
     MOZ_ASSERT(dom != nullptr);
     MOZ_ASSERT(dom != this);
+
+    
+    
+    if (isUseRemoved())
+        dom->setUseRemovedUnchecked();
 
     
     MUse *exceptUse = nullptr;
