@@ -217,9 +217,20 @@ stun_get_win32_addrs(nr_local_addr addrs[], int maxaddrs, int *count)
           }
 
           strlcpy(addrs[n].addr.ifname, hex_hashed_ifname, sizeof(addrs[n].addr.ifname));
+          if (tmpAddress->IfType == IF_TYPE_ETHERNET_CSMACD) {
+            addrs[n].interface.type = NR_INTERFACE_TYPE_WIRED;
+          } else if (tmpAddress->IfType == IF_TYPE_IEEE80211) {
+            
+            addrs[n].interface.type = NR_INTERFACE_TYPE_WIFI;
+          } else {
+            addrs[n].interface.type = NR_INTERFACE_TYPE_UNKNOWN;
+          }
+#if (_WIN32_WINNT >= 0x0600)
           
-          addrs[n].interface.type = NR_INTERFACE_TYPE_UNKNOWN;
+          addrs[n].interface.estimated_speed = tmpAddress->TransmitLinkSpeed / 1000;
+#else
           addrs[n].interface.estimated_speed = 0;
+#endif
           if (++n >= maxaddrs)
             goto done;
         }
