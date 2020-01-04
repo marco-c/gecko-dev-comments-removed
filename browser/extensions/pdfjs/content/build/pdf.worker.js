@@ -20,8 +20,8 @@ if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.3.56';
-PDFJS.build = 'e2aca38';
+PDFJS.version = '1.3.72';
+PDFJS.build = '4d6f3c8';
 
 (function pdfjsWrapper() {
   
@@ -10536,6 +10536,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         subtype: smask.get('S').name,
         backdrop: smask.get('BC')
       };
+
+      
+      
+      var transferObj = smask.get('TR');
+      if (isPDFFunction(transferObj)) {
+        var transferFn = PDFFunction.parse(this.xref, transferObj);
+        var transferMap = new Uint8Array(256);
+        var tmp = new Float32Array(1);
+        for (var i = 0; i < 255; i++) {
+          tmp[0] = i / 255;
+          transferFn(tmp, 0, tmp, 0);
+          transferMap[i] = (tmp[0] * 255) | 0;
+        }
+        smaskOptions.transferMap = transferMap;
+      }
+
       return this.buildFormXObject(resources, smaskContent, smaskOptions,
                             operatorList, task, stateManager.state.clone());
     },
@@ -16226,6 +16242,9 @@ function reverseIfRtl(chars) {
 }
 
 function adjustWidths(properties) {
+  if (!properties.fontMatrix) {
+    return;
+  }
   if (properties.fontMatrix[0] === FONT_IDENTITY_MATRIX[0]) {
     return;
   }
@@ -16349,7 +16368,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     charCodeOf: function (v) {
-      error('should not call .charCodeOf');
+      return (isInt(v) && v >= this.firstChar && v <= this.lastChar) ? v : -1;
     }
   };
 
@@ -16740,6 +16759,8 @@ var Font = (function FontClosure() {
         
         data = this.checkAndRepair(name, file, properties);
         if (this.isOpenType) {
+          adjustWidths(properties);
+
           type = 'OpenType';
         }
         break;
@@ -18172,6 +18193,8 @@ var Font = (function FontClosure() {
           cffFile = new Stream(tables['CFF '].data);
           cff = new CFFFont(cffFile, properties);
 
+          adjustWidths(properties);
+
           return this.convert(name, cff, properties);
         }
 
@@ -18793,7 +18816,7 @@ var Font = (function FontClosure() {
           }
         }
         
-        if (!charcode && 'toUnicode' in this) {
+        if (!charcode && this.toUnicode) {
           charcode = this.toUnicode.charCodeOf(glyphUnicode);
         }
         
