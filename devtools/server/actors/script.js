@@ -3197,35 +3197,7 @@ FrameActor.prototype = {
     return this.frame.arguments.map(arg => createValueGrip(arg,
       this.threadActor._pausePool, this.threadActor.objectGrip));
   },
-
-  
-
-
-
-
-
-  onPop: function (aRequest) {
-    
-    if (typeof this.frame.pop != "function") {
-      return { error: "notImplemented",
-               message: "Popping frames is not yet implemented." };
-    }
-
-    while (this.frame != this.threadActor.dbg.getNewestFrame()) {
-      this.threadActor.dbg.getNewestFrame().pop();
-    }
-    this.frame.pop(aRequest.completionValue);
-
-    
-    
-    return { from: this.actorID };
-  }
 };
-
-FrameActor.prototype.requestTypes = {
-  "pop": FrameActor.prototype.onPop,
-};
-
 
 
 
