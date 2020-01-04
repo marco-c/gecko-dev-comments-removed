@@ -36,6 +36,19 @@ extern "C" {
 
 
 
+
+
+
+char* nsEscapeWithLength(const char* aStr, size_t aLength, size_t* aOutputLen,
+                         nsEscapeMask aMask);
+
+
+
+
+
+
+
+
 char* nsEscape(const char* aStr, nsEscapeMask aMask);
 
 char* nsUnescape(char* aStr);
@@ -184,22 +197,24 @@ NS_EscapeURL(const nsAFlatString& aStr, const nsTArray<char16_t>& aForbidden,
 
 
 inline bool
-NS_Escape(const nsCString& aOriginal, nsCString& aEscaped,
+NS_Escape(const nsACString& aOriginal, nsACString& aEscaped,
           nsEscapeMask aMask)
 {
-  char* esc = nsEscape(aOriginal.get(), aMask);
+  size_t escLen = 0;
+  char* esc = nsEscapeWithLength(aOriginal.BeginReading(), aOriginal.Length(),
+                                 &escLen, aMask);
   if (! esc) {
     return false;
   }
-  aEscaped.Adopt(esc);
+  aEscaped.Adopt(esc, escLen);
   return true;
 }
 
 
 
 
-inline nsCString&
-NS_UnescapeURL(nsCString& aStr)
+inline nsACString&
+NS_UnescapeURL(nsACString& aStr)
 {
   aStr.SetLength(nsUnescapeCount(aStr.BeginWriting()));
   return aStr;
