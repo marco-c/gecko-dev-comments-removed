@@ -384,13 +384,6 @@ exports.dumpv = function(msg) {
 
 exports.dumpv.wantVerbose = false;
 
-exports.dbg_assert = function dbg_assert(cond, e) {
-  if (!cond) {
-    return e;
-  }
-};
-
-
 
 
 
@@ -446,6 +439,43 @@ exports.defineLazyGetter = function defineLazyGetter(aObject, aName, aLambda) {
     enumerable: true
   });
 };
+
+
+exports.dbg_assert = function dbg_assert(cond, e) {
+  if (!cond) {
+    return e;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.defineLazyGetter(exports, "assert", () => {
+  function noop(condition, msg) { }
+
+  function assert(condition, message) {
+    if (!condition) {
+      const err = new Error("Assertion failure: " + message);
+      exports.reportException("DevToolsUtils.assert", err);
+      throw err;
+    }
+  }
+
+  const scope = {};
+  Cu.import("resource://gre/modules/AppConstants.jsm", scope);
+  return scope.AppConstants.DEBUG_JS_MODULES ? assert : noop;
+});
 
 
 
