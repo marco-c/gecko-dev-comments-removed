@@ -92,6 +92,15 @@ enum class StyleFloatEdge : uint8_t {
 };
 
 
+enum class StyleShapeOutsideShapeBox : uint8_t {
+  NoBox,
+  Content,
+  Padding,
+  Border,
+  Margin
+};
+
+
 
 enum class StyleShapeSourceType : uint8_t {
   None_,
