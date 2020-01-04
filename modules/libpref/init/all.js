@@ -2533,6 +2533,7 @@ pref("layout.frame_rate", -1);
 
 
 pref("layout.display-list.dump", false);
+pref("layout.display-list.dump-content", false);
 
 
 
