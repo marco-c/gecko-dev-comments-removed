@@ -7,64 +7,44 @@ package org.mozilla.gecko;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import android.annotation.SuppressLint;
-import android.content.ContentResolver;
 import org.mozilla.gecko.annotation.JNITarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.AppConstants.Versions;
-import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.db.LocalURLMetadata;
-import org.mozilla.gecko.db.URLMetadataTable;
-import org.mozilla.gecko.favicons.Favicons;
-import org.mozilla.gecko.favicons.OnFaviconLoadedListener;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanZoomController;
-import org.mozilla.gecko.mozglue.ContextUtils;
-import org.mozilla.gecko.overlays.ui.ShareDialog;
 import org.mozilla.gecko.permissions.Permissions;
-import org.mozilla.gecko.prompts.PromptService;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoRequest;
 import org.mozilla.gecko.util.HardwareCodecCapabilityUtils;
 import org.mozilla.gecko.util.HardwareUtils;
-import org.mozilla.gecko.util.IOUtils;
 import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSContainer;
 import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.ProxySelector;
 import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.gecko.widget.ExternalIntentDuringPrivateBrowsingPromptFragment;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
@@ -82,17 +62,13 @@ import android.content.pm.ServiceInfo;
 import android.content.pm.Signature;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.hardware.display.DisplayManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
@@ -103,21 +79,14 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.Looper;
-import android.os.MessageQueue;
 import android.os.SystemClock;
 import android.os.Vibrator;
-import android.provider.Browser;
 import android.provider.Settings;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentActivity;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -130,14 +99,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
-import android.webkit.URLUtil;
 import android.widget.AbsoluteLayout;
-import android.widget.Toast;
 
 public class GeckoAppShell
 {
     private static final String LOGTAG = "GeckoAppShell";
-    private static final boolean LOGGING = false;
 
     
     private GeckoAppShell() { }
@@ -222,9 +188,6 @@ public class GeckoAppShell
 
     static private int sDensityDpi;
     static private int sScreenDepth;
-
-    
-    private static final float[] DEFAULT_LAUNCHER_ICON_HSV = { 32.0f, 1.0f, 1.0f };
 
     
     private static boolean sVibrationMaybePlaying;
@@ -843,62 +806,11 @@ public class GeckoAppShell
     
     @WrapForJNI
     public static void createShortcut(final String aTitle, final String aURI) {
-        ThreadUtils.assertOnBackgroundThread();
-        final BrowserDB db = GeckoProfile.get(getApplicationContext()).getDB();
-
-        final ContentResolver cr = getContext().getContentResolver();
-        final Map<String, Map<String, Object>> metadata = db.getURLMetadata().getForURLs(cr,
-                Collections.singletonList(aURI),
-                Collections.singletonList(URLMetadataTable.TOUCH_ICON_COLUMN)
-        );
-
-        final Map<String, Object> row = metadata.get(aURI);
-
-        String touchIconURL = null;
-
-        if (row != null) {
-            touchIconURL = (String) row.get(URLMetadataTable.TOUCH_ICON_COLUMN);
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
         }
-
-        OnFaviconLoadedListener listener = new OnFaviconLoadedListener() {
-            @Override
-            public void onFaviconLoaded(String url, String faviconURL, Bitmap favicon) {
-                doCreateShortcut(aTitle, url, favicon);
-            }
-        };
-
-        
-        
-        
-        
-        
-        
-        Favicons.getPreferredSizeFaviconForPage(getApplicationContext(), aURI, touchIconURL, listener);
-    }
-
-    private static void doCreateShortcut(final String aTitle, final String aURI, final Bitmap aIcon) {
-        
-        Intent shortcutIntent = new Intent();
-        shortcutIntent.setAction(GeckoApp.ACTION_HOMESCREEN_SHORTCUT);
-        shortcutIntent.setData(Uri.parse(aURI));
-        shortcutIntent.setClassName(AppConstants.ANDROID_PACKAGE_NAME,
-                                    AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
-
-        Intent intent = new Intent();
-        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, getLauncherIcon(aIcon));
-
-        if (aTitle != null) {
-            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, aTitle);
-        } else {
-            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, aURI);
-        }
-
-        
-        intent.putExtra("duplicate", false);
-
-        intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-        getApplicationContext().sendBroadcast(intent);
+        geckoInterface.createShortcut(aTitle, aURI);
     }
 
     @JNITarget
@@ -920,77 +832,22 @@ public class GeckoAppShell
         }
     }
 
-    static private Bitmap getLauncherIcon(Bitmap aSource) {
-        final int kOffset = 6;
-        final int kRadius = 5;
-        int size = getPreferredIconSize();
-        int insetSize = aSource != null ? size * 2 / 3 : size;
-
-        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-
-
-        
-        Paint paint = new Paint();
-        if (aSource == null) {
-            
-            paint.setColor(Color.HSVToColor(DEFAULT_LAUNCHER_ICON_HSV));
-            canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset), kRadius, kRadius, paint);
-        } else if (aSource.getWidth() >= insetSize || aSource.getHeight() >= insetSize) {
-            
-            Rect iconBounds = new Rect(0, 0, size, size);
-            canvas.drawBitmap(aSource, null, iconBounds, null);
-            return bitmap;
-        } else {
-            
-            int color = BitmapUtils.getDominantColor(aSource);
-            paint.setColor(color);
-            canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset), kRadius, kRadius, paint);
-            paint.setColor(Color.argb(100, 255, 255, 255));
-            canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset), kRadius, kRadius, paint);
-        }
-
-        
-        Bitmap overlay = BitmapUtils.decodeResource(getApplicationContext(), R.drawable.home_bg);
-        canvas.drawBitmap(overlay, null, new Rect(0, 0, size, size), null);
-
-        
-        if (aSource == null)
-            aSource = BitmapUtils.decodeResource(getApplicationContext(), R.drawable.home_star);
-
-        
-        int sWidth = insetSize / 2;
-        int sHeight = sWidth;
-
-        int halfSize = size / 2;
-        canvas.drawBitmap(aSource,
-                          null,
-                          new Rect(halfSize - sWidth,
-                                   halfSize - sHeight,
-                                   halfSize + sWidth,
-                                   halfSize + sHeight),
-                          null);
-
-        return bitmap;
-    }
-
     @WrapForJNI(stubName = "GetHandlersForMimeTypeWrapper")
     static String[] getHandlersForMimeType(String aMimeType, String aAction) {
-        Intent intent = getIntentForActionString(aAction);
-        if (aMimeType != null && aMimeType.length() > 0)
-            intent.setType(aMimeType);
-        return getHandlersForIntent(intent);
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return new String[] {};
+        }
+        return geckoInterface.getHandlersForMimeType(aMimeType, aAction);
     }
 
     @WrapForJNI(stubName = "GetHandlersForURLWrapper")
     static String[] getHandlersForURL(String aURL, String aAction) {
-        
-        Uri uri = aURL.indexOf(':') >= 0 ? Uri.parse(aURL) : new Uri.Builder().scheme(aURL).build();
-
-        Intent intent = getOpenURIIntent(getApplicationContext(), uri.toString(), "",
-            TextUtils.isEmpty(aAction) ? Intent.ACTION_VIEW : aAction, "");
-
-        return getHandlersForIntent(intent);
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return new String[] {};
+        }
+        return geckoInterface.getHandlersForURL(aURL, aAction);
     }
 
     @WrapForJNI(stubName = "GetHWEncoderCapability")
@@ -1016,47 +873,6 @@ public class GeckoAppShell
         }
 
         return list;
-    }
-
-    static boolean hasHandlersForIntent(Intent intent) {
-        try {
-            return !queryIntentActivities(intent).isEmpty();
-        } catch (Exception ex) {
-            Log.e(LOGTAG, "Exception in GeckoAppShell.hasHandlersForIntent");
-            return false;
-        }
-    }
-
-    static String[] getHandlersForIntent(Intent intent) {
-        final PackageManager pm = getApplicationContext().getPackageManager();
-        try {
-            final List<ResolveInfo> list = queryIntentActivities(intent);
-
-            int numAttr = 4;
-            final String[] ret = new String[list.size() * numAttr];
-            for (int i = 0; i < list.size(); i++) {
-                ResolveInfo resolveInfo = list.get(i);
-                ret[i * numAttr] = resolveInfo.loadLabel(pm).toString();
-                if (resolveInfo.isDefault)
-                    ret[i * numAttr + 1] = "default";
-                else
-                    ret[i * numAttr + 1] = "";
-                ret[i * numAttr + 2] = resolveInfo.activityInfo.applicationInfo.packageName;
-                ret[i * numAttr + 3] = resolveInfo.activityInfo.name;
-            }
-            return ret;
-        } catch (Exception ex) {
-            Log.e(LOGTAG, "Exception in GeckoAppShell.getHandlersForIntent");
-            return new String[0];
-        }
-    }
-
-    static Intent getIntentForActionString(String aAction) {
-        
-        if (TextUtils.isEmpty(aAction)) {
-            return new Intent(Intent.ACTION_VIEW);
-        }
-        return new Intent(aAction);
     }
 
     @WrapForJNI(stubName = "GetExtensionFromMimeTypeWrapper")
@@ -1110,277 +926,11 @@ public class GeckoAppShell
                                           String className,
                                           String action,
                                           String title) {
-        
-        return openUriExternal(targetURI, mimeType, packageName, className, action, title, true);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public static boolean openUriExternal(String targetURI,
-                                          String mimeType,
-                                          String packageName,
-                                          String className,
-                                          String action,
-                                          String title,
-                                          final boolean showPromptInPrivateBrowsing) {
-        final GeckoInterface gi = getGeckoInterface();
-        final Context activityContext = gi != null ? gi.getActivity() : null;
-        final Context context = activityContext != null ? activityContext : getApplicationContext();
-        final Intent intent = getOpenURIIntent(context, targetURI,
-                                               mimeType, action, title);
-
-        if (intent == null) {
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
             return false;
         }
-
-        if (!TextUtils.isEmpty(className)) {
-            if (!TextUtils.isEmpty(packageName)) {
-                intent.setClassName(packageName, className);
-            } else {
-                
-                intent.setClassName(context, className);
-            }
-        }
-
-        if (!showPromptInPrivateBrowsing || activityContext == null) {
-            if (activityContext == null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            }
-            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, intent);
-        } else {
-            
-            
-            
-            final FragmentActivity fragmentActivity = (FragmentActivity) activityContext;
-            return ExternalIntentDuringPrivateBrowsingPromptFragment.showDialogOrAndroidChooser(
-                    context, fragmentActivity.getSupportFragmentManager(), intent);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-    static Uri normalizeUriScheme(final Uri u) {
-        final String scheme = u.getScheme();
-        final String lower  = scheme.toLowerCase(Locale.US);
-        if (lower.equals(scheme)) {
-            return u;
-        }
-
-        
-        return u.buildUpon().scheme(lower).build();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    public static Intent getShareIntent(final Context context,
-                                        final String targetURI,
-                                        final String mimeType,
-                                        final String title) {
-        Intent shareIntent = getIntentForActionString(Intent.ACTION_SEND);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, targetURI);
-        shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
-        shareIntent.putExtra(ShareDialog.INTENT_EXTRA_DEVICES_ONLY, true);
-
-        
-        
-        
-        shareIntent.putExtra(Intent.EXTRA_TITLE, title);
-
-        if (mimeType != null && mimeType.length() > 0) {
-            shareIntent.setType(mimeType);
-        }
-
-        return shareIntent;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static Intent getOpenURIIntent(final Context context,
-                                   final String targetURI,
-                                   final String mimeType,
-                                   final String action,
-                                   final String title) {
-
-        
-        
-        final Intent intent = getOpenURIIntentInner(context, targetURI, mimeType, action, title);
-
-        if (intent != null) {
-            
-            
-            
-            intent.putExtra(Browser.EXTRA_APPLICATION_ID, AppConstants.ANDROID_PACKAGE_NAME);
-        }
-
-        return intent;
-    }
-
-    private static Intent getOpenURIIntentInner(final Context context,  final String targetURI,
-            final String mimeType, final String action, final String title) {
-
-        if (action.equalsIgnoreCase(Intent.ACTION_SEND)) {
-            Intent shareIntent = getShareIntent(context, targetURI, mimeType, title);
-            return Intent.createChooser(shareIntent,
-                                        context.getResources().getString(R.string.share_title)); 
-        }
-
-        Uri uri = normalizeUriScheme(targetURI.indexOf(':') >= 0 ? Uri.parse(targetURI) : new Uri.Builder().scheme(targetURI).build());
-        if (!TextUtils.isEmpty(mimeType)) {
-            Intent intent = getIntentForActionString(action);
-            intent.setDataAndType(uri, mimeType);
-            return intent;
-        }
-
-        if (!isUriSafeForScheme(uri)) {
-            return null;
-        }
-
-        final String scheme = uri.getScheme();
-        if ("intent".equals(scheme) || "android-app".equals(scheme)) {
-            final Intent intent;
-            try {
-                intent = Intent.parseUri(targetURI, 0);
-            } catch (final URISyntaxException e) {
-                Log.e(LOGTAG, "Unable to parse URI - " + e);
-                return null;
-            }
-
-            
-            intent.addCategory(Intent.CATEGORY_BROWSABLE);
-
-            
-            intent.setComponent(null);
-            nullIntentSelector(intent);
-
-            return intent;
-        }
-
-        
-        
-        
-        
-        final String extension = MimeTypeMap.getFileExtensionFromUrl(targetURI);
-        final Intent intent = getIntentForActionString(action);
-        intent.setData(uri);
-
-        if ("file".equals(scheme)) {
-            
-            final String mimeType2 = getMimeTypeFromExtension(extension);
-            intent.setType(mimeType2);
-            return intent;
-        }
-
-        
-        
-        if (!"sms".equals(scheme) && !"smsto".equals(scheme) && !"mms".equals(scheme) && !"mmsto".equals(scheme)) {
-            return intent;
-        }
-
-        final String query = uri.getEncodedQuery();
-        if (TextUtils.isEmpty(query)) {
-            return intent;
-        }
-
-        
-        
-        String currentUri = uri.toString();
-        String correctlyFormattedDataURIScheme = scheme + "://";
-        if (!currentUri.contains(correctlyFormattedDataURIScheme)) {
-            uri = Uri.parse(currentUri.replaceFirst(scheme + ":", correctlyFormattedDataURIScheme));
-        }
-
-        final String[] fields = query.split("&");
-        boolean shouldUpdateIntent = false;
-        String resultQuery = "";
-        for (String field : fields) {
-            if (field.startsWith("body=")) {
-                final String body = Uri.decode(field.substring(5));
-                intent.putExtra("sms_body", body);
-                shouldUpdateIntent = true;
-            } else if (field.startsWith("subject=")) {
-                final String subject = Uri.decode(field.substring(8));
-                intent.putExtra("subject", subject);
-                shouldUpdateIntent = true;
-            } else if (field.startsWith("cc=")) {
-                final String ccNumber = Uri.decode(field.substring(3));
-                String phoneNumber = uri.getAuthority();
-                if (phoneNumber != null) {
-                    uri = uri.buildUpon().encodedAuthority(phoneNumber + ";" + ccNumber).build();
-                }
-                shouldUpdateIntent = true;
-            } else {
-                resultQuery = resultQuery.concat(resultQuery.length() > 0 ? "&" + field : field);
-            }
-        }
-
-        if (!shouldUpdateIntent) {
-            
-            return intent;
-        }
-
-        
-        
-        final String newQuery = resultQuery.length() > 0 ? "?" + resultQuery : "";
-        final Uri pruned = uri.buildUpon().encodedQuery(newQuery).build();
-        intent.setData(pruned);
-
-        return intent;
-    }
-
-    
-    @TargetApi(15)
-    private static void nullIntentSelector(final Intent intent) {
-        if (!Versions.feature15Plus) {
-            return;
-        }
-
-        intent.setSelector(null);
+        return geckoInterface.openUriExternal(targetURI, mimeType, packageName, className, action, title);
     }
 
     
@@ -2200,7 +1750,6 @@ public class GeckoAppShell
 
     public interface GeckoInterface {
         public GeckoProfile getProfile();
-        public PromptService getPromptService();
         public Activity getActivity();
         public String getDefaultUAString();
         public LocationListener getLocationListener();
@@ -2220,6 +1769,57 @@ public class GeckoAppShell
         public AbsoluteLayout getPluginContainer();
         public void notifyCheckUpdateResult(String result);
         public void invalidateOptionsMenu();
+
+        
+
+
+
+
+
+
+
+        public void createShortcut(String title, String URI);
+
+        
+
+
+
+
+
+
+
+
+
+        public void checkUriVisited(String uri);
+
+        
+
+
+
+
+
+
+
+
+
+        public void markUriVisited(final String uri);
+
+        
+
+
+
+
+
+
+
+        public void setUriTitle(final String uri, final String title);
+
+        public void setAccessibilityEnabled(boolean enabled);
+
+        public boolean openUriExternal(String targetURI, String mimeType, String packageName, String className, String action, String title);
+
+        public String[] getHandlersForMimeType(String mimeType, String action);
+        public String[] getHandlersForURL(String url, String action);
     };
 
     private static GeckoInterface sGeckoInterface;
@@ -2379,31 +1979,29 @@ public class GeckoAppShell
 
     @WrapForJNI(stubName = "CheckURIVisited")
     static void checkUriVisited(String uri) {
-        GlobalHistory.getInstance().checkUriVisited(uri);
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
+        }
+        geckoInterface.checkUriVisited(uri);
     }
 
     @WrapForJNI(stubName = "MarkURIVisited")
     static void markUriVisited(final String uri) {
-        final Context context = getApplicationContext();
-        final BrowserDB db = GeckoProfile.get(context).getDB();
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                GlobalHistory.getInstance().add(context, db, uri);
-            }
-        });
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
+        }
+        geckoInterface.markUriVisited(uri);
     }
 
     @WrapForJNI(stubName = "SetURITitle")
     static void setUriTitle(final String uri, final String title) {
-        final Context context = getApplicationContext();
-        final BrowserDB db = GeckoProfile.get(context).getDB();
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                GlobalHistory.getInstance().update(context.getContentResolver(), db, uri, title);
-            }
-        });
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
+        }
+        geckoInterface.setUriTitle(uri, title);
     }
 
     @WrapForJNI
@@ -2621,84 +2219,6 @@ public class GeckoAppShell
         }
 
         return "DIRECT";
-    }
-
-    
-
-    public static void downloadImageForIntent(final Intent intent) {
-        final String src = ContextUtils.getStringExtra(intent, Intent.EXTRA_TEXT);
-        if (src == null) {
-            showImageShareFailureSnackbar();
-            return;
-        }
-
-        final File dir = GeckoApp.getTempDirectory();
-
-        if (dir == null) {
-            showImageShareFailureSnackbar();
-            return;
-        }
-
-        GeckoApp.deleteTempFiles();
-
-        String type = intent.getType();
-        OutputStream os = null;
-        try {
-            
-            if (src.startsWith("data:")) {
-                final int dataStart = src.indexOf(",");
-
-                String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(type);
-
-                
-                if (TextUtils.isEmpty(extension) && dataStart > 5) {
-                    type = src.substring(5, dataStart).replace(";base64", "");
-                    extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(type);
-                }
-
-                final File imageFile = File.createTempFile("image", "." + extension, dir);
-                os = new FileOutputStream(imageFile);
-
-                byte[] buf = Base64.decode(src.substring(dataStart + 1), Base64.DEFAULT);
-                os.write(buf);
-
-                
-                intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(imageFile));
-            } else {
-                InputStream is = null;
-                try {
-                    final byte[] buf = new byte[2048];
-                    final URL url = new URL(src);
-                    final String filename = URLUtil.guessFileName(src, null, type);
-                    is = url.openStream();
-
-                    final File imageFile = new File(dir, filename);
-                    os = new FileOutputStream(imageFile);
-
-                    int length;
-                    while ((length = is.read(buf)) != -1) {
-                        os.write(buf, 0, length);
-                    }
-
-                    
-                    intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(imageFile));
-                } finally {
-                    IOUtils.safeStreamClose(is);
-                }
-            }
-        } catch(IOException ex) {
-            
-        } finally {
-            IOUtils.safeStreamClose(os);
-        }
-    }
-
-    
-    private static final void showImageShareFailureSnackbar() {
-        SnackbarHelper.showSnackbar((Activity) getContext(),
-                getApplicationContext().getString(R.string.share_image_failed),
-                Snackbar.LENGTH_LONG
-        );
     }
 
     @WrapForJNI(allowMultithread = true)
