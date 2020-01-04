@@ -102,57 +102,58 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
   MOZ_ASSERT(HasError() || !mCurrentFrame || mCurrentFrame->IsFinished());
 }
 
+
+
+
 bool
-nsICODecoder::CheckAndFixBitmapSize(int8_t* aBIH)
+nsICODecoder::FixBitmapHeight(int8_t* bih)
 {
   
-  
-  
-  
-  
-  
-  const int32_t width = LittleEndian::readInt32(aBIH + 4);
-  if (width <= 0 || width > 256) {
-    return false;
-  }
+  int32_t height = LittleEndian::readInt32(bih + 8);
 
-  
-  
-  
-  
-  if (width != GetRealWidth()) {
-    return false;
-  }
-
-  
-  
-  int32_t height = LittleEndian::readInt32(aBIH + 8);
-  if (height == 0) {
-    return false;
-  }
-
-  
-  
   
   height = abs(height);
 
   
   
   height /= 2;
+
   if (height > 256) {
     return false;
   }
 
   
   
-  if (height != GetRealHeight()) {
+  if (height == 256) {
+    mDirEntry.mHeight = 0;
+  } else {
+    mDirEntry.mHeight = (int8_t)height;
+  }
+
+  
+  LittleEndian::writeInt32(bih + 8, height);
+  return true;
+}
+
+
+
+bool
+nsICODecoder::FixBitmapWidth(int8_t* bih)
+{
+  
+  int32_t width = LittleEndian::readInt32(bih + 4);
+
+  if (width > 256) {
     return false;
   }
 
   
   
-  LittleEndian::writeInt32(aBIH + 8, GetRealHeight());
-
+  if (width == 256) {
+    mDirEntry.mWidth = 0;
+  } else {
+    mDirEntry.mWidth = (int8_t)width;
+  }
   return true;
 }
 
@@ -383,7 +384,12 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   
-  if (!CheckAndFixBitmapSize(reinterpret_cast<int8_t*>(mBIHraw))) {
+  if (!FixBitmapHeight(reinterpret_cast<int8_t*>(mBIHraw))) {
+    return Transition::TerminateFailure();
+  }
+
+  
+  if (!FixBitmapWidth(reinterpret_cast<int8_t*>(mBIHraw))) {
     return Transition::TerminateFailure();
   }
 
