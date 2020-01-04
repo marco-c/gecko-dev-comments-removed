@@ -778,9 +778,7 @@ var SessionStoreInternal = {
         
         let activePageData = tabData.entries[tabData.index - 1] || null;
         let uri = activePageData ? activePageData.url || null : null;
-        if (!browser.userTypedValue) {
-          browser.userTypedValue = uri;
-        }
+        browser.userTypedValue = uri;
 
         
         if (activePageData) {
@@ -820,8 +818,11 @@ var SessionStoreInternal = {
           
           
           let tabData = TabState.collect(tab);
-          if (tabData.userTypedValue && !tabData.userTypedClear && !browser.userTypedValue) {
+          if (tabData.userTypedValue && !tabData.userTypedClear) {
             browser.userTypedValue = tabData.userTypedValue;
+            if (data.didStartLoad) {
+              browser.userTypedClear++;
+            }
             win.URLBarSetURI();
           }
 
