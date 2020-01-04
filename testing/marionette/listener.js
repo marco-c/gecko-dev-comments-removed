@@ -194,7 +194,6 @@ function removeMessageListenerId(messageName, handler) {
 }
 
 let getTitleFn = dispatch(getTitle);
-let getElementSizeFn = dispatch(getElementSize);
 let getPageSourceFn = dispatch(getPageSource);
 let getActiveElementFn = dispatch(getActiveElement);
 let clickElementFn = dispatch(clickElement);
@@ -208,7 +207,6 @@ let getCurrentUrlFn = dispatch(getCurrentUrl);
 let findElementContentFn = dispatch(findElementContent);
 let findElementsContentFn = dispatch(findElementsContent);
 let isElementSelectedFn = dispatch(isElementSelected);
-let getElementLocationFn = dispatch(getElementLocation);
 let clearElementFn = dispatch(clearElement);
 let isElementDisplayedFn = dispatch(isElementDisplayed);
 let getElementValueOfCssPropertyFn = dispatch(getElementValueOfCssProperty);
@@ -245,12 +243,10 @@ function startListeners() {
   addMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
   addMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
   addMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssPropertyFn);
-  addMessageListenerId("Marionette:getElementSize", getElementSizeFn);  
   addMessageListenerId("Marionette:getElementRect", getElementRectFn);
   addMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
   addMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
   addMessageListenerId("Marionette:sendKeysToElement", sendKeysToElement);
-  addMessageListenerId("Marionette:getElementLocation", getElementLocationFn); 
   addMessageListenerId("Marionette:clearElement", clearElementFn);
   addMessageListenerId("Marionette:switchToFrame", switchToFrame);
   addMessageListenerId("Marionette:switchToShadowRoot", switchToShadowRootFn);
@@ -351,12 +347,10 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
   removeMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
   removeMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssPropertyFn);
-  removeMessageListenerId("Marionette:getElementSize", getElementSizeFn); 
   removeMessageListenerId("Marionette:getElementRect", getElementRectFn);
   removeMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
   removeMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
   removeMessageListenerId("Marionette:sendKeysToElement", sendKeysToElement);
-  removeMessageListenerId("Marionette:getElementLocation", getElementLocationFn);
   removeMessageListenerId("Marionette:clearElement", clearElementFn);
   removeMessageListenerId("Marionette:switchToFrame", switchToFrame);
   removeMessageListenerId("Marionette:switchToShadowRoot", switchToShadowRootFn);
@@ -1552,21 +1546,6 @@ function getElementValueOfCssProperty(id, prop) {
 
 
 
-function getElementSize(id) {
-  let el = elementManager.getKnownElement(id, curContainer);
-  let clientRect = el.getBoundingClientRect();
-  return {width: clientRect.width, height: clientRect.height};
-}
-
-
-
-
-
-
-
-
-
-
 function getElementRect(id) {
   let el = elementManager.getKnownElement(id, curContainer);
   let clientRect = el.getBoundingClientRect();
@@ -1634,15 +1613,6 @@ function sendKeysToElement(msg) {
   } catch (e) {
     sendError(e, command_id);
   }
-}
-
-
-
-
-function getElementLocation(id) {
-  let el = elementManager.getKnownElement(id, curContainer);
-  let rect = el.getBoundingClientRect();
-  return {x: rect.left, y: rect.top};
 }
 
 
