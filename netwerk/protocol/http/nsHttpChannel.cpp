@@ -416,10 +416,6 @@ nsHttpChannel::Connect()
         return NS_ERROR_DOCUMENT_NOT_CACHED;
     }
 
-    if (!gHttpHandler->UseCache()) {
-        return ContinueConnect();
-    }
-
     
     rv = OpenCacheEntry(isHttps);
 

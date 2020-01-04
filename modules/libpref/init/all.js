@@ -1253,9 +1253,6 @@ pref("network.http.proxy.version", "1.1");
                                               
 
 
-pref("network.http.use-cache", true);
-
-
 
 pref("network.http.default-socket-type", "");
 
