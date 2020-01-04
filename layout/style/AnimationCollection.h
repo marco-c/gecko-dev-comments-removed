@@ -68,9 +68,7 @@ public:
   
   static AnimationCollection<AnimationType>*
     GetAnimationCollection(dom::Element* aElement,
-                           CSSPseudoElementType aPseudoType,
-                           bool aCreateIfNeeded,
-                           bool* aCreatedCollection = nullptr);
+                           CSSPseudoElementType aPseudoType);
 
   
   
@@ -78,6 +76,17 @@ public:
   
   static AnimationCollection<AnimationType>* GetAnimationCollection(
     const nsIFrame* aFrame);
+
+  
+  
+  
+  
+  
+  
+  static AnimationCollection<AnimationType>*
+    GetOrCreateAnimationCollection(dom::Element* aElement,
+                                   CSSPseudoElementType aPseudoType,
+                                   bool* aCreatedCollection);
 
   bool IsForElement() const { 
     return mElementProperty == TraitsType::ElementPropertyAtom();
@@ -125,6 +134,9 @@ public:
   void UpdateCheckGeneration(nsPresContext* aPresContext);
 
 private:
+  static nsIAtom* GetPropertyAtomForPseudoType(
+    CSSPseudoElementType aPseudoType);
+
 #ifdef DEBUG
   bool mCalledPropertyDtor;
 #endif
