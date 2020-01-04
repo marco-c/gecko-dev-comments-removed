@@ -273,8 +273,13 @@ nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
         mSynthesizedTouchInput = MakeUnique<MultiTouchInput>();
     }
 
+    
+    
+    uint32_t time = 0;
+    TimeStamp timestamp = TimeStamp::FromSystemTime(time);
+
     MultiTouchInput inputToDispatch = UpdateSynthesizedTouchState(
-        mSynthesizedTouchInput.get(), aPointerId, aPointerState,
+        mSynthesizedTouchInput.get(), time, timeStamp, aPointerId, aPointerState,
         aPoint, aPointerPressure, aPointerOrientation);
 
     
