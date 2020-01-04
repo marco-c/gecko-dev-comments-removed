@@ -304,7 +304,7 @@ MakeDefaultConstructor(JSContext* cx, JSOp op, JSAtom* atom, HandleObject proto)
 
     RootedFunction ctor(cx);
     if (!cx->runtime()->createLazySelfHostedFunctionClone(cx, selfHostedName, name,
-                                                           0,
+                                                           !!derived,
                                                           proto, TenuredObject, &ctor))
     {
         return nullptr;
@@ -312,6 +312,8 @@ MakeDefaultConstructor(JSContext* cx, JSOp op, JSAtom* atom, HandleObject proto)
 
     ctor->setIsConstructor();
     ctor->setIsClassConstructor();
+    if (derived)
+        ctor->setHasRest();
 
     MOZ_ASSERT(ctor->infallibleIsDefaultClassConstructor(cx));
 

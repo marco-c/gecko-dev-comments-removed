@@ -2332,19 +2332,8 @@ JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx, HandlePropertyName name,
         return false;
     MOZ_ASSERT(!targetFun->isInterpretedLazy());
 
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(sourceFun->nargs() - sourceFun->hasRest() ==
-               targetFun->nargs() - targetFun->hasRest());
-    MOZ_ASSERT_IF(targetFun->hasRest(), sourceFun->hasRest());
-    if (sourceFun->hasRest() && !targetFun->hasRest()) {
-        targetFun->setHasRest();
-        targetFun->setArgCount(sourceFun->nargs());
-    }
+    MOZ_ASSERT(sourceFun->nargs() == targetFun->nargs());
+    MOZ_ASSERT(sourceFun->hasRest() == targetFun->hasRest());
 
     
     targetFun->setFlags(targetFun->flags() | sourceFun->flags());
