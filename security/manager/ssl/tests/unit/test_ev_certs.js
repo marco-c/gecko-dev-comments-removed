@@ -150,7 +150,7 @@ function run_test() {
     
     Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
     
-    Services.prefs.setIntPref("services.blocklist.onecrl.checked",
+    Services.prefs.setIntPref("services.kinto.onecrl.checked",
                               Math.floor(Date.now() / 1000) - 1);
     Services.prefs.setIntPref("app.update.lastUpdateTime.blocklist-background-update-timer",
                               Math.floor(Date.now() / 1000) - 1);
@@ -178,7 +178,7 @@ function run_test() {
     
     Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
     
-    Services.prefs.setIntPref("services.blocklist.onecrl.checked",
+    Services.prefs.setIntPref("services.kinto.onecrl.checked",
                               Math.floor(Date.now() / 1000) - 108080);
     Services.prefs.setIntPref("app.update.lastUpdateTime.blocklist-background-update-timer",
                               Math.floor(Date.now() / 1000) - 108080);
@@ -220,7 +220,7 @@ function run_test() {
     Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
 
     
-    Services.prefs.setIntPref("services.blocklist.onecrl.checked",
+    Services.prefs.setIntPref("services.kinto.onecrl.checked",
                               Math.floor(Date.now() / 1000) - 1);
 
     clearOCSPCache();
@@ -230,7 +230,7 @@ function run_test() {
     
     Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 0);
     Services.prefs.clearUserPref("security.onecrl.via.amo");
-    Services.prefs.clearUserPref("services.blocklist.onecrl.checked");
+    Services.prefs.clearUserPref("services.kinto.onecrl.checked");
     ocspResponder.stop(run_next_test);
   });
 
