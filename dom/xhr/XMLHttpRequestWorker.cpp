@@ -1490,7 +1490,8 @@ SendRunnable::RunOnMainThread(ErrorResult& aRv)
 
   
   if (mProxy->mWorkerPrivate) {
-    mProxy->Reset();
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
   }
 
   mProxy->mWorkerPrivate = mWorkerPrivate;
