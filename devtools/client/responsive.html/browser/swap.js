@@ -35,6 +35,20 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   let innerBrowser;
   let tunnel;
 
+  
+  
+  
+  
+  
+  let dispatchDevToolsBrowserSwap = (from, to) => {
+    let CustomEvent = tab.ownerDocument.defaultView.CustomEvent;
+    let event = new CustomEvent("DevTools:BrowserSwap", {
+      detail: to,
+      bubbles: true,
+    });
+    from.dispatchEvent(event);
+  };
+
   return {
 
     start: Task.async(function* () {
@@ -72,6 +86,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
+      dispatchDevToolsBrowserSwap(tab.linkedBrowser, innerBrowser);
       gBrowser._swapBrowserDocShells(tab, innerBrowser);
 
       
@@ -115,6 +130,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
+      dispatchDevToolsBrowserSwap(innerBrowser, contentBrowser);
       gBrowser._swapBrowserDocShells(contentTab, innerBrowser);
       innerBrowser = null;
 
@@ -126,6 +142,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
+      dispatchDevToolsBrowserSwap(contentBrowser, tab.linkedBrowser);
       gBrowser.swapBrowsersAndCloseOther(tab, contentTab);
       gBrowser = null;
 

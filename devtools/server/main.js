@@ -1005,7 +1005,24 @@ var DebuggerServer = {
     
     let mm = frame.messageManager || frame.frameLoader.messageManager;
     mm.loadFrameScript("resource://devtools/server/child.js", false);
-    this._childMessageManagers.add(mm);
+
+    let trackMessageManager = () => {
+      frame.addEventListener("DevTools:BrowserSwap", onBrowserSwap);
+      mm.addMessageListener("debug:setup-in-parent", onSetupInParent);
+      if (!actor) {
+        mm.addMessageListener("debug:actor", onActorCreated);
+      }
+      DebuggerServer._childMessageManagers.add(mm);
+    };
+
+    let untrackMessageManager = () => {
+      frame.removeEventListener("DevTools:BrowserSwap", onBrowserSwap);
+      mm.removeMessageListener("debug:setup-in-parent", onSetupInParent);
+      if (!actor) {
+        mm.removeMessageListener("debug:actor", onActorCreated);
+      }
+      DebuggerServer._childMessageManagers.delete(mm);
+    };
 
     let actor, childTransport;
     let prefix = connection.allocID("child");
@@ -1044,7 +1061,6 @@ var DebuggerServer = {
         return false;
       }
     };
-    mm.addMessageListener("debug:setup-in-parent", onSetupInParent);
 
     let onActorCreated = DevToolsUtils.makeInfallible(function (msg) {
       if (msg.json.prefix != prefix) {
@@ -1069,11 +1085,25 @@ var DebuggerServer = {
       let { NetworkMonitorManager } = require("devtools/shared/webconsole/network-monitor");
       netMonitor = new NetworkMonitorManager(frame, actor.actor);
 
-      events.emit(DebuggerServer, "new-child-process", { mm });
-
       deferred.resolve(actor);
     }).bind(this);
-    mm.addMessageListener("debug:actor", onActorCreated);
+
+    
+    let onBrowserSwap = ({ detail: newFrame }) => {
+      
+      untrackMessageManager();
+      
+      frame = newFrame;
+      
+      
+      mm = frame.messageManager || frame.frameLoader.messageManager;
+      
+      trackMessageManager();
+
+      if (childTransport) {
+        childTransport.swapBrowser(mm);
+      }
+    };
 
     let destroy = DevToolsUtils.makeInfallible(function () {
       
@@ -1119,15 +1149,13 @@ var DebuggerServer = {
       }
 
       
+      untrackMessageManager();
       Services.obs.removeObserver(onMessageManagerClose, "message-manager-close");
-      mm.removeMessageListener("debug:setup-in-parent", onSetupInParent);
-      if (!actor) {
-        mm.removeMessageListener("debug:actor", onActorCreated);
-      }
       events.off(connection, "closed", destroy);
-
-      DebuggerServer._childMessageManagers.delete(mm);
     });
+
+    
+    trackMessageManager();
 
     
     let onMessageManagerClose = function (subject, topic, data) {
