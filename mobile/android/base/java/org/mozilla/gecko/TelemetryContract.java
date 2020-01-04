@@ -149,6 +149,9 @@ public interface TelemetryContract {
         DIALOG("dialog"),
 
         
+        DOORHANGER("doorhanger"),
+
+        
         GRID_ITEM("griditem"),
 
         
