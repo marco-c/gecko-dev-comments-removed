@@ -232,6 +232,10 @@ public:
     void SetReadBuffer(GLenum userMode);
     void SetDrawBuffer(GLenum userMode);
 
+    GLenum GetReadBufferMode() const {
+        return mUserReadBufferMode;
+    }
+
     
 
 

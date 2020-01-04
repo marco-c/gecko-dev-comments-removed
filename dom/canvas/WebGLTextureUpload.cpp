@@ -1719,9 +1719,20 @@ WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level, GLenum internal
     const webgl::FormatUsageInfo* srcUsage;
     uint32_t srcWidth;
     uint32_t srcHeight;
-    if (!mContext->ValidateCurFBForRead(funcName, &srcUsage, &srcWidth, &srcHeight))
+    GLenum srcMode;
+    if (!mContext->ValidateCurFBForRead(funcName, &srcUsage, &srcWidth, &srcHeight,
+                                        &srcMode))
         return;
     auto srcFormat = srcUsage->format;
+
+    
+    
+    
+    
+    if (srcMode == LOCAL_GL_NONE) {
+        mContext->ErrorInvalidOperation("%s: READ_BUFFER is NONE. ", funcName);
+        return;
+    }
 
     
     
@@ -1869,9 +1880,20 @@ WebGLTexture::CopyTexSubImage(const char* funcName, TexImageTarget target, GLint
     const webgl::FormatUsageInfo* srcUsage;
     uint32_t srcWidth;
     uint32_t srcHeight;
-    if (!mContext->ValidateCurFBForRead(funcName, &srcUsage, &srcWidth, &srcHeight))
+    GLenum srcMode;
+    if (!mContext->ValidateCurFBForRead(funcName, &srcUsage, &srcWidth, &srcHeight,
+                                        &srcMode))
         return;
     auto srcFormat = srcUsage->format;
+
+    
+    
+    
+    
+    if (srcMode == LOCAL_GL_NONE) {
+        mContext->ErrorInvalidOperation("%s: READ_BUFFER is NONE. ", funcName);
+        return;
+    }
 
     
     
