@@ -377,18 +377,18 @@ LoginManagerPrompter.prototype = {
 
     
     
+    let newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
+                   createInstance(Ci.nsILoginInfo);
+    newLogin.init(hostname, null, realm,
+                  aUsername.value, aPassword.value, "", "");
     if (!selectedLogin) {
       
       this.log("New login seen for " + realm);
-      var newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
-                     createInstance(Ci.nsILoginInfo);
-      newLogin.init(hostname, null, realm,
-                    aUsername.value, aPassword.value, "", "");
       this._pwmgr.addLogin(newLogin);
     } else if (aPassword.value != selectedLogin.password) {
       
       this.log("Updating password for  " + realm);
-      this._updateLogin(selectedLogin, aPassword.value);
+      this._updateLogin(selectedLogin, newLogin);
     } else {
       this.log("Login unchanged, no further action needed.");
       this._updateLogin(selectedLogin);
@@ -604,14 +604,14 @@ LoginManagerPrompter.prototype = {
 
       
       
+      let newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
+                     createInstance(Ci.nsILoginInfo);
+      newLogin.init(hostname, null, httpRealm,
+                    username, password, "", "");
       if (!selectedLogin) {
         this.log("New login seen for " + username +
                  " @ " + hostname + " (" + httpRealm + ")");
 
-        var newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
-                       createInstance(Ci.nsILoginInfo);
-        newLogin.init(hostname, null, httpRealm,
-                      username, password, "", "");
         var notifyObj = this._getPopupNote() || notifyBox;
         if (notifyObj)
           this._showSaveLoginNotification(notifyObj, newLogin);
@@ -625,10 +625,9 @@ LoginManagerPrompter.prototype = {
         var notifyObj = this._getPopupNote() || notifyBox;
         if (notifyObj)
           this._showChangeLoginNotification(notifyObj,
-                                            selectedLogin, password);
+                                            selectedLogin, newLogin);
         else
-          this._updateLogin(selectedLogin, password);
-
+          this._updateLogin(selectedLogin, newLogin);
       } else {
         this.log("Login unchanged, no further action needed.");
         this._updateLogin(selectedLogin);
@@ -825,7 +824,7 @@ LoginManagerPrompter.prototype = {
       let foundLogins = Services.logins.findLogins({}, login.hostname,
                                                    login.formSubmitURL,
                                                    login.httpRealm);
-      let logins = foundLogins.filter(l => l.username == login.username);
+      let logins = this._filterUpdatableLogins(login, foundLogins);
       let msgNames = (logins.length == 0) ? saveMsgNames : changeMsgNames;
 
       
@@ -918,7 +917,8 @@ LoginManagerPrompter.prototype = {
       let foundLogins = Services.logins.findLogins({}, login.hostname,
                                                    login.formSubmitURL,
                                                    login.httpRealm);
-      let logins = foundLogins.filter(l => l.username == login.username);
+      let logins = this._filterUpdatableLogins(login, foundLogins);
+
       if (logins.length == 0) {
         
         
@@ -930,11 +930,12 @@ LoginManagerPrompter.prototype = {
                                                login.usernameField,
                                                login.passwordField));
       } else if (logins.length == 1) {
-        if (logins[0].password == login.password) {
+        if (logins[0].password == login.password &&
+            logins[0].username == login.username) {
           
-          this._updateLogin(logins[0], null);
+          this._updateLogin(logins[0]);
         } else {
-          this._updateLogin(logins[0], login.password);
+          this._updateLogin(logins[0], login);
         }
       } else {
         Cu.reportError("Unexpected match of multiple logins.");
@@ -1200,16 +1201,18 @@ LoginManagerPrompter.prototype = {
 
 
 
-  promptToChangePassword : function (aOldLogin, aNewLogin) {
-    var notifyObj = this._getPopupNote() || this._getNotifyBox();
 
-    if (notifyObj)
+
+  promptToChangePassword(aOldLogin, aNewLogin) {
+    let notifyObj = this._getPopupNote() || this._getNotifyBox();
+
+    if (notifyObj) {
       this._showChangeLoginNotification(notifyObj, aOldLogin,
-                                        aNewLogin.password);
-    else
-      this._showChangeLoginDialog(aOldLogin, aNewLogin.password);
+                                        aNewLogin);
+    } else {
+      this._showChangeLoginDialog(aOldLogin, aNewLogin);
+    }
   },
-
 
   
 
@@ -1219,7 +1222,14 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _showChangeLoginNotification : function (aNotifyObj, aOldLogin, aNewPassword) {
+
+
+
+
+
+
+
+  _showChangeLoginNotification(aNotifyObj, aOldLogin, aNewLogin) {
     var changeButtonText =
           this._getLocalizedString("notifyBarUpdateButtonText");
     var changeButtonAccessKey =
@@ -1238,7 +1248,8 @@ LoginManagerPrompter.prototype = {
 
     
     if (aNotifyObj == this._getPopupNote()) {
-      aOldLogin.password = aNewPassword;
+      aOldLogin.password = aNewLogin.password;
+      aOldLogin.username = aNewLogin.username;
       this._showLoginCaptureDoorhanger(aOldLogin, "password-change");
     } else {
       var dontChangeButtonText =
@@ -1252,7 +1263,7 @@ LoginManagerPrompter.prototype = {
           accessKey: changeButtonAccessKey,
           popup:     null,
           callback:  function(aNotifyObj, aButton) {
-            self._updateLogin(aOldLogin, aNewPassword);
+            self._updateLogin(aOldLogin, aNewLogin);
           }
         },
 
@@ -1279,7 +1290,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _showChangeLoginDialog : function (aOldLogin, aNewPassword) {
+  _showChangeLoginDialog(aOldLogin, aNewLogin) {
     const buttonFlags = Ci.nsIPrompt.STD_YES_NO_BUTTONS;
 
     var dialogText;
@@ -1301,7 +1312,7 @@ LoginManagerPrompter.prototype = {
                             null, {});
     if (ok) {
       this.log("Updating password for user " + aOldLogin.username);
-      this._updateLogin(aOldLogin, aNewPassword);
+      this._updateLogin(aOldLogin, aNewLogin);
     }
   },
 
@@ -1337,7 +1348,7 @@ LoginManagerPrompter.prototype = {
       
       var selectedLogin = logins[selectedIndex.value];
       this.log("Updating password for user " + selectedLogin.username);
-      this._updateLogin(selectedLogin, aNewLogin.password);
+      this._updateLogin(selectedLogin, aNewLogin);
     }
   },
 
@@ -1349,15 +1360,13 @@ LoginManagerPrompter.prototype = {
 
 
 
-  
-
-
-  _updateLogin : function (login, newPassword) {
+  _updateLogin(login, aNewLogin = null) {
     var now = Date.now();
     var propBag = Cc["@mozilla.org/hash-property-bag;1"].
                   createInstance(Ci.nsIWritablePropertyBag);
-    if (newPassword) {
-      propBag.setProperty("password", newPassword);
+    if (aNewLogin) {
+      propBag.setProperty("password", aNewLogin.password);
+      propBag.setProperty("username", aNewLogin.username);
       
       
       
@@ -1720,7 +1729,28 @@ LoginManagerPrompter.prototype = {
         this.context = null;
       }
     };
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _filterUpdatableLogins(aLogin, aLoginList) {
+    return aLoginList.filter(l => l.username == aLogin.username ||
+                             (l.password == aLogin.password &&
+                              !l.username));
+  },
 
 }; 
 
