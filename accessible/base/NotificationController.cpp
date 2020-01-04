@@ -220,24 +220,6 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
     mDocument->AddScrollListener();
 
   
-  
-  
-  
-  
-  
-  
-  
-
-  
-  for (auto iter = mContentInsertions.ConstIter(); !iter.Done(); iter.Next()) {
-    mDocument->ProcessContentInserted(iter.Key(), iter.UserData());
-    if (!mDocument) {
-      return;
-    }
-  }
-  mContentInsertions.Clear();
-
-  
   for (auto iter = mTextHash.Iter(); !iter.Done(); iter.Next()) {
     nsCOMPtrHashKey<nsIContent>* entry = iter.Get();
     nsIContent* textNode = entry->GetKey();
@@ -311,16 +293,26 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
       }
   #endif
 
-      
       Accessible* container = mDocument->AccessibleOrTrueContainer(containerNode);
       MOZ_ASSERT(container,
                  "Text node having rendered text hasn't accessible document!");
       if (container) {
-        mDocument->ProcessContentInserted(container, textNode);
+        nsTArray<nsCOMPtr<nsIContent>>* list =
+          mContentInsertions.LookupOrAdd(container);
+        list->AppendElement(textNode);
       }
     }
   }
   mTextHash.Clear();
+
+  
+  for (auto iter = mContentInsertions.ConstIter(); !iter.Done(); iter.Next()) {
+    mDocument->ProcessContentInserted(iter.Key(), iter.UserData());
+    if (!mDocument) {
+      return;
+    }
+  }
+  mContentInsertions.Clear();
 
   
   uint32_t hangingDocCnt = mHangingChildDocuments.Length();
