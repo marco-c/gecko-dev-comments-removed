@@ -1128,6 +1128,9 @@ GetDebugScopeForFunction(JSContext* cx, HandleFunction fun);
 extern JSObject*
 GetDebugScopeForFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc);
 
+extern JSObject*
+GetDebugScopeForGlobalLexicalScope(JSContext* cx);
+
 
 class DebugScopeObject : public ProxyObject
 {

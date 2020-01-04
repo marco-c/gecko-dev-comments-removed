@@ -2859,6 +2859,13 @@ js::GetDebugScopeForFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc)
     return GetDebugScope(cx, si);
 }
 
+JSObject*
+js::GetDebugScopeForGlobalLexicalScope(JSContext* cx)
+{
+    ScopeIter si(cx, &cx->global()->lexicalScope(), &cx->global()->lexicalScope().staticBlock());
+    return GetDebugScope(cx, si);
+}
+
 
 JS_FRIEND_API(JSObject*)
 js::GetNearestEnclosingWithScopeObjectForFunction(JSFunction* fun)
