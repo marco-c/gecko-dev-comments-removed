@@ -928,18 +928,6 @@ public:
 
 
 
-
-  static nsRect MatrixTransformRectOut(const nsRect &aBounds,
-                                       const Matrix4x4 &aMatrix, float aFactor);
-  
-
-
-
-
-
-
-
-
   static nsPoint MatrixTransformPoint(const nsPoint &aPoint,
                                       const Matrix4x4 &aMatrix, float aFactor);
 
