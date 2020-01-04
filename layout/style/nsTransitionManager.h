@@ -95,6 +95,20 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
   
   
   double CurrentValuePortion() const;
+
+  
+  
+  
+  void UpdateStartValueFromReplacedTransition();
+
+  struct ReplacedTransitionProperties {
+    TimeDuration mStartTime;
+    double mPlaybackRate;
+    TimingParams mTiming;
+    Maybe<ComputedTimingFunction> mTimingFunction;
+    StyleAnimationValue mFromValue, mToValue;
+  };
+  Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
 
 namespace dom {
@@ -183,6 +197,17 @@ public:
   
   
   bool IsTiedToMarkup() const { return mOwningElement.IsSet(); }
+
+  
+  
+  
+  
+  
+  static Nullable<TimeDuration> GetCurrentTimeAt(
+      const DocumentTimeline& aTimeline,
+      const TimeStamp& aBaseTime,
+      const TimeDuration& aStartTime,
+      double aPlaybackRate);
 
 protected:
   virtual ~CSSTransition()

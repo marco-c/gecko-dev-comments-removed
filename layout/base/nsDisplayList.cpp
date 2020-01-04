@@ -389,6 +389,29 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
     aLayer->AddAnimation();
 
   const TimingParams& timing = aAnimation->GetEffect()->SpecifiedTiming();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aAnimation->AsCSSTransition() &&
+      aAnimation->GetEffect()) {
+    MOZ_ASSERT(aAnimation->GetEffect()->AsTransition(),
+               "CSSTransition' effect should be an ElementPropertyTransition "
+               "until we fix bug 1049975");
+    aAnimation->GetEffect()->AsTransition()->
+      UpdateStartValueFromReplacedTransition();
+  }
+
   const ComputedTiming computedTiming =
     aAnimation->GetEffect()->GetComputedTiming();
   Nullable<TimeDuration> startTime = aAnimation->GetCurrentOrPendingStartTime();
