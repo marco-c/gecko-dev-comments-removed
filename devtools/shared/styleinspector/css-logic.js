@@ -815,17 +815,7 @@ DevToolsUtils.defineLazyGetter(CssLogic, "_strings", function() {
 
 
 CssLogic.isContentStylesheet = function(sheet) {
-  
-  if (sheet.ownerNode) {
-    return true;
-  }
-
-  
-  if (sheet.ownerRule instanceof Ci.nsIDOMCSSImportRule) {
-    return CssLogic.isContentStylesheet(sheet.parentStyleSheet);
-  }
-
-  return false;
+  return sheet.parsingMode !== "agent";
 };
 
 
