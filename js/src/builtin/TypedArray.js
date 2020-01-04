@@ -43,6 +43,25 @@ function GetAttachedArrayBuffer(tarray) {
 }
 
 
+
+
+
+
+
+function IsTypedArrayEnsuringArrayBuffer(arg) {
+    if (IsObject(arg) && IsTypedArray(arg)) {
+        GetAttachedArrayBuffer(arg);
+        return true;
+    }
+
+    
+    
+    
+    callFunction(CallTypedArrayMethodIfWrapped, arg, arg, "GetAttachedArrayBuffer");
+    return false;
+}
+
+
 function TypedArrayCopyWithin(target, start, end = undefined) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -132,13 +151,7 @@ function TypedArrayEntries() {
     
 
     
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        
-        callFunction(CallTypedArrayMethodIfWrapped, O, O, "GetAttachedArrayBuffer");
-    } else {
-        
-        GetAttachedArrayBuffer(O);
-    }
+    IsTypedArrayEnsuringArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
@@ -147,18 +160,22 @@ function TypedArrayEntries() {
 
 function TypedArrayEvery(callbackfn, thisArg = undefined) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
-                            "TypedArrayEvery");
-    }
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -235,15 +252,19 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
 
     
     
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
-                           "TypedArrayFilter");
-    }
-
-    GetAttachedArrayBuffer(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
     
-    var len = TypedArrayLength(O);
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -297,18 +318,22 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
 
 function TypedArrayFind(predicate, thisArg = undefined) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, predicate, thisArg,
-                            "TypedArrayFind");
-    }
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -336,18 +361,22 @@ function TypedArrayFind(predicate, thisArg = undefined) {
 
 function TypedArrayFindIndex(predicate, thisArg = undefined) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, predicate, thisArg,
-                            "TypedArrayFindIndex");
-    }
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -373,18 +402,22 @@ function TypedArrayFindIndex(predicate, thisArg = undefined) {
 
 function TypedArrayForEach(callbackfn, thisArg = undefined) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
-                            "TypedArrayForEach");
-    }
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -516,10 +549,7 @@ function TypedArrayKeys() {
     
 
     
-    if (!IsObject(O) || !IsTypedArray(O))
-        callFunction(CallTypedArrayMethodIfWrapped, O, O, "GetAttachedArrayBuffer");
-    else
-        GetAttachedArrayBuffer(O);
+    IsTypedArrayEnsuringArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_KEY);
@@ -569,15 +599,19 @@ function TypedArrayMap(callbackfn, thisArg = undefined) {
 
     
     
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
-                            "TypedArrayMap");
-    }
-
-    GetAttachedArrayBuffer(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
     
-    var len = TypedArrayLength(O);
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -612,16 +646,22 @@ function TypedArrayMap(callbackfn, thisArg = undefined) {
 
 function TypedArrayReduce(callbackfn) {
     
-    if (!IsObject(this) || !IsTypedArray(this))
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, "TypedArrayReduce");
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -653,16 +693,22 @@ function TypedArrayReduce(callbackfn) {
 
 function TypedArrayReduceRight(callbackfn) {
     
-    if (!IsObject(this) || !IsTypedArray(this))
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, "TypedArrayReduceRight");
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -914,18 +960,22 @@ function TypedArraySlice(start, end) {
 
 function TypedArraySome(callbackfn, thisArg = undefined) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, callbackfn, thisArg,
-                            "TypedArraySome");
-    }
-
-    GetAttachedArrayBuffer(this);
-
-    
     var O = this;
 
     
-    var len = TypedArrayLength(O);
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray) {
+        len = TypedArrayLength(O);
+    } else {
+        len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
+    }
 
     
     if (arguments.length === 0)
@@ -986,16 +1036,12 @@ function TypedArrayCompare(x, y) {
 
 function TypedArraySort(comparefn) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, comparefn,
-                            "TypedArraySort");
-    }
 
     
     var obj = this;
 
     
-    var buffer = GetAttachedArrayBuffer(obj);
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(obj);
 
     
     var len = TypedArrayLength(obj);
@@ -1018,20 +1064,30 @@ function TypedArraySort(comparefn) {
         } else if (IsFloat32TypedArray(obj)) {
             return RadixSort(obj, len, 4 , true , true , comparefn);
         }
+    }
+
+    
+    
+    var wrappedCompareFn = comparefn;
+    comparefn = function(x, y) {
         
+        var v = wrappedCompareFn(x, y);
         
-        var wrappedCompareFn = comparefn;
-        comparefn = function(x, y) {
-            
-            var v = wrappedCompareFn(x, y);
-            
-            if (IsDetachedBuffer(buffer))
-                ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+        var bufferDetached;
+        if (isTypedArray) {
+            bufferDetached = IsDetachedBuffer(buffer);
+        } else {
             
             
-            
-            return v;
+            bufferDetached = callFunction(CallTypedArrayMethodIfWrapped, this,
+                                          buffer, "IsDetachedBuffer");
         }
+        if (bufferDetached)
+            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+        
+        
+        
+        return v;
     }
 
     return QuickSort(obj, len, comparefn);
@@ -1089,15 +1145,7 @@ function TypedArrayValues() {
     var O = this;
 
     
-
-    
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        
-        callFunction(CallTypedArrayMethodIfWrapped, O, O, "GetAttachedArrayBuffer");
-    } else {
-        
-        GetAttachedArrayBuffer(O);
-    }
+    IsTypedArrayEnsuringArrayBuffer(O);
 
     
     return CreateArrayIterator(O, ITEM_KIND_VALUE);
