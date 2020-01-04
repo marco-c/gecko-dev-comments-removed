@@ -3897,7 +3897,7 @@ class JS_FRIEND_API(OwningCompileOptions) : public ReadOnlyCompileOptions
 
 
 
-class MOZ_STACK_CLASS JS_FRIEND_API(CompileOptions) : public ReadOnlyCompileOptions
+class MOZ_STACK_CLASS JS_FRIEND_API(CompileOptions) final : public ReadOnlyCompileOptions
 {
     RootedObject elementRoot;
     RootedString elementAttributeNameRoot;
