@@ -29,6 +29,10 @@ DevToolsUtils.defineLazyGetter(this, "DebuggerSocket", () => {
 DevToolsUtils.defineLazyGetter(this, "Authentication", () => {
   return require("devtools/shared/security/auth");
 });
+DevToolsUtils.defineLazyGetter(this, "generateUUID", () => {
+  let { generateUUID } = Cc['@mozilla.org/uuid-generator;1'].getService(Ci.nsIUUIDGenerator);
+  return generateUUID;
+});
 
 
 
@@ -908,18 +912,50 @@ var DebuggerServer = {
 
 
 
-  setupInChild: function({ module, setupChild, args }) {
-    if (this.isInChildProcess) {
-      return;
+
+
+
+  setupInChild: function({ module, setupChild, args, waitForEval }) {
+    if (this.isInChildProcess || this._childMessageManagers.size == 0) {
+      return Promise.resolve();
     }
+    let deferred = Promise.defer();
+
+    
+    
+    if (typeof(waitForEval) != "boolean") {
+      waitForEval = false;
+    }
+    let count = this._childMessageManagers.size;
+    let id = waitForEval ? generateUUID().toString() : null;
 
     this._childMessageManagers.forEach(mm => {
+      if (waitForEval) {
+        
+        let evalListener = msg => {
+          if (msg.data.id !== id) {
+            return;
+          }
+          mm.removeMessageListener("debug:setup-in-child-response", evalListener);
+          if (--count === 0) {
+            deferred.resolve();
+          }
+        };
+        mm.addMessageListener("debug:setup-in-child-response", evalListener);
+      }
       mm.sendAsyncMessage("debug:setup-in-child", {
         module: module,
         setupChild: setupChild,
         args: args,
+        id: id,
       });
     });
+
+    if (waitForEval) {
+      return deferred.promise;
+    } else {
+      return Promise.resolve();
+    }
   },
 
   
@@ -1194,7 +1230,10 @@ var DebuggerServer = {
           (handler.id && handler.id == aActor.id)) {
         delete DebuggerServer.tabActorFactories[name];
         for (let connID of Object.getOwnPropertyNames(this._connections)) {
-          this._connections[connID].rootActor.removeActorByName(name);
+          
+          if (this._connections[connID].rootActor) {
+            this._connections[connID].rootActor.removeActorByName(name);
+          }
         }
       }
     }
@@ -1698,9 +1737,10 @@ DebuggerServerConnection.prototype = {
       
       return;
     }
+    this._actorPool = null;
+
     events.emit(this, "closed", aStatus);
 
-    this._actorPool = null;
     this._extraPools.map(function(p) { p.destroy(); });
     this._extraPools = null;
 
