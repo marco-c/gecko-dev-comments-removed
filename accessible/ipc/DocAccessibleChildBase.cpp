@@ -5,6 +5,7 @@
 
 
 #include "mozilla/a11y/DocAccessibleChildBase.h"
+#include "mozilla/a11y/ProxyAccessibleBase.h"
 
 #include "Accessible-inl.h"
 
