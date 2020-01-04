@@ -473,15 +473,6 @@ public:
     }
 
     StreamTime streamPosition = mDestination->GraphTimeToStreamTime(aFrom);
-    
-    
-    if (streamPosition >= mStop ||
-        (!mLoop && mBufferPosition >= mBufferEnd && !mRemainingResamplerTail)) {
-      *aFinished = true;
-      aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
-      return;
-    }
-
     uint32_t channels = mBuffer ? mBuffer->GetChannels() : 0;
 
     UpdateSampleRateIfNeeded(channels, streamPosition);
@@ -513,6 +504,13 @@ public:
           FillWithZeroes(aOutput, channels, &written, &streamPosition, STREAM_TIME_MAX);
         }
       }
+    }
+
+    
+    
+    if (streamPosition >= mStop ||
+        (!mLoop && mBufferPosition >= mBufferEnd && !mRemainingResamplerTail)) {
+      *aFinished = true;
     }
   }
 
