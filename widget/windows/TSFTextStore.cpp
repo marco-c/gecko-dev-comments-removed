@@ -3782,7 +3782,14 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     options.mRelativeToInsertionPoint = true;
     startOffset -= mSelectionForTSF.StartOffset();
   }
-  event.InitForQueryTextRect(startOffset, acpEnd - acpStart, options);
+  
+  
+  
+  
+  
+  
+  uint32_t length = std::max(static_cast<int32_t>(acpEnd - acpStart), 1);
+  event.InitForQueryTextRect(startOffset, length, options);
 
   DispatchEvent(event);
   if (NS_WARN_IF(!event.mSucceeded)) {
@@ -3791,6 +3798,7 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
        "eQueryTextRect failure", this));
     return TS_E_INVALIDPOS; 
   }
+
   
   if (event.mReply.mRect.width <= 0)
     event.mReply.mRect.width = 1;
