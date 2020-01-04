@@ -33,7 +33,6 @@ public:
             MediaSink* aAudioSink,
             MediaQueue<MediaData>& aVideoQueue,
             VideoFrameContainer* aContainer,
-            bool aRealTime,
             FrameStatistics& aFrameStats,
             uint32_t aVQueueSentToCompositerSize);
 
@@ -114,9 +113,6 @@ private:
   
   
   const ProducerID mProducerID;
-
-  
-  const bool mRealTime;
 
   
   FrameStatistics& mFrameStats;
