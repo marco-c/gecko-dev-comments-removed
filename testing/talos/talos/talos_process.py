@@ -107,6 +107,7 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
         
         
         context.kill_process()
+        return_code = proc.wait(1)
 
     reader.output.append(
         "__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp"
@@ -115,6 +116,6 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
         "__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp"
         % (int(time.time()) * 1000))
 
-    logging.info("Browser exited with error code: {0}".format(proc.returncode))
+    logging.info("Browser exited with error code: {0}".format(return_code))
     context.output = reader.output
     return context
