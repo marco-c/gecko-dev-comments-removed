@@ -708,9 +708,12 @@ IMEContentObserver::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
   
   
   
-  if (aEvent->mMessage == eQuerySelectedText && aEvent->mUseNativeLineBreak &&
-      aEvent->mInput.mSelectionType == SelectionType::eNormal &&
-      mSelectionData.IsValid() && !mNeedsToNotifyIMEOfSelectionChange) {
+  bool isSelectionCacheAvailable =
+    aEvent->mUseNativeLineBreak && mSelectionData.IsValid() &&
+    !mNeedsToNotifyIMEOfSelectionChange;
+  if (isSelectionCacheAvailable &&
+      aEvent->mMessage == eQuerySelectedText &&
+      aEvent->mInput.mSelectionType == SelectionType::eNormal) {
     aEvent->mReply.mContentsRoot = mRootContent;
     aEvent->mReply.mHasSelection = !mSelectionData.IsCollapsed();
     aEvent->mReply.mOffset = mSelectionData.mOffset;
@@ -727,6 +730,32 @@ IMEContentObserver::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("IMECO: 0x%p IMEContentObserver::HandleQueryContentEvent(aEvent={ "
      "mMessage=%s })", this, ToChar(aEvent->mMessage)));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aEvent->mInput.mRelativeToInsertionPoint &&
+      aEvent->mInput.IsValidEventMessage(aEvent->mMessage)) {
+    RefPtr<TextComposition> composition =
+      IMEStateManager::GetTextCompositionFor(aEvent->mWidget);
+    if (composition) {
+      uint32_t compositionStart = composition->NativeOffsetOfStartComposition();
+      if (NS_WARN_IF(!aEvent->mInput.MakeOffsetAbsolute(compositionStart))) {
+        return NS_ERROR_FAILURE;
+      }
+    } else if (isSelectionCacheAvailable) {
+      uint32_t selectionStart = mSelectionData.mOffset;
+      if (NS_WARN_IF(!aEvent->mInput.MakeOffsetAbsolute(selectionStart))) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+  }
 
   AutoRestore<bool> handling(mIsHandlingQueryContentEvent);
   mIsHandlingQueryContentEvent = true;
