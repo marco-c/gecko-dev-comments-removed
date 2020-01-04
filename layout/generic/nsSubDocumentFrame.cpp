@@ -483,7 +483,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       
-      nestedClipState.Clear();
+      nestedClipState.ClearForStackingContextContents();
     }
 
     if (subdocRootFrame) {
