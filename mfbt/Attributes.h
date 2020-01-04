@@ -552,7 +552,7 @@
 #  define MOZ_NON_OWNING_REF __attribute__((annotate("moz_weak_ref")))
 #  define MOZ_UNSAFE_REF(reason) __attribute__((annotate("moz_weak_ref")))
 #  define MOZ_NO_ADDREF_RELEASE_ON_RETURN __attribute__((annotate("moz_no_addref_release_on_return")))
-#  define MOZ_MUST_USE __attribute__((annotate("moz_must_use")))
+#  define MOZ_MUST_USE_TYPE __attribute__((annotate("moz_must_use_type")))
 #  define MOZ_NEEDS_NO_VTABLE_TYPE __attribute__((annotate("moz_needs_no_vtable_type")))
 #  define MOZ_NON_MEMMOVABLE __attribute__((annotate("moz_non_memmovable")))
 #  define MOZ_NEEDS_MEMMOVABLE_TYPE __attribute__((annotate("moz_needs_memmovable_type")))
@@ -585,7 +585,7 @@
 #  define MOZ_NON_OWNING_REF
 #  define MOZ_UNSAFE_REF(reason)
 #  define MOZ_NO_ADDREF_RELEASE_ON_RETURN
-#  define MOZ_MUST_USE
+#  define MOZ_MUST_USE_TYPE
 #  define MOZ_NEEDS_NO_VTABLE_TYPE
 #  define MOZ_NON_MEMMOVABLE
 #  define MOZ_NEEDS_MEMMOVABLE_TYPE

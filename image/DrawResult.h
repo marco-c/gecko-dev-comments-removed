@@ -45,7 +45,7 @@ namespace image {
 
 
 
-enum class MOZ_MUST_USE DrawResult : uint8_t
+enum class MOZ_MUST_USE_TYPE DrawResult : uint8_t
 {
   SUCCESS,
   INCOMPLETE,
