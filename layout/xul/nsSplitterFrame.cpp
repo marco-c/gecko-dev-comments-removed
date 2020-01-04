@@ -279,7 +279,7 @@ nsSplitterFrame::Init(nsIContent*       aContent,
   
   
   
-  if (aParent && aParent->IsBoxFrame()) {
+  if (aParent && aParent->IsXULBoxFrame()) {
     if (!aParent->IsHorizontal()) {
       if (!nsContentUtils::HasNonEmptyAttr(aContent, kNameSpaceID_None,
                                            nsGkAtoms::orient)) {
@@ -839,7 +839,7 @@ nsSplitterFrameInner::UpdateState()
   }
 
   if ((SupportsCollapseDirection(Before) || SupportsCollapseDirection(After)) &&
-      mOuter->GetParent()->IsBoxFrame()) {
+      mOuter->GetParent()->IsXULBoxFrame()) {
     
     nsIFrame* splitterSibling;
     if (newState == CollapsedBefore || mState == CollapsedBefore) {

@@ -424,7 +424,7 @@ static bool
 ShouldSuppressFloatingOfDescendants(nsIFrame* aFrame)
 {
   return aFrame->IsFrameOfType(nsIFrame::eMathML) ||
-    aFrame->IsBoxFrame() ||
+    aFrame->IsXULBoxFrame() ||
     ::IsFlexOrGridContainer(aFrame);
 }
 
@@ -8297,7 +8297,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     
     
     nsIFrame* grandparentFrame = parentFrame->GetParent();
-    if (grandparentFrame && grandparentFrame->IsBoxFrame() &&
+    if (grandparentFrame && grandparentFrame->IsXULBoxFrame() &&
         (grandparentFrame->GetStateBits() & NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK) &&
         
         aChild == AnyKidsNeedBlockParent(parentFrame->PrincipalChildList().FirstChild()) &&
@@ -10697,7 +10697,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
 
   ConstructFramesFromItemList(aState, itemsToConstruct, aFrame, aFrameItems);
 
-  NS_ASSERTION(!aAllowBlockStyles || !aFrame->IsBoxFrame(),
+  NS_ASSERTION(!aAllowBlockStyles || !aFrame->IsXULBoxFrame(),
                "can't be both block and box");
 
   if (haveFirstLetterStyle) {
@@ -10711,14 +10711,14 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
   
   
   
-  NS_ASSERTION(!haveFirstLineStyle || !aFrame->IsBoxFrame(),
+  NS_ASSERTION(!haveFirstLineStyle || !aFrame->IsXULBoxFrame(),
                "Shouldn't have first-line style if we're a box");
-  NS_ASSERTION(!aFrame->IsBoxFrame() ||
+  NS_ASSERTION(!aFrame->IsXULBoxFrame() ||
                itemsToConstruct.AnyItemsNeedBlockParent() ==
                  (AnyKidsNeedBlockParent(aFrameItems.FirstChild()) != nullptr),
                "Something went awry in our block parent calculations");
 
-  if (aFrame->IsBoxFrame() && itemsToConstruct.AnyItemsNeedBlockParent()) {
+  if (aFrame->IsXULBoxFrame() && itemsToConstruct.AnyItemsNeedBlockParent()) {
     
     
     
@@ -12055,7 +12055,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
 
   
   
-  if (aFrame->IsBoxFrame() &&
+  if (aFrame->IsXULBoxFrame() &&
       !(aFrame->GetStateBits() & NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK) &&
       aItems.AnyItemsNeedBlockParent()) {
     RecreateFramesForContent(aFrame->GetContent(), true,

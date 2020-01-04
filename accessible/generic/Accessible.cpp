@@ -434,9 +434,9 @@ Accessible::NativeState()
 
     
     
-    if (HasOwnContent() && mContent->IsXULElement() && frame->IsBoxFrame()) {
+    if (HasOwnContent() && mContent->IsXULElement() && frame->IsXULBoxFrame()) {
       const nsStyleXUL* xulStyle = frame->StyleXUL();
-      if (xulStyle && frame->IsBoxFrame()) {
+      if (xulStyle && frame->IsXULBoxFrame()) {
         
         if (xulStyle->mBoxOrient == NS_STYLE_BOX_ORIENT_VERTICAL)
           state |= states::VERTICAL;

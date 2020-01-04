@@ -2850,7 +2850,7 @@ public:
   
   
   
-  bool IsBoxFrame() const
+  bool IsXULBoxFrame() const
   {
     return IsFrameOfType(nsIFrame::eXULBox);
   }

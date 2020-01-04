@@ -169,7 +169,7 @@ nsStackLayout::GetOffset(nsIFrame* aChild, nsMargin& aOffset)
 
   
   
-  if (aChild->IsBoxFrame() &&
+  if (aChild->IsXULBoxFrame() &&
       (aChild->GetStateBits() & NS_STATE_STACK_NOT_POSITIONED))
     return 0;
 
@@ -241,7 +241,7 @@ nsStackLayout::GetOffset(nsIFrame* aChild, nsMargin& aOffset)
     }
   }
 
-  if (!offsetSpecified && aChild->IsBoxFrame()) {
+  if (!offsetSpecified && aChild->IsXULBoxFrame()) {
     
     
     aChild->AddStateBits(NS_STATE_STACK_NOT_POSITIONED);
