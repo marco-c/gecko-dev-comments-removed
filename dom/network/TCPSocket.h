@@ -30,6 +30,8 @@ class ErrorResult;
 namespace dom {
 
 class DOMError;
+struct ServerSocketOptions;
+class TCPServerSocket;
 class USVStringOrArrayBuffer;
 
 
@@ -40,6 +42,12 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS(LegacyMozTCPSocket)
 
   explicit LegacyMozTCPSocket(nsPIDOMWindow* aWindow);
+
+  already_AddRefed<TCPServerSocket>
+  Listen(uint16_t aPort,
+         const ServerSocketOptions& aOptions,
+         uint16_t aBacklog,
+         ErrorResult& aRv);
 
   already_AddRefed<TCPSocket>
   Open(const nsAString& aHost,
@@ -106,6 +114,11 @@ public:
               const SocketOptions& aOptions,
               ErrorResult& aRv);
 
+  
+  
+  static already_AddRefed<TCPSocket>
+  CreateAcceptedSocket(nsIGlobalObject* aGlobal, nsISocketTransport* aTransport, bool aUseArrayBuffers);
+
   static bool SocketEnabled();
 
   IMPL_EVENT_HANDLER(open);
@@ -122,6 +135,12 @@ public:
 private:
   ~TCPSocket();
 
+  
+  nsresult InitWithTransport(nsISocketTransport* aTransport);
+  
+  nsresult CreateStream();
+  
+  nsresult CreateInputStreamPump();
   
   
   bool Send(nsIInputStream* aStream, uint32_t aByteLength);

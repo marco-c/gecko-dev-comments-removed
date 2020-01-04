@@ -127,7 +127,7 @@ function waitForConnection(listeningServer) {
     
     
     
-    listeningServer.onconnect = function(socket) {
+    listeningServer.onconnect = function(event) {
       
       
       listeningServer.onconnect = function() {
@@ -135,8 +135,8 @@ function waitForConnection(listeningServer) {
       };
       ok(true, 'Listening server accepted socket');
       resolve({
-        socket: socket,
-        queue: listenForEventsOnSocket(socket, 'server')
+        socket: event.socket,
+        queue: listenForEventsOnSocket(event.socket, 'server')
       });
     };
   });
@@ -171,11 +171,10 @@ function* test_basics() {
   
   let serverPort = 8085;
 
-  let mozTCPSocket = navigator.mozTCPSocket;
   
-  let listeningServer = mozTCPSocket.listen(serverPort,
-                                         { binaryType: 'arraybuffer' },
-                                         SERVER_BACKLOG);
+  let listeningServer = new TCPServerSocket(serverPort,
+                                            { binaryType: 'arraybuffer' },
+                                            SERVER_BACKLOG);
 
   let connectedPromise = waitForConnection(listeningServer);
 
