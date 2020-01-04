@@ -6,12 +6,14 @@
 
 
 #include "nsFloatManager.h"
-#include "nsIPresShell.h"
-#include "nsMemory.h"
+
+#include <algorithm>
+
 #include "mozilla/ReflowInput.h"
 #include "nsBlockDebugFlags.h"
 #include "nsError.h"
-#include <algorithm>
+#include "nsIPresShell.h"
+#include "nsMemory.h"
 
 using namespace mozilla;
 
@@ -468,7 +470,7 @@ nsFloatManager::List(FILE* out) const
 
   for (uint32_t i = 0; i < mFloats.Length(); ++i) {
     const FloatInfo &fi = mFloats[i];
-    fprintf_stderr(out, "Float %u: frame=%p rect={%d,%d,%d,%d} ymost={l:%d, r:%d}\n",
+    fprintf_stderr(out, "Float %u: frame=%p rect={%d,%d,%d,%d} BEnd={l:%d, r:%d}\n",
                    i, static_cast<void*>(fi.mFrame),
                    fi.LineLeft(), fi.BStart(), fi.ISize(), fi.BSize(),
                    fi.mLeftBEnd, fi.mRightBEnd);
@@ -565,8 +567,8 @@ nsAutoFloatManager::~nsAutoFloatManager()
 
 #ifdef NOISY_FLOATMANAGER
     if (mOld) {
-      static_cast<nsFrame *>(mReflowInput.frame)->ListTag(stdout);
-      printf(": space-manager %p after reflow\n", mOld);
+      mReflowInput.mFrame->ListTag(stdout);
+      printf(": float manager %p after reflow\n", mOld);
       mOld->List(stdout);
     }
 #endif
