@@ -51,7 +51,7 @@ struct MediaTrackConstraints;
 struct MediaTrackConstraintSet;
 } 
 
-extern LogModule* GetMediaManagerLog();
+extern PRLogModuleInfo* GetMediaManagerLog();
 #define MM_LOG(msg) MOZ_LOG(GetMediaManagerLog(), mozilla::LogLevel::Debug, msg)
 
 class MediaDevice : public nsIMediaDevice

@@ -107,8 +107,8 @@ class AudioSegment;
 class DecodedStream;
 class TaskQueue;
 
-extern LazyLogModule gMediaDecoderLog;
-extern LazyLogModule gMediaSampleLog;
+extern PRLogModuleInfo* gMediaDecoderLog;
+extern PRLogModuleInfo* gMediaSampleLog;
 
 
 

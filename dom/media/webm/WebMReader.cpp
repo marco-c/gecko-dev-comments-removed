@@ -39,8 +39,8 @@ using namespace gfx;
 using namespace layers;
 using namespace media;
 
-extern LazyLogModule gMediaDecoderLog;
-LazyLogModule gNesteggLog("Nestegg");
+extern PRLogModuleInfo* gMediaDecoderLog;
+PRLogModuleInfo* gNesteggLog;
 
 
 
@@ -137,6 +137,9 @@ WebMReader::WebMReader(AbstractMediaDecoder* aDecoder)
   , mResource(aDecoder->GetResource())
 {
   MOZ_COUNT_CTOR(WebMReader);
+  if (!gNesteggLog) {
+    gNesteggLog = PR_NewLogModule("Nestegg");
+  }
 }
 
 WebMReader::~WebMReader()

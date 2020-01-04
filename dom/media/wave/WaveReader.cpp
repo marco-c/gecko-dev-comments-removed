@@ -23,7 +23,7 @@ namespace mozilla {
 
 
 
-extern LazyLogModule gMediaDecoderLog;
+extern PRLogModuleInfo* gMediaDecoderLog;
 #define LOG(type, msg) MOZ_LOG(gMediaDecoderLog, type, msg)
 #ifdef SEEK_LOGGING
 #define SEEK_LOG(type, msg) MOZ_LOG(gMediaDecoderLog, type, msg)
