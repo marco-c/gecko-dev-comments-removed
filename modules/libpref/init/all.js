@@ -2380,9 +2380,6 @@ pref("layout.css.scroll-snap.enabled", true);
 pref("layout.css.font-loading-api.enabled", true);
 
 
-pref("dom.mouseEvent.offsetXY.enabled", true);
-
-
 
 
 
