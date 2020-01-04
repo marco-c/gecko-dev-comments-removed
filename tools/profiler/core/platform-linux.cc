@@ -359,8 +359,9 @@ static void* SignalSender(void* arg) {
           printf_stderr("profiler failed to signal tid=%d\n", threadId);
 #ifdef DEBUG
           abort();
-#endif
+#else
           continue;
+#endif
         }
 
         
