@@ -11,7 +11,7 @@ const {escapeCSSComment} = require("devtools/client/shared/css-parsing-utils");
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
+XPCOMUtils.defineLazyGetter(this, "domUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
 
@@ -56,7 +56,7 @@ TextProperty.prototype = {
 
 
 
-  updateEditor: function() {
+  updateEditor: function () {
     if (this.editor) {
       this.editor.update();
     }
@@ -65,7 +65,7 @@ TextProperty.prototype = {
   
 
 
-  updateComputed: function() {
+  updateComputed: function () {
     if (!this.name) {
       return;
     }
@@ -107,7 +107,7 @@ TextProperty.prototype = {
 
 
 
-  set: function(prop) {
+  set: function (prop) {
     let changed = false;
     for (let item of ["name", "value", "priority", "enabled"]) {
       if (this[item] !== prop[item]) {
@@ -121,7 +121,7 @@ TextProperty.prototype = {
     }
   },
 
-  setValue: function(value, priority, force = false) {
+  setValue: function (value, priority, force = false) {
     let store = this.rule.elementStyle.store;
 
     if (this.editor && value !== this.editor.committed.value || force) {
@@ -136,14 +136,14 @@ TextProperty.prototype = {
 
 
 
-  noticeNewValue: function(value) {
+  noticeNewValue: function (value) {
     if (value !== this.value) {
       this.value = value;
       this.updateEditor();
     }
   },
 
-  setName: function(name) {
+  setName: function (name) {
     let store = this.rule.elementStyle.store;
 
     if (name !== this.name) {
@@ -155,19 +155,19 @@ TextProperty.prototype = {
     this.updateEditor();
   },
 
-  setEnabled: function(value) {
+  setEnabled: function (value) {
     this.rule.setPropertyEnabled(this, value);
     this.updateEditor();
   },
 
-  remove: function() {
+  remove: function () {
     this.rule.removeProperty(this);
   },
 
   
 
 
-  stringifyProperty: function() {
+  stringifyProperty: function () {
     
     let declaration = this.name + ": " + this.editor.valueSpan.textContent +
       ";";
@@ -185,7 +185,7 @@ TextProperty.prototype = {
 
 
 
-  isKnownProperty: function() {
+  isKnownProperty: function () {
     try {
       
       
@@ -203,7 +203,7 @@ TextProperty.prototype = {
 
 
 
-  isValid: function() {
+  isValid: function () {
     return domUtils.cssPropertyIsValid(this.name, this.value);
   }
 };

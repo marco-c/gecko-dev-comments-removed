@@ -155,7 +155,7 @@ function* uninstallAddon(document, addonId, addonName) {
   yield new Promise(done => {
     AddonManager.getAddonByID(addonId, addon => {
       let listener = {
-        onUninstalled: function(uninstalledAddon) {
+        onUninstalled: function (uninstalledAddon) {
           if (uninstalledAddon != addon) {
             return;
           }
@@ -241,10 +241,10 @@ function assertHasTarget(expected, document, type, name) {
 
 function waitForServiceWorkerRegistered(tab) {
   
-  let frameScript = function() {
+  let frameScript = function () {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function(registration) {
+    sw.then(function (registration) {
       sendAsyncMessage("sw-registered");
     });
   };
@@ -266,14 +266,14 @@ function waitForServiceWorkerRegistered(tab) {
 
 function unregisterServiceWorker(tab) {
   
-  let frameScript = function() {
+  let frameScript = function () {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function(registration) {
-      registration.unregister().then(function() {
+    sw.then(function (registration) {
+      registration.unregister().then(function () {
         sendAsyncMessage("sw-unregistered");
       },
-      function(e) {
+      function (e) {
         dump("SW not unregistered; " + e + "\n");
       });
     });

@@ -84,7 +84,7 @@ var NetworkHelper = {
 
 
 
-  convertToUnicode: function(text, charset) {
+  convertToUnicode: function (text, charset) {
     let conv = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
         .createInstance(Ci.nsIScriptableUnicodeConverter);
     try {
@@ -103,7 +103,7 @@ var NetworkHelper = {
 
 
 
-  readAndConvertFromStream: function(stream, charset) {
+  readAndConvertFromStream: function (stream, charset) {
     let text = null;
     try {
       text = NetUtil.readInputStreamToString(stream, stream.available());
@@ -123,7 +123,7 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromRequest: function(request, charset) {
+  readPostTextFromRequest: function (request, charset) {
     if (request instanceof Ci.nsIUploadChannel) {
       let iStream = request.uploadStream;
 
@@ -161,7 +161,7 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromPage: function(docShell, charset) {
+  readPostTextFromPage: function (docShell, charset) {
     let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
     return this.readPostTextFromPageViaWebNav(webNav, charset);
   },
@@ -176,7 +176,7 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromPageViaWebNav: function(webNav, charset) {
+  readPostTextFromPageViaWebNav: function (webNav, charset) {
     if (webNav instanceof Ci.nsIWebPageDescriptor) {
       let descriptor = webNav.currentDescriptor;
 
@@ -197,7 +197,7 @@ var NetworkHelper = {
 
 
 
-  getAppIdForRequest: function(request) {
+  getAppIdForRequest: function (request) {
     try {
       return this.getRequestLoadContext(request).appId;
     } catch (ex) {
@@ -215,7 +215,7 @@ var NetworkHelper = {
 
 
 
-  getTopFrameForRequest: function(request) {
+  getTopFrameForRequest: function (request) {
     try {
       return this.getRequestLoadContext(request).topFrameElement;
     } catch (ex) {
@@ -230,7 +230,7 @@ var NetworkHelper = {
 
 
 
-  getWindowForRequest: function(request) {
+  getWindowForRequest: function (request) {
     try {
       return this.getRequestLoadContext(request).associatedWindow;
     } catch (ex) {
@@ -246,7 +246,7 @@ var NetworkHelper = {
 
 
 
-  getRequestLoadContext: function(request) {
+  getRequestLoadContext: function (request) {
     try {
       return request.notificationCallbacks.getInterface(Ci.nsILoadContext);
     } catch (ex) {
@@ -269,7 +269,7 @@ var NetworkHelper = {
 
 
 
-  isTopLevelLoad: function(request) {
+  isTopLevelLoad: function (request) {
     if (request instanceof Ci.nsIChannel) {
       let loadInfo = request.loadInfo;
       if (loadInfo && loadInfo.parentOuterWindowID == loadInfo.outerWindowID) {
@@ -292,7 +292,7 @@ var NetworkHelper = {
 
 
 
-  loadFromCache: function(url, charset, callback) {
+  loadFromCache: function (url, charset, callback) {
     let channel = NetUtil.newChannel({uri: url,
                                       loadUsingSystemPrincipal: true});
 
@@ -328,11 +328,11 @@ var NetworkHelper = {
 
 
 
-  parseCookieHeader: function(header) {
+  parseCookieHeader: function (header) {
     let cookies = header.split(";");
     let result = [];
 
-    cookies.forEach(function(cookie) {
+    cookies.forEach(function (cookie) {
       let equal = cookie.indexOf("=");
       let name = cookie.substr(0, equal);
       let value = cookie.substr(equal + 1);
@@ -353,11 +353,11 @@ var NetworkHelper = {
 
 
 
-  parseSetCookieHeader: function(header) {
+  parseSetCookieHeader: function (header) {
     let rawCookies = header.split(/\r\n|\n|\r/);
     let cookies = [];
 
-    rawCookies.forEach(function(cookie) {
+    rawCookies.forEach(function (cookie) {
       let equal = cookie.indexOf("=");
       let name = unescape(cookie.substr(0, equal).trim());
       let parts = cookie.substr(equal + 1).split(";");
@@ -365,7 +365,7 @@ var NetworkHelper = {
 
       cookie = {name: name, value: value};
 
-      parts.forEach(function(part) {
+      parts.forEach(function (part) {
         part = part.trim();
         if (part.toLowerCase() == "secure") {
           cookie.secure = true;
@@ -474,7 +474,7 @@ var NetworkHelper = {
 
 
 
-  isTextMimeType: function(mimeType) {
+  isTextMimeType: function (mimeType) {
     if (mimeType.indexOf("text/") == 0) {
       return true;
     }
@@ -537,7 +537,7 @@ var NetworkHelper = {
 
 
 
-  parseSecurityInfo: function(securityInfo, httpActivity) {
+  parseSecurityInfo: function (securityInfo, httpActivity) {
     const info = {
       state: "insecure",
     };
@@ -671,7 +671,7 @@ var NetworkHelper = {
 
 
 
-  parseCertificateInfo: function(cert) {
+  parseCertificateInfo: function (cert) {
     let info = {};
     if (cert) {
       info.subject = {
@@ -713,7 +713,7 @@ var NetworkHelper = {
 
 
 
-  formatSecurityProtocol: function(version) {
+  formatSecurityProtocol: function (version) {
     switch (version) {
       case Ci.nsISSLStatus.TLS_VERSION_1:
         return "TLSv1";
@@ -739,7 +739,7 @@ var NetworkHelper = {
 
 
 
-  getReasonsForWeakness: function(state) {
+  getReasonsForWeakness: function (state) {
     const wpl = Ci.nsIWebProgressListener;
 
     
@@ -771,7 +771,7 @@ var NetworkHelper = {
 
 
 
-  parseQueryString: function(queryString) {
+  parseQueryString: function (queryString) {
     
     
     
@@ -796,7 +796,7 @@ var NetworkHelper = {
   
 
 
-  nsIURL: function(url, store = gNSURLStore) {
+  nsIURL: function (url, store = gNSURLStore) {
     if (store.has(url)) {
       return store.get(url);
     }

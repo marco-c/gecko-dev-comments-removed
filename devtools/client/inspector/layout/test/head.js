@@ -59,10 +59,10 @@ function openLayoutView() {
     
     
     function mockHighlighter({highlighter}) {
-      highlighter.showBoxModel = function() {
+      highlighter.showBoxModel = function () {
         return promise.resolve();
       };
-      highlighter.hideBoxModel = function() {
+      highlighter.hideBoxModel = function () {
         return promise.resolve();
       };
     }

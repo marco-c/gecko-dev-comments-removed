@@ -84,7 +84,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  _showError: function(event, data) {
+  _showError: function (event, data) {
     if (!this._toolbox) {
       
       return;
@@ -121,7 +121,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  selectStyleSheet: function(href, line, col) {
+  selectStyleSheet: function (href, line, col) {
     if (!this._debuggee || !this.UI) {
       return null;
     }
@@ -131,7 +131,7 @@ StyleEditorPanel.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     if (!this._destroyed) {
       this._destroyed = true;
 
@@ -152,7 +152,7 @@ StyleEditorPanel.prototype = {
 };
 
 XPCOMUtils.defineLazyGetter(StyleEditorPanel.prototype, "strings",
-  function() {
+  function () {
     return Services.strings.createBundle(
             "chrome://devtools/locale/styleeditor.properties");
   });

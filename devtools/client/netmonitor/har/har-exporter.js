@@ -9,7 +9,7 @@ const { resolve } = require("promise");
 const { HarUtils } = require("./har-utils.js");
 const { HarBuilder } = require("./har-builder.js");
 
-XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function() {
+XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function () {
   return Cc["@mozilla.org/widget/clipboardhelper;1"]
     .getService(Ci.nsIClipboardHelper);
 });
@@ -18,7 +18,7 @@ var uid = 1;
 
 
 const trace = {
-  log: function(...args) {
+  log: function (...args) {
   }
 };
 
@@ -67,7 +67,7 @@ const HarExporter = {
 
 
 
-  save: function(options) {
+  save: function (options) {
     
     options.defaultFileName = Services.prefs.getCharPref(
       "devtools.netmonitor.har.defaultFileName");
@@ -100,7 +100,7 @@ const HarExporter = {
 
 
 
-  copy: function(options) {
+  copy: function (options) {
     return this.fetchHarData(options).then(jsonString => {
       clipboardHelper.copyString(jsonString);
       return jsonString;
@@ -109,7 +109,7 @@ const HarExporter = {
 
   
 
-  fetchHarData: function(options) {
+  fetchHarData: function (options) {
     
     options.id = options.id || uid++;
 
@@ -157,7 +157,7 @@ const HarExporter = {
 
 
 
-  buildHarData: function(options) {
+  buildHarData: function (options) {
     
     let builder = new HarBuilder(options);
     return builder.build();
@@ -166,7 +166,7 @@ const HarExporter = {
   
 
 
-  stringify: function(har) {
+  stringify: function (har) {
     if (!har) {
       return null;
     }

@@ -7,7 +7,7 @@
 
 var oldCanRecord = Services.telemetry.canRecordExtended;
 Services.telemetry.canRecordExtended = true;
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   Services.telemetry.canRecordExtended = oldCanRecord;
 });
 const EXPECTED_TELEMETRY = {

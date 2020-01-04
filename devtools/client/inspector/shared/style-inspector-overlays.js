@@ -77,7 +77,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  addToView: function() {
+  addToView: function () {
     if (!this.supportsHighlighters || this._isStarted || this._isDestroyed) {
       return;
     }
@@ -93,7 +93,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  removeFromView: function() {
+  removeFromView: function () {
     if (!this.supportsHighlighters || !this._isStarted || this._isDestroyed) {
       return;
     }
@@ -107,7 +107,7 @@ HighlightersOverlay.prototype = {
     this._isStarted = false;
   },
 
-  _onMouseMove: function(event) {
+  _onMouseMove: function (event) {
     
     if (event.target === this._lastHovered) {
       return;
@@ -143,7 +143,7 @@ HighlightersOverlay.prototype = {
     }
   },
 
-  _onMouseLeave: function() {
+  _onMouseLeave: function () {
     this._lastHovered = null;
     this._hideCurrent();
   },
@@ -154,7 +154,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isRuleViewTransform: function(nodeInfo) {
+  _isRuleViewTransform: function (nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     let isEnabled = nodeInfo.value.enabled &&
@@ -170,7 +170,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isComputedViewTransform: function(nodeInfo) {
+  _isComputedViewTransform: function (nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     return !this.isRuleView && isTransform;
@@ -179,7 +179,7 @@ HighlightersOverlay.prototype = {
   
 
 
-  _hideCurrent: function() {
+  _hideCurrent: function () {
     if (!this.highlighterShown || !this.highlighters[this.highlighterShown]) {
       return;
     }
@@ -202,7 +202,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _getHighlighter: function(type) {
+  _getHighlighter: function (type) {
     let utils = this.highlighterUtils;
 
     if (this.highlighters[type]) {
@@ -219,7 +219,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  destroy: function() {
+  destroy: function () {
     this.removeFromView();
 
     for (let type in this.highlighters) {
@@ -266,7 +266,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  addToView: function() {
+  addToView: function () {
     if (this._isStarted || this._isDestroyed) {
       return;
     }
@@ -297,7 +297,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  removeFromView: function() {
+  removeFromView: function () {
     if (!this._isStarted || this._isDestroyed) {
       return;
     }
@@ -331,7 +331,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  _getTooltipType: function({type, value: prop}) {
+  _getTooltipType: function ({type, value: prop}) {
     let tooltipType = null;
     let inspector = this.view.inspector;
 
@@ -360,7 +360,7 @@ TooltipsOverlay.prototype = {
 
 
 
-  _onPreviewTooltipTargetHover: function(target) {
+  _onPreviewTooltipTargetHover: function (target) {
     let nodeInfo = this.view.getNodeInfo(target);
     if (!nodeInfo) {
       
@@ -410,7 +410,7 @@ TooltipsOverlay.prototype = {
     return undefined;
   },
 
-  _onNewSelection: function() {
+  _onNewSelection: function () {
     if (this.previewTooltip) {
       this.previewTooltip.hide();
     }
@@ -435,7 +435,7 @@ TooltipsOverlay.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     this.removeFromView();
 
     this.view.inspector.selection.off("new-node-front", this._onNewSelection);

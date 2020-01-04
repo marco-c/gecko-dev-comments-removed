@@ -44,7 +44,7 @@ var Sniffer = Class({
     return this;
   },
 
-  getMIMETypeFromContent: function(request, data, length) {
+  getMIMETypeFromContent: function (request, data, length) {
     
     if (!NetworkHelper.isTopLevelLoad(request)) {
       return "";

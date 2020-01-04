@@ -152,7 +152,7 @@ StyleEditorUI.prototype = {
   
 
 
-  createUI: function() {
+  createUI: function () {
     let viewRoot = this._root.parentNode.querySelector(".splitview-root");
 
     this._view = new SplitView(viewRoot);
@@ -202,7 +202,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _onOptionsPopupShowing: function() {
+  _onOptionsPopupShowing: function () {
     this._optionsButton.setAttribute("open", "true");
     this._sourcesItem.setAttribute("checked",
       Services.prefs.getBoolPref(PREF_ORIG_SOURCES));
@@ -213,7 +213,7 @@ StyleEditorUI.prototype = {
   
 
 
-  _onOptionsPopupHiding: function() {
+  _onOptionsPopupHiding: function () {
     this._optionsButton.removeAttribute("open");
   },
 
@@ -225,7 +225,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _onNewDocument: function() {
+  _onNewDocument: function () {
     this._debuggee.getStyleSheets().then((styleSheets) => {
       return this._resetStyleSheetList(styleSheets);
     }).then(null, Cu.reportError);
@@ -256,7 +256,7 @@ StyleEditorUI.prototype = {
   
 
 
-  _clear: function() {
+  _clear: function () {
     
     if (this.selectedEditor && this.selectedEditor.sourceEditor) {
       let href = this.selectedEditor.styleSheet.href;
@@ -361,7 +361,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _importFromFile: function(file, parentWindow) {
+  _importFromFile: function (file, parentWindow) {
     let onFileSelected = (selectedFile) => {
       if (!selectedFile) {
         
@@ -394,7 +394,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _onStyleSheetCreated: function(styleSheet, file) {
+  _onStyleSheetCreated: function (styleSheet, file) {
     this._addStyleSheetEditor(styleSheet, file, true);
   },
 
@@ -406,14 +406,14 @@ StyleEditorUI.prototype = {
 
 
 
-  _onError: function(event, data) {
+  _onError: function (event, data) {
     this.emit("error", data);
   },
 
   
 
 
-  _toggleOrigSources: function() {
+  _toggleOrigSources: function () {
     let isEnabled = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
     Services.prefs.setBoolPref(PREF_ORIG_SOURCES, !isEnabled);
   },
@@ -421,7 +421,7 @@ StyleEditorUI.prototype = {
   
 
 
-  _toggleMediaSidebar: function() {
+  _toggleMediaSidebar: function () {
     let isEnabled = Services.prefs.getBoolPref(PREF_MEDIA_SIDEBAR);
     Services.prefs.setBoolPref(PREF_MEDIA_SIDEBAR, !isEnabled);
   },
@@ -429,7 +429,7 @@ StyleEditorUI.prototype = {
   
 
 
-  _onMediaPrefChanged: function() {
+  _onMediaPrefChanged: function () {
     this.editors.forEach(this._updateMediaList);
   },
 
@@ -444,7 +444,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _updateOpenLinkItem: function() {
+  _updateOpenLinkItem: function () {
     this._openLinkNewTabItem.setAttribute("hidden",
                                           !this._contextMenuStyleSheet);
     if (this._contextMenuStyleSheet) {
@@ -456,7 +456,7 @@ StyleEditorUI.prototype = {
   
 
 
-  _openLinkNewTab: function() {
+  _openLinkNewTab: function () {
     if (this._contextMenuStyleSheet) {
       this._window.openUILinkIn(this._contextMenuStyleSheet.href, "tab");
     }
@@ -468,7 +468,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _removeStyleSheetEditor: function(editor) {
+  _removeStyleSheetEditor: function (editor) {
     if (editor.summary) {
       this._view.removeItem(editor.summary);
     } else {
@@ -488,7 +488,7 @@ StyleEditorUI.prototype = {
   
 
 
-  _clearStyleSheetEditors: function() {
+  _clearStyleSheetEditors: function () {
     for (let editor of this.editors) {
       editor.destroy();
     }
@@ -502,7 +502,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _sourceLoaded: function(editor) {
+  _sourceLoaded: function (editor) {
     let ordinal = editor.styleSheet.styleSheetIndex;
     ordinal = ordinal == -1 ? Number.MAX_SAFE_INTEGER : ordinal;
     
@@ -512,7 +512,7 @@ StyleEditorUI.prototype = {
       },
       disableAnimations: this._alwaysDisableAnimations,
       ordinal: ordinal,
-      onCreate: function(summary, details, data) {
+      onCreate: function (summary, details, data) {
         let createdEditor = data.editor;
         createdEditor.summary = summary;
         createdEditor.details = details;
@@ -589,7 +589,7 @@ StyleEditorUI.prototype = {
         this.emit("editor-added", createdEditor);
       }.bind(this),
 
-      onShow: function(summary, details, data) {
+      onShow: function (summary, details, data) {
         let showEditor = data.editor;
         this.selectedEditor = showEditor;
 
@@ -639,7 +639,7 @@ StyleEditorUI.prototype = {
 
 
 
-  switchToSelectedSheet: function() {
+  switchToSelectedSheet: function () {
     let toSelect = this._styleSheetToSelect;
 
     for (let editor of this.editors) {
@@ -664,7 +664,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _isEditorToSelect: function(editor) {
+  _isEditorToSelect: function (editor) {
     let toSelect = this._styleSheetToSelect;
     if (!toSelect) {
       return false;
@@ -689,7 +689,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _selectEditor: function(editor, line, col) {
+  _selectEditor: function (editor, line, col) {
     line = line || 0;
     col = col || 0;
 
@@ -705,7 +705,7 @@ StyleEditorUI.prototype = {
     return promise.all([editorPromise, summaryPromise]);
   },
 
-  getEditorSummary: function(editor) {
+  getEditorSummary: function (editor) {
     if (editor.summary) {
       return promise.resolve(editor.summary);
     }
@@ -723,7 +723,7 @@ StyleEditorUI.prototype = {
     return deferred.promise;
   },
 
-  getEditorDetails: function(editor) {
+  getEditorDetails: function (editor) {
     if (editor.details) {
       return promise.resolve(editor.details);
     }
@@ -747,7 +747,7 @@ StyleEditorUI.prototype = {
 
 
 
-  getStyleSheetIdentifier: function(styleSheet) {
+  getStyleSheetIdentifier: function (styleSheet) {
     
     
     return styleSheet.href ? styleSheet.href :
@@ -767,7 +767,7 @@ StyleEditorUI.prototype = {
 
 
 
-  selectStyleSheet: function(stylesheet, line, col) {
+  selectStyleSheet: function (stylesheet, line, col) {
     this._styleSheetToSelect = {
       stylesheet: stylesheet,
       line: line,
@@ -786,7 +786,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _summaryChange: function(editor) {
+  _summaryChange: function (editor) {
     this._updateSummaryForEditor(editor);
   },
 
@@ -798,7 +798,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _updateSummaryForEditor: function(editor, summary) {
+  _updateSummaryForEditor: function (editor, summary) {
     summary = summary || editor.summary;
     if (!summary) {
       return;
@@ -851,7 +851,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _updateMediaList: function(editor) {
+  _updateMediaList: function (editor) {
     Task.spawn(function* () {
       let details = yield this.getEditorDetails(editor);
       let list = details.querySelector(".stylesheet-media-list");
@@ -930,7 +930,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _onMediaConditionClick: function(e) {
+  _onMediaConditionClick: function (e) {
     if (!e.target.matches(".media-responsive-mode-toggle")) {
       return;
     }
@@ -971,12 +971,12 @@ StyleEditorUI.prototype = {
 
 
 
-  _jumpToLocation: function(location) {
+  _jumpToLocation: function (location) {
     let source = location.styleSheet || location.source;
     this.selectStyleSheet(source, location.line - 1, location.column - 1);
   },
 
-  destroy: function() {
+  destroy: function () {
     if (this._highlighter) {
       this._highlighter.finalize();
       this._highlighter = null;

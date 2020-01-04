@@ -81,7 +81,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _create: function() {
+  _create: function () {
     this.element = this.doc.createElementNS(HTML_NS, "li");
     this.element.classList.add("ruleview-property");
     this.element._textPropertyEditor = this;
@@ -279,7 +279,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  resolveURI: function(relativePath) {
+  resolveURI: function (relativePath) {
     if (this.sheetURI) {
       relativePath = this.sheetURI.resolve(relativePath);
     }
@@ -289,7 +289,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  update: function() {
+  update: function () {
     if (this.ruleView.isDestroyed) {
       return;
     }
@@ -423,7 +423,7 @@ TextPropertyEditor.prototype = {
     this.ruleView._updatePropertyHighlight(this);
   },
 
-  _onStartEditing: function() {
+  _onStartEditing: function () {
     this.element.classList.remove("ruleview-overridden");
     this.enable.style.visibility = "hidden";
   },
@@ -432,7 +432,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _updateComputed: function() {
+  _updateComputed: function () {
     this.computed.innerHTML = "";
 
     let showExpander = this.prop.computed.some(c => c.name !== this.prop.name);
@@ -447,7 +447,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _populateComputed: function() {
+  _populateComputed: function () {
     if (this._populatedComputed) {
       return;
     }
@@ -502,7 +502,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onEnableClicked: function(event) {
+  _onEnableClicked: function (event) {
     let checked = this.enable.hasAttribute("checked");
     if (checked) {
       this.enable.removeAttribute("checked");
@@ -520,7 +520,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onExpandClicked: function(event) {
+  _onExpandClicked: function (event) {
     if (this.computed.hasAttribute("filter-open") ||
         this.computed.hasAttribute("user-open")) {
       this.expander.removeAttribute("open");
@@ -540,7 +540,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  expandForFilter: function() {
+  expandForFilter: function () {
     if (!this.computed.hasAttribute("user-open")) {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("filter-open", "");
@@ -551,7 +551,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  collapseForFilter: function() {
+  collapseForFilter: function () {
     this.computed.removeAttribute("filter-open");
 
     if (!this.computed.hasAttribute("user-open")) {
@@ -571,7 +571,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onNameDone: function(value, commit, direction) {
+  _onNameDone: function (value, commit, direction) {
     let isNameUnchanged = (!commit && !this.ruleEditor.isEditing) ||
                           this.committed.name === value;
     if (this.prop.value && isNameUnchanged) {
@@ -619,7 +619,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  remove: function(direction) {
+  remove: function (direction) {
     if (this._colorSwatchSpans && this._colorSwatchSpans.length) {
       for (let span of this._colorSwatchSpans) {
         this.ruleView.tooltips.colorPicker.removeSwatch(span);
@@ -651,7 +651,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function(value = "", commit, direction) {
+  _onValueDone: function (value = "", commit, direction) {
     let parsedProperties = this._getValueAndExtraProperties(value);
     let val = parseSingleValue(parsedProperties.firstValue);
     let isValueUnchanged = (!commit && !this.ruleEditor.isEditing) ||
@@ -697,7 +697,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchCommit: function() {
+  _onSwatchCommit: function () {
     this._onValueDone(this.valueSpan.textContent, true);
     this.update();
   },
@@ -705,7 +705,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchPreview: function() {
+  _onSwatchPreview: function () {
     this._previewValue(this.valueSpan.textContent);
   },
 
@@ -713,7 +713,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onSwatchRevert: function() {
+  _onSwatchRevert: function () {
     this._previewValue(this.prop.value, true);
     this.update();
   },
@@ -733,7 +733,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _getValueAndExtraProperties: function(value) {
+  _getValueAndExtraProperties: function (value) {
     
     
     
@@ -773,7 +773,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _previewValue: function(value, reverting = false) {
+  _previewValue: function (value, reverting = false) {
     
     
     if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
@@ -791,7 +791,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isValid: function() {
+  isValid: function () {
     return this.prop.isValid();
   }
 };

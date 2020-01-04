@@ -166,7 +166,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  setAsyncListener: function(stream, listener) {
+  setAsyncListener: function (stream, listener) {
     
     stream.asyncWait(listener, 0, 0, Services.tm.mainThread);
   },
@@ -185,7 +185,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onDataAvailable: function(request, context, inputStream, offset, count) {
+  onDataAvailable: function (request, context, inputStream, offset, count) {
     this._findOpenResponse();
     let data = NetUtil.readInputStreamToString(inputStream, count);
 
@@ -205,7 +205,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onStartRequest: function(request) {
+  onStartRequest: function (request) {
     
     if (this.request) {
       return;
@@ -255,7 +255,7 @@ NetworkResponseListener.prototype = {
   
 
 
-  _getSecurityInfo: DevToolsUtils.makeInfallible(function() {
+  _getSecurityInfo: DevToolsUtils.makeInfallible(function () {
     
     
     
@@ -272,7 +272,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onStopRequest: function() {
+  onStopRequest: function () {
     this._findOpenResponse();
     this.sink.outputStream.close();
   },
@@ -283,14 +283,14 @@ NetworkResponseListener.prototype = {
 
 
 
-  onProgress: function(request, context, progress, progressMax) {
+  onProgress: function (request, context, progress, progressMax) {
     this.transferredSize = progress;
     
     
     this._forwardNotification(Ci.nsIProgressEventSink, "onProgress", arguments);
   },
 
-  onStatus: function() {
+  onStatus: function () {
     this._forwardNotification(Ci.nsIProgressEventSink, "onStatus", arguments);
   },
 
@@ -303,7 +303,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  _findOpenResponse: function() {
+  _findOpenResponse: function () {
     if (!this.owner || this._foundOpenResponse) {
       return;
     }
@@ -335,7 +335,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onStreamClose: function() {
+  onStreamClose: function () {
     if (!this.httpActivity) {
       return;
     }
@@ -365,7 +365,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  _onComplete: function(data) {
+  _onComplete: function (data) {
     let response = {
       mimeType: "",
       text: data || "",
@@ -420,7 +420,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onInputStreamReady: function(stream) {
+  onInputStreamReady: function (stream) {
     if (!(stream instanceof Ci.nsIAsyncInputStream) || !this.httpActivity) {
       return;
     }
@@ -545,7 +545,7 @@ NetworkMonitor.prototype = {
   
 
 
-  init: function() {
+  init: function () {
     this.responsePipeSegmentSize = Services.prefs
                                    .getIntPref("network.buffer.cache.size");
     this.interceptedChannels = new Set();
@@ -563,7 +563,7 @@ NetworkMonitor.prototype = {
                              "service-worker-synthesized-response", false);
   },
 
-  _serviceWorkerRequest: function(subject, topic, data) {
+  _serviceWorkerRequest: function (subject, topic, data) {
     let channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     if (!this._matchRequest(channel)) {
@@ -587,7 +587,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _httpResponseExaminer: function(subject, topic) {
+  _httpResponseExaminer: function (subject, topic) {
     
     
     
@@ -616,7 +616,7 @@ NetworkMonitor.prototype = {
     let setCookieHeader = null;
 
     channel.visitResponseHeaders({
-      visitHeader: function(name, value) {
+      visitHeader: function (name, value) {
         let lowerName = name.toLowerCase();
         if (lowerName == "set-cookie") {
           setCookieHeader = value;
@@ -690,7 +690,7 @@ NetworkMonitor.prototype = {
 
 
   observeActivity:
-  DevToolsUtils.makeInfallible(function(channel, activityType, activitySubtype,
+  DevToolsUtils.makeInfallible(function (channel, activityType, activitySubtype,
                                         timestamp, extraSizeData,
                                         extraStringData) {
     if (!this.owner ||
@@ -766,7 +766,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _matchRequest: function(channel) {
+  _matchRequest: function (channel) {
     if (this._logEverything) {
       return true;
     }
@@ -837,7 +837,7 @@ NetworkMonitor.prototype = {
   
 
 
-  _createNetworkEvent: function(channel, { timestamp, extraStringData,
+  _createNetworkEvent: function (channel, { timestamp, extraStringData,
                                            fromCache, fromServiceWorker }) {
     let win = NetworkHelper.getWindowForRequest(channel);
     let httpActivity = this.createActivityObject(channel);
@@ -896,7 +896,7 @@ NetworkMonitor.prototype = {
 
     
     channel.visitRequestHeaders({
-      visitHeader: function(name, value) {
+      visitHeader: function (name, value) {
         if (name == "Cookie") {
           cookieHeader = value;
         }
@@ -931,7 +931,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _onRequestHeader: function(channel, timestamp, extraStringData) {
+  _onRequestHeader: function (channel, timestamp, extraStringData) {
     if (!this._matchRequest(channel)) {
       return;
     }
@@ -953,7 +953,7 @@ NetworkMonitor.prototype = {
 
 
 
-  createActivityObject: function(channel) {
+  createActivityObject: function (channel) {
     return {
       id: gSequenceId(),
       channel: channel,
@@ -981,7 +981,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _setupResponseListener: function(httpActivity) {
+  _setupResponseListener: function (httpActivity) {
     let channel = httpActivity.channel;
     channel.QueryInterface(Ci.nsITraceableChannel);
 
@@ -1018,7 +1018,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _onRequestBodySent: function(httpActivity) {
+  _onRequestBodySent: function (httpActivity) {
     if (httpActivity.discardRequestBody) {
       return;
     }
@@ -1056,7 +1056,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _onResponseHeader: function(httpActivity, extraStringData) {
+  _onResponseHeader: function (httpActivity, extraStringData) {
     
     
     
@@ -1106,7 +1106,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _onTransactionClose: function(httpActivity) {
+  _onTransactionClose: function (httpActivity) {
     let result = this._setupHarTimings(httpActivity);
     httpActivity.owner.addEventTimings(result.total, result.timings);
     delete this.openRequests[httpActivity.id];
@@ -1128,7 +1128,7 @@ NetworkMonitor.prototype = {
 
 
 
-  _setupHarTimings: function(httpActivity, fromCache) {
+  _setupHarTimings: function (httpActivity, fromCache) {
     if (fromCache) {
       
       
@@ -1211,7 +1211,7 @@ NetworkMonitor.prototype = {
 
 
 
-  destroy: function() {
+  destroy: function () {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
       gActivityDistributor.removeObserver(this);
       Services.obs.removeObserver(this._httpResponseExaminer,
@@ -1288,7 +1288,7 @@ NetworkMonitorChild.prototype = {
     });
   },
 
-  init: function() {
+  init: function () {
     let mm = this._messageManager;
     mm.addMessageListener("debug:netmonitor:" + this.connID + ":newEvent",
                           this._onNewEvent);
@@ -1323,7 +1323,7 @@ NetworkMonitorChild.prototype = {
     actor[method].apply(actor, args);
   }),
 
-  destroy: function() {
+  destroy: function () {
     let mm = this._messageManager;
     try {
       mm.removeMessageListener("debug:netmonitor:" + this.connID + ":newEvent",
@@ -1368,8 +1368,8 @@ function NetworkEventActorProxy(messageManager, connID) {
 }
 exports.NetworkEventActorProxy = NetworkEventActorProxy;
 
-NetworkEventActorProxy.methodFactory = function(method) {
-  return DevToolsUtils.makeInfallible(function() {
+NetworkEventActorProxy.methodFactory = function (method) {
+  return DevToolsUtils.makeInfallible(function () {
     let args = Array.slice(arguments);
     let mm = this.messageManager;
     mm.sendAsyncMessage("debug:netmonitor:" + this.connID + ":updateEvent", {
@@ -1390,7 +1390,7 @@ NetworkEventActorProxy.prototype = {
 
 
 
-  init: DevToolsUtils.makeInfallible(function(event) {
+  init: DevToolsUtils.makeInfallible(function (event) {
     let mm = this.messageManager;
     mm.sendAsyncMessage("debug:netmonitor:" + this.connID + ":newEvent", {
       id: this.id,
@@ -1400,7 +1400,7 @@ NetworkEventActorProxy.prototype = {
   }),
 };
 
-(function() {
+(function () {
   
   let methods = ["addRequestHeaders", "addRequestCookies", "addRequestPostData",
                  "addResponseStart", "addSecurityInfo", "addResponseHeaders",
@@ -1447,7 +1447,7 @@ NetworkMonitorManager.prototype = {
 
 
 
-  onNetMonitorMessage: DevToolsUtils.makeInfallible(function(msg) {
+  onNetMonitorMessage: DevToolsUtils.makeInfallible(function (msg) {
     let { action, appId } = msg.json;
     
     switch (action) {
@@ -1498,7 +1498,7 @@ NetworkMonitorManager.prototype = {
     return new NetworkEventActorProxy(this.messageManager, this.id).init(event);
   }),
 
-  destroy: function() {
+  destroy: function () {
     if (this.messageManager) {
       this.messageManager.removeMessageListener("debug:netmonitor:" + this.id,
                                                 this.onNetMonitorMessage);
@@ -1576,7 +1576,7 @@ ConsoleProgressListener.prototype = {
 
 
 
-  _init: function() {
+  _init: function () {
     if (this._initialized) {
       return;
     }
@@ -1601,7 +1601,7 @@ ConsoleProgressListener.prototype = {
 
 
 
-  startMonitor: function(monitor) {
+  startMonitor: function (monitor) {
     switch (monitor) {
       case this.MONITOR_FILE_ACTIVITY:
         this._fileActivity = true;
@@ -1623,7 +1623,7 @@ ConsoleProgressListener.prototype = {
 
 
 
-  stopMonitor: function(monitor) {
+  stopMonitor: function (monitor) {
     switch (monitor) {
       case this.MONITOR_FILE_ACTIVITY:
         this._fileActivity = false;
@@ -1641,7 +1641,7 @@ ConsoleProgressListener.prototype = {
     }
   },
 
-  onStateChange: function(progress, request, state, status) {
+  onStateChange: function (progress, request, state, status) {
     if (!this.owner) {
       return;
     }
@@ -1661,7 +1661,7 @@ ConsoleProgressListener.prototype = {
 
 
 
-  _checkFileActivity: function(progress, request, state, status) {
+  _checkFileActivity: function (progress, request, state, status) {
     if (!(state & Ci.nsIWebProgressListener.STATE_START)) {
       return;
     }
@@ -1688,7 +1688,7 @@ ConsoleProgressListener.prototype = {
 
 
 
-  _checkLocationChange: function(progress, request, state) {
+  _checkLocationChange: function (progress, request, state) {
     let isStart = state & Ci.nsIWebProgressListener.STATE_START;
     let isStop = state & Ci.nsIWebProgressListener.STATE_STOP;
     let isNetwork = state & Ci.nsIWebProgressListener.STATE_IS_NETWORK;
@@ -1707,15 +1707,15 @@ ConsoleProgressListener.prototype = {
     }
   },
 
-  onLocationChange: function() {},
-  onStatusChange: function() {},
-  onProgressChange: function() {},
-  onSecurityChange: function() {},
+  onLocationChange: function () {},
+  onStatusChange: function () {},
+  onProgressChange: function () {},
+  onSecurityChange: function () {},
 
   
 
 
-  destroy: function() {
+  destroy: function () {
     if (!this._initialized) {
       return;
     }

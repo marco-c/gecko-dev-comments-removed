@@ -43,7 +43,7 @@ EditingSession.prototype = {
 
 
 
-  getPropertyFromRule: function(rule, property) {
+  getPropertyFromRule: function (rule, property) {
     let dummyStyle = this._element.style;
 
     dummyStyle.cssText = rule.cssText;
@@ -56,7 +56,7 @@ EditingSession.prototype = {
 
 
 
-  getProperty: function(property) {
+  getProperty: function (property) {
     
     let div = this._doc.createElement("div");
     div.setAttribute("style", "display: none");
@@ -85,7 +85,7 @@ EditingSession.prototype = {
 
 
 
-  setProperties: function(properties) {
+  setProperties: function (properties) {
     let modifications = this._rules[0].startModifyingProperties();
 
     for (let property of properties) {
@@ -108,7 +108,7 @@ EditingSession.prototype = {
 
 
 
-  revert: function() {
+  revert: function () {
     let modifications = this._rules[0].startModifyingProperties();
 
     for (let [property, value] of this._modifications) {
@@ -122,7 +122,7 @@ EditingSession.prototype = {
     return modifications.apply().then(null, console.error);
   },
 
-  destroy: function() {
+  destroy: function () {
     this._doc = null;
     this._rules = null;
     this._modifications.clear();
@@ -146,7 +146,7 @@ function LayoutView(inspector, win) {
 }
 
 LayoutView.prototype = {
-  init: function() {
+  init: function () {
     this.update = this.update.bind(this);
 
     this.onNewSelection = this.onNewSelection.bind(this);
@@ -266,7 +266,7 @@ LayoutView.prototype = {
     nodeGeometry.addEventListener("click", this.onGeometryButtonClick);
   },
 
-  initBoxModelHighlighter: function() {
+  initBoxModelHighlighter: function () {
     let highlightElts = this.doc.querySelectorAll("#layout-container *[title]");
     this.onHighlightMouseOver = this.onHighlightMouseOver.bind(this);
     this.onHighlightMouseOut = this.onHighlightMouseOut.bind(this);
@@ -280,7 +280,7 @@ LayoutView.prototype = {
   
 
 
-  trackReflows: function() {
+  trackReflows: function () {
     if (!this.reflowFront) {
       let toolbox = this.inspector.toolbox;
       if (toolbox.target.form.reflowActor) {
@@ -298,7 +298,7 @@ LayoutView.prototype = {
   
 
 
-  untrackReflows: function() {
+  untrackReflows: function () {
     if (!this.reflowFront) {
       return;
     }
@@ -310,7 +310,7 @@ LayoutView.prototype = {
   
 
 
-  initEditor: function(element, event, dimension) {
+  initEditor: function (element, event, dimension) {
     let { property } = dimension;
     let session = new EditingSession(this.doc, this.elementRules);
     let initialValue = session.getProperty(property);
@@ -360,7 +360,7 @@ LayoutView.prototype = {
 
 
 
-  isViewVisible: function() {
+  isViewVisible: function () {
     return this.inspector &&
            this.inspector.sidebar.getCurrentTabID() == "layoutview";
   },
@@ -370,7 +370,7 @@ LayoutView.prototype = {
 
 
 
-  isViewVisibleAndNodeValid: function() {
+  isViewVisibleAndNodeValid: function () {
     return this.isViewVisible() &&
            this.inspector.selection.isConnected() &&
            this.inspector.selection.isElementNode();
@@ -379,7 +379,7 @@ LayoutView.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     let highlightElts = this.doc.querySelectorAll("#layout-container *[title]");
 
     for (let element of highlightElts) {
@@ -417,14 +417,14 @@ LayoutView.prototype = {
     }
   },
 
-  onSidebarSelect: function(e, sidebar) {
+  onSidebarSelect: function (e, sidebar) {
     this.setActive(sidebar === "layoutview");
   },
 
   
 
 
-  onNewSelection: function() {
+  onNewSelection: function () {
     let done = this.inspector.updating("layoutview");
     this.onNewNode()
       .then(() => this.hideGeometryEditor())
@@ -437,12 +437,12 @@ LayoutView.prototype = {
   
 
 
-  onNewNode: function() {
+  onNewNode: function () {
     this.setActive(this.isViewVisibleAndNodeValid());
     return this.update();
   },
 
-  onHighlightMouseOver: function(e) {
+  onHighlightMouseOver: function (e) {
     let region = e.target.getAttribute("data-box");
     if (!region) {
       return;
@@ -455,11 +455,11 @@ LayoutView.prototype = {
     });
   },
 
-  onHighlightMouseOut: function() {
+  onHighlightMouseOut: function () {
     this.hideBoxModel();
   },
 
-  onGeometryButtonClick: function({target}) {
+  onGeometryButtonClick: function ({target}) {
     if (target.hasAttribute("checked")) {
       target.removeAttribute("checked");
       this.hideGeometryEditor();
@@ -469,19 +469,19 @@ LayoutView.prototype = {
     }
   },
 
-  onPickerStarted: function() {
+  onPickerStarted: function () {
     this.hideGeometryEditor();
   },
 
-  onMarkupViewLeave: function() {
+  onMarkupViewLeave: function () {
     this.showGeometryEditor(true);
   },
 
-  onMarkupViewNodeHover: function() {
+  onMarkupViewNodeHover: function () {
     this.hideGeometryEditor(false);
   },
 
-  onWillNavigate: function() {
+  onWillNavigate: function () {
     this._geometryEditorHighlighter.release().catch(console.error);
     this._geometryEditorHighlighter = null;
   },
@@ -491,7 +491,7 @@ LayoutView.prototype = {
 
 
 
-  setActive: function(isActive) {
+  setActive: function (isActive) {
     if (isActive === this.isActive) {
       return;
     }
@@ -512,7 +512,7 @@ LayoutView.prototype = {
 
 
 
-  update: function() {
+  update: function () {
     let lastRequest = Task.spawn((function* () {
       if (!this.isViewVisibleAndNodeValid()) {
         return null;
@@ -619,7 +619,7 @@ LayoutView.prototype = {
 
 
 
-  updateSourceRuleTooltip: function(el, property, rules) {
+  updateSourceRuleTooltip: function (el, property, rules) {
     
     let dummyEl = this.doc.createElement("div");
 
@@ -649,7 +649,7 @@ LayoutView.prototype = {
 
 
 
-  showBoxModel: function(options = {}) {
+  showBoxModel: function (options = {}) {
     let toolbox = this.inspector.toolbox;
     let nodeFront = this.inspector.selection.nodeFront;
 
@@ -659,7 +659,7 @@ LayoutView.prototype = {
   
 
 
-  hideBoxModel: function() {
+  hideBoxModel: function () {
     let toolbox = this.inspector.toolbox;
 
     toolbox.highlighterUtils.unhighlight();
@@ -671,7 +671,7 @@ LayoutView.prototype = {
 
 
 
-  showGeometryEditor: function(showOnlyIfActive = false) {
+  showGeometryEditor: function (showOnlyIfActive = false) {
     let toolbox = this.inspector.toolbox;
     let nodeFront = this.inspector.selection.nodeFront;
     let nodeGeometry = this.doc.getElementById("layout-geometry-editor");
@@ -709,7 +709,7 @@ LayoutView.prototype = {
 
 
 
-  hideGeometryEditor: function(updateButton = true) {
+  hideGeometryEditor: function (updateButton = true) {
     if (this._geometryEditorHighlighter) {
       this._geometryEditorHighlighter.hide().catch(console.error);
     }
@@ -736,7 +736,7 @@ LayoutView.prototype = {
     nodeGeometry.style.visibility = isEditable ? "visible" : "hidden";
   }),
 
-  manageOverflowingText: function(span) {
+  manageOverflowingText: function (span) {
     let classList = span.parentNode.classList;
 
     if (classList.contains("layout-left") ||

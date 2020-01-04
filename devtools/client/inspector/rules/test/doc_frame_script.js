@@ -31,7 +31,7 @@ var promise = require("promise");
 
 
 
-addMessageListener("Test:GetRulePropertyValue", function(msg) {
+addMessageListener("Test:GetRulePropertyValue", function (msg) {
   let {name, styleSheetIndex, ruleIndex} = msg.data;
   let value = null;
 
@@ -56,7 +56,7 @@ addMessageListener("Test:GetRulePropertyValue", function(msg) {
 
 
 
-addMessageListener("Test:GetStyleSheetsInfoForNode", function(msg) {
+addMessageListener("Test:GetStyleSheetsInfoForNode", function (msg) {
   let target = msg.objects.target;
   let sheets = [];
 
@@ -83,7 +83,7 @@ addMessageListener("Test:GetStyleSheetsInfoForNode", function(msg) {
 
 
 
-addMessageListener("Test:GetComputedStylePropertyValue", function(msg) {
+addMessageListener("Test:GetComputedStylePropertyValue", function (msg) {
   let {selector, pseudo, name} = msg.data;
   let element = content.document.querySelector(selector);
   let value = content.document.defaultView.getComputedStyle(element, pseudo)
@@ -100,7 +100,7 @@ addMessageListener("Test:GetComputedStylePropertyValue", function(msg) {
 
 
 
-addMessageListener("Test:WaitForComputedStylePropertyValue", function(msg) {
+addMessageListener("Test:WaitForComputedStylePropertyValue", function (msg) {
   let {selector, pseudo, name, expected} = msg.data;
   let element = content.document.querySelector(selector);
   waitForSuccess(() => {

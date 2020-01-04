@@ -60,7 +60,7 @@ function AnimationsTimeline(inspector, serverTraits) {
 exports.AnimationsTimeline = AnimationsTimeline;
 
 AnimationsTimeline.prototype = {
-  init: function(containerEl) {
+  init: function (containerEl) {
     this.win = containerEl.ownerDocument.defaultView;
 
     this.rootWrapperEl = createNode({
@@ -112,7 +112,7 @@ AnimationsTimeline.prototype = {
       this.onWindowResize);
   },
 
-  destroy: function() {
+  destroy: function () {
     this.stopAnimatingScrubber();
     this.unrender();
 
@@ -142,7 +142,7 @@ AnimationsTimeline.prototype = {
 
 
 
-  destroySubComponents: function(name, handlers = []) {
+  destroySubComponents: function (name, handlers = []) {
     for (let component of this[name]) {
       for (let {event, fn} of handlers) {
         component.off(event, fn);
@@ -152,7 +152,7 @@ AnimationsTimeline.prototype = {
     this[name] = [];
   },
 
-  unrender: function() {
+  unrender: function () {
     for (let animation of this.animations) {
       animation.off("changed", this.onAnimationStateChanged);
     }
@@ -167,7 +167,7 @@ AnimationsTimeline.prototype = {
     this.animationsEl.innerHTML = "";
   },
 
-  onWindowResize: function() {
+  onWindowResize: function () {
     
     if (this.rootWrapperEl.offsetWidth === 0) {
       return;
@@ -182,7 +182,7 @@ AnimationsTimeline.prototype = {
     }, TIMELINE_BACKGROUND_RESIZE_DEBOUNCE_TIMER);
   },
 
-  onAnimationSelected: function(e, animation) {
+  onAnimationSelected: function (e, animation) {
     let index = this.animations.indexOf(animation);
     if (index === -1) {
       return;
@@ -208,11 +208,11 @@ AnimationsTimeline.prototype = {
   
 
 
-  onFrameSelected: function(e, {x}) {
+  onFrameSelected: function (e, {x}) {
     this.moveScrubberTo(x, true);
   },
 
-  onScrubberMouseDown: function(e) {
+  onScrubberMouseDown: function (e) {
     this.moveScrubberTo(e.pageX);
     this.win.addEventListener("mouseup", this.onScrubberMouseUp);
     this.win.addEventListener("mouseout", this.onScrubberMouseOut);
@@ -222,11 +222,11 @@ AnimationsTimeline.prototype = {
     e.preventDefault();
   },
 
-  onScrubberMouseUp: function() {
+  onScrubberMouseUp: function () {
     this.cancelTimeHeaderDragging();
   },
 
-  onScrubberMouseOut: function(e) {
+  onScrubberMouseOut: function (e) {
     
     
     if (!this.win.document.contains(e.relatedTarget)) {
@@ -234,17 +234,17 @@ AnimationsTimeline.prototype = {
     }
   },
 
-  cancelTimeHeaderDragging: function() {
+  cancelTimeHeaderDragging: function () {
     this.win.removeEventListener("mouseup", this.onScrubberMouseUp);
     this.win.removeEventListener("mouseout", this.onScrubberMouseOut);
     this.win.removeEventListener("mousemove", this.onScrubberMouseMove);
   },
 
-  onScrubberMouseMove: function(e) {
+  onScrubberMouseMove: function (e) {
     this.moveScrubberTo(e.pageX);
   },
 
-  moveScrubberTo: function(pageX, noOffset) {
+  moveScrubberTo: function (pageX, noOffset) {
     this.stopAnimatingScrubber();
 
     
@@ -271,7 +271,7 @@ AnimationsTimeline.prototype = {
     });
   },
 
-  render: function(animations, documentCurrentTime) {
+  render: function (animations, documentCurrentTime) {
     this.unrender();
 
     this.animations = animations;
@@ -361,20 +361,20 @@ AnimationsTimeline.prototype = {
     }
   },
 
-  isAtLeastOneAnimationPlaying: function() {
+  isAtLeastOneAnimationPlaying: function () {
     return this.animations.some(({state}) => state.playState === "running");
   },
 
-  wasRewound: function() {
+  wasRewound: function () {
     return !this.isAtLeastOneAnimationPlaying() &&
            this.animations.every(({state}) => state.currentTime === 0);
   },
 
-  hasInfiniteAnimations: function() {
+  hasInfiniteAnimations: function () {
     return this.animations.some(({state}) => !state.iterationCount);
   },
 
-  startAnimatingScrubber: function(time) {
+  startAnimatingScrubber: function (time) {
     let isOutOfBounds = time < TimeScale.minStartTime ||
                         time > TimeScale.maxEndTime;
     let isAllPaused = !this.isAtLeastOneAnimationPlaying();
@@ -416,20 +416,20 @@ AnimationsTimeline.prototype = {
     });
   },
 
-  stopAnimatingScrubber: function() {
+  stopAnimatingScrubber: function () {
     if (this.rafID) {
       this.win.cancelAnimationFrame(this.rafID);
       this.rafID = null;
     }
   },
 
-  onAnimationStateChanged: function() {
+  onAnimationStateChanged: function () {
     
     
     this.render(this.animations);
   },
 
-  drawHeaderAndBackground: function() {
+  drawHeaderAndBackground: function () {
     let width = this.timeHeaderEl.offsetWidth;
     let animationDuration = TimeScale.maxEndTime - TimeScale.minStartTime;
     let minTimeInterval = TIME_GRADUATION_MIN_SPACING *

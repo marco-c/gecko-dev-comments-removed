@@ -192,7 +192,7 @@ var AnimationsController = {
     this.destroyed.resolve();
   }),
 
-  startListeners: function() {
+  startListeners: function () {
     
     
     gInspector.selection.on("new-node-front", this.onNewNodeFront);
@@ -200,7 +200,7 @@ var AnimationsController = {
     gToolbox.on("select", this.onPanelVisibilityChange);
   },
 
-  stopListeners: function() {
+  stopListeners: function () {
     gInspector.selection.off("new-node-front", this.onNewNodeFront);
     gInspector.sidebar.off("select", this.onPanelVisibilityChange);
     gToolbox.off("select", this.onPanelVisibilityChange);
@@ -209,7 +209,7 @@ var AnimationsController = {
     }
   },
 
-  isPanelVisible: function() {
+  isPanelVisible: function () {
     return gToolbox.currentToolId === "inspector" &&
            gInspector.sidebar &&
            gInspector.sidebar.getCurrentTabID() == "animationinspector";
@@ -248,7 +248,7 @@ var AnimationsController = {
   
 
 
-  toggleAll: function() {
+  toggleAll: function () {
     if (!this.traits.hasToggleAll) {
       return promise.resolve();
     }
@@ -341,7 +341,7 @@ var AnimationsController = {
     }
   }),
 
-  onAnimationMutations: function(changes) {
+  onAnimationMutations: function (changes) {
     
     
     for (let {type, player} of changes) {
@@ -378,7 +378,7 @@ var AnimationsController = {
     return time;
   },
 
-  destroyAnimationPlayers: function() {
+  destroyAnimationPlayers: function () {
     this.animationPlayers = [];
   }
 };

@@ -17,7 +17,7 @@ loader.lazyGetter(this, "PSEUDO_ELEMENTS", () => {
   return domUtils.getCSSPseudoElementNames();
 });
 
-XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
+XPCOMUtils.defineLazyGetter(this, "domUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
 
@@ -64,7 +64,7 @@ ElementStyle.prototype = {
   
   element: null,
 
-  destroy: function() {
+  destroy: function () {
     if (this.destroyed) {
       return;
     }
@@ -81,7 +81,7 @@ ElementStyle.prototype = {
 
 
 
-  _changed: function() {
+  _changed: function () {
     if (this.onChanged) {
       this.onChanged();
     }
@@ -94,7 +94,7 @@ ElementStyle.prototype = {
 
 
 
-  populate: function() {
+  populate: function () {
     let populated = this.pageStyle.getApplied(this.element, {
       inherited: true,
       matchedSelectors: true,
@@ -147,7 +147,7 @@ ElementStyle.prototype = {
   
 
 
-  _sortRulesForPseudoElement: function() {
+  _sortRulesForPseudoElement: function () {
     this.rules = this.rules.sort((a, b) => {
       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
     });
@@ -164,7 +164,7 @@ ElementStyle.prototype = {
 
 
 
-  _maybeAddRule: function(options, existingRules) {
+  _maybeAddRule: function (options, existingRules) {
     
     
     if (options.rule &&
@@ -206,7 +206,7 @@ ElementStyle.prototype = {
   
 
 
-  markOverriddenAll: function() {
+  markOverriddenAll: function () {
     this.markOverridden();
     for (let pseudo of PSEUDO_ELEMENTS) {
       this.markOverridden(pseudo);
@@ -221,7 +221,7 @@ ElementStyle.prototype = {
 
 
 
-  markOverridden: function(pseudo = "") {
+  markOverridden: function (pseudo = "") {
     
     
     
@@ -320,7 +320,7 @@ ElementStyle.prototype = {
 
 
 
-  _updatePropertyOverridden: function(prop) {
+  _updatePropertyOverridden: function (prop) {
     let overridden = true;
     let dirty = false;
     for (let computedProp of prop.computed) {
@@ -359,7 +359,7 @@ UserProperties.prototype = {
 
 
 
-  getProperty: function(style, name, value) {
+  getProperty: function (style, name, value) {
     let key = this.getKey(style);
     let entry = this.map.get(key, null);
 
@@ -379,7 +379,7 @@ UserProperties.prototype = {
 
 
 
-  setProperty: function(style, bame, userValue) {
+  setProperty: function (style, bame, userValue) {
     let key = this.getKey(style, bame);
     let entry = this.map.get(key, null);
 
@@ -400,17 +400,17 @@ UserProperties.prototype = {
 
 
 
-  contains: function(style, name) {
+  contains: function (style, name) {
     let key = this.getKey(style, name);
     let entry = this.map.get(key, null);
     return !!entry && name in entry;
   },
 
-  getKey: function(style, name) {
+  getKey: function (style, name) {
     return style.actorID + ":" + name;
   },
 
-  clear: function() {
+  clear: function () {
     this.map.clear();
   }
 };

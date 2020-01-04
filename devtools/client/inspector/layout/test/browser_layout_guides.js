@@ -23,7 +23,7 @@ add_task(function* () {
   yield selectNode("div", inspector);
 
   
-  toolbox.highlighter.showBoxModel = function(nodeFront, options) {
+  toolbox.highlighter.showBoxModel = function (nodeFront, options) {
     highlightedNodeFront = nodeFront;
     highlighterOptions = options;
   };

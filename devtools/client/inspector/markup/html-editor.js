@@ -70,7 +70,7 @@ HTMLEditor.prototype = {
 
 
 
-  refresh: function() {
+  refresh: function () {
     let element = this._attachedElement;
 
     if (element) {
@@ -89,7 +89,7 @@ HTMLEditor.prototype = {
 
 
 
-  _attach: function(element) {
+  _attach: function (element) {
     this._detach();
     this._attachedElement = element;
     element.classList.add("html-editor-container");
@@ -99,7 +99,7 @@ HTMLEditor.prototype = {
   
 
 
-  _detach: function() {
+  _detach: function () {
     if (this._attachedElement) {
       this._attachedElement.classList.remove("html-editor-container");
       this._attachedElement = undefined;
@@ -117,7 +117,7 @@ HTMLEditor.prototype = {
 
 
 
-  show: function(element, text) {
+  show: function (element, text) {
     if (this._visible) {
       return;
     }
@@ -141,7 +141,7 @@ HTMLEditor.prototype = {
 
 
 
-  hide: function(shouldCommit) {
+  hide: function (shouldCommit) {
     if (!this._visible) {
       return;
     }
@@ -160,7 +160,7 @@ HTMLEditor.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     this.doc.defaultView.removeEventListener("resize",
       this.refresh, true);
     this.container.removeEventListener("click", this.hide, false);

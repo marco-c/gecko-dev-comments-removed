@@ -29,7 +29,7 @@ const promise = require("promise");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
-XPCOMUtils.defineLazyGetter(this, "_strings", function() {
+XPCOMUtils.defineLazyGetter(this, "_strings", function () {
   return Services.strings.createBundle(
     "chrome://devtools-shared/locale/styleinspector.properties");
 });
@@ -77,7 +77,7 @@ function RuleEditor(ruleView, rule) {
 }
 
 RuleEditor.prototype = {
-  destroy: function() {
+  destroy: function () {
     this.rule.domRule.off("location-changed");
   },
 
@@ -93,7 +93,7 @@ RuleEditor.prototype = {
     return trait && !this.rule.elementStyle.element.isAnonymous;
   },
 
-  _create: function() {
+  _create: function () {
     this.element = this.doc.createElementNS(HTML_NS, "div");
     this.element.className = "ruleview-rule theme-separator";
     this.element.setAttribute("uneditable", !this.isEditable);
@@ -108,7 +108,7 @@ RuleEditor.prototype = {
     this.source = createChild(this.element, "div", {
       class: "ruleview-rule-source theme-link"
     });
-    this.source.addEventListener("click", function() {
+    this.source.addEventListener("click", function () {
       if (this.source.hasAttribute("unselectable")) {
         return;
       }
@@ -211,11 +211,11 @@ RuleEditor.prototype = {
 
 
 
-  _locationChanged: function() {
+  _locationChanged: function () {
     this.updateSourceLink();
   },
 
-  updateSourceLink: function() {
+  updateSourceLink: function () {
     let sourceLabel = this.element.querySelector(".ruleview-rule-source-label");
     let title = this.rule.title;
     let sourceHref = (this.rule.sheet && this.rule.sheet.href) ?
@@ -267,7 +267,7 @@ RuleEditor.prototype = {
   
 
 
-  populate: function() {
+  populate: function () {
     
     while (this.selectorText.hasChildNodes()) {
       this.selectorText.removeChild(this.selectorText.lastChild);
@@ -350,7 +350,7 @@ RuleEditor.prototype = {
 
 
 
-  addProperty: function(name, value, priority, enabled, siblingProp) {
+  addProperty: function (name, value, priority, enabled, siblingProp) {
     let prop = this.rule.createProperty(name, value, priority, enabled,
       siblingProp);
     let index = this.rule.textProps.indexOf(prop);
@@ -382,7 +382,7 @@ RuleEditor.prototype = {
 
 
 
-  addProperties: function(properties, siblingProp) {
+  addProperties: function (properties, siblingProp) {
     if (!properties || !properties.length) {
       return;
     }
@@ -408,7 +408,7 @@ RuleEditor.prototype = {
 
 
 
-  newProperty: function() {
+  newProperty: function () {
     
     if (!this.closeBrace.hasAttribute("tabindex")) {
       return;
@@ -452,7 +452,7 @@ RuleEditor.prototype = {
 
 
 
-  _onNewProperty: function(value, commit) {
+  _onNewProperty: function (value, commit) {
     if (!value || !commit) {
       return;
     }
@@ -474,7 +474,7 @@ RuleEditor.prototype = {
 
 
 
-  _newPropertyDestroy: function() {
+  _newPropertyDestroy: function () {
     
     this.closeBrace.setAttribute("tabindex", "0");
 
@@ -502,7 +502,7 @@ RuleEditor.prototype = {
 
 
 
-  _onSelectorDone: function(value, commit, direction) {
+  _onSelectorDone: function (value, commit, direction) {
     if (!commit || this.isEditing || value === "" ||
         value === this.rule.selectorText) {
       return;
@@ -566,7 +566,7 @@ RuleEditor.prototype = {
 
 
 
-  _moveSelectorFocus: function(direction) {
+  _moveSelectorFocus: function (direction) {
     if (!direction || direction === Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
       return;
     }

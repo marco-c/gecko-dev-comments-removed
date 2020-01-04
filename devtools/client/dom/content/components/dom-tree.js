@@ -39,7 +39,7 @@ var DomTree = React.createClass({
 
 
 
-  onFilter: function(object) {
+  onFilter: function (object) {
     if (!this.props.filter) {
       return true;
     }
@@ -50,7 +50,7 @@ var DomTree = React.createClass({
   
 
 
-  render: function() {
+  render: function () {
     let columns = [{
       "id": "value"
     }];

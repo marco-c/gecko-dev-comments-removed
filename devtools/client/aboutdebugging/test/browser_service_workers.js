@@ -41,14 +41,14 @@ add_task(function* () {
     { childList: true });
 
   
-  let frameScript = function() {
+  let frameScript = function () {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function(registration) {
-      registration.unregister().then(function() {
+    sw.then(function (registration) {
+      registration.unregister().then(function () {
         sendAsyncMessage("sw-unregistered");
       },
-      function(e) {
+      function (e) {
         dump("SW not unregistered; " + e + "\n");
       });
     });

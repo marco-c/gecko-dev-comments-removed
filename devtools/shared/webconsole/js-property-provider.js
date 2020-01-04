@@ -462,11 +462,11 @@ var JSObjectSupport = {
     }
   },
 
-  getProperties: function(obj) {
+  getProperties: function (obj) {
     return Object.getOwnPropertyNames(obj);
   },
 
-  getProperty: function() {
+  getProperty: function () {
     
     throw new Error("Unimplemented!");
   },
@@ -480,11 +480,11 @@ var DebuggerObjectSupport = {
     }
   },
 
-  getProperties: function(obj) {
+  getProperties: function (obj) {
     return obj.getOwnPropertyNames();
   },
 
-  getProperty: function(obj, name, rootObj) {
+  getProperty: function (obj, name, rootObj) {
     
     throw new Error("Unimplemented!");
   },
@@ -498,7 +498,7 @@ var DebuggerEnvironmentSupport = {
     }
   },
 
-  getProperties: function(obj) {
+  getProperties: function (obj) {
     let names = obj.names();
 
     
@@ -512,7 +512,7 @@ var DebuggerEnvironmentSupport = {
     return names;
   },
 
-  getProperty: function(obj, name) {
+  getProperty: function (obj, name) {
     let result;
     
     
