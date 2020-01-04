@@ -53,7 +53,12 @@ public:
            nsSecurityFlags aSecurityFlags,
            nsContentPolicyType aContentPolicyType);
 
+  
   already_AddRefed<nsILoadInfo> Clone() const;
+  
+  
+  
+  already_AddRefed<nsILoadInfo> CloneForNewRequest() const;
 
 private:
   
@@ -88,6 +93,7 @@ private:
   void SetWithCredentialsSecFlag();
   friend class ::nsXMLHttpRequest;
 
+  
   nsCOMPtr<nsIPrincipal>           mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal>           mTriggeringPrincipal;
   nsWeakPtr                        mLoadingContext;
