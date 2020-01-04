@@ -26,9 +26,14 @@
 
 
 class nsIDateTimeFormat : public nsISupports {
+protected:
+  nsIDateTimeFormat() {}
+  virtual ~nsIDateTimeFormat() {}
 
 public: 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDATETIMEFORMAT_IID)
+
+  static already_AddRefed<nsIDateTimeFormat> Create();
 
   
   NS_IMETHOD FormatTime(nsILocale* locale, 
