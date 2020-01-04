@@ -5,7 +5,7 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_inspector_outerhtml.html";
+const TEST_URL = URL_ROOT + "doc_inspector_outerhtml.html";
 
 add_task(function *() {
   let { inspector } = yield openInspectorForURL(TEST_URL);

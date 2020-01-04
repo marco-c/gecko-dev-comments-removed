@@ -6,7 +6,7 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_inspector_highlighter_dom.html";
+const TEST_URL = URL_ROOT + "doc_inspector_highlighter_dom.html";
 
 add_task(function*() {
   let {inspector, toolbox, testActor} = yield openInspectorForURL(TEST_URL);

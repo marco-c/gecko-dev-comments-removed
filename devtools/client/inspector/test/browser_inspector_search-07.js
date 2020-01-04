@@ -5,7 +5,7 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_inspector_search-svg.html";
+const TEST_URL = URL_ROOT + "doc_inspector_search-svg.html";
 
 
 

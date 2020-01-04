@@ -6,7 +6,7 @@
 
 
 
-const TEST_URI = TEST_URL_ROOT + "doc_inspector_infobar_01.html";
+const TEST_URI = URL_ROOT + "doc_inspector_infobar_01.html";
 
 add_task(function*() {
   let {inspector, testActor} = yield openInspectorForURL(TEST_URI);

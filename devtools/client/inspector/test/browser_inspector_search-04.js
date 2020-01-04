@@ -8,8 +8,8 @@
 const IFRAME_SRC = "doc_inspector_search.html";
 const TEST_URL = "data:text/html;charset=utf-8," +
                  "<div class=\"c1 c2\">" +
-                 "<iframe src=\"" + TEST_URL_ROOT + IFRAME_SRC + "\"></iframe>" +
-                 "<iframe src=\"" + TEST_URL_ROOT + IFRAME_SRC + "\"></iframe>";
+                 "<iframe src=\"" + URL_ROOT + IFRAME_SRC + "\"></iframe>" +
+                 "<iframe src=\"" + URL_ROOT + IFRAME_SRC + "\"></iframe>";
 
 
 

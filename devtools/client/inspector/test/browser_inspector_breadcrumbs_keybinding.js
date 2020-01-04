@@ -5,7 +5,7 @@
 
 
 
-const TEST_URI = TEST_URL_ROOT + "doc_inspector_breadcrumbs.html";
+const TEST_URI = URL_ROOT + "doc_inspector_breadcrumbs.html";
 const TEST_DATA = [{
   desc: "Pressing left should select the parent <body>",
   key: "VK_LEFT",

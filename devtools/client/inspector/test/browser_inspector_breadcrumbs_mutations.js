@@ -7,7 +7,7 @@
 
 
 
-const TEST_URI = TEST_URL_ROOT + "doc_inspector_breadcrumbs.html";
+const TEST_URI = URL_ROOT + "doc_inspector_breadcrumbs.html";
 
 
 

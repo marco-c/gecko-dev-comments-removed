@@ -5,7 +5,7 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_inspector_menu.html";
+const TEST_URL = URL_ROOT + "doc_inspector_menu.html";
 const COPY_ITEMS_TEST_DATA = [
   {
     desc: "copy inner html",

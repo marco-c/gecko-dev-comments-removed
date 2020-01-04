@@ -6,8 +6,8 @@
 
 
 
-var PAGE_1 = TEST_URL_ROOT + "doc_inspector_select-last-selected-01.html";
-var PAGE_2 = TEST_URL_ROOT + "doc_inspector_select-last-selected-02.html";
+var PAGE_1 = URL_ROOT + "doc_inspector_select-last-selected-01.html";
+var PAGE_2 = URL_ROOT + "doc_inspector_select-last-selected-02.html";
 
 
 

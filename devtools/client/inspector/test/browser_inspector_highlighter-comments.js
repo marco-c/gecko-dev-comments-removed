@@ -15,7 +15,7 @@ thisTestLeaksUncaughtRejectionsAndShouldBeFixed("false");
 
 
 
-const TEST_PAGE = TEST_URL_ROOT +
+const TEST_PAGE = URL_ROOT +
   "doc_inspector_highlighter-comments.html";
 
 add_task(function* () {

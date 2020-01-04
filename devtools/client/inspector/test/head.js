@@ -4,10 +4,9 @@
 
 "use strict";
 
-var Cu = Components.utils;
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var CC = Components.Constructor;
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
 
 
 
@@ -17,24 +16,16 @@ var CC = Components.Constructor;
 
 
 
-var TEST_URL_ROOT = "http://example.com/browser/devtools/client/inspector/test/";
 var ROOT_TEST_DIR = getRootDirectory(gTestPath);
 
 
-waitForExplicitFinish();
-
-var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var {TargetFactory} = require("devtools/client/framework/target");
-var {console} = Cu.import("resource://gre/modules/Console.jsm", {});
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var promise = require("promise");
-
-
 var testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
-Services.scriptloader.loadSubScript(testDir + "../../../commandline/test/helpers.js", this);
+Services.scriptloader.loadSubScript(
+  testDir + "../../../commandline/test/helpers.js", this);
 
 
-Services.scriptloader.loadSubScript(testDir + "../../../shared/test/test-actor-registry.js", this);
+Services.scriptloader.loadSubScript(
+  testDir + "../../../shared/test/test-actor-registry.js", this);
 
 DevToolsUtils.testing = true;
 registerCleanupFunction(() => {
@@ -59,25 +50,6 @@ registerCleanupFunction(function*() {
   while (gBrowser.tabs.length > 1) {
     gBrowser.removeCurrentTab();
   }
-});
-
-
-
-
-
-
-var addTab = Task.async(function* (url) {
-  info("Adding a new tab with URL: '" + url + "'");
-
-  window.focus();
-
-  let tab = gBrowser.selectedTab = gBrowser.addTab(url);
-  let browser = tab.linkedBrowser;
-
-  yield once(browser, "load", true);
-  info("URL '" + url + "' loading complete");
-
-  return tab;
 });
 
 var navigateTo = function (toolbox, url) {
@@ -162,7 +134,7 @@ var selectNode = Task.async(function*(selector, inspector, reason="test") {
 
 var openInspectorForURL = Task.async(function*(url, hostType) {
   let tab = yield addTab(url);
-  let { inspector, toolbox, testActor } = yield openInspector(null, hostType);
+  let { inspector, toolbox, testActor } = yield openInspector(hostType);
   return { tab, inspector, toolbox, testActor };
 });
 
@@ -171,24 +143,10 @@ var openInspectorForURL = Task.async(function*(url, hostType) {
 
 
 
-
-
-
-var openInspector = Task.async(function*(cb, hostType) {
+var openInspector = Task.async(function*(hostType) {
   info("Opening the inspector");
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
 
-  let toolbox = gDevTools.getToolbox(target);
-  if (toolbox) {
-    if (toolbox.getPanel("inspector")) {
-      info("Toolbox and inspector already open");
-      throw new Error("Inspector is already opened, please use getActiveInspector");
-    }
-  }
-
-  info("Opening the toolbox");
-  toolbox = yield gDevTools.showToolbox(target, "inspector", hostType);
-  yield waitForToolboxFrameFocus(toolbox);
+  let toolbox = yield openToolboxForTab(gBrowser.selectedTab, "inspector", hostType);
   let inspector = toolbox.getPanel("inspector");
 
   info("Waiting for the inspector to update");
@@ -197,25 +155,8 @@ var openInspector = Task.async(function*(cb, hostType) {
   yield registerTestActor(toolbox.target.client);
   let testActor = yield getTestActor(toolbox);
 
-  return {
-    toolbox: toolbox,
-    inspector: inspector,
-    testActor: testActor
-  };
+  return {toolbox, inspector, testActor};
 });
-
-
-
-
-
-
-function waitForToolboxFrameFocus(toolbox) {
-  info("Making sure that the toolbox's frame is focused");
-  let def = promise.defer();
-  let win = toolbox.frame.contentWindow;
-  waitForFocus(def.resolve, win);
-  return def.promise;
-}
 
 function getActiveInspector() {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
@@ -256,40 +197,13 @@ var getNodeFrontInFrame = Task.async(function*(selector, frameSelector,
   return inspector.walker.querySelector(nodes[0], selector);
 });
 
-function synthesizeKeyFromKeyTag(aKeyId, aDocument = null) {
-  let document = aDocument || document;
-  let key = document.getElementById(aKeyId);
-  isnot(key, null, "Successfully retrieved the <key> node");
-
-  let modifiersAttr = key.getAttribute("modifiers");
-
-  let name = null;
-
-  if (key.getAttribute("keycode"))
-    name = key.getAttribute("keycode");
-  else if (key.getAttribute("key"))
-    name = key.getAttribute("key");
-
-  isnot(name, null, "Successfully retrieved keycode/key");
-
-  let modifiers = {
-    shiftKey: modifiersAttr.match("shift"),
-    ctrlKey: modifiersAttr.match("ctrl"),
-    altKey: modifiersAttr.match("alt"),
-    metaKey: modifiersAttr.match("meta"),
-    accelKey: modifiersAttr.match("accel")
-  }
-
-  EventUtils.synthesizeKey(name, modifiers);
-}
-
 var focusSearchBoxUsingShortcut = Task.async(function* (panelWin, callback) {
   info("Focusing search box");
   let searchBox = panelWin.document.getElementById("inspector-searchbox");
   let focused = once(searchBox, "focus");
 
   panelWin.focus();
-  synthesizeKeyFromKeyTag("nodeSearchKey", panelWin.document);
+  synthesizeKeyFromKeyTag(panelWin.document.getElementById("nodeSearchKey"));
 
   yield focused;
 
@@ -387,38 +301,6 @@ function mouseLeaveMarkupView(inspector) {
 
   return def.promise;
 }
-
-
-
-
-
-
-
-
-
-function once(target, eventName, useCapture=false) {
-  info("Waiting for event: '" + eventName + "' on " + target + ".");
-
-  let deferred = promise.defer();
-
-  for (let [add, remove] of [
-    ["addEventListener", "removeEventListener"],
-    ["addListener", "removeListener"],
-    ["on", "off"]
-  ]) {
-    if ((add in target) && (remove in target)) {
-      target[add](eventName, function onEvent(...aArgs) {
-        info("Got event: '" + eventName + "' on " + target + ".");
-        target[remove](eventName, onEvent, useCapture);
-        deferred.resolve.apply(deferred, aArgs);
-      }, useCapture);
-      break;
-    }
-  }
-
-  return deferred.promise;
-}
-
 
 
 

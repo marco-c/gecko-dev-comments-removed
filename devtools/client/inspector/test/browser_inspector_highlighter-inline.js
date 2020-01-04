@@ -9,7 +9,7 @@ requestLongerTimeout(2);
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_inspector_highlighter_inline.html";
+const TEST_URL = URL_ROOT + "doc_inspector_highlighter_inline.html";
 const TEST_DATA = [
   "body",
   "h1",

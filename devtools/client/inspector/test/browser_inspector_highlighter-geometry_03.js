@@ -7,7 +7,7 @@
 
 
 
-const TEST_URL = TEST_URL_ROOT + "doc_inspector_highlighter-geometry_01.html";
+const TEST_URL = URL_ROOT + "doc_inspector_highlighter-geometry_01.html";
 const ID = "geometry-editor-";
 const PROPS = ["left", "right", "top", "bottom"];
 

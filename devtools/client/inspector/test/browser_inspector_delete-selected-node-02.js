@@ -9,7 +9,7 @@
 
 
 
-const TEST_PAGE = TEST_URL_ROOT +
+const TEST_PAGE = URL_ROOT +
   "doc_inspector_delete-selected-node-02.html";
 
 add_task(function* () {

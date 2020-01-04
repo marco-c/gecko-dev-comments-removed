@@ -5,7 +5,7 @@
 
 
 
-const TEST_URI = TEST_URL_ROOT + "doc_inspector_gcli-inspect-command.html";
+const TEST_URI = URL_ROOT + "doc_inspector_gcli-inspect-command.html";
 
 add_task(function* () {
   return helpers.addTabWithToolbar(TEST_URI, function(options) {
