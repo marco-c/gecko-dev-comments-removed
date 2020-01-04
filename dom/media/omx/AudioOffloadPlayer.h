@@ -78,27 +78,27 @@ public:
   ~AudioOffloadPlayer();
 
   
-  virtual void SetSource(const android::sp<MediaSource> &aSource) override;
+  void SetSource(const android::sp<MediaSource> &aSource) override;
 
   
   
-  virtual status_t Start(bool aSourceAlreadyStarted = false) override;
+  status_t Start(bool aSourceAlreadyStarted = false) override;
 
-  virtual status_t ChangeState(MediaDecoder::PlayState aState) override;
+  status_t ChangeState(MediaDecoder::PlayState aState) override;
 
-  virtual void SetVolume(double aVolume) override;
+  void SetVolume(double aVolume) override;
 
-  virtual int64_t GetMediaTimeUs() override;
-
-  
-  virtual void SetElementVisibility(bool aIsVisible) override;;
+  int64_t GetMediaTimeUs() override;
 
   
-  
-  
-  virtual MediaDecoderOwner::NextFrameStatus GetNextFrameStatus() override;
+  void SetElementVisibility(bool aIsVisible) override;;
 
-  virtual RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget) override;
+  
+  
+  
+  MediaDecoderOwner::NextFrameStatus GetNextFrameStatus() override;
+
+  RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget) override;
 
   void TimeUpdate();
 

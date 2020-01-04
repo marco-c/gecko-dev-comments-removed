@@ -28,7 +28,7 @@ class RtspOmxReader : public MediaOmxReader
 protected:
   
   nsresult InitOmxDecoder() final override;
-  virtual void EnsureActive() override;
+  void EnsureActive() override;
 
 public:
   RtspOmxReader(AbstractMediaDecoder* aDecoder)
@@ -43,13 +43,12 @@ public:
     MOZ_ASSERT(mRtspResource);
   }
 
-  virtual ~RtspOmxReader() override {
+  virtual ~RtspOmxReader() {
     MOZ_COUNT_DTOR(RtspOmxReader);
   }
 
   
-  virtual RefPtr<SeekPromise>
-  Seek(int64_t aTime, int64_t aEndTime) final override;
+  RefPtr<SeekPromise> Seek(int64_t aTime, int64_t aEndTime) final override;
 
   
   
@@ -60,16 +59,15 @@ public:
   
   
   
-  virtual media::TimeIntervals GetBuffered() final override {
+  media::TimeIntervals GetBuffered() final override {
     return media::TimeIntervals::Invalid();
   }
 
-  virtual void SetIdle() override;
+  void SetIdle() override;
 
-  virtual RefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata()
-    override;
+  RefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata() override;
 
-  virtual void HandleResourceAllocated() override;
+  void HandleResourceAllocated() override;
 
 private:
   
