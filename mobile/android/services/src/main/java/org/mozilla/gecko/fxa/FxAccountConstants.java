@@ -41,17 +41,7 @@ public class FxAccountConstants {
 
   public static final String ACCOUNT_PICKLE_FILENAME = "fxa.account.json";
 
-  
 
-
-
-
-
-
-
-
-
-  public static final String OLD_SYNC_ACCOUNT_PICKLE_FILENAME = "old.sync.account.json";
 
   
 
