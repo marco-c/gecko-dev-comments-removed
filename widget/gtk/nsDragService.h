@@ -59,6 +59,10 @@ public:
     NS_DECL_NSIOBSERVER
 
     
+    virtual nsresult InvokeDragSessionImpl(nsISupportsArray* anArrayTransferables,
+                                           nsIScriptableRegion* aRegion,
+                                           uint32_t aActionType) override;
+    
     NS_IMETHOD InvokeDragSession (nsIDOMNode *aDOMNode,
                                   nsISupportsArray * anArrayTransferables,
                                   nsIScriptableRegion * aRegion,

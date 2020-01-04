@@ -225,7 +225,15 @@ nsBaseDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
   
   nsIPresShell::ClearMouseCapture(nullptr);
 
-  return NS_OK;
+  nsresult rv = InvokeDragSessionImpl(aTransferableArray,
+                                      aDragRgn, aActionType);
+
+  if (NS_FAILED(rv)) {
+    mSourceNode = nullptr;
+    mSourceDocument = nullptr;
+  }
+
+  return rv;
 }
 
 NS_IMETHODIMP

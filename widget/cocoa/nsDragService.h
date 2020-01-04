@@ -31,8 +31,10 @@ public:
   nsDragService();
 
   
-  NS_IMETHOD InvokeDragSession(nsIDOMNode *aDOMNode, nsISupportsArray * anArrayTransferables,
-                               nsIScriptableRegion * aRegion, uint32_t aActionType);
+  virtual nsresult InvokeDragSessionImpl(nsISupportsArray* anArrayTransferables,
+                                         nsIScriptableRegion* aRegion,
+                                         uint32_t aActionType);
+  
   NS_IMETHOD EndDragSession(bool aDoneDrag);
 
   
