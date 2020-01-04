@@ -136,7 +136,8 @@ enum class DeviceResetReason
 
 enum class ForcedDeviceResetReason
 {
-  OPENSHAREDHANDLE = 0
+  OPENSHAREDHANDLE = 0,
+  COMPOSITOR_UPDATED,
 };
 
 class gfxPlatform {
@@ -632,6 +633,8 @@ public:
     mozilla::layers::LayersBackend GetCompositorBackend() const {
       return mCompositorBackend;
     }
+
+    virtual void CompositorUpdated() {}
 
     
     
