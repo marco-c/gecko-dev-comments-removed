@@ -600,10 +600,6 @@ protected:
 
   
   
-  bool IsVideoDecodeSuspended() const;
-
-  
-  
   bool IsAudioDecoding();
   bool IsVideoDecoding();
 
