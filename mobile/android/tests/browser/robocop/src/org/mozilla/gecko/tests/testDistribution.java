@@ -13,6 +13,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Locale;
 import java.util.jar.JarInputStream;
+import java.util.NoSuchElementException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -137,7 +138,14 @@ public class testDistribution extends ContentProviderTest {
         
         clearDistributionPref();
         setTestLocale("en-US");
-        initDistribution(mockPackagePath);
+        try {
+            initDistribution(mockPackagePath);
+        } catch(NoSuchElementException e) {
+            
+            Log.w(LOGTAG, "NoSuchElementException on first initDistribution -- will retry");
+            mSolo.sleep(4000);
+            initDistribution(mockPackagePath);
+        }
         checkPreferences();
         checkAndroidPreferences();
         checkLocalizedPreferences("en-US");
