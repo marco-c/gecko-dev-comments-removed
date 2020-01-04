@@ -5770,14 +5770,17 @@ BytecodeEmitter::emitCStyleFor(ParseNode* pn, ptrdiff_t top)
 bool
 BytecodeEmitter::emitFor(ParseNode* pn, ptrdiff_t top)
 {
+    if (pn->pn_left->isKind(PNK_FORHEAD))
+        return emitCStyleFor(pn, top);
+
+    if (!updateLineNumberNotes(pn->pn_pos.begin))
+        return false;
+
     if (pn->pn_left->isKind(PNK_FORIN))
         return emitForIn(pn, top);
 
-    if (pn->pn_left->isKind(PNK_FOROF))
-        return emitForOf(StmtType::FOR_OF_LOOP, pn, top);
-
-    MOZ_ASSERT(pn->pn_left->isKind(PNK_FORHEAD));
-    return emitCStyleFor(pn, top);
+    MOZ_ASSERT(pn->pn_left->isKind(PNK_FOROF));
+    return emitForOf(StmtType::FOR_OF_LOOP, pn, top);
 }
 
 MOZ_NEVER_INLINE bool
@@ -6020,6 +6023,20 @@ BytecodeEmitter::emitWhile(ParseNode* pn, ptrdiff_t top)
 
 
 
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (parser->tokenStream.srcCoords.lineNum(pn->pn_pos.begin) ==
+        parser->tokenStream.srcCoords.lineNum(pn->pn_pos.end) &&
+        !updateSourceCoordNotes(pn->pn_pos.begin))
+        return false;
 
     LoopStmtInfo stmtInfo(cx);
     pushLoopStatement(&stmtInfo, StmtType::WHILE_LOOP, top);
@@ -7548,7 +7565,10 @@ BytecodeEmitter::emitTree(ParseNode* pn)
     pn->pn_offset = top;
 
     
-    if (!updateLineNumberNotes(pn->pn_pos.begin))
+
+
+    if (pn->getKind() != PNK_WHILE && pn->getKind() != PNK_FOR &&
+        !updateLineNumberNotes(pn->pn_pos.begin))
         return false;
 
     switch (pn->getKind()) {
