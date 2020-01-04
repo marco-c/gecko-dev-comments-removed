@@ -3,6 +3,7 @@
 
 
 FRAME_ID(BRFrame)
+FRAME_ID(DetailsFrame)
 FRAME_ID(nsAutoRepeatBoxFrame)
 FRAME_ID(nsBCTableCellFrame)
 FRAME_ID(nsBackdropFrame)
