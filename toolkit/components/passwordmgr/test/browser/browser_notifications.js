@@ -1,8 +1,4 @@
-
-
-
 Cu.import("resource://testing-common/ContentTaskUtils.jsm", this);
-Cu.import("resource://testing-common/LoginTestUtils.jsm", this);
 
 
 
