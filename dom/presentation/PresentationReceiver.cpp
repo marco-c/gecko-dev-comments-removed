@@ -37,11 +37,10 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(PresentationReceiver)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
  already_AddRefed<PresentationReceiver>
-PresentationReceiver::Create(nsPIDOMWindowInner* aWindow,
-                             const nsAString& aSessionId)
+PresentationReceiver::Create(nsPIDOMWindowInner* aWindow)
 {
   RefPtr<PresentationReceiver> receiver = new PresentationReceiver(aWindow);
-  return NS_WARN_IF(!receiver->Init(aSessionId)) ? nullptr : receiver.forget();
+  return NS_WARN_IF(!receiver->Init()) ? nullptr : receiver.forget();
 }
 
 PresentationReceiver::PresentationReceiver(nsPIDOMWindowInner* aWindow)
@@ -55,28 +54,36 @@ PresentationReceiver::~PresentationReceiver()
 }
 
 bool
-PresentationReceiver::Init(const nsAString& aSessionId)
+PresentationReceiver::Init()
 {
   if (NS_WARN_IF(!GetOwner())) {
     return false;
   }
   mWindowId = GetOwner()->WindowID();
 
-  if (!aSessionId.IsEmpty()) {
-    nsresult rv = NotifySessionConnect(mWindowId, aSessionId);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return false;
-    }
-  }
-
-  
   nsCOMPtr<nsIPresentationService> service =
     do_GetService(PRESENTATION_SERVICE_CONTRACTID);
   if (NS_WARN_IF(!service)) {
     return false;
   }
 
-  nsresult rv = service->RegisterRespondingListener(mWindowId, this);
+  
+  
+  nsAutoString sessionId;
+  nsresult rv = service->GetExistentSessionIdAtLaunch(mWindowId, sessionId);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  if (!sessionId.IsEmpty()) {
+    rv = NotifySessionConnect(mWindowId, sessionId);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return false;
+    }
+  }
+
+  
+  rv = service->RegisterRespondingListener(mWindowId, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
