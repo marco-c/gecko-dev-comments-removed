@@ -23,13 +23,13 @@ enum class KeySizeStatus {
 };
 
 
-enum class SignatureDigestStatus {
+enum class SHA1ModeResult {
   NeverChecked = 0,
-  GoodAlgorithmsOnly = 1,
-  WeakEECert = 2,
-  WeakCACert = 3,
-  WeakCAAndEE = 4,
-  AlreadyBad = 5,
+  SucceededWithoutSHA1 = 1,
+  SucceededWithSHA1Before2016 = 2,
+  SucceededWithImportedRoot = 3,
+  SucceededWithSHA1 = 4,
+  Failed = 5,
 };
 
 class PinningTelemetryInfo
@@ -73,13 +73,13 @@ public:
                        mozilla::pkix::Time time,
                        void* pinArg,
                        const char* hostname,
+                ScopedCERTCertList& builtChain,
                        Flags flags = 0,
         const SECItem* stapledOCSPResponse = nullptr,
-       ScopedCERTCertList* builtChain = nullptr,
        SECOidTag* evOidPolicy = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
-       SignatureDigestStatus* sigDigestStatus = nullptr,
+       SHA1ModeResult* sha1ModeResult = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr);
 
   SECStatus VerifySSLServerCert(
@@ -88,13 +88,13 @@ public:
                     mozilla::pkix::Time time,
         void* pinarg,
                     const char* hostname,
-                    bool saveIntermediatesInPermanentDatabase = false,
-                    Flags flags = 0,
-    ScopedCERTCertList* builtChain = nullptr,
+             ScopedCERTCertList& builtChain,
+        bool saveIntermediatesInPermanentDatabase = false,
+        Flags flags = 0,
     SECOidTag* evOidPolicy = nullptr,
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,
-    SignatureDigestStatus* sigDigestStatus = nullptr,
+    SHA1ModeResult* sha1ModeResult = nullptr,
     PinningTelemetryInfo* pinningTelemetryInfo = nullptr);
 
   enum PinningMode {
@@ -107,7 +107,8 @@ public:
   enum class SHA1Mode {
     Allowed = 0,
     Forbidden = 1,
-    OnlyBefore2016 = 2
+    Before2016 = 2,
+    ImportedRoot = 3,
   };
 
   enum OcspDownloadConfig {
@@ -134,6 +135,12 @@ public:
 
 private:
   OCSPCache mOCSPCache;
+
+  
+  
+  
+  
+  bool SHA1ModeMoreRestrictiveThanGivenMode(SHA1Mode mode);
 };
 
 void InitCertVerifierLog();

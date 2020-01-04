@@ -103,9 +103,11 @@ nsUsageArrayHelper::check(uint32_t previousCheckResult,
     MOZ_CRASH("unknown cert usage passed to check()");
   }
 
+  ScopedCERTCertList unusedBuiltChain;
   SECStatus rv = certVerifier->VerifyCert(mCert, aCertUsage, time,
                                           nullptr ,
-                                          nullptr , flags);
+                                          nullptr ,
+                                          unusedBuiltChain, flags);
 
   if (rv == SECSuccess) {
     typestr.Append(suffix);

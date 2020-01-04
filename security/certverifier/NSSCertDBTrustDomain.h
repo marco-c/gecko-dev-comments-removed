@@ -41,13 +41,6 @@ char* DefaultServerNicknameForCert(CERTCertificate* cert);
 
 void SaveIntermediateCerts(const ScopedCERTCertList& certList);
 
-enum SignatureDigestOption {
-  AcceptAllAlgorithms,
-  DisableSHA1ForEE,
-  DisableSHA1ForCA,
-  DisableSHA1Everywhere,
-};
-
 class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain
 {
 
@@ -69,11 +62,10 @@ public:
                        CertVerifier::PinningMode pinningMode,
                        unsigned int minRSABits,
                        ValidityCheckingMode validityCheckingMode,
-                       SignatureDigestOption signatureDigestOption,
                        CertVerifier::SHA1Mode sha1Mode,
+                       ScopedCERTCertList& builtChain,
            PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
-           const char* hostname = nullptr,
-       ScopedCERTCertList* builtChain = nullptr);
+           const char* hostname = nullptr);
 
   virtual Result FindIssuer(mozilla::pkix::Input encodedIssuerName,
                             IssuerChecker& checker,
@@ -156,11 +148,10 @@ private:
   CertVerifier::PinningMode mPinningMode;
   const unsigned int mMinRSABits;
   ValidityCheckingMode mValidityCheckingMode;
-  SignatureDigestOption mSignatureDigestOption;
   CertVerifier::SHA1Mode mSHA1Mode;
+  ScopedCERTCertList& mBuiltChain; 
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname; 
-  ScopedCERTCertList* mBuiltChain; 
   nsCOMPtr<nsICertBlocklist> mCertBlocklist;
   CertVerifier::OCSPStaplingStatus mOCSPStaplingStatus;
 };

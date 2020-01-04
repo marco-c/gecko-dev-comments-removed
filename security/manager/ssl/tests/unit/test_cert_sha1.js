@@ -62,6 +62,9 @@ function run_test() {
   
   
   
+  
+  
+  
 
   
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 0);
@@ -86,4 +89,13 @@ function run_test() {
   checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
   checkIntermediate(certFromFile("int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
   checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+
+  
+  
+  Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 3);
+  checkIntermediate(certFromFile("int-pre"), PRErrorCodeSuccess);
+  checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
+  checkEndEntity(certFromFile("ee-post_int-pre"), PRErrorCodeSuccess);
+  checkIntermediate(certFromFile("int-post"), PRErrorCodeSuccess);
+  checkEndEntity(certFromFile("ee-post_int-post"), PRErrorCodeSuccess);
 }

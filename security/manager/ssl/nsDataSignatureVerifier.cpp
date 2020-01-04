@@ -250,9 +250,7 @@ VerifyCertificate(CERTCertificate* cert, void* voidContext, void* pinArg)
                                                certificateUsageObjectSigner,
                                                Now(), pinArg,
                                                nullptr, 
-                                               0, 
-                                               nullptr, 
-                                               &context->builtChain));
+                                               context->builtChain));
 }
 
 } 

@@ -831,9 +831,8 @@ nsNSSCertificate::GetChain(nsIArray** _rvChain)
   if (certVerifier->VerifyCert(mCert.get(), certificateUsageSSLServer, now,
                                nullptr, 
                                nullptr, 
-                               CertVerifier::FLAG_LOCAL_ONLY,
-                               nullptr, 
-                               &nssChain) != SECSuccess) {
+                               nssChain,
+                               CertVerifier::FLAG_LOCAL_ONLY) != SECSuccess) {
     nssChain = nullptr;
     
   }
@@ -858,9 +857,8 @@ nsNSSCertificate::GetChain(nsIArray** _rvChain)
     if (certVerifier->VerifyCert(mCert.get(), usage, now,
                                  nullptr, 
                                  nullptr, 
-                                 CertVerifier::FLAG_LOCAL_ONLY,
-                                 nullptr, 
-                                 &nssChain) != SECSuccess) {
+                                 nssChain,
+                                 CertVerifier::FLAG_LOCAL_ONLY) != SECSuccess) {
       nssChain = nullptr;
       
     }
@@ -1393,11 +1391,13 @@ nsNSSCertificate::hasValidEVOidTag(SECOidTag& resultOidTag, bool& validEV)
 
   uint32_t flags = mozilla::psm::CertVerifier::FLAG_LOCAL_ONLY |
     mozilla::psm::CertVerifier::FLAG_MUST_BE_EV;
+  ScopedCERTCertList unusedBuiltChain;
   SECStatus rv = certVerifier->VerifyCert(mCert.get(),
     certificateUsageSSLServer, mozilla::pkix::Now(),
     nullptr ,
     nullptr ,
-    flags, nullptr  , nullptr, &resultOidTag);
+    unusedBuiltChain,
+    flags, nullptr , &resultOidTag);
 
   if (rv != SECSuccess) {
     resultOidTag = SEC_OID_UNKNOWN;

@@ -57,8 +57,30 @@ InitCertVerifierLog()
   }
 }
 
+Result
+IsCertChainRootBuiltInRoot(CERTCertList* chain, bool& result)
+{
+  if (!chain || CERT_LIST_EMPTY(chain)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  CERTCertListNode* rootNode = CERT_LIST_TAIL(chain);
+  if (!rootNode) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  CERTCertificate* root = rootNode->cert;
+  if (!root) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  SECStatus srv = IsCertBuiltInRoot(root, result);
+  if (srv != SECSuccess) {
+    return MapPRErrorCodeToResult(PR_GetError());
+  }
+  return Success;
+}
+
 SECStatus
-IsCertBuiltInRoot(CERTCertificate* cert, bool& result) {
+IsCertBuiltInRoot(CERTCertificate* cert, bool& result)
+{
   result = false;
   ScopedPK11SlotList slots;
   slots = PK11_GetAllSlotsForCert(cert, nullptr);
@@ -115,19 +137,37 @@ BuildCertChainForOneKeyUsage(NSSCertDBTrustDomain& trustDomain, Input certDER,
   return rv;
 }
 
+bool
+CertVerifier::SHA1ModeMoreRestrictiveThanGivenMode(SHA1Mode mode)
+{
+  switch (mSHA1Mode) {
+    case SHA1Mode::Forbidden:
+      return mode != SHA1Mode::Forbidden;
+    case SHA1Mode::Before2016:
+      return mode != SHA1Mode::Forbidden && mode != SHA1Mode::Before2016;
+    case SHA1Mode::ImportedRoot:
+      return mode == SHA1Mode::Allowed;
+    case SHA1Mode::Allowed:
+      return false;
+    default:
+      MOZ_ASSERT(false, "unexpected SHA1Mode type");
+      return true;
+  }
+}
+
 static const unsigned int MIN_RSA_BITS = 2048;
 static const unsigned int MIN_RSA_BITS_WEAK = 1024;
 
 SECStatus
 CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                          Time time, void* pinArg, const char* hostname,
-                         const Flags flags,
+                  ScopedCERTCertList& builtChain,
+             const Flags flags,
              const SECItem* stapledOCSPResponseSECItem,
-         ScopedCERTCertList* builtChain,
          SECOidTag* evOidPolicy,
          OCSPStaplingStatus* ocspStaplingStatus,
          KeySizeStatus* keySizeStatus,
-         SignatureDigestStatus* sigDigestStatus,
+         SHA1ModeResult* sha1ModeResult,
          PinningTelemetryInfo* pinningTelemetryInfo)
 {
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug, ("Top of VerifyCert\n"));
@@ -135,11 +175,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
   PR_ASSERT(cert);
   PR_ASSERT(usage == certificateUsageSSLServer || !(flags & FLAG_MUST_BE_EV));
   PR_ASSERT(usage == certificateUsageSSLServer || !keySizeStatus);
-  PR_ASSERT(usage == certificateUsageSSLServer || !sigDigestStatus);
+  PR_ASSERT(usage == certificateUsageSSLServer || !sha1ModeResult);
 
-  if (builtChain) {
-    *builtChain = nullptr;
-  }
   if (evOidPolicy) {
     *evOidPolicy = SEC_OID_UNKNOWN;
   }
@@ -159,12 +196,12 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
     *keySizeStatus = KeySizeStatus::NeverChecked;
   }
 
-  if (sigDigestStatus) {
+  if (sha1ModeResult) {
     if (usage != certificateUsageSSLServer) {
       PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
       return SECFailure;
     }
-    *sigDigestStatus = SignatureDigestStatus::NeverChecked;
+    *sha1ModeResult = SHA1ModeResult::NeverChecked;
   }
 
   if (!cert ||
@@ -216,8 +253,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        mCertShortLifetimeInDays,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
-                                       AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                       nullptr, nullptr, builtChain);
+                                       SHA1Mode::Allowed, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::digitalSignature,
@@ -231,24 +268,27 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
       
       
 
-      SignatureDigestOption digestAlgorithmOptions[] = {
-        DisableSHA1Everywhere,
-        DisableSHA1ForCA,
-        DisableSHA1ForEE,
-        AcceptAllAlgorithms
+      
+      
+      
+      SHA1Mode sha1ModeConfigurations[] = {
+        SHA1Mode::Forbidden,
+        SHA1Mode::Before2016,
+        SHA1Mode::ImportedRoot,
+        SHA1Mode::Allowed,
       };
 
-      SignatureDigestStatus digestAlgorithmStatuses[] = {
-        SignatureDigestStatus::GoodAlgorithmsOnly,
-        SignatureDigestStatus::WeakEECert,
-        SignatureDigestStatus::WeakCACert,
-        SignatureDigestStatus::WeakCAAndEE
+      SHA1ModeResult sha1ModeResults[] = {
+        SHA1ModeResult::SucceededWithoutSHA1,
+        SHA1ModeResult::SucceededWithSHA1Before2016,
+        SHA1ModeResult::SucceededWithImportedRoot,
+        SHA1ModeResult::SucceededWithSHA1,
       };
 
-      size_t digestAlgorithmOptionsCount = MOZ_ARRAY_LENGTH(digestAlgorithmStatuses);
+      size_t sha1ModeConfigurationsCount = MOZ_ARRAY_LENGTH(sha1ModeConfigurations);
 
-      static_assert(MOZ_ARRAY_LENGTH(digestAlgorithmOptions) ==
-                    MOZ_ARRAY_LENGTH(digestAlgorithmStatuses),
+      static_assert(MOZ_ARRAY_LENGTH(sha1ModeConfigurations) ==
+                    MOZ_ARRAY_LENGTH(sha1ModeResults),
                     "digestAlgorithm array lengths differ");
 
       rv = Result::ERROR_UNKNOWN_ERROR;
@@ -263,21 +303,30 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
       CertPolicyId evPolicy;
       SECOidTag evPolicyOidTag;
       SECStatus srv = GetFirstEVPolicy(cert, evPolicy, evPolicyOidTag);
-      for (size_t i=0;
-           i < digestAlgorithmOptionsCount && rv != Success && srv == SECSuccess;
+      for (size_t i = 0;
+           i < sha1ModeConfigurationsCount && rv != Success && srv == SECSuccess;
            i++) {
         
         
         if (pinningTelemetryInfo) {
           pinningTelemetryInfo->Reset();
         }
+        
+        
+        
+        
+        
+        
+        if (SHA1ModeMoreRestrictiveThanGivenMode(sha1ModeConfigurations[i])) {
+          continue;
+        }
         NSSCertDBTrustDomain
           trustDomain(trustSSL, evOCSPFetching,
                       mOCSPCache, pinArg, ocspGETConfig,
                       mCertShortLifetimeInDays, mPinningMode, MIN_RSA_BITS,
                       ValidityCheckingMode::CheckForEV,
-                      digestAlgorithmOptions[i], mSHA1Mode,
-                      pinningTelemetryInfo, hostname, builtChain);
+                      sha1ModeConfigurations[i], builtChain,
+                      pinningTelemetryInfo, hostname);
         rv = BuildCertChainForOneKeyUsage(trustDomain, certDER, time,
                                           KeyUsage::digitalSignature,
                                           KeyUsage::keyEncipherment, 
@@ -285,14 +334,34 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                           KeyPurposeId::id_kp_serverAuth,
                                           evPolicy, stapledOCSPResponse,
                                           ocspStaplingStatus);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (rv == Success &&
+            sha1ModeConfigurations[i] == SHA1Mode::ImportedRoot) {
+          bool isBuiltInRoot = false;
+          rv = IsCertChainRootBuiltInRoot(builtChain, isBuiltInRoot);
+          if (rv != Success) {
+            break;
+          }
+          if (isBuiltInRoot) {
+            rv = Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+          }
+        }
         if (rv == Success) {
           MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-                  ("cert is EV with status %i\n", digestAlgorithmStatuses[i]));
+                  ("cert is EV with status %i\n", sha1ModeResults[i]));
           if (evOidPolicy) {
             *evOidPolicy = evPolicyOidTag;
           }
-          if (sigDigestStatus) {
-            *sigDigestStatus = digestAlgorithmStatuses[i];
+          if (sha1ModeResult) {
+            *sha1ModeResult = sha1ModeResults[i];
           }
         }
       }
@@ -323,17 +392,21 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
 
       size_t keySizeOptionsCount = MOZ_ARRAY_LENGTH(keySizeStatuses);
 
-      for (size_t i=0; i<keySizeOptionsCount && rv != Success; i++) {
-        for (size_t j=0; j<digestAlgorithmOptionsCount && rv != Success; j++) {
-
+      for (size_t i = 0; i < keySizeOptionsCount && rv != Success; i++) {
+        for (size_t j = 0; j < sha1ModeConfigurationsCount && rv != Success;
+             j++) {
           
           if (pinningTelemetryInfo) {
             pinningTelemetryInfo->Reset();
           }
 
           
-          if (mSHA1Mode == SHA1Mode::Forbidden &&
-              digestAlgorithmOptions[i] != DisableSHA1Everywhere) {
+          
+          
+          
+          
+          
+          if (SHA1ModeMoreRestrictiveThanGivenMode(sha1ModeConfigurations[j])) {
             continue;
           }
 
@@ -342,9 +415,9 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                            mCertShortLifetimeInDays,
                                            mPinningMode, keySizeOptions[i],
                                            ValidityCheckingMode::CheckingOff,
-                                           digestAlgorithmOptions[j],
-                                           mSHA1Mode, pinningTelemetryInfo,
-                                           hostname, builtChain);
+                                           sha1ModeConfigurations[j],
+                                           builtChain, pinningTelemetryInfo,
+                                           hostname);
           rv = BuildCertChainForOneKeyUsage(trustDomain, certDER, time,
                                             KeyUsage::digitalSignature,
                                             KeyUsage::keyEncipherment,
@@ -353,32 +426,49 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                             CertPolicyId::anyPolicy,
                                             stapledOCSPResponse,
                                             ocspStaplingStatus);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (rv == Success &&
+              sha1ModeConfigurations[j] == SHA1Mode::ImportedRoot) {
+            bool isBuiltInRoot = false;
+            rv = IsCertChainRootBuiltInRoot(builtChain, isBuiltInRoot);
+            if (rv != Success) {
+              break;
+            }
+            if (isBuiltInRoot) {
+              rv = Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+            }
+          }
           if (rv == Success) {
             if (keySizeStatus) {
               *keySizeStatus = keySizeStatuses[i];
             }
-            if (sigDigestStatus) {
-              *sigDigestStatus = digestAlgorithmStatuses[j];
+            if (sha1ModeResult) {
+              *sha1ModeResult = sha1ModeResults[j];
             }
           }
         }
       }
 
       if (rv == Success) {
-        
-        
-        if (sigDigestStatus && mSHA1Mode == SHA1Mode::Forbidden) {
-          *sigDigestStatus = SignatureDigestStatus::NeverChecked;
-        }
-
         break;
       }
 
       if (keySizeStatus) {
         *keySizeStatus = KeySizeStatus::AlreadyBad;
       }
-      if (sigDigestStatus && mSHA1Mode != SHA1Mode::Forbidden) {
-        *sigDigestStatus = SignatureDigestStatus::AlreadyBad;
+      
+      
+      
+      if (sha1ModeResult && mSHA1Mode == SHA1Mode::Allowed) {
+        *sha1ModeResult = SHA1ModeResult::Failed;
       }
 
       break;
@@ -390,8 +480,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        mCertShortLifetimeInDays,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
-                                       AcceptAllAlgorithms, mSHA1Mode,
-                                       nullptr, nullptr, builtChain);
+                                       mSHA1Mode, builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeCA, KeyUsage::keyCertSign,
                           KeyPurposeId::id_kp_serverAuth,
@@ -405,8 +494,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        mCertShortLifetimeInDays,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
-                                       AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                       nullptr, nullptr, builtChain);
+                                       SHA1Mode::Allowed, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::digitalSignature,
@@ -431,8 +520,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        mCertShortLifetimeInDays,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
-                                       AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                       nullptr, nullptr, builtChain);
+                                       SHA1Mode::Allowed, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::keyEncipherment, 
@@ -454,8 +543,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                        mCertShortLifetimeInDays,
                                        pinningDisabled, MIN_RSA_BITS_WEAK,
                                        ValidityCheckingMode::CheckingOff,
-                                       AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                       nullptr, nullptr, builtChain);
+                                       SHA1Mode::Allowed, builtChain, nullptr,
+                                       nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::digitalSignature,
@@ -486,8 +575,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                     pinArg, ocspGETConfig, mCertShortLifetimeInDays,
                                     pinningDisabled, MIN_RSA_BITS_WEAK,
                                     ValidityCheckingMode::CheckingOff,
-                                    AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                    nullptr, nullptr, builtChain);
+                                    SHA1Mode::Allowed, builtChain, nullptr,
+                                    nullptr);
       rv = BuildCertChain(sslTrust, certDER, time, endEntityOrCA,
                           keyUsage, eku, CertPolicyId::anyPolicy,
                           stapledOCSPResponse);
@@ -497,8 +586,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                         mCertShortLifetimeInDays,
                                         pinningDisabled, MIN_RSA_BITS_WEAK,
                                         ValidityCheckingMode::CheckingOff,
-                                        AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                        nullptr, nullptr, builtChain);
+                                        SHA1Mode::Allowed, builtChain, nullptr,
+                                        nullptr);
         rv = BuildCertChain(emailTrust, certDER, time, endEntityOrCA,
                             keyUsage, eku, CertPolicyId::anyPolicy,
                             stapledOCSPResponse);
@@ -510,8 +599,8 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
                                                   pinningDisabled,
                                                   MIN_RSA_BITS_WEAK,
                                                   ValidityCheckingMode::CheckingOff,
-                                                  AcceptAllAlgorithms, SHA1Mode::Allowed,
-                                                  nullptr, nullptr, builtChain);
+                                                  SHA1Mode::Allowed, builtChain,
+                                                  nullptr, nullptr);
           rv = BuildCertChain(objectSigningTrust, certDER, time,
                               endEntityOrCA, keyUsage, eku,
                               CertPolicyId::anyPolicy, stapledOCSPResponse);
@@ -539,13 +628,13 @@ CertVerifier::VerifySSLServerCert(CERTCertificate* peerCert,
                                   Time time,
                       void* pinarg,
                                   const char* hostname,
-                                  bool saveIntermediatesInPermanentDatabase,
-                                  Flags flags,
-                  ScopedCERTCertList* builtChain,
+                           ScopedCERTCertList& builtChain,
+                      bool saveIntermediatesInPermanentDatabase,
+                      Flags flags,
                   SECOidTag* evOidPolicy,
                   OCSPStaplingStatus* ocspStaplingStatus,
                   KeySizeStatus* keySizeStatus,
-                  SignatureDigestStatus* sigDigestStatus,
+                  SHA1ModeResult* sha1ModeResult,
                   PinningTelemetryInfo* pinningTelemetryInfo)
 {
   PR_ASSERT(peerCert);
@@ -553,9 +642,6 @@ CertVerifier::VerifySSLServerCert(CERTCertificate* peerCert,
   PR_ASSERT(hostname);
   PR_ASSERT(hostname[0]);
 
-  if (builtChain) {
-    *builtChain = nullptr;
-  }
   if (evOidPolicy) {
     *evOidPolicy = SEC_OID_UNKNOWN;
   }
@@ -565,14 +651,12 @@ CertVerifier::VerifySSLServerCert(CERTCertificate* peerCert,
     return SECFailure;
   }
 
-  ScopedCERTCertList builtChainTemp;
   
   
   SECStatus rv = VerifyCert(peerCert, certificateUsageSSLServer, time, pinarg,
-                            hostname, flags, stapledOCSPResponse,
-                            &builtChainTemp, evOidPolicy, ocspStaplingStatus,
-                            keySizeStatus, sigDigestStatus,
-                            pinningTelemetryInfo);
+                            hostname, builtChain, flags, stapledOCSPResponse,
+                            evOidPolicy, ocspStaplingStatus, keySizeStatus,
+                            sha1ModeResult, pinningTelemetryInfo);
   if (rv != SECSuccess) {
     return rv;
   }
@@ -625,11 +709,7 @@ CertVerifier::VerifySSLServerCert(CERTCertificate* peerCert,
   }
 
   if (saveIntermediatesInPermanentDatabase) {
-    SaveIntermediateCerts(builtChainTemp);
-  }
-
-  if (builtChain) {
-    *builtChain = builtChainTemp.forget();
+    SaveIntermediateCerts(builtChain);
   }
 
   return SECSuccess;

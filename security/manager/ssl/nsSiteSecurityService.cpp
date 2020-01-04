@@ -712,9 +712,10 @@ nsSiteSecurityService::ProcessPKPHeader(nsIURI* aSourceURI,
   if (certVerifier->VerifySSLServerCert(nssCert, nullptr, 
                                         now, nullptr, 
                                         host.get(), 
+                                        certList,
                                         false, 
-                                        CertVerifier::FLAG_LOCAL_ONLY,
-                                        &certList) != SECSuccess) {
+                                        CertVerifier::FLAG_LOCAL_ONLY)
+      != SECSuccess) {
     return NS_ERROR_FAILURE;
   }
 
