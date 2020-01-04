@@ -406,13 +406,17 @@ var gSyncPane = {
             displayNameLabel.textContent = data.displayName;
           }
           if (data.avatar) {
-            
-            
-            
+            let bgImage = "url(\"" + data.avatar + "\")";
+            let profileImageElement = document.getElementById("fxaProfileImage");
+            profileImageElement.style.listStyleImage = bgImage;
+
             let img = new Image();
-            img.onload = () => {
-              let bgImage = "url('" + data.avatar + "')";
-              document.getElementById("fxaProfileImage").style.listStyleImage = bgImage;
+            img.onerror = () => {
+              
+              
+              if (profileImageElement.style.listStyleImage === bgImage) {
+                profileImageElement.style.removeProperty("list-style-image");
+              }
             };
             img.src = data.avatar;
           }
