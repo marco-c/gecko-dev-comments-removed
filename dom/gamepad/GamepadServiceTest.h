@@ -12,7 +12,7 @@
 namespace mozilla {
 namespace dom {
 
-class GamepadService;
+class GamepadManager;
 
 
 class GamepadServiceTest : public nsIGamepadServiceTest
@@ -29,7 +29,7 @@ private:
   static GamepadServiceTest* sSingleton;
   
   
-  RefPtr<GamepadService> mService;
+  RefPtr<GamepadManager> mService;
   virtual ~GamepadServiceTest();
 };
 

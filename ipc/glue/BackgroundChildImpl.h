@@ -172,6 +172,12 @@ protected:
   virtual bool
   DeallocPFileSystemRequestChild(PFileSystemRequestChild*) override;
 
+  
+  virtual PGamepadEventChannelChild*
+  AllocPGamepadEventChannelChild() override;
+
+  virtual bool
+  DeallocPGamepadEventChannelChild(PGamepadEventChannelChild* aActor) override;
 };
 
 class BackgroundChildImpl::ThreadLocal final
