@@ -116,6 +116,22 @@ MacroAssemblerMIPSCompat::convertDoubleToFloat32(FloatRegister src, FloatRegiste
 
 
 
+
+void
+MacroAssemblerMIPSCompat::branchTruncateDouble(FloatRegister src, Register dest,
+                                         Label* fail)
+{
+    Label test, success;
+    as_truncwd(ScratchDoubleReg, src);
+    as_mfc1(dest, ScratchDoubleReg);
+
+    ma_b(dest, Imm32(INT32_MAX), fail, Assembler::Equal);
+    ma_b(dest, Imm32(INT32_MIN), fail, Assembler::Equal);
+}
+
+
+
+
 void
 MacroAssemblerMIPSCompat::convertDoubleToInt32(FloatRegister src, Register dest,
                                          Label* fail, bool negativeZeroCheck)

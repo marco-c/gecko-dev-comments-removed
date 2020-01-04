@@ -1083,6 +1083,18 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     void loadConstantInt32x4(const SimdConstant& v, FloatRegister dest);
     void loadConstantFloat32x4(const SimdConstant& v, FloatRegister dest);
 
+    void branchTruncateDouble(FloatRegister src, Register dest, Label* fail) {
+        vcvttsd2sq(src, dest);
+
+        
+        
+        
+        cmpPtr(dest, Imm32(1));
+        j(Assembler::Overflow, fail);
+
+        movl(dest, dest); 
+    }
+
     Condition testInt32Truthy(bool truthy, const ValueOperand& operand) {
         test32(operand.valueReg(), operand.valueReg());
         return truthy ? NonZero : Zero;
