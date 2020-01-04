@@ -87,6 +87,31 @@ public:
 
   
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void
+  SetContentFilters(const nsAString& aFilters);
+
   FileSystemBase*
   GetFileSystem() const;
 private:
@@ -108,6 +133,7 @@ private:
 
   RefPtr<FileSystemBase> mFileSystem;
   nsString mPath;
+  nsString mFilters;
 };
 
 } 

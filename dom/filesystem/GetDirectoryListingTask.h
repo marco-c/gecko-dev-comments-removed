@@ -23,6 +23,7 @@ public:
   
   GetDirectoryListingTask(FileSystemBase* aFileSystem,
                           const nsAString& aTargetPath,
+                          const nsAString& aFilters,
                           ErrorResult& aRv);
   GetDirectoryListingTask(FileSystemBase* aFileSystem,
                           const FileSystemGetDirectoryListingParams& aParam,
@@ -55,6 +56,7 @@ protected:
 private:
   RefPtr<Promise> mPromise;
   nsString mTargetRealPath;
+  nsString mFilters;
 
   
   

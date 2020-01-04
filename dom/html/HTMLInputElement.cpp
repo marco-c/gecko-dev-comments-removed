@@ -4934,8 +4934,14 @@ HTMLInputElement::GetFilesAndDirectories(ErrorResult& aRv)
       fs = MakeOrReuseFileSystem(dirname, fs, window);
       nsAutoString dompath(NS_LITERAL_STRING(FILESYSTEM_DOM_PATH_SEPARATOR));
       dompath.Append(Substring(path, leafSeparatorIndex + 1));
-      filesAndDirsSeq[i].SetAsDirectory() = new Directory(fs, dompath);
+      RefPtr<Directory> directory = new Directory(fs, dompath);
+      
+      
+      
+      directory->SetContentFilters(NS_LITERAL_STRING("filter-out-sensitive"));
+      filesAndDirsSeq[i].SetAsDirectory() = directory;
     } else {
+      
       filesAndDirsSeq[i].SetAsFile() = filesAndDirs[i];
     }
   }
