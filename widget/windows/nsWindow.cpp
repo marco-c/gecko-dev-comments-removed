@@ -7520,6 +7520,13 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
       
       return true;
 
+    case WM_SHOWWINDOW:
+      
+      if (aLParam == SW_PARENTCLOSING) {
+        break;
+      }
+      return false;
+
     case WM_KILLFOCUS:
       
       
