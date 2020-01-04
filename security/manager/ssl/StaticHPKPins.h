@@ -176,6 +176,10 @@ static const char kGOOGLE_PIN_UTNDATACorpSGCFingerprint[] =
   "QAL80xHQczFWfnG82XHkYEjI3OjRZZcRdTs9qiommvo=";
 
 
+static const char kGOOGLE_PIN_VeriSignClass3_G2Fingerprint[] =
+  "AjyBzOjnxk+pQtPBUEhwfTXZu1uH9PVExb8bxWQ68vo=";
+
+
 static const char kGOOGLE_PIN_VeriSignClass4_G3Fingerprint[] =
   "VnuCEf0g09KD7gzXzgZyy52ZvFtIeljJ1U7Gf3fUqPU=";
 
@@ -322,10 +326,6 @@ static const char kVerisign_Class_2_Public_Primary_Certification_Authority___G2F
 
 static const char kVerisign_Class_2_Public_Primary_Certification_Authority___G3Fingerprint[] =
   "cAajgxHlj7GTSEIzIYIQxmEloOSoJq7VOaxWHfv72QM=";
-
-
-static const char kVerisign_Class_3_Public_Primary_Certification_Authority___G2Fingerprint[] =
-  "AjyBzOjnxk+pQtPBUEhwfTXZu1uH9PVExb8bxWQ68vo=";
 
 
 static const char kVerisign_Class_3_Public_Primary_Certification_Authority___G3Fingerprint[] =
@@ -498,7 +498,7 @@ static const StaticFingerprints kPinset_tor = {
 
 static const char* kPinset_twitterCom_Data[] = {
   kVerisign_Class_2_Public_Primary_Certification_Authority___G2Fingerprint,
-  kVerisign_Class_3_Public_Primary_Certification_Authority___G2Fingerprint,
+  kGOOGLE_PIN_VeriSignClass3_G2Fingerprint,
   kGeoTrust_Global_CA_2Fingerprint,
   kDigiCert_Assured_ID_Root_CAFingerprint,
   kVerisign_Class_1_Public_Primary_Certification_Authority___G3Fingerprint,
@@ -528,7 +528,7 @@ static const char* kPinset_twitterCDN_Data[] = {
   kVerisign_Class_2_Public_Primary_Certification_Authority___G2Fingerprint,
   kComodo_Trusted_Services_rootFingerprint,
   kCOMODO_Certification_AuthorityFingerprint,
-  kVerisign_Class_3_Public_Primary_Certification_Authority___G2Fingerprint,
+  kGOOGLE_PIN_VeriSignClass3_G2Fingerprint,
   kAddTrust_Low_Value_Services_RootFingerprint,
   kUTN_USERFirst_Object_Root_CAFingerprint,
   kGOOGLE_PIN_GTECyberTrustGlobalRootFingerprint,
@@ -678,6 +678,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "blogger.com", true, false, false, -1, &kPinset_google_root_pems },
   { "blogspot.com", true, false, false, -1, &kPinset_google_root_pems },
   { "br.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
+  { "bugs.chromium.org", true, false, false, -1, &kPinset_google_root_pems },
   { "build.chromium.org", true, false, false, -1, &kPinset_google_root_pems },
   { "business.facebook.com", true, false, false, -1, &kPinset_facebook },
   { "business.twitter.com", true, false, false, -1, &kPinset_twitterCom },
@@ -1113,4 +1114,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1462019163550000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1465961475786000);
