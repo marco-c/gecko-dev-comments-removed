@@ -549,16 +549,22 @@ nsFrameSelection::nsFrameSelection()
   mSelectingTableCellMode = 0;
   mSelectedCellIndex = 0;
 
+  nsAutoCopyListener *autoCopy = nullptr;
+  
+#ifdef XP_MACOSX
+  autoCopy = nsAutoCopyListener::GetInstance(nsIClipboard::kSelectionCache);
+#endif
+
   
   
   if (Preferences::GetBool("clipboard.autocopy")) {
-    nsAutoCopyListener *autoCopy = nsAutoCopyListener::GetInstance();
+    autoCopy = nsAutoCopyListener::GetInstance(nsIClipboard::kSelectionClipboard);
+  }
 
-    if (autoCopy) {
-      int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
-      if (mDomSelections[index]) {
-        autoCopy->Listen(mDomSelections[index]);
-      }
+  if (autoCopy) {
+    int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
+    if (mDomSelections[index]) {
+      autoCopy->Listen(mDomSelections[index]);
     }
   }
 
@@ -6469,6 +6475,11 @@ NS_IMPL_ISUPPORTS(nsAutoCopyListener, nsISelectionListener)
 
 
 
+
+
+
+
+
 NS_IMETHODIMP
 nsAutoCopyListener::NotifySelectionChanged(nsIDOMDocument *aDoc,
                                            nsISelection *aSel, int16_t aReason)
@@ -6493,7 +6504,7 @@ nsAutoCopyListener::NotifySelectionChanged(nsIDOMDocument *aDoc,
 
   
   return nsCopySupport::HTMLCopy(aSel, doc,
-                                 nsIClipboard::kSelectionClipboard, false);
+                                 mCachedClipboard, false);
 }
 
 
