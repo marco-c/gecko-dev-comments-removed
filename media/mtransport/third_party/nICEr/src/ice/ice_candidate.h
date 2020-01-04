@@ -76,6 +76,9 @@ struct nr_ice_candidate_ {
     struct {
       nr_stun_client_ctx *stun;
       void *stun_handle;
+      
+
+      nr_ice_candidate *relay_candidate;
     } srvrflx;
     struct {
       nr_turn_client_ctx *turn;
