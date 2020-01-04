@@ -146,8 +146,8 @@ this.ManifestProcessor = {
         trim: true
       };
       const value = extractor.extractValue(spec);
-      if (this.orientationTypes.has(value)) {
-        return value;
+      if (value && typeof value === "string" && this.orientationTypes.has(value.toLowerCase())) {
+        return value.toLowerCase();
       }
       
       return '';
@@ -162,8 +162,8 @@ this.ManifestProcessor = {
         trim: true
       };
       const value = extractor.extractValue(spec);
-      if (displayModes.has(value)) {
-        return value;
+      if (value && typeof value === "string" && displayModes.has(value.toLowerCase())) {
+        return value.toLowerCase();
       }
       return this.defaultDisplayMode;
     }
