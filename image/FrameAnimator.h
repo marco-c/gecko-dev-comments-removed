@@ -215,9 +215,7 @@ private:
 
 
 
-
-
-  int32_t GetSingleLoopTime(AnimationState& aState) const;
+  FrameTimeout GetSingleLoopTime(AnimationState& aState) const;
 
   
   FrameTimeout GetTimeoutForFrame(uint32_t aFrameNum) const;
