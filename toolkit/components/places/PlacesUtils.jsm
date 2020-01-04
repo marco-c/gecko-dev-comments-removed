@@ -106,7 +106,7 @@ function notify(observers, notification, args) {
 
 
 
-function* notifyKeywordChange(url, keyword) {
+function* notifyKeywordChange(url, keyword, source) {
   
   let bookmarks = [];
   yield PlacesUtils.bookmarks.fetch({ url }, b => bookmarks.push(b));
@@ -124,7 +124,7 @@ function* notifyKeywordChange(url, keyword) {
                                          bookmark.type,
                                          bookmark.parentId,
                                          bookmark.guid, bookmark.parentGuid,
-                                         ""
+                                         "", source
                                        ]);
   }
   gIgnoreKeywordNotifications = false;
@@ -250,7 +250,9 @@ const BOOKMARK_VALIDATORS = Object.freeze({
     if (v instanceof Ci.nsIURI)
       return new URL(v.spec);
     return v;
-  }
+  },
+  source: simpleValidateFunc(v => Number.isInteger(v) &&
+                                  Object.values(PlacesUtils.bookmarks.SOURCES).includes(v)),
 });
 
 
@@ -1063,19 +1065,19 @@ this.PlacesUtils = {
 
 
 
-  setAnnotationsForItem: function PU_setAnnotationsForItem(aItemId, aAnnos) {
+  setAnnotationsForItem: function PU_setAnnotationsForItem(aItemId, aAnnos, aSource) {
     var annosvc = this.annotations;
 
     aAnnos.forEach(function(anno) {
       if (anno.value === undefined || anno.value === null) {
-        annosvc.removeItemAnnotation(aItemId, anno.name);
+        annosvc.removeItemAnnotation(aItemId, anno.name, aSource);
       }
       else {
         let flags = ("flags" in anno) ? anno.flags : 0;
         let expires = ("expires" in anno) ?
           anno.expires : Ci.nsIAnnotationService.EXPIRE_NEVER;
         annosvc.setItemAnnotation(aItemId, anno.name, anno.value, flags,
-                                  expires);
+                                  expires, aSource);
       }
     });
   },
@@ -2203,7 +2205,8 @@ var Keywords = {
       throw new Error("Invalid POST data");
     if (!("url" in keywordEntry))
       throw new Error("undefined is not a valid URL");
-    let { keyword, url } = keywordEntry;
+    let { keyword, url,
+          source = Ci.nsINavBookmarksService.SOURCE_DEFAULT } = keywordEntry;
     keyword = keyword.trim().toLowerCase();
     let postData = keywordEntry.postData || null;
     
@@ -2231,7 +2234,7 @@ var Keywords = {
                  post_data = :post_data
              WHERE keyword = :keyword
             `, { url: url.href, keyword: keyword, post_data: postData });
-          yield notifyKeywordChange(oldEntry.url.href, "");
+          yield notifyKeywordChange(oldEntry.url.href, "", source);
         } else {
           
           
@@ -2251,7 +2254,7 @@ var Keywords = {
         cache.set(keyword, { keyword, url, postData });
 
         
-        yield notifyKeywordChange(url.href, keyword);
+        yield notifyKeywordChange(url.href, keyword, source);
       }.bind(this))
     );
   },
@@ -2264,10 +2267,17 @@ var Keywords = {
 
 
 
-  remove(keyword) {
-    if (!keyword || typeof(keyword) != "string")
+  remove(keywordOrEntry) {
+    if (typeof(keywordOrEntry) == "string")
+      keywordOrEntry = { keyword: keywordOrEntry };
+
+    if (keywordOrEntry === null || typeof(keywordOrEntry) != "object" ||
+        !keywordOrEntry.keyword || typeof keywordOrEntry.keyword != "string")
       throw new Error("Invalid keyword");
-    keyword = keyword.trim().toLowerCase();
+
+    let { keyword,
+          source = Ci.nsINavBookmarksService.SOURCE_DEFAULT } = keywordOrEntry;
+    keyword = keywordOrEntry.keyword.trim().toLowerCase();
     return PlacesUtils.withConnectionWrapper("Keywords.remove",  Task.async(function*(db) {
       let cache = yield gKeywordsCachePromise;
       if (!cache.has(keyword))
@@ -2279,7 +2289,7 @@ var Keywords = {
                        { keyword });
 
       
-      yield notifyKeywordChange(url.href, "");
+      yield notifyKeywordChange(url.href, "", source);
     }.bind(this))) ;
   }
 };

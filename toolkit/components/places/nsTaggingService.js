@@ -34,9 +34,12 @@ TaggingService.prototype = {
 
 
 
-  _createTag: function TS__createTag(aTagName) {
+
+
+  _createTag: function TS__createTag(aTagName, aSource) {
     var newFolderId = PlacesUtils.bookmarks.createFolder(
-      PlacesUtils.tagsFolderId, aTagName, PlacesUtils.bookmarks.DEFAULT_INDEX
+      PlacesUtils.tagsFolderId, aTagName, PlacesUtils.bookmarks.DEFAULT_INDEX,
+       null, aSource
     );
     
     
@@ -135,7 +138,7 @@ TaggingService.prototype = {
   },
 
   
-  tagURI: function TS_tagURI(aURI, aTags)
+  tagURI: function TS_tagURI(aURI, aTags, aSource)
   {
     if (!aURI || !aTags || !Array.isArray(aTags)) {
       throw Cr.NS_ERROR_INVALID_ARG;
@@ -148,14 +151,15 @@ TaggingService.prototype = {
       for (let tag of tags) {
         if (tag.id == -1) {
           
-          this._createTag(tag.name);
+          this._createTag(tag.name, aSource);
         }
 
         if (this._getItemIdForTaggedURI(aURI, tag.name) == -1) {
           
           
           PlacesUtils.bookmarks.insertBookmark(
-            tag.id, aURI, PlacesUtils.bookmarks.DEFAULT_INDEX, null
+            tag.id, aURI, PlacesUtils.bookmarks.DEFAULT_INDEX,
+             null,  null, aSource
           );
         }
 
@@ -164,7 +168,7 @@ TaggingService.prototype = {
         
         if (PlacesUtils.bookmarks.getItemTitle(tag.id) != tag.name) {
           
-          PlacesUtils.bookmarks.setItemTitle(tag.id, tag.name);
+          PlacesUtils.bookmarks.setItemTitle(tag.id, tag.name, aSource);
         }
       }
     };
@@ -183,7 +187,9 @@ TaggingService.prototype = {
 
 
 
-  _removeTagIfEmpty: function TS__removeTagIfEmpty(aTagId) {
+
+
+  _removeTagIfEmpty: function TS__removeTagIfEmpty(aTagId, aSource) {
     let count = 0;
     let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
                                 .DBConnection;
@@ -202,12 +208,12 @@ TaggingService.prototype = {
     }
 
     if (count == 0) {
-      PlacesUtils.bookmarks.removeItem(aTagId);
+      PlacesUtils.bookmarks.removeItem(aTagId, aSource);
     }
   },
 
   
-  untagURI: function TS_untagURI(aURI, aTags)
+  untagURI: function TS_untagURI(aURI, aTags, aSource)
   {
     if (!aURI || (aTags && !Array.isArray(aTags))) {
       throw Cr.NS_ERROR_INVALID_ARG;
@@ -235,7 +241,7 @@ TaggingService.prototype = {
           let itemId = this._getItemIdForTaggedURI(aURI, tag.name);
           if (itemId != -1) {
             
-            PlacesUtils.bookmarks.removeItem(itemId);
+            PlacesUtils.bookmarks.removeItem(itemId, aSource);
           }
         }
       }
@@ -414,7 +420,8 @@ TaggingService.prototype = {
   },
 
   onItemRemoved: function TS_onItemRemoved(aItemId, aFolderId, aIndex,
-                                           aItemType, aURI) {
+                                           aItemType, aURI, aGuid, aParentGuid,
+                                           aSource) {
     
     if (aFolderId == PlacesUtils.tagsFolderId && this._tagFolders[aItemId]) {
       delete this._tagFolders[aItemId];
@@ -427,13 +434,13 @@ TaggingService.prototype = {
       let itemIds = this._getTaggedItemIdsIfUnbookmarkedURI(aURI);
       for (let i = 0; i < itemIds.length; i++) {
         try {
-          PlacesUtils.bookmarks.removeItem(itemIds[i]);
+          PlacesUtils.bookmarks.removeItem(itemIds[i], aSource);
         } catch (ex) {}
       }
     }
     
     else if (aURI && this._tagFolders[aFolderId]) {
-      this._removeTagIfEmpty(aFolderId);
+      this._removeTagIfEmpty(aFolderId, aSource);
     }
   },
 
