@@ -458,42 +458,49 @@ exports.dbg_assert = function dbg_assert(cond, e) {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-exports.defineLazyGetter(exports, "assert", () => {
-  function noop(condition, msg) { }
-
-  function assert(condition, message) {
-    if (!condition) {
-      const err = new Error("Assertion failure: " + message);
-      exports.reportException("DevToolsUtils.assert", err);
-      throw err;
-    }
-  }
-
+exports.defineLazyGetter(this, "AppConstants", () => {
   const scope = {};
   Cu.import("resource://gre/modules/AppConstants.jsm", scope);
-  const { DEBUG, DEBUG_JS_MODULES } = scope.AppConstants;
-
-  return (DEBUG || DEBUG_JS_MODULES || exports.testing) ? assert : noop;
+  return scope.AppConstants;
 });
+
+
+
+
+exports.noop = function () { };
+
+function reallyAssert(condition, message) {
+  if (!condition) {
+    const err = new Error("Assertion failure: " + message);
+    exports.reportException("DevToolsUtils.assert", err);
+    throw err;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(exports, "assert", {
+  get: () => (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES || this.testing)
+    ? reallyAssert
+    : exports.noop,
+})
 
 
 

@@ -9,6 +9,11 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
+
+
+
+var ALLOW_CONSOLE_ERRORS = false;
+
 var errorCount = 0;
 var listener = {
   observe: function (aMessage) {
@@ -35,7 +40,10 @@ var listener = {
     while (DebuggerServer.xpcInspector.eventLoopNestLevel > 0) {
       DebuggerServer.xpcInspector.exitNestedEventLoop();
     }
-    do_throw("head_dbg.js got console message: " + string + "\n");
+
+    if (!ALLOW_CONSOLE_ERRORS) {
+      do_throw("head_devtools.js got console message: " + string + "\n");
+    }
   }
 };
 
