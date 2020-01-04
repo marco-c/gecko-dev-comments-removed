@@ -388,7 +388,8 @@ public:
 
 
 
-  already_AddRefed<MediaInputPort> ForwardTrackContentsTo(ProcessedMediaStream* aStream);
+  already_AddRefed<MediaInputPort> ForwardTrackContentsTo(ProcessedMediaStream* aStream,
+                                                          TrackID aDestinationTrackID = TRACK_ANY);
 
   
 
