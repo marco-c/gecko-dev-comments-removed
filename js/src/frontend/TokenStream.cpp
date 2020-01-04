@@ -1016,16 +1016,6 @@ TokenStream::checkForKeyword(const KeywordInfo* kw, TokenKind* ttp)
 }
 
 bool
-TokenStream::checkForKeyword(const char16_t* s, size_t length, TokenKind* ttp)
-{
-    const KeywordInfo* kw = FindKeyword(s, length);
-    if (!kw)
-        return true;
-
-    return checkForKeyword(kw, ttp);
-}
-
-bool
 TokenStream::checkForKeyword(JSAtom* atom, TokenKind* ttp)
 {
     const KeywordInfo* kw = FindKeyword(atom);
@@ -1237,11 +1227,21 @@ TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
 
         
         if (modifier != KeywordIsName) {
-            tp->type = TOK_NAME;
-            if (!checkForKeyword(chars, length, &tp->type))
-                goto error;
-            if (tp->type != TOK_NAME)
-                goto out;
+            if (const KeywordInfo* kw = FindKeyword(chars, length)) {
+                
+                
+                
+                if (hadUnicodeEscape) {
+                    reportError(JSMSG_ESCAPED_KEYWORD);
+                    goto error;
+                }
+
+                tp->type = TOK_NAME;
+                if (!checkForKeyword(kw, &tp->type))
+                    goto error;
+                if (tp->type != TOK_NAME)
+                    goto out;
+            }
         }
 
         JSAtom* atom = AtomizeChars(cx, chars, length);

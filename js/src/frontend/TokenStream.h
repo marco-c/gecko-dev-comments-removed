@@ -226,6 +226,11 @@ struct Token
         return u.name->asPropertyName(); 
     }
 
+    bool nameContainsEscape() const {
+        PropertyName* n = name();
+        return pos.begin + n->length() != pos.end;
+    }
+
     JSAtom* atom() const {
         MOZ_ASSERT(type == TOK_STRING ||
                    type == TOK_TEMPLATE_HEAD ||
@@ -642,11 +647,28 @@ class MOZ_STACK_CLASS TokenStream
         MOZ_ALWAYS_TRUE(matched);
     }
 
-    bool matchContextualKeyword(bool* matchedp, Handle<PropertyName*> keyword) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool matchContextualKeyword(bool* matchedp, Handle<PropertyName*> keyword,
+                                Modifier modifier = None)
+    {
         TokenKind token;
-        if (!getToken(&token))
+        if (!getToken(&token, modifier))
             return false;
         if (token == TOK_NAME && currentToken().name() == keyword) {
+            if (currentToken().nameContainsEscape()) {
+                reportError(JSMSG_ESCAPED_KEYWORD);
+                return false;
+            }
+
             *matchedp = true;
         } else {
             *matchedp = false;
@@ -730,9 +752,10 @@ class MOZ_STACK_CLASS TokenStream
     
     
     
-    bool checkForKeyword(const KeywordInfo* kw, TokenKind* ttp);
-    bool checkForKeyword(const char16_t* s, size_t length, TokenKind* ttp);
     bool checkForKeyword(JSAtom* atom, TokenKind* ttp);
+
+    
+    bool checkForKeyword(const KeywordInfo* kw, TokenKind* ttp);
 
     
     
