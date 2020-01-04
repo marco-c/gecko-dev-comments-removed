@@ -833,6 +833,8 @@ private:
 
   bool mNegotiationNeeded;
 
+  bool mPrivateWindow;
+
   
   uint16_t mMaxReceiving[SdpMediaSection::kMediaTypes];
   uint16_t mMaxSending[SdpMediaSection::kMediaTypes];
