@@ -106,6 +106,18 @@ var gSearchPane = {
   handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "click":
+        if (aEvent.target.id != "engineChildren" && aEvent.target.id != "removeEngineButton") {
+          let engineList = document.getElementById("engineList");
+          
+          
+          if (engineList.inputField.hidden) {
+            let selection = engineList.view.selection;
+            if (selection.count > 0) {
+              selection.toggleSelect(selection.currentIndex);
+            }
+            engineList.blur();
+          }
+        }
         if (aEvent.target.id == "addEngines" && aEvent.button == 0) {
           Services.wm.getMostRecentWindow('navigator:browser')
                      .BrowserSearch.loadAddEngines();
