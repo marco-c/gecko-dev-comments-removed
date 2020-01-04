@@ -105,6 +105,14 @@ DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
              nsCOMPtr<nsIStreamListener>& aInAndOutListener)
 {
   MOZ_RELEASE_ASSERT(aInAndOutListener, "can not perform CORS checks without a listener");
+
+  
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(aLoadInfo->TriggeringPrincipal())) {
+    return NS_OK;
+  }
+
   nsIPrincipal* loadingPrincipal = aLoadInfo->LoadingPrincipal();
   RefPtr<nsCORSListenerProxy> corsListener =
     new nsCORSListenerProxy(aInAndOutListener,
@@ -478,8 +486,9 @@ nsContentSecurityManager::CheckChannel(nsIChannel* aChannel)
 
   
   
-  
-  if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal())) {
+  if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
+      loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT &&
+      loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_SUBDOCUMENT) {
     return NS_OK;
   }
 
