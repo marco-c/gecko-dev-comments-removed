@@ -119,6 +119,12 @@ public:
 
 
   bool AllowScrollHandoff() const;
+  
+
+
+
+
+  bool IsDragOnScrollbar(bool aOnScrollbar);
 
 private:
   ~InputQueue();

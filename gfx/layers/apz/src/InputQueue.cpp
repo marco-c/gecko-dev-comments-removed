@@ -551,6 +551,19 @@ InputQueue::AllowScrollHandoff() const
   return true;
 }
 
+bool
+InputQueue::IsDragOnScrollbar(bool aHitScrollbar)
+{
+  if (!mDragTracker.InDrag()) {
+    return false;
+  }
+  
+  
+  
+  
+  return mDragTracker.IsOnScrollbar(aHitScrollbar);
+}
+
 void
 InputQueue::ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTarget, uint64_t aInputBlockId) {
   INPQ_LOG("scheduling main thread timeout for target %p\n", aTarget.get());

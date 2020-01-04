@@ -95,6 +95,7 @@ public:
   void SetScrollbarData(FrameMetrics::ViewID aScrollViewId, Layer::ScrollDirection aDir, int32_t aScrollSize);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
   int32_t GetScrollSize() const;
+  bool IsScrollbarNode() const;
 
   
 
