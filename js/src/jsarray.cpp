@@ -2449,6 +2449,35 @@ array_splice(JSContext* cx, unsigned argc, Value* vp)
     return array_splice_impl(cx, argc, vp, true);
 }
 
+static inline bool
+ArraySpliceCopy(JSContext* cx, HandleObject arr, HandleObject obj,
+                uint32_t actualStart, uint32_t actualDeleteCount)
+{
+    
+    RootedValue fromValue(cx);
+    for (uint32_t k = 0; k < actualDeleteCount; k++) {
+        
+
+        if (!CheckForInterrupt(cx))
+            return false;
+
+        
+        bool hole;
+        if (!GetElement(cx, obj, actualStart + k, &hole, &fromValue))
+            return false;
+
+        
+        if (!hole) {
+            
+            if (!DefineElement(cx, arr, k, fromValue))
+                return false;
+        }
+    }
+
+    
+    return SetLengthProperty(cx, arr, actualDeleteCount);
+}
+
 bool
 js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueIsUsed)
 {
@@ -2479,48 +2508,61 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
 
     
     uint32_t actualDeleteCount;
-    if (args.length() != 1) {
-        double deleteCountDouble;
-        RootedValue cnt(cx, args.length() >= 2 ? args[1] : Int32Value(0));
-        if (!ToInteger(cx, cnt, &deleteCountDouble))
-            return false;
-        actualDeleteCount = Min(Max(deleteCountDouble, 0.0), double(len - actualStart));
+    if (args.length() == 0) {
+        
+        actualDeleteCount = 0;
+    } else if (args.length() == 1) {
+        
+        actualDeleteCount = len - actualStart;
     } else {
         
+        double deleteCountDouble;
+        RootedValue cnt(cx, args[1]);
+        if (!ToInteger(cx, cnt, &deleteCountDouble))
+            return false;
 
-
-
-        actualDeleteCount = len - actualStart;
+        
+        actualDeleteCount = Min(Max(deleteCountDouble, 0.0), double(len - actualStart));
     }
+
+    
 
     MOZ_ASSERT(len - actualStart >= actualDeleteCount);
 
-    
     RootedObject arr(cx);
-    if (CanOptimizeForDenseStorage(obj, actualStart, actualDeleteCount, cx)) {
-        if (returnValueIsUsed) {
+    if (IsArraySpecies(cx, obj)) {
+        if (CanOptimizeForDenseStorage(obj, actualStart, actualDeleteCount, cx)) {
+            if (returnValueIsUsed) {
+                
+                arr = NewFullyAllocatedArrayTryReuseGroup(cx, obj, actualDeleteCount);
+                if (!arr)
+                    return false;
+
+                
+                DebugOnly<DenseElementResult> result =
+                    CopyAnyBoxedOrUnboxedDenseElements(cx, arr, obj, 0, actualStart, actualDeleteCount);
+                MOZ_ASSERT(result.value == DenseElementResult::Success);
+
+                
+            }
+        } else {
+            
             arr = NewFullyAllocatedArrayTryReuseGroup(cx, obj, actualDeleteCount);
             if (!arr)
                 return false;
-            DebugOnly<DenseElementResult> result =
-                CopyAnyBoxedOrUnboxedDenseElements(cx, arr, obj, 0, actualStart, actualDeleteCount);
-            MOZ_ASSERT(result.value == DenseElementResult::Success);
+
+            
+            if (!ArraySpliceCopy(cx, arr, obj, actualStart, actualDeleteCount))
+                return false;
         }
     } else {
-        arr = NewFullyAllocatedArrayTryReuseGroup(cx, obj, actualDeleteCount);
-        if (!arr)
+        
+        if (!ArraySpeciesCreate(cx, obj, actualDeleteCount, &arr))
             return false;
 
-        RootedValue fromValue(cx);
-        for (uint32_t k = 0; k < actualDeleteCount; k++) {
-            bool hole;
-            if (!CheckForInterrupt(cx) ||
-                !GetElement(cx, obj, actualStart + k, &hole, &fromValue) ||
-                (!hole && !DefineElement(cx, arr, k, fromValue)))
-            {
-                return false;
-            }
-        }
+        
+        if (!ArraySpliceCopy(cx, arr, obj, actualStart, actualDeleteCount))
+            return false;
     }
 
     
@@ -2554,16 +2596,23 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
             
             RootedValue fromValue(cx);
             for (uint32_t from = sourceIndex, to = targetIndex; from < len; from++, to++) {
+                
+
                 if (!CheckForInterrupt(cx))
                     return false;
 
+                
                 bool hole;
                 if (!GetElement(cx, obj, from, &hole, &fromValue))
                     return false;
+
+                
                 if (hole) {
+                    
                     if (!DeletePropertyOrThrow(cx, obj, to))
                         return false;
                 } else {
+                    
                     if (!SetArrayElement(cx, obj, to, fromValue))
                         return false;
                 }
@@ -2571,6 +2620,7 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
 
             
             for (uint32_t k = len; k > finalLength; k--) {
+                
                 if (!DeletePropertyOrThrow(cx, obj, k - 1))
                     return false;
             }
@@ -2629,17 +2679,24 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
                 if (!CheckForInterrupt(cx))
                     return false;
 
+                
                 double from = k + actualDeleteCount - 1;
+
+                
                 double to = k + itemCount - 1;
 
+                
                 bool hole;
                 if (!GetElement(cx, obj, from, &hole, &fromValue))
                     return false;
 
+                
                 if (hole) {
+                    
                     if (!DeletePropertyOrThrow(cx, obj, to))
                         return false;
                 } else {
+                    
                     if (!SetArrayElement(cx, obj, to, fromValue))
                         return false;
                 }
@@ -2652,6 +2709,9 @@ js::array_splice_impl(JSContext* cx, unsigned argc, Value* vp, bool returnValueI
 
     
     for (uint32_t k = actualStart, i = 0; i < itemCount; i++, k++) {
+        
+
+        
         if (!SetArrayElement(cx, obj, k, HandleValue::fromMarkedLocation(&items[i])))
             return false;
     }
