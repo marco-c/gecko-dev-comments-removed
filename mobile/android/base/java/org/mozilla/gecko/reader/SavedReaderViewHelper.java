@@ -18,6 +18,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 
 
 
@@ -203,6 +204,43 @@ public class SavedReaderViewHelper {
             return ReaderModeUtils.getAboutReaderForUrl(pageURL);
         } else {
             return pageURL;
+        }
+    }
+
+    
+
+
+
+
+    public synchronized int getDiskSpacedUsedKB() {
+        
+        
+        final Iterator<String> keys = mItems.keys();
+        long bytes = 0;
+
+        while (keys.hasNext()) {
+            final String pageURL = keys.next();
+            try {
+                final JSONObject item = mItems.getJSONObject(pageURL);
+                bytes += item.getLong(SIZE);
+
+                
+                
+                
+                if (bytes < 0) {
+                    return Integer.MAX_VALUE;
+                }
+            } catch (JSONException e) {
+                
+                throw new IllegalStateException("Must be able to access items in saved reader view list", e);
+            }
+        }
+
+        long kb = bytes / 1024;
+        if (kb > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        } else {
+            return (int) kb;
         }
     }
 }
