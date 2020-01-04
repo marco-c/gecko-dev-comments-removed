@@ -558,8 +558,22 @@ SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
     return;
   }
 
+  {
+    LinuxCapabilities existingCaps;
+    if (existingCaps.GetCurrent() && existingCaps.AnyEffective()) {
+      SANDBOX_LOG_ERROR("PLEASE DO NOT RUN THIS AS ROOT.  Strange things may"
+                        " happen when capabilities are dropped.");
+    }
+  }
+
   
   if (!info.Test(SandboxInfo::kHasUserNamespaces)) {
+    
+    
+    
+    
+    
+    LinuxCapabilities().SetCurrent();
     return;
   }
 

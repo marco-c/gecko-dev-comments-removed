@@ -84,6 +84,15 @@ public:
     }
   }
 
+  bool AnyEffective() const {
+    for (size_t i = 0; i < _LINUX_CAPABILITY_U32S_3; ++i) {
+      if (mBits[i].effective != 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   
   
   
