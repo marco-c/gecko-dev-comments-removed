@@ -455,7 +455,6 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
 
 
 
-
 static bool
 CheckUserContextCompatibility(nsIDocShell* aDocShell)
 {
@@ -464,16 +463,14 @@ CheckUserContextCompatibility(nsIDocShell* aDocShell)
   uint32_t userContextId =
     static_cast<nsDocShell*>(aDocShell)->GetOriginAttributes().mUserContextId;
 
-  if (userContextId == nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID) {
-    return true;
-  }
-
   nsCOMPtr<nsIPrincipal> subjectPrincipal =
     nsContentUtils::GetCurrentJSContext()
       ? nsContentUtils::SubjectPrincipal() : nullptr;
 
+  
+  
   if (!subjectPrincipal) {
-    return false;
+    return true;
   }
 
   
