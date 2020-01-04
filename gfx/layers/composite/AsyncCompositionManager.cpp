@@ -209,12 +209,12 @@ TranslateShadowLayer(Layer* aLayer,
 
   if (aAdjustClipRect) {
     TransformClipRect(aLayer, Matrix4x4::Translation(aTranslation.x, aTranslation.y, 0));
-  }
 
-  
-  
-  if (Layer* maskLayer = aLayer->GetMaskLayer()) {
-    TranslateShadowLayer(maskLayer, aTranslation, false);
+    
+    
+    if (Layer* maskLayer = aLayer->GetMaskLayer()) {
+      TranslateShadowLayer(maskLayer, aTranslation, false);
+    }
   }
 }
 
