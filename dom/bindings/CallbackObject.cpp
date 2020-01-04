@@ -271,13 +271,6 @@ CallbackObject::CallSetup::~CallSetup()
       
       
       
-      
-      
-      
-      
-      
-      
-      
       JS::Rooted<JSObject*> oldGlobal(mCx, JS::CurrentGlobalOrNull(mCx));
       MOZ_ASSERT(oldGlobal, "How can we not have a global here??");
       bool saved = JS_SaveFrameChain(mCx);
@@ -288,9 +281,6 @@ CallbackObject::CallSetup::~CallSetup()
         MOZ_ASSERT(!JS::DescribeScriptedCaller(mCx),
                    "Our comment above about JS_SaveFrameChain having been "
                    "called is a lie?");
-        
-        
-        
         mAutoEntryScript->ReportException();
       }
       if (saved) {
