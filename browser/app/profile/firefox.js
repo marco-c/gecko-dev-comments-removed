@@ -1658,6 +1658,9 @@ pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/
 pref("browser.newtabpage.directory.ping", "https://tiles.services.mozilla.com/v3/links/");
 
 
+pref("browser.newtabpage.remote", false);
+
+
 pref("full-screen-api.enabled", true);
 
 
