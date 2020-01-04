@@ -91,7 +91,6 @@ private:
                                         
                                         
                                         
-  bool                 mLeakIt : 1; 
 
   
   
@@ -387,7 +386,7 @@ private:
   nsresult DoomFileInternal(CacheFileHandle *aHandle,
                             PinningDoomRestriction aPinningStatusRestriction = NO_RESTRICTION);
   nsresult DoomFileByKeyInternal(const SHA1Sum::Hash *aHash);
-  nsresult ReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
+  nsresult MaybeReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
                                      bool aIgnoreShutdownLag = false);
   nsresult TruncateSeekSetEOFInternal(CacheFileHandle *aHandle,
                                       int64_t aTruncatePos, int64_t aEOFPos);

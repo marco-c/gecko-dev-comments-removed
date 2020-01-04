@@ -117,7 +117,6 @@ CacheFileHandle::CacheFileHandle(const SHA1Sum::Hash *aHash, bool aPriority, Pin
   , mSpecialFile(false)
   , mInvalid(false)
   , mFileExists(false)
-  , mLeakIt(false)
   , mDoomWhenFoundPinned(false)
   , mDoomWhenFoundNonPinned(false)
   , mPinning(aPinning)
@@ -141,7 +140,6 @@ CacheFileHandle::CacheFileHandle(const nsACString &aKey, bool aPriority, Pinning
   , mSpecialFile(true)
   , mInvalid(false)
   , mFileExists(false)
-  , mLeakIt(false)
   , mDoomWhenFoundPinned(false)
   , mDoomWhenFoundNonPinned(false)
   , mPinning(aPinning)
@@ -177,17 +175,17 @@ CacheFileHandle::Log()
 
   if (mSpecialFile) {
     LOG(("CacheFileHandle::Log() - special file [this=%p, "
-         "isDoomed=%d, priority=%d, closed=%d, invalid=%d, leakit=%d, "
+         "isDoomed=%d, priority=%d, closed=%d, invalid=%d, "
          "pinning=%d, fileExists=%d, fileSize=%lld, leafName=%s, key=%s]",
          this,
-         bool(mIsDoomed), bool(mPriority), bool(mClosed), bool(mInvalid), bool(mLeakIt),
+         bool(mIsDoomed), bool(mPriority), bool(mClosed), bool(mInvalid),
          mPinning, bool(mFileExists), mFileSize, leafName.get(), mKey.get()));
   } else {
     LOG(("CacheFileHandle::Log() - entry file [this=%p, hash=%08x%08x%08x%08x%08x, "
-         "isDoomed=%d, priority=%d, closed=%d, invalid=%d, leakit=%d, "
+         "isDoomed=%d, priority=%d, closed=%d, invalid=%d, "
          "pinning=%d, fileExists=%d, fileSize=%lld, leafName=%s, key=%s]",
          this, LOGSHA1(mHash),
-         bool(mIsDoomed), bool(mPriority), bool(mClosed), bool(mInvalid), bool(mLeakIt),
+         bool(mIsDoomed), bool(mPriority), bool(mClosed), bool(mInvalid),
          mPinning, bool(mFileExists), mFileSize, leafName.get(), mKey.get()));
   }
 }
@@ -858,8 +856,8 @@ protected:
 public:
   NS_IMETHOD Run()
   {
-    if (mHandle->mFD && !mHandle->IsClosed()) {
-      CacheFileIOManager::gInstance->ReleaseNSPRHandleInternal(mHandle);
+    if (!mHandle->IsClosed()) {
+      CacheFileIOManager::gInstance->MaybeReleaseNSPRHandleInternal(mHandle);
     }
 
     return NS_OK;
@@ -1215,18 +1213,15 @@ CacheFileIOManager::ShutdownInternal()
     h->Log();
 
     
-    if (h->mFD) {
-      ReleaseNSPRHandleInternal(h);
-    }
-
+    MaybeReleaseNSPRHandleInternal(h);
     
-    if (h->mFileExists && !h->mLeakIt && (h->mIsDoomed || h->mInvalid)) {
-      LOG(("CacheFileIOManager::ShutdownInternal() - Removing file from disk"));
-      h->mFile->Remove(false);
-    }
+    
+    
+    
+    
+    
 
-    if (!h->IsSpecialFile() && !h->mIsDoomed &&
-        (h->mInvalid || !h->mFileExists)) {
+    if (!h->IsSpecialFile() && !h->mIsDoomed && !h->mFileExists) {
       CacheIndex::RemoveEntry(h->Hash());
     }
 
@@ -1776,6 +1771,8 @@ CacheFileIOManager::OpenSpecialFileInternal(const nsACString &aKey,
 nsresult
 CacheFileIOManager::CloseHandleInternal(CacheFileHandle *aHandle)
 {
+  nsresult rv;
+
   LOG(("CacheFileIOManager::CloseHandleInternal() [handle=%p]", aHandle));
 
   MOZ_ASSERT(!aHandle->IsClosed());
@@ -1785,12 +1782,11 @@ CacheFileIOManager::CloseHandleInternal(CacheFileHandle *aHandle)
   MOZ_ASSERT(CacheFileIOManager::IsOnIOThreadOrCeased());
 
   
-  if (aHandle->mFD) {
-    ReleaseNSPRHandleInternal(aHandle);
-  }
+  rv = MaybeReleaseNSPRHandleInternal(aHandle);
 
   
-  if ((aHandle->mIsDoomed || aHandle->mInvalid) && MOZ_LIKELY(!aHandle->mLeakIt)) {
+  
+  if ((aHandle->mIsDoomed || aHandle->mInvalid) && NS_SUCCEEDED(rv)) {
     LOG(("CacheFileIOManager::CloseHandleInternal() - Removing file from "
          "disk"));
     aHandle->mFile->Remove(false);
@@ -2108,9 +2104,8 @@ CacheFileIOManager::DoomFileInternal(CacheFileHandle *aHandle,
 
   if (aHandle->mFileExists) {
     
-    if (aHandle->mFD) {
-      ReleaseNSPRHandleInternal(aHandle, true);
-    }
+    rv = MaybeReleaseNSPRHandleInternal(aHandle, true);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     nsCOMPtr<nsIFile> file;
@@ -2256,17 +2251,21 @@ CacheFileIOManager::ReleaseNSPRHandle(CacheFileHandle *aHandle)
 }
 
 nsresult
-CacheFileIOManager::ReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
-                                              bool aIgnoreShutdownLag)
+CacheFileIOManager::MaybeReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
+                                                   bool aIgnoreShutdownLag)
 {
-  LOG(("CacheFileIOManager::ReleaseNSPRHandleInternal() [handle=%p]", aHandle));
+  LOG(("CacheFileIOManager::MaybeReleaseNSPRHandleInternal() [handle=%p]", aHandle));
 
   MOZ_ASSERT(CacheFileIOManager::IsOnIOThreadOrCeased());
-  MOZ_ASSERT(aHandle->mFD);
 
-  DebugOnly<bool> found;
-  found = mHandlesByLastUsed.RemoveElement(aHandle);
-  MOZ_ASSERT(found);
+  if (aHandle->mFD) {
+    DebugOnly<bool> found;
+    found = mHandlesByLastUsed.RemoveElement(aHandle);
+    MOZ_ASSERT(found);
+  }
+
+  PRFileDesc *fd = aHandle->mFD;
+  aHandle->mFD = nullptr;
 
   
   
@@ -2282,13 +2281,21 @@ CacheFileIOManager::ReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
     
     
     
-    aHandle->mLeakIt = true;
+    
+    
     LOG(("  past the shutdown I/O lag, leaking file handle"));
-  } else {
-    PR_Close(aHandle->mFD);
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
-  aHandle->mFD = nullptr;
+  if (!fd) {
+    
+    return NS_OK;
+  }
+
+  PRStatus status = PR_Close(fd);
+  if (status != PR_SUCCESS) {
+    return NS_ERROR_FAILURE;
+  }
 
   return NS_OK;
 }
@@ -2584,9 +2591,8 @@ CacheFileIOManager::RenameFileInternal(CacheFileHandle *aHandle,
     return NS_OK;
   }
 
-  if (aHandle->mFD) {
-    ReleaseNSPRHandleInternal(aHandle, true);
-  }
+  rv = MaybeReleaseNSPRHandleInternal(aHandle, true);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   rv = aHandle->mFile->MoveToNative(nullptr, aNewName);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3791,7 +3797,7 @@ CacheFileIOManager::OpenNSPRHandle(CacheFileHandle *aHandle, bool aCreate)
 
   if (mHandlesByLastUsed.Length() == kOpenHandlesLimit) {
     
-    rv = ReleaseNSPRHandleInternal(mHandlesByLastUsed[0], true);
+    rv = MaybeReleaseNSPRHandleInternal(mHandlesByLastUsed[0], true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
