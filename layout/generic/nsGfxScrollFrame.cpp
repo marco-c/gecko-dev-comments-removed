@@ -947,7 +947,7 @@ GetScrollableOverflowForPerspective(nsIFrame* aScrolledFrame,
         
         
         
-        nsRect overflow(0, 0, aScrollPort.width, aScrollPort.height);
+        nsRect overflow = aScrollPort - scrollPos;
 
         
         
