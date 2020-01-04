@@ -2299,20 +2299,24 @@ nsHTMLEditor::ReplaceOrphanedStructure(StartOrEnd aStartOrEnd,
   
   
   
-  while (aNodeArray.Length()) {
-    int32_t idx = aStartOrEnd == StartOrEnd::start ? 0
-                                                   : aNodeArray.Length() - 1;
+  bool shouldReplaceNodes = true;
+  for (uint32_t i = 0; i < aNodeArray.Length(); i++) {
+    uint32_t idx = aStartOrEnd == StartOrEnd::start ?
+      i : (aNodeArray.Length() - i - 1);
     OwningNonNull<nsINode> endpoint = aNodeArray[idx];
     if (!nsEditorUtils::IsDescendantOf(endpoint, replaceNode)) {
+      shouldReplaceNodes = false;
       break;
     }
-    aNodeArray.RemoveElementAt(idx);
   }
 
-  
-  if (aStartOrEnd == StartOrEnd::end) {
-    aNodeArray.AppendElement(*replaceNode);
-  } else {
-    aNodeArray.InsertElementAt(0, *replaceNode);
+  if (shouldReplaceNodes) {
+    
+    aNodeArray.Clear();
+    if (aStartOrEnd == StartOrEnd::end) {
+      aNodeArray.AppendElement(*replaceNode);
+    } else {
+      aNodeArray.InsertElementAt(0, *replaceNode);
+    }
   }
 }
