@@ -7877,7 +7877,9 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
       (tk->mIdent.LowerCaseEqualsLiteral("calc") ||
        tk->mIdent.LowerCaseEqualsLiteral("-moz-calc"))) {
     
-    if (!ParseCalc(aValue, aVariantMask & VARIANT_LP)) {
+    
+    
+    if (!ParseCalc(aValue, aVariantMask & VARIANT_LPN)) {
       return CSSParseResult::Error;
     }
     return CSSParseResult::Ok;
@@ -12960,7 +12962,6 @@ CSSParserImpl::ParseCalc(nsCSSValue &aValue, uint32_t aVariantMask)
   
   
   
-  NS_ASSERTION(!(aVariantMask & VARIANT_NUMBER), "unexpected variant mask");
   MOZ_ASSERT(aVariantMask != 0, "unexpected variant mask");
 
   bool oldUnitlessLengthQuirk = mUnitlessLengthQuirk;
