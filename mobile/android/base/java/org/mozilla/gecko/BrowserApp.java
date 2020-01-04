@@ -3508,7 +3508,7 @@ public class BrowserApp extends GeckoApp
                     
                     Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST, "menu");
 
-                    GeckoAppShell.openUriExternal(url, "text/plain", "", "", Intent.ACTION_SEND, tab.getDisplayTitle(), false);
+                    IntentHelper.openUriExternal(url, "text/plain", "", "", Intent.ACTION_SEND, tab.getDisplayTitle(), false);
                 }
             }
             return true;
