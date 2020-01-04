@@ -1608,17 +1608,13 @@ pref("browser.pocket.enabledLocales", "cs de en-GB en-US en-ZA es-ES es-MX fr hu
 
 pref("view_source.tab", true);
 
+pref("dom.serviceWorkers.enabled", true);
+pref("dom.serviceWorkers.interception.enabled", true);
+pref("dom.serviceWorkers.openWindow.enabled", true);
+
 #ifndef RELEASE_BUILD
 
-
-pref("dom.serviceWorkers.enabled", true);
-
-pref("dom.serviceWorkers.interception.enabled", true);
-
-
 pref("dom.push.enabled", true);
-
-pref("dom.serviceWorkers.openWindow.enabled", true);
 #endif
 
 
