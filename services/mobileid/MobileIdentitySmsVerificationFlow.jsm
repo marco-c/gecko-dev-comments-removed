@@ -8,16 +8,17 @@ this.EXPORTED_SYMBOLS = ["MobileIdentitySmsVerificationFlow"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/MobileIdentityCommon.jsm");
 Cu.import("resource://gre/modules/MobileIdentityVerificationFlow.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-#ifdef MOZ_B2G_RIL
-XPCOMUtils.defineLazyServiceGetter(this, "smsService",
-                                   "@mozilla.org/sms/smsservice;1",
-                                   "nsISmsService");
-#endif
+if (AppConstants.MOZ_B2G_RIL) {
+  XPCOMUtils.defineLazyServiceGetter(this, "smsService",
+                                     "@mozilla.org/sms/smsservice;1",
+                                     "nsISmsService");
+}
 
 this.MobileIdentitySmsVerificationFlow = function(aVerificationOptions,
                                                   aUI,
@@ -51,58 +52,58 @@ this.MobileIdentitySmsVerificationFlow.prototype = {
     
     
 
-#ifdef MOZ_B2G_RIL
-    this.observedSilentNumber = this.verificationOptions.mtSender;
-    try {
-      smsService.addSilentNumber(this.observedSilentNumber);
-    } catch (e) {
-      log.warn("We are already listening for that number");
-    }
-
-    this.onSilentSms = (function(aSubject, aTopic, aData) {
-      log.debug("Got silent message " + aSubject.sender + " - " + aSubject.body);
-      
-      
-      if (aSubject.sender != this.observedSilentNumber) {
-        return;
+    if (AppConstants.MOZ_B2G_RIL) {
+      this.observedSilentNumber = this.verificationOptions.mtSender;
+      try {
+        smsService.addSilentNumber(this.observedSilentNumber);
+      } catch (e) {
+        log.warn("We are already listening for that number");
       }
 
-      
-
-      
-      
-      
-      
-      
-      
-      
-      let verificationCode = aSubject.body;
-      if (this.verificationOptions.external) {
+      this.onSilentSms = (function(aSubject, aTopic, aData) {
+        log.debug("Got silent message " + aSubject.sender + " - " + aSubject.body);
         
-        verificationCode = aSubject.body.replace(/[^0-9]/g,'');
-      }
+        
+        if (aSubject.sender != this.observedSilentNumber) {
+          return;
+        }
 
-      log.debug("Verification code: " + verificationCode);
+        
 
-      this.verificationCodeDeferred.resolve(verificationCode);
-    }).bind(this);
+        
+        
+        
+        
+        
+        
+        
+        let verificationCode = aSubject.body;
+        if (this.verificationOptions.external) {
+          
+          verificationCode = aSubject.body.replace(/[^0-9]/g,'');
+        }
 
-    Services.obs.addObserver(this.onSilentSms,
-                             SILENT_SMS_RECEIVED_TOPIC,
-                             false);
-    log.debug("Observing messages from " + this.observedSilentNumber);
-#endif
+        log.debug("Verification code: " + verificationCode);
+
+        this.verificationCodeDeferred.resolve(verificationCode);
+      }).bind(this);
+
+      Services.obs.addObserver(this.onSilentSms,
+                               SILENT_SMS_RECEIVED_TOPIC,
+                               false);
+      log.debug("Observing messages from " + this.observedSilentNumber);
+    }
 
     return this.smsVerifyStrategy();
   },
 
   _cleanupStrategy: function() {
-#ifdef MOZ_B2G_RIL
-    smsService.removeSilentNumber(this.observedSilentNumber);
-    Services.obs.removeObserver(this.onSilentSms,
-                                SILENT_SMS_RECEIVED_TOPIC);
-    this.observedSilentNumber = null;
-    this.onSilentSms = null;
-#endif
+    if (AppConstants.MOZ_B2G_RIL) {
+      smsService.removeSilentNumber(this.observedSilentNumber);
+      Services.obs.removeObserver(this.onSilentSms,
+                                  SILENT_SMS_RECEIVED_TOPIC);
+      this.observedSilentNumber = null;
+      this.onSilentSms = null;
+    }
   }
 };
