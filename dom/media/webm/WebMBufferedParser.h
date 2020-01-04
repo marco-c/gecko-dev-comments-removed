@@ -47,9 +47,15 @@ struct WebMTimeDataOffset
 struct WebMBufferedParser
 {
   explicit WebMBufferedParser(int64_t aOffset)
-    : mStartOffset(aOffset), mCurrentOffset(aOffset), mInitEndOffset(-1),
-      mState(READ_ELEMENT_ID), mVIntRaw(false), mClusterSyncPos(0),
-      mTimecodeScale(1000000), mGotTimecodeScale(false)
+    : mStartOffset(aOffset)
+    , mCurrentOffset(aOffset)
+    , mInitEndOffset(-1)
+    , mBlockEndOffset(-1)
+    , mState(READ_ELEMENT_ID)
+    , mVIntRaw(false)
+    , mClusterSyncPos(0)
+    , mTimecodeScale(1000000)
+    , mGotTimecodeScale(false)
   {
     if (mStartOffset != 0) {
       mState = FIND_CLUSTER_SYNC;
@@ -95,6 +101,10 @@ struct WebMBufferedParser
   
   
   int64_t mInitEndOffset;
+
+  
+  
+  int64_t mBlockEndOffset;
 
 private:
   enum State {
@@ -225,7 +235,10 @@ class WebMBufferedState final
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebMBufferedState)
 
 public:
-  WebMBufferedState() : mReentrantMonitor("WebMBufferedState") {
+  WebMBufferedState()
+    : mReentrantMonitor("WebMBufferedState")
+    , mLastBlockOffset(-1)
+  {
     MOZ_COUNT_CTOR(WebMBufferedState);
   }
 
@@ -242,6 +255,8 @@ public:
 
   
   int64_t GetInitEndOffset();
+  
+  int64_t GetLastBlockOffset();
 
   
   bool GetStartTime(uint64_t *aTime);
@@ -261,6 +276,8 @@ private:
   
   
   nsTArray<WebMTimeDataOffset> mTimeMapping;
+  
+  int64_t mLastBlockOffset;
 
   
   nsTArray<WebMBufferedParser> mRangeParsers;
