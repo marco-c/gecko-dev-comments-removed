@@ -5309,9 +5309,9 @@ WorkerPrivate::NotifyHolders(JSContext* aCx, Status aStatus)
 
   nsTObserverArray<WorkerHolder*>::ForwardIterator iter(mHolders);
   while (iter.HasMore()) {
-    WorkerHolder* feature = iter.GetNext();
-    if (!feature->Notify(aStatus)) {
-      NS_WARNING("Failed to notify feature!");
+    WorkerHolder* holder = iter.GetNext();
+    if (!holder->Notify(aStatus)) {
+      NS_WARNING("Failed to notify holder!");
     }
     MOZ_ASSERT(!JS_IsExceptionPending(aCx));
   }
