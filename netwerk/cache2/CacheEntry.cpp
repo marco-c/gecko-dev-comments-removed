@@ -923,7 +923,13 @@ void CacheEntry::OnHandleClosed(CacheEntryHandle const* aHandle)
 
   mozilla::MutexAutoLock lock(mLock);
 
-  if (IsDoomed() && mHandlesCount == 0 && NS_SUCCEEDED(mFileStatus)) {
+  if (IsDoomed() && NS_SUCCEEDED(mFileStatus) &&
+      
+      (mHandlesCount == 0 ||
+       (mHandlesCount == 1 && mWriter && mWriter != aHandle))
+      ) {
+    
+    
     
     
     
@@ -1653,6 +1659,17 @@ void CacheEntry::DoomFile()
   nsresult rv = NS_ERROR_NOT_AVAILABLE;
 
   if (NS_SUCCEEDED(mFileStatus)) {
+    if (mHandlesCount == 0 ||
+        (mHandlesCount == 1 && mWriter)) {
+      
+      
+      
+      
+      
+      
+      mFile->Kill();
+    }
+
     
     rv = mFile->Doom(mDoomCallback ? this : nullptr);
     if (NS_SUCCEEDED(rv)) {
