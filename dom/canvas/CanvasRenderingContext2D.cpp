@@ -1631,11 +1631,7 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
         JS_updateMallocCounter(context, mWidth * mHeight * 4);
       }
 
-      
-      bool isOpaqueSkia = mOpaque && mTarget->GetBackendType() == BackendType::SKIA;
-      if (!canDiscardContent || isOpaqueSkia) {
-        mTarget->ClearRect(canvasRect);
-      }
+      mTarget->ClearRect(canvasRect);
 
       
       
