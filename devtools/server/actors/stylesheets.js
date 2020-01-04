@@ -28,6 +28,10 @@ const {
   getIndentationFromString
 } = require("devtools/shared/indentation");
 
+XPCOMUtils.defineLazyGetter(this, "DOMUtils", function () {
+  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
+});
+
 var TRANSITION_CLASS = "moz-styleeditor-transitioning";
 var TRANSITION_DURATION_MS = 500;
 var TRANSITION_BUFFER_MS = 1000;
@@ -41,9 +45,6 @@ transition-property: all !important;\
 }";
 
 var LOAD_ERROR = "error-load";
-
-types.addActorType("stylesheet");
-types.addActorType("originalsource");
 
 
 
@@ -65,207 +66,85 @@ let modifiedStyleSheets = new WeakMap();
 
 
 
-var StyleSheetsActor = exports.StyleSheetsActor = protocol.ActorClass({
-  typeName: "stylesheets",
+var OriginalSourceActor = protocol.ActorClass({
+  typeName: "originalsource",
 
-  
-
-
-  get window() {
-    return this.parentActor.window;
-  },
-
-  
-
-
-  get document() {
-    return this.window.document;
-  },
-
-  form: function()
-  {
-    return { actor: this.actorID };
-  },
-
-  initialize: function (conn, tabActor) {
+  initialize: function(aUrl, aSourceMap, aParentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
-    this.parentActor = tabActor;
+    this.url = aUrl;
+    this.sourceMap = aSourceMap;
+    this.parentActor = aParentActor;
+    this.conn = this.parentActor.conn;
+
+    this.text = null;
   },
 
-  
+  form: function() {
+    return {
+      actor: this.actorID, 
+      url: this.url,
+      relatedStyleSheet: this.parentActor.form()
+    };
+  },
 
-
-
-  getStyleSheets: method(Task.async(function* () {
-    
-    
-    let windows = [this.window];
-    let actors = [];
-
-    for (let win of windows) {
-      let sheets = yield this._addStyleSheets(win);
-      actors = actors.concat(sheets);
-
-      
-      for (let iframe of win.document.querySelectorAll("iframe, browser, frame")) {
-        if (iframe.contentDocument && iframe.contentWindow) {
-          
-          
-          windows.push(iframe.contentWindow);
-        }
-      }
+  _getText: function() {
+    if (this.text) {
+      return promise.resolve(this.text);
     }
-    return actors;
-  }), {
-    request: {},
-    response: { styleSheets: RetVal("array:stylesheet") }
-  }),
-
-  
-
-
-
-
-
-
-
-
-
-
-  _shouldListSheet: function(doc, sheet) {
-    
-    
-    
-    if (sheet.href && sheet.href.toLowerCase() == "about:preferencestylesheet") {
-      return false;
+    let content = this.sourceMap.sourceContentFor(this.url);
+    if (content) {
+      this.text = content;
+      return promise.resolve(content);
     }
-
-    return true;
+    let options = {
+      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
+      window: this.window
+    };
+    return fetch(this.url, options).then(({content}) => {
+      this.text = content;
+      return content;
+    });
   },
 
   
 
 
-
-
-
-
-
-
-
-  _addStyleSheets: function(win)
-  {
-    return Task.spawn(function*() {
-      let doc = win.document;
-      
-      
-      if (doc.readyState === "loading" || doc.readyState === "uninitialized") {
-        
-        yield listenOnce(win, "DOMContentLoaded", true);
-
-        
-        
-        
-        doc = win.document;
-      }
-
-      let isChrome = Services.scriptSecurityManager.isSystemPrincipal(doc.nodePrincipal);
-      let styleSheets = isChrome ? DOMUtils.getAllStyleSheets(doc) : doc.styleSheets;
-      let actors = [];
-      for (let i = 0; i < styleSheets.length; i++) {
-        let sheet = styleSheets[i];
-        if (!this._shouldListSheet(doc, sheet)) {
-          continue;
-        }
-
-        let actor = this.parentActor.createStyleSheetActor(sheet);
-        actors.push(actor);
-
-        
-        let imports = yield this._getImported(doc, actor);
-        actors = actors.concat(imports);
-      }
-      return actors;
-    }.bind(this));
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _getImported: function(doc, styleSheet) {
-    return Task.spawn(function*() {
-      let rules = yield styleSheet.getCSSRules();
-      let imported = [];
-
-      for (let i = 0; i < rules.length; i++) {
-        let rule = rules[i];
-        if (rule.type == Ci.nsIDOMCSSRule.IMPORT_RULE) {
-          
-          
-          if (!rule.styleSheet || !this._shouldListSheet(doc, rule.styleSheet)) {
-            continue;
-          }
-          let actor = this.parentActor.createStyleSheetActor(rule.styleSheet);
-          imported.push(actor);
-
-          
-          let children = yield this._getImported(doc, actor);
-          imported = imported.concat(children);
-        }
-        else if (rule.type != Ci.nsIDOMCSSRule.CHARSET_RULE) {
-          
-          break;
-        }
-      }
-
-      return imported;
-    }.bind(this));
-  },
-
-
-  
-
-
-
-
-
-
-
-
-  addStyleSheet: method(function(text) {
-    let parent = this.document.documentElement;
-    let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
-    style.setAttribute("type", "text/css");
-
-    if (text) {
-      style.appendChild(this.document.createTextNode(text));
-    }
-    parent.appendChild(style);
-
-    let actor = this.parentActor.createStyleSheetActor(style.sheet);
-    return actor;
+  getText: method(function() {
+    return this._getText().then((text) => {
+      return new LongStringActor(this.conn, text || "");
+    });
   }, {
-    request: { text: Arg(0, "string") },
-    response: { styleSheet: RetVal("stylesheet") }
+    response: {
+      text: RetVal("longstring")
+    }
   })
-});
+})
 
 
 
 
-var StyleSheetsFront = protocol.FrontClass(StyleSheetsActor, {
-  initialize: function(client, tabForm) {
-    protocol.Front.prototype.initialize.call(this, client);
-    this.actorID = tabForm.styleSheetsActor;
-    this.manage(this);
+var OriginalSourceFront = protocol.FrontClass(OriginalSourceActor, {
+  initialize: function(client, form) {
+    protocol.Front.prototype.initialize.call(this, client, form);
+
+    this.isOriginalSource = true;
+  },
+
+  form: function(form, detail) {
+    if (detail === "actorid") {
+      this.actorID = form;
+      return;
+    }
+    this.actorID = form.actor;
+    this._form = form;
+  },
+
+  get href() {
+    return this._form.url;
+  },
+  get url() {
+    return this._form.url;
   }
 });
 
@@ -392,6 +271,8 @@ var MediaRuleFront = protocol.FrontClass(MediaRuleActor, {
     return this.conn.getActor(this._form.parentStyleSheet);
   }
 });
+
+types.addActorType("stylesheet");
 
 
 
@@ -1016,6 +897,8 @@ var StyleSheetActor = protocol.ActorClass({
   }
 })
 
+exports.StyleSheetActor = StyleSheetActor;
+
 
 
 
@@ -1091,103 +974,219 @@ var StyleSheetFront = protocol.FrontClass(StyleSheetActor, {
   }
 });
 
+exports.StyleSheetFront = StyleSheetFront;
 
 
 
 
-var OriginalSourceActor = protocol.ActorClass({
-  typeName: "originalsource",
 
-  initialize: function(aUrl, aSourceMap, aParentActor) {
-    protocol.Actor.prototype.initialize.call(this, null);
+var StyleSheetsActor = protocol.ActorClass({
+  typeName: "stylesheets",
 
-    this.url = aUrl;
-    this.sourceMap = aSourceMap;
-    this.parentActor = aParentActor;
-    this.conn = this.parentActor.conn;
+  
 
-    this.text = null;
-  },
 
-  form: function() {
-    return {
-      actor: this.actorID, 
-      url: this.url,
-      relatedStyleSheet: this.parentActor.form()
-    };
-  },
-
-  _getText: function() {
-    if (this.text) {
-      return promise.resolve(this.text);
-    }
-    let content = this.sourceMap.sourceContentFor(this.url);
-    if (content) {
-      this.text = content;
-      return promise.resolve(content);
-    }
-    let options = {
-      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
-      window: this.window
-    };
-    return fetch(this.url, options).then(({content}) => {
-      this.text = content;
-      return content;
-    });
+  get window() {
+    return this.parentActor.window;
   },
 
   
 
 
-  getText: method(function() {
-    return this._getText().then((text) => {
-      return new LongStringActor(this.conn, text || "");
-    });
+  get document() {
+    return this.window.document;
+  },
+
+  form: function()
+  {
+    return { actor: this.actorID };
+  },
+
+  initialize: function (conn, tabActor) {
+    protocol.Actor.prototype.initialize.call(this, null);
+
+    this.parentActor = tabActor;
+  },
+
+  
+
+
+
+  getStyleSheets: method(Task.async(function* () {
+    
+    
+    let windows = [this.window];
+    let actors = [];
+
+    for (let win of windows) {
+      let sheets = yield this._addStyleSheets(win);
+      actors = actors.concat(sheets);
+
+      
+      for (let iframe of win.document.querySelectorAll("iframe, browser, frame")) {
+        if (iframe.contentDocument && iframe.contentWindow) {
+          
+          
+          windows.push(iframe.contentWindow);
+        }
+      }
+    }
+    return actors;
+  }), {
+    request: {},
+    response: { styleSheets: RetVal("array:stylesheet") }
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+  _shouldListSheet: function(doc, sheet) {
+    
+    
+    
+    if (sheet.href && sheet.href.toLowerCase() == "about:preferencestylesheet") {
+      return false;
+    }
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _addStyleSheets: function(win)
+  {
+    return Task.spawn(function*() {
+      let doc = win.document;
+      
+      
+      if (doc.readyState === "loading" || doc.readyState === "uninitialized") {
+        
+        yield listenOnce(win, "DOMContentLoaded", true);
+
+        
+        
+        
+        doc = win.document;
+      }
+
+      let isChrome = Services.scriptSecurityManager.isSystemPrincipal(doc.nodePrincipal);
+      let styleSheets = isChrome ? DOMUtils.getAllStyleSheets(doc) : doc.styleSheets;
+      let actors = [];
+      for (let i = 0; i < styleSheets.length; i++) {
+        let sheet = styleSheets[i];
+        if (!this._shouldListSheet(doc, sheet)) {
+          continue;
+        }
+
+        let actor = this.parentActor.createStyleSheetActor(sheet);
+        actors.push(actor);
+
+        
+        let imports = yield this._getImported(doc, actor);
+        actors = actors.concat(imports);
+      }
+      return actors;
+    }.bind(this));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _getImported: function(doc, styleSheet) {
+    return Task.spawn(function*() {
+      let rules = yield styleSheet.getCSSRules();
+      let imported = [];
+
+      for (let i = 0; i < rules.length; i++) {
+        let rule = rules[i];
+        if (rule.type == Ci.nsIDOMCSSRule.IMPORT_RULE) {
+          
+          
+          if (!rule.styleSheet || !this._shouldListSheet(doc, rule.styleSheet)) {
+            continue;
+          }
+          let actor = this.parentActor.createStyleSheetActor(rule.styleSheet);
+          imported.push(actor);
+
+          
+          let children = yield this._getImported(doc, actor);
+          imported = imported.concat(children);
+        }
+        else if (rule.type != Ci.nsIDOMCSSRule.CHARSET_RULE) {
+          
+          break;
+        }
+      }
+
+      return imported;
+    }.bind(this));
+  },
+
+
+  
+
+
+
+
+
+
+
+
+  addStyleSheet: method(function(text) {
+    let parent = this.document.documentElement;
+    let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
+    style.setAttribute("type", "text/css");
+
+    if (text) {
+      style.appendChild(this.document.createTextNode(text));
+    }
+    parent.appendChild(style);
+
+    let actor = this.parentActor.createStyleSheetActor(style.sheet);
+    return actor;
   }, {
-    response: {
-      text: RetVal("longstring")
-    }
+    request: { text: Arg(0, "string") },
+    response: { styleSheet: RetVal("stylesheet") }
   })
-})
-
-
-
-
-var OriginalSourceFront = protocol.FrontClass(OriginalSourceActor, {
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-
-    this.isOriginalSource = true;
-  },
-
-  form: function(form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-    this.actorID = form.actor;
-    this._form = form;
-  },
-
-  get href() {
-    return this._form.url;
-  },
-  get url() {
-    return this._form.url;
-  }
-});
-
-
-XPCOMUtils.defineLazyGetter(this, "DOMUtils", function () {
-  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
 
 exports.StyleSheetsActor = StyleSheetsActor;
+
+
+
+
+var StyleSheetsFront = protocol.FrontClass(StyleSheetsActor, {
+  initialize: function(client, tabForm) {
+    protocol.Front.prototype.initialize.call(this, client);
+    this.actorID = tabForm.styleSheetsActor;
+    this.manage(this);
+  }
+});
+
 exports.StyleSheetsFront = StyleSheetsFront;
-
-exports.StyleSheetActor = StyleSheetActor;
-exports.StyleSheetFront = StyleSheetFront;
-
 
 
 
