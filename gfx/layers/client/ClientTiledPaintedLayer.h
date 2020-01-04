@@ -133,6 +133,9 @@ private:
   void EndPaint();
 
   RefPtr<TiledContentClient> mContentClient;
+  
+  
+  bool mHaveSingleTiledContentClient;
   nsIntRegion mLowPrecisionValidRegion;
   BasicTiledLayerPaintData mPaintData;
 };
