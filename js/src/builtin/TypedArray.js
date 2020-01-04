@@ -1351,45 +1351,31 @@ function ArrayBufferSlice(start, end) {
     
     var new_ = new ctor(newLen);
 
-    var isWrapped = false;
-    if (IsArrayBuffer(new_)) {
-        
-        if (IsDetachedBuffer(new_))
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-    } else {
-        
-        if (!IsWrappedArrayBuffer(new_))
-            ThrowTypeError(JSMSG_NON_ARRAY_BUFFER_RETURNED);
-
-        isWrapped = true;
-
-        
-        if (callFunction(CallArrayBufferMethodIfWrapped, new_, "IsDetachedBufferThis"))
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-    }
+    
+    if (!IsArrayBuffer(new_))
+        ThrowTypeError(JSMSG_NON_ARRAY_BUFFER_RETURNED);
 
     
-    if (new_ === O)
+    if (IsDetachedBuffer(new_))
+        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+
+    
+    if (new_ == O)
         ThrowTypeError(JSMSG_SAME_ARRAY_BUFFER_RETURNED);
 
     
-    var actualLen = PossiblyWrappedArrayBufferByteLength(new_);
-    if (actualLen < newLen)
-        ThrowTypeError(JSMSG_SHORT_ARRAY_BUFFER_RETURNED, newLen, actualLen);
+    if (ArrayBufferByteLength(new_) < newLen)
+        ThrowTypeError(JSMSG_SHORT_ARRAY_BUFFER_RETURNED, newLen, ArrayBufferByteLength(new_));
 
     
     if (IsDetachedBuffer(O))
         ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
 
     
-    ArrayBufferCopyData(new_, O, first | 0, newLen | 0, isWrapped);
+    ArrayBufferCopyData(new_, O, first | 0, newLen | 0);
 
     
     return new_;
-}
-
-function IsDetachedBufferThis() {
-  return IsDetachedBuffer(this);
 }
 
 function ArrayBufferStaticSlice(buf, start, end) {
