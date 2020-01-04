@@ -987,6 +987,13 @@ function TypedArraySort(comparefn) {
     var len = TypedArrayLength(obj);
 
     if (comparefn === undefined) {
+        
+        if (IsUint8TypedArray(obj)) {
+            return CountingSort(obj, len, false );
+        } else if (IsInt8TypedArray(obj)) {
+            return CountingSort(obj, len, true );
+        }
+
         comparefn = TypedArrayCompare;
     } else {
         
