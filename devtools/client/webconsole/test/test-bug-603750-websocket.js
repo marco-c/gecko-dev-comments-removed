@@ -3,7 +3,6 @@
 
 
 
-
 window.addEventListener("load", function () {
   var ws1 = new WebSocket("ws://0.0.0.0:81");
   ws1.onopen = function() {

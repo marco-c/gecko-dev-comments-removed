@@ -6,7 +6,6 @@
 
 
 
-
 "use strict";
 
 const TEST_URI_WARNING = "http://example.com/browser/devtools/client/" +

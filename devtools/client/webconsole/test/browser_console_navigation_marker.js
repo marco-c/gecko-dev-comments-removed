@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 const PREF = "devtools.webconsole.persistlog";

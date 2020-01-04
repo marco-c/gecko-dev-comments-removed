@@ -14,7 +14,6 @@
 
 
 
-
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf8,Web Console CSP report only " +

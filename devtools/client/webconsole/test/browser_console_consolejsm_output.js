@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 function onNewMessage(aEvent, aNewMessages) {

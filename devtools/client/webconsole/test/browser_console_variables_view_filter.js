@@ -5,7 +5,6 @@
 
 
 
-
 function props(view, prefix = "") {
   
   let visible = [...view].filter(([id, prop]) => prop._isMatch);
