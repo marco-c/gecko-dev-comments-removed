@@ -2333,7 +2333,8 @@ GetNextContinuationWithSameStyle(nsIFrame* aFrame,
 nsresult
 RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 {
-  if (nsGkAtoms::placeholderFrame == aFrame->GetType()) {
+  nsIAtom* frameType = aFrame->GetType();
+  if (frameType == nsGkAtoms::placeholderFrame) {
     
     nsIFrame* outOfFlow =
       nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
@@ -2341,6 +2342,10 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
     do {
       ReparentStyleContext(outOfFlow);
     } while ((outOfFlow = outOfFlow->GetNextContinuation()));
+  } else if (frameType == nsGkAtoms::backdropFrame) {
+    
+    
+    return NS_OK;
   }
 
   
