@@ -121,15 +121,17 @@ Throw(JSContext* aCx, nsresult aRv, const nsACString& aMessage)
 
   CycleCollectedJSRuntime* runtime = CycleCollectedJSRuntime::Get();
   nsCOMPtr<nsIException> existingException = runtime->GetPendingException();
-  if (existingException) {
+  
+  
+  
+  runtime->SetPendingException(nullptr);
+
+  
+  if (aMessage.IsEmpty() && existingException) {
     nsresult nr;
     if (NS_SUCCEEDED(existingException->GetResult(&nr)) &&
         aRv == nr) {
       
-
-      
-      runtime->SetPendingException(nullptr);
-
       if (!ThrowExceptionObject(aCx, existingException)) {
         
         
