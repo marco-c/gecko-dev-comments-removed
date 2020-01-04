@@ -8,6 +8,7 @@
 #define GMP_LOADER_H__
 
 #include <stdint.h>
+#include "prlink.h"
 #include "gmp-entrypoints.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
@@ -28,6 +29,25 @@ public:
   virtual void SetSandboxInfo(MacSandboxInfo* aSandboxInfo) = 0;
 #endif
 };
+
+
+class GMPAdapter {
+public:
+  virtual ~GMPAdapter() {}
+  
+  
+  
+  virtual void SetAdaptee(PRLibrary* aLib) = 0;
+
+  
+  virtual GMPErr GMPInit(const GMPPlatformAPI* aPlatformAPI) = 0;
+  virtual GMPErr GMPGetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI) = 0;
+  virtual void GMPShutdown() = 0;
+  virtual void GMPSetNodeId(const char* aNodeId, uint32_t aLength) = 0;
+};
+
+
+
 
 
 
@@ -52,11 +72,14 @@ public:
   
   
   
+  
+  
   virtual bool Load(const char* aUTF8LibPath,
                     uint32_t aLibPathLen,
                     char* aOriginSalt,
                     uint32_t aOriginSaltLen,
-                    const GMPPlatformAPI* aPlatformAPI) = 0;
+                    const GMPPlatformAPI* aPlatformAPI,
+                    GMPAdapter* aAdapter = nullptr) = 0;
 
   
   virtual GMPErr GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI) = 0;
