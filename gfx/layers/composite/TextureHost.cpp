@@ -516,6 +516,16 @@ BufferTextureHost::EnsureWrappingTextureSource()
   }
 
   mFirstSource = mCompositor->CreateDataTextureSourceAround(surf);
+  if (!mFirstSource) {
+    
+    
+    
+    
+    
+    NS_WARNING("Failed to use a BufferTextureHost without intermediate buffer");
+    return false;
+  }
+
   mFirstSource->SetUpdateSerial(mUpdateSerial);
   mFirstSource->SetOwner(this);
 
