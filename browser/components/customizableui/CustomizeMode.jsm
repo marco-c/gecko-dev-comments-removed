@@ -210,7 +210,10 @@ CustomizeMode.prototype = {
       return;
     }
     if (!gTab.selected) {
+      
+      
       gTab.ownerGlobal.gBrowser.selectedTab = gTab;
+      return;
     }
     gTab.ownerGlobal.focus();
     if (gTab.ownerDocument != this.document) {
