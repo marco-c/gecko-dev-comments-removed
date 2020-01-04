@@ -93,9 +93,6 @@ public:
   IMPL_EVENT_HANDLER(error)
   void Close();
 
-  
-  static bool PrefEnabled(JSContext* aCx = nullptr, JSObject* aGlobal = nullptr);
-
   virtual void DisconnectFromOwner() override;
 
 protected:

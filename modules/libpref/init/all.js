@@ -1566,8 +1566,6 @@ pref("network.websocket.delay-failed-reconnects", true);
 
 
 
-pref("dom.server-events.enabled", true);
-
 pref("dom.server-events.default-reconnection-time", 5000); 
 
 
