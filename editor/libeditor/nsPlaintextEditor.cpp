@@ -888,7 +888,8 @@ nsPlaintextEditor::UpdateIMEComposition(nsIDOMEvent* aDOMTextEvent)
   
   
   
-  if (IsIMEComposing()) {
+  
+  if (!compositionChangeEvent->IsFollowedByCompositionEnd()) {
     NotifyEditorObservers(eNotifyEditorObserversOfEnd);
   }
 

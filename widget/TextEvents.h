@@ -365,6 +365,7 @@ public:
   WidgetCompositionEvent(bool aIsTrusted, EventMessage aMessage,
                          nsIWidget* aWidget)
     : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eCompositionEventClass)
+    , mOriginalMessage(eVoidEvent)
   {
     
     
@@ -391,12 +392,17 @@ public:
 
   nsRefPtr<TextRangeArray> mRanges;
 
+  
+  
+  EventMessage mOriginalMessage;
+
   void AssignCompositionEventData(const WidgetCompositionEvent& aEvent,
                                   bool aCopyTargets)
   {
     AssignGUIEventData(aEvent, aCopyTargets);
 
     mData = aEvent.mData;
+    mOriginalMessage = aEvent.mOriginalMessage;
 
     
     
@@ -438,6 +444,12 @@ public:
     return mMessage == NS_COMPOSITION_END ||
            mMessage == NS_COMPOSITION_COMMIT ||
            mMessage == NS_COMPOSITION_COMMIT_AS_IS;
+  }
+
+  bool IsFollowedByCompositionEnd() const
+  {
+    return mOriginalMessage == NS_COMPOSITION_COMMIT ||
+           mOriginalMessage == NS_COMPOSITION_COMMIT_AS_IS;
   }
 };
 
