@@ -81,6 +81,10 @@ public:
     virtual ~SharedSurface() {
     }
 
+    
+    
+    virtual layers::TextureFlags GetTextureFlags() const;
+
     bool IsLocked() const {
         return mIsLocked;
     }
