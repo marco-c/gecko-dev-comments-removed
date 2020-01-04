@@ -276,6 +276,7 @@ struct JSCompartment
     bool                         marked;
     bool                         warnedAboutNoSuchMethod;
     bool                         warnedAboutFlagsArgument;
+    bool                         warnedAboutExprClosure;
 
     
     
