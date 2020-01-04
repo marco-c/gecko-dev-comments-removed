@@ -1051,6 +1051,10 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
           maxPosition = containerBox[size] + step,
           initialAxis = axis[0];
 
+      if (step == 0) {
+        return;
+      }
+
       
       
       
