@@ -18,11 +18,18 @@ var makeDebugger = require("./utils/make-debugger");
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(
+  this, "swm",
+  "@mozilla.org/serviceworkers/manager;1",
+  "nsIServiceWorkerManager"
+);
+
 loader.lazyRequireGetter(this, "RootActor", "devtools/server/actors/root", true);
 loader.lazyRequireGetter(this, "ThreadActor", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "BrowserAddonActor", "devtools/server/actors/addon", true);
 loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker", true);
+loader.lazyRequireGetter(this, "ServiceWorkerRegistrationActor", "devtools/server/actors/worker", true);
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 
 
@@ -111,6 +118,34 @@ function sendShutdownEvent() {
 }
 
 exports.sendShutdownEvent = sendShutdownEvent;
+
+
+
+
+
+
+
+
+
+function matchServiceWorkerRegistration(clientURL) {
+  let matchingRegistration = null;
+
+  let array = swm.getAllRegistrations();
+  for (let index = 0; index < array.length; ++index) {
+    let registration =
+      array.queryElementAt(index, Ci.nsIServiceWorkerRegistrationInfo);
+    if (clientURL.indexOf(registration.scope) !== 0) {
+      continue;
+    }
+
+    if (matchingRegistration === null ||
+        matchingRegistration.scope.length < registration.scope.length) {
+      matchingRegistration = registration;
+    }
+  }
+
+  return matchingRegistration;
+}
 
 
 
@@ -739,6 +774,9 @@ function TabActor(aConnection)
   this._workerActorList = null;
   this._workerActorPool = null;
   this._onWorkerActorListChanged = this._onWorkerActorListChanged.bind(this);
+
+  this._serviceWorkerRegistrationActor = null;
+  this._mustNotifyServiceWorkerRegistrationChanged = false;
 }
 
 
@@ -1119,6 +1157,107 @@ TabActor.prototype = {
   _onWorkerActorListChanged: function () {
     this._workerActorList.onListChanged = null;
     this.conn.sendActorEvent(this.actorID, "workerListChanged");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  onGetServiceWorkerRegistration: function () {
+    
+    
+    
+    
+    
+    let actor = null;
+
+    
+    
+    
+    
+    
+    
+    let registration = matchServiceWorkerRegistration(this.url);
+    if ((this._serviceWorkerRegistrationActor === null &&
+         registration === null) ||
+        (this._serviceWorkerRegistrationActor !== null &&
+         this._serviceWorkerRegistrationActor.registration === registration)) {
+      
+      
+      
+      actor = this._serviceWorkerRegistrationActor;
+    }
+    else {
+      
+      
+      
+      
+      if (this._serviceWorkerRegistrationActor) {
+        this._tabPool.removeActor(this._serviceWorkerRegistrationActor);
+      }
+
+      
+      
+      
+      if (registration !== null) {
+        
+        
+        
+        actor = new ServiceWorkerRegistrationActor(registration);
+        this._tabPool.addActor(actor);
+      }
+
+      
+      
+      
+      this._serviceWorkerRegistrationActor = actor;
+    }
+
+    
+    
+    if (!this._mustNotifyServiceWorkerRegistrationChanged) {
+      swm.addListener(this);
+      this._mustNotifyServiceWorkerRegistrationChanged = true;
+    }
+
+    
+    
+    return {
+      "registration": actor !== null ? actor.form() : null
+    }
+  },
+
+  _notifyServiceWorkerRegistrationChanged: function () {
+    this.conn.sendActorEvent(this.actorID, "serviceWorkerRegistrationChanged");
+    swm.removeListener(this);
+    this._mustNotifyServiceWorkerRegistrationChanged = false;
+  },
+
+  onRegister: function () {
+    let registration = matchServiceWorkerRegistration(this.url);
+    if ((this._serviceWorkerRegistrationActor === null &&
+         registration !== null) ||
+        (this._serviceWorkerRegistrationActor !== null &&
+         this._serviceWorkerRegistrationActor.registration !== registration)) {
+      this._notifyServiceWorkerRegistrationChanged();
+    }
+  },
+
+  onUnregister: function () {
+    let registration = matchServiceWorkerRegistration(this.url);
+    if ((this._serviceWorkerRegistrationActor === null &&
+         registration !== null) ||
+        (this._serviceWorkerRegistrationActor !== null &&
+         this._serviceWorkerRegistrationActor.registration !== registration)) {
+      this._notifyServiceWorkerRegistrationChanged();
+    }
   },
 
   observe: function (aSubject, aTopic, aData) {
@@ -1840,7 +1979,8 @@ TabActor.prototype.requestTypes = {
   "reconfigure": TabActor.prototype.onReconfigure,
   "switchToFrame": TabActor.prototype.onSwitchToFrame,
   "listFrames": TabActor.prototype.onListFrames,
-  "listWorkers": TabActor.prototype.onListWorkers
+  "listWorkers": TabActor.prototype.onListWorkers,
+  "getServiceWorkerRegistration": TabActor.prototype.onGetServiceWorkerRegistration
 };
 
 exports.TabActor = TabActor;
