@@ -274,13 +274,27 @@ WindowNamedPropertiesHandler::Create(JSContext* aCx,
   
   
   
-  JS::Rooted<JSObject*> gsp(aCx);
   js::ProxyOptions options;
   options.setSingleton(true);
   options.setClass(&WindowNamedPropertiesClass.mBase);
-  return js::NewProxyObject(aCx, WindowNamedPropertiesHandler::getInstance(),
-                            JS::NullHandleValue, aProto,
-                            options);
+
+  JS::Rooted<JSObject*> gsp(aCx);
+  gsp = js::NewProxyObject(aCx, WindowNamedPropertiesHandler::getInstance(),
+                           JS::NullHandleValue, aProto,
+                           options);
+  if (!gsp) {
+    return nullptr;
+  }
+
+  bool succeeded;
+  if (!JS_SetImmutablePrototype(aCx, gsp, &succeeded)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(succeeded,
+             "errors making the [[Prototype]] of the named properties object "
+             "immutable should have been JSAPI failures, not !succeeded");
+
+  return gsp;
 }
 
 } 
