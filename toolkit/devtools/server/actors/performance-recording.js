@@ -236,6 +236,14 @@ let PerformanceRecordingFront = exports.PerformanceRecordingFront = protocol.Fro
     if (form.profile) {
       this._profile = form.profile;
     }
+
+    
+    
+    
+    if (this._completed && !this._markersSorted) {
+      this._markers = this._markers.sort((a, b) => (a.start > b.start));
+      this._markersSorted = true;
+    }
   },
 
   initialize: function (client, form, config) {
