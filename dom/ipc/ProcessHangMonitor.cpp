@@ -167,15 +167,12 @@ public:
 
 
 
-  void SetHangData(const HangData& aHangData) { mHangData = aHangData; }
-
-  
 
 
 
-
-  void SetDumpId(nsString& aId) {
-    mDumpId = aId;
+  void SetHangData(const HangData& aHangData, const nsAString& aDumpId) {
+    mHangData = aHangData;
+    mDumpId = aDumpId;
   }
 
   void ClearHang() {
@@ -216,9 +213,17 @@ public:
   void EndStartingDebugger();
   void CleanupPluginHang(uint32_t aPluginId, bool aRemoveFiles);
 
+  
+
+
+
+
+  void UpdateMinidump(uint32_t aPluginId, const nsString& aDumpId);
+
   MessageLoop* MonitorLoop() { return mHangMonitor->MonitorLoop(); }
 
- private:
+private:
+  bool TakeBrowserMinidump(const PluginHangData& aPhd, nsString& aCrashId);
   void ShutdownOnThread();
 
   const RefPtr<ProcessHangMonitor> mHangMonitor;
@@ -550,11 +555,15 @@ class HangObserverNotifier final : public Runnable
 {
 public:
   HangObserverNotifier(HangMonitoredProcess* aProcess,
+                       HangMonitorParent *aParent,
                        const HangData& aHangData,
-                       const nsString& aBrowserDumpId)
+                       const nsString& aBrowserDumpId,
+                       bool aTakeMinidump)
     : mProcess(aProcess),
+      mParent(aParent),
       mHangData(aHangData),
-      mBrowserDumpId(aBrowserDumpId)
+      mBrowserDumpId(aBrowserDumpId),
+      mTakeMinidump(aTakeMinidump)
   {}
 
   NS_IMETHOD
@@ -564,14 +573,19 @@ public:
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
     nsString dumpId;
-    if (mHangData.type() == HangData::TPluginHangData) {
+    if ((mHangData.type() == HangData::TPluginHangData) && mTakeMinidump) {
+      
+      
       const PluginHangData& phd = mHangData.get_PluginHangData();
       plugins::TakeFullMinidump(phd.pluginId(), phd.contentProcessId(),
                                 mBrowserDumpId, dumpId);
+      mParent->UpdateMinidump(phd.pluginId(), dumpId);
+    } else {
+      
+      dumpId = mBrowserDumpId;
     }
 
-    mProcess->SetHangData(mHangData);
-    mProcess->SetDumpId(dumpId);
+    mProcess->SetHangData(mHangData, dumpId);
 
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
@@ -581,9 +595,39 @@ public:
 
 private:
   RefPtr<HangMonitoredProcess> mProcess;
+  HangMonitorParent* mParent;
   HangData mHangData;
   nsAutoString mBrowserDumpId;
+  bool mTakeMinidump;
 };
+
+
+
+
+bool
+HangMonitorParent::TakeBrowserMinidump(const PluginHangData& aPhd,
+                                       nsString& aCrashId)
+{
+#ifdef MOZ_CRASHREPORTER
+  MutexAutoLock lock(mBrowserCrashDumpHashLock);
+  if (!mBrowserCrashDumpIds.Get(aPhd.pluginId(), &aCrashId)) {
+    nsCOMPtr<nsIFile> browserDump;
+    if (CrashReporter::TakeMinidump(getter_AddRefs(browserDump), true)) {
+      if (!CrashReporter::GetIDFromMinidump(browserDump, aCrashId)
+          || aCrashId.IsEmpty()) {
+        browserDump->Remove(false);
+        NS_WARNING("Failed to generate timely browser stack, "
+                   "this is bad for plugin hang analysis!");
+      } else {
+        mBrowserCrashDumpIds.Put(aPhd.pluginId(), aCrashId);
+        return true;
+      }
+    }
+  }
+#endif 
+
+  return false;
+}
 
 bool
 HangMonitorParent::RecvHangEvidence(const HangData& aHangData)
@@ -606,30 +650,17 @@ HangMonitorParent::RecvHangEvidence(const HangData& aHangData)
   
   
   nsAutoString crashId;
-#ifdef MOZ_CRASHREPORTER
+  bool takeMinidump = false;
   if (aHangData.type() == HangData::TPluginHangData) {
-    MutexAutoLock lock(mBrowserCrashDumpHashLock);
-    const PluginHangData& phd = aHangData.get_PluginHangData();
-    if (!mBrowserCrashDumpIds.Get(phd.pluginId(), &crashId)) {
-      nsCOMPtr<nsIFile> browserDump;
-      if (CrashReporter::TakeMinidump(getter_AddRefs(browserDump), true)) {
-        if (!CrashReporter::GetIDFromMinidump(browserDump, crashId) || crashId.IsEmpty()) {
-          browserDump->Remove(false);
-          NS_WARNING("Failed to generate timely browser stack, this is bad for plugin hang analysis!");
-        } else {
-          mBrowserCrashDumpIds.Put(phd.pluginId(), crashId);
-        }
-      }
-    }
+    takeMinidump = TakeBrowserMinidump(aHangData.get_PluginHangData(), crashId);
   }
-#endif
 
   mHangMonitor->InitiateCPOWTimeout();
 
   MonitorAutoLock lock(mMonitor);
 
   nsCOMPtr<nsIRunnable> notifier =
-    new HangObserverNotifier(mProcess, aHangData, crashId);
+    new HangObserverNotifier(mProcess, this, aHangData, crashId, takeMinidump);
   NS_DispatchToMainThread(notifier);
 
   return true;
@@ -724,6 +755,17 @@ HangMonitorParent::CleanupPluginHang(uint32_t aPluginId, bool aRemoveFiles)
     CrashReporter::DeleteMinidumpFilesForID(crashId);
   }
 #endif
+}
+
+void
+HangMonitorParent::UpdateMinidump(uint32_t aPluginId, const nsString& aDumpId)
+{
+  if (aDumpId.IsEmpty()) {
+    return;
+  }
+
+  MutexAutoLock lock(mBrowserCrashDumpHashLock);
+  mBrowserCrashDumpIds.Put(aPluginId, aDumpId);
 }
 
 
