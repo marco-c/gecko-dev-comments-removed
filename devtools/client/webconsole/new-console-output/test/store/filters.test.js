@@ -14,11 +14,16 @@ const { setupStore } = require("devtools/client/webconsole/new-console-output/te
 const { MESSAGE_LEVEL } = require("devtools/client/webconsole/new-console-output/constants");
 
 describe("Filtering", () => {
-  const numMessages = 5;
+  const numMessages = 7;
   const store = setupStore([
+    
     "console.log('foobar', 'test')",
     "console.warn('danger, will robinson!')",
     "console.log(undefined)",
+    "console.count('bar')",
+    
+    "new Date(0)",
+    
     "ReferenceError"
   ]);
   
@@ -33,8 +38,14 @@ describe("Filtering", () => {
       store.dispatch(actions.filterToggle(MESSAGE_LEVEL.LOG));
 
       let messages = getAllMessages(store.getState());
-      
-      expect(messages.size).toEqual(numMessages - 3);
+      expect(messages.size).toEqual(numMessages - 2);
+    });
+
+    it("filters debug messages", () => {
+      store.dispatch(actions.filterToggle(MESSAGE_LEVEL.DEBUG));
+
+      let messages = getAllMessages(store.getState());
+      expect(messages.size).toEqual(numMessages - 1);
     });
 
     
@@ -62,7 +73,7 @@ describe("Filtering", () => {
       let messages = getAllMessages(store.getState());
       
       
-      expect(messages.size).toEqual(3);
+      expect(messages.size).toEqual(5);
     });
   });
 
@@ -81,6 +92,7 @@ describe("Clear filters", () => {
     store.dispatch(actions.filterTextSet("foobar"));
     let filters = getAllFilters(store.getState());
     expect(filters.toJS()).toEqual({
+      "debug": true,
       "error": false,
       "info": true,
       "log": true,
@@ -92,6 +104,7 @@ describe("Clear filters", () => {
 
     filters = getAllFilters(store.getState());
     expect(filters.toJS()).toEqual({
+      "debug": true,
       "error": true,
       "info": true,
       "log": true,
