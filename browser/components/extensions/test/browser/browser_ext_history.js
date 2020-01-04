@@ -459,7 +459,9 @@ add_task(function* test_on_visited() {
     let onVisited = onVisitedData[index];
     ok(PlacesUtils.isValidGuid(onVisited.id), "onVisited received a valid id");
     is(onVisited.url, expected.url, "onVisited received the expected url");
-    is(onVisited.title, expected.title, "onVisited received the expected title");
+    
+    
+    is(onVisited.title, "", "onVisited received a blank title");
     is(onVisited.lastVisitTime, expected.time, "onVisited received the expected time");
     is(onVisited.visitCount, expected.visitCount, "onVisited received the expected visitCount");
   }
