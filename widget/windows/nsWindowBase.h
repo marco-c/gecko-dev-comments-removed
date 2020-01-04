@@ -43,7 +43,7 @@ public:
 
 
   virtual void InitEvent(mozilla::WidgetGUIEvent& aEvent,
-                         mozilla::LayoutDeviceIntPoint* aPoint = nullptr) = 0;
+                         LayoutDeviceIntPoint* aPoint = nullptr) = 0;
 
   
 

@@ -332,6 +332,10 @@ class nsIWidget : public nsISupports {
     typedef mozilla::widget::SizeConstraints SizeConstraints;
     typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
     typedef mozilla::CompositorVsyncDispatcher CompositorVsyncDispatcher;
+    typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
+    typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
+    typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+    typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
 
     
     struct ThemeGeometry {
@@ -808,9 +812,9 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetBounds(mozilla::LayoutDeviceIntRect &aRect) = 0;
-    NS_IMETHOD GetBoundsUntyped(nsIntRect &aRect) {
-      mozilla::LayoutDeviceIntRect tmp;
+    NS_IMETHOD GetBounds(LayoutDeviceIntRect& aRect) = 0;
+    NS_IMETHOD GetBoundsUntyped(nsIntRect& aRect) {
+      LayoutDeviceIntRect tmp;
       nsresult rv = GetBounds(tmp);
       aRect = tmp.ToUnknownRect();
       return rv;
@@ -826,9 +830,9 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetScreenBounds(mozilla::LayoutDeviceIntRect &aRect) = 0;
-    NS_IMETHOD GetScreenBoundsUntyped(nsIntRect &aRect) {
-      mozilla::LayoutDeviceIntRect tmp;
+    NS_IMETHOD GetScreenBounds(LayoutDeviceIntRect& aRect) = 0;
+    NS_IMETHOD GetScreenBoundsUntyped(nsIntRect& aRect) {
+      LayoutDeviceIntRect tmp;
       nsresult rv = GetScreenBounds(tmp);
       aRect = tmp.ToUnknownRect();
       return rv;
@@ -846,7 +850,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetRestoredBounds(mozilla::LayoutDeviceIntRect &aRect) = 0;
+    NS_IMETHOD GetRestoredBounds(mozilla::LayoutDeviceIntRect& aRect) = 0;
 
     
 
@@ -860,9 +864,9 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetClientBounds(mozilla::LayoutDeviceIntRect &aRect) = 0;
-    NS_IMETHOD GetClientBoundsUntyped(nsIntRect &aRect) {
-      mozilla::LayoutDeviceIntRect tmp;
+    NS_IMETHOD GetClientBounds(mozilla::LayoutDeviceIntRect& aRect) = 0;
+    NS_IMETHOD GetClientBoundsUntyped(nsIntRect& aRect) {
+      LayoutDeviceIntRect tmp;
       nsresult rv = GetClientBounds(tmp);
       aRect = tmp.ToUnknownRect();
       return rv;
@@ -871,7 +875,7 @@ class nsIWidget : public nsISupports {
     
 
 
-    NS_IMETHOD GetNonClientMargins(mozilla::LayoutDeviceIntMargin &margins) = 0;
+    NS_IMETHOD GetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
 
     
 
@@ -885,22 +889,22 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD SetNonClientMargins(mozilla::LayoutDeviceIntMargin &margins) = 0;
+    NS_IMETHOD SetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
 
     
 
 
 
 
-    virtual mozilla::LayoutDeviceIntPoint GetClientOffset() = 0;
+    virtual LayoutDeviceIntPoint GetClientOffset() = 0;
 
     
 
 
-    virtual mozilla::LayoutDeviceIntSize GetClientSize() {
+    virtual LayoutDeviceIntSize GetClientSize() {
       
       
-      mozilla::LayoutDeviceIntRect rect;
+      LayoutDeviceIntRect rect;
       GetClientBounds(rect);
       return rect.Size();
     }
@@ -996,7 +1000,7 @@ class nsIWidget : public nsISupports {
         nsCOMPtr<nsIWidget> mChild;
         uintptr_t mWindowID; 
         bool mVisible; 
-        mozilla::LayoutDeviceIntRect mBounds;
+        LayoutDeviceIntRect mBounds;
         nsTArray<nsIntRect> mClipRegion;
     };
 
@@ -1358,15 +1362,15 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual mozilla::LayoutDeviceIntPoint WidgetToScreenOffset() = 0;
+    virtual LayoutDeviceIntPoint WidgetToScreenOffset() = 0;
 
     
 
 
 
 
-    virtual mozilla::LayoutDeviceIntSize ClientToWindowSize(
-                const mozilla::LayoutDeviceIntSize& aClientSize) = 0;
+    virtual LayoutDeviceIntSize ClientToWindowSize(
+                const LayoutDeviceIntSize& aClientSize) = 0;
 
     
 
@@ -1569,7 +1573,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual nsresult SynthesizeNativeMouseEvent(mozilla::LayoutDeviceIntPoint aPoint,
+    virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
                                                 uint32_t aNativeMessage,
                                                 uint32_t aModifierFlags,
                                                 nsIObserver* aObserver) = 0;
@@ -1580,7 +1584,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual nsresult SynthesizeNativeMouseMove(mozilla::LayoutDeviceIntPoint aPoint,
+    virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
                                                nsIObserver* aObserver) = 0;
 
     
@@ -1606,7 +1610,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual nsresult SynthesizeNativeMouseScrollEvent(mozilla::LayoutDeviceIntPoint aPoint,
+    virtual nsresult SynthesizeNativeMouseScrollEvent(LayoutDeviceIntPoint aPoint,
                                                       uint32_t aNativeMessage,
                                                       double aDeltaX,
                                                       double aDeltaY,
@@ -1844,7 +1848,7 @@ public:
 
 
 
-    NS_IMETHOD OnDefaultButtonLoaded(const mozilla::LayoutDeviceIntRect& aButtonRect) = 0;
+    NS_IMETHOD OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
 
     
 
@@ -1936,7 +1940,7 @@ public:
        if (!IsVisible()) {
            return false;
        }
-       mozilla::LayoutDeviceIntRect bounds;
+       LayoutDeviceIntRect bounds;
        nsresult rv = GetBounds(bounds);
        NS_ENSURE_SUCCESS(rv, false);
        return !bounds.IsEmpty();
@@ -1954,8 +1958,8 @@ public:
 
 
 
-    virtual mozilla::LayoutDeviceIntRect GetNaturalBounds() {
-        mozilla::LayoutDeviceIntRect bounds;
+    virtual LayoutDeviceIntRect GetNaturalBounds() {
+        LayoutDeviceIntRect bounds;
         GetBounds(bounds);
         return bounds;
     }
