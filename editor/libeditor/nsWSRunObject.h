@@ -203,9 +203,9 @@ class MOZ_STACK_CLASS nsWSRunObject
     
     
     
-    mozilla::dom::Element* InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
-                                       int32_t* aInOutOffset,
-                                       nsIEditor::EDirection aSelect);
+    already_AddRefed<mozilla::dom::Element>
+      InsertBreak(nsCOMPtr<nsINode>* aInOutParent, int32_t* aInOutOffset,
+                  nsIEditor::EDirection aSelect);
 
     
     
