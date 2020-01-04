@@ -6041,6 +6041,12 @@ nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
 {
   AutoObserverNotifier notifier(aObserver, "mouseevent");
 
+  if (aNativeMessage == MOUSEEVENTF_MOVE) {
+    
+    
+    
+    sLastMouseMovePoint = {0};
+  }
   ::SetCursorPos(aPoint.x, aPoint.y);
 
   INPUT input;
