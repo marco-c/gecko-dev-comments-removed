@@ -70,11 +70,6 @@ class Proxy
                             ElementAdder* adder);
 
     static void trace(JSTracer* trc, JSObject* obj);
-
-    
-    static bool callProp(JSContext* cx, HandleObject proxy, HandleValue reveiver, HandleId id,
-                         MutableHandleValue vp);
-
 };
 
 } 

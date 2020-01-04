@@ -505,17 +505,6 @@ IsCacheableNoProperty(JSObject* obj, JSObject* holder, Shape* shape, jsbytecode*
     if (!pc)
         return false;
 
-#if JS_HAS_NO_SUCH_METHOD
-    
-    
-    
-    if (JSOp(*pc) == JSOP_CALLPROP ||
-        JSOp(*pc) == JSOP_CALLELEM)
-    {
-        return false;
-    }
-#endif
-
     
     
     if (!output.hasValue())
@@ -1676,13 +1665,6 @@ ProxyGetProperty(JSContext* cx, HandleObject proxy, HandleId id, MutableHandleVa
 }
 
 static bool
-ProxyCallProperty(JSContext* cx, HandleObject proxy, HandleId id, MutableHandleValue vp)
-{
-    RootedValue receiver(cx, ObjectValue(*proxy));
-    return Proxy::callProp(cx, proxy, receiver, id, vp);
-}
-
-static bool
 EmitCallProxyGet(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& attacher,
                  jsid id, LiveRegisterSet liveRegs, Register object, TypedOrValueRegister output,
                  jsbytecode* pc, void* returnAddr)
@@ -1703,10 +1685,6 @@ EmitCallProxyGet(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& at
     Register argVpReg        = regSet.takeAnyGeneral();
 
     Register scratch         = regSet.takeAnyGeneral();
-
-    void* getFunction = JSOp(*pc) == JSOP_CALLPROP                        ?
-                            JS_FUNC_TO_DATA_PTR(void*, ProxyCallProperty) :
-                            JS_FUNC_TO_DATA_PTR(void*, ProxyGetProperty);
 
     
     attacher.pushStubCodePointer(masm);
@@ -1734,7 +1712,7 @@ EmitCallProxyGet(JSContext* cx, MacroAssembler& masm, IonCache::StubAttacher& at
     masm.passABIArg(argProxyReg);
     masm.passABIArg(argIdReg);
     masm.passABIArg(argVpReg);
-    masm.callWithABI(getFunction);
+    masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, ProxyGetProperty));
 
     
     masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
@@ -2196,17 +2174,6 @@ GetPropertyIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex
         RootedScript script(cx);
         jsbytecode* pc;
         cache.getScriptedLocation(&script, &pc);
-
-        
-        
-
-#if JS_HAS_NO_SUCH_METHOD
-        
-        if (JSOp(*pc) == JSOP_CALLPROP && MOZ_UNLIKELY(vp.isUndefined())) {
-            if (!OnUnknownMethod(cx, obj, idval, vp))
-                return false;
-        }
-#endif
 
         
         if (!cache.monitoredResult())
