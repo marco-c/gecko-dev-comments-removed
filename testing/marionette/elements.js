@@ -5,6 +5,12 @@
 var {utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/error.js");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, 'setInterval',
+  'resource://gre/modules/Timer.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, 'clearInterval',
+  'resource://gre/modules/Timer.jsm');
 
 
 
@@ -64,6 +70,22 @@ this.Accessibility = function Accessibility() {
 };
 
 Accessibility.prototype = {
+
+  
+
+
+
+
+
+  GET_ACCESSIBLE_ATTEMPTS: 100,
+
+  
+
+
+
+
+  GET_ACCESSIBLE_ATTEMPT_INTERVAL: 10,
+
   
 
 
@@ -100,12 +122,28 @@ Accessibility.prototype = {
 
 
   getAccessibleObject(element, mustHaveAccessible = false) {
-    let acc = this.accessibleRetrieval.getAccessibleFor(element);
-    if (!acc && mustHaveAccessible) {
-      this.handleErrorMessage('Element does not have an accessible object',
-        element);
-    }
-    return acc;
+    return new Promise((resolve, reject) => {
+      let acc = this.accessibleRetrieval.getAccessibleFor(element);
+
+      if (acc || !mustHaveAccessible) {
+        
+        
+        resolve(acc);
+      } else {
+        
+        
+        let attempts = this.GET_ACCESSIBLE_ATTEMPTS;
+        let intervalId = setInterval(() => {
+          let acc = this.accessibleRetrieval.getAccessibleFor(element);
+          if (acc || --attempts <= 0) {
+            clearInterval(intervalId);
+            if (acc) { resolve(acc); }
+            else { reject(); }
+          }
+        }, this.GET_ACCESSIBLE_ATTEMPT_INTERVAL);
+      }
+    }).catch(() => this.handleErrorMessage(
+      'Element does not have an accessible object', element));
   },
 
   
