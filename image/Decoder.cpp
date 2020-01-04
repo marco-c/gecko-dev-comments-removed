@@ -3,7 +3,6 @@
 
 
 
-
 #include "Decoder.h"
 
 #include "mozilla/gfx/2D.h"
@@ -106,7 +105,7 @@ Decoder::Init()
   return rv;
 }
 
-nsresult
+LexerResult
 Decoder::Decode(IResumable* aOnResume )
 {
   MOZ_ASSERT(mInitialized, "Should be initialized here");
@@ -114,7 +113,8 @@ Decoder::Decode(IResumable* aOnResume )
 
   
   if (GetDecodeDone()) {
-    return HasError() ? NS_ERROR_FAILURE : NS_OK;
+    return LexerResult(HasError() ? TerminalState::FAILURE
+                                  : TerminalState::SUCCESS);
   }
 
   LexerResult lexerResult(TerminalState::FAILURE);
@@ -129,8 +129,7 @@ Decoder::Decode(IResumable* aOnResume )
     
     
     
-    MOZ_ASSERT(lexerResult.as<Yield>() == Yield::NEED_MORE_DATA);
-    return NS_OK;
+    return lexerResult;
   }
 
   
@@ -145,7 +144,8 @@ Decoder::Decode(IResumable* aOnResume )
   
   CompleteDecode();
 
-  return HasError() ? NS_ERROR_FAILURE : NS_OK;
+  return LexerResult(HasError() ? TerminalState::FAILURE
+                                : TerminalState::SUCCESS);
 }
 
 bool

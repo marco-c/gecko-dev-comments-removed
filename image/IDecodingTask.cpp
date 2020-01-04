@@ -85,20 +85,31 @@ DecodingTask::DecodingTask(NotNull<Decoder*> aDecoder)
 void
 DecodingTask::Run()
 {
-  nsresult rv = mDecoder->Decode(WrapNotNull(this));
+  while (true) {
+    LexerResult result = mDecoder->Decode(WrapNotNull(this));
 
-  if (NS_SUCCEEDED(rv) && !mDecoder->GetDecodeDone()) {
+    if (result.is<TerminalState>()) {
+      NotifyDecodeComplete(mDecoder);
+      return;  
+    }
+
+    MOZ_ASSERT(result.is<Yield>());
+
     
     if (mDecoder->HasProgress()) {
       NotifyProgress(mDecoder);
     }
 
-    
-    
-    return;
-  }
+    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+      
+      
+      
+      return;
+    }
 
-  NotifyDecodeComplete(mDecoder);
+    
+    
+  }
 }
 
 bool
@@ -122,9 +133,14 @@ MetadataDecodingTask::MetadataDecodingTask(NotNull<Decoder*> aDecoder)
 void
 MetadataDecodingTask::Run()
 {
-  nsresult rv = mDecoder->Decode(WrapNotNull(this));
+  LexerResult result = mDecoder->Decode(WrapNotNull(this));
 
-  if (NS_SUCCEEDED(rv) && !mDecoder->GetDecodeDone()) {
+  if (result.is<TerminalState>()) {
+    NotifyDecodeComplete(mDecoder);
+    return;  
+  }
+
+  if (result == LexerResult(Yield::NEED_MORE_DATA)) {
     
     
     
@@ -132,7 +148,7 @@ MetadataDecodingTask::Run()
     return;
   }
 
-  NotifyDecodeComplete(mDecoder);
+  MOZ_ASSERT_UNREACHABLE("Metadata decode yielded for an unexpected reason");
 }
 
 
@@ -147,7 +163,23 @@ AnonymousDecodingTask::AnonymousDecodingTask(NotNull<Decoder*> aDecoder)
 void
 AnonymousDecodingTask::Run()
 {
-  mDecoder->Decode(WrapNotNull(this));
+  while (true) {
+    LexerResult result = mDecoder->Decode(WrapNotNull(this));
+
+    if (result.is<TerminalState>()) {
+      return;  
+    }
+
+    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+      
+      
+      return;
+    }
+
+    
+    
+    MOZ_ASSERT(result.is<Yield>());
+  }
 }
 
 } 

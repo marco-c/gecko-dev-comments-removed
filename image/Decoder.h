@@ -50,7 +50,12 @@ public:
 
 
 
-  nsresult Decode(IResumable* aOnResume = nullptr);
+
+
+
+
+
+  LexerResult Decode(IResumable* aOnResume = nullptr);
 
   
 
