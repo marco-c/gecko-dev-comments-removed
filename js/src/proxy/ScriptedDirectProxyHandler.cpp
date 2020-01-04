@@ -18,18 +18,6 @@ using namespace js;
 using JS::IsArrayAnswer;
 using mozilla::ArrayLength;
 
-static inline bool
-IsDataDescriptor(const PropertyDescriptor& desc)
-{
-    return desc.obj && !(desc.attrs & (JSPROP_GETTER | JSPROP_SETTER));
-}
-
-static inline bool
-IsAccessorDescriptor(const PropertyDescriptor& desc)
-{
-    return desc.obj && desc.attrs & (JSPROP_GETTER | JSPROP_SETTER);
-}
-
 
 
 
