@@ -1,9 +1,10 @@
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 const loaders = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
-const devtools = Cu.import("resource://devtools/shared/Loader.jsm", {}).devtools;
+const { devtools, DevToolsLoader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { joinURI } = devtools.require("devtools/shared/path");
 const VENDOR_CONTENT_URL = "resource://devtools/client/shared/vendor";
+const COMPONENTS_URL = "resource://devtools/client/shared/components";
 
 
 
@@ -32,6 +33,7 @@ const VENDOR_CONTENT_URL = "resource://devtools/client/shared/vendor";
 
 function BrowserLoader(baseURI, window) {
   const loaderOptions = devtools.require("@loader/options");
+
   const opts = {
     id: "browser-loader",
     sharedGlobal: true,
@@ -42,6 +44,7 @@ function BrowserLoader(baseURI, window) {
       let uri = require.resolve(id);
 
       if (!uri.startsWith(baseURI) &&
+          !uri.startsWith(COMPONENTS_URL) &&
           !uri.startsWith(VENDOR_CONTENT_URL)) {
         return devtools.require(uri);
       }
@@ -49,9 +52,6 @@ function BrowserLoader(baseURI, window) {
     }
   };
 
-  
-  
-  
   const mainModule = loaders.Module(baseURI, joinURI(baseURI, "main.js"));
   const mainLoader = loaders.Loader(opts);
 
