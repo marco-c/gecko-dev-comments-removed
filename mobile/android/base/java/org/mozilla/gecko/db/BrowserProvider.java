@@ -761,7 +761,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         String[] suggestedSiteArgs = new String[0];
 
-        boolean hasProcessedAnySuggestedSites = true;
+        boolean hasProcessedAnySuggestedSites = false;
 
         final int idColumnIndex = suggestedSitesCursor.getColumnIndexOrThrow(Bookmarks._ID);
         final int urlColumnIndex = suggestedSitesCursor.getColumnIndexOrThrow(Bookmarks.URL);
@@ -769,10 +769,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         while (suggestedSitesCursor.moveToNext()) {
             
-            if (!hasProcessedAnySuggestedSites) {
+            if (hasProcessedAnySuggestedSites) {
                 suggestedSitesBuilder.append(" UNION ALL");
             } else {
-                hasProcessedAnySuggestedSites = false;
+                hasProcessedAnySuggestedSites = true;
             }
             suggestedSitesBuilder.append(" SELECT" +
                                          " ? AS " + Bookmarks._ID + "," +
@@ -813,7 +813,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
                        ignoreForTopSitesArgs);
 
-            if (!hasProcessedAnySuggestedSites) {
+            if (hasProcessedAnySuggestedSites) {
                 db.execSQL("INSERT INTO " + TABLE_TOPSITES +
                            
                            
