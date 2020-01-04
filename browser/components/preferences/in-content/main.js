@@ -96,7 +96,7 @@ var gMainPane = {
 
     if (preffedOn) {
       
-      e10sCheckbox.checked = true;
+      e10sCheckbox.checked = Services.appinfo.browserTabsRemoteAutostart;
 
       
       e10sCheckbox.disabled = !Services.appinfo.browserTabsRemoteAutostart;
