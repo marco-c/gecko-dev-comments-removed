@@ -1571,8 +1571,7 @@ nsHTMLEditRules::WillInsertBreak(Selection& aSelection, bool* aCancel,
     return NS_OK;
   } else if (nsHTMLEditUtils::IsHeader(*blockParent)) {
     
-    ReturnInHeader(&aSelection, GetAsDOMNode(blockParent), GetAsDOMNode(node),
-                   offset);
+    ReturnInHeader(aSelection, *blockParent, node, offset);
     *aHandled = true;
     return NS_OK;
   } else if (blockParent->IsHTMLElement(nsGkAtoms::p)) {
@@ -6291,21 +6290,20 @@ nsHTMLEditRules::IsInListItem(nsINode* aNode)
 
 
 nsresult
-nsHTMLEditRules::ReturnInHeader(Selection* aSelection,
-                                nsIDOMNode *aHeader,
-                                nsIDOMNode *aNode,
+nsHTMLEditRules::ReturnInHeader(Selection& aSelection,
+                                Element& aHeader,
+                                nsINode& aNode,
                                 int32_t aOffset)
 {
-  nsCOMPtr<Element> header = do_QueryInterface(aHeader);
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(aSelection && header && node, NS_ERROR_NULL_POINTER);
-
-  
-  int32_t offset;
-  nsCOMPtr<nsIDOMNode> headerParent = nsEditor::GetNodeLocation(aHeader, &offset);
-
-  
   NS_ENSURE_STATE(mHTMLEditor);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
+
+  
+  nsCOMPtr<nsINode> headerParent = aHeader.GetParentNode();
+  int32_t offset = headerParent ? headerParent->IndexOf(&aHeader) : -1;
+
+  
+  nsCOMPtr<nsINode> node = &aNode;
   nsresult res = nsWSRunObject::PrepareToSplitAcrossBlocks(mHTMLEditor,
                                                            address_of(node),
                                                            &aOffset);
@@ -6313,75 +6311,60 @@ nsHTMLEditRules::ReturnInHeader(Selection* aSelection,
 
   
   NS_ENSURE_STATE(node->IsContent());
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->SplitNodeDeep(*header, *node->AsContent(), aOffset);
+  mHTMLEditor->SplitNodeDeep(aHeader, *node->AsContent(), aOffset);
 
   
-  nsCOMPtr<nsIDOMNode> prevItem;
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->GetPriorHTMLSibling(aHeader, address_of(prevItem));
-  if (prevItem && nsHTMLEditUtils::IsHeader(prevItem))
-  {
-    bool bIsEmptyNode;
-    NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->IsEmptyNode(prevItem, &bIsEmptyNode);
+  nsCOMPtr<nsIContent> prevItem = mHTMLEditor->GetPriorHTMLSibling(&aHeader);
+  if (prevItem && nsHTMLEditUtils::IsHeader(*prevItem)) {
+    bool isEmptyNode;
+    res = mHTMLEditor->IsEmptyNode(prevItem, &isEmptyNode);
     NS_ENSURE_SUCCESS(res, res);
-    if (bIsEmptyNode) {
-      res = CreateMozBR(prevItem, 0);
+    if (isEmptyNode) {
+      res = CreateMozBR(prevItem->AsDOMNode(), 0);
       NS_ENSURE_SUCCESS(res, res);
     }
   }
 
   
   bool isEmpty;
-  res = IsEmptyBlock(aHeader, &isEmpty, true);
+  res = IsEmptyBlock(aHeader.AsDOMNode(), &isEmpty, true);
   NS_ENSURE_SUCCESS(res, res);
-  if (isEmpty)
-  {
-    NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->DeleteNode(aHeader);
+  if (isEmpty) {
+    res = mHTMLEditor->DeleteNode(&aHeader);
     NS_ENSURE_SUCCESS(res, res);
     
     
-    nsCOMPtr<nsIDOMNode> sibling;
-    NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->GetNextHTMLSibling(headerParent, offset+1, address_of(sibling));
-    NS_ENSURE_SUCCESS(res, res);
-    if (!sibling || !nsTextEditUtils::IsBreak(sibling))
-    {
+    nsCOMPtr<nsIContent> sibling =
+      mHTMLEditor->GetNextHTMLSibling(headerParent, offset + 1);
+    if (!sibling || !sibling->IsHTMLElement(nsGkAtoms::br)) {
       ClearCachedStyles();
-      NS_ENSURE_STATE(mHTMLEditor);
       mHTMLEditor->mTypeInState->ClearAllProps();
 
       
-      NS_NAMED_LITERAL_STRING(pType, "p");
-      nsCOMPtr<nsIDOMNode> pNode;
-      NS_ENSURE_STATE(mHTMLEditor);
-      res = mHTMLEditor->CreateNode(pType, headerParent, offset+1, getter_AddRefs(pNode));
-      NS_ENSURE_SUCCESS(res, res);
+      nsCOMPtr<Element> pNode =
+        mHTMLEditor->CreateNode(nsGkAtoms::p, headerParent, offset + 1);
+      NS_ENSURE_STATE(pNode);
 
       
-      nsCOMPtr<nsIDOMNode> brNode;
-      NS_ENSURE_STATE(mHTMLEditor);
-      res = mHTMLEditor->CreateBR(pNode, 0, address_of(brNode));
-      NS_ENSURE_SUCCESS(res, res);
+      nsCOMPtr<Element> brNode = mHTMLEditor->CreateBR(pNode, 0);
+      NS_ENSURE_STATE(brNode);
 
       
-      res = aSelection->Collapse(pNode, 0);
-    }
-    else
-    {
-      headerParent = nsEditor::GetNodeLocation(sibling, &offset);
+      res = aSelection.Collapse(pNode, 0);
+      NS_ENSURE_SUCCESS(res, res);
+    } else {
+      headerParent = sibling->GetParentNode();
+      offset = headerParent ? headerParent->IndexOf(sibling) : -1;
       
-      res = aSelection->Collapse(headerParent,offset+1);
+      res = aSelection.Collapse(headerParent, offset + 1);
+      NS_ENSURE_SUCCESS(res, res);
     }
-  }
-  else
-  {
+  } else {
     
-    res = aSelection->Collapse(aHeader,0);
+    res = aSelection.Collapse(&aHeader, 0);
+    NS_ENSURE_SUCCESS(res, res);
   }
-  return res;
+  return NS_OK;
 }
 
 
