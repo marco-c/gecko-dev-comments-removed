@@ -5651,8 +5651,21 @@ CSSParserImpl::ParseAttributeSelector(int32_t&       aDataMask,
       }
       if ((eCSSToken_Ident == mToken.mType) || (eCSSToken_String == mToken.mType)) {
         nsAutoString  value(mToken.mIdent);
+        
+        
+        typedef nsAttrSelector::ValueCaseSensitivity ValueCaseSensitivity;
+        ValueCaseSensitivity valueCaseSensitivity =
+          ValueCaseSensitivity::CaseSensitive;
+        bool eof = !GetToken(true);
+        if (!eof) {
+          if (eCSSToken_Ident == mToken.mType &&
+              mToken.mIdent.LowerCaseEqualsLiteral("i")) {
+            valueCaseSensitivity = ValueCaseSensitivity::CaseInsensitive;
+            eof = !GetToken(true);
+          }
+        }
         bool gotClosingBracket;
-        if (! GetToken(true)) { 
+        if (eof) { 
           
           REPORT_UNEXPECTED_EOF(PEAttSelCloseEOF);
           gotClosingBracket = true;
@@ -5660,14 +5673,13 @@ CSSParserImpl::ParseAttributeSelector(int32_t&       aDataMask,
           gotClosingBracket = mToken.IsSymbol(']');
         }
         if (gotClosingBracket) {
-          bool isCaseSensitive = true;
-
           
           
           
           
           
-          if (nameSpaceID == kNameSpaceID_None) {
+          if (valueCaseSensitivity != ValueCaseSensitivity::CaseInsensitive &&
+              nameSpaceID == kNameSpaceID_None) {
             static const char* caseInsensitiveHTMLAttribute[] = {
               
               "lang",
@@ -5723,13 +5735,14 @@ CSSParserImpl::ParseAttributeSelector(int32_t&       aDataMask,
             const char* htmlAttr;
             while ((htmlAttr = caseInsensitiveHTMLAttribute[i++])) {
               if (attr.LowerCaseEqualsASCII(htmlAttr)) {
-                isCaseSensitive = false;
+                valueCaseSensitivity = ValueCaseSensitivity::CaseInsensitiveInHTML;
                 break;
               }
             }
           }
           aDataMask |= SEL_MASK_ATTRIB;
-          aSelector.AddAttribute(nameSpaceID, attr, func, value, isCaseSensitive);
+          aSelector.AddAttribute(nameSpaceID, attr, func, value,
+                                 valueCaseSensitivity);
         }
         else {
           REPORT_UNEXPECTED_TOKEN(PEAttSelNoClose);
