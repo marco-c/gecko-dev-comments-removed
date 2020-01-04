@@ -1735,6 +1735,18 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   
+  
+  
+  
+  
+  if (IsStyledByServo() && IsInComposedDoc()) {
+    MOZ_ASSERT(!ServoData().get());
+    SetIsDirtyForServo();
+  }
+
+  
+  
+  
   NS_POSTCONDITION(aDocument == GetUncomposedDoc(), "Bound to wrong document");
   NS_POSTCONDITION(aParent == GetParent(), "Bound to wrong parent");
   NS_POSTCONDITION(aBindingParent == GetBindingParent(),
@@ -1840,11 +1852,15 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
   ClearInDocument();
 
+  
+  
+  if (IsStyledByServo()) {
+    ServoData().reset();
+  } else {
 #ifdef MOZ_STYLO
-  
-  
-  ServoData().reset();
+    MOZ_ASSERT(!ServoData());
 #endif
+  }
 
   
   

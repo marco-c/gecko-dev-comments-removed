@@ -1751,17 +1751,7 @@ public:
   }
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
-  
-
-
-
-  void SetIsDocument() { SetBoolFlag(IsInDocument); }
-  void SetIsInDocument() {
-    if (IsStyledByServo()) {
-      SetIsDirtyAndHasDirtyDescendantsForServo();
-    }
-    SetBoolFlag(IsInDocument);
-  }
+  void SetIsInDocument() { SetBoolFlag(IsInDocument); }
   void SetNodeIsContent() { SetBoolFlag(NodeIsContent); }
   void ClearInDocument() { ClearBoolFlag(IsInDocument); }
   void SetIsElement() { SetBoolFlag(NodeIsElement); }
