@@ -32,7 +32,7 @@ add_task(function* () {
   let { tab, document } = yield openAboutDebugging("workers");
 
   
-  let serviceWorkersElement = document.getElementById("service-workers");
+  let serviceWorkersElement = getServiceWorkerList(document);
   let onMutation = waitForMutation(serviceWorkersElement, { childList: true });
 
   

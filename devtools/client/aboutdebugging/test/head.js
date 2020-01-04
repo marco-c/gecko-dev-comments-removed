@@ -93,6 +93,28 @@ function getSupportsFile(path) {
   return fileurl.QueryInterface(Ci.nsIFileURL);
 }
 
+
+
+
+
+
+
+function getAddonList(document) {
+  return document.querySelector("#addons .target-list") ||
+    document.querySelector("#addons .targets");
+}
+
+
+
+
+
+
+
+function getServiceWorkerList(document) {
+  return document.querySelector("#service-workers .target-list") ||
+    document.querySelector("#service-workers.targets");
+}
+
 function* installAddon(document, path, name, evt) {
   
   let MockFilePicker = SpecialPowers.MockFilePicker;
@@ -100,7 +122,7 @@ function* installAddon(document, path, name, evt) {
   let file = getSupportsFile(path);
   MockFilePicker.returnFiles = [file.file];
 
-  let addonList = document.querySelector("#addons .targets");
+  let addonList = getAddonList(document);
   let addonListMutation = waitForMutation(addonList, { childList: true });
 
   
@@ -126,7 +148,7 @@ function* installAddon(document, path, name, evt) {
 }
 
 function* uninstallAddon(document, addonId, addonName) {
-  let addonList = document.querySelector("#addons .targets");
+  let addonList = getAddonList(document);
   let addonListMutation = waitForMutation(addonList, { childList: true });
 
   
@@ -163,7 +185,7 @@ function* uninstallAddon(document, addonId, addonName) {
 
 
 function waitForInitialAddonList(document) {
-  const addonListContainer = document.querySelector("#addons .targets");
+  const addonListContainer = getAddonList(document);
   let addonCount = addonListContainer.querySelectorAll(".target");
   addonCount = addonCount ? [...addonCount].length : -1;
   info("Waiting for add-ons to load. Current add-on count: " + addonCount);
