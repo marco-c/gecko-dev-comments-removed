@@ -382,7 +382,7 @@ InplaceEditor.prototype = {
       }
     }
 
-    copyTextStyles(this.input, this._measurement);
+    copyAllStyles(this.input, this._measurement);
     this._updateSize();
   },
 
@@ -1367,6 +1367,17 @@ function copyTextStyles(from, to) {
   to.style.fontSize = getCssText("font-size");
   to.style.fontWeight = getCssText("font-weight");
   to.style.fontStyle = getCssText("font-style");
+}
+
+
+
+
+function copyAllStyles(from, to) {
+  let win = from.ownerDocument.defaultView;
+  let style = win.getComputedStyle(from);
+  let getCssText = name => style.getPropertyCSSValue(name).cssText;
+
+  copyTextStyles(from, to);
   to.style.lineHeight = getCssText("line-height");
 
   
