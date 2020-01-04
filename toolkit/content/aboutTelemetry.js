@@ -931,11 +931,11 @@ var ThreadHangStats = {
   
 
 
-  render: function(aPing) {
+  render: function(aPayload) {
     let div = document.getElementById("thread-hang-stats");
     removeAllChildNodes(div);
 
-    let stats = aPing.payload.threadHangStats;
+    let stats = aPayload.threadHangStats;
     setHasData("thread-hang-stats-section", stats && (stats.length > 0));
     if (!stats) {
       return;
@@ -1609,9 +1609,6 @@ function displayPingData(ping, updatePayloadList = false) {
   ChromeHangs.render(ping);
 
   
-  ThreadHangStats.render(ping);
-
-  
   AddonDetails.render(ping);
 
   
@@ -1623,6 +1620,9 @@ function displayPingData(ping, updatePayloadList = false) {
   if (payloadIndex > 0) {
     payload = ping.payload.childPayloads[payloadIndex - 1];
   }
+
+  
+  ThreadHangStats.render(payload);
 
   
   let simpleMeasurements = sortStartupMilestones(payload.simpleMeasurements);
