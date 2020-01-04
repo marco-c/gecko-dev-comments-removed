@@ -173,6 +173,9 @@ public:
   bool HasPseudoElementData() const
     { return !!(mBits & NS_STYLE_HAS_PSEUDO_ELEMENT_DATA); }
 
+  bool HasChildThatUsesResetStyle() const
+    { return mBits & NS_STYLE_HAS_CHILD_THAT_USES_RESET_STYLE; }
+
   
   
   
