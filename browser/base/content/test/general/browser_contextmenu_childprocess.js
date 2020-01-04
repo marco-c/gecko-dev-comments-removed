@@ -4,26 +4,23 @@
 const gBaseURL = "https://example.com/browser/browser/base/content/test/general/";
 
 add_task(function *() {
-  let tab = gBrowser.addTab();
-  let browser = gBrowser.getBrowserForTab(tab);
-
-  gBrowser.selectedTab = tab;
-  yield promiseTabLoadEvent(tab, gBaseURL + "subtst_contextmenu.html");
-
-  let popupShownPromise = promiseWaitForEvent(window, "popupshown", true);
-
-  
-  
-  let eventDetails = { type : "contextmenu", button : 2 };
-  let rect = browser.contentWindow.document.getElementById("test-pagemenu").getBoundingClientRect();
-  EventUtils.synthesizeMouse(browser, rect.x + rect.width / 2, rect.y + rect.height / 2, eventDetails, window);
-
-  let event = yield popupShownPromise;
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, gBaseURL + "subtst_contextmenu.html");
 
   let contextMenu = document.getElementById("contentAreaContextMenu");
+
+  
+  
+  let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+  yield BrowserTestUtils.synthesizeMouse("#test-pagemenu", 5, 5, { type : "contextmenu", button : 2 }, tab.linkedBrowser);
+  let event = yield popupShownPromise;
+
   checkMenu(contextMenu);
+
+  let popupHiddenPromise = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
   contextMenu.hidePopup();
-  gBrowser.removeCurrentTab();
+  yield popupHiddenPromise;
+
+  yield BrowserTestUtils.removeTab(tab);
 });
 
 function checkItems(menuitem, arr)
