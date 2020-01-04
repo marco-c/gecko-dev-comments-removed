@@ -90,14 +90,14 @@ public:
     
     
     
-    nsresult ParseCachedHead(char *block);
+    nsresult ParseCachedHead(const char *block);
     nsresult ParseCachedOriginalHeaders(char *block);
 
     
-    void ParseStatusLine(const char *line);
+    void ParseStatusLine(const nsACString &line);
 
     
-    nsresult ParseHeaderLine(const char *line);
+    nsresult ParseHeaderLine(const nsACString &line);
 
     
     nsresult ComputeFreshnessLifetime(uint32_t *);
@@ -144,8 +144,8 @@ private:
     void ParseCacheControl(const char *);
     void ParsePragma(const char *);
 
-    void ParseStatusLine_locked(const char *line);
-    nsresult ParseHeaderLine_locked(const char *line, bool originalFromNetHeaders);
+    void ParseStatusLine_locked(const nsACString &line);
+    nsresult ParseHeaderLine_locked(const nsACString &line, bool originalFromNetHeaders);
 
     
     nsresult ParseDateHeader(nsHttpAtom header, uint32_t *result) const;

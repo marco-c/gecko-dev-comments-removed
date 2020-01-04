@@ -3559,7 +3559,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     
     
     
-    rv = mCachedResponseHead->ParseCachedHead((char *) buf.get());
+    rv = mCachedResponseHead->ParseCachedHead(buf.get());
     NS_ENSURE_SUCCESS(rv, rv);
     buf.Adopt(0);
 

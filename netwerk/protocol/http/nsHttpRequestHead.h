@@ -98,7 +98,7 @@ public:
     bool IsHead() { return EqualsMethod(kMethod_Head); }
     bool IsPut() { return EqualsMethod(kMethod_Put); }
     bool IsTrace() { return EqualsMethod(kMethod_Trace); }
-    void ParseHeaderSet(char *buffer);
+    void ParseHeaderSet(const char *buffer);
 private:
     
     nsHttpHeaderArray mHeaders;

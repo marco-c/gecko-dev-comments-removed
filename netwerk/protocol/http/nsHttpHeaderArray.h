@@ -96,9 +96,9 @@ public:
 
     
     
-    static nsresult ParseHeaderLine(const char *line,
+    static nsresult ParseHeaderLine(const nsACString& line,
                                     nsHttpAtom *header=nullptr,
-                                    char **value=nullptr);
+                                    nsACString* value=nullptr);
 
     void Flatten(nsACString &, bool pruneProxyHeaders, bool pruneTransients);
     void FlattenOriginalHeader(nsACString &);

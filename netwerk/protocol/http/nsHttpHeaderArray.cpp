@@ -308,9 +308,9 @@ nsHttpHeaderArray::VisitHeaders(nsIHttpHeaderVisitor *visitor, nsHttpHeaderArray
 }
 
  nsresult
-nsHttpHeaderArray::ParseHeaderLine(const char *line,
+nsHttpHeaderArray::ParseHeaderLine(const nsACString& line,
                                    nsHttpAtom *hdr,
-                                   char **val)
+                                   nsACString *val)
 {
     
     
@@ -325,39 +325,41 @@ nsHttpHeaderArray::ParseHeaderLine(const char *line,
 
     
     
-    char *p = (char *) strchr(line, ':');
-    if (!p) {
-        LOG(("malformed header [%s]: no colon\n", line));
+    int32_t split = line.FindChar(':');
+
+    if (split == kNotFound) {
+        LOG(("malformed header [%s]: no colon\n",
+            PromiseFlatCString(line).get()));
         return NS_ERROR_FAILURE;
     }
+
+    const nsACString& sub = Substring(line, 0, split);
+    const nsACString& sub2 = Substring(
+        line, split + 1, line.Length() - split - 1);
 
     
-    if (!nsHttp::IsValidToken(line, p)) {
-        LOG(("malformed header [%s]: field-name not a token\n", line));
+    if (!nsHttp::IsValidToken(sub)) {
+        LOG(("malformed header [%s]: field-name not a token\n",
+            PromiseFlatCString(line).get()));
         return NS_ERROR_FAILURE;
     }
 
-    *p = 0; 
-
-    nsHttpAtom atom = nsHttp::ResolveAtom(line);
+    nsHttpAtom atom = nsHttp::ResolveAtom(sub);
     if (!atom) {
-        LOG(("failed to resolve atom [%s]\n", line));
+        LOG(("failed to resolve atom [%s]\n", PromiseFlatCString(line).get()));
         return NS_ERROR_FAILURE;
     }
 
     
-    p = net_FindCharNotInSet(++p, HTTP_LWS);
+    char *p = net_FindCharNotInSet(
+        sub2.BeginReading(), sub2.EndReading(), HTTP_LWS);
 
     
-    char *p2 = net_RFindCharNotInSet(p, HTTP_LWS);
-
-    *++p2 = 0; 
-               
-               
+    char *p2 = net_RFindCharNotInSet(p, sub2.EndReading(), HTTP_LWS);
 
     
     if (hdr) *hdr = atom;
-    if (val) *val = p;
+    if (val) val->Assign(p, p2 - p + 1);
 
     return NS_OK;
 }

@@ -1215,9 +1215,8 @@ nsMultiMixedConv::ParseHeaders(nsIChannel *aChannel, char *&aPtr,
         *newLine = '\0'; 
 
         if (mResponseHead) {
-            
             nsAutoCString tmpHeader(cursor);
-            mResponseHead->ParseHeaderLine(tmpHeader.get());
+            mResponseHead->ParseHeaderLine(tmpHeader);
         }
 
         char *colon = (char *) strchr(cursor, ':');
@@ -1350,4 +1349,3 @@ NS_NewMultiMixedConv(nsMultiMixedConv** aMultiMixedConv)
     NS_ADDREF(*aMultiMixedConv);
     return NS_OK;
 }
-
