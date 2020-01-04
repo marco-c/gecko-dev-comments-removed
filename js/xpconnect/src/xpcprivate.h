@@ -3735,6 +3735,13 @@ public:
     
     
     
+    bool allowCPOWs;
+
+    
+    
+    
+    
+    
     
     bool universalXPConnectEnabled;
 
