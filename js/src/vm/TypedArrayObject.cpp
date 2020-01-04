@@ -681,7 +681,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
 
     static bool
     CloneArrayBufferNoCopy(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> srcBuffer,
-                           bool isWrapped, uint32_t srcByteOffset,
+                           bool isWrapped, uint32_t srcByteOffset, uint32_t srcLength,
                            MutableHandle<ArrayBufferObject*> buffer);
 
     static JSObject*
@@ -825,6 +825,7 @@ template<typename T>
 TypedArrayObjectTemplate<T>::CloneArrayBufferNoCopy(JSContext* cx,
                                                     Handle<ArrayBufferObjectMaybeShared*> srcBuffer,
                                                     bool isWrapped, uint32_t srcByteOffset,
+                                                    uint32_t srcLength,
                                                     MutableHandle<ArrayBufferObject*> buffer)
 {
     
@@ -843,16 +844,7 @@ TypedArrayObjectTemplate<T>::CloneArrayBufferNoCopy(JSContext* cx,
     
 
     
-    uint32_t srcLength = srcBuffer->byteLength();
-    MOZ_ASSERT(srcByteOffset <= srcLength);
-
-    
-    uint32_t cloneLength = srcLength - srcByteOffset;
-
-    
-
-    
-    if (!AllocateArrayBuffer(cx, cloneCtor, cloneLength, buffer))
+    if (!AllocateArrayBuffer(cx, cloneCtor, srcLength, buffer))
         return false;
 
     
@@ -949,7 +941,10 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     Rooted<ArrayBufferObject*> buffer(cx);
     if (ArrayTypeID() == srcType) {
         
-        if (!CloneArrayBufferNoCopy(cx, srcData, isWrapped, srcByteOffset, &buffer))
+        uint32_t srcLength = srcArray->byteLength();
+
+        
+        if (!CloneArrayBufferNoCopy(cx, srcData, isWrapped, srcByteOffset, srcLength, &buffer))
             return nullptr;
     } else {
         
