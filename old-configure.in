@@ -119,17 +119,15 @@ if test -n "$MOZTTDIR" ; then
     AC_DEFINE(PACKAGE_MOZTT)
 fi
 
-MOZ_ARG_WITH_STRING(gonk,
-[  --with-gonk=DIR
-               location of gonk dir],
-    gonkdir=$withval)
-
 MOZ_ARG_WITH_STRING(gonk-toolchain-prefix,
 [  --with-gonk-toolchain-prefix=DIR
                           prefix to gonk toolchain commands],
     gonk_toolchain_prefix=$withval)
 
 if test -n "$gonkdir" ; then
+    dnl export for js/src/configure. We can't pass the option down normally,
+    dnl because it's a `--enable-project=b2g`-only option.
+    export gonkdir
     kernel_name=`uname -s | tr "[[:upper:]]" "[[:lower:]]"`
     android_source="$gonkdir"
     ANDROID_SOURCE="$android_source"
@@ -6559,10 +6557,12 @@ fi
 
 dnl We need to wrap dlopen and related functions on Android because we use
 dnl our own linker.
-dnl This configuration will only work on Android SDK 11 and above: Bug 1220184.
 if test "$OS_TARGET" = Android; then
     if test "$MOZ_WIDGET_TOOLKIT" = gonk -a -n "$MOZ_NUWA_PROCESS"; then
         MOZ_GLUE_WRAP_LDFLAGS="${MOZ_GLUE_WRAP_LDFLAGS} -Wl,--wrap=pthread_create,--wrap=epoll_wait,--wrap=poll,--wrap=pthread_cond_timedwait,--wrap=pthread_cond_wait,--wrap=epoll_create,--wrap=epoll_ctl,--wrap=close,--wrap=pthread_key_create,--wrap=pthread_key_delete,--wrap=socketpair,--wrap=pthread_self,--wrap=pthread_mutex_lock,--wrap=pthread_mutex_trylock,--wrap=pthread_join,--wrap=pipe,--wrap=pipe2"
+    fi
+    if test "$MOZ_WIDGET_TOOLKIT" = android -a "$MOZ_ANDROID_MIN_SDK_VERSION" -lt 11; then
+        MOZ_GLUE_WRAP_LDFLAGS="${MOZ_GLUE_WRAP_LDFLAGS} -Wl,--wrap=getaddrinfo,--wrap=freeaddrinfo,--wrap=gai_strerror"
     fi
 fi
 
