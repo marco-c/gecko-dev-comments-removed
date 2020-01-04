@@ -619,6 +619,8 @@ MediaDecoder::Shutdown()
   mCDMProxyPromiseHolder.RejectIfExists(true, __func__);
 #endif
 
+  DiscardOngoingSeekIfExists();
+
   
   
   
