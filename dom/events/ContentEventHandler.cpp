@@ -1587,6 +1587,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
   LayoutDeviceIntRect rect;
   uint32_t offset = aEvent->mInput.mOffset;
   const uint32_t kEndOffset = offset + aEvent->mInput.mLength;
+  bool wasLineBreaker = false;
+  nsRect lastCharRect;
   while (offset < kEndOffset) {
     rv = SetRangeFromFlatTextOffset(range, offset, 1, lineBreakType, true,
                                     nullptr);
@@ -1624,11 +1626,34 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     AutoTArray<nsRect, 16> charRects;
 
     if (ShouldBreakLineBefore(firstContent, mRootContent)) {
+      nsRect brRect;
       
       
       
-      FrameRelativeRect brRect = GetLineBreakerRectBefore(firstFrame);
-      charRects.AppendElement(brRect.RectRelativeTo(firstFrame));
+      
+      
+      if (firstFrame->GetType() == nsGkAtoms::brFrame ||
+          aEvent->mInput.mOffset == offset) {
+        FrameRelativeRect relativeBRRect = GetLineBreakerRectBefore(firstFrame);
+        brRect = relativeBRRect.RectRelativeTo(firstFrame);
+      } else {
+        
+        
+        
+        brRect = lastCharRect - frameRect.TopLeft();
+        if (!wasLineBreaker) {
+          if (firstFrame->GetWritingMode().IsVertical()) {
+            
+            brRect.y = brRect.YMost() + 1;
+            brRect.height = 1;
+          } else {
+            
+            brRect.x = brRect.XMost() + 1;
+            brRect.width = 1;
+          }
+        }
+      }
+      charRects.AppendElement(brRect);
       chars.AssignLiteral("\n");
       if (kBRLength > 1 && offset == aEvent->mInput.mOffset && offset) {
         
@@ -1680,6 +1705,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       nsRect charRect = charRects[i];
       charRect.x += frameRect.x;
       charRect.y += frameRect.y;
+      lastCharRect = charRect;
 
       rect = LayoutDeviceIntRect::FromUnknownRect(
                charRect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
@@ -1692,7 +1718,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
       
       
-      if (chars[i] != '\n' || kBRLength == 1) {
+      wasLineBreaker = chars[i] == '\n';
+      if (!wasLineBreaker || kBRLength == 1) {
         continue;
       }
 
