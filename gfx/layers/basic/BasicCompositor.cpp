@@ -622,10 +622,6 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   }
 
   
-  gfxUtils::ClipToRegion(mDrawTarget,
-                         mInvalidRegion.ToUnknownRegion());
-
-  
   
   RefPtr<CompositingRenderTarget> target =
     CreateRenderTargetForWindow(mInvalidRect,
@@ -643,10 +639,8 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   mRenderTarget->mDrawTarget->SetTransform(Matrix::Translation(-mRenderTarget->GetOrigin()));
 
-  if (mRenderTarget->mDrawTarget != mDrawTarget) {
-    gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget,
-                           mInvalidRegion.ToUnknownRegion());
-  }
+  gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget,
+                         mInvalidRegion.ToUnknownRegion());
 
   if (aRenderBoundsOut) {
     *aRenderBoundsOut = rect;
@@ -681,10 +675,7 @@ BasicCompositor::EndFrame()
   }
 
   
-  mDrawTarget->PopClip();
-  if (mRenderTarget->mDrawTarget != mDrawTarget) {
-    mRenderTarget->mDrawTarget->PopClip();
-  }
+  mRenderTarget->mDrawTarget->PopClip();
 
   if (mTarget || mRenderTarget->mDrawTarget != mDrawTarget) {
     
