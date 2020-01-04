@@ -9,6 +9,7 @@
 
 #include "mozilla/Atomics.h"
 
+#include "jsfriendapi.h"
 #include "jsgc.h"
 
 #include "gc/Heap.h"
@@ -984,6 +985,8 @@ class GCRuntime
     
     GCSchedulingTunables tunables;
     GCSchedulingState schedulingState;
+
+    MemProfiler mMemProfiler;
 
   private:
     
