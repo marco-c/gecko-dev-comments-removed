@@ -72,11 +72,11 @@ public class UploadTelemetryCorePingCallback implements SearchEngineManager.Sear
 
                 
                 final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(activity, profile.getName());
-                final int sequenceNumber = TelemetryCorePingBuilder.getAndIncrementSequenceNumber(sharedPrefs);
-                final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity, sequenceNumber)
+                final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity)
                         .setClientID(clientID)
                         .setDefaultSearchEngine(TelemetryCorePingBuilder.getEngineIdentifier(engine))
-                        .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile));
+                        .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile))
+                        .setSequenceNumber(TelemetryCorePingBuilder.getAndIncrementSequenceNumber(sharedPrefs));
                 final String distributionId = sharedPrefs.getString(DistributionStoreCallback.PREF_DISTRIBUTION_ID, null);
                 if (distributionId != null) {
                     pingBuilder.setOptDistributionID(distributionId);

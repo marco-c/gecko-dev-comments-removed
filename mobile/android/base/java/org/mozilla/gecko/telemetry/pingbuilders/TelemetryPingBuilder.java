@@ -27,12 +27,12 @@ abstract class TelemetryPingBuilder {
 
     private final String serverPath;
     protected final ExtendedJSONObject payload;
-    private final int uniqueID;
+    private final String docID;
 
-    public TelemetryPingBuilder(final int uniqueID) {
-        serverPath = getTelemetryServerPath(getDocType());
+    public TelemetryPingBuilder() {
+        docID = UUID.randomUUID().toString();
+        serverPath = getTelemetryServerPath(getDocType(), docID);
         payload = new ExtendedJSONObject();
-        this.uniqueID = uniqueID;
     }
 
     
@@ -48,7 +48,7 @@ abstract class TelemetryPingBuilder {
 
     public TelemetryPing build() {
         validatePayload();
-        return new TelemetryPing(serverPath, payload, uniqueID);
+        return new TelemetryPing(serverPath, payload, docID);
     }
 
     private void validatePayload() {
@@ -68,8 +68,7 @@ abstract class TelemetryPingBuilder {
 
 
 
-    private static String getTelemetryServerPath(final String docType) {
-        final String docId = UUID.randomUUID().toString();
+    private static String getTelemetryServerPath(final String docType, final String docID) {
         final String appName = AppConstants.MOZ_APP_BASENAME;
         final String appVersion = AppConstants.MOZ_APP_VERSION;
         final String appUpdateChannel = AppConstants.MOZ_UPDATE_CHANNEL;
@@ -78,7 +77,7 @@ abstract class TelemetryPingBuilder {
         
         
         return SERVER_INITIAL_PATH + '/' +
-                docId + '/' +
+                docID + '/' +
                 docType + '/' +
                 appName + '/' +
                 appVersion + '/' +

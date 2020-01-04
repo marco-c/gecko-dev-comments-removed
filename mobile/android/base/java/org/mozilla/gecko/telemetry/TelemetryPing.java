@@ -17,19 +17,18 @@ import org.mozilla.gecko.sync.ExtendedJSONObject;
 
 
 
-
 public class TelemetryPing {
     private final String urlPath;
     private final ExtendedJSONObject payload;
-    private final int uniqueID;
+    private final String docID;
 
-    public TelemetryPing(final String urlPath, final ExtendedJSONObject payload, final int uniqueID) {
+    public TelemetryPing(final String urlPath, final ExtendedJSONObject payload, final String docID) {
         this.urlPath = urlPath;
         this.payload = payload;
-        this.uniqueID = uniqueID;
+        this.docID = docID;
     }
 
     public String getURLPath() { return urlPath; }
     public ExtendedJSONObject getPayload() { return payload; }
-    public int getUniqueID() { return uniqueID; }
+    public String getDocID() { return docID; }
 }
