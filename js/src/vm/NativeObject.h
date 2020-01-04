@@ -175,7 +175,12 @@ class ObjectElements
         
         
         
-        COPY_ON_WRITE               = 0x4
+        COPY_ON_WRITE               = 0x4,
+
+        
+        
+        
+        SHARED_MEMORY               = 0x8
     };
 
   private:
@@ -238,6 +243,14 @@ class ObjectElements
       : flags(0), initializedLength(0), capacity(capacity), length(length)
     {}
 
+    enum class SharedMemory {
+        IsShared
+    };
+
+    MOZ_CONSTEXPR ObjectElements(uint32_t capacity, uint32_t length, SharedMemory shmem)
+      : flags(SHARED_MEMORY), initializedLength(0), capacity(capacity), length(length)
+    {}
+
     HeapSlot* elements() {
         return reinterpret_cast<HeapSlot*>(uintptr_t(this) + sizeof(ObjectElements));
     }
@@ -246,6 +259,10 @@ class ObjectElements
     }
     static ObjectElements * fromElements(HeapSlot* elems) {
         return reinterpret_cast<ObjectElements*>(uintptr_t(elems) - sizeof(ObjectElements));
+    }
+
+    bool isSharedMemory() const {
+        return flags & SHARED_MEMORY;
     }
 
     HeapPtrNativeObject& ownerObject() const {
@@ -278,7 +295,12 @@ static_assert(ObjectElements::VALUES_PER_HEADER * sizeof(HeapSlot) == sizeof(Obj
               "ObjectElements doesn't fit in the given number of slots");
 
 
+
+
+
+
 extern HeapSlot* const emptyObjectElements;
+extern HeapSlot* const emptyObjectElementsShared;
 
 struct Class;
 class GCMarker;
@@ -301,6 +323,7 @@ enum class DenseElementResult {
     Success,
     Incomplete
 };
+
 
 
 
@@ -404,6 +427,10 @@ class NativeObject : public JSObject
         return getElementsHeader()->capacity;
     }
 
+    bool isSharedMemory() const {
+        return getElementsHeader()->isSharedMemory();
+    }
+
     
     
     bool setLastProperty(ExclusiveContext* cx, Shape* shape);
@@ -423,6 +450,14 @@ class NativeObject : public JSObject
     
     
     void setLastPropertyMakeNative(ExclusiveContext* cx, Shape* shape);
+
+    
+    
+    
+    void setIsSharedMemory() {
+        MOZ_ASSERT(elements_ == emptyObjectElements);
+        elements_ = emptyObjectElementsShared;
+    }
 
   protected:
 #ifdef DEBUG
@@ -1144,7 +1179,7 @@ class NativeObject : public JSObject
     }
 
     inline bool hasEmptyElements() const {
-        return elements_ == emptyObjectElements;
+        return elements_ == emptyObjectElements || elements_ == emptyObjectElementsShared;
     }
 
     

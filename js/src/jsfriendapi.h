@@ -1711,6 +1711,17 @@ JS_IsFloat64Array(JSObject* obj);
 
 
 
+
+
+
+extern JS_FRIEND_API(bool)
+JS_GetTypedArraySharedness(JSObject* obj);
+
+
+
+
+
+
 namespace js {
 
 extern JS_FRIEND_API(JSObject*)
@@ -1755,14 +1766,8 @@ extern JS_FRIEND_DATA(const Class* const) Float32ArrayClassPtr;
 extern JS_FRIEND_DATA(const Class* const) Float64ArrayClassPtr;
 
 const size_t TypedArrayLengthSlot = 1;
-const size_t TypedArrayIsSharedmemSlot = 3;
 
 } 
-
-
-
-
-
 
 #define JS_DEFINE_DATA_AND_LENGTH_ACCESSOR(Type, type) \
 inline void \
@@ -1771,8 +1776,7 @@ Get ## Type ## ArrayLengthAndData(JSObject* obj, uint32_t* length, bool* isShare
     MOZ_ASSERT(GetObjectClass(obj) == detail::Type ## ArrayClassPtr); \
     const JS::Value& lenSlot = GetReservedSlot(obj, detail::TypedArrayLengthSlot); \
     *length = mozilla::AssertedCast<uint32_t>(lenSlot.toInt32()); \
-    const JS::Value& isSharedmemSlot = GetReservedSlot(obj, detail::TypedArrayIsSharedmemSlot); \
-    *isSharedMemory = mozilla::AssertedCast<bool>(isSharedmemSlot.toBoolean()); \
+    *isSharedMemory = JS_GetTypedArraySharedness(obj); \
     *data = static_cast<type*>(GetObjectPrivate(obj)); \
 }
 
@@ -1949,17 +1953,6 @@ JS_GetTypedArrayByteOffset(JSObject* obj);
 
 extern JS_FRIEND_API(uint32_t)
 JS_GetTypedArrayByteLength(JSObject* obj);
-
-
-
-
-
-
-
-
-
-extern JS_FRIEND_API(bool)
-JS_GetTypedArraySharedness(JSObject* obj);
 
 
 

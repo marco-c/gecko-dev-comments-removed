@@ -655,7 +655,7 @@ function ViewedArrayBufferIfReified(tarray) {
     assert(IsTypedArray(tarray), "non-typed array asked for its buffer");
 
     var buf = UnsafeGetReservedSlot(tarray, JS_TYPEDARRAYLAYOUT_BUFFER_SLOT);
-    assert(buf === null || (IsObject(buf) && IsArrayBuffer(buf)),
+    assert(buf === null || (IsObject(buf) && (IsArrayBuffer(buf) || IsSharedArrayBuffer(buf))),
            "unexpected value in buffer slot");
     return buf;
 }
@@ -666,8 +666,17 @@ function IsDetachedBuffer(buffer) {
     if (buffer === null)
         return false;
 
-    assert(IsArrayBuffer(buffer),
+    assert(IsArrayBuffer(buffer) || IsSharedArrayBuffer(buffer),
            "non-ArrayBuffer passed to IsDetachedBuffer");
+
+    
+    
+    
+    
+    
+    
+    if (IsSharedArrayBuffer(buffer))
+	return false;
 
     var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
     return (flags & JS_ARRAYBUFFER_NEUTERED_FLAG) !== 0;
@@ -695,19 +704,26 @@ function SetFromNonTypedArray(target, array, targetOffset, targetLength, targetB
     var k = 0;
 
     
+    
+    
+    var isShared = targetBuffer !== null && IsSharedArrayBuffer(targetBuffer);
+
+    
     while (targetOffset < limitOffset) {
         
         var kNumber = ToNumber(src[k]);
 
         
         
-        if (targetBuffer === null) {
-            
-            
-            targetBuffer = ViewedArrayBufferIfReified(target);
-        }
-        if (IsDetachedBuffer(targetBuffer))
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+	if (!isShared) {
+            if (targetBuffer === null) {
+		
+		
+		targetBuffer = ViewedArrayBufferIfReified(target);
+            }
+            if (IsDetachedBuffer(targetBuffer))
+		ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+	}
 
         
         target[targetOffset] = kNumber;
