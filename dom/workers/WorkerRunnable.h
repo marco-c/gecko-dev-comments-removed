@@ -185,11 +185,20 @@ private:
   }
 
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override final
   {
     AssertIsOnMainThread();
 
     return true;
+  }
+
+  
+  
+  
+  virtual bool
+  DispatchInternal() override final
+  {
+    return WorkerRunnable::DispatchInternal();
   }
 
   virtual void
