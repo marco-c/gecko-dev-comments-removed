@@ -111,9 +111,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.9.1"
-#define SQLITE_VERSION_NUMBER 3009001
-#define SQLITE_SOURCE_ID      "2015-10-16 17:31:12 767c1727fec4ce11b83f25b3f1bfcfe68a2c8b02"
+#define SQLITE_VERSION        "3.10.1"
+#define SQLITE_VERSION_NUMBER 3010001
+#define SQLITE_SOURCE_ID      "2016-01-13 21:41:56 254419c36766225ca542ae873ed38255e3fb8588"
 
 
 
@@ -478,6 +478,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_exec(
 #define SQLITE_IOERR_GETTEMPPATH       (SQLITE_IOERR | (25<<8))
 #define SQLITE_IOERR_CONVPATH          (SQLITE_IOERR | (26<<8))
 #define SQLITE_IOERR_VNODE             (SQLITE_IOERR | (27<<8))
+#define SQLITE_IOERR_AUTH              (SQLITE_IOERR | (28<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_BUSY_SNAPSHOT           (SQLITE_BUSY   |  (2<<8))
@@ -974,6 +975,20 @@ struct sqlite3_io_methods {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_FCNTL_GET_LOCKPROXYFILE       2
 #define SQLITE_FCNTL_SET_LOCKPROXYFILE       3
@@ -999,6 +1014,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_WAL_BLOCK              24
 #define SQLITE_FCNTL_ZIPVFS                 25
 #define SQLITE_FCNTL_RBU                    26
+#define SQLITE_FCNTL_VFS_POINTER            27
+#define SQLITE_FCNTL_JOURNAL_POINTER        28
 
 
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1484,6 +1501,11 @@ struct sqlite3_mem_methods {
   void (*xShutdown)(void*);      
   void *pAppData;                
 };
+
+
+
+
+
 
 
 
@@ -4389,8 +4411,8 @@ SQLITE_API unsigned int SQLITE_STDCALL sqlite3_value_subtype(sqlite3_value*);
 
 
 
-SQLITE_API SQLITE_EXPERIMENTAL sqlite3_value *SQLITE_STDCALL sqlite3_value_dup(const sqlite3_value*);
-SQLITE_API SQLITE_EXPERIMENTAL void SQLITE_STDCALL sqlite3_value_free(sqlite3_value*);
+SQLITE_API sqlite3_value *SQLITE_STDCALL sqlite3_value_dup(const sqlite3_value*);
+SQLITE_API void SQLITE_STDCALL sqlite3_value_free(sqlite3_value*);
 
 
 
@@ -5660,6 +5682,17 @@ struct sqlite3_module {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 struct sqlite3_index_info {
   
   int nConstraint;           
@@ -5688,6 +5721,8 @@ struct sqlite3_index_info {
   sqlite3_int64 estimatedRows;    
   
   int idxFlags;              
+  
+  sqlite3_uint64 colUsed;    
 };
 
 
@@ -5703,12 +5738,15 @@ struct sqlite3_index_info {
 
 
 
-#define SQLITE_INDEX_CONSTRAINT_EQ    2
-#define SQLITE_INDEX_CONSTRAINT_GT    4
-#define SQLITE_INDEX_CONSTRAINT_LE    8
-#define SQLITE_INDEX_CONSTRAINT_LT    16
-#define SQLITE_INDEX_CONSTRAINT_GE    32
-#define SQLITE_INDEX_CONSTRAINT_MATCH 64
+#define SQLITE_INDEX_CONSTRAINT_EQ      2
+#define SQLITE_INDEX_CONSTRAINT_GT      4
+#define SQLITE_INDEX_CONSTRAINT_LE      8
+#define SQLITE_INDEX_CONSTRAINT_LT     16
+#define SQLITE_INDEX_CONSTRAINT_GE     32
+#define SQLITE_INDEX_CONSTRAINT_MATCH  64
+#define SQLITE_INDEX_CONSTRAINT_LIKE   65
+#define SQLITE_INDEX_CONSTRAINT_GLOB   66
+#define SQLITE_INDEX_CONSTRAINT_REGEXP 67
 
 
 
@@ -6494,6 +6532,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_status64(
   sqlite3_int64 *pHighwater,
   int resetFlag
 );
+
 
 
 
@@ -7368,7 +7407,32 @@ SQLITE_API int SQLITE_STDCALL sqlite3_strnicmp(const char *, const char *, int);
 
 
 
+
+
 SQLITE_API int SQLITE_STDCALL sqlite3_strglob(const char *zGlob, const char *zStr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API int SQLITE_STDCALL sqlite3_strlike(const char *zGlob, const char *zStr, unsigned int cEsc);
 
 
 
@@ -7790,6 +7854,129 @@ SQLITE_API int SQLITE_STDCALL sqlite3_stmt_scanstatus(
 
 SQLITE_API void SQLITE_STDCALL sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API int SQLITE_STDCALL sqlite3_db_cacheflush(sqlite3*);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct sqlite3_snapshot sqlite3_snapshot;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_get(
+  sqlite3 *db,
+  const char *zSchema,
+  sqlite3_snapshot **ppSnapshot
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_open(
+  sqlite3 *db,
+  const char *zSchema,
+  sqlite3_snapshot *pSnapshot
+);
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API SQLITE_EXPERIMENTAL void SQLITE_STDCALL sqlite3_snapshot_free(sqlite3_snapshot*);
 
 
 
