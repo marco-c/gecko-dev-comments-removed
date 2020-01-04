@@ -722,10 +722,12 @@ public:
 
 
 
+  inline nsIContent *GetFlattenedTreeParent() const;
+
+  
 
 
-
-  nsIContent *GetFlattenedTreeParent() const;
+  nsINode *GetFlattenedTreeParentNodeInternal() const;
 
   
 

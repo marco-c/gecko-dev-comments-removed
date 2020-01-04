@@ -33,5 +33,39 @@ inline mozilla::dom::ShadowRoot* nsIContent::GetShadowRoot() const
   return AsElement()->FastGetShadowRoot();
 }
 
+inline nsINode* nsINode::GetFlattenedTreeParentNode() const
+{
+  nsINode* parent = GetParentNode();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool needSlowCall = HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
+                      IsInShadowTree() ||
+                      (parent && parent->IsContent() &&
+                       parent->AsContent()->GetShadowRoot());
+  if (MOZ_UNLIKELY(needSlowCall)) {
+    MOZ_ASSERT(IsContent());
+    return AsContent()->GetFlattenedTreeParentNodeInternal();
+  }
+
+  return parent;
+}
+
+inline nsIContent*
+nsIContent::GetFlattenedTreeParent() const
+{
+  nsINode* parent = GetFlattenedTreeParentNode();
+  return (parent && parent->IsContent()) ? parent->AsContent() : nullptr;
+}
+
 
 #endif 

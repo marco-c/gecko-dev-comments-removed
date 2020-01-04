@@ -932,6 +932,16 @@ public:
 
 
 
+
+
+
+
+  inline nsINode* GetFlattenedTreeParentNode() const;
+
+  
+
+
+
   mozilla::dom::Element* GetParentElement() const
   {
     return mParent && mParent->IsElement() ? mParent->AsElement() : nullptr;

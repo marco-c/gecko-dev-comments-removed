@@ -29,6 +29,7 @@
 #include "nsCOMPtr.h"
 #include "nsFocusManager.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsIDocument.h"
 #include "nsIFrame.h"
 #include "nsIWidget.h"
@@ -3567,7 +3568,7 @@ EventStateManager::UpdateCursor(nsPresContext* aPresContext,
       hotspotY = framecursor.mHotspotY;
   }
 
-  if (nsContentUtils::UseActivityCursor()) {
+  if (Preferences::GetBool("ui.use_activity_cursor", false)) {
     
     nsCOMPtr<nsIDocShell> docShell(aPresContext->GetDocShell());
     if (!docShell) return;
