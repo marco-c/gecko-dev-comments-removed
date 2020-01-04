@@ -45,6 +45,7 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "WorkerPrivate.h"
+#include "WorkerRunnable.h"
 
 #ifdef DEBUG
 #include "BackgroundChild.h" 
@@ -1700,9 +1701,16 @@ class BlobChild::RemoteBlobImpl
 {
 protected:
   class CreateStreamHelper;
+  class WorkerHolder;
 
   BlobChild* mActor;
   nsCOMPtr<nsIEventTarget> mActorTarget;
+
+  
+  
+  WorkerPrivate* mWorkerPrivate;
+  nsAutoPtr<WorkerHolder> mWorkerHolder;
+  Mutex mMutex;
 
   
   
@@ -1823,6 +1831,16 @@ public:
     mDifferentProcessBlobImpl = nullptr;
   }
 
+  
+  
+  
+  
+  nsresult
+  DispatchToTarget(nsIRunnable* aRunnable);
+
+  void
+  WorkerHasNotified();
+
 protected:
   
   RemoteBlobImpl(const nsAString& aContentType, uint64_t aLength);
@@ -1838,6 +1856,26 @@ protected:
 
   void
   Destroy();
+};
+
+class BlobChild::RemoteBlobImpl::WorkerHolder final
+  : public workers::WorkerHolder
+{
+  
+  RemoteBlobImpl* mRemoteBlobImpl;
+
+public:
+  explicit WorkerHolder(RemoteBlobImpl* aRemoteBlobImpl)
+    : mRemoteBlobImpl(aRemoteBlobImpl)
+  {
+    MOZ_ASSERT(aRemoteBlobImpl);
+  }
+
+  bool Notify(Status aStatus) override
+  {
+    mRemoteBlobImpl->WorkerHasNotified();
+    return true;
+  }
 };
 
 class BlobChild::RemoteBlobImpl::CreateStreamHelper final
@@ -2053,6 +2091,8 @@ RemoteBlobImpl::RemoteBlobImpl(BlobChild* aActor,
                                BlobImplIsDirectory aIsDirectory,
                                bool aIsSameProcessBlob)
   : BlobImplBase(aName, aContentType, aLength, aModDate)
+  , mWorkerPrivate(nullptr)
+  , mMutex("BlobChild::RemoteBlobImpl::mMutex")
   , mIsSlice(false), mIsDirectory(aIsDirectory == eDirectory)
 {
   SetPath(aPath);
@@ -2075,6 +2115,8 @@ RemoteBlobImpl::RemoteBlobImpl(BlobChild* aActor,
                                uint64_t aLength,
                                bool aIsSameProcessBlob)
   : BlobImplBase(aContentType, aLength)
+  , mWorkerPrivate(nullptr)
+  , mMutex("BlobChild::RemoteBlobImpl::mMutex")
   , mIsSlice(false), mIsDirectory(false)
 {
   if (aIsSameProcessBlob) {
@@ -2091,6 +2133,8 @@ RemoteBlobImpl::RemoteBlobImpl(BlobChild* aActor,
 BlobChild::
 RemoteBlobImpl::RemoteBlobImpl(BlobChild* aActor)
   : BlobImplBase(EmptyString(), EmptyString(), UINT64_MAX, INT64_MAX)
+  , mWorkerPrivate(nullptr)
+  , mMutex("BlobChild::RemoteBlobImpl::mMutex")
   , mIsSlice(false), mIsDirectory(false)
 {
   CommonInit(aActor);
@@ -2100,6 +2144,8 @@ BlobChild::
 RemoteBlobImpl::RemoteBlobImpl(const nsAString& aContentType, uint64_t aLength)
   : BlobImplBase(aContentType, aLength)
   , mActor(nullptr)
+  , mWorkerPrivate(nullptr)
+  , mMutex("BlobChild::RemoteBlobImpl::mMutex")
   , mIsSlice(true)
   , mIsDirectory(false)
 {
@@ -2116,6 +2162,22 @@ RemoteBlobImpl::CommonInit(BlobChild* aActor)
 
   mActor = aActor;
   mActorTarget = aActor->EventTarget();
+
+  if (!NS_IsMainThread()) {
+    mWorkerPrivate = GetCurrentThreadWorkerPrivate();
+    
+    
+    
+    if (mWorkerPrivate) {
+      mWorkerHolder = new RemoteBlobImpl::WorkerHolder(this);
+      if (NS_WARN_IF(!mWorkerHolder->HoldWorker(mWorkerPrivate, Closing))) {
+        
+        
+        mWorkerPrivate = nullptr;
+        mWorkerHolder = nullptr;
+      }
+    }
+  }
 
   mImmutable = true;
 }
@@ -2158,6 +2220,13 @@ RemoteBlobImpl::Destroy()
     if (mActor) {
       mActor->AssertIsOnOwningThread();
       mActor->NoteDyingRemoteBlobImpl();
+    }
+
+    if (mWorkerHolder) {
+      
+      MutexAutoLock lock(mMutex);
+      mWorkerPrivate = nullptr;
+      mWorkerHolder = nullptr;
     }
 
     delete this;
@@ -2344,6 +2413,71 @@ RemoteBlobImpl::GetBlobParent()
   return nullptr;
 }
 
+class RemoteBlobControlRunnable : public WorkerControlRunnable
+{
+  nsCOMPtr<nsIRunnable> mRunnable;
+
+public:
+  RemoteBlobControlRunnable(WorkerPrivate* aWorkerPrivate,
+                            nsIRunnable* aRunnable)
+    : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
+    , mRunnable(aRunnable)
+  {
+    MOZ_ASSERT(aRunnable);
+  }
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    mRunnable->Run();
+    return true;
+  }
+};
+
+nsresult
+BlobChild::
+RemoteBlobImpl::DispatchToTarget(nsIRunnable* aRunnable)
+{
+  MOZ_ASSERT(aRunnable);
+
+  
+  
+  MutexAutoLock lock(mMutex);
+
+  if (mWorkerPrivate) {
+    MOZ_ASSERT(mWorkerHolder);
+
+    RefPtr<RemoteBlobControlRunnable> controlRunnable =
+      new RemoteBlobControlRunnable(mWorkerPrivate, aRunnable);
+    if (!controlRunnable->Dispatch()) {
+      return NS_ERROR_FAILURE;
+    }
+
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIEventTarget> target = BaseRemoteBlobImpl()->GetActorEventTarget();
+  if (!target) {
+    target = do_GetMainThread();
+  }
+
+  MOZ_ASSERT(target);
+
+  return target->Dispatch(aRunnable, NS_DISPATCH_NORMAL);
+}
+
+void
+BlobChild::
+RemoteBlobImpl::WorkerHasNotified()
+{
+  MutexAutoLock lock(mMutex);
+
+  mWorkerHolder->ReleaseWorker();
+
+  mWorkerHolder = nullptr;
+  mWorkerPrivate = nullptr;
+}
+
 
 
 
@@ -2381,14 +2515,7 @@ CreateStreamHelper::GetStream(nsIInputStream** aInputStream)
   if (EventTargetIsOnCurrentThread(baseRemoteBlobImpl->GetActorEventTarget())) {
     RunInternal(baseRemoteBlobImpl, false);
   } else {
-    nsCOMPtr<nsIEventTarget> target = baseRemoteBlobImpl->GetActorEventTarget();
-    if (!target) {
-      target = do_GetMainThread();
-    }
-
-    MOZ_ASSERT(target);
-
-    nsresult rv = target->Dispatch(this, NS_DISPATCH_NORMAL);
+    nsresult rv = baseRemoteBlobImpl->DispatchToTarget(this);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
