@@ -391,19 +391,14 @@ class RecursiveMakeBackend(CommonBackend):
         self.backend_input_files.add(mozpath.join(self.environment.topobjdir,
             'config', 'autoconf.mk'))
 
-        self._install_manifests = {
-            k: InstallManifest() for k in [
-                'dist_bin',
-                'dist_branding',
-                'dist_idl',
-                'dist_include',
-                'dist_public',
-                'dist_private',
-                'dist_sdk',
-                'dist_xpi-stage',
-                '_tests',
-                'xpidl',
-            ]}
+        self._install_manifests = defaultdict(InstallManifest)
+        
+        
+        
+        
+        self._install_manifests['dist_public']
+        self._install_manifests['dist_private']
+        self._install_manifests['dist_sdk']
 
         self._traversal = RecursiveMakeTraversal()
         self._compile_graph = defaultdict(set)
