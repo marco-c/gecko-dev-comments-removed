@@ -853,15 +853,18 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
   
   
   
+  
   ClipParts& clipParts = aClipPartsCache[aLayer];
   clipParts.mFixedClip = aLayer->GetClipRect();
+  clipParts.mScrolledClip = aLayer->GetScrolledClipRect();
 
   
   
   
   
   
-  clipParts.mScrolledClip = clipDeferredFromChildren;
+  clipParts.mScrolledClip = IntersectMaybeRects(
+      clipDeferredFromChildren, clipParts.mScrolledClip);
 
   
   
@@ -874,6 +877,15 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
   
   
   nsTArray<Layer*> ancestorMaskLayers;
+
+  
+  
+  if (const Maybe<LayerClip>& scrolledClip = aLayer->GetScrolledClip()) {
+    if (scrolledClip->GetMaskLayerIndex()) {
+      ancestorMaskLayers.AppendElement(
+          aLayer->GetAncestorMaskLayerAt(*scrolledClip->GetMaskLayerIndex()));
+    }
+  }
 
   for (uint32_t i = 0; i < aLayer->GetScrollMetadataCount(); i++) {
     AsyncPanZoomController* controller = aLayer->GetAsyncPanZoomController(i);
@@ -1021,7 +1033,8 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     }
   }
 
-  bool clipChanged = (hasAsyncTransform || clipDeferredFromChildren);
+  bool clipChanged = (hasAsyncTransform || clipDeferredFromChildren ||
+                      aLayer->GetScrolledClipRect());
   if (clipChanged) {
     
     
