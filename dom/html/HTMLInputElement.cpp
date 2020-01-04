@@ -3108,6 +3108,15 @@ HTMLInputElement::SetValueInternal(const nsAString& aValue, uint32_t aFlags)
         }
       }
 
+      
+      
+      
+      
+      if (PlaceholderApplies() &&
+          HasAttr(kNameSpaceID_None, nsGkAtoms::placeholder)) {
+        UpdateState(true);
+      }
+
       return NS_OK;
     }
 
@@ -6488,6 +6497,12 @@ HTMLInputElement::IntrinsicState() const
     }
   }
 
+  if (PlaceholderApplies() &&
+      HasAttr(kNameSpaceID_None, nsGkAtoms::placeholder) &&
+      IsValueEmpty()) {
+    state |= NS_EVENT_STATE_PLACEHOLDERSHOWN;
+  }
+
   if (mForm && !mForm->GetValidity() && IsSubmitControl()) {
     state |= NS_EVENT_STATE_MOZ_SUBMITINVALID;
   }
@@ -7917,6 +7932,13 @@ HTMLInputElement::OnValueChanged(bool aNotify, bool aWasInteractiveUserChange)
 
   if (HasDirAuto()) {
     SetDirectionIfAuto(true, aNotify);
+  }
+
+  
+  
+  if (PlaceholderApplies() &&
+      HasAttr(kNameSpaceID_None, nsGkAtoms::placeholder)) {
+    UpdateState(aNotify);
   }
 }
 
