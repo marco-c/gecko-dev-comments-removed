@@ -146,8 +146,7 @@ public:
   typedef MediaDecoderOwner::NextFrameStatus NextFrameStatus;
   typedef mozilla::layers::ImageContainer::FrameID FrameID;
   MediaDecoderStateMachine(MediaDecoder* aDecoder,
-                           MediaDecoderReader* aReader,
-                           bool aRealTime = false);
+                           MediaDecoderReader* aReader);
 
   nsresult Init(MediaDecoder* aDecoder);
 
@@ -246,9 +245,6 @@ public:
 
   MediaEventSource<MediaEventType>&
   OnPlaybackEvent() { return mOnPlaybackEvent; }
-
-  
-  bool IsRealTime() const { return mRealTime; }
 
   size_t SizeOfVideoQueue() const;
 
@@ -623,9 +619,6 @@ private:
   WatchManager<MediaDecoderStateMachine> mWatchManager;
 
   
-  const bool mRealTime;
-
-  
   
   bool mDispatchedStateMachine;
 
@@ -760,13 +753,13 @@ private:
   uint32_t AudioPrerollUsecs() const
   {
     MOZ_ASSERT(OnTaskQueue());
-    return IsRealTime() ? 0 : mAmpleAudioThresholdUsecs / 2;
+    return mAmpleAudioThresholdUsecs / 2;
   }
 
   uint32_t VideoPrerollFrames() const
   {
     MOZ_ASSERT(OnTaskQueue());
-    return IsRealTime() ? 0 : GetAmpleVideoFrames() / 2;
+    return GetAmpleVideoFrames() / 2;
   }
 
   bool DonePrerollingAudio()

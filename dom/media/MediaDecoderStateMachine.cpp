@@ -212,8 +212,7 @@ SuspendBackgroundVideoDelay()
   name(mTaskQueue, val, "MediaDecoderStateMachine::" #name " (Canonical)")
 
 MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
-                                                   MediaDecoderReader* aReader,
-                                                   bool aRealTime) :
+                                                   MediaDecoderReader* aReader) :
   mDecoderID(aDecoder),
   mFrameStats(&aDecoder->GetFrameStatistics()),
   mVideoFrameContainer(aDecoder->GetVideoFrameContainer()),
@@ -221,14 +220,13 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mTaskQueue(new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK),
                             true)),
   mWatchManager(this, mTaskQueue),
-  mRealTime(aRealTime),
   mDispatchedStateMachine(false),
   mDelayedScheduler(mTaskQueue),
   INIT_WATCHABLE(mState, DECODER_STATE_DECODING_METADATA),
   mCurrentFrameID(0),
   INIT_WATCHABLE(mObservedDuration, TimeUnit()),
   mFragmentEndTime(-1),
-  mReader(new MediaDecoderReaderWrapper(aRealTime, mTaskQueue, aReader)),
+  mReader(new MediaDecoderReaderWrapper(mTaskQueue, aReader)),
   mDecodedAudioEndTime(0),
   mDecodedVideoEndTime(0),
   mPlaybackRate(1.0),
@@ -282,8 +280,8 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
 
   InitVideoQueuePrefs();
 
-  mBufferingWait = IsRealTime() ? 0 : 15;
-  mLowDataThresholdUsecs = IsRealTime() ? 0 : detail::LOW_DATA_THRESHOLD_USECS;
+  mBufferingWait = 15;
+  mLowDataThresholdUsecs = detail::LOW_DATA_THRESHOLD_USECS;
 
 #ifdef XP_WIN
   
@@ -1282,19 +1280,15 @@ void MediaDecoderStateMachine::StartDecoding()
   }
   SetState(DECODER_STATE_DECODING);
 
-  if (mDecodingFirstFrame &&
-      (IsRealTime() || mSentFirstFrameLoadedEvent)) {
-    if (IsRealTime()) {
-      FinishDecodeFirstFrame();
-    } else {
-      
-      
-      
-      
-      
-      MOZ_ASSERT(mQueuedSeek.Exists() && mSentFirstFrameLoadedEvent,
-                 "Return from dormant must have queued seek");
-    }
+  if (mDecodingFirstFrame && mSentFirstFrameLoadedEvent) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mQueuedSeek.Exists() && mSentFirstFrameLoadedEvent,
+               "Return from dormant must have queued seek");
+
     if (mQueuedSeek.Exists()) {
       InitiateSeek(Move(mQueuedSeek));
       return;
@@ -2117,7 +2111,7 @@ MediaDecoderStateMachine::FinishDecodeFirstFrame()
   MOZ_ASSERT(OnTaskQueue());
   DECODER_LOG("FinishDecodeFirstFrame");
 
-  if (!IsRealTime() && !mSentFirstFrameLoadedEvent) {
+  if (!mSentFirstFrameLoadedEvent) {
     mMediaSink->Redraw(mInfo.mVideo);
   }
 
@@ -2565,7 +2559,7 @@ bool
 MediaDecoderStateMachine::CanPlayThrough()
 {
   MOZ_ASSERT(OnTaskQueue());
-  return IsRealTime() || GetStatistics().CanPlayThrough();
+  return GetStatistics().CanPlayThrough();
 }
 
 MediaStatistics
@@ -2639,11 +2633,6 @@ MediaDecoderStateMachine::ScheduleStateMachineIn(int64_t aMicroseconds)
   MOZ_ASSERT(aMicroseconds > 0);
   if (mDispatchedStateMachine) {
     return;
-  }
-
-  
-  if (IsRealTime()) {
-    aMicroseconds = std::min(aMicroseconds, int64_t(40000));
   }
 
   TimeStamp now = TimeStamp::Now();
