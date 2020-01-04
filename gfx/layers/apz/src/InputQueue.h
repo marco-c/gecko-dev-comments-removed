@@ -36,7 +36,6 @@ class QueuedInput;
 
 
 
-
 class InputQueue {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InputQueue)
 
@@ -115,7 +114,9 @@ public:
 
 
 
-  WheelBlockState* GetCurrentWheelTransaction() const;
+
+
+  WheelBlockState* GetActiveWheelTransaction() const;
   
 
 
@@ -181,7 +182,7 @@ private:
   void ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTarget,
                                  CancelableBlockState* aBlock);
   void MainThreadTimeout(const uint64_t& aInputBlockId);
-  void ProcessInputBlocks();
+  void ProcessQueue();
   bool CanDiscardBlock(CancelableBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);
 

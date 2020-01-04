@@ -1675,7 +1675,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
 
   if ((delta.x || delta.y) && !CanScrollWithWheel(delta)) {
     
-    if (mInputQueue->GetCurrentWheelTransaction() &&
+    if (mInputQueue->GetActiveWheelTransaction() &&
         gfxPrefs::MouseScrollTestingEnabled()) {
       if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
         controller->NotifyMozMouseScrollEvent(

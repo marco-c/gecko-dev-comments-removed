@@ -34,7 +34,6 @@ class PanGestureBlockState;
 
 
 
-
 class InputBlockState : public RefCounted<InputBlockState>
 {
 public:
