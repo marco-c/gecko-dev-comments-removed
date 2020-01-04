@@ -34,6 +34,7 @@ class HTMLCanvasElement;
 namespace layers {
 
 class CanvasClient;
+class TextureClient;
 
 
 
@@ -90,6 +91,12 @@ public:
   
   
   
+  
+  void CopyFromTextureClient(TextureClient *aClient);
+
+  
+  
+  
   nsresult
   GetInputStream(const char *aMimeType,
                  const char16_t *aEncoderOptions,
@@ -142,6 +149,12 @@ private:
   
   CanvasClient* mCanvasClient;
 
+  
+  
+  
+  
+  
+  RefPtr<gfx::DataSourceSurface> mSurfaceForBasic;
 
   
   Mutex mMutex;
