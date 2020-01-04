@@ -77,6 +77,30 @@ public abstract class HomeFragment extends Fragment {
     
     private OnUrlOpenInBackgroundListener mUrlOpenInBackgroundListener;
 
+    protected PanelStateChangeListener mPanelStateChangeListener = null;
+
+    
+
+
+
+    public interface PanelStateChangeListener {
+
+        
+
+
+
+        void onStateChanged(Bundle bundle);
+    }
+
+    public void restoreData(Bundle data) {
+        
+    }
+
+    public void setPanelStateChangeListener(
+            PanelStateChangeListener mPanelStateChangeListener) {
+        this.mPanelStateChangeListener = mPanelStateChangeListener;
+    }
+
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);

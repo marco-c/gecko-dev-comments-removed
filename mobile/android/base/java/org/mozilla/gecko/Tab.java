@@ -36,6 +36,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
+import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -87,6 +88,13 @@ public class Tab {
     private volatile boolean mIsAudioPlaying;
     private String mMostRecentHomePanel;
     private boolean mShouldShowToolbarWithoutAnimationOnFirstSelection;
+
+    
+
+
+
+
+    private Bundle mMostRecentHomePanelData;
 
     private int mHistoryIndex;
     private int mHistorySize;
@@ -219,8 +227,17 @@ public class Tab {
         return mMostRecentHomePanel;
     }
 
+    public Bundle getMostRecentHomePanelData() {
+        return mMostRecentHomePanelData;
+    }
+
     public void setMostRecentHomePanel(String panelId) {
         mMostRecentHomePanel = panelId;
+        mMostRecentHomePanelData = null;
+    }
+
+    public void setMostRecentHomePanelData(Bundle data) {
+        mMostRecentHomePanelData = data;
     }
 
     public Bitmap getThumbnailBitmap(int width, int height) {
