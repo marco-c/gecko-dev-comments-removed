@@ -104,6 +104,14 @@ public:
 
 
 
+
+
+  void ClearArenaRefPtrs(mozilla::ArenaObjectID aObjectID);
+
+  
+
+
+
   void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               nsArenaMemoryStats* aArenaStats);
 

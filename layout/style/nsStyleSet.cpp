@@ -261,6 +261,10 @@ nsStyleSet::BeginReconstruct()
   NS_ASSERTION(mRuleTree, "Reconstructing before first construction?");
 
   
+  
+  PresContext()->PresShell()->ClearArenaRefPtrs(eArenaObjectID_nsStyleContext);
+
+  
   nsRuleNode* newTree = nsRuleNode::CreateRootNode(mRuleTree->PresContext());
 
   

@@ -73,6 +73,13 @@ public:
   void* operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW;
   void Destroy();
 
+  
+  static mozilla::ArenaObjectID ArenaObjectID()
+  {
+    return mozilla::eArenaObjectID_nsStyleContext;
+  }
+  nsIPresShell* Arena();
+
 #ifdef DEBUG
   
 
