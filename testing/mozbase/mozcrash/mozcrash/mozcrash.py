@@ -44,7 +44,7 @@ def get_logger():
 
 
 def check_for_crashes(dump_directory,
-                      symbols_path,
+                      symbols_path=None,
                       stackwalk_binary=None,
                       dump_save_path=None,
                       test_name=None,
@@ -164,7 +164,13 @@ class CrashInfo(object):
 
     def _get_symbols(self):
         
-        if self.symbols_path and mozfile.is_url(self.symbols_path):
+        
+        if not self.symbols_path:
+            self.symbols_path = tempfile.mkdtemp()
+            self.remove_symbols = True
+
+        
+        if mozfile.is_url(self.symbols_path):
             self.remove_symbols = True
             self.logger.info("Downloading symbols from: %s" % self.symbols_path)
             
