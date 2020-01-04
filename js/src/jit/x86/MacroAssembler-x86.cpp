@@ -6,6 +6,7 @@
 
 #include "jit/x86/MacroAssembler-x86.h"
 
+#include "mozilla/Alignment.h"
 #include "mozilla/Casting.h"
 
 #include "jit/Bailouts.h"
@@ -19,6 +20,62 @@
 
 using namespace js;
 using namespace js::jit;
+
+
+
+MOZ_ALIGNED_DECL(static const uint64_t, 16) TO_DOUBLE[4] = {
+    0x4530000043300000LL,
+    0x0LL,
+    0x4330000000000000LL,
+    0x4530000000000000LL
+};
+
+void
+MacroAssemblerX86::convertUInt64ToDouble(Register64 src, Register temp, FloatRegister dest)
+{
+    
+    
+    MOZ_ASSERT(dest.size() == 8);
+    FloatRegister dest128 = FloatRegister(dest.encoding(), FloatRegisters::Int32x4);
+
+    
+    
+
+    
+    
+    
+    vmovd(src.low, dest128);
+    vmovd(src.high, ScratchInt32x4Reg);
+
+    
+    
+    vpunpckldq(ScratchInt32x4Reg, dest128, dest128);
+
+    
+    
+    
+    
+    
+    
+    movePtr(ImmPtr(TO_DOUBLE), temp);
+    vpunpckldq(Operand(temp, 0), dest128, dest128);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    vsubpd(Operand(temp, sizeof(uint64_t) * 2), dest128, dest128);
+
+    
+    
+    
+    
+    vhaddpd(dest128, dest128);
+}
 
 MacroAssemblerX86::Double*
 MacroAssemblerX86::getDouble(double d)

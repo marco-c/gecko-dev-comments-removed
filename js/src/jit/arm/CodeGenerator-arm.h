@@ -216,7 +216,7 @@ class CodeGeneratorARM : public CodeGeneratorShared
 
     void generateInvalidateEpilogue();
 
-    void visitRandom(LRandom* ins);
+    void setReturnDoubleRegs(LiveRegisterSet* regs);
 
     
     template<typename S, typename T>
