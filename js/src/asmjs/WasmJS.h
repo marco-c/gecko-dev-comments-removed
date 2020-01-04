@@ -19,24 +19,15 @@
 #ifndef wasm_js_h
 #define wasm_js_h
 
+#include "asmjs/WasmTypes.h"
 #include "gc/Policy.h"
-#include "js/UniquePtr.h"
 #include "vm/NativeObject.h"
 
 namespace js {
 
 class TypedArrayObject;
-class WasmInstanceObject;
 
 namespace wasm {
-
-
-
-class Module;
-class Instance;
-class Table;
-
-typedef UniquePtr<Instance> UniqueInstance;
 
 
 
@@ -54,7 +45,7 @@ IsI64Implemented();
 
 MOZ_MUST_USE bool
 Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
-     MutableHandle<WasmInstanceObject*> instanceObj);
+     MutableHandleWasmInstanceObject instanceObj);
 
 
 
@@ -117,10 +108,6 @@ class WasmModuleObject : public NativeObject
     wasm::Module& module() const;
 };
 
-typedef Rooted<WasmModuleObject*> RootedWasmModuleObject;
-typedef Handle<WasmModuleObject*> HandleWasmModuleObject;
-typedef MutableHandle<WasmModuleObject*> MutableHandleWasmModuleObject;
-
 
 
 
@@ -152,19 +139,14 @@ class WasmInstanceObject : public NativeObject
     static bool construct(JSContext*, unsigned, Value*);
 
     static WasmInstanceObject* create(JSContext* cx, HandleObject proto);
-    void init(wasm::UniqueInstance instance);
+    void init(UniquePtr<wasm::Instance> instance);
     wasm::Instance& instance() const;
 
     static bool getExportedFunction(JSContext* cx,
-                                    Handle<WasmInstanceObject*> instanceObj,
+                                    HandleWasmInstanceObject instanceObj,
                                     uint32_t funcIndex,
                                     MutableHandleFunction fun);
 };
-
-typedef GCVector<WasmInstanceObject*> WasmInstanceObjectVector;
-typedef Rooted<WasmInstanceObject*> RootedWasmInstanceObject;
-typedef Handle<WasmInstanceObject*> HandleWasmInstanceObject;
-typedef MutableHandle<WasmInstanceObject*> MutableHandleWasmInstanceObject;
 
 
 
@@ -185,11 +167,6 @@ class WasmMemoryObject : public NativeObject
                                     HandleObject proto);
     ArrayBufferObjectMaybeShared& buffer() const;
 };
-
-typedef GCPtr<WasmMemoryObject*> GCPtrWasmMemoryObject;
-typedef Rooted<WasmMemoryObject*> RootedWasmMemoryObject;
-typedef Handle<WasmMemoryObject*> HandleWasmMemoryObject;
-typedef MutableHandle<WasmMemoryObject*> MutableHandleWasmMemoryObject;
 
 
 
@@ -233,10 +210,6 @@ class WasmTableObject : public NativeObject
     wasm::Table& table() const;
     bool setInstance(JSContext* cx, uint32_t index, HandleWasmInstanceObject instanceObj);
 };
-
-typedef Rooted<WasmTableObject*> RootedWasmTableObject;
-typedef Handle<WasmTableObject*> HandleWasmTableObject;
-typedef MutableHandle<WasmTableObject*> MutableHandleWasmTableObject;
 
 } 
 
