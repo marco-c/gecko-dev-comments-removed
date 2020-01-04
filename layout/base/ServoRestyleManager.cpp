@@ -69,7 +69,8 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
 {
   nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
   if (!primaryFrame && !aContent->IsDirtyForServo()) {
-    NS_WARNING("Frame not found for non-dirty content");
+    
+    
     return;
   }
 
