@@ -258,9 +258,7 @@ public:
     
     
     
-    virtual bool HaveChoiceOfHWAndSWCanvas();
-
-    virtual bool UseAcceleratedSkiaCanvas();
+    virtual bool UseAcceleratedCanvas();
     virtual void InitializeSkiaCacheLimits();
 
     
@@ -271,7 +269,7 @@ public:
 
     virtual void GetAzureBackendInfo(mozilla::widget::InfoObject &aObj) {
       aObj.DefineProperty("AzureCanvasBackend", GetBackendName(mPreferredCanvasBackend));
-      aObj.DefineProperty("AzureSkiaAccelerated", UseAcceleratedSkiaCanvas());
+      aObj.DefineProperty("AzureCanvasAccelerated", UseAcceleratedCanvas());
       aObj.DefineProperty("AzureFallbackCanvasBackend", GetBackendName(mFallbackCanvasBackend));
       aObj.DefineProperty("AzureContentBackend", GetBackendName(mContentBackend));
     }

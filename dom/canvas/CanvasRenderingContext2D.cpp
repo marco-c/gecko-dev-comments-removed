@@ -795,10 +795,16 @@ CanvasDrawObserver::FrameEnd()
     
     if (mGPUPreferredCalls > mMinCallsBeforeDecision ||
         mSoftwarePreferredCalls > mMinCallsBeforeDecision) {
+      CanvasRenderingContext2D::RenderingMode switchToMode;
       if (mGPUPreferredCalls >= mSoftwarePreferredCalls) {
-        mCanvasContext->SwitchRenderingMode(CanvasRenderingContext2D::RenderingMode::OpenGLBackendMode);
+        switchToMode = CanvasRenderingContext2D::RenderingMode::OpenGLBackendMode;
       } else {
-        mCanvasContext->SwitchRenderingMode(CanvasRenderingContext2D::RenderingMode::SoftwareBackendMode);
+        switchToMode = CanvasRenderingContext2D::RenderingMode::SoftwareBackendMode;
+      }
+      if (switchToMode != mCanvasContext->mRenderingMode) {
+        if (!mCanvasContext->SwitchRenderingMode(switchToMode)) {
+          gfxDebug() << "Canvas acceleration failed mode switch to " << switchToMode;
+        }
       }
     }
 
@@ -968,12 +974,10 @@ CanvasRenderingContext2D::CanvasRenderingContext2D()
   sNumLivingContexts++;
 
   
-  if (!gfxPlatform::GetPlatform()->UseAcceleratedSkiaCanvas()) {
-    mRenderingMode = RenderingMode::SoftwareBackendMode;
-  }
-
-  if (gfxPlatform::GetPlatform()->HaveChoiceOfHWAndSWCanvas()) {
+  if (gfxPlatform::GetPlatform()->UseAcceleratedCanvas()) {
     mDrawObserver = new CanvasDrawObserver(this);
+  } else {
+    mRenderingMode = RenderingMode::SoftwareBackendMode;
   }
 }
 
@@ -1208,8 +1212,7 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
 #ifdef USE_SKIA_GPU
   
   if ((aRenderingMode == RenderingMode::OpenGLBackendMode) &&
-      (!gfxPlatform::GetPlatform()->HaveChoiceOfHWAndSWCanvas() ||
-       !gfxPlatform::GetPlatform()->UseAcceleratedSkiaCanvas())) {
+      !gfxPlatform::GetPlatform()->UseAcceleratedCanvas()) {
       return false;
   }
 
@@ -1416,7 +1419,7 @@ CanvasRenderingContext2D::EnsureTarget(RenderingMode aRenderingMode)
 
     if (layerManager) {
       if (mode == RenderingMode::OpenGLBackendMode &&
-          gfxPlatform::GetPlatform()->UseAcceleratedSkiaCanvas() &&
+          gfxPlatform::GetPlatform()->UseAcceleratedCanvas() &&
           CheckSizeForSkiaGL(size)) {
         DemoteOldestContextIfNecessary();
         mBufferProvider = nullptr;
