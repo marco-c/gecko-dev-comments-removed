@@ -4,8 +4,10 @@
 
 
 #include "GPUProcessManager.h"
+#include "GPUProcessHost.h"
 #include "mozilla/layers/CompositorSession.h"
 #include "mozilla/StaticPtr.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 namespace gfx {
@@ -34,11 +36,109 @@ GPUProcessManager::Shutdown()
 }
 
 GPUProcessManager::GPUProcessManager()
+ : mProcess(nullptr),
+   mGPUChild(nullptr)
 {
+  mObserver = new Observer(this);
+  nsContentUtils::RegisterShutdownObserver(mObserver);
 }
 
 GPUProcessManager::~GPUProcessManager()
 {
+  
+  MOZ_ASSERT(!mProcess && !mGPUChild);
+
+  
+  MOZ_ASSERT(!mObserver);
+}
+
+NS_IMPL_ISUPPORTS(GPUProcessManager::Observer, nsIObserver);
+
+GPUProcessManager::Observer::Observer(GPUProcessManager* aManager)
+ : mManager(aManager)
+{
+}
+
+NS_IMETHODIMP
+GPUProcessManager::Observer::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
+{
+  if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
+    mManager->OnXPCOMShutdown();
+  }
+  return NS_OK;
+}
+
+void
+GPUProcessManager::OnXPCOMShutdown()
+{
+  if (mObserver) {
+    nsContentUtils::UnregisterShutdownObserver(mObserver);
+    mObserver = nullptr;
+  }
+
+  DestroyProcess();
+}
+
+void
+GPUProcessManager::EnableGPUProcess()
+{
+  if (mProcess) {
+    return;
+  }
+
+  
+  
+  mProcess = new GPUProcessHost(this);
+  if (!mProcess->Launch()) {
+    DisableGPUProcess("Failed to launch GPU process");
+  }
+}
+
+void
+GPUProcessManager::DisableGPUProcess(const char* aMessage)
+{
+  gfxConfig::SetFailed(Feature::GPU_PROCESS, FeatureStatus::Failed, aMessage);
+  gfxCriticalNote << aMessage;
+
+  DestroyProcess();
+}
+
+void
+GPUProcessManager::EnsureGPUReady()
+{
+  if (mProcess && mProcess->IsConnected()) {
+    if (!mProcess->WaitForLaunch()) {
+      
+      
+      MOZ_ASSERT(!mProcess && !mGPUChild);
+      return;
+    }
+  }
+}
+
+void
+GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost)
+{
+  MOZ_ASSERT(mProcess && mProcess == aHost);
+
+  if (!mProcess->IsConnected()) {
+    DisableGPUProcess("Failed to launch GPU process");
+    return;
+  }
+
+  mGPUChild = mProcess->GetActor();
+}
+
+void
+GPUProcessManager::DestroyProcess()
+{
+  if (!mProcess) {
+    return;
+  }
+
+  mProcess->Shutdown();
+  mProcess = nullptr;
+  mGPUChild = nullptr;
 }
 
 already_AddRefed<CompositorSession>

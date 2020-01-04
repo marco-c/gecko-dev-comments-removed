@@ -10,7 +10,9 @@
 #include "base/process.h"
 #include "Units.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/gfx/GPUProcessHost.h"
 #include "mozilla/ipc/Transport.h"
+#include "nsIObserverService.h"
 
 namespace mozilla {
 namespace layers {
@@ -32,10 +34,12 @@ class GeckoChildProcessHost;
 } 
 namespace gfx {
 
+class GPUChild;
 
 
 
-class GPUProcessManager final
+
+class GPUProcessManager final : public GPUProcessHost::Listener
 {
   typedef layers::APZCTreeManager APZCTreeManager;
   typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
@@ -46,6 +50,14 @@ public:
   static GPUProcessManager* Get();
 
   ~GPUProcessManager();
+
+  
+  void EnableGPUProcess();
+
+  
+  
+  
+  void EnsureGPUReady();
 
   already_AddRefed<layers::CompositorSession> CreateTopLevelCompositor(
     widget::CompositorWidgetProxy* aProxy,
@@ -92,10 +104,40 @@ public:
                                      const dom::TabId& aTabId,
                                      dom::TabParent* aBrowserParent);
 
+  void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
+
+private:
+  
+  void OnXPCOMShutdown();
+
 private:
   GPUProcessManager();
 
+  
+  void DisableGPUProcess(const char* aMessage);
+
+  
+  void DestroyProcess();
+
   DISALLOW_COPY_AND_ASSIGN(GPUProcessManager);
+
+  class Observer final : public nsIObserver {
+  public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIOBSERVER
+    Observer(GPUProcessManager* aManager);
+
+  protected:
+    ~Observer() {}
+
+    GPUProcessManager* mManager;
+  };
+  friend class Observer;
+
+private:
+  RefPtr<Observer> mObserver;
+  GPUProcessHost* mProcess;
+  GPUChild* mGPUChild;
 };
 
 } 
