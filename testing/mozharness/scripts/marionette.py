@@ -65,13 +65,6 @@ class MarionetteTest(TestingMixin, MercurialScript, BlobUploadMixin, TransferMix
          "help": "branch of gaia repo to clone"
          }
     ], [
-        ["--test-type"],
-        {"action": "store",
-         "dest": "test_type",
-         "default": "browser",
-         "help": "The type of tests to run",
-         }
-    ], [
         ["--marionette-address"],
         {"action": "store",
          "dest": "marionette_address",
@@ -118,13 +111,6 @@ class MarionetteTest(TestingMixin, MercurialScript, BlobUploadMixin, TransferMix
          "help": "url of desktop xre archive"
          }
      ], [
-           ["--gip-suite"],
-           {"action": "store",
-            "dest": "gip_suite",
-            "default": None,
-            "help": "gip suite to be executed. If no value is provided, manifest tbpl-manifest.ini will be used. the See Bug 1046694"
-           }
-     ], [ 
         ["--total-chunks"],
         {"action": "store",
          "dest": "total_chunks",
@@ -330,7 +316,6 @@ class MarionetteTest(TestingMixin, MercurialScript, BlobUploadMixin, TransferMix
         error_summary_file = os.path.join(dirs['abs_blob_upload_dir'],
                                           'marionette_errorsummary.log')
         config_fmt_args = {
-            'type': self.config.get('test_type'),
             
             'timeout': 60000 if self.config.get('emulator') else 10000,
             'profile': os.path.join(dirs['abs_gaia_dir'], 'profile'),
@@ -394,19 +379,6 @@ class MarionetteTest(TestingMixin, MercurialScript, BlobUploadMixin, TransferMix
                 else:
                     
                     config_fmt_args['binary'] = os.path.join(binary_path, 'b2g')
-
-            
-            
-            
-            if self.config.get('gip_suite'):
-                manifest = os.path.join(dirs['abs_gaiatest_dir'], 'gaiatest', 'tests', self.config.get('gip_suite'),
-                                        'manifest.ini')
-                if self.config.get('gip_suite') == "functional":
-                    config_fmt_args['type'] = "b2g-external"
-            else:
-                
-                manifest = os.path.join(dirs['abs_gaiatest_dir'], 'gaiatest', 'tests',
-                    'tbpl-manifest.ini')
 
         else:
             
