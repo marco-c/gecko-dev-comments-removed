@@ -25,10 +25,10 @@
 #include "imgIScriptedNotificationObserver.h"
 #include "gfxPlatform.h"
 
-using namespace mozilla;
-using namespace mozilla::image;
 using namespace mozilla::gfx;
 
+namespace mozilla {
+namespace image {
 
 
 
@@ -349,3 +349,6 @@ imgTools::GetImgCacheForDocument(nsIDOMDocument* aDoc, imgICache** aCache)
   NS_ENSURE_SUCCESS(rv, rv);
   return CallQueryInterface(loader, aCache);
 }
+
+} 
+} 
