@@ -1529,6 +1529,7 @@ this.DownloadError = function (aProperties)
   } else if (aProperties.becauseBlockedByReputationCheck) {
     this.becauseBlocked = true;
     this.becauseBlockedByReputationCheck = true;
+    this.reputationCheckVerdict = aProperties.reputationCheckVerdict || "";
   } else if (aProperties.becauseBlockedByRuntimePermissions) {
     this.becauseBlocked = true;
     this.becauseBlockedByRuntimePermissions = true;
@@ -1542,6 +1543,16 @@ this.DownloadError = function (aProperties)
 
   this.stack = new Error().stack;
 }
+
+
+
+
+
+
+
+this.DownloadError.BLOCK_VERDICT_MALWARE = "Malware";
+this.DownloadError.BLOCK_VERDICT_POTENTIALLY_UNWANTED = "PotentiallyUnwanted";
+this.DownloadError.BLOCK_VERDICT_UNCOMMON = "Uncommon";
 
 this.DownloadError.prototype = {
   __proto__: Error.prototype,
@@ -1593,6 +1604,15 @@ this.DownloadError.prototype = {
 
 
 
+
+
+  reputationCheckVerdict: "",
+
+  
+
+
+
+
   innerException: null,
 
   
@@ -1611,6 +1631,7 @@ this.DownloadError.prototype = {
       becauseBlockedByParentalControls: this.becauseBlockedByParentalControls,
       becauseBlockedByReputationCheck: this.becauseBlockedByReputationCheck,
       becauseBlockedByRuntimePermissions: this.becauseBlockedByRuntimePermissions,
+      reputationCheckVerdict: this.reputationCheckVerdict,
     };
 
     serializeUnknownProperties(this, serializable);
@@ -1636,7 +1657,8 @@ this.DownloadError.fromSerializable = function (aSerializable) {
     property != "becauseBlocked" &&
     property != "becauseBlockedByParentalControls" &&
     property != "becauseBlockedByReputationCheck" &&
-    property != "becauseBlockedByRuntimePermissions");
+    property != "becauseBlockedByRuntimePermissions" &&
+    property != "reputationCheckVerdict");
 
   return e;
 };
@@ -2148,7 +2170,9 @@ this.DownloadCopySaver.prototype = {
     let targetPath = this.download.target.path;
     let partFilePath = this.download.target.partFilePath;
 
-    if (yield DownloadIntegration.shouldBlockForReputationCheck(download)) {
+    let { shouldBlock, verdict } =
+        yield DownloadIntegration.shouldBlockForReputationCheck(download);
+    if (shouldBlock) {
       download.progress = 100;
       download.hasPartialData = false;
 
@@ -2166,7 +2190,10 @@ this.DownloadCopySaver.prototype = {
         download.hasBlockedData = true;
       }
 
-      throw new DownloadError({ becauseBlockedByReputationCheck: true });
+      throw new DownloadError({
+        becauseBlockedByReputationCheck: true,
+        reputationCheckVerdict: verdict,
+      });
     }
 
     if (partFilePath) {

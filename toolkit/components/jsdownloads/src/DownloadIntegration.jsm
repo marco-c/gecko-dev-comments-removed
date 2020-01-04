@@ -128,6 +128,20 @@ const kObserverTopics = [
 
 
 
+const kVerdictMap = {
+  [Ci.nsIApplicationReputationService.VERDICT_DANGEROUS]:
+                Downloads.Error.BLOCK_VERDICT_MALWARE,
+  [Ci.nsIApplicationReputationService.VERDICT_UNCOMMON]:
+                Downloads.Error.BLOCK_VERDICT_UNCOMMON,
+  [Ci.nsIApplicationReputationService.VERDICT_POTENTIALLY_UNWANTED]:
+                Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED,
+  [Ci.nsIApplicationReputationService.VERDICT_DANGEROUS_HOST]:
+                Downloads.Error.BLOCK_VERDICT_MALWARE,
+};
+
+
+
+
 
 
 
@@ -148,6 +162,7 @@ this.DownloadIntegration = {
   dontCheckApplicationReputation: true,
 #endif
   shouldBlockInTestForApplicationReputation: false,
+  verdictInTestForApplicationReputation: "",
   shouldKeepBlockedDataInTest: false,
   dontOpenFileAndFolder: false,
   downloadDoneCalled: false,
@@ -533,9 +548,18 @@ this.DownloadIntegration = {
 
 
 
+
+
+
+
+
+
   shouldBlockForReputationCheck: function (aDownload) {
     if (this.dontCheckApplicationReputation) {
-      return Promise.resolve(this.shouldBlockInTestForApplicationReputation);
+      return Promise.resolve({
+        shouldBlock: this.shouldBlockInTestForApplicationReputation,
+        verdict: this.verdictInTestForApplicationReputation,
+      });
     }
     let hash;
     let sigInfo;
@@ -546,10 +570,16 @@ this.DownloadIntegration = {
       channelRedirects = aDownload.saver.getRedirects();
     } catch (ex) {
       
-      return Promise.resolve(false);
+      return Promise.resolve({
+        shouldBlock: false,
+        verdict: "",
+      });
     }
     if (!hash || !sigInfo) {
-      return Promise.resolve(false);
+      return Promise.resolve({
+        shouldBlock: false,
+        verdict: "",
+      });
     }
     let deferred = Promise.defer();
     let aReferrer = null;
@@ -564,8 +594,11 @@ this.DownloadIntegration = {
       suggestedFileName: OS.Path.basename(aDownload.target.path),
       signatureInfo: sigInfo,
       redirects: channelRedirects },
-      function onComplete(aShouldBlock, aRv) {
-        deferred.resolve(aShouldBlock);
+      function onComplete(aShouldBlock, aRv, aVerdict) {
+        deferred.resolve({
+          shouldBlock: aShouldBlock,
+          verdict: (aShouldBlock && kVerdictMap[aVerdict]) || "",
+        });
       });
     return deferred.promise;
   },

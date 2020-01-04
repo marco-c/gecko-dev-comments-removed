@@ -143,13 +143,6 @@ this.DownloadsCommon = {
   
 
 
-  BLOCK_VERDICT_MALWARE: "Malware",
-  BLOCK_VERDICT_POTENTIALLY_UNWANTED: "PotentiallyUnwanted",
-  BLOCK_VERDICT_UNCOMMON: "Uncommon",
-
-  
-
-
 
 
   get strings() {
@@ -536,7 +529,9 @@ this.DownloadsCommon = {
 
 
 
-  confirmUnblockDownload: Task.async(function* (aType, aOwnerWindow) {
+
+
+  confirmUnblockDownload: Task.async(function* (aVerdict, aOwnerWindow) {
     let s = DownloadsCommon.strings;
     let title = s.unblockHeader;
     let buttonFlags = (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0) +
@@ -547,15 +542,15 @@ this.DownloadsCommon = {
     let okButton = s.unblockButtonContinue;
     let cancelButton = s.unblockButtonCancel;
 
-    switch (aType) {
-      case this.BLOCK_VERDICT_MALWARE:
-        type = s.unblockTypeMalware;
+    switch (aVerdict) {
+      case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
+        type = s.unblockTypeUncommon;
         break;
-      case this.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+      case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
         type = s.unblockTypePotentiallyUnwanted;
         break;
-      case this.BLOCK_VERDICT_UNCOMMON:
-        type = s.unblockTypeUncommon;
+      default: 
+        type = s.unblockTypeMalware;
         break;
     }
 
