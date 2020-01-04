@@ -2486,6 +2486,10 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
     ComputeRadialGradientLine(aPresContext, aGradient, srcSize,
                               &lineStart, &lineEnd, &radiusX, &radiusY);
   }
+  
+  if (!lineStart.IsFinite() || !lineEnd.IsFinite()) {
+    lineStart = lineEnd = gfxPoint(0, 0);
+  }
   gfxFloat lineLength = NS_hypot(lineEnd.x - lineStart.x,
                                   lineEnd.y - lineStart.y);
 
