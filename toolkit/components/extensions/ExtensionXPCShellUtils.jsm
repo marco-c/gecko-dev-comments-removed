@@ -125,6 +125,23 @@ class ExtensionWrapper {
     this.state = "unloading";
 
     this.extension.shutdown();
+
+    this.state = "unloaded";
+
+    return Promise.resolve();
+  }
+
+  
+
+
+
+
+
+
+  markUnloaded() {
+    if (this.state != "running") {
+      throw new Error("Extension not running");
+    }
     this.state = "unloaded";
 
     return Promise.resolve();

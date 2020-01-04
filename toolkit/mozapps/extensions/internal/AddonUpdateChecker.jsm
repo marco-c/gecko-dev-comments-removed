@@ -505,8 +505,10 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
 
     
     
-    if (!("gecko" in applications))
+    if (!("gecko" in applications)) {
+      logger.debug("gecko not in application entry, skipping update of ${addon}")
       continue;
+    }
 
     let app = getProperty(applications, "gecko", "object");
 
