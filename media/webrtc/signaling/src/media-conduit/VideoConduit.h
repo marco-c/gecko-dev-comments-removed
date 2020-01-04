@@ -144,10 +144,12 @@ public:
 
 
 
-  void SelectBandwidth(webrtc::VideoCodec& vie_codec,
-                       unsigned short width,
-                       unsigned short height,
-                       mozilla::Atomic<int32_t, mozilla::Relaxed>& aLastFramerateTenths);
+  void SelectBitrates(unsigned short width,
+                      unsigned short height,
+                      mozilla::Atomic<int32_t, mozilla::Relaxed>& aLastFramerateTenths,
+                      unsigned int& out_start,
+                      unsigned int& out_min,
+                      unsigned int& out_max);
 
   
 
