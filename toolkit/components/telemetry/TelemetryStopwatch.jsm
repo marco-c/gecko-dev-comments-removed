@@ -8,14 +8,110 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["TelemetryStopwatch"];
 
+Cu.import("resource://gre/modules/Log.jsm", this);
 var Telemetry = Cc["@mozilla.org/base/telemetry;1"]
                   .getService(Ci.nsITelemetry);
 
 
 
+const NULL_OBJECT = {};
+const NULL_KEY = {};
 
-var simpleTimers = {};
-var objectTimers = new WeakMap();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let Timers = {
+  _timers: new Map(),
+
+  _validTypes: function(histogram, obj, key) {
+    let nonEmptyString = value => {
+      return typeof value === "string" && value !== "" && value.length > 0;
+    };
+    return  nonEmptyString(histogram) &&
+            typeof obj == "object" &&
+           (key === NULL_KEY || nonEmptyString(key));
+  },
+
+  get: function(histogram, obj, key) {
+    key = key === null ? NULL_KEY : key;
+    obj = obj || NULL_OBJECT;
+
+    if (!this.has(histogram, obj, key)) {
+      return null;
+    }
+
+    return this._timers.get(histogram).get(obj).get(key);
+  },
+
+  put: function(histogram, obj, key, startTime) {
+    key = key === null ? NULL_KEY : key;
+    obj = obj || NULL_OBJECT;
+
+    if (!this._validTypes(histogram, obj, key)) {
+      return false;
+    }
+
+    let objectMap = this._timers.get(histogram) || new WeakMap();
+    let keyedInfo = objectMap.get(obj) || new Map();
+    keyedInfo.set(key, startTime);
+    objectMap.set(obj, keyedInfo);
+    this._timers.set(histogram, objectMap);
+    return true;
+  },
+
+  has: function(histogram, obj, key) {
+    key = key === null ? NULL_KEY : key;
+    obj = obj || NULL_OBJECT;
+
+    return this._timers.has(histogram) &&
+      this._timers.get(histogram).has(obj) &&
+      this._timers.get(histogram).get(obj).has(key);
+  },
+
+  delete: function(histogram, obj, key) {
+    key = key === null ? NULL_KEY : key;
+    obj = obj || NULL_OBJECT;
+
+    if(!this.has(histogram, obj, key)) {
+      return false;
+    }
+    let objectMap = this._timers.get(histogram);
+    let keyedInfo = objectMap.get(obj);
+    if (keyedInfo.size > 1) {
+      keyedInfo.delete(key);
+      return true;
+    }
+    objectMap.delete(obj);
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+};
 
 this.TelemetryStopwatch = {
   
@@ -35,27 +131,9 @@ this.TelemetryStopwatch = {
 
 
 
+
   start: function(aHistogram, aObj) {
-    if (!validTypes(aHistogram, aObj))
-      return false;
-
-    let timers;
-    if (aObj) {
-      timers = objectTimers.get(aObj) || {};
-      objectTimers.set(aObj, timers);
-    } else {
-      timers = simpleTimers;
-    }
-
-    if (timers.hasOwnProperty(aHistogram)) {
-      delete timers[aHistogram];
-      Cu.reportError("TelemetryStopwatch: key \"" +
-                     aHistogram + "\" was already initialized");
-      return false;
-    }
-
-    timers[aHistogram] = Components.utils.now();
-    return true;
+    return TelemetryStopwatchImpl.start(aHistogram, aObj, null);
   },
 
   
@@ -74,23 +152,13 @@ this.TelemetryStopwatch = {
 
 
 
-  cancel: function ts_cancel(aHistogram, aObj) {
-    if (!validTypes(aHistogram, aObj))
-      return false;
 
-    let timers = aObj
-                 ? objectTimers.get(aObj) || {}
-                 : simpleTimers;
-
-    if (timers.hasOwnProperty(aHistogram)) {
-      delete timers[aHistogram];
-      return true;
-    }
-
-    return false;
+  cancel: function(aHistogram, aObj) {
+    return TelemetryStopwatchImpl.cancel(aHistogram, aObj, null);
   },
 
   
+
 
 
 
@@ -104,17 +172,24 @@ this.TelemetryStopwatch = {
 
 
   timeElapsed: function(aHistogram, aObj) {
-    if (!validTypes(aHistogram, aObj))
-      return -1;
-    let timers = aObj
-                 ? objectTimers.get(aObj) || {}
-                 : simpleTimers;
-    let start = timers[aHistogram];
-    if (start) {
-      let delta = Components.utils.now() - start;
-      return Math.round(delta);
-    }
-    return -1;
+    return TelemetryStopwatchImpl.timeElapsed(aHistogram, aObj, null);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  finish: function(aHistogram, aObj) {
+    return TelemetryStopwatchImpl.finish(aHistogram, aObj, null);
   },
 
   
@@ -132,30 +207,129 @@ this.TelemetryStopwatch = {
 
 
 
-  finish: function(aHistogram, aObj) {
-    if (!validTypes(aHistogram, aObj))
+
+
+
+
+
+
+
+  startKeyed: function(aHistogram, aKey, aObj) {
+    return TelemetryStopwatchImpl.start(aHistogram, aObj, aKey);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  cancelKeyed: function(aHistogram, aKey, aObj) {
+    return TelemetryStopwatchImpl.cancel(aHistogram, aObj, aKey);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  timeElapsedKeyed: function(aHistogram, aKey, aObj) {
+    return TelemetryStopwatchImpl.timeElapsed(aHistogram, aObj, aKey);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  finishKeyed: function(aHistogram, aKey, aObj) {
+    return TelemetryStopwatchImpl.finish(aHistogram, aObj, aKey);
+  }
+};
+
+this.TelemetryStopwatchImpl = {
+  start: function(histogram, object, key) {
+    if (Timers.has(histogram, object, key)) {
+      Timers.delete(histogram, object, key);
+      Cu.reportError(`TelemetryStopwatch: key "${histogram}" was already ` +
+                     "initialized");
       return false;
-
-    let timers = aObj
-                 ? objectTimers.get(aObj) || {}
-                 : simpleTimers;
-
-    let start = timers[aHistogram];
-    delete timers[aHistogram];
-
-    if (start) {
-      let delta = Components.utils.now() - start;
-      delta = Math.round(delta);
-      let histogram = Telemetry.getHistogramById(aHistogram);
-      histogram.add(delta);
-      return true;
     }
 
-    return false;
-  }
-}
+    return Timers.put(histogram, object, key, Components.utils.now());
+  },
 
-function validTypes(aKey, aObj) {
-  return (typeof aKey == "string") &&
-         (aObj === undefined || typeof aObj == "object");
+  cancel: function (histogram, object, key) {
+    return Timers.delete(histogram, object, key);
+  },
+
+  timeElapsed: function(histogram, object, key) {
+    let startTime = Timers.get(histogram, object, key);
+    if (startTime === null) {
+      Cu.reportError("TelemetryStopwatch: requesting elapsed time for " +
+                     `nonexisting stopwatch. Histogram: "${histogram}", ` +
+                     `key: "${key}"`);
+      return -1;
+    }
+
+    try {
+      let delta = Components.utils.now() - startTime
+      return Math.round(delta);
+    } catch (e) {
+      Cu.reportError("TelemetryStopwatch: failed to calculate elapsed time " +
+                     `for Histogram: "${histogram}", key: "${key}", ` +
+                     `exception: ${Log.exceptionStr(e)}`);
+      return -1;
+    }
+  },
+
+  finish: function(histogram, object, key) {
+    let delta = this.timeElapsed(histogram, object, key);
+    if (delta == -1) {
+      return false;
+    }
+
+    try {
+      if (key) {
+        Telemetry.getKeyedHistogramById(histogram).add(key, delta);
+      } else {
+        Telemetry.getHistogramById(histogram).add(delta);
+      }
+    } catch (e) {
+      Cu.reportError("TelemetryStopwatch: failed to update the Histogram " +
+                     `"${histogram}", using key: "${key}", ` +
+                     `exception: ${Log.exceptionStr(e)}`);
+      return false;
+    }
+
+    return Timers.delete(histogram, object, key);
+  }
 }
