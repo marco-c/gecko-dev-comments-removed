@@ -388,7 +388,7 @@ public:
 
 
 
-  nsresult
+  void
   CreateFloatManager(nsPresContext *aPresContext);
 
 protected:
