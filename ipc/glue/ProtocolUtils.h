@@ -191,7 +191,7 @@ typedef IPCMessageStart ProtocolId;
 
 
 
-class IProtocol : protected MessageListener
+class IProtocol : public MessageListener
 {
 public:
     
