@@ -17,7 +17,7 @@
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/TouchCounter.h"
-#include "mozilla/Monitor.h"            
+#include "mozilla/Mutex.h"              
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/Vector.h"             
 #include "nsAutoPtr.h"                  
@@ -534,7 +534,7 @@ private:
 
 
 
-  mutable mozilla::Monitor mTreeLock;
+  mutable mozilla::Mutex mTreeLock;
   RefPtr<HitTestingTreeNode> mRootNode;
   
 
