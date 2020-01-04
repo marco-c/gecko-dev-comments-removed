@@ -140,11 +140,8 @@ private:
   
   
   
-  
-  
   bool ApplyAsyncContentTransformToTree(Layer* aLayer,
-                                        bool* aOutFoundRoot,
-                                        ClipPartsCache& aClipPartsCache);
+                                        bool* aOutFoundRoot);
   
 
 

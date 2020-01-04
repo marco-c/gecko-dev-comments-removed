@@ -810,11 +810,15 @@ MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
 
 bool
 AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
-                                                          bool* aOutFoundRoot,
-                                                          ClipPartsCache& aClipPartsCache)
+                                                          bool* aOutFoundRoot)
 {
   bool appliedTransform = false;
   std::stack<Maybe<ParentLayerIntRect>> stackDeferredClips;
+
+  
+  
+  
+  ClipPartsCache clipPartsCache;
 
   ForEachNode<ForwardIterator>(
       aLayer,
@@ -822,7 +826,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
       {
         stackDeferredClips.push(Maybe<ParentLayerIntRect>());
       },
-      [this, &aOutFoundRoot, &stackDeferredClips, &appliedTransform, &aClipPartsCache] (Layer* layer)
+      [this, &aOutFoundRoot, &stackDeferredClips, &appliedTransform, &clipPartsCache] (Layer* layer)
       {
         Maybe<ParentLayerIntRect> clipDeferredFromChildren = stackDeferredClips.top();
         stackDeferredClips.pop();
@@ -851,7 +855,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
         
         
         
-        ClipParts& clipParts = aClipPartsCache[layer];
+        ClipParts& clipParts = clipPartsCache[layer];
         clipParts.mFixedClip = layer->GetClipRect();
         clipParts.mScrolledClip = layer->GetScrolledClipRect();
 
@@ -958,10 +962,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
           if (!scrollMetadata.UsesContainerScrolling()) {
             MOZ_ASSERT(asyncTransform.Is2D());
             if (clipParts.mFixedClip) {
-              clipParts.mFixedClip = Some(TransformBy(asyncTransform, *clipParts.mFixedClip));
+              *clipParts.mFixedClip = TransformBy(asyncTransform, *clipParts.mFixedClip);
             }
             if (clipParts.mScrolledClip) {
-              clipParts.mScrolledClip = Some(TransformBy(asyncTransform, *clipParts.mScrolledClip));
+              *clipParts.mScrolledClip = TransformBy(asyncTransform, *clipParts.mScrolledClip);
             }
           }
           
@@ -982,11 +986,9 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             * CompleteAsyncTransform(
                 AdjustForClip(asyncTransformWithoutOverscroll, layer));
 
-          
-          
           AlignFixedAndStickyLayers(layer, metrics.GetScrollId(), oldTransform,
                                     transformWithoutOverscrollOrOmta, fixedLayerMargins,
-                                    &aClipPartsCache);
+                                    &clipPartsCache);
 
           
           
@@ -1463,12 +1465,6 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     
     
-    ClipPartsCache clipPartsCache;
-
-    
-    
-    
-    
     
     
     
@@ -1477,7 +1473,7 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     
     bool foundRoot = false;
-    if (ApplyAsyncContentTransformToTree(root, &foundRoot, clipPartsCache)) {
+    if (ApplyAsyncContentTransformToTree(root, &foundRoot)) {
 #if defined(MOZ_ANDROID_APZ)
       MOZ_ASSERT(foundRoot);
       if (foundRoot && mFixedLayerMargins != ScreenMargin()) {
