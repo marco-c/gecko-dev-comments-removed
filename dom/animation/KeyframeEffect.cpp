@@ -527,17 +527,32 @@ struct KeyframeValueEntry
 {
   float mOffset;
   nsCSSProperty mProperty;
+
+protected:
+  KeyframeValueEntry() = default;
+};
+
+
+
+
+
+
+
+
+
+struct KeyframeStringValueEntry : KeyframeValueEntry
+{
   nsString mValue;
   const ComputedTimingFunction* mTimingFunction;
 
-  bool operator==(const KeyframeValueEntry& aRhs) const
+  bool operator==(const KeyframeStringValueEntry& aRhs) const
   {
     NS_ASSERTION(mOffset != aRhs.mOffset || mProperty != aRhs.mProperty,
                  "shouldn't have duplicate (offset, property) pairs");
     return false;
   }
 
-  bool operator<(const KeyframeValueEntry& aRhs) const
+  bool operator<(const KeyframeStringValueEntry& aRhs) const
   {
     NS_ASSERTION(mOffset != aRhs.mOffset || mProperty != aRhs.mProperty,
                  "shouldn't have duplicate (offset, property) pairs");
@@ -569,14 +584,14 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
   
   
   
-  nsAutoTArray<KeyframeValueEntry,4> entries;
+  nsAutoTArray<KeyframeStringValueEntry,4> entries;
   for (const AnimationProperty& property : mProperties) {
     if (property.mSegments.IsEmpty()) {
       continue;
     }
     for (size_t i = 0, n = property.mSegments.Length(); i < n; i++) {
       const AnimationPropertySegment& segment = property.mSegments[i];
-      KeyframeValueEntry* entry = entries.AppendElement();
+      KeyframeStringValueEntry* entry = entries.AppendElement();
       entry->mOffset = segment.mFromKey;
       entry->mProperty = property.mProperty;
       entry->mTimingFunction = &segment.mTimingFunction;
@@ -585,7 +600,7 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
                                           entry->mValue);
     }
     const AnimationPropertySegment& segment = property.mSegments.LastElement();
-    KeyframeValueEntry* entry = entries.AppendElement();
+    KeyframeStringValueEntry* entry = entries.AppendElement();
     entry->mOffset = segment.mToKey;
     entry->mProperty = property.mProperty;
     
@@ -617,7 +632,7 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
 
     
     do {
-      const KeyframeValueEntry& entry = entries[i];
+      const KeyframeStringValueEntry& entry = entries[i];
       const char* name = nsCSSProps::PropertyIDLName(entry.mProperty);
       JS::Rooted<JS::Value> value(aCx);
       if (!ToJSValue(aCx, entry.mValue, &value) ||
