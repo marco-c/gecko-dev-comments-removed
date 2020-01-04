@@ -1067,10 +1067,6 @@ public:
 
   void GetCrossDocChildLists(nsTArray<ChildList>* aLists);
 
-  
-  nsIFrame* GetLastChild(ChildListID aListID) const {
-    return GetChildList(aListID).LastChild();
-  }
   nsIFrame* GetFirstPrincipalChild() const {
     return GetChildList(kPrincipalList).FirstChild();
   }
