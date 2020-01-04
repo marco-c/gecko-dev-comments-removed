@@ -1,5 +1,7 @@
+
 importScripts("/resources/testharness.js");
 importScripts("../util/helpers.js");
-importScripts("failures.js");
-run_test();
+importScripts("successes.js");
+
+run_test(["RSA-PSS"]);
 done();
