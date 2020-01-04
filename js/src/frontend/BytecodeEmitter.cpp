@@ -3056,15 +3056,15 @@ BytecodeEmitter::enterBlockScope(StmtInfoBCE* stmtInfo, ObjectBox* objbox, JSOp 
         switchToPrologue();
     }
 
+    if (!enterNestedScope(stmtInfo, objbox, StmtType::BLOCK))
+        return false;
+
     
     
     
     
     Rooted<StaticBlockObject*> blockObj(cx, &objbox->object->as<StaticBlockObject>());
     if (!pushInitialConstants(initialValueOp, blockObj->numVariables() - alreadyPushed))
-        return false;
-
-    if (!enterNestedScope(stmtInfo, objbox, StmtType::BLOCK))
         return false;
 
     if (!initializeBlockScopedLocalsFromStack(blockObj))
