@@ -120,6 +120,10 @@ private:
     
     nsresult MaybeSetAddonIdFromURI(mozilla::PrincipalOriginAttributes& aAttrs, nsIURI* aURI);
 
+    nsresult GetChannelResultPrincipal(nsIChannel* aChannel,
+                                       nsIPrincipal** aPrincipal,
+                                       bool aIgnoreSandboxing);
+
     nsCOMPtr<nsIPrincipal> mSystemPrincipal;
     bool mPrefInitialized;
     bool mIsJavaScriptEnabled;
