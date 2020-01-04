@@ -748,10 +748,15 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
     return NS_OK;
   }
 
+  
   nsCOMPtr<nsIURI> imageURI;
   nsresult rv = StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
-  NS_ENSURE_SUCCESS(rv, rv);
-  
+  if (NS_FAILED(rv)) {
+    
+    CancelImageRequests(aNotify);
+    FireEvent(NS_LITERAL_STRING("error"));
+    return NS_OK;
+  }
 
   bool equal;
 
