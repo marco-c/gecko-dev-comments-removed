@@ -723,39 +723,37 @@ private:
   Maybe<size_t> mMaskLayerIndex;
 
   
-  bool mIsRootContent;
+  bool mIsRootContent:1;
 
   
-  bool mHasScrollgrab;
-
-  
-  
-  bool mUpdateScrollOffset;
+  bool mHasScrollgrab:1;
 
   
   
-  bool mDoSmoothScroll;
+  bool mUpdateScrollOffset:1;
 
   
   
-  bool mUseDisplayPortMargins;
-
-  
-  bool mAllowVerticalScrollWithWheel;
+  bool mDoSmoothScroll:1;
 
   
   
-  bool mIsLayersIdRoot;
+  bool mUseDisplayPortMargins:1;
+
+  
+  bool mAllowVerticalScrollWithWheel:1;
 
   
   
-  bool mUsesContainerScrolling;
-
-  
-  bool mIsScrollInfoLayer;
+  bool mIsLayersIdRoot:1;
 
   
   
+  bool mUsesContainerScrolling:1;
+
+  
+  bool mIsScrollInfoLayer:1;
+
   
   
   
@@ -763,6 +761,17 @@ private:
   
   
   
+  
+  
+
+
+  
+  void SetUpdateScrollOffset(bool aValue) {
+    mUpdateScrollOffset = aValue;
+  }
+  void SetDoSmoothScroll(bool aValue) {
+    mDoSmoothScroll = aValue;
+  }
 };
 
 
