@@ -1021,36 +1021,14 @@ toolbar[mode="text"] > #downloads-button > .toolbarbutton-icon {
 }
 
 
-chatbar:-moz-full-screen-ancestor,
-chatbox:-moz-full-screen-ancestor  {
-  border: none;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  box-sizing: border-box !important;
-}
-
-
-chatbox:-moz-full-screen-ancestor > .chat-titlebar {
+#chat-window[sizemode="fullscreen"] chatbox > .chat-titlebar {
   display: none;
 }
 
 
-*:-moz-full-screen-ancestor chatbar:not(:-moz-full-screen-ancestor) {
-  display: none;
-}
-
-
-*:-moz-full-screen-ancestor #social-sidebar-box:not(:-moz-full-screen-ancestor) {
+#main-window[inFullscreen][inDOMFullscreen] chatbar,
+#main-window[inFullscreen][inDOMFullscreen] #social-sidebar-box,
+#main-window[inFullscreen][inDOMFullscreen] #social-sidebar-splitter {
   display: none;
 }
 
