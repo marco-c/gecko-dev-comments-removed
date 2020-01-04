@@ -344,9 +344,13 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
 
   nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
 
-  DebugOnly<bool> startedAny = UpdateTransitions(disp, aElement, collection,
-                                                 aOldStyleContext,
-                                                 afterChangeStyle);
+  DebugOnly<bool> startedAny = false;
+  
+  
+  if (!afterChangeStyle->IsInDisplayNoneSubtree()) {
+    startedAny = UpdateTransitions(disp, aElement, collection,
+                                   aOldStyleContext, afterChangeStyle);
+  }
 
   MOZ_ASSERT(!startedAny || collection,
              "must have element transitions if we started any transitions");
