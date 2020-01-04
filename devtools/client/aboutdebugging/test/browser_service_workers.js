@@ -40,21 +40,33 @@ add_task(function *() {
   ok(names.includes(SERVICE_WORKER), "The service worker url appears in the list: " + names);
 
   
+  let aboutDebuggingUpdate = waitForWorkersUpdate(document);
+
+  
   let frameScript = function () {
     
     let { sw } = content.wrappedJSObject;
     sw.then(function (registration) {
       registration.unregister().then(function (success) {
-        dump("SW unregistered: " + success + "\n");
+        sendAsyncMessage("sw-unregistered");
       },
       function (e) {
         dump("SW not unregistered; " + e + "\n");
       });
     });
   };
-  swTab.linkedBrowser.messageManager.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
+  let mm = swTab.linkedBrowser.messageManager;
+  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
 
-  yield waitForWorkersUpdate(document);
+  yield new Promise(done => {
+    mm.addMessageListener("sw-unregistered", function listener() {
+      mm.removeMessageListener("sw-unregistered", listener);
+      done();
+    });
+  });
+  ok(true, "Service worker registration unregistered");
+
+  yield aboutDebuggingUpdate;
 
   
   names = [...document.querySelectorAll("#service-workers .target-name")];
