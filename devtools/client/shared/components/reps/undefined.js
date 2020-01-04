@@ -10,8 +10,9 @@
 define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
-  const { createFactories } = require("./rep-utils");
-  const { ObjectBox } = createFactories(require("./object-box"));
+
+  
+  const { span } = React.DOM;
 
   
 
@@ -21,7 +22,7 @@ define(function (require, exports, module) {
 
     render: function () {
       return (
-        ObjectBox({className: "undefined"},
+        span({className: "objectBox objectBox-undefined"},
           "undefined"
         )
       );
