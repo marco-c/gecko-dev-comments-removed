@@ -34,7 +34,7 @@ template <typename Source> void
 MacroAssembler::guardTypeSet(const Source& address, const TypeSet *types, BarrierKind kind,
                              Register scratch, Label* miss)
 {
-    MOZ_ASSERT(kind == BarrierKind::TypeTagOnly || kind == BarrierKind::TypeSet);
+    MOZ_ASSERT(kind != BarrierKind::NoBarrier);
     MOZ_ASSERT(!types->unknown());
 
     Label matched;
@@ -49,24 +49,26 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet *types, Barrie
         TypeSet::AnyObjectType()
     };
 
-    
-    
-    if (types->hasType(TypeSet::DoubleType())) {
-        MOZ_ASSERT(types->hasType(TypeSet::Int32Type()));
-        tests[0] = TypeSet::DoubleType();
-    }
-
     Register tag = extractTag(address, scratch);
-
-    
     BranchType lastBranch;
-    for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
-        if (!types->hasType(tests[i]))
-            continue;
 
-        if (lastBranch.isInitialized())
-            lastBranch.emit(*this);
-        lastBranch = BranchType(Equal, tag, tests[i], &matched);
+    if (kind != BarrierKind::ObjectTypesOnly) {
+        
+        
+        if (types->hasType(TypeSet::DoubleType())) {
+            MOZ_ASSERT(types->hasType(TypeSet::Int32Type()));
+            tests[0] = TypeSet::DoubleType();
+        }
+
+        
+        for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
+            if (!types->hasType(tests[i]))
+                continue;
+
+            if (lastBranch.isInitialized())
+                lastBranch.emit(*this);
+            lastBranch = BranchType(Equal, tag, tests[i], &matched);
+        }
     }
 
     
