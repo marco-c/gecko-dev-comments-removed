@@ -161,6 +161,24 @@ TimingParams::ParseEasing(const nsAString& aEasing,
       MOZ_ASSERT_UNREACHABLE("unexpected animation-timing-function unit");
       break;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aEasing == NS_LITERAL_STRING("function (a){return a}")) {
+    return Nothing();
+  }
+
   aRv.ThrowTypeError<dom::MSG_INVALID_EASING_ERROR>(aEasing);
   return Nothing();
 }
