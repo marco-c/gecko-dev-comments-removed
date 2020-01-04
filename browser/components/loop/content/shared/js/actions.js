@@ -79,69 +79,9 @@ loop.shared.actions = (function() {
 
 
 
-    FetchRoomEmailLink: Action.define("fetchRoomEmailLink", {
-      roomName: String
-    }),
-
-    
-
-
-    CancelCall: Action.define("cancelCall", {
-    }),
-
-    
-
-
-    RetryCall: Action.define("retryCall", {
-    }),
-
-    
-
-
-    AcceptCall: Action.define("acceptCall", {
-      callType: String
-    }),
-
-    
-
-
-    DeclineCall: Action.define("declineCall", {
-      blockCaller: Boolean
-    }),
-
-    
-
-
-
-    ConnectCall: Action.define("connectCall", {
-      
-      
-      sessionData: Object
-    }),
-
-    
-
-
-    HangupCall: Action.define("hangupCall", {
-    }),
-
-    
-
-
-
 
     RemotePeerDisconnected: Action.define("remotePeerDisconnected", {
       peerHungup: Boolean
-    }),
-
-    
-
-
-
-
-    ConnectionProgress: Action.define("connectionProgress", {
-      
-      wsState: String
     }),
 
     
