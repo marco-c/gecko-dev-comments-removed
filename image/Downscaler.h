@@ -162,6 +162,34 @@ public:
 
 #endif 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Deinterlacer
+{
+public:
+  explicit Deinterlacer(const nsIntSize& aImageSize);
+
+  uint8_t* RowBuffer(uint32_t aRow);
+  void PropagatePassToDownscaler(Downscaler& aDownscaler);
+
+private:
+  uint32_t RowSize() const;
+
+  nsIntSize mImageSize;
+  UniquePtr<uint8_t[]> mBuffer;
+};
+
 } 
 } 
 
