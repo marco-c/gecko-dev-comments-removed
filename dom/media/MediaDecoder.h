@@ -220,7 +220,7 @@ public:
   virtual double GetDuration();
 
   
-  virtual bool IsInfinite();
+  bool IsInfinite() const;
 
   
   
@@ -232,12 +232,12 @@ public:
 
   
   
-  virtual bool IsSeeking() const;
+  bool IsSeeking() const;
 
   
   
   
-  virtual bool IsEndedOrShutdown() const;
+  bool IsEndedOrShutdown() const;
 
   
   
