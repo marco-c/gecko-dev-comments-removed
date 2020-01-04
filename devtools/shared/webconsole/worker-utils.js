@@ -10,7 +10,7 @@
 
 
 
-exports.Utils = { l10n: function() {} };
+exports.Utils = { L10n: function() {} };
 exports.ConsoleServiceListener = function() {};
 exports.ConsoleAPIListener = function() {};
 exports.addWebConsoleCommands = function() {};
