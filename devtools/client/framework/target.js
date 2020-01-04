@@ -767,7 +767,9 @@ WorkerTarget.prototype = {
     return this._workerClient.client;
   },
 
-  destroy: function () {},
+  destroy: function () {
+    this._workerClient.detach();
+  },
 
   hasActor: function (name) {
     

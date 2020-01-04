@@ -863,10 +863,25 @@ var DebuggerServer = {
           transport.hooks = {
             onClosed: () => {
               if (!dbg.isClosed) {
-                dbg.postMessage(JSON.stringify({
-                  type: "disconnect",
-                  id,
-                }));
+                
+                
+                
+                
+                
+                
+                
+                try {
+                  dbg.postMessage(JSON.stringify({
+                    type: "disconnect",
+                    id,
+                  }));
+                } catch (e) {
+                  
+                  
+                  
+                  
+                  
+                }
               }
 
               connection.cancelForwarding(id);
@@ -1444,6 +1459,26 @@ DebuggerServerConnection.prototype = {
 
 
   removeActorPool(actorPool, noCleanup) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this._extraPools === null) {
+      return;
+    }
     let index = this._extraPools.lastIndexOf(actorPool);
     if (index > -1) {
       let pool = this._extraPools.splice(index, 1);
