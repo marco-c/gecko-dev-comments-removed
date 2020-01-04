@@ -149,7 +149,11 @@ public:
   
   NS_IMETHOD Redraw(const gfxRect &dirty) = 0;
 
-  NS_IMETHOD SetContextOptions(JSContext* cx, JS::Handle<JS::Value> options) { return NS_OK; }
+  NS_IMETHOD SetContextOptions(JSContext* cx, JS::Handle<JS::Value> options,
+                               mozilla::ErrorResult& aRvForDictionaryInit)
+  {
+    return NS_OK;
+  }
 
   
   virtual bool GetHitRegionRect(mozilla::dom::Element* element, nsRect& rect) { return false; }
