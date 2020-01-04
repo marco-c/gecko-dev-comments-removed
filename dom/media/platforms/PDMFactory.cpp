@@ -109,7 +109,7 @@ public:
           
           
           
-          if (!mp4_demuxer::H264::DecodeSPSFromExtraData(extraData, spsdata) ||
+          if (mp4_demuxer::H264::DecodeSPSFromExtraData(extraData, spsdata) &&
               spsdata.chroma_format_idc == PDMFactory::kYUV444) {
             return SupportChecker::Result::kVideoFormatNotSupported;
           }

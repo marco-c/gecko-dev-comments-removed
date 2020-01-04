@@ -137,6 +137,24 @@ H264Converter::CreateDecoder(DecoderDoctorDiagnostics* aDiagnostics)
     return NS_ERROR_NOT_INITIALIZED;
   }
   UpdateConfigFromExtraData(mCurrentConfig.mExtraData);
+
+  mp4_demuxer::SPSData spsdata;
+  if (mp4_demuxer::H264::DecodeSPSFromExtraData(mCurrentConfig.mExtraData, spsdata)) {
+    
+    
+    if (spsdata.chroma_format_idc == 3 ) {
+      mLastError = NS_ERROR_FAILURE;
+      if (aDiagnostics) {
+        aDiagnostics->SetVideoFormatNotSupport();
+      }
+      return NS_ERROR_FAILURE;
+    }
+  } else if (mNeedAVCC) {
+    
+    mLastError = NS_ERROR_FAILURE;
+    return NS_ERROR_FAILURE;
+  }
+
   if (!mNeedAVCC) {
     
     
