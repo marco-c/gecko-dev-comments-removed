@@ -132,8 +132,8 @@ protected:
   bool mCanceled;
 
   
-  uint32_t mAudioInitCounter;
-  uint32_t mVideoInitCounter;
+  uint32_t mInitCounter;
+  StreamTime mNotInitDuration;
 };
 
 class AudioTrackEncoder : public TrackEncoder
