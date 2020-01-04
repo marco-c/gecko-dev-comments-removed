@@ -15,7 +15,6 @@
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "mozilla/layers/YCbCrImageDataSerializer.h"
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "ImageContainer.h"             
@@ -838,10 +837,10 @@ TextureClient::CreateForYCbCr(ISurfaceAllocator* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateWithBufferSize(ISurfaceAllocator* aAllocator,
-                                    gfx::SurfaceFormat aFormat,
-                                    size_t aSize,
-                                    TextureFlags aTextureFlags)
+TextureClient::CreateForYCbCrWithBufferSize(ISurfaceAllocator* aAllocator,
+                                            gfx::SurfaceFormat aFormat,
+                                            size_t aSize,
+                                            TextureFlags aTextureFlags)
 {
   
   MOZ_ASSERT(aAllocator && aAllocator->IPCOpen());
@@ -849,8 +848,9 @@ TextureClient::CreateWithBufferSize(ISurfaceAllocator* aAllocator,
     return nullptr;
   }
 
-  TextureData* data = BufferTextureData::CreateWithBufferSize(aAllocator, aFormat, aSize,
-                                                              aTextureFlags);
+  TextureData* data =
+    BufferTextureData::CreateForYCbCrWithBufferSize(aAllocator, aFormat, aSize,
+                                                    aTextureFlags);
   if (!data) {
     return nullptr;
   }

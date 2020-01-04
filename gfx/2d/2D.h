@@ -1165,6 +1165,11 @@ public:
   
 
 
+  static bool CheckBufferSize(int32_t bufSize);
+
+  
+
+
   static bool ReasonableSurfaceSize(const IntSize &aSize);
 
   static bool AllowedSurfaceSize(const IntSize &aSize);

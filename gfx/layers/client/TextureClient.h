@@ -297,10 +297,10 @@ public:
   
   
   static already_AddRefed<TextureClient>
-  CreateWithBufferSize(ISurfaceAllocator* aAllocator,
-                       gfx::SurfaceFormat aFormat,
-                       size_t aSize,
-                       TextureFlags aTextureFlags);
+  CreateForYCbCrWithBufferSize(ISurfaceAllocator* aAllocator,
+                               gfx::SurfaceFormat aFormat,
+                               size_t aSize,
+                               TextureFlags aTextureFlags);
 
   
   already_AddRefed<TextureClient>

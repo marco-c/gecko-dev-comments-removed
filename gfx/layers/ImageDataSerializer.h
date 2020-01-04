@@ -24,37 +24,15 @@ class DrawTarget;
 namespace mozilla {
 namespace layers {
 
-class ImageDataSerializerBase
-{
-public:
-  bool IsValid() const { return mIsValid; }
+namespace ImageDataSerializer {
 
-  uint8_t* GetData();
-  uint32_t GetStride() const;
-  gfx::IntSize GetSize() const;
-  gfx::SurfaceFormat GetFormat() const;
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface();
-  already_AddRefed<gfx::DrawTarget> GetAsDrawTarget(gfx::BackendType aBackend);
 
-  static uint32_t ComputeMinBufferSize(gfx::IntSize aSize,
-                                       gfx::SurfaceFormat aFormat);
 
-  size_t GetBufferSize() const { return mDataSize; }
+int32_t ComputeRGBStride(gfx::SurfaceFormat aFormat, int32_t aWidth);
 
-protected:
+int32_t GetRGBStride(const RGBDescriptor& aDescriptor);
 
-  ImageDataSerializerBase(uint8_t* aData, size_t aDataSize)
-    : mData(aData)
-    , mDataSize(aDataSize)
-    , mIsValid(false)
-  {}
-
-  void Validate();
-
-  uint8_t* mData;
-  size_t mDataSize;
-  bool mIsValid;
-};
+uint32_t ComputeRGBBufferSize(gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
 
 
 
@@ -62,34 +40,33 @@ protected:
 
 
 
+uint32_t ComputeYCbCrBufferSize(const gfx::IntSize& aYSize,
+                                int32_t aYStride,
+                                const gfx::IntSize& aCbCrSize,
+                                int32_t aCbCrStride);
+uint32_t ComputeYCbCrBufferSize(const gfx::IntSize& aYSize,
+                                const gfx::IntSize& aCbCrSize);
 
-class MOZ_STACK_CLASS ImageDataSerializer : public ImageDataSerializerBase
-{
-public:
-  ImageDataSerializer(uint8_t* aData, size_t aDataSize)
-    : ImageDataSerializerBase(aData, aDataSize)
-  {
-    
-    mIsValid = !!mData;
-  }
-  void InitializeBufferInfo(gfx::IntSize aSize,
-                            gfx::SurfaceFormat aFormat);
-};
+uint32_t ComputeYCbCrBufferSize(uint32_t aBufferSize);
 
+void ComputeYCbCrOffsets(int32_t yStride, int32_t yHeight,
+                         int32_t cbCrStride, int32_t cbCrHeight,
+                         uint32_t& outYOffset, uint32_t& outCbOffset, uint32_t& outCrOffset);
 
+gfx::SurfaceFormat FormatFromBufferDescriptor(const BufferDescriptor& aDescriptor);
 
+gfx::IntSize SizeFromBufferDescriptor(const BufferDescriptor& aDescriptor);
 
+uint8_t* GetYChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
 
-class MOZ_STACK_CLASS ImageDataDeserializer : public ImageDataSerializerBase
-{
-public:
-  ImageDataDeserializer(uint8_t* aData, size_t aDataSize)
-    : ImageDataSerializerBase(aData, aDataSize)
-  {
-    Validate();
-  }
+uint8_t* GetCbChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
 
-};
+uint8_t* GetCrChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
+
+already_AddRefed<gfx::DataSourceSurface>
+DataSourceSurfaceFromYCbCrDescriptor(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
+
+} 
 
 } 
 } 
