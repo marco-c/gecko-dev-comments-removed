@@ -199,7 +199,7 @@ nsresult NrIceResolver::PendingResolution::OnLookupComplete(
   ASSERT_ON_THREAD(thread_);
   
   
-  if (request_) {
+  if (!canceled_) {
     nr_transport_addr *cb_addr = nullptr;
     nr_transport_addr ta;
     
@@ -212,7 +212,6 @@ nsresult NrIceResolver::PendingResolution::OnLookupComplete(
       }
     }
     cb_(cb_arg_, cb_addr);
-    request_ = nullptr;
     Release();
   }
   return NS_OK;
@@ -227,7 +226,7 @@ int NrIceResolver::cancel(void *obj, void *handle) {
 
 int NrIceResolver::PendingResolution::cancel() {
   request_->Cancel (NS_ERROR_ABORT);
-  request_ = nullptr;
+  canceled_ = true; 
   Release();
   return 0;
 }
