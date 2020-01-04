@@ -9,8 +9,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, Constructor: CC}
-  = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, Constructor: CC} = Components;
 
 function scopedCuImport(path) {
   const scope = {};
@@ -41,12 +40,9 @@ waitForExplicitFinish();
 var EXPECTED_DTU_ASSERT_FAILURE_COUNT = 0;
 
 registerCleanupFunction(function() {
-  if (DevToolsUtils.assertionFailureCount !==
-      EXPECTED_DTU_ASSERT_FAILURE_COUNT) {
-    ok(false,
-      "Should have had the expected number of DevToolsUtils.assert() failures."
-      + " Expected " + EXPECTED_DTU_ASSERT_FAILURE_COUNT
-      + ", got " + DevToolsUtils.assertionFailureCount);
+  if (DevToolsUtils.assertionFailureCount !== EXPECTED_DTU_ASSERT_FAILURE_COUNT) {
+    ok(false, "Should have had the expected number of DevToolsUtils.assert() failures. Expected " +
+      EXPECTED_DTU_ASSERT_FAILURE_COUNT + ", got " + DevToolsUtils.assertionFailureCount);
   }
 });
 
@@ -60,7 +56,7 @@ const ConsoleObserver = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   observe: function(subject, topic, data) {
-    let message = subject.wrappedJSObject.arguments[0];
+    var message = subject.wrappedJSObject.arguments[0];
 
     if (/Failed propType/.test(message)) {
       ok(false, message);
@@ -107,7 +103,7 @@ registerCleanupFunction(function* cleanup() {
 
 
 
-var addTab = Task.async(function* (url) {
+var addTab = Task.async(function*(url) {
   info("Adding a new tab with URL: " + url);
 
   let tab = gBrowser.selectedTab = gBrowser.addTab(url);
@@ -123,7 +119,7 @@ var addTab = Task.async(function* (url) {
 
 
 
-var removeTab = Task.async(function* (tab) {
+var removeTab = Task.async(function*(tab) {
   info("Removing tab.");
 
   let onClose = once(gBrowser.tabContainer, "TabClose");
@@ -163,7 +159,6 @@ function synthesizeKeyFromKeyTag(key) {
   info("Synthesizing key " + name + " " + JSON.stringify(modifiers));
   EventUtils.synthesizeKey(name, modifiers);
 }
-
 
 
 
@@ -229,7 +224,7 @@ function waitForTick() {
 
 
 
-var openToolboxForTab = Task.async(function* (tab, toolId, hostType) {
+var openToolboxForTab = Task.async(function*(tab, toolId, hostType) {
   info("Opening the toolbox");
 
   let toolbox;
@@ -249,8 +244,7 @@ var openToolboxForTab = Task.async(function* (tab, toolId, hostType) {
   toolbox = yield gDevTools.showToolbox(target, toolId, hostType);
 
   
-  yield new Promise(resolve => waitForFocus(resolve,
-    toolbox.frame.contentWindow));
+  yield new Promise(resolve => waitForFocus(resolve, toolbox.frame.contentWindow));
 
   info("Toolbox opened and focused");
 
@@ -265,9 +259,9 @@ var openToolboxForTab = Task.async(function* (tab, toolId, hostType) {
 
 
 
-var openNewTabAndToolbox = Task.async(function* (url, toolId, hostType) {
+var openNewTabAndToolbox = Task.async(function*(url, toolId, hostType) {
   let tab = yield addTab(url);
-  return openToolboxForTab(tab, toolId, hostType);
+  return openToolboxForTab(tab, toolId, hostType)
 });
 
 
@@ -306,13 +300,13 @@ function waitUntil(predicate, interval = 10) {
 
 
 let MM_INC_ID = 0;
-function evalInDebuggee(mm, script) {
-  return new Promise(function(resolve, reject) {
+function evalInDebuggee (mm, script) {
+  return new Promise(function (resolve, reject) {
     let id = MM_INC_ID++;
     mm.sendAsyncMessage("devtools:test:eval", { script, id });
     mm.addMessageListener("devtools:test:eval:response", handler);
 
-    function handler({ data }) {
+    function handler ({ data }) {
       if (id !== data.id) {
         return;
       }
