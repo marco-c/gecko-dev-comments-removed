@@ -149,6 +149,12 @@ public:
     }
 
     
+    static Ref<Cls> From(const RefBase<Object, jobject>& obj)
+    {
+        return Ref<Cls>(obj.Get());
+    }
+
+    
     JNIType Get() const
     {
         return static_cast<JNIType>(Cls::mInstance);

@@ -53,6 +53,10 @@ private:
     
     mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
 
+    class GLControllerSupport;
+    
+    mozilla::UniquePtr<GLControllerSupport> mGLControllerSupport;
+
 public:
     static void OnGlobalAndroidEvent(mozilla::AndroidGeckoEvent *ae);
     static mozilla::gfx::IntSize GetAndroidScreenBounds();
