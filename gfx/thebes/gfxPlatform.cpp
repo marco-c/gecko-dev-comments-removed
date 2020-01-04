@@ -2124,17 +2124,27 @@ gfxPlatform::InitAcceleration()
                                false);
 
   if (XRE_IsParentProcess()) {
+    FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
     if (gfxPrefs::GPUProcessDevEnabled()) {
       
       
-      gfxConfig::SetDefaultFromPref(
-        Feature::GPU_PROCESS,
+      gpuProc.SetDefaultFromPref(
         gfxPrefs::GetGPUProcessDevEnabledPrefName(),
         true,
         gfxPrefs::GetGPUProcessDevEnabledPrefDefault());
+
+      
+      
+      
+      if (!BrowserTabsRemoteAutostart()) {
+        gpuProc.Disable(
+          FeatureStatus::Unavailable,
+          "Multi-process mode is not enabled",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_E10S"));
+      }
     }
 
-    if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+    if (gpuProc.IsEnabled()) {
       GPUProcessManager* gpu = GPUProcessManager::Get();
       gpu->EnableGPUProcess();
     }
