@@ -414,6 +414,8 @@ add_task(function* test_helpers_change_password() {
           do_check_true(credentials.hasOwnProperty("email"));
           do_check_true(credentials.hasOwnProperty("uid"));
           do_check_true(credentials.hasOwnProperty("kA"));
+          do_check_true(credentials.hasOwnProperty("deviceId"));
+          do_check_null(credentials.deviceId);
           
           do_check_false(credentials.hasOwnProperty("foo"));
           wasCalled.updateUserAccountData = true;
