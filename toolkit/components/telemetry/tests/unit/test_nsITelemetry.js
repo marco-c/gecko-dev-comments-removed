@@ -264,13 +264,13 @@ function test_addons() {
   var fake_addon_id = "fake-addon";
   var name1 = "testing-histogram1";
   var register = Telemetry.registerAddonHistogram;
-  expect_success(function ()
+  expect_success(() =>
                  register(addon_id, name1, Telemetry.HISTOGRAM_LINEAR, 1, 5, 6));
   
-  expect_fail(function ()
-	      register(addon_id, name1, Telemetry.HISTOGRAM_LINEAR, 1, 5, 6));
+  expect_fail(() =>
+              register(addon_id, name1, Telemetry.HISTOGRAM_LINEAR, 1, 5, 6));
   
-  expect_fail(function () Telemetry.getAddonHistogram(fake_addon_id, name1));
+  expect_fail(() => Telemetry.getAddonHistogram(fake_addon_id, name1));
 
   
   var h1 = Telemetry.getAddonHistogram(addon_id, name1);
@@ -287,7 +287,7 @@ function test_addons() {
   do_check_eq(s1.counts[3], 1);
 
   var name2 = "testing-histogram2";
-  expect_success(function ()
+  expect_success(() =>
                  register(addon_id, name2, Telemetry.HISTOGRAM_LINEAR, 2, 4, 4));
 
   var h2 = Telemetry.getAddonHistogram(addon_id, name2);
@@ -303,16 +303,16 @@ function test_addons() {
   
   
   var extra_addon = "testing-extra-addon";
-  expect_success(function ()
-		 register(extra_addon, name1, Telemetry.HISTOGRAM_BOOLEAN));
+  expect_success(() =>
+                 register(extra_addon, name1, Telemetry.HISTOGRAM_BOOLEAN));
 
   
   var flag_addon = "testing-flag-addon";
   var flag_histogram = "flag-histogram";
-  expect_success(function()
-                 register(flag_addon, flag_histogram, Telemetry.HISTOGRAM_FLAG))
-  expect_success(function()
-		 register(flag_addon, name2, Telemetry.HISTOGRAM_LINEAR, 2, 4, 4));
+  expect_success(() =>
+                 register(flag_addon, flag_histogram, Telemetry.HISTOGRAM_FLAG));
+  expect_success(() =>
+                 register(flag_addon, name2, Telemetry.HISTOGRAM_LINEAR, 2, 4, 4));
 
   
   snapshots = Telemetry.addonHistogramSnapshots;
@@ -882,8 +882,8 @@ function run_test()
     test_histogram(histogram_type, "test::"+histogram_type, min, max, bucket_count);
 
     const nh = Telemetry.newHistogram;
-    expect_fail(function () nh("test::min", "never", histogram_type, 0, max, bucket_count));
-    expect_fail(function () nh("test::bucket_count", "never", histogram_type, min, max, 1));
+    expect_fail(() => nh("test::min", "never", histogram_type, 0, max, bucket_count));
+    expect_fail(() => nh("test::bucket_count", "never", histogram_type, min, max, 1));
   }
 
   
