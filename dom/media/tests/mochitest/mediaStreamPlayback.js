@@ -32,11 +32,11 @@ MediaStreamPlayback.prototype = {
 
 
 
-  playMedia : function(isResume) {
+  playMediaWithMediaStreamTracksStop : function(isResume) {
     this.startMedia(isResume);
     return this.verifyPlaying()
       .then(() => this.stopTracksForStreamInMediaPlayback())
-      .then(() => this.detachFromMediaElement());
+      .then(() => this.stopMediaElement());
   },
 
   
@@ -85,10 +85,10 @@ MediaStreamPlayback.prototype = {
 
 
 
-  playMediaWithoutStoppingTracks : function(isResume) {
+  playMedia : function(isResume) {
     this.startMedia(isResume);
     return this.verifyPlaying()
-      .then(() => this.detachFromMediaElement());
+      .then(() => this.stopMediaElement());
   },
 
   
@@ -161,7 +161,7 @@ MediaStreamPlayback.prototype = {
 
 
 
-  detachFromMediaElement : function() {
+  stopMediaElement : function() {
     this.mediaElement.pause();
     this.mediaElement.srcObject = null;
   }
@@ -198,7 +198,7 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
       this.startMedia(isResume);
       return this.verifyPlaying()
         .then(() => this.deprecatedStopStreamInMediaPlayback())
-        .then(() => this.detachFromMediaElement());
+        .then(() => this.stopMediaElement());
     }
   },
 
