@@ -337,7 +337,13 @@ struct BytecodeEmitter
     void setJumpOffsetAt(ptrdiff_t off);
 
     
-    bool emitTree(ParseNode* pn);
+    enum EmitLineNumberNote {
+        EMIT_LINENOTE,
+        SUPPRESS_LINENOTE
+    };
+
+    
+    bool emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote = EMIT_LINENOTE);
 
     
     bool emitFunctionScript(ParseNode* body);

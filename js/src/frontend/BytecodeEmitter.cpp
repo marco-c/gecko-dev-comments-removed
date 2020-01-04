@@ -3191,7 +3191,11 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         
         for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
             ParseNode* caseValue = caseNode->pn_left;
-            if (caseValue && !emitTree(caseValue))
+            
+            
+            if (caseValue &&
+                !emitTree(caseValue, caseValue->isLiteral() ? SUPPRESS_LINENOTE :
+                          EMIT_LINENOTE))
                 return false;
             if (!beforeCases) {
                 
@@ -7554,7 +7558,7 @@ BytecodeEmitter::emitClass(ParseNode* pn)
 }
 
 bool
-BytecodeEmitter::emitTree(ParseNode* pn)
+BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
 {
     JS_CHECK_RECURSION(cx, return false);
 
@@ -7567,7 +7571,7 @@ BytecodeEmitter::emitTree(ParseNode* pn)
     
 
 
-    if (pn->getKind() != PNK_WHILE && pn->getKind() != PNK_FOR &&
+    if (emitLineNote == EMIT_LINENOTE && pn->getKind() != PNK_WHILE && pn->getKind() != PNK_FOR &&
         !updateLineNumberNotes(pn->pn_pos.begin))
         return false;
 
