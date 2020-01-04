@@ -86,6 +86,10 @@ var AboutTabCrashed = {
         this.onClick(event);
         break;
       }
+      case "input": {
+        this.onInput(event);
+        break;
+      }
     }
   },
 
@@ -94,6 +98,9 @@ var AboutTabCrashed = {
       let el = document.getElementById(targetID);
       el.addEventListener("click", this);
     });
+
+    
+    document.getElementById("email").addEventListener("input", this);
 
     
     let event = new CustomEvent("AboutTabCrashedLoad", {bubbles:true});
@@ -126,6 +133,14 @@ var AboutTabCrashed = {
     }
   },
 
+  onInput(event) {
+    switch(event.target.id) {
+      case "email": {
+        document.getElementById("emailMe").checked = !!event.target.value;
+        break;
+      }
+    }
+  },
   
 
 
