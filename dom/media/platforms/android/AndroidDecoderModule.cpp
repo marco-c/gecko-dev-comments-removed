@@ -193,7 +193,7 @@ public:
   }
 
   nsresult Output(BufferInfo::Param aInfo, void* aBuffer,
-                  MediaFormat::Param aFormat, const TimeUnit& aDuration)
+                  MediaFormat::Param aFormat, const TimeUnit& aDuration) override
   {
     
     nsresult rv;
