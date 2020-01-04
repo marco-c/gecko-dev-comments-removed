@@ -50,81 +50,81 @@ public:
             BluetoothResultHandler* aRes) override;
   void Cleanup(BluetoothResultHandler* aRes) override;
 
-  void Enable(BluetoothResultHandler* aRes) override;
-  void Disable(BluetoothResultHandler* aRes) override;
+  void Enable(BluetoothCoreResultHandler* aRes) override;
+  void Disable(BluetoothCoreResultHandler* aRes) override;
 
   
 
-  void GetAdapterProperties(BluetoothResultHandler* aRes) override;
+  void GetAdapterProperties(BluetoothCoreResultHandler* aRes) override;
   void GetAdapterProperty(BluetoothPropertyType aType,
-                          BluetoothResultHandler* aRes) override;
+                          BluetoothCoreResultHandler* aRes) override;
   void SetAdapterProperty(const BluetoothProperty& aProperty,
-                          BluetoothResultHandler* aRes) override;
+                          BluetoothCoreResultHandler* aRes) override;
 
   
 
   void GetRemoteDeviceProperties(const BluetoothAddress& aRemoteAddr,
-                                 BluetoothResultHandler* aRes) override;
+                                 BluetoothCoreResultHandler* aRes) override;
   void GetRemoteDeviceProperty(const BluetoothAddress& aRemoteAddr,
                                BluetoothPropertyType aType,
-                               BluetoothResultHandler* aRes) override;
+                               BluetoothCoreResultHandler* aRes) override;
   void SetRemoteDeviceProperty(const BluetoothAddress& aRemoteAddr,
                                const BluetoothProperty& aProperty,
-                               BluetoothResultHandler* aRes) override;
+                               BluetoothCoreResultHandler* aRes) override;
 
   
 
   void GetRemoteServiceRecord(const BluetoothAddress& aRemoteAddr,
                               const BluetoothUuid& aUuid,
-                              BluetoothResultHandler* aRes) override;
+                              BluetoothCoreResultHandler* aRes) override;
   void GetRemoteServices(const BluetoothAddress& aRemoteAddr,
-                         BluetoothResultHandler* aRes) override;
+                         BluetoothCoreResultHandler* aRes) override;
 
   
 
-  void StartDiscovery(BluetoothResultHandler* aRes) override;
-  void CancelDiscovery(BluetoothResultHandler* aRes) override;
+  void StartDiscovery(BluetoothCoreResultHandler* aRes) override;
+  void CancelDiscovery(BluetoothCoreResultHandler* aRes) override;
 
   
 
   void CreateBond(const BluetoothAddress& aBdAddr,
                   BluetoothTransport aTransport,
-                  BluetoothResultHandler* aRes) override;
+                  BluetoothCoreResultHandler* aRes) override;
   void RemoveBond(const BluetoothAddress& aBdAddr,
-                  BluetoothResultHandler* aRes) override;
+                  BluetoothCoreResultHandler* aRes) override;
   void CancelBond(const BluetoothAddress& aBdAddr,
-                  BluetoothResultHandler* aRes) override;
+                  BluetoothCoreResultHandler* aRes) override;
 
   
 
   void GetConnectionState(const BluetoothAddress& aBdAddr,
-                          BluetoothResultHandler* aRes) override;
+                          BluetoothCoreResultHandler* aRes) override;
 
   
 
   void PinReply(const BluetoothAddress& aBdAddr, bool aAccept,
                 const BluetoothPinCode& aPinCode,
-                BluetoothResultHandler* aRes) override;
+                BluetoothCoreResultHandler* aRes) override;
 
   void SspReply(const BluetoothAddress& aBdAddr,
                 BluetoothSspVariant aVariant,
                 bool aAccept, uint32_t aPasskey,
-                BluetoothResultHandler* aRes) override;
+                BluetoothCoreResultHandler* aRes) override;
 
   
 
-  void DutModeConfigure(bool aEnable, BluetoothResultHandler* aRes);
+  void DutModeConfigure(bool aEnable, BluetoothCoreResultHandler* aRes);
   void DutModeSend(uint16_t aOpcode, uint8_t* aBuf, uint8_t aLen,
-                   BluetoothResultHandler* aRes) override;
+                   BluetoothCoreResultHandler* aRes) override;
 
   
 
   void LeTestMode(uint16_t aOpcode, uint8_t* aBuf, uint8_t aLen,
-                  BluetoothResultHandler* aRes) override;
+                  BluetoothCoreResultHandler* aRes) override;
 
   
 
-  void ReadEnergyInfo(BluetoothResultHandler* aRes) override;
+  void ReadEnergyInfo(BluetoothCoreResultHandler* aRes) override;
 
   
 
@@ -153,6 +153,11 @@ protected:
   void OnDisconnect(int aIndex) override;
 
 private:
+  void DispatchError(BluetoothCoreResultHandler* aRes,
+                     BluetoothStatus aStatus);
+  void DispatchError(BluetoothCoreResultHandler* aRes,
+                     nsresult aRv);
+
   void DispatchError(BluetoothResultHandler* aRes, BluetoothStatus aStatus);
   void DispatchError(BluetoothResultHandler* aRes, nsresult aRv);
 
