@@ -65,7 +65,7 @@ testOne("testTryFinally",
          } finally {            // +6
          }                      // +7
          nothing();             // +8
-        `, "1689");
+        `, "168");
 
 
 testOne("testTryCatch",
@@ -74,7 +74,7 @@ testOne("testTryCatch",
          } catch (e) {          // +6
          }                      // +7
          nothing();             // +8
-        `, "189");
+        `, "18");
 
 
 testOne("testCatchFinally",
@@ -85,7 +85,7 @@ testOne("testCatchFinally",
          } finally {            // +6
          }                      // +7
          nothing();             // +8
-        `, "1689");
+        `, "168");
 
 
 
@@ -98,7 +98,7 @@ testOne("testCatch",
          } catch (e) {          // +6
          }                      // +7
          nothing();             // +8
-        `, "189");
+        `, "18");
 
 
 testOne("testFinally",
@@ -107,7 +107,7 @@ testOne("testFinally",
            ${bitOfCode}
          }                      // +6
          nothing();             // +7
-        `, "178");
+        `, "17");
 
 
 testOne("testThen",
@@ -116,7 +116,7 @@ testOne("testThen",
          } else {               // +6
          }                      // +7
          nothing();             // +8
-        `, "189");
+        `, "18");
 
 
 testOne("testSwitch",
@@ -126,4 +126,4 @@ testOne("testSwitch",
              ${bitOfCode}
          }                      // +6
          nothing();             // +7
-        `, "178");
+        `, "17");
