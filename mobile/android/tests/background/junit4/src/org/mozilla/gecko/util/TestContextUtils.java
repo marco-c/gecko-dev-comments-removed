@@ -31,7 +31,7 @@ public class TestContextUtils {
     @Test
     public void testGetPackageInstallTimeReturnsReasonableValue() throws Exception {
         
-        final long installTime = ContextUtils.getPackageInstallTime(context);
+        final long installTime = ContextUtils.getCurrentPackageInfo(context).firstInstallTime;
         assertTrue("Package install time is positive", installTime >= 0);
         assertTrue("Package install time is less than current time", installTime < System.currentTimeMillis());
     }
