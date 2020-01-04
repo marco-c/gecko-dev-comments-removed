@@ -42,6 +42,7 @@ const EVENTS = {
   
   BREAKPOINT_ADDED: "Debugger:BreakpointAdded",
   BREAKPOINT_REMOVED: "Debugger:BreakpointRemoved",
+  BREAKPOINT_CLICKED: "Debugger:BreakpointClicked",
 
   
   
