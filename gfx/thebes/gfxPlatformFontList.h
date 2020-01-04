@@ -13,6 +13,7 @@
 #include "gfxFontUtils.h"
 #include "gfxFontInfoLoader.h"
 #include "gfxFont.h"
+#include "gfxFontConstants.h"
 #include "gfxPlatform.h"
 #include "gfxFontFamilyList.h"
 
@@ -205,6 +206,41 @@ public:
     AddGenericFonts(mozilla::FontFamilyType aGenericType, gfxFontStyle* aStyle,
                     nsTArray<gfxFontFamily*>& aFamilyList);
 
+    
+    void GetLangPrefs(eFontPrefLang aPrefLangs[], uint32_t &aLen, eFontPrefLang aCharLang, eFontPrefLang aPageLang);
+
+    
+
+
+
+
+    typedef bool (*PrefFontCallback) (eFontPrefLang aLang, const nsAString& aName,
+                                        void *aClosure);
+    static bool ForEachPrefFont(eFontPrefLang aLangArray[], uint32_t aLangArrayLen,
+                                  PrefFontCallback aCallback,
+                                  void *aClosure);
+
+    
+    static eFontPrefLang GetFontPrefLangFor(const char* aLang);
+
+    
+    static eFontPrefLang GetFontPrefLangFor(nsIAtom *aLang);
+
+    
+    static nsIAtom* GetLangGroupForPrefLang(eFontPrefLang aLang);
+
+    
+    static const char* GetPrefLangName(eFontPrefLang aLang);
+
+    
+    static eFontPrefLang GetFontPrefLangFor(uint8_t aUnicodeRange);
+
+    
+    static bool IsLangCJK(eFontPrefLang aLang);
+
+    
+    static void AppendPrefLang(eFontPrefLang aPrefLangs[], uint32_t& aLen, eFontPrefLang aAddLang);
+
 protected:
     class MemoryReporter final : public nsIMemoryReporter
     {
@@ -246,6 +282,9 @@ protected:
     
     
     virtual bool UsesSystemFallback() { return false; }
+
+    void AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aLen,
+                            eFontPrefLang aCharLang, eFontPrefLang aPageLang);
 
     
     gfxFontFamily* CheckFamily(gfxFontFamily *aFamily);
@@ -373,6 +412,7 @@ protected:
     nsTHashtable<nsPtrHashKey<gfxUserFontSet> > mUserFontSetList;
 
     nsCOMPtr<nsILanguageAtomService> mLangService;
+    nsTArray<uint32_t> mCJKPrefLangs;
 };
 
 #endif 

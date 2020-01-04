@@ -70,15 +70,6 @@ BackendTypeBit(BackendType b)
 
 extern cairo_user_data_key_t kDrawTarget;
 
-
-enum eFontPrefLang {
-    #define FONT_PREF_LANG(enum_id_, str_, atom_id_) eFontPrefLang_ ## enum_id_
-    #include "gfxFontPrefLangList.h"
-    #undef FONT_PREF_LANG
-
-    , eFontPrefLang_CJKSet  
-};
-
 enum eCMSMode {
     eCMSMode_Off          = 0,     
     eCMSMode_All          = 1,     
@@ -428,41 +419,6 @@ public:
     virtual bool DidRenderingDeviceReset(DeviceResetReason* aResetReason = nullptr) { return false; }
 
     
-    void GetLangPrefs(eFontPrefLang aPrefLangs[], uint32_t &aLen, eFontPrefLang aCharLang, eFontPrefLang aPageLang);
-    
-    
-
-
-
-
-    typedef bool (*PrefFontCallback) (eFontPrefLang aLang, const nsAString& aName,
-                                        void *aClosure);
-    static bool ForEachPrefFont(eFontPrefLang aLangArray[], uint32_t aLangArrayLen,
-                                  PrefFontCallback aCallback,
-                                  void *aClosure);
-
-    
-    static eFontPrefLang GetFontPrefLangFor(const char* aLang);
-
-    
-    static eFontPrefLang GetFontPrefLangFor(nsIAtom *aLang);
-
-    
-    static nsIAtom* GetLangGroupForPrefLang(eFontPrefLang aLang);
-
-    
-    static const char* GetPrefLangName(eFontPrefLang aLang);
-   
-    
-    static eFontPrefLang GetFontPrefLangFor(uint8_t aUnicodeRange);
-
-    
-    static bool IsLangCJK(eFontPrefLang aLang);
-    
-    
-    static void AppendPrefLang(eFontPrefLang aPrefLangs[], uint32_t& aLen, eFontPrefLang aAddLang);
-
-    
     
     virtual void GetCommonFallbackFonts(uint32_t , uint32_t ,
                                         int32_t ,
@@ -667,9 +623,6 @@ protected:
     gfxPlatform();
     virtual ~gfxPlatform();
 
-    void AppendCJKPrefLangs(eFontPrefLang aPrefLangs[], uint32_t &aLen,
-                            eFontPrefLang aCharLang, eFontPrefLang aPageLang);
-
     
 
 
@@ -784,7 +737,6 @@ private:
     void PopulateScreenInfo();
 
     nsRefPtr<gfxASurface> mScreenReferenceSurface;
-    nsTArray<uint32_t> mCJKPrefLangs;
     nsCOMPtr<nsIObserver> mSRGBOverrideObserver;
     nsCOMPtr<nsIObserver> mFontPrefsObserver;
     nsCOMPtr<nsIObserver> mMemoryPressureObserver;
