@@ -10,6 +10,43 @@ do_get_profile();
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+
+
+Cu.import("resource://gre/modules/FileUtils.jsm");
+
+function registerDirectory(key, dir) {
+  let dirProvider = {
+    getFile: function(prop, persistent) {
+      persistent.value = false;
+      if (prop == key) {
+        return dir.clone();
+      }
+      return null;
+    },
+
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIDirectoryServiceProvider,
+                                           Ci.nsISupports])
+  };
+  Services.dirsvc.registerProvider(dirProvider);
+}
+
+
+
+const distroDir = FileUtils.getDir("GreD", ["browser", "features"], true);
+registerDirectory("XREAppFeat", distroDir);
+
+
+Cu.import("resource://testing-common/AppInfo.jsm");
+updateAppInfo();
+
+
+
+var gInternalManager = Cc["@mozilla.org/addons/integration;1"]
+  .getService(Ci.nsIObserver)
+  .QueryInterface(Ci.nsITimerCallback);
+
+gInternalManager.observe(null, "addons-startup", null);
+
 Cu.import("resource://gre/modules/Http.jsm");
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("chrome://loop/content/modules/MozLoopService.jsm");
