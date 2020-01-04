@@ -34,6 +34,11 @@ pref("browser.tabs.expireTime", 900);
 
 
 
+pref("browser.tabs.disableBackgroundZombification", false);
+
+
+
+
 pref("browser.tabs.useCache", false);
 
 
