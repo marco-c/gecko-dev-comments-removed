@@ -841,7 +841,7 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
 
   
   if (gfxPrefs::LayersDump()) {
-    this->Dump();
+    this->Dump(true);
   } else if (profiler_feature_active("layersdump")) {
     std::stringstream ss;
     Dump(ss);
