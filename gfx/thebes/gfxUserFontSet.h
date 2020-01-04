@@ -322,6 +322,17 @@ public:
         
         static void Shutdown();
 
+        
+        class MemoryReporter final : public nsIMemoryReporter
+        {
+        private:
+            ~MemoryReporter() { }
+
+        public:
+            NS_DECL_ISUPPORTS
+            NS_DECL_NSIMEMORYREPORTER
+        };
+
 #ifdef DEBUG_USERFONT_CACHE
         
         static void Dump();
@@ -436,6 +447,10 @@ public:
 
             bool IsPersistent() const { return mPersistence == kPersistent; }
             bool IsPrivate() const { return mPrivate; }
+
+            nsresult ReportMemory(nsIMemoryReporterCallback* aCb,
+                                  nsISupports* aClosure,
+                                  bool aAnonymize);
 
 #ifdef DEBUG_USERFONT_CACHE
             void Dump();

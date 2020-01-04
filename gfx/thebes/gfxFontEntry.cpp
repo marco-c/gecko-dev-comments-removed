@@ -99,7 +99,8 @@ gfxFontEntry::gfxFontEntry() :
     mUnitsPerEm(0),
     mHBFace(nullptr),
     mGrFace(nullptr),
-    mGrFaceRefCnt(0)
+    mGrFaceRefCnt(0),
+    mComputedSizeOfUserFont(0)
 {
     memset(&mDefaultSubSpaceFeatures, 0, sizeof(mDefaultSubSpaceFeatures));
     memset(&mNonDefaultSubSpaceFeatures, 0, sizeof(mNonDefaultSubSpaceFeatures));
@@ -138,7 +139,8 @@ gfxFontEntry::gfxFontEntry(const nsAString& aName, bool aIsStandardFace) :
     mUnitsPerEm(0),
     mHBFace(nullptr),
     mGrFace(nullptr),
-    mGrFaceRefCnt(0)
+    mGrFaceRefCnt(0),
+    mComputedSizeOfUserFont(0)
 {
     memset(&mDefaultSubSpaceFeatures, 0, sizeof(mDefaultSubSpaceFeatures));
     memset(&mNonDefaultSubSpaceFeatures, 0, sizeof(mNonDefaultSubSpaceFeatures));
@@ -1144,6 +1146,32 @@ gfxFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 {
     aSizes->mFontListSize += aMallocSizeOf(this);
     AddSizeOfExcludingThis(aMallocSizeOf, aSizes);
+}
+
+
+
+
+
+size_t
+gfxFontEntry::ComputedSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+    FontListSizes s = { 0 };
+    AddSizeOfExcludingThis(aMallocSizeOf, &s);
+
+    
+    
+    
+    
+    
+    
+    size_t result = s.mFontListSize + s.mFontTableCacheSize + s.mCharMapsSize;
+
+    if (mIsDataUserFont) {
+        MOZ_ASSERT(mComputedSizeOfUserFont > 0, "user font with no data?");
+        result += mComputedSizeOfUserFont;
+    }
+
+    return result;
 }
 
 
