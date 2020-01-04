@@ -72,29 +72,52 @@ BaseProxyHandler::get(JSContext* cx, HandleObject proxy, HandleValue receiver,
 {
     assertEnteredPolicy(cx, proxy, id, GET);
 
-    Rooted<PropertyDescriptor> desc(cx);
-    if (!getPropertyDescriptor(cx, proxy, id, &desc))
-        return false;
-    if (!desc.object()) {
-        vp.setUndefined();
-        return true;
-    }
-    desc.assertComplete();
-    MOZ_ASSERT(desc.getter() != JS_PropertyStub);
-    if (!desc.getter()) {
-        vp.set(desc.value());
-        return true;
-    }
-    if (desc.hasGetterObject())
-        return InvokeGetter(cx, receiver, ObjectValue(*desc.getterObject()), vp);
-    if (!desc.isShared())
-        vp.set(desc.value());
-    else
-        vp.setUndefined();
+    
+    
 
     
-    MOZ_ASSERT(desc.object() != proxy);
-    return CallJSGetterOp(cx, desc.getter(), desc.object(), id, vp);
+    Rooted<PropertyDescriptor> desc(cx);
+    if (!getOwnPropertyDescriptor(cx, proxy, id, &desc))
+        return false;
+    desc.assertCompleteIfFound();
+
+    
+    if (!desc.object()) {
+        
+        
+        
+        RootedObject proto(cx);
+        if (!GetPrototype(cx, proxy, &proto))
+            return false;
+
+        
+        if (!proto) {
+            vp.setUndefined();
+            return true;
+        }
+
+        
+        return GetProperty(cx, proto, receiver, id, vp);
+    }
+
+    
+    if (desc.isDataDescriptor()) {
+        vp.set(desc.value());
+        return true;
+    }
+
+    
+    MOZ_ASSERT(desc.isAccessorDescriptor());
+    RootedObject getter(cx, desc.getterObject());
+
+    
+    if (!getter) {
+        vp.setUndefined();
+        return true;
+    }
+
+    
+    return InvokeGetter(cx, receiver, ObjectValue(*getter), vp);
 }
 
 bool
