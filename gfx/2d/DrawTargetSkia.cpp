@@ -398,11 +398,20 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, Float aAlpha = 1.0)
 static inline Rect
 GetClipBounds(SkCanvas *aCanvas)
 {
-  SkRect clipBounds;
-  if (!aCanvas->getClipBounds(&clipBounds)) {
+  
+  
+  
+  SkIRect deviceBounds;
+  if (!aCanvas->getClipDeviceBounds(&deviceBounds)) {
     return Rect();
   }
-  return SkRectToRect(clipBounds);
+  SkMatrix inverseCTM;
+  if (!aCanvas->getTotalMatrix().invert(&inverseCTM)) {
+    return Rect();
+  }
+  SkRect localBounds;
+  inverseCTM.mapRect(&localBounds, SkRect::Make(deviceBounds));
+  return SkRectToRect(localBounds);
 }
 
 struct AutoPaintSetup {
