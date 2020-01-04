@@ -33,6 +33,7 @@ class FeatureState
   void EnableByDefault();
   void DisableByDefault(FeatureStatus aStatus, const char* aMessage);
   void SetUser(FeatureStatus aStatus, const char* aMessage);
+  void SetEnvironment(FeatureStatus aStatus, const char* aMessage);
   void SetRuntime(FeatureStatus aStatus, const char* aMessage);
   bool IsForcedOnByUser() const;
   bool DisabledByDefault() const;
@@ -58,8 +59,12 @@ class FeatureState
   
   
   
+  
+  
+  
   Instance mDefault;
   Instance mUser;
+  Instance mEnvironment;
   Instance mRuntime;
 };
 

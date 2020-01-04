@@ -15,6 +15,12 @@ FeatureState::GetValue() const
   if (mRuntime.mStatus != FeatureStatus::Unused) {
     return mRuntime.mStatus;
   }
+  if (mUser.mStatus == FeatureStatus::ForceEnabled) {
+    return FeatureStatus::ForceEnabled;
+  }
+  if (mEnvironment.mStatus != FeatureStatus::Unused) {
+    return mEnvironment.mStatus;
+  }
   if (mUser.mStatus != FeatureStatus::Unused) {
     return mUser.mStatus;
   }
@@ -58,9 +64,20 @@ FeatureState::SetUser(FeatureStatus aStatus, const char* aMessage)
 {
   
   MOZ_ASSERT(mDefault.mStatus != FeatureStatus::Unused);
+  MOZ_ASSERT(mEnvironment.mStatus == FeatureStatus::Unused);
   MOZ_ASSERT(mRuntime.mStatus == FeatureStatus::Unused);
 
   mUser.Set(aStatus, aMessage);
+}
+
+void
+FeatureState::SetEnvironment(FeatureStatus aStatus, const char* aMessage)
+{
+  
+  MOZ_ASSERT(mDefault.mStatus != FeatureStatus::Unused);
+  MOZ_ASSERT(mRuntime.mStatus == FeatureStatus::Unused);
+
+  mEnvironment.Set(aStatus, aMessage);
 }
 
 void

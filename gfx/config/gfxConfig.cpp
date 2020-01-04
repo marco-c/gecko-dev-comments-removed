@@ -80,7 +80,20 @@ gfxConfig::InitOrUpdate(Feature aFeature,
   if (!state.IsInitialized()) {
     return SetDefault(aFeature, aEnable, aDisableStatus, aDisableMessage);
   }
-  return UpdateIfFailed(aFeature, aEnable, aDisableStatus, aDisableMessage);
+  return MaybeSetFailed(aFeature, aEnable, aDisableStatus, aDisableMessage);
+}
+
+ void
+gfxConfig::SetFailed(Feature aFeature, FeatureStatus aStatus, const char* aMessage)
+{
+  AssertStatusInitialized(aFeature);
+
+  
+  
+  MOZ_ASSERT(IsFeatureStatusFailure(aStatus));
+
+  FeatureState& state = sConfig.GetState(aFeature);
+  state.SetRuntime(aStatus, aMessage);
 }
 
  void
@@ -93,7 +106,7 @@ gfxConfig::Disable(Feature aFeature, FeatureStatus aStatus, const char* aMessage
   MOZ_ASSERT(IsFeatureStatusFailure(aStatus));
 
   FeatureState& state = sConfig.GetState(aFeature);
-  state.SetRuntime(aStatus, aMessage);
+  state.SetEnvironment(aStatus, aMessage);
 }
 
  void
