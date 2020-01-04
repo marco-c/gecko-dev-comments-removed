@@ -181,11 +181,11 @@ nsGIFDecoder2::FlushImageData()
     case 1:  
       FlushImageData(0, mCurrentRow + 1);
       FlushImageData(mLastFlushedRow + 1,
-                     mGIFStruct.height - (mLastFlushedRow + 1));
+                     mGIFStruct.clamped_height - (mLastFlushedRow + 1));
       break;
 
     default: 
-      FlushImageData(0, mGIFStruct.height);
+      FlushImageData(0, mGIFStruct.clamped_height);
   }
 }
 
@@ -338,11 +338,11 @@ nsGIFDecoder2::EndImageFrame()
   mCurrentPass = mLastFlushedPass = 0;
 
   
-  if (mGIFStruct.rows_remaining != mGIFStruct.height) {
+  if (mGIFStruct.rows_remaining != mGIFStruct.clamped_height) {
     if (mGIFStruct.rows_remaining && mGIFStruct.images_decoded) {
       
       uint8_t* rowp =
-        mImageData + ((mGIFStruct.height - mGIFStruct.rows_remaining) *
+        mImageData + ((mGIFStruct.clamped_height - mGIFStruct.rows_remaining) *
                       mGIFStruct.width);
       memset(rowp, 0, mGIFStruct.rows_remaining * mGIFStruct.width);
     }
@@ -381,7 +381,7 @@ nsGIFDecoder2::OutputRow()
   int drow_end = mGIFStruct.irow;
 
   
-  if ((unsigned)drow_start >= mGIFStruct.height) {
+  if ((unsigned)drow_start >= mGIFStruct.clamped_height) {
     NS_WARNING("GIF2.cpp::OutputRow - too much image data");
     return 0;
   }
@@ -401,16 +401,16 @@ nsGIFDecoder2::OutputRow()
       drow_end = drow_start + row_dup;
 
       
-      if (((mGIFStruct.height - 1) - drow_end) <= row_shift) {
-        drow_end = mGIFStruct.height - 1;
+      if (((mGIFStruct.clamped_height - 1) - drow_end) <= row_shift) {
+        drow_end = mGIFStruct.clamped_height - 1;
       }
 
       
       if (drow_start < 0) {
         drow_start = 0;
       }
-      if ((unsigned)drow_end >= mGIFStruct.height) {
-        drow_end = mGIFStruct.height - 1;
+      if ((unsigned)drow_end >= mGIFStruct.clamped_height) {
+        drow_end = mGIFStruct.clamped_height - 1;
       }
     }
 
@@ -418,17 +418,17 @@ nsGIFDecoder2::OutputRow()
     uint8_t* rowp = GetCurrentRowBuffer();
 
     
-    uint8_t* from = rowp + mGIFStruct.width;
-    uint32_t* to = ((uint32_t*)rowp) + mGIFStruct.width;
+    uint8_t* from = rowp + mGIFStruct.clamped_width;
+    uint32_t* to = ((uint32_t*)rowp) + mGIFStruct.clamped_width;
     uint32_t* cmap = mColormap;
-    for (uint32_t c = mGIFStruct.width; c > 0; c--) {
+    for (uint32_t c = mGIFStruct.clamped_width; c > 0; c--) {
       *--to = cmap[*--from];
     }
 
     
     if (mGIFStruct.is_transparent && !mSawTransparency) {
       const uint32_t* rgb = (uint32_t*)rowp;
-      for (uint32_t i = mGIFStruct.width; i > 0; i--) {
+      for (uint32_t i = mGIFStruct.clamped_width; i > 0; i--) {
         if (*rgb++ == 0) {
           mSawTransparency = true;
           break;
@@ -449,7 +449,7 @@ nsGIFDecoder2::OutputRow()
       
       
       MOZ_ASSERT_IF(mDownscaler, mDeinterlacer);
-      const uint32_t bpr = sizeof(uint32_t) * mGIFStruct.width;
+      const uint32_t bpr = sizeof(uint32_t) * mGIFStruct.clamped_width;
       for (int r = drow_start; r <= drow_end; r++) {
         
         if (r != int(mGIFStruct.irow)) {
@@ -475,12 +475,12 @@ nsGIFDecoder2::OutputRow()
     do {
       
       mGIFStruct.irow += kjump[mGIFStruct.ipass];
-      if (mGIFStruct.irow >= mGIFStruct.height) {
+      if (mGIFStruct.irow >= mGIFStruct.clamped_height) {
         
         mGIFStruct.irow = 8 >> mGIFStruct.ipass;
         mGIFStruct.ipass++;
       }
-    } while (mGIFStruct.irow >= mGIFStruct.height);
+    } while (mGIFStruct.irow >= mGIFStruct.clamped_height);
 
     
     
@@ -525,14 +525,14 @@ nsGIFDecoder2::DoLzw(const uint8_t* q)
   uint8_t* stack    = mGIFStruct.stack;
   uint8_t* rowp     = mGIFStruct.rowp;
 
-  uint8_t* rowend = GetCurrentRowBuffer() + mGIFStruct.width;
+  uint8_t* rowend = GetCurrentRowBuffer() + mGIFStruct.clamped_width;
 
 #define OUTPUT_ROW()                                        \
   PR_BEGIN_MACRO                                            \
     if (!OutputRow())                                       \
       goto END;                                             \
     rowp = GetCurrentRowBuffer();                           \
-    rowend = rowp + mGIFStruct.width;                       \
+    rowend = rowp + mGIFStruct.clamped_width;               \
   PR_END_MACRO
 
   for (const uint8_t* ch = q; count-- > 0; ch++) {
@@ -625,6 +625,10 @@ nsGIFDecoder2::DoLzw(const uint8_t* q)
         *rowp++ = *--stackp & mColorMask; 
         if (rowp == rowend) {
           OUTPUT_ROW();
+
+          
+          stackp -= mGIFStruct.width - mGIFStruct.clamped_width;
+          stackp = std::max(stackp, stack);
         }
       } while (stackp > stack);
     }
@@ -1109,6 +1113,21 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
       }
 
       
+      IntRect clampedRect =
+        ClampToImageRect(IntRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
+                                 mGIFStruct.width, mGIFStruct.height));
+      if (clampedRect.IsEmpty()) {
+        
+        mGIFStruct.state = gif_error;
+        break;
+      }
+      mGIFStruct.clamped_width = clampedRect.width;
+      mGIFStruct.clamped_height = clampedRect.height;
+
+      MOZ_ASSERT(mGIFStruct.clamped_width <= mGIFStruct.width);
+      MOZ_ASSERT(mGIFStruct.clamped_height <= mGIFStruct.height);
+
+      
       
       
       uint32_t depth = mGIFStruct.global_colormap_depth;
@@ -1170,7 +1189,7 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
 
       
       mGIFStruct.irow = 0;
-      mGIFStruct.rows_remaining = mGIFStruct.height;
+      mGIFStruct.rows_remaining = mGIFStruct.clamped_height;
       mGIFStruct.rowp = GetCurrentRowBuffer();
 
       

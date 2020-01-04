@@ -75,6 +75,8 @@ typedef struct gif_struct {
     
     unsigned x_offset, y_offset; 
     unsigned height, width;
+    unsigned clamped_height;    
+    unsigned clamped_width;     
     int tpixel;                 
     int32_t disposal_method;    
     uint32_t* local_colormap;   
