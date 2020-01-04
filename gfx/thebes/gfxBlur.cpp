@@ -980,7 +980,8 @@ gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
                               const Color& aShadowColor,
                               bool aHasBorderRadius,
                               const RectCornerRadii& aInnerClipRadii,
-                              const Rect aSkipRect)
+                              const Rect aSkipRect,
+                              const Point aShadowOffset)
 {
   
   if ((aBlurRadius.width <= 0 && aBlurRadius.height <= 0)) {
@@ -1005,6 +1006,7 @@ gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
   srcInner.Deflate(Margin(slice));
 
   Rect dstOuter(aDestinationRect);
+  dstOuter.MoveBy(aShadowOffset);
   dstOuter.Inflate(Margin(extendDest));
   Rect dstInner = dstOuter;
   dstInner.Deflate(Margin(slice));
