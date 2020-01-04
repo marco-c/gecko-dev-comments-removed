@@ -115,14 +115,9 @@ AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset)
 }
 
 static bool
-IsKeyboardRTL()
+IsBidiUI()
 {
-  bool isKeyboardRTL = false;
-  nsIBidiKeyboard* bidiKeyboard = nsContentUtils::GetBidiKeyboard();
-  if (bidiKeyboard) {
-    bidiKeyboard->IsLangRTL(&isKeyboardRTL);
-  }
-  return isKeyboardRTL;
+  return Preferences::GetBool("bidi.browser.ui");
 }
 
 nsCaret::nsCaret()
@@ -503,21 +498,6 @@ nsCaret::SetCaretPosition(nsIDOMNode* aNode, int32_t aOffset)
   SchedulePaint();
 }
 
-bool
-nsCaret::IsBidiUI()
-{
-  nsIFrame* frame = nullptr;
-
-  if(Selection* selection = GetSelectionInternal()) {
-    int32_t contentOffset;
-    frame = GetFrameAndOffset(selection, mOverrideContent, mOverrideOffset,
-                              &contentOffset);
-  }
-
-  return (frame && frame->GetStateBits() & NS_FRAME_IS_BIDI) ||
-         Preferences::GetBool("bidi.browser.ui");
-}
-
 void
 nsCaret::CheckSelectionLanguageChange()
 {
@@ -525,8 +505,11 @@ nsCaret::CheckSelectionLanguageChange()
     return;
   }
 
-  bool isKeyboardRTL = IsKeyboardRTL();
-
+  bool isKeyboardRTL = false;
+  nsIBidiKeyboard* bidiKeyboard = nsContentUtils::GetBidiKeyboard();
+  if (bidiKeyboard) {
+    bidiKeyboard->IsLangRTL(&isKeyboardRTL);
+  }
   
   
   
@@ -715,9 +698,8 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
   if (theFrame->PresContext()->BidiEnabled())
   {
     
-    if (aBidiLevel & BIDI_LEVEL_UNDEFINED) {
+    if (aBidiLevel & BIDI_LEVEL_UNDEFINED)
       aBidiLevel = NS_GET_EMBEDDING_LEVEL(theFrame);
-    }
 
     int32_t start;
     int32_t end;
@@ -941,22 +923,21 @@ nsCaret::ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,
     }
   }
 
+  
   aHookRect->SetEmpty();
-
-  Selection* selection = GetSelectionInternal();
-  if (!selection || !selection->GetFrameSelection()) {
+  if (!IsBidiUI()) {
     return;
   }
 
-  if (IsBidiUI() || IsKeyboardRTL()) {
+  bool isCaretRTL;
+  nsIBidiKeyboard* bidiKeyboard = nsContentUtils::GetBidiKeyboard();
+  
+  
+  
+  if (bidiKeyboard && NS_SUCCEEDED(bidiKeyboard->IsLangRTL(&isCaretRTL))) {
     
     
     
-    int caretBidiLevel = selection->GetFrameSelection()->GetCaretBidiLevel();
-    if (caretBidiLevel & BIDI_LEVEL_UNDEFINED) {
-      caretBidiLevel = NS_GET_EMBEDDING_LEVEL(aFrame);
-    }
-    bool isCaretRTL = caretBidiLevel % 2;
     if (isVertical) {
       bool isSidewaysLR = wm.IsVerticalLR() && !wm.IsLineInverted();
       if (isSidewaysLR) {
