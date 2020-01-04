@@ -180,7 +180,28 @@ public:
 
   nsresult NotifyIME(const IMENotification& aIMENotification);
 
+
   
+
+
+
+
+
+  enum DispatchTo
+  {
+    
+    
+    
+    
+    eDispatchToParentProcess = 0,
+    
+    
+    
+    eDispatchToCurrentProcess = 1
+  };
+
+  
+
 
 
 
@@ -196,7 +217,8 @@ public:
 
   bool DispatchKeyboardEvent(uint32_t aMessage,
                              const WidgetKeyboardEvent& aKeyboardEvent,
-                             nsEventStatus& aStatus);
+                             nsEventStatus& aStatus,
+                             DispatchTo aDispatchTo = eDispatchToParentProcess);
 
   
 
@@ -213,8 +235,11 @@ public:
 
 
 
+
   bool MaybeDispatchKeypressEvents(const WidgetKeyboardEvent& aKeyboardEvent,
-                                   nsEventStatus& aStatus);
+                                   nsEventStatus& aStatus,
+                                   DispatchTo aDispatchTo =
+                                     eDispatchToParentProcess);
 
 private:
   
@@ -273,12 +298,23 @@ private:
 
   void InitEvent(WidgetGUIEvent& aEvent) const;
 
+
   
 
 
   nsresult DispatchEvent(nsIWidget* aWidget,
                          WidgetGUIEvent& aEvent,
                          nsEventStatus& aStatus);
+
+  
+
+
+
+
+  nsresult DispatchInputEvent(nsIWidget* aWidget,
+                              WidgetInputEvent& aEvent,
+                              nsEventStatus& aStatus,
+                              DispatchTo aDispatchTo);
 
   
 
@@ -317,9 +353,12 @@ private:
 
 
 
+
   bool DispatchKeyboardEventInternal(uint32_t aMessage,
                                      const WidgetKeyboardEvent& aKeyboardEvent,
                                      nsEventStatus& aStatus,
+                                     DispatchTo aDispatchTo =
+                                       eDispatchToParentProcess,
                                      uint32_t aIndexOfKeypress = 0);
 };
 
