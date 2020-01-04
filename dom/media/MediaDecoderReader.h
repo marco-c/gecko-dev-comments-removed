@@ -94,6 +94,14 @@ public:
   
   virtual nsresult Init() { return NS_OK; }
 
+  RefPtr<MetadataPromise> AsyncReadMetadata()
+  {
+    return OnTaskQueue() ?
+           AsyncReadMetadataInternal() :
+           InvokeAsync(OwnerThread(), this, __func__,
+                       &MediaDecoderReader::AsyncReadMetadataInternal);
+  }
+
   
   
   void ReleaseMediaResources()
@@ -176,11 +184,6 @@ public:
 
   virtual bool HasAudio() = 0;
   virtual bool HasVideo() = 0;
-
-  
-  
-  
-  virtual RefPtr<MetadataPromise> AsyncReadMetadata();
 
   
   
