@@ -16,6 +16,9 @@ const PREF_BOOL = 128;
 const NS_PREFBRANCH_PREFCHANGE_TOPIC_ID = "nsPref:changed";
 
 
+const PREFIX = "Services.prefs:";
+
+
 
 
 
@@ -101,7 +104,7 @@ Preference.prototype = {
       userValue: this.userValue,
     };
 
-    localStorage.setItem(this.fullName, JSON.stringify(store));
+    localStorage.setItem(PREFIX + this.fullName, JSON.stringify(store));
     this.branch._notify(this.name);
   },
 
@@ -446,9 +449,12 @@ PrefBranch.prototype = {
     
     for (let i = 0; i < localStorage.length; ++i) {
       let keyName = localStorage.key(i);
-      let {userValue, hasUserValue, defaultValue} =
-          JSON.parse(localStorage.getItem(keyName));
-      this._findOrCreatePref(keyName, userValue, hasUserValue, defaultValue);
+      if (keyName.startsWith(PREFIX)) {
+        let {userValue, hasUserValue, defaultValue} =
+            JSON.parse(localStorage.getItem(keyName));
+        this._findOrCreatePref(keyName.slice(PREFIX.length), userValue,
+                               hasUserValue, defaultValue);
+      }
     }
 
     this._onStorageChange = this._onStorageChange.bind(this);
