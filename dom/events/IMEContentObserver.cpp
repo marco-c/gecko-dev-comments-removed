@@ -224,10 +224,10 @@ IMEContentObserver::IMEContentObserver()
   , mSendingNotification(NOTIFY_IME_OF_NOTHING)
   , mIsObserving(false)
   , mIMEHasFocus(false)
-  , mIsFocusEventPending(false)
-  , mIsTextChangeEventPending(false)
-  , mIsSelectionChangeEventPending(false)
-  , mIsPositionChangeEventPending(false)
+  , mNeedsToNotifyIMEOfFocusSet(false)
+  , mNeedsToNotifyIMEOfTextChange(false)
+  , mNeedsToNotifyIMEOfSelectionChange(false)
+  , mNeedsToNotifyIMEOfPositionChange(false)
   , mIsFlushingPendingNotifications(false)
   , mIsHandlingQueryContentEvent(false)
 {
@@ -1033,7 +1033,7 @@ IMEContentObserver::PostFocusSetNotification()
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("IMECO: 0x%p IMEContentObserver::PostFocusSetNotification()", this));
 
-  mIsFocusEventPending = true;
+  mNeedsToNotifyIMEOfFocusSet = true;
 }
 
 void
@@ -1046,7 +1046,7 @@ IMEContentObserver::PostTextChangeNotification()
 
   MOZ_ASSERT(mTextChangeData.IsValid(),
              "mTextChangeData must have text change data");
-  mIsTextChangeEventPending = true;
+  mNeedsToNotifyIMEOfTextChange = true;
 }
 
 void
@@ -1058,7 +1058,7 @@ IMEContentObserver::PostSelectionChangeNotification()
      this, ToChar(mSelectionData.mCausedByComposition),
      ToChar(mSelectionData.mCausedBySelectionEvent)));
 
-  mIsSelectionChangeEventPending = true;
+  mNeedsToNotifyIMEOfSelectionChange = true;
 }
 
 void
@@ -1164,7 +1164,7 @@ IMEContentObserver::PostPositionChangeNotification()
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("IMECO: 0x%p IMEContentObserver::PostPositionChangeNotification()", this));
 
-  mIsPositionChangeEventPending = true;
+  mNeedsToNotifyIMEOfPositionChange = true;
 }
 
 bool
@@ -1335,8 +1335,8 @@ IMEContentObserver::IMENotificationSender::Run()
   
   
 
-  if (mIMEContentObserver->mIsFocusEventPending) {
-    mIMEContentObserver->mIsFocusEventPending = false;
+  if (mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet) {
+    mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet = false;
     SendFocusSet();
     
     
@@ -1345,19 +1345,19 @@ IMEContentObserver::IMENotificationSender::Run()
     return NS_OK;
   }
 
-  if (mIMEContentObserver->mIsTextChangeEventPending) {
-    mIMEContentObserver->mIsTextChangeEventPending = false;
+  if (mIMEContentObserver->mNeedsToNotifyIMEOfTextChange) {
+    mIMEContentObserver->mNeedsToNotifyIMEOfTextChange = false;
     SendTextChange();
   }
 
   
   
-  if (!mIMEContentObserver->mIsTextChangeEventPending) {
+  if (!mIMEContentObserver->mNeedsToNotifyIMEOfTextChange) {
     
     
     
-    if (mIMEContentObserver->mIsSelectionChangeEventPending) {
-      mIMEContentObserver->mIsSelectionChangeEventPending = false;
+    if (mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange) {
+      mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange = false;
       SendSelectionChange();
     }
   }
@@ -1366,10 +1366,10 @@ IMEContentObserver::IMENotificationSender::Run()
   
   
   
-  if (!mIMEContentObserver->mIsTextChangeEventPending &&
-      !mIMEContentObserver->mIsSelectionChangeEventPending) {
-    if (mIMEContentObserver->mIsPositionChangeEventPending) {
-      mIMEContentObserver->mIsPositionChangeEventPending = false;
+  if (!mIMEContentObserver->mNeedsToNotifyIMEOfTextChange &&
+      !mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange) {
+    if (mIMEContentObserver->mNeedsToNotifyIMEOfPositionChange) {
+      mIMEContentObserver->mNeedsToNotifyIMEOfPositionChange = false;
       SendPositionChange();
     }
   }
