@@ -58,31 +58,32 @@ public:
   
   
   bool mAllowUntrustedEvents : 1;
+  
+  
+  bool mPassive : 1;
 
   EventListenerFlags() :
     mListenerIsJSListener(false),
-    mCapture(false), mInSystemGroup(false), mAllowUntrustedEvents(false)
+    mCapture(false), mInSystemGroup(false), mAllowUntrustedEvents(false),
+    mPassive(false)
   {
   }
 
-  bool Equals(const EventListenerFlags& aOther) const
+  bool EqualsForAddition(const EventListenerFlags& aOther) const
   {
     return (mCapture == aOther.mCapture &&
             mInSystemGroup == aOther.mInSystemGroup &&
             mListenerIsJSListener == aOther.mListenerIsJSListener &&
             mAllowUntrustedEvents == aOther.mAllowUntrustedEvents);
+            
   }
 
-  bool EqualsIgnoringTrustness(const EventListenerFlags& aOther) const
+  bool EqualsForRemoval(const EventListenerFlags& aOther) const
   {
     return (mCapture == aOther.mCapture &&
             mInSystemGroup == aOther.mInSystemGroup &&
             mListenerIsJSListener == aOther.mListenerIsJSListener);
-  }
-
-  bool operator==(const EventListenerFlags& aOther) const
-  {
-    return Equals(aOther);
+            
   }
 };
 
