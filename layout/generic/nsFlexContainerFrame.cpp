@@ -554,6 +554,9 @@ public:
     return mFlexShrink * mFlexBaseSize;
   }
 
+  const nsSize& IntrinsicRatio() const { return mIntrinsicRatio; }
+  bool HasIntrinsicRatio() const { return mIntrinsicRatio != nsSize(); }
+
   
   
   const nsMargin& GetMargin() const { return mMargin; }
@@ -749,6 +752,8 @@ protected:
   
   const float mFlexGrow;
   const float mFlexShrink;
+
+  const nsSize mIntrinsicRatio;
 
   const nsMargin mBorderPadding;
   nsMargin mMargin; 
@@ -1393,7 +1398,6 @@ MainSizeFromAspectRatio(nscoord aCrossSize,
 static nscoord
 PartiallyResolveAutoMinSize(const FlexItem& aFlexItem,
                             const nsHTMLReflowState& aItemReflowState,
-                            const nsSize& aIntrinsicRatio,
                             const FlexboxAxisTracker& aAxisTracker)
 {
   MOZ_ASSERT(aFlexItem.NeedsMinSizeAutoResolution(),
@@ -1430,7 +1434,7 @@ PartiallyResolveAutoMinSize(const FlexItem& aFlexItem,
   
   
   
-  if (aAxisTracker.GetCrossComponent(aIntrinsicRatio) != 0) {
+  if (aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) != 0) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = true;
     nscoord crossSizeToUseWithRatio =
@@ -1439,7 +1443,7 @@ PartiallyResolveAutoMinSize(const FlexItem& aFlexItem,
                               aAxisTracker);
     nscoord minMainSizeFromRatio =
       MainSizeFromAspectRatio(crossSizeToUseWithRatio,
-                              aIntrinsicRatio, aAxisTracker);
+                              aFlexItem.IntrinsicRatio(), aAxisTracker);
     minMainSize = std::min(minMainSize, minMainSizeFromRatio);
   }
 
@@ -1453,7 +1457,6 @@ PartiallyResolveAutoMinSize(const FlexItem& aFlexItem,
 static bool
 ResolveAutoFlexBasisFromRatio(FlexItem& aFlexItem,
                               const nsHTMLReflowState& aItemReflowState,
-                              const nsSize& aIntrinsicRatio,
                               const FlexboxAxisTracker& aAxisTracker)
 {
   MOZ_ASSERT(NS_AUTOHEIGHT == aFlexItem.GetFlexBaseSize(),
@@ -1464,7 +1467,7 @@ ResolveAutoFlexBasisFromRatio(FlexItem& aFlexItem,
   
   
   
-  if (aAxisTracker.GetCrossComponent(aIntrinsicRatio) != 0) {
+  if (aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) != 0) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = false;
     nscoord crossSizeToUseWithRatio =
@@ -1475,7 +1478,7 @@ ResolveAutoFlexBasisFromRatio(FlexItem& aFlexItem,
       
       nscoord mainSizeFromRatio =
         MainSizeFromAspectRatio(crossSizeToUseWithRatio,
-                                aIntrinsicRatio, aAxisTracker);
+                                aFlexItem.IntrinsicRatio(), aAxisTracker);
       aFlexItem.SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
       return true;
     }
@@ -1533,19 +1536,15 @@ nsFlexContainerFrame::
     }
   }
 
-  
-  
-  const nsSize ratio = aFlexItem.Frame()->GetIntrinsicRatio();
-
   nscoord resolvedMinSize; 
   bool minSizeNeedsToMeasureContent = false; 
   if (isMainMinSizeAuto) {
     
     
     resolvedMinSize = PartiallyResolveAutoMinSize(aFlexItem, aItemReflowState,
-                                                  ratio, aAxisTracker);
+                                                  aAxisTracker);
     if (resolvedMinSize > 0 &&
-        aAxisTracker.GetCrossComponent(ratio) == 0) {
+        aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) == 0) {
       
       
       
@@ -1558,7 +1557,7 @@ nsFlexContainerFrame::
   bool flexBasisNeedsToMeasureContent = false; 
   if (isMainSizeAuto) {
     if (!ResolveAutoFlexBasisFromRatio(aFlexItem, aItemReflowState,
-                                       ratio, aAxisTracker)) {
+                                       aAxisTracker)) {
       flexBasisNeedsToMeasureContent = true;
     }
   }
@@ -1678,6 +1677,7 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
   : mFrame(aFlexItemReflowState.frame),
     mFlexGrow(aFlexGrow),
     mFlexShrink(aFlexShrink),
+    mIntrinsicRatio(mFrame->GetIntrinsicRatio()),
     mBorderPadding(aFlexItemReflowState.ComputedPhysicalBorderPadding()),
     mMargin(aFlexItemReflowState.ComputedPhysicalMargin()),
     mMainMinSize(aMainMinSize),
@@ -1770,6 +1770,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
   : mFrame(aChildFrame),
     mFlexGrow(0.0f),
     mFlexShrink(0.0f),
+    mIntrinsicRatio(),
     
     
     mFlexBaseSize(0),
