@@ -50,7 +50,7 @@ public:
 
 
 
-  int64_t GetPositionInFrames(int64_t frames) const;
+  int64_t GetPositionInFrames(int64_t aFrames) const;
 
   
 
