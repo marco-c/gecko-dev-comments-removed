@@ -1521,6 +1521,21 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
     return mRenderingMode;
   }
 
+  
+  
+  gfx::Rect canvasRect(0, 0, mWidth, mHeight);
+  bool canDiscardContent = aCoveredRect &&
+    CurrentState().transform.TransformBounds(*aCoveredRect).Contains(canvasRect);
+
+  
+  
+  for (uint32_t i = 0; i < mStyleStack.Length(); i++) {
+    if (!mStyleStack[i].clipsPushed.IsEmpty()) {
+      canDiscardContent = false;
+      break;
+    }
+  }
+
   ScheduleStableStateCallback();
 
   
@@ -1528,12 +1543,9 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
   RefPtr<PersistentBufferProvider> oldBufferProvider = mBufferProvider;
 
   if (mBufferProvider && mode == mRenderingMode) {
-    gfx::Rect rect(0, 0, mWidth, mHeight);
-    if (aCoveredRect && CurrentState().transform.TransformBounds(*aCoveredRect).Contains(rect)) {
-      mTarget = mBufferProvider->BorrowDrawTarget(IntRect());
-    } else {
-      mTarget = mBufferProvider->BorrowDrawTarget(IntRect(0, 0, mWidth, mHeight));
-    }
+    auto persistedRect = canDiscardContent ? IntRect()
+                                           : IntRect(0, 0, mWidth, mHeight);
+    mTarget = mBufferProvider->BorrowDrawTarget(persistedRect);
 
     mode = mRenderingMode;
   }
@@ -1614,7 +1626,11 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
         JS_updateMallocCounter(context, mWidth * mHeight * 4);
       }
 
-      mTarget->ClearRect(gfx::Rect(Point(0, 0), Size(mWidth, mHeight)));
+      
+      bool isOpaqueSkia = mOpaque && mTarget->GetBackendType() == BackendType::SKIA;
+      if (!canDiscardContent || isOpaqueSkia) {
+        mTarget->ClearRect(canvasRect);
+      }
 
       
       
@@ -1633,7 +1649,7 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
       
       
       
-      mTarget->PushClipRect(gfx::Rect(Point(0, 0), Size(mWidth, mHeight)));
+      mTarget->PushClipRect(canvasRect);
     }
 
     
