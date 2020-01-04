@@ -4690,7 +4690,7 @@ nsHTMLEditRules::AlignInnerBlocks(nsINode& aNode, const nsAString* alignType)
   
   nsTArray<OwningNonNull<nsINode>> nodeArray;
   nsTableCellAndListItemFunctor functor;
-  nsDOMIterator iter(aNode);
+  DOMIterator iter(aNode);
   iter.AppendList(functor, nodeArray);
 
   
@@ -5955,7 +5955,7 @@ nsHTMLEditRules::BustUpInlinesAtBRs(nsIContent& aNode,
   
   nsTArray<OwningNonNull<nsINode>> arrayOfBreaks;
   nsBRNodeFunctor functor;
-  nsDOMIterator iter(aNode);
+  DOMIterator iter(aNode);
   iter.AppendList(functor, arrayOfBreaks);
 
   
@@ -7111,7 +7111,7 @@ nsHTMLEditRules::AdjustSpecialBreaks()
   
   nsTArray<OwningNonNull<nsINode>> nodeArray;
   nsEmptyEditableFunctor functor(mHTMLEditor);
-  nsDOMIterator iter;
+  DOMIterator iter;
   nsresult res = iter.Init(*mDocChangeRange);
   NS_ENSURE_SUCCESS(res, );
   iter.AppendList(functor, nodeArray);
