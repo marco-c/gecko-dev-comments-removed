@@ -135,6 +135,7 @@
 namespace mozilla {
 namespace dom {
 
+static bool sDoNotTrackEnabled = false;
 static bool sVibratorEnabled   = false;
 static uint32_t sMaxVibrateMS  = 0;
 static uint32_t sMaxVibrateListLen = 0;
@@ -190,6 +191,9 @@ GetPermission(nsIPrincipal* aPrincipal, const char* aType)
 void
 Navigator::Init()
 {
+  Preferences::AddBoolVarCache(&sDoNotTrackEnabled,
+                               "privacy.donottrackheader.enabled",
+                               false);
   Preferences::AddBoolVarCache(&sVibratorEnabled,
                                "dom.vibrator.enabled", true);
   Preferences::AddUintVarCache(&sMaxVibrateMS,
@@ -200,6 +204,7 @@ Navigator::Init()
 
 Navigator::Navigator(nsPIDOMWindowInner* aWindow)
   : mWindow(aWindow)
+  , mBatteryTelemetryReported(false)
 {
   MOZ_ASSERT(aWindow->IsInnerWindow(), "Navigator must get an inner window!");
 }
@@ -303,6 +308,7 @@ Navigator::Invalidate()
   }
 
   mBatteryPromise = nullptr;
+  mBatteryTelemetryReported = false;
 
 #ifdef MOZ_B2G_FM
   if (mFMRadio) {
@@ -757,13 +763,7 @@ Navigator::GetBuildID(nsAString& aBuildID)
 NS_IMETHODIMP
 Navigator::GetDoNotTrack(nsAString &aResult)
 {
-  bool doNotTrack = nsContentUtils::DoNotTrackEnabled();
-  if (!doNotTrack) {
-    nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(mWindow);
-    doNotTrack = loadContext && loadContext->UseTrackingProtection();
-  }
-
-  if (doNotTrack) {
+  if (sDoNotTrackEnabled) {
     aResult.AssignLiteral("1");
   } else {
     aResult.AssignLiteral("unspecified");
@@ -1588,6 +1588,10 @@ Navigator::GetBattery(ErrorResult& aRv)
     return nullptr;
   }
   mBatteryPromise = batteryPromise;
+
+  
+  
+  Telemetry::Accumulate(Telemetry::BATTERY_STATUS_COUNT, 1);
 
   if (!mBatteryManager) {
     mBatteryManager = new battery::BatteryManager(mWindow);
