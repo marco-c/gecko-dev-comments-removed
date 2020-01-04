@@ -79,7 +79,6 @@ import org.mozilla.gecko.tabs.TabsPanel;
 import org.mozilla.gecko.telemetry.TelemetryUploadService;
 import org.mozilla.gecko.telemetry.TelemetryCorePingUploadDelegate;
 import org.mozilla.gecko.telemetry.measurements.SearchCountMeasurements;
-import org.mozilla.gecko.telemetry.measurements.SessionMeasurements;
 import org.mozilla.gecko.toolbar.AutocompleteHandler;
 import org.mozilla.gecko.toolbar.BrowserToolbar;
 import org.mozilla.gecko.toolbar.BrowserToolbar.TabEditingState;
@@ -315,8 +314,6 @@ public class BrowserApp extends GeckoApp
 
     @NonNull
     private SearchEngineManager mSearchEngineManager; 
-
-    private final SessionMeasurements mSessionMeasurements = new SessionMeasurements();
 
     private boolean mHasResumed;
 
@@ -1001,7 +998,6 @@ public class BrowserApp extends GeckoApp
 
         
         AdjustConstants.getAdjustHelper().onResume();
-        mSessionMeasurements.recordSessionStart();
 
         if (!mHasResumed) {
             EventDispatcher.getInstance().unregisterGeckoThreadListener((GeckoEventListener) this,
@@ -1025,10 +1021,6 @@ public class BrowserApp extends GeckoApp
 
         
         AdjustConstants.getAdjustHelper().onPause();
-
-        
-        
-        mSessionMeasurements.recordSessionEnd(this);
 
         if (mHasResumed) {
             
@@ -3913,10 +3905,6 @@ public class BrowserApp extends GeckoApp
 
     public SearchEngineManager getSearchEngineManager() {
         return mSearchEngineManager;
-    }
-
-    public SessionMeasurements getSessionMeasurementDelegate() {
-        return mSessionMeasurements;
     }
 
     
