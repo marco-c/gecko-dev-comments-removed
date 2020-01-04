@@ -507,7 +507,8 @@ var gUnseekableTests = [
 ];
 
 var androidVersion = -1; 
-if (manifestNavigator().userAgent.indexOf("Mobile") != -1) {
+if (manifestNavigator().userAgent.indexOf("Mobile") != -1 ||
+    manifestNavigator().userAgent.indexOf("Tablet") != -1) {
   
   
   var versionString = manifestNavigator().userAgent.indexOf("Android") != -1 ?
