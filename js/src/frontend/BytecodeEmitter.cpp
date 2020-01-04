@@ -1901,8 +1901,17 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
 
 
-    if (bceOfDef != this && bceOfDef->sc->isGlobalContext())
+
+
+
+
+
+    if (dn->kind() == Definition::LET || dn->kind() == Definition::CONSTANT) {
+        if (IsStaticGlobalLexicalScope(blockScopeOfDef(dn)))
+            return true;
+    } else if (bceOfDef != this && bceOfDef->sc->isGlobalContext()) {
         return true;
+    }
 
     if (!pn->pn_scopecoord.set(parser->tokenStream, hops, slot))
         return false;
