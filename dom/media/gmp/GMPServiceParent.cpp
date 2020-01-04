@@ -769,10 +769,10 @@ GeckoMediaPluginServiceParent::LoadFromEnvironment()
     
     int32_t next = allpaths.FindChar(XPCOM_ENV_PATH_SEPARATOR[0], pos);
     if (next == -1) {
-      promises.AppendElement(AddOnGMPThread(nsDependentSubstring(allpaths, pos)));
+      promises.AppendElement(AddOnGMPThread(nsString(Substring(allpaths, pos))));
       break;
     } else {
-      promises.AppendElement(AddOnGMPThread(nsDependentSubstring(allpaths, pos, next - pos)));
+      promises.AppendElement(AddOnGMPThread(nsString(Substring(allpaths, pos, next - pos))));
       pos = next + 1;
     }
   }
@@ -806,13 +806,9 @@ private:
 NS_IMETHODIMP
 GeckoMediaPluginServiceParent::PathRunnable::Run()
 {
-  if (mOperation == ADD) {
-    mService->AddOnGMPThread(mPath);
-  } else {
-    mService->RemoveOnGMPThread(mPath,
-                                mOperation == REMOVE_AND_DELETE_FROM_DISK,
-                                mDefer);
-  }
+  mService->RemoveOnGMPThread(mPath,
+                              mOperation == REMOVE_AND_DELETE_FROM_DISK,
+                              mDefer);
 #ifndef MOZ_WIDGET_GONK 
   
   
@@ -826,12 +822,41 @@ GeckoMediaPluginServiceParent::PathRunnable::Run()
   return NS_OK;
 }
 
+RefPtr<GenericPromise>
+GeckoMediaPluginServiceParent::AsyncAddPluginDirectory(const nsAString& aDirectory)
+{
+  RefPtr<AbstractThread> thread(GetAbstractGMPThread());
+  nsString dir(aDirectory);
+  return InvokeAsync(thread, this, __func__, &GeckoMediaPluginServiceParent::AddOnGMPThread, dir)
+    ->Then(AbstractThread::MainThread(), __func__,
+      [dir]() -> void {
+        LOGD(("GeckoMediaPluginServiceParent::AsyncAddPluginDirectory %s succeeded",
+              NS_ConvertUTF16toUTF8(dir).get()));
+        MOZ_ASSERT(NS_IsMainThread());
+        
+        
+        nsCOMPtr<nsIObserverService> obsService = mozilla::services::GetObserverService();
+        MOZ_ASSERT(obsService);
+        if (obsService) {
+          obsService->NotifyObservers(nullptr, "gmp-changed", nullptr);
+        }
+        
+        
+        GMPDecoderModule::UpdateUsableCodecs();
+      },
+      [dir]() -> void {
+        LOGD(("GeckoMediaPluginServiceParent::AsyncAddPluginDirectory %s failed",
+              NS_ConvertUTF16toUTF8(dir).get()));
+      })
+    ->CompletionPromise();
+}
+
 NS_IMETHODIMP
 GeckoMediaPluginServiceParent::AddPluginDirectory(const nsAString& aDirectory)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  return GMPDispatch(new PathRunnable(this, aDirectory,
-                                      PathRunnable::EOperation::ADD));
+  RefPtr<GenericPromise> p = AsyncAddPluginDirectory(aDirectory);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1032,7 +1057,7 @@ GeckoMediaPluginServiceParent::ClonePlugin(const GMPParent* aOriginal)
 }
 
 RefPtr<GenericPromise>
-GeckoMediaPluginServiceParent::AddOnGMPThread(const nsAString& aDirectory)
+GeckoMediaPluginServiceParent::AddOnGMPThread(nsString aDirectory)
 {
   MOZ_ASSERT(NS_GetCurrentThread() == mGMPThread);
   LOGD(("%s::%s: %s", __CLASS__, __FUNCTION__, NS_LossyConvertUTF16toASCII(aDirectory).get()));
