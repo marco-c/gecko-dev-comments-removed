@@ -237,6 +237,8 @@ public:
 
 
 
+
+
   DrawResult
   DrawBorderImageComponent(nsPresContext*       aPresContext,
                            nsRenderingContext&  aRenderingContext,
@@ -247,7 +249,8 @@ public:
                            uint8_t              aVFill,
                            const nsSize&        aUnitSize,
                            uint8_t              aIndex,
-                           const mozilla::Maybe<nsSize>& aSVGViewportSize);
+                           const mozilla::Maybe<nsSize>& aSVGViewportSize,
+                           const bool           aHasIntrinsicRatio);
 
   bool IsRasterImage();
   bool IsAnimatedImage();
@@ -259,6 +262,8 @@ public:
   DrawResult PrepareResult() const { return mPrepareResult; }
   void SetExtendMode(mozilla::gfx::ExtendMode aMode) { mExtendMode = aMode; }
   void SetMaskOp(uint8_t aMaskOp) { mMaskOp = aMaskOp; }
+  void PurgeCacheForViewportChange(const mozilla::Maybe<nsSize>& aSVGViewportSize,
+                                   const bool aHasRatio);
 
 private:
   

@@ -1913,6 +1913,19 @@ nsStyleGradient::HasCalc()
 
 
 void
+CachedBorderImageData::SetCachedSVGViewportSize(
+  const mozilla::Maybe<nsSize>& aSVGViewportSize)
+{
+  mCachedSVGViewportSize = aSVGViewportSize;
+}
+
+const mozilla::Maybe<nsSize>&
+CachedBorderImageData::GetCachedSVGViewportSize()
+{
+  return mCachedSVGViewportSize;
+}
+
+void
 CachedBorderImageData::PurgeCachedImages()
 {
   mSubImages.Clear();
@@ -2293,6 +2306,26 @@ nsStyleImage::operator==(const nsStyleImage& aOther) const
   }
 
   return true;
+}
+
+void
+nsStyleImage::PurgeCacheForViewportChange(
+  const mozilla::Maybe<nsSize>& aSVGViewportSize,
+  const bool aHasIntrinsicRatio) const
+{
+  EnsureCachedBIData();
+
+  
+  
+  
+  
+  
+  
+  if (aSVGViewportSize != mCachedBIData->GetCachedSVGViewportSize() &&
+      !aHasIntrinsicRatio) {
+    mCachedBIData->PurgeCachedImages();
+    mCachedBIData->SetCachedSVGViewportSize(aSVGViewportSize);
+  }
 }
 
 
