@@ -184,6 +184,7 @@ class TypeCache(object):
         self.mod_JSObject = None
         self.mod_JSString = None
         self.mod_jsval = None
+        self.mod_ExecutableAllocator = None
 
 
 

@@ -28,11 +28,26 @@ expected: %r
 actual:   %r""" % (expected, actual))
 
 
+def assert_match(actual, expected):
+    if re.match(expected, actual, re.MULTILINE) == None:
+        raise AssertionError("""Unexpected result:
+expected pattern: %r
+actual:           %r""" % (expected, actual))
+
+
 
 def assert_pretty(value, form):
     if isinstance(value, str):
         value = gdb.parse_and_eval(value)
     assert_eq(str(value), form)
+
+
+
+
+def assert_regexp_pretty(value, form):
+    if isinstance(value, str):
+        value = gdb.parse_and_eval(value)
+    assert_match(str(value), form)
 
 
 
