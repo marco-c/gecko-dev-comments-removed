@@ -858,6 +858,8 @@ AccessibleCaretManager::SelectMoreIfPhoneNumber() const
 
   SetSelectionDirection(eDirPrevious);
   ExtendPhoneNumberSelection(NS_LITERAL_STRING("backward"));
+
+  SetSelectionDirection(eDirNext);
 }
 
 void
@@ -869,6 +871,11 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
   Selection* selection = GetSelection();
 
   while (selection) {
+    
+    
+    RefPtr<nsRange> oldAnchorFocusRange =
+      selection->GetAnchorFocusRange()->CloneRange();
+
     
     nsINode* focusNode = selection->GetFocusNode();
     uint32_t focusOffset = selection->FocusOffset();
@@ -890,8 +897,7 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
     if (!nsContentUtils::IsPatternMatching(selectedText, phoneRegex, doc)) {
       
       
-      selection->Collapse(selection->GetAnchorNode(), selection->AnchorOffset());
-      selection->Extend(focusNode, focusOffset);
+      selection->SetAnchorFocusToRange(oldAnchorFocusRange);
       return;
     }
   }
