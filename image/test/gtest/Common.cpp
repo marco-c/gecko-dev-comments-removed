@@ -550,5 +550,15 @@ ImageTestCase DownscaledIconTestCase()
                        IntSize(20, 20), TEST_CASE_IS_TRANSPARENT);
 }
 
+ImageTestCase DownscaledTransparentICOWithANDMaskTestCase()
+{
+  
+  
+  
+  return ImageTestCase("transparent-ico-with-and-mask.ico", "image/x-icon",
+                       IntSize(32, 32), IntSize(20, 20),
+                       TEST_CASE_IS_TRANSPARENT | TEST_CASE_IGNORE_OUTPUT);
+}
+
 } 
 } 
