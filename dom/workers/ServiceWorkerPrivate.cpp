@@ -390,8 +390,7 @@ class LifeCycleEventWatcher final : public PromiseNativeHandler,
     
     
     
-    JSContext* cx = mWorkerPrivate->GetJSContext();
-    ReportResult(cx, false);
+    ReportResult(false);
   }
 
 public:
