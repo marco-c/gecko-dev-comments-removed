@@ -17,6 +17,11 @@
 #include <linux/kernel.h>
 #include <unistd.h>
 
+#ifndef ANDROID_VERSION
+#include <android/api-level.h>
+#define ANDROID_VERSION __ANDROID_API__
+#endif
+
 
 
 __attribute__((unused))
