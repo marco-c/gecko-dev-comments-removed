@@ -166,6 +166,8 @@
 
 
 
+
+
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -315,10 +317,6 @@ class BarrieredBase : public BarrieredBaseMixins<T>
     explicit BarrieredBase(T v) : value(v) {}
 
   public:
-    void init(T v) {
-        this->value = v;
-    }
-
     DECLARE_POINTER_COMPARISON_OPS(T);
     DECLARE_POINTER_CONSTREF_OPS(T);
 
@@ -338,6 +336,7 @@ class BarrieredBase : public BarrieredBaseMixins<T>
 
   protected:
     void pre() { InternalGCMethods<T>::preBarrier(value); }
+    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&value, prev, next); }
 };
 
 template <>
@@ -359,9 +358,12 @@ class PreBarriered : public BarrieredBase<T>
 
 
     MOZ_IMPLICIT PreBarriered(T v) : BarrieredBase<T>(v) {}
-    explicit PreBarriered(const PreBarriered<T>& v)
-      : BarrieredBase<T>(v.value) {}
+    explicit PreBarriered(const PreBarriered<T>& v) : BarrieredBase<T>(v.value) {}
     ~PreBarriered() { this->pre(); }
+
+    void init(T v) {
+        this->value = v;
+    }
 
     
     void clear() {
@@ -397,8 +399,12 @@ class HeapPtr : public BarrieredBase<T>
 {
   public:
     HeapPtr() : BarrieredBase<T>(GCMethods<T>::initial()) {}
-    explicit HeapPtr(T v) : BarrieredBase<T>(v) { post(GCMethods<T>::initial(), v); }
-    explicit HeapPtr(const HeapPtr<T>& v) : BarrieredBase<T>(v) { post(GCMethods<T>::initial(), v); }
+    explicit HeapPtr(T v) : BarrieredBase<T>(v) {
+        this->post(GCMethods<T>::initial(), v);
+    }
+    explicit HeapPtr(const HeapPtr<T>& v) : BarrieredBase<T>(v) {
+        this->post(GCMethods<T>::initial(), v);
+    }
 #ifdef DEBUG
     ~HeapPtr() {
         
@@ -409,20 +415,17 @@ class HeapPtr : public BarrieredBase<T>
 
     void init(T v) {
         this->value = v;
-        post(GCMethods<T>::initial(), v);
+        this->post(GCMethods<T>::initial(), v);
     }
 
     DECLARE_POINTER_ASSIGN_OPS(HeapPtr, T);
-
-  protected:
-    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&this->value, prev, next); }
 
   private:
     void set(const T& v) {
         this->pre();
         T tmp = this->value;
         this->value = v;
-        post(tmp, this->value);
+        this->post(tmp, this->value);
     }
 
     
@@ -443,47 +446,13 @@ class HeapPtr : public BarrieredBase<T>
 
 
 
-
-
-
-
-
-template <typename T>
-class ImmutableTenuredPtr
-{
-    T value;
-
-  public:
-    operator T() const { return value; }
-    T operator->() const { return value; }
-
-    operator Handle<T>() const {
-        return Handle<T>::fromMarkedLocation(&value);
-    }
-
-    void init(T ptr) {
-        MOZ_ASSERT(ptr->isTenured());
-        value = ptr;
-    }
-
-    T get() const { return value; }
-    const T* address() { return &value; }
-};
-
-
-
-
-
-
-
-
 template <class T>
 class RelocatablePtr : public BarrieredBase<T>
 {
   public:
     RelocatablePtr() : BarrieredBase<T>(GCMethods<T>::initial()) {}
     explicit RelocatablePtr(T v) : BarrieredBase<T>(v) {
-        post(GCMethods<T>::initial(), this->value);
+        this->post(GCMethods<T>::initial(), this->value);
     }
 
     
@@ -493,12 +462,17 @@ class RelocatablePtr : public BarrieredBase<T>
 
 
     RelocatablePtr(const RelocatablePtr<T>& v) : BarrieredBase<T>(v) {
-        post(GCMethods<T>::initial(), this->value);
+        this->post(GCMethods<T>::initial(), this->value);
     }
 
     ~RelocatablePtr() {
         this->pre();
-        post(this->value, GCMethods<T>::initial());
+        this->post(this->value, GCMethods<T>::initial());
+    }
+
+    void init(T v) {
+        this->value = v;
+        this->post(GCMethods<T>::initial(), this->value);
     }
 
     DECLARE_POINTER_ASSIGN_OPS(RelocatablePtr, T);
@@ -519,61 +493,9 @@ class RelocatablePtr : public BarrieredBase<T>
     void postBarrieredSet(const T& v) {
         T tmp = this->value;
         this->value = v;
-        post(tmp, this->value);
-    }
-
-    void post(T prev, T next) {
-        InternalGCMethods<T>::postBarrier(&this->value, prev, next);
+        this->post(tmp, this->value);
     }
 };
-
-
-
-
-
-template <class T1, class T2>
-static inline void
-BarrieredSetPair(Zone* zone,
-                 RelocatablePtr<T1*>& v1, T1* val1,
-                 RelocatablePtr<T2*>& v2, T2* val2)
-{
-    if (T1::needWriteBarrierPre(zone)) {
-        v1.pre();
-        v2.pre();
-    }
-    v1.postBarrieredSet(val1);
-    v2.postBarrieredSet(val2);
-}
-
-
-template <class T>
-struct HeapPtrHasher
-{
-    typedef HeapPtr<T> Key;
-    typedef T Lookup;
-
-    static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-    static bool match(const Key& k, Lookup l) { return k.get() == l; }
-    static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
-};
-
-
-template <class T>
-struct DefaultHasher<HeapPtr<T>> : HeapPtrHasher<T> { };
-
-template <class T>
-struct PreBarrieredHasher
-{
-    typedef PreBarriered<T> Key;
-    typedef T Lookup;
-
-    static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-    static bool match(const Key& k, Lookup l) { return k.get() == l; }
-    static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
-};
-
-template <class T>
-struct DefaultHasher<PreBarriered<T>> : PreBarrieredHasher<T> { };
 
 
 
@@ -616,6 +538,190 @@ class ReadBarriered
 
     void set(T v) { value = v; }
 };
+
+
+
+
+class HeapSlot : public BarrieredBase<Value>
+{
+  public:
+    enum Kind {
+        Slot = 0,
+        Element = 1
+    };
+
+    explicit HeapSlot() = delete;
+
+    explicit HeapSlot(NativeObject* obj, Kind kind, uint32_t slot, const Value& v)
+      : BarrieredBase<Value>(v)
+    {
+        post(obj, kind, slot, v);
+    }
+
+    explicit HeapSlot(NativeObject* obj, Kind kind, uint32_t slot, const HeapSlot& s)
+      : BarrieredBase<Value>(s.value)
+    {
+        post(obj, kind, slot, s);
+    }
+
+    ~HeapSlot() {
+        pre();
+    }
+
+    void init(NativeObject* owner, Kind kind, uint32_t slot, const Value& v) {
+        value = v;
+        post(owner, kind, slot, v);
+    }
+
+#ifdef DEBUG
+    bool preconditionForSet(NativeObject* owner, Kind kind, uint32_t slot);
+    bool preconditionForWriteBarrierPost(NativeObject* obj, Kind kind, uint32_t slot, Value target) const;
+#endif
+
+    void set(NativeObject* owner, Kind kind, uint32_t slot, const Value& v) {
+        MOZ_ASSERT(preconditionForSet(owner, kind, slot));
+        pre();
+        value = v;
+        post(owner, kind, slot, v);
+    }
+
+    
+    static void writeBarrierPost(NativeObject* owner, Kind kind, uint32_t slot, const Value& target) {
+        reinterpret_cast<HeapSlot*>(const_cast<Value*>(&target))->post(owner, kind, slot, target);
+    }
+
+    Value* unsafeGet() { return &value; }
+
+  private:
+    void post(NativeObject* owner, Kind kind, uint32_t slot, const Value& target) {
+        MOZ_ASSERT(preconditionForWriteBarrierPost(owner, kind, slot, target));
+        if (this->value.isObject()) {
+            gc::Cell* cell = reinterpret_cast<gc::Cell*>(&this->value.toObject());
+            if (cell->storeBuffer())
+                cell->storeBuffer()->putSlotFromAnyThread(owner, kind, slot, 1);
+        }
+    }
+};
+
+class HeapSlotArray
+{
+    HeapSlot* array;
+
+    
+    
+#ifdef DEBUG
+    bool allowWrite_;
+#endif
+
+  public:
+    explicit HeapSlotArray(HeapSlot* array, bool allowWrite)
+      : array(array)
+#ifdef DEBUG
+      , allowWrite_(allowWrite)
+#endif
+    {}
+
+    operator const Value*() const {
+        JS_STATIC_ASSERT(sizeof(HeapPtr<Value>) == sizeof(Value));
+        JS_STATIC_ASSERT(sizeof(HeapSlot) == sizeof(Value));
+        return reinterpret_cast<const Value*>(array);
+    }
+    operator HeapSlot*() const { MOZ_ASSERT(allowWrite()); return array; }
+
+    HeapSlotArray operator +(int offset) const { return HeapSlotArray(array + offset, allowWrite()); }
+    HeapSlotArray operator +(uint32_t offset) const { return HeapSlotArray(array + offset, allowWrite()); }
+
+  private:
+    bool allowWrite() const {
+#ifdef DEBUG
+        return allowWrite_;
+#else
+        return true;
+#endif
+    }
+};
+
+
+
+
+
+template <class T1, class T2>
+static inline void
+BarrieredSetPair(Zone* zone,
+                 RelocatablePtr<T1*>& v1, T1* val1,
+                 RelocatablePtr<T2*>& v2, T2* val2)
+{
+    if (T1::needWriteBarrierPre(zone)) {
+        v1.pre();
+        v2.pre();
+    }
+    v1.postBarrieredSet(val1);
+    v2.postBarrieredSet(val2);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class ImmutableTenuredPtr
+{
+    T value;
+
+  public:
+    operator T() const { return value; }
+    T operator->() const { return value; }
+
+    operator Handle<T>() const {
+        return Handle<T>::fromMarkedLocation(&value);
+    }
+
+    void init(T ptr) {
+        MOZ_ASSERT(ptr->isTenured());
+        value = ptr;
+    }
+
+    T get() const { return value; }
+    const T* address() { return &value; }
+};
+
+
+template <class T>
+struct HeapPtrHasher
+{
+    typedef HeapPtr<T> Key;
+    typedef T Lookup;
+
+    static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
+    static bool match(const Key& k, Lookup l) { return k.get() == l; }
+    static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
+};
+
+
+template <class T>
+struct DefaultHasher<HeapPtr<T>> : HeapPtrHasher<T> { };
+
+template <class T>
+struct PreBarrieredHasher
+{
+    typedef PreBarriered<T> Key;
+    typedef T Lookup;
+
+    static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
+    static bool match(const Key& k, Lookup l) { return k.get() == l; }
+    static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
+};
+
+template <class T>
+struct DefaultHasher<PreBarriered<T>> : PreBarrieredHasher<T> { };
 
 
 template <class T>
@@ -710,108 +816,6 @@ typedef ReadBarriered<JSAtom*> ReadBarrieredAtom;
 typedef ReadBarriered<JS::Symbol*> ReadBarrieredSymbol;
 
 typedef ReadBarriered<Value> ReadBarrieredValue;
-
-
-
-
-class HeapSlot : public BarrieredBase<Value>
-{
-  public:
-    enum Kind {
-        Slot = 0,
-        Element = 1
-    };
-
-    explicit HeapSlot() = delete;
-
-    explicit HeapSlot(NativeObject* obj, Kind kind, uint32_t slot, const Value& v)
-      : BarrieredBase<Value>(v)
-    {
-        post(obj, kind, slot, v);
-    }
-
-    explicit HeapSlot(NativeObject* obj, Kind kind, uint32_t slot, const HeapSlot& s)
-      : BarrieredBase<Value>(s.value)
-    {
-        post(obj, kind, slot, s);
-    }
-
-    ~HeapSlot() {
-        pre();
-    }
-
-    void init(NativeObject* owner, Kind kind, uint32_t slot, const Value& v) {
-        value = v;
-        post(owner, kind, slot, v);
-    }
-
-#ifdef DEBUG
-    bool preconditionForSet(NativeObject* owner, Kind kind, uint32_t slot);
-    bool preconditionForWriteBarrierPost(NativeObject* obj, Kind kind, uint32_t slot, Value target) const;
-#endif
-
-    void set(NativeObject* owner, Kind kind, uint32_t slot, const Value& v) {
-        MOZ_ASSERT(preconditionForSet(owner, kind, slot));
-        pre();
-        value = v;
-        post(owner, kind, slot, v);
-    }
-
-    
-    static void writeBarrierPost(NativeObject* owner, Kind kind, uint32_t slot, const Value& target) {
-        reinterpret_cast<HeapSlot*>(const_cast<Value*>(&target))->post(owner, kind, slot, target);
-    }
-
-    Value* unsafeGet() { return &value; }
-
-  private:
-    void post(NativeObject* owner, Kind kind, uint32_t slot, const Value& target) {
-        MOZ_ASSERT(preconditionForWriteBarrierPost(owner, kind, slot, target));
-        if (this->value.isObject()) {
-            gc::Cell* cell = reinterpret_cast<gc::Cell*>(&this->value.toObject());
-            if (cell->storeBuffer())
-                cell->storeBuffer()->putSlotFromAnyThread(owner, kind, slot, 1);
-        }
-    }
-};
-
-class HeapSlotArray
-{
-    HeapSlot* array;
-
-    
-    
-#ifdef DEBUG
-    bool allowWrite_;
-#endif
-
-  public:
-    explicit HeapSlotArray(HeapSlot* array, bool allowWrite)
-      : array(array)
-#ifdef DEBUG
-      , allowWrite_(allowWrite)
-#endif
-    {}
-
-    operator const Value*() const {
-        JS_STATIC_ASSERT(sizeof(HeapValue) == sizeof(Value));
-        JS_STATIC_ASSERT(sizeof(HeapSlot) == sizeof(Value));
-        return reinterpret_cast<const Value*>(array);
-    }
-    operator HeapSlot*() const { MOZ_ASSERT(allowWrite()); return array; }
-
-    HeapSlotArray operator +(int offset) const { return HeapSlotArray(array + offset, allowWrite()); }
-    HeapSlotArray operator +(uint32_t offset) const { return HeapSlotArray(array + offset, allowWrite()); }
-
-  private:
-    bool allowWrite() const {
-#ifdef DEBUG
-        return allowWrite_;
-#else
-        return true;
-#endif
-    }
-};
 
 } 
 
