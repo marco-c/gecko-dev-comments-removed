@@ -128,6 +128,7 @@ enum class LogReason : int {
   InvalidCacheSurface,
   AlphaWithBasicClient,
   UnbalancedClipStack,
+  ProcessingError,
   
   MustBeLessThanThis = 101,
 };
