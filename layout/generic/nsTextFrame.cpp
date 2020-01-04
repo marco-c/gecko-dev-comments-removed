@@ -4953,9 +4953,12 @@ nsTextFrame::GetTextDecorations(
   nscolor overrideColor = NS_RGBA(0, 0, 0, 0);
 
   bool nearestBlockFound = false;
-  WritingMode wm = GetWritingMode();
+  
+  
+  WritingMode wm = GetParent()->GetWritingMode();
   bool vertical = wm.IsVertical();
 
+  nscoord ascent = GetLogicalBaseline(wm);
   
   
   
@@ -4963,7 +4966,7 @@ nsTextFrame::GetTextDecorations(
   
   
   nscoord physicalBlockStartOffset =
-    wm.IsVerticalRL() ? GetSize().width - mAscent : mAscent;
+    wm.IsVerticalRL() ? GetSize().width - ascent : ascent;
   
   
   
@@ -5216,10 +5219,9 @@ nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
 {
   const WritingMode wm = GetWritingMode();
   bool verticalRun = mTextRun->IsVertical();
-  bool useVerticalMetrics = verticalRun && mTextRun->UseCenterBaseline();
-  bool inverted = wm.IsLineInverted();
 
   if (IsFloatingFirstLetterChild()) {
+    bool inverted = wm.IsLineInverted();
     
     
     
@@ -5267,6 +5269,13 @@ nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
   if (aIncludeTextDecorations) {
     
     
+    WritingMode parentWM = GetParent()->GetWritingMode();
+    bool verticalDec = parentWM.IsVertical();
+    bool useVerticalMetrics = verticalDec != verticalRun
+      ? verticalDec : verticalRun && mTextRun->UseCenterBaseline();
+
+    
+    
     
     
     TextDecorations textDecs;
@@ -5275,12 +5284,12 @@ nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
       nscoord inflationMinFontSize =
         nsLayoutUtils::InflationMinFontSizeFor(aBlock);
 
-      const nscoord measure = verticalRun ? GetSize().height : GetSize().width;
-      const gfxFloat appUnitsPerDevUnit = aPresContext->AppUnitsPerDevPixel(),
-                     gfxWidth = measure / appUnitsPerDevUnit;
-      gfxFloat ascent = gfxFloat(mAscent) / appUnitsPerDevUnit;
+      const nscoord measure = verticalDec ? GetSize().height : GetSize().width;
+      const gfxFloat app = aPresContext->AppUnitsPerDevPixel();
+      gfxFloat gfxWidth = measure / app;
+      gfxFloat ascent = gfxFloat(GetLogicalBaseline(parentWM)) / app;
       nscoord frameBStart = 0;
-      if (wm.IsVerticalRL()) {
+      if (parentWM.IsVerticalRL()) {
         frameBStart = GetSize().width;
         ascent = -ascent;
       }
@@ -5291,7 +5300,7 @@ nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
       nsCSSRendering::DecorationRectParams params;
       params.lineSize = Size(gfxWidth, 0);
       params.ascent = ascent;
-      params.vertical = verticalRun;
+      params.vertical = verticalDec;
 
       nscoord topOrLeft(nscoord_MAX), bottomOrRight(nscoord_MIN);
       typedef gfxFont::Metrics Metrics;
@@ -5316,10 +5325,10 @@ nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
         params.offset = decorationOffsetDir * metrics.*lineOffset;
         const nsRect decorationRect =
           nsCSSRendering::GetTextDecorationRect(aPresContext, params) +
-          (verticalRun ? nsPoint(frameBStart - dec.mBaselineOffset, 0)
+          (verticalDec ? nsPoint(frameBStart - dec.mBaselineOffset, 0)
                        : nsPoint(0, -dec.mBaselineOffset));
 
-        if (verticalRun) {
+        if (verticalDec) {
           topOrLeft = std::min(decorationRect.x, topOrLeft);
           bottomOrRight = std::max(decorationRect.XMost(), bottomOrRight);
         } else {
@@ -5348,12 +5357,12 @@ nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
 
       aVisualOverflowRect->UnionRect(
         *aVisualOverflowRect,
-        verticalRun ? nsRect(topOrLeft, 0, bottomOrRight - topOrLeft, measure)
+        verticalDec ? nsRect(topOrLeft, 0, bottomOrRight - topOrLeft, measure)
                     : nsRect(0, topOrLeft, measure, bottomOrRight - topOrLeft));
     }
 
     aVisualOverflowRect->UnionRect(*aVisualOverflowRect,
-                                   UpdateTextEmphasis(wm, aProvider));
+                                   UpdateTextEmphasis(parentWM, aProvider));
   }
 
   
@@ -6630,8 +6639,18 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
 {
     const gfxFloat app =
       aParams.textStyle->PresContext()->AppUnitsPerDevPixel();
+    
+    
+    
+    
+    
+    const WritingMode wm = GetParent()->GetWritingMode();
+    bool verticalDec = wm.IsVertical();
     bool verticalRun = mTextRun->IsVertical();
-    bool useVerticalMetrics = verticalRun && mTextRun->UseCenterBaseline();
+    
+    
+    bool useVerticalMetrics = verticalDec != verticalRun
+      ? verticalDec : verticalRun && mTextRun->UseCenterBaseline();
 
     
     nscoord x = NSToCoordRound(aParams.framePt.x);
@@ -6640,9 +6659,9 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
     
     
     const nsSize frameSize = GetSize();
-    nscoord measure = verticalRun ? frameSize.height : frameSize.width;
+    nscoord measure = verticalDec ? frameSize.height : frameSize.width;
 
-    if (verticalRun) {
+    if (verticalDec) {
       aParams.clipEdges->Intersect(&y, &measure);
     } else {
       aParams.clipEdges->Intersect(&x, &measure);
@@ -6650,14 +6669,12 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
 
     
     
-    gfxFloat ascent = gfxFloat(mAscent) / app;
+    gfxFloat ascent = gfxFloat(GetLogicalBaseline(wm)) / app;
+    
+    gfxFloat frameBStart = verticalDec ? aParams.framePt.x : aParams.framePt.y;
 
     
-    gfxFloat frameBStart = verticalRun ? aParams.framePt.x : aParams.framePt.y;
-
     
-    
-    const WritingMode wm = GetWritingMode();
     if (wm.IsVerticalRL()) {
       frameBStart += frameSize.width;
       ascent = -ascent;
@@ -6678,10 +6695,25 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
     
     
     params.pt = Point(x / app, y / app);
-    Float& bCoord = verticalRun ? params.pt.x : params.pt.y;
+    Float& bCoord = verticalDec ? params.pt.x : params.pt.y;
     params.lineSize = Size(measure / app, 0);
     params.ascent = ascent;
-    params.vertical = verticalRun;
+    params.vertical = verticalDec;
+
+    
+    
+    
+    gfxContextMatrixAutoSaveRestore scaledRestorer;
+    if (StyleContext()->IsTextCombined()) {
+      float scaleFactor = GetTextCombineScaleFactor(this);
+      if (scaleFactor != 1.0f) {
+        scaledRestorer.SetContext(aParams.context);
+        gfxMatrix unscaled = aParams.context->CurrentMatrix();
+        gfxPoint pt(x / app, y / app);
+        unscaled.Translate(pt).Scale(1.0f / scaleFactor, 1.0f).Translate(-pt);
+        aParams.context->SetMatrix(unscaled);
+      }
+    }
 
     typedef gfxFont::Metrics Metrics;
     auto paintDecorationLine = [&](const LineDecoration& dec,
@@ -6718,9 +6750,17 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
       paintDecorationLine(dec, &Metrics::underlineSize, &Metrics::maxAscent);
     }
 
-    
-    
-    DrawTextRun(aRange, aTextBaselinePt, aParams);
+    {
+      gfxContextMatrixAutoSaveRestore unscaledRestorer;
+      if (scaledRestorer.HasMatrix()) {
+        unscaledRestorer.SetContext(aParams.context);
+        aParams.context->SetMatrix(scaledRestorer.Matrix());
+      }
+
+      
+      
+      DrawTextRun(aRange, aTextBaselinePt, aParams);
+    }
 
     
     DrawEmphasisMarks(aParams.context, wm, aTextBaselinePt, aRange,
@@ -9493,9 +9533,23 @@ nsTextFrame::IsAtEndOfLine() const
 }
 
 nscoord
-nsTextFrame::GetLogicalBaseline(WritingMode aWritingMode ) const
+nsTextFrame::GetLogicalBaseline(WritingMode aWM) const
 {
-  return mAscent;
+  if (!aWM.IsOrthogonalTo(GetWritingMode())) {
+    return mAscent;
+  }
+
+  
+  
+  nsIFrame* parent = GetParent();
+  nsPoint position = GetNormalPosition();
+  nscoord parentAscent = parent->GetLogicalBaseline(aWM);
+  if (aWM.IsVerticalRL()) {
+    nscoord parentDescent = parent->GetSize().width - parentAscent;
+    nscoord descent = parentDescent - position.x;
+    return GetSize().width - descent;
+  }
+  return parentAscent - (aWM.IsVertical() ? position.x : position.y);
 }
 
 bool
