@@ -749,7 +749,7 @@ nsJSChannel::EvaluateScript()
             if (cv) {
                 bool okToUnload;
 
-                if (NS_SUCCEEDED(cv->PermitUnload(false, &okToUnload)) &&
+                if (NS_SUCCEEDED(cv->PermitUnload(&okToUnload)) &&
                     !okToUnload) {
                     
                     

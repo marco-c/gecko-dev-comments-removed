@@ -84,10 +84,6 @@ function pktUIGetter(prop) {
 Object.defineProperty(window, "pktUI", pktUIGetter("pktUI"));
 Object.defineProperty(window, "pktUIMessaging", pktUIGetter("pktUIMessaging"));
 
-XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
-  return Services.strings.createBundle('chrome://browser/locale/browser.properties');
-});
-
 const nsIWebNavigation = Ci.nsIWebNavigation;
 
 var gLastBrowserCharset = null;
@@ -4039,41 +4035,6 @@ function updateUserContextUIVisibility()
 
 
 
-function updateUserContextUIIndicator(browser)
-{
-  let hbox = document.getElementById("userContext-icons");
-
-  if (!browser.hasAttribute("usercontextid")) {
-    hbox.removeAttribute("usercontextid");
-    return;
-  }
-
-  let label = document.getElementById("userContext-label");
-  let userContextId = browser.getAttribute("usercontextid");
-  hbox.setAttribute("usercontextid", userContextId);
-  switch (userContextId) {
-    case "1":
-      label.value = gBrowserBundle.GetStringFromName("usercontext.personal.label");
-      break;
-    case "2":
-      label.value = gBrowserBundle.GetStringFromName("usercontext.work.label");
-      break;
-    case "3":
-      label.value = gBrowserBundle.GetStringFromName("usercontext.banking.label");
-      break;
-    case "4":
-      label.value = gBrowserBundle.GetStringFromName("usercontext.shopping.label");
-      break;
-    
-    
-    default:
-      label.value = "Context " + userContextId;
-  }
-}
-
-
-
-
 
 function updateCharacterEncodingMenuState()
 {
@@ -4959,6 +4920,10 @@ nsBrowserAccess.prototype = {
 
   isTabContentWindow: function (aWindow) {
     return gBrowser.browsers.some(browser => browser.contentWindow == aWindow);
+  },
+
+  canClose() {
+    return CanCloseWindow();
   },
 }
 
@@ -6424,6 +6389,26 @@ var IndexedDBPromptHelper = {
   }
 };
 
+function CanCloseWindow()
+{
+  
+  
+  if (window.skipNextCanClose) {
+    return true;
+  }
+
+  for (let browser of gBrowser.browsers) {
+    let {permitUnload, timedOut} = browser.permitUnload();
+    if (timedOut) {
+      return true;
+    }
+    if (!permitUnload) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function WindowIsClosing()
 {
   if (TabView.isVisible()) {
@@ -6435,26 +6420,18 @@ function WindowIsClosing()
     return false;
 
   
-  if (gMultiProcessBrowser)
+  
+  
+  
+  if (CanCloseWindow()) {
+    
+    
+    
+    window.skipNextCanClose = true;
     return true;
-
-  for (let browser of gBrowser.browsers) {
-    let ds = browser.docShell;
-    
-    
-    
-    
-    if (ds.contentViewer && !ds.contentViewer.permitUnload(true)) {
-      
-      
-      
-      
-      window.getInterface(Ci.nsIDocShell).contentViewer.resetCloseWindow();
-      return false;
-    }
   }
 
-  return true;
+  return false;
 }
 
 

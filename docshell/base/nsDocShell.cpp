@@ -7764,7 +7764,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
     mTiming->NotifyBeforeUnload();
 
     bool okToUnload;
-    rv = mContentViewer->PermitUnload(false, &okToUnload);
+    rv = mContentViewer->PermitUnload(&okToUnload);
 
     if (NS_SUCCEEDED(rv) && !okToUnload) {
       
@@ -10097,7 +10097,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   if (!isJavaScript && aFileName.IsVoid() && mContentViewer) {
     bool okToUnload;
-    rv = mContentViewer->PermitUnload(false, &okToUnload);
+    rv = mContentViewer->PermitUnload(&okToUnload);
 
     if (NS_SUCCEEDED(rv) && !okToUnload) {
       
