@@ -146,7 +146,20 @@ GeckoMediaPluginServiceParent::Init()
 
   
   nsCOMPtr<nsIThread> thread;
-  return GetThread(getter_AddRefs(thread));
+  rv = GetThread(getter_AddRefs(thread));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  int32_t version = Preferences::GetInt("media.gmp.storage.version.observed", 0);
+  int32_t expected = Preferences::GetInt("media.gmp.storage.version.expected", 0);
+  if (version != expected) {
+    Preferences::SetInt("media.gmp.storage.version.observed", expected);
+    return GMPDispatch(NewRunnableMethod(
+      this, &GeckoMediaPluginServiceParent::ClearStorage));
+  }
+  return NS_OK;
 }
 
 already_AddRefed<nsIFile>
