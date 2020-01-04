@@ -1183,7 +1183,24 @@ var gBrowserInit = {
 
     if (!(isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") ||
         !focusAndSelectUrlBar()) {
-      gBrowser.selectedBrowser.focus();
+      if (gBrowser.selectedBrowser.isRemoteBrowser) {
+        
+        
+        let focusedElement = document.commandDispatcher.focusedElement;
+        let mm = window.messageManager;
+        mm.addMessageListener("Browser:FirstPaint", function onFirstPaint() {
+          mm.removeMessageListener("Browser:FirstPaint", onFirstPaint);
+          
+          
+          if (document.commandDispatcher.focusedElement == focusedElement) {
+            gBrowser.selectedBrowser.focus();
+          }
+        });
+      } else {
+        
+        
+        gBrowser.selectedBrowser.focus();
+      }
     }
 
     
