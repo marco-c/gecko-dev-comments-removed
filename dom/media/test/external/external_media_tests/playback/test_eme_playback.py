@@ -2,7 +2,11 @@
 
 
 
-from external_media_harness.testcase import MediaTestCase, VideoPlaybackTestsMixin, EMESetupMixin
+from external_media_harness.testcase import (
+    MediaTestCase,
+    VideoPlaybackTestsMixin,
+    EMESetupMixin
+)
 
 
 class TestEMEPlayback(MediaTestCase, VideoPlaybackTestsMixin, EMESetupMixin):
