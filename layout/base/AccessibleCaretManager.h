@@ -115,7 +115,10 @@ protected:
     
     RespectOldAppearance
   };
+  
   void UpdateCarets(UpdateCaretsHint aHint = UpdateCaretsHint::Default);
+
+  
   void HideCarets();
 
   void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
@@ -182,8 +185,12 @@ protected:
   
   AccessibleCaret* mActiveCaret = nullptr;
 
+  
+  
   nsCOMPtr<nsITimer> mCaretTimeoutTimer;
-  CaretMode mCaretMode = CaretMode::None;
+
+  
+  CaretMode mLastUpdateCaretMode = CaretMode::None;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 };
