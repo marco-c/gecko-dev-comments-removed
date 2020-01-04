@@ -23,7 +23,7 @@ loader.lazyRequireGetter(this, "HeapSnapshotFileUtils",
 
 
 
-exports.HeapSnapshotFileActor = protocol.ActorClass(heapSnapshotFileSpec, {
+exports.HeapSnapshotFileActor = protocol.ActorClassWithSpec(heapSnapshotFileSpec, {
   initialize: function (conn, parent) {
     if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
       const err = new Error("Attempt to create a HeapSnapshotFileActor in a " +

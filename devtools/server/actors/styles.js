@@ -39,7 +39,7 @@ const FONT_PREVIEW_OFFSET = 4;
 
 
 
-var PageStyleActor = protocol.ActorClass(pageStyleSpec, {
+var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   
 
 
@@ -925,7 +925,7 @@ exports.PageStyleActor = PageStyleActor;
 
 
 
-var StyleRuleActor = protocol.ActorClass(styleRuleSpec, {
+var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
   initialize: function (pageStyle, item) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.pageStyle = pageStyle;

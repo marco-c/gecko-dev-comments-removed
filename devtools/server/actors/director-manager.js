@@ -38,7 +38,7 @@ const ERR_DIRECTOR_UNINSTALLED_SCRIPTID = "uninstalled director-script id";
 
 
 
-var MessagePortActor = exports.MessagePortActor = protocol.ActorClass(messagePortSpec, {
+var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(messagePortSpec, {
   
 
 
@@ -149,7 +149,7 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClass(messagePor
 
 
 
-var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass(directorScriptSpec, {
+var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithSpec(directorScriptSpec, {
   
 
 
@@ -337,7 +337,7 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass(dire
 
 
 
-const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(directorManagerSpec, {
+const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClassWithSpec(directorManagerSpec, {
   
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);

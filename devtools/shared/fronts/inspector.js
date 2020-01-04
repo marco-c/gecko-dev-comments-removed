@@ -8,7 +8,7 @@ require("devtools/shared/fronts/highlighters");
 const { SimpleStringFront } = require("devtools/shared/fronts/string");
 const {
   Front,
-  FrontClass,
+  FrontClassWithSpec,
   custom,
   preEvent,
   types
@@ -84,7 +84,7 @@ const AttributeModificationList = Class({
 
 
 
-const NodeFront = FrontClass(nodeSpec, {
+const NodeFront = FrontClassWithSpec(nodeSpec, {
   initialize: function (conn, form, detail, ctx) {
     
     this._parent = null;
@@ -444,7 +444,7 @@ exports.NodeFront = NodeFront;
 
 
 
-const NodeListFront = FrontClass(nodeListSpec, {
+const NodeListFront = FrontClassWithSpec(nodeListSpec, {
   initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
   },
@@ -484,7 +484,7 @@ exports.NodeListFront = NodeListFront;
 
 
 
-const WalkerFront = FrontClass(walkerSpec, {
+const WalkerFront = FrontClassWithSpec(walkerSpec, {
   
   autoCleanup: true,
 
@@ -940,7 +940,7 @@ exports.WalkerFront = WalkerFront;
 
 
 
-var InspectorFront = FrontClass(inspectorSpec, {
+var InspectorFront = FrontClassWithSpec(inspectorSpec, {
   initialize: function (client, tabForm) {
     Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.inspectorActor;

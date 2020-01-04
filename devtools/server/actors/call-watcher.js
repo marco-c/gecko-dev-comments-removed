@@ -18,7 +18,7 @@ const { CallWatcherFront } = require("devtools/shared/fronts/call-watcher");
 
 
 
-var FunctionCallActor = protocol.ActorClass(functionCallSpec, {
+var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
   
 
 
@@ -226,7 +226,7 @@ var FunctionCallActor = protocol.ActorClass(functionCallSpec, {
 
 
 
-var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass(callWatcherSpec, {
+var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;

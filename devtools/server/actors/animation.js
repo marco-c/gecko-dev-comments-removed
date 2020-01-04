@@ -29,7 +29,7 @@ const {Cu} = require("chrome");
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
 const protocol = require("devtools/shared/protocol");
-const {Actor, ActorClass} = protocol;
+const {Actor, ActorClassWithSpec} = protocol;
 const {animationPlayerSpec, animationsSpec} = require("devtools/shared/specs/animation");
 const events = require("sdk/event/core");
 
@@ -51,7 +51,7 @@ exports.ANIMATION_TYPES = ANIMATION_TYPES;
 
 
 
-var AnimationPlayerActor = protocol.ActorClass(animationPlayerSpec, {
+var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
   
 
 
@@ -433,7 +433,7 @@ exports.AnimationPlayerActor = AnimationPlayerActor;
 
 
 
-var AnimationsActor = exports.AnimationsActor = protocol.ActorClass(animationsSpec, {
+var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
   initialize: function(conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;

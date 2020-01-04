@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Front, FrontClass } = require("devtools/shared/protocol");
+const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
 const {
   getIndentationFromPrefs,
   getIndentationFromString
@@ -21,7 +21,7 @@ const events = require("sdk/event/core");
 
 
 
-const OriginalSourceFront = FrontClass(originalSourceSpec, {
+const OriginalSourceFront = FrontClassWithSpec(originalSourceSpec, {
   initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
 
@@ -50,7 +50,7 @@ exports.OriginalSourceFront = OriginalSourceFront;
 
 
 
-const MediaRuleFront = FrontClass(mediaRuleSpec, {
+const MediaRuleFront = FrontClassWithSpec(mediaRuleSpec, {
   initialize: function (client, form) {
     Front.prototype.initialize.call(this, client, form);
 
@@ -96,7 +96,7 @@ exports.MediaRuleFront = MediaRuleFront;
 
 
 
-const StyleSheetFront = FrontClass(styleSheetSpec, {
+const StyleSheetFront = FrontClassWithSpec(styleSheetSpec, {
   initialize: function (conn, form) {
     Front.prototype.initialize.call(this, conn, form);
 
@@ -173,7 +173,7 @@ exports.StyleSheetFront = StyleSheetFront;
 
 
 
-const StyleSheetsFront = FrontClass(styleSheetsSpec, {
+const StyleSheetsFront = FrontClassWithSpec(styleSheetsSpec, {
   initialize: function (client, tabForm) {
     Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.styleSheetsActor;

@@ -148,7 +148,7 @@ exports.setupParentProcess = function setupParentProcess({ mm, prefix }) {
 
 
 
-const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClass(directorRegistrySpec, {
+const DirectorRegistryActor = exports.DirectorRegistryActor = protocol.ActorClassWithSpec(directorRegistrySpec, {
   
   initialize: function (conn, parentActor) {
     protocol.Actor.prototype.initialize.call(this, conn);

@@ -1098,7 +1098,24 @@ var generateRequestHandlers = function (actorSpec, actorProto) {
 
 
 
-var ActorClass = function (actorSpec, actorProto) {
+
+exports.ActorClass = function (actorProto) {
+  return ActorClassWithSpec(generateActorSpec(actorProto), actorProto);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ActorClassWithSpec = function (actorSpec, actorProto) {
   if (!actorSpec.typeName) {
     throw Error("Actor specification must have a typeName member.");
   }
@@ -1108,7 +1125,7 @@ var ActorClass = function (actorSpec, actorProto) {
 
   return cls;
 };
-exports.ActorClass = ActorClass;
+exports.ActorClassWithSpec = ActorClassWithSpec;
 
 
 
@@ -1419,7 +1436,20 @@ var generateRequestMethods = function (actorSpec, frontProto) {
 
 
 
-var FrontClass = function (actorSpec, frontProto) {
+exports.FrontClass = function (actorType, frontProto) {
+  return FrontClassWithSpec(prototypeOf(actorType)._actorSpec, frontProto);
+};
+
+
+
+
+
+
+
+
+
+
+var FrontClassWithSpec = function (actorSpec, frontProto) {
   frontProto.extends = Front;
   let cls = Class(generateRequestMethods(actorSpec, frontProto));
 
@@ -1430,7 +1460,7 @@ var FrontClass = function (actorSpec, frontProto) {
 
   return cls;
 };
-exports.FrontClass = FrontClass;
+exports.FrontClassWithSpec = FrontClassWithSpec;
 
 exports.dumpActorSpec = function (type) {
   let actorSpec = type.actorSpec;

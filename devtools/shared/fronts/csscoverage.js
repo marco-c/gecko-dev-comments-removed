@@ -36,7 +36,7 @@ var chromeWindow;
 
 
 
-const CSSUsageFront = protocol.FrontClass(cssUsageSpec, {
+const CSSUsageFront = protocol.FrontClassWithSpec(cssUsageSpec, {
   initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
     this.actorID = form.cssUsageActor;
