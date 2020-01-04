@@ -7,8 +7,7 @@
 const { Ci, Cc } = require("chrome");
 const { memoize } = require("sdk/lang/functional");
 
-loader.lazyRequireGetter(this, "setIgnoreLayoutChanges",
-  "devtools/server/actors/layout", true);
+loader.lazyRequireGetter(this, "setIgnoreLayoutChanges", "devtools/server/actors/layout", true);
 exports.setIgnoreLayoutChanges = (...args) =>
   this.setIgnoreLayoutChanges(...args);
 
@@ -19,8 +18,8 @@ exports.setIgnoreLayoutChanges = (...args) =>
 
 
 const utilsFor = memoize(
-  (win) => win.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindowUtils)
+  win => win.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindowUtils)
 );
 
 
@@ -38,7 +37,8 @@ function getTopWindow(win) {
     return win.top;
   }
 
-  let topDocShell = docShell.getSameTypeRootTreeItemIgnoreBrowserAndAppBoundaries();
+  let topDocShell =
+    docShell.getSameTypeRootTreeItemIgnoreBrowserAndAppBoundaries();
 
   return topDocShell
           ? topDocShell.contentViewer.DOMDocument.defaultView
@@ -98,7 +98,8 @@ function getParentWindow(win) {
     return win.parent;
   }
 
-  let parentDocShell = docShell.getSameTypeParentIgnoreBrowserAndAppBoundaries();
+  let parentDocShell =
+    docShell.getSameTypeParentIgnoreBrowserAndAppBoundaries();
 
   return parentDocShell
           ? parentDocShell.contentViewer.DOMDocument.defaultView
@@ -140,11 +141,10 @@ function getFrameOffsets(boundaryWindow, node) {
   if (boundaryWindow === null) {
     boundaryWindow = getTopWindow(frameWin);
   } else if (typeof boundaryWindow === "undefined") {
-    throw new Error("No `boundaryWindow` given. Use `null` for the default one.");
+    throw new Error("No boundaryWindow given. Use null for the default one.");
   }
 
   while (frameWin !== boundaryWindow) {
-
     let frameElement = getFrameElement(frameWin);
     if (!frameElement) {
       break;
@@ -256,21 +256,21 @@ exports.getAdjustedQuads = getAdjustedQuads;
 
 
 
-function getRect(boundaryWindow, aNode, aContentWindow) {
-  let frameWin = aNode.ownerDocument.defaultView;
-  let clientRect = aNode.getBoundingClientRect();
+function getRect(boundaryWindow, node, contentWindow) {
+  let frameWin = node.ownerDocument.defaultView;
+  let clientRect = node.getBoundingClientRect();
 
   if (boundaryWindow === null) {
     boundaryWindow = getTopWindow(frameWin);
   } else if (typeof boundaryWindow === "undefined") {
-    throw new Error("No `boundaryWindow` given. Use `null` for the default one.");
+    throw new Error("No boundaryWindow given. Use null for the default one.");
   }
 
   
   
   let rect = {
-    top: clientRect.top + aContentWindow.pageYOffset,
-    left: clientRect.left + aContentWindow.pageXOffset,
+    top: clientRect.top + contentWindow.pageYOffset,
+    left: clientRect.left + contentWindow.pageXOffset,
     width: clientRect.width,
     height: clientRect.height
   };
@@ -296,7 +296,7 @@ function getRect(boundaryWindow, aNode, aContentWindow) {
   }
 
   return rect;
-};
+}
 exports.getRect = getRect;
 
 
@@ -312,7 +312,7 @@ exports.getRect = getRect;
 
 function getNodeBounds(boundaryWindow, node) {
   if (!node) {
-    return;
+    return null;
   }
 
   let scale = getCurrentZoom(node);
@@ -368,21 +368,21 @@ exports.getNodeBounds = getNodeBounds;
 
 
 
-function safelyGetContentWindow(aFrame) {
-  if (aFrame.contentWindow) {
-    return aFrame.contentWindow;
+function safelyGetContentWindow(frame) {
+  if (frame.contentWindow) {
+    return frame.contentWindow;
   }
 
   let walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"]
                .createInstance(Ci.inIDeepTreeWalker);
   walker.showSubDocuments = true;
   walker.showDocumentsAsNodes = true;
-  walker.init(aFrame, Ci.nsIDOMNodeFilter.SHOW_ALL);
-  walker.currentNode = aFrame;
+  walker.init(frame, Ci.nsIDOMNodeFilter.SHOW_ALL);
+  walker.currentNode = frame;
 
   let document = walker.nextNode();
   if (!document || !document.defaultView) {
-    throw new Error("Couldn't get the content window inside aFrame " + aFrame);
+    throw new Error("Couldn't get the content window inside frame " + frame);
   }
 
   return document.defaultView;
@@ -402,19 +402,19 @@ function safelyGetContentWindow(aFrame) {
 
 
 
-function getFrameContentOffset(aFrame) {
-  let style = safelyGetContentWindow(aFrame).getComputedStyle(aFrame, null);
+function getFrameContentOffset(frame) {
+  let style = safelyGetContentWindow(frame).getComputedStyle(frame, null);
 
   
   if (!style) {
     return [0, 0];
   }
 
-  let paddingTop = parseInt(style.getPropertyValue("padding-top"));
-  let paddingLeft = parseInt(style.getPropertyValue("padding-left"));
+  let paddingTop = parseInt(style.getPropertyValue("padding-top"), 10);
+  let paddingLeft = parseInt(style.getPropertyValue("padding-left"), 10);
 
-  let borderTop = parseInt(style.getPropertyValue("border-top-width"));
-  let borderLeft = parseInt(style.getPropertyValue("border-left-width"));
+  let borderTop = parseInt(style.getPropertyValue("border-top-width"), 10);
+  let borderLeft = parseInt(style.getPropertyValue("border-left-width"), 10);
 
   return [borderTop + paddingTop, borderLeft + paddingLeft];
 }
@@ -431,8 +431,8 @@ function getFrameContentOffset(aFrame) {
 
 
 
-function getElementFromPoint(aDocument, aX, aY) {
-  let node = aDocument.elementFromPoint(aX, aY);
+function getElementFromPoint(document, x, y) {
+  let node = document.elementFromPoint(x, y);
   if (node && node.contentDocument) {
     if (node instanceof Ci.nsIDOMHTMLIFrameElement) {
       let rect = node.getBoundingClientRect();
@@ -440,17 +440,17 @@ function getElementFromPoint(aDocument, aX, aY) {
       
       let [offsetTop, offsetLeft] = getFrameContentOffset(node);
 
-      aX -= rect.left + offsetLeft;
-      aY -= rect.top + offsetTop;
+      x -= rect.left + offsetLeft;
+      y -= rect.top + offsetTop;
 
-      if (aX < 0 || aY < 0) {
+      if (x < 0 || y < 0) {
         
         return node;
       }
     }
     if (node instanceof Ci.nsIDOMHTMLIFrameElement ||
         node instanceof Ci.nsIDOMHTMLFrameElement) {
-      let subnode = getElementFromPoint(node.contentDocument, aX, aY);
+      let subnode = getElementFromPoint(node.contentDocument, x, y);
       if (subnode) {
         node = subnode;
       }
@@ -470,7 +470,7 @@ exports.getElementFromPoint = getElementFromPoint;
 
 
 
-function scrollIntoViewIfNeeded(elem, centered=true) {
+function scrollIntoViewIfNeeded(elem, centered = true) {
   let win = elem.ownerDocument.defaultView;
   let clientRect = elem.getBoundingClientRect();
 
@@ -481,14 +481,16 @@ function scrollIntoViewIfNeeded(elem, centered=true) {
 
   let topToBottom = clientRect.bottom;
   let bottomToTop = clientRect.top - win.innerHeight;
-  let yAllowed = true;  
+  
+  let yAllowed = true;
 
   
   
   if ((topToBottom > 0 || !centered) && topToBottom <= elem.offsetHeight) {
     win.scrollBy(0, topToBottom - elem.offsetHeight);
     yAllowed = false;
-  } else if ((bottomToTop < 0 || !centered) && bottomToTop >= -elem.offsetHeight) {
+  } else if ((bottomToTop < 0 || !centered) &&
+             bottomToTop >= -elem.offsetHeight) {
     win.scrollBy(0, bottomToTop + elem.offsetHeight);
     yAllowed = false;
   }
@@ -512,12 +514,14 @@ exports.scrollIntoViewIfNeeded = scrollIntoViewIfNeeded;
 
 
 
-function isNodeConnected(aNode) {
+function isNodeConnected(node) {
+  if (!node.ownerDocument || !node.ownerDocument.defaultView) {
+    return false;
+  }
+
   try {
-    let connected = (aNode.ownerDocument && aNode.ownerDocument.defaultView &&
-                    !(aNode.compareDocumentPosition(aNode.ownerDocument.documentElement) &
-                    aNode.DOCUMENT_POSITION_DISCONNECTED));
-    return connected;
+    return !(node.compareDocumentPosition(node.ownerDocument.documentElement) &
+             node.DOCUMENT_POSITION_DISCONNECTED);
   } catch (e) {
     
     return false;
@@ -655,8 +659,13 @@ exports.isShadowAnonymous = isShadowAnonymous;
 
 
 function getCurrentZoom(node) {
-  let win = node instanceof Ci.nsIDOMNode ? node.ownerDocument.defaultView :
-            node instanceof Ci.nsIDOMWindow ? node : null;
+  let win = null;
+
+  if (node instanceof Ci.nsIDOMNode) {
+    win = node.ownerDocument.defaultView;
+  } else if (node instanceof Ci.nsIDOMWindow) {
+    win = node;
+  }
 
   if (!win) {
     throw new Error("Unable to get the zoom from the given argument.");
