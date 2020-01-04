@@ -1115,7 +1115,7 @@ protected:
 #ifdef MOZ_EME
   void ReportEMETelemetry();
 #endif
-  void ReportMSETelemetry();
+  void ReportTelemetry();
 
   
   bool CheckAudioChannelPermissions(const nsAString& aType);
