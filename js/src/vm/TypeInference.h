@@ -598,6 +598,9 @@ class AutoClearTypeInferenceStateOnOOM
     void setOOM() {
         oom = true;
     }
+    bool hadOOM() const {
+        return oom;
+    }
 };
 
 

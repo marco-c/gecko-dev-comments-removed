@@ -4308,6 +4308,12 @@ JSScript::maybeSweepTypes(AutoClearTypeInferenceStateOnOOM* oom)
     for (unsigned i = 0; i < num; i++)
         typeArray[i].sweep(zone(), *oom);
 
+    if (oom->hadOOM()) {
+        
+        
+        hasFreezeConstraints_ = false;
+    }
+
     
     if (hasIonScript())
         ionScript()->recompileInfoRef().shouldSweep(types);
