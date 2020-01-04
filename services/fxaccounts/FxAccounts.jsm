@@ -296,6 +296,10 @@ function copyObjectProperties(from, to, opts = {}) {
   }
 }
 
+function urlsafeBase64Encode(key) {
+  return ChromeUtils.base64URLEncode(new Uint8Array(key), { pad: false });
+}
+
 
 
 
@@ -355,7 +359,7 @@ FxAccountsInternal.prototype = {
   VERIFICATION_POLL_TIMEOUT_SUBSEQUENT: 30000, 
   
   
-  DEVICE_REGISTRATION_VERSION: 1,
+  DEVICE_REGISTRATION_VERSION: 2,
 
   _fxAccountsClient: null,
 
@@ -1513,6 +1517,12 @@ FxAccountsInternal.prototype = {
       
       if (subscription && subscription.endpoint) {
         deviceOptions.pushCallback = subscription.endpoint;
+        let publicKey = subscription.getKey('p256dh');
+        let authKey = subscription.getKey('auth');
+        if (publicKey && authKey) {
+          deviceOptions.pushPublicKey = urlsafeBase64Encode(publicKey);
+          deviceOptions.pushAuthKey = urlsafeBase64Encode(authKey);
+        }
       }
 
       if (signedInUser.deviceId) {
