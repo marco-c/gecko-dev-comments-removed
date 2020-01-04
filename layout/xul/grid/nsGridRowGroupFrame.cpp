@@ -34,7 +34,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsGridRowGroupFrame)
 
 
 nscoord
-nsGridRowGroupFrame::GetFlex(nsBoxLayoutState& aState)
+nsGridRowGroupFrame::GetFlex()
 {
   
   
@@ -43,7 +43,7 @@ nsGridRowGroupFrame::GetFlex(nsBoxLayoutState& aState)
   if (!DoesNeedRecalc(mFlex))
      return mFlex;
 
-  if (nsBoxFrame::GetFlex(aState) == 0)
+  if (nsBoxFrame::GetFlex() == 0)
     return 0;
 
   
@@ -51,7 +51,7 @@ nsGridRowGroupFrame::GetFlex(nsBoxLayoutState& aState)
   nsIFrame* child = nsBox::GetChildBox(this);
   while (child)
   {
-    totalFlex += child->GetFlex(aState);
+    totalFlex += child->GetFlex();
     child = GetNextBox(child);
   }
 

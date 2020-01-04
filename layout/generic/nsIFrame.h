@@ -2780,7 +2780,7 @@ NS_PTR_TO_INT32(frame->Properties().Get(nsIFrame::ParagraphDepthProperty()))
   
   uint32_t GetOrdinal();
 
-  virtual nscoord GetFlex(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nscoord GetFlex() = 0;
   virtual nscoord GetBoxAscent(nsBoxLayoutState& aBoxLayoutState) = 0;
   virtual bool IsCollapsed() = 0;
   
@@ -2809,7 +2809,7 @@ NS_PTR_TO_INT32(frame->Properties().Get(nsIFrame::ParagraphDepthProperty()))
   bool IsNormalDirection() const { return (mState & NS_STATE_IS_DIRECTION_NORMAL) != 0; }
 
   nsresult Redraw(nsBoxLayoutState& aState);
-  virtual nsresult RelayoutChildAtOrdinal(nsBoxLayoutState& aState, nsIFrame* aChild)=0;
+  virtual nsresult RelayoutChildAtOrdinal(nsIFrame* aChild)=0;
   
   virtual bool GetMouseThrough() const { return false; }
 
@@ -2830,7 +2830,7 @@ NS_PTR_TO_INT32(frame->Properties().Get(nsIFrame::ParagraphDepthProperty()))
   static bool AddCSSMinSize(nsBoxLayoutState& aState, nsIFrame* aBox,
                             nsSize& aSize, bool& aWidth, bool& aHeightSet);
   static bool AddCSSMaxSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth, bool& aHeightSet);
-  static bool AddCSSFlex(nsBoxLayoutState& aState, nsIFrame* aBox, nscoord& aFlex);
+  static bool AddCSSFlex(nsIFrame* aBox, nscoord& aFlex);
 
   
   
