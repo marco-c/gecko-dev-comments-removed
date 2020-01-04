@@ -143,7 +143,7 @@ class MessageChannel : HasResultCodes
         return !mCxxStackFrames.empty();
     }
 
-    bool CancelCurrentTransaction();
+    void CancelCurrentTransaction();
 
     
 
