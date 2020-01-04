@@ -91,7 +91,16 @@ loop.conversation = (function(mozL10n) {
 
 
   function init() {
-    return loop.requestMulti(
+    
+    var locationHash = loop.shared.utils.locationData().hash;
+    var windowId;
+
+    var hash = locationHash.match(/#(.*)/);
+    if (hash) {
+      windowId = hash[1];
+    }
+
+    var requests = [
       ["GetAllConstants"],
       ["GetAllStrings"],
       ["GetLocale"],
@@ -99,12 +108,20 @@ loop.conversation = (function(mozL10n) {
       ["GetLoopPref", "textChat.enabled"],
       ["GetLoopPref", "feedback.periodSec"],
       ["GetLoopPref", "feedback.dateLastSeenSec"]
-    ).then(function(results) {
-      var constants = results[0];
+    ];
+    var prefetch = [
+      ["GetConversationWindowData", windowId]
+    ];
+
+    return loop.requestMulti.apply(null, requests.concat(prefetch)).then(function(results) {
       
       
-      var stringBundle = results[1];
-      var locale = results[2];
+      var requestIdx = 0;
+      var constants = results[requestIdx];
+      
+      
+      var stringBundle = results[++requestIdx];
+      var locale = results[++requestIdx];
       mozL10n.initialize({
         locale: locale,
         getStrings: function(key) {
@@ -119,20 +136,22 @@ loop.conversation = (function(mozL10n) {
 
       
       
+      var currGuid = results[++requestIdx];
       window.OT.overrideGuidStorage({
         get: function(callback) {
-          callback(null, results[3]);
+          callback(null, currGuid);
         },
         set: function(guid, callback) {
           
           var PREF_STRING = 32;
+          currGuid = guid;
           loop.request("SetLoopPref", "ot.guid", guid, PREF_STRING);
           callback(null);
         }
       });
 
       
-      var useDataChannels = results[4];
+      var useDataChannels = results[++requestIdx];
 
       var dispatcher = new loop.Dispatcher();
       var sdkDriver = new loop.OTSdkDriver({
@@ -154,9 +173,15 @@ loop.conversation = (function(mozL10n) {
       var conversationAppStore = new loop.store.ConversationAppStore({
         activeRoomStore: activeRoomStore,
         dispatcher: dispatcher,
-        feedbackPeriod: results[5],
-        feedbackTimestamp: results[6]
+        feedbackPeriod: results[++requestIdx],
+        feedbackTimestamp: results[++requestIdx]
       });
+
+      prefetch.forEach(function(req) {
+        req.shift();
+        loop.storeRequest(req, results[++requestIdx]);
+      });
+
       var roomStore = new loop.store.RoomStore(dispatcher, {
         activeRoomStore: activeRoomStore,
         constants: constants
@@ -169,15 +194,6 @@ loop.conversation = (function(mozL10n) {
         conversationAppStore: conversationAppStore,
         textChatStore: textChatStore
       });
-
-      
-      var locationHash = loop.shared.utils.locationData().hash;
-      var windowId;
-
-      var hash = locationHash.match(/#(.*)/);
-      if (hash) {
-        windowId = hash[1];
-      }
 
       React.render(
         React.createElement(AppControllerView, {
