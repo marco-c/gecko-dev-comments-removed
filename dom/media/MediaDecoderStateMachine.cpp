@@ -15,6 +15,7 @@
 #include "MediaDecoderStateMachine.h"
 #include "MediaTimer.h"
 #include "mediasink/DecodedAudioDataSink.h"
+#include "mediasink/AudioSinkWrapper.h"
 #include "nsTArray.h"
 #include "MediaDecoder.h"
 #include "MediaDecoderReader.h"
@@ -287,6 +288,15 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
     mTaskQueue, this, &MediaDecoderStateMachine::OnAudioPopped);
   mVideoQueueListener = VideoQueue().PopEvent().Connect(
     mTaskQueue, this, &MediaDecoderStateMachine::OnVideoPopped);
+
+  nsRefPtr<MediaDecoderStateMachine> self = this;
+  auto audioSinkCreator = [self] () {
+    MOZ_ASSERT(self->OnTaskQueue());
+    return new DecodedAudioDataSink(
+      self->mAudioQueue, self->GetMediaTime(),
+      self->mInfo.mAudio, self->mDecoder->GetAudioChannel());
+  };
+  mAudioSink = new AudioSinkWrapper(mTaskQueue, audioSinkCreator);
 }
 
 MediaDecoderStateMachine::~MediaDecoderStateMachine()
@@ -362,7 +372,7 @@ int64_t MediaDecoderStateMachine::GetDecodedAudioDuration()
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
   int64_t audioDecoded = AudioQueue().Duration();
-  if (AudioEndTime() != -1) {
+  if (mAudioSink->IsStarted()) {
     audioDecoded += AudioEndTime() - GetMediaTime();
   }
   return audioDecoded;
@@ -372,7 +382,7 @@ void MediaDecoderStateMachine::DiscardStreamData()
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
-  MOZ_ASSERT(!mAudioSink, "Should've been stopped in RunStateMachine()");
+  MOZ_ASSERT(!mAudioSink->IsStarted(), "Should've been stopped in RunStateMachine()");
 
   const auto clockTime = GetClock();
   while (true) {
@@ -1137,9 +1147,7 @@ void MediaDecoderStateMachine::VolumeChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-  if (mAudioSink) {
-    mAudioSink->SetVolume(mVolume);
-  }
+  mAudioSink->SetVolume(mVolume);
   mDecodedStream->SetVolume(mVolume);
 }
 
@@ -1259,6 +1267,8 @@ void MediaDecoderStateMachine::Shutdown()
   }
 
   Reset();
+
+  mAudioSink->Shutdown();
 
   
   if (mStartTimeRendezvous) {
@@ -1456,12 +1466,11 @@ void MediaDecoderStateMachine::StopAudioSink()
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
 
-  if (mAudioSink) {
-    DECODER_LOG("Shutdown audio thread");
-    mAudioSink->Shutdown();
-    mAudioSink = nullptr;
+  if (mAudioSink->IsStarted()) {
+    DECODER_LOG("Stop AudioSink");
+    mAudioSink->Stop();
+    mAudioSinkPromise.DisconnectIfExists();
   }
-  mAudioSinkPromise.DisconnectIfExists();
 }
 
 void
@@ -1743,25 +1752,19 @@ MediaDecoderStateMachine::StartAudioSink()
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
   if (mAudioCaptured) {
-    MOZ_ASSERT(!mAudioSink);
+    MOZ_ASSERT(!mAudioSink->IsStarted());
     return;
   }
 
-  if (HasAudio() && !mAudioSink) {
+  if (HasAudio() && !mAudioSink->IsStarted()) {
     mAudioCompleted = false;
-    mAudioSink = new DecodedAudioDataSink(mAudioQueue,
-                                          GetMediaTime(), mInfo.mAudio,
-                                          mDecoder->GetAudioChannel());
+    mAudioSink->Start(GetMediaTime(), mInfo);
 
     mAudioSinkPromise.Begin(
-      mAudioSink->Init()->Then(
+      mAudioSink->OnEnded(TrackInfo::kAudioTrack)->Then(
         OwnerThread(), __func__, this,
         &MediaDecoderStateMachine::OnAudioSinkComplete,
         &MediaDecoderStateMachine::OnAudioSinkError));
-
-    mAudioSink->SetVolume(mVolume);
-    mAudioSink->SetPlaybackRate(mPlaybackRate);
-    mAudioSink->SetPreservesPitch(mPreservesPitch);
   }
 }
 
@@ -1799,7 +1802,7 @@ int64_t MediaDecoderStateMachine::AudioDecodedUsecs()
   
   
   
-  int64_t pushed = (AudioEndTime() != -1) ? (AudioEndTime() - GetMediaTime()) : 0;
+  int64_t pushed = mAudioSink->IsStarted() ? (AudioEndTime() - GetMediaTime()) : 0;
 
   
   
@@ -1828,7 +1831,7 @@ bool MediaDecoderStateMachine::OutOfDecodedAudio()
     MOZ_ASSERT(OnTaskQueue());
     return IsAudioDecoding() && !AudioQueue().IsFinished() &&
            AudioQueue().GetSize() == 0 &&
-           (!mAudioSink || !mAudioSink->HasUnplayedFrames());
+           !mAudioSink->HasUnplayedFrames(TrackInfo::kAudioTrack);
 }
 
 bool MediaDecoderStateMachine::HasLowUndecodedData()
@@ -2392,7 +2395,6 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
         mSentPlaybackEndedEvent = true;
 
         
-        
         StopAudioSink();
         StopDecodedStream();
       }
@@ -2569,7 +2571,7 @@ MediaDecoderStateMachine::GetAudioClock() const
   MOZ_ASSERT(HasAudio() && !mAudioCompleted && IsPlaying());
   
   
-  MOZ_ASSERT(mAudioSink);
+  MOZ_ASSERT(mAudioSink->IsStarted());
   return mAudioSink->GetPosition();
 }
 
@@ -2909,9 +2911,7 @@ void MediaDecoderStateMachine::SetPlayStartTime(const TimeStamp& aTimeStamp)
   AssertCurrentThreadInMonitor();
   mPlayStartTime = aTimeStamp;
 
-  if (mAudioSink) {
-    mAudioSink->SetPlaying(!mPlayStartTime.IsNull());
-  }
+  mAudioSink->SetPlaying(!mPlayStartTime.IsNull());
   
   
   
@@ -3004,9 +3004,7 @@ MediaDecoderStateMachine::LogicalPlaybackRateChanged()
   }
 
   mPlaybackRate = mLogicalPlaybackRate;
-  if (mAudioSink) {
-    mAudioSink->SetPlaybackRate(mPlaybackRate);
-  }
+  mAudioSink->SetPlaybackRate(mPlaybackRate);
 
   ScheduleStateMachine();
 }
@@ -3015,10 +3013,7 @@ void MediaDecoderStateMachine::PreservesPitchChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
   ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-
-  if (mAudioSink) {
-    mAudioSink->SetPreservesPitch(mPreservesPitch);
-  }
+  mAudioSink->SetPreservesPitch(mPreservesPitch);
 }
 
 bool MediaDecoderStateMachine::IsShutdown()
@@ -3045,15 +3040,12 @@ MediaDecoderStateMachine::AudioEndTime() const
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
-  if (mAudioSink) {
-    return mAudioSink->GetEndTime();
+  if (mAudioSink->IsStarted()) {
+    return mAudioSink->GetEndTime(TrackInfo::kAudioTrack);
   } else if (mAudioCaptured) {
     return mDecodedStream->AudioEndTime();
   }
-  
-  
-  
-  MOZ_ASSERT(!mAudioCompleted);
+  MOZ_ASSERT(!HasAudio());
   return -1;
 }
 

@@ -100,7 +100,7 @@
 namespace mozilla {
 
 namespace media {
-class AudioSink;
+class MediaSink;
 }
 
 class AudioSegment;
@@ -1000,7 +1000,7 @@ private:
   int64_t mFragmentEndTime;
 
   
-  RefPtr<media::AudioSink> mAudioSink;
+  nsRefPtr<media::MediaSink> mAudioSink;
 
   
   
