@@ -46,6 +46,7 @@
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 
 
@@ -569,9 +570,12 @@ private:
   
   Mutex mMutex;
   webrtc::VoiceEngine* mVoiceEngine;
+  webrtc::Config mConfig;
   RefPtr<mozilla::AudioInput> mAudioInput;
   bool mAudioEngineInit;
   bool mFullDuplex;
+  bool mExtendedFilter;
+  bool mDelayAgnostic;
   bool mHasTabVideoSource;
 
   
