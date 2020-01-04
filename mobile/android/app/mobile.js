@@ -624,11 +624,6 @@ pref("media.mediasource.enabled", true);
 
 pref("image.downscale-during-decode.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-
-pref("shumway.disabled", true);
-#endif
-
 #ifdef MOZ_SAFE_BROWSING
 pref("browser.safebrowsing.enabled", true);
 pref("browser.safebrowsing.malware.enabled", true);
