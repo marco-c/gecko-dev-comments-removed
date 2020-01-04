@@ -52,14 +52,6 @@ public:
   
 
 
-
-
-  static Maybe<ComputedTimingFunction>
-  ParseEasing(const nsAString& aEasing, nsIDocument* aDocument);
-
-  
-
-
   static nsIDocument*
   GetCurrentRealmDocument(JSContext* aCx);
 };
