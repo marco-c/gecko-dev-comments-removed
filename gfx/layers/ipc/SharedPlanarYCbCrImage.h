@@ -39,6 +39,9 @@ public:
   virtual bool SetDataNoCopy(const Data &aData) override;
 
   virtual bool Allocate(PlanarYCbCrData& aData);
+  virtual uint8_t* AllocateBuffer(uint32_t aSize) override;
+  
+  
   virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize) override;
 
   virtual bool IsValid() override;

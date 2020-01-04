@@ -48,7 +48,7 @@ GetDataSourceSurfaceFrom(android::sp<android::GraphicBuffer>& aGraphicBuffer,
 
 
 
-class GrallocImage : public RecyclingPlanarYCbCrImage
+class GrallocImage : public PlanarYCbCrImage
 {
   typedef PlanarYCbCrData Data;
   static int32_t sColorIdMap[];
