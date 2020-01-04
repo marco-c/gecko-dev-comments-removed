@@ -5229,6 +5229,11 @@ nsHttpChannel::BeginConnect()
     CallOnModifyRequestObservers();
 
     
+    if (mLoadGroup) {
+      HttpBaseChannel::SetLoadGroupUserAgentOverride();
+    }
+
+    
     
     if (mAPIRedirectToURI) {
         return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
