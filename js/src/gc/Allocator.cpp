@@ -260,30 +260,6 @@ GCRuntime::checkIncrementalZoneState(ExclusiveContext* cx, T* t)
 
 
 
-
-
-
-
-
-class MOZ_RAII js::gc::AutoMaybeStartBackgroundAllocation
-{
-    JSRuntime* runtime;
-
-  public:
-    AutoMaybeStartBackgroundAllocation()
-      : runtime(nullptr)
-    {}
-
-    void tryToStartBackgroundAllocation(JSRuntime* rt) {
-        runtime = rt;
-    }
-
-    ~AutoMaybeStartBackgroundAllocation() {
-        if (runtime)
-            runtime->gc.startBackgroundAllocTaskIfIdle();
-    }
-};
-
 void
 GCRuntime::startBackgroundAllocTaskIfIdle()
 {
@@ -547,7 +523,7 @@ GCRuntime::getOrAllocChunk(const AutoLockGC& lock,
     }
 
     if (wantBackgroundAllocation(lock))
-        maybeStartBackgroundAllocation.tryToStartBackgroundAllocation(rt);
+        maybeStartBackgroundAllocation.tryToStartBackgroundAllocation(rt->gc);
 
     return chunk;
 }

@@ -491,7 +491,8 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             
             
             
-            if (!IsInsideNursery(obj) && cx->runtime()->gc.nursery.isInside(buffer->dataPointerEither())) {
+            auto ptr = buffer->dataPointerEither();
+            if (!IsInsideNursery(obj) && cx->runtime()->gc.nursery.isInside(ptr)) {
                 
                 
                 
@@ -499,8 +500,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
                 
                 if (isSharedMemory) {
                     MOZ_ASSERT(buffer->byteLength() == 0 &&
-                               cx->runtime()->gc.nursery.start() ==
-                                   buffer->dataPointerEither().unwrapValue());
+                               (uintptr_t(ptr.unwrapValue()) & gc::ChunkMask) == 0);
                 } else {
                     cx->runtime()->gc.storeBuffer.putWholeCell(obj);
                 }

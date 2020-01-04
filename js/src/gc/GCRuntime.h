@@ -1387,6 +1387,30 @@ class MOZ_RAII AutoEnterIteration {
     }
 };
 
+
+
+
+
+
+class MOZ_RAII AutoMaybeStartBackgroundAllocation
+{
+    GCRuntime* gc;
+
+  public:
+    AutoMaybeStartBackgroundAllocation()
+      : gc(nullptr)
+    {}
+
+    void tryToStartBackgroundAllocation(GCRuntime& gc) {
+        this->gc = &gc;
+    }
+
+    ~AutoMaybeStartBackgroundAllocation() {
+        if (gc)
+            gc->startBackgroundAllocTaskIfIdle();
+    }
+};
+
 #ifdef JS_GC_ZEAL
 
 inline bool
