@@ -500,6 +500,8 @@ function getRuleViewSelectorHighlighterIcon(view, selectorText) {
 
 
 
+
+
 var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
     newRgba, expectedChange) {
   let onRuleViewChanged = ruleView.once("ruleview-changed");
@@ -515,11 +517,96 @@ var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
 
   if (expectedChange) {
     info("Waiting for the style to be applied on the page");
-    yield waitForSuccess(function*() {
-      let {selector, name, value} = expectedChange;
-      return (yield getComputedStyleProperty(selector, null, name)) === value;
-    }, `Color picker change applied on element "${expectedChange.selector}"`);
+    let {selector, name, value} = expectedChange;
+    yield waitForComputedStyleProperty(selector, null, name, value);
   }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var openColorPickerAndSelectColor = Task.async(function*(view, ruleIndex,
+    propIndex, newRgba, expectedChange) {
+  let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  let propEditor = ruleEditor.rule.textProps[propIndex].editor;
+  let swatch = propEditor.valueSpan.querySelector(".ruleview-colorswatch");
+  let cPicker = view.tooltips.colorPicker;
+
+  info("Opening the colorpicker by clicking the color swatch");
+  let onShown = cPicker.tooltip.once("shown");
+  swatch.click();
+  yield onShown;
+
+  yield simulateColorPickerChange(view, cPicker, newRgba, expectedChange);
+
+  return {propEditor, swatch, cPicker};
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var openCubicBezierAndChangeCoords = Task.async(function*(view, ruleIndex,
+    propIndex, coords, expectedChange) {
+  let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  let propEditor = ruleEditor.rule.textProps[propIndex].editor;
+  let swatch = propEditor.valueSpan.querySelector(".ruleview-bezierswatch");
+  let bezierTooltip = view.tooltips.cubicBezier;
+
+  info("Opening the cubicBezier by clicking the swatch");
+  let onShown = bezierTooltip.tooltip.once("shown");
+  swatch.click();
+  yield onShown;
+
+  let widget = yield bezierTooltip.widget;
+
+  info("Simulating a change of curve in the widget");
+  let onRuleViewChanged = view.once("ruleview-changed");
+  widget.coordinates = coords;
+  yield onRuleViewChanged;
+
+  if (expectedChange) {
+    info("Waiting for the style to be applied on the page");
+    let {selector, name, value} = expectedChange;
+    yield waitForComputedStyleProperty(selector, null, name, value);
+  }
+
+  return {propEditor, swatch, bezierTooltip};
 });
 
 
@@ -643,15 +730,30 @@ var addProperty = Task.async(function*(view, ruleIndex, name, value,
 
 
 
-var setProperty = Task.async(function*(view, textProp, value) {
-  let editor = yield focusEditableField(view, textProp.editor.valueSpan);
 
-  let onRuleViewRefreshed = view.once("ruleview-changed");
-  editor.input.value = value;
+
+
+
+
+var setProperty = Task.async(function*(view, textProp, value,
+                                       blurNewProperty = true) {
+  yield focusEditableField(view, textProp.editor.valueSpan);
+
+  let onPreview = view.once("ruleview-changed");
+  if (value === null) {
+    EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
+  } else {
+    EventUtils.sendString(value, view.styleWindow);
+  }
+  yield onPreview;
+
+  let onValueDone = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
-  yield onRuleViewRefreshed;
+  yield onValueDone;
 
-  view.styleDocument.activeElement.blur();
+  if (blurNewProperty) {
+    view.styleDocument.activeElement.blur();
+  }
 });
 
 
@@ -662,7 +764,12 @@ var setProperty = Task.async(function*(view, textProp, value) {
 
 
 
-var removeProperty = Task.async(function*(view, textProp) {
+
+
+
+
+var removeProperty = Task.async(function*(view, textProp,
+                                          blurNewProperty = true) {
   yield focusEditableField(view, textProp.editor.nameSpan);
 
   let onModifications = view.once("ruleview-changed");
@@ -671,8 +778,9 @@ var removeProperty = Task.async(function*(view, textProp) {
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
   yield onModifications;
 
-  
-  view.styleDocument.activeElement.blur();
+  if (blurNewProperty) {
+    view.styleDocument.activeElement.blur();
+  }
 });
 
 
