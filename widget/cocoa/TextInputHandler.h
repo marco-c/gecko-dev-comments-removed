@@ -508,6 +508,9 @@ protected:
     
     nsAString* mInsertString;
     
+    
+    nsString mInsertedString;
+    
     bool mKeyDownHandled;
     
     bool mKeyPressDispatched;
@@ -527,17 +530,7 @@ protected:
       Set(aNativeKeyEvent);
     }
 
-    KeyEventState(const KeyEventState &aOther) : mKeyEvent(nullptr)
-    {
-      Clear();
-      if (aOther.mKeyEvent) {
-        mKeyEvent = [aOther.mKeyEvent retain];
-      }
-      mKeyDownHandled = aOther.mKeyDownHandled;
-      mKeyPressDispatched = aOther.mKeyPressDispatched;
-      mKeyPressHandled = aOther.mKeyPressHandled;
-      mCausedOtherKeyEvents = aOther.mCausedOtherKeyEvents;
-    }
+    KeyEventState(const KeyEventState &aOther) = delete;
 
     ~KeyEventState()
     {
@@ -558,6 +551,7 @@ protected:
         mKeyEvent = nullptr;
       }
       mInsertString = nullptr;
+      mInsertedString.Truncate();
       mKeyDownHandled = false;
       mKeyPressDispatched = false;
       mKeyPressHandled = false;
@@ -573,6 +567,19 @@ protected:
     {
       return !mKeyPressDispatched && !IsDefaultPrevented();
     }
+
+    void InitKeyEvent(TextInputHandlerBase* aHandler,
+                      WidgetKeyboardEvent& aKeyEvent);
+
+    
+
+
+
+
+
+
+
+    void GetUnhandledString(nsAString& aUnhandledString) const;
   };
 
   
@@ -601,12 +608,8 @@ protected:
       : mState(aState)
     {
     }
-    ~AutoInsertStringClearer()
-    {
-      if (mState) {
-        mState->mInsertString = nullptr;
-      }
-    }
+    ~AutoInsertStringClearer();
+
   private:
     KeyEventState* mState;
   };
