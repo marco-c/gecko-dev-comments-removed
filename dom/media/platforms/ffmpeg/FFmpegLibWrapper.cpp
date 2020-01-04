@@ -96,6 +96,7 @@ FFmpegLibWrapper::Link()
   } else {                                                                     \
     func = (decltype(func))nullptr;                                            \
   }
+  AV_FUNC(av_lockmgr_register, AV_FUNC_AVCODEC_ALL)
   AV_FUNC(avcodec_alloc_context3, AV_FUNC_AVCODEC_ALL)
   AV_FUNC(avcodec_close, AV_FUNC_AVCODEC_ALL)
   AV_FUNC(avcodec_decode_audio4, AV_FUNC_AVCODEC_ALL)
@@ -130,6 +131,12 @@ FFmpegLibWrapper::Link()
 void
 FFmpegLibWrapper::Unlink()
 {
+  if (av_lockmgr_register) {
+    
+    
+    
+    av_lockmgr_register(nullptr);
+  }
   if (mAVUtilLib && mAVUtilLib != mAVCodecLib) {
     PR_UnloadLibrary(mAVUtilLib);
   }
