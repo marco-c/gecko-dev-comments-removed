@@ -16,13 +16,13 @@
 #include "nsString.h"
 #include "nscore.h"
 
-class nsAutoLockRulesSniffing;
 class nsIDOMElement;
 class nsIDOMNode;
 class nsPlaintextEditor;
 
 namespace mozilla {
 
+class AutoLockRulesSniffing;
 namespace dom {
 class Selection;
 } 
@@ -250,7 +250,7 @@ protected:
   uint32_t mLastLength;
 
   
-  friend class nsAutoLockRulesSniffing;
+  friend class AutoLockRulesSniffing;
 };
 
 class TextRulesInfo final : public nsRulesInfo
@@ -297,27 +297,34 @@ public:
   const nsIDOMElement* insertElement;
 };
 
-} 
 
 
 
 
 
-
-class nsAutoLockRulesSniffing
+class MOZ_STACK_CLASS AutoLockRulesSniffing final
 {
-  public:
+public:
+  explicit AutoLockRulesSniffing(TextEditRules* aRules)
+    : mRules(aRules)
+  {
+    if (mRules) {
+      mRules->mLockRulesSniffing = true;
+    }
+  }
 
-  explicit nsAutoLockRulesSniffing(mozilla::TextEditRules *rules) : mRules(rules)
-                 {if (mRules) mRules->mLockRulesSniffing = true;}
-  ~nsAutoLockRulesSniffing()
-                 {if (mRules) mRules->mLockRulesSniffing = false;}
+  ~AutoLockRulesSniffing()
+  {
+    if (mRules) {
+      mRules->mLockRulesSniffing = false;
+    }
+  }
 
-  protected:
-  mozilla::TextEditRules *mRules;
+protected:
+  TextEditRules* mRules;
 };
 
-
+} 
 
 
 
