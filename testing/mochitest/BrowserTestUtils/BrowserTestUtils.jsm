@@ -389,6 +389,9 @@ this.BrowserTestUtils = {
 
 
 
+
+
+
   synthesizeMouse(target, offsetX, offsetY, event, browser)
   {
     return new Promise(resolve => {
@@ -399,13 +402,17 @@ this.BrowserTestUtils = {
       });
 
       let cpowObject = null;
-      if (typeof target != "string") {
+      let targetFn = null;
+      if (typeof target == "function") {
+        targetFn = target.toString();
+        target = null;
+      } else if (typeof target != "string") {
         cpowObject = target;
         target = null;
       }
 
       mm.sendAsyncMessage("Test:SynthesizeMouse",
-                          {target, target, x: offsetX, y: offsetY, event: event},
+                          {target, targetFn, x: offsetX, y: offsetY, event: event},
                           {object: cpowObject});
     });
   },
@@ -450,6 +457,32 @@ this.BrowserTestUtils = {
       if (!dontRemove && !tab.closing) {
         tab.ownerDocument.defaultView.gBrowser.removeTab(tab);
       }
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sendChar(char, browser) {
+    return new Promise(resolve => {
+      let mm = browser.messageManager;
+      mm.addMessageListener("Test:SendCharDone", function charMsg(message) {
+        mm.removeMessageListener("Test:SendCharDone", charMsg);
+        resolve(message.data.sendCharResult);
+      });
+
+      mm.sendAsyncMessage("Test:SendChar", { char: char });
     });
   }
 };
