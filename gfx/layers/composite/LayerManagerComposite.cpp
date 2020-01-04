@@ -251,13 +251,13 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   
   Matrix4x4 transform = GetAccTransformIn3DContext(aLayer);
   Matrix transform2d;
-  Maybe<nsIntPoint> integerTranslation;
+  Maybe<IntPoint> integerTranslation;
   
   
   
   if (transform.Is2D(&transform2d)) {
     if (transform2d.IsIntegerTranslation()) {
-      integerTranslation = Some(TruncatedToInt(transform2d.GetTranslation()));
+      integerTranslation = Some(IntPoint::Truncate(transform2d.GetTranslation()));
       localOpaque = aOpaqueRegion;
       localOpaque.MoveBy(-*integerTranslation);
     }
