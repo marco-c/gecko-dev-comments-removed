@@ -599,8 +599,7 @@ WebAudioDecodeJob::OnFailure(ErrorCode aErrorCode)
   
   
   if (mFailureCallback) {
-    ErrorResult rv;
-    mFailureCallback->Call(rv);
+    mFailureCallback->Call();
   }
 
   mPromise->MaybeReject(NS_ERROR_DOM_ENCODING_NOT_SUPPORTED_ERR);
