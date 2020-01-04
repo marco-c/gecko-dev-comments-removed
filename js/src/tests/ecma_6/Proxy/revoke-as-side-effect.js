@@ -54,16 +54,6 @@ assertEq(delete createProxy({}).a, true);
 assertEq(delete createProxy(Object.defineProperty({}, "a", {configurable: false})).a, false);
 
 
-for (var k in createProxy({})) {
-    
-    assertEq(true, false);
-}
-for (var k in createProxy({a: 5})) {
-    
-    assertEq(k, "a");
-}
-
-
 assertEq(Object.getOwnPropertyNames(createProxy({})).length, 0);
 assertEq(Object.getOwnPropertyNames(createProxy({a: 5})).length, 1);
 

@@ -28,7 +28,6 @@ class ScriptedDirectProxyHandler : public BaseProxyHandler {
                                  AutoIdVector& props) const override;
     virtual bool delete_(JSContext* cx, HandleObject proxy, HandleId id,
                          ObjectOpResult& result) const override;
-    virtual bool enumerate(JSContext* cx, HandleObject proxy, MutableHandleObject objp) const override;
 
     
     virtual bool getPrototype(JSContext* cx, HandleObject proxy,
