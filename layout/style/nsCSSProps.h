@@ -698,7 +698,6 @@ public:
   static const KTableValue kAlignAutoBaseline[]; 
   static const KTableValue kAlignContentDistribution[]; 
   static const KTableValue kAlignContentPosition[]; 
-  static const KTableValue kAlignContentKTable[];
   static const KTableValue kAlignSelfKTable[];
   static const KTableValue kJustifyContentKTable[];
   
