@@ -816,6 +816,16 @@ public:
          NS_LITERAL_STRING("\x5FAE\x8EDF\x8F38\x5165\x6CD5")));
   }
 
+  bool IsMSOfficeJapaneseIME2010Active() const
+  {
+    
+    static const GUID kGUID = {
+      0x54EDCC94, 0x1524, 0x4BB1,
+        { 0x9F, 0xB7, 0x7B, 0xAB, 0xE4, 0xF4, 0xCA, 0x64 }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
   bool IsATOKActive() const
   {
     
@@ -919,6 +929,9 @@ private:
   
   nsString mActiveTIPKeyboardDescription;
 
+  
+  GUID mActiveTIPGUID;
+
   static StaticRefPtr<TSFStaticSink> sInstance;
 };
 
@@ -930,6 +943,7 @@ TSFStaticSink::TSFStaticSink()
   , mLangID(0)
   , mIsIMM_IME(false)
   , mOnActivatedCalled(false)
+  , mActiveTIPGUID(GUID_NULL)
 {
 }
 
@@ -1044,6 +1058,7 @@ TSFStaticSink::OnActivated(REFCLSID clsid, REFGUID guidProfile,
   if (fActivated) {
     
     mOnActivatedCalled = true;
+    mActiveTIPGUID = guidProfile;
     mIsIMM_IME = IsIMM_IME(::GetKeyboardLayout(0));
 
     HRESULT hr = mInputProcessorProfiles->GetCurrentLanguage(&mLangID);
@@ -1086,6 +1101,7 @@ TSFStaticSink::OnActivated(DWORD dwProfileType,
       (dwProfileType == TF_PROFILETYPE_KEYBOARDLAYOUT ||
        catid == GUID_TFCAT_TIP_KEYBOARD)) {
     mOnActivatedCalled = true;
+    mActiveTIPGUID = guidProfile;
     mLangID = langid;
     mIsIMM_IME = IsIMM_IME(hkl);
     GetTIPDescription(rclsid, mLangID, guidProfile,
