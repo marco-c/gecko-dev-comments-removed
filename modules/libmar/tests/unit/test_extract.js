@@ -17,7 +17,7 @@ function run_test() {
     let outDir = tempDir.clone();
     outDir.append("out");
     do_check_false(outDir.exists());
-    outDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0777);
+    outDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o777);
 
     
     let outFiles = [];

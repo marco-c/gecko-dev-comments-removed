@@ -108,7 +108,7 @@ function createMAR(outMAR, dataDir, files) {
   for (filePath of files) {
     let f = dataDir.clone();
     f.append(filePath);
-    f.permissions = 0664;
+    f.permissions = 0o664;
   }
 
   

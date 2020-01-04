@@ -234,7 +234,7 @@ function writeToFileSync(file, data) {
                  createInstance(Components.interfaces.nsIFileOutputStream);
 
   
-  foStream.init(file, 0x02 | 0x08 | 0x20, 0666, 0);
+  foStream.init(file, 0x02 | 0x08 | 0x20, 0o666, 0);
   
   
   

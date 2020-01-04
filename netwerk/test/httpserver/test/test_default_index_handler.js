@@ -42,7 +42,7 @@ function createTestDirectory()
           .getService(Ci.nsIProperties)
           .get("TmpD", Ci.nsIFile);
   dir.append("index_handler_test_" + Math.random());
-  dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0744);
+  dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o744);
 
   
   
@@ -249,7 +249,7 @@ function makeFile(name, isDirectory, parentDir, lst)
   try
   {
     file.append(name);
-    file.create(type, 0755);
+    file.create(type, 0o755);
     lst.push({name: name, isDirectory: isDirectory});
   }
   catch (e) {  }

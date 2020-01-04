@@ -26,7 +26,7 @@ function write_registry(version, info) {
   let foStream = Components.classes["@mozilla.org/network/file-output-stream;1"]
                            .createInstance(Components.interfaces.nsIFileOutputStream);
   
-  foStream.init(registry, 0x02 | 0x08 | 0x20, 0666, 0);
+  foStream.init(registry, 0x02 | 0x08 | 0x20, 0o666, 0);
 
   let charset = "UTF-8"; 
   let os = Cc["@mozilla.org/intl/converter-output-stream;1"].
