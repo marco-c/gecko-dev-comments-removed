@@ -1096,12 +1096,6 @@ SVGSVGElement::ClearPreserveAspectRatioProperty()
 }
 
 void
-SVGSVGElement::SetIsPaintingForSVGImageElement(bool aIsPaintingSVGImageElement)
-{
-  mIsPaintingSVGImageElement = aIsPaintingSVGImageElement;
-}
-
-void
 SVGSVGElement::
   SetImageOverridePreserveAspectRatio(const SVGPreserveAspectRatio& aPAR)
 {
@@ -1117,12 +1111,9 @@ SVGSVGElement::
     
     mImageNeedsTransformInvalidation = true;
   }
+  mIsPaintingSVGImageElement = true;
 
   if (!hasViewBoxRect) {
-    return; 
-  }
-
-  if (aPAR.GetDefer() && HasPreserveAspectRatio()) {
     return; 
   }
 
@@ -1139,6 +1130,7 @@ SVGSVGElement::ClearImageOverridePreserveAspectRatio()
              "should only override image preserveAspectRatio in images");
 #endif
 
+  mIsPaintingSVGImageElement = false;
   if (!HasViewBoxRect() && ShouldSynthesizeViewBox()) {
     
     

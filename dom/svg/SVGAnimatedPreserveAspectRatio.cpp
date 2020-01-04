@@ -245,7 +245,6 @@ PackPreserveAspectRatio(const SVGPreserveAspectRatio& par)
   
   
   uint64_t packed = 0;
-  packed |= uint64_t(par.GetDefer() ? 1 : 0) << 16;
   packed |= uint64_t(par.GetAlign()) << 8;
   packed |= uint64_t(par.GetMeetOrSlice());
   return packed;
@@ -258,7 +257,6 @@ SVGAnimatedPreserveAspectRatio::SetAnimValue(uint64_t aPackedValue,
   if (mIsAnimated && PackPreserveAspectRatio(mAnimVal) == aPackedValue) {
     return;
   }
-  mAnimVal.SetDefer(((aPackedValue & 0xff0000) >> 16) ? true : false);
   mAnimVal.SetAlign(uint16_t((aPackedValue & 0xff00) >> 8));
   mAnimVal.SetMeetOrSlice(uint16_t(aPackedValue & 0xff));
   mIsAnimated = true;
