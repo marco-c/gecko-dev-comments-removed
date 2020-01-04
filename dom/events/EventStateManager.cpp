@@ -3132,12 +3132,31 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         }
         case WheelPrefs::ACTION_NONE:
         default:
-          
-          
+          bool allDeltaOverflown = false;
+          if (wheelEvent->mFlags.mHandledByAPZ) {
+            if (wheelEvent->mCanTriggerSwipe) {
+              
+              
+              
+              
+              allDeltaOverflown =
+                !ComputeScrollTarget(aTargetFrame, wheelEvent,
+                                     COMPUTE_DEFAULT_ACTION_TARGET);
+            }
+          } else {
+            
+            
+            allDeltaOverflown = true;
+          }
+
+          if (!allDeltaOverflown) {
+            break;
+          }
           wheelEvent->overflowDeltaX = wheelEvent->deltaX;
           wheelEvent->overflowDeltaY = wheelEvent->deltaY;
           WheelPrefs::GetInstance()->
             CancelApplyingUserPrefsFromOverflowDelta(wheelEvent);
+          wheelEvent->mViewPortIsOverscrolled = true;
           break;
       }
       *aStatus = nsEventStatus_eConsumeNoDefault;
