@@ -7,6 +7,7 @@
 #ifndef js_UbiNodeCensus_h
 #define js_UbiNodeCensus_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/Move.h"
 
 #include <algorithm>
@@ -104,13 +105,14 @@ struct CountType {
 
     
     
-    virtual bool count(CountBase& count,
-                       mozilla::MallocSizeOf mallocSizeOf,
-                       const Node& node) = 0;
+    virtual MOZ_MUST_USE bool count(CountBase& count,
+                                    mozilla::MallocSizeOf mallocSizeOf,
+                                    const Node& node) = 0;
 
     
     
-    virtual bool report(JSContext* cx, CountBase& count, MutableHandleValue report) = 0;
+    virtual MOZ_MUST_USE bool report(JSContext* cx, CountBase& count,
+                                     MutableHandleValue report) = 0;
 };
 
 using CountTypePtr = js::UniquePtr<CountType>;
@@ -134,7 +136,7 @@ class CountBase {
     { }
 
     
-    bool count(mozilla::MallocSizeOf mallocSizeOf, const Node& node) {
+    MOZ_MUST_USE bool count(mozilla::MallocSizeOf mallocSizeOf, const Node& node) {
         total_++;
 
         auto id = node.identifier();
@@ -157,7 +159,7 @@ class CountBase {
     
     
     
-    bool report(JSContext* cx, MutableHandleValue report) {
+    MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
         return type.report(cx, *this, report);
     }
 
@@ -201,7 +203,7 @@ struct Census {
 
     explicit Census(JSContext* cx) : cx(cx), atomsZone(nullptr) { }
 
-    bool init();
+    MOZ_MUST_USE bool init();
 };
 
 
@@ -218,24 +220,24 @@ class CensusHandler {
         mallocSizeOf(mallocSizeOf)
     { }
 
-    bool report(JSContext* cx, MutableHandleValue report) {
+    MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
         return rootCount->report(cx, report);
     }
 
     
     class NodeData { };
 
-    bool operator() (BreadthFirst<CensusHandler>& traversal,
-                     Node origin, const Edge& edge,
-                     NodeData* referentData, bool first);
+    MOZ_MUST_USE bool operator() (BreadthFirst<CensusHandler>& traversal,
+                                  Node origin, const Edge& edge,
+                                  NodeData* referentData, bool first);
 };
 
 using CensusTraversal = BreadthFirst<CensusHandler>;
 
 
 
-bool ParseCensusOptions(JSContext* cx, Census& census, HandleObject options,
-                        CountTypePtr& outResult);
+MOZ_MUST_USE bool ParseCensusOptions(JSContext* cx, Census& census, HandleObject options,
+                                     CountTypePtr& outResult);
 
 
 
