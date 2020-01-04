@@ -396,9 +396,7 @@ ExternalHelperAppParent::SetContentCharset(const nsACString& aContentCharset)
 NS_IMETHODIMP
 ExternalHelperAppParent::GetContentDisposition(uint32_t *aContentDisposition)
 {
-  
-  
-  if (mContentDispositionHeader.IsEmpty() && mContentDisposition == UINT32_MAX)
+  if (mContentDispositionHeader.IsEmpty())
     return NS_ERROR_NOT_AVAILABLE;
 
   *aContentDisposition = mContentDisposition;

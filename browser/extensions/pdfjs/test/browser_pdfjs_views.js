@@ -4,7 +4,9 @@
 const RELATIVE_DIR = "browser/extensions/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
-add_task(function* test() {
+function test() {
+  var tab;
+
   let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
   let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
@@ -15,79 +17,60 @@ add_task(function* test() {
 
   info('Pref action: ' + handlerInfo.preferredAction);
 
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: TESTROOT + "file_pdfjs_test.pdf" },
-    function* (browser) {
-      
-      let [ viewer, pdfjs ] = yield ContentTask.spawn(browser, null, function* () {
-        yield new Promise((resolve) => {
-          content.addEventListener("documentload", function documentload() {
-            content.removeEventListener("documentload", documentload);
-            resolve();
-          });
-        });
-        return [ content.document.querySelector('div#viewer') !== null,
-                 'PDFJS' in content.wrappedJSObject ]
-      });
+  waitForExplicitFinish();
+  registerCleanupFunction(function() {
+    gBrowser.removeTab(tab);
+  });
 
-      ok(viewer, "document content has viewer UI");
-      ok(pdfjs, "window content has PDFJS object");
+  tab = gBrowser.addTab(TESTROOT + "file_pdfjs_test.pdf");
+  var newTabBrowser = gBrowser.getBrowserForTab(tab);
+  newTabBrowser.addEventListener("load", function eventHandler() {
+    newTabBrowser.removeEventListener("load", eventHandler, true);
 
-      
-      let sidebarOpen = yield ContentTask.spawn(browser, null, function* () {
-        var sidebar = content.document.querySelector('button#sidebarToggle');
-        var outerContainer = content.document.querySelector('div#outerContainer');
+    var document = newTabBrowser.contentDocument,
+        window = newTabBrowser.contentWindow;
 
-        sidebar.click();
-        return outerContainer.classList.contains('sidebarOpen');
-      });
+    
+    window.addEventListener("documentload", function() {
+      runTests(document, window, finish);
+    }, false, true);
+  }, true);
+}
 
-      ok(sidebarOpen, 'sidebar opens on click');
+function runTests(document, window, callback) {
+  
+  ok(document.querySelector('div#viewer'), "document content has viewer UI");
+  ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
 
-      
-      let [ thumbnailClass, outlineClass ] = yield ContentTask.spawn(browser, null, function* () {
-        var thumbnailView = content.document.querySelector('div#thumbnailView');
-        var outlineView = content.document.querySelector('div#outlineView');
+  
+  var sidebar = document.querySelector('button#sidebarToggle');
+  var outerContainer = document.querySelector('div#outerContainer');
 
-        return [ thumbnailView.getAttribute('class'),
-                 outlineView.getAttribute('class') ]
-      });
+  sidebar.click();
+  ok(outerContainer.classList.contains('sidebarOpen'), 'sidebar opens on click');
 
-      is(thumbnailClass, null, 'Initial view is thumbnail view');
-      is(outlineClass, 'hidden', 'Outline view is hidden initially');
+  
+  var thumbnailView = document.querySelector('div#thumbnailView');
+  var outlineView = document.querySelector('div#outlineView');
 
-      
-      [ thumbnailClass, outlineClass ] = yield ContentTask.spawn(browser, null, function* () {
-        var viewOutlineButton = content.document.querySelector('button#viewOutline');
-        viewOutlineButton.click();
+  is(thumbnailView.getAttribute('class'), null, 'Initial view is thumbnail view');
+  is(outlineView.getAttribute('class'), 'hidden', 'Outline view is hidden initially');
 
-        var thumbnailView = content.document.querySelector('div#thumbnailView');
-        var outlineView = content.document.querySelector('div#outlineView');
+  
+  var viewOutlineButton = document.querySelector('button#viewOutline');
+  viewOutlineButton.click();
 
-        return [ thumbnailView.getAttribute('class'),
-                 outlineView.getAttribute('class') ];
-      });
+  is(outlineView.getAttribute('class'), '', 'Outline view is visible when selected');
+  is(thumbnailView.getAttribute('class'), 'hidden', 'Thumbnail view is hidden when outline is selected');
 
-      is(thumbnailClass, 'hidden', 'Thumbnail view is hidden when outline is selected');
-      is(outlineClass, '', 'Outline view is visible when selected');
+  
+  var viewThumbnailButton = document.querySelector('button#viewThumbnail');
+  viewThumbnailButton.click();
 
-      
-      [ thumbnailClass, outlineClass ] = yield ContentTask.spawn(browser, null, function* () {
-          var viewThumbnailButton = content.document.querySelector('button#viewThumbnail');
-          viewThumbnailButton.click();
+  is(thumbnailView.getAttribute('class'), '', 'Thumbnail view is visible when selected');
+  is(outlineView.getAttribute('class'), 'hidden', 'Outline view is hidden when thumbnail is selected');
 
-          var thumbnailView = content.document.querySelector('div#thumbnailView');
-          var outlineView = content.document.querySelector('div#outlineView');
+  sidebar.click();
 
-          let rval = [ thumbnailView.getAttribute('class'),
-                       outlineView.getAttribute('class') ];
-
-          var sidebar = content.document.querySelector('button#sidebarToggle');
-          sidebar.click();
-
-          return rval;
-      });
-
-      is(thumbnailClass, '', 'Thumbnail view is visible when selected');
-      is(outlineClass, 'hidden', 'Outline view is hidden when thumbnail is selected');
-    });
-});
+  callback();
+}
