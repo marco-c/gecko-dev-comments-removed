@@ -817,7 +817,8 @@ this.WidgetMethods = {
     }
     
     if (!("index" in aOptions)) {
-      return this._insertItemAt(this._findExpectedIndexFor(item), item, aOptions);
+      var idx = this._findExpectedIndexFor(item);
+      return this._insertItemAt(idx, item, aOptions);
     }
     
     
