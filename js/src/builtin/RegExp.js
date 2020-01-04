@@ -187,11 +187,8 @@ function RegExpReplace(string, replaceValue) {
 
     
     if (!functionalReplace && firstDollarIndex === -1 && IsRegExpReplaceOptimizable(rx)) {
-        if (global) {
-            if (lengthS < 0x7fff)
-                return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue);
+        if (global)
             return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue);
-        }
         return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue);
     }
 
@@ -351,61 +348,6 @@ function RegExpReplace(string, replaceValue) {
 }
 
 
-
-function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue)
-{
-   
-    var fullUnicode = !!rx.unicode;
-
-    
-    var lastIndex = 0;
-    rx.lastIndex = 0;
-
-    
-    var accumulatedResult = "";
-
-    
-    var nextSourcePosition = 0;
-
-    var sticky = !!rx.sticky;
-
-    
-    while (true) {
-        
-        var result = RegExpSearcher(rx, S, lastIndex, sticky);
-
-        
-        if (result === -1)
-            break;
-
-        var position = result & 0x7fff;
-        lastIndex = (result >> 15) & 0x7fff;
-
-        
-        accumulatedResult += Substring(S, nextSourcePosition,
-                                       position - nextSourcePosition) + replaceValue;
-
-        
-        nextSourcePosition = lastIndex;
-
-        
-        if (lastIndex === position) {
-            lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
-            if (lastIndex > lengthS)
-                break;
-        }
-    }
-
-    
-    if (nextSourcePosition >= lengthS)
-        return accumulatedResult;
-
-    
-    return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
-}
-
-
-
 function RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue)
 {
    
@@ -467,7 +409,6 @@ function RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue)
     
     return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
 }
-
 
 
 function RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue)
