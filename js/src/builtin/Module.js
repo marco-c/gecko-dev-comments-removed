@@ -18,23 +18,24 @@ function ModuleGetExportedNames(exportStarSet = [])
         return [];
 
     
-    exportStarSet.push(module);
+    _DefineDataProperty(exportStarSet, exportStarSet.length, module);
 
     
     let exportedNames = [];
+    let namesCount = 0;
 
     
     let localExportEntries = module.localExportEntries;
     for (let i = 0; i < localExportEntries.length; i++) {
         let e = localExportEntries[i];
-        exportedNames.push(e.exportName);
+        _DefineDataProperty(exportedNames, namesCount++, e.exportName);
     }
 
     
     let indirectExportEntries = module.indirectExportEntries;
     for (let i = 0; i < indirectExportEntries.length; i++) {
         let e = indirectExportEntries[i];
-        exportedNames.push(e.exportName);
+        _DefineDataProperty(exportedNames, namesCount++, e.exportName);
     }
 
     
@@ -46,7 +47,7 @@ function ModuleGetExportedNames(exportStarSet = [])
         for (let j = 0; j < starNames.length; j++) {
             let n = starNames[j];
             if (n !== "default" && !(n in exportedNames))
-                exportedNames.push(n);
+                _DefineDataProperty(exportedNames, namesCount++, n);
         }
     }
 
@@ -72,7 +73,7 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
     }
 
     
-    resolveSet.push({module: module, exportName: exportName});
+    _DefineDataProperty(resolveSet, resolveSet.length, {module: module, exportName: exportName});
 
     
     let localExportEntries = module.localExportEntries;
@@ -107,7 +108,7 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
         return null;
 
     
-    exportStarSet.push(module);
+    _DefineDataProperty(exportStarSet, exportStarSet.length, module);
 
     
     let starResolution = null;
@@ -153,7 +154,7 @@ function GetModuleNamespace(module)
             if (resolution === null)
                 ThrowSyntaxError(JSMSG_MISSING_NAMESPACE_EXPORT);
             if (resolution !== "ambiguous")
-                unambiguousNames.push(name);
+                _DefineDataProperty(unambiguousNames, unambiguousNames.length, name);
         }
         namespace = ModuleNamespaceCreate(module, unambiguousNames);
     }
