@@ -1922,7 +1922,6 @@ struct nsStyleTextReset
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
-  nsStyleCoord  mVerticalAlign;         
   nsStyleTextOverflow mTextOverflow;    
 
   uint8_t mTextDecorationLine;          
@@ -2526,6 +2525,8 @@ struct nsStyleDisplay
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
   nsStyleCoord mPerspectiveOrigin[2]; 
+
+  nsStyleCoord mVerticalAlign;  
 
   AutoTArray<mozilla::StyleTransition, 1> mTransitions; 
   

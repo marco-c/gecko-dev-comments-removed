@@ -2002,8 +2002,7 @@ nsLineLayout::VerticalAlignFrames(PerSpanData* psd)
 
     
     
-    const nsStyleCoord& verticalAlign =
-      frame->StyleTextReset()->mVerticalAlign;
+    const nsStyleCoord& verticalAlign = frame->StyleDisplay()->mVerticalAlign;
     uint8_t verticalAlignEnum = frame->VerticalAlignEnum();
 #ifdef NOISY_BLOCKDIR_ALIGN
     printf("  [frame]");
