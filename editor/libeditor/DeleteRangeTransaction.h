@@ -3,8 +3,8 @@
 
 
 
-#ifndef DeleteRangeTxn_h__
-#define DeleteRangeTxn_h__
+#ifndef DeleteRangeTransaction_h
+#define DeleteRangeTransaction_h
 
 #include "EditAggregateTxn.h"
 #include "EditTxn.h"
@@ -19,13 +19,16 @@ class nsEditor;
 class nsINode;
 class nsRangeUpdater;
 
+namespace mozilla {
 
 
 
-class DeleteRangeTxn : public EditAggregateTxn
+
+class DeleteRangeTransaction final : public EditAggregateTxn
 {
 public:
   
+
 
 
 
@@ -33,9 +36,10 @@ public:
                 nsRange* aRange,
                 nsRangeUpdater* aRangeUpdater);
 
-  DeleteRangeTxn();
+  DeleteRangeTransaction();
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteRangeTxn, EditAggregateTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteRangeTransaction,
+                                           EditAggregateTxn)
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   NS_DECL_EDITTXN
@@ -47,8 +51,8 @@ public:
     mRange = nullptr;
     EditAggregateTxn::LastRelease();
   }
-protected:
 
+protected:
   nsresult CreateTxnsToDeleteBetween(nsINode* aNode,
                                      int32_t aStartOffset,
                                      int32_t aEndOffset);
@@ -58,8 +62,6 @@ protected:
   nsresult CreateTxnsToDeleteContent(nsINode* aParent,
                                      int32_t aOffset,
                                      nsIEditor::EDirection aAction);
-
-protected:
 
   
   RefPtr<nsRange> mRange;
@@ -71,4 +73,6 @@ protected:
   nsRangeUpdater* mRangeUpdater;
 };
 
-#endif
+} 
+
+#endif 

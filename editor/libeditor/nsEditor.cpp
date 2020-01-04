@@ -13,7 +13,7 @@
 #include "ChangeAttributeTransaction.h" 
 #include "CreateElementTransaction.h"   
 #include "DeleteNodeTransaction.h"      
-#include "DeleteRangeTxn.h"             
+#include "DeleteRangeTransaction.h"     
 #include "DeleteTextTxn.h"              
 #include "EditAggregateTxn.h"           
 #include "EditorUtils.h"                
@@ -4302,9 +4302,9 @@ nsEditor::CreateTxnForDeleteSelection(EDirection aAction,
     
     
     if (!range->Collapsed()) {
-      RefPtr<DeleteRangeTxn> txn = new DeleteRangeTxn();
-      txn->Init(this, range, &mRangeUpdater);
-      aggTxn->AppendChild(txn);
+      RefPtr<DeleteRangeTransaction> transaction = new DeleteRangeTransaction();
+      transaction->Init(this, range, &mRangeUpdater);
+      aggTxn->AppendChild(transaction);
     } else if (aAction != eNone) {
       
       
