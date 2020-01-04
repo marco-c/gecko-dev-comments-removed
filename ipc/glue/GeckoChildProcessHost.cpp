@@ -1119,7 +1119,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 #ifdef MOZ_SANDBOX
     
     
-    if (mProcessType == GeckoProcessType_Content) {
+    if (mProcessType == GeckoProcessType_Content ||
+        mProcessType == GeckoProcessType_GMPlugin) {
       if (!mSandboxBroker.AddTargetPeer(process)) {
         NS_WARNING("Failed to add content process as target peer.");
       }
