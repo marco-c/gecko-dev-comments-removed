@@ -56,9 +56,7 @@ public:
 
 
 
-  RenderFrameParent(nsFrameLoader* aFrameLoader,
-                    TextureFactoryIdentifier* aTextureFactoryIdentifier,
-                    uint64_t* aId, bool* aSuccess);
+  RenderFrameParent(nsFrameLoader* aFrameLoader, bool* aSuccess);
   virtual ~RenderFrameParent();
 
   void Destroy();
