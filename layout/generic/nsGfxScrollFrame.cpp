@@ -2816,13 +2816,13 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   bool createLayersForScrollbars = mIsRoot &&
     mOuter->PresContext()->IsRootContentDocument();
 
+  bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
+    nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
+
   if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
     
     
     mAddClipRectToLayer = false;
-
-    bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-        nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
 
     if (usingDisplayPort) {
       
@@ -2873,9 +2873,8 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   nsRect dirtyRect = aDirtyRect.Intersect(mScrollPort);
 
   nsRect displayPort;
-  bool usingDisplayPort = false;
   if (aBuilder->IsPaintingToWindow()) {
-    bool wasUsingDisplayPort = nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), nullptr);
+    bool wasUsingDisplayPort = usingDisplayPort;
 
     if (mIsRoot && gfxPrefs::LayoutUseContainersForRootFrames()) {
       
