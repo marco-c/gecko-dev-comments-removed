@@ -378,12 +378,7 @@ var Bookmarks = Object.freeze({
 
 
 
-
-
-
-
-
-  remove(guidOrInfo, options={}) {
+  remove(guidOrInfo) {
     let info = guidOrInfo;
     if (!info)
       throw new Error("Input should be a valid object");
@@ -405,7 +400,7 @@ var Bookmarks = Object.freeze({
       if (!item)
         throw new Error("No bookmarks found for the provided GUID.");
 
-      item = yield removeBookmark(item, options);
+      item = yield removeBookmark(item);
 
       
       let observers = PlacesUtils.bookmarks.getObservers();
@@ -1073,7 +1068,7 @@ function fetchBookmarksByParent(info) {
 
 
 
-function removeBookmark(item, options) {
+function removeBookmark(item) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: updateBookmark",
     Task.async(function*(db) {
 
@@ -1081,12 +1076,8 @@ function removeBookmark(item, options) {
 
     yield db.executeTransaction(function* transaction() {
       
-      if (item.type == Bookmarks.TYPE_FOLDER) {
-        if (options.preventRemovalOfNonEmptyFolders && item._childCount > 0) {
-          throw new Error("Cannot remove a non-empty folder.");
-        }
+      if (item.type == Bookmarks.TYPE_FOLDER)
         yield removeFoldersContents(db, [item.guid]);
-      }
 
       
       if (!isUntagging) {
