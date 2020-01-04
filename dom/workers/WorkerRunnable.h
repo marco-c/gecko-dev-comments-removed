@@ -267,15 +267,17 @@ private:
 
 
 
-class StopSyncLoopRunnable : public WorkerSyncRunnable
+
+class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable
 {
   bool mResult;
 
 public:
   
-  StopSyncLoopRunnable(WorkerPrivate* aWorkerPrivate,
-                       already_AddRefed<nsIEventTarget>&& aSyncLoopTarget,
-                       bool aResult);
+  MainThreadStopSyncLoopRunnable(
+                               WorkerPrivate* aWorkerPrivate,
+                               already_AddRefed<nsIEventTarget>&& aSyncLoopTarget,
+                               bool aResult);
 
   
   
@@ -283,7 +285,7 @@ public:
   Cancel() override;
 
 protected:
-  virtual ~StopSyncLoopRunnable()
+  virtual ~MainThreadStopSyncLoopRunnable()
   { }
 
   
@@ -298,33 +300,6 @@ protected:
 
 private:
   virtual bool
-  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
-
-  virtual bool
-  DispatchInternal() override final;
-};
-
-
-
-class MainThreadStopSyncLoopRunnable : public StopSyncLoopRunnable
-{
-public:
-  
-  MainThreadStopSyncLoopRunnable(
-                               WorkerPrivate* aWorkerPrivate,
-                               already_AddRefed<nsIEventTarget>&& aSyncLoopTarget,
-                               bool aResult)
-  : StopSyncLoopRunnable(aWorkerPrivate, Move(aSyncLoopTarget), aResult)
-  {
-    AssertIsOnMainThread();
-  }
-
-protected:
-  virtual ~MainThreadStopSyncLoopRunnable()
-  { }
-
-private:
-  virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override final
   {
     AssertIsOnMainThread();
@@ -333,6 +308,12 @@ private:
 
   virtual void
   PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
+
+  virtual bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
+
+  virtual bool
+  DispatchInternal() override final;
 };
 
 
