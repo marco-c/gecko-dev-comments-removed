@@ -188,12 +188,16 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
 
   focusInput() {
     this.inputFocused = true;
-    this._change("update");
+    
+    
+    this._change("all");
   },
 
   blurInput() {
     this.inputFocused = false;
-    this._change("update");
+    
+    
+    this._change("all");
   },
 
   clearFilter() {
