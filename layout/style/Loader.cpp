@@ -48,7 +48,6 @@
 #include "nsThreadUtils.h"
 #include "nsGkAtoms.h"
 #include "nsIThreadInternal.h"
-#include "nsCORSListenerProxy.h"
 #include "nsINetworkPredictor.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/URL.h"
@@ -68,8 +67,6 @@
 using mozilla::dom::EncodingUtils;
 
 using namespace mozilla::dom;
-
-
 
 
 
@@ -1027,63 +1024,6 @@ Loader::ObsoleteSheet(nsIURI* aURI)
 
 
 
-
-nsresult
-Loader::CheckLoadAllowed(nsIPrincipal* aSourcePrincipal,
-                         nsIURI* aTargetURI,
-                         nsISupports* aContext,
-                         bool aIsPreload)
-{
-  LOG(("css::Loader::CheckLoadAllowed"));
-
-  nsresult rv;
-
-  if (aSourcePrincipal) {
-    
-    nsIScriptSecurityManager *secMan = nsContentUtils::GetSecurityManager();
-    rv =
-      secMan->CheckLoadURIWithPrincipal(aSourcePrincipal, aTargetURI,
-                                        nsIScriptSecurityManager::ALLOW_CHROME);
-    if (NS_FAILED(rv)) { 
-      return rv;
-    }
-
-    LOG(("  Passed security check"));
-
-    
-    nsContentPolicyType contentPolicyType =
-      aIsPreload ? nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD
-                 : nsIContentPolicy::TYPE_INTERNAL_STYLESHEET;
-
-    int16_t shouldLoad = nsIContentPolicy::ACCEPT;
-    rv = NS_CheckContentLoadPolicy(contentPolicyType,
-                                   aTargetURI,
-                                   aSourcePrincipal,
-                                   aContext,
-                                   NS_LITERAL_CSTRING("text/css"),
-                                   nullptr,                     
-                                   &shouldLoad,
-                                   nsContentUtils::GetContentPolicy(),
-                                   nsContentUtils::GetSecurityManager());
-
-    if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
-      LOG(("  Load blocked by content policy"));
-      return NS_ERROR_CONTENT_BLOCKED;
-    }
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-
 nsresult
 Loader::CreateSheet(nsIURI* aURI,
                     nsIContent* aLinkingContent,
@@ -1446,19 +1386,8 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     return NS_BINDING_ABORTED;
   }
 
-  bool inherit = false;
   nsIPrincipal* triggeringPrincipal = aLoadData->mLoaderPrincipal;
-  if (triggeringPrincipal) {
-    rv = NS_URIChainHasFlags(aLoadData->mURI,
-                             nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT,
-                             &inherit);
-    inherit =
-      ((NS_SUCCEEDED(rv) && inherit) ||
-       (nsContentUtils::URIIsLocalFile(aLoadData->mURI) &&
-        NS_SUCCEEDED(aLoadData->mLoaderPrincipal->
-                     CheckMayLoad(aLoadData->mURI, false, false))));
-  }
-  else {
+  if (!triggeringPrincipal) {
     triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
   }
 
@@ -1487,6 +1416,14 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
                                    mDocument);
     }
 
+    nsSecurityFlags securityFlags =
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
+      nsILoadInfo::SEC_ALLOW_CHROME;
+
+    nsContentPolicyType contentPolicyType =
+      aIsPreload ? nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD
+                 : nsIContentPolicy::TYPE_INTERNAL_STYLESHEET;
+
     
     nsCOMPtr<nsIChannel> channel;
     
@@ -1499,8 +1436,8 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
                                                 aLoadData->mURI,
                                                 aLoadData->mRequestingNode,
                                                 triggeringPrincipal,
-                                                nsILoadInfo::SEC_NORMAL,
-                                                nsIContentPolicy::TYPE_OTHER);
+                                                securityFlags,
+                                                contentPolicyType);
     }
     else {
       
@@ -1511,13 +1448,17 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
       rv = NS_NewChannel(getter_AddRefs(channel),
                          aLoadData->mURI,
                          triggeringPrincipal,
-                         nsILoadInfo::SEC_NORMAL,
-                         nsIContentPolicy::TYPE_OTHER);
+                         securityFlags,
+                         contentPolicyType);
     }
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      LOG_ERROR(("  Failed to create channel"));
+      SheetComplete(aLoadData, rv);
+      return rv;
+    }
 
     nsCOMPtr<nsIInputStream> stream;
-    rv = channel->Open(getter_AddRefs(stream));
+    rv = channel->Open2(getter_AddRefs(stream));
 
     if (NS_FAILED(rv)) {
       LOG_ERROR(("  Failed to open URI synchronously"));
@@ -1581,20 +1522,30 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     return NS_OK;
   }
 
-#ifdef DEBUG
-  mSyncCallback = true;
-#endif
   nsCOMPtr<nsILoadGroup> loadGroup;
   if (mDocument) {
     loadGroup = mDocument->GetDocumentLoadGroup();
-    NS_ASSERTION(loadGroup,
-                 "No loadgroup for stylesheet; onload will fire early");
+    
+    
+    if (!loadGroup) {
+      LOG_ERROR(("  Failed to query loadGroup from document"));
+      SheetComplete(aLoadData, NS_ERROR_UNEXPECTED);
+      return NS_ERROR_UNEXPECTED;
+    }
   }
+#ifdef DEBUG
+  mSyncCallback = true;
+#endif
 
-  nsLoadFlags securityFlags = nsILoadInfo::SEC_NORMAL;
-  if (inherit) {
-    securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+  CORSMode ourCORSMode = aLoadData->mSheet->GetCORSMode();
+  nsSecurityFlags securityFlags =
+    ourCORSMode == CORS_NONE
+      ? nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS
+      : nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
+  if (ourCORSMode == CORS_USE_CREDENTIALS) {
+    securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
   }
+  securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
 
   nsContentPolicyType contentPolicyType =
     aIsPreload ? nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD
@@ -1690,35 +1641,13 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     return rv;
   }
 
-  nsCOMPtr<nsIStreamListener> channelListener;
-  CORSMode ourCORSMode = aLoadData->mSheet->GetCORSMode();
-  if (ourCORSMode != CORS_NONE) {
-    bool withCredentials = (ourCORSMode == CORS_USE_CREDENTIALS);
-    LOG(("  Doing CORS-enabled load; credentials %d", withCredentials));
-    RefPtr<nsCORSListenerProxy> corsListener =
-      new nsCORSListenerProxy(streamLoader, aLoadData->mLoaderPrincipal,
-			      withCredentials);
-    rv = corsListener->Init(channel, DataURIHandling::Allow);
-    if (NS_FAILED(rv)) {
-#ifdef DEBUG
-      mSyncCallback = false;
-#endif
-      LOG_ERROR(("  Initial CORS check failed"));
-      SheetComplete(aLoadData, rv);
-      return rv;
-    }
-    channelListener = corsListener;
-  } else {
-    channelListener = streamLoader;
-  }
-
   if (mDocument) {
     mozilla::net::PredictorLearn(aLoadData->mURI, mDocument->GetDocumentURI(),
                                  nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
                                  mDocument);
   }
 
-  rv = channel->AsyncOpen(channelListener, nullptr);
+  rv = channel->AsyncOpen2(streamLoader);
 
 #ifdef DEBUG
   mSyncCallback = false;
@@ -2061,17 +1990,13 @@ Loader::LoadStyleLink(nsIContent* aElement,
   if (!context) {
     context = mDocument;
   }
-  nsresult rv = CheckLoadAllowed(principal, aURL, context, false);
-  if (NS_FAILED(rv)) return rv;
-
-  LOG(("  Passed load check"));
 
   StyleSheetState state;
   RefPtr<CSSStyleSheet> sheet;
-  rv = CreateSheet(aURL, aElement, principal, aCORSMode,
-                   aReferrerPolicy, aIntegrity, false,
-                   aHasAlternateRel, aTitle, state, aIsAlternate,
-                   getter_AddRefs(sheet));
+  nsresult rv = CreateSheet(aURL, aElement, principal, aCORSMode,
+                            aReferrerPolicy, aIntegrity, false,
+                            aHasAlternateRel, aTitle, state, aIsAlternate,
+                            getter_AddRefs(sheet));
   NS_ENSURE_SUCCESS(rv, rv);
 
   LOG(("  Sheet is alternate: %d", *aIsAlternate));
@@ -2195,12 +2120,6 @@ Loader::LoadChildSheet(CSSStyleSheet* aParentSheet,
     context = mDocument;
   }
 
-  nsIPrincipal* principal = aParentSheet->Principal();
-  nsresult rv = CheckLoadAllowed(principal, aURL, context, false);
-  if (NS_FAILED(rv)) return rv;
-
-  LOG(("  Passed load check"));
-
   SheetLoadData* parentData = nullptr;
   nsCOMPtr<nsICSSLoaderObserver> observer;
 
@@ -2227,7 +2146,9 @@ Loader::LoadChildSheet(CSSStyleSheet* aParentSheet,
 
   
   
+  nsIPrincipal* principal = aParentSheet->Principal();
   RefPtr<CSSStyleSheet> sheet;
+  nsresult rv;
   StyleSheetState state;
   if (aReusableSheets && aReusableSheets->FindReusableStyleSheet(aURL, sheet)) {
     aParentRule->SetSheet(sheet);
@@ -2351,16 +2272,12 @@ Loader::InternalLoadNonDocumentSheet(nsIURI* aURL,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsresult rv = CheckLoadAllowed(aOriginPrincipal, aURL, mDocument, aIsPreload);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   StyleSheetState state;
   bool isAlternate;
   RefPtr<CSSStyleSheet> sheet;
   bool syncLoad = (aObserver == nullptr);
   const nsSubstring& empty = EmptyString();
+  nsresult rv;
 
   rv = CreateSheet(aURL, nullptr, aOriginPrincipal, aCORSMode,
                    aReferrerPolicy, aIntegrity, syncLoad, false,
