@@ -12,7 +12,6 @@
 #include "gfxContext.h"                 
 #include "mozilla/Attributes.h"         
 #include "mozilla/Maybe.h"              
-#include "nsAutoPtr.h"                  
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsRegion.h"                   

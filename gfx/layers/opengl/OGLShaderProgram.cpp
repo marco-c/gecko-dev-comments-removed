@@ -10,7 +10,6 @@
 #include "mozilla/DebugOnly.h"          
 #include "mozilla/layers/Compositor.h"  
 #include "nsAString.h"
-#include "nsAutoPtr.h"                  
 #include "nsString.h"                   
 #include "Layers.h"
 #include "GLContext.h"

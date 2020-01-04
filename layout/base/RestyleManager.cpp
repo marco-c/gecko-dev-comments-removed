@@ -18,6 +18,7 @@
 #include "FrameLayerBuilder.h"
 #include "GeckoProfiler.h"
 #include "LayerAnimationInfo.h" 
+#include "nsAutoPtr.h"
 #include "nsStyleChangeList.h"
 #include "nsRuleProcessorData.h"
 #include "nsStyleSet.h"

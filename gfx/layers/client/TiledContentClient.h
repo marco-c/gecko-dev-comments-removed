@@ -27,7 +27,6 @@
 #include "mozilla/layers/TextureClientPool.h"
 #include "ClientLayerManager.h"
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsISupportsImpl.h"            
 #include "nsPoint.h"                    
 #include "nsRect.h"                     

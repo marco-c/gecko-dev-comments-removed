@@ -31,7 +31,6 @@
 #include "ShadowLayerUtils.h"
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsTArray.h"                   
 #include "nsXULAppAPI.h"                
 #include "mozilla/ReentrantMonitor.h"

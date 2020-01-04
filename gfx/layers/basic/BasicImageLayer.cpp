@@ -10,7 +10,6 @@
 #include "basic/BasicImplData.h"        
 #include "basic/BasicLayers.h"          
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            

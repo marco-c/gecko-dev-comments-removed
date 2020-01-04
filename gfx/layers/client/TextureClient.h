@@ -25,7 +25,6 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/mozalloc.h"           
 #include "mozilla/gfx/CriticalSection.h"
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "GfxTexturesReporter.h"

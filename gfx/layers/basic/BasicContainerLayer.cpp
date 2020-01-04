@@ -10,7 +10,6 @@
 #include "basic/BasicLayers.h"          
 #include "mozilla/gfx/BaseRect.h"       
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "nsPoint.h"                    

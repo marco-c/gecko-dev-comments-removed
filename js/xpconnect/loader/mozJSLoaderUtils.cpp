@@ -4,7 +4,6 @@
 
 
 
-#include "nsAutoPtr.h"
 
 #include "jsapi.h"
 #include "jsfriendapi.h"

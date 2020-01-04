@@ -10,7 +10,6 @@
 #include "mozilla/HashFunctions.h"  
 
 #include "nsWrapperCache.h"
-#include "nsAutoPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/ErrorResult.h"
 #include "nsSVGElement.h"

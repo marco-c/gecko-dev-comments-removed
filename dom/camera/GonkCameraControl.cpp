@@ -32,7 +32,6 @@
 #include "nsNetUtil.h" 
 #endif
 #include "nsNetCID.h" 
-#include "nsAutoPtr.h" 
 #include "nsCOMPtr.h"
 #include "nsMemory.h"
 #include "nsThread.h"

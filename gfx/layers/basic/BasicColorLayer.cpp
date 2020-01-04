@@ -11,7 +11,6 @@
 #include "gfxRect.h"                    
 #include "gfx2DGlue.h"
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            

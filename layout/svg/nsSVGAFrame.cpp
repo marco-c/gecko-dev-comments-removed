@@ -6,6 +6,7 @@
 
 #include "gfxMatrix.h"
 #include "mozilla/dom/SVGAElement.h"
+#include "nsAutoPtr.h"
 #include "nsSVGContainerFrame.h"
 #include "nsSVGIntegrationUtils.h"
 #include "nsSVGUtils.h"

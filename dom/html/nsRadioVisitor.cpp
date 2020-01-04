@@ -5,7 +5,6 @@
 
 
 #include "nsRadioVisitor.h"
-#include "nsAutoPtr.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsIConstraintValidation.h"
 

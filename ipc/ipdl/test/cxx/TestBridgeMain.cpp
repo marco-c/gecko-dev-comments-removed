@@ -4,6 +4,8 @@
 #include "IPDLUnitTests.h"      
 #include "IPDLUnitTestSubprocess.h"
 
+#include "nsAutoPtr.h"
+
 using namespace std;
 
 namespace mozilla {

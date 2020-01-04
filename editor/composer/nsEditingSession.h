@@ -11,7 +11,6 @@
 #include "nsWeakReference.h"            
 #endif
 
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "nsIWeakReferenceUtils.h"      

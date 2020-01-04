@@ -8,7 +8,6 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/dom/Selection.h"      
 #include "nsAString.h"                  
-#include "nsAutoPtr.h"                  
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"                    
 #include "nsEditor.h"                   

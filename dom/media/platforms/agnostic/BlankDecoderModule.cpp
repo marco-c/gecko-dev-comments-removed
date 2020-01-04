@@ -11,6 +11,7 @@
 #include "mozilla/mozalloc.h" 
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
+#include "nsAutoPtr.h"
 #include "nsRect.h"
 #include "PlatformDecoderModule.h"
 #include "TimeUnits.h"

@@ -12,7 +12,6 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 
 using namespace mozilla::gl;
 

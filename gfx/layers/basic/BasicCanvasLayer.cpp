@@ -8,7 +8,6 @@
 #include "basic/BasicLayers.h"          
 #include "basic/BasicLayersImpl.h"      
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "gfx2DGlue.h"

@@ -5,7 +5,6 @@
 
 
 #include "nsCOMPtr.h"
-#include "nsAutoPtr.h"
 #include "jsapi.h"
 #include "jswrapper.h"
 #include "nsCRT.h"

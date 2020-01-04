@@ -7,7 +7,6 @@
 #define InsertTextTxn_h__
 
 #include "EditTxn.h"                    
-#include "nsAutoPtr.h"                  
 #include "nsCycleCollectionParticipant.h" 
 #include "nsID.h"                       
 #include "nsISupportsImpl.h"            

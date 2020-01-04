@@ -4,6 +4,7 @@
 
 
 #include "CanvasImageCache.h"
+#include "nsAutoPtr.h"
 #include "nsIImageLoadingContent.h"
 #include "nsExpirationTracker.h"
 #include "imgIRequest.h"

@@ -28,7 +28,6 @@
 
 #include "nsIDOMHTMLElement.h"
 #include "nsStubMutationObserver.h"
-#include "nsAutoPtr.h"
 #include "nsTransactionManager.h"
 
 

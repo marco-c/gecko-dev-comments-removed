@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "MediaTrackConstraints.h"
 #include "mtransport/runnable_utils.h"
+#include "nsAutoPtr.h"
 
 
 #ifdef FF

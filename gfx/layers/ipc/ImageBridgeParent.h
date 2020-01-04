@@ -16,7 +16,6 @@
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/PImageBridgeParent.h"
-#include "nsAutoPtr.h"                  
 #include "nsISupportsImpl.h"
 #include "nsTArrayForwardDeclare.h"     
 

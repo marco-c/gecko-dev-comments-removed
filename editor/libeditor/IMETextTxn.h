@@ -7,7 +7,6 @@
 #define IMETextTxn_h__
 
 #include "EditTxn.h"                      
-#include "nsAutoPtr.h"                    
 #include "nsCycleCollectionParticipant.h" 
 #include "nsString.h"                     
 

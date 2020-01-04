@@ -16,7 +16,6 @@
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/BaseRect.h"       
 #include "mozilla/gfx/Point.h"          
-#include "nsAutoPtr.h"                  
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsPoint.h"                    

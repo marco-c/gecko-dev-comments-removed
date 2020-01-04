@@ -28,7 +28,6 @@
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/mozalloc.h"           
 #include "mozilla/unused.h"
-#include "nsAutoPtr.h"                  
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsTArray.h"                   

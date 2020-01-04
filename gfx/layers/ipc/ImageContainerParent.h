@@ -11,7 +11,6 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PImageContainerParent.h"
-#include "nsAutoPtr.h"                  
 
 namespace mozilla {
 namespace layers {

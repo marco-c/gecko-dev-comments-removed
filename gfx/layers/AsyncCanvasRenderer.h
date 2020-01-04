@@ -10,7 +10,6 @@
 #include "LayersTypes.h"
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"             
 #include "nsCOMPtr.h"                   
 
 class nsICanvasRenderingContextInternal;

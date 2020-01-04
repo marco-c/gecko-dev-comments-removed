@@ -15,7 +15,6 @@
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/ImageBridgeChild.h"  
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsRect.h"                     

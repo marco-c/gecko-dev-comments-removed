@@ -86,6 +86,7 @@
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StateMirroring.h"
 
+#include "nsAutoPtr.h"
 #include "nsThreadUtils.h"
 #include "MediaCallbackID.h"
 #include "MediaDecoder.h"

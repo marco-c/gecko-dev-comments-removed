@@ -15,7 +15,6 @@
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsDataHashtable.h"            
 #include "nsDebug.h"                    
 #include "nsHashKeys.h"                 

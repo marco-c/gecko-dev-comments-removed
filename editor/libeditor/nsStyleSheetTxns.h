@@ -7,7 +7,6 @@
 #define nsStylesheetTxns_h__
 
 #include "EditTxn.h"                    
-#include "nsAutoPtr.h"                  
 #include "mozilla/StyleSheetHandle.h"   
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"                       

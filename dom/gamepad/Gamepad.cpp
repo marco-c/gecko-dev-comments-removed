@@ -5,7 +5,6 @@
 
 
 #include "Gamepad.h"
-#include "nsAutoPtr.h"
 #include "nsPIDOMWindow.h"
 #include "nsTArray.h"
 #include "nsVariant.h"

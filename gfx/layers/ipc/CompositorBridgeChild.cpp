@@ -14,6 +14,7 @@
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/mozalloc.h"           
+#include "nsAutoPtr.h"
 #include "nsDebug.h"                    
 #include "nsIObserver.h"                
 #include "nsISupportsImpl.h"            

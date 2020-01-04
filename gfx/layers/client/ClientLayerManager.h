@@ -17,7 +17,6 @@
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/layers/APZTestData.h" 
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsIObserver.h"                
 #include "nsISupportsImpl.h"            

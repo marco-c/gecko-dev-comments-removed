@@ -26,7 +26,6 @@
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/mozalloc.h"           
 #include "gfxEnv.h"
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 

@@ -6,7 +6,6 @@
 #include "ClientContainerLayer.h"
 #include "ClientLayerManager.h"         
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 

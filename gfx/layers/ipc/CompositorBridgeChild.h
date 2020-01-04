@@ -12,7 +12,6 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"
-#include "nsAutoPtr.h"                  
 #include "nsClassHashtable.h"           
 #include "nsCOMPtr.h"                   
 #include "nsHashKeys.h"                 

@@ -7,7 +7,6 @@
 #include "Layers.h"                     
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            

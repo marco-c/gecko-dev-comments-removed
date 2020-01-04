@@ -14,7 +14,6 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/PLayerTransactionParent.h"
-#include "nsAutoPtr.h"                  
 #include "nsTArrayForwardDeclare.h"     
 
 namespace mozilla {

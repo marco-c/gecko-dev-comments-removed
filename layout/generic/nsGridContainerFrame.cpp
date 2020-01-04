@@ -14,7 +14,6 @@
 #include "mozilla/PodOperations.h" 
 #include "nsAbsoluteContainingBlock.h"
 #include "nsAlgorithm.h" 
-#include "nsAutoPtr.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsDataHashtable.h"

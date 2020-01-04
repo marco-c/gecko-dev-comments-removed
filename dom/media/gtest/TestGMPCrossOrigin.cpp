@@ -5,6 +5,7 @@
 
 
 #include "gtest/gtest.h"
+#include "nsAutoPtr.h"
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"

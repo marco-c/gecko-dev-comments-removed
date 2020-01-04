@@ -14,7 +14,6 @@
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsAString.h"
-#include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "nsRegion.h"                   

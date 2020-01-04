@@ -14,7 +14,6 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsRegion.h"                   

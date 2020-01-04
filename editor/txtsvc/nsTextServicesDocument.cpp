@@ -9,7 +9,6 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"                  
-#include "nsAutoPtr.h"                  
 #include "nsContentUtils.h"             
 #include "nsDebug.h"                    
 #include "nsDependentSubstring.h"       
