@@ -27,6 +27,12 @@ namespace {
 
 
 StaticMutex sMutex;
+enum class CubebState {
+  Uninitialized = 0,
+  Initialized,
+  Error,
+  Shutdown
+} sCubebState = CubebState::Uninitialized;
 cubeb* sCubebContext;
 double sVolumeScale;
 uint32_t sCubebLatency;
@@ -163,7 +169,9 @@ void InitBrandName()
 cubeb* GetCubebContextUnlocked()
 {
   sMutex.AssertCurrentThreadOwns();
-  if (sCubebContext) {
+  if (sCubebState != CubebState::Uninitialized) {
+    
+    
     return sCubebContext;
   }
 
@@ -174,8 +182,9 @@ cubeb* GetCubebContextUnlocked()
       sBrandName, "Did not initialize sbrandName, and not on the main thread?");
   }
 
-  DebugOnly<int> rv = cubeb_init(&sCubebContext, sBrandName);
+  int rv = cubeb_init(&sCubebContext, sBrandName);
   NS_WARNING_ASSERTION(rv == CUBEB_OK, "Could not get a cubeb context.");
+  sCubebState = (rv == CUBEB_OK) ? CubebState::Initialized : CubebState::Error;
 
   return sCubebContext;
 }
@@ -247,6 +256,8 @@ void ShutdownLibrary()
     sCubebContext = nullptr;
   }
   sBrandName = nullptr;
+  
+  sCubebState = CubebState::Shutdown;
 }
 
 uint32_t MaxNumberOfChannels()
