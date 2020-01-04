@@ -747,7 +747,10 @@ function RegExpSplit(string, limit) {
     }
 
     
-    _DefineDataProperty(A, lengthA, Substring(S, p, size - p));
+    if (p >= size)
+        _DefineDataProperty(A, lengthA, "");
+    else
+        _DefineDataProperty(A, lengthA, Substring(S, p, size - p));
 
     
     return A;
