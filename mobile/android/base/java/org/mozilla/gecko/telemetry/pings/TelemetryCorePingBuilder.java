@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko.telemetry;
+package org.mozilla.gecko.telemetry.pings;
 
 import android.content.Context;
 import android.os.Build;
@@ -24,7 +24,7 @@ import java.util.Locale;
 
 
 
-class TelemetryCorePingBuilder extends TelemetryPingBuilder {
+public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
     private static final String NAME = "core";
     private static final int VERSION_VALUE = 4; 
