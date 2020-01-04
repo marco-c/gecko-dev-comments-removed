@@ -696,9 +696,15 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       }
 
       if (apzc) {
+        bool targetConfirmed = (hitResult == HitLayer);
+        if (gfxPrefs::APZDragEnabled() && hitScrollbar) {
+          
+          
+          
+          targetConfirmed = false;
+        }
         result = mInputQueue->ReceiveInputEvent(
-          apzc,
-           false,
+          apzc, targetConfirmed,
           mouseInput, aOutInputBlockId);
 
         if (result == nsEventStatus_eConsumeDoDefault) {

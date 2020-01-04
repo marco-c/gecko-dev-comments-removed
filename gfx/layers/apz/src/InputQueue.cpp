@@ -182,8 +182,6 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
                               bool aTargetConfirmed,
                               const MouseInput& aEvent,
                               uint64_t* aOutInputBlockId) {
-  MOZ_ASSERT(!aTargetConfirmed); 
-
   
   
   bool newBlock = DragTracker::StartsDrag(aEvent);
@@ -216,23 +214,15 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
   if (!block) {
     MOZ_ASSERT(newBlock);
     block = new DragBlockState(aTarget, aTargetConfirmed, aEvent);
-    if (aOutInputBlockId) {
-      *aOutInputBlockId = block->GetBlockId();
-    }
 
-    INPQ_LOG("started new drag block %p id %" PRIu64 " for target %p\n",
-        block, block->GetBlockId(), aTarget.get());
+    INPQ_LOG("started new drag block %p id %" PRIu64 " for %sconfirmed target %p\n",
+        block, block->GetBlockId(), aTargetConfirmed ? "" : "un", aTarget.get());
 
     SweepDepletedBlocks();
     mInputBlockQueue.AppendElement(block);
 
     CancelAnimationsForNewBlock(block);
     MaybeRequestContentResponse(aTarget, block);
-
-    block->AddEvent(aEvent.AsMouseInput());
-
-    
-    return nsEventStatus_eConsumeDoDefault;
   }
 
   if (aOutInputBlockId) {
