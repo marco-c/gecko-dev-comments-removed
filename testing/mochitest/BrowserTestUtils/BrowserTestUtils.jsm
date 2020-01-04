@@ -484,7 +484,9 @@ this.BrowserTestUtils = {
 
 
 
-  waitForEvent(subject, eventName, capture, checkFn) {
+
+
+  waitForEvent(subject, eventName, capture, checkFn, wantsUntrusted) {
     return new Promise((resolve, reject) => {
       subject.addEventListener(eventName, function listener(event) {
         try {
@@ -501,7 +503,7 @@ this.BrowserTestUtils = {
           }
           reject(ex);
         }
-      }, capture);
+      }, capture, wantsUntrusted);
     });
   },
 
