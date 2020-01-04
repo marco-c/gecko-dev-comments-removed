@@ -389,6 +389,7 @@ ResponsiveUI.prototype = {
     
     this.toolbar = this.chromeDoc.createElement("toolbar");
     this.toolbar.className = "devtools-responsiveui-toolbar";
+    this.toolbar.setAttribute("fullscreentoolbar", "true");
 
     this.menulist = this.chromeDoc.createElement("menulist");
     this.menulist.className = "devtools-responsiveui-menulist";
