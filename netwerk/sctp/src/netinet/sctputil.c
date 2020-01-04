@@ -4064,12 +4064,8 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 	vtag = 0;
 	if (stcb != NULL) {
-		
 		vtag = stcb->asoc.peer_vtag;
-		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
-		
 		vrf_id = stcb->asoc.vrf_id;
-		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 	}
 	sctp_send_abort(m, iphlen, src, dst, sh, vtag, op_err,
 #if defined(__FreeBSD__)
@@ -4077,6 +4073,9 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 	                vrf_id, port);
 	if (stcb != NULL) {
+		
+		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
+		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 		
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
@@ -4205,15 +4204,15 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 	}
 	
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
-		sctp_abort_notification(stcb, 0, 0, NULL, so_locked);
-	}
-	
 	sctp_send_abort_tcb(stcb, op_err, so_locked);
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 	if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_OPEN) ||
 	    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 		SCTP_STAT_DECR_GAUGE32(sctps_currestab);
+	}
+	
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
+		sctp_abort_notification(stcb, 0, 0, NULL, so_locked);
 	}
 	
 #ifdef SCTP_ASOCLOG_OF_TSNS
