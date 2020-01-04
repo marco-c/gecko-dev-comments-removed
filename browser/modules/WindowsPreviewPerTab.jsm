@@ -750,7 +750,11 @@ this.AeroPeek = {
 
   disable() {
     while (this.windows.length) {
-      this.windows[0].destroy(); 
+      
+      
+      let tabWinObject = this.windows[0];
+      tabWinObject.destroy(); 
+      delete tabWinObject.win.gTaskbarTabGroup; 
     }
   },
 
