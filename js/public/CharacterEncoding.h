@@ -235,10 +235,19 @@ UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen)
 
 
 
+extern TwoByteCharsZ
+UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* outlen);
+
+
+
+
 
 
 extern TwoByteCharsZ
 LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
+
+extern TwoByteCharsZ
+LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* outlen);
 
 
 
