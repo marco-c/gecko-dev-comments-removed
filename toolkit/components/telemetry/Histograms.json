@@ -7629,13 +7629,6 @@
     "n_values": 16,
     "description": "TLS/SSL version fallback reached the minimum version (1=TLS 1.0, 2=TLS 1.1, 3=TLS 1.2) or the fallback limit (4=TLS 1.0, 8=TLS 1.1, 12=TLS 1.2), stopped the fallback"
   },
-  "SSL_WEAK_CIPHERS_FALLBACK": {
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 64,
-    "description": "Fallback attempted when server did not support any strong cipher suites"
-  },
   "SSL_CIPHER_SUITE_FULL": {
     "alert_emails": ["seceng-telemetry@mozilla.com"],
     "expires_in_version": "never",
@@ -9678,13 +9671,6 @@
     "releaseChannelCollection": "opt-out",
     "bug_numbers": [722110,1260065],
     "description": "Counts number of times a certain plugin has been activated."
-  },
-  "SCROLL_LINKED_EFFECT_FOUND": {
-    "alert_emails": ["kgupta@mozilla.com"],
-    "bug_numbers": [1229052],
-    "expires_in_version": "50",
-    "kind": "boolean",
-    "description": "Attempt to determine prevalence of scroll-linked effects on the web."
   },
   "SCROLL_INPUT_METHODS": {
     "alert_emails": ["botond@mozilla.com"],
