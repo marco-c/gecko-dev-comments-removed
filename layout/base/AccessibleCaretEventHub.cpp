@@ -287,12 +287,6 @@ public:
     aContext->SetState(aContext->NoActionState());
   }
 
-  virtual void OnScrolling(AccessibleCaretEventHub* aContext) override
-  {
-    
-    aContext->LaunchScrollEndInjector();
-  }
-
   virtual void OnBlur(AccessibleCaretEventHub* aContext,
                       bool aIsLeavingDocument) override
   {
@@ -471,10 +465,6 @@ AccessibleCaretEventHub::HandleEvent(WidgetEvent* aEvent)
     status = HandleMouseEvent(aEvent->AsMouseEvent());
     break;
 
-  case eWheelEventClass:
-    status = HandleWheelEvent(aEvent->AsWheelEvent());
-    break;
-
   case eTouchEventClass:
     status = HandleTouchEvent(aEvent->AsTouchEvent());
     break;
@@ -536,35 +526,6 @@ AccessibleCaretEventHub::HandleMouseEvent(WidgetMouseEvent* aEvent)
   }
 
   return rv;
-}
-
-nsEventStatus
-AccessibleCaretEventHub::HandleWheelEvent(WidgetWheelEvent* aEvent)
-{
-  switch (aEvent->mMessage) {
-  case eWheel:
-    AC_LOGV("eWheel, isMomentum %d, state: %s", aEvent->isMomentum,
-            mState->Name());
-    mState->OnScrolling(this);
-    break;
-
-  case eWheelOperationStart:
-    AC_LOGV("eWheelOperationStart, state: %s", mState->Name());
-    mState->OnScrollStart(this);
-    break;
-
-  case eWheelOperationEnd:
-    AC_LOGV("eWheelOperationEnd, state: %s", mState->Name());
-    mState->OnScrollEnd(this);
-    break;
-
-  default:
-    break;
-  }
-
-  
-  
-  return nsEventStatus_eIgnore;
 }
 
 nsEventStatus
