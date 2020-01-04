@@ -148,6 +148,7 @@ private:
   static void ComposeAnimationRule(dom::Element* aElement,
                                    nsCSSPseudoElements::Type aPseudoType,
                                    CascadeLevel aCascadeLevel,
+                                   TimeStamp aRefreshTime,
                                    bool& aStyleChanging);
 
   

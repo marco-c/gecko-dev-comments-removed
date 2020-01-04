@@ -10,6 +10,7 @@
 #include "mozilla/AnimValuesStyleRule.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/TimeStamp.h"
 #include "nsCSSPseudoElements.h" 
 #include "nsHashKeys.h" 
 #include "nsTHashtable.h" 
@@ -133,6 +134,18 @@ public:
     return mAnimationRule[aCascadeLevel];
   }
 
+  const TimeStamp& AnimationRuleRefreshTime(EffectCompositor::CascadeLevel
+                                              aCascadeLevel) const
+  {
+    return mAnimationRuleRefreshTime[aCascadeLevel];
+  }
+  void UpdateAnimationRuleRefreshTime(EffectCompositor::CascadeLevel
+                                        aCascadeLevel,
+                                      const TimeStamp& aRefreshTime)
+  {
+    mAnimationRuleRefreshTime[aCascadeLevel] = aRefreshTime;
+  }
+
   bool CascadeNeedsUpdate() const { return mCascadeNeedsUpdate; }
   void MarkCascadeNeedsUpdate() { mCascadeNeedsUpdate = true; }
   void MarkCascadeUpdated() { mCascadeNeedsUpdate = false; }
@@ -157,6 +170,15 @@ private:
                   EffectCompositor::CascadeLevel(
                     EffectCompositor::kCascadeLevelCount),
                   RefPtr<AnimValuesStyleRule>> mAnimationRule;
+
+  
+  
+  
+  
+  EnumeratedArray<EffectCompositor::CascadeLevel,
+                  EffectCompositor::CascadeLevel(
+                    EffectCompositor::kCascadeLevelCount),
+                  TimeStamp> mAnimationRuleRefreshTime;
 
   
   
