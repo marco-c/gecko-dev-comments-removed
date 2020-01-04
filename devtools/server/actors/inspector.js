@@ -80,6 +80,7 @@ const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
 const {EventParsers} = require("devtools/shared/event-parsers");
+const { makeInfallible } = require("devtools/shared/DevToolsUtils");
 
 const FONT_FAMILY_PREVIEW_TEXT = "The quick brown fox jumps over the lazy dog";
 const FONT_FAMILY_PREVIEW_TEXT_SIZE = 20;
@@ -150,19 +151,6 @@ loader.lazyGetter(this, "eventListenerService", function () {
 });
 
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
-
-
-
-function makeInfallible(handler) {
-  return function (...args) {
-    try {
-      return handler.apply(this, args);
-    } catch(ex) {
-      console.error(ex);
-    }
-    return undefined;
-  };
-}
 
 
 function delayedResolve(value) {
