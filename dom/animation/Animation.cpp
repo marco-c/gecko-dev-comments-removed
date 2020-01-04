@@ -617,11 +617,9 @@ Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
   
   
   
+  bool updatedHoldTime = false;
   {
     AutoRestore<Nullable<TimeDuration>> restoreHoldTime(mHoldTime);
-    bool updatedHoldTime = false;
-
-    AnimationPlayState playState = PlayState();
 
     if (playState == AnimationPlayState::Pending &&
         mHoldTime.IsNull() &&
@@ -642,13 +640,16 @@ Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
     }
 
     mEffect->ComposeStyle(aStyleRule, aSetProperties);
-
-    if (updatedHoldTime) {
-      UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
-    }
-
-    mFinishedAtLastComposeStyle = (playState == AnimationPlayState::Finished);
   }
+
+  
+  if (updatedHoldTime) {
+    UpdateEffect();
+  }
+
+  MOZ_ASSERT(playState == PlayState(),
+             "Play state should not change during the course of compositing");
+  mFinishedAtLastComposeStyle = (playState == AnimationPlayState::Finished);
 }
 
 void
