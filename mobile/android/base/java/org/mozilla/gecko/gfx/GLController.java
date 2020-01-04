@@ -142,7 +142,7 @@ public class GLController {
         
         
         
-        if (GeckoThread.isRunning()) {
+        if (mView.getLayerClient().isGeckoReady()) {
             GeckoAppShell.sendEventToGeckoSync(GeckoEvent.createCompositorCreateEvent(mWidth, mHeight));
         }
     }

@@ -91,7 +91,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
     private ZoomConstraints mZoomConstraints;
 
-    private boolean mGeckoIsReady;
+    private volatile boolean mGeckoIsReady;
 
     private final PanZoomController mPanZoomController;
     private final DynamicToolbarAnimator mToolbarAnimator;
@@ -146,7 +146,11 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     }
 
     
-    public void notifyGeckoReady() {
+     boolean isGeckoReady() {
+        return mGeckoIsReady;
+    }
+
+    public void onGeckoReady() {
         mGeckoIsReady = true;
 
         mRootLayer = new VirtualLayer(new IntSize(mView.getWidth(), mView.getHeight()));
