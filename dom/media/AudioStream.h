@@ -279,10 +279,6 @@ private:
   
   Monitor mMonitor;
 
-  
-  uint32_t mInRate;
-  
-  uint32_t mOutRate;
   uint32_t mChannels;
   uint32_t mOutChannels;
   AudioClock mAudioClock;
