@@ -7,7 +7,6 @@
 #include "nsThreadUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "LeakRefPtr.h"
 
 #ifdef MOZILLA_INTERNAL_API
 # include "nsThreadManager.h"
@@ -27,8 +26,6 @@ using mozilla::IsVistaOrLater;
 
 #include <pratom.h>
 #include <prthread.h>
-
-using namespace mozilla;
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
 
@@ -142,11 +139,13 @@ NS_IsMainThread()
 }
 #endif
 
+
+
+
 NS_METHOD
-NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent)
+NS_DispatchToCurrentThread(nsIRunnable* aEvent)
 {
-  nsresult rv;
-  nsCOMPtr<nsIRunnable> event(aEvent);
+  nsCOMPtr<nsIRunnable> deathGrip = aEvent;
 #ifdef MOZILLA_INTERNAL_API
   nsIThread* thread = NS_GetCurrentThread();
   if (!thread) {
@@ -154,47 +153,28 @@ NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent)
   }
 #else
   nsCOMPtr<nsIThread> thread;
-  rv = NS_GetCurrentThread(getter_AddRefs(thread));
+  nsresult rv = NS_GetCurrentThread(getter_AddRefs(thread));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 #endif
-  
-  
-  nsIRunnable* temp = event.get();
-  rv = thread->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    
-    
-    NS_RELEASE(temp);
-  }
-  return rv;
-}
-
-
-
-
-NS_METHOD
-NS_DispatchToCurrentThread(nsIRunnable* aEvent)
-{
-  nsCOMPtr<nsIRunnable> event(aEvent);
-  return NS_DispatchToCurrentThread(event.forget());
+  return thread->Dispatch(aEvent, NS_DISPATCH_NORMAL);
 }
 
 NS_METHOD
 NS_DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aDispatchFlags)
 {
-  LeakRefPtr<nsIRunnable> event(Move(aEvent));
+  nsCOMPtr<nsIRunnable> event(aEvent);
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     NS_ASSERTION(false, "Failed NS_DispatchToMainThread() in shutdown; leaking");
     
     
-    return rv;
+    nsIRunnable* temp = event.forget().take(); 
+    return temp ? rv : rv; 
   }
-  return thread->Dispatch(event.take(), aDispatchFlags);
+  return thread->Dispatch(event.forget(), aDispatchFlags);
 }
 
 
