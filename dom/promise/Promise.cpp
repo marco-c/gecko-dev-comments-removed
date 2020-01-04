@@ -317,7 +317,7 @@ struct MOZ_STACK_CLASS Promise::PromiseCapability
   
 
   
-  JS::Rooted<JS::Value> mPromise;
+  JS::Rooted<JSObject*> mPromise;
   
   JS::Rooted<JS::Value> mResolve;
   
@@ -340,7 +340,7 @@ Promise::PromiseCapability::RejectWithException(JSContext* aCx,
   
 
   MOZ_ASSERT(!aRv.Failed());
-  MOZ_ASSERT(mNativePromise || !mPromise.isUndefined(),
+  MOZ_ASSERT(mNativePromise || mPromise,
              "NewPromiseCapability didn't succeed");
 
   JS::Rooted<JS::Value> exn(aCx);
@@ -370,14 +370,14 @@ Promise::PromiseCapability::RejectWithException(JSContext* aCx,
 JS::Value
 Promise::PromiseCapability::PromiseValue() const
 {
-  MOZ_ASSERT(mNativePromise || !mPromise.isUndefined(),
+  MOZ_ASSERT(mNativePromise || mPromise,
              "NewPromiseCapability didn't succeed");
 
   if (mNativePromise) {
     return JS::ObjectValue(*mNativePromise->GetWrapper());
   }
 
-  return mPromise;
+  return JS::ObjectValue(*mPromise);
 }
 
 
@@ -965,7 +965,7 @@ Promise::NewPromiseCapability(JSContext* aCx, nsIGlobalObject* aGlobal,
   aCapability.mReject = v;
 
   
-  aCapability.mPromise.setObject(*promiseObj);
+  aCapability.mPromise = promiseObj;
 
   
 }
@@ -1280,11 +1280,11 @@ Promise::Then(JSContext* aCx, JS::Handle<JSObject*> aCalleeGlobal,
     RefPtr<AnyCallback> rejectFunc =
       new AnyCallback(aCx, rejectObj, GetIncumbentGlobal());
 
-    if (!capability.mPromise.isObject()) {
+    if (!capability.mPromise) {
       aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
       return;
     }
-    JS::Rooted<JSObject*> newPromiseObj(aCx, &capability.mPromise.toObject());
+    JS::Rooted<JSObject*> newPromiseObj(aCx, capability.mPromise);
     
     newPromiseObj = js::CheckedUnwrap(newPromiseObj);
     if (!newPromiseObj) {
