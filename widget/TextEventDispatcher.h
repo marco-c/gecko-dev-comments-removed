@@ -227,6 +227,15 @@ public:
   
 
 
+
+  const TextRangeArray* GetPendingCompositionClauses() const
+  {
+    return mPendingComposition.GetClauses();
+  }
+
+  
+
+
   nsresult NotifyIME(const IMENotification& aIMENotification);
 
   
@@ -301,6 +310,7 @@ private:
     nsresult Flush(TextEventDispatcher* aDispatcher,
                    nsEventStatus& aStatus,
                    const WidgetEventTime* aEventTime);
+    const TextRangeArray* GetClauses() const { return mClauses; }
     void Clear();
 
   private:

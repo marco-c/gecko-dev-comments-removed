@@ -1106,6 +1106,7 @@ IMMHandler::OnIMEStartCompositionOnPlugin(nsWindow* aWindow,
     ("IMM: OnIMEStartCompositionOnPlugin, hWnd=%08x, mIsComposingOnPlugin=%s",
      aWindow->GetWindowHandle(), GetBoolName(mIsComposingOnPlugin)));
   mIsComposingOnPlugin = true;
+  mDispatcher = GetTextEventDispatcherFor(aWindow);
   mComposingWindow = aWindow;
   IMEContext context(aWindow);
   SetIMERelatedWindowsPosOnPlugin(aWindow, context);
@@ -1131,11 +1132,13 @@ IMMHandler::OnIMECompositionOnPlugin(nsWindow* aWindow,
   if (IS_COMMITTING_LPARAM(lParam)) {
     mIsComposingOnPlugin = false;
     mComposingWindow = nullptr;
+    mDispatcher = nullptr;
     return;
   }
   
   if (IS_COMPOSING_LPARAM(lParam)) {
     mIsComposingOnPlugin = true;
+    mDispatcher = GetTextEventDispatcherFor(aWindow);
     mComposingWindow = aWindow;
     IMEContext context(aWindow);
     SetIMERelatedWindowsPosOnPlugin(aWindow, context);
@@ -1153,6 +1156,7 @@ IMMHandler::OnIMEEndCompositionOnPlugin(nsWindow* aWindow,
 
   mIsComposingOnPlugin = false;
   mComposingWindow = nullptr;
+  mDispatcher = nullptr;
 
   if (mNativeCaretIsCreated) {
     ::DestroyCaret();
@@ -1258,6 +1262,13 @@ IMMHandler::OnCharOnPlugin(nsWindow* aWindow,
 
 
 
+TextEventDispatcher*
+IMMHandler::GetTextEventDispatcherFor(nsWindow* aWindow)
+{
+  return aWindow == mComposingWindow && mDispatcher ?
+    mDispatcher : aWindow->GetTextEventDispatcher();
+}
+
 void
 IMMHandler::HandleStartComposition(nsWindow* aWindow,
                                    const IMEContext& aContext)
@@ -1278,13 +1289,27 @@ IMMHandler::HandleStartComposition(nsWindow* aWindow,
   mCompositionStart = selection.mOffset;
   mCursorPosition = NO_IME_CARET;
 
-  WidgetCompositionEvent event(true, eCompositionStart, aWindow);
-  LayoutDeviceIntPoint point(0, 0);
-  aWindow->InitEvent(event, &point);
-  DispatchEvent(aWindow, event);
+  RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcherFor(aWindow);
+  nsresult rv = dispatcher->BeginNativeInputTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: HandleStartComposition, FAILED due to "
+       "TextEventDispatcher::BeginNativeInputTransaction() failure"));
+    return;
+  }
+  WidgetEventTime eventTime = aWindow->CurrentMessageWidgetEventTime();
+  nsEventStatus status;
+  rv = dispatcher->StartComposition(status, &eventTime);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: HandleStartComposition, FAILED, due to "
+       "TextEventDispatcher::StartComposition() failure"));
+    return;
+  }
 
   mIsComposing = true;
   mComposingWindow = aWindow;
+  mDispatcher = dispatcher;
 
   MOZ_LOG(gIMMLog, LogLevel::Info,
     ("IMM: HandleStartComposition, START composition, mCompositionStart=%ld",
@@ -1547,17 +1572,27 @@ IMMHandler::HandleEndComposition(nsWindow* aWindow,
     mNativeCaretIsCreated = false;
   }
 
-  EventMessage message =
-    aCommitString ? eCompositionCommit : eCompositionCommitAsIs;
-  WidgetCompositionEvent compositionCommitEvent(true, message, aWindow);
-  LayoutDeviceIntPoint point(0, 0);
-  aWindow->InitEvent(compositionCommitEvent, &point);
-  if (aCommitString) {
-    compositionCommitEvent.mData = *aCommitString;
+  RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcherFor(aWindow);
+  nsresult rv = dispatcher->BeginNativeInputTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: HandleEndComposition, FAILED due to "
+       "TextEventDispatcher::BeginNativeInputTransaction() failure"));
+    return;
   }
-  DispatchEvent(aWindow, compositionCommitEvent);
+  WidgetEventTime eventTime = aWindow->CurrentMessageWidgetEventTime();
+  nsEventStatus status;
+  rv = dispatcher->CommitComposition(status, aCommitString, &eventTime);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: HandleStartComposition, FAILED, due to "
+       "TextEventDispatcher::CommitComposition() failure"));
+    return;
+  }
   mIsComposing = false;
+  
   mComposingWindow = nullptr;
+  mDispatcher = nullptr;
 }
 
 bool
@@ -1929,116 +1964,127 @@ IMMHandler::DispatchCompositionChangeEvent(nsWindow* aWindow,
   }
 
   RefPtr<nsWindow> kungFuDeathGrip(aWindow);
-
-  LayoutDeviceIntPoint point(0, 0);
-
-  WidgetCompositionEvent event(true, eCompositionChange, aWindow);
-
-  aWindow->InitEvent(event, &point);
-
-  event.mRanges = CreateTextRangeArray();
-  event.mData = mCompositionString;
-
-  DispatchEvent(aWindow, event);
+  RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcherFor(aWindow);
+  nsresult rv = dispatcher->BeginNativeInputTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: DispatchCompositionChangeEvent, FAILED due to "
+       "TextEventDispatcher::BeginNativeInputTransaction() failure"));
+    return;
+  }
 
   
   
   
-}
+  
 
-already_AddRefed<TextRangeArray>
-IMMHandler::CreateTextRangeArray()
-{
   
   
   
-  
-  NS_ASSERTION(ShouldDrawCompositionStringOurselves(),
-    "CreateTextRangeArray is called when we don't need to fire "
-    "compositionchange event");
 
-  RefPtr<TextRangeArray> textRangeArray = new TextRangeArray();
-
-  TextRange range;
   if (mCompositionString.IsEmpty()) {
     
-  } else if (mClauseArray.Length() == 0) {
+  } else if (mClauseArray.IsEmpty()) {
     
     
-    range.mStartOffset = 0;
-    range.mEndOffset = mCompositionString.Length();
-    range.mRangeType = NS_TEXTRANGE_RAWINPUT;
-    textRangeArray->AppendElement(range);
-
     MOZ_LOG(gIMMLog, LogLevel::Info,
-      ("IMM: CreateTextRangeArray, mClauseLength=0"));
+      ("IMM: DispatchCompositionChangeEvent, mClauseArray.Length()=0"));
+    rv =dispatcher->SetPendingComposition(mCompositionString, nullptr);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      MOZ_LOG(gIMMLog, LogLevel::Error,
+        ("IMM: DispatchCompositionChangeEvent, FAILED due to"
+         "TextEventDispatcher::SetPendingComposition() failure"));
+      return;
+    }
   } else {
     
+    rv = dispatcher->SetPendingCompositionString(mCompositionString);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      MOZ_LOG(gIMMLog, LogLevel::Error,
+        ("IMM: DispatchCompositionChangeEvent, FAILED due to"
+         "TextEventDispatcher::SetPendingCompositionString() failure"));
+      return;
+    }
     uint32_t lastOffset = 0;
     for (uint32_t i = 0; i < mClauseArray.Length() - 1; i++) {
       uint32_t current = mClauseArray[i + 1];
       if (current > mCompositionString.Length()) {
         MOZ_LOG(gIMMLog, LogLevel::Info,
-          ("IMM: CreateTextRangeArray, mClauseArray[%ld]=%lu. "
+          ("IMM: DispatchCompositionChangeEvent, mClauseArray[%ld]=%lu. "
            "This is larger than mCompositionString.Length()=%lu",
            i + 1, current, mCompositionString.Length()));
         current = int32_t(mCompositionString.Length());
       }
 
-      range.mRangeType = PlatformToNSAttr(mAttributeArray[lastOffset]);
-      range.mStartOffset = lastOffset;
-      range.mEndOffset = current;
-      textRangeArray->AppendElement(range);
+      uint32_t length = current - lastOffset;
+      uint32_t attr = PlatformToNSAttr(mAttributeArray[lastOffset]);
+      rv = dispatcher->AppendClauseToPendingComposition(length, attr);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        MOZ_LOG(gIMMLog, LogLevel::Error,
+          ("IMM: DispatchCompositionChangeEvent, FAILED due to"
+           "TextEventDispatcher::AppendClauseToPendingComposition() failure"));
+        return;
+      }
 
       lastOffset = current;
 
       MOZ_LOG(gIMMLog, LogLevel::Info,
-        ("IMM: CreateTextRangeArray, index=%ld, rangeType=%s, range=[%lu-%lu]",
-         i, GetRangeTypeName(range.mRangeType), range.mStartOffset,
-         range.mEndOffset));
+        ("IMM: DispatchCompositionChangeEvent, index=%ld, rangeType=%s, "
+         "range length=%lu",
+         i, GetRangeTypeName(attr), length));
     }
   }
 
   if (mCursorPosition == NO_IME_CARET) {
     MOZ_LOG(gIMMLog, LogLevel::Info,
-      ("IMM: CreateTextRangeArray, no caret"));
-    return textRangeArray.forget();
-  }
+      ("IMM: DispatchCompositionChangeEvent, no caret"));
+  } else {
+    uint32_t cursor = static_cast<uint32_t>(mCursorPosition);
+    if (cursor > mCompositionString.Length()) {
+      MOZ_LOG(gIMMLog, LogLevel::Info,
+        ("IMM: CreateTextRangeArray, mCursorPosition=%ld. "
+         "This is larger than mCompositionString.Length()=%lu",
+         mCursorPosition, mCompositionString.Length()));
+      cursor = mCompositionString.Length();
+    }
 
-  uint32_t cursor = static_cast<uint32_t>(mCursorPosition);
-  if (cursor > mCompositionString.Length()) {
-    MOZ_LOG(gIMMLog, LogLevel::Info,
-      ("IMM: CreateTextRangeArray, mCursorPosition=%ld. "
-       "This is larger than mCompositionString.Length()=%lu",
-       mCursorPosition, mCompositionString.Length()));
-    cursor = mCompositionString.Length();
-  }
-
-  
-  
-  
-  const TextRange* targetClause = textRangeArray->GetTargetClause();
-  if (targetClause &&
-      cursor >= targetClause->mStartOffset &&
-      cursor <= targetClause->mEndOffset) {
     
     
-    mCursorPosition = NO_IME_CARET;
-    MOZ_LOG(gIMMLog, LogLevel::Info,
-      ("IMM: CreateTextRangeArray, no caret due to it's in the target clause, "
-       "now, mCursorPosition is NO_IME_CARET"));
-    return textRangeArray.forget();
+    
+    const TextRangeArray* clauses = dispatcher->GetPendingCompositionClauses();
+    const TextRange* targetClause =
+      clauses ? clauses->GetTargetClause() : nullptr;
+    if (targetClause &&
+        cursor >= targetClause->mStartOffset &&
+        cursor <= targetClause->mEndOffset) {
+      
+      
+      mCursorPosition = NO_IME_CARET;
+      MOZ_LOG(gIMMLog, LogLevel::Info,
+        ("IMM: CreateTextRangeArray, no caret due to it's in the target "
+         "clause, now, mCursorPosition is NO_IME_CARET"));
+    }
+
+    if (mCursorPosition != NO_IME_CARET) {
+      rv = dispatcher->SetCaretInPendingComposition(cursor, 0);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        MOZ_LOG(gIMMLog, LogLevel::Error,
+          ("IMM: DispatchCompositionChangeEvent, FAILED due to"
+           "TextEventDispatcher::SetCaretInPendingComposition() failure"));
+        return;
+      }
+    }
   }
 
-  range.mStartOffset = range.mEndOffset = cursor;
-  range.mRangeType = NS_TEXTRANGE_CARETPOSITION;
-  textRangeArray->AppendElement(range);
-
-  MOZ_LOG(gIMMLog, LogLevel::Info,
-    ("IMM: CreateTextRangeArray, caret position=%ld",
-     range.mStartOffset));
-
-  return textRangeArray.forget();
+  WidgetEventTime eventTime = aWindow->CurrentMessageWidgetEventTime();
+  nsEventStatus status;
+  rv = dispatcher->FlushPendingComposition(status, &eventTime);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(gIMMLog, LogLevel::Error,
+      ("IMM: DispatchCompositionChangeEvent, FAILED due to"
+       "TextEventDispatcher::FlushPendingComposition() failure"));
+    return;
+  }
 }
 
 void
