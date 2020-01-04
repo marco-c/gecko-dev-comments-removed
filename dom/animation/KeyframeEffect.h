@@ -264,13 +264,16 @@ public:
   
   static ComputedTiming
   GetComputedTimingAt(const Nullable<TimeDuration>& aLocalTime,
-                      const TimingParams& aTiming,
-                      double aPlaybackRate);
+                      const TimingParams& aTiming);
 
   
   
   ComputedTiming
-  GetComputedTiming(const TimingParams* aTiming = nullptr) const;
+  GetComputedTiming(const TimingParams* aTiming = nullptr) const
+  {
+    return GetComputedTimingAt(GetLocalTime(),
+                               aTiming ? *aTiming : SpecifiedTiming());
+  }
 
   void
   GetComputedTimingAsDict(ComputedTimingProperties& aRetVal) const override;
