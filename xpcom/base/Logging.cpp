@@ -145,7 +145,11 @@ public:
 
     
     
-    size_t charsWritten = PR_vsnprintf(buff, kBuffSize, aFmt, aArgs);
+    va_list argsCopy;
+    va_copy(argsCopy, aArgs);
+    size_t charsWritten = PR_vsnprintf(buff, kBuffSize, aFmt, argsCopy);
+    va_end(argsCopy);
+
     if (charsWritten == kBuffSize - 1) {
       
       buffToWrite = PR_vsmprintf(aFmt, aArgs);
