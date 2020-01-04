@@ -134,6 +134,20 @@ public:
   }
 
   
+
+
+
+  void push_front_silence(size_t length)
+  {
+    if (length_ + length > capacity_) {
+      reserve(length + length_);
+    }
+    PodMove(data_ + length, data_, length_);
+    PodZero(data_, length);
+    length_ += length;
+  }
+
+  
   size_t available() const
   {
     return capacity_ - length_;
