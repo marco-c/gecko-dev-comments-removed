@@ -53,6 +53,7 @@ class FormatToken;
 class Debugger : public Simulator {
  public:
   explicit Debugger(Decoder* decoder, FILE* stream = stdout);
+  ~Debugger();
 
   virtual void Run();
   virtual void VisitException(const Instruction* instr);
@@ -66,8 +67,8 @@ class Debugger : public Simulator {
 
   
   
-  int steps() const { return steps_; }
-  void set_steps(int value) {
+  int64_t steps() const { return steps_; }
+  void set_steps(int64_t value) {
     VIXL_ASSERT(value > 1);
     steps_ = value;
   }
@@ -98,7 +99,7 @@ class Debugger : public Simulator {
 
   int debug_parameters_;
   bool pending_request_;
-  int steps_;
+  int64_t steps_;
   DebugCommand* last_command_;
   PrintDisassembler* disasm_;
   Decoder* printer_;

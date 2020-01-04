@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #include "vm/Stopwatch.h"
 
 #include "mozilla/ArrayUtils.h"
@@ -12,17 +18,18 @@
 #include "jscompartment.h"
 
 #include "gc/Zone.h"
+#include "vm/Runtime.h"
 
 namespace js {
 
 bool
 PerformanceMonitoring::addRecentGroup(PerformanceGroup* group)
 {
-  if (group->isUsedInThisIteration())
-    return true;
+    if (group->isUsedInThisIteration())
+        return true;
 
-  group->setIsUsedInThisIteration(true);
-  return recentGroups_.append(group);
+    group->setIsUsedInThisIteration(true);
+    return recentGroups_.append(group);
 }
 
 void
