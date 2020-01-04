@@ -12,46 +12,6 @@ var engine = Service.engineManager.get("bookmarks");
 var store = engine._store;
 var tracker = engine._tracker;
 
-
-
-function promiseLogMessage(messagePortion) {
-  return new Promise(resolve => {
-    let appender;
-    let log = Log.repository.getLogger("Sync.Engine.Bookmarks");
-
-    function TestAppender() {
-      Log.Appender.call(this);
-    }
-    TestAppender.prototype = Object.create(Log.Appender.prototype);
-    TestAppender.prototype.doAppend = function(message) {
-      if (message.indexOf(messagePortion) >= 0) {
-        log.removeAppender(appender);
-        resolve();
-      }
-    };
-    TestAppender.prototype.level = Log.Level.Debug;
-    appender = new TestAppender();
-    log.addAppender(appender);
-  });
-}
-
-
-
-function promiseNoItem(itemId) {
-  return new Promise((resolve, reject) => {
-    try {
-      PlacesUtils.bookmarks.getFolderIdForItem(itemId);
-      reject("fetching the item didn't fail");
-    } catch (ex) {
-      if (ex.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
-        resolve("item doesn't exist");
-      } else {
-        reject("unexpected exception: " + ex);
-      }
-    }
-  });
-}
-
 add_task(function* test_ignore_invalid_uri() {
   _("Ensure that we don't die with invalid bookmarks.");
 
@@ -71,12 +31,8 @@ add_task(function* test_ignore_invalid_uri() {
   }));
 
   
-  let promiseMessage = promiseLogMessage('Deleting bookmark with invalid URI. url="<invalid url>"');
   
   engine._buildGUIDMap();
-  yield promiseMessage;
-  
-  yield promiseNoItem(bmid);
 });
 
 add_task(function* test_ignore_missing_uri() {
@@ -98,11 +54,7 @@ add_task(function* test_ignore_missing_uri() {
 
   
   
-  let promiseMessage = promiseLogMessage('Deleting bookmark with invalid URI. url="<not found>"');
   engine._buildGUIDMap();
-  yield promiseMessage;
-  
-  yield promiseNoItem(bmid);
 });
 
 function run_test() {
