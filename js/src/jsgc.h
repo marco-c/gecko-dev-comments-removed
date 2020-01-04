@@ -52,19 +52,7 @@ enum State {
 };
 
 
-#define FOR_EACH_PUBLIC_GC_POINTER_TYPE(D) \
-    D(JS::Symbol*) \
-    D(JSAtom*) \
-    D(JSFunction*) \
-    D(JSObject*) \
-    D(JSScript*) \
-    D(JSString*) \
-    D(JS::Value) \
-    D(jsid)
-
-
 #define FOR_EACH_GC_POINTER_TYPE(D) \
-    FOR_EACH_PUBLIC_GC_POINTER_TYPE(D) \
     D(AccessorShape*) \
     D(BaseShape*) \
     D(UnownedBaseShape*) \
@@ -77,6 +65,8 @@ enum State {
     D(ArrayBufferViewObject*) \
     D(DebugScopeObject*) \
     D(GlobalObject*) \
+    D(JSObject*) \
+    D(JSFunction*) \
     D(ModuleObject*) \
     D(ModuleEnvironmentObject*) \
     D(ModuleNamespaceObject*) \
@@ -88,12 +78,18 @@ enum State {
     D(SharedArrayBufferObject*) \
     D(ImportEntryObject*) \
     D(ExportEntryObject*) \
+    D(JSScript*) \
     D(LazyScript*) \
     D(Shape*) \
+    D(JSAtom*) \
+    D(JSString*) \
     D(JSFlatString*) \
     D(JSLinearString*) \
     D(PropertyName*) \
+    D(JS::Symbol*) \
     D(js::ObjectGroup*) \
+    D(Value) \
+    D(jsid) \
     D(TaggedProto)
 
 
