@@ -224,7 +224,6 @@ protected:
     double vError = -1;
     double heading = -1;
     double speed = -1;
-    long long timestamp = 0;
 
     while (IsRunning()) {
 
@@ -289,14 +288,12 @@ protected:
           continue; 
       }
 
-      timestamp = PR_Now() / PR_USEC_PER_MSEC; 
-
       NS_DispatchToMainThread(
         MakeAndAddRef<UpdateRunnable>(mLocationProvider,
                                       new nsGeoPosition(lat, lon, alt,
                                                         hError, vError,
                                                         heading, speed,
-                                                        timestamp)));
+                                                        PR_Now() / PR_USEC_PER_MSEC)));
     }
 
     gps_stream(&gpsData, WATCH_DISABLE, NULL);
