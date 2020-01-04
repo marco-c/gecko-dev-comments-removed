@@ -572,7 +572,7 @@ ContentChild::Init(MessageLoop* aIOLoop,
   
   
   
-  nsresult rv = nsThreadManager::get()->Init();
+  nsresult rv = nsThreadManager::get().Init();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }

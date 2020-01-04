@@ -20,10 +20,10 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSITHREADMANAGER
 
-  static nsThreadManager* get()
+  static nsThreadManager& get()
   {
     static nsThreadManager sInstance;
-    return &sInstance;
+    return sInstance;
   }
 
   nsresult Init();
@@ -34,11 +34,11 @@ public:
 
   
   
-  void RegisterCurrentThread(nsThread* aThread);
+  void RegisterCurrentThread(nsThread& aThread);
 
   
   
-  void UnregisterCurrentThread(nsThread* aThread);
+  void UnregisterCurrentThread(nsThread& aThread);
 
   
   
@@ -68,7 +68,7 @@ private:
   nsRefPtrHashtable<nsPtrHashKey<PRThread>, nsThread> mThreadsByPRThread;
   unsigned            mCurThreadIndex;  
   RefPtr<nsThread>  mMainThread;
-  PRThread*           mMainPRThread;
+  PRThread*         mMainPRThread;
   mozilla::OffTheBooksMutex mLock;  
   mozilla::Atomic<bool> mInitialized;
 
