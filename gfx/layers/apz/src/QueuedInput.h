@@ -39,6 +39,9 @@ public:
   QueuedInput(const MouseInput& aInput, DragBlockState& aBlock);
   QueuedInput(const PanGestureInput& aInput, PanGestureBlockState& aBlock);
 
+  InputData* Input();
+  CancelableBlockState* Block();
+
 private:
   
   
