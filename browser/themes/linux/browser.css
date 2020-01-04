@@ -149,7 +149,7 @@ toolbarbutton.bookmark-item:not(.subviewbutton) {
 }
 
 toolbarbutton.bookmark-item:not(.subviewbutton):hover:not([open]) {
-  background: var(--toolbarbutton-hover-background);
+  background-color: var(--toolbarbutton-hover-background);
   border-color: var(--toolbarbutton-hover-bordercolor);
 }
 
@@ -158,11 +158,6 @@ toolbarbutton.bookmark-item[open="true"] {
   background: var(--toolbarbutton-active-background);
   box-shadow: var(--toolbarbutton-active-boxshadow);
   border-color: var(--toolbarbutton-active-bordercolor);
-}
-
-toolbarbutton.bookmark-item:not(.subviewbutton):hover:-moz-lwtheme {
-  background: var(--toolbarbutton-hover-background);
-  border-color: var(--toolbarbutton-hover-bordercolor);
 }
 
 .bookmark-item > .toolbarbutton-icon,
@@ -1953,6 +1948,15 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton:not(:h
 .browser-extension-panel > .panel-arrowcontainer > .panel-arrowcontent {
   padding: 0;
   overflow: hidden;
+}
+
+.webextension-popup-browser {
+  margin-right: -1px;
+  border-radius: inherit;
+}
+
+#PanelUI-popup .webextension-popup-browser {
+  margin: 0;
 }
 
 .menuitem-iconic[usercontextid] > .menu-iconic-left > .menu-iconic-icon {
