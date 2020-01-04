@@ -39,15 +39,13 @@ function run_test() {
   do_execute_soon(() => {
     
     let startTime = Date.now();
-    while ((Date.now() - startTime) < 1000) {
-    }
+    while ((Date.now() - startTime) < 1000);
   });
 
   do_execute_soon(() => {
     
     let startTime = Date.now();
-    while ((Date.now() - startTime) < 10000) {
-    }
+    while ((Date.now() - startTime) < 10000);
   });
 
   do_execute_soon(() => {
