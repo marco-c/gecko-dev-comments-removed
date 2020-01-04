@@ -987,15 +987,23 @@ function TypedArraySort(comparefn) {
     var len = TypedArrayLength(obj);
 
     if (comparefn === undefined) {
+        comparefn = TypedArrayCompare;
         
         if (IsUint8TypedArray(obj)) {
             return CountingSort(obj, len, false );
         } else if (IsInt8TypedArray(obj)) {
             return CountingSort(obj, len, true );
+        } else if (IsUint16TypedArray(obj)) {
+            return RadixSort(obj, len, 2 , false , false , comparefn);
+        } else if (IsInt16TypedArray(obj)) {
+            return RadixSort(obj, len, 2 , true , false , comparefn);
+        } else if (IsUint32TypedArray(obj)) {
+            return RadixSort(obj, len, 4 , false , false , comparefn);
+        } else if (IsInt32TypedArray(obj)) {
+            return RadixSort(obj, len, 4 , true , false , comparefn);
+        } else if (IsFloat32TypedArray(obj)) {
+            return RadixSort(obj, len, 4 , true , true , comparefn);
         }
-
-        comparefn = TypedArrayCompare;
-    } else {
         
         
         var wrappedCompareFn = comparefn;
