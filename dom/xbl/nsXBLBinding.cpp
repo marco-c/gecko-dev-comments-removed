@@ -406,18 +406,18 @@ nsXBLBinding::GenerateAnonymousContent()
   
   
   
-  const nsAttrName* attrName;
-  for (uint32_t i = 0; (attrName = content->GetAttrNameAt(i)); ++i) {
-    int32_t namespaceID = attrName->NamespaceID();
+  nsAttrInfo attrInfo;
+  for (uint32_t i = 0; (attrInfo = content->GetAttrInfoAt(i)); ++i) {
+    int32_t namespaceID = attrInfo.mName->NamespaceID();
     
     
-    nsCOMPtr<nsIAtom> name = attrName->LocalName();
+    nsCOMPtr<nsIAtom> name = attrInfo.mName->LocalName();
 
     if (name != nsGkAtoms::includes) {
       if (!nsContentUtils::HasNonEmptyAttr(mBoundElement, namespaceID, name)) {
         nsAutoString value2;
-        content->GetAttr(namespaceID, name, value2);
-        mBoundElement->SetAttr(namespaceID, name, attrName->GetPrefix(),
+        attrInfo.mValue->ToString(value2);
+        mBoundElement->SetAttr(namespaceID, name, attrInfo.mName->GetPrefix(),
                                value2, false);
       }
     }
