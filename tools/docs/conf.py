@@ -58,9 +58,18 @@ exclude_patterns = ['_build', '_staging', '_venv']
 pygments_style = 'sphinx'
 
 
+
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-if not on_rtd:
+if on_rtd:
+    
+    
+    
+    assert 'SHELL' not in os.environ
+    os.environ['SHELL'] = '/bin/bash'
+else:
+    
+    
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
