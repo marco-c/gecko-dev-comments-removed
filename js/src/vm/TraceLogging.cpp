@@ -535,10 +535,14 @@ TraceLoggerThread::log(uint32_t id)
         return;
 
     MOZ_ASSERT(traceLoggerState);
-    if (!events.hasSpaceForAdd()) {
+
+    
+    
+    
+    if (!events.hasSpaceForAdd(3)) {
         uint64_t start = rdtsc() - traceLoggerState->startupTime;
 
-        if (!events.ensureSpaceBeforeAdd()) {
+        if (!events.ensureSpaceBeforeAdd(3)) {
             if (graph.get())
                 graph->log(events);
 
@@ -570,7 +574,7 @@ TraceLoggerThread::log(uint32_t id)
         
         
         if (graph.get()) {
-            MOZ_ASSERT(events.capacity() > 2);
+            MOZ_ASSERT(events.hasSpaceForAdd(2));
             EventEntry& entryStart = events.pushUninitialized();
             entryStart.time = start;
             entryStart.textId = TraceLogger_Internal;
