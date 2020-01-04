@@ -385,6 +385,7 @@ static const char kEventTypeNames[][40] = {
   "hypertext links count changed",           
   "object attribute changed",                
   "virtual cursor changed"                   
+  "text value change",                       
 };
 
 #endif 
