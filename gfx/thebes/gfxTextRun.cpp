@@ -485,17 +485,30 @@ gfxTextRun::DrawPartialLigature(gfxFont *aFont, uint32_t aStart, uint32_t aEnd,
 }
 
 
+
+
+
 static bool
-HasSyntheticBold(gfxTextRun *aRun, uint32_t aStart, uint32_t aLength)
+HasSyntheticBoldOrColor(gfxTextRun *aRun, uint32_t aStart, uint32_t aLength)
 {
     gfxTextRun::GlyphRunIterator iter(aRun, aStart, aLength);
     while (iter.NextRun()) {
         gfxFont *font = iter.GetGlyphRun()->mFont;
-        if (font && font->IsSyntheticBold()) {
-            return true;
+        if (font) {
+            if (font->IsSyntheticBold()) {
+                return true;
+            }
+            gfxFontEntry* fe = font->GetFontEntry();
+            if (fe->TryGetSVGData(font) || fe->TryGetColorGlyphs()) {
+                return true;
+            }
+#if defined(XP_MACOSX) 
+            if (fe->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'))) {
+                return true;
+            }
+#endif
         }
     }
-
     return false;
 }
 
@@ -592,7 +605,7 @@ gfxTextRun::Draw(gfxContext *aContext, gfxPoint aPt, DrawMode aDrawMode,
 
     if (aDrawMode == DrawMode::GLYPH_FILL &&
         HasNonOpaqueNonTransparentColor(aContext, currentColor) &&
-        HasSyntheticBold(this, aStart, aLength)) {
+        HasSyntheticBoldOrColor(this, aStart, aLength)) {
         needToRestore = true;
         
         gfxTextRun::Metrics metrics = MeasureText(aStart, aLength,
