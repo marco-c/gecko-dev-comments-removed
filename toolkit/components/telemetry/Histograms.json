@@ -3240,15 +3240,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "PLACES: Number of unique pages"
   },
-  "PLACES_MOST_RECENT_EXPIRED_VISIT_DAYS": {
-    "alert_emails": ["mbonardo@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "low": 30,
-    "high": 730,
-    "n_buckets": 12,
-    "description": "PLACES: the most recent expired visit in days"
-  },
   "PLACES_BOOKMARKS_COUNT": {
     "expires_in_version": "never",
     "kind": "exponential",
@@ -10081,5 +10072,12 @@
     "bug_numbers": [1229961],
     "n_values": 12,
     "description": "Plugin drawing model. 0 when windowed, otherwise NPDrawingModel + 1."
+  },
+  "WEB_NOTIFICATION_REQUEST_PERMISSION_CALLBACK": {
+    "alert_emails": ["push@mozilla.com"],
+    "expires_in_version": "55",
+    "bug_numbers": [1241278],
+    "kind": "boolean",
+    "description": "Usage of the deprecated Notification.requestPermission() callback argument"
   }
 }
