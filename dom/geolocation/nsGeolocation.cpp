@@ -90,6 +90,7 @@ class nsGeolocationRequest final
                        const GeoPositionCallback& aCallback,
                        const GeoPositionErrorCallback& aErrorCallback,
                        PositionOptions* aOptions,
+                       uint8_t aProtocolType,
                        bool aWatchPositionRequest = false,
                        int32_t aWatchId = 0);
   void Shutdown();
@@ -120,6 +121,7 @@ class nsGeolocationRequest final
   int32_t mWatchId;
   bool mShutdown;
   nsCOMPtr<nsIContentPermissionRequester> mRequester;
+  uint8_t mProtocolType;
 };
 
 static PositionOptions*
@@ -354,6 +356,7 @@ nsGeolocationRequest::nsGeolocationRequest(Geolocation* aLocator,
                                            const GeoPositionCallback& aCallback,
                                            const GeoPositionErrorCallback& aErrorCallback,
                                            PositionOptions* aOptions,
+                                           uint8_t aProtocolType,
                                            bool aWatchPositionRequest,
                                            int32_t aWatchId)
   : mIsWatchPositionRequest(aWatchPositionRequest),
@@ -362,7 +365,8 @@ nsGeolocationRequest::nsGeolocationRequest(Geolocation* aLocator,
     mOptions(aOptions),
     mLocator(aLocator),
     mWatchId(aWatchId),
-    mShutdown(false)
+    mShutdown(false),
+    mProtocolType(aProtocolType)
 {
   nsCOMPtr<nsIDOMWindow> win = do_QueryReferent(mLocator->GetOwner());
   if (win) {
@@ -453,6 +457,13 @@ nsGeolocationRequest::GetElement(nsIDOMElement * *aRequestingElement)
 NS_IMETHODIMP
 nsGeolocationRequest::Cancel()
 {
+  if (mRequester) {
+    
+    
+    
+    Telemetry::Accumulate(Telemetry::GEOLOCATION_REQUEST_GRANTED, mProtocolType);
+  }
+
   if (mLocator->ClearPendingRequest(this)) {
     return NS_OK;
   }
@@ -465,6 +476,11 @@ NS_IMETHODIMP
 nsGeolocationRequest::Allow(JS::HandleValue aChoices)
 {
   MOZ_ASSERT(aChoices.isUndefined());
+
+  if (mRequester) {
+    
+    Telemetry::Accumulate(Telemetry::GEOLOCATION_REQUEST_GRANTED, mProtocolType + 10);
+  }
 
   if (mLocator->ClearPendingRequest(this)) {
     return NS_OK;
@@ -1193,7 +1209,8 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Geolocation,
                                       mPendingRequests)
 
 Geolocation::Geolocation()
-: mLastWatchId(0)
+: mProtocolType(ProtocolType::OTHER)
+, mLastWatchId(0)
 {
 }
 
@@ -1234,6 +1251,24 @@ Geolocation::Init(nsIDOMWindow* aContentDom)
                                    false);
     }
 
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = mPrincipal->GetURI(getter_AddRefs(uri));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    bool isHttp;
+    rv = uri->SchemeIs("http", &isHttp);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    bool isHttps;
+    rv = uri->SchemeIs("https", &isHttps);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    if (isHttp) {
+      mProtocolType = ProtocolType::HTTP;
+    } else if (isHttps) {
+      mProtocolType = ProtocolType::HTTPS;
+    }
   }
 
   
@@ -1494,11 +1529,13 @@ Geolocation::GetCurrentPosition(GeoPositionCallback& callback,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  RefPtr<nsGeolocationRequest> request = new nsGeolocationRequest(this,
-                                                                    callback,
-                                                                    errorCallback,
-                                                                    options,
-                                                                    false);
+  
+  Telemetry::Accumulate(Telemetry::GEOLOCATION_GETCURRENTPOSITION_SECURE_ORIGIN,
+                        static_cast<uint8_t>(mProtocolType));
+
+  RefPtr<nsGeolocationRequest> request =
+    new nsGeolocationRequest(this, callback, errorCallback, options,
+                             static_cast<uint8_t>(mProtocolType), false);
 
   if (!sGeoEnabled) {
     nsCOMPtr<nsIRunnable> ev = new RequestAllowEvent(false, request);
@@ -1584,14 +1621,15 @@ Geolocation::WatchPosition(GeoPositionCallback& aCallback,
   }
 
   
+  Telemetry::Accumulate(Telemetry::GEOLOCATION_WATCHPOSITION_SECURE_ORIGIN,
+                        static_cast<uint8_t>(mProtocolType));
+
+  
   *aRv = mLastWatchId++;
 
-  RefPtr<nsGeolocationRequest> request = new nsGeolocationRequest(this,
-                                                                    aCallback,
-                                                                    aErrorCallback,
-                                                                    aOptions,
-                                                                    true,
-                                                                    *aRv);
+  RefPtr<nsGeolocationRequest> request =
+    new nsGeolocationRequest(this, aCallback, aErrorCallback, aOptions,
+                             static_cast<uint8_t>(mProtocolType), true, *aRv);
 
   if (!sGeoEnabled) {
     GPSLOG("request allow event");

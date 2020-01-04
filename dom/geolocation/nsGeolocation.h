@@ -219,6 +219,12 @@ private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
+  enum class ProtocolType: uint8_t { OTHER, HTTP, HTTPS };
+
+  
+  ProtocolType mProtocolType;
+
+  
   RefPtr<nsGeolocationService> mService;
 
   
