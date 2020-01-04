@@ -2,6 +2,8 @@
 
 
 
+
+
 #pragma once
 
 
@@ -43,8 +45,8 @@ class WinWLANLibrary {
 class ScopedWLANObject {
 public:
  ScopedWLANObject(WinWLANLibrary* library, void* object)
-   : mObject(object),
-    mLibrary(library)
+   : mLibrary(library)
+   , mObject(object)
   {
   }
 
