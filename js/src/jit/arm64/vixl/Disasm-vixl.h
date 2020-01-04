@@ -55,6 +55,7 @@ class Disassembler: public DecoderVisitor {
   
 
   
+  
   virtual void AppendRegisterNameToOutput(const Instruction* instr,
                                           const CPURegister& reg);
 
@@ -122,7 +123,8 @@ class Disassembler: public DecoderVisitor {
   int SubstituteLSRegOffsetField(const Instruction* instr, const char* format);
   int SubstitutePrefetchField(const Instruction* instr, const char* format);
   int SubstituteBarrierField(const Instruction* instr, const char* format);
-
+  int SubstituteSysOpField(const Instruction* instr, const char* format);
+  int SubstituteCrField(const Instruction* instr, const char* format);
   bool RdIsZROrSP(const Instruction* instr) const {
     return (instr->Rd() == kZeroRegCode);
   }
@@ -163,7 +165,6 @@ class Disassembler: public DecoderVisitor {
 class PrintDisassembler: public Disassembler {
  public:
   explicit PrintDisassembler(FILE* stream) : stream_(stream) { }
-  virtual ~PrintDisassembler() { }
 
  protected:
   virtual void ProcessOutput(const Instruction* instr);
