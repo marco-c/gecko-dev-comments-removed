@@ -235,6 +235,8 @@ public class FxAccountStatusFragment
         
         ActivityUtils.openURLInFennec(getActivity().getApplicationContext(), "about:accounts?action=avatar");
       }
+      
+      return true;
     }
 
     if (preference == manageAccountPreference) {
