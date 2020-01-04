@@ -910,7 +910,7 @@ GeckoMediaPluginServiceParent::GetPluginVersionForAPI(const nsACString& aAPI,
     double maxParsedVersion = -1.;
 
     *aHasPlugin = false;
-    while (GMPParent* gmp = FindPluginForAPIFrom(index, api, *aTags, &index)) {
+    while (RefPtr<GMPParent> gmp = FindPluginForAPIFrom(index, api, *aTags, &index)) {
       *aHasPlugin = true;
       double parsedVersion = atof(gmp->GetVersion().get());
       if (maxParsedVersion < 0 || parsedVersion > maxParsedVersion) {
@@ -943,7 +943,7 @@ GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned()
   return NS_OK;
 }
 
-GMPParent*
+already_AddRefed<GMPParent>
 GeckoMediaPluginServiceParent::FindPluginForAPIFrom(size_t aSearchStartIndex,
                                                     const nsCString& aAPI,
                                                     const nsTArray<nsCString>& aTags,
@@ -951,7 +951,7 @@ GeckoMediaPluginServiceParent::FindPluginForAPIFrom(size_t aSearchStartIndex,
 {
   mMutex.AssertCurrentThreadOwns();
   for (size_t i = aSearchStartIndex; i < mPlugins.Length(); i++) {
-    GMPParent* gmp = mPlugins[i];
+    RefPtr<GMPParent> gmp = mPlugins[i];
     bool supportsAllTags = true;
     for (size_t t = 0; t < aTags.Length(); t++) {
       const nsCString& tag = aTags.ElementAt(t);
@@ -966,12 +966,12 @@ GeckoMediaPluginServiceParent::FindPluginForAPIFrom(size_t aSearchStartIndex,
     if (aOutPluginIndex) {
       *aOutPluginIndex = i;
     }
-    return gmp;
+    return gmp.forget();
   }
   return nullptr;
 }
 
-GMPParent*
+already_AddRefed<GMPParent>
 GeckoMediaPluginServiceParent::SelectPluginForAPI(const nsACString& aNodeId,
                                                   const nsCString& aAPI,
                                                   const nsTArray<nsCString>& aTags)
@@ -983,16 +983,16 @@ GeckoMediaPluginServiceParent::SelectPluginForAPI(const nsACString& aNodeId,
   {
     MutexAutoLock lock(mMutex);
     size_t index = 0;
-    GMPParent* gmp = nullptr;
+    RefPtr<GMPParent> gmp;
     while ((gmp = FindPluginForAPIFrom(index, aAPI, aTags, &index))) {
       if (aNodeId.IsEmpty()) {
         if (gmp->CanBeSharedCrossNodeIds()) {
-          return gmp;
+          return gmp.forget();
         }
       } else if (gmp->CanBeUsedFrom(aNodeId)) {
         MOZ_ASSERT(!aNodeId.IsEmpty());
         gmp->SetNodeId(aNodeId);
-        return gmp;
+        return gmp.forget();
       }
 
       if (!gmpToClone ||
@@ -1014,11 +1014,15 @@ GeckoMediaPluginServiceParent::SelectPluginForAPI(const nsACString& aNodeId,
   
   
   if (gmpToClone) {
-    GMPParent* clone = ClonePlugin(gmpToClone);
+    RefPtr<GMPParent> clone = ClonePlugin(gmpToClone);
+    {
+      MutexAutoLock lock(mMutex);
+      mPlugins.AppendElement(clone);
+    }
     if (!aNodeId.IsEmpty()) {
       clone->SetNodeId(aNodeId);
     }
-    return clone;
+    return clone.forget();
   }
 
   return nullptr;
@@ -1039,7 +1043,7 @@ CreateGMPParent()
   return new GMPParent();
 }
 
-GMPParent*
+already_AddRefed<GMPParent>
 GeckoMediaPluginServiceParent::ClonePlugin(const GMPParent* aOriginal)
 {
   MOZ_ASSERT(aOriginal);
@@ -1052,10 +1056,7 @@ GeckoMediaPluginServiceParent::ClonePlugin(const GMPParent* aOriginal)
     return nullptr;
   }
 
-  MutexAutoLock lock(mMutex);
-  mPlugins.AppendElement(gmp);
-
-  return gmp.get();
+  return gmp.forget();
 }
 
 RefPtr<GenericPromise>
@@ -1199,14 +1200,20 @@ GeckoMediaPluginServiceParent::ReAddOnGMPThread(const RefPtr<GMPParent>& aOld)
   RefPtr<GMPParent> gmp;
   if (!mShuttingDownOnGMPThread) {
     
+    
+    
+    
     gmp = ClonePlugin(aOld);
+    MutexAutoLock lock(mMutex);
+    MOZ_ASSERT(mPlugins.Contains(aOld));
+    if (mPlugins.Contains(aOld)) {
+      mPlugins[mPlugins.IndexOf(aOld)] = gmp;
+    }
+  } else {
+    
+    MutexAutoLock lock(mMutex);
+    mPlugins.RemoveElement(aOld);
   }
-  
-  
-  
-  MutexAutoLock lock(mMutex);
-  mPlugins.RemoveElement(aOld);
-
   
   
   NS_DispatchToCurrentThread(WrapRunnableNM(&Dummy, aOld));
