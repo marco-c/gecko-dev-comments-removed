@@ -102,8 +102,8 @@ var tasksCfg = [
 
   
   {
-    get title()       _getString("taskbar.tasks.newTab.label"),
-    get description() _getString("taskbar.tasks.newTab.description"),
+    get title()       { return _getString("taskbar.tasks.newTab.label"); },
+    get description() { return _getString("taskbar.tasks.newTab.description"); },
     args:             "-new-tab about:blank",
     iconIndex:        3, 
     open:             true,
@@ -114,8 +114,8 @@ var tasksCfg = [
 
   
   {
-    get title()       _getString("taskbar.tasks.newWindow.label"),
-    get description() _getString("taskbar.tasks.newWindow.description"),
+    get title()       { return _getString("taskbar.tasks.newWindow.label"); },
+    get description() { return _getString("taskbar.tasks.newWindow.description"); },
     args:             "-browser",
     iconIndex:        2, 
     open:             true,
@@ -125,8 +125,8 @@ var tasksCfg = [
 
   
   {
-    get title()       _getString("taskbar.tasks.newPrivateWindow.label"),
-    get description() _getString("taskbar.tasks.newPrivateWindow.description"),
+    get title()       { return _getString("taskbar.tasks.newPrivateWindow.label"); },
+    get description() { return _getString("taskbar.tasks.newPrivateWindow.description"); },
     args:             "-private-window",
     iconIndex:        4, 
     open:             true,
