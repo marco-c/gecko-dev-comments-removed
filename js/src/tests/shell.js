@@ -3,13 +3,6 @@
 
 
 
-
-
-if (typeof version != 'undefined')
-{
-  version(0);
-}
-
 var STATUS = "STATUS: ";
 var VERBOSE = false;
 var SECT_PREFIX = 'Section ';
