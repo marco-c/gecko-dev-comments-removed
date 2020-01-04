@@ -162,6 +162,9 @@ ThrowNoSetterArg(JSContext* aCx, prototypes::ID aProtoId)
 } 
 
 struct ErrorResult::Message {
+  Message() { MOZ_COUNT_CTOR(ErrorResult::Message); }
+  ~Message() { MOZ_COUNT_DTOR(ErrorResult::Message); }
+
   nsTArray<nsString> mArgs;
   dom::ErrNum mErrorNumber;
 
