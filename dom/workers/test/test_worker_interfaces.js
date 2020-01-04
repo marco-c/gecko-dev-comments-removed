@@ -85,6 +85,8 @@ var interfaceNamesInGlobalScope =
 
     "CacheStorage",
 
+    "CustomEvent",
+
     "DedicatedWorkerGlobalScope",
 
     { name: "DataStore", b2g: true },
