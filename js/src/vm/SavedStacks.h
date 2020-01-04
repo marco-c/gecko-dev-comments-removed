@@ -170,8 +170,12 @@ class SavedStacks {
     void     trace(JSTracer* trc);
     uint32_t count();
     void     clear();
-    void     setRNGState(uint64_t state0, uint64_t state1) { bernoulli.setRandomState(state0, state1); }
     void     chooseSamplingProbability(JSCompartment*);
+
+    
+    
+    
+    void     setRNGState(uint64_t state0, uint64_t state1) { bernoulli.setRandomState(state0, state1); }
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
