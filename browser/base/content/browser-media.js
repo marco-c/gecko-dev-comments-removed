@@ -296,7 +296,7 @@ let gDecoderDoctorHandler = {
         let existing = formatsInPref.split(",").map(String.trim);
         
         let newbies = formats.split(",").map(String.trim)
-                      .filter(x => existing.includes(x));
+                      .filter(x => !existing.includes(x));
         
         if (newbies.length) {
           Services.prefs.setCharPref(formatsPref,
