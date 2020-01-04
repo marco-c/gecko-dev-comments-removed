@@ -24,9 +24,6 @@ InitRegExpClass(JSContext* cx, HandleObject obj);
 enum RegExpStaticsUpdate { UpdateRegExpStatics, DontUpdateRegExpStatics };
 
 
-enum RegExpStaticsUse { UseRegExpStatics, DontUseRegExpStatics };
-
-
 
 
 
