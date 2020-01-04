@@ -64,8 +64,8 @@ static constexpr Register ZeroRegister = { Registers::sp };
 static constexpr ARMRegister ZeroRegister64 = { Registers::sp, 64 };
 static constexpr ARMRegister ZeroRegister32 = { Registers::sp, 32 };
 
-static constexpr FloatRegister ReturnSimd128Reg = InvalidFloatReg;
-static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
+static constexpr FloatRegister ReturnSimdReg = InvalidFloatReg;
+static constexpr FloatRegister ScratchSimdReg = InvalidFloatReg;
 
 
 

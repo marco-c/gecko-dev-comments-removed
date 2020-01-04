@@ -49,7 +49,7 @@ MacroAssemblerX86::convertUInt64ToDouble(Register64 src, Register temp, FloatReg
     
     
     MOZ_ASSERT(dest.size() == 8);
-    FloatRegister dest128 = FloatRegister(dest.encoding(), FloatRegisters::Simd128);
+    FloatRegister dest128 = FloatRegister(dest.encoding(), FloatRegisters::Int32x4);
 
     
     
@@ -58,11 +58,11 @@ MacroAssemblerX86::convertUInt64ToDouble(Register64 src, Register temp, FloatReg
     
     
     vmovd(src.low, dest128);
-    vmovd(src.high, ScratchSimd128Reg);
+    vmovd(src.high, ScratchInt32x4Reg);
 
     
     
-    vpunpckldq(ScratchSimd128Reg, dest128, dest128);
+    vpunpckldq(ScratchInt32x4Reg, dest128, dest128);
 
     
     
