@@ -645,6 +645,7 @@ WorkerMainThreadRunnable::Dispatch(ErrorResult& aRv)
   
   
   
+  Unused << startTime; 
 }
 
 NS_IMETHODIMP
