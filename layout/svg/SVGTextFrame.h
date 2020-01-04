@@ -244,7 +244,6 @@ public:
 
 
 
-
 class SVGTextFrame final : public SVGTextFrameBase
 {
   friend nsIFrame*
