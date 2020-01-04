@@ -813,6 +813,9 @@ element.inViewport = function(el, x = undefined, y = undefined) {
 
 
 
+
+
+
 element.isVisible = function(el, x = undefined, y = undefined) {
   let win = el.ownerDocument.defaultView;
 
