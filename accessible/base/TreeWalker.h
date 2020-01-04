@@ -62,7 +62,7 @@ public:
 
 
 
-  Accessible* Next();
+  Accessible* Next(nsIContent* aStopNode = nullptr);
   Accessible* Prev();
 
   Accessible* Context() const { return mContext; }
@@ -72,6 +72,12 @@ private:
   TreeWalker();
   TreeWalker(const TreeWalker&);
   TreeWalker& operator =(const TreeWalker&);
+
+  
+
+
+  Accessible* AccessibleFor(nsIContent* aNode, uint32_t aFlags,
+                            bool* aSkipSubtree);
 
   
 
