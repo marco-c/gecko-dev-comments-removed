@@ -1281,7 +1281,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
     
     
     
-    separatedCollection.BorderBackground()->Sort(aBuilder, CompareByTablePartRank, nullptr);
+    separatedCollection.BorderBackground()->Sort(CompareByTablePartRank, nullptr);
     separatedCollection.MoveTo(aLists);
   }
 

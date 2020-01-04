@@ -194,7 +194,7 @@ nsTableOuterFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  set.SortAllByContentOrder(aBuilder, GetContent());
+  set.SortAllByContentOrder(GetContent());
   set.MoveTo(aLists);
 }
 

@@ -2038,7 +2038,7 @@ public:
 
 
 
-  void SortByZOrder(nsDisplayListBuilder* aBuilder);
+  void SortByZOrder();
   
 
 
@@ -2047,14 +2047,14 @@ public:
 
 
 
-  void SortByContentOrder(nsDisplayListBuilder* aBuilder, nsIContent* aCommonAncestor);
+  void SortByContentOrder(nsIContent* aCommonAncestor);
   
 
 
 
 
 
-  void SortByCSSOrder(nsDisplayListBuilder* aBuilder);
+  void SortByCSSOrder();
 
   
 
@@ -2064,7 +2064,7 @@ public:
 
   typedef bool (* SortLEQ)(nsDisplayItem* aItem1, nsDisplayItem* aItem2,
                              void* aClosure);
-  void Sort(nsDisplayListBuilder* aBuilder, SortLEQ aCmp, void* aClosure);
+  void Sort(SortLEQ aCmp, void* aClosure);
 
   
 
@@ -2305,9 +2305,9 @@ struct nsDisplayListCollection : public nsDisplayListSet {
   
 
                      
-  void SortAllByContentOrder(nsDisplayListBuilder* aBuilder, nsIContent* aCommonAncestor) {
+  void SortAllByContentOrder(nsIContent* aCommonAncestor) {
     for (int32_t i = 0; i < 6; ++i) {
-      mLists[i].SortByContentOrder(aBuilder, aCommonAncestor);
+      mLists[i].SortByContentOrder(aCommonAncestor);
     }
   }
 
