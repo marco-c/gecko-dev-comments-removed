@@ -2817,9 +2817,6 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
     AddLoadFlags(mChannel, nsIChannel::LOAD_EXPLICIT_CREDENTIALS);
   }
 
-  NS_ASSERTION(listener != this,
-               "Using an object as a listener that can't be exposed to JS");
-
   
   
   
