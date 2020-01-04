@@ -99,10 +99,6 @@ const SEARCH_SERVICE_CACHE_WRITTEN  = "write-cache-to-disk-complete";
 
 const SEARCH_TYPE_MOZSEARCH      = Ci.nsISearchEngine.TYPE_MOZSEARCH;
 const SEARCH_TYPE_OPENSEARCH     = Ci.nsISearchEngine.TYPE_OPENSEARCH;
-const SEARCH_TYPE_SHERLOCK       = Ci.nsISearchEngine.TYPE_SHERLOCK;
-
-const SEARCH_DATA_XML            = Ci.nsISearchEngine.DATA_XML;
-const SEARCH_DATA_TEXT           = Ci.nsISearchEngine.DATA_TEXT;
 
 
 const LAZY_SERIALIZE_DELAY = 100;
@@ -1490,11 +1486,7 @@ EngineURL.prototype = {
 
 
 
-
-
-
-function Engine(aLocation, aSourceDataType, aIsReadOnly) {
-  this._dataType = aSourceDataType;
+function Engine(aLocation, aIsReadOnly) {
   this._readOnly = aIsReadOnly;
   this._urls = [];
 
@@ -1536,8 +1528,6 @@ Engine.prototype = {
   
   
   _data: null,
-  
-  _dataType: null,
   
   _readOnly: true,
   
@@ -1621,8 +1611,6 @@ Engine.prototype = {
 
 
 
-
-
   _initFromFile: function SRCH_ENG_initFromFile() {
     if (!this._file || !this._file.exists())
       FAIL("File must exist before calling initFromFile!", Cr.NS_ERROR_UNEXPECTED);
@@ -1632,19 +1620,13 @@ Engine.prototype = {
 
     fileInStream.init(this._file, MODE_RDONLY, FileUtils.PERMS_FILE, false);
 
-    if (this._dataType == SEARCH_DATA_XML) {
-      var domParser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                      createInstance(Ci.nsIDOMParser);
-      var doc = domParser.parseFromStream(fileInStream, "UTF-8",
-                                          this._file.fileSize,
-                                          "text/xml");
+    var domParser = Cc["@mozilla.org/xmlextras/domparser;1"].
+                    createInstance(Ci.nsIDOMParser);
+    var doc = domParser.parseFromStream(fileInStream, "UTF-8",
+                                        this._file.fileSize,
+                                        "text/xml");
 
-      this._data = doc.documentElement;
-    } else {
-      ERROR("Unsuppored engine _dataType in _initFromFile: \"" +
-            this._dataType + "\"",
-            Cr.NS_ERROR_UNEXPECTED);
-    }
+    this._data = doc.documentElement;
     fileInStream.close();
 
     
@@ -1663,14 +1645,8 @@ Engine.prototype = {
       if (!this._file || !(yield OS.File.exists(this._file.path)))
         FAIL("File must exist before calling initFromFile!", Cr.NS_ERROR_UNEXPECTED);
 
-      if (this._dataType == SEARCH_DATA_XML) {
-        let fileURI = NetUtil.ioService.newFileURI(this._file);
-        yield this._retrieveSearchXMLData(fileURI.spec);
-      } else {
-        ERROR("Unsuppored engine _dataType in _initFromFile: \"" +
-              this._dataType + "\"",
-              Cr.NS_ERROR_UNEXPECTED);
-      }
+      let fileURI = NetUtil.ioService.newFileURI(this._file);
+      yield this._retrieveSearchXMLData(fileURI.spec);
 
       
       this._initFromData();
@@ -1880,21 +1856,10 @@ Engine.prototype = {
       aEngine._file = engineToUpdate._file;
     }
 
-    switch (aEngine._dataType) {
-      case SEARCH_DATA_XML:
-        var parser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                     createInstance(Ci.nsIDOMParser);
-        var doc = parser.parseFromBuffer(aBytes, aBytes.length, "text/xml");
-        aEngine._data = doc.documentElement;
-        break;
-      case SEARCH_DATA_TEXT:
-        aEngine._data = aBytes;
-        break;
-      default:
-        promptError();
-        LOG("_onLoad: Bogus engine _dataType: \"" + this._dataType + "\"");
-        return;
-    }
+    var parser = Cc["@mozilla.org/xmlextras/domparser;1"].
+                 createInstance(Ci.nsIDOMParser);
+    var doc = parser.parseFromBuffer(aBytes, aBytes.length, "text/xml");
+    aEngine._data = doc.documentElement;
 
     try {
       
@@ -2134,35 +2099,24 @@ Engine.prototype = {
                 Cr.NS_ERROR_UNEXPECTED);
 
     
-    switch (this._dataType) {
-      case SEARCH_DATA_XML:
-        if (checkNameSpace(this._data, [MOZSEARCH_LOCALNAME],
-            [MOZSEARCH_NS_10])) {
+    if (checkNameSpace(this._data, [MOZSEARCH_LOCALNAME],
+        [MOZSEARCH_NS_10])) {
 
-          LOG("_init: Initing MozSearch plugin from " + this._location);
+      LOG("_init: Initing MozSearch plugin from " + this._location);
 
-          this._type = SEARCH_TYPE_MOZSEARCH;
-          this._parseAsMozSearch();
+      this._type = SEARCH_TYPE_MOZSEARCH;
+      this._parseAsMozSearch();
 
-        } else if (checkNameSpace(this._data, [OPENSEARCH_LOCALNAME],
-                                  OPENSEARCH_NAMESPACES)) {
+    } else if (checkNameSpace(this._data, [OPENSEARCH_LOCALNAME],
+                              OPENSEARCH_NAMESPACES)) {
 
-          LOG("_init: Initing OpenSearch plugin from " + this._location);
+      LOG("_init: Initing OpenSearch plugin from " + this._location);
 
-          this._type = SEARCH_TYPE_OPENSEARCH;
-          this._parseAsOpenSearch();
+      this._type = SEARCH_TYPE_OPENSEARCH;
+      this._parseAsOpenSearch();
 
-        } else
-          FAIL(this._location + " is not a valid search plugin.", Cr.NS_ERROR_FAILURE);
-
-        break;
-      case SEARCH_DATA_TEXT:
-        LOG("_init: Initing Sherlock plugin from " + this._location);
-
-        
-        this._type = SEARCH_TYPE_SHERLOCK;
-        this._parseAsSherlock();
-    }
+    } else
+      FAIL(this._location + " is not a valid search plugin.", Cr.NS_ERROR_FAILURE);
 
     
     
@@ -2761,8 +2715,6 @@ Engine.prototype = {
       json.type = this.type;
     if (this.queryCharset != DEFAULT_QUERY_CHARSET || !aFilter)
       json.queryCharset = this.queryCharset;
-    if (this._dataType != SEARCH_DATA_XML || !aFilter)
-      json._dataType = this._dataType;
     if (!this._readOnly || !aFilter)
       json._readOnly = this._readOnly;
     if (this._extensionID) {
@@ -4041,15 +3993,6 @@ SearchService.prototype = {
       
       if (!engineMetadataService.getAttr(aEngine, "updateexpir"))
         engineUpdateService.scheduleNextUpdate(aEngine);
-
-      
-      
-      
-      
-      
-      if (!engineMetadataService.getAttr(aEngine, "updatedatatype"))
-        engineMetadataService.setAttr(aEngine, "updatedatatype",
-                                      aEngine._dataType);
     }
   },
 
@@ -4062,10 +4005,10 @@ SearchService.prototype = {
       try {
         let engine;
         if (json.filePath)
-          engine = new Engine({type: "filePath", value: json.filePath}, json._dataType,
+          engine = new Engine({type: "filePath", value: json.filePath},
                                json._readOnly);
         else if (json._url)
-          engine = new Engine({type: "uri", value: json._url}, json._dataType, json._readOnly);
+          engine = new Engine({type: "uri", value: json._url}, json._readOnly);
 
         engine._initWithJSON(json);
         this._addEngineToStore(engine);
@@ -4103,7 +4046,7 @@ SearchService.prototype = {
 
       var addedEngine = null;
       try {
-        addedEngine = new Engine(file, SEARCH_DATA_XML, !isWritable);
+        addedEngine = new Engine(file, !isWritable);
         addedEngine._initFromFile();
       } catch (ex) {
         LOG("_loadEnginesFromDir: Failed to load " + file.path + "!\n" + ex);
@@ -4151,7 +4094,7 @@ SearchService.prototype = {
         try {
           let file = new FileUtils.File(osfile.path);
           let isWritable = isInProfile;
-          addedEngine = new Engine(file, SEARCH_DATA_XML, !isWritable);
+          addedEngine = new Engine(file, !isWritable);
           yield checkForSyncCompletion(addedEngine._asyncInitFromFile());
         } catch (ex if ex.result != Cr.NS_ERROR_ALREADY_INITIALIZED) {
           LOG("_asyncLoadEnginesFromDir: Failed to load " + osfile.path + "!\n" + ex);
@@ -4168,7 +4111,7 @@ SearchService.prototype = {
       try {
         LOG("_loadFromChromeURLs: loading engine from chrome url: " + url);
 
-        let engine = new Engine(makeURI(url), SEARCH_DATA_XML, true);
+        let engine = new Engine(makeURI(url), true);
 
         engine._initFromURISync();
 
@@ -4193,7 +4136,7 @@ SearchService.prototype = {
       for (let url of aURLs) {
         try {
           LOG("_asyncLoadFromChromeURLs: loading engine from chrome url: " + url);
-          let engine = new Engine(NetUtil.newURI(url), SEARCH_DATA_XML, true);
+          let engine = new Engine(NetUtil.newURI(url), true);
           yield checkForSyncCompletion(engine._asyncInitFromURI());
           engines.push(engine);
         } catch (ex if ex.result != Cr.NS_ERROR_ALREADY_INITIALIZED) {
@@ -4640,7 +4583,7 @@ SearchService.prototype = {
     if (this._engines[aName])
       FAIL("An engine with that name already exists!", Cr.NS_ERROR_FILE_ALREADY_EXISTS);
 
-    var engine = new Engine(getSanitizedFile(aName), SEARCH_DATA_XML, false);
+    var engine = new Engine(getSanitizedFile(aName), false);
     engine._initFromMetadata(aName, aIconURL, aAlias, aDescription,
                              aMethod, aTemplate, aExtensionID);
     this._addEngineToStore(engine);
@@ -4652,7 +4595,7 @@ SearchService.prototype = {
     this._ensureInitialized();
     try {
       var uri = makeURI(aEngineURL);
-      var engine = new Engine(uri, aDataType, false);
+      var engine = new Engine(uri, false);
       if (aCallback) {
         engine._installCallback = function (errorCode) {
           try {
@@ -5542,14 +5485,8 @@ var engineUpdateService = {
         return;
       }
 
-      let dataType = engineMetadataService.getAttr(engine, "updatedatatype");
-      if (!dataType) {
-        ULOG("No loadtype to update engine!");
-        return;
-      }
-
       ULOG("updating " + engine.name + " from " + updateURI.spec);
-      testEngine = new Engine(updateURI, dataType, false);
+      testEngine = new Engine(updateURI, false);
       testEngine._engineToUpdate = engine;
       testEngine._initFromURIAndLoad();
     } else

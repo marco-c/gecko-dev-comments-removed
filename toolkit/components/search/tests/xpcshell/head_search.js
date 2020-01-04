@@ -395,8 +395,6 @@ function useHttpServer() {
 
 
 
-
-
 var addTestEngines = Task.async(function* (aItems) {
   if (!gDataUrl) {
     do_throw("useHttpServer must be called before addTestEngines.");
@@ -426,10 +424,6 @@ var addTestEngines = Task.async(function* (aItems) {
       if (item.xmlFileName) {
         Services.search.addEngine(gDataUrl + item.xmlFileName,
                                   Ci.nsISearchEngine.DATA_XML, null, false);
-      } else if (item.srcFileName) {
-        Services.search.addEngine(gDataUrl + item.srcFileName,
-                                  Ci.nsISearchEngine.DATA_TEXT,
-                                  gDataUrl + item.iconFileName, false);
       } else {
         Services.search.addEngineWithDetails(item.name, ...item.details);
       }
