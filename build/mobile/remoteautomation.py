@@ -95,7 +95,7 @@ class RemoteAutomation(Automation):
 
         return env
 
-    def waitForFinish(self, proc, utilityPath, timeout, maxTime, startTime, debuggerInfo, symbolsPath, outputHandler=None):
+    def waitForFinish(self, proc, utilityPath, timeout, maxTime, startTime, debuggerInfo, symbolsPath):
         """ Wait for tests to finish.
             If maxTime seconds elapse or no output is detected for timeout
             seconds, kill the process and fail the test.
@@ -307,21 +307,20 @@ class RemoteAutomation(Automation):
             return pid
 
         def read_stdout(self):
-            """
-            Fetch the full remote log file using devicemanager, process them and
-            return whether there were any new log entries since the last call.
+            """ Fetch the full remote log file using devicemanager and return just
+                the new log entries since the last call (as a list of messages or lines).
             """
             if not self.dm.fileExists(self.proc):
-                return False
+                return []
             try:
                 newLogContent = self.dm.pullFile(self.proc, self.stdoutlen)
             except DMError:
                 
                 
                 
-                return False
+                return []
             if not newLogContent:
-                return False
+                return []
 
             self.stdoutlen += len(newLogContent)
 
@@ -330,27 +329,26 @@ class RemoteAutomation(Automation):
                 if testStartFilenames:
                     self.lastTestSeen = testStartFilenames[-1]
                 print newLogContent
-                return True
+                return [newLogContent]
 
             self.logBuffer += newLogContent
             lines = self.logBuffer.split('\n')
-
-            if lines:
-                
-                self.logBuffer = lines[-1]
-                del lines[-1]
-
             if not lines:
-                return False
+                return
 
+            
+            self.logBuffer = lines[-1]
+            del lines[-1]
+            messages = []
             for line in lines:
                 
                 
                 parsed_messages = self.messageLogger.write(line)
                 for message in parsed_messages:
-                    if isinstance(message, dict) and message.get('action') == 'test_start':
+                    if message['action'] == 'test_start':
                         self.lastTestSeen = message['test']
-            return True
+                messages += parsed_messages
+            return messages
 
         @property
         def getLastTestSeen(self):
@@ -376,10 +374,10 @@ class RemoteAutomation(Automation):
                 
                 if (not slowLog) or (timer % 60 == 0):
                     startRead = datetime.datetime.now()
-                    hasOutput = self.read_stdout()
+                    messages = self.read_stdout()
                     if (datetime.datetime.now() - startRead) > datetime.timedelta(seconds=5):
                         slowLog = True
-                    if hasOutput:
+                    if messages:
                         noOutputTimer = 0
                 time.sleep(interval)
                 timer += interval

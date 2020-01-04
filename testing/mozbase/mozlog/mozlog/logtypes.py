@@ -132,9 +132,9 @@ class TestId(DataType):
     def convert(self, data):
         if isinstance(data, unicode):
             return data
-        elif isinstance(data, bytes):
+        elif isinstance(data, str):
             return data.decode("utf-8", "replace")
-        elif isinstance(data, (tuple, list)):
+        elif isinstance(data, tuple):
             
             
             func = Unicode(None).convert
