@@ -719,7 +719,7 @@ pref("gfx.canvas.azure.backends", "skia");
 
 pref("gfx.canvas.azure.accelerated", true);
 #else
-pref("gfx.canvas.azure.backends", "cairo");
+pref("gfx.canvas.azure.backends", "skia");
 pref("gfx.content.azure.backends", "cairo");
 #endif
 #endif
