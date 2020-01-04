@@ -181,6 +181,8 @@ public class LocalURLMetadata implements URLMetadata {
             }
         }
 
+        Telemetry.addToHistogram("FENNEC_TILES_CACHE_HIT", data.size());
+
         
         if (urlsToQuery.size() == 0) {
             return Collections.unmodifiableMap(data);
