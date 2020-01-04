@@ -106,6 +106,8 @@ public:
     return AsAccessible()->Role();
   }
 
+  AccessibleOrProxy Parent() const;
+
   
   uintptr_t Bits() const { return mBits; }
   void SetBits(uintptr_t aBits) { mBits = aBits; }
