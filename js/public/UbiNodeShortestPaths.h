@@ -69,7 +69,7 @@ struct JS_PUBLIC_API(BackEdge)
 
 
 
-using Path = mozilla::Vector<BackEdge*>;
+using Path = JS::ubi::Vector<BackEdge*>;
 
 
 
@@ -81,7 +81,7 @@ struct JS_PUBLIC_API(ShortestPaths)
   private:
     
 
-    using BackEdgeVector = mozilla::Vector<BackEdge::Ptr>;
+    using BackEdgeVector = JS::ubi::Vector<BackEdge::Ptr>;
     using NodeToBackEdgeVectorMap = js::HashMap<Node, BackEdgeVector, js::DefaultHasher<Node>,
                                                 js::SystemAllocPolicy>;
 
