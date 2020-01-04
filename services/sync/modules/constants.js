@@ -4,7 +4,8 @@
 
 
 
-this.EXPORTED_SYMBOLS = [((this[key] = val), key) for ([key, val] in Iterator({
+this.EXPORTED_SYMBOLS = [];
+for (let [key, val] in Iterator({
 
 WEAVE_VERSION:                         "@weave_version@",
 
@@ -181,4 +182,7 @@ MIN_PASS_LENGTH:                       8,
 
 LOG_DATE_FORMAT:                       "%Y-%m-%d %H:%M:%S",
 
-}))];
+})) {
+  this[key] = val;
+  this.EXPORTED_SYMBOLS.push(key);
+}

@@ -158,7 +158,7 @@ function checkResults(root, step)
     
     
     actualoutput = treeViewToDOM(root);
-    var treechildrenElements = [e for (e of output.children) if (e.localName === "treechildren")];
+    var treechildrenElements = [...output.children].filter((e) => e.localName === "treechildren");
     error = compareOutput(actualoutput, treechildrenElements[0], false);
   }
   else {

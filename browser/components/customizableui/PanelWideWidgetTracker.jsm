@@ -92,7 +92,7 @@ var PanelWideWidgetTracker = {
       return;
     }
     this.adjusting = true;
-    let widgetsAffected = [w for (w of gPanelPlacements) if (gWideWidgets.has(w))];
+    let widgetsAffected = gPanelPlacements.filter((w) => gWideWidgets.has(w));
     
     
     

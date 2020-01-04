@@ -3631,7 +3631,7 @@ this.DOMApplicationRegistry = {
       
       let data = hasher.finish(false);
       
-      let hash = [toHexString(data.charCodeAt(i)) for (i in data)].join("");
+      let hash = Array.from(data, (c, i) => toHexString(data.charCodeAt(i))).join("");
       debug("File hash computed: " + hash);
 
       deferred.resolve(hash);
