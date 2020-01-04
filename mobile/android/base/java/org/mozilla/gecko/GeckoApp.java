@@ -1463,7 +1463,7 @@ public abstract class GeckoApp
             if (mLastSessionCrashed) {
                 
                 
-                Tabs.getInstance().loadUrl(AboutPages.getURLForBuiltinPanelType(PanelType.RECENT_TABS), flags);
+                Tabs.getInstance().loadUrl(AboutPages.getURLForBuiltinPanelType(PanelType.DEPRECATED_RECENT_TABS), flags);
             } else {
                 final String homepage = getHomepage();
                 Tabs.getInstance().loadUrl(!TextUtils.isEmpty(homepage) ? homepage : AboutPages.HOME, flags);

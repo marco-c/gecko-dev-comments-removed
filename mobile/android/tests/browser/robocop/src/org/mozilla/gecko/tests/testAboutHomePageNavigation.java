@@ -11,8 +11,6 @@ import org.mozilla.gecko.tests.helpers.GeckoHelper;
 
 
 
-
-
 public class testAboutHomePageNavigation extends UITest {
     
     
