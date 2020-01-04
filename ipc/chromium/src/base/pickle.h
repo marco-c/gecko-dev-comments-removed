@@ -251,7 +251,7 @@ class Pickle {
   
   
   
-  bool Resize(uint32_t new_capacity);
+  void Resize(uint32_t new_capacity);
 
   
   
