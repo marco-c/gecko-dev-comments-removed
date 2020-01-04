@@ -5,7 +5,7 @@ config = {
     "repo": {
         
         "repo": "https://hg.mozilla.org/projects/date",
-        "revision": "default",
+        "branch": "default",
         "dest": "date",
         "vcs": "hg",
     },

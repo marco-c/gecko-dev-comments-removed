@@ -8,7 +8,7 @@ config = {
     "repo": {
         
         "repo": "https://hg.mozilla.org/projects/jamun",
-        "revision": "default",
+        "branch": "default",
         "dest": "jamun",
         "vcs": "hg",
     },
