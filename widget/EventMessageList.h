@@ -146,7 +146,7 @@ NS_EVENT_MESSAGE(eUnidentifiedEvent,    2000)
  
 
 NS_EVENT_MESSAGE(eCompositionEventFirst, 2200)
-NS_EVENT_MESSAGE(NS_COMPOSITION_START,   eCompositionEventFirst)
+NS_EVENT_MESSAGE(eCompositionStart,      eCompositionEventFirst)
 
 
 

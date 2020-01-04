@@ -1303,7 +1303,7 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
         ("GTKIM: %p   DispatchCompositionStart(), FAILED, mCompositionStart=%u",
          this, mCompositionStart));
     mCompositionState = eCompositionState_CompositionStartDispatched;
-    WidgetCompositionEvent compEvent(true, NS_COMPOSITION_START,
+    WidgetCompositionEvent compEvent(true, eCompositionStart,
                                      mLastFocusedWindow);
     InitEvent(compEvent);
     nsCOMPtr<nsIWidget> kungFuDeathGrip = mLastFocusedWindow;
