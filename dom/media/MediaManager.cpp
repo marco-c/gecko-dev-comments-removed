@@ -1510,11 +1510,11 @@ MediaManager::IsInMediaThread()
 MediaManager::Get() {
   if (!sSingleton) {
     MOZ_ASSERT(NS_IsMainThread());
-#ifdef DEBUG
+
     static int timesCreated = 0;
     timesCreated++;
-    MOZ_ASSERT(timesCreated == 1);
-#endif
+    MOZ_RELEASE_ASSERT(timesCreated == 1);
+
     sSingleton = new MediaManager();
 
     sSingleton->mMediaThread = new base::Thread("MediaManager");
@@ -2074,6 +2074,17 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
       RemoveFromWindowList(windowID, listener);
       return NS_OK;
     }
+  } else if (loop) {
+    
+    nsCOMPtr<nsIPermissionManager> permManager =
+      do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = permManager->Add(docURI, "camera",
+                          nsIPermissionManager::ALLOW_ACTION,
+                          nsIPermissionManager::EXPIRE_SESSION,
+                          0);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
 #if defined(MOZ_B2G_CAMERA) && defined(MOZ_WIDGET_GONK)
@@ -3291,8 +3302,12 @@ GetUserMediaCallbackMediaStreamListener::NotifyFinished()
   mFinished = true;
   Stop(); 
 
-  RefPtr<MediaManager> manager(MediaManager::GetInstance());
-  manager->RemoveFromWindowList(mWindowID, this);
+  RefPtr<MediaManager> manager(MediaManager::GetIfExists());
+  if (manager) {
+    manager->RemoveFromWindowList(mWindowID, this);
+  } else {
+    NS_WARNING("Late NotifyFinished after MediaManager shutdown");
+  }
 }
 
 
