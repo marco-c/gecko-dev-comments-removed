@@ -601,6 +601,13 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, bool frame
     if (frameRange.empty())
         return frameOk;
 
+    auto frameMapsGuard = MakeScopeExit([&] {
+        
+        
+        
+        removeFromFrameMapsAndClearBreakpointsIn(cx, frame);
+    });
+
     
     JSTrapStatus status;
     RootedValue value(cx);
@@ -660,13 +667,6 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, bool frame
             }
         }
     }
-
-    
-
-
-
-
-    removeFromFrameMapsAndClearBreakpointsIn(cx, frame);
 
     
     switch (status) {
