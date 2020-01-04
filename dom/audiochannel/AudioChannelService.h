@@ -93,7 +93,8 @@ public:
 
 
 
-  void RegisterAudioChannelAgent(AudioChannelAgent* aAgent);
+  void RegisterAudioChannelAgent(AudioChannelAgent* aAgent,
+                                 AudibleState aAudible);
 
   
 
@@ -244,7 +245,7 @@ private:
 
     void AudioAudibleChanged(AudioChannelAgent* aAgent, AudibleState aAudible);
 
-    void AppendAgent(AudioChannelAgent* aAgent);
+    void AppendAgent(AudioChannelAgent* aAgent, AudibleState aAudible);
     void RemoveAgent(AudioChannelAgent* aAgent);
 
     uint64_t mWindowID;
