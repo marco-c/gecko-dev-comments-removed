@@ -1459,8 +1459,8 @@ ScopeIter::settle()
         
         
         
-        MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Block);
-        incrementStaticScopeIter();
+        if (ssi_.type() == StaticScopeIter<CanGC>::Block)
+            incrementStaticScopeIter();
         if (ssi_.type() == StaticScopeIter<CanGC>::Block)
             incrementStaticScopeIter();
         MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Eval);
