@@ -292,8 +292,7 @@ AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   
   
 
-  SAMPLE_LOG("OnAudioDecoded [%lld,%lld] disc=%d",
-    audio->mTime, audio->GetEndTime(), audio->mDiscontinuity);
+  SAMPLE_LOG("OnAudioDecoded [%lld,%lld]", audio->mTime, audio->GetEndTime());
 
   
   
@@ -301,11 +300,6 @@ AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   if (mTarget.IsVideoOnly()) {
     mSeekedAudioData = audio.forget();
     return;
-  }
-
-  if (mFirstAudioSample) {
-    mFirstAudioSample = false;
-    MOZ_ASSERT(audio->mDiscontinuity);
   }
 
   AdjustFastSeekIfNeeded(audio);
@@ -393,13 +387,7 @@ AccurateSeekTask::OnVideoDecoded(MediaData* aVideoSample)
   
   
 
-  SAMPLE_LOG("OnVideoDecoded [%lld,%lld] disc=%d",
-    video->mTime, video->GetEndTime(), video->mDiscontinuity);
-
-  if (mFirstVideoSample) {
-    mFirstVideoSample = false;
-    MOZ_ASSERT(video->mDiscontinuity);
-  }
+  SAMPLE_LOG("OnVideoDecoded [%lld,%lld]", video->mTime, video->GetEndTime());
 
   AdjustFastSeekIfNeeded(video);
 

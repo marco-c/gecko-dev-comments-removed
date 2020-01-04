@@ -65,8 +65,6 @@ private:
   const uint32_t mAudioRate;  
   bool mDoneAudioSeeking;
   bool mDoneVideoSeeking;
-  bool mFirstAudioSample = true;
-  bool mFirstVideoSample = true;
 
   
   

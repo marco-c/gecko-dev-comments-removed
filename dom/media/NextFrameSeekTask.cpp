@@ -172,10 +172,9 @@ NextFrameSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   
   
 
-  SAMPLE_LOG("OnAudioDecoded [%lld,%lld] disc=%d",
+  SAMPLE_LOG("OnAudioDecoded [%lld,%lld]",
              aAudioSample->mTime,
-             aAudioSample->GetEndTime(),
-             aAudioSample->mDiscontinuity);
+             aAudioSample->GetEndTime());
 
   
   mSeekedAudioData = aAudioSample;
@@ -208,10 +207,9 @@ NextFrameSeekTask::OnVideoDecoded(MediaData* aVideoSample)
   
   
 
-  SAMPLE_LOG("OnVideoDecoded [%lld,%lld] disc=%d",
+  SAMPLE_LOG("OnVideoDecoded [%lld,%lld]",
              aVideoSample->mTime,
-             aVideoSample->GetEndTime(),
-             aVideoSample->mDiscontinuity);
+             aVideoSample->GetEndTime());
 
   if (aVideoSample->mTime > mCurrentTime) {
     mSeekedVideoData = aVideoSample;

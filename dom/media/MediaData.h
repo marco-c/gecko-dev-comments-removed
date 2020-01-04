@@ -289,7 +289,6 @@ public:
     , mDuration(aDuration)
     , mFrames(aFrames)
     , mKeyframe(false)
-    , mDiscontinuity(false)
   {}
 
   
@@ -312,10 +311,6 @@ public:
   const uint32_t mFrames;
 
   bool mKeyframe;
-
-  
-  
-  bool mDiscontinuity;
 
   int64_t GetEndTime() const { return mTime + mDuration; }
 
@@ -348,7 +343,6 @@ protected:
     , mDuration(0)
     , mFrames(aFrames)
     , mKeyframe(false)
-    , mDiscontinuity(false)
   {}
 
   virtual ~MediaData() {}
