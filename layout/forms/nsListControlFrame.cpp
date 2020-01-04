@@ -585,10 +585,7 @@ nsListControlFrame::ReflowAsDropdown(nsPresContext*           aPresContext,
         if (mNumDisplayRows == rows) {
           newBSize = visibleBSize;  
         } else {
-          
-          
-          newBSize = std::min(mNumDisplayRows * blockSizeOfARow, 
-                              visibleBSize);
+          newBSize = mNumDisplayRows * blockSizeOfARow; 
         }
       } else {
         rows = availableBSize / blockSizeOfARow;
