@@ -40,6 +40,8 @@ const gfxFrameScript = {
         (flags & Ci.nsIWebProgressListener.STATE_STOP) &&
         this.isSanityTest(req.name)) {
 
+      webProgress.removeProgressListener(this);
+
       
       if (this.domUtils.isMozAfterPaintPending) {
         addEventListener("MozAfterPaint", this);

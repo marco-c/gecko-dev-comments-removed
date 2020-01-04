@@ -143,11 +143,10 @@ function testCompositor(win, ctx) {
 }
 
 var listener = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
-
   win: null,
   utils: null,
   canvas: null,
+  ctx: null,
   mm: null,
 
   messages: [
@@ -219,6 +218,7 @@ var listener = {
     this.win = null;
     this.utils = null;
     this.canvas = null;
+    this.ctx = null;
 
     if (this.mm) {
       
@@ -290,6 +290,12 @@ SanityTest.prototype = {
 
   observe: function(subject, topic, data) {
     if (topic != "profile-after-change") return;
+
+    
+    
+    let tester = listener;
+    listener = null;
+
     if (!this.shouldRunTest()) return;
 
     annotateCrashReport(true);
@@ -304,7 +310,7 @@ SanityTest.prototype = {
     
     
     sanityTest.moveTo(100000000,1000000000);
-    listener.scheduleTest(sanityTest);
+    tester.scheduleTest(sanityTest);
   },
 };
 
