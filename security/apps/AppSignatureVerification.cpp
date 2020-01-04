@@ -811,7 +811,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
     }
 
     
-    items.RemoveEntry(entryFilename);
+    items.RemoveEntry(item);
   }
 
   
@@ -1321,7 +1321,7 @@ CheckDirForUnsignedFiles(nsIFile* aDir,
       }
 
       
-      aItems.RemoveEntry(curName);
+      aItems.RemoveEntry(item);
     }
   }
   files->Close();

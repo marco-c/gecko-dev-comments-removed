@@ -349,13 +349,14 @@ CertBlocklist::AddRevokedCertInternal(const nsACString& aEncodedDN,
 
   if (aItemState == CertNewFromBlocklist) {
     
-    if (!mBlocklist.Contains(item)) {
+    nsGenericHashKey<CertBlocklistItem>* entry = mBlocklist.GetEntry(item);
+    if (!entry) {
       mModified = true;
+    } else {
+      
+      
+      mBlocklist.RemoveEntry(entry);
     }
-
-    
-    
-    mBlocklist.RemoveEntry(item);
     item.mIsCurrent = true;
   }
   mBlocklist.PutEntry(item);
