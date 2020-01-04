@@ -470,7 +470,19 @@ class ScriptCounts
 
     
     
+    const PCCounts* getImmediatePrecedingPCCounts(size_t offset) const;
+
+    
+    
     const PCCounts* maybeGetThrowCounts(size_t offset) const;
+
+    
+    
+    
+    
+    
+    
+    const PCCounts* getImmediatePrecedingThrowCounts(size_t offset) const;
 
     
     
@@ -1671,6 +1683,7 @@ class JSScript : public js::gc::TenuredCell
     js::PCCounts* maybeGetPCCounts(jsbytecode* pc);
     const js::PCCounts* maybeGetThrowCounts(jsbytecode* pc);
     js::PCCounts* getThrowCounts(jsbytecode* pc);
+    uint64_t getHitCount(jsbytecode* pc);
     void addIonCounts(js::jit::IonScriptCounts* ionCounts);
     js::jit::IonScriptCounts* getIonCounts();
     void releaseScriptCounts(js::ScriptCounts* counts);

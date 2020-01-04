@@ -604,6 +604,32 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void dump();
 
     
+    enum class HitState {
+        
+        NotDefined,
+
+        
+        
+        Count,
+
+        
+        
+        
+        Frequency
+    };
+    HitState getHitState() const {
+        return hitState_;
+    }
+    void setHitCount(uint64_t count) {
+        hitCount_ = count;
+        hitState_ = HitState::Count;
+    }
+    uint64_t getHitCount() const {
+        MOZ_ASSERT(hitState_ == HitState::Count);
+        return hitCount_;
+    }
+
+    
     
     
     void updateTrackedSite(BytecodeSite* site) {
@@ -665,6 +691,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     MBasicBlock* immediateDominator_;
 
     BytecodeSite* trackedSite_;
+
+    
+    
+    uint64_t hitCount_;
+    HitState hitState_;
 
 #if defined(JS_ION_PERF) || defined(DEBUG)
     unsigned lineno_;
