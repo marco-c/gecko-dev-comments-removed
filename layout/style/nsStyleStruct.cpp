@@ -993,7 +993,7 @@ nsStyleSVG::CalcDifference(const nsStyleSVG& aNewData) const
 
 
 nsCSSKeyword
-nsStyleBasicShape::GetShapeTypeName() const
+StyleBasicShape::GetShapeTypeName() const
 {
   switch (mType) {
     case StyleBasicShapeType::Polygon:
@@ -1215,7 +1215,7 @@ nsStyleClipPath::SetURL(const nsCSSValue* aValue)
 }
 
 void
-nsStyleClipPath::SetBasicShape(nsStyleBasicShape* aBasicShape,
+nsStyleClipPath::SetBasicShape(StyleBasicShape* aBasicShape,
                                StyleClipShapeSizing aSizingBox)
 {
   NS_ASSERTION(aBasicShape, "expected pointer");
