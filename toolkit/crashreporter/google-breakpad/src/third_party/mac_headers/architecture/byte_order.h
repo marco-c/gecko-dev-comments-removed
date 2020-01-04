@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef _ARCHITECTURE_BYTE_ORDER_H_
+#define _ARCHITECTURE_BYTE_ORDER_H_
+
+
+
+
+
+
+enum NXByteOrder {
+    NX_UnknownByteOrder,
+    NX_LittleEndian,
+    NX_BigEndian
+};
+
+#endif  
