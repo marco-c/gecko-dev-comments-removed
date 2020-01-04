@@ -159,6 +159,8 @@ public:
 
   
   
+  
+  
   bool HasTextDecorationLines() const
     { return !!(mBits & NS_STYLE_HAS_TEXT_DECORATION_LINES); }
 

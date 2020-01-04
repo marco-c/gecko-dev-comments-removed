@@ -315,8 +315,15 @@ nsStyleContext::MoveTo(nsStyleContext* aNewParent)
   
   
   
-  DebugOnly<uint64_t> mask = NS_STYLE_IN_DISPLAY_NONE_SUBTREE;
+  DebugOnly<uint64_t> mask = NS_STYLE_HAS_PSEUDO_ELEMENT_DATA |
+                             NS_STYLE_IN_DISPLAY_NONE_SUBTREE;
   MOZ_ASSERT((mParent->mBits & mask) == (aNewParent->mBits & mask));
+  MOZ_ASSERT((mParent->mBits & NS_STYLE_HAS_TEXT_DECORATION_LINES) ==
+             (aNewParent->mBits & NS_STYLE_HAS_TEXT_DECORATION_LINES) ||
+             StyleTextReset()->HasTextDecorationLines());
+  MOZ_ASSERT((mParent->mBits & NS_STYLE_RELEVANT_LINK_VISITED) ==
+             (aNewParent->mBits & NS_STYLE_RELEVANT_LINK_VISITED) ||
+             IsLinkContext());
 
   
   
@@ -589,10 +596,7 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
     mBits |= NS_STYLE_HAS_TEXT_DECORATION_LINES;
   } else {
     
-    const nsStyleTextReset* text = StyleTextReset();
-    uint8_t decorationLine = text->mTextDecorationLine;
-    if (decorationLine != NS_STYLE_TEXT_DECORATION_LINE_NONE &&
-        decorationLine != NS_STYLE_TEXT_DECORATION_LINE_OVERRIDE_ALL) {
+    if (StyleTextReset()->HasTextDecorationLines()) {
       mBits |= NS_STYLE_HAS_TEXT_DECORATION_LINES;
     }
   }
