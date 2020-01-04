@@ -50,6 +50,7 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
         super();
         sectionHeaders = new SparseArray<>();
         HistorySectionsHelper.updateRecentSectionOffset(resources, sectionDateRangeArray);
+        this.setHasStableIds(true);
     }
 
     public void setHistory(Cursor history) {
@@ -187,6 +188,52 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
     public int getItemCount() {
         final int historySize = historyCursor == null ? 0 : historyCursor.getCount();
         return historySize + sectionHeaders.size() + CombinedHistoryPanel.NUM_SMART_FOLDERS;
+    }
+
+    
+
+
+
+
+
+    @Override
+    public long getItemId(int position) {
+        
+        final long PRIME_BOOKMARKS = 32416189867L;
+        final long PRIME_SECTION_HEADERS = 32416187737L;
+
+        
+        final int RECENT_TABS_ID = -2;
+        final int SYNCED_DEVICES_ID = -3;
+
+        switch (getItemTypeForPosition(position)) {
+            case RECENT_TABS:
+                return RECENT_TABS_ID;
+            case SYNCED_DEVICES:
+                return SYNCED_DEVICES_ID;
+            case SECTION_HEADER:
+                
+                return position * PRIME_SECTION_HEADERS;
+            case HISTORY:
+                if (!historyCursor.moveToPosition(position)) {
+                    return RecyclerView.NO_ID;
+                }
+
+                final int historyIdCol = historyCursor.getColumnIndexOrThrow(BrowserContract.Combined.HISTORY_ID);
+                final long historyId = historyCursor.getLong(historyIdCol);
+
+                if (historyId != -1) {
+                    return historyId;
+                }
+
+                final int bookmarkIdCol = historyCursor.getColumnIndexOrThrow(BrowserContract.Combined.BOOKMARK_ID);
+                final long bookmarkId = historyCursor.getLong(bookmarkIdCol);
+
+                
+                return bookmarkId * PRIME_BOOKMARKS;
+            default:
+                throw new IllegalStateException("Unexpected Home Panel item type");
+        }
     }
 
     
