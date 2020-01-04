@@ -32,10 +32,6 @@ DOMCI_CLASS(XULTreeBuilder)
 DOMCI_CLASS(CSSMozDocumentRule)
 DOMCI_CLASS(CSSSupportsRule)
 
-DOMCI_CLASS(MozSmsMessage)
-DOMCI_CLASS(MozMmsMessage)
-DOMCI_CLASS(MozMobileMessageThread)
-
 
 DOMCI_CLASS(CSSFontFaceRule)
 
