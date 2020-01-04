@@ -285,9 +285,14 @@ Tools.memory = {
   label: "Memory",
   panelLabel: "Memory Panel",
   tooltip: "Memory (keyboardshortcut)",
+  hiddenInOptions: true,
 
   isTargetSupported: function (target) {
-    return target.getTrait("heapSnapshots");
+    
+    
+    
+    
+    return true; 
   },
 
   build: function (frame, target) {
