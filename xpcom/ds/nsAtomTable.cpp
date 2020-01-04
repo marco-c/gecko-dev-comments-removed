@@ -384,28 +384,6 @@ static const PLDHashTableOps AtomTableOps = {
 
 
 
-
-
-
-
-
-
-
-
-
-#define ATOM_HASHTABLE_INITIAL_LENGTH  4096
-
-static inline void
-EnsureTableExists()
-{
-  if (!gAtomTable) {
-    gAtomTable = new PLDHashTable(&AtomTableOps, sizeof(AtomTableEntry),
-                                  ATOM_HASHTABLE_INITIAL_LENGTH);
-  }
-}
-
-
-
 DynamicAtom::~DynamicAtom()
 {
   MOZ_ASSERT(gAtomTable, "uninitialized atom hashtable");
@@ -466,32 +444,46 @@ static bool gStaticAtomTableSealed = false;
 
 
 
+
+
+
+
+
+
+
+
+
+#define ATOM_HASHTABLE_INITIAL_LENGTH  4096
+
 void
-NS_PurgeAtomTable()
+NS_InitAtomTable()
+{
+  MOZ_ASSERT(!gAtomTable);
+  gAtomTable = new PLDHashTable(&AtomTableOps, sizeof(AtomTableEntry),
+                                ATOM_HASHTABLE_INITIAL_LENGTH);
+}
+
+void
+NS_ShutdownAtomTable()
 {
   delete gStaticAtomTable;
   gStaticAtomTable = nullptr;
 
-  if (gAtomTable) {
-    
-    
-    
-    delete gAtomTable;
-    gAtomTable = nullptr;
-  }
+  
+  
+  
+  delete gAtomTable;
+  gAtomTable = nullptr;
 }
 
 void
 NS_SizeOfAtomTablesIncludingThis(MallocSizeOf aMallocSizeOf,
                                  size_t* aMain, size_t* aStatic)
 {
-  *aMain = 0;
-  if (gAtomTable) {
-    *aMain += gAtomTable->ShallowSizeOfIncludingThis(aMallocSizeOf);
-    for (auto iter = gAtomTable->Iter(); !iter.Done(); iter.Next()) {
-      auto entry = static_cast<AtomTableEntry*>(iter.Get());
-      *aMain += entry->mAtom->SizeOfIncludingThis(aMallocSizeOf);
-    }
+  *aMain = gAtomTable->ShallowSizeOfIncludingThis(aMallocSizeOf);
+  for (auto iter = gAtomTable->Iter(); !iter.Done(); iter.Next()) {
+    auto entry = static_cast<AtomTableEntry*>(iter.Get());
+    *aMain += entry->mAtom->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   
@@ -505,7 +497,6 @@ static inline AtomTableEntry*
 GetAtomHashEntry(const char* aString, uint32_t aLength, uint32_t* aHashOut)
 {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
-  EnsureTableExists();
   AtomTableKey key(aString, aLength, aHashOut);
   
   return static_cast<AtomTableEntry*>(gAtomTable->Add(&key));
@@ -515,7 +506,6 @@ static inline AtomTableEntry*
 GetAtomHashEntry(const char16_t* aString, uint32_t aLength, uint32_t* aHashOut)
 {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
-  EnsureTableExists();
   AtomTableKey key(aString, aLength, aHashOut);
   
   return static_cast<AtomTableEntry*>(gAtomTable->Add(&key));
