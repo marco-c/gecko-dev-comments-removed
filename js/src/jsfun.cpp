@@ -164,7 +164,7 @@ ArgumentsGetterImpl(JSContext* cx, const CallArgs& args)
         return false;
 
     
-    NonBuiltinScriptFrameIter iter(cx, FrameIter::STOP_AT_SAVED);
+    NonBuiltinScriptFrameIter iter(cx, FrameIter::GO_THROUGH_SAVED);
     if (!AdvanceToActiveCallLinear(cx, iter, fun)) {
         args.rval().setNull();
         return true;
@@ -255,7 +255,7 @@ CallerGetterImpl(JSContext* cx, const CallArgs& args)
         return false;
 
     
-    NonBuiltinScriptFrameIter iter(cx, FrameIter::STOP_AT_SAVED);
+    NonBuiltinScriptFrameIter iter(cx, FrameIter::GO_THROUGH_SAVED);
     if (!AdvanceToActiveCallLinear(cx, iter, fun)) {
         args.rval().setNull();
         return true;
@@ -326,7 +326,7 @@ CallerSetterImpl(JSContext* cx, const CallArgs& args)
     
     
 
-    NonBuiltinScriptFrameIter iter(cx, FrameIter::STOP_AT_SAVED);
+    NonBuiltinScriptFrameIter iter(cx, FrameIter::GO_THROUGH_SAVED);
     if (!AdvanceToActiveCallLinear(cx, iter, fun))
         return true;
 
