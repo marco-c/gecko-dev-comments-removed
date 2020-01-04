@@ -25,6 +25,11 @@ const CLIENTS_TTL_REFRESH = 604800;
 
 const SUPPORTED_PROTOCOL_VERSIONS = ["1.1", "1.5"];
 
+function hasDupeCommand(commands, action) {
+  return commands.some(other => other.command == action.command &&
+    Utils.deepEquals(other.args, action.args));
+}
+
 this.ClientsRec = function ClientsRec(collection, id) {
   CryptoWrapper.call(this, collection, id);
 }
@@ -150,6 +155,27 @@ ClientEngine.prototype = {
     SyncEngine.prototype._syncStartup.call(this);
   },
 
+  _processIncoming() {
+    
+    this.lastSync = 0;
+    this._incomingClients = [];
+    try {
+      SyncEngine.prototype._processIncoming.call(this);
+      
+      
+      
+      
+      
+      let remoteClientIDs = Object.keys(this._store._remoteClients);
+      let staleIDs = Utils.arraySub(remoteClientIDs, this._incomingClients);
+      for (let staleID of staleIDs) {
+        this._removeRemoteClient(staleID);
+      }
+    } finally {
+      this._incomingClients = null;
+    }
+  },
+
   _syncFinish() {
     
     for (let [deviceType, count] of this.deviceTypes) {
@@ -170,9 +196,22 @@ ClientEngine.prototype = {
     SyncEngine.prototype._syncFinish.call(this);
   },
 
-  
-  _reconcile: function _reconcile() {
-    return true;
+  _reconcile: function _reconcile(item) {
+    
+    
+    this._incomingClients.push(item.id);
+
+    if (!this._store.itemExists(item.id)) {
+      return true;
+    }
+    
+    
+    
+    
+    
+    
+    this._store.update(item);
+    return false;
   },
 
   
@@ -243,11 +282,6 @@ ClientEngine.prototype = {
       throw new Error("Unknown remote client ID: '" + clientId + "'.");
     }
 
-    
-    let notDupe = function(other) {
-      return other.command != command || !Utils.deepEquals(other.args, args);
-    };
-
     let action = {
       command: command,
       args: args,
@@ -257,7 +291,7 @@ ClientEngine.prototype = {
       client.commands = [action];
     }
     
-    else if (client.commands.every(notDupe)) {
+    else if (!hasDupeCommand(client.commands, action)) {
       client.commands.push(action);
     }
     
@@ -409,7 +443,12 @@ ClientEngine.prototype = {
 
     let subject = {uri: uri, client: clientId, title: title};
     Svc.Obs.notify("weave:engine:clients:display-uri", subject);
-  }
+  },
+
+  _removeRemoteClient(id) {
+    delete this._store._remoteClients[id];
+    this._tracker.removeChangedID(id);
+  },
 };
 
 function ClientStore(name, engine) {
@@ -426,8 +465,18 @@ ClientStore.prototype = {
     
     if (record.id == this.engine.localID)
       this.engine.localCommands = record.commands;
-    else
+    else {
+      let currentRecord = this._remoteClients[record.id];
+      if (currentRecord && currentRecord.commands) {
+        
+        for (let action of currentRecord.commands) {
+          if (!hasDupeCommand(record.cleartext.commands, action)) {
+            record.cleartext.commands.push(action);
+          }
+        }
+      }
       this._remoteClients[record.id] = record.cleartext;
+    }
   },
 
   createRecord: function createRecord(id, collection) {
