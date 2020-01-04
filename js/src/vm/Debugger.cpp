@@ -4167,11 +4167,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         
         for (WeakGlobalObjectSet::Range r = debugger->allDebuggees(); !r.empty(); r.popFront()) {
-            auto& instanceObjects = r.front()->compartment()->wasm.instanceObjects();
-            if (!instanceObjects.initialized())
-                continue;
-            for (auto i = instanceObjects.all(); !i.empty(); i.popFront())
-                consider(i.front());
+            for (wasm::Instance* instance : r.front()->compartment()->wasm.instances())
+                consider(instance->object());
         }
 
         return true;

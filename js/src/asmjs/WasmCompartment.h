@@ -28,6 +28,7 @@ class WasmActivation;
 namespace wasm {
 
 class Code;
+typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
 
 
 
@@ -36,17 +37,10 @@ class Code;
 
 class Compartment
 {
-    using InstanceObjectSet = GCHashSet<ReadBarriered<WasmInstanceObject*>,
-                                        MovableCellHasher<ReadBarriered<WasmInstanceObject*>>,
-                                        SystemAllocPolicy>;
-    using WeakInstanceObjectSet = JS::WeakCache<InstanceObjectSet>;
-    using InstanceVector = Vector<Instance*, 0, SystemAllocPolicy>;
-
-    InstanceVector        instances_;
-    volatile bool         mutatingInstances_;
-    WeakInstanceObjectSet instanceObjects_;
-    size_t                activationCount_;
-    bool                  profilingEnabled_;
+    InstanceVector instances_;
+    volatile bool  mutatingInstances_;
+    size_t         activationCount_;
+    bool           profilingEnabled_;
 
     friend class js::WasmActivation;
 
@@ -79,8 +73,9 @@ class Compartment
     
     
     
+    
 
-    const WeakInstanceObjectSet& instanceObjects() const { return instanceObjects_; }
+    const InstanceVector& instances() const { return instances_; }
 
     
     
