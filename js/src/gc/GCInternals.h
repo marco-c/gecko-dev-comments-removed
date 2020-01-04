@@ -32,6 +32,10 @@ class MOZ_RAII AutoTraceSession
     explicit AutoTraceSession(JSRuntime* rt, JS::HeapState state = JS::HeapState::Tracing);
     ~AutoTraceSession();
 
+    
+    
+    
+    
     AutoLockForExclusiveAccess lock;
 
   protected:

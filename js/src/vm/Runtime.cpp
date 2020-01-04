@@ -161,7 +161,6 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     promiseRejectionTrackerCallback(nullptr),
     promiseRejectionTrackerCallbackData(nullptr),
 #ifdef DEBUG
-    exclusiveAccessOwner(nullptr),
     mainThreadHasExclusiveAccess(false),
 #endif
     numExclusiveThreads(0),
@@ -431,8 +430,6 @@ JSRuntime::destroyRuntime()
 
 
     finishSelfHosting();
-
-    MOZ_ASSERT(!exclusiveAccessOwner);
 
     MOZ_ASSERT(!numExclusiveThreads);
     AutoLockForExclusiveAccess lock(this);
@@ -888,37 +885,6 @@ js::CurrentThreadCanAccessZone(Zone* zone)
     
     return zone->usedByExclusiveThread;
 }
-
-#ifdef DEBUG
-
-void
-JSRuntime::assertCanLock(RuntimeLock which)
-{
-    
-    
-    
-    switch (which) {
-      case ExclusiveAccessLock:
-        MOZ_ASSERT(exclusiveAccessOwner != PR_GetCurrentThread());
-        MOZ_FALLTHROUGH;
-      case HelperThreadStateLock:
-        MOZ_FALLTHROUGH;
-      case GCLock:
-        break;
-      default:
-        MOZ_CRASH();
-    }
-}
-
-void
-js::AssertCurrentThreadCanLock(RuntimeLock which)
-{
-    PerThreadData* pt = TlsPerThreadData.get();
-    if (pt && pt->runtime_)
-        pt->runtime_->assertCanLock(which);
-}
-
-#endif 
 
 JS_FRIEND_API(void)
 JS::UpdateJSRuntimeProfilerSampleBufferGen(JSRuntime* runtime, uint32_t generation,

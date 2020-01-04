@@ -423,10 +423,6 @@ js::ExclusiveContext::setCompartment(JSCompartment* comp)
                   !comp->zone()->usedByExclusiveThread);
 
     
-    MOZ_ASSERT_IF(runtime_->isAtomsCompartment(comp),
-                  runtime_->currentThreadHasExclusiveAccess());
-
-    
     MOZ_ASSERT_IF(comp && !runtime_->isAtomsCompartment(comp),
                   !comp->zone()->isAtomsZone());
 

@@ -5570,12 +5570,6 @@ AutoTraceSession::AutoTraceSession(JSRuntime* rt, JS::HeapState heapState)
     MOZ_ASSERT(heapState != JS::HeapState::Idle);
     MOZ_ASSERT_IF(heapState == JS::HeapState::MajorCollecting, rt->gc.nursery.isEmpty());
 
-    
-    
-    
-    
-    MOZ_ASSERT(rt->currentThreadHasExclusiveAccess());
-
     if (rt->exclusiveThreadsPresent()) {
         
         
@@ -6207,9 +6201,6 @@ GCRuntime::checkCanCallAPI()
 
     
     MOZ_RELEASE_ASSERT(!rt->isHeapBusy());
-
-    
-    MOZ_ASSERT(!rt->currentThreadHasExclusiveAccess());
 
     MOZ_ASSERT(isAllocAllowed());
 }
