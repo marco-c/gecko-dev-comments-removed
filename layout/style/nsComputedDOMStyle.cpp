@@ -2574,14 +2574,9 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrack
           AppendGridLineNames(valueList, aTrackList.mRepeatAutoLineNameListBefore);
         }
 
-        
-        
-        
-        RefPtr<CSSValue> tmpTrackSize =
+        valueList->AppendCSSValue(
           GetGridTrackSize(aTrackList.mMinTrackSizingFunctions[i],
-                           aTrackList.mMaxTrackSizingFunctions[i]);
-
-        valueList->AppendCSSValue(tmpTrackSize.forget());
+                           aTrackList.mMaxTrackSizingFunctions[i]));
         if (!aTrackList.mRepeatAutoLineNameListAfter.IsEmpty()) {
           AppendGridLineNames(valueList, aTrackList.mRepeatAutoLineNameListAfter);
         }
@@ -2589,13 +2584,9 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrack
         end->SetString(NS_LITERAL_STRING(")"));
         valueList->AppendCSSValue(end.forget());
       } else {
-        
-        
-        
-        RefPtr<CSSValue> tmpTrackSize =
+        valueList->AppendCSSValue(
           GetGridTrackSize(aTrackList.mMinTrackSizingFunctions[i],
-                           aTrackList.mMaxTrackSizingFunctions[i]);
-        valueList->AppendCSSValue(tmpTrackSize.forget());
+                           aTrackList.mMaxTrackSizingFunctions[i]));
       }
     }
   }
@@ -3483,19 +3474,12 @@ nsComputedDOMStyle::CreateTextAlignValue(uint8_t aAlign, bool aAlignTrue,
     return val.forget();
   }
 
-  
-  
-  
-  
-  RefPtr<nsROCSSPrimitiveValue> refcountedVal = val;
-  val = nullptr; 
-
   RefPtr<nsROCSSPrimitiveValue> first = new nsROCSSPrimitiveValue;
   first->SetIdent(eCSSKeyword_true);
 
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
   valueList->AppendCSSValue(first.forget());
-  valueList->AppendCSSValue(refcountedVal.forget());
+  valueList->AppendCSSValue(val.forget());
   return valueList.forget();
 }
 
@@ -3553,17 +3537,12 @@ nsComputedDOMStyle::DoGetTextDecoration()
 
   RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
 
-  
-  
-  RefPtr<CSSValue> tmp = DoGetTextDecorationLine();
-  valueList->AppendCSSValue(tmp.forget());
+  valueList->AppendCSSValue(DoGetTextDecorationLine());
   if (!isInitialStyle) {
-    tmp = DoGetTextDecorationStyle();
-    valueList->AppendCSSValue(tmp.forget());
+    valueList->AppendCSSValue(DoGetTextDecorationStyle());
   }
   if (!isForegroundColor) {
-    tmp = DoGetTextDecorationColor();
-    valueList->AppendCSSValue(tmp.forget());
+    valueList->AppendCSSValue(DoGetTextDecorationColor());
   }
 
   return valueList.forget();
@@ -5421,17 +5400,10 @@ nsComputedDOMStyle::GetSVGPaintFor(bool aFill)
       RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
       RefPtr<nsROCSSPrimitiveValue> fallback = new nsROCSSPrimitiveValue;
 
-      
-      
-      
-      
-      RefPtr<nsROCSSPrimitiveValue> refcountedVal = val;
-      val = nullptr; 
-
-      refcountedVal->SetURI(paint->mPaint.mPaintServer);
+      val->SetURI(paint->mPaint.mPaintServer);
       SetToRGBAColor(fallback, paint->mFallbackColor);
 
-      valueList->AppendCSSValue(refcountedVal.forget());
+      valueList->AppendCSSValue(val.forget());
       valueList->AppendCSSValue(fallback.forget());
       return valueList.forget();
     }
