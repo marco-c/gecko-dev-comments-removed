@@ -94,6 +94,7 @@ const CONTEXT_FOR_VALIDATION = [
 
 const CONTEXT_FOR_INJECTION = [
   ...CONTEXT_FOR_VALIDATION,
+  "shouldInject",
   "callFunction",
   "callFunctionNoReturn",
   "callAsyncFunction",
@@ -348,23 +349,6 @@ class InjectionContext extends Context {
 
 
 
-  callFunction(path, name, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-  callFunctionNoReturn(path, name, args) {
-    throw new Error("Not implemented");
-  }
-
-  
 
 
 
@@ -376,31 +360,11 @@ class InjectionContext extends Context {
 
 
 
-  callAsyncFunction(path, name, args, callback) {
-    throw new Error("Not implemented");
-  }
-
-  
 
 
 
 
-
-
-
-  getProperty(path, name) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-  setProperty(path, name, value) {
+  shouldInject(namespace, name) {
     throw new Error("Not implemented");
   }
 
@@ -414,7 +378,20 @@ class InjectionContext extends Context {
 
 
 
-  addListener(path, name, listener, args) {
+  callFunction(pathObj, path, name, args) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+  callFunctionNoReturn(pathObj, path, name, args) {
     throw new Error("Not implemented");
   }
 
@@ -428,7 +405,10 @@ class InjectionContext extends Context {
 
 
 
-  hasListener(path, name, listener) {
+
+
+
+  callAsyncFunction(pathObj, path, name, args, callback) {
     throw new Error("Not implemented");
   }
 
@@ -441,7 +421,64 @@ class InjectionContext extends Context {
 
 
 
-  removeListener(path, name, listener) {
+  getProperty(pathObj, path, name) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+  setProperty(pathObj, path, name, value) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  addListener(pathObj, path, name, listener, args) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  hasListener(pathObj, path, name, listener) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  removeListener(pathObj, path, name, listener) {
     throw new Error("Not implemented");
   }
 }
@@ -617,7 +654,8 @@ class Entry {
 
 
 
-  inject(path, name, dest, context) {
+
+  inject(pathObj, path, name, dest, context) {
   }
 }
 
@@ -808,7 +846,7 @@ class StringType extends Type {
     return baseType == "string";
   }
 
-  inject(path, name, dest, context) {
+  inject(pathObj, path, name, dest, context) {
     if (this.enumeration) {
       let obj = Cu.createObjectIn(dest, {defineAs: name});
       for (let e of this.enumeration) {
@@ -1125,7 +1163,7 @@ class ValueProperty extends Entry {
     this.value = value;
   }
 
-  inject(path, name, dest, context) {
+  inject(pathObj, path, name, dest, context) {
     dest[name] = this.value;
   }
 }
@@ -1145,14 +1183,14 @@ class TypeProperty extends Entry {
     throw context.makeError(`${msg} for ${this.namespaceName}.${this.name}.`);
   }
 
-  inject(path, name, dest, context) {
+  inject(pathObj, path, name, dest, context) {
     if (this.unsupported) {
       return;
     }
 
     let getStub = () => {
       this.checkDeprecated(context);
-      return context.getProperty(path, name);
+      return context.getProperty(pathObj, path, name);
     };
 
     let desc = {
@@ -1169,7 +1207,7 @@ class TypeProperty extends Entry {
           this.throwError(context, normalized.error);
         }
 
-        context.setProperty(path, name, normalized.value);
+        context.setProperty(pathObj, path, name, normalized.value);
       };
 
       desc.set = Cu.exportFunction(setStub, dest);
@@ -1198,7 +1236,7 @@ class SubModuleProperty extends Entry {
     this.properties = properties;
   }
 
-  inject(path, name, dest, context) {
+  inject(pathObj, path, name, dest, context) {
     let obj = Cu.createObjectIn(dest, {defineAs: name});
 
     let ns = Schemas.namespaces.get(this.namespaceName);
@@ -1214,7 +1252,12 @@ class SubModuleProperty extends Entry {
 
     let functions = type.functions;
     for (let fun of functions) {
-      fun.inject(path.concat(name), fun.name, obj, context);
+      let subpath = path.concat(name);
+      let pathObj = context.shouldInject(subpath.join("."), fun.name);
+      if (pathObj) {
+        pathObj = pathObj === true ? null : pathObj;
+        fun.inject(pathObj, subpath, fun.name, obj, context);
+      }
     }
 
     
@@ -1322,7 +1365,7 @@ class FunctionEntry extends CallEntry {
     this.hasAsyncCallback = type.hasAsyncCallback;
   }
 
-  inject(path, name, dest, context) {
+  inject(pathObj, path, name, dest, context) {
     if (this.unsupported) {
       return;
     }
@@ -1340,19 +1383,19 @@ class FunctionEntry extends CallEntry {
         if (this.hasAsyncCallback) {
           callback = actuals.pop();
         }
-        return context.callAsyncFunction(path, name, actuals, callback);
+        return context.callAsyncFunction(pathObj, path, name, actuals, callback);
       };
     } else if (!this.returns) {
       stub = (...args) => {
         this.checkDeprecated(context);
         let actuals = this.checkParameters(args, context);
-        return context.callFunctionNoReturn(path, name, actuals);
+        return context.callFunctionNoReturn(pathObj, path, name, actuals);
       };
     } else {
       stub = (...args) => {
         this.checkDeprecated(context);
         let actuals = this.checkParameters(args, context);
-        return context.callFunction(path, name, actuals);
+        return context.callFunction(pathObj, path, name, actuals);
       };
     }
     Cu.exportFunction(stub, dest, {defineAs: name});
@@ -1376,7 +1419,7 @@ class Event extends CallEntry {
     return r.value;
   }
 
-  inject(path, name, dest, context) {
+  inject(pathObj, path, name, dest, context) {
     if (this.unsupported) {
       return;
     }
@@ -1388,17 +1431,17 @@ class Event extends CallEntry {
     let addStub = (listener, ...args) => {
       listener = this.checkListener(listener, context);
       let actuals = this.checkParameters(args, context);
-      context.addListener(this.path, name, listener, actuals);
+      context.addListener(pathObj, this.path, name, listener, actuals);
     };
 
     let removeStub = (listener) => {
       listener = this.checkListener(listener, context);
-      context.removeListener(this.path, name, listener);
+      context.removeListener(pathObj, this.path, name, listener);
     };
 
     let hasStub = (listener) => {
       listener = this.checkListener(listener, context);
-      return context.hasListener(this.path, name, listener);
+      return context.hasListener(pathObj, this.path, name, listener);
     };
 
     let obj = Cu.createObjectIn(dest, {defineAs: name});
@@ -1827,8 +1870,10 @@ this.Schemas = {
 
       let obj = Cu.createObjectIn(dest, {defineAs: namespace});
       for (let [name, entry] of ns) {
-        if (wrapperFuncs.shouldInject(namespace, name)) {
-          entry.inject([namespace], name, obj, context);
+        let pathObj = context.shouldInject(namespace, name);
+        if (pathObj) {
+          pathObj = pathObj === true ? null : pathObj;
+          entry.inject(pathObj, [namespace], name, obj, context);
         }
       }
 
