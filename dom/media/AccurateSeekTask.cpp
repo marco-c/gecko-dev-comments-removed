@@ -339,6 +339,23 @@ AccurateSeekTask::OnSeekRejected(nsresult aResult)
 }
 
 void
+AccurateSeekTask::AdjustFastSeekIfNeeded(MediaData* aSample)
+{
+  AssertOwnerThread();
+  if (mSeekJob.mTarget.IsFast() &&
+      mSeekJob.mTarget.GetTime().ToMicroseconds() > mCurrentTimeBeforeSeek &&
+      aSample->mTime < mCurrentTimeBeforeSeek) {
+    
+    
+    
+    
+    
+    
+    mSeekJob.mTarget.SetType(SeekTarget::Accurate);
+  }
+}
+
+void
 AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
 {
   AssertOwnerThread();
@@ -360,17 +377,8 @@ AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   if (!mDropAudioUntilNextDiscontinuity) {
     
     
-    if (mSeekJob.mTarget.IsFast() &&
-        mSeekJob.mTarget.GetTime().ToMicroseconds() > mCurrentTimeBeforeSeek &&
-        audio->mTime < mCurrentTimeBeforeSeek) {
-      
-      
-      
-      
-      
-      
-      mSeekJob.mTarget.SetType(SeekTarget::Accurate);
-    }
+    AdjustFastSeekIfNeeded(audio);
+
     if (mSeekJob.mTarget.IsFast()) {
       
       mSeekedAudioData = audio;
@@ -459,17 +467,8 @@ AccurateSeekTask::OnVideoDecoded(MediaData* aVideoSample)
   if (!mDropVideoUntilNextDiscontinuity) {
     
     
-    if (mSeekJob.mTarget.IsFast() &&
-        mSeekJob.mTarget.GetTime().ToMicroseconds() > mCurrentTimeBeforeSeek &&
-        video->mTime < mCurrentTimeBeforeSeek) {
-      
-      
-      
-      
-      
-      
-      mSeekJob.mTarget.SetType(SeekTarget::Accurate);
-    }
+    AdjustFastSeekIfNeeded(video);
+
     if (mSeekJob.mTarget.IsFast()) {
       
       mSeekedVideoData = video;
