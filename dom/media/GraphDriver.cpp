@@ -57,6 +57,7 @@ void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
                                GraphTime aLastSwitchNextIterationStart,
                                GraphTime aLastSwitchNextIterationEnd)
 {
+  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   
   
   
@@ -71,6 +72,7 @@ void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
 
 void GraphDriver::SwitchAtNextIteration(GraphDriver* aNextDriver)
 {
+  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   
   
   
