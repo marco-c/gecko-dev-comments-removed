@@ -84,6 +84,8 @@ public class FxAccountStatusFragment
   private static final long LAST_SYNCED_TIME_UPDATE_INTERVAL_IN_MILLISECONDS = 60 * 1000;
   private static final long PROFILE_FETCH_RETRY_INTERVAL_IN_MILLISECONDS = 60 * 1000;
 
+  private static final String[] STAGES_TO_SYNC_ON_DEVICE_NAME_CHANGE = new String[] { "clients" };
+
   
   
   private static boolean ALWAYS_SHOW_AUTH_SERVER = false;
@@ -939,7 +941,10 @@ public class FxAccountStatusFragment
       }
       final long now = System.currentTimeMillis();
       clientsDataDelegate.setClientName(newClientName, now);
-      requestDelayedSync(); 
+      
+      
+      
+      fxAccount.requestImmediateSync(STAGES_TO_SYNC_ON_DEVICE_NAME_CHANGE, null);
       hardRefresh(); 
       return true;
     }
