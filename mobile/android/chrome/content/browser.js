@@ -2268,6 +2268,8 @@ var NativeWindow = {
   init: function() {
     Services.obs.addObserver(this, "Menu:Clicked", false);
     Services.obs.addObserver(this, "Doorhanger:Reply", false);
+    Services.obs.addObserver(this, "Toast:Click", false);
+    Services.obs.addObserver(this, "Toast:Hidden", false);
     this.contextmenus.init();
   },
 
@@ -2284,6 +2286,38 @@ var NativeWindow = {
       type: "Dex:Unload",
       zipfile: zipFile
     });
+  },
+
+  toast: {
+    _callbacks: {},
+    show: function(aMessage, aDuration, aOptions) {
+      let msg = {
+        type: "Toast:Show",
+        message: aMessage,
+        duration: aDuration
+      };
+
+      if (aOptions && aOptions.button) {
+        msg.button = {
+          id: uuidgen.generateUUID().toString(),
+        };
+
+        
+        if (aOptions.button.label) {
+          msg.button.label = aOptions.button.label;
+        }
+
+        if (aOptions.button.icon) {
+          
+          
+          msg.button.icon = resolveGeckoURI(aOptions.button.icon);
+        };
+
+        this._callbacks[msg.button.id] = aOptions.button.callback;
+      }
+
+      Messaging.sendRequest(msg);
+    }
   },
 
   menu: {
@@ -2398,6 +2432,14 @@ var NativeWindow = {
     if (aTopic == "Menu:Clicked") {
       if (this.menu._callbacks[aData])
         this.menu._callbacks[aData]();
+    } else if (aTopic == "Toast:Click") {
+      if (this.toast._callbacks[aData]) {
+        this.toast._callbacks[aData]();
+        delete this.toast._callbacks[aData];
+      }
+    } else if (aTopic == "Toast:Hidden") {
+      if (this.toast._callbacks[aData])
+        delete this.toast._callbacks[aData];
     } else if (aTopic == "Doorhanger:Reply") {
       let data = JSON.parse(aData);
       let reply_id = data["callback"];
@@ -3093,8 +3135,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PageActions",
 
 
 [
-  ["pageactions", "resource://gre/modules/PageActions.jsm", "PageActions"],
-  ["toast", "resource://gre/modules/Snackbars.jsm", "Snackbars"]
+  ["pageactions", "resource://gre/modules/PageActions.jsm", "PageActions"]
 ].forEach(item => {
   let [name, script, exprt] = item;
 
@@ -5229,13 +5270,17 @@ var ErrorPageEventHandler = {
           
           
           
-          let bucketName = "WARNING_PHISHING_PAGE_";
+          let bucketName = "";
+          let sendTelemetry = false;
           if (errorDoc.documentURI.contains("e=malwareBlocked")) {
+            sendTelemetry = true;
             bucketName = "WARNING_MALWARE_PAGE_";
+          } else if (errorDoc.documentURI.contains("e=phishingBlocked")) {
+            sendTelemetry = true;
+            bucketName = "WARNING_PHISHING_PAGE_";
           } else if (errorDoc.documentURI.contains("e=unwantedBlocked")) {
+            sendTelemetry = true;
             bucketName = "WARNING_UNWANTED_PAGE_";
-          } else if (errorDoc.documentURI.contains("e=forbiddenBlocked")) {
-            return; 
           }
           let nsISecTel = Ci.nsISecurityUITelemetry;
           let isIframe = (errorDoc.defaultView.parent === errorDoc.defaultView);
@@ -5244,19 +5289,26 @@ var ErrorPageEventHandler = {
           let formatter = Cc["@mozilla.org/toolkit/URLFormatterService;1"].getService(Ci.nsIURLFormatter);
 
           if (target == errorDoc.getElementById("getMeOutButton")) {
-            Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "GET_ME_OUT_OF_HERE"]);
+            if (sendTelemetry) {
+              Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "GET_ME_OUT_OF_HERE"]);
+            }
             errorDoc.location = "about:home";
           } else if (target == errorDoc.getElementById("reportButton")) {
             
             
-            Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "WHY_BLOCKED"]);
+            if (sendTelemetry) {
+              Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "WHY_BLOCKED"]);
+            }
 
             
             
             let url = Services.urlFormatter.formatURLPref("app.support.baseURL");
             BrowserApp.selectedBrowser.loadURI(url + "phishing-malware");
-          } else if (target == errorDoc.getElementById("ignoreWarningButton")) {
-            Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "IGNORE_WARNING"]);
+          } else if (target == errorDoc.getElementById("ignoreWarningButton") &&
+                     Services.prefs.getBoolPref("browser.safebrowsing.allowOverride")) {
+            if (sendTelemetry) {
+              Telemetry.addData("SECURITY_UI", nsISecTel[bucketName + "IGNORE_WARNING"]);
+            }
 
             
             let webNav = BrowserApp.selectedBrowser.docShell.QueryInterface(Ci.nsIWebNavigation);
