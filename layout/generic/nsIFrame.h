@@ -3032,6 +3032,15 @@ NS_PTR_TO_INT32(frame->Properties().Get(nsIFrame::ParagraphDepthProperty()))
 
 
 
+  bool FrameMaintainsOverflow() const {
+    return !HasAllStateBits(NS_FRAME_SVG_LAYOUT | NS_FRAME_IS_NONDISPLAY);
+  }
+
+  
+
+
+
+
   virtual mozilla::dom::Element* GetPseudoElement(nsCSSPseudoElements::Type aType);
 
   bool BackfaceIsHidden() {

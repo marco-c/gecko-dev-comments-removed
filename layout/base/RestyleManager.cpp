@@ -818,8 +818,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
     } else {
       NS_ASSERTION(frame, "This shouldn't happen");
 
-      if ((frame->GetStateBits() & NS_FRAME_SVG_LAYOUT) &&
-          (frame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
+      if (!frame->FrameMaintainsOverflow()) {
         
         
         hint = NS_SubtractHint(hint,
