@@ -374,10 +374,7 @@ bool
 nsLayoutUtils::HasAnimationsForCompositor(const nsIFrame* aFrame,
                                           nsCSSProperty aProperty)
 {
-  
-  
-  return !EffectCompositor::GetAnimationsForCompositor(aFrame,
-                                                       aProperty).IsEmpty();
+  return !EffectCompositor::HasAnimationsForCompositor(aFrame, aProperty);
 }
 
 template<typename TestType>
