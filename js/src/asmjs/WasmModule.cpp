@@ -517,23 +517,42 @@ Module::instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) c
     RootedArrayBufferObjectMaybeShared buffer(cx);
     if (memory) {
         buffer = &memory->buffer();
-        uint32_t length = buffer->byteLength();
-        if (length < metadata_->minMemoryLength || length > metadata_->maxMemoryLength) {
+        uint32_t length = buffer->wasmActualByteLength();
+        uint32_t declaredMaxLength = metadata_->maxMemoryLength.valueOr(UINT32_MAX);
+
+        
+        
+        
+        if (length < metadata_->minMemoryLength || length > declaredMaxLength) {
             JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_WASM_BAD_IMP_SIZE, "Memory");
             return false;
         }
 
         
-        if (metadata_->assumptions.usesSignal.forOOB &&
-            !buffer->is<SharedArrayBufferObject>() &&
-            !buffer->as<ArrayBufferObject>().isWasmMapped())
-        {
-            JS_ReportError(cx, "can't access same buffer with and without signals enabled");
-            return false;
+        
+        
+        if (!metadata_->isAsmJS()) {
+            Maybe<uint32_t> memMaxSize =
+                buffer->as<ArrayBufferObject>().wasmMaxSize();
+
+            if (metadata_->maxMemoryLength.isSome() != memMaxSize.isSome() ||
+                metadata_->maxMemoryLength < memMaxSize) {
+                JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_WASM_BAD_IMP_SIZE,
+                                     "Memory");
+                return false;
+            }
         }
+
+        MOZ_RELEASE_ASSERT(buffer->is<SharedArrayBufferObject>() ||
+                           buffer->as<ArrayBufferObject>().isWasm());
+
+        
+        
+        MOZ_ASSERT_IF(buffer->is<SharedArrayBufferObject>(), metadata_->isAsmJS());
     } else {
         buffer = ArrayBufferObject::createForWasm(cx, metadata_->minMemoryLength,
-                                                  metadata_->assumptions.usesSignal.forOOB);
+                                                  metadata_->maxMemoryLength);
+
         if (!buffer)
             return false;
 

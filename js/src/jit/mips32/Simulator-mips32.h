@@ -142,7 +142,7 @@ class Simulator {
     };
 
     
-    static Simulator* Create();
+    static Simulator* Create(JSContext* cx);
 
     static void Destroy(Simulator* simulator);
 

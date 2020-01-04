@@ -100,12 +100,12 @@ class Simulator
     };
 
     
-    static Simulator* Create();
+    static Simulator* Create(JSContext* cx);
 
     static void Destroy(Simulator* simulator);
 
     
-    Simulator();
+    explicit Simulator(JSContext* cx);
     ~Simulator();
 
     
@@ -260,6 +260,9 @@ class Simulator
     void printStopInfo(uint32_t code);
 
     
+    inline bool handleWasmFault(int32_t addr, unsigned numBytes);
+
+    
     inline uint8_t readBU(int32_t addr);
     inline int8_t readB(int32_t addr);
     inline void writeB(int32_t addr, uint8_t value);
@@ -348,6 +351,8 @@ class Simulator
     void setVFPRegister(int reg_index, const InputType& value);
 
     void callInternal(uint8_t* entry);
+
+    JSContext* const cx_;
 
     
     
