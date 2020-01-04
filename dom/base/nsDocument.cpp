@@ -33,6 +33,7 @@
 #include "mozilla/css/Loader.h"
 #include "mozilla/css/ImageLoader.h"
 #include "nsDocShell.h"
+#include "nsDocShellLoadTypes.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsCOMArray.h"
 #include "nsQueryObject.h"
@@ -4730,15 +4731,13 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
     mTemplateContentsOwner->SetScriptGlobalObject(aScriptGlobalObject);
   }
 
-  nsCOMPtr<nsIChannel> channel = GetChannel();
-  if (!mMaybeServiceWorkerControlled && channel) {
-    nsLoadFlags loadFlags = 0;
-    channel->GetLoadFlags(&loadFlags);
+  if (!mMaybeServiceWorkerControlled && mDocumentContainer && mScriptGlobalObject && GetChannel()) {
+    nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
+    uint32_t loadType;
+    docShell->GetLoadType(&loadType);
+
     
-    
-    
-    
-    if (loadFlags & nsIRequest::LOAD_BYPASS_CACHE) {
+    if (IsForceReloadType(loadType)) {
       NS_WARNING("Page was shift reloaded, skipping ServiceWorker control");
       return;
     }
