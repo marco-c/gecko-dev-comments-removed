@@ -230,15 +230,8 @@ nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest, nsresult aStatus)
   
   if (NS_SUCCEEDED(aStatus)) {
     FireEvent(NS_LITERAL_STRING("load"));
-
-    
-    bool isMultipart;
-    if (NS_FAILED(aRequest->GetMultipart(&isMultipart)) || !isMultipart) {
-      FireEvent(NS_LITERAL_STRING("loadend"));
-    }
   } else {
     FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
   }
 
   nsCOMPtr<nsINode> thisNode = do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
@@ -635,9 +628,7 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
     
     if (!mCurrentRequest)
       aChannel->GetURI(getter_AddRefs(mCurrentURI));
-
     FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
     aError.Throw(rv);
   }
   return listener.forget();
@@ -673,7 +664,7 @@ nsImageLoadingContent::ForceReload(const mozilla::dom::Optional<bool>& aNotify,
   ImageLoadType loadType = \
     (mCurrentRequestFlags & REQUEST_IS_IMAGESET) ? eImageLoadType_Imageset
                                                  : eImageLoadType_Normal;
-  nsresult rv = LoadImage(currentURI, true, notify, loadType, true, nullptr,
+  nsresult rv = LoadImage(currentURI, true, notify, loadType, nullptr,
                           nsIRequest::VALIDATE_ALWAYS);
   if (NS_FAILED(rv)) {
     aError.Throw(rv);
@@ -758,16 +749,12 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
   }
 
   
-  FireEvent(NS_LITERAL_STRING("loadstart"));
-
-  
   nsCOMPtr<nsIURI> imageURI;
   nsresult rv = StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
   if (NS_FAILED(rv)) {
     
     CancelImageRequests(aNotify);
     FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
   }
 
@@ -791,7 +778,7 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
 
   NS_TryToSetImmutable(imageURI);
 
-  return LoadImage(imageURI, aForce, aNotify, aImageLoadType, false, doc);
+  return LoadImage(imageURI, aForce, aNotify, aImageLoadType, doc);
 }
 
 nsresult
@@ -799,20 +786,13 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
                                  bool aForce,
                                  bool aNotify,
                                  ImageLoadType aImageLoadType,
-                                 bool aLoadStart,
                                  nsIDocument* aDocument,
                                  nsLoadFlags aLoadFlags)
 {
-  
-  if (aLoadStart) {
-    FireEvent(NS_LITERAL_STRING("loadstart"));
-  }
-
   if (!mLoadingEnabled) {
     
     
     FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
   }
 
@@ -869,7 +849,6 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
                                policyType);
   if (!NS_CP_ACCEPTED(cpDecision)) {
     FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
     SetBlockedRequest(aNewURI, cpDecision);
     return NS_OK;
   }
@@ -942,9 +921,7 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
     
     if (!mCurrentRequest)
       mCurrentURI = aNewURI;
-
     FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
   }
 
