@@ -4,8 +4,7 @@
 
 "use strict";
 
-const {Cu, Ci} = require("chrome");
-
+const {Ci} = require("chrome");
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
 
@@ -112,8 +111,8 @@ InspectorSearch.prototype = {
       this._onSearch(event.shiftKey);
     }
 
-    const modifierKey = system.constants.platform === "macosx" ? event.metaKey :
-event.ctrlKey;
+    const modifierKey = system.constants.platform === "macosx"
+                        ? event.metaKey : event.ctrlKey;
     if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_G && modifierKey) {
       this._onSearch(event.shiftKey);
       event.preventDefault();
@@ -221,6 +220,7 @@ SelectorAutocompleter.prototype = {
     
     
     
+    
     for (let i = 1; i <= query.length; i++) {
       
       subQuery = query.slice(0, i);
@@ -229,7 +229,8 @@ SelectorAutocompleter.prototype = {
         case null:
           
           lastChar = secondLastChar;
-        case this.States.TAG:
+
+        case this.States.TAG: 
           if (lastChar == ".") {
             this._state = this.States.CLASS;
           } else if (lastChar == "#") {
@@ -243,6 +244,7 @@ SelectorAutocompleter.prototype = {
 
         case this.States.CLASS:
           if (subQuery.match(/[\.]+[^\.]*$/)[0].length > 2) {
+            
             
             if (lastChar == " " || lastChar == ">") {
               this._state = this.States.TAG;
@@ -258,6 +260,7 @@ SelectorAutocompleter.prototype = {
 
         case this.States.ID:
           if (subQuery.match(/[#]+[^#]*$/)[0].length > 2) {
+            
             
             if (lastChar == " " || lastChar == ">") {
               this._state = this.States.TAG;
@@ -295,7 +298,8 @@ SelectorAutocompleter.prototype = {
 
   destroy: function () {
     this.searchBox.removeEventListener("input", this.showSuggestions, true);
-    this.searchBox.removeEventListener("keypress", this._onSearchKeypress, true);
+    this.searchBox.removeEventListener("keypress",
+      this._onSearchKeypress, true);
     this.inspector.off("markupmutation", this._onMarkupMutation);
     this.searchPopup.destroy();
     this.searchPopup = null;
@@ -308,16 +312,19 @@ SelectorAutocompleter.prototype = {
 
   _onSearchKeypress: function (event) {
     let query = this.searchBox.value;
+    let popup = this.searchPopup;
+
     switch (event.keyCode) {
       case event.DOM_VK_RETURN:
       case event.DOM_VK_TAB:
-        if (this.searchPopup.isOpen &&
-            this.searchPopup.getItemAtIndex(this.searchPopup.itemCount - 1)
+        if (popup.isOpen &&
+            popup.getItemAtIndex(popup.itemCount - 1)
                 .preLabel == query) {
-          this.searchPopup.selectedIndex = this.searchPopup.itemCount - 1;
-          this.searchBox.value = this.searchPopup.selectedItem.label;
+          popup.selectedIndex = popup.itemCount - 1;
+          this.searchBox.value = popup.selectedItem.label;
           this.hidePopup();
-        } else if (!this.searchPopup.isOpen && event.keyCode === event.DOM_VK_TAB) {
+        } else if (!popup.isOpen &&
+                   event.keyCode === event.DOM_VK_TAB) {
           
           
           
@@ -327,24 +334,23 @@ SelectorAutocompleter.prototype = {
         break;
 
       case event.DOM_VK_UP:
-        if (this.searchPopup.isOpen && this.searchPopup.itemCount > 0) {
-          this.searchPopup.focus();
-          if (this.searchPopup.selectedIndex == this.searchPopup.itemCount - 1) {
-            this.searchPopup.selectedIndex =
-              Math.max(0, this.searchPopup.itemCount - 2);
+        if (popup.isOpen && popup.itemCount > 0) {
+          popup.focus();
+          if (popup.selectedIndex == popup.itemCount - 1) {
+            popup.selectedIndex =
+              Math.max(0, popup.itemCount - 2);
+          } else {
+            popup.selectedIndex = popup.itemCount - 1;
           }
-          else {
-            this.searchPopup.selectedIndex = this.searchPopup.itemCount - 1;
-          }
-          this.searchBox.value = this.searchPopup.selectedItem.label;
+          this.searchBox.value = popup.selectedItem.label;
         }
         break;
 
       case event.DOM_VK_DOWN:
-        if (this.searchPopup.isOpen && this.searchPopup.itemCount > 0) {
-          this.searchPopup.focus();
-          this.searchPopup.selectedIndex = 0;
-          this.searchBox.value = this.searchPopup.selectedItem.label;
+        if (popup.isOpen && popup.itemCount > 0) {
+          popup.focus();
+          popup.selectedIndex = 0;
+          this.searchBox.value = popup.selectedItem.label;
         }
         break;
 
@@ -361,40 +367,41 @@ SelectorAutocompleter.prototype = {
 
 
   _onListBoxKeypress: function (event) {
+    let popup = this.searchPopup;
+
     switch (event.keyCode || event.button) {
       case event.DOM_VK_RETURN:
       case event.DOM_VK_TAB:
-      case 0: 
+      case 0:
+        
         event.stopPropagation();
         event.preventDefault();
-        this.searchBox.value = this.searchPopup.selectedItem.label;
+        this.searchBox.value = popup.selectedItem.label;
         this.searchBox.focus();
         this.hidePopup();
         break;
 
       case event.DOM_VK_UP:
-        if (this.searchPopup.selectedIndex == 0) {
-          this.searchPopup.selectedIndex = -1;
+        if (popup.selectedIndex == 0) {
+          popup.selectedIndex = -1;
           event.stopPropagation();
           event.preventDefault();
           this.searchBox.focus();
-        }
-        else {
-          let index = this.searchPopup.selectedIndex;
-          this.searchBox.value = this.searchPopup.getItemAtIndex(index - 1).label;
+        } else {
+          let index = popup.selectedIndex;
+          this.searchBox.value = popup.getItemAtIndex(index - 1).label;
         }
         break;
 
       case event.DOM_VK_DOWN:
-        if (this.searchPopup.selectedIndex == this.searchPopup.itemCount - 1) {
-          this.searchPopup.selectedIndex = -1;
+        if (popup.selectedIndex == popup.itemCount - 1) {
+          popup.selectedIndex = -1;
           event.stopPropagation();
           event.preventDefault();
           this.searchBox.focus();
-        }
-        else {
-          let index = this.searchPopup.selectedIndex;
-          this.searchBox.value = this.searchPopup.getItemAtIndex(index + 1).label;
+        } else {
+          let index = popup.selectedIndex;
+          this.searchBox.value = popup.getItemAtIndex(index + 1).label;
         }
         break;
 
@@ -403,8 +410,8 @@ SelectorAutocompleter.prototype = {
         event.preventDefault();
         this.searchBox.focus();
         if (this.searchBox.selectionStart > 0) {
-          this.searchBox.value =
-            this.searchBox.value.substring(0, this.searchBox.selectionStart - 1);
+          this.searchBox.value = this.searchBox.value.substring(0,
+            this.searchBox.selectionStart - 1);
         }
         this.hidePopup();
         break;
@@ -424,7 +431,7 @@ SelectorAutocompleter.prototype = {
   
 
 
-  _showPopup: function (list, firstPart, aState) {
+  _showPopup: function (list, firstPart, popupState) {
     let total = 0;
     let query = this.searchBox.value;
     let items = [];
@@ -454,10 +461,10 @@ SelectorAutocompleter.prototype = {
 
       
       
-      if (aState === this.States.TAG && state === this.States.CLASS) {
+      if (popupState === this.States.TAG && state === this.States.CLASS) {
         item.preLabel = "." + item.preLabel;
       }
-      if (aState === this.States.TAG && state === this.States.ID) {
+      if (popupState === this.States.TAG && state === this.States.ID) {
         item.preLabel = "#" + item.preLabel;
       }
 
@@ -469,12 +476,10 @@ SelectorAutocompleter.prototype = {
     if (total > 0) {
       this.searchPopup.setItems(items);
       this.searchPopup.openPopup(this.searchBox);
-    }
-    else {
+    } else {
       this.hidePopup();
     }
   },
-
 
   
 
@@ -507,13 +512,11 @@ SelectorAutocompleter.prototype = {
       
       firstPart = (query.match(/[\s>+]?([a-zA-Z]*)$/) || ["", query])[1];
       query = query.slice(0, query.length - firstPart.length);
-    }
-    else if (state === this.States.CLASS) {
+    } else if (state === this.States.CLASS) {
       
       firstPart = query.match(/\.([^\.]*)$/)[1];
       query = query.slice(0, query.length - firstPart.length - 1);
-    }
-    else if (state === this.States.ID) {
+    } else if (state === this.States.ID) {
       
       firstPart = query.match(/#([^#]*)$/)[1];
       query = query.slice(0, query.length - firstPart.length - 1);
@@ -524,7 +527,9 @@ SelectorAutocompleter.prototype = {
       query += "*";
     }
 
-    this._lastQuery = this.walker.getSuggestionsForQuery(query, firstPart, state).then(result => {
+    let suggestionsPromise = this.walker.getSuggestionsForQuery(
+      query, firstPart, state);
+    this._lastQuery = suggestionsPromise.then(result => {
       this.emit("processing-done");
       if (result.query !== query) {
         
@@ -545,10 +550,9 @@ SelectorAutocompleter.prototype = {
         result.suggestions = [];
       }
 
-
       this._showPopup(result.suggestions, firstPart, state);
     });
 
-    return this._lastQuery;
+    return;
   }
 };

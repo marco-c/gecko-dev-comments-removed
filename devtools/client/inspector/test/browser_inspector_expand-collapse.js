@@ -6,17 +6,19 @@
 
 
 
-const TEST_URL = "data:text/html;charset=utf-8,<div id='parent-node'><div id='child-node'></div></div>";
+const TEST_URL = "data:text/html;charset=utf-8," +
+                 "<div id='parent-node'><div id='child-node'></div></div>";
 
 add_task(function* () {
-
-    
+  
   requestLongerTimeout(2);
 
-  let {inspector, testActor} = yield openInspectorForURL(TEST_URL);
+  let {inspector} = yield openInspectorForURL(TEST_URL);
 
-  let nodeMenuCollapseElement = inspector.panelDoc.getElementById("node-menu-collapse");
-  let nodeMenuExpandElement = inspector.panelDoc.getElementById("node-menu-expand");
+  let nodeMenuCollapseElement = inspector.panelDoc.getElementById(
+    "node-menu-collapse");
+  let nodeMenuExpandElement = inspector.panelDoc.getElementById(
+    "node-menu-expand");
 
   info("Selecting the parent node");
 
@@ -27,9 +29,10 @@ add_task(function* () {
   info("Simulating context menu click on the selected node container.");
   contextMenuClick(getContainerForNodeFront(front, inspector).tagLine);
 
-  ok(nodeMenuCollapseElement.hasAttribute("disabled"), "Collapse option is disabled");
-
-  ok(!nodeMenuExpandElement.hasAttribute("disabled"), "ExpandAll option is enabled");
+  ok(nodeMenuCollapseElement.hasAttribute("disabled"),
+     "Collapse option is disabled");
+  ok(!nodeMenuExpandElement.hasAttribute("disabled"),
+     "ExpandAll option is enabled");
 
   info("Testing whether expansion works properly");
   dispatchCommandEvent(nodeMenuExpandElement);
@@ -45,7 +48,8 @@ add_task(function* () {
   info("Simulating context menu click on the selected node container.");
   contextMenuClick(getContainerForNodeFront(front, inspector).tagLine);
 
-  ok(!nodeMenuCollapseElement.hasAttribute("disabled"), "Collapse option is enabled");
+  ok(!nodeMenuCollapseElement.hasAttribute("disabled"),
+     "Collapse option is enabled");
 
   dispatchCommandEvent(nodeMenuCollapseElement);
   info("Waiting for collapse to occur");

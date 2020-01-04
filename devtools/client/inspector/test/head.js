@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 
@@ -81,8 +82,7 @@ function getNode(nodeOrSelector, options = {}) {
     let node = document.querySelector(nodeOrSelector);
     if (noMatches) {
       ok(!node, "Selector " + nodeOrSelector + " didn't match any nodes.");
-    }
-    else {
+    } else {
       ok(node, "Selector " + nodeOrSelector + " matched a node.");
     }
 
@@ -146,22 +146,6 @@ var selectNode = Task.async(function* (selector, inspector, reason = "test") {
 
 
 
-function* focusNode(selector, inspector) {
-  getContainerForNodeFront(inspector.walker.rootNode, inspector).elt.focus();
-  let nodeFront = yield getNodeFront(selector, inspector);
-  let container = getContainerForNodeFront(nodeFront, inspector);
-  yield selectNode(nodeFront, inspector);
-  EventUtils.sendKey("return", inspector.panelWin);
-  return container;
-}
-
-
-
-
-
-
-
-
 function clearCurrentNodeSelection(inspector) {
   info("Clearing the current selection");
   let updated = inspector.once("inspector-updated");
@@ -190,7 +174,8 @@ var openInspectorForURL = Task.async(function* (url, hostType) {
 var openInspector = Task.async(function* (hostType) {
   info("Opening the inspector");
 
-  let toolbox = yield openToolboxForTab(gBrowser.selectedTab, "inspector", hostType);
+  let toolbox = yield openToolboxForTab(gBrowser.selectedTab, "inspector",
+                                        hostType);
   let inspector = toolbox.getPanel("inspector");
 
   info("Waiting for the inspector to update");
@@ -217,7 +202,8 @@ function getActiveInspector() {
 
 var clickOnInspectMenuItem = Task.async(function* (testActor, selector) {
   info("Showing the contextual menu on node " + selector);
-  let contentAreaContextMenu = document.querySelector("#contentAreaContextMenu");
+  let contentAreaContextMenu = document.querySelector(
+    "#contentAreaContextMenu");
   let contextOpened = once(contentAreaContextMenu, "popupshown");
 
   yield testActor.synthesizeMouse({
@@ -346,10 +332,8 @@ function getNodeFront(selector, {walker}) {
 
 
 
-
-
 var getNodeFrontInFrame = Task.async(function* (selector, frameSelector,
-                                               inspector, reason = "test") {
+                                                inspector) {
   let iframe = yield getNodeFront(frameSelector, inspector);
   let {nodes} = yield inspector.walker.children(iframe);
   return inspector.walker.querySelector(nodes[0], selector);
@@ -448,6 +432,7 @@ var clickContainer = Task.async(function* (selector, inspector) {
 
 
 
+
 function mouseLeaveMarkupView(inspector) {
   info("Leaving the markup-view area");
   let def = promise.defer();
@@ -528,7 +513,7 @@ function dispatchCommandEvent(node) {
 
 function contextMenuClick(element) {
   let evt = element.ownerDocument.createEvent("MouseEvents");
-  let button = 2;  
+  let button = 2;
 
   evt.initMouseEvent("contextmenu", true, true,
        element.ownerDocument.defaultView, 1, 0, 0, 0, 0, false,
@@ -545,11 +530,11 @@ function* getNodeFrontForSelector(selector, inspector) {
   if (selector) {
     info("Retrieving front for selector " + selector);
     return getNodeFront(selector, inspector);
-  } else {
-    info("Retrieving front for doctype node");
-    let {nodes} = yield inspector.walker.children(inspector.walker.rootNode);
-    return nodes[0];
   }
+
+  info("Retrieving front for doctype node");
+  let {nodes} = yield inspector.walker.children(inspector.walker.rootNode);
+  return nodes[0];
 }
 
 
@@ -657,13 +642,14 @@ const getHighlighterHelperFor = (type) => Task.async(
 
 
 function* waitForMultipleChildrenUpdates(inspector) {
-
-
+  
+  
   if (inspector.markup._queuedChildUpdates &&
         inspector.markup._queuedChildUpdates.size) {
     yield waitForChildrenUpdated(inspector);
     return yield waitForMultipleChildrenUpdates(inspector);
   }
+  return null;
 }
 
 
