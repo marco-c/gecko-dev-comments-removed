@@ -71,9 +71,9 @@ namespace jni {
 
 
 
-namespace {
+namespace detail {
 
-uintptr_t CheckNativeHandle(JNIEnv* env, uintptr_t handle)
+inline uintptr_t CheckNativeHandle(JNIEnv* env, uintptr_t handle)
 {
     if (!handle) {
         if (!env->ExceptionCheck()) {
@@ -175,6 +175,8 @@ struct NativePtr<Impl,  true>
 
 } 
 
+using namespace detail;
+
 
 
 
@@ -221,10 +223,6 @@ namespace detail {
 
 template<class Traits, class Impl, class Args, bool IsStatic, bool IsVoid>
 class NativeStubImpl;
-
-}
-
-namespace {
 
 
 

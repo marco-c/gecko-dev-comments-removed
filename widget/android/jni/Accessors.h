@@ -11,7 +11,7 @@
 namespace mozilla {
 namespace jni {
 
-namespace {
+namespace detail {
 
 
 struct Value
@@ -29,8 +29,9 @@ struct Value
     jvalue val;
 };
 
-}
+} 
 
+using namespace detail;
 
 
 class Accessor
