@@ -317,6 +317,7 @@ public:
 
 
   nsresult LoadSheet(nsIURI* aURL,
+                     bool aIsPreload,
                      nsIPrincipal* aOriginPrincipal,
                      const nsCString& aCharset,
                      nsICSSLoaderObserver* aObserver,
@@ -405,9 +406,12 @@ private:
 
   
   
+  
+  
   nsresult CheckLoadAllowed(nsIPrincipal* aSourcePrincipal,
                             nsIURI* aTargetURI,
-                            nsISupports* aContext);
+                            nsISupports* aContext,
+                            bool aIsPreload);
 
 
   
@@ -446,6 +450,7 @@ private:
                             ImportRule* aParentRule);
 
   nsresult InternalLoadNonDocumentSheet(nsIURI* aURL,
+                                        bool aIsPreload,
                                         bool aAllowUnsafeRules,
                                         bool aUseSystemPrincipal,
                                         nsIPrincipal* aOriginPrincipal,
@@ -477,7 +482,9 @@ private:
 
   
   
-  nsresult LoadSheet(SheetLoadData* aLoadData, StyleSheetState aSheetState);
+  nsresult LoadSheet(SheetLoadData* aLoadData,
+                     StyleSheetState aSheetState,
+                     bool aIsPreLoad);
 
   
   
