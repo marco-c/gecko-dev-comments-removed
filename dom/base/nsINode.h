@@ -56,7 +56,7 @@ class nsDOMMutationObserver;
 
 
 struct ServoNodeData;
-extern "C" void Servo_NodeData_Drop(ServoNodeData*);
+extern "C" void Servo_DropNodeData(ServoNodeData*);
 namespace mozilla {
 template<>
 class DefaultDelete<ServoNodeData>
@@ -64,7 +64,7 @@ class DefaultDelete<ServoNodeData>
 public:
   void operator()(ServoNodeData* aPtr) const
   {
-    Servo_NodeData_Drop(aPtr);
+    Servo_DropNodeData(aPtr);
   }
 };
 } 
@@ -84,6 +84,7 @@ inline bool IsSpaceCharacter(char aChar) {
   return aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == '\r' ||
          aChar == '\f';
 }
+class AccessibleNode;
 struct BoxQuadOptions;
 struct ConvertCoordinateOptions;
 class DOMPoint;
@@ -1805,6 +1806,8 @@ public:
   void UnbindObject(nsISupports* aObject);
 
   void GetBoundMutationObservers(nsTArray<RefPtr<nsDOMMutationObserver> >& aResult);
+
+  already_AddRefed<mozilla::dom::AccessibleNode> GetAccessibleNode();
 
   
 
