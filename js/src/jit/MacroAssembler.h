@@ -955,6 +955,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void branch64(Condition cond, Register64 lhs, Register64 rhs, Label* label)
         DEFINED_ON(x86, x64);
     
+    
     inline void branch64(Condition cond, const Address& lhs, Imm64 val, Label* label) PER_ARCH;
 
     
