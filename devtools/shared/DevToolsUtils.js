@@ -461,6 +461,11 @@ exports.dbg_assert = function dbg_assert(cond, e) {
 
 
 
+
+
+
+
+
 exports.defineLazyGetter(exports, "assert", () => {
   function noop(condition, msg) { }
 
@@ -474,7 +479,9 @@ exports.defineLazyGetter(exports, "assert", () => {
 
   const scope = {};
   Cu.import("resource://gre/modules/AppConstants.jsm", scope);
-  return scope.AppConstants.DEBUG_JS_MODULES ? assert : noop;
+  const { DEBUG, DEBUG_JS_MODULES } = scope.AppConstants;
+
+  return (DEBUG || DEBUG_JS_MODULES || exports.testing) ? assert : noop;
 });
 
 
