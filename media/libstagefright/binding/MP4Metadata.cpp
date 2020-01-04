@@ -8,7 +8,6 @@
 #include "media/stagefright/MediaSource.h"
 #include "media/stagefright/MetaData.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/Telemetry.h"
 #include "mp4_demuxer/MoofParser.h"
 #include "mp4_demuxer/MP4Metadata.h"
@@ -333,20 +332,14 @@ MP4Metadata::GetTrackNumber(mozilla::TrackID aTrackID)
  bool
 MP4Metadata::HasCompleteMetadata(Stream* aSource)
 {
-  
-  mozilla::Monitor monitor("MP4Metadata::HasCompleteMetadata");
-  mozilla::MonitorAutoLock mon(monitor);
-  auto parser = mozilla::MakeUnique<MoofParser>(aSource, 0, false, &monitor);
+  auto parser = mozilla::MakeUnique<MoofParser>(aSource, 0, false);
   return parser->HasMetadata();
 }
 
  already_AddRefed<mozilla::MediaByteBuffer>
 MP4Metadata::Metadata(Stream* aSource)
 {
-  
-  mozilla::Monitor monitor("MP4Metadata::HasCompleteMetadata");
-  mozilla::MonitorAutoLock mon(monitor);
-  auto parser = mozilla::MakeUnique<MoofParser>(aSource, 0, false, &monitor);
+  auto parser = mozilla::MakeUnique<MoofParser>(aSource, 0, false);
   return parser->Metadata();
 }
 
