@@ -51,11 +51,14 @@ public:
   }
 
   explicit InternalHeaders(const InternalHeaders& aOther)
-    : mGuard(aOther.mGuard)
+    : mGuard(HeadersGuardEnum::None)
   {
     ErrorResult result;
     Fill(aOther, result);
     MOZ_ASSERT(!result.Failed());
+    
+    
+    mGuard = aOther.mGuard;
   }
 
   explicit InternalHeaders(const nsTArray<Entry>&& aHeaders,
