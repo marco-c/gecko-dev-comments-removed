@@ -120,7 +120,6 @@ var ExtensionContext, GlobalManager;
 var Management = {
   initialized: null,
   scopes: [],
-  apis: [],
   schemaApis: [],
   emitter: new EventEmitter(),
 
@@ -163,26 +162,24 @@ var Management = {
   },
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  registerAPI(api) {
-    this.apis.push({api});
-  },
 
-  
-  
-  registerPrivilegedAPI(permission, api) {
-    this.apis.push({api, permission});
-  },
 
-  registerSchemaAPI(namespace, api) {
-    this.schemaApis.push({namespace, api});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerSchemaAPI(namespace, getAPI) {
+    this.schemaApis.push({namespace, getAPI});
   },
 
   
@@ -215,14 +212,9 @@ var Management = {
         }
       }
 
-      api = api.api(context);
+      api = api.getAPI(context);
       copy(obj, api);
     }
-
-    for (let api of context.extension.apis) {
-      copy(obj, api.getAPI(context));
-    }
-
     return obj;
   },
 
@@ -635,9 +627,6 @@ GlobalManager = {
   },
 
   injectInObject(context, defaultCallback, dest, namespaces = null) {
-    let api = Management.generateAPIs(context, Management.apis, namespaces);
-    injectAPI(api, dest);
-
     let schemaApi = Management.generateAPIs(context, Management.schemaApis, namespaces);
 
     
@@ -709,6 +698,9 @@ GlobalManager = {
       },
     };
     Schemas.inject(dest, schemaWrapper);
+
+    let experimentalApis = Management.generateAPIs(context, context.extension.apis, namespaces);
+    injectAPI(experimentalApis, dest);
   },
 
   observe(document, topic, data) {
