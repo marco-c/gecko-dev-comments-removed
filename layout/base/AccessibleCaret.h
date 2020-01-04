@@ -37,11 +37,11 @@ namespace mozilla {
 
 
 
-class AccessibleCaret final
+class AccessibleCaret
 {
 public:
   explicit AccessibleCaret(nsIPresShell* aPresShell);
-  ~AccessibleCaret();
+  virtual ~AccessibleCaret();
 
   
   
@@ -74,7 +74,7 @@ public:
     return mAppearance;
   }
 
-  void SetAppearance(Appearance aAppearance);
+  virtual void SetAppearance(Appearance aAppearance);
 
   
   
@@ -92,7 +92,7 @@ public:
 
   
   
-  void SetSelectionBarEnabled(bool aEnabled);
+  virtual void SetSelectionBarEnabled(bool aEnabled);
 
   
   enum class PositionChangedResult : uint8_t {
@@ -105,7 +105,7 @@ public:
     
     Invisible
   };
-  PositionChangedResult SetPosition(nsIFrame* aFrame, int32_t aOffset);
+  virtual PositionChangedResult SetPosition(nsIFrame* aFrame, int32_t aOffset);
 
   
   bool Intersects(const AccessibleCaret& aCaret) const;
@@ -127,7 +127,7 @@ public:
     return mCaretElementHolder->GetContentNode();
   }
 
-private:
+protected:
   
   void SetCaretElementStyle(const nsRect& aRect);
   void SetSelectionBarElementStyle(const nsRect& aRect);
