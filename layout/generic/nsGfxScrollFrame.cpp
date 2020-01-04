@@ -231,7 +231,7 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
     mReflowState(aState),
     
     
-    mBoxState(aState.mFrame->PresContext(), aState.rendContext, 0),
+    mBoxState(aState.mFrame->PresContext(), aState.mRenderingContext, 0),
     mStyles(aFrame->GetScrollbarStyles()) {
   }
 };

@@ -339,7 +339,7 @@ nsVideoFrame::Reflow(nsPresContext*           aPresContext,
                         posterRenderRect.x, posterRenderRect.y, 0);
     } else if (child->GetContent() == mVideoControls) {
       
-      nsBoxLayoutState boxState(PresContext(), aReflowState.rendContext);
+      nsBoxLayoutState boxState(PresContext(), aReflowState.mRenderingContext);
       nsSize size = child->GetSize();
       nsBoxFrame::LayoutChildAt(boxState,
                                 child,

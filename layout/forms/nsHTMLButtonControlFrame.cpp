@@ -286,7 +286,7 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   
   
   
-  nscoord IOverflow = GetMinISize(aButtonReflowState.rendContext) -
+  nscoord IOverflow = GetMinISize(aButtonReflowState.mRenderingContext) -
                       aButtonReflowState.ComputedISize();
   nscoord IFocusPadding = focusPadding.IStartEnd(wm);
   nscoord focusPaddingReduction = std::min(IFocusPadding,

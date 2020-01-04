@@ -857,7 +857,7 @@ nsMathMLContainerFrame::ReflowChild(nsIFrame*                aChildFrame,
   }
   if (IsForeignChild(aChildFrame)) {
     
-    nsRect r = aChildFrame->ComputeTightBounds(aReflowState.rendContext->GetDrawTarget());
+    nsRect r = aChildFrame->ComputeTightBounds(aReflowState.mRenderingContext->GetDrawTarget());
     aDesiredSize.mBoundingMetrics.leftBearing = r.x;
     aDesiredSize.mBoundingMetrics.rightBearing = r.XMost();
     aDesiredSize.mBoundingMetrics.ascent = aDesiredSize.BlockStartAscent() - r.y;
@@ -907,7 +907,7 @@ nsMathMLContainerFrame::Reflow(nsPresContext*           aPresContext,
   
   
 
-  DrawTarget* drawTarget = aReflowState.rendContext->GetDrawTarget();
+  DrawTarget* drawTarget = aReflowState.mRenderingContext->GetDrawTarget();
 
   if (!NS_MATHML_IS_EMBELLISH_OPERATOR(mEmbellishData.flags) &&
       (NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) ||

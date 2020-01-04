@@ -107,7 +107,7 @@ public:
   nsIFrame* mFrame;
 
   
-  nsRenderingContext* rendContext;
+  nsRenderingContext* mRenderingContext;
 
   const nsMargin& ComputedPhysicalMargin() const { return mComputedMargin; }
   const nsMargin& ComputedPhysicalBorderPadding() const { return mComputedBorderPadding; }
@@ -166,7 +166,7 @@ public:
   
   SizeComputationInput(nsIFrame *aFrame, nsRenderingContext *aRenderingContext)
     : mFrame(aFrame)
-    , rendContext(aRenderingContext)
+    , mRenderingContext(aRenderingContext)
     , mWritingMode(aFrame->GetWritingMode())
   {
   }

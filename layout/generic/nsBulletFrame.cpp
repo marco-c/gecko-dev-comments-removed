@@ -642,7 +642,7 @@ nsBulletFrame::Reflow(nsPresContext* aPresContext,
   SetFontSizeInflation(inflation);
 
   
-  GetDesiredSize(aPresContext, aReflowState.rendContext, aMetrics, inflation,
+  GetDesiredSize(aPresContext, aReflowState.mRenderingContext, aMetrics, inflation,
                  &mPadding);
 
   

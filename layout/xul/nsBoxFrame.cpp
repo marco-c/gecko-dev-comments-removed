@@ -659,7 +659,7 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   aStatus = NS_FRAME_COMPLETE;
 
   
-  nsBoxLayoutState state(aPresContext, aReflowState.rendContext,
+  nsBoxLayoutState state(aPresContext, aReflowState.mRenderingContext,
                          &aReflowState, aReflowState.mReflowDepth);
 
   WritingMode wm = aReflowState.GetWritingMode();
