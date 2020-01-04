@@ -499,6 +499,11 @@ public:
     
 
 
+    bool CanUseDoubleBufferedContent(mozilla::layers::LayersBackend aBackend) const;
+
+    
+
+
     static eCMSMode GetCMSMode();
 
     
