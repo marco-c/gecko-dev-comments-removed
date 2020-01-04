@@ -528,9 +528,14 @@ Livemark.prototype = {
       
       let loadgroup = Cc["@mozilla.org/network/load-group;1"].
                       createInstance(Ci.nsILoadGroup);
+      
+      
+      
+      
       let channel = NetUtil.newChannel({
-        uri: this.feedURI.spec,
+        uri: this.feedURI,
         loadingPrincipal: Services.scriptSecurityManager.createCodebasePrincipal(this.feedURI, {}),
+        securityFlags: Ci.nsILoadInfo.SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
         contentPolicyType: Ci.nsIContentPolicy.TYPE_INTERNAL_XMLHTTPREQUEST
       }).QueryInterface(Ci.nsIHttpChannel);
       channel.loadGroup = loadgroup;
@@ -542,7 +547,7 @@ Livemark.prototype = {
       
       let listener = new LivemarkLoadListener(this);
       channel.notificationCallbacks = listener;
-      channel.asyncOpen(listener, null);
+      channel.asyncOpen2(listener);
 
       this.loadGroup = loadgroup;
     }
