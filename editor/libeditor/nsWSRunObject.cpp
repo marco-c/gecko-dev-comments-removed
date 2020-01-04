@@ -623,7 +623,7 @@ nsWSRunObject::GetWSNodes()
   
   
   
-  ::DOMPoint start(mNode, mOffset), end(mNode, mOffset);
+  EditorDOMPoint start(mNode, mOffset), end(mNode, mOffset);
   nsCOMPtr<nsINode> wsBoundingParent = GetWSBoundingParent();
 
   
@@ -1044,7 +1044,7 @@ nsWSRunObject::GetPreviousWSNodeInner(nsINode* aStartNode,
 }
 
 nsIContent*
-nsWSRunObject::GetPreviousWSNode(::DOMPoint aPoint,
+nsWSRunObject::GetPreviousWSNode(EditorDOMPoint aPoint,
                                  nsINode* aBlockParent)
 {
   
@@ -1128,7 +1128,7 @@ nsWSRunObject::GetNextWSNodeInner(nsINode* aStartNode,
 }
 
 nsIContent*
-nsWSRunObject::GetNextWSNode(::DOMPoint aPoint, nsINode* aBlockParent)
+nsWSRunObject::GetNextWSNode(EditorDOMPoint aPoint, nsINode* aBlockParent)
 {
   
   

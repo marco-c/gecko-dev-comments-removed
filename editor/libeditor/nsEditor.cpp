@@ -3871,7 +3871,7 @@ nsEditor::SplitNodeDeep(nsIContent& aNode,
 
 
 
-::DOMPoint
+EditorDOMPoint
 nsEditor::JoinNodeDeep(nsIContent& aLeftNode, nsIContent& aRightNode)
 {
   
@@ -3882,7 +3882,7 @@ nsEditor::JoinNodeDeep(nsIContent& aLeftNode, nsIContent& aRightNode)
   nsCOMPtr<nsIContent> rightNodeToJoin = &aRightNode;
   nsCOMPtr<nsINode> parentNode = aRightNode.GetParentNode();
 
-  ::DOMPoint ret;
+  EditorDOMPoint ret;
 
   while (leftNodeToJoin && rightNodeToJoin && parentNode &&
          AreNodesSameType(leftNodeToJoin, rightNodeToJoin)) {
@@ -3893,7 +3893,7 @@ nsEditor::JoinNodeDeep(nsIContent& aLeftNode, nsIContent& aRightNode)
 
     
     nsresult res = JoinNodes(*leftNodeToJoin, *rightNodeToJoin);
-    NS_ENSURE_SUCCESS(res, ::DOMPoint());
+    NS_ENSURE_SUCCESS(res, EditorDOMPoint());
 
     if (parentNode->GetAsText()) {
       

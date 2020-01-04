@@ -2093,7 +2093,7 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
       
       if (startNode == stepbrother && startNode->GetAsText() &&
           sibling->GetAsText()) {
-        ::DOMPoint pt = JoinNodesSmart(*sibling, *startNode->AsContent());
+        EditorDOMPoint pt = JoinNodesSmart(*sibling, *startNode->AsContent());
         NS_ENSURE_STATE(pt.node);
         
         res = aSelection->Collapse(pt.node, pt.offset);
@@ -2161,7 +2161,7 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
       if (bDeletedBR) {
         
         NS_ENSURE_STATE(leafNode);
-        ::DOMPoint newSel = GetGoodSelPointForNode(*leafNode, aAction);
+        EditorDOMPoint newSel = GetGoodSelPointForNode(*leafNode, aAction);
         NS_ENSURE_STATE(newSel.node);
         aSelection->Collapse(newSel.node, newSel.offset);
         return NS_OK;
@@ -2323,7 +2323,8 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
             NS_ENSURE_SUCCESS(res, res);
             
             NS_ENSURE_STATE(mHTMLEditor);
-            ::DOMPoint pt = mHTMLEditor->JoinNodeDeep(*leftParent, *rightParent);
+            EditorDOMPoint pt =
+              mHTMLEditor->JoinNodeDeep(*leftParent, *rightParent);
             NS_ENSURE_STATE(pt.node);
             
             res = aSelection->Collapse(pt.node, pt.offset);
@@ -2338,7 +2339,8 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
             NS_ENSURE_SUCCESS(res, res);
             
             NS_ENSURE_STATE(mHTMLEditor);
-            ::DOMPoint pt = mHTMLEditor->JoinNodeDeep(*leftParent, *rightParent);
+            EditorDOMPoint pt =
+              mHTMLEditor->JoinNodeDeep(*leftParent, *rightParent);
             NS_ENSURE_STATE(pt.node);
             
             res = aSelection->Collapse(pt.node, pt.offset);
@@ -2520,20 +2522,20 @@ nsHTMLEditRules::InsertBRIfNeeded(Selection* aSelection)
 
 
 
-::DOMPoint
+EditorDOMPoint
 nsHTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
                                         nsIEditor::EDirection aAction)
 {
-  NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+  NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   if (aNode.GetAsText() || mHTMLEditor->IsContainer(&aNode)) {
-    return ::DOMPoint(&aNode,
-                      aAction == nsIEditor::ePrevious ? aNode.Length() : 0);
+    return EditorDOMPoint(&aNode,
+                          aAction == nsIEditor::ePrevious ? aNode.Length() : 0);
   }
 
-  ::DOMPoint ret;
+  EditorDOMPoint ret;
   ret.node = aNode.GetParentNode();
   ret.offset = ret.node ? ret.node->IndexOf(&aNode) : -1;
-  NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+  NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   if ((!aNode.IsHTMLElement(nsGkAtoms::br) ||
        mHTMLEditor->IsVisBreak(&aNode)) &&
       aAction == nsIEditor::ePrevious) {
@@ -2779,7 +2781,7 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
     if (mergeLists || leftBlock->NodeInfo()->NameAtom() ==
                       rightBlock->NodeInfo()->NameAtom()) {
       
-      ::DOMPoint pt = JoinNodesSmart(*leftBlock, *rightBlock);
+      EditorDOMPoint pt = JoinNodesSmart(*leftBlock, *rightBlock);
       if (pt.node && mergeLists) {
         nsCOMPtr<Element> newBlock;
         res = ConvertListType(rightBlock, getter_AddRefs(newBlock),
@@ -2811,7 +2813,7 @@ nsHTMLEditRules::MoveBlock(Element& aLeftBlock, Element& aRightBlock,
 {
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   
-  nsresult res = GetNodesFromPoint(::DOMPoint(&aRightBlock, aRightOffset),
+  nsresult res = GetNodesFromPoint(EditorDOMPoint(&aRightBlock, aRightOffset),
                                    EditAction::makeList, arrayOfNodes,
                                    TouchContent::yes);
   NS_ENSURE_SUCCESS(res, res);
@@ -6025,7 +6027,7 @@ nsHTMLEditRules::GetHighestInlineParent(nsINode& aNode)
 
 
 nsresult
-nsHTMLEditRules::GetNodesFromPoint(::DOMPoint aPoint,
+nsHTMLEditRules::GetNodesFromPoint(EditorDOMPoint aPoint,
                                    EditAction aOperation,
                                    nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                                    TouchContent aTouchContent)
@@ -6910,12 +6912,12 @@ nsHTMLEditRules::SplitAsNeeded(nsIAtom& aTag,
 
 
 
-::DOMPoint
+EditorDOMPoint
 nsHTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft, nsIContent& aNodeRight)
 {
   
   nsCOMPtr<nsINode> parent = aNodeLeft.GetParentNode();
-  NS_ENSURE_TRUE(parent, ::DOMPoint());
+  NS_ENSURE_TRUE(parent, EditorDOMPoint());
   int32_t parOffset = parent->IndexOf(&aNodeLeft);
   nsCOMPtr<nsINode> rightParent = aNodeRight.GetParentNode();
 
@@ -6923,34 +6925,34 @@ nsHTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft, nsIContent& aNodeRight)
   
   nsresult res;
   if (parent != rightParent) {
-    NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+    NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
     res = mHTMLEditor->MoveNode(&aNodeRight, parent, parOffset);
-    NS_ENSURE_SUCCESS(res, ::DOMPoint());
+    NS_ENSURE_SUCCESS(res, EditorDOMPoint());
   }
 
-  ::DOMPoint ret(&aNodeRight, aNodeLeft.Length());
+  EditorDOMPoint ret(&aNodeRight, aNodeLeft.Length());
 
   
   if (nsHTMLEditUtils::IsList(&aNodeLeft) || aNodeLeft.GetAsText()) {
     
     res = mHTMLEditor->JoinNodes(aNodeLeft, aNodeRight);
-    NS_ENSURE_SUCCESS(res, ::DOMPoint());
+    NS_ENSURE_SUCCESS(res, EditorDOMPoint());
     return ret;
   }
 
   
-  NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+  NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   nsCOMPtr<nsIContent> lastLeft = mHTMLEditor->GetLastEditableChild(aNodeLeft);
-  NS_ENSURE_TRUE(lastLeft, ::DOMPoint());
+  NS_ENSURE_TRUE(lastLeft, EditorDOMPoint());
 
-  NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+  NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   nsCOMPtr<nsIContent> firstRight = mHTMLEditor->GetFirstEditableChild(aNodeRight);
-  NS_ENSURE_TRUE(firstRight, ::DOMPoint());
+  NS_ENSURE_TRUE(firstRight, EditorDOMPoint());
 
   
-  NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+  NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
   res = mHTMLEditor->JoinNodes(aNodeLeft, aNodeRight);
-  NS_ENSURE_SUCCESS(res, ::DOMPoint());
+  NS_ENSURE_SUCCESS(res, EditorDOMPoint());
 
   if (lastLeft && firstRight && mHTMLEditor &&
       mHTMLEditor->AreNodesSameType(lastLeft, firstRight) &&
@@ -6958,7 +6960,7 @@ nsHTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft, nsIContent& aNodeRight)
        (lastLeft->IsElement() && firstRight->IsElement() &&
         mHTMLEditor->mHTMLCSSUtils->ElementsSameStyle(lastLeft->AsElement(),
                                                   firstRight->AsElement())))) {
-    NS_ENSURE_TRUE(mHTMLEditor, ::DOMPoint());
+    NS_ENSURE_TRUE(mHTMLEditor, EditorDOMPoint());
     return JoinNodesSmart(*lastLeft, *firstRight);
   }
   return ret;
