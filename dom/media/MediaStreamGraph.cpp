@@ -948,8 +948,10 @@ MediaStreamGraphImpl::PrepareUpdatesToMainThreadState(bool aFinalUpdate)
       }
       StreamUpdate* update = mStreamUpdates.AppendElement();
       update->mStream = stream;
+      
+      
       update->mNextMainThreadCurrentTime =
-        GraphTimeToStreamTimeWithBlocking(stream, mProcessedTime);
+        stream->GraphTimeToStreamTime(mProcessedTime);
       update->mNextMainThreadFinished = stream->mNotifiedFinished;
     }
     if (!mPendingUpdateRunnables.IsEmpty()) {
