@@ -3,6 +3,8 @@
 
 
 
+requestLongerTimeout(5);
+
 var {Toolbox} = require("devtools/client/framework/toolbox");
 
 function test() {
