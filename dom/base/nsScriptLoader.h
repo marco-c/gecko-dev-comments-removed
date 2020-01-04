@@ -366,16 +366,6 @@ public:
 
 
 
-  static nsresult ShouldLoadScript(nsIDocument* aDocument,
-                                   nsISupports* aContext,
-                                   nsIURI* aURI,
-                                   const nsAString &aType,
-                                   bool aIsPreLoad);
-
-  
-
-
-
   void BeginDeferringScripts()
   {
     mDeferEnabled = true;
