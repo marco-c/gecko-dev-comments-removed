@@ -71,9 +71,12 @@ private:
       return mMessage.get();
     }
 
-    already_AddRefed<nsIConsoleMessage> forget()
+    
+    
+    
+    void swapMessage(nsCOMPtr<nsIConsoleMessage>& aRetVal)
     {
-      return mMessage.forget();
+      mMessage.swap(aRetVal);
     }
 
     ~MessageElement();
