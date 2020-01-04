@@ -155,9 +155,12 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
     
     
     
+    if (!mBrowseDirs) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
     mBrowseDirs->SetAttr(kNameSpaceID_None, nsGkAtoms::directory,
                          EmptyString(), false);
-    if (!mBrowseDirs || !aElements.AppendElement(mBrowseDirs)) {
+    if (!aElements.AppendElement(mBrowseDirs)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
