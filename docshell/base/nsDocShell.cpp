@@ -10593,7 +10593,13 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       
       loadingPrincipal = requestingNode->NodePrincipal();
     } else {
-      MOZ_ASSERT(aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT);
+      if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
+        
+        
+        
+        
+        return NS_OK;
+      }
       requestingWindow = mScriptGlobal->AsOuter();
     }
   }
