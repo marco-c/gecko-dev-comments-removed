@@ -5856,14 +5856,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   
   
   if (display->mTopLayer != NS_STYLE_TOP_LAYER_NONE &&
-      
-      
-      
-      
-      
-      display->mPosition != NS_STYLE_POSITION_FIXED) {
-    
-    display->mPosition = NS_STYLE_POSITION_FIXED;
+      !display->IsAbsolutelyPositionedStyle()) {
+    display->mPosition = NS_STYLE_POSITION_ABSOLUTE;
     
     
     conditions.SetUncacheable();
