@@ -10812,7 +10812,10 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   
   NeckoOriginAttributes neckoAttrs;
-  neckoAttrs.InheritFromDocShellToNecko(GetOriginAttributes());
+  bool isTopLevelDoc = aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT &&
+                       mItemType == typeContent &&
+                       !GetIsMozBrowserOrApp();
+  neckoAttrs.InheritFromDocShellToNecko(GetOriginAttributes(), isTopLevelDoc, aURI);
   rv = loadInfo->SetOriginAttributes(neckoAttrs);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
