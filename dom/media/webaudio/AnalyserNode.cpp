@@ -93,7 +93,7 @@ AnalyserNode::AnalyserNode(AudioContext* aContext)
   
   
   
-  (void)mChunks.SetLength(CHUNK_COUNT, fallible);
+  unused << mChunks.SetLength(CHUNK_COUNT, fallible);
 
   AllocateBuffer();
 }
