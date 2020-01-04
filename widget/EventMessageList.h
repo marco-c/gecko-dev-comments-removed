@@ -215,7 +215,7 @@ NS_EVENT_MESSAGE(ePaste,                eClipboardEventFirst + 2)
 NS_EVENT_MESSAGE(eQueryContentEventFirst,       3200)
 
 
-NS_EVENT_MESSAGE(NS_QUERY_SELECTED_TEXT,        eQueryContentEventFirst)
+NS_EVENT_MESSAGE(eQuerySelectedText,            eQueryContentEventFirst)
 
 
 

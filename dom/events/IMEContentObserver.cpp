@@ -51,8 +51,8 @@ static const char*
 ToChar(EventMessage aEventMessage)
 {
   switch (aEventMessage) {
-    case NS_QUERY_SELECTED_TEXT:
-      return "NS_QUERY_SELECTED_TEXT";
+    case eQuerySelectedText:
+      return "eQuerySelectedText";
     case NS_QUERY_TEXT_CONTENT:
       return "NS_QUERY_TEXT_CONTENT";
     case NS_QUERY_CARET_RECT:
@@ -569,8 +569,7 @@ IMEContentObserver::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
 
   
   
-  if (aEvent->mMessage == NS_QUERY_SELECTED_TEXT &&
-      aEvent->mUseNativeLineBreak &&
+  if (aEvent->mMessage == eQuerySelectedText && aEvent->mUseNativeLineBreak &&
       mSelectionData.IsValid()) {
     aEvent->mReply.mContentsRoot = mRootContent;
     aEvent->mReply.mHasSelection = !mSelectionData.IsCollapsed();
@@ -1109,7 +1108,7 @@ IMEContentObserver::UpdateSelectionCache()
 
   
   
-  WidgetQueryContentEvent selection(true, NS_QUERY_SELECTED_TEXT, mWidget);
+  WidgetQueryContentEvent selection(true, eQuerySelectedText, mWidget);
   ContentEventHandler handler(GetPresContext());
   handler.OnQuerySelectedText(&selection);
   if (NS_WARN_IF(!selection.mSucceeded)) {
