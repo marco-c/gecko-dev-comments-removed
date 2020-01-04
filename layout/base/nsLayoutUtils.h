@@ -1224,17 +1224,13 @@ public:
 
 
 
+  static already_AddRefed<nsFontMetrics> GetFontMetricsForFrame(
+    const nsIFrame* aFrame, float aSizeInflation);
 
-
-  static nsresult GetFontMetricsForFrame(const nsIFrame* aFrame,
-                                         nsFontMetrics** aFontMetrics,
-                                         float aSizeInflation);
-
-  static nsresult GetInflatedFontMetricsForFrame(const nsIFrame* aFrame,
-                                                 nsFontMetrics** aFontMetrics)
+  static already_AddRefed<nsFontMetrics>
+    GetInflatedFontMetricsForFrame(const nsIFrame* aFrame)
   {
-    return GetFontMetricsForFrame(aFrame, aFontMetrics,
-                                  FontSizeInflationFor(aFrame));
+    return GetFontMetricsForFrame(aFrame, FontSizeInflationFor(aFrame));
   }
 
   
@@ -1242,11 +1238,8 @@ public:
 
 
 
-
-
-  static nsresult GetFontMetricsForStyleContext(nsStyleContext* aStyleContext,
-                                                nsFontMetrics** aFontMetrics,
-                                                float aSizeInflation = 1.0f);
+  static already_AddRefed<nsFontMetrics> GetFontMetricsForStyleContext(
+      nsStyleContext* aStyleContext, float aSizeInflation = 1.0f);
 
   
 
@@ -1255,14 +1248,10 @@ public:
 
 
 
-
-
-  static nsresult GetFontMetricsOfEmphasisMarks(nsStyleContext* aStyleContext,
-                                                nsFontMetrics** aFontMetrics,
-                                                float aInflation)
+  static already_AddRefed<nsFontMetrics> GetFontMetricsOfEmphasisMarks(
+      nsStyleContext* aStyleContext, float aInflation)
   {
-    return GetFontMetricsForStyleContext(aStyleContext, aFontMetrics,
-                                         aInflation * 0.5f);
+    return GetFontMetricsForStyleContext(aStyleContext, aInflation * 0.5f);
   }
 
   

@@ -34,10 +34,8 @@ StyleContextContainsFont(nsStyleContext* aStyleContext,
 
   
   
-  RefPtr<nsFontMetrics> fm;
-  nsLayoutUtils::GetFontMetricsForStyleContext(aStyleContext,
-                                               getter_AddRefs(fm),
-                                               1.0f);
+  RefPtr<nsFontMetrics> fm =
+    nsLayoutUtils::GetFontMetricsForStyleContext(aStyleContext, 1.0f);
 
   if (fm->GetThebesFontGroup()->ContainsUserFont(aFont)) {
     return true;

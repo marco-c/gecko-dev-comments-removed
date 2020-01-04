@@ -362,9 +362,8 @@ nsMathMLmoFrame::ProcessOperatorData()
       
       
       nscoord em;
-      RefPtr<nsFontMetrics> fm;
-      nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
-                                            fontSizeInflation);
+      RefPtr<nsFontMetrics> fm =
+        nsLayoutUtils::GetFontMetricsForFrame(this, fontSizeInflation);
       GetEmHeight(fm, em);
 
       mEmbellishData.leadingSpace = NSToCoordRound(lspace * em);
@@ -619,9 +618,8 @@ nsMathMLmoFrame::Stretch(DrawTarget*          aDrawTarget,
 
   
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
-  RefPtr<nsFontMetrics> fm;
-  nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
-                                        fontSizeInflation);
+  RefPtr<nsFontMetrics> fm =
+    nsLayoutUtils::GetFontMetricsForFrame(this, fontSizeInflation);
   nscoord axisHeight, height;
   GetAxisHeight(aDrawTarget, fm, axisHeight);
 

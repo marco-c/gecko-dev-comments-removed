@@ -506,9 +506,8 @@ ParseSpacingAttribute(nsMathMLmtableFrame* aFrame, nsIAtom* aAttribute)
   nscoord value2;
   
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(aFrame);
-  RefPtr<nsFontMetrics> fm;
-  nsLayoutUtils::GetFontMetricsForFrame(aFrame, getter_AddRefs(fm),
-                                        fontSizeInflation);
+  RefPtr<nsFontMetrics> fm =
+    nsLayoutUtils::GetFontMetricsForFrame(aFrame, fontSizeInflation);
   if (nsGkAtoms::rowspacing_ == aAttribute) {
     value = kDefaultRowspacingEx * fm->XHeight();
     value2 = 0;
@@ -882,8 +881,8 @@ nsMathMLmtableOuterFrame::Reflow(nsPresContext*          aPresContext,
     case eAlign_axis:
     default: {
       
-      RefPtr<nsFontMetrics> fm;
-      nsLayoutUtils::GetInflatedFontMetricsForFrame(this, getter_AddRefs(fm));
+      RefPtr<nsFontMetrics> fm =
+        nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
       nscoord axisHeight;
       GetAxisHeight(aReflowState.rendContext->GetDrawTarget(), fm, axisHeight);
       if (rowFrame) {

@@ -114,11 +114,8 @@ public:
 
 
 
-
-
-    nsresult GetMetricsFor(const nsFont& aFont,
-                           const nsFontMetrics::Params& aParams,
-                           nsFontMetrics*& aMetrics);
+    already_AddRefed<nsFontMetrics> GetMetricsFor(
+        const nsFont& aFont, const nsFontMetrics::Params& aParams);
 
     
 

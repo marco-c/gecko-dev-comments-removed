@@ -525,8 +525,8 @@ IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const Ev
   }
 
   if (testFontSize) {
-    RefPtr<nsFontMetrics> fm;
-    nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame, getter_AddRefs(fm));
+    RefPtr<nsFontMetrics> fm =
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
     if (fm && fm->EmHeight() > 0 && 
         (pc->AppUnitsToGfxUnits(fm->EmHeight()) * cumulativeResolution) < limitReadableSize) {
       return false;

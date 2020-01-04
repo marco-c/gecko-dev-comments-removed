@@ -1130,8 +1130,8 @@ nsImageFrame::DisplayAltText(nsPresContext*      aPresContext,
   
   aRenderingContext.ThebesContext()->
     SetColor(Color::FromABGR(StyleColor()->mColor));
-  RefPtr<nsFontMetrics> fm;
-  nsLayoutUtils::GetInflatedFontMetricsForFrame(this, getter_AddRefs(fm));
+  RefPtr<nsFontMetrics> fm =
+    nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
 
   
 
