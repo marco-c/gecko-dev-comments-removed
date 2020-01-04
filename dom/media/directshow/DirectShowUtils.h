@@ -115,6 +115,11 @@ RefTimeToSeconds(const REFERENCE_TIME aRefTime)
 const char*
 GetDirectShowGuidName(const GUID& aGuid);
 
+
+
+bool
+CanDecodeMP3UsingDirectShow();
+
 } 
 
 #endif
