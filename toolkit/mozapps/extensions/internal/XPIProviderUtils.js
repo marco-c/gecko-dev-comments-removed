@@ -314,13 +314,15 @@ function DBAddonInternal(aLoaded) {
 
   this._key = this.location + ":" + this.id;
 
-  try {
-    this._sourceBundle = this._installLocation.getLocationForID(this.id);
+  if (aLoaded._sourceBundle) {
+    this._sourceBundle = aLoaded._sourceBundle;
   }
-  catch (e) {
-    
-    
-    
+  else if (aLoaded.descriptor) {
+    this._sourceBundle = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    this._sourceBundle.persistentDescriptor = aLoaded.descriptor;
+  }
+  else {
+    throw new Error("Expected passed argument to contain a descriptor");
   }
 
   XPCOMUtils.defineLazyGetter(this, "pendingUpgrade",
@@ -1580,7 +1582,8 @@ this.XPIDatabaseReconcile = {
     try {
       if (!aNewAddon) {
         
-        let file = aInstallLocation.getLocationForID(aId);
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+        file.persistentDescriptor = aAddonState.descriptor;
         aNewAddon = syncLoadManifestFromFile(file);
       }
       
@@ -1698,7 +1701,8 @@ this.XPIDatabaseReconcile = {
     try {
       
       if (!aNewAddon) {
-        let file = aInstallLocation.getLocationForID(aOldAddon.id);
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+        file.persistentDescriptor = aAddonState.descriptor;
         aNewAddon = syncLoadManifestFromFile(file);
         applyBlocklistChanges(aOldAddon, aNewAddon);
 
@@ -1751,6 +1755,7 @@ this.XPIDatabaseReconcile = {
   updateDescriptor(aInstallLocation, aOldAddon, aAddonState) {
     logger.debug("Add-on " + aOldAddon.id + " moved to " + aAddonState.descriptor);
     aOldAddon.descriptor = aAddonState.descriptor;
+    aOldAddon._sourceBundle.persistentDescriptor = aAddonState.descriptor;
 
     return aOldAddon;
   },
@@ -1773,14 +1778,17 @@ this.XPIDatabaseReconcile = {
 
 
 
-  updateCompatibility(aInstallLocation, aOldAddon, aOldAppVersion, aOldPlatformVersion) {
+
+
+  updateCompatibility(aInstallLocation, aOldAddon, aAddonState, aOldAppVersion, aOldPlatformVersion) {
     logger.debug("Updating compatibility for add-on " + aOldAddon.id + " in " + aInstallLocation.name);
 
     
     
     if (aOldAddon.signedState === undefined && ADDON_SIGNING &&
         SIGNED_TYPES.has(aOldAddon.type)) {
-      let file = aInstallLocation.getLocationForID(aOldAddon.id);
+      let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+      file.persistentDescriptor = aAddonState.descriptor;
       let manifest = syncLoadManifestFromFile(file);
       aOldAddon.signedState = manifest.signedState;
     }
@@ -1885,7 +1893,8 @@ this.XPIDatabaseReconcile = {
               newAddon = this.updateDescriptor(installLocation, oldAddon, xpiState);
             }
             else if (aUpdateCompatibility) {
-              newAddon = this.updateCompatibility(installLocation, oldAddon, aOldAppVersion, aOldPlatformVersion);
+              newAddon = this.updateCompatibility(installLocation, oldAddon, xpiState,
+                                                  aOldAppVersion, aOldPlatformVersion);
             }
             else {
               
