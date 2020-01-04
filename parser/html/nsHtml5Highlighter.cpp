@@ -9,6 +9,8 @@
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsHtml5ViewSourceUtils.h"
+
+#include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
 
 using namespace mozilla;
@@ -568,7 +570,7 @@ nsHtml5Highlighter::FlushChars()
           
           
           buf[i] = '\n';
-          
+          MOZ_FALLTHROUGH;
         case '\n': {
           ++i;
           if (mCStart < i) {
