@@ -1294,8 +1294,7 @@ public:
     explicit XPCNativeSetKey(XPCNativeSet*       BaseSet  = nullptr,
                              XPCNativeInterface* Addition = nullptr,
                              uint16_t            Position = 0)
-        : mIsAKey(IS_A_KEY), mPosition(Position), mBaseSet(BaseSet),
-          mAddition(Addition) {}
+        : mBaseSet(BaseSet), mAddition(Addition), mPosition(Position) {}
     ~XPCNativeSetKey() {}
 
     XPCNativeSet*           GetBaseSet()  const {return mBaseSet;}
@@ -1303,36 +1302,11 @@ public:
     uint16_t                GetPosition() const {return mPosition;}
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    bool                    IsAKey() const {return mIsAKey == IS_A_KEY;}
-
-    enum {IS_A_KEY = 0xffff};
-
-    
 
 private:
-    uint16_t                mIsAKey;    
-    uint16_t                mPosition;
     XPCNativeSet*           mBaseSet;
     XPCNativeInterface*     mAddition;
+    uint16_t                mPosition;
 };
 
 
