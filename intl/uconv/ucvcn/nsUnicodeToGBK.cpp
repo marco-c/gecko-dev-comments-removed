@@ -17,10 +17,7 @@
 #include "gbku.h"
 #include "uconvutil.h"
 #include "nsCharTraits.h"
-
-
-
-
+#include "nsUnicodeEncodeHelper.h"
 
 
 
@@ -29,54 +26,36 @@
 static const uint16_t g_uf_gb18030_2bytes[] = {
 #include "gb18030uniq2b.uf"
 };
-class nsUnicodeToGB18030Uniq2Bytes : public nsTableEncoderSupport
-{
-public: 
-  nsUnicodeToGB18030Uniq2Bytes() 
-    : nsTableEncoderSupport(u2BytesCharset,
-                            (uMappingTable*) &g_uf_gb18030_2bytes, 2) {}
-protected: 
-};
-
-
-
-
 static const uint16_t g_uf_gb18030_4bytes[] = {
 #include "gb180304bytes.uf"
 };
-class nsUnicodeTo4BytesGB18030 : public nsTableEncoderSupport
-{
-public: 
-  nsUnicodeTo4BytesGB18030()
-    : nsTableEncoderSupport(u4BytesGB18030Charset, 
-                             (uMappingTable*) &g_uf_gb18030_4bytes, 4) {}
-protected: 
-};
-
-
-
-
 static const uint16_t g_uf_gbk[] = {
 #include "gbkuniq.uf"
 };
-class nsUnicodeToGBKUniq : public nsTableEncoderSupport
+
+
+
+nsresult nsUnicodeToGB18030::TryExtensionEncoder(char16_t aChar,
+                                                 char* aOut,
+                                                 int32_t *aOutLen)
 {
-public: 
-  nsUnicodeToGBKUniq()
-    : nsTableEncoderSupport(u1ByteCharset,
-                             (uMappingTable*) &g_uf_gbk, 1) {}
-protected: 
-};
-
-
-
-void nsUnicodeToGB18030::CreateExtensionEncoder()
-{
-  mExtensionEncoder = new nsUnicodeToGB18030Uniq2Bytes();
+  int32_t len = 1;
+  return nsUnicodeEncodeHelper::ConvertByTable(
+    &aChar, &len, aOut, aOutLen, u2BytesCharset, nullptr,
+    (uMappingTable*) &g_uf_gb18030_2bytes);
 }
-void nsUnicodeToGB18030::Create4BytesEncoder()
+
+nsresult nsUnicodeToGB18030::Try4BytesEncoder(char16_t aChar,
+                                              char* aOut,
+                                              int32_t *aOutLen)
 {
-  m4BytesEncoder = new nsUnicodeTo4BytesGB18030();
+  int32_t len = 1;
+  nsresult res = nsUnicodeEncodeHelper::ConvertByTable(
+    &aChar, &len, aOut, aOutLen, u4BytesGB18030Charset, nullptr,
+    (uMappingTable*) &g_uf_gb18030_4bytes);
+  MOZ_ASSERT(NS_FAILED(res) || ((1 == len) && (4 == *aOutLen)),
+             "unexpect conversion length");
+  return res;
 }
 
 nsresult nsUnicodeToGB18030::EncodeSurrogate(char16_t aSurrogateHigh,
@@ -113,64 +92,24 @@ nsresult nsUnicodeToGB18030::EncodeSurrogate(char16_t aSurrogateHigh,
 
 
 nsUnicodeToGBK::nsUnicodeToGBK(uint32_t aMaxLength) :
-  nsEncoderSupport(aMaxLength)
+  nsEncoderSupport(aMaxLength), mSurrogateHigh(0)
 {
-  mExtensionEncoder = nullptr;
-  m4BytesEncoder = nullptr;
-  mSurrogateHigh = 0;
-}
-void nsUnicodeToGBK::CreateExtensionEncoder()
-{
-  mExtensionEncoder = new nsUnicodeToGBKUniq();
-}
-void nsUnicodeToGBK::Create4BytesEncoder()
-{
-  m4BytesEncoder = nullptr;
 }
 
 nsresult nsUnicodeToGBK::TryExtensionEncoder(char16_t aChar,
                                              char* aOut,
                                              int32_t *aOutLen)
 {
-  if( NS_IS_HIGH_SURROGATE(aChar) ||
-      NS_IS_LOW_SURROGATE(aChar) )
-  {
-    
-    return NS_ERROR_UENC_NOMAPPING;
-  }
-  if(! mExtensionEncoder )
-    CreateExtensionEncoder();
-  if(mExtensionEncoder)
-  {
-    int32_t len = 1;
-    return mExtensionEncoder->Convert(&aChar, &len, aOut, aOutLen);
-  }
-  return NS_ERROR_UENC_NOMAPPING;
+  int32_t len = 1;
+  return nsUnicodeEncodeHelper::ConvertByTable(
+    &aChar, &len, aOut, aOutLen, u1ByteCharset, nullptr,
+    (uMappingTable*) &g_uf_gbk);
 }
 
-nsresult nsUnicodeToGBK::Try4BytesEncoder(
-  char16_t aChar,
-  char* aOut,
-  int32_t *aOutLen
-)
+nsresult nsUnicodeToGBK::Try4BytesEncoder(char16_t aChar,
+                                          char* aOut,
+                                          int32_t *aOutLen)
 {
-  if( NS_IS_HIGH_SURROGATE(aChar) ||
-      NS_IS_LOW_SURROGATE(aChar) )
-  {
-    
-    return NS_ERROR_UENC_NOMAPPING;
-  }
-  if(! m4BytesEncoder )
-    Create4BytesEncoder();
-  if(m4BytesEncoder)
-  {
-    int32_t len = 1;
-    nsresult res = NS_OK;
-    res = m4BytesEncoder->Convert(&aChar, &len, aOut, aOutLen);
-    NS_ASSERTION(NS_FAILED(res) || ((1 == len) && (4 == *aOutLen)),
-      "unexpect conversion length");
-    return res;
-  }
   return NS_ERROR_UENC_NOMAPPING;
 }
 
@@ -196,8 +135,12 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
   {
     unicode = *aSrc;
     
-    if(IS_ASCII(unicode))
-    {
+    if (IS_ASCII(unicode)) {
+      
+      if (iDestLength >= *aDestLength) {
+        res = NS_OK_UENC_MOREOUTPUT;
+        break;
+      }
       
       *aDest = CAST_UNICHAR_TO_CHAR(*aSrc);
       aDest++; 
@@ -221,20 +164,25 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
         if (unicode == 0xE7C7) {
           unicode = 0x1E3F;
         }
-        int32_t aOutLen = 2;
         
         
         
-        res = TryExtensionEncoder(unicode, aDest, &aOutLen);
+        int32_t outLen = *aDestLength - iDestLength;
+        if (NS_IS_HIGH_SURROGATE(unicode) ||
+            NS_IS_LOW_SURROGATE(unicode)) {
+          
+          res = NS_ERROR_UENC_NOMAPPING;
+        } else {
+          res = TryExtensionEncoder(unicode, aDest, &outLen);
+        }
         if (res == NS_OK) {
-          iDestLength += aOutLen;
-          aDest += aOutLen;
+          iDestLength += outLen;
+          aDest += outLen;
         } else if (res == NS_OK_UENC_MOREOUTPUT) {
           break;
         } else {
           
           
-          aOutLen = 4;
           if( NS_IS_HIGH_SURROGATE(unicode) )
           {
             if((iSrcLength+1) < *aSrcLength ) {
@@ -244,8 +192,8 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
                 
                 iSrcLength++ ;
                 aSrc++;
-                iDestLength += aOutLen;
-                aDest += aOutLen;
+                iDestLength += 4;
+                aDest += 4;
               } else {
                 if (res == NS_ERROR_UENC_NOMAPPING) {
                   
@@ -265,8 +213,8 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
                 res = EncodeSurrogate(mSurrogateHigh, aSrc[0], aDest,
                                       iDestLength, *aDestLength);
                 if (res == NS_OK) {
-                  iDestLength += aOutLen;
-                  aDest += aOutLen;
+                  iDestLength += 4;
+                  aDest += 4;
                 } else {
                   if (res == NS_ERROR_UENC_NOMAPPING) {
                     
@@ -281,11 +229,11 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
                 break;
               }
             } else {
-              res = Try4BytesEncoder(unicode, aDest, &aOutLen);
+              outLen = *aDestLength - iDestLength;
+              res = Try4BytesEncoder(unicode, aDest, &outLen);
               if (res == NS_OK) {
-                NS_ASSERTION((aOutLen == 4), "we should always generate 4 bytes here");
-                iDestLength += aOutLen;
-                aDest += aOutLen;
+                iDestLength += outLen;
+                aDest += outLen;
               } else {
                 if (res == NS_ERROR_UENC_NOMAPPING) {
                   iSrcLength++;   
@@ -300,11 +248,6 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
     iSrcLength++ ; 
     mSurrogateHigh = 0;
     aSrc++;
-    if ( iDestLength >= (*aDestLength) && (iSrcLength < *aSrcLength) )
-    {
-      res = NS_OK_UENC_MOREOUTPUT;
-      break;
-    }
   }
 
   *aDestLength = iDestLength;
