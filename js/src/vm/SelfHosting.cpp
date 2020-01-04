@@ -375,6 +375,8 @@ intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
 
     bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, args[2]);
     MOZ_ASSERT(!bound->hasGuessedAtom());
+
+    
     RootedAtom name(cx, AtomizeString(cx, args[3].toString()));
     if (!name)
         return false;
