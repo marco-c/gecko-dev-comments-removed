@@ -194,6 +194,11 @@ public:
     return mBlobImplArray;
   }
 
+  ContextSupport SupportedContext() const
+  {
+    return mSupportedContext;
+  }
+
   
   
   nsISupports* ParentDuringRead() const

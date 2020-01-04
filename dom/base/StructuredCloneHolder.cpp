@@ -743,13 +743,11 @@ WriteDirectory(JSStructuredCloneWriter* aWriter,
          JS_WriteBytes(aWriter, path.get(), path.Length() * charSize);
 }
 
-JSObject*
-ReadDirectory(JSContext* aCx,
-              JSStructuredCloneReader* aReader,
-              uint32_t aPathLength,
-              StructuredCloneHolder* aHolder)
+already_AddRefed<Directory>
+ReadDirectoryInternal(JSStructuredCloneReader* aReader,
+                      uint32_t aPathLength,
+                      StructuredCloneHolder* aHolder)
 {
-  MOZ_ASSERT(aCx);
   MOZ_ASSERT(aReader);
   MOZ_ASSERT(aHolder);
 
@@ -768,6 +766,21 @@ ReadDirectory(JSContext* aCx,
     return nullptr;
   }
 
+  RefPtr<Directory> directory =
+    Directory::Create(aHolder->ParentDuringRead(), file);
+  return directory.forget();
+}
+
+JSObject*
+ReadDirectory(JSContext* aCx,
+              JSStructuredCloneReader* aReader,
+              uint32_t aPathLength,
+              StructuredCloneHolder* aHolder)
+{
+  MOZ_ASSERT(aCx);
+  MOZ_ASSERT(aReader);
+  MOZ_ASSERT(aHolder);
+
   
   
   
@@ -776,7 +789,10 @@ ReadDirectory(JSContext* aCx,
   JS::Rooted<JS::Value> val(aCx);
   {
     RefPtr<Directory> directory =
-      Directory::Create(aHolder->ParentDuringRead(), file);
+      ReadDirectoryInternal(aReader, aPathLength, aHolder);
+    if (!directory) {
+      return nullptr;
+    }
 
     if (!ToJSValue(aCx, directory, &val)) {
       return nullptr;
@@ -926,6 +942,15 @@ ReadFormData(JSContext* aCx,
           return nullptr;
         }
 
+      } else if (tag == SCTAG_DOM_DIRECTORY) {
+        RefPtr<Directory> directory =
+          ReadDirectoryInternal(aReader, indexOrLengthOfString, aHolder);
+        if (!directory) {
+          return nullptr;
+        }
+
+        formData->Append(name, directory);
+
       } else {
         MOZ_ASSERT(tag == 0);
 
@@ -964,6 +989,9 @@ ReadFormData(JSContext* aCx,
 
 
 
+
+
+
 bool
 WriteFormData(JSStructuredCloneWriter* aWriter,
               FormData* aFormData,
@@ -991,7 +1019,7 @@ WriteFormData(JSStructuredCloneWriter* aWriter,
     { }
 
     static bool
-    Write(const nsString& aName, const OwningBlobOrUSVString& aValue,
+    Write(const nsString& aName, const OwningBlobOrDirectoryOrUSVString& aValue,
           void* aClosure)
     {
       Closure* closure = static_cast<Closure*>(aClosure);
@@ -1008,6 +1036,18 @@ WriteFormData(JSStructuredCloneWriter* aWriter,
 
         closure->mHolder->BlobImpls().AppendElement(blobImpl);
         return true;
+      }
+
+      if (aValue.IsDirectory()) {
+        Directory* directory = aValue.GetAsDirectory();
+
+        if (closure->mHolder->SupportedContext() !=
+              StructuredCloneHolder::SameProcessSameThread &&
+            !directory->ClonableToDifferentThreadOrProcess()) {
+          return false;
+        }
+
+        return WriteDirectory(closure->mWriter, directory);
       }
 
       size_t charSize = sizeof(nsString::char_type);

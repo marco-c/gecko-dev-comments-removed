@@ -22,6 +22,7 @@ namespace mozilla {
 namespace dom {
 
 class Blob;
+class Directory;
 
 
 
@@ -67,6 +68,15 @@ public:
 
   virtual nsresult
   AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob) = 0;
+
+  
+
+
+
+
+
+  virtual nsresult AddNameDirectoryPair(const nsAString& aName,
+                                        Directory* aDirectory) = 0;
 
   
 
@@ -178,6 +188,9 @@ public:
 
   virtual nsresult
   AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob) override;
+
+  virtual nsresult
+  AddNameDirectoryPair(const nsAString& aName, Directory* aDirectory) override;
 
   virtual nsresult
   GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream) override;

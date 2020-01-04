@@ -2165,7 +2165,23 @@ HTMLInputElement::GetValueInternal(nsAString& aValue) const
 
     case VALUE_MODE_FILENAME:
       if (nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+#ifndef MOZ_CHILD_PERMISSIONS
         aValue.Assign(mFirstFilePath);
+#else
+        
+        
+        if (!mFilesOrDirectories.IsEmpty()) {
+          ErrorResult rv;
+          GetDOMFileOrDirectoryPath(mFilesOrDirectories[0], aValue, rv);
+          if (NS_WARN_IF(rv.Failed())) {
+            return rv.StealNSResult();
+          }
+          return NS_OK;
+        }
+        else {
+          aValue.Truncate();
+        }
+#endif
       } else {
         
         if (mFilesOrDirectories.IsEmpty()) {
@@ -3334,6 +3350,7 @@ HTMLInputElement::AfterSetFilesOrDirectoriesInternal(bool aSetValueChanged)
     formControlFrame->SetFormProperty(nsGkAtoms::value, readableValue);
   }
 
+#ifndef MOZ_CHILD_PERMISSIONS
   
   
   
@@ -3348,6 +3365,7 @@ HTMLInputElement::AfterSetFilesOrDirectoriesInternal(bool aSetValueChanged)
       rv.SuppressException();
     }
   }
+#endif
 
   UpdateFileList();
 
@@ -6570,16 +6588,18 @@ HTMLInputElement::SubmitNamesValues(HTMLFormSubmission* aFormSubmission)
     const nsTArray<OwningFileOrDirectory>& files =
       GetFilesOrDirectoriesInternal();
 
-    bool hasBlobs = false;
-    for (uint32_t i = 0; i < files.Length(); ++i) {
-      if (files[i].IsFile()) {
-        hasBlobs = true;
-        aFormSubmission->AddNameBlobOrNullPair(name, files[i].GetAsFile());
-      }
+    if (files.IsEmpty()) {
+      aFormSubmission->AddNameBlobOrNullPair(name, nullptr);
+      return NS_OK;
     }
 
-    if (!hasBlobs) {
-      aFormSubmission->AddNameBlobOrNullPair(name, nullptr);
+    for (uint32_t i = 0; i < files.Length(); ++i) {
+      if (files[i].IsFile()) {
+        aFormSubmission->AddNameBlobOrNullPair(name, files[i].GetAsFile());
+      } else {
+        MOZ_ASSERT(files[i].IsDirectory());
+        aFormSubmission->AddNameDirectoryPair(name, files[i].GetAsDirectory());
+      }
     }
 
     return NS_OK;
