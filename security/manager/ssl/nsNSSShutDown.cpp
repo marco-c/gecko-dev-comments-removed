@@ -2,6 +2,7 @@
 
 
 
+#include "mozilla/Casting.h"
 #include "nsNSSShutDown.h"
 #include "nsCOMPtr.h"
 
@@ -114,8 +115,8 @@ nsresult nsNSSShutDownList::doPK11Logout()
        !iter.Done();
        iter.Next()) {
     auto entry = static_cast<ObjectHashEntry*>(iter.Get());
-    nsOnPK11LogoutCancelObject *pklco =
-      reinterpret_cast<nsOnPK11LogoutCancelObject*>(entry->obj);
+    nsOnPK11LogoutCancelObject* pklco =
+      BitwiseCast<nsOnPK11LogoutCancelObject*, nsNSSShutDownObject*>(entry->obj);
     if (pklco) {
       pklco->logout();
     }
