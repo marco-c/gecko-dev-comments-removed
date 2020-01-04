@@ -36,7 +36,7 @@ NS_EVENT_MESSAGE(eScroll,               eWindowEventFirst + 61)
 
 
 NS_EVENT_MESSAGE(ePluginActivate,       eWindowEventFirst + 62)
-NS_EVENT_MESSAGE(NS_PLUGIN_FOCUS,       eWindowEventFirst + 63)
+NS_EVENT_MESSAGE(ePluginFocus,          eWindowEventFirst + 63)
 
 NS_EVENT_MESSAGE(NS_OFFLINE,            eWindowEventFirst + 64)
 NS_EVENT_MESSAGE(NS_ONLINE,             eWindowEventFirst + 65)
