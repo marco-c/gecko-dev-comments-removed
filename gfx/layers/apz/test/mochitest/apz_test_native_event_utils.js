@@ -44,6 +44,14 @@ function nativeScrollUnits(aElement, aDimen) {
   return aDimen;
 }
 
+function nativeMouseDownEventMsg() {
+  switch (getPlatform()) {
+    case "windows": return 2; 
+    case "mac": return 1; 
+    case "linux": return 4; 
+  }
+}
+
 function nativeMouseMoveEventMsg() {
   switch (getPlatform()) {
     case "windows": return 1; 
@@ -51,6 +59,14 @@ function nativeMouseMoveEventMsg() {
     case "linux": return 3; 
   }
   throw "Native wheel events not supported on platform " + getPlatform();
+}
+
+function nativeMouseUpEventMsg() {
+  switch (getPlatform()) {
+    case "windows": return 4; 
+    case "mac": return 2; 
+    case "linux": return 7; 
+  }
 }
 
 
@@ -175,5 +191,14 @@ function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
   var pt = coordinatesRelativeToWindow(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
   utils.sendNativeTouchTap(pt.x, pt.y, false, aObserver);
+  return true;
+}
+
+function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
+  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
+  utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseDownEventMsg(), 0, aElement, function() {
+    utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseUpEventMsg(), 0, aElement, aObserver);
+  });
   return true;
 }
