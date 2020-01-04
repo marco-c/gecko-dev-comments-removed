@@ -828,12 +828,26 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
 
         let gBrowser = tab.ownerDocument.defaultView.gBrowser;
         let newTab = gBrowser.duplicateTab(tab);
-        gBrowser.moveTabTo(newTab, tab._tPos + 1);
-        gBrowser.selectTabAtIndex(newTab._tPos);
 
         return new Promise(resolve => {
+          
+          
+          
+          newTab.addEventListener("SSTabRestoring", function listener() {
+            
+            newTab.removeEventListener("SSTabRestoring", listener);
+            
+            
+            if (tab.pinned) {
+              gBrowser.pinTab(newTab);
+            }
+            gBrowser.moveTabTo(newTab, tab._tPos + 1);
+          });
+
           newTab.addEventListener("SSTabRestored", function listener() {
+            
             newTab.removeEventListener("SSTabRestored", listener);
+            gBrowser.selectedTab = newTab;
             return resolve(TabManager.convert(extension, newTab));
           });
         });
