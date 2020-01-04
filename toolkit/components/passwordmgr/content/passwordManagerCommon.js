@@ -99,7 +99,7 @@ function DeleteAllFromTree(tree, view, table, deletedTable, removeButton, remove
 
   
   document.getElementById(removeButton).setAttribute("disabled", "true")
-  document.getElementById(removeAllButton).setAttribute("disabled","true");
+  document.getElementById(removeAllButton).setAttribute("disabled", "true");
 }
 
 function DeleteSelectedItemFromTree
@@ -138,7 +138,7 @@ function DeleteSelectedItemFromTree
   } else {
     
     document.getElementById(removeButton).setAttribute("disabled", "true")
-    document.getElementById(removeAllButton).setAttribute("disabled","true");
+    document.getElementById(removeAllButton).setAttribute("disabled", "true");
   }
   tree.view.selection.selectEventsSuppressed = false;
 }
