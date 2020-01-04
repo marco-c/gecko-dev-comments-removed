@@ -59,7 +59,7 @@ LoginManagerPrompter.prototype = {
   __strBundle : null, 
   get _strBundle() {
     if (!this.__strBundle) {
-      var bunService = Cc["@mozilla.org/intl/stringbundle;1"].
+      let bunService = Cc["@mozilla.org/intl/stringbundle;1"].
                        getService(Ci.nsIStringBundleService);
       this.__strBundle = {
         pwmgr : bunService.createBundle("chrome://passwordmgr/locale/passwordmgr.properties"),
@@ -301,7 +301,7 @@ LoginManagerPrompter.prototype = {
       selectedIndex);
     if (ok) {
       
-      var selectedLogin = logins[selectedIndex.value];
+      let selectedLogin = logins[selectedIndex.value];
       this.log("Updating password for user " + selectedLogin.username);
       this._updateLogin(selectedLogin, aNewLogin.password);
     }
