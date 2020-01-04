@@ -314,6 +314,12 @@ TEST_P(UnpackAlignmentTest, Alignment8AUByte)
 }
 
 
-ANGLE_INSTANTIATE_TEST(UnpackAlignmentTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES3_OPENGL());
+ANGLE_INSTANTIATE_TEST(UnpackAlignmentTest,
+                       ES2_D3D9(),
+                       ES2_D3D11(),
+                       ES2_OPENGL(),
+                       ES3_OPENGL(),
+                       ES2_OPENGLES(),
+                       ES3_OPENGLES());
 
 } 

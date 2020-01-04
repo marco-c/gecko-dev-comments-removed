@@ -201,7 +201,13 @@ TEST_P(PackUnpackTest, PackUnpackSnormOverflow)
 }
 
 
-ANGLE_INSTANTIATE_TEST(PackUnpackTest, ES3_OPENGL(3, 3), ES3_OPENGL(4, 0), ES3_OPENGL(4, 1), ES3_OPENGL(4, 2),
-                                       ES3_OPENGL(4, 3), ES3_OPENGL(4, 4), ES3_OPENGL(4, 5));
-
+ANGLE_INSTANTIATE_TEST(PackUnpackTest,
+                       ES3_OPENGL(3, 3),
+                       ES3_OPENGL(4, 0),
+                       ES3_OPENGL(4, 1),
+                       ES3_OPENGL(4, 2),
+                       ES3_OPENGL(4, 3),
+                       ES3_OPENGL(4, 4),
+                       ES3_OPENGL(4, 5),
+                       ES3_OPENGLES());
 }

@@ -48,7 +48,7 @@ typedef unsigned int GLenum;
 
 
 
-#define ANGLE_SH_VERSION 140
+#define ANGLE_SH_VERSION 143
 
 typedef enum {
   SH_GLES2_SPEC = 0x8B40,
@@ -80,30 +80,35 @@ typedef enum {
   SH_CSS_SHADERS_SPEC = 0x8B42
 } ShShaderSpec;
 
-typedef enum {
-  SH_ESSL_OUTPUT               = 0x8B45,
-  
-  SH_GLSL_OUTPUT               = 0x8B46,
-  SH_GLSL_COMPATIBILITY_OUTPUT = 0x8B46,
-  
-  SH_GLSL_CORE_OUTPUT          = 0x8B47,
-  
-  
-  SH_GLSL_130_OUTPUT           = 0x8B47,
-  SH_GLSL_140_OUTPUT           = 0x8B80,
-  SH_GLSL_150_CORE_OUTPUT      = 0x8B81,
-  SH_GLSL_330_CORE_OUTPUT      = 0x8B82,
-  SH_GLSL_400_CORE_OUTPUT      = 0x8B83,
-  SH_GLSL_410_CORE_OUTPUT      = 0x8B84,
-  SH_GLSL_420_CORE_OUTPUT      = 0x8B85,
-  SH_GLSL_430_CORE_OUTPUT      = 0x8B86,
-  SH_GLSL_440_CORE_OUTPUT      = 0x8B87,
-  SH_GLSL_450_CORE_OUTPUT      = 0x8B88,
+typedef enum
+{
+    
+    SH_ESSL_OUTPUT = 0x8B45,
 
-  
-  SH_HLSL_OUTPUT   = 0x8B48,
-  SH_HLSL9_OUTPUT  = 0x8B48,
-  SH_HLSL11_OUTPUT = 0x8B49
+    
+    SH_GLSL_COMPATIBILITY_OUTPUT = 0x8B46,
+    
+    SH_GLSL_130_OUTPUT      = 0x8B47,
+    SH_GLSL_140_OUTPUT      = 0x8B80,
+    SH_GLSL_150_CORE_OUTPUT = 0x8B81,
+    SH_GLSL_330_CORE_OUTPUT = 0x8B82,
+    SH_GLSL_400_CORE_OUTPUT = 0x8B83,
+    SH_GLSL_410_CORE_OUTPUT = 0x8B84,
+    SH_GLSL_420_CORE_OUTPUT = 0x8B85,
+    SH_GLSL_430_CORE_OUTPUT = 0x8B86,
+    SH_GLSL_440_CORE_OUTPUT = 0x8B87,
+    SH_GLSL_450_CORE_OUTPUT = 0x8B88,
+
+    
+    
+    SH_HLSL_OUTPUT   = 0x8B48,
+    SH_HLSL9_OUTPUT  = 0x8B48,
+    SH_HLSL11_OUTPUT = 0x8B49,
+
+    
+    SH_HLSL_3_0_OUTPUT       = 0x8B48,  
+    SH_HLSL_4_1_OUTPUT       = 0x8B49,  
+    SH_HLSL_4_0_FL9_3_OUTPUT = 0x8B4A   
 } ShShaderOutput;
 
 
