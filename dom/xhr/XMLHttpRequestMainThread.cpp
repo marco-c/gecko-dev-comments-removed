@@ -1350,131 +1350,54 @@ XMLHttpRequestMainThread::IsSystemXHR() const
 }
 
 NS_IMETHODIMP
-XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsACString& aUrl,
-                               bool aAsync, const nsAString& aUsername,
-                               const nsAString& aPassword, uint8_t optional_argc)
+XMLHttpRequestMainThread::Open(const nsACString& method, const nsACString& url,
+                               bool async, const nsAString& user,
+                               const nsAString& password, uint8_t optional_argc)
 {
-  Optional<bool> async;
   if (!optional_argc) {
     
-    async.Construct() = true;
-  } else {
-    async.Construct() = aAsync;
+    async = true;
   }
-  Optional<nsAString> username;
+  Optional<nsAString> realUser;
   if (optional_argc > 1) {
-    username = &aUsername;
+    realUser = &user;
   }
-  Optional<nsAString> password;
+  Optional<nsAString> realPassword;
   if (optional_argc > 2) {
-    password = &aPassword;
+    realPassword = &password;
   }
-  return OpenInternal(aMethod, aUrl, async, username, password);
-}
-
-
-
-void
-XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsAString& aUrl,
-                               ErrorResult& aRv)
-{
-  aRv = OpenInternal(aMethod, NS_ConvertUTF16toUTF8(aUrl), Optional<bool>(true),
-                     Optional<nsAString>(), Optional<nsAString>());
-}
-
-
-
-
-void
-XMLHttpRequestMainThread::Open(const nsACString& aMethod,
-                               const nsAString& aUrl,
-                               bool aAsync,
-                               const Optional<nsAString>& aUsername,
-                               const Optional<nsAString>& aPassword,
-                               ErrorResult& aRv)
-{
-  aRv = OpenInternal(aMethod, NS_ConvertUTF16toUTF8(aUrl),
-                     Optional<bool>(aAsync), aUsername, aPassword);
+  return Open(method, url, async, realUser, realPassword);
 }
 
 nsresult
-XMLHttpRequestMainThread::OpenInternal(const nsACString& aMethod,
-                                       const nsACString& aUrl,
-                                       const Optional<bool>& aAsync,
-                                       const Optional<nsAString>& aUsername,
-                                       const Optional<nsAString>& aPassword)
+XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url,
+                               bool async, const Optional<nsAString>& user,
+                               const Optional<nsAString>& password)
 {
-  bool async = aAsync.WasPassed() ? aAsync.Value() : true;
+  if (inMethod.IsEmpty()) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
+  }
 
-  
   if (!async && !DontWarnAboutSyncXHR() && GetOwner() &&
       GetOwner()->GetExtantDoc()) {
     GetOwner()->GetExtantDoc()->WarnOnceAbout(nsIDocument::eSyncXMLHttpRequest);
   }
 
-  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC, async ? 0 : 1);
+  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC,
+                        async ? 0 : 1);
 
-  
-  nsCOMPtr<nsIDocument> responsibleDocument = GetDocumentIfCurrent();
-  if (!responsibleDocument) {
-    
-    
-    nsresult rv = CheckInnerWindowCorrectness();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_ERROR_DOM_INVALID_STATE_ERR;
-    }
-  }
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
 
-  
   nsAutoCString method;
-  nsresult rv = FetchUtil::GetValidRequestMethod(aMethod, method);
+  nsresult rv = FetchUtil::GetValidRequestMethod(inMethod, method);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
-  nsCOMPtr<nsIURI> baseURI;
-  if (mBaseURI) {
-    baseURI = mBaseURI;
-  } else if (responsibleDocument) {
-    baseURI = responsibleDocument->GetBaseURI();
-  }
-  nsCOMPtr<nsIURI> parsedURL;
-  rv = NS_NewURI(getter_AddRefs(parsedURL), aUrl, nullptr, baseURI);
-  if (NS_FAILED(rv)) {
-    if (rv ==  NS_ERROR_MALFORMED_URI) {
-      return NS_ERROR_DOM_SYNTAX_ERR;
-    }
-    return rv;
-  }
-  if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
-  }
-
   
-  
-  
-
-  
-  if (aAsync.WasPassed()) {
-    nsAutoCString host;
-    parsedURL->GetHost(host);
-    if (!host.IsEmpty()) {
-      nsAutoCString userpass;
-      if (aUsername.WasPassed()) {
-        CopyUTF16toUTF8(aUsername.Value(), userpass);
-      }
-      userpass.AppendLiteral(":");
-      if (aPassword.WasPassed()) {
-        AppendUTF16toUTF8(aPassword.Value(), userpass);
-      }
-      parsedURL->SetUserPass(userpass);
-    }
-  }
-
-  
-  if (!async && HasOrHasHadOwner() && (mTimeoutMilliseconds ||
+  if (!async && HasOrHasHadOwner() &&
+      (mTimeoutMilliseconds ||
        mResponseType != XMLHttpRequestResponseType::_empty)) {
     if (mTimeoutMilliseconds) {
       LogMessage("TimeoutSyncXHRWarning", GetOwner());
@@ -1485,30 +1408,140 @@ XMLHttpRequestMainThread::OpenInternal(const nsACString& aMethod,
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
 
-  
-  CloseRequest();
+  nsCOMPtr<nsIURI> uri;
 
-  
-  
+  CloseRequest(); 
+  ResetResponse(); 
+
   mFlagSend = false;
-  mRequestMethod.Assign(method);
-  mRequestURL = parsedURL;
-  mFlagSynchronous = !async;
-  mAuthorRequestHeaders.Clear();
-  ResetResponse();
 
   
-  mFlagHadUploadListenersOnSend = false;
   mFlagAborted = false;
   mFlagTimedOut = false;
 
-  rv = InitChannel();
-  NS_ENSURE_SUCCESS(rv, rv);
+  mFlagSynchronous = !async;
+
+  nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
+  if (!doc) {
+    
+    
+    if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
+      return NS_ERROR_DOM_INVALID_STATE_ERR;
+    }
+  }
+
+  nsCOMPtr<nsIURI> baseURI;
+  if (mBaseURI) {
+    baseURI = mBaseURI;
+  }
+  else if (doc) {
+    baseURI = doc->GetBaseURI();
+  }
+
+  rv = NS_NewURI(getter_AddRefs(uri), url, nullptr, baseURI);
+
+  if (NS_FAILED(rv)) {
+    if (rv ==  NS_ERROR_MALFORMED_URI) {
+      return NS_ERROR_DOM_SYNTAX_ERR;
+    }
+    return rv;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   
+  
+  if (user.WasPassed() && !user.Value().IsEmpty()) {
+    nsAutoCString userpass;
+    CopyUTF16toUTF8(user.Value(), userpass);
+    if (password.WasPassed() && !password.Value().IsEmpty()) {
+      userpass.Append(':');
+      AppendUTF16toUTF8(password.Value(), userpass);
+    }
+    uri->SetUserPass(userpass);
+  }
+
+  
+  
+  mAlreadySetHeaders.Clear();
+
+  
+  
+  
+  nsCOMPtr<nsILoadGroup> loadGroup = GetLoadGroup();
+
+  nsSecurityFlags secFlags;
+  nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND |
+    nsIChannel::LOAD_CLASSIFY_URI;
+  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
+    
+    
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL |
+               nsILoadInfo::SEC_SANDBOXED;
+  }
+  else if (IsSystemXHR()) {
+    
+    
+    
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
+               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+  }
+  else {
+    
+    
+    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
+               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+  }
+
+  if (mIsAnon) {
+    secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
+  }
+
+  
+  
+  
+  if (doc && doc->NodePrincipal() == mPrincipal) {
+    rv = NS_NewChannel(getter_AddRefs(mChannel),
+                       uri,
+                       doc,
+                       secFlags,
+                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       loadGroup,
+                       nullptr,   
+                       loadFlags);
+  } else {
+    
+    rv = NS_NewChannel(getter_AddRefs(mChannel),
+                       uri,
+                       mPrincipal,
+                       secFlags,
+                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       loadGroup,
+                       nullptr,   
+                       loadFlags);
+  }
+
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mFlagHadUploadListenersOnSend = false;
+
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
+  if (httpChannel) {
+    rv = httpChannel->SetRequestMethod(method);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));
+    if (timedChannel) {
+      timedChannel->SetInitiatorType(kLiteralString_xmlhttprequest);
+    }
+  }
+
   if (mState != State::opened) {
-    mState = State::opened;
-    FireReadystatechangeEvent();
+    ChangeState(State::opened);
   }
 
   return NS_OK;
@@ -2106,13 +2139,13 @@ XMLHttpRequestMainThread::ChangeStateToDone()
   }
 }
 
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<nsIDocument>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
+static nsresult
+GetRequestBodyInternal(nsIDOMDocument* aDoc, nsIInputStream** aResult,
+                       uint64_t* aContentLength, nsACString& aContentType,
+                       nsACString& aCharset)
 {
-  nsCOMPtr<nsIDOMDocument> domdoc(do_QueryInterface(mBody));
-  NS_ENSURE_STATE(domdoc);
+  nsCOMPtr<nsIDocument> doc(do_QueryInterface(aDoc));
+  NS_ENSURE_STATE(doc);
   aCharset.AssignLiteral("UTF-8");
 
   nsresult rv;
@@ -2124,11 +2157,11 @@ XMLHttpRequestMainThread::RequestBody<nsIDocument>::GetAsStream(
   rv = storStream->GetOutputStream(0, getter_AddRefs(output));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (mBody->IsHTMLDocument()) {
+  if (doc->IsHTMLDocument()) {
     aContentType.AssignLiteral("text/html");
 
     nsString serialized;
-    if (!nsContentUtils::SerializeNodeToMarkup(mBody, true, serialized)) {
+    if (!nsContentUtils::SerializeNodeToMarkup(doc, true, serialized)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
     NS_ConvertUTF16toUTF8 utf8Serialized(serialized);
@@ -2146,8 +2179,9 @@ XMLHttpRequestMainThread::RequestBody<nsIDocument>::GetAsStream(
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = serializer->SerializeToStream(domdoc, output, aCharset);
+    rv = serializer->SerializeToStream(aDoc, output, aCharset);
     NS_ENSURE_SUCCESS(rv, rv);
+
   }
 
   output->Close();
@@ -2157,78 +2191,60 @@ XMLHttpRequestMainThread::RequestBody<nsIDocument>::GetAsStream(
   NS_ENSURE_SUCCESS(rv, rv);
   *aContentLength = length;
 
-  rv = storStream->NewInputStream(0, aResult);
-  NS_ENSURE_SUCCESS(rv, rv);
-  return NS_OK;
+  return storStream->NewInputStream(0, aResult);
 }
 
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<const nsAString>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
+static nsresult
+GetRequestBodyInternal(const nsAString& aString, nsIInputStream** aResult,
+                       uint64_t* aContentLength, nsACString& aContentType,
+                       nsACString& aCharset)
 {
   aContentType.AssignLiteral("text/plain");
   aCharset.AssignLiteral("UTF-8");
 
-  nsCString converted = NS_ConvertUTF16toUTF8(*mBody);
+  nsCString converted = NS_ConvertUTF16toUTF8(aString);
   *aContentLength = converted.Length();
-  nsresult rv = NS_NewCStringInputStream(aResult, converted);
-  NS_ENSURE_SUCCESS(rv, rv);
-  return NS_OK;
+  return NS_NewCStringInputStream(aResult, converted);
 }
 
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<nsIInputStream>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
+static nsresult
+GetRequestBodyInternal(nsIInputStream* aStream, nsIInputStream** aResult,
+                       uint64_t* aContentLength, nsACString& aContentType,
+                       nsACString& aCharset)
 {
   aContentType.AssignLiteral("text/plain");
   aCharset.Truncate();
 
-  nsresult rv = mBody->Available(aContentLength);
+  nsresult rv = aStream->Available(aContentLength);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIInputStream> stream(mBody);
-  stream.forget(aResult);
+  NS_ADDREF(*aResult = aStream);
+
   return NS_OK;
 }
 
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<Blob>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
+static nsresult
+GetRequestBodyInternal(URLSearchParams* aURLSearchParams,
+                       nsIInputStream** aResult, uint64_t* aContentLength,
+                       nsACString& aContentType, nsACString& aCharset)
 {
-  return mBody->GetSendInfo(aResult, aContentLength, aContentType, aCharset);
-}
-
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<FormData>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
-{
-  return mBody->GetSendInfo(aResult, aContentLength, aContentType, aCharset);
-}
-
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<URLSearchParams>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
-{
-  return mBody->GetSendInfo(aResult, aContentLength, aContentType, aCharset);
-}
-
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<nsIXHRSendable>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
-{
-  return mBody->GetSendInfo(aResult, aContentLength, aContentType, aCharset);
+  return aURLSearchParams->GetSendInfo(aResult, aContentLength,
+                                       aContentType, aCharset);
 }
 
 static nsresult
-GetBufferDataAsStream(const uint8_t* aData, uint32_t aDataLength,
-                      nsIInputStream** aResult, uint64_t* aContentLength,
-                      nsACString& aContentType, nsACString& aCharset)
+GetRequestBodyInternal(nsIXHRSendable* aSendable, nsIInputStream** aResult,
+                       uint64_t* aContentLength, nsACString& aContentType,
+                       nsACString& aCharset)
+{
+  return aSendable->GetSendInfo(aResult, aContentLength, aContentType, aCharset);
+}
+
+
+static nsresult
+GetRequestBodyInternal(const uint8_t* aData, uint32_t aDataLength,
+                       nsIInputStream** aResult, uint64_t* aContentLength,
+                       nsACString& aContentType, nsACString& aCharset)
 {
   aContentType.SetIsVoid(true);
   aCharset.Truncate();
@@ -2246,127 +2262,31 @@ GetBufferDataAsStream(const uint8_t* aData, uint32_t aDataLength,
   return NS_OK;
 }
 
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<const ArrayBuffer>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
+static nsresult
+GetRequestBodyInternal(nsIVariant* aBody, nsIInputStream** aResult,
+                       uint64_t* aContentLength, nsACString& aContentType,
+                       nsACString& aCharset)
 {
-  mBody->ComputeLengthAndData();
-  return GetBufferDataAsStream(mBody->Data(), mBody->Length(),
-                               aResult, aContentLength, aContentType, aCharset);
-}
-
-template<> nsresult
-XMLHttpRequestMainThread::RequestBody<const ArrayBufferView>::GetAsStream(
-   nsIInputStream** aResult, uint64_t* aContentLength,
-   nsACString& aContentType, nsACString& aCharset) const
-{
-  mBody->ComputeLengthAndData();
-  return GetBufferDataAsStream(mBody->Data(), mBody->Length(),
-                               aResult, aContentLength, aContentType, aCharset);
-}
-
-
-nsresult
-XMLHttpRequestMainThread::InitChannel()
-{
-  
-  
-  
-  nsCOMPtr<nsILoadGroup> loadGroup = GetLoadGroup();
-
-  nsSecurityFlags secFlags;
-  nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND |
-                          nsIChannel::LOAD_CLASSIFY_URI;
-  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
-    
-    
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL |
-               nsILoadInfo::SEC_SANDBOXED;
-  } else if (IsSystemXHR()) {
-    
-    
-    
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-  } else {
-    
-    
-    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-  }
-
-  if (mIsAnon) {
-    secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
-  }
-
-  
-  
-  nsresult rv;
-  nsCOMPtr<nsIDocument> responsibleDocument = GetDocumentIfCurrent();
-  if (responsibleDocument && responsibleDocument->NodePrincipal() == mPrincipal) {
-    rv = NS_NewChannel(getter_AddRefs(mChannel),
-                       mRequestURL,
-                       responsibleDocument,
-                       secFlags,
-                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                       loadGroup,
-                       nullptr,   
-                       loadFlags);
-  } else {
-    
-    rv = NS_NewChannel(getter_AddRefs(mChannel),
-                       mRequestURL,
-                       mPrincipal,
-                       secFlags,
-                       nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
-                       loadGroup,
-                       nullptr,   
-                       loadFlags);
-  }
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
-  if (httpChannel) {
-    rv = httpChannel->SetRequestMethod(mRequestMethod);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));
-    if (timedChannel) {
-      timedChannel->SetInitiatorType(NS_LITERAL_STRING("xmlhttprequest"));
-    }
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-XMLHttpRequestMainThread::Send(nsIVariant* aVariant)
-{
-  if (!aVariant) {
-    return SendInternal(nullptr);
-  }
+  *aResult = nullptr;
 
   uint16_t dataType;
-  nsresult rv = aVariant->GetDataType(&dataType);
+  nsresult rv = aBody->GetDataType(&dataType);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (dataType == nsIDataType::VTYPE_INTERFACE ||
       dataType == nsIDataType::VTYPE_INTERFACE_IS) {
     nsCOMPtr<nsISupports> supports;
     nsID *iid;
-    rv = aVariant->GetAsInterface(&iid, getter_AddRefs(supports));
+    rv = aBody->GetAsInterface(&iid, getter_AddRefs(supports));
     NS_ENSURE_SUCCESS(rv, rv);
 
     free(iid);
 
     
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(supports);
+    nsCOMPtr<nsIDOMDocument> doc = do_QueryInterface(supports);
     if (doc) {
-      RequestBody<nsIDocument> body(doc);
-      return SendInternal(&body);
+      return GetRequestBodyInternal(doc, aResult, aContentLength, aContentType,
+                                    aCharset);
     }
 
     
@@ -2374,56 +2294,153 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant)
     if (wstr) {
       nsAutoString string;
       wstr->GetData(string);
-      RequestBody<const nsAString> body(&string);
-      return SendInternal(&body);
+
+      return GetRequestBodyInternal(string, aResult, aContentLength,
+                                    aContentType, aCharset);
     }
 
     
     nsCOMPtr<nsIInputStream> stream = do_QueryInterface(supports);
     if (stream) {
-      RequestBody<nsIInputStream> body(stream);
-      return SendInternal(&body);
+      return GetRequestBodyInternal(stream, aResult, aContentLength,
+                                    aContentType, aCharset);
     }
 
     
     nsCOMPtr<nsIXHRSendable> sendable = do_QueryInterface(supports);
     if (sendable) {
-      RequestBody<nsIXHRSendable> body(sendable);
-      return SendInternal(&body);
+      return GetRequestBodyInternal(sendable, aResult, aContentLength,
+                                    aContentType, aCharset);
     }
 
     
     JSContext* rootingCx = nsContentUtils::RootingCx();
     JS::Rooted<JS::Value> realVal(rootingCx);
 
-    nsresult rv = aVariant->GetAsJSVal(&realVal);
+    nsresult rv = aBody->GetAsJSVal(&realVal);
     if (NS_SUCCEEDED(rv) && !realVal.isPrimitive()) {
       JS::Rooted<JSObject*> obj(rootingCx, realVal.toObjectOrNull());
       RootedTypedArray<ArrayBuffer> buf(rootingCx);
       if (buf.Init(obj)) {
-        RequestBody<const ArrayBuffer> body(&buf);
-        return SendInternal(&body);
+          buf.ComputeLengthAndData();
+          return GetRequestBodyInternal(buf.Data(), buf.Length(), aResult,
+                                        aContentLength, aContentType, aCharset);
       }
     }
-  } else if (dataType == nsIDataType::VTYPE_VOID ||
+  }
+  else if (dataType == nsIDataType::VTYPE_VOID ||
            dataType == nsIDataType::VTYPE_EMPTY) {
-    return SendInternal(nullptr);
+    
+    aContentType.AssignLiteral("text/plain");
+    aCharset.AssignLiteral("UTF-8");
+    *aContentLength = 0;
+
+    return NS_OK;
   }
 
   char16_t* data = nullptr;
   uint32_t len = 0;
-  rv = aVariant->GetAsWStringWithSize(&len, &data);
+  rv = aBody->GetAsWStringWithSize(&len, &data);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsString string;
   string.Adopt(data, len);
 
-  RequestBody<const nsAString> body(&string);
-  return SendInternal(&body);
+  return GetRequestBodyInternal(string, aResult, aContentLength, aContentType,
+                                aCharset);
+}
+
+
+nsresult
+XMLHttpRequestMainThread::GetRequestBody(nsIVariant* aVariant,
+                                         const Nullable<RequestBody>& aBody,
+                                         nsIInputStream** aResult,
+                                         uint64_t* aContentLength,
+                                         nsACString& aContentType,
+                                         nsACString& aCharset)
+{
+  
+  aContentType.SetIsVoid(true);
+  aCharset.SetIsVoid(true);
+
+  if (aVariant) {
+    return GetRequestBodyInternal(aVariant, aResult, aContentLength,
+                                  aContentType, aCharset);
+  }
+
+  const RequestBody& body = aBody.Value();
+  RequestBody::Value value = body.GetValue();
+  switch (body.GetType()) {
+    case XMLHttpRequestMainThread::RequestBody::eArrayBuffer:
+    {
+      const ArrayBuffer* buffer = value.mArrayBuffer;
+      buffer->ComputeLengthAndData();
+      return GetRequestBodyInternal(buffer->Data(), buffer->Length(), aResult,
+                                    aContentLength, aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eArrayBufferView:
+    {
+      const ArrayBufferView* view = value.mArrayBufferView;
+      view->ComputeLengthAndData();
+      return GetRequestBodyInternal(view->Data(), view->Length(), aResult,
+                                    aContentLength, aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eBlob:
+    {
+      nsresult rv;
+      nsCOMPtr<nsIDOMBlob> blob = value.mBlob;
+      nsCOMPtr<nsIXHRSendable> sendable = do_QueryInterface(blob, &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      return GetRequestBodyInternal(sendable, aResult, aContentLength,
+                                    aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eDocument:
+    {
+      nsCOMPtr<nsIDOMDocument> document = do_QueryInterface(value.mDocument);
+      return GetRequestBodyInternal(document, aResult, aContentLength,
+                                    aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eDOMString:
+    {
+      return GetRequestBodyInternal(*value.mString, aResult, aContentLength,
+                                    aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eFormData:
+    {
+      MOZ_ASSERT(value.mFormData);
+      return GetRequestBodyInternal(value.mFormData, aResult, aContentLength,
+                                    aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eURLSearchParams:
+    {
+      MOZ_ASSERT(value.mURLSearchParams);
+      return GetRequestBodyInternal(value.mURLSearchParams, aResult,
+                                    aContentLength, aContentType, aCharset);
+    }
+    case XMLHttpRequestMainThread::RequestBody::eInputStream:
+    {
+      return GetRequestBodyInternal(value.mStream, aResult, aContentLength,
+                                    aContentType, aCharset);
+    }
+    default:
+    {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  NS_NOTREACHED("Default cases exist for a reason");
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+XMLHttpRequestMainThread::Send(nsIVariant *aBody)
+{
+  return Send(aBody, Nullable<RequestBody>());
 }
 
 nsresult
-XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
+XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
 {
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
 
@@ -2463,9 +2480,6 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
 
   if (httpChannel) {
-    
-    SetAuthorRequestHeadersOnChannel(httpChannel);
-
     httpChannel->GetRequestMethod(method); 
 
     if (!IsSystemXHR()) {
@@ -2502,7 +2516,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   mErrorLoad = false;
   mLoadLengthComputable = false;
   mLoadTotal = 0;
-  if (aBody && httpChannel &&
+  if ((aVariant || !aBody.IsNull()) && httpChannel &&
       !method.LowerCaseEqualsLiteral("get") &&
       !method.LowerCaseEqualsLiteral("head")) {
 
@@ -2511,8 +2525,8 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     nsCOMPtr<nsIInputStream> postDataStream;
 
     uint64_t size_u64;
-    rv = aBody->GetAsStream(getter_AddRefs(postDataStream),
-                            &size_u64, defaultContentType, charset);
+    rv = GetRequestBody(aVariant, aBody, getter_AddRefs(postDataStream),
+                        &size_u64, defaultContentType, charset);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2521,13 +2535,14 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 
     if (postDataStream) {
       
+      
       nsAutoCString contentType;
-
-      GetAuthorRequestHeaderValue("content-type", contentType);
-      if (contentType.IsVoid()) {
+      if (NS_FAILED(httpChannel->
+                      GetRequestHeader(NS_LITERAL_CSTRING("Content-Type"),
+                                       contentType))) {
         contentType = defaultContentType;
 
-        if (!charset.IsEmpty()) {
+        if (!charset.IsEmpty() && !contentType.IsVoid()) {
           
           
           contentType.Append(NS_LITERAL_CSTRING(";charset="));
@@ -2705,26 +2720,8 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 
   
   if (!IsSystemXHR()) {
-    nsTArray<nsCString> CORSUnsafeHeaders;
-    const char *kCrossOriginSafeHeaders[] = {
-      "accept", "accept-language", "content-language", "content-type",
-      "last-event-id"
-    };
-    for (RequestHeader& header : mAuthorRequestHeaders) {
-      bool safe = false;
-      for (uint32_t i = 0; i < ArrayLength(kCrossOriginSafeHeaders); ++i) {
-        if (header.name.EqualsASCII(kCrossOriginSafeHeaders[i])) {
-          safe = true;
-          break;
-        }
-      }
-      if (!safe) {
-        CORSUnsafeHeaders.AppendElement(header.name);
-      }
-    }
-
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
+    loadInfo->SetCorsPreflightInfo(mCORSUnsafeHeaders,
                                    mFlagHadUploadListenersOnSend);
   }
 
@@ -2774,6 +2771,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 
   mWaitingForOnStopRequest = true;
 
+  
   mFlagSend = true;
 
   
@@ -2832,7 +2830,8 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     if (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress)) {
       StartProgressEventTimer();
     }
-    DispatchProgressEvent(this, ProgressEventType::loadstart, false, 0, 0);
+    DispatchProgressEvent(this, ProgressEventType::loadstart, false,
+                          0, 0);
     if (mUpload && !mUploadComplete) {
       DispatchProgressEvent(mUpload, ProgressEventType::loadstart, true,
                             0, mUploadTotal);
@@ -2848,62 +2847,99 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
 
 
 NS_IMETHODIMP
-XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
-                                           const nsACString& aValue)
+XMLHttpRequestMainThread::SetRequestHeader(const nsACString& header,
+                                           const nsACString& value)
 {
   
   if (mState != State::opened || mFlagSend) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
+  NS_ASSERTION(mChannel, "mChannel must be valid if we're OPENED.");
 
   
-  nsAutoCString value(aValue);
-  static const char kHTTPWhitespace[] = "\n\t\r ";
-  value.Trim(kHTTPWhitespace);
-
   
-  if (!NS_IsValidHTTPToken(aName) || !NS_IsReasonableHTTPHeaderValue(value)) {
+  if (!NS_IsValidHTTPToken(header)) {
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
 
-  
-  bool isPrivilegedCaller = IsSystemXHR();
-  bool isForbiddenHeader = nsContentUtils::IsForbiddenRequestHeader(aName);
-  if (!isPrivilegedCaller && isForbiddenHeader) {
-    NS_WARNING("refusing to set request header");
+  if (!mChannel)             
+    return NS_ERROR_FAILURE; 
+
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+  if (!httpChannel) {
     return NS_OK;
   }
 
   
-  nsAutoCString lowercaseName;
-  nsContentUtils::ASCIIToLower(aName, lowercaseName);
-
   
-  bool notAlreadySet = true;
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(lowercaseName)) {
+  
+  
+  
+  bool mergeHeaders = true;
+
+  if (!IsSystemXHR()) {
+    
+    
+    
+    if (nsContentUtils::IsForbiddenRequestHeader(header)) {
+      NS_WARNING("refusing to set request header");
+      return NS_OK;
+    }
+
+    
+    bool safeHeader = IsSystemXHR();
+    if (!safeHeader) {
       
-      
-      if (isPrivilegedCaller && isForbiddenHeader) {
-        header.value.Assign(value);
-      } else {
-        header.value.AppendLiteral(", ");
-        header.value.Append(value);
+      const char *kCrossOriginSafeHeaders[] = {
+        "accept", "accept-language", "content-language", "content-type",
+        "last-event-id"
+      };
+      for (uint32_t i = 0; i < ArrayLength(kCrossOriginSafeHeaders); ++i) {
+        if (header.LowerCaseEqualsASCII(kCrossOriginSafeHeaders[i])) {
+          safeHeader = true;
+          break;
+        }
       }
-      notAlreadySet = false;
-      break;
+    }
+
+    if (!safeHeader) {
+      if (!mCORSUnsafeHeaders.Contains(header, nsCaseInsensitiveCStringArrayComparator())) {
+        mCORSUnsafeHeaders.AppendElement(header);
+      }
+    }
+  } else {
+    
+    if (nsContentUtils::IsForbiddenSystemRequestHeader(header)) {
+      mergeHeaders = false;
     }
   }
 
-  
-  if (notAlreadySet) {
-    RequestHeader newHeader = {
-      nsCString(lowercaseName), nsCString(value)
-    };
-    mAuthorRequestHeaders.AppendElement(newHeader);
+  if (!mAlreadySetHeaders.Contains(header)) {
+    
+    mergeHeaders = false;
   }
 
-  return NS_OK;
+  nsresult rv;
+  if (value.IsEmpty()) {
+    rv = httpChannel->SetEmptyRequestHeader(header);
+  } else {
+    
+    rv = httpChannel->SetRequestHeader(header, value, mergeHeaders);
+  }
+  if (rv == NS_ERROR_INVALID_ARG) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
+  }
+  if (NS_SUCCEEDED(rv)) {
+    
+    mAlreadySetHeaders.PutEntry(nsCString(header));
+
+    
+    RequestHeader reqHeader = {
+      nsCString(header), nsCString(value)
+    };
+    mModifiedRequestHeaders.AppendElement(reqHeader);
+  }
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -3143,32 +3179,6 @@ XMLHttpRequestMainThread::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
   return NS_OK;
 }
 
-void
-XMLHttpRequestMainThread::GetAuthorRequestHeaderValue(const char* aName,
-                                                      nsACString& outValue)
-{
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(aName)) {
-      outValue.Assign(header.value);
-      return;
-    }
-  }
-  outValue.SetIsVoid(true);
-}
-
-void
-XMLHttpRequestMainThread::SetAuthorRequestHeadersOnChannel(
-  nsCOMPtr<nsIHttpChannel> aHttpChannel)
-{
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.value.IsEmpty()) {
-      aHttpChannel->SetEmptyRequestHeader(header.name);
-    } else {
-      aHttpChannel->SetRequestHeader(header.name, header.value, false);
-    }
-  }
-}
-
 nsresult
 XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
 {
@@ -3181,7 +3191,15 @@ XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
     if (httpChannel) {
       
-      SetAuthorRequestHeadersOnChannel(httpChannel);
+      for (RequestHeader& requestHeader : mModifiedRequestHeaders) {
+        if (requestHeader.value.IsEmpty()) {
+          httpChannel->SetEmptyRequestHeader(requestHeader.header);
+        } else {
+          httpChannel->SetRequestHeader(requestHeader.header,
+                                        requestHeader.value,
+                                        false);
+        }
+      }
     }
   } else {
     mErrorLoad = true;
@@ -3497,8 +3515,9 @@ XMLHttpRequestMainThread::ShouldBlockAuthPrompt()
   
   
 
-  for (RequestHeader& requestHeader : mAuthorRequestHeaders) {
-    if (requestHeader.name.EqualsLiteral("authorization")) {
+  for (uint32_t i = 0, len = mModifiedRequestHeaders.Length(); i < len; ++i) {
+    if (mModifiedRequestHeaders[i].header.
+          LowerCaseEqualsLiteral("authorization")) {
       return true;
     }
   }
