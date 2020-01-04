@@ -17,6 +17,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIGfxInfo.h"
+#include "nsWindowsHelpers.h"
 #include "GfxDriverInfo.h"
 #include "gfxWindowsPlatform.h"
 #include "MediaInfo.h"
@@ -163,9 +164,45 @@ CanCreateWMFDecoder()
   return result.value();
 }
 
+static bool
+IsH264DecoderBlacklisted()
+{
+#ifdef _WIN64
+  WCHAR systemPath[MAX_PATH + 1];
+  if (!ConstructSystem32Path(L"msmpeg2vdec.dll", systemPath, MAX_PATH + 1)) {
+    
+    return false;
+  }
+
+  DWORD zero;
+  DWORD infoSize = GetFileVersionInfoSizeW(systemPath, &zero);
+  if (infoSize == 0) {
+    
+    return false;
+  }
+  auto infoData = MakeUnique<unsigned char[]>(infoSize);
+  VS_FIXEDFILEINFO *vInfo;
+  UINT vInfoLen;
+  if (GetFileVersionInfoW(systemPath, 0, infoSize, infoData.get()) &&
+    VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen))
+  {
+    if ((vInfo->dwFileVersionMS == ((12u << 16) | 0u))
+        && ((vInfo->dwFileVersionLS == ((9200u << 16) | 16426u))
+            || (vInfo->dwFileVersionLS == ((9200u << 16) | 17037u)))) {
+      
+      return true;
+    }
+  }
+#endif 
+  return false;
+}
+
  bool
 WMFDecoderModule::HasH264()
 {
+  if (IsH264DecoderBlacklisted()) {
+    return false;
+  }
   return CanCreateWMFDecoder<CLSID_CMSH264DecoderMFT>();
 }
 
