@@ -11,20 +11,117 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsIDocument.h"
+#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "nsPIDOMWindow.h"
 #include "nsContentPermissionHelper.h"
 
 namespace mozilla {
 namespace dom {
 
-NS_IMPL_ISUPPORTS(FileSystemPermissionRequest, nsIRunnable,
-                  nsIContentPermissionRequest,
+namespace {
+
+
+
+class PBackgroundInitializer final : public nsIIPCBackgroundChildCreateCallback
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
+
+  static void
+  ScheduleTask(FileSystemTaskChildBase* aTask)
+  {
+    MOZ_ASSERT(aTask);
+    RefPtr<PBackgroundInitializer> pb = new PBackgroundInitializer(aTask);
+  }
+
+private:
+  explicit PBackgroundInitializer(FileSystemTaskChildBase* aTask)
+    : mTask(aTask)
+  {
+    MOZ_ASSERT(aTask);
+
+    PBackgroundChild* actor =
+      mozilla::ipc::BackgroundChild::GetForCurrentThread();
+    if (actor) {
+      ActorCreated(actor);
+    } else {
+      if (NS_WARN_IF(
+          !mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread(this))) {
+        MOZ_CRASH();
+      }
+    }
+  }
+
+  ~PBackgroundInitializer()
+  {}
+
+  RefPtr<FileSystemTaskChildBase> mTask;
+};
+
+NS_IMPL_ISUPPORTS(PBackgroundInitializer,
                   nsIIPCBackgroundChildCreateCallback)
+
+void
+PBackgroundInitializer::ActorFailed()
+{
+  MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+}
+
+void
+PBackgroundInitializer::ActorCreated(mozilla::ipc::PBackgroundChild* aActor)
+{
+  mTask->Start();
+}
+
+
+
+
+class AsyncStartRunnable final : public nsCancelableRunnable
+{
+public:
+  explicit AsyncStartRunnable(FileSystemTaskChildBase* aTask)
+    : mTask(aTask)
+  {
+    MOZ_ASSERT(aTask);
+  }
+
+  NS_IMETHOD
+  Run() override
+  {
+    PBackgroundInitializer::ScheduleTask(mTask);
+    return NS_OK;
+  }
+
+private:
+  RefPtr<FileSystemTaskChildBase> mTask;
+};
+
+} 
+
+NS_IMPL_ISUPPORTS(FileSystemPermissionRequest, nsIRunnable,
+                  nsIContentPermissionRequest)
 
  void
 FileSystemPermissionRequest::RequestForTask(FileSystemTaskChildBase* aTask)
 {
-  MOZ_ASSERT(aTask, "aTask should not be null!");
+  MOZ_ASSERT(aTask);
+
+  RefPtr<FileSystemBase> filesystem = aTask->GetFileSystem();
+  if (!filesystem) {
+    return;
+  }
+
+  if (filesystem->PermissionCheckType() == FileSystemBase::ePermissionCheckNotRequired) {
+    
+    RefPtr<AsyncStartRunnable> runnable = new AsyncStartRunnable(aTask);
+    NS_DispatchToCurrentThread(runnable);
+    return;
+  }
+
+  
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<FileSystemPermissionRequest> request =
@@ -156,30 +253,9 @@ FileSystemPermissionRequest::GetRequester(nsIContentPermissionRequester** aReque
 }
 
 void
-FileSystemPermissionRequest::ActorFailed()
-{
-  MOZ_CRASH("Failed to create a PBackgroundChild actor!");
-}
-
-void
-FileSystemPermissionRequest::ActorCreated(mozilla::ipc::PBackgroundChild* aActor)
-{
-  mTask->Start();
-}
-
-void
 FileSystemPermissionRequest::ScheduleTask()
 {
-  PBackgroundChild* actor =
-    mozilla::ipc::BackgroundChild::GetForCurrentThread();
-  if (actor) {
-    ActorCreated(actor);
-  } else {
-    if (NS_WARN_IF(
-        !mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread(this))) {
-      MOZ_CRASH();
-    }
-  }
+  PBackgroundInitializer::ScheduleTask(mTask);
 }
 
 } 
