@@ -15,7 +15,7 @@
 
     function start() {
       for(var i = 0; i < 70; i++) {
-        var pc = new RTCPeerConnection();
+        var pc = new mozRTCPeerConnection();
         pc.createOffer(function() {}, function() {});
         pcArray.push(pc);
       }
