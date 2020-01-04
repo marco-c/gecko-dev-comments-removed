@@ -262,12 +262,12 @@ public class TabsPanel extends LinearLayout
 
             
             
-            return  resources.getDimensionPixelSize(R.dimen.tab_thumbnail_height
-                  + resources.getDimensionPixelSize(R.dimen.tab_title_height)
-                  + 2 * (resources.getDimensionPixelSize(R.dimen.tab_highlight_stroke_width)
-                         + resources.getDimensionPixelSize(R.dimen.tab_vertical_padding)
-                         + resources.getDimensionPixelSize(R.dimen.tab_thumbnail_padding)
-                         + resources.getDimensionPixelSize(R.dimen.tab_thumbnail_margin)));
+            return resources.getDimensionPixelSize(R.dimen.tab_thumbnail_height)
+                 + resources.getDimensionPixelSize(R.dimen.tab_title_height)
+                 + 2 * (resources.getDimensionPixelSize(R.dimen.tab_highlight_stroke_width)
+                      + resources.getDimensionPixelSize(R.dimen.tab_vertical_padding)
+                      + resources.getDimensionPixelSize(R.dimen.tab_thumbnail_padding)
+                      + resources.getDimensionPixelSize(R.dimen.tab_thumbnail_margin));
         }
 
         Rect windowRect = new Rect();
