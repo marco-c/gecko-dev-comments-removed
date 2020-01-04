@@ -27,8 +27,7 @@ function run_test() {
   const rootPrefBranch = prefSvc.getBranch("");
   
   let noMailto = false;
-  let isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
-  if (isWindows) {
+  if (mozinfo.os == "win") {
     
     
     let regSvc = Cc["@mozilla.org/windows-registry-key;1"].
@@ -44,8 +43,7 @@ function run_test() {
     regSvc.close();
   }
 
-  let isLinux = ("@mozilla.org/gio-service;1" in Components.classes);
-  if (isLinux) {
+  if (mozinfo.os == "linux") {
     
     
     let gIOSvc = Cc["@mozilla.org/gio-service;1"].
@@ -463,7 +461,7 @@ function run_test() {
   do_check_eq(lolType, "application/lolcat");
 
   
-  if (!("@mozilla.org/windows-registry-key;1" in Cc) && !("nsILocalFileMac" in Ci)) {
+  if (mozinfo.os != "win" && mozinfo.os != "mac") {
     env.set('PERSONAL_MAILCAP', do_get_file('mailcap').path);
     handlerInfo = mimeSvc.getFromTypeAndExtension("text/plain", null);
     do_check_eq(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useSystemDefault);
