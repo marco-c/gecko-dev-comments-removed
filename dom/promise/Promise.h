@@ -99,10 +99,15 @@ public:
   
   
   
+#ifdef SPIDERMONKEY_PROMISE
+  static already_AddRefed<Promise>
+  Create(nsIGlobalObject* aGlobal, ErrorResult& aRv);
+#else
   static already_AddRefed<Promise>
   Create(nsIGlobalObject* aGlobal, ErrorResult& aRv,
          
          JS::Handle<JSObject*> aDesiredProto = nullptr);
+#endif 
 
   typedef void (Promise::*MaybeFunc)(JSContext* aCx,
                                      JS::Handle<JS::Value> aValue);
@@ -161,6 +166,35 @@ public:
   virtual JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
+#ifdef SPIDERMONKEY_PROMISE
+  
+  
+  
+  static already_AddRefed<Promise>
+  Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
+          JS::Handle<JS::Value> aValue, ErrorResult& aRv);
+
+  
+  
+  
+  static already_AddRefed<Promise>
+  Reject(nsIGlobalObject* aGlobal, JSContext* aCx,
+         JS::Handle<JS::Value> aValue, ErrorResult& aRv);
+
+  static already_AddRefed<Promise>
+  All(const GlobalObject& aGlobal,
+      const nsTArray<RefPtr<Promise>>& aPromiseList, ErrorResult& aRv);
+
+  void
+  Then(JSContext* aCx,
+       
+       
+       JS::Handle<JSObject*> aCalleeGlobal,
+       AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
+       JS::MutableHandle<JS::Value> aRetval,
+       ErrorResult& aRv);
+
+#else 
   static already_AddRefed<Promise>
   Constructor(const GlobalObject& aGlobal, PromiseInit& aInit,
               ErrorResult& aRv, JS::Handle<JSObject*> aDesiredProto);
@@ -214,6 +248,7 @@ public:
 
   static bool
   PromiseSpecies(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
+#endif 
 
   void AppendNativeHandler(PromiseNativeHandler* aRunnable);
 
@@ -221,21 +256,34 @@ public:
 
   JSCompartment* Compartment() const;
 
+#ifndef SPIDERMONKEY_PROMISE
   
   uint64_t GetID();
+#endif 
 
   
   static void
   DispatchToMicroTask(nsIRunnable* aRunnable);
 
+#ifndef SPIDERMONKEY_PROMISE
   enum JSCallbackSlots {
     SLOT_PROMISE = 0,
     SLOT_DATA
   };
+#endif 
+
+#ifdef SPIDERMONKEY_PROMISE
+  
+  
+  static already_AddRefed<Promise>
+  CreateFromExisting(nsIGlobalObject* aGlobal,
+                     JS::Handle<JSObject*> aPromiseObj);
+#endif 
 
 protected:
   struct PromiseCapability;
 
+  
   
   
   explicit Promise(nsIGlobalObject* aGlobal);
@@ -246,6 +294,7 @@ protected:
   
   void CreateWrapper(JS::Handle<JSObject*> aDesiredProto, ErrorResult& aRv);
 
+#ifndef SPIDERMONKEY_PROMISE
   
   
   
@@ -284,15 +333,17 @@ protected:
   {
     return mWasNotifiedAsUncaught;
   }
+#endif 
 
 private:
-  friend class PromiseDebugging;
-
   enum PromiseState {
     Pending,
     Resolved,
     Rejected
   };
+
+#ifndef SPIDERMONKEY_PROMISE
+  friend class PromiseDebugging;
 
   void SetState(PromiseState aState)
   {
@@ -340,6 +391,7 @@ private:
                        JS::Handle<JS::Value> aValue);
   void RejectInternal(JSContext* aCx,
                       JS::Handle<JS::Value> aValue);
+#endif 
 
   template <typename T>
   void MaybeSomething(T& aArgument, MaybeFunc aFunc) {
@@ -357,6 +409,7 @@ private:
     (this->*aFunc)(cx, val);
   }
 
+#ifndef SPIDERMONKEY_PROMISE
   
   static bool
   JSCallback(JSContext *aCx, unsigned aArgc, JS::Value *aVp);
@@ -375,8 +428,6 @@ private:
   static JSObject*
   CreateThenableFunction(JSContext* aCx, Promise* aPromise, uint32_t aTask);
 
-  void HandleException(JSContext* aCx);
-
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
   void RemoveFeature();
 #endif 
@@ -384,9 +435,13 @@ private:
   
   
   bool CaptureStack(JSContext* aCx, JS::Heap<JSObject*>& aTarget);
+#endif 
+
+  void HandleException(JSContext* aCx);
 
   RefPtr<nsIGlobalObject> mGlobal;
 
+#ifndef SPIDERMONKEY_PROMISE
   nsTArray<RefPtr<PromiseCallback> > mResolveCallbacks;
   nsTArray<RefPtr<PromiseCallback> > mRejectCallbacks;
 
@@ -437,6 +492,7 @@ private:
   
   
   uint64_t mID;
+#endif 
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Promise, NS_PROMISE_IID)
