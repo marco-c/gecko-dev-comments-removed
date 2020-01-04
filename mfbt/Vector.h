@@ -128,7 +128,7 @@ struct VectorImpl
 
 
 
-  static inline bool
+  static inline MOZ_MUST_USE bool
   growTo(Vector<T, N, AP>& aV, size_t aNewCap)
   {
     MOZ_ASSERT(!aV.usingInlineStorage());
@@ -215,7 +215,7 @@ struct VectorImpl<T, N, AP, true>
     }
   }
 
-  static inline bool
+  static inline MOZ_MUST_USE bool
   growTo(Vector<T, N, AP>& aV, size_t aNewCap)
   {
     MOZ_ASSERT(!aV.usingInlineStorage());

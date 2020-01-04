@@ -72,8 +72,7 @@ public:
 
 
 
-
-  static MFBT_API bool
+  static MFBT_API MOZ_MUST_USE bool
   decompress(const char* aSource, char* aDest, size_t aOutputSize);
 
   
@@ -92,7 +91,8 @@ public:
 
 
 
-  static MFBT_API bool
+
+  static MFBT_API MOZ_MUST_USE bool
   decompress(const char* aSource, size_t aInputSize, char* aDest,
              size_t aMaxOutputSize, size_t* aOutputSize);
 
