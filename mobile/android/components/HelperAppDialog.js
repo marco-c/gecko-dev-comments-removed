@@ -19,6 +19,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "RuntimePermissions", "resource://gre/modules/RuntimePermissions.jsm");
+
 
 
 
@@ -241,9 +243,15 @@ HelperAppLauncherDialog.prototype = {
     Task.spawn(function* () {
       let file = null;
       try {
-        let preferredDir = yield Downloads.getPreferredDownloadsDirectory();
-        file = this.validateLeafName(new FileUtils.File(preferredDir),
-                                     aDefaultFile, aSuggestedFileExt);
+        let hasPermission = yield RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE);
+        if (hasPermission) {
+          
+          
+          
+          let preferredDir = yield Downloads.getPreferredDownloadsDirectory();
+          file = this.validateLeafName(new FileUtils.File(preferredDir),
+                                       aDefaultFile, aSuggestedFileExt);
+        }
       } finally {
         
         aLauncher.saveDestinationAvailable(file);

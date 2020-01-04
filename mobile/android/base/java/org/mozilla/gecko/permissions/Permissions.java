@@ -92,6 +92,13 @@ public class Permissions {
         }
     }
 
+    
+
+
+    public static boolean has(Context context, String... permissions) {
+        return permissionHelper.hasPermissions(context, permissions);
+    }
+
      static void setPermissionHelper(PermissionsHelper permissionHelper) {
         Permissions.permissionHelper = permissionHelper;
     }

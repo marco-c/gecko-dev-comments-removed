@@ -378,14 +378,18 @@ static nsresult GetDownloadDirectory(nsIFile **_directory,
 #elif defined(ANDROID)
   
   
-
   
-  char* downloadDir = getenv("DOWNLOADS_DIRECTORY");
+  
+  
+  
+  auto downloadDir = widget::DownloadsIntegration::GetTemporaryDownloadDirectory();
+
   nsresult rv;
   if (downloadDir) {
     nsCOMPtr<nsIFile> ldir;
-    rv = NS_NewNativeLocalFile(nsDependentCString(downloadDir),
+    rv = NS_NewNativeLocalFile(downloadDir->ToCString(),
                                true, getter_AddRefs(ldir));
+
     NS_ENSURE_SUCCESS(rv, rv);
     dir = do_QueryInterface(ldir);
 
