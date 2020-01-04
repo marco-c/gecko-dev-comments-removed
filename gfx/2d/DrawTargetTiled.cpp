@@ -305,5 +305,29 @@ DrawTargetTiled::Fill(const Path* aPath, const Pattern& aPattern, const DrawOpti
   }
 }
 
+void
+DrawTargetTiled::PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
+                           const Matrix& aMaskTransform, const IntRect& aBounds,
+                           bool aCopyBackground)
+{
+  
+  
+  for (size_t i = 0; i < mTiles.size(); i++) {
+    IntRect bounds = aBounds;
+    bounds.MoveBy(-mTiles[i].mTileOrigin);
+    mTiles[i].mDrawTarget->PushLayer(aOpaque, aOpacity, aMask, aMaskTransform, aBounds);
+  }
+}
+
+void
+DrawTargetTiled::PopLayer()
+{
+  
+  
+  for (size_t i = 0; i < mTiles.size(); i++) {
+    mTiles[i].mDrawTarget->PopLayer();
+  }
+}
+
 } 
 } 

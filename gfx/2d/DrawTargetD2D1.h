@@ -243,13 +243,14 @@ private:
   
   struct PushedLayer
   {
-    PushedLayer() : mClipsArePushed(false), mIsOpaque(false) {}
+    PushedLayer() : mClipsArePushed(false), mIsOpaque(false), mOldPermitSubpixelAA(false) {}
 
     std::vector<PushedClip> mPushedClips;
     RefPtr<ID2D1CommandList> mCurrentList;
     
     bool mClipsArePushed;
     bool mIsOpaque;
+    bool mOldPermitSubpixelAA;
   };
   std::vector<PushedLayer> mPushedLayers;
   PushedLayer& CurrentLayer()
