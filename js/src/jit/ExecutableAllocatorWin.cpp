@@ -126,6 +126,10 @@ ExceptionHandler(PEXCEPTION_RECORD exceptionRecord, _EXCEPTION_REGISTRATION_RECO
 static bool
 RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
 {
+    DWORD oldProtect;
+    if (!VirtualProtect(p, pageSize, PAGE_READWRITE, &oldProtect))
+        return false;
+
     ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
 
     
@@ -158,7 +162,6 @@ RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
     r->thunk[10] = 0xff;
     r->thunk[11] = 0xe0;
 
-    DWORD oldProtect;
     if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect))
         return false;
 
