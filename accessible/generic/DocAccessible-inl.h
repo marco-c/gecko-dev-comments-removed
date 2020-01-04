@@ -160,6 +160,25 @@ DocAccessible::GetAccessibleEvenIfNotInMapOrContainer(nsINode* aNode) const
   return acc ? acc : GetContainerAccessible(aNode);
 }
 
+inline void
+DocAccessible::CreateSubtree(Accessible* aChild)
+{
+  
+  
+  
+  
+  Accessible* focusedAcc = nullptr;
+  CacheChildrenInSubtree(aChild, &focusedAcc);
+
+  
+  
+  if (focusedAcc) {
+    FocusMgr()->DispatchFocusEvent(this, focusedAcc);
+    SelectionMgr()->
+      SetControlSelectionListener(focusedAcc->GetNode()->AsElement());
+  }
+}
+
 } 
 } 
 

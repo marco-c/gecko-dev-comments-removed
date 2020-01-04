@@ -1762,7 +1762,6 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
                     aContainer);
 #endif
 
-  uint32_t updateFlags = 0;
   TreeMutation mt(aContainer);
   do {
     Accessible* parent = iter.Child()->Parent();
@@ -1791,7 +1790,7 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
 #endif
 
       mt.AfterInsertion(iter.Child());
-      updateFlags |= UpdateTreeInternal(iter.Child(), true);
+      CreateSubtree(iter.Child());
       continue;
     }
 
@@ -1805,7 +1804,7 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
                     aContainer);
 #endif
 
-  FireEventsOnInsertion(aContainer, updateFlags);
+  FireEventsOnInsertion(aContainer);
 }
 
 void
@@ -1828,25 +1827,18 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer, nsIContent* aNode)
       mt.AfterInsertion(child);
       mt.Done();
 
-      uint32_t flags = UpdateTreeInternal(child, true);
-      FireEventsOnInsertion(aContainer, flags);
+      CreateSubtree(child);
+      FireEventsOnInsertion(aContainer);
     }
   }
 }
 
 void
-DocAccessible::FireEventsOnInsertion(Accessible* aContainer,
-                                     uint32_t aUpdateFlags)
+DocAccessible::FireEventsOnInsertion(Accessible* aContainer)
 {
   
-  if (aUpdateFlags == eNoAccessible) {
-    return;
-  }
-
   
-  
-  if (!(aUpdateFlags & eAlertAccessible) &&
-      (aContainer->IsAlert() || aContainer->IsInsideAlert())) {
+  if (aContainer->IsAlert() || aContainer->IsInsideAlert()) {
     Accessible* ancestor = aContainer;
     do {
       if (ancestor->IsAlert()) {
@@ -1895,45 +1887,6 @@ DocAccessible::UpdateTreeOnRemoval(Accessible* aContainer, nsIContent* aChildNod
     UncacheChildrenInSubtree(child);
   }
   mt.Done();
-}
-
-uint32_t
-DocAccessible::UpdateTreeInternal(Accessible* aChild, bool aIsInsert)
-{
-  uint32_t updateFlags = eAccessible;
-
-  
-  
-  
-  
-  Accessible* focusedAcc = nullptr;
-
-  if (aIsInsert) {
-    
-    CacheChildrenInSubtree(aChild, &focusedAcc);
-  }
-
-  if (aIsInsert) {
-    roles::Role ariaRole = aChild->ARIARole();
-    if (ariaRole == roles::MENUPOPUP) {
-      
-      FireDelayedEvent(nsIAccessibleEvent::EVENT_MENUPOPUP_START, aChild);
-
-    } else if (ariaRole == roles::ALERT) {
-      
-      updateFlags = eAlertAccessible;
-      FireDelayedEvent(nsIAccessibleEvent::EVENT_ALERT, aChild);
-    }
-  }
-
-  
-  
-  if (focusedAcc) {
-    FocusMgr()->DispatchFocusEvent(this, focusedAcc);
-    SelectionMgr()->SetControlSelectionListener(focusedAcc->GetNode()->AsElement());
-  }
-
-  return updateFlags;
 }
 
 bool
@@ -2035,8 +1988,8 @@ DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner)
           insertIdx = child->IndexInParent() + 1;
           arrayIdx++;
 
-          uint32_t flags = UpdateTreeInternal(child, true);
-          FireEventsOnInsertion(aOwner, flags);
+          CreateSubtree(child);
+          FireEventsOnInsertion(aOwner);
         }
       }
       continue;
@@ -2224,11 +2177,25 @@ DocAccessible::CacheChildrenInSubtree(Accessible* aRoot,
   }
 
   
+  if (!aRoot->HasARIARole()) {
+    return;
+  }
+
+  roles::Role role = aRoot->ARIARole();
+  if (role == roles::MENUPOPUP) {
+    FireDelayedEvent(nsIAccessibleEvent::EVENT_MENUPOPUP_START, aRoot);
+    return;
+  }
+
+  if (role == roles::ALERT) {
+    FireDelayedEvent(nsIAccessibleEvent::EVENT_ALERT, aRoot);
+    return;
+  }
+
   
-  if (aRoot->HasARIARole() && !aRoot->IsDoc()) {
-    a11y::role role = aRoot->ARIARole();
-    if (role == roles::DIALOG || role == roles::DOCUMENT)
-      FireDelayedEvent(nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE, aRoot);
+  
+  if (!aRoot->IsDoc() && (role == roles::DIALOG || role == roles::DOCUMENT)) {
+    FireDelayedEvent(nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE, aRoot);
   }
 }
 

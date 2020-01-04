@@ -187,7 +187,7 @@ public:
 
   void FireDelayedEvent(AccEvent* aEvent);
   void FireDelayedEvent(uint32_t aEventType, Accessible* aTarget);
-  void FireEventsOnInsertion(Accessible* aContainer, uint32_t aUpdateFlags);
+  void FireEventsOnInsertion(Accessible* aContainer);
 
   
 
@@ -519,17 +519,6 @@ protected:
   
 
 
-
-  enum EUpdateTreeFlags {
-    eNoAccessible = 0,
-    eAccessible = 1,
-    eAlertAccessible = 2
-  };
-  uint32_t UpdateTreeInternal(Accessible* aChild, bool aIsInsert);
-
-  
-
-
   void ValidateARIAOwned();
 
   
@@ -555,6 +544,7 @@ protected:
 
   void CacheChildrenInSubtree(Accessible* aRoot,
                               Accessible** aFocusedAcc = nullptr);
+  void CreateSubtree(Accessible* aRoot);
 
   
 
