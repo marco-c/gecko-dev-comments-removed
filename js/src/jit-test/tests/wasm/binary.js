@@ -7,10 +7,10 @@ const magic2 = 0x73;
 const magic3 = 0x6d;  
 
 
-const ver0 = 0x0b;
-const ver1 = 0x00;
-const ver2 = 0x00;
-const ver3 = 0x00;
+const ver0 = (Wasm.experimentalVersion >>>  0) & 0xff;
+const ver1 = (Wasm.experimentalVersion >>>  8) & 0xff;
+const ver2 = (Wasm.experimentalVersion >>> 16) & 0xff;
+const ver3 = (Wasm.experimentalVersion >>> 24) & 0xff;
 
 
 const sigId                = "type";
