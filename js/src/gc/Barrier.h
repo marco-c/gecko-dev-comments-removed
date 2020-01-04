@@ -482,7 +482,9 @@ class RelocatablePtr : public WriteBarrieredBase<T>
 {
   public:
     RelocatablePtr() : WriteBarrieredBase<T>(GCMethods<T>::initial()) {}
-    explicit RelocatablePtr(T v) : WriteBarrieredBase<T>(v) {
+
+    
+    MOZ_IMPLICIT RelocatablePtr(const T& v) : WriteBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), this->value);
     }
 
@@ -560,14 +562,18 @@ class ReadBarriered : public ReadBarrieredBase<T>
   public:
     ReadBarriered() : ReadBarrieredBase<T>(GCMethods<T>::initial()) {}
 
+    
     MOZ_IMPLICIT ReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), v);
     }
 
+    
     explicit ReadBarriered(const ReadBarriered& v) : ReadBarrieredBase<T>(v) {
         this->post(GCMethods<T>::initial(), v.get());
     }
 
+    
+    
     ReadBarriered(ReadBarriered&& v)
       : ReadBarrieredBase<T>(mozilla::Forward<ReadBarriered<T>>(v))
     {
@@ -797,6 +803,17 @@ struct MovableCellHasher
     static HashNumber hash(const Lookup& l);
     static bool match(const Key& k, const Lookup& l);
     static void rekey(Key& k, const Key& newKey) { k = newKey; }
+};
+
+template <typename T>
+struct MovableCellHasher<RelocatablePtr<T>>
+{
+    using Key = RelocatablePtr<T>;
+    using Lookup = T;
+
+    static HashNumber hash(const Lookup& l) { return MovableCellHasher<T>::hash(l); }
+    static bool match(const Key& k, const Lookup& l) { return MovableCellHasher<T>::match(k, l); }
+    static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
 };
 
 
