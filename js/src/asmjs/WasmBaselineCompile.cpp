@@ -473,6 +473,10 @@ class BaseCompiler
     Vector<OutOfLineCode*, 8, SystemAllocPolicy> outOfLine_;
 
     
+    
+    uint32_t                    tlsSlot_;
+
+    
 
 #ifdef JS_CODEGEN_X64
     RegI64 specific_rax;
@@ -574,6 +578,10 @@ class BaseCompiler
 #endif
     }
 
+    void storeToFramePtr(Register r, int32_t offset) {
+        masm.storePtr(r, Address(StackPointer, localOffsetToSPOffset(offset)));
+    }
+
     void storeToFrameF64(FloatRegister r, int32_t offset) {
         masm.storeDouble(r, Address(StackPointer, localOffsetToSPOffset(offset)));
     }
@@ -592,6 +600,10 @@ class BaseCompiler
 #else
         MOZ_CRASH("BaseCompiler platform hook: loadFromFrameI64");
 #endif
+    }
+
+    void loadFromFramePtr(Register r, int32_t offset) {
+        masm.loadPtr(Address(StackPointer, localOffsetToSPOffset(offset)), r);
     }
 
     void loadFromFrameF64(FloatRegister r, int32_t offset) {
@@ -1785,6 +1797,10 @@ class BaseCompiler
 
         
         
+        storeToFramePtr(WasmTlsReg, localInfo_[tlsSlot_].offs());
+
+        
+        
         
         
         
@@ -1817,7 +1833,7 @@ class BaseCompiler
         masm.movePtr(masm.getStackPointer(), ABINonArgReg0);
         masm.subPtr(Imm32(maxFramePushed_ - localSize_), ABINonArgReg0);
         masm.branchPtr(Assembler::Below,
-                       SymbolicAddress::StackLimit,
+                       Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
                        ABINonArgReg0,
                        &bodyLabel_);
 
@@ -1830,6 +1846,10 @@ class BaseCompiler
         masm.jump(wasm::JumpTarget::StackOverflow);
 
         masm.bind(&returnLabel_);
+
+        
+        
+        loadFromFramePtr(WasmTlsReg, frameOffsetFromSlot(tlsSlot_, MIRType::Pointer));
 
         wasm::GenerateFunctionEpilogue(masm, localSize_, &compileResults_.offsets());
 
@@ -4995,6 +5015,11 @@ BaseCompiler::emitCallArgs(const ValTypeVector& args, FunctionCall& baselineCall
         passArg(baselineCall, argType, arg);
     }
 
+    
+    
+    
+    loadFromFramePtr(WasmTlsReg, frameOffsetFromSlot(tlsSlot_, MIRType::Pointer));
+
     if (!iter_.readCallArgsEnd(numArgs))
         return false;
 
@@ -6552,6 +6577,7 @@ BaseCompiler::BaseCompiler(const ModuleGeneratorData& mg,
 #ifdef DEBUG
       scratchRegisterTaken_(false),
 #endif
+      tlsSlot_(0),
 #ifdef JS_CODEGEN_X64
       specific_rax(RegI64(Register64(rax))),
       specific_rcx(RegI64(Register64(rcx))),
@@ -6615,7 +6641,11 @@ BaseCompiler::init()
 
     const ValTypeVector& args = func_.sig().args();
 
-    if (!localInfo_.resize(locals_.length()))
+    
+    
+    
+    tlsSlot_ = locals_.length();
+    if (!localInfo_.resize(locals_.length() + 1))
         return false;
 
     localSize_ = 0;
@@ -6651,6 +6681,10 @@ BaseCompiler::init()
             MOZ_CRASH("Argument type");
         }
     }
+
+    
+    
+    localInfo_[tlsSlot_].init(MIRType::Pointer, pushLocal(sizeof(void*)));
 
     varLow_ = localSize_;
 
