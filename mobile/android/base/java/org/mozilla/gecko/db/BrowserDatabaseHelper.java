@@ -309,7 +309,6 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
 
 
-
         db.execSQL("CREATE VIEW IF NOT EXISTS " + VIEW_COMBINED + " AS" +
 
                 
@@ -388,7 +387,6 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
     private void createCombinedViewOn33(final SQLiteDatabase db) {
         
-
 
 
 
