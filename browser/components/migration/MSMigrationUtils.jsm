@@ -691,7 +691,8 @@ Cookies.prototype = {
       }
 
       
-      let expireTime = (Date.now() + 3600 * 1000) * 1000;
+      
+      let expireTime = Math.floor(Date.now() / 1000) + 3600;
       try {
         expireTime = this.ctypesKernelHelpers.fileTimeToSecondsSinceEpoch(Number(expireTimeHi),
                                                                           Number(expireTimeLo));
@@ -755,10 +756,14 @@ function getTypedURLs(registryKeyPath) {
           try {
             let hi = parseInt(urlTimeHex.slice(0, 4).join(''), 16);
             let lo = parseInt(urlTimeHex.slice(4, 8).join(''), 16);
+            
             timeTyped = cTypes.fileTimeToSecondsSinceEpoch(hi, lo);
             
             timeTyped *= 1000 * 1000;
-          } catch (ex) {}
+          } catch (ex) {
+            
+            
+          }
         }
       }
       typedURLs.set(url, timeTyped);
@@ -866,9 +871,16 @@ WindowsVaultFormPasswords.prototype = {
           }
 
           let password = credential.contents.pAuthenticatorElement.contents.itemValue.readString();
-          let creation = ctypesKernelHelpers.
+          let creation = Date.now();
+          try {
+            
+            
+            creation = ctypesKernelHelpers.
                          fileTimeToSecondsSinceEpoch(item.contents.highLastModified,
                                                      item.contents.lowLastModified) * 1000;
+          } catch (ex) {
+            
+          }
           
           let login = {
             username, password,
