@@ -24,35 +24,11 @@ const AudioNodeModel = Class({
   initialize: function (actor) {
     this.actor = actor;
     this.id = actor.actorID;
+    this.type = actor.type;
+    this.bypassable = actor.bypassable;
+    this._bypassed = false;
     this.connections = [];
   },
-
-  
-
-
-
-
-
-  setup: Task.async(function* () {
-    yield this.getType();
-
-    
-    this._bypassed = yield this.isBypassed();
-
-    
-    this.bypassable = !AUDIO_NODE_DEFINITION[this.type].unbypassable;
-  }),
-
-  
-
-
-
-
-
-  getType: Task.async(function* () {
-    this.type = yield this.actor.getType();
-    return this.type;
-  }),
 
   
 
@@ -87,7 +63,7 @@ const AudioNodeModel = Class({
 
 
   isBypassed: function () {
-    return this.actor.isBypassed();
+    return this._bypassed;
   },
 
   
@@ -162,7 +138,9 @@ const AudioNodeModel = Class({
 
       graph.addEdge(null, this.id, edge.destination, options);
     }
-  }
+  },
+
+  toString: () => "[object AudioNodeModel]",
 });
 
 
@@ -205,20 +183,16 @@ const AudioNodesCollection = Class({
 
 
 
-
-
-
-  add: Task.async(function* (obj) {
+  add: function (obj) {
     let node = new this.model(obj);
     node.collection = this;
-    yield node.setup();
 
     this.models.add(node);
 
     node.on("*", this._onModelEvent);
     coreEmit(this, "add", node);
     return node;
-  }),
+  },
 
   
 
@@ -308,5 +282,7 @@ const AudioNodesCollection = Class({
       
       coreEmit(this, eventName, node, ...args);
     }
-  }
+  },
+
+  toString: () => "[object AudioNodeCollection]",
 });

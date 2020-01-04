@@ -12,7 +12,7 @@ add_task(function*() {
     getN(front, "create-node", 14)
   ]);
 
-  let actualTypes = yield Promise.all(nodes.map(node => node.getType()));
+  let actualTypes = nodes.map(node => node.type);
   let expectedTypes = [
     "AudioDestinationNode",
     "AudioBufferSourceNode", "ScriptProcessorNode", "AnalyserNode", "GainNode",
