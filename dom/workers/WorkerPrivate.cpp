@@ -4032,7 +4032,7 @@ WorkerPrivate::Constructor(JSContext* aCx,
                               aWorkerType, stackLoadInfo.ptr());
     aRv.MightThrowJSException();
     if (NS_FAILED(rv)) {
-      scriptloader::ReportLoadError(aCx, aRv, rv);
+      scriptloader::ReportLoadError(aCx, aRv, rv, aScriptURL);
       return nullptr;
     }
 
@@ -4377,6 +4377,14 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
     MOZ_ASSERT(mStatus == Pending);
     mStatus = Running;
   }
+
+  
+  
+  
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  MOZ_ASSERT(jsapi.cx() == aCx);
+  jsapi.TakeOwnershipOfErrorReporting();
 
   EnableMemoryReporter();
 

@@ -2636,8 +2636,10 @@ WorkerThreadPrimaryRunnable::Run()
         JSAutoRequest ar(cx);
 
         mWorkerPrivate->DoRunLoop(cx);
-
-        JS_ReportPendingException(cx);
+        
+        
+        
+        MOZ_ASSERT(!JS_IsExceptionPending(cx));
       }
 
       BackgroundChild::CloseForCurrentThread();

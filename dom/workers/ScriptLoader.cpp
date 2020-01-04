@@ -1777,7 +1777,7 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
     mScriptLoader.mRv.MightThrowJSException();
     if (NS_FAILED(loadInfo.mLoadResult)) {
       scriptloader::ReportLoadError(aCx, mScriptLoader.mRv,
-                                    loadInfo.mLoadResult);
+                                    loadInfo.mLoadResult, loadInfo.mURL);
       
       if (mIsWorkerScript) {
         aWorkerPrivate->MaybeDispatchLoadFailedRunnable();
@@ -2019,37 +2019,56 @@ ChannelFromScriptURLWorkerThread(JSContext* aCx,
   return getter->GetResult();
 }
 
-void ReportLoadError(JSContext* aCx, ErrorResult& aRv, nsresult aLoadResult)
+void ReportLoadError(JSContext* aCx, ErrorResult& aRv, nsresult aLoadResult,
+                     const nsAString& aScriptURL)
 {
   MOZ_ASSERT(!aRv.Failed());
 
   switch (aLoadResult) {
     case NS_ERROR_FILE_NOT_FOUND:
     case NS_ERROR_NOT_AVAILABLE:
-      aRv.Throw(NS_ERROR_DOM_NETWORK_ERR);
+      aLoadResult = NS_ERROR_DOM_NETWORK_ERR;
       break;
 
     case NS_ERROR_MALFORMED_URI:
       aLoadResult = NS_ERROR_DOM_SYNTAX_ERR;
-      MOZ_FALLTHROUGH;
+      break;
+
     case NS_BINDING_ABORTED:
       
       
       
       
       
-      MOZ_FALLTHROUGH;
+      
+      
+      aRv.Throw(aLoadResult);
+      return;
+
     case NS_ERROR_DOM_SECURITY_ERR:
     case NS_ERROR_DOM_SYNTAX_ERR:
-      aRv.Throw(aLoadResult);
+      break;
+
+    case NS_ERROR_DOM_BAD_URI:
+      
+      aLoadResult = NS_ERROR_DOM_SECURITY_ERR;
       break;
 
     default:
       
       
-      JS_ReportError(aCx, "Failed to load script (nsresult = 0x%x)", aLoadResult);
-      aRv.StealExceptionFromJSContext(aCx);
+      
+      aRv.ThrowDOMException(NS_ERROR_DOM_NETWORK_ERR,
+        nsPrintfCString("Failed to load worker script at %s (nsresult = 0x%x)",
+                        NS_ConvertUTF16toUTF8(aScriptURL).get(),
+                        aLoadResult));
+      return;
   }
+
+  aRv.ThrowDOMException(aLoadResult,
+                        NS_LITERAL_CSTRING("Failed to load worker script at \"") +
+                        NS_ConvertUTF16toUTF8(aScriptURL) +
+                        NS_LITERAL_CSTRING("\""));
 }
 
 void
