@@ -601,13 +601,18 @@ function BlockOnPromise(promise, blockedPromise, onResolve, onReject) {
     
     
     
-    if (IsPromise(promise))
+    
+    
+    
+    if (IsPromise(promise)) {
         return callFunction(AddPromiseReaction, promise, PROMISE_REJECT_REACTIONS_SLOT,
                             blockedPromise);
+    }
 
-    assert(IsWrappedPromise(promise), "Can only block on, maybe wrapped, Promise objects");
-    callFunction(CallPromiseMethodIfWrapped, promise, PROMISE_REJECT_REACTIONS_SLOT,
-                 blockedPromise, "AddPromiseReaction");
+    if (IsWrappedPromise(promise)) {
+        callFunction(CallPromiseMethodIfWrapped, promise, PROMISE_REJECT_REACTIONS_SLOT,
+                     blockedPromise, "AddPromiseReaction");
+    }
 }
 
 
