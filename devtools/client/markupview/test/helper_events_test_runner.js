@@ -7,12 +7,12 @@
 
 
 function* runEventPopupTests() {
-  let {inspector} = yield addTab(TEST_URL).then(openInspector);
+  let {inspector, testActor} = yield addTab(TEST_URL).then(openInspector);
 
   yield inspector.markup.expandAll();
 
-  for (let {selector, expected} of TEST_DATA) {
-    yield checkEventsForNode(selector, expected, inspector);
+  for (let test of TEST_DATA) {
+    yield checkEventsForNode(test, inspector, testActor);
   }
 
   
@@ -28,9 +28,33 @@ function* runEventPopupTests() {
 
 
 
-function* checkEventsForNode(selector, expected, inspector) {
+
+
+
+
+
+
+
+
+
+
+
+function* checkEventsForNode(test, inspector, testActor) {
+  let {selector, expected, beforeTest} = test;
   let container = yield getContainerForSelector(selector, inspector);
+
+  if (typeof beforeTest === "function") {
+    yield beforeTest(inspector, testActor);
+  }
+
   let evHolder = container.elt.querySelector(".markupview-events");
+
+  if (expected.length === 0) {
+    
+    is(evHolder.style.display, "none", "event bubble should be hidden");
+    return;
+  }
+
   let tooltip = inspector.markup.tooltip;
 
   yield selectNode(selector, inspector);
