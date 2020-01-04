@@ -113,7 +113,7 @@ class MessageChannel : HasResultCodes
     
     
     
-    void PeekMessages(Message::msgid_t aId, mozilla::function<void(const Message& aMsg)> aInvoke);
+    void PeekMessages(Message::msgid_t aId, mozilla::function<bool(const Message& aMsg)> aInvoke);
 
     
     enum ChannelFlags {
