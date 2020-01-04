@@ -1001,7 +1001,15 @@ Context::OnQuotaInit(nsresult aRv, const QuotaInfo& aQuotaInfo,
   MOZ_ASSERT(!mDirectoryLock);
   mDirectoryLock = aDirectoryLock;
 
-  if (mState == STATE_CONTEXT_CANCELED || NS_FAILED(aRv)) {
+  
+  
+  
+  
+  if (NS_FAILED(aRv)) {
+    mState = STATE_CONTEXT_CANCELED;
+  }
+
+  if (mState == STATE_CONTEXT_CANCELED) {
     for (uint32_t i = 0; i < mPendingActions.Length(); ++i) {
       mPendingActions[i].mAction->CompleteOnInitiatingThread(aRv);
     }
