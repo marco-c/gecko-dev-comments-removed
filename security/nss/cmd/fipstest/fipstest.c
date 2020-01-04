@@ -3368,6 +3368,24 @@ drbg(char *reqfn)
         }
     }
 loser:
+    if (predictedreturn_bytes) {
+        PORT_Free(predictedreturn_bytes);
+    }
+    if (return_bytes) {
+        PORT_Free(return_bytes);
+    }
+    if (additionalInput) {
+        PORT_Free(additionalInput);
+    }
+    if (personalizationString) {
+        PORT_Free(personalizationString);
+    }
+    if (nonce) {
+        PORT_Free(nonce);
+    }
+    if (entropyInput) {
+        PORT_Free(entropyInput);
+    }
     fclose(rngreq);
 }
 
@@ -5132,7 +5150,7 @@ rsa_keypair_test(char *reqfn)
     FILE *rsaresp;    
     int count;
     int i;
-    int keySize;   
+    int keySize = 1;   
     int len = 0;       
     int len2 = 0;      
     SECItem e;

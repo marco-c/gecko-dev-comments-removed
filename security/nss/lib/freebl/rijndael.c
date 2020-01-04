@@ -21,8 +21,11 @@
 
 #ifdef USE_HW_AES
 #include "intel-aes.h"
+#endif
+
 #include "mpi.h"
 
+#ifdef USE_HW_AES
 static int has_intel_aes = 0;
 static PRBool use_hw_aes = PR_FALSE;
 
@@ -1168,6 +1171,7 @@ AES_InitContext(AESContext *cx, const unsigned char *key, unsigned int keysize,
 	AES_DestroyContext(cx, PR_FALSE);
 	return rv;
     }
+    cx->mode = mode;
 
     
     switch (mode) {
@@ -1291,6 +1295,23 @@ AES_Encrypt(AESContext *cx, unsigned char *output,
 	return SECFailure;
     }
     *outputLen = inputLen;
+#if  UINT_MAX > MP_32BIT_MAX
+    
+
+
+
+
+
+    {PR_STATIC_ASSERT(sizeof(unsigned int) > 4);}
+    if ((cx->mode == NSS_AES_GCM) && (inputLen > MP_32BIT_MAX)) {
+	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+	return SECFailure;
+    }
+#else
+    
+    {PR_STATIC_ASSERT(sizeof(unsigned int) <= 4);}
+#endif
+
     return (*cx->worker)(cx->worker_cx, output, outputLen, maxOutputLen,	
                              input, inputLen, blocksize);
 }
