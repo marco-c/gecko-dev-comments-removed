@@ -119,7 +119,6 @@ public:
 
     void UpdateFontList();
 
-    void ClearPrefFonts() { mPrefFonts.Clear(); }
     void ClearLangGroupPrefFonts();
 
     virtual void GetFontFamilyList(nsTArray<nsRefPtr<gfxFontFamily> >& aFamilyArray);
@@ -134,9 +133,6 @@ public:
                                       bool aUseSystemFonts = false);
 
     gfxFontEntry* FindFontForFamily(const nsAString& aFamily, const gfxFontStyle* aStyle, bool& aNeedsBold);
-
-    bool GetPrefFontFamilyEntries(eFontPrefLang aLangGroup, nsTArray<nsRefPtr<gfxFontFamily> > *array);
-    void SetPrefFontFamilyEntries(eFontPrefLang aLangGroup, nsTArray<nsRefPtr<gfxFontFamily> >& array);
 
     
 
@@ -208,19 +204,12 @@ public:
                     nsIAtom* aLanguage,
                     nsTArray<gfxFontFamily*>& aFamilyList);
 
+    nsTArray<nsRefPtr<gfxFontFamily> >*
+    GetPrefFontsLangGroup(mozilla::FontFamilyType aGenericType,
+                          eFontPrefLang aPrefLang);
+
     
     void GetLangPrefs(eFontPrefLang aPrefLangs[], uint32_t &aLen, eFontPrefLang aCharLang, eFontPrefLang aPageLang);
-
-    
-
-
-
-
-    typedef bool (*PrefFontCallback) (eFontPrefLang aLang, const nsAString& aName,
-                                        void *aClosure);
-    static bool ForEachPrefFont(eFontPrefLang aLangArray[], uint32_t aLangArrayLen,
-                                  PrefFontCallback aCallback,
-                                  void *aClosure);
 
     
     static eFontPrefLang GetFontPrefLangFor(const char* aLang);
@@ -242,6 +231,10 @@ public:
 
     
     static void AppendPrefLang(eFontPrefLang aPrefLangs[], uint32_t& aLen, eFontPrefLang aAddLang);
+
+    
+    mozilla::FontFamilyType
+    GetDefaultGeneric(eFontPrefLang aLang);
 
 protected:
     class MemoryReporter final : public nsIMemoryReporter
@@ -339,10 +332,6 @@ protected:
                             eFontPrefLang aPrefLang,
                             nsTArray<nsRefPtr<gfxFontFamily> >* aGenericFamilies);
 
-    nsTArray<nsRefPtr<gfxFontFamily> >*
-    GetPrefFontsLangGroup(mozilla::FontFamilyType aGenericType,
-                          eFontPrefLang aPrefLang);
-
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontFamilyTable;
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> FontEntryTable;
 
@@ -388,10 +377,6 @@ protected:
     
     nsAutoPtr<nsTHashtable<nsStringHashKey> > mOtherNamesMissed;
 
-    
-    
-    nsDataHashtable<nsUint32HashKey, nsTArray<nsRefPtr<gfxFontFamily> > > mPrefFonts;
-
     nsTArray<nsTArray<nsRefPtr<gfxFontFamily> >* > mLangGroupPrefFonts;
 
     
@@ -421,6 +406,7 @@ protected:
 
     nsCOMPtr<nsILanguageAtomService> mLangService;
     nsTArray<uint32_t> mCJKPrefLangs;
+    nsTArray<mozilla::FontFamilyType> mDefaultGenericsLangGroup;
 };
 
 #endif 
