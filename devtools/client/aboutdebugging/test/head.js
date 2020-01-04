@@ -8,7 +8,6 @@
 
 
 
-
 "use strict";
 
 var { utils: Cu, classes: Cc, interfaces: Ci } = Components;
@@ -154,18 +153,6 @@ function* uninstallAddon(document, addonId, addonName) {
   ok(!names.includes(addonName),
     "After uninstall, the addon name disappears from the list of addons: "
     + names);
-}
-
-
-
-
-
-
-
-function waitForInitialAddonList(document) {
-  
-  return waitForMutation(document.querySelector("#addons .targets"),
-                         { childList: true });
 }
 
 

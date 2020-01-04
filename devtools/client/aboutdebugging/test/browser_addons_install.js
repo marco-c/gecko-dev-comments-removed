@@ -7,7 +7,6 @@ const ADDON_NAME = "test-devtools";
 
 add_task(function* () {
   let { tab, document } = yield openAboutDebugging("addons");
-  yield waitForInitialAddonList(document);
 
   
   yield installAddon(document, "addons/unpacked/install.rdf", ADDON_NAME,
@@ -21,7 +20,6 @@ add_task(function* () {
 
 add_task(function* () {
   let { tab, document } = yield openAboutDebugging("addons");
-  yield waitForInitialAddonList(document);
 
   
   
