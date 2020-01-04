@@ -77,22 +77,6 @@ ExecutableAllocator::computeRandomAllocationAddress()
     return (void*) (base | (rand & mask));
 }
 
-static bool
-RandomizeIsBrokenImpl()
-{
-    
-    return !mozilla::IsVistaOrLater();
-}
-
-static bool
-RandomizeIsBroken()
-{
-    
-    
-    static int result = RandomizeIsBrokenImpl();
-    return !!result;
-}
-
 #ifdef JS_CPU_X64
 static js::JitExceptionHandler sJitExceptionHandler;
 
@@ -236,15 +220,11 @@ js::jit::DeallocateExecutableMemory(void* addr, size_t bytes, size_t pageSize)
 ExecutablePool::Allocation
 ExecutableAllocator::systemAlloc(size_t n)
 {
-    void* allocation = nullptr;
-    if (!RandomizeIsBroken()) {
-        void* randomAddress = computeRandomAllocationAddress();
-        allocation = AllocateExecutableMemory(randomAddress, n, initialProtectionFlags(Executable),
-                                              "js-jit-code", pageSize);
-    }
+    void* randomAddress = computeRandomAllocationAddress();
+    unsigned flags = initialProtectionFlags(Executable);
+    void* allocation = AllocateExecutableMemory(randomAddress, n, flags, "js-jit-code", pageSize);
     if (!allocation) {
-        allocation = AllocateExecutableMemory(nullptr, n, initialProtectionFlags(Executable),
-                                              "js-jit-code", pageSize);
+        allocation = AllocateExecutableMemory(nullptr, n, flags, "js-jit-code", pageSize);
     }
     ExecutablePool::Allocation alloc = { reinterpret_cast<char*>(allocation), n };
     return alloc;
