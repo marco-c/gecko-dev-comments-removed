@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_mips32_MacroAssembler_mips32_h
 #define jit_mips32_MacroAssembler_mips32_h
@@ -61,24 +61,24 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared
     void ma_liPatchable(Register dest, ImmPtr imm);
     void ma_liPatchable(Register dest, ImmWord imm);
 
-    // load
+    
     void ma_load(Register dest, Address address, LoadStoreSize size = SizeWord,
                  LoadStoreExtension extension = SignExtend);
 
-    // store
+    
     void ma_store(Register data, Address address, LoadStoreSize size = SizeWord,
                   LoadStoreExtension extension = SignExtend);
 
-    // arithmetic based ops
-    // add
+    
+    
     void ma_addTestOverflow(Register rd, Register rs, Register rt, Label* overflow);
     void ma_addTestOverflow(Register rd, Register rs, Imm32 imm, Label* overflow);
 
-    // subtract
+    
     void ma_subTestOverflow(Register rd, Register rs, Register rt, Label* overflow);
 
-    // memory
-    // shortcut for when we know we're transferring 32 bits of data
+    
+    
     void ma_lw(Register data, Address address);
 
     void ma_sw(Register data, Address address);
@@ -89,7 +89,7 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared
     void ma_push(Register r);
 
     void branchWithCode(InstImm code, Label* label, JumpKind jumpKind);
-    // branches when done from within mips-specific code
+    
     void ma_b(Register lhs, ImmWord imm, Label* l, Condition c, JumpKind jumpKind = LongJump)
     {
         ma_b(lhs, Imm32(uint32_t(imm.value)), l, c, jumpKind);
@@ -110,7 +110,7 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared
 
     void ma_bal(Label* l, DelaySlotFill delaySlotFill = FillDelaySlot);
 
-    // fp instructions
+    
     void ma_lid(FloatRegister dest, double value);
 
     void ma_mv(FloatRegister src, ValueOperand dest);
@@ -135,10 +135,10 @@ class MacroAssemblerMIPS : public MacroAssemblerMIPSShared
         ma_cmp_set(dst, ScratchRegister, SecondScratchReg, c);
     }
 
-    // These fuctions abstract the access to high part of the double precision
-    // float register. It is intended to work on both 32 bit and 64 bit
-    // floating point coprocessor.
-    // :TODO: (Bug 985881) Modify this for N32 ABI to use mthc1 and mfhc1
+    
+    
+    
+    
     void moveToDoubleHi(Register src, FloatRegister dest) {
         as_mtc1(src, getOddPair(dest));
     }
@@ -259,17 +259,17 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         ma_pop(reg);
     }
 
-    // Emit a branch that can be toggled to a non-operation. On MIPS we use
-    // "andi" instruction to toggle the branch.
-    // See ToggleToJmp(), ToggleToCmp().
+    
+    
+    
     CodeOffset toggledJump(Label* label);
 
-    // Emit a "jalr" or "nop" instruction. ToggleCall can be used to patch
-    // this instruction.
+    
+    
     CodeOffset toggledCall(JitCode* target, bool enabled);
 
     static size_t ToggledCallSize(uint8_t* code) {
-        // Four instructions used in: MacroAssemblerMIPSCompat::toggledCall
+        
         return 4 * sizeof(uint32_t);
     }
 
@@ -312,7 +312,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         ma_negu(reg, reg);
     }
 
-    // Returns the register containing the type tag.
+    
     Register splitTagForTest(const ValueOperand& value) {
         return value.typeReg();
     }
@@ -327,7 +327,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     void branchTestValue(Condition cond, const Address& valaddr, const ValueOperand& value,
                          Label* label);
 
-    // unboxing code
+    
     void unboxNonDouble(const ValueOperand& operand, Register dest);
     void unboxNonDouble(const Address& src, Register dest);
     void unboxNonDouble(const BaseIndex& src, Register dest);
@@ -349,13 +349,13 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         as_xori(val.payloadReg(), val.payloadReg(), 1);
     }
 
-    // boxing code
+    
     void boxDouble(FloatRegister src, const ValueOperand& dest);
     void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
 
-    // Extended unboxing API. If the payload is already in a register, returns
-    // that register. Otherwise, provides a move to the given scratch register,
-    // and returns that.
+    
+    
+    
     Register extractObject(const Address& address, Register scratch);
     Register extractObject(const ValueOperand& value, Register scratch) {
         return value.payloadReg();
@@ -554,12 +554,9 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     void branchPtr(Condition cond, Register lhs, Imm32 imm, Label* label) {
         ma_b(lhs, imm, label, cond);
     }
-    void decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label) {
-        subPtr(imm, lhs);
-        branchPtr(cond, lhs, Imm32(0), label);
-    }
+    inline void decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label);
 
-    // higher level tag testing code
+    
     Operand ToPayload(Operand base);
     Address ToPayload(Address base) {
         return ToPayload(Operand(base)).toAddress();
@@ -674,11 +671,11 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         Register s0 = src.typeReg(), d0 = dest.typeReg(),
                  s1 = src.payloadReg(), d1 = dest.payloadReg();
 
-        // Either one or both of the source registers could be the same as a
-        // destination register.
+        
+        
         if (s1 == d0) {
             if (s0 == d1) {
-                // If both are, this is just a swap of two registers.
+                
                 MOZ_ASSERT(d1 != ScratchRegister);
                 MOZ_ASSERT(d0 != ScratchRegister);
                 move32(d1, ScratchRegister);
@@ -686,7 +683,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
                 move32(ScratchRegister, d0);
                 return;
             }
-            // If only one is, copy that source first.
+            
             mozilla::Swap(s0, s1);
             mozilla::Swap(d0, d1);
         }
@@ -737,11 +734,11 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
 
     void handleFailureWithHandlerTail(void* handler);
 
-    /////////////////////////////////////////////////////////////////
-    // Common interface.
-    /////////////////////////////////////////////////////////////////
+    
+    
+    
   public:
-    // The following functions are exposed for use in platform-shared code.
+    
 
     template<typename T>
     void compareExchange8SignExtend(const T& mem, Register oldval, Register newval, Register valueTemp,
@@ -1088,8 +1085,6 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         }
     }
 
-    void subPtr(Register src, Register dest);
-
     void move32(Imm32 imm, Register dest);
     void move32(Register src, Register dest);
     void move64(Register64 src, Register64 dest) {
@@ -1164,7 +1159,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     void loadDouble(const Address& addr, FloatRegister dest);
     void loadDouble(const BaseIndex& src, FloatRegister dest);
 
-    // Load a float value into a register, then expand it to a double.
+    
     void loadFloatAsDouble(const Address& addr, FloatRegister dest);
     void loadFloatAsDouble(const BaseIndex& src, FloatRegister dest);
 
@@ -1187,8 +1182,8 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     void store32(Imm32 src, const Address& address);
     void store32(Imm32 src, const BaseIndex& address);
 
-    // NOTE: This will use second scratch on MIPS. Only ARM needs the
-    // implementation without second scratch.
+    
+    
     void store32_NoSecondScratch(Imm32 src, const Address& address) {
         store32(src, address);
     }
@@ -1230,9 +1225,6 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
 
     void clampIntToUint8(Register reg);
 
-    void subPtr(Imm32 imm, const Register dest);
-    void subPtr(const Address& addr, const Register dest);
-    void subPtr(Register src, const Address& dest);
     void mulBy3(const Register& src, const Register& dest) {
         as_addu(dest, src, src);
         as_addu(dest, dest, src);
@@ -1261,8 +1253,8 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     void restoreStackPointer();
     static void calculateAlignedStackPointer(void** stackPointer);
 
-    // If source is a double, load it into dest. If source is int32,
-    // convert it to double. Else, branch to failure.
+    
+    
     void ensureDouble(const ValueOperand& source, FloatRegister dest, Label* failure);
 
     template <typename T1, typename T2>
@@ -1325,14 +1317,14 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
         loadPtr(Address(GlobalReg, wasm::HeapGlobalDataOffset - AsmJSGlobalRegBias), HeapReg);
     }
 
-    // Instrumentation for entering and leaving the profiler.
+    
     void profilerEnterFrame(Register framePtr, Register scratch);
     void profilerExitFrame();
 };
 
 typedef MacroAssemblerMIPSCompat MacroAssemblerSpecific;
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif /* jit_mips32_MacroAssembler_mips32_h */
+#endif 

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_arm_MacroAssembler_arm_inl_h
 #define jit_arm_MacroAssembler_arm_inl_h
@@ -12,9 +12,9 @@
 namespace js {
 namespace jit {
 
-//{{{ check_macroassembler_style
-// ===============================================================
-// Logical instructions
+
+
+
 
 void
 MacroAssembler::not32(Register reg)
@@ -135,8 +135,8 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
     ma_eor(imm, dest);
 }
 
-// ===============================================================
-// Arithmetic functions
+
+
 
 void
 MacroAssembler::add32(Register src, Register dest)
@@ -234,8 +234,37 @@ MacroAssembler::sub32(const Address& src, Register dest)
     ma_sub(scratch, dest, SetCC);
 }
 
-// ===============================================================
-// Shift functions
+void
+MacroAssembler::subPtr(Register src, Register dest)
+{
+    ma_sub(src, dest);
+}
+
+void
+MacroAssembler::subPtr(Register src, const Address& dest)
+{
+    ScratchRegisterScope scratch(*this);
+    loadPtr(dest, scratch);
+    ma_sub(src, scratch);
+    storePtr(scratch, dest);
+}
+
+void
+MacroAssembler::subPtr(Imm32 imm, Register dest)
+{
+    ma_sub(imm, dest);
+}
+
+void
+MacroAssembler::subPtr(const Address& addr, Register dest)
+{
+    ScratchRegisterScope scratch(*this);
+    loadPtr(addr, scratch);
+    ma_sub(scratch, dest);
+}
+
+
+
 
 void
 MacroAssembler::lshiftPtr(Imm32 imm, Register dest)
@@ -271,8 +300,8 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
     as_mov(dest.high, lsr(dest.high, imm.value));
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
+
+
 
 template <typename T>
 void
@@ -288,7 +317,14 @@ MacroAssemblerARMCompat::incrementInt32Value(const Address& addr)
     asMasm().add32(Imm32(1), ToPayload(addr));
 }
 
-} // namespace jit
-} // namespace js
+void
+MacroAssemblerARMCompat::decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label)
+{
+    asMasm().subPtr(imm, lhs);
+    branch32(cond, lhs, Imm32(0), label);
+}
 
-#endif /* jit_arm_MacroAssembler_arm_inl_h */
+} 
+} 
+
+#endif 
