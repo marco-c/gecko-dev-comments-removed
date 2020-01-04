@@ -219,15 +219,15 @@ public:
 
   nsresult     NotifySelectionListeners();
 
-  friend struct AutoApplyUserSelectStyle;
-  struct MOZ_RAII AutoApplyUserSelectStyle
+  friend struct AutoUserInitiated;
+  struct MOZ_RAII AutoUserInitiated
   {
-    explicit AutoApplyUserSelectStyle(Selection* aSelection
-                             MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mSavedValue(aSelection->mApplyUserSelectStyle)
+    explicit AutoUserInitiated(Selection* aSelection
+                               MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mSavedValue(aSelection->mUserInitiated)
     {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-      aSelection->mApplyUserSelectStyle = true;
+      aSelection->mUserInitiated = true;
     }
     AutoRestore<bool> mSavedValue;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -321,7 +321,7 @@ private:
 
 
 
-  bool mApplyUserSelectStyle;
+  bool mUserInitiated;
 
   
   
