@@ -137,12 +137,15 @@ private:
       : mTime(aTime)
       , mDropTarget(aDropTarget)
       , mWaiting(false)
+      , mHasSeeked(false)
     {}
 
     media::TimeUnit mTime;
     bool mDropTarget;
     bool mWaiting;
+    bool mHasSeeked;
   };
+
   
   
   void InternalSeek(TrackType aTrack, const InternalSeekTarget& aTarget);
@@ -291,6 +294,8 @@ private:
     MozPromiseRequestHolder<MediaDataDecoder::InitPromise> mInitPromise;
     
     bool mDecoderInitialized;
+    
+    
     bool mDecodingRequested;
     bool mOutputRequested;
     bool mInputExhausted;
@@ -327,6 +332,7 @@ private:
     {
       
       mDemuxRequest.DisconnectIfExists();
+      mSeekRequest.DisconnectIfExists();
       mTrackDemuxer->Reset();
     }
 
@@ -351,6 +357,11 @@ private:
       mNumSamplesOutput = 0;
       mSizeOfQueue = 0;
       mNextStreamSourceID.reset();
+    }
+
+    bool HasInternalSeekPending() const
+    {
+      return mTimeThreshold && !mTimeThreshold.ref().mHasSeeked;
     }
 
     

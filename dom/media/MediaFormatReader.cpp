@@ -520,7 +520,10 @@ MediaFormatReader::RequestVideoData(bool aSkipToNextKeyframe,
   }
 
   media::TimeUnit timeThreshold{media::TimeUnit::FromMicroseconds(aTimeThreshold)};
-  if (ShouldSkip(aSkipToNextKeyframe, timeThreshold)) {
+  
+  
+  if (!mVideo.HasInternalSeekPending() &&
+      ShouldSkip(aSkipToNextKeyframe, timeThreshold)) {
     
     mVideo.mDemuxRequest.DisconnectIfExists();
 
@@ -747,6 +750,7 @@ MediaFormatReader::NeedInput(DecoderData& aDecoder)
     !aDecoder.mError &&
     aDecoder.mDecodingRequested &&
     !aDecoder.mDemuxRequest.Exists() &&
+    !aDecoder.HasInternalSeekPending() &&
     aDecoder.mOutput.Length() <= aDecoder.mDecodeAhead &&
     (aDecoder.mInputExhausted || !aDecoder.mQueuedSamples.IsEmpty() ||
      aDecoder.mTimeThreshold.isSome() ||
@@ -784,8 +788,22 @@ MediaFormatReader::UpdateReceivedNewData(TrackType aTrack)
   
   decoder.mTimeRanges = decoder.mTrackDemuxer->GetBuffered();
 
-  if (decoder.mDrainComplete || decoder.mDraining ||
-      decoder.mDemuxRequest.Exists()) {
+  
+  
+  
+  
+  
+  if (decoder.mSeekRequest.Exists()) {
+    
+    return true;
+  }
+  if (decoder.mDemuxRequest.Exists()) {
+    
+    
+    return false;
+  }
+
+  if (decoder.mDrainComplete || decoder.mDraining) {
     
     
     return false;
@@ -810,10 +828,17 @@ MediaFormatReader::UpdateReceivedNewData(TrackType aTrack)
   if (decoder.mError) {
     return false;
   }
-  if (decoder.HasWaitingPromise()) {
-    MOZ_ASSERT(!decoder.HasPromise());
-    LOG("We have new data. Resolving WaitingPromise");
-    decoder.mWaitingPromise.Resolve(decoder.mType, __func__);
+
+  if (decoder.HasInternalSeekPending() || decoder.HasWaitingPromise()) {
+    if (decoder.HasInternalSeekPending()) {
+      LOG("Attempting Internal Seek");
+      InternalSeek(aTrack, decoder.mTimeThreshold.ref());
+    }
+    if (decoder.HasWaitingPromise()) {
+      MOZ_ASSERT(!decoder.HasPromise());
+      LOG("We have new data. Resolving WaitingPromise");
+      decoder.mWaitingPromise.Resolve(decoder.mType, __func__);
+    }
     return true;
   }
   if (!mSeekPromise.IsEmpty()) {
@@ -974,15 +999,23 @@ void
 MediaFormatReader::InternalSeek(TrackType aTrack, const InternalSeekTarget& aTarget)
 {
   MOZ_ASSERT(OnTaskQueue());
+  LOG("%s internal seek to %f",
+      TrackTypeToStr(aTrack), aTarget.mTime.ToSeconds());
+
   auto& decoder = GetDecoderData(aTrack);
   decoder.mTimeThreshold = Some(aTarget);
   RefPtr<MediaFormatReader> self = this;
   decoder.ResetDemuxer();
+  decoder.mTimeThreshold = Some(aTarget);
+  RefPtr<MediaFormatReader> self = this;
   decoder.mSeekRequest.Begin(decoder.mTrackDemuxer->Seek(decoder.mTimeThreshold.ref().mTime)
              ->Then(OwnerThread(), __func__,
                     [self, aTrack] (media::TimeUnit aTime) {
                       auto& decoder = self->GetDecoderData(aTrack);
                       decoder.mSeekRequest.Complete();
+                      MOZ_ASSERT(decoder.mTimeThreshold,
+                                 "Seek promise must be disconnected when timethreshold is reset");
+                      decoder.mTimeThreshold.ref().mHasSeeked = true;
                       self->NotifyDecodingRequested(aTrack);
                     },
                     [self, aTrack] (DemuxerFailureReason aResult) {
@@ -993,16 +1026,18 @@ MediaFormatReader::InternalSeek(TrackType aTrack, const InternalSeekTarget& aTar
                           self->NotifyWaitingForData(aTrack);
                           break;
                         case DemuxerFailureReason::END_OF_STREAM:
+                          decoder.mTimeThreshold.reset();
                           self->NotifyEndOfStream(aTrack);
                           break;
                         case DemuxerFailureReason::CANCELED:
                         case DemuxerFailureReason::SHUTDOWN:
+                          decoder.mTimeThreshold.reset();
                           break;
                         default:
+                          decoder.mTimeThreshold.reset();
                           self->NotifyError(aTrack);
                           break;
                       }
-                      decoder.mTimeThreshold.reset();
                     }));
 }
 
@@ -1053,6 +1088,16 @@ MediaFormatReader::Update(TrackType aTrack)
     LOGV("Nothing more to do");
     return;
   }
+
+  if (decoder.mSeekRequest.Exists()) {
+    LOGV("Seeking hasn't completed, nothing more to do");
+    return;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(!decoder.HasInternalSeekPending() ||
+                        (!decoder.mOutput.Length() &&
+                         !decoder.mQueuedSamples.Length()),
+                        "No frames can be demuxed or decoded while an internal seek is pending");
 
   
   
@@ -1125,7 +1170,7 @@ MediaFormatReader::Update(TrackType aTrack)
       
       
       
-      if (UpdateReceivedNewData(aTrack)) {
+      if (UpdateReceivedNewData(aTrack) || decoder.mSeekRequest.Exists()) {
         LOGV("Nothing more to do");
         return;
       }
@@ -1246,8 +1291,6 @@ MediaFormatReader::ResetDecode()
   MOZ_ASSERT(OnTaskQueue());
   LOGV("");
 
-  mAudio.mSeekRequest.DisconnectIfExists();
-  mVideo.mSeekRequest.DisconnectIfExists();
   mSeekPromise.RejectIfExists(NS_OK, __func__);
   mSkipRequest.DisconnectIfExists();
 
