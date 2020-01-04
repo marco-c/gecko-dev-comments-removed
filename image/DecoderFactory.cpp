@@ -140,13 +140,21 @@ DecoderFactory::CreateDecoder(DecoderType aType,
   
   SurfaceKey surfaceKey =
     RasterSurfaceKey(aOutputSize, aSurfaceFlags,  0);
+  NotNull<RefPtr<DecodedSurfaceProvider>> provider =
+    WrapNotNull(new DecodedSurfaceProvider(aImage,
+                                           WrapNotNull(decoder),
+                                           surfaceKey));
+
+  
+  
   InsertOutcome outcome =
-    SurfaceCache::InsertPlaceholder(ImageKey(aImage.get()), surfaceKey);
+    SurfaceCache::Insert(provider, ImageKey(aImage.get()), surfaceKey);
   if (outcome != InsertOutcome::SUCCESS) {
     return nullptr;
   }
 
-  RefPtr<IDecodingTask> task = new DecodingTask(aImage, WrapNotNull(decoder));
+  
+  RefPtr<IDecodingTask> task = provider.get();
   return task.forget();
 }
 

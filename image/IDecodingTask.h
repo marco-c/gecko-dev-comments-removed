@@ -65,33 +65,6 @@ protected:
 
 
 
-class DecodingTask final : public IDecodingTask
-{
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecodingTask, override)
-
-  DecodingTask(NotNull<RasterImage*> aImage,
-               NotNull<Decoder*> aDecoder);
-
-  void Run() override;
-  bool ShouldPreferSyncRun() const override;
-
-  
-  
-  TaskPriority Priority() const override { return TaskPriority::eLow; }
-
-private:
-  virtual ~DecodingTask();
-
-  NotNull<RefPtr<RasterImage>> mImage;
-  NotNull<RefPtr<Decoder>> mDecoder;
-  RefPtr<imgFrame> mSurface;
-};
-
-
-
-
-
 class AnimationDecodingTask final : public IDecodingTask
 {
 public:

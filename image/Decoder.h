@@ -249,14 +249,6 @@ public:
 
   bool WasAborted() const { return mDecodeAborted; }
 
-  
-
-
-
-
-
-  void Abort() { mDecodeAborted = true; }
-
   enum DecodeStyle {
       PROGRESSIVE, 
                    
