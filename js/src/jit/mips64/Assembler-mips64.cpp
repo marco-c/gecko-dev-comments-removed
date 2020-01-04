@@ -310,19 +310,59 @@ Assembler::bind(RepatchLabel* label)
         
         
         BufferOffset b(label->offset());
-        InstImm* inst1 = (InstImm*)editSrc(b);
+        InstImm* inst = (InstImm*)editSrc(b);
+        InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
+        uint64_t offset = dest.getOffset() - label->offset();
 
         
-        if (inst1->extractOpcode() == ((uint32_t)op_beq >> OpcodeShift)) {
+        
+        if (inst[0].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift)) {
             
             
-            uint64_t offset = dest.getOffset() - label->offset();
+            
+            Assembler::UpdateLoad64Value(inst, dest.getOffset());
+        } else if (inst[1].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift) ||
+                   BOffImm16::IsInRange(offset))
+        {
+            
+            
+            
             MOZ_ASSERT(BOffImm16::IsInRange(offset));
-            inst1->setBOffImm16(BOffImm16(offset));
+            MOZ_ASSERT(inst[0].extractOpcode() == (uint32_t(op_beq) >> OpcodeShift) ||
+                       inst[0].extractOpcode() == (uint32_t(op_bne) >> OpcodeShift) ||
+                       inst[0].extractOpcode() == (uint32_t(op_blez) >> OpcodeShift) ||
+                       inst[0].extractOpcode() == (uint32_t(op_bgtz) >> OpcodeShift));
+            inst[0].setBOffImm16(BOffImm16(offset));
+        } else if (inst[0].encode() == inst_beq.encode()) {
+            
+            
+            
+            
+            MOZ_ASSERT(inst[1].encode() == NopInst);
+            MOZ_ASSERT(inst[2].encode() == NopInst);
+            MOZ_ASSERT(inst[3].encode() == NopInst);
+            MOZ_ASSERT(inst[4].encode() == NopInst);
+            MOZ_ASSERT(inst[5].encode() == NopInst);
+            addLongJump(BufferOffset(label->offset()));
+            Assembler::WriteLoad64Instructions(inst, ScratchRegister, dest.getOffset());
+            inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
         } else {
-            Assembler::UpdateLoad64Value(inst1, dest.getOffset());
+            
+            
+            inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
+            
+            
+            
+            MOZ_ASSERT(inst[1].encode() == NopInst);
+            MOZ_ASSERT(inst[2].encode() == NopInst);
+            MOZ_ASSERT(inst[3].encode() == NopInst);
+            MOZ_ASSERT(inst[4].encode() == NopInst);
+            MOZ_ASSERT(inst[5].encode() == NopInst);
+            MOZ_ASSERT(inst[6].encode() == NopInst);
+            addLongJump(BufferOffset(label->offset() + sizeof(uint32_t)));
+            Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, dest.getOffset());
+            inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
         }
-
     }
     label->bind(dest.getOffset());
 }
