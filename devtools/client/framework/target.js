@@ -86,18 +86,6 @@ exports.TargetFactory = {
 
 
 
-function getVersion() {
-  
-  return 20;
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -122,12 +110,6 @@ function getVersion() {
 function Target() {
   throw new Error("Use TargetFactory.newXXX or Target.getXXX to create a Target in place of 'new Target()'");
 }
-
-Object.defineProperty(Target.prototype, "version", {
-  get: getVersion,
-  enumerable: true
-});
-
 
 
 
@@ -273,8 +255,6 @@ TabTarget.prototype = {
 
     return this.client.traits[traitName];
   },
-
-  get version() { return getVersion(); },
 
   get tab() {
     return this._tab;
