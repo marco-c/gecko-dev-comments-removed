@@ -415,27 +415,6 @@ IsNullTaggedPointer(void* p)
 
 
 
-template <typename Map, typename Key>
-class HashKeyRef : public BufferableRef
-{
-    Map* map;
-    Key key;
-
-  public:
-    HashKeyRef(Map* m, const Key& k) : map(m), key(k) {}
-
-    void trace(JSTracer* trc) override {
-        Key prior = key;
-        typename Map::Ptr p = map->lookup(key);
-        if (!p)
-            return;
-        TraceManuallyBarrieredEdge(trc, &key, "HashKeyRef");
-        map->rekeyIfMoved(prior, key);
-    }
-};
-
-
-
 template <typename S, typename T>
 struct RewrapTaggedPointer{};
 #define DECLARE_REWRAP(S, T, method, prefix) \
