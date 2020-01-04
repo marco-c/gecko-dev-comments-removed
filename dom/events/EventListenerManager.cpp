@@ -670,6 +670,10 @@ EventListenerManager::ListenerCanHandle(const Listener* aListener,
              "aEvent and aEventMessage should agree, modulo legacyness");
 
   
+  if (aListener->mListenerType == Listener::eNoListener) {
+    return false;
+  }
+  
   
   
   
