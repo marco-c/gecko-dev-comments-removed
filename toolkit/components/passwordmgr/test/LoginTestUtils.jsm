@@ -36,7 +36,7 @@ this.LoginTestUtils = {
 
 
 
-  reloadData() {
+  * reloadData() {
     Services.obs.notifyObservers(null, "passwordmgr-storage-replace", null);
     yield TestUtils.topicObserved("passwordmgr-storage-replace-complete");
   },

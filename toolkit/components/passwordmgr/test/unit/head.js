@@ -165,7 +165,7 @@ const MockDocument = {
 
 
 
-add_task(function test_common_initialize()
+add_task(function* test_common_initialize()
 {
   
   

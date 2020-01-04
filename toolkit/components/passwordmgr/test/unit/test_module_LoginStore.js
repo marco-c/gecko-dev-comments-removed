@@ -23,7 +23,7 @@ const TEST_STORE_FILE_NAME = "test-logins.json";
 
 
 
-add_task(function test_save_reload()
+add_task(function* test_save_reload()
 {
   let storeForSave = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
@@ -74,7 +74,7 @@ add_task(function test_save_reload()
 
 
 
-add_task(function test_load_empty()
+add_task(function* test_load_empty()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
@@ -91,7 +91,7 @@ add_task(function test_load_empty()
 
 
 
-add_task(function test_save_empty()
+add_task(function* test_save_empty()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
@@ -109,7 +109,7 @@ add_task(function test_save_empty()
 
 
 
-add_task(function test_load_string_predefined()
+add_task(function* test_load_string_predefined()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
@@ -161,7 +161,7 @@ add_task(function test_load_string_predefined()
 
 
 
-add_task(function test_load_string_malformed()
+add_task(function* test_load_string_malformed()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
@@ -186,7 +186,7 @@ add_task(function test_load_string_malformed()
 
 
 
-add_task(function test_load_string_malformed_sync()
+add_task(function* test_load_string_malformed_sync()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
