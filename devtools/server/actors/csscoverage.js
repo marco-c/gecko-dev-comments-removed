@@ -346,6 +346,18 @@ var CSSUsageActor = protocol.ActorClassWithSpec(cssUsageSpec, {
 
 
 
+  createEditorReportForSheet: function (stylesheetActor) {
+    let url = sheetToUrl(stylesheetActor.rawSheet);
+    return this.createEditorReport(url);
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -696,7 +708,7 @@ exports.SEL_ALL = [
 
 
 
-const sheetToUrl = exports.sheetToUrl = function (stylesheet) {
+const sheetToUrl = function (stylesheet) {
   
   if (stylesheet.href) {
     return stylesheet.href;
@@ -708,11 +720,6 @@ const sheetToUrl = exports.sheetToUrl = function (stylesheet) {
     let sheets = [...document.querySelectorAll("style")];
     let index = sheets.indexOf(stylesheet.ownerNode);
     return getURL(document) + " → <style> index " + index;
-  }
-
-  
-  if (stylesheet.nodeHref) {
-    return stylesheet.nodeHref + " → <style> index " + stylesheet.styleSheetIndex;
   }
 
   throw new Error("Unknown sheet source");
