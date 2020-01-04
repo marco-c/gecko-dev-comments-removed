@@ -3,6 +3,10 @@
 
 #include "nsString.h"
 #include "nsError.h"
+#include "nsFormData.h"
+
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/File.h"
 
 namespace mozilla {
 namespace dom {
@@ -21,6 +25,46 @@ public:
 
   static nsresult
   GetValidRequestMethod(const nsACString& aMethod, nsCString& outMethod);
+
+  
+
+
+
+
+  static void
+  ConsumeArrayBuffer(JSContext* aCx, JS::MutableHandle<JSObject*> aValue,
+                     uint32_t aInputLength, uint8_t* aInput, ErrorResult& aRv);
+
+  
+
+
+
+  static already_AddRefed<Blob>
+  ConsumeBlob(nsISupports* aParent, const nsString& aMimeType,
+              uint32_t aInputLength, uint8_t* aInput, ErrorResult& aRv);
+
+  
+
+
+
+  static already_AddRefed<nsFormData>
+  ConsumeFormData(nsIGlobalObject* aParent, const nsCString& aMimeType,
+                  const nsCString& aStr, ErrorResult& aRv);
+
+  
+
+
+
+  static nsresult
+  ConsumeText(uint32_t aInputLength, uint8_t* aInput, nsString& aText);
+
+  
+
+
+
+  static void
+  ConsumeJson(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+              const nsString& aStr, ErrorResult& aRv);
 };
 
 } 
