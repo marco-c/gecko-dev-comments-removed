@@ -80,11 +80,9 @@ public:
     return mCanvasElement;
   }
 
-#ifdef DEBUG
-    
-    virtual int32_t GetWidth() const = 0;
-    virtual int32_t GetHeight() const = 0;
-#endif
+  
+  virtual int32_t GetWidth() const = 0;
+  virtual int32_t GetHeight() const = 0;
 
   
   

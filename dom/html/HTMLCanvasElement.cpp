@@ -669,18 +669,19 @@ HTMLCanvasElement::ToBlob(JSContext* aCx,
     return;
   }
 
-#ifdef DEBUG
   if (mCurrentContext) {
     
     
     
     nsIntSize elementSize = GetWidthHeight();
-    MOZ_ASSERT(elementSize.width == mCurrentContext->GetWidth() ||
-               (elementSize.width == 0 && mCurrentContext->GetWidth() == 1));
-    MOZ_ASSERT(elementSize.height == mCurrentContext->GetHeight() ||
-               (elementSize.height == 0 && mCurrentContext->GetHeight() == 1));
+    if ((elementSize.width != mCurrentContext->GetWidth() &&
+         (elementSize.width != 0 || mCurrentContext->GetWidth() != 1)) ||
+        (elementSize.height != mCurrentContext->GetHeight() &&
+         (elementSize.height != 0 || mCurrentContext->GetHeight() != 1))) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+    }
   }
-#endif
 
   uint8_t* imageBuffer = nullptr;
   int32_t format = 0;

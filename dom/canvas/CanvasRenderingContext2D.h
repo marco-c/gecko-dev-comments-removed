@@ -418,10 +418,9 @@ public:
 
   nsresult Redraw();
 
-#ifdef DEBUG
-    virtual int32_t GetWidth() const override;
-    virtual int32_t GetHeight() const override;
-#endif
+  virtual int32_t GetWidth() const override;
+  virtual int32_t GetHeight() const override;
+
   
   
 
