@@ -12,12 +12,14 @@
 #include "TextureClient.h"
 #include "nsITimer.h"
 #include <stack>
+#include <list>
 
 namespace mozilla {
 namespace layers {
 
 class ISurfaceAllocator;
 class CompositableForwarder;
+class gfxSharedReadLock;
 
 class TextureClientAllocator
 {
@@ -32,7 +34,7 @@ public:
 
 
 
-  virtual void ReturnTextureClientDeferred(TextureClient *aClient) = 0;
+  virtual void ReturnTextureClientDeferred(TextureClient *aClient, gfxSharedReadLock* aLock) = 0;
 
   virtual void ReportClientLost() = 0;
 };
@@ -70,7 +72,7 @@ public:
 
 
 
-  void ReturnTextureClientDeferred(TextureClient *aClient) override;
+  void ReturnTextureClientDeferred(TextureClient *aClient, gfxSharedReadLock* aLock) override;
 
   
 
@@ -111,6 +113,8 @@ public:
   void Destroy();
 
 private:
+  void ReturnUnlockedClients();
+
   
   
   static const uint32_t sMinCacheSize = 0;
@@ -137,11 +141,21 @@ private:
   
   uint32_t mOutstandingClients;
 
+  struct TextureClientHolder {
+    RefPtr<TextureClient> mTextureClient;
+    RefPtr<gfxSharedReadLock> mLock;
+
+    TextureClientHolder(TextureClient* aTextureClient, gfxSharedReadLock* aLock)
+      : mTextureClient(aTextureClient), mLock(aLock)
+    {}
+  };
+
   
   
   
   std::stack<RefPtr<TextureClient> > mTextureClients;
-  std::stack<RefPtr<TextureClient> > mTextureClientsDeferred;
+
+  std::list<TextureClientHolder> mTextureClientsDeferred;
   RefPtr<nsITimer> mTimer;
   RefPtr<CompositableForwarder> mSurfaceAllocator;
 };

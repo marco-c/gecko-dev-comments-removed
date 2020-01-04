@@ -352,10 +352,6 @@ ClientLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
     MakeSnapshotIfRequired();
   }
 
-  for (size_t i = 0; i < mTexturePools.Length(); i++) {
-    mTexturePools[i]->ReturnDeferredClients();
-  }
-
   mInTransaction = false;
   mTransactionStart = TimeStamp();
 }
@@ -431,6 +427,10 @@ ClientLayerManager::DidComposite(uint64_t aTransactionId,
   
   for (size_t i = 0; i < mDidCompositeObservers.Length(); i++) {
     mDidCompositeObservers[i]->DidComposite();
+  }
+
+  for (size_t i = 0; i < mTexturePools.Length(); i++) {
+    mTexturePools[i]->ReturnDeferredClients();
   }
 }
 

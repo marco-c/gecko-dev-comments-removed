@@ -358,7 +358,8 @@ gfxMemorySharedReadLock::gfxMemorySharedReadLock()
 
 gfxMemorySharedReadLock::~gfxMemorySharedReadLock()
 {
-  MOZ_ASSERT(mReadCount == 0);
+  
+  MOZ_ASSERT(mReadCount == 1);
   MOZ_COUNT_DTOR(gfxMemorySharedReadLock);
 }
 
@@ -405,6 +406,12 @@ gfxShmSharedReadLock::gfxShmSharedReadLock(ClientIPCAllocator* aAllocator)
 
 gfxShmSharedReadLock::~gfxShmSharedReadLock()
 {
+  auto fwd = mAllocator->AsLayerForwarder();
+  if (fwd) {
+    
+    
+    ReadUnlock();
+  }
   MOZ_COUNT_DTOR(gfxShmSharedReadLock);
 }
 
@@ -673,12 +680,11 @@ TileClient::DiscardFrontBuffer()
       mFrontBuffer->RemoveFromCompositable(mCompositableClient);
     }
 
-    mAllocator->ReturnTextureClientDeferred(mFrontBuffer);
+    mAllocator->ReturnTextureClientDeferred(mFrontBuffer, mFrontLock);
     if (mFrontBufferOnWhite) {
       mFrontBufferOnWhite->RemoveFromCompositable(mCompositableClient);
-      mAllocator->ReturnTextureClientDeferred(mFrontBufferOnWhite);
+      mAllocator->ReturnTextureClientDeferred(mFrontBufferOnWhite, mFrontLock);
     }
-    mFrontLock->ReadUnlock();
     if (mFrontBuffer->IsLocked()) {
       mFrontBuffer->Unlock();
     }
@@ -705,12 +711,11 @@ TileClient::DiscardBackBuffer()
        mAllocator->ReportClientLost();
      }
     } else {
-      mAllocator->ReturnTextureClientDeferred(mBackBuffer);
+      mAllocator->ReturnTextureClientDeferred(mBackBuffer, mBackLock);
       if (mBackBufferOnWhite) {
-        mAllocator->ReturnTextureClientDeferred(mBackBufferOnWhite);
+        mAllocator->ReturnTextureClientDeferred(mBackBufferOnWhite, mBackLock);
       }
     }
-    mBackLock->ReadUnlock();
     if (mBackBuffer->IsLocked()) {
       mBackBuffer->Unlock();
     }
@@ -743,11 +748,6 @@ TileClient::GetBackBuffer(const nsIntRegion& aDirtyRegion,
   } else {
     if (!mBackBuffer ||
         mBackLock->GetReadCount() > 1) {
-
-      if (mBackLock) {
-        
-        mBackLock->ReadUnlock();
-      }
 
       if (mBackBuffer) {
         
