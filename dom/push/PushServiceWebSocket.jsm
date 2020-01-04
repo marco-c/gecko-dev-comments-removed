@@ -170,11 +170,6 @@ this.PushServiceWebSocket = {
 
     if (timer == this._backoffTimer) {
       console.debug("onTimerFired: Reconnecting after backoff");
-      if (this._reconnectTestCallback) {
-        
-        let actualRetryTimeout = Date.now() - this._lastDisconnect;
-        this._reconnectTestCallback(actualRetryTimeout);
-      }
       this._beginWSSetup();
       return;
     }
@@ -332,9 +327,6 @@ this.PushServiceWebSocket = {
   _lastPingTime: 0,
 
   
-  _lastDisconnect: 0,
-
-  
 
 
 
@@ -342,15 +334,6 @@ this.PushServiceWebSocket = {
 
   
   _backoffTimer: null,
-
-  
-
-
-
-
-
-
-  _reconnectTestCallback: null,
 
   
 
@@ -434,8 +417,6 @@ this.PushServiceWebSocket = {
       this._notifyRequestQueue();
       this._notifyRequestQueue = null;
     }
-
-    this._lastDisconnect = Date.now();
   },
 
   uninit: function() {
