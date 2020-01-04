@@ -2322,7 +2322,15 @@ void
 ContentChild::QuickExit()
 {
   NS_WARNING("content process _exit()ing");
+
+#ifdef XP_WIN
+  
+  
+  
+  TerminateProcess(GetCurrentProcess(), 0);
+#else
   _exit(0);
+#endif
 }
 
 nsresult
