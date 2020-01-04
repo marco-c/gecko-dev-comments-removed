@@ -786,6 +786,11 @@ final class GeckoEditable extends JNIObject
         return true;
     }
 
+    @Override 
+    public void postToInputConnection(final Runnable runnable) {
+        mIcPostHandler.post(runnable);
+    }
+
     private void geckoSetIcHandler(final Handler newHandler) {
         geckoPostToIc(new Runnable() { 
             @Override
