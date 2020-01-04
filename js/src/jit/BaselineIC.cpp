@@ -3103,6 +3103,8 @@ ICSetElemDenseOrUnboxedArrayAddCompiler::generateStubCode(MacroAssembler& masm)
     
     EmitStowICValues(masm, 2);
 
+    uint32_t framePushedAfterStow = masm.framePushed();
+
     
     regs = availableGeneralRegs(0);
     regs.take(R0);
@@ -3264,6 +3266,7 @@ ICSetElemDenseOrUnboxedArrayAddCompiler::generateStubCode(MacroAssembler& masm)
 
     
     masm.bind(&failureUnstow);
+    masm.setFramePushed(framePushedAfterStow);
     EmitUnstowICValues(masm, 2);
 
     
