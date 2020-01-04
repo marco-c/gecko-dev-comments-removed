@@ -1886,7 +1886,9 @@ nsSocketTransport::OnSocketReady(PRFileDesc *fd, int16_t outFlags)
         
         mPollTimeout = mTimeouts[TIMEOUT_READ_WRITE];
     }
-    else if (mState == STATE_CONNECTING) {
+    else if ((mState == STATE_CONNECTING) && !gIOService->IsNetTearingDown()) {
+        
+        
 
         
         
@@ -1958,6 +1960,13 @@ nsSocketTransport::OnSocketReady(PRFileDesc *fd, int16_t outFlags)
                 SOCKET_LOG(("  connection failed! [reason=%x]\n", mCondition));
             }
         }
+    }
+    else if ((mState == STATE_CONNECTING) && gIOService->IsNetTearingDown()) {
+        
+        
+        SOCKET_LOG(("We are in shutdown so skip PR_ConnectContinue and set "
+                    "and error.\n"));
+        mCondition = NS_ERROR_ABORT;
     }
     else {
         NS_ERROR("unexpected socket state");
