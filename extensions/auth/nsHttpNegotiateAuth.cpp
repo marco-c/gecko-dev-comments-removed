@@ -65,7 +65,27 @@ TestNotInPBMode(nsIHttpAuthenticableChannel *authChannel)
 {
     nsCOMPtr<nsIChannel> bareChannel = do_QueryInterface(authChannel);
     MOZ_ASSERT(bareChannel);
-    return !NS_UsePrivateBrowsing(bareChannel);
+
+    if (!NS_UsePrivateBrowsing(bareChannel)) {
+        return true;
+    }
+
+    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+    if (!prefs) {
+        return true;
+    }
+
+    
+    
+    
+    bool dontRememberHistory;
+    if (NS_SUCCEEDED(prefs->GetBoolPref("browser.privatebrowsing.autostart",
+                                        &dontRememberHistory)) &&
+        dontRememberHistory) {
+        return true;
+    }
+
+    return false;
 }
 
 NS_IMETHODIMP

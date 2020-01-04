@@ -187,17 +187,27 @@ static bool
 CanUseDefaultCredentials(nsIHttpAuthenticableChannel *channel,
                          bool isProxyAuth)
 {
+    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+
     
     
     nsCOMPtr<nsIChannel> bareChannel = do_QueryInterface(channel);
     MOZ_ASSERT(bareChannel);
+
     if (NS_UsePrivateBrowsing(bareChannel)) {
-        return false;
+        
+        bool dontRememberHistory;
+        if (prefs &&
+            NS_SUCCEEDED(prefs->GetBoolPref("browser.privatebrowsing.autostart",
+                                            &dontRememberHistory)) &&
+            !dontRememberHistory) {
+            return false;
+        }
     }
 
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (!prefs)
+    if (!prefs) {
         return false;
+    }
 
     if (isProxyAuth) {
         bool val;
