@@ -54,9 +54,6 @@
 #include "base/time.h"
 #include "base/lock.h"
 
-class Pickle;
-class PickleIterator;
-
 namespace base {
 
 using mozilla::OffTheBooksMutex;
@@ -302,13 +299,6 @@ class Histogram {
     kNoFlags = 0,
     kUmaTargetedHistogramFlag = 0x1,  
 
-    
-    
-    
-    
-    
-    kIPCSerializationSourceFlag = 0x10,
-
     kHexRangePrintingFlag = 0x8000  
   };
 
@@ -360,9 +350,6 @@ class Histogram {
 
     
     void Add(const SampleSet& other);
-
-    bool Serialize(Pickle* pickle) const;
-    bool Deserialize(PickleIterator* iter, const Pickle& pickle);
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
@@ -473,21 +460,6 @@ class Histogram {
   void SetFlags(Flags flags) { flags_ = static_cast<Flags> (flags_ | flags); }
   void ClearFlags(Flags flags) { flags_ = static_cast<Flags>(flags_ & ~flags); }
   int flags() const { return flags_; }
-
-  
-  
-  
-  
-  
-
-  
-  
-  static std::string SerializeHistogramInfo(const Histogram& histogram,
-                                            const SampleSet& snapshot);
-  
-  
-  
-  static bool DeserializeHistogramInfo(const std::string& histogram_info);
 
   
   
