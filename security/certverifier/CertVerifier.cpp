@@ -12,11 +12,14 @@
 #include "NSSCertDBTrustDomain.h"
 #include "NSSErrorsService.h"
 #include "cert.h"
+#include "nsNSSComponent.h"
+#include "nsServiceManagerUtils.h"
 #include "pk11pub.h"
 #include "pkix/pkix.h"
 #include "pkix/pkixnss.h"
 #include "prerror.h"
 #include "secerr.h"
+#include "secmod.h"
 #include "sslerr.h"
 
 using namespace mozilla::pkix;
@@ -68,35 +71,43 @@ IsCertChainRootBuiltInRoot(CERTCertList* chain, bool& result)
   if (!root) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  SECStatus srv = IsCertBuiltInRoot(root, result);
-  if (srv != SECSuccess) {
-    return MapPRErrorCodeToResult(PR_GetError());
-  }
-  return Success;
+  return IsCertBuiltInRoot(root, result);
 }
 
-SECStatus
+Result
 IsCertBuiltInRoot(CERTCertificate* cert, bool& result)
 {
   result = false;
-  UniquePK11SlotList slots(PK11_GetAllSlotsForCert(cert, nullptr));
-  if (!slots) {
-    if (PORT_GetError() == SEC_ERROR_NO_TOKEN) {
-      
-      return SECSuccess;
-    }
-    return SECFailure;
+  nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
+  if (!component) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  for (PK11SlotListElement* le = slots->head; le; le = le->next) {
-    char* token = PK11_GetTokenName(le->slot);
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("BuiltInRoot? subject=%s token=%s",cert->subjectName, token));
-    if (strcmp("Builtin Object Token", token) == 0) {
-      result = true;
-      return SECSuccess;
-    }
+  nsAutoString modName;
+  nsresult rv = component->GetPIPNSSBundleString("RootCertModuleName", modName);
+  if (NS_FAILED(rv)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  return SECSuccess;
+  NS_ConvertUTF16toUTF8 modNameUTF8(modName);
+  UniqueSECMODModule builtinRootsModule(SECMOD_FindModule(modNameUTF8.get()));
+  
+  if (!builtinRootsModule) {
+    return Success;
+  }
+  UniquePK11SlotInfo builtinSlot(SECMOD_FindSlot(builtinRootsModule.get(),
+                                                 "Builtin Object Token"));
+  
+  
+  
+  if (!builtinSlot) {
+    return Success;
+  }
+  
+  
+  
+  CK_OBJECT_HANDLE handle = PK11_FindCertInSlot(builtinSlot.get(), cert,
+                                                nullptr);
+  result = (handle != CK_INVALID_HANDLE);
+  return Success;
 }
 
 static Result

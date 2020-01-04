@@ -19,9 +19,6 @@ main(int argc, char* argv[])
     }
     
     
-    
-    
-    
     nsresult rv = prefs->SetBoolPref("intl.locale.matchOS", true);
     if (NS_FAILED(rv)) {
       return -1;
