@@ -119,6 +119,10 @@ public:
   
   virtual void Shutdown() {}
 
+  
+  
+  virtual void DumpDebugInfo() {}
+
 protected:
   virtual ~MediaSink() {}
 };
