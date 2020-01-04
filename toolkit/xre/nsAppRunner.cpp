@@ -3391,6 +3391,11 @@ XREMain::XRE_mainInit(bool* aExitFlag)
 #endif
 
 #ifdef XP_MACOSX
+  
+  
+  
+  SetupMacApplicationDelegate();
+
   if (EnvHasValue("MOZ_LAUNCHED_CHILD")) {
     
     
@@ -4286,10 +4291,6 @@ XREMain::XRE_mainRun()
 #endif
 
 #ifdef XP_MACOSX
-    
-    
-    SetupMacApplicationDelegate();
-
     
     
     cmdLine = do_CreateInstance("@mozilla.org/toolkit/command-line;1");
