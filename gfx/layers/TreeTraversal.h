@@ -19,25 +19,33 @@ namespace layers {
 
 
 
+enum class TraversalFlag { Skip, Continue };
+
+
+
+
+
+
+
 
 template <typename Node, typename Condition>
-const Node* BreadthFirstSearch(const Node* aRoot, const Condition& aCondition)
+Node* BreadthFirstSearch(Node* aRoot, const Condition& aCondition)
 {
   if (!aRoot) {
     return nullptr;
   }
 
-  std::queue<const Node*> queue;
+  std::queue<Node*> queue;
   queue.push(aRoot);
   while (!queue.empty()) {
-    const Node* node = queue.front();
+    Node* node = queue.front();
     queue.pop();
 
     if (aCondition(node)) {
       return node;
     }
 
-    for (const Node* child = node->GetLastChild();
+    for (Node* child = node->GetLastChild();
          child;
          child = child->GetPrevSibling()) {
       queue.push(child);
@@ -55,23 +63,23 @@ const Node* BreadthFirstSearch(const Node* aRoot, const Condition& aCondition)
 
 
 template <typename Node, typename Condition>
-const Node* DepthFirstSearch(const Node* aRoot, const Condition& aCondition)
+Node* DepthFirstSearch(Node* aRoot, const Condition& aCondition)
 {
   if (!aRoot) {
     return nullptr;
   }
 
-  std::stack<const Node*> stack;
+  std::stack<Node*> stack;
   stack.push(aRoot);
   while (!stack.empty()) {
-    const Node* node = stack.top();
+    Node* node = stack.top();
     stack.pop();
 
     if (aCondition(node)) {
         return node;
     }
 
-    for (const Node* child = node->GetLastChild();
+    for (Node* child = node->GetLastChild();
          child;
          child = child->GetPrevSibling()) {
       stack.push(child);
@@ -79,6 +87,44 @@ const Node* DepthFirstSearch(const Node* aRoot, const Condition& aCondition)
   }
 
   return nullptr;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Node, typename Action>
+void ForEachNode(Node* aRoot, const Action& aAction)
+{
+  if (!aRoot) {
+    return;
+  }
+
+  std::stack<Node*> stack;
+  stack.push(aRoot);
+
+  while (!stack.empty()) {
+    Node* node = stack.top();
+    stack.pop();
+
+    TraversalFlag result = aAction(node);
+
+    if (result == TraversalFlag::Continue) {
+      for (Node* child = node->GetLastChild();
+           child;
+           child = child->GetPrevSibling()) {
+        stack.push(child);
+      }
+    }
+  }
 }
 
 }
