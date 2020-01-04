@@ -707,6 +707,7 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
                                    {}, {recipient});
       },
 
+      
       _execute: function(tabId, details, kind, method) {
         let tab = tabId !== null ? TabManager.getTab(tabId) : TabManager.activeTab;
         let mm = tab.linkedBrowser.messageManager;
@@ -714,6 +715,7 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
         let options = {
           js: [],
           css: [],
+          remove_css: method == "removeCSS",
         };
 
         
@@ -771,6 +773,10 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
 
       insertCSS: function(tabId, details) {
         return self.tabs._execute(tabId, details, "css", "insertCSS");
+      },
+
+      removeCSS: function(tabId, details) {
+        return self.tabs._execute(tabId, details, "css", "removeCSS");
       },
 
       connect: function(tabId, connectInfo) {
