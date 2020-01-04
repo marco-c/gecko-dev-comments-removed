@@ -40,6 +40,7 @@
 #include "nsTArrayForwardDeclare.h"     
 #include "nsThreadUtils.h"              
 #include "nsXULAppAPI.h"                
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"          
 #include "mozilla/layers/TextureClient.h"
 
@@ -390,6 +391,7 @@ ImageBridgeChild::CancelWaitForRecycle(uint64_t aTextureId)
 }
 
 
+static StaticMutex sImageBridgeSingletonLock;
 static StaticRefPtr<ImageBridgeChild> sImageBridgeChildSingleton;
 static Thread *sImageBridgeChildThread = nullptr;
 
@@ -603,8 +605,10 @@ Thread* ImageBridgeChild::GetThread() const
   return sImageBridgeChildThread;
 }
 
-ImageBridgeChild* ImageBridgeChild::GetSingleton()
+ RefPtr<ImageBridgeChild>
+ImageBridgeChild::GetSingleton()
 {
+  StaticMutexAutoLock lock(sImageBridgeSingletonLock);
   return sImageBridgeChildSingleton;
 }
 
@@ -885,13 +889,17 @@ ImageBridgeChild::InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint)
 
   RefPtr<ImageBridgeChild> child = new ImageBridgeChild();
 
-  sImageBridgeChildSingleton = child;
-
   RefPtr<Runnable> runnable = NewRunnableMethod<Endpoint<PImageBridgeChild>&&>(
     child,
     &ImageBridgeChild::Bind,
     Move(aEndpoint));
   child->GetMessageLoop()->PostTask(runnable.forget());
+
+  
+  {
+    StaticMutexAutoLock lock(sImageBridgeSingletonLock);
+    sImageBridgeChildSingleton = child;
+  }
 
   return true;
 }
@@ -927,6 +935,7 @@ void ImageBridgeChild::ShutDown()
   if (RefPtr<ImageBridgeChild> child = GetSingleton()) {
     child->WillShutdown();
 
+    StaticMutexAutoLock lock(sImageBridgeSingletonLock);
     sImageBridgeChildSingleton = nullptr;
   }
 
@@ -983,13 +992,17 @@ ImageBridgeChild::InitSameProcess()
   RefPtr<ImageBridgeChild> child = new ImageBridgeChild();
   RefPtr<ImageBridgeParent> parent = ImageBridgeParent::CreateSameProcess();
 
-  sImageBridgeChildSingleton = child;
-
   RefPtr<Runnable> runnable = WrapRunnable(
     child,
     &ImageBridgeChild::BindSameProcess,
     parent);
   child->GetMessageLoop()->PostTask(runnable.forget());
+
+  
+  {
+    StaticMutexAutoLock lock(sImageBridgeSingletonLock);
+    sImageBridgeChildSingleton = child;
+  }
 }
 
  void
@@ -1004,11 +1017,17 @@ ImageBridgeChild::InitWithGPUProcess(Endpoint<PImageBridgeChild>&& aEndpoint)
     sImageBridgeChildThread->Start();
   }
 
-  sImageBridgeChildSingleton = new ImageBridgeChild();
+  RefPtr<ImageBridgeChild> child = new ImageBridgeChild();
 
-  MessageLoop* loop = sImageBridgeChildSingleton->GetMessageLoop();
+  MessageLoop* loop = child->GetMessageLoop();
   loop->PostTask(NewRunnableMethod<Endpoint<PImageBridgeChild>&&>(
-    sImageBridgeChildSingleton, &ImageBridgeChild::Bind, Move(aEndpoint)));
+    child, &ImageBridgeChild::Bind, Move(aEndpoint)));
+
+  
+  {
+    StaticMutexAutoLock lock(sImageBridgeSingletonLock);
+    sImageBridgeChildSingleton = child;
+  }
 }
 
 bool InImageBridgeChildThread()
@@ -1022,11 +1041,11 @@ MessageLoop * ImageBridgeChild::GetMessageLoop() const
   return sImageBridgeChildThread ? sImageBridgeChildThread->message_loop() : nullptr;
 }
 
-void
+ void
 ImageBridgeChild::IdentifyCompositorTextureHost(const TextureFactoryIdentifier& aIdentifier)
 {
-  if (sImageBridgeChildSingleton) {
-    sImageBridgeChildSingleton->IdentifyTextureHost(aIdentifier);
+  if (RefPtr<ImageBridgeChild> child = GetSingleton()) {
+    child->IdentifyTextureHost(aIdentifier);
   }
 }
 
