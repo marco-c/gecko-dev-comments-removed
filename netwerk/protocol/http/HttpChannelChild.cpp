@@ -1092,6 +1092,14 @@ HttpChannelChild::FailedAsyncOpen(const nsresult& status)
 
   
   HandleAsyncAbort();
+
+  if (mIPCOpen) {
+    PHttpChannelChild::Send__delete__(this);
+  }
+  
+  
+  
+  
 }
 
 void
@@ -1102,10 +1110,6 @@ HttpChannelChild::DoNotifyListenerCleanup()
   if (mInterceptListener) {
     mInterceptListener->Cleanup();
     mInterceptListener = nullptr;
-  }
-
-  if (mIPCOpen) {
-    PHttpChannelChild::Send__delete__(this);
   }
 }
 
