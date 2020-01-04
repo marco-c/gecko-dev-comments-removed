@@ -113,10 +113,6 @@ public:
 
   
   
-  virtual void OnReadMetadataCompleted() = 0;
-
-  
-  
   virtual MediaDecoderOwner* GetOwner() = 0;
 
   

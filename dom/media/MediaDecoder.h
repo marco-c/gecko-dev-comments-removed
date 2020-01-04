@@ -609,10 +609,6 @@ private:
 
   
   
-  void OnReadMetadataCompleted() override { }
-
-  
-  
   virtual void MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
                               nsAutoPtr<MetadataTags> aTags,
                               MediaDecoderEventVisibility aEventVisibility) override;
