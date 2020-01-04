@@ -1013,24 +1013,6 @@ var MozLoopServiceInternal = {
           mm.sendAsyncMessage("Social:HookWindowCloseForPanelClose");
           messageName = "Social:DOMWindowClose";
           mm.addMessageListener(messageName, listeners[messageName] = () => {
-            
-            for (let name of Object.getOwnPropertyNames(listeners)) {
-              mm.removeMessageListener(name, listeners[name]);
-            }
-            listeners = {};
-
-            windowCloseCallback();
-
-            if (conversationWindowData.type == "room") {
-              
-              
-              
-              LoopAPI.sendMessageToHandler({
-                name: "HangupNow",
-                data: [conversationWindowData.roomToken, windowId]
-              });
-            }
-
             chatbox.close();
           });
 
@@ -1065,6 +1047,28 @@ var MozLoopServiceInternal = {
             }
           });
 
+          let closeListener = function() {
+            this.removeEventListener("ChatboxClosed", closeListener);
+
+            
+            for (let name of Object.getOwnPropertyNames(listeners)) {
+              mm.removeMessageListener(name, listeners[name]);
+            }
+            listeners = {};
+
+            windowCloseCallback();
+
+            if (conversationWindowData.type == "room") {
+              
+              
+              
+              LoopAPI.sendMessageToHandler({
+                name: "HangupNow",
+                data: [conversationWindowData.roomToken, windowId]
+              });
+            }
+          };
+
           
           
           
@@ -1074,17 +1078,21 @@ var MozLoopServiceInternal = {
           
           
           chatbox.content.addEventListener("SwapDocShells", function swapped(ev) {
-            chatbox.content.removeEventListener("SwapDocShells", swapped);
+            this.removeEventListener("SwapDocShells", swapped);
+            this.removeEventListener("ChatboxClosed", closeListener);
 
             let otherBrowser = ev.detail;
             chatbox = otherBrowser.ownerDocument.getBindingParent(otherBrowser);
             mm = otherBrowser.messageManager;
             otherBrowser.addEventListener("SwapDocShells", swapped);
+            chatbox.addEventListener("ChatboxClosed", closeListener);
 
             for (let name of Object.getOwnPropertyNames(listeners)) {
               mm.addMessageListener(name, listeners[name]);
             }
           });
+
+          chatbox.addEventListener("ChatboxClosed", closeListener);
 
           UITour.notify("Loop:ChatWindowOpened");
           resolve(windowId);
