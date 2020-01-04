@@ -1,2 +1,0 @@
-
-foobar = "a string"
