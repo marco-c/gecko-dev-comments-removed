@@ -18,7 +18,7 @@ const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
 
 
 
-exports.ResponsiveUIManager = {
+const ResponsiveUIManager = exports.ResponsiveUIManager = {
   activeTabs: new Map(),
 
   
@@ -138,8 +138,7 @@ exports.ResponsiveUIManager = {
 
 
 
-EventEmitter.decorate(exports.ResponsiveUIManager);
-
+EventEmitter.decorate(ResponsiveUIManager);
 
 
 
@@ -198,6 +197,7 @@ ResponsiveUI.prototype = {
     yield tabLoaded(this.tab);
     let toolWindow = this.toolWindow = tabBrowser.contentWindow;
     toolWindow.addInitialViewport(contentURI);
+    toolWindow.addEventListener("message", this);
   }),
 
   destroy() {
@@ -209,6 +209,21 @@ ResponsiveUI.prototype = {
     this.toolWindow = null;
   },
 
+  handleEvent(event) {
+    let { tab, window } = this;
+    let toolWindow = tab.linkedBrowser.contentWindow;
+
+    if (event.origin !== "chrome://devtools") {
+      return;
+    }
+
+    switch (event.data.type) {
+      case "exit":
+        toolWindow.removeEventListener(event.type, this);
+        ResponsiveUIManager.closeIfNeeded(window, tab);
+        break;
+    }
+  },
 };
 
 function tabLoaded(tab) {
