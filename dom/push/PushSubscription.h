@@ -8,6 +8,7 @@
 #include "jsapi.h"
 #include "nsCOMPtr.h"
 #include "nsWrapperCache.h"
+#include "nsContentUtils.h" 
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
