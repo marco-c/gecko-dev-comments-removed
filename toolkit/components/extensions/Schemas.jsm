@@ -249,6 +249,21 @@ const FORMATS = {
 
     throw new SyntaxError(`String ${JSON.stringify(string)} must be a relative URL`);
   },
+
+  date(string, context) {
+    
+    const PATTERN = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|([-+]\d{2}:?\d{2})))?$/;
+    if (!PATTERN.test(string)) {
+      throw new Error(`Invalid date string ${string}`);
+    }
+    
+    
+    
+    if (isNaN(new Date(string))) {
+      throw new Error(`Invalid date string ${string}`);
+    }
+    return string;
+  },
 };
 
 
