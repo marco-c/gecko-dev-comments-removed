@@ -55,11 +55,11 @@ def android_version_code_v1(buildid, cpu_arch=None, min_sdk=0, max_sdk=0):
 
     The bit labelled 'p' is a placeholder that is always 0 (for now).
 
-    The bit labelled 'g' is 1 if the build is an ARM build targeting API 14+
+    The bit labelled 'g' is 1 if the build is an ARM build targeting API 15+
     and 0 otherwise, which means the build targets Android API 9-10 (Gingerbread).
 
     Fennec no longer supports Android API 8 or earlier. After Bug 1155801 it
-    no longer supports API 11-13. API 9 is still supported due to significant usage.
+    no longer supports API 11-14. API 9 is still supported due to significant usage.
 
     We throw an explanatory exception when we are within one calendar year of
     running out of build events.  This gives lots of time to update the version
@@ -111,7 +111,7 @@ def android_version_code_v1(buildid, cpu_arch=None, min_sdk=0, max_sdk=0):
             pass
         
         
-        elif min_sdk == 14:
+        elif min_sdk == 15:
             version |= 1 << 0
         else:
             raise ValueError("Don't know how to compute android:versionCode "
