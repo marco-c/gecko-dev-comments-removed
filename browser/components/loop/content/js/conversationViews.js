@@ -192,7 +192,8 @@ loop.conversationViews = (function(mozL10n) {
 
       
 
-      return false;
+       e.stopPropagation();
+       e.preventDefault();
     },
 
     
