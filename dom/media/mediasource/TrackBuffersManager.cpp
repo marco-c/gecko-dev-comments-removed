@@ -1642,9 +1642,11 @@ TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   
   
   
-  TimeIntervals range(aIntervals);
-  range.SetFuzz(trackBuffer.mLongestFrameDuration / 2);
-  trackBuffer.mSanitizedBufferedRanges += range;
+  if (aIntervals.Length()) {
+    TimeIntervals range(aIntervals);
+    range.SetFuzz(trackBuffer.mLongestFrameDuration / 2);
+    trackBuffer.mSanitizedBufferedRanges += range;
+  }
 }
 
 void
