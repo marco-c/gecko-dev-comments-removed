@@ -2,11 +2,13 @@
 
 
 
+
 #ifndef mozilla_image_encoders_bmp_nsBMPEncoder_h
 #define mozilla_image_encoders_bmp_nsBMPEncoder_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "mozilla/UniquePtr.h"
 
 #include "imgIEncoder.h"
 #include "BMPFileHeaders.h"
@@ -48,7 +50,8 @@ protected:
   nsresult ParseOptions(const nsAString& aOptions, Version* version,
                         uint32_t* bpp);
   
-  void ConvertHostARGBRow(const uint8_t* aSrc, uint8_t* aDest,
+  void ConvertHostARGBRow(const uint8_t* aSrc,
+                          const mozilla::UniquePtr<uint8_t[]>& aDest,
                           uint32_t aPixelWidth);
   
   void NotifyListener();
