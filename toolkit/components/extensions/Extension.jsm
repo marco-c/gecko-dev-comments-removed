@@ -31,6 +31,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
+                                  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 Cu.import("resource://gre/modules/ExtensionManagement.jsm");
 
@@ -167,6 +169,7 @@ var globalBroker = new MessageBroker([Services.mm, Services.ppmm]);
 
 
 
+
 function ExtensionPage(extension, params)
 {
   let {type, contentWindow, uri, docShell} = params;
@@ -174,6 +177,7 @@ function ExtensionPage(extension, params)
   this.type = type;
   this.contentWindow = contentWindow || null;
   this.uri = uri || extension.baseURI;
+  this.incognito = params.incognito || false;
   this.onClose = new Set();
 
   
@@ -301,7 +305,8 @@ var GlobalManager = {
     }
     let extension = this.extensionMap.get(id);
     let uri = contentWindow.document.documentURIObject;
-    let context = new ExtensionPage(extension, {type: "tab", contentWindow, uri, docShell});
+    let incognito = PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
+    let context = new ExtensionPage(extension, {type: "tab", contentWindow, uri, docShell, incognito});
     inject(extension, context);
 
     let eventHandler = docShell.chromeEventHandler;
