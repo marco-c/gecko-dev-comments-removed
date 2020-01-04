@@ -3257,7 +3257,7 @@ pref("plugin.mousewheel.enabled", true);
 
 
 
-pref("network.autodial-helper.enabled", true);
+pref("network.autodial-helper.enabled", false);
 
 
 pref("intl.keyboard.per_window_layout", false);
