@@ -51,10 +51,7 @@ isOK("for (let x = 5, y; ; ) ;");
 isOK("for (let [z] = [3]; ; ) ;");
 isError("for (let [z, z]; ; ) ;", SyntaxError); 
 
-
-
-
-isError("for (let [z, z] = [0, 1]; ; ) ;", TypeError);
+isError("for (let [z, z] = [0, 1]; ; ) ;", SyntaxError);
 
 
 
