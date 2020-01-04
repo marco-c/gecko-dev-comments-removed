@@ -1143,12 +1143,6 @@ nsIFrame::Extend3DContext() const
     return false;
   }
 
-  
-  
-  if (HasOpacity() && Combines3DTransformWithAncestors()) {
-    return false;
-  }
-
   nsRect temp;
   return !nsFrame::ShouldApplyOverflowClipping(this, disp) &&
          !GetClipPropClipRect(disp, &temp, GetSize()) &&
@@ -1967,28 +1961,6 @@ WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   }
 }
 
-static void
-CreateOpacityItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                  nsDisplayList& aList, bool aItemForEventsOnly)
-{
-  
-  
-  
-  
-  
-  
-  
-  
-  const DisplayItemScrollClip* scrollClipForSameAGRChildren =
-    aBuilder->ClipState().GetCurrentInnermostScrollClip();
-  DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
-  opacityClipState.ClearIncludingScrollClip();
-  aList.AppendNewToTop(
-      new (aBuilder) nsDisplayOpacity(aBuilder, aFrame, &aList,
-                                      scrollClipForSameAGRChildren,
-                                      aItemForEventsOnly));
-}
-
 void
 nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                              const nsRect&         aDirtyRect,
@@ -2211,8 +2183,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     clipState.Restore();
   }
 
-  bool is3DContextRoot = Extend3DContext() && !Combines3DTransformWithAncestors();
-
   
 
 
@@ -2225,16 +2195,26 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplaySVGEffects(aBuilder, this, &resultList));
   }
-  else if (useOpacity && !resultList.IsEmpty() && !is3DContextRoot) {
+  
+
+
+  else if (useOpacity && !resultList.IsEmpty()) {
     
-
-
-
-
-
-
-    CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly);
-    useOpacity = false;
+    
+    
+    
+    
+    
+    
+    
+    const DisplayItemScrollClip* scrollClipForSameAGRChildren =
+      aBuilder->ClipState().GetCurrentInnermostScrollClip();
+    DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
+    opacityClipState.ClearIncludingScrollClip();
+    resultList.AppendNewToTop(
+        new (aBuilder) nsDisplayOpacity(aBuilder, this, &resultList,
+                                        scrollClipForSameAGRChildren,
+                                        opacityItemForEventsOnly));
   }
 
   
@@ -2308,12 +2288,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
           GetContainingBlock()->GetContent()->GetPrimaryFrame(), &resultList));
     }
 
-    
-
-
-    if (useOpacity && !usingSVGEffects) {
-      CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly);
-    }
   }
 
   

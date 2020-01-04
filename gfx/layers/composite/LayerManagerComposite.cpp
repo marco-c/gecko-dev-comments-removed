@@ -282,12 +282,8 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   
   
   LayerIntRegion descendantsVisibleRegion;
-  bool hasPreserve3DChild = false;
   for (Layer* child = aLayer->GetLastChild(); child; child = child->GetPrevSibling()) {
     PostProcessLayers(child, localOpaque, descendantsVisibleRegion, ancestorClipForChildren);
-    if (child->Extend3DContext()) {
-      hasPreserve3DChild = true;
-    }
   }
 
   
@@ -295,7 +291,7 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
 
   
   
-  if (aLayer->GetFirstChild() && !hasPreserve3DChild) {
+  if (aLayer->GetFirstChild()) {
     visible = descendantsVisibleRegion;
   }
 
