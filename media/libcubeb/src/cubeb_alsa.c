@@ -796,7 +796,11 @@ alsa_stream_init(cubeb * ctx, cubeb_stream ** stream, char const * stream_name,
 
   assert(ctx && stream);
 
-  assert(!input_stream_params && "not supported.");
+  if (input_stream_params) {
+    
+    return CUBEB_ERROR_NOT_SUPPORTED;
+  }
+
   if (input_device || output_device) {
     
     return CUBEB_ERROR_DEVICE_UNAVAILABLE;
