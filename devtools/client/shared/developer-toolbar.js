@@ -223,15 +223,10 @@ exports.CommandUtils = CommandUtils;
 
 
 loader.lazyGetter(this, "isLinux", function () {
-  return OS == "Linux";
+  return Services.appinfo.OS == "Linux";
 });
 loader.lazyGetter(this, "isMac", function () {
-  return OS == "Darwin";
-});
-
-loader.lazyGetter(this, "OS", function () {
-  let os = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).OS;
-  return os;
+  return Services.appinfo.OS == "Darwin";
 });
 
 
@@ -1010,7 +1005,7 @@ OutputPanel.prototype._resize = function () {
   
   
   
-  switch (OS) {
+  switch (Services.appinfo.OS) {
     case "Linux":
       maxWidth -= 5;
       break;

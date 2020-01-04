@@ -465,6 +465,26 @@ const Services = {
 
 
   prefs: new PrefBranch(null, "", ""),
+
+  
+
+
+
+  appinfo: {
+    get OS() {
+      const os = window.navigator.userAgent;
+      if (os) {
+        if (os.includes("Linux")) {
+          return "Linux";
+        } else if (os.includes("Windows")) {
+          return "WINNT";
+        } else if (os.includes("Mac")) {
+          return "Darwin";
+        }
+      }
+      return "Unknown";
+    }
+  },
 };
 
 

@@ -9,9 +9,7 @@
 
 
 
-XPCOMUtils.defineLazyGetter(this, "osString", function () {
-  return Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).OS;
-});
+const osString = Services.appinfo.OS;
 
 const TEST_URI = URL_ROOT + "doc_copystyles.html";
 
