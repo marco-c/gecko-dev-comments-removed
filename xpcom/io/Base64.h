@@ -34,6 +34,14 @@ Base64Decode(const nsACString& aBinaryData, nsACString& aString);
 nsresult
 Base64Decode(const nsAString& aBinaryData, nsAString& aString);
 
+
+
+
+
+
+nsresult
+Base64URLEncode(uint32_t aLength, const uint8_t* aData, nsACString& aString);
+
 } 
 
 #endif
