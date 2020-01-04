@@ -8,7 +8,7 @@
 
 
 Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 var httpserv;
 
@@ -28,10 +28,19 @@ function clearCreds()
 }
 
 function makeChan() {
-  return NetUtil.newChannel({
-    uri: "http://localhost:" + httpserv.identity.primaryPort + "/",
-    loadUsingSystemPrincipal: true
-  }).QueryInterface(Ci.nsIHttpChannel);
+  var ios = Cc["@mozilla.org/network/io-service;1"]
+                      .getService(Ci.nsIIOService);
+  var chan = ios.newChannel2("http://localhost:" +
+                             httpserv.identity.primaryPort + "/",
+                             null,
+                             null,
+                             null,      
+                             Services.scriptSecurityManager.getSystemPrincipal(),
+                             null,      
+                             Ci.nsILoadInfo.SEC_NORMAL,
+                             Ci.nsIContentPolicy.TYPE_OTHER)
+                .QueryInterface(Ci.nsIHttpChannel);
+  return chan;
 }
 
 
@@ -139,46 +148,46 @@ var tests = [
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       do_check_eq(body, "Response body 1");
       sync_and_run_next_test();
-    }, null, CL_NOT_FROM_CACHE));
+    }, null, CL_NOT_FROM_CACHE), null);
   },
 
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       do_check_eq(body, "Response body 2");
       sync_and_run_next_test();
-    }, null, CL_NOT_FROM_CACHE));
+    }, null, CL_NOT_FROM_CACHE), null);
   },
 
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       do_check_eq(body, "Response body 2");
       sync_and_run_next_test();
-    }, null, CL_FROM_CACHE));
+    }, null, CL_FROM_CACHE), null);
   },
 
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       do_check_eq(body, "Response body 3");
       sync_and_run_next_test();
-    }, null, CL_NOT_FROM_CACHE));
+    }, null, CL_NOT_FROM_CACHE), null);
   },
 
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       do_check_eq(body, "Response body 3");
       sync_and_run_next_test();
-    }, null, CL_FROM_CACHE));
+    }, null, CL_FROM_CACHE), null);
   },
 
   
