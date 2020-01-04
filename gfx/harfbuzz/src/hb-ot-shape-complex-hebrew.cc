@@ -163,6 +163,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hebrew =
   NULL, 
   NULL, 
   NULL, 
+  NULL, 
   HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   NULL, 
   compose_hebrew,

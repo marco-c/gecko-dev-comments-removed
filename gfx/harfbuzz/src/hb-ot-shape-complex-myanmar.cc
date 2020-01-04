@@ -455,12 +455,12 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
     {
       last_syllable = syllable;
 
-      hb_glyph_info_t info = dottedcircle;
-      info.cluster = buffer->cur().cluster;
-      info.mask = buffer->cur().mask;
-      info.syllable() = buffer->cur().syllable();
+      hb_glyph_info_t ginfo = dottedcircle;
+      ginfo.cluster = buffer->cur().cluster;
+      ginfo.mask = buffer->cur().mask;
+      ginfo.syllable() = buffer->cur().syllable();
 
-      buffer->output_info (info);
+      buffer->output_info (ginfo);
     }
     else
       buffer->next_glyph ();
@@ -507,6 +507,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_old =
   NULL, 
   NULL, 
   NULL, 
+  NULL, 
   HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   NULL, 
   NULL, 
@@ -520,6 +521,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
   "myanmar",
   collect_features_myanmar,
   override_features_myanmar,
+  NULL, 
   NULL, 
   NULL, 
   NULL, 
