@@ -56,6 +56,10 @@ function makeMemoryTest(url, generator) {
   return Task.async(function* () {
     waitForExplicitFinish();
 
+    
+    
+    requestLongerTimeout(2);
+
     const tab = yield addTab(url);
     const results = yield openMemoryPanel(tab);
 
