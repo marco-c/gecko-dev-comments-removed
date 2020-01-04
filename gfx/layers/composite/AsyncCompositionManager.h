@@ -16,7 +16,7 @@
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/FrameUniformityData.h" 
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/RefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsISupportsImpl.h"            
 
 namespace mozilla {
@@ -119,6 +119,10 @@ public:
 
   
   
+  bool HasRemoteContent() { return mHasRemoteContent; }
+
+  
+  
   bool IsFirstPaint() { return mIsFirstPaint; }
 
   
@@ -186,7 +190,8 @@ private:
 
 
 
-  void ResolveRefLayers();
+  void ResolveRefLayers(bool aResolvePlugins);
+
   
 
 
@@ -200,7 +205,7 @@ private:
   TargetConfig mTargetConfig;
   CSSRect mContentRect;
 
-  RefPtr<LayerManagerComposite> mLayerManager;
+  nsRefPtr<LayerManagerComposite> mLayerManager;
   
   
   
@@ -215,6 +220,7 @@ private:
   int32_t mPaintSyncId;
 
   bool mReadyForCompose;
+  bool mHasRemoteContent;
 
   gfx::Matrix mWorldTransform;
   LayerTransformRecorder mLayerTransformRecorder;
@@ -224,10 +230,12 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AsyncCompositionManager::TransformsToSkip)
 
 class MOZ_STACK_CLASS AutoResolveRefLayers {
 public:
-  explicit AutoResolveRefLayers(AsyncCompositionManager* aManager) : mManager(aManager)
+  explicit AutoResolveRefLayers(AsyncCompositionManager* aManager,
+                                bool aResolvePlugins = false) :
+    mManager(aManager)
   {
     if (mManager) {
-      mManager->ResolveRefLayers();
+      mManager->ResolveRefLayers(aResolvePlugins);
     }
   }
 

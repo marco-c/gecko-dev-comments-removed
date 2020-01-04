@@ -194,7 +194,7 @@ LayerManager::Mutated(Layer* aLayer)
 already_AddRefed<ImageContainer>
 LayerManager::CreateImageContainer(ImageContainer::Mode flag)
 {
-  RefPtr<ImageContainer> container = new ImageContainer(flag);
+  nsRefPtr<ImageContainer> container = new ImageContainer(flag);
   return container.forget();
 }
 
@@ -301,7 +301,7 @@ CreateCSSValueList(const InfallibleTArray<TransformFunction>& aFunctions)
   nsAutoPtr<nsCSSValueList> result;
   nsCSSValueList** resultTail = getter_Transfers(result);
   for (uint32_t i = 0; i < aFunctions.Length(); i++) {
-    RefPtr<nsCSSValue::Array> arr;
+    nsRefPtr<nsCSSValue::Array> arr;
     switch (aFunctions[i].type()) {
       case TransformFunction::TRotationX:
       {
@@ -992,6 +992,10 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
                                            nsIntPoint* aLayerOffset)
 {
   MOZ_ASSERT(aLayerOffset, "invalid offset pointer");
+
+  if (!GetParent()) {
+    return false;
+  }
 
   IntPoint offset;
   aResult = GetEffectiveVisibleRegion();

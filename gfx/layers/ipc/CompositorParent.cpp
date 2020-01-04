@@ -1040,7 +1040,15 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
     return;
   }
 
-  AutoResolveRefLayers resolve(mCompositionManager);
+  AutoResolveRefLayers resolve(mCompositionManager, true);
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+  
+  
+  if (!mCompositionManager->HasRemoteContent()) {
+    unused << SendHideAllPlugins((uintptr_t)GetWidget());
+  }
+#endif
 
   if (aTarget) {
     mLayerManager->BeginTransactionWithDrawTarget(aTarget, *aRect);
@@ -1308,7 +1316,7 @@ CompositorParent::GetAPZTestData(const LayerTransactionParent* aLayerTree,
 class NotifyAPZConfirmedTargetTask : public Task
 {
 public:
-  explicit NotifyAPZConfirmedTargetTask(const RefPtr<APZCTreeManager>& aAPZCTM,
+  explicit NotifyAPZConfirmedTargetTask(const nsRefPtr<APZCTreeManager>& aAPZCTM,
                                         const uint64_t& aInputBlockId,
                                         const nsTArray<ScrollableLayerGuid>& aTargets)
    : mAPZCTM(aAPZCTM),
@@ -1322,7 +1330,7 @@ public:
   }
 
 private:
-  RefPtr<APZCTreeManager> mAPZCTM;
+  nsRefPtr<APZCTreeManager> mAPZCTM;
   uint64_t mInputBlockId;
   nsTArray<ScrollableLayerGuid> mTargets;
 };
@@ -1749,10 +1757,10 @@ private:
   
   
   
-  RefPtr<CrossProcessCompositorParent> mSelfRef;
+  nsRefPtr<CrossProcessCompositorParent> mSelfRef;
   Transport* mTransport;
 
-  RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
+  nsRefPtr<CompositorThreadHolder> mCompositorThreadHolder;
   
   
   bool mNotifyAfterRemotePaint;
@@ -1799,7 +1807,7 @@ CompositorParent::Create(Transport* aTransport, ProcessId aOtherPid)
 {
   gfxPlatform::InitLayersIPC();
 
-  RefPtr<CrossProcessCompositorParent> cpcp =
+  nsRefPtr<CrossProcessCompositorParent> cpcp =
     new CrossProcessCompositorParent(aTransport);
 
   cpcp->mSelfRef = cpcp;
@@ -1855,7 +1863,7 @@ CompositorParent::GetIndirectShadowTree(uint64_t aId)
 bool
 CrossProcessCompositorParent::RecvNotifyHidden(const uint64_t& id)
 {
-  RefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
+  nsRefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
   lru->Add(this, id);
   return true;
 }
@@ -1863,7 +1871,7 @@ CrossProcessCompositorParent::RecvNotifyHidden(const uint64_t& id)
 bool
 CrossProcessCompositorParent::RecvNotifyVisible(const uint64_t& id)
 {
-  RefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
+  nsRefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
   lru->Remove(this, id);
   return true;
 }
@@ -1878,7 +1886,7 @@ CrossProcessCompositorParent::RecvRequestNotifyAfterRemotePaint()
 void
 CrossProcessCompositorParent::ActorDestroy(ActorDestroyReason aWhy)
 {
-  RefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
+  nsRefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
   lru->Remove(this);
 
   MessageLoop::current()->PostTask(
@@ -1989,7 +1997,7 @@ CrossProcessCompositorParent::ShadowLayersUpdated(
   }
 
   if (state->mLayerTreeReadyObserver) {
-    RefPtr<CompositorUpdateObserver> observer = state->mLayerTreeReadyObserver;
+    nsRefPtr<CompositorUpdateObserver> observer = state->mLayerTreeReadyObserver;
     state->mLayerTreeReadyObserver = nullptr;
     observer->ObserveUpdate(id, true);
   }
@@ -1999,66 +2007,40 @@ CrossProcessCompositorParent::ShadowLayersUpdated(
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 
-static void
-UpdatePluginWindowState(uint64_t aId)
+void
+CompositorParent::UpdatePluginWindowState(uint64_t aId)
 {
   CompositorParent::LayerTreeState& lts = sIndirectLayerTrees[aId];
-  if (!lts.mPluginData.Length() && !lts.mUpdatedPluginDataAvailable) {
+  if (!lts.mUpdatedPluginDataAvailable) {
     return;
   }
 
-  bool shouldComposePlugin = !!lts.mRoot &&
-                             !!lts.mRoot->GetParent();
-
-  bool shouldHidePlugin = !lts.mRoot ||
-                          !lts.mRoot->GetParent();
-
-  if (shouldComposePlugin) {
-    if (!lts.mPluginData.Length()) {
-      
-      
-      
-      
-      uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
-      unused << lts.mParent->SendHideAllPlugins(parentWidget);
-      lts.mUpdatedPluginDataAvailable = false;
-      return;
-    }
-
+  if (!lts.mPluginData.Length()) {
     
     
     
-    LayerTransactionParent* layerTree = lts.mLayerTree;
-    Layer* contentRoot = layerTree->GetRoot();
-    if (contentRoot) {
-      nsIntPoint offset;
-      nsIntRegion visibleRegion;
-      if (contentRoot->GetVisibleRegionRelativeToRootLayer(visibleRegion,
-                                                           &offset)) {
-        unused <<
-          lts.mParent->SendUpdatePluginConfigurations(offset, visibleRegion,
-                                                      lts.mPluginData);
-        lts.mUpdatedPluginDataAvailable = false;
-      } else {
-        shouldHidePlugin = true;
-      }
-    }
+    
+    uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
+    unused << lts.mParent->SendHideAllPlugins(parentWidget);
+    lts.mUpdatedPluginDataAvailable = false;
+    return;
   }
 
   
-  if (shouldHidePlugin) {
-    for (uint32_t pluginsIdx = 0; pluginsIdx < lts.mPluginData.Length();
-         pluginsIdx++) {
-      lts.mPluginData[pluginsIdx].visible() = false;
-    }
+  
+  
+  LayerTransactionParent* layerTree = lts.mLayerTree;
+  Layer* contentRoot = layerTree->GetRoot();
+  if (contentRoot) {
     nsIntPoint offset;
-    nsIntRegion region;
-    unused << lts.mParent->SendUpdatePluginConfigurations(offset,
-                                                          region,
-                                                          lts.mPluginData);
-    
-    
-    lts.mPluginData.Clear();
+    nsIntRegion visibleRegion;
+    if (contentRoot->GetVisibleRegionRelativeToRootLayer(visibleRegion,
+                                                          &offset)) {
+      unused <<
+        lts.mParent->SendUpdatePluginConfigurations(offset, visibleRegion,
+                                                    lts.mPluginData);
+      lts.mUpdatedPluginDataAvailable = false;
+    }
   }
 }
 #endif 
@@ -2074,9 +2056,6 @@ CrossProcessCompositorParent::DidComposite(uint64_t aId,
     unused << SendDidComposite(aId, layerTree->GetPendingTransactionId(), aCompositeStart, aCompositeEnd);
     layerTree->SetPendingTransactionId(0);
   }
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-      UpdatePluginWindowState(aId);
-#endif
 }
 
 void
@@ -2100,7 +2079,7 @@ CrossProcessCompositorParent::NotifyClearCachedResources(LayerTransactionParent*
   uint64_t id = aLayerTree->GetId();
   MOZ_ASSERT(id != 0);
 
-  RefPtr<CompositorUpdateObserver> observer;
+  nsRefPtr<CompositorUpdateObserver> observer;
   { 
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     observer = sIndirectLayerTrees[id].mLayerTreeClearedObserver;
