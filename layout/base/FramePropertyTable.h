@@ -6,8 +6,9 @@
 #ifndef FRAMEPROPERTYTABLE_H_
 #define FRAMEPROPERTYTABLE_H_
 
-#include "mozilla/TypeTraits.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/TypeTraits.h"
+#include "mozilla/unused.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
@@ -171,6 +172,32 @@ public:
     helper.value = aValue;
     SetInternal(aFrame, aProperty, helper.ptr);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<typename T>
+  bool IsSet(const nsIFrame* aFrame, Descriptor<T> aProperty)
+  {
+    bool foundResult = false;
+    mozilla::Unused << GetInternal(aFrame, aProperty, &foundResult);
+    return foundResult;
+  }
+
   
 
 
@@ -360,6 +387,13 @@ public:
   {
     mTable->Set(mFrame, aProperty, aValue);
   }
+
+  template<typename T>
+  bool IsSet(Descriptor<T> aProperty) const
+  {
+    return mTable->IsSet(mFrame, aProperty);
+  }
+
   template<typename T>
   PropertyType<T> Get(Descriptor<T> aProperty,
                       bool* aFoundResult = nullptr) const
