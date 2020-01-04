@@ -319,9 +319,9 @@ public:
 
 
   struct ReplacedElementISizeToClear {
-    nscoord marginIStart, borderBoxISize, marginIEnd;
-    nscoord MarginBoxISize() const
-      { return marginIStart + borderBoxISize + marginIEnd; }
+    
+    
+    nscoord marginIStart, borderBoxISize;
   };
   static ReplacedElementISizeToClear
     ISizeToClearPastFloats(const nsBlockReflowState& aState,
