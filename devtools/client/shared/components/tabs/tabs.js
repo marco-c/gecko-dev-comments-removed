@@ -47,12 +47,15 @@ define(function (require, exports, module) {
       children: React.PropTypes.oneOfType([
         React.PropTypes.array,
         React.PropTypes.element
-      ]).isRequired
+      ]).isRequired,
+      showAllTabsMenu: React.PropTypes.bool,
+      onAllTabsMenuClick: React.PropTypes.func,
     },
 
     getDefaultProps: function () {
       return {
-        tabActive: 0
+        tabActive: 0,
+        showAllTabsMenu: false,
       };
     },
 
@@ -69,12 +72,24 @@ define(function (require, exports, module) {
         
         
         created: [],
+
+        
+        overflow: false,
       };
     },
 
     componentDidMount: function () {
       let node = findDOMNode(this);
       node.addEventListener("keydown", this.onKeyDown, false);
+
+      
+      
+      
+      
+      if (this.props.showAllTabsMenu) {
+        node.addEventListener("overflow", this.onOverflow, false);
+        node.addEventListener("underflow", this.onUnderflow, false);
+      }
 
       let index = this.state.tabActive;
       if (this.props.onMount) {
@@ -83,7 +98,9 @@ define(function (require, exports, module) {
     },
 
     componentWillReceiveProps: function (newProps) {
-      if (newProps.tabActive) {
+      
+      
+      if (typeof newProps.tabActive == "number") {
         let created = [...this.state.created];
         created[newProps.tabActive] = true;
 
@@ -97,9 +114,30 @@ define(function (require, exports, module) {
     componentWillUnmount: function () {
       let node = findDOMNode(this);
       node.removeEventListener("keydown", this.onKeyDown, false);
+
+      if (this.props.showAllTabsMenu) {
+        node.removeEventListener("overflow", this.onOverflow, false);
+        node.removeEventListener("underflow", this.onUnderflow, false);
+      }
     },
 
     
+
+    onOverflow: function (event) {
+      if (event.target.classList.contains("tabs-menu")) {
+        this.setState({
+          overflow: true
+        });
+      }
+    },
+
+    onUnderflow: function (event) {
+      if (event.target.classList.contains("tabs-menu")) {
+        this.setState({
+          overflow: false
+        });
+      }
+    },
 
     onKeyDown: function (event) {
       
@@ -127,6 +165,12 @@ define(function (require, exports, module) {
     onClickTab: function (index, event) {
       this.setActive(index);
       event.preventDefault();
+    },
+
+    onAllTabsMenuClick: function (event) {
+      if (this.props.onAllTabsMenuClick) {
+        this.props.onAllTabsMenuClick(event);
+      }
     },
 
     
@@ -218,11 +262,21 @@ define(function (require, exports, module) {
           );
         });
 
+      
+      
+      let allTabsMenu = this.state.overflow ? (
+        DOM.div({
+          className: "all-tabs-menu",
+          onClick: this.props.onAllTabsMenuClick
+        })
+      ) : null;
+
       return (
         DOM.nav({className: "tabs-navigation"},
           DOM.ul({className: "tabs-menu", role: "tablist"},
             tabs
-          )
+          ),
+          allTabsMenu
         )
       );
     },
