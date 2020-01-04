@@ -68,7 +68,7 @@ public:
         
         for (uint32_t j = 0; j < contextArray.Length(); ++j) {
           if ((contextArray[j].OwnOrContainingAppId() == mOriginAttributes.mAppId) &&
-              (contextArray[j].IsBrowserElement() == mOriginAttributes.mInBrowser)) {
+              (contextArray[j].IsBrowserElement() == mOriginAttributes.mInIsolatedMozBrowser)) {
             continue;
           }
           

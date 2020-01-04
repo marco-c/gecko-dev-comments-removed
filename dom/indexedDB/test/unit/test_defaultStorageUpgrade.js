@@ -47,11 +47,11 @@ function testSteps()
     { dbName: "dbL", dbVersion: 1 },
 
     
-    { appId: 1007, inMozBrowser: false, url: "app://system.gaiamobile.org",
+    { appId: 1007, inIsolatedMozBrowser: false, url: "app://system.gaiamobile.org",
       dbName: "dbM", dbVersion: 1 },
 
     
-    { appId: 1007, inMozBrowser: true, url: "https://developer.cdn.mozilla.net",
+    { appId: 1007, inIsolatedMozBrowser: true, url: "https://developer.cdn.mozilla.net",
       dbName: "dbN", dbVersion: 1 },
 
     
@@ -93,7 +93,7 @@ function testSteps()
       let principal =
         ssm.createCodebasePrincipal(uri,
                                     {appId: params.appId || ssm.NO_APPID,
-                                     inBrowser: params.inMozBrowser});
+                                     inIsolatedMozBrowser: params.inIsolatedMozBrowser});
       if ("dbVersion" in params) {
         request = indexedDB.openForPrincipal(principal, params.dbName,
                                              params.dbVersion);

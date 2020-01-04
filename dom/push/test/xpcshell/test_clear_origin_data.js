@@ -51,31 +51,31 @@ add_task(function* test_webapps_cleardata() {
   let testRecords = [{
     scope: 'https://example.org/1',
     originAttributes: { appId: 1 },
-    clearIf: { appId: 1, inBrowser: false },
+    clearIf: { appId: 1, inIsolatedMozBrowser: false },
   }, {
     scope: 'https://example.org/1',
-    originAttributes: { appId: 1, inBrowser: true },
+    originAttributes: { appId: 1, inIsolatedMozBrowser: true },
     clearIf: { appId: 1 },
   }, {
     scope: 'https://example.org/1',
-    originAttributes: { appId: 2, inBrowser: true },
-    clearIf: { appId: 2, inBrowser: true },
+    originAttributes: { appId: 2, inIsolatedMozBrowser: true },
+    clearIf: { appId: 2, inIsolatedMozBrowser: true },
   }, {
     scope: 'https://example.org/2',
     originAttributes: { appId: 1 },
-    clearIf: { appId: 1, inBrowser: false },
+    clearIf: { appId: 1, inIsolatedMozBrowser: false },
   }, {
     scope: 'https://example.org/2',
-    originAttributes: { appId: 2, inBrowser: true },
-    clearIf: { appId: 2, inBrowser: true },
+    originAttributes: { appId: 2, inIsolatedMozBrowser: true },
+    clearIf: { appId: 2, inIsolatedMozBrowser: true },
   }, {
     scope: 'https://example.org/3',
-    originAttributes: { appId: 3, inBrowser: true },
-    clearIf: { inBrowser: true },
+    originAttributes: { appId: 3, inIsolatedMozBrowser: true },
+    clearIf: { inIsolatedMozBrowser: true },
   }, {
     scope: 'https://example.org/3',
-    originAttributes: { appId: 4, inBrowser: true },
-    clearIf: { inBrowser: true },
+    originAttributes: { appId: 4, inIsolatedMozBrowser: true },
+    clearIf: { inIsolatedMozBrowser: true },
   }];
 
   let unregisterDone;
@@ -124,17 +124,17 @@ add_task(function* test_webapps_cleardata() {
 
   
   
-  yield clearForPattern(testRecords, { appId: 1, inBrowser: false });
+  yield clearForPattern(testRecords, { appId: 1, inIsolatedMozBrowser: false });
 
   
   yield clearForPattern(testRecords, { appId: 1 });
 
   
   
-  yield clearForPattern(testRecords, { appId: 2, inBrowser: true });
+  yield clearForPattern(testRecords, { appId: 2, inIsolatedMozBrowser: true });
 
   
-  yield clearForPattern(testRecords, { inBrowser: true });
+  yield clearForPattern(testRecords, { inIsolatedMozBrowser: true });
 
   equal(testRecords.length, 0, 'Should remove all test records');
   yield waitForPromise(unregisterPromise, DEFAULT_TIMEOUT,

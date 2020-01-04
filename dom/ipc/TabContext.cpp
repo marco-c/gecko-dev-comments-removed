@@ -30,7 +30,7 @@ TabContext::TabContext()
 bool
 TabContext::IsBrowserElement() const
 {
-  return mOriginAttributes.mInBrowser;
+  return mOriginAttributes.mInIsolatedMozBrowser;
 }
 
 bool
@@ -310,7 +310,7 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
   }
 
   nsCOMPtr<mozIApplication> ownApp;
-  if (!originAttributes.mInBrowser) {
+  if (!originAttributes.mInIsolatedMozBrowser) {
     
     
     ownApp = GetAppForId(originAttributes.mAppId);

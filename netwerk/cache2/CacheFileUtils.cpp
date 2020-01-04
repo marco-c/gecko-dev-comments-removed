@@ -90,7 +90,7 @@ private:
       break;
     case 'b':
       
-      originAttribs.mInBrowser = true;
+      originAttribs.mInIsolatedMozBrowser = true;
       break;
     case 'a':
       isAnonymous = true;

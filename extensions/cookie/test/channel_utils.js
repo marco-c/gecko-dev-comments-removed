@@ -166,14 +166,14 @@ ChannelListener.prototype = {
 
 
 
-function LoadContextCallback(appId, inBrowserElement, isPrivate, isContent) {
+function LoadContextCallback(appId, inIsolatedMozBrowser, isPrivate, isContent) {
   this.appId = appId;
-  this.isInBrowserElement = inBrowserElement;
+  this.isInBrowserElement = inIsolatedMozBrowser;
   this.usePrivateBrowsing = isPrivate;
   this.isContent = isContent;
   this.originAttributes = {
     appId: appId,
-    inBrowser: inBrowserElement
+    inIsolatedMozBrowser: inIsolatedMozBrowser
   };
 }
 

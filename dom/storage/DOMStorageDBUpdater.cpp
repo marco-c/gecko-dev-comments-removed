@@ -85,14 +85,14 @@ public:
     }
 
     
-    nsDependentCSubstring browserFlag;
-    if (!ReadWord(browserFlag)) {
+    nsDependentCSubstring isolatedBrowserFlag;
+    if (!ReadWord(isolatedBrowserFlag)) {
       return;
     }
 
-    bool inBrowser = browserFlag == "t";
-    bool notInBrowser = browserFlag == "f";
-    if (!inBrowser && !notInBrowser) {
+    bool inIsolatedMozBrowser = isolatedBrowserFlag == "t";
+    bool notInIsolatedBrowser = isolatedBrowserFlag == "f";
+    if (!inIsolatedMozBrowser && !notInIsolatedBrowser) {
       return;
     }
 
@@ -133,7 +133,7 @@ public:
         }
       }
     } else {
-      PrincipalOriginAttributes attrs(appId, inBrowser);
+      PrincipalOriginAttributes attrs(appId, inIsolatedMozBrowser);
       attrs.CreateSuffix(suffix);
     }
 

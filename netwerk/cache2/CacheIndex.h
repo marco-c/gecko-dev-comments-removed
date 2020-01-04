@@ -148,7 +148,7 @@ public:
     mRec->mFlags = 0;
   }
 
-  void Init(uint32_t aAppId, bool aAnonymous, bool aInBrowser, bool aPinned)
+  void Init(uint32_t aAppId, bool aAnonymous, bool aInIsolatedMozBrowser, bool aPinned)
   {
     MOZ_ASSERT(mRec->mFrecency == 0);
     MOZ_ASSERT(mRec->mExpirationTime == nsICacheEntry::NO_EXPIRATION_TIME);
@@ -161,8 +161,8 @@ public:
     if (aAnonymous) {
       mRec->mFlags |= kAnonymousMask;
     }
-    if (aInBrowser) {
-      mRec->mFlags |= kInBrowserMask;
+    if (aInIsolatedMozBrowser) {
+      mRec->mFlags |= kInIsolatedMozBrowserMask;
     }
     if (aPinned) {
       mRec->mFlags |= kPinnedMask;
@@ -175,7 +175,10 @@ public:
 
   uint32_t AppId() const { return mRec->mAppId; }
   bool     Anonymous() const { return !!(mRec->mFlags & kAnonymousMask); }
-  bool     InBrowser() const { return !!(mRec->mFlags & kInBrowserMask); }
+  bool     InIsolatedMozBrowser() const
+  {
+    return !!(mRec->mFlags & kInIsolatedMozBrowserMask);
+  }
 
   bool IsRemoved() const { return !!(mRec->mFlags & kRemovedMask); }
   void MarkRemoved() { mRec->mFlags |= kRemovedMask; }
@@ -256,11 +259,12 @@ public:
   }
 
   void Log() const {
-    LOG(("CacheIndexEntry::Log() [this=%p, hash=%08x%08x%08x%08x%08x, fresh=%u,"
-         " initialized=%u, removed=%u, dirty=%u, anonymous=%u, inBrowser=%u, "
-         "appId=%u, frecency=%u, expirationTime=%u, size=%u]",
+    LOG(("CacheIndexEntry::Log() [this=%p, hash=%08x%08x%08x%08x%08x, "
+         "fresh=%u, initialized=%u, removed=%u, dirty=%u, anonymous=%u, "
+         "inIsolatedMozBrowser=%u, appId=%u, frecency=%u, expirationTime=%u, "
+         "size=%u]",
          this, LOGSHA1(mRec->mHash), IsFresh(), IsInitialized(), IsRemoved(),
-         IsDirty(), Anonymous(), InBrowser(), AppId(), GetFrecency(),
+         IsDirty(), Anonymous(), InIsolatedMozBrowser(), AppId(), GetFrecency(),
          GetExpirationTime(), GetFileSize()));
   }
 
@@ -270,7 +274,7 @@ public:
     if (!aInfo->IsPrivate() &&
         aInfo->OriginAttributesPtr()->mAppId == aRec->mAppId &&
         aInfo->IsAnonymous() == !!(aRec->mFlags & kAnonymousMask) &&
-        aInfo->OriginAttributesPtr()->mInBrowser == !!(aRec->mFlags & kInBrowserMask)) {
+        aInfo->OriginAttributesPtr()->mInIsolatedMozBrowser == !!(aRec->mFlags & kInIsolatedMozBrowserMask)) {
       return true;
     }
 
@@ -295,7 +299,7 @@ private:
 
   static const uint32_t kInitializedMask = 0x80000000;
   static const uint32_t kAnonymousMask   = 0x40000000;
-  static const uint32_t kInBrowserMask   = 0x20000000;
+  static const uint32_t kInIsolatedMozBrowserMask   = 0x20000000;
 
   
   
@@ -622,7 +626,7 @@ public:
   static nsresult InitEntry(const SHA1Sum::Hash *aHash,
                             uint32_t             aAppId,
                             bool                 aAnonymous,
-                            bool                 aInBrowser,
+                            bool                 aInIsolatedMozBrowser,
                             bool                 aPinned);
 
   
@@ -724,7 +728,7 @@ private:
   static bool IsCollision(CacheIndexEntry *aEntry,
                           uint32_t         aAppId,
                           bool             aAnonymous,
-                          bool             aInBrowser);
+                          bool             aInIsolatedMozBrowser);
 
   
   static bool HasEntryChanged(CacheIndexEntry *aEntry,

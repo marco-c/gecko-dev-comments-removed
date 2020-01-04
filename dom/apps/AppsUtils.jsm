@@ -150,15 +150,16 @@ this.AppsUtils = {
   },
 
   
-  createLoadContext: function createLoadContext(aAppId, aIsBrowser) {
+  
+  createLoadContext: function createLoadContext(aAppId, aInIsolatedMozBrowser) {
     return {
        associatedWindow: null,
        topWindow : null,
        appId: aAppId,
-       isInBrowserElement: aIsBrowser,
+       isInBrowserElement: aInIsolatedMozBrowser,
        originAttributes: {
          appId: aAppId,
-         inBrowser: aIsBrowser
+         inIsolatedMozBrowser: aInIsolatedMozBrowser
        },
        usePrivateBrowsing: false,
        isContent: false,

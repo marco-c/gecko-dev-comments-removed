@@ -262,7 +262,7 @@ NS_IMETHODIMP
 OfflineCacheUpdateParent::GetIsInBrowserElement(bool *aIsInBrowserElement)
 {
     NS_ENSURE_TRUE(mLoadingPrincipal, NS_ERROR_UNEXPECTED);
-    return mLoadingPrincipal->GetIsInBrowserElement(aIsInBrowserElement);
+    return mLoadingPrincipal->GetIsInIsolatedMozBrowserElement(aIsInBrowserElement);
 }
 
 NS_IMETHODIMP
