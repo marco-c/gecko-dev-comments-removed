@@ -1019,7 +1019,10 @@ nsDisplayPlugin::ComputeVisibility(nsDisplayListBuilder* aBuilder,
         rAncestor.ToNearestPixels(appUnitsPerDevPixel));
 
       nsRegion visibleRegion;
-      visibleRegion.And(*aVisibleRegion, GetClippedBounds(aBuilder));
+      
+      
+      
+      visibleRegion.And(*aVisibleRegion, GetScrollClippedBoundsUpTo(aBuilder, nullptr));
       
       visibleRegion.MoveBy(-ToReferenceFrame());
 
