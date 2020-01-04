@@ -108,6 +108,7 @@ class JitCode;
     D(js::UnownedBaseShape*) \
     D(js::WasmInstanceObject*) \
     D(js::WasmMemoryObject*) \
+    D(js::WasmTableObject*) \
     D(js::jit::JitCode*)
 
 

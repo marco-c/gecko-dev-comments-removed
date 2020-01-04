@@ -401,7 +401,7 @@ Instance::tracePrivate(JSTracer* trc)
     
     
     
-    MOZ_ASSERT(!IsAboutToBeFinalized(&object_));
+    MOZ_ASSERT(!gc::IsAboutToBeFinalized(&object_));
     TraceEdge(trc, &object_, "wasm instance object");
 
     for (const FuncImport& fi : metadata().funcImports)

@@ -21,12 +21,13 @@
 #include "jscntxt.h"
 
 #include "asmjs/WasmInstance.h"
+#include "asmjs/WasmJS.h"
 
 using namespace js;
 using namespace js::wasm;
 
  SharedTable
-Table::create(JSContext* cx, const TableDesc& desc)
+Table::create(JSContext* cx, const TableDesc& desc, HandleWasmTableObject maybeObject)
 {
     SharedTable table = cx->new_<Table>();
     if (!table)
@@ -43,6 +44,7 @@ Table::create(JSContext* cx, const TableDesc& desc)
     if (!array)
         return nullptr;
 
+    table->maybeObject_.set(maybeObject);
     table->array_.reset((uint8_t*)array);
     table->kind_ = desc.kind;
     table->length_ = desc.initial;
@@ -73,14 +75,38 @@ Table::init(Instance& instance)
 }
 
 void
-Table::trace(JSTracer* trc)
+Table::tracePrivate(JSTracer* trc)
 {
+    
+    
+    
+    
+    
+    if (maybeObject_) {
+        MOZ_ASSERT(!gc::IsAboutToBeFinalized(&maybeObject_));
+        TraceEdge(trc, &maybeObject_, "wasm table object");
+    }
+
     if (!initialized_ || !external_)
         return;
 
     ExternalTableElem* array = externalArray();
     for (uint32_t i = 0; i < length_; i++)
         array[i].tls->instance->trace(trc);
+}
+
+void
+Table::trace(JSTracer* trc)
+{
+    
+    
+    
+    
+    
+    if (maybeObject_)
+        TraceEdge(trc, &maybeObject_, "wasm table object");
+    else
+        tracePrivate(trc);
 }
 
 void**
