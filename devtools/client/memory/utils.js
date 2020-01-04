@@ -524,6 +524,42 @@ exports.openFilePicker = function({ title, filters, defaultName, mode }) {
 
 
 
+exports.formatNumber = function(number, showSign = false) {
+  const rounded = Math.round(number);
+  if (rounded === 0 || rounded === -0) {
+    return "0";
+  }
+
+  const abs = String(Math.abs(rounded));
+  
+  const formatted = abs.replace(/(\d)(?=(\d{3})+$)/g, "$1 ");
+
+  if (showSign) {
+    const sign = rounded < 0 ? "-" : "+";
+    return sign + formatted;
+  }
+  return formatted;
+};
+
+
+
+
+
+
+
+
+exports.formatPercent = function(percent, showSign = false) {
+  return exports.L10N.getFormatStr("tree-item.percent",
+                           exports.formatNumber(percent, showSign));
+};
+
+
+
+
+
+
+
+
 
 const createParentMap = exports.createParentMap = function (node,
                                                             getId = node => node.id,
