@@ -605,6 +605,9 @@ jit::LazyLink(JSContext* cx, HandleScript calleeScript)
             
             
             cx->clearPendingException();
+
+            
+            InvalidateCompilerOutputsForScript(cx, calleeScript);
         }
     }
 
@@ -2207,9 +2210,6 @@ IonCompile(JSContext* cx, JSScript* script,
 
     
     if (options.offThreadCompilationAvailable()) {
-        if (!recompile)
-            builderScript->setIonScript(cx, ION_COMPILING_SCRIPT);
-
         JitSpew(JitSpew_IonSyncLogs, "Can't log script %s:%" PRIuSIZE
                 ". (Compiled on background thread.)",
                 builderScript->filename(), builderScript->lineno());
@@ -2219,6 +2219,9 @@ IonCompile(JSContext* cx, JSScript* script,
             builder->graphSpewer().endFunction();
             return AbortReason_Alloc;
         }
+
+        if (!recompile)
+            builderScript->setIonScript(cx, ION_COMPILING_SCRIPT);
 
         
         

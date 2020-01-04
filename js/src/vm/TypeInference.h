@@ -1071,6 +1071,10 @@ FinishCompilation(JSContext* cx, HandleScript script, CompilerConstraintList* co
                   RecompileInfo* precompileInfo);
 
 
+void
+InvalidateCompilerOutputsForScript(JSContext* cx, HandleScript script);
+
+
 
 void
 FinishDefinitePropertiesAnalysis(JSContext* cx, CompilerConstraintList* constraints);
