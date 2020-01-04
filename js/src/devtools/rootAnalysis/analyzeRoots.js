@@ -331,28 +331,54 @@ function edgeCanGC(edge)
 
 
 
-function findGCBeforeVariableUse(suppressed, variable, worklist)
+function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
 {
     
     
     
     
 
+    var bodies_visited = new Map();
+
+    let worklist = [{body: start_body, ppoint: start_point, gcInfo: null, why: null}];
     while (worklist.length) {
+        
+        
+        
+        
+
         var entry = worklist.pop();
         var { body, ppoint, gcInfo } = entry;
 
-        if (body.seen) {
-            if (ppoint in body.seen) {
-                var seenEntry = body.seen[ppoint];
-                if (!gcInfo || seenEntry.gcInfo)
-                    continue;
-            }
-        } else {
-            body.seen = [];
-        }
-        body.seen[ppoint] = {body: body, gcInfo: gcInfo};
+        
+        
+        var visited = bodies_visited.get(body);
+        if (!visited)
+            bodies_visited.set(body, visited = new Map());
+        if (visited.has(ppoint)) {
+            var seenEntry = visited.get(ppoint);
 
+            
+            
+            
+            if (seenEntry.gcInfo)
+                continue;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            if (!gcInfo)
+                continue;
+        }
+        visited.set(ppoint, {body: body, gcInfo: gcInfo});
+
+        
+        
         if (ppoint == body.Index[0]) {
             if (body.BlockId.Kind == "Loop") {
                 
@@ -399,9 +425,8 @@ function findGCBeforeVariableUse(suppressed, variable, worklist)
                 
                 
                 if (gcInfo)
-                    return {gcInfo: gcInfo, why: {body: body, ppoint: source, gcInfo: gcInfo, why: entry } }
+                    return {gcInfo: gcInfo, why: {body: body, ppoint: source, gcInfo: gcInfo, why: entry } };
 
-                
                 
                 
                 continue;
@@ -414,6 +439,9 @@ function findGCBeforeVariableUse(suppressed, variable, worklist)
             }
 
             if (edge_uses) {
+                
+                
+                
                 
                 
                 if (gcInfo)
@@ -448,11 +476,10 @@ function variableLiveAcrossGC(suppressed, variable)
 {
     
     
+    
 
-    for (var body of functionBodies) {
-        body.seen = null;
+    for (var body of functionBodies)
         body.minimumUse = 0;
-    }
 
     for (var body of functionBodies) {
         if (!("PEdge" in body))
@@ -467,8 +494,7 @@ function variableLiveAcrossGC(suppressed, variable)
             
             if (usePoint && !edgeKillsVariable(edge, variable)) {
                 
-                var worklist = [{body:body, ppoint:usePoint, gcInfo:null, why:null}];
-                var call = findGCBeforeVariableUse(suppressed, variable, worklist);
+                var call = findGCBeforeVariableUse(body, usePoint, suppressed, variable);
                 if (!call)
                     continue;
 
