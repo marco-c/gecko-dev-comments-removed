@@ -1269,6 +1269,42 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
         return line;
       }
 
+      function createCueIfNeeded() {
+        if (!self.cue) {
+          self.cue = new self.window.VTTCue(0, 0, "");
+        }
+      }
+
+      
+      
+      function parseCueIdentifier(input) {
+        if (maybeIsTimeStampFormat(line)) {
+          self.state = "CUE";
+          return false;
+        }
+
+        createCueIfNeeded();
+        
+        self.cue.id = containsTimeDirectionSymbol(input) ? "" : input;
+        self.state = "CUE";
+        return true;
+      }
+
+      
+      
+      function parseCueMayThrow(input) {
+        try {
+          createCueIfNeeded();
+          parseCue(input, self.cue, self.regionList);
+          self.state = "CUETEXT";
+        } catch (e) {
+          self.reportOrThrowError(e);
+          
+          self.cue = null;
+          self.state = "BADCUE";
+        }
+      }
+
       
       function parseRegion(input) {
         var settings = new Settings();
@@ -1391,92 +1427,55 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
         }
 
         var line;
-        var alreadyCollectedLine = false;
-        while (self.buffer) {
-          
-          if (!/\r\n|\n/.test(self.buffer)) {
-            return this;
-          }
+        if (self.state === "HEADER") {
+          line = parseHeader();
+        }
 
-          if (!alreadyCollectedLine) {
+        while (self.buffer) {
+          if (!line) {
             line = collectNextLine();
-          } else {
-            alreadyCollectedLine = false;
           }
 
           switch (self.state) {
-          case "HEADER":
-            
-            if (/:/.test(line)) {
-              parseHeader(line);
-            } else if (!line) {
-              
-              self.state = "ID";
-            }
-            continue;
-          case "NOTE":
-            
-            if (!line) {
-              self.state = "ID";
-            }
-            continue;
           case "ID":
             
-            if (/^NOTE($|[ \t])/.test(line)) {
-              self.state = "NOTE";
+            if (/^NOTE($|[ \t])/.test(line) || !line) {
               break;
             }
             
-            if (!line) {
+            
+            if (!parseCueIdentifier(line)) {
               continue;
             }
-            self.cue = new self.window.VTTCue(0, 0, "");
-            self.state = "CUE";
-            
-            if (line.indexOf("-->") === -1) {
-              self.cue.id = line;
-              continue;
-            }
-            
-            
+            break;
           case "CUE":
-            
-            try {
-              parseCue(line, self.cue, self.regionList);
-            } catch (e) {
-              self.reportOrThrowError(e);
-              
-              self.cue = null;
-              self.state = "BADCUE";
-              continue;
-            }
-            self.state = "CUETEXT";
-            continue;
+            parseCueMayThrow(line);
+            break;
           case "CUETEXT":
-            var hasSubstring = line.indexOf("-->") !== -1;
             
-            
-            
-            
-            if (!line || hasSubstring && (alreadyCollectedLine = true)) {
+            if (!line || containsTimeDirectionSymbol(line)) {
               
               self.oncue && self.oncue(self.cue);
               self.cue = null;
               self.state = "ID";
+              
               continue;
             }
             if (self.cue.text) {
               self.cue.text += "\n";
             }
             self.cue.text += line;
-            continue;
+            break;
           case "BADCUE": 
             
             if (!line) {
               self.state = "ID";
             }
-            continue;
+            break;
           }
+          
+          
+          line = null;
         }
       } catch (e) {
         self.reportOrThrowError(e);
