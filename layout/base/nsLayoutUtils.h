@@ -1212,6 +1212,23 @@ public:
 
 
 
+
+
+
+
+  static nsresult GetFontMetricsOfEmphasisMarks(nsStyleContext* aStyleContext,
+                                                nsFontMetrics** aFontMetrics,
+                                                float aInflation)
+  {
+    return GetFontMetricsForStyleContext(aStyleContext, aFontMetrics,
+                                         aInflation * 0.5f);
+  }
+
+  
+
+
+
+
   static nsIFrame* FindChildContainingDescendant(nsIFrame* aParent, nsIFrame* aDescendantFrame);
 
   
