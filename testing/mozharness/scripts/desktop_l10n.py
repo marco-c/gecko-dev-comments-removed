@@ -993,10 +993,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
         self.enable_mock()
         self.activate_virtualenv()
 
-        
-        
-        logging.getLogger('taskcluster').setLevel(logging.DEBUG)
-
         branch = self.config['branch']
         platform = self.config['platform']
         revision = self._query_revision()

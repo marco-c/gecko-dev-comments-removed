@@ -1368,10 +1368,6 @@ or run without that action (ie: --no-{action})"
         self.create_virtualenv()
         self.activate_virtualenv()
 
-        
-        
-        logging.getLogger('taskcluster').setLevel(logging.DEBUG)
-
         routes_file = os.path.join(dirs['abs_src_dir'],
                                    'testing/taskcluster/routes.json')
         with open(routes_file) as f:
