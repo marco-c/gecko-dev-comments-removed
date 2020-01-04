@@ -24,55 +24,11 @@
 #include "nsIScriptError.h"
 
 namespace mozilla {
-
-
-static void
-GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
-                            const Nullable<TimeDuration>& aLocalTime,
-                            const TimingParams& aTiming,
-                            dom::ComputedTimingProperties& aRetVal)
-{
-  
-  aRetVal.mDelay = aTiming.mDelay.ToMilliseconds();
-  aRetVal.mEndDelay = aTiming.mEndDelay.ToMilliseconds();
-  aRetVal.mFill = aComputedTiming.mFill;
-  aRetVal.mIterations = aComputedTiming.mIterations;
-  aRetVal.mIterationStart = aComputedTiming.mIterationStart;
-  aRetVal.mDuration.SetAsUnrestrictedDouble() =
-    aComputedTiming.mDuration.ToMilliseconds();
-  aRetVal.mDirection = aTiming.mDirection;
-
-  
-  aRetVal.mActiveDuration = aComputedTiming.mActiveDuration.ToMilliseconds();
-  aRetVal.mEndTime = aComputedTiming.mEndTime.ToMilliseconds();
-  aRetVal.mLocalTime = AnimationUtils::TimeDurationToDouble(aLocalTime);
-  aRetVal.mProgress = aComputedTiming.mProgress;
-
-  if (!aRetVal.mProgress.IsNull()) {
-    
-    
-    double iteration = aComputedTiming.mCurrentIteration == UINT64_MAX
-                     ? PositiveInfinity<double>()
-                     : static_cast<double>(aComputedTiming.mCurrentIteration);
-    aRetVal.mCurrentIteration.SetValue(iteration);
-  }
-}
-
 namespace dom {
 
-NS_IMPL_CYCLE_COLLECTION_CLASS(KeyframeEffectReadOnly)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(KeyframeEffectReadOnly,
-                                                AnimationEffectReadOnly)
-  if (tmp->mTiming) {
-    tmp->mTiming->Unlink();
-  }
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTarget, mAnimation, mTiming)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(KeyframeEffectReadOnly,
-                                                  AnimationEffectReadOnly)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTarget, mAnimation, mTiming)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+NS_IMPL_CYCLE_COLLECTION_INHERITED(KeyframeEffectReadOnly,
+                                   AnimationEffectReadOnly,
+                                   mTarget)
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(KeyframeEffectReadOnly,
                                                AnimationEffectReadOnly)
@@ -101,14 +57,12 @@ KeyframeEffectReadOnly::KeyframeEffectReadOnly(
   const Maybe<OwningAnimationTarget>& aTarget,
   AnimationEffectTimingReadOnly* aTiming,
   const KeyframeEffectParams& aOptions)
-  : AnimationEffectReadOnly(aDocument)
+  : AnimationEffectReadOnly(aDocument, aTiming)
   , mTarget(aTarget)
-  , mTiming(aTiming)
   , mEffectOptions(aOptions)
   , mInEffectOnLastAnimationTimingUpdate(false)
   , mCumulativeChangeHint(nsChangeHint(0))
 {
-  MOZ_ASSERT(aTiming);
 }
 
 JSObject*
@@ -128,28 +82,6 @@ CompositeOperation
 KeyframeEffectReadOnly::Composite() const
 {
   return CompositeOperation::Replace;
-}
-
-already_AddRefed<AnimationEffectTimingReadOnly>
-KeyframeEffectReadOnly::Timing() const
-{
-  RefPtr<AnimationEffectTimingReadOnly> temp(mTiming);
-  return temp.forget();
-}
-
-void
-KeyframeEffectReadOnly::SetSpecifiedTiming(const TimingParams& aTiming)
-{
-  if (mTiming->AsTimingParams() == aTiming) {
-    return;
-  }
-  mTiming->SetTimingParams(aTiming);
-  if (mAnimation) {
-    mAnimation->NotifyEffectTimingUpdated();
-  }
-  
-  
-  
 }
 
 void
@@ -203,249 +135,6 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   if (!inEffect) {
      mProgressOnLastCompose.SetNull();
   }
-}
-
-Nullable<TimeDuration>
-KeyframeEffectReadOnly::GetLocalTime() const
-{
-  
-  
-  Nullable<TimeDuration> result;
-  if (mAnimation) {
-    result = mAnimation->GetCurrentTime();
-  }
-  return result;
-}
-
-void
-KeyframeEffectReadOnly::GetComputedTimingAsDict(
-    ComputedTimingProperties& aRetVal) const
-{
-  double playbackRate = mAnimation ? mAnimation->PlaybackRate() : 1;
-  const Nullable<TimeDuration> currentTime = GetLocalTime();
-  GetComputedTimingDictionary(GetComputedTimingAt(currentTime,
-                                                  SpecifiedTiming(),
-                                                  playbackRate),
-                              currentTime,
-                              SpecifiedTiming(),
-                              aRetVal);
-}
-
-ComputedTiming
-KeyframeEffectReadOnly::GetComputedTimingAt(
-    const Nullable<TimeDuration>& aLocalTime,
-    const TimingParams& aTiming,
-    double aPlaybackRate)
-{
-  const StickyTimeDuration zeroDuration;
-
-  
-  ComputedTiming result;
-
-  if (aTiming.mDuration) {
-    MOZ_ASSERT(aTiming.mDuration.ref() >= zeroDuration,
-               "Iteration duration should be positive");
-    result.mDuration = aTiming.mDuration.ref();
-  }
-
-  MOZ_ASSERT(aTiming.mIterations >= 0.0 && !IsNaN(aTiming.mIterations),
-             "mIterations should be nonnegative & finite, as ensured by "
-             "ValidateIterations or CSSParser");
-  result.mIterations = aTiming.mIterations;
-
-  MOZ_ASSERT(aTiming.mIterationStart >= 0.0,
-             "mIterationStart should be nonnegative, as ensured by "
-             "ValidateIterationStart");
-  result.mIterationStart = aTiming.mIterationStart;
-
-  result.mActiveDuration = aTiming.ActiveDuration();
-  result.mEndTime = aTiming.EndTime();
-  result.mFill = aTiming.mFill == dom::FillMode::Auto ?
-                 dom::FillMode::None :
-                 aTiming.mFill;
-
-  
-  
-  if (aLocalTime.IsNull()) {
-    return result;
-  }
-  const TimeDuration& localTime = aLocalTime.Value();
-
-  
-  
-  StickyTimeDuration activeTime;
-
-  StickyTimeDuration beforeActiveBoundary =
-    std::min(StickyTimeDuration(aTiming.mDelay), result.mEndTime);
-  StickyTimeDuration activeAfterBoundary =
-    std::min(StickyTimeDuration(aTiming.mDelay + result.mActiveDuration),
-             result.mEndTime);
-
-  if (localTime > activeAfterBoundary ||
-      (aPlaybackRate >= 0 && localTime == activeAfterBoundary)) {
-    result.mPhase = ComputedTiming::AnimationPhase::After;
-    if (!result.FillsForwards()) {
-      
-      return result;
-    }
-    activeTime = std::max(std::min(result.mActiveDuration,
-                                   result.mActiveDuration + aTiming.mEndDelay),
-                          zeroDuration);
-  } else if (localTime < beforeActiveBoundary ||
-             (aPlaybackRate < 0 && localTime == beforeActiveBoundary)) {
-    result.mPhase = ComputedTiming::AnimationPhase::Before;
-    if (!result.FillsBackwards()) {
-      
-      return result;
-    }
-    
-  } else {
-    MOZ_ASSERT(result.mActiveDuration != zeroDuration,
-               "How can we be in the middle of a zero-duration interval?");
-    result.mPhase = ComputedTiming::AnimationPhase::Active;
-    activeTime = localTime - aTiming.mDelay;
-  }
-
-  
-  
-  double overallProgress;
-  if (result.mDuration == zeroDuration) {
-    overallProgress = result.mPhase == ComputedTiming::AnimationPhase::Before
-                      ? 0.0
-                      : result.mIterations;
-  } else {
-    overallProgress = activeTime / result.mDuration;
-  }
-
-  
-  if (IsFinite(overallProgress)) {
-    overallProgress += result.mIterationStart;
-  }
-
-  
-  
-  result.mCurrentIteration =
-    IsInfinite(result.mIterations) &&
-      result.mPhase == ComputedTiming::AnimationPhase::After
-    ? UINT64_MAX 
-                 
-    : static_cast<uint64_t>(overallProgress);
-
-  
-  
-  
-  double progress = IsFinite(overallProgress)
-                    ? fmod(overallProgress, 1.0)
-                    : fmod(result.mIterationStart, 1.0);
-
-  
-  
-  
-  
-  
-  if (result.mPhase == ComputedTiming::AnimationPhase::After &&
-      progress == 0.0 &&
-      result.mIterations != 0.0 &&
-      (activeTime != zeroDuration || result.mDuration == zeroDuration)) {
-    
-    
-    
-    
-    MOZ_ASSERT(result.mCurrentIteration != 0,
-               "Should not have zero current iteration");
-    progress = 1.0;
-    if (result.mCurrentIteration != UINT64_MAX) {
-      result.mCurrentIteration--;
-    }
-  }
-
-  
-  bool thisIterationReverse = false;
-  switch (aTiming.mDirection) {
-    case PlaybackDirection::Normal:
-      thisIterationReverse = false;
-      break;
-    case PlaybackDirection::Reverse:
-      thisIterationReverse = true;
-      break;
-    case PlaybackDirection::Alternate:
-      thisIterationReverse = (result.mCurrentIteration & 1) == 1;
-      break;
-    case PlaybackDirection::Alternate_reverse:
-      thisIterationReverse = (result.mCurrentIteration & 1) == 0;
-      break;
-    default:
-      MOZ_ASSERT(true, "Unknown PlaybackDirection type");
-  }
-  if (thisIterationReverse) {
-    progress = 1.0 - progress;
-  }
-
-  
-  
-  if ((result.mPhase == ComputedTiming::AnimationPhase::After &&
-       thisIterationReverse) ||
-      (result.mPhase == ComputedTiming::AnimationPhase::Before &&
-       !thisIterationReverse)) {
-    result.mBeforeFlag = ComputedTimingFunction::BeforeFlag::Set;
-  }
-
-  
-  if (aTiming.mFunction) {
-    progress = aTiming.mFunction->GetValue(progress, result.mBeforeFlag);
-  }
-
-  MOZ_ASSERT(IsFinite(progress), "Progress value should be finite");
-  result.mProgress.SetValue(progress);
-  return result;
-}
-
-ComputedTiming
-KeyframeEffectReadOnly::GetComputedTiming(const TimingParams* aTiming) const
-{
-  double playbackRate = mAnimation ? mAnimation->PlaybackRate() : 1;
-  return GetComputedTimingAt(GetLocalTime(),
-                             aTiming ? *aTiming : SpecifiedTiming(),
-                             playbackRate);
-}
-
-
-bool
-KeyframeEffectReadOnly::IsInPlay() const
-{
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
-    return false;
-  }
-
-  return GetComputedTiming().mPhase == ComputedTiming::AnimationPhase::Active;
-}
-
-
-bool
-KeyframeEffectReadOnly::IsCurrent() const
-{
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
-    return false;
-  }
-
-  ComputedTiming computedTiming = GetComputedTiming();
-  return computedTiming.mPhase == ComputedTiming::AnimationPhase::Before ||
-         computedTiming.mPhase == ComputedTiming::AnimationPhase::Active;
-}
-
-
-bool
-KeyframeEffectReadOnly::IsInEffect() const
-{
-  ComputedTiming computedTiming = GetComputedTiming();
-  return !computedTiming.mProgress.IsNull();
-}
-
-void
-KeyframeEffectReadOnly::SetAnimation(Animation* aAnimation)
-{
-  mAnimation = aAnimation;
-  NotifyAnimationTimingUpdated();
 }
 
 static bool
@@ -770,10 +459,6 @@ KeyframeEffectReadOnly::ResetIsRunningOnCompositor()
   for (AnimationProperty& property : mProperties) {
     property.mIsRunningOnCompositor = false;
   }
-}
-
-KeyframeEffectReadOnly::~KeyframeEffectReadOnly()
-{
 }
 
 static const KeyframeEffectOptions&
@@ -1680,15 +1365,6 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
   } else if (mEffectOptions.mSpacingMode == SpacingMode::paced) {
     
     KeyframeUtils::ApplyDistributeSpacing(mKeyframes);
-  }
-}
-
-KeyframeEffect::~KeyframeEffect()
-{
-  
-  
-  if (mTiming) {
-    mTiming->Unlink();
   }
 }
 
