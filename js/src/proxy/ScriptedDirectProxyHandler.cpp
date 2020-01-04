@@ -128,17 +128,6 @@ GetDirectProxyHandlerObject(JSObject* proxy)
     return proxy->as<ProxyObject>().extra(ScriptedDirectProxyHandler::HANDLER_EXTRA).toObjectOrNull();
 }
 
-static inline void
-ReportInvalidTrapResult(JSContext* cx, JSObject* proxy, JSAtom* atom)
-{
-    RootedValue v(cx, ObjectOrNullValue(proxy));
-    JSAutoByteString bytes;
-    if (!AtomToPrintableString(cx, atom, &bytes))
-        return;
-    ReportValueError2(cx, JSMSG_INVALID_TRAP_RESULT, JSDVG_IGNORE_STACK, v,
-                      nullptr, bytes.ptr());
-}
-
 
 
 bool
