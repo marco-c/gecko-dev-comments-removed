@@ -119,12 +119,19 @@ function (anchorRect, viewportRect, height, pos, offset) {
 
 
 
+
+
+
+
+
+
 const calculateHorizontalPosition =
-function (anchorRect, viewportRect, width, type, offset) {
-  let {left: anchorLeft, width: anchorWidth} = anchorRect;
+function (anchorRect, viewportRect, width, type, offset, isRtl) {
+  let anchorWidth = anchorRect.width;
+  let anchorStart = isRtl ? anchorRect.right : anchorRect.left;
 
   
-  anchorLeft -= viewportRect.left;
+  anchorStart -= viewportRect.left;
 
   
   width = Math.min(width, viewportRect.width);
@@ -132,14 +139,16 @@ function (anchorRect, viewportRect, width, type, offset) {
   
   
   
-  let left = Math.min(anchorLeft + offset, viewportRect.width - width);
+  let left = anchorStart + offset - (isRtl ? width : 0);
+  left = Math.min(left, viewportRect.width - width);
+  left = Math.max(0, left);
 
   
   let arrowLeft;
   
   if (type === TYPE.ARROW) {
     let arrowCenter = left + ARROW_OFFSET + ARROW_WIDTH / 2;
-    let anchorCenter = anchorLeft + anchorWidth / 2;
+    let anchorCenter = anchorStart + anchorWidth / 2;
     
     if (arrowCenter > anchorCenter) {
       left = Math.max(0, left - (arrowCenter - anchorCenter));
@@ -147,7 +156,7 @@ function (anchorRect, viewportRect, width, type, offset) {
     
     arrowLeft = Math.min(ARROW_OFFSET, (anchorWidth - ARROW_WIDTH) / 2) | 0;
     
-    arrowLeft += anchorLeft - left;
+    arrowLeft += anchorStart - left;
     
     arrowLeft = Math.min(arrowLeft, width - ARROW_WIDTH);
     arrowLeft = Math.max(arrowLeft, 0);
@@ -347,8 +356,10 @@ HTMLTooltip.prototype = {
       preferredWidth = this.preferredWidth + themeWidth;
     }
 
-    let {left, width, arrowLeft} =
-      calculateHorizontalPosition(anchorRect, viewportRect, preferredWidth, this.type, x);
+    let anchorWin = anchor.ownerDocument.defaultView;
+    let isRtl = anchorWin.getComputedStyle(anchor).direction === "rtl";
+    let {left, width, arrowLeft} = calculateHorizontalPosition(
+      anchorRect, viewportRect, preferredWidth, this.type, x, isRtl);
 
     this.container.style.width = width + "px";
 
