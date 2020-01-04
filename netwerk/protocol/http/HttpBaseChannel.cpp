@@ -2485,6 +2485,20 @@ HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+HttpBaseChannel::SetIntegrityMetadata(const nsAString& aIntegrityMetadata)
+{
+  mIntegrityMetadata = aIntegrityMetadata;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetIntegrityMetadata(nsAString& aIntegrityMetadata)
+{
+  aIntegrityMetadata = mIntegrityMetadata;
+  return NS_OK;
+}
+
 
 
 
@@ -3086,6 +3100,9 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
 
     
     httpInternal->SetFetchCacheMode(mFetchCacheMode);
+
+    
+    httpInternal->SetIntegrityMetadata(mIntegrityMetadata);
   }
 
   
