@@ -190,7 +190,8 @@ nsPNGDecoder::CreateFrame(const FrameInfo& aFrameInfo)
   MOZ_ASSERT(!IsMetadataDecode());
 
   
-  auto transparency = GetTransparencyType(aFrameInfo.mFormat, aFrameInfo.mFrameRect);
+  auto transparency = GetTransparencyType(aFrameInfo.mFormat,
+                                          aFrameInfo.mFrameRect);
   PostHasTransparencyIfNeeded(transparency);
   SurfaceFormat format = transparency == TransparencyType::eNone
                        ? SurfaceFormat::B8G8R8X8
@@ -692,7 +693,9 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
     
     
     
-    auto transparency = decoder->GetTransparencyType(decoder->format, frameRect);
+    
+    auto transparency = decoder->GetTransparencyType(decoder->format,
+                                                     frameRect);
     decoder->PostHasTransparencyIfNeeded(transparency);
 
     
@@ -757,7 +760,8 @@ static NextPixel<uint32_t>
 PackRGBPixelAndAdvance(uint8_t*& aRawPixelInOut)
 {
   const uint32_t pixel =
-    gfxPackedPixel(0xFF, aRawPixelInOut[0], aRawPixelInOut[1], aRawPixelInOut[2]);
+    gfxPackedPixel(0xFF, aRawPixelInOut[0], aRawPixelInOut[1],
+                   aRawPixelInOut[2]);
   aRawPixelInOut += 3;
   return AsVariant(pixel);
 }
@@ -831,7 +835,8 @@ nsPNGDecoder::row_callback(png_structp png_ptr, png_bytep new_row,
     decoder->mPass++;
   }
 
-  const png_uint_32 height = static_cast<png_uint_32>(decoder->mFrameRect.height);
+  const png_uint_32 height =
+    static_cast<png_uint_32>(decoder->mFrameRect.height);
 
   if (row_num >= height) {
     
@@ -936,7 +941,8 @@ nsPNGDecoder::DoYield(png_structp aPNGStruct)
   
   
   
-  png_size_t pendingBytes = png_process_data_pause(aPNGStruct,  false);
+  png_size_t pendingBytes = png_process_data_pause(aPNGStruct,
+                                                    false);
 
   MOZ_ASSERT(pendingBytes < mLastChunkLength);
   size_t consumedBytes = mLastChunkLength - min(pendingBytes, mLastChunkLength);
@@ -978,10 +984,12 @@ nsPNGDecoder::frame_info_callback(png_structp png_ptr, png_uint_32 frame_num)
 
 #ifndef MOZ_EMBEDDED_LIBPNG
   
-  if (frameRect.width == 0)
+  if (frameRect.width == 0) {
     png_error(png_ptr, "Frame width must not be 0");
-  if (frameRect.height == 0)
+  }
+  if (frameRect.height == 0) {
     png_error(png_ptr, "Frame height must not be 0");
+  }
 #endif
 
   const FrameInfo info { decoder->format, frameRect, isInterlaced };
