@@ -15,7 +15,6 @@
 #include "nsIPrincipal.h"
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/CORSMode.h"
 #include "PrincipalChangeObserver.h"
 
 
@@ -445,8 +444,6 @@ public:
 
 
   nsIPrincipal* GetPrincipal() { return mPrincipal; }
-  mozilla::CORSMode GetCORSMode();
-  void SetCORSMode(mozilla::CORSMode aCORSMode);
 
   
 
