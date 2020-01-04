@@ -530,9 +530,8 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
     invalidRegionSafe.And(aInvalidRegion, intRect);
   }
 
-  IntRect invalidRect = invalidRegionSafe.GetBounds();
-  mInvalidRect = IntRect(invalidRect.x, invalidRect.y, invalidRect.width, invalidRect.height);
   mInvalidRegion = invalidRegionSafe;
+  mInvalidRect = mInvalidRegion.GetBounds();
 
   if (aRenderBoundsOut) {
     *aRenderBoundsOut = Rect();
@@ -547,7 +546,9 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
     
     mDrawTarget = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
   } else {
+    
     mDrawTarget = mWidget->StartRemoteDrawingInRegion(mInvalidRegion);
+    mInvalidRect = mInvalidRegion.GetBounds();
   }
   if (!mDrawTarget) {
     return;
@@ -566,10 +567,10 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
 
   
   
-  mRenderTarget->mDrawTarget->SetTransform(Matrix::Translation(-invalidRect.x,
-                                                               -invalidRect.y));
+  mRenderTarget->mDrawTarget->SetTransform(Matrix::Translation(-mInvalidRect.x,
+                                                               -mInvalidRect.y));
 
-  gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget, invalidRegionSafe);
+  gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget, mInvalidRegion);
 
   if (aRenderBoundsOut) {
     *aRenderBoundsOut = rect;
