@@ -55,7 +55,7 @@ function selectAndHighlightNode(nodeOrSelector, inspector) {
 
 
 function openLayoutView() {
-  return openInspectorSidebarTab("layoutview").then(data => {
+  return openInspectorSidebarTab("computedview").then(data => {
     
     
     function mockHighlighter({highlighter}) {
@@ -71,7 +71,7 @@ function openLayoutView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      view: data.inspector.layoutview,
+      view: data.inspector.computedview.layoutView,
       testActor: data.testActor
     };
   });

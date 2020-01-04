@@ -2,66 +2,34 @@
 
 
 
-#sidebar-panel-layoutview {
-  display: block;
-  overflow: auto;
-  height: 100%;
-}
-
-#layout-wrapper {
-  
-
-  height: 100%;
-}
-
 #layout-container {
   
   max-width: 400px;
   margin: 0px auto;
   padding: 0;
-  
-  position: relative;
 }
 
 
 
-#layout-header {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 4px 14px;
-  display: -moz-box;
-  vertical-align: top;
+#layout-header,
+#layout-info {
+  display: flex;
+  align-items: center;
+  padding: 4px 17px;
 }
 
-#layout-header:dir(rtl) {
-  -moz-box-direction: reverse;
+#layout-geometry-editor {
+  visibility: hidden;
 }
 
-#layout-header > span {
-  display: -moz-box;
-}
-
-#layout-element-size {
-  -moz-box-flex: 1;
-}
-
-#layout-element-size:dir(rtl) {
-  -moz-box-pack: end;
-}
-
-@media (max-height: 250px) {
-  #layout-header {
-    padding-top: 0;
-    padding-bottom: 0;
-    margin-top: 10px;
-    margin-bottom: 8px;
-  }
+#layout-geometry-editor::before {
+  background: url(images/geometry-editor.svg) no-repeat center center / 16px 16px;
 }
 
 
 
 #layout-main {
-  position: absolute;
+  position: relative;
   box-sizing: border-box;
   
 
@@ -358,21 +326,11 @@
 
 
 
-#layout-container.inactive > #layout-header > #layout-element-position,
-#layout-container.inactive > #layout-header > #layout-element-size,
-#layout-container.inactive > #layout-main > p {
-   visibility: hidden;
+#layout-element-size {
+  flex: 1;
 }
 
 #layout-position-group {
   display: flex;
   align-items: center;
-}
-
-#layout-geometry-editor {
-  visibility: hidden;
-}
-
-#layout-geometry-editor::before {
-  background: url(images/geometry-editor.svg) no-repeat center center / 16px 16px;
 }
