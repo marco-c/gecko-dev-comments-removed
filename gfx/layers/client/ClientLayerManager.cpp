@@ -190,7 +190,6 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
   mPhase = PHASE_CONSTRUCTION;
 
   MOZ_ASSERT(mKeepAlive.IsEmpty(), "uncommitted txn?");
-  RefPtr<gfxContext> targetContext = aTarget;
 
   
   
