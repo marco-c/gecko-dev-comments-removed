@@ -200,13 +200,17 @@ nsUrlClassifierUtils::GetKeyForURI(nsIURI * uri, nsACString & _retval)
 
 
 
+
+
+
 static const struct {
   const char* mListName;
   uint32_t mThreatType;
 } THREAT_TYPE_CONV_TABLE[] = {
   { "goog-malware-proto",  MALWARE_THREAT},            
-  { "goog-phish-proto",    SOCIAL_ENGINEERING_PUBLIC}, 
+  { "googpub-phish-proto", SOCIAL_ENGINEERING_PUBLIC}, 
   { "goog-unwanted-proto", UNWANTED_SOFTWARE},         
+  { "goog-phish-proto", SOCIAL_ENGINEERING},           
 };
 
 NS_IMETHODIMP

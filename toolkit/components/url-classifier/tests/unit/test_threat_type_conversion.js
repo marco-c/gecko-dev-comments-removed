@@ -5,8 +5,9 @@ function run_test() {
   
 
   equal(urlUtils.convertListNameToThreatType("goog-malware-proto"), 1);
-  equal(urlUtils.convertListNameToThreatType("goog-phish-proto"), 2);
+  equal(urlUtils.convertListNameToThreatType("googpub-phish-proto"), 2);
   equal(urlUtils.convertListNameToThreatType("goog-unwanted-proto"), 3);
+  equal(urlUtils.convertListNameToThreatType("goog-phish-proto"), 5);
 
   try {
     urlUtils.convertListNameToThreatType("bad-list-name");
@@ -20,8 +21,9 @@ function run_test() {
 
   
   equal(urlUtils.convertThreatTypeToListName(1), "goog-malware-proto");
-  equal(urlUtils.convertThreatTypeToListName(2), "goog-phish-proto");
+  equal(urlUtils.convertThreatTypeToListName(2), "googpub-phish-proto");
   equal(urlUtils.convertThreatTypeToListName(3), "goog-unwanted-proto");
+  equal(urlUtils.convertThreatTypeToListName(5), "goog-phish-proto");
 
   try {
     urlUtils.convertThreatTypeToListName(0);
