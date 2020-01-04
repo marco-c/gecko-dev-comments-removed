@@ -675,6 +675,8 @@ private:
   void SetCDMProxy(CDMProxy* aProxy);
 #endif
 
+  void EnsureTelemetryReported();
+
 #ifdef MOZ_RAW
   static bool IsRawEnabled();
 #endif
@@ -1094,6 +1096,8 @@ private:
   
   
   void NotifyDownloadEnded(nsresult aStatus);
+  
+  bool mTelemetryReported;
 };
 
 } 
