@@ -24,10 +24,6 @@
 #include "js/TypeDecls.h"
 
 namespace js {
-
-class ArrayBufferObjectMaybeShared;
-class WasmInstanceObject;
-
 namespace wasm {
 
 
@@ -219,7 +215,8 @@ class Module : public RefCounted<Module>
     bool instantiate(JSContext* cx,
                      Handle<FunctionVector> funcImports,
                      HandleWasmMemoryObject memoryImport,
-                     HandleWasmInstanceObject instanceObj) const;
+                     HandleObject instanceProto,
+                     MutableHandleWasmInstanceObject instanceObj) const;
 
     
 

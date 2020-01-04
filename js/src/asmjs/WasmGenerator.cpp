@@ -647,8 +647,8 @@ ModuleGenerator::funcImport(uint32_t funcImportIndex) const
 }
 
 bool
-ModuleGenerator::declareFuncExport(UniqueChars fieldName, uint32_t funcIndex,
-                                   uint32_t* funcExportIndex )
+ModuleGenerator::addFuncExport(UniqueChars fieldName, uint32_t funcIndex,
+                               uint32_t* funcExportIndex )
 {
     MOZ_ASSERT(!metadata_->hasStartFunction());
 
