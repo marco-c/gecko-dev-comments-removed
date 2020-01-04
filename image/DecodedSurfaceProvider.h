@@ -71,6 +71,9 @@ private:
   RefPtr<RasterImage> mImage;
 
   
+  Mutex mMutex;
+
+  
   RefPtr<Decoder> mDecoder;
 
   

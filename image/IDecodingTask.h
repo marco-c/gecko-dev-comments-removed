@@ -82,6 +82,9 @@ public:
 private:
   virtual ~AnimationDecodingTask() { }
 
+  
+  Mutex mMutex;
+
   NotNull<RefPtr<Decoder>> mDecoder;
 };
 
