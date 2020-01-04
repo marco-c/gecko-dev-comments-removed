@@ -221,11 +221,6 @@ public:
            mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Browser;
   }
 
-  void SetStopped()
-  {
-    mStopped = true;
-  }
-
   
   
   void Invalidate();

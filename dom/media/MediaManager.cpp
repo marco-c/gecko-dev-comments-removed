@@ -3009,10 +3009,15 @@ GetUserMediaCallbackMediaStreamListener::AudioConfig(bool aEchoOn,
   }
 }
 
-
 void
 GetUserMediaCallbackMediaStreamListener::Invalidate()
 {
+  MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
+  if (mStopped) {
+    return;
+  }
+  mStopped = true;
+
   
   
   
@@ -3025,7 +3030,6 @@ GetUserMediaCallbackMediaStreamListener::Invalidate()
 }
 
 
-
 void
 GetUserMediaCallbackMediaStreamListener::StopSharing()
 {
@@ -3035,11 +3039,15 @@ GetUserMediaCallbackMediaStreamListener::StopSharing()
        mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Application ||
        mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Window)) {
     
-    MediaManager::PostTask(FROM_HERE,
-      new MediaOperationTask(mAudioDevice ? MEDIA_STOP_TRACK : MEDIA_STOP,
-                             this, nullptr, nullptr,
-                             nullptr, mVideoDevice,
-                             mFinished, mWindowID, nullptr));
+    if (!mAudioDevice) {
+      Invalidate();
+    } else {
+      MediaManager::PostTask(FROM_HERE,
+        new MediaOperationTask(MEDIA_STOP_TRACK,
+                               this, nullptr, nullptr,
+                               nullptr, mVideoDevice,
+                               mFinished, mWindowID, nullptr));
+    }
   } else if (mAudioDevice &&
              mAudioDevice->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
     nsCOMPtr<nsPIDOMWindow> window = nsGlobalWindow::GetInnerWindowWithId(mWindowID);
@@ -3224,11 +3232,6 @@ GetUserMediaNotificationEvent::Run()
     stream->OnTracksAvailable(mOnTracksAvailableCallback.forget());
     break;
   case STOPPING:
-    msg = NS_LITERAL_STRING("shutdown");
-    if (mListener) {
-      mListener->SetStopped();
-    }
-    break;
   case STOPPED_TRACK:
     msg = NS_LITERAL_STRING("shutdown");
     break;
