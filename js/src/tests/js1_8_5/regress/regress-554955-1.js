@@ -8,7 +8,8 @@ function f(s) {
   eval(s);
   return function(a) {
     var d;
-    let (c = 3) {
+    {
+      let c = 3;
       d = function() { a; }; 
       with({}) {}; 
       return b; 

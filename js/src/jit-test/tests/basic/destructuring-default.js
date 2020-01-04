@@ -93,17 +93,6 @@ function testThrow(pattern, input) {
 testAll(testThrow);
 
 
-
-
-function testLetBlock(pattern, input) {
-  return new Function('input',
-    'let (' + pattern + ' = input)' +
-    '{ return [a, b, c, d, e, f]; }'
-  )(input);
-}
-testAll(testLetBlock);
-
-
 const [ca = 1, cb = 2] = [];
 assertEq(ca, 1);
 assertEq(cb, 2);

@@ -1,3 +1,3 @@
 
 
-eval("if (true) { let(y){} } else {}")
+eval("if (true) { { let y; } } else {}")

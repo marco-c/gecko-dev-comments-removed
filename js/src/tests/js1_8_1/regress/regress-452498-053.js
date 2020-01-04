@@ -30,7 +30,7 @@ function test()
 
 
 
-  let (a=0, b=1, c=2) {}
+  { let a=0, b=1, c=2; }
 
 
 

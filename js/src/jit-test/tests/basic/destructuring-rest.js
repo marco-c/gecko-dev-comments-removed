@@ -126,15 +126,3 @@ function testThrow(pattern, input, binding) {
   )(input);
 }
 testDeclaration(testThrow);
-
-
-
-
-function testLetBlock(pattern, input, binding) {
-  binding = binding || 'rest';
-  return new Function('input',
-    'let (' + pattern + ' = input)' +
-    '{ return ' + binding + '; }'
-  )(input);
-}
-testDeclaration(testLetBlock);

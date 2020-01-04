@@ -25,7 +25,7 @@ function test()
 
 
 
-  let ({}={}) {}
+  { let {}={}; }
 
   try
   {

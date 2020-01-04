@@ -11,7 +11,8 @@ function f() {
         
         
         eval(a);
-        let (c = 3) {
+        {
+            let c = 3;
             
             
             eval('');

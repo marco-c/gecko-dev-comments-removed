@@ -9,7 +9,8 @@ function f(s) {
     return function(a) {
         with({}) {}; 
         eval(a);
-        let (c = 3) {
+        {
+            let c = 3;
             return b;
         };
     };

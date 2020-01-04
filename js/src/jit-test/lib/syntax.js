@@ -1156,22 +1156,6 @@ function test_syntax(postfixes, check_error, ignore_opts) {
 
   
 
-  test("let ( ");
-  test("let ( x ");
-  test("let ( x = ");
-  test("let ( x = 1 ");
-  test("let ( x = 1, ");
-  test("let ( x = 1, y ");
-  test("let ( x = 1, y = ");
-  test("let ( x = 1, y = 2 ");
-  test("let ( x = 1, y = 2 ) ");
-  test("let ( x = 1, y = 2 ) { ");
-  test("let ( x = 1, y = 2 ) { x ");
-  test("let ( x = 1, y = 2 ) { x; ");
-  test("let ( x = 1, y = 2 ) { x; } ");
-
-  
-
   test("function f() 1 ");
   test("function f() 1; ");
   test("(function () 1 ");

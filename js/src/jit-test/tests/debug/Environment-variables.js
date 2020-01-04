@@ -12,7 +12,6 @@ var cases = [
     
     "let x = VAL; @@",
     "{ let x = VAL; @@ }",
-    "let (x = VAL) { @@ }",
     "try { throw VAL; } catch (x) { @@ }",
     "try { throw VAL; } catch (x) { @@ }",
     "for (let x of [VAL]) { @@ }",
@@ -80,7 +79,7 @@ for (var s of cases) {
     test(s, "debugMe(); assertEq(x, 'ok');");
 
     
-    test(s, "let (y = 'irrelevant') { (function (z) { let (zz = y) { debugger; }})(); } assertEq(x, 'ok');"),
+    test(s, "{ let y = 'irrelevant'; (function (z) { { let zz = y; debugger; } })(); } assertEq(x, 'ok');"),
 
     
     

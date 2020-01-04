@@ -10,7 +10,8 @@ function f(a) {
   
   
   eval(a);
-  let (b=3) {
+  {
+    let b=3;
     
     
     
@@ -33,8 +34,10 @@ assertEq("local", f("var v='local'"));
 
 function f2(a) {
   eval(a);
-  let (b=3) {
-    let (c=4) {
+  {
+    let b=3;
+    {
+      let c=4;
       eval("");
       return v;
     };
