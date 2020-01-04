@@ -299,13 +299,7 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
       
       if (isVisible) {
         
-        
-        
         bounds = aPlugins[pluginsIdx].bounds();
-        rv = widget->Resize(aContentOffset.x + bounds.x,
-                            aContentOffset.y + bounds.y,
-                            bounds.width, bounds.height, false);
-        NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");
         nsTArray<LayoutDeviceIntRect> rectsOut;
         
         CalculatePluginClip(bounds, aPlugins[pluginsIdx].clip(),
@@ -314,6 +308,14 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
                             rectsOut, visibleBounds, isVisible);
         
         rv = widget->SetWindowClipRegion(rectsOut, false);
+        NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");
+        
+        
+        
+        
+        rv = widget->Resize(aContentOffset.x + bounds.x,
+                            aContentOffset.y + bounds.y,
+                            bounds.width, bounds.height, true);
         NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");
       }
 
