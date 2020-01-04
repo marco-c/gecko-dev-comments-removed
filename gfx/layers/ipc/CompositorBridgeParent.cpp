@@ -2472,6 +2472,11 @@ CompositorBridgeParent::UpdatePluginWindowState(uint64_t aId)
 
   if (!lts.mPluginData.Length()) {
     
+    if (!mCachedPluginData.Length()) {
+      PLUGINS_LOG("[%" PRIu64 "] nothing to hide", aId);
+      return false;
+    }
+    
     
     
     
