@@ -4638,7 +4638,11 @@ nsWindow::GrabPointer(guint32 aTime)
         
         
         
-        CheckForRollup(0, 0, false, true);
+        
+        
+        nsCOMPtr<nsIRunnable> event =
+            NS_NewRunnableMethod(this, &nsWindow::CheckForRollupDuringGrab);
+        NS_DispatchToCurrentThread(event.forget());
     }
 }
 
