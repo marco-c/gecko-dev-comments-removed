@@ -513,7 +513,7 @@ class ScriptCounts
 
 
 typedef HashMap<JSScript*,
-                ScriptCounts,
+                ScriptCounts*,
                 DefaultHasher<JSScript*>,
                 SystemAllocPolicy> ScriptCountsMap;
 
