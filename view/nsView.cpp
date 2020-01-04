@@ -136,7 +136,12 @@ void nsView::DestroyWidget()
       nsCOMPtr<nsIRunnable> widgetDestroyer =
         new DestroyWidgetRunnable(mWindow);
 
-      NS_DispatchToMainThread(widgetDestroyer);
+      
+      
+      nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+      if (mainThread) {
+        mainThread->Dispatch(widgetDestroyer.forget(), NS_DISPATCH_NORMAL);
+      }
     }
 
     mWindow = nullptr;
