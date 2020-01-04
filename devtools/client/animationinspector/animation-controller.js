@@ -148,13 +148,6 @@ var AnimationsController = {
     
     this.traits = yield getServerTraits(target);
 
-    
-    
-    
-    
-    
-    this.nonBlockingPlayerReleases = [];
-
     if (this.destroyed) {
       console.warn("Could not fully initialize the AnimationsController");
       return;
@@ -184,11 +177,8 @@ var AnimationsController = {
     this.destroyed = promise.defer();
 
     this.stopListeners();
-    yield this.destroyAnimationPlayers();
+    this.destroyAnimationPlayers();
     this.nodeFront = null;
-
-    
-    yield promise.all(this.nonBlockingPlayerReleases);
 
     if (this.animationsFront) {
       this.animationsFront.destroy();
@@ -238,7 +228,7 @@ var AnimationsController = {
 
     if (!gInspector.selection.isConnected() ||
         !gInspector.selection.isElementNode()) {
-      yield this.destroyAnimationPlayers();
+      this.destroyAnimationPlayers();
       this.emit(this.PLAYERS_UPDATED_EVENT);
       done();
       return;
@@ -334,7 +324,7 @@ var AnimationsController = {
   animationPlayers: [],
 
   refreshAnimationPlayers: Task.async(function*(nodeFront) {
-    yield this.destroyAnimationPlayers();
+    this.destroyAnimationPlayers();
 
     this.animationPlayers = yield this.animationsFront
                                       .getAnimationPlayersForNode(nodeFront);
@@ -356,8 +346,6 @@ var AnimationsController = {
       }
 
       if (type === "removed") {
-        
-        this.nonBlockingPlayerReleases.push(player.release());
         let index = this.animationPlayers.indexOf(player);
         this.animationPlayers.splice(index, 1);
       }
@@ -386,19 +374,9 @@ var AnimationsController = {
     return time;
   },
 
-  destroyAnimationPlayers: Task.async(function*() {
-    
-    
-    
-    if (this.traits.hasMutationEvents) {
-      yield this.animationsFront.stopAnimationPlayerUpdates();
-    }
-
-    for (let front of this.animationPlayers) {
-      yield front.release();
-    }
+  destroyAnimationPlayers: function() {
     this.animationPlayers = [];
-  })
+  }
 };
 
 EventEmitter.decorate(AnimationsController);

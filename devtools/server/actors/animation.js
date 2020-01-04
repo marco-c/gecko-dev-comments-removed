@@ -564,6 +564,10 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
+
+
+
+
   getAnimationPlayersForNode: method(function(nodeActor) {
     let animations = [
       ...nodeActor.rawNode.getAnimations(),
@@ -571,8 +575,11 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     ];
 
     
-    
+    if (this.actors) {
+      this.actors.forEach(actor => actor.destroy());
+    }
     this.actors = [];
+
     for (let i = 0; i < animations.length; i++) {
       let actor = AnimationPlayerActor(this, animations[i]);
       this.actors.push(actor);
