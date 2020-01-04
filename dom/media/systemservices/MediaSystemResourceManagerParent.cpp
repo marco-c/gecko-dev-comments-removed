@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 
 #include "MediaSystemResourceManagerParent.h"
 

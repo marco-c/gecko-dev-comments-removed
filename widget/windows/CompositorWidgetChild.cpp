@@ -4,7 +4,7 @@
 
 
 #include "CompositorWidgetChild.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"
 #include "nsBaseWidget.h"
 #include "VsyncDispatcher.h"

@@ -31,7 +31,7 @@
 #include "mozilla/layers/PaintedLayerComposite.h"
 #include "mozilla/layers/ShadowLayersManager.h" 
 #include "mozilla/mozalloc.h"           
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsCoord.h"                    
 #include "nsDebug.h"                    
 #include "nsDeviceContext.h"            

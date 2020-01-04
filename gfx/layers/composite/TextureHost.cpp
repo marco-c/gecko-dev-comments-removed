@@ -23,7 +23,7 @@
 #include "mozilla/RefPtr.h"                   
 #include "nsPrintfCString.h"            
 #include "mozilla/layers/PTextureParent.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include <limits>
 #include "../opengl/CompositorOGL.h"
 #include "gfxPrefs.h"

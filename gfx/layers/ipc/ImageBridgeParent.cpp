@@ -26,7 +26,7 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/mozalloc.h"           
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsTArray.h"                   

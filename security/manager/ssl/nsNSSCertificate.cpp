@@ -12,7 +12,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
 #include "mozilla/NotNull.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsArray.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -36,9 +36,11 @@
 #include "nsUnicharUtils.h"
 #include "nsXULAppAPI.h"
 #include "nspr.h"
+#include "nssb64.h"
 #include "pkix/pkixnss.h"
 #include "pkix/pkixtypes.h"
 #include "pkix/Result.h"
+#include "plbase64.h"
 #include "prerror.h"
 #include "prmem.h"
 #include "prprf.h"
@@ -169,7 +171,7 @@ nsNSSCertificate::~nsNSSCertificate()
     return;
   }
   destructorSafeDestroyNSSReference();
-  shutdown(ShutdownCalledFrom::Object);
+  shutdown(calledFromObject);
 }
 
 void nsNSSCertificate::virtualDestroyNSSReference()
@@ -1446,7 +1448,7 @@ nsNSSCertList::~nsNSSCertList()
     return;
   }
   destructorSafeDestroyNSSReference();
-  shutdown(ShutdownCalledFrom::Object);
+  shutdown(calledFromObject);
 }
 
 void nsNSSCertList::virtualDestroyNSSReference()
@@ -1733,7 +1735,7 @@ nsNSSCertListEnumerator::~nsNSSCertListEnumerator()
     return;
   }
   destructorSafeDestroyNSSReference();
-  shutdown(ShutdownCalledFrom::Object);
+  shutdown(calledFromObject);
 }
 
 void nsNSSCertListEnumerator::virtualDestroyNSSReference()

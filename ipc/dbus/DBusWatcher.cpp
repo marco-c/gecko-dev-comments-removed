@@ -5,7 +5,7 @@
 
 
 #include "DBusWatcher.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {

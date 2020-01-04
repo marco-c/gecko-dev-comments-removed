@@ -65,7 +65,7 @@
 #include <mozilla/layers/AxisPhysicsMSDModel.h>
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/ScrollLinkedEffectDetector.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "LayersLogging.h"  
 #include <algorithm>
 #include <cstdlib> 

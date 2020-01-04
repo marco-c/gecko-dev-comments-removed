@@ -57,7 +57,7 @@
 #include "mozilla/layers/LayerTransactionParent.h" 
 #include "mozilla/layers/ScrollInputMethods.h" 
 #include "mozilla/mozalloc.h"           
-#include "mozilla/unused.h"             
+#include "mozilla/Unused.h"             
 #include "mozilla/FloatingPoint.h"      
 #include "nsAlgorithm.h"                
 #include "nsCOMPtr.h"                   
@@ -2818,16 +2818,16 @@ int32_t AsyncPanZoomController::GetLastTouchIdentifier() const {
   return listener ? listener->GetLastTouchIdentifier() : -1;
 }
 
-void AsyncPanZoomController::RequestContentRepaint(bool aUserAction) {
+void AsyncPanZoomController::RequestContentRepaint() {
   
   
   
   
   if (!NS_IsMainThread()) {
     
-    auto func = static_cast<void (AsyncPanZoomController::*)(bool)>
+    auto func = static_cast<void (AsyncPanZoomController::*)()>
         (&AsyncPanZoomController::RequestContentRepaint);
-    NS_DispatchToMainThread(NewRunnableMethod<bool>(this, func, aUserAction));
+    NS_DispatchToMainThread(NewRunnableMethod(this, func));
     return;
   }
 
@@ -2838,7 +2838,6 @@ void AsyncPanZoomController::RequestContentRepaint(bool aUserAction) {
   mFrameMetrics.SetDisplayPortMargins(CalculatePendingDisplayPort(mFrameMetrics, velocity));
   mFrameMetrics.SetUseDisplayPortMargins(true);
   mFrameMetrics.SetPaintRequestTime(TimeStamp::Now());
-  mFrameMetrics.SetRepaintDrivenByUserAction(aUserAction);
   RequestContentRepaint(mFrameMetrics, velocity);
 }
 
@@ -2899,8 +2898,6 @@ AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
     }
   }
 
-  MOZ_ASSERT(aFrameMetrics.GetScrollUpdateType() == FrameMetrics::eNone ||
-             aFrameMetrics.GetScrollUpdateType() == FrameMetrics::eUserAction);
   controller->RequestContentRepaint(aFrameMetrics);
   mExpectedGeckoMetrics = aFrameMetrics;
   mLastPaintRequestMetrics = aFrameMetrics;
@@ -3416,8 +3413,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
   }
 
   if (needContentRepaint) {
-    
-    RequestContentRepaint(false);
+    RequestContentRepaint();
   }
   UpdateSharedCompositorFrameMetrics();
 }
@@ -3565,7 +3561,6 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
       CalculatePendingDisplayPort(endZoomToMetrics, velocity));
     endZoomToMetrics.SetUseDisplayPortMargins(true);
     endZoomToMetrics.SetPaintRequestTime(TimeStamp::Now());
-    endZoomToMetrics.SetRepaintDrivenByUserAction(true);
     if (NS_IsMainThread()) {
       RequestContentRepaint(endZoomToMetrics, velocity);
     } else {

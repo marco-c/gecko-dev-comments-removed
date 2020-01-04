@@ -12,7 +12,7 @@
 #include "keyhi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsISupportsPriority.h"
@@ -49,7 +49,7 @@ ContentSignatureVerifier::~ContentSignatureVerifier()
     return;
   }
   destructorSafeDestroyNSSReference();
-  shutdown(ShutdownCalledFrom::Object);
+  shutdown(calledFromObject);
 }
 
 NS_IMETHODIMP

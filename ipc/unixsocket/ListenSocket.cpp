@@ -10,7 +10,7 @@
 #include "DataSocket.h"
 #include "ListenSocketConsumer.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
 #include "UnixSocketConnector.h"

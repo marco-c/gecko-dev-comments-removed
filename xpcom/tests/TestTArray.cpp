@@ -5,7 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 
 #include <stdlib.h>
 #include <stdio.h>

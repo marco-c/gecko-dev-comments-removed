@@ -10,7 +10,7 @@
 #include "nsNPAPIPlugin.h"
 
 #include "mozilla/UniquePtr.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 
 
 

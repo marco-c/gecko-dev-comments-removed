@@ -1,7 +1,7 @@
 #include "TestActorPunning.h"
 
 #include "IPDLUnitTests.h"      
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace _ipdltest {

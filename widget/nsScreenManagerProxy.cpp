@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "nsScreenManagerProxy.h"
 #include "nsServiceManagerUtils.h"

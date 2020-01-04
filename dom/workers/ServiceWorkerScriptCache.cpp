@@ -5,7 +5,7 @@
 
 
 #include "ServiceWorkerScriptCache.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/cache/Cache.h"

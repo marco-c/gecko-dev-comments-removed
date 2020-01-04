@@ -14,7 +14,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/UniquePtr.h"          
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsIMemoryReporter.h"
 #ifdef MOZ_WIDGET_GONK
 #include "mozilla/LinuxUtils.h"

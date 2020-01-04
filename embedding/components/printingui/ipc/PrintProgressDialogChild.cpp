@@ -2,7 +2,7 @@
 
 
 
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsIObserver.h"
 #include "PrintProgressDialogChild.h"
 

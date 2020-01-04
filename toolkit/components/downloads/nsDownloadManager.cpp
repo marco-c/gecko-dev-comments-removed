@@ -4,7 +4,7 @@
 
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 
 #include "mozIStorageService.h"
 #include "nsIAlertsService.h"

@@ -5,7 +5,7 @@
 
 
 #include "CrossProcessMutex.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"
 

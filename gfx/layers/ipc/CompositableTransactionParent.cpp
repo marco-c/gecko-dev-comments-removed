@@ -25,7 +25,7 @@
 #include "mozilla/layers/TiledContentHost.h"
 #include "mozilla/layers/PaintedLayerComposite.h"
 #include "mozilla/mozalloc.h"           
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsDebug.h"                    
 #include "nsRegion.h"                   
 

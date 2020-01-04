@@ -14,7 +14,7 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/SSE.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsIObserverService.h"
 #include "GMPTimerParent.h"
 #include "runnable_utils.h"
@@ -899,7 +899,7 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
       
       
       
-      if (cap.mAPITags.Contains(kEMEKeySystemPrimetime) &&
+      if (cap.mAPITags.Contains(nsCString(kEMEKeySystemPrimetime)) &&
           !mozilla::supports_sse2()) {
         return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
       }
@@ -956,11 +956,11 @@ GMPParent::ParseChromiumManifest(nsString aJSON)
   video.mAPITags.AppendElement(NS_LITERAL_CSTRING("h264"));
   video.mAPITags.AppendElement(NS_LITERAL_CSTRING("vp8"));
   video.mAPITags.AppendElement(NS_LITERAL_CSTRING("vp9"));
-  video.mAPITags.AppendElement(kEMEKeySystemWidevine);
+  video.mAPITags.AppendElement(nsCString(kEMEKeySystemWidevine));
   mCapabilities.AppendElement(Move(video));
 
   GMPCapability decrypt(NS_LITERAL_CSTRING(GMP_API_DECRYPTOR));
-  decrypt.mAPITags.AppendElement(kEMEKeySystemWidevine);
+  decrypt.mAPITags.AppendElement(nsCString(kEMEKeySystemWidevine));
   mCapabilities.AppendElement(Move(decrypt));
 
   MOZ_ASSERT(mName.EqualsLiteral("widevinecdm"));

@@ -6,7 +6,7 @@
 
 
 #include "mozilla/net/RemoteOpenFileParent.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsEscape.h"
 
 #if !defined(XP_WIN) && !defined(MOZ_WIDGET_COCOA)

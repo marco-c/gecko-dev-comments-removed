@@ -3,7 +3,7 @@
 
 
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsClipboardProxy.h"
 #include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"

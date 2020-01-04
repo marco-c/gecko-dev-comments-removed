@@ -2,7 +2,7 @@
 
 
 
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "mp4_demuxer/SinfParser.h"
 #include "mp4_demuxer/AtomType.h"
 #include "mp4_demuxer/Box.h"

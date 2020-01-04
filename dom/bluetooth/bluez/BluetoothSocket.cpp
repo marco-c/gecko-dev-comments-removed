@@ -12,7 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 
 using namespace mozilla::ipc;
 

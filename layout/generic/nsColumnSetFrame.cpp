@@ -5,7 +5,7 @@
 
 
 
-#include "mozilla/unused.h"
+#include "mozilla/Unused.h"
 #include "nsColumnSetFrame.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
