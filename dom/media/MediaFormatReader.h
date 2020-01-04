@@ -137,12 +137,15 @@ private:
       : mTime(aTime)
       , mDropTarget(aDropTarget)
       , mWaiting(false)
+      , mHasSeeked(false)
     {}
 
     media::TimeUnit mTime;
     bool mDropTarget;
     bool mWaiting;
+    bool mHasSeeked;
   };
+
   
   
   void InternalSeek(TrackType aTrack, const InternalSeekTarget& aTarget);
