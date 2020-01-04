@@ -334,7 +334,16 @@ IMEHandler::GetUpdatePreference()
 
 #ifdef NS_ENABLE_TSF
   if (IsTSFAvailable()) {
-    return TSFTextStore::GetIMEUpdatePreference();
+    if (!sIsIMMEnabled) {
+      return TSFTextStore::GetIMEUpdatePreference();
+    }
+    
+    
+    
+    
+    
+    return IMMHandler::GetIMEUpdatePreference() |
+             TSFTextStore::GetIMEUpdatePreference();
   }
 #endif 
 
