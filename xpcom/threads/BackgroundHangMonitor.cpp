@@ -337,9 +337,11 @@ BackgroundHangManager::RunMonitorThread()
       }
       recheckTimeout = std::min(recheckTimeout, nextRecheck - hangTime);
 
-      
+      if (currentThread->mTimeout != PR_INTERVAL_NO_TIMEOUT) {
+        
 
-      waitTime = std::min(waitTime, currentThread->mTimeout / 4);
+        waitTime = std::min(waitTime, currentThread->mTimeout / 4);
+      }
     }
   }
 
