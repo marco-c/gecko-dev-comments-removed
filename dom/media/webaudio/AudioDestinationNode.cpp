@@ -55,12 +55,20 @@ public:
     *aOutput = aInput;
 
     
-    if (!mBufferAllocated) {
+    
+    if (!mBufferAllocated && !aInput.IsNull()) {
       
       
       
       mBuffer = ThreadSharedFloatArrayBufferList::
         Create(mNumberOfChannels, mLength, fallible);
+      if (mBuffer && mWriteIndex) {
+        
+        for (uint32_t i = 0; i < mNumberOfChannels; ++i) {
+          float* channelData = mBuffer->GetDataForWrite(i);
+          PodZero(channelData, mWriteIndex);
+        }
+      }
 
       mBufferAllocated = true;
     }
