@@ -1006,34 +1006,77 @@ Promise::NewPromiseCapability(JSContext* aCx, nsIGlobalObject* aGlobal,
   
 }
 
- already_AddRefed<Promise>
+ void
 Promise::Resolve(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-                 JS::Handle<JS::Value> aValue, ErrorResult& aRv)
+                 JS::Handle<JS::Value> aValue,
+                 JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
 {
   
-  if (aValue.isObject()) {
-    JS::Rooted<JSObject*> valueObj(aGlobal.Context(), &aValue.toObject());
-    Promise* nextPromise;
-    nsresult rv = UNWRAP_OBJECT(Promise, valueObj, nextPromise);
+  
 
-    if (NS_SUCCEEDED(rv)) {
-      RefPtr<Promise> addRefed = nextPromise;
-      return addRefed.forget();
-    }
-  }
+  JSContext* cx = aGlobal.Context();
 
   nsCOMPtr<nsIGlobalObject> global =
     do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
+    return;
   }
 
-  RefPtr<Promise> p = Resolve(global, aGlobal.Context(), aValue, aRv);
-  if (p) {
-    p->mFullfillmentStack = p->mAllocationStack;
+  
+  if (!aThisv.isObject()) {
+    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
+    return;
   }
-  return p.forget();
+
+  
+  if (aValue.isObject()) {
+    JS::Rooted<JSObject*> valueObj(cx, &aValue.toObject());
+    Promise* nextPromise;
+    nsresult rv = UNWRAP_OBJECT(Promise, valueObj, nextPromise);
+
+    if (NS_SUCCEEDED(rv)) {
+      JS::Rooted<JS::Value> constructor(cx);
+      if (!JS_GetProperty(cx, valueObj, "constructor", &constructor)) {
+        aRv.NoteJSContextException();
+        return;
+      }
+
+      
+      if (aThisv == constructor) {
+        aRetval.setObject(*valueObj);
+        return;
+      }
+    }
+  }
+
+  
+  PromiseCapability capability(cx);
+  NewPromiseCapability(cx, global, aThisv, false, capability, aRv);
+  
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  Promise* p = capability.mNativePromise;
+  if (p) {
+    p->MaybeResolveInternal(cx, aValue);
+    p->mFullfillmentStack = p->mAllocationStack;
+  } else {
+    JS::Rooted<JS::Value> value(cx, aValue);
+    JS::Rooted<JS::Value> ignored(cx);
+    if (!JS::Call(cx, JS::UndefinedHandleValue ,
+                  capability.mResolve, JS::HandleValueArray(value),
+                  &ignored)) {
+      
+      aRv.NoteJSContextException();
+      return;
+    }
+  }
+
+  
+  aRetval.set(capability.PromiseValue());
 }
 
  already_AddRefed<Promise>
