@@ -3602,6 +3602,8 @@ nsContentUtils::IsChildOfSameType(nsIDocument* aDoc)
 bool
 nsContentUtils::IsPlainTextType(const nsACString& aContentType)
 {
+  
+  
   return aContentType.EqualsLiteral(TEXT_PLAIN) ||
          aContentType.EqualsLiteral(TEXT_CSS) ||
          aContentType.EqualsLiteral(TEXT_CACHE_MANIFEST) ||
