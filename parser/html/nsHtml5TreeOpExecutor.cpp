@@ -952,7 +952,8 @@ nsHtml5TreeOpExecutor::PreloadImage(const nsAString& aURL,
     
     bool referrerAttributeEnabled = Preferences::GetBool("network.http.enablePerElementReferrer", true);
     if (referrerAttributeEnabled) {
-      mozilla::net::ReferrerPolicy imageReferrerPolicy = mozilla::net::ReferrerPolicyFromString(aImageReferrerPolicy);
+      mozilla::net::ReferrerPolicy imageReferrerPolicy =
+        mozilla::net::AttributeReferrerPolicyFromString(aImageReferrerPolicy);
       if (imageReferrerPolicy != mozilla::net::RP_Unset) {
         referrerPolicy = imageReferrerPolicy;
       }
@@ -1011,8 +1012,21 @@ nsHtml5TreeOpExecutor::SetSpeculationBase(const nsAString& aURL)
 void
 nsHtml5TreeOpExecutor::SetSpeculationReferrerPolicy(const nsAString& aReferrerPolicy)
 {
+  
+  
+  
+  
+  if (aReferrerPolicy.IsEmpty()) {
+    return;
+  }
+
   ReferrerPolicy policy = mozilla::net::ReferrerPolicyFromString(aReferrerPolicy);
-  return SetSpeculationReferrerPolicy(policy);
+  
+  
+  
+  if (policy != mozilla::net::RP_Unset) {
+    SetSpeculationReferrerPolicy(policy);
+  }
 }
 
 void

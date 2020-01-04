@@ -7,6 +7,7 @@
 
 #include "nsStringGlue.h"
 #include "nsIHttpChannel.h"
+#include "nsUnicharUtils.h"
 
 namespace mozilla { namespace net {
 
@@ -27,6 +28,7 @@ enum ReferrerPolicy {
   
   RP_Unsafe_URL                  = nsIHttpChannel::REFERRER_POLICY_UNSAFE_URL,
 
+  
   
   RP_Unset                       = nsIHttpChannel::REFERRER_POLICY_UNSET,
 };
@@ -53,71 +55,89 @@ const char kRPS_Unsafe_URL[]                  = "unsafe-url";
 inline ReferrerPolicy
 ReferrerPolicyFromString(const nsAString& content)
 {
-  
-  
-  if (content.LowerCaseEqualsLiteral(kRPS_Never) ||
-      content.LowerCaseEqualsLiteral(kRPS_No_Referrer)) {
+  if (content.IsEmpty()) {
     return RP_No_Referrer;
   }
-  if (content.LowerCaseEqualsLiteral(kRPS_Origin)) {
+
+  nsString lowerContent(content);
+  ToLowerCase(lowerContent);
+  
+  
+  if (lowerContent.EqualsLiteral(kRPS_Never) ||
+      lowerContent.EqualsLiteral(kRPS_No_Referrer)) {
+    return RP_No_Referrer;
+  }
+  if (lowerContent.EqualsLiteral(kRPS_Origin)) {
     return RP_Origin;
   }
-  if (content.LowerCaseEqualsLiteral(kRPS_Default) ||
-      content.LowerCaseEqualsLiteral(kRPS_No_Referrer_When_Downgrade)) {
+  if (lowerContent.EqualsLiteral(kRPS_Default) ||
+      lowerContent.EqualsLiteral(kRPS_No_Referrer_When_Downgrade)) {
     return RP_No_Referrer_When_Downgrade;
   }
-  if (content.LowerCaseEqualsLiteral(kRPS_Origin_When_Cross_Origin) ||
-      content.LowerCaseEqualsLiteral(kRPS_Origin_When_Crossorigin)) {
+  if (lowerContent.EqualsLiteral(kRPS_Origin_When_Cross_Origin) ||
+      lowerContent.EqualsLiteral(kRPS_Origin_When_Crossorigin)) {
     return RP_Origin_When_Crossorigin;
   }
-  if (content.LowerCaseEqualsLiteral(kRPS_Always) ||
-      content.LowerCaseEqualsLiteral(kRPS_Unsafe_URL)) {
+  if (lowerContent.EqualsLiteral(kRPS_Always) ||
+      lowerContent.EqualsLiteral(kRPS_Unsafe_URL)) {
     return RP_Unsafe_URL;
   }
   
-  return RP_No_Referrer;
+  return RP_Unset;
 
 }
 
 inline bool
 IsValidReferrerPolicy(const nsAString& content)
 {
-  return content.LowerCaseEqualsLiteral(kRPS_Never)
-      || content.LowerCaseEqualsLiteral(kRPS_No_Referrer)
-      || content.LowerCaseEqualsLiteral(kRPS_Origin)
-      || content.LowerCaseEqualsLiteral(kRPS_Default)
-      || content.LowerCaseEqualsLiteral(kRPS_No_Referrer_When_Downgrade)
-      || content.LowerCaseEqualsLiteral(kRPS_Origin_When_Cross_Origin)
-      || content.LowerCaseEqualsLiteral(kRPS_Origin_When_Crossorigin)
-      || content.LowerCaseEqualsLiteral(kRPS_Always)
-      || content.LowerCaseEqualsLiteral(kRPS_Unsafe_URL);
-}
+  if (content.IsEmpty()) {
+    return true;
+  }
 
-inline bool
-IsValidAttributeReferrerPolicy(const nsAString& aContent)
-{
-  return aContent.LowerCaseEqualsLiteral(kRPS_No_Referrer)
-      || aContent.LowerCaseEqualsLiteral(kRPS_Origin)
-      || aContent.LowerCaseEqualsLiteral(kRPS_No_Referrer_When_Downgrade)
-      || aContent.LowerCaseEqualsLiteral(kRPS_Origin_When_Cross_Origin)
-      || aContent.LowerCaseEqualsLiteral(kRPS_Unsafe_URL);
+  nsString lowerContent(content);
+  ToLowerCase(lowerContent);
+
+  return lowerContent.EqualsLiteral(kRPS_Never)
+      || lowerContent.EqualsLiteral(kRPS_No_Referrer)
+      || lowerContent.EqualsLiteral(kRPS_Origin)
+      || lowerContent.EqualsLiteral(kRPS_Default)
+      || lowerContent.EqualsLiteral(kRPS_No_Referrer_When_Downgrade)
+      || lowerContent.EqualsLiteral(kRPS_Origin_When_Cross_Origin)
+      || lowerContent.EqualsLiteral(kRPS_Origin_When_Crossorigin)
+      || lowerContent.EqualsLiteral(kRPS_Always)
+      || lowerContent.EqualsLiteral(kRPS_Unsafe_URL);
 }
 
 inline ReferrerPolicy
-AttributeReferrerPolicyFromString(const nsAString& aContent)
+AttributeReferrerPolicyFromString(const nsAString& content)
 {
   
-  if (aContent.IsEmpty()) {
+  
+  if (content.IsEmpty()) {
     return RP_Unset;
   }
-  
-  
-  if (IsValidAttributeReferrerPolicy(aContent)) {
-    return ReferrerPolicyFromString(aContent);
+
+  nsString lowerContent(content);
+  ToLowerCase(lowerContent);
+
+  if (lowerContent.EqualsLiteral(kRPS_No_Referrer)) {
+    return RP_No_Referrer;
+  }
+  if (lowerContent.EqualsLiteral(kRPS_Origin)) {
+    return RP_Origin;
+  }
+  if (lowerContent.EqualsLiteral(kRPS_No_Referrer_When_Downgrade)) {
+    return RP_No_Referrer_When_Downgrade;
+  }
+  if (lowerContent.EqualsLiteral(kRPS_Origin_When_Cross_Origin)) {
+    return RP_Origin_When_Crossorigin;
+  }
+  if (lowerContent.EqualsLiteral(kRPS_Unsafe_URL)) {
+    return RP_Unsafe_URL;
   }
   
   
-  return RP_No_Referrer;
+  return RP_Unset;
 }
 
 } 

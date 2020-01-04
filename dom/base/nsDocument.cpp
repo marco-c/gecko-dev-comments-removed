@@ -3781,15 +3781,17 @@ nsDocument::SetHeaderData(nsIAtom* aHeaderField, const nsAString& aData)
 
   
   if (aHeaderField == nsGkAtoms::referrer && !aData.IsEmpty()) {
-    ReferrerPolicy policy = mozilla::net::ReferrerPolicyFromString(aData);
-
+     ReferrerPolicy policy = mozilla::net::ReferrerPolicyFromString(aData);
     
     
-    mReferrerPolicy = policy;
-    mReferrerPolicySet = true;
+    if (policy != mozilla::net::RP_Unset) {
+      
+      
+      mReferrerPolicy = policy;
+      mReferrerPolicySet = true;
+    }
   }
 }
-
 void
 nsDocument::TryChannelCharset(nsIChannel *aChannel,
                               int32_t& aCharsetSource,

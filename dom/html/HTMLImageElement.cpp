@@ -555,8 +555,10 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   } else if (aName == nsGkAtoms::referrerpolicy &&
       aNameSpaceID == kNameSpaceID_None &&
       aNotify) {
-    ReferrerPolicy referrerPolicy = ReferrerPolicyFromString(aValue);
-    if (!InResponsiveMode() && referrerPolicy != GetImageReferrerPolicy()) {
+    ReferrerPolicy referrerPolicy = AttributeReferrerPolicyFromString(aValue);
+    if (!InResponsiveMode() &&
+        referrerPolicy != RP_Unset &&
+        referrerPolicy != GetImageReferrerPolicy()) {
       
       
       
