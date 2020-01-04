@@ -240,6 +240,11 @@ exports.FXA_PWDMGR_MEMORY_FIELDS = new Set(
   ["cert", "keyPair"]);
 
 
+
+exports.FXA_PWDMGR_REAUTH_WHITELIST = new Set(
+  ["email", "uid", "profile", "deviceId", "isDeviceStale", "verified"]);
+
+
 exports.FXA_PWDMGR_HOST = "chrome://FirefoxAccounts";
 
 exports.FXA_PWDMGR_REALM = "Firefox Accounts credentials";

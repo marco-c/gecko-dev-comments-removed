@@ -11,6 +11,7 @@ this.EXPORTED_SYMBOLS = [
   "ensureLegacyIdentityManager",
   "setBasicCredentials",
   "makeIdentityConfig",
+  "makeFxAccountsInternalMock",
   "configureFxAccountIdentity",
   "configureIdentity",
   "SyncTestingInfrastructure",
@@ -179,16 +180,8 @@ this.makeIdentityConfig = function(overrides) {
   return result;
 }
 
-
-
-this.configureFxAccountIdentity = function(authService,
-                                           config = makeIdentityConfig()) {
-  
-  
-  config.fxaccount.user.email = config.username;
-
-  let fxa;
-  let MockInternal = {
+this.makeFxAccountsInternalMock = function(config) {
+  return {
     newAccountState(credentials) {
       
       
@@ -203,9 +196,19 @@ this.configureFxAccountIdentity = function(authService,
     _getAssertion(audience) {
       return Promise.resolve("assertion");
     },
-
   };
-  fxa = new FxAccounts(MockInternal);
+};
+
+
+
+this.configureFxAccountIdentity = function(authService,
+                                           config = makeIdentityConfig(),
+                                           fxaInternal = makeFxAccountsInternalMock(config)) {
+  
+  
+  config.fxaccount.user.email = config.username;
+
+  let fxa = new FxAccounts(fxaInternal);
 
   let MockFxAccountsClient = function() {
     FxAccountsClient.apply(this);
