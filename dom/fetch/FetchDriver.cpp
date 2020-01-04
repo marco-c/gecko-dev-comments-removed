@@ -252,11 +252,15 @@ FetchDriver::HttpFetch()
     
     nsAutoString referrer;
     mRequest->GetReferrer(referrer);
+
+    
+    
+    
+    
     ReferrerPolicy referrerPolicy = mRequest->ReferrerPolicy_();
-    net::ReferrerPolicy net_referrerPolicy = net::RP_Unset;
+    net::ReferrerPolicy net_referrerPolicy = mRequest->GetEnvironmentReferrerPolicy();
     switch (referrerPolicy) {
     case ReferrerPolicy::_empty:
-      net_referrerPolicy = net::RP_Default;
       break;
     case ReferrerPolicy::No_referrer:
       net_referrerPolicy = net::RP_No_Referrer;
@@ -294,12 +298,10 @@ FetchDriver::HttpFetch()
       rv = NS_NewURI(getter_AddRefs(referrerURI), referrer, nullptr, nullptr);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      uint32_t documentReferrerPolicy = mDocument ? mDocument->GetReferrerPolicy() :
-                                                    net::RP_Default;
       rv =
         httpChan->SetReferrerWithPolicy(referrerURI,
                                         referrerPolicy == ReferrerPolicy::_empty ?
-                                          documentReferrerPolicy :
+                                          mRequest->GetEnvironmentReferrerPolicy() :
                                           net_referrerPolicy);
       NS_ENSURE_SUCCESS(rv, rv);
     }
