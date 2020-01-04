@@ -16,6 +16,7 @@ import org.mozilla.gecko.util.GamepadUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.media.AudioManager;
@@ -468,6 +469,10 @@ class GeckoInputConnection
     }
 
     
+    
+    
+    
+    @SuppressLint("Override")
     public Handler getHandler() {
         if (isPhysicalKeyboardPresent()) {
             return ThreadUtils.getUiHandler();
