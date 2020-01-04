@@ -833,26 +833,29 @@ nsSocketTransportService::Run()
 
     gSocketThread = PR_GetCurrentThread();
 
-    mPollableEvent.reset(new PollableEvent());
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!mPollableEvent->Valid()) {
-        mPollableEvent = nullptr;
-        NS_WARNING("running socket transport thread without a pollable event");
-        SOCKET_LOG(("running socket transport thread without a pollable event"));
-    }
+    {
+        DebugMutexAutoLock lock(mLock);
+        mPollableEvent.reset(new PollableEvent());
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!mPollableEvent->Valid()) {
+            mPollableEvent = nullptr;
+            NS_WARNING("running socket transport thread without a pollable event");
+            SOCKET_LOG(("running socket transport thread without a pollable event"));
+        }
 
-    mPollList[0].fd = mPollableEvent ? mPollableEvent->PollableFD() : nullptr;
-    mPollList[0].in_flags = PR_POLL_READ | PR_POLL_EXCEPT;
-    mPollList[0].out_flags = 0;
+        mPollList[0].fd = mPollableEvent ? mPollableEvent->PollableFD() : nullptr;
+        mPollList[0].in_flags = PR_POLL_READ | PR_POLL_EXCEPT;
+        mPollList[0].out_flags = 0;
+    }
 
     mRawThread = NS_GetCurrentThread();
 
