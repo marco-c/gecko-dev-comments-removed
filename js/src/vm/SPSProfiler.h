@@ -173,7 +173,7 @@ class SPSProfiler
 
 
 
-    bool enter(JSScript* script, JSFunction* maybeFun);
+    bool enter(JSContext* cx, JSScript* script, JSFunction* maybeFun);
     void exit(JSScript* script, JSFunction* maybeFun);
     void updatePC(JSScript* script, jsbytecode* pc) {
         if (enabled() && *size_ - 1 < max_) {
