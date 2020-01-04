@@ -225,12 +225,13 @@ class CompileInfo
         fixedLexicalBegin_ = script->fixedLexicalBegin();
         nstack_ = Max<unsigned>(script->nslots() - script->nfixed(), MinJITStackSize);
         nslots_ = nimplicit_ + nargs_ + nlocals_ + nstack_;
+        needsCallObject_ = fun ? fun->needsCallObject() : false;
     }
 
     explicit CompileInfo(unsigned nlocals)
       : script_(nullptr), fun_(nullptr), osrPc_(nullptr), osrStaticScope_(nullptr),
-        constructing_(false), analysisMode_(Analysis_None), scriptNeedsArgsObj_(false),
-        mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr)
+        constructing_(false), needsCallObject_(false), analysisMode_(Analysis_None),
+        scriptNeedsArgsObj_(false), mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr)
     {
         nimplicit_ = 0;
         nargs_ = 0;
@@ -328,6 +329,10 @@ class CompileInfo
     
     unsigned nargs() const {
         return nargs_;
+    }
+    bool needsCallObject() const {
+        MOZ_ASSERT(funMaybeLazy());
+        return needsCallObject_;
     }
     
     
@@ -499,7 +504,7 @@ class CompileInfo
         if (slot == thisSlot())
             return true;
 
-        if (funMaybeLazy()->needsCallObject() && slot == scopeChainSlot())
+        if (needsCallObject() && slot == scopeChainSlot())
             return true;
 
         
@@ -572,6 +577,7 @@ class CompileInfo
     jsbytecode* osrPc_;
     NestedStaticScope* osrStaticScope_;
     bool constructing_;
+    bool needsCallObject_;
     AnalysisMode analysisMode_;
 
     
