@@ -379,6 +379,11 @@ protected:
   
 
 
+  void UpdateRootElIfNeeded();
+
+  
+
+
 
   void ProcessLoad();
 

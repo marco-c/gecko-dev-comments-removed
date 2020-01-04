@@ -1461,13 +1461,7 @@ DocAccessible::DoInitialUpdate()
   mLoadState |= eTreeConstructed;
 
   
-  
-  
-  dom::Element* rootEl = nsCoreUtils::GetRoleContent(mDocumentNode);
-  if (rootEl) {
-    mContent = rootEl;
-    SetRoleMapEntry(aria::GetRoleMap(rootEl));
-  }
+  UpdateRootElIfNeeded();
 
   
   
@@ -1700,11 +1694,7 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
 
     if (container == this) {
       
-      dom::Element* rootEl = nsCoreUtils::GetRoleContent(mDocumentNode);
-      if (rootEl != mContent) {
-        mContent = rootEl;
-        SetRoleMapEntry(aria::GetRoleMap(rootEl));
-      }
+      UpdateRootElIfNeeded();
 
       
       

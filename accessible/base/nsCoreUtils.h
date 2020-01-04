@@ -117,17 +117,6 @@ public:
 
 
 
-  static mozilla::dom::Element* GetRoleContent(nsINode *aNode);
-
-  
-
-
-
-
-
-
-
-
 
 
 
