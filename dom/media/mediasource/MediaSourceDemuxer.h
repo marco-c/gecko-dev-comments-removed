@@ -55,6 +55,9 @@ public:
 
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 
+  
+  static const media::TimeUnit EOS_FUZZ;
+
 private:
   ~MediaSourceDemuxer();
   friend class MediaSourceTrackDemuxer;

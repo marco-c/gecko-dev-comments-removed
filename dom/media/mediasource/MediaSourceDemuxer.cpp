@@ -19,11 +19,6 @@ typedef TrackInfo::TrackType TrackType;
 using media::TimeUnit;
 using media::TimeIntervals;
 
-
-
-
-#define EOS_FUZZ_US 125000
-
 MediaSourceDemuxer::MediaSourceDemuxer()
   : mTaskQueue(new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK),
                               true))
@@ -31,6 +26,11 @@ MediaSourceDemuxer::MediaSourceDemuxer()
 {
   MOZ_ASSERT(NS_IsMainThread());
 }
+
+
+
+
+const TimeUnit MediaSourceDemuxer::EOS_FUZZ = media::TimeUnit::FromMicroseconds(125000);
 
 RefPtr<MediaSourceDemuxer::InitPromise>
 MediaSourceDemuxer::Init()
@@ -375,7 +375,7 @@ RefPtr<MediaSourceTrackDemuxer::SeekPromise>
 MediaSourceTrackDemuxer::DoSeek(media::TimeUnit aTime)
 {
   TimeIntervals buffered = mManager->Buffered(mType);
-  buffered.SetFuzz(TimeUnit::FromMicroseconds(EOS_FUZZ_US));
+  buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ);
 
   if (!buffered.Contains(aTime)) {
     
@@ -383,7 +383,7 @@ MediaSourceTrackDemuxer::DoSeek(media::TimeUnit aTime)
                                         __func__);
   }
   TimeUnit seekTime =
-    mManager->Seek(mType, aTime, TimeUnit::FromMicroseconds(EOS_FUZZ_US));
+    mManager->Seek(mType, aTime, MediaSourceDemuxer::EOS_FUZZ);
   {
     MonitorAutoLock mon(mMonitor);
     mNextRandomAccessPoint = mManager->GetNextRandomAccessPoint(mType);
@@ -395,9 +395,10 @@ RefPtr<MediaSourceTrackDemuxer::SamplesPromise>
 MediaSourceTrackDemuxer::DoGetSamples(int32_t aNumSamples)
 {
   bool error;
-  RefPtr<MediaRawData> sample = mManager->GetSample(mType,
-                                                      TimeUnit::FromMicroseconds(EOS_FUZZ_US),
-                                                      error);
+  RefPtr<MediaRawData> sample =
+    mManager->GetSample(mType,
+                        MediaSourceDemuxer::EOS_FUZZ,
+                        error);
   if (!sample) {
     if (error) {
       return SamplesPromise::CreateAndReject(DemuxerFailureReason::DEMUXER_ERROR, __func__);
