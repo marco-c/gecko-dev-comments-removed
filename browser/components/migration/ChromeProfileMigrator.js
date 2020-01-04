@@ -53,10 +53,17 @@ function chromeTimeToDate(aTime)
 
 
 
-function* insertBookmarkItems(parentGuid, items) {
+
+
+function* insertBookmarkItems(parentGuid, items, errorAccumulator) {
   for (let item of items) {
     try {
       if (item.type == "url") {
+        if (item.url.trim().startsWith("chrome:")) {
+          
+          
+          continue;
+        }
         yield PlacesUtils.bookmarks.insert({
           parentGuid, url: item.url, title: item.name
         });
@@ -65,10 +72,11 @@ function* insertBookmarkItems(parentGuid, items) {
           parentGuid, type: PlacesUtils.bookmarks.TYPE_FOLDER, title: item.name
         })).guid;
 
-        yield insertBookmarkItems(newFolderGuid, item.children);
+        yield insertBookmarkItems(newFolderGuid, item.children, errorAccumulator);
       }
     } catch (e) {
       Cu.reportError(e);
+      errorAccumulator(e);
     }
   }
 }
@@ -202,6 +210,8 @@ function GetBookmarksResource(aProfileFolder) {
 
     migrate: function(aCallback) {
       return Task.spawn(function* () {
+        let gotErrors = false;
+        let errorGatherer = () => gotErrors = true;
         let jsonStream = yield new Promise(resolve =>
           NetUtil.asyncFetch({ uri: NetUtil.newURI(bookmarksFile),
                                loadUsingSystemPrincipal: true
@@ -230,7 +240,7 @@ function GetBookmarksResource(aProfileFolder) {
             parentGuid =
               yield MigrationUtils.createImportedBookmarksFolder("Chrome", parentGuid);
           }
-          yield insertBookmarkItems(parentGuid, roots.bookmark_bar.children);
+          yield insertBookmarkItems(parentGuid, roots.bookmark_bar.children, errorGatherer);
         }
 
         
@@ -242,10 +252,13 @@ function GetBookmarksResource(aProfileFolder) {
             parentGuid =
               yield MigrationUtils.createImportedBookmarksFolder("Chrome", parentGuid);
           }
-          yield insertBookmarkItems(parentGuid, roots.other.children);
+          yield insertBookmarkItems(parentGuid, roots.other.children, errorGatherer);
+        }
+        if (gotErrors) {
+          throw "The migration included errors.";
         }
       }.bind(this)).then(() => aCallback(true),
-                          e => { Cu.reportError(e); aCallback(false) });
+                          e => aCallback(false));
     }
   };
 }
