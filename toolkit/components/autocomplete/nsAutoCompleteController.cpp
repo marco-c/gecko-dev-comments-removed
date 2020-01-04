@@ -451,8 +451,19 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
           
           nsAutoString value;
           if (NS_SUCCEEDED(GetResultValueAt(selectedIndex, false, value))) {
+            
+            
+            
+            int32_t start;
+            if (value.Equals(mPlaceholderCompletionString,
+                             nsCaseInsensitiveStringComparator())) {
+              start = mSearchString.Length();
+              value = mPlaceholderCompletionString;
+            } else {
+              start = value.Length();
+            }
             input->SetTextValue(value);
-            input->SelectTextRange(value.Length(), value.Length());
+            input->SelectTextRange(start, value.Length());
           }
           mCompletedSelectionIndex = selectedIndex;
         } else {
