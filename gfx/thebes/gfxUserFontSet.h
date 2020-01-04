@@ -140,7 +140,9 @@ public:
         nsRefPtr<gfxFontEntry> fe = aFontEntry;
         
         mAvailableFonts.RemoveElement(aFontEntry);
-        mAvailableFonts.AppendElement(aFontEntry);
+        
+        
+        mAvailableFonts.InsertElementAt(0, aFontEntry);
 
         if (aFontEntry->mFamilyName.IsEmpty()) {
             aFontEntry->mFamilyName = Name();

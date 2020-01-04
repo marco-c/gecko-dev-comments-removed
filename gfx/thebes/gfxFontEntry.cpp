@@ -1340,7 +1340,7 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     gfxFontEntry* matched = nullptr;
     
     
-    for (int32_t i = count - 1; i >= 0; i--) {
+    for (uint32_t i = 0; i < count; i++) {
         fe = mAvailableFonts[i];
         uint32_t distance =
             WeightDistance(aFontStyle.weight, fe->Weight()) +
