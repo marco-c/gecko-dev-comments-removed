@@ -5267,36 +5267,20 @@ FrameWantsToBeInAnonymousGridItem(nsIFrame* aFrame)
 
 
 void
-nsGridContainerFrame::SanityCheckAnonymousGridItems() const
+nsGridContainerFrame::SetInitialChildList(ChildListID  aListID,
+                                          nsFrameList& aChildList)
 {
-  ChildListIDs noCheckLists = kAbsoluteList | kFixedList |
-    kOverflowContainersList | kExcessOverflowContainersList;
-  ChildListIDs checkLists = kPrincipalList | kOverflowList;
-  for (nsIFrame::ChildListIterator childLists(this);
-       !childLists.IsDone(); childLists.Next()) {
-    if (!checkLists.Contains(childLists.CurrentID())) {
-      MOZ_ASSERT(noCheckLists.Contains(childLists.CurrentID()),
-                 "unexpected non-empty child list");
-      continue;
-    }
+  ChildListIDs supportedLists = kAbsoluteList | kFixedList | kPrincipalList;
+  MOZ_ASSERT(supportedLists.Contains(aListID), "unexpected child list");
 
+  if (aListID == kPrincipalList) {
     bool prevChildWasAnonGridItem = false;
-    nsFrameList children = childLists.CurrentList();
-    for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next()) {
+    for (nsFrameList::Enumerator e(aChildList); !e.AtEnd(); e.Next()) {
       nsIFrame* child = e.get();
       MOZ_ASSERT(!FrameWantsToBeInAnonymousGridItem(child),
-                 "frame wants to be inside an anonymous grid item, "
-                 "but it isn't");
+                 "frame wants to be inside an anonymous grid item, but it isn't");
       if (child->StyleContext()->GetPseudo() ==
             nsCSSAnonBoxes::anonymousGridItem) {
-
-
-
-
-
-
-
-
         MOZ_ASSERT(!prevChildWasAnonGridItem, "two anon grid items in a row");
         nsIFrame* firstWrappedChild = child->PrincipalChildList().FirstChild();
         MOZ_ASSERT(firstWrappedChild,
@@ -5307,6 +5291,13 @@ nsGridContainerFrame::SanityCheckAnonymousGridItems() const
       }
     }
   }
+
+  return nsContainerFrame::SetInitialChildList(aListID, aChildList);
+}
+
+void
+nsGridContainerFrame::SanityCheckAnonymousGridItems() const
+{
 }
 
 void
