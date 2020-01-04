@@ -40,25 +40,17 @@ function String_match(regexp) {
     
     var S = ToString(this);
 
-    
-    var flags = undefined;
-    if (arguments.length > 1) {
-        if (IsMatchFlagsArgumentEnabled())
-            flags = ToString(arguments[1]);
-        WarnOnceAboutFlagsArgument();
-    } else {
-        if (isPatternString && IsStringMatchOptimizable()) {
-            var flatResult = FlatStringMatch(S, regexp);
-            if (flatResult !== undefined)
-                return flatResult;
-        }
+    if (isPatternString && IsStringMatchOptimizable()) {
+        var flatResult = FlatStringMatch(S, regexp);
+        if (flatResult !== undefined)
+            return flatResult;
     }
 
     
-    var rx = RegExpCreate(regexp, flags);
+    var rx = RegExpCreate(regexp, undefined);
 
     
-    if (IsStringMatchOptimizable() && !flags)
+    if (IsStringMatchOptimizable())
         return RegExpMatcher(rx, S, 0);
 
     
@@ -161,18 +153,6 @@ function String_replace(searchValue, replaceValue) {
     
     var searchString = ToString(searchValue);
 
-    
-    var flags = undefined;
-    if (arguments.length > 2) {
-        WarnOnceAboutFlagsArgument();
-        if (IsMatchFlagsArgumentEnabled()) {
-            flags = ToString(arguments[2]);
-            var rx = RegExpCreate(RegExpEscapeMetaChars(searchString), flags);
-
-            return callContentFunction(GetMethod(rx, std_replace), rx, string, replaceValue);
-        }
-    }
-
     if (typeof replaceValue === "string") {
         
         return StringReplaceString(string, searchString, replaceValue);
@@ -253,22 +233,14 @@ function String_search(regexp) {
     
     var string = ToString(this);
 
-    
-    var flags = undefined;
-    if (arguments.length > 1) {
-        if (IsMatchFlagsArgumentEnabled())
-            flags = ToString(arguments[1]);
-        WarnOnceAboutFlagsArgument();
-    } else {
-        if (isPatternString && IsStringSearchOptimizable()) {
-            var flatResult = FlatStringSearch(string, regexp);
-            if (flatResult !== -2)
-                return flatResult;
-        }
+    if (isPatternString && IsStringSearchOptimizable()) {
+        var flatResult = FlatStringSearch(string, regexp);
+        if (flatResult !== -2)
+            return flatResult;
     }
 
     
-    var rx = RegExpCreate(regexp, flags);
+    var rx = RegExpCreate(regexp, undefined);
 
     
     return callContentFunction(GetMethod(rx, std_search), rx, string);

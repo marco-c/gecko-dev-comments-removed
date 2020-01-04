@@ -298,7 +298,6 @@ struct JSCompartment
   public:
     bool                         isSelfHosting;
     bool                         marked;
-    bool                         warnedAboutFlagsArgument;
     bool                         warnedAboutExprClosure;
 
 #ifdef DEBUG
@@ -796,7 +795,7 @@ struct JSCompartment
         
         
         
-        DeprecatedFlagsArgument = 7,        
+        
         
         
         DeprecatedBlockScopeFunRedecl = 10,
