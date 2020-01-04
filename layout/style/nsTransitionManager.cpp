@@ -571,10 +571,7 @@ nsTransitionManager::ConsiderStartingTransition(
   
   
   
-  MOZ_ASSERT(!oldPT || oldPT->Properties()[0].mSegments.Length() == 1,
-             "Should have one animation property segment for a transition");
-  if (haveCurrentTransition && haveValues &&
-      oldPT->Properties()[0].mSegments[0].mToValue == endValue) {
+  if (haveCurrentTransition && haveValues && oldPT->ToValue() == endValue) {
     
     return;
   }
@@ -653,7 +650,7 @@ nsTransitionManager::ConsiderStartingTransition(
 
     duration *= valuePortion;
 
-    startForReversingTest = oldPT->Properties()[0].mSegments[0].mToValue;
+    startForReversingTest = oldPT->ToValue();
     reversePortion = valuePortion;
   }
 
