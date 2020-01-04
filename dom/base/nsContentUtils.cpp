@@ -5370,8 +5370,8 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   
   
   
-  NS_ASSERTION(aDragEvent->mMessage != eLegacyDragGesture &&
-               aDragEvent->mMessage != eDragStart,
+  
+  NS_ASSERTION(aDragEvent->mMessage != eDragStart,
                "draggesture event created without a dataTransfer");
 
   nsCOMPtr<nsIDragSession> dragSession = GetDragSession();
