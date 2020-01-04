@@ -202,7 +202,7 @@ AccessibleCaretManager::UpdateCarets(UpdateCaretsHint aHint)
     UpdateCaretsForCursorMode(aHint);
     break;
   case CaretMode::Selection:
-    UpdateCaretsForSelectionMode(aHint);
+    UpdateCaretsForSelectionMode();
     break;
   }
 }
@@ -316,7 +316,7 @@ AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHint aHint)
 }
 
 void
-AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
+AccessibleCaretManager::UpdateCaretsForSelectionMode()
 {
   AC_LOG("%s: selection: %p", __FUNCTION__, GetSelection());
 
@@ -332,8 +332,8 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
     return;
   }
 
-  auto updateSingleCaret = [aHint](AccessibleCaret* aCaret, nsIFrame* aFrame,
-                                   int32_t aOffset) -> PositionChangedResult
+  auto updateSingleCaret = [](AccessibleCaret* aCaret, nsIFrame* aFrame,
+                              int32_t aOffset) -> PositionChangedResult
   {
     PositionChangedResult result = aCaret->SetPosition(aFrame, aOffset);
     aCaret->SetSelectionBarEnabled(sSelectionBarEnabled);
@@ -344,16 +344,7 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
         break;
 
       case PositionChangedResult::Changed:
-        switch (aHint) {
-          case UpdateCaretsHint::Default:
-            aCaret->SetAppearance(Appearance::Normal);
-            break;
-
-          case UpdateCaretsHint::RespectOldAppearance:
-            
-            
-            break;
-        }
+        aCaret->SetAppearance(Appearance::Normal);
         break;
 
       case PositionChangedResult::Invisible:
@@ -374,11 +365,7 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
     FlushLayout();
   }
 
-  if (aHint == UpdateCaretsHint::Default) {
-    
-    
-    UpdateCaretsForTilt();
-  }
+  UpdateCaretsForTilt();
 
   if (!mActiveCaret) {
     DispatchCaretStateChangedEvent(CaretChangedReason::Updateposition);
@@ -573,8 +560,9 @@ AccessibleCaretManager::OnScrollStart()
 {
   AC_LOG("%s", __FUNCTION__);
 
-  mFirstCaretAppearanceOnScrollStart = mFirstCaret->GetAppearance();
-  mSecondCaretAppearanceOnScrollStart = mSecondCaret->GetAppearance();
+  if (GetCaretMode() == CaretMode::Cursor) {
+    mFirstCaretAppearanceOnScrollStart = mFirstCaret->GetAppearance();
+  }
 
   
   if (sCaretsExtendedVisibility) {
@@ -591,15 +579,8 @@ AccessibleCaretManager::OnScrollEnd()
     return;
   }
 
-  mFirstCaret->SetAppearance(mFirstCaretAppearanceOnScrollStart);
-  mSecondCaret->SetAppearance(mSecondCaretAppearanceOnScrollStart);
-
-  
-  
-  
-  FlushLayout();
-
   if (GetCaretMode() == CaretMode::Cursor) {
+    mFirstCaret->SetAppearance(mFirstCaretAppearanceOnScrollStart);
     if (!mFirstCaret->IsLogicallyVisible()) {
       
       
