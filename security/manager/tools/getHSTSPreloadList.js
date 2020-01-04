@@ -86,7 +86,7 @@ function download() {
   }
 
   
-  var result = resultDecoded.replace(/\/\/[^\n]*\n/g, "");
+  var result = resultDecoded.replace(/^(\s*)?\/\/[^\n]*\n/mg, "");
   var data = null;
   try {
     data = JSON.parse(result);

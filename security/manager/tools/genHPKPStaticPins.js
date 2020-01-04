@@ -145,7 +145,7 @@ function download(filename) {
 
 function downloadAsJson(filename) {
   
-  let result = download(filename).replace(/\/\/[^\n]*\n/g, "");
+  let result = download(filename).replace(/^(\s*)?\/\/[^\n]*\n/mg, "");
   let data = null;
   try {
     data = JSON.parse(result);
