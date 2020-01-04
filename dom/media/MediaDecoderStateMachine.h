@@ -119,7 +119,6 @@ enum class MediaEventType : int8_t {
   PlaybackStopped,
   PlaybackEnded,
   SeekStarted,
-  DecodeError,
   Invalidate,
   EnterVideoSuspend,
   ExitVideoSuspend
@@ -245,6 +244,8 @@ public:
 
   MediaEventSource<MediaEventType>&
   OnPlaybackEvent() { return mOnPlaybackEvent; }
+  MediaEventSource<MediaResult>&
+  OnPlaybackErrorEvent() { return mOnPlaybackErrorEvent; }
 
   size_t SizeOfVideoQueue() const;
 
@@ -481,7 +482,7 @@ protected:
   
   
   
-  void DecodeError();
+  void DecodeError(const MediaResult& aError);
 
   
   
@@ -892,6 +893,7 @@ private:
                         MediaDecoderEventVisibility> mFirstFrameLoadedEvent;
 
   MediaEventProducer<MediaEventType> mOnPlaybackEvent;
+  MediaEventProducer<MediaResult> mOnPlaybackErrorEvent;
 
   
   
