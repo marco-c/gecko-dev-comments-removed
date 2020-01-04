@@ -78,7 +78,6 @@ public:
 
   AsyncPanZoomController* GetApzc() const;
   AsyncPanZoomController* GetNearestContainingApzc() const;
-  AsyncPanZoomController* GetNearestContainingApzcWithSameLayersId() const;
   bool IsPrimaryHolder() const;
   uint64_t GetLayersId() const;
 
@@ -103,7 +102,7 @@ public:
   
 
   void SetFixedPosData(FrameMetrics::ViewID aFixedPosTarget);
-  FrameMetrics::ViewID GetNearestAncestorFixedPosTargetWithSameLayersId() const;
+  FrameMetrics::ViewID GetFixedPosTarget() const;
 
   
 
