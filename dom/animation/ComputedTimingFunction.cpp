@@ -5,6 +5,7 @@
 
 
 #include "ComputedTimingFunction.h"
+#include "nsAlgorithm.h" 
 #include "nsStyleUtil.h"
 
 namespace mozilla {
@@ -36,6 +37,19 @@ ComputedTimingFunction::GetValue(double aPortion) const
   if (HasSpline()) {
     return mTimingFunction.GetSplineValue(aPortion);
   }
+
+  
+  
+  
+  
+  
+  if (aPortion < 0.0) {
+    return 0.0;
+  }
+
+  
+  aPortion = clamped(aPortion, 0.0, 1.0);
+
   if (mType == nsTimingFunction::Type::StepStart) {
     
     
