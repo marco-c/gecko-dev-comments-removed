@@ -672,7 +672,7 @@ function implicitlyWaitFor(func, timeout, interval = 100) {
     let startTime = new Date().getTime();
     let endTime = startTime + timeout;
 
-    let onTimer = function() {
+    let elementSearch = function() {
       let res;
       try {
         res = func();
@@ -694,14 +694,17 @@ function implicitlyWaitFor(func, timeout, interval = 100) {
 
     
     
-    onTimer();
+    elementSearch();
 
-    timer.init(onTimer, interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
+    timer.init(elementSearch, interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
 
   
   }).then(res => {
     timer.cancel();
     return res;
+  }, err => {
+    timer.cancel();
+    throw err;
   });
 }
 
