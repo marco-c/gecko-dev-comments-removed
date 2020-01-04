@@ -18,8 +18,7 @@
 
 
 
-class UrlClassifierDBServiceWorkerProxy final :
-  public nsIUrlClassifierDBServiceWorker
+class UrlClassifierDBServiceWorkerProxy final : public nsIUrlClassifierDBService
 {
 public:
   explicit UrlClassifierDBServiceWorkerProxy(nsUrlClassifierDBServiceWorker* aTarget)
@@ -28,7 +27,6 @@ public:
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURLCLASSIFIERDBSERVICE
-  NS_DECL_NSIURLCLASSIFIERDBSERVICEWORKER
 
   class LookupRunnable : public mozilla::Runnable
   {
@@ -207,6 +205,12 @@ public:
   nsresult DoLocalLookup(const nsACString& spec,
                          const nsACString& tables,
                          mozilla::safebrowsing::LookupResultArray* results);
+
+  nsresult OpenDb();
+  nsresult CloseDb();
+
+  nsresult CacheCompletions(mozilla::safebrowsing::CacheResultArray * aEntries);
+  nsresult CacheMisses(mozilla::safebrowsing::PrefixArray * aEntries);
 
 private:
   ~UrlClassifierDBServiceWorkerProxy() {}

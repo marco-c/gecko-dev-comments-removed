@@ -105,7 +105,6 @@ static bool gShuttingDownThread = false;
 static mozilla::Atomic<int32_t> gFreshnessGuarantee(CONFIRM_AGE_DEFAULT_SEC);
 
 NS_IMPL_ISUPPORTS(nsUrlClassifierDBServiceWorker,
-                  nsIUrlClassifierDBServiceWorker,
                   nsIUrlClassifierDBService)
 
 nsUrlClassifierDBServiceWorker::nsUrlClassifierDBServiceWorker()
@@ -659,7 +658,7 @@ nsUrlClassifierDBServiceWorker::CancelUpdate()
 
 
 
-NS_IMETHODIMP
+nsresult
 nsUrlClassifierDBServiceWorker::CloseDb()
 {
   if (mClassifier) {
@@ -673,7 +672,7 @@ nsUrlClassifierDBServiceWorker::CloseDb()
   return NS_OK;
 }
 
-NS_IMETHODIMP
+nsresult
 nsUrlClassifierDBServiceWorker::CacheCompletions(CacheResultArray *results)
 {
   LOG(("nsUrlClassifierDBServiceWorker::CacheCompletions [%p]", this));
@@ -734,7 +733,7 @@ nsUrlClassifierDBServiceWorker::CacheCompletions(CacheResultArray *results)
   return NS_OK;
 }
 
-NS_IMETHODIMP
+nsresult
 nsUrlClassifierDBServiceWorker::CacheMisses(PrefixArray *results)
 {
   LOG(("nsUrlClassifierDBServiceWorker::CacheMisses [%p] %d",
