@@ -894,11 +894,18 @@ void nr_ice_media_stream_role_change(nr_ice_media_stream *stream)
     nr_ice_cand_pair *pair,*temp_pair;
     
 
-    nr_ice_cand_pair_head old_checklist=stream->check_list;
-    TAILQ_INIT(&stream->check_list);
+    nr_ice_cand_pair_head old_checklist;
 
     assert(stream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED);
 
+    
+    TAILQ_INIT(&old_checklist);
+    TAILQ_FOREACH_SAFE(pair,&stream->check_list,check_queue_entry,temp_pair) {
+      TAILQ_REMOVE(&stream->check_list,pair,check_queue_entry);
+      TAILQ_INSERT_TAIL(&old_checklist,pair,check_queue_entry);
+    }
+
+    
     TAILQ_FOREACH_SAFE(pair,&old_checklist,check_queue_entry,temp_pair) {
       TAILQ_REMOVE(&old_checklist,pair,check_queue_entry);
       nr_ice_candidate_pair_role_change(pair);
