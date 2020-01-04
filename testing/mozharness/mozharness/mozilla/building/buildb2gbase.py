@@ -131,23 +131,6 @@ class B2GBuildBaseScript(BuildbotMixin, MockMixin,
         if 'target' not in self.config:
             self.fatal("Must specify --target!")
 
-        
-        if self.config['target'] == 'mako':
-            self.info("Using target nexus-4 instead of mako")
-            self.config['target'] = 'nexus-4'
-            if self.config.get('b2g_config_dir') is None:
-                self.config['b2g_config_dir'] = 'mako'
-        elif self.config['target'] == 'generic':
-            if self.config.get('b2g_config_dir') == 'emulator':
-                self.info("Using target emulator instead of generic")
-                self.config['target'] = 'emulator'
-            elif self.config.get('b2g_config_dir') == 'emulator-jb':
-                self.info("Using target emulator-jb instead of generic")
-                self.config['target'] = 'emulator-jb'
-            elif self.config.get('b2g_config_dir') == 'emulator-kk':
-                self.info("Using target emulator-kk instead of generic")
-                self.config['target'] = 'emulator-kk'
-
         if not (self.buildbot_config and 'properties' in self.buildbot_config) and 'repo' not in self.config:
             self.fatal("Must specify --repo")
 
@@ -519,13 +502,6 @@ class B2GBuildBaseScript(BuildbotMixin, MockMixin,
                     sleep_time = min(sleep_time * 1.5, max_sleep_time) + random.randint(1, 60)
             else:
                 self.fatal("failed to run config.sh")
-
-            
-            if self.config['target'] == 'emulator-kk':
-                self.info("Forcing -j4 for emulator-kk")
-                dotconfig_file = os.path.join(dirs['abs_work_dir'], '.config')
-                with open(dotconfig_file, "a+") as f:
-                    f.write("\nMAKE_FLAGS=-j1\n")
 
             
             self.run_command(
