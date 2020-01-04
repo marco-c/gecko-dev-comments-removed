@@ -3505,8 +3505,7 @@ public:
     NS_DECL_NSIXPCSCRIPTABLE
     
     
-    
-    static NS_IMETHODIMP Get(nsIXPCScriptable** helper)
+    static NS_METHOD Get(nsIXPCScriptable** helper)
     {
         *helper = &singleton;
         return NS_OK;
