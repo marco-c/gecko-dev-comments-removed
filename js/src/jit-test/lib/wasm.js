@@ -16,6 +16,18 @@ function hasI64() {
     return getBuildConfiguration().x64;
 }
 
+function jsify(wasmVal) {
+    if (wasmVal === 'nan')
+        return NaN;
+    if (wasmVal === 'infinity')
+        return Infinity;
+    if (wasmVal === '-infinity')
+        return Infinity;
+    if (wasmVal === '-0')
+        return -0;
+    return wasmVal;
+}
+
 
 
 
