@@ -4,10 +4,7 @@
 "use strict";
 
 const { L10N } = require("devtools/client/performance/modules/global");
-const { Formatters } = require("devtools/client/performance/modules/logic/marker-formatters");
-
-
-
+const { Formatters, labelForProperty } = require("devtools/client/performance/modules/marker-formatters");
 
 
 
@@ -57,6 +54,7 @@ const TIMELINE_BLUEPRINT = {
   },
 
   
+
   "Styles": {
     group: 0,
     colorName: "graphs-purple",
@@ -85,6 +83,7 @@ const TIMELINE_BLUEPRINT = {
   },
 
   
+
   "DOMEvent": {
     group: 1,
     colorName: "graphs-yellow",
@@ -155,38 +154,23 @@ const TIMELINE_BLUEPRINT = {
   },
 
   
+
   "ConsoleTime": {
     group: 2,
     colorName: "graphs-blue",
-    label: sublabelForProperty(L10N.getStr("marker.label.consoleTime"), "causeName"),
-    fields: [{
-      property: "causeName",
-      label: L10N.getStr("marker.field.consoleTimerName")
-    }],
+    label: Formatters.labelForProperty(L10N.getStr("marker.label.consoleTime"), "causeName"),
+    fields: Formatters.ConsoleTimeFields,
     nestable: false,
     collapsible: false,
   },
   "TimeStamp": {
     group: 2,
     colorName: "graphs-blue",
-    label: sublabelForProperty(L10N.getStr("marker.label.timestamp"), "causeName"),
-    fields: [{
-      property: "causeName",
-      label: "Label:"
-    }],
+    label: Formatters.labelForProperty(L10N.getStr("marker.label.timestamp"), "causeName"),
+    fields: Formatters.TimeStampFields,
     collapsible: false,
   },
 };
-
-
-
-
-
-
-
-function sublabelForProperty (mainLabel, prop) {
-  return (marker={}) => marker[prop] ? `${mainLabel} (${marker[prop]})` : mainLabel;
-}
 
 
 exports.TIMELINE_BLUEPRINT = TIMELINE_BLUEPRINT;
