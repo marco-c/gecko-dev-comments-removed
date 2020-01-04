@@ -30,9 +30,6 @@ public:
   virtual void ClearTransparentWindow() = 0;
 
   
-  virtual void ResizeTransparentWindow(const gfx::IntSize& aSize) = 0;
-
-  
   
   virtual HDC GetTransparentDC() const = 0;
 };
@@ -71,7 +68,6 @@ public:
   void OnDestroyWindow() override;
   void UpdateTransparency(nsTransparencyMode aMode) override;
   void ClearTransparentWindow() override;
-  void ResizeTransparentWindow(const gfx::IntSize& aSize) override;
 
   bool RedrawTransparentWindow();
 
