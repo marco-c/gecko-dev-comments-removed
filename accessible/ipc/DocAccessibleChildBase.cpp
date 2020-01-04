@@ -82,29 +82,6 @@ DocAccessibleChildBase::SerializeTree(Accessible* aRoot,
   }
 }
 
-#if defined(XP_WIN)
- void
-DocAccessibleChildBase::SetMsaaIds(Accessible* aRoot,
-                                   uint32_t& aMsaaIdIndex,
-                                   const nsTArray<MsaaMapping>& aNewMsaaIds)
-{
-  const MsaaMapping& mapping = aNewMsaaIds[aMsaaIdIndex];
-#if defined(DEBUG)
-  uint64_t id = reinterpret_cast<uint64_t>(aRoot->UniqueID());
-  MOZ_ASSERT(mapping.ID() == id);
-#endif 
-  static_cast<AccessibleWrap*>(aRoot)->SetID(mapping.MsaaID());
-  ++aMsaaIdIndex;
-  if (aRoot->IsOuterDoc()) {
-    
-    return;
-  }
-  for (uint32_t i = 0, n = aRoot->ChildCount(); i < n; ++i) {
-    SetMsaaIds(aRoot->GetChildAt(i), aMsaaIdIndex, aNewMsaaIds);
-  }
-}
-#endif 
-
 void
 DocAccessibleChildBase::ShowEvent(AccShowEvent* aShowEvent)
 {
@@ -114,22 +91,7 @@ DocAccessibleChildBase::ShowEvent(AccShowEvent* aShowEvent)
   nsTArray<AccessibleData> shownTree;
   ShowEventData data(parentID, idxInParent, shownTree);
   SerializeTree(aShowEvent->GetAccessible(), data.NewTree());
-#if defined(XP_WIN)
-  nsTArray<MsaaMapping> newMsaaIds;
-  SendShowEventInfo(data, &newMsaaIds);
-  
-  if (!newMsaaIds.IsEmpty()) {
-    uint32_t index = 0;
-    SetMsaaIds(aShowEvent->GetAccessible(), index, newMsaaIds);
-  }
-  
-  
-  
-  SendEvent(reinterpret_cast<uint64_t>(aShowEvent->GetAccessible()->UniqueID()),
-            nsIAccessibleEvent::EVENT_SHOW);
-#else
   SendShowEvent(data, aShowEvent->IsFromUserInput());
-#endif 
 }
 
 } 
