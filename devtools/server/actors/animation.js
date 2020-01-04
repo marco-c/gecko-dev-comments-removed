@@ -414,6 +414,20 @@ var AnimationPlayerActor = ActorClass({
       currentTime: Arg(0, "number")
     },
     response: {}
+  }),
+
+  
+
+
+
+
+  getFrames: method(function() {
+    return this.player.effect.getFrames();
+  }, {
+    request: {},
+    response: {
+      frames: RetVal("json")
+    }
   })
 });
 
