@@ -132,14 +132,14 @@ public:
   virtual uint32_t IterationDuration() = 0;
 
   
-  bool Switching() {
-    return mNextDriver || mPreviousDriver;
-  }
+  bool Switching();
 
-  GraphDriver* NextDriver()
-  {
-    return mNextDriver;
-  }
+  
+  
+  GraphDriver* NextDriver();
+  GraphDriver* PreviousDriver();
+  void SetNextDriver(GraphDriver* aNextDriver);
+  void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
   
 
