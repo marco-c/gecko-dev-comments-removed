@@ -772,6 +772,11 @@ or run without that action (ie: --no-{action})"
                 buildid = self.buildbot_config['properties']['buildid'].encode(
                     'ascii', 'replace'
                 )
+            else:
+                
+                
+                
+                buildid = os.environ.get('MOZ_BUILD_DATE')
 
         if not buildid:
             self.info("Creating buildid through current time")
