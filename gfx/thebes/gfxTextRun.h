@@ -1113,7 +1113,8 @@ protected:
     
 
     
-    gfxFontFamily* FindPlatformFont(const nsAString& aName, bool aUseFontSet);
+    void AddPlatformFont(const nsAString& aName,
+                         nsTArray<gfxFontFamily*>& aFamilyList);
 
     
     void AddFamilyToFontList(gfxFontFamily* aFamily);
