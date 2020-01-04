@@ -345,7 +345,8 @@ nsDocLoader::Destroy()
   
   if (mParent)
   {
-    mParent->RemoveChildLoader(this);
+    nsresult rv = mParent->RemoveChildLoader(this);
+    NS_WARN_IF(NS_FAILED(rv));
   }
 
   
@@ -376,7 +377,8 @@ nsDocLoader::DestroyChildren()
     if (loader) {
       
       
-      static_cast<nsDocLoader*>(loader)->SetDocLoaderParent(nullptr);
+      nsresult rv = static_cast<nsDocLoader*>(loader)->SetDocLoaderParent(nullptr);
+      NS_WARN_IF(NS_FAILED(rv));
     }
   }
   mChildList.Clear();
@@ -616,7 +618,7 @@ nsresult nsDocLoader::RemoveChildLoader(nsDocLoader* aChild)
 {
   nsresult rv = mChildList.RemoveElement(aChild) ? NS_OK : NS_ERROR_FAILURE;
   if (NS_SUCCEEDED(rv)) {
-    aChild->SetDocLoaderParent(nullptr);
+    rv = aChild->SetDocLoaderParent(nullptr);
   }
   return rv;
 }
@@ -625,7 +627,7 @@ nsresult nsDocLoader::AddChildLoader(nsDocLoader* aChild)
 {
   nsresult rv = mChildList.AppendElement(aChild) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
   if (NS_SUCCEEDED(rv)) {
-    aChild->SetDocLoaderParent(this);
+    rv = aChild->SetDocLoaderParent(this);
   }
   return rv;
 }
