@@ -83,6 +83,7 @@ function reload(event) {
 
   
   Services.obs.notifyObservers(null, "startupcache-invalidate", null);
+  Services.obs.notifyObservers(null, "chrome-flush-caches", null);
 
   
   const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
