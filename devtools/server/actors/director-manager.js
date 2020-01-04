@@ -21,6 +21,12 @@ const { PlainTextConsole } = require("sdk/console/plain-text");
 
 const { DirectorRegistry } = require("./director-registry");
 
+const {
+  messagePortSpec,
+  directorManagerSpec,
+  directorScriptSpec,
+} = require("devtools/shared/specs/director-manager");
+
 
 
 
@@ -33,22 +39,8 @@ const ERR_DIRECTOR_UNINSTALLED_SCRIPTID = "uninstalled director-script id";
 
 
 
-types.addDictType("messageportevent", {
-  isTrusted: "boolean",
-  data: "nullable:primitive",
-  origin: "nullable:string",
-  lastEventId: "nullable:string",
-  source: "messageport",
-  ports: "nullable:array:messageport"
-});
 
-
-
-
-
-var MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
-  typeName: "messageport",
-
+var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(messagePortSpec, {
   
 
 
@@ -76,24 +68,19 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
 
 
 
-  postMessage: method(function (msg) {
+  postMessage: function (msg) {
     if (!this.port) {
       console.error(ERR_MESSAGEPORT_FINALIZED);
       return;
     }
 
     this.port.postMessage(msg);
-  }, {
-    oneway: true,
-    request: {
-      msg: Arg(0, "nullable:json")
-    }
-  }),
+  },
 
   
 
 
-  start: method(function () {
+  start: function () {
     if (!this.port) {
       console.error(ERR_MESSAGEPORT_FINALIZED);
       return;
@@ -126,16 +113,13 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
         ports: ports
       });
     };
-  }, {
-    oneway: true,
-    request: {}
-  }),
+  },
 
   
 
 
 
-  close: method(function () {
+  close: function () {
     if (!this.port) {
       console.error(ERR_MESSAGEPORT_FINALIZED);
       return;
@@ -143,101 +127,26 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClass({
 
     this.port.onmessage = null;
     this.port.close();
-  }, {
-    oneway: true,
-    request: {}
-  }),
-
-  finalize: method(function () {
-    this.close();
-    this.port = null;
-  }, {
-    oneway: true
-  }),
-
-  
-
-
-  events: {
-    "message": {
-      type: "message",
-      msg: Arg(0, "nullable:messageportevent")
-    }
-  }
-});
-
-
-
-
-var MessagePortFront = exports.MessagePortFront = protocol.FrontClass(MessagePortActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-  }
-});
-
-
-
-
-
-types.addDictType("director-script-error", {
-  directorScriptId: "string",
-  message: "nullable:string",
-  stack: "nullable:string",
-  fileName: "nullable:string",
-  lineNumber: "nullable:number",
-  columnNumber: "nullable:number"
-});
-
-
-
-
-types.addDictType("director-script-attach", {
-  directorScriptId: "string",
-  url: "string",
-  innerId: "number",
-  port: "nullable:messageport"
-});
-
-
-
-
-types.addDictType("director-script-detach", {
-  directorScriptId: "string",
-  innerId: "number"
-});
-
-
-
-
-
-
-
-
-
-
-
-
-var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
-  typeName: "director-script",
-
-  
-
-
-  events: {
-    "error": {
-      type: "error",
-      data: Arg(0, "director-script-error")
-    },
-    "attach": {
-      type: "attach",
-      data: Arg(0, "director-script-attach")
-    },
-    "detach": {
-      type: "detach",
-      data: Arg(0, "director-script-detach")
-    }
   },
 
+  finalize: function () {
+    this.close();
+    this.port = null;
+  },
+});
+
+
+
+
+
+
+
+
+
+
+
+
+var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClassWithSpec(directorScriptSpec, {
   
 
 
@@ -281,7 +190,7 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
 
 
 
-  setup: method(function ({ reload, skipAttach }) {
+  setup: function ({ reload, skipAttach }) {
     if (this._setupCalled) {
       
       return;
@@ -303,31 +212,20 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
       
       this._onGlobalCreated({ id: getWindowID(this.window), window: this.window, isTopLevel: true });
     }
-  }, {
-    request: {
-      reload: Option(0, "boolean"),
-      skipAttach: Option(0, "boolean")
-    },
-    oneway: true
-  }),
+  },
 
   
 
 
-  getMessagePort: method(function () {
+  getMessagePort: function () {
     return this._messagePortActor;
-  }, {
-    request: { },
-    response: {
-      port: RetVal("nullable:messageport")
-    }
-  }),
+  },
 
   
 
 
 
-  finalize: method(function () {
+  finalize: function () {
     if (!this._setupCalled) {
       return;
     }
@@ -338,9 +236,7 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
     this._onGlobalDestroyed({ id: this._lastAttachedWinId });
 
     this._setupCalled = false;
-  }, {
-    oneway: true
-  }),
+  },
 
   
   get window() {
@@ -438,36 +334,7 @@ var DirectorScriptActor = exports.DirectorScriptActor = protocol.ActorClass({
 
 
 
-var DirectorScriptFront = exports.DirectorScriptFront = protocol.FrontClass(DirectorScriptActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-  }
-});
-
-
-
-
-const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass({
-  typeName: "director-manager",
-
-  
-
-
-  events: {
-    "director-script-error": {
-      type: "error",
-      data: Arg(0, "director-script-error")
-    },
-    "director-script-attach": {
-      type: "attach",
-      data: Arg(0, "director-script-attach")
-    },
-    "director-script-detach": {
-      type: "detach",
-      data: Arg(0, "director-script-detach")
-    }
-  },
-
+const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClassWithSpec(directorManagerSpec, {
   
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
@@ -482,18 +349,14 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(
   
 
 
-  list: method(function () {
+  list: function () {
     let enabledScriptIds = [...this._directorScriptActorsMap.keys()];
 
     return {
       installed: DirectorRegistry.list(),
       enabled: enabledScriptIds
     };
-  }, {
-    response: {
-      directorScripts: RetVal("json")
-    }
-  }),
+  },
 
   
 
@@ -504,7 +367,7 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(
 
 
 
-  enableByScriptIds: method(function (selectedIds, { reload }) {
+  enableByScriptIds: function (selectedIds, { reload }) {
     if (selectedIds && selectedIds.length === 0) {
       
       return;
@@ -527,13 +390,7 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(
     if (reload) {
       this.tabActor.window.location.reload();
     }
-  }, {
-    oneway: true,
-    request: {
-      selectedIds: Arg(0, "array:string"),
-      reload: Option(1, "boolean")
-    }
-  }),
+  },
 
   
 
@@ -544,7 +401,7 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(
 
 
 
-  disableByScriptIds: method(function (selectedIds, { reload }) {
+  disableByScriptIds: function (selectedIds, { reload }) {
     if (selectedIds && selectedIds.length === 0) {
       
       return;
@@ -571,19 +428,13 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(
     if (reload) {
       this.tabActor.window.location.reload();
     }
-  }, {
-    oneway: true,
-    request: {
-      selectedIds: Arg(0, "array:string"),
-      reload: Option(1, "boolean")
-    }
-  }),
+  },
 
   
 
 
 
-  getByScriptId: method(function (scriptId) {
+  getByScriptId: function (scriptId) {
     var id = scriptId;
     
     if (!DirectorRegistry.checkInstalled(id)) {
@@ -616,31 +467,10 @@ const DirectorManagerActor = exports.DirectorManagerActor = protocol.ActorClass(
     }
 
     return actor;
-  }, {
-    request: {
-      scriptId: Arg(0, "string")
-    },
-    response: {
-      directorScript: RetVal("director-script")
-    }
-  }),
+  },
 
-  finalize: method(function () {
+  finalize: function () {
     this.disableByScriptIds(["*"], false);
-  }, {
-    oneway: true
-  })
-});
-
-
-
-
-exports.DirectorManagerFront = protocol.FrontClass(DirectorManagerActor, {
-  initialize: function (client, { directorManagerActor }) {
-    protocol.Front.prototype.initialize.call(this, client, {
-      actor: directorManagerActor
-    });
-    this.manage(this);
   }
 });
 
