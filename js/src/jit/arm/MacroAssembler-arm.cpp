@@ -1092,6 +1092,8 @@ MacroAssemblerARM::ma_ldrd(EDtrAddr addr, Register rt, DebugOnly<Register> rt2,
 {
     MOZ_ASSERT((rt.code() & 1) == 0);
     MOZ_ASSERT(rt2.value.code() == rt.code() + 1);
+    MOZ_ASSERT(addr.maybeOffsetRegister() != rt); 
+    MOZ_ASSERT(addr.maybeOffsetRegister() != rt2);
     as_extdtr(IsLoad, 64, true, mode, rt, addr, cc);
 }
 
@@ -3170,7 +3172,15 @@ MacroAssemblerARMCompat::loadValue(const BaseIndex& addr, ValueOperand val)
         Register tmpIdx;
         if (addr.offset == 0) {
             if (addr.scale == TimesOne) {
-                tmpIdx = addr.index;
+                
+                
+                
+                if (val.aliases(addr.index)) {
+                    ma_mov(addr.index, scratch);
+                    tmpIdx = scratch;
+                } else {
+                    tmpIdx = addr.index;
+                }
             } else {
                 ma_lsl(Imm32(addr.scale), addr.index, scratch);
                 tmpIdx = scratch;
