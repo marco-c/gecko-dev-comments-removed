@@ -438,12 +438,6 @@ nsICODecoder::ReadBIH(const char* aData)
   }
 
   
-  
-  
-  
-  mBPP = bmpDecoder->GetBitsPerPixel();
-
-  
   uint16_t numColors = GetNumColors();
   if (numColors == uint16_t(-1)) {
     return Transition::Terminate(ICOState::FAILURE);
