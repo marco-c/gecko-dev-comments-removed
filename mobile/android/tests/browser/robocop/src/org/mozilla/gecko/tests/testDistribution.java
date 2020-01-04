@@ -137,8 +137,6 @@ public class testDistribution extends ContentProviderTest {
 
         
         clearDistributionPref();
-        clearDistributionFromDataData();
-
         setTestLocale("en-US");
         try {
             initDistribution(mockPackagePath);
@@ -156,7 +154,6 @@ public class testDistribution extends ContentProviderTest {
 
         
         clearDistributionPref();
-        clearDistributionFromDataData();
         setTestLocale("es-MX");
         initDistribution(mockPackagePath);
         checkLocalizedPreferences("es-MX");
@@ -164,11 +161,9 @@ public class testDistribution extends ContentProviderTest {
         
         setTestLocale("en-US");
         clearDistributionPref();
-        clearDistributionFromDataData();
         doTestValidReferrerIntent();
 
         clearDistributionPref();
-        clearDistributionFromDataData();
         doTestInvalidReferrerIntent();
     }
 
@@ -508,22 +503,6 @@ public class testDistribution extends ContentProviderTest {
         TestableDistribution.clearReferrerDescriptorForTesting();
     }
 
-    
-
-
-    private void clearDistributionFromDataData() throws Exception {
-        File dataDir = new File(mActivity.getApplicationInfo().dataDir);
-
-        
-        File distDir = new File(dataDir, "distribution");
-        if (distDir.exists()) {
-            mAsserter.dumpLog("Clearing distribution from " + distDir.getAbsolutePath());
-            delete(distDir);
-        } else {
-            mAsserter.dumpLog("No distribution to clear from " + distDir.getAbsolutePath());
-        }
-    }
-
     @Override
     public void setUp() throws Exception {
         
@@ -548,7 +527,10 @@ public class testDistribution extends ContentProviderTest {
         File mockPackage = new File(dataDir, MOCK_PACKAGE);
         mAsserter.ok(mockPackage.delete(), "clean up mock package", "deleted " + mockPackage.getPath());
 
-        clearDistributionFromDataData();
+        
+        File distDir = new File(dataDir, "distribution");
+        delete(distDir);
+
         clearDistributionPref();
 
         super.tearDown();

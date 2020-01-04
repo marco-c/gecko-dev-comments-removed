@@ -464,12 +464,10 @@ public class Distribution {
         }
 
         
-        
         final boolean distributionSet =
                 checkIntentDistribution(referrer) ||
                 copyAndCheckAPKDistribution() ||
-                checkSystemDistribution() ||
-                checkDataDistribution();
+                checkSystemDistribution();
 
         
         
