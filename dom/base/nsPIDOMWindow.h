@@ -41,7 +41,7 @@ class Element;
 class ServiceWorkerRegistrationMainThread;
 } 
 namespace gfx {
-class VRHMDInfo;
+class VRDeviceProxy;
 } 
 } 
 
@@ -511,7 +511,7 @@ public:
 
   virtual nsresult SetFullscreenInternal(
     FullscreenReason aReason, bool aIsFullscreen,
-    mozilla::gfx::VRHMDInfo *aHMD = nullptr) = 0;
+    mozilla::gfx::VRDeviceProxy *aHMD = nullptr) = 0;
 
   
 

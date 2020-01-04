@@ -129,7 +129,7 @@ class IDBFactory;
 } 
 } 
 namespace gfx {
-class VRHMDInfo;
+class VRDeviceProxy;
 } 
 } 
 
@@ -471,7 +471,7 @@ public:
   
   virtual nsresult SetFullscreenInternal(
     FullscreenReason aReason, bool aIsFullscreen,
-    mozilla::gfx::VRHMDInfo *aHMD = nullptr) override final;
+    mozilla::gfx::VRDeviceProxy *aHMD = nullptr) override final;
   virtual void FinishFullscreenChange(bool aIsFullscreen) override final;
   void SetWidgetFullscreen(FullscreenReason aReason, bool aIsFullscreen,
                            nsIWidget* aWidget, nsIScreen* aScreen);
@@ -761,7 +761,7 @@ public:
   void DisableGamepadUpdates();
 
   
-  bool GetVRDevices(nsTArray<RefPtr<mozilla::dom::VRDevice>>& aDevices);
+  bool UpdateVRDevices(nsTArray<RefPtr<mozilla::dom::VRDevice>>& aDevices);
 
 #define EVENT(name_, id_, type_, struct_)                                     \
   mozilla::dom::EventHandlerNonNull* GetOn##name_()                           \
@@ -1849,11 +1849,7 @@ protected:
   uint32_t mCanSkipCCGeneration;
 
   
-  bool                                       mVRDevicesInitialized;
-  
   nsTArray<RefPtr<mozilla::dom::VRDevice>> mVRDevices;
-  
-  RefPtr<mozilla::gfx::VRHMDInfo>          mVRHMDInfo;
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;

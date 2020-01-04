@@ -32,6 +32,7 @@
 #include "nsTArray.h"                   
 #include "TextRenderer.h"               
 #include <vector>
+#include "VRManager.h"                  
 #include "GeckoProfiler.h"              
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "ProfilerMarkers.h"            
@@ -138,7 +139,7 @@ template<class ContainerT> void
 ContainerRenderVR(ContainerT* aContainer,
                   LayerManagerComposite* aManager,
                   const gfx::IntRect& aClipRect,
-                  gfx::VRHMDInfo* aHMD)
+                  RefPtr<gfx::VRHMDInfo> aHMD)
 {
   RefPtr<CompositingRenderTarget> surface;
 
@@ -149,7 +150,7 @@ ContainerRenderVR(ContainerT* aContainer,
   float opacity = aContainer->GetEffectiveOpacity();
 
   
-  gfx::IntSize eyeResolution = aHMD->SuggestedEyeResolution();
+  gfx::IntSize eyeResolution = aHMD->GetDeviceInfo().SuggestedEyeResolution();
   gfx::IntRect eyeRect[2];
   eyeRect[0] = gfx::IntRect(0, 0, eyeResolution.width, eyeResolution.height);
   eyeRect[1] = gfx::IntRect(eyeResolution.width, 0, eyeResolution.width, eyeResolution.height);
@@ -348,7 +349,7 @@ ContainerPrepare(ContainerT* aContainer,
   aContainer->mPrepared = MakeUnique<PreparedData>();
   aContainer->mPrepared->mNeedsSurfaceCopy = false;
 
-  gfx::VRHMDInfo *hmdInfo = aContainer->GetVRHMDInfo();
+  RefPtr<gfx::VRHMDInfo> hmdInfo = gfx::VRManager::Get()->GetDevice(aContainer->GetVRDeviceID());
   if (hmdInfo && hmdInfo->GetConfiguration().IsValid()) {
     
     
@@ -693,7 +694,7 @@ ContainerRender(ContainerT* aContainer,
 {
   MOZ_ASSERT(aContainer->mPrepared);
 
-  gfx::VRHMDInfo *hmdInfo = aContainer->GetVRHMDInfo();
+  RefPtr<gfx::VRHMDInfo> hmdInfo = gfx::VRManager::Get()->GetDevice(aContainer->GetVRDeviceID());
   if (hmdInfo && hmdInfo->GetConfiguration().IsValid()) {
     ContainerRenderVR(aContainer, aManager, aClipRect, hmdInfo);
     aContainer->mPrepared = nullptr;

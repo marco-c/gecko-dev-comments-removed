@@ -268,6 +268,7 @@ public:
   void GetGamepads(nsTArray<RefPtr<Gamepad> >& aGamepads, ErrorResult& aRv);
 #endif 
   already_AddRefed<Promise> GetVRDevices(ErrorResult& aRv);
+  void NotifyVRDevicesUpdated();
 #ifdef MOZ_B2G_FM
   FMRadio* GetMozFMRadio(ErrorResult& aRv);
 #endif
@@ -414,6 +415,8 @@ private:
   
   
   nsInterfaceHashtable<nsStringHashKey, nsISupports> mCachedResolveResults;
+
+  nsTArray<RefPtr<Promise> > mVRGetDevicesPromises;
 };
 
 } 

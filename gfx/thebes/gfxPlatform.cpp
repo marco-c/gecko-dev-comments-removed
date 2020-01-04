@@ -19,7 +19,6 @@
 #include "gfxPrefs.h"
 #include "gfxEnv.h"
 #include "gfxTextRun.h"
-#include "gfxVR.h"
 
 #ifdef XP_WIN
 #include <process.h>
@@ -127,6 +126,8 @@ class mozilla::gl::SkiaGLGlue : public GenericAtomicRefCounted {
 #include "SoftwareVsyncSource.h"
 #include "nscore.h" 
 #include "mozilla/dom/ContentChild.h"
+#include "gfxVR.h"
+#include "VRManagerChild.h"
 
 namespace mozilla {
 namespace layers {
@@ -445,8 +446,7 @@ gfxPlatform::gfxPlatform()
                      contentMask, BackendType::CAIRO);
     mTotalSystemMemory = mozilla::hal::GetTotalSystemMemory();
 
-    
-    VRHMDManager::ManagerInit();
+    VRManager::ManagerInit();
 }
 
 gfxPlatform*
@@ -735,6 +735,7 @@ gfxPlatform::InitLayersIPC()
         SharedBufferManagerChild::StartUp();
 #endif
         mozilla::layers::ImageBridgeChild::StartUp();
+        gfx::VRManagerChild::StartUpSameProcess();
     }
 }
 
@@ -750,22 +751,22 @@ gfxPlatform::ShutdownLayersIPC()
     {
         
         
+        gfx::VRManagerChild::ShutDown();
         layers::ImageBridgeChild::ShutDown();
 #ifdef MOZ_WIDGET_GONK
         layers::SharedBufferManagerChild::ShutDown();
 #endif
 
         layers::CompositorParent::ShutDown();
-    }
+	} else if (XRE_GetProcessType() == GeckoProcessType_Content) {
+		gfx::VRManagerChild::ShutDown();
+	}
 }
 
 gfxPlatform::~gfxPlatform()
 {
     mScreenReferenceSurface = nullptr;
     mScreenReferenceDrawTarget = nullptr;
-
-    
-    VRHMDManager::ManagerDestroy();
 
     
     

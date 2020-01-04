@@ -111,7 +111,7 @@ private:
   RefPtr<nsDocument> mDocument;
 
 public:
-  RefPtr<gfx::VRHMDInfo> mVRHMDDevice;
+  RefPtr<gfx::VRDeviceProxy> mVRHMDDevice;
   
   
   bool mIsCallerChrome = false;

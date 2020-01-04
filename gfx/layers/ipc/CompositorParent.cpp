@@ -28,6 +28,7 @@
 #include "mozilla/gfx/2D.h"          
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"          
+#include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
@@ -79,6 +80,12 @@
 #include "LayerScope.h"
 
 namespace mozilla {
+
+namespace gfx {
+
+void ReleaseVRManagerParentSingleton();
+} 
+
 namespace layers {
 
 using namespace mozilla::ipc;
@@ -426,6 +433,7 @@ CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
   }
 
   DispatchTouchEvents(aVsyncTimestamp);
+  DispatchVREvents(aVsyncTimestamp);
 
   if (mNeedsComposite || mAsapScheduling) {
     mNeedsComposite = 0;
@@ -497,6 +505,15 @@ CompositorVsyncScheduler::DispatchTouchEvents(TimeStamp aVsyncTimestamp)
 #endif
 }
 
+void
+CompositorVsyncScheduler::DispatchVREvents(TimeStamp aVsyncTimestamp)
+{
+  MOZ_ASSERT(CompositorParent::IsInCompositorThread());
+
+  VRManager* vm = VRManager::Get();
+  vm->NotifyVsync(aVsyncTimestamp);
+}
+
 void CompositorParent::StartUp()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
@@ -511,6 +528,7 @@ void CompositorParent::ShutDown()
   MOZ_ASSERT(sCompositorThreadHolder, "The compositor thread has already been shut down!");
 
   ReleaseImageBridgeParentSingleton();
+  ReleaseVRManagerParentSingleton();
   MediaSystemResourceService::Shutdown();
 
   sCompositorThreadHolder = nullptr;

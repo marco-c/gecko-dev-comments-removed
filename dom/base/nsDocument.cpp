@@ -11442,10 +11442,10 @@ nsresult nsDocument::RemoteFrameFullscreenReverted()
 }
 
 static void
-ReleaseHMDInfoRef(void *, nsIAtom*, void *aPropertyValue, void *)
+ReleaseVRDeviceProxyRef(void *, nsIAtom*, void *aPropertyValue, void *)
 {
   if (aPropertyValue) {
-    static_cast<gfx::VRHMDInfo*>(aPropertyValue)->Release();
+    static_cast<gfx::VRDeviceProxy*>(aPropertyValue)->Release();
   }
 }
 
@@ -11764,9 +11764,9 @@ nsDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
 
   
   if (aRequest.mVRHMDDevice) {
-    RefPtr<gfx::VRHMDInfo> hmdRef = aRequest.mVRHMDDevice;
+    RefPtr<gfx::VRDeviceProxy> hmdRef = aRequest.mVRHMDDevice;
     elem->SetProperty(nsGkAtoms::vr_state, hmdRef.forget().take(),
-                      ReleaseHMDInfoRef, true);
+                      ReleaseVRDeviceProxyRef, true);
   }
 
   

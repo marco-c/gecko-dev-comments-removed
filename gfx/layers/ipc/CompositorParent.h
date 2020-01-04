@@ -134,6 +134,7 @@ private:
   void ObserveVsync();
   void UnobserveVsync();
   void DispatchTouchEvents(TimeStamp aVsyncTimestamp);
+  void DispatchVREvents(TimeStamp aVsyncTimestamp);
   void CancelCurrentSetNeedsCompositeTask();
 
   class Observer final : public VsyncObserver
@@ -293,6 +294,7 @@ public:
   static CompositorParent* GetCompositor(uint64_t id);
 
   
+
 
 
 
