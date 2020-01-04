@@ -462,7 +462,7 @@ var BrowserApp = {
     Messaging.addListener(this.getHistory.bind(this), "Session:GetHistory");
 
     function showFullScreenWarning() {
-      Snackbars.show(Strings.browser.GetStringFromName("alertFullScreenToast"), Snackbars.LENGTH_SHORT);
+      Snackbars.show(Strings.browser.GetStringFromName("alertFullScreenToast"), Snackbars.LENGTH_LONG);
     }
 
     window.addEventListener("fullscreen", function() {
@@ -1018,7 +1018,7 @@ var BrowserApp = {
           return;
         }
         let message = Strings.browser.GetStringFromName("imageblocking.downloadedImage");
-        Snackbars.show(message, Snackbars.LENGTH_SHORT, {
+        Snackbars.show(message, Snackbars.LENGTH_LONG, {
           action: {
             label: Strings.browser.GetStringFromName("imageblocking.showAllImages"),
             callback: () => {
@@ -1326,7 +1326,7 @@ var BrowserApp = {
         message = Strings.browser.GetStringFromName("undoCloseToast.messageDefault");
       }
 
-      Snackbars.show(message, Snackbars.LENGTH_SHORT, {
+      Snackbars.show(message, Snackbars.LENGTH_LONG, {
         action: {
           label: Strings.browser.GetStringFromName("undoCloseToast.action2"),
           callback: function() {
@@ -1921,6 +1921,12 @@ var BrowserApp = {
             aSubject.setAsEmpty();
             break;
           }
+
+          
+          case SearchEngines.PREF_SUGGEST_ENABLED:
+            Services.prefs.setBoolPref(SearchEngines.PREF_SUGGEST_PROMPTED, true);
+            aSubject.setAsEmpty();
+            break;
 
           
           case "datareporting.crashreporter.submitEnabled":
@@ -2996,7 +3002,7 @@ var NativeWindow = {
     _copyStringToDefaultClipboard: function(aString) {
       let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
       clipboard.copyString(aString);
-      Snackbars.show(Strings.browser.GetStringFromName("selectionHelper.textCopied"), Snackbars.LENGTH_SHORT);
+      Snackbars.show(Strings.browser.GetStringFromName("selectionHelper.textCopied"), Snackbars.LENGTH_LONG);
     },
 
     _stripScheme: function(aString) {
@@ -5612,7 +5618,7 @@ var XPInstallObserver = {
 
     switch (aTopic) {
       case "addon-install-started":
-        Snackbars.show(strings.GetStringFromName("alertAddonsDownloading"), Snackbars.LENGTH_SHORT);
+        Snackbars.show(strings.GetStringFromName("alertAddonsDownloading"), Snackbars.LENGTH_LONG);
         break;
       case "addon-install-disabled": {
         if (!tab)
@@ -6676,7 +6682,7 @@ var SearchEngines = {
     Services.search.addEngine(engine.url, Ci.nsISearchEngine.DATA_XML, engine.iconURL, false, {
       onSuccess: function() {
         
-        Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [engine.title], 1), Snackbars.LENGTH_SHORT);
+        Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [engine.title], 1), Snackbars.LENGTH_LONG);
       },
 
       onError: function(aCode) {
@@ -6690,7 +6696,7 @@ var SearchEngines = {
           errorMessage = "alertSearchEngineErrorToast";
         }
 
-        Snackbars.show(Strings.browser.formatStringFromName(errorMessage, [engine.title], 1), Snackbars.LENGTH_SHORT);
+        Snackbars.show(Strings.browser.formatStringFromName(errorMessage, [engine.title], 1), Snackbars.LENGTH_LONG);
       }
     });
   },
@@ -6771,7 +6777,7 @@ var SearchEngines = {
             name = title.value + " " + i;
 
           Services.search.addEngineWithDetails(name, favicon, null, null, method, formURL);
-          Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), Snackbars.LENGTH_SHORT);
+          Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), Snackbars.LENGTH_LONG);
           let engine = Services.search.getEngineByName(name);
           engine.wrappedJSObject._queryCharset = charset;
           for (let i = 0; i < formData.length; ++i) {
