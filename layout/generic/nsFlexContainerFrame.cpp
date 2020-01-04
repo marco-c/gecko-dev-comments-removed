@@ -239,7 +239,7 @@ PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
 
 class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
 public:
-  FlexboxAxisTracker(const nsStylePosition* aStylePosition,
+  FlexboxAxisTracker(const nsFlexContainerFrame* aFlexContainer,
                      const WritingMode& aWM);
 
   
@@ -1154,7 +1154,7 @@ IsOrderLEQ(nsIFrame* aFrame1,
 bool
 nsFlexContainerFrame::IsHorizontal()
 {
-  const FlexboxAxisTracker axisTracker(StylePosition(), GetWritingMode());
+  const FlexboxAxisTracker axisTracker(this, GetWritingMode());
   return axisTracker.IsMainAxisHorizontal();
 }
 
@@ -3148,12 +3148,14 @@ BlockDirToAxisOrientation(WritingMode::BlockDir aBlockDir)
   return eAxis_TB; 
 }
 
-FlexboxAxisTracker::FlexboxAxisTracker(const nsStylePosition* aStylePosition,
-                                       const WritingMode& aWM)
+FlexboxAxisTracker::FlexboxAxisTracker(
+  const nsFlexContainerFrame* aFlexContainer,
+  const WritingMode& aWM)
   : mWM(aWM),
     mAreAxesInternallyReversed(false)
 {
-  uint32_t flexDirection = aStylePosition->mFlexDirection;
+  const nsStylePosition* stylePos = aFlexContainer->StylePosition();
+  uint32_t flexDirection = stylePos->mFlexDirection;
 
   
   
@@ -3201,7 +3203,7 @@ FlexboxAxisTracker::FlexboxAxisTracker(const nsStylePosition* aStylePosition,
   }
 
   
-  if (aStylePosition->mFlexWrap == NS_STYLE_FLEX_WRAP_WRAP_REVERSE) {
+  if (stylePos->mFlexWrap == NS_STYLE_FLEX_WRAP_WRAP_REVERSE) {
     mCrossAxis = GetReverseAxis(mCrossAxis);
     mIsCrossAxisReversed = true;
   } else {
@@ -3736,8 +3738,7 @@ nsFlexContainerFrame::Reflow(nsPresContext*           aPresContext,
     SortChildrenIfNeeded<IsOrderLEQWithDOMFallback>();
   }
 
-  const FlexboxAxisTracker axisTracker(aReflowState.mStylePosition,
-                                       aReflowState.GetWritingMode());
+  const FlexboxAxisTracker axisTracker(this, aReflowState.GetWritingMode());
 
   
   
@@ -4242,7 +4243,7 @@ nsFlexContainerFrame::GetMinISize(nsRenderingContext* aRenderingContext)
   DISPLAY_MIN_WIDTH(this, minWidth);
 
   const nsStylePosition* stylePos = StylePosition();
-  const FlexboxAxisTracker axisTracker(stylePos, GetWritingMode());
+  const FlexboxAxisTracker axisTracker(this, GetWritingMode());
 
   for (nsIFrame* childFrame : mFrames) {
     nscoord childMinWidth =
@@ -4273,7 +4274,7 @@ nsFlexContainerFrame::GetPrefISize(nsRenderingContext* aRenderingContext)
   
   
   
-  const FlexboxAxisTracker axisTracker(StylePosition(), GetWritingMode());
+  const FlexboxAxisTracker axisTracker(this, GetWritingMode());
 
   for (nsIFrame* childFrame : mFrames) {
     nscoord childPrefWidth =
