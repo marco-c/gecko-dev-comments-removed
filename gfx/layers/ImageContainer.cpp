@@ -58,6 +58,10 @@ ImageFactory::CreatePlanarYCbCrImage(const gfx::IntSize& aScaleHint, BufferRecyc
 
 BufferRecycleBin::BufferRecycleBin()
   : mLock("mozilla.layers.BufferRecycleBin.mLock")
+  
+  
+  
+  , mRecycledBufferSize(0)
 {
 }
 
