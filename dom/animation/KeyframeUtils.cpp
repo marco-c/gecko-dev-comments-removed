@@ -957,9 +957,15 @@ BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
   std::stable_sort(aEntries.begin(), aEntries.end(),
                    &KeyframeValueEntry::PropertyOffsetComparator::LessThan);
 
-  MOZ_ASSERT(aEntries[0].mOffset == 0.0f);
-  MOZ_ASSERT(aEntries.LastElement().mOffset == 1.0f);
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -980,7 +986,41 @@ BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
 
   size_t i = 0, n = aEntries.Length();
 
-  while (i + 1 < n) {
+  while (i < n) {
+    
+    if (i + 1 == n) {
+      if (aEntries[i].mOffset != 1.0f && animationProperty) {
+        aResult.RemoveElementAt(aResult.Length() - 1);
+        animationProperty = nullptr;
+      }
+      break;
+    }
+
+    MOZ_ASSERT(aEntries[i].mProperty != eCSSProperty_UNKNOWN &&
+               aEntries[i + 1].mProperty != eCSSProperty_UNKNOWN,
+               "Each entry should specify a valid property");
+
+    
+    if (aEntries[i].mProperty != lastProperty &&
+        aEntries[i].mOffset != 0.0f) {
+      
+      
+      
+      ++i;
+      continue;
+    }
+
+    
+    if (aEntries[i].mProperty != aEntries[i + 1].mProperty &&
+        aEntries[i].mOffset != 1.0f) {
+      if (animationProperty) {
+        aResult.RemoveElementAt(aResult.Length() - 1);
+        animationProperty = nullptr;
+      }
+      ++i;
+      continue;
+    }
+
     
     
     size_t j;
@@ -988,23 +1028,24 @@ BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
       
       MOZ_ASSERT(aEntries[i].mProperty == aEntries[i + 1].mProperty);
       j = i + 1;
-      while (aEntries[j + 1].mOffset == 0.0f) {
-        MOZ_ASSERT(aEntries[j].mProperty == aEntries[j + 1].mProperty);
+      while (aEntries[j + 1].mOffset == 0.0f &&
+             aEntries[j + 1].mProperty == aEntries[j].mProperty) {
         ++j;
       }
     } else if (aEntries[i].mOffset == 1.0f) {
-      if (aEntries[i + 1].mOffset == 1.0f) {
+      if (aEntries[i + 1].mOffset == 1.0f &&
+          aEntries[i + 1].mProperty == aEntries[i].mProperty) {
         
-        MOZ_ASSERT(aEntries[i].mProperty == aEntries[i].mProperty);
         j = i + 1;
-        while (j + 1 < n && aEntries[j + 1].mOffset == 1.0f) {
-          MOZ_ASSERT(aEntries[j].mProperty == aEntries[j + 1].mProperty);
+        while (j + 1 < n &&
+               aEntries[j + 1].mOffset == 1.0f &&
+               aEntries[j + 1].mProperty == aEntries[j].mProperty) {
           ++j;
         }
       } else {
         
-        MOZ_ASSERT(aEntries[i + 1].mOffset == 0.0f);
         MOZ_ASSERT(aEntries[i].mProperty != aEntries[i + 1].mProperty);
+        animationProperty = nullptr;
         ++i;
         continue;
       }
@@ -1020,6 +1061,7 @@ BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
     
     if (aEntries[i].mProperty != lastProperty) {
       MOZ_ASSERT(aEntries[i].mOffset == 0.0f);
+      MOZ_ASSERT(!animationProperty);
       animationProperty = aResult.AppendElement();
       animationProperty->mProperty = aEntries[i].mProperty;
       lastProperty = aEntries[i].mProperty;
