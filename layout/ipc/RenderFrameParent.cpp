@@ -424,6 +424,9 @@ RenderFrameParent::OwnerContentChanged(nsIContent* aContent)
       static_cast<ClientLayerManager*>(lm.get());
     clientManager->GetRemoteRenderer()->SendAdoptChild(mLayersId);
   }
+  
+  
+  mApzcTreeManager = nullptr;
 }
 
 void
