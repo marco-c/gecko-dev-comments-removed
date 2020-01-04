@@ -10,10 +10,13 @@ import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.lwt.LightweightTheme;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.util.ColorUtils;
+import org.mozilla.gecko.util.DrawableUtil;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
 public class ThemedImageView extends android.widget.ImageView
@@ -33,17 +36,19 @@ public class ThemedImageView extends android.widget.ImageView
     private boolean mIsDark;
     private boolean mAutoUpdateTheme;        
 
+    private ColorStateList mDrawableColors;
+
     public ThemedImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initialize(context, attrs);
+        initialize(context, attrs, 0);
     }
 
     public ThemedImageView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        initialize(context, attrs);
+        initialize(context, attrs, defStyle);
     }
 
-    private void initialize(final Context context, final AttributeSet attrs) {
+    private void initialize(final Context context, final AttributeSet attrs, final int defStyle) {
         
         
         final Context applicationContext = context.getApplicationContext();
@@ -54,6 +59,14 @@ public class ThemedImageView extends android.widget.ImageView
         final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.LightweightTheme);
         mAutoUpdateTheme = mTheme != null && a.getBoolean(R.styleable.LightweightTheme_autoUpdateTheme, true);
         a.recycle();
+
+        final TypedArray themedA = context.obtainStyledAttributes(attrs, R.styleable.ThemedView, defStyle, 0);
+        mDrawableColors = themedA.getColorStateList(R.styleable.ThemedView_drawableTintList);
+        themedA.recycle();
+
+        
+        
+        setTintedImageDrawable(getDrawable());
     }
 
     @Override
@@ -155,6 +168,25 @@ public class ThemedImageView extends android.widget.ImageView
             else
                 mTheme.removeListener(this);
         }
+    }
+
+    @Override
+    public void setImageDrawable(final Drawable drawable) {
+        setTintedImageDrawable(drawable);
+    }
+
+    private void setTintedImageDrawable(final Drawable drawable) {
+        final Drawable tintedDrawable;
+        if (mDrawableColors == null) {
+            
+            
+            tintedDrawable = drawable;
+        } else if (drawable == null) {
+            tintedDrawable = null;
+        } else {
+            tintedDrawable = DrawableUtil.tintDrawableWithStateList(drawable, mDrawableColors);
+        }
+        super.setImageDrawable(tintedDrawable);
     }
 
     public ColorDrawable getColorDrawable(int id) {
