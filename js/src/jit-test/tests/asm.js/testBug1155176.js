@@ -2,7 +2,7 @@ if (!this.SharedArrayBuffer || !isAsmJSCompilationAvailable())
     quit(0);
 
 load(libdir + "asm.js");
-setJitCompilerOption('wasm.test-mode', 1);
+setJitCompilerOption('asmjs.atomics.enable', 1);
 
 
 
