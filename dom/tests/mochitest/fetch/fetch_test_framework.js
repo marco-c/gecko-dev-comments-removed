@@ -1,9 +1,4 @@
 function testScript(script) {
-  
-  if (!("isSWPresent" in window)) {
-    window.isSWPresent = false;
-  }
-
   function setupPrefs() {
     return new Promise(function(resolve, reject) {
       SpecialPowers.pushPrefEnv({
