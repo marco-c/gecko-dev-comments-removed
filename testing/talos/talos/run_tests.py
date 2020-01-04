@@ -150,7 +150,7 @@ def run_tests(config, browser_config):
         browser_config['sourcestamp'] = version_info['application_changeset']
     except KeyError:
         if not browser_config['develop']:
-            print "unable to find changeset or repository: %s" % version_info
+            print("unable to find changeset or repository: %s" % version_info)
             sys.exit()
         else:
             browser_config['repository'] = 'develop'
@@ -207,14 +207,14 @@ def run_tests(config, browser_config):
         LOG.error("Detected a regression for %s" % testname)
         
         
-        LOG.test_end(testname, status='FAIL', message=unicode(exc),
+        LOG.test_end(testname, status='FAIL', message=str(exc),
                      stack=traceback.format_exc())
         return 1
     except Exception as exc:
         
         
         
-        LOG.test_end(testname, status='ERROR', message=unicode(exc),
+        LOG.test_end(testname, status='ERROR', message=str(exc),
                      stack=traceback.format_exc())
         
         return 2
@@ -228,8 +228,8 @@ def run_tests(config, browser_config):
     if results_urls:
         talos_results.output(results_urls)
         if browser_config['develop'] or config['sps_profile']:
-            print ("Thanks for running Talos locally. Results are in %s"
-                   % (results_urls['output_urls']))
+            print("Thanks for running Talos locally. Results are in %s"
+                  % (results_urls['output_urls']))
 
     
     
@@ -239,7 +239,7 @@ def run_tests(config, browser_config):
 def main(args=sys.argv[1:]):
     try:
         config, browser_config = get_configs()
-    except ConfigurationError, exc:
+    except ConfigurationError as exc:
         sys.exit("ERROR: %s" % exc)
     sys.exit(run_tests(config, browser_config))
 
