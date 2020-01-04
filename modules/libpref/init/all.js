@@ -2347,7 +2347,7 @@ pref("layout.css.convertFromNode.enabled", true);
 #endif
 
 
-pref("layout.css.text-align-true-value.enabled", false);
+pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
 
