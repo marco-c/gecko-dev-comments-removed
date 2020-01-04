@@ -421,7 +421,7 @@ nsStyleSet::GatherRuleProcessors(SheetType aType)
     
     oldScopedDocRuleProcessors.SwapElements(mScopedDocSheetRuleProcessors);
   }
-  if (mAuthorStyleDisabled && (aType == SheetType::Doc || 
+  if (mAuthorStyleDisabled && (aType == SheetType::Doc ||
                                aType == SheetType::ScopedDoc ||
                                aType == SheetType::StyleAttr)) {
     
@@ -907,13 +907,6 @@ nsStyleSet::GetContext(nsStyleContext* aParentContext,
                                                 aVisitedRuleNode,
                                                 relevantLinkVisited);
 
-#ifdef NOISY_DEBUG
-  if (result)
-    fprintf(stdout, "--- SharedSC %d ---\n", ++gSharedCount);
-  else
-    fprintf(stdout, "+++ NewSC %d +++\n", ++gNewCount);
-#endif
-
   if (!result) {
     result = NS_NewStyleContext(aParentContext, aPseudoTag, aPseudoType,
                                 aRuleNode,
@@ -1068,7 +1061,7 @@ nsStyleSet::AssertNoCSSRules(nsRuleNode* aCurrLevelNode,
 
 
 void
-nsStyleSet::FileRules(nsIStyleRuleProcessor::EnumFunc aCollectorFunc, 
+nsStyleSet::FileRules(nsIStyleRuleProcessor::EnumFunc aCollectorFunc,
                       RuleProcessorData* aData, Element* aElement,
                       nsRuleWalker* aRuleWalker)
 {

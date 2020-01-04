@@ -461,14 +461,14 @@ private:
   
   void AssertNoImportantRules(nsRuleNode* aCurrLevelNode,
                               nsRuleNode* aLastPrevLevelNode);
-  
+
   
   
   
   void AssertNoCSSRules(nsRuleNode* aCurrLevelNode,
                         nsRuleNode* aLastPrevLevelNode);
 #endif
-  
+
   
   
   

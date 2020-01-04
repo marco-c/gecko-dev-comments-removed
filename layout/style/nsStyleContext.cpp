@@ -31,10 +31,6 @@
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 
-#ifdef DEBUG
-
-#endif
-
 using namespace mozilla;
 
 
@@ -331,7 +327,7 @@ void nsStyleContext::RemoveChild(nsStyleContext* aChild)
     if ((*list) == aChild) {
       (*list) = (*list)->mNextSibling;
     }
-  } 
+  }
   else {
     NS_ASSERTION((*list) == aChild, "bad sibling pointers");
     (*list) = nullptr;
@@ -474,7 +470,7 @@ const void* nsStyleContext::StyleData(nsStyleStructID aSID)
 
 
 
-void* 
+void*
 nsStyleContext::GetUniqueStyleData(const nsStyleStructID& aSID)
 {
   MOZ_ASSERT(!mSource.IsServoComputedValues(),
@@ -559,7 +555,7 @@ nsStyleContext::SetStyle(nsStyleStructID aSID, void* aStruct)
 {
   
   
-  
+
   NS_ASSERTION(aSID >= 0 && aSID < nsStyleStructID_Length, "out of bounds");
 
   
@@ -1143,9 +1139,9 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
       const nsStyleOutline *otherVisOutline = otherVis->StyleOutline();
       bool haveColor;
       nscolor thisColor, otherColor;
-      if (thisVisOutline->GetOutlineInitialColor() != 
+      if (thisVisOutline->GetOutlineInitialColor() !=
             otherVisOutline->GetOutlineInitialColor() ||
-          (haveColor = thisVisOutline->GetOutlineColor(thisColor)) != 
+          (haveColor = thisVisOutline->GetOutlineColor(thisColor)) !=
             otherVisOutline->GetOutlineColor(otherColor) ||
           (haveColor && thisColor != otherColor)) {
         change = true;
@@ -1278,7 +1274,7 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
 
 
 
-void* 
+void*
 nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
 {
   
@@ -1288,7 +1284,7 @@ nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_N
 
 
 
-void 
+void
 nsStyleContext::Destroy()
 {
   
