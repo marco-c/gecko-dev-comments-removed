@@ -782,22 +782,18 @@ nsMathMLContainerFrame::AttributeChanged(int32_t         aNameSpaceID,
 }
 
 void
-nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
+nsMathMLContainerFrame::ComputeOverflow(nsOverflowAreas& aOverflowAreas)
 {
   
   
-  aMetrics->SetOverflowAreasToDesiredBounds();
-
-  
-  
   nsRect boundingBox(mBoundingMetrics.leftBearing,
-                     aMetrics->BlockStartAscent() - mBoundingMetrics.ascent,
+                     mBlockStartAscent - mBoundingMetrics.ascent,
                      mBoundingMetrics.rightBearing - mBoundingMetrics.leftBearing,
                      mBoundingMetrics.ascent + mBoundingMetrics.descent);
 
   
   
-  aMetrics->mOverflowAreas.UnionAllWith(boundingBox);
+  aOverflowAreas.UnionAllWith(boundingBox);
 
   
   
@@ -805,9 +801,21 @@ nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
   
   nsIFrame* childFrame = mFrames.FirstChild();
   while (childFrame) {
-    ConsiderChildOverflow(aMetrics->mOverflowAreas, childFrame);
+    ConsiderChildOverflow(aOverflowAreas, childFrame);
     childFrame = childFrame->GetNextSibling();
   }
+}
+
+void
+nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
+{
+  mBlockStartAscent = aMetrics->BlockStartAscent();
+
+  
+  
+  aMetrics->SetOverflowAreasToDesiredBounds();
+
+  ComputeOverflow(aMetrics->mOverflowAreas);
 
   FinishAndStoreOverflow(aMetrics);
 }
@@ -815,12 +823,12 @@ nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
 bool
 nsMathMLContainerFrame::UpdateOverflow()
 {
-  
-  PresContext()->PresShell()->FrameNeedsReflow(
-    this, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+  nsRect bounds(nsPoint(0, 0), GetSize());
+  nsOverflowAreas overflowAreas(bounds, bounds);
 
-  
-  return false;
+  ComputeOverflow(overflowAreas);
+
+  return FinishAndStoreOverflow(overflowAreas, GetSize());
 }
 
 void
