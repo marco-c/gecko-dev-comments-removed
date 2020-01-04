@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko;
 
+import org.mozilla.gecko.adjust.AdjustHelperInterface;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.DynamicToolbar.PinReason;
@@ -699,9 +700,14 @@ public class BrowserApp extends GeckoApp
         mAccountsHelper = new AccountsHelper(appContext, getProfile());
 
         if (AppConstants.MOZ_INSTALL_TRACKING) {
+            final AdjustHelperInterface adjustHelper = AdjustConstants.getAdjustHelper();
+            adjustHelper.onCreate(this, AdjustConstants.MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN);
+
             
             
-            AdjustConstants.getAdjustHelper().onCreate(this, AdjustConstants.MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN);
+            
+            final SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
+            adjustHelper.setEnabled(prefs.getBoolean(GeckoPreferences.PREFS_HEALTHREPORT_UPLOAD_ENABLED, true));
         }
 
         if (AppConstants.MOZ_ANDROID_BEAM) {
