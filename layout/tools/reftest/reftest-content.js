@@ -4,6 +4,8 @@
 
 
 
+
+
 var CC = Components.classes;
 const CI = Components.interfaces;
 const CR = Components.results;
@@ -686,6 +688,27 @@ function OnDocumentLoad(event)
         
         return;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    windowUtils().runNextCollectorTimer();
+    windowUtils().runNextCollectorTimer();
+    windowUtils().runNextCollectorTimer();
+    windowUtils().runNextCollectorTimer();
 
     
     
