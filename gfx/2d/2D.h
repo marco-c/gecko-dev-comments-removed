@@ -970,6 +970,35 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+  virtual void PushLayer(bool aOpaque, Float aOpacity,
+                         SourceSurface* aMask,
+                         const Matrix& aMaskTransform,
+                         const IntRect& aBounds = IntRect(),
+                         bool aCopyBackground = false) { MOZ_CRASH(); }
+
+  
+
+
+
+
+  virtual void PopLayer() { MOZ_CRASH(); }
+
+  
+
+
+
+
+
   virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(unsigned char *aData,
                                                                   const IntSize &aSize,
                                                                   int32_t aStride,
@@ -1108,6 +1137,10 @@ public:
 
   const IntRect &GetOpaqueRect() const {
     return mOpaqueRect;
+  }
+
+  virtual bool IsCurrentGroupOpaque() {
+    return GetFormat() == SurfaceFormat::B8G8R8X8;
   }
 
   virtual void SetPermitSubpixelAA(bool aPermitSubpixelAA) {
