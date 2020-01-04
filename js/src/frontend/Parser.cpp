@@ -2330,7 +2330,30 @@ Parser<FullParseHandler>::checkFunctionDefinition(HandlePropertyName funName,
         MOZ_ASSERT(assignmentForAnnexBOut);
         *assignmentForAnnexBOut = nullptr;
 
-        if (pc->atBodyLevel()) {
+        
+        
+        bool bodyLevelFunction = pc->atBodyLevel();
+        if (!bodyLevelFunction) {
+            StmtInfoPC* stmt = pc->innermostStmt();
+            if (stmt->type == StmtType::LABEL) {
+                if (pc->sc->strict()) {
+                    report(ParseError, false, null(), JSMSG_FUNCTION_LABEL);
+                    return false;
+                }
+
+                stmt = pc->innermostNonLabelStmt();
+                
+                
+                if (stmt && stmt->type != StmtType::BLOCK && stmt->type != StmtType::SWITCH) {
+                    report(ParseError, false, null(), JSMSG_SLOPPY_FUNCTION_LABEL);
+                    return false;
+                }
+
+                bodyLevelFunction = pc->atBodyLevel(stmt);
+            }
+        }
+
+        if (bodyLevelFunction) {
             if (!bindBodyLevelFunctionName(funName, pn_))
                 return false;
         } else {
@@ -3113,16 +3136,16 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
     Maybe<AutoPushStmtInfoPC> synthesizedStmtInfoForAnnexB;
     Node synthesizedBlockForAnnexB = null();
     StmtInfoPC *stmt = pc->innermostStmt();
-    if (!pc->sc->strict() && stmt &&
-        (stmt->type == StmtType::IF || stmt->type == StmtType::ELSE))
-    {
-        if (!abortIfSyntaxParser())
-            return null();
+    if (!pc->sc->strict() && stmt) {
+        if (stmt->type == StmtType::IF || stmt->type == StmtType::ELSE) {
+            if (!abortIfSyntaxParser())
+                return null();
 
-        synthesizedStmtInfoForAnnexB.emplace(*this, StmtType::BLOCK);
-        synthesizedBlockForAnnexB = pushLexicalScope(*synthesizedStmtInfoForAnnexB);
-        if (!synthesizedBlockForAnnexB)
-            return null();
+            synthesizedStmtInfoForAnnexB.emplace(*this, StmtType::BLOCK);
+            synthesizedBlockForAnnexB = pushLexicalScope(*synthesizedStmtInfoForAnnexB);
+            if (!synthesizedBlockForAnnexB)
+                return null();
+        }
     }
 
     RootedPropertyName name(context);
@@ -4554,7 +4577,8 @@ Parser<ParseHandler>::variables(YieldHandling yieldHandling,
 
 template <>
 bool
-Parser<FullParseHandler>::checkAndPrepareLexical(bool isConst, const TokenPos& errorPos)
+Parser<FullParseHandler>::checkAndPrepareLexical(PrepareLexicalKind prepareWhat,
+                                                 const TokenPos& errorPos)
 {
     
 
@@ -4567,15 +4591,31 @@ Parser<FullParseHandler>::checkAndPrepareLexical(bool isConst, const TokenPos& e
 
 
 
-    StmtInfoPC* stmt = pc->innermostStmt();
+
+
+
+
+    
+    
+    MOZ_ASSERT_IF(pc->innermostStmt() &&
+                  pc->innermostStmt()->type == StmtType::LABEL &&
+                  prepareWhat == PrepareFunction,
+                  !pc->sc->strict());
+
+    StmtInfoPC* stmt = prepareWhat == PrepareFunction
+                       ? pc->innermostNonLabelStmt()
+                       : pc->innermostStmt();
     if (stmt && (!stmt->maybeScope() || stmt->isForLetBlock)) {
-        reportWithOffset(ParseError, false, errorPos.begin, JSMSG_LEXICAL_DECL_NOT_IN_BLOCK,
-                         isConst ? "const" : "lexical");
+        reportWithOffset(ParseError, false, errorPos.begin,
+                         stmt->type == StmtType::LABEL
+                         ? JSMSG_LEXICAL_DECL_LABEL
+                         : JSMSG_LEXICAL_DECL_NOT_IN_BLOCK,
+                         prepareWhat == PrepareConst ? "const" : "lexical");
         return false;
     }
 
     if (!stmt) {
-        MOZ_ASSERT(pc->atBodyLevel());
+        MOZ_ASSERT_IF(prepareWhat != PrepareFunction, pc->atBodyLevel());
 
         
 
@@ -4586,7 +4626,7 @@ Parser<FullParseHandler>::checkAndPrepareLexical(bool isConst, const TokenPos& e
         bool isGlobal = !pc->sc->isFunctionBox() && stmt == pc->innermostScopeStmt();
         if (options().selfHostingMode && isGlobal) {
             report(ParseError, false, null(), JSMSG_SELFHOSTED_TOP_LEVEL_LEXICAL,
-                   isConst ? "'const'" : "'let'");
+                   prepareWhat == PrepareConst ? "'const'" : "'let'");
             return false;
         }
         return true;
@@ -4612,8 +4652,12 @@ Parser<FullParseHandler>::checkAndPrepareLexical(bool isConst, const TokenPos& e
 
 
         MOZ_ASSERT(stmt->canBeBlockScope() && stmt->type != StmtType::CATCH);
-
-        pc->stmtStack.makeInnermostLexicalScope(*blockObj);
+        if (prepareWhat == PrepareFunction) {
+            stmt->isBlockScope = true;
+            pc->stmtStack.linkAsInnermostScopeStmt(stmt, *blockObj);
+        } else {
+            pc->stmtStack.makeInnermostLexicalScope(*blockObj);
+        }
         MOZ_ASSERT(!blockScopes[stmt->blockid]);
         blockScopes[stmt->blockid].set(blockObj);
 
@@ -4645,21 +4689,22 @@ CurrentLexicalStaticBlock(ParseContext<FullParseHandler>* pc)
 template <>
 bool
 Parser<FullParseHandler>::prepareAndBindInitializedLexicalWithNode(HandlePropertyName name,
-                                                                   bool isConst,
+                                                                   PrepareLexicalKind prepareWhat,
                                                                    ParseNode* pn,
                                                                    const TokenPos& pos)
 {
     BindData<FullParseHandler> data(context);
-    if (!checkAndPrepareLexical(isConst, pos))
+    if (!checkAndPrepareLexical(prepareWhat, pos))
         return false;
-    data.initLexical(HoistVars, isConst ? JSOP_DEFCONST : JSOP_DEFLET,
+    data.initLexical(HoistVars, prepareWhat == PrepareConst ? JSOP_DEFCONST : JSOP_DEFLET,
                      CurrentLexicalStaticBlock(pc), JSMSG_TOO_MANY_LOCALS);
     return bindInitialized(&data, name, pn);
 }
 
 template <>
 ParseNode*
-Parser<FullParseHandler>::makeInitializedLexicalBinding(HandlePropertyName name, bool isConst,
+Parser<FullParseHandler>::makeInitializedLexicalBinding(HandlePropertyName name,
+                                                        PrepareLexicalKind prepareWhat,
                                                         const TokenPos& pos)
 {
     ParseNode* dn = newBindingNode(name, false);
@@ -4667,7 +4712,7 @@ Parser<FullParseHandler>::makeInitializedLexicalBinding(HandlePropertyName name,
         return null();
     handler.setPosition(dn, pos);
 
-    if (!prepareAndBindInitializedLexicalWithNode(name, isConst, dn, pos))
+    if (!prepareAndBindInitializedLexicalWithNode(name, prepareWhat, dn, pos))
         return null();
 
     return dn;
@@ -4680,7 +4725,7 @@ Parser<FullParseHandler>::bindLexicalFunctionName(HandlePropertyName funName,
 {
     MOZ_ASSERT(!pc->atBodyLevel());
     pn->pn_blockid = pc->blockid();
-    return prepareAndBindInitializedLexicalWithNode(funName,  false, pn, pos());
+    return prepareAndBindInitializedLexicalWithNode(funName, PrepareFunction, pn, pos());
 }
 
 template <>
@@ -4689,7 +4734,7 @@ Parser<FullParseHandler>::lexicalDeclaration(YieldHandling yieldHandling, bool i
 {
     handler.disableSyntaxParser();
 
-    if (!checkAndPrepareLexical(isConst, pos()))
+    if (!checkAndPrepareLexical(isConst ? PrepareConst : PrepareLet, pos()))
         return null();
 
     
@@ -5218,7 +5263,7 @@ Parser<FullParseHandler>::exportDeclaration()
           default:
             tokenStream.ungetToken();
             RootedPropertyName name(context, context->names().starDefaultStar);
-            binding = makeInitializedLexicalBinding(name, true, pos());
+            binding = makeInitializedLexicalBinding(name, PrepareConst, pos());
             if (!binding)
                 return null();
             kid = assignExpr(InAllowed, YieldIsKeyword, TripledotProhibited);
@@ -5967,7 +6012,7 @@ Parser<ParseHandler>::switchStatement(YieldHandling yieldHandling)
                     afterReturn = true;
                 }
             }
-            handler.addList(body, stmt);
+            handler.addStatementToList(body, stmt, pc);
         }
 
         
@@ -5986,7 +6031,7 @@ Parser<ParseHandler>::switchStatement(YieldHandling yieldHandling)
         Node casepn = handler.newCaseOrDefault(caseBegin, caseExpr, body);
         if (!casepn)
             return null();
-        handler.addList(caseList, casepn);
+        handler.addCaseStatementToList(caseList, casepn, pc);
     }
 
     
@@ -6813,7 +6858,7 @@ Parser<FullParseHandler>::classDefinition(YieldHandling yieldHandling,
     ParseNode* nameNode = null();
     ParseNode* methodsOrBlock = classMethods;
     if (name) {
-        ParseNode* innerBinding = makeInitializedLexicalBinding(name, true, namePos);
+        ParseNode* innerBinding = makeInitializedLexicalBinding(name, PrepareConst, namePos);
         if (!innerBinding)
             return null();
 
@@ -6824,7 +6869,7 @@ Parser<FullParseHandler>::classDefinition(YieldHandling yieldHandling,
 
         ParseNode* outerBinding = null();
         if (classContext == ClassStatement) {
-            outerBinding = makeInitializedLexicalBinding(name, false, namePos);
+            outerBinding = makeInitializedLexicalBinding(name, PrepareLet, namePos);
             if (!outerBinding)
                 return null();
         }
