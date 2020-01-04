@@ -309,8 +309,17 @@ class TestingMixin(VirtualenvMixin, BuildbotMixin, ResourceMonitoringMixin,
             if c.get("test_packages_url"):
                 self.test_packages_url = c['test_packages_url']
 
+            
             if self.buildbot_config['sourcestamp']['changes']:
                 self.find_artifacts_from_buildbot_changes()
+
+            
+            elif 'testPackagesUrl' in self.buildbot_config['properties'] and \
+                 'packageUrl' in self.buildbot_config['properties']:
+                self.installer_url = self.buildbot_config['properties']['packageUrl']
+                self.test_packages_url = self.buildbot_config['properties']['testPackagesUrl']
+
+            
             elif 'taskId' in self.buildbot_config['properties']:
                 self.find_artifacts_from_taskcluster()
 
