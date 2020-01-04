@@ -394,14 +394,6 @@ class BaseShape : public gc::TenuredCell
   public:
     void finalize(FreeOp* fop);
 
-    BaseShape(JSCompartment* comp, const Class* clasp, uint32_t objectFlags)
-    {
-        MOZ_ASSERT(!(objectFlags & ~OBJECT_FLAG_MASK));
-        mozilla::PodZero(this);
-        this->clasp_ = clasp;
-        this->flags = objectFlags;
-    }
-
     explicit inline BaseShape(const StackBaseShape& base);
 
     
