@@ -6,12 +6,6 @@ function callByScript() {
 importScripts(['importscript.sjs']);
 importScripts(['importscript.sjs']);
 
-try {
-  importScripts(['there-is-nothing-here.js']);
-} catch (ex) {
-  
-}
-
 onmessage = function(e) {
   self.clients.matchAll().then(function(res) {
     if (!res.length) {
