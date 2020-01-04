@@ -217,7 +217,12 @@ add_task(function*() {
 
   
   
-  shutdownManager();
+  let shutdownError;
+  try {
+    shutdownManager();
+  } catch (e) {
+    shutdownError = e;
+  }
   yield file.close();
   gExtensionsJSON.permissions = filePermissions;
   startupManager();
@@ -226,7 +231,7 @@ add_task(function*() {
   
   
   
-  if (gXPISaveError) {
+  if (shutdownError) {
     do_print("Previous XPI save failed");
     check_startup_changes(AddonManager.STARTUP_CHANGE_INSTALLED,
         ["addon6@tests.mozilla.org"]);

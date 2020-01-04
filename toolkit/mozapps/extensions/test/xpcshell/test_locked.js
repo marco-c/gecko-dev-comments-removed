@@ -361,7 +361,12 @@ add_task(function* run_test_1() {
    
    
    
-   restartManager();
+   try {
+     shutdownManager();
+   } catch (e) {
+     
+   }
+   startupManager(false);
 
    
    check_startup_changes(AddonManager.STARTUP_CHANGE_INSTALLED, []);
@@ -440,7 +445,11 @@ add_task(function* run_test_1() {
 
    
    
-   shutdownManager();
+   try {
+     shutdownManager();
+   } catch (e) {
+     
+   }
    do_print("Unlocking " + gExtensionsJSON.path);
    yield file.close();
    gExtensionsJSON.permissions = filePermissions;
@@ -521,6 +530,12 @@ add_task(function* run_test_1() {
    do_check_false(t2.appDisabled);
    do_check_eq(t2.pendingOperations, AddonManager.PENDING_NONE);
    do_check_true(isThemeInAddonsList(profileDir, t2.id));
+
+   try {
+     shutdownManager();
+   } catch (e) {
+     
+   }
 });
 
 

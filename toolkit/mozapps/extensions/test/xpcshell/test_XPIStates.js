@@ -60,7 +60,7 @@ writeInstallRDFToDir({
     maxVersion: "1"
   }],
   name: "Unpacked, Enabled",
-}, profileDir, null, "extraFile.js");
+}, profileDir, undefined, "extraFile.js");
 
 
 
@@ -75,7 +75,7 @@ writeInstallRDFToDir({
     maxVersion: "1"
   }],
   name: "Unpacked, disabled",
-}, profileDir, null, "extraFile.js");
+}, profileDir, undefined, "extraFile.js");
 
 
 
