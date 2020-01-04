@@ -7800,7 +7800,7 @@ CodeGenerator::generateAsmJS(AsmJSFunctionLabels* labels)
     if (!generateOutOfLineCode())
         return false;
 
-    masm.bind(&labels->end);
+    masm.bind(&labels->endAfterOOL);
 
     
     

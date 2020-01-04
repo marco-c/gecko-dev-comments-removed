@@ -1520,6 +1520,7 @@ class MOZ_STACK_CLASS ModuleValidator
             if (!module().addFunctionCounts(compileResults_->functionCount(i)))
                 return false;
         }
+
 #if defined(MOZ_VTUNE) || defined(JS_ION_PERF)
         for (size_t i = 0; i < compileResults_->numProfiledFunctions(); ++i) {
             if (!module().addProfiledFunction(Move(compileResults_->profiledFunction(i))))
