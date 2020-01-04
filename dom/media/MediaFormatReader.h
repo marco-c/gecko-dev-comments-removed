@@ -528,7 +528,9 @@ private:
   void ReportDroppedFramesTelemetry();
 
   
-  Maybe<SeekTarget> mOriginalSeekTarget;
+  SeekTarget mOriginalSeekTarget;
+  
+  Maybe<media::TimeUnit> mFallbackSeekTime;
   Maybe<media::TimeUnit> mPendingSeekTime;
   MozPromiseHolder<SeekPromise> mSeekPromise;
 
