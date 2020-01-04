@@ -1190,8 +1190,8 @@ TabActor.prototype = {
     
     
     
-    return !docShell.chromeEventHandler ||
-           !(docShell.chromeEventHandler instanceof Ci.nsIDOMElement);
+    
+    return !docShell.parent;
   },
 
   
@@ -1250,9 +1250,7 @@ TabActor.prototype = {
     
     
     webProgress.QueryInterface(Ci.nsIDocShell);
-    if (this._isRootDocShell(webProgress)) {
-      this._progressListener.unwatch(webProgress);
-    }
+    this._progressListener.unwatch(webProgress);
 
     if (webProgress.DOMWindow == this._originalWindow) {
       
@@ -2199,6 +2197,8 @@ function DebuggerProgressListener(aTabActor) {
   
   
   this._knownWindowIDs = new Map();
+
+  this._watchedDocShells = new WeakSet();
 }
 
 DebuggerProgressListener.prototype = {
@@ -2215,6 +2215,13 @@ DebuggerProgressListener.prototype = {
   },
 
   watch: function(docShell) {
+    
+    
+    
+    let docShellWindow = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                                 .getInterface(Ci.nsIDOMWindow);
+    this._watchedDocShells.add(docShellWindow);
+
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
     webProgress.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATUS |
@@ -2234,6 +2241,12 @@ DebuggerProgressListener.prototype = {
   },
 
   unwatch: function(docShell) {
+    let docShellWindow = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                                 .getInterface(Ci.nsIDOMWindow);
+    if (!this._watchedDocShells.has(docShellWindow)) {
+      return;
+    }
+
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
     
