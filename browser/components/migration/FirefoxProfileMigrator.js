@@ -29,6 +29,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ProfileAge",
                                   "resource://gre/modules/ProfileAge.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+                                  "resource://gre/modules/AppConstants.jsm");
 
 
 function FirefoxProfileMigrator() {
@@ -148,6 +150,11 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
           
           Services.prefs.setCharPref("browser.startup.homepage_override.mstone", mstone);
           Services.prefs.setCharPref("browser.startup.homepage_override.buildID", buildID);
+          
+          
+          if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
+            Services.prefs.setBoolPref("browser.usedOnWindows10", true);
+          }
           
           
           let newPrefsFile = currentProfileDir.clone();
