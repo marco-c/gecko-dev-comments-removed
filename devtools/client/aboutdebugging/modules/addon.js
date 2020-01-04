@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+loader.lazyImporter(this, "BrowserToolboxProcess",
+  "resource://devtools/client/framework/ToolboxProcess.jsm");
+
+let toolbox = null;
+
+exports.debugAddon = function (addonID) {
+  if (toolbox) {
+    toolbox.close();
+  }
+
+  toolbox = BrowserToolboxProcess.init({
+    addonID,
+    onClose: () => {
+      toolbox = null;
+    }
+  });
+};

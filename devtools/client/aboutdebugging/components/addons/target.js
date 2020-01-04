@@ -4,14 +4,11 @@
 
 
 
-
 "use strict";
-
-loader.lazyImporter(this, "BrowserToolboxProcess",
-  "resource://devtools/client/framework/ToolboxProcess.jsm");
 
 const { createClass, DOM: dom } =
   require("devtools/client/shared/vendor/react");
+const { debugAddon } = require("../../modules/addon");
 const Services = require("Services");
 
 const Strings = Services.strings.createBundle(
@@ -22,7 +19,7 @@ module.exports = createClass({
 
   debug() {
     let { target } = this.props;
-    BrowserToolboxProcess.init({ addonID: target.addonID });
+    debugAddon(target.addonID);
   },
 
   reload() {
