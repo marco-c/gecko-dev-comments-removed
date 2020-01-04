@@ -74,16 +74,40 @@ MAX_CACHED_TASKS = 400
 MAX_CACHED_ARTIFACTS = 6
 
 
+class ArtifactJob(object):
+    def __init__(self, regexp, log=None):
+        self._regexp = re.compile(regexp)
+        self._log = log
+
+    def log(self, *args, **kwargs):
+        if self._log:
+            self._log(*args, **kwargs)
+
+    def find_candidate_artifacts(self, artifacts):
+        
+        for artifact in artifacts:
+            name = artifact['name']
+            if self._regexp.match(name):
+                yield artifact
+            else:
+                self.log(logging.DEBUG, 'artifact',
+                    {'name': name},
+                    'Not yielding artifact named {name} as a candidate artifact')
+
 
 
 JOB_DETAILS = {
     
-    'android-api-11': {'re': re.compile('public/build/fennec-(.*)\.android-arm\.apk')},
-    'android-x86': {'re': re.compile('public/build/fennec-(.*)\.android-i386\.apk')},
+    'android-api-11': (ArtifactJob, 'public/build/fennec-(.*)\.android-arm\.apk'),
+    'android-x86': (ArtifactJob, 'public/build/fennec-(.*)\.android-i386\.apk'),
     
     
     
 }
+
+def get_job_details(job, log=None):
+    cls, re = JOB_DETAILS[job]
+    return cls(re, log=log)
 
 
 def cachedmethod(cachefunc):
@@ -209,7 +233,7 @@ class TaskCache(CacheManager):
     @cachedmethod(operator.attrgetter('_cache'))
     def artifact_url(self, tree, job, rev):
         try:
-            artifact_re = JOB_DETAILS[job]['re']
+            artifact_job = get_job_details(job, log=self._log)
         except KeyError:
             self.log(logging.INFO, 'artifact',
                 {'job': job},
@@ -226,22 +250,14 @@ class TaskCache(CacheManager):
             raise ValueError('Task for {key} does not exist (yet)!'.format(key=key))
         taskId = task['taskId']
 
-        
         artifacts = self._queue.listLatestArtifacts(taskId)['artifacts']
 
-        def names():
-            for artifact in artifacts:
-                name = artifact['name']
-                if artifact_re.match(name):
-                    yield name
-
-        
-        for name in names():
+        for artifact in artifact_job.find_candidate_artifacts(artifacts):
             
             
             
             
-            url = self._queue.buildUrl('getLatestArtifact', taskId, name)
+            url = self._queue.buildUrl('getLatestArtifact', taskId, artifact['name'])
             return url
         raise ValueError('Task for {key} existed, but no artifacts found!'.format(key=key))
 
@@ -270,7 +286,7 @@ class ArtifactCache(CacheManager):
             self.log(logging.INFO, 'artifact',
                 {'filename': value},
                 'Purged artifact {filename}')
-        except IOError:
+        except (OSError, IOError):
             pass
 
     @cachedmethod(operator.attrgetter('_cache'))
