@@ -854,21 +854,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         didReflowThisFrame = true;
       }
 
-      if ((hint & nsChangeHint_UpdateUsesOpacity) &&
-          frame->IsFrameOfType(nsIFrame::eTablePart)) {
-        NS_ASSERTION(hint & nsChangeHint_UpdateOpacityLayer,
-                     "should only return UpdateUsesOpacity hint "
-                     "when also returning UpdateOpacityLayer hint");
-        
-        
-        
-        
-        
-        
-        hint &= ~nsChangeHint_UpdateOpacityLayer;
-        hint |= nsChangeHint_RepaintFrame;
-      }
-
       if (hint & (nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView |
                   nsChangeHint_UpdateOpacityLayer | nsChangeHint_UpdateTransformLayer |
                   nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
