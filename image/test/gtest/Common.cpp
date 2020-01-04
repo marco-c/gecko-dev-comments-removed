@@ -65,7 +65,7 @@ LoadFile(const char* aRelativePath)
 
   
   
-  file->AppendNative(nsAutoCString(aRelativePath));
+  file->AppendNative(nsDependentCString(aRelativePath));
 
   
   nsCOMPtr<nsIInputStream> inputStream;
