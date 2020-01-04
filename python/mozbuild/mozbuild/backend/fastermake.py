@@ -13,7 +13,6 @@ from mozbuild.frontend.data import (
     FinalTargetFiles,
     JARManifest,
     JavaScriptModules,
-    JsPreferenceFile,
     Resources,
     XPIDLFile,
 )
@@ -89,29 +88,6 @@ class FasterMakeBackend(CommonBackend):
                         )
                     elif obj.flavor == 'extra_pp':
                         self._add_preprocess(obj, f, base, defines=defines)
-
-        elif isinstance(obj, JsPreferenceFile) and \
-                obj.install_target.startswith('dist/bin'):
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if obj.install_target == 'dist/bin':
-                pref_dir = 'defaults/pref'
-            else:
-                pref_dir = 'defaults/preferences'
-
-            dest = mozpath.join(obj.install_target, pref_dir,
-                                mozpath.basename(obj.path))
-            
-            
-            self._add_preprocess(obj, obj.path, pref_dir, defines=defines,
-                                 silence_missing_directive_warnings=True)
 
         elif isinstance(obj, Resources) and \
                 obj.install_target.startswith('dist/bin'):
