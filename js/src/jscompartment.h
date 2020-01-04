@@ -385,6 +385,10 @@ struct JSCompartment
         return runtime_;
     }
 
+    JSContext* contextFromMainThread() const {
+        return runtime_->contextFromMainThread();
+    }
+
     
 
 
