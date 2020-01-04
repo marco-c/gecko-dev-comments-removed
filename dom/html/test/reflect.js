@@ -183,17 +183,14 @@ function reflectUnsignedInt(aParameters)
   is(element[attr], defaultValue,
      "." + attr + " should be equals to " + defaultValue);
 
-  var nonValidValues = [
-    
-    [ -2147483648, 2147483648 ],
-    [ -1,          4294967295 ],
-    [ 3147483647,  3147483647 ],
-  ];
+  
+  
+  var nonValidValues = [ -2147483648, -1, 3147483647];
 
-  for (var values of nonValidValues) {
-    element[attr] = values[0];
-    is(element.getAttribute(attr), String(values[1]),
-       "@" + attr + " should be equals to " + values[1]);
+  for (var value of nonValidValues) {
+    element[attr] = value;
+    is(element.getAttribute(attr), String(defaultValue),
+       "@" + attr + " should be equals to " + defaultValue);
     is(element[attr], defaultValue,
        "." + attr + " should be equals to " + defaultValue);
   }
