@@ -118,6 +118,8 @@ var interfaceNamesInGlobalScope =
 
     "ExtendableEvent",
 
+    "ExtendableMessageEvent",
+
     "FetchEvent",
 
     "File",

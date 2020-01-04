@@ -19,14 +19,8 @@ namespace dom {
 struct MessageEventInit;
 class MessagePort;
 class MessagePortList;
-class OwningWindowProxyOrMessagePortOrClient;
+class OwningWindowProxyOrMessagePort;
 class WindowProxyOrMessagePort;
-
-namespace workers {
-
-class ServiceWorkerClient;
-
-} 
 
 
 
@@ -56,7 +50,7 @@ public:
   void GetData(JSContext* aCx, JS::MutableHandle<JS::Value> aData,
                ErrorResult& aRv);
 
-  void GetSource(Nullable<OwningWindowProxyOrMessagePortOrClient>& aValue) const;
+  void GetSource(Nullable<OwningWindowProxyOrMessagePort>& aValue) const;
 
   MessagePortList* GetPorts()
   {
@@ -67,8 +61,6 @@ public:
 
   
   void SetSource(mozilla::dom::MessagePort* aPort);
-
-  void SetSource(workers::ServiceWorkerClient* aClient);
 
   void SetSource(nsPIDOMWindow* aWindow)
   {
@@ -103,7 +95,6 @@ private:
   nsString mLastEventId;
   nsCOMPtr<nsIDOMWindow> mWindowSource;
   RefPtr<MessagePort> mPortSource;
-  RefPtr<workers::ServiceWorkerClient> mClientSource;
   RefPtr<MessagePortList> mPorts;
 };
 
