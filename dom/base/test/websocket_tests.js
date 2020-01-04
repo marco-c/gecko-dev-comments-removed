@@ -1213,3 +1213,32 @@ function test47() {
        + ws.readyState);
   });
 }
+
+
+
+function test48() {
+  return new Promise(function(resolve, reject) {
+    const pref_close = "network.websocket.timeout.close";
+    SpecialPowers.setIntPref(pref_close, 1);
+
+    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/base/test/file_websocket", "test-48");
+
+    ws.onopen = function() {
+      ws.close();
+
+      var date = new Date();
+      var curDate = null;
+      do {
+        curDate = new Date();
+      } while(curDate-date < 1500);
+
+    }
+
+    ws.onclose = function(e) {
+      ok(true, "ws close in test 48");
+      resolve();
+    }
+
+    SpecialPowers.clearUserPref(pref_close);
+  });
+}
