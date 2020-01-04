@@ -130,7 +130,7 @@ if (!imgTools)
 
 
 
-var isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
+var isWindows = mozinfo.os == "win";
 
 
 
