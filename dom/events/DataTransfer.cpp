@@ -1237,7 +1237,7 @@ DataTransfer::CacheExternalDragFormats()
   
   
   
-  const char* formats[] = { kFileMime, kHTMLMime, kURLMime, kURLDataMime, kUnicodeMime };
+  const char* formats[] = { kFileMime, kHTMLMime, kRTFMime, kURLMime, kURLDataMime, kUnicodeMime };
 
   uint32_t count;
   dragSession->GetNumDropItems(&count);
@@ -1279,7 +1279,7 @@ DataTransfer::CacheExternalClipboardFormats()
 
   
   
-  const char* formats[] = { kFileMime, kHTMLMime, kURLMime, kURLDataMime, kUnicodeMime };
+  const char* formats[] = { kFileMime, kHTMLMime, kRTFMime, kURLMime, kURLDataMime, kUnicodeMime };
 
   for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
     
