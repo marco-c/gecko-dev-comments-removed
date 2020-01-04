@@ -52,6 +52,8 @@ const DIAL_ERROR_RADIO_NOT_AVAILABLE = RIL.GECKO_ERROR_RADIO_NOT_AVAILABLE;
 
 const TONES_GAP_DURATION = 70;
 
+const EMERGENCY_CALL_DEFAULT_CLIENT_ID = 0;
+
 
 
 const MMI_PROCEDURE_ACTIVATION = "*";
@@ -726,6 +728,26 @@ TelephonyService.prototype = {
 
 
 
+  _getClientIdForEmergencyCall: function() {
+    
+    for (let cid = 0; cid < this._numClients; ++cid) {
+      let icc = gIccService.getIccByServiceId(cid);
+      let cardState = icc ? icc.cardState : Ci.nsIIcc.CARD_STATE_UNKONWN;
+      if (cardState !== Ci.nsIIcc.CARD_STATE_UNDETECTED &&
+          cardState !== Ci.nsIIcc.CARD_STATE_UNKNOWN) {
+        return cid;
+      }
+    }
+
+    
+    return EMERGENCY_CALL_DEFAULT_CLIENT_ID;
+  },
+
+  
+
+
+
+
   dial: function(aClientId, aNumber, aIsDialEmergency, aCallback) {
     if (DEBUG) debug("Dialing " + (aIsDialEmergency ? "emergency " : "")
                      + aNumber + ", clientId: " + aClientId);
@@ -866,7 +888,7 @@ TelephonyService.prototype = {
 
     if (isEmergency) {
       
-      aClientId = gRadioInterfaceLayer.getClientIdForEmergencyCall() ;
+      aClientId = this._getClientIdForEmergencyCall() ;
       if (aClientId === -1) {
         if (DEBUG) debug("Error: No client is avaialble for emergency call.");
         aCallback.notifyError(DIAL_ERROR_INVALID_STATE_ERROR);
