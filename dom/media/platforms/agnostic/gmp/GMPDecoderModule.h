@@ -38,7 +38,6 @@ public:
   bool
   SupportsMimeType(const nsACString& aMimeType) override;
 
-  
   static void Init();
 
   static const Maybe<nsCString> PreferredGMP(const nsACString& aMimeType);
@@ -46,8 +45,6 @@ public:
   static bool SupportsMimeType(const nsACString& aMimeType,
                                const Maybe<nsCString>& aGMP);
 
-  
-  static void UpdateUsableCodecs();
 };
 
 } 
