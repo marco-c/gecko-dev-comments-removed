@@ -3396,7 +3396,8 @@ GetWindowsStackSize()
     MOZ_RELEASE_ASSERT(stackSize <= 32 * 1024 * 1024);
 
     
-    return stackSize - 20 * 1024;
+    
+    return stackSize - 10 * sizeof(uintptr_t) * 1024;
 }
 #endif
 
