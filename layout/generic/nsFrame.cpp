@@ -8330,7 +8330,7 @@ nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
 
   
   
-  if (aChildPseudo && aChildPseudo != nsCSSAnonBoxes::mozNonElement &&
+  if (aChildPseudo && !nsCSSAnonBoxes::IsNonElement(aChildPseudo) &&
       nsCSSAnonBoxes::IsAnonBox(aChildPseudo)) {
     NS_ASSERTION(aChildPseudo != nsCSSAnonBoxes::mozAnonymousBlock &&
                  aChildPseudo != nsCSSAnonBoxes::mozAnonymousPositionedBlock,

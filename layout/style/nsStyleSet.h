@@ -169,8 +169,13 @@ class nsStyleSet final
   
   
   
+  
+  
+  
+  
   already_AddRefed<nsStyleContext>
-  ResolveStyleForNonElement(nsStyleContext* aParentContext);
+  ResolveStyleForNonElement(nsStyleContext* aParentContext,
+                            nsIAtom* aPseudoTag);
 
   
   

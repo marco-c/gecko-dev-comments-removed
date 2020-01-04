@@ -575,7 +575,7 @@ ShouldSuppressLineBreak(const nsStyleContext* aContext,
   
   
   if (aContext->GetPseudoType() == CSSPseudoElementType::AnonBox &&
-      aContext->GetPseudo() != nsCSSAnonBoxes::mozNonElement &&
+      !nsCSSAnonBoxes::IsNonElement(aContext->GetPseudo()) &&
       !RubyUtils::IsRubyPseudo(aContext->GetPseudo())) {
     return false;
   }
@@ -744,7 +744,7 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
       containerDisp = containerContext->StyleDisplay();
     }
     if (ShouldBlockifyChildren(containerDisp) &&
-        GetPseudo() != nsCSSAnonBoxes::mozNonElement) {
+        !nsCSSAnonBoxes::IsNonElement(GetPseudo())) {
       
       
       
@@ -815,7 +815,7 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
 
 
   if (disp->mDisplay == NS_STYLE_DISPLAY_INLINE &&
-      mPseudoTag != nsCSSAnonBoxes::mozNonElement &&
+      !nsCSSAnonBoxes::IsNonElement(mPseudoTag) &&
       mParent) {
     auto cbContext = mParent;
     while (cbContext->StyleDisplay()->mDisplay == NS_STYLE_DISPLAY_CONTENTS) {

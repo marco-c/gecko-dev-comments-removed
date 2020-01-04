@@ -1004,7 +1004,7 @@ GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
     
     if (!pseudoTag ||                                 
         !nsCSSAnonBoxes::IsAnonBox(pseudoTag) ||      
-        pseudoTag == nsCSSAnonBoxes::mozNonElement) { 
+        nsCSSAnonBoxes::IsNonElement(pseudoTag)) {    
       break;
     }
 

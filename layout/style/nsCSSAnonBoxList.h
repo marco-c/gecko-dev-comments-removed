@@ -19,7 +19,13 @@
 
 
 
-CSS_ANON_BOX(mozNonElement, ":-moz-non-element")
+
+
+CSS_ANON_BOX(mozText, ":-moz-text")
+
+
+
+CSS_ANON_BOX(mozOtherNonElement, ":-moz-other-non-element")
 
 CSS_ANON_BOX(mozAnonymousBlock, ":-moz-anonymous-block")
 CSS_ANON_BOX(mozAnonymousPositionedBlock, ":-moz-anonymous-positioned-block")

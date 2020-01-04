@@ -35,6 +35,7 @@
 #include "nsColor.h"
 #include "nsCSSPseudoClasses.h"
 #include "nsCSSPseudoElements.h"
+#include "nsCSSAnonBoxes.h"
 #include "nsNameSpaceManager.h"
 #include "nsXMLNameSpaceMap.h"
 #include "nsError.h"
@@ -5921,6 +5922,13 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
        (!ChromeRulesEnabled() &&
         (pseudoClassType != nsCSSPseudoClasses::ePseudoClass_NotPseudoClass &&
          nsCSSPseudoClasses::PseudoClassIsUASheetAndChromeOnly(pseudoClassType))))) {
+    
+    REPORT_UNEXPECTED_TOKEN(PEPseudoSelUnknown);
+    UngetToken();
+    return eSelectorParsingStatus_Error;
+  }
+
+  if (nsCSSAnonBoxes::IsNonElement(pseudo)) {
     
     REPORT_UNEXPECTED_TOKEN(PEPseudoSelUnknown);
     UngetToken();
