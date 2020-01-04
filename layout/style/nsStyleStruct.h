@@ -1977,6 +1977,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset
 
   uint8_t mTextDecorationLine;          
   uint8_t mUnicodeBidi;                 
+  nscoord mInitialLetterSink;           
+  float mInitialLetterSize;             
 protected:
   uint8_t mTextDecorationStyle;         
 

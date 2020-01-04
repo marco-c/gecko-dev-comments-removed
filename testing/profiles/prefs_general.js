@@ -164,6 +164,9 @@ user_pref("layout.css.grid-template-subgrid-value.enabled", true);
 user_pref("layout.css.contain.enabled", true);
 
 
+user_pref("layout.css.initial-letter.enabled", true);
+
+
 user_pref("layout.css.object-fit-and-position.enabled", true);
 
 
