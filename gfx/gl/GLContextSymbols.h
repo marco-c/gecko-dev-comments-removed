@@ -694,6 +694,9 @@ struct GLContextSymbols
     
     typedef void (GLAPIENTRY * PFNTEXTUREBARRIERPROC) (void);
     PFNTEXTUREBARRIERPROC fTextureBarrier;
+
+    
+    void (GLAPIENTRY * fPrimitiveRestartIndex) (GLuint index);
 };
 
 } 
