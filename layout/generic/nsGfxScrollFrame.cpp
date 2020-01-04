@@ -61,6 +61,7 @@
 #include "nsPluginFrame.h"
 #include <mozilla/layers/AxisPhysicsModel.h>
 #include <mozilla/layers/AxisPhysicsMSDModel.h>
+#include "mozilla/layers/ScrollLinkedEffectDetector.h"
 #include "mozilla/unused.h"
 #include <algorithm>
 #include <cstdlib> 
@@ -4227,6 +4228,7 @@ ScrollFrameHelper::FireScrollEvent()
   nsPresContext* prescontext = mOuter->PresContext();
   
   
+  mozilla::layers::ScrollLinkedEffectDetector detector(content->GetComposedDoc());
   if (mIsRoot) {
     nsIDocument* doc = content->GetCurrentDoc();
     if (doc) {
