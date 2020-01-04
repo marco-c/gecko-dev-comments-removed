@@ -259,7 +259,7 @@ protected:
 
 
 
-    void ToPositionAndLengthForAbsPos(const nsTArray<TrackSize>& aTrackSizes,
+    void ToPositionAndLengthForAbsPos(const Tracks& aTracks,
                                       nscoord aGridOrigin,
                                       nscoord* aPos, nscoord* aLength) const;
 
