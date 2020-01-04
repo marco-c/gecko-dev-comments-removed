@@ -64,11 +64,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PdfJs",
 XPCOMUtils.defineLazyModuleGetter(this, "ProcessHangMonitor",
                                   "resource:///modules/ProcessHangMonitor.jsm");
 
-if (AppConstants.NIGHTLY_BUILD) {
-  XPCOMUtils.defineLazyModuleGetter(this, "ShumwayUtils",
-                                    "resource://shumway/ShumwayUtils.jsm");
-}
-
 XPCOMUtils.defineLazyModuleGetter(this, "webrtcUI",
                                   "resource:///modules/webrtcUI.jsm");
 
@@ -994,13 +989,6 @@ BrowserGlue.prototype = {
     
     
     Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap.js", true);
-
-    if (AppConstants.NIGHTLY_BUILD) {
-      
-      Services.ppmm.loadProcessScript("chrome://shumway/content/bootstrap-content.js", true);
-      
-      ShumwayUtils.init();
-    }
 
     if (AppConstants.platform == "win") {
       
