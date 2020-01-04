@@ -176,6 +176,10 @@ protected:
            std::max(TimeDuration(), mEffect->Timing().mDelay * -1) :
            TimeDuration();
   }
+  
+  
+  TimeStamp ElapsedTimeToTimeStamp(const StickyTimeDuration& aElapsedTime)
+    const;
 
   nsString mAnimationName;
 
