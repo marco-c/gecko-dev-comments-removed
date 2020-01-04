@@ -40,6 +40,10 @@
 #include <windows.h>
 #include <gdiplus.h>
 
+
+
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:wmainCRTStartup")
+
 using namespace Gdiplus;
 
 
@@ -67,7 +71,7 @@ static int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
           *pClsid = pImageCodecInfo[j].Clsid;
           free(pImageCodecInfo);
           return j;  
-        }    
+        }
     }
 
   free(pImageCodecInfo);
@@ -102,7 +106,7 @@ int wmain(int argc, wchar_t** argv)
   }
   if (b)
     delete b;
-  
+
   
   GdiplusShutdown(gdiplusToken);
   ReleaseDC(desktop, desktopdc);
