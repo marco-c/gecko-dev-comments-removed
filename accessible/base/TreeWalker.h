@@ -57,6 +57,7 @@ public:
 
 
   Accessible* Next();
+  Accessible* Prev();
 
 private:
   TreeWalker();
@@ -69,10 +70,11 @@ private:
 
 
 
-  dom::AllChildrenIterator* PushState(nsIContent* aContent)
+  dom::AllChildrenIterator* PushState(nsIContent* aContent,
+                                      bool aStartAtBeginning)
   {
     return mStateStack.AppendElement(
-      dom::AllChildrenIterator(aContent, mChildFilter));
+      dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
   }
 
   
@@ -89,6 +91,14 @@ private:
 
   int32_t mChildFilter;
   uint32_t mFlags;
+
+  enum Phase {
+    eAtStart,
+    eAtDOM,
+    eAtARIAOwns,
+    eAtEnd
+  };
+  Phase mPhase;
 };
 
 } 
