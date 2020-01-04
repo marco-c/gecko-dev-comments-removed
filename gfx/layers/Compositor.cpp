@@ -357,23 +357,37 @@ DecomposeIntoNoRepeatRects(const gfx::Rect& aRect,
 gfx::IntRect
 Compositor::ComputeBackdropCopyRect(const gfx::Rect& aRect,
                                     const gfx::Rect& aClipRect,
-                                    const gfx::Matrix4x4& aTransform)
+                                    const gfx::Matrix4x4& aTransform,
+                                    gfx::Matrix4x4* aOutTransform)
 {
-  gfx::Rect renderBounds = mRenderBounds;
-
   
-  gfx::IntPoint offset = GetCurrentRenderTarget()->GetOrigin();
+  gfx::IntPoint rtOffset = GetCurrentRenderTarget()->GetOrigin();
+  gfx::IntSize rtSize = GetCurrentRenderTarget()->GetSize();
+
+  gfx::Rect renderBounds(0, 0, rtSize.width, rtSize.height);
   renderBounds.IntersectRect(renderBounds, aClipRect);
-  renderBounds.MoveBy(offset);
+  renderBounds.MoveBy(rtOffset);
 
   
   gfx::Rect dest = aTransform.TransformAndClipBounds(aRect, renderBounds);
-  dest -= offset;
+  dest -= rtOffset;
+
+  
+  dest.IntersectRect(dest, gfx::Rect(0, 0, rtSize.width, rtSize.height));
 
   
   gfx::IntRect result;
   dest.RoundOut();
   dest.ToIntRect(&result);
+
+  
+  
+  
+  gfx::Matrix4x4 transform;
+  transform.PostScale(rtSize.width, rtSize.height, 1.0);
+  transform.PostTranslate(-result.x, -result.y, 0.0);
+  transform.PostScale(1 / float(result.width), 1 / float(result.height), 1.0);
+  *aOutTransform = transform;
   return result;
 }
 
