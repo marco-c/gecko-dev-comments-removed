@@ -1302,12 +1302,6 @@ MediaDecoder::NotifyWaitingForResourcesStatusChanged()
   }
 }
 
-bool MediaDecoder::IsShutdown() const {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_TRUE(GetStateMachine(), true);
-  return mStateMachineIsShutdown;
-}
-
 
 void MediaDecoder::BreakCycles() {
   SetStateMachine(nullptr);

@@ -46,13 +46,6 @@ BufferDecoder::GetReentrantMonitor()
 }
 
 bool
-BufferDecoder::IsShutdown() const
-{
-  
-  return false;
-}
-
-bool
 BufferDecoder::OnStateMachineTaskQueue() const
 {
   

@@ -531,9 +531,6 @@ public:
   ReentrantMonitor& GetReentrantMonitor() override;
 
   
-  bool IsShutdown() const final override;
-
-  
   
   virtual media::TimeIntervals GetBuffered();
 

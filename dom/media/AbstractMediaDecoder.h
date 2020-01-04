@@ -53,9 +53,6 @@ public:
   virtual ReentrantMonitor& GetReentrantMonitor() = 0;
 
   
-  virtual bool IsShutdown() const = 0;
-
-  
   
   virtual bool IsOggDecoderShutdown() { return false; }
 
