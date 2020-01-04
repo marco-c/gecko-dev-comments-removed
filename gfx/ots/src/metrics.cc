@@ -125,23 +125,6 @@ bool ParseMetricsTable(const ots::Font *font,
     if (!table->ReadU16(&adv) || !table->ReadS16(&sb)) {
       return OTS_FAILURE_MSG("Failed to read metric %d", i);
     }
-
-    
-#if 0
-    
-    
-    
-    if (adv > header->adv_width_max) {
-      OTS_WARNING("bad adv: %u > %u", adv, header->adv_width_max);
-      adv = header->adv_width_max;
-    }
-
-    if (sb < header->min_sb1) {
-      OTS_WARNING("bad sb: %d < %d", sb, header->min_sb1);
-      sb = header->min_sb1;
-    }
-#endif
-
     metrics->entries.push_back(std::make_pair(adv, sb));
   }
 
@@ -152,17 +135,6 @@ bool ParseMetricsTable(const ots::Font *font,
       
       return OTS_FAILURE_MSG("Failed to read side bearing %d", i + num_metrics);
     }
-
-    
-#if 0
-    if (sb < header->min_sb1) {
-      
-      
-      OTS_WARNING("bad lsb: %d < %d", sb, header->min_sb1);
-      sb = header->min_sb1;
-    }
-#endif
-
     metrics->sbs.push_back(sb);
   }
 

@@ -128,7 +128,7 @@ bool ots_post_serialise(OTSStream *out, Font *font) {
   const OpenTypePOST *post = font->post;
 
   
-  if (font->post && font->cff && font->post->version != 0x00030000) {
+  if (post && font->cff && post->version != 0x00030000) {
     return OTS_FAILURE_MSG("Bad post version %x", post->version);
   }
 
