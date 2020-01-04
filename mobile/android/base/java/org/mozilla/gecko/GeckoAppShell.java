@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -31,11 +32,15 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import org.mozilla.gecko.annotation.JNITarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.db.BrowserDB;
+import org.mozilla.gecko.db.URLMetadataTable;
+import org.mozilla.gecko.favicons.Favicons;
+import org.mozilla.gecko.favicons.OnFaviconLoadedListener;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanZoomController;
@@ -73,7 +78,10 @@ import android.content.pm.ServiceInfo;
 import android.content.pm.Signature;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -204,6 +212,9 @@ public class GeckoAppShell
 
     static private int sDensityDpi;
     static private int sScreenDepth;
+
+    
+    private static final float[] DEFAULT_LAUNCHER_ICON_HSV = { 32.0f, 1.0f, 1.0f };
 
     
     private static boolean sVibrationMaybePlaying;
@@ -822,11 +833,62 @@ public class GeckoAppShell
     
     @WrapForJNI
     public static void createShortcut(final String aTitle, final String aURI) {
-        final GeckoInterface geckoInterface = getGeckoInterface();
-        if (geckoInterface == null) {
-            return;
+        ThreadUtils.assertOnBackgroundThread();
+        final BrowserDB db = GeckoProfile.get(getApplicationContext()).getDB();
+
+        final ContentResolver cr = getContext().getContentResolver();
+        final Map<String, Map<String, Object>> metadata = db.getURLMetadata().getForURLs(cr,
+                Collections.singletonList(aURI),
+                Collections.singletonList(URLMetadataTable.TOUCH_ICON_COLUMN)
+        );
+
+        final Map<String, Object> row = metadata.get(aURI);
+
+        String touchIconURL = null;
+
+        if (row != null) {
+            touchIconURL = (String) row.get(URLMetadataTable.TOUCH_ICON_COLUMN);
         }
-        geckoInterface.createShortcut(aTitle, aURI);
+
+        OnFaviconLoadedListener listener = new OnFaviconLoadedListener() {
+            @Override
+            public void onFaviconLoaded(String url, String faviconURL, Bitmap favicon) {
+                doCreateShortcut(aTitle, url, favicon);
+            }
+        };
+
+        
+        
+        
+        
+        
+        
+        Favicons.getPreferredSizeFaviconForPage(getApplicationContext(), aURI, touchIconURL, listener);
+    }
+
+    private static void doCreateShortcut(final String aTitle, final String aURI, final Bitmap aIcon) {
+        
+        Intent shortcutIntent = new Intent();
+        shortcutIntent.setAction(GeckoApp.ACTION_HOMESCREEN_SHORTCUT);
+        shortcutIntent.setData(Uri.parse(aURI));
+        shortcutIntent.setClassName(AppConstants.ANDROID_PACKAGE_NAME,
+                                    AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
+
+        Intent intent = new Intent();
+        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, getLauncherIcon(aIcon));
+
+        if (aTitle != null) {
+            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, aTitle);
+        } else {
+            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, aURI);
+        }
+
+        
+        intent.putExtra("duplicate", false);
+
+        intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+        getApplicationContext().sendBroadcast(intent);
     }
 
     @JNITarget
@@ -846,6 +908,60 @@ public class GeckoAppShell
                     return 72;
             }
         }
+    }
+
+    static private Bitmap getLauncherIcon(Bitmap aSource) {
+        final int kOffset = 6;
+        final int kRadius = 5;
+        int size = getPreferredIconSize();
+        int insetSize = aSource != null ? size * 2 / 3 : size;
+
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+
+        
+        Paint paint = new Paint();
+        if (aSource == null) {
+            
+            paint.setColor(Color.HSVToColor(DEFAULT_LAUNCHER_ICON_HSV));
+            canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset), kRadius, kRadius, paint);
+        } else if (aSource.getWidth() >= insetSize || aSource.getHeight() >= insetSize) {
+            
+            Rect iconBounds = new Rect(0, 0, size, size);
+            canvas.drawBitmap(aSource, null, iconBounds, null);
+            return bitmap;
+        } else {
+            
+            int color = BitmapUtils.getDominantColor(aSource);
+            paint.setColor(color);
+            canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset), kRadius, kRadius, paint);
+            paint.setColor(Color.argb(100, 255, 255, 255));
+            canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset), kRadius, kRadius, paint);
+        }
+
+        
+        Bitmap overlay = BitmapUtils.decodeResource(getApplicationContext(), R.drawable.home_bg);
+        canvas.drawBitmap(overlay, null, new Rect(0, 0, size, size), null);
+
+        
+        if (aSource == null)
+            aSource = BitmapUtils.decodeResource(getApplicationContext(), R.drawable.home_star);
+
+        
+        int sWidth = insetSize / 2;
+        int sHeight = sWidth;
+
+        int halfSize = size / 2;
+        canvas.drawBitmap(aSource,
+                          null,
+                          new Rect(halfSize - sWidth,
+                                   halfSize - sHeight,
+                                   halfSize + sWidth,
+                                   halfSize + sHeight),
+                          null);
+
+        return bitmap;
     }
 
     @WrapForJNI(stubName = "GetHandlersForMimeTypeWrapper")
@@ -2093,13 +2209,6 @@ public class GeckoAppShell
         public AbsoluteLayout getPluginContainer();
         public void notifyCheckUpdateResult(String result);
         public void invalidateOptionsMenu();
-
-        
-
-
-
-
-        public void createShortcut(String title, String URI);
     };
 
     private static GeckoInterface sGeckoInterface;
