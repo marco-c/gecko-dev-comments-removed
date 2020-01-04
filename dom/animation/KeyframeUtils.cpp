@@ -21,11 +21,6 @@
 #include "nsTArray.h"
 #include <algorithm> 
 
-
-#include "nsComputedDOMStyle.h"
-#include "nsIDocument.h"
-#include "nsIPresShell.h"
-
 namespace mozilla {
 
 
@@ -235,17 +230,6 @@ struct PropertyValuesPair
 
 
 
-
-struct OffsetIndexedKeyframe
-{
-  dom::binding_detail::FastBaseKeyframe mKeyframeDict;
-  nsTArray<PropertyValuesPair> mPropertyValuePairs;
-};
-
-
-
-
-
 struct AdditionalProperty
 {
   nsCSSProperty mProperty;
@@ -270,22 +254,14 @@ struct AdditionalProperty
 
 
 
-struct KeyframeValue
+
+
+
+
+struct KeyframeValueEntry
 {
   nsCSSProperty mProperty;
   StyleAnimationValue mValue;
-};
-
-
-
-
-
-
-
-
-
-struct KeyframeValueEntry : KeyframeValue
-{
   float mOffset;
   Maybe<ComputedTimingFunction> mTimingFunction;
 
@@ -335,24 +311,10 @@ public:
 
 
 static void
-BuildAnimationPropertyListFromKeyframeSequence(
-    JSContext* aCx,
-    Element* aTarget,
-    CSSPseudoElementType aPseudoType,
-    JS::ForOfIterator& aIterator,
-    nsTArray<AnimationProperty>& aResult,
-    ErrorResult& aRv);
-
-static void
 GetKeyframeListFromKeyframeSequence(JSContext* aCx,
                                     JS::ForOfIterator& aIterator,
                                     nsTArray<Keyframe>& aResult,
                                     ErrorResult& aRv);
-
-static bool
-ConvertKeyframeSequence(JSContext* aCx,
-                        JS::ForOfIterator& aIterator,
-                        nsTArray<OffsetIndexedKeyframe>& aResult);
 
 static bool
 ConvertKeyframeSequence(JSContext* aCx,
@@ -381,33 +343,11 @@ MakePropertyValuePair(nsCSSProperty aProperty, const nsAString& aStringValue,
                       nsCSSParser& aParser, nsIDocument* aDocument);
 
 static bool
-HasValidOffsets(const nsTArray<OffsetIndexedKeyframe>& aKeyframes);
-
-static bool
 HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
-
-static void
-ApplyDistributeSpacing(nsTArray<OffsetIndexedKeyframe>& aKeyframes);
-
-static void
-GenerateValueEntries(Element* aTarget,
-                     CSSPseudoElementType aPseudoType,
-                     nsTArray<OffsetIndexedKeyframe>& aKeyframes,
-                     nsTArray<KeyframeValueEntry>& aResult,
-                     ErrorResult& aRv);
 
 static void
 BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
                               nsTArray<AnimationProperty>& aResult);
-
-static void
-BuildAnimationPropertyListFromPropertyIndexedKeyframes(
-    JSContext* aCx,
-    Element* aTarget,
-    CSSPseudoElementType aPseudoType,
-    JS::Handle<JS::Value> aValue,
-    InfallibleTArray<AnimationProperty>& aResult,
-    ErrorResult& aRv);
 
 static void
 GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
@@ -421,62 +361,10 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
 
 
 
-already_AddRefed<nsStyleContext>
-LookupStyleContext(dom::Element* aElement, CSSPseudoElementType aPseudoType);
 
 
 
 
-
-
-
- void
-KeyframeUtils::BuildAnimationPropertyList(
-    JSContext* aCx,
-    Element* aTarget,
-    CSSPseudoElementType aPseudoType,
-    JS::Handle<JSObject*> aFrames,
-    InfallibleTArray<AnimationProperty>& aResult,
-    ErrorResult& aRv)
-{
-  MOZ_ASSERT(aResult.IsEmpty());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!aFrames) {
-    
-    
-    return;
-  }
-
-  
-  
-  
-  JS::Rooted<JS::Value> objectValue(aCx, JS::ObjectValue(*aFrames));
-  JS::ForOfIterator iter(aCx);
-  if (!iter.init(objectValue, JS::ForOfIterator::AllowNonIterable)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  if (iter.valueIsIterable()) {
-    BuildAnimationPropertyListFromKeyframeSequence(aCx, aTarget, aPseudoType,
-                                                   iter, aResult, aRv);
-  } else {
-    BuildAnimationPropertyListFromPropertyIndexedKeyframes(aCx, aTarget,
-                                                           aPseudoType,
-                                                           objectValue, aResult,
-                                                           aRv);
-  }
-}
 
  nsTArray<Keyframe>
 KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
@@ -670,65 +558,6 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
 
 
 
-
-static void
-BuildAnimationPropertyListFromKeyframeSequence(
-    JSContext* aCx,
-    Element* aTarget,
-    CSSPseudoElementType aPseudoType,
-    JS::ForOfIterator& aIterator,
-    nsTArray<AnimationProperty>& aResult,
-    ErrorResult& aRv)
-{
-  
-  
-  AutoTArray<OffsetIndexedKeyframe,4> keyframes;
-  if (!ConvertKeyframeSequence(aCx, aIterator, keyframes)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  
-  
-  if (keyframes.IsEmpty()) {
-    return;
-  }
-
-  
-  
-  if (!HasValidOffsets(keyframes)) {
-    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
-    return;
-  }
-
-  
-  
-  
-  ApplyDistributeSpacing(keyframes);
-
-  
-  
-  nsTArray<KeyframeValueEntry> entries;
-  GenerateValueEntries(aTarget, aPseudoType, keyframes, entries, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  
-  BuildSegmentsFromValueEntries(entries, aResult);
-}
-
-
-
-
-
-
-
-
-
-
-
 static void
 GetKeyframeListFromKeyframeSequence(JSContext* aCx,
                                     JS::ForOfIterator& aIterator,
@@ -759,52 +588,6 @@ GetKeyframeListFromKeyframeSequence(JSContext* aCx,
     aResult.Clear();
     return;
   }
-}
-
-
-
-
-
-
-static bool
-ConvertKeyframeSequence(JSContext* aCx,
-                        JS::ForOfIterator& aIterator,
-                        nsTArray<OffsetIndexedKeyframe>& aResult)
-{
-  JS::Rooted<JS::Value> value(aCx);
-  for (;;) {
-    bool done;
-    if (!aIterator.next(&value, &done)) {
-      return false;
-    }
-    if (done) {
-      break;
-    }
-    
-    
-    
-    if (!value.isObject() && !value.isNullOrUndefined()) {
-      dom::ThrowErrorMessage(aCx, dom::MSG_NOT_OBJECT,
-                             "Element of sequence<Keyframes> argument");
-      return false;
-    }
-    
-    OffsetIndexedKeyframe* keyframe = aResult.AppendElement();
-    if (!keyframe->mKeyframeDict.Init(
-          aCx, value, "Element of sequence<Keyframes> argument")) {
-      return false;
-    }
-    
-    if (value.isObject()) {
-      JS::Rooted<JSObject*> object(aCx, &value.toObject());
-      if (!GetPropertyValuesPairs(aCx, object,
-                                  ListAllowance::eDisallow,
-                                  keyframe->mPropertyValuePairs)) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 
@@ -1067,30 +850,6 @@ MakePropertyValuePair(nsCSSProperty aProperty, const nsAString& aStringValue,
 
 
 static bool
-HasValidOffsets(const nsTArray<OffsetIndexedKeyframe>& aKeyframes)
-{
-  double offset = 0.0;
-  for (const OffsetIndexedKeyframe& keyframe : aKeyframes) {
-    if (!keyframe.mKeyframeDict.mOffset.IsNull()) {
-      double thisOffset = keyframe.mKeyframeDict.mOffset.Value();
-      if (thisOffset < offset || thisOffset > 1.0f) {
-        return false;
-      }
-      offset = thisOffset;
-    }
-  }
-  return true;
-}
-
-
-
-
-
-
-
-
-
-static bool
 HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
 {
   double offset = 0.0;
@@ -1104,147 +863,6 @@ HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
     }
   }
   return true;
-}
-
-
-
-
-
-
-
-static void
-ApplyDistributeSpacing(nsTArray<OffsetIndexedKeyframe>& aKeyframes)
-{
-  
-  
-  
-  if (aKeyframes.LastElement().mKeyframeDict.mOffset.IsNull()) {
-    aKeyframes.LastElement().mKeyframeDict.mOffset.SetValue(1.0);
-  }
-  if (aKeyframes[0].mKeyframeDict.mOffset.IsNull()) {
-    aKeyframes[0].mKeyframeDict.mOffset.SetValue(0.0);
-  }
-
-  
-  size_t i = 0;
-  while (i < aKeyframes.Length() - 1) {
-    MOZ_ASSERT(!aKeyframes[i].mKeyframeDict.mOffset.IsNull());
-    double start = aKeyframes[i].mKeyframeDict.mOffset.Value();
-    size_t j = i + 1;
-    while (aKeyframes[j].mKeyframeDict.mOffset.IsNull()) {
-      ++j;
-    }
-    double end = aKeyframes[j].mKeyframeDict.mOffset.Value();
-    size_t n = j - i;
-    for (size_t k = 1; k < n; ++k) {
-      double offset = start + double(k) / n * (end - start);
-      aKeyframes[i + k].mKeyframeDict.mOffset.SetValue(offset);
-    }
-    i = j;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-GenerateValueEntries(Element* aTarget,
-                     CSSPseudoElementType aPseudoType,
-                     nsTArray<OffsetIndexedKeyframe>& aKeyframes,
-                     nsTArray<KeyframeValueEntry>& aResult,
-                     ErrorResult& aRv)
-{
-  RefPtr<nsStyleContext> styleContext =
-    LookupStyleContext(aTarget, aPseudoType);
-  if (!styleContext) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  nsCSSPropertySet properties;              
-  nsCSSPropertySet propertiesWithFromValue; 
-  nsCSSPropertySet propertiesWithToValue;   
-
-  for (OffsetIndexedKeyframe& keyframe : aKeyframes) {
-    Maybe<ComputedTimingFunction> easing =
-      TimingParams::ParseEasing(keyframe.mKeyframeDict.mEasing,
-                                aTarget->OwnerDoc(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-    float offset = float(keyframe.mKeyframeDict.mOffset.Value());
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    keyframe.mPropertyValuePairs.Sort(PropertyValuesPair::Comparator());
-
-    nsCSSPropertySet propertiesOnThisKeyframe;
-    for (const PropertyValuesPair& pair : keyframe.mPropertyValuePairs) {
-      MOZ_ASSERT(pair.mValues.Length() == 1,
-                 "ConvertKeyframeSequence should have parsed single "
-                 "DOMString values from the property-values pairs");
-      
-      
-      nsTArray<PropertyStyleAnimationValuePair> values;
-      if (StyleAnimationValue::ComputeValues(pair.mProperty,
-                                             nsCSSProps::eEnabledForAllContent,
-                                             aTarget,
-                                             styleContext,
-                                             pair.mValues[0],
-                                              false,
-                                             values)) {
-        for (auto& value : values) {
-          
-          
-          if (propertiesOnThisKeyframe.HasProperty(value.mProperty)) {
-            continue;
-          }
-
-          KeyframeValueEntry* entry = aResult.AppendElement();
-          entry->mOffset = offset;
-          entry->mProperty = value.mProperty;
-          entry->mValue = value.mValue;
-          entry->mTimingFunction = easing;
-
-          if (offset == 0.0) {
-            propertiesWithFromValue.AddProperty(value.mProperty);
-          } else if (offset == 1.0) {
-            propertiesWithToValue.AddProperty(value.mProperty);
-          }
-          propertiesOnThisKeyframe.AddProperty(value.mProperty);
-          properties.AddProperty(value.mProperty);
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  if (!propertiesWithFromValue.Equals(properties) ||
-      !propertiesWithToValue.Equals(properties)) {
-    aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
-    return;
-  }
 }
 
 
@@ -1344,183 +962,6 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
     segment->mTimingFunction = aEntries[i].mTimingFunction;
 
     i = j;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-static void
-BuildAnimationPropertyListFromPropertyIndexedKeyframes(
-    JSContext* aCx,
-    Element* aTarget,
-    CSSPseudoElementType aPseudoType,
-    JS::Handle<JS::Value> aValue,
-    InfallibleTArray<AnimationProperty>& aResult,
-    ErrorResult& aRv)
-{
-  MOZ_ASSERT(aValue.isObject());
-
-  RefPtr<nsStyleContext> styleContext =
-    LookupStyleContext(aTarget, aPseudoType);
-  if (!styleContext) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  
-  
-  dom::binding_detail::FastBasePropertyIndexedKeyframe keyframes;
-  if (!keyframes.Init(aCx, aValue, "BasePropertyIndexedKeyframe argument",
-                      false)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  Maybe<ComputedTimingFunction> easing =
-    TimingParams::ParseEasing(keyframes.mEasing, aTarget->OwnerDoc(), aRv);
-
-  
-  
-
-  
-  JS::Rooted<JSObject*> object(aCx, &aValue.toObject());
-  nsTArray<PropertyValuesPair> propertyValuesPairs;
-  if (!GetPropertyValuesPairs(aCx, object, ListAllowance::eAllow,
-                              propertyValuesPairs)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  
-  
-  
-  
-  nsCSSPropertySet properties;
-
-  
-  
-  for (const PropertyValuesPair& pair : propertyValuesPairs) {
-    size_t count = pair.mValues.Length();
-    if (count == 0) {
-      
-      continue;
-    }
-    if (count == 1) {
-      
-      
-      
-      aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsTArray<PropertyStyleAnimationValuePair> fromValues;
-    float fromKey = 0.0f;
-    if (!StyleAnimationValue::ComputeValues(pair.mProperty,
-                                            nsCSSProps::eEnabledForAllContent,
-                                            aTarget,
-                                            styleContext,
-                                            pair.mValues[0],
-                                             false,
-                                            fromValues)) {
-      
-      
-      aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
-      return;
-    }
-
-    if (fromValues.IsEmpty()) {
-      
-      continue;
-    }
-
-    
-    
-    
-    
-    nsTArray<size_t> animationPropertyIndexes;
-    animationPropertyIndexes.SetLength(fromValues.Length());
-    for (size_t i = 0, n = fromValues.Length(); i < n; ++i) {
-      nsCSSProperty p = fromValues[i].mProperty;
-      bool found = false;
-      if (properties.HasProperty(p)) {
-        
-        
-        for (size_t j = 0, m = aResult.Length(); j < m; ++j) {
-          if (aResult[j].mProperty == p) {
-            aResult[j].mSegments.Clear();
-            animationPropertyIndexes[i] = j;
-            found = true;
-            break;
-          }
-        }
-        MOZ_ASSERT(found, "properties is inconsistent with aResult");
-      }
-      if (!found) {
-        
-        animationPropertyIndexes[i] = aResult.Length();
-        AnimationProperty* animationProperty = aResult.AppendElement();
-        animationProperty->mProperty = p;
-        properties.AddProperty(p);
-      }
-    }
-
-    double portion = 1.0 / (count - 1);
-    for (size_t i = 0; i < count - 1; ++i) {
-      nsTArray<PropertyStyleAnimationValuePair> toValues;
-      float toKey = (i + 1) * portion;
-      if (!StyleAnimationValue::ComputeValues(pair.mProperty,
-                                              nsCSSProps::eEnabledForAllContent,
-                                              aTarget,
-                                              styleContext,
-                                              pair.mValues[i + 1],
-                                               false,
-                                              toValues)) {
-        if (i + 1 == count - 1) {
-          
-          
-          aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
-          return;
-        }
-        
-        continue;
-      }
-      MOZ_ASSERT(toValues.Length() == fromValues.Length(),
-                 "should get the same number of properties as the last time "
-                 "we called ComputeValues for pair.mProperty");
-      for (size_t j = 0, n = toValues.Length(); j < n; ++j) {
-        size_t index = animationPropertyIndexes[j];
-        AnimationPropertySegment* segment =
-          aResult[index].mSegments.AppendElement();
-        segment->mFromKey = fromKey;
-        segment->mFromValue = fromValues[j].mValue;
-        segment->mToKey = toKey;
-        segment->mToValue = toValues[j].mValue;
-        segment->mTimingFunction = easing;
-      }
-      fromValues = Move(toValues);
-      fromKey = toKey;
-    }
   }
 }
 
@@ -1693,21 +1134,6 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
 
   return !propertiesWithFromValue.Equals(properties) ||
          !propertiesWithToValue.Equals(properties);
-}
-
-already_AddRefed<nsStyleContext>
-LookupStyleContext(dom::Element* aElement, CSSPseudoElementType aPseudoType)
-{
-  nsIDocument* doc = aElement->GetCurrentDoc();
-  nsIPresShell* shell = doc->GetShell();
-  if (!shell) {
-    return nullptr;
-  }
-
-  nsIAtom* pseudo =
-    aPseudoType < CSSPseudoElementType::Count ?
-    nsCSSPseudoElements::GetPseudoAtom(aPseudoType) : nullptr;
-  return nsComputedDOMStyle::GetStyleContextForElement(aElement, pseudo, shell);
 }
 
 } 

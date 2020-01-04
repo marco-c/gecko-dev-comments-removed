@@ -45,25 +45,6 @@ public:
 
 
 
-  static void
-  BuildAnimationPropertyList(JSContext* aCx, Element* aTarget,
-                             CSSPseudoElementType aPseudoType,
-                             JS::Handle<JSObject*> aFrames,
-                             InfallibleTArray<AnimationProperty>& aResult,
-                             ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
   static nsTArray<Keyframe>
   GetKeyframesFromObject(JSContext* aCx,
