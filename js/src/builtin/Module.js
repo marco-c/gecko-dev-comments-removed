@@ -97,12 +97,12 @@ function ModuleDeclarationInstantiation()
     let module = this;
 
     
-    if (module.environment !== undefined)
+    if (GetModuleEnvironment(module) !== undefined)
         return;
 
     
     CreateModuleEnvironment(module);
-    let env = module.environment;
+    let env = GetModuleEnvironment(module);
 
     
     let requestedModules = module.requestedModules;
