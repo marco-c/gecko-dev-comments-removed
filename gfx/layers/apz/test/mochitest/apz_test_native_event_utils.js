@@ -250,8 +250,12 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
 
 
 
-function moveMouseAndScrollWheelOver(element, dx, dy, testDriver) {
+function moveMouseAndScrollWheelOver(element, dx, dy, testDriver, waitForScroll = true) {
   return synthesizeNativeMouseMoveAndWaitForMoveEvent(element, dx, dy, function() {
-    synthesizeNativeWheelAndWaitForScrollEvent(element, dx, dy, 0, -10, testDriver);
+    if (waitForScroll) {
+      synthesizeNativeWheelAndWaitForScrollEvent(element, dx, dy, 0, -10, testDriver);
+    } else {
+      synthesizeNativeWheelAndWaitForWheelEvent(element, dx, dy, 0, -10, testDriver);
+    }
   });
 }
