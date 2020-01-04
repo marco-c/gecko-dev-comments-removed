@@ -1018,11 +1018,15 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     MOZ_ASSERT(mHitResultForInputBlock != HitNothing);
 
     mApzcForInputBlock->GetGuid(aOutTargetGuid);
+    uint64_t inputBlockId = 0;
     result = mInputQueue->ReceiveInputEvent(mApzcForInputBlock,
          mHitResultForInputBlock != HitDispatchToContentRegion,
-        aInput, aOutInputBlockId);
+        aInput, &inputBlockId);
+    if (aOutInputBlockId) {
+      *aOutInputBlockId = inputBlockId;
+    }
     if (!touchBehaviors.IsEmpty()) {
-      mInputQueue->SetAllowedTouchBehavior(*aOutInputBlockId, touchBehaviors);
+      mInputQueue->SetAllowedTouchBehavior(inputBlockId, touchBehaviors);
     }
 
     
