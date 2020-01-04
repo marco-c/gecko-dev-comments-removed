@@ -306,10 +306,10 @@ SpdyStream31::ParseHttpRequestHeaders(const char *buf,
   
   if (mTransaction->RequestHead()->IsGet()) {
     
-    nsISchedulingContext *schedulingContext = mTransaction->SchedulingContext();
+    nsIRequestContext *requestContext = mTransaction->RequestContext();
     SpdyPushCache *cache = nullptr;
-    if (schedulingContext)
-      schedulingContext->GetSpdyPushCache(&cache);
+    if (requestContext)
+      requestContext->GetSpdyPushCache(&cache);
 
     SpdyPushedStream31 *pushedStream = nullptr;
     

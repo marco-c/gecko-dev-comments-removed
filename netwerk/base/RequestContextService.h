@@ -1,0 +1,47 @@
+
+
+
+
+
+
+#ifndef mozilla__net__RequestContextService_h
+#define mozilla__net__RequestContextService_h
+
+#include "nsCOMPtr.h"
+#include "nsInterfaceHashtable.h"
+#include "nsIObserver.h"
+#include "nsIRequestContext.h"
+
+class nsIUUIDGenerator;
+
+namespace mozilla {
+namespace net {
+
+class RequestContextService final
+  : public nsIRequestContextService
+  , public nsIObserver
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIREQUESTCONTEXTSERVICE
+  NS_DECL_NSIOBSERVER
+
+  RequestContextService();
+
+  nsresult Init();
+  void Shutdown();
+  static nsresult Create(nsISupports *outer, const nsIID& iid, void **result);
+
+private:
+  virtual ~RequestContextService();
+
+  static RequestContextService *sSelf;
+
+  nsInterfaceHashtable<nsIDHashKey, nsIRequestContext> mTable;
+  nsCOMPtr<nsIUUIDGenerator> mUUIDGen;
+};
+
+} 
+} 
+
+#endif 

@@ -29,7 +29,7 @@ class nsIHttpActivityObserver;
 class nsIEventTarget;
 class nsIInputStream;
 class nsIOutputStream;
-class nsISchedulingContext;
+class nsIRequestContext;
 
 namespace mozilla { namespace net {
 
@@ -127,8 +127,8 @@ public:
     bool UsesPipelining() const { return mCaps & NS_HTTP_ALLOW_PIPELINING; }
 
     
-    nsISchedulingContext *SchedulingContext() override { return mSchedulingContext.get(); }
-    void SetSchedulingContext(nsISchedulingContext *aSchedulingContext);
+    nsIRequestContext *RequestContext() override { return mRequestContext.get(); }
+    void SetRequestContext(nsIRequestContext *aRequestContext);
     void DispatchedAsBlocking();
     void RemoveDispatchedAsBlocking();
 
@@ -224,7 +224,7 @@ private:
     nsCOMPtr<nsISupports>           mSecurityInfo;
     nsCOMPtr<nsIAsyncInputStream>   mPipeIn;
     nsCOMPtr<nsIAsyncOutputStream>  mPipeOut;
-    nsCOMPtr<nsISchedulingContext>  mSchedulingContext;
+    nsCOMPtr<nsIRequestContext>     mRequestContext;
 
     nsCOMPtr<nsISupports>             mChannel;
     nsCOMPtr<nsIHttpActivityObserver> mActivityDistributor;

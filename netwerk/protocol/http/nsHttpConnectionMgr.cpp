@@ -29,7 +29,7 @@
 #include "nsIDNSRecord.h"
 #include "nsITransport.h"
 #include "nsInterfaceRequestorAgg.h"
-#include "nsISchedulingContext.h"
+#include "nsIRequestContext.h"
 #include "nsISocketTransportService.h"
 #include <algorithm>
 #include "mozilla/ChaosMode.h"
@@ -1479,14 +1479,14 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
     
     if (!(caps & NS_HTTP_LOAD_AS_BLOCKING)) {
         if (!(caps & NS_HTTP_LOAD_UNBLOCKED)) {
-            nsISchedulingContext *schedulingContext = trans->SchedulingContext();
-            if (schedulingContext) {
+            nsIRequestContext *requestContext = trans->RequestContext();
+            if (requestContext) {
                 uint32_t blockers = 0;
-                if (NS_SUCCEEDED(schedulingContext->GetBlockingTransactionCount(&blockers)) &&
+                if (NS_SUCCEEDED(requestContext->GetBlockingTransactionCount(&blockers)) &&
                     blockers) {
                     
-                    LOG(("   blocked by scheduling context: [sc=%p trans=%p blockers=%d]\n",
-                         schedulingContext, trans, blockers));
+                    LOG(("   blocked by request context: [rc=%p trans=%p blockers=%d]\n",
+                         requestContext, trans, blockers));
                     return NS_ERROR_NOT_AVAILABLE;
                 }
             }

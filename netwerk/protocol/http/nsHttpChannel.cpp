@@ -672,27 +672,27 @@ nsHttpChannel::ContinueHandleAsyncFallback(nsresult rv)
 }
 
 void
-nsHttpChannel::SetupTransactionSchedulingContext()
+nsHttpChannel::SetupTransactionRequestContext()
 {
-    if (!EnsureSchedulingContextID()) {
+    if (!EnsureRequestContextID()) {
         return;
     }
 
-    nsISchedulingContextService *scsvc =
-        gHttpHandler->GetSchedulingContextService();
-    if (!scsvc) {
+    nsIRequestContextService *rcsvc =
+        gHttpHandler->GetRequestContextService();
+    if (!rcsvc) {
         return;
     }
 
-    nsCOMPtr<nsISchedulingContext> sc;
-    nsresult rv = scsvc->GetSchedulingContext(mSchedulingContextID,
-                                              getter_AddRefs(sc));
+    nsCOMPtr<nsIRequestContext> rc;
+    nsresult rv = rcsvc->GetRequestContext(mRequestContextID,
+                                           getter_AddRefs(rc));
 
     if (NS_FAILED(rv)) {
         return;
     }
 
-    mTransaction->SetSchedulingContext(sc);
+    mTransaction->SetRequestContext(rc);
 }
 
 static bool
@@ -908,7 +908,7 @@ nsHttpChannel::SetupTransaction()
     }
 
     mTransaction->SetClassOfService(mClassOfService);
-    SetupTransactionSchedulingContext();
+    SetupTransactionRequestContext();
 
     rv = nsInputStreamPump::Create(getter_AddRefs(mTransactionPump),
                                    responseStream);
@@ -5349,10 +5349,7 @@ nsHttpChannel::BeginConnect()
     
     CallOnModifyRequestObservers();
 
-    
-    if (mLoadGroup) {
-      HttpBaseChannel::SetLoadGroupUserAgentOverride();
-    }
+    SetLoadGroupUserAgentOverride();
 
     
     
@@ -7417,6 +7414,50 @@ nsHttpChannel::MaybeWarnAboutAppCache()
     GetCallback(warner);
     if (warner) {
         warner->IssueWarning(nsIDocument::eAppCache, false);
+    }
+}
+
+void
+nsHttpChannel::SetLoadGroupUserAgentOverride()
+{
+    nsCOMPtr<nsIURI> uri;
+    GetURI(getter_AddRefs(uri));
+    nsAutoCString uriScheme;
+    if (uri) {
+        uri->GetScheme(uriScheme);
+    }
+
+    
+    if (uriScheme.EqualsLiteral("file")) {
+        gHttpHandler->OnUserAgentRequest(this);
+        return;
+    }
+
+    nsIRequestContextService* rcsvc = gHttpHandler->GetRequestContextService();
+    nsCOMPtr<nsIRequestContext> rc;
+    if (rcsvc) {
+        rcsvc->GetRequestContext(mRequestContextID,
+                                    getter_AddRefs(rc));
+    }
+
+    nsAutoCString ua;
+    if (nsContentUtils::IsNonSubresourceRequest(this)) {
+        gHttpHandler->OnUserAgentRequest(this);
+        if (rc) {
+            GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
+            rc->SetUserAgentOverride(ua);
+        }
+    } else {
+        GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
+        
+        if (ua.IsEmpty()) {
+            if (rc) {
+                rc->GetUserAgentOverride(ua);
+                SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua, false);
+            } else {
+                gHttpHandler->OnUserAgentRequest(this);
+            }
+        }
     }
 }
 

@@ -123,7 +123,7 @@ HttpBaseChannel::HttpBaseChannel()
 #endif
   mSelfAddr.raw.family = PR_AF_UNSPEC;
   mPeerAddr.raw.family = PR_AF_UNSPEC;
-  mSchedulingContextID.Clear();
+  mRequestContextID.Clear();
 }
 
 HttpBaseChannel::~HttpBaseChannel()
@@ -1812,17 +1812,17 @@ HttpBaseChannel::RedirectTo(nsIURI *targetURI)
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::GetSchedulingContextID(nsID *aSCID)
+HttpBaseChannel::GetRequestContextID(nsID *aRCID)
 {
-  NS_ENSURE_ARG_POINTER(aSCID);
-  *aSCID = mSchedulingContextID;
+  NS_ENSURE_ARG_POINTER(aRCID);
+  *aRCID = mRequestContextID;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::SetSchedulingContextID(const nsID aSCID)
+HttpBaseChannel::SetRequestContextID(const nsID aRCID)
 {
-  mSchedulingContextID = aSCID;
+  mRequestContextID = aRCID;
   return NS_OK;
 }
 
@@ -2547,41 +2547,6 @@ HttpBaseChannel::ShouldIntercept(nsIURI* aURI)
   return shouldIntercept;
 }
 
-void
-HttpBaseChannel::SetLoadGroupUserAgentOverride()
-{
-  nsCOMPtr<nsIURI> uri;
-  GetURI(getter_AddRefs(uri));
-  nsAutoCString uriScheme;
-  if (uri) {
-    uri->GetScheme(uriScheme);
-  }
-  nsCOMPtr<nsILoadGroupChild> childLoadGroup = do_QueryInterface(mLoadGroup);
-  nsCOMPtr<nsILoadGroup> rootLoadGroup;
-  if (childLoadGroup) {
-    childLoadGroup->GetRootLoadGroup(getter_AddRefs(rootLoadGroup));
-  }
-  if (rootLoadGroup && !uriScheme.EqualsLiteral("file")) {
-    nsAutoCString ua;
-    if (nsContentUtils::IsNonSubresourceRequest(this)) {
-      gHttpHandler->OnUserAgentRequest(this);
-      GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
-      rootLoadGroup->SetUserAgentOverrideCache(ua);
-    } else {
-      GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
-      
-      if (ua.IsEmpty()) {
-        rootLoadGroup->GetUserAgentOverrideCache(ua);
-        SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua, false);
-      }
-    }
-  } else {
-    
-    
-    gHttpHandler->OnUserAgentRequest(this);
-  }
-}
-
 
 
 
@@ -2900,7 +2865,7 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   }
 
   
-  httpChannel->SetSchedulingContextID(mSchedulingContextID);
+  httpChannel->SetRequestContextID(mRequestContextID);
 
   if (httpInternal) {
     
@@ -3343,11 +3308,11 @@ HttpBaseChannel::GetInnerDOMWindow()
 
 
 bool
-HttpBaseChannel::EnsureSchedulingContextID()
+HttpBaseChannel::EnsureRequestContextID()
 {
     nsID nullID;
     nullID.Clear();
-    if (!mSchedulingContextID.Equals(nullID)) {
+    if (!mRequestContextID.Equals(nullID)) {
         
         return true;
     }
@@ -3367,7 +3332,7 @@ HttpBaseChannel::EnsureSchedulingContextID()
     }
 
     
-    rootLoadGroup->GetSchedulingContextID(&mSchedulingContextID);
+    rootLoadGroup->GetRequestContextID(&mRequestContextID);
     return true;
 }
 
