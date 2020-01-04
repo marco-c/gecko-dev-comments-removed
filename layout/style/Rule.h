@@ -33,7 +33,7 @@ class GroupRule;
 class Rule : public nsISupports {
 protected:
   Rule(uint32_t aLineNumber, uint32_t aColumnNumber)
-    : mSheet(0),
+    : mSheet(nullptr),
       mParentRule(nullptr),
       mLineNumber(aLineNumber),
       mColumnNumber(aColumnNumber)
@@ -80,8 +80,7 @@ public:
 
   virtual int32_t GetType() const = 0;
 
-  CSSStyleSheet* GetStyleSheet() const;
-  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const;
+  CSSStyleSheet* GetStyleSheet() const { return mSheet; }
 
   
   nsIDocument* GetDocument() const
@@ -91,9 +90,6 @@ public:
   }
 
   virtual void SetStyleSheet(CSSStyleSheet* aSheet);
-  
-  
-  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aSheet);
 
   void SetParentRule(GroupRule* aRule) {
     
@@ -134,8 +130,7 @@ public:
 
 protected:
   
-  
-  uintptr_t         mSheet;
+  CSSStyleSheet*    mSheet;
   
   
   GroupRule* MOZ_NON_OWNING_REF mParentRule;
