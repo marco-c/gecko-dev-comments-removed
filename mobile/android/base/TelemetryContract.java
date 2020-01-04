@@ -50,7 +50,19 @@ public interface TelemetryContract {
         LOCALE_BROWSER_UNSELECTED("locale.browser.unselected.1"),
 
         
-        PANEL_SET_DEFAULT("setdefault.1"),
+        PANEL_HIDE("panel.hide.1"),
+
+        
+        PANEL_MOVE("panel.move.1"),
+
+        
+        PANEL_REMOVE("panel.remove.1"),
+
+        
+        PANEL_SET_DEFAULT("panel.setdefault.1"),
+
+        
+        PANEL_SHOW("panel.show.1"),
 
         
         PIN("pin.1"),
