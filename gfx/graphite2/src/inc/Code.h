@@ -86,7 +86,7 @@ private:
     void failure(const status_t) throw();
 
 public:
-    static size_t estimateCodeDataOut(size_t num_bytecodes, int nRules, int nSlots);
+    static size_t estimateCodeDataOut(size_t num_bytecodes);
 
     Code() throw();
     Code(bool is_constraint, const byte * bytecode_begin, const byte * const bytecode_end,
@@ -112,11 +112,9 @@ public:
 };
 
 inline
-size_t  Machine::Code::estimateCodeDataOut(size_t n_bc, int nRules, int nSlots)
+size_t  Machine::Code::estimateCodeDataOut(size_t n_bc)
 {
-    
-    
-    return (n_bc + nRules + nSlots) * sizeof(instr) + n_bc * sizeof(byte);
+    return (n_bc + 1) * (sizeof(instr)+sizeof(byte));
 }
 
 
