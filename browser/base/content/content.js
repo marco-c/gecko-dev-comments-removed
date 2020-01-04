@@ -81,7 +81,9 @@ addEventListener("blur", function(event) {
   LoginManagerContent.onUsernameInput(event);
 });
 
+var gLastContextMenuEvent = null; 
 var handleContentContextMenu = function (event) {
+  gLastContextMenuEvent = null;
   let defaultPrevented = event.defaultPrevented;
   if (!Services.prefs.getBoolPref("dom.event.contextmenu.enabled")) {
     let plugin = null;
@@ -96,8 +98,36 @@ var handleContentContextMenu = function (event) {
     defaultPrevented = false;
   }
 
-  if (defaultPrevented)
+  if (defaultPrevented) {
     return;
+  }
+
+  if (event.mozInputSource == Ci.nsIDOMMouseEvent.MOZ_SOURCE_TOUCH) {
+    
+    
+    
+    
+    
+    gLastContextMenuEvent = Cu.getWeakReference(event);
+    return;
+  }
+
+  
+  showContentContextMenu(event);
+}
+
+var showContentContextMenu = function (event) {
+  if (event == null) {
+    
+    
+    
+    event = (gLastContextMenuEvent ? gLastContextMenuEvent.get() : null);
+    gLastContextMenuEvent = null;
+    if (event == null) {
+      
+      return;
+    }
+  }
 
   let addonInfo = {};
   let subject = {
@@ -214,6 +244,11 @@ var handleContentContextMenu = function (event) {
 Cc["@mozilla.org/eventlistenerservice;1"]
   .getService(Ci.nsIEventListenerService)
   .addSystemEventListener(global, "contextmenu", handleContentContextMenu, false);
+
+Services.obs.addObserver(showContentContextMenu, "APZ:LongTapUp", false);
+addEventListener("unload", () => {
+  Services.obs.removeObserver(showContentContextMenu, "APZ:LongTapUp")
+}, false);
 
 
 const TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN = 0;
