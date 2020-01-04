@@ -275,6 +275,8 @@ CallbackObject::CallSetup::~CallSetup()
       if (mErrorResult.IsJSContextException()) {
         
         
+
+        
         
         mErrorResult.Throw(NS_ERROR_UNEXPECTED);
       }

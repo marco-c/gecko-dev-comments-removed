@@ -25,6 +25,50 @@
 namespace mozilla {
 namespace dom {
 
+
+
+
+
+static void
+ThrowExceptionValueIfSafe(JSContext* aCx, JS::Handle<JS::Value> exnVal,
+                          nsIException* aOriginalException)
+{
+  MOZ_ASSERT(aOriginalException);
+
+  if (!exnVal.isObject()) {
+    JS_SetPendingException(aCx, exnVal);
+    return;
+  }
+
+  JS::Rooted<JSObject*> exnObj(aCx, &exnVal.toObject());
+  MOZ_ASSERT(js::IsObjectInContextCompartment(exnObj, aCx),
+             "exnObj needs to be in the right compartment for the "
+             "CheckedUnwrap thing to make sense");
+
+  if (js::CheckedUnwrap(exnObj)) {
+    
+    
+    JS_SetPendingException(aCx, exnVal);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  RefPtr<Exception> syntheticException =
+    CreateException(aCx, NS_ERROR_UNEXPECTED);
+  JS::Rooted<JS::Value> syntheticVal(aCx);
+  if (!GetOrCreateDOMReflector(aCx, syntheticException, &syntheticVal)) {
+    return;
+  }
+  MOZ_ASSERT(syntheticVal.isObject() &&
+             !js::IsWrapper(&syntheticVal.toObject()),
+             "Must have a reflector here, not a wrapper");
+  JS_SetPendingException(aCx, syntheticVal);
+}
+
 void
 ThrowExceptionObject(JSContext* aCx, nsIException* aException)
 {
@@ -44,7 +88,7 @@ ThrowExceptionObject(JSContext* aCx, nsIException* aException)
     return;
   }
 
-  JS_SetPendingException(aCx, val);
+  ThrowExceptionValueIfSafe(aCx, val, aException);
 }
 
 void
@@ -76,7 +120,7 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
     if (!JS_WrapValue(aCx, &thrown)) {
       return;
     }
-    JS_SetPendingException(aCx, thrown);
+    ThrowExceptionValueIfSafe(aCx, thrown, aException);
     return;
   }
 
@@ -84,7 +128,7 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
     return;
   }
 
-  JS_SetPendingException(aCx, thrown);
+  ThrowExceptionValueIfSafe(aCx, thrown, aException);
 }
 
 bool
