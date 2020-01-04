@@ -70,7 +70,7 @@ var Chat = {
 
         
         
-        let chatboxes = [c for (c of chatbar.children)];
+        let chatboxes = [...chatbar.children];
         for (let chatbox of chatboxes) {
           yield chatbox;
         }
@@ -244,7 +244,7 @@ var Chat = {
 
     
     if (typeof buttonSet == "string") {
-      buttonSet = [for (button of buttonSet.split(",")) button.trim()];
+      buttonSet = buttonSet.split(",").map(button => button.trim());
     }
 
     

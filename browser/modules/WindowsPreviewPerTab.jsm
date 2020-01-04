@@ -543,7 +543,12 @@ TabWindow.prototype = {
 
     
     
-    let inorder = [previews.get(t) for (t of tabs) if (previews.has(t))];
+    let inorder = [];
+    for (let t of tabs) {
+      if (previews.has(t)) {
+        inorder.push(previews.get(t));
+      }
+    }
 
     
     

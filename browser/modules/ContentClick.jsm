@@ -64,7 +64,7 @@ var ContentClick = {
     
     var where = window.whereToOpenLink(json);
     if (where == "current")
-      return false;
+      return;
 
     
 

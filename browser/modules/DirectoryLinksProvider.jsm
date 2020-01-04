@@ -773,7 +773,7 @@ var DirectoryLinksProvider = {
       RemoteNewTabUtils.links.addObserver(this);
     }
 
-    return Task.spawn(function() {
+    return Task.spawn(function*() {
       
       let doesFileExists = yield OS.File.exists(this._directoryFilePath);
       if (doesFileExists) {
@@ -916,7 +916,7 @@ var DirectoryLinksProvider = {
     if (!sortedLinks) {
       
       
-      return;
+      return undefined;
     }
 
     
@@ -939,7 +939,7 @@ var DirectoryLinksProvider = {
       
       
       
-      return;
+      return undefined;
     }
 
     
@@ -994,7 +994,7 @@ var DirectoryLinksProvider = {
     
     let numLinks = possibleLinks.size;
     if (numLinks == 0) {
-      return;
+      return undefined;
     }
 
     let flattenedLinks = [...possibleLinks.values()];
