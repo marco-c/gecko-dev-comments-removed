@@ -1304,6 +1304,9 @@ TenuredCell::readBarrier(TenuredCell* thing)
         UnmarkGrayCellRecursively(thing, thing->getTraceKind());
 }
 
+void
+AssertSafeToSkipBarrier(TenuredCell* thing);
+
  MOZ_ALWAYS_INLINE void
 TenuredCell::writeBarrierPre(TenuredCell* thing)
 {
@@ -1311,6 +1314,22 @@ TenuredCell::writeBarrierPre(TenuredCell* thing)
     MOZ_ASSERT_IF(thing, !isNullLike(thing));
     if (!thing || thing->shadowRuntimeFromAnyThread()->isHeapCollecting())
         return;
+
+#ifdef JS_GC_ZEAL
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread())) {
+        AssertSafeToSkipBarrier(thing);
+        return;
+    }
+#endif
 
     JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
     if (shadowZone->needsIncrementalBarrier()) {
