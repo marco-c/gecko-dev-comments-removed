@@ -2860,32 +2860,47 @@ date_toSource(JSContext* cx, unsigned argc, Value* vp)
 }
 #endif
 
-
-static bool
-date_toString(JSContext* cx, unsigned argc, Value* vp)
+MOZ_ALWAYS_INLINE bool
+IsObject(HandleValue v)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-    
-    double tv = GenericNaN();
-    if (args.thisv().isObject()) {
-        
-        RootedObject obj(cx, &args.thisv().toObject());
+    return v.isObject();
+}
 
+
+MOZ_ALWAYS_INLINE bool
+date_toString_impl(JSContext* cx, const CallArgs& args)
+{
+    
+    RootedObject obj(cx, &args.thisv().toObject());
+
+    
+    ESClassValue cls;
+    if (!GetBuiltinClass(cx, obj, &cls))
+        return false;
+
+    double tv;
+    if (cls != ESClass_Date) {
         
-        ESClassValue cls;
-        if (!GetBuiltinClass(cx, obj, &cls))
+        tv = GenericNaN();
+    } else {
+        
+        RootedValue unboxed(cx);
+        if (!Unbox(cx, obj, &unboxed))
             return false;
 
-        if (cls == ESClass_Date) {
-            
-            RootedValue unboxed(cx);
-            if (!Unbox(cx, obj, &unboxed))
-                return false;
-            tv = unboxed.toNumber();
-        }
+        tv = unboxed.toNumber();
     }
+
     
     return date_format(cx, tv, FORMATSPEC_FULL, args.rval());
+}
+
+bool
+date_toString(JSContext* cx, unsigned argc, Value* vp)
+{
+    
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return CallNonGenericMethod<IsObject, date_toString_impl>(cx, args);
 }
 
 MOZ_ALWAYS_INLINE bool
