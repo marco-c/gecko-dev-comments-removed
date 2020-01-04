@@ -190,7 +190,6 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mDispatchedStateMachine(false),
   mDelayedScheduler(this),
   mState(DECODER_STATE_DECODING_NONE, "MediaDecoderStateMachine::mState"),
-  mPlayDuration(0),
   mCurrentFrameID(0),
   mObservedDuration(TimeUnit(), "MediaDecoderStateMachine::mObservedDuration"),
   mFragmentEndTime(-1),
@@ -466,6 +465,13 @@ MediaDecoderStateMachine::NeedToSkipToNextKeyframe()
   MOZ_ASSERT(mState == DECODER_STATE_DECODING ||
              mState == DECODER_STATE_BUFFERING ||
              mState == DECODER_STATE_SEEKING);
+
+  
+  
+  
+  if (!mMediaSink->IsStarted()) {
+    return false;
+  }
 
   
   if (!IsVideoDecoding() || mState == DECODER_STATE_BUFFERING ||
@@ -1043,7 +1049,6 @@ void MediaDecoderStateMachine::StopPlayback()
 
   if (IsPlaying()) {
     RenderVideoFrames(1);
-    mPlayDuration = GetClock();
     SetPlayStartTime(TimeStamp());
   }
   NS_ASSERTION(!IsPlaying(), "Should report not playing at end of StopPlayback()");
@@ -2081,7 +2086,6 @@ MediaDecoderStateMachine::SeekCompleted()
   } else {
     newCurrentTime = video ? video->mTime : seekTime;
   }
-  mPlayDuration = newCurrentTime;
 
   if (mDecodingFirstFrame) {
     
@@ -2538,28 +2542,14 @@ void MediaDecoderStateMachine::RenderVideoFrames(int32_t aMaxFrames,
   container->SetCurrentFrames(frames[0]->As<VideoData>()->mDisplay, images);
 }
 
-int64_t MediaDecoderStateMachine::GetClock(TimeStamp* aTimeStamp) const
+int64_t
+MediaDecoderStateMachine::GetClock(TimeStamp* aTimeStamp) const
 {
   MOZ_ASSERT(OnTaskQueue());
   AssertCurrentThreadInMonitor();
-
-  
-  
-  
-  
-  int64_t clock_time = -1;
-  TimeStamp t;
-  if (!IsPlaying()) {
-    clock_time = mPlayDuration;
-  } else {
-    clock_time = mMediaSink->GetPosition(&t);
-    NS_ASSERTION(GetMediaTime() <= clock_time, "Clock should go forwards.");
-  }
-  if (aTimeStamp) {
-    *aTimeStamp = t.IsNull() ? TimeStamp::Now() : t;
-  }
-
-  return clock_time;
+  int64_t clockTime = mMediaSink->GetPosition(aTimeStamp);
+  NS_ASSERTION(GetMediaTime() <= clockTime, "Clock should go forwards.");
+  return clockTime;
 }
 
 void MediaDecoderStateMachine::UpdateRenderedVideoFrames()
