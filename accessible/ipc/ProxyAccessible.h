@@ -431,7 +431,11 @@ private:
   DocAccessibleParent* mDoc;
   uintptr_t mWrapper;
   uint64_t mID;
+protected:
+  
+  
   role mRole : 29;
+private:
   bool mOuterDoc : 1;
 
 public:
