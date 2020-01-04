@@ -48,6 +48,8 @@ const TEST_DATA = [
     numUserRules: 1,
     numUARules: 0
   },
+  
+  
   {
     selector: "a",
     numUserRules: 3,
@@ -111,9 +113,11 @@ function* userAgentStylesVisible(inspector, view) {
   ok(userRules.some(rule=> rule.matchedSelectors.length === 1),
     "There is an inline style for element in user styles");
 
-  ok(uaRules.some(rule=> rule.matchedSelectors.indexOf(":-moz-any-link")),
+  
+  
+  ok(uaRules.some(rule=> rule.matchedSelectors.indexOf(":-moz-any-link") !== -1),
     "There is a rule for :-moz-any-link");
-  ok(uaRules.some(rule=> rule.matchedSelectors.indexOf("*|*:link")),
+  ok(uaRules.some(rule=> rule.matchedSelectors.indexOf("*|*:link") !== -1),
     "There is a rule for *|*:link");
   ok(uaRules.some(rule=> rule.matchedSelectors.length === 1),
     "Inline styles for ua styles");
