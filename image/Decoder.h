@@ -254,9 +254,15 @@ public:
   }
   SurfaceFlags GetSurfaceFlags() const { return mSurfaceFlags; }
 
+  
   bool HasSize() const { return mImageMetadata.HasSize(); }
 
-  nsIntSize GetSize() const
+  
+
+
+
+
+  gfx::IntSize GetSize() const
   {
     MOZ_ASSERT(HasSize());
     return mImageMetadata.GetSize();
