@@ -2140,6 +2140,11 @@ public:
     
     
     
+    eReplacedSizing =                   1 << 16,
+
+    
+    
+    
     eDEBUGAllFrames =                   1 << 30,
     eDEBUGNoFrames =                    1 << 31
   };
