@@ -784,15 +784,6 @@ public:
 
 
 
-  NSInteger ConversationIdentifier();
-
-  
-
-
-
-
-
-
 
 
 
