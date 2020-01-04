@@ -441,8 +441,7 @@ struct JSCompartment
     JS::WeakCache<js::BaseShapeSet> baseShapes;
 
     
-    js::InitialShapeSet          initialShapes;
-    void sweepInitialShapeTable();
+    JS::WeakCache<js::InitialShapeSet> initialShapes;
 
     
     js::ObjectGroupCompartment   objectGroups;
