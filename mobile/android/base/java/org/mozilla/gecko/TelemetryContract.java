@@ -189,6 +189,9 @@ public interface TelemetryContract {
         SUGGESTION("suggestion"),
 
         
+        TABSTRAY("tabstray"),
+
+        
         
         TOAST("toast"),
 
