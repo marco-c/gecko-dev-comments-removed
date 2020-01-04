@@ -2281,6 +2281,22 @@ ProcessReplaceRequest()
     return rv;
   }
 
+#if !defined(XP_WIN) && !defined(XP_MACOSX)
+  
+  
+  
+  NS_tchar tmpLog[MAXPATHLEN];
+  NS_tsnprintf(tmpLog, sizeof(tmpLog)/sizeof(tmpLog[0]),
+               NS_T("%s/updates/last-update.log"), tmpDir);
+  if (!NS_taccess(tmpLog, F_OK)) {
+    NS_tchar destLog[MAXPATHLEN];
+    NS_tsnprintf(destLog, sizeof(destLog)/sizeof(destLog[0]),
+                 NS_T("%s/updates/last-update.log"), destDir);
+    NS_tremove(destLog);
+    NS_trename(tmpLog, destLog);
+  }
+#endif
+
   LOG(("Now, remove the tmpDir"));
   rv = ensure_remove_recursive(tmpDir, true);
   if (rv) {
@@ -2496,16 +2512,29 @@ UpdateThreadFunc(void *param)
     }
   }
 
-  if (sReplaceRequest && rv) {
+  if (rv && (sReplaceRequest || sStagedUpdate)) {
+#ifdef XP_WIN
     
     
     
-    
-    
-    
-    
+    if (sStagedUpdate) {
+      NS_tchar sysDir[MAX_PATH + 1] = { L'\0' };
+      if (GetSystemDirectoryW(sysDir, MAX_PATH + 1)) {
+        NS_tchdir(sysDir);
+      }
+    }
+#endif
     ensure_remove_recursive(gWorkingDirPath);
-    WriteStatusFile(sUsingService ? "pending-service" : "pending");
+    
+    
+    
+    
+    
+    
+    
+    if (sReplaceRequest) {
+      WriteStatusFile(sUsingService ? "pending-service" : "pending");
+    }
 #ifdef TEST_UPDATER
     
     putenv(const_cast<char*>("MOZ_TEST_PROCESS_UPDATES="));
@@ -2701,17 +2730,20 @@ int NS_main(int argc, NS_tchar **argv)
 #ifdef XP_WIN
   bool useService = false;
   bool testOnlyFallbackKeyExists = false;
-  bool noServiceFallback = EnvHasValue("MOZ_NO_SERVICE_FALLBACK");
-  putenv(const_cast<char*>("MOZ_NO_SERVICE_FALLBACK="));
+  bool noServiceFallback = false;
 
   
   
 #ifdef MOZ_MAINTENANCE_SERVICE
   useService = IsUpdateStatusPendingService();
+#ifdef TEST_UPDATER
+  noServiceFallback = EnvHasValue("MOZ_NO_SERVICE_FALLBACK");
+  putenv(const_cast<char*>("MOZ_NO_SERVICE_FALLBACK="));
   
   
   
   testOnlyFallbackKeyExists = DoesFallbackKeyExist();
+#endif
 #endif
 
   
@@ -2793,26 +2825,7 @@ int NS_main(int argc, NS_tchar **argv)
     putenv(const_cast<char*>("MOZ_OS_UPDATE="));
   }
 
-  if (sReplaceRequest) {
-    
-    
-#ifdef XP_WIN
-    NS_tchar* logDir = gPatchDirPath;
-#else
-#ifdef XP_MACOSX
-    NS_tchar* logDir = gPatchDirPath;
-#else
-    NS_tchar logDir[MAXPATHLEN];
-    NS_tsnprintf(logDir, sizeof(logDir)/sizeof(logDir[0]),
-                 NS_T("%s/updated/updates"),
-                 gInstallDirPath);
-#endif
-#endif
-
-    LogInitAppend(logDir, NS_T("last-update.log"), NS_T("update.log"));
-  } else {
-    LogInit(gPatchDirPath, NS_T("update.log"));
-  }
+  LogInit(gPatchDirPath, NS_T("update.log"));
 
   if (!WriteStatusFile("applying")) {
     LOG(("failed setting status to 'applying'"));
@@ -2897,8 +2910,9 @@ int NS_main(int argc, NS_tchar **argv)
       DWORD waitTime = PARENT_WAIT;
       DWORD result = WaitForSingleObject(parent, waitTime);
       CloseHandle(parent);
-      if (result != WAIT_OBJECT_0)
+      if (result != WAIT_OBJECT_0) {
         return 1;
+      }
     }
   }
 #else
@@ -2906,18 +2920,16 @@ int NS_main(int argc, NS_tchar **argv)
     waitpid(pid, nullptr, 0);
 #endif
 
-  if (sReplaceRequest) {
 #ifdef XP_WIN
+  if (sReplaceRequest) {
     
     
     NS_tchar sysDir[MAX_PATH + 1] = { L'\0' };
     if (GetSystemDirectoryW(sysDir, MAX_PATH + 1)) {
       NS_tchdir(sysDir);
     }
-#endif
   }
 
-#if defined(XP_WIN)
 #ifdef MOZ_MAINTENANCE_SERVICE
   sUsingService = EnvHasValue("MOZ_USING_SERVICE");
   putenv(const_cast<char*>("MOZ_USING_SERVICE="));
@@ -3066,7 +3078,9 @@ int NS_main(int argc, NS_tchar **argv)
                             &baseKey) == ERROR_SUCCESS) {
             RegCloseKey(baseKey);
           } else {
+#ifdef TEST_UPDATER
             useService = testOnlyFallbackKeyExists;
+#endif
             if (!useService) {
               lastFallbackError = FALLBACKKEY_NOKEY_ERROR;
             }
@@ -3231,11 +3245,13 @@ int NS_main(int argc, NS_tchar **argv)
   
   
   {
+#if !defined(TEST_UPDATER)
     GonkAutoMounter mounter;
     if (mounter.GetAccess() != MountAccess::ReadWrite) {
       WriteStatusFile(FILESYSTEM_MOUNT_READWRITE_ERROR);
       return 1;
     }
+#endif
 #endif
 
   if (sStagedUpdate) {
@@ -3280,8 +3296,9 @@ int NS_main(int argc, NS_tchar **argv)
     
     
     NS_tchar *destpath = (NS_tchar *) malloc((NS_tstrlen(gWorkingDirPath) + 2) * sizeof(NS_tchar));
-    if (!destpath)
+    if (!destpath) {
       return 1;
+    }
 
     NS_tchar *c = destpath;
     NS_tstrcpy(c, gWorkingDirPath);

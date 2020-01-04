@@ -1025,17 +1025,6 @@ ProcessUpdates(nsIFile *greDir, nsIFile *appDir, nsIFile *updRootDir,
   if (NS_FAILED(rv))
     return rv;
  
-  ProcessType dummyPID; 
-  const char *processingUpdates = PR_GetEnv("MOZ_TEST_PROCESS_UPDATES");
-  if (processingUpdates && *processingUpdates) {
-    
-    const char *stagingUpdate = PR_GetEnv("MOZ_UPDATE_STAGING");
-    if (stagingUpdate && *stagingUpdate) {
-      restart = false;
-      pid = &dummyPID;
-    }
-  }
-
   nsCOMPtr<nsIFile> statusFile;
   UpdateStatus status = GetUpdateStatus(updatesDir, statusFile);
   switch (status) {
