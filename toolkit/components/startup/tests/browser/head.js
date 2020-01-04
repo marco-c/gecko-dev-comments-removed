@@ -15,13 +15,7 @@ function whenBrowserLoaded(browser, callback) {
 }
 
 function waitForOnBeforeUnloadDialog(browser, callback) {
-  browser.addEventListener("DOMWillOpenModalDialog", function onModalDialog(event) {
-    if (Cu.isCrossProcessWrapper(event.target)) {
-      
-      
-      return;
-    }
-
+  browser.addEventListener("DOMWillOpenModalDialog", function onModalDialog() {
     browser.removeEventListener("DOMWillOpenModalDialog", onModalDialog, true);
 
     executeSoon(() => {
