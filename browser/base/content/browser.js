@@ -5398,9 +5398,7 @@ function hrefAndLinkNodeForClickEvent(event)
     if (node.nodeType == Node.ELEMENT_NODE &&
         (node.localName == "a" ||
          node.namespaceURI == "http://www.w3.org/1998/Math/MathML")) {
-      href = node.getAttribute("href") ||
-             node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
-
+      href = node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
       if (href) {
         baseURI = node.baseURI;
         break;
@@ -7557,6 +7555,8 @@ var gRemoteTabsUI = {
 
 
 
+
+
 function switchToTabHavingURI(aURI, aOpenNew, aOpenParams={}) {
   
   
@@ -7605,16 +7605,18 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams={}) {
 
     
     
+    let ignoreFragmentWhenComparing = typeof ignoreFragment == "string" &&
+                                      ignoreFragment.startsWith("whenComparing");
     let requestedCompare = cleanURL(
-        aURI.spec, ignoreQueryString || replaceQueryString, ignoreFragment);
+        aURI.spec, ignoreQueryString || replaceQueryString, ignoreFragmentWhenComparing);
     let browsers = aWindow.gBrowser.browsers;
     for (let i = 0; i < browsers.length; i++) {
       let browser = browsers[i];
       let browserCompare = cleanURL(
-          browser.currentURI.spec, ignoreQueryString || replaceQueryString, ignoreFragment);
+          browser.currentURI.spec, ignoreQueryString || replaceQueryString, ignoreFragmentWhenComparing);
       if (requestedCompare == browserCompare) {
         aWindow.focus();
-        if (ignoreFragment || replaceQueryString) {
+        if (ignoreFragment == "whenComparingAndReplace" || replaceQueryString) {
           browser.loadURI(aURI.spec);
         }
         aWindow.gBrowser.tabContainer.selectedIndex = i;

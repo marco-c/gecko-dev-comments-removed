@@ -211,7 +211,7 @@ var TrackingProtection = {
         
         
         
-        ignoreFragment: true,
+        ignoreFragment: "whenComparingAndReplace",
       });
     };
 

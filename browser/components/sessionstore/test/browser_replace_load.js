@@ -13,7 +13,7 @@ const STATE = {
 
 
 add_task(function* () {
-  yield testSwitchToTab("about:mozilla#fooobar", {ignoreFragment: true});
+  yield testSwitchToTab("about:mozilla#fooobar", {ignoreFragment: "whenComparingAndReplace"});
   yield testSwitchToTab("about:mozilla?foo=bar", {replaceQueryString: true});
 });
 
