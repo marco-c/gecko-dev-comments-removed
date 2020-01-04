@@ -344,6 +344,13 @@ SpeechDispatcherService::Setup()
     return;
   }
 
+  if (!PR_FindFunctionSymbol(speechdLib, "spd_get_volume")) {
+    
+    
+    NS_WARNING("Unsupported version of speechd detected");
+    return;
+  }
+
   for (uint32_t i = 0; i < ArrayLength(kSpeechDispatcherSymbols); i++) {
     *kSpeechDispatcherSymbols[i].function =
       PR_FindFunctionSymbol(speechdLib, kSpeechDispatcherSymbols[i].functionName);
