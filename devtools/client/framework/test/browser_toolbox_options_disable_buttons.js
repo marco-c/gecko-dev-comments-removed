@@ -82,12 +82,6 @@ function testToggleToolboxButtons() {
   let toggleableTools = toolbox.toolboxButtons;
 
   
-  
-  if (toolbox.target.isMultiProcess) {
-    toolboxButtonNodes = [...doc.querySelectorAll(".command-button:not(#command-button-tilt)")];
-  }
-
-  
   toggleableTools = toggleableTools.filter(tool => tool.id != "command-button-noautohide");
   toolboxButtonNodes = toolboxButtonNodes.filter(btn => btn.id != "command-button-noautohide");
 
