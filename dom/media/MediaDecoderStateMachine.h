@@ -648,8 +648,6 @@ private:
   
   bool NeedToSkipToNextKeyframe();
 
-  void AdjustAudioThresholds();
-
   void* const mDecoderID;
   const RefPtr<FrameStatistics> mFrameStats;
   const RefPtr<VideoFrameContainer> mVideoFrameContainer;
@@ -970,13 +968,7 @@ private:
   uint32_t AudioPrerollUsecs() const
   {
     MOZ_ASSERT(OnTaskQueue());
-    if (IsRealTime()) {
-      return 0;
-    }
-
-    uint32_t result = mLowAudioThresholdUsecs * 2;
-    MOZ_ASSERT(result <= mAmpleAudioThresholdUsecs, "Prerolling will never finish");
-    return result;
+    return IsRealTime() ? 0 : mAmpleAudioThresholdUsecs;
   }
 
   uint32_t VideoPrerollFrames() const
@@ -1075,7 +1067,7 @@ private:
   
   
   
-  Watchable<bool> mAudioCaptured;
+  bool mAudioCaptured;
 
   
   
@@ -1173,7 +1165,7 @@ private:
   
   
   
-  Watchable<bool> mSentFirstFrameLoadedEvent;
+  bool mSentFirstFrameLoadedEvent;
 
   bool mSentPlaybackEndedEvent;
 

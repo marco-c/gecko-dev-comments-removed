@@ -99,13 +99,6 @@ const int64_t AMPLE_AUDIO_USECS = 1000000;
 
 
 
-
-
-const int64_t NO_VIDEO_AMPLE_AUDIO_DIVISOR = 8;
-
-
-
-
 static const uint32_t LOW_VIDEO_FRAMES = 2;
 
 
@@ -223,7 +216,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mQuickBufferingLowDataThresholdUsecs(detail::QUICK_BUFFERING_LOW_DATA_USECS),
   mIsAudioPrerolling(false),
   mIsVideoPrerolling(false),
-  mAudioCaptured(false, "MediaDecoderStateMachine::mAudioCaptured"),
+  mAudioCaptured(false),
   mAudioCompleted(false, "MediaDecoderStateMachine::mAudioCompleted"),
   mVideoCompleted(false, "MediaDecoderStateMachine::mVideoCompleted"),
   mNotifyMetadataBeforeFirstFrame(false),
@@ -238,7 +231,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mCorruptFrames(60),
   mDecodingFirstFrame(true),
   mSentLoadedMetadataEvent(false),
-  mSentFirstFrameLoadedEvent(false, "MediaDecoderStateMachine::mSentFirstFrameLoadedEvent"),
+  mSentFirstFrameLoadedEvent(false),
   mSentPlaybackEndedEvent(false),
   mOutputStreamManager(new OutputStreamManager()),
   mResource(aDecoder->GetResource()),
@@ -366,8 +359,6 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
   mWatchManager.Watch(mObservedDuration, &MediaDecoderStateMachine::RecomputeDuration);
   mWatchManager.Watch(mPlayState, &MediaDecoderStateMachine::PlayStateChanged);
   mWatchManager.Watch(mLogicallySeeking, &MediaDecoderStateMachine::LogicallySeekingChanged);
-  mWatchManager.Watch(mSentFirstFrameLoadedEvent, &MediaDecoderStateMachine::AdjustAudioThresholds);
-  mWatchManager.Watch(mAudioCaptured, &MediaDecoderStateMachine::AdjustAudioThresholds);
 }
 
 media::MediaSink*
@@ -2015,32 +2006,6 @@ bool
 MediaDecoderStateMachine::IsDecodingFirstFrame()
 {
   return mState == DECODER_STATE_DECODING && mDecodingFirstFrame;
-}
-
-void
-MediaDecoderStateMachine::AdjustAudioThresholds()
-{
-  MOZ_ASSERT(OnTaskQueue());
-
-  
-  
-  int64_t divisor = mAudioCaptured ? NO_VIDEO_AMPLE_AUDIO_DIVISOR / 2
-                                   : NO_VIDEO_AMPLE_AUDIO_DIVISOR;
-
-  
-  
-  
-  if (HasAudio() && !HasVideo() && mSentFirstFrameLoadedEvent) {
-    mAmpleAudioThresholdUsecs = detail::AMPLE_AUDIO_USECS / divisor;
-    mLowAudioThresholdUsecs = detail::LOW_AUDIO_USECS / divisor;
-    mQuickBufferingLowDataThresholdUsecs =
-      detail::QUICK_BUFFERING_LOW_DATA_USECS / divisor;
-
-    
-    if (mIsAudioPrerolling && DonePrerollingAudio()) {
-      StopPrerollingAudio();
-    }
-  }
 }
 
 void
