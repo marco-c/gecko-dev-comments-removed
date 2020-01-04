@@ -38,6 +38,7 @@
 #include "mozilla/dom/XMLHttpRequest.h"
 #include "mozilla/dom/XMLHttpRequestBinding.h"
 #include "mozilla/dom/XMLHttpRequestEventTarget.h"
+#include "mozilla/dom/XMLHttpRequestString.h"
 
 #ifdef Status
 
@@ -630,7 +631,7 @@ protected:
   
   
   
-  nsString mResponseText;
+  XMLHttpRequestString mResponseText;
 
   
   
