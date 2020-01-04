@@ -1213,10 +1213,6 @@ class Activation
 
     
     
-    size_t savedFrameChain_;
-
-    
-    
     
     
     
@@ -1285,17 +1281,6 @@ class Activation
     WasmActivation* asWasm() const {
         MOZ_ASSERT(isWasm());
         return (WasmActivation*)this;
-    }
-
-    void saveFrameChain() {
-        savedFrameChain_++;
-    }
-    void restoreFrameChain() {
-        MOZ_ASSERT(savedFrameChain_ > 0);
-        savedFrameChain_--;
-    }
-    bool hasSavedFrameChain() const {
-        return savedFrameChain_ > 0;
     }
 
     void hideScriptedCaller() {

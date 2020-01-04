@@ -4574,23 +4574,6 @@ GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 extern JS_PUBLIC_API(bool)
 JS_IsRunning(JSContext* cx);
 
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_SaveFrameChain(JSContext* cx);
-
-extern JS_PUBLIC_API(void)
-JS_RestoreFrameChain(JSContext* cx);
-
 namespace JS {
 
 

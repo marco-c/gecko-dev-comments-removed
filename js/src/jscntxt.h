@@ -345,21 +345,6 @@ struct JSContext : public js::ExclusiveContext,
     bool                generatingError;
 
     
-  private:
-    struct SavedFrameChain {
-        SavedFrameChain(JSCompartment* comp, unsigned count)
-          : compartment(comp), enterCompartmentCount(count) {}
-        JSCompartment* compartment;
-        unsigned enterCompartmentCount;
-    };
-    typedef js::Vector<SavedFrameChain, 1, js::SystemAllocPolicy> SaveStack;
-    SaveStack           savedFrameChains_;
-  public:
-    bool saveFrameChain();
-    void restoreFrameChain();
-
-  public:
-    
     js::AutoCycleDetector::Set cycleDetectorSet;
 
     
