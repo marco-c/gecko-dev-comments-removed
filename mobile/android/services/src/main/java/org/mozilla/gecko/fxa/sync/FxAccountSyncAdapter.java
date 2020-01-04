@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.text.TextUtils;
 
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.background.common.telemetry.TelemetryWrapper;
@@ -21,6 +22,7 @@ import org.mozilla.gecko.background.fxa.SkewHandler;
 import org.mozilla.gecko.browserid.JSONWebTokenUtils;
 import org.mozilla.gecko.fxa.FirefoxAccounts;
 import org.mozilla.gecko.fxa.FxAccountConstants;
+import org.mozilla.gecko.fxa.FxAccountDeviceRegistrator;
 import org.mozilla.gecko.fxa.authenticator.AccountPickler;
 import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
 import org.mozilla.gecko.fxa.authenticator.FxADefaultLoginStateMachineDelegate;
@@ -535,6 +537,12 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
             final KeyBundle syncKeyBundle = married.getSyncKeyBundle();
             final String clientState = married.getClientState();
             syncWithAssertion(audience, assertion, tokenServerEndpointURI, tokenBackoffHandler, sharedPrefs, syncKeyBundle, clientState, sessionCallback, extras, fxAccount);
+
+            
+            if (fxAccount.getDeviceRegistrationVersion() != FxAccountDeviceRegistrator.DEVICE_REGISTRATION_VERSION
+                || TextUtils.isEmpty(fxAccount.getDeviceId())) {
+              FxAccountDeviceRegistrator.register(fxAccount, context);
+            }
 
             
             Logger.info(LOG_TAG, "Fetching profile avatar information.");
