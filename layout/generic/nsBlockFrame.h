@@ -785,12 +785,6 @@ protected:
   
   
 
-  
-  
-  
-  
-  bool RenumberLists();
-
   void ReflowBullet(nsIFrame* aBulletFrame,
                     BlockReflowInput& aState,
                     ReflowOutput& aMetrics,

@@ -1814,9 +1814,9 @@ nsContainerFrame::FrameStartsCounterScope(nsIFrame* aFrame)
 }
 
 bool
-nsBlockFrame::RenumberLists()
+nsContainerFrame::RenumberLists()
 {
-  if (!nsContainerFrame::FrameStartsCounterScope(this)) {
+  if (!FrameStartsCounterScope(this)) {
     
     
     return false;
@@ -1836,23 +1836,22 @@ nsBlockFrame::RenumberLists()
     increment = 1;
   }
 
-  nsGenericHTMLElement *hc = nsGenericHTMLElement::FromContent(mContent);
+  nsGenericHTMLElement* hc = nsGenericHTMLElement::FromContent(mContent);
   
   
   MOZ_ASSERT(hc, "How is mContent not HTML?");
   const nsAttrValue* attr = hc->GetParsedAttr(nsGkAtoms::start);
+  nsContainerFrame* fif = static_cast<nsContainerFrame*>(FirstInFlow());
   if (attr && attr->Type() == nsAttrValue::eInteger) {
     ordinal = attr->GetIntegerValue();
   } else if (increment < 0) {
     
     
     ordinal = 0;
-    nsBlockFrame* block = static_cast<nsBlockFrame*>(FirstInFlow());
-    block->RenumberChildFrames(&ordinal, 0, -increment, true);
+    fif->RenumberChildFrames(&ordinal, 0, -increment, true);
   }
 
-  nsBlockFrame* block = static_cast<nsBlockFrame*>(FirstInFlow());
-  return block->RenumberChildFrames(&ordinal, 0, increment, false);
+  return fif->RenumberChildFrames(&ordinal, 0, increment, false);
 }
 
 

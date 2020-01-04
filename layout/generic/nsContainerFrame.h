@@ -469,6 +469,15 @@ public:
 
 
 
+  bool RenumberLists();
+
+  
+
+
+
+
+
+
 
 
 
