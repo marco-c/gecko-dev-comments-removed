@@ -145,7 +145,7 @@ TabStore.prototype = {
       }
 
       for (let tab of win.gBrowser.tabs) {
-        tabState = this.getTabState(tab);
+        let tabState = this.getTabState(tab);
 
         
         if (!tabState || !tabState.entries.length) {
@@ -265,7 +265,13 @@ TabStore.prototype = {
 
   create: function (record) {
     this._log.debug("Adding remote tabs from " + record.clientName);
-    this._remoteClients[record.id] = record.cleartext;
+    this._remoteClients[record.id] = Object.assign({}, record.cleartext, {
+      lastModified: record.modified
+    });
+
+    
+    
+    
 
     
     let roundModify = Math.floor(record.modified / 1000);
