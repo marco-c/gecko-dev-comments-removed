@@ -1983,7 +1983,8 @@ DocAccessible::ValidateARIAOwned()
     nsTArray<RefPtr<Accessible> >* children = it.UserData();
 
     
-    if (!owner->IsInDocument()) {
+    if (!mAccessibleCache.GetWeak(reinterpret_cast<void*>(owner)) ||
+        !owner->IsInDocument()) {
       PutChildrenBack(children, 0);
       it.Remove();
       continue;
