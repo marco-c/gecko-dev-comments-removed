@@ -2320,8 +2320,8 @@ ContentContribution(nsIFrame*                         aChild,
     }
 #ifdef DEBUG
     
-    parent->Properties().Set(nsContainerFrame::DebugReflowingWithInfiniteISize(),
-                             parent );
+    parent->Properties().Set(
+      nsContainerFrame::DebugReflowingWithInfiniteISize(), true);
 #endif
     
     LogicalSize availableSize(wm, INFINITE_ISIZE_COORD, NS_UNCONSTRAINEDSIZE);

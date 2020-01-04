@@ -458,9 +458,9 @@ public:
 
 #ifdef DEBUG
   
-  NS_DECLARE_FRAME_PROPERTY(DebugReflowingWithInfiniteISize, nullptr)
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(DebugReflowingWithInfiniteISize, bool)
   bool IsCrazySizeAssertSuppressed() const {
-    return Properties().Get(DebugReflowingWithInfiniteISize()) != nullptr;
+    return Properties().Get(DebugReflowingWithInfiniteISize());
   }
 #endif
 
