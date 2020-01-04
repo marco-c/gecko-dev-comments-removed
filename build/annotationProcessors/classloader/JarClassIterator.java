@@ -9,9 +9,13 @@ import java.util.Iterator;
 
 
 
+
+
 public class JarClassIterator implements Iterator<ClassWithOptions> {
     private IterableJarLoadingURLClassLoader mTarget;
     private Iterator<String> mTargetClassListIterator;
+
+    private ClassWithOptions lookAhead;
 
     public JarClassIterator(IterableJarLoadingURLClassLoader aTarget) {
         mTarget = aTarget;
@@ -20,11 +24,28 @@ public class JarClassIterator implements Iterator<ClassWithOptions> {
 
     @Override
     public boolean hasNext() {
-        return mTargetClassListIterator.hasNext();
+        return fillLookAheadIfPossible();
     }
 
     @Override
     public ClassWithOptions next() {
+        if (!fillLookAheadIfPossible()) {
+            throw new IllegalStateException("Failed to look ahead in next()!");
+        }
+        ClassWithOptions next = lookAhead;
+        lookAhead = null;
+        return next;
+    }
+
+    private boolean fillLookAheadIfPossible() {
+        if (lookAhead != null) {
+            return true;
+        }
+
+        if (!mTargetClassListIterator.hasNext()) {
+            return false;
+        }
+
         String className = mTargetClassListIterator.next();
         try {
             Class<?> ret = mTarget.loadClass(className);
@@ -37,22 +58,23 @@ public class JarClassIterator implements Iterator<ClassWithOptions> {
             try {
                 enclosingClass = ret.getEnclosingClass();
             } catch (IncompatibleClassChangeError e) {
-                return next();
+                return fillLookAheadIfPossible();
             }
 
             if (enclosingClass != null) {
                 
                 
-                return next();
+                return fillLookAheadIfPossible();
             }
 
-            return new ClassWithOptions(ret, ret.getSimpleName());
+            lookAhead = new ClassWithOptions(ret, ret.getSimpleName());
+            return true;
         } catch (ClassNotFoundException e) {
             System.err.println("Unable to enumerate class: " + className + ". Corrupted jar file?");
             e.printStackTrace();
             System.exit(2);
         }
-        return null;
+        return false;
     }
 
     @Override
