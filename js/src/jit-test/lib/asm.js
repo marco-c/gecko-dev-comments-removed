@@ -78,8 +78,8 @@ function assertAsmTypeFail()
     Function.apply(null, arguments);
 
     
-    var oldOpts = options("werror");
-    assertEq(oldOpts.indexOf("werror"), -1);
+    var oldOpts = options("throw_on_asmjs_validation_failure");
+    assertEq(oldOpts.indexOf("throw_on_asmjs_validation_failure"), -1);
 
     
     var caught = false;
@@ -94,7 +94,7 @@ function assertAsmTypeFail()
         throw new Error("Didn't catch the type failure error");
 
     
-    options("werror");
+    options("throw_on_asmjs_validation_failure");
 }
 
 function assertAsmLinkFail(f)
