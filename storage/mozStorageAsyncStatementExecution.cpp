@@ -70,10 +70,9 @@ public:
       
       
       
-      nsCOMPtr<mozIStorageStatementCallback> callback =
-        do_QueryInterface(mCallback);
+      nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
 
-      (void)mCallback->HandleResult(mResults);
+      (void)callback->HandleResult(mResults);
     }
 
     return NS_OK;
@@ -106,10 +105,9 @@ public:
       
       
       
-      nsCOMPtr<mozIStorageStatementCallback> callback =
-        do_QueryInterface(mCallback);
+      nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
 
-      (void)mCallback->HandleError(mErrorObj);
+      (void)callback->HandleError(mErrorObj);
     }
 
     return NS_OK;

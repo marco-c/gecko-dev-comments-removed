@@ -162,8 +162,6 @@ InterceptedChannelChrome::InterceptedChannelChrome(nsHttpChannel* aChannel,
 void
 InterceptedChannelChrome::NotifyController()
 {
-  nsCOMPtr<nsIOutputStream> out;
-
   
   mChannel->SetApplyConversion(false);
 

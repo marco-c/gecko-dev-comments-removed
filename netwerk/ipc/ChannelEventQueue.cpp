@@ -9,6 +9,7 @@
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace net {
@@ -36,6 +37,7 @@ ChannelEventQueue::FlushQueue()
   
   
   nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
+  mozilla::Unused << kungFuDeathGrip; 
 
   
   {

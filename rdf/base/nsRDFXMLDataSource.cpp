@@ -475,7 +475,6 @@ RDFXMLDataSourceImpl::BlockingParse(nsIURI* aURL, nsIStreamListener* aConsumer)
     
     
     nsCOMPtr<nsIChannel> channel;
-    nsCOMPtr<nsIRequest> request;
 
     
     rv = NS_NewChannel(getter_AddRefs(channel),

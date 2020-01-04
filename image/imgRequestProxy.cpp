@@ -787,7 +787,7 @@ imgRequestProxy::Notify(int32_t aType, const mozilla::gfx::IntRect* aRect)
   
   nsCOMPtr<imgINotificationObserver> listener(mListener);
 
-  mListener->Notify(this, aType, aRect);
+  listener->Notify(this, aType, aRect);
 }
 
 void
@@ -807,8 +807,8 @@ imgRequestProxy::OnLoadComplete(bool aLastPart)
 
   if (mListener && !mCanceled) {
     
-    nsCOMPtr<imgINotificationObserver> kungFuDeathGrip(mListener);
-    mListener->Notify(this, imgINotificationObserver::LOAD_COMPLETE, nullptr);
+    nsCOMPtr<imgINotificationObserver> listener(mListener);
+    listener->Notify(this, imgINotificationObserver::LOAD_COMPLETE, nullptr);
   }
 
   

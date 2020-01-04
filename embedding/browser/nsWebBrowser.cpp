@@ -1661,7 +1661,11 @@ nsWebBrowser::ScrollByPages(int32_t aNumPages)
 NS_IMETHODIMP
 nsWebBrowser::SetDocShell(nsIDocShell* aDocShell)
 {
+  
+  
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(mDocShell);
+  mozilla::Unused << kungFuDeathGrip;
+
   if (aDocShell) {
     NS_ENSURE_TRUE(!mDocShell, NS_ERROR_FAILURE);
 
