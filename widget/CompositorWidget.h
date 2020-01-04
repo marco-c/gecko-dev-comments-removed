@@ -29,7 +29,6 @@ class SourceSurface;
 namespace widget {
 
 class WinCompositorWidget;
-class X11CompositorWidget;
 class CompositorWidgetInitData;
 
 
@@ -40,7 +39,7 @@ class CompositorWidgetInitData;
 class CompositorWidgetDelegate;
 
 
-#if defined(XP_WIN) || defined(MOZ_X11)
+#if defined(XP_WIN)
 
 
 class CompositorWidgetParent;
@@ -244,9 +243,6 @@ public:
   virtual RefPtr<VsyncObserver> GetVsyncObserver() const;
 
   virtual WinCompositorWidget* AsWindows() {
-    return nullptr;
-  }
-  virtual X11CompositorWidget* AsX11() {
     return nullptr;
   }
 
