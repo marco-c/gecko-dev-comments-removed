@@ -6,9 +6,7 @@
 
 SimpleTest.waitForExplicitFinish();
 SimpleTest.requestFlakyTimeout("untriaged");
-SimpleTest.requestLongerTimeout(2); 
 browserElementTestHelpers.setEnabledPref(true);
-browserElementTestHelpers.setSelectionChangeEnabledPref(false);
 browserElementTestHelpers.setAccessibleCaretEnabledPref(true);
 browserElementTestHelpers.addPermission();
 const { Services } = SpecialPowers.Cu.import('resource://gre/modules/Services.jsm');
@@ -92,14 +90,6 @@ function doCommand(cmd) {
                                'copypaste-docommand', cmd);
 }
 
-function rerunTest() {
-  
-  document.body.removeChild(iframeOuter);
-  document.body.removeChild(gTextarea);
-  state = 0;
-  runTest();
-}
-
 function dispatchTest(e) {
   iframeInner.addEventListener("mozbrowserloadend", function onloadend2(e) {
     iframeInner.removeEventListener("mozbrowserloadend", onloadend2);
@@ -171,23 +161,15 @@ function dispatchTest(e) {
       break;
     default:
       if (createEmbededFrame || browserElementTestHelpers.getOOPByDefaultPref()) {
-        if (testSelectionChange) {
-          SimpleTest.finish();
-          return;
-        } else {
-          testSelectionChange = true;
-          createEmbededFrame = false;
-          SpecialPowers.pushPrefEnv(
-            {'set':
-              [['selectioncaret.enabled', true],
-               ['layout.accessiblecaret.enabled', false]]},
-            function() {
-              rerunTest();
-          });
-        }
+        SimpleTest.finish();
       } else {
         createEmbededFrame = true;
-        rerunTest();
+
+        
+        document.body.removeChild(iframeOuter);
+        document.body.removeChild(gTextarea);
+        state = 0;
+        runTest();
       }
       break;
   }
@@ -202,19 +184,14 @@ function isChildProcess() {
 function testSelectAll(e) {
   
   if (!isChildProcess()) {
-    let eventName = testSelectionChange ? "mozbrowserselectionstatechanged" : "mozbrowsercaretstatechanged";
-    iframeOuter.addEventListener(eventName, function selectchangeforselectall(e) {
-      if (!e.detail.states || e.detail.states.indexOf('selectall') == 0) {
-        iframeOuter.removeEventListener(eventName, selectchangeforselectall, true);
-        ok(true, "got mozbrowserselectionstatechanged event." + stateMeaning);
-        ok(e.detail, "event.detail is not null." + stateMeaning);
-        ok(e.detail.width != 0, "event.detail.width is not zero" + stateMeaning);
-        ok(e.detail.height != 0, "event.detail.height is not zero" + stateMeaning);
-        if (testSelectionChange) {
-          ok(e.detail.states, "event.detail.state " + e.detail.states);
-        }
-        SimpleTest.executeSoon(function() { testCopy1(e); });
-      }
+    let eventName = "mozbrowsercaretstatechanged";
+    iframeOuter.addEventListener(eventName, function caretchangeforselectall(e) {
+      iframeOuter.removeEventListener(eventName, caretchangeforselectall, true);
+      ok(true, "got mozbrowsercaretstatechanged event." + stateMeaning);
+      ok(e.detail, "event.detail is not null." + stateMeaning);
+      ok(e.detail.width != 0, "event.detail.width is not zero" + stateMeaning);
+      ok(e.detail.height != 0, "event.detail.height is not zero" + stateMeaning);
+      SimpleTest.executeSoon(function() { testCopy1(e); });
     }, true);
   }
 
