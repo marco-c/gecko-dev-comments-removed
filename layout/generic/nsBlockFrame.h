@@ -174,6 +174,7 @@ public:
   
   
   
+  
   void SetupLineCursor();
 
   virtual void ChildIsDirty(nsIFrame* aChild) override;
