@@ -22,6 +22,8 @@
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/FetchEventBinding.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/Request.h"
@@ -39,7 +41,9 @@
 #endif
 
 #include "js/Conversions.h"
+#include "js/TypeDecls.h"
 #include "WorkerPrivate.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::dom;
 
@@ -346,6 +350,74 @@ void RespondWithCopyComplete(void* aClosure, nsresult aStatus)
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToMainThread(event)));
 }
 
+namespace {
+
+void
+ExtractErrorValues(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                  nsACString& aSourceSpecOut, uint32_t *aLineOut,
+                  uint32_t *aColumnOut, nsString& aMessageOut)
+{
+  MOZ_ASSERT(aLineOut);
+  MOZ_ASSERT(aColumnOut);
+
+  if (aValue.isObject()) {
+    JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
+    RefPtr<DOMException> domException;
+
+    
+    
+    
+    JSErrorReport* err = obj ? JS_ErrorFromException(aCx, obj) : nullptr;
+    if (err) {
+      
+      
+      RefPtr<xpc::ErrorReport> report = new xpc::ErrorReport();
+      report->Init(err,
+                   "<unknown>", 
+                   false,       
+                   0);          
+
+      if (!report->mFileName.IsEmpty()) {
+        CopyUTF16toUTF8(report->mFileName, aSourceSpecOut);
+        *aLineOut = report->mLineNumber;
+        *aColumnOut = report->mColumn;
+      }
+      aMessageOut.Assign(report->mErrorMsg);
+    }
+
+    
+    else if(NS_SUCCEEDED(UNWRAP_OBJECT(DOMException, obj, domException))) {
+
+      nsAutoString filename;
+      if (NS_SUCCEEDED(domException->GetFilename(filename)) &&
+          !filename.IsEmpty()) {
+        CopyUTF16toUTF8(filename, aSourceSpecOut);
+        *aLineOut = domException->LineNumber();
+        *aColumnOut = domException->ColumnNumber();
+      }
+
+      domException->GetName(aMessageOut);
+      aMessageOut.AppendLiteral(": ");
+
+      nsAutoString message;
+      domException->GetMessageMoz(message);
+      aMessageOut.Append(message);
+    }
+  }
+
+  
+  
+  
+  if (aMessageOut.IsEmpty()) {
+    nsAutoJSString jsString;
+    if (jsString.init(aCx, aValue)) {
+      aMessageOut = jsString;
+    }
+  }
+}
+
+} 
+
 class MOZ_STACK_CLASS AutoCancel
 {
   RefPtr<RespondWithHandler> mOwner;
@@ -514,13 +586,17 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
 void
 RespondWithHandler::RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue)
 {
-  nsAutoJSString rejectionString;
-  if (rejectionString.init(aCx, aValue)) {
-    ::AsyncLog(mInterceptedChannel, mRespondWithScriptSpec, mRespondWithLineNumber,
-               mRespondWithColumnNumber,
-               NS_LITERAL_CSTRING("InterceptionRejectedResponseWithURL"),
-               &mRequestURL, &rejectionString);
-  }
+  nsCString sourceSpec = mRespondWithScriptSpec;
+  uint32_t line = mRespondWithLineNumber;
+  uint32_t column = mRespondWithColumnNumber;
+  nsString valueString;
+
+  ExtractErrorValues(aCx, aValue, sourceSpec, &line, &column, valueString);
+
+  ::AsyncLog(mInterceptedChannel, sourceSpec, line, column,
+             NS_LITERAL_CSTRING("InterceptionRejectedResponseWithURL"),
+             &mRequestURL, &valueString);
+
   CancelRequest(NS_ERROR_INTERCEPTION_FAILED);
 }
 
