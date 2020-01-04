@@ -134,8 +134,11 @@ nsPNGDecoder::CheckForTransparency(SurfaceFormat aFormat,
   }
 
   
-  MOZ_ASSERT_IF(mNumFrames == 0,
-                IntRect(IntPoint(), GetSize()).IsEqualEdges(aFrameRect));
+  
+  if (mNumFrames == 0 && !IntRect(IntPoint(), GetSize()).IsEqualEdges(aFrameRect)) {
+    MOZ_ASSERT(HasAnimation());
+    PostHasTransparency();
+  }
 }
 
 
@@ -597,6 +600,12 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
 #endif
 
   if (decoder->IsMetadataDecode()) {
+    
+    
+    
+    
+    
+    
     decoder->CheckForTransparency(decoder->format,
                                   IntRect(0, 0, width, height));
 
