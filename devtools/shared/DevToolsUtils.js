@@ -12,6 +12,7 @@ var promise = require("promise");
 
 loader.lazyRequireGetter(this, "FileUtils",
                          "resource://gre/modules/FileUtils.jsm", true);
+loader.lazyRequireGetter(this, "setTimeout", "Timer", true);
 
 
 
@@ -136,6 +137,18 @@ exports.entries = function entries(obj) {
 
 
 
+exports.toObject = function(arr) {
+  const obj = {};
+  for(let pair of arr) {
+    obj[pair[0]] = pair[1];
+  }
+  return obj;
+}
+
+
+
+
+
 
 
 
@@ -186,7 +199,7 @@ exports.waitForTick = function waitForTick() {
 
 exports.waitForTime = function waitForTime(aDelay) {
   let deferred = promise.defer();
-  require("Timer").setTimeout(deferred.resolve, aDelay);
+  setTimeout(deferred.resolve, aDelay);
   return deferred.promise;
 };
 
