@@ -99,8 +99,8 @@ elif system == "Linux":
     
     
     
-    if not os_version and "ARCH" in release:
-        distro = 'arch'
+    if not distro and not os_version and not codename:
+        distro = 'lfs'
         version = release
         os_version = release
 
