@@ -42,12 +42,18 @@ function waitForFrame() {
 
 
 
-function waitForAnimationFrames(frameCount) {
+
+
+
+function waitForAnimationFrames(frameCount, onFrame) {
   return new Promise(function(resolve, reject) {
     function handleFrame() {
       if (--frameCount <= 0) {
         resolve();
       } else {
+        if (onFrame && typeof onFrame === 'function') {
+          onFrame();
+        }
         window.requestAnimationFrame(handleFrame); 
       }
     }
