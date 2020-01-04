@@ -241,6 +241,15 @@ PDMFactory::CreatePDMs()
 {
   RefPtr<PlatformDecoderModule> m;
 
+  if (sUseBlankDecoder) {
+    m = CreateBlankDecoderModule();
+    StartupPDM(m);
+    
+    
+    
+    return;
+  }
+
   if (sGMPDecoderEnabled) {
     m = new GMPDecoderModule();
     StartupPDM(m);
@@ -282,11 +291,6 @@ PDMFactory::CreatePDMs()
 
   m = new AgnosticDecoderModule();
   StartupPDM(m);
-
-  if (sUseBlankDecoder) {
-    m = CreateBlankDecoderModule();
-    StartupPDM(m);
-  }
 }
 
 bool
