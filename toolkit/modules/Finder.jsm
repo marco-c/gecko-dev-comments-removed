@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "ClipboardHelper",
                                          "@mozilla.org/widget/clipboardhelper;1",
                                          "nsIClipboardHelper");
 
+const kHighlightIterationSizeMax = 100;
 const kSelectionMaxLen = 150;
 
 function Finder(docShell) {
@@ -32,7 +33,6 @@ function Finder(docShell) {
   this._listeners = [];
   this._previousLink = null;
   this._searchString = null;
-  this._highlighter = null;
 
   docShell.QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIWebProgress)
@@ -40,19 +40,6 @@ function Finder(docShell) {
 }
 
 Finder.prototype = {
-  destroy: function() {
-    if (this._highlighter) {
-      this._highlighter.clear();
-      this._highlighter.hide();
-    }
-    this.listeners = [];
-    this._docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIWebProgress)
-      .removeProgressListener(this, Ci.nsIWebProgress.NOTIFY_LOCATION);
-    this._listeners = [];
-    this._fastFind = this._docShell = this._previousLink = this._highlighter = null;
-  },
-
   addResultListener: function (aListener) {
     if (this._listeners.indexOf(aListener) === -1)
       this._listeners.push(aListener);
@@ -62,15 +49,12 @@ Finder.prototype = {
     this._listeners = this._listeners.filter(l => l != aListener);
   },
 
-  _notify: function (options) {
-    if (typeof options.storeResult != "boolean")
-      options.storeResult = true;
-
-    if (options.storeResult) {
-      this._searchString = options.searchString;
-      this.clipboardSearchString = options.searchString
+  _notify: function (aSearchString, aResult, aFindBackwards, aDrawOutline, aStoreResult = true) {
+    if (aStoreResult) {
+      this._searchString = aSearchString;
+      this.clipboardSearchString = aSearchString
     }
-    this._outlineLink(options.drawOutline);
+    this._outlineLink(aDrawOutline);
 
     let foundLink = this._fastFind.foundLink;
     let linkURL = null;
@@ -83,15 +67,18 @@ Finder.prototype = {
       linkURL = TextToSubURIService.unEscapeURIForUI(docCharset, foundLink.href);
     }
 
-    options.linkURL = linkURL;
-    options.rect = this._getResultRect();
-    options.searchString = this._searchString;
-
-    this.highlighter.update(options);
+    let data = {
+      result: aResult,
+      findBackwards: aFindBackwards,
+      linkURL: linkURL,
+      rect: this._getResultRect(),
+      searchString: this._searchString,
+      storeResult: aStoreResult
+    };
 
     for (let l of this._listeners) {
       try {
-        l.onFindResult(options);
+        l.onFindResult(data);
       } catch (ex) {}
     }
   },
@@ -121,14 +108,6 @@ Finder.prototype = {
     this._fastFind.caseSensitive = aSensitive;
   },
 
-  get highlighter() {
-    if (this._highlighter)
-      return this._highlighter;
-
-    const {FinderHighlighter} = Cu.import("resource://gre/modules/FinderHighlighter.jsm", {});
-    return this._highlighter = new FinderHighlighter(this);
-  },
-
   _lastFindResult: null,
 
   
@@ -141,13 +120,7 @@ Finder.prototype = {
   fastFind: function (aSearchString, aLinksOnly, aDrawOutline) {
     this._lastFindResult = this._fastFind.find(aSearchString, aLinksOnly);
     let searchString = this._fastFind.searchString;
-    this._notify({
-      searchString,
-      result: this._lastFindResult,
-      findBackwards: false,
-      findAgain: false,
-      drawOutline: aDrawOutline
-    });
+    this._notify(searchString, this._lastFindResult, false, aDrawOutline);
   },
 
   
@@ -162,13 +135,7 @@ Finder.prototype = {
   findAgain: function (aFindBackwards, aLinksOnly, aDrawOutline) {
     this._lastFindResult = this._fastFind.findAgain(aFindBackwards, aLinksOnly);
     let searchString = this._fastFind.searchString;
-    this._notify({
-      searchString,
-      result: this._lastFindResult,
-      findBackwards: aFindBackwards,
-      fidnAgain: true,
-      drawOutline: aDrawOutline
-    });
+    this._notify(searchString, this._lastFindResult, aFindBackwards, aDrawOutline);
   },
 
   
@@ -186,22 +153,25 @@ Finder.prototype = {
     return searchString;
   },
 
-  highlight: Task.async(function* (aHighlight, aWord) {
-    this.highlighter.maybeAbort();
+  _notifyHighlightFinished: function(aHighlight) {
+    for (let l of this._listeners) {
+      try {
+        l.onHighlightFinished(aHighlight);
+      } catch (ex) {}
+    }
+  },
 
-    let found = yield this.highlighter.highlight(aHighlight, aWord, null);
-    this.highlighter.notifyFinished(aHighlight);
+  highlight: Task.async(function* (aHighlight, aWord) {
+    if (this._abortHighlight) {
+      this._abortHighlight();
+    }
+
+    let found = yield this._highlight(aHighlight, aWord, null);
+    this._notifyHighlightFinished(aHighlight);
     if (aHighlight) {
       let result = found ? Ci.nsITypeAheadFind.FIND_FOUND
                          : Ci.nsITypeAheadFind.FIND_NOTFOUND;
-      this._notify({
-        searchString: aWord,
-        result,
-        findBackwards: false,
-        findAgain: false,
-        drawOutline: false,
-        storeResult: false
-      });
+      this._notify(aWord, result, false, false, false);
     }
   }),
 
@@ -260,7 +230,6 @@ Finder.prototype = {
   removeSelection: function() {
     this._fastFind.collapseSelection();
     this.enableSelection();
-    this.highlighter.clear();
   },
 
   focusContent: function() {
@@ -290,17 +259,6 @@ Finder.prototype = {
         this._getWindow().focus()
       }
     } catch (e) {}
-  },
-
-  onFindbarClose: function() {
-    this.focusContent();
-    this.enableSelection();
-    this.highlighter.hide();
-  },
-
-  onModalHighlightChange(useModalHighlight) {
-    if (this._highlighter)
-      this._highlighter.onModalHighlightChange(useModalHighlight);
   },
 
   keyPress: function (aEvent) {
@@ -476,6 +434,28 @@ Finder.prototype = {
     }
   },
 
+  _highlightIterator: Task.async(function* (aWord, aWindow, aOnFind) {
+    let count = 0;
+    for (let range of this._findIterator(aWord, aWindow)) {
+      aOnFind(range);
+      if (++count >= kHighlightIterationSizeMax) {
+          count = 0;
+          yield this._highlightSleep(0);
+      }
+    }
+  }),
+
+  _abortHighlight: null,
+  _highlightSleep: function(delay) {
+    return new Promise((resolve, reject) => {
+      this._abortHighlight = () => {
+        this._abortHighlight = null;
+        reject();
+      };
+      this._getWindow().setTimeout(resolve, delay);
+    });
+  },
+
   
 
 
@@ -618,6 +598,84 @@ Finder.prototype = {
     }
   },
 
+  _highlight: Task.async(function* (aHighlight, aWord, aWindow) {
+    let win = aWindow || this._getWindow();
+
+    let found = false;
+    for (let i = 0; win.frames && i < win.frames.length; i++) {
+      if (yield this._highlight(aHighlight, aWord, win.frames[i]))
+        found = true;
+    }
+
+    let controller = this._getSelectionController(win);
+    let doc = win.document;
+    if (!controller || !doc || !doc.documentElement) {
+      
+      
+      return found;
+    }
+
+    if (aHighlight) {
+      yield this._highlightIterator(aWord, win, aRange => {
+        this._highlightRange(aRange, controller);
+        found = true;
+      });
+    } else {
+      
+      let sel = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+      sel.removeAllRanges();
+
+      
+      
+      if (this._editors) {
+        for (let x = this._editors.length - 1; x >= 0; --x) {
+          if (this._editors[x].document == doc) {
+            sel = this._editors[x].selectionController
+                                  .getSelection(Ci.nsISelectionController.SELECTION_FIND);
+            sel.removeAllRanges();
+            
+            this._unhookListenersAtIndex(x);
+          }
+        }
+      }
+
+      
+      found = true;
+    }
+
+    return found;
+  }),
+
+  _highlightRange: function(aRange, aController) {
+    let node = aRange.startContainer;
+    let controller = aController;
+
+    let editableNode = this._getEditableNode(node);
+    if (editableNode)
+      controller = editableNode.editor.selectionController;
+
+    let findSelection = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+    findSelection.addRange(aRange);
+
+    if (editableNode) {
+      
+      
+      if (!this._editors) {
+        this._editors = [];
+        this._stateListeners = [];
+      }
+
+      let existingIndex = this._editors.indexOf(editableNode.editor);
+      if (existingIndex == -1) {
+        let x = this._editors.length;
+        this._editors[x] = editableNode.editor;
+        this._stateListeners[x] = this._createStateListener();
+        this._editors[x].addEditActionListener(this);
+        this._editors[x].addDocumentStateListener(this._stateListeners[x]);
+      }
+    }
+  },
+
   _getSelectionController: function(aWindow) {
     
     try {
@@ -638,6 +696,129 @@ Finder.prototype = {
                              .getInterface(Ci.nsISelectionDisplay)
                              .QueryInterface(Ci.nsISelectionController);
     return controller;
+  },
+
+  
+
+
+
+
+
+
+
+
+  _getEditableNode: function (aNode) {
+    if (aNode.nodeType === aNode.TEXT_NODE && aNode.parentNode && aNode.parentNode.parentNode &&
+        aNode.parentNode.parentNode instanceof Ci.nsIDOMNSEditableElement) {
+      return aNode.parentNode.parentNode;
+    }
+    return null;
+  },
+
+  
+
+
+
+
+
+
+  _unhookListenersAtIndex: function (aIndex) {
+    this._editors[aIndex].removeEditActionListener(this);
+    this._editors[aIndex]
+        .removeDocumentStateListener(this._stateListeners[aIndex]);
+    this._editors.splice(aIndex, 1);
+    this._stateListeners.splice(aIndex, 1);
+    if (!this._editors.length) {
+      delete this._editors;
+      delete this._stateListeners;
+    }
+  },
+
+  
+
+
+
+
+
+  _removeEditorListeners: function (aEditor) {
+    
+    
+    let idx = this._editors.indexOf(aEditor);
+    if (idx == -1)
+      return;
+    
+    this._unhookListenersAtIndex(idx);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+  _checkOverlap: function (aSelectionRange, aFindRange) {
+    
+    
+    
+    
+    
+    if (aFindRange.isPointInRange(aSelectionRange.startContainer,
+                                  aSelectionRange.startOffset))
+      return true;
+    if (aFindRange.isPointInRange(aSelectionRange.endContainer,
+                                  aSelectionRange.endOffset))
+      return true;
+    if (aSelectionRange.isPointInRange(aFindRange.startContainer,
+                                       aFindRange.startOffset))
+      return true;
+    if (aSelectionRange.isPointInRange(aFindRange.endContainer,
+                                       aFindRange.endOffset))
+      return true;
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
+  _findRange: function (aSelection, aNode, aOffset) {
+    let rangeCount = aSelection.rangeCount;
+    let rangeidx = 0;
+    let foundContainingRange = false;
+    let range = null;
+
+    
+    while (!foundContainingRange && rangeidx < rangeCount) {
+      range = aSelection.getRangeAt(rangeidx);
+      if (range.isPointInRange(aNode, aOffset)) {
+        foundContainingRange = true;
+        break;
+      }
+      rangeidx++;
+    }
+
+    if (foundContainingRange)
+      return range;
+
+    return null;
   },
 
   
@@ -684,7 +865,176 @@ Finder.prototype = {
 
     
     this._previousLink = null;
-    this.highlighter.onLocationChange();
+  },
+
+  
+
+  WillDeleteText: function (aTextNode, aOffset, aLength) {
+    let editor = this._getEditableNode(aTextNode).editor;
+    let controller = editor.selectionController;
+    let fSelection = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+    let range = this._findRange(fSelection, aTextNode, aOffset);
+
+    if (range) {
+      
+      
+      if (aTextNode != range.endContainer ||
+          aOffset != range.endOffset) {
+        
+        
+        fSelection.removeRange(range);
+        if (fSelection.rangeCount == 0)
+          this._removeEditorListeners(editor);
+      }
+    }
+  },
+
+  DidInsertText: function (aTextNode, aOffset, aString) {
+    let editor = this._getEditableNode(aTextNode).editor;
+    let controller = editor.selectionController;
+    let fSelection = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+    let range = this._findRange(fSelection, aTextNode, aOffset);
+
+    if (range) {
+      
+      
+      if (aTextNode == range.startContainer &&
+          aOffset == range.startOffset) {
+        range.setStart(range.startContainer,
+                       range.startOffset+aString.length);
+      } else if (aTextNode != range.endContainer ||
+                 aOffset != range.endOffset) {
+        
+        
+        
+        fSelection.removeRange(range);
+        if (fSelection.rangeCount == 0)
+          this._removeEditorListeners(editor);
+      }
+    }
+  },
+
+  WillDeleteSelection: function (aSelection) {
+    let editor = this._getEditableNode(aSelection.getRangeAt(0)
+                                                 .startContainer).editor;
+    let controller = editor.selectionController;
+    let fSelection = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+
+    let selectionIndex = 0;
+    let findSelectionIndex = 0;
+    let shouldDelete = {};
+    let numberOfDeletedSelections = 0;
+    let numberOfMatches = fSelection.rangeCount;
+
+    
+    
+    
+    
+
+    for (let fIndex = 0; fIndex < numberOfMatches; fIndex++) {
+      shouldDelete[fIndex] = false;
+      let fRange = fSelection.getRangeAt(fIndex);
+
+      for (let index = 0; index < aSelection.rangeCount; index++) {
+        if (shouldDelete[fIndex])
+          continue;
+
+        let selRange = aSelection.getRangeAt(index);
+        let doesOverlap = this._checkOverlap(selRange, fRange);
+        if (doesOverlap) {
+          shouldDelete[fIndex] = true;
+          numberOfDeletedSelections++;
+        }
+      }
+    }
+
+    
+    
+    if (numberOfDeletedSelections == 0)
+      return;
+
+    for (let i = numberOfMatches - 1; i >= 0; i--) {
+      if (shouldDelete[i])
+        fSelection.removeRange(fSelection.getRangeAt(i));
+    }
+
+    
+    if (fSelection.rangeCount == 0)
+      this._removeEditorListeners(editor);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _onEditorDestruction: function (aListener) {
+    
+    
+    
+    
+    let idx = 0;
+    while (this._stateListeners[idx] != aListener)
+      idx++;
+
+    
+    this._unhookListenersAtIndex(idx);
+  },
+
+  
+
+
+
+
+
+
+
+
+  _createStateListener: function () {
+    return {
+      findbar: this,
+
+      QueryInterface: function(aIID) {
+        if (aIID.equals(Ci.nsIDocumentStateListener) ||
+            aIID.equals(Ci.nsISupports))
+          return this;
+
+        throw Components.results.NS_ERROR_NO_INTERFACE;
+      },
+
+      NotifyDocumentWillBeDestroyed: function() {
+        this.findbar._onEditorDestruction(this);
+      },
+
+      
+      notifyDocumentCreated: function() {},
+      notifyDocumentStateChanged: function(aDirty) {}
+    };
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
