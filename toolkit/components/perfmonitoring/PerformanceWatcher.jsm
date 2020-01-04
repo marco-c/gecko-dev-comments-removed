@@ -54,6 +54,7 @@ this.EXPORTED_SYMBOLS = ["PerformanceWatcher"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
+let { PerformanceStats, performanceStatsService } = Cu.import("resource://gre/modules/PerformanceStats.jsm", {});
 let { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 
@@ -73,8 +74,6 @@ if (!isContent) {
 }
 
 
-let performanceStatsService = Cc["@mozilla.org/toolkit/performance-stats-service;1"].
-  getService(Ci.nsIPerformanceStatsService);
 performanceStatsService.jankAlertThreshold = 64000 ;
 
 

@@ -16,75 +16,28 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "console",
-                                  "resource://gre/modules/Console.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PerformanceStats",
-                                  "resource://gre/modules/PerformanceStats.jsm");
+                                  "resource://gre/modules/devtools/Console.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PerformanceWatcher",
+                                  "resource://gre/modules/PerformanceWatcher.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "Telemetry",
                                   "@mozilla.org/base/telemetry;1",
                                   Ci.nsITelemetry);
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-const FILTERS = [
-  {probe: "jank", field: "longestDuration"},
-];
-
-const WAKEUP_IS_SURPRISINGLY_SLOW_FACTOR = 2;
-const THREAD_TAKES_LOTS_OF_CPU_FACTOR = .75;
-
-var AddonWatcher = {
-  _previousPerformanceIndicators: {},
-
-  
-
-
-
-  _stats: new Map(),
-  _timer: Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer),
-  _callback: null,
-  
-
-
-
-
-  _monitor: null,
-  
-
-
-
-  _interval: 15000,
-  _ignoreList: null,
-
-  
-
-
-
-
-
-  _latestWakeup: Date.now(),
-  _latestSnapshot: null,
-
-  
+XPCOMUtils.defineLazyServiceGetter(this, "IdleService",
+                                   "@mozilla.org/widget/idleservice;1",
+                                   Ci.nsIIdleService);
 
 
 
 
 
 
+let SUSPICIOUSLY_MANY_ADDONS = 5;
+
+this.AddonWatcher = {
   init: function(callback) {
-    if (!callback) {
-      return;
-    }
-
-    if (this._callback) {
-      
-      return;
-    }
-
-    this._interval = Preferences.get("browser.addon-watch.interval", 15000);
-    if (this._interval == -1) {
-      
-      return;
-    }
+    this._initializedTimeStamp = Cu.now();
 
     this._callback = callback;
     try {
@@ -94,193 +47,149 @@ var AddonWatcher = {
       this._ignoreList = new Set();
     }
 
-    
+    this._warmupPeriod = Preferences.get("browser.addon-watch.warmup-ms", 60 * 1000 );
+    this._idleThreshold = Preferences.get("browser.addon-watch.deactivate-after-idle-ms", 3000);
     this.paused = false;
-
-    Services.obs.addObserver(() => {
-      this.uninit();
-    }, "profile-before-change", false);
+    this.callback = callback;
   },
   uninit: function() {
     this.paused = true;
-    this._callback = null;
   },
+  _initializedTimeStamp: 0,
 
-  
-
-
-  set paused(isPaused) {
-    if (!this._callback || this._interval == -1) {
-      return;
+  set callback(callback) {
+    this._callback = callback;
+    if (this._callback == null) {
+      this.paused = true;
     }
-    if (isPaused) {
-      this._timer.cancel();
-      if (this._monitor) {
-        
-        this._monitor.dispose();
+  },
+  _callback: null,
+
+  set paused(paused) {
+    if (paused) {
+      if (this._listener) {
+        PerformanceWatcher.removePerformanceListener({addonId: "*"}, this._listener);
       }
-      this._monitor = null;
+      this._listener = null;
     } else {
-      this._monitor = PerformanceStats.getMonitor(["jank", "cpow"]);
-      this._timer.initWithCallback(this._checkAddons.bind(this), this._interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
+      this._listener = this._onSlowAddons.bind(this);
+      PerformanceWatcher.addPerformanceListener({addonId: "*"}, this._listener);
     }
-    this._isPaused = isPaused;
   },
   get paused() {
-    return this._isPaused;
+    return !this._listener;
   },
-  _isPaused: true,
+  _listener: null,
 
   
 
 
 
-  _isSystemTooBusy: function(deltaT, currentSnapshot, previousSnapshot) {
-    if (deltaT <= WAKEUP_IS_SURPRISINGLY_SLOW_FACTOR * this._interval) {
-      
-      return false;
+
+
+
+
+  _getAlerts: function(addonId) {
+    let alerts = this._alerts.get(addonId);
+    if (!alerts) {
+      alerts = {
+        occurrences: 0,
+        occurrencesSinceLastNotification: 0,
+        latestNotificationTimeStamp: 0,
+      };
+      this._alerts.set(addonId, alerts);
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (!previousSnapshot) {
-      
-      return true;
-    }
-
-    let diff = currentSnapshot.processData.subtract(previousSnapshot.processData);
-    if (diff.totalCPUTime >= deltaT * THREAD_TAKES_LOTS_OF_CPU_FACTOR ) {
-      
-      
-      
-      
-      
-      
-      return false;
-    }
-
-    
-    
-    return true;
+    return alerts;
   },
+  _alerts: new Map(),
+  _onSlowAddons: function(addons) {
+    try {
+      if (IdleService.idleTime >= this._idleThreshold) {
+        
+        
+        
+        return;
+      }
 
-  
+      if (addons.length > SUSPICIOUSLY_MANY_ADDONS) {
+        
+        
+        
+        
+        return;
+      }
 
+      let now = Cu.now();
+      if (now - this._initializedTimeStamp < this._warmupPeriod) {
+        
+        return;
+      }
 
-  _checkAddons: function() {
-    if (this.paused) {
-      return;
-    }
-    let previousWakeup = this._latestWakeup;
-    let currentWakeup = this._latestWakeup = Date.now();
+      let jankThreshold = Preferences.get("browser.addon-watch.jank-threshold-micros",  128000);
+      let occurrencesBetweenAlerts = Preferences.get("browser.addon-watch.occurrences-between-alerts", 3);
+      let delayBetweenAlerts = Preferences.get("browser.addon-watch.delay-between-alerts-ms", .5 * 3600 * 1000 );
+      let prescriptionDelay = Preferences.get("browser.addon-watch.prescription-delay", 2 * 3600 * 1000 );
+      let highestNumberOfAddonsToReport = Preferences.get("browser.addon-watch.max-simultaneous-reports", 1);
 
-    return Task.spawn(function*() {
-      try {
-        let previousSnapshot = this._latestSnapshot;
-        let snapshot = this._latestSnapshot = yield this._monitor.promiseSnapshot();
-        if (this.paused) {
+      addons = addons.filter(x => x.details.highestJank >= jankThreshold).
+        sort((a, b) => a.details.highestJank - b.details.highestJank);
+
+      
+      
+      for (let {source: {addonId}, details} of addons) {
+        Telemetry.getKeyedHistogramById("PERF_MONITORING_SLOW_ADDON_JANK_US").
+          add(addonId, details.highestJank);
+        Telemetry.getKeyedHistogramById("PERF_MONITORING_SLOW_ADDON_CPOW_US").
+          add(addonId, details.highestCPOW);
+      }
+
+      for (let {source: {addonId}, details} of addons) {
+        if (highestNumberOfAddonsToReport <= 0) {
           return;
         }
+        if (this._ignoreList.has(addonId)) {
+          
+          continue;
+        }
 
-        let isSystemTooBusy = this._isSystemTooBusy(currentWakeup - previousWakeup, snapshot, previousSnapshot);
-
-        let limits = {
+        let alerts = this._getAlerts(addonId);
+        if (now - alerts.latestOccurrence >= prescriptionDelay) {
           
           
-          longestDuration: Math.round(Math.log2(Preferences.get("browser.addon-watch.limits.longestDuration", 128))),
-        };
+          alerts.occurrencesSinceLastNotification = 0;
+        }
+
+        alerts.occurrencesSinceLastNotification++;
+        alerts.occurrences++;
+        if (alerts.occurrencesSinceLastNotification <= occurrencesBetweenAlerts) {
+          
+          
+          continue;
+        }
+        if (now - alerts.latestNotificationTimeStamp <= delayBetweenAlerts) {
+          
+          
+          continue;
+        }
 
         
-        let tolerance = Preferences.get("browser.addon-watch.tolerance", 3);
-
-        for (let [addonId, item] of snapshot.addons) {
-          if (this._ignoreList.has(addonId)) {
-            
-            
-            continue;
-          }
-
-          let previous = this._previousPerformanceIndicators[addonId];
-          this._previousPerformanceIndicators[addonId] = item;
-
-          if (!previous) {
-            
-            
-            
-            
-            
-            continue;
-          }
-          if (isSystemTooBusy) {
-            
-            
-            
-            return;
-          }
-
-          
-
-          let diff = item.subtract(previous);
-          if ("jank" in diff && diff.jank.longestDuration > 5) {
-            Telemetry.getKeyedHistogramById("MISBEHAVING_ADDONS_JANK_LEVEL").
-              add(addonId, diff.jank.longestDuration);
-          }
-          if ("cpow" in diff && diff.cpow.totalCPOWTime > 0) {
-            Telemetry.getKeyedHistogramById("MISBEHAVING_ADDONS_CPOW_TIME_MS").
-              add(addonId, diff.cpow.totalCPOWTime / 1000);
-          }
-
-          
-          let stats = this._stats.get(addonId);
-          if (!stats) {
-            stats = {
-              peaks: {},
-              alerts: {},
-            };
-            this._stats.set(addonId, stats);
-          }
-
-          
-
-          for (let {probe, field: filter} of FILTERS) {
-            let peak = stats.peaks[filter] || 0;
-            let value = diff[probe][filter];
-            stats.peaks[filter] = Math.max(value, peak);
-
-            if (limits[filter] <= 0 || value <= limits[filter]) {
-              continue;
-            }
-
-            stats.alerts[filter] = (stats.alerts[filter] || 0) + 1;
-
-            if (stats.alerts[filter] % tolerance != 0) {
-              continue;
-            }
-
-            try {
-              this._callback(addonId, filter);
-            } catch (ex) {
-              Cu.reportError("Error in AddonWatcher._checkAddons callback " + ex);
-              Cu.reportError(ex.stack);
-            }
-          }
+        alerts.latestNotificationTimeStamp = now;
+        alerts.occurrencesSinceLastNotification = 0;
+        try {
+          this._callback(addonId);
+        } catch (ex) {
+          Cu.reportError("Error in AddonWatcher callback " + ex);
+          Cu.reportError(Task.Debugging.generateReadableStack(ex.stack));
         }
-      } catch (ex) {
-        Cu.reportError("Error in AddonWatcher._checkAddons " + ex);
-        Cu.reportError(Task.Debugging.generateReadableStack(ex.stack));
+
+        highestNumberOfAddonsToReport--;
       }
-    }.bind(this));
+    } catch (ex) {
+      Cu.reportError("Error in AddonWatcher._onSlowAddons " + ex);
+      Cu.reportError(Task.Debugging.generateReadableStack(ex.stack));
+    }
   },
+
   ignoreAddonForSession: function(addonid) {
     this._ignoreList.add(addonid);
   },
@@ -296,6 +205,7 @@ var AddonWatcher = {
       Preferences.set("browser.addon-watch.ignore", JSON.stringify([addonid]));
     }
   },
+
   
 
 
@@ -310,7 +220,7 @@ var AddonWatcher = {
 
   get alerts() {
     let result = new Map();
-    for (let [k, v] of this._stats) {
+    for (let [k, v] of this._alerts) {
       result.set(k, Cu.cloneInto(v, this));
     }
     return result;
