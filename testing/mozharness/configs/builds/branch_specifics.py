@@ -228,6 +228,7 @@ config = {
     
     
     'date': {
+        'update_channel': 'beta-dev',
         'enable_release_promotion': 1,
         'platform_overrides': {
             'linux': {
