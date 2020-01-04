@@ -851,26 +851,6 @@ function emitTouchEvent(type, touch) {
 
 
 
-
-
-
-function coordinates(target, x, y) {
-  let box = target.getBoundingClientRect();
-  if (x == null) {
-    x = box.width / 2;
-  }
-  if (y == null) {
-    y = box.height / 2;
-  }
-  let coords = {};
-  coords.x = box.left + x;
-  coords.y = box.top + y;
-  return coords;
-}
-
-
-
-
 function singleTap(id, corx, cory) {
   let el = elementManager.getKnownElement(id, curContainer);
   
@@ -884,7 +864,7 @@ function singleTap(id, corx, cory) {
     if (!curContainer.frame.document.createTouch) {
       actions.mouseEventsOnly = true;
     }
-    let c = coordinates(el, corx, cory);
+    let c = element.coordinates(el, corx, cory);
     if (!actions.mouseEventsOnly) {
       let touchId = actions.nextTouchId++;
       let touch = createATouch(el, c.x, c.y, touchId);
@@ -996,7 +976,7 @@ function setDispatch(batches, touches, batchIndex=0) {
     switch (command) {
       case "press":
         el = elementManager.getKnownElement(pack[2], curContainer);
-        c = coordinates(el, pack[3], pack[4]);
+        c = element.coordinates(el, pack[3], pack[4]);
         touch = createATouch(el, c.x, c.y, touchId);
         multiLast[touchId] = touch;
         touches.push(touch);
@@ -1013,7 +993,7 @@ function setDispatch(batches, touches, batchIndex=0) {
 
       case "move":
         el = elementManager.getKnownElement(pack[2], curContainer);
-        c = coordinates(el);
+        c = element.coordinates(el);
         touch = createATouch(multiLast[touchId].target, c.x, c.y, touchId);
         touchIndex = touches.indexOf(lastTouch);
         touches[touchIndex] = touch;
