@@ -1532,7 +1532,8 @@ static const CheckCertHostnameParams CHECK_CERT_HOSTNAME_PARAMS[] =
 };
 
 ByteString
-CreateCert(const ByteString& subject, const ByteString& subjectAltName)
+CreateCert(const ByteString& subject, const ByteString& subjectAltName,
+           EndEntityOrCA endEntityOrCA = EndEntityOrCA::MustBeEndEntity)
 {
   ByteString serialNumber(CreateEncodedSerialNumber(1));
   EXPECT_FALSE(ENCODING_FAILED(serialNumber));
@@ -1543,6 +1544,17 @@ CreateCert(const ByteString& subject, const ByteString& subjectAltName)
   ByteString extensions[2];
   if (subjectAltName != NO_SAN) {
     extensions[0] = CreateEncodedSubjectAltName(subjectAltName);
+    EXPECT_FALSE(ENCODING_FAILED(extensions[0]));
+  }
+  if (endEntityOrCA == EndEntityOrCA::MustBeCA) {
+    
+    
+    
+    
+    
+    EXPECT_EQ(subjectAltName, NO_SAN);
+    extensions[0] = CreateEncodedBasicConstraints(true, nullptr,
+                                                  Critical::Yes);
     EXPECT_FALSE(ENCODING_FAILED(extensions[0]));
   }
 
@@ -2504,6 +2516,56 @@ static const NameConstraintParams NAME_CONSTRAINT_PARAMS[] =
                                               RDN(CN("example.com"))))),
     Result::ERROR_CERT_NOT_IN_NAME_SPACE, Result::ERROR_CERT_NOT_IN_NAME_SPACE
   },
+  
+  
+  { RDN(CN("*.example.com")), NO_SAN, GeneralSubtree(DNSName("example.com")),
+    Success, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { ByteString(), DNSName("*.example.com"),
+    GeneralSubtree(DNSName("example.com")),
+    Success, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { ByteString(), DNSName("www.example.com"),
+    GeneralSubtree(DNSName("*.example.com")),
+    Result::ERROR_BAD_DER, Result::ERROR_BAD_DER
+  },
+  
+  { RDN(CN("example.com")), NO_SAN,
+    GeneralSubtree(DNSName("example.org")) +
+      GeneralSubtree(DNSName("example.com")),
+    Success, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { ByteString(), DNSName("example.com"),
+    GeneralSubtree(DNSName("example.org")) +
+      GeneralSubtree(DNSName("example.com")),
+    Success, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  
+  { ByteString(), DNSName("example.com") + DNSName("example.org"),
+    GeneralSubtree(DNSName("example.com")),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  
+  { RDN(OU("Example Organization")), DNSName("example.com"),
+    GeneralSubtree(DirectoryName(Name(RDN(OU("Example Organization"))))) +
+      GeneralSubtree(DNSName("example.com")),
+    Success, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { RDN(OU("Other Example Organization")), DNSName("example.com"),
+    GeneralSubtree(DirectoryName(Name(RDN(OU("Example Organization"))))) +
+      GeneralSubtree(DNSName("example.com")),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { RDN(OU("Example Organization")), DNSName("example.org"),
+    GeneralSubtree(DirectoryName(Name(RDN(OU("Example Organization"))))) +
+      GeneralSubtree(DNSName("example.com")),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  
+  { ByteString(), DNSName("example.com"),
+    GeneralSubtree(DirectoryName(Name(RDN(OU("Example Organization"))))),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
 };
 
 class pkixnames_CheckNameConstraints
@@ -2569,3 +2631,156 @@ TEST_P(pkixnames_CheckNameConstraints,
 INSTANTIATE_TEST_CASE_P(pkixnames_CheckNameConstraints,
                         pkixnames_CheckNameConstraints,
                         testing::ValuesIn(NAME_CONSTRAINT_PARAMS));
+
+
+
+static const NameConstraintParams NO_FALLBACK_NAME_CONSTRAINT_PARAMS[] =
+{
+  
+  
+  
+  
+  { RDN(CN("Not a DNSName")), NO_SAN, GeneralSubtree(DNSName("a.example.com")),
+    Success, Success
+  },
+  { RDN(CN("a.example.com")), NO_SAN, GeneralSubtree(DNSName("a.example.com")),
+    Success, Success
+  },
+  { RDN(CN("b.example.com")), NO_SAN, GeneralSubtree(DNSName("a.example.com")),
+    Success, Success
+  },
+  
+  { RDN(CN("Example Name")), NO_SAN,
+    GeneralSubtree(DirectoryName(Name(RDN(CN("Example Name"))))),
+    Success, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  
+  
+  { RDN(CN("Other Example Name")), NO_SAN,
+    GeneralSubtree(DirectoryName(Name(RDN(CN("Example Name"))))),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE, Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+};
+
+class pkixnames_CheckNameConstraintsOnIntermediate
+  : public ::testing::Test
+  , public ::testing::WithParamInterface<NameConstraintParams>
+{
+};
+
+TEST_P(pkixnames_CheckNameConstraintsOnIntermediate,
+       NameConstraintsEnforcedOnIntermediate)
+{
+  
+  
+
+  const NameConstraintParams& param(GetParam());
+
+  ByteString certDER(CreateCert(param.subject, NO_SAN,
+                                EndEntityOrCA::MustBeCA));
+  ASSERT_FALSE(ENCODING_FAILED(certDER));
+  Input certInput;
+  ASSERT_EQ(Success, certInput.Init(certDER.data(), certDER.length()));
+  BackCert cert(certInput, EndEntityOrCA::MustBeCA, nullptr);
+  ASSERT_EQ(Success, cert.Init());
+
+  {
+    ByteString nameConstraintsDER(TLV(der::SEQUENCE,
+                                      PermittedSubtrees(param.subtrees)));
+    Input nameConstraints;
+    ASSERT_EQ(Success,
+              nameConstraints.Init(nameConstraintsDER.data(),
+                                   nameConstraintsDER.length()));
+    ASSERT_EQ(param.expectedPermittedSubtreesResult,
+              CheckNameConstraints(nameConstraints, cert,
+                                   KeyPurposeId::id_kp_serverAuth));
+  }
+  {
+    ByteString nameConstraintsDER(TLV(der::SEQUENCE,
+                                      ExcludedSubtrees(param.subtrees)));
+    Input nameConstraints;
+    ASSERT_EQ(Success,
+              nameConstraints.Init(nameConstraintsDER.data(),
+                                   nameConstraintsDER.length()));
+    ASSERT_EQ(param.expectedExcludedSubtreesResult,
+              CheckNameConstraints(nameConstraints, cert,
+                                   KeyPurposeId::id_kp_serverAuth));
+  }
+  {
+    ByteString nameConstraintsDER(TLV(der::SEQUENCE,
+                                      PermittedSubtrees(param.subtrees) +
+                                      ExcludedSubtrees(param.subtrees)));
+    Input nameConstraints;
+    ASSERT_EQ(Success,
+              nameConstraints.Init(nameConstraintsDER.data(),
+                                   nameConstraintsDER.length()));
+    ASSERT_EQ(param.expectedExcludedSubtreesResult,
+              CheckNameConstraints(nameConstraints, cert,
+                                   KeyPurposeId::id_kp_serverAuth));
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(pkixnames_CheckNameConstraintsOnIntermediate,
+                        pkixnames_CheckNameConstraintsOnIntermediate,
+                        testing::ValuesIn(NO_FALLBACK_NAME_CONSTRAINT_PARAMS));
+
+class pkixnames_CheckNameConstraintsForNonServerAuthUsage
+  : public ::testing::Test
+  , public ::testing::WithParamInterface<NameConstraintParams>
+{
+};
+
+TEST_P(pkixnames_CheckNameConstraintsForNonServerAuthUsage,
+       NameConstraintsEnforcedForNonServerAuthUsage)
+{
+  
+  
+
+  const NameConstraintParams& param(GetParam());
+
+  ByteString certDER(CreateCert(param.subject, NO_SAN));
+  ASSERT_FALSE(ENCODING_FAILED(certDER));
+  Input certInput;
+  ASSERT_EQ(Success, certInput.Init(certDER.data(), certDER.length()));
+  BackCert cert(certInput, EndEntityOrCA::MustBeEndEntity, nullptr);
+  ASSERT_EQ(Success, cert.Init());
+
+  {
+    ByteString nameConstraintsDER(TLV(der::SEQUENCE,
+                                      PermittedSubtrees(param.subtrees)));
+    Input nameConstraints;
+    ASSERT_EQ(Success,
+              nameConstraints.Init(nameConstraintsDER.data(),
+                                   nameConstraintsDER.length()));
+    ASSERT_EQ(param.expectedPermittedSubtreesResult,
+              CheckNameConstraints(nameConstraints, cert,
+                                   KeyPurposeId::id_kp_clientAuth));
+  }
+  {
+    ByteString nameConstraintsDER(TLV(der::SEQUENCE,
+                                      ExcludedSubtrees(param.subtrees)));
+    Input nameConstraints;
+    ASSERT_EQ(Success,
+              nameConstraints.Init(nameConstraintsDER.data(),
+                                   nameConstraintsDER.length()));
+    ASSERT_EQ(param.expectedExcludedSubtreesResult,
+              CheckNameConstraints(nameConstraints, cert,
+                                   KeyPurposeId::id_kp_clientAuth));
+  }
+  {
+    ByteString nameConstraintsDER(TLV(der::SEQUENCE,
+                                      PermittedSubtrees(param.subtrees) +
+                                      ExcludedSubtrees(param.subtrees)));
+    Input nameConstraints;
+    ASSERT_EQ(Success,
+              nameConstraints.Init(nameConstraintsDER.data(),
+                                   nameConstraintsDER.length()));
+    ASSERT_EQ(param.expectedExcludedSubtreesResult,
+              CheckNameConstraints(nameConstraints, cert,
+                                   KeyPurposeId::id_kp_clientAuth));
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(pkixnames_CheckNameConstraintsForNonServerAuthUsage,
+                        pkixnames_CheckNameConstraintsForNonServerAuthUsage,
+                        testing::ValuesIn(NO_FALLBACK_NAME_CONSTRAINT_PARAMS));
