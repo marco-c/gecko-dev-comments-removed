@@ -161,12 +161,7 @@ public:
 
 
 
-  void NotifyOwnerDocumentActivityChanged();
-
-  
-  
-  
-  virtual bool NotifyOwnerDocumentActivityChangedInternal();
+  virtual void NotifyOwnerDocumentActivityChanged();
 
   
   

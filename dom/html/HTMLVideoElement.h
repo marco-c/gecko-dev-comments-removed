@@ -128,7 +128,7 @@ public:
 
   void SetMozUseScreenWakeLock(bool aValue);
 
-  bool NotifyOwnerDocumentActivityChangedInternal() override;
+  void NotifyOwnerDocumentActivityChanged() override;
 
   
   FrameStatistics* GetFrameStatistics();
