@@ -309,7 +309,6 @@ protected:
   
   
   void UpdateTargetRegistration();
-  void UnregisterFromTarget();
 
   static AnimationTiming ConvertKeyframeEffectOptions(
     const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions);

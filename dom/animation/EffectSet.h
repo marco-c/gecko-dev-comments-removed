@@ -40,6 +40,9 @@ public:
   static void PropertyDtor(void* aObject, nsIAtom* aPropertyName,
                            void* aPropertyValue, void* aData);
 
+  
+  void Traverse(nsCycleCollectionTraversalCallback& aCallback);
+
   static EffectSet* GetEffectSet(dom::Element* aElement,
                                  nsCSSPseudoElements::Type aPseudoType);
   static EffectSet* GetOrCreateEffectSet(dom::Element* aElement,
@@ -49,11 +52,8 @@ public:
   void RemoveEffect(dom::KeyframeEffectReadOnly& aEffect);
 
 private:
-  
-  
-  
-  
-  typedef nsTHashtable<nsPtrHashKey<dom::KeyframeEffectReadOnly>> EffectPtrSet;
+  typedef nsTHashtable<nsRefPtrHashKey<dom::KeyframeEffectReadOnly>>
+    OwningEffectSet;
 
 public:
   
@@ -65,14 +65,14 @@ public:
   class Iterator
   {
   public:
-    explicit Iterator(EffectPtrSet::Iterator&& aHashIterator)
+    explicit Iterator(OwningEffectSet::Iterator&& aHashIterator)
       : mHashIterator(mozilla::Move(aHashIterator))
       , mIsEndIterator(false) { }
     Iterator(Iterator&& aOther)
       : mHashIterator(mozilla::Move(aOther.mHashIterator))
       , mIsEndIterator(aOther.mIsEndIterator) { }
 
-    static Iterator EndIterator(EffectPtrSet::Iterator&& aHashIterator)
+    static Iterator EndIterator(OwningEffectSet::Iterator&& aHashIterator)
     {
       Iterator result(mozilla::Move(aHashIterator));
       result.mIsEndIterator = true;
@@ -108,7 +108,7 @@ public:
       return mIsEndIterator || mHashIterator.Done();
     }
 
-    EffectPtrSet::Iterator mHashIterator;
+    OwningEffectSet::Iterator mHashIterator;
     bool mIsEndIterator;
   };
 
@@ -118,11 +118,13 @@ public:
     return Iterator::EndIterator(mEffects.Iter());
   }
 
+  static nsIAtom** GetEffectSetPropertyAtoms();
+
 private:
   static nsIAtom* GetEffectSetPropertyAtom(nsCSSPseudoElements::Type
                                              aPseudoType);
 
-  EffectPtrSet mEffects;
+  OwningEffectSet mEffects;
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;
