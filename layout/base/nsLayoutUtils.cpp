@@ -1001,6 +1001,19 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
                                 * nsLayoutUtils::GetTransformToAncestorScale(frame));
 
   
+  
+  nsRect expandedScrollableRect =
+    nsLayoutUtils::CalculateExpandedScrollableRect(frame);
+
+  
+  
+  
+  if (res == LayoutDeviceToScreenScale2D(0, 0)) {
+    
+    return base.MoveInsideAndClamp(expandedScrollableRect - scrollPos);
+  }
+
+  
   LayoutDeviceToScreenScale2D parentRes = res;
   if (isRoot) {
     
@@ -1113,8 +1126,6 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   result = ApplyRectMultiplier(result, aMultiplier);
 
   
-  nsRect expandedScrollableRect =
-    nsLayoutUtils::CalculateExpandedScrollableRect(frame);
   result = result.MoveInsideAndClamp(expandedScrollableRect - scrollPos);
 
   return result;

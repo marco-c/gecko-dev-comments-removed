@@ -179,11 +179,17 @@ public:
 
   CSSSize CalculateCompositedSizeInCssPixels() const
   {
+    if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
+      return CSSSize();  
+    }
     return mCompositionBounds.Size() / GetZoom();
   }
 
   CSSRect CalculateCompositedRectInCssPixels() const
   {
+    if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
+      return CSSRect();  
+    }
     return mCompositionBounds / GetZoom();
   }
 
