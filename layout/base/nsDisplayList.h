@@ -1067,6 +1067,7 @@ public:
     : mFrame(aFrame)
     , mClip(nullptr)
     , mReferenceFrame(nullptr)
+    , mAnimatedGeometryRoot(nullptr)
 #ifdef MOZ_DUMP_PAINTING
     , mPainted(false)
 #endif
@@ -1513,6 +1514,11 @@ public:
 
   virtual const nsIFrame* ReferenceFrameForChildren() const { return mReferenceFrame; }
 
+  nsIFrame* AnimatedGeometryRoot() const {
+    MOZ_ASSERT(mAnimatedGeometryRoot, "Must have cached AGR before accessing it!");
+    return mAnimatedGeometryRoot;
+  }
+
   
 
 
@@ -1568,6 +1574,7 @@ protected:
   const DisplayItemClip* mClip;
   
   const nsIFrame* mReferenceFrame;
+  nsIFrame* mAnimatedGeometryRoot;
   
   nsPoint   mToReferenceFrame;
   
