@@ -595,6 +595,11 @@ nsFilePicker::ShowFolderPicker(const nsString& aInitialDir, bool &aWasInitError)
  
   
   dialog->SetTitle(mTitle.get());
+
+  if (!mOkButtonLabel.IsEmpty()) {
+    dialog->SetOkButtonLabel(mOkButtonLabel.get());
+  }
+
   if (!aInitialDir.IsEmpty()) {
     RefPtr<IShellItem> folder;
     if (SUCCEEDED(
