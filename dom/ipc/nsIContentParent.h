@@ -82,6 +82,8 @@ public:
 
   ContentBridgeParent* AsContentBridgeParent();
 
+  virtual int32_t Pid() const = 0;
+
 protected: 
   bool CanOpenBrowser(const IPCTabContext& aContext);
 
