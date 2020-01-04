@@ -377,7 +377,7 @@ public class GeckoThread extends Thread {
         } else {
             
             final GeckoProfile profile = getProfile();
-            profile.forceCreate();
+            profile.getDir(); 
 
             
             if (args == null || !args.matches(".*\\B-(P|profile)\\s+\\S+.*")) {

@@ -557,13 +557,21 @@ public final class GeckoProfile {
         return CUSTOM_PROFILE.equals(mName);
     }
 
+    
+
+
+
     @RobocopTarget
     public synchronized File getDir() {
         forceCreate();
         return mProfileDir;
     }
 
-    public synchronized GeckoProfile forceCreate() {
+    
+
+
+
+    private synchronized GeckoProfile forceCreate() {
         if (mProfileDir != null) {
             return this;
         }
