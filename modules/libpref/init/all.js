@@ -2341,9 +2341,6 @@ pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 pref("layout.css.clip-path-shapes.enabled", false);
 
 
-pref("layout.css.sticky.enabled", true);
-
-
 pref("layout.css.DOMPoint.enabled", true);
 
 

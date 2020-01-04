@@ -794,9 +794,7 @@ public:
   static const KTableEntry kPageSizeKTable[];
   static const KTableEntry kPitchKTable[];
   static const KTableEntry kPointerEventsKTable[];
-  
-  
-  static KTableEntry kPositionKTable[];
+  static const KTableEntry kPositionKTable[];
   static const KTableEntry kRadialGradientShapeKTable[];
   static const KTableEntry kRadialGradientSizeKTable[];
   static const KTableEntry kRadialGradientLegacySizeKTable[];
