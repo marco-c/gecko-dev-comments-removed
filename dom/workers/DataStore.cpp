@@ -962,7 +962,7 @@ DataStoreChangeEventProxy::HandleEvent(nsIDOMEvent* aEvent)
 
 
 bool
-DataStoreChangeEventProxy::Notify(JSContext* aCx, Status aStatus)
+DataStoreChangeEventProxy::Notify(Status aStatus)
 {
   MutexAutoLock lock(mCleanUpLock);
 
@@ -974,7 +974,6 @@ DataStoreChangeEventProxy::Notify(JSContext* aCx, Status aStatus)
 
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(mWorkerPrivate->GetJSContext() == aCx);
 
   
   

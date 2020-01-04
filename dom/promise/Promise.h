@@ -62,7 +62,7 @@ public:
   }
 
   virtual bool
-  Notify(JSContext* aCx, workers::Status aStatus) override;
+  Notify(workers::Status aStatus) override;
 };
 #endif 
 
