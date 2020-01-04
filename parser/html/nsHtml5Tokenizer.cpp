@@ -229,7 +229,7 @@ nsHtml5Tokenizer::appendStrBuf(char16_t c)
 nsString* 
 nsHtml5Tokenizer::strBufToString()
 {
-  return nsHtml5Portability::newStringFromBuffer(strBuf, 0, strBufLen);
+  return nsHtml5Portability::newStringFromBuffer(strBuf, 0, strBufLen, tokenHandler);
 }
 
 void 

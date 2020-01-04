@@ -3184,7 +3184,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
 
 
-    public static String extractCharsetFromContent(String attributeValue) {
+    public static String extractCharsetFromContent(String attributeValue
+        
+    ) {
         
         
         int charsetState = CHARSET_INITIAL;
@@ -3336,7 +3338,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 end = buffer.length;
             }
             charset = Portability.newStringFromBuffer(buffer, start, end
-                    - start);
+                    - start
+                
+            );
         }
         return charset;
     }
@@ -3358,7 +3362,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         }
         String content = attributes.getValue(AttributeName.CONTENT);
         if (content != null) {
-            String extract = TreeBuilder.extractCharsetFromContent(content);
+            String extract = TreeBuilder.extractCharsetFromContent(content
+                
+            );
             
             if (extract != null) {
                 if (tokenizer.internalEncodingDeclaration(extract)) {

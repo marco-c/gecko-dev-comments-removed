@@ -79,8 +79,9 @@ class nsHtml5MetaScanner
     nsString* content;
     nsString* charset;
     int32_t httpEquivState;
+    nsHtml5TreeBuilder* treeBuilder;
   public:
-    nsHtml5MetaScanner();
+    explicit nsHtml5MetaScanner(nsHtml5TreeBuilder* tb);
     ~nsHtml5MetaScanner();
   protected:
     void stateLoop(int32_t state);

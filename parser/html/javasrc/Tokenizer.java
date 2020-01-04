@@ -855,7 +855,9 @@ public class Tokenizer implements Locator {
 
 
     protected String strBufToString() {
-        return Portability.newStringFromBuffer(strBuf, 0, strBufLen);
+        return Portability.newStringFromBuffer(strBuf, 0, strBufLen
+            
+        );
     }
 
     

@@ -59,7 +59,7 @@ class nsHtml5Portability
 {
   public:
     static nsIAtom* newLocalNameFromBuffer(char16_t* buf, int32_t offset, int32_t length, nsHtml5AtomTable* interner);
-    static nsString* newStringFromBuffer(char16_t* buf, int32_t offset, int32_t length);
+    static nsString* newStringFromBuffer(char16_t* buf, int32_t offset, int32_t length, nsHtml5TreeBuilder* treeBuilder);
     static nsString* newEmptyString();
     static nsString* newStringFromLiteral(const char* literal);
     static nsString* newStringFromString(nsString* string);

@@ -119,7 +119,7 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState
     bool isTemplateModeStackEmpty();
     bool isSpecialParentInForeign(nsHtml5StackNode* stackNode);
   public:
-    static nsString* extractCharsetFromContent(nsString* attributeValue);
+    static nsString* extractCharsetFromContent(nsString* attributeValue, nsHtml5TreeBuilder* tb);
   private:
     void checkMetaCharset(nsHtml5HtmlAttributes* attributes);
   public:
