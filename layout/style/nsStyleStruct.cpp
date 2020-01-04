@@ -156,7 +156,7 @@ nsStyleFont::nsStyleFont(StyleStructContext aContext)
 {
 }
 
-void 
+void
 nsStyleFont::Destroy(nsPresContext* aContext) {
   this->~nsStyleFont();
   aContext->PresShell()->
@@ -272,7 +272,7 @@ nsStyleMargin::nsStyleMargin(const nsStyleMargin& aSrc)
   MOZ_COUNT_CTOR(nsStyleMargin);
 }
 
-void 
+void
 nsStyleMargin::Destroy(nsPresContext* aContext) {
   this->~nsStyleMargin();
   aContext->PresShell()->
@@ -307,7 +307,7 @@ nsStylePadding::nsStylePadding(const nsStylePadding& aSrc)
   MOZ_COUNT_CTOR(nsStylePadding);
 }
 
-void 
+void
 nsStylePadding::Destroy(nsPresContext* aContext) {
   this->~nsStylePadding();
   aContext->PresShell()->
@@ -560,7 +560,7 @@ nsStyleOutline::nsStyleOutline(const nsStyleOutline& aSrc)
   MOZ_COUNT_CTOR(nsStyleOutline);
 }
 
-void 
+void
 nsStyleOutline::RecalcData()
 {
   if (NS_STYLE_BORDER_STYLE_NONE == GetOutlineStyle()) {
@@ -608,7 +608,7 @@ nsStyleOutline::CalcDifference(const nsStyleOutline& aNewData) const
 
 
 
-nsStyleList::nsStyleList(StyleStructContext aContext) 
+nsStyleList::nsStyleList(StyleStructContext aContext)
   : mListStylePosition(NS_STYLE_LIST_STYLE_POSITION_OUTSIDE)
   , mCounterStyle(aContext.BuildCounterStyle(NS_LITERAL_STRING("disc")))
 {
@@ -616,7 +616,7 @@ nsStyleList::nsStyleList(StyleStructContext aContext)
   SetQuotesInitial();
 }
 
-nsStyleList::~nsStyleList() 
+nsStyleList::~nsStyleList()
 {
   MOZ_COUNT_DTOR(nsStyleList);
 }
