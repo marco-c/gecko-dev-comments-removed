@@ -1943,7 +1943,7 @@ pref("view_source.tab", true);
 
 pref("dom.serviceWorkers.enabled", true);
 
-#ifdef NIGHTLY_BUILD
+#ifndef RELEASE_BUILD
 pref("dom.serviceWorkers.interception.enabled", true);
 #endif
 
