@@ -63,15 +63,25 @@ SVGTransformableElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
     if (!frame || (frame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
       return retval;
     }
+
+    bool isAdditionOrRemoval = false;
     if (aModType == nsIDOMMutationEvent::ADDITION ||
-        aModType == nsIDOMMutationEvent::REMOVAL ||
-        (aModType == nsIDOMMutationEvent::MODIFICATION &&
-         !(mTransforms && mTransforms->HasTransform()))) {
-      
-      NS_UpdateHint(retval, nsChangeHint_ReconstructFrame);
+        aModType == nsIDOMMutationEvent::REMOVAL) {
+      isAdditionOrRemoval = true;
     } else {
       MOZ_ASSERT(aModType == nsIDOMMutationEvent::MODIFICATION,
                  "Unknown modification type.");
+      if (!mTransforms ||
+          !mTransforms->HasTransform()) {
+        
+        isAdditionOrRemoval = true;
+      }
+    }
+
+    if (isAdditionOrRemoval) {
+      
+      NS_UpdateHint(retval, nsChangeHint_ReconstructFrame);
+    } else {
       
       NS_UpdateHint(retval, NS_CombineHint(nsChangeHint_UpdatePostTransformOverflow,
                                            nsChangeHint_UpdateTransformLayer));
