@@ -219,9 +219,6 @@ public:
   virtual bool IsHidden() const final override;
 
   
-  VideoFrameContainer* GetOverlayImageVideoFrameContainer();
-
-  
   
   B2G_ACL_EXPORT virtual VideoFrameContainer* GetVideoFrameContainer() final override;
   layers::ImageContainer* GetImageContainer();

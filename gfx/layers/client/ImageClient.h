@@ -140,28 +140,6 @@ protected:
   uint64_t mAsyncContainerID;
 };
 
-#ifdef MOZ_WIDGET_GONK
-
-
-
-
-
-
-
-class ImageClientOverlay : public ImageClient
-{
-public:
-  ImageClientOverlay(CompositableForwarder* aFwd,
-                     TextureFlags aFlags);
-
-  virtual bool UpdateImage(ImageContainer* aContainer, uint32_t aContentFlags);
-  TextureInfo GetTextureInfo() const override
-  {
-    return TextureInfo(CompositableType::IMAGE_OVERLAY);
-  }
-};
-#endif
-
 } 
 } 
 
