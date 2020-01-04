@@ -693,12 +693,6 @@ bool NS_GetOriginAttributes(nsIChannel *aChannel,
 
 
 
-
-
-bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
-
-
-
 #define NECKO_NO_APP_ID 0
 #define NECKO_UNKNOWN_APP_ID UINT32_MAX
 

@@ -50,7 +50,6 @@
 #include "CaptivePortalService.h"
 #include "ClosingService.h"
 #include "ReferrerPolicy.h"
-#include "nsContentSecurityManager.h"
 
 #ifdef MOZ_WIDGET_GONK
 #include "nsINetworkManager.h"
@@ -416,11 +415,8 @@ nsIOService::AsyncOnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
     
     RecheckCaptivePortalIfLocalRedirect(newChan);
 
-    
-    
-    
     nsCOMPtr<nsIChannelEventSink> sink =
-        do_GetService(NS_CONTENTSECURITYMANAGER_CONTRACTID);
+        do_GetService(NS_GLOBAL_CHANNELEVENTSINK_CONTRACTID);
     if (sink) {
         nsresult rv = helper->DelegateOnChannelRedirect(sink, oldChan,
                                                         newChan, flags);

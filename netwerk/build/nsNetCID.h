@@ -1010,6 +1010,15 @@
 
 
 
+#define NS_GLOBAL_CHANNELEVENTSINK_CONTRACTID \
+  "@mozilla.org/netwerk/global-channel-event-sink;1"
+
+
+
+
+
+
+
 #define NS_NETWORK_LINK_SERVICE_CONTRACTID \
   "@mozilla.org/network/network-link-service;1"
 

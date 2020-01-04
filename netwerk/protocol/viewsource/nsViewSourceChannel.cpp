@@ -966,10 +966,3 @@ nsViewSourceChannel::SetIsMainDocumentChannel(bool aValue)
     return !mHttpChannel ? NS_ERROR_NULL_POINTER :
         mHttpChannel->SetIsMainDocumentChannel(aValue);
 }
-
-
-void
-nsViewSourceChannel::SetCorsPreflightParameters(const nsTArray<nsCString>& aUnsafeHeaders)
-{
-  mHttpChannelInternal->SetCorsPreflightParameters(aUnsafeHeaders);
-}

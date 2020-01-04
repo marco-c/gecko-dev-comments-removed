@@ -821,8 +821,6 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   rv = aChannel->GetOriginalURI(getter_AddRefs(originalURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-
   
   if (aAllowDataURI == DataURIHandling::Allow && originalURI == uri) {
     bool dataScheme = false;
@@ -831,6 +829,8 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
     if (dataScheme) {
       return NS_OK;
     }
+    nsCOMPtr<nsILoadInfo> loadInfo;
+    aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
     if (loadInfo && loadInfo->GetAboutBlankInherits() &&
         NS_IsAboutBlank(uri)) {
       return NS_OK;
@@ -882,11 +882,6 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   }
 
   
-  
-  rv = CheckPreflightNeeded(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
   mHasBeenCrossSite = true;
 
   nsCString userpass;
@@ -905,10 +900,7 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
-  
-  if (!mWithCredentials &&
-      (!loadInfo || !loadInfo->GetEnforceSecurity())) {
+  if (!mWithCredentials) {
     nsLoadFlags flags;
     rv = http->GetLoadFlags(&flags);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -917,71 +909,6 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
     rv = http->SetLoadFlags(flags);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-
-  return NS_OK;
-}
-
-nsresult
-nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel)
-{
-  
-  
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-  if (!loadInfo ||
-      loadInfo->GetSecurityMode() !=
-        nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS ||
-      loadInfo->GetIsPreflight()) {
-    return NS_OK;
-  }
-
-  bool doPreflight = loadInfo->GetForcePreflight();
-
-  nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aChannel);
-  NS_ENSURE_TRUE(http, NS_ERROR_DOM_BAD_URI);
-  nsAutoCString method;
-  http->GetRequestMethod(method);
-  if (!method.LowerCaseEqualsLiteral("get") &&
-      !method.LowerCaseEqualsLiteral("post") &&
-      !method.LowerCaseEqualsLiteral("head")) {
-    doPreflight = true;
-  }
-
-  
-  const nsTArray<nsCString>& loadInfoHeaders = loadInfo->CorsUnsafeHeaders();
-  if (!loadInfoHeaders.IsEmpty()) {
-    doPreflight = true;
-  }
-
-  
-  nsTArray<nsCString> headers;
-  nsAutoCString contentTypeHeader;
-  nsresult rv = http->GetRequestHeader(NS_LITERAL_CSTRING("Content-Type"),
-                                       contentTypeHeader);
-  
-  
-  if (NS_SUCCEEDED(rv) &&
-      !nsContentUtils::IsAllowedNonCorsContentType(contentTypeHeader) &&
-      !loadInfoHeaders.Contains(NS_LITERAL_CSTRING("content-type"),
-                                nsCaseInsensitiveCStringArrayComparator())) {
-    headers.AppendElements(loadInfoHeaders);
-    headers.AppendElement(NS_LITERAL_CSTRING("content-type"));
-    doPreflight = true;
-  }
-
-  if (!doPreflight) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  NS_ENSURE_FALSE(mHasBeenCrossSite, NS_ERROR_DOM_BAD_URI);
-
-  nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(http);
-  NS_ENSURE_TRUE(internal, NS_ERROR_DOM_BAD_URI);
-
-  internal->SetCorsPreflightParameters(
-    headers.IsEmpty() ? loadInfoHeaders : headers);
 
   return NS_OK;
 }
@@ -1309,7 +1236,9 @@ nsCORSListenerProxy::RemoveFromCorsPreflightCache(nsIURI* aURI,
 
 nsresult
 nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
+                                        nsIPrincipal* aPrincipal,
                                         nsICorsPreflightCallback* aCallback,
+                                        bool aWithCredentials,
                                         nsTArray<nsCString>& aUnsafeHeaders,
                                         nsIChannel** aPreflightChannel)
 {
@@ -1335,17 +1264,18 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
     return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(originalLoadInfo->GetSecurityMode() ==
-             nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
-             "how did we end up here?");
+  nsCOMPtr<nsILoadInfo> loadInfo = static_cast<mozilla::LoadInfo*>
+    (originalLoadInfo.get())->CloneForNewRequest();
 
-  nsCOMPtr<nsIPrincipal> principal = originalLoadInfo->LoadingPrincipal();
-  bool withCredentials = originalLoadInfo->GetCookiePolicy() ==
-    nsILoadInfo::SEC_COOKIES_INCLUDE;
+  nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
+
+  MOZ_ASSERT(securityMode == 0 ||
+             securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
+             "how did we end up here?");
 
   nsPreflightCache::CacheEntry* entry =
     sPreflightCache ?
-    sPreflightCache->GetEntry(uri, principal, withCredentials, false) :
+    sPreflightCache->GetEntry(uri, aPrincipal, aWithCredentials, false) :
     nullptr;
 
   if (entry && entry->CheckRequest(method, aUnsafeHeaders)) {
@@ -1355,10 +1285,6 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
 
   
   
-
-  nsCOMPtr<nsILoadInfo> loadInfo = static_cast<mozilla::LoadInfo*>
-    (originalLoadInfo.get())->CloneForNewRequest();
-  static_cast<mozilla::LoadInfo*>(loadInfo.get())->SetIsPreflight();
 
   nsCOMPtr<nsILoadGroup> loadGroup;
   rv = aRequestChannel->GetLoadGroup(getter_AddRefs(loadGroup));
@@ -1421,14 +1347,24 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
 
   
   RefPtr<nsCORSPreflightListener> preflightListener =
-    new nsCORSPreflightListener(principal, aCallback, withCredentials,
+    new nsCORSPreflightListener(aPrincipal, aCallback, aWithCredentials,
                                 method, preflightHeaders);
 
   rv = preflightChannel->SetNotificationCallbacks(preflightListener);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = preflightChannel->AsyncOpen2(preflightListener);
+  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+    rv = preflightChannel->AsyncOpen2(preflightListener);
+  }
+  else {
+    RefPtr<nsCORSListenerProxy> corsListener =
+      new nsCORSListenerProxy(preflightListener, aPrincipal,
+                              aWithCredentials);
+    rv = corsListener->Init(preflightChannel, DataURIHandling::Disallow);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = preflightChannel->AsyncOpen(corsListener, nullptr);
+  }
   NS_ENSURE_SUCCESS(rv, rv);
   
   

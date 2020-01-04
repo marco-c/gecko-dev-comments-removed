@@ -61,8 +61,6 @@ public:
   
   already_AddRefed<nsILoadInfo> CloneForNewRequest() const;
 
-  void SetIsPreflight();
-
 private:
   
   
@@ -72,7 +70,6 @@ private:
            nsIPrincipal* aTriggeringPrincipal,
            nsSecurityFlags aSecurityFlags,
            nsContentPolicyType aContentPolicyType,
-           LoadTainting aTainting,
            bool aUpgradeInsecureRequests,
            bool aUpgradeInsecurePreloads,
            uint64_t aInnerWindowID,
@@ -83,10 +80,7 @@ private:
            bool aIsThirdPartyRequest,
            const NeckoOriginAttributes& aOriginAttributes,
            nsTArray<nsCOMPtr<nsIPrincipal>>& aRedirectChainIncludingInternalRedirects,
-           nsTArray<nsCOMPtr<nsIPrincipal>>& aRedirectChain,
-           const nsTArray<nsCString>& aUnsafeHeaders,
-           bool aForcePreflight,
-           bool aIsPreflight);
+           nsTArray<nsCOMPtr<nsIPrincipal>>& aRedirectChain);
   LoadInfo(const LoadInfo& rhs);
 
   friend nsresult
@@ -101,7 +95,7 @@ private:
   
   
   
-  void SetIncludeCookiesSecFlag();
+  void SetWithCredentialsSecFlag();
   friend class ::nsXMLHttpRequest;
 
   
@@ -122,9 +116,6 @@ private:
   NeckoOriginAttributes            mOriginAttributes;
   nsTArray<nsCOMPtr<nsIPrincipal>> mRedirectChainIncludingInternalRedirects;
   nsTArray<nsCOMPtr<nsIPrincipal>> mRedirectChain;
-  nsTArray<nsCString>              mCorsUnsafeHeaders;
-  bool                             mForcePreflight;
-  bool                             mIsPreflight;
 };
 
 } 
