@@ -410,6 +410,9 @@ InputQueue::MaybeRequestContentResponse(const RefPtr<AsyncPanZoomController>& aT
     
     
     
+    
+    
+    INPQ_LOG("waiting for main thread touch-action info on block %p\n", aBlock);
     waitForMainThread = true;
   }
   if (waitForMainThread) {
