@@ -69,6 +69,15 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
 
 
 
+void
+MacroAssembler::rshiftPtr(Imm32 imm, Register dest)
+{
+    shrq(imm, dest);
+}
+
+
+
+
 } 
 } 
 

@@ -144,6 +144,27 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
 
 
 
+void
+MacroAssembler::rshiftPtr(Imm32 imm, Register dest)
+{
+    Lsr(ARMRegister(dest, 64), ARMRegister(dest, 64), imm.value);
+}
+
+void
+MacroAssembler::rshiftPtr(Imm32 imm, Register src, Register dest)
+{
+    Lsr(ARMRegister(dest, 64), ARMRegister(src, 64), imm.value);
+}
+
+
+
+
+void
+MacroAssemblerCompat::rshift64(Imm32 imm, Register64 dest)
+{
+    asMasm().rshiftPtr(imm, dest.reg);
+}
+
 template <typename T>
 void
 MacroAssemblerCompat::andToStackPtr(T t)

@@ -128,6 +128,15 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
 
 
 
+void
+MacroAssembler::rshiftPtr(Imm32 imm, Register dest)
+{
+    ma_srl(dest, dest, imm);
+}
+
+
+
+
 } 
 } 
 
