@@ -527,24 +527,16 @@ protected:                                                                    \
   NS_DECL_OWNINGTHREAD                                                        \
 public:
 
-
-
-
-
-
-
-
-
-#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING(_class, ...)                    \
+#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, _decl, ...)        \
 public:                                                                       \
-  NS_METHOD_(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {              \
+  _decl(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {                   \
     MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                                \
     MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");                      \
     nsrefcnt count = ++mRefCnt;                                               \
     NS_LOG_ADDREF(this, count, #_class, sizeof(*this));                       \
     return (nsrefcnt) count;                                                  \
   }                                                                           \
-  NS_METHOD_(MozExternalRefCountType) Release(void) __VA_ARGS__ {             \
+  _decl(MozExternalRefCountType) Release(void) __VA_ARGS__ {                  \
     MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                          \
     nsrefcnt count = --mRefCnt;                                               \
     NS_LOG_RELEASE(this, count, #_class);                                     \
@@ -557,6 +549,24 @@ public:                                                                       \
 protected:                                                                    \
   ::mozilla::ThreadSafeAutoRefCnt mRefCnt;                                    \
 public:
+
+
+
+
+
+
+
+
+
+#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING(_class, ...)                    \
+NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_METHOD_, __VA_ARGS__)
+
+
+
+
+
+#define NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(_class, ...)            \
+NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_IMETHOD_, __VA_ARGS__)
 
 
 
