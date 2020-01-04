@@ -15,6 +15,7 @@
 #include "nsTArray.h"
 
 class nsINode;
+class nsXMLHttpRequest;
 
 namespace mozilla {
 
@@ -76,6 +77,12 @@ private:
     nsILoadInfo** outLoadInfo);
 
   ~LoadInfo();
+
+  
+  
+  
+  void SetWithCredentialsSecFlag();
+  friend class ::nsXMLHttpRequest;
 
   nsCOMPtr<nsIPrincipal>           mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal>           mTriggeringPrincipal;
