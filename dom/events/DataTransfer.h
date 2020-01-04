@@ -146,7 +146,7 @@ public:
   void ClearData(const mozilla::dom::Optional<nsAString>& aFormat,
                  mozilla::ErrorResult& aRv);
 
-  FileList* GetFiles(mozilla::ErrorResult& aRv);
+  already_AddRefed<FileList> GetFiles(mozilla::ErrorResult& aRv);
 
   already_AddRefed<Promise> GetFilesAndDirectories(ErrorResult& aRv);
 
@@ -270,6 +270,10 @@ public:
   
   
   void GetRealFormat(const nsAString& aInFormat, nsAString& aOutFormat) const;
+
+  static bool PrincipalMaySetData(const nsAString& aFormat,
+                                  nsIVariant* aData,
+                                  nsIPrincipal* aPrincipal);
 
 protected:
 
