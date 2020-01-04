@@ -278,6 +278,12 @@ public:
   
 
 
+
+  Accessible* AccessibleOrTrueContainer(nsINode* aNode) const;
+
+  
+
+
   Accessible* GetAccessibleOrDescendant(nsINode* aNode) const;
 
   

@@ -22,6 +22,18 @@
 namespace mozilla {
 namespace a11y {
 
+inline Accessible*
+DocAccessible::AccessibleOrTrueContainer(nsINode* aNode) const
+{
+  
+  
+  Accessible* container = GetAccessibleOrContainer(aNode);
+  if (container && container->IsHTMLCombobox()) {
+    return container->FirstChild();
+  }
+  return container;
+}
+
 inline nsIAccessiblePivot*
 DocAccessible::VirtualCursor()
 {
