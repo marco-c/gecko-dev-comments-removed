@@ -130,6 +130,7 @@ private:
   void NotifyError(TrackType aTrack);
   void NotifyWaitingForData(TrackType aTrack);
   void NotifyEndOfStream(TrackType aTrack);
+  void NotifyDecodingRequested(TrackType aTrack);
 
   void ExtractCryptoInitData(nsTArray<uint8_t>& aInitData);
 
@@ -197,6 +198,7 @@ private:
       , mReceivedNewData(false)
       , mDiscontinuity(true)
       , mDecoderInitialized(false)
+      , mDecodingRequested(false)
       , mOutputRequested(false)
       , mInputExhausted(false)
       , mError(false)
@@ -247,6 +249,7 @@ private:
     
     
     bool mDecoderInitialized;
+    bool mDecodingRequested;
     bool mOutputRequested;
     bool mInputExhausted;
     bool mError;
@@ -264,6 +267,7 @@ private:
     uint64_t mNumSamplesOutput;
     uint64_t mNumSamplesOutputTotal;
 
+    
     
     
     virtual bool HasPromise() = 0;
@@ -331,6 +335,7 @@ private:
     {
       MOZ_ASSERT(mOwner->OnTaskQueue());
       mPromise.Reject(aReason, aMethodName);
+      mDecodingRequested = false;
     }
   };
 
