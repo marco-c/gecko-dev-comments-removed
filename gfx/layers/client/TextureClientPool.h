@@ -44,9 +44,10 @@ class TextureClientPool final : public TextureClientAllocator
   ~TextureClientPool();
 
 public:
-  TextureClientPool(gfx::SurfaceFormat aFormat,
-                    TextureFlags aFlags,
+  TextureClientPool(LayersBackend aBackend,
+                    gfx::SurfaceFormat aFormat,
                     gfx::IntSize aSize,
+                    TextureFlags aFlags,
                     uint32_t aMaxTextureClients,
                     uint32_t aShrinkTimeoutMsec,
                     TextureForwarder* aAllocator);
@@ -104,6 +105,7 @@ public:
 
   void Clear();
 
+  LayersBackend GetBackend() const { return mBackend; }
   gfx::SurfaceFormat GetFormat() { return mFormat; }
   TextureFlags GetFlags() const { return mFlags; }
 
@@ -120,13 +122,16 @@ private:
   static const uint32_t sMinCacheSize = 0;
 
   
+  LayersBackend mBackend;
+
+  
   gfx::SurfaceFormat mFormat;
 
   
-  const TextureFlags mFlags;
+  gfx::IntSize mSize;
 
   
-  gfx::IntSize mSize;
+  const TextureFlags mFlags;
 
   
   
