@@ -184,7 +184,8 @@ nsThreadPool::Run()
         } else {
           if (wasIdle) {
             
-            if (mIdleCount > mIdleThreadLimit || (now - idleSince) >= timeout) {
+            if (mIdleCount > mIdleThreadLimit ||
+                (mIdleThreadTimeout != UINT32_MAX && (now - idleSince) >= timeout)) {
               exitThread = true;
             }
           } else {
