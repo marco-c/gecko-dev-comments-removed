@@ -39,6 +39,8 @@ Cu.import("resource://gre/modules/Preferences.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "console",
   "resource://gre/modules/Console.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RunState",
   "resource:///modules/sessionstore/RunState.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
@@ -181,6 +183,10 @@ var SessionFileInternal = {
 
   
   
+  _deferredInitialized: PromiseUtils.defer(),
+
+  
+  
   get latestUpgradeBackupID() {
     try {
       return Services.prefs.getCharPref(PREF_UPGRADE_BACKUP);
@@ -255,11 +261,13 @@ var SessionFileInternal = {
 
     
     
-    SessionWorker.post("init", [result.origin, this.Paths, {
+    let initialized = SessionWorker.post("init", [result.origin, this.Paths, {
       maxUpgradeBackups: Preferences.get(PREF_MAX_UPGRADE_BACKUPS, 3),
       maxSerializeBack: Preferences.get(PREF_MAX_SERIALIZE_BACK, 10),
       maxSerializeForward: Preferences.get(PREF_MAX_SERIALIZE_FWD, -1)
     }]);
+
+    initialized.catch(Promise.reject).then(() => this._deferredInitialized.resolve());
 
     return result;
   }),
@@ -281,7 +289,7 @@ var SessionFileInternal = {
       !sessionStartup.isAutomaticRestoreEnabled();
 
     let options = {isFinalWrite, performShutdownCleanup};
-    let promise = SessionWorker.post("write", [aData, options]);
+    let promise = this._deferredInitialized.promise.then(() => SessionWorker.post("write", [aData, options]));
 
     
     promise = promise.then(msg => {
@@ -328,7 +336,7 @@ var SessionFileInternal = {
   },
 
   wipe: function () {
-    return SessionWorker.post("wipe");
+    return this._deferredInitialized.promise.then(() => SessionWorker.post("wipe"));
   },
 
   _recordTelemetry: function(telemetry) {
