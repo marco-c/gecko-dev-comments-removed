@@ -5,6 +5,8 @@
 #ifndef PNGLCONF_H
 #define PNGLCONF_H
 
+#define MOZ_EMBEDDED_LIBPNG
+
 
 #ifndef MOZ_PNG_MAX_WIDTH
 #  define MOZ_PNG_MAX_WIDTH 0x7fffffffL /* Unlimited */
