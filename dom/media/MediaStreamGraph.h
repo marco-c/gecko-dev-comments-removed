@@ -432,7 +432,18 @@ public:
   void RunAfterPendingUpdates(already_AddRefed<nsIRunnable> aRunnable);
 
   
+  
+  
+  
   virtual void Destroy();
+  
+  
+  
+  void RegisterUser();
+  
+  
+  void UnregisterUser();
+
   
   
   StreamTime GetCurrentTime()
@@ -706,6 +717,7 @@ protected:
   bool mMainThreadFinished;
   bool mFinishedNotificationSent;
   bool mMainThreadDestroyed;
+  int mNrOfMainThreadUsers;
 
   
   MediaStreamGraphImpl* mGraph;
