@@ -19,11 +19,9 @@
 
 
 
-typedef struct BLK_HDR BLK_HDR;
 struct BLK_HDR
 {
     BLK_HDR *next;
-    size_t   size;
 };
 
 #define XPT_MIN_BLOCK_SIZE 32
@@ -117,9 +115,6 @@ XPT_ArenaMalloc(XPTArena *arena, size_t size)
         
         new_block->next = arena->first;
         arena->first = new_block;
-
-        
-        new_block->size = new_space;
 
         
         arena->next  = ((uint8_t*)new_block) + block_header_size;
