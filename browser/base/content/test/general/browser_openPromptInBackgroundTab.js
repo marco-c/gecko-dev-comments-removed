@@ -19,8 +19,11 @@ add_task(function*() {
   let firstTab = gBrowser.selectedTab;
   
   let openedTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageWithAlert, true);
+  let openedTabGotAttentionPromise = BrowserTestUtils.waitForAttribute("attention", openedTab, "true");
   
   yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+  
+  yield openedTabGotAttentionPromise;
   
   is(openedTab.getAttribute("attention"), "true", "Tab with alert should have 'attention' attribute.");
   ok(!openedTab.selected, "Tab with alert should not be selected");
@@ -43,8 +46,15 @@ add_task(function*() {
   let ps = Services.perms;
   is(ps.ALLOW_ACTION, ps.testPermission(makeURI(pageWithAlert), "focus-tab-by-prompt"),
      "Tab switching should now be allowed");
+
+  let openedTabSelectedPromise = BrowserTestUtils.waitForAttribute("selected", openedTab, "true");
   
   yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+
+  
+  
+  
+  yield openedTabSelectedPromise;
   
   ok(openedTab.selected, "Ta-dah, the other tab should now be selected again!");
 
