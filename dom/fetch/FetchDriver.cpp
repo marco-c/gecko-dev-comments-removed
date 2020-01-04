@@ -249,6 +249,12 @@ FetchDriver::HttpFetch()
   
   
   
+  
+
+  
+  
+  
+  
   nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(chan);
   if (httpChan) {
     
@@ -326,10 +332,10 @@ FetchDriver::HttpFetch()
     
     internalChan->SetCorsMode(static_cast<uint32_t>(mRequest->Mode()));
     internalChan->SetRedirectMode(static_cast<uint32_t>(mRequest->GetRedirectMode()));
-    mRequest->MaybeSkipCacheIfPerformingRevalidation();
-    internalChan->SetFetchCacheMode(static_cast<uint32_t>(mRequest->GetCacheMode()));
   }
 
+  
+  
   
 
   
