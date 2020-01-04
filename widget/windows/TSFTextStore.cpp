@@ -1191,7 +1191,7 @@ TSFTextStore::TSFTextStore()
   , mHasReturnedNoLayoutError(false)
   , mWaitingQueryLayout(false)
   , mPendingDestroy(false)
-  , mDeferClearingLockedContent(false)
+  , mDeferClearingContentForTSF(false)
   , mNativeCaretIsCreated(false)
   , mDeferNotifyingTSF(false)
   , mDeferCommittingComposition(false)
@@ -1665,7 +1665,7 @@ TSFTextStore::FlushPendingActions()
         
         
         
-        mDeferClearingLockedContent = true;
+        mDeferClearingContentForTSF = true;
 
         MOZ_LOG(sTextStoreLog, LogLevel::Debug,
                ("TSF: 0x%p   TSFTextStore::FlushPendingActions() "
@@ -1677,7 +1677,7 @@ TSFTextStore::FlushPendingActions()
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("TSF: 0x%p   TSFTextStore::FlushPendingActions() "
              "FAILED to dispatch compositionstart event.", this));
-          mDeferClearingLockedContent = false;
+          mDeferClearingContentForTSF = false;
         }
         if (!mWidget || mWidget->Destroyed()) {
           break;
@@ -1696,7 +1696,7 @@ TSFTextStore::FlushPendingActions()
         
         
         
-        mDeferClearingLockedContent = true;
+        mDeferClearingContentForTSF = true;
 
         rv = mDispatcher->SetPendingComposition(action.mData,
                                                 action.mRanges);
@@ -1704,7 +1704,7 @@ TSFTextStore::FlushPendingActions()
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("TSF: 0x%p   TSFTextStore::FlushPendingActions() "
              "FAILED to setting pending composition...", this));
-          mDeferClearingLockedContent = false;
+          mDeferClearingContentForTSF = false;
         } else {
           MOZ_LOG(sTextStoreLog, LogLevel::Debug,
             ("TSF: 0x%p   TSFTextStore::FlushPendingActions() "
@@ -1716,7 +1716,7 @@ TSFTextStore::FlushPendingActions()
             MOZ_LOG(sTextStoreLog, LogLevel::Error,
               ("TSF: 0x%p   TSFTextStore::FlushPendingActions() "
                "FAILED to dispatch compositionchange event.", this));
-            mDeferClearingLockedContent = false;
+            mDeferClearingContentForTSF = false;
           }
           
         }
@@ -1732,7 +1732,7 @@ TSFTextStore::FlushPendingActions()
         
         
         
-        mDeferClearingLockedContent = true;
+        mDeferClearingContentForTSF = true;
 
         MOZ_LOG(sTextStoreLog, LogLevel::Debug,
                ("TSF: 0x%p   TSFTextStore::FlushPendingActions(), "
@@ -1744,7 +1744,7 @@ TSFTextStore::FlushPendingActions()
           MOZ_LOG(sTextStoreLog, LogLevel::Error,
             ("TSF: 0x%p   TSFTextStore::FlushPendingActions() "
              "FAILED to dispatch compositioncommit event.", this));
-          mDeferClearingLockedContent = false;
+          mDeferClearingContentForTSF = false;
         }
         break;
       }
@@ -1837,7 +1837,7 @@ TSFTextStore::MaybeFlushPendingNotifications()
     return;
   }
 
-  if (!mDeferClearingLockedContent && mContentForTSF.IsInitialized()) {
+  if (!mDeferClearingContentForTSF && mContentForTSF.IsInitialized()) {
     mContentForTSF.Clear();
     MOZ_LOG(sTextStoreLog, LogLevel::Debug,
            ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
@@ -2017,7 +2017,7 @@ TSFTextStore::ContentForTSFRef()
     
     
     
-    mDeferClearingLockedContent = false;
+    mDeferClearingContentForTSF = false;
   }
 
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -4990,7 +4990,7 @@ TSFTextStore::OnUpdateCompositionInternal()
 
   
   
-  mDeferClearingLockedContent = false;
+  mDeferClearingContentForTSF = false;
   mDeferNotifyingTSF = false;
   MaybeFlushPendingNotifications();
   return NS_OK;

@@ -886,7 +886,7 @@ protected:
   bool                         mPendingDestroy;
   
   
-  bool                         mDeferClearingLockedContent;
+  bool                         mDeferClearingContentForTSF;
   
   bool                         mNativeCaretIsCreated;
   
