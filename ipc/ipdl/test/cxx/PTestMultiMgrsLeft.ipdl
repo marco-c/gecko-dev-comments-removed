@@ -1,5 +1,5 @@
-include protocol "PTestMultiMgrs.ipdl";
-include protocol "PTestMultiMgrsBottom.ipdl";
+include protocol PTestMultiMgrs;
+include protocol PTestMultiMgrsBottom;
 
 namespace mozilla {
 namespace _ipdltest {
@@ -10,8 +10,8 @@ protocol PTestMultiMgrsLeft {
     manages PTestMultiMgrsBottom;
 
 child:
-    PTestMultiMgrsBottom();
-    __delete__();
+    async PTestMultiMgrsBottom();
+    async __delete__();
 
 state START:
     send PTestMultiMgrsBottom goto DONE;

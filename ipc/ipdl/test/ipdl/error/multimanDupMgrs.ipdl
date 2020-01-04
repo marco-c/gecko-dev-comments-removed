@@ -1,8 +1,8 @@
-include protocol "multimanDupMgrsMgr.ipdl";
+include protocol multimanDupMgrsMgr;
 
 protocol multimanDupMgrs {
     manager multimanDupMgrsMgr or multimanDupMgrsMgr;
 
 child:
-    __delete__();
+    async __delete__();
 };
