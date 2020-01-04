@@ -4581,9 +4581,6 @@ pref("dom.sms.defaultServiceId", 0);
 pref("dom.sms.maxReadAheadEntries", 0);
 
 
-pref("dom.mozContacts.enabled", false);
-
-
 pref("dom.mozAlarms.enabled", false);
 
 

@@ -443,9 +443,6 @@ pref("dom.sms.enabled", true);
 pref("network.gonk.ms-release-mms-connection", 30000);
 
 
-pref("dom.mozContacts.enabled", true);
-
-
 
 pref("dom.phonenumber.substringmatching.BR", 8);
 pref("dom.phonenumber.substringmatching.CO", 10);
