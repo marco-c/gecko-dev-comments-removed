@@ -10,12 +10,18 @@ function test() {
 
   let { CustomizableUI, BrowserUITelemetry } = s;
 
-  Assert.ok(CustomizableUI.inDefaultState,
-            "No other test should have left CUI in a dirty state.");
+  
+  if (!AppConstants.MOZ_DEV_EDITION) {
+    Assert.ok(CustomizableUI.inDefaultState,
+              "No other test should have left CUI in a dirty state.");
+  }
 
   let result = BrowserUITelemetry._getWindowMeasurements(window, 0);
 
-  Assert.deepEqual(result.defaultMoved, []);
+  
+  if (!AppConstants.MOZ_DEV_EDITION) {
+    Assert.deepEqual(result.defaultMoved, []);
+  }
   Assert.deepEqual(result.nondefaultAdded, []);
   
   
