@@ -135,7 +135,8 @@ nsXULCommandDispatcher::GetFocusedElement(nsIDOMElement** aElement)
     CallQueryInterface(focusedContent, aElement);
 
     
-    if (!nsContentUtils::CanCallerAccess(*aElement)) {
+    nsCOMPtr<nsINode> node = do_QueryInterface(*aElement);
+    if (!node || !nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller()->Subsumes(node->NodePrincipal())) {
       
       
       

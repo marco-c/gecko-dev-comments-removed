@@ -1221,7 +1221,7 @@ nsFocusManager::SetFocusInner(nsIContent* aNewContent, int32_t aFlags,
     }
     bool subsumes = false;
     focusedPrincipal->Subsumes(newPrincipal, &subsumes);
-    if (!subsumes && !nsContentUtils::IsCallerChrome()) {
+    if (!subsumes && !nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
       NS_WARNING("Not allowed to focus the new window!");
       return;
     }
@@ -1275,7 +1275,7 @@ nsFocusManager::SetFocusInner(nsIContent* aNewContent, int32_t aFlags,
   
   
   
-  if (sendFocusEvent && mFocusedContent &&
+  if (sendFocusEvent && mFocusedContent && !nsContentUtils::LegacyIsCallerNativeCode() &&
       mFocusedContent->OwnerDoc() != aNewContent->OwnerDoc()) {
     
     
@@ -1453,8 +1453,10 @@ nsFocusManager::AdjustWindowFocus(nsPIDOMWindow* aWindow,
       
       
       
-      if (aCheckPermission && !nsContentUtils::CanCallerAccess(window))
+      if (aCheckPermission && !nsContentUtils::LegacyIsCallerNativeCode() &&
+          !nsContentUtils::CanCallerAccess(window)) {
         break;
+      }
 
       window->SetFocusedNode(frameElement);
     }

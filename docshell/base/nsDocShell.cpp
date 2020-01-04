@@ -1508,7 +1508,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
   }
   if (!owner && !inheritOwner && !ownerIsExplicit) {
     
-    inheritOwner = nsContentUtils::IsCallerChrome();
+    inheritOwner = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
   }
 
   if (aLoadFlags & LOAD_FLAGS_DISALLOW_INHERIT_OWNER) {

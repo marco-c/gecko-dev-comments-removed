@@ -1472,7 +1472,7 @@ HTMLMediaElement::Seek(double aTime,
 
   
   
-  if (EventStateManager::IsHandlingUserInput() || nsContentUtils::IsCallerChrome()) {
+  if (EventStateManager::IsHandlingUserInput() || nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
     mHasUserInteraction = true;
   }
 

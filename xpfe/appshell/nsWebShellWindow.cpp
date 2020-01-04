@@ -213,7 +213,7 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   
   
   if (nsContentUtils::IsInitialized()) { 
-    rv = mDocShell->CreateAboutBlankContentViewer(nsContentUtils::SubjectPrincipal());
+    rv = mDocShell->CreateAboutBlankContentViewer(nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller());
     NS_ENSURE_SUCCESS(rv, rv);
     nsCOMPtr<nsIDocument> doc = mDocShell ? mDocShell->GetDocument() : nullptr;
     NS_ENSURE_TRUE(!!doc, NS_ERROR_FAILURE);

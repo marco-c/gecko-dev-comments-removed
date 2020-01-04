@@ -237,7 +237,7 @@ nsCommandManager::GetControllerForCommand(const char* aCommand,
 
   
   
-  if (!nsContentUtils::IsCallerChrome()) {
+  if (!nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
     if (!aTargetWindow) {
       return rv;
     }
