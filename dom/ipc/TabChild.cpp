@@ -460,6 +460,24 @@ PreloadSlowThingsPostFork(void* aUnused)
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
     observerService->NotifyObservers(nullptr, "preload-postfork", nullptr);
+
+    MOZ_ASSERT(sPreallocatedTab);
+    
+    
+    
+    nsCOMPtr<nsIDocShell> docShell =
+      do_GetInterface(sPreallocatedTab->WebNavigation());
+    if (nsIPresShell* presShell = docShell->GetPresShell()) {
+        
+        
+        presShell->Initialize(0, 0);
+        nsIDocument* doc = presShell->GetDocument();
+        doc->FlushPendingNotifications(Flush_Layout);
+        
+        
+        presShell->MakeZombie();
+    }
+
 }
 
 #ifdef MOZ_NUWA_PROCESS
@@ -540,30 +558,18 @@ TabChild::PreloadSlowThings()
         NS_LITERAL_STRING("chrome://global/content/preload.js"),
         true);
 
+    sPreallocatedTab = tab;
+    ClearOnShutdown(&sPreallocatedTab);
+
 #ifdef MOZ_NUWA_PROCESS
     if (IsNuwaProcess()) {
         NuwaAddFinalConstructor(PreloadSlowThingsPostFork, nullptr);
     } else {
-      PreloadSlowThingsPostFork(nullptr);
+        PreloadSlowThingsPostFork(nullptr);
     }
 #else
     PreloadSlowThingsPostFork(nullptr);
 #endif
-
-    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(tab->WebNavigation());
-    if (nsIPresShell* presShell = docShell->GetPresShell()) {
-        
-        
-        presShell->Initialize(0, 0);
-        nsIDocument* doc = presShell->GetDocument();
-        doc->FlushPendingNotifications(Flush_Layout);
-        
-        
-        presShell->MakeZombie();
-    }
-
-    sPreallocatedTab = tab;
-    ClearOnShutdown(&sPreallocatedTab);
 }
 
  already_AddRefed<TabChild>
