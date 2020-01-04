@@ -1209,6 +1209,10 @@ public:
   
   virtual void PostVisibilityUpdateEvent() override;
 
+  
+  
+  void MaybeActiveMediaComponents();
+
   virtual void DocAddSizeOfExcludingThis(nsWindowSizes* aWindowSizes) const override;
   
 

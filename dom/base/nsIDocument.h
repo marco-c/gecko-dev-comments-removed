@@ -3069,6 +3069,9 @@ protected:
   
   bool mPostedFlushUserFontSet : 1;
 
+  
+  bool mEverInForeground : 1;
+
   enum Type {
     eUnknown, 
     eHTML,
