@@ -7,7 +7,7 @@
 #ifndef mozilla_image_decoders_nsBMPDecoder_h
 #define mozilla_image_decoders_nsBMPDecoder_h
 
-#include "BMPFileHeaders.h"
+#include "BMPHeaders.h"
 #include "Decoder.h"
 #include "gfxColor.h"
 #include "StreamingLexer.h"
@@ -17,6 +17,32 @@ namespace mozilla {
 namespace image {
 
 namespace bmp {
+
+
+
+
+struct Header {
+  uint32_t mDataOffset;     
+  uint32_t mBIHSize;        
+  int32_t  mWidth;          
+  int32_t  mHeight;         
+  uint16_t mBpp;            
+  uint32_t mCompression;    
+  uint32_t mImageSize;      
+                            
+  uint32_t mNumColors;      
+
+  Header()
+   : mDataOffset(0)
+   , mBIHSize(0)
+   , mWidth(0)
+   , mHeight(0)
+   , mBpp(0)
+   , mCompression(0)
+   , mImageSize(0)
+   , mNumColors(0)
+  {}
+};
 
 
 struct ColorTableEntry {
@@ -173,8 +199,7 @@ private:
 
   StreamingLexer<State> mLexer;
 
-  bmp::FileHeader mBFH;
-  bmp::V5InfoHeader mBIH;
+  bmp::Header mH;
 
   
   bool mIsWithinICO;

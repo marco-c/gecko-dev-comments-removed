@@ -174,7 +174,7 @@ GetBMPLog()
 
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   : Decoder(aImage)
-  , mLexer(Transition::To(State::FILE_HEADER, FileHeader::LENGTH))
+  , mLexer(Transition::To(State::FILE_HEADER, FILE_HEADER_LENGTH))
   , mIsWithinICO(false)
   , mMayHaveTransparency(false)
   , mDoesHaveTransparency(false)
@@ -186,8 +186,6 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   , mCurrentPos(0)
   , mAbsoluteModeNumPixels(0)
 {
-  memset(&mBFH, 0, sizeof(mBFH));
-  memset(&mBIH, 0, sizeof(mBIH));
 }
 
 nsBMPDecoder::~nsBMPDecoder()
@@ -198,14 +196,14 @@ nsBMPDecoder::~nsBMPDecoder()
 int32_t
 nsBMPDecoder::GetBitsPerPixel() const
 {
-  return mBIH.bpp;
+  return mH.mBpp;
 }
 
 
 int32_t
 nsBMPDecoder::GetWidth() const
 {
-  return mBIH.width;
+  return mH.mWidth;
 }
 
 
@@ -213,7 +211,7 @@ nsBMPDecoder::GetWidth() const
 int32_t
 nsBMPDecoder::GetHeight() const
 {
-  return abs(mBIH.height);
+  return abs(mH.mHeight);
 }
 
 
@@ -229,9 +227,9 @@ nsBMPDecoder::GetCompressedImageSize() const
 {
   
   MOZ_ASSERT(mPixelRowSize != 0);
-  return mBIH.compression == Compression::RGB
+  return mH.mCompression == Compression::RGB
        ? mPixelRowSize * GetHeight()
-       : mBIH.image_size;
+       : mH.mImageSize;
 }
 
 void
@@ -247,7 +245,7 @@ nsBMPDecoder::FinishInternal()
   if (!IsMetadataDecode() && HasSize()) {
 
     
-    nsIntRect r(0, 0, mBIH.width, GetHeight());
+    nsIntRect r(0, 0, mH.mWidth, GetHeight());
     PostInvalidation(r);
 
     if (mDoesHaveTransparency) {
@@ -401,10 +399,10 @@ nsBMPDecoder::RowBuffer()
   }
 
   
-  int32_t line = (mBIH.height < 0)
-               ? -mBIH.height - mCurrentRow
+  int32_t line = (mH.mHeight < 0)
+               ? -mH.mHeight - mCurrentRow
                : mCurrentRow - 1;
-  int32_t offset = line * mBIH.width + mCurrentPos;
+  int32_t offset = line * mH.mWidth + mCurrentPos;
   return reinterpret_cast<uint32_t*>(mImageData) + offset;
 }
 
@@ -420,7 +418,7 @@ nsBMPDecoder::FinishRow()
                        Some(invalidRect.mTargetSizeRect));
     }
   } else {
-    PostInvalidation(IntRect(0, mCurrentRow, mBIH.width, 1));
+    PostInvalidation(IntRect(0, mCurrentRow, mH.mWidth, 1));
   }
   mCurrentRow--;
 }
@@ -474,22 +472,15 @@ nsBMPDecoder::ReadFileHeader(const char* aData, size_t aLength)
 {
   mPreGapLength += aLength;
 
-  mBFH.signature[0] = aData[0];
-  mBFH.signature[1] = aData[1];
-  bool signatureOk = mBFH.signature[0] == 'B' && mBFH.signature[1] == 'M';
+  bool signatureOk = aData[0] == 'B' && aData[1] == 'M';
   if (!signatureOk) {
     PostDataError();
     return Transition::Terminate(State::FAILURE);
   }
 
   
-  
-  
-  mBFH.filesize = LittleEndian::readUint32(aData + 2);
 
-  mBFH.reserved = 0;
-
-  mBFH.dataoffset = LittleEndian::readUint32(aData + 10);
+  mH.mDataOffset = LittleEndian::readUint32(aData + 10);
 
   return Transition::To(State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH);
 }
@@ -501,24 +492,24 @@ nsBMPDecoder::ReadInfoHeaderSize(const char* aData, size_t aLength)
 {
   mPreGapLength += aLength;
 
-  mBIH.bihsize = LittleEndian::readUint32(aData);
+  mH.mBIHSize = LittleEndian::readUint32(aData);
 
-  bool bihsizeOk = mBIH.bihsize == InfoHeaderLength::WIN_V2 ||
-                   mBIH.bihsize == InfoHeaderLength::WIN_V3 ||
-                   mBIH.bihsize == InfoHeaderLength::WIN_V4 ||
-                   mBIH.bihsize == InfoHeaderLength::WIN_V5 ||
-                   (mBIH.bihsize >= InfoHeaderLength::OS2_V2_MIN &&
-                    mBIH.bihsize <= InfoHeaderLength::OS2_V2_MAX);
-  if (!bihsizeOk) {
+  bool bihSizeOk = mH.mBIHSize == InfoHeaderLength::WIN_V2 ||
+                   mH.mBIHSize == InfoHeaderLength::WIN_V3 ||
+                   mH.mBIHSize == InfoHeaderLength::WIN_V4 ||
+                   mH.mBIHSize == InfoHeaderLength::WIN_V5 ||
+                   (mH.mBIHSize >= InfoHeaderLength::OS2_V2_MIN &&
+                    mH.mBIHSize <= InfoHeaderLength::OS2_V2_MAX);
+  if (!bihSizeOk) {
     PostDataError();
     return Transition::Terminate(State::FAILURE);
   }
   
   
-  MOZ_ASSERT_IF(mIsWithinICO, mBIH.bihsize == InfoHeaderLength::WIN_V3);
+  MOZ_ASSERT_IF(mIsWithinICO, mH.mBIHSize == InfoHeaderLength::WIN_V3);
 
   return Transition::To(State::INFO_HEADER_REST,
-                        mBIH.bihsize - BIHSIZE_FIELD_LENGTH);
+                        mH.mBIHSize - BIHSIZE_FIELD_LENGTH);
 }
 
 LexerTransition<nsBMPDecoder::State>
@@ -528,26 +519,24 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
 
   
   
-  if (mBIH.bihsize == InfoHeaderLength::WIN_V2) {
-    mBIH.width       = LittleEndian::readUint16(aData + 0);
-    mBIH.height      = LittleEndian::readUint16(aData + 2);
-    mBIH.planes      = LittleEndian::readUint16(aData + 4);
-    mBIH.bpp         = LittleEndian::readUint16(aData + 6);
+  if (mH.mBIHSize == InfoHeaderLength::WIN_V2) {
+    mH.mWidth  = LittleEndian::readUint16(aData + 0);
+    mH.mHeight = LittleEndian::readUint16(aData + 2);
+    
+    mH.mBpp    = LittleEndian::readUint16(aData + 6);
   } else {
-    mBIH.width       = LittleEndian::readUint32(aData + 0);
-    mBIH.height      = LittleEndian::readUint32(aData + 4);
-    mBIH.planes      = LittleEndian::readUint16(aData + 8);
-    mBIH.bpp         = LittleEndian::readUint16(aData + 10);
+    mH.mWidth  = LittleEndian::readUint32(aData + 0);
+    mH.mHeight = LittleEndian::readUint32(aData + 4);
+    
+    mH.mBpp    = LittleEndian::readUint16(aData + 10);
 
     
     
-    mBIH.compression = aLength >= 16 ? LittleEndian::readUint32(aData + 12) : 0;
-    mBIH.image_size  = aLength >= 20 ? LittleEndian::readUint32(aData + 16) : 0;
-    mBIH.xppm        = aLength >= 24 ? LittleEndian::readUint32(aData + 20) : 0;
-    mBIH.yppm        = aLength >= 28 ? LittleEndian::readUint32(aData + 24) : 0;
-    mBIH.colors      = aLength >= 32 ? LittleEndian::readUint32(aData + 28) : 0;
-    mBIH.important_colors
-                     = aLength >= 36 ? LittleEndian::readUint32(aData + 32) : 0;
+    mH.mCompression = aLength >= 16 ? LittleEndian::readUint32(aData + 12) : 0;
+    mH.mImageSize   = aLength >= 20 ? LittleEndian::readUint32(aData + 16) : 0;
+    
+    mH.mNumColors   = aLength >= 32 ? LittleEndian::readUint32(aData + 28) : 0;
+    
 
     
     
@@ -557,15 +546,15 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   
   MOZ_LOG(GetBMPLog(), LogLevel::Debug,
           ("BMP: bihsize=%u, %d x %d, bpp=%u, compression=%u, colors=%u\n",
-          mBIH.bihsize, mBIH.width, mBIH.height, uint32_t(mBIH.bpp),
-          mBIH.compression, mBIH.colors));
+          mH.mBIHSize, mH.mWidth, mH.mHeight, uint32_t(mH.mBpp),
+          mH.mCompression, mH.mNumColors));
 
   
   
   
   const int32_t k64KWidth = 0x0000FFFF;
-  bool sizeOk = 0 <= mBIH.width && mBIH.width <= k64KWidth &&
-                mBIH.height != INT_MIN;
+  bool sizeOk = 0 <= mH.mWidth && mH.mWidth <= k64KWidth &&
+                mH.mHeight != INT_MIN;
   if (!sizeOk) {
     PostDataError();
     return Transition::Terminate(State::FAILURE);
@@ -573,13 +562,13 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
 
   
   bool bppCompressionOk =
-    (mBIH.compression == Compression::RGB &&
-      (mBIH.bpp ==  1 || mBIH.bpp ==  4 || mBIH.bpp ==  8 ||
-       mBIH.bpp == 16 || mBIH.bpp == 24 || mBIH.bpp == 32)) ||
-    (mBIH.compression == Compression::RLE8 && mBIH.bpp == 8) ||
-    (mBIH.compression == Compression::RLE4 && mBIH.bpp == 4) ||
-    (mBIH.compression == Compression::BITFIELDS &&
-      (mBIH.bpp == 16 || mBIH.bpp == 32));
+    (mH.mCompression == Compression::RGB &&
+      (mH.mBpp ==  1 || mH.mBpp ==  4 || mH.mBpp ==  8 ||
+       mH.mBpp == 16 || mH.mBpp == 24 || mH.mBpp == 32)) ||
+    (mH.mCompression == Compression::RLE8 && mH.mBpp == 8) ||
+    (mH.mCompression == Compression::RLE4 && mH.mBpp == 4) ||
+    (mH.mCompression == Compression::BITFIELDS &&
+      (mH.mBpp == 16 || mH.mBpp == 32));
   if (!bppCompressionOk) {
     PostDataError();
     return Transition::Terminate(State::FAILURE);
@@ -587,22 +576,22 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
 
   
   uint32_t realHeight = GetHeight();
-  PostSize(mBIH.width, realHeight);
+  PostSize(mH.mWidth, realHeight);
   mCurrentRow = realHeight;
 
   
   
   
-  mPixelRowSize = (mBIH.bpp * mBIH.width + 7) / 8;
+  mPixelRowSize = (mH.mBpp * mH.mWidth + 7) / 8;
   uint32_t surplus = mPixelRowSize % 4;
   if (surplus != 0) {
     mPixelRowSize += 4 - surplus;
   }
 
   size_t bitFieldsLengthStillToRead = 0;
-  if (mBIH.compression == Compression::BITFIELDS) {
+  if (mH.mCompression == Compression::BITFIELDS) {
     
-    if (mBIH.bihsize >= InfoHeaderLength::WIN_V4) {
+    if (mH.mBIHSize >= InfoHeaderLength::WIN_V4) {
       
       
       mBitFields.ReadFromHeader(aData + 36,  true);
@@ -611,10 +600,10 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
       
       bitFieldsLengthStillToRead = BitFields::LENGTH;
     }
-  } else if (mBIH.bpp == 16) {
+  } else if (mH.mBpp == 16) {
     
     mBitFields.SetR5G5B5();
-  } else if (mBIH.bpp == 32) {
+  } else if (mH.mBpp == 32) {
     
     mBitFields.SetR8G8B8();
   }
@@ -647,10 +636,10 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
   
   
   mMayHaveTransparency =
-    (mBIH.compression == Compression::RGB && mIsWithinICO && mBIH.bpp == 32) ||
-    mBIH.compression == Compression::RLE8 ||
-    mBIH.compression == Compression::RLE4 ||
-    (mBIH.compression == Compression::BITFIELDS &&
+    (mH.mCompression == Compression::RGB && mIsWithinICO && mH.mBpp == 32) ||
+    mH.mCompression == Compression::RLE8 ||
+    mH.mCompression == Compression::RLE4 ||
+    (mH.mCompression == Compression::BITFIELDS &&
      mBitFields.mAlpha.IsPresent());
   if (mMayHaveTransparency) {
     PostHasTransparency();
@@ -663,10 +652,10 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
   }
 
   
-  if (mBIH.bpp <= 8) {
-    mNumColors = 1 << mBIH.bpp;
-    if (0 < mBIH.colors && mBIH.colors < mNumColors) {
-      mNumColors = mBIH.colors;
+  if (mH.mBpp <= 8) {
+    mNumColors = 1 << mH.mBpp;
+    if (0 < mH.mNumColors && mH.mNumColors < mNumColors) {
+      mNumColors = mH.mNumColors;
     }
 
     
@@ -675,7 +664,7 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
     memset(mColors.get(), 0, 256 * sizeof(ColorTableEntry));
 
     
-    mBytesPerColor = (mBIH.bihsize == InfoHeaderLength::WIN_V2) ? 3 : 4;
+    mBytesPerColor = (mH.mBIHSize == InfoHeaderLength::WIN_V2) ? 3 : 4;
   }
 
   MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
@@ -724,19 +713,19 @@ nsBMPDecoder::ReadColorTable(const char* aData, size_t aLength)
   
   
   
-  if (mPreGapLength > mBFH.dataoffset) {
+  if (mPreGapLength > mH.mDataOffset) {
     PostDataError();
     return Transition::Terminate(State::FAILURE);
   }
-  uint32_t gapLength = mBFH.dataoffset - mPreGapLength;
+  uint32_t gapLength = mH.mDataOffset - mPreGapLength;
   return Transition::To(State::GAP, gapLength);
 }
 
 LexerTransition<nsBMPDecoder::State>
 nsBMPDecoder::SkipGap()
 {
-  bool hasRLE = mBIH.compression == Compression::RLE8 ||
-                mBIH.compression == Compression::RLE4;
+  bool hasRLE = mH.mCompression == Compression::RLE8 ||
+                mH.mCompression == Compression::RLE4;
   return hasRLE
        ? Transition::To(State::RLE_SEGMENT, RLE::SEGMENT_LENGTH)
        : Transition::To(State::PIXEL_ROW, mPixelRowSize);
@@ -749,8 +738,8 @@ nsBMPDecoder::ReadPixelRow(const char* aData)
 
   const uint8_t* src = reinterpret_cast<const uint8_t*>(aData);
   uint32_t* dst = RowBuffer();
-  uint32_t lpos = mBIH.width;
-  switch (mBIH.bpp) {
+  uint32_t lpos = mH.mWidth;
+  switch (mH.mBpp) {
     case 1:
       while (lpos > 0) {
         int8_t bit;
@@ -817,8 +806,8 @@ nsBMPDecoder::ReadPixelRow(const char* aData)
       break;
 
     case 32:
-      if (mBIH.compression == Compression::RGB && mIsWithinICO &&
-          mBIH.bpp == 32) {
+      if (mH.mCompression == Compression::RGB && mIsWithinICO &&
+          mH.mBpp == 32) {
         
         
         while (lpos > 0) {
@@ -894,11 +883,11 @@ nsBMPDecoder::ReadRLESegment(const char* aData)
     
     
     uint32_t pixelsNeeded =
-      std::min<uint32_t>(mBIH.width - mCurrentPos, byte1);
+      std::min<uint32_t>(mH.mWidth - mCurrentPos, byte1);
     if (pixelsNeeded) {
       uint32_t* dst = RowBuffer();
       mCurrentPos += pixelsNeeded;
-      if (mBIH.compression == Compression::RLE8) {
+      if (mH.mCompression == Compression::RLE8) {
         do {
           SetPixel(dst, byte2, mColors);
           pixelsNeeded --;
@@ -934,7 +923,7 @@ nsBMPDecoder::ReadRLESegment(const char* aData)
   MOZ_ASSERT(mAbsoluteModeNumPixels == 0);
   mAbsoluteModeNumPixels = byte2;
   uint32_t length = byte2;
-  if (mBIH.compression == Compression::RLE4) {
+  if (mH.mCompression == Compression::RLE4) {
     length = (length + 1) / 2;    
   }
   if (length & 1) {
@@ -959,8 +948,8 @@ nsBMPDecoder::ReadRLEDelta(const char* aData)
 
   
   mCurrentPos += uint8_t(aData[0]);
-  if (mCurrentPos > mBIH.width) {
-    mCurrentPos = mBIH.width;
+  if (mCurrentPos > mH.mWidth) {
+    mCurrentPos = mH.mWidth;
   }
 
   
@@ -989,7 +978,7 @@ nsBMPDecoder::ReadRLEAbsolute(const char* aData, size_t aLength)
   uint32_t n = mAbsoluteModeNumPixels;
   mAbsoluteModeNumPixels = 0;
 
-  if (mCurrentPos + n > uint32_t(mBIH.width)) {
+  if (mCurrentPos + n > uint32_t(mH.mWidth)) {
     
     
     return Transition::Terminate(State::SUCCESS);
@@ -1000,7 +989,7 @@ nsBMPDecoder::ReadRLEAbsolute(const char* aData, size_t aLength)
   uint32_t* dst = RowBuffer();
   uint32_t iSrc = 0;
   uint32_t* oldPos = dst;
-  if (mBIH.compression == Compression::RLE8) {
+  if (mH.mCompression == Compression::RLE8) {
     while (n > 0) {
       SetPixel(dst, aData[iSrc], mColors);
       n--;
