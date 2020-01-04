@@ -89,14 +89,12 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
 
 
 
-
     private String getTitle() {
         final int res = getResource();
         if (res == R.xml.preferences) {
             return getString(R.string.settings_title);
         }
 
-        
         
         if (res == R.xml.preferences_privacy) {
             return getString(R.string.pref_category_privacy_short);
@@ -108,6 +106,33 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
         }
 
         return null;
+    }
+
+    
+
+
+
+
+
+
+
+    private int getHeader() {
+        final int res = getResource();
+        if (res == R.xml.preferences) {
+            return R.id.pref_header_general;
+        }
+
+        
+        if (res == R.xml.preferences_privacy) {
+            return R.id.pref_header_privacy;
+        }
+
+        
+        if (res == R.xml.preferences_search) {
+            return R.id.pref_header_search;
+        }
+
+        return -1;
     }
 
     private void updateTitle() {
@@ -122,6 +147,7 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
             
             
             activity.showBreadCrumbs(newTitle, newTitle);
+            ((GeckoPreferences) activity).switchToHeader(getHeader());
             return;
         }
 
