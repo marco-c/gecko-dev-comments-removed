@@ -543,6 +543,23 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
       success = (sizeUnit != nsIPrintSettings::kPaperSizeInches)
              || (width < 100.0)
              || (height < 100.0);
+#if defined(XP_WIN)
+      
+      
+      
+      if (sizeUnit == nsIPrintSettings::kPaperSizeMillimeters &&
+          height == 11L && width == 8.5L) {
+
+        
+        
+        
+        if (GETINTPREF(kPrintResolution, &iVal) &&
+            (iVal < 0 || iVal > 1000000)) {
+          height = -1L;
+          width = -1L;
+        }
+      }
+#endif
     }
 
     if (success) {
