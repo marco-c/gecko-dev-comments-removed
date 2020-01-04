@@ -101,9 +101,7 @@ protected:
 
   void EmptyBufferFailure(OmxBufferFailureHolder aFailureHolder);
 
-  void NotifyError(OMX_ERRORTYPE aOmxError,
-                   const char* aLine,
-                   MediaDataDecoderError aError = MediaDataDecoderError::FATAL_ERROR);
+  void NotifyError(OMX_ERRORTYPE aError, const char* aLine);
 
   
   
