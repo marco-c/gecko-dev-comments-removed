@@ -44,8 +44,6 @@ function run_test() {
                         "UWM4GJke4pE8ecHiXoi-7KnZXty6Pe3s4o3yAIyKDP9jUC52Ek1G" +
                         "q25j_X703nP5rk5gM1qz5Fe-qCWakPPl6L";
 
-  setRoot(TEST_DATA_DIR + "content_signing_root.pem");
-
   let remoteNewTabChain = loadChain(TEST_DATA_DIR + "content_signing",
                                     ["remote_newtab_ee", "int", "root"]);
 
@@ -64,6 +62,13 @@ function run_test() {
   
   let chain1 = oneCRLChain.join("\n");
   let verifier = getSignatureVerifier();
+  ok(!verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain1, ONECRL_NAME),
+     "Before the root is set, signatures should fail to verify but not throw.");
+
+  setRoot(TEST_DATA_DIR + "content_signing_root.pem");
+
+  
+  verifier = getSignatureVerifier();
   ok(verifier.verifyContentSignature(DATA, GOOD_SIGNATURE, chain1, ONECRL_NAME),
      "A OneCRL signature should verify with the OneCRL chain");
   let chain2 = remoteNewTabChain.join("\n");

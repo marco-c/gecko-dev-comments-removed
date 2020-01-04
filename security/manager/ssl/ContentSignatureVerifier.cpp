@@ -183,6 +183,10 @@ ContentSignatureVerifier::CreateContext(const nsACString& aData,
                           nullptr);
   if (result != Success) {
     
+    if (IsFatalError(result)) {
+      return NS_ERROR_FAILURE;
+    }
+    
     CSVerifier_LOG(("CSVerifier: The supplied chain is bad\n"));
     return NS_ERROR_INVALID_SIGNATURE;
   }
