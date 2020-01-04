@@ -137,10 +137,10 @@ this.GeckoDriver = function(appName, device, emulator) {
 
   this.sessionCapabilities = {
     
-    "browserName": Services.appinfo.name,
+    "browserName": this.appName,
     "browserVersion": Services.appinfo.version,
-    "platformName": Services.sysinfo.getProperty("name"),
-    "platformVersion": Services.sysinfo.getProperty("version"),
+    "platformName": Services.appinfo.OS.toUpperCase(),
+    "platformVersion": Services.appinfo.platformVersion,
     "specificationLevel": "1",
 
     
@@ -152,13 +152,13 @@ this.GeckoDriver = function(appName, device, emulator) {
     "proxy": {},
 
     
-    "platform": Services.sysinfo.getProperty("name").toUpperCase(),
+    "platform": Services.appinfo.OS.toUpperCase(),
 
     
     "XULappId" : Services.appinfo.ID,
     "appBuildId" : Services.appinfo.appBuildID,
     "device": device,
-    "version": Services.appinfo.version,
+    "version": Services.appinfo.version
   };
 
   this.mm = globalMessageManager;
