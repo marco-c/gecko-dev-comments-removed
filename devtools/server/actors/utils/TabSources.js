@@ -5,12 +5,12 @@
 "use strict";
 
 const { Ci, Cu } = require("chrome");
-const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert, fetch } = DevToolsUtils;
 const EventEmitter = require("devtools/shared/event-emitter");
 const { OriginalLocation, GeneratedLocation } = require("devtools/server/actors/common");
 const { resolve } = require("promise");
+const URL = require("URL");
 
 loader.lazyRequireGetter(this, "SourceActor", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "isEvalSource", "devtools/server/actors/script", true);
@@ -258,9 +258,9 @@ TabSources.prototype = {
 
   _isMinifiedURL: function (aURL) {
     try {
-      let url = Services.io.newURI(aURL, null, null)
-                           .QueryInterface(Ci.nsIURL);
-      return MINIFIED_SOURCE_REGEXP.test(url.fileName);
+      let url = new URL(aURL);
+      let pathname = url.pathname;
+      return MINIFIED_SOURCE_REGEXP.test(pathname.slice(pathname.lastIndexOf("/") + 1));
     } catch (e) {
       
       
@@ -301,22 +301,28 @@ TabSources.prototype = {
       spec.isInlineSource = true;
     } else {
       if (url) {
-        try {
-          let urlInfo = Services.io.newURI(url, null, null).QueryInterface(Ci.nsIURL);
-          if (urlInfo.fileExtension === "xml") {
+        
+        
+        if (url.indexOf("javascript:") === 0 || url === 'debugger eval code') {
+          spec.contentType = "text/javascript";
+        } else {
+          try {
+            let pathname = new URL(url).pathname;
+            let filename = pathname.slice(pathname.lastIndexOf("/") + 1);
+            let index = filename.lastIndexOf(".");
+            let extension = index >= 0 ? filename.slice(index + 1) : "";
+            if (extension === "xml") {
+              
+              
+              
+              spec.isInlineSource = true;
+            }
+            else if (extension === "js") {
+              spec.contentType = "text/javascript";
+            }
+          } catch (e) {
             
             
-            
-            spec.isInlineSource = true;
-          }
-          else if (urlInfo.fileExtension === "js") {
-            spec.contentType = "text/javascript";
-          }
-        } catch(ex) {
-          
-          
-          if (url.indexOf("javascript:") === 0 || url === 'debugger eval code') {
-            spec.contentType = "text/javascript";
           }
         }
       }
@@ -478,8 +484,9 @@ TabSources.prototype = {
   },
 
   _dirname: function (aPath) {
-    return Services.io.newURI(
-      ".", null, Services.io.newURI(aPath, null, null)).spec;
+    let url = new URL(aPath);
+    let href = url.href;
+    return href.slice(0, href.lastIndexOf("/"));
   },
 
   
@@ -778,12 +785,12 @@ TabSources.prototype = {
 
   _normalize: function (...aURLs) {
     assert(aURLs.length > 1, "Should have more than 1 URL");
-    let base = Services.io.newURI(aURLs.pop(), null, null);
+    let base = new URL(aURLs.pop());
     let url;
     while ((url = aURLs.pop())) {
-      base = Services.io.newURI(url, null, base);
+      base = new URL(url, base);
     }
-    return base.spec;
+    return base.href;
   },
 
   iter: function () {
