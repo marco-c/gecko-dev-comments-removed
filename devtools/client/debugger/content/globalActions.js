@@ -6,4 +6,11 @@
 const constants = require('./constants');
 
 
-module.exports = {};
+
+function unload() {
+  return {
+    type: constants.UNLOAD
+  }
+}
+
+module.exports = { unload };

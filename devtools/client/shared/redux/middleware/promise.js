@@ -4,6 +4,7 @@
 "use strict";
 
 const uuidgen = require("sdk/util/uuid").uuid;
+const promise = require("promise");
 const {
   entries, toObject, reportException, executeSoon
 } = require("devtools/shared/DevToolsUtils");
@@ -15,7 +16,7 @@ function promiseMiddleware ({ dispatch, getState }) {
       return next(action);
     }
 
-    const promise = action[PROMISE];
+    const promiseInst = action[PROMISE];
     const seqId = uuidgen().toString();
 
     
@@ -26,26 +27,27 @@ function promiseMiddleware ({ dispatch, getState }) {
 
     dispatch(Object.assign({}, action, { status: "start" }));
 
-    promise.then(value => {
+    
+    
+    const deferred = promise.defer();
+    promiseInst.then(value => {
       executeSoon(() => {
         dispatch(Object.assign({}, action, {
           status: "done",
           value: value
         }));
+        deferred.resolve(value);
       });
-    }).catch(error => {
+    }, error => {
       executeSoon(() => {
         dispatch(Object.assign({}, action, {
           status: "error",
-          error
+          error: error.message || error
         }));
+        deferred.reject(error);
       });
-      reportException(`@@redux/middleware/promise#${action.type}`, error);
     });
-
-    
-    
-    return promise;
+    return deferred.promise;
   };
 }
 
