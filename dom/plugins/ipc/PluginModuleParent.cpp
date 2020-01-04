@@ -2687,6 +2687,7 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
                                     InfallibleTArray<nsCString>& values,
                                     NPSavedData* saved, NPError* error)
 {
+    MOZ_ASSERT(names.Length() == values.Length());
     if (mPluginName.IsEmpty()) {
         GetPluginDetails();
         InitQuirksModes(nsDependentCString(pluginType));
@@ -2712,6 +2713,18 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
         new PluginInstanceParent(this, instance, strPluginType, mNPNIface);
 
     if (mIsFlashPlugin) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        std::reverse(names.begin(), names.end());
+        std::reverse(values.begin(), values.end());
+
         parentInstance->InitMetadata(strPluginType, srcAttribute);
 #ifdef XP_WIN
         bool supportsAsyncRender = false;
