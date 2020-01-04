@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+module.exports = function(context) {
+  
+  
+  
+
+  return {
+    Program: function(node) {
+      context.markVariableAsUsed("test");
+    }
+  };
+};

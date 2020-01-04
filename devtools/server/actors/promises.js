@@ -13,8 +13,6 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 loader.lazyRequireGetter(this, "events", "sdk/event/core");
 
 
-
-
 types.addType("ObjectActor", {
   write: actor => actor.grip(),
   read: grip => grip

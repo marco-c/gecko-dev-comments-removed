@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 
@@ -999,7 +998,9 @@ var NodeFront = protocol.FrontClass(NodeActor, {
     return this._form.props ? (name in this._form.props) : null;
   },
 
-  get formProperties() this._form.props,
+  get formProperties() {
+    return this._form.props
+  },
 
   
 
