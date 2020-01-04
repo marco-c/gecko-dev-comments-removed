@@ -1167,6 +1167,13 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
       if (mQueuedSeek.Exists()) {
         
       } else if (mSeekTask && mSeekTask->Exists()) {
+        
+        
+        
+        
+        if (mSeekTask->GetSeekJob().mTarget.IsVideoOnly()) {
+          mSeekTask->GetSeekJob().mTarget.SetType(SeekTarget::Accurate);
+        }
         mQueuedSeek = Move(mSeekTask->GetSeekJob());
         mSeekTaskRequest.DisconnectIfExists();
       } else {
@@ -1644,9 +1651,6 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
                                       Move(aSeekJob), mInfo, Duration(),
                                       GetMediaTime(), AudioQueue(), VideoQueue());
   } else {
-    
-    
-    
     MOZ_DIAGNOSTIC_ASSERT(false, "Cannot handle this seek task.");
   }
 
