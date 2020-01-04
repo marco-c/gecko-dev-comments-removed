@@ -558,7 +558,8 @@ BufferTextureHost::PrepareTextureSource(CompositableTextureSourceRef& aTexture)
                              || (mFormat == gfx::SurfaceFormat::YUV
                                  && mCompositor
                                  && mCompositor->SupportsEffect(EffectTypes::YCBCR)
-                                 && texture->GetNextSibling())
+                                 && texture->GetNextSibling()
+                                 && texture->GetNextSibling()->GetNextSibling())
                              || (mFormat == gfx::SurfaceFormat::YUV
                                  && mCompositor
                                  && !mCompositor->SupportsEffect(EffectTypes::YCBCR)
@@ -573,6 +574,15 @@ BufferTextureHost::PrepareTextureSource(CompositableTextureSourceRef& aTexture)
     mFirstSource = texture;
     mFirstSource->SetOwner(this);
     mNeedsFullUpdate = true;
+
+    
+    
+    
+    RefPtr<TextureSource> it = mFirstSource;
+    while (it) {
+      it->SetCompositor(mCompositor);
+      it = it->GetNextSibling();
+    }
   }
 }
 
