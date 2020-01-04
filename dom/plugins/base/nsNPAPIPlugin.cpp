@@ -693,7 +693,6 @@ AsyncCallbackAutoLock::~AsyncCallbackAutoLock()
   }
 }
 
-
 NPP NPPStack::sCurrentNPP = nullptr;
 
 const char *
@@ -743,7 +742,6 @@ _geturl(NPP npp, const char* relativeURL, const char* target)
       (strncmp(relativeURL, "https:", 6) != 0) &&
       (strncmp(relativeURL, "ftp:", 4) != 0)) {
     nsNPAPIPluginInstance *inst = (nsNPAPIPluginInstance *) npp->ndata;
-
 
     const char *name = nullptr;
     RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
@@ -1958,9 +1956,7 @@ _getvalue(NPP npp, NPNVariable variable, void *result)
         return NPERR_NO_ERROR;
       }
     }
-    else {
-      return NPERR_GENERIC_ERROR;
-    }
+    return NPERR_GENERIC_ERROR;
   }
 
 #ifndef NP_NO_QUICKDRAW
@@ -2189,14 +2185,13 @@ _getvalue(NPP npp, NPNVariable variable, void *result)
 
   
   case NPNVDOMElement:
-    
   case NPNVDOMWindow:
-    
   case NPNVserviceManager:
     
     
     *(nsISupports**)result = nullptr;
-    
+    MOZ_FALLTHROUGH;
+
   default:
     NPN_PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("NPN_getvalue unhandled get value: %d\n", variable));
     return NPERR_GENERIC_ERROR;
