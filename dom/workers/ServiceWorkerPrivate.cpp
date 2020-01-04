@@ -845,6 +845,15 @@ private:
   bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
 
+  NS_IMETHOD
+  Cancel() override
+  {
+    
+    
+    mHandler = nullptr;
+    return WorkerRunnable::Cancel();
+  }
+
   RefPtr<AllowWindowInteractionHandler> mHandler;
 };
 
@@ -955,6 +964,7 @@ bool
 ClearWindowAllowedRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
 {
   mHandler->ClearWindowAllowed(aWorkerPrivate);
+  mHandler = nullptr;
   return true;
 }
 
