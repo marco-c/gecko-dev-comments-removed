@@ -27,6 +27,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "DirectoryLinksProvider",
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
                                   "resource://gre/modules/NewTabUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
+                                  "resource:///modules/NewTabPrefsProvider.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "NewTabWebChannel",
+                                  "resource:///modules/NewTabWebChannel.jsm");
+
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabMessages",
                                   "resource:///modules/NewTabMessages.jsm");
 
@@ -753,6 +759,8 @@ BrowserGlue.prototype = {
     NewTabUtils.links.addProvider(DirectoryLinksProvider);
     AboutNewTab.init();
 
+    NewTabPrefsProvider.prefs.init();
+    NewTabWebChannel.init();
     NewTabMessages.init();
 
     SessionStore.init();
@@ -1058,6 +1066,8 @@ BrowserGlue.prototype = {
     }
 
     SelfSupportBackend.uninit();
+    NewTabPrefsProvider.prefs.uninit();
+    NewTabWebChannel.uninit();
     NewTabMessages.uninit();
 
     AboutNewTab.uninit();
@@ -1794,7 +1804,7 @@ BrowserGlue.prototype = {
   },
 
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 36;
+    const UI_VERSION = 37;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2154,6 +2164,10 @@ BrowserGlue.prototype = {
       xulStore.removeValue("chrome://passwordmgr/content/passwordManager.xul",
                            "passwordCol",
                            "hidden");
+    }
+
+    if (currentVersion < 37) {
+      Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
     }
 
     
