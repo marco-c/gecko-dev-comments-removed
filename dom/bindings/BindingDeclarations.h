@@ -500,6 +500,24 @@ struct MOZ_STACK_CLASS ParentObject {
   bool mUseXBLScope;
 };
 
+namespace binding_detail {
+
+
+template<typename T>
+class AutoSequence : public AutoTArray<T, 16>
+{
+public:
+  AutoSequence() : AutoTArray<T, 16>()
+  {}
+
+  
+  operator const Sequence<T>&() const {
+    return *reinterpret_cast<const Sequence<T>*>(this);
+  }
+};
+
+} 
+
 } 
 } 
 
