@@ -46,6 +46,5 @@ public interface TelemetryPingStore extends Parcelable {
 
 
 
-
-    void onUploadAttemptComplete(Set<Integer> successfulRemoveIDs);
+    void onUploadAttemptComplete(Set<String> successfulRemoveIDs);
 }

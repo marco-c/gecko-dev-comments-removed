@@ -16,7 +16,11 @@ import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.sync.NonObjectJSONException;
 import org.mozilla.gecko.telemetry.TelemetryPing;
 import org.mozilla.gecko.util.FileUtils;
+import org.mozilla.gecko.util.FileUtils.FileLastModifiedComparator;
+import org.mozilla.gecko.util.FileUtils.FilenameRegexFilter;
+import org.mozilla.gecko.util.FileUtils.FilenameWhitelistFilter;
 import org.mozilla.gecko.util.StringUtils;
+import org.mozilla.gecko.util.UUIDUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,13 +30,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 
@@ -58,34 +60,21 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
 
     @VisibleForTesting static final int MAX_PING_COUNT = 40; 
 
-    private static final String FILENAME = "ping-%s.json";
-    private static final Pattern FILENAME_PATTERN = Pattern.compile("ping-([0-9]+)\\.json");
-
     
     @VisibleForTesting static final String KEY_PAYLOAD = "p";
     @VisibleForTesting static final String KEY_URL_PATH = "u";
 
     private final File storeDir;
+    private final FilenameFilter uuidFilenameFilter;
 
     public TelemetryJSONFilePingStore(final File storeDir) {
         this.storeDir = storeDir;
         this.storeDir.mkdirs();
+        uuidFilenameFilter = new FilenameRegexFilter(UUIDUtil.UUID_PATTERN);
     }
 
-    @VisibleForTesting File getPingFile(final long id) {
-        final String filename = String.format(Locale.US, FILENAME, id);
-        return new File(storeDir, filename);
-    }
-
-    
-
-
-    @VisibleForTesting static int getIDFromFilename(final String filename) {
-        final Matcher matcher = FILENAME_PATTERN.matcher(filename);
-        if (!matcher.matches()) { 
-            return -1;
-        }
-        return Integer.parseInt(matcher.group(1));
+    @VisibleForTesting File getPingFile(final String docID) {
+        return new File(storeDir, docID);
     }
 
     @Override
@@ -101,48 +90,36 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
             throw new IOException("Unable to create JSON to store to disk");
         }
 
-        final FileOutputStream outputStream = new FileOutputStream(getPingFile(ping.getUniqueID()), false);
+        final FileOutputStream outputStream = new FileOutputStream(getPingFile(ping.getDocID()), false);
         blockForLockAndWriteFileAndCloseStream(outputStream, output);
     }
 
     @Override
     public void maybePrunePings() {
-        final File[] files = storeDir.listFiles(new PingFileFilter());
+        final File[] files = storeDir.listFiles(uuidFilenameFilter);
         if (files.length < MAX_PING_COUNT) {
             return;
         }
 
-        final SortedSet<Integer> ids = getIDsFromFileList(files);
-        removeFilesWithSmallestIDs(ids, files.length - MAX_PING_COUNT);
+        final SortedSet<File> sortedFiles = new TreeSet<>(new FileLastModifiedComparator());
+        sortedFiles.addAll(Arrays.asList(files));
+        deleteSmallestFiles(sortedFiles, files.length - MAX_PING_COUNT);
     }
 
-    private static SortedSet<Integer> getIDsFromFileList(final File[] files) {
-        
-        
-        
-        final SortedSet<Integer> out = new TreeSet<>();
-        for (final File file : files) {
-            final int id = getIDFromFilename(file.getName());
-            if (id >= 0) {
-                out.add(id);
-            }
-        }
-        return out;
-    }
-
-    private void removeFilesWithSmallestIDs(final SortedSet<Integer> ids, final int numFilesToRemove) {
-        final Iterator<Integer> it = ids.iterator();
+    private void deleteSmallestFiles(final SortedSet<File> files, final int numFilesToRemove) {
+        final Iterator<File> it = files.iterator();
         int i = 0;
-        while (i < numFilesToRemove) { 
+        while (i < numFilesToRemove) {
             i += 1;
-            final Integer id = it.next(); 
-            getPingFile(id).delete();
+            
+            final File file = it.next(); 
+            file.delete();
         }
     }
 
     @Override
     public ArrayList<TelemetryPing> getAllPings() {
-        final File[] files = storeDir.listFiles(new PingFileFilter());
+        final File[] files = storeDir.listFiles(uuidFilenameFilter);
         final ArrayList<TelemetryPing> out = new ArrayList<>(files.length);
         for (final File file : files) {
             final JSONObject obj = lockAndReadJSONFromFile(file);
@@ -154,12 +131,7 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
             try {
                 final String url = obj.getString(KEY_URL_PATH);
                 final ExtendedJSONObject payload = new ExtendedJSONObject(obj.getString(KEY_PAYLOAD));
-                final int id = getIDFromFilename(file.getName());
-                if (id < 0) {
-                    throw new IllegalStateException("These files are already filtered - did not expect to see " +
-                            "an invalid ID in these files");
-                }
-                out.add(new TelemetryPing(url, payload, id));
+                out.add(new TelemetryPing(url, payload, file.getName()));
             } catch (final IOException | JSONException | NonObjectJSONException e) {
                 Log.w(LOGTAG, "Bad json in ping. Ignoring.");
                 continue;
@@ -199,12 +171,12 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
     }
 
     @Override
-    public void onUploadAttemptComplete(final Set<Integer> successfulRemoveIDs) {
+    public void onUploadAttemptComplete(final Set<String> successfulRemoveIDs) {
         if (successfulRemoveIDs.isEmpty()) {
             return;
         }
 
-        final File[] files = storeDir.listFiles(new PingFileFilter(successfulRemoveIDs));
+        final File[] files = storeDir.listFiles(new FilenameWhitelistFilter(successfulRemoveIDs));
         for (final File file : files) {
             file.delete();
         }
@@ -248,27 +220,6 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
             return new JSONObject(FileUtils.readStringFromInputStreamAndCloseStream(inputStream, fileSize));
         } finally {
             inputStream.close(); 
-        }
-    }
-
-    private static class PingFileFilter implements FilenameFilter {
-        private final Set<Integer> idsToFilter;
-
-        public PingFileFilter() {
-            this(null);
-        }
-
-        public PingFileFilter(final Set<Integer> idsToFilter) {
-            this.idsToFilter = idsToFilter;
-        }
-
-        @Override
-        public boolean accept(final File dir, final String filename) {
-            if (idsToFilter == null) {
-                return FILENAME_PATTERN.matcher(filename).matches();
-            }
-
-            return idsToFilter.contains(getIDFromFilename(filename));
         }
     }
 
