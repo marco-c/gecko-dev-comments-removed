@@ -536,14 +536,12 @@ class Module
     
     
 
-    bool dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> heap,
-                         Handle<FunctionVector> imports);
-
-    
-    
-
-    bool createExportObject(JSContext* cx, Handle<WasmModuleObject*> moduleObj,
-                            const ExportMap& map, MutableHandleObject exportObj);
+    bool dynamicallyLink(JSContext* cx,
+                         Handle<WasmModuleObject*> moduleObj,
+                         Handle<ArrayBufferObjectMaybeShared*> heap,
+                         Handle<FunctionVector> imports,
+                         const ExportMap& exportMap,
+                         MutableHandleObject exportObj);
 
     
 
