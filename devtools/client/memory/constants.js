@@ -30,6 +30,9 @@ actions.SELECT_SNAPSHOT = "select-snapshot";
 actions.TOGGLE_INVERTED = "toggle-inverted";
 
 
+actions.SET_BREAKDOWN = "set-breakdown";
+
+
 actions.SNAPSHOT_ERROR = "snapshot-error";
 
 
