@@ -312,8 +312,17 @@ class SystemResourceMonitor(object):
             self.measurements.append(SystemResourceUsage(start_time, end_time,
                 cpu_times, cpu_percent, io, virt, swap))
 
-        self._process.join()
-        assert done
+        
+        
+        self._process.join(10)
+        if self._process.is_alive():
+            self._process.terminate()
+            self._process.join(10)
+        else:
+            
+            
+            
+            assert done
 
         if len(self.measurements):
             self.start_time = self.measurements[0].start
