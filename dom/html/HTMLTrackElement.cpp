@@ -202,13 +202,6 @@ HTMLTrackElement::LoadResource()
     mChannel = nullptr;
   }
 
-  
-  
-  
-  if (!mTrack) {
-    CreateTextTrack();
-  }
-
   nsCOMPtr<nsIChannel> channel;
   nsCOMPtr<nsILoadGroup> loadGroup = OwnerDoc()->GetDocumentLoadGroup();
   rv = NS_NewChannel(getter_AddRefs(channel),
@@ -259,11 +252,16 @@ HTMLTrackElement::BindToTree(nsIDocument* aDocument,
   if (!mMediaParent) {
     mMediaParent = static_cast<HTMLMediaElement*>(aParent);
 
-    HTMLMediaElement* media = static_cast<HTMLMediaElement*>(aParent);
     
-    media->NotifyAddedSource();
+    mMediaParent->NotifyAddedSource();
     LOG(LogLevel::Debug, ("Track element sent notification to parent."));
 
+    
+    
+    
+    if (!mTrack) {
+      CreateTextTrack();
+    }
     RefPtr<Runnable> r = NewRunnableMethod(this, &HTMLTrackElement::LoadResource);
     mMediaParent->RunInStableState(r);
   }
