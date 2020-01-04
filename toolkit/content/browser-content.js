@@ -670,60 +670,17 @@ var FindBar = {
 };
 FindBar.init();
 
-let WebChannelMessageToChromeListener = {
-  
-  
-  
-  URL_WHITELIST_PREF: "webchannel.allowObject.urlWhitelist",
 
+addEventListener("WebChannelMessageToChrome", function (e) {
   
-  
-  
-  
-  _principalWhitelist: null,
+  let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
 
-  init() {
-    Services.prefs.addObserver(this.URL_WHITELIST_PREF, () => {
-      this._principalWhitelist = null;
-    }, false);
-    addEventListener("WebChannelMessageToChrome", e => {
-      this._onMessageToChrome(e);
-    }, true, true);
-  },
-
-  _getWhitelistedPrincipals() {
-    if (!this._principalWhitelist) {
-      let prefValue = Services.prefs.getCharPref(this.URL_WHITELIST_PREF);
-      let urls = prefValue.split(/\s+/);
-      this._principalWhitelist = urls.map(origin =>
-        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin));
-    }
-    return this._principalWhitelist;
-  },
-
-  _onMessageToChrome(e) {
-    
-    let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
-
-    if (e.detail) {
-      if (typeof e.detail != 'string') {
-        
-        
-        let objectsAllowed = this._getWhitelistedPrincipals().some(whitelisted =>
-          principal.originNoSuffix == whitelisted.originNoSuffix);
-        if (!objectsAllowed) {
-          Cu.reportError("WebChannelMessageToChrome sent with an object from a non-whitelisted principal");
-          return;
-        }
-      }
-      sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
-    } else  {
-      Cu.reportError("WebChannel message failed. No message detail.");
-    }
+  if (e.detail) {
+    sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
+  } else  {
+    Cu.reportError("WebChannel message failed. No message detail.");
   }
-};
-
-WebChannelMessageToChromeListener.init();
+}, true, true);
 
 
 

@@ -44,8 +44,8 @@ var gTests = [
         let channel = new WebChannel("twoway", Services.io.newURI(HTTP_PATH, null, null));
 
         channel.listen(function (id, message, sender) {
-          is(id, "twoway", "bad id");
-          ok(message.command, "command not ok");
+          is(id, "twoway");
+          ok(message.command);
 
           if (message.command === "one") {
             channel.send({ data: { nested: true } }, sender);
@@ -74,8 +74,8 @@ var gTests = [
         });
 
         iframeChannel.listen(function (id, message, sender) {
-          is(id, "twoway", "bad id (2)");
-          ok(message.command, "command not ok (2)");
+          is(id, "twoway");
+          ok(message.command);
 
           if (message.command === "one") {
             iframeChannel.send({ data: { nested: true } }, sender);
@@ -328,75 +328,6 @@ var gTests = [
       });
     }
   },
-  {
-    desc: "WebChannel disallows non-string message from non-whitelisted origin",
-    run: function* () {
-      
-
-
-
-
-
-
-      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH, null, null));
-      let testDonePromise = new Promise((resolve, reject) => {
-        channel.listen((id, message, sender) => {
-          is(id, "objects");
-          is(message.type, "string");
-          resolve();
-        });
-      });
-      yield BrowserTestUtils.withNewTab({
-        gBrowser,
-        url: HTTP_PATH + HTTP_ENDPOINT + "?object"
-      }, function* () {
-        yield testDonePromise;
-        channel.stopListening();
-      });
-    }
-  },
-  {
-    desc: "WebChannel allows both string and non-string message from whitelisted origin",
-    run: function* () {
-      
-
-
-
-      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH, null, null));
-
-      let testDonePromise = new Promise((resolve, reject) => {
-        let sawObject = false;
-        let sawString = false;
-        channel.listen((id, message, sender) => {
-          is(id, "objects");
-          if (message.type === "object") {
-            ok(!sawObject);
-            sawObject = true;
-          } else if (message.type === "string") {
-            ok(!sawString);
-            sawString = true;
-          } else {
-            reject(new Error(`Unknown message type: ${message.type}`))
-          }
-          if (sawObject && sawString) {
-            resolve();
-          }
-        });
-      });
-      const webchannelWhitelistPref = "webchannel.allowObject.urlWhitelist";
-      let origWhitelist = Services.prefs.getCharPref(webchannelWhitelistPref);
-      let newWhitelist = origWhitelist + " " + HTTP_PATH;
-      Services.prefs.setCharPref(webchannelWhitelistPref, newWhitelist);
-      yield BrowserTestUtils.withNewTab({
-        gBrowser,
-        url: HTTP_PATH + HTTP_ENDPOINT + "?object"
-      }, function* () {
-        yield testDonePromise;
-        Services.prefs.setCharPref(webchannelWhitelistPref, origWhitelist);
-        channel.stopListening();
-      });
-    }
-  }
 ]; 
 
 function test() {
