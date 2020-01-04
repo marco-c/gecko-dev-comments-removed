@@ -23,16 +23,21 @@ EvaluationResult.propTypes = {
 
 function EvaluationResult(props) {
   const { message } = props;
-  const icon = MessageIcon({severity: message.severity});
+  const {category, severity} = message;
+  const icon = MessageIcon({severity: severity});
 
-  
-  
-  
+  const classes = ["message", "cm-s-mozilla"];
+
+  if (category) {
+    classes.push(category);
+  }
+
+  if (severity) {
+    classes.push(severity);
+  }
+
   return dom.div({
-    class: "message cm-s-mozilla",
-    is: "fdt-message",
-    category: message.category,
-    severity: message.severity
+    className: classes.join(" ")
   },
     
     

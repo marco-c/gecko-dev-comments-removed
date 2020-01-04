@@ -14,9 +14,6 @@ const {
 DefaultRenderer.displayName = "DefaultRenderer";
 
 function DefaultRenderer(props) {
-  
-  
-  
   return dom.div({},
     "This message type is not supported yet."
   );

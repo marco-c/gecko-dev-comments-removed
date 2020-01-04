@@ -26,18 +26,23 @@ ConsoleCommand.propTypes = {
 
 function ConsoleCommand(props) {
   const { message } = props;
+  const {category, severity} = message;
 
-  const icon = MessageIcon({severity: message.severity});
+  const icon = MessageIcon({severity: severity});
 
-  
-  
-  
+  const classes = ["message"];
+
+  if (category) {
+    classes.push(category);
+  }
+
+  if (severity) {
+    classes.push(severity);
+  }
+
   return dom.div({
-    class: "message",
+    className: classes.join(" "),
     ariaLive: "off",
-    is: "fdt-message",
-    category: message.category,
-    severity: message.severity
   },
     
     

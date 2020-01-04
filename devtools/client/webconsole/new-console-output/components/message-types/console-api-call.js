@@ -24,22 +24,27 @@ ConsoleApiCall.propTypes = {
 
 function ConsoleApiCall(props) {
   const { message } = props;
+  const {category, severity} = message;
 
   const messageBody = message.parameters ?
     message.parameters.map((grip) => GripMessageBody({grip})) :
     message.messageText;
 
-  const icon = MessageIcon({severity: message.severity});
+  const icon = MessageIcon({severity: severity});
   const repeat = MessageRepeat({repeat: message.repeat});
 
-  
-  
-  
+  const classes = ["message", "cm-s-mozilla"];
+
+  if (category) {
+    classes.push(category);
+  }
+
+  if (severity) {
+    classes.push(severity);
+  }
+
   return dom.div({
-    class: "message cm-s-mozilla",
-    is: "fdt-message",
-    category: message.category,
-    severity: message.severity
+    className: classes.join(" ")
   },
     
     
