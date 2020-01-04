@@ -16,6 +16,7 @@ const FORMAT_VERSION = 1;
 
 const TAB_STATE_NEEDS_RESTORE = 1;
 const TAB_STATE_RESTORING = 2;
+const TAB_STATE_WILL_RESTORE = 3;
 
 const NOTIFY_WINDOWS_RESTORED = "sessionstore-windows-restored";
 const NOTIFY_BROWSER_STATE_RESTORED = "sessionstore-browser-state-restored";
@@ -1781,12 +1782,10 @@ var SessionStoreInternal = {
 
 
   onBrowserCrashed: function(aWindow, aBrowser) {
+    NS_ASSERT(aBrowser.isRemoteBrowser,
+              "Only remote browsers should be able to crash");
     this._crashedBrowsers.add(aBrowser.permanentKey);
-    
-    
-    
-    
-    
+
     
     
     
@@ -2335,6 +2334,13 @@ var SessionStoreInternal = {
                       "Somehow a crashed browser is still remote.")
     }
 
+    
+    
+    
+    
+    aTab.removeAttribute("crashed");
+    browser.loadURI("about:blank", null, null);
+
     let data = TabState.collect(aTab);
     this.restoreTab(aTab, data);
   },
@@ -2429,6 +2435,8 @@ var SessionStoreInternal = {
       
       this.restoreTab(tab, tabState, options);
     });
+
+    tab.linkedBrowser.__SS_restoreState = TAB_STATE_WILL_RESTORE;
   },
 
   
@@ -2817,7 +2825,10 @@ var SessionStoreInternal = {
     for (var t = 0; t < newTabCount; t++) {
       tabs.push(t < openTabCount ?
                 tabbrowser.tabs[t] :
-                tabbrowser.addTab("about:blank", {skipAnimation: true}));
+                tabbrowser.addTab("about:blank", {
+                  skipAnimation: true,
+                  forceNotRemote: true,
+                }));
 
       if (winData.tabs[t].pinned)
         tabbrowser.pinTab(tabs[t]);
@@ -3127,21 +3138,6 @@ var SessionStoreInternal = {
 
     
     
-    let activePageData = tabData.entries[activeIndex] || null;
-    let uri = activePageData ? activePageData.url || null : null;
-    if (loadArguments) {
-      uri = loadArguments.uri;
-    }
-    tabbrowser.updateBrowserRemotenessByURL(browser, uri);
-
-    
-    
-    if (uri && ViewSourceBrowser.isViewSource(uri)) {
-      new ViewSourceBrowser(browser);
-    }
-
-    
-    
     
     let epoch = this.startNextEpoch(browser);
 
@@ -3198,9 +3194,45 @@ var SessionStoreInternal = {
 
 
   restoreTabContent: function (aTab, aLoadArguments = null) {
+    let browser = aTab.linkedBrowser;
+    let window = aTab.ownerDocument.defaultView;
+    let tabbrowser = window.gBrowser;
+    let tabData = TabState.clone(aTab);
+    let activeIndex = tabData.index - 1;
+    let activePageData = tabData.entries[activeIndex] || null;
+    let uri = activePageData ? activePageData.url || null : null;
+    if (aLoadArguments) {
+      uri = aLoadArguments.uri;
+    }
+
+    
+    
+    
+    
     this.markTabAsRestoring(aTab);
 
-    let browser = aTab.linkedBrowser;
+    if (tabbrowser.updateBrowserRemotenessByURL(browser, uri)) {
+      
+      
+      
+      
+      
+      let epoch = this.startNextEpoch(browser);
+
+      browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory", {
+        tabData: tabData,
+        epoch: epoch,
+        loadArguments: aLoadArguments
+      });
+
+    }
+
+    
+    
+    if (uri && ViewSourceBrowser.isViewSource(uri)) {
+      new ViewSourceBrowser(browser);
+    }
+
     browser.messageManager.sendAsyncMessage("SessionStore:restoreTabContent",
       {loadArguments: aLoadArguments});
   },
