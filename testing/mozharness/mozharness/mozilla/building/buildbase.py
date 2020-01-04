@@ -849,15 +849,6 @@ or run without that action (ie: --no-{action})"
         
         env['MOZ_BUILD_DATE'] = self.query_buildid()
 
-        
-        
-        
-        env['MOZ_SOURCE_REPO'] = self.repo_path
-        
-        
-        if isinstance(self.repo_path, unicode):
-            env['MOZ_SOURCE_REPO'] = self.repo_path.encode('latin1')
-
         if self.query_is_nightly() or self.query_is_nightly_promotion():
             if self.query_is_nightly():
                 
