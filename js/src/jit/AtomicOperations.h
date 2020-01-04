@@ -154,6 +154,12 @@ class AtomicOperations
     
     
     
+    
+    
+    
+    
+    
+    
     static inline bool isLockfree(int32_t n);
 
     
@@ -297,7 +303,12 @@ AtomicOperations::isLockfree(int32_t size)
       case 4:
         return true;
       case 8:
-        return AtomicOperations::isLockfree8();
+        
+        
+        
+        
+        
+        return false;
       default:
         return false;
     }

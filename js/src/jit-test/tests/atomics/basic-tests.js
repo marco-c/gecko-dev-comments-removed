@@ -375,23 +375,25 @@ function adHocExchange() {
     assertEq(exchangeLoop(a), -100000);
 }
 
+
+
+
+
+
+
+
 var sizes   = [    1,     2,     3,     4,     5,     6,     7,  8,
                    9,    10,    11,    12];
-var answers = [ true,  true, false,  true, false, false, false, {},
+var answers = [ true,  true, false,  true, false, false, false, false,
 	       false, false, false, false];
 
 function testIsLockFree() {
-    var saved8 = "Invalid";
-
     
     for ( var i=0 ; i < sizes.length ; i++ ) {
 	var v = Atomics.isLockFree(sizes[i]);
 	var a = answers[i];
 	assertEq(typeof v, 'boolean');
-	if (typeof a == 'boolean')
-	    assertEq(v, a);
-	else
-	    saved8 = v;
+	assertEq(v, a);
     }
 
     
@@ -402,7 +404,7 @@ function testIsLockFree() {
     assertEq(Atomics.isLockFree(5), false);
     assertEq(Atomics.isLockFree(6), false);
     assertEq(Atomics.isLockFree(7), false);
-    assertEq(Atomics.isLockFree(8), saved8);
+    assertEq(Atomics.isLockFree(8), false);
     assertEq(Atomics.isLockFree(9), false);
     assertEq(Atomics.isLockFree(10), false);
     assertEq(Atomics.isLockFree(11), false);
