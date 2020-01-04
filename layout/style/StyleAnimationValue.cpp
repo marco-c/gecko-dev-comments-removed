@@ -1196,6 +1196,32 @@ AddWeightedColors(double aCoeff1, nscolor aColor1,
   return NS_RGBA(Rres, Gres, Bres, Ares);
 }
 
+
+
+static nscolor
+DiluteColor(nscolor aColor, double aDilutionRatio)
+{
+  MOZ_ASSERT(aDilutionRatio >= 0.0 && aDilutionRatio <= 1.0,
+             "Dilution ratio should be in [0, 1]");
+
+  double A = NS_GET_A(aColor) * (1.0 / 255.0);
+  double Aresf = A * aDilutionRatio;
+  if (Aresf <= 0.0) {
+    return NS_RGBA(0, 0, 0, 0);
+  }
+
+  
+  double R = NS_GET_R(aColor) * A;
+  double G = NS_GET_G(aColor) * A;
+  double B = NS_GET_B(aColor) * A;
+
+  double factor = 1.0 / Aresf;
+  return NS_RGBA(ClampColor(R * aDilutionRatio * factor),
+                 ClampColor(G * aDilutionRatio * factor),
+                 ClampColor(B * aDilutionRatio * factor),
+                 NSToIntRound(Aresf * 255.0));
+}
+
 static bool
 AddShadowItems(double aCoeff1, const nsCSSValue &aValue1,
                double aCoeff2, const nsCSSValue &aValue2,
@@ -2384,8 +2410,18 @@ StyleAnimationValue::AddWeighted(nsCSSPropertyID aProperty,
     case eUnit_Color: {
       nscolor color1 = aValue1.GetColorValue();
       nscolor color2 = aValue2.GetColorValue();
-      nscolor resultColor =
-        AddWeightedColors(aCoeff1, color1, aCoeff2, color2);
+      nscolor resultColor;
+
+      
+      
+      
+      
+      
+      if (aCoeff2 == 0.0) {
+        resultColor = DiluteColor(color1, aCoeff1);
+      } else {
+        resultColor = AddWeightedColors(aCoeff1, color1, aCoeff2, color2);
+      }
       aResultValue.SetColorValue(resultColor);
       return true;
     }
