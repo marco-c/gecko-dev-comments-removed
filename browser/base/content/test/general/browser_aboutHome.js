@@ -78,11 +78,24 @@ var gTests = [
   }
 },
 
+
 {
   desc: "Check that performing a search fires a search event and records to " +
-        "Telemetry.",
+        "Firefox Health Report.",
   setup: function () { },
   run: function* () {
+    
+    if (navigator.platform.indexOf("Linux") == 0) {
+      return Promise.resolve();
+    }
+
+    try {
+      let cm = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
+      cm.getCategoryEntry("healthreport-js-provider-default", "SearchesProvider");
+    } catch (ex) {
+      
+      return Promise.resolve();
+    }
 
     let engine = yield promiseNewEngine("searchSuggestionEngine.xml");
     
@@ -100,32 +113,23 @@ var gTests = [
     is(engine.name, engineName, "Engine name in DOM should match engine we just added");
 
     
-    let histogramKey = engine.identifier + ".abouthome";
-    try {
-      let hs = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").snapshot();
-      if (histogramKey in hs) {
-        numSearchesBefore = hs[histogramKey].sum;
-      }
-    } catch (ex) {
-      
-    }
-
-    
     let searchStr = "a search";
-    info("Perform a search.");
-    doc.getElementById("searchText").value = searchStr;
-    doc.getElementById("searchSubmit").click();
+    getNumberOfSearchesInFHR(engineName, "abouthome").then(num => {
+      numSearchesBefore = num;
+
+      info("Perform a search.");
+      doc.getElementById("searchText").value = searchStr;
+      doc.getElementById("searchSubmit").click();
+    });
 
     let expectedURL = Services.search.currentEngine.
                       getSubmission(searchStr, null, "homepage").
                       uri.spec;
     let loadPromise = waitForDocLoadAndStopIt(expectedURL).then(() => {
-      
-      let hs = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").snapshot();
-      Assert.ok(histogramKey in hs, "histogram with key should be recorded");
-      Assert.equal(hs[histogramKey].sum, numSearchesBefore + 1,
-                   "histogram sum should be incremented");
-      searchEventDeferred.resolve();
+      getNumberOfSearchesInFHR(engineName, "abouthome").then(num => {
+        is(num, numSearchesBefore + 1, "One more search recorded.");
+        searchEventDeferred.resolve();
+      });
     });
 
     try {

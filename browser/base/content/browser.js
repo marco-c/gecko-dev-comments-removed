@@ -3633,7 +3633,7 @@ const BrowserSearch = {
   loadSearchFromContext: function (terms) {
     let engine = BrowserSearch._loadSearch(terms, true, "contextmenu");
     if (engine) {
-      BrowserSearch.recordSearchInTelemetry(engine, "contextmenu");
+      BrowserSearch.recordSearchInHealthReport(engine, "contextmenu");
     }
   },
 
@@ -3657,22 +3657,6 @@ const BrowserSearch = {
     openUILinkIn(searchEnginesURL, where);
   },
 
-  _getSearchEngineId: function (engine) {
-    if (!engine) {
-      return "other";
-    }
-
-    if (engine.identifier) {
-      return engine.identifier;
-    }
-
-    if (!("name" in engine) || engine.name === undefined) {
-      return "other";
-    }
-
-    return "other-" + engine.name;
-  },
-
   
 
 
@@ -3688,7 +3672,45 @@ const BrowserSearch = {
 
 
 
-  recordSearchInTelemetry: function (engine, source, selection) {
+  recordSearchInHealthReport: function (engine, source, selection) {
+    BrowserUITelemetry.countSearchEvent(source, null, selection);
+    this.recordSearchInTelemetry(engine, source);
+
+    let reporter = AppConstants.MOZ_SERVICES_HEALTHREPORT
+                   ? Cc["@mozilla.org/datareporting/service;1"]
+                     .getService()
+                     .wrappedJSObject
+                     .healthReporter
+                   : null;
+
+    
+    
+    if (!reporter) {
+      return;
+    }
+
+    reporter.onInit().then(function record() {
+      try {
+        reporter.getProvider("org.mozilla.searches").recordSearch(engine, source);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    });
+  },
+
+  _getSearchEngineId: function (engine) {
+    if (!engine) {
+      return "other";
+    }
+
+    if (engine.identifier) {
+      return engine.identifier;
+    }
+
+    return "other-" + engine.name;
+  },
+
+  recordSearchInTelemetry: function (engine, source) {
     const SOURCES = [
       "abouthome",
       "contextmenu",
@@ -3696,8 +3718,6 @@ const BrowserSearch = {
       "searchbar",
       "urlbar",
     ];
-
-    BrowserUITelemetry.countSearchEvent(source, null, selection);
 
     if (SOURCES.indexOf(source) == -1) {
       Cu.reportError("Unknown source for search: " + source);

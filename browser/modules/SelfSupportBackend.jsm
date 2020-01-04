@@ -24,6 +24,8 @@ const PREF_ENABLED = "browser.selfsupport.enabled";
 
 const PREF_URL = "browser.selfsupport.url";
 
+const PREF_FHR_ENABLED = "datareporting.healthreport.service.enabled";
+
 const PREF_TELEMETRY_UNIFIED = "toolkit.telemetry.unified";
 
 const PREF_UITOUR_ENABLED = "browser.uitour.enabled";
@@ -83,7 +85,7 @@ var SelfSupportBackendInternal = {
     Preferences.observe(PREF_BRANCH_LOG, this._configureLogging, this);
 
     
-    let reportingEnabled = IS_UNIFIED_TELEMETRY;
+    let reportingEnabled = Preferences.get(PREF_FHR_ENABLED, false) || IS_UNIFIED_TELEMETRY;
     if (!reportingEnabled) {
       this._log.config("init - Disabling SelfSupport because FHR and Unified Telemetry are disabled.");
       return;
