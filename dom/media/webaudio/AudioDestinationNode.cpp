@@ -112,6 +112,14 @@ public:
     }
   }
 
+  virtual bool IsActive() const override
+  {
+    
+    
+    return true;
+  }
+
+
   class OnCompleteTask final : public nsRunnable
   {
   public:
@@ -253,6 +261,16 @@ public:
       aStream->Graph()->
         DispatchToMainThreadAfterStreamStateUpdate(runnable.forget());
     }
+  }
+
+  virtual bool IsActive() const override
+  {
+    
+    
+    
+    
+    
+    return true;
   }
 
   virtual void SetDoubleParameter(uint32_t aIndex, double aParam) override

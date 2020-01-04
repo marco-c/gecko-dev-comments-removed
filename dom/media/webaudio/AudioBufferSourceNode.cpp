@@ -508,6 +508,12 @@ public:
     }
   }
 
+  virtual bool IsActive() const override
+  {
+    
+    return mBufferSampleRate != 0;
+  }
+
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
   {
     

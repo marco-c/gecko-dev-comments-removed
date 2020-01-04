@@ -346,6 +346,12 @@ public:
                                     OutputChunks& aOutput,
                                     bool* aFinished);
 
+  
+  
+  
+  
+  virtual bool IsActive() const { return false; }
+
   bool HasNode() const
   {
     MOZ_ASSERT(NS_IsMainThread());
