@@ -290,18 +290,6 @@ public:
   
   MediaEventSource<void>& OnMediaNotSeekable() { return mOnMediaNotSeekable; }
 
-  bool IsSuspended() const
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return mIsSuspended;
-  }
-
-  void SetIsSuspended(bool aState)
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    mIsSuspended = aState;
-  }
-
 protected:
   virtual ~MediaDecoderReader();
 
@@ -447,7 +435,6 @@ private:
   
   bool mAudioDiscontinuity;
   bool mVideoDiscontinuity;
-  bool mIsSuspended;
 
   MediaEventListener mDataArrivedListener;
 };
