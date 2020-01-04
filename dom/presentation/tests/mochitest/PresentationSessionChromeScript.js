@@ -256,7 +256,7 @@ const mockedSessionTransport = {
     }, 0);
   },
   
-  buildDataChannelTransport: function(role, window, controlChannel, listener) {
+  buildDataChannelTransport: function(role, window, listener) {
     this._listener = listener;
     this._role = role;
 
