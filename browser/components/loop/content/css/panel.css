@@ -132,27 +132,20 @@ body {
 
 
 
-.contact-list-empty,
-.contact-search-list-empty,
-.no-conversations-message {
-  background-repeat: no-repeat;
-  background-position: top center;
-  text-align: center;
-  color: #4a4a4a;
-  font-weight: lighter;
-}
-
-
-
 .no-conversations-message {
   
 
+  text-align: center;
+  color: #4a4a4a;
+  font-weight: lighter;
   position: relative;
   top: 50%;
   transform: translateY(-50%);
   padding-top: 11rem;
   padding-bottom: 1rem;
   background-image: url("../shared/img/empty_conversations.svg");
+  background-repeat: no-repeat;
+  background-position: top center;
 }
 
 .panel-text-medium,
