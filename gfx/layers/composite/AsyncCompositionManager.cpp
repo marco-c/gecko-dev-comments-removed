@@ -948,6 +948,12 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
         
         
         
+        
+        
+        
+        
+        
+        
         MOZ_ASSERT(!aClipDeferredToParent);
         aClipDeferredToParent = Some(clip);
       } else {
