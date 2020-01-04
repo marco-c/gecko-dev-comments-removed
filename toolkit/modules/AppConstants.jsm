@@ -223,5 +223,10 @@ this.AppConstants = Object.freeze({
 #else
     false,
 #endif
-  DEBUG_JS_MODULES: "@DEBUG_JS_MODULES@"
+  DEBUG_JS_MODULES: "@DEBUG_JS_MODULES@",
+
+  
+  
+  
+  SOURCE_REVISION_URL: "@SOURCE_REV_URL@"
 });
