@@ -11,6 +11,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
+#include "prenv.h"
 #include "WebGLContext.h"
 #include "WebGLObjectModel.h"
 #include "WebGLShaderValidator.h"
@@ -167,7 +168,7 @@ WebGLShader::ShaderSource(const nsAString& source)
 
     
     
-    NS_LossyConvertUTF16toASCII sourceCString(cleanSource);
+    const NS_LossyConvertUTF16toASCII sourceCString(cleanSource);
 
     if (mContext->gl->WorkAroundDriverBugs()) {
         const size_t maxSourceLength = 0x3ffff;
@@ -179,23 +180,24 @@ WebGLShader::ShaderSource(const nsAString& source)
         }
     }
 
-    
-    {
+    if (PR_GetEnv("MOZ_WEBGL_DUMP_SHADERS")) {
+        printf_stderr("////////////////////////////////////////\n");
+        printf_stderr("// MOZ_WEBGL_DUMP_SHADERS:\n");
 
+        
+        
 
+        int32_t start = 0;
+        int32_t end = sourceCString.Find("\n", false, start, -1);
+        while (end > -1) {
+            const nsCString line(sourceCString.BeginReading() + start, end - start);
+            printf_stderr("%s\n", line.BeginReading());
+            start = end + 1;
+            end = sourceCString.Find("\n", false, start, -1);
+        }
 
-
-
-
-
-
-
-
-
-
-
+        printf_stderr("////////////////////////////////////////\n");
     }
-    
 
     mSource = source;
     mCleanSource = sourceCString;
