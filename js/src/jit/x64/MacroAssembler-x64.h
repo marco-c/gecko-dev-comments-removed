@@ -543,9 +543,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     
     
 
-    void add64(Imm32 imm, Register64 dest) {
-        addq(imm, dest.reg);
-    }
     void subPtr(Imm32 imm, Register dest) {
         subq(imm, dest);
     }
