@@ -169,6 +169,13 @@ user_pref("media.mediasource.mp4.enabled", true);
 user_pref("media.mediasource.webm.enabled", true);
 
 
+user_pref("media.fragmented-mp4.exposed", true);
+
+#if defined(LINUX)
+user_pref("media.fragmented-mp4.ffmpeg.enabled", true);
+#endif
+
+
 user_pref("dom.mozContacts.enabled", true);
 
 
@@ -342,3 +349,5 @@ user_pref("browser.urlbar.suggest.searches", false);
 user_pref("browser.urlbar.userMadeSearchSuggestionsChoice", true);
 
 user_pref("dom.audiochannel.mutedByDefault", false);
+
+user_pref("view_source.tab", true);
