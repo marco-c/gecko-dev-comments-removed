@@ -3206,6 +3206,12 @@ nsRootPresContext::CollectPluginGeometryUpdates(LayerManager* aLayerManager)
   mozilla::layers::ClientLayerManager* clm = aLayerManager->AsClientLayerManager();
 
   nsTArray<nsIWidget::Configuration> configurations;
+  
+  
+  if (!mRegisteredPlugins.Count() && clm) {
+    clm->StorePluginWidgetConfigurations(configurations);
+    return;
+  }
   PluginGetGeometryUpdate(mRegisteredPlugins, &configurations);
   if (configurations.IsEmpty()) {
     PluginDidSetGeometry(mRegisteredPlugins);
