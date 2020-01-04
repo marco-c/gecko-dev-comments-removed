@@ -493,7 +493,7 @@ private:
   void UpdateReadyState()
   {
     MOZ_ASSERT(NS_IsMainThread());
-    if (!mShuttingDown) {
+    if (!IsShutdown()) {
       mOwner->UpdateReadyState();
     }
   }
@@ -527,6 +527,8 @@ protected:
 
   
   bool IsEnded() const;
+
+  bool IsShutdown() const;
 
   
   
