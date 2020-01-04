@@ -108,46 +108,46 @@ function run_test()
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url, "no-store");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_false(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "no-store");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 
@@ -156,23 +156,23 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url, "no-cache");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 
@@ -181,48 +181,48 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "max-age=10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "max-age=10, max-stale=99999");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "max-age=1000");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_age_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 
@@ -231,59 +231,59 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_stale_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_stale_100_url), ""));
 
     
     do_timeout(1500, run_next_test);
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_stale_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_stale_100_url), ""));
 
     do_timeout(1500, run_next_test);
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_stale_100_url, "max-stale");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_stale_100_url), ""));
 
     do_timeout(1500, run_next_test);
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_stale_100_url, "max-stale=1000");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_stale_100_url), ""));
 
     do_timeout(1500, run_next_test);
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_stale_100_url, "max-stale=10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_stale_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 
@@ -292,45 +292,45 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_fresh_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_fresh_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url, "min-fresh=10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_false(hit_server);
     do_check_true(cache.exists(make_uri(resource_fresh_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url, "min-fresh=1000");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_fresh_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 
@@ -339,22 +339,22 @@ add_test(() => {
 
 add_test(() => {
   var ch = make_channel(resource_fresh_100_url, "unknown1,unknown2 = \"a,b\",  min-fresh = 1000 ");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_fresh_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 add_test(() => {
   var ch = make_channel(resource_fresh_100_url, "no-cache = , min-fresh = 10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
+  ch.asyncOpen2(new ChannelListener(function(request, data) {
     do_check_true(hit_server);
     do_check_true(cache.exists(make_uri(resource_fresh_100_url), ""));
 
     run_next_test();
-  }, null), null);
+  }, null));
 });
 
 
