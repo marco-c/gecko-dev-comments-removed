@@ -182,12 +182,12 @@ var showContentContextMenu = function (event) {
         imageCache.findEntryProperties(event.target.currentURI, doc);
       try {
         contentType = props.get("type", Ci.nsISupportsCString).data;
-      } catch (e) {}
+      } catch(e) {}
       try {
         contentDisposition =
           props.get("content-disposition", Ci.nsISupportsCString).data;
-      } catch (e) {}
-    } catch (e) {}
+      } catch(e) {}
+    } catch(e) {}
   }
 
   let selectionInfo = BrowserUtils.getSelectionDetails(content);
@@ -693,7 +693,7 @@ var PageMetadataMessenger = {
     addMessageListener("PageMetadata:GetMicroformats", this);
   },
   receiveMessage(message) {
-    switch (message.name) {
+    switch(message.name) {
       case "PageMetadata:GetPageData": {
         let target = message.objects.target;
         let result = PageMetadata.getData(content.document, target);
@@ -713,10 +713,6 @@ PageMetadataMessenger.init();
 
 addEventListener("ActivateSocialFeature", function (aEvent) {
   let document = content.document;
-  if (PrivateBrowsingUtils.isContentWindowPrivate(content)) {
-    Cu.reportError("cannot use social providers in private windows");
-    return;
-  }
   let dwu = content.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIDOMWindowUtils);
   if (!dwu.isHandlingUserInput) {
@@ -730,7 +726,7 @@ addEventListener("ActivateSocialFeature", function (aEvent) {
   if (data) {
     try {
       data = JSON.parse(data);
-    } catch (e) {
+    } catch(e) {
       Cu.reportError("Social Service manifest parse error: " + e);
       return;
     }
@@ -1461,7 +1457,7 @@ let OfflineApps = {
         
         return;
       }
-    } catch (e) {
+    } catch(e) {
       
     }
     let docId = ++this._docId;

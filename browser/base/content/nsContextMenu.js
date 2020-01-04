@@ -1046,12 +1046,7 @@ nsContextMenu.prototype = {
   },
 
   reload: function(event) {
-    if (this.onSocial) {
-      
-      Social._getProviderFromOrigin(this.browser.getAttribute("origin")).reload();
-    } else {
-      BrowserReloadOrDuplicate(event);
-    }
+    BrowserReloadOrDuplicate(event);
   },
 
   
@@ -1059,9 +1054,6 @@ nsContextMenu.prototype = {
     let inWindow = !Services.prefs.getBoolPref("view_source.tab");
     let openSelectionFn = inWindow ? null : function() {
       let tabBrowser = gBrowser;
-      
-      
-      
       
       if (!tabBrowser || !window.toolbar.visible) {
         
