@@ -42,6 +42,7 @@ var WindowListener = {
 
 
 
+
       get toolbarButton() {
         delete this.toolbarButton;
         return (this.toolbarButton = CustomizableUI.getWidget("loop-button").forWindow(window));
@@ -268,14 +269,6 @@ var WindowListener = {
 
       init: function() {
         
-        window.addEventListener("unload", () => {
-          this.uninit();
-        });
-
-        
-        Services.obs.addObserver(this, "loop-status-changed", false);
-
-        
         
         this.MozLoopService.initialize().catch(ex => {
           if (!ex.message ||
@@ -284,11 +277,21 @@ var WindowListener = {
             console.error(ex);
           }
         });
-        this.updateToolbarState();
-      },
 
-      uninit: function() {
-        Services.obs.removeObserver(this, "loop-status-changed");
+        
+        
+        if (window == Services.appShell.hiddenDOMWindow) {
+          return;
+        }
+
+        
+        window.addEventListener("unload", () => {
+          Services.obs.removeObserver(this, "loop-status-changed");
+        });
+
+        Services.obs.addObserver(this, "loop-status-changed", false);
+
+        this.updateToolbarState();
       },
 
       
@@ -300,6 +303,7 @@ var WindowListener = {
       },
 
       
+
 
 
 
@@ -352,6 +356,7 @@ var WindowListener = {
       },
 
       
+
 
 
 
@@ -759,15 +764,17 @@ function startup() {
   createLoopButton();
 
   
-  try {
-    WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);
-  } catch (ex) {
-    
-    let topic = "browser-delayed-startup-finished";
-    Services.obs.addObserver(function observer() {
-      Services.obs.removeObserver(observer, topic);
+  if (AppConstants.platform == "macosx") {
+    try {
       WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);
-    }, topic, false);
+    } catch (ex) {
+      
+      let topic = "browser-delayed-startup-finished";
+      Services.obs.addObserver(function observer() {
+        Services.obs.removeObserver(observer, topic);
+        WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);
+      }, topic, false);
+    }
   }
 
   
@@ -814,7 +821,9 @@ function shutdown() {
   });
 
   
-  WindowListener.tearDownBrowserUI(Services.appShell.hiddenDOMWindow);
+  if (AppConstants.platform == "macosx") {
+    WindowListener.tearDownBrowserUI(Services.appShell.hiddenDOMWindow);
+  }
 
   
   let wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
