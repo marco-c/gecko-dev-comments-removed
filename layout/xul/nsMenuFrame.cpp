@@ -1392,7 +1392,7 @@ nsMenuFrame::GetXULPrefSize(nsBoxLayoutState& aState)
       SizeToPopup(aState, size)) {
     
     nsSize minSize = nsBoxFrame::GetXULMinSize(aState);
-    nsSize maxSize = GetMaxSize(aState);
+    nsSize maxSize = GetXULMaxSize(aState);
     size = BoundsCheck(minSize, size, maxSize);
   }
 

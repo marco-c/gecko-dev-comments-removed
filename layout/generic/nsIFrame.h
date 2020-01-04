@@ -2887,7 +2887,7 @@ public:
 
 
     
-  virtual nsSize GetMaxSize(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) = 0;
 
   
 

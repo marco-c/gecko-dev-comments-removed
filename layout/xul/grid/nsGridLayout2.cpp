@@ -171,9 +171,9 @@ nsGridLayout2::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 }
 
 nsSize
-nsGridLayout2::GetMaxSize(nsIFrame* aBox, nsBoxLayoutState& aState)
+nsGridLayout2::GetXULMaxSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
-  nsSize maxSize = nsStackLayout::GetMaxSize(aBox, aState); 
+  nsSize maxSize = nsStackLayout::GetXULMaxSize(aBox, aState); 
 
   
   
