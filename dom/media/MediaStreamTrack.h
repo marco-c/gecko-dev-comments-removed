@@ -82,6 +82,15 @@ public:
   
 
 
+
+  virtual already_AddRefed<Promise>
+  ApplyConstraints(nsPIDOMWindowInner* aWindow,
+                   const dom::MediaTrackConstraints& aConstraints,
+                   ErrorResult &aRv);
+
+  
+
+
   virtual void Stop() = 0;
 
   
@@ -193,6 +202,9 @@ public:
 
   virtual AudioStreamTrack* AsAudioStreamTrack() { return nullptr; }
   virtual VideoStreamTrack* AsVideoStreamTrack() { return nullptr; }
+
+  virtual const AudioStreamTrack* AsAudioStreamTrack() const { return nullptr; }
+  virtual const VideoStreamTrack* AsVideoStreamTrack() const { return nullptr; }
 
   
   virtual void GetKind(nsAString& aKind) = 0;

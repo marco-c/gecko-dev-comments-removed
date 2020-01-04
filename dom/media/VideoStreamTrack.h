@@ -23,6 +23,8 @@ public:
 
   VideoStreamTrack* AsVideoStreamTrack() override { return this; }
 
+  const VideoStreamTrack* AsVideoStreamTrack() const override { return this; }
+
   
   void GetKind(nsAString& aKind) override { aKind.AssignLiteral("video"); }
 };
