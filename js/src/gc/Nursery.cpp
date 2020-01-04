@@ -593,7 +593,7 @@ js::Nursery::FreeMallocedBuffersTask::transferBuffersToFree(MallocedBuffersSet& 
 {
     
     
-    MOZ_ASSERT(!isRunning());
+    MOZ_ASSERT(!isRunningWithLockHeld());
     MOZ_ASSERT(buffers_.empty());
     mozilla::Swap(buffers_, buffersToFree);
 }
