@@ -9,10 +9,12 @@
 
 
 require("devtools/server/actors/inspector");
+const {HighlighterEnvironment} = require("devtools/server/actors/highlighters");
+
 const {
-  CanvasFrameAnonymousContentHelper,
-  HighlighterEnvironment
-} = require("devtools/server/actors/highlighter");
+  CanvasFrameAnonymousContentHelper
+} = require("devtools/server/actors/highlighters/utils/markup");
+
 const TEST_URL = "data:text/html;charset=utf-8,CanvasFrameAnonymousContentHelper test";
 
 add_task(function*() {

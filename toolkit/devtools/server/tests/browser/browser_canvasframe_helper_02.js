@@ -10,10 +10,12 @@
 
 
 require("devtools/server/actors/inspector");
+
+const {HighlighterEnvironment} = require("devtools/server/actors/highlighters");
+
 const {
-  CanvasFrameAnonymousContentHelper,
-  HighlighterEnvironment
-} = require("devtools/server/actors/highlighter");
+  CanvasFrameAnonymousContentHelper
+} = require("devtools/server/actors/highlighters/utils/markup");
 
 add_task(function*() {
   let doc = yield addTab("about:preferences");

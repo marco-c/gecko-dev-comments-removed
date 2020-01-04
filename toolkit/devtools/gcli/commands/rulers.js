@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const EventEmitter = require("devtools/toolkit/event-emitter");
@@ -13,7 +14,7 @@ loader.lazyRequireGetter(this, "getBrowserForTab", "sdk/tabs/utils", true);
 const l10n = require("gcli/l10n");
 require("devtools/server/actors/inspector");
 const { RulersHighlighter, HighlighterEnvironment } =
-  require("devtools/server/actors/highlighter");
+  require("devtools/server/actors/highlighters");
 
 const highlighters = new WeakMap();
 const visibleHighlighters = new Set();
