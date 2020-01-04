@@ -2758,7 +2758,7 @@ nsHttpChannel::ProcessFallback(bool *waitingForRedirectCallback)
     CloseCacheEntry(true);
 
     
-    RefPtr<nsIChannel> newChannel;
+    nsRefPtr<nsIChannel> newChannel;
     rv = gHttpHandler->NewChannel2(mURI,
                                    mLoadInfo,
                                    getter_AddRefs(newChannel));
@@ -2912,7 +2912,7 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         do_GetService("@mozilla.org/netwerk/cache-storage-service;1", &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    RefPtr<LoadContextInfo> info = GetLoadContextInfo(this);
+    nsRefPtr<LoadContextInfo> info = GetLoadContextInfo(this);
     nsCOMPtr<nsICacheStorage> cacheStorage;
     nsCOMPtr<nsIURI> openURI;
     if (!mFallbackKey.IsEmpty() && mFallbackChannel) {
@@ -3006,7 +3006,7 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         nsCOMPtr<nsINetworkInterceptController> controller;
         GetCallback(controller);
 
-        RefPtr<InterceptedChannelChrome> intercepted =
+        nsRefPtr<InterceptedChannelChrome> intercepted =
                 new InterceptedChannelChrome(this, controller, entry);
         intercepted->NotifyController();
     } else {
@@ -5120,7 +5120,7 @@ nsHttpChannel::BeginConnect()
     mRequestHead.SetHTTPS(isHttps);
     mRequestHead.SetOrigin(scheme, host, port);
 
-    RefPtr<AltSvcMapping> mapping;
+    nsRefPtr<AltSvcMapping> mapping;
     if (mAllowAltSvc && 
         (scheme.Equals(NS_LITERAL_CSTRING("http")) ||
          scheme.Equals(NS_LITERAL_CSTRING("https"))) &&
@@ -5198,7 +5198,7 @@ nsHttpChannel::BeginConnect()
         return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
     }
     
-    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier();
+    nsRefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier();
     if (mLoadFlags & LOAD_CLASSIFY_URI) {
         nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
         bool tpEnabled = false;
@@ -5851,7 +5851,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         
         
         
-        RefPtr<nsAHttpConnection> conn;
+        nsRefPtr<nsAHttpConnection> conn;
         if (authRetry && (mCaps & NS_HTTP_STICKY_CONNECTION)) {
             conn = mTransaction->GetConnectionReference();
             
@@ -5861,7 +5861,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
                 conn = nullptr;
         }
 
-        RefPtr<nsAHttpConnection> stickyConn;
+        nsRefPtr<nsAHttpConnection> stickyConn;
         if (mCaps & NS_HTTP_STICKY_CONNECTION)
             stickyConn = mTransaction->GetConnectionReference();
 
@@ -6865,7 +6865,7 @@ nsHttpChannel::DoInvalidateCacheEntry(nsIURI* aURI)
 
     nsCOMPtr<nsICacheStorage> cacheStorage;
     if (NS_SUCCEEDED(rv)) {
-        RefPtr<LoadContextInfo> info = GetLoadContextInfo(this);
+        nsRefPtr<LoadContextInfo> info = GetLoadContextInfo(this);
         rv = cacheStorageService->DiskCacheStorage(info, false, getter_AddRefs(cacheStorage));
     }
 
@@ -6997,7 +6997,7 @@ nsHttpChannel::OnPush(const nsACString &url, Http2PushedStream *pushedStream)
         return NS_ERROR_UNEXPECTED;
     }
 
-    RefPtr<nsHttpChannel> channel;
+    nsRefPtr<nsHttpChannel> channel;
     CallQueryInterface(pushHttpChannel, channel.StartAssignment());
     MOZ_ASSERT(channel);
     if (!channel) {
@@ -7021,6 +7021,7 @@ nsHttpChannel::OnPush(const nsACString &url, Http2PushedStream *pushedStream)
 void
 nsHttpChannel::SetCouldBeSynthesized()
 {
+  MOZ_ASSERT(!BypassServiceWorker());
   mResponseCouldBeSynthesized = true;
 }
 
