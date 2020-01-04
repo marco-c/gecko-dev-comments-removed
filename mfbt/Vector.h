@@ -163,7 +163,12 @@ struct VectorImpl<T, N, AP, true>
   MOZ_NONNULL(1)
   static inline void new_(T* aDst, Args&&... aArgs)
   {
-    *aDst = T(Forward<Args>(aArgs)...);
+    
+    
+    
+    
+    T temp(Forward<Args>(aArgs)...);
+    *aDst = temp;
   }
 
   static inline void destroy(T*, T*) {}
