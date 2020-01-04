@@ -7,9 +7,6 @@
 
 
 
-
-
-
 !(function(window) {
 
 !(function(window, OTHelpers, undefined) {
@@ -560,6 +557,22 @@ OTHelpers.invert = function(obj) {
 
 
 
+
+
+
+OTHelpers.makeSimplePromise = function(err) {
+  return new OTHelpers.RSVP.Promise(function(resolve, reject) {
+    if (err === void 0) {
+      resolve();
+    } else {
+      reject(err);
+    }
+  });
+};
+
+
+
+
 OTHelpers.Event = function() {
   return function (type, cancelable) {
     this.type = type;
@@ -632,6 +645,1919 @@ OTHelpers.statable = function(self, possibleStates, initialState, stateChanged,
   };
 
   return setState;
+};
+
+
+
+
+
+
+var getErrorLocation;
+
+
+var safeErrorProps = [
+  'description',
+  'fileName',
+  'lineNumber',
+  'message',
+  'name',
+  'number',
+  'stack'
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OTHelpers.Error = function (message, name, props) {
+  switch (arguments.length) {
+  case 1:
+    if ($.isObject(message)) {
+      props = message;
+      name = void 0;
+      message = void 0;
+    }
+    
+    break;
+
+  case 2:
+    if ($.isObject(name)) {
+      props = name;
+      name = void 0;
+    }
+    
+
+    break;
+  }
+
+  if ( props instanceof Error) {
+    
+    
+    
+    for (var i = 0, num = safeErrorProps.length; i < num; ++i) {
+      this[safeErrorProps[i]] = props[safeErrorProps[i]];
+    }
+  }
+  else if ( $.isObject(props)) {
+    
+    for (var key in props) {
+      if (props.hasOwnProperty(key)) {
+        this[key] = props[key];
+      }
+    }
+  }
+
+  
+  
+  if ( !(this.fileName && this.lineNumber && this.columnNumber && this.stack) ) {
+    var err = getErrorLocation();
+
+    if (!this.fileName && err.fileName) {
+      this.fileName = err.fileName;
+    }
+
+    if (!this.lineNumber && err.lineNumber) {
+      this.lineNumber = err.lineNumber;
+    }
+
+    if (!this.columnNumber && err.columnNumber) {
+      this.columnNumber = err.columnNumber;
+    }
+
+    if (!this.stack && err.stack) {
+      this.stack = err.stack;
+    }
+  }
+
+  if (!this.message && message) this.message = message;
+  if (!this.name && name) this.name = name;
+};
+
+OTHelpers.Error.prototype.toString =
+OTHelpers.Error.prototype.valueOf = function() {
+  var locationDetails = '';
+  if (this.fileName) locationDetails += ' ' + this.fileName;
+  if (this.lineNumber) {
+    locationDetails += ' ' + this.lineNumber;
+    if (this.columnNumber) locationDetails += ':' + this.columnNumber;
+  }
+
+  return '<' + (this.name ? this.name + ' ' : '') + this.message + locationDetails + '>';
+};
+
+
+
+
+
+
+
+
+var prepareStackTrace = function prepareStackTrace (_, stack){
+  return $.map(stack.slice(2), function(frame) {
+    var _f = {
+      fileName: frame.getFileName(),
+      linenumber: frame.getLineNumber(),
+      columnNumber: frame.getColumnNumber()
+    };
+
+    if (frame.getFunctionName()) _f.functionName = frame.getFunctionName();
+    if (frame.getMethodName()) _f.methodName = frame.getMethodName();
+    if (frame.getThis()) _f.self = frame.getThis();
+
+    return _f;
+  });
+};
+
+
+
+getErrorLocation = function getErrorLocation () {
+  var info = {},
+      callstack,
+      errLocation,
+      err;
+
+  switch ($.env.name) {
+  case 'Firefox':
+  case 'Safari':
+  case 'IE':
+
+    if ($.env.name !== 'IE') {
+      err = new Error();
+    }
+    else {
+      try {
+        window.call.js.is.explody;
+      }
+      catch(e) { err = e; }
+    }
+
+    callstack = (err.stack || '').split('\n');
+
+    
+    callstack.shift();
+    callstack.shift();
+
+    info.stack = callstack;
+
+    if ($.env.name === 'IE') {
+      
+      info.stack.shift();
+
+      
+      
+      info.stack = $.map(callstack, function(call) {
+        return call.replace(/^\s+at\s+/g, '');
+      });
+    }
+
+    errLocation = /@(.+?):([0-9]+)(:([0-9]+))?$/.exec(callstack[0]);
+    if (errLocation) {
+      info.fileName = errLocation[1];
+      info.lineNumber = parseInt(errLocation[2], 10);
+      if (errLocation.length > 3) info.columnNumber = parseInt(errLocation[4], 10);
+    }
+    break;
+
+  case 'Chrome':
+  case 'Node':
+  case 'Opera':
+    var currentPST = Error.prepareStackTrace;
+    Error.prepareStackTrace = prepareStackTrace;
+    err = new Error();
+    info.stack = err.stack;
+    Error.prepareStackTrace = currentPST;
+
+    var topFrame = info.stack[0];
+    info.lineNumber = topFrame.lineNumber;
+    info.columnNumber = topFrame.columnNumber;
+    info.fileName = topFrame.fileName;
+    if (topFrame.functionName) info.functionName = topFrame.functionName;
+    if (topFrame.methodName) info.methodName = topFrame.methodName;
+    if (topFrame.self) info.self = topFrame.self;
+    break;
+
+  default:
+    err = new Error();
+    if (err.stack) info.stack = err.stack.split('\n');
+    break;
+  }
+
+  if (err.message) info.message = err.message;
+  return info;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function() {
+  
+  var version = -1;
+
+  
+  
+  var versionGEThan = function versionGEThan (otherVersion) {
+    if (otherVersion === version) return true;
+
+    if (typeof(otherVersion) === 'number' && typeof(version) === 'number') {
+      return otherVersion > version;
+    }
+
+    
+    
+    
+    
+    var v1 = otherVersion.split('.'),
+        v2 = version.split('.'),
+        versionLength = (v1.length > v2.length ? v2 : v1).length;
+
+    for (var i = 0; i < versionLength; ++i) {
+      if (parseInt(v1[i], 10) > parseInt(v2[i], 10)) {
+        return true;
+      }
+    }
+
+    
+    
+    
+    if (i < v1.length) {
+      return true;
+    }
+
+    return false;
+  };
+
+  var env = function() {
+    if (typeof(process) !== 'undefined' &&
+        typeof(process.versions) !== 'undefined' &&
+        typeof(process.versions.node) === 'string') {
+
+      version = process.versions.node;
+      if (version.substr(1) === 'v') version = version.substr(1);
+
+      
+      
+      return {
+        name: 'Node',
+        version: version,
+        userAgent: 'Node ' + version,
+        iframeNeedsLoad: false,
+        versionGreaterThan: versionGEThan
+      };
+    }
+
+    var userAgent = window.navigator.userAgent.toLowerCase(),
+        appName = window.navigator.appName,
+        navigatorVendor,
+        name = 'unknown';
+
+    if (userAgent.indexOf('opera') > -1 || userAgent.indexOf('opr') > -1) {
+      name = 'Opera';
+
+      if (/opr\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
+        version = parseFloat( RegExp.$1 );
+      }
+
+    } else if (userAgent.indexOf('firefox') > -1)   {
+      name = 'Firefox';
+
+      if (/firefox\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
+        version = parseFloat( RegExp.$1 );
+      }
+
+    } else if (appName === 'Microsoft Internet Explorer') {
+      
+      name = 'IE';
+
+      if (/msie ([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
+        version = parseFloat( RegExp.$1 );
+      }
+
+    } else if (appName === 'Netscape' && userAgent.indexOf('trident') > -1) {
+      
+
+      name = 'IE';
+
+      if (/trident\/.*rv:([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
+        version = parseFloat( RegExp.$1 );
+      }
+
+    } else if (userAgent.indexOf('chrome') > -1) {
+      name = 'Chrome';
+
+      if (/chrome\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
+        version = parseFloat( RegExp.$1 );
+      }
+
+    } else if ((navigatorVendor = window.navigator.vendor) &&
+      navigatorVendor.toLowerCase().indexOf('apple') > -1) {
+      name = 'Safari';
+
+      if (/version\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
+        version = parseFloat( RegExp.$1 );
+      }
+    }
+
+    return {
+      name: name,
+      version: version,
+      userAgent: window.navigator.userAgent,
+      iframeNeedsLoad: userAgent.indexOf('webkit') < 0,
+      versionGreaterThan: versionGEThan
+    };
+  }();
+
+
+  OTHelpers.env = env;
+
+  OTHelpers.browser = function() {
+    return OTHelpers.env.name;
+  };
+
+  OTHelpers.browserVersion = function() {
+    return OTHelpers.env;
+  };
+
+})();
+
+
+
+var nodeEventing;
+
+if($.env.name === 'Node') {
+  (function() {
+    var EventEmitter = require('events').EventEmitter,
+        util = require('util');
+
+    
+    
+    
+    var NodeEventable = function NodeEventable () {
+      EventEmitter.call(this);
+
+      this.events = {};
+    };
+    util.inherits(NodeEventable, EventEmitter);
+
+
+    nodeEventing = function nodeEventing () {
+      var api = new NodeEventable(),
+          _on = api.on,
+          _off = api.removeListener;
+
+
+      api.addListeners = function (eventNames, handler, context, closure) {
+        var listener = {handler: handler};
+        if (context) listener.context = context;
+        if (closure) listener.closure = closure;
+
+        $.forEach(eventNames, function(name) {
+          if (!api.events[name]) api.events[name] = [];
+          api.events[name].push(listener);
+
+          _on(name, handler);
+
+          var addedListener = name + ':added';
+          if (api.events[addedListener]) {
+            api.emit(addedListener, api.events[name].length);
+          }
+        });
+      };
+
+      api.removeAllListenersNamed = function (eventNames) {
+        var _eventNames = eventNames.split(' ');
+        api.removeAllListeners(_eventNames);
+
+        $.forEach(_eventNames, function(name) {
+          if (api.events[name]) delete api.events[name];
+        });
+      };
+
+      api.removeListeners = function (eventNames, handler, closure) {
+        function filterHandlers(listener) {
+          return !(listener.handler === handler && listener.closure === closure);
+        }
+
+        $.forEach(eventNames.split(' '), function(name) {
+          if (api.events[name]) {
+            _off(name, handler);
+            api.events[name] = $.filter(api.events[name], filterHandlers);
+            if (api.events[name].length === 0) delete api.events[name];
+
+            var removedListener = name + ':removed';
+            if (api.events[removedListener]) {
+              api.emit(removedListener, api.events[name] ? api.events[name].length : 0);
+            }
+          }
+        });
+      };
+
+      api.removeAllListeners = function () {
+        api.events = {};
+        api.removeAllListeners();
+      };
+
+      api.dispatchEvent = function(event, defaultAction) {
+        this.emit(event.type, event);
+
+        if (defaultAction) {
+          defaultAction.call(null, event);
+        }
+      };
+
+      api.trigger = $.bind(api.emit, api);
+
+
+      return api;
+    };
+  })();
+}
+
+
+
+
+var browserEventing;
+
+if($.env.name !== 'Node') {
+
+  browserEventing = function browserEventing (self, syncronous) {
+    var api = {
+      events: {}
+    };
+
+
+    
+    function executeDefaultAction(defaultAction, args) {
+      if (!defaultAction) return;
+
+      defaultAction.apply(null, args.slice());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    function executeListenersAsyncronously(name, args, defaultAction) {
+      var listeners = api.events[name];
+      if (!listeners || listeners.length === 0) return;
+
+      var listenerAcks = listeners.length;
+
+      $.forEach(listeners, function(listener) { 
+        function filterHandlers(_listener) {
+          return _listener.handler === listener.handler;
+        }
+
+        
+        
+        $.callAsync(function() {
+          try {
+            
+            if (api.events[name] && $.some(api.events[name], filterHandlers)) {
+              (listener.closure || listener.handler).apply(listener.context || null, args);
+            }
+          }
+          finally {
+            listenerAcks--;
+
+            if (listenerAcks === 0) {
+              executeDefaultAction(defaultAction, args);
+            }
+          }
+        });
+      });
+    }
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    function executeListenersSyncronously(name, args) { 
+      var listeners = api.events[name];
+      if (!listeners || listeners.length === 0) return;
+
+      $.forEach(listeners, function(listener) { 
+        (listener.closure || listener.handler).apply(listener.context || null, args);
+      });
+    }
+
+    var executeListeners = syncronous === true ?
+      executeListenersSyncronously : executeListenersAsyncronously;
+
+
+    api.addListeners = function (eventNames, handler, context, closure) {
+      var listener = {handler: handler};
+      if (context) listener.context = context;
+      if (closure) listener.closure = closure;
+
+      $.forEach(eventNames, function(name) {
+        if (!api.events[name]) api.events[name] = [];
+        api.events[name].push(listener);
+
+        var addedListener = name + ':added';
+        if (api.events[addedListener]) {
+          executeListeners(addedListener, [api.events[name].length]);
+        }
+      });
+    };
+
+    api.removeListeners = function(eventNames, handler, context) {
+      function filterListeners(listener) {
+        var isCorrectHandler = (
+          listener.handler.originalHandler === handler ||
+          listener.handler === handler
+        );
+
+        return !(isCorrectHandler && listener.context === context);
+      }
+
+      $.forEach(eventNames, function(name) {
+        if (api.events[name]) {
+          api.events[name] = $.filter(api.events[name], filterListeners);
+          if (api.events[name].length === 0) delete api.events[name];
+
+          var removedListener = name + ':removed';
+          if (api.events[ removedListener]) {
+            executeListeners(removedListener, [api.events[name] ? api.events[name].length : 0]);
+          }
+        }
+      });
+    };
+
+    api.removeAllListenersNamed = function (eventNames) {
+      $.forEach(eventNames, function(name) {
+        if (api.events[name]) {
+          delete api.events[name];
+        }
+      });
+    };
+
+    api.removeAllListeners = function () {
+      api.events = {};
+    };
+
+    api.dispatchEvent = function(event, defaultAction) {
+      if (!api.events[event.type] || api.events[event.type].length === 0) {
+        executeDefaultAction(defaultAction, [event]);
+        return;
+      }
+
+      executeListeners(event.type, [event], defaultAction);
+    };
+
+    api.trigger = function(eventName, args) {
+      if (!api.events[eventName] || api.events[eventName].length === 0) {
+        return;
+      }
+
+      executeListeners(eventName, args);
+    };
+
+
+    return api;
+  };
+}
+
+
+
+
+
+
+
+if (window.OTHelpers.env.name === 'Node') {
+  var request = require('request');
+
+  OTHelpers.request = function(url, options, callback) {
+    var completion = function(error, response, body) {
+      var event = {response: response, body: body};
+
+      
+      
+      if (!error && response.statusCode >= 200 &&
+                  (response.statusCode < 300 || response.statusCode === 304) ) {
+        callback(null, event);
+      } else {
+        callback(error, event);
+      }
+    };
+
+    if (options.method.toLowerCase() === 'get') {
+      request.get(url, completion);
+    }
+    else {
+      request.post(url, options.body, completion);
+    }
+  };
+
+  OTHelpers.getJSON = function(url, options, callback) {
+    var extendedHeaders = require('underscore').extend(
+      {
+        'Accept': 'application/json'
+      },
+      options.headers || {}
+    );
+
+    request.get({
+      url: url,
+      headers: extendedHeaders,
+      json: true
+    }, function(err, response) {
+      callback(err, response && response.body);
+    });
+  };
+}
+
+
+
+
+
+function formatPostData(data) { 
+  
+  if (typeof(data) === 'string') return data;
+
+  var queryString = [];
+
+  for (var key in data) {
+    queryString.push(
+      encodeURIComponent(key) + '=' + encodeURIComponent(data[key])
+    );
+  }
+
+  return queryString.join('&').replace(/\+/g, '%20');
+}
+
+if (window.OTHelpers.env.name !== 'Node') {
+
+  OTHelpers.xdomainRequest = function(url, options, callback) {
+    
+    var xdr = new XDomainRequest(),
+        _options = options || {},
+        _method = _options.method.toLowerCase();
+
+    if(!_method) {
+      callback(new Error('No HTTP method specified in options'));
+      return;
+    }
+
+    _method = _method.toUpperCase();
+
+    if(!(_method === 'GET' || _method === 'POST')) {
+      callback(new Error('HTTP method can only be '));
+      return;
+    }
+
+    function done(err, event) {
+      xdr.onload = xdr.onerror = xdr.ontimeout = function() {};
+      xdr = void 0;
+      callback(err, event);
+    }
+
+
+    xdr.onload = function() {
+      done(null, {
+        target: {
+          responseText: xdr.responseText,
+          headers: {
+            'content-type': xdr.contentType
+          }
+        }
+      });
+    };
+
+    xdr.onerror = function() {
+      done(new Error('XDomainRequest of ' + url + ' failed'));
+    };
+
+    xdr.ontimeout = function() {
+      done(new Error('XDomainRequest of ' + url + ' timed out'));
+    };
+
+    xdr.open(_method, url);
+    xdr.send(options.body && formatPostData(options.body));
+
+  };
+
+  OTHelpers.request = function(url, options, callback) {
+    var request = new XMLHttpRequest(),
+        _options = options || {},
+        _method = _options.method;
+
+    if(!_method) {
+      callback(new Error('No HTTP method specified in options'));
+      return;
+    }
+
+    if (options.overrideMimeType) {
+      if (request.overrideMimeType) {
+        request.overrideMimeType(options.overrideMimeType);
+      }
+      delete options.overrideMimeType;
+    }
+
+    
+    
+    
+    if (callback) {
+      OTHelpers.on(request, 'load', function(event) {
+        var status = event.target.status;
+
+        
+        
+        if ( status >= 200 && (status < 300 || status === 304) ) {
+          callback(null, event);
+        } else {
+          callback(event);
+        }
+      });
+
+      OTHelpers.on(request, 'error', callback);
+    }
+
+    request.open(options.method, url, true);
+
+    if (!_options.headers) _options.headers = {};
+
+    for (var name in _options.headers) {
+      if (!Object.prototype.hasOwnProperty.call(_options.headers, name)) {
+        continue;
+      }
+      request.setRequestHeader(name, _options.headers[name]);
+    }
+
+    request.send(options.body && formatPostData(options.body));
+  };
+
+
+  OTHelpers.getJSON = function(url, options, callback) {
+    options = options || {};
+
+    var done = function(error, event) {
+      if(error) {
+        callback(error, event && event.target && event.target.responseText);
+      } else {
+        var response;
+
+        try {
+          response = JSON.parse(event.target.responseText);
+        } catch(e) {
+          
+          callback(e, event && event.target && event.target.responseText);
+          return;
+        }
+
+        callback(null, response, event);
+      }
+    };
+
+    if(options.xdomainrequest) {
+      OTHelpers.xdomainRequest(url, { method: 'GET' }, done);
+    } else {
+      var extendedHeaders = OTHelpers.extend({
+        'Accept': 'application/json'
+      }, options.headers || {});
+
+      OTHelpers.get(url, OTHelpers.extend(options || {}, {
+        headers: extendedHeaders
+      }), done);
+    }
+
+  };
+
+}
+
+
+
+
+
+
+
+var LOG_LEVEL_DEBUG = 5,
+    LOG_LEVEL_LOG   = 4,
+    LOG_LEVEL_INFO  = 3,
+    LOG_LEVEL_WARN  = 2,
+    LOG_LEVEL_ERROR = 1,
+    LOG_LEVEL_NONE  = 0;
+
+
+
+
+var _logLevel = LOG_LEVEL_NONE;
+
+var setLogLevel = function setLogLevel (level) {
+  _logLevel = typeof(level) === 'number' ? level : 0;
+  return _logLevel;
+};
+
+
+OTHelpers.useLogHelpers = function(on){
+
+  
+  on.DEBUG    = LOG_LEVEL_DEBUG;
+  on.LOG      = LOG_LEVEL_LOG;
+  on.INFO     = LOG_LEVEL_INFO;
+  on.WARN     = LOG_LEVEL_WARN;
+  on.ERROR    = LOG_LEVEL_ERROR;
+  on.NONE     = LOG_LEVEL_NONE;
+
+  var _logs = [],
+      _canApplyConsole = true;
+
+  try {
+    Function.prototype.bind.call(window.console.log, window.console);
+  } catch (err) {
+    _canApplyConsole = false;
+  }
+
+  
+  
+  
+  var makeLogArgumentsSafe = function(args) { return args; };
+
+  if (OTHelpers.env.name === 'IE') {
+    makeLogArgumentsSafe = function(args) {
+      return [toDebugString(prototypeSlice.apply(args))];
+    };
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  function generateLoggingMethod(method, level, fallback) {
+    return function() {
+      if (on.shouldLog(level)) {
+        var cons = window.console,
+            args = makeLogArgumentsSafe(arguments);
+
+        
+        
+        
+        if (cons && cons[method]) {
+          
+          
+          
+          if (cons[method].apply || _canApplyConsole) {
+            if (!cons[method].apply) {
+              cons[method] = Function.prototype.bind.call(cons[method], cons);
+            }
+
+            cons[method].apply(cons, args);
+          }
+          else {
+            
+            
+            cons[method](args);
+          }
+        }
+        else if (fallback) {
+          fallback.apply(on, args);
+
+          
+          return;
+        }
+
+        appendToLogs(method, makeLogArgumentsSafe(arguments));
+      }
+    };
+  }
+
+  on.log = generateLoggingMethod('log', on.LOG);
+
+  
+  on.debug = generateLoggingMethod('debug', on.DEBUG, on.log);
+  on.info = generateLoggingMethod('info', on.INFO, on.log);
+  on.warn = generateLoggingMethod('warn', on.WARN, on.log);
+  on.error = generateLoggingMethod('error', on.ERROR, on.log);
+
+
+  on.setLogLevel = function(level) {
+    on.debug('TB.setLogLevel(' + _logLevel + ')');
+    return setLogLevel(level);
+  };
+
+  on.getLogs = function() {
+    return _logs;
+  };
+
+  
+  on.shouldLog = function(level) {
+    return _logLevel >= level;
+  };
+
+  
+  
+  function formatDateStamp() {
+    var now = new Date();
+    return now.toLocaleTimeString() + now.getMilliseconds();
+  }
+
+  function toJson(object) {
+    try {
+      return JSON.stringify(object);
+    } catch(e) {
+      return object.toString();
+    }
+  }
+
+  function toDebugString(object) {
+    var components = [];
+
+    if (typeof(object) === 'undefined') {
+      
+    }
+    else if (object === null) {
+      components.push('NULL');
+    }
+    else if (OTHelpers.isArray(object)) {
+      for (var i=0; i<object.length; ++i) {
+        components.push(toJson(object[i]));
+      }
+    }
+    else if (OTHelpers.isObject(object)) {
+      for (var key in object) {
+        var stringValue;
+
+        if (!OTHelpers.isFunction(object[key])) {
+          stringValue = toJson(object[key]);
+        }
+        else if (object.hasOwnProperty(key)) {
+          stringValue = 'function ' + key + '()';
+        }
+
+        components.push(key + ': ' + stringValue);
+      }
+    }
+    else if (OTHelpers.isFunction(object)) {
+      try {
+        components.push(object.toString());
+      } catch(e) {
+        components.push('function()');
+      }
+    }
+    else  {
+      components.push(object.toString());
+    }
+
+    return components.join(', ');
+  }
+
+  
+  function appendToLogs(level, args) {
+    if (!args) return;
+
+    var message = toDebugString(args);
+    if (message.length <= 2) return;
+
+    _logs.push(
+      [level, formatDateStamp(), message]
+    );
+  }
+};
+
+OTHelpers.useLogHelpers(OTHelpers);
+OTHelpers.setLogLevel(OTHelpers.ERROR);
+
+
+
+
+
+
+
+
+
+
+
+
+ElementCollection.prototype.on = function (eventName, handler) {
+  return this.forEach(function(element) {
+    if (element.addEventListener) {
+      element.addEventListener(eventName, handler, false);
+    } else if (element.attachEvent) {
+      element.attachEvent('on' + eventName, handler);
+    } else {
+      var oldHandler = element['on'+eventName];
+      element['on'+eventName] = function() {
+        handler.apply(this, arguments);
+        if (oldHandler) oldHandler.apply(this, arguments);
+      };
+    }
+  });
+};
+
+
+ElementCollection.prototype.off = function (eventName, handler) {
+  return this.forEach(function(element) {
+    if (element.removeEventListener) {
+      element.removeEventListener (eventName, handler,false);
+    }
+    else if (element.detachEvent) {
+      element.detachEvent('on' + eventName, handler);
+    }
+  });
+};
+
+ElementCollection.prototype.once = function (eventName, handler) {
+  var removeAfterTrigger = $.bind(function() {
+    this.off(eventName, removeAfterTrigger);
+    handler.apply(null, arguments);
+  }, this);
+
+  return this.on(eventName, removeAfterTrigger);
+};
+
+
+OTHelpers.on = function(element, eventName,  handler) {
+  return $(element).on(eventName, handler);
+};
+
+
+OTHelpers.off = function(element, eventName, handler) {
+  return $(element).off(eventName, handler);
+};
+
+
+OTHelpers.once = function (element, eventName, handler) {
+  return $(element).once(eventName, handler);
+};
+
+
+
+
+
+
+(function() {
+
+  var _domReady = typeof(document) === 'undefined' ||
+                    document.readyState === 'complete' ||
+                   (document.readyState === 'interactive' && document.body),
+
+      _loadCallbacks = [],
+      _unloadCallbacks = [],
+      _domUnloaded = false,
+
+      onDomReady = function() {
+        _domReady = true;
+
+        if (typeof(document) !== 'undefined') {
+          if ( document.addEventListener ) {
+            document.removeEventListener('DOMContentLoaded', onDomReady, false);
+            window.removeEventListener('load', onDomReady, false);
+          } else {
+            document.detachEvent('onreadystatechange', onDomReady);
+            window.detachEvent('onload', onDomReady);
+          }
+        }
+
+        
+        
+        OTHelpers.on(window, 'unload', onDomUnload);
+
+        OTHelpers.forEach(_loadCallbacks, function(listener) {
+          listener[0].call(listener[1]);
+        });
+
+        _loadCallbacks = [];
+      },
+
+      onDomUnload = function() {
+        _domUnloaded = true;
+
+        OTHelpers.forEach(_unloadCallbacks, function(listener) {
+          listener[0].call(listener[1]);
+        });
+
+        _unloadCallbacks = [];
+      };
+
+
+  OTHelpers.onDOMLoad = function(cb, context) {
+    if (OTHelpers.isReady()) {
+      cb.call(context);
+      return;
+    }
+
+    _loadCallbacks.push([cb, context]);
+  };
+
+  OTHelpers.onDOMUnload = function(cb, context) {
+    if (this.isDOMUnloaded()) {
+      cb.call(context);
+      return;
+    }
+
+    _unloadCallbacks.push([cb, context]);
+  };
+
+  OTHelpers.isReady = function() {
+    return !_domUnloaded && _domReady;
+  };
+
+  OTHelpers.isDOMUnloaded = function() {
+    return _domUnloaded;
+  };
+
+  if (_domReady) {
+    onDomReady();
+  } else if(typeof(document) !== 'undefined') {
+    if (document.addEventListener) {
+      document.addEventListener('DOMContentLoaded', onDomReady, false);
+
+      
+      window.addEventListener( 'load', onDomReady, false );
+
+    } else if (document.attachEvent) {
+      document.attachEvent('onreadystatechange', function() {
+        if (document.readyState === 'complete') onDomReady();
+      });
+
+      
+      window.attachEvent( 'onload', onDomReady );
+    }
+  }
+
+})();
+
+
+
+
+
+OTHelpers.setCookie = function(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    
+    var date = new Date();
+    date.setTime(date.getTime()+(365*24*60*60*1000));
+    var expires = '; expires=' + date.toGMTString();
+    document.cookie = key + '=' + value + expires + '; path=/';
+  }
+};
+
+OTHelpers.getCookie = function(key) {
+  var value;
+
+  try {
+    value = localStorage.getItem(key);
+    return value;
+  } catch (err) {
+    
+    var nameEQ = key + '=';
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+      var c = ca[i];
+      while (c.charAt(0) === ' ') {
+        c = c.substring(1,c.length);
+      }
+      if (c.indexOf(nameEQ) === 0) {
+        value = c.substring(nameEQ.length,c.length);
+      }
+    }
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+
+
+
+
+
+
+OTHelpers.Collection = function(idField) {
+  var _models = [],
+      _byId = {},
+      _idField = idField || 'id';
+
+  OTHelpers.eventing(this, true);
+
+  var modelProperty = function(model, property) {
+    if(OTHelpers.isFunction(model[property])) {
+      return model[property]();
+    } else {
+      return model[property];
+    }
+  };
+
+  var onModelUpdate = OTHelpers.bind(function onModelUpdate (event) {
+        this.trigger('update', event);
+        this.trigger('update:'+event.target.id, event);
+      }, this),
+
+      onModelDestroy = OTHelpers.bind(function onModelDestroyed (event) {
+        this.remove(event.target, event.reason);
+      }, this);
+
+
+  this.reset = function() {
+    
+    OTHelpers.forEach(_models, function(model) {
+      model.off('updated', onModelUpdate, this);
+      model.off('destroyed', onModelDestroy, this);
+    }, this);
+
+    _models = [];
+    _byId = {};
+  };
+
+  this.destroy = function(reason) {
+    OTHelpers.forEach(_models, function(model) {
+      if(model && typeof model.destroy === 'function') {
+        model.destroy(reason, true);
+      }
+    });
+
+    this.reset();
+    this.off();
+  };
+
+  this.get = function(id) { return id && _byId[id] !== void 0 ? _models[_byId[id]] : void 0; };
+  this.has = function(id) { return id && _byId[id] !== void 0; };
+
+  this.toString = function() { return _models.toString(); };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  this.where = function(attrsOrFilterFn, context) {
+    if (OTHelpers.isFunction(attrsOrFilterFn)) {
+      return OTHelpers.filter(_models, attrsOrFilterFn, context);
+    }
+
+    return OTHelpers.filter(_models, function(model) {
+      for (var key in attrsOrFilterFn) {
+        if(!attrsOrFilterFn.hasOwnProperty(key)) {
+          continue;
+        }
+        if (modelProperty(model, key) !== attrsOrFilterFn[key]) return false;
+      }
+
+      return true;
+    });
+  };
+
+  
+  
+  this.find = function(attrsOrFilterFn, context) {
+    var filterFn;
+
+    if (OTHelpers.isFunction(attrsOrFilterFn)) {
+      filterFn = attrsOrFilterFn;
+    }
+    else {
+      filterFn = function(model) {
+        for (var key in attrsOrFilterFn) {
+          if(!attrsOrFilterFn.hasOwnProperty(key)) {
+            continue;
+          }
+          if (modelProperty(model, key) !== attrsOrFilterFn[key]) return false;
+        }
+
+        return true;
+      };
+    }
+
+    filterFn = OTHelpers.bind(filterFn, context);
+
+    for (var i=0; i<_models.length; ++i) {
+      if (filterFn(_models[i]) === true) return _models[i];
+    }
+
+    return null;
+  };
+
+  this.forEach = function(fn, context) {
+    OTHelpers.forEach(_models, fn, context);
+    return this;
+  };
+
+  this.add = function(model) {
+    var id = modelProperty(model, _idField);
+
+    if (this.has(id)) {
+      OTHelpers.warn('Model ' + id + ' is already in the collection', _models);
+      return this;
+    }
+
+    _byId[id] = _models.push(model) - 1;
+
+    model.on('updated', onModelUpdate, this);
+    model.on('destroyed', onModelDestroy, this);
+
+    this.trigger('add', model);
+    this.trigger('add:'+id, model);
+
+    return this;
+  };
+
+  this.remove = function(model, reason) {
+    var id = modelProperty(model, _idField);
+
+    _models.splice(_byId[id], 1);
+
+    
+    for (var i=_byId[id]; i<_models.length; ++i) {
+      _byId[_models[i][_idField]] = i;
+    }
+
+    delete _byId[id];
+
+    model.off('updated', onModelUpdate, this);
+    model.off('destroyed', onModelDestroy, this);
+
+    this.trigger('remove', model, reason);
+    this.trigger('remove:'+id, model, reason);
+
+    return this;
+  };
+
+  
+  
+  
+  this._triggerAddEvents = function() {
+    var models = this.where.apply(this, arguments);
+    OTHelpers.forEach(models, function(model) {
+      this.trigger('add', model);
+      this.trigger('add:' + modelProperty(model, _idField), model);
+    }, this);
+  };
+
+  this.length = function() {
+    return _models.length;
+  };
+};
+
+
+
+
+
+
+OTHelpers.castToBoolean = function(value, defaultValue) {
+  if (value === undefined) return defaultValue;
+  return value === 'true' || value === true;
+};
+
+OTHelpers.roundFloat = function(value, places) {
+  return Number(value.toFixed(places));
+};
+
+
+
+
+
+(function() {
+
+  var capabilities = {};
+
+  
+  
+  
+  
+  
+  
+  
+  
+  OTHelpers.registerCapability = function(name, callback) {
+    var _name = name.toLowerCase();
+
+    if (capabilities.hasOwnProperty(_name)) {
+      OTHelpers.error('Attempted to register', name, 'capability more than once');
+      return;
+    }
+
+    if (!OTHelpers.isFunction(callback)) {
+      OTHelpers.error('Attempted to register', name,
+                              'capability with a callback that isn\' a function');
+      return;
+    }
+
+    memoriseCapabilityTest(_name, callback);
+  };
+
+
+  
+  
+  var memoriseCapabilityTest = function (name, callback) {
+    capabilities[name] = function() {
+      var result = callback();
+      capabilities[name] = function() {
+        return result;
+      };
+
+      return result;
+    };
+  };
+
+  var testCapability = function (name) {
+    return capabilities[name]();
+  };
+
+
+  
+  
+  
+  
+  
+  OTHelpers.hasCapabilities = function() {
+    var capNames = prototypeSlice.call(arguments),
+        name;
+
+    for (var i=0; i<capNames.length; ++i) {
+      name = capNames[i].toLowerCase();
+
+      if (!capabilities.hasOwnProperty(name)) {
+        OTHelpers.error('hasCapabilities was called with an unknown capability: ' + name);
+        return false;
+      }
+      else if (testCapability(name) === false) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+})();
+
+
+
+
+
+
+
+OTHelpers.registerCapability('websockets', function() {
+  return 'WebSocket' in window && window.WebSocket !== void 0;
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function() {
+
+  OTHelpers.setImmediate = (function() {
+    if (typeof process === 'undefined' || !(process.nextTick)) {
+      if (typeof setImmediate === 'function') {
+        return function (fn) {
+          
+          setImmediate(fn);
+        };
+      }
+      return function (fn) {
+        setTimeout(fn, 0);
+      };
+    }
+    if (typeof setImmediate !== 'undefined') {
+      return setImmediate;
+    }
+    return process.nextTick;
+  })();
+
+  OTHelpers.iterator = function(tasks) {
+    var makeCallback = function (index) {
+      var fn = function () {
+        if (tasks.length) {
+          tasks[index].apply(null, arguments);
+        }
+        return fn.next();
+      };
+      fn.next = function () {
+        return (index < tasks.length - 1) ? makeCallback(index + 1) : null;
+      };
+      return fn;
+    };
+    return makeCallback(0);
+  };
+
+  OTHelpers.waterfall = function(array, done) {
+    done = done || function () {};
+    if (array.constructor !== Array) {
+      return done(new Error('First argument to waterfall must be an array of functions'));
+    }
+
+    if (!array.length) {
+      return done();
+    }
+
+    var next = function(iterator) {
+      return function (err) {
+        if (err) {
+          done.apply(null, arguments);
+          done = function () {};
+        } else {
+          var args = prototypeSlice.call(arguments, 1),
+              nextFn = iterator.next();
+          if (nextFn) {
+            args.push(next(nextFn));
+          } else {
+            args.push(done);
+          }
+          OTHelpers.setImmediate(function() {
+            iterator.apply(null, args);
+          });
+        }
+      };
+    };
+
+    next(OTHelpers.iterator(array))();
+  };
+
+})();
+
+
+
+
+
+(function() {
+
+  var requestAnimationFrame = window.requestAnimationFrame ||
+                              window.mozRequestAnimationFrame ||
+                              window.webkitRequestAnimationFrame ||
+                              window.msRequestAnimationFrame;
+
+  if (requestAnimationFrame) {
+    requestAnimationFrame = OTHelpers.bind(requestAnimationFrame, window);
+  }
+  else {
+    var lastTime = 0;
+    var startTime = OTHelpers.now();
+
+    requestAnimationFrame = function(callback){
+      var currTime = OTHelpers.now();
+      var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+      var id = window.setTimeout(function() { callback(currTime - startTime); }, timeToCall);
+      lastTime = currTime + timeToCall;
+      return id;
+    };
+  }
+
+  OTHelpers.requestAnimationFrame = requestAnimationFrame;
+})();
+
+
+
+
+(function() {
+
+  
+  var logQueue = [],
+      queueRunning = false;
+
+  OTHelpers.Analytics = function(loggingUrl, debugFn) {
+
+    var endPoint = loggingUrl + '/logging/ClientEvent',
+        endPointQos = loggingUrl + '/logging/ClientQos',
+
+        reportedErrors = {},
+
+        send = function(data, isQos, callback) {
+          OTHelpers.post((isQos ? endPointQos : endPoint) + '?_=' + OTHelpers.uuid.v4(), {
+            body: data,
+            xdomainrequest: ($.env.name === 'IE' && $.env.version < 10),
+            overrideMimeType: 'text/plain',
+            headers: {
+              'Accept': 'text/plain',
+              'Content-Type': 'application/json'
+            }
+          }, callback);
+        },
+
+        throttledPost = function() {
+          
+          if (!queueRunning && logQueue.length > 0) {
+            queueRunning = true;
+            var curr = logQueue[0];
+
+            
+            var processNextItem = function() {
+              logQueue.shift();
+              queueRunning = false;
+              throttledPost();
+            };
+
+            if (curr) {
+              send(curr.data, curr.isQos, function(err) {
+                if (err) {
+                  var debugMsg = 'Failed to send ClientEvent, moving on to the next item.';
+                  if (debugFn) {
+                    debugFn(debugMsg);
+                  } else {
+                    console.log(debugMsg);
+                  }
+                  if (curr.onComplete) {
+                    curr.onComplete(err);
+                  }
+                  
+                }
+                if (curr.onComplete) {
+                  curr.onComplete(err);
+                }
+                setTimeout(processNextItem, 50);
+              });
+            }
+          }
+        },
+
+        post = function(data, onComplete, isQos) {
+          logQueue.push({
+            data: data,
+            onComplete: onComplete,
+            isQos: isQos
+          });
+
+          throttledPost();
+        },
+
+        shouldThrottleError = function(code, type, partnerId) {
+          if (!partnerId) return false;
+
+          var errKey = [partnerId, type, code].join('_'),
+          
+            msgLimit = 100;
+          if (msgLimit === null || msgLimit === undefined) return false;
+          return (reportedErrors[errKey] || 0) <= msgLimit;
+        };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.logError = function(code, type, message, details, options) {
+      if (!options) options = {};
+      var partnerId = options.partnerId;
+
+      if (shouldThrottleError(code, type, partnerId)) {
+        
+        
+        return;
+      }
+
+      var errKey = [partnerId, type, code].join('_'),
+      payload =  details ? details : null;
+
+      reportedErrors[errKey] = typeof(reportedErrors[errKey]) !== 'undefined' ?
+        reportedErrors[errKey] + 1 : 1;
+      this.logEvent(OTHelpers.extend(options, {
+        action: type + '.' + code,
+        payload: payload
+      }), false);
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.logEvent = function(data, qos, throttle, completionHandler) {
+      if (!qos) qos = false;
+
+      if (throttle && !isNaN(throttle)) {
+        if (Math.random() > throttle) {
+          return;
+        }
+      }
+
+      
+      for (var key in data) {
+        if (data.hasOwnProperty(key) && data[key] === null) {
+          delete data[key];
+        }
+      }
+
+      
+      data = JSON.stringify(data);
+
+      post(data, completionHandler, qos);
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.logQOS = function(options) {
+      this.logEvent(options, true);
+    };
+  };
+
+})();
+
+
+
+
+
+
+
+
+
+OTHelpers.get = function(url, options, callback) {
+  var _options = OTHelpers.extend(options || {}, {
+    method: 'GET'
+  });
+  OTHelpers.request(url, _options, callback);
+};
+
+
+OTHelpers.post = function(url, options, callback) {
+  var _options = OTHelpers.extend(options || {}, {
+    method: 'POST'
+  });
+
+  if(_options.xdomainrequest) {
+    OTHelpers.xdomainRequest(url, _options, callback);
+  } else {
+    OTHelpers.request(url, _options, callback);
+  }
 };
 
 
@@ -775,6 +2701,1360 @@ OTHelpers.statable = function(self, possibleStates, initialState, stateChanged,
   OTHelpers.uuid = uuid;
 
 }());
+
+
+
+
+
+
+(function() {
+
+  var _callAsync;
+
+  
+  
+  
+  
+  
+  var supportsPostMessage = (function () {
+    if (window.postMessage) {
+      
+      
+      
+      var postMessageIsAsynchronous = true;
+      var oldOnMessage = window.onmessage;
+      window.onmessage = function() {
+        postMessageIsAsynchronous = false;
+      };
+      window.postMessage('', '*');
+      window.onmessage = oldOnMessage;
+      return postMessageIsAsynchronous;
+    }
+  })();
+
+  if (supportsPostMessage) {
+    var timeouts = [],
+        messageName = 'OTHelpers.' + OTHelpers.uuid.v4() + '.zero-timeout';
+
+    var removeMessageHandler = function() {
+      timeouts = [];
+
+      if(window.removeEventListener) {
+        window.removeEventListener('message', handleMessage);
+      } else if(window.detachEvent) {
+        window.detachEvent('onmessage', handleMessage);
+      }
+    };
+
+    var handleMessage = function(event) {
+      if (event.source === window &&
+          event.data === messageName) {
+
+        if(OTHelpers.isFunction(event.stopPropagation)) {
+          event.stopPropagation();
+        }
+        event.cancelBubble = true;
+
+        if (!window.___othelpers) {
+          removeMessageHandler();
+          return;
+        }
+
+        if (timeouts.length > 0) {
+          var args = timeouts.shift(),
+              fn = args.shift();
+
+          fn.apply(null, args);
+        }
+      }
+    };
+
+    
+    
+    
+    OTHelpers.on(window, 'unload', removeMessageHandler);
+
+    if(window.addEventListener) {
+      window.addEventListener('message', handleMessage, true);
+    } else if(window.attachEvent) {
+      window.attachEvent('onmessage', handleMessage);
+    }
+
+    _callAsync = function () {
+      timeouts.push(prototypeSlice.call(arguments));
+      window.postMessage(messageName, '*');
+    };
+  }
+  else {
+    _callAsync = function () {
+      var args = prototypeSlice.call(arguments),
+          fn = args.shift();
+
+      setTimeout(function() {
+        fn.apply(null, args);
+      }, 0);
+    };
+  }
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  OTHelpers.callAsync = _callAsync;
+
+
+  
+  
+  
+  OTHelpers.createAsyncHandler = function(handler) {
+    return function() {
+      var args = prototypeSlice.call(arguments);
+
+      OTHelpers.callAsync(function() {
+        handler.apply(null, args);
+      });
+    };
+  };
+
+})();
+
+
+
+
+
+
+
+OTHelpers.createElement = function(nodeName, attributes, children, doc) {
+  var element = (doc || document).createElement(nodeName);
+
+  if (attributes) {
+    for (var name in attributes) {
+      if (typeof(attributes[name]) === 'object') {
+        if (!element[name]) element[name] = {};
+
+        var subAttrs = attributes[name];
+        for (var n in subAttrs) {
+          element[name][n] = subAttrs[n];
+        }
+      }
+      else if (name === 'className') {
+        element.className = attributes[name];
+      }
+      else {
+        element.setAttribute(name, attributes[name]);
+      }
+    }
+  }
+
+  var setChildren = function(child) {
+    if(typeof child === 'string') {
+      element.innerHTML = element.innerHTML + child;
+    } else {
+      element.appendChild(child);
+    }
+  };
+
+  if($.isArray(children)) {
+    $.forEach(children, setChildren);
+  } else if(children) {
+    setChildren(children);
+  }
+
+  return element;
+};
+
+OTHelpers.createButton = function(innerHTML, attributes, events) {
+  var button = $.createElement('button', attributes, innerHTML);
+
+  if (events) {
+    for (var name in events) {
+      if (events.hasOwnProperty(name)) {
+        $.on(button, name, events[name]);
+      }
+    }
+
+    button._boundEvents = events;
+  }
+
+  return button;
+};
+
+
+
+
+
+
+
+var firstElementChild;
+
+
+if( typeof(document) !== 'undefined' &&
+      document.createElement('div').firstElementChild !== void 0 ){
+  firstElementChild = function firstElementChild (parentElement) {
+    return parentElement.firstElementChild;
+  };
+}
+else {
+  firstElementChild = function firstElementChild (parentElement) {
+    var el = parentElement.firstChild;
+
+    do {
+      if(el.nodeType===1){
+        return el;
+      }
+      el = el.nextSibling;
+    } while(el);
+
+    return null;
+  };
+}
+
+
+ElementCollection.prototype.appendTo = function(parentElement) {
+  if (!parentElement) throw new Error('appendTo requires a DOMElement to append to.');
+
+  return this.forEach(function(child) {
+    parentElement.appendChild(child);
+  });
+};
+
+ElementCollection.prototype.append = function() {
+  var parentElement = this.first;
+  if (!parentElement) return this;
+
+  $.forEach(prototypeSlice.call(arguments), function(child) {
+    parentElement.appendChild(child);
+  });
+
+  return this;
+};
+
+ElementCollection.prototype.prepend = function() {
+  if (arguments.length === 0) return this;
+
+  var parentElement = this.first,
+      elementsToPrepend;
+
+  if (!parentElement) return this;
+
+  elementsToPrepend = prototypeSlice.call(arguments);
+
+  if (!firstElementChild(parentElement)) {
+    parentElement.appendChild(elementsToPrepend.shift());
+  }
+
+  $.forEach(elementsToPrepend, function(element) {
+    parentElement.insertBefore(element, firstElementChild(parentElement));
+  });
+
+  return this;
+};
+
+ElementCollection.prototype.after = function(prevElement) {
+  if (!prevElement) throw new Error('after requires a DOMElement to insert after');
+
+  return this.forEach(function(element) {
+    if (element.parentElement) {
+      if (prevElement !== element.parentNode.lastChild) {
+        element.parentElement.insertBefore(element, prevElement);
+      }
+      else {
+        element.parentElement.appendChild(element);
+      }
+    }
+  });
+};
+
+ElementCollection.prototype.before = function(nextElement) {
+  if (!nextElement) {
+    throw new Error('before requires a DOMElement to insert before');
+  }
+
+  return this.forEach(function(element) {
+    if (element.parentElement) {
+      element.parentElement.insertBefore(element, nextElement);
+    }
+  });
+};
+
+ElementCollection.prototype.remove = function () {
+  return this.forEach(function(element) {
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
+  });
+};
+
+ElementCollection.prototype.empty = function () {
+  return this.forEach(function(element) {
+    
+    
+    
+    
+    
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
+    }
+  });
+};
+
+
+
+
+ElementCollection.prototype.isDisplayNone = function() {
+  return this.some(function(element) {
+    if ( (element.offsetWidth === 0 || element.offsetHeight === 0) &&
+                $(element).css('display') === 'none') return true;
+
+    if (element.parentNode && element.parentNode.style) {
+      return $(element.parentNode).isDisplayNone();
+    }
+  });
+};
+
+ElementCollection.prototype.findElementWithDisplayNone = function(element) {
+  return $.findElementWithDisplayNone(element);
+};
+
+
+
+OTHelpers.isElementNode = function(node) {
+  return node && typeof node === 'object' && node.nodeType === 1;
+};
+
+
+
+OTHelpers.removeElement = function(element) {
+  $(element).remove();
+};
+
+
+OTHelpers.removeElementById = function(elementId) {
+  return $('#'+elementId).remove();
+};
+
+
+OTHelpers.removeElementsByType = function(parentElem, type) {
+  return $(type, parentElem).remove();
+};
+
+
+OTHelpers.emptyElement = function(element) {
+  return $(element).empty();
+};
+
+
+
+
+
+
+OTHelpers.isDisplayNone = function(element) {
+  return $(element).isDisplayNone();
+};
+
+OTHelpers.findElementWithDisplayNone = function(element) {
+  if ( (element.offsetWidth === 0 || element.offsetHeight === 0) &&
+            $.css(element, 'display') === 'none') return element;
+
+  if (element.parentNode && element.parentNode.style) {
+    return $.findElementWithDisplayNone(element.parentNode);
+  }
+
+  return null;
+};
+
+
+
+
+
+
+
+
+OTHelpers.Modal = function(options) {
+
+  OTHelpers.eventing(this, true);
+
+  var callback = arguments[arguments.length - 1];
+
+  if(!OTHelpers.isFunction(callback)) {
+    throw new Error('OTHelpers.Modal2 must be given a callback');
+  }
+
+  if(arguments.length < 2) {
+    options = {};
+  }
+
+  var domElement = document.createElement('iframe');
+
+  domElement.id = options.id || OTHelpers.uuid();
+  domElement.style.position = 'absolute';
+  domElement.style.position = 'fixed';
+  domElement.style.height = '100%';
+  domElement.style.width = '100%';
+  domElement.style.top = '0px';
+  domElement.style.left = '0px';
+  domElement.style.right = '0px';
+  domElement.style.bottom = '0px';
+  domElement.style.zIndex = 1000;
+  domElement.style.border = '0';
+
+  try {
+    domElement.style.backgroundColor = 'rgba(0,0,0,0.2)';
+  } catch (err) {
+    
+    
+    domElement.style.backgroundColor = 'transparent';
+    domElement.setAttribute('allowTransparency', 'true');
+  }
+
+  domElement.scrolling = 'no';
+  domElement.setAttribute('scrolling', 'no');
+
+  
+  
+  var frameContent = '<!DOCTYPE html><html><head>' +
+                    '<meta http-equiv="x-ua-compatible" content="IE=Edge">' +
+                    '<meta http-equiv="Content-type" content="text/html; charset=utf-8">' +
+                    '<title></title></head><body></body></html>';
+
+  var wrappedCallback = function() {
+    var doc = domElement.contentDocument || domElement.contentWindow.document;
+
+    if (OTHelpers.env.iframeNeedsLoad) {
+      doc.body.style.backgroundColor = 'transparent';
+      doc.body.style.border = 'none';
+
+      if (OTHelpers.env.name !== 'IE') {
+        
+        
+        doc.open();
+        doc.write(frameContent);
+        doc.close();
+      }
+    }
+
+    callback(
+      domElement.contentWindow,
+      doc
+    );
+  };
+
+  document.body.appendChild(domElement);
+
+  if(OTHelpers.env.iframeNeedsLoad) {
+    if (OTHelpers.env.name === 'IE') {
+      
+      
+      
+      domElement.contentWindow.contents = frameContent;
+      
+      domElement.src = 'javascript:window["contents"]';
+      
+    }
+
+    OTHelpers.on(domElement, 'load', wrappedCallback);
+  } else {
+    setTimeout(wrappedCallback, 0);
+  }
+
+  this.close = function() {
+    OTHelpers.removeElement(domElement);
+    this.trigger('closed');
+    this.element = domElement = null;
+    return this;
+  };
+
+  this.element = domElement;
+
+};
+
+
+
+
+
+
+
+
+
+
+(function() {
+
+  
+
+
+  function getPixelSize(element, style, property, fontSize) {
+    var sizeWithSuffix = style[property],
+        size = parseFloat(sizeWithSuffix),
+        suffix = sizeWithSuffix.split(/\d/)[0],
+        rootSize;
+
+    fontSize = fontSize != null ?
+      fontSize : /%|em/.test(suffix) && element.parentElement ?
+        getPixelSize(element.parentElement, element.parentElement.currentStyle, 'fontSize', null) :
+        16;
+    rootSize = property === 'fontSize' ?
+      fontSize : /width/i.test(property) ? element.clientWidth : element.clientHeight;
+
+    return (suffix === 'em') ?
+      size * fontSize : (suffix === 'in') ?
+        size * 96 : (suffix === 'pt') ?
+          size * 96 / 72 : (suffix === '%') ?
+            size / 100 * rootSize : size;
+  }
+
+  function setShortStyleProperty(style, property) {
+    var
+    borderSuffix = property === 'border' ? 'Width' : '',
+    t = property + 'Top' + borderSuffix,
+    r = property + 'Right' + borderSuffix,
+    b = property + 'Bottom' + borderSuffix,
+    l = property + 'Left' + borderSuffix;
+
+    style[property] = (style[t] === style[r] === style[b] === style[l] ? [style[t]]
+    : style[t] === style[b] && style[l] === style[r] ? [style[t], style[r]]
+    : style[l] === style[r] ? [style[t], style[r], style[b]]
+    : [style[t], style[r], style[b], style[l]]).join(' ');
+  }
+
+  function CSSStyleDeclaration(element) {
+    var currentStyle = element.currentStyle,
+        style = this,
+        fontSize = getPixelSize(element, currentStyle, 'fontSize', null),
+        property;
+
+    for (property in currentStyle) {
+      if (/width|height|margin.|padding.|border.+W/.test(property) && style[property] !== 'auto') {
+        style[property] = getPixelSize(element, currentStyle, property, fontSize) + 'px';
+      } else if (property === 'styleFloat') {
+        
+        style['float'] = currentStyle[property];
+      } else {
+        style[property] = currentStyle[property];
+      }
+    }
+
+    setShortStyleProperty(style, 'margin');
+    setShortStyleProperty(style, 'padding');
+    setShortStyleProperty(style, 'border');
+
+    style.fontSize = fontSize + 'px';
+
+    return style;
+  }
+
+  CSSStyleDeclaration.prototype = {
+    constructor: CSSStyleDeclaration,
+    getPropertyPriority: function () {},
+    getPropertyValue: function ( prop ) {
+      return this[prop] || '';
+    },
+    item: function () {},
+    removeProperty: function () {},
+    setProperty: function () {},
+    getPropertyCSSValue: function () {}
+  };
+
+  function getComputedStyle(element) {
+    return new CSSStyleDeclaration(element);
+  }
+
+
+  OTHelpers.getComputedStyle = function(element) {
+    if(element &&
+        element.ownerDocument &&
+        element.ownerDocument.defaultView &&
+        element.ownerDocument.defaultView.getComputedStyle) {
+      return element.ownerDocument.defaultView.getComputedStyle(element);
+    } else {
+      return getComputedStyle(element);
+    }
+  };
+
+})();
+
+
+
+
+
+
+
+var observeStyleChanges = function observeStyleChanges (element, stylesToObserve, onChange) {
+  var oldStyles = {};
+
+  var getStyle = function getStyle(style) {
+    switch (style) {
+    case 'width':
+      return $(element).width();
+
+    case 'height':
+      return $(element).height();
+
+    default:
+      return $(element).css(style);
+    }
+  };
+
+  
+  $.forEach(stylesToObserve, function(style) {
+    oldStyles[style] = getStyle(style);
+  });
+
+  var observer = new MutationObserver(function(mutations) {
+    var changeSet = {};
+
+    $.forEach(mutations, function(mutation) {
+      if (mutation.attributeName !== 'style') return;
+
+      var isHidden = $.isDisplayNone(element);
+
+      $.forEach(stylesToObserve, function(style) {
+        if(isHidden && (style === 'width' || style === 'height')) return;
+
+        var newValue = getStyle(style);
+
+        if (newValue !== oldStyles[style]) {
+          changeSet[style] = [oldStyles[style], newValue];
+          oldStyles[style] = newValue;
+        }
+      });
+    });
+
+    if (!$.isEmpty(changeSet)) {
+      
+      $.callAsync(function() {
+        onChange.call(null, changeSet);
+      });
+    }
+  });
+
+  observer.observe(element, {
+    attributes:true,
+    attributeFilter: ['style'],
+    childList:false,
+    characterData:false,
+    subtree:false
+  });
+
+  return observer;
+};
+
+var observeNodeOrChildNodeRemoval = function observeNodeOrChildNodeRemoval (element, onChange) {
+  var observer = new MutationObserver(function(mutations) {
+    var removedNodes = [];
+
+    $.forEach(mutations, function(mutation) {
+      if (mutation.removedNodes.length) {
+        removedNodes = removedNodes.concat(prototypeSlice.call(mutation.removedNodes));
+      }
+    });
+
+    if (removedNodes.length) {
+      
+      $.callAsync(function() {
+        onChange($(removedNodes));
+      });
+    }
+  });
+
+  observer.observe(element, {
+    attributes:false,
+    childList:true,
+    characterData:false,
+    subtree:true
+  });
+
+  return observer;
+};
+
+var observeSize = function (element, onChange) {
+  var previousSize = {
+    width: 0,
+    height: 0
+  };
+
+  var interval = setInterval(function() {
+    var rect = element.getBoundingClientRect();
+    if (previousSize.width !== rect.width || previousSize.height !== rect.height) {
+      onChange(rect, previousSize);
+      previousSize = {
+        width: rect.width,
+        height: rect.height
+      };
+    }
+  }, 1000 / 5);
+
+  return {
+    disconnect: function() {
+      clearInterval(interval);
+    }
+  };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ElementCollection.prototype.observeStyleChanges = function(stylesToObserve, onChange) {
+  var observers = [];
+
+  this.forEach(function(element) {
+    observers.push(
+      observeStyleChanges(element, stylesToObserve, onChange)
+    );
+  });
+
+  return observers;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ElementCollection.prototype.observeNodeOrChildNodeRemoval = function(onChange) {
+  var observers = [];
+
+  this.forEach(function(element) {
+    observers.push(
+      observeNodeOrChildNodeRemoval(element, onChange)
+    );
+  });
+
+  return observers;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ElementCollection.prototype.observeSize = function(onChange) {
+  var observers = [];
+
+  this.forEach(function(element) {
+    observers.push(
+      observeSize(element, onChange)
+    );
+  });
+
+  return observers;
+};
+
+
+
+OTHelpers.observeStyleChanges = function(element, stylesToObserve, onChange) {
+  return $(element).observeStyleChanges(stylesToObserve, onChange)[0];
+};
+
+
+OTHelpers.observeNodeOrChildNodeRemoval = function(element, onChange) {
+  return $(element).observeNodeOrChildNodeRemoval(onChange)[0];
+};
+
+
+
+
+
+
+
+
+OTHelpers.registerCapability('classList', function() {
+  return (typeof document !== 'undefined') && ('classList' in document.createElement('a'));
+});
+
+
+function hasClass (element, className) {
+  if (!className) return false;
+
+  if ($.hasCapabilities('classList')) {
+    return element.classList.contains(className);
+  }
+
+  return element.className.indexOf(className) > -1;
+}
+
+function toggleClasses (element, classNames) {
+  if (!classNames || classNames.length === 0) return;
+
+  
+  if (element.nodeType !== 1) {
+    return;
+  }
+
+  var numClasses = classNames.length,
+      i = 0;
+
+  if ($.hasCapabilities('classList')) {
+    for (; i<numClasses; ++i) {
+      element.classList.toggle(classNames[i]);
+    }
+
+    return;
+  }
+
+  var className = (' ' + element.className + ' ').replace(/[\s+]/, ' ');
+
+
+  for (; i<numClasses; ++i) {
+    if (hasClass(element, classNames[i])) {
+      className = className.replace(' ' + classNames[i] + ' ', ' ');
+    }
+    else {
+      className += classNames[i] + ' ';
+    }
+  }
+
+  element.className = $.trim(className);
+}
+
+function addClass (element, classNames) {
+  if (!classNames || classNames.length === 0) return;
+
+  
+  if (element.nodeType !== 1) {
+    return;
+  }
+
+  var numClasses = classNames.length,
+      i = 0;
+
+  if ($.hasCapabilities('classList')) {
+    for (; i<numClasses; ++i) {
+      element.classList.add(classNames[i]);
+    }
+
+    return;
+  }
+
+  
+
+  if (!element.className && classNames.length === 1) {
+    element.className = classNames.join(' ');
+  }
+  else {
+    var setClass = ' ' + element.className + ' ';
+
+    for (; i<numClasses; ++i) {
+      if ( !~setClass.indexOf( ' ' + classNames[i] + ' ')) {
+        setClass += classNames[i] + ' ';
+      }
+    }
+
+    element.className = $.trim(setClass);
+  }
+}
+
+function removeClass (element, classNames) {
+  if (!classNames || classNames.length === 0) return;
+
+  
+  if (element.nodeType !== 1) {
+    return;
+  }
+
+  var numClasses = classNames.length,
+      i = 0;
+
+  if ($.hasCapabilities('classList')) {
+    for (; i<numClasses; ++i) {
+      element.classList.remove(classNames[i]);
+    }
+
+    return;
+  }
+
+  var className = (' ' + element.className + ' ').replace(/[\s+]/, ' ');
+
+  for (; i<numClasses; ++i) {
+    className = className.replace(' ' + classNames[i] + ' ', ' ');
+  }
+
+  element.className = $.trim(className);
+}
+
+ElementCollection.prototype.addClass = function (value) {
+  if (value) {
+    var classNames = $.trim(value).split(/\s+/);
+
+    this.forEach(function(element) {
+      addClass(element, classNames);
+    });
+  }
+
+  return this;
+};
+
+ElementCollection.prototype.removeClass = function (value) {
+  if (value) {
+    var classNames = $.trim(value).split(/\s+/);
+
+    this.forEach(function(element) {
+      removeClass(element, classNames);
+    });
+  }
+
+  return this;
+};
+
+ElementCollection.prototype.toggleClass = function (value) {
+  if (value) {
+    var classNames = $.trim(value).split(/\s+/);
+
+    this.forEach(function(element) {
+      toggleClasses(element, classNames);
+    });
+  }
+
+  return this;
+};
+
+ElementCollection.prototype.hasClass = function (value) {
+  return this.some(function(element) {
+    return hasClass(element, value);
+  });
+};
+
+
+
+OTHelpers.addClass = function(element, className) {
+  return $(element).addClass(className);
+};
+
+
+OTHelpers.removeClass = function(element, value) {
+  return $(element).removeClass(value);
+};
+
+
+
+
+
+
+
+
+var specialDomProperties = {
+  'for': 'htmlFor',
+  'class': 'className'
+};
+
+
+
+ElementCollection.prototype.attr = function (name, value) {
+  if (OTHelpers.isObject(name)) {
+    var actualName;
+
+    for (var key in name) {
+      actualName = specialDomProperties[key] || key;
+      this.first.setAttribute(actualName, name[key]);
+    }
+  }
+  else if (value === void 0) {
+    return this.first.getAttribute(specialDomProperties[name] || name);
+  }
+  else {
+    this.first.setAttribute(specialDomProperties[name] || name, value);
+  }
+
+  return this;
+};
+
+
+
+ElementCollection.prototype.removeAttr = function (name) {
+  var actualName = specialDomProperties[name] || name;
+
+  this.forEach(function(element) {
+    element.removeAttribute(actualName);
+  });
+
+  return this;
+};
+
+
+
+
+
+
+ElementCollection.prototype.html = function (html) {
+  if (html !== void 0) {
+    this.first.innerHTML = html;
+  }
+
+  return this.first.innerHTML;
+};
+
+
+
+
+ElementCollection.prototype.center = function (width, height) {
+  var $element;
+
+  this.forEach(function(element) {
+    $element = $(element);
+    if (!width) width = parseInt($element.width(), 10);
+    if (!height) height = parseInt($element.height(), 10);
+
+    var marginLeft = -0.5 * width + 'px';
+    var marginTop = -0.5 * height + 'px';
+
+    $element.css('margin', marginTop + ' 0 0 ' + marginLeft)
+            .addClass('OT_centered');
+  });
+
+  return this;
+};
+
+
+
+
+
+OTHelpers.centerElement = function(element, width, height) {
+  return $(element).center(width, height);
+};
+
+  
+
+
+(function() {
+
+  var _width = function(element) {
+        if (element.offsetWidth > 0) {
+          return element.offsetWidth + 'px';
+        }
+
+        return $(element).css('width');
+      },
+
+      _height = function(element) {
+        if (element.offsetHeight > 0) {
+          return element.offsetHeight + 'px';
+        }
+
+        return $(element).css('height');
+      };
+
+  ElementCollection.prototype.width = function (newWidth) {
+    if (newWidth) {
+      this.css('width', newWidth);
+      return this;
+    }
+    else {
+      if (this.isDisplayNone()) {
+        return this.makeVisibleAndYield(function(element) {
+          return _width(element);
+        })[0];
+      }
+      else {
+        return _width(this.get(0));
+      }
+    }
+  };
+
+  ElementCollection.prototype.height = function (newHeight) {
+    if (newHeight) {
+      this.css('height', newHeight);
+      return this;
+    }
+    else {
+      if (this.isDisplayNone()) {
+        
+        return this.makeVisibleAndYield(function(element) {
+          return _height(element);
+        })[0];
+      }
+      else {
+        return _height(this.get(0));
+      }
+    }
+  };
+
+  
+  OTHelpers.width = function(element, newWidth) {
+    var ret = $(element).width(newWidth);
+    return newWidth ? OTHelpers : ret;
+  };
+
+  
+  OTHelpers.height = function(element, newHeight) {
+    var ret = $(element).height(newHeight);
+    return newHeight ? OTHelpers : ret;
+  };
+
+})();
+
+
+
+
+
+
+
+
+
+
+(function() {
+
+  var displayStateCache = {},
+      defaultDisplays = {};
+
+  var defaultDisplayValueForElement = function (element) {
+    if (defaultDisplays[element.ownerDocument] &&
+      defaultDisplays[element.ownerDocument][element.nodeName]) {
+      return defaultDisplays[element.ownerDocument][element.nodeName];
+    }
+
+    if (!defaultDisplays[element.ownerDocument]) defaultDisplays[element.ownerDocument] = {};
+
+    
+    
+    var testNode = element.ownerDocument.createElement(element.nodeName),
+        defaultDisplay;
+
+    element.ownerDocument.body.appendChild(testNode);
+    defaultDisplay = defaultDisplays[element.ownerDocument][element.nodeName] =
+    $(testNode).css('display');
+
+    $(testNode).remove();
+    testNode = null;
+
+    return defaultDisplay;
+  };
+
+  var isHidden = function (element) {
+    var computedStyle = $.getComputedStyle(element);
+    return computedStyle.getPropertyValue('display') === 'none';
+  };
+
+  var setCssProperties = function (element, hash) {
+    var style = element.style;
+
+    for (var cssName in hash) {
+      if (hash.hasOwnProperty(cssName)) {
+        style[cssName] = hash[cssName];
+      }
+    }
+  };
+
+  var setCssProperty = function (element, name, value) {
+    element.style[name] = value;
+  };
+
+  var getCssProperty = function (element, unnormalisedName) {
+    
+    
+
+    var name = unnormalisedName.replace( /([A-Z]|^ms)/g, '-$1' ).toLowerCase(),
+        computedStyle = $.getComputedStyle(element),
+        currentValue = computedStyle.getPropertyValue(name);
+
+    if (currentValue === '') {
+      currentValue = element.style[name];
+    }
+
+    return currentValue;
+  };
+
+  var applyCSS = function(element, styles, callback) {
+    var oldStyles = {},
+        name,
+        ret;
+
+    
+    for (name in styles) {
+      if (styles.hasOwnProperty(name)) {
+        
+        
+        
+        oldStyles[name] = element.style[name];
+
+        $(element).css(name, styles[name]);
+      }
+    }
+
+    ret = callback(element);
+
+    
+    for (name in styles) {
+      if (styles.hasOwnProperty(name)) {
+        $(element).css(name, oldStyles[name] || '');
+      }
+    }
+
+    return ret;
+  };
+
+  ElementCollection.prototype.show = function() {
+    return this.forEach(function(element) {
+      var display = element.style.display;
+
+      if (display === '' || display === 'none') {
+        element.style.display = displayStateCache[element] || '';
+        delete displayStateCache[element];
+      }
+
+      if (isHidden(element)) {
+        
+        
+        displayStateCache[element] = 'none';
+
+        element.style.display = defaultDisplayValueForElement(element);
+      }
+    });
+  };
+
+  ElementCollection.prototype.hide = function() {
+    return this.forEach(function(element) {
+      if (element.style.display === 'none') return;
+
+      displayStateCache[element] = element.style.display;
+      element.style.display = 'none';
+    });
+  };
+
+  ElementCollection.prototype.css = function(nameOrHash, value) {
+    if (this.length === 0) return;
+
+    if (typeof(nameOrHash) !== 'string') {
+
+      return this.forEach(function(element) {
+        setCssProperties(element, nameOrHash);
+      });
+
+    } else if (value !== undefined) {
+
+      return this.forEach(function(element) {
+        setCssProperty(element, nameOrHash, value);
+      });
+
+    } else {
+      return getCssProperty(this.first, nameOrHash, value);
+    }
+  };
+
+  
+  
+  ElementCollection.prototype.applyCSS = function (styles, callback) {
+    var results = [];
+
+    this.forEach(function(element) {
+      results.push(applyCSS(element, styles, callback));
+    });
+
+    return results;
+  };
+
+
+  
+  ElementCollection.prototype.makeVisibleAndYield = function (callback) {
+    var hiddenVisually = {
+        display: 'block',
+        visibility: 'hidden'
+      },
+      results = [];
+
+    this.forEach(function(element) {
+      
+      
+      var targetElement = $.findElementWithDisplayNone(element);
+      if (!targetElement) {
+        results.push(void 0);
+      }
+      else {
+        results.push(
+          applyCSS(targetElement, hiddenVisually, callback)
+        );
+      }
+    });
+
+    return results;
+  };
+
+
+  
+  OTHelpers.show = function(element) {
+    return $(element).show();
+  };
+
+  
+  OTHelpers.hide = function(element) {
+    return $(element).hide();
+  };
+
+  
+  OTHelpers.css = function(element, nameOrHash, value) {
+    return $(element).css(nameOrHash, value);
+  };
+
+  
+  OTHelpers.applyCSS = function(element, styles, callback) {
+    return $(element).applyCSS(styles, callback);
+  };
+
+  
+  OTHelpers.makeVisibleAndYield = function(element, callback) {
+    return $(element).makeVisibleAndYield(callback);
+  };
+
+})();
+
 
 
 
@@ -2450,1685 +5730,6 @@ OTHelpers.statable = function(self, possibleStates, initialState, stateChanged,
 
 
 
-var getErrorLocation;
-
-
-var safeErrorProps = [
-  'description',
-  'fileName',
-  'lineNumber',
-  'message',
-  'name',
-  'number',
-  'stack'
-];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-OTHelpers.Error = function (message, name, props) {
-  switch (arguments.length) {
-  case 1:
-    if ($.isObject(message)) {
-      props = message;
-      name = void 0;
-      message = void 0;
-    }
-    
-    break;
-
-  case 2:
-    if ($.isObject(name)) {
-      props = name;
-      name = void 0;
-    }
-    
-
-    break;
-  }
-
-  if ( props instanceof Error) {
-    
-    
-    
-    for (var i = 0, num = safeErrorProps.length; i < num; ++i) {
-      this[safeErrorProps[i]] = props[safeErrorProps[i]];
-    }
-  }
-  else if ( $.isObject(props)) {
-    
-    for (var key in props) {
-      if (props.hasOwnProperty(key)) {
-        this[key] = props[key];
-      }
-    }
-  }
-
-  
-  
-  if ( !(this.fileName && this.lineNumber && this.columnNumber && this.stack) ) {
-    var err = getErrorLocation();
-
-    if (!this.fileName && err.fileName) {
-      this.fileName = err.fileName;
-    }
-
-    if (!this.lineNumber && err.lineNumber) {
-      this.lineNumber = err.lineNumber;
-    }
-
-    if (!this.columnNumber && err.columnNumber) {
-      this.columnNumber = err.columnNumber;
-    }
-
-    if (!this.stack && err.stack) {
-      this.stack = err.stack;
-    }
-  }
-
-  if (!this.message && message) this.message = message;
-  if (!this.name && name) this.name = name;
-};
-
-OTHelpers.Error.prototype.toString =
-OTHelpers.Error.prototype.valueOf = function() {
-  var locationDetails = '';
-  if (this.fileName) locationDetails += ' ' + this.fileName;
-  if (this.lineNumber) {
-    locationDetails += ' ' + this.lineNumber;
-    if (this.columnNumber) locationDetails += ':' + this.columnNumber;
-  }
-
-  return '<' + (this.name ? this.name + ' ' : '') + this.message + locationDetails + '>';
-};
-
-
-
-
-
-
-
-
-var prepareStackTrace = function prepareStackTrace (_, stack){
-  return $.map(stack.slice(2), function(frame) {
-    var _f = {
-      fileName: frame.getFileName(),
-      linenumber: frame.getLineNumber(),
-      columnNumber: frame.getColumnNumber()
-    };
-
-    if (frame.getFunctionName()) _f.functionName = frame.getFunctionName();
-    if (frame.getMethodName()) _f.methodName = frame.getMethodName();
-    if (frame.getThis()) _f.self = frame.getThis();
-
-    return _f;
-  });
-};
-
-
-
-getErrorLocation = function getErrorLocation () {
-  var info = {},
-      callstack,
-      errLocation,
-      err;
-
-  switch ($.env.name) {
-  case 'Firefox':
-  case 'Safari':
-  case 'IE':
-
-    if ($.env.name === 'IE') {
-      err = new Error();
-    }
-    else {
-      try {
-        window.call.js.is.explody;
-      }
-      catch(e) { err = e; }
-    }
-
-    callstack = err.stack.split('\n');
-
-    
-    callstack.shift();
-    callstack.shift();
-
-    info.stack = callstack;
-
-    if ($.env.name === 'IE') {
-      
-      info.stack.shift();
-
-      
-      
-      info.stack = $.map(callstack, function(call) {
-        return call.replace(/^\s+at\s+/g, '');
-      });
-    }
-
-    errLocation = /@(.+?):([0-9]+)(:([0-9]+))?$/.exec(callstack[0]);
-    if (errLocation) {
-      info.fileName = errLocation[1];
-      info.lineNumber = parseInt(errLocation[2], 10);
-      if (errLocation.length > 3) info.columnNumber = parseInt(errLocation[4], 10);
-    }
-    break;
-
-  case 'Chrome':
-  case 'Node':
-  case 'Opera':
-    var currentPST = Error.prepareStackTrace;
-    Error.prepareStackTrace = prepareStackTrace;
-    err = new Error();
-    info.stack = err.stack;
-    Error.prepareStackTrace = currentPST;
-
-    var topFrame = info.stack[0];
-    info.lineNumber = topFrame.lineNumber;
-    info.columnNumber = topFrame.columnNumber;
-    info.fileName = topFrame.fileName;
-    if (topFrame.functionName) info.functionName = topFrame.functionName;
-    if (topFrame.methodName) info.methodName = topFrame.methodName;
-    if (topFrame.self) info.self = topFrame.self;
-    break;
-
-  default:
-    err = new Error();
-    if (err.stack) info.stack = err.stack.split('\n');
-    break;
-  }
-
-  if (err.message) info.message = err.message;
-  return info;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(function() {
-  
-  var version = -1;
-
-  
-  
-  var versionGEThan = function versionGEThan (otherVersion) {
-    if (otherVersion === version) return true;
-
-    if (typeof(otherVersion) === 'number' && typeof(version) === 'number') {
-      return otherVersion > version;
-    }
-
-    
-    
-    
-    
-    var v1 = otherVersion.split('.'),
-        v2 = version.split('.'),
-        versionLength = (v1.length > v2.length ? v2 : v1).length;
-
-    for (var i = 0; i < versionLength; ++i) {
-      if (parseInt(v1[i], 10) > parseInt(v2[i], 10)) {
-        return true;
-      }
-    }
-
-    
-    
-    
-    if (i < v1.length) {
-      return true;
-    }
-
-    return false;
-  };
-
-  var env = function() {
-    if (typeof(process) !== 'undefined' &&
-        typeof(process.versions) !== 'undefined' &&
-        typeof(process.versions.node) === 'string') {
-
-      version = process.versions.node;
-      if (version.substr(1) === 'v') version = version.substr(1);
-
-      
-      
-      return {
-        name: 'Node',
-        version: version,
-        userAgent: 'Node ' + version,
-        iframeNeedsLoad: false,
-        versionGreaterThan: versionGEThan
-      };
-    }
-
-    var userAgent = window.navigator.userAgent.toLowerCase(),
-        appName = window.navigator.appName,
-        navigatorVendor,
-        name = 'unknown';
-
-    if (userAgent.indexOf('opera') > -1 || userAgent.indexOf('opr') > -1) {
-      name = 'Opera';
-
-      if (/opr\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
-        version = parseFloat( RegExp.$1 );
-      }
-
-    } else if (userAgent.indexOf('firefox') > -1)   {
-      name = 'Firefox';
-
-      if (/firefox\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
-        version = parseFloat( RegExp.$1 );
-      }
-
-    } else if (appName === 'Microsoft Internet Explorer') {
-      
-      name = 'IE';
-
-      if (/msie ([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
-        version = parseFloat( RegExp.$1 );
-      }
-
-    } else if (appName === 'Netscape' && userAgent.indexOf('trident') > -1) {
-      
-
-      name = 'IE';
-
-      if (/trident\/.*rv:([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
-        version = parseFloat( RegExp.$1 );
-      }
-
-    } else if (userAgent.indexOf('chrome') > -1) {
-      name = 'Chrome';
-
-      if (/chrome\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
-        version = parseFloat( RegExp.$1 );
-      }
-
-    } else if ((navigatorVendor = window.navigator.vendor) &&
-      navigatorVendor.toLowerCase().indexOf('apple') > -1) {
-      name = 'Safari';
-
-      if (/version\/([0-9]{1,}[\.0-9]{0,})/.exec(userAgent) !== null) {
-        version = parseFloat( RegExp.$1 );
-      }
-    }
-
-    return {
-      name: name,
-      version: version,
-      userAgent: window.navigator.userAgent,
-      iframeNeedsLoad: userAgent.indexOf('webkit') < 0,
-      versionGreaterThan: versionGEThan
-    };
-  }();
-
-
-  OTHelpers.env = env;
-
-  OTHelpers.browser = function() {
-    return OTHelpers.env.name;
-  };
-
-  OTHelpers.browserVersion = function() {
-    return OTHelpers.env;
-  };
-
-})();
-
-
-
-var nodeEventing;
-
-if($.env.name === 'Node') {
-  (function() {
-    var EventEmitter = require('events').EventEmitter,
-        util = require('util');
-
-    
-    
-    
-    var NodeEventable = function NodeEventable () {
-      EventEmitter.call(this);
-
-      this.events = {};
-    };
-    util.inherits(NodeEventable, EventEmitter);
-
-
-    nodeEventing = function nodeEventing () {
-      var api = new NodeEventable(),
-          _on = api.on,
-          _off = api.removeListener;
-
-
-      api.addListeners = function (eventNames, handler, context, closure) {
-        var listener = {handler: handler};
-        if (context) listener.context = context;
-        if (closure) listener.closure = closure;
-
-        $.forEach(eventNames, function(name) {
-          if (!api.events[name]) api.events[name] = [];
-          api.events[name].push(listener);
-
-          _on(name, handler);
-
-          var addedListener = name + ':added';
-          if (api.events[addedListener]) {
-            api.emit(addedListener, api.events[name].length);
-          }
-        });
-      };
-
-      api.removeAllListenersNamed = function (eventNames) {
-        var _eventNames = eventNames.split(' ');
-        api.removeAllListeners(_eventNames);
-
-        $.forEach(_eventNames, function(name) {
-          if (api.events[name]) delete api.events[name];
-        });
-      };
-
-      api.removeListeners = function (eventNames, handler, closure) {
-        function filterHandlers(listener) {
-          return !(listener.handler === handler && listener.closure === closure);
-        }
-
-        $.forEach(eventNames.split(' '), function(name) {
-          if (api.events[name]) {
-            _off(name, handler);
-            api.events[name] = $.filter(api.events[name], filterHandlers);
-            if (api.events[name].length === 0) delete api.events[name];
-
-            var removedListener = name + ':removed';
-            if (api.events[removedListener]) {
-              api.emit(removedListener, api.events[name] ? api.events[name].length : 0);
-            }
-          }
-        });
-      };
-
-      api.removeAllListeners = function () {
-        api.events = {};
-        api.removeAllListeners();
-      };
-
-      api.dispatchEvent = function(event, defaultAction) {
-        this.emit(event.type, event);
-
-        if (defaultAction) {
-          defaultAction.call(null, event);
-        }
-      };
-
-      api.trigger = $.bind(api.emit, api);
-
-
-      return api;
-    };
-  })();
-}
-
-
-
-
-var browserEventing;
-
-if($.env.name !== 'Node') {
-
-  browserEventing = function browserEventing (self, syncronous) {
-    var api = {
-      events: {}
-    };
-
-
-    
-    function executeDefaultAction(defaultAction, args) {
-      if (!defaultAction) return;
-
-      defaultAction.apply(null, args.slice());
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    function executeListenersAsyncronously(name, args, defaultAction) {
-      var listeners = api.events[name];
-      if (!listeners || listeners.length === 0) return;
-
-      var listenerAcks = listeners.length;
-
-      $.forEach(listeners, function(listener) { 
-        function filterHandlers(_listener) {
-          return _listener.handler === listener.handler;
-        }
-
-        
-        
-        $.callAsync(function() {
-          try {
-            
-            if (api.events[name] && $.some(api.events[name], filterHandlers)) {
-              (listener.closure || listener.handler).apply(listener.context || null, args);
-            }
-          }
-          finally {
-            listenerAcks--;
-
-            if (listenerAcks === 0) {
-              executeDefaultAction(defaultAction, args);
-            }
-          }
-        });
-      });
-    }
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    function executeListenersSyncronously(name, args) { 
-      var listeners = api.events[name];
-      if (!listeners || listeners.length === 0) return;
-
-      $.forEach(listeners, function(listener) { 
-        (listener.closure || listener.handler).apply(listener.context || null, args);
-      });
-    }
-
-    var executeListeners = syncronous === true ?
-      executeListenersSyncronously : executeListenersAsyncronously;
-
-
-    api.addListeners = function (eventNames, handler, context, closure) {
-      var listener = {handler: handler};
-      if (context) listener.context = context;
-      if (closure) listener.closure = closure;
-
-      $.forEach(eventNames, function(name) {
-        if (!api.events[name]) api.events[name] = [];
-        api.events[name].push(listener);
-
-        var addedListener = name + ':added';
-        if (api.events[addedListener]) {
-          executeListeners(addedListener, [api.events[name].length]);
-        }
-      });
-    };
-
-    api.removeListeners = function(eventNames, handler, context) {
-      function filterListeners(listener) {
-        var isCorrectHandler = (
-          listener.handler.originalHandler === handler ||
-          listener.handler === handler
-        );
-
-        return !(isCorrectHandler && listener.context === context);
-      }
-
-      $.forEach(eventNames, function(name) {
-        if (api.events[name]) {
-          api.events[name] = $.filter(api.events[name], filterListeners);
-          if (api.events[name].length === 0) delete api.events[name];
-
-          var removedListener = name + ':removed';
-          if (api.events[ removedListener]) {
-            executeListeners(removedListener, [api.events[name] ? api.events[name].length : 0]);
-          }
-        }
-      });
-    };
-
-    api.removeAllListenersNamed = function (eventNames) {
-      $.forEach(eventNames, function(name) {
-        if (api.events[name]) {
-          delete api.events[name];
-        }
-      });
-    };
-
-    api.removeAllListeners = function () {
-      api.events = {};
-    };
-
-    api.dispatchEvent = function(event, defaultAction) {
-      if (!api.events[event.type] || api.events[event.type].length === 0) {
-        executeDefaultAction(defaultAction, [event]);
-        return;
-      }
-
-      executeListeners(event.type, [event], defaultAction);
-    };
-
-    api.trigger = function(eventName, args) {
-      if (!api.events[eventName] || api.events[eventName].length === 0) {
-        return;
-      }
-
-      executeListeners(eventName, args);
-    };
-
-
-    return api;
-  };
-}
-
-
-
-
-
-
-
-if (window.OTHelpers.env.name === 'Node') {
-  var request = require('request');
-
-  OTHelpers.request = function(url, options, callback) {
-    var completion = function(error, response, body) {
-      var event = {response: response, body: body};
-
-      
-      
-      if (!error && response.statusCode >= 200 &&
-                  (response.statusCode < 300 || response.statusCode === 304) ) {
-        callback(null, event);
-      } else {
-        callback(error, event);
-      }
-    };
-
-    if (options.method.toLowerCase() === 'get') {
-      request.get(url, completion);
-    }
-    else {
-      request.post(url, options.body, completion);
-    }
-  };
-
-  OTHelpers.getJSON = function(url, options, callback) {
-    var extendedHeaders = require('underscore').extend(
-      {
-        'Accept': 'application/json'
-      },
-      options.headers || {}
-    );
-
-    request.get({
-      url: url,
-      headers: extendedHeaders,
-      json: true
-    }, function(err, response) {
-      callback(err, response && response.body);
-    });
-  };
-}
-
-
-
-
-
-function formatPostData(data) { 
-  
-  if (typeof(data) === 'string') return data;
-
-  var queryString = [];
-
-  for (var key in data) {
-    queryString.push(
-      encodeURIComponent(key) + '=' + encodeURIComponent(data[key])
-    );
-  }
-
-  return queryString.join('&').replace(/\+/g, '%20');
-}
-
-if (window.OTHelpers.env.name !== 'Node') {
-
-  OTHelpers.xdomainRequest = function(url, options, callback) {
-    
-    var xdr = new XDomainRequest(),
-        _options = options || {},
-        _method = _options.method.toLowerCase();
-
-    if(!_method) {
-      callback(new Error('No HTTP method specified in options'));
-      return;
-    }
-
-    _method = _method.toUpperCase();
-
-    if(!(_method === 'GET' || _method === 'POST')) {
-      callback(new Error('HTTP method can only be '));
-      return;
-    }
-
-    function done(err, event) {
-      xdr.onload = xdr.onerror = xdr.ontimeout = function() {};
-      xdr = void 0;
-      callback(err, event);
-    }
-
-
-    xdr.onload = function() {
-      done(null, {
-        target: {
-          responseText: xdr.responseText,
-          headers: {
-            'content-type': xdr.contentType
-          }
-        }
-      });
-    };
-
-    xdr.onerror = function() {
-      done(new Error('XDomainRequest of ' + url + ' failed'));
-    };
-
-    xdr.ontimeout = function() {
-      done(new Error('XDomainRequest of ' + url + ' timed out'));
-    };
-
-    xdr.open(_method, url);
-    xdr.send(options.body && formatPostData(options.body));
-
-  };
-
-  OTHelpers.request = function(url, options, callback) {
-    var request = new XMLHttpRequest(),
-        _options = options || {},
-        _method = _options.method;
-
-    if(!_method) {
-      callback(new Error('No HTTP method specified in options'));
-      return;
-    }
-
-    
-    
-    
-    if(callback) {
-      OTHelpers.on(request, 'load', function(event) {
-        var status = event.target.status;
-
-        
-        
-        if ( status >= 200 && (status < 300 || status === 304) ) {
-          callback(null, event);
-        } else {
-          callback(event);
-        }
-      });
-
-      OTHelpers.on(request, 'error', callback);
-    }
-
-    request.open(options.method, url, true);
-
-    if (!_options.headers) _options.headers = {};
-
-    for (var name in _options.headers) {
-      request.setRequestHeader(name, _options.headers[name]);
-    }
-
-    request.send(options.body && formatPostData(options.body));
-  };
-
-
-  OTHelpers.getJSON = function(url, options, callback) {
-    options = options || {};
-
-    var done = function(error, event) {
-      if(error) {
-        callback(error, event && event.target && event.target.responseText);
-      } else {
-        var response;
-
-        try {
-          response = JSON.parse(event.target.responseText);
-        } catch(e) {
-          
-          callback(e, event && event.target && event.target.responseText);
-          return;
-        }
-
-        callback(null, response, event);
-      }
-    };
-
-    if(options.xdomainrequest) {
-      OTHelpers.xdomainRequest(url, { method: 'GET' }, done);
-    } else {
-      var extendedHeaders = OTHelpers.extend({
-        'Accept': 'application/json'
-      }, options.headers || {});
-
-      OTHelpers.get(url, OTHelpers.extend(options || {}, {
-        headers: extendedHeaders
-      }), done);
-    }
-
-  };
-
-}
-
-
-
-
-
-
-
-var LOG_LEVEL_DEBUG = 5,
-    LOG_LEVEL_LOG   = 4,
-    LOG_LEVEL_INFO  = 3,
-    LOG_LEVEL_WARN  = 2,
-    LOG_LEVEL_ERROR = 1,
-    LOG_LEVEL_NONE  = 0;
-
-
-
-
-var _logLevel = LOG_LEVEL_NONE;
-
-var setLogLevel = function setLogLevel (level) {
-  _logLevel = typeof(level) === 'number' ? level : 0;
-  return _logLevel;
-};
-
-
-OTHelpers.useLogHelpers = function(on){
-
-  
-  on.DEBUG    = LOG_LEVEL_DEBUG;
-  on.LOG      = LOG_LEVEL_LOG;
-  on.INFO     = LOG_LEVEL_INFO;
-  on.WARN     = LOG_LEVEL_WARN;
-  on.ERROR    = LOG_LEVEL_ERROR;
-  on.NONE     = LOG_LEVEL_NONE;
-
-  var _logs = [],
-      _canApplyConsole = true;
-
-  try {
-    Function.prototype.bind.call(window.console.log, window.console);
-  } catch (err) {
-    _canApplyConsole = false;
-  }
-
-  
-  
-  
-  var makeLogArgumentsSafe = function(args) { return args; };
-
-  if (OTHelpers.env.name === 'IE') {
-    makeLogArgumentsSafe = function(args) {
-      return [toDebugString(prototypeSlice.apply(args))];
-    };
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  function generateLoggingMethod(method, level, fallback) {
-    return function() {
-      if (on.shouldLog(level)) {
-        var cons = window.console,
-            args = makeLogArgumentsSafe(arguments);
-
-        
-        
-        
-        if (cons && cons[method]) {
-          
-          
-          
-          if (cons[method].apply || _canApplyConsole) {
-            if (!cons[method].apply) {
-              cons[method] = Function.prototype.bind.call(cons[method], cons);
-            }
-
-            cons[method].apply(cons, args);
-          }
-          else {
-            
-            
-            cons[method](args);
-          }
-        }
-        else if (fallback) {
-          fallback.apply(on, args);
-
-          
-          return;
-        }
-
-        appendToLogs(method, makeLogArgumentsSafe(arguments));
-      }
-    };
-  }
-
-  on.log = generateLoggingMethod('log', on.LOG);
-
-  
-  on.debug = generateLoggingMethod('debug', on.DEBUG, on.log);
-  on.info = generateLoggingMethod('info', on.INFO, on.log);
-  on.warn = generateLoggingMethod('warn', on.WARN, on.log);
-  on.error = generateLoggingMethod('error', on.ERROR, on.log);
-
-
-  on.setLogLevel = function(level) {
-    on.debug('TB.setLogLevel(' + _logLevel + ')');
-    return setLogLevel(level);
-  };
-
-  on.getLogs = function() {
-    return _logs;
-  };
-
-  
-  on.shouldLog = function(level) {
-    return _logLevel >= level;
-  };
-
-  
-  
-  function formatDateStamp() {
-    var now = new Date();
-    return now.toLocaleTimeString() + now.getMilliseconds();
-  }
-
-  function toJson(object) {
-    try {
-      return JSON.stringify(object);
-    } catch(e) {
-      return object.toString();
-    }
-  }
-
-  function toDebugString(object) {
-    var components = [];
-
-    if (typeof(object) === 'undefined') {
-      
-    }
-    else if (object === null) {
-      components.push('NULL');
-    }
-    else if (OTHelpers.isArray(object)) {
-      for (var i=0; i<object.length; ++i) {
-        components.push(toJson(object[i]));
-      }
-    }
-    else if (OTHelpers.isObject(object)) {
-      for (var key in object) {
-        var stringValue;
-
-        if (!OTHelpers.isFunction(object[key])) {
-          stringValue = toJson(object[key]);
-        }
-        else if (object.hasOwnProperty(key)) {
-          stringValue = 'function ' + key + '()';
-        }
-
-        components.push(key + ': ' + stringValue);
-      }
-    }
-    else if (OTHelpers.isFunction(object)) {
-      try {
-        components.push(object.toString());
-      } catch(e) {
-        components.push('function()');
-      }
-    }
-    else  {
-      components.push(object.toString());
-    }
-
-    return components.join(', ');
-  }
-
-  
-  function appendToLogs(level, args) {
-    if (!args) return;
-
-    var message = toDebugString(args);
-    if (message.length <= 2) return;
-
-    _logs.push(
-      [level, formatDateStamp(), message]
-    );
-  }
-};
-
-OTHelpers.useLogHelpers(OTHelpers);
-OTHelpers.setLogLevel(OTHelpers.ERROR);
-
-
-
-
-
-
-
-
-
-
-
-
-ElementCollection.prototype.on = function (eventName, handler) {
-  return this.forEach(function(element) {
-    if (element.addEventListener) {
-      element.addEventListener(eventName, handler, false);
-    } else if (element.attachEvent) {
-      element.attachEvent('on' + eventName, handler);
-    } else {
-      var oldHandler = element['on'+eventName];
-      element['on'+eventName] = function() {
-        handler.apply(this, arguments);
-        if (oldHandler) oldHandler.apply(this, arguments);
-      };
-    }
-  });
-};
-
-
-ElementCollection.prototype.off = function (eventName, handler) {
-  return this.forEach(function(element) {
-    if (element.removeEventListener) {
-      element.removeEventListener (eventName, handler,false);
-    }
-    else if (element.detachEvent) {
-      element.detachEvent('on' + eventName, handler);
-    }
-  });
-};
-
-ElementCollection.prototype.once = function (eventName, handler) {
-  var removeAfterTrigger = $.bind(function() {
-    this.off(eventName, removeAfterTrigger);
-    handler.apply(null, arguments);
-  }, this);
-
-  return this.on(eventName, removeAfterTrigger);
-};
-
-
-OTHelpers.on = function(element, eventName,  handler) {
-  return $(element).on(eventName, handler);
-};
-
-
-OTHelpers.off = function(element, eventName, handler) {
-  return $(element).off(eventName, handler);
-};
-
-
-OTHelpers.once = function (element, eventName, handler) {
-  return $(element).once(eventName, handler);
-};
-
-
-
-
-
-
-(function() {
-
-  var _domReady = typeof(document) === 'undefined' ||
-                    document.readyState === 'complete' ||
-                   (document.readyState === 'interactive' && document.body),
-
-      _loadCallbacks = [],
-      _unloadCallbacks = [],
-      _domUnloaded = false,
-
-      onDomReady = function() {
-        _domReady = true;
-
-        if (typeof(document) !== 'undefined') {
-          if ( document.addEventListener ) {
-            document.removeEventListener('DOMContentLoaded', onDomReady, false);
-            window.removeEventListener('load', onDomReady, false);
-          } else {
-            document.detachEvent('onreadystatechange', onDomReady);
-            window.detachEvent('onload', onDomReady);
-          }
-        }
-
-        
-        
-        OTHelpers.on(window, 'unload', onDomUnload);
-
-        OTHelpers.forEach(_loadCallbacks, function(listener) {
-          listener[0].call(listener[1]);
-        });
-
-        _loadCallbacks = [];
-      },
-
-      onDomUnload = function() {
-        _domUnloaded = true;
-
-        OTHelpers.forEach(_unloadCallbacks, function(listener) {
-          listener[0].call(listener[1]);
-        });
-
-        _unloadCallbacks = [];
-      };
-
-
-  OTHelpers.onDOMLoad = function(cb, context) {
-    if (OTHelpers.isReady()) {
-      cb.call(context);
-      return;
-    }
-
-    _loadCallbacks.push([cb, context]);
-  };
-
-  OTHelpers.onDOMUnload = function(cb, context) {
-    if (this.isDOMUnloaded()) {
-      cb.call(context);
-      return;
-    }
-
-    _unloadCallbacks.push([cb, context]);
-  };
-
-  OTHelpers.isReady = function() {
-    return !_domUnloaded && _domReady;
-  };
-
-  OTHelpers.isDOMUnloaded = function() {
-    return _domUnloaded;
-  };
-
-  if (_domReady) {
-    onDomReady();
-  } else if(typeof(document) !== 'undefined') {
-    if (document.addEventListener) {
-      document.addEventListener('DOMContentLoaded', onDomReady, false);
-
-      
-      window.addEventListener( 'load', onDomReady, false );
-
-    } else if (document.attachEvent) {
-      document.attachEvent('onreadystatechange', function() {
-        if (document.readyState === 'complete') onDomReady();
-      });
-
-      
-      window.attachEvent( 'onload', onDomReady );
-    }
-  }
-
-})();
-
-
-
-
-
-OTHelpers.setCookie = function(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch (err) {
-    
-    var date = new Date();
-    date.setTime(date.getTime()+(365*24*60*60*1000));
-    var expires = '; expires=' + date.toGMTString();
-    document.cookie = key + '=' + value + expires + '; path=/';
-  }
-};
-
-OTHelpers.getCookie = function(key) {
-  var value;
-
-  try {
-    value = localStorage.getItem(key);
-    return value;
-  } catch (err) {
-    
-    var nameEQ = key + '=';
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-      var c = ca[i];
-      while (c.charAt(0) === ' ') {
-        c = c.substring(1,c.length);
-      }
-      if (c.indexOf(nameEQ) === 0) {
-        value = c.substring(nameEQ.length,c.length);
-      }
-    }
-
-    if (value) {
-      return value;
-    }
-  }
-
-  return null;
-};
-
-
-
-
-
-OTHelpers.castToBoolean = function(value, defaultValue) {
-  if (value === undefined) return defaultValue;
-  return value === 'true' || value === true;
-};
-
-OTHelpers.roundFloat = function(value, places) {
-  return Number(value.toFixed(places));
-};
-
-
-
-
-
-
-
-OTHelpers.Collection = function(idField) {
-  var _models = [],
-      _byId = {},
-      _idField = idField || 'id';
-
-  OTHelpers.eventing(this, true);
-
-  var modelProperty = function(model, property) {
-    if(OTHelpers.isFunction(model[property])) {
-      return model[property]();
-    } else {
-      return model[property];
-    }
-  };
-
-  var onModelUpdate = OTHelpers.bind(function onModelUpdate (event) {
-        this.trigger('update', event);
-        this.trigger('update:'+event.target.id, event);
-      }, this),
-
-      onModelDestroy = OTHelpers.bind(function onModelDestroyed (event) {
-        this.remove(event.target, event.reason);
-      }, this);
-
-
-  this.reset = function() {
-    
-    OTHelpers.forEach(_models, function(model) {
-      model.off('updated', onModelUpdate, this);
-      model.off('destroyed', onModelDestroy, this);
-    }, this);
-
-    _models = [];
-    _byId = {};
-  };
-
-  this.destroy = function(reason) {
-    OTHelpers.forEach(_models, function(model) {
-      if(model && typeof model.destroy === 'function') {
-        model.destroy(reason, true);
-      }
-    });
-
-    this.reset();
-    this.off();
-  };
-
-  this.get = function(id) { return id && _byId[id] !== void 0 ? _models[_byId[id]] : void 0; };
-  this.has = function(id) { return id && _byId[id] !== void 0; };
-
-  this.toString = function() { return _models.toString(); };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  this.where = function(attrsOrFilterFn, context) {
-    if (OTHelpers.isFunction(attrsOrFilterFn)) {
-      return OTHelpers.filter(_models, attrsOrFilterFn, context);
-    }
-
-    return OTHelpers.filter(_models, function(model) {
-      for (var key in attrsOrFilterFn) {
-        if(!attrsOrFilterFn.hasOwnProperty(key)) {
-          continue;
-        }
-        if (modelProperty(model, key) !== attrsOrFilterFn[key]) return false;
-      }
-
-      return true;
-    });
-  };
-
-  
-  
-  this.find = function(attrsOrFilterFn, context) {
-    var filterFn;
-
-    if (OTHelpers.isFunction(attrsOrFilterFn)) {
-      filterFn = attrsOrFilterFn;
-    }
-    else {
-      filterFn = function(model) {
-        for (var key in attrsOrFilterFn) {
-          if(!attrsOrFilterFn.hasOwnProperty(key)) {
-            continue;
-          }
-          if (modelProperty(model, key) !== attrsOrFilterFn[key]) return false;
-        }
-
-        return true;
-      };
-    }
-
-    filterFn = OTHelpers.bind(filterFn, context);
-
-    for (var i=0; i<_models.length; ++i) {
-      if (filterFn(_models[i]) === true) return _models[i];
-    }
-
-    return null;
-  };
-
-  this.add = function(model) {
-    var id = modelProperty(model, _idField);
-
-    if (this.has(id)) {
-      OTHelpers.warn('Model ' + id + ' is already in the collection', _models);
-      return this;
-    }
-
-    _byId[id] = _models.push(model) - 1;
-
-    model.on('updated', onModelUpdate, this);
-    model.on('destroyed', onModelDestroy, this);
-
-    this.trigger('add', model);
-    this.trigger('add:'+id, model);
-
-    return this;
-  };
-
-  this.remove = function(model, reason) {
-    var id = modelProperty(model, _idField);
-
-    _models.splice(_byId[id], 1);
-
-    
-    for (var i=_byId[id]; i<_models.length; ++i) {
-      _byId[_models[i][_idField]] = i;
-    }
-
-    delete _byId[id];
-
-    model.off('updated', onModelUpdate, this);
-    model.off('destroyed', onModelDestroy, this);
-
-    this.trigger('remove', model, reason);
-    this.trigger('remove:'+id, model, reason);
-
-    return this;
-  };
-
-  
-  
-  
-  this._triggerAddEvents = function() {
-    var models = this.where.apply(this, arguments);
-    OTHelpers.forEach(models, function(model) {
-      this.trigger('add', model);
-      this.trigger('add:' + modelProperty(model, _idField), model);
-    }, this);
-  };
-
-  this.length = function() {
-    return _models.length;
-  };
-};
-
-
-
-
-
-
-(function() {
-
-  var capabilities = {};
-
-  
-  
-  
-  
-  
-  
-  
-  
-  OTHelpers.registerCapability = function(name, callback) {
-    var _name = name.toLowerCase();
-
-    if (capabilities.hasOwnProperty(_name)) {
-      OTHelpers.error('Attempted to register', name, 'capability more than once');
-      return;
-    }
-
-    if (!OTHelpers.isFunction(callback)) {
-      OTHelpers.error('Attempted to register', name,
-                              'capability with a callback that isn\' a function');
-      return;
-    }
-
-    memoriseCapabilityTest(_name, callback);
-  };
-
-
-  
-  
-  var memoriseCapabilityTest = function (name, callback) {
-    capabilities[name] = function() {
-      var result = callback();
-      capabilities[name] = function() {
-        return result;
-      };
-
-      return result;
-    };
-  };
-
-  var testCapability = function (name) {
-    return capabilities[name]();
-  };
-
-
-  
-  
-  
-  
-  
-  OTHelpers.hasCapabilities = function() {
-    var capNames = prototypeSlice.call(arguments),
-        name;
-
-    for (var i=0; i<capNames.length; ++i) {
-      name = capNames[i].toLowerCase();
-
-      if (!capabilities.hasOwnProperty(name)) {
-        OTHelpers.error('hasCapabilities was called with an unknown capability: ' + name);
-        return false;
-      }
-      else if (testCapability(name) === false) {
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-})();
-
-
-
-
-
-
-
-OTHelpers.registerCapability('websockets', function() {
-  return 'WebSocket' in window && window.WebSocket !== void 0;
-});
-
-
-
-
-
-
-(function() {
-
-  var _callAsync;
-
-  
-  
-  
-  
-  
-  var supportsPostMessage = (function () {
-    if (window.postMessage) {
-      
-      
-      
-      var postMessageIsAsynchronous = true;
-      var oldOnMessage = window.onmessage;
-      window.onmessage = function() {
-        postMessageIsAsynchronous = false;
-      };
-      window.postMessage('', '*');
-      window.onmessage = oldOnMessage;
-      return postMessageIsAsynchronous;
-    }
-  })();
-
-  if (supportsPostMessage) {
-    var timeouts = [],
-        messageName = 'OTHelpers.' + OTHelpers.uuid.v4() + '.zero-timeout';
-
-    var removeMessageHandler = function() {
-      timeouts = [];
-
-      if(window.removeEventListener) {
-        window.removeEventListener('message', handleMessage);
-      } else if(window.detachEvent) {
-        window.detachEvent('onmessage', handleMessage);
-      }
-    };
-
-    var handleMessage = function(event) {
-      if (event.source === window &&
-          event.data === messageName) {
-
-        if(OTHelpers.isFunction(event.stopPropagation)) {
-          event.stopPropagation();
-        }
-        event.cancelBubble = true;
-
-        if (!window.___othelpers) {
-          removeMessageHandler();
-          return;
-        }
-
-        if (timeouts.length > 0) {
-          var args = timeouts.shift(),
-              fn = args.shift();
-
-          fn.apply(null, args);
-        }
-      }
-    };
-
-    
-    
-    
-    OTHelpers.on(window, 'unload', removeMessageHandler);
-
-    if(window.addEventListener) {
-      window.addEventListener('message', handleMessage, true);
-    } else if(window.attachEvent) {
-      window.attachEvent('onmessage', handleMessage);
-    }
-
-    _callAsync = function () {
-      timeouts.push(prototypeSlice.call(arguments));
-      window.postMessage(messageName, '*');
-    };
-  }
-  else {
-    _callAsync = function () {
-      var args = prototypeSlice.call(arguments),
-          fn = args.shift();
-
-      setTimeout(function() {
-        fn.apply(null, args);
-      }, 0);
-    };
-  }
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  OTHelpers.callAsync = _callAsync;
-
-
-  
-  
-  
-  OTHelpers.createAsyncHandler = function(handler) {
-    return function() {
-      var args = prototypeSlice.call(arguments);
-
-      OTHelpers.callAsync(function() {
-        handler.apply(null, args);
-      });
-    };
-  };
-
-})();
-
-
-
-
-
-
 
 
 
@@ -4535,1572 +6136,6 @@ OTHelpers.eventing = function(self, syncronous) {
   return self;
 };
 
-
-
-
-
-
-OTHelpers.createElement = function(nodeName, attributes, children, doc) {
-  var element = (doc || document).createElement(nodeName);
-
-  if (attributes) {
-    for (var name in attributes) {
-      if (typeof(attributes[name]) === 'object') {
-        if (!element[name]) element[name] = {};
-
-        var subAttrs = attributes[name];
-        for (var n in subAttrs) {
-          element[name][n] = subAttrs[n];
-        }
-      }
-      else if (name === 'className') {
-        element.className = attributes[name];
-      }
-      else {
-        element.setAttribute(name, attributes[name]);
-      }
-    }
-  }
-
-  var setChildren = function(child) {
-    if(typeof child === 'string') {
-      element.innerHTML = element.innerHTML + child;
-    } else {
-      element.appendChild(child);
-    }
-  };
-
-  if($.isArray(children)) {
-    $.forEach(children, setChildren);
-  } else if(children) {
-    setChildren(children);
-  }
-
-  return element;
-};
-
-OTHelpers.createButton = function(innerHTML, attributes, events) {
-  var button = $.createElement('button', attributes, innerHTML);
-
-  if (events) {
-    for (var name in events) {
-      if (events.hasOwnProperty(name)) {
-        $.on(button, name, events[name]);
-      }
-    }
-
-    button._boundEvents = events;
-  }
-
-  return button;
-};
-
-
-
-
-
-
-
-var firstElementChild;
-
-
-if( typeof(document) !== 'undefined' &&
-      document.createElement('div').firstElementChild !== void 0 ){
-  firstElementChild = function firstElementChild (parentElement) {
-    return parentElement.firstElementChild;
-  };
-}
-else {
-  firstElementChild = function firstElementChild (parentElement) {
-    var el = parentElement.firstChild;
-
-    do {
-      if(el.nodeType===1){
-        return el;
-      }
-      el = el.nextSibling;
-    } while(el);
-
-    return null;
-  };
-}
-
-
-ElementCollection.prototype.appendTo = function(parentElement) {
-  if (!parentElement) throw new Error('appendTo requires a DOMElement to append to.');
-
-  return this.forEach(function(child) {
-    parentElement.appendChild(child);
-  });
-};
-
-ElementCollection.prototype.append = function() {
-  var parentElement = this.first;
-  if (!parentElement) return this;
-
-  $.forEach(prototypeSlice.call(arguments), function(child) {
-    parentElement.appendChild(child);
-  });
-
-  return this;
-};
-
-ElementCollection.prototype.prepend = function() {
-  if (arguments.length === 0) return this;
-
-  var parentElement = this.first,
-      elementsToPrepend;
-
-  if (!parentElement) return this;
-
-  elementsToPrepend = prototypeSlice.call(arguments);
-
-  if (!firstElementChild(parentElement)) {
-    parentElement.appendChild(elementsToPrepend.shift());
-  }
-
-  $.forEach(elementsToPrepend, function(element) {
-    parentElement.insertBefore(element, firstElementChild(parentElement));
-  });
-
-  return this;
-};
-
-ElementCollection.prototype.after = function(prevElement) {
-  if (!prevElement) throw new Error('after requires a DOMElement to insert after');
-
-  return this.forEach(function(element) {
-    if (element.parentElement) {
-      if (prevElement !== element.parentNode.lastChild) {
-        element.parentElement.insertBefore(element, prevElement);
-      }
-      else {
-        element.parentElement.appendChild(element);
-      }
-    }
-  });
-};
-
-ElementCollection.prototype.before = function(nextElement) {
-  if (!nextElement) {
-    throw new Error('before requires a DOMElement to insert before');
-  }
-
-  return this.forEach(function(element) {
-    if (element.parentElement) {
-      element.parentElement.insertBefore(element, nextElement);
-    }
-  });
-};
-
-ElementCollection.prototype.remove = function () {
-  return this.forEach(function(element) {
-    if (element.parentNode) {
-      element.parentNode.removeChild(element);
-    }
-  });
-};
-
-ElementCollection.prototype.empty = function () {
-  return this.forEach(function(element) {
-    
-    
-    
-    
-    
-    while (element.firstChild) {
-      element.removeChild(element.firstChild);
-    }
-  });
-};
-
-
-
-
-ElementCollection.prototype.isDisplayNone = function() {
-  return this.some(function(element) {
-    if ( (element.offsetWidth === 0 || element.offsetHeight === 0) &&
-                $(element).css('display') === 'none') return true;
-
-    if (element.parentNode && element.parentNode.style) {
-      return $(element.parentNode).isDisplayNone();
-    }
-  });
-};
-
-ElementCollection.prototype.findElementWithDisplayNone = function(element) {
-  return $.findElementWithDisplayNone(element);
-};
-
-
-
-OTHelpers.isElementNode = function(node) {
-  return node && typeof node === 'object' && node.nodeType === 1;
-};
-
-
-
-OTHelpers.removeElement = function(element) {
-  $(element).remove();
-};
-
-
-OTHelpers.removeElementById = function(elementId) {
-  return $('#'+elementId).remove();
-};
-
-
-OTHelpers.removeElementsByType = function(parentElem, type) {
-  return $(type, parentElem).remove();
-};
-
-
-OTHelpers.emptyElement = function(element) {
-  return $(element).empty();
-};
-
-
-
-
-
-
-OTHelpers.isDisplayNone = function(element) {
-  return $(element).isDisplayNone();
-};
-
-OTHelpers.findElementWithDisplayNone = function(element) {
-  if ( (element.offsetWidth === 0 || element.offsetHeight === 0) &&
-            $.css(element, 'display') === 'none') return element;
-
-  if (element.parentNode && element.parentNode.style) {
-    return $.findElementWithDisplayNone(element.parentNode);
-  }
-
-  return null;
-};
-
-
-
-
-
-
-
-
-OTHelpers.Modal = function(options) {
-
-  OTHelpers.eventing(this, true);
-
-  var callback = arguments[arguments.length - 1];
-
-  if(!OTHelpers.isFunction(callback)) {
-    throw new Error('OTHelpers.Modal2 must be given a callback');
-  }
-
-  if(arguments.length < 2) {
-    options = {};
-  }
-
-  var domElement = document.createElement('iframe');
-
-  domElement.id = options.id || OTHelpers.uuid();
-  domElement.style.position = 'absolute';
-  domElement.style.position = 'fixed';
-  domElement.style.height = '100%';
-  domElement.style.width = '100%';
-  domElement.style.top = '0px';
-  domElement.style.left = '0px';
-  domElement.style.right = '0px';
-  domElement.style.bottom = '0px';
-  domElement.style.zIndex = 1000;
-  domElement.style.border = '0';
-
-  try {
-    domElement.style.backgroundColor = 'rgba(0,0,0,0.2)';
-  } catch (err) {
-    
-    
-    domElement.style.backgroundColor = 'transparent';
-    domElement.setAttribute('allowTransparency', 'true');
-  }
-
-  domElement.scrolling = 'no';
-  domElement.setAttribute('scrolling', 'no');
-
-  
-  
-  var frameContent = '<!DOCTYPE html><html><head>' +
-                    '<meta http-equiv="x-ua-compatible" content="IE=Edge">' +
-                    '<meta http-equiv="Content-type" content="text/html; charset=utf-8">' +
-                    '<title></title></head><body></body></html>';
-
-  var wrappedCallback = function() {
-    var doc = domElement.contentDocument || domElement.contentWindow.document;
-
-    if (OTHelpers.env.iframeNeedsLoad) {
-      doc.body.style.backgroundColor = 'transparent';
-      doc.body.style.border = 'none';
-
-      if (OTHelpers.env.name !== 'IE') {
-        
-        
-        doc.open();
-        doc.write(frameContent);
-        doc.close();
-      }
-    }
-
-    callback(
-      domElement.contentWindow,
-      doc
-    );
-  };
-
-  document.body.appendChild(domElement);
-
-  if(OTHelpers.env.iframeNeedsLoad) {
-    if (OTHelpers.env.name === 'IE') {
-      
-      
-      
-      domElement.contentWindow.contents = frameContent;
-      
-      domElement.src = 'javascript:window["contents"]';
-      
-    }
-
-    OTHelpers.on(domElement, 'load', wrappedCallback);
-  } else {
-    setTimeout(wrappedCallback, 0);
-  }
-
-  this.close = function() {
-    OTHelpers.removeElement(domElement);
-    this.trigger('closed');
-    this.element = domElement = null;
-    return this;
-  };
-
-  this.element = domElement;
-
-};
-
-
-
-
-
-
-
-
-
-
-(function() {
-
-  
-
-
-  function getPixelSize(element, style, property, fontSize) {
-    var sizeWithSuffix = style[property],
-        size = parseFloat(sizeWithSuffix),
-        suffix = sizeWithSuffix.split(/\d/)[0],
-        rootSize;
-
-    fontSize = fontSize != null ?
-      fontSize : /%|em/.test(suffix) && element.parentElement ?
-        getPixelSize(element.parentElement, element.parentElement.currentStyle, 'fontSize', null) :
-        16;
-    rootSize = property === 'fontSize' ?
-      fontSize : /width/i.test(property) ? element.clientWidth : element.clientHeight;
-
-    return (suffix === 'em') ?
-      size * fontSize : (suffix === 'in') ?
-        size * 96 : (suffix === 'pt') ?
-          size * 96 / 72 : (suffix === '%') ?
-            size / 100 * rootSize : size;
-  }
-
-  function setShortStyleProperty(style, property) {
-    var
-    borderSuffix = property === 'border' ? 'Width' : '',
-    t = property + 'Top' + borderSuffix,
-    r = property + 'Right' + borderSuffix,
-    b = property + 'Bottom' + borderSuffix,
-    l = property + 'Left' + borderSuffix;
-
-    style[property] = (style[t] === style[r] === style[b] === style[l] ? [style[t]]
-    : style[t] === style[b] && style[l] === style[r] ? [style[t], style[r]]
-    : style[l] === style[r] ? [style[t], style[r], style[b]]
-    : [style[t], style[r], style[b], style[l]]).join(' ');
-  }
-
-  function CSSStyleDeclaration(element) {
-    var currentStyle = element.currentStyle,
-        style = this,
-        fontSize = getPixelSize(element, currentStyle, 'fontSize', null),
-        property;
-
-    for (property in currentStyle) {
-      if (/width|height|margin.|padding.|border.+W/.test(property) && style[property] !== 'auto') {
-        style[property] = getPixelSize(element, currentStyle, property, fontSize) + 'px';
-      } else if (property === 'styleFloat') {
-        
-        style['float'] = currentStyle[property];
-      } else {
-        style[property] = currentStyle[property];
-      }
-    }
-
-    setShortStyleProperty(style, 'margin');
-    setShortStyleProperty(style, 'padding');
-    setShortStyleProperty(style, 'border');
-
-    style.fontSize = fontSize + 'px';
-
-    return style;
-  }
-
-  CSSStyleDeclaration.prototype = {
-    constructor: CSSStyleDeclaration,
-    getPropertyPriority: function () {},
-    getPropertyValue: function ( prop ) {
-      return this[prop] || '';
-    },
-    item: function () {},
-    removeProperty: function () {},
-    setProperty: function () {},
-    getPropertyCSSValue: function () {}
-  };
-
-  function getComputedStyle(element) {
-    return new CSSStyleDeclaration(element);
-  }
-
-
-  OTHelpers.getComputedStyle = function(element) {
-    if(element &&
-        element.ownerDocument &&
-        element.ownerDocument.defaultView &&
-        element.ownerDocument.defaultView.getComputedStyle) {
-      return element.ownerDocument.defaultView.getComputedStyle(element);
-    } else {
-      return getComputedStyle(element);
-    }
-  };
-
-})();
-
-
-
-
-
-
-
-var observeStyleChanges = function observeStyleChanges (element, stylesToObserve, onChange) {
-  var oldStyles = {};
-
-  var getStyle = function getStyle(style) {
-    switch (style) {
-    case 'width':
-      return $(element).width();
-
-    case 'height':
-      return $(element).height();
-
-    default:
-      return $(element).css(style);
-    }
-  };
-
-  
-  $.forEach(stylesToObserve, function(style) {
-    oldStyles[style] = getStyle(style);
-  });
-
-  var observer = new MutationObserver(function(mutations) {
-    var changeSet = {};
-
-    $.forEach(mutations, function(mutation) {
-      if (mutation.attributeName !== 'style') return;
-
-      var isHidden = $.isDisplayNone(element);
-
-      $.forEach(stylesToObserve, function(style) {
-        if(isHidden && (style === 'width' || style === 'height')) return;
-
-        var newValue = getStyle(style);
-
-        if (newValue !== oldStyles[style]) {
-          changeSet[style] = [oldStyles[style], newValue];
-          oldStyles[style] = newValue;
-        }
-      });
-    });
-
-    if (!$.isEmpty(changeSet)) {
-      
-      $.callAsync(function() {
-        onChange.call(null, changeSet);
-      });
-    }
-  });
-
-  observer.observe(element, {
-    attributes:true,
-    attributeFilter: ['style'],
-    childList:false,
-    characterData:false,
-    subtree:false
-  });
-
-  return observer;
-};
-
-var observeNodeOrChildNodeRemoval = function observeNodeOrChildNodeRemoval (element, onChange) {
-  var observer = new MutationObserver(function(mutations) {
-    var removedNodes = [];
-
-    $.forEach(mutations, function(mutation) {
-      if (mutation.removedNodes.length) {
-        removedNodes = removedNodes.concat(prototypeSlice.call(mutation.removedNodes));
-      }
-    });
-
-    if (removedNodes.length) {
-      
-      $.callAsync(function() {
-        onChange($(removedNodes));
-      });
-    }
-  });
-
-  observer.observe(element, {
-    attributes:false,
-    childList:true,
-    characterData:false,
-    subtree:true
-  });
-
-  return observer;
-};
-
-var observeSize = function (element, onChange) {
-  var previousSize = {
-    width: 0,
-    height: 0
-  };
-
-  var interval = setInterval(function() {
-    var rect = element.getBoundingClientRect();
-    if (previousSize.width !== rect.width || previousSize.height !== rect.height) {
-      onChange(rect, previousSize);
-      previousSize = {
-        width: rect.width,
-        height: rect.height
-      };
-    }
-  }, 1000 / 5);
-
-  return {
-    disconnect: function() {
-      clearInterval(interval);
-    }
-  };
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ElementCollection.prototype.observeStyleChanges = function(stylesToObserve, onChange) {
-  var observers = [];
-
-  this.forEach(function(element) {
-    observers.push(
-      observeStyleChanges(element, stylesToObserve, onChange)
-    );
-  });
-
-  return observers;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ElementCollection.prototype.observeNodeOrChildNodeRemoval = function(onChange) {
-  var observers = [];
-
-  this.forEach(function(element) {
-    observers.push(
-      observeNodeOrChildNodeRemoval(element, onChange)
-    );
-  });
-
-  return observers;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ElementCollection.prototype.observeSize = function(onChange) {
-  var observers = [];
-
-  this.forEach(function(element) {
-    observers.push(
-      observeSize(element, onChange)
-    );
-  });
-
-  return observers;
-};
-
-
-
-OTHelpers.observeStyleChanges = function(element, stylesToObserve, onChange) {
-  return $(element).observeStyleChanges(stylesToObserve, onChange)[0];
-};
-
-
-OTHelpers.observeNodeOrChildNodeRemoval = function(element, onChange) {
-  return $(element).observeNodeOrChildNodeRemoval(onChange)[0];
-};
-
-
-
-
-
-
-
-
-OTHelpers.registerCapability('classList', function() {
-  return (typeof document !== 'undefined') && ('classList' in document.createElement('a'));
-});
-
-
-function hasClass (element, className) {
-  if (!className) return false;
-
-  if ($.hasCapabilities('classList')) {
-    return element.classList.contains(className);
-  }
-
-  return element.className.indexOf(className) > -1;
-}
-
-function toggleClasses (element, classNames) {
-  if (!classNames || classNames.length === 0) return;
-
-  
-  if (element.nodeType !== 1) {
-    return;
-  }
-
-  var numClasses = classNames.length,
-      i = 0;
-
-  if ($.hasCapabilities('classList')) {
-    for (; i<numClasses; ++i) {
-      element.classList.toggle(classNames[i]);
-    }
-
-    return;
-  }
-
-  var className = (' ' + element.className + ' ').replace(/[\s+]/, ' ');
-
-
-  for (; i<numClasses; ++i) {
-    if (hasClass(element, classNames[i])) {
-      className = className.replace(' ' + classNames[i] + ' ', ' ');
-    }
-    else {
-      className += classNames[i] + ' ';
-    }
-  }
-
-  element.className = $.trim(className);
-}
-
-function addClass (element, classNames) {
-  if (!classNames || classNames.length === 0) return;
-
-  
-  if (element.nodeType !== 1) {
-    return;
-  }
-
-  var numClasses = classNames.length,
-      i = 0;
-
-  if ($.hasCapabilities('classList')) {
-    for (; i<numClasses; ++i) {
-      element.classList.add(classNames[i]);
-    }
-
-    return;
-  }
-
-  
-
-  if (!element.className && classNames.length === 1) {
-    element.className = classNames.join(' ');
-  }
-  else {
-    var setClass = ' ' + element.className + ' ';
-
-    for (; i<numClasses; ++i) {
-      if ( !~setClass.indexOf( ' ' + classNames[i] + ' ')) {
-        setClass += classNames[i] + ' ';
-      }
-    }
-
-    element.className = $.trim(setClass);
-  }
-}
-
-function removeClass (element, classNames) {
-  if (!classNames || classNames.length === 0) return;
-
-  
-  if (element.nodeType !== 1) {
-    return;
-  }
-
-  var numClasses = classNames.length,
-      i = 0;
-
-  if ($.hasCapabilities('classList')) {
-    for (; i<numClasses; ++i) {
-      element.classList.remove(classNames[i]);
-    }
-
-    return;
-  }
-
-  var className = (' ' + element.className + ' ').replace(/[\s+]/, ' ');
-
-  for (; i<numClasses; ++i) {
-    className = className.replace(' ' + classNames[i] + ' ', ' ');
-  }
-
-  element.className = $.trim(className);
-}
-
-ElementCollection.prototype.addClass = function (value) {
-  if (value) {
-    var classNames = $.trim(value).split(/\s+/);
-
-    this.forEach(function(element) {
-      addClass(element, classNames);
-    });
-  }
-
-  return this;
-};
-
-ElementCollection.prototype.removeClass = function (value) {
-  if (value) {
-    var classNames = $.trim(value).split(/\s+/);
-
-    this.forEach(function(element) {
-      removeClass(element, classNames);
-    });
-  }
-
-  return this;
-};
-
-ElementCollection.prototype.toggleClass = function (value) {
-  if (value) {
-    var classNames = $.trim(value).split(/\s+/);
-
-    this.forEach(function(element) {
-      toggleClasses(element, classNames);
-    });
-  }
-
-  return this;
-};
-
-ElementCollection.prototype.hasClass = function (value) {
-  return this.some(function(element) {
-    return hasClass(element, value);
-  });
-};
-
-
-
-OTHelpers.addClass = function(element, className) {
-  return $(element).addClass(className);
-};
-
-
-OTHelpers.removeClass = function(element, value) {
-  return $(element).removeClass(value);
-};
-
-
-
-
-
-
-
-
-var specialDomProperties = {
-  'for': 'htmlFor',
-  'class': 'className'
-};
-
-
-
-ElementCollection.prototype.attr = function (name, value) {
-  if (OTHelpers.isObject(name)) {
-    var actualName;
-
-    for (var key in name) {
-      actualName = specialDomProperties[key] || key;
-      this.first.setAttribute(actualName, name[key]);
-    }
-  }
-  else if (value === void 0) {
-    return this.first.getAttribute(specialDomProperties[name] || name);
-  }
-  else {
-    this.first.setAttribute(specialDomProperties[name] || name, value);
-  }
-
-  return this;
-};
-
-
-
-ElementCollection.prototype.removeAttr = function (name) {
-  var actualName = specialDomProperties[name] || name;
-
-  this.forEach(function(element) {
-    element.removeAttribute(actualName);
-  });
-
-  return this;
-};
-
-
-
-
-
-
-ElementCollection.prototype.html = function (html) {
-  if (html !== void 0) {
-    this.first.innerHTML = html;
-  }
-
-  return this.first.innerHTML;
-};
-
-
-
-
-ElementCollection.prototype.center = function (width, height) {
-  var $element;
-
-  this.forEach(function(element) {
-    $element = $(element);
-    if (!width) width = parseInt($element.width(), 10);
-    if (!height) height = parseInt($element.height(), 10);
-
-    var marginLeft = -0.5 * width + 'px';
-    var marginTop = -0.5 * height + 'px';
-
-    $element.css('margin', marginTop + ' 0 0 ' + marginLeft)
-            .addClass('OT_centered');
-  });
-
-  return this;
-};
-
-
-
-
-
-OTHelpers.centerElement = function(element, width, height) {
-  return $(element).center(width, height);
-};
-
-  
-
-
-(function() {
-
-  var _width = function(element) {
-        if (element.offsetWidth > 0) {
-          return element.offsetWidth + 'px';
-        }
-
-        return $(element).css('width');
-      },
-
-      _height = function(element) {
-        if (element.offsetHeight > 0) {
-          return element.offsetHeight + 'px';
-        }
-
-        return $(element).css('height');
-      };
-
-  ElementCollection.prototype.width = function (newWidth) {
-    if (newWidth) {
-      this.css('width', newWidth);
-      return this;
-    }
-    else {
-      if (this.isDisplayNone()) {
-        return this.makeVisibleAndYield(function(element) {
-          return _width(element);
-        })[0];
-      }
-      else {
-        return _width(this.get(0));
-      }
-    }
-  };
-
-  ElementCollection.prototype.height = function (newHeight) {
-    if (newHeight) {
-      this.css('height', newHeight);
-      return this;
-    }
-    else {
-      if (this.isDisplayNone()) {
-        
-        return this.makeVisibleAndYield(function(element) {
-          return _height(element);
-        })[0];
-      }
-      else {
-        return _height(this.get(0));
-      }
-    }
-  };
-
-  
-  OTHelpers.width = function(element, newWidth) {
-    var ret = $(element).width(newWidth);
-    return newWidth ? OTHelpers : ret;
-  };
-
-  
-  OTHelpers.height = function(element, newHeight) {
-    var ret = $(element).height(newHeight);
-    return newHeight ? OTHelpers : ret;
-  };
-
-})();
-
-
-
-
-
-
-
-
-
-
-(function() {
-
-  var displayStateCache = {},
-      defaultDisplays = {};
-
-  var defaultDisplayValueForElement = function (element) {
-    if (defaultDisplays[element.ownerDocument] &&
-      defaultDisplays[element.ownerDocument][element.nodeName]) {
-      return defaultDisplays[element.ownerDocument][element.nodeName];
-    }
-
-    if (!defaultDisplays[element.ownerDocument]) defaultDisplays[element.ownerDocument] = {};
-
-    
-    
-    var testNode = element.ownerDocument.createElement(element.nodeName),
-        defaultDisplay;
-
-    element.ownerDocument.body.appendChild(testNode);
-    defaultDisplay = defaultDisplays[element.ownerDocument][element.nodeName] =
-    $(testNode).css('display');
-
-    $(testNode).remove();
-    testNode = null;
-
-    return defaultDisplay;
-  };
-
-  var isHidden = function (element) {
-    var computedStyle = $.getComputedStyle(element);
-    return computedStyle.getPropertyValue('display') === 'none';
-  };
-
-  var setCssProperties = function (element, hash) {
-    var style = element.style;
-
-    for (var cssName in hash) {
-      if (hash.hasOwnProperty(cssName)) {
-        style[cssName] = hash[cssName];
-      }
-    }
-  };
-
-  var setCssProperty = function (element, name, value) {
-    element.style[name] = value;
-  };
-
-  var getCssProperty = function (element, unnormalisedName) {
-    
-    
-
-    var name = unnormalisedName.replace( /([A-Z]|^ms)/g, '-$1' ).toLowerCase(),
-        computedStyle = $.getComputedStyle(element),
-        currentValue = computedStyle.getPropertyValue(name);
-
-    if (currentValue === '') {
-      currentValue = element.style[name];
-    }
-
-    return currentValue;
-  };
-
-  var applyCSS = function(element, styles, callback) {
-    var oldStyles = {},
-        name,
-        ret;
-
-    
-    for (name in styles) {
-      if (styles.hasOwnProperty(name)) {
-        
-        
-        
-        oldStyles[name] = element.style[name];
-
-        $(element).css(name, styles[name]);
-      }
-    }
-
-    ret = callback(element);
-
-    
-    for (name in styles) {
-      if (styles.hasOwnProperty(name)) {
-        $(element).css(name, oldStyles[name] || '');
-      }
-    }
-
-    return ret;
-  };
-
-  ElementCollection.prototype.show = function() {
-    return this.forEach(function(element) {
-      var display = element.style.display;
-
-      if (display === '' || display === 'none') {
-        element.style.display = displayStateCache[element] || '';
-        delete displayStateCache[element];
-      }
-
-      if (isHidden(element)) {
-        
-        
-        displayStateCache[element] = 'none';
-
-        element.style.display = defaultDisplayValueForElement(element);
-      }
-    });
-  };
-
-  ElementCollection.prototype.hide = function() {
-    return this.forEach(function(element) {
-      if (element.style.display === 'none') return;
-
-      displayStateCache[element] = element.style.display;
-      element.style.display = 'none';
-    });
-  };
-
-  ElementCollection.prototype.css = function(nameOrHash, value) {
-    if (this.length === 0) return;
-
-    if (typeof(nameOrHash) !== 'string') {
-
-      return this.forEach(function(element) {
-        setCssProperties(element, nameOrHash);
-      });
-
-    } else if (value !== undefined) {
-
-      return this.forEach(function(element) {
-        setCssProperty(element, nameOrHash, value);
-      });
-
-    } else {
-      return getCssProperty(this.first, nameOrHash, value);
-    }
-  };
-
-  
-  
-  ElementCollection.prototype.applyCSS = function (styles, callback) {
-    var results = [];
-
-    this.forEach(function(element) {
-      results.push(applyCSS(element, styles, callback));
-    });
-
-    return results;
-  };
-
-
-  
-  ElementCollection.prototype.makeVisibleAndYield = function (callback) {
-    var hiddenVisually = {
-        display: 'block',
-        visibility: 'hidden'
-      },
-      results = [];
-
-    this.forEach(function(element) {
-      
-      
-      var targetElement = $.findElementWithDisplayNone(element);
-      if (!targetElement) {
-        results.push(void 0);
-      }
-      else {
-        results.push(
-          applyCSS(targetElement, hiddenVisually, callback)
-        );
-      }
-    });
-
-    return results;
-  };
-
-
-  
-  OTHelpers.show = function(element) {
-    return $(element).show();
-  };
-
-  
-  OTHelpers.hide = function(element) {
-    return $(element).hide();
-  };
-
-  
-  OTHelpers.css = function(element, nameOrHash, value) {
-    return $(element).css(nameOrHash, value);
-  };
-
-  
-  OTHelpers.applyCSS = function(element, styles, callback) {
-    return $(element).applyCSS(styles, callback);
-  };
-
-  
-  OTHelpers.makeVisibleAndYield = function(element, callback) {
-    return $(element).makeVisibleAndYield(callback);
-  };
-
-})();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(function() {
-
-  OTHelpers.setImmediate = (function() {
-    if (typeof process === 'undefined' || !(process.nextTick)) {
-      if (typeof setImmediate === 'function') {
-        return function (fn) {
-          
-          setImmediate(fn);
-        };
-      }
-      return function (fn) {
-        setTimeout(fn, 0);
-      };
-    }
-    if (typeof setImmediate !== 'undefined') {
-      return setImmediate;
-    }
-    return process.nextTick;
-  })();
-
-  OTHelpers.iterator = function(tasks) {
-    var makeCallback = function (index) {
-      var fn = function () {
-        if (tasks.length) {
-          tasks[index].apply(null, arguments);
-        }
-        return fn.next();
-      };
-      fn.next = function () {
-        return (index < tasks.length - 1) ? makeCallback(index + 1) : null;
-      };
-      return fn;
-    };
-    return makeCallback(0);
-  };
-
-  OTHelpers.waterfall = function(array, done) {
-    done = done || function () {};
-    if (array.constructor !== Array) {
-      return done(new Error('First argument to waterfall must be an array of functions'));
-    }
-
-    if (!array.length) {
-      return done();
-    }
-
-    var next = function(iterator) {
-      return function (err) {
-        if (err) {
-          done.apply(null, arguments);
-          done = function () {};
-        } else {
-          var args = prototypeSlice.call(arguments, 1),
-              nextFn = iterator.next();
-          if (nextFn) {
-            args.push(next(nextFn));
-          } else {
-            args.push(done);
-          }
-          OTHelpers.setImmediate(function() {
-            iterator.apply(null, args);
-          });
-        }
-      };
-    };
-
-    next(OTHelpers.iterator(array))();
-  };
-
-})();
-
-
-
-
-
-(function() {
-
-  var requestAnimationFrame = window.requestAnimationFrame ||
-                              window.mozRequestAnimationFrame ||
-                              window.webkitRequestAnimationFrame ||
-                              window.msRequestAnimationFrame;
-
-  if (requestAnimationFrame) {
-    requestAnimationFrame = OTHelpers.bind(requestAnimationFrame, window);
-  }
-  else {
-    var lastTime = 0;
-    var startTime = OTHelpers.now();
-
-    requestAnimationFrame = function(callback){
-      var currTime = OTHelpers.now();
-      var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-      var id = window.setTimeout(function() { callback(currTime - startTime); }, timeToCall);
-      lastTime = currTime + timeToCall;
-      return id;
-    };
-  }
-
-  OTHelpers.requestAnimationFrame = requestAnimationFrame;
-})();
-
-
-
-
-(function() {
-
-  
-  var logQueue = [],
-      queueRunning = false;
-
-  OTHelpers.Analytics = function(loggingUrl, debugFn) {
-
-    var endPoint = loggingUrl + '/logging/ClientEvent',
-        endPointQos = loggingUrl + '/logging/ClientQos',
-
-        reportedErrors = {},
-
-        send = function(data, isQos, callback) {
-          OTHelpers.post((isQos ? endPointQos : endPoint) + '?_=' + OTHelpers.uuid.v4(), {
-            body: data,
-            xdomainrequest: ($.env.name === 'IE' && $.env.version < 10),
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }, callback);
-        },
-
-        throttledPost = function() {
-          
-          if (!queueRunning && logQueue.length > 0) {
-            queueRunning = true;
-            var curr = logQueue[0];
-
-            
-            var processNextItem = function() {
-              logQueue.shift();
-              queueRunning = false;
-              throttledPost();
-            };
-
-            if (curr) {
-              send(curr.data, curr.isQos, function(err) {
-                if (err) {
-                  var debugMsg = 'Failed to send ClientEvent, moving on to the next item.';
-                  if (debugFn) {
-                    debugFn(debugMsg);
-                  } else {
-                    console.log(debugMsg);
-                  }
-                  
-                } else {
-                  curr.onComplete();
-                }
-                setTimeout(processNextItem, 50);
-              });
-            }
-          }
-        },
-
-        post = function(data, onComplete, isQos) {
-          logQueue.push({
-            data: data,
-            onComplete: onComplete,
-            isQos: isQos
-          });
-
-          throttledPost();
-        },
-
-        shouldThrottleError = function(code, type, partnerId) {
-          if (!partnerId) return false;
-
-          var errKey = [partnerId, type, code].join('_'),
-          
-            msgLimit = 100;
-          if (msgLimit === null || msgLimit === undefined) return false;
-          return (reportedErrors[errKey] || 0) <= msgLimit;
-        };
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.logError = function(code, type, message, details, options) {
-      if (!options) options = {};
-      var partnerId = options.partnerId;
-
-      if (shouldThrottleError(code, type, partnerId)) {
-        
-        
-        return;
-      }
-
-      var errKey = [partnerId, type, code].join('_'),
-      payload =  details ? details : null;
-
-      reportedErrors[errKey] = typeof(reportedErrors[errKey]) !== 'undefined' ?
-        reportedErrors[errKey] + 1 : 1;
-      this.logEvent(OTHelpers.extend(options, {
-        action: type + '.' + code,
-        payload: payload
-      }), false);
-    };
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.logEvent = function(data, qos, throttle) {
-      if (!qos) qos = false;
-
-      if (throttle && !isNaN(throttle)) {
-        if (Math.random() > throttle) {
-          return;
-        }
-      }
-
-      
-      for (var key in data) {
-        if (data.hasOwnProperty(key) && data[key] === null) {
-          delete data[key];
-        }
-      }
-
-      
-      data = JSON.stringify(data);
-
-      var onComplete = function() {
-        
-        
-      };
-
-      post(data, onComplete, qos);
-    };
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.logQOS = function(options) {
-      this.logEvent(options, true);
-    };
-  };
-
-})();
-
-
-
-
-
-
-
-
-
-OTHelpers.get = function(url, options, callback) {
-  var _options = OTHelpers.extend(options || {}, {
-    method: 'GET'
-  });
-  OTHelpers.request(url, _options, callback);
-};
-
-
-OTHelpers.post = function(url, options, callback) {
-  var _options = OTHelpers.extend(options || {}, {
-    method: 'POST'
-  });
-
-  if(_options.xdomainrequest) {
-    OTHelpers.xdomainRequest(url, _options, callback);
-  } else {
-    OTHelpers.request(url, _options, callback);
-  }
-};
-
-
 })(window, window.OTHelpers);
 
 
@@ -6127,23 +6162,24 @@ if (scope.OTPlugin !== void 0) return;
 var $ = OTHelpers;
 
 
+window.EmpiricDelay = 3000;
 
 
 
 
-var isSupported = $.env.name === 'Safari' ||
-                  ($.env.name === 'IE' && $.env.version >= 8 &&
+
+
+var isSupported = ($.env.name === 'IE' && $.env.version >= 8 &&
                     $.env.userAgent.indexOf('x64') === -1),
     pluginIsReady = false;
 
-
 var OTPlugin = {
-  isSupported: function () { return isSupported; },
+  isSupported: function() { return isSupported; },
   isReady: function() { return pluginIsReady; },
   meta: {
-    mimeType: 'application/x-opentokie,version=0.4.0.10',
-    activeXName: 'TokBox.OpenTokIE.0.4.0.10',
-    version: '0.4.0.10'
+    mimeType: 'application/x-opentokplugin,version=0.4.0.12',
+    activeXName: 'TokBox.OpenTokPlugin.0.4.0.12',
+    version: '0.4.0.12'
   },
 
   useLoggingFrom: function(host) {
@@ -6157,9 +6193,7 @@ var OTPlugin = {
 };
 
 
-
 $.useLogHelpers(OTPlugin);
-
 
 scope.OTPlugin = OTPlugin;
 
@@ -6170,7 +6204,7 @@ $.registerCapability('otplugin', function() {
 
 
 if (!OTPlugin.isSupported()) {
-  OTPlugin.isInstalled = function isInstalled () { return false; };
+  OTPlugin.isInstalled = function isInstalled() { return false; };
   return;
 }
 
@@ -6180,9 +6214,9 @@ if (!OTPlugin.isSupported()) {
 
 
 
-var shim = function shim () {
+var shim = function shim() {
   if (!Function.prototype.bind) {
-    Function.prototype.bind = function (oThis) {
+    Function.prototype.bind = function(oThis) {
       if (typeof this !== 'function') {
         
         throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
@@ -6190,8 +6224,8 @@ var shim = function shim () {
 
       var aArgs = Array.prototype.slice.call(arguments, 1),
           fToBind = this,
-          FNOP = function () {},
-          fBound = function () {
+          FNOP = function() {},
+          fBound = function() {
             return fToBind.apply(this instanceof FNOP && oThis ?
                           this : oThis, aArgs.concat(Array.prototype.slice.call(arguments)));
           };
@@ -6203,14 +6237,14 @@ var shim = function shim () {
     };
   }
 
-  if(!Array.isArray) {
-    Array.isArray = function (vArg) {
+  if (!Array.isArray) {
+    Array.isArray = function(vArg) {
       return Object.prototype.toString.call(vArg) === '[object Array]';
     };
   }
 
   if (!Array.prototype.indexOf) {
-    Array.prototype.indexOf = function (searchElement, fromIndex) {
+    Array.prototype.indexOf = function(searchElement, fromIndex) {
       var i,
           pivot = (fromIndex) ? fromIndex : 0,
           length;
@@ -6276,26 +6310,52 @@ var shim = function shim () {
 
 
 
-var RumorSocket = function (plugin, server) {
-  var Proto = function RumorSocket () {},
+var TaskQueue = function() {
+  var Proto = function TaskQueue() {},
+      api = new Proto(),
+      tasks = [];
+
+  api.add = function(fn, context) {
+    if (context) {
+      tasks.push($.bind(fn, context));
+    } else {
+      tasks.push(fn);
+    }
+  };
+
+  api.runAll = function() {
+    var task;
+    while ((task = tasks.shift())) {
+      task();
+    }
+  };
+
+  return api;
+};
+
+
+
+
+
+
+
+var RumorSocket = function(plugin, server) {
+  var Proto = function RumorSocket() {},
       api = new Proto(),
       connected = false,
       rumorID,
       _onOpen,
       _onClose;
 
-
   try {
     rumorID = plugin._.RumorInit(server, '');
-  }
-  catch(e) {
+  } catch (e) {
     OTPlugin.error('Error creating the Rumor Socket: ', e.message);
   }
 
-  if(!rumorID) {
+  if (!rumorID) {
     throw new Error('Could not initialise OTPlugin rumor connection');
   }
-
 
   api.open = function() {
     connected = true;
@@ -6359,15 +6419,15 @@ var RumorSocket = function (plugin, server) {
 
 
 
-var refCountBehaviour = function refCountBehaviour (api) {
+var refCountBehaviour = function refCountBehaviour(api) {
   var _liveObjects = [];
 
-  api.addRef = function (ref) {
+  api.addRef = function(ref) {
     _liveObjects.push(ref);
     return api;
   };
 
-  api.removeRef = function (ref) {
+  api.removeRef = function(ref) {
     if (_liveObjects.length === 0) return;
 
     var index = _liveObjects.indexOf(ref);
@@ -6382,7 +6442,7 @@ var refCountBehaviour = function refCountBehaviour (api) {
     return api;
   };
 
-  api.removeAllRefs = function () {
+  api.removeAllRefs = function() {
     while (_liveObjects.length) {
       _liveObjects.shift().destroy();
     }
@@ -6395,15 +6455,24 @@ var refCountBehaviour = function refCountBehaviour (api) {
 
 
 
-var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
-  var eventHandlers = {};
+
+var pluginEventingBehaviour = function pluginEventingBehaviour(api) {
+  var eventHandlers = {},
+      pendingTasks = new TaskQueue(),
+      isReady = false;
 
   var onCustomEvent = function() {
     var args = Array.prototype.slice.call(arguments);
     api.emit(args.shift(), args);
   };
 
-  api.on = function (name, callback, context) {
+  var devicesChanged = function() {
+    var args = Array.prototype.slice.call(arguments);
+    OTPlugin.debug(args);
+    api.emit('devicesChanged', args);
+  };
+
+  api.on = function(name, callback, context) {
     if (!eventHandlers.hasOwnProperty(name)) {
       eventHandlers[name] = [];
     }
@@ -6412,7 +6481,7 @@ var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
     return api;
   };
 
-  api.off = function (name, callback, context) {
+  api.off = function(name, callback, context) {
     if (!eventHandlers.hasOwnProperty(name) ||
         eventHandlers[name].length === 0) {
       return;
@@ -6426,8 +6495,8 @@ var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
     return api;
   };
 
-  api.once = function (name, callback, context) {
-    var fn = function () {
+  api.once = function(name, callback, context) {
+    var fn = function() {
       api.off(name, fn);
       return callback.apply(context, arguments);
     };
@@ -6436,7 +6505,7 @@ var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
     return api;
   };
 
-  api.emit = function (name, args) {
+  api.emit = function(name, args) {
     $.callAsync(function() {
       if (!eventHandlers.hasOwnProperty(name) && eventHandlers[name].length) {
         return;
@@ -6450,7 +6519,20 @@ var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
     return api;
   };
 
-  var onReady = function onReady (readyCallback) {
+  
+  
+  api.listenForDeviceChanges = function() {
+    if (!isReady) {
+      pendingTasks.add(api.listenForDeviceChanges, api);
+      return;
+    }
+
+    setTimeout(function() {
+      api._.registerXCallback('devicesChanged', devicesChanged);
+    }, window.EmpiricDelay);
+  };
+
+  var onReady = function onReady(readyCallback) {
     if (api._.on) {
       
       api._.on(-1, {
@@ -6458,17 +6540,25 @@ var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
       });
     }
 
+    var internalReadyCallback = function() {
+      
+      
+      isReady = true;
+
+      pendingTasks.runAll();
+      readyCallback.call(api);
+    };
+
     
     if (api._.initialise) {
-      api.on('ready', curryCallAsync(readyCallback));
+      api.on('ready', curryCallAsync(internalReadyCallback));
       api._.initialise();
-    }
-    else {
-      readyCallback.call(api);
+    } else {
+      internalReadyCallback.call(api);
     }
   };
 
-  return function (completion) {
+  return function(completion) {
     onReady(function(err) {
       if (err) {
         OTPlugin.error('Error while starting up plugin ' + api.uuid + ': ' + err);
@@ -6489,11 +6579,12 @@ var pluginEventingBehaviour = function pluginEventingBehaviour (api) {
 
 
 
+
 var PROXY_LOAD_TIMEOUT = 5000;
 
 var objectTimeouts = {};
 
-var curryCallAsync = function curryCallAsync (fn) {
+var curryCallAsync = function curryCallAsync(fn) {
   return function() {
     var args = Array.prototype.slice.call(arguments);
     args.unshift(fn);
@@ -6501,7 +6592,7 @@ var curryCallAsync = function curryCallAsync (fn) {
   };
 };
 
-var clearGlobalCallback = function clearGlobalCallback (callbackId) {
+var clearGlobalCallback = function clearGlobalCallback(callbackId) {
   if (!callbackId) return;
 
   if (objectTimeouts[callbackId]) {
@@ -6518,7 +6609,7 @@ var clearGlobalCallback = function clearGlobalCallback (callbackId) {
   }
 };
 
-var waitOnGlobalCallback = function waitOnGlobalCallback (callbackId, completion) {
+var waitOnGlobalCallback = function waitOnGlobalCallback(callbackId, completion) {
   objectTimeouts[callbackId] = setTimeout(function() {
     clearGlobalCallback(callbackId);
     completion('The object timed out while loading.');
@@ -6533,11 +6624,11 @@ var waitOnGlobalCallback = function waitOnGlobalCallback (callbackId, completion
   };
 };
 
-var generateCallbackID = function generateCallbackID () {
+var generateCallbackID = function generateCallbackID() {
   return 'OTPlugin_loaded_' + $.uuid().replace(/\-+/g, '');
 };
 
-var generateObjectHtml = function generateObjectHtml (callbackId, options) {
+var generateObjectHtml = function generateObjectHtml(callbackId, options) {
   options = options || {};
 
   var objBits = [],
@@ -6552,7 +6643,6 @@ var generateObjectHtml = function generateObjectHtml (callbackId, options) {
       windowless: options.windowless,
       onload: callbackId
     };
-
 
   if (options.isVisible !== true) {
     attrs.push('visibility="hidden"');
@@ -6570,9 +6660,7 @@ var generateObjectHtml = function generateObjectHtml (callbackId, options) {
   return objBits.join('');
 };
 
-
-
-var createObject = function createObject (callbackId, options, completion) {
+var createObject = function createObject(callbackId, options, completion) {
   options = options || {};
 
   var html = generateObjectHtml(callbackId, options),
@@ -6587,9 +6675,8 @@ var createObject = function createObject (callbackId, options, completion) {
   
   
 
-
   doc.body.insertAdjacentHTML('beforeend', html);
-  var object = doc.body.querySelector('#'+callbackId+'_obj');
+  var object = doc.body.querySelector('#' + callbackId + '_obj');
 
   
 
@@ -6598,7 +6685,7 @@ var createObject = function createObject (callbackId, options, completion) {
 };
 
 
-var createPluginProxy = function (options, completion) {
+var createPluginProxy = function(options, completion) {
   var Proto = function PluginProxy() {},
       api = new Proto(),
       waitForReadySignal = pluginEventingBehaviour(api);
@@ -6608,19 +6695,17 @@ var createPluginProxy = function (options, completion) {
   
   
   
-  var setPlugin = function setPlugin (plugin) {
+  var setPlugin = function setPlugin(plugin) {
         if (plugin) {
           api._ = plugin;
           api.parentElement = plugin.parentElement;
           api.$ = $(plugin);
-        }
-        else {
+        } else {
           api._ = null;
           api.parentElement = null;
           api.$ = $();
         }
       };
-
 
   api.uuid = generateCallbackID();
 
@@ -6637,10 +6722,11 @@ var createPluginProxy = function (options, completion) {
     api.emit('destroy');
   };
 
-
+  api.enumerateDevices = function(completion) {
+    api._.enumerateDevices(completion);
+  };
 
   
-
 
   
   
@@ -6679,21 +6765,17 @@ var createPluginProxy = function (options, completion) {
 };
 
 
-
-
-
-var makeMediaCapturerProxy = function makeMediaCapturerProxy (api) {
-
+var makeMediaCapturerProxy = function makeMediaCapturerProxy(api) {
   api.selectSources = function() {
     return api._.selectSources.apply(api._, arguments);
   };
 
+  api.listenForDeviceChanges();
   return api;
 };
 
 
-
-var makeMediaPeerProxy = function makeMediaPeerProxy (api) {
+var makeMediaPeerProxy = function makeMediaPeerProxy(api) {
   api.setStream = function(stream, completion) {
     api._.setStream(stream);
 
@@ -6710,15 +6792,13 @@ var makeMediaPeerProxy = function makeMediaPeerProxy (api) {
           if (api._.videoWidth > 0) {
             
             setTimeout(completion, 200);
-          }
-          else {
+          } else {
             setTimeout(verifyStream, 500);
           }
         };
 
         setTimeout(verifyStream, 500);
-      }
-      else {
+      } else {
         
         
 
@@ -6739,9 +6819,8 @@ var makeMediaPeerProxy = function makeMediaPeerProxy (api) {
 
 
 
-
-var VideoContainer = function (plugin, stream) {
-  var Proto = function VideoContainer () {},
+var VideoContainer = function(plugin, stream) {
+  var Proto = function VideoContainer() {},
       api = new Proto();
 
   api.domElement = plugin._;
@@ -6750,7 +6829,7 @@ var VideoContainer = function (plugin, stream) {
 
   plugin.addRef(api);
 
-  api.appendTo = function (parentDomElement) {
+  api.appendTo = function(parentDomElement) {
     if (parentDomElement && plugin._.parentNode !== parentDomElement) {
       OTPlugin.debug('VideoContainer appendTo', parentDomElement);
       parentDomElement.appendChild(plugin._);
@@ -6758,7 +6837,7 @@ var VideoContainer = function (plugin, stream) {
     }
   };
 
-  api.show = function (completion) {
+  api.show = function(completion) {
     OTPlugin.debug('VideoContainer show');
     plugin._.removeAttribute('width');
     plugin._.removeAttribute('height');
@@ -6773,7 +6852,7 @@ var VideoContainer = function (plugin, stream) {
     return api;
   };
 
-  api.width = function (newWidth) {
+  api.width = function(newWidth) {
     if (newWidth !== void 0) {
       OTPlugin.debug('VideoContainer set width to ' + newWidth);
       plugin._.setAttribute('width', newWidth);
@@ -6782,7 +6861,7 @@ var VideoContainer = function (plugin, stream) {
     return plugin._.getAttribute('width');
   };
 
-  api.height = function (newHeight) {
+  api.height = function(newHeight) {
     if (newHeight !== void 0) {
       OTPlugin.debug('VideoContainer set height to ' + newHeight);
       plugin._.setAttribute('height', newHeight);
@@ -6791,31 +6870,30 @@ var VideoContainer = function (plugin, stream) {
     return plugin._.getAttribute('height');
   };
 
-  api.volume = function (newVolume) {
+  api.volume = function(newVolume) {
     if (newVolume !== void 0) {
       
       OTPlugin.debug('VideoContainer setVolume not implemented: called with ' + newVolume);
-    }
-    else {
+    } else {
       OTPlugin.debug('VideoContainer getVolume not implemented');
     }
 
     return 0.5;
   };
 
-  api.getImgData = function () {
+  api.getImgData = function() {
     return plugin._.getImgData('image/png');
   };
 
-  api.videoWidth = function () {
+  api.videoWidth = function() {
     return plugin._.videoWidth;
   };
 
-  api.videoHeight = function () {
+  api.videoHeight = function() {
     return plugin._.videoHeight;
   };
 
-  api.destroy = function () {
+  api.destroy = function() {
     plugin._.setStream(null);
     plugin.removeRef(api);
   };
@@ -6829,7 +6907,7 @@ var VideoContainer = function (plugin, stream) {
 
 
 
-var RTCStatsReport = function RTCStatsReport (reports) {
+var RTCStatsReport = function RTCStatsReport(reports) {
   for (var id in reports) {
     if (reports.hasOwnProperty(id)) {
       this[id] = reports[id];
@@ -6837,7 +6915,7 @@ var RTCStatsReport = function RTCStatsReport (reports) {
   }
 };
 
-RTCStatsReport.prototype.forEach = function (callback, context) {
+RTCStatsReport.prototype.forEach = function(callback, context) {
   for (var id in this) {
     if (this.hasOwnProperty(id)) {
       callback.call(context, this[id]);
@@ -6852,21 +6930,18 @@ RTCStatsReport.prototype.forEach = function (callback, context) {
 
 
 
-
 var PluginProxies = (function() {
-  var Proto = function PluginProxies () {},
+  var Proto = function PluginProxies() {},
       api = new Proto(),
       proxies = {};
 
-
   
 
   
-  var cleanupProxyOnDestroy = function cleanupProxyOnDestroy (object) {
+  var cleanupProxyOnDestroy = function cleanupProxyOnDestroy(object) {
     if (api.mediaCapturer && api.mediaCapturer.id === object.id) {
       api.mediaCapturer = null;
-    }
-    else if (proxies.hasOwnProperty(object.id)) {
+    } else if (proxies.hasOwnProperty(object.id)) {
       delete proxies[object.id];
     }
 
@@ -6875,14 +6950,12 @@ var PluginProxies = (function() {
     }
   };
 
-
   
-
 
   
   api.mediaCapturer = null;
 
-  api.removeAll = function removeAll () {
+  api.removeAll = function removeAll() {
     for (var id in proxies) {
       if (proxies.hasOwnProperty(id)) {
         proxies[id].destroy();
@@ -6892,7 +6965,7 @@ var PluginProxies = (function() {
     if (api.mediaCapturer) api.mediaCapturer.destroy();
   };
 
-  api.create = function create (options, completion) {
+  api.create = function create(options, completion) {
     var proxy = createPluginProxy(options, completion);
 
     proxies[proxy.uuid] = proxy;
@@ -6905,7 +6978,7 @@ var PluginProxies = (function() {
     return proxy;
   };
 
-  api.createMediaPeer = function createMediaPeer (options, completion) {
+  api.createMediaPeer = function createMediaPeer(options, completion) {
     if ($.isFunction(options)) {
       completion = options;
       options = {};
@@ -6928,7 +7001,7 @@ var PluginProxies = (function() {
     makeMediaPeerProxy(mediaPeer);
   };
 
-  api.createMediaCapturer = function createMediaCapturer (completion) {
+  api.createMediaCapturer = function createMediaCapturer(completion) {
     if (api.mediaCapturer) {
       completion.call(OTPlugin, void 0, api.mediaCapturer);
       return api;
@@ -6959,8 +7032,8 @@ var PluginProxies = (function() {
 
 
 
-var PeerConnection = function (iceServers, options, plugin, ready) {
-  var Proto = function PeerConnection () {},
+var PeerConnection = function(iceServers, options, plugin, ready) {
+  var Proto = function PeerConnection() {},
       api = new Proto(),
       id = $.uuid(),
       hasLocalDescription = false,
@@ -6980,21 +7053,20 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
     iceconnectionstatechange: []
   };
 
-  var onAddIceCandidate = function onAddIceCandidate () {},
+  var onAddIceCandidate = function onAddIceCandidate() {},
 
-      onAddIceCandidateFailed = function onAddIceCandidateFailed (err) {
+      onAddIceCandidateFailed = function onAddIceCandidateFailed(err) {
         OTPlugin.error('Failed to process candidate');
         OTPlugin.error(err);
       },
 
-      processPendingCandidates = function processPendingCandidates () {
-        for (var i=0; i<candidates.length; ++i) {
+      processPendingCandidates = function processPendingCandidates() {
+        for (var i = 0; i < candidates.length; ++i) {
           plugin._.addIceCandidate(id, candidates[i], onAddIceCandidate, onAddIceCandidateFailed);
         }
       },
 
-
-      deferMethod = function deferMethod (method) {
+      deferMethod = function deferMethod(method) {
         return function() {
           if (inited === true) {
             return method.apply(api, arguments);
@@ -7004,14 +7076,14 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         };
       },
 
-      processDeferredMethods = function processDeferredMethods () {
+      processDeferredMethods = function processDeferredMethods() {
         var m;
-        while ( (m = deferMethods.shift()) ) {
+        while ((m = deferMethods.shift())) {
           m[0].apply(api, m[1]);
         }
       },
 
-      triggerEvent = function triggerEvent () {
+      triggerEvent = function triggerEvent() {
         var args = Array.prototype.slice.call(arguments),
             eventName = args.shift();
 
@@ -7025,7 +7097,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         });
       },
 
-      bindAndDelegateEvents = function bindAndDelegateEvents (events) {
+      bindAndDelegateEvents = function bindAndDelegateEvents(events) {
         for (var name in events) {
           if (events.hasOwnProperty(name)) {
             events[name] = curryCallAsync(events[name]);
@@ -7035,7 +7107,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         plugin._.on(id, events);
       },
 
-      addStream = function addStream (streamJson) {
+      addStream = function addStream(streamJson) {
         setTimeout(function() {
           var stream = MediaStream.fromJson(streamJson, plugin),
               event = {stream: stream, target: api};
@@ -7045,10 +7117,10 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
           }
 
           triggerEvent('addstream', event);
-        }, 3000);
+        }, window.EmpiricDelay);
       },
 
-      removeStream = function removeStream (streamJson) {
+      removeStream = function removeStream(streamJson) {
         var stream = MediaStream.fromJson(streamJson, plugin),
             event = {stream: stream, target: api};
 
@@ -7059,7 +7131,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         triggerEvent('removestream', event);
       },
 
-      iceCandidate = function iceCandidate (candidateSdp, sdpMid, sdpMLineIndex) {
+      iceCandidate = function iceCandidate(candidateSdp, sdpMid, sdpMLineIndex) {
         var candidate = new OTPlugin.RTCIceCandidate({
           candidate: candidateSdp,
           sdpMid: sdpMid,
@@ -7075,7 +7147,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         triggerEvent('icecandidate', event);
       },
 
-      signalingStateChange = function signalingStateChange (state) {
+      signalingStateChange = function signalingStateChange(state) {
         api.signalingState = state;
         var event = {state: state, target: api};
 
@@ -7087,7 +7159,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         triggerEvent('signalingstate', event);
       },
 
-      iceConnectionChange = function iceConnectionChange (state) {
+      iceConnectionChange = function iceConnectionChange(state) {
         api.iceConnectionState = state;
         var event = {state: state, target: api};
 
@@ -7099,7 +7171,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
         triggerEvent('iceconnectionstatechange', event);
       };
 
-  api.createOffer = deferMethod(function (success, error, constraints) {
+  api.createOffer = deferMethod(function(success, error, constraints) {
     OTPlugin.debug('createOffer', constraints);
     plugin._.createOffer(id, function(type, sdp) {
       success(new OTPlugin.RTCSessionDescription({
@@ -7109,7 +7181,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
     }, error, constraints || {});
   });
 
-  api.createAnswer = deferMethod(function (success, error, constraints) {
+  api.createAnswer = deferMethod(function(success, error, constraints) {
     OTPlugin.debug('createAnswer', constraints);
     plugin._.createAnswer(id, function(type, sdp) {
       success(new OTPlugin.RTCSessionDescription({
@@ -7119,7 +7191,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
     }, error, constraints || {});
   });
 
-  api.setLocalDescription = deferMethod( function (description, success, error) {
+  api.setLocalDescription = deferMethod(function(description, success, error) {
     OTPlugin.debug('setLocalDescription');
 
     plugin._.setLocalDescription(id, description, function() {
@@ -7130,7 +7202,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
     }, error);
   });
 
-  api.setRemoteDescription = deferMethod( function (description, success, error) {
+  api.setRemoteDescription = deferMethod(function(description, success, error) {
     OTPlugin.debug('setRemoteDescription');
 
     plugin._.setRemoteDescription(id, description, function() {
@@ -7141,75 +7213,67 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
     }, error);
   });
 
-  api.addIceCandidate = deferMethod( function (candidate) {
+  api.addIceCandidate = deferMethod(function(candidate) {
     OTPlugin.debug('addIceCandidate');
 
     if (hasLocalDescription && hasRemoteDescription) {
       plugin._.addIceCandidate(id, candidate, onAddIceCandidate, onAddIceCandidateFailed);
-    }
-    else {
+    } else {
       candidates.push(candidate);
     }
   });
 
-  api.addStream = deferMethod( function (stream) {
+  api.addStream = deferMethod(function(stream) {
     var constraints = {};
     plugin._.addStream(id, stream, constraints);
   });
 
-  api.removeStream = deferMethod( function (stream) {
+  api.removeStream = deferMethod(function(stream) {
     plugin._.removeStream(id, stream);
   });
 
-
-  api.getRemoteStreams = function () {
+  api.getRemoteStreams = function() {
     return $.map(plugin._.getRemoteStreams(id), function(stream) {
       return MediaStream.fromJson(stream, plugin);
     });
   };
 
-  api.getLocalStreams = function () {
+  api.getLocalStreams = function() {
     return $.map(plugin._.getLocalStreams(id), function(stream) {
       return MediaStream.fromJson(stream, plugin);
     });
   };
 
-  api.getStreamById = function (streamId) {
+  api.getStreamById = function(streamId) {
     return MediaStream.fromJson(plugin._.getStreamById(id, streamId), plugin);
   };
 
-  api.getStats = deferMethod( function (mediaStreamTrack, success, error) {
+  api.getStats = deferMethod(function(mediaStreamTrack, success, error) {
     plugin._.getStats(id, mediaStreamTrack || null, curryCallAsync(function(statsReportJson) {
       var report = new RTCStatsReport(JSON.parse(statsReportJson));
       success(report);
     }), error);
   });
 
-  api.close = function () {
+  api.close = function() {
     plugin._.destroyPeerConnection(id);
     plugin.removeRef(this);
   };
 
-  api.destroy = function () {
+  api.destroy = function() {
     api.close();
   };
 
-  api.addEventListener = function  (event, handler ) {
+  api.addEventListener = function(event, handler ) {
     if (events[event] === void 0) {
-      OTPlugin.error('Could not bind invalid event "' + event + '" to PeerConnection. ' +
-                      'The valid event types are:');
-      OTPlugin.error('\t' + $.keys(events).join(', '));
       return;
     }
 
     events[event].push(handler);
   };
 
-  api.removeEventListener = function  (event, handler ) {
+  api.removeEventListener = function(event, handler ) {
     if (events[event] === void 0) {
-      OTPlugin.error('Could not unbind invalid event "' + event + '" to PeerConnection. ' +
-                      'The valid event types are:');
-      OTPlugin.error('\t' + $.keys(events).join(', '));
       return;
     }
 
@@ -7253,7 +7317,7 @@ var PeerConnection = function (iceServers, options, plugin, ready) {
   return api;
 };
 
-PeerConnection.create = function (iceServers, options, plugin, ready) {
+PeerConnection.create = function(iceServers, options, plugin, ready) {
   new PeerConnection(iceServers, options, plugin, ready);
 };
 
@@ -7265,9 +7329,8 @@ PeerConnection.create = function (iceServers, options, plugin, ready) {
 
 
 
-
-var MediaStreamTrack = function (mediaStreamId, options, plugin) {
-  var Proto = function MediaStreamTrack () {},
+var MediaStreamTrack = function(mediaStreamId, options, plugin) {
+  var Proto = function MediaStreamTrack() {},
       api = new Proto();
 
   api.id = options.id;
@@ -7276,13 +7339,12 @@ var MediaStreamTrack = function (mediaStreamId, options, plugin) {
   api.enabled = $.castToBoolean(options.enabled);
   api.streamId = mediaStreamId;
 
-  api.setEnabled = function (enabled) {
+  api.setEnabled = function(enabled) {
     api.enabled = $.castToBoolean(enabled);
 
     if (api.enabled) {
       plugin._.enableMediaStreamTrack(mediaStreamId, api.id);
-    }
-    else {
+    } else {
       plugin._.disableMediaStreamTrack(mediaStreamId, api.id);
     }
   };
@@ -7290,8 +7352,8 @@ var MediaStreamTrack = function (mediaStreamId, options, plugin) {
   return api;
 };
 
-var MediaStream = function (options, plugin) {
-  var Proto = function MediaStream () {},
+var MediaStream = function(options, plugin) {
+  var Proto = function MediaStream() {},
       api = new Proto(),
       audioTracks = [],
       videoTracks = [];
@@ -7305,17 +7367,17 @@ var MediaStream = function (options, plugin) {
 
   if (options.videoTracks) {
     options.videoTracks.map(function(track) {
-      videoTracks.push( new MediaStreamTrack(options.id, track, plugin) );
+      videoTracks.push(new MediaStreamTrack(options.id, track, plugin));
     });
   }
 
   if (options.audioTracks) {
     options.audioTracks.map(function(track) {
-      audioTracks.push( new MediaStreamTrack(options.id, track, plugin) );
+      audioTracks.push(new MediaStreamTrack(options.id, track, plugin));
     });
   }
 
-  var hasTracksOfType = function (type) {
+  var hasTracksOfType = function(type) {
     var tracks = type === 'video' ? videoTracks : audioTracks;
 
     return $.some(tracks, function(track) {
@@ -7323,10 +7385,10 @@ var MediaStream = function (options, plugin) {
     });
   };
 
-  api.getVideoTracks = function () { return videoTracks; };
-  api.getAudioTracks = function () { return audioTracks; };
+  api.getVideoTracks = function() { return videoTracks; };
+  api.getAudioTracks = function() { return audioTracks; };
 
-  api.getTrackById = function (id) {
+  api.getTrackById = function(id) {
     videoTracks.concat(audioTracks).forEach(function(track) {
       if (track.id === id) return track;
     });
@@ -7334,19 +7396,19 @@ var MediaStream = function (options, plugin) {
     return null;
   };
 
-  api.hasVideo = function () {
+  api.hasVideo = function() {
     return hasTracksOfType('video');
   };
 
-  api.hasAudio = function () {
+  api.hasAudio = function() {
     return hasTracksOfType('audio');
   };
 
-  api.addTrack = function () {
+  api.addTrack = function() {
     
   };
 
-  api.removeTrack = function () {
+  api.removeTrack = function() {
     
   };
 
@@ -7372,10 +7434,9 @@ var MediaStream = function (options, plugin) {
   return api;
 };
 
-
-MediaStream.fromJson = function (json, plugin) {
+MediaStream.fromJson = function(json, plugin) {
   if (!json) return null;
-  return new MediaStream( JSON.parse(json), plugin );
+  return new MediaStream(JSON.parse(json), plugin);
 };
 
 
@@ -7403,8 +7464,8 @@ var MediaConstraints = function(userConstraints) {
   }
 
   this.screenSharing = this.hasVideo &&
-                ( constraints.video.mandatory.chromeMediaSource === 'screen' ||
-                  constraints.video.mandatory.chromeMediaSource === 'window' );
+                (constraints.video.mandatory.chromeMediaSource === 'screen' ||
+                 constraints.video.mandatory.chromeMediaSource === 'window');
 
   this.audio = constraints.audio;
   this.video = constraints.video;
@@ -7430,339 +7491,8 @@ var MediaConstraints = function(userConstraints) {
 
 
 
-
-
-var AutoUpdater;
-
-(function() {
-
-  var autoUpdaterController,
-      updaterMimeType,        
-      installedVersion = -1;  
-
-  var versionGreaterThan = function versionGreaterThan (version1, version2) {
-    if (version1 === version2) return false;
-    if (version1 === -1) return version2;
-    if (version2 === -1) return version1;
-
-    if (version1.indexOf('.') === -1 && version2.indexOf('.') === -1) {
-      return version1 > version2;
-    }
-
-    
-    
-    
-    
-    var v1 = version1.split('.'),
-        v2 = version2.split('.'),
-        versionLength = (v1.length > v2.length ? v2 : v1).length;
-
-
-    for (var i = 0; i < versionLength; ++i) {
-      if (parseInt(v1[i], 10) > parseInt(v2[i], 10)) {
-        return true;
-      }
-    }
-
-    
-    
-    
-    if (i < v1.length) {
-      return true;
-    }
-
-    return false;
-  };
-
-
-  
-  
-  var findMimeTypeAndVersion = function findMimeTypeAndVersion () {
-
-    if (updaterMimeType !== void 0) {
-      return updaterMimeType;
-    }
-
-    var activeXControlId = 'TokBox.otiePluginInstaller',
-        installPluginName = 'otiePluginInstaller',
-        unversionedMimeType = 'application/x-otieplugininstaller',
-        plugin = navigator.plugins[activeXControlId] || navigator.plugins[installPluginName];
-
-    installedVersion = -1;
-
-    if (plugin) {
-      
-      
-      
-      
-      var numMimeTypes = plugin.length,
-          extractVersion = new RegExp(unversionedMimeType.replace('-', '\\-') +
-                                                      ',version=([0-9a-zA-Z-_.]+)', 'i'),
-          mimeType,
-          bits;
-
-
-      for (var i=0; i<numMimeTypes; ++i) {
-        mimeType = plugin[i];
-
-        
-        
-        if (mimeType && mimeType.enabledPlugin &&
-            (mimeType.enabledPlugin.name === plugin.name) &&
-            mimeType.type.indexOf(unversionedMimeType) !== -1) {
-
-          bits = extractVersion.exec(mimeType.type);
-
-          if (bits !== null && versionGreaterThan(bits[1], installedVersion)) {
-            installedVersion = bits[1];
-          }
-        }
-      }
-    }
-    else if ($.env.name === 'IE') {
-      
-      
-      
-      
-      try {
-        plugin = new ActiveXObject(activeXControlId);
-        installedVersion = plugin.getMasterVersion();
-      } catch(e) {
-      }
-    }
-
-    updaterMimeType = installedVersion !== -1 ?
-                              unversionedMimeType + ',version=' + installedVersion :
-                              null;
-  };
-
-  var getInstallerMimeType = function getInstallerMimeType () {
-    if (updaterMimeType === void 0) {
-      findMimeTypeAndVersion();
-    }
-
-    return updaterMimeType;
-  };
-
-  var getInstalledVersion = function getInstalledVersion () {
-    if (installedVersion === void 0) {
-      findMimeTypeAndVersion();
-    }
-
-    return installedVersion;
-  };
-
-  
-  
-  
-  
-  
-  var hasBrokenUpdater = function () {
-    var _broken = getInstalledVersion() === '0.4.0.9' ||
-                  !versionGreaterThan(getInstalledVersion(), '0.4.0.4');
-
-    hasBrokenUpdater = function() { return _broken; };
-    return _broken;
-  };
-
-
-  AutoUpdater = function () {
-    var plugin;
-
-    var getControllerCurry = function getControllerFirstCurry (fn) {
-      return function() {
-        if (plugin) {
-          return fn(void 0, arguments);
-        }
-
-        PluginProxies.create({
-          mimeType: getInstallerMimeType(),
-          isVisible: false,
-          windowless: false
-        }, function(err, p) {
-          plugin = p;
-
-          if (err) {
-            OTPlugin.error('Error while loading the AutoUpdater: ' + err);
-            return;
-          }
-
-          return fn.apply(void 0, arguments);
-        });
-      };
-    };
-
-    
-    
-    this.isOutOfDate = function () {
-      return versionGreaterThan(OTPlugin.meta.version, getInstalledVersion());
-    };
-
-    this.autoUpdate = getControllerCurry(function () {
-      var modal = OT.Dialogs.Plugin.updateInProgress(),
-          analytics = new OT.Analytics(),
-        payload = {
-          ieVersion: $.env.version,
-          pluginOldVersion: OTPlugin.installedVersion(),
-          pluginNewVersion: OTPlugin.version()
-        };
-
-      var success = curryCallAsync(function() {
-            analytics.logEvent({
-              action: 'OTPluginAutoUpdate',
-              variation: 'Success',
-              partnerId: OT.APIKEY,
-              payload: JSON.stringify(payload)
-            });
-
-            plugin.destroy();
-
-            modal.close();
-            OT.Dialogs.Plugin.updateComplete().on({
-              reload: function() {
-                window.location.reload();
-              }
-            });
-          }),
-
-          error = curryCallAsync(function(errorCode, errorMessage, systemErrorCode) {
-            payload.errorCode = errorCode;
-            payload.systemErrorCode = systemErrorCode;
-
-            analytics.logEvent({
-              action: 'OTPluginAutoUpdate',
-              variation: 'Failure',
-              partnerId: OT.APIKEY,
-              payload: JSON.stringify(payload)
-            });
-
-            plugin.destroy();
-
-            modal.close();
-            var updateMessage = errorMessage + ' (' + errorCode +
-                                      '). Please restart your browser and try again.';
-
-            modal = OT.Dialogs.Plugin.updateComplete(updateMessage).on({
-              'reload': function() {
-                modal.close();
-              }
-            });
-
-            OTPlugin.error('autoUpdate failed: ' + errorMessage + ' (' + errorCode +
-                                      '). Please restart your browser and try again.');
-            
-          }),
-
-          progress = curryCallAsync(function(progress) {
-            modal.setUpdateProgress(progress.toFixed());
-            
-          });
-
-      plugin._.updatePlugin(OTPlugin.pathToInstaller(), success, error, progress);
-    });
-
-    this.destroy = function() {
-      if (plugin) plugin.destroy();
-    };
-
-    
-    if (navigator.plugins) {
-      navigator.plugins.refresh(false);
-    }
-  };
-
-  AutoUpdater.get = function (completion) {
-    if (!autoUpdaterController) {
-      if (!this.isinstalled()) {
-        completion.call(null, 'Plugin was not installed');
-        return;
-      }
-
-      autoUpdaterController = new AutoUpdater();
-    }
-
-    completion.call(null, void 0, autoUpdaterController);
-  };
-
-  AutoUpdater.isinstalled = function () {
-    return getInstallerMimeType() !== null && !hasBrokenUpdater();
-  };
-
-  AutoUpdater.installedVersion = function () {
-    return getInstalledVersion();
-  };
-
-})();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var readyCallbacks = [];
-
-var 
-    destroy = function destroy () {
-      PluginProxies.removeAll();
-    },
-
-    registerReadyListener = function registerReadyListener (callback) {
-      readyCallbacks.push(callback);
-    },
-
-    notifyReadyListeners = function notifyReadyListeners (err) {
-      var callback;
-
-      while ( (callback = readyCallbacks.pop()) && $.isFunction(callback) ) {
-        callback.call(OTPlugin, err);
-      }
-    },
-
-    onDomReady = function onDomReady () {
-      AutoUpdater.get(function(err, updater) {
-        if (err) {
-          OTPlugin.error('Error while loading the AutoUpdater: ' + err);
-          notifyReadyListeners('Error while loading the AutoUpdater: ' + err);
-          return;
-        }
-
-        
-        
-        if (updater.isOutOfDate()) {
-          updater.autoUpdate();
-          return;
-        }
-
-        
-        PluginProxies.createMediaCapturer(function(err) {
-          if (!err && (PluginProxies.mediaCapturer && !PluginProxies.mediaCapturer.isValid())) {
-            err = 'The TB Plugin failed to load properly';
-          }
-
-          pluginIsReady = true;
-          notifyReadyListeners(err);
-
-          $.onDOMUnload(destroy);
-        });
-      });
-    };
-
-
-
-
-
-
-
-var createFrame = function createFrame (bodyContent, callbackId, callback) {
-  var Proto = function Frame () {},
+var createFrame = function createFrame(bodyContent, callbackId, callback) {
+  var Proto = function Frame() {},
       api = new Proto(),
       domElement = scope.document.createElement('iframe');
 
@@ -7819,7 +7549,7 @@ var createFrame = function createFrame (bodyContent, callbackId, callback) {
 
   scope.document.body.appendChild(domElement);
 
-  if($.env.iframeNeedsLoad) {
+  if ($.env.iframeNeedsLoad) {
     if ($.env.name === 'IE') {
       
       
@@ -7835,7 +7565,7 @@ var createFrame = function createFrame (bodyContent, callbackId, callback) {
     setTimeout(wrappedCallback, 0);
   }
 
-  api.reparent = function reparent (target) {
+  api.reparent = function reparent(target) {
     
     target.appendChild(domElement);
   };
@@ -7853,6 +7583,261 @@ var createFrame = function createFrame (bodyContent, callbackId, callback) {
 
 
 
+var AutoUpdater;
+
+(function() {
+
+  var autoUpdaterController,
+      updaterMimeType,        
+      installedVersion = -1;  
+
+  var versionGreaterThan = function versionGreaterThan(version1, version2) {
+    if (version1 === version2) return false;
+    if (version1 === -1) return version2;
+    if (version2 === -1) return version1;
+
+    if (version1.indexOf('.') === -1 && version2.indexOf('.') === -1) {
+      return version1 > version2;
+    }
+
+    
+    
+    
+    
+    var v1 = version1.split('.'),
+        v2 = version2.split('.'),
+        versionLength = (v1.length > v2.length ? v2 : v1).length;
+
+    for (var i = 0; i < versionLength; ++i) {
+      if (parseInt(v1[i], 10) > parseInt(v2[i], 10)) {
+        return true;
+      }
+    }
+
+    
+    
+    
+    if (i < v1.length) {
+      return true;
+    }
+
+    return false;
+  };
+
+  
+  
+  var findMimeTypeAndVersion = function findMimeTypeAndVersion() {
+
+    if (updaterMimeType !== void 0) {
+      return updaterMimeType;
+    }
+
+    var activeXControlId = 'TokBox.OpenTokPluginInstaller',
+        installPluginName = 'OpenTokPluginInstaller',
+        unversionedMimeType = 'application/x-opentokplugininstaller',
+        plugin = navigator.plugins[activeXControlId] || navigator.plugins[installPluginName];
+
+    installedVersion = -1;
+
+    if (plugin) {
+      
+      
+      
+      
+      var numMimeTypes = plugin.length,
+          extractVersion = new RegExp(unversionedMimeType.replace('-', '\\-') +
+                                                      ',version=([0-9a-zA-Z-_.]+)', 'i'),
+          mimeType,
+          bits;
+
+      for (var i = 0; i < numMimeTypes; ++i) {
+        mimeType = plugin[i];
+
+        
+        
+        if (mimeType && mimeType.enabledPlugin &&
+            (mimeType.enabledPlugin.name === plugin.name) &&
+            mimeType.type.indexOf(unversionedMimeType) !== -1) {
+
+          bits = extractVersion.exec(mimeType.type);
+
+          if (bits !== null && versionGreaterThan(bits[1], installedVersion)) {
+            installedVersion = bits[1];
+          }
+        }
+      }
+    } else if ($.env.name === 'IE') {
+      
+      
+      
+      
+      try {
+        plugin = new ActiveXObject(activeXControlId);
+        installedVersion = plugin.getMasterVersion();
+      } catch (e) {}
+    }
+
+    updaterMimeType = installedVersion !== -1 ?
+                              unversionedMimeType + ',version=' + installedVersion :
+                              null;
+  };
+
+  var getInstallerMimeType = function getInstallerMimeType() {
+    if (updaterMimeType === void 0) {
+      findMimeTypeAndVersion();
+    }
+
+    return updaterMimeType;
+  };
+
+  var getInstalledVersion = function getInstalledVersion() {
+    if (installedVersion === void 0) {
+      findMimeTypeAndVersion();
+    }
+
+    return installedVersion;
+  };
+
+  
+  
+  
+  
+  
+  var hasBrokenUpdater = function() {
+    var _broken = getInstalledVersion() === '0.4.0.9' ||
+                  !versionGreaterThan(getInstalledVersion(), '0.4.0.4');
+
+    hasBrokenUpdater = function() { return _broken; };
+    return _broken;
+  };
+
+  AutoUpdater = function() {
+    var plugin;
+
+    var getControllerCurry = function getControllerFirstCurry(fn) {
+      return function() {
+        if (plugin) {
+          return fn(void 0, arguments);
+        }
+
+        PluginProxies.create({
+          mimeType: getInstallerMimeType(),
+          isVisible: false,
+          windowless: false
+        }, function(err, p) {
+          plugin = p;
+
+          if (err) {
+            OTPlugin.error('Error while loading the AutoUpdater: ' + err);
+            return;
+          }
+
+          return fn.apply(void 0, arguments);
+        });
+      };
+    };
+
+    
+    
+    this.isOutOfDate = function() {
+      return versionGreaterThan(OTPlugin.meta.version, getInstalledVersion());
+    };
+
+    this.autoUpdate = getControllerCurry(function() {
+      var modal = OT.Dialogs.Plugin.updateInProgress(),
+          analytics = new OT.Analytics(),
+        payload = {
+          ieVersion: $.env.version,
+          pluginOldVersion: OTPlugin.installedVersion(),
+          pluginNewVersion: OTPlugin.version()
+        };
+
+      var success = curryCallAsync(function() {
+            analytics.logEvent({
+              action: 'OTPluginAutoUpdate',
+              variation: 'Success',
+              partnerId: OT.APIKEY,
+              payload: JSON.stringify(payload)
+            });
+
+            plugin.destroy();
+
+            modal.close();
+            OT.Dialogs.Plugin.updateComplete().on({
+              reload: function() {
+                window.location.reload();
+              }
+            });
+          }),
+
+          error = curryCallAsync(function(errorCode, errorMessage, systemErrorCode) {
+            payload.errorCode = errorCode;
+            payload.systemErrorCode = systemErrorCode;
+
+            analytics.logEvent({
+              action: 'OTPluginAutoUpdate',
+              variation: 'Failure',
+              partnerId: OT.APIKEY,
+              payload: JSON.stringify(payload)
+            });
+
+            plugin.destroy();
+
+            modal.close();
+            var updateMessage = errorMessage + ' (' + errorCode +
+                                      '). Please restart your browser and try again.';
+
+            modal = OT.Dialogs.Plugin.updateComplete(updateMessage).on({
+              reload: function() {
+                modal.close();
+              }
+            });
+
+            OTPlugin.error('autoUpdate failed: ' + errorMessage + ' (' + errorCode +
+                                      '). Please restart your browser and try again.');
+            
+          }),
+
+          progress = curryCallAsync(function(progress) {
+            modal.setUpdateProgress(progress.toFixed());
+            
+          });
+
+      plugin._.updatePlugin(OTPlugin.pathToInstaller(), success, error, progress);
+    });
+
+    this.destroy = function() {
+      if (plugin) plugin.destroy();
+    };
+
+    
+    if (navigator.plugins) {
+      navigator.plugins.refresh(false);
+    }
+  };
+
+  AutoUpdater.get = function(completion) {
+    if (!autoUpdaterController) {
+      if (!this.isinstalled()) {
+        completion.call(null, 'Plugin was not installed');
+        return;
+      }
+
+      autoUpdaterController = new AutoUpdater();
+    }
+
+    completion.call(null, void 0, autoUpdaterController);
+  };
+
+  AutoUpdater.isinstalled = function() {
+    return getInstallerMimeType() !== null && !hasBrokenUpdater();
+  };
+
+  AutoUpdater.installedVersion = function() {
+    return getInstalledVersion();
+  };
+
+})();
 
 
 
@@ -7862,24 +7847,160 @@ var createFrame = function createFrame (bodyContent, callbackId, callback) {
 
 
 
-OTPlugin.isInstalled = function isInstalled () {
+
+
+
+
+var MediaDevices = function() {
+  var Proto = function MediaDevices() {},
+      api = new Proto();
+
+  api.enumerateDevices = function enumerateDevices(completion) {
+    OTPlugin.ready(function(error) {
+      if (error) {
+        completion(error);
+      } else {
+        PluginProxies.mediaCapturer.enumerateDevices(completion);
+      }
+    });
+  };
+
+  api.addListener = function addListener(fn, context) {
+    OTPlugin.ready(function(error) {
+      if (error) {
+        
+        
+        return;
+      }
+
+      PluginProxies.mediaCapturer.on('devicesChanged', fn, context);
+    });
+  };
+
+  api.removeListener = function removeListener(fn, context) {
+    if (OTPlugin.isReady()) {
+      PluginProxies.mediaCapturer.off('devicesChanged', fn, context);
+    }
+  };
+
+  return api;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var readyCallbacks = [],
+
+    
+    
+    
+    loadError;
+
+var 
+    destroy = function destroy() {
+      PluginProxies.removeAll();
+    },
+
+    registerReadyListener = function registerReadyListener(callback) {
+      if (!$.isFunction(callback)) {
+        OTPlugin.warn('registerReadyListener was called with something that was not a function.');
+        return;
+      }
+
+      if (OTPlugin.isReady()) {
+        callback.call(OTPlugin, loadError);
+      } else {
+        readyCallbacks.push(callback);
+      }
+    },
+
+    notifyReadyListeners = function notifyReadyListeners() {
+      var callback;
+
+      while ((callback = readyCallbacks.pop()) && $.isFunction(callback)) {
+        callback.call(OTPlugin, loadError);
+      }
+    },
+
+    onDomReady = function onDomReady() {
+      AutoUpdater.get(function(err, updater) {
+        if (err) {
+          loadError = 'Error while loading the AutoUpdater: ' + err;
+          notifyReadyListeners();
+          return;
+        }
+
+        
+        
+        if (updater.isOutOfDate()) {
+          updater.autoUpdate();
+          return;
+        }
+
+        
+        PluginProxies.createMediaCapturer(function(err) {
+          loadError = err;
+
+          if (!loadError && (!PluginProxies.mediaCapturer ||
+                !PluginProxies.mediaCapturer.isValid())) {
+            loadError = 'The TB Plugin failed to load properly';
+          }
+
+          pluginIsReady = true;
+          notifyReadyListeners();
+
+          $.onDOMUnload(destroy);
+        });
+      });
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OTPlugin.isInstalled = function isInstalled() {
   if (!this.isSupported()) return false;
   return AutoUpdater.isinstalled();
 };
 
-OTPlugin.version = function version () {
+OTPlugin.version = function version() {
   return OTPlugin.meta.version;
 };
 
-OTPlugin.installedVersion = function installedVersion () {
+OTPlugin.installedVersion = function installedVersion() {
   return AutoUpdater.installedVersion();
 };
 
 
 
-OTPlugin.pathToInstaller = function pathToInstaller () {
+OTPlugin.pathToInstaller = function pathToInstaller() {
   return 'https://s3.amazonaws.com/otplugin.tokbox.com/v' +
-                    OTPlugin.meta.version + '/otiePluginMain.msi';
+                    OTPlugin.meta.version + '/OpenTokPluginMain.msi';
 };
 
 
@@ -7887,19 +8008,8 @@ OTPlugin.pathToInstaller = function pathToInstaller () {
 
 
 
-OTPlugin.ready = function ready (callback) {
-  if (OTPlugin.isReady()) {
-    var err;
-
-    if (!PluginProxies.mediaCapturer || !PluginProxies.mediaCapturer.isValid()) {
-      err = 'The TB Plugin failed to load properly';
-    }
-
-    callback.call(OTPlugin, err);
-  }
-  else {
-    registerReadyListener(callback);
-  }
+OTPlugin.ready = function ready(callback) {
+  registerReadyListener(callback);
 };
 
 
@@ -7919,13 +8029,12 @@ var _getUserMedia = function _getUserMedia(mediaConstraints, success, error) {
 
 
 
-OTPlugin.getUserMedia = function getUserMedia (userConstraints, success, error) {
+OTPlugin.getUserMedia = function getUserMedia(userConstraints, success, error) {
   var constraints = new MediaConstraints(userConstraints);
 
   if (constraints.screenSharing) {
     _getUserMedia(constraints, success, error);
-  }
-  else {
+  } else {
     var sources = [];
     if (constraints.hasVideo) sources.push('video');
     if (constraints.hasAudio) sources.push('audio');
@@ -7946,9 +8055,19 @@ OTPlugin.getUserMedia = function getUserMedia (userConstraints, success, error) 
   }
 };
 
+OTPlugin.enumerateDevices = function(completion) {
+  OTPlugin.ready(function(error) {
+    if (error) {
+      completion(error);
+    } else {
+      PluginProxies.mediaCapturer.enumerateDevices(completion);
+    }
+  });
+};
+
 OTPlugin.initRumorSocket = function(messagingURL, completion) {
   OTPlugin.ready(function(error) {
-    if(error) {
+    if (error) {
       completion(error);
     } else {
       completion(null, new RumorSocket(PluginProxies.mediaCapturer, messagingURL));
@@ -7959,11 +8078,10 @@ OTPlugin.initRumorSocket = function(messagingURL, completion) {
 
 
 
-
-OTPlugin.initPeerConnection = function initPeerConnection (iceServers,
-                                                           options,
-                                                           localStream,
-                                                           completion) {
+OTPlugin.initPeerConnection = function initPeerConnection(iceServers,
+                                                          options,
+                                                          localStream,
+                                                          completion) {
 
   var gotPeerObject = function(err, plugin) {
     if (err) {
@@ -7991,24 +8109,26 @@ OTPlugin.initPeerConnection = function initPeerConnection (iceServers,
   
   if (localStream && localStream._.plugin) {
     gotPeerObject(null, localStream._.plugin);
-  }
-  else {
+  } else {
     PluginProxies.createMediaPeer(gotPeerObject);
   }
 };
 
 
-OTPlugin.RTCSessionDescription = function RTCSessionDescription (options) {
+OTPlugin.RTCSessionDescription = function RTCSessionDescription(options) {
   this.type = options.type;
   this.sdp = options.sdp;
 };
 
 
-OTPlugin.RTCIceCandidate = function RTCIceCandidate (options) {
+OTPlugin.RTCIceCandidate = function RTCIceCandidate(options) {
   this.sdpMid = options.sdpMid;
   this.sdpMLineIndex = parseInt(options.sdpMLineIndex, 10);
   this.candidate = options.candidate;
 };
+
+OTPlugin.mediaDevices = new MediaDevices();
+
 
 
 
@@ -8023,6 +8143,72 @@ $.onDOMLoad(onDomReady);
 
 
 
+
+
+
+var _setCertificates = function(pcConfig, completion) {
+  if (
+    OT.$.env.name === 'Firefox' &&
+    window.mozRTCPeerConnection &&
+    window.mozRTCPeerConnection.generateCertificate
+  ) {
+    window.mozRTCPeerConnection.generateCertificate({
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256',
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1])
+    }).catch(function(err) {
+      completion(err);
+    }).then(function(cert) {
+      pcConfig.certificates = [cert];
+      completion(undefined, pcConfig);
+    });
+  } else {
+    OT.$.callAsync(function() {
+      completion(undefined, pcConfig);
+    });
+  }
+};
+
+
+
+var videoContentResizesMixin = function(self, domElement) {
+
+  var width = domElement.videoWidth,
+      height = domElement.videoHeight,
+      stopped = true;
+
+  function actor() {
+    if (stopped) {
+      return;
+    }
+    if (width !== domElement.videoWidth || height !== domElement.videoHeight) {
+      self.trigger('videoDimensionsChanged',
+        { width: width, height: height },
+        { width: domElement.videoWidth, height: domElement.videoHeight }
+      );
+      width = domElement.videoWidth;
+      height = domElement.videoHeight;
+    }
+    waiter();
+  }
+
+  function waiter() {
+    self.whenTimeIncrements(function() {
+      window.requestAnimationFrame(actor);
+    });
+  }
+
+  self.startObservingSize = function() {
+    stopped = false;
+    waiter();
+  };
+
+  self.stopObservingSize = function() {
+    stopped = true;
+  };
+
+};
 
 
 !(function(window, OT) {
@@ -8045,9 +8231,9 @@ if (location.protocol === 'file:') {
 var OT = window.OT || {};
 
 
-OT.APIKEY = (function(){
+OT.APIKEY = (function() {
   
-  var scriptSrc = (function(){
+  var scriptSrc = (function() {
     var s = document.getElementsByTagName('script');
     s = s[s.length - 1];
     s = s.getAttribute('src') || s.src;
@@ -8058,15 +8244,14 @@ OT.APIKEY = (function(){
   return m ? m[1] : '';
 })();
 
-
 if (!window.OT) window.OT = OT;
 if (!window.TB) window.TB = OT;
 
 
 
 OT.properties = {
-  version: 'v2.5.2',         
-  build: 'f4508e1',    
+  version: 'v2.6.8',         
+  build: 'fae7901',    
 
   
   debug: 'false',
@@ -8097,12 +8282,10 @@ OT.properties = {
   apiURLSSL: 'https://anvil.opentok.com',
 
   minimumVersion: {
-    firefox: parseFloat('29'),
-    chrome: parseFloat('34')
+    firefox: parseFloat('37'),
+    chrome: parseFloat('39')
   }
 };
-
-
 
 
 
@@ -8125,7 +8308,7 @@ OT.$.defineGetters = function(self, getters, enumerable) {
   if (enumerable === void 0) enumerable = false;
 
   for (var key in getters) {
-    if(!getters.hasOwnProperty(key)) {
+    if (!getters.hasOwnProperty(key)) {
       continue;
     }
 
@@ -8168,7 +8351,6 @@ OT.setLogLevel = function(level) {
 
 var debugTrue = OT.properties.debug === 'true' || OT.properties.debug === true;
 OT.setLogLevel(debugTrue ? OT.DEBUG : OT.ERROR);
-
 
 
 if (OTPlugin && OTPlugin.isInstalled()) {
@@ -8265,6 +8447,121 @@ OT.$.userAgent = function() { return OT.$.env.userAgent; };
 
 
 
+OT.Rumor = {
+  MessageType: {
+    
+    
+    
+    SUBSCRIBE: 0,
+
+    
+    
+    UNSUBSCRIBE: 1,
+
+    
+    
+    MESSAGE: 2,
+
+    
+    
+    
+    CONNECT: 3,
+
+    
+    
+    DISCONNECT: 4,
+
+    
+    PING: 7,
+    PONG: 8,
+    STATUS: 9
+  }
+};
+
+
+
+
+
+
+
+
+!(function() {
+
+  OT.Rumor.PluginSocket = function(messagingURL, events) {
+
+    var webSocket,
+        state = 'initializing';
+
+    OTPlugin.initRumorSocket(messagingURL, OT.$.bind(function(err, rumorSocket) {
+      if (err) {
+        state = 'closed';
+        events.onClose({ code: 4999 });
+      } else if (state === 'initializing') {
+        webSocket = rumorSocket;
+
+        webSocket.onOpen(function() {
+          state = 'open';
+          events.onOpen();
+        });
+        webSocket.onClose(function(error) {
+          state = 'closed'; 
+          events.onClose({ code: error });
+        });
+        webSocket.onError(function(error) {
+          state = 'closed'; 
+          events.onError(error);
+          
+          events.onClose({ code: error });
+        });
+
+        webSocket.onMessage(function(type, addresses, headers, payload) {
+          var msg = new OT.Rumor.Message(type, addresses, headers, payload);
+          events.onMessage(msg);
+        });
+
+        webSocket.open();
+      } else {
+        this.close();
+      }
+    }, this));
+
+    this.close = function() {
+      if (state === 'initializing' || state === 'closed') {
+        state = 'closed';
+        return;
+      }
+
+      webSocket.close(1000, '');
+    };
+
+    this.send = function(msg) {
+      if (state === 'open') {
+        webSocket.send(msg);
+      }
+    };
+
+    this.isClosed = function() {
+      return state === 'closed';
+    };
+
+  };
+
+}(this));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -8279,11 +8576,11 @@ OT.$.userAgent = function() { return OT.$.env.userAgent; };
 (function(global) {
   'use strict';
 
-  if(OT.$.env && OT.$.env.name === 'IE' && OT.$.env.version < 10) {
+  if (OT.$.env && OT.$.env.name === 'IE' && OT.$.env.version < 10) {
     return; 
   }
 
-  if ( (global.TextEncoder !== void 0) && (global.TextDecoder !== void 0))  {
+  if ((global.TextEncoder !== void 0) && (global.TextDecoder !== void 0)) {
     
     return;
   }
@@ -8312,7 +8609,6 @@ OT.$.userAgent = function() { return OT.$.env.userAgent; };
   function div(n, d) {
     return Math.floor(n / d);
   }
-
 
   
   
@@ -9322,123 +9618,7 @@ OT.$.userAgent = function() { return OT.$.env.userAgent; };
 
 
 
-
-OT.Rumor = {
-  MessageType: {
-    
-    
-    
-    SUBSCRIBE: 0,
-
-    
-    
-    UNSUBSCRIBE: 1,
-
-    
-    
-    MESSAGE: 2,
-
-    
-    
-    
-    CONNECT: 3,
-
-    
-    
-    DISCONNECT: 4,
-
-    
-    PING: 7,
-    PONG: 8,
-    STATUS: 9
-  }
-};
-
-
-
-
-
-
-
-
-!(function() {
-
-  OT.Rumor.PluginSocket = function(messagingURL, events) {
-
-    var webSocket,
-        state = 'initializing';
-
-    OTPlugin.initRumorSocket(messagingURL, OT.$.bind(function(err, rumorSocket) {
-      if(err) {
-        state = 'closed';
-        events.onClose({ code: 4999 });
-      } else if(state === 'initializing') {
-        webSocket = rumorSocket;
-
-        webSocket.onOpen(function() {
-          state = 'open';
-          events.onOpen();
-        });
-        webSocket.onClose(function(error) {
-          state = 'closed'; 
-          events.onClose({ code: error });
-        });
-        webSocket.onError(function(error) {
-          state = 'closed'; 
-          events.onError(error);
-          
-          events.onClose({ code: error });
-        });
-
-        webSocket.onMessage(function(type, addresses, headers, payload) {
-          var msg = new OT.Rumor.Message(type, addresses, headers, payload);
-          events.onMessage(msg);
-        });
-
-        webSocket.open();
-      } else {
-        this.close();
-      }
-    }, this));
-
-    this.close = function() {
-      if(state === 'initializing' || state === 'closed') {
-        state = 'closed';
-        return;
-      }
-
-      webSocket.close(1000, '');
-    };
-
-    this.send = function(msg) {
-      if(state === 'open') {
-        webSocket.send(msg);
-      }
-    };
-
-    this.isClosed = function() {
-      return state === 'closed';
-    };
-
-  };
-
-}(this));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-OT.Rumor.Message = function (type, toAddress, headers, data) {
+OT.Rumor.Message = function(type, toAddress, headers, data) {
   this.type = type;
   this.toAddress = toAddress;
   this.headers = headers;
@@ -9449,7 +9629,7 @@ OT.Rumor.Message = function (type, toAddress, headers, data) {
   this.isError = !(this.status && this.status[0] === '2');
 };
 
-OT.Rumor.Message.prototype.serialize = function () {
+OT.Rumor.Message.prototype.serialize = function() {
   var offset = 8,
       cBuf = 7,
       address = [],
@@ -9478,7 +9658,7 @@ OT.Rumor.Message.prototype.serialize = function () {
   i = 0;
 
   for (var key in this.headers) {
-    if(!this.headers.hasOwnProperty(key)) {
+    if (!this.headers.hasOwnProperty(key)) {
       continue;
     }
     headerKey.push(new TextEncoder('utf-8').encode(key));
@@ -9560,9 +9740,9 @@ function toArrayBuffer(buffer) {
   return ab;
 }
 
-OT.Rumor.Message.deserialize = function (buffer) {
+OT.Rumor.Message.deserialize = function(buffer) {
 
-  if(typeof Buffer !== 'undefined' &&
+  if (typeof Buffer !== 'undefined' &&
     Buffer.isBuffer(buffer)) {
     buffer = toArrayBuffer(buffer);
   }
@@ -9620,8 +9800,7 @@ OT.Rumor.Message.deserialize = function (buffer) {
   return new OT.Rumor.Message(type, address, headers, data);
 };
 
-
-OT.Rumor.Message.Connect = function (uniqueId, notifyDisconnectAddress) {
+OT.Rumor.Message.Connect = function(uniqueId, notifyDisconnectAddress) {
   var headers = {
     uniqueId: uniqueId,
     notifyDisconnectAddress: notifyDisconnectAddress
@@ -9630,7 +9809,7 @@ OT.Rumor.Message.Connect = function (uniqueId, notifyDisconnectAddress) {
   return new OT.Rumor.Message(OT.Rumor.MessageType.CONNECT, [], headers, '');
 };
 
-OT.Rumor.Message.Disconnect = function () {
+OT.Rumor.Message.Disconnect = function() {
   return new OT.Rumor.Message(OT.Rumor.MessageType.DISCONNECT, [], {}, '');
 };
 
@@ -9643,7 +9822,7 @@ OT.Rumor.Message.Unsubscribe = function(topics) {
 };
 
 OT.Rumor.Message.Publish = function(topics, message, headers) {
-  return new OT.Rumor.Message(OT.Rumor.MessageType.MESSAGE, topics, headers||{}, message || '');
+  return new OT.Rumor.Message(OT.Rumor.MessageType.MESSAGE, topics, headers || {}, message || '');
 };
 
 
@@ -9697,7 +9876,7 @@ OT.Rumor.Message.Ping = function() {
     
     
     disconnectWhenSendBufferIsDrained =
-      function disconnectWhenSendBufferIsDrained (bufferDrainRetries) {
+      function disconnectWhenSendBufferIsDrained(bufferDrainRetries) {
       if (!webSocket) return;
 
       if (bufferDrainRetries === void 0) bufferDrainRetries = 0;
@@ -9706,7 +9885,7 @@ OT.Rumor.Message.Ping = function() {
       if (webSocket.bufferedAmount > 0 &&
         (bufferDrainRetries + 1) <= BUFFER_DRAIN_MAX_RETRIES) {
         bufferDrainTimeout = setTimeout(disconnectWhenSendBufferIsDrained,
-          BUFFER_DRAIN_INTERVAL, bufferDrainRetries+1);
+          BUFFER_DRAIN_INTERVAL, bufferDrainRetries + 1);
 
       } else {
         close();
@@ -9735,7 +9914,6 @@ OT.Rumor.Message.Ping = function() {
 
   };
 
-
 }(this));
 
 
@@ -9752,9 +9930,10 @@ var WEB_SOCKET_KEEP_ALIVE_INTERVAL = 9000,
     
     
     
-    WEB_SOCKET_CONNECTIVITY_TIMEOUT = 5*WEB_SOCKET_KEEP_ALIVE_INTERVAL - 100,
+    WEB_SOCKET_CONNECTIVITY_TIMEOUT = 5 * WEB_SOCKET_KEEP_ALIVE_INTERVAL - 100,
 
-    wsCloseErrorCodes;
+    wsCloseErrorCodes,
+    errorMap;
 
 
 
@@ -9783,8 +9962,22 @@ wsCloseErrorCodes = {
     'unexpected condition that prevented it from fulfilling the request',
 
   
-  4001:   'Connectivity loss was detected as it was too long since the socket received the ' +
-    'last PONG message'
+  4001: 'Connectivity loss was detected as it was too long since the socket received the ' +
+    'last PONG message',
+  4010: 'Timed out while waiting for the Rumor socket to connect.',
+  4020: 'Error code unavailable.',
+  4030: 'Exception was thrown during Rumor connection, possibly because of a blocked port.'
+};
+
+errorMap = {
+  CLOSE_PROTOCOL_ERROR: 1002,
+  CLOSE_UNSUPPORTED: 1003,
+  CLOSE_TOO_LARGE: 1004,
+  CLOSE_NO_STATUS: 1005,
+  CLOSE_ABNORMAL: 1006,
+  CLOSE_TIMEOUT: 4010,
+  CLOSE_FALLBACK_CODE: 4020,
+  CLOSE_CONNECT_EXCEPTION: 4030
 };
 
 OT.Rumor.SocketError = function(code, message) {
@@ -9795,6 +9988,8 @@ OT.Rumor.SocketError = function(code, message) {
 
 
 OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) {
+
+  var _this = this;
 
   var states = ['disconnected',  'error', 'connected', 'connecting', 'disconnecting'],
       webSocket,
@@ -9808,7 +10003,6 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
       lastMessageTimestamp,         
       keepAliveTimer;               
 
-
   
   var stateChanged = function(newState) {
         switch (newState) {
@@ -9817,7 +10011,7 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
             webSocket = null;
             if (onClose) {
               var error;
-              if(hasLostConnectivity()) {
+              if (hasLostConnectivity()) {
                 error = new Error(wsCloseErrorCodes[4001]);
                 error.code = 4001;
               }
@@ -9829,60 +10023,63 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
 
       setState = OT.$.statable(this, states, 'disconnected', stateChanged),
 
-      validateCallback = function validateCallback (name, callback) {
-        if (callback === null || !OT.$.isFunction(callback) ) {
+      validateCallback = function validateCallback(name, callback) {
+        if (callback === null || !OT.$.isFunction(callback)) {
           throw new Error('The Rumor.Socket ' + name +
             ' callback must be a valid function or null');
         }
       },
 
-      error = OT.$.bind(function error (errorMessage) {
-        OT.error('Rumor.Socket: ' + errorMessage);
+      raiseError = function raiseError(code, extraDetail) {
+        code = code || errorMap.CLOSE_FALLBACK_CODE;
 
-        var socketError = new OT.Rumor.SocketError(null, errorMessage || 'Unknown Socket Error');
+        var messageFromCode = wsCloseErrorCodes[code] || 'No message available from code.';
+        var message = messageFromCode + (extraDetail ? ' ' + extraDetail : '');
+
+        OT.error('Rumor.Socket: ' + message);
+
+        var socketError = new OT.Rumor.SocketError(code, message);
 
         if (connectTimeout) clearTimeout(connectTimeout);
 
         setState('error');
 
-        if (this.previousState === 'connecting' && connectCallback) {
+        if (_this.previousState === 'connecting' && connectCallback) {
           connectCallback(socketError, void 0);
           connectCallback = null;
         }
 
         if (onError) onError(socketError);
-      }, this),
+      },
 
-      hasLostConnectivity = function hasLostConnectivity () {
+      hasLostConnectivity = function hasLostConnectivity() {
         if (!lastMessageTimestamp) return false;
 
         return (OT.$.now() - lastMessageTimestamp) >= WEB_SOCKET_CONNECTIVITY_TIMEOUT;
       },
 
-      sendKeepAlive = OT.$.bind(function() {
-        if (!this.is('connected')) return;
+      sendKeepAlive = function() {
+        if (!_this.is('connected')) return;
 
-        if ( hasLostConnectivity() ) {
+        if (hasLostConnectivity()) {
           webSocketDisconnected({code: 4001});
-        }
-        else  {
+        } else {
           webSocket.send(OT.Rumor.Message.Ping());
           keepAliveTimer = setTimeout(sendKeepAlive, WEB_SOCKET_KEEP_ALIVE_INTERVAL);
         }
-      }, this),
+      },
 
       
       
       
-      isDOMUnloaded = function isDOMUnloaded () {
+      isDOMUnloaded = function isDOMUnloaded() {
         return !window.OT;
       };
 
-
   
-  var webSocketConnected = OT.$.bind(function webSocketConnected () {
+  var webSocketConnected = function webSocketConnected() {
         if (connectTimeout) clearTimeout(connectTimeout);
-        if (this.isNot('connecting')) {
+        if (_this.isNot('connecting')) {
           OT.debug('webSocketConnected reached in state other than connecting');
           return;
         }
@@ -9905,21 +10102,21 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
           lastMessageTimestamp = OT.$.now();
           sendKeepAlive();
         }, WEB_SOCKET_KEEP_ALIVE_INTERVAL);
-      }, this),
+      },
 
-      webSocketConnectTimedOut = function webSocketConnectTimedOut () {
+      webSocketConnectTimedOut = function webSocketConnectTimedOut() {
         var webSocketWas = webSocket;
-        error('Timed out while waiting for the Rumor socket to connect.');
+        raiseError(errorMap.CLOSE_TIMEOUT);
         
         
         
         
         try {
           webSocketWas.close();
-        } catch(x) {}
+        } catch (x) {}
       },
 
-      webSocketError = function webSocketError () {},
+      webSocketError = function webSocketError() {},
         
         
 
@@ -9930,7 +10127,7 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
         
         
 
-      webSocketDisconnected = OT.$.bind(function webSocketDisconnected (closeEvent) {
+      webSocketDisconnected = function webSocketDisconnected(closeEvent) {
         if (connectTimeout) clearTimeout(connectTimeout);
         if (keepAliveTimer) clearTimeout(keepAliveTimer);
 
@@ -9943,18 +10140,20 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
         }
 
         if (closeEvent.code !== 1000 && closeEvent.code !== 1001) {
-          var reason = closeEvent.reason || closeEvent.message;
-          if (!reason && wsCloseErrorCodes.hasOwnProperty(closeEvent.code)) {
-            reason = wsCloseErrorCodes[closeEvent.code];
+          if (closeEvent.code) {
+            raiseError(closeEvent.code);
+          } else {
+            raiseError(
+              errorMap.CLOSE_FALLBACK_CODE,
+              closeEvent.reason || closeEvent.message
+            );
           }
-
-          error('Rumor Socket Disconnected: ' + reason);
         }
 
-        if (this.isNot('error')) setState('disconnected');
-      }, this),
+        if (_this.isNot('error')) setState('disconnected');
+      },
 
-      webSocketReceivedMessage = function webSocketReceivedMessage (msg) {
+      webSocketReceivedMessage = function webSocketReceivedMessage(msg) {
         lastMessageTimestamp = OT.$.now();
 
         if (onMessage) {
@@ -9964,10 +10163,9 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
         }
       };
 
-
   
 
-  this.publish = function (topics, message, headers) {
+  this.publish = function(topics, message, headers) {
     webSocket.send(OT.Rumor.Message.Publish(topics, message, headers));
   };
 
@@ -9979,7 +10177,7 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
     webSocket.send(OT.Rumor.Message.Unsubscribe(topics));
   };
 
-  this.connect = function (connectionId, complete) {
+  this.connect = function(connectionId, complete) {
     if (this.is('connecting', 'connected')) {
       complete(new OT.Rumor.SocketError(null,
           'Rumor.Socket cannot connect when it is already connecting or connected.'));
@@ -10001,19 +10199,17 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
     };
 
     try {
-      if(typeof TheWebSocket !== 'undefined') {
+      if (typeof TheWebSocket !== 'undefined') {
         webSocket = new OT.Rumor.NativeSocket(TheWebSocket, messagingURL, events);
       } else {
         webSocket = new OT.Rumor.PluginSocket(messagingURL, events);
       }
 
       connectTimeout = setTimeout(webSocketConnectTimedOut, OT.Rumor.Socket.CONNECT_TIMEOUT);
-    }
-    catch(e) {
+    } catch (e) {
       OT.error(e);
 
-      
-      error('Could not connect to the Rumor socket, possibly because of a blocked port.');
+      raiseError(errorMap.CLOSE_CONNECT_EXCEPTION);
     }
   };
 
@@ -10028,8 +10224,7 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
 
     if (webSocket.isClosed()) {
       if (this.isNot('error')) setState('disconnected');
-    }
-    else {
+    } else {
       if (this.is('connected')) {
         
         webSocket.send(OT.Rumor.Message.Disconnect());
@@ -10039,8 +10234,6 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
       webSocket.close(drainSocketBuffer);
     }
   };
-
-
 
   OT.$.defineProperties(this, {
     id: {
@@ -10087,7 +10280,6 @@ OT.Rumor.Socket = function(messagingURL, notifyDisconnectAddress, NativeSocket) 
 
 
 OT.Rumor.Socket.CONNECT_TIMEOUT = 15000;
-
 
 
 
@@ -10197,7 +10389,7 @@ OT.Raptor = {
 
 
 
-OT.Raptor.serializeMessage = function (message) {
+OT.Raptor.serializeMessage = function(message) {
   return JSON.stringify(message);
 };
 
@@ -10210,8 +10402,7 @@ OT.Raptor.serializeMessage = function (message) {
 
 
 
-
-OT.Raptor.deserializeMessage = function (msg) {
+OT.Raptor.deserializeMessage = function(msg) {
   if (msg.length === 0) return {};
 
   var message = JSON.parse(msg),
@@ -10219,28 +10410,27 @@ OT.Raptor.deserializeMessage = function (msg) {
 
   
   bits.shift();
-  if (bits[bits.length-1] === '') bits.pop();
+  if (bits[bits.length - 1] === '') bits.pop();
 
   message.params = {};
-  for (var i=0, numBits=bits.length ; i<numBits-1; i+=2) {
-    message.params[bits[i]] = bits[i+1];
+  for (var i = 0, numBits = bits.length ; i < numBits - 1; i += 2) {
+    message.params[bits[i]] = bits[i + 1];
   }
 
   
   
   
   if (bits.length % 2 === 0) {
-    if (bits[bits.length-2] === 'channel' && bits.length > 6) {
-      message.resource = bits[bits.length-4] + '_' + bits[bits.length-2];
+    if (bits[bits.length - 2] === 'channel' && bits.length > 6) {
+      message.resource = bits[bits.length - 4] + '_' + bits[bits.length - 2];
     } else {
-      message.resource = bits[bits.length-2];
+      message.resource = bits[bits.length - 2];
     }
-  }
-  else {
-    if (bits[bits.length-1] === 'channel' && bits.length > 5) {
-      message.resource = bits[bits.length-3] + '_' + bits[bits.length-1];
+  } else {
+    if (bits[bits.length - 1] === 'channel' && bits.length > 5) {
+      message.resource = bits[bits.length - 3] + '_' + bits[bits.length - 1];
     } else {
-      message.resource = bits[bits.length-1];
+      message.resource = bits[bits.length - 1];
     }
   }
 
@@ -10248,7 +10438,7 @@ OT.Raptor.deserializeMessage = function (msg) {
   return message;
 };
 
-OT.Raptor.unboxFromRumorMessage = function (rumorMessage) {
+OT.Raptor.unboxFromRumorMessage = function(rumorMessage) {
   var message = OT.Raptor.deserializeMessage(rumorMessage.data);
   message.transactionId = rumorMessage.transactionId;
   message.fromAddress = rumorMessage.headers['X-TB-FROM-ADDRESS'];
@@ -10256,7 +10446,7 @@ OT.Raptor.unboxFromRumorMessage = function (rumorMessage) {
   return message;
 };
 
-OT.Raptor.parseIceServers = function (message) {
+OT.Raptor.parseIceServers = function(message) {
   try {
     return JSON.parse(message.data).content.iceServers;
   } catch (e) {
@@ -10266,8 +10456,7 @@ OT.Raptor.parseIceServers = function (message) {
 
 OT.Raptor.Message = {};
 
-
-OT.Raptor.Message.offer = function (uri, offerSdp) {
+OT.Raptor.Message.offer = function(uri, offerSdp) {
   return OT.Raptor.serializeMessage({
     method: 'offer',
     uri: uri,
@@ -10277,10 +10466,9 @@ OT.Raptor.Message.offer = function (uri, offerSdp) {
   });
 };
 
-
 OT.Raptor.Message.connections = {};
 
-OT.Raptor.Message.connections.create = function (apiKey, sessionId, connectionId) {
+OT.Raptor.Message.connections.create = function(apiKey, sessionId, connectionId) {
   return OT.Raptor.serializeMessage({
     method: 'create',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/connection/' + connectionId,
@@ -10290,7 +10478,7 @@ OT.Raptor.Message.connections.create = function (apiKey, sessionId, connectionId
   });
 };
 
-OT.Raptor.Message.connections.destroy = function (apiKey, sessionId, connectionId) {
+OT.Raptor.Message.connections.destroy = function(apiKey, sessionId, connectionId) {
   return OT.Raptor.serializeMessage({
     method: 'delete',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/connection/' + connectionId,
@@ -10298,10 +10486,9 @@ OT.Raptor.Message.connections.destroy = function (apiKey, sessionId, connectionI
   });
 };
 
-
 OT.Raptor.Message.sessions = {};
 
-OT.Raptor.Message.sessions.get = function (apiKey, sessionId) {
+OT.Raptor.Message.sessions.get = function(apiKey, sessionId) {
   return OT.Raptor.serializeMessage({
     method: 'read',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId,
@@ -10309,10 +10496,9 @@ OT.Raptor.Message.sessions.get = function (apiKey, sessionId) {
   });
 };
 
-
 OT.Raptor.Message.streams = {};
 
-OT.Raptor.Message.streams.get = function (apiKey, sessionId, streamId) {
+OT.Raptor.Message.streams.get = function(apiKey, sessionId, streamId) {
   return OT.Raptor.serializeMessage({
     method: 'read',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/stream/' + streamId,
@@ -10341,7 +10527,7 @@ OT.Raptor.Message.streams.channelFromOTChannel = function(channel) {
   return raptorChannel;
 };
 
-OT.Raptor.Message.streams.create = function (apiKey, sessionId, streamId, name,
+OT.Raptor.Message.streams.create = function(apiKey, sessionId, streamId, name,
   audioFallbackEnabled, channels, minBitrate, maxBitrate) {
   var messageContent = {
     id: streamId,
@@ -10362,7 +10548,7 @@ OT.Raptor.Message.streams.create = function (apiKey, sessionId, streamId, name,
   });
 };
 
-OT.Raptor.Message.streams.destroy = function (apiKey, sessionId, streamId) {
+OT.Raptor.Message.streams.destroy = function(apiKey, sessionId, streamId) {
   return OT.Raptor.serializeMessage({
     method: 'delete',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/stream/' + streamId,
@@ -10370,8 +10556,7 @@ OT.Raptor.Message.streams.destroy = function (apiKey, sessionId, streamId) {
   });
 };
 
-
-OT.Raptor.Message.streams.answer = function (apiKey, sessionId, streamId, answerSdp) {
+OT.Raptor.Message.streams.answer = function(apiKey, sessionId, streamId, answerSdp) {
   return OT.Raptor.serializeMessage({
     method: 'answer',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/stream/' + streamId,
@@ -10381,7 +10566,7 @@ OT.Raptor.Message.streams.answer = function (apiKey, sessionId, streamId, answer
   });
 };
 
-OT.Raptor.Message.streams.candidate = function (apiKey, sessionId, streamId, candidate) {
+OT.Raptor.Message.streams.candidate = function(apiKey, sessionId, streamId, candidate) {
   return OT.Raptor.serializeMessage({
     method: 'candidate',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/stream/' + streamId,
@@ -10391,7 +10576,7 @@ OT.Raptor.Message.streams.candidate = function (apiKey, sessionId, streamId, can
 
 OT.Raptor.Message.streamChannels = {};
 OT.Raptor.Message.streamChannels.update =
-  function (apiKey, sessionId, streamId, channelId, attributes) {
+  function(apiKey, sessionId, streamId, channelId, attributes) {
   return OT.Raptor.serializeMessage({
     method: 'update',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId + '/stream/' +
@@ -10400,11 +10585,10 @@ OT.Raptor.Message.streamChannels.update =
   });
 };
 
-
 OT.Raptor.Message.subscribers = {};
 
 OT.Raptor.Message.subscribers.create =
-  function (apiKey, sessionId, streamId, subscriberId, connectionId, channelsToSubscribeTo) {
+  function(apiKey, sessionId, streamId, subscriberId, connectionId, channelsToSubscribeTo) {
   var content = {
     id: subscriberId,
     connection: connectionId,
@@ -10422,7 +10606,7 @@ OT.Raptor.Message.subscribers.create =
   });
 };
 
-OT.Raptor.Message.subscribers.destroy = function (apiKey, sessionId, streamId, subscriberId) {
+OT.Raptor.Message.subscribers.destroy = function(apiKey, sessionId, streamId, subscriberId) {
   return OT.Raptor.serializeMessage({
     method: 'delete',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId +
@@ -10432,7 +10616,7 @@ OT.Raptor.Message.subscribers.destroy = function (apiKey, sessionId, streamId, s
 };
 
 OT.Raptor.Message.subscribers.update =
-  function (apiKey, sessionId, streamId, subscriberId, attributes) {
+  function(apiKey, sessionId, streamId, subscriberId, attributes) {
   return OT.Raptor.serializeMessage({
     method: 'update',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId +
@@ -10441,9 +10625,8 @@ OT.Raptor.Message.subscribers.update =
   });
 };
 
-
 OT.Raptor.Message.subscribers.candidate =
-  function (apiKey, sessionId, streamId, subscriberId, candidate) {
+  function(apiKey, sessionId, streamId, subscriberId, candidate) {
   return OT.Raptor.serializeMessage({
     method: 'candidate',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId +
@@ -10452,9 +10635,8 @@ OT.Raptor.Message.subscribers.candidate =
   });
 };
 
-
 OT.Raptor.Message.subscribers.answer =
-  function (apiKey, sessionId, streamId, subscriberId, answerSdp) {
+  function(apiKey, sessionId, streamId, subscriberId, answerSdp) {
   return OT.Raptor.serializeMessage({
     method: 'answer',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId +
@@ -10465,11 +10647,10 @@ OT.Raptor.Message.subscribers.answer =
   });
 };
 
-
 OT.Raptor.Message.subscriberChannels = {};
 
 OT.Raptor.Message.subscriberChannels.update =
-  function (apiKey, sessionId, streamId, subscriberId, channelId, attributes) {
+  function(apiKey, sessionId, streamId, subscriberId, channelId, attributes) {
   return OT.Raptor.serializeMessage({
     method: 'update',
     uri: '/v2/partner/' + apiKey + '/session/' + sessionId +
@@ -10478,10 +10659,9 @@ OT.Raptor.Message.subscriberChannels.update =
   });
 };
 
-
 OT.Raptor.Message.signals = {};
 
-OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type, data) {
+OT.Raptor.Message.signals.create = function(apiKey, sessionId, toAddress, type, data) {
   var content = {};
   if (type !== void 0) content.type = type;
   if (data !== void 0) content.data = data;
@@ -10493,7 +10673,6 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     content: content
   });
 };
-
 
 
 
@@ -10512,17 +10691,16 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     1004: 'The token passed is invalid.'
   };
 
-
-  OT.Raptor.Dispatcher = function () {
+  OT.Raptor.Dispatcher = function() {
     OT.$.eventing(this, true);
     this.callbacks = {};
   };
 
-  OT.Raptor.Dispatcher.prototype.registerCallback = function (transactionId, completion) {
+  OT.Raptor.Dispatcher.prototype.registerCallback = function(transactionId, completion) {
     this.callbacks[transactionId] = completion;
   };
 
-  OT.Raptor.Dispatcher.prototype.triggerCallback = function (transactionId) {
+  OT.Raptor.Dispatcher.prototype.triggerCallback = function(transactionId) {
     
     if (!transactionId) return;
 
@@ -10541,7 +10719,6 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
   OT.Raptor.Dispatcher.prototype.onClose = function(reason) {
     this.emit('close', reason);
   };
-
 
   OT.Raptor.Dispatcher.prototype.dispatch = function(rumorMessage) {
     
@@ -10566,7 +10743,7 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     OT.debug('OT.Raptor.dispatch ' + message.signature);
     OT.debug(rumorMessage.data);
 
-    switch(message.resource) {
+    switch (message.resource) {
       case 'session':
         this.dispatchSession(message);
         break;
@@ -10604,25 +10781,23 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     }
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchSession = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchSession = function(message) {
     switch (message.method) {
       case 'read':
         this.emit('session#read', message.content, message.transactionId);
         break;
-
 
       default:
         OT.warn('OT.Raptor.dispatch: ' + message.signature + ' is not currently implemented');
     }
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchConnection = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchConnection = function(message) {
 
     switch (message.method) {
       case 'created':
         this.emit('connection#created', message.content);
         break;
-
 
       case 'deleted':
         this.emit('connection#deleted', message.params.connection, message.reason);
@@ -10633,7 +10808,7 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     }
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchStream = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchStream = function(message) {
 
     switch (message.method) {
       case 'created':
@@ -10645,12 +10820,10 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
           message.reason);
         break;
 
-
       case 'updated':
         this.emit('stream#updated', message.params.stream,
           message.content);
         break;
-
 
       
       case 'generateoffer':
@@ -10666,7 +10839,7 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     }
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchStreamChannel = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchStreamChannel = function(message) {
     switch (message.method) {
       case 'updated':
         this.emit('streamChannel#updated', message.params.stream,
@@ -10694,44 +10867,39 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
   
   
   
-  OT.Raptor.Dispatcher.prototype.dispatchJsep = function (method, message) {
+  OT.Raptor.Dispatcher.prototype.dispatchJsep = function(method, message) {
     this.emit('jsep#' + method, message.params.stream, message.fromAddress, message);
   };
 
-
-  OT.Raptor.Dispatcher.prototype.dispatchSubscriberChannel = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchSubscriberChannel = function(message) {
     switch (message.method) {
       case 'updated':
         this.emit('subscriberChannel#updated', message.params.stream,
           message.params.channel, message.content);
         break;
 
-
       case 'update': 
         this.emit('subscriberChannel#update', message.params.subscriber,
           message.params.stream, message.content);
         break;
-
 
       default:
         OT.warn('OT.Raptor.dispatch: ' + message.signature + ' is not currently implemented');
     }
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchSubscriber = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchSubscriber = function(message) {
     switch (message.method) {
       case 'created':
         this.emit('subscriber#created', message.params.stream, message.fromAddress,
           message.content.id);
         break;
 
-
       case 'deleted':
         this.dispatchJsep('unsubscribe', message);
         this.emit('subscriber#deleted', message.params.stream,
           message.fromAddress);
         break;
-
 
       
       case 'generateoffer':
@@ -10742,13 +10910,12 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
         this.dispatchJsep(message.method, message);
         break;
 
-
       default:
         OT.warn('OT.Raptor.dispatch: ' + message.signature + ' is not currently implemented');
     }
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchSignal = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchSignal = function(message) {
     if (message.method !== 'signal') {
       OT.warn('OT.Raptor.dispatch: ' + message.signature + ' is not currently implemented');
       return;
@@ -10757,7 +10924,7 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
       message.content.data);
   };
 
-  OT.Raptor.Dispatcher.prototype.dispatchArchive = function (message) {
+  OT.Raptor.Dispatcher.prototype.dispatchArchive = function(message) {
     switch (message.method) {
       case 'created':
         this.emit('archive#created', message.content);
@@ -10793,27 +10960,27 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
 
     var connectionId = dict.connectionId ? dict.connectionId : dict.connection.id;
 
-    return  new OT.Stream(  dict.id,
-                            dict.name,
-                            dict.creationTime,
-                            session.connections.get(connectionId),
-                            session,
-                            channel );
+    return new OT.Stream(dict.id,
+                         dict.name,
+                         dict.creationTime,
+                         session.connections.get(connectionId),
+                         session,
+                         channel);
   }
 
   function parseAndAddStreamToSession(dict, session) {
     if (session.streams.has(dict.id)) return;
 
     var stream = parseStream(dict, session);
-    session.streams.add( stream );
+    session.streams.add(stream);
 
     return stream;
   }
 
   function parseArchive(dict) {
-    return new OT.Archive( dict.id,
-                           dict.name,
-                           dict.status );
+    return new OT.Archive(dict.id,
+                          dict.name,
+                          dict.status);
   }
 
   function parseAndAddArchiveToSession(dict, session) {
@@ -10825,14 +10992,14 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
     return archive;
   }
 
-  var DelayedEventQueue = function DelayedEventQueue (eventDispatcher) {
+  var DelayedEventQueue = function DelayedEventQueue(eventDispatcher) {
     var queue = [];
 
-    this.enqueue = function enqueue () {
-      queue.push( Array.prototype.slice.call(arguments) );
+    this.enqueue = function enqueue() {
+      queue.push(Array.prototype.slice.call(arguments));
     };
 
-    this.triggerAll = function triggerAll () {
+    this.triggerAll = function triggerAll() {
       var event;
 
       
@@ -10855,7 +11022,7 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
       
       
       
-      while( (event = queue.shift()) ) {
+      while ((event = queue.shift())) {
         eventDispatcher.trigger.apply(eventDispatcher, event);
       }
     };
@@ -10864,7 +11031,7 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
   var DelayedSessionEvents = function(dispatcher) {
     var eventQueues = {};
 
-    this.enqueue = function enqueue () {
+    this.enqueue = function enqueue() {
       var key = arguments[0];
       var eventArgs = Array.prototype.slice.call(arguments, 1);
       if (!eventQueues[key]) {
@@ -10873,13 +11040,13 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
       eventQueues[key].enqueue.apply(eventQueues[key], eventArgs);
     };
 
-    this.triggerConnectionCreated = function triggerConnectionCreated (connection) {
+    this.triggerConnectionCreated = function triggerConnectionCreated(connection) {
       if (eventQueues['connectionCreated' + connection.id]) {
         eventQueues['connectionCreated' + connection.id].triggerAll();
       }
     };
 
-    this.triggerSessionConnected = function triggerSessionConnected (connections) {
+    this.triggerSessionConnected = function triggerSessionConnected(connections) {
       if (eventQueues.sessionConnected) {
         eventQueues.sessionConnected.triggerAll();
       }
@@ -10912,16 +11079,16 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
         return;
       }
 
-      connection.destroy( reason );
+      connection.destroy(reason);
     });
     
     
     
     
-    var addConnection = function (connection, sessionRead) {
+    var addConnection = function(connection, sessionRead) {
       connection = OT.Connection.fromHash(connection);
       if (sessionRead || session.connection && connection.id !== session.connection.id) {
-        session.connections.add( connection );
+        session.connections.add(connection);
         delayedSessionEvents.triggerConnectionCreated(connection);
       }
 
@@ -10935,8 +11102,8 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
           var payload = {
             debug: sessionRead ? 'connection came in session#read' :
               'connection came in connection#created',
-            streamId : stream.id,
-            connectionId : connection.id
+            streamId: stream.id,
+            connectionId: connection.id
           };
           session.logEvent('streamCreated', 'warning', payload);
         }
@@ -10960,11 +11127,11 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
       });
 
       OT.$.forEach(content.stream, function(streamParams) {
-        state.streams.push( parseAndAddStreamToSession(streamParams, session) );
+        state.streams.push(parseAndAddStreamToSession(streamParams, session));
       });
 
       OT.$.forEach(content.archive || content.archives, function(archiveParams) {
-        state.archives.push( parseAndAddArchiveToSession(archiveParams, session) );
+        state.archives.push(parseAndAddArchiveToSession(archiveParams, session));
       });
 
       session._.subscriberMap = {};
@@ -10992,8 +11159,8 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
         unconnectedStreams[stream.id] = stream;
 
         var payload = {
-          debug : 'eventOrderError -- streamCreated event before connectionCreated',
-          streamId : stream.id,
+          debug: 'eventOrderError -- streamCreated event before connectionCreated',
+          streamId: stream.id
         };
         session.logEvent('streamCreated', 'warning', payload);
       }
@@ -11072,7 +11239,6 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
           if (subscriber) actors.push(subscriber);
           break;
 
-
         
         case 'answer':
         case 'pranswer':
@@ -11081,7 +11247,6 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
           actors = OT.publishers.where({streamId: streamId});
           break;
 
-
         
         case 'candidate':
           
@@ -11089,7 +11254,6 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
           actors = OT.publishers.where({streamId: streamId})
             .concat(OT.subscribers.where({streamId: streamId}));
           break;
-
 
         default:
           OT.warn('OT.Raptor.dispatch: jsep#' + method +
@@ -11103,14 +11267,14 @@ OT.Raptor.Message.signals.create = function (apiKey, sessionId, toAddress, type,
       
       
       fromConnection = actors[0].session.connections.get(fromAddress);
-      if(!fromConnection && fromAddress.match(/^symphony\./)) {
+      if (!fromConnection && fromAddress.match(/^symphony\./)) {
         fromConnection = OT.Connection.fromHash({
           id: fromAddress,
           creationTime: Math.floor(OT.$.now())
         });
 
         actors[0].session.connections.add(fromConnection);
-      } else if(!fromConnection) {
+      } else if (!fromConnection) {
         OT.warn('OT.Raptor.dispatch: Messsage comes from a connection (' +
           fromAddress + ') that we do not know about. The message was ignored.');
         return;
@@ -11374,6 +11538,8 @@ OT.httpTest = httpTest;
 
 
 
+var START_MEDIA_SSRC = 10000,
+    START_RTX_SSRC = 20000;
 
 
 
@@ -11384,108 +11550,330 @@ OT.httpTest = httpTest;
 
 
 
-var SDPHelpers = {
-  
-  getMLineIndex: function getMLineIndex(sdpLines, mediaType) {
-    var targetMLine = 'm=' + mediaType;
 
-    
-    return OT.$.findIndex(sdpLines, function(line) {
-      if (line.indexOf(targetMLine) !== -1) {
-        return true;
-      }
+var SDPHelpers = {};
 
-      return false;
-    });
-  },
+
+SDPHelpers.getMLineIndex = function getMLineIndex(sdpLines, mediaType) {
+  var targetMLine = 'm=' + mediaType;
 
   
-  
-  getMLinePayloadTypes: function getMLinePayloadTypes (mediaLine, mediaType) {
-    var mLineSelector = new RegExp('^m=' + mediaType +
-                          ' \\d+(/\\d+)? [a-zA-Z0-9/]+(( [a-zA-Z0-9/]+)+)$', 'i');
-
-    
-    var payloadTypes = mediaLine.match(mLineSelector);
-    if (!payloadTypes || payloadTypes.length < 2) {
-      
-      return [];
+  return OT.$.findIndex(sdpLines, function(line) {
+    if (line.indexOf(targetMLine) !== -1) {
+      return true;
     }
 
-    return OT.$.trim(payloadTypes[2]).split(' ');
-  },
-
-  removeTypesFromMLine: function removeTypesFromMLine (mediaLine, payloadTypes) {
-    return OT.$.trim(
-              mediaLine.replace(new RegExp(' ' + payloadTypes.join(' |'), 'ig') , ' ')
-                       .replace(/\s+/g, ' ') );
-  },
+    return false;
+  });
+};
 
 
-  
-  
-  removeMediaEncoding: function removeMediaEncoding (sdp, mediaType, encodingName) {
-    var sdpLines = sdp.split('\r\n'),
-        mLineIndex = SDPHelpers.getMLineIndex(sdpLines, mediaType),
-        mLine = mLineIndex > -1 ? sdpLines[mLineIndex] : void 0,
-        typesToRemove = [],
-        payloadTypes,
-        match;
+SDPHelpers.getMLine = function getMLine(sdpLines, mediaType) {
+  var mLineIndex = SDPHelpers.getMLineIndex(sdpLines, mediaType);
+  return mLineIndex > -1 ? sdpLines[mLineIndex] : void 0;
+};
 
-    if (mLineIndex === -1) {
-      
-      return sdpLines.join('\r\n');
-    }
-
-    
+SDPHelpers.hasMLinePayloadType = function hasMLinePayloadType(sdpLines, mediaType, payloadType) {
+  var mLine = SDPHelpers.getMLine(sdpLines, mediaType),
     payloadTypes = SDPHelpers.getMLinePayloadTypes(mLine, mediaType);
-    if (payloadTypes.length === 0) {
+  
+  return OT.$.arrayIndexOf(payloadTypes, payloadType) > -1;
+};
+
+
+
+SDPHelpers.getMLinePayloadTypes = function getMLinePayloadTypes(mediaLine, mediaType) {
+  var mLineSelector = new RegExp('^m=' + mediaType +
+                        ' \\d+(/\\d+)? [a-zA-Z0-9/]+(( [a-zA-Z0-9/]+)+)$', 'i');
+
+  
+  var payloadTypes = mediaLine.match(mLineSelector);
+  if (!payloadTypes || payloadTypes.length < 2) {
+    
+    return [];
+  }
+
+  return OT.$.trim(payloadTypes[2]).split(' ');
+};
+
+SDPHelpers.removeTypesFromMLine = function removeTypesFromMLine(mediaLine, payloadTypes) {
+  return OT.$.trim(
+            mediaLine.replace(new RegExp(' ' + payloadTypes.join(' |'), 'ig'), ' ')
+                     .replace(/\s+/g, ' '));
+};
+
+
+
+SDPHelpers.removeMediaEncoding = function removeMediaEncoding(sdp, mediaType, encodingName) {
+  var sdpLines = sdp.split('\r\n'),
+      mLineIndex = SDPHelpers.getMLineIndex(sdpLines, mediaType),
+      mLine = mLineIndex > -1 ? sdpLines[mLineIndex] : void 0,
+      typesToRemove = [],
+      payloadTypes,
+      match;
+
+  if (mLineIndex === -1) {
+    
+    return sdpLines.join('\r\n');
+  }
+
+  
+  payloadTypes = SDPHelpers.getMLinePayloadTypes(mLine, mediaType);
+  if (payloadTypes.length === 0) {
+    
+    return sdpLines.join('\r\n');
+  }
+
+  
+  
+  var matcher = new RegExp('a=rtpmap:(' + payloadTypes.join('|') + ') ' +
+                                        encodingName + '\\/\\d+', 'i');
+
+  sdpLines = OT.$.filter(sdpLines, function(line, index) {
+    match = line.match(matcher);
+    if (match === null) return true;
+
+    typesToRemove.push(match[1]);
+
+    if (index < mLineIndex) {
       
-      return sdpLines.join('\r\n');
+      mLineIndex--;
     }
 
     
+    return false;
+  });
+
+  if (typesToRemove.length > 0 && mLineIndex > -1) {
     
-    var matcher = new RegExp('a=rtpmap:(' + payloadTypes.join('|') + ') ' +
-                                          encodingName + '\\/\\d+', 'i');
+    sdpLines[mLineIndex] = SDPHelpers.removeTypesFromMLine(mLine, typesToRemove);
+  }
 
-    sdpLines = OT.$.filter(sdpLines, function(line, index) {
-      match = line.match(matcher);
-      if (match === null) return true;
+  return sdpLines.join('\r\n');
+};
 
-      typesToRemove.push(match[1]);
 
-      if (index < mLineIndex) {
-        
-        mLineIndex--;
+
+
+
+SDPHelpers.removeComfortNoise = function removeComfortNoise(sdp) {
+  return SDPHelpers.removeMediaEncoding(sdp, 'audio', 'CN');
+};
+
+SDPHelpers.removeVideoCodec = function removeVideoCodec(sdp, codec) {
+  return SDPHelpers.removeMediaEncoding(sdp, 'video', codec);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var isUsingRTX = function isUsingRTX(sdpLines, videoAttrs) {
+  var groupFID = videoAttrs.filterByName('ssrc-group:FID'),
+      missingFID = groupFID.length === 0;
+
+  if (groupFID.length > 1) {
+    
+    throw new Error('WTF Simulcast?!');
+  }
+
+  if (!missingFID) groupFID = groupFID[0].value.split(' ');
+  else groupFID = [];
+
+  switch (groupFID.length) {
+    case 0:
+    case 1:
+      
+      
+      
+      
+      
+      
+      
+      
+
+      var rtxAttr = videoAttrs.find(function(attr) {
+        return attr.name.indexOf('rtpmap:') === 0 &&
+               attr.value.indexOf('rtx/90000') > -1;
+      });
+
+      if (!rtxAttr) {
+        return false;
       }
 
+      var rtxPayloadId = rtxAttr.name.split(':')[1];
+      if (rtxPayloadId.indexOf('/') > -1) rtxPayloadId = rtxPayloadId.split('/')[0];
+      return SDPHelpers.hasMLinePayloadType(sdpLines, 'video', rtxPayloadId);
+
+    default:
       
-      return false;
-    });
-
-    if (typesToRemove.length > 0 && mLineIndex > -1) {
-      
-      sdpLines[mLineIndex] = SDPHelpers.removeTypesFromMLine(mLine, typesToRemove);
-    }
-
-    return sdpLines.join('\r\n');
-  },
-
-  
-  
-  
-  
-  removeComfortNoise: function removeComfortNoise (sdp) {
-    return SDPHelpers.removeMediaEncoding(sdp, 'audio', 'CN');
-  },
-
-  removeVideoCodec: function removeVideoCodec (sdp, codec) {
-    return SDPHelpers.removeMediaEncoding(sdp, 'video', codec);
+      return true;
   }
 };
 
 
+
+
+SDPHelpers.getAttributesForMediaType = function getAttributesForMediaType(sdpLines, mediaType) {
+  var mLineIndex = SDPHelpers.getMLineIndex(sdpLines, mediaType),
+    matchOtherMLines = new RegExp('m=(^' + mediaType + ') ', 'i'),
+    matchSSRCLines = new RegExp('a=ssrc:\\d+ .*', 'i'),
+    matchSSRCGroup = new RegExp('a=ssrc-group:FID (\\d+).*?', 'i'),
+    matchAttrLine = new RegExp('a=([a-z0-9:/-]+) (.*)', 'i'),
+    ssrcStartIndex,
+    ssrcEndIndex,
+    attrs = [],
+    regResult,
+    ssrc, ssrcGroup,
+    msidMatch, msid;
+
+  for (var i = mLineIndex + 1; i < sdpLines.length; i++) {
+    if (matchOtherMLines.test(sdpLines[i])) {
+      break;
+    }
+    
+    
+    ssrcGroup = sdpLines[i].match(matchSSRCGroup);
+    if (ssrcGroup) {
+      ssrcStartIndex = i;
+      ssrc = ssrcGroup[1];
+    }
+
+    
+    msidMatch = sdpLines[i].match('a=ssrc:' + ssrc + ' msid:(.+)');
+    if (msidMatch) {
+      msid = msidMatch[1];
+    }
+    
+    
+    var isSSRCLine = matchSSRCLines.test(sdpLines[i]);
+    if (ssrcStartIndex !== undefined && ssrcEndIndex === undefined && !isSSRCLine ||
+      i === sdpLines.length - 1) {
+      ssrcEndIndex = i;
+    }
+
+    regResult = matchAttrLine.exec(sdpLines[i]);
+    if (regResult && regResult.length === 3) {
+      attrs.push({
+        name: regResult[1],
+        value: regResult[2]
+      });
+    }
+  }
+
+  
+  
+
+  
+  
+  attrs.ssrcStartIndex = ssrcStartIndex;
+  attrs.ssrcEndIndex = ssrcEndIndex;
+  attrs.msid = msid;
+
+  
+  if (!Array.prototype.filter) {
+    attrs.filter = OT.$.bind(OT.$.filter, OT.$, attrs);
+  }
+
+  if (!Array.prototype.find) {
+    attrs.find = OT.$.bind(OT.$.find, OT.$, attrs);
+  }
+
+  attrs.isUsingRTX = OT.$.bind(isUsingRTX, null, sdpLines, attrs);
+
+  attrs.filterByName = function(name) {
+    return this.filter(function(attr) {
+      return attr.name === name;
+    });
+  };
+
+  return attrs;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SDPHelpers.enableSimulcast = function enableSimulcast(sdp, numberOfStreams) {
+  var sdpLines = sdp.split('\r\n'),
+      videoAttrs = SDPHelpers.getAttributesForMediaType(sdpLines, 'video'),
+      usingRTX = videoAttrs.isUsingRTX(),
+      mediaSSRC = [],
+      rtxSSRC = [],
+      linesToAdd,
+      i;
+
+  
+  for (i = 0; i < numberOfStreams; ++i) {
+    mediaSSRC.push(START_MEDIA_SSRC + i);
+    if (usingRTX) rtxSSRC.push(START_RTX_SSRC + i);
+  }
+
+  linesToAdd = [
+    'a=ssrc-group:SIM ' + mediaSSRC.join(' ')
+  ];
+
+  if (usingRTX) {
+    for (i = 0; i < numberOfStreams; ++i) {
+      linesToAdd.push('a=ssrc-group:FID ' + mediaSSRC[i] + ' ' + rtxSSRC[i]);
+    }
+  }
+
+  for (i = 0; i < numberOfStreams; ++i) {
+    linesToAdd.push('a=ssrc:' + mediaSSRC[i] + ' cname:localCname',
+    'a=ssrc:' + mediaSSRC[i] + ' msid:' + videoAttrs.msid);
+
+  }
+
+  if (usingRTX) {
+    for (i = 0; i < numberOfStreams; ++i) {
+      linesToAdd.push('a=ssrc:' + rtxSSRC[i] + ' cname:localCname',
+      'a=ssrc:' + rtxSSRC[i] + ' msid:' + videoAttrs.msid);
+    }
+  }
+  
+  
+  
+  linesToAdd.unshift(videoAttrs.ssrcStartIndex, videoAttrs.ssrcEndIndex -
+    videoAttrs.ssrcStartIndex);
+  sdpLines.splice.apply(sdpLines, linesToAdd);
+
+  return sdpLines.join('\r\n');
+};
 
 
 
@@ -11556,9 +11944,9 @@ OT.getStatsHelpers = getStatsHelpers;
 function getStatsAdapter() {
 
   
-
-
-
+  
+  
+  
   function getStatsOldAPI(peerConnection, completion) {
 
     peerConnection.getStats(function(rtcStatsReport) {
@@ -11583,9 +11971,9 @@ function getStatsAdapter() {
     });
   }
 
-
-
-
+  
+  
+  
   function getStatsNewAPI(peerConnection, completion) {
 
     peerConnection.getStats(null, function(rtcStatsReport) {
@@ -11632,12 +12020,10 @@ function webrtcTest(config) {
     NativeRTCSessionDescription = (window.mozRTCSessionDescription ||
     window.RTCSessionDescription);
     NativeRTCIceCandidate = (window.mozRTCIceCandidate || window.RTCIceCandidate);
-  }
-  else {
+  } else {
     NativeRTCSessionDescription = OTPlugin.RTCSessionDescription;
     NativeRTCIceCandidate = OTPlugin.RTCIceCandidate;
   }
-
 
   function isCandidateRelay(candidate) {
     return candidate.candidate.indexOf('relay') !== -1;
@@ -11815,7 +12201,7 @@ function webrtcTest(config) {
                 if (stat.hasOwnProperty('bytesReceived')) {
                   _statsSamples.videoBytesReceived = parseInt(stat.bytesReceived, 10);
                 }
-              } else if(OT.getStatsHelpers.isAudioStat(stat)) {
+              } else if (OT.getStatsHelpers.isAudioStat(stat)) {
                 if (stat.hasOwnProperty('bytesReceived')) {
                   _statsSamples.audioBytesReceived = parseInt(stat.bytesReceived, 10);
                 }
@@ -11984,7 +12370,6 @@ OT.Chrome = function(properties) {
     }
   };
 
-
   
   
   
@@ -12000,7 +12385,7 @@ OT.Chrome = function(properties) {
   
   
   this.set = function(widgetName, widget) {
-    if (typeof(widgetName) === 'string' && widget) {
+    if (typeof widgetName === 'string' && widget) {
       _set.call(this, widgetName, widget);
 
     } else {
@@ -12014,7 +12399,6 @@ OT.Chrome = function(properties) {
   };
 
 };
-
 
 
 
@@ -12107,7 +12491,6 @@ OT.Chrome.Behaviour.Widget = function(widget, options) {
       }, 2000);
     }
 
-
     
     parent.appendChild(this.domElement);
 
@@ -12123,39 +12506,38 @@ OT.Chrome.Behaviour.Widget = function(widget, options) {
 
 
 OT.Chrome.VideoDisabledIndicator = function(options) {
-  var _videoDisabled = false,
-      _warning = false,
+  var videoDisabled = false,
+      warning = false,
       updateClasses;
 
-  updateClasses = OT.$.bind(function(domElement) {
-    if (_videoDisabled) {
-      OT.$.addClass(domElement, 'OT_video-disabled');
-    } else {
-      OT.$.removeClass(domElement, 'OT_video-disabled');
+  updateClasses = OT.$.bind(function(element) {
+    var shouldDisplay = ['auto', 'on'].indexOf(this.getDisplayMode()) > -1;
+
+    OT.$.removeClass(element, 'OT_video-disabled OT_video-disabled-warning OT_active');
+
+    if (!shouldDisplay) {
+      return;
     }
-    if(_warning) {
-      OT.$.addClass(domElement, 'OT_video-disabled-warning');
-    } else {
-      OT.$.removeClass(domElement, 'OT_video-disabled-warning');
+
+    if (videoDisabled) {
+      OT.$.addClass(element, 'OT_video-disabled');
+    } else if (warning) {
+      OT.$.addClass(element, 'OT_video-disabled-warning');
     }
-    if ((_videoDisabled || _warning) &&
-        (this.getDisplayMode() === 'auto' || this.getDisplayMode() === 'on')) {
-      OT.$.addClass(domElement, 'OT_active');
-    } else {
-      OT.$.removeClass(domElement, 'OT_active');
-    }
+
+    OT.$.addClass(element, 'OT_active');
   }, this);
 
   this.disableVideo = function(value) {
-    _videoDisabled = value;
-    if(value === true) {
-      _warning = false;
+    videoDisabled = value;
+    if (value === true) {
+      warning = false;
     }
     updateClasses(this.domElement);
   };
 
   this.setWarning = function(value) {
-    _warning = value;
+    warning = value;
     updateClasses(this.domElement);
   };
 
@@ -12320,13 +12702,13 @@ OT.Chrome.BackingBar = function(options) {
       _muteMode = options.muteMode;
 
   function getDisplayMode() {
-    if(_nameMode === 'on' || _muteMode === 'on') {
+    if (_nameMode === 'on' || _muteMode === 'on') {
       return 'on';
-    } else if(_nameMode === 'mini' || _muteMode === 'mini') {
+    } else if (_nameMode === 'mini' || _muteMode === 'mini') {
       return 'mini';
-    } else if(_nameMode === 'mini-auto' || _muteMode === 'mini-auto') {
+    } else if (_nameMode === 'mini-auto' || _muteMode === 'mini-auto') {
       return 'mini-auto';
-    } else if(_nameMode === 'auto' || _muteMode === 'auto') {
+    } else if (_nameMode === 'auto' || _muteMode === 'auto') {
       return 'auto';
     } else {
       return 'off';
@@ -12354,8 +12736,6 @@ OT.Chrome.BackingBar = function(options) {
   };
 
 };
-
-
 
 
 
@@ -12445,7 +12825,6 @@ OT.Chrome.AudioLevelMeter = function(options) {
 
 
 
-
 OT.Chrome.Archiving = function(options) {
   var _archiving = options.archiving,
       _archivingStarted = options.archivingStarted || 'Archiving on',
@@ -12465,12 +12844,12 @@ OT.Chrome.Archiving = function(options) {
   };
 
   renderStage = OT.$.bind(function() {
-    if(renderStageDelayedAction) {
+    if (renderStageDelayedAction) {
       clearTimeout(renderStageDelayedAction);
       renderStageDelayedAction = null;
     }
 
-    if(_archiving) {
+    if (_archiving) {
       OT.$.addClass(_light, 'OT_active');
     } else {
       OT.$.removeClass(_light, 'OT_active');
@@ -12478,7 +12857,7 @@ OT.Chrome.Archiving = function(options) {
 
     OT.$.removeClass(this.domElement, 'OT_archiving-' + (!_archiving ? 'on' : 'off'));
     OT.$.addClass(this.domElement, 'OT_archiving-' + (_archiving ? 'on' : 'off'));
-    if(options.show && _archiving) {
+    if (options.show && _archiving) {
       renderText(_archivingStarted);
       OT.$.addClass(_text, 'OT_mode-on');
       OT.$.removeClass(_text, 'OT_mode-auto');
@@ -12487,7 +12866,7 @@ OT.Chrome.Archiving = function(options) {
         OT.$.addClass(_text, 'OT_mode-auto');
         OT.$.removeClass(_text, 'OT_mode-on');
       }, 5000);
-    } else if(options.show && !_initialState) {
+    } else if (options.show && !_initialState) {
       OT.$.addClass(_text, 'OT_mode-on');
       OT.$.removeClass(_text, 'OT_mode-auto');
       this.setDisplayMode('on');
@@ -12526,7 +12905,7 @@ OT.Chrome.Archiving = function(options) {
 
   this.setShowArchiveStatus = OT.$.bind(function(show) {
     options.show = show;
-    if(this.domElement) {
+    if (this.domElement) {
       renderStage.call(this);
     }
   }, this);
@@ -12534,7 +12913,7 @@ OT.Chrome.Archiving = function(options) {
   this.setArchiving = OT.$.bind(function(status) {
     _archiving = status;
     _initialState = false;
-    if(this.domElement) {
+    if (this.domElement) {
       renderStage.call(this);
     }
   }, this);
@@ -12550,7 +12929,7 @@ OT.Chrome.Archiving = function(options) {
 
 !(function(window) {
   
-  if (window && typeof(navigator) !== 'undefined') {
+  if (window && typeof navigator !== 'undefined') {
     var NativeRTCPeerConnection = (window.webkitRTCPeerConnection ||
                                    window.mozRTCPeerConnection);
 
@@ -12619,7 +12998,7 @@ OT.Chrome.Archiving = function(options) {
     
     if (typeof window.MediaStreamTrack !== 'undefined') {
       if (!window.MediaStreamTrack.prototype.setEnabled) {
-        window.MediaStreamTrack.prototype.setEnabled = function (enabled) {
+        window.MediaStreamTrack.prototype.setEnabled = function(enabled) {
           this.enabled = OT.$.castToBoolean(enabled);
         };
       }
@@ -12629,17 +13008,16 @@ OT.Chrome.Archiving = function(options) {
       window.URL = window.webkitURL;
     }
 
-    OT.$.createPeerConnection = function (config, options, publishersWebRtcStream, completion) {
+    OT.$.createPeerConnection = function(config, options, publishersWebRtcStream, completion) {
       if (OTPlugin.isInstalled()) {
         OTPlugin.initPeerConnection(config, options,
                                     publishersWebRtcStream, completion);
-      }
-      else {
+      } else {
         var pc;
 
         try {
           pc = new NativeRTCPeerConnection(config, options);
-        } catch(e) {
+        } catch (e) {
           completion(e.message);
           return;
         }
@@ -12676,7 +13054,7 @@ OT.Chrome.Archiving = function(options) {
 
 
 
-var subscribeProcessor = function(peerConnection, success, failure) {
+var subscribeProcessor = function(peerConnection, numberOfSimulcastStreams, success, failure) {
   var generateErrorCallback,
       setLocalDescription;
 
@@ -12693,6 +13071,9 @@ var subscribeProcessor = function(peerConnection, success, failure) {
     offer.sdp = SDPHelpers.removeComfortNoise(offer.sdp);
     offer.sdp = SDPHelpers.removeVideoCodec(offer.sdp, 'ulpfec');
     offer.sdp = SDPHelpers.removeVideoCodec(offer.sdp, 'red');
+    if (numberOfSimulcastStreams > 1) {
+      offer.sdp = SDPHelpers.enableSimulcast(offer.sdp, numberOfSimulcastStreams);
+    }
 
     peerConnection.setLocalDescription(
       offer,
@@ -12781,7 +13162,7 @@ var offerProcessor = function(peerConnection, offer, success, failure) {
   if (offer.sdp.indexOf('a=rtcp-fb') === -1) {
     var rtcpFbLine = 'a=rtcp-fb:* ccm fir\r\na=rtcp-fb:* nack ';
 
-    offer.sdp = offer.sdp.replace(/^m=video(.*)$/gmi, 'm=video$1\r\n'+rtcpFbLine);
+    offer.sdp = offer.sdp.replace(/^m=video(.*)$/gmi, 'm=video$1\r\n' + rtcpFbLine);
   }
 
   peerConnection.setRemoteDescription(
@@ -12801,12 +13182,12 @@ var offerProcessor = function(peerConnection, offer, success, failure) {
 
 
 
+
 var NativeRTCIceCandidate;
 
 if (!OTPlugin.isInstalled()) {
   NativeRTCIceCandidate = (window.mozRTCIceCandidate || window.RTCIceCandidate);
-}
-else {
+} else {
   NativeRTCIceCandidate = OTPlugin.RTCIceCandidate;
 }
 
@@ -12844,7 +13225,7 @@ var IceCandidateProcessor = function() {
   };
 
   this.processPending = function() {
-    while(_pendingIceCandidates.length) {
+    while (_pendingIceCandidates.length) {
       _peerConnection.addIceCandidate(_pendingIceCandidates.shift());
     }
   };
@@ -12861,7 +13242,7 @@ var IceCandidateProcessor = function() {
 
 
 
-var DataChannelMessageEvent = function DataChanneMessageEvent (event) {
+var DataChannelMessageEvent = function DataChanneMessageEvent(event) {
   this.data = event.data;
   this.source = event.source;
   this.lastEventId = event.lastEventId;
@@ -12911,54 +13292,60 @@ var DataChannelMessageEvent = function DataChanneMessageEvent (event) {
 
 
 
-
-var DataChannel = function DataChannel (dataChannel) {
+var DataChannel = function DataChannel(dataChannel) {
   var api = {};
 
   
 
   var bufferedMessages = [];
 
+  var qosData = {
+    sentMessages: 0,
+    recvMessages: 0
+  };
 
   
 
-  var bufferMessage = function bufferMessage (data) {
+  var bufferMessage = function bufferMessage(data) {
         bufferedMessages.push(data);
         return api;
       },
 
-      sendMessage = function sendMessage (data) {
+      sendMessage = function sendMessage(data) {
         dataChannel.send(data);
+        qosData.sentMessages++;
+
         return api;
       },
 
-      flushBufferedMessages = function flushBufferedMessages () {
+      flushBufferedMessages = function flushBufferedMessages() {
         var data;
 
-        while ( (data = bufferedMessages.shift()) ) {
+        while ((data = bufferedMessages.shift())) {
           api.send(data);
         }
       },
 
-      onOpen = function onOpen () {
+      onOpen = function onOpen() {
         api.send = sendMessage;
         flushBufferedMessages();
       },
 
-      onClose = function onClose (event) {
+      onClose = function onClose(event) {
         api.send = bufferMessage;
         api.trigger('close', event);
       },
 
-      onError = function onError (event) {
+      onError = function onError(event) {
         OT.error('Data Channel Error:', event);
       },
 
-      onMessage = function onMessage (domEvent) {
+      onMessage = function onMessage(domEvent) {
         var event = new DataChannelMessageEvent(domEvent);
+        qosData.recvMessages++;
+
         api.trigger('message', event);
       };
-
 
   
 
@@ -12973,11 +13360,12 @@ var DataChannel = function DataChannel (dataChannel) {
   api.ordered = dataChannel.ordered;
   api.protocol = dataChannel.protocol;
   api._channel = dataChannel;
-  api.close = function () {
+
+  api.close = function() {
     dataChannel.close();
   };
 
-  api.equals = function (label, options) {
+  api.equals = function(label, options) {
     if (api.label !== label) return false;
 
     for (var key in options) {
@@ -12991,10 +13379,13 @@ var DataChannel = function DataChannel (dataChannel) {
     return true;
   };
 
+  api.getQosData = function() {
+    return qosData;
+  };
+
   
   
   api.send = bufferMessage;
-
 
   
   dataChannel.addEventListener('open', onOpen, false);
@@ -13018,21 +13409,26 @@ var DataChannel = function DataChannel (dataChannel) {
 
 
 
-var PeerConnectionChannels = function PeerConnectionChannels (pc) {
+
+var PeerConnectionChannels = function PeerConnectionChannels(pc) {
   
   var channels = [],
       api = {};
 
+  var lastQos = {
+    sentMessages: 0,
+    recvMessages: 0
+  };
 
   
 
-  var remove = function remove (channel) {
+  var remove = function remove(channel) {
     OT.$.filter(channels, function(c) {
       return channel !== c;
     });
   };
 
-  var add = function add (nativeChannel) {
+  var add = function add(nativeChannel) {
     var channel = new DataChannel(nativeChannel);
     channels.push(channel);
 
@@ -13043,14 +13439,13 @@ var PeerConnectionChannels = function PeerConnectionChannels (pc) {
     return channel;
   };
 
-
   
 
-  api.add = function (label, options) {
+  api.add = function(label, options) {
     return add(pc.createDataChannel(label, options));
   };
 
-  api.addMany = function (newChannels) {
+  api.addMany = function(newChannels) {
     for (var label in newChannels) {
       if (newChannels.hasOwnProperty(label)) {
         api.add(label, newChannels[label]);
@@ -13058,13 +13453,13 @@ var PeerConnectionChannels = function PeerConnectionChannels (pc) {
     }
   };
 
-  api.get = function (label, options) {
+  api.get = function(label, options) {
     return OT.$.find(channels, function(channel) {
       return channel.equals(label, options);
     });
   };
 
-  api.getOrAdd = function (label, options) {
+  api.getOrAdd = function(label, options) {
     var channel = api.get(label, options);
     if (!channel) {
       channel = api.add(label, options);
@@ -13073,14 +13468,40 @@ var PeerConnectionChannels = function PeerConnectionChannels (pc) {
     return channel;
   };
 
-  api.destroy = function () {
+  api.getQosData = function() {
+    var qosData = {
+      sentMessages: 0,
+      recvMessages: 0
+    };
+
+    OT.$.forEach(channels, function(channel) {
+      qosData.sentMessages += channel.getQosData().sentMessages;
+      qosData.recvMessages += channel.getQosData().recvMessages;
+    });
+
+    return qosData;
+  };
+
+  api.sampleQos = function() {
+    var newQos = api.getQosData();
+
+    var sampleQos = {
+      sentMessages: newQos.sentMessages - lastQos.sentMessages,
+      recvMessages: newQos.recvMessages - lastQos.recvMessages
+    };
+
+    lastQos = newQos;
+
+    return sampleQos;
+  };
+
+  api.destroy = function() {
     OT.$.forEach(channels, function(channel) {
       channel.close();
     });
 
     channels = [];
   };
-
 
   
 
@@ -13129,7 +13550,7 @@ var connectionStateLogger = function(pc) {
 
   var trackState = function() {
     var now = OT.$.now(),
-        lastState = states[states.length-1],
+        lastState = states[states.length - 1],
         state = {delta: finishTime ? now - finishTime : 0};
 
     if (!lastState || lastState.iceConnection !== pc.iceConnectionState) {
@@ -13153,7 +13574,7 @@ var connectionStateLogger = function(pc) {
   pc.addEventListener('icegatheringstatechange', trackState, false);
 
   return {
-    stop: function () {
+    stop: function() {
       pc.removeEventListener('iceconnectionstatechange', trackState, false);
       pc.removeEventListener('signalingstatechange', trackState, false);
       pc.removeEventListener('icegatheringstatechange', trackState, false);
@@ -13196,11 +13617,9 @@ if (!OTPlugin.isInstalled()) {
   
   NativeRTCSessionDescription = (window.mozRTCSessionDescription ||
                                  window.RTCSessionDescription);
-}
-else {
+} else {
   NativeRTCSessionDescription = OTPlugin.RTCSessionDescription;
 }
-
 
 
 var iceCandidateForwarder = function(messageDelegate) {
@@ -13239,7 +13658,6 @@ OT.PeerConnection = function(config) {
       _messageDelegates = [],
       api = {};
 
-
   OT.$.eventing(api);
 
   
@@ -13271,7 +13689,7 @@ OT.PeerConnection = function(config) {
       
       
       
-      createPeerConnection = function (completion, localWebRtcStream) {
+      createPeerConnection = function(completion, localWebRtcStream) {
         if (_peerConnection) {
           completion.call(null, null, _peerConnection);
           return;
@@ -13296,12 +13714,15 @@ OT.PeerConnection = function(config) {
           ]
         };
 
-
         OT.debug('Creating peer connection config "' + JSON.stringify(config) + '".');
 
         if (!config.iceServers || config.iceServers.length === 0) {
           
           OT.error('No ice servers present');
+          OT.analytics.logEvent({
+            action: 'Error',
+            variation: 'noIceServers'
+          });
         }
 
         OT.$.createPeerConnection(config, pcConstraints, localWebRtcStream,
@@ -13337,7 +13758,7 @@ OT.PeerConnection = function(config) {
 
         if (_peerConnection.oniceconnectionstatechange !== void 0) {
           var failedStateTimer;
-          _peerConnection.addEventListener('iceconnectionstatechange', function (event) {
+          _peerConnection.addEventListener('iceconnectionstatechange', function(event) {
             if (event.target.iceConnectionState === 'failed') {
               if (failedStateTimer) {
                 clearTimeout(failedStateTimer);
@@ -13346,12 +13767,18 @@ OT.PeerConnection = function(config) {
               
               
               
-              failedStateTimer = setTimeout(function () {
+              failedStateTimer = setTimeout(function() {
                 if (event.target.iceConnectionState === 'failed') {
                   triggerError('The stream was unable to connect due to a network error.' +
                    ' Make sure your connection isn\'t blocked by a firewall.', 'ICEWorkflow');
                 }
               }, 5000);
+            } else if (event.target.iceConnectionState === 'disconnected') {
+              OT.analytics.logEvent({
+                action: 'attachEventsToPeerConnection',
+                variation: 'iceconnectionstatechange',
+                payload: 'disconnected'
+              });
             }
           }, false);
         }
@@ -13359,7 +13786,7 @@ OT.PeerConnection = function(config) {
         triggerPeerConnectionCompletion(null);
       },
 
-      triggerPeerConnectionCompletion = function () {
+      triggerPeerConnectionCompletion = function() {
         while (_peerConnectionCompletionHandlers.length) {
           _peerConnectionCompletionHandlers.shift().call(null);
         }
@@ -13394,7 +13821,7 @@ OT.PeerConnection = function(config) {
           _state = newState;
           OT.debug('PeerConnection.stateChange: ' + _state);
 
-          switch(_state) {
+          switch (_state) {
             case 'closed':
               tearDownPeerConnection();
               break;
@@ -13403,6 +13830,7 @@ OT.PeerConnection = function(config) {
       },
 
       qosCallback = function(parsedStats) {
+        parsedStats.dataChannels = _channels.sampleQos();
         api.trigger('qos', parsedStats);
       },
 
@@ -13435,13 +13863,11 @@ OT.PeerConnection = function(config) {
 
       
 
-
       
       
       relaySDP = function(messageType, sdp, uri) {
         delegateMessage(messageType, sdp, uri);
       },
-
 
       
       processOffer = function(message) {
@@ -13480,9 +13906,9 @@ OT.PeerConnection = function(config) {
         _answer = new NativeRTCSessionDescription({type: 'answer', sdp: message.content.sdp});
 
         _peerConnection.setRemoteDescription(_answer,
-            function () {
+            function() {
               OT.debug('setRemoteDescription Success');
-            }, function (errorReason) {
+            }, function(errorReason) {
               triggerError('Error while setting RemoteDescription ' + errorReason,
                 'SetRemoteDescription');
             });
@@ -13506,6 +13932,7 @@ OT.PeerConnection = function(config) {
         createPeerConnection(function() {
           subscribeProcessor(
             _peerConnection,
+            config.numberOfSimulcastStreams,
 
             
             function(offer) {
@@ -13566,7 +13993,7 @@ OT.PeerConnection = function(config) {
 
     OT.debug(message);
 
-    switch(type) {
+    switch (type) {
       case 'generateoffer':
         processSubscribe(message);
         break;
@@ -13592,7 +14019,7 @@ OT.PeerConnection = function(config) {
     return api;
   };
 
-  api.setIceServers = function (iceServers) {
+  api.setIceServers = function(iceServers) {
     if (iceServers) {
       config.iceServers = iceServers;
     }
@@ -13605,7 +14032,7 @@ OT.PeerConnection = function(config) {
   api.unregisterMessageDelegate = function(delegateFn) {
     var index = OT.$.arrayIndexOf(_messageDelegates, delegateFn);
 
-    if ( index !== -1 ) {
+    if (index !== -1) {
       _messageDelegates.splice(index, 1);
     }
     return _messageDelegates.length;
@@ -13616,18 +14043,21 @@ OT.PeerConnection = function(config) {
   };
 
   api.getStats = function(callback) {
-    createPeerConnection(function() {
-      _getStatsAdapter(_peerConnection, callback);
-    });
+    if (!_peerConnection) {
+      callback(new OT.$.Error('Cannot call getStats before there is a connection.', 1015));
+      return;
+    }
+    _getStatsAdapter(_peerConnection, callback);
   };
 
-  var waitForChannel = function waitForChannel (timesToWait, label, options, completion) {
+  var waitForChannel = function waitForChannel(timesToWait, label, options, completion) {
     var channel = _channels.get(label, options),
         err;
 
     if (!channel) {
       if (timesToWait > 0) {
-        setTimeout(OT.$.bind(waitForChannel, null, timesToWait-1, label, options, completion), 200);
+        setTimeout(OT.$.bind(waitForChannel, null, timesToWait - 1, label, options, completion),
+          200);
         return;
       }
 
@@ -13638,11 +14068,13 @@ OT.PeerConnection = function(config) {
     completion(err, channel);
   };
 
-  api.getDataChannel = function (label, options, completion) {
-    createPeerConnection(function() {
-      
-      waitForChannel(100, label, options, completion);
-    });
+  api.getDataChannel = function(label, options, completion) {
+    if (!_peerConnection) {
+      completion(new OT.$.Error('Cannot create a DataChannel before there is a connection.'));
+      return;
+    }
+    
+    waitForChannel(100, label, options, completion);
   };
 
   var qos = new OT.PeerConnection.QOS(qosCallback);
@@ -13676,13 +14108,13 @@ OT.PeerConnection = function(config) {
   
   
   
-  var parseStatsOldAPI = function parseStatsOldAPI (peerConnection,
-                                                    prevStats,
-                                                    currentStats,
-                                                    completion) {
+  var parseStatsOldAPI = function parseStatsOldAPI(peerConnection,
+                                                   prevStats,
+                                                   currentStats,
+                                                   completion) {
 
     
-    var parseVideoStats = function (result) {
+    var parseVideoStats = function(result) {
           if (result.stat('googFrameRateSent')) {
             currentStats.videoSentBytes = Number(result.stat('bytesSent'));
             currentStats.videoSentPackets = Number(result.stat('packetsSent'));
@@ -13691,20 +14123,26 @@ OT.PeerConnection = function(config) {
             currentStats.videoFrameRate = Number(result.stat('googFrameRateInput'));
             currentStats.videoWidth = Number(result.stat('googFrameWidthSent'));
             currentStats.videoHeight = Number(result.stat('googFrameHeightSent'));
+            currentStats.videoFrameRateSent = Number(result.stat('googFrameRateSent'));
+            currentStats.videoWidthInput = Number(result.stat('googFrameWidthInput'));
+            currentStats.videoHeightInput = Number(result.stat('googFrameHeightInput'));
             currentStats.videoCodec = result.stat('googCodecName');
           } else if (result.stat('googFrameRateReceived')) {
             currentStats.videoRecvBytes = Number(result.stat('bytesReceived'));
             currentStats.videoRecvPackets = Number(result.stat('packetsReceived'));
             currentStats.videoRecvPacketsLost = Number(result.stat('packetsLost'));
             currentStats.videoFrameRate = Number(result.stat('googFrameRateOutput'));
+            currentStats.videoFrameRateReceived = Number(result.stat('googFrameRateReceived'));
+            currentStats.videoFrameRateDecoded = Number(result.stat('googFrameRateDecoded'));
             currentStats.videoWidth = Number(result.stat('googFrameWidthReceived'));
             currentStats.videoHeight = Number(result.stat('googFrameHeightReceived'));
             currentStats.videoCodec = result.stat('googCodecName');
           }
+
           return null;
         },
 
-        parseAudioStats = function (result) {
+        parseAudioStats = function(result) {
           if (result.stat('audioInputLevel')) {
             currentStats.audioSentPackets = Number(result.stat('packetsSent'));
             currentStats.audioSentPacketsLost = Number(result.stat('packetsLost'));
@@ -13719,15 +14157,14 @@ OT.PeerConnection = function(config) {
           }
         },
 
-        parseStatsReports = function (stats) {
+        parseStatsReports = function(stats) {
           if (stats.result) {
             var resultList = stats.result();
             for (var resultIndex = 0; resultIndex < resultList.length; resultIndex++) {
               var result = resultList[resultIndex];
 
               if (result.stat) {
-
-                if(result.stat('googActiveConnection') === 'true') {
+                if (result.stat('googActiveConnection') === 'true') {
                   currentStats.localCandidateType = result.stat('googLocalCandidateType');
                   currentStats.remoteCandidateType = result.stat('googRemoteCandidateType');
                   currentStats.transportType = result.stat('googTransportType');
@@ -13749,12 +14186,12 @@ OT.PeerConnection = function(config) {
   
   
   
-  var parseStatsOTPlugin = function parseStatsOTPlugin (peerConnection,
+  var parseStatsOTPlugin = function parseStatsOTPlugin(peerConnection,
                                                     prevStats,
                                                     currentStats,
                                                     completion) {
 
-    var onStatsError = function onStatsError (error) {
+    var onStatsError = function onStatsError(error) {
           completion(error);
         },
 
@@ -13763,7 +14200,7 @@ OT.PeerConnection = function(config) {
         
         
         
-        parseAudioStats = function (statsReport) {
+        parseAudioStats = function(statsReport) {
           var lastBytesSent = prevStats.audioBytesTransferred || 0,
               transferDelta;
 
@@ -13773,8 +14210,7 @@ OT.PeerConnection = function(config) {
             currentStats.audioSentPacketsLost = Number(statsReport.packetsLost);
             currentStats.audioRtt = Number(statsReport.googRtt);
             currentStats.audioCodec = statsReport.googCodecName;
-          }
-          else if (statsReport.audioOutputLevel) {
+          } else if (statsReport.audioOutputLevel) {
             currentStats.audioBytesTransferred = Number(statsReport.bytesReceived);
             currentStats.audioCodec = statsReport.googCodecName;
           }
@@ -13782,7 +14218,7 @@ OT.PeerConnection = function(config) {
           if (currentStats.audioBytesTransferred) {
             transferDelta = currentStats.audioBytesTransferred - lastBytesSent;
             currentStats.avgAudioBitrate = Math.round(transferDelta * 8 /
-              (currentStats.period/1000));
+              (currentStats.period / 1000));
           }
         },
 
@@ -13792,7 +14228,7 @@ OT.PeerConnection = function(config) {
         
         
         
-        parseVideoStats = function (statsReport) {
+        parseVideoStats = function(statsReport) {
 
           var lastBytesSent = prevStats.videoBytesTransferred || 0,
               transferDelta;
@@ -13805,13 +14241,17 @@ OT.PeerConnection = function(config) {
             currentStats.videoCodec = statsReport.googCodecName;
             currentStats.videoWidth = Number(statsReport.googFrameWidthSent);
             currentStats.videoHeight = Number(statsReport.googFrameHeightSent);
-          }
-          else if (statsReport.googFrameHeightReceived) {
+            currentStats.videoFrameRateSent = Number(statsReport.googFrameRateSent);
+            currentStats.videoWidthInput = Number(statsReport.googFrameWidthInput);
+            currentStats.videoHeightInput = Number(statsReport.googFrameHeightInput);
+          } else if (statsReport.googFrameHeightReceived) {
             currentStats.videoRecvBytes =   Number(statsReport.bytesReceived);
             currentStats.videoRecvPackets = Number(statsReport.packetsReceived);
             currentStats.videoRecvPacketsLost = Number(statsReport.packetsLost);
             currentStats.videoRtt = Number(statsReport.googRtt);
             currentStats.videoCodec = statsReport.googCodecName;
+            currentStats.videoFrameRateReceived = Number(statsReport.googFrameRateReceived);
+            currentStats.videoFrameRateDecoded = Number(statsReport.googFrameRateDecoded);
             currentStats.videoWidth = Number(statsReport.googFrameWidthReceived);
             currentStats.videoHeight = Number(statsReport.googFrameHeightReceived);
           }
@@ -13819,13 +14259,13 @@ OT.PeerConnection = function(config) {
           if (currentStats.videoBytesTransferred) {
             transferDelta = currentStats.videoBytesTransferred - lastBytesSent;
             currentStats.avgVideoBitrate = Math.round(transferDelta * 8 /
-             (currentStats.period/1000));
+             (currentStats.period / 1000));
           }
 
-          if (statsReport.googFrameRateSent) {
-            currentStats.videoFrameRate = Number(statsReport.googFrameRateSent);
-          } else if (statsReport.googFrameRateReceived) {
-            currentStats.videoFrameRate = Number(statsReport.googFrameRateReceived);
+          if (statsReport.googFrameRateInput) {
+            currentStats.videoFrameRate = Number(statsReport.googFrameRateInput);
+          } else if (statsReport.googFrameRateOutput) {
+            currentStats.videoFrameRate = Number(statsReport.googFrameRateOutput);
           }
         },
 
@@ -13846,11 +14286,9 @@ OT.PeerConnection = function(config) {
           currentStats.localCandidateType = statsReport.googLocalCandidateType;
           currentStats.remoteCandidateType = statsReport.googRemoteCandidateType;
           currentStats.transportType = statsReport.googTransportType;
-        }
-        else if (isStatsForVideoTrack(statsReport)) {
+        } else if (isStatsForVideoTrack(statsReport)) {
           parseVideoStats(statsReport);
-        }
-        else {
+        } else {
           parseAudioStats(statsReport);
         }
       });
@@ -13859,37 +14297,36 @@ OT.PeerConnection = function(config) {
     }, onStatsError);
   };
 
+  
+  
+  
+  var parseStatsNewAPI = function parseStatsNewAPI(peerConnection,
+                                                   prevStats,
+                                                   currentStats,
+                                                   completion) {
 
-  
-  
-  
-  var parseStatsNewAPI = function parseStatsNewAPI (peerConnection,
-                                                    prevStats,
-                                                    currentStats,
-                                                    completion) {
-
-    var onStatsError = function onStatsError (error) {
+    var onStatsError = function onStatsError(error) {
           completion(error);
         },
 
-        parseAudioStats = function (result) {
-          if (result.type==='outboundrtp') {
+        parseAudioStats = function(result) {
+          if (result.type === 'outboundrtp') {
             currentStats.audioSentPackets = result.packetsSent;
             currentStats.audioSentPacketsLost = result.packetsLost;
             currentStats.audioSentBytes =  result.bytesSent;
-          } else if (result.type==='inboundrtp') {
+          } else if (result.type === 'inboundrtp') {
             currentStats.audioRecvPackets = result.packetsReceived;
             currentStats.audioRecvPacketsLost = result.packetsLost;
             currentStats.audioRecvBytes =  result.bytesReceived;
           }
         },
 
-        parseVideoStats = function (result) {
-          if (result.type==='outboundrtp') {
+        parseVideoStats = function(result) {
+          if (result.type === 'outboundrtp') {
             currentStats.videoSentPackets = result.packetsSent;
             currentStats.videoSentPacketsLost = result.packetsLost;
             currentStats.videoSentBytes =  result.bytesSent;
-          } else if (result.type==='inboundrtp') {
+          } else if (result.type === 'inboundrtp') {
             currentStats.videoRecvPackets = result.packetsReceived;
             currentStats.videoRecvPacketsLost = result.packetsLost;
             currentStats.videoRecvBytes =  result.bytesReceived;
@@ -13917,27 +14354,24 @@ OT.PeerConnection = function(config) {
     }, onStatsError);
   };
 
-
-  var parseQOS = function (peerConnection, prevStats, currentStats, completion) {
+  var parseQOS = function(peerConnection, prevStats, currentStats, completion) {
     if (OTPlugin.isInstalled()) {
       parseQOS = parseStatsOTPlugin;
       return parseStatsOTPlugin(peerConnection, prevStats, currentStats, completion);
-    }
-    else if (OT.$.env.name === 'Firefox' && OT.$.env.version >= 27) {
+    } else if (OT.$.env.name === 'Firefox' && OT.$.env.version >= 27) {
       parseQOS = parseStatsNewAPI;
       return parseStatsNewAPI(peerConnection, prevStats, currentStats, completion);
-    }
-    else {
+    } else {
       parseQOS = parseStatsOldAPI;
       return parseStatsOldAPI(peerConnection, prevStats, currentStats, completion);
     }
   };
 
-  OT.PeerConnection.QOS = function (qosCallback) {
+  OT.PeerConnection.QOS = function(qosCallback) {
     var _creationTime = OT.$.now(),
         _peerConnection;
 
-    var calculateQOS = OT.$.bind(function calculateQOS (prevStats) {
+    var calculateQOS = OT.$.bind(function calculateQOS(prevStats, interval) {
       if (!_peerConnection) {
         
         
@@ -13952,7 +14386,7 @@ OT.PeerConnection = function(config) {
         period: Math.round(now - prevStats.timeStamp)
       };
 
-      var onParsedStats = function (err, parsedStats) {
+      var onParsedStats = function(err, parsedStats) {
         if (err) {
           OT.error('Failed to Parse QOS Stats: ' + JSON.stringify(err));
           return;
@@ -13960,15 +14394,19 @@ OT.PeerConnection = function(config) {
 
         qosCallback(parsedStats, prevStats);
 
+        var nextInterval = interval === OT.PeerConnection.QOS.INITIAL_INTERVAL ?
+          OT.PeerConnection.QOS.INTERVAL - OT.PeerConnection.QOS.INITIAL_INTERVAL :
+          OT.PeerConnection.QOS.INTERVAL;
+
         
-        setTimeout(OT.$.bind(calculateQOS, null, parsedStats), OT.PeerConnection.QOS.INTERVAL);
+        setTimeout(OT.$.bind(calculateQOS, null, parsedStats, nextInterval),
+          interval);
       };
 
       parseQOS(_peerConnection, prevStats, currentStats, onParsedStats);
     }, this);
 
-
-    this.startCollecting = function (peerConnection) {
+    this.startCollecting = function(peerConnection) {
       if (!peerConnection || !peerConnection.getStats) {
         
         
@@ -13977,16 +14415,16 @@ OT.PeerConnection = function(config) {
 
       _peerConnection = peerConnection;
 
-      calculateQOS({
-        timeStamp: OT.$.now()
-      });
+      calculateQOS({timeStamp: OT.$.now()}, OT.PeerConnection.QOS.INITIAL_INTERVAL);
     };
 
-    this.stopCollecting = function () {
+    this.stopCollecting = function() {
       _peerConnection = null;
     };
   };
 
+  
+  OT.PeerConnection.QOS.INITIAL_INTERVAL = 1000;
   
   OT.PeerConnection.QOS.INTERVAL = 30000;
 })();
@@ -14058,9 +14496,14 @@ OT.PeerConnections = (function() {
 
 
 
+
+
+
+
 OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
   subscriber, properties) {
-  var _peerConnection,
+  var _subscriberPeerConnection = this,
+      _peerConnection,
       _destroyed = false,
       _hasRelayCandidates = false,
       _onPeerClosed,
@@ -14091,7 +14534,7 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
   };
 
   _relayMessageToPeer = OT.$.bind(function(type, payload) {
-    if (!_hasRelayCandidates){
+    if (!_hasRelayCandidates) {
       var extractCandidates = type === OT.Raptor.Actions.CANDIDATE ||
                               type === OT.Raptor.Actions.OFFER ||
                               type === OT.Raptor.Actions.ANSWER ||
@@ -14103,7 +14546,7 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
       }
     }
 
-    switch(type) {
+    switch (type) {
       case OT.Raptor.Actions.ANSWER:
       case OT.Raptor.Actions.PRANSWER:
         this.trigger('connected');
@@ -14136,11 +14579,11 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
         return;
       }
 
-      for (var i=0, num=remoteStreams.length; i<num; ++i) {
+      for (var i = 0, num = remoteStreams.length; i < num; ++i) {
         stream = remoteStreams[i];
         tracks = stream[method]();
 
-        for (var k=0, numTracks=tracks.length; k < numTracks; ++k){
+        for (var k = 0, numTracks = tracks.length; k < numTracks; ++k) {
           
           
           if (tracks[k].enabled !== enabled) tracks[k].setEnabled(enabled);
@@ -14149,7 +14592,7 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
     };
   };
 
-  _onQOS = OT.$.bind(function _onQOS (parsedStats, prevStats) {
+  _onQOS = OT.$.bind(function _onQOS(parsedStats, prevStats) {
     this.trigger('qos', parsedStats, prevStats);
   }, this);
 
@@ -14167,7 +14610,7 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
       if (numDelegates === 0) {
         
         if (session && session.isConnected() && stream && !stream.destroyed) {
-            
+          
           session._.subscriberDestroy(stream, subscriber);
         }
 
@@ -14180,7 +14623,7 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
     this.off();
   };
 
-  this.getDataChannel = function (label, options, completion) {
+  this.getDataChannel = function(label, options, completion) {
     _peerConnection.getDataChannel(label, options, completion);
   };
 
@@ -14204,59 +14647,101 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
   };
 
   
-  this.init = function() {
-    _peerConnection = OT.PeerConnections.add(remoteConnection, stream.streamId, {});
+  this.init = function(completion) {
+    var pcConfig = {};
 
-    _peerConnection.on({
-      close: _onPeerClosed,
-      streamAdded: _onRemoteStreamAdded,
-      streamRemoved: _onRemoteStreamRemoved,
-      error: _onPeerError,
-      qos: _onQOS
-    }, this);
-
-    var numDelegates = _peerConnection.registerMessageDelegate(_relayMessageToPeer);
-
-      
-    if (_peerConnection.remoteStreams().length > 0) {
-      OT.$.forEach(_peerConnection.remoteStreams(), _onRemoteStreamAdded, this);
-    } else if (numDelegates === 1) {
-      
-      
-
-      var channelsToSubscribeTo;
-
-      if (properties.subscribeToVideo || properties.subscribeToAudio) {
-        var audio = stream.getChannelsOfType('audio'),
-            video = stream.getChannelsOfType('video');
-
-        channelsToSubscribeTo = OT.$.map(audio, function(channel) {
-          return {
-            id: channel.id,
-            type: channel.type,
-            active: properties.subscribeToAudio
-          };
-        }).concat(OT.$.map(video, function(channel) {
-          return {
-            id: channel.id,
-            type: channel.type,
-            active: properties.subscribeToVideo,
-            restrictFrameRate: properties.restrictFrameRate !== void 0 ?
-              properties.restrictFrameRate : false
-          };
-        }));
+    _setCertificates(pcConfig, function(err, pcConfigWithCerts) {
+      if (err) {
+        completion(err);
+        return;
       }
 
-      session._.subscriberCreate(stream, subscriber, channelsToSubscribeTo,
-        OT.$.bind(function(err, message) {
-          if (err) {
-            this.trigger('error', err.message, this, 'Subscribe');
+      _peerConnection = OT.PeerConnections.add(
+        remoteConnection,
+        stream.streamId,
+        pcConfigWithCerts
+      );
+
+      _peerConnection.on({
+        close: _onPeerClosed,
+        streamAdded: _onRemoteStreamAdded,
+        streamRemoved: _onRemoteStreamRemoved,
+        error: _onPeerError,
+        qos: _onQOS
+      }, _subscriberPeerConnection);
+
+      var numDelegates = _peerConnection.registerMessageDelegate(_relayMessageToPeer);
+
+      
+      if (_peerConnection.remoteStreams().length > 0) {
+        OT.$.forEach(
+          _peerConnection.remoteStreams(),
+          _onRemoteStreamAdded,
+          _subscriberPeerConnection
+        );
+      } else if (numDelegates === 1) {
+        
+        
+
+        var channelsToSubscribeTo;
+
+        if (properties.subscribeToVideo || properties.subscribeToAudio) {
+          var audio = stream.getChannelsOfType('audio'),
+              video = stream.getChannelsOfType('video');
+
+          channelsToSubscribeTo = OT.$.map(audio, function(channel) {
+            return {
+              id: channel.id,
+              type: channel.type,
+              active: properties.subscribeToAudio
+            };
+          }).concat(OT.$.map(video, function(channel) {
+            var props = {
+              id: channel.id,
+              type: channel.type,
+              active: properties.subscribeToVideo,
+              restrictFrameRate: properties.restrictFrameRate !== void 0 ?
+                properties.restrictFrameRate : false
+            };
+
+            if (properties.maxFrameRate !== void 0) {
+              props.maxFrameRate = parseFloat(properties.maxFrameRate);
+            }
+
+            if (properties.maxHeight !== void 0) {
+              props.maxHeight = parseInt(properties.maxHeight, 10);
+            }
+
+            if (properties.maxWidth !== void 0) {
+              props.maxWidth = parseInt(properties.maxWidth, 10);
+            }
+
+            return props;
+          }));
+        }
+
+        session._.subscriberCreate(
+          stream,
+          subscriber,
+          channelsToSubscribeTo,
+            function(err, message) {
+            if (err) {
+              _subscriberPeerConnection.trigger(
+                'error',
+                err.message,
+                _subscriberPeerConnection,
+                'Subscribe'
+              );
+            }
+            if (_peerConnection) {
+              _peerConnection.setIceServers(OT.Raptor.parseIceServers(message));
+            }
           }
-          if (_peerConnection) {
-            _peerConnection.setIceServers(OT.Raptor.parseIceServers(message));
-          }
-        }, this));
-    }
+        );
+
+        completion(undefined, _subscriberPeerConnection);
+      }
+    });
   };
 };
 
@@ -14282,8 +14767,12 @@ OT.SubscriberPeerConnection = function(remoteConnection, session, stream,
 
 
 
-OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRTCStream, channels) {
-  var _peerConnection,
+
+
+OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRTCStream, channels,
+    numberOfSimulcastStreams) {
+  var _publisherPeerConnection = this,
+      _peerConnection,
       _hasRelayCandidates = false,
       _subscriberId = session._.subscriberMap[remoteConnection.id + '_' + streamId],
       _onPeerClosed,
@@ -14304,7 +14793,7 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
   };
 
   _relayMessageToPeer = OT.$.bind(function(type, payload, uri) {
-    if (!_hasRelayCandidates){
+    if (!_hasRelayCandidates) {
       var extractCandidates = type === OT.Raptor.Actions.CANDIDATE ||
                               type === OT.Raptor.Actions.OFFER ||
                               type === OT.Raptor.Actions.ANSWER ||
@@ -14316,7 +14805,7 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
       }
     }
 
-    switch(type) {
+    switch (type) {
       case OT.Raptor.Actions.ANSWER:
       case OT.Raptor.Actions.PRANSWER:
         if (session.sessionInfo.p2pEnabled) {
@@ -14343,7 +14832,7 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
     }
   }, this);
 
-  _onQOS = OT.$.bind(function _onQOS (parsedStats, prevStats) {
+  _onQOS = OT.$.bind(function _onQOS(parsedStats, prevStats) {
     this.trigger('qos', remoteConnection, parsedStats, prevStats);
   }, this);
 
@@ -14351,7 +14840,7 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
 
   
 
-  this.getDataChannel = function (label, options, completion) {
+  this.getDataChannel = function(label, options, completion) {
     _peerConnection.getDataChannel(label, options, completion);
   };
 
@@ -14370,20 +14859,32 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
   };
 
   
-  this.init = function(iceServers) {
-    _peerConnection = OT.PeerConnections.add(remoteConnection, streamId, {
+  this.init = function(iceServers, completion) {
+    var pcConfig = {
       iceServers: iceServers,
-      channels: channels
+      channels: channels,
+      numberOfSimulcastStreams: numberOfSimulcastStreams
+    };
+
+    _setCertificates(pcConfig, function(err, pcConfigWithCerts) {
+      if (err) {
+        completion(err);
+        return;
+      }
+
+      _peerConnection = OT.PeerConnections.add(remoteConnection, streamId, pcConfigWithCerts);
+
+      _peerConnection.on({
+        close: _onPeerClosed,
+        error: _onPeerError,
+        qos: _onQOS
+      }, _publisherPeerConnection);
+
+      _peerConnection.registerMessageDelegate(_relayMessageToPeer);
+      _peerConnection.addLocalStream(webRTCStream);
+
+      completion(undefined, _publisherPeerConnection);
     });
-
-    _peerConnection.on({
-      close: _onPeerClosed,
-      error: _onPeerError,
-      qos: _onQOS
-    }, this);
-
-    _peerConnection.registerMessageDelegate(_relayMessageToPeer);
-    _peerConnection.addLocalStream(webRTCStream);
 
     this.remoteConnection = function() {
       return remoteConnection;
@@ -14392,7 +14893,6 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
     this.hasRelayCandidates = function() {
       return _hasRelayCandidates;
     };
-
   };
 
   this.getSenders = function() {
@@ -14407,44 +14907,6 @@ OT.PublisherPeerConnection = function(remoteConnection, session, streamId, webRT
 
 
 
-
-var videoContentResizesMixin = function(self, domElement) {
-
-  var width = domElement.videoWidth,
-      height = domElement.videoHeight,
-      stopped = true;
-
-  function actor() {
-    if (stopped) {
-      return;
-    }
-    if (width !== domElement.videoWidth || height !== domElement.videoHeight) {
-      self.trigger('videoDimensionsChanged',
-        { width: width, height: height },
-        { width: domElement.videoWidth, height: domElement.videoHeight }
-      );
-      width = domElement.videoWidth;
-      height = domElement.videoHeight;
-    }
-    waiter();
-  }
-
-  function waiter() {
-    self.whenTimeIncrements(function() {
-      window.requestAnimationFrame(actor);
-    });
-  }
-
-  self.startObservingSize = function() {
-    stopped = false;
-    waiter();
-  };
-
-  self.stopObservingSize = function() {
-    stopped = true;
-  };
-
-};
 
 (function(window) {
 
@@ -14487,12 +14949,12 @@ var videoContentResizesMixin = function(self, domElement) {
   
   
   OT.VideoElement = function( options) {
-    var _options = OT.$.defaults( options && !OT.$.isFunction(options) ? options : {}, {
+    var _options = OT.$.defaults(options && !OT.$.isFunction(options) ? options : {}, {
         fallbackText: 'Sorry, Web RTC is not available in your browser'
       }),
 
-      errorHandler = OT.$.isFunction(arguments[arguments.length-1]) ?
-                                    arguments[arguments.length-1] : void 0,
+      errorHandler = OT.$.isFunction(arguments[arguments.length - 1]) ?
+                                    arguments[arguments.length - 1] : void 0,
 
       orientationHandler = OT.$.bind(function(orientation) {
         this.trigger('orientationChanged', orientation);
@@ -14503,7 +14965,7 @@ var videoContentResizesMixin = function(self, domElement) {
                             new NativeDOMVideoElement(_options, errorHandler, orientationHandler),
       _streamBound = false,
       _stream,
-      _preInitialisedVolue;
+      _preInitialisedVolume;
 
     OT.$.eventing(this);
 
@@ -14590,9 +15052,9 @@ var videoContentResizesMixin = function(self, domElement) {
 
         _streamBound = true;
 
-        if (_preInitialisedVolue) {
-          this.setAudioVolume(_preInitialisedVolue);
-          _preInitialisedVolue = null;
+        if (typeof _preInitialisedVolume !== 'undefined') {
+          this.setAudioVolume(_preInitialisedVolume);
+          _preInitialisedVolume = undefined;
         }
 
         _videoElement.on('aspectRatioAvailable',
@@ -14607,25 +15069,32 @@ var videoContentResizesMixin = function(self, domElement) {
     this.unbindStream = function() {
       if (!_stream) return this;
 
+      _stream.onended = null;
       _stream = null;
       _videoElement.unbindStream();
       return this;
     };
 
-    this.setAudioVolume = function (value) {
-      if (_streamBound) _videoElement.setAudioVolume( OT.$.roundFloat(value / 100, 2) );
-      else _preInitialisedVolue = value;
+    this.setAudioVolume = function(value) {
+      if (_streamBound) _videoElement.setAudioVolume(OT.$.roundFloat(value / 100, 2));
+      else _preInitialisedVolume = parseFloat(value);
 
       return this;
     };
 
-    this.getAudioVolume = function () {
-      if (_streamBound) return parseInt(_videoElement.getAudioVolume() * 100, 10);
-      else return _preInitialisedVolue || 50;
+    this.getAudioVolume = function() {
+      if (_streamBound) {
+        return parseInt(_videoElement.getAudioVolume() * 100, 10);
+      }
+
+      if (typeof _preInitialisedVolume !== 'undefined') {
+        return _preInitialisedVolume;
+      }
+
+      return 50;
     };
 
-
-    this.whenTimeIncrements = function (callback, context) {
+    this.whenTimeIncrements = function(callback, context) {
       _videoElement.whenTimeIncrements(callback, context);
       return this;
     };
@@ -14635,7 +15104,7 @@ var videoContentResizesMixin = function(self, domElement) {
       return this;
     };
 
-    this.destroy = function () {
+    this.destroy = function() {
       
       this.off();
 
@@ -14644,9 +15113,9 @@ var videoContentResizesMixin = function(self, domElement) {
     };
   };
 
-  var PluginVideoElement = function PluginVideoElement (options,
-                                                        errorHandler,
-                                                        orientationChangedHandler) {
+  var PluginVideoElement = function PluginVideoElement(options,
+                                                       errorHandler,
+                                                       orientationChangedHandler) {
     var _videoProxy,
         _parentDomElement,
         _ratioAvailable = false,
@@ -14742,7 +15211,7 @@ var videoContentResizesMixin = function(self, domElement) {
     };
 
     this.onRatioAvailable = function(callback) {
-      if(_ratioAvailable) {
+      if (_ratioAvailable) {
         callback();
       } else {
         _ratioAvailableListeners.push(callback);
@@ -14756,10 +15225,9 @@ var videoContentResizesMixin = function(self, domElement) {
     };
   };
 
-
-  var NativeDOMVideoElement = function NativeDOMVideoElement (options,
-                                                              errorHandler,
-                                                              orientationChangedHandler) {
+  var NativeDOMVideoElement = function NativeDOMVideoElement(options,
+                                                             errorHandler,
+                                                             orientationChangedHandler) {
     var _domElement,
         _videoElementMovedWarning = false;
 
@@ -14776,7 +15244,7 @@ var videoContentResizesMixin = function(self, domElement) {
         
         
         _playVideoOnPause = function() {
-          if(!_videoElementMovedWarning) {
+          if (!_videoElementMovedWarning) {
             OT.warn('Video element paused, auto-resuming. If you intended to do this, ' +
                       'use publishVideo(false) or subscribeToVideo(false) instead.');
 
@@ -14785,7 +15253,6 @@ var videoContentResizesMixin = function(self, domElement) {
 
           _domElement.play();
         };
-
 
     _domElement = createNativeVideoElement(options.fallbackText, options.attributes);
 
@@ -14839,7 +15306,7 @@ var videoContentResizesMixin = function(self, domElement) {
       document.body.appendChild(canvas);
       try {
         canvas.getContext('2d').drawImage(_domElement, 0, 0, canvas.width, canvas.height);
-      } catch(err) {
+      } catch (err) {
         OT.warn('Cannot get image data yet');
         return null;
       }
@@ -14859,28 +15326,41 @@ var videoContentResizesMixin = function(self, domElement) {
     
     this.bindToStream = function(webRtcStream, completion) {
       var _this = this;
+
       bindStreamToNativeVideoElement(_domElement, webRtcStream, function(err) {
         if (err) {
           completion(err);
           return;
         }
 
+        if (!_domElement) {
+          completion('Can\'t bind because _domElement no longer exists');
+          return;
+        }
+
         _this.startObservingSize();
 
-        webRtcStream.onended = function() {
+        function handleEnded() {
+          webRtcStream.onended = null;
+
+          if (_domElement) {
+            _domElement.onended = null;
+          }
+
           _this.trigger('mediaStopped', this);
-        };
-
-
-        if (_domElement) {
-          _domElement.addEventListener('error', _onVideoError, false);
         }
+
+        
+        
+        webRtcStream.onended = handleEnded;
+        _domElement.onended = handleEnded;
+
+        _domElement.addEventListener('error', _onVideoError, false);
         completion(null);
       });
 
       return this;
     };
-
 
     
     this.unbindStream = function() {
@@ -14951,7 +15431,7 @@ var videoContentResizesMixin = function(self, domElement) {
     };
 
     this.onRatioAvailable = function(callback) {
-      if(ratioAvailable) {
+      if (ratioAvailable) {
         callback();
       } else {
         ratioAvailableListeners.push(callback);
@@ -14959,8 +15439,8 @@ var videoContentResizesMixin = function(self, domElement) {
     };
   };
 
+  
 
-
   
   
   
@@ -14968,10 +15448,10 @@ var videoContentResizesMixin = function(self, domElement) {
   
   
   
-  var canBeOrientatedMixin = function canBeOrientatedMixin (self,
-                                                            getDomElementCallback,
-                                                            orientationChangedHandler,
-                                                            initialOrientation) {
+  var canBeOrientatedMixin = function canBeOrientatedMixin(self,
+                                                           getDomElementCallback,
+                                                           orientationChangedHandler,
+                                                           initialOrientation) {
     var _orientation = initialOrientation;
 
     OT.$.defineProperties(self, {
@@ -14991,7 +15471,7 @@ var videoContentResizesMixin = function(self, domElement) {
           var transform = VideoOrientationTransforms[orientation.videoOrientation] ||
                           VideoOrientationTransforms.ROTATED_NORMAL;
 
-          switch(OT.$.env.name) {
+          switch (OT.$.env.name) {
             case 'Chrome':
             case 'Safari':
               getDomElementCallback().style.webkitTransform = transform;
@@ -15000,8 +15480,7 @@ var videoContentResizesMixin = function(self, domElement) {
             case 'IE':
               if (OT.$.env.version >= 9) {
                 getDomElementCallback().style.msTransform = transform;
-              }
-              else {
+              } else {
                 
                 
                 
@@ -15027,12 +15506,11 @@ var videoContentResizesMixin = function(self, domElement) {
                 
 
                 element.style.filter = 'progid:DXImageTransform.Microsoft.Matrix(' +
-                                          'M11='+costheta+',' +
-                                          'M12='+(-sintheta)+',' +
-                                          'M21='+sintheta+',' +
-                                          'M22='+costheta+',SizingMethod=\'auto expand\')';
+                                          'M11=' + costheta + ',' +
+                                          'M12=' + (-sintheta) + ',' +
+                                          'M21=' + sintheta + ',' +
+                                          'M22=' + costheta + ',SizingMethod=\'auto expand\')';
               }
-
 
               break;
 
@@ -15078,7 +15556,7 @@ var videoContentResizesMixin = function(self, domElement) {
       }
 
       for (var key in attributes) {
-        if(!attributes.hasOwnProperty(key)) {
+        if (!attributes.hasOwnProperty(key)) {
           continue;
         }
         videoElement.setAttribute(key, attributes[key]);
@@ -15087,7 +15565,6 @@ var videoContentResizesMixin = function(self, domElement) {
 
     return videoElement;
   }
-
 
   
   var _videoErrorCodes = {};
@@ -15117,36 +15594,33 @@ var videoContentResizesMixin = function(self, domElement) {
         loadedEvent = webRtcStream.getVideoTracks().length > minVideoTracksForTimeUpdate ?
           'timeupdate' : 'loadedmetadata';
 
-    var cleanup = function cleanup () {
+    var cleanup = function cleanup() {
           clearTimeout(timeout);
           videoElement.removeEventListener(loadedEvent, onLoad, false);
           videoElement.removeEventListener('error', onError, false);
           webRtcStream.onended = null;
+          videoElement.onended = null;
         },
 
-        onLoad = function onLoad () {
+        onLoad = function onLoad() {
           cleanup();
           completion(null);
         },
 
-        onError = function onError (event) {
+        onError = function onError(event) {
           cleanup();
           unbindNativeStream(videoElement);
           completion('There was an unexpected problem with the Video Stream: ' +
             videoElementErrorCodeToStr(event.target.error.code));
         },
 
-        onStoppedLoading = function onStoppedLoading () {
+        onStoppedLoading = function onStoppedLoading() {
           
           
           cleanup();
           unbindNativeStream(videoElement);
           completion('Stream ended while trying to bind it to a video element.');
         };
-
-    videoElement.addEventListener(loadedEvent, onLoad, false);
-    videoElement.addEventListener('error', onError, false);
-    webRtcStream.onended = onStoppedLoading;
 
     
     if (videoElement.srcObject !== void 0) {
@@ -15156,10 +15630,16 @@ var videoContentResizesMixin = function(self, domElement) {
     } else {
       videoElement.src = window.URL.createObjectURL(webRtcStream);
     }
+
+    videoElement.addEventListener(loadedEvent, onLoad, false);
+    videoElement.addEventListener('error', onError, false);
+    webRtcStream.onended = onStoppedLoading;
+    videoElement.onended = onStoppedLoading;
   }
 
-
   function unbindNativeStream(videoElement) {
+    videoElement.onended = null;
+
     if (videoElement.srcObject !== void 0) {
       videoElement.srcObject = null;
     } else if (videoElement.mozSrcObject !== void 0) {
@@ -15168,7 +15648,6 @@ var videoContentResizesMixin = function(self, domElement) {
       window.URL.revokeObjectURL(videoElement.src);
     }
   }
-
 
 })(window);
 
@@ -15180,9 +15659,9 @@ var videoContentResizesMixin = function(self, domElement) {
 
 
 !(function() {
+  
 
-
-  var defaultAspectRatio = 4.0/3.0,
+  var defaultAspectRatio = 4.0 / 3.0,
       miniWidth = 128,
       miniHeight = 128,
       microWidth = 64,
@@ -15267,7 +15746,6 @@ var videoContentResizesMixin = function(self, domElement) {
 
       var cssProps = {left: '', top: ''};
 
-
       if (OTPlugin.isInstalled()) {
         intrinsicRatio = intrinsicRatio || defaultAspectRatio;
 
@@ -15310,12 +15788,12 @@ var videoContentResizesMixin = function(self, domElement) {
     var w = parseInt(width, 10),
         h = parseInt(height, 10);
 
-    if(w < microWidth || h < microHeight) {
+    if (w < microWidth || h < microHeight) {
       OT.$.addClass(container, 'OT_micro');
     } else {
       OT.$.removeClass(container, 'OT_micro');
     }
-    if(w < miniWidth || h < miniHeight) {
+    if (w < miniWidth || h < miniHeight) {
       OT.$.addClass(container, 'OT_mini');
     } else {
       OT.$.removeClass(container, 'OT_mini');
@@ -15350,16 +15828,16 @@ var videoContentResizesMixin = function(self, domElement) {
       container.style.backgroundColor = '#000000';
       document.body.appendChild(container);
     } else {
-      if(!(insertMode == null || insertMode === 'replace')) {
+      if (!(insertMode == null || insertMode === 'replace')) {
         var placeholder = document.createElement('div');
         placeholder.id = ('OT_' + OT.$.uuid());
-        if(insertMode === 'append') {
+        if (insertMode === 'append') {
           container.appendChild(placeholder);
           container = placeholder;
-        } else if(insertMode === 'before') {
+        } else if (insertMode === 'before') {
           container.parentNode.insertBefore(placeholder, container);
           container = placeholder;
-        } else if(insertMode === 'after') {
+        } else if (insertMode === 'after') {
           container.parentNode.insertBefore(placeholder, container.nextSibling);
           container = placeholder;
         }
@@ -15399,13 +15877,13 @@ var videoContentResizesMixin = function(self, domElement) {
       height = properties.height;
 
       if (width) {
-        if (typeof(width) === 'number') {
+        if (typeof width === 'number') {
           width = width + 'px';
         }
       }
 
       if (height) {
-        if (typeof(height) === 'number') {
+        if (typeof height === 'number') {
           height = height + 'px';
         }
       }
@@ -15462,7 +15940,6 @@ var videoContentResizesMixin = function(self, domElement) {
               videoElement.isRotated());
           }
         })[0];
-
 
       
       
@@ -15544,6 +16021,11 @@ var videoContentResizesMixin = function(self, domElement) {
     widgetView.bindVideo = function(webRTCStream, options, completion) {
       
       
+
+      if (typeof options.audioVolume !== 'undefined') {
+        options.audioVolume = parseFloat(options.audioVolume);
+      }
+
       if (videoElement) {
         videoElement.destroy();
         videoElement = null;
@@ -15555,7 +16037,9 @@ var videoContentResizesMixin = function(self, domElement) {
       var video = new OT.VideoElement({attributes: options}, onError);
 
       
-      if (options.audioVolume) video.setAudioVolume(options.audioVolume);
+      if (typeof options.audioVolume !== 'undefined') {
+        video.setAudioVolume(options.audioVolume);
+      }
 
       
       video.audioChannelType('telephony');
@@ -15612,7 +16096,7 @@ var videoContentResizesMixin = function(self, domElement) {
           return !OT.$.isDisplayNone(posterContainer);
         },
         set: function(newValue) {
-          if(newValue) {
+          if (newValue) {
             OT.$.show(posterContainer);
           } else {
             OT.$.hide(posterContainer);
@@ -15673,7 +16157,7 @@ var videoContentResizesMixin = function(self, domElement) {
         (helpMsg ? ' <span class="ot-help-message">' + helpMsg + '</span>' : '') +
         '</p>';
       OT.$.addClass(container, classNames || 'OT_subscriber_error');
-      if(container.querySelector('p').offsetHeight > container.offsetHeight) {
+      if (container.querySelector('p').offsetHeight > container.offsetHeight) {
         container.querySelector('span').style.display = 'none';
       }
     };
@@ -15694,13 +16178,8 @@ if (!OT.properties) {
     'properties file.');
 }
 
-OT.useSSL = function () {
-  return OT.properties.supportSSL && (window.location.protocol.indexOf('https') >= 0 ||
-        window.location.protocol.indexOf('chrome-extension') >= 0);
-};
 
-
-OT.properties = function(properties) {
+OT.properties = (function(properties) {
   var props = OT.$.clone(properties);
 
   props.debug = properties.debug === 'true' || properties.debug === true;
@@ -15716,7 +16195,7 @@ OT.properties = function(properties) {
   }
 
   if (!props.assetURL) {
-    if (OT.useSSL()) {
+    if (OT.properties.supportSSL) {
       props.assetURL = props.cdnURLSSL + '/webrtc/' + props.version;
     } else {
       props.assetURL = props.cdnURL + '/webrtc/' + props.version;
@@ -15733,7 +16212,7 @@ OT.properties = function(properties) {
   if (!props.cssURL) props.cssURL = props.assetURL + '/css/TB.min.css';
 
   return props;
-}(OT.properties);
+})(OT.properties);
 
 
 
@@ -15745,11 +16224,11 @@ OT.properties = function(properties) {
   var currentGuidStorage,
       currentGuid;
 
-  var isInvalidStorage = function isInvalidStorage (storageInterface) {
+  var isInvalidStorage = function isInvalidStorage(storageInterface) {
     return !(OT.$.isFunction(storageInterface.get) && OT.$.isFunction(storageInterface.set));
   };
 
-  var getClientGuid = function getClientGuid (completion) {
+  var getClientGuid = function getClientGuid(completion) {
     if (currentGuid) {
       completion(null, currentGuid);
       return;
@@ -15798,7 +16277,7 @@ OT.properties = function(properties) {
 
 
 
-  OT.overrideGuidStorage = function (storageInterface) {
+  OT.overrideGuidStorage = function(storageInterface) {
     if (isInvalidStorage(storageInterface)) {
       throw new Error('The storageInterface argument does not seem to be valid, ' +
                                         'it must implement get and set methods');
@@ -15824,7 +16303,7 @@ OT.properties = function(properties) {
   };
 
   if (!OT._) OT._ = {};
-  OT._.getClientGuid = function (completion) {
+  OT._.getClientGuid = function(completion) {
     getClientGuid(function(error, guid) {
       if (error) {
         completion(error);
@@ -15843,15 +16322,13 @@ OT.properties = function(properties) {
 
           currentGuid = guid;
         });
-      }
-      else if (!currentGuid) {
+      } else if (!currentGuid) {
         currentGuid = guid;
       }
 
       completion(null, currentGuid);
     });
   };
-
 
   
   
@@ -15926,7 +16403,7 @@ OT.properties = function(properties) {
   mapVendorErrorName = function mapVendorErrorName(vendorErrorName, vendorErrors) {
     var errorName, errorMessage;
 
-    if(vendorErrors.hasOwnProperty(vendorErrorName)) {
+    if (vendorErrors.hasOwnProperty(vendorErrorName)) {
       errorName = vendorErrors[vendorErrorName];
     } else {
       
@@ -15934,7 +16411,7 @@ OT.properties = function(properties) {
       errorName = vendorErrorName;
     }
 
-    if(gumNamesToMessages.hasOwnProperty(errorName)) {
+    if (gumNamesToMessages.hasOwnProperty(errorName)) {
       errorMessage = gumNamesToMessages[errorName];
     } else {
       errorMessage = 'Unknown Error while getting user media';
@@ -15971,7 +16448,7 @@ OT.properties = function(properties) {
     if (!constraints || !OT.$.isObject(constraints)) return true;
 
     for (var key in constraints) {
-      if(!constraints.hasOwnProperty(key)) {
+      if (!constraints.hasOwnProperty(key)) {
         continue;
       }
       if (constraints[key]) return false;
@@ -15979,7 +16456,6 @@ OT.properties = function(properties) {
 
     return true;
   };
-
 
   
   
@@ -16016,7 +16492,7 @@ OT.properties = function(properties) {
 
     var getUserMedia = nativeGetUserMedia;
 
-    if(OT.$.isFunction(customGetUserMedia)) {
+    if (OT.$.isFunction(customGetUserMedia)) {
       getUserMedia = customGetUserMedia;
     }
 
@@ -16104,6 +16580,138 @@ OT.properties = function(properties) {
 
 
 
+!(function(window) {
+
+  
+
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  var deviceKindsMap = {
+    audio: 'audioInput',
+    video: 'videoInput',
+    audioinput: 'audioInput',
+    videoinput: 'videoInput',
+    audioInput: 'audioInput',
+    videoInput: 'videoInput'
+  };
+
+  var getNativeEnumerateDevices = function() {
+    if (navigator.mediaDevices) {
+      return navigator.mediaDevices.enumerateDevices;
+    } else if (OT.$.hasCapabilities('otplugin')) {
+      return OTPlugin.mediaDevices.enumerateDevices;
+    } else if (window.MediaStreamTrack && window.MediaStreamTrack.getSources) {
+      return window.MediaStreamTrack.getSources;
+    }
+  };
+
+  var enumerateDevices = function(completion) {
+    var fn = getNativeEnumerateDevices();
+
+    if (navigator.mediaDevices && OT.$.isFunction(fn)) {
+      
+      fn = function(completion) {
+        navigator.mediaDevices.enumerateDevices().then(function(devices) {
+          completion(void 0, devices);
+        })['catch'](function(err) {
+          completion(err);
+        });
+      };
+    } else if (window.MediaStreamTrack && window.MediaStreamTrack.getSources) {
+      fn = function(completion) {
+        window.MediaStreamTrack.getSources(function(devices) {
+          completion(void 0, devices.map(function(device) {
+            return OT.$.clone(device);
+          }));
+        });
+      };
+    }
+
+    return fn(completion);
+  };
+
+  var fakeShouldAskForDevices = function fakeShouldAskForDevices(callback) {
+    setTimeout(OT.$.bind(callback, null, { video: true, audio: true }));
+  };
+
+  
+  
+  OT.$.registerCapability('enumerateDevices', function() {
+    return OT.$.isFunction(getNativeEnumerateDevices());
+  });
+
+  OT.$.getMediaDevices = function(completion, customGetDevices) {
+    if (!OT.$.hasCapabilities('enumerateDevices')) {
+      completion(new Error('This browser does not support enumerateDevices APIs'));
+      return;
+    }
+
+    var getDevices = OT.$.isFunction(customGetDevices) ? customGetDevices
+                                                       : enumerateDevices;
+
+    getDevices(function(err, devices) {
+      if (err) {
+        completion(err);
+        return;
+      }
+
+      
+      var filteredDevices = OT.$(devices).map(function(device) {
+        return {
+          deviceId: device.deviceId || device.id,
+          label: device.label,
+          kind: deviceKindsMap[device.kind]
+        };
+      }).filter(function(device) {
+        return device.kind === 'audioInput' || device.kind === 'videoInput';
+      });
+
+      completion(void 0, filteredDevices.get());
+    });
+  };
+
+  OT.$.shouldAskForDevices = function(callback) {
+    if (OT.$.hasCapabilities('enumerateDevices')) {
+      OT.$.getMediaDevices(function(err, devices) {
+        if (err) {
+          
+          
+          fakeShouldAskForDevices(callback);
+          return;
+        }
+
+        var hasAudio = OT.$.some(devices, function(device) {
+          return device.kind === 'audioInput';
+        });
+
+        var hasVideo = OT.$.some(devices, function(device) {
+          return device.kind === 'videoInput';
+        });
+
+        callback.call(null, { video: hasVideo, audio: hasAudio });
+      });
+
+    } else {
+      
+      OT.$.shouldAskForDevices = fakeShouldAskForDevices;
+      OT.$.shouldAskForDevices(callback);
+    }
+  };
+})(window);
+
+
+
+
+
 
 
 !(function() {
@@ -16139,7 +16747,7 @@ OT.properties = function(properties) {
     var remainingStylesheets = allURLs.length;
     OT.$.forEach(allURLs, function(stylesheetUrl) {
       addCss(document, stylesheetUrl, function() {
-        if(--remainingStylesheets <= 0) {
+        if (--remainingStylesheets <= 0) {
           callback();
         }
       });
@@ -16154,7 +16762,7 @@ OT.properties = function(properties) {
     return el;
   };
 
-  var checkBoxElement = function (classes, nameAndId, onChange) {
+  var checkBoxElement = function(classes, nameAndId, onChange) {
     var checkbox = templateElement.call(this, '', null, 'input');
     checkbox = OT.$(checkbox).on('change', onChange);
 
@@ -16235,8 +16843,7 @@ OT.properties = function(properties) {
       function onToggleEULA() {
         if (checkbox.checked) {
           enableButtons();
-        }
-        else {
+        } else {
           disableButtons();
         }
       }
@@ -16399,18 +17006,18 @@ OT.properties = function(properties) {
 
       addDialogCSS(document, [], function() {
         document.body.appendChild(root);
-        if(progressValue != null) {
+        if (progressValue != null) {
           modal.setUpdateProgress(progressValue);
         }
       });
     }));
 
     modal.setUpdateProgress = function(newProgress) {
-      if(progressBar && progressText) {
-        if(newProgress > 99) {
+      if (progressBar && progressText) {
+        if (newProgress > 99) {
           OT.$.css(progressBar, 'width', '');
           progressText.innerHTML = '100%';
-        } else if(newProgress < 1) {
+        } else if (newProgress < 1) {
           OT.$.css(progressBar, 'width', '0%');
           progressText.innerHTML = '0%';
         } else {
@@ -16439,7 +17046,7 @@ OT.properties = function(properties) {
 
       var msgs;
 
-      if(error) {
+      if (error) {
         msgs = ['Update Failed.', error + '' || 'NO ERROR'];
       } else {
         msgs = ['Update Complete.',
@@ -16469,78 +17076,8 @@ OT.properties = function(properties) {
 
   };
 
-
 })();
 
-
-
-
-
-!(function(window) {
-
-  
-
-  
-
-  
-  
-  
-  
-  
-
-  var chromeToW3CDeviceKinds = {
-    audio: 'audioInput',
-    video: 'videoInput'
-  };
-
-
-  OT.$.shouldAskForDevices = function(callback) {
-    var MST = window.MediaStreamTrack;
-
-    if(MST != null && OT.$.isFunction(MST.getSources)) {
-      window.MediaStreamTrack.getSources(function(sources) {
-        var hasAudio = sources.some(function(src) {
-          return src.kind === 'audio';
-        });
-
-        var hasVideo = sources.some(function(src) {
-          return src.kind === 'video';
-        });
-
-        callback.call(null, { video: hasVideo, audio: hasAudio });
-      });
-
-    } else {
-      
-      OT.$.shouldAskForDevices = function(callback) {
-        setTimeout(OT.$.bind(callback, null, { video: true, audio: true }));
-      };
-
-      OT.$.shouldAskForDevices(callback);
-    }
-  };
-
-
-  OT.$.getMediaDevices = function(callback) {
-    if(OT.$.hasCapabilities('getMediaDevices')) {
-      window.MediaStreamTrack.getSources(function(sources) {
-        var filteredSources = OT.$.filter(sources, function(source) {
-          return chromeToW3CDeviceKinds[source.kind] != null;
-        });
-        callback(void 0, OT.$.map(filteredSources, function(source) {
-          return {
-            deviceId: source.id,
-            label: source.label,
-            kind: chromeToW3CDeviceKinds[source.kind]
-          };
-        }));
-      });
-    } else {
-      callback(new Error('This browser does not support getMediaDevices APIs'));
-    }
-  };
-
-})(window);
 
 
 
@@ -16556,140 +17093,6 @@ var loadCSS = function loadCSS(cssURL) {
   var head = document.head || document.getElementsByTagName('head')[0];
   head.appendChild(style);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-OT.$.registerCapability('getUserMedia', function() {
-  if (OT.$.env === 'Node') return false;
-  return !!(navigator.webkitGetUserMedia ||
-            navigator.mozGetUserMedia ||
-            OTPlugin.isInstalled());
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-OT.$.registerCapability('PeerConnection', function() {
-  if (OT.$.env === 'Node') {
-    return false;
-  }
-  else if (typeof(window.webkitRTCPeerConnection) === 'function' &&
-                    !!window.webkitRTCPeerConnection.prototype.addStream) {
-    return true;
-  } else if (typeof(window.mozRTCPeerConnection) === 'function' && OT.$.env.version > 20.0) {
-    return true;
-  } else {
-    return OTPlugin.isInstalled();
-  }
-});
-
-
-
-
-
-
-
-OT.$.registerCapability('webrtc', function() {
-  if (OT.properties) {
-    var minimumVersions = OT.properties.minimumVersion || {},
-        minimumVersion = minimumVersions[OT.$.env.name.toLowerCase()];
-
-    if(minimumVersion && OT.$.env.versionGreaterThan(minimumVersion)) {
-      OT.debug('Support for', OT.$.env.name, 'is disabled because we require',
-        minimumVersion, 'but this is', OT.$.env.version);
-      return false;
-    }
-  }
-
-  if (OT.$.env === 'Node') {
-    
-    return true;
-  }
-
-  return OT.$.hasCapabilities('getUserMedia', 'PeerConnection');
-});
-
-
-
-
-
-
-
-
-
-
-
-OT.$.registerCapability('bundle', function() {
-  return OT.$.hasCapabilities('webrtc') &&
-            (OT.$.env.name === 'Chrome' ||
-              OT.$.env.name === 'Node' ||
-              OTPlugin.isInstalled());
-});
-
-
-
-
-
-
-
-
-
-
-OT.$.registerCapability('RTCPMux', function() {
-  return OT.$.hasCapabilities('webrtc') &&
-              (OT.$.env.name === 'Chrome' ||
-                OT.$.env.name === 'Node' ||
-                OTPlugin.isInstalled());
-});
-
-
-
-
-
-OT.$.registerCapability('getMediaDevices', function() {
-  return OT.$.isFunction(window.MediaStreamTrack) &&
-            OT.$.isFunction(window.MediaStreamTrack.getSources);
-});
-
-
-OT.$.registerCapability('audioOutputLevelStat', function() {
-  return OT.$.env.name === 'Chrome' || OT.$.env.name === 'IE';
-});
-
-OT.$.registerCapability('webAudioCapableRemoteStream', function() {
-  return OT.$.env.name === 'Firefox';
-});
-
-OT.$.registerCapability('webAudio', function() {
-  return 'AudioContext' in window;
-});
-
 
 
 
@@ -16723,8 +17126,8 @@ OT.Config = (function() {
         if (_script) {
           _script.onload = _script.onreadystatechange = null;
 
-          if ( _head && _script.parentNode ) {
-            _head.removeChild( _script );
+          if (_head && _script.parentNode) {
+            _head.removeChild(_script);
           }
 
           _script = undefined;
@@ -16733,8 +17136,8 @@ OT.Config = (function() {
 
       _onLoad = function() {
         
-        if (_script.readyState && !/loaded|complete/.test( _script.readyState )) {
-            
+        if (_script.readyState && !/loaded|complete/.test(_script.readyState)) {
+          
           return;
         }
 
@@ -16782,19 +17185,18 @@ OT.Config = (function() {
       _loaded = false;
 
       setTimeout(function() {
-        _script = document.createElement( 'script' );
+        _script = document.createElement('script');
         _script.async = 'async';
         _script.src = configUrl;
         _script.onload = _script.onreadystatechange = OT.$.bind(_onLoad, _this);
         _script.onerror = OT.$.bind(_onLoadError, _this);
         _head.appendChild(_script);
-      },1);
+      }, 1);
 
       _loadTimer = setTimeout(function() {
         _this._onLoadTimeout();
       }, this.loadTimeout);
     },
-
 
     isLoaded: function() {
       return _loaded;
@@ -16848,6 +17250,121 @@ OT.Config = (function() {
 
 
 
+
+
+
+
+
+
+
+OT.$.registerCapability('getUserMedia', function() {
+  if (OT.$.env === 'Node') return false;
+  return !!(navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia ||
+            OTPlugin.isInstalled());
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OT.$.registerCapability('PeerConnection', function() {
+  if (OT.$.env === 'Node') {
+    return false;
+  } else if (typeof window.webkitRTCPeerConnection === 'function' &&
+                    !!window.webkitRTCPeerConnection.prototype.addStream) {
+    return true;
+  } else if (typeof window.mozRTCPeerConnection === 'function' && OT.$.env.version > 20.0) {
+    return true;
+  } else {
+    return OTPlugin.isInstalled();
+  }
+});
+
+
+
+
+
+OT.$.registerCapability('webrtc', function() {
+  if (OT.properties) {
+    var minimumVersions = OT.properties.minimumVersion || {},
+        minimumVersion = minimumVersions[OT.$.env.name.toLowerCase()];
+
+    if (minimumVersion && OT.$.env.versionGreaterThan(minimumVersion)) {
+      OT.debug('Support for', OT.$.env.name, 'is disabled because we require',
+        minimumVersion, 'but this is', OT.$.env.version);
+      return false;
+    }
+  }
+
+  if (OT.$.env === 'Node') {
+    
+    return true;
+  }
+
+  return OT.$.hasCapabilities('getUserMedia', 'PeerConnection');
+});
+
+
+
+
+
+
+
+
+
+
+OT.$.registerCapability('bundle', function() {
+  return OT.$.hasCapabilities('webrtc') &&
+            (OT.$.env.name === 'Chrome' ||
+              OT.$.env.name === 'Node' ||
+              OTPlugin.isInstalled());
+});
+
+
+
+
+
+
+
+
+
+
+OT.$.registerCapability('RTCPMux', function() {
+  return OT.$.hasCapabilities('webrtc') &&
+              (OT.$.env.name === 'Chrome' ||
+                OT.$.env.name === 'Node' ||
+                OTPlugin.isInstalled());
+});
+
+OT.$.registerCapability('audioOutputLevelStat', function() {
+  return OT.$.env.name === 'Chrome' || OT.$.env.name === 'IE' || OT.$.env.name === 'Opera';
+});
+
+OT.$.registerCapability('webAudioCapableRemoteStream', function() {
+  return OT.$.env.name === 'Firefox';
+});
+
+OT.$.registerCapability('webAudio', function() {
+  return 'AudioContext' in window;
+});
+
+
+
+
+
+
+
+
 OT.Analytics = function(loggingUrl) {
 
   var LOG_VERSION = '1';
@@ -16868,19 +17385,19 @@ OT.Analytics = function(loggingUrl) {
       }
       var data = OT.$.extend({
         
-        'clientVersion' : 'js-' + OT.properties.version.replace('v', ''),
-        'guid' : guid,
-        'partnerId' : partnerId,
-        'source' : window.location.href,
-        'logVersion' : LOG_VERSION,
-        'clientSystemTime' : new Date().getTime()
+        clientVersion: 'js-' + OT.properties.version.replace('v', ''),
+        guid: guid,
+        partnerId: partnerId,
+        source: window.location.href,
+        logVersion: LOG_VERSION,
+        clientSystemTime: new Date().getTime()
       }, options);
       _analytics.logError(code, type, message, details, data);
     });
 
   };
 
-  this.logEvent = function(options, throttle) {
+  this.logEvent = function(options, throttle, completionHandler) {
     var partnerId = options.partnerId;
 
     if (!options) options = {};
@@ -16894,14 +17411,14 @@ OT.Analytics = function(loggingUrl) {
       
       var data = OT.$.extend({
         
-        'clientVersion' : 'js-' + OT.properties.version.replace('v', ''),
-        'guid' : guid,
-        'partnerId' : partnerId,
-        'source' : window.location.href,
-        'logVersion' : LOG_VERSION,
-        'clientSystemTime' : new Date().getTime()
+        clientVersion: 'js-' + OT.properties.version.replace('v', ''),
+        guid: guid,
+        partnerId: partnerId,
+        source: window.location.href,
+        logVersion: LOG_VERSION,
+        clientSystemTime: new Date().getTime()
       }, options);
-      _analytics.logEvent(data, false, throttle);
+      _analytics.logEvent(data, false, throttle, completionHandler);
     });
   };
 
@@ -16919,13 +17436,13 @@ OT.Analytics = function(loggingUrl) {
       
       var data = OT.$.extend({
         
-        'clientVersion' : 'js-' + OT.properties.version.replace('v', ''),
-        'guid' : guid,
-        'partnerId' : partnerId,
-        'source' : window.location.href,
-        'logVersion' : LOG_VERSION,
-        'clientSystemTime' : new Date().getTime(),
-        'duration' : 0 
+        clientVersion: 'js-' + OT.properties.version.replace('v', ''),
+        guid: guid,
+        partnerId: partnerId,
+        source: window.location.href,
+        logVersion: LOG_VERSION,
+        clientSystemTime: new Date().getTime(),
+        duration: 0 
       }, options);
 
       _analytics.logQOS(data);
@@ -16941,7 +17458,7 @@ OT.Analytics = function(loggingUrl) {
 
 
 
-OT.ConnectivityAttemptPinger = function (options) {
+OT.ConnectivityAttemptPinger = function(options) {
   var _state = 'Initial',
     _previousState,
     states = ['Initial', 'Attempt',  'Success', 'Failure'],
@@ -17071,7 +17588,7 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
     }
   };
 
-  if(showControls === false) {
+  if (showControls === false) {
     initalStyles = {
       buttonDisplayMode: 'off',
       nameDisplayMode: 'off',
@@ -17086,6 +17603,7 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
 
   var _style = new Style(initalStyles, onStyleChange);
 
+  
 
 
 
@@ -17095,9 +17613,8 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
 
 
 
-
-
-
+   
+  
 
 
 
@@ -17112,6 +17629,7 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
     return _style.get(key);
   };
 
+  
 
 
 
@@ -17180,6 +17698,8 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
 
 
 
+   
+  
 
 
 
@@ -17256,25 +17776,8 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if(_readOnly) {
+   
+  if (_readOnly) {
     self.setStyle = function() {
       OT.warn('Calling setStyle() has no effect because the' +
         'showControls option was set to false');
@@ -17283,7 +17786,7 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
   } else {
     self.setStyle = function(keyOrStyleHash, value, silent) {
       var logPayload = {};
-      if (typeof(keyOrStyleHash) !== 'string') {
+      if (typeof keyOrStyleHash !== 'string') {
         _style.setAll(keyOrStyleHash, silent);
         logPayload = keyOrStyleHash;
       } else {
@@ -17297,15 +17800,13 @@ OT.StylableComponent = function(self, initalStyles, showControls, logSetStyleWit
 };
 
 
-
 var Style = function(initalStyles, onStyleChange) {
-
+  
   var _style = {},
       _COMPONENT_STYLES,
       _validStyleValues,
       isValidStyle,
       castValue;
-
 
   _COMPONENT_STYLES = [
     'showMicButton',
@@ -17332,11 +17833,11 @@ var Style = function(initalStyles, onStyleChange) {
   isValidStyle = function(key, value) {
     return key === 'backgroundImageURI' ||
       (_validStyleValues.hasOwnProperty(key) &&
-        OT.$.arrayIndexOf(_validStyleValues[key], value) !== -1 );
+        OT.$.arrayIndexOf(_validStyleValues[key], value) !== -1);
   };
 
   castValue = function(value) {
-    switch(value) {
+    switch (value) {
       case 'true':
         return true;
       case 'false':
@@ -17351,7 +17852,7 @@ var Style = function(initalStyles, onStyleChange) {
     var style = OT.$.clone(_style);
 
     for (var key in style) {
-      if(!style.hasOwnProperty(key)) {
+      if (!style.hasOwnProperty(key)) {
         continue;
       }
       if (OT.$.arrayIndexOf(_COMPONENT_STYLES, key) < 0) {
@@ -17378,7 +17879,7 @@ var Style = function(initalStyles, onStyleChange) {
     var oldValue, newValue;
 
     for (var key in newStyles) {
-      if(!newStyles.hasOwnProperty(key)) {
+      if (!newStyles.hasOwnProperty(key)) {
         continue;
       }
       newValue = castValue(newStyles[key]);
@@ -17442,12 +17943,11 @@ var Style = function(initalStyles, onStyleChange) {
 
 
 
-
 OT.generateSimpleStateMachine = function(initialState, states, transitions) {
   var validStates = states.slice(),
       validTransitions = OT.$.clone(transitions);
 
-  var isValidState = function (state) {
+  var isValidState = function(state) {
     return OT.$.arrayIndexOf(validStates, state) !== -1;
   };
 
@@ -17489,7 +17989,6 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
       return true;
     }
 
-
     this.set = function(newState) {
       if (!handleInvalidStateChanges(newState)) return;
       previousState = currentState;
@@ -17508,63 +18007,63 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
 
 !(function() {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   var validStates,
       validTransitions,
       initialState = 'NotSubscribing';
@@ -17601,7 +18100,7 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
 
   OT.SubscribingState.prototype.isAttemptingToSubscribe = function() {
     return OT.$.arrayIndexOf(
-      [ 'Init', 'ConnectingToPeer', 'BindingRemoteStream' ],
+      ['Init', 'ConnectingToPeer', 'BindingRemoteStream'],
       this.current
     ) !== -1;
   };
@@ -17617,62 +18116,62 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
 
 !(function() {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   var validStates = [
       'NotPublishing', 'GetUserMedia', 'BindingMedia', 'MediaBound',
@@ -17701,7 +18200,7 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
 
   OT.PublishingState.prototype.isAttemptingToPublish = function() {
     return OT.$.arrayIndexOf(
-      [ 'GetUserMedia', 'BindingMedia', 'MediaBound', 'PublishingToSession' ],
+      ['GetUserMedia', 'BindingMedia', 'MediaBound', 'PublishingToSession'],
       this.current) !== -1;
   };
 
@@ -17716,11 +18215,11 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
 
 !(function() {
 
+  
 
+  
 
-
-
-
+  
 
 
 
@@ -17741,7 +18240,7 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
 
           var audioTracks = webRTCStream.getAudioTracks();
 
-          for (var i=0, num=audioTracks.length; i<num; ++i) {
+          for (var i = 0, num = audioTracks.length; i < num; ++i) {
             audioTracks[i].setEnabled(!_muted);
           }
         }
@@ -17762,34 +18261,6 @@ OT.generateSimpleStateMachine = function(initialState, states, transitions) {
   };
 
 })(window);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-OT.IntervalRunner = function(callback, frequency) {
-  var _callback = callback,
-    _frequency = frequency,
-    _intervalId = null;
-
-  this.start = function() {
-    _intervalId = window.setInterval(_callback, 1000 / _frequency);
-  };
-
-  this.stop = function() {
-    window.clearInterval(_intervalId);
-    _intervalId = null;
-  };
-};
 
 
 
@@ -17888,7 +18359,6 @@ OT.IntervalRunner = function(callback, frequency) {
     STREAM_PROPERTY_CHANGED: 'streamPropertyChanged',
     MICROPHONE_LEVEL_CHANGED: 'microphoneLevelChanged',
 
-
     
     RESIZE: 'resize',
     SETTINGS_BUTTON_CLICK: 'settingsButtonClick',
@@ -17912,8 +18382,8 @@ OT.IntervalRunner = function(callback, frequency) {
     DEVICES_SELECTED: 'devicesSelected',
     CLOSE_BUTTON_CLICK: 'closeButtonClick',
 
-    MICLEVEL : 'microphoneActivityLevel',
-    MICGAINCHANGED : 'microphoneGainChanged',
+    MICLEVEL: 'microphoneActivityLevel',
+    MICGAINCHANGED: 'microphoneGainChanged',
 
     
     ENV_LOADED: 'envLoaded',
@@ -17931,6 +18401,7 @@ OT.IntervalRunner = function(callback, frequency) {
     CONNECT_REJECTED: 1007,
     CONNECTION_TIMEOUT: 1008,
     NOT_CONNECTED: 1010,
+    INVALID_PARAMETER: 1011,
     P2P_CONNECTION_FAILED: 1013,
     API_RESPONSE_FAILURE: 1014,
     TERMS_OF_SERVICE_FAILURE: 1026,
@@ -17940,7 +18411,8 @@ OT.IntervalRunner = function(callback, frequency) {
     UNABLE_TO_FORCE_UNPUBLISH: 1530,
     PUBLISHER_ICE_WORKFLOW_FAILED: 1553,
     SUBSCRIBER_ICE_WORKFLOW_FAILED: 1554,
-    UNEXPECTED_SERVER_RESPONSE: 2001
+    UNEXPECTED_SERVER_RESPONSE: 2001,
+    REPORT_ISSUE_ERROR: 2011
   };
 
   
@@ -18131,7 +18603,7 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
 
-  OT.ExceptionEvent = function (type, message, title, code, component, target) {
+  OT.ExceptionEvent = function(type, message, title, code, component, target) {
     OT.Event.call(this, type);
 
     this.message = message;
@@ -18141,19 +18613,17 @@ OT.IntervalRunner = function(callback, frequency) {
     this.target = target;
   };
 
-
-  OT.IssueReportedEvent = function (type, issueId) {
+  OT.IssueReportedEvent = function(type, issueId) {
     OT.Event.call(this, type);
     this.issueId = issueId;
   };
 
   
-  OT.EnvLoadedEvent = function (type) {
+  OT.EnvLoadedEvent = function(type) {
     OT.Event.call(this, type);
   };
 
-
-
+  
 
 
 
@@ -18234,13 +18704,13 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
   var connectionEventPluralDeprecationWarningShown = false;
-  OT.ConnectionEvent = function (type, connection, reason) {
+  OT.ConnectionEvent = function(type, connection, reason) {
     OT.Event.call(this, type, false);
 
     if (OT.$.canDefineProperty) {
       Object.defineProperty(this, 'connections', {
         get: function() {
-          if(!connectionEventPluralDeprecationWarningShown) {
+          if (!connectionEventPluralDeprecationWarningShown) {
             OT.warn('OT.ConnectionEvent connections property is deprecated, ' +
               'use connection instead.');
             connectionEventPluralDeprecationWarningShown = true;
@@ -18256,6 +18726,7 @@ OT.IntervalRunner = function(callback, frequency) {
     this.reason = reason;
   };
 
+  
 
 
 
@@ -18362,13 +18833,13 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
   var streamEventPluralDeprecationWarningShown = false;
-  OT.StreamEvent = function (type, stream, reason, cancelable) {
+  OT.StreamEvent = function(type, stream, reason, cancelable) {
     OT.Event.call(this, type, cancelable);
 
     if (OT.$.canDefineProperty) {
       Object.defineProperty(this, 'streams', {
         get: function() {
-          if(!streamEventPluralDeprecationWarningShown) {
+          if (!streamEventPluralDeprecationWarningShown) {
             OT.warn('OT.StreamEvent streams property is deprecated, use stream instead.');
             streamEventPluralDeprecationWarningShown = true;
           }
@@ -18383,6 +18854,7 @@ OT.IntervalRunner = function(callback, frequency) {
     this.reason = reason;
   };
 
+  
 
 
 
@@ -18412,6 +18884,7 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
 
+  
 
 
 
@@ -18439,13 +18912,13 @@ OT.IntervalRunner = function(callback, frequency) {
   var sessionConnectedStreamsDeprecationWarningShown = false;
   var sessionConnectedArchivesDeprecationWarningShown = false;
 
-  OT.SessionConnectEvent = function (type) {
+  OT.SessionConnectEvent = function(type) {
     OT.Event.call(this, type, false);
     if (OT.$.canDefineProperty) {
       Object.defineProperties(this, {
         connections: {
           get: function() {
-            if(!sessionConnectedConnectionsDeprecationWarningShown) {
+            if (!sessionConnectedConnectionsDeprecationWarningShown) {
               OT.warn('OT.SessionConnectedEvent no longer includes connections. Listen ' +
                 'for connectionCreated events instead.');
               sessionConnectedConnectionsDeprecationWarningShown = true;
@@ -18455,7 +18928,7 @@ OT.IntervalRunner = function(callback, frequency) {
         },
         streams: {
           get: function() {
-            if(!sessionConnectedStreamsDeprecationWarningShown) {
+            if (!sessionConnectedStreamsDeprecationWarningShown) {
               OT.warn('OT.SessionConnectedEvent no longer includes streams. Listen for ' +
                 'streamCreated events instead.');
               sessionConnectedConnectionsDeprecationWarningShown = true;
@@ -18465,7 +18938,7 @@ OT.IntervalRunner = function(callback, frequency) {
         },
         archives: {
           get: function() {
-            if(!sessionConnectedArchivesDeprecationWarningShown) {
+            if (!sessionConnectedArchivesDeprecationWarningShown) {
               OT.warn('OT.SessionConnectedEvent no longer includes archives. Listen for ' +
                 'archiveStarted events instead.');
               sessionConnectedArchivesDeprecationWarningShown = true;
@@ -18481,6 +18954,7 @@ OT.IntervalRunner = function(callback, frequency) {
     }
   };
 
+  
 
 
 
@@ -18523,11 +18997,45 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
 
-  OT.SessionDisconnectEvent = function (type, reason, cancelable) {
+
+
+
+
+
+
+
+
+  OT.SessionDisconnectEvent = function(type, reason, cancelable) {
     OT.Event.call(this, type, cancelable);
     this.reason = reason;
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -18563,27 +19071,7 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  OT.StreamPropertyChangedEvent = function (type, stream, changedProperty, oldValue, newValue) {
+  OT.StreamPropertyChangedEvent = function(type, stream, changedProperty, oldValue, newValue) {
     OT.Event.call(this, type, false);
     this.type = type;
     this.stream = stream;
@@ -18592,7 +19080,7 @@ OT.IntervalRunner = function(callback, frequency) {
     this.newValue = newValue;
   };
 
-  OT.VideoDimensionsChangedEvent = function (target, oldValue, newValue) {
+  OT.VideoDimensionsChangedEvent = function(target, oldValue, newValue) {
     OT.Event.call(this, 'videoDimensionsChanged', false);
     this.type = 'videoDimensionsChanged';
     this.target = target;
@@ -18600,6 +19088,7 @@ OT.IntervalRunner = function(callback, frequency) {
     this.newValue = newValue;
   };
 
+  
 
 
 
@@ -18612,8 +19101,7 @@ OT.IntervalRunner = function(callback, frequency) {
 
 
 
-
-  OT.ArchiveEvent = function (type, archive) {
+  OT.ArchiveEvent = function(type, archive) {
     OT.Event.call(this, type, false);
     this.type = type;
     this.id = archive.id;
@@ -18622,13 +19110,15 @@ OT.IntervalRunner = function(callback, frequency) {
     this.archive = archive;
   };
 
-  OT.ArchiveUpdatedEvent = function (stream, key, oldValue, newValue) {
+  OT.ArchiveUpdatedEvent = function(stream, key, oldValue, newValue) {
     OT.Event.call(this, 'updated', false);
     this.target = stream;
     this.changedProperty = key;
     this.oldValue = oldValue;
     this.newValue = newValue;
   };
+
+  
 
 
 
@@ -18649,7 +19139,7 @@ OT.IntervalRunner = function(callback, frequency) {
     this.from = from;
   };
 
-  OT.StreamUpdatedEvent = function (stream, key, oldValue, newValue) {
+  OT.StreamUpdatedEvent = function(stream, key, oldValue, newValue) {
     OT.Event.call(this, 'updated', false);
     this.target = stream;
     this.changedProperty = key;
@@ -18663,7 +19153,7 @@ OT.IntervalRunner = function(callback, frequency) {
     this.reason = reason;
   };
 
-
+  
 
 
 
@@ -18727,7 +19217,7 @@ OT.IntervalRunner = function(callback, frequency) {
     OT.Event.call(this, type, false);
   };
 
-
+  
 
 
 
@@ -18980,8 +19470,8 @@ OT.registerScreenSharingExtensionHelper('chrome', {
     window: false,
     browser: false
   },
-  register: function (extensionID) {
-    if(!extensionID) {
+  register: function(extensionID) {
+    if (!extensionID) {
       throw new Error('initChromeScreenSharingExtensionHelper: extensionID is required.');
     }
 
@@ -19004,7 +19494,7 @@ OT.registerScreenSharingExtensionHelper('chrome', {
         timeout = null;
         fn.apply(null, arguments);
       };
-      if(timeToWait) {
+      if (timeToWait) {
         timeout = setTimeout(function() {
           delete callbackRegistry[requestId];
           fn(new Error('Timeout waiting for response to request.'));
@@ -19014,19 +19504,19 @@ OT.registerScreenSharingExtensionHelper('chrome', {
     };
 
     var isAvailable = function(callback) {
-      if(!callback) {
+      if (!callback) {
         throw new Error('isAvailable: callback is required.');
       }
 
-      if(!isChrome) {
+      if (!isChrome) {
         setTimeout(callback.bind(null, false));
       }
 
-      if(isInstalled !== void 0) {
+      if (isInstalled !== void 0) {
         setTimeout(callback.bind(null, isInstalled));
       } else {
         var requestId = addCallback(function(error, event) {
-          if(isInstalled !== true) {
+          if (isInstalled !== true) {
             isInstalled = (event === 'extensionLoaded');
           }
           callback(isInstalled);
@@ -19037,13 +19527,13 @@ OT.registerScreenSharingExtensionHelper('chrome', {
     };
 
     var getConstraints = function(source, constraints, callback) {
-      if(!callback) {
+      if (!callback) {
         throw new Error('getSourceId: callback is required');
       }
       isAvailable(function(isInstalled) {
-        if(isInstalled) {
+        if (isInstalled) {
           var requestId = addCallback(function(error, event, payload) {
-            if(event === 'permissionDenied') {
+            if (event === 'permissionDenied') {
               callback(new Error('PermissionDeniedError'));
             } else {
               if (!constraints.video) {
@@ -19070,26 +19560,26 @@ OT.registerScreenSharingExtensionHelper('chrome', {
         return;
       }
 
-      if(!(event.data != null && typeof event.data === 'object')) {
+      if (!(event.data != null && typeof event.data === 'object')) {
         return;
       }
 
-      if(event.data.from !== 'extension') {
+      if (event.data.from !== 'extension') {
         return;
       }
 
       var method = event.data[prefix],
           payload = event.data.payload;
 
-      if(payload && payload.requestId) {
+      if (payload && payload.requestId) {
         var callback = callbackRegistry[payload.requestId];
         delete callbackRegistry[payload.requestId];
-        if(callback) {
+        if (callback) {
           callback(null, method, payload);
         }
       }
 
-      if(method === 'extensionLoaded') {
+      if (method === 'extensionLoaded') {
         isInstalled = true;
       }
     });
@@ -19117,13 +19607,15 @@ OT.registerScreenSharingExtensionHelper('chrome', {
 
 
 
-
 OT.StreamChannel = function(options) {
   this.id = options.id;
   this.type = options.type;
   this.active = OT.$.castToBoolean(options.active);
   this.orientation = options.orientation || OT.VideoOrientation.ROTATED_NORMAL;
-  if (options.frameRate) this.frameRate = parseFloat(options.frameRate, 10);
+  if (options.frameRate) this.frameRate = parseFloat(options.frameRate);
+  if (options.maxFrameRate) this.maxFrameRate = parseFloat(options.maxFrameRate);
+  if (options.maxWidth) this.maxWidth = parseInt(options.maxWidth, 10);
+  if (options.maxHeight) this.maxHeight = parseInt(options.maxHeight, 10);
   this.width = parseInt(options.width, 10);
   this.height = parseInt(options.height, 10);
 
@@ -19139,14 +19631,14 @@ OT.StreamChannel = function(options) {
         oldVideoDimensions = {};
 
     for (var key in attributes) {
-      if(!attributes.hasOwnProperty(key)) {
+      if (!attributes.hasOwnProperty(key)) {
         continue;
       }
 
       
       var oldValue = this[key];
 
-      switch(key) {
+      switch (key) {
         case 'active':
           this.active = OT.$.castToBoolean(attributes[key]);
           break;
@@ -19206,16 +19698,11 @@ OT.StreamChannel = function(options) {
 
 
 
-
-
-
-
 !(function() {
 
   var validPropertyNames = ['name', 'archiving'];
 
-
-
+  
 
 
 
@@ -19297,14 +19784,14 @@ OT.StreamChannel = function(options) {
     var onChannelUpdate = OT.$.bind(function(channel, key, oldValue, newValue) {
       var _key = key;
 
-      switch(_key) {
+      switch (_key) {
         case 'active':
           _key = channel.type === 'audio' ? 'hasAudio' : 'hasVideo';
           this[_key] = newValue;
           break;
 
         case 'disableWarning':
-          _key = channel.type === 'audio' ? 'audioDisableWarning': 'videoDisableWarning';
+          _key = channel.type === 'audio' ? 'audioDisableWarning' : 'videoDisableWarning';
           this[_key] = newValue;
           if (!this[channel.type === 'audio' ? 'hasAudio' : 'hasVideo']) {
             return; 
@@ -19321,48 +19808,61 @@ OT.StreamChannel = function(options) {
           this[_key] = newValue;
           break;
 
+        case 'videoDimensions':
+          this.videoDimensions = newValue;
+          break;
+
         case 'orientation':
         case 'width':
         case 'height':
-          this.videoDimensions = {
-            width: channel.width,
-            height: channel.height,
-            orientation: channel.orientation
-          };
-
+          
           
           return;
       }
 
-      this.dispatchEvent( new OT.StreamUpdatedEvent(this, _key, oldValue, newValue) );
+      this.dispatchEvent(new OT.StreamUpdatedEvent(this, _key, oldValue, newValue));
     }, this);
 
     var associatedWidget = OT.$.bind(function() {
-      if(this.publisher) {
+      if (this.publisher) {
         return this.publisher;
       } else {
         return OT.subscribers.find(function(subscriber) {
-          return subscriber.stream.id === this.id &&
+          return subscriber.stream && subscriber.stream.id === this.id &&
             subscriber.session.id === session.id;
-        });
+        }, this);
       }
     }, this);
 
     
-    this.getChannelsOfType = function (type) {
+    var isBeingSubscribedTo = OT.$.bind(function() {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return !this.publisher;
+    }, this);
+
+    
+    this.getChannelsOfType = function(type) {
       return OT.$.filter(this.channel, function(channel) {
         return channel.type === type;
       });
     };
 
-    this.getChannel = function (id) {
-      for (var i=0; i<this.channel.length; ++i) {
+    this.getChannel = function(id) {
+      for (var i = 0; i < this.channel.length; ++i) {
         if (this.channel[i].id === id) return this.channel[i];
       }
 
       return null;
     };
-
 
     
     
@@ -19418,13 +19918,131 @@ OT.StreamChannel = function(options) {
       });
     };
 
+    this.setPreferredResolution = function(resolution) {
+      if (!isBeingSubscribedTo()) {
+        OT.warn('setPreferredResolution has no affect when called by a publisher');
+        return;
+      }
+
+      if (session.sessionInfo.p2pEnabled) {
+        OT.warn('Stream.setPreferredResolution will not work in a P2P Session');
+        return;
+      }
+
+      if (resolution &&
+          resolution.width === void 0 &&
+          resolution.height === void 0) {
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      var video = this.getChannelsOfType('video')[0];
+      if (!video) {
+        return;
+      }
+
+      if (resolution && resolution.width) {
+        if (isNaN(parseInt(resolution.width, 10))) {
+          throw new OT.$.Error('stream preferred width must be an integer', 'Subscriber');
+        }
+
+        video.maxWidth = parseInt(resolution.width, 10);
+      } else {
+        video.maxWidth = void 0;
+      }
+
+      if (resolution && resolution.height) {
+        if (isNaN(parseInt(resolution.height, 10))) {
+          throw new OT.$.Error('stream preferred height must be an integer', 'Subscriber');
+        }
+
+        video.maxHeight = parseInt(resolution.height, 10);
+      } else {
+        video.maxHeight = void 0;
+      }
+
+      session._.subscriberChannelUpdate(this, associatedWidget(), video, {
+        maxWidth: video.maxWidth || 0,
+        maxHeight: video.maxHeight || 0
+      });
+    };
+
+    this.getPreferredResolution = function() {
+      var videoChannel = this.getChannelsOfType('video')[0];
+      if (!videoChannel || (!videoChannel.maxWidth && !videoChannel.maxHeight)) {
+        return void 0;
+      }
+
+      return {
+        width: videoChannel.maxWidth,
+        height: videoChannel.maxHeight
+      };
+    };
+
+    this.setPreferredFrameRate = function(maxFrameRate) {
+      if (!isBeingSubscribedTo()) {
+        OT.warn('setPreferredFrameRate has no affect when called by a publisher');
+        return;
+      }
+
+      if (session.sessionInfo.p2pEnabled) {
+        OT.warn('Stream.setPreferredFrameRate will not work in a P2P Session');
+        return;
+      }
+
+      if (maxFrameRate && isNaN(parseFloat(maxFrameRate))) {
+        throw new OT.$.Error('stream preferred frameRate must be a number', 'Subscriber');
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      var video = this.getChannelsOfType('video')[0];
+
+      if (video) {
+        video.maxFrameRate = maxFrameRate ? parseFloat(maxFrameRate) : void 0;
+
+        session._.subscriberChannelUpdate(this, associatedWidget(), video, {
+          maxFrameRate: video.maxFrameRate || 0
+        });
+      }
+    };
+
+    this.getPreferredFrameRate = function() {
+      var videoChannel = this.getChannelsOfType('video')[0];
+      return videoChannel ? videoChannel.maxFrameRate : void 0;
+    };
+
     var updateChannelsOfType = OT.$.bind(function(channelType, attributes) {
       var setChannelActiveState;
       if (!this.publisher) {
-        var subscriber = OT.subscribers.find(function(subscriber) {
-          return subscriber.stream && subscriber.stream.id === this.id &&
-            subscriber.session.id === session.id;
-        }, this);
+        var subscriber = associatedWidget();
 
         setChannelActiveState = function(channel) {
           session._.subscriberChannelUpdate(this, subscriber, channel, attributes);
@@ -19478,14 +20096,14 @@ OT.StreamChannel = function(options) {
       var oldValue = this[key],
           newValue = value;
 
-      switch(key) {
+      switch (key) {
         case 'name':
           this[key] = newValue;
           break;
 
         case 'archiving':
           var widget = associatedWidget();
-          if(widget) {
+          if (widget) {
             widget._.archivingStatus(newValue);
           }
           this[key] = newValue;
@@ -19499,7 +20117,7 @@ OT.StreamChannel = function(options) {
     
     this._.update = OT.$.bind(function(attributes) {
       for (var key in attributes) {
-        if(!attributes.hasOwnProperty(key)) {
+        if (!attributes.hasOwnProperty(key)) {
           continue;
         }
         this._.updateProperty(key, attributes[key]);
@@ -19521,148 +20139,25 @@ OT.StreamChannel = function(options) {
 
 
 
-!(function() {
 
-  var parseErrorFromJSONDocument,
-      onGetResponseCallback,
-      onGetErrorCallback;
 
-  OT.SessionInfo = function(jsonDocument) {
-    var sessionJSON = jsonDocument[0];
 
-    OT.log('SessionInfo Response:');
-    OT.log(jsonDocument);
 
-    
 
-    this.sessionId = sessionJSON.session_id;
-    this.partnerId = sessionJSON.partner_id;
-    this.sessionStatus = sessionJSON.session_status;
+OT.IntervalRunner = function(callback, frequency) {
+  var _callback = callback,
+    _frequency = frequency,
+    _intervalId = null;
 
-    this.messagingServer = sessionJSON.messaging_server_url;
-
-    this.messagingURL = sessionJSON.messaging_url;
-    this.symphonyAddress = sessionJSON.symphony_address;
-
-    this.p2pEnabled = !!(sessionJSON.properties &&
-      sessionJSON.properties.p2p &&
-      sessionJSON.properties.p2p.preference &&
-      sessionJSON.properties.p2p.preference.value === 'enabled');
+  this.start = function() {
+    _intervalId = window.setInterval(_callback, 1000 / _frequency);
   };
 
-  
-  
-  
-  OT.SessionInfo.get = function(session, onSuccess, onFailure) {
-    var sessionInfoURL = OT.properties.apiURL + '/session/' + session.id + '?extended=true',
-
-        startTime = OT.$.now(),
-
-        options,
-
-        validateRawSessionInfo = function(sessionInfo) {
-          session.logEvent('Instrumentation', null, 'gsi', OT.$.now() - startTime);
-          var error = parseErrorFromJSONDocument(sessionInfo);
-          if (error === false) {
-            onGetResponseCallback(session, onSuccess, sessionInfo);
-          } else {
-            onGetErrorCallback(session, onFailure, error, JSON.stringify(sessionInfo));
-          }
-        };
-
-
-    if(OT.$.env.name === 'IE' && OT.$.env.version < 10) {
-      sessionInfoURL = sessionInfoURL + '&format=json&token=' + encodeURIComponent(session.token) +
-                                        '&version=1&cache=' + OT.$.uuid();
-      options = {
-        xdomainrequest: true
-      };
-    }
-    else {
-      options = {
-        headers: {
-          'X-TB-TOKEN-AUTH': session.token,
-          'X-TB-VERSION': 1
-        }
-      };
-    }
-    session.logEvent('SessionInfo', 'Attempt');
-    OT.$.getJSON(sessionInfoURL, options, function(error, sessionInfo) {
-      if(error) {
-        var responseText = sessionInfo;
-        onGetErrorCallback(session, onFailure,
-          new OT.Error(error.target && error.target.status || error.code, error.message ||
-            'Could not connect to the OpenTok API Server.'), responseText);
-      } else {
-        validateRawSessionInfo(sessionInfo);
-      }
-    });
+  this.stop = function() {
+    window.clearInterval(_intervalId);
+    _intervalId = null;
   };
-
-  var messageServerToClientErrorCodes = {};
-  messageServerToClientErrorCodes['404'] = OT.ExceptionCodes.INVALID_SESSION_ID;
-  messageServerToClientErrorCodes['409'] = OT.ExceptionCodes.TERMS_OF_SERVICE_FAILURE;
-  messageServerToClientErrorCodes['400'] = OT.ExceptionCodes.INVALID_SESSION_ID;
-  messageServerToClientErrorCodes['403'] = OT.ExceptionCodes.AUTHENTICATION_ERROR;
-
-  
-  
-  parseErrorFromJSONDocument = function(jsonDocument) {
-    if(OT.$.isArray(jsonDocument)) {
-
-      var errors = OT.$.filter(jsonDocument, function(node) {
-        return node.error != null;
-      });
-
-      var numErrorNodes = errors.length;
-      if(numErrorNodes === 0) {
-        return false;
-      }
-
-      var errorCode = errors[0].error.code;
-      var errorMessage;
-      if (messageServerToClientErrorCodes[errorCode.toString()]) {
-        errorCode = messageServerToClientErrorCodes[errorCode];
-        errorMessage = errors[0].error.errorMessage && errors[0].error.errorMessage.message;
-      } else {
-        errorCode = OT.ErrorCodes.UNEXPECTED_SERVER_RESPONSE;
-        errorMessage = 'Unexpected server response. Try this operation again later.';
-      }
-
-      return {
-        code: errorCode,
-        message: errorMessage
-      };
-    } else {
-      return {
-        code: null,
-        message: 'Unknown error: getSessionInfo JSON response was badly formed'
-      };
-    }
-  };
-
-  
-  onGetResponseCallback = function(session, onSuccess, rawSessionInfo) {
-    session.logEvent('SessionInfo', 'Success',
-      {messagingServer: rawSessionInfo[0].messaging_server_url});
-
-    onSuccess( new OT.SessionInfo(rawSessionInfo) );
-  };
-  
-
-  onGetErrorCallback = function(session, onFailure, error, responseText) {
-    var payload = {
-      reason:'GetSessionInfo',
-      code: (error.code || 'No code'),
-      message: error.message + ':' +
-        (responseText || 'Empty responseText from API server')
-    };
-    session.logConnectivityEvent('Failure', payload);
-
-    onFailure(error, session);
-  };
-
-})(window);
+};
 
 
 
@@ -19673,6 +20168,20 @@ OT.StreamChannel = function(options) {
   
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19981,7 +20490,7 @@ OT.StreamChannel = function(options) {
   };
 
   function _exceptionHandler(component, msg, errorCode, context) {
-    var title = errorsCodesToTitle[errorCode],
+    var title = OT.getErrorTitleByCode(errorCode),
         contextCopy = context ? OT.$.clone(context) : {};
 
     OT.error('OT.exception :: title: ' + title + ' (' + errorCode + ') msg: ' + msg);
@@ -19994,7 +20503,7 @@ OT.StreamChannel = function(options) {
       OT.dispatchEvent(
         new OT.ExceptionEvent(OT.Event.names.EXCEPTION, msg, title, errorCode, component, component)
       );
-    } catch(err) {
+    } catch (err) {
       OT.error('OT.exception :: Failed to dispatch exception - ' + err.toString());
       
       
@@ -20015,15 +20524,15 @@ OT.StreamChannel = function(options) {
     return errorsCodesToTitle[+code];
   };
 
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
   OT.handleJsException = function(errorMsg, code, options) {
     options = options || {};
 
@@ -20047,19 +20556,6 @@ OT.StreamChannel = function(options) {
     }
 
     _exceptionHandler(options.target, errorMsg, code, context);
-  };
-
-  
-  OT.dispatchError = function (code, message, completionHandler, session) {
-    OT.error(code, message);
-
-    if (completionHandler && OT.$.isFunction(completionHandler)) {
-      completionHandler.call(null, new OT.Error(code, message));
-    }
-
-    OT.handleJsException(message, code, {
-      session: session
-    });
   };
 
 })(window);
@@ -20100,7 +20596,6 @@ OT.StreamChannel = function(options) {
           }
         },
 
-
         onDomReady = function() {
           OT.$.onDOMUnload(onDomUnload);
 
@@ -20137,7 +20632,6 @@ OT.StreamChannel = function(options) {
         configLoadFailed = function() {
           configLoaded();
         };
-
 
     OT.Config.on('dynamicConfigChanged', configLoaded);
     OT.Config.on('dynamicConfigLoadFailed', configLoadFailed);
@@ -20224,7 +20718,7 @@ OT.checkSystemRequirements = function() {
     return systemRequirementsMet;
   };
 
-  if(systemRequirementsMet === this.NOT_HAS_REQUIREMENTS) {
+  if (systemRequirementsMet === this.NOT_HAS_REQUIREMENTS) {
     OT.analytics.logEvent({
       action: 'checkSystemRequirements',
       variation: 'notHasRequirements',
@@ -20248,12 +20742,11 @@ OT.checkSystemRequirements = function() {
 
 
 
-
-OT.upgradeSystemRequirements = function(){
+OT.upgradeSystemRequirements = function() {
   
-  OT.onLoad( function() {
+  OT.onLoad(function() {
 
-    if(OTPlugin.isSupported()) {
+    if (OTPlugin.isSupported()) {
       OT.Dialogs.Plugin.promptToInstall().on({
         download: function() {
           window.location = OTPlugin.pathToInstaller();
@@ -20268,7 +20761,7 @@ OT.upgradeSystemRequirements = function(){
 
     var id = '_upgradeFlash';
 
-       
+    
     document.body.appendChild((function() {
       var d = document.createElement('iframe');
       d.id = id;
@@ -20308,12 +20801,12 @@ OT.upgradeSystemRequirements = function(){
     
     
     if (_intervalId) clearInterval(_intervalId);
-    _intervalId = setInterval(function(){
+    _intervalId = setInterval(function() {
       var hash = document.location.hash,
           re = /^#?\d+&/;
       if (hash !== _lastHash && re.test(hash)) {
         _lastHash = hash;
-        if (hash.replace(re, '') === 'close_window'){
+        if (hash.replace(re, '') === 'close_window') {
           document.body.removeChild(document.getElementById(id));
           document.location.hash = '';
         }
@@ -20321,6 +20814,7 @@ OT.upgradeSystemRequirements = function(){
     }, 100);
   });
 };
+
 
 
 
@@ -20338,8 +20832,6 @@ OT.ConnectionCapabilities = function(capabilitiesHash) {
   var _caps = castCapabilities(capabilitiesHash);
   this.supportsWebRTC = _caps.supportsWebRTC;
 };
-
-
 
 
 
@@ -20471,9 +20963,8 @@ OT.Connection.fromHash = function(hash) {
                            hash.creationTime,
                            hash.data,
                            OT.$.extend(hash.capablities || {}, { supportsWebRTC: true }),
-                           hash.permissions || [] );
+                           hash.permissions || []);
 };
-
 
 
 
@@ -20515,7 +21006,7 @@ OT.Connection.fromHash = function(hash) {
           };
         }
 
-        if ( !(toAddress instanceof OT.Connection || toAddress instanceof OT.Session) ) {
+        if (!(toAddress instanceof OT.Connection || toAddress instanceof OT.Session)) {
           return {
             code: 400,
             reason: 'The To field was invalid'
@@ -20534,15 +21025,13 @@ OT.Connection.fromHash = function(hash) {
             reason: 'The signal type was null or undefined. Either set it to a String value or ' +
               'omit it'
           };
-        }
-        else if (type.length > MAX_SIGNAL_TYPE_LENGTH) {
+        } else if (type.length > MAX_SIGNAL_TYPE_LENGTH) {
           error = {
             code: 413,
             reason: 'The signal type was too long, the maximum length of it is ' +
               MAX_SIGNAL_TYPE_LENGTH + ' characters'
           };
-        }
-        else if ( isInvalidType(type) ) {
+        } else if (isInvalidType(type)) {
           error = {
             code: 400,
             reason: 'The signal type was invalid, it can only contain letters, ' +
@@ -20561,8 +21050,7 @@ OT.Connection.fromHash = function(hash) {
             reason: 'The signal data was null or undefined. Either set it to a String value or ' +
               'omit it'
           };
-        }
-        else {
+        } else {
           try {
             if (JSON.stringify(data).length > MAX_SIGNAL_DATA_LENGTH) {
               error = {
@@ -20571,8 +21059,7 @@ OT.Connection.fromHash = function(hash) {
                   MAX_SIGNAL_DATA_LENGTH + ' characters'
               };
             }
-          }
-          catch(e) {
+          } catch (e) {
             error = {code: 400, reason: 'The data field was not valid JSON'};
           }
         }
@@ -20580,11 +21067,10 @@ OT.Connection.fromHash = function(hash) {
         return error;
       };
 
-
     this.toRaptorMessage = function() {
       var to = this.to;
 
-      if (to && typeof(to) !== 'string') {
+      if (to && typeof to !== 'string') {
         to = to.id;
       }
 
@@ -20594,7 +21080,6 @@ OT.Connection.fromHash = function(hash) {
     this.toHash = function() {
       return options;
     };
-
 
     this.error = null;
 
@@ -20653,15 +21138,13 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
       _dispatcher,
       _completion;
 
-
   
   var setState = OT.$.statable(this, _states, 'disconnected'),
 
       onConnectComplete = function onConnectComplete(error) {
         if (error) {
           setState('error');
-        }
-        else {
+        } else {
           setState('connected');
         }
 
@@ -20682,13 +21165,12 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
         _dispatcher.onClose(reason);
       }, this),
 
-      onError = function onError () {};
-      
-
+      onError = function onError() {};
+  
 
   
 
-  this.connect = function (token, sessionInfo, completion) {
+  this.connect = function(token, sessionInfo, completion) {
     if (!this.is('disconnected', 'error')) {
       OT.warn('Cannot connect the Raptor Socket as it is currently connected. You should ' +
         'disconnect first.');
@@ -20764,8 +21246,8 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
           return;
         }
 
-        this.publish( OT.Raptor.Message.sessions.get(OT.APIKEY, _sessionId),
-          function (error) {
+        this.publish(OT.Raptor.Message.sessions.get(OT.APIKEY, _sessionId),
+          function(error) {
           if (error) {
             var errorCode,
               errorMessage,
@@ -20800,8 +21282,7 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
     }, this));
   };
 
-
-  this.disconnect = function (drainSocketBuffer) {
+  this.disconnect = function(drainSocketBuffer) {
     if (this.is('disconnected')) return;
 
     setState('disconnecting');
@@ -20814,7 +21295,7 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
   
   
   
-  this.publish = function (message, headers, completion) {
+  this.publish = function(message, headers, completion) {
     if (_rumor.isNot('connected')) {
       OT.error('OT.Raptor.Socket: cannot publish until the socket is connected.' + message);
       return;
@@ -20830,13 +21311,11 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
       if (OT.$.isFunction(headers)) {
         _headers = {};
         _completion = headers;
-      }
-      else {
+      } else {
         _headers = headers;
       }
     }
     if (!_completion && completion && OT.$.isFunction(completion)) _completion = completion;
-
 
     if (_completion) _dispatcher.registerCallback(transactionId, _completion);
 
@@ -20855,14 +21334,14 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
   
   this.streamCreate = function(name, streamId, audioFallbackEnabled, channels, minBitrate,
     maxBitrate, completion) {
-    var message = OT.Raptor.Message.streams.create( OT.APIKEY,
-                                                    _sessionId,
-                                                    streamId,
-                                                    name,
-                                                    audioFallbackEnabled,
-                                                    channels,
-                                                    minBitrate,
-                                                    maxBitrate);
+    var message = OT.Raptor.Message.streams.create(OT.APIKEY,
+                                                   _sessionId,
+                                                   streamId,
+                                                   name,
+                                                   audioFallbackEnabled,
+                                                   channels,
+                                                   minBitrate,
+                                                   maxBitrate);
 
     this.publish(message, function(error, message) {
       completion(error, streamId, message);
@@ -20870,42 +21349,42 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
   };
 
   this.streamDestroy = function(streamId) {
-    this.publish( OT.Raptor.Message.streams.destroy(OT.APIKEY, _sessionId, streamId) );
+    this.publish(OT.Raptor.Message.streams.destroy(OT.APIKEY, _sessionId, streamId));
   };
 
   this.streamChannelUpdate = function(streamId, channelId, attributes) {
-    this.publish( OT.Raptor.Message.streamChannels.update(OT.APIKEY, _sessionId,
-      streamId, channelId, attributes) );
+    this.publish(OT.Raptor.Message.streamChannels.update(OT.APIKEY, _sessionId,
+      streamId, channelId, attributes));
   };
 
   this.subscriberCreate = function(streamId, subscriberId, channelsToSubscribeTo, completion) {
-    this.publish( OT.Raptor.Message.subscribers.create(OT.APIKEY, _sessionId,
-      streamId, subscriberId, _rumor.id(), channelsToSubscribeTo), completion );
+    this.publish(OT.Raptor.Message.subscribers.create(OT.APIKEY, _sessionId,
+      streamId, subscriberId, _rumor.id(), channelsToSubscribeTo), completion);
   };
 
   this.subscriberDestroy = function(streamId, subscriberId) {
-    this.publish( OT.Raptor.Message.subscribers.destroy(OT.APIKEY, _sessionId,
-      streamId, subscriberId) );
+    this.publish(OT.Raptor.Message.subscribers.destroy(OT.APIKEY, _sessionId,
+      streamId, subscriberId));
   };
 
   this.subscriberUpdate = function(streamId, subscriberId, attributes) {
-    this.publish( OT.Raptor.Message.subscribers.update(OT.APIKEY, _sessionId,
-      streamId, subscriberId, attributes) );
+    this.publish(OT.Raptor.Message.subscribers.update(OT.APIKEY, _sessionId,
+      streamId, subscriberId, attributes));
   };
 
   this.subscriberChannelUpdate = function(streamId, subscriberId, channelId, attributes) {
-    this.publish( OT.Raptor.Message.subscriberChannels.update(OT.APIKEY, _sessionId,
-      streamId, subscriberId, channelId, attributes) );
+    this.publish(OT.Raptor.Message.subscriberChannels.update(OT.APIKEY, _sessionId,
+      streamId, subscriberId, channelId, attributes));
   };
 
   this.forceDisconnect = function(connectionIdToDisconnect, completion) {
-    this.publish( OT.Raptor.Message.connections.destroy(OT.APIKEY, _sessionId,
-      connectionIdToDisconnect), completion );
+    this.publish(OT.Raptor.Message.connections.destroy(OT.APIKEY, _sessionId,
+      connectionIdToDisconnect), completion);
   };
 
   this.forceUnpublish = function(streamIdToUnpublish, completion) {
-    this.publish( OT.Raptor.Message.streams.destroy(OT.APIKEY, _sessionId,
-      streamIdToUnpublish), completion );
+    this.publish(OT.Raptor.Message.streams.destroy(OT.APIKEY, _sessionId,
+      streamIdToUnpublish), completion);
   };
 
   this.jsepCandidate = function(streamId, candidate) {
@@ -20922,16 +21401,16 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
   };
 
   this.jsepOffer = function(uri, offerSdp) {
-    this.publish( OT.Raptor.Message.offer(uri, offerSdp) );
+    this.publish(OT.Raptor.Message.offer(uri, offerSdp));
   };
 
   this.jsepAnswer = function(streamId, answerSdp) {
-    this.publish( OT.Raptor.Message.streams.answer(OT.APIKEY, _sessionId, streamId, answerSdp) );
+    this.publish(OT.Raptor.Message.streams.answer(OT.APIKEY, _sessionId, streamId, answerSdp));
   };
 
   this.jsepAnswerP2p = function(streamId, subscriberId, answerSdp) {
-    this.publish( OT.Raptor.Message.subscribers.answer(OT.APIKEY, _sessionId, streamId,
-      subscriberId, answerSdp) );
+    this.publish(OT.Raptor.Message.subscribers.answer(OT.APIKEY, _sessionId, streamId,
+      subscriberId, answerSdp));
   };
 
   this.signal = function(options, completion, logEventFn) {
@@ -20939,13 +21418,13 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
 
     if (!signal.valid) {
       if (completion && OT.$.isFunction(completion)) {
-        completion( new SignalError(signal.error.code, signal.error.reason), signal.toHash() );
+        completion(new SignalError(signal.error.code, signal.error.reason), signal.toHash());
       }
 
       return;
     }
 
-    this.publish( signal.toRaptorMessage(), function(err) {
+    this.publish(signal.toRaptorMessage(), function(err) {
       var error,
         errorCode,
         errorMessage,
@@ -20960,7 +21439,7 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
         }
         error = new OT.SignalError(errorCode, errorMessage);
       } else {
-        var typeStr = signal.data? typeof(signal.data) : null;
+        var typeStr = signal.data ? typeof (signal.data) : null;
         logEventFn('signal', 'send', {type: typeStr});
       }
 
@@ -20972,7 +21451,7 @@ OT.Raptor.Socket = function(connectionId, widgetId, messagingSocketUrl, symphony
     return _rumor && _rumor.id();
   };
 
-  if(dispatcher == null) {
+  if (dispatcher == null) {
     dispatcher = new OT.Raptor.Dispatcher();
   }
   _dispatcher = dispatcher;
@@ -21031,7 +21510,6 @@ OT.GetStatsAudioLevelSampler = function(peerConnection) {
     });
   };
 };
-
 
 
 
@@ -21163,9 +21641,9 @@ OT.Archive = function(id, name, status) {
   OT.$.eventing(this);
 
   
-  this._.update = OT.$.bind(function (attributes) {
+  this._.update = OT.$.bind(function(attributes) {
     for (var key in attributes) {
-      if(!attributes.hasOwnProperty(key)) {
+      if (!attributes.hasOwnProperty(key)) {
         continue;
       }
       var oldValue = this[key];
@@ -21179,6 +21657,240 @@ OT.Archive = function(id, name, status) {
   this.destroy = function() {};
 
 };
+
+
+
+
+
+!(function() {
+  var Anvil = {};
+
+  
+  var httpToClientCode = {
+    400: OT.ExceptionCodes.INVALID_SESSION_ID,
+    403: OT.ExceptionCodes.AUTHENTICATION_ERROR,
+    404: OT.ExceptionCodes.INVALID_SESSION_ID,
+    409: OT.ExceptionCodes.TERMS_OF_SERVICE_FAILURE
+  };
+
+  var anvilErrors = {
+    RESPONSE_BADLY_FORMED: {
+      code: null,
+      message: 'Unknown error: JSON response was badly formed'
+    },
+
+    UNEXPECTED_SERVER_RESPONSE: {
+      code: OT.ExceptionCodes.UNEXPECTED_SERVER_RESPONSE,
+      message: 'Unexpected server response. Try this operation again later.'
+    }
+  };
+
+  
+  
+  
+  
+  var normaliseUnexpectedError = function normaliseUnexpectedError(originalError) {
+    var error = OT.$.clone(anvilErrors.UNEXPECTED_SERVER_RESPONSE);
+
+    
+    
+    error.details = {
+      originalCode: originalError.code.toString(),
+      originalMessage: originalError.message
+    };
+
+    return error;
+  };
+
+  Anvil.getRequestParams = function getApiRequestOptions(resourcePath, token) {
+    var url = OT.properties.apiURL + '/' + resourcePath;
+    var options;
+
+    if (OT.$.env.name === 'IE' && OT.$.env.version < 10) {
+      url = url + '&format=json&token=' + encodeURIComponent(token) +
+                  '&version=1&cache=' + OT.$.uuid();
+      options = {
+        xdomainrequest: true
+      };
+    } else {
+      options = {
+        headers: {
+          'X-TB-TOKEN-AUTH': token,
+          'X-TB-VERSION': 1
+        }
+      };
+    }
+
+    return {
+      url: url,
+      options: options
+    };
+  };
+
+  Anvil.getErrorsFromHTTP = function(httpError) {
+    if (!httpError) {
+      return false;
+    }
+
+    var error = {
+      code: httpError.target && httpError.target.status
+    };
+
+    return error;
+  };
+
+  Anvil.getErrorsFromResponse = function getErrorsFromResponse(responseJson) {
+    if (!OT.$.isArray(responseJson)) {
+      return anvilErrors.RESPONSE_BADLY_FORMED;
+    }
+
+    var error = OT.$.find(responseJson, function(node) {
+      return node.error !== void 0 && node.error !== null;
+    });
+
+    if (!error) {
+      return false;
+    }
+
+    
+    error = error.error;
+    error.message = error.errorMessage && error.errorMessage.message;
+
+    return error;
+  };
+
+  var normaliseError = function normaliseError(error, responseText) {
+    if (error.code && !httpToClientCode[error.code]) {
+      error = normaliseUnexpectedError(error);
+    } else {
+      error.code = httpToClientCode[error.code];
+    }
+
+    if (responseText.length === 0) {
+      
+      
+      error.code = OT.ExceptionCodes.CONNECT_FAILED;
+      responseText = 'Response body was empty, probably due to connectivity loss';
+    } else if (!error.code) {
+      error = normaliseUnexpectedError(error);
+    }
+
+    if (!error.details) error.details = {};
+    error.details.responseText = responseText;
+
+    return error;
+  };
+
+  Anvil.get = function getFromAnvil(resourcePath, token) {
+    var params = Anvil.getRequestParams(resourcePath, token);
+
+    return new OT.$.RSVP.Promise(function(resolve, reject) {
+      OT.$.getJSON(params.url, params.options, function(httpError, responseJson) {
+        var err = Anvil.getErrorsFromHTTP(httpError) || Anvil.getErrorsFromResponse(responseJson);
+        var responseText;
+
+        if (err) {
+          responseText = responseJson && !OT.$.isEmpty(responseJson) ?
+                                          JSON.stringify(responseJson) : '';
+          err = normaliseError(err, responseText);
+
+          reject(new OT.$.Error(err.message, 'AnvilError', {
+            code: err.code,
+            details: err.details
+          }));
+
+          return;
+        }
+
+        resolve(responseJson[0]);
+      });
+    });
+  };
+
+  OT.Anvil = Anvil;
+
+})(window);
+
+
+
+!(function() {
+
+  
+  
+  
+  
+  
+  var retryDelays = [0, 600, 1200];
+
+  
+  
+  var transientErrorCodes = [
+    OT.ExceptionCodes.CONNECT_FAILED,
+    OT.ExceptionCodes.UNEXPECTED_SERVER_RESPONSE
+  ];
+
+  OT.SessionInfo = function(rawSessionInfo) {
+    OT.log('SessionInfo Response:');
+    OT.log(rawSessionInfo);
+
+    
+    
+    this.sessionId = rawSessionInfo.session_id;
+    this.partnerId = rawSessionInfo.partner_id;
+    this.sessionStatus = rawSessionInfo.session_status;
+    this.messagingServer = rawSessionInfo.messaging_server_url;
+    this.messagingURL = rawSessionInfo.messaging_url;
+    this.symphonyAddress = rawSessionInfo.symphony_address;
+
+    if (rawSessionInfo.properties) {
+      
+      
+      
+      
+      
+      this.simulcast = rawSessionInfo.properties.simulcast;
+
+      this.p2pEnabled = !!(rawSessionInfo.properties.p2p &&
+        rawSessionInfo.properties.p2p.preference &&
+        rawSessionInfo.properties.p2p.preference.value === 'enabled');
+    } else {
+      this.p2pEnabled = false;
+    }
+  };
+
+  
+  
+  
+  
+  OT.SessionInfo.get = function(id, token) {
+    var remainingRetryDelays = retryDelays.slice();
+
+    var attempt = function(err, resolve, reject) {
+      if (remainingRetryDelays.length === 0) {
+        reject(err);
+        return;
+      }
+
+      OT.Anvil.get('session/' + id + '?extended=true', token).then(function(anvilResponse) {
+        resolve(new OT.SessionInfo(anvilResponse));
+      }, function(err) {
+        if (OT.$.arrayIndexOf(transientErrorCodes, err.code) > -1) {
+          
+          setTimeout(function() {
+            attempt(err, resolve, reject);
+          }, remainingRetryDelays.shift());
+        } else {
+          reject(err);
+        }
+      });
+    };
+
+    return new OT.$.RSVP.Promise(function(resolve, reject) {
+      attempt(void 0, resolve, reject);
+    });
+  };
+
+})(window);
 
 
 
@@ -21253,10 +21965,12 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
       _audioLevelRunner,
       _frameRateRestricted = false,
       _connectivityAttemptPinger,
-      _subscriber = this;
+      _subscriber = this,
+      _isLocalStream;
 
   _properties = OT.$.defaults({}, options, {
     showControls: true,
+    testNetwork: false,
     fitMode: _stream.defaultFitMode || 'cover'
   });
 
@@ -21285,7 +21999,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     this.once('subscribeComplete', completionHandler);
   }
 
-  if(_audioLevelCapable) {
+  if (_audioLevelCapable) {
     this.on({
       'audioLevelUpdated:added': function(count) {
         if (count === 1 && _audioLevelRunner) {
@@ -21310,7 +22024,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
           connectionId: _session && _session.isConnected() ?
             _session.connection.connectionId : null,
           partnerId: _session && _session.isConnected() ? _session.sessionInfo.partnerId : null,
-          subscriberId: _widgetId,
+          subscriberId: _widgetId
         }];
         if (throttle) args.push(throttle);
         OT.analytics.logEvent.apply(OT.analytics, args);
@@ -21333,7 +22047,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
       recordQOS = OT.$.bind(function(parsedStats) {
         var QoSBlob = {
-          streamType : 'WebRTC',
+          streamType: 'WebRTC',
           width: _container ? Number(OT.$.width(_container.domElement).replace('px', '')) : null,
           height: _container ? Number(OT.$.height(_container.domElement).replace('px', '')) : null,
           sessionId: _session ? _session.sessionId : null,
@@ -21348,10 +22062,9 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
           remoteConnectionId: _stream.connection.connectionId
         };
 
-        OT.analytics.logQOS( OT.$.extend(QoSBlob, parsedStats) );
+        OT.analytics.logQOS(OT.$.extend(QoSBlob, parsedStats));
         this.trigger('qos', parsedStats);
       }, this),
-
 
       stateChangeFailed = function(changeFailed) {
         OT.error('Subscriber State Change Failed: ', changeFailed.message);
@@ -21375,11 +22088,11 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
         _container.loading(false);
         _chrome.showAfterLoading();
 
-        if(_frameRateRestricted) {
+        if (_frameRateRestricted) {
           _stream.setRestrictFrameRate(true);
         }
 
-        if(_audioLevelMeter && _subscriber.getStyle('audioLevelDisplayMode') === 'auto') {
+        if (_audioLevelMeter && _subscriber.getStyle('audioLevelDisplayMode') === 'auto') {
           _audioLevelMeter[_container.audioOnly() ? 'show' : 'hide']();
         }
 
@@ -21462,6 +22175,8 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
         _lastSubscribeToVideoReason = 'loading';
         this.subscribeToVideo(_properties.subscribeToVideo, 'loading');
+        this.setPreferredResolution(_properties.preferredResolution);
+        this.setPreferredFrameRate(_properties.preferredFrameRate);
 
         var videoContainerOptions = {
           error: onPeerConnectionFailure,
@@ -21477,7 +22192,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
         
         
         var tracks = webRTCStream.getVideoTracks();
-        if(tracks.length > 0) {
+        if (tracks.length > 0) {
           OT.$.forEach(tracks, function(track) {
             track.setEnabled(_stream.hasVideo && _properties.subscribeToVideo);
           });
@@ -21518,17 +22233,16 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
           _streamContainer = null;
         }
 
-
         this.trigger('streamRemoved', this);
       },
 
-      streamDestroyed = function () {
+      streamDestroyed = function() {
         this.disconnect();
       },
 
       streamUpdated = function(event) {
 
-        switch(event.changedProperty) {
+        switch (event.changedProperty) {
           case 'videoDimensions':
             if (!_streamContainer) {
               
@@ -21564,7 +22278,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
             break;
 
           case 'hasAudio':
-            
+          
         }
       },
 
@@ -21588,7 +22302,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
       updateChromeForStyleChange = function(key, value) {
         if (!_chrome) return;
 
-        switch(key) {
+        switch (key) {
           case 'nameDisplayMode':
             _chrome.name.setDisplayMode(value);
             _chrome.backingBar.setNameMode(value);
@@ -21702,7 +22416,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     backgroundImageURI: null,
     showArchiveStatus: true,
     showMicButton: true
-  }, _properties.showControls, function (payload) {
+  }, _properties.showControls, function(payload) {
     logAnalyticsEvent('SetStyle', 'Subscriber', payload, 0.1);
   });
 
@@ -21725,8 +22439,8 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
   var notifyGetStatsCalled = (function() {
     var callCount = 0;
     return function throttlingNotifyGetStatsCalled() {
-      if (callCount % 100 === 0) {
-        logAnalyticsEvent('getStats', 'Called');
+      if (callCount === 0) {
+        logAnalyticsEvent('GetStats', 'Called');
       }
       callCount++;
     };
@@ -21735,17 +22449,20 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
   this.destroy = function(reason, quiet) {
     if (_state.isDestroyed()) return;
 
-    if(reason === 'streamDestroyed') {
-      if (_state.isAttemptingToSubscribe()) {
+    if (_state.isAttemptingToSubscribe()) {
+      if (reason === 'streamDestroyed') {
         
         
         this.trigger('subscribeComplete', new OT.Error(null, 'InvalidStreamID'));
+      } else {
+        logConnectivityEvent('Canceled', {streamId: _stream.id});
+        _connectivityAttemptPinger.stop();
       }
     }
 
     _state.set('Destroyed');
 
-    if(_audioLevelRunner) {
+    if (_audioLevelRunner) {
       _audioLevelRunner.stop();
     }
 
@@ -21770,7 +22487,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     this.stream = _stream = null;
     this.streamId = null;
 
-    this.session =_session = null;
+    this.session = _session = null;
     _properties = null;
 
     if (quiet !== true) {
@@ -21834,7 +22551,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
       }
     }
     this.subscribeToVideo(active, 'auto');
-    if(!active) {
+    if (!active) {
       _chrome.videoDisabledIndicator.disableVideo(true);
     }
     var payload = active ? {videoEnabled: true} : {videoDisabled: true};
@@ -21939,7 +22656,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     if (_audioVolume !== value) {
       OT.warn('OT.Subscriber.setAudioVolume: value should be an integer between 0 and 100');
     }
-    if(_properties.muted && _audioVolume > 0) {
+    if (_properties.muted && _audioVolume > 0) {
       _properties.premuteVolume = value;
       muteAudio.call(this, false);
     }
@@ -21961,7 +22678,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
   this.getAudioVolume = function() {
-    if(_properties.muted) {
+    if (_properties.muted) {
       return 0;
     }
     if (_streamContainer) return _streamContainer.getAudioVolume();
@@ -22013,18 +22730,18 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
   var muteAudio = function(_mute) {
     _chrome.muteButton.muted(_mute);
 
-    if(_mute === _properties.mute) {
+    if (_mute === _properties.mute) {
       return;
     }
-    if(OT.$.env.name === 'Chrome' || OTPlugin.isInstalled()) {
+    if (OT.$.env.name === 'Chrome' || OTPlugin.isInstalled()) {
       _properties.subscribeMute = _properties.muted = _mute;
       this.subscribeToAudio(_properties.subscribeToAudio);
     } else {
-      if(_mute) {
+      if (_mute) {
         _properties.premuteVolume = this.getAudioVolume();
         _properties.muted = true;
         this.setAudioVolume(0);
-      } else if(_properties.premuteVolume || _properties.audioVolume) {
+      } else if (_properties.premuteVolume || _properties.audioVolume) {
         _properties.muted = false;
         this.setAudioVolume(_properties.premuteVolume || _properties.audioVolume);
       }
@@ -22037,7 +22754,6 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     publishVideo: 'publishVideo',
     subscribeToVideo: 'subscribeToVideo'
   };
-
 
   
 
@@ -22070,7 +22786,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
     setAudioOnly(!(value && _stream.hasVideo));
 
-    if ( value && _container  && _container.video()) {
+    if (value && _container && _container.video() && _stream.hasVideo) {
       _container.loading(value);
       _container.video().whenTimeIncrements(function() {
         _container.loading(false);
@@ -22101,6 +22817,55 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     }
 
     return this;
+  };
+
+  this.setPreferredResolution = function(preferredResolution) {
+    if (_state.isDestroyed() || !_peerConnection) {
+      OT.warn('Cannot set the max Resolution when not subscribing to a publisher');
+      return;
+    }
+
+    _properties.preferredResolution = preferredResolution;
+
+    if (_session.sessionInfo.p2pEnabled) {
+      OT.warn('Subscriber.setPreferredResolution will not work in a P2P Session');
+      return;
+    }
+
+    var curMaxResolution = _stream.getPreferredResolution();
+
+    var isUnchanged = (curMaxResolution && preferredResolution &&
+                        curMaxResolution.width ===  preferredResolution.width &&
+                        curMaxResolution.height ===  preferredResolution.height) ||
+                      (!curMaxResolution && !preferredResolution);
+
+    if (isUnchanged) {
+      return;
+    }
+
+    _stream.setPreferredResolution(preferredResolution);
+  };
+
+  this.setPreferredFrameRate = function(preferredFrameRate) {
+    if (_state.isDestroyed() || !_peerConnection) {
+      OT.warn('Cannot set the max frameRate when not subscribing to a publisher');
+      return;
+    }
+
+    _properties.preferredFrameRate = preferredFrameRate;
+
+    if (_session.sessionInfo.p2pEnabled) {
+      OT.warn('Subscriber.setPreferredFrameRate will not work in a P2P Session');
+      return;
+    }
+
+    
+    if (_stream.getPreferredFrameRate() == preferredFrameRate) {
+      return;
+    }
+    
+
+    _stream.setPreferredFrameRate(preferredFrameRate);
   };
 
   this.isSubscribing = function() {
@@ -22195,12 +22960,12 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
   this._ = {
     archivingStatus: function(status) {
-      if(_chrome) {
+      if (_chrome) {
         _chrome.archive.setArchiving(status);
       }
     },
 
-    getDataChannel: function (label, options, completion) {
+    getDataChannel: function(label, options, completion) {
       
       
       if (!_peerConnection) {
@@ -22254,8 +23019,23 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
   _startConnectingTime = OT.$.now();
 
-  if (_stream.connection.id !== _session.connection.id) {
-    logAnalyticsEvent('createPeerConnection', 'Attempt', '');
+  logAnalyticsEvent('createPeerConnection', 'Attempt', '');
+
+  _isLocalStream = _stream.connection.id === _session.connection.id;
+
+  if (!_properties.testNetwork && _isLocalStream) {
+    
+    var publisher = _session.getPublisherForStream(_stream);
+    if (!(publisher && publisher._.webRtcStream())) {
+      this.trigger('subscribeComplete', new OT.Error(null, 'InvalidStreamID'));
+      return this;
+    }
+
+    onRemoteStreamAdded.call(this, publisher._.webRtcStream());
+  } else {
+    if (_properties.testNetwork) {
+      this.setAudioVolume(0);
+    }
 
     _state.set('ConnectingToPeer');
 
@@ -22271,7 +23051,11 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
     }, this);
 
     
-    _peerConnection.init();
+    _peerConnection.init(function(err) {
+      if (err) {
+        throw err;
+      }
+    });
 
     if (OT.$.hasCapabilities('audioOutputLevelStat')) {
       _audioLevelSampler = new OT.GetStatsAudioLevelSampler(_peerConnection, 'out');
@@ -22279,7 +23063,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
       _audioLevelSampler = new OT.AnalyserAudioLevelSampler(OT.audioContext());
     }
 
-    if(_audioLevelSampler) {
+    if (_audioLevelSampler) {
       var subscriber = this;
       
       
@@ -22294,23 +23078,13 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
         });
       }, 60);
     }
-  } else {
-    logAnalyticsEvent('createPeerConnection', 'Attempt', '');
 
-    var publisher = _session.getPublisherForStream(_stream);
-    if(!(publisher && publisher._.webRtcStream())) {
-      this.trigger('subscribeComplete', new OT.Error(null, 'InvalidStreamID'));
-      return this;
-    }
-
-    
-    onRemoteStreamAdded.call(this, publisher._.webRtcStream());
   }
 
   logConnectivityEvent('Attempt', {streamId: _stream.id});
 
+  
 
- 
 
 
 
@@ -22342,6 +23116,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
+  
 
 
 
@@ -22397,6 +23172,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
+  
 
 
 
@@ -22420,6 +23196,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
+  
 
 
 
@@ -22436,6 +23213,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
+  
 
 
 
@@ -22475,6 +23253,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
+  
 
 
 
@@ -22483,13 +23262,7 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
-
-
-
-
-
-
-
+  
 
 
 
@@ -22545,7 +23318,6 @@ OT.Subscriber = function(targetElement, options, completionHandler) {
 
 
 
-
 OT.Session = function(apiKey, sessionId) {
   OT.$.eventing(this);
 
@@ -22556,7 +23328,7 @@ OT.Session = function(apiKey, sessionId) {
     return;
   }
 
-  if(sessionId == null) {
+  if (sessionId == null) {
     sessionId = apiKey;
     apiKey = null;
   }
@@ -22593,8 +23365,6 @@ OT.Session = function(apiKey, sessionId) {
       _connectivityAttemptPinger,
       dispatchError;
 
-
-
   var setState = OT.$.statable(this, [
     'disconnected', 'connecting', 'connected', 'disconnecting'
   ], 'disconnected');
@@ -22604,13 +23374,12 @@ OT.Session = function(apiKey, sessionId) {
   this.streams = new OT.$.Collection();
   this.archives = new OT.$.Collection();
 
+  
+  
+  
 
-
-
-
-
-
-
+  
+  
   sessionConnectFailed = function(reason, code) {
     setState('disconnected');
 
@@ -22626,7 +23395,7 @@ OT.Session = function(apiKey, sessionId) {
 
   sessionDisconnectedHandler = function(event) {
     var reason = event.reason;
-    if(reason === 'networkTimedout') {
+    if (reason === 'networkTimedout') {
       reason = 'networkDisconnected';
       this.logEvent('Connect', 'TimeOutDisconnect', {reason: event.reason});
     } else {
@@ -22677,7 +23446,7 @@ OT.Session = function(apiKey, sessionId) {
   };
 
   streamCreatedHandler = function(stream) {
-    if(stream.connection.id !== this.connection.id) {
+    if (stream.connection.id !== this.connection.id) {
       this.dispatchEvent(new OT.StreamEvent(
         OT.Event.names.STREAM_CREATED,
         stream,
@@ -22696,8 +23465,7 @@ OT.Session = function(apiKey, sessionId) {
       return; 
     }
 
-    if (propertyName === 'orientation') {
-      propertyName = 'videoDimensions';
+    if (propertyName === 'videoDimensions') {
       newValue = {width: newValue.width, height: newValue.height};
     }
 
@@ -22714,7 +23482,7 @@ OT.Session = function(apiKey, sessionId) {
 
     
     
-    if(stream.connection.id === this.connection.id) {
+    if (stream.connection.id === this.connection.id) {
       OT.$.forEach(OT.publishers.where({ streamId: stream.id }), OT.$.bind(function(publisher) {
         publisher._.unpublishFromSession(this, reason);
       }, this));
@@ -22728,14 +23496,13 @@ OT.Session = function(apiKey, sessionId) {
         
         OT.$.forEach(OT.subscribers.where({streamId: stream.id}), function(subscriber) {
           if (subscriber.session.id === this.id) {
-            if(subscriber.stream) {
+            if (subscriber.stream) {
               subscriber.destroy('streamDestroyed');
             }
           }
         }, this);
-      } else {
-        
       }
+      
     }, this);
 
     this.dispatchEvent(event, defaultAction);
@@ -22754,7 +23521,7 @@ OT.Session = function(apiKey, sessionId) {
       propertyName = event.changedProperty,
       newValue = event.newValue;
 
-    if(propertyName === 'status' && newValue === 'stopped') {
+    if (propertyName === 'status' && newValue === 'stopped') {
       this.dispatchEvent(new OT.ArchiveEvent('archiveStopped', archive));
     } else {
       this.dispatchEvent(new OT.ArchiveEvent('archiveUpdated', archive));
@@ -22812,7 +23579,6 @@ OT.Session = function(apiKey, sessionId) {
     _socket = new OT.Raptor.Socket(_connectionId, _widgetId, socketUrl, symphonyUrl,
       OT.SessionDispatcher(this));
 
-
     _socket.connect(_token, this.sessionInfo, OT.$.bind(function(error, sessionState) {
       if (error) {
         _socket = void 0;
@@ -22825,7 +23591,7 @@ OT.Session = function(apiKey, sessionId) {
       OT.debug('OT.Session: Received session state from Raptor', sessionState);
 
       this.connection = this.connections.get(_socket.id());
-      if(this.connection) {
+      if (this.connection) {
         this.capabilities = this.connection.permissions;
       }
 
@@ -22868,19 +23634,32 @@ OT.Session = function(apiKey, sessionId) {
 
   getSessionInfo = function() {
     if (this.is('connecting')) {
-      OT.SessionInfo.get(
-        this,
-        OT.$.bind(onSessionInfoResponse, this),
-        OT.$.bind(function(error) {
-          sessionConnectFailed.call(this, error.message +
-            (error.code ? ' (' + error.code + ')' : ''), error.code);
-        }, this)
+      var session = this;
+      this.logEvent('SessionInfo', 'Attempt');
+
+      OT.SessionInfo.get(sessionId, _token).then(
+        onSessionInfoResponse,
+        function(error) {
+          session.logConnectivityEvent('Failure', {
+            reason:'GetSessionInfo',
+            code: (error.code || 'No code'),
+            message: error.message
+          });
+
+          sessionConnectFailed.call(session,
+                error.message + (error.code ? ' (' + error.code + ')' : ''),
+                error.code);
+        }
       );
     }
   };
 
-  onSessionInfoResponse = function(sessionInfo) {
+  onSessionInfoResponse = OT.$.bind(function(sessionInfo) {
     if (this.is('connecting')) {
+      this.logEvent('SessionInfo', 'Success', {
+        messagingServer: sessionInfo.messagingServer
+      });
+
       var overrides = OT.properties.sessionInfoOverrides;
       this.sessionInfo = sessionInfo;
       if (overrides != null && typeof overrides === 'object') {
@@ -22902,15 +23681,24 @@ OT.Session = function(apiKey, sessionId) {
         connectMessenger.call(this);
       }
     }
-  };
+  }, this);
 
   
   permittedTo = OT.$.bind(function(action) {
     return this.capabilities.permittedTo(action);
   }, this);
 
+  
   dispatchError = OT.$.bind(function(code, message, completionHandler) {
-    OT.dispatchError(code, message, completionHandler, this);
+    OT.error(code, message);
+
+    if (completionHandler && OT.$.isFunction(completionHandler)) {
+      completionHandler.call(null, new OT.Error(code, message));
+    }
+
+    OT.handleJsException(message, code, {
+      session: this
+    });
   }, this);
 
   this.logEvent = function(action, variation, payload, options) {
@@ -22984,7 +23772,7 @@ OT.Session = function(apiKey, sessionId) {
 
     _session.logEvent('TestNetwork', 'Attempt', {});
 
-    if(this.isConnected()) {
+    if (this.isConnected()) {
       callback(new OT.$.Error('Session connected, cannot test network', 1015));
       return;
     }
@@ -23030,7 +23818,7 @@ OT.Session = function(apiKey, sessionId) {
       .then(function(stats) {
         OT.debug('Received stats from webrtcTest: ', stats);
         if (stats.bandwidth < testConfig.media.thresholdBitsPerSecond) {
-          return OT.$.RSVP.Promise.reject(new OT.$.Error('The detect bandwidth form the WebRTC ' +
+          return OT.$.RSVP.Promise.reject(new OT.$.Error('The detect bandwidth from the WebRTC ' +
           'stage of the test was not sufficient to run the HTTP stage of the test', 1553));
         }
 
@@ -23038,7 +23826,7 @@ OT.Session = function(apiKey, sessionId) {
       })
       .then(function() {
         
-        if(!webrtcStats.extended) {
+        if (!webrtcStats.extended) {
           return OT.httpTest({httpConfig: testConfig.http});
         }
       })
@@ -23074,7 +23862,7 @@ OT.Session = function(apiKey, sessionId) {
     this.logEvent('Connect', variation, payload, options);
   };
 
-
+  
 
 
 
@@ -23167,10 +23955,10 @@ OT.Session = function(apiKey, sessionId) {
 
   this.connect = function(token) {
 
-    if(apiKey == null && arguments.length > 1 &&
+    if (arguments.length > 1 &&
       (typeof arguments[0] === 'string' || typeof arguments[0] === 'number') &&
       typeof arguments[1] === 'string') {
-      _apiKey = token.toString();
+      if (apiKey == null) _apiKey = token.toString();
       token = arguments[1];
     }
 
@@ -23198,7 +23986,7 @@ OT.Session = function(apiKey, sessionId) {
       this.once('sessionConnectFailed', completionHandler);
     }
 
-    if(_apiKey == null || OT.$.isFunction(_apiKey)) {
+    if (_apiKey == null || OT.$.isFunction(_apiKey)) {
       setTimeout(OT.$.bind(
         sessionConnectFailed,
         this,
@@ -23213,7 +24001,7 @@ OT.Session = function(apiKey, sessionId) {
 
     if (!_sessionId || OT.$.isObject(_sessionId) || OT.$.isArray(_sessionId)) {
       var errorMsg;
-      if(!_sessionId) {
+      if (!_sessionId) {
         errorMsg = 'SessionID is undefined. You must pass a sessionID to initSession.';
       } else {
         errorMsg = 'SessionID is not a string. You must use string as the session ID passed into ' +
@@ -23244,7 +24032,7 @@ OT.Session = function(apiKey, sessionId) {
     return this;
   };
 
-
+  
 
 
 
@@ -23308,8 +24096,7 @@ OT.Session = function(apiKey, sessionId) {
         setState('disconnecting');
         _socket.disconnect(drainSocketBuffer);
       }
-    }
-    else {
+    } else {
       reset();
     }
   }, this);
@@ -23325,7 +24112,7 @@ OT.Session = function(apiKey, sessionId) {
     disconnect(reason !== 'unloaded');
   };
 
-
+  
 
 
 
@@ -23443,11 +24230,11 @@ OT.Session = function(apiKey, sessionId) {
 
 
   this.publish = function(publisher, properties, completionHandler) {
-    if(typeof publisher === 'function') {
+    if (typeof publisher === 'function') {
       completionHandler = publisher;
       publisher = undefined;
     }
-    if(typeof properties === 'function') {
+    if (typeof properties === 'function') {
       completionHandler = properties;
       properties = undefined;
     }
@@ -23463,7 +24250,7 @@ OT.Session = function(apiKey, sessionId) {
         },
         sessionId: _sessionId,
         streamId: (publisher && publisher.stream) ? publisher.stream.id : null,
-        partnerId: _apiKey,
+        partnerId: _apiKey
       });
 
       if (completionHandler && OT.$.isFunction(completionHandler)) {
@@ -23488,21 +24275,21 @@ OT.Session = function(apiKey, sessionId) {
     }
 
     
-    if (!publisher || typeof(publisher)==='string' || OT.$.isElementNode(publisher)) {
+    if (!publisher || typeof (publisher) === 'string' || OT.$.isElementNode(publisher)) {
       
       publisher = OT.initPublisher(publisher, properties);
 
-    } else if (publisher instanceof OT.Publisher){
+    } else if (publisher instanceof OT.Publisher) {
 
       
       if ('session' in publisher && publisher.session && 'sessionId' in publisher.session) {
         
-        if( publisher.session.sessionId === this.sessionId){
+        if (publisher.session.sessionId === this.sessionId) {
           OT.warn('Cannot publish ' + publisher.guid() + ' again to ' +
             this.sessionId + '. Please call session.unpublish(publisher) first.');
         } else {
           OT.warn('Cannot publish ' + publisher.guid() + ' publisher already attached to ' +
-            publisher.session.sessionId+ '. Please call session.unpublish(publisher) first.');
+            publisher.session.sessionId + '. Please call session.unpublish(publisher) first.');
         }
       }
 
@@ -23514,16 +24301,19 @@ OT.Session = function(apiKey, sessionId) {
       return;
     }
 
-    publisher.once('publishComplete', function(err) {
+    publisher.once('publishComplete', function() {
+      var args = Array.prototype.slice.call(arguments),
+          err = args[0];
+
       if (err) {
-        dispatchError(OT.ExceptionCodes.UNABLE_TO_PUBLISH,
-          'Session.publish :: ' + err.message,
-          completionHandler);
-        return;
+        err.message = 'Session.publish :: ' + err.message;
+        args[0] = err;
+
+        OT.error(err.code, err.message);
       }
 
       if (completionHandler && OT.$.isFunction(completionHandler)) {
-        completionHandler.apply(null, arguments);
+        completionHandler.apply(null, args);
       }
     });
 
@@ -23534,7 +24324,7 @@ OT.Session = function(apiKey, sessionId) {
     return publisher;
   };
 
-
+  
 
 
 
@@ -23624,6 +24414,14 @@ OT.Session = function(apiKey, sessionId) {
     
     publisher._.unpublishFromSession(this, 'unpublished');
   };
+
+  
+
+
+
+
+
+
 
 
 
@@ -23823,13 +24621,13 @@ OT.Session = function(apiKey, sessionId) {
 
 
   this.subscribe = function(stream, targetElement, properties, completionHandler) {
-    if(typeof targetElement === 'function') {
+    if (typeof targetElement === 'function') {
       completionHandler = targetElement;
       targetElement = undefined;
       properties = undefined;
     }
 
-    if(typeof properties === 'function') {
+    if (typeof properties === 'function') {
       completionHandler = properties;
       properties = undefined;
     }
@@ -23855,7 +24653,6 @@ OT.Session = function(apiKey, sessionId) {
       return;
     }
 
-
     var subscriber = new OT.Subscriber(targetElement, OT.$.extend(properties || {}, {
       stream: stream,
       session: this
@@ -23875,7 +24672,7 @@ OT.Session = function(apiKey, sessionId) {
 
         dispatchError(errorCode, errorMessage, completionHandler);
 
-      } else  if (completionHandler && OT.$.isFunction(completionHandler)) {
+      } else if (completionHandler && OT.$.isFunction(completionHandler)) {
         completionHandler.apply(null, arguments);
       }
 
@@ -23887,7 +24684,7 @@ OT.Session = function(apiKey, sessionId) {
 
   };
 
-
+  
 
 
 
@@ -23964,7 +24761,7 @@ OT.Session = function(apiKey, sessionId) {
     return true;
   };
 
-
+  
 
 
 
@@ -23981,7 +24778,7 @@ OT.Session = function(apiKey, sessionId) {
     return OT.subscribers.where({streamId: stream.id});
   };
 
-
+  
 
 
 
@@ -24093,8 +24890,7 @@ OT.Session = function(apiKey, sessionId) {
     }
   };
 
-
-
+  
 
 
 
@@ -24220,14 +25016,13 @@ OT.Session = function(apiKey, sessionId) {
     }
 
     _socket.signal(_options, _completion, this.logEvent);
-    if (options && options.data && (typeof(options.data) !== 'string')) {
+    if (options && options.data && typeof options.data !== 'string') {
       OT.warn('Signaling of anything other than Strings is deprecated. ' +
               'Please update the data property to be a string.');
     }
   };
 
-
-
+  
 
 
 
@@ -24319,31 +25114,54 @@ OT.Session = function(apiKey, sessionId) {
       return;
     }
 
+    var connectionId = (
+      typeof connectionOrConnectionId === 'string' ?
+      connectionOrConnectionId :
+      connectionOrConnectionId.id
+    );
+
+    var invalidParameterErrorMsg = (
+      'Invalid Parameter. Check that you have passed valid parameter values into the method call.'
+    );
+
+    if (!connectionId) {
+      dispatchError(
+        OT.ExceptionCodes.INVALID_PARAMETER,
+        invalidParameterErrorMsg,
+        completionHandler
+      );
+
+      return;
+    }
+
     var notPermittedErrorMsg = 'This token does not allow forceDisconnect. ' +
       'The role must be at least `moderator` to enable this functionality';
 
-    if (permittedTo('forceDisconnect')) {
-      var connectionId = typeof connectionOrConnectionId === 'string' ?
-        connectionOrConnectionId : connectionOrConnectionId.id;
-
-      _socket.forceDisconnect(connectionId, function(err) {
-        if (err) {
-          dispatchError(OT.ExceptionCodes.UNABLE_TO_FORCE_DISCONNECT,
-            notPermittedErrorMsg, completionHandler);
-
-        } else if (completionHandler && OT.$.isFunction(completionHandler)) {
-          completionHandler.apply(null, arguments);
-        }
-      });
-    } else {
+    if (!permittedTo('forceDisconnect')) {
       
-      dispatchError(OT.ExceptionCodes.UNABLE_TO_FORCE_DISCONNECT,
-        notPermittedErrorMsg, completionHandler);
+      dispatchError(
+        OT.ExceptionCodes.UNABLE_TO_FORCE_DISCONNECT,
+        notPermittedErrorMsg,
+        completionHandler
+      );
+
+      return;
     }
+
+    _socket.forceDisconnect(connectionId, function(err) {
+      if (err) {
+        dispatchError(
+          OT.ExceptionCodes.INVALID_PARAMETER,
+          invalidParameterErrorMsg,
+          completionHandler
+        );
+      } else if (completionHandler && OT.$.isFunction(completionHandler)) {
+        completionHandler.apply(null, arguments);
+      }
+    });
   };
 
-
-
+  
 
 
 
@@ -24431,16 +25249,13 @@ OT.Session = function(apiKey, sessionId) {
     }
   };
 
-  this.getStateManager = function() {
-    OT.warn('Fixme: Have not implemented session.getStateManager');
-  };
-
   this.isConnected = function() {
     return this.is('connected');
   };
 
   this.capabilities = new OT.Capabilities([]);
 
+  
 
 
 
@@ -24450,6 +25265,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24459,6 +25275,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24470,6 +25287,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24477,6 +25295,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24490,6 +25309,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24509,6 +25329,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24519,6 +25340,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24539,6 +25361,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24573,6 +25396,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
+  
 
 
 
@@ -24605,17 +25429,7 @@ OT.Session = function(apiKey, sessionId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+  
 
 
 
@@ -24751,7 +25565,7 @@ OT.Publisher = function(options) {
       _audioLevelMeter,
       _properties,
       _validResolutions,
-      _validFrameRates = [ 1, 7, 15, 30 ],
+      _validFrameRates = [1, 7, 15, 30],
       _prevStats,
       _state,
       _iceServers,
@@ -24765,6 +25579,7 @@ OT.Publisher = function(options) {
         options.videoSource === 'application'
       ),
       _connectivityAttemptPinger,
+      _enableSimulcast,
       _publisher = this;
 
   _properties = OT.$.defaults(options || {}, {
@@ -24783,21 +25598,13 @@ OT.Publisher = function(options) {
     '1280x720': {width: 1280, height: 720}
   };
 
-  if (_isScreenSharing) {
-    if (window.location.protocol !== 'https:') {
-      OT.warn('Screen Sharing typically requires pages to be loadever over HTTPS - unless this ' +
-        'browser is configured locally to allow non-SSL pages, permission will be denied ' +
-        'without user input.');
-    }
-  }
-
   _prevStats = {
-    'timeStamp' : OT.$.now()
+    timeStamp: OT.$.now()
   };
 
   OT.$.eventing(this);
 
-  if(!_isScreenSharing && _audioLevelCapable) {
+  if (!_isScreenSharing && _audioLevelCapable) {
     _audioLevelSampler = new OT.AnalyserAudioLevelSampler(OT.audioContext());
 
     var audioLevelRunner = new OT.IntervalRunner(function() {
@@ -24829,10 +25636,10 @@ OT.Publisher = function(options) {
           action: action,
           variation: variation,
           payload: payload,
-          'sessionId': _session ? _session.sessionId : null,
-          'connectionId': _session &&
+          sessionId: _session ? _session.sessionId : null,
+          connectionId: _session &&
             _session.isConnected() ? _session.connection.connectionId : null,
-          'partnerId': _session ? _session.apiKey : OT.APIKEY,
+          partnerId: _session ? _session.apiKey : OT.APIKEY,
           streamId: _streamId
         }, throttle);
       },
@@ -24841,10 +25648,10 @@ OT.Publisher = function(options) {
         if (variation === 'Attempt' || !_connectivityAttemptPinger) {
           _connectivityAttemptPinger = new OT.ConnectivityAttemptPinger({
             action: 'Publish',
-            'sessionId': _session ? _session.sessionId : null,
-            'connectionId': _session &&
+            sessionId: _session ? _session.sessionId : null,
+            connectionId: _session &&
               _session.isConnected() ? _session.connection.connectionId : null,
-            'partnerId': _session ? _session.apiKey : OT.APIKEY,
+            partnerId: _session ? _session.apiKey : OT.APIKEY,
             streamId: _streamId
           });
         }
@@ -24872,11 +25679,40 @@ OT.Publisher = function(options) {
           mediaServerName: _session ? _session.sessionInfo.messagingServer : null,
           p2pFlag: _session ? _session.sessionInfo.p2pEnabled : false,
           duration: _publishStartTime ? new Date().getTime() - _publishStartTime.getTime() : 0,
-          remoteConnectionId: connection.id
+          remoteConnectionId: connection.id,
+          scalableVideo: !!_enableSimulcast
         };
-        OT.analytics.logQOS( OT.$.extend(QoSBlob, parsedStats) );
+        OT.analytics.logQOS(OT.$.extend(QoSBlob, parsedStats));
         this.trigger('qos', parsedStats);
       }, this),
+
+      
+      
+      
+      
+      
+      
+      getVideoDimensions = function() {
+        var streamWidth;
+        var streamHeight;
+
+        
+        
+        if (_properties.videoDimensions) {
+          streamWidth = Math.min(_properties.videoDimensions.width,
+            _targetElement.videoWidth() || 640);
+          streamHeight = Math.min(_properties.videoDimensions.height,
+            _targetElement.videoHeight() || 480);
+        } else {
+          streamWidth = _targetElement.videoWidth() || 640;
+          streamHeight = _targetElement.videoHeight() || 480;
+        }
+
+        return {
+          width: streamWidth,
+          height: streamHeight
+        };
+      },
 
       
 
@@ -24939,7 +25775,6 @@ OT.Publisher = function(options) {
         this.publishVideo(_properties.publishVideo &&
           _webRTCStream.getVideoTracks().length > 0);
 
-
         this.accessAllowed = true;
         this.dispatchEvent(new OT.Event(OT.Event.names.ACCESS_ALLOWED, false));
 
@@ -24959,7 +25794,7 @@ OT.Publisher = function(options) {
           onLoaded();
         });
 
-        if(_audioLevelSampler && _webRTCStream.getAudioTracks().length > 0) {
+        if (_audioLevelSampler && _webRTCStream.getAudioTracks().length > 0) {
           _audioLevelSampler.webRTCStream(_webRTCStream);
         }
 
@@ -25005,6 +25840,17 @@ OT.Publisher = function(options) {
       
       
       onAccessDenied = OT.$.bind(function(error) {
+        if (_isScreenSharing) {
+          if (window.location.protocol !== 'https:') {
+            
+
+
+
+
+            error.message += ' Note: https:// is required for screen sharing.';
+          }
+        }
+
         OT.error('OT.Publisher.onStreamAvailableError Permission Denied');
 
         _state.set('Failed');
@@ -25032,7 +25878,7 @@ OT.Publisher = function(options) {
       onAccessDialogClosed = OT.$.bind(function() {
         logAnalyticsEvent('accessDialog', 'Closed');
 
-        this.dispatchEvent( new OT.Event(OT.Event.names.ACCESS_DIALOG_CLOSED, false));
+        this.dispatchEvent(new OT.Event(OT.Event.names.ACCESS_DIALOG_CLOSED, false));
       }, this),
 
       onVideoError = OT.$.bind(function(errorCode, errorReason) {
@@ -25119,7 +25965,7 @@ OT.Publisher = function(options) {
         this.dispatchEvent(new OT.StreamEvent('streamCreated', stream, null, false));
 
         var payload = {
-          streamType: 'WebRTC',
+          streamType: 'WebRTC'
         };
         logConnectivityEvent('Success', payload);
       }, this),
@@ -25129,12 +25975,22 @@ OT.Publisher = function(options) {
         if (_webRTCStream) {
           
           
-          _webRTCStream.stop();
+          if (_webRTCStream.stop) {
+            
+            _webRTCStream.stop();
+          } else {
+            
+            var tracks = _webRTCStream.getAudioTracks().concat(_webRTCStream.getVideoTracks());
+            tracks.forEach(function(track) {
+              track.stop();
+            });
+          }
+
           _webRTCStream = null;
         }
       },
 
-      createPeerConnectionForRemote = OT.$.bind(function(remoteConnection) {
+      createPeerConnectionForRemote = OT.$.bind(function(remoteConnection, completion) {
         var peerConnection = _peerConnections[remoteConnection.id];
 
         if (!peerConnection) {
@@ -25146,12 +26002,42 @@ OT.Publisher = function(options) {
           remoteConnection.on('destroyed',
             OT.$.bind(this.cleanupSubscriber, this, remoteConnection.id));
 
+          
+          var numberOfSimulcastStreams = 1;
+
+          _enableSimulcast = false;
+          if (OT.$.env.name === 'Chrome' && !_isScreenSharing &&
+            !_session.sessionInfo.p2pEnabled &&
+            _properties.constraints.video) {
+            
+            
+            _enableSimulcast = _session.sessionInfo.simulcast;
+
+            if (_enableSimulcast === void 0) {
+              
+              
+              _enableSimulcast = options && options._enableSimulcast;
+            }
+          }
+
+          if (_enableSimulcast) {
+            var streamDimensions = getVideoDimensions();
+            
+            if (streamDimensions.width > 640 &&
+                streamDimensions.height > 480) {
+              numberOfSimulcastStreams = 3;
+            } else {
+              numberOfSimulcastStreams = 2;
+            }
+          }
+
           peerConnection = _peerConnections[remoteConnection.id] = new OT.PublisherPeerConnection(
             remoteConnection,
             _session,
             _streamId,
             _webRTCStream,
-            _properties.channels
+            _properties.channels,
+            numberOfSimulcastStreams
           );
 
           peerConnection.on({
@@ -25167,10 +26053,12 @@ OT.Publisher = function(options) {
             qos: recordQOS
           }, this);
 
-          peerConnection.init(_iceServers);
+          peerConnection.init(_iceServers, completion);
+        } else {
+          OT.$.callAsync(function() {
+            completion(undefined, peerConnection);
+          });
         }
-
-        return peerConnection;
       }, this),
 
       
@@ -25193,14 +26081,14 @@ OT.Publisher = function(options) {
       updateChromeForStyleChange = function(key, value) {
         if (!_chrome) return;
 
-        switch(key) {
+        switch (key) {
           case 'nameDisplayMode':
             _chrome.name.setDisplayMode(value);
             _chrome.backingBar.setNameMode(value);
             break;
 
           case 'showArchiveStatus':
-            logAnalyticsEvent('showArchiveStatus', 'styleChange', {mode: value ? 'on': 'off'});
+            logAnalyticsEvent('showArchiveStatus', 'styleChange', {mode: value ? 'on' : 'off'});
             _chrome.archive.setShowArchiveStatus(value);
             break;
 
@@ -25220,7 +26108,7 @@ OT.Publisher = function(options) {
 
       createChrome = function() {
 
-        if(!this.getStyle('showArchiveStatus')) {
+        if (!this.getStyle('showArchiveStatus')) {
           logAnalyticsEvent('showArchiveStatus', 'createChrome', {mode: 'off'});
         }
 
@@ -25273,9 +26161,7 @@ OT.Publisher = function(options) {
           unmuted: OT.$.bind(this.publishAudio, this, true)
         });
 
-        if(_audioLevelMeter && this.getStyle('audioLevelDisplayMode') === 'auto') {
-          _audioLevelMeter[_widgetView.audioOnly() ? 'show' : 'hide']();
-        }
+        updateAudioLevelMeterDisplay();
       },
 
       reset = OT.$.bind(function() {
@@ -25319,9 +26205,19 @@ OT.Publisher = function(options) {
     buttonDisplayMode: 'auto',
     audioLevelDisplayMode: _isScreenSharing ? 'off' : 'auto',
     backgroundImageURI: null
-  }, _properties.showControls, function (payload) {
+  }, _properties.showControls, function(payload) {
     logAnalyticsEvent('SetStyle', 'Publisher', payload, 0.1);
   });
+
+  var updateAudioLevelMeterDisplay = function() {
+    if (_audioLevelMeter && _publisher.getStyle('audioLevelDisplayMode') === 'auto') {
+      if (!_properties.publishVideo && _properties.publishAudio) {
+        _audioLevelMeter.show();
+      } else {
+        _audioLevelMeter.hide();
+      }
+    }
+  };
 
   var setAudioOnly = function(audioOnly) {
     if (_widgetView) {
@@ -25329,15 +26225,15 @@ OT.Publisher = function(options) {
       _widgetView.showPoster(audioOnly);
     }
 
-    if (_audioLevelMeter && _publisher.getStyle('audioLevelDisplayMode') === 'auto') {
-      _audioLevelMeter[audioOnly ? 'show' : 'hide']();
-    }
+    updateAudioLevelMeterDisplay();
   };
 
   this.publish = function(targetElement) {
     OT.debug('OT.Publisher: publish');
 
-    if ( _state.isAttemptingToPublish() || _state.isPublishing() ) reset();
+    if (_state.isAttemptingToPublish() || _state.isPublishing()) {
+      reset();
+    }
     _state.set('GetUserMedia');
 
     if (!_properties.constraints) {
@@ -25351,12 +26247,12 @@ OT.Publisher = function(options) {
         _properties.audioSource = null;
       }
 
-      if(_properties.audioSource === null || _properties.audioSource === false) {
+      if (_properties.audioSource === null || _properties.audioSource === false) {
         _properties.constraints.audio = false;
         _properties.publishAudio = false;
       } else {
-        if(typeof _properties.audioSource === 'object') {
-          if(_properties.audioSource.deviceId != null) {
+        if (typeof _properties.audioSource === 'object') {
+          if (_properties.audioSource.deviceId != null) {
             _properties.audioSource = _properties.audioSource.deviceId;
           } else {
             OT.warn('Invalid audioSource passed to Publisher. Expected either a device ID');
@@ -25378,12 +26274,12 @@ OT.Publisher = function(options) {
         }
       }
 
-      if(_properties.videoSource === null || _properties.videoSource === false) {
+      if (_properties.videoSource === null || _properties.videoSource === false) {
         _properties.constraints.video = false;
         _properties.publishVideo = false;
       } else {
 
-        if(typeof _properties.videoSource === 'object' &&
+        if (typeof _properties.videoSource === 'object' &&
           _properties.videoSource.deviceId == null) {
           OT.warn('Invalid videoSource passed to Publisher. Expected either a device ' +
             'ID or device.');
@@ -25407,12 +26303,13 @@ OT.Publisher = function(options) {
 
           var mandatory = _properties.constraints.video.mandatory;
 
-          if(_isScreenSharing) {
-            
-          } else if(_properties.videoSource.deviceId != null) {
-            mandatory.sourceId = _properties.videoSource.deviceId;
-          } else {
-            mandatory.sourceId = _properties.videoSource;
+          
+          if (!_isScreenSharing) {
+            if (_properties.videoSource.deviceId != null) {
+              mandatory.sourceId = _properties.videoSource.deviceId;
+            } else {
+              mandatory.sourceId = _properties.videoSource;
+            }
           }
         }
 
@@ -25432,9 +26329,8 @@ OT.Publisher = function(options) {
                   {minHeight: _properties.videoDimensions.height},
                   {maxHeight: _properties.videoDimensions.height}
                 ]);
-            } else {
-              
             }
+            
           }
         }
 
@@ -25459,9 +26355,8 @@ OT.Publisher = function(options) {
               _properties.videoDimensions.width;
             _properties.constraints.video.mandatory.maxHeight =
               _properties.videoDimensions.height;
-          } else {
-            
           }
+          
         }
 
         if (_properties.frameRate !== void 0 &&
@@ -25514,7 +26409,7 @@ OT.Publisher = function(options) {
         var event = new OT.MediaStoppedEvent(_publisher);
 
         _publisher.dispatchEvent(event, function() {
-          if(!event.isDefaultPrevented()) {
+          if (!event.isDefaultPrevented()) {
             if (_session) {
               _publisher._.unpublishFromSession(_session, 'mediaStopped');
             } else {
@@ -25534,12 +26429,12 @@ OT.Publisher = function(options) {
                 );
               } else if (response.extensionRegistered === false) {
                 onScreenSharingError(
-                  new Error('Screen Sharing suppor in this browser requires an extension, but ' +
+                  new Error('Screen Sharing support in this browser requires an extension, but ' +
                     'one has not been registered.')
                 );
               } else if (response.extensionInstalled === false) {
                 onScreenSharingError(
-                  new Error('Screen Sharing suppor in this browser requires an extension, but ' +
+                  new Error('Screen Sharing support in this browser requires an extension, but ' +
                     'the extension is not installed.')
                 );
               } else {
@@ -25570,11 +26465,11 @@ OT.Publisher = function(options) {
             });
           } else {
             OT.$.shouldAskForDevices(function(devices) {
-              if(!devices.video) {
+              if (!devices.video) {
                 OT.warn('Setting video constraint to false, there are no video sources');
                 _properties.constraints.video = false;
               }
-              if(!devices.audio) {
+              if (!devices.audio) {
                 OT.warn('Setting audio constraint to false, there are no audio sources');
                 _properties.constraints.audio = false;
               }
@@ -25606,7 +26501,7 @@ OT.Publisher = function(options) {
     return this;
   };
 
-
+  
 
 
 
@@ -25635,11 +26530,12 @@ OT.Publisher = function(options) {
       _stream.setChannelActiveState('audio', value);
     }
 
+    updateAudioLevelMeterDisplay();
+
     return this;
   };
 
-
-
+  
 
 
 
@@ -25666,7 +26562,7 @@ OT.Publisher = function(options) {
     
     if (_webRTCStream) {
       var videoTracks = _webRTCStream.getVideoTracks();
-      for (var i=0, num=videoTracks.length; i<num; ++i) {
+      for (var i = 0, num = videoTracks.length; i < num; ++i) {
         videoTracks[i].setEnabled(value);
       }
     }
@@ -25687,6 +26583,16 @@ OT.Publisher = function(options) {
 
 
   this.destroy = function( reason, quiet) {
+    if (_state.isAttemptingToPublish()) {
+      if (_connectivityAttemptPinger) {
+        _connectivityAttemptPinger.stop();
+        _connectivityAttemptPinger = null;
+      }
+      if (_session) {
+        logConnectivityEvent('Canceled');
+      }
+    }
+
     if (_state.isDestroyed()) return;
     _state.set('Destroyed');
 
@@ -25729,7 +26635,6 @@ OT.Publisher = function(options) {
     }
   };
 
-
   this.processMessage = function(type, fromConnection, message) {
     OT.debug('OT.Publisher.processMessage: Received ' + type + ' from ' + fromConnection.id);
     OT.debug(message);
@@ -25740,8 +26645,13 @@ OT.Publisher = function(options) {
         break;
 
       default:
-        var peerConnection = createPeerConnectionForRemote(fromConnection);
-        peerConnection.processMessage(type, message);
+        createPeerConnectionForRemote(fromConnection, function(err, peerConnection) {
+          if (err) {
+            throw err;
+          }
+
+          peerConnection.processMessage(type, message);
+        });
     }
   };
 
@@ -25776,19 +26686,13 @@ OT.Publisher = function(options) {
     return _targetElement.imgData();
   };
 
-
   
   this._ = {
     publishToSession: OT.$.bind(function(session) {
       
       this.session = _session = session;
-
       _streamId = OT.$.uuid();
       var createStream = function() {
-
-        var streamWidth,
-            streamHeight;
-
         
         
         if (!_session) return;
@@ -25833,18 +26737,7 @@ OT.Publisher = function(options) {
           _iceServers = OT.Raptor.parseIceServers(message);
         }, this);
 
-        
-        
-        if (_properties.videoDimensions) {
-          streamWidth = Math.min(_properties.videoDimensions.width,
-            _targetElement.videoWidth() || 640);
-          streamHeight = Math.min(_properties.videoDimensions.height,
-            _targetElement.videoHeight() || 480);
-        } else {
-          streamWidth = _targetElement.videoWidth() || 640;
-          streamHeight = _targetElement.videoHeight() || 480;
-        }
-
+        var streamDimensions = getVideoDimensions();
         var streamChannels = [];
 
         if (!(_properties.videoSource === null || _properties.videoSource === false)) {
@@ -25854,8 +26747,8 @@ OT.Publisher = function(options) {
             active: _properties.publishVideo,
             orientation: OT.VideoOrientation.ROTATED_NORMAL,
             frameRate: _properties.frameRate,
-            width: streamWidth,
-            height: streamHeight,
+            width: streamDimensions.width,
+            height: streamDimensions.height,
             source: _isScreenSharing ? 'screen' : 'camera',
             fitMode: _properties.fitMode
           }));
@@ -25876,7 +26769,10 @@ OT.Publisher = function(options) {
       if (_loaded) createStream.call(this);
       else this.on('initSuccess', createStream, this);
 
-      logConnectivityEvent('Attempt', {streamType: 'WebRTC'});
+      logConnectivityEvent('Attempt', {
+        streamType: 'WebRTC',
+        dataChannels: _properties.channels
+      });
 
       return this;
     }, this),
@@ -25896,13 +26792,17 @@ OT.Publisher = function(options) {
       
       
       this.disconnect();
+      if (_state.isAttemptingToPublish()) {
+        logConnectivityEvent('Canceled');
+      }
       this.session = _session = null;
 
       
       if (!_state.isDestroyed()) _state.set('MediaBound');
 
-      if(_connectivityAttemptPinger) {
+      if (_connectivityAttemptPinger) {
         _connectivityAttemptPinger.stop();
+        _connectivityAttemptPinger = null;
       }
       logAnalyticsEvent('unpublish', 'Success', {sessionId: session.id});
 
@@ -25912,10 +26812,10 @@ OT.Publisher = function(options) {
     }, this),
 
     streamDestroyed: OT.$.bind(function(reason) {
-      if(OT.$.arrayIndexOf(['reset'], reason) < 0) {
+      if (OT.$.arrayIndexOf(['reset'], reason) < 0) {
         var event = new OT.StreamEvent('streamDestroyed', _stream, reason, true);
         var defaultAction = OT.$.bind(function() {
-          if(!event.isDefaultPrevented()) {
+          if (!event.isDefaultPrevented()) {
             this.destroy();
           }
         }, this);
@@ -25923,9 +26823,8 @@ OT.Publisher = function(options) {
       }
     }, this),
 
-
     archivingStatus: OT.$.bind(function(status) {
-      if(_chrome) {
+      if (_chrome) {
         _chrome.archive.setArchiving(status);
       }
 
@@ -26027,7 +26926,7 @@ OT.Publisher = function(options) {
       return switchTracksPromise;
     },
 
-    getDataChannel: function (label, options, completion) {
+    getDataChannel: function(label, options, completion) {
       var pc = _peerConnections[OT.$.keys(_peerConnections)[0]];
 
       
@@ -26070,7 +26969,6 @@ OT.Publisher = function(options) {
   this.setMicrophone = function() {
     OT.warn('Fixme: Haven\'t implemented setMicrophone');
   };
-
 
   
 
@@ -26125,6 +27023,7 @@ OT.Publisher = function(options) {
 
   this.accessAllowed = false;
 
+  
 
 
 
@@ -26135,6 +27034,7 @@ OT.Publisher = function(options) {
 
 
 
+  
 
 
 
@@ -26143,6 +27043,7 @@ OT.Publisher = function(options) {
 
 
 
+  
 
 
 
@@ -26151,10 +27052,7 @@ OT.Publisher = function(options) {
 
 
 
-
-
-
-
+  
 
 
 
@@ -26197,6 +27095,16 @@ OT.Publisher = function(options) {
 
 
 
+  
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -26209,6 +27117,15 @@ OT.Publisher = function(options) {
 
 
 
+  
+
+
+
+
+
+
+
+  
 
 
 
@@ -26217,26 +27134,7 @@ OT.Publisher = function(options) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
 
 
 
@@ -26249,38 +27147,6 @@ OT.Publisher = function(options) {
 
 OT.Publisher.nextId = OT.$.uuid;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-OT.onUnload(function() {
-  OT.publishers.destroy();
-  OT.subscribers.destroy();
-  OT.sessions.destroy('unloaded');
-});
-
-loadCSS(OT.properties.cssURL);
-
-
-
-
-
-
-
-if (typeof define === 'function' && define.amd) {
-  define( 'TB', [], function () { return TB; } );
-}
 
 
 
@@ -26325,7 +27191,7 @@ if (typeof define === 'function' && define.amd) {
 
 OT.initSession = function(apiKey, sessionId) {
 
-  if(sessionId == null) {
+  if (sessionId == null) {
     sessionId = apiKey;
     apiKey = null;
   }
@@ -26639,29 +27505,35 @@ OT.initSession = function(apiKey, sessionId) {
 
 
 
+
+
+
+
+
+
+
 OT.initPublisher = function(targetElement, properties, completionHandler) {
-  OT.debug('OT.initPublisher('+targetElement+')');
+  OT.debug('OT.initPublisher(' + targetElement + ')');
 
   
   
-  if(typeof targetElement === 'string' && !document.getElementById(targetElement)) {
+  if (typeof targetElement === 'string' && !document.getElementById(targetElement)) {
     targetElement = properties;
     properties = completionHandler;
     completionHandler = arguments[3];
   }
 
-  if(typeof targetElement === 'function') {
+  if (typeof targetElement === 'function') {
     completionHandler = targetElement;
     properties = undefined;
     targetElement = undefined;
-  }
-  else if (OT.$.isObject(targetElement) && !(OT.$.isElementNode(targetElement))) {
+  } else if (OT.$.isObject(targetElement) && !(OT.$.isElementNode(targetElement))) {
     completionHandler = properties;
     properties = targetElement;
     targetElement = undefined;
   }
 
-  if(typeof properties === 'function') {
+  if (typeof properties === 'function') {
     completionHandler = properties;
     properties = undefined;
   }
@@ -26669,27 +27541,24 @@ OT.initPublisher = function(targetElement, properties, completionHandler) {
   var publisher = new OT.Publisher(properties);
   OT.publishers.add(publisher);
 
-  var triggerCallback = function triggerCallback (err) {
-    if (err) {
-      OT.dispatchError(err.code, err.message, completionHandler, publisher.session);
-    } else if (completionHandler && OT.$.isFunction(completionHandler)) {
+  var triggerCallback = function triggerCallback() {
+    if (completionHandler && OT.$.isFunction(completionHandler)) {
       completionHandler.apply(null, arguments);
     }
   },
 
-  removeInitSuccessAndCallComplete = function removeInitSuccessAndCallComplete (err) {
+  removeInitSuccessAndCallComplete = function removeInitSuccessAndCallComplete(err) {
     publisher.off('publishComplete', removeHandlersAndCallComplete);
     triggerCallback(err);
   },
 
-  removeHandlersAndCallComplete = function removeHandlersAndCallComplete (err) {
+  removeHandlersAndCallComplete = function removeHandlersAndCallComplete(err) {
     publisher.off('initSuccess', removeInitSuccessAndCallComplete);
 
     
     
     if (err) triggerCallback(err);
   };
-
 
   publisher.once('initSuccess', removeInitSuccessAndCallComplete);
   publisher.once('publishComplete', removeHandlersAndCallComplete);
@@ -26741,15 +27610,65 @@ OT.initPublisher = function(targetElement, properties, completionHandler) {
 
 
 
-
 OT.getDevices = function(callback) {
   OT.$.getMediaDevices(callback);
 };
 
 
 
-OT.reportIssue = function(){
-  OT.warn('ToDo: haven\'t yet implemented OT.reportIssue');
+
+
+
+
+
+
+
+
+
+
+
+
+
+OT.reportIssue = function(completionHandler) {
+  var reportIssueId = OT.$.uuid();
+  var sessionCount = OT.sessions.length();
+  var completedLogEventCount = 0;
+  var errorReported = false;
+
+  function logEventCompletionHandler(error) {
+    if (error) {
+      if (completionHandler && !errorReported) {
+        var reportIssueError = new OT.Error(OT.ExceptionCodes.REPORT_ISSUE_ERROR,
+          'Error calling OT.reportIssue(). Check the client\'s network connection.');
+        completionHandler(reportIssueError);
+        errorReported = true;
+      }
+    } else {
+      completedLogEventCount++;
+      if (completedLogEventCount >= sessionCount && completionHandler && !errorReported) {
+        completionHandler(null, reportIssueId);
+      }
+    }
+  }
+
+  var eventOptions = {
+    action: 'ReportIssue',
+    payload: {
+      reportIssueId: reportIssueId
+    }
+  };
+
+  if (sessionCount === 0) {
+    OT.analytics.logEvent(eventOptions, null, logEventCompletionHandler);
+  } else {
+    OT.sessions.forEach(function(session) {
+      var individualSessionEventOptions = OT.$.extend({
+        sessionId: session.sessionId,
+        partnerId: session.isConnected() ? session.sessionInfo.partnerId : null
+      }, eventOptions);
+      OT.analytics.logEvent(individualSessionEventOptions, null, logEventCompletionHandler);
+    });
+  }
 };
 
 OT.components = {};
@@ -26979,6 +27898,35 @@ OT.components = {};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+OT.onUnload(function() {
+  OT.publishers.destroy();
+  OT.subscribers.destroy();
+  OT.sessions.destroy('unloaded');
+});
+
+loadCSS(OT.properties.cssURL);
+
+
+
+
+
+
+
+if (typeof define === 'function' && define.amd) {
+  define('TB', [], function() { return TB; });
+}
 
 
 
