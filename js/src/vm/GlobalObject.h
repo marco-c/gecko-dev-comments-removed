@@ -59,10 +59,6 @@ enum class SimdType;
 
 
 
-
-
-
-
 class GlobalObject : public NativeObject
 {
     
@@ -72,7 +68,7 @@ class GlobalObject : public NativeObject
 
 
 
-    static const unsigned STANDARD_CLASS_SLOTS  = JSProto_LIMIT * 3;
+    static const unsigned STANDARD_CLASS_SLOTS = JSProto_LIMIT * 2;
 
     enum : unsigned {
         
@@ -182,19 +178,6 @@ class GlobalObject : public NativeObject
     void setPrototype(JSProtoKey key, const Value& value) {
         MOZ_ASSERT(key <= JSProto_LIMIT);
         setSlot(APPLICATION_SLOTS + JSProto_LIMIT + key, value);
-    }
-
-    static uint32_t constructorPropertySlot(JSProtoKey key) {
-        MOZ_ASSERT(key <= JSProto_LIMIT);
-        return APPLICATION_SLOTS + JSProto_LIMIT * 2 + key;
-    }
-
-    Value getConstructorPropertySlot(JSProtoKey key) {
-        return getSlot(constructorPropertySlot(key));
-    }
-
-    void setConstructorPropertySlot(JSProtoKey key, const Value& ctor) {
-        setSlot(constructorPropertySlot(key), ctor);
     }
 
     bool classIsInitialized(JSProtoKey key) const {
