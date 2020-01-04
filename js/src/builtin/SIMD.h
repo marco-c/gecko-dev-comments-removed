@@ -352,6 +352,23 @@ class SIMDObject : public JSObject
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct Float32x4 {
     typedef float Elem;
     static const unsigned lanes = 4;
