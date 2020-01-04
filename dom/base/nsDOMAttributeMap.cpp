@@ -302,38 +302,22 @@ nsDOMAttributeMap::SetNamedItemNS(Attr& aAttr, ErrorResult& aError)
     }
   }
 
-  RefPtr<Attr> attr;
+  RefPtr<Attr> oldAttr;
 
   if (oldNi) {
-    RefPtr<Attr> oldAttr = GetAttribute(oldNi);
+    oldAttr = GetAttribute(oldNi);
 
     if (oldAttr == &aAttr) {
       return oldAttr.forget();
     }
 
     if (oldAttr) {
-      attr = RemoveNamedItem(oldNi, aError);
-      NS_ASSERTION(attr->NodeInfo()->NameAndNamespaceEquals(oldNi),
-        "RemoveNamedItem() called, attr->NodeInfo() should be equal to oldNi!");
-
       
       
-      nsDOMAttributeMap* newOwner = aAttr.GetMap();
-      if (newOwner) {
-        if (newOwner == this) {
-          
-          return attr.forget();
-        }
-
-        
-        
-        aError.Throw(NS_ERROR_DOM_INUSE_ATTRIBUTE_ERR);
-        return nullptr;
-      } else if (mContent->OwnerDoc() != aAttr.OwnerDoc()) {
-        
-        aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
-        return nullptr;
-      }
+      
+      
+      
+      DropAttribute(oldNi->NamespaceID(), oldNi->NameAtom());
     }
   }
 
@@ -355,7 +339,7 @@ nsDOMAttributeMap::SetNamedItemNS(Attr& aAttr, ErrorResult& aError)
     DropAttribute(ni->NamespaceID(), ni->NameAtom());
   }
 
-  return attr.forget();
+  return oldAttr.forget();
 }
 
 already_AddRefed<Attr>
