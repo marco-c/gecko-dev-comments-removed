@@ -325,6 +325,15 @@ GetDevicePixelRatio(nsPresContext* aPresContext, const nsMediaFeature*,
 }
 
 static nsresult
+GetTransform3d(nsPresContext* aPresContext, const nsMediaFeature*,
+               nsCSSValue& aResult)
+{
+  
+  aResult.SetIntValue(1, eCSSUnit_Integer);
+  return NS_OK;
+}
+
+static nsresult
 GetSystemMetric(nsPresContext* aPresContext, const nsMediaFeature* aFeature,
                 nsCSSValue& aResult)
 {
@@ -532,6 +541,15 @@ nsMediaFeatures::features[] = {
       nsMediaFeature::eWebkitDevicePixelRatioPrefEnabled,
     { nullptr },
     GetDevicePixelRatio
+  },
+  
+  {
+    &nsGkAtoms::transform_3d,
+    nsMediaFeature::eMinMaxNotAllowed,
+    nsMediaFeature::eBoolInteger,
+    nsMediaFeature::eHasWebkitPrefix,
+    { nullptr },
+    GetTransform3d
   },
 
   
