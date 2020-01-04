@@ -6,9 +6,6 @@
 
 #include "mozilla/ServoRestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/dom/ChildIterator.h"
-#include "nsContentUtils.h"
-#include "nsStyleChangeList.h"
 
 using namespace mozilla::dom;
 
@@ -82,10 +79,10 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
       Servo_GetComputedValues(aContent).Consume();
     MOZ_ASSERT(computedValues);
 
-    nsChangeHint changeHint = nsChangeHint(0);
     
     
     if (aContent->IsElement()) {
+      nsChangeHint changeHint = nsChangeHint(0);
       Element* element = aContent->AsElement();
 
       
@@ -144,36 +141,6 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
     }
 
     
-    if (aContent->IsElement()) {
-      Element* aElement = aContent->AsElement();
-      const static CSSPseudoElementType pseudosToRestyle[] = {
-        CSSPseudoElementType::before, CSSPseudoElementType::after,
-      };
-
-      for (CSSPseudoElementType pseudoType : pseudosToRestyle) {
-        nsIAtom* pseudoTag =
-          nsCSSPseudoElements::GetPseudoAtom(pseudoType);
-        if (nsIFrame* pseudoFrame =
-              FrameForPseudoElement(aElement, pseudoTag)) {
-          
-          
-          RefPtr<nsStyleContext> pseudoContext =
-            aStyleSet->ProbePseudoElementStyle(aElement, pseudoType,
-                                               newContext);
-
-          
-          
-          
-          MOZ_ASSERT_IF(!pseudoContext,
-                        changeHint & nsChangeHint_ReconstructFrame);
-          if (pseudoContext) {
-            pseudoFrame->SetStyleContext(pseudoContext);
-          }
-        }
-      }
-    }
-
-    
     
     aContent->UnsetFlags(NODE_IS_DIRTY_FOR_SERVO);
   }
@@ -220,37 +187,7 @@ MarkChildrenAsDirtyForServo(nsIContent* aContent)
   }
 }
 
- nsIFrame*
-ServoRestyleManager::FrameForPseudoElement(nsIContent* aContent,
-                                           nsIAtom* aPseudoTagOrNull)
-{
-  MOZ_ASSERT_IF(aPseudoTagOrNull, aContent->IsElement());
-  nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
-
-  if (!aPseudoTagOrNull) {
-    return primaryFrame;
-  }
-
-  if (!primaryFrame) {
-    return nullptr;
-  }
-
-  
-  
-  if (aPseudoTagOrNull == nsCSSPseudoElements::before) {
-    return nsLayoutUtils::GetBeforeFrameForContent(primaryFrame, aContent);
-  }
-
-  if (aPseudoTagOrNull == nsCSSPseudoElements::after) {
-    return nsLayoutUtils::GetAfterFrameForContent(primaryFrame, aContent);
-  }
-
-  MOZ_CRASH("Unkown pseudo-element given to "
-            "ServoRestyleManager::FrameForPseudoElement");
-  return nullptr;
-}
-
- void
+void
 ServoRestyleManager::NoteRestyleHint(Element* aElement, nsRestyleHint aHint)
 {
   const nsRestyleHint HANDLED_RESTYLE_HINTS = eRestyle_Self |

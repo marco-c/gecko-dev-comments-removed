@@ -77,15 +77,6 @@ public:
 
   bool HasPendingRestyles() { return !mModifiedElements.IsEmpty(); }
 
-  
-
-
-
-
-
-  static nsIFrame* FrameForPseudoElement(nsIContent* aContent,
-                                         nsIAtom* aPseudoTagOrNull);
-
 protected:
   ~ServoRestyleManager() {}
 
