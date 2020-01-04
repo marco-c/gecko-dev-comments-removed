@@ -11,6 +11,7 @@ function mismatchError(actual, expect) {
 function testConversion(resultType, opcode, paramType, op, expect) {
   assertEq(wasmEvalText('(module (func (param ' + paramType + ') (result ' + resultType + ') (' + resultType + '.' + opcode + '/' + paramType + ' (get_local 0))) (export "" 0))')(op), expect);
 
+  
   for (var bad of ['i32', 'f32', 'f64']) {
     if (bad != resultType)
       assertErrorMessage(() => wasmEvalText('(module (func (param ' + paramType + ') (result ' + bad + ') (' + resultType + '.' + opcode + '/' + paramType + ' (get_local 0))))'),
@@ -25,17 +26,31 @@ function testConversion(resultType, opcode, paramType, op, expect) {
   }
 }
 
+
 testConversion('i32', 'trunc_s', 'f32', 40.1, 40);
 testConversion('i32', 'trunc_u', 'f32', 40.1, 40);
 testConversion('i32', 'trunc_s', 'f64', 40.1, 40);
 testConversion('i32', 'trunc_u', 'f64', 40.1, 40);
 
 
+
+
+
+
+
+
+
+
 testConversion('f32', 'convert_s', 'i32', 40, 40);
 testConversion('f32', 'convert_u', 'i32', 40, 40);
+
+
 testConversion('f32', 'demote', 'f64', 40.1, 40.099998474121094);
 
 
 testConversion('f64', 'convert_s', 'i32', 40, 40);
 testConversion('f64', 'convert_u', 'i32', 40, 40);
+
+
 testConversion('f64', 'promote', 'f32', 40.1, 40.099998474121094);
+

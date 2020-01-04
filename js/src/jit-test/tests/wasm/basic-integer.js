@@ -49,6 +49,35 @@ testComparison('i32', 'gt_u', 40, 40, 0);
 testComparison('i32', 'ge_s', 40, 40, 1);
 testComparison('i32', 'ge_u', 40, 40, 1);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 assertErrorMessage(() => wasmEvalText('(module (func (param f32) (result i32) (i32.popcnt (get_local 0))))'), TypeError, mismatchError("f32", "i32"));
 assertErrorMessage(() => wasmEvalText('(module (func (param i32) (result f32) (i32.popcnt (get_local 0))))'), TypeError, mismatchError("i32", "f32"));
 assertErrorMessage(() => wasmEvalText('(module (func (param f32) (result f32) (i32.popcnt (get_local 0))))'), TypeError, mismatchError("i32", "f32"));
