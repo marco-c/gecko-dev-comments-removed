@@ -123,6 +123,13 @@ private:
 
     virtual already_AddRefed<FontInfoData> CreateFontInfoData();
 
+    
+    
+    
+    
+    
+    void AddFamily(CFStringRef aFamily);
+
 #ifdef MOZ_BUNDLED_FONTS
     void ActivateBundledFonts();
 #endif
