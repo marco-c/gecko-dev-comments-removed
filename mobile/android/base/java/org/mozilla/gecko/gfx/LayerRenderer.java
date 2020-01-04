@@ -29,7 +29,7 @@ import android.opengl.GLES20;
 import android.os.SystemClock;
 import android.util.Log;
 
-import org.mozilla.gecko.annotation.JNITarget;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import java.nio.ByteBuffer;
@@ -463,7 +463,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
 
         
-        @JNITarget
+        @WrapForJNI(allowMultithread = true)
         public void beginDrawing() {
             mFrameStartTime = System.nanoTime();
 
@@ -522,7 +522,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
 
         
-        @JNITarget
+        @WrapForJNI(allowMultithread = true)
         public void drawBackground() {
             
             
@@ -536,7 +536,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
             clear(mBackgroundColor);
         }
 
-        @JNITarget
+        @WrapForJNI(allowMultithread = true)
         public void drawForeground() {
             
             
@@ -620,7 +620,7 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         }
 
         
-        @JNITarget
+        @WrapForJNI(allowMultithread = true)
         public void endDrawing() {
             
             if (!mUpdated)
