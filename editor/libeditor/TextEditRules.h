@@ -18,11 +18,11 @@
 
 class nsIDOMElement;
 class nsIDOMNode;
-class nsPlaintextEditor;
 
 namespace mozilla {
 
 class AutoLockRulesSniffing;
+class TextEditor;
 namespace dom {
 class Selection;
 } 
@@ -55,7 +55,7 @@ public:
   TextEditRules();
 
   
-  NS_IMETHOD Init(nsPlaintextEditor* aTextEditor) override;
+  NS_IMETHOD Init(TextEditor* aTextEditor) override;
   NS_IMETHOD SetInitialValue(const nsAString& aValue) override;
   NS_IMETHOD DetachEditor() override;
   NS_IMETHOD BeforeEdit(EditAction action,
@@ -225,7 +225,7 @@ protected:
   bool DontEchoPassword() const;
 
   
-  nsPlaintextEditor* mEditor;
+  TextEditor* mTextEditor;
   
   nsString mPasswordText;
   

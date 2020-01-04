@@ -72,7 +72,6 @@
 #include "nsLinebreakConverter.h"
 #include "nsLiteralString.h"
 #include "nsNetUtil.h"
-#include "nsPlaintextEditor.h"
 #include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -1558,7 +1557,7 @@ HTMLEditor::PasteNoFormatting(int32_t aSelectionType)
   
   
   nsCOMPtr<nsITransferable> trans;
-  rv = nsPlaintextEditor::PrepareTransferable(getter_AddRefs(trans));
+  rv = TextEditor::PrepareTransferable(getter_AddRefs(trans));
   if (NS_SUCCEEDED(rv) && trans)
   {
     
@@ -1910,9 +1909,9 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   }
 
   if (aAddCites)
-    rv = nsPlaintextEditor::InsertAsQuotation(aQuotedText, aNodeInserted);
+    rv = TextEditor::InsertAsQuotation(aQuotedText, aNodeInserted);
   else
-    rv = nsPlaintextEditor::InsertText(aQuotedText);
+    rv = TextEditor::InsertText(aQuotedText);
   
   
   
@@ -1938,13 +1937,13 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
 NS_IMETHODIMP
 HTMLEditor::StripCites()
 {
-  return nsPlaintextEditor::StripCites();
+  return TextEditor::StripCites();
 }
 
 NS_IMETHODIMP
 HTMLEditor::Rewrap(bool aRespectNewlines)
 {
-  return nsPlaintextEditor::Rewrap(aRespectNewlines);
+  return TextEditor::Rewrap(aRespectNewlines);
 }
 
 NS_IMETHODIMP

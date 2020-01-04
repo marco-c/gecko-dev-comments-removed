@@ -12,10 +12,9 @@
 
 #include "nsEditor.h" 
 
-class nsPlaintextEditor;
-
 namespace mozilla {
 
+class TextEditor;
 namespace dom {
 class Selection;
 } 
@@ -48,7 +47,7 @@ public:
 
 
 
-  NS_IMETHOD Init(nsPlaintextEditor* aEditor) = 0;
+  NS_IMETHOD Init(mozilla::TextEditor* aTextEditor) = 0;
   NS_IMETHOD SetInitialValue(const nsAString& aValue) = 0;
   NS_IMETHOD DetachEditor() = 0;
   NS_IMETHOD BeforeEdit(EditAction action,

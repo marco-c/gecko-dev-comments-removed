@@ -193,14 +193,14 @@ HTMLEditor::HideAnonymousEditingUIs()
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLEditor)
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLEditor, nsPlaintextEditor)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLEditor, TextEditor)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTypeInState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mStyleSheets)
 
   tmp->HideAnonymousEditingUIs();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, nsPlaintextEditor)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, TextEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTypeInState)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStyleSheets)
 
@@ -246,7 +246,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(HTMLEditor)
   NS_INTERFACE_MAP_ENTRY(nsIEditorStyleSheets)
   NS_INTERFACE_MAP_ENTRY(nsICSSLoaderObserver)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
-NS_INTERFACE_MAP_END_INHERITING(nsPlaintextEditor)
+NS_INTERFACE_MAP_END_INHERITING(TextEditor)
 
 NS_IMETHODIMP
 HTMLEditor::Init(nsIDOMDocument* aDoc,
@@ -267,7 +267,7 @@ HTMLEditor::Init(nsIDOMDocument* aDoc,
     AutoEditInitRulesTrigger rulesTrigger(this, rulesRes);
 
     
-    result = nsPlaintextEditor::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);
+    result = TextEditor::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);
     if (NS_FAILED(result)) { return result; }
 
     
@@ -346,7 +346,7 @@ HTMLEditor::PreDestroy(bool aDestroyingFrames)
   
   HideAnonymousEditingUIs();
 
-  return nsPlaintextEditor::PreDestroy(aDestroyingFrames);
+  return TextEditor::PreDestroy(aDestroyingFrames);
 }
 
 NS_IMETHODIMP
@@ -496,13 +496,13 @@ HTMLEditor::RemoveEventListeners()
   mMouseMotionListenerP = nullptr;
   mResizeEventListenerP = nullptr;
 
-  nsPlaintextEditor::RemoveEventListeners();
+  TextEditor::RemoveEventListeners();
 }
 
 NS_IMETHODIMP
 HTMLEditor::SetFlags(uint32_t aFlags)
 {
-  nsresult rv = nsPlaintextEditor::SetFlags(aFlags);
+  nsresult rv = TextEditor::SetFlags(aFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -520,7 +520,7 @@ HTMLEditor::InitRules()
     
     mRules = new HTMLEditRules();
   }
-  return mRules->Init(static_cast<nsPlaintextEditor*>(this));
+  return mRules->Init(static_cast<TextEditor*>(this));
 }
 
 NS_IMETHODIMP
@@ -634,7 +634,7 @@ HTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
       if (IsPlaintextEditor()) {
         
         
-        return nsPlaintextEditor::HandleKeyPressEvent(aKeyEvent);
+        return TextEditor::HandleKeyPressEvent(aKeyEvent);
       }
 
       if (IsTabbable()) {
@@ -1045,7 +1045,7 @@ HTMLEditor::TypedText(const nsAString& aString,
     return InsertBR(address_of(brNode));
   }
 
-  return nsPlaintextEditor::TypedText(aString, aAction);
+  return TextEditor::TypedText(aString, aAction);
 }
 
 NS_IMETHODIMP
@@ -5283,7 +5283,7 @@ HTMLEditor::GetInputEventTargetContent()
 bool
 HTMLEditor::IsEditable(nsINode* aNode)
 {
-  if (!nsPlaintextEditor::IsEditable(aNode)) {
+  if (!TextEditor::IsEditable(aNode)) {
     return false;
   }
   if (aNode->IsElement()) {
