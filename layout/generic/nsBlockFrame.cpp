@@ -2935,15 +2935,21 @@ nsBlockFrame::AttributeChanged(int32_t         aNameSpaceID,
       
       
       
-      nsBlockFrame* blockParent = nsLayoutUtils::FindNearestBlockAncestor(this);
-
+      nsContainerFrame* ancestor = GetParent();
+      for (; ancestor; ancestor = ancestor->GetParent()) {
+        auto frameType = ancestor->GetType();
+        if (frameType == nsGkAtoms::blockFrame ||
+            frameType == nsGkAtoms::flexContainerFrame ||
+            frameType == nsGkAtoms::gridContainerFrame) {
+          break;
+        }
+      }
       
-      
-      if (nullptr != blockParent) {
+      if (ancestor) {
         
-        if (blockParent->RenumberLists()) {
+        if (ancestor->RenumberLists()) {
           PresContext()->PresShell()->
-            FrameNeedsReflow(blockParent, nsIPresShell::eStyleChange,
+            FrameNeedsReflow(ancestor, nsIPresShell::eStyleChange,
                              NS_FRAME_HAS_DIRTY_CHILDREN);
         }
       }
