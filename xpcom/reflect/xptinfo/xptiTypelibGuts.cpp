@@ -11,6 +11,13 @@
 using namespace mozilla;
 
 
+template <class T>
+class MOZ_NEEDS_NO_VTABLE_TYPE CheckNoVTable
+{
+};
+CheckNoVTable<xptiTypelibGuts> gChecker;
+
+
 xptiTypelibGuts* 
 xptiTypelibGuts::Create(XPTHeader* aHeader)
 {
