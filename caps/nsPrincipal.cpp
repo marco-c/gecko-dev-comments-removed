@@ -674,14 +674,7 @@ struct OriginComparator
   }
 };
 
-nsExpandedPrincipal::nsExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList,
-                                         const PrincipalOriginAttributes& aOriginAttributes)
-  : nsExpandedPrincipal(aWhiteList)
-{
-  mOriginAttributes = aOriginAttributes;
-}
-
-nsExpandedPrincipal::nsExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList)
+nsExpandedPrincipal::nsExpandedPrincipal(nsTArray<nsCOMPtr <nsIPrincipal> > &aWhiteList)
 {
   
   
