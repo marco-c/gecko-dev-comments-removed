@@ -54,7 +54,7 @@ public:
   
   
   explicit CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
-                          nsIGlobalObject *aIncumbentGlobal)
+                          nsIGlobalObject* aIncumbentGlobal)
   {
     if (aCx && JS::RuntimeOptionsRef(aCx).asyncStack()) {
       JS::RootedObject stack(aCx);
@@ -72,7 +72,7 @@ public:
   
   explicit CallbackObject(JS::Handle<JSObject*> aCallback,
                           JS::Handle<JSObject*> aAsyncStack,
-                          nsIGlobalObject *aIncumbentGlobal)
+                          nsIGlobalObject* aIncumbentGlobal)
   {
     Init(aCallback, aAsyncStack, aIncumbentGlobal);
   }
@@ -163,8 +163,8 @@ protected:
   }
 
 private:
-  inline void Init(JSObject* aCallback, JSObject* aCreationStack,
-                   nsIGlobalObject* aIncumbentGlobal)
+  inline void InitNoHold(JSObject* aCallback, JSObject* aCreationStack,
+                         nsIGlobalObject* aIncumbentGlobal)
   {
     MOZ_ASSERT(aCallback && !mCallback);
     
@@ -175,6 +175,12 @@ private:
       mIncumbentGlobal = aIncumbentGlobal;
       mIncumbentJSGlobal = aIncumbentGlobal->GetGlobalJSObject();
     }
+  }
+
+  inline void Init(JSObject* aCallback, JSObject* aCreationStack,
+                   nsIGlobalObject* aIncumbentGlobal)
+  {
+    InitNoHold(aCallback, aCreationStack, aIncumbentGlobal);
     mozilla::HoldJSObjects(this);
   }
 
@@ -190,6 +196,33 @@ protected:
       mCreationStack = nullptr;
       mIncumbentJSGlobal = nullptr;
       mozilla::DropJSObjects(this);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  struct FastCallbackConstructor {
+  };
+
+  
+  
+  
+  CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
+                 nsIGlobalObject* aIncumbentGlobal,
+                 const FastCallbackConstructor&)
+  {
+    if (aCx && JS::RuntimeOptionsRef(aCx).asyncStack()) {
+      JS::RootedObject stack(aCx);
+      if (!JS::CaptureCurrentStack(aCx, &stack)) {
+        JS_ClearPendingException(aCx);
+      }
+      InitNoHold(aCallback, stack, aIncumbentGlobal);
+    } else {
+      InitNoHold(aCallback, nullptr, aIncumbentGlobal);
     }
   }
 
