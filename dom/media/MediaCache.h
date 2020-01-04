@@ -11,13 +11,14 @@
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsTHashtable.h"
+#include "Intervals.h"
 
 class nsIPrincipal;
 
 namespace mozilla {
 
 class ChannelMediaResource;
-class MediaByteRange;
+typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 class MediaResource;
 class ReentrantMonitorAutoEnter;
 
@@ -300,7 +301,7 @@ public:
   
   
   
-  nsresult GetCachedRanges(nsTArray<MediaByteRange>& aRanges);
+  nsresult GetCachedRanges(MediaByteRangeSet& aRanges);
 
   
   

@@ -162,7 +162,7 @@ public:
     return false;
   }
   
-  nsresult GetCachedRanges(nsTArray<MediaByteRange>& aRanges) override {
+  nsresult GetCachedRanges(MediaByteRangeSet& aRanges) override {
     return NS_ERROR_FAILURE;
   }
 

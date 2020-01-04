@@ -25,7 +25,7 @@ public:
   
   
   
-  explicit RangeFinder(const nsTArray<mozilla::MediaByteRange>& ranges)
+  explicit RangeFinder(const MediaByteRangeSet& ranges)
     : mRanges(ranges), mIndex(0)
   {
     
@@ -34,7 +34,7 @@ public:
   bool Contains(MediaByteRange aByteRange);
 
 private:
-  const nsTArray<MediaByteRange>& mRanges;
+  const MediaByteRangeSet& mRanges;
   size_t mIndex;
 };
 
@@ -266,7 +266,7 @@ Index::Index(const nsTArray<Indice>& aIndex,
 Index::~Index() {}
 
 void
-Index::UpdateMoofIndex(const nsTArray<MediaByteRange>& aByteRanges)
+Index::UpdateMoofIndex(const MediaByteRangeSet& aByteRanges)
 {
   if (!mMoofParser) {
     return;
@@ -276,7 +276,7 @@ Index::UpdateMoofIndex(const nsTArray<MediaByteRange>& aByteRanges)
 }
 
 Microseconds
-Index::GetEndCompositionIfBuffered(const nsTArray<MediaByteRange>& aByteRanges)
+Index::GetEndCompositionIfBuffered(const MediaByteRangeSet& aByteRanges)
 {
   FallibleTArray<Sample>* index;
   if (mMoofParser) {
@@ -305,7 +305,7 @@ Index::GetEndCompositionIfBuffered(const nsTArray<MediaByteRange>& aByteRanges)
 
 void
 Index::ConvertByteRangesToTimeRanges(
-  const nsTArray<MediaByteRange>& aByteRanges,
+  const MediaByteRangeSet& aByteRanges,
   nsTArray<Interval<Microseconds>>* aTimeRanges)
 {
   RangeFinder rangeFinder(aByteRanges);

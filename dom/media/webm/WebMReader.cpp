@@ -749,7 +749,7 @@ media::TimeIntervals WebMReader::GetBuffered()
 
   
   
-  nsTArray<MediaByteRange> ranges;
+  MediaByteRangeSet ranges;
   nsresult res = resource->GetCachedRanges(ranges);
   NS_ENSURE_SUCCESS(res, media::TimeIntervals::Invalid());
 
@@ -788,7 +788,7 @@ void WebMReader::NotifyDataArrivedInternal()
 {
   MOZ_ASSERT(OnTaskQueue());
   AutoPinned<MediaResource> resource(mDecoder->GetResource());
-  nsTArray<MediaByteRange> byteRanges;
+  MediaByteRangeSet byteRanges;
   nsresult rv = resource->GetCachedRanges(byteRanges);
 
   if (NS_FAILED(rv)) {
