@@ -96,4 +96,29 @@ ComputedTimingFunction::AppendToString(nsAString& aResult) const
   }
 }
 
+ int32_t
+ComputedTimingFunction::Compare(const Maybe<ComputedTimingFunction>& aLhs,
+                                const Maybe<ComputedTimingFunction>& aRhs)
+{
+  
+  
+  
+  nsTimingFunction::Type lhsType = aLhs.isNothing() ?
+    nsTimingFunction::Type::Linear : aLhs->GetType();
+  nsTimingFunction::Type rhsType = aRhs.isNothing() ?
+    nsTimingFunction::Type::Linear : aRhs->GetType();
+
+  if (lhsType != rhsType) {
+    return int32_t(lhsType) - int32_t(rhsType);
+  }
+
+  
+  if (lhsType == nsTimingFunction::Type::Linear) {
+    return 0;
+  }
+
+  
+  return aLhs->Compare(aRhs.value());
+}
+
 } 
