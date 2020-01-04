@@ -2,26 +2,28 @@
 
 
 
-#ifndef _NSX509CERTVALIDITY_H_
-#define _NSX509CERTVALIDITY_H_
+#ifndef nsNSSCertValidity_h
+#define nsNSSCertValidity_h
 
+#include "ScopedNSSTypes.h"
 #include "nsIDateTimeFormat.h"
 #include "nsIX509CertValidity.h"
-
-#include "certt.h"
+#include "nsNSSShutDown.h"
 
 class nsX509CertValidity : public nsIX509CertValidity
+                         , public nsNSSShutDownObject
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIX509CERTVALIDITY
 
-  nsX509CertValidity();
-  explicit nsX509CertValidity(CERTCertificate *cert);
+  explicit nsX509CertValidity(const mozilla::UniqueCERTCertificate& cert);
 
 protected:
   virtual ~nsX509CertValidity();
+
   
+  virtual void virtualDestroyNSSReference() override {}
 
 private:
   nsresult FormatTime(const PRTime& aTime,
@@ -29,8 +31,12 @@ private:
                       const nsTimeFormatSelector aTimeFormatSelector,
                       nsAString& aFormattedTimeDate);
 
-  PRTime mNotBefore, mNotAfter;
+  PRTime mNotBefore;
+  PRTime mNotAfter;
   bool mTimesInitialized;
+
+  nsX509CertValidity(const nsX509CertValidity& x) = delete;
+  nsX509CertValidity& operator=(const nsX509CertValidity& x) = delete;
 };
 
-#endif
+#endif 
