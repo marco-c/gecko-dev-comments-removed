@@ -2,6 +2,8 @@ setJitCompilerOption("baseline.warmup.trigger", 10);
 setJitCompilerOption("ion.warmup.trigger", 20);
 var i;
 
+var config = getBuildConfiguration();
+
 
 
 
@@ -1286,6 +1288,29 @@ function rhypot_object_4args(i) {
     return i;
 }
 
+var uceFault_random = eval(uneval(uceFault).replace('uceFault', 'uceFault_random'));
+function rrandom(i) {
+    
+
+    if(config.debug) {
+        setRNGState(2, 0);
+        var x = Math.random();
+        if (uceFault_random(i) || uceFault_random(i)) {
+            setRNGState(2, 0);
+            assertEq(x, Math.random());
+        }
+        assertRecoveredOnBailout(x, true);
+    } else {
+        var x = Math.random();
+        if (uceFault_random(i) || uceFault_random(i)) {
+            Math.random();
+        }
+        assertRecoveredOnBailout(x, true);
+    }
+
+    return i;
+}
+
 var uceFault_sin_number = eval(uneval(uceFault).replace('uceFault', 'uceFault_sin_number'));
 function rsin_number(i) {
     var x = Math.sin(i);
@@ -1444,6 +1469,7 @@ for (i = 0; i < 100; i++) {
     rhypot_object_2args(i);
     rhypot_object_3args(i);
     rhypot_object_4args(i);
+    rrandom(i);
     rsin_number(i);
     rsin_object(i);
     rlog_number(i);
