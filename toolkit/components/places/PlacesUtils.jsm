@@ -278,8 +278,9 @@ this.PlacesUtils = {
 
 
 
-  toDate(time) {
-    return new Date(parseInt(time / 1000));
+
+  toTime(time) {
+    return time / 1000;
   },
 
   
