@@ -71,12 +71,4 @@ add_task(function* () {
     
     todo(false, "Verify that node is scrolled into the viewport.");
   }
-
-  function dispatchCommandEvent(node) {
-    info("Dispatching command event on " + node);
-    let commandEvent = document.createEvent("XULCommandEvent");
-    commandEvent.initCommandEvent("command", true, true, window, 0, false, false,
-                                  false, false, null);
-    node.dispatchEvent(commandEvent);
-  }
 });
