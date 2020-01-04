@@ -18,6 +18,10 @@ function run_test() {
   
   const o2 = {};
   let loader = new DevToolsLoader();
+
+  
+  loader.require("devtools/shared/DevToolsUtils");
+
   loader.lazyRequireGetter(o2, name, path);
   do_check_true(o2.asyncUtils !== asyncUtils);
 
