@@ -2529,7 +2529,9 @@ HttpChannelChild::ResetInterception()
 
   
   nsresult rv = ContinueAsyncOpen();
-  NS_ENSURE_SUCCESS_VOID(rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    AsyncAbort(rv);
+  }
 }
 
 NS_IMETHODIMP
@@ -2560,7 +2562,9 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
     mShouldInterceptSubsequentRedirect = true;
     
     nsresult rv = ContinueAsyncOpen();
-    NS_ENSURE_SUCCESS_VOID(rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      AsyncAbort(rv);
+    }
     return;
   }
 
