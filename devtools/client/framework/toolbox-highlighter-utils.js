@@ -268,7 +268,11 @@ exports.getHighlighterUtils = function(toolbox) {
       yield toolbox.highlighter.hideBoxModel();
     }
 
-    toolbox.emit("node-unhighlight");
+    
+    
+    if (toolbox) {
+      toolbox.emit("node-unhighlight");
+    }
   });
 
   
