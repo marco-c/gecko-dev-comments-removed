@@ -179,7 +179,7 @@ var AnimationsPanel = {
 
   onTimelineDataChanged: function(e, data) {
     this.timelineData = data;
-    let {isPaused, isMoving, time} = data;
+    let {isMoving, isUserDrag, time} = data;
 
     this.playTimelineButtonEl.classList.toggle("paused", !isMoving);
 
@@ -187,7 +187,7 @@ var AnimationsPanel = {
     
     
     
-    if (isPaused && !this.setCurrentTimeAllPromise) {
+    if (isUserDrag && !this.setCurrentTimeAllPromise) {
       this.setCurrentTimeAllPromise =
         AnimationsController.setCurrentTimeAll(time, true)
                             .catch(error => console.error(error))

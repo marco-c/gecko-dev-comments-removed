@@ -259,9 +259,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-
-
-  getCurrentState: method(function() {
+  getState: function() {
     
     
     
@@ -274,7 +272,7 @@ var AnimationPlayerActor = ActorClass({
     
     
     
-    let newState = {
+    return {
       type: this.getType(),
       
       startTime: this.player.startTime,
@@ -288,15 +286,25 @@ var AnimationPlayerActor = ActorClass({
       iterationCount: this.getIterationCount(),
       
       
-      
-      
-      
       isRunningOnCompositor: this.player.isRunningOnCompositor,
       
       
       
       documentCurrentTime: this.node.ownerDocument.timeline.currentTime
     };
+  },
+
+  
+
+
+
+
+
+
+
+
+  getCurrentState: method(function() {
+    let newState = this.getState();
 
     
     
@@ -328,20 +336,26 @@ var AnimationPlayerActor = ActorClass({
 
 
   onAnimationMutation: function(mutations) {
+    let isCurrentAnimation = animation => animation === this.player;
+    let hasCurrentAnimation = animations => animations.some(isCurrentAnimation);
     let hasChanged = false;
+
     for (let {removedAnimations, changedAnimations} of mutations) {
-      if (removedAnimations.length) {
+      if (hasCurrentAnimation(removedAnimations)) {
         
         
         
         this.currentState = null;
       }
 
-      if (!changedAnimations.length) {
-        return;
-      }
-      if (changedAnimations.some(animation => animation === this.player)) {
-        hasChanged = true;
+      if (hasCurrentAnimation(changedAnimations)) {
+        
+        
+        let newState = this.getState();
+        let oldState = this.currentState;
+        hasChanged = newState.delay !== oldState.delay ||
+                     newState.iterationCount !== oldState.iterationCount ||
+                     newState.duration !== oldState.duration;
         break;
       }
     }
