@@ -2785,8 +2785,19 @@ nsDocument::InitCSP(nsIChannel* aChannel)
     }
   }
 
-  rv = principal->EnsureCSP(this, getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
+  csp = do_CreateInstance("@mozilla.org/cspcontext;1", &rv);
+
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gCspPRLog, LogLevel::Debug, ("Failed to create CSP object: %x", rv));
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIURI> selfURI;
+  aChannel->GetURI(getter_AddRefs(selfURI));
+
+  
+  csp->SetRequestContext(this, nullptr);
 
   
   if (applyAppDefaultCSP) {
@@ -2836,7 +2847,14 @@ nsDocument::InitCSP(nsIChannel* aChannel)
       aChannel->Cancel(NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION);
     }
   }
+
+  rv = principal->SetCsp(csp);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_LOG(gCspPRLog, LogLevel::Debug,
+         ("Inserted CSP into principal %p", principal));
+
   ApplySettingsFromCSP(false);
+
   return NS_OK;
 }
 
