@@ -155,10 +155,8 @@ TypedArrayObject::finalize(FreeOp* fop, JSObject* obj)
         return;
 
     
-    Nursery& nursery = fop->runtime()->gc.nursery;
-    if (!curObj->hasInlineElements() && !nursery.isInside(curObj->elements())) {
+    if (!curObj->hasInlineElements())
         js_free(curObj->elements());
-    }
 }
 
  void

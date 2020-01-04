@@ -491,12 +491,12 @@ FinalizeTypedArenas(FreeOp* fop,
 {
     
     Maybe<AutoLockGC> maybeLock;
-    if (!fop->onBackgroundThread())
+    if (fop->onMainThread())
         maybeLock.emplace(fop->runtime());
 
     
     
-    MOZ_ASSERT_IF(fop->onBackgroundThread(), keepArenas == ArenaLists::KEEP_ARENAS);
+    MOZ_ASSERT_IF(!fop->onMainThread(), keepArenas == ArenaLists::KEEP_ARENAS);
 
     size_t thingSize = Arena::thingSize(thingKind);
     size_t thingsPerArena = Arena::thingsPerArena(thingKind);
@@ -2786,7 +2786,7 @@ ArenaLists::backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty)
     
     
     {
-        AutoLockGC lock(fop->runtime());
+        AutoLockGC lock(lists->runtime_);
         MOZ_ASSERT(lists->backgroundFinalizeState[thingKind] == BFS_RUN);
 
         
@@ -3158,7 +3158,7 @@ GCRuntime::sweepBackgroundThings(ZoneList& zones, LifoAlloc& freeBlocks, ThreadT
 
     
     Arena* emptyArenas = nullptr;
-    FreeOp fop(rt, threadType);
+    FreeOp fop(threadType == MainThread ? rt : nullptr);
     for (unsigned phase = 0 ; phase < ArrayLength(BackgroundFinalizePhases) ; ++phase) {
         for (Zone* zone = zones.front(); zone; zone = zone->nextZone()) {
             for (auto kind : BackgroundFinalizePhases[phase].kinds) {
