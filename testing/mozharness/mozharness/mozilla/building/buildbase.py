@@ -1648,6 +1648,12 @@ or run without that action (ie: --no-{action})"
         
         
         
+        if branch == 'try':
+            branch = 'mozilla-central'
+
+        
+        
+        
         default_platform = self.buildbot_config['properties'].get('platform',
                                                                   'android')
 
