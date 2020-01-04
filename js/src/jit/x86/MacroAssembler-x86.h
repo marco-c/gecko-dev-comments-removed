@@ -949,8 +949,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     
     void handleFailureWithHandlerTail(void* handler);
 
-    void branchValueIsNurseryObject(Condition cond, ValueOperand value, Register temp, Label* label);
-
     
     void profilerEnterFrame(Register framePtr, Register scratch);
     void profilerExitFrame();
