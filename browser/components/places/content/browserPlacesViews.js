@@ -2,6 +2,7 @@
 
 
 
+Components.utils.import("resource://gre/modules/AppConstants.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 
@@ -355,12 +356,12 @@ PlacesViewBase.prototype = {
           PlacesUtils.livemarks.getLivemark({ id: itemId })
             .then(aLivemark => {
               element.setAttribute("livemark", "true");
-#ifdef XP_MACOSX
-              
-              
-              element.setAttribute("image", "");
-              element.removeAttribute("image");
-#endif
+              if (AppConstants.platform === "macosx") {
+                
+                
+                element.setAttribute("image", "");
+                element.removeAttribute("image");
+              }
               this.controller.cacheLivemarkInfo(aPlacesNode, aLivemark);
             }, () => undefined);
         }
@@ -540,12 +541,12 @@ PlacesViewBase.prototype = {
       let menu = elt.parentNode;
       if (!menu.hasAttribute("livemark")) {
         menu.setAttribute("livemark", "true");
-#ifdef XP_MACOSX
-        
-        
-        menu.setAttribute("image", "");
-        menu.removeAttribute("image");
-#endif
+        if (AppConstants.platform === "macosx") {
+          
+          
+          menu.setAttribute("image", "");
+          menu.removeAttribute("image");
+        }
       }
 
       PlacesUtils.livemarks.getLivemark({ id: aPlacesNode.itemId })
@@ -1774,15 +1775,15 @@ function PlacesMenu(aPopupShowingEvent, aPlace, aOptions) {
   this._addEventListeners(this._rootElt, ["popupshowing", "popuphidden"], true);
   this._addEventListeners(window, ["unload"], false);
 
-#ifdef XP_MACOSX
-  
-  for (let elt = this._viewElt.parentNode; elt; elt = elt.parentNode) {
-    if (elt.localName == "menubar") {
-      this._nativeView = true;
-      break;
+  if (AppConstants.platform === "macosx") {
+    
+    for (let elt = this._viewElt.parentNode; elt; elt = elt.parentNode) {
+      if (elt.localName == "menubar") {
+        this._nativeView = true;
+        break;
+      }
     }
   }
-#endif
 
   PlacesViewBase.call(this, aPlace, aOptions);
   this._onPopupShowing(aPopupShowingEvent);
