@@ -1,4 +1,22 @@
+addEventListener('install', function(evt) {
+  evt.waitUntil(self.skipWaiting());
+});
+
+addEventListener('activate', function(evt) {
+  
+  
+  
+  
+  evt.waitUntil(clients.claim());
+});
+
 addEventListener('fetch', function(evt) {
+  
+  
+  if (evt.request.url.indexOf('fake_download') === -1) {
+    return;
+  }
+
   
   evt.respondWith(registration.unregister().then(function() {
     return new Response('service worker generated download', {
