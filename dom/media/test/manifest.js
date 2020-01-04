@@ -221,6 +221,9 @@ var gPlayTests = [
   { name:"split.webm", type:"video/webm", duration:1.967 },
 
   
+  { name:"resolution-change.webm", type:"video/webm", duration:6.533 },
+
+  
   { name:"seek.yuv", type:"video/x-raw-yuv", duration:1.833 },
 
   
@@ -282,6 +285,11 @@ var gSnifferTests = [
   
   { name:"id3tags.mp3", type:"audio/mpeg", duration:0.28, size:3530},
   { name:"bogus.duh", type:"bogus/duh" }
+];
+
+
+var gResolutionChangeTests = [
+  { name:"resolution-change.webm", type:"video/webm", duration:6.533 },
 ];
 
 
