@@ -427,8 +427,6 @@ pref("dom.max_chrome_script_run_time", 0);
 pref("dom.max_script_run_time", 20);
 
 
-pref("devtools.errorconsole.enabled", false);
-
 
 pref("devtools.debugger.unix-domain-socket", "/data/data/@ANDROID_PACKAGE_NAME@/firefox-debugger-socket");
 
