@@ -303,7 +303,7 @@ class CodeGeneratorShared : public LElementVisitor
 
     
     
-    bool encodeSafepoints();
+    void encodeSafepoints();
 
     
     bool createNativeToBytecodeScriptList(JSContext* cx);

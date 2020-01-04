@@ -8010,8 +8010,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
                            : FrameSizeClass::FromDepth(frameDepth_).frameSize();
 
     
-    if (!encodeSafepoints())
-        return false;
+    encodeSafepoints();
 
     AutoDiscardIonCode discardIonCode(cx, &recompileInfo);
 
