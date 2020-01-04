@@ -5,6 +5,13 @@
 
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
+                                  "resource://gre/modules/PlacesUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
+                                  "resource://gre/modules/DeferredTask.jsm");
 
 var kSignonBundle;
 var showingPasswords = false;
@@ -44,13 +51,43 @@ function setFilter(aFilterString) {
 }
 
 var signonsTreeView = {
+  
+  
+  _faviconMap: new Map(),
   _filterSet : [],
+  
+  _invalidateTask: new DeferredTask(() => {
+    signonsTree.treeBoxObject.invalidateColumn(signonsTree.columns.siteCol);
+  }, 10),
   _lastSelectedRanges : [],
   selection: null,
 
   rowCount : 0,
   setTree : function(tree) {},
-  getImageSrc : function(row,column) {},
+  getImageSrc : function(row, column) {
+    if (column.element.getAttribute("id") !== "siteCol") {
+      return "";
+    }
+
+    const signon = this._filterSet.length ? this._filterSet[row] : signons[row];
+
+    
+    if (this._faviconMap.has(signon.hostname)) {
+      return this._faviconMap.get(signon.hostname);
+    }
+
+    
+    
+    this._faviconMap.set(signon.hostname, null);
+
+    PlacesUtils.promiseFaviconLinkUrl(signon.hostname)
+      .then(faviconURI => {
+        this._faviconMap.set(signon.hostname, faviconURI.spec);
+        this._invalidateTask.arm();
+      }).catch(Cu.reportError);
+
+    return "";
+  },
   getProgressMode : function(row,column) {},
   getCellValue : function(row,column) {},
   getCellText : function(row,column) {
