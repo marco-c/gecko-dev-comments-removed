@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GeckoMenu extends ListView 
+public class GeckoMenu extends ListView
                        implements Menu,
                                   AdapterView.OnItemClickListener,
                                   GeckoMenuItem.OnShowAsActionChangedListener {
@@ -509,7 +509,7 @@ public class GeckoMenu extends ListView
             mPrimaryActionItems.remove(item);
             mItems.remove(item);
 
-            if (mPrimaryActionItems.size() == 0 && 
+            if (mPrimaryActionItems.size() == 0 &&
                 mPrimaryActionItemBar instanceof DefaultActionItemBar) {
                 removePrimaryActionBarView();
             }
@@ -840,7 +840,7 @@ public class GeckoMenu extends ListView
             
             view.setShowIcon(mShowIcons);
             view.initialize(item);
-            return (View) view; 
+            return (View) view;
         }
 
         @Override

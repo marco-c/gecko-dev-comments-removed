@@ -28,7 +28,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 import java.io.File;
 import java.lang.reflect.Method;
 
-public class GeckoApplication extends Application 
+public class GeckoApplication extends Application
     implements ContextGetter {
     private static final String LOG_TAG = "GeckoApplication";
 

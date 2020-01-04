@@ -59,7 +59,7 @@ class MultiChoicePreference extends DialogPreference implements DialogInterface.
     public void setEntries(CharSequence[] entries) {
         mEntries = entries.clone();
     }
-    
+
     
 
 

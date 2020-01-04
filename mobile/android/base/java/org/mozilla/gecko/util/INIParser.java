@@ -37,14 +37,14 @@ public final class INIParser extends INISection {
     public void writeTo(File f) {
         if (f == null)
             return;
-  
+
         FileWriter outputStream = null;
         try {
             outputStream = new FileWriter(f);
         } catch (IOException e1) {
             e1.printStackTrace();
         }
-  
+
         BufferedWriter writer = new BufferedWriter(outputStream);
         try {
             write(writer);
@@ -85,15 +85,15 @@ public final class INIParser extends INISection {
         super.parse();
         parse(mFile);
     }
-   
+
     
     private void parse(File f) throws IOException {
         
         mSections = new Hashtable<String, INISection>();
-  
+
         if (f == null || !f.exists())
             return;
-  
+
         FileReader inputStream = null;
         try {
             inputStream = new FileReader(f);
@@ -101,16 +101,16 @@ public final class INIParser extends INISection {
             
             return;
         }
-  
+
         BufferedReader buf = new BufferedReader(inputStream);
         String line = null;            
         INISection currentSection = null; 
-  
+
         while ((line = buf.readLine()) != null) {
-  
+
             if (line != null)
                 line = line.trim();
-  
+
             
             if (line == null || line.length() == 0 || line.charAt(0) == ';') {
                 debug("Ignore line: " + line);
@@ -120,11 +120,11 @@ public final class INIParser extends INISection {
                 mSections.put(currentSection.getName(), currentSection);
             } else {
                 debug("Parse as property: " + line);
-  
+
                 String[] pieces = line.split("=");
                 if (pieces.length != 2)
                     continue;
-  
+
                 String key = pieces[0].trim();
                 String value = pieces[1].trim();
                 if (currentSection != null) {
@@ -150,7 +150,7 @@ public final class INIParser extends INISection {
         getSections();
         return mSections.get(key);
     }
- 
+
     
     public void removeSection(String name) {
         

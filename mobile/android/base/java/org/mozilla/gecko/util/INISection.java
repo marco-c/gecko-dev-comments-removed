@@ -38,7 +38,7 @@ public class INISection {
             Log.i(LOGTAG, msg);
         }
     }
-  
+
     
     public Object getProperty(String key) {
         getProperties(); 
@@ -86,9 +86,9 @@ public class INISection {
         if (value == null)
             removeProperty(key);
         else
-            mProperties.put(key.trim(), value);     
-    }   
- 
+            mProperties.put(key.trim(), value);
+    }
+
     
     public void removeProperty(String name) {
         

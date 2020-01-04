@@ -637,7 +637,7 @@ public class GeckoView extends LayerView
 
 
         public void onAlert(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result);
-    
+
         
 
 
@@ -647,7 +647,7 @@ public class GeckoView extends LayerView
 
 
         public void onConfirm(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result);
-    
+
         
 
 
@@ -658,7 +658,7 @@ public class GeckoView extends LayerView
 
 
         public void onPrompt(GeckoView view, GeckoView.Browser browser, String message, String defaultValue, GeckoView.PromptResult result);
-    
+
         
 
 
@@ -685,7 +685,7 @@ public class GeckoView extends LayerView
 
 
         public void onPageStart(GeckoView view, GeckoView.Browser browser, String url);
-    
+
         
 
 
