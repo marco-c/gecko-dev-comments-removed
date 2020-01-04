@@ -159,8 +159,8 @@ public:
     GetDefaultCertVerifier() override;
 
   
-  static bool AreAnyFallbackCiphersEnabled();
-  static void UseFallbackCiphersOnSocket(PRFileDesc* fd);
+  static bool AreAnyWeakCiphersEnabled();
+  static void UseWeakCiphersOnSocket(PRFileDesc* fd);
 
   static void FillTLSVersionRange(SSLVersionRange& rangeOut,
                                   uint32_t minFromPrefs,
