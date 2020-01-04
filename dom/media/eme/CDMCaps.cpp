@@ -45,12 +45,13 @@ CDMCaps::AutoLock::~AutoLock()
 
 
 
+
 static bool
-IsUsableStatus(GMPMediaKeyStatus aStatus)
+IsUsableStatus(dom::MediaKeyStatus aStatus)
 {
-  return aStatus == kGMPUsable ||
-         aStatus == kGMPOutputRestricted ||
-         aStatus == kGMPOutputDownscaled;
+  return aStatus == dom::MediaKeyStatus::Usable ||
+         aStatus == dom::MediaKeyStatus::Output_restricted ||
+         aStatus == dom::MediaKeyStatus::Output_downscaled;
 }
 
 bool
@@ -68,24 +69,27 @@ CDMCaps::AutoLock::IsKeyUsable(const CencKeyId& aKeyId)
 bool
 CDMCaps::AutoLock::SetKeyStatus(const CencKeyId& aKeyId,
                                 const nsString& aSessionId,
-                                GMPMediaKeyStatus aStatus)
+                                const dom::Optional<dom::MediaKeyStatus>& aStatus)
 {
   mData.mMonitor.AssertCurrentThreadOwns();
-  KeyStatus key(aKeyId, aSessionId, aStatus);
 
-  if (aStatus == kGMPUnknown) {
+  if (!aStatus.WasPassed()) {
     
-    return mData.mKeyStatuses.RemoveElement(key);
+    
+    return mData.mKeyStatuses.RemoveElement(KeyStatus(aKeyId,
+                                                      aSessionId,
+                                                      dom::MediaKeyStatus::Internal_error));
   }
 
+  KeyStatus key(aKeyId, aSessionId, aStatus.Value());
   auto index = mData.mKeyStatuses.IndexOf(key);
   if (index != mData.mKeyStatuses.NoIndex) {
-    if (mData.mKeyStatuses[index].mStatus == aStatus) {
+    if (mData.mKeyStatuses[index].mStatus == aStatus.Value()) {
       
       return false;
     }
     auto oldStatus = mData.mKeyStatuses[index].mStatus;
-    mData.mKeyStatuses[index].mStatus = aStatus;
+    mData.mKeyStatuses[index].mStatus = aStatus.Value();
     
     
     
@@ -99,7 +103,7 @@ CDMCaps::AutoLock::SetKeyStatus(const CencKeyId& aKeyId,
 
   
   
-  if (!IsUsableStatus(aStatus)) {
+  if (!IsUsableStatus(aStatus.Value())) {
     return true;
   }
 
@@ -155,8 +159,10 @@ CDMCaps::AutoLock::RemoveKeysForSession(const nsString& aSessionId)
   bool changed = false;
   nsTArray<KeyStatus> statuses;
   GetKeyStatusesForSession(aSessionId, statuses);
-  for (const KeyStatus& keyStatus : statuses) {
-    changed |= SetKeyStatus(keyStatus.mId, aSessionId, kGMPUnknown);
+  for (const KeyStatus& status : statuses) {
+    changed |= SetKeyStatus(status.mId,
+                            aSessionId,
+                            dom::Optional<dom::MediaKeyStatus>());
   }
   return changed;
 }

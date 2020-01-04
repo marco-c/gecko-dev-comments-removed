@@ -34,6 +34,8 @@ struct DecryptResult {
   RefPtr<MediaRawData> mSample;
 };
 
+typedef int64_t UnixTime;
+
 
 
 
@@ -142,7 +144,7 @@ public:
 
   
   virtual void OnExpirationChange(const nsAString& aSessionId,
-                                  int64_t aExpiryTime) = 0;
+                                  UnixTime aExpiryTime) = 0;
 
   
   virtual void OnSessionClosed(const nsAString& aSessionId) = 0;
