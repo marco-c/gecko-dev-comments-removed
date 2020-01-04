@@ -69,7 +69,7 @@ add_task(function* test_crash() {
   
   
   
-  let promise1 = crashBrowser(browser);
+  let promise1 = BrowserTestUtils.crashBrowser(browser);
   let promise2 = TabStateFlusher.flush(browser);
   yield Promise.all([promise1, promise2]);
 
