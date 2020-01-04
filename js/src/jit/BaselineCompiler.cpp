@@ -1312,6 +1312,12 @@ BaselineCompiler::emitCheckThis()
 bool
 BaselineCompiler::emit_JSOP_THIS()
 {
+    
+    if (module()) {
+        frame.push(UndefinedValue());
+        return true;
+    }
+
     if (function() && function()->isArrow()) {
         
         
