@@ -126,6 +126,8 @@ public:
   NS_IMETHOD SetContentLength(int64_t aContentLength) override;
   NS_IMETHOD Open(nsIInputStream **aResult) override;
   NS_IMETHOD Open2(nsIInputStream **aResult) override;
+  NS_IMETHOD GetBlockAuthPrompt(bool* aValue) override;
+  NS_IMETHOD SetBlockAuthPrompt(bool aValue) override;
 
   
   NS_IMETHOD GetApplyConversion(bool *value) override;
@@ -430,6 +432,8 @@ protected:
 
   
   uint32_t                          mResponseCouldBeSynthesized : 1;
+
+  uint32_t                          mBlockAuthPrompt : 1;
 
   
   

@@ -12,6 +12,7 @@
 #include "nsNetUtil.h"
 #include "nsHttpHandler.h"
 #include "nsIHttpAuthenticator.h"
+#include "nsIHttpChannelInternal.h"
 #include "nsIAuthPrompt2.h"
 #include "nsIAuthPromptProvider.h"
 #include "nsIInterfaceRequestor.h"
@@ -817,6 +818,18 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
 bool
 nsHttpChannelAuthProvider::BlockPrompt()
 {
+    
+    
+
+    nsCOMPtr<nsIHttpChannelInternal> chanInternal = do_QueryInterface(mAuthChannel);
+    MOZ_ASSERT(chanInternal);
+
+    bool skipAuthentication = false;
+    nsresult rv = chanInternal->GetBlockAuthPrompt(&skipAuthentication);
+    if (NS_SUCCEEDED(rv) && skipAuthentication) {
+        return true;
+    }
+
     nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
     nsCOMPtr<nsILoadInfo> loadInfo;
     chan->GetLoadInfo(getter_AddRefs(loadInfo));
