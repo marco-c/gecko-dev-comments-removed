@@ -594,7 +594,9 @@ gfxPlatform::Init()
 
     gfxConfig::Init();
 
-    GPUProcessManager::Initialize();
+    if (XRE_IsParentProcess()) {
+      GPUProcessManager::Initialize();
+    }
 
     auto fwd = new CrashStatsLogForwarder("GraphicsCriticalError");
     fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
@@ -848,7 +850,9 @@ gfxPlatform::Shutdown()
     GLContextProviderEGL::Shutdown();
 #endif
 
-    GPUProcessManager::Shutdown();
+    if (XRE_IsParentProcess()) {
+      GPUProcessManager::Shutdown();
+    }
 
     
     
