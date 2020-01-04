@@ -388,6 +388,11 @@ TokenServerClient.prototype = {
         error.cause = "unknown-service";
       }
 
+      if (response.status == 401 || response.status == 403) {
+        Services.telemetry.getKeyedHistogramById(
+          "TOKENSERVER_AUTH_ERRORS").add(error.cause || "unknown");
+      }
+
       
       
       this._maybeNotifyBackoff(response, "retry-after");

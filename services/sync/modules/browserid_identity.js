@@ -475,6 +475,7 @@ this.BrowserIDManager.prototype = {
   unlockAndVerifyAuthState: function() {
     if (this._canFetchKeys()) {
       log.debug("unlockAndVerifyAuthState already has (or can fetch) sync keys");
+      Services.telemetry.getHistogramById("WEAVE_CAN_FETCH_KEYS").add(1);
       return Promise.resolve(STATUS_OK);
     }
     
@@ -491,7 +492,16 @@ this.BrowserIDManager.prototype = {
         
         
         
-        let result = this._canFetchKeys() ? STATUS_OK : LOGIN_FAILED_LOGIN_REJECTED;
+        let result;
+        if (this._canFetchKeys()) {
+          
+          
+          
+          Services.telemetry.getHistogramById("WEAVE_CAN_FETCH_KEYS").add(1);
+          result = STATUS_OK;
+        } else {
+          result = LOGIN_FAILED_LOGIN_REJECTED;
+        }
         log.debug("unlockAndVerifyAuthState re-fetched credentials and is returning", result);
         return result;
       }
@@ -622,6 +632,7 @@ this.BrowserIDManager.prototype = {
         } else if (err.code && err.code === 401) {
           err = new AuthenticationError(err);
         }
+        Services.telemetry.getHistogramById("WEAVE_FXA_KEY_FETCH_ERRORS").add();
 
         
         

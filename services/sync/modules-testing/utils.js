@@ -18,6 +18,7 @@ this.EXPORTED_SYMBOLS = [
   "add_identity_test",
   "MockFxaStorageManager",
   "AccountState", 
+  "sumHistogram",
 ];
 
 const {utils: Cu} = Components;
@@ -34,6 +35,7 @@ Cu.import("resource://gre/modules/FxAccounts.jsm");
 Cu.import("resource://gre/modules/FxAccountsClient.jsm");
 Cu.import("resource://gre/modules/FxAccountsCommon.js");
 Cu.import("resource://gre/modules/Promise.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 
 const {AccountState} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
@@ -316,4 +318,16 @@ this.add_identity_test = function(test, testFunction) {
     yield testFunction();
     Status.__authManager = ns.Service.identity = oldIdentity;
   });
+}
+
+this.sumHistogram = function(name, options = {}) {
+  let histogram = options.key ? Services.telemetry.getKeyedHistogramById(name) :
+                  Services.telemetry.getHistogramById(name);
+  let snapshot = histogram.snapshot(options.key);
+  let sum = -Infinity;
+  if (snapshot) {
+    sum = snapshot.sum;
+  }
+  histogram.clear();
+  return sum;
 }
