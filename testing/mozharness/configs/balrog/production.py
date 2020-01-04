@@ -17,18 +17,18 @@ config = {
             }
         },
         
-        {
-            'balrog_api_root': 'https://balrog-admin.stage.mozaws.net/api',
-            'ignore_failures': True,
-            'balrog_usernames': {
-                'b2g': 'stage-b2gbld',
-                'firefox': 'stage-ffxbld',
-                'thunderbird': 'stage-tbirdbld',
-                'mobile': 'stage-ffxbld',
-                'Fennec': 'stage-ffxbld',
-                'graphene': 'stage-ffxbld',
-                'horizon': 'stage-ffxbld',
-            }
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     ]
 }
