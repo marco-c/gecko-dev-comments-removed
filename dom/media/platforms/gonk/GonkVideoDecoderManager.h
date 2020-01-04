@@ -51,17 +51,18 @@ public:
 
   nsresult Shutdown() override;
 
+  static void RecycleCallback(TextureClient* aClient, void* aClosure);
+
+protected:
   
   
   
   
-  nsresult Flush() override
+  void ProcessFlush() override
   {
     mNeedsCopyBuffer = true;
-    return GonkDecoderManager::Flush();
+    GonkDecoderManager::ProcessFlush();
   }
-
-  static void RecycleCallback(TextureClient* aClient, void* aClosure);
 
 private:
   struct FrameInfo
