@@ -460,13 +460,24 @@ struct JustAssertCleanupPolicy {
   static const bool suppress = false;
 };
 
+struct AssertAndSuppressCleanupPolicy {
+  static const bool assertHandled = true;
+  static const bool suppress = true;
+};
+
+struct JustSuppressCleanupPolicy {
+  static const bool assertHandled = false;
+  static const bool suppress = true;
+};
+
 } 
 
 
 
-class ErrorResult : public binding_danger::TErrorResult<binding_danger::JustAssertCleanupPolicy>
+class ErrorResult :
+    public binding_danger::TErrorResult<binding_danger::AssertAndSuppressCleanupPolicy>
 {
-  typedef binding_danger::TErrorResult<binding_danger::JustAssertCleanupPolicy> BaseErrorResult;
+  typedef binding_danger::TErrorResult<binding_danger::AssertAndSuppressCleanupPolicy> BaseErrorResult;
 
 public:
   ErrorResult()
@@ -503,17 +514,15 @@ template<typename CleanupPolicy>
 binding_danger::TErrorResult<CleanupPolicy>::operator ErrorResult&()
 {
   return *static_cast<ErrorResult*>(
-     reinterpret_cast<TErrorResult<JustAssertCleanupPolicy>*>(this));
+     reinterpret_cast<TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
 }
 
 
-class IgnoredErrorResult : public ErrorResult
+
+
+class IgnoredErrorResult :
+    public binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy>
 {
-public:
-  ~IgnoredErrorResult()
-  {
-    SuppressException();
-  }
 };
 
 
