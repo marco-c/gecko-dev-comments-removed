@@ -166,14 +166,6 @@ Telephony::IsValidServiceId(uint32_t aServiceId)
   return aServiceId < GetNumServices();
 }
 
-
-bool
-Telephony::IsActiveState(uint16_t aCallState) {
-  return aCallState == nsITelephonyService::CALL_STATE_DIALING ||
-      aCallState == nsITelephonyService::CALL_STATE_ALERTING ||
-      aCallState == nsITelephonyService::CALL_STATE_CONNECTED;
-}
-
 uint32_t
 Telephony::GetServiceId(const Optional<uint32_t>& aServiceId,
                         bool aGetIfActiveCall)
@@ -182,11 +174,11 @@ Telephony::GetServiceId(const Optional<uint32_t>& aServiceId,
     return aServiceId.Value();
   } else if (aGetIfActiveCall) {
     nsTArray<nsRefPtr<TelephonyCall> > &calls = mCalls;
-    if (mGroup->CallState() == nsITelephonyService::CALL_STATE_CONNECTED) {
+    if (mGroup->IsActive()) {
       calls = mGroup->CallsArray();
     }
     for (uint32_t i = 0; i < calls.Length(); i++) {
-      if (IsActiveState(calls[i]->CallState())) {
+      if (calls[i]->IsActive()) {
         return calls[i]->mServiceId;
       }
     }
@@ -257,17 +249,17 @@ Telephony::CreateCallId(const nsAString& aNumber, uint16_t aNumberPresentation,
 
 already_AddRefed<TelephonyCall>
 Telephony::CreateCall(TelephonyCallId* aId, uint32_t aServiceId,
-                      uint32_t aCallIndex, uint16_t aCallState,
+                      uint32_t aCallIndex, TelephonyCallState aState,
                       bool aEmergency, bool aConference,
                       bool aSwitchable, bool aMergeable)
 {
   
-  if (aCallState == nsITelephonyService::CALL_STATE_DISCONNECTED) {
+  if (aState == TelephonyCallState::Disconnected) {
     return nullptr;
   }
 
   nsRefPtr<TelephonyCall> call =
-    TelephonyCall::Create(this, aId, aServiceId, aCallIndex, aCallState,
+    TelephonyCall::Create(this, aId, aServiceId, aCallIndex, aState,
                           aEmergency, aConference, aSwitchable, aMergeable);
 
   NS_ASSERTION(call, "This should never fail!");
@@ -338,61 +330,66 @@ Telephony::HandleCallInfo(nsITelephonyCallInfo* aInfo)
   aInfo->GetIsSwitchable(&isSwitchable);
   aInfo->GetIsMergeable(&isMergeable);
 
-  nsRefPtr<TelephonyCall> call = GetCallFromEverywhere(serviceId, callIndex);
+  TelephonyCallState state = TelephonyCall::ConvertToTelephonyCallState(callState);
 
+  nsRefPtr<TelephonyCall> call = GetCallFromEverywhere(serviceId, callIndex);
+  
   if (!call) {
     nsRefPtr<TelephonyCallId> id = CreateCallId(aInfo);
-    call = CreateCall(id, serviceId, callIndex, callState, isEmergency,
+    call = CreateCall(id, serviceId, callIndex, state, isEmergency,
                       isConference, isSwitchable, isMergeable);
-
-    if (call && callState == nsITelephonyService::CALL_STATE_INCOMING) {
+    
+    if (call &&
+        state == TelephonyCallState::Incoming) {
       nsresult rv = DispatchCallEvent(NS_LITERAL_STRING("incoming"), call);
       NS_ENSURE_SUCCESS(rv, rv);
     }
-  } else {
-    call->UpdateEmergency(isEmergency);
-    call->UpdateSwitchable(isSwitchable);
-    call->UpdateMergeable(isMergeable);
+    return NS_OK;
+  } 
 
-    nsAutoString number;
-    aInfo->GetNumber(number);
-    nsRefPtr<TelephonyCallId> id = call->Id();
-    id->UpdateNumber(number);
+  
+  call->UpdateEmergency(isEmergency);
+  call->UpdateSwitchable(isSwitchable);
+  call->UpdateMergeable(isMergeable);
 
-    nsAutoString disconnectedReason;
-    aInfo->GetDisconnectedReason(disconnectedReason);
+  nsAutoString number;
+  aInfo->GetNumber(number);
+  nsRefPtr<TelephonyCallId> id = call->Id();
+  id->UpdateNumber(number);
 
-    
-    if (call->CallState() != callState) {
-      if (callState == nsITelephonyService::CALL_STATE_DISCONNECTED) {
-        call->UpdateDisconnectedReason(disconnectedReason);
-        call->ChangeState(nsITelephonyService::CALL_STATE_DISCONNECTED);
-        return NS_OK;
-      }
+  nsAutoString disconnectedReason;
+  aInfo->GetDisconnectedReason(disconnectedReason);
 
-      
-      
-      
-      
-      
-      bool fireEvent = !isConference;
-      call->ChangeStateInternal(callState, fireEvent);
+  
+  if (call->State() != state) {
+    if (state == TelephonyCallState::Disconnected) {
+      call->UpdateDisconnectedReason(disconnectedReason);
+      call->ChangeState(TelephonyCallState::Disconnected);
+      return NS_OK;
     }
 
     
-    nsRefPtr<TelephonyCallGroup> group = call->GetGroup();
+    
+    
+    
+    
+    bool fireEvent = !isConference;
+    call->ChangeStateInternal(state, fireEvent);
+  }
 
-    if (!group && isConference) {
-      
-      NS_ASSERTION(mCalls.Contains(call), "Should in mCalls");
-      mGroup->AddCall(call);
-      RemoveCall(call);
-    } else if (group && !isConference) {
-      
-      NS_ASSERTION(mGroup->CallsArray().Contains(call), "Should in mGroup");
-      mGroup->RemoveCall(call);
-      AddCall(call);
-    }
+  
+  nsRefPtr<TelephonyCallGroup> group = call->GetGroup();
+
+  if (!group && isConference) {
+    
+    NS_ASSERTION(mCalls.Contains(call), "Should in mCalls");
+    mGroup->AddCall(call);
+    RemoveCall(call);
+  } else if (group && !isConference) {
+    
+    NS_ASSERTION(mGroup->CallsArray().Contains(call), "Should in mGroup");
+    mGroup->RemoveCall(call);
+    AddCall(call);
   }
 
   return NS_OK;
@@ -623,18 +620,21 @@ Telephony::SetSpeakerEnabled(bool aEnabled, ErrorResult& aRv)
 void
 Telephony::GetActive(Nullable<OwningTelephonyCallOrTelephonyCallGroup>& aValue)
 {
-  if (mGroup->CallState() == nsITelephonyService::CALL_STATE_CONNECTED) {
+  if (mGroup->IsActive()) {
     aValue.SetValue().SetAsTelephonyCallGroup() = mGroup;
-  } else {
-    
-    for (uint32_t i = 0; i < mCalls.Length(); i++) {
-      if (IsActiveState(mCalls[i]->CallState())) {
-        aValue.SetValue().SetAsTelephonyCall() = mCalls[i];
-        return;
-      }
-    }
-    aValue.SetNull();
+    return;
   }
+
+  
+  for (uint32_t i = 0; i < mCalls.Length(); i++) {
+    if (mCalls[i]->IsActive()) {
+      aValue.SetValue().SetAsTelephonyCall() = mCalls[i];
+      return;
+    }
+  }
+
+  
+  aValue.SetNull();
 }
 
 already_AddRefed<CallsList>
@@ -747,7 +747,11 @@ Telephony::EnumerateCallState(nsITelephonyCallInfo* aInfo)
 NS_IMETHODIMP
 Telephony::ConferenceCallStateChanged(uint16_t aCallState)
 {
-  mGroup->ChangeState(aCallState);
+  
+  
+  
+  
+  mGroup->ChangeState();
   return NS_OK;
 }
 
@@ -755,19 +759,7 @@ NS_IMETHODIMP
 Telephony::EnumerateCallStateComplete()
 {
   
-  if (mGroup->CallsArray().Length() >= 2) {
-    const nsTArray<nsRefPtr<TelephonyCall> > &calls = mGroup->CallsArray();
-
-    uint16_t callState = calls[0]->CallState();
-    for (uint32_t i = 1; i < calls.Length(); i++) {
-      if (calls[i]->CallState() != callState) {
-        callState = nsITelephonyService::CALL_STATE_UNKNOWN;
-        break;
-      }
-    }
-
-    mGroup->ChangeState(callState);
-  }
+  mGroup->ChangeState();
 
   HandleAudioAgentState();
   if (mReadyPromise) {
