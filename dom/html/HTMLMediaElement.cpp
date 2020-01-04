@@ -4963,12 +4963,15 @@ void HTMLMediaElement::CheckAutoplayDataReady()
     if (mCurrentPlayRangeStart == -1.0) {
       mCurrentPlayRangeStart = CurrentTime();
     }
-    mDecoder->Play();
+    if (!ShouldElementBePaused()) {
+      mDecoder->Play();
+    }
   } else if (mSrcStream) {
     SetPlayedOrSeeked(true);
   }
-  DispatchAsyncEvent(NS_LITERAL_STRING("play"));
 
+  
+  DispatchAsyncEvent(NS_LITERAL_STRING("play"));
 }
 
 bool HTMLMediaElement::IsActive() const
@@ -5293,19 +5296,8 @@ bool HTMLMediaElement::IsBeingDestroyed()
 
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
 {
-  bool pauseElement = NotifyOwnerDocumentActivityChangedInternal();
-  if (pauseElement && mAudioChannelAgent) {
-    
-    
-    
-    auto docShell = static_cast<nsDocShell*>(OwnerDoc()->GetDocShell());
-    if (!docShell) {
-      return;
-    }
-    if (!docShell->InFrameSwap()) {
-      NotifyAudioChannelAgent(false);
-    }
-  }
+  
+  NotifyOwnerDocumentActivityChangedInternal();
 }
 
 bool
@@ -5324,7 +5316,7 @@ HTMLMediaElement::NotifyOwnerDocumentActivityChangedInternal()
     mDecoder->NotifyOwnerActivityChanged(visible);
   }
 
-  bool pauseElement = !IsActive();
+  bool pauseElement = ShouldElementBePaused();
   SuspendOrResumeElement(pauseElement, !IsActive());
 
   AddRemoveSelfReference();
@@ -6567,6 +6559,22 @@ HTMLMediaElement::OnVisibilityChange(Visibility aOldVisibility,
     }
   }
 
+}
+
+bool
+HTMLMediaElement::ShouldElementBePaused()
+{
+  
+  if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
+    return true;
+  }
+
+  
+  if (!IsActive()) {
+    return true;
+  }
+
+  return false;
 }
 
 void

@@ -1222,6 +1222,9 @@ protected:
   bool MaybeCreateAudioChannelAgent();
 
   
+  bool ShouldElementBePaused();
+
+  
 
 
 
