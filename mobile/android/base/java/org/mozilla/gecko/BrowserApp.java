@@ -43,6 +43,7 @@ import org.mozilla.gecko.home.HomeBanner;
 import org.mozilla.gecko.home.HomeConfig;
 import org.mozilla.gecko.home.HomeConfig.PanelType;
 import org.mozilla.gecko.home.HomeConfigPrefsBackend;
+import org.mozilla.gecko.home.HomeFragment;
 import org.mozilla.gecko.home.HomePager;
 import org.mozilla.gecko.home.HomePager.OnUrlOpenInBackgroundListener;
 import org.mozilla.gecko.home.HomePager.OnUrlOpenListener;
@@ -199,7 +200,6 @@ public class BrowserApp extends GeckoApp
     public static final String GUEST_BROWSING_ARG = "--guest";
 
     
-    private static final String INTENT_KEY_SWITCHBOARD_UUID = "switchboard-uuid";
     private static final String INTENT_KEY_SWITCHBOARD_HOST = "switchboard-host";
 
     private static final String DEFAULT_SWITCHBOARD_HOST = "switchboard.services.mozilla.com";
@@ -679,6 +679,8 @@ public class BrowserApp extends GeckoApp
             "CharEncoding:State",
             "Download:AndroidDownloadManager",
             "Experiments:GetActive",
+            "Experiments:SetOverride",
+            "Experiments:ClearOverride",
             "Favicon:CacheLoad",
             "Feedback:MaybeLater",
             "Menu:Add",
@@ -793,14 +795,11 @@ public class BrowserApp extends GeckoApp
             return;
         }
 
-        final String switchboardUUID = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_UUID);
-        SwitchBoard.setUUIDFromExtra(switchboardUUID);
-
         
         
         
         
-        new AsyncConfigLoader(this, switchboardUUID, serverUrl).execute();
+        new AsyncConfigLoader(this, serverUrl).execute();
     }
 
     private void showUpdaterPermissionSnackbar() {
@@ -1386,6 +1385,8 @@ public class BrowserApp extends GeckoApp
             "CharEncoding:State",
             "Download:AndroidDownloadManager",
             "Experiments:GetActive",
+            "Experiments:SetOverride",
+            "Experiments:ClearOverride",
             "Favicon:CacheLoad",
             "Feedback:MaybeLater",
             "Menu:Add",
@@ -1661,6 +1662,10 @@ public class BrowserApp extends GeckoApp
             final List<String> experiments = SwitchBoard.getActiveExperiments(this);
             final JSONArray json = new JSONArray(experiments);
             callback.sendSuccess(json.toString());
+        } else if ("Experiments:SetOverride".equals(event)) {
+            Experiments.setOverride(getContext(), message.getString("name"), message.getBoolean("isEnabled"));
+        } else if ("Experiments:ClearOverride".equals(event)) {
+            Experiments.clearOverride(getContext(), message.getString("name"));
         } else if ("Favicon:CacheLoad".equals(event)) {
             final String url = message.getString("url");
             getFaviconFromCache(callback, url);
@@ -2305,7 +2310,7 @@ public class BrowserApp extends GeckoApp
         if (isUserSearchTerm && SwitchBoard.isInExperiment(getContext(), Experiments.SEARCH_TERM)) {
             showBrowserSearchAfterAnimation(animator);
         } else {
-            showHomePagerWithAnimator(panelId, animator);
+            showHomePagerWithAnimator(panelId, null, animator);
         }
 
         animator.start();
@@ -2496,14 +2501,28 @@ public class BrowserApp extends GeckoApp
             return;
         }
 
+        
+        
+        
+        
         if (isAboutHome(tab)) {
             String panelId = AboutPages.getPanelIdFromAboutHomeUrl(tab.getURL());
+            Bundle panelRestoreData = null;
             if (panelId == null) {
                 
                 
+                
+                
+                
+                
+                
+                
+                
+                
                 panelId = tab.getMostRecentHomePanel();
+                panelRestoreData = tab.getMostRecentHomePanelData();
             }
-            showHomePager(panelId);
+            showHomePager(panelId, panelRestoreData);
 
             if (mDynamicToolbar.isEnabled()) {
                 mDynamicToolbar.setVisible(true, VisibilityTransition.ANIMATE);
@@ -2588,14 +2607,14 @@ public class BrowserApp extends GeckoApp
         mHomePagerContainer.setVisibility(View.VISIBLE);
     }
 
-    private void showHomePager(String panelId) {
-        showHomePagerWithAnimator(panelId, null);
+    private void showHomePager(String panelId, Bundle panelRestoreData) {
+        showHomePagerWithAnimator(panelId, panelRestoreData, null);
     }
 
-    private void showHomePagerWithAnimator(String panelId, PropertyAnimator animator) {
+    private void showHomePagerWithAnimator(String panelId, Bundle panelRestoreData, PropertyAnimator animator) {
         if (isHomePagerVisible()) {
             
-            mHomePager.showPanel(panelId);
+            mHomePager.showPanel(panelId, panelRestoreData);
             return;
         }
 
@@ -2629,6 +2648,17 @@ public class BrowserApp extends GeckoApp
             });
 
             
+            mHomePager.setPanelStateChangeListener(new HomeFragment.PanelStateChangeListener() {
+                @Override
+                public void onStateChanged(Bundle bundle) {
+                    final Tab currentTab = Tabs.getInstance().getSelectedTab();
+                    if (currentTab != null) {
+                        currentTab.setMostRecentHomePanelData(bundle);
+                    }
+                }
+            });
+
+            
             if (!Restrictions.isUserRestricted()) {
                 final ViewStub homeBannerStub = (ViewStub) findViewById(R.id.home_banner_stub);
                 final HomeBanner homeBanner = (HomeBanner) homeBannerStub.inflate();
@@ -2648,7 +2678,9 @@ public class BrowserApp extends GeckoApp
         mHomePagerContainer.setVisibility(View.VISIBLE);
         mHomePager.load(getSupportLoaderManager(),
                         getSupportFragmentManager(),
-                        panelId, animator);
+                        panelId,
+                        panelRestoreData,
+                        animator);
 
         
         hideWebContentOnPropertyAnimationEnd(animator);
@@ -2804,7 +2836,8 @@ public class BrowserApp extends GeckoApp
 
         
         
-        showHomePager(Tabs.getInstance().getSelectedTab().getMostRecentHomePanel());
+        showHomePager(Tabs.getInstance().getSelectedTab().getMostRecentHomePanel(),
+                Tabs.getInstance().getSelectedTab().getMostRecentHomePanelData());
 
         mBrowserSearchContainer.setVisibility(View.INVISIBLE);
 
