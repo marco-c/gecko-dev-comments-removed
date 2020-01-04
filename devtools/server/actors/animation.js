@@ -74,12 +74,20 @@ var AnimationPlayerActor = ActorClass({
 
     this.walker = animationsActor.walker;
     this.player = player;
-    this.node = player.effect.target;
 
     
     
+    
+    
+    
+    
     this.observer = new this.window.MutationObserver(this.onAnimationMutation);
-    this.observer.observe(this.node, {animations: true});
+    if (this.isPseudoElement) {
+      this.observer.observe(this.node.parentElement,
+                            {animations: true, subtree: true});
+    } else {
+      this.observer.observe(this.node, {animations: true});
+    }
   },
 
   destroy: function() {
@@ -88,9 +96,41 @@ var AnimationPlayerActor = ActorClass({
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
-    this.player = this.node = this.observer = this.walker = null;
+    this.player = this.observer = this.walker = null;
 
     Actor.prototype.destroy.call(this);
+  },
+
+  get isPseudoElement() {
+    return !this.player.effect.target.ownerDocument;
+  },
+
+  get node() {
+    if (this._node) {
+      return this._node;
+    }
+
+    let node = this.player.effect.target;
+
+    if (this.isPseudoElement) {
+      
+      
+      let treeWalker = this.walker.getDocumentWalker(node.parentElement);
+      while (treeWalker.nextNode()) {
+        let currentNode = treeWalker.currentNode;
+        if ((currentNode.nodeName === "_moz_generated_content_before" &&
+             node.type === "::before") ||
+            (currentNode.nodeName === "_moz_generated_content_after" &&
+             node.type === "::after")) {
+          this._node = currentNode;
+        }
+      }
+    } else {
+      
+      this._node = node;
+    }
+
+    return this._node;
   },
 
   get window() {
@@ -606,10 +646,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
   getAnimationPlayersForNode: method(function(nodeActor) {
-    let animations = [
-      ...nodeActor.rawNode.getAnimations(),
-      ...this.getAllAnimations(nodeActor.rawNode)
-    ];
+    let animations = nodeActor.rawNode.getAnimations({subtree: true});
 
     
     if (this.actors) {
@@ -659,15 +696,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
         if (player.playState !== "idle") {
           continue;
         }
-        
-        
-        
-        
-        
-        
-        if (player.effect.target.type) {
-          continue;
-        }
+
         let index = this.actors.findIndex(a => a.player === player);
         if (index !== -1) {
           eventData.push({
@@ -684,15 +713,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
         if (this.actors.find(a => a.player === player)) {
           continue;
         }
-        
-        
-        
-        
-        
-        
-        if (player.effect.target.type) {
-          continue;
-        }
+
         
         
         
@@ -757,25 +778,14 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
   getAllAnimations: function(rootNode, traverseFrames) {
-    let animations = [];
-
-    
-    
-    
-    for (let element of rootNode.getElementsByTagNameNS("*", "*")) {
-      if (traverseFrames && element.contentWindow) {
-        animations = [
-          ...animations,
-          ...this.getAllAnimations(element.contentWindow.document, traverseFrames)
-        ];
-      } else {
-        animations = [
-          ...animations,
-          ...element.getAnimations()
-        ];
-      }
+    if (!traverseFrames) {
+      return rootNode.getAnimations({subtree: true});
     }
 
+    let animations = [];
+    for (let {document} of this.tabActor.windows) {
+      animations = [...animations, ...document.getAnimations({subtree: true})];
+    }
     return animations;
   },
 
