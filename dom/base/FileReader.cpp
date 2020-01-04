@@ -701,7 +701,7 @@ nsresult
 FileReader::IncreaseBusyCounter()
 {
   if (mWorkerPrivate && mBusyCount++ == 0 &&
-      !mWorkerPrivate->AddFeature(this)) {
+      !HoldWorker(mWorkerPrivate)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -713,7 +713,7 @@ FileReader::DecreaseBusyCounter()
 {
   MOZ_ASSERT_IF(mWorkerPrivate, mBusyCount);
   if (mWorkerPrivate && --mBusyCount == 0) {
-    mWorkerPrivate->RemoveFeature(this);
+    ReleaseWorker();
   }
 }
 
@@ -742,7 +742,7 @@ FileReader::Shutdown()
   }
 
   if (mWorkerPrivate && mBusyCount != 0) {
-    mWorkerPrivate->RemoveFeature(this);
+    ReleaseWorker();
     mWorkerPrivate = nullptr;
     mBusyCount = 0;
   }

@@ -9,7 +9,7 @@
 #include "mozilla/unused.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/workers/bindings/WorkerFeature.h"
+#include "mozilla/dom/workers/bindings/WorkerHolder.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICancelableRunnable.h"
@@ -23,13 +23,13 @@ namespace ipc {
 using mozilla::dom::PContentChild;
 using mozilla::dom::workers::GetCurrentThreadWorkerPrivate;
 using mozilla::dom::workers::Status;
-using mozilla::dom::workers::WorkerFeature;
+using mozilla::dom::workers::WorkerHolder;
 using mozilla::dom::workers::WorkerPrivate;
 
 namespace {
 
 class SendStreamChildImpl final : public SendStreamChild
-                                , public WorkerFeature
+                                , public WorkerHolder
 {
 public:
   explicit SendStreamChildImpl(nsIAsyncInputStream* aStream);
@@ -39,7 +39,7 @@ public:
   void StartDestroy() override;
 
   bool
-  AddAsWorkerFeature(dom::workers::WorkerPrivate* aWorkerPrivate);
+  AddAsWorkerHolder(dom::workers::WorkerPrivate* aWorkerPrivate);
 
 private:
   class Callback;
@@ -180,11 +180,11 @@ SendStreamChildImpl::StartDestroy()
 }
 
 bool
-SendStreamChildImpl::AddAsWorkerFeature(WorkerPrivate* aWorkerPrivate)
+SendStreamChildImpl::AddAsWorkerHolder(WorkerPrivate* aWorkerPrivate)
 {
   NS_ASSERT_OWNINGTHREAD(SendStreamChild);
   MOZ_ASSERT(aWorkerPrivate);
-  bool result = aWorkerPrivate->AddFeature(this);
+  bool result = HoldWorker(aWorkerPrivate);
   if (result) {
     mWorkerPrivate = aWorkerPrivate;
   }
@@ -207,7 +207,7 @@ SendStreamChildImpl::ActorDestroy(ActorDestroyReason aReason)
   }
 
   if (mWorkerPrivate) {
-    mWorkerPrivate->RemoveFeature(this);
+    ReleaseWorker();
     mWorkerPrivate = nullptr;
   }
 }
@@ -405,7 +405,7 @@ SendStreamChild::Create(nsIAsyncInputStream* aInputStream,
 
   SendStreamChildImpl* actor = new SendStreamChildImpl(aInputStream);
 
-  if (workerPrivate && !actor->AddAsWorkerFeature(workerPrivate)) {
+  if (workerPrivate && !actor->AddAsWorkerHolder(workerPrivate)) {
     delete actor;
     return nullptr;
   }

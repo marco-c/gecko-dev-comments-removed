@@ -195,16 +195,16 @@ NS_IMPL_RELEASE_INHERITED(MessagePort, DOMEventTargetHelper)
 
 namespace {
 
-class MessagePortFeature final : public workers::WorkerFeature
+class MessagePortWorkerHolder final : public workers::WorkerHolder
 {
   MessagePort* mPort;
 
 public:
-  explicit MessagePortFeature(MessagePort* aPort)
+  explicit MessagePortWorkerHolder(MessagePort* aPort)
     : mPort(aPort)
   {
     MOZ_ASSERT(aPort);
-    MOZ_COUNT_CTOR(MessagePortFeature);
+    MOZ_COUNT_CTOR(MessagePortWorkerHolder);
   }
 
   virtual bool Notify(workers::Status aStatus) override
@@ -219,9 +219,9 @@ public:
   }
 
 private:
-  ~MessagePortFeature()
+  ~MessagePortWorkerHolder()
   {
-    MOZ_COUNT_DTOR(MessagePortFeature);
+    MOZ_COUNT_DTOR(MessagePortWorkerHolder);
   }
 };
 
@@ -287,7 +287,7 @@ MessagePort::MessagePort(nsIGlobalObject* aGlobal)
 MessagePort::~MessagePort()
 {
   CloseForced();
-  MOZ_ASSERT(!mWorkerFeature);
+  MOZ_ASSERT(!mWorkerHolder);
 }
 
  already_AddRefed<MessagePort>
@@ -357,15 +357,15 @@ MessagePort::Initialize(const nsID& aUUID,
   if (!NS_IsMainThread()) {
     WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(workerPrivate);
-    MOZ_ASSERT(!mWorkerFeature);
+    MOZ_ASSERT(!mWorkerHolder);
 
-    nsAutoPtr<WorkerFeature> feature(new MessagePortFeature(this));
-    if (NS_WARN_IF(!workerPrivate->AddFeature(feature))) {
+    nsAutoPtr<WorkerHolder> workerHolder(new MessagePortWorkerHolder(this));
+    if (NS_WARN_IF(!workerHolder->HoldWorker(workerPrivate))) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
-    mWorkerFeature = Move(feature);
+    mWorkerHolder = Move(workerHolder);
   } else if (GetOwner()) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(GetOwner()->IsInnerWindow());
@@ -912,13 +912,8 @@ MessagePort::UpdateMustKeepAlive()
       mIsKeptAlive) {
     mIsKeptAlive = false;
 
-    if (mWorkerFeature) {
-      WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-      MOZ_ASSERT(workerPrivate);
-
-      workerPrivate->RemoveFeature(mWorkerFeature);
-      mWorkerFeature = nullptr;
-    }
+    
+    mWorkerHolder = nullptr;
 
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIObserverService> obs =

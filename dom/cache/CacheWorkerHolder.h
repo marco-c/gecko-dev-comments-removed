@@ -4,12 +4,12 @@
 
 
 
-#ifndef mozilla_dom_cache_Feature_h
-#define mozilla_dom_cache_Feature_h
+#ifndef mozilla_dom_cache_CacheWorkerHolder_h
+#define mozilla_dom_cache_CacheWorkerHolder_h
 
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
-#include "WorkerFeature.h"
+#include "WorkerHolder.h"
 
 namespace mozilla {
 
@@ -22,10 +22,11 @@ namespace cache {
 
 class ActorChild;
 
-class Feature final : public workers::WorkerFeature
+class CacheWorkerHolder final : public workers::WorkerHolder
 {
 public:
-  static already_AddRefed<Feature> Create(workers::WorkerPrivate* aWorkerPrivate);
+  static already_AddRefed<CacheWorkerHolder>
+  Create(workers::WorkerPrivate* aWorkerPrivate);
 
   void AddActor(ActorChild* aActor);
   void RemoveActor(ActorChild* aActor);
@@ -36,15 +37,14 @@ public:
   virtual bool Notify(workers::Status aStatus) override;
 
 private:
-  explicit Feature(workers::WorkerPrivate *aWorkerPrivate);
-  ~Feature();
+  CacheWorkerHolder();
+  ~CacheWorkerHolder();
 
-  workers::WorkerPrivate* mWorkerPrivate;
   nsTArray<ActorChild*> mActorList;
   bool mNotified;
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(mozilla::dom::cache::Feature)
+  NS_INLINE_DECL_REFCOUNTING(mozilla::dom::cache::CacheWorkerHolder)
 };
 
 } 

@@ -70,7 +70,7 @@ CacheChild::ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
 {
   mNumChildActors += 1;
   MOZ_ALWAYS_TRUE(SendPCacheOpConstructor(
-    new CacheOpChild(GetFeature(), aGlobal, aParent, aPromise), aArgs));
+    new CacheOpChild(GetWorkerHolder(), aGlobal, aParent, aPromise), aArgs));
 }
 
 void
@@ -130,7 +130,7 @@ CacheChild::ActorDestroy(ActorDestroyReason aReason)
     MOZ_ASSERT(!mListener);
   }
 
-  RemoveFeature();
+  RemoveWorkerHolder();
 }
 
 PCacheOpChild*

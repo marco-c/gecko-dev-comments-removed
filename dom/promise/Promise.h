@@ -29,7 +29,7 @@
 #define DOM_PROMISE_DEPRECATED_REPORTING !SPIDERMONKEY_PROMISE
 
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-#include "mozilla/dom/workers/bindings/WorkerFeature.h"
+#include "mozilla/dom/workers/bindings/WorkerHolder.h"
 #endif 
 
 class nsIGlobalObject;
@@ -48,14 +48,15 @@ class PromiseDebugging;
 class Promise;
 
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-class PromiseReportRejectFeature : public workers::WorkerFeature
+class PromiseReportRejectWorkerHolder : public workers::WorkerHolder
 {
+  
   
   
   Promise* MOZ_NON_OWNING_REF mPromise;
 
 public:
-  explicit PromiseReportRejectFeature(Promise* aPromise)
+  explicit PromiseReportRejectWorkerHolder(Promise* aPromise)
     : mPromise(aPromise)
   {
     MOZ_ASSERT(mPromise);
@@ -84,7 +85,7 @@ class Promise : public nsISupports,
   friend class PromiseResolverTask;
   friend class PromiseTask;
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-  friend class PromiseReportRejectFeature;
+  friend class PromiseReportRejectWorkerHolder;
 #endif 
   friend class PromiseWorkerProxy;
   friend class PromiseWorkerProxyRunnable;
@@ -409,7 +410,7 @@ private:
 
   void MaybeReportRejectedOnce() {
     MaybeReportRejected();
-    RemoveFeature();
+    RemoveWorkerHolder();
     mResult.setUndefined();
   }
 #endif 
@@ -464,7 +465,7 @@ private:
   CreateThenableFunction(JSContext* aCx, Promise* aPromise, uint32_t aTask);
 
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-  void RemoveFeature();
+  void RemoveWorkerHolder();
 #endif 
 
   
@@ -503,7 +504,7 @@ private:
   
   
   
-  nsAutoPtr<PromiseReportRejectFeature> mFeature;
+  nsAutoPtr<PromiseReportRejectWorkerHolder> mWorkerHolder;
 #endif 
 
   bool mTaskPending;
