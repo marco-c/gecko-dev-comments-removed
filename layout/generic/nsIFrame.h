@@ -1752,8 +1752,7 @@ public:
 
   struct InlineMinISizeData : public InlineIntrinsicISizeData {
     InlineMinISizeData()
-      : trailingTextFrame(nullptr)
-      , atStartOfLine(true)
+      : atStartOfLine(true)
     {}
 
     
@@ -1770,11 +1769,6 @@ public:
     
     
     void OptionallyBreak(nscoord aHyphenWidth = 0);
-
-    
-    
-    
-    nsIFrame *trailingTextFrame;
 
     
     

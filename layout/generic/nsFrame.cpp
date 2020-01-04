@@ -4298,7 +4298,6 @@ nsIFrame::InlineMinISizeData::DefaultAddInlineMinISize(nsIFrame* aFrame,
   }
   trailingWhitespace = 0;
   skipWhitespace = false;
-  trailingTextFrame = nullptr;
   currentLine += aISize;
   atStartOfLine = false;
   if (mayBreak) {
@@ -4327,15 +4326,12 @@ nsIFrame::InlineMinISizeData::ForceBreak()
       prevLines = float_min;
   }
   floats.Clear();
-  trailingTextFrame = nullptr;
   skipWhitespace = true;
 }
 
 void
 nsIFrame::InlineMinISizeData::OptionallyBreak(nscoord aHyphenWidth)
 {
-  trailingTextFrame = nullptr;
-
   
   
   
