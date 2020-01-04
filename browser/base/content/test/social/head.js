@@ -489,7 +489,12 @@ function get3ChatsForCollapsing(mode, cb) {
 function makeChat(mode, uniqueid, cb) {
   info("making a chat window '" + uniqueid +"'");
   let provider = SocialSidebar.provider;
-  const chatUrl = provider.origin + "/browser/browser/base/content/test/social/social_chat.html";
+  let chatUrl = provider.origin + "/browser/browser/base/content/test/social/social_chat.html";
+  
+  
+  if (provider.chatURL) {
+    chatUrl = provider.chatURL;
+  }
   
   
   let chatbox = getChatBar().openChat(provider.origin, provider.name,

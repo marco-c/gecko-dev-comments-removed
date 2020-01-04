@@ -9,11 +9,10 @@ function test() {
   let manifest = { 
     name: "provider 1",
     origin: "https://example.com",
-    sidebarURL: "https://example.com/browser/browser/base/content/test/social/social_sidebar.html",
-    workerURL: "https://example.com/browser/browser/base/content/test/social/social_worker.js",
+    sidebarURL: "https://example.com/browser/browser/base/content/test/social/social_sidebar_empty.html",
     iconURL: "https://example.com/browser/browser/base/content/test/general/moz.png",
     
-    chatURL: "https://example.com/browser/browser/base/content/test/social/social_chat.html"
+    chatURL: "https://example.com/browser/browser/base/content/test/social/social_sidebar_empty.html"
   };
   let oldwidth = window.outerWidth; 
   let oldleft = window.screenX;
@@ -25,27 +24,20 @@ function test() {
   };
 
   runSocialTestWithProvider(manifest, function (finishcb) {
-    SocialSidebar.show();
-    let port = SocialSidebar.provider.getWorkerPort();
-    ok(port, "provider has a port");
-    port.postMessage({topic: "test-init"});
-    
-    waitForCondition(function() {
-      let sbrowser = document.getElementById("social-sidebar-browser");
-      return SocialSidebar.provider &&
-             SocialSidebar.provider.profile &&
-             SocialSidebar.provider.profile.displayName &&
-             sbrowser.docShellIsActive;
-    }, function() {
+    let sbrowser = document.getElementById("social-sidebar-browser");
+    ensureFrameLoaded(sbrowser).then(() => {
+      let provider = SocialSidebar.provider;
+      provider.chatURL = manifest.chatURL;
+      ok(provider, "provider is set");
+      ok(provider.chatURL, "provider has chatURL");
       
       runSocialTests(tests, undefined, postSubTest, function() {
         window.moveTo(oldleft, window.screenY)
         window.resizeTo(oldwidth, window.outerHeight);
-        port.close();
         finishcb();
       });
-    },
-    "waitForProviderLoad: provider profile was not set", 100);
+    });
+    SocialSidebar.show();
   });
 }
 
