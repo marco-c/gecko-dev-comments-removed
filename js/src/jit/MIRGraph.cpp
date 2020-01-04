@@ -119,8 +119,9 @@ MIRGenerator::needsAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* access) const
     
     
     
+    
 #if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
-    if (usesSignalHandlersForAsmJSOOB_)
+    if (usesSignalHandlersForAsmJSOOB_ && !access->isAtomicAccess())
         return false;
 #endif
     return access->needsBoundsCheck();
