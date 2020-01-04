@@ -1399,9 +1399,7 @@ BluetoothHfpManager::ConnectionStateNotification(
 
   } else if (aState == HFP_CONNECTION_STATE_CONNECTED) {
     
-    mNrecEnabled = HFP_NREC_STARTED;
-    NotifyConnectionStateChanged(
-      NS_LITERAL_STRING(BLUETOOTH_HFP_NREC_STATUS_CHANGED_ID));
+    NRECNotification(HFP_NREC_STARTED, mDeviceAddress);
   }
 }
 
@@ -1478,6 +1476,12 @@ BluetoothHfpManager::DtmfNotification(char aDtmf, const nsAString& aBdAddress)
   NotifyDialer(NS_ConvertUTF8toUTF16(message));
 }
 
+
+
+
+
+
+
 void
 BluetoothHfpManager::NRECNotification(BluetoothHandsfreeNRECState aNrec,
                                       const nsAString& aBdAddr)
@@ -1488,7 +1492,6 @@ BluetoothHfpManager::NRECNotification(BluetoothHandsfreeNRECState aNrec,
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   NS_ENSURE_TRUE_VOID(obs);
 
-  
   mNrecEnabled = static_cast<bool>(aNrec);
 
   
