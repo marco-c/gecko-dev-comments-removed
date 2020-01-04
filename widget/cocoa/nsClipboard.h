@@ -8,6 +8,7 @@
 
 #include "nsBaseClipboard.h"
 #include "nsXPIDLString.h"
+#include "mozilla/StaticPtr.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -26,6 +27,11 @@ public:
   NS_IMETHOD SupportsFindClipboard(bool *_retval);
 
   
+  
+  
+  static mozilla::StaticRefPtr<nsITransferable> sSelectionCache;
+
+  
   static NSDictionary* PasteboardDictFromTransferable(nsITransferable *aTransferable);
   static bool IsStringType(const nsCString& aMIMEType, NSString** aPasteboardType);
   static NSString* WrapHtmlForSystemPasteboard(NSString* aString);
@@ -36,6 +42,7 @@ protected:
   
   NS_IMETHOD SetNativeClipboardData(int32_t aWhichClipboard);
   NS_IMETHOD GetNativeClipboardData(nsITransferable * aTransferable, int32_t aWhichClipboard);
+  void SetSelectionCache(nsITransferable* aTransferable);
   
 private:
   int32_t mCachedClipboard;
