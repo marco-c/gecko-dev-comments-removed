@@ -29,6 +29,13 @@ class PropertyName;
 namespace wasm {
 
 
+static const unsigned MaxSigs        =   4 * 1024;
+static const unsigned MaxFuncs       = 512 * 1024;
+static const unsigned MaxImports     =   4 * 1024;
+static const unsigned MaxExports     =   4 * 1024;
+static const unsigned MaxArgsPerFunc =   4 * 1024;
+
+
 static const uint32_t MagicNumber = 0x6d736100; 
 static const uint32_t EncodingVersion = -1;     
 
