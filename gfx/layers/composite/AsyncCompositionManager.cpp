@@ -369,7 +369,11 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   
-  TranslateShadowLayer(aLayer, ThebesPoint(translation), aLayer != aTransformedSubtreeRoot);
+  
+  
+  bool adjustClipRect = aLayer != aTransformedSubtreeRoot &&
+                        aLayer->IsClipFixed();
+  TranslateShadowLayer(aLayer, ThebesPoint(translation), adjustClipRect);
 }
 
 static void
