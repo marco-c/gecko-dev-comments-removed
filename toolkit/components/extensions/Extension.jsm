@@ -481,7 +481,9 @@ ExtensionData.prototype = {
 
     if (!(this.rootURI instanceof Ci.nsIJARURI &&
           this.rootURI.JARFile instanceof Ci.nsIFileURL)) {
-      throw Error("Invalid extension root URL");
+      
+      
+      return [];
     }
 
     
