@@ -14,6 +14,7 @@
 #include <vector>
 #include <list>
 
+#include "base/buffer.h"
 #include "base/message_loop.h"
 #include "chrome/common/file_descriptor_set_posix.h"
 
@@ -127,7 +128,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   
-  std::string input_overflow_buf_;
+  Buffer input_overflow_buf_;
   std::vector<int> input_overflow_fds_;
 
   

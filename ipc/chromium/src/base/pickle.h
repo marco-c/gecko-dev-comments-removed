@@ -32,6 +32,11 @@
 
 class Pickle {
  public:
+  enum Ownership {
+    BORROWS,
+    OWNS,
+  };
+
   ~Pickle();
 
   
@@ -46,7 +51,9 @@ class Pickle {
   
   
   
-  Pickle(const char* data, int data_len);
+  
+  
+  Pickle(const char* data, int data_len, Ownership ownership = BORROWS);
 
   
   Pickle(const Pickle& other);
@@ -279,6 +286,12 @@ class Pickle {
   static const char* FindNext(uint32_t header_size,
                               const char* range_start,
                               const char* range_end);
+
+  
+  
+  static uint32_t GetLength(uint32_t header_size,
+                            const char* range_start,
+                            const char* range_end);
 
   
   static const int kPayloadUnit;

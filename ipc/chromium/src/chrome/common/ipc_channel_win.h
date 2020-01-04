@@ -10,6 +10,7 @@
 #include <queue>
 #include <string>
 
+#include "base/buffer.h"
 #include "base/message_loop.h"
 #include "mozilla/UniquePtr.h"
 
@@ -86,7 +87,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
 
   
   
-  std::string input_overflow_buf_;
+  Buffer input_overflow_buf_;
 
   
   

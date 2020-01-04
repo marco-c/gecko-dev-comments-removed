@@ -73,7 +73,9 @@ class Message : public Pickle {
   
   
   
-  Message(const char* data, int data_len);
+  
+  
+  Message(const char* data, int data_len, Ownership ownership = BORROWS);
 
   Message(const Message& other);
   Message(Message&& other);
@@ -240,6 +242,12 @@ class Message : public Pickle {
   
   static const char* FindNext(const char* range_start, const char* range_end) {
     return Pickle::FindNext(sizeof(Header), range_start, range_end);
+  }
+
+  
+  
+  static uint32_t GetLength(const char* range_start, const char* range_end) {
+    return Pickle::GetLength(sizeof(Header), range_start, range_end);
   }
 
 #if defined(OS_POSIX)

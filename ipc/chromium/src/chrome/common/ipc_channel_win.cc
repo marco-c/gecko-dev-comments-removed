@@ -350,16 +350,53 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         CHROMIUM_LOG(ERROR) << "IPC message is too big";
         return false;
       }
+
       input_overflow_buf_.append(input_buf_, bytes_read);
       p = input_overflow_buf_.data();
       end = p + input_overflow_buf_.size();
+
+      
+      
+      
+      
+      uint32_t length = Message::GetLength(p, end);
+      if (length) {
+        input_overflow_buf_.reserve(length + kReadBufferSize);
+
+        
+        p = input_overflow_buf_.data();
+        end = p + input_overflow_buf_.size();
+      }
     }
 
     while (p < end) {
       const char* message_tail = Message::FindNext(p, end);
       if (message_tail) {
         int len = static_cast<int>(message_tail - p);
-        const Message m(p, len);
+        char* buf;
+
+        
+        
+        
+        
+        if (len > kMaxCopySize) {
+          
+          
+          
+          
+          buf = input_overflow_buf_.trade_bytes(len);
+
+          
+          
+          
+          p = nullptr;
+          message_tail = input_overflow_buf_.data();
+          end = message_tail + input_overflow_buf_.size();
+        } else {
+          buf = (char*)malloc(len);
+          memcpy(buf, p, len);
+        }
+        Message m(buf, len, Message::OWNS);
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
         DLOG(INFO) << "received message on channel @" << this <<
                       " with type " << m.type();
@@ -380,7 +417,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
           waiting_for_shared_secret_ = false;
           listener_->OnChannelConnected(claimed_pid);
         } else {
-          listener_->OnMessageReceived(m);
+          listener_->OnMessageReceived(mozilla::Move(m));
         }
         p = message_tail;
       } else {

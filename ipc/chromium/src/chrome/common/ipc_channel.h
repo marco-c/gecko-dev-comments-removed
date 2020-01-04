@@ -25,7 +25,7 @@ class Channel : public Message::Sender {
     virtual ~Listener() {}
 
     
-    virtual void OnMessageReceived(const Message& message) = 0;
+    virtual void OnMessageReceived(Message&& message) = 0;
 
     
     
@@ -51,7 +51,10 @@ class Channel : public Message::Sender {
     kMaximumMessageSize = 256 * 1024 * 1024,
 
     
-    kReadBufferSize = 4 * 1024
+    kReadBufferSize = 4 * 1024,
+
+    
+    kMaxCopySize = 32 * 1024,
   };
 
   

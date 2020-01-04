@@ -1140,11 +1140,11 @@ GeckoChildProcessHost::OnChannelConnected(int32_t peer_pid)
 }
 
 void
-GeckoChildProcessHost::OnMessageReceived(const IPC::Message& aMsg)
+GeckoChildProcessHost::OnMessageReceived(IPC::Message&& aMsg)
 {
   
   
-  mQueue.push(aMsg);
+  mQueue.push(Move(aMsg));
 }
 
 void

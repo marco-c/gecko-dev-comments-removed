@@ -263,18 +263,7 @@ bool Channel::ChannelImpl::EnqueueHelloMessage() {
 
 void Channel::ChannelImpl::ClearAndShrinkInputOverflowBuf()
 {
-  
-  static size_t previousCapacityAfterClearing = 0;
-  if (input_overflow_buf_.capacity() > previousCapacityAfterClearing) {
-    
-    
-    std::string tmp;
-    tmp.reserve(Channel::kReadBufferSize);
-    input_overflow_buf_.swap(tmp);
-    previousCapacityAfterClearing = input_overflow_buf_.capacity();
-  } else {
-    input_overflow_buf_.clear();
-  }
+  input_overflow_buf_.clear();
 }
 
 bool Channel::ChannelImpl::Connect() {
@@ -396,9 +385,23 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
         CHROMIUM_LOG(ERROR) << "IPC message is too big";
         return false;
       }
+
       input_overflow_buf_.append(input_buf_, bytes_read);
       overflowp = p = input_overflow_buf_.data();
       end = p + input_overflow_buf_.size();
+
+      
+      
+      
+      
+      uint32_t length = Message::GetLength(p, end);
+      if (length) {
+        input_overflow_buf_.reserve(length + kReadBufferSize);
+
+        
+        overflowp = p = input_overflow_buf_.data();
+        end = p + input_overflow_buf_.size();
+      }
     }
 
     
@@ -423,7 +426,31 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
       const char* message_tail = Message::FindNext(p, end);
       if (message_tail) {
         int len = static_cast<int>(message_tail - p);
-        Message m(p, len);
+        char* buf;
+
+        
+        
+        
+        
+        if (len > kMaxCopySize) {
+          
+          
+          
+          
+          MOZ_RELEASE_ASSERT(p == overflowp);
+          buf = input_overflow_buf_.trade_bytes(len);
+
+          
+          
+          
+          p = nullptr;
+          overflowp = message_tail = input_overflow_buf_.data();
+          end = overflowp + input_overflow_buf_.size();
+        } else {
+          buf = (char*)malloc(len);
+          memcpy(buf, p, len);
+        }
+        Message m(buf, len, Message::OWNS);
         if (m.header()->num_fds) {
           
           const char* error = NULL;
@@ -492,7 +519,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
           CloseDescriptors(m.fd_cookie());
 #endif
         } else {
-          listener_->OnMessageReceived(m);
+          listener_->OnMessageReceived(mozilla::Move(m));
         }
         p = message_tail;
       } else {
