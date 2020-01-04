@@ -1575,19 +1575,21 @@ protected:
 
 public:
   
-  class TimeDurationAccumulator {
+  class TimeDurationAccumulator
+  {
   public:
     TimeDurationAccumulator()
       : mCount(0)
+    {}
+    void Start()
     {
-    }
-    void Start() {
       if (IsStarted()) {
         return;
       }
       mStartTime = TimeStamp::Now();
     }
-    void Pause() {
+    void Pause()
+    {
       if (!IsStarted()) {
         return;
       }
@@ -1595,14 +1597,25 @@ public:
       mCount++;
       mStartTime = TimeStamp();
     }
-    bool IsStarted() const {
+    bool IsStarted() const
+    {
       return !mStartTime.IsNull();
     }
-    double Total() const {
-      return mSum.ToSeconds();
+    double Total() const
+    {
+      if (!IsStarted()) {
+        return mSum.ToSeconds();
+      }
+      
+      return (mSum + (TimeStamp::Now() - mStartTime)).ToSeconds();
     }
-    uint32_t Count() const {
-      return mCount;
+    uint32_t Count() const
+    {
+      if (!IsStarted()) {
+        return mCount;
+      }
+      
+      return mCount + 1;
     }
   private:
     TimeStamp mStartTime;
