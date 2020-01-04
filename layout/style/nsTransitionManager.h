@@ -53,19 +53,28 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
   }
 
   nsCSSProperty TransitionProperty() const {
-    MOZ_ASSERT(mProperties.Length() == 1,
-               "Transitions should have exactly one animation property. "
+    MOZ_ASSERT(mFrames.Length() == 2,
+               "Transitions should have exactly two animation frames. "
                "Perhaps we are using an un-initialized transition?");
-    return mProperties[0].mProperty;
+    MOZ_ASSERT(mFrames[0].mPropertyValues.Length() == 1,
+               "Transitions should have exactly one property in their first "
+               "frame");
+    return mFrames[0].mPropertyValues[0].mProperty;
   }
 
   StyleAnimationValue ToValue() const {
-    MOZ_ASSERT(mProperties.Length() == 1,
-               "Transitions should have exactly one animation property");
-    MOZ_ASSERT(mProperties[0].mSegments.Length() == 1,
-               "Transitions should have one animation property segment ");
+    
+    
+    
+    
+    if (mProperties.Length() < 1 ||
+        mProperties[0].mSegments.Length() < 1) {
+      NS_WARNING("Failed to generate transition property values");
+      return StyleAnimationValue();
+    }
     return mProperties[0].mSegments[0].mToValue;
   }
+
   
   
   
