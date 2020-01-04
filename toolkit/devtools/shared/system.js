@@ -40,22 +40,28 @@ function *getSystemInfo() {
   let appInfo = Services.appinfo;
   let win = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
   let [processor, compiler] = appInfo.XPCOMABI.split("-");
-  let dpi, useragent, width, height, os, hardware, version, brandName;
+  let dpi, useragent, width, height, os, brandName;
   let appid = appInfo.ID;
   let apptype = APP_MAP[appid];
   let geckoVersion = appInfo.platformVersion;
+  let hardware = "unknown";
+  let version = "unknown";
 
   
   if (apptype === "b2g") {
     os = "B2G";
-    hardware = yield exports.getSetting("deviceinfo.hardware");
-    version = yield exports.getSetting("deviceinfo.os");
+    
+    
+    try {
+      hardware = yield exports.getSetting("deviceinfo.hardware");
+      version = yield exports.getSetting("deviceinfo.os");
+    } catch (e) {
+    }
   }
   
   else {
     os = appInfo.OS;
     version = appInfo.version;
-    hardware = "unknown";
   }
 
   let bundle = Services.strings.createBundle("chrome://branding/locale/brand.properties");
@@ -293,7 +299,16 @@ function getSetting(name) {
   let deferred = promise.defer();
 
   if ("@mozilla.org/settingsService;1" in Cc) {
-    let settingsService = Cc["@mozilla.org/settingsService;1"].getService(Ci.nsISettingsService);
+    let settingsService;
+
+    
+    
+    try {
+      settingsService = Cc["@mozilla.org/settingsService;1"].getService(Ci.nsISettingsService);
+    } catch (e) {
+      return promise.reject(e);
+    }
+
     let req = settingsService.createLock().get(name, {
       handle: (name, value) => deferred.resolve(value),
       handleError: (error) => deferred.reject(error),
