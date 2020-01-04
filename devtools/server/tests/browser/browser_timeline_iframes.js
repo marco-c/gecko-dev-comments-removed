@@ -7,7 +7,7 @@
 
 
 
-const {TimelineFront} = require("devtools/server/actors/timeline");
+const {TimelineFront} = require("devtools/shared/fronts/timeline");
 
 add_task(function* () {
   let browser = yield addTab(MAIN_DOMAIN + "timeline-iframe-parent.html");

@@ -17,86 +17,16 @@
 
 
 const protocol = require("devtools/shared/protocol");
-const { method, Arg, RetVal, Option } = protocol;
-const events = require("sdk/event/core");
+const { Option, RetVal } = protocol;
+const { actorBridgeWithSpec } = require("devtools/server/actors/common");
 const { Timeline } = require("devtools/server/performance/timeline");
-const { actorBridge } = require("devtools/server/actors/common");
+const { timelineSpec } = require("devtools/shared/specs/timeline");
+const events = require("sdk/event/core");
 
 
 
 
-
-
-
-
-
-protocol.types.addType("array-of-numbers-as-strings", {
-  write: (v) => v.join(","),
-  
-  read: (v) => typeof v === "string" ? v.split(",") : v
-});
-
-
-
-
-var TimelineActor = exports.TimelineActor = protocol.ActorClass({
-  typeName: "timeline",
-
-  events: {
-    
-
-
-    "doc-loading" : {
-      type: "doc-loading",
-      marker: Arg(0, "json"),
-      endTime: Arg(0, "number")
-    },
-
-    
-
-
-
-
-    "markers" : {
-      type: "markers",
-      markers: Arg(0, "json"),
-      endTime: Arg(1, "number")
-    },
-
-    
-
-
-
-
-    "memory" : {
-      type: "memory",
-      delta: Arg(0, "number"),
-      measurement: Arg(1, "json")
-    },
-
-    
-
-
-
-
-    "ticks" : {
-      type: "ticks",
-      delta: Arg(0, "number"),
-      timestamps: Arg(1, "array-of-numbers-as-strings")
-    },
-
-    
-
-
-
-
-    "frames" : {
-      type: "frames",
-      delta: Arg(0, "number"),
-      frames: Arg(1, "json")
-    }
-  },
-
+var TimelineActor = exports.TimelineActor = protocol.ActorClassWithSpec(timelineSpec, {
   
 
 
@@ -134,19 +64,17 @@ var TimelineActor = exports.TimelineActor = protocol.ActorClass({
 
 
   _onTimelineEvent: function (eventName, ...args) {
-    if (this.events[eventName]) {
-      events.emit(this, eventName, ...args);
-    }
+    events.emit(this, eventName, ...args);
   },
 
-  isRecording: actorBridge("isRecording", {
+  isRecording: actorBridgeWithSpec("isRecording", {
     request: {},
     response: {
       value: RetVal("boolean")
     }
   }),
 
-  start: actorBridge("start", {
+  start: actorBridgeWithSpec("start", {
     request: {
       withMarkers: Option(0, "boolean"),
       withTicks: Option(0, "boolean"),
@@ -160,21 +88,11 @@ var TimelineActor = exports.TimelineActor = protocol.ActorClass({
     }
   }),
 
-  stop: actorBridge("stop", {
+  stop: actorBridgeWithSpec("stop", {
     response: {
       
       
       value: RetVal("nullable:number")
     }
   }),
-});
-
-exports.TimelineFront = protocol.FrontClass(TimelineActor, {
-  initialize: function (client, {timelineActor}) {
-    protocol.Front.prototype.initialize.call(this, client, {actor: timelineActor});
-    this.manage(this);
-  },
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
 });

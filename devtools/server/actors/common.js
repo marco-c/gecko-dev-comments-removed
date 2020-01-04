@@ -508,3 +508,14 @@ function actorBridge(methodName, definition = {}) {
   }, definition);
 }
 exports.actorBridge = actorBridge;
+
+
+
+
+
+function actorBridgeWithSpec (methodName) {
+  return method(function () {
+    return this.bridge[methodName].apply(this.bridge, arguments);
+  });
+}
+exports.actorBridgeWithSpec = actorBridgeWithSpec;
