@@ -154,8 +154,8 @@ void DynamicsCompressor::process(const AudioChunk* sourceChunk, AudioChunk* dest
     
     
 
-    unsigned numberOfChannels = destinationChunk->mChannelData.Length();
-    unsigned numberOfSourceChannels = sourceChunk->mChannelData.Length();
+    unsigned numberOfChannels = destinationChunk->ChannelCount();
+    unsigned numberOfSourceChannels = sourceChunk->ChannelCount();
 
     MOZ_ASSERT(numberOfChannels == m_numberOfChannels && numberOfSourceChannels);
 

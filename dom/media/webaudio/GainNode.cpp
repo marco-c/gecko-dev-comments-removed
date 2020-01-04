@@ -81,7 +81,7 @@ public:
       
       
       
-      AllocateAudioBlock(aInput.mChannelData.Length(), aOutput);
+      AllocateAudioBlock(aInput.ChannelCount(), aOutput);
 
       
       StreamTime tick = aStream->GetCurrentPosition();
@@ -93,7 +93,7 @@ public:
       }
 
       
-      for (size_t channel = 0; channel < aOutput->mChannelData.Length(); ++channel) {
+      for (size_t channel = 0; channel < aOutput->ChannelCount(); ++channel) {
         const float* inputBuffer = static_cast<const float*> (aInput.mChannelData[channel]);
         float* buffer = aOutput->ChannelFloatsForWrite(channel);
         AudioBlockCopyChannelWithScale(inputBuffer, computedGain, buffer);
