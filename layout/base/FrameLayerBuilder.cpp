@@ -422,7 +422,7 @@ public:
     mSolidColor(NS_RGBA(0, 0, 0, 0)),
     mIsSolidColorInVisibleRegion(false),
     mFontSmoothingBackgroundColor(NS_RGBA(0,0,0,0)),
-    mSingleItemFixedToViewport(false),
+    mClipMovesWithLayer(true),
     mIsCaret(false),
     mNeedComponentAlpha(false),
     mForceTransparentSurface(false),
@@ -585,7 +585,7 @@ public:
 
 
 
-  bool mSingleItemFixedToViewport;
+  bool mClipMovesWithLayer;
   
 
 
@@ -3106,7 +3106,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
   
   
   
-  if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
+  if (!data->mClipMovesWithLayer && data->mItemClip.HasClip()) {
     nsRect clipRect = data->mItemClip.GetClipRect();
     nsRect insideRoundedCorners = data->mItemClip.ApproximateIntersectInward(clipRect);
     nsIntRect insideRoundedCornersScaled = ScaleToInsidePixels(insideRoundedCorners);
@@ -3180,7 +3180,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     
     
     
-    if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
+    if (!data->mClipMovesWithLayer && data->mItemClip.HasClip()) {
       nsIntRect layerClipRect = ScaleToNearestPixels(data->mItemClip.GetClipRect());
       layerClipRect.MoveBy(mParameters.mOffset);
       
@@ -3522,14 +3522,14 @@ ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
                                     AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                     const DisplayItemScrollClip* aScrollClip,
                                     const nsPoint& aTopLeft,
-                                    bool aShouldFixToViewport)
+                                    bool aClipMovesWithLayer)
 {
   PaintedLayerData data;
   data.mAnimatedGeometryRoot = aAnimatedGeometryRoot;
   data.mScrollClip = aScrollClip;
   data.mAnimatedGeometryRootOffset = aTopLeft;
   data.mReferenceFrame = aItem->ReferenceFrame();
-  data.mSingleItemFixedToViewport = aShouldFixToViewport;
+  data.mClipMovesWithLayer = aClipMovesWithLayer;
   data.mBackfaceHidden = aItem->Frame()->In3DContextAndBackfaceIsHidden();
   data.mIsCaret = aItem->GetType() == nsDisplayItem::TYPE_CARET;
 
@@ -3886,17 +3886,13 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
     bool clipMovesWithLayer = (animatedGeometryRoot == animatedGeometryRootForClip);
 
-    bool shouldFixToViewport = !clipMovesWithLayer &&
-        !(*animatedGeometryRoot)->GetParent() &&
-        item->ShouldFixToViewport(mBuilder);
-
     
     
     
     
-    DisplayItemClip fixedToViewportClip = DisplayItemClip::NoClip();
-    if (shouldFixToViewport) {
-      fixedToViewportClip = item->GetClip();
+    DisplayItemClip scrollingClip = DisplayItemClip::NoClip();
+    if (!clipMovesWithLayer) {
+      scrollingClip = item->GetClip();
       item->SetClip(mBuilder, DisplayItemClip::NoClip());
     }
 
@@ -3929,7 +3925,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         bounds.IntersectRect(bounds, itemClip.GetClipRect());
       }
     }
-    bounds = fixedToViewportClip.ApplyNonRoundedIntersection(bounds);
+    bounds = scrollingClip.ApplyNonRoundedIntersection(bounds);
     if (!bounds.IsEmpty()) {
       for (const DisplayItemScrollClip* scrollClip = itemScrollClip;
            scrollClip && scrollClip != mContainerScrollClip;
@@ -4022,7 +4018,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       nscolor* uniformColorPtr = (mayDrawOutOfOrder || IsInInactiveLayer()) ? nullptr :
                                                                               &uniformColor;
       nsIntRect clipRectUntyped;
-      const DisplayItemClip& layerClip = shouldFixToViewport ? fixedToViewportClip : itemClip;
+      const DisplayItemClip& layerClip = clipMovesWithLayer ? itemClip : scrollingClip;
       ParentLayerIntRect layerClipRect;
       nsIntRect* clipPtr = nullptr;
       if (layerClip.HasClip()) {
@@ -4042,7 +4038,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot,
                                              clipPtr,
                                              uniformColorPtr);
-      } else if (shouldFixToViewport) {
+      } else if (!clipMovesWithLayer) {
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRootForClip,
                                              clipPtr,
                                              uniformColorPtr);
@@ -4128,15 +4124,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       if (layerClip.HasClip()) {
         
         
-        if (shouldFixToViewport) {
-          LayerClip scrolledClip;
-          scrolledClip.SetClipRect(layerClipRect);
-          if (layerClip.GetRoundedRectCount() > 0) {
-            scrolledClip.SetMaskLayerIndex(
-                SetupMaskLayerForScrolledClip(ownLayer.get(), layerClip));
-          }
-          ownLayer->SetScrolledClip(Some(scrolledClip));
-        } else {
+        if (clipMovesWithLayer) {
           ownLayer->SetClipRect(Some(layerClipRect));
 
           
@@ -4144,6 +4132,14 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           if (layerClip.GetRoundedRectCount() > 0) {
             SetupMaskLayer(ownLayer, layerClip);
           }
+        } else {
+          LayerClip scrolledClip;
+          scrolledClip.SetClipRect(layerClipRect);
+          if (layerClip.GetRoundedRectCount() > 0) {
+            scrolledClip.SetMaskLayerIndex(
+                SetupMaskLayerForScrolledClip(ownLayer.get(), layerClip));
+          }
+          ownLayer->SetScrolledClip(Some(scrolledClip));
         }
       }
 
@@ -4234,7 +4230,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                                                   item->Frame()->In3DContextAndBackfaceIsHidden(),
                                                   [&]() {
           return NewPaintedLayerData(item, animatedGeometryRoot, agrScrollClip,
-                                     topLeft, shouldFixToViewport);
+                                     topLeft, clipMovesWithLayer);
         });
 
       if (itemType == nsDisplayItem::TYPE_LAYER_EVENT_REGIONS) {
@@ -4259,8 +4255,8 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         
-        if (fixedToViewportClip.HasClip()) {
-          paintedLayerData->mItemClip = fixedToViewportClip;
+        if (scrollingClip.HasClip()) {
+          paintedLayerData->mItemClip = scrollingClip;
         }
 
         if (!paintedLayerData->mLayer) {
@@ -6057,7 +6053,8 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
 
   uint32_t maxSize = mManager->GetMaxTextureSize();
   NS_ASSERTION(maxSize > 0, "Invalid max texture size");
-  gfx::Size surfaceSize(std::min<gfx::Float>(boundingRect.Width(), maxSize),
+  
+  gfx::Size surfaceSize(std::min<gfx::Float>(GetAlignedStride<4>(NSToIntCeil(boundingRect.Width())), maxSize),
                         std::min<gfx::Float>(boundingRect.Height(), maxSize));
 
   
@@ -6092,8 +6089,7 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
     GetMaskLayerImageCache()->FindImageFor(&lookupKey);
 
   if (!container) {
-    
-    IntSize surfaceSizeInt(GetAlignedStride<4>(NSToIntCeil(surfaceSize.width)),
+    IntSize surfaceSizeInt(NSToIntCeil(surfaceSize.width),
                            NSToIntCeil(surfaceSize.height));
     
     MaskImageData imageData(surfaceSizeInt, mManager);
