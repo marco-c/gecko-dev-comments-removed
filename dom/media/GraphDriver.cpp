@@ -227,11 +227,14 @@ void
 ThreadedDriver::Start()
 {
   LIFECYCLE_LOG("Starting thread for a SystemClockDriver  %p\n", mGraphImpl);
-  nsCOMPtr<nsIRunnable> event = new MediaStreamGraphInitThreadRunnable(this);
-  
-  nsresult rv = NS_NewNamedThread("MediaStreamGrph", getter_AddRefs(mThread));
-  if (NS_SUCCEEDED(rv)) {
-    mThread->Dispatch(event, NS_DISPATCH_NORMAL);
+  NS_WARN_IF(!mThread);
+  if (!mThread) { 
+    nsCOMPtr<nsIRunnable> event = new MediaStreamGraphInitThreadRunnable(this);
+    
+    nsresult rv = NS_NewNamedThread("MediaStreamGrph", getter_AddRefs(mThread));
+    if (NS_SUCCEEDED(rv)) {
+      mThread->Dispatch(event, NS_DISPATCH_NORMAL);
+    }
   }
 }
 
