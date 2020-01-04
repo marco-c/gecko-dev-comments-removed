@@ -34,13 +34,6 @@ function test() {
   UITourTest();
 }
 
-function searchEngineTargets() {
-  let engines = Services.search.getVisibleEngines();
-  return ["searchEngine-" + engine.identifier
-          for (engine of engines)
-          if (engine.identifier)];
-}
-
 var tests = [
   function test_availableTargets(done) {
     gContentAPI.getConfiguration("availableTargets", (data) => {
@@ -63,7 +56,6 @@ var tests = [
         "searchIcon",
         "trackingProtection",
         "urlbar",
-        ...searchEngineTargets(),
         ...(hasWebIDE ? ["webide"] : [])
       ]);
 
@@ -96,7 +88,6 @@ var tests = [
         "searchIcon",
         "trackingProtection",
         "urlbar",
-        ...searchEngineTargets(),
         ...(hasWebIDE ? ["webide"] : [])
       ]);
 
