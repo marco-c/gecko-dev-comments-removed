@@ -1218,7 +1218,8 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
 
   
   
-  if (type == CSSPseudoClassType::mozAnyLink) {
+  if (type == CSSPseudoClassType::anyLink ||
+      type == CSSPseudoClassType::mozAnyLink) {
     return EventStates();
   }
   

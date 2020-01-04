@@ -116,8 +116,8 @@ function* userAgentStylesVisible(inspector, view) {
   
   
   ok(uaRules.some(rule => {
-    return rule.matchedSelectors.indexOf(":-moz-any-link") !== -1;
-  }), "There is a rule for :-moz-any-link");
+    return rule.matchedSelectors.indexOf(":any-link") !== -1;
+  }), "There is a rule for :any-link");
   ok(uaRules.some(rule => {
     return rule.matchedSelectors.indexOf("*|*:link") !== -1;
   }), "There is a rule for *|*:link");

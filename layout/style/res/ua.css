@@ -112,11 +112,11 @@
 
 
 
-*|*:-moz-any-link {
+*|*:any-link {
   cursor: pointer;
 }
 
-*|*:-moz-any-link:-moz-focusring {
+*|*:any-link:-moz-focusring {
   
   outline: 1px dotted;
 }

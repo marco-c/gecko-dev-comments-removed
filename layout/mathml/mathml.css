@@ -64,7 +64,7 @@ ms[rquote]:after {
 
 
 
-:-moz-any-link {
+:any-link {
   text-decoration: none !important;
 }
 
