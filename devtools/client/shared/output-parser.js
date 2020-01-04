@@ -6,7 +6,7 @@
 
 const {Cc, Ci} = require("chrome");
 const {angleUtils} = require("devtools/client/shared/css-angle");
-const {colorUtils} = require("devtools/client/shared/css-color");
+const {colorUtils} = require("devtools/shared/css-color");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {
@@ -21,6 +21,8 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 loader.lazyGetter(this, "DOMUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
+
+
 
 
 

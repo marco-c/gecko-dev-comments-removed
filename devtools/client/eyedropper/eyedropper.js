@@ -3,10 +3,8 @@
 
 
 "use strict";
-
+const {rgbToHsl, rgbToColorName} = require("devtools/shared/css-color").colorUtils;
 const {Cc, Ci} = require("chrome");
-const {rgbToHsl, rgbToColorName} =
-      require("devtools/client/shared/css-color").colorUtils;
 const Telemetry = require("devtools/client/shared/telemetry");
 const EventEmitter = require("devtools/shared/event-emitter");
 const promise = require("promise");

@@ -166,6 +166,7 @@ function getFrameOffsets(boundaryWindow, node) {
 
   return [xOffset * scale, yOffset * scale];
 }
+exports.getFrameOffsets = getFrameOffsets;
 
 
 
