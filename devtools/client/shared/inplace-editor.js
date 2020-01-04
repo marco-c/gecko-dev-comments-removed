@@ -373,11 +373,7 @@ InplaceEditor.prototype = {
     
     this._measurement.textContent = this.input.value.replace(/ /g, "\u00a0");
 
-    
-    
-    
-    let width = this._measurement.offsetWidth + 10;
-
+    let width = this._measurement.offsetWidth;
     if (this.multiline) {
       
       
@@ -386,7 +382,12 @@ InplaceEditor.prototype = {
       this.input.style.height = this._measurement.offsetHeight + "px";
     }
 
-    this.input.style.width = width + "px";
+    if (width === 0) {
+      
+      this.input.style.width = "1ch";
+    } else {
+      this.input.style.width = width + "px";
+    }
   },
 
   
