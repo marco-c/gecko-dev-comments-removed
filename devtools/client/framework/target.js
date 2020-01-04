@@ -478,15 +478,17 @@ TabTarget.prototype = {
     this.client.addListener("tabDetached", this._onTabDetached);
 
     this._onTabNavigated = (aType, aPacket) => {
-      
-      this._url = aPacket.url;
-      this._title = aPacket.title;
-
       let event = Object.create(null);
       event.url = aPacket.url;
       event.title = aPacket.title;
       event.nativeConsoleAPI = aPacket.nativeConsoleAPI;
       event.isFrameSwitching = aPacket.isFrameSwitching;
+
+      if (!aPacket.isFrameSwitching) {
+        
+        this._url = aPacket.url;
+        this._title = aPacket.title;
+      }
 
       
       
