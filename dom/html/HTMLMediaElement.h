@@ -1066,6 +1066,9 @@ protected:
   void Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
 
   
+  bool IsPlayingThroughTheAudioChannel() const;
+
+  
   void UpdateAudioChannelPlayingState();
 
   

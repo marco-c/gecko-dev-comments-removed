@@ -4714,17 +4714,43 @@ HTMLMediaElement::MaybeCreateAudioChannelAgent()
   return true;
 }
 
+bool
+HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
+{
+  
+  if (mPaused || Muted()) {
+    return false;
+  }
+
+  
+  if (std::fabs(Volume()) <= 1e-7) {
+    return false;
+  }
+
+  
+  if (HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
+    return true;
+  }
+
+  
+  if (mReadyState >= nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA &&
+      !IsPlaybackEnded()) {
+    return true;
+  }
+
+  
+  if (mPlayingThroughTheAudioChannelBeforeSeek) {
+    return true;
+  }
+
+  return false;
+}
+
 void
 HTMLMediaElement::UpdateAudioChannelPlayingState()
 {
-  bool playingThroughTheAudioChannel =
-     (!mPaused &&
-      !Muted() &&
-      std::fabs(Volume()) > 1e-7 &&
-      (HasAttr(kNameSpaceID_None, nsGkAtoms::loop) ||
-       (mReadyState >= nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA &&
-        !IsPlaybackEnded()) ||
-       mPlayingThroughTheAudioChannelBeforeSeek));
+  bool playingThroughTheAudioChannel = IsPlayingThroughTheAudioChannel();
+
   if (playingThroughTheAudioChannel != mPlayingThroughTheAudioChannel) {
     mPlayingThroughTheAudioChannel = playingThroughTheAudioChannel;
 
