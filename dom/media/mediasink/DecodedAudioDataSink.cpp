@@ -4,7 +4,6 @@
 
 
 
-#include "AudioStream.h"
 #include "MediaQueue.h"
 #include "DecodedAudioDataSink.h"
 #include "VideoUtils.h"
@@ -32,15 +31,11 @@ DecodedAudioDataSink::DecodedAudioDataSink(MediaQueue<MediaData>& aAudioQueue,
                                            const AudioInfo& aInfo,
                                            dom::AudioChannel aChannel)
   : AudioSink(aAudioQueue)
-  , mMonitor("DecodedAudioDataSink::mMonitor")
-  , mState(AUDIOSINK_STATE_INIT)
-  , mAudioLoopScheduled(false)
   , mStartTime(aStartTime)
   , mWritten(0)
   , mLastGoodPosition(0)
   , mInfo(aInfo)
   , mChannel(aChannel)
-  , mStopAudioThread(false)
   , mPlaying(true)
 {
 }
@@ -49,97 +44,20 @@ DecodedAudioDataSink::~DecodedAudioDataSink()
 {
 }
 
-void
-DecodedAudioDataSink::SetState(State aState)
-{
-  AssertOnAudioThread();
-  mPendingState = Some(aState);
-}
-
-void
-DecodedAudioDataSink::DispatchTask(already_AddRefed<nsIRunnable>&& event)
-{
-  DebugOnly<nsresult> rv = mThread->Dispatch(Move(event), NS_DISPATCH_NORMAL);
-  
-  
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-}
-
-void
-DecodedAudioDataSink::OnAudioQueueEvent()
-{
-  AssertOnAudioThread();
-  if (!mAudioLoopScheduled) {
-    AudioLoop();
-  }
-}
-
-void
-DecodedAudioDataSink::ConnectListener()
-{
-  AssertOnAudioThread();
-  mPushListener = AudioQueue().PushEvent().Connect(
-    mThread, this, &DecodedAudioDataSink::OnAudioQueueEvent);
-  mFinishListener = AudioQueue().FinishEvent().Connect(
-    mThread, this, &DecodedAudioDataSink::OnAudioQueueEvent);
-}
-
-void
-DecodedAudioDataSink::DisconnectListener()
-{
-  AssertOnAudioThread();
-  mPushListener.Disconnect();
-  mFinishListener.Disconnect();
-}
-
-void
-DecodedAudioDataSink::ScheduleNextLoop()
-{
-  AssertOnAudioThread();
-  if (mAudioLoopScheduled) {
-    return;
-  }
-  mAudioLoopScheduled = true;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(this, &DecodedAudioDataSink::AudioLoop);
-  DispatchTask(r.forget());
-}
-
-void
-DecodedAudioDataSink::ScheduleNextLoopCrossThread()
-{
-  AssertNotOnAudioThread();
-  RefPtr<DecodedAudioDataSink> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
-    
-    if (!self->mAudioLoopScheduled) {
-      self->AudioLoop();
-    }
-  });
-  DispatchTask(r.forget());
-}
-
 RefPtr<GenericPromise>
-DecodedAudioDataSink::Init()
+DecodedAudioDataSink::Init(const PlaybackParams& aParams)
 {
   RefPtr<GenericPromise> p = mEndPromise.Ensure(__func__);
-  nsresult rv = NS_NewNamedThread("Media Audio",
-                                  getter_AddRefs(mThread),
-                                  nullptr,
-                                  SharedThreadPool::kStackSize);
+  nsresult rv = InitializeAudioStream(aParams);
   if (NS_FAILED(rv)) {
     mEndPromise.Reject(rv, __func__);
-    return p;
   }
-
-  ScheduleNextLoopCrossThread();
   return p;
 }
 
 int64_t
 DecodedAudioDataSink::GetPosition()
 {
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-
   int64_t pos;
   if (mAudioStream &&
       (pos = mAudioStream->GetPosition()) >= 0) {
@@ -157,7 +75,6 @@ DecodedAudioDataSink::GetPosition()
 bool
 DecodedAudioDataSink::HasUnplayedFrames()
 {
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   
   
   return mAudioStream && mAudioStream->GetPositionInFrames() + 1 < mWritten;
@@ -166,348 +83,72 @@ DecodedAudioDataSink::HasUnplayedFrames()
 void
 DecodedAudioDataSink::Shutdown()
 {
-  {
-    ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-    if (mAudioStream) {
-      mAudioStream->Cancel();
-    }
-  }
-  RefPtr<DecodedAudioDataSink> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    self->mStopAudioThread = true;
-    if (!self->mAudioLoopScheduled) {
-      self->AudioLoop();
-    }
-  });
-  DispatchTask(r.forget());
-
-  mThread->Shutdown();
-  mThread = nullptr;
   if (mAudioStream) {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;
   }
-
-  
-  MOZ_ASSERT(mState == AUDIOSINK_STATE_SHUTDOWN ||
-             mState == AUDIOSINK_STATE_ERROR);
-  
-  MOZ_ASSERT(mPendingState.isNothing());
+  mEndPromise.ResolveIfExists(true, __func__);
 }
 
 void
 DecodedAudioDataSink::SetVolume(double aVolume)
 {
-  AssertNotOnAudioThread();
-  RefPtr<DecodedAudioDataSink> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (self->mState == AUDIOSINK_STATE_PLAYING) {
-      self->mAudioStream->SetVolume(aVolume);
-    }
-  });
-  DispatchTask(r.forget());
+  if (mAudioStream) {
+    mAudioStream->SetVolume(aVolume);
+  }
 }
 
 void
 DecodedAudioDataSink::SetPlaybackRate(double aPlaybackRate)
 {
-  AssertNotOnAudioThread();
   MOZ_ASSERT(aPlaybackRate != 0, "Don't set the playbackRate to 0 on AudioStream");
-  RefPtr<DecodedAudioDataSink> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (self->mState == AUDIOSINK_STATE_PLAYING) {
-      self->mAudioStream->SetPlaybackRate(aPlaybackRate);
-    }
-  });
-  DispatchTask(r.forget());
+  if (mAudioStream) {
+    mAudioStream->SetPlaybackRate(aPlaybackRate);
+  }
 }
 
 void
 DecodedAudioDataSink::SetPreservesPitch(bool aPreservesPitch)
 {
-  AssertNotOnAudioThread();
-  RefPtr<DecodedAudioDataSink> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (self->mState == AUDIOSINK_STATE_PLAYING) {
-      self->mAudioStream->SetPreservesPitch(aPreservesPitch);
-    }
-  });
-  DispatchTask(r.forget());
+  if (mAudioStream) {
+    mAudioStream->SetPreservesPitch(aPreservesPitch);
+  }
 }
 
 void
 DecodedAudioDataSink::SetPlaying(bool aPlaying)
 {
-  AssertNotOnAudioThread();
-  RefPtr<DecodedAudioDataSink> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (self->mState != AUDIOSINK_STATE_PLAYING ||
-        self->mPlaying == aPlaying) {
-      return;
-    }
-    self->mPlaying = aPlaying;
-    
-    if (!aPlaying && !self->mAudioStream->IsPaused()) {
-      self->mAudioStream->Pause();
-    } else if (aPlaying && self->mAudioStream->IsPaused()) {
-      self->mAudioStream->Resume();
-    }
-    
-    if (aPlaying && !self->mAudioLoopScheduled) {
-      self->AudioLoop();
-    }
-  });
-  DispatchTask(r.forget());
+  if (!mAudioStream || mPlaying == aPlaying) {
+    return;
+  }
+  
+  if (!aPlaying && !mAudioStream->IsPaused()) {
+    mAudioStream->Pause();
+  } else if (aPlaying && mAudioStream->IsPaused()) {
+    mAudioStream->Resume();
+  }
+  mPlaying = aPlaying;
 }
 
 nsresult
-DecodedAudioDataSink::InitializeAudioStream()
+DecodedAudioDataSink::InitializeAudioStream(const PlaybackParams& aParams)
 {
-  
-  
-  
-  RefPtr<AudioStream> audioStream(new AudioStream());
-  nsresult rv = audioStream->Init(mInfo.mChannels, mInfo.mRate, mChannel);
+  mAudioStream = new AudioStream(*this);
+  nsresult rv = mAudioStream->Init(mInfo.mChannels, mInfo.mRate, mChannel);
   if (NS_FAILED(rv)) {
-    audioStream->Shutdown();
+    mAudioStream->Shutdown();
+    mAudioStream = nullptr;
     return rv;
   }
 
-  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
-  mAudioStream = audioStream;
+  
+  
+  mAudioStream->SetVolume(aParams.mVolume);
+  mAudioStream->SetPlaybackRate(aParams.mPlaybackRate);
+  mAudioStream->SetPreservesPitch(aParams.mPreservesPitch);
+  mAudioStream->Start();
 
   return NS_OK;
-}
-
-void
-DecodedAudioDataSink::Drain()
-{
-  AssertOnAudioThread();
-  MOZ_ASSERT(mPlaying && !mAudioStream->IsPaused());
-  
-  
-  mAudioStream->Start();
-  mAudioStream->Drain();
-}
-
-void
-DecodedAudioDataSink::Cleanup()
-{
-  AssertOnAudioThread();
-  mEndPromise.Resolve(true, __func__);
-  
-  
-  
-}
-
-bool
-DecodedAudioDataSink::ExpectMoreAudioData()
-{
-  return AudioQueue().GetSize() == 0 && !AudioQueue().IsFinished();
-}
-
-bool
-DecodedAudioDataSink::WaitingForAudioToPlay()
-{
-  AssertOnAudioThread();
-  
-  
-  if (!mStopAudioThread && (!mPlaying || ExpectMoreAudioData())) {
-    return true;
-  }
-  return false;
-}
-
-bool
-DecodedAudioDataSink::IsPlaybackContinuing()
-{
-  AssertOnAudioThread();
-  
-  
-  if (mStopAudioThread || AudioQueue().AtEndOfStream()) {
-    return false;
-  }
-
-  return true;
-}
-
-void
-DecodedAudioDataSink::AudioLoop()
-{
-  AssertOnAudioThread();
-  mAudioLoopScheduled = false;
-
-  switch (mState) {
-    case AUDIOSINK_STATE_INIT: {
-      SINK_LOG("AudioLoop started");
-      nsresult rv = InitializeAudioStream();
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Initializing AudioStream failed.");
-        mEndPromise.Reject(rv, __func__);
-        SetState(AUDIOSINK_STATE_ERROR);
-        break;
-      }
-      SetState(AUDIOSINK_STATE_PLAYING);
-      ConnectListener();
-      break;
-    }
-
-    case AUDIOSINK_STATE_PLAYING: {
-      if (WaitingForAudioToPlay()) {
-        
-        break;
-      }
-      if (!IsPlaybackContinuing()) {
-        SetState(AUDIOSINK_STATE_COMPLETE);
-        break;
-      }
-      if (!PlayAudio()) {
-        SetState(AUDIOSINK_STATE_COMPLETE);
-        break;
-      }
-      
-      ScheduleNextLoop();
-      break;
-    }
-
-    case AUDIOSINK_STATE_COMPLETE: {
-      DisconnectListener();
-      FinishAudioLoop();
-      SetState(AUDIOSINK_STATE_SHUTDOWN);
-      break;
-    }
-
-    case AUDIOSINK_STATE_SHUTDOWN:
-      break;
-
-    case AUDIOSINK_STATE_ERROR:
-      break;
-  } 
-
-  
-  
-  if (mPendingState.isSome()) {
-    MOZ_ASSERT(mState != mPendingState.ref());
-    SINK_LOG("change mState, %d -> %d", mState, mPendingState.ref());
-    mState = mPendingState.ref();
-    mPendingState.reset();
-    
-    ScheduleNextLoop();
-  }
-}
-
-bool
-DecodedAudioDataSink::PlayAudio()
-{
-  
-  
-  
-  
-  NS_ASSERTION(AudioQueue().GetSize() > 0, "Should have data to play");
-  CheckedInt64 sampleTime = UsecsToFrames(AudioQueue().PeekFront()->mTime, mInfo.mRate);
-
-  
-  CheckedInt64 playedFrames = UsecsToFrames(mStartTime, mInfo.mRate) +
-                              static_cast<int64_t>(mWritten);
-
-  CheckedInt64 missingFrames = sampleTime - playedFrames;
-  if (!missingFrames.isValid() || !sampleTime.isValid()) {
-    NS_WARNING("Int overflow adding in AudioLoop");
-    return false;
-  }
-
-  if (missingFrames.value() > AUDIO_FUZZ_FRAMES) {
-    
-    
-    
-    
-    missingFrames = std::min<int64_t>(UINT32_MAX, missingFrames.value());
-    mWritten += PlaySilence(static_cast<uint32_t>(missingFrames.value()));
-  } else {
-    mWritten += PlayFromAudioQueue();
-  }
-
-  return true;
-}
-
-void
-DecodedAudioDataSink::FinishAudioLoop()
-{
-  AssertOnAudioThread();
-  MOZ_ASSERT(mStopAudioThread || AudioQueue().AtEndOfStream());
-  if (!mStopAudioThread && mPlaying) {
-    Drain();
-  }
-  SINK_LOG("AudioLoop complete");
-  Cleanup();
-  SINK_LOG("AudioLoop exit");
-}
-
-uint32_t
-DecodedAudioDataSink::PlaySilence(uint32_t aFrames)
-{
-  
-  
-  
-  
-  
-  const uint32_t SILENCE_BYTES_CHUNK = 32 * 1024;
-
-  AssertOnAudioThread();
-  NS_ASSERTION(!mAudioStream->IsPaused(), "Don't play when paused");
-  uint32_t maxFrames = SILENCE_BYTES_CHUNK / mInfo.mChannels / sizeof(AudioDataValue);
-  uint32_t frames = std::min(aFrames, maxFrames);
-  SINK_LOG_V("playing %u frames of silence", aFrames);
-  WriteSilence(frames);
-  return frames;
-}
-
-uint32_t
-DecodedAudioDataSink::PlayFromAudioQueue()
-{
-  AssertOnAudioThread();
-  NS_ASSERTION(!mAudioStream->IsPaused(), "Don't play when paused");
-  RefPtr<AudioData> audio =
-    dont_AddRef(AudioQueue().PopFront().take()->As<AudioData>());
-
-  SINK_LOG_V("playing %u frames of audio at time %lld",
-             audio->mFrames, audio->mTime);
-  if (audio->mRate == mInfo.mRate && audio->mChannels == mInfo.mChannels) {
-    mAudioStream->Write(audio->mAudioData.get(), audio->mFrames);
-  } else {
-    SINK_LOG_V("mismatched sample format mInfo=[%uHz/%u channels] audio=[%uHz/%u channels]",
-               mInfo.mRate, mInfo.mChannels, audio->mRate, audio->mChannels);
-    PlaySilence(audio->mFrames);
-  }
-
-  StartAudioStreamPlaybackIfNeeded();
-
-  return audio->mFrames;
-}
-
-void
-DecodedAudioDataSink::StartAudioStreamPlaybackIfNeeded()
-{
-  
-  const uint32_t MIN_WRITE_BEFORE_START_USECS = 200000;
-
-  
-  if (static_cast<double>(mAudioStream->GetWritten()) / mAudioStream->GetRate() >=
-      static_cast<double>(MIN_WRITE_BEFORE_START_USECS) / USECS_PER_S) {
-    mAudioStream->Start();
-  }
-}
-
-void
-DecodedAudioDataSink::WriteSilence(uint32_t aFrames)
-{
-  uint32_t numSamples = aFrames * mInfo.mChannels;
-  nsAutoTArray<AudioDataValue, 1000> buf;
-  buf.SetLength(numSamples);
-  memset(buf.Elements(), 0, numSamples * sizeof(AudioDataValue));
-  mAudioStream->Write(buf.Elements(), aFrames);
-
-  StartAudioStreamPlaybackIfNeeded();
 }
 
 int64_t
@@ -521,16 +162,120 @@ DecodedAudioDataSink::GetEndTime() const
   return playedUsecs.value();
 }
 
-void
-DecodedAudioDataSink::AssertOnAudioThread()
+UniquePtr<AudioStream::Chunk>
+DecodedAudioDataSink::PopFrames(uint32_t aFrames)
 {
-  MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+  class Chunk : public AudioStream::Chunk {
+  public:
+    Chunk(AudioData* aBuffer, uint32_t aFrames, uint32_t aOffset)
+      : mBuffer(aBuffer)
+      , mFrames(aFrames)
+      , mData(aBuffer->mAudioData.get() + aBuffer->mChannels * aOffset) {
+      MOZ_ASSERT(aOffset + aFrames <= aBuffer->mFrames);
+    }
+    Chunk() : mFrames(0), mData(nullptr) {}
+    const AudioDataValue* Data() const { return mData; }
+    uint32_t Frames() const { return mFrames; }
+    AudioDataValue* GetWritable() const { return mData; }
+
+  private:
+    const RefPtr<AudioData> mBuffer;
+    const uint32_t mFrames;
+    AudioDataValue* const mData;
+  };
+
+  class SilentChunk : public AudioStream::Chunk {
+  public:
+    SilentChunk(uint32_t aFrames, uint32_t aChannels)
+      : mFrames(aFrames)
+      , mData(MakeUnique<AudioDataValue[]>(aChannels * aFrames)) {
+      memset(mData.get(), 0, aChannels * aFrames * sizeof(AudioDataValue));
+    }
+    const AudioDataValue* Data() const { return mData.get(); }
+    uint32_t Frames() const { return mFrames; }
+    AudioDataValue* GetWritable() const { return mData.get(); }
+  private:
+    const uint32_t mFrames;
+    UniquePtr<AudioDataValue[]> mData;
+  };
+
+  if (!mCurrentData) {
+    
+    if (AudioQueue().GetSize() == 0) {
+      return MakeUnique<Chunk>();
+    }
+
+    
+    
+    
+    
+    CheckedInt64 sampleTime = UsecsToFrames(AudioQueue().PeekFront()->mTime, mInfo.mRate);
+    
+    CheckedInt64 playedFrames = UsecsToFrames(mStartTime, mInfo.mRate) +
+                                static_cast<int64_t>(mWritten);
+    CheckedInt64 missingFrames = sampleTime - playedFrames;
+
+    if (!missingFrames.isValid() || !sampleTime.isValid()) {
+      NS_WARNING("Int overflow in DecodedAudioDataSink");
+      mErrored = true;
+      return MakeUnique<Chunk>();
+    }
+
+    if (missingFrames.value() > AUDIO_FUZZ_FRAMES) {
+      
+      
+      
+      
+      missingFrames = std::min<int64_t>(UINT32_MAX, missingFrames.value());
+      auto framesToPop = std::min<uint32_t>(missingFrames.value(), aFrames);
+      mWritten += framesToPop;
+      return MakeUnique<SilentChunk>(framesToPop, mInfo.mChannels);
+    }
+
+    mFramesPopped = 0;
+    mCurrentData = dont_AddRef(AudioQueue().PopFront().take()->As<AudioData>());
+  }
+
+  auto framesToPop = std::min(aFrames, mCurrentData->mFrames - mFramesPopped);
+
+  SINK_LOG_V("playing audio at time=%lld offset=%u length=%u",
+             mCurrentData->mTime, mFramesPopped, framesToPop);
+
+  UniquePtr<AudioStream::Chunk> chunk;
+
+  if (mCurrentData->mRate == mInfo.mRate &&
+      mCurrentData->mChannels == mInfo.mChannels) {
+    chunk = MakeUnique<Chunk>(mCurrentData, framesToPop, mFramesPopped);
+  } else {
+    SINK_LOG_V("mismatched sample format mInfo=[%uHz/%u channels] audio=[%uHz/%u channels]",
+               mInfo.mRate, mInfo.mChannels, mCurrentData->mRate, mCurrentData->mChannels);
+    chunk = MakeUnique<SilentChunk>(framesToPop, mInfo.mChannels);
+  }
+
+  mWritten += framesToPop;
+  mFramesPopped += framesToPop;
+
+  
+  
+  if (mFramesPopped == mCurrentData->mFrames) {
+    mCurrentData = nullptr;
+  }
+
+  return chunk;
+}
+
+bool
+DecodedAudioDataSink::Ended() const
+{
+  
+  return AudioQueue().IsFinished() || mErrored;
 }
 
 void
-DecodedAudioDataSink::AssertNotOnAudioThread()
+DecodedAudioDataSink::Drained()
 {
-  MOZ_ASSERT(NS_GetCurrentThread() != mThread);
+  SINK_LOG("Drained");
+  mEndPromise.Resolve(true, __func__);
 }
 
 } 

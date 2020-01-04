@@ -7,6 +7,7 @@
 #define DecodedAudioDataSink_h__
 
 #include "AudioSink.h"
+#include "AudioStream.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
 #include "mozilla/RefPtr.h"
@@ -20,13 +21,11 @@
 
 namespace mozilla {
 
-class AudioStream;
-
 namespace media {
 
-class DecodedAudioDataSink : public AudioSink {
+class DecodedAudioDataSink : public AudioSink,
+                             private AudioStream::DataSource {
 public:
-
   DecodedAudioDataSink(MediaQueue<MediaData>& aAudioQueue,
                        int64_t aStartTime,
                        const AudioInfo& aInfo,
@@ -34,9 +33,10 @@ public:
 
   
   
-  RefPtr<GenericPromise> Init() override;
+  RefPtr<GenericPromise> Init(const PlaybackParams& aParams) override;
 
   
+
 
 
   int64_t GetPosition() override;
@@ -55,100 +55,20 @@ public:
   void SetPlaying(bool aPlaying) override;
 
 private:
-  enum State {
-    AUDIOSINK_STATE_INIT,
-    AUDIOSINK_STATE_PLAYING,
-    AUDIOSINK_STATE_COMPLETE,
-    AUDIOSINK_STATE_SHUTDOWN,
-    AUDIOSINK_STATE_ERROR
-  };
-
   virtual ~DecodedAudioDataSink();
 
-  void DispatchTask(already_AddRefed<nsIRunnable>&& event);
-  void SetState(State aState);
-  void ScheduleNextLoop();
-  void ScheduleNextLoopCrossThread();
-
-  void OnAudioQueueEvent();
-  void ConnectListener();
-  void DisconnectListener();
+  
+  nsresult InitializeAudioStream(const PlaybackParams& aParams);
 
   
   
-  
-  void AudioLoop();
+  UniquePtr<AudioStream::Chunk> PopFrames(uint32_t aFrames) override;
+  bool Ended() const override;
+  void Drained() override;
 
-  
-  nsresult InitializeAudioStream();
-
-  void Drain();
-
-  void Cleanup();
-
-  bool ExpectMoreAudioData();
-
-  
-  bool WaitingForAudioToPlay();
-
-  
-  
-  
-  bool IsPlaybackContinuing();
-
-  
-  
-  bool PlayAudio();
-
-  void FinishAudioLoop();
-
-  
-  
-  
-  
-  
-  
-  
-  uint32_t PlaySilence(uint32_t aFrames);
-
-  
-  
-  uint32_t PlayFromAudioQueue();
-
-  
-  
-  void StartAudioStreamPlaybackIfNeeded();
-  void WriteSilence(uint32_t aFrames);
-
-  ReentrantMonitor& GetReentrantMonitor() const {
-    return mMonitor;
-  }
-
-  void AssertCurrentThreadInMonitor() const {
-    GetReentrantMonitor().AssertCurrentThreadIn();
-  }
-
-  void AssertOnAudioThread();
-  void AssertNotOnAudioThread();
-
-  mutable ReentrantMonitor mMonitor;
-
-  
-  State mState;
-  Maybe<State> mPendingState;
-  bool mAudioLoopScheduled;
-
-  
-  
-  nsCOMPtr<nsIThread> mThread;
-
-  
-  
-  
   
   RefPtr<AudioStream> mAudioStream;
 
-  
   
   
   
@@ -166,14 +86,21 @@ private:
 
   const dom::AudioChannel mChannel;
 
-  bool mStopAudioThread;
-
+  
   bool mPlaying;
 
   MozPromiseHolder<GenericPromise> mEndPromise;
 
-  MediaEventListener mPushListener;
-  MediaEventListener mFinishListener;
+  
+
+
+
+  
+  RefPtr<AudioData> mCurrentData;
+  
+  uint32_t mFramesPopped = 0;
+  
+  bool mErrored = false;
 };
 
 } 
