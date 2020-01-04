@@ -47,7 +47,7 @@ function testBreakpointMapping(aName, aCallback)
     
     
     
-    response = yield rdpRequest(gThreadClient, gThreadClient.eval, null, aName + "()");
+    response = yield gThreadClient.eval(null, aName + "()");
     do_check_eq(response.type, "resumed");
 
     response = yield waitForPause(gThreadClient);
