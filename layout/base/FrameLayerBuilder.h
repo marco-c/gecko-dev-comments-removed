@@ -217,8 +217,6 @@ public:
   void DidEndTransaction();
 
   enum {
-    CONTAINER_NOT_CLIPPED_BY_ANCESTORS = 0x01,
-
     
 
 
@@ -226,7 +224,7 @@ public:
 
 
 
-    CONTAINER_ALLOW_PULL_BACKGROUND_COLOR = 0x02
+    CONTAINER_ALLOW_PULL_BACKGROUND_COLOR = 0x01
   };
   
 
