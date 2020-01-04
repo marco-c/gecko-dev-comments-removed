@@ -2350,15 +2350,8 @@ CompositorParent::UpdatePluginWindowState(uint64_t aId)
 
   
   if (!lts.mUpdatedPluginDataAvailable) {
-    if (mLastPluginUpdateLayerTreeId != aId) {
-      lts.mUpdatedPluginDataAvailable = true;
-      mPluginsLayerOffset = nsIntPoint(0,0);
-      mPluginsLayerVisibleRegion.SetEmpty();
-      PLUGINS_LOG("[%" PRIu64 "] new layer id, refreshing", aId);
-    } else {
-      PLUGINS_LOG("[%" PRIu64 "] no plugin data", aId);
-      return false;
-    }
+    PLUGINS_LOG("[%" PRIu64 "] no plugin data", aId);
+    return false;
   }
 
   
