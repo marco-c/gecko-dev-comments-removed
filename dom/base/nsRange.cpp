@@ -151,34 +151,6 @@ GetNextRangeCommonAncestor(nsINode* aNode)
   return aNode;
 }
 
-
-
-
-
-struct IsItemInRangeComparator
-{
-  nsINode* mNode;
-  uint32_t mStartOffset;
-  uint32_t mEndOffset;
-
-  int operator()(const nsRange* const aRange) const
-  {
-    int32_t cmp = nsContentUtils::ComparePoints(mNode, mEndOffset,
-                                                aRange->GetStartParent(),
-                                                aRange->StartOffset());
-    if (cmp == 1) {
-      cmp = nsContentUtils::ComparePoints(mNode, mStartOffset,
-                                          aRange->GetEndParent(),
-                                          aRange->EndOffset());
-      if (cmp == -1) {
-        return 0;
-      }
-      return 1;
-    }
-    return -1;
-  }
-};
-
  bool
 nsRange::IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
                         uint32_t aEndOffset)
@@ -188,45 +160,24 @@ nsRange::IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
   nsINode* n = GetNextRangeCommonAncestor(aNode);
   NS_ASSERTION(n || !aNode->IsSelectionDescendant(),
                "orphan selection descendant");
-
-  
-  RangeHashTable ancestorSelectionRanges;
-  nsTHashtable<nsPtrHashKey<Selection>> ancestorSelections;
-  uint32_t maxRangeCount = 0;
   for (; n; n = GetNextRangeCommonAncestor(n->GetParentNode())) {
     RangeHashTable* ranges =
       static_cast<RangeHashTable*>(n->GetProperty(nsGkAtoms::range));
     for (auto iter = ranges->ConstIter(); !iter.Done(); iter.Next()) {
       nsRange* range = iter.Get()->GetKey();
       if (range->IsInSelection() && !range->Collapsed()) {
-        ancestorSelectionRanges.PutEntry(range);
-        Selection* selection = range->mSelection;
-        ancestorSelections.PutEntry(selection);
-        maxRangeCount = std::max(maxRangeCount, selection->RangeCount());
-      }
-    }
-  }
-
-  if (!ancestorSelectionRanges.IsEmpty()) {
-    nsTArray<const nsRange*> sortedRanges(maxRangeCount);
-    for (auto iter = ancestorSelections.ConstIter(); !iter.Done(); iter.Next()) {
-      Selection* selection = iter.Get()->GetKey();
-      
-      
-      for (uint32_t i = 0, len = selection->RangeCount(); i < len; ++i) {
-        nsRange* range = selection->GetRangeAt(i);
-        if (ancestorSelectionRanges.Contains(range)) {
-          sortedRanges.AppendElement(range);
+        int32_t cmp = nsContentUtils::ComparePoints(aNode, aEndOffset,
+                                                    range->GetStartParent(),
+                                                    range->StartOffset());
+        if (cmp == 1) {
+          cmp = nsContentUtils::ComparePoints(aNode, aStartOffset,
+                                              range->GetEndParent(),
+                                              range->EndOffset());
+          if (cmp == -1) {
+            return true;
+          }
         }
       }
-      MOZ_ASSERT(!sortedRanges.IsEmpty());
-      
-      IsItemInRangeComparator comparator = { aNode, aStartOffset, aEndOffset };
-      size_t unused;
-      if (mozilla::BinarySearchIf(sortedRanges, 0, sortedRanges.Length(), comparator, &unused)) {
-        return true;
-      }
-      sortedRanges.ClearAndRetainStorage();
     }
   }
   return false;
@@ -3154,12 +3105,6 @@ nsRange::Constructor(const GlobalObject& aGlobal,
   return window->GetDoc()->CreateRange(aRv);
 }
 
-static bool ExcludeIfNextToNonSelectable(nsIContent* aContent)
-{
-  return aContent->IsNodeOfType(nsINode::eTEXT) &&
-    aContent->HasFlag(NS_CREATE_FRAME_IF_NON_WHITESPACE);
-}
-
 void
 nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
 {
@@ -3178,10 +3123,6 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
 
     bool added = false;
     bool seenSelectable = false;
-    
-    
-    
-    
     nsIContent* firstNonSelectableContent = nullptr;
     while (true) {
       ErrorResult err;
@@ -3191,19 +3132,12 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
       nsIContent* content =
         node && node->IsContent() ? node->AsContent() : nullptr;
       if (content) {
-        if (firstNonSelectableContent && ExcludeIfNextToNonSelectable(content)) {
-          
-          
-          selectable = false;
+        nsIFrame* frame = content->GetPrimaryFrame();
+        for (nsIContent* p = content; !frame && (p = p->GetParent()); ) {
+          frame = p->GetPrimaryFrame();
         }
-        if (selectable) {
-          nsIFrame* frame = content->GetPrimaryFrame();
-          for (nsIContent* p = content; !frame && (p = p->GetParent()); ) {
-            frame = p->GetPrimaryFrame();
-          }
-          if (frame) {
-            frame->IsSelectable(&selectable, nullptr);
-          }
+        if (frame) {
+          frame->IsSelectable(&selectable, nullptr);
         }
       }
 
