@@ -34,10 +34,13 @@
 #include "nsIScriptContext.h"
 
 #include "nsAppShellService.h"
+#include "nsContentUtils.h"
+#include "nsThreadUtils.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIChromeRegistry.h"
 #include "nsILoadContext.h"
 #include "nsIWebNavigation.h"
+#include "nsIWindowlessBrowser.h"
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
@@ -399,43 +402,100 @@ WebBrowserChrome2Stub::Blur()
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-
-
-
-class WindowlessBrowserStub final : public nsIWebNavigation,
-                                    public nsIInterfaceRequestor
+class BrowserDestroyer final : public nsRunnable
 {
 public:
-  WindowlessBrowserStub(nsIWebBrowser *aBrowser, nsISupports *aContainer) {
-    mBrowser = aBrowser;
+  BrowserDestroyer(nsIWebBrowser *aBrowser, nsISupports *aContainer) :
+    mBrowser(aBrowser),
+    mContainer(aContainer)
+  {
+  }
+
+  NS_IMETHOD
+  Run() override
+  {
+    
+    nsCOMPtr<nsIBaseWindow> window = do_QueryInterface(mBrowser);
+    return window->Destroy();
+  }
+
+protected:
+  virtual ~BrowserDestroyer() {}
+
+private:
+  nsCOMPtr<nsIWebBrowser> mBrowser;
+  nsCOMPtr<nsISupports> mContainer;
+};
+
+
+
+
+
+
+class WindowlessBrowser final : public nsIWindowlessBrowser,
+                                public nsIInterfaceRequestor
+{
+public:
+  WindowlessBrowser(nsIWebBrowser *aBrowser, nsISupports *aContainer) :
+    mBrowser(aBrowser),
+    mContainer(aContainer),
+    mClosed(false)
+  {
     mWebNavigation = do_QueryInterface(aBrowser);
     mInterfaceRequestor = do_QueryInterface(aBrowser);
-    mContainer = aContainer;
   }
   NS_DECL_ISUPPORTS
-  NS_FORWARD_NSIWEBNAVIGATION(mWebNavigation->)
-  NS_FORWARD_NSIINTERFACEREQUESTOR(mInterfaceRequestor->)
+  NS_FORWARD_SAFE_NSIWEBNAVIGATION(mWebNavigation)
+  NS_FORWARD_SAFE_NSIINTERFACEREQUESTOR(mInterfaceRequestor)
+
+  NS_IMETHOD
+  Close() override
+  {
+    NS_ENSURE_TRUE(!mClosed, NS_ERROR_UNEXPECTED);
+    NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
+                 "WindowlessBrowser::Close called when not safe to run scripts");
+
+    mClosed = true;
+
+    mWebNavigation = nullptr;
+    mInterfaceRequestor = nullptr;
+
+    nsCOMPtr<nsIBaseWindow> window = do_QueryInterface(mBrowser);
+    return window->Destroy();
+  }
+
+protected:
+  virtual ~WindowlessBrowser()
+  {
+    if (mClosed) {
+      return;
+    }
+
+    NS_WARNING("Windowless browser was not closed prior to destruction");
+
+    
+    
+    
+    
+    nsCOMPtr<nsIRunnable> runnable = new BrowserDestroyer(mBrowser, mContainer);
+    nsContentUtils::AddScriptRunner(runnable);
+  }
+
 private:
-  ~WindowlessBrowserStub() {}
   nsCOMPtr<nsIWebBrowser> mBrowser;
   nsCOMPtr<nsIWebNavigation> mWebNavigation;
   nsCOMPtr<nsIInterfaceRequestor> mInterfaceRequestor;
   
   nsCOMPtr<nsISupports> mContainer;
+
+  bool mClosed;
 };
 
-NS_INTERFACE_MAP_BEGIN(WindowlessBrowserStub)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIWebNavigation)
-  NS_INTERFACE_MAP_ENTRY(nsIWebNavigation)
-  NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_ADDREF(WindowlessBrowserStub)
-NS_IMPL_RELEASE(WindowlessBrowserStub)
+NS_IMPL_ISUPPORTS(WindowlessBrowser, nsIWindowlessBrowser, nsIWebNavigation, nsIInterfaceRequestor)
 
 
 NS_IMETHODIMP
-nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, nsIWebNavigation **aResult)
+nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, nsIWindowlessBrowser **aResult)
 {
   
 
@@ -480,7 +540,7 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, nsIWebNavigation **aR
   window->Create();
 
   nsISupports *isstub = NS_ISUPPORTS_CAST(nsIWebBrowserChrome2*, stub);
-  RefPtr<nsIWebNavigation> result = new WindowlessBrowserStub(browser, isstub);
+  RefPtr<nsIWindowlessBrowser> result = new WindowlessBrowser(browser, isstub);
   nsCOMPtr<nsIDocShell> docshell = do_GetInterface(result);
   docshell->SetInvisible(true);
 
