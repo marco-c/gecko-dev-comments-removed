@@ -365,17 +365,18 @@ Compositor::ComputeBackdropCopyRect(const gfx::Rect& aRect,
   gfx::Rect renderBounds = mRenderBounds;
 
   
+  gfx::IntPoint offset = GetCurrentRenderTarget()->GetOrigin();
   renderBounds.IntersectRect(renderBounds, aClipRect);
+  renderBounds.MoveBy(offset);
 
   
   gfx::Rect dest = aTransform.TransformAndClipBounds(aRect, renderBounds);
-  dest.RoundOut();
+  dest -= offset;
 
+  
   gfx::IntRect result;
+  dest.RoundOut();
   dest.ToIntRect(&result);
-
-  gfx::IntPoint offset = GetCurrentRenderTarget()->GetOrigin();
-  result.MoveBy(-offset);
   return result;
 }
 
