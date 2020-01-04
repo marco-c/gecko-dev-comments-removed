@@ -144,7 +144,9 @@ class HTMLFormatter(base.BaseFormatter):
                     
                     
                     
-                    href = 'data:text/plain;charset=utf-8;base64,%s' % base64.b64encode(str(content).encode('utf-8'))
+                    utf_encoded = unicode(content).encode('utf-8', 'xmlcharrefreplace')
+                    href = 'data:text/html;charset=utf-8;base64,%s' % base64.b64encode(utf_encoded)
+
                 links_html.append(html.a(
                     name.title(),
                     class_=name,
