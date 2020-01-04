@@ -105,7 +105,7 @@ MacroAssemblerX86Shared::branchNegativeZero(FloatRegister reg,
         zeroDouble(scratchDouble);
 
         
-        asMasm().branchDouble(DoubleNotEqual, reg, scratchDouble, &nonZero);
+        branchDouble(DoubleNotEqual, reg, scratchDouble, &nonZero);
     }
     
     vmovmskpd(reg, scratch);
