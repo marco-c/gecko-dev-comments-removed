@@ -14,6 +14,7 @@
 #include "nsSubDocumentFrame.h"
 #include "nsAbsoluteContainingBlock.h"
 #include "GeckoProfiler.h"
+#include "nsIMozBrowserFrame.h"
 
 using namespace mozilla;
 
@@ -51,14 +52,89 @@ ViewportFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   PROFILER_LABEL("ViewportFrame", "BuildDisplayList",
     js::ProfileEntry::Category::GRAPHICS);
 
-  nsIFrame* kid = mFrames.FirstChild();
-  if (!kid)
-    return;
+  if (nsIFrame* kid = mFrames.FirstChild()) {
+    
+    
+    
+    BuildDisplayListForChild(aBuilder, kid, aDirtyRect, aLists);
+  }
 
-  
-  
-  
-  BuildDisplayListForChild(aBuilder, kid, aDirtyRect, aLists);
+  nsDisplayList topLayerList;
+  BuildDisplayListForTopLayer(aBuilder, &topLayerList);
+  if (!topLayerList.IsEmpty()) {
+    
+    
+    nsDisplayWrapList* wrapList =
+      new (aBuilder) nsDisplayWrapList(aBuilder, this, &topLayerList);
+    wrapList->SetOverrideZIndex(
+      std::numeric_limits<decltype(wrapList->ZIndex())>::max());
+    aLists.PositionedDescendants()->AppendNewToTop(wrapList);
+  }
+}
+
+#ifdef DEBUG
+
+
+
+
+static bool
+ShouldInTopLayerForFullscreen(Element* aElement)
+{
+  if (!aElement->GetParent()) {
+    return false;
+  }
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aElement);
+  if (browserFrame && browserFrame->GetReallyIsBrowserOrApp()) {
+    return false;
+  }
+  return true;
+}
+#endif 
+
+void
+ViewportFrame::BuildDisplayListForTopLayer(nsDisplayListBuilder* aBuilder,
+                                           nsDisplayList* aList)
+{
+  nsIDocument* doc = PresContext()->Document();
+  nsTArray<Element*> fullscreenStack = doc->GetFullscreenStack();
+  for (Element* elem : fullscreenStack) {
+    if (nsIFrame* frame = elem->GetPrimaryFrame()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (frame->StyleDisplay()->mTopLayer == NS_STYLE_TOP_LAYER_NONE) {
+        MOZ_ASSERT(!aBuilder->IsForPainting() ||
+                   !ShouldInTopLayerForFullscreen(elem));
+        continue;
+      }
+      MOZ_ASSERT(ShouldInTopLayerForFullscreen(elem));
+      
+      
+      
+      if (!(frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
+        MOZ_ASSERT(!elem->GetParent()->IsHTMLElement(), "HTML element "
+                   "should always be out-of-flow if in the top layer");
+        continue;
+      }
+      MOZ_ASSERT(frame->GetParent() == this);
+
+      nsRect dirty;
+      nsDisplayListBuilder::OutOfFlowDisplayData*
+        savedOutOfFlowData = nsDisplayListBuilder::GetOutOfFlowData(frame);
+      if (savedOutOfFlowData) {
+        dirty = savedOutOfFlowData->mDirtyRect;
+      }
+      nsDisplayList list;
+      frame->BuildDisplayListForStackingContext(aBuilder, dirty, &list);
+      aList->AppendToTop(&list);
+    }
+  }
 }
 
 #ifdef DEBUG

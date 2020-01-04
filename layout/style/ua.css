@@ -280,6 +280,8 @@
   box-sizing: border-box !important;
 }
 
+
+
 *|*:-moz-full-screen:not(:root):not(:-moz-browser-frame) {
   -moz-top-layer: top !important;
 }
