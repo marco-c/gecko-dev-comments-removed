@@ -187,7 +187,7 @@ class MIRGenerator
     uint32_t wasmMaxStackArgBytes_;
     bool performsCall_;
     bool usesSimd_;
-    bool usesSimdCached_;
+    bool cachedUsesSimd_;
 
     
     

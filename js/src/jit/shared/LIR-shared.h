@@ -3400,6 +3400,22 @@ class LAbsF : public LInstructionHelper<1, 1, 0>
 };
 
 
+class LCopySignD : public LInstructionHelper<1, 2, 2>
+{
+  public:
+    LIR_HEADER(CopySignD)
+    explicit LCopySignD() {}
+};
+
+
+class LCopySignF : public LInstructionHelper<1, 2, 2>
+{
+  public:
+    LIR_HEADER(CopySignF)
+    explicit LCopySignF() {}
+};
+
+
 class LClzI : public LInstructionHelper<1, 1, 0>
 {
   public:
