@@ -323,14 +323,7 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
             mMixedContentActivity.setVisibility(View.GONE);
             mLink.setVisibility(View.GONE);
         } else if (!siteIdentity.isSecure()) {
-            if (siteIdentity.loginInsecure()) {
-                
-                mIcon.setImageResource(R.drawable.lock_disabled);
-                clearSecurityStateIcon();
-
-                mMixedContentActivity.setVisibility(View.VISIBLE);
-                mMixedContentActivity.setText(R.string.identity_login_insecure);
-            } else if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_LOADED) {
+            if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_LOADED) {
                 
                 mIcon.setImageResource(R.drawable.lock_disabled);
                 clearSecurityStateIcon();
