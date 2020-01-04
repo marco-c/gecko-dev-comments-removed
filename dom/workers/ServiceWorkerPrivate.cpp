@@ -353,6 +353,15 @@ public:
     return DispatchLifecycleEvent(aCx, aWorkerPrivate);
   }
 
+  NS_IMETHOD
+  Cancel() override
+  {
+    mCallback->SetResult(false);
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToMainThread(mCallback)));
+
+    return WorkerRunnable::Cancel();
+  }
+
 private:
   bool
   DispatchLifecycleEvent(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
@@ -363,49 +372,113 @@ private:
 
 
 
-class LifecycleEventPromiseHandler final : public PromiseNativeHandler
-{
-  RefPtr<LifeCycleEventCallback> mCallback;
 
-  virtual
-  ~LifecycleEventPromiseHandler()
-  { }
+class LifeCycleEventWatcher final : public PromiseNativeHandler,
+                                    public WorkerFeature
+{
+  WorkerPrivate* mWorkerPrivate;
+  RefPtr<LifeCycleEventCallback> mCallback;
+  bool mDone;
+
+  ~LifeCycleEventWatcher()
+  {
+    if (mDone) {
+      return;
+    }
+
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
+    
+    
+    
+    
+    JSContext* cx = mWorkerPrivate->GetJSContext();
+    ReportResult(cx, false);
+  }
 
 public:
   NS_DECL_ISUPPORTS
 
-  explicit LifecycleEventPromiseHandler(LifeCycleEventCallback* aCallback)
-    : mCallback(aCallback)
+  LifeCycleEventWatcher(WorkerPrivate* aWorkerPrivate,
+                        LifeCycleEventCallback* aCallback)
+    : mWorkerPrivate(aWorkerPrivate)
+    , mCallback(aCallback)
+    , mDone(false)
   {
-    MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
+  }
+
+  bool
+  Init()
+  {
+    MOZ_ASSERT(mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
+    JSContext* cx = mWorkerPrivate->GetJSContext();
+
+    
+    
+    
+    
+    
+    
+    
+    if (NS_WARN_IF(!mWorkerPrivate->AddFeature(cx, this))) {
+      NS_WARNING("LifeCycleEventWatcher failed to add feature.");
+      ReportResult(cx, false);
+      return false;
+    }
+
+    return true;
+  }
+
+  bool
+  Notify(JSContext* aCx, Status aStatus) override
+  {
+    if (aStatus < Terminating) {
+      return true;
+    }
+
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
+    ReportResult(aCx, false);
+
+    return true;
+  }
+
+  void
+  ReportResult(JSContext* aCx, bool aResult)
+  {
+    mWorkerPrivate->AssertIsOnWorkerThread();
+
+    if (mDone) {
+      return;
+    }
+    mDone = true;
+
+    mCallback->SetResult(aResult);
+    nsresult rv = NS_DispatchToMainThread(mCallback);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      NS_RUNTIMEABORT("Failed to dispatch life cycle event handler.");
+    }
+
+    mWorkerPrivate->RemoveFeature(aCx, this);
   }
 
   void
   ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
   {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-    workerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
 
-    mCallback->SetResult(true);
-    nsresult rv = NS_DispatchToMainThread(mCallback);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      NS_RUNTIMEABORT("Failed to dispatch life cycle event handler.");
-    }
+    ReportResult(aCx, true);
   }
 
   void
   RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
   {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-    workerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
 
-    mCallback->SetResult(false);
-    nsresult rv = NS_DispatchToMainThread(mCallback);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      NS_RUNTIMEABORT("Failed to dispatch life cycle event handler.");
-    }
+    ReportResult(aCx, false);
 
     
     
@@ -414,7 +487,7 @@ public:
   }
 };
 
-NS_IMPL_ISUPPORTS0(LifecycleEventPromiseHandler)
+NS_IMPL_ISUPPORTS0(LifeCycleEventWatcher)
 
 bool
 LifecycleEventWorkerRunnable::DispatchLifecycleEvent(JSContext* aCx,
@@ -437,16 +510,23 @@ LifecycleEventWorkerRunnable::DispatchLifecycleEvent(JSContext* aCx,
 
   event->SetTrusted(true);
 
+  
+  
+  
+  RefPtr<LifeCycleEventWatcher> watcher =
+    new LifeCycleEventWatcher(aWorkerPrivate, mCallback);
+
+  if (!watcher->Init()) {
+    return true;
+  }
+
   RefPtr<Promise> waitUntil;
   DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(),
                                        event, getter_AddRefs(waitUntil));
   if (waitUntil) {
-    RefPtr<LifecycleEventPromiseHandler> handler =
-      new LifecycleEventPromiseHandler(mCallback);
-    waitUntil->AppendNativeHandler(handler);
+    waitUntil->AppendNativeHandler(watcher);
   } else {
-    mCallback->SetResult(false);
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToMainThread(mCallback)));
+    watcher->ReportResult(aCx, false);
   }
 
   return true;
