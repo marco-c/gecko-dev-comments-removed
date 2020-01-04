@@ -994,14 +994,6 @@ nsFrameConstructorState::nsFrameConstructorState(nsIPresShell* aPresShell,
 
 nsFrameConstructorState::~nsFrameConstructorState()
 {
-  
-  
-  
-  
-  
-  
-  
-  
   MOZ_COUNT_DTOR(nsFrameConstructorState);
   ProcessFrameInsertions(mFloatedItems, nsIFrame::kFloatList);
   ProcessFrameInsertions(mAbsoluteItems, nsIFrame::kAbsoluteList);
@@ -1270,6 +1262,11 @@ nsFrameConstructorState::ProcessFrameInsertions(nsAbsoluteItems& aFrameItems,
     } else {
       containingBlock->SetInitialChildList(aChildListID, aFrameItems);
     }
+  } else if (aChildListID == nsIFrame::kFixedList ||
+             aChildListID == nsIFrame::kAbsoluteList) {
+    
+    
+    mFrameManager->AppendFrames(containingBlock, aChildListID, aFrameItems);
   } else {
     
     
