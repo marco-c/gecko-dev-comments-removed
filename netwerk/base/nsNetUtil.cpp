@@ -1295,6 +1295,8 @@ NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport)
 {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   MOZ_RELEASE_ASSERT(loadInfo, "Origin tracking only works for channels created with a loadinfo");
+  MOZ_ASSERT(loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT,
+             "calling NS_HasBeenCrossOrigin on a top level load");
 
   
   if (loadInfo->GetTainting() != LoadTainting::Basic) {
@@ -2256,9 +2258,11 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
       
       
       
+      
+      
       bool crossOriginNavigation =
         (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) &&
-        (!aChannelResultPrincipal->Equals(aLoadInfo->LoadingPrincipal()));
+        (!aChannelResultPrincipal->Equals(aLoadInfo->TriggeringPrincipal()));
 
       if (aLoadInfo->GetUpgradeInsecureRequests() && !crossOriginNavigation) {
         
