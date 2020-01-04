@@ -161,7 +161,8 @@ FinderHighlighter.prototype = {
       gWindows.set(window, {
         dynamicRangesSet: new Set(),
         frames: new Map(),
-        modalHighlightRectsMap: new Map()
+        modalHighlightRectsMap: new Map(),
+        previousRangeRectsCount: 0
       });
     }
     return gWindows.get(window);
@@ -411,7 +412,6 @@ FinderHighlighter.prototype = {
       return;
     }
 
-    let outlineNode;
     if (foundRange !== dict.currentFoundRange || data.findAgain) {
       dict.currentFoundRange = foundRange;
 
@@ -434,12 +434,14 @@ FinderHighlighter.prototype = {
       this._updateRangeOutline(dict, textContent, fontStyle);
     }
 
-    outlineNode = dict.modalHighlightOutline;
-    if (dict.animation)
-      dict.animation.finish();
-    dict.animation = outlineNode.setAnimationForElement(kModalOutlineId,
-      Cu.cloneInto(kModalOutlineAnim.keyframes, window), kModalOutlineAnim.duration);
-    dict.animation.onfinish = () => dict.animation = null;
+    let outlineNode = dict.modalHighlightOutline;
+    if (outlineNode) {
+      if (dict.animation)
+        dict.animation.finish();
+      dict.animation = outlineNode.setAnimationForElement(kModalOutlineId,
+        Cu.cloneInto(kModalOutlineAnim.keyframes, window), kModalOutlineAnim.duration);
+      dict.animation.onfinish = () => dict.animation = null;
+    }
 
     if (this._highlightAll && data.searchString)
       this.highlight(true, data.searchString, data.linksOnly);
@@ -757,12 +759,7 @@ FinderHighlighter.prototype = {
 
 
 
-
-
-
-
-
-  _updateRangeRects(range, checkIfDynamic = true, dict = null) {
+  _getRangeRects(range, dict = null) {
     let window = range.startContainer.ownerDocument.defaultView;
     let bounds;
     
@@ -788,6 +785,26 @@ FinderHighlighter.prototype = {
       if (rect.intersects(topBounds))
         rects.add(rect);
     }
+    return rects;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _updateRangeRects(range, checkIfDynamic = true, dict = null) {
+    let window = range.startContainer.ownerDocument.defaultView;
+    let rects = this._getRangeRects(range, dict);
 
     
     dict = dict || this.getForWindow(window.top);
@@ -823,38 +840,104 @@ FinderHighlighter.prototype = {
 
 
 
-  _updateRangeOutline(dict, textContent = [], fontStyle = null) {
-    let outlineNode = dict.modalHighlightOutline;
-    let range = this.finder._fastFind.getFoundRange();
-    if (!outlineNode || !range)
-      return;
-    let rect = range.getClientRects()[0];
-    if (!rect)
+
+
+  _updateRangeOutline(dict, textContent = null, fontStyle = null) {
+    let range = dict.currentFoundRange;
+    if (!range)
       return;
 
-    if (!fontStyle)
-      fontStyle = this._getRangeFontStyle(range);
+    fontStyle = fontStyle || this._getRangeFontStyle(range);
     
     delete fontStyle.color;
 
-    if (textContent.length)
-      outlineNode.setTextContentForElement(kModalOutlineId + "-text", textContent.join(" "));
-    
-    fontStyle.lineHeight = rect.height + "px";
-    outlineNode.setAttributeForElement(kModalOutlineId + "-text", "style",
-      this._getStyleString(kModalStyles.outlineText) + "; " +
-      this._getHTMLFontStyle(fontStyle));
+    let rects = this._getRangeRects(range);
+    textContent = textContent || this._getRangeContentArray(range);
 
-    let window = range.startContainer.ownerDocument.defaultView;
-    let { left, top } = this._getRootBounds(window);
-    outlineNode.setAttributeForElement(kModalOutlineId, "style",
-      this._getStyleString(kModalStyles.outlineNode, [
-        ["top", top + rect.top + "px"],
-        ["left", left + rect.left + "px"],
+    let outlineAnonNode = dict.modalHighlightOutline;
+    let rectCount = rects.size;
+    
+    
+    
+    
+    
+    
+    let rebuildOutline = (!outlineAnonNode || rectCount !== dict.previousRangeRectsCount ||
+      rectCount != 1);
+    dict.previousRangeRectsCount = rectCount;
+
+    let document = range.startContainer.ownerDocument;
+    
+    if (rebuildOutline && outlineAnonNode) {
+      if (kDebug) {
+        outlineAnonNode.remove();
+      } else {
+        try {
+          document.removeAnonymousContent(outlineAnonNode);
+        } catch (ex) {}
+      }
+      dict.modalHighlightOutline = null;
+    }
+
+    
+    if (!textContent.length)
+      return;
+
+    let container, outlineBox;
+    if (rebuildOutline) {
+      
+      
+      container = document.createElementNS(kNSHTML, "div");
+      
+      outlineBox = document.createElementNS(kNSHTML, "div");
+      outlineBox.setAttribute("id", kModalOutlineId);
+    }
+
+    const kModalOutlineTextId = kModalOutlineId + "-text";
+    let i = 0;
+    for (let rect of rects) {
+      
+      
+      
+      let text = (i == rectCount - 1) ? textContent.slice(i).join(" ") : textContent[i];
+      ++i;
+      let outlineStyle = this._getStyleString(kModalStyles.outlineNode, [
+        ["top", rect.top + "px"],
+        ["left", rect.left + "px"],
         ["height", rect.height + "px"],
-        ["width", rect.width + "px"]],
-        kDebug ? kModalStyles.outlineNodeDebug : []
-    ));
+        ["width", rect.width + "px"]
+      ], kDebug ? kModalStyles.outlineNodeDebug : []);
+      fontStyle.lineHeight = rect.height + "px";
+      let textStyle = this._getStyleString(kModalStyles.outlineText) + "; " +
+        this._getHTMLFontStyle(fontStyle);
+
+      if (rebuildOutline) {
+        let textBoxParent = (rectCount == 1) ? outlineBox :
+          outlineBox.appendChild(document.createElementNS(kNSHTML, "div"));
+        textBoxParent.setAttribute("style", outlineStyle);
+
+        let textBox = document.createElementNS(kNSHTML, "span");
+        if (rectCount == 1)
+          textBox.setAttribute("id", kModalOutlineTextId);
+        textBox.setAttribute("style", textStyle);
+        textBox.textContent = text;
+        textBoxParent.appendChild(textBox);
+      } else {
+        
+        
+        outlineAnonNode.setAttributeForElement(kModalOutlineId, "style", outlineStyle);
+        outlineAnonNode.setAttributeForElement(kModalOutlineTextId, "style", textStyle);
+        outlineAnonNode.setTextContentForElement(kModalOutlineTextId, text);
+      }
+    }
+
+    if (rebuildOutline) {
+      container.appendChild(outlineBox);
+      dict.modalHighlightOutline = kDebug ?
+        mockAnonymousContentNode((document.body ||
+          document.documentElement).appendChild(container.firstChild)) :
+        document.insertAnonymousContent(container);
+    }
   },
 
   
@@ -907,25 +990,7 @@ FinderHighlighter.prototype = {
       return;
     }
 
-    
-    
-    let container = document.createElementNS(kNSHTML, "div");
-
-    
-    let outlineBox = document.createElementNS(kNSHTML, "div");
-    outlineBox.setAttribute("id", kModalOutlineId);
-    outlineBox.setAttribute("style", this._getStyleString(kModalStyles.outlineNode,
-      kDebug ? kModalStyles.outlineNodeDebug : []));
-    let outlineBoxText = document.createElementNS(kNSHTML, "span");
-    let attrValue = kModalOutlineId + "-text";
-    outlineBoxText.setAttribute("id", attrValue);
-    outlineBoxText.setAttribute("style", this._getStyleString(kModalStyles.outlineText));
-    outlineBox.appendChild(outlineBoxText);
-
-    container.appendChild(outlineBox);
-    dict.modalHighlightOutline = kDebug ?
-      mockAnonymousContentNode((document.body || document.documentElement).appendChild(container.firstChild)) :
-      document.insertAnonymousContent(container);
+    this._updateRangeOutline(dict);
 
     
     this._repaintHighlightAllMask(window, false);
