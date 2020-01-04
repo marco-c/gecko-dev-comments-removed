@@ -57,7 +57,9 @@ public:
 
     Result(const Point& aC, Float aR)
      : C(aC), r(aR)
-    {}
+    {
+      MOZ_ASSERT(aR >= 0);
+    }
   };
 
   
@@ -213,8 +215,30 @@ private:
   
   
   
-  Point mCurveOrigin;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Point mCenterCurveOrigin;
   Float mCenterCurveR;
+  Point mInnerCurveOrigin;
   Float mInnerWidth;
   Float mInnerHeight;
 
