@@ -1,6 +1,9 @@
 
 
 
+
+
+
 "use strict";
 
 const URL_LABEL_TOOLTIP = L10N.getStr("table.url.tooltiptext");
