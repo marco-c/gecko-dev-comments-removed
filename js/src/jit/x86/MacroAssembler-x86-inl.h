@@ -269,6 +269,52 @@ MacroAssembler::mul64(Imm64 imm, const Register64& dest)
 }
 
 void
+MacroAssembler::mul64(Imm64 imm, const Register64& dest, const Register temp)
+{
+    
+    
+    
+    
+
+    MOZ_ASSERT(dest == Register64(edx, eax));
+    MOZ_ASSERT(temp != edx && temp != eax);
+
+    movl(dest.low, temp);
+
+    
+    imull(imm.low(), dest.high); 
+    imull(imm.hi(), temp); 
+    addl(dest.high, temp);
+    movl(imm.low(), dest.high);
+    mull(dest.high); 
+    addl(temp, dest.high);
+}
+
+void
+MacroAssembler::mul64(const Register64& src, const Register64& dest, const Register temp)
+{
+    
+    
+    
+    
+
+    MOZ_ASSERT(dest == Register64(edx, eax));
+    MOZ_ASSERT(src != Register64(edx, eax) && src != Register64(eax, edx));
+
+    
+    
+    movl(dest.low, temp);
+
+    
+    imull(src.low, dest.high); 
+    imull(src.high, temp); 
+    addl(dest.high, temp);
+    movl(src.low, dest.high);
+    mull(dest.high); 
+    addl(temp, dest.high);
+}
+
+void
 MacroAssembler::mulBy3(Register src, Register dest)
 {
     lea(Operand(src, src, TimesTwo), dest);
@@ -289,6 +335,14 @@ MacroAssembler::inc64(AbsoluteAddress dest)
     j(NonZero, &noOverflow);
     addl(Imm32(1), Operand(dest.offset(4)));
     bind(&noOverflow);
+}
+
+void
+MacroAssembler::neg64(Register64 reg)
+{
+    negl(reg.low);
+    adcl(Imm32(0), reg.high);
+    negl(reg.high);
 }
 
 
