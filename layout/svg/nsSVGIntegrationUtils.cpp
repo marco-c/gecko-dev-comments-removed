@@ -413,100 +413,108 @@ static bool
 HasMaskToDraw(const nsStyleSVGReset* aSVGReset,
               nsSVGEffects::EffectProperties& aEffectProperties)
 {
-  bool isOK = true;
-  
-  
-  nsSVGMaskFrame *svgMaskFrame = aEffectProperties.GetFirstMaskFrame(&isOK);
+  nsTArray<nsSVGMaskFrame*> svgMaskFrames = aEffectProperties.GetMaskFrames();
+  for (int i = svgMaskFrames.Length() - 1; i >= 0 ; i--) {
+    nsSVGMaskFrame *maskFrame = svgMaskFrames[i];
 
-  
-  
-  bool hasMaskToDraw = (svgMaskFrame != nullptr);
-  if (!hasMaskToDraw) {
-    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, aSVGReset->mMask) {
-      if (!aSVGReset->mMask.mLayers[i].mImage.IsEmpty()) {
-        hasMaskToDraw = true;
-        break;
-      }
+    
+    if (maskFrame || !aSVGReset->mMask.mLayers[i].mImage.IsEmpty()) {
+      return true;
     }
   }
 
-  return hasMaskToDraw;
+  return false;
 }
 
 static void
 GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
                     float aOpacity, nsStyleContext* aSC,
                     nsSVGEffects::EffectProperties& aEffectProperties,
-                    gfxMatrix aOriginMatrix, Matrix& aOutMaskTransform,
+                    const gfxPoint& aOffest, Matrix& aOutMaskTransform,
                     RefPtr<SourceSurface>& aOutMaskSurface)
 {
   const nsStyleSVGReset *svgReset = aSC->StyleSVGReset();
   MOZ_ASSERT(HasMaskToDraw(svgReset, aEffectProperties));
 
-  
-  
-  nsSVGMaskFrame *svgMaskFrame = aEffectProperties.GetFirstMaskFrame();
+  nsTArray<nsSVGMaskFrame *> svgMaskFrames = aEffectProperties.GetMaskFrames();
+  MOZ_ASSERT(svgMaskFrames.Length() == svgReset->mMask.mImageCount);
+
+  gfxMatrix cssPxToDevPxMatrix =
+    nsSVGIntegrationUtils::GetCSSPxToDevPxMatrix(aParams.frame);
+
   gfxContext& ctx = aParams.ctx;
+  ctx.Save();
+  ctx.SetMatrix(gfxMatrix());
+  gfxRect clipExtents = ctx.GetClipExtents();
+  IntRect maskSurfaceRect = RoundedOut(ToRect(clipExtents));
+  ctx.Restore();
 
-  if (svgMaskFrame) {
-    gfxMatrix cssPxToDevPxMatrix =
-      nsSVGIntegrationUtils::GetCSSPxToDevPxMatrix(aParams.frame);
+  
+  
+  
+  RefPtr<DrawTarget> maskDT =
+    (ctx.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS)
+    ? Factory::CreateDrawTarget(BackendType::SKIA, maskSurfaceRect.Size(),
+                                SurfaceFormat::A8)
+    : ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
+                                                   SurfaceFormat::A8);
+  RefPtr<gfxContext> maskContext = gfxContext::ForDrawTarget(maskDT);
+
+  
+  
+  gfxMatrix maskSurfaceMatrix =
+    ctx.CurrentMatrix() * gfxMatrix::Translation(-maskSurfaceRect.TopLeft());
+  maskContext->SetMatrix(maskSurfaceMatrix);
+
+  
+  
+  for (int i = svgMaskFrames.Length() - 1; i >= 0 ; i--) {
+    nsSVGMaskFrame *maskFrame = svgMaskFrames[i];
 
     
-    aOutMaskSurface = svgMaskFrame->GetMaskForMaskedFrame(&ctx,
-                                                          aParams.frame,
-                                                          cssPxToDevPxMatrix,
-                                                          aOpacity,
-                                                          &aOutMaskTransform,
-                                                          svgReset->mMask.mLayers[0].mMaskMode);
-  } else {
     
-    gfxRect clipRect = ctx.GetClipExtents();
-    {
-      gfxContextMatrixAutoSaveRestore matRestore(&ctx);
+    if (maskFrame) {
+      Matrix svgMaskMatrix;
+      RefPtr<SourceSurface> svgMask =
+        maskFrame->GetMaskForMaskedFrame(maskContext, aParams.frame,
+                                         cssPxToDevPxMatrix, aOpacity,
+                                         &svgMaskMatrix,
+                                         svgReset->mMask.mLayers[i].mMaskMode);
+      if (svgMask) {
+        gfxContextMatrixAutoSaveRestore matRestore(maskContext);
 
-      ctx.SetMatrix(gfxMatrix());
-      clipRect = ctx.GetClipExtents();
+        maskContext->Multiply(ThebesMatrix(svgMaskMatrix));
+        Rect drawRect = IntRectToRect(IntRect(IntPoint(0, 0), svgMask->GetSize()));
+        maskDT->DrawSurface(svgMask, drawRect, drawRect);
+      }
+    } else {
+      gfxContextMatrixAutoSaveRestore matRestore(maskContext);
+
+      maskContext->Multiply(gfxMatrix::Translation(-aOffest));
+      CompositionOp compositionOp =
+        nsCSSRendering::GetGFXCompositeMode(svgReset->mMask.mLayers[i].mComposite);
+      nsRenderingContext rc(maskContext);
+      nsCSSRendering::PaintBGParams  params =
+        nsCSSRendering::PaintBGParams::ForSingleLayer(*aParams.frame->PresContext(),
+                                                      rc, aParams.dirtyRect,
+                                                      aParams.borderArea,
+                                                      aParams.frame,
+                                                      aParams.builder->GetBackgroundPaintFlags() |
+                                                      nsCSSRendering::PAINTBG_MASK_IMAGE,
+                                                      i, compositionOp);
+
+      
+      Unused << nsCSSRendering::PaintBackgroundWithSC(params, aSC,
+                                                      *aParams.frame->StyleBorder());
     }
-    IntRect drawRect = RoundedOut(ToRect(clipRect));
-
-    
-    
-    
-    RefPtr<DrawTarget> targetDT =
-      (ctx.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS) ?
-        Factory::CreateDrawTarget(BackendType::SKIA, drawRect.Size(),
-                                  SurfaceFormat::A8) :
-        ctx.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(),
-                                                     SurfaceFormat::A8);
-
-    if (!targetDT || !targetDT->IsValid()) {
-      return;
-    }
-
-    RefPtr<gfxContext> target = gfxContext::ForDrawTarget(targetDT);
-    MOZ_ASSERT(target); 
-    target->SetMatrix(aOriginMatrix * gfxMatrix::Translation(-drawRect.TopLeft()));
-
-    
-    nsRenderingContext rc(target);
-    nsCSSRendering::PaintBGParams params =
-      nsCSSRendering::PaintBGParams::ForAllLayers(*aParams.frame->PresContext(),
-                                                  rc, aParams.dirtyRect,
-                                                  aParams.borderArea,
-                                                  aParams.frame,
-                                                  aParams.builder->GetBackgroundPaintFlags() |
-                                                  nsCSSRendering::PAINTBG_MASK_IMAGE);
-    
-    Unused << nsCSSRendering::PaintBackgroundWithSC(params, aSC,
-                                                    *aParams.frame->StyleBorder());
-    aOutMaskSurface = targetDT->Snapshot();
-
-    
-    Matrix mat = ToMatrix(ctx.CurrentMatrix());
-    mat.Invert();
-    aOutMaskTransform = Matrix::Translation(drawRect.x, drawRect.y) * mat;
   }
+
+  aOutMaskTransform = ToMatrix(maskSurfaceMatrix);
+  if (!aOutMaskTransform.Invert()) {
+    return;
+  }
+
+  aOutMaskSurface = maskDT->Snapshot();
 }
 
 void
@@ -632,7 +640,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
 
     if (hasMaskToDraw) {
       GenerateMaskSurface(aParams, opacity, firstFrame->StyleContext(),
-                          effectProperties, matrixAutoSaveRestore.Matrix(),
+                          effectProperties, devPixelOffsetToUserSpace,
                           maskTransform, maskSurface);
     }
 
