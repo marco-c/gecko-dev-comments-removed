@@ -39,4 +39,11 @@ function run_test() {
   
   
   
+
+  
+  
+  let testToken = testSlot.getToken();
+  notEqual(testToken, null, "getToken() should succeed");
+  equal(testToken.tokenLabel, "Test PKCS11 Tokeñ Label",
+        "Spot check: the actual and expected test token labels should be equal");
 }
