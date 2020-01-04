@@ -183,6 +183,19 @@ add_task(function* multipleWindows() {
   yield BrowserTestUtils.closeWindow(win3);
 });
 
+add_task(function* enableOutsideNotification() {
+  
+  
+  Services.prefs.setBoolPref(SUGGEST_ALL_PREF, true);
+  Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, false);
+  yield setUserMadeChoicePref(false);
+
+  Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, true);
+  gURLBar.focus();
+  yield promiseAutocompleteResultPopup("foo");
+  assertVisible(false);
+});
+
 
 
 
