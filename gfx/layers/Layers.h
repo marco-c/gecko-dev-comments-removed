@@ -1046,6 +1046,26 @@ public:
 
 
 
+  void SetScrolledClip(const Maybe<LayerClip>& aScrolledClip)
+  {
+    if (mScrolledClip != aScrolledClip) {
+      MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ScrolledClip", this));
+      mScrolledClip = aScrolledClip;
+      Mutated();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1281,6 +1301,7 @@ public:
   float GetOpacity() { return mOpacity; }
   gfx::CompositionOp GetMixBlendMode() const { return mMixBlendMode; }
   const Maybe<ParentLayerIntRect>& GetClipRect() const { return mClipRect; }
+  const Maybe<LayerClip>& GetScrolledClip() const { return mScrolledClip; }
   uint32_t GetContentFlags() { return mContentFlags; }
   const gfx::IntRect& GetLayerBounds() const { return mLayerBounds; }
   const LayerIntRegion& GetVisibleRegion() const { return mVisibleRegion; }
@@ -1850,6 +1871,7 @@ protected:
   gfx::CompositionOp mMixBlendMode;
   bool mForceIsolatedGroup;
   Maybe<ParentLayerIntRect> mClipRect;
+  Maybe<LayerClip> mScrolledClip;
   gfx::IntRect mTileSourceRect;
   gfx::TiledIntRegion mInvalidRegion;
   nsTArray<RefPtr<AsyncPanZoomController> > mApzcs;
