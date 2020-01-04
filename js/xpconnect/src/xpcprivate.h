@@ -744,8 +744,8 @@ public:
 private:
 
     
-    XPCCallContext(const XPCCallContext& r); 
-    XPCCallContext& operator= (const XPCCallContext& r); 
+    XPCCallContext(const XPCCallContext& r) = delete;
+    XPCCallContext& operator= (const XPCCallContext& r) = delete;
 
 private:
     
@@ -1034,7 +1034,7 @@ public:
 protected:
     virtual ~XPCWrappedNativeScope();
 
-    XPCWrappedNativeScope(); 
+    XPCWrappedNativeScope() = delete;
 
 private:
     class ClearInterpositionsObserver final : public nsIObserver {
@@ -1262,7 +1262,7 @@ class XPCNativeInterface final
   protected:
     static XPCNativeInterface* NewInstance(nsIInterfaceInfo* aInfo);
 
-    XPCNativeInterface();   
+    XPCNativeInterface() = delete;
     XPCNativeInterface(nsIInterfaceInfo* aInfo, jsid aName)
       : mInfo(aInfo), mName(aName), mMemberCount(0), mMarked(0)
     {
@@ -1274,8 +1274,8 @@ class XPCNativeInterface final
 
     void* operator new(size_t, void* p) CPP_THROW_NEW {return p;}
 
-    XPCNativeInterface(const XPCNativeInterface& r); 
-    XPCNativeInterface& operator= (const XPCNativeInterface& r); 
+    XPCNativeInterface(const XPCNativeInterface& r) = delete;
+    XPCNativeInterface& operator= (const XPCNativeInterface& r) = delete;
 
 private:
     nsCOMPtr<nsIInterfaceInfo> mInfo;
@@ -1603,8 +1603,8 @@ public:
 private:
 
     
-    XPCNativeScriptableInfo(const XPCNativeScriptableInfo& r); 
-    XPCNativeScriptableInfo& operator= (const XPCNativeScriptableInfo& r); 
+    XPCNativeScriptableInfo(const XPCNativeScriptableInfo& r) = delete;
+    XPCNativeScriptableInfo& operator= (const XPCNativeScriptableInfo& r) = delete;
 
 private:
     nsCOMPtr<nsIXPCScriptable>  mCallback;
@@ -1750,8 +1750,8 @@ public:
 
 protected:
     
-    XPCWrappedNativeProto(const XPCWrappedNativeProto& r); 
-    XPCWrappedNativeProto& operator= (const XPCWrappedNativeProto& r); 
+    XPCWrappedNativeProto(const XPCWrappedNativeProto& r) = delete;
+    XPCWrappedNativeProto& operator= (const XPCWrappedNativeProto& r) = delete;
 
     
     XPCWrappedNativeProto(XPCWrappedNativeScope* Scope,
@@ -2062,7 +2062,7 @@ public:
 
     
 protected:
-    XPCWrappedNative(); 
+    XPCWrappedNative() = delete;
 
     
     XPCWrappedNative(already_AddRefed<nsISupports>&& aIdentity,
@@ -2192,7 +2192,7 @@ private:
                                       nsIException* aSyntheticException = nullptr);
     virtual ~nsXPCWrappedJSClass();
 
-    nsXPCWrappedJSClass();   
+    nsXPCWrappedJSClass() = delete;
     nsXPCWrappedJSClass(JSContext* cx, REFNSIID aIID,
                         nsIInterfaceInfo* aInfo);
 
@@ -2373,7 +2373,7 @@ public:
 private:
     virtual ~XPCJSObjectHolder();
 
-    XPCJSObjectHolder(); 
+    XPCJSObjectHolder() = delete;
 
     JS::Heap<JSObject*> mJSObj;
 };
@@ -2518,7 +2518,7 @@ public:
                                        JS::Value* jsExceptionPtr);
 
 private:
-    XPCConvert(); 
+    XPCConvert() = delete;
 
 };
 
@@ -2625,7 +2625,7 @@ public:
     static already_AddRefed<nsJSIID> NewID(nsIInterfaceInfo* aInfo);
 
     explicit nsJSIID(nsIInterfaceInfo* aInfo);
-    nsJSIID(); 
+    nsJSIID() = delete;
 
 private:
     virtual ~nsJSIID();
