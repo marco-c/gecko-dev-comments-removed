@@ -43,12 +43,6 @@ uint32_t GetRow(Accessible* aAccessible);
 
 
 uint32_t GetCell(Accessible* aAccessible);
-
-
-
-
-uint32_t GetEmbeddedObject(Accessible* aAccessible);
-
 } 
 } 
 } 
