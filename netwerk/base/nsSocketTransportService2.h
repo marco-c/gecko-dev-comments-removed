@@ -94,16 +94,7 @@ public:
     static PRCallOnceType gMaxCountInitOnce;
     static PRStatus DiscoverMaxCount();
 
-    
-    
-    
-    
-    
-    
-    
-    bool CanAttachSocket() {
-        return mActiveCount + mIdleCount < gMaxCount;
-    }
+    bool CanAttachSocket();
 
     
     
