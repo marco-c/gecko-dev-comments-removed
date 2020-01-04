@@ -154,10 +154,15 @@ MacroAssemblerMIPS::convertFloat32ToInt32(FloatRegister src, Register dest,
     
     
     
+    
+    
     as_cvtws(ScratchFloat32Reg, src);
     as_mfc1(dest, ScratchFloat32Reg);
     as_cvtsw(ScratchFloat32Reg, ScratchFloat32Reg);
     ma_bc1s(src, ScratchFloat32Reg, fail, Assembler::DoubleNotEqualOrUnordered);
+
+    
+    ma_b(dest, Imm32(INT32_MAX), fail, Assembler::Equal);
 
     if (negativeZeroCheck) {
         Label notZero;
