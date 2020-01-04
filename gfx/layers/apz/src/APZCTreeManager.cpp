@@ -7,6 +7,7 @@
 #include "APZCTreeManager.h"
 #include "AsyncPanZoomController.h"
 #include "Compositor.h"                 
+#include "DragTracker.h"                
 #include "gfxPrefs.h"                   
 #include "HitTestingTreeNode.h"         
 #include "InputBlockState.h"            
@@ -618,10 +619,6 @@ WillHandleWheelEvent(WidgetWheelEvent* aEvent)
 static bool
 WillHandleMouseEvent(const WidgetMouseEventBase& aEvent)
 {
-  if (!gfxPrefs::APZDragEnabled()) {
-    return false;
-  }
-
   return aEvent.mMessage == eMouseMove ||
          aEvent.mMessage == eMouseDown ||
          aEvent.mMessage == eMouseUp;
@@ -674,6 +671,14 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
     } case MOUSE_INPUT: {
       MouseInput& mouseInput = aEvent.AsMouseInput();
 
+      if (DragTracker::StartsDrag(mouseInput)) {
+        
+        
+        
+        
+        FlushRepaintsToClearScreenToGeckoTransform();
+      }
+
       RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(mouseInput.mOrigin,
                                                             &hitResult);
 
@@ -692,12 +697,20 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         
         apzc->GetGuid(aOutTargetGuid);
 
-        
-        
-        
-        
-        
-        
+        if (result == nsEventStatus_eIgnore) {
+          
+          
+          
+          
+          ScreenToParentLayerMatrix4x4 transformToApzc = GetScreenToApzcTransform(apzc);
+          ParentLayerToScreenMatrix4x4 transformToGecko = GetApzcToGeckoTransform(apzc);
+          ScreenToScreenMatrix4x4 outTransform = transformToApzc * transformToGecko;
+          Maybe<ScreenPoint> untransformedRefPoint = UntransformBy(
+            outTransform, mouseInput.mOrigin);
+          if (untransformedRefPoint) {
+            mouseInput.mOrigin = *untransformedRefPoint;
+          }
+        }
       }
       break;
     } case SCROLLWHEEL_INPUT: {

@@ -207,7 +207,9 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
   mDragTracker.Update(aEvent);
 
   if (!newBlock && !block) {
-    return nsEventStatus_eConsumeDoDefault;
+    
+    
+    return nsEventStatus_eIgnore;
   }
 
   if (!block) {
