@@ -320,7 +320,9 @@ private:
 
 
 
-  DebugOnly<bool> mAsyncExecutionThreadIsAlive;
+#ifdef DEBUG
+  bool mAsyncExecutionThreadIsAlive;
+#endif
 
   
 
