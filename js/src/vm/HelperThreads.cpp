@@ -1416,8 +1416,11 @@ HelperThread::handleParseWorkload()
 
     
     
-    if (!HelperThreadState().parseFinishedList().append(task))
-        CrashAtUnhandlableOOM("handleParseWorkload");
+    {
+        AutoEnterOOMUnsafeRegion oomUnsafe;
+        if (!HelperThreadState().parseFinishedList().append(task))
+            oomUnsafe.crash("handleParseWorkload");
+    }
 
     currentTask.reset();
 
