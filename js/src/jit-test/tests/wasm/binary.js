@@ -1,8 +1,5 @@
 load(libdir + "wasm.js");
 
-if (!wasmIsSupported())
-    quit();
-
 
 const magic0 = 0;
 const magic1 = 97;  
