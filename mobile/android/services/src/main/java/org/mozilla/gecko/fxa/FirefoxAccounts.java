@@ -33,40 +33,6 @@ import android.os.Bundle;
 public class FirefoxAccounts {
   private static final String LOG_TAG = FirefoxAccounts.class.getSimpleName();
 
-  public enum SyncHint {
-    
-
-
-
-
-
-    SCHEDULE_NOW,
-
-    
-
-
-
-
-    IGNORE_LOCAL_RATE_LIMIT,
-
-    
-
-
-
-
-    IGNORE_REMOTE_SERVER_BACKOFF,
-  }
-
-  public static final EnumSet<SyncHint> SOON = EnumSet.noneOf(SyncHint.class);
-
-  public static final EnumSet<SyncHint> NOW = EnumSet.of(
-      SyncHint.SCHEDULE_NOW);
-
-  public static final EnumSet<SyncHint> FORCE = EnumSet.of(
-      SyncHint.SCHEDULE_NOW,
-      SyncHint.IGNORE_LOCAL_RATE_LIMIT,
-      SyncHint.IGNORE_REMOTE_SERVER_BACKOFF);
-
   
 
 
@@ -182,54 +148,21 @@ public class FirefoxAccounts {
     return account.name;
   }
 
-  protected static void putHintsToSync(final Bundle extras, EnumSet<SyncHint> syncHints) {
-    
-    if (syncHints == null) {
-      throw new IllegalArgumentException("syncHints must not be null");
-    }
+  public static void logSyncOptions(Bundle syncOptions) {
+    final boolean scheduleNow = syncOptions.getBoolean(ContentResolver.SYNC_EXTRAS_IGNORE_BACKOFF, false);
 
-    final boolean scheduleNow = syncHints.contains(SyncHint.SCHEDULE_NOW);
-    final boolean ignoreLocalRateLimit = syncHints.contains(SyncHint.IGNORE_LOCAL_RATE_LIMIT);
-    final boolean ignoreRemoteServerBackoff = syncHints.contains(SyncHint.IGNORE_REMOTE_SERVER_BACKOFF);
-
-    extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, scheduleNow);
-    
-    
-    
-    
-    extras.putBoolean(FxAccountSyncAdapter.SYNC_EXTRAS_RESPECT_LOCAL_RATE_LIMIT, !ignoreLocalRateLimit);
-    extras.putBoolean(FxAccountSyncAdapter.SYNC_EXTRAS_RESPECT_REMOTE_SERVER_BACKOFF, !ignoreRemoteServerBackoff);
+    Logger.info(LOG_TAG, "Sync options -- scheduling now: " + scheduleNow);
   }
 
-  public static EnumSet<SyncHint> getHintsToSyncFromBundle(final Bundle extras) {
-    final EnumSet<SyncHint> syncHints = EnumSet.noneOf(SyncHint.class);
-
-    final boolean scheduleNow = extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
-    final boolean ignoreLocalRateLimit = !extras.getBoolean(FxAccountSyncAdapter.SYNC_EXTRAS_RESPECT_LOCAL_RATE_LIMIT, false);
-    final boolean ignoreRemoteServerBackoff = !extras.getBoolean(FxAccountSyncAdapter.SYNC_EXTRAS_RESPECT_REMOTE_SERVER_BACKOFF, false);
-
-    if (scheduleNow) {
-      syncHints.add(SyncHint.SCHEDULE_NOW);
-    }
-    if (ignoreLocalRateLimit) {
-      syncHints.add(SyncHint.IGNORE_LOCAL_RATE_LIMIT);
-    }
-    if (ignoreRemoteServerBackoff) {
-      syncHints.add(SyncHint.IGNORE_REMOTE_SERVER_BACKOFF);
-    }
-
-    return syncHints;
+  public static void requestImmediateSync(final Account account, String[] stagesToSync, String[] stagesToSkip) {
+    final Bundle syncOptions = new Bundle();
+    syncOptions.putBoolean(ContentResolver.SYNC_EXTRAS_IGNORE_BACKOFF, true);
+    syncOptions.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+    requestSync(account, syncOptions, stagesToSync, stagesToSkip);
   }
 
-  public static void logSyncHints(EnumSet<SyncHint> syncHints) {
-    final boolean scheduleNow = syncHints.contains(SyncHint.SCHEDULE_NOW);
-    final boolean ignoreLocalRateLimit = syncHints.contains(SyncHint.IGNORE_LOCAL_RATE_LIMIT);
-    final boolean ignoreRemoteServerBackoff = syncHints.contains(SyncHint.IGNORE_REMOTE_SERVER_BACKOFF);
-
-    Logger.info(LOG_TAG, "Sync hints" +
-        "; scheduling now: " + scheduleNow +
-        "; ignoring local rate limit: " + ignoreLocalRateLimit +
-        "; ignoring remote server backoff: " + ignoreRemoteServerBackoff + ".");
+  public static void requestEventualSync(final Account account, String[] stagesToSync, String[] stagesToSkip) {
+    requestSync(account, Bundle.EMPTY, stagesToSync, stagesToSkip);
   }
 
   
@@ -246,20 +179,18 @@ public class FirefoxAccounts {
 
 
 
-  public static void requestSync(final Account account, EnumSet<SyncHint> syncHints, String[] stagesToSync, String[] stagesToSkip) {
+  protected static void requestSync(final Account account, final Bundle syncOptions, String[] stagesToSync, String[] stagesToSkip) {
     if (account == null) {
       throw new IllegalArgumentException("account must not be null");
     }
-    if (syncHints == null) {
-      throw new IllegalArgumentException("syncHints must not be null");
+    if (syncOptions == null) {
+      throw new IllegalArgumentException("syncOptions must not be null");
     }
 
-    final Bundle extras = new Bundle();
-    putHintsToSync(extras, syncHints);
-    Utils.putStageNamesToSync(extras, stagesToSync, stagesToSkip);
+    Utils.putStageNamesToSync(syncOptions, stagesToSync, stagesToSkip);
 
     Logger.info(LOG_TAG, "Requesting sync.");
-    logSyncHints(syncHints);
+    logSyncOptions(syncOptions);
 
     
     
@@ -267,7 +198,7 @@ public class FirefoxAccounts {
       @Override
       public void run() {
         for (String authority : AndroidFxAccount.DEFAULT_AUTHORITIES_TO_SYNC_AUTOMATICALLY_MAP.keySet()) {
-          ContentResolver.requestSync(account, authority, extras);
+          ContentResolver.requestSync(account, authority, syncOptions);
         }
       }
     });
