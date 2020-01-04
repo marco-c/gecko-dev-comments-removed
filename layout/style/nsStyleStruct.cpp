@@ -1506,7 +1506,7 @@ IsAutonessEqual(const nsStyleSides& aSides1, const nsStyleSides& aSides2)
 
 nsChangeHint
 nsStylePosition::CalcDifference(const nsStylePosition& aOther,
-                                nsStyleContext* aContext) const
+                                const nsStyleVisibility* aOldStyleVisibility) const
 {
   nsChangeHint hint = nsChangeHint(0);
 
@@ -1603,23 +1603,43 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
   bool heightChanged = mHeight != aOther.mHeight ||
                        mMinHeight != aOther.mMinHeight ||
                        mMaxHeight != aOther.mMaxHeight;
-  bool isVertical = WritingMode(aContext).IsVertical();
-  if (isVertical ? widthChanged : heightChanged) {
-    
-    
-    
-    
-    NS_UpdateHint(hint, nsChangeHint_NeedReflow |
-        nsChangeHint_UpdateComputedBSize |
-        nsChangeHint_ReflowChangesSizeOrPosition);
-  }
 
-  if (isVertical ? heightChanged : widthChanged) {
-    
-    
-    NS_UpdateHint(hint, NS_SubtractHint(nsChangeHint_AllReflowHints,
-                                        NS_CombineHint(nsChangeHint_ClearDescendantIntrinsics,
-                                                       nsChangeHint_NeedDirtyReflow)));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aOldStyleVisibility) {
+    bool isVertical = WritingMode(aOldStyleVisibility).IsVertical();
+    if (isVertical ? widthChanged : heightChanged) {
+      
+      
+      
+      
+      
+      NS_UpdateHint(hint, nsChangeHint_NeedReflow |
+          nsChangeHint_UpdateComputedBSize |
+          nsChangeHint_ReflowChangesSizeOrPosition);
+    }
+
+    if (isVertical ? heightChanged : widthChanged) {
+      
+      
+      
+      NS_UpdateHint(hint, NS_SubtractHint(nsChangeHint_AllReflowHints,
+                                          NS_CombineHint(nsChangeHint_ClearDescendantIntrinsics,
+                                                         nsChangeHint_NeedDirtyReflow)));
+    }
+  } else {
+    if (widthChanged || heightChanged) {
+      NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+    }
   }
 
   
