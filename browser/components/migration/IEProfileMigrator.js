@@ -9,6 +9,7 @@ const Ci = Components.interfaces;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+const kLoginsKey = "Software\\Microsoft\\Internet Explorer\\IntelliForms\\Storage2";
 const kMainKey = "Software\\Microsoft\\Internet Explorer\\Main";
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -17,10 +18,16 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource:///modules/MigrationUtils.jsm");
 Cu.import("resource:///modules/MSMigrationUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "ctypes",
+                                  "resource://gre/modules/ctypes.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OSCrypto",
+                                  "resource://gre/modules/OSCrypto.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WindowsRegistry",
                                   "resource://gre/modules/WindowsRegistry.jsm");
+
+Cu.importGlobalProperties(["URL"]);
 
 
 
@@ -114,6 +121,270 @@ History.prototype = {
       }
     });
   }
+};
+
+
+function IE7FormPasswords () {
+}
+
+IE7FormPasswords.prototype = {
+  type: MigrationUtils.resourceTypes.PASSWORDS,
+
+  get exists() {
+    try {
+      let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
+      let key = Cc["@mozilla.org/windows-registry-key;1"].
+                createInstance(nsIWindowsRegKey);
+      key.open(nsIWindowsRegKey.ROOT_KEY_CURRENT_USER, kLoginsKey,
+               nsIWindowsRegKey.ACCESS_READ);
+      let count = key.valueCount;
+      key.close();
+      return count > 0;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  migrate(aCallback) {
+    let historyEnumerator = Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"].
+                            createInstance(Ci.nsISimpleEnumerator);
+    let uris = []; 
+    while (historyEnumerator.hasMoreElements()) {
+      let entry = historyEnumerator.getNext().QueryInterface(Ci.nsIPropertyBag2);
+      let uri = entry.get("uri").QueryInterface(Ci.nsIURI);
+      
+      
+      
+      if (["http", "https", "ftp"].indexOf(uri.scheme) == -1) {
+        continue;
+      }
+
+      uris.push(uri);
+    }
+    this._migrateURIs(uris);
+    aCallback(true);
+  },
+
+  
+
+
+
+  _migrateURIs(uris) {
+    this.ctypesHelpers = new MSMigrationUtils.CtypesHelpers();
+    this._crypto = new OSCrypto();
+    let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
+    let key = Cc["@mozilla.org/windows-registry-key;1"].
+              createInstance(nsIWindowsRegKey);
+    key.open(nsIWindowsRegKey.ROOT_KEY_CURRENT_USER, kLoginsKey,
+             nsIWindowsRegKey.ACCESS_READ);
+
+    let urlsSet = new Set(); 
+    
+    let successfullyDecryptedValues = 0;
+    
+
+
+
+
+
+
+
+    for (let uri of uris) {
+      try {
+        
+        let urlObject = new URL(uri.spec);
+        let url = urlObject.origin + urlObject.pathname;
+        
+        if (urlsSet.has(url)) {
+          continue;
+        }
+        urlsSet.add(url);
+        
+        let hashStr = this._crypto.getIELoginHash(url);
+        if (!key.hasValue(hashStr)) {
+          continue;
+        }
+        let value = key.readBinaryValue(hashStr);
+        
+        if (value == null) {
+          continue;
+        }
+        let data;
+        try {
+          
+          data = this._crypto.decryptData(value, url, true);
+        } catch (e) {
+          continue;
+        }
+        
+        let ieLogins = this._extractDetails(data, uri);
+        
+        
+        if (ieLogins.length) {
+          successfullyDecryptedValues++;
+        }
+        this._addLogins(ieLogins);
+      } catch (e) {
+        Cu.reportError("Error while importing logins for " + uri.spec + ": " + e);
+      }
+    }
+    
+    
+    if (successfullyDecryptedValues < key.valueCount) {
+      Cu.reportError("We failed to decrypt and import some logins. " +
+                     "This is likely because we didn't find the URLs where these " +
+                     "passwords were submitted in the IE history and which are needed to be used " +
+                     "as keys in the decryption.");
+    }
+
+    key.close();
+    this._crypto.finalize();
+    this.ctypesHelpers.finalize();
+  },
+
+  _crypto: null,
+
+  
+
+
+
+  _addLogins(ieLogins) {
+    function addLogin(login, existingLogins) {
+      
+      
+      
+      if (existingLogins.some(l => login.matches(l, true))) {
+        return;
+      }
+      let isUpdate = false; 
+      for (let existingLogin of existingLogins) {
+        if (login.username == existingLogin.username && login.password != existingLogin.password) {
+          
+          
+          if (login.timePasswordChanged > existingLogin.timePasswordChanged) {
+            
+
+            
+            let propBag = Cc["@mozilla.org/hash-property-bag;1"].
+                          createInstance(Ci.nsIWritablePropertyBag);
+            propBag.setProperty("password", login.password);
+            propBag.setProperty("timePasswordChanged", login.timePasswordChanged);
+            Services.logins.modifyLogin(existingLogin, propBag);
+            
+            isUpdate = true;
+          }
+        }
+      }
+      
+      if (!isUpdate) {
+        Services.logins.addLogin(login);
+      }
+    }
+
+    for (let ieLogin of ieLogins) {
+      try {
+        let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
+
+        login.init(ieLogin.url, "", null,
+                   ieLogin.username, ieLogin.password, "", "");
+        login.QueryInterface(Ci.nsILoginMetaInfo);
+        login.timeCreated = ieLogin.creation;
+        login.timeLastUsed = ieLogin.creation;
+        login.timePasswordChanged = ieLogin.creation;
+        
+        
+        let existingLogins = Services.logins.findLogins({}, login.hostname, "", null);
+        addLogin(login, existingLogins);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+  _extractDetails(data, uri) {
+    
+    let loginData = new ctypes.StructType("loginData", [
+      
+      {"unknown1": ctypes.uint32_t},
+      
+      {"headerSize": ctypes.uint32_t},
+      
+      {"dataSize": ctypes.uint32_t},
+      
+      {"unknown2": ctypes.uint32_t},
+      {"unknown3": ctypes.uint32_t},
+      
+      {"dataMax": ctypes.uint32_t},
+      
+      {"unknown4": ctypes.uint32_t},
+      {"unknown5": ctypes.uint32_t},
+      {"unknown6": ctypes.uint32_t}
+    ]);
+
+    
+    let loginItem = new ctypes.StructType("loginItem", [
+      
+      {"usernameOffset": ctypes.uint32_t},
+      
+      {"loDateTime": ctypes.uint32_t},
+      {"hiDateTime": ctypes.uint32_t},
+      
+      {"foo": ctypes.uint32_t},
+      
+      {"passwordOffset": ctypes.uint32_t},
+      
+      {"unknown1": ctypes.uint32_t},
+      {"unknown2": ctypes.uint32_t},
+      {"unknown3": ctypes.uint32_t}
+    ]);
+
+    let url = uri.prePath;
+    let results = [];
+    let arr = this._crypto.stringToArray(data);
+    
+    let cdata = ctypes.unsigned_char.array(arr.length)(arr);
+    
+    let currentLoginData = ctypes.cast(cdata, loginData);
+    let headerSize = currentLoginData.headerSize;
+    let currentInfoIndex = loginData.size;
+    
+    let currentLoginItemPointer = ctypes.cast(cdata.addressOfElement(currentInfoIndex),
+                                              loginItem.ptr);
+    
+    
+    let numLogins = currentLoginData.dataMax / 2;
+    for (let n = 0; n < numLogins; n++) {
+      
+      
+      let currentLoginItem = currentLoginItemPointer.contents;
+      let creation = this.ctypesHelpers.
+                     fileTimeToSecondsSinceEpoch(currentLoginItem.hiDateTime,
+                                                 currentLoginItem.loDateTime) * 1000;
+      let currentResult = {
+        creation: creation,
+        url: url,
+      };
+      
+      currentResult.username =
+        ctypes.cast(cdata.addressOfElement(headerSize + 12 + currentLoginItem.usernameOffset),
+                                          ctypes.char16_t.ptr).readString();
+      
+      currentResult.password =
+        ctypes.cast(cdata.addressOfElement(headerSize + 12 + currentLoginItem.passwordOffset),
+                                          ctypes.char16_t.ptr).readString();
+      results.push(currentResult);
+      
+      currentLoginItemPointer = currentLoginItemPointer.increment();
+    }
+    return results;
+  },
 };
 
 function Settings() {
@@ -243,6 +514,7 @@ Settings.prototype = {
 
 function IEProfileMigrator()
 {
+  this.wrappedJSObject = this; 
 }
 
 IEProfileMigrator.prototype = Object.create(MigratorPrototype);
@@ -252,6 +524,7 @@ IEProfileMigrator.prototype.getResources = function IE_getResources() {
     MSMigrationUtils.getBookmarksMigrator()
   , new History()
   , MSMigrationUtils.getCookiesMigrator()
+  , new IE7FormPasswords()
   , new Settings()
   ];
   return [r for each (r in resources) if (r.exists)];

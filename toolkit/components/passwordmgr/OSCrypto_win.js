@@ -11,14 +11,27 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "ctypes", "resource://gre/modules/ctypes.jsm");
 
+const FLAGS_NOT_SET = 0;
+
+const wintypes = {
+  BOOL: ctypes.bool,
+  BYTE: ctypes.uint8_t,
+  DWORD: ctypes.uint32_t,
+  PBYTE: ctypes.unsigned_char.ptr,
+  PCHAR: ctypes.char.ptr,
+  PDWORD: ctypes.uint32_t.ptr,
+  PVOID: ctypes.voidptr_t,
+  WORD: ctypes.uint16_t,
+}
+
 function OSCrypto() {
   this._structs = {};
   this._functions = new Map();
   this._libs = new Map();
   this._structs.DATA_BLOB = new ctypes.StructType("DATA_BLOB",
                                                   [
-                                                    {cbData: ctypes.uint32_t},
-                                                    {pbData: ctypes.uint8_t.ptr}
+                                                    {cbData: wintypes.DWORD},
+                                                    {pbData: wintypes.PVOID}
                                                   ]);
 
   try {
@@ -29,31 +42,30 @@ function OSCrypto() {
     this._functions.set("CryptProtectData",
                         this._libs.get("crypt32").declare("CryptProtectData",
                                                           ctypes.winapi_abi,
-                                                          ctypes.uint32_t,
+                                                          wintypes.DWORD,
                                                           this._structs.DATA_BLOB.ptr,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.uint32_t,
+                                                          wintypes.PVOID,
+                                                          wintypes.PVOID,
+                                                          wintypes.PVOID,
+                                                          wintypes.PVOID,
+                                                          wintypes.DWORD,
                                                           this._structs.DATA_BLOB.ptr));
-
     this._functions.set("CryptUnprotectData",
                         this._libs.get("crypt32").declare("CryptUnprotectData",
                                                           ctypes.winapi_abi,
-                                                          ctypes.uint32_t,
+                                                          wintypes.DWORD,
                                                           this._structs.DATA_BLOB.ptr,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.voidptr_t,
-                                                          ctypes.uint32_t,
+                                                          wintypes.PVOID,
+                                                          wintypes.PVOID,
+                                                          wintypes.PVOID,
+                                                          wintypes.PVOID,
+                                                          wintypes.DWORD,
                                                           this._structs.DATA_BLOB.ptr));
     this._functions.set("LocalFree",
                         this._libs.get("kernel32").declare("LocalFree",
                                                            ctypes.winapi_abi,
-                                                           ctypes.uint32_t,
-                                                           ctypes.voidptr_t));
+                                                           wintypes.DWORD,
+                                                           wintypes.PVOID));
   } catch (ex) {
     Cu.reportError(ex);
     this.finalize();
@@ -66,28 +78,12 @@ OSCrypto.prototype = {
 
 
 
-  decryptData(array) {
-    let decryptedData = "";
-    let encryptedData = ctypes.uint8_t.array(array.length)(array);
-    let inData = new this._structs.DATA_BLOB(encryptedData.length, encryptedData);
-    let outData = new this._structs.DATA_BLOB();
-    let status = this._functions.get("CryptUnprotectData")(inData.address(), null,
-                                                           null, null, null, 0,
-                                                           outData.address());
-    if (status === 0) {
-      throw new Error("decryptData failed: " + status);
+  arrayToString(arr) {
+    let str = "";
+    for (let i = 0; i < arr.length; i++) {
+      str += String.fromCharCode(arr[i]);
     }
-
-    
-    let len = outData.cbData;
-    let decrypted = ctypes.cast(outData.pbData,
-                                ctypes.uint8_t.array(len).ptr).contents;
-    for (let i = 0; i < decrypted.length; i++) {
-      decryptedData += String.fromCharCode(decrypted[i]);
-    }
-
-    this._functions.get("LocalFree")(outData.pbData);
-    return decryptedData;
+    return str;
   },
 
   
@@ -95,18 +91,128 @@ OSCrypto.prototype = {
 
 
 
-  encryptData(string) {
-    let encryptedData = [];
-    let decryptedData = ctypes.uint8_t.array(string.length)();
+  stringToArray(str) {
+    let arr = [];
+    for (let i = 0; i < str.length; i++) {
+      arr.push(str.charCodeAt(i));
+    }
+    return arr;
+  },
 
-    for (let i = 0; i < string.length; i++) {
-      decryptedData[i] = string.charCodeAt(i);
+  
+
+
+
+
+
+  getIELoginHash(data) {
+    
+    function toHexString(charCode) {
+      return ("00" + charCode.toString(16)).slice(-2);
     }
 
-    let inData = new this._structs.DATA_BLOB(string.length, decryptedData);
+    
+    data += "\0";
+    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
+                    createInstance(Ci.nsIScriptableUnicodeConverter);
+    converter.charset = "UTF-16";
+    
+    
+    let result = {};
+    
+    let dataArray = converter.convertToByteArray(data, result);
+    
+    let cryptoHash = Cc["@mozilla.org/security/hash;1"].
+                     createInstance(Ci.nsICryptoHash);
+    cryptoHash.init(cryptoHash.SHA1);
+    cryptoHash.update(dataArray, dataArray.length);
+    let hash = cryptoHash.finish(false);
+
+    let tail = 0; 
+    
+    for (let c of hash) {
+      tail += c.charCodeAt(0);
+    }
+    hash += String.fromCharCode(tail % 256);
+
+    
+    let hashStr = [toHexString(hash.charCodeAt(i)) for (i in hash)].join("");
+    return hashStr.toUpperCase();
+  },
+
+  
+
+
+
+
+
+
+  decryptData(data, entropy = null) {
+    let array = this.stringToArray(data);
+    let decryptedData = "";
+    let encryptedData = wintypes.BYTE.array(array.length)(array);
+    let inData = new this._structs.DATA_BLOB(encryptedData.length, encryptedData);
     let outData = new this._structs.DATA_BLOB();
+    let entropyParam;
+    if (entropy) {
+      let entropyArray = this.stringToArray(entropy);
+      entropyArray.push(0);
+      let entropyData = wintypes.WORD.array(entropyArray.length)(entropyArray);
+      let optionalEntropy = new this._structs.DATA_BLOB(entropyData.length * 2,
+                                                        entropyData);
+      entropyParam = optionalEntropy.address();
+    } else {
+      entropyParam = null;
+    }
+
+    let status = this._functions.get("CryptUnprotectData")(inData.address(), null,
+                                     entropyParam,
+                                     null, null, FLAGS_NOT_SET,
+                                     outData.address());
+    if (status === 0) {
+      throw new Error("decryptData failed: " + status);
+    }
+
+    
+    let len = outData.cbData;
+    let decrypted = ctypes.cast(outData.pbData,
+                                wintypes.BYTE.array(len).ptr).contents;
+    for (let i = 0; i < decrypted.length; i++) {
+      decryptedData += String.fromCharCode(decrypted[i]);
+    }
+
+    this._functions.get("LocalFree")(outData.pbData);
+    return decryptedData;
+ },
+
+  
+
+
+
+
+
+
+  encryptData(data, entropy = null) {
+    let encryptedData = "";
+    let decryptedData = wintypes.BYTE.array(data.length)(this.stringToArray(data));
+
+    let inData = new this._structs.DATA_BLOB(data.length, decryptedData);
+    let outData = new this._structs.DATA_BLOB();
+    let entropyParam;
+    if (!entropy) {
+      entropyParam = null;
+    } else {
+      let entropyArray = this.stringToArray(entropy);
+      entropyArray.push(0);
+      let entropyData = wintypes.WORD.array(entropyArray.length)(entropyArray);
+      let optionalEntropy = new this._structs.DATA_BLOB(entropyData.length * 2,
+                                                        entropyData);
+      entropyParam = optionalEntropy.address();
+    }
+
     let status = this._functions.get("CryptProtectData")(inData.address(), null,
-                                                         null, null, null, 0,
+                                                         entropyParam,
+                                                         null, null, FLAGS_NOT_SET,
                                                          outData.address());
     if (status === 0) {
       throw new Error("encryptData failed: " + status);
@@ -115,12 +221,8 @@ OSCrypto.prototype = {
     
     let len = outData.cbData;
     let encrypted = ctypes.cast(outData.pbData,
-                                ctypes.uint8_t.array(len).ptr).contents;
-
-    for (let i = 0; i < len; i++) {
-      encryptedData.push(encrypted[i]);
-    }
-
+                                wintypes.BYTE.array(len).ptr).contents;
+    encryptedData = this.arrayToString(encrypted);
     this._functions.get("LocalFree")(outData.pbData);
     return encryptedData;
   },
