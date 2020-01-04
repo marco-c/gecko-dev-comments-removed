@@ -281,18 +281,21 @@ Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target)
     }
 
     if (BOffImm16::IsInRange(offset)) {
-        bool conditional = (inst[0].encode() != inst_bgezal.encode() &&
-                            inst[0].encode() != inst_beq.encode());
-
         inst[0].setBOffImm16(BOffImm16(offset));
         inst[1].makeNop();
 
         
         
-        if (0 && conditional) {
+#ifndef _MIPS_ARCH_LOONGSON3A
+        bool conditional = (inst[0].encode() != inst_bgezal.encode() &&
+                            inst[0].encode() != inst_beq.encode());
+
+        
+        if (conditional) {
             inst[2] = InstImm(op_regimm, zero, rt_bgez, BOffImm16(5 * sizeof(uint32_t))).encode();
             
         }
+#endif
         return;
     }
 
