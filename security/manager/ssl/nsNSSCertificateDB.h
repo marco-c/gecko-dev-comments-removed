@@ -2,14 +2,15 @@
 
 
 
-#ifndef __NSNSSCERTIFICATEDB_H__
-#define __NSNSSCERTIFICATEDB_H__
+#ifndef nsNSSCertificateDB_h
+#define nsNSSCertificateDB_h
 
+#include "certt.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsIX509CertDB.h"
 #include "nsNSSShutDown.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Mutex.h"
-#include "certt.h"
 
 class nsCString;
 class nsIArray;
@@ -70,4 +71,4 @@ private:
     {0xb3, 0x2c, 0x80, 0x12, 0x46, 0x93, 0xd8, 0x71}                   \
   }
 
-#endif
+#endif 

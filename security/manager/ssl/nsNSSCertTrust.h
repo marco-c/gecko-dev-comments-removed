@@ -48,8 +48,6 @@ public:
   
   void SetTrustedCA();
   
-  void SetValidServerPeer();
-  
   void SetValidPeer();
   
   void SetTrustedPeer();
