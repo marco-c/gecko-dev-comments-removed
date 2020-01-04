@@ -309,10 +309,7 @@ public:
 protected:
   virtual ~ImportantRule();
 
-  
-  
-  
-  Declaration* mDeclaration;
+  RefPtr<Declaration> mDeclaration;
 
   friend class StyleRule;
 };
@@ -387,7 +384,7 @@ private:
 
 private:
   nsCSSSelectorList*      mSelector; 
-  Declaration*            mDeclaration;
+  RefPtr<Declaration>     mDeclaration;
   RefPtr<ImportantRule> mImportantRule; 
   RefPtr<DOMCSSStyleRule> mDOMRule;
 

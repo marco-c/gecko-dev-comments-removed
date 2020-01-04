@@ -2491,7 +2491,7 @@ BuildStyleRule(nsCSSProperty aProperty,
                bool aUseSVGMode)
 {
   
-  nsAutoPtr<css::Declaration> declaration(new css::Declaration());
+  RefPtr<css::Declaration> declaration(new css::Declaration());
   declaration->InitializeEmpty();
 
   bool changed; 
@@ -2514,7 +2514,7 @@ BuildStyleRule(nsCSSProperty aProperty,
   }
 
   RefPtr<css::StyleRule> rule = new css::StyleRule(nullptr,
-                                                     declaration.forget(),
+                                                     declaration,
                                                      0, 0);
   return rule.forget();
 }

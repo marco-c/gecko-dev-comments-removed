@@ -49,8 +49,12 @@ public:
 
   Declaration(const Declaration& aCopy);
 
+  NS_INLINE_DECL_REFCOUNTING(Declaration)
+
+private:
   ~Declaration();
 
+public:
   
 
 
@@ -243,7 +247,7 @@ public:
   
 
 
-  Declaration* EnsureMutable();
+  already_AddRefed<Declaration> EnsureMutable();
 
   
 

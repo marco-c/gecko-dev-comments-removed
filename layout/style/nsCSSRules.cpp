@@ -2225,8 +2225,6 @@ nsCSSKeyframeRule::ChangeDeclaration(css::Declaration* aDeclaration)
   nsIDocument* doc = GetDocument();
   MOZ_AUTO_DOC_UPDATE(doc, UPDATE_STYLE, true);
 
-  
-  
   if (aDeclaration != mDeclaration) {
     mDeclaration = aDeclaration;
   }
@@ -2729,8 +2727,6 @@ void
 nsCSSPageRule::ChangeDeclaration(css::Declaration* aDeclaration)
 {
   mImportantRule = nullptr;
-  
-  
   if (aDeclaration != mDeclaration) {
     mDeclaration = aDeclaration;
   }
