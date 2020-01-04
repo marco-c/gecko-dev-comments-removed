@@ -1741,7 +1741,7 @@ SortLexicographically(JSContext* cx, AutoValueVector* vec, size_t len)
     Vector<StringifiedElement, 0, TempAllocPolicy> strElements(cx);
 
     
-    if (!strElements.reserve(2 * len))
+    if (!strElements.resize(2 * len))
         return false;
 
     
@@ -1753,13 +1753,9 @@ SortLexicographically(JSContext* cx, AutoValueVector* vec, size_t len)
         if (!ValueToStringBuffer(cx, (*vec)[i], sb))
             return false;
 
-        StringifiedElement el = { cursor, sb.length(), i };
-        strElements.infallibleAppend(el);
+        strElements[i] = { cursor, sb.length(), i };
         cursor = sb.length();
     }
-
-    
-    JS_ALWAYS_TRUE(strElements.resize(2 * len));
 
     
     return MergeSortByKey(strElements.begin(), len, strElements.begin() + len,
@@ -1780,7 +1776,7 @@ SortNumerically(JSContext* cx, AutoValueVector* vec, size_t len, ComparatorMatch
     Vector<NumericElement, 0, TempAllocPolicy> numElements(cx);
 
     
-    if (!numElements.reserve(2 * len))
+    if (!numElements.resize(2 * len))
         return false;
 
     
@@ -1792,12 +1788,8 @@ SortNumerically(JSContext* cx, AutoValueVector* vec, size_t len, ComparatorMatch
         if (!ToNumber(cx, (*vec)[i], &dv))
             return false;
 
-        NumericElement el = { dv, i };
-        numElements.infallibleAppend(el);
+        numElements[i] = { dv, i };
     }
-
-    
-    JS_ALWAYS_TRUE(numElements.resize(2 * len));
 
     
     return MergeSortByKey(numElements.begin(), len, numElements.begin() + len,
