@@ -2336,6 +2336,7 @@ var CustomizableUIInternal = {
     this.wrapWidgetEventHandler("onBeforeCreated", widget);
     this.wrapWidgetEventHandler("onClick", widget);
     this.wrapWidgetEventHandler("onCreated", widget);
+    this.wrapWidgetEventHandler("onDestroyed", widget);
 
     if (widget.type == "button") {
       widget.onCommand = typeof aData.onCommand == "function" ?
@@ -2438,6 +2439,9 @@ var CustomizableUIInternal = {
             }
           }
         }
+      }
+      if (widgetNode && widget.onDestroyed) {
+        widget.onDestroyed(window.document);
       }
     }
 
@@ -3144,6 +3148,11 @@ this.CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
+
+
+
+
+
 
 
 
