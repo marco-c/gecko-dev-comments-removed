@@ -495,22 +495,20 @@ nsHttpHandler::IsAcceptableEncoding(const char *enc, bool isSecure)
 
     
     
-    bool rv;
+    
+    
+    if (!PL_strncasecmp(enc, "x-", 2))
+        enc += 2;
+
+    
+    
+    if (!PL_strcasecmp(enc, "gzip") || !PL_strcasecmp(enc, "deflate"))
+        return true;
+
     if (isSecure) {
-        rv = nsHttp::FindToken(mHttpsAcceptEncodings.get(), enc, HTTP_LWS ",") != nullptr;
-    } else {
-        rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") != nullptr;
+        return nsHttp::FindToken(mHttpsAcceptEncodings.get(), enc, HTTP_LWS ",") != nullptr;
     }
-    
-    
-    if (!rv &&
-        (!PL_strcasecmp(enc, "gzip") || !PL_strcasecmp(enc, "deflate") ||
-         !PL_strcasecmp(enc, "x-gzip") || !PL_strcasecmp(enc, "x-deflate"))) {
-        rv = true;
-    }
-    LOG(("nsHttpHandler::IsAceptableEncoding %s https=%d %d\n",
-         enc, isSecure, rv));
-    return rv;
+    return nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") != nullptr;
 }
 
 nsresult
