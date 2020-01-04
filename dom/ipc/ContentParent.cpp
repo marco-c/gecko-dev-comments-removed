@@ -1763,7 +1763,6 @@ ContentParent::ShutDownProcess(ShutDownMethod aMethod)
 
   
   
-  
 
   if (aMethod == CLOSE_CHANNEL && !mCalledClose) {
     
@@ -1777,14 +1776,6 @@ ContentParent::ShutDownProcess(ShutDownMethod aMethod)
       KillHard("ShutDownProcess");
     }
 #endif
-  }
-
-  if (aMethod == CLOSE_CHANNEL_WITH_ERROR && !mCalledCloseWithError) {
-    MessageChannel* channel = GetIPCChannel();
-    if (channel) {
-      mCalledCloseWithError = true;
-      channel->CloseWithError();
-    }
   }
 
   const ManagedContainer<POfflineCacheUpdateParent>& ocuParents =
@@ -2315,7 +2306,6 @@ ContentParent::InitializeMembers()
   mMetamorphosed = false;
   mSendPermissionUpdates = false;
   mCalledClose = false;
-  mCalledCloseWithError = false;
   mCalledKillHard = false;
   mCreatedPairedMinidumps = false;
   mShutdownPending = false;
