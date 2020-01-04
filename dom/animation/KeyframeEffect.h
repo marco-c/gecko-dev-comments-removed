@@ -43,6 +43,7 @@ class OwningElementOrCSSPseudoElement;
 class UnrestrictedDoubleOrKeyframeEffectOptions;
 enum class IterationCompositeOperation : uint32_t;
 enum class CompositeOperation : uint32_t;
+struct AnimationPropertyState;
 }
 
 
@@ -306,6 +307,8 @@ public:
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
+
+  void GetPropertyState(nsTArray<AnimationPropertyState>& aStates) const;
 
   
   
