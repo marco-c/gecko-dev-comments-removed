@@ -175,6 +175,17 @@ DefaultJitOptions::DefaultJitOptions()
     
     
     
+    
+    
+    SET_DEFAULT(branchPruningHitCountFactor, 1);
+    SET_DEFAULT(branchPruningInstFactor, 10);
+    SET_DEFAULT(branchPruningBlockSpanFactor, 100);
+    SET_DEFAULT(branchPruningEffectfulInstFactor, 3500);
+    SET_DEFAULT(branchPruningThreshold, 4000);
+
+    
+    
+    
     const char* forcedDefaultIonWarmUpThresholdEnv = "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
     if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
         Maybe<int> value = ParseInt(env);
