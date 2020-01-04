@@ -389,6 +389,15 @@ protected:
 
   void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
 
+  
+  
+  
+  
+  
+  
+  already_AddRefed<nsStyleContext>
+  GetTargetStyleContext(nsIDocument* aDoc = nullptr);
+
   Maybe<OwningAnimationTarget> mTarget;
   RefPtr<Animation> mAnimation;
 
@@ -468,12 +477,6 @@ public:
 
 protected:
   ~KeyframeEffect() override;
-
-  
-  
-  
-  
-  void MaybeUpdateProperties();
 };
 
 } 
