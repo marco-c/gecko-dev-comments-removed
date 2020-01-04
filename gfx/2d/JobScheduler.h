@@ -206,7 +206,7 @@ private:
   void SubmitWaitingJobs();
 
   std::vector<Job*> mWaitingJobs;
-  Mutex mMutex; 
+  CriticalSection mWaitingJobsSection; 
   Atomic<int32_t> mSignals;
 
 #ifdef DEBUG
@@ -216,15 +216,6 @@ private:
 
   friend class Job;
   friend class JobScheduler;
-};
-
-
-
-struct MutexAutoLock {
-    MutexAutoLock(Mutex* aMutex) : mMutex(aMutex) { mMutex->Lock(); }
-    ~MutexAutoLock() { mMutex->Unlock(); }
-protected:
-    Mutex* mMutex;
 };
 
 
