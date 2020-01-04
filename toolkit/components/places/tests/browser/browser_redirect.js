@@ -3,8 +3,6 @@
 
 
 add_task(function* () {
-  waitForExplicitFinish();
-
   const REDIRECT_URI = NetUtil.newURI("http://mochi.test:8888/tests/toolkit/components/places/tests/browser/redirect.sjs");
   const TARGET_URI = NetUtil.newURI("http://mochi.test:8888/tests/toolkit/components/places/tests/browser/redirect-target.html");
 
