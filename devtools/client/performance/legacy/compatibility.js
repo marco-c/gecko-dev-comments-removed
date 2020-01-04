@@ -3,7 +3,6 @@
 
 "use strict";
 
-const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 
@@ -56,7 +55,7 @@ function callFrontMethod(method) {
     
     
     if (!this._target || !this._target.client) {
-      return;
+      return undefined;
     }
     return this._front[method].apply(this._front, arguments);
   };

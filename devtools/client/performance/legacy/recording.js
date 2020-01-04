@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
 const { Task } = require("devtools/shared/task");
 
 const PerformanceIO = require("devtools/client/performance/modules/io");
@@ -94,7 +93,8 @@ LegacyPerformanceRecording.prototype = merge({
 
 
 
-  _onStopRecording: Task.async(function* ({ profilerEndTime, profile, systemClient, systemHost }) {
+  _onStopRecording: Task.async(function* ({ profilerEndTime, profile, systemClient,
+                                            systemHost }) {
     
     
     this._duration = profilerEndTime - this._profilerStartTime;
@@ -139,7 +139,9 @@ LegacyPerformanceRecording.prototype = merge({
       
       
       case "markers": {
-        if (!config.withMarkers) { break; }
+        if (!config.withMarkers) {
+          break;
+        }
         let [markers] = data;
         RecordingUtils.offsetMarkerTimes(markers, this._timelineStartTime);
         RecordingUtils.pushAll(this._markers, markers);
@@ -147,14 +149,18 @@ LegacyPerformanceRecording.prototype = merge({
       }
       
       case "frames": {
-        if (!config.withMarkers) { break; }
+        if (!config.withMarkers) {
+          break;
+        }
         let [, frames] = data;
         RecordingUtils.pushAll(this._frames, frames);
         break;
       }
       
       case "ticks": {
-        if (!config.withTicks) { break; }
+        if (!config.withTicks) {
+          break;
+        }
         let [, timestamps] = data;
         this._ticks = timestamps;
         break;

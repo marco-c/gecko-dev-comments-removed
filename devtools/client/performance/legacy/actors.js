@@ -5,7 +5,6 @@
 
 const { Task } = require("devtools/shared/task");
 
-const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { Poller } = require("devtools/client/shared/poller");
 
@@ -15,7 +14,7 @@ const { TimelineFront } = require("devtools/shared/fronts/timeline");
 const { ProfilerFront } = require("devtools/shared/fronts/profiler");
 
 
-const PROFILER_CHECK_TIMER = 5000; 
+const PROFILER_CHECK_TIMER = 5000;
 
 const TIMELINE_ACTOR_METHODS = [
   "start", "stop",
@@ -33,7 +32,8 @@ function LegacyProfilerFront(target) {
   this._target = target;
   this._onProfilerEvent = this._onProfilerEvent.bind(this);
   this._checkProfilerStatus = this._checkProfilerStatus.bind(this);
-  this._PROFILER_CHECK_TIMER = this._target.TEST_MOCK_PROFILER_CHECK_TIMER || PROFILER_CHECK_TIMER;
+  this._PROFILER_CHECK_TIMER = this._target.TEST_MOCK_PROFILER_CHECK_TIMER ||
+                               PROFILER_CHECK_TIMER;
 
   EventEmitter.decorate(this);
 }
@@ -80,7 +80,8 @@ LegacyProfilerFront.prototype = {
     
     
     if (!this._poller) {
-      this._poller = new Poller(this._checkProfilerStatus, this._PROFILER_CHECK_TIMER, false);
+      this._poller = new Poller(this._checkProfilerStatus, this._PROFILER_CHECK_TIMER,
+                                false);
     }
     if (!this._poller.isPolling()) {
       this._poller.on();
@@ -90,7 +91,13 @@ LegacyProfilerFront.prototype = {
     
     
     
-    let { isActive, currentTime, position, generation, totalSize } = yield this.getStatus();
+    let {
+      isActive,
+      currentTime,
+      position,
+      generation,
+      totalSize
+    } = yield this.getStatus();
 
     if (isActive) {
       return { startTime: currentTime, position, generation, totalSize };
@@ -100,7 +107,9 @@ LegacyProfilerFront.prototype = {
     
     let profilerOptions = {
       entries: options.bufferSize,
-      interval: options.sampleFrequency ? (1000 / (options.sampleFrequency * 1000)) : void 0
+      interval: options.sampleFrequency
+                  ? (1000 / (options.sampleFrequency * 1000))
+                  : void 0
     };
 
     let startInfo = yield this.startProfiler(profilerOptions);
@@ -129,7 +138,7 @@ LegacyProfilerFront.prototype = {
     
     
     if (!data) {
-      return;
+      return undefined;
     }
 
     
@@ -152,7 +161,8 @@ LegacyProfilerFront.prototype = {
 
 
   getProfile: Task.async(function* (options) {
-    let profilerData = yield (CompatUtils.callFrontMethod("getProfile").call(this, options));
+    let profilerData = yield (CompatUtils.callFrontMethod("getProfile")
+                                         .call(this, options));
     
     
     if (profilerData.profile.meta.version === 2) {
@@ -242,8 +252,12 @@ LegacyTimelineFront.prototype = {
 };
 
 
-PROFILER_ACTOR_METHODS.forEach(m => LegacyProfilerFront.prototype[m] = CompatUtils.callFrontMethod(m));
-TIMELINE_ACTOR_METHODS.forEach(m => LegacyTimelineFront.prototype[m] = CompatUtils.callFrontMethod(m));
+PROFILER_ACTOR_METHODS.forEach(m => {
+  LegacyProfilerFront.prototype[m] = CompatUtils.callFrontMethod(m);
+});
+TIMELINE_ACTOR_METHODS.forEach(m => {
+  LegacyTimelineFront.prototype[m] = CompatUtils.callFrontMethod(m);
+});
 
 exports.LegacyProfilerFront = LegacyProfilerFront;
 exports.LegacyTimelineFront = LegacyTimelineFront;
