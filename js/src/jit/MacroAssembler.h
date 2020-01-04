@@ -495,6 +495,12 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
+    CodeOffset nopPatchableToNearJump() PER_SHARED_ARCH;
+    static void patchNopToNearJump(uint8_t* jump, uint8_t* target) PER_SHARED_ARCH;
+    static void patchNearJumpToNop(uint8_t* jump) PER_SHARED_ARCH;
+
+    
+    
     
     void callAndPushReturnAddress(Register reg) DEFINED_ON(x86_shared);
     void callAndPushReturnAddress(Label* label) DEFINED_ON(x86_shared);
