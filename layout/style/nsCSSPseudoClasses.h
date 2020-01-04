@@ -13,6 +13,8 @@
 
 #define CSS_PSEUDO_CLASS_UA_SHEET_ONLY                 (1<<0)
 
+#define CSS_PSEUDO_CLASS_UA_SHEET_AND_CHROME           (1<<1)
+
 class nsIAtom;
 
 class nsCSSPseudoClasses {
@@ -40,6 +42,9 @@ public:
 
   static bool PseudoClassIsUASheetOnly(Type aType) {
     return PseudoClassHasFlags(aType, CSS_PSEUDO_CLASS_UA_SHEET_ONLY);
+  }
+  static bool PseudoClassIsUASheetAndChromeOnly(Type aType) {
+    return PseudoClassHasFlags(aType, CSS_PSEUDO_CLASS_UA_SHEET_AND_CHROME);
   }
 
   
