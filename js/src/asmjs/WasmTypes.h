@@ -876,7 +876,9 @@ enum class Trap
     
     UnalignedAccess,
     
-    BadIndirectCall,
+    IndirectCallToNull,
+    
+    IndirectCallBadSig,
 
     
     
@@ -899,7 +901,8 @@ enum class JumpTarget
     IntegerDivideByZero = unsigned(Trap::IntegerDivideByZero),
     OutOfBounds = unsigned(Trap::OutOfBounds),
     UnalignedAccess = unsigned(Trap::UnalignedAccess),
-    BadIndirectCall = unsigned(Trap::BadIndirectCall),
+    IndirectCallToNull = unsigned(Trap::IndirectCallToNull),
+    IndirectCallBadSig = unsigned(Trap::IndirectCallBadSig),
     ImpreciseSimdConversion = unsigned(Trap::ImpreciseSimdConversion),
     
     StackOverflow,
