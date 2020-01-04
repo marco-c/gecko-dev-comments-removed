@@ -37,9 +37,6 @@ DEFAULT_COMMON_PREFS = {
     
     'app.releaseNotesURL': 'http://localhost/app-dummy/',
     'app.vendorURL': 'http://localhost/app-dummy/',
-
-    
-    'browser.displayedE10SPrompt.1': 5
 }
 
 DEFAULT_NO_CONNECTIONS_PREFS = {
