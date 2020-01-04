@@ -49,9 +49,7 @@ class js::jit::OutOfLineTableSwitch : public OutOfLineCodeBase<CodeGeneratorMIPS
 void
 CodeGeneratorMIPS64::visitOutOfLineBailout(OutOfLineBailout* ool)
 {
-    
-    masm.subPtr(Imm32(2 * sizeof(void*)), StackPointer);
-    masm.storePtr(ImmWord(ool->snapshot()->snapshotOffset()), Address(StackPointer, 0));
+    masm.push(ImmWord(ool->snapshot()->snapshotOffset()));
 
     masm.jump(&deoptLabel_);
 }

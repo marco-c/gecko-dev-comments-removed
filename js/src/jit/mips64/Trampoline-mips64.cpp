@@ -573,20 +573,14 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
 
 
 static void
-PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
+PushBailoutFrame(MacroAssembler& masm, Register spArg)
 {
-    
-    masm.checkStackAlignment();
-
-    
-    masm.PushRegsInMask(AllRegs);
-
     
     
     masm.push(ra);
 
     
-    masm.push(ImmWord(frameClass));
+    masm.PushRegsInMask(AllRegs);
 
     
     masm.movePtr(StackPointer, spArg);
@@ -595,12 +589,11 @@ PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
 static void
 GenerateBailoutThunk(JSContext* cx, MacroAssembler& masm, uint32_t frameClass)
 {
-    PushBailoutFrame(masm, frameClass, a0);
+    PushBailoutFrame(masm, a0);
 
     
     static const uint32_t sizeOfBailoutInfo = sizeof(uintptr_t) * 2;
     masm.subPtr(Imm32(sizeOfBailoutInfo), StackPointer);
-    masm.storePtr(ImmPtr(nullptr), Address(StackPointer, 0));
     masm.movePtr(StackPointer, a1);
 
     masm.setupAlignedABICall();
@@ -611,6 +604,13 @@ GenerateBailoutThunk(JSContext* cx, MacroAssembler& masm, uint32_t frameClass)
     
     masm.loadPtr(Address(StackPointer, 0), a2);
 
+    
+    
+    
+    
+    
+    
+    
     
     
     masm.loadPtr(Address(StackPointer,
