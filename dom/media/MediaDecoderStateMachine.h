@@ -654,6 +654,8 @@ private:
   
   bool NeedToSkipToNextKeyframe();
 
+  void AdjustAudioThresholds();
+
   
   
   
@@ -1136,7 +1138,7 @@ private:
   
   
   
-  bool mAudioCaptured;
+  Watchable<bool> mAudioCaptured;
 
   
   
@@ -1228,7 +1230,7 @@ private:
   
   
   
-  bool mSentFirstFrameLoadedEvent;
+  Watchable<bool> mSentFirstFrameLoadedEvent;
 
   bool mSentPlaybackEndedEvent;
 
