@@ -122,7 +122,7 @@ private:
 
   
   
-  nsRefPtr<nsSVGElement> mElement;
+  RefPtr<nsSVGElement> mElement;
 };
 
 } 

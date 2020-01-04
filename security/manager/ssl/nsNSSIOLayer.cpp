@@ -377,7 +377,7 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
   
   
   
-  nsRefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
+  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
   if (!certVerifier) {
     return NS_OK;
   }
@@ -1035,7 +1035,7 @@ class SSLErrorRunnable : public SyncRunnableBase
     nsHandleSSLError(mInfoObject, mErrType, mErrorCode);
   }
 
-  nsRefPtr<nsNSSSocketInfo> mInfoObject;
+  RefPtr<nsNSSSocketInfo> mInfoObject;
   ::mozilla::psm::SSLErrorMessageType mErrType;
   const PRErrorCode mErrorCode;
 };
@@ -1227,7 +1227,7 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
     
     if (!wantRetry && mozilla::psm::IsNSSErrorCode(err) &&
         !socketInfo->GetErrorCode()) {
-      nsRefPtr<SyncRunnableBase> runnable(new SSLErrorRunnable(socketInfo,
+      RefPtr<SyncRunnableBase> runnable(new SSLErrorRunnable(socketInfo,
                                                              PlainErrorMessage,
                                                              err));
       (void) runnable->DispatchToMainThreadAndWait();
@@ -1799,7 +1799,7 @@ nsSSLIOLayerHelpers::removeInsecureFallbackSite(const nsACString& hostname,
   if (!isPublic()) {
     return;
   }
-  nsRefPtr<nsRunnable> runnable = new FallbackPrefRemover(hostname);
+  RefPtr<nsRunnable> runnable = new FallbackPrefRemover(hostname);
   if (NS_IsMainThread()) {
     runnable->Run();
   } else {
@@ -2096,7 +2096,7 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
     return SECFailure;
   }
 
-  nsRefPtr<nsNSSSocketInfo> info(
+  RefPtr<nsNSSSocketInfo> info(
     reinterpret_cast<nsNSSSocketInfo*>(socket->higher->secret));
 
   CERTCertificate* serverCert = SSL_PeerCertificate(socket);
@@ -2120,7 +2120,7 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
   }
 
   
-  nsRefPtr<ClientAuthDataRunnable> runnable(
+  RefPtr<ClientAuthDataRunnable> runnable(
     new ClientAuthDataRunnable(caNames, pRetCert, pRetKey, info, serverCert));
   nsresult rv = runnable->DispatchToMainThreadAndWait();
   if (NS_FAILED(rv)) {
@@ -2267,7 +2267,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
     nsXPIDLCString hostname;
     mSocketInfo->GetHostName(getter_Copies(hostname));
 
-    nsRefPtr<nsClientAuthRememberService> cars =
+    RefPtr<nsClientAuthRememberService> cars =
       mSocketInfo->SharedState().GetClientAuthRememberService();
 
     bool hasRemembered = false;
@@ -2404,7 +2404,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
         !CERT_LIST_END(node, certList) && CertsToUse < nicknames->numnicknames;
         node = CERT_LIST_NEXT(node)
         ) {
-        nsRefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
+        RefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
 
         if (!tempCert)
           continue;

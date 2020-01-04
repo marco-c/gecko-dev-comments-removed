@@ -12,7 +12,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsTArray.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include <queue>
 
 namespace mozilla {
@@ -171,7 +171,7 @@ public:
   
   
   
-  virtual nsRefPtr<InitPromise> Init() = 0;
+  virtual RefPtr<InitPromise> Init() = 0;
 
   
   virtual nsresult Input(MediaRawData* aSample) = 0;

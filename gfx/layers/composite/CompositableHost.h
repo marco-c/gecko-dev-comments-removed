@@ -11,7 +11,7 @@
 #include "gfxRect.h"                    
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -186,7 +186,7 @@ public:
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) = 0;
 
   struct TimedTexture {
-    nsRefPtr<TextureHost> mTexture;
+    RefPtr<TextureHost> mTexture;
     TimeStamp mTimeStamp;
     gfx::IntRect mPictureRect;
     int32_t mFrameID;
@@ -236,7 +236,7 @@ protected:
   TextureInfo mTextureInfo;
   uint64_t mAsyncID;
   uint64_t mCompositorID;
-  nsRefPtr<Compositor> mCompositor;
+  RefPtr<Compositor> mCompositor;
   Layer* mLayer;
   uint32_t mFlashCounter; 
   bool mAttached;
@@ -262,7 +262,7 @@ public:
   bool Failed() const { return !mSucceeded; }
 
 private:
-  nsRefPtr<CompositableHost> mHost;
+  RefPtr<CompositableHost> mHost;
   bool mSucceeded;
 };
 

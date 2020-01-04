@@ -410,11 +410,11 @@ private:
 
 #ifdef MOZ_HAVE_SHMIMAGE
     
-    nsRefPtr<nsShmImage>  mShmImage;
+    RefPtr<nsShmImage>  mShmImage;
 #endif
 
 #ifdef ACCESSIBILITY
-    nsRefPtr<mozilla::a11y::Accessible> mRootAccessible;
+    RefPtr<mozilla::a11y::Accessible> mRootAccessible;
 
     
 
@@ -511,7 +511,7 @@ private:
 
 
 
-    nsRefPtr<mozilla::widget::IMContextWrapper> mIMContext;
+    RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
     nsAutoPtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
 

@@ -362,7 +362,7 @@ nsMathMLmoFrame::ProcessOperatorData()
       
       
       nscoord em;
-      nsRefPtr<nsFontMetrics> fm;
+      RefPtr<nsFontMetrics> fm;
       nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
                                             fontSizeInflation);
       GetEmHeight(fm, em);
@@ -619,7 +619,7 @@ nsMathMLmoFrame::Stretch(nsRenderingContext& aRenderingContext,
 
   
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
-  nsRefPtr<nsFontMetrics> fm;
+  RefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
                                         fontSizeInflation);
   nscoord axisHeight, height;

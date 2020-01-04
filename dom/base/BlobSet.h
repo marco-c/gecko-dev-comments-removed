@@ -27,9 +27,9 @@ public:
   nsresult AppendVoidPtr(const void* aData, uint32_t aLength);
   nsresult AppendString(const nsAString& aString, bool nativeEOL, JSContext* aCx);
   nsresult AppendBlobImpl(BlobImpl* aBlobImpl);
-  nsresult AppendBlobImpls(const nsTArray<nsRefPtr<BlobImpl>>& aBlobImpls);
+  nsresult AppendBlobImpls(const nsTArray<RefPtr<BlobImpl>>& aBlobImpls);
 
-  nsTArray<nsRefPtr<BlobImpl>>& GetBlobImpls() { Flush(); return mBlobImpls; }
+  nsTArray<RefPtr<BlobImpl>>& GetBlobImpls() { Flush(); return mBlobImpls; }
 
   already_AddRefed<Blob> GetBlobInternal(nsISupports* aParent,
                                          const nsACString& aContentType);
@@ -68,7 +68,7 @@ protected:
       
       
 
-      nsRefPtr<BlobImpl> blobImpl =
+      RefPtr<BlobImpl> blobImpl =
         new BlobImplMemory(mData, mDataLen, EmptyString());
       mBlobImpls.AppendElement(blobImpl);
       mData = nullptr; 
@@ -77,7 +77,7 @@ protected:
     }
   }
 
-  nsTArray<nsRefPtr<BlobImpl>> mBlobImpls;
+  nsTArray<RefPtr<BlobImpl>> mBlobImpls;
   void* mData;
   uint64_t mDataLen;
   uint64_t mDataBufferLen;

@@ -46,18 +46,18 @@ class IDBRequest
 protected:
   
   
-  nsRefPtr<IDBObjectStore> mSourceAsObjectStore;
-  nsRefPtr<IDBIndex> mSourceAsIndex;
-  nsRefPtr<IDBCursor> mSourceAsCursor;
+  RefPtr<IDBObjectStore> mSourceAsObjectStore;
+  RefPtr<IDBIndex> mSourceAsIndex;
+  RefPtr<IDBCursor> mSourceAsCursor;
 
-  nsRefPtr<IDBTransaction> mTransaction;
+  RefPtr<IDBTransaction> mTransaction;
 
 #ifdef DEBUG
   PRThread* mOwningThread;
 #endif
 
   JS::Heap<JS::Value> mResultVal;
-  nsRefPtr<DOMError> mError;
+  RefPtr<DOMError> mError;
 
   nsString mFilename;
   uint64_t mLoggingSerialNumber;
@@ -229,7 +229,7 @@ class IDBOpenDBRequest final
   class WorkerFeature;
 
   
-  nsRefPtr<IDBFactory> mFactory;
+  RefPtr<IDBFactory> mFactory;
 
   nsAutoPtr<WorkerFeature> mWorkerFeature;
 

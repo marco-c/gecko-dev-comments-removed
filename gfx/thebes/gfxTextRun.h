@@ -413,7 +413,7 @@ public:
 
     
     struct GlyphRun {
-        nsRefPtr<gfxFont> mFont;   
+        RefPtr<gfxFont> mFont;   
         uint32_t          mCharacterOffset; 
         uint8_t           mMatchType;
         uint16_t          mOrientation; 
@@ -1004,7 +1004,7 @@ protected:
         bool EqualsUserFont(const gfxUserFontEntry* aUserFont) const;
 
     private:
-        nsRefPtr<gfxFontFamily> mFamily;
+        RefPtr<gfxFontFamily> mFamily;
         
         union {
             gfxFont*            mFont;
@@ -1025,13 +1025,13 @@ protected:
     
     nsTArray<FamilyFace> mFonts;
 
-    nsRefPtr<gfxFont> mDefaultFont;
+    RefPtr<gfxFont> mDefaultFont;
     gfxFontStyle mStyle;
 
     gfxFloat mUnderlineOffset;
     gfxFloat mHyphenWidth;
 
-    nsRefPtr<gfxUserFontSet> mUserFontSet;
+    RefPtr<gfxUserFontSet> mUserFontSet;
     uint64_t mCurrGeneration;  
 
     gfxTextPerfMetrics *mTextPerf;
@@ -1041,8 +1041,8 @@ protected:
     nsAutoPtr<gfxTextRun>   mCachedEllipsisTextRun;
 
     
-    nsRefPtr<gfxFontFamily> mLastPrefFamily;
-    nsRefPtr<gfxFont>       mLastPrefFont;
+    RefPtr<gfxFontFamily> mLastPrefFamily;
+    RefPtr<gfxFont>       mLastPrefFont;
     eFontPrefLang           mLastPrefLang;       
     eFontPrefLang           mPageLang;
     bool                    mLastPrefFirstFont;  

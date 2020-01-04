@@ -57,11 +57,11 @@ protected:
   HandlerCallback() override;
 
 private:
-  nsRefPtr<Promise> mPromise;
+  RefPtr<Promise> mPromise;
   nsString mDirRealPath;
   
   
-  nsRefPtr<BlobImpl> mTargetBlobImpl;
+  RefPtr<BlobImpl> mTargetBlobImpl;
   nsString mTargetRealPath;
   bool mRecursive;
   bool mReturnValue;

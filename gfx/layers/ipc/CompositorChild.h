@@ -167,17 +167,17 @@ private:
   private:
     
     
-    nsRefPtr<mozilla::ipc::SharedMemoryBasic> mBuffer;
+    RefPtr<mozilla::ipc::SharedMemoryBasic> mBuffer;
     CrossProcessMutex* mMutex;
     uint64_t mLayersId;
     
     uint32_t mAPZCId;
   };
 
-  nsRefPtr<ClientLayerManager> mLayerManager;
+  RefPtr<ClientLayerManager> mLayerManager;
   
   
-  nsRefPtr<CompositorParent> mCompositorParent;
+  RefPtr<CompositorParent> mCompositorParent;
 
   
   

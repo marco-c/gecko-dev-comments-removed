@@ -22,7 +22,7 @@
 #include "Units.h"
 #include "mozilla/Mutex.h"
 #include <vector>
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 
 class nsIWidget;
 
@@ -91,7 +91,7 @@ private:
   
   TimeDuration mOldTouchThreshold;
 
-  nsRefPtr<layers::CompositorVsyncScheduler> mCompositorVsyncScheduler;
+  RefPtr<layers::CompositorVsyncScheduler> mCompositorVsyncScheduler;
 };
 
 } 

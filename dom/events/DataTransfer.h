@@ -289,7 +289,7 @@ protected:
   nsTArray<nsTArray<TransferItem> > mItems;
 
   
-  nsRefPtr<FileList> mFiles;
+  RefPtr<FileList> mFiles;
 
   
   nsCOMPtr<mozilla::dom::Element> mDragTarget;

@@ -69,7 +69,7 @@ private:
 
     nsPrefetchNode                   *mQueueHead;
     nsPrefetchNode                   *mQueueTail;
-    nsRefPtr<nsPrefetchNode>          mCurrentNode;
+    RefPtr<nsPrefetchNode>          mCurrentNode;
     int32_t                           mStopCount;
     
     int32_t                           mHaveProcessed;
@@ -109,7 +109,7 @@ public:
 private:
     ~nsPrefetchNode() {}
 
-    nsRefPtr<nsPrefetchService> mService;
+    RefPtr<nsPrefetchService> mService;
     nsCOMPtr<nsIChannel>        mChannel;
     nsCOMPtr<nsIChannel>        mRedirectChannel;
     int64_t                     mBytesRead;

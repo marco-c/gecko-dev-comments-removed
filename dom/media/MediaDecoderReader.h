@@ -67,9 +67,9 @@ public:
     CANCELED
   };
 
-  typedef MozPromise<nsRefPtr<MetadataHolder>, ReadMetadataFailureReason,  true> MetadataPromise;
-  typedef MozPromise<nsRefPtr<MediaData>, NotDecodedReason,  true> AudioDataPromise;
-  typedef MozPromise<nsRefPtr<MediaData>, NotDecodedReason,  true> VideoDataPromise;
+  typedef MozPromise<RefPtr<MetadataHolder>, ReadMetadataFailureReason,  true> MetadataPromise;
+  typedef MozPromise<RefPtr<MediaData>, NotDecodedReason,  true> AudioDataPromise;
+  typedef MozPromise<RefPtr<MediaData>, NotDecodedReason,  true> VideoDataPromise;
   typedef MozPromise<int64_t, nsresult,  true> SeekPromise;
 
   
@@ -127,7 +127,7 @@ public:
   
   
   
-  virtual nsRefPtr<ShutdownPromise> Shutdown();
+  virtual RefPtr<ShutdownPromise> Shutdown();
 
   virtual bool OnTaskQueue() const
   {
@@ -154,7 +154,7 @@ public:
   
   
   
-  virtual nsRefPtr<AudioDataPromise> RequestAudioData();
+  virtual RefPtr<AudioDataPromise> RequestAudioData();
 
   
   
@@ -162,7 +162,7 @@ public:
   
   
   
-  virtual nsRefPtr<VideoDataPromise>
+  virtual RefPtr<VideoDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe, int64_t aTimeThreshold);
 
   friend class ReRequestVideoWithSkipTask;
@@ -172,7 +172,7 @@ public:
   
   
   virtual bool IsWaitForDataSupported() { return false; }
-  virtual nsRefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) { MOZ_CRASH(); }
+  virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) { MOZ_CRASH(); }
 
   virtual bool HasAudio() = 0;
   virtual bool HasVideo() = 0;
@@ -180,7 +180,7 @@ public:
   
   
   
-  virtual nsRefPtr<MetadataPromise> AsyncReadMetadata();
+  virtual RefPtr<MetadataPromise> AsyncReadMetadata();
 
   
   
@@ -196,7 +196,7 @@ public:
   
   
   
-  virtual nsRefPtr<SeekPromise>
+  virtual RefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) = 0;
 
   
@@ -293,7 +293,7 @@ public:
   
   void DispatchNotifyDataArrived(uint32_t aLength, int64_t aOffset, bool aThrottleUpdates)
   {
-    nsRefPtr<nsRunnable> r =
+    RefPtr<nsRunnable> r =
       NS_NewRunnableMethodWithArg<media::Interval<int64_t>>(this, aThrottleUpdates ? &MediaDecoderReader::ThrottledNotifyDataArrived
                                                                                    : &MediaDecoderReader::NotifyDataArrived,
                                                             media::Interval<int64_t>(aOffset, aOffset + aLength));
@@ -311,7 +311,7 @@ public:
     return mDecoder;
   }
 
-  nsRefPtr<VideoDataPromise> DecodeToFirstVideoData();
+  RefPtr<VideoDataPromise> DecodeToFirstVideoData();
 
   MediaInfo GetMediaInfo() { return mInfo; }
 
@@ -321,7 +321,7 @@ public:
 
   void DispatchSetStartTime(int64_t aStartTime)
   {
-    nsRefPtr<MediaDecoderReader> self = this;
+    RefPtr<MediaDecoderReader> self = this;
     nsCOMPtr<nsIRunnable> r =
       NS_NewRunnableFunction([self, aStartTime] () -> void
     {
@@ -390,13 +390,13 @@ protected:
   AbstractMediaDecoder* mDecoder;
 
   
-  nsRefPtr<TaskQueue> mTaskQueue;
+  RefPtr<TaskQueue> mTaskQueue;
 
   
   WatchManager<MediaDecoderReader> mWatchManager;
 
   
-  nsRefPtr<MediaTimer> mTimer;
+  RefPtr<MediaTimer> mTimer;
 
   
   Canonical<media::TimeIntervals> mBuffered;

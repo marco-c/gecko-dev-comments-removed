@@ -48,11 +48,11 @@ protected:
   SupportsMimeType(const nsACString& aMimeType) override;
 
 private:
-  nsRefPtr<CDMProxy> mProxy;
+  RefPtr<CDMProxy> mProxy;
   
-  nsRefPtr<PDMFactory> mPDM;
+  RefPtr<PDMFactory> mPDM;
   
-  nsRefPtr<TaskQueue> mTaskQueue;
+  RefPtr<TaskQueue> mTaskQueue;
   bool mCDMDecodesAudio;
   bool mCDMDecodesVideo;
 };

@@ -79,7 +79,7 @@ nsDragService::CreateDragImage(nsIDOMNode *aDOMNode,
 
   
   nsIntRect dragRect;
-  nsRefPtr<SourceSurface> surface;
+  RefPtr<SourceSurface> surface;
   nsPresContext* pc;
   DrawDrag(aDOMNode, aRegion,
            mScreenX, mScreenY,
@@ -94,7 +94,7 @@ nsDragService::CreateDragImage(nsIDOMNode *aDOMNode,
 
   psdi->crColorKey = CLR_NONE;
 
-  nsRefPtr<DataSourceSurface> dataSurface =
+  RefPtr<DataSourceSurface> dataSurface =
     Factory::CreateDataSourceSurface(IntSize(bmWidth, bmHeight),
                                      SurfaceFormat::B8G8R8A8);
   NS_ENSURE_TRUE(dataSurface, false);
@@ -104,7 +104,7 @@ nsDragService::CreateDragImage(nsIDOMNode *aDOMNode,
     return false;
   }
 
-  nsRefPtr<DrawTarget> dt =
+  RefPtr<DrawTarget> dt =
     Factory::CreateDrawTargetForData(BackendType::CAIRO,
                                      map.mData,
                                      dataSurface->GetSize(),
@@ -202,7 +202,7 @@ nsDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
   
   
   
-  nsRefPtr<IDataObject> itemToDrag;
+  RefPtr<IDataObject> itemToDrag;
   if (numItemsToDrag > 1) {
     nsDataObjCollection * dataObjCollection = new nsDataObjCollection();
     if (!dataObjCollection)
@@ -215,7 +215,7 @@ nsDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
       if (trans) {
         
         trans->SetRequestingNode(aDOMNode);
-        nsRefPtr<IDataObject> dataObj;
+        RefPtr<IDataObject> dataObj;
         rv = nsClipboard::CreateNativeDataObject(trans,
                                                  getter_AddRefs(dataObj), uri);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -265,7 +265,7 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
 {
   
   
-  nsRefPtr<nsNativeDragSource> nativeDragSrc =
+  RefPtr<nsNativeDragSource> nativeDragSrc =
     new nsNativeDragSource(mDataTransfer);
 
   
@@ -290,7 +290,7 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
   StartDragSession();
   OpenDragPopup();
 
-  nsRefPtr<IAsyncOperation> pAsyncOp;
+  RefPtr<IAsyncOperation> pAsyncOp;
   
   if (SUCCEEDED(aDataObj->QueryInterface(IID_IAsyncOperation,
                                          getter_AddRefs(pAsyncOp)))) {

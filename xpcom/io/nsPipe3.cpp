@@ -11,7 +11,7 @@
 #include "nsIPipe.h"
 #include "nsIEventTarget.h"
 #include "nsISeekableStream.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsSegmentedBuffer.h"
 #include "nsStreamUtils.h"
 #include "nsCOMPtr.h"
@@ -210,7 +210,7 @@ public:
 private:
   virtual ~nsPipeInputStream();
 
-  nsRefPtr<nsPipe>               mPipe;
+  RefPtr<nsPipe>               mPipe;
 
   int64_t                        mLogicalOffset;
   
@@ -356,7 +356,7 @@ private:
   
   
   
-  nsRefPtr<nsPipeInputStream> mOriginalInput;
+  RefPtr<nsPipeInputStream> mOriginalInput;
 
   ReentrantMonitor    mReentrantMonitor;
   nsSegmentedBuffer   mBuffer;
@@ -572,7 +572,7 @@ nsPipe::Init(bool aNonBlockingIn,
 NS_IMETHODIMP
 nsPipe::GetInputStream(nsIAsyncInputStream** aInputStream)
 {
-  nsRefPtr<nsPipeInputStream> ref = mOriginalInput;
+  RefPtr<nsPipeInputStream> ref = mOriginalInput;
   ref.forget(aInputStream);
   return NS_OK;
 }
@@ -978,7 +978,7 @@ nsPipe::CloneInputStream(nsPipeInputStream* aOriginal,
                          nsIInputStream** aCloneOut)
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-  nsRefPtr<nsPipeInputStream> ref = new nsPipeInputStream(*aOriginal);
+  RefPtr<nsPipeInputStream> ref = new nsPipeInputStream(*aOriginal);
   mInputList.AppendElement(ref);
   ref.forget(aCloneOut);
   return NS_OK;

@@ -101,8 +101,8 @@ private:
   
   void BuildTables(bool trackingProtectionEnabled, nsCString& tables);
 
-  nsRefPtr<nsUrlClassifierDBServiceWorker> mWorker;
-  nsRefPtr<UrlClassifierDBServiceWorkerProxy> mWorkerProxy;
+  RefPtr<nsUrlClassifierDBServiceWorker> mWorker;
+  RefPtr<UrlClassifierDBServiceWorkerProxy> mWorkerProxy;
 
   nsInterfaceHashtable<nsCStringHashKey, nsIUrlClassifierHashCompleter> mCompleters;
 

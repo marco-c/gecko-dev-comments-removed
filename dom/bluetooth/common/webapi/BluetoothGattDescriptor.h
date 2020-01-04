@@ -154,7 +154,7 @@ private:
   
 
 
-  nsRefPtr<BluetoothGattCharacteristic> mCharacteristic;
+  RefPtr<BluetoothGattCharacteristic> mCharacteristic;
 
   
 
@@ -221,11 +221,11 @@ END_BLUETOOTH_NAMESPACE
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>,
   mozilla::dom::bluetooth::BluetoothUuid> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>& aDesc,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>& aDesc,
     const mozilla::dom::bluetooth::BluetoothUuid& aUuid) const
   {
     mozilla::dom::bluetooth::BluetoothUuid uuid;
@@ -244,11 +244,11 @@ public:
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>,
   mozilla::dom::bluetooth::BluetoothAttributeHandle> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>& aDesc,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattDescriptor>& aDesc,
     const mozilla::dom::bluetooth::BluetoothAttributeHandle& aHandle) const
   {
     return aDesc->GetDescriptorHandle() == aHandle;

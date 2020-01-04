@@ -12,7 +12,7 @@
 #include "nsID.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
@@ -95,7 +95,7 @@ private:
   
   
   
-  nsRefPtr<Inner> mInner;
+  RefPtr<Inner> mInner;
 
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOM_CACHE_READSTREAM_IID);

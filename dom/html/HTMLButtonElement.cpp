@@ -391,7 +391,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           
           
           
-          nsRefPtr<HTMLFormElement> form(mForm);
+          RefPtr<HTMLFormElement> form(mForm);
           presShell->HandleDOMEventWithTarget(mForm, &event, &status);
           aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
         }

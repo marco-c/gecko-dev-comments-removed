@@ -106,7 +106,7 @@ public:
 
   bool IsDirectory() const;
 
-  const nsTArray<nsRefPtr<BlobImpl>>* GetSubBlobImpls() const;
+  const nsTArray<RefPtr<BlobImpl>>* GetSubBlobImpls() const;
 
   
   
@@ -173,7 +173,7 @@ protected:
   
   
   
-  nsRefPtr<BlobImpl> mImpl;
+  RefPtr<BlobImpl> mImpl;
 
 private:
   nsCOMPtr<nsISupports> mParent;
@@ -311,7 +311,7 @@ public:
   CreateSlice(uint64_t aStart, uint64_t aLength,
               const nsAString& aContentType, ErrorResult& aRv) = 0;
 
-  virtual const nsTArray<nsRefPtr<BlobImpl>>*
+  virtual const nsTArray<RefPtr<BlobImpl>>*
   GetSubBlobImpls() const = 0;
 
   virtual void GetInternalStream(nsIInputStream** aStream,
@@ -472,7 +472,7 @@ public:
     return nullptr;
   }
 
-  virtual const nsTArray<nsRefPtr<BlobImpl>>*
+  virtual const nsTArray<RefPtr<BlobImpl>>*
   GetSubBlobImpls() const override
   {
     return nullptr;
@@ -680,7 +680,7 @@ private:
   ~BlobImplMemory() {}
 
   
-  nsRefPtr<DataOwner> mDataOwner;
+  RefPtr<DataOwner> mDataOwner;
 };
 
 class BlobImplTemporaryBlob final : public BlobImplBase
@@ -715,7 +715,7 @@ private:
   ~BlobImplTemporaryBlob() {}
 
   uint64_t mStartPos;
-  nsRefPtr<nsTemporaryFileInputStream::FileDescOwner> mFileDescOwner;
+  RefPtr<nsTemporaryFileInputStream::FileDescOwner> mFileDescOwner;
 };
 
 class BlobImplFile : public BlobImplBase

@@ -479,7 +479,7 @@ FrameAnimator::DoBlend(nsIntRect* aDirtyRect,
 
   
   if (!mCompositingFrame) {
-    nsRefPtr<imgFrame> newFrame = new imgFrame;
+    RefPtr<imgFrame> newFrame = new imgFrame;
     nsresult rv = newFrame->InitForDecoder(mSize,
                                            SurfaceFormat::B8G8R8A8);
     if (NS_FAILED(rv)) {
@@ -622,7 +622,7 @@ FrameAnimator::DoBlend(nsIntRect* aDirtyRect,
     
     
     if (!mCompositingPrevFrame) {
-      nsRefPtr<imgFrame> newFrame = new imgFrame;
+      RefPtr<imgFrame> newFrame = new imgFrame;
       nsresult rv = newFrame->InitForDecoder(mSize,
                                              SurfaceFormat::B8G8R8A8);
       if (NS_FAILED(rv)) {

@@ -435,7 +435,7 @@ private:
 
   already_AddRefed<nsIContent> CreateGenConTextNode(nsFrameConstructorState& aState,
                                                     const nsString& aString,
-                                                    nsRefPtr<nsTextNode>* aText,
+                                                    RefPtr<nsTextNode>* aText,
                                                     nsGenConInitializer* aInitializer);
 
   
@@ -995,7 +995,7 @@ private:
       {}
 
       nsIContent * const mContent;
-      nsRefPtr<nsStyleContext> mStyleContext;
+      RefPtr<nsStyleContext> mStyleContext;
     };
 
     
@@ -1121,7 +1121,7 @@ private:
     
     PendingBinding* mPendingBinding;
     
-    nsRefPtr<nsStyleContext> mStyleContext;
+    RefPtr<nsStyleContext> mStyleContext;
     
     int32_t mNameSpaceID;
     

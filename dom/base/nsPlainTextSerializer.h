@@ -192,7 +192,7 @@ private:
 
 
 
-  nsRefPtr<mozilla::dom::Element> mElement;
+  RefPtr<mozilla::dom::Element> mElement;
 
   
   nsAutoTArray<bool, 8> mHasWrittenCellsForRow;

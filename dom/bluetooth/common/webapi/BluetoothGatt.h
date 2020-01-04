@@ -40,7 +40,7 @@ public:
     return mConnectionState;
   }
 
-  void GetServices(nsTArray<nsRefPtr<BluetoothGattService>>& aServices) const
+  void GetServices(nsTArray<RefPtr<BluetoothGattService>>& aServices) const
   {
     aServices = mServices;
   }
@@ -181,7 +181,7 @@ private:
   
 
 
-  nsTArray<nsRefPtr<BluetoothGattService>> mServices;
+  nsTArray<RefPtr<BluetoothGattService>> mServices;
 
   
 

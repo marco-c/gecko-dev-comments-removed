@@ -10,7 +10,7 @@
 #include "mozilla/dom/cache/ActorChild.h"
 #include "mozilla/dom/cache/PCacheOpChild.h"
 #include "mozilla/dom/cache/TypeUtils.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 
 class nsIGlobalObject;
 
@@ -72,7 +72,7 @@ private:
   
   
   nsCOMPtr<nsISupports> mParent;
-  nsRefPtr<Promise> mPromise;
+  RefPtr<Promise> mPromise;
 
   NS_DECL_OWNINGTHREAD
 };

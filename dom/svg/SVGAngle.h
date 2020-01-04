@@ -50,7 +50,7 @@ protected:
   ~SVGAngle();
 
   nsSVGAngle* mVal; 
-  nsRefPtr<nsSVGElement> mSVGElement;
+  RefPtr<nsSVGElement> mSVGElement;
   AngleType mType;
 };
 

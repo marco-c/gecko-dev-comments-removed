@@ -135,7 +135,7 @@ private:
     nsCString                       mJarEntry;
     nsCString                       mInnerJarEntry;
 
-    nsRefPtr<nsInputStreamPump>     mSynthesizedResponsePump;
+    RefPtr<nsInputStreamPump>     mSynthesizedResponsePump;
     int64_t                         mSynthesizedStreamLength;
 
     

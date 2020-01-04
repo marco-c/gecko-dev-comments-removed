@@ -140,7 +140,7 @@ public:
                 uint32_t aQueryCount,
                 nsNavHistoryQueryOptions *aOptions);
 
-  nsRefPtr<nsNavHistoryContainerResultNode> mRootNode;
+  RefPtr<nsNavHistoryContainerResultNode> mRootNode;
 
   nsCOMArray<nsINavHistoryQuery> mQueries;
   nsCOMPtr<nsNavHistoryQueryOptions> mOptions;
@@ -161,15 +161,15 @@ public:
   bool mIsBookmarkFolderObserver;
   bool mIsAllBookmarksObserver;
 
-  typedef nsTArray< nsRefPtr<nsNavHistoryQueryResultNode> > QueryObserverList;
+  typedef nsTArray< RefPtr<nsNavHistoryQueryResultNode> > QueryObserverList;
   QueryObserverList mHistoryObservers;
   QueryObserverList mAllBookmarksObservers;
 
-  typedef nsTArray< nsRefPtr<nsNavHistoryFolderResultNode> > FolderObserverList;
+  typedef nsTArray< RefPtr<nsNavHistoryFolderResultNode> > FolderObserverList;
   nsDataHashtable<nsTrimInt64HashKey, FolderObserverList*> mBookmarkFolderObservers;
   FolderObserverList* BookmarkFolderObserversForId(int64_t aFolderId, bool aCreate);
 
-  typedef nsTArray< nsRefPtr<nsNavHistoryContainerResultNode> > ContainerObserverList;
+  typedef nsTArray< RefPtr<nsNavHistoryContainerResultNode> > ContainerObserverList;
 
   void RecursiveExpandCollapse(nsNavHistoryContainerResultNode* aContainer,
                                bool aExpand);
@@ -348,7 +348,7 @@ public:
     return reinterpret_cast<nsNavHistoryQueryResultNode*>(this);
   }
 
-  nsRefPtr<nsNavHistoryContainerResultNode> mParent;
+  RefPtr<nsNavHistoryContainerResultNode> mParent;
   nsCString mURI; 
   nsCString mTitle;
   nsString mTags;
@@ -459,7 +459,7 @@ public:
   
   
   
-  nsRefPtr<nsNavHistoryResult> mResult;
+  RefPtr<nsNavHistoryResult> mResult;
 
   
   

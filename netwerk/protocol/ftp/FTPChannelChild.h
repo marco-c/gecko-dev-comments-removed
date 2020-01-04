@@ -121,7 +121,7 @@ private:
   nsCOMPtr<nsIInputStream> mUploadStream;
 
   bool mIPCOpen;
-  nsRefPtr<ChannelEventQueue> mEventQ;
+  RefPtr<ChannelEventQueue> mEventQ;
 
   
   

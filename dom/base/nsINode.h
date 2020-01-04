@@ -1050,7 +1050,7 @@ public:
 
 
 
-    nsRefPtr<nsChildContentList> mChildNodes;
+    RefPtr<nsChildContentList> mChildNodes;
 
     
 
@@ -1694,7 +1694,7 @@ public:
   
   void UnbindObject(nsISupports* aObject);
 
-  void GetBoundMutationObservers(nsTArray<nsRefPtr<nsDOMMutationObserver> >& aResult);
+  void GetBoundMutationObservers(nsTArray<RefPtr<nsDOMMutationObserver> >& aResult);
 
   
 
@@ -1808,7 +1808,7 @@ public:
   mozilla::dom::Element* GetLastElementChild() const;
 
   void GetBoxQuads(const BoxQuadOptions& aOptions,
-                   nsTArray<nsRefPtr<DOMQuad> >& aResult,
+                   nsTArray<RefPtr<DOMQuad> >& aResult,
                    mozilla::ErrorResult& aRv);
 
   already_AddRefed<DOMQuad> ConvertQuadFromNode(DOMQuad& aQuad,
@@ -1967,7 +1967,7 @@ protected:
   static bool Traverse(nsINode *tmp, nsCycleCollectionTraversalCallback &cb);
   static void Unlink(nsINode *tmp);
 
-  nsRefPtr<mozilla::dom::NodeInfo> mNodeInfo;
+  RefPtr<mozilla::dom::NodeInfo> mNodeInfo;
 
   
   

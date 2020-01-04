@@ -424,7 +424,7 @@ public:
     uint16_t         mWeight;
     int16_t          mStretch;
 
-    nsRefPtr<gfxCharacterMap> mCharacterMap;
+    RefPtr<gfxCharacterMap> mCharacterMap;
     uint32_t         mUVSOffset;
     nsAutoArrayPtr<uint8_t> mUVSData;
     nsAutoPtr<gfxUserFontData> mUserFontData;
@@ -641,8 +641,8 @@ struct GlobalFontMatch {
     int32_t                mRunScript;   
     const gfxFontStyle*    mStyle;       
     int32_t                mMatchRank;   
-    nsRefPtr<gfxFontEntry> mBestMatch;   
-    nsRefPtr<gfxFontFamily> mMatchedFamily; 
+    RefPtr<gfxFontEntry> mBestMatch;   
+    RefPtr<gfxFontFamily> mMatchedFamily; 
     uint32_t               mCount;       
     uint32_t               mCmapsTested; 
 };
@@ -668,9 +668,9 @@ public:
     virtual void LocalizedName(nsAString& aLocalizedName);
     virtual bool HasOtherFamilyNames();
     
-    nsTArray<nsRefPtr<gfxFontEntry> >& GetFontList() { return mAvailableFonts; }
+    nsTArray<RefPtr<gfxFontEntry> >& GetFontList() { return mAvailableFonts; }
     
-    void AddFontEntry(nsRefPtr<gfxFontEntry> aFontEntry) {
+    void AddFontEntry(RefPtr<gfxFontEntry> aFontEntry) {
         
         
         if (aFontEntry->IsItalic() && !aFontEntry->IsUserFont() &&
@@ -809,7 +809,7 @@ protected:
     }
 
     nsString mName;
-    nsTArray<nsRefPtr<gfxFontEntry> >  mAvailableFonts;
+    nsTArray<RefPtr<gfxFontEntry> >  mAvailableFonts;
     gfxSparseBitSet mFamilyCharacterMap;
     bool mOtherFamilyNamesInitialized : 1;
     bool mHasOtherFamilyNames : 1;

@@ -192,7 +192,7 @@ nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
   
   
   
-  nsRefPtr<nsNPAPIPluginStreamListener> kungFuDeathGrip(this);
+  RefPtr<nsNPAPIPluginStreamListener> kungFuDeathGrip(this);
 
   if (mStreamCleanedUp)
     return NS_OK;

@@ -56,7 +56,7 @@ private:
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  nsRefPtr<ServiceWorkerManagerService> mService;
+  RefPtr<ServiceWorkerManagerService> mService;
 
   
   

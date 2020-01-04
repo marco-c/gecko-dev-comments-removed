@@ -137,7 +137,7 @@ protected:
 
   
   ThreadProfile* mPrimaryThreadProfile;
-  nsRefPtr<ProfileBuffer> mBuffer;
+  RefPtr<ProfileBuffer> mBuffer;
   bool mSaveRequested;
   bool mAddLeafAddresses;
   bool mUseStackWalk;
@@ -162,7 +162,7 @@ protected:
 #endif
 
 private:
-  nsRefPtr<mozilla::ProfileGatherer> mGatherer;
+  RefPtr<mozilla::ProfileGatherer> mGatherer;
 };
 
 #endif

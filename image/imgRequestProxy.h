@@ -151,7 +151,7 @@ protected:
       }
 
     private:
-      nsRefPtr<imgRequestProxy> mOwner;
+      RefPtr<imgRequestProxy> mOwner;
       nsresult mStatus;
   };
 
@@ -198,7 +198,7 @@ private:
   friend imgRequestProxy* NewStaticProxy(imgRequestProxy* aThis);
 
   
-  nsRefPtr<ImageURL> mURI;
+  RefPtr<ImageURL> mURI;
 
   
   

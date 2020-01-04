@@ -1722,7 +1722,7 @@ nsLineLayout::VerticalAlignFrames(PerSpanData* psd)
   nsIFrame* spanFrame = spanFramePFD->mFrame;
 
   
-  nsRefPtr<nsFontMetrics> fm;
+  RefPtr<nsFontMetrics> fm;
   float inflation =
     GetInflationForBlockDirAlignment(spanFrame, mInflationMinFontSize);
   nsLayoutUtils::GetFontMetricsForFrame(spanFrame, getter_AddRefs(fm),

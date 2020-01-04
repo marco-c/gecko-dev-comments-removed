@@ -121,13 +121,13 @@ private:
   
   uint64_t mLayersId;
 
-  nsRefPtr<nsFrameLoader> mFrameLoader;
-  nsRefPtr<ContainerLayer> mContainer;
+  RefPtr<nsFrameLoader> mFrameLoader;
+  RefPtr<ContainerLayer> mContainer;
   
   
   
-  nsRefPtr<layers::APZCTreeManager> mApzcTreeManager;
-  nsRefPtr<RemoteContentController> mContentController;
+  RefPtr<layers::APZCTreeManager> mApzcTreeManager;
+  RefPtr<RemoteContentController> mContentController;
 
   layers::APZCTreeManager* GetApzcTreeManager();
 

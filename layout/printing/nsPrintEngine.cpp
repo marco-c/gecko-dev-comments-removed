@@ -203,7 +203,7 @@ public:
 
   void Disconnect() { mPrintEngine = nullptr; }
 protected:
-  nsRefPtr<nsPrintEngine> mPrintEngine;
+  RefPtr<nsPrintEngine> mPrintEngine;
   bool                    mSuppressed;
 };
 
@@ -404,7 +404,7 @@ nsPrintEngine::CommonPrint(bool                    aIsPrintPreview,
                            nsIPrintSettings*       aPrintSettings,
                            nsIWebProgressListener* aWebProgressListener,
                            nsIDOMDocument* aDoc) {
-  nsRefPtr<nsPrintEngine> kungfuDeathGrip = this;
+  RefPtr<nsPrintEngine> kungfuDeathGrip = this;
   nsresult rv = DoCommonPrint(aIsPrintPreview, aPrintSettings,
                               aWebProgressListener, aDoc);
   if (NS_FAILED(rv)) {
@@ -1537,7 +1537,7 @@ nsPrintEngine::FirePrintingErrorEvent(nsresult aPrintError)
                          resultVariant);
   event->SetTrusted(true);
 
-  nsRefPtr<AsyncEventDispatcher> asyncDispatcher =
+  RefPtr<AsyncEventDispatcher> asyncDispatcher =
     new AsyncEventDispatcher(doc, event);
   asyncDispatcher->mOnlyChromeDispatch = true;
   asyncDispatcher->RunDOMEventWhenSafe();
@@ -1930,7 +1930,7 @@ nsPrintEngine::UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
 {
   nsCOMPtr<nsIPresShell> displayShell = aPO->mDocShell->GetPresShell();
   
-  nsRefPtr<Selection> selection, selectionPS;
+  RefPtr<Selection> selection, selectionPS;
   
   if (displayShell) {
     selection = displayShell->GetCurrentSelection(nsISelectionController::SELECTION_NORMAL);
@@ -2336,7 +2336,7 @@ CloneRangeToSelection(nsRange* aRange, nsIDocument* aDoc,
   nsCOMPtr<nsINode> newStartNode = do_QueryInterface(newStart);
   NS_ENSURE_TRUE_VOID(newStartNode);
 
-  nsRefPtr<nsRange> range = new nsRange(newStartNode);
+  RefPtr<nsRange> range = new nsRange(newStartNode);
   nsresult rv = range->SetStart(newStartNode, startOffset);
   NS_ENSURE_SUCCESS_VOID(rv);
   rv = range->SetEnd(newEnd, endOffset);
@@ -2351,9 +2351,9 @@ static nsresult CloneSelection(nsIDocument* aOrigDoc, nsIDocument* aDoc)
   nsIPresShell* shell = aDoc->GetShell();
   NS_ENSURE_STATE(origShell && shell);
 
-  nsRefPtr<Selection> origSelection =
+  RefPtr<Selection> origSelection =
     origShell->GetCurrentSelection(nsISelectionController::SELECTION_NORMAL);
-  nsRefPtr<Selection> selection =
+  RefPtr<Selection> selection =
     shell->GetCurrentSelection(nsISelectionController::SELECTION_NORMAL);
   NS_ENSURE_STATE(origSelection && selection);
 
@@ -2436,7 +2436,7 @@ nsPrintEngine::DoPrint(nsPrintObject * aPO)
         
 
         
-        nsRefPtr<gfxContext> gCtx = mPrt->mPrintDC->CreateRenderingContext();
+        RefPtr<gfxContext> gCtx = mPrt->mPrintDC->CreateRenderingContext();
         NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
 
         nsRenderingContext rc(gCtx);
@@ -2450,7 +2450,7 @@ nsPrintEngine::DoPrint(nsPrintObject * aPO)
         nsRect    startRect;
         nsRect    endRect;
 
-        nsRefPtr<Selection> selectionPS =
+        RefPtr<Selection> selectionPS =
           poPresShell->GetCurrentSelection(nsISelectionController::SELECTION_NORMAL);
 
         rv = GetPageRangeForSelection(poPresShell, poPresContext, rc, selectionPS, pageSequence,
@@ -2576,7 +2576,7 @@ DocHasPrintCallbackCanvas(nsIDocument* aDoc, void* aData)
   if (!root) {
     return true;
   }
-  nsRefPtr<nsContentList> canvases = NS_GetContentList(root,
+  RefPtr<nsContentList> canvases = NS_GetContentList(root,
                                                        kNameSpaceID_XHTML,
                                                        NS_LITERAL_STRING("canvas"));
   uint32_t canvasCount = canvases->Length(true);
@@ -3503,7 +3503,7 @@ nsPrintEngine::StartPagePrintTimer(nsPrintObject* aPO)
     int32_t printPageDelay = 50;
     mPrt->mPrintSettings->GetPrintPageDelay(&printPageDelay);
 
-    nsRefPtr<nsPagePrintTimer> timer =
+    RefPtr<nsPagePrintTimer> timer =
       new nsPagePrintTimer(this, mDocViewerPrint, printPageDelay);
     timer.forget(&mPagePrintTimer);
   }

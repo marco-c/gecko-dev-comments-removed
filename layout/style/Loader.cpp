@@ -161,7 +161,7 @@ public:
 
   
   
-  nsRefPtr<Loader>           mLoader;
+  RefPtr<Loader>           mLoader;
 
   
   
@@ -177,14 +177,14 @@ public:
   uint32_t                   mLineNumber;
 
   
-  nsRefPtr<CSSStyleSheet>    mSheet;
+  RefPtr<CSSStyleSheet>    mSheet;
 
   
   SheetLoadData*             mNext;  
 
   
   
-  nsRefPtr<SheetLoadData>    mParentData;
+  RefPtr<SheetLoadData>    mParentData;
 
   
   uint32_t                   mPendingChildren;
@@ -481,7 +481,7 @@ SheetLoadData::FireLoadEvent(nsIThreadInternal* aThread)
   
   
   
-  nsRefPtr<SheetLoadData> kungFuDeathGrip(this);
+  RefPtr<SheetLoadData> kungFuDeathGrip(this);
   aThread->RemoveObserver(this);
 
   
@@ -526,7 +526,7 @@ SheetLoadData::ScheduleLoadEventIfNeeded(nsresult aStatus)
 
 bool
 LoaderReusableStyleSheets::FindReusableStyleSheet(nsIURI* aURL,
-                                                  nsRefPtr<CSSStyleSheet>& aResult)
+                                                  RefPtr<CSSStyleSheet>& aResult)
 {
   MOZ_ASSERT(aURL);
   for (size_t i = mReusableSheets.Length(); i > 0; --i) {
@@ -1023,7 +1023,7 @@ Loader::IsAlternate(const nsAString& aTitle, bool aHasAlternateRel)
 
  PLDHashOperator
 Loader::RemoveEntriesWithURI(URIPrincipalReferrerPolicyAndCORSModeHashKey* aKey,
-                             nsRefPtr<CSSStyleSheet>& aSheet,
+                             RefPtr<CSSStyleSheet>& aSheet,
                              void* aUserData)
 {
   nsIURI* obsoleteURI = static_cast<nsIURI*>(aUserData);
@@ -1145,7 +1145,7 @@ Loader::CreateSheet(nsIURI* aURI,
 
   if (aURI) {
     aSheetState = eSheetComplete;
-    nsRefPtr<CSSStyleSheet> sheet;
+    RefPtr<CSSStyleSheet> sheet;
 
     
 #ifdef MOZ_XUL
@@ -1277,7 +1277,7 @@ Loader::CreateSheet(nsIURI* aURI,
       SRICheck::IntegrityMetadata(aIntegrity, mDocument, &sriMetadata);
     }
 
-    nsRefPtr<CSSStyleSheet> sheet = new CSSStyleSheet(aCORSMode,
+    RefPtr<CSSStyleSheet> sheet = new CSSStyleSheet(aCORSMode,
                                                       aReferrerPolicy,
                                                       sriMetadata);
     sheet->SetURIs(sheetURI, originalURI, baseURI);
@@ -1306,7 +1306,7 @@ Loader::PrepareSheet(CSSStyleSheet* aSheet,
 {
   NS_PRECONDITION(aSheet, "Must have a sheet!");
 
-  nsRefPtr<nsMediaList> mediaList(aMediaList);
+  RefPtr<nsMediaList> mediaList(aMediaList);
 
   if (!aMediaString.IsEmpty()) {
     NS_ASSERTION(!aMediaList,
@@ -1725,7 +1725,7 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
   if (ourCORSMode != CORS_NONE) {
     bool withCredentials = (ourCORSMode == CORS_USE_CREDENTIALS);
     LOG(("  Doing CORS-enabled load; credentials %d", withCredentials));
-    nsRefPtr<nsCORSListenerProxy> corsListener =
+    RefPtr<nsCORSListenerProxy> corsListener =
       new nsCORSListenerProxy(streamLoader, aLoadData->mLoaderPrincipal,
 			      withCredentials);
     rv = corsListener->Init(channel, DataURIHandling::Allow);
@@ -1831,7 +1831,7 @@ Loader::SheetComplete(SheetLoadData* aLoadData, nsresult aStatus)
   
   
   
-  nsAutoTArray<nsRefPtr<SheetLoadData>, 8> datasToNotify;
+  nsAutoTArray<RefPtr<SheetLoadData>, 8> datasToNotify;
   DoSheetComplete(aLoadData, aStatus, datasToNotify);
 
   
@@ -2013,7 +2013,7 @@ Loader::LoadInlineStyle(nsIContent* aElement,
   
   
   StyleSheetState state;
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   nsresult rv = CreateSheet(nullptr, aElement, nullptr, CORS_NONE,
                             mDocument->GetReferrerPolicy(),
                             EmptyString(), 
@@ -2097,7 +2097,7 @@ Loader::LoadStyleLink(nsIContent* aElement,
   LOG(("  Passed load check"));
 
   StyleSheetState state;
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   rv = CreateSheet(aURL, aElement, principal, aCORSMode,
                    aReferrerPolicy, aIntegrity, false,
                    aHasAlternateRel, aTitle, state, aIsAlternate,
@@ -2257,7 +2257,7 @@ Loader::LoadChildSheet(CSSStyleSheet* aParentSheet,
 
   
   
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   StyleSheetState state;
   if (aReusableSheets && aReusableSheets->FindReusableStyleSheet(aURL, sheet)) {
     aParentRule->SetSheet(sheet);
@@ -2388,7 +2388,7 @@ Loader::InternalLoadNonDocumentSheet(nsIURI* aURL,
 
   StyleSheetState state;
   bool isAlternate;
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   bool syncLoad = (aObserver == nullptr);
   const nsSubstring& empty = EmptyString();
 
@@ -2441,7 +2441,7 @@ Loader::PostLoadEvent(nsIURI* aURI,
   NS_PRECONDITION(aObserver || !mObservers.IsEmpty() || aElement,
                   "Must have observer or element");
 
-  nsRefPtr<SheetLoadData> evt =
+  RefPtr<SheetLoadData> evt =
     new SheetLoadData(this, EmptyString(), 
                       aURI,
                       aSheet,
@@ -2661,7 +2661,7 @@ Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
       
       
       
-      const nsRefPtr<CSSStyleSheet>& aSheet = iter.Data();
+      const RefPtr<CSSStyleSheet>& aSheet = iter.Data();
       n += (aSheet->GetOwnerNode() || aSheet->GetParentSheet())
          ? 0
          : aSheet->SizeOfIncludingThis(aMallocSizeOf);

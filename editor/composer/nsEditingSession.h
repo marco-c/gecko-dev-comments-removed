@@ -127,7 +127,7 @@ protected:
 
   
   
-  nsRefPtr<nsComposerCommandsUpdater> mStateMaintainer;
+  RefPtr<nsComposerCommandsUpdater> mStateMaintainer;
 
   
   nsCString       mEditorType;

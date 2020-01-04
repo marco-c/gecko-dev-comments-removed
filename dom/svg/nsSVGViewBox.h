@@ -111,7 +111,7 @@ public:
     {}
 
     nsSVGViewBox* mVal; 
-    nsRefPtr<nsSVGElement> mSVGElement;
+    RefPtr<nsSVGElement> mSVGElement;
 
     float X() const override final
     {
@@ -159,7 +159,7 @@ public:
     {}
 
     nsSVGViewBox* mVal; 
-    nsRefPtr<nsSVGElement> mSVGElement;
+    RefPtr<nsSVGElement> mSVGElement;
 
     
     

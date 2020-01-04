@@ -17,7 +17,7 @@ namespace dom {
  already_AddRefed<FakeInputPortService>
 InputPortServiceFactory::CreateFakeInputPortService()
 {
-  nsRefPtr<FakeInputPortService> service = new FakeInputPortService();
+  RefPtr<FakeInputPortService> service = new FakeInputPortService();
   return service.forget();
 }
 

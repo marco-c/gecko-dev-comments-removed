@@ -48,7 +48,7 @@ public:
 
   nsIGlobalObject* GetParentObject() const { return mWindow; }
 
-  typedef nsTArray<nsRefPtr<Animation>> AnimationSequence;
+  typedef nsTArray<RefPtr<Animation>> AnimationSequence;
 
   
   virtual Nullable<TimeDuration> GetCurrentTime() const = 0;
@@ -103,7 +103,7 @@ protected:
   
   
   typedef nsTHashtable<nsPtrHashKey<dom::Animation>> AnimationSet;
-  typedef nsTArray<nsRefPtr<dom::Animation>>         AnimationArray;
+  typedef nsTArray<RefPtr<dom::Animation>>         AnimationArray;
   AnimationSet   mAnimations;
   AnimationArray mAnimationOrder;
 };

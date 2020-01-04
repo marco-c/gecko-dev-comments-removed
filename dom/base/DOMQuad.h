@@ -61,8 +61,8 @@ protected:
   class QuadBounds;
 
   nsCOMPtr<nsISupports> mParent;
-  nsRefPtr<DOMPoint> mPoints[4];
-  mutable nsRefPtr<QuadBounds> mBounds; 
+  RefPtr<DOMPoint> mPoints[4];
+  mutable RefPtr<QuadBounds> mBounds; 
 };
 
 } 

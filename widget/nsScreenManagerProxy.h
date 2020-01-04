@@ -44,7 +44,7 @@ private:
   bool mCacheValid;
   bool mCacheWillInvalidate;
 
-  nsRefPtr<mozilla::widget::ScreenProxy> mPrimaryScreen;
+  RefPtr<mozilla::widget::ScreenProxy> mPrimaryScreen;
 
   
   
@@ -57,8 +57,8 @@ private:
   
   struct ScreenCacheEntry
   {
-    nsRefPtr<mozilla::widget::ScreenProxy> mScreenProxy;
-    nsRefPtr<mozilla::dom::TabChild> mTabChild;
+    RefPtr<mozilla::widget::ScreenProxy> mScreenProxy;
+    RefPtr<mozilla::dom::TabChild> mTabChild;
   };
 
   nsTArray<ScreenCacheEntry> mScreenCache;

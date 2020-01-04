@@ -88,7 +88,7 @@ GMPVideoEncoderParent::Close()
   
 
   
-  nsRefPtr<GMPVideoEncoderParent> kungfudeathgrip(this);
+  RefPtr<GMPVideoEncoderParent> kungfudeathgrip(this);
   Release();
   Shutdown();
 }

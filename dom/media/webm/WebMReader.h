@@ -69,7 +69,7 @@ protected:
   ~WebMReader();
 
 public:
-  virtual nsRefPtr<ShutdownPromise> Shutdown() override;
+  virtual RefPtr<ShutdownPromise> Shutdown() override;
   virtual nsresult Init() override;
   virtual nsresult ResetDecode() override;
   virtual bool DecodeAudioData() override;
@@ -89,9 +89,9 @@ public:
     return mHasVideo;
   }
 
-  virtual nsRefPtr<MetadataPromise> AsyncReadMetadata() override;
+  virtual RefPtr<MetadataPromise> AsyncReadMetadata() override;
 
-  virtual nsRefPtr<SeekPromise>
+  virtual RefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) override;
 
   virtual media::TimeIntervals GetBuffered() override;
@@ -108,7 +108,7 @@ public:
   
   
   
-  nsRefPtr<NesteggPacketHolder> NextPacket(TrackType aTrackType);
+  RefPtr<NesteggPacketHolder> NextPacket(TrackType aTrackType);
 
   
   virtual void PushVideoPacket(NesteggPacketHolder* aItem);
@@ -154,7 +154,7 @@ private:
 
   
   
-  nsRefPtr<NesteggPacketHolder> DemuxPacket();
+  RefPtr<NesteggPacketHolder> DemuxPacket();
 
   
   
@@ -190,7 +190,7 @@ private:
 
   
   
-  nsRefPtr<WebMBufferedState> mBufferedState;
+  RefPtr<WebMBufferedState> mBufferedState;
 
   
   

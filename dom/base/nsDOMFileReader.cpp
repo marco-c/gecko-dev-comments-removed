@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsDOMFileReader.h"
 
@@ -80,7 +80,7 @@ nsDOMFileReader::RootResultArrayBuffer()
   mozilla::HoldJSObjects(this);
 }
 
-//nsDOMFileReader constructors/initializers
+
 
 nsDOMFileReader::nsDOMFileReader()
   : mFileData(nullptr),
@@ -98,23 +98,23 @@ nsDOMFileReader::~nsDOMFileReader()
 }
 
 
-/**
- * This Init method is called from the factory constructor.
- */
+
+
+
 nsresult
 nsDOMFileReader::Init()
 {
-  // Instead of grabbing some random global from the context stack,
-  // let's use the default one (junk scope) for now.
-  // We should move away from this Init...
+  
+  
+  
   BindToOwner(xpc::NativeGlobal(xpc::PrivilegedJunkScope()));
   return NS_OK;
 }
 
-/* static */ already_AddRefed<nsDOMFileReader>
+ already_AddRefed<nsDOMFileReader>
 nsDOMFileReader::Constructor(const GlobalObject& aGlobal, ErrorResult& aRv)
 {
-  nsRefPtr<nsDOMFileReader> fileReader = new nsDOMFileReader();
+  RefPtr<nsDOMFileReader> fileReader = new nsDOMFileReader();
 
   nsCOMPtr<nsPIDOMWindow> owner = do_QueryInterface(aGlobal.GetAsSupports());
   if (!owner) {
@@ -127,7 +127,7 @@ nsDOMFileReader::Constructor(const GlobalObject& aGlobal, ErrorResult& aRv)
   return fileReader.forget();
 }
 
-// nsIInterfaceRequestor
+
 
 NS_IMETHODIMP
 nsDOMFileReader::GetInterface(const nsIID & aIID, void **aResult)
@@ -135,7 +135,7 @@ nsDOMFileReader::GetInterface(const nsIID & aIID, void **aResult)
   return QueryInterface(aIID, aResult);
 }
 
-// nsIDOMFileReader
+
 
 NS_IMETHODIMP
 nsDOMFileReader::GetReadyState(uint16_t *aReadyState)
@@ -187,7 +187,7 @@ nsDOMFileReader::ReadAsArrayBuffer(nsIDOMBlob* aBlob, JSContext* aCx)
 {
   NS_ENSURE_TRUE(aBlob, NS_ERROR_NULL_POINTER);
   ErrorResult rv;
-  nsRefPtr<Blob> blob = static_cast<Blob*>(aBlob);
+  RefPtr<Blob> blob = static_cast<Blob*>(aBlob);
   ReadAsArrayBuffer(aCx, *blob, rv);
   return rv.StealNSResult();
 }
@@ -197,7 +197,7 @@ nsDOMFileReader::ReadAsBinaryString(nsIDOMBlob* aBlob)
 {
   NS_ENSURE_TRUE(aBlob, NS_ERROR_NULL_POINTER);
   ErrorResult rv;
-  nsRefPtr<Blob> blob = static_cast<Blob*>(aBlob);
+  RefPtr<Blob> blob = static_cast<Blob*>(aBlob);
   ReadAsBinaryString(*blob, rv);
   return rv.StealNSResult();
 }
@@ -208,7 +208,7 @@ nsDOMFileReader::ReadAsText(nsIDOMBlob* aBlob,
 {
   NS_ENSURE_TRUE(aBlob, NS_ERROR_NULL_POINTER);
   ErrorResult rv;
-  nsRefPtr<Blob> blob = static_cast<Blob*>(aBlob);
+  RefPtr<Blob> blob = static_cast<Blob*>(aBlob);
   ReadAsText(*blob, aCharset, rv);
   return rv.StealNSResult();
 }
@@ -218,7 +218,7 @@ nsDOMFileReader::ReadAsDataURL(nsIDOMBlob* aBlob)
 {
   NS_ENSURE_TRUE(aBlob, NS_ERROR_NULL_POINTER);
   ErrorResult rv;
-  nsRefPtr<Blob> blob = static_cast<Blob*>(aBlob);
+  RefPtr<Blob> blob = static_cast<Blob*>(aBlob);
   ReadAsDataURL(*blob, rv);
   return rv.StealNSResult();
 }
@@ -231,20 +231,20 @@ nsDOMFileReader::Abort()
   return rv.StealNSResult();
 }
 
-/* virtual */ void
+ void
 nsDOMFileReader::DoAbort(nsAString& aEvent)
 {
-  // Revert status and result attributes
+  
   SetDOMStringToNull(mResult);
   mResultArrayBuffer = nullptr;
 
   mAsyncStream = nullptr;
   mBlob = nullptr;
 
-  //Clean up memory buffer
+  
   FreeFileData();
 
-  // Tell the base class which event to dispatch
+  
   aEvent = NS_LITERAL_STRING(LOADEND_STR);
 }
 
@@ -276,17 +276,17 @@ nsDOMFileReader::DoOnLoadEnd(nsresult aStatus,
                              nsAString& aTerminationEvent)
 {
 
-  // Make sure we drop all the objects that could hold files open now.
+  
   nsCOMPtr<nsIAsyncInputStream> stream;
   mAsyncStream.swap(stream);
 
-  nsRefPtr<Blob> blob;
+  RefPtr<Blob> blob;
   mBlob.swap(blob);
 
   aSuccessEvent = NS_LITERAL_STRING(LOAD_STR);
   aTerminationEvent = NS_LITERAL_STRING(LOADEND_STR);
 
-  // Clear out the data if necessary
+  
   if (NS_FAILED(aStatus)) {
     FreeFileData();
     return NS_OK;
@@ -306,12 +306,12 @@ nsDOMFileReader::DoOnLoadEnd(nsresult aStatus,
         JS_ClearPendingException(jsapi.cx());
         rv = NS_ERROR_OUT_OF_MEMORY;
       } else {
-        mFileData = nullptr; // Transfer ownership
+        mFileData = nullptr; 
       }
       break;
     }
     case FILE_AS_BINARY:
-      break; //Already accumulated mResult
+      break; 
     case FILE_AS_TEXT:
       if (!mFileData) {
         if (mDataLen) {
@@ -341,7 +341,7 @@ nsDOMFileReader::DoReadData(nsIAsyncInputStream* aStream, uint64_t aCount)
   MOZ_ASSERT(aStream);
 
   if (mDataFormat == FILE_AS_BINARY) {
-    //Continuously update our binary string as data comes in
+    
     uint32_t oldLen = mResult.Length();
     NS_ASSERTION(mResult.Length() == mDataLen,
                  "unexpected mResult length");
@@ -357,9 +357,9 @@ nsDOMFileReader::DoReadData(nsIAsyncInputStream* aStream, uint64_t aCount)
     NS_ASSERTION(bytesRead == aCount, "failed to read data");
   }
   else {
-    //Update memory buffer to reflect the contents of the file
+    
     if (mDataLen + aCount > UINT32_MAX) {
-      // PR_Realloc doesn't support over 4GB memory size even if 64-bit OS
+      
       return NS_ERROR_OUT_OF_MEMORY;
     }
     if (mDataFormat != FILE_AS_ARRAYBUFFER) {
@@ -376,7 +376,7 @@ nsDOMFileReader::DoReadData(nsIAsyncInputStream* aStream, uint64_t aCount)
   return NS_OK;
 }
 
-// Helper methods
+
 
 void
 nsDOMFileReader::ReadFileContent(Blob& aBlob,
@@ -384,7 +384,7 @@ nsDOMFileReader::ReadFileContent(Blob& aBlob,
                                  eDataFormat aDataFormat,
                                  ErrorResult& aRv)
 {
-  //Implicit abort to clear any other activity going on
+  
   Abort();
   mError = nullptr;
   SetDOMStringToNull(mResult);
@@ -414,9 +414,9 @@ nsDOMFileReader::ReadFileContent(Blob& aBlob,
 
   nsCOMPtr<nsITransport> transport;
   rv = sts->CreateInputTransport(stream,
-                                 /* aStartOffset */ 0,
-                                 /* aReadLimit */ -1,
-                                 /* aCloseWhenDone */ true,
+                                  0,
+                                  -1,
+                                  true,
                                  getter_AddRefs(transport));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
@@ -424,9 +424,9 @@ nsDOMFileReader::ReadFileContent(Blob& aBlob,
   }
 
   nsCOMPtr<nsIInputStream> wrapper;
-  rv = transport->OpenInputStream(/* aFlags */ 0,
-                                  /* aSegmentSize */ 0,
-                                  /* aSegmentCount */ 0,
+  rv = transport->OpenInputStream( 0,
+                                   0,
+                                   0,
                                   getter_AddRefs(wrapper));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
@@ -448,7 +448,7 @@ nsDOMFileReader::ReadFileContent(Blob& aBlob,
     return;
   }
 
-  //FileReader should be in loading state here
+  
   mReadyState = nsIDOMFileReader::LOADING;
   DispatchProgressEvent(NS_LITERAL_STRING(LOADSTART_STR));
 
@@ -468,17 +468,17 @@ nsDOMFileReader::GetAsText(Blob *aBlob,
                            uint32_t aDataLen,
                            nsAString& aResult)
 {
-  // The BOM sniffing is baked into the "decode" part of the Encoding
-  // Standard, which the File API references.
+  
+  
   nsAutoCString encoding;
   if (!nsContentUtils::CheckForBOM(
         reinterpret_cast<const unsigned char *>(aFileData),
         aDataLen,
         encoding)) {
-    // BOM sniffing failed. Try the API argument.
+    
     if (!EncodingUtils::FindEncodingForLabel(aCharset,
                                              encoding)) {
-      // API argument failed. Try the type property of the blob.
+      
       nsAutoString type16;
       aBlob->GetType(type16);
       NS_ConvertUTF16toUTF8 type(type16);
@@ -491,7 +491,7 @@ nsDOMFileReader::GetAsText(Blob *aBlob,
                                        &charsetStart,
                                        &charsetEnd);
       if (!EncodingUtils::FindEncodingForLabel(specifiedCharset, encoding)) {
-        // Type property failed. Use UTF-8.
+        
         encoding.AssignLiteral("UTF-8");
       }
     }
@@ -529,7 +529,7 @@ nsDOMFileReader::GetAsDataURL(Blob *aBlob,
   return NS_OK;
 }
 
-/* virtual */ JSObject*
+ JSObject*
 nsDOMFileReader::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   return FileReaderBinding::Wrap(aCx, this, aGivenProto);

@@ -46,7 +46,7 @@ class RevocableStore {
   private:
     
     
-    nsRefPtr<StoreRef> store_reference_;
+    RefPtr<StoreRef> store_reference_;
 
     DISALLOW_EVIL_CONSTRUCTORS(Revocable);
   };
@@ -68,7 +68,7 @@ class RevocableStore {
   void Add(Revocable* item);
 
   
-  nsRefPtr<StoreRef> owning_reference_;
+  RefPtr<StoreRef> owning_reference_;
 
   
   int count_;

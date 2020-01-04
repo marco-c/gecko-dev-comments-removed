@@ -152,8 +152,8 @@ public:
 
     friend class PendingOperations;
     OperationType mType;
-    nsRefPtr<DOMStorageCacheBridge> mCache;
-    nsRefPtr<DOMStorageUsageBridge> mUsage;
+    RefPtr<DOMStorageCacheBridge> mCache;
+    RefPtr<DOMStorageUsageBridge> mUsage;
     nsString mKey;
     nsString mValue;
     nsCString mScope;
@@ -282,7 +282,7 @@ private:
   PRThread* mThread;
 
   
-  nsRefPtr<ThreadObserver> mThreadObserver;
+  RefPtr<ThreadObserver> mThreadObserver;
 
   
   

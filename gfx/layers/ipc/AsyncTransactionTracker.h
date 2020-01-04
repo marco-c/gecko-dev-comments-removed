@@ -13,7 +13,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/layers/FenceUtils.h"  
 #include "mozilla/Monitor.h"      
-#include "mozilla/nsRefPtr.h"       
+#include "mozilla/RefPtr.h"       
 
 namespace mozilla {
 namespace layers {
@@ -130,7 +130,7 @@ protected:
   }
 
   uint64_t mSerial;
-  nsRefPtr<AsyncTransactionWaiter> mWaiter;
+  RefPtr<AsyncTransactionWaiter> mWaiter;
   DebugOnly<bool> mCompleted;
 
   
@@ -200,7 +200,7 @@ protected:
   uint64_t mSerial;
 
   bool mIsTrackersHolderDestroyed;
-  std::map<uint64_t, nsRefPtr<AsyncTransactionTracker> > mAsyncTransactionTrackers;
+  std::map<uint64_t, RefPtr<AsyncTransactionTracker> > mAsyncTransactionTrackers;
 
   
 

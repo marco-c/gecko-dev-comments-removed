@@ -213,7 +213,7 @@ private:
   workers::WorkerPrivate* mWorkerPrivate;
 
   
-  nsRefPtr<Promise> mWorkerPromise;
+  RefPtr<Promise> mWorkerPromise;
 
   
   

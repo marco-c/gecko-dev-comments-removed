@@ -14,7 +14,7 @@
 #include "MediaInfo.h"
 #include "TimeUnits.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -50,7 +50,7 @@ public:
   
   
   
-  virtual nsRefPtr<InitPromise> Init() = 0;
+  virtual RefPtr<InitPromise> Init() = 0;
 
   
   virtual bool HasTrackType(TrackInfo::TrackType aType) const = 0;
@@ -109,7 +109,7 @@ public:
   class SamplesHolder {
   public:
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SamplesHolder)
-    nsTArray<nsRefPtr<MediaRawData>> mSamples;
+    nsTArray<RefPtr<MediaRawData>> mSamples;
   private:
     ~SamplesHolder() {}
   };
@@ -125,7 +125,7 @@ public:
   };
 
   typedef MozPromise<media::TimeUnit, DemuxerFailureReason,  true> SeekPromise;
-  typedef MozPromise<nsRefPtr<SamplesHolder>, DemuxerFailureReason,  true> SamplesPromise;
+  typedef MozPromise<RefPtr<SamplesHolder>, DemuxerFailureReason,  true> SamplesPromise;
   typedef MozPromise<uint32_t, SkipFailureHolder,  true> SkipAccessPointPromise;
 
   
@@ -137,7 +137,7 @@ public:
 
   
   
-  virtual nsRefPtr<SeekPromise> Seek(media::TimeUnit aTime) = 0;
+  virtual RefPtr<SeekPromise> Seek(media::TimeUnit aTime) = 0;
 
   
   
@@ -145,7 +145,7 @@ public:
   
   
   
-  virtual nsRefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) = 0;
+  virtual RefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) = 0;
 
   
   
@@ -181,7 +181,7 @@ public:
   
   
   
-  virtual nsRefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(media::TimeUnit aTimeThreshold) = 0;
+  virtual RefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(media::TimeUnit aTimeThreshold) = 0;
 
   
   

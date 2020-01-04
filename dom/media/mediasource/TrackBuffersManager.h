@@ -36,7 +36,7 @@ public:
   typedef MozPromise<bool, nsresult,  true> CodedFrameProcessingPromise;
   typedef TrackInfo::TrackType TrackType;
   typedef MediaData::Type MediaType;
-  typedef nsTArray<nsRefPtr<MediaRawData>> TrackBuffer;
+  typedef nsTArray<RefPtr<MediaRawData>> TrackBuffer;
 
   TrackBuffersManager(dom::SourceBufferAttributes* aAttributes,
                       MediaSourceDecoder* aParentDecoder,
@@ -45,13 +45,13 @@ public:
   bool AppendData(MediaByteBuffer* aData,
                   media::TimeUnit aTimestampOffset) override;
 
-  nsRefPtr<AppendPromise> BufferAppend() override;
+  RefPtr<AppendPromise> BufferAppend() override;
 
   void AbortAppendData() override;
 
   void ResetParserState() override;
 
-  nsRefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
+  RefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
                                              media::TimeUnit aEnd) override;
 
   EvictDataResult
@@ -109,7 +109,7 @@ private:
   friend class MediaSourceDemuxer;
   virtual ~TrackBuffersManager();
   
-  nsRefPtr<AppendPromise> InitSegmentParserLoop();
+  RefPtr<AppendPromise> InitSegmentParserLoop();
   void ScheduleSegmentParserLoop();
   void SegmentParserLoop();
   void AppendIncomingBuffers();
@@ -121,13 +121,13 @@ private:
   void RejectAppend(nsresult aRejectValue, const char* aName);
   
   
-  nsRefPtr<CodedFrameProcessingPromise> CodedFrameProcessing();
+  RefPtr<CodedFrameProcessingPromise> CodedFrameProcessing();
   void CompleteCodedFrameProcessing();
   
   
   void FinishCodedFrameProcessing();
   void CompleteResetParserState();
-  nsRefPtr<RangeRemovalPromise>
+  RefPtr<RangeRemovalPromise>
     CodedFrameRemovalWithPromise(media::TimeInterval aInterval);
   bool CodedFrameRemoval(media::TimeInterval aInterval);
   void SetAppendState(AppendState aAppendState);
@@ -141,12 +141,12 @@ private:
     return mAudioTracks.mNumTracks > 0;
   }
 
-  typedef Pair<nsRefPtr<MediaByteBuffer>, media::TimeUnit> IncomingBuffer;
+  typedef Pair<RefPtr<MediaByteBuffer>, media::TimeUnit> IncomingBuffer;
   void AppendIncomingBuffer(IncomingBuffer aData);
   nsTArray<IncomingBuffer> mIncomingBuffers;
 
   
-  nsRefPtr<MediaByteBuffer> mInputBuffer;
+  RefPtr<MediaByteBuffer> mInputBuffer;
   
   
   Atomic<AppendState> mAppendState;
@@ -172,14 +172,14 @@ private:
 
   
   void AppendDataToCurrentInputBuffer(MediaByteBuffer* aData);
-  nsRefPtr<MediaByteBuffer> mInitData;
+  RefPtr<MediaByteBuffer> mInitData;
   
   
   
   
-  nsRefPtr<MediaByteBuffer> mPendingInputBuffer;
-  nsRefPtr<SourceBufferResource> mCurrentInputBuffer;
-  nsRefPtr<MediaDataDemuxer> mInputDemuxer;
+  RefPtr<MediaByteBuffer> mPendingInputBuffer;
+  RefPtr<SourceBufferResource> mCurrentInputBuffer;
+  RefPtr<MediaDataDemuxer> mInputDemuxer;
   
   uint32_t mProcessedInput;
   Maybe<media::TimeUnit> mLastParsedEndTime;
@@ -192,14 +192,14 @@ private:
 
   void OnDemuxFailed(TrackType aTrack, DemuxerFailureReason aFailure);
   void DoDemuxVideo();
-  void OnVideoDemuxCompleted(nsRefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
+  void OnVideoDemuxCompleted(RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
   void OnVideoDemuxFailed(DemuxerFailureReason aFailure)
   {
     mVideoTracks.mDemuxRequest.Complete();
     OnDemuxFailed(TrackType::kVideoTrack, aFailure);
   }
   void DoDemuxAudio();
-  void OnAudioDemuxCompleted(nsRefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
+  void OnAudioDemuxCompleted(RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
   void OnAudioDemuxFailed(DemuxerFailureReason aFailure)
   {
     mAudioTracks.mDemuxRequest.Complete();
@@ -241,7 +241,7 @@ private:
     
     
     bool mNeedRandomAccessPoint;
-    nsRefPtr<MediaTrackDemuxer> mDemuxer;
+    RefPtr<MediaTrackDemuxer> mDemuxer;
     MozPromiseRequestHolder<MediaTrackDemuxer::SamplesPromise> mDemuxRequest;
     
     media::TimeUnit mLastParsedEndTime;
@@ -260,9 +260,9 @@ private:
     
     uint32_t mSizeBuffer;
     
-    nsRefPtr<SharedTrackInfo> mInfo;
+    RefPtr<SharedTrackInfo> mInfo;
     
-    nsRefPtr<SharedTrackInfo> mLastInfo;
+    RefPtr<SharedTrackInfo> mLastInfo;
 
     
     
@@ -335,7 +335,7 @@ private:
   {
     return !GetTaskQueue() || GetTaskQueue()->IsCurrentThreadIn();
   }
-  nsRefPtr<TaskQueue> mTaskQueue;
+  RefPtr<TaskQueue> mTaskQueue;
 
   media::TimeInterval mAppendWindow;
   media::TimeUnit mTimestampOffset;
@@ -343,7 +343,7 @@ private:
   void RestoreCachedVariables();
 
   
-  nsRefPtr<dom::SourceBufferAttributes> mSourceBufferAttributes;
+  RefPtr<dom::SourceBufferAttributes> mSourceBufferAttributes;
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
 
   

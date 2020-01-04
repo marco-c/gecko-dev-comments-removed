@@ -69,7 +69,7 @@ DOMError::Constructor(const GlobalObject& aGlobal,
 
   
 
-  nsRefPtr<DOMError> ret = new DOMError(window, aName, aMessage);
+  RefPtr<DOMError> ret = new DOMError(window, aName, aMessage);
   return ret.forget();
 }
 

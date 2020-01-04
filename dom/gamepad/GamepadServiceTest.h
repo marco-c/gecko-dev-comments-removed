@@ -29,7 +29,7 @@ private:
   static GamepadServiceTest* sSingleton;
   
   
-  nsRefPtr<GamepadService> mService;
+  RefPtr<GamepadService> mService;
   virtual ~GamepadServiceTest();
 };
 

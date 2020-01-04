@@ -189,7 +189,7 @@ public:
 
   bool GetNextMilestoneInParentTime(nsSMILMilestone& aNextMilestone) const;
 
-  typedef nsTArray<nsRefPtr<mozilla::dom::SVGAnimationElement> > AnimElemArray;
+  typedef nsTArray<RefPtr<mozilla::dom::SVGAnimationElement> > AnimElemArray;
 
   
 
@@ -283,7 +283,7 @@ protected:
     }
 
     nsSMILMilestone mMilestone; 
-    nsRefPtr<mozilla::dom::SVGAnimationElement> mTimebase;
+    RefPtr<mozilla::dom::SVGAnimationElement> mTimebase;
   };
 
   

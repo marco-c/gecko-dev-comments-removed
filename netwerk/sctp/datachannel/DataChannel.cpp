@@ -138,7 +138,7 @@ public:
       MOZ_ASSERT(rv == NS_OK);
       (void) rv;
 
-      nsRefPtr<DataChannelShutdown> kungFuDeathGrip(this);
+      RefPtr<DataChannelShutdown> kungFuDeathGrip(this);
       gDataChannelShutdown = nullptr;
     }
     return NS_OK;
@@ -260,7 +260,7 @@ DataChannelConnection::Destroy()
   
   
   
-  RUN_ON_THREAD(mSTS, WrapRunnable(nsRefPtr<DataChannelConnection>(this),
+  RUN_ON_THREAD(mSTS, WrapRunnable(RefPtr<DataChannelConnection>(this),
                                    &DataChannelConnection::DestroyOnSTS,
                                    mSocket, mMasterSocket),
                 NS_DISPATCH_NORMAL);
@@ -549,7 +549,7 @@ DataChannelConnection::ConnectViaTransportFlow(TransportFlow *aFlow, uint16_t lo
   mRemotePort = remoteport;
   mState = CONNECTING;
 
-  RUN_ON_THREAD(mSTS, WrapRunnable(nsRefPtr<DataChannelConnection>(this),
+  RUN_ON_THREAD(mSTS, WrapRunnable(RefPtr<DataChannelConnection>(this),
                                    &DataChannelConnection::SetSignals),
                 NS_DISPATCH_NORMAL);
   return true;
@@ -662,7 +662,7 @@ DataChannelConnection::ProcessQueuedOpens()
     temp.Push(static_cast<void *>(temp_channel));
   }
 
-  nsRefPtr<DataChannel> channel;
+  RefPtr<DataChannel> channel;
   
   while (nullptr != (channel = dont_AddRef(static_cast<DataChannel *>(temp.PopFront())))) {
     if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
@@ -736,7 +736,7 @@ DataChannelConnection::SctpDtlsOutput(void *addr, void *buffer, size_t length,
     
     
     peer->mSTS->Dispatch(WrapRunnable(
-                           nsRefPtr<DataChannelConnection>(peer),
+                           RefPtr<DataChannelConnection>(peer),
                            &DataChannelConnection::SendPacket, data, length, true),
                                    NS_DISPATCH_NORMAL);
     res = 0; 
@@ -1053,7 +1053,7 @@ bool
 DataChannelConnection::SendDeferredMessages()
 {
   uint32_t i;
-  nsRefPtr<DataChannel> channel; 
+  RefPtr<DataChannel> channel; 
   bool still_blocked = false;
   bool sent = false;
 
@@ -1195,7 +1195,7 @@ DataChannelConnection::HandleOpenRequestMessage(const struct rtcweb_datachannel_
                                                 size_t length,
                                                 uint16_t stream)
 {
-  nsRefPtr<DataChannel> channel;
+  RefPtr<DataChannel> channel;
   uint32_t prValue;
   uint16_t prPolicy;
   uint32_t flags;
@@ -1699,7 +1699,7 @@ DataChannelConnection::ClearResets()
   }
 
   for (uint32_t i = 0; i < mStreamsResetting.Length(); ++i) {
-    nsRefPtr<DataChannel> channel;
+    RefPtr<DataChannel> channel;
     channel = FindChannelByStream(mStreamsResetting[i]);
     if (channel) {
       LOG(("Forgetting channel %u (%p) with pending reset",channel->mStream, channel.get()));
@@ -1765,7 +1765,7 @@ void
 DataChannelConnection::HandleStreamResetEvent(const struct sctp_stream_reset_event *strrst)
 {
   uint32_t n, i;
-  nsRefPtr<DataChannel> channel; 
+  RefPtr<DataChannel> channel; 
 
   if (!(strrst->strreset_flags & SCTP_STREAM_RESET_DENIED) &&
       !(strrst->strreset_flags & SCTP_STREAM_RESET_FAILED)) {
@@ -1824,7 +1824,7 @@ DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_e
 {
   uint16_t stream;
   uint32_t i;
-  nsRefPtr<DataChannel> channel;
+  RefPtr<DataChannel> channel;
 
   if (strchg->strchange_flags == SCTP_STREAM_CHANGE_DENIED) {
     LOG(("*** Failed increasing number of streams from %u (%u/%u)",
@@ -2029,7 +2029,7 @@ DataChannelConnection::Open(const nsACString& label, const nsACString& protocol,
   }
 
   flags = !inOrder ? DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED : 0;
-  nsRefPtr<DataChannel> channel(new DataChannel(this,
+  RefPtr<DataChannel> channel(new DataChannel(this,
                                                 aStream,
                                                 DataChannel::CONNECTING,
                                                 label, protocol,
@@ -2048,7 +2048,7 @@ DataChannelConnection::Open(const nsACString& label, const nsACString& protocol,
 already_AddRefed<DataChannel>
 DataChannelConnection::OpenFinish(already_AddRefed<DataChannel>&& aChannel)
 {
-  nsRefPtr<DataChannel> channel(aChannel); 
+  RefPtr<DataChannel> channel(aChannel); 
   
   
   uint16_t stream = channel->mStream;
@@ -2353,10 +2353,10 @@ private:
   
   
   
-  nsRefPtr<DataChannelConnection> mConnection;
+  RefPtr<DataChannelConnection> mConnection;
   uint16_t mStream;
   
-  nsRefPtr<nsIInputStream> mBlob;
+  RefPtr<nsIInputStream> mBlob;
 };
 
 int32_t
@@ -2408,7 +2408,7 @@ public:
 private:
   
   
-  nsRefPtr<DataChannelConnection> mConnection;
+  RefPtr<DataChannelConnection> mConnection;
   uint16_t mStream;
 };
 
@@ -2436,7 +2436,7 @@ DataChannelConnection::ReadBlob(already_AddRefed<DataChannelConnection> aThis,
   
   
   
-  nsRefPtr<DataChannelBlobSendRunnable> runnable = new DataChannelBlobSendRunnable(aThis,
+  RefPtr<DataChannelBlobSendRunnable> runnable = new DataChannelBlobSendRunnable(aThis,
                                                                                    aStream);
   
   if (NS_FAILED(aBlob->Available(&len)) ||
@@ -2500,7 +2500,7 @@ void
 DataChannelConnection::CloseInt(DataChannel *aChannel)
 {
   MOZ_ASSERT(aChannel);
-  nsRefPtr<DataChannel> channel(aChannel); 
+  RefPtr<DataChannel> channel(aChannel); 
 
   mLock.AssertCurrentThreadOwns();
   LOG(("Connection %p/Channel %p: Closing stream %u",
@@ -2557,7 +2557,7 @@ void DataChannelConnection::CloseAll()
   }
 
   
-  nsRefPtr<DataChannel> channel;
+  RefPtr<DataChannel> channel;
   while (nullptr != (channel = dont_AddRef(static_cast<DataChannel *>(mPending.PopFront())))) {
     LOG(("closing pending channel %p, stream %u", channel.get(), channel->mStream));
     channel->Close(); 

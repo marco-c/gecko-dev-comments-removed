@@ -277,7 +277,7 @@ public:
 
 
 
-    nsRefPtr<UndoManager> mUndoManager;
+    RefPtr<UndoManager> mUndoManager;
 
     
 
@@ -288,13 +288,13 @@ public:
     
 
 
-    nsRefPtr<mozilla::css::StyleRule> mSMILOverrideStyleRule;
+    RefPtr<mozilla::css::StyleRule> mSMILOverrideStyleRule;
 
     
 
 
 
-    nsRefPtr<nsDOMAttributeMap> mAttributeMap;
+    RefPtr<nsDOMAttributeMap> mAttributeMap;
 
     union {
       
@@ -312,22 +312,22 @@ public:
     
 
 
-    nsRefPtr<nsContentList> mChildrenList;
+    RefPtr<nsContentList> mChildrenList;
 
     
 
 
-    nsRefPtr<nsDOMTokenList> mClassList;
+    RefPtr<nsDOMTokenList> mClassList;
 
     
 
 
-    nsRefPtr<ShadowRoot> mShadowRoot;
+    RefPtr<ShadowRoot> mShadowRoot;
 
     
 
 
-    nsRefPtr<ShadowRoot> mContainingShadow;
+    RefPtr<ShadowRoot> mContainingShadow;
 
     
 
@@ -338,7 +338,7 @@ public:
     
 
 
-    nsRefPtr<nsXBLBinding> mXBLBinding;
+    RefPtr<nsXBLBinding> mXBLBinding;
 
     
 
@@ -348,7 +348,7 @@ public:
     
 
 
-    nsRefPtr<CustomElementData> mCustomElementData;
+    RefPtr<CustomElementData> mCustomElementData;
   };
 
 protected:

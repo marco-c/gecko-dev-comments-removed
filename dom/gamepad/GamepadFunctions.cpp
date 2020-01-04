@@ -33,7 +33,7 @@ NotifyGamepadChange(const T& aInfo)
   }
   
   if (GamepadService::IsServiceRunning()) {
-    nsRefPtr<GamepadService> svc = GamepadService::GetService();
+    RefPtr<GamepadService> svc = GamepadService::GetService();
     svc->Update(e);
   }
 }

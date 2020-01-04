@@ -163,7 +163,7 @@ private:
   
   
   
-  nsRefPtr<WorkerPrivate> mWorkerPrivate;
+  RefPtr<WorkerPrivate> mWorkerPrivate;
 
   nsCOMPtr<nsITimer> mIdleWorkerTimer;
 
@@ -174,7 +174,7 @@ private:
 
   
   
-  nsRefPtr<KeepAliveToken> mKeepAliveToken;
+  RefPtr<KeepAliveToken> mKeepAliveToken;
 
   uint64_t mTokenCount;
 };

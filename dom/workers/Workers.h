@@ -256,7 +256,7 @@ struct WorkerLoadInfo
   };
 
   
-  nsRefPtr<InterfaceRequestor> mInterfaceRequestor;
+  RefPtr<InterfaceRequestor> mInterfaceRequestor;
 
   nsAutoPtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
   nsCString mDomain;

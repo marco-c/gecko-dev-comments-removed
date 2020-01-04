@@ -99,7 +99,7 @@ private:
 
 protected:
   
-  nsRefPtr<MediaStream> mStream;
+  RefPtr<MediaStream> mStream;
 };
 
 template<> inline float

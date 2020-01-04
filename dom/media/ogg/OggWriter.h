@@ -40,7 +40,7 @@ private:
 
   void ProduceOggPage(nsTArray<nsTArray<uint8_t> >* aOutputBufs);
   
-  nsRefPtr<OpusMetadata> mMetadata;
+  RefPtr<OpusMetadata> mMetadata;
 
   ogg_stream_state mOggStreamState;
   ogg_page mOggPage;

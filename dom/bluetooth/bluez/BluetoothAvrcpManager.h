@@ -53,7 +53,7 @@ private:
   void NotifyConnectionStatusChanged();
 
   nsString mDeviceAddress;
-  nsRefPtr<BluetoothProfileController> mController;
+  RefPtr<BluetoothProfileController> mController;
 
   
   bool mAvrcpConnected;

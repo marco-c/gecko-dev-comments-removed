@@ -514,7 +514,7 @@ Activate()
 #endif
 
   
-  nsRefPtr<nsMemoryPressureWatcher> watcher = new nsMemoryPressureWatcher();
+  RefPtr<nsMemoryPressureWatcher> watcher = new nsMemoryPressureWatcher();
   watcher->Init();
 }
 

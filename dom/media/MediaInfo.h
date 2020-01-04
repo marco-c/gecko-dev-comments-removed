@@ -8,7 +8,7 @@
 
 #include "mozilla/UniquePtr.h"
 #include "nsRect.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsSize.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -219,8 +219,8 @@ public:
 
   
   nsIntRect mImage;
-  nsRefPtr<MediaByteBuffer> mCodecSpecificConfig;
-  nsRefPtr<MediaByteBuffer> mExtraData;
+  RefPtr<MediaByteBuffer> mCodecSpecificConfig;
+  RefPtr<MediaByteBuffer> mExtraData;
 };
 
 class AudioInfo : public TrackInfo {
@@ -285,8 +285,8 @@ public:
   
   int8_t mExtendedProfile;
 
-  nsRefPtr<MediaByteBuffer> mCodecSpecificConfig;
-  nsRefPtr<MediaByteBuffer> mExtraData;
+  RefPtr<MediaByteBuffer> mCodecSpecificConfig;
+  RefPtr<MediaByteBuffer> mExtraData;
 
 };
 

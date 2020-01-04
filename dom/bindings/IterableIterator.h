@@ -127,7 +127,7 @@ protected:
   }
 
   
-  nsRefPtr<T> mIterableObj;
+  RefPtr<T> mIterableObj;
 };
 
 template<typename T>

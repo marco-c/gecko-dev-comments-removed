@@ -29,7 +29,7 @@ class BackgroundMutableFileChildBase
 protected:
   friend class MutableFileBase;
 
-  nsRefPtr<MutableFileBase> mTemporaryStrongMutableFile;
+  RefPtr<MutableFileBase> mTemporaryStrongMutableFile;
   MutableFileBase* mMutableFile;
 
 public:
@@ -82,7 +82,7 @@ class BackgroundFileHandleChild
   
   
   
-  nsRefPtr<FileHandleBase> mTemporaryStrongFileHandle;
+  RefPtr<FileHandleBase> mTemporaryStrongFileHandle;
 
   
   
@@ -130,8 +130,8 @@ class BackgroundFileRequestChild final
   friend class BackgroundFileHandleChild;
   friend class FileHandleBase;
 
-  nsRefPtr<FileRequestBase> mFileRequest;
-  nsRefPtr<FileHandleBase> mFileHandle;
+  RefPtr<FileRequestBase> mFileRequest;
+  RefPtr<FileHandleBase> mFileHandle;
   bool mActorDestroyed;
 
 private:

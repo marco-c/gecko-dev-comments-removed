@@ -151,7 +151,7 @@ public:
 
 
 
-  bool FindReusableStyleSheet(nsIURI* aURL, nsRefPtr<CSSStyleSheet>& aResult);
+  bool FindReusableStyleSheet(nsIURI* aURL, RefPtr<CSSStyleSheet>& aResult);
 
   
 
@@ -169,7 +169,7 @@ private:
   LoaderReusableStyleSheets& operator=(const LoaderReusableStyleSheets&) = delete;
 
   
-  nsTArray<nsRefPtr<CSSStyleSheet>> mReusableSheets;
+  nsTArray<RefPtr<CSSStyleSheet>> mReusableSheets;
 };
 
 
@@ -456,7 +456,7 @@ public:
   
   bool IsAlternate(const nsAString& aTitle, bool aHasAlternateRel);
 
-  typedef nsTArray<nsRefPtr<SheetLoadData> > LoadDataArray;
+  typedef nsTArray<RefPtr<SheetLoadData> > LoadDataArray;
 
   
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -470,7 +470,7 @@ private:
 
   static PLDHashOperator
   RemoveEntriesWithURI(URIPrincipalReferrerPolicyAndCORSModeHashKey* aKey,
-                       nsRefPtr<CSSStyleSheet>& aSheet,
+                       RefPtr<CSSStyleSheet>& aSheet,
                        void* aUserData);
 
   

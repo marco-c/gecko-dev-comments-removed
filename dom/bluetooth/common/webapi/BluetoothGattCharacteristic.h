@@ -47,7 +47,7 @@ public:
   }
 
   void GetDescriptors(
-    nsTArray<nsRefPtr<BluetoothGattDescriptor>>& aDescriptors) const
+    nsTArray<RefPtr<BluetoothGattDescriptor>>& aDescriptors) const
   {
     aDescriptors = mDescriptors;
   }
@@ -200,12 +200,12 @@ private:
   
 
 
-  nsRefPtr<BluetoothGattService> mService;
+  RefPtr<BluetoothGattService> mService;
 
   
 
 
-  nsTArray<nsRefPtr<BluetoothGattDescriptor>> mDescriptors;
+  nsTArray<RefPtr<BluetoothGattDescriptor>> mDescriptors;
 
   
 
@@ -283,11 +283,11 @@ END_BLUETOOTH_NAMESPACE
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>,
   mozilla::dom::bluetooth::BluetoothGattId> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>& aChar,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>& aChar,
     const mozilla::dom::bluetooth::BluetoothGattId& aCharId) const
   {
     return aChar->GetCharacteristicId() == aCharId;
@@ -304,11 +304,11 @@ public:
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>,
   mozilla::dom::bluetooth::BluetoothUuid> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>& aChar,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>& aChar,
     const mozilla::dom::bluetooth::BluetoothUuid& aUuid) const
   {
     mozilla::dom::bluetooth::BluetoothUuid uuid;
@@ -327,11 +327,11 @@ public:
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>,
   mozilla::dom::bluetooth::BluetoothAttributeHandle> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>& aChar,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattCharacteristic>& aChar,
     const mozilla::dom::bluetooth::BluetoothAttributeHandle& aCharacteristicHandle)
     const
   {

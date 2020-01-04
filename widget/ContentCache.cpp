@@ -11,7 +11,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
 #include "nsIWidget.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 
@@ -318,7 +318,7 @@ ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
   }
 
   
-  nsRefPtr<TextComposition> textComposition =
+  RefPtr<TextComposition> textComposition =
     IMEStateManager::GetTextCompositionFor(aWidget);
   if (textComposition) {
     

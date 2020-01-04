@@ -114,7 +114,7 @@ protected:
                                 const IPC::Principal& aPrincipal);
 
 protected: 
-  nsRefPtr<nsFrameMessageManager> mMessageManager;
+  RefPtr<nsFrameMessageManager> mMessageManager;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIContentParent, NS_ICONTENTPARENT_IID)

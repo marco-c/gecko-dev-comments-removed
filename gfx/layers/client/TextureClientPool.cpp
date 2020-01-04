@@ -87,7 +87,7 @@ already_AddRefed<TextureClient>
 TextureClientPool::GetTextureClient()
 {
   
-  nsRefPtr<TextureClient> textureClient;
+  RefPtr<TextureClient> textureClient;
   if (mTextureClients.size()) {
     mOutstandingClients++;
     textureClient = mTextureClients.top();

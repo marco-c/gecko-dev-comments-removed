@@ -108,7 +108,7 @@ private:
   SVGStringList &InternalList() const;
 
   
-  nsRefPtr<nsSVGElement> mElement;
+  RefPtr<nsSVGElement> mElement;
 
   uint8_t mAttrEnum;
 

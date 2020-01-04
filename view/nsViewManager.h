@@ -264,7 +264,7 @@ public:
     AutoDisableRefresh(const AutoDisableRefresh& aOther);
     const AutoDisableRefresh& operator=(const AutoDisableRefresh& aOther);
 
-    nsRefPtr<nsViewManager> mRootVM;
+    RefPtr<nsViewManager> mRootVM;
   };
 
 private:
@@ -385,7 +385,7 @@ private:
   
   void PostPendingUpdate();
 
-  nsRefPtr<nsDeviceContext> mContext;
+  RefPtr<nsDeviceContext> mContext;
   nsIPresShell   *mPresShell;
 
   

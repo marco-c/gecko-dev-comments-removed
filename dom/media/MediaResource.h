@@ -293,7 +293,7 @@ public:
   
   virtual already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount)
   {
-    nsRefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
+    RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
     bool ok = bytes->SetLength(aCount, fallible);
     NS_ENSURE_TRUE(ok, nullptr);
     char* curr = reinterpret_cast<char*>(bytes->Elements());
@@ -711,7 +711,7 @@ public:
     void Revoke() { mResource = nullptr; }
 
   private:
-    nsRefPtr<ChannelMediaResource> mResource;
+    RefPtr<ChannelMediaResource> mResource;
   };
   friend class Listener;
 
@@ -754,7 +754,7 @@ protected:
 
   
   int64_t            mOffset;
-  nsRefPtr<Listener> mListener;
+  RefPtr<Listener> mListener;
   
   
   nsRevocableEventPtr<nsRunnableMethod<ChannelMediaResource, void, false> > mDataReceivedEvent;
@@ -770,7 +770,7 @@ protected:
 
   
   Mutex               mLock;
-  nsRefPtr<MediaChannelStatistics> mChannelStatistics;
+  RefPtr<MediaChannelStatistics> mChannelStatistics;
 
   
   
@@ -903,7 +903,7 @@ public:
   int64_t GetLength() const { return mResource->GetLength(); }
 
 private:
-  nsRefPtr<MediaResource> mResource;
+  RefPtr<MediaResource> mResource;
   int64_t mOffset;
 };
 

@@ -423,7 +423,7 @@ nsresult nsChromeRegistry::RefreshWindow(nsIDOMWindow* aWindow)
 
       if (IsChromeURI(uri)) {
         
-        nsRefPtr<CSSStyleSheet> newSheet;
+        RefPtr<CSSStyleSheet> newSheet;
         rv = document->LoadChromeSheetSync(uri, true,
                                            getter_AddRefs(newSheet));
         if (NS_FAILED(rv)) return rv;
@@ -462,12 +462,12 @@ nsresult nsChromeRegistry::RefreshWindow(nsIDOMWindow* aWindow)
   
   
   for (i = 0; i < count; i++) {
-    nsRefPtr<CSSStyleSheet> sheet = do_QueryObject(oldSheets[i]);
+    RefPtr<CSSStyleSheet> sheet = do_QueryObject(oldSheets[i]);
     nsIURI* uri = sheet ? sheet->GetOriginalURI() : nullptr;
 
     if (uri && IsChromeURI(uri)) {
       
-      nsRefPtr<CSSStyleSheet> newSheet;
+      RefPtr<CSSStyleSheet> newSheet;
       
       
       document->LoadChromeSheetSync(uri, false, getter_AddRefs(newSheet));
@@ -711,11 +711,11 @@ already_AddRefed<nsChromeRegistry>
 nsChromeRegistry::GetSingleton()
 {
   if (gChromeRegistry) {
-    nsRefPtr<nsChromeRegistry> registry = gChromeRegistry;
+    RefPtr<nsChromeRegistry> registry = gChromeRegistry;
     return registry.forget();
   }
 
-  nsRefPtr<nsChromeRegistry> cr;
+  RefPtr<nsChromeRegistry> cr;
   if (GeckoProcessType_Content == XRE_GetProcessType())
     cr = new nsChromeRegistryContent();
   else

@@ -121,7 +121,7 @@ nsHTMLEditor::~nsHTMLEditor()
 
   
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   
   if (selection) {
     nsCOMPtr<nsISelectionListener>listener;
@@ -283,7 +283,7 @@ nsHTMLEditor::Init(nsIDOMDocument *aDoc,
       AddOverrideStyleSheet(NS_LITERAL_STRING("resource://gre/res/EditorOverride.css"));
     }
 
-    nsRefPtr<Selection> selection = GetSelection();
+    RefPtr<Selection> selection = GetSelection();
     if (selection)
     {
       nsCOMPtr<nsISelectionListener>listener;
@@ -509,7 +509,7 @@ nsHTMLEditor::BeginningOfDocument()
   }
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
 
   
@@ -624,7 +624,7 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
         return NS_OK;
       }
 
-      nsRefPtr<Selection> selection = GetSelection();
+      RefPtr<Selection> selection = GetSelection();
       NS_ENSURE_TRUE(selection && selection->RangeCount(), NS_ERROR_FAILURE);
 
       nsCOMPtr<nsINode> node = selection->GetRangeAt(0)->GetStartParent();
@@ -797,7 +797,7 @@ nsHTMLEditor::IsBlockNode(nsINode *aNode)
 NS_IMETHODIMP
 nsHTMLEditor::SetDocumentTitle(const nsAString &aTitle)
 {
-  nsRefPtr<SetDocTitleTxn> txn = new SetDocTitleTxn();
+  RefPtr<SetDocTitleTxn> txn = new SetDocTitleTxn();
   NS_ENSURE_TRUE(txn, NS_ERROR_OUT_OF_MEMORY);
 
   nsresult result = txn->Init(this, &aTitle);
@@ -1003,7 +1003,7 @@ nsHTMLEditor::UpdateBaseURL()
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
   
-  nsRefPtr<nsContentList> nodeList =
+  RefPtr<nsContentList> nodeList =
     doc->GetElementsByTagName(NS_LITERAL_STRING("base"));
 
   
@@ -1085,7 +1085,7 @@ nsHTMLEditor::TabInTable(bool inIsShift, bool* outHandled)
     *outHandled = true;
     
     
-    nsRefPtr<Selection> selection;
+    RefPtr<Selection> selection;
     nsCOMPtr<nsIDOMElement> tblElement, cell;
     int32_t row;
     res = GetCellContext(getter_AddRefs(selection),
@@ -1133,7 +1133,7 @@ nsHTMLEditor::CollapseSelectionToDeepestNonTableFirstChild(
 {
   MOZ_ASSERT(aNode);
 
-  nsRefPtr<Selection> selection = aSelection;
+  RefPtr<Selection> selection = aSelection;
   if (!selection) {
     selection = GetSelection();
   }
@@ -1168,7 +1168,7 @@ nsHTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
 {
   
   nsAutoRules beginRulesSniffing(this, EditAction::ignore, nsIEditor::eNone);
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   ForceCompositionEnd();
@@ -1178,7 +1178,7 @@ nsHTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
   nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
   NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
 
-  nsRefPtr<nsContentList> nodeList =
+  RefPtr<nsContentList> nodeList =
     doc->GetElementsByTagName(NS_LITERAL_STRING("head"));
   NS_ENSURE_TRUE(nodeList, NS_ERROR_NULL_POINTER);
 
@@ -1201,11 +1201,11 @@ nsHTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
   nsAutoEditBatch beginBatching(this);
 
   
-  nsRefPtr<nsRange> range = selection->GetRangeAt(0);
+  RefPtr<nsRange> range = selection->GetRangeAt(0);
   NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
 
   ErrorResult err;
-  nsRefPtr<DocumentFragment> docfrag =
+  RefPtr<DocumentFragment> docfrag =
     range->CreateContextualFragment(inputString, err);
 
   
@@ -1243,7 +1243,7 @@ nsHTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
 {
   ForceCompositionEnd();
 
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   nsCOMPtr<Element> bodyElement = GetRoot();
@@ -1371,11 +1371,11 @@ nsHTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
   bodyTag.AssignLiteral("<div ");
   bodyTag.Append(Substring(endbody, endclosebody));
 
-  nsRefPtr<nsRange> range = selection->GetRangeAt(0);
+  RefPtr<nsRange> range = selection->GetRangeAt(0);
   NS_ENSURE_TRUE(range, NS_ERROR_FAILURE);
 
   ErrorResult rv;
-  nsRefPtr<DocumentFragment> docfrag =
+  RefPtr<DocumentFragment> docfrag =
     range->CreateContextualFragment(bodyTag, rv);
   NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
   NS_ENSURE_TRUE(docfrag, NS_ERROR_NULL_POINTER);
@@ -1479,7 +1479,7 @@ nsHTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement, bool aDeleteSele
   nsAutoEditBatch beginBatching(this);
   nsAutoRules beginRulesSniffing(this, EditAction::insertElement, nsIEditor::eNext);
 
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   if (!selection) {
     return NS_ERROR_FAILURE;
   }
@@ -1635,7 +1635,7 @@ nsHTMLEditor::SelectElement(nsIDOMElement* aElement)
 
   
   if (IsDescendantOfEditorRoot(aElement)) {
-    nsRefPtr<Selection> selection = GetSelection();
+    RefPtr<Selection> selection = GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
     nsCOMPtr<nsIDOMNode>parent;
     res = aElement->GetParentNode(getter_AddRefs(parent));
@@ -1661,7 +1661,7 @@ nsHTMLEditor::SetCaretAfterElement(nsIDOMElement* aElement)
 
   
   if (aElement && IsDescendantOfEditorRoot(aElement)) {
-    nsRefPtr<Selection> selection = GetSelection();
+    RefPtr<Selection> selection = GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
     nsCOMPtr<nsIDOMNode>parent;
     res = aElement->GetParentNode(getter_AddRefs(parent));
@@ -1690,7 +1690,7 @@ nsHTMLEditor::GetParagraphState(bool *aMixed, nsAString &outFormat)
 {
   if (!mRules) { return NS_ERROR_NOT_INITIALIZED; }
   NS_ENSURE_TRUE(aMixed, NS_ERROR_NULL_POINTER);
-  nsRefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
+  RefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
 
   return htmlRules->GetParagraphState(aMixed, outFormat);
 }
@@ -1735,7 +1735,7 @@ nsHTMLEditor::GetCSSBackgroundColorState(bool *aMixed, nsAString &aOutColor, boo
   aOutColor.AssignLiteral("transparent");
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_STATE(selection && selection->GetRangeAt(0));
 
   
@@ -1859,7 +1859,7 @@ nsHTMLEditor::GetListState(bool *aMixed, bool *aOL, bool *aUL, bool *aDL)
 {
   if (!mRules) { return NS_ERROR_NOT_INITIALIZED; }
   NS_ENSURE_TRUE(aMixed && aOL && aUL && aDL, NS_ERROR_NULL_POINTER);
-  nsRefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
+  RefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
 
   return htmlRules->GetListState(aMixed, aOL, aUL, aDL);
 }
@@ -1870,7 +1870,7 @@ nsHTMLEditor::GetListItemState(bool *aMixed, bool *aLI, bool *aDT, bool *aDD)
   if (!mRules) { return NS_ERROR_NOT_INITIALIZED; }
   NS_ENSURE_TRUE(aMixed && aLI && aDT && aDD, NS_ERROR_NULL_POINTER);
 
-  nsRefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
+  RefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
 
   return htmlRules->GetListItemState(aMixed, aLI, aDT, aDD);
 }
@@ -1880,7 +1880,7 @@ nsHTMLEditor::GetAlignment(bool *aMixed, nsIHTMLEditor::EAlignment *aAlign)
 {
   if (!mRules) { return NS_ERROR_NOT_INITIALIZED; }
   NS_ENSURE_TRUE(aMixed && aAlign, NS_ERROR_NULL_POINTER);
-  nsRefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
+  RefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
 
   return htmlRules->GetAlignment(aMixed, aAlign);
 }
@@ -1892,7 +1892,7 @@ nsHTMLEditor::GetIndentState(bool *aCanIndent, bool *aCanOutdent)
   if (!mRules) { return NS_ERROR_NOT_INITIALIZED; }
   NS_ENSURE_TRUE(aCanIndent && aCanOutdent, NS_ERROR_NULL_POINTER);
 
-  nsRefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
+  RefPtr<nsHTMLEditRules> htmlRules = static_cast<nsHTMLEditRules*>(mRules.get());
 
   return htmlRules->GetIndentState(aCanIndent, aCanOutdent);
 }
@@ -1912,7 +1912,7 @@ nsHTMLEditor::MakeOrChangeList(const nsAString& aListType, bool entireList, cons
   nsAutoRules beginRulesSniffing(this, EditAction::makeList, nsIEditor::eNext);
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   nsTextRulesInfo ruleInfo(EditAction::makeList);
@@ -1985,7 +1985,7 @@ nsHTMLEditor::RemoveList(const nsAString& aListType)
   nsAutoRules beginRulesSniffing(this, EditAction::removeList, nsIEditor::eNext);
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   nsTextRulesInfo ruleInfo(EditAction::removeList);
@@ -2016,7 +2016,7 @@ nsHTMLEditor::MakeDefinitionItem(const nsAString& aItemType)
   nsAutoRules beginRulesSniffing(this, EditAction::makeDefListItem, nsIEditor::eNext);
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
   nsTextRulesInfo ruleInfo(EditAction::makeDefListItem);
   ruleInfo.blockType = &aItemType;
@@ -2047,7 +2047,7 @@ nsHTMLEditor::InsertBasicBlock(const nsAString& aBlockType)
   nsAutoRules beginRulesSniffing(this, EditAction::makeBasicBlock, nsIEditor::eNext);
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
   nsTextRulesInfo ruleInfo(EditAction::makeBasicBlock);
   ruleInfo.blockType = &aBlockType;
@@ -2120,7 +2120,7 @@ nsHTMLEditor::Indent(const nsAString& aIndent)
   nsAutoRules beginRulesSniffing(this, opID, nsIEditor::eNext);
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   nsTextRulesInfo ruleInfo(opID);
@@ -2195,7 +2195,7 @@ nsHTMLEditor::Align(const nsAString& aAlignType)
   bool cancel, handled;
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
   nsTextRulesInfo ruleInfo(EditAction::align);
   ruleInfo.alignType = &aAlignType;
@@ -2216,7 +2216,7 @@ nsHTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
   nsCOMPtr<nsINode> node = aNode;
   if (!node) {
     
-    nsRefPtr<Selection> selection = GetSelection();
+    RefPtr<Selection> selection = GetSelection();
     NS_ENSURE_TRUE(selection, nullptr);
 
     nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
@@ -2317,7 +2317,7 @@ nsHTMLEditor::GetSelectedElement(const nsAString& aTagName, nsIDOMElement** aRet
   *aReturn = nullptr;
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   bool bNodeFound = false;
@@ -2332,7 +2332,7 @@ nsHTMLEditor::GetSelectedElement(const nsAString& aTagName, nsIDOMElement** aRet
   bool isNamedAnchorTag = IsNamedAnchorTag(TagName);
 
   nsCOMPtr<nsIDOMElement> selectedElement;
-  nsRefPtr<nsRange> range = selection->GetRangeAt(0);
+  RefPtr<nsRange> range = selection->GetRangeAt(0);
   NS_ENSURE_STATE(range);
 
   nsCOMPtr<nsIDOMNode> startParent;
@@ -2434,7 +2434,7 @@ nsHTMLEditor::GetSelectedElement(const nsAString& aTagName, nsIDOMElement** aRet
 
     if (!isCollapsed)   
     {
-      nsRefPtr<nsRange> currange = selection->GetRangeAt(0);
+      RefPtr<nsRange> currange = selection->GetRangeAt(0);
       if (currange) {
         nsCOMPtr<nsIContentIterator> iter =
           do_CreateInstance("@mozilla.org/content/post-content-iterator;1", &res);
@@ -2588,7 +2588,7 @@ nsHTMLEditor::InsertLinkAroundSelection(nsIDOMElement* aAnchorElement)
   NS_ENSURE_TRUE(aAnchorElement, NS_ERROR_NULL_POINTER);
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   if (selection->Collapsed()) {
@@ -2800,12 +2800,12 @@ nsHTMLEditor::ReplaceStyleSheet(const nsAString& aURL)
 NS_IMETHODIMP
 nsHTMLEditor::RemoveStyleSheet(const nsAString &aURL)
 {
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   nsresult rv = GetStyleSheetForURL(aURL, getter_AddRefs(sheet));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(sheet, NS_ERROR_UNEXPECTED);
 
-  nsRefPtr<RemoveStyleSheetTxn> txn;
+  RefPtr<RemoveStyleSheetTxn> txn;
   rv = CreateTxnForRemoveStyleSheet(sheet, getter_AddRefs(txn));
   if (!txn) rv = NS_ERROR_NULL_POINTER;
   if (NS_SUCCEEDED(rv))
@@ -2840,7 +2840,7 @@ nsHTMLEditor::AddOverrideStyleSheet(const nsAString& aURL)
   
   
   
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   
   rv = ps->GetDocument()->CSSLoader()->
     LoadSheetSync(uaURI, mozilla::css::eAgentSheetFeatures, true,
@@ -2885,7 +2885,7 @@ nsHTMLEditor::ReplaceOverrideStyleSheet(const nsAString& aURL)
 NS_IMETHODIMP
 nsHTMLEditor::RemoveOverrideStyleSheet(const nsAString &aURL)
 {
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   GetStyleSheetForURL(aURL, getter_AddRefs(sheet));
 
   
@@ -2908,7 +2908,7 @@ nsHTMLEditor::RemoveOverrideStyleSheet(const nsAString &aURL)
 NS_IMETHODIMP
 nsHTMLEditor::EnableStyleSheet(const nsAString &aURL, bool aEnable)
 {
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   nsresult rv = GetStyleSheetForURL(aURL, getter_AddRefs(sheet));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(sheet, NS_OK); 
@@ -2923,7 +2923,7 @@ nsHTMLEditor::EnableStyleSheet(const nsAString &aURL, bool aEnable)
 bool
 nsHTMLEditor::EnableExistingStyleSheet(const nsAString &aURL)
 {
-  nsRefPtr<CSSStyleSheet> sheet;
+  RefPtr<CSSStyleSheet> sheet;
   nsresult rv = GetStyleSheetForURL(aURL, getter_AddRefs(sheet));
   NS_ENSURE_SUCCESS(rv, false);
 
@@ -3069,7 +3069,7 @@ nsHTMLEditor::DeleteSelectionImpl(EDirection aAction,
     return NS_OK;
   }
 
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   
   
   NS_ENSURE_STATE(selection);
@@ -3200,7 +3200,7 @@ nsHTMLEditor::DoContentInserted(nsIDocument* aDocument, nsIContent* aContainer,
 
     
     if (mInlineSpellChecker) {
-      nsRefPtr<nsRange> range = new nsRange(aChild);
+      RefPtr<nsRange> range = new nsRange(aChild);
       int32_t endIndex = aIndexInContainer + 1;
       if (aInsertedOrAppended == eAppended) {
         
@@ -3260,7 +3260,7 @@ nsHTMLEditor::GetIsSelectionEditable(bool* aIsSelectionEditable)
 {
   MOZ_ASSERT(aIsSelectionEditable);
 
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   
@@ -3308,7 +3308,7 @@ SetSelectionAroundHeadChildren(Selection* aSelection,
 NS_IMETHODIMP
 nsHTMLEditor::GetHeadContentsAsHTML(nsAString& aOutputString)
 {
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   
@@ -3379,7 +3379,7 @@ nsHTMLEditor::StyleSheetLoaded(CSSStyleSheet* aSheet, bool aWasAlternate,
   if (!mLastStyleSheetURL.IsEmpty())
     RemoveStyleSheet(mLastStyleSheetURL);
 
-  nsRefPtr<AddStyleSheetTxn> txn;
+  RefPtr<AddStyleSheetTxn> txn;
   rv = CreateTxnForAddStyleSheet(aSheet, getter_AddRefs(txn));
   if (!txn) rv = NS_ERROR_NULL_POINTER;
   if (NS_SUCCEEDED(rv))
@@ -3510,7 +3510,7 @@ nsHTMLEditor::SelectAll()
 {
   ForceCompositionEnd();
 
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_STATE(selection);
 
   nsCOMPtr<nsIDOMNode> anchorNode;
@@ -3648,7 +3648,7 @@ nsHTMLEditor::SetCaretInTableCell(nsIDOMElement* aElement)
   }
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, false);
 
   return NS_SUCCEEDED(selection->CollapseNative(node, 0));
@@ -4520,7 +4520,7 @@ nsHTMLEditor::SetCSSBackgroundColor(const nsAString& aColor)
   
   nsCOMPtr<nsIEditRules> kungFuDeathGrip(mRules);
 
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_STATE(selection);
 
   bool isCollapsed = selection->Collapsed();
@@ -4539,7 +4539,7 @@ nsHTMLEditor::SetCSSBackgroundColor(const nsAString& aColor)
     
     NS_NAMED_LITERAL_STRING(bgcolor, "bgcolor");
     for (uint32_t i = 0; i < selection->RangeCount(); i++) {
-      nsRefPtr<nsRange> range = selection->GetRangeAt(i);
+      RefPtr<nsRange> range = selection->GetRangeAt(i);
       NS_ENSURE_TRUE(range, NS_ERROR_FAILURE);
 
       nsCOMPtr<Element> cachedBlockParent;
@@ -4794,7 +4794,7 @@ nsHTMLEditor::EndUpdateViewBatch()
   
   
   if (mUpdateCount == 0) {
-    nsRefPtr<Selection> selection = GetSelection();
+    RefPtr<Selection> selection = GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
     res = CheckSelectionStateForAnonymousButtons(selection);
   }
@@ -4804,7 +4804,7 @@ nsHTMLEditor::EndUpdateViewBatch()
 NS_IMETHODIMP
 nsHTMLEditor::GetSelectionContainer(nsIDOMElement ** aReturn)
 {
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   
   if (!selection) {
     return NS_ERROR_FAILURE;
@@ -4824,7 +4824,7 @@ nsHTMLEditor::GetSelectionContainer(nsIDOMElement ** aReturn)
 
     if (rangeCount == 1) {
 
-      nsRefPtr<nsRange> range = selection->GetRangeAt(0);
+      RefPtr<nsRange> range = selection->GetRangeAt(0);
       NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
 
       nsCOMPtr<nsIDOMNode> startContainer, endContainer;
@@ -4852,7 +4852,7 @@ nsHTMLEditor::GetSelectionContainer(nsIDOMElement ** aReturn)
     }
     else {
       int32_t i;
-      nsRefPtr<nsRange> range;
+      RefPtr<nsRange> range;
       for (i = 0; i < rangeCount; i++)
       {
         range = selection->GetRangeAt(i);
@@ -5016,7 +5016,7 @@ nsHTMLEditor::GetActiveEditingHost()
   }
 
   
-  nsRefPtr<Selection> selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, nullptr);
   nsCOMPtr<nsIDOMNode> focusNode;
   nsresult rv = selection->GetFocusNode(getter_AddRefs(focusNode));

@@ -13,7 +13,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/Function.h"
 #include "mozilla/layers/GeckoContentController.h"  
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"  
 #include "nsIWeakReferenceUtils.h"  
@@ -71,7 +71,7 @@ private:
   already_AddRefed<nsIWidget> GetWidget() const;
 private:
   nsWeakPtr mWidget;
-  nsRefPtr<ActiveElementManager> mActiveElementManager;
+  RefPtr<ActiveElementManager> mActiveElementManager;
   ContentReceivedInputBlockCallback mContentReceivedInputBlockCallback;
   bool mPendingTouchPreventedResponse;
   ScrollableLayerGuid mPendingTouchPreventedGuid;

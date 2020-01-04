@@ -189,7 +189,7 @@ private:
   
 
 
-  nsRefPtr<nsStyleContext> mOuterFocusStyle;
+  RefPtr<nsStyleContext> mOuterFocusStyle;
 
   class DummyTouchListener final : public nsIDOMEventListener
   {
@@ -208,7 +208,7 @@ private:
   
 
 
-  nsRefPtr<DummyTouchListener> mDummyTouchListener;
+  RefPtr<DummyTouchListener> mDummyTouchListener;
 };
 
 #endif

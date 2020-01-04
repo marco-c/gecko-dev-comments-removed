@@ -137,7 +137,7 @@ public:
             
             JS::Rooted<JS::Value> val(aCx);
             {
-                nsRefPtr<Blob> blob = Blob::Create(global, mBlobImpls[idx]);
+                RefPtr<Blob> blob = Blob::Create(global, mBlobImpls[idx]);
                 if (!ToJSValue(aCx, blob, &val)) {
                     return nullptr;
                 }
@@ -156,7 +156,7 @@ public:
           
           JS::Rooted<JSObject*> result(aCx);
           {
-            nsRefPtr<MozNDEFRecord> ndefRecord = new MozNDEFRecord(global);
+            RefPtr<MozNDEFRecord> ndefRecord = new MozNDEFRecord(global);
             result = ndefRecord->ReadStructuredClone(aCx, aReader) ?
                      ndefRecord->WrapObject(aCx, nullptr) : nullptr;
           }
@@ -230,7 +230,7 @@ public:
     StackScopedCloneOptions* mOptions;
     AutoObjectVector mReflectors;
     AutoObjectVector mFunctions;
-    nsTArray<nsRefPtr<BlobImpl>> mBlobImpls;
+    nsTArray<RefPtr<BlobImpl>> mBlobImpls;
 };
 
 

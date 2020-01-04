@@ -213,7 +213,7 @@ private:
 
   
   ConsumeType mConsumeType;
-  nsRefPtr<Promise> mConsumePromise;
+  RefPtr<Promise> mConsumePromise;
   DebugOnly<bool> mReadDone;
 
   nsMainThreadPtrHandle<nsIInputStreamPump> mConsumeBodyPump;

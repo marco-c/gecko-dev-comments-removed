@@ -106,7 +106,7 @@ VRHMDManager::ManagerInit()
 
   sManagers = new VRHMDManagerArray();
 
-  nsRefPtr<VRHMDManager> mgr;
+  RefPtr<VRHMDManager> mgr;
 
   
   
@@ -150,7 +150,7 @@ VRHMDManager::ManagerDestroy()
 }
 
  void
-VRHMDManager::GetAllHMDs(nsTArray<nsRefPtr<VRHMDInfo>>& aHMDResult)
+VRHMDManager::GetAllHMDs(nsTArray<RefPtr<VRHMDInfo>>& aHMDResult)
 {
   if (!sManagers)
     return;

@@ -8,7 +8,7 @@
 #include "nsISupportsImpl.h"
 #include "nsXPCOM.h"
 #include "nsDOMNavigationTiming.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "CodecConfig.h"
 #include "VideoTypes.h"
 #include "MediaConduitErrors.h"
@@ -58,10 +58,10 @@ class ImageHandle
 public:
   explicit ImageHandle(layers::Image* image) : mImage(image) {}
 
-  const nsRefPtr<layers::Image>& GetImage() const { return mImage; }
+  const RefPtr<layers::Image>& GetImage() const { return mImage; }
 
 private:
-  nsRefPtr<layers::Image> mImage;
+  RefPtr<layers::Image> mImage;
 };
 
 
@@ -170,7 +170,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode SetTransmitterTransport(nsRefPtr<TransportInterface> aTransport) = 0;
+  virtual MediaConduitErrorCode SetTransmitterTransport(RefPtr<TransportInterface> aTransport) = 0;
 
   
 
@@ -181,7 +181,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode SetReceiverTransport(nsRefPtr<TransportInterface> aTransport) = 0;
+  virtual MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) = 0;
 
   virtual bool SetLocalSSRC(unsigned int ssrc) = 0;
   virtual bool GetLocalSSRC(unsigned int* ssrc) = 0;
@@ -256,7 +256,7 @@ public:
 
 
 
-  static nsRefPtr<VideoSessionConduit> Create();
+  static RefPtr<VideoSessionConduit> Create();
 
   enum FrameRequestType
   {
@@ -280,7 +280,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode AttachRenderer(nsRefPtr<VideoRenderer> aRenderer) = 0;
+  virtual MediaConduitErrorCode AttachRenderer(RefPtr<VideoRenderer> aRenderer) = 0;
   virtual void DetachRenderer() = 0;
 
   
@@ -387,7 +387,7 @@ public:
 
 
 
-  static nsRefPtr<AudioSessionConduit> Create();
+  static RefPtr<AudioSessionConduit> Create();
 
   virtual ~AudioSessionConduit() {}
 

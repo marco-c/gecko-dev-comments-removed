@@ -34,7 +34,7 @@ public:
   
   struct Attachment final
   {
-    nsRefPtr<Blob> content;
+    RefPtr<Blob> content;
     nsString id;
     nsString location;
 

@@ -728,7 +728,7 @@ protected:
 
   virtual void WakeLockCreate();
   virtual void WakeLockRelease();
-  nsRefPtr<WakeLock> mWakeLock;
+  RefPtr<WakeLock> mWakeLock;
 
   
 
@@ -772,13 +772,13 @@ protected:
 
 
 
-  void NotifyMediaStreamTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack);
+  void NotifyMediaStreamTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
 
   
 
 
 
-  void NotifyMediaStreamTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack);
+  void NotifyMediaStreamTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack);
 
   
 
@@ -1097,55 +1097,55 @@ protected:
 
   
   
-  nsRefPtr<MediaDecoder> mDecoder;
+  RefPtr<MediaDecoder> mDecoder;
 
   
   WatchManager<HTMLMediaElement> mWatchManager;
 
   
   
-  nsRefPtr<VideoFrameContainer> mVideoFrameContainer;
+  RefPtr<VideoFrameContainer> mVideoFrameContainer;
 
   
   
-  nsRefPtr<DOMMediaStream> mSrcAttrStream;
+  RefPtr<DOMMediaStream> mSrcAttrStream;
 
   
   
   
-  nsRefPtr<DOMMediaStream> mSrcStream;
+  RefPtr<DOMMediaStream> mSrcStream;
 
   
   
   double mSrcStreamPausedCurrentTime;
 
   
-  nsRefPtr<MediaInputPort> mCaptureStreamPort;
+  RefPtr<MediaInputPort> mCaptureStreamPort;
 
   
   
   struct OutputMediaStream {
-    nsRefPtr<DOMMediaStream> mStream;
+    RefPtr<DOMMediaStream> mStream;
     bool mFinishWhenEnded;
   };
   nsTArray<OutputMediaStream> mOutputStreams;
 
   
   
-  nsRefPtr<StreamListener> mMediaStreamListener;
+  RefPtr<StreamListener> mMediaStreamListener;
   
   
-  nsRefPtr<StreamSizeListener> mMediaStreamSizeListener;
+  RefPtr<StreamSizeListener> mMediaStreamSizeListener;
 
   
   
-  nsRefPtr<MediaSource> mSrcMediaSource;
+  RefPtr<MediaSource> mSrcMediaSource;
 
   
   
   
   
-  nsRefPtr<MediaSource> mMediaSource;
+  RefPtr<MediaSource> mMediaSource;
 
   
   
@@ -1154,7 +1154,7 @@ protected:
   nsCOMPtr<nsIChannel> mChannel;
 
   
-  nsRefPtr<MediaError> mError;
+  RefPtr<MediaError> mError;
 
   
   
@@ -1163,7 +1163,7 @@ protected:
 
   
   
-  nsRefPtr<nsRange> mSourcePointer;
+  RefPtr<nsRange> mSourcePointer;
 
   
   
@@ -1263,14 +1263,14 @@ protected:
   nsCOMPtr<nsIContent> mSourceLoadCandidate;
 
   
-  nsRefPtr<TimeRanges> mPlayed;
+  RefPtr<TimeRanges> mPlayed;
 
   
   nsCOMPtr<nsITimer> mProgressTimer;
 
 #ifdef MOZ_EME
   
-  nsRefPtr<MediaKeys> mMediaKeys;
+  RefPtr<MediaKeys> mMediaKeys;
 #endif
 
   
@@ -1445,13 +1445,13 @@ protected:
   
   nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
 
-  nsRefPtr<TextTrackManager> mTextTrackManager;
+  RefPtr<TextTrackManager> mTextTrackManager;
 
-  nsRefPtr<AudioTrackList> mAudioTrackList;
+  RefPtr<AudioTrackList> mAudioTrackList;
 
-  nsRefPtr<VideoTrackList> mVideoTrackList;
+  RefPtr<VideoTrackList> mVideoTrackList;
 
-  nsRefPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
+  RefPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
 
   enum ElementInTreeState {
     

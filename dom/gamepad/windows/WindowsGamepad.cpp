@@ -398,7 +398,7 @@ private:
   
   nsTArray<Gamepad> mGamepads;
 
-  nsRefPtr<Observer> mObserver;
+  RefPtr<Observer> mObserver;
   nsCOMPtr<nsITimer> mXInputPollTimer;
 
   HIDLoader mHID;

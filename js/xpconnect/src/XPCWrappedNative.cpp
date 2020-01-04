@@ -213,7 +213,7 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
 
     
     
-    nsRefPtr<XPCWrappedNative> wrapper =
+    RefPtr<XPCWrappedNative> wrapper =
         new XPCWrappedNative(nativeHelper.forgetCanonical(), proto);
 
     
@@ -311,7 +311,7 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
         return NS_ERROR_FAILURE;
     }
 
-    nsRefPtr<XPCWrappedNative> wrapper;
+    RefPtr<XPCWrappedNative> wrapper;
 
     Native2WrappedNativeMap* map = Scope->GetWrappedNativeMap();
     
@@ -474,7 +474,7 @@ FinishCreate(XPCWrappedNativeScope* Scope,
 
     Native2WrappedNativeMap* map = Scope->GetWrappedNativeMap();
 
-    nsRefPtr<XPCWrappedNative> wrapper;
+    RefPtr<XPCWrappedNative> wrapper;
     
     
     
@@ -510,7 +510,7 @@ XPCWrappedNative::GetUsedOnly(nsISupports* Object,
     MOZ_ASSERT(Object, "XPCWrappedNative::GetUsedOnly was called with a null Object");
     MOZ_ASSERT(Interface);
 
-    nsRefPtr<XPCWrappedNative> wrapper;
+    RefPtr<XPCWrappedNative> wrapper;
     nsWrapperCache* cache = nullptr;
     CallQueryInterface(Object, &cache);
     if (cache) {
@@ -910,7 +910,7 @@ XPCWrappedNative::FlatJSObjectFinalized()
         }
 
         
-        nsRefPtr<nsISupports> native = to->TakeNative();
+        RefPtr<nsISupports> native = to->TakeNative();
         if (native && GetRuntime()) {
             DeferredFinalize(native.forget().take());
         }
@@ -1131,7 +1131,7 @@ XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
 
     
     
-    nsRefPtr<nsISupports> qiResult;
+    RefPtr<nsISupports> qiResult;
 
     
     
@@ -1209,7 +1209,7 @@ XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
         
 
         if (iid->Equals(NS_GET_IID(nsIPropertyBag)) && jso) {
-            nsRefPtr<nsXPCWrappedJSClass> clasp = nsXPCWrappedJSClass::GetNewOrUsed(cx, *iid);
+            RefPtr<nsXPCWrappedJSClass> clasp = nsXPCWrappedJSClass::GetNewOrUsed(cx, *iid);
             if (clasp) {
                 RootedObject answer(cx, clasp->CallQueryInterfaceOnJSObject(cx, jso, *iid));
 

@@ -124,7 +124,7 @@ public:
 
 
 
-  void getConnections(nsTArray<nsRefPtr<Connection> >& aConnections);
+  void getConnections(nsTArray<RefPtr<Connection> >& aConnections);
 
 private:
   Service();
@@ -148,7 +148,7 @@ private:
 
 
 
-  nsTArray<nsRefPtr<Connection> > mConnections;
+  nsTArray<RefPtr<Connection> > mConnections;
 
   
 

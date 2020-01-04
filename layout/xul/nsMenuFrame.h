@@ -273,13 +273,13 @@ protected:
   nsMenuType mType;
 
   
-  nsRefPtr<nsMenuTimerMediator> mTimerMediator;
+  RefPtr<nsMenuTimerMediator> mTimerMediator;
 
   nsCOMPtr<nsITimer> mOpenTimer;
   nsCOMPtr<nsITimer> mBlinkTimer;
 
   uint8_t mBlinkState; 
-  nsRefPtr<nsXULMenuCommandEvent> mDelayedMenuCommandEvent;
+  RefPtr<nsXULMenuCommandEvent> mDelayedMenuCommandEvent;
 
   nsString mGroupName;
 

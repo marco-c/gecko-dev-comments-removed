@@ -100,7 +100,7 @@ protected:
   already_AddRefed<nsPIDOMWindow> GetContentWindow();
   nsresult GetContentWindow(nsIDOMWindow** aContentWindow);
 
-  nsRefPtr<nsFrameLoader> mFrameLoader;
+  RefPtr<nsFrameLoader> mFrameLoader;
 
   
 

@@ -77,8 +77,8 @@ protected:
 private:
 
   
-  nsRefPtr<nsStyleContext> mInnerFocusStyle;
-  nsRefPtr<nsStyleContext> mOuterFocusStyle;
+  RefPtr<nsStyleContext> mInnerFocusStyle;
+  RefPtr<nsStyleContext> mOuterFocusStyle;
 
   nsFrame* mFrame;
 };

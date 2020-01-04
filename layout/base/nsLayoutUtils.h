@@ -2058,7 +2058,7 @@ public:
     SurfaceFromElementResult();
 
     
-    nsRefPtr<SourceSurface> mSourceSurface;
+    RefPtr<SourceSurface> mSourceSurface;
     
     DirectDrawInfo mDrawInfo;
 

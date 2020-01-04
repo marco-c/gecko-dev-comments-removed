@@ -66,7 +66,7 @@ protected:
   static void EnableCustomDrawing(HWND aHWND, bool aEnable);
 
   
-  nsRefPtr<ITaskbarList4> mTaskbar;
+  RefPtr<ITaskbarList4> mTaskbar;
   
   nsCOMPtr<nsITaskbarPreviewController> mController;
   

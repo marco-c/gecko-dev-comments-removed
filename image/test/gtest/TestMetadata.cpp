@@ -17,7 +17,7 @@
 #include "nsIInputStream.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -57,7 +57,7 @@ CheckMetadata(const ImageTestCase& aTestCase,
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
-  nsRefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
+  RefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
@@ -66,7 +66,7 @@ CheckMetadata(const ImageTestCase& aTestCase,
   
   DecoderType decoderType =
     DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  nsRefPtr<Decoder> decoder =
+  RefPtr<Decoder> decoder =
     DecoderFactory::CreateAnonymousMetadataDecoder(decoderType, sourceBuffer);
   ASSERT_TRUE(decoder != nullptr);
 
@@ -194,7 +194,7 @@ TEST(ImageMetadata, NoFrameDelayGIFFullDecode)
   
 
   
-  nsRefPtr<Image> image =
+  RefPtr<Image> image =
     ImageFactory::CreateAnonymousImage(nsAutoCString(testCase.mMimeType));
   ASSERT_TRUE(!image->HasError());
 
@@ -215,11 +215,11 @@ TEST(ImageMetadata, NoFrameDelayGIFFullDecode)
   rv = image->OnImageDataComplete(nullptr, nullptr, NS_OK, true);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
-  nsRefPtr<ProgressTracker> tracker = image->GetProgressTracker();
+  RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
   tracker->SyncNotifyProgress(FLAG_LOAD_COMPLETE);
 
   
-  nsRefPtr<SourceSurface> surface =
+  RefPtr<SourceSurface> surface =
     image->GetFrame(imgIContainer::FRAME_CURRENT,
                     imgIContainer::FLAG_SYNC_DECODE);
 

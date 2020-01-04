@@ -158,8 +158,8 @@ BasicTextureImage::EndUpdate()
 
     
 
-    nsRefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
-    nsRefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
+    RefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
+    RefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
 
     bool relative = FinishedSurfaceUpdate();
 
@@ -463,7 +463,7 @@ TiledTextureImage::BeginUpdate(nsIntRegion& aRegion)
             
             aRegion.MoveBy(-xPos, -yPos);
             
-            nsRefPtr<gfx::DrawTarget> drawTarget = mImages[i]->BeginUpdate(aRegion);
+            RefPtr<gfx::DrawTarget> drawTarget = mImages[i]->BeginUpdate(aRegion);
             
             aRegion.MoveBy(xPos, yPos);
             
@@ -503,8 +503,8 @@ TiledTextureImage::EndUpdate()
         return;
     }
 
-    nsRefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
-    nsRefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
+    RefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
+    RefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
 
     
     for (unsigned i = 0; i < mImages.Length(); i++) {
@@ -664,7 +664,7 @@ void TiledTextureImage::Resize(const gfx::IntSize& aSize)
             }
 
             
-            nsRefPtr<TextureImage> teximg =
+            RefPtr<TextureImage> teximg =
                 TileGenFunc(mGL, size, mContentType, mFlags, mImageFormat);
             if (replace)
                 mImages.ReplaceElementAt(i, teximg);
@@ -723,7 +723,7 @@ CreateBasicTextureImage(GLContext* aGL,
     aGL->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_S, aWrapMode);
     aGL->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_T, aWrapMode);
 
-    nsRefPtr<BasicTextureImage> texImage =
+    RefPtr<BasicTextureImage> texImage =
         new BasicTextureImage(texture, aSize, aWrapMode, aContentType,
                               aGL, aFlags, aImageFormat);
     return texImage.forget();

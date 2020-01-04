@@ -61,15 +61,15 @@ struct _cairo_d2d_device
     cairo_device_t base;
 
     HMODULE mD3D10_1;
-    nsRefPtr<ID3D10Device1> mD3D10Device;
-    nsRefPtr<ID3D10Effect> mSampleEffect;
-    nsRefPtr<ID3D10InputLayout> mInputLayout;
-    nsRefPtr<ID3D10Buffer> mQuadBuffer;
-    nsRefPtr<ID3D10RasterizerState> mRasterizerState;
-    nsRefPtr<ID3D10BlendState> mBlendStates[MAX_OPERATORS];
+    RefPtr<ID3D10Device1> mD3D10Device;
+    RefPtr<ID3D10Effect> mSampleEffect;
+    RefPtr<ID3D10InputLayout> mInputLayout;
+    RefPtr<ID3D10Buffer> mQuadBuffer;
+    RefPtr<ID3D10RasterizerState> mRasterizerState;
+    RefPtr<ID3D10BlendState> mBlendStates[MAX_OPERATORS];
     
-    nsRefPtr<ID3D10Texture2D> mTextTexture;
-    nsRefPtr<ID3D10ShaderResourceView> mTextTextureView;
+    RefPtr<ID3D10Texture2D> mTextTexture;
+    RefPtr<ID3D10ShaderResourceView> mTextTextureView;
     int mVRAMUsage;
 };
 
@@ -94,20 +94,20 @@ struct _cairo_d2d_surface {
     cairo_d2d_device_t *device;
 
     
-    nsRefPtr<ID2D1RenderTarget> rt;
+    RefPtr<ID2D1RenderTarget> rt;
     
-    nsRefPtr<ID3D10Resource> surface;
+    RefPtr<ID3D10Resource> surface;
     
 
 
 
-    nsRefPtr<ID3D10Texture2D> bufferTexture;
+    RefPtr<ID3D10Texture2D> bufferTexture;
     
-    nsRefPtr<IDXGISurface> backBuf;
+    RefPtr<IDXGISurface> backBuf;
     
-    nsRefPtr<ID2D1Bitmap> surfaceBitmap;
+    RefPtr<ID2D1Bitmap> surfaceBitmap;
     
-    nsRefPtr<IDXGISwapChain> dxgiChain;
+    RefPtr<IDXGISwapChain> dxgiChain;
     
     HWND hwnd;
     
@@ -118,18 +118,18 @@ struct _cairo_d2d_surface {
 
 
     
-    nsRefPtr<ID2D1Layer> maskLayer;
+    RefPtr<ID2D1Layer> maskLayer;
     
 
 
 
-    nsRefPtr<ID2D1Layer> helperLayer;
+    RefPtr<ID2D1Layer> helperLayer;
     
     bool clipping;
     
-    nsRefPtr<ID2D1BitmapBrush> bitmapBrush;
+    RefPtr<ID2D1BitmapBrush> bitmapBrush;
     
-    nsRefPtr<ID2D1SolidColorBrush> solidColorBrush;
+    RefPtr<ID2D1SolidColorBrush> solidColorBrush;
     
     bool isDrawing;
     
@@ -141,8 +141,8 @@ struct _cairo_d2d_surface {
     };
     TextRenderingState textRenderingState;
 
-    nsRefPtr<ID3D10RenderTargetView> buffer_rt_view;
-    nsRefPtr<ID3D10ShaderResourceView> buffer_sr_view;
+    RefPtr<ID3D10RenderTargetView> buffer_rt_view;
+    RefPtr<ID3D10ShaderResourceView> buffer_sr_view;
 
     
     

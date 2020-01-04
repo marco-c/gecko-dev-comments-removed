@@ -264,7 +264,7 @@ private:
   
 
 
-  nsRefPtr<mozilla::places::Database> mDB;
+  RefPtr<mozilla::places::Database> mDB;
 
   int32_t mItemCount;
 

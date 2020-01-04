@@ -149,7 +149,7 @@ private:
     
     
     
-    nsRefPtr<nsWindow> mPendingWindow;
+    RefPtr<nsWindow> mPendingWindow;
     nsIntPoint mPendingWindowPoint;
     nsCountedRef<GdkDragContext> mPendingDragContext;
     guint mPendingTime;
@@ -157,7 +157,7 @@ private:
     
     
     
-    nsRefPtr<nsWindow> mTargetWindow;
+    RefPtr<nsWindow> mTargetWindow;
     nsIntPoint mTargetWindowPoint;
     
     

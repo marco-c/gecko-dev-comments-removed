@@ -224,7 +224,7 @@ private:
 
   
   
-  nsTArray<nsRefPtr<nsScriptLoader>> mBlockedScriptLoaders;
+  nsTArray<RefPtr<nsScriptLoader>> mBlockedScriptLoaders;
 
   
   

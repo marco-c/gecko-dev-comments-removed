@@ -161,7 +161,7 @@ convertJSValToVariant(
 Variant_base *
 convertVariantToStorageVariant(nsIVariant* aVariant)
 {
-  nsRefPtr<Variant_base> variant = do_QueryObject(aVariant);
+  RefPtr<Variant_base> variant = do_QueryObject(aVariant);
   if (variant) {
     
     

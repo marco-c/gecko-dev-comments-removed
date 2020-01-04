@@ -30,7 +30,7 @@ public:
 
 private:
   nsresult InitDecoder(unsigned int aWidth, unsigned int aHeight);
-  nsRefPtr<WebMReader> mReader;
+  RefPtr<WebMReader> mReader;
 
   
   vpx_codec_ctx_t mVPX;

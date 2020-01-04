@@ -83,7 +83,7 @@ NS_IMETHODIMP TypeInState::NotifySelectionChanged(nsIDOMDocument *, nsISelection
   
   
   
-  nsRefPtr<Selection> selection = static_cast<Selection*>(aSelection);
+  RefPtr<Selection> selection = static_cast<Selection*>(aSelection);
 
   if (aSelection) {
     int32_t rangeCount = selection->RangeCount();

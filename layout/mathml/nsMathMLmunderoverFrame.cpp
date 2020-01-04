@@ -398,7 +398,7 @@ nsMathMLmunderoverFrame::Place(nsRenderingContext& aRenderingContext,
   
   
 
-  nsRefPtr<nsFontMetrics> fm;
+  RefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
                                         fontSizeInflation);
 

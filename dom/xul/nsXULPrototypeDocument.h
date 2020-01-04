@@ -70,7 +70,7 @@ public:
 
 
 
-    const nsTArray<nsRefPtr<nsXULPrototypePI> >& GetProcessingInstructions() const;
+    const nsTArray<RefPtr<nsXULPrototypePI> >& GetProcessingInstructions() const;
 
     
 
@@ -119,14 +119,14 @@ public:
 
 protected:
     nsCOMPtr<nsIURI> mURI;
-    nsRefPtr<nsXULPrototypeElement> mRoot;
-    nsTArray<nsRefPtr<nsXULPrototypePI> > mProcessingInstructions;
+    RefPtr<nsXULPrototypeElement> mRoot;
+    nsTArray<RefPtr<nsXULPrototypePI> > mProcessingInstructions;
     nsCOMArray<nsIURI> mStyleSheetReferences;
 
     bool mLoaded;
-    nsTArray< nsRefPtr<mozilla::dom::XULDocument> > mPrototypeWaiters;
+    nsTArray< RefPtr<mozilla::dom::XULDocument> > mPrototypeWaiters;
 
-    nsRefPtr<nsNodeInfoManager> mNodeInfoManager;
+    RefPtr<nsNodeInfoManager> mNodeInfoManager;
 
     uint32_t mCCGeneration;
     uint32_t mGCNumber;

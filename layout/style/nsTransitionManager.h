@@ -194,8 +194,8 @@ protected:
 } 
 
 struct TransitionEventInfo {
-  nsRefPtr<dom::Element> mElement;
-  nsRefPtr<dom::Animation> mAnimation;
+  RefPtr<dom::Element> mElement;
+  RefPtr<dom::Animation> mAnimation;
   InternalTransitionEvent mEvent;
   TimeStamp mTimeStamp;
 
@@ -262,7 +262,7 @@ public:
 
   void StyleContextChanged(mozilla::dom::Element *aElement,
                            nsStyleContext *aOldStyleContext,
-                           nsRefPtr<nsStyleContext>* aNewStyleContext );
+                           RefPtr<nsStyleContext>* aNewStyleContext );
 
   
 

@@ -64,7 +64,7 @@ ImportLoader::Updater::GetReferrerChain(nsINode* aNode,
 
   aResult.AppendElement(aNode);
   nsINode* node = aNode;
-  nsRefPtr<ImportManager> manager = mLoader->Manager();
+  RefPtr<ImportManager> manager = mLoader->Manager();
   for (ImportLoader* referrersLoader = manager->Find(node->OwnerDoc());
        referrersLoader;
        referrersLoader = manager->Find(node->OwnerDoc()))
@@ -154,7 +154,7 @@ ImportLoader::Updater::UpdateMainReferrer(uint32_t aNewIdx)
   if (mLoader->mDocument) {
     
     
-    nsRefPtr<ImportManager> manager = mLoader->Manager();
+    RefPtr<ImportManager> manager = mLoader->Manager();
     nsScriptLoader* loader = mLoader->mDocument->ScriptLoader();
     ImportLoader*& pred = mLoader->mBlockingPredecessor;
     ImportLoader* newPred = manager->GetNearestPredecessor(newMainReferrer);
@@ -658,7 +658,7 @@ ImportManager::Get(nsIURI* aURI, nsINode* aNode, nsIDocument* aOrigDocument)
 {
   
   
-  nsRefPtr<ImportLoader> loader;
+  RefPtr<ImportLoader> loader;
   mImports.Get(aURI, getter_AddRefs(loader));
   bool needToStart = false;
   if (!loader) {
@@ -716,7 +716,7 @@ ImportLoader* ImportManager::GetNearestPredecessor(nsINode* aNode)
     HTMLLinkElement* link =
       static_cast<HTMLLinkElement*>(doc->GetSubImportLink(idx - 1));
     nsCOMPtr<nsIURI> uri = link->GetHrefURI();
-    nsRefPtr<ImportLoader> ret;
+    RefPtr<ImportLoader> ret;
     mImports.Get(uri, getter_AddRefs(ret));
     
     if (ret->GetMainReferrer() == link) {

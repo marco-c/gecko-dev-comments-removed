@@ -1014,7 +1014,7 @@ RestyleManager::RestyleElement(Element*               aElement,
       !mInRebuildAllStyleData) {
     nsStyleContext *oldContext = aPrimaryFrame->StyleContext();
     if (!oldContext->GetParent()) { 
-      nsRefPtr<nsStyleContext> newContext = mPresContext->StyleSet()->
+      RefPtr<nsStyleContext> newContext = mPresContext->StyleSet()->
         ResolveStyleFor(aElement, nullptr );
       if (oldContext->StyleFont()->mFont.size !=
           newContext->StyleFont()->mFont.size) {
@@ -1100,7 +1100,7 @@ RestyleManager::AnimationsWithDestroyedFrame::StopAnimationsForElementsWithoutFr
 
 void
 RestyleManager::AnimationsWithDestroyedFrame::StopAnimationsWithoutFrame(
-  nsTArray<nsRefPtr<nsIContent>>& aArray,
+  nsTArray<RefPtr<nsIContent>>& aArray,
   nsCSSPseudoElements::Type aPseudoType)
 {
   nsAnimationManager* animationManager =
@@ -1628,7 +1628,7 @@ RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
   }
 
   
-  nsRefPtr<nsViewManager> vm = presShell->GetViewManager();
+  RefPtr<nsViewManager> vm = presShell->GetViewManager();
 
   
   
@@ -2116,7 +2116,7 @@ RestyleManager::DebugVerifyStyleTree(nsIFrame* aFrame)
 RestyleManager::TryStartingTransition(nsPresContext* aPresContext,
                                       nsIContent* aContent,
                                       nsStyleContext* aOldStyleContext,
-                                      nsRefPtr<nsStyleContext>*
+                                      RefPtr<nsStyleContext>*
                                         aNewStyleContext )
 {
   if (!aContent || !aContent->IsElement()) {
@@ -2125,7 +2125,7 @@ RestyleManager::TryStartingTransition(nsPresContext* aPresContext,
 
   
   
-  nsRefPtr<nsStyleContext> sc = *aNewStyleContext;
+  RefPtr<nsStyleContext> sc = *aNewStyleContext;
   aPresContext->TransitionManager()->StyleContextChanged(
     aContent->AsElement(), aOldStyleContext, aNewStyleContext);
   return *aNewStyleContext != sc;
@@ -2351,7 +2351,7 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
   
   nsStyleContext* oldContext = aFrame->StyleContext();
 
-  nsRefPtr<nsStyleContext> newContext;
+  RefPtr<nsStyleContext> newContext;
   nsIFrame* providerFrame;
   nsStyleContext* newParentContext = aFrame->GetParentStyleContext(&providerFrame);
   bool isChild = providerFrame && providerFrame->GetParent() == aFrame;
@@ -2493,7 +2493,7 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
       for (nsStyleContext* oldExtraContext;
            (oldExtraContext = aFrame->GetAdditionalStyleContext(contextIndex));
            ++contextIndex) {
-        nsRefPtr<nsStyleContext> newExtraContext;
+        RefPtr<nsStyleContext> newExtraContext;
         newExtraContext = mPresContext->StyleSet()->
                             ReparentStyleContext(oldExtraContext,
                                                  newContext, nullptr);
@@ -2541,7 +2541,7 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
                                  nsTArray<nsIContent*>&
                                    aVisibleKidsOfHiddenElement,
                                  nsTArray<ContextToClear>& aContextsToClear,
-                                 nsTArray<nsRefPtr<nsStyleContext>>&
+                                 nsTArray<RefPtr<nsStyleContext>>&
                                    aSwappedStructOwners)
   : mPresContext(aPresContext)
   , mFrame(aFrame)
@@ -2665,7 +2665,7 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
                                  nsTArray<nsIContent*>&
                                    aVisibleKidsOfHiddenElement,
                                  nsTArray<ContextToClear>& aContextsToClear,
-                                 nsTArray<nsRefPtr<nsStyleContext>>&
+                                 nsTArray<RefPtr<nsStyleContext>>&
                                    aSwappedStructOwners)
   : mPresContext(aPresContext)
   , mFrame(nullptr)
@@ -3214,7 +3214,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
   
   
   
-  nsTArray<nsRefPtr<Element>> descendants;
+  nsTArray<RefPtr<Element>> descendants;
 
   nsRestyleHint hintToRestore = nsRestyleHint(0);
   RestyleHintData hintDataToRestore;
@@ -3256,7 +3256,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
                                   eRestyle_Subtree |
                                   eRestyle_ForceDescendants));
 
-  nsRefPtr<nsStyleContext> oldContext = mFrame->StyleContext();
+  RefPtr<nsStyleContext> oldContext = mFrame->StyleContext();
 
   nsTArray<SwapInstruction> swaps;
 
@@ -3755,7 +3755,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
   ComputeRestyleResultFromFrame(aSelf, result, canStopWithStyleChange);
 
   nsChangeHint assumeDifferenceHint = NS_STYLE_HINT_NONE;
-  nsRefPtr<nsStyleContext> oldContext = aSelf->StyleContext();
+  RefPtr<nsStyleContext> oldContext = aSelf->StyleContext();
   nsStyleSet* styleSet = mPresContext->StyleSet();
 
 #ifdef ACCESSIBILITY
@@ -3814,7 +3814,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
   LOG_RESTYLE("parentContext = %p", parentContext);
 
   
-  nsRefPtr<nsStyleContext> newContext;
+  RefPtr<nsStyleContext> newContext;
   nsIFrame *prevContinuation =
     GetPrevContinuationWithPossiblySameStyle(aSelf);
   nsStyleContext *prevContinuationContext;
@@ -4154,7 +4154,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
        ++contextIndex) {
     LOG_RESTYLE("extra context %d", contextIndex);
     LOG_RESTYLE_INDENT();
-    nsRefPtr<nsStyleContext> newExtraContext;
+    RefPtr<nsStyleContext> newExtraContext;
     nsIAtom* const extraPseudoTag = oldExtraContext->GetPseudo();
     const nsCSSPseudoElements::Type extraPseudoType =
       oldExtraContext->GetPseudoType();
@@ -4342,7 +4342,7 @@ ElementRestyler::ComputeStyleChangeFor(nsIFrame*          aFrame,
                                        const RestyleHintData& aRestyleHintData,
                                        nsTArray<ContextToClear>&
                                          aContextsToClear,
-                                       nsTArray<nsRefPtr<nsStyleContext>>&
+                                       nsTArray<RefPtr<nsStyleContext>>&
                                          aSwappedStructOwners)
 {
   nsIContent* content = aFrame->GetContent();
@@ -4499,7 +4499,7 @@ ElementRestyler::RestyleUndisplayedNodes(nsRestyleHint    aChildRestyleHint,
       thisChildHint =
         nsRestyleHint(thisChildHint | undisplayedRestyleData->mRestyleHint);
     }
-    nsRefPtr<nsStyleContext> undisplayedContext;
+    RefPtr<nsStyleContext> undisplayedContext;
     nsStyleSet* styleSet = mPresContext->StyleSet();
     if (MustRestyleSelf(thisChildHint, element)) {
       undisplayedContext =
@@ -4822,7 +4822,7 @@ RestyleManager::ComputeAndProcessStyleChange(nsIFrame*              aFrame,
   
   
   
-  nsTArray<nsRefPtr<nsStyleContext>> swappedStructOwners;
+  nsTArray<RefPtr<nsStyleContext>> swappedStructOwners;
   ElementRestyler::ComputeStyleChangeFor(aFrame, &changeList, aMinChange,
                                          aRestyleTracker, aRestyleHint,
                                          aRestyleHintData,
@@ -4859,7 +4859,7 @@ RestyleManager::ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
   
   
   
-  nsTArray<nsRefPtr<nsStyleContext>> swappedStructOwners;
+  nsTArray<RefPtr<nsStyleContext>> swappedStructOwners;
   nsStyleChangeList changeList;
   ElementRestyler r(frame->PresContext(), aElement, &changeList, aMinChange,
                     aRestyleTracker, selectorsForDescendants, treeMatchContext,

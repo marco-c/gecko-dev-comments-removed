@@ -119,7 +119,7 @@ private:
   LexerTransition<ICOState> FinishResource();
 
   StreamingLexer<ICOState, 32> mLexer; 
-  nsRefPtr<Decoder> mContainedDecoder; 
+  RefPtr<Decoder> mContainedDecoder; 
   UniquePtr<uint8_t[]> mMaskBuffer;    
   char mBIHraw[40];                    
   IconDirEntry mDirEntry;              

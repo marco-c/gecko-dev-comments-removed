@@ -318,7 +318,7 @@ public:
     
     
     
-    nsTArray<nsRefPtr<Element>> mDescendants;
+    nsTArray<RefPtr<Element>> mDescendants;
 #if defined(MOZ_ENABLE_PROFILER_SPS) && !defined(MOZILLA_XPCOMRT_API)
     UniquePtr<ProfilerBacktrace> mBacktrace;
 #endif
@@ -357,7 +357,7 @@ public:
 
 
   void AddRestyleRootsIfAwaitingRestyle(
-                                  const nsTArray<nsRefPtr<Element>>& aElements);
+                                  const nsTArray<RefPtr<Element>>& aElements);
 
   
 
@@ -394,7 +394,7 @@ private:
                                 const RestyleHintData& aRestyleHintData);
 
   typedef nsClassHashtable<nsISupportsHashKey, RestyleData> PendingRestyleTable;
-  typedef nsAutoTArray< nsRefPtr<Element>, 32> RestyleRootArray;
+  typedef nsAutoTArray< RefPtr<Element>, 32> RestyleRootArray;
   
   
   

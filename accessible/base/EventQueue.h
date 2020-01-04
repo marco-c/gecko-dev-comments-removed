@@ -79,7 +79,7 @@ protected:
 
 
 
-  nsTArray<nsRefPtr<AccEvent> > mEvents;
+  nsTArray<RefPtr<AccEvent> > mEvents;
 };
 
 } 

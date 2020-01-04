@@ -310,15 +310,15 @@ protected:
   void     MaybeDestroyNativeCaret();
 
   
-  nsRefPtr<nsWindowBase>       mWidget;
+  RefPtr<nsWindowBase>       mWidget;
   
-  nsRefPtr<ITfDocumentMgr>     mDocumentMgr;
+  RefPtr<ITfDocumentMgr>     mDocumentMgr;
   
   DWORD                        mEditCookie;
   
-  nsRefPtr<ITfContext>         mContext;
+  RefPtr<ITfContext>         mContext;
   
-  nsRefPtr<ITextStoreACPSink>  mSink;
+  RefPtr<ITextStoreACPSink>  mSink;
   
   DWORD                        mSinkMask;
   
@@ -330,7 +330,7 @@ protected:
   {
   public:
     
-    nsRefPtr<ITfCompositionView> mView;
+    RefPtr<ITfCompositionView> mView;
 
     
     
@@ -520,7 +520,7 @@ protected:
     
     nsString mData;
     
-    nsRefPtr<TextRangeArray> mRanges;
+    RefPtr<TextRangeArray> mRanges;
     
     bool mSelectionReversed;
     
@@ -620,7 +620,7 @@ protected:
   private:
     AutoPendingActionAndContentFlusher() {}
 
-    nsRefPtr<TSFTextStore> mTextStore;
+    RefPtr<TSFTextStore> mTextStore;
   };
 
   class Content final
@@ -782,7 +782,7 @@ protected:
     LONG RangeStart() const { return mStart; }
   
   private:
-    nsRefPtr<ITfMouseSink> mSink;
+    RefPtr<ITfMouseSink> mSink;
     LONG mStart;
     LONG mLength;
     DWORD mCookie;

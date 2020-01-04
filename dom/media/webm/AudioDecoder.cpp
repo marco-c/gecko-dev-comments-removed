@@ -58,7 +58,7 @@ public:
   explicit VorbisDecoder(WebMReader* aReader);
   ~VorbisDecoder();
 private:
-  nsRefPtr<WebMReader> mReader;
+  RefPtr<WebMReader> mReader;
 
   
   vorbis_info mVorbisInfo;
@@ -240,7 +240,7 @@ public:
   explicit OpusDecoder(WebMReader* aReader);
   ~OpusDecoder();
 private:
-  nsRefPtr<WebMReader> mReader;
+  RefPtr<WebMReader> mReader;
 
   
   nsAutoPtr<OpusParser> mOpusParser;

@@ -114,17 +114,17 @@ private:
   
 
 
-  nsRefPtr<Accessible> mRoot;
+  RefPtr<Accessible> mRoot;
 
   
 
 
-  nsRefPtr<Accessible> mModalRoot;
+  RefPtr<Accessible> mModalRoot;
 
   
 
 
-  nsRefPtr<Accessible> mPosition;
+  RefPtr<Accessible> mPosition;
 
   
 

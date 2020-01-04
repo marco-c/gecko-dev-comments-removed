@@ -492,9 +492,9 @@ public:
     void EndUpdate();
 
     LayerManagerData* mParent;
-    nsRefPtr<Layer> mLayer;
-    nsRefPtr<Layer> mOptLayer;
-    nsRefPtr<BasicLayerManager> mInactiveManager;
+    RefPtr<Layer> mLayer;
+    RefPtr<Layer> mOptLayer;
+    RefPtr<BasicLayerManager> mInactiveManager;
     nsAutoTArray<nsIFrame*, 1> mFrameList;
     nsAutoPtr<nsDisplayItemGeometry> mGeometry;
     DisplayItemClip mClip;
@@ -592,7 +592,7 @@ protected:
 
 
 
-    nsRefPtr<LayerManager> mInactiveLayerManager;
+    RefPtr<LayerManager> mInactiveLayerManager;
 
     uint32_t mContainerLayerGeneration;
 
@@ -699,7 +699,7 @@ protected:
   
 
 
-  nsRefPtr<nsRootPresContext>         mRootPresContext;
+  RefPtr<nsRootPresContext>         mRootPresContext;
 
   
 

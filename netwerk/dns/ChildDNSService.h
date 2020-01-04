@@ -49,7 +49,7 @@ private:
   bool mDisablePrefetch;
 
   
-  nsClassHashtable<nsCStringHashKey, nsTArray<nsRefPtr<DNSRequestChild>>> mPendingRequests;
+  nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<DNSRequestChild>>> mPendingRequests;
   Mutex mPendingRequestsLock;
 };
 

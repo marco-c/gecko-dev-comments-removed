@@ -176,11 +176,11 @@ protected:
   friend class layout::RenderFrameParent;
 
 private:
-  nsRefPtr<LayerManagerComposite> mLayerManager;
+  RefPtr<LayerManagerComposite> mLayerManager;
   ShadowLayersManager* mShadowLayersManager;
   
   
-  nsRefPtr<Layer> mRoot;
+  RefPtr<Layer> mRoot;
   
   
   

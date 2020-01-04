@@ -146,7 +146,7 @@ protected:
 
 
 
-  nsRefPtr<DnDListener> mMouseListener;
+  RefPtr<DnDListener> mMouseListener;
 
 protected:
   

@@ -14,7 +14,7 @@
 
 #include "mozilla/media/MediaSystemResourceClient.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 
 namespace android {
 
@@ -183,7 +183,7 @@ private:
   wp<CodecResourceListener> mListener;
 
   
-  nsRefPtr<mozilla::MediaSystemResourceClient> mResourceClient;
+  RefPtr<mozilla::MediaSystemResourceClient> mResourceClient;
 
   
   mutable RWLock mCodecLock;

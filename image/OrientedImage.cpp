@@ -96,7 +96,7 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
   }
 
   
-  nsRefPtr<DrawTarget> target =
+  RefPtr<DrawTarget> target =
     gfxPlatform::GetPlatform()->
       CreateOffscreenContentDrawTarget(size, surfaceFormat);
   if (!target) {
@@ -106,14 +106,14 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
 
 
   
-  nsRefPtr<SourceSurface> innerSurface =
+  RefPtr<SourceSurface> innerSurface =
     InnerImage()->GetFrame(aWhichFrame, aFlags);
   NS_ENSURE_TRUE(innerSurface, nullptr);
-  nsRefPtr<gfxDrawable> drawable =
+  RefPtr<gfxDrawable> drawable =
     new gfxSurfaceDrawable(innerSurface, size);
 
   
-  nsRefPtr<gfxContext> ctx = new gfxContext(target);
+  RefPtr<gfxContext> ctx = new gfxContext(target);
   ctx->Multiply(OrientationMatrix(size));
   gfxUtils::DrawPixelSnapped(ctx, drawable, size, ImageRegion::Create(size),
                              surfaceFormat, Filter::LINEAR);

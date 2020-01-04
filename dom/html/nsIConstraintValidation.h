@@ -98,7 +98,7 @@ protected:
   
 
 
-  nsRefPtr<mozilla::dom::ValidityState>  mValidity;
+  RefPtr<mozilla::dom::ValidityState>  mValidity;
 
 private:
 

@@ -8,7 +8,7 @@
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
@@ -122,7 +122,7 @@ private:
                                  TextureFlags aFlags,
                                  ClientCanvasLayer* aLayer);
 
-  nsRefPtr<TextureClient> mBuffer;
+  RefPtr<TextureClient> mBuffer;
 };
 
 
@@ -130,10 +130,10 @@ private:
 class CanvasClientSharedSurface : public CanvasClient
 {
 private:
-  nsRefPtr<SharedSurfaceTextureClient> mShSurfClient;
-  nsRefPtr<TextureClient> mReadbackClient;
-  nsRefPtr<TextureClient> mFront;
-  nsRefPtr<TextureClient> mNewFront;
+  RefPtr<SharedSurfaceTextureClient> mShSurfClient;
+  RefPtr<TextureClient> mReadbackClient;
+  RefPtr<TextureClient> mFront;
+  RefPtr<TextureClient> mNewFront;
 
   void ClearSurfaces();
 

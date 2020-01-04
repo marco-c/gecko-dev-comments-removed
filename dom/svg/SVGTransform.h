@@ -165,7 +165,7 @@ private:
     return HasOwner() ? InternalItem() : *mTransform;
   }
 
-  nsRefPtr<DOMSVGTransformList> mList;
+  RefPtr<DOMSVGTransformList> mList;
 
   
   

@@ -79,7 +79,7 @@ ESDBox::~ESDBox()
 
 nsresult
 ES_Descriptor::Find(const nsACString& aType,
-                    nsTArray<nsRefPtr<MuxerOperation>>& aOperations)
+                    nsTArray<RefPtr<MuxerOperation>>& aOperations)
 {
   
   return NS_OK;

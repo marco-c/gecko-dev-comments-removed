@@ -321,7 +321,7 @@ private:
   
   
   
-  nsRefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
+  RefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
 
   
   

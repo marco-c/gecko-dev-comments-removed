@@ -40,14 +40,14 @@ class nsJARInputStream final : public nsIInputStream
   private:
     ~nsJARInputStream() { Close(); }
 
-    nsRefPtr<nsZipHandle>  mFd;         
+    RefPtr<nsZipHandle>  mFd;         
     uint32_t               mOutSize;    
     uint32_t               mInCrc;      
     uint32_t               mOutCrc;     
     z_stream               mZs;         
 
     
-    nsRefPtr<nsJAR>        mJar;        
+    RefPtr<nsJAR>        mJar;        
     uint32_t               mNameLen;    
     nsCString              mBuffer;     
     uint32_t               mCurPos;     

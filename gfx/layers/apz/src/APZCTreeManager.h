@@ -303,7 +303,7 @@ public:
 
 
 
-  nsRefPtr<HitTestingTreeNode> FindScrollNode(const AsyncDragMetrics& aDragMetrics);
+  RefPtr<HitTestingTreeNode> FindScrollNode(const AsyncDragMetrics& aDragMetrics);
 
   
 
@@ -393,7 +393,7 @@ public:
 
   void DispatchFling(AsyncPanZoomController* aApzc,
                      ParentLayerPoint& aVelocity,
-                     nsRefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
+                     RefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
                      bool aHandoff);
 
   void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
@@ -402,7 +402,7 @@ public:
   
 
 
-  nsRefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain(const nsRefPtr<AsyncPanZoomController>& aInitialTarget);
+  RefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain(const RefPtr<AsyncPanZoomController>& aInitialTarget);
 
 protected:
   
@@ -423,7 +423,7 @@ public:
 
 
 
-  nsRefPtr<HitTestingTreeNode> GetRootNode() const;
+  RefPtr<HitTestingTreeNode> GetRootNode() const;
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint,
                                                          HitTestResult* aOutHitResult);
   gfx::Matrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
@@ -517,7 +517,7 @@ protected:
   
 
 
-  nsRefPtr<InputQueue> mInputQueue;
+  RefPtr<InputQueue> mInputQueue;
 
 private:
   
@@ -528,20 +528,20 @@ private:
 
 
   mutable mozilla::Monitor mTreeLock;
-  nsRefPtr<HitTestingTreeNode> mRootNode;
+  RefPtr<HitTestingTreeNode> mRootNode;
   
 
   std::map<ScrollableLayerGuid, ZoomConstraints> mZoomConstraints;
   
 
 
-  std::map<uint64_t, nsRefPtr<TaskThrottler>> mPaintThrottlerMap;
+  std::map<uint64_t, RefPtr<TaskThrottler>> mPaintThrottlerMap;
   
 
 
 
 
-  nsRefPtr<AsyncPanZoomController> mApzcForInputBlock;
+  RefPtr<AsyncPanZoomController> mApzcForInputBlock;
   
 
 

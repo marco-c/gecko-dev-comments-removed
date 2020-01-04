@@ -125,7 +125,7 @@ private:
   NS_IMETHOD OnFileDoomed(nsresult aResult) override;
 
   
-  nsRefPtr<CacheStorageService> mService;
+  RefPtr<CacheStorageService> mService;
 
   
   
@@ -146,7 +146,7 @@ private:
     
     
     
-    nsRefPtr<CacheEntry> mEntry;
+    RefPtr<CacheEntry> mEntry;
     nsCOMPtr<nsICacheEntryOpenCallback> mCallback;
     nsCOMPtr<nsIThread> mTargetThread;
     bool mReadOnly : 1;
@@ -178,7 +178,7 @@ private:
       return NS_OK;
     }
 
-    nsRefPtr<CacheEntry> mEntry;
+    RefPtr<CacheEntry> mEntry;
     Callback mCallback;
   };
 
@@ -204,7 +204,7 @@ private:
       return NS_OK;
     }
 
-    nsRefPtr<CacheEntry> mEntry;
+    RefPtr<CacheEntry> mEntry;
     nsresult mRv;
   };
 
@@ -263,7 +263,7 @@ private:
   nsTArray<Callback> mCallbacks;
   nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback;
 
-  nsRefPtr<CacheFile> mFile;
+  RefPtr<CacheFile> mFile;
 
   
   
@@ -366,7 +366,7 @@ public:
   NS_FORWARD_NSICACHEENTRY(mEntry->)
 private:
   virtual ~CacheEntryHandle();
-  nsRefPtr<CacheEntry> mEntry;
+  RefPtr<CacheEntry> mEntry;
 };
 
 
@@ -384,7 +384,7 @@ private:
   explicit CacheOutputCloseListener(CacheEntry* aEntry);
 
 private:
-  nsRefPtr<CacheEntry> mEntry;
+  RefPtr<CacheEntry> mEntry;
 };
 
 } 

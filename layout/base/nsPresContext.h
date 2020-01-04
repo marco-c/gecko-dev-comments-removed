@@ -1227,17 +1227,17 @@ protected:
   
   nsIPresShell* MOZ_NON_OWNING_REF mShell;         
   nsCOMPtr<nsIDocument> mDocument;
-  nsRefPtr<nsDeviceContext> mDeviceContext; 
+  RefPtr<nsDeviceContext> mDeviceContext; 
                                             
                                             
                                             
                                             
-  nsRefPtr<mozilla::EventStateManager> mEventManager;
-  nsRefPtr<nsRefreshDriver> mRefreshDriver;
-  nsRefPtr<nsTransitionManager> mTransitionManager;
-  nsRefPtr<nsAnimationManager> mAnimationManager;
-  nsRefPtr<mozilla::RestyleManager> mRestyleManager;
-  nsRefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
+  RefPtr<mozilla::EventStateManager> mEventManager;
+  RefPtr<nsRefreshDriver> mRefreshDriver;
+  RefPtr<nsTransitionManager> mTransitionManager;
+  RefPtr<nsAnimationManager> mAnimationManager;
+  RefPtr<mozilla::RestyleManager> mRestyleManager;
+  RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
   nsIAtom* MOZ_UNSAFE_REF("always a static atom") mMedium; 
   nsCOMPtr<nsIAtom> mMediaEmulated;
 

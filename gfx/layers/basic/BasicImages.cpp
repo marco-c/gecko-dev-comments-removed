@@ -81,7 +81,7 @@ public:
                                               const gfx::IntSize &aScaleHint,
                                               BufferRecycleBin *aRecycleBin)
   {
-    nsRefPtr<Image> image;
+    RefPtr<Image> image;
     if (aFormat == ImageFormat::PLANAR_YCBCR) {
       image = new BasicPlanarYCbCrImage(aScaleHint, gfxPlatform::GetPlatform()->GetOffscreenFormat(), aRecycleBin);
       return image.forget();
@@ -136,7 +136,7 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
   NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
 
   if (mSourceSurface) {
-    nsRefPtr<gfx::SourceSurface> surface(mSourceSurface);
+    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
     return surface.forget();
   }
 
@@ -146,12 +146,12 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
 
   gfxImageFormat format = GetOffscreenFormat();
 
-  nsRefPtr<gfx::SourceSurface> surface;
+  RefPtr<gfx::SourceSurface> surface;
   {
     
     
     
-    nsRefPtr<gfx::DrawTarget> drawTarget
+    RefPtr<gfx::DrawTarget> drawTarget
       = gfxPlatform::GetPlatform()->CreateDrawTargetForData(mDecodedBuffer,
                                                             mSize,
                                                             mStride,

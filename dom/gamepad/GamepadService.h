@@ -128,7 +128,7 @@ class GamepadService : public nsIObserver
   nsRefPtrHashtable<nsUint32HashKey, Gamepad> mGamepads;
   
   
-  nsTArray<nsRefPtr<nsGlobalWindow> > mListeners;
+  nsTArray<RefPtr<nsGlobalWindow> > mListeners;
   nsCOMPtr<nsITimer> mTimer;
 };
 

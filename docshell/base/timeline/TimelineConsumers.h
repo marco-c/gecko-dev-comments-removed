@@ -39,7 +39,7 @@ public:
   static void AddConsumer(nsDocShell* aDocShell);
   static void RemoveConsumer(nsDocShell* aDocShell);
   static bool IsEmpty();
-  static bool GetKnownDocShells(Vector<nsRefPtr<nsDocShell>>& aStore);
+  static bool GetKnownDocShells(Vector<RefPtr<nsDocShell>>& aStore);
 
   
   
@@ -76,14 +76,14 @@ public:
                                    UniquePtr<AbstractTimelineMarker>&& aMarker);
 
   
-  static void AddMarkerForDocShellsList(Vector<nsRefPtr<nsDocShell>>& aDocShells,
+  static void AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
                                         const char* aName,
                                         MarkerTracingType aTracingType);
-  static void AddMarkerForDocShellsList(Vector<nsRefPtr<nsDocShell>>& aDocShells,
+  static void AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
                                         const char* aName,
                                         const TimeStamp& aTime,
                                         MarkerTracingType aTracingType);
-  static void AddMarkerForDocShellsList(Vector<nsRefPtr<nsDocShell>>& aDocShells,
+  static void AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
                                         UniquePtr<AbstractTimelineMarker>& aMarker);
 
   
@@ -101,7 +101,7 @@ public:
                                        UniquePtr<AbstractTimelineMarker>& aMarker);
   static void AddOTMTMarkerForDocShell(nsIDocShell* aDocShell,
                                        UniquePtr<AbstractTimelineMarker>& aMarker);
-  static void AddOTMTMarkerForDocShellsList(Vector<nsRefPtr<nsDocShell>>& aDocShells,
+  static void AddOTMTMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
                                             UniquePtr<AbstractTimelineMarker>& aMarker);
   static void AddOTMTMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMarker>& aMarker);
 

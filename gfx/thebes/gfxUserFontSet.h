@@ -57,7 +57,7 @@ struct gfxFontFaceSrc {
     mozilla::net::ReferrerPolicy mReferrerPolicy;
     nsCOMPtr<nsIPrincipal> mOriginPrincipal; 
 
-    nsRefPtr<gfxFontFaceBufferSource> mBuffer;
+    RefPtr<gfxFontFaceBufferSource> mBuffer;
 };
 
 inline bool
@@ -137,7 +137,7 @@ public:
     
     void AddFontEntry(gfxFontEntry* aFontEntry) {
         
-        nsRefPtr<gfxFontEntry> fe = aFontEntry;
+        RefPtr<gfxFontEntry> fe = aFontEntry;
         
         mAvailableFonts.RemoveElement(aFontEntry);
         
@@ -653,7 +653,7 @@ protected:
 
     bool                     mUnsupportedFormat;
 
-    nsRefPtr<gfxFontEntry>   mPlatformFontEntry;
+    RefPtr<gfxFontEntry>   mPlatformFontEntry;
     nsTArray<gfxFontFaceSrc> mSrcList;
     uint32_t                 mSrcIndex; 
     

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsWindowRoot_h__
 #define nsWindowRoot_h__
@@ -40,7 +40,7 @@ public:
                                 const mozilla::dom::Nullable<bool>& aWantsUntrusted,
                                 mozilla::ErrorResult& aRv) override;
 
-  // nsPIWindowRoot
+  
 
   virtual nsPIDOMWindow* GetWindow() override;
 
@@ -81,15 +81,15 @@ protected:
                                                 nsTArray<nsCString>& aEnabledCommands,
                                                 nsTArray<nsCString>& aDisabledCommands);
 
-  // Members
+  
   nsCOMPtr<nsPIDOMWindow> mWindow;
-  // We own the manager, which owns event listeners attached to us.
-  nsRefPtr<mozilla::EventListenerManager> mListenerManager; // [Strong]
-  nsCOMPtr<nsIDOMNode> mPopupNode; // [OWNER]
+  
+  RefPtr<mozilla::EventListenerManager> mListenerManager; 
+  nsCOMPtr<nsIDOMNode> mPopupNode; 
 
   nsCOMPtr<mozilla::dom::EventTarget> mParent;
 
-  // The TabParents that are currently registered with this top-level window.
+  
   typedef nsTHashtable<nsRefPtrHashKey<nsIWeakReference>> WeakBrowserTable;
   WeakBrowserTable mWeakBrowsers;
 };

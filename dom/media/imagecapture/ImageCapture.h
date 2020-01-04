@@ -84,7 +84,7 @@ protected:
   
   nsresult TakePhotoByMediaEngine();
 
-  nsRefPtr<VideoStreamTrack> mVideoStreamTrack;
+  RefPtr<VideoStreamTrack> mVideoStreamTrack;
 };
 
 } 

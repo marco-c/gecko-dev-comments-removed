@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsDOMMutationObserver_h
 #define nsDOMMutationObserver_h
@@ -36,7 +36,7 @@ class nsDOMMutationRecord final : public nsISupports,
   virtual ~nsDOMMutationRecord() {}
 
 public:
-  typedef nsTArray<nsRefPtr<mozilla::dom::Animation>> AnimationArray;
+  typedef nsTArray<RefPtr<mozilla::dom::Animation>> AnimationArray;
 
   nsDOMMutationRecord(nsIAtom* aType, nsISupports* aOwner)
   : mType(aType), mAttrNamespace(NullString()), mPrevValue(NullString()), mOwner(aOwner)
@@ -115,20 +115,20 @@ public:
   nsCOMPtr<nsIAtom>             mAttrName;
   nsString                      mAttrNamespace;
   nsString                      mPrevValue;
-  nsRefPtr<nsSimpleContentList> mAddedNodes;
-  nsRefPtr<nsSimpleContentList> mRemovedNodes;
+  RefPtr<nsSimpleContentList> mAddedNodes;
+  RefPtr<nsSimpleContentList> mRemovedNodes;
   nsCOMPtr<nsINode>             mPreviousSibling;
   nsCOMPtr<nsINode>             mNextSibling;
   AnimationArray                mAddedAnimations;
   AnimationArray                mRemovedAnimations;
   AnimationArray                mChangedAnimations;
 
-  nsRefPtr<nsDOMMutationRecord> mNext;
+  RefPtr<nsDOMMutationRecord> mNext;
   nsCOMPtr<nsISupports>         mOwner;
 };
  
-// Base class just prevents direct access to
-// members to make sure we go through getters/setters.
+
+
 class nsMutationReceiverBase : public nsStubAnimationObserver
 {
 public:
@@ -291,16 +291,16 @@ protected:
     return false;
   }
 
-  // The target for the MutationObserver.observe() method.
+  
   nsINode*                           mTarget;
   nsDOMMutationObserver*             mObserver;
-  nsRefPtr<nsMutationReceiverBase>   mParent; // Cleared after microtask.
-  // The node to which Gecko-internal nsIMutationObserver was registered to.
-  // This is different than mTarget when dealing with transient observers.
+  RefPtr<nsMutationReceiverBase>   mParent; 
+  
+  
   nsINode*                           mRegisterTarget;
   nsCOMArray<nsMutationReceiverBase> mTransientReceivers;
-  // While we have transient receivers, keep the original mutation receiver
-  // alive so it doesn't go away and disconnect all its transient receivers.
+  
+  
   nsCOMPtr<nsINode>                  mKungFuDeathGrip;
   
 private:
@@ -385,7 +385,7 @@ public:
                                           int32_t aNameSpaceID,
                                           nsIAtom* aAttribute) override
   {
-    // We can reuse AttributeWillChange implementation.
+    
     AttributeWillChange(aDocument, aElement, aNameSpaceID, aAttribute,
                         nsIDOMMutationEvent::MODIFICATION, nullptr);
   }
@@ -503,7 +503,7 @@ public:
 
   void Disconnect();
 
-  void TakeRecords(nsTArray<nsRefPtr<nsDOMMutationRecord> >& aRetVal);
+  void TakeRecords(nsTArray<RefPtr<nsDOMMutationRecord> >& aRetVal);
 
   void HandleMutation();
 
@@ -522,15 +522,15 @@ public:
     mMergeAttributeRecords = aVal;
   }
 
-  // If both records are for 'attributes' type and for the same target and
-  // attribute name and namespace are the same, we can skip the newer record.
-  // aOldRecord->mPrevValue holds the original value, if observed.
+  
+  
+  
   bool MergeableAttributeRecord(nsDOMMutationRecord* aOldRecord,
                                 nsDOMMutationRecord* aRecord);
 
   void AppendMutationRecord(already_AddRefed<nsDOMMutationRecord> aRecord)
   {
-    nsRefPtr<nsDOMMutationRecord> record = aRecord;
+    RefPtr<nsDOMMutationRecord> record = aRecord;
     MOZ_ASSERT(record);
     if (!mLastPendingMutation) {
       MOZ_ASSERT(!mFirstPendingMutation);
@@ -551,7 +551,7 @@ public:
     mPendingMutationCount = 0;
   }
 
-  // static methods
+  
   static void HandleMutations()
   {
     if (sScheduledMutationObservers) {
@@ -603,15 +603,15 @@ protected:
   nsCOMArray<nsMutationReceiver>                     mReceivers;
   nsClassHashtable<nsISupportsHashKey,
                    nsCOMArray<nsMutationReceiver> >  mTransientReceivers;
-  // MutationRecords which are being constructed.
+  
   nsAutoTArray<nsDOMMutationRecord*, 4>              mCurrentMutations;
-  // MutationRecords which will be handed to the callback at the end of
-  // the microtask.
-  nsRefPtr<nsDOMMutationRecord>                      mFirstPendingMutation;
+  
+  
+  RefPtr<nsDOMMutationRecord>                      mFirstPendingMutation;
   nsDOMMutationRecord*                               mLastPendingMutation;
   uint32_t                                           mPendingMutationCount;
 
-  nsRefPtr<mozilla::dom::MutationCallback>           mCallback;
+  RefPtr<mozilla::dom::MutationCallback>           mCallback;
 
   bool                                               mWaitingForRun;
   bool                                               mIsChrome;
@@ -620,11 +620,11 @@ protected:
   uint64_t                                           mId;
 
   static uint64_t                                    sCount;
-  static nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>* sScheduledMutationObservers;
+  static nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>* sScheduledMutationObservers;
   static nsDOMMutationObserver*                      sCurrentObserver;
 
   static uint32_t                                    sMutationLevel;
-  static nsAutoTArray<nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>, 4>*
+  static nsAutoTArray<nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>, 4>*
                                                      sCurrentlyHandlingObservers;
 };
 
@@ -702,7 +702,7 @@ public:
 
   static nsINode* GetBatchTarget() { return sCurrentBatch->mBatchTarget; }
 
-  // Mutation receivers notify the batch about removed child nodes.
+  
   static void NodeRemoved(nsIContent* aChild)
   {
     if (IsBatching() && !sCurrentBatch->mRemovalDone) {
@@ -714,7 +714,7 @@ public:
     }
   }
 
-  // Called after new child nodes have been added to the batch target.
+  
   void NodesAdded()
   {
     if (sCurrentBatch != this) {
@@ -900,7 +900,7 @@ private:
 
   struct Entry
   {
-    nsRefPtr<mozilla::dom::Animation> mAnimation;
+    RefPtr<mozilla::dom::Animation> mAnimation;
     State mState;
     bool mChanged;
   };
@@ -909,7 +909,7 @@ private:
   nsAutoTArray<nsDOMMutationObserver*, 2> mObservers;
   typedef nsTArray<Entry> EntryArray;
   nsClassHashtable<nsPtrHashKey<nsINode>, EntryArray> mEntryTable;
-  // List of nodes referred to by mEntryTable so we can sort them
+  
   nsTArray<nsINode*> mBatchTargets;
 };
 

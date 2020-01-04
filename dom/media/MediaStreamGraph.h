@@ -612,11 +612,11 @@ protected:
     float mVolume;
   };
   nsTArray<AudioOutput> mAudioOutputs;
-  nsTArray<nsRefPtr<VideoFrameContainer> > mVideoOutputs;
+  nsTArray<RefPtr<VideoFrameContainer> > mVideoOutputs;
   
   
   VideoFrame mLastPlayedVideoFrame;
-  nsTArray<nsRefPtr<MediaStreamListener> > mListeners;
+  nsTArray<RefPtr<MediaStreamListener> > mListeners;
   nsTArray<MainThreadMediaStreamListener*> mMainThreadListeners;
   nsTArray<TrackID> mDisabledTrackIDs;
 
@@ -842,7 +842,7 @@ protected:
       mRunnable = aRunnable;
     }
 
-    nsRefPtr<TaskQueue> mTarget;
+    RefPtr<TaskQueue> mTarget;
     nsCOMPtr<nsIRunnable> mRunnable;
   };
   enum TrackCommands {
@@ -906,7 +906,7 @@ protected:
   StreamTime mUpdateKnownTracksTime;
   nsTArray<TrackData> mUpdateTracks;
   nsTArray<TrackData> mPendingTracks;
-  nsTArray<nsRefPtr<MediaStreamDirectListener> > mDirectListeners;
+  nsTArray<RefPtr<MediaStreamDirectListener> > mDirectListeners;
   bool mPullEnabled;
   bool mUpdateFinished;
   bool mNeedsMixing;

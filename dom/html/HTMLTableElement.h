@@ -218,8 +218,8 @@ protected:
     return nullptr;
   }
 
-  nsRefPtr<nsContentList> mTBodies;
-  nsRefPtr<TableRowsCollection> mRows;
+  RefPtr<nsContentList> mTBodies;
+  RefPtr<TableRowsCollection> mRows;
   
   
   nsMappedAttributes *mTableInheritedAttributes;

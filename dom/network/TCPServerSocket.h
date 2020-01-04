@@ -68,9 +68,9 @@ private:
   
   nsCOMPtr<nsIServerSocket> mServerSocket;
   
-  nsRefPtr<TCPServerSocketChild> mServerBridgeChild;
+  RefPtr<TCPServerSocketChild> mServerBridgeChild;
   
-  nsRefPtr<TCPServerSocketParent> mServerBridgeParent;
+  RefPtr<TCPServerSocketParent> mServerBridgeParent;
   int32_t mPort;
   uint16_t mBacklog;
   

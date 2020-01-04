@@ -49,7 +49,7 @@ class RequestBehaviour : public ProxyBehaviour
     mOwner = aOwner;
 
     if (mOwner) {
-      nsRefPtr<ProgressTracker> ownerProgressTracker = GetProgressTracker();
+      RefPtr<ProgressTracker> ownerProgressTracker = GetProgressTracker();
       mOwnerHasImage = ownerProgressTracker && ownerProgressTracker->HasImage();
     } else {
       mOwnerHasImage = false;
@@ -63,7 +63,7 @@ class RequestBehaviour : public ProxyBehaviour
   
   
   
-  nsRefPtr<imgRequest> mOwner;
+  RefPtr<imgRequest> mOwner;
 
   bool mOwnerHasImage;
 };
@@ -74,7 +74,7 @@ RequestBehaviour::GetImage() const
   if (!mOwnerHasImage) {
     return nullptr;
   }
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   return progressTracker->GetImage();
 }
 
@@ -210,7 +210,7 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
 
   
   bool wasDecoded = false;
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   if (progressTracker->HasImage() &&
       progressTracker->GetImageStatus() &
         imgIRequest::STATUS_FRAME_COMPLETE) {
@@ -374,7 +374,7 @@ imgRequestProxy::StartDecoding()
   
   mDecodeRequested = true;
 
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   if (image) {
     return image->StartDecoding();
   }
@@ -392,7 +392,7 @@ imgRequestProxy::RequestDecode()
   
   mDecodeRequested = true;
 
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   if (image) {
     return image->RequestDecode();
   }
@@ -409,7 +409,7 @@ NS_IMETHODIMP
 imgRequestProxy::LockImage()
 {
   mLockCount++;
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   if (image) {
     return image->LockImage();
   }
@@ -422,7 +422,7 @@ imgRequestProxy::UnlockImage()
   MOZ_ASSERT(mLockCount > 0, "calling unlock but no locks!");
 
   mLockCount--;
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   if (image) {
     return image->UnlockImage();
   }
@@ -432,7 +432,7 @@ imgRequestProxy::UnlockImage()
 NS_IMETHODIMP
 imgRequestProxy::RequestDiscard()
 {
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   if (image) {
     return image->RequestDiscard();
   }
@@ -443,7 +443,7 @@ NS_IMETHODIMP
 imgRequestProxy::IncrementAnimationConsumers()
 {
   mAnimationConsumers++;
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   if (image) {
     image->IncrementAnimationConsumers();
   }
@@ -461,7 +461,7 @@ imgRequestProxy::DecrementAnimationConsumers()
   
   if (mAnimationConsumers > 0) {
     mAnimationConsumers--;
-    nsRefPtr<Image> image = GetImage();
+    RefPtr<Image> image = GetImage();
     if (image) {
       image->DecrementAnimationConsumers();
     }
@@ -525,7 +525,7 @@ imgRequestProxy::GetImage(imgIContainer** aImage)
   
   
   
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
   nsCOMPtr<imgIContainer> imageToReturn;
   if (image) {
     imageToReturn = do_QueryInterface(image);
@@ -545,7 +545,7 @@ imgRequestProxy::GetImage(imgIContainer** aImage)
 NS_IMETHODIMP
 imgRequestProxy::GetImageStatus(uint32_t* aStatus)
 {
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   *aStatus = progressTracker->GetImageStatus();
 
   return NS_OK;
@@ -628,7 +628,7 @@ imgRequestProxy* NewStaticProxy(imgRequestProxy* aThis)
 {
   nsCOMPtr<nsIPrincipal> currentPrincipal;
   aThis->GetImagePrincipal(getter_AddRefs(currentPrincipal));
-  nsRefPtr<Image> image = aThis->GetImage();
+  RefPtr<Image> image = aThis->GetImage();
   return new imgRequestProxyStatic(image, currentPrincipal);
 }
 
@@ -659,7 +659,7 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   LOG_SCOPE(GetImgLog(), "imgRequestProxy::Clone");
 
   *aClone = nullptr;
-  nsRefPtr<imgRequestProxy> clone = aAllocFn(this);
+  RefPtr<imgRequestProxy> clone = aAllocFn(this);
 
   
   
@@ -928,7 +928,7 @@ nsresult
 imgRequestProxy::GetStaticRequest(imgRequestProxy** aReturn)
 {
   *aReturn = nullptr;
-  nsRefPtr<Image> image = GetImage();
+  RefPtr<Image> image = GetImage();
 
   bool animated;
   if (!image || (NS_SUCCEEDED(image->GetAnimated(&animated)) && !animated)) {
@@ -945,12 +945,12 @@ imgRequestProxy::GetStaticRequest(imgRequestProxy** aReturn)
   }
 
   
-  nsRefPtr<Image> frozenImage = ImageOps::Freeze(image);
+  RefPtr<Image> frozenImage = ImageOps::Freeze(image);
 
   
   nsCOMPtr<nsIPrincipal> currentPrincipal;
   GetImagePrincipal(getter_AddRefs(currentPrincipal));
-  nsRefPtr<imgRequestProxy> req = new imgRequestProxyStatic(frozenImage,
+  RefPtr<imgRequestProxy> req = new imgRequestProxyStatic(frozenImage,
                                                             currentPrincipal);
   req->Init(nullptr, nullptr, mURI, nullptr);
 
@@ -967,7 +967,7 @@ imgRequestProxy::NotifyListener()
   
   
 
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   if (GetOwner()) {
     
     progressTracker->Notify(this);
@@ -988,16 +988,16 @@ imgRequestProxy::SyncNotifyListener()
   
   
 
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   progressTracker->SyncNotify(this);
 }
 
 void
 imgRequestProxy::SetHasImage()
 {
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   MOZ_ASSERT(progressTracker);
-  nsRefPtr<Image> image = progressTracker->GetImage();
+  RefPtr<Image> image = progressTracker->GetImage();
   MOZ_ASSERT(image);
 
   
@@ -1033,7 +1033,7 @@ RequestBehaviour::HasImage() const
   if (!mOwnerHasImage) {
     return false;
   }
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   return progressTracker ? progressTracker->HasImage() : false;
 }
 
@@ -1058,7 +1058,7 @@ public:
 
   virtual already_AddRefed<mozilla::image::Image>
   GetImage() const override {
-    nsRefPtr<mozilla::image::Image> image = mImage;
+    RefPtr<mozilla::image::Image> image = mImage;
     return image.forget();
   }
 
@@ -1083,7 +1083,7 @@ public:
 private:
   
   
-  nsRefPtr<mozilla::image::Image> mImage;
+  RefPtr<mozilla::image::Image> mImage;
 };
 
 imgRequestProxyStatic::imgRequestProxyStatic(mozilla::image::Image* aImage,

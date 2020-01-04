@@ -566,7 +566,7 @@ private:
   
   
   
-  nsRefPtr<nsStyleContext> mStyleIfVisited;
+  RefPtr<nsStyleContext> mStyleIfVisited;
 
   
   

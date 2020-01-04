@@ -83,14 +83,14 @@ class nsXMLBindingValues
 protected:
 
   
-  nsRefPtr<nsXMLBindingSet> mBindings;
+  RefPtr<nsXMLBindingSet> mBindings;
 
   
 
 
 
 
-  nsTArray<nsRefPtr<mozilla::dom::XPathResult> > mValues;
+  nsTArray<RefPtr<mozilla::dom::XPathResult> > mValues;
 
 public:
 

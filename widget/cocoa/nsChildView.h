@@ -612,7 +612,7 @@ protected:
 protected:
 
   NSView<mozView>*      mView;      
-  nsRefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
+  RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
   InputContext          mInputContext;
 
   NSView<mozView>*      mParentView;
@@ -674,7 +674,7 @@ protected:
   nsAutoPtr<GLPresenter> mGLPresenter;
 
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
-  nsRefPtr<mozilla::SwipeTracker> mSwipeTracker;
+  RefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
 
   

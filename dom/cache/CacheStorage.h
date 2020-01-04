@@ -106,7 +106,7 @@ private:
   const Namespace mNamespace;
   nsCOMPtr<nsIGlobalObject> mGlobal;
   UniquePtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
-  nsRefPtr<Feature> mFeature;
+  RefPtr<Feature> mFeature;
 
   
   CacheStorageChild* mActor;

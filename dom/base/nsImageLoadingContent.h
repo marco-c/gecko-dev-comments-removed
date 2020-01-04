@@ -286,7 +286,7 @@ protected:
 
 
 
-   nsRefPtr<imgRequestProxy>& PrepareNextRequest(ImageLoadType aImageLoadType);
+   RefPtr<imgRequestProxy>& PrepareNextRequest(ImageLoadType aImageLoadType);
 
   
 
@@ -303,8 +303,8 @@ protected:
 
 
 
-  nsRefPtr<imgRequestProxy>& PrepareCurrentRequest(ImageLoadType aImageLoadType);
-  nsRefPtr<imgRequestProxy>& PreparePendingRequest(ImageLoadType aImageLoadType);
+  RefPtr<imgRequestProxy>& PrepareCurrentRequest(ImageLoadType aImageLoadType);
+  RefPtr<imgRequestProxy>& PreparePendingRequest(ImageLoadType aImageLoadType);
 
   
 
@@ -358,8 +358,8 @@ protected:
                     uint32_t aNonvisibleAction = ON_NONVISIBLE_NO_ACTION);
 
   
-  nsRefPtr<imgRequestProxy> mCurrentRequest;
-  nsRefPtr<imgRequestProxy> mPendingRequest;
+  RefPtr<imgRequestProxy> mCurrentRequest;
+  RefPtr<imgRequestProxy> mPendingRequest;
   uint32_t mCurrentRequestFlags;
   uint32_t mPendingRequestFlags;
 

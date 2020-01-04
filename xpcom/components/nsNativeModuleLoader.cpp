@@ -87,7 +87,7 @@ public:
     return NS_OK;
   }
 
-  nsRefPtr<nsComponentManagerImpl> mManager;
+  RefPtr<nsComponentManagerImpl> mManager;
   nsNativeModuleLoader* mLoader;
   FileLocation mFile;
   const mozilla::Module* mResult;
@@ -106,7 +106,7 @@ nsNativeModuleLoader::LoadModule(FileLocation& aFile)
   if (!NS_IsMainThread()) {
     
     
-    nsRefPtr<LoadModuleMainThreadRunnable> r =
+    RefPtr<LoadModuleMainThreadRunnable> r =
       new LoadModuleMainThreadRunnable(this, aFile);
     NS_DispatchToMainThread(r, NS_DISPATCH_SYNC);
     return r->mResult;

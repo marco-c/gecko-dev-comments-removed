@@ -186,7 +186,7 @@ protected:
   
 
 
-  nsRefPtr<DummyTouchListener> mDummyTouchListener;
+  RefPtr<DummyTouchListener> mDummyTouchListener;
 };
 
 

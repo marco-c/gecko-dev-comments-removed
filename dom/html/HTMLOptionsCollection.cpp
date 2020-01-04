@@ -169,7 +169,7 @@ HTMLOptionsCollection::SetOption(uint32_t aIndex,
   } else {
     
     
-    nsRefPtr<HTMLOptionElement> refChild = ItemAsOption(index);
+    RefPtr<HTMLOptionElement> refChild = ItemAsOption(index);
     NS_ENSURE_TRUE(refChild, NS_ERROR_UNEXPECTED);
 
     nsCOMPtr<nsINode> parent = refChild->GetParent();

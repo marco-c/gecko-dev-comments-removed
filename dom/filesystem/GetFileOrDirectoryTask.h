@@ -54,14 +54,14 @@ protected:
   HandlerCallback() override;
 
 private:
-  nsRefPtr<Promise> mPromise;
+  RefPtr<Promise> mPromise;
   nsString mTargetRealPath;
   
   bool mIsDirectory;
 
   
   
-  nsRefPtr<BlobImpl> mTargetBlobImpl;
+  RefPtr<BlobImpl> mTargetBlobImpl;
 };
 
 } 

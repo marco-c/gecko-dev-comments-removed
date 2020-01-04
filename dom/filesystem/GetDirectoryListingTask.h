@@ -53,12 +53,12 @@ protected:
   HandlerCallback() override;
 
 private:
-  nsRefPtr<Promise> mPromise;
+  RefPtr<Promise> mPromise;
   nsString mTargetRealPath;
 
   
   
-  nsTArray<nsRefPtr<BlobImpl>> mTargetBlobImpls;
+  nsTArray<RefPtr<BlobImpl>> mTargetBlobImpls;
 };
 
 } 

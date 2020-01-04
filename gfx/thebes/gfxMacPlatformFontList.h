@@ -167,8 +167,8 @@ private:
     
     
     bool mUseSizeSensitiveSystemFont;
-    nsRefPtr<gfxFontFamily> mSystemTextFontFamily;
-    nsRefPtr<gfxFontFamily> mSystemDisplayFontFamily; 
+    RefPtr<gfxFontFamily> mSystemTextFontFamily;
+    RefPtr<gfxFontFamily> mSystemDisplayFontFamily; 
 };
 
 #endif 

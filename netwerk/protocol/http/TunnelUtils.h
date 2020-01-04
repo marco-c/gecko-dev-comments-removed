@@ -151,10 +151,10 @@ private:
   static PRStatus FilterClose(PRFileDesc *fd);
 
 private:
-  nsRefPtr<nsAHttpTransaction> mTransaction;
+  RefPtr<nsAHttpTransaction> mTransaction;
   nsCOMPtr<nsISupports> mSecInfo;
   nsCOMPtr<nsITimer> mTimer;
-  nsRefPtr<NudgeTunnelCallback> mNudgeCallback;
+  RefPtr<NudgeTunnelCallback> mNudgeCallback;
 
   
   nsAutoArrayPtr<char> mEncryptedText;
@@ -230,17 +230,17 @@ private:
 
   bool                           mForcePlainText;
   TimeStamp                      mTimestampSyn;
-  nsRefPtr<nsHttpConnectionInfo> mConnInfo;
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   
   
   
   
-  nsRefPtr<nsHttpConnection>     mTunneledConn;
-  nsRefPtr<SocketTransportShim>  mTunnelTransport;
-  nsRefPtr<InputStreamShim>      mTunnelStreamIn;
-  nsRefPtr<OutputStreamShim>     mTunnelStreamOut;
-  nsRefPtr<nsHttpTransaction>    mDrivingTransaction;
+  RefPtr<nsHttpConnection>     mTunneledConn;
+  RefPtr<SocketTransportShim>  mTunnelTransport;
+  RefPtr<InputStreamShim>      mTunnelStreamIn;
+  RefPtr<OutputStreamShim>     mTunnelStreamOut;
+  RefPtr<nsHttpTransaction>    mDrivingTransaction;
 };
 
 } 

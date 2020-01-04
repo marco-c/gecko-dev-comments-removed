@@ -351,7 +351,7 @@ protected:
   HTMLFormElement* mForm;
 
   
-  nsRefPtr<ResponsiveImageSelector> mResponsiveSelector;
+  RefPtr<ResponsiveImageSelector> mResponsiveSelector;
 
 private:
   bool SourceElementMatches(nsIContent* aSourceNode);

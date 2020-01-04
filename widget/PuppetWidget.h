@@ -16,7 +16,7 @@
 #define mozilla_widget_PuppetWidget_h__
 
 #include "mozilla/gfx/2D.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsBaseScreen.h"
 #include "nsBaseWidget.h"
 #include "nsIScreenManager.h"
@@ -311,13 +311,13 @@ private:
   TabChild* mTabChild;
   
   
-  nsRefPtr<PuppetWidget> mChild;
+  RefPtr<PuppetWidget> mChild;
   nsIntRegion mDirtyRegion;
   nsRevocableEventPtr<PaintTask> mPaintTask;
-  nsRefPtr<MemoryPressureObserver> mMemoryPressureObserver;
+  RefPtr<MemoryPressureObserver> mMemoryPressureObserver;
   
   
-  nsRefPtr<DrawTarget> mDrawTarget;
+  RefPtr<DrawTarget> mDrawTarget;
   
   nsIMEUpdatePreference mIMEPreferenceOfParent;
   InputContext mInputContext;

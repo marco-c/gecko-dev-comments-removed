@@ -49,7 +49,7 @@ gfxQuartzImageSurface::KnownMemoryUsed()
 {
   
   
-  nsRefPtr<gfxImageSurface> imgSurface = GetAsImageSurface();
+  RefPtr<gfxImageSurface> imgSurface = GetAsImageSurface();
   if (imgSurface)
     return imgSurface->KnownMemoryUsed();
   return 0;
@@ -67,7 +67,7 @@ gfxQuartzImageSurface::GetAsImageSurface()
         return nullptr;
     }
 
-    nsRefPtr<gfxImageSurface> result = gfxASurface::Wrap(isurf).downcast<gfxImageSurface>();
+    RefPtr<gfxImageSurface> result = gfxASurface::Wrap(isurf).downcast<gfxImageSurface>();
     result->SetOpaqueRect(GetOpaqueRect());
 
     return result.forget();

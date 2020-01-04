@@ -76,7 +76,7 @@ void ClearPrivateSSLState()
   MOZ_ASSERT(NS_SUCCEEDED(rv) && onSTSThread);
 #endif
 
-  nsRefPtr<MainThreadClearer> runnable = new MainThreadClearer;
+  RefPtr<MainThreadClearer> runnable = new MainThreadClearer;
   runnable->DispatchToMainThreadAndWait();
 
   

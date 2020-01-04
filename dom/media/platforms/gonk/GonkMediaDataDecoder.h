@@ -26,7 +26,7 @@ public:
 
   virtual ~GonkDecoderManager() {}
 
-  virtual nsRefPtr<InitPromise> Init() = 0;
+  virtual RefPtr<InitPromise> Init() = 0;
 
   
   
@@ -66,7 +66,7 @@ protected:
   
   
   virtual nsresult Output(int64_t aStreamOffset,
-                          nsRefPtr<MediaData>& aOutput) = 0;
+                          RefPtr<MediaData>& aOutput) = 0;
 
   
   
@@ -76,7 +76,7 @@ protected:
   void ProcessFlush();
   void ProcessToDo(bool aEndOfStream);
 
-  nsRefPtr<MediaByteBuffer> mCodecSpecificData;
+  RefPtr<MediaByteBuffer> mCodecSpecificData;
 
   nsAutoCString mMimeType;
 
@@ -103,7 +103,7 @@ protected:
   
   
   
-  nsTArray<nsRefPtr<MediaRawData>> mQueuedSamples;
+  nsTArray<RefPtr<MediaRawData>> mQueuedSamples;
 
   int64_t mLastTime;  
 
@@ -134,7 +134,7 @@ public:
 
   ~GonkMediaDataDecoder();
 
-  nsRefPtr<InitPromise> Init() override;
+  RefPtr<InitPromise> Init() override;
 
   nsresult Input(MediaRawData* aSample) override;
 
@@ -145,7 +145,7 @@ public:
   nsresult Shutdown() override;
 
 private:
-  nsRefPtr<FlushableTaskQueue> mTaskQueue;
+  RefPtr<FlushableTaskQueue> mTaskQueue;
 
   android::sp<GonkDecoderManager> mManager;
 };

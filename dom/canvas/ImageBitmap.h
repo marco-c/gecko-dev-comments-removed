@@ -98,12 +98,12 @@ public:
   ReadStructuredClone(JSContext* aCx,
                       JSStructuredCloneReader* aReader,
                       nsIGlobalObject* aParent,
-                      const nsTArray<nsRefPtr<layers::Image>>& aClonedImages,
+                      const nsTArray<RefPtr<layers::Image>>& aClonedImages,
                       uint32_t aIndex);
 
   static bool
   WriteStructuredClone(JSStructuredCloneWriter* aWriter,
-                       nsTArray<nsRefPtr<layers::Image>>& aClonedImages,
+                       nsTArray<RefPtr<layers::Image>>& aClonedImages,
                        ImageBitmap* aImageBitmap);
 
   friend CreateImageBitmapFromBlob;
@@ -158,8 +158,8 @@ protected:
 
 
 
-  nsRefPtr<layers::Image> mData;
-  nsRefPtr<gfx::SourceSurface> mSurface;
+  RefPtr<layers::Image> mData;
+  RefPtr<gfx::SourceSurface> mSurface;
 
   
 

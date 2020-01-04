@@ -100,7 +100,7 @@ public:
     
     
     virtual nsresult TakeSubTransactions(
-        nsTArray<nsRefPtr<nsAHttpTransaction> > &outTransactions) = 0;
+        nsTArray<RefPtr<nsAHttpTransaction> > &outTransactions) = 0;
 
     
     
@@ -212,7 +212,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
     void     SetProxyConnectFailed() override;                                   \
     virtual nsHttpRequestHead *RequestHead() override;                                   \
     uint32_t Http1xTransactionCount() override;                                  \
-    nsresult TakeSubTransactions(nsTArray<nsRefPtr<nsAHttpTransaction> > &outTransactions) override; \
+    nsresult TakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &outTransactions) override; \
     nsresult AddTransaction(nsAHttpTransaction *) override;                      \
     uint32_t PipelineDepth() override;                                           \
     nsresult SetPipelinePosition(int32_t) override;                              \

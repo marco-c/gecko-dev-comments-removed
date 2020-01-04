@@ -13,7 +13,7 @@
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/LayersTypes.h"     
 #include "mozilla/Maybe.h"                  
-#include "mozilla/nsRefPtr.h"               
+#include "mozilla/RefPtr.h"               
 
 namespace mozilla {
 namespace layers {
@@ -111,11 +111,11 @@ public:
 private:
   void SetApzcParent(AsyncPanZoomController* aApzc);
 
-  nsRefPtr<HitTestingTreeNode> mLastChild;
-  nsRefPtr<HitTestingTreeNode> mPrevSibling;
-  nsRefPtr<HitTestingTreeNode> mParent;
+  RefPtr<HitTestingTreeNode> mLastChild;
+  RefPtr<HitTestingTreeNode> mPrevSibling;
+  RefPtr<HitTestingTreeNode> mParent;
 
-  nsRefPtr<AsyncPanZoomController> mApzc;
+  RefPtr<AsyncPanZoomController> mApzc;
   bool mIsPrimaryApzcHolder;
 
   uint64_t mLayersId;

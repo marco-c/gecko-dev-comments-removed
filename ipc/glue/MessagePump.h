@@ -63,7 +63,7 @@ protected:
 
 private:
   
-  nsRefPtr<DoWorkRunnable> mDoWorkEvent;
+  RefPtr<DoWorkRunnable> mDoWorkEvent;
 };
 
 class MessagePumpForChildProcess final: public MessagePump

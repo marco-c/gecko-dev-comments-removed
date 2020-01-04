@@ -63,7 +63,7 @@ protected:
 protected:
 
   
-  nsRefPtr<nsRange> mRange;
+  RefPtr<nsRange> mRange;
 
   
   nsEditor* mEditor;

@@ -1058,7 +1058,7 @@ nsFirstLineFrame::Init(nsIContent*       aContent,
     
     
     nsStyleContext* parentContext = aParent->StyleContext();
-    nsRefPtr<nsStyleContext> newSC = PresContext()->StyleSet()->
+    RefPtr<nsStyleContext> newSC = PresContext()->StyleSet()->
       ResolveAnonymousBoxStyle(nsCSSAnonBoxes::mozLineFrame, parentContext);
     SetStyleContext(newSC);
   } else {

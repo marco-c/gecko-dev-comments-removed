@@ -51,7 +51,7 @@ private:
   virtual ~nsDOMStringMap();
 
 protected:
-  nsRefPtr<nsGenericHTMLElement> mElement;
+  RefPtr<nsGenericHTMLElement> mElement;
   
   bool mRemovingProp;
   static bool DataPropToAttr(const nsAString& aProp, nsAutoString& aResult);

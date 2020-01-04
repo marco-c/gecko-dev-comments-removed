@@ -56,7 +56,7 @@ public:
     enum { ALLOW_MEMMOVE = true };
     
     txKeyValueHashKey mKey;
-    nsRefPtr<txNodeSet> mNodeSet;
+    RefPtr<txNodeSet> mNodeSet;
 };
 
 typedef nsTHashtable<txKeyValueHashEntry> txKeyValueHash;
@@ -205,7 +205,7 @@ private:
     const txOwningExpandedNameMap<txXSLKey>& mKeys;
     
     
-    nsRefPtr<txNodeSet> mEmptyNodeSet;
+    RefPtr<txNodeSet> mEmptyNodeSet;
 };
 
 

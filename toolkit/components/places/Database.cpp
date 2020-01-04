@@ -327,7 +327,7 @@ private:
   
   
   
-  nsRefPtr<Database> mDatabase;
+  RefPtr<Database> mDatabase;
 
   
   
@@ -421,7 +421,7 @@ NS_IMETHODIMP DatabaseShutdown::GetState(nsIPropertyBag** aState)
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
 
   
-  nsRefPtr<nsVariant> progress = new nsVariant();
+  RefPtr<nsVariant> progress = new nsVariant();
 
   rv = progress->SetAsUint8(mState);
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
@@ -439,7 +439,7 @@ NS_IMETHODIMP DatabaseShutdown::GetState(nsIPropertyBag** aState)
     return NS_OK;
   }
 
-  nsRefPtr<nsVariant> barrier = new nsVariant();
+  RefPtr<nsVariant> barrier = new nsVariant();
 
   rv = barrier->SetAsInterface(NS_GET_IID(nsIPropertyBag), barrierState);
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
@@ -694,7 +694,7 @@ Database::Init()
   
   
   if (NS_FAILED(rv)) {
-    nsRefPtr<PlacesEvent> lockedEvent = new PlacesEvent(TOPIC_DATABASE_LOCKED);
+    RefPtr<PlacesEvent> lockedEvent = new PlacesEvent(TOPIC_DATABASE_LOCKED);
     (void)NS_DispatchToMainThread(lockedEvent);
     return rv;
   }
@@ -731,7 +731,7 @@ Database::Init()
   
   
   
-  nsRefPtr<PlacesEvent> completeEvent =
+  RefPtr<PlacesEvent> completeEvent =
     new PlacesEvent(TOPIC_PLACES_INIT_COMPLETE);
   rv = NS_DispatchToMainThread(completeEvent);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1925,7 +1925,7 @@ Database::Shutdown()
   mMainThreadStatements.FinalizeStatements();
   mMainThreadAsyncStatements.FinalizeStatements();
 
-  nsRefPtr< FinalizeStatementCacheProxy<mozIStorageStatement> > event =
+  RefPtr< FinalizeStatementCacheProxy<mozIStorageStatement> > event =
     new FinalizeStatementCacheProxy<mozIStorageStatement>(
           mAsyncThreadStatements,
           NS_ISUPPORTS_CAST(nsIObserver*, this)

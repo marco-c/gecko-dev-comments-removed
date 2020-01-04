@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 #ifndef nsScreen_h___
 #define nsScreen_h___
 
@@ -16,7 +16,7 @@
 
 class nsDeviceContext;
 
-// Script "screen" object
+
 class nsScreen : public mozilla::DOMEventTargetHelper
                , public nsIDOMScreen
 {
@@ -114,7 +114,7 @@ public:
     return rect.height;
   }
 
-  // Deprecated
+  
   void GetMozOrientation(nsString& aOrientation) const;
 
   IMPL_EVENT_HANDLER(mozorientationchange)
@@ -141,7 +141,7 @@ private:
 
   bool ShouldResistFingerprinting() const;
 
-  nsRefPtr<mozilla::dom::ScreenOrientation> mScreenOrientation;
+  RefPtr<mozilla::dom::ScreenOrientation> mScreenOrientation;
 };
 
-#endif /* nsScreen_h___ */
+#endif 

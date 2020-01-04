@@ -94,10 +94,10 @@ private:
   void CancelAllListeners();
   void SendInvalidationNotifications();
 
-  nsRefPtr<SVGDocumentWrapper>       mSVGDocumentWrapper;
-  nsRefPtr<SVGRootRenderingObserver> mRenderingObserver;
-  nsRefPtr<SVGLoadEventListener>     mLoadEventListener;
-  nsRefPtr<SVGParseCompleteListener> mParseCompleteListener;
+  RefPtr<SVGDocumentWrapper>       mSVGDocumentWrapper;
+  RefPtr<SVGRootRenderingObserver> mRenderingObserver;
+  RefPtr<SVGLoadEventListener>     mLoadEventListener;
+  RefPtr<SVGParseCompleteListener> mParseCompleteListener;
 
   
   uint32_t mLockCount;

@@ -136,7 +136,7 @@ nsJAR::Open(nsIFile* zipFile)
 
   
   
-  nsRefPtr<nsZipArchive> zip = mozilla::Omnijar::GetReader(zipFile);
+  RefPtr<nsZipArchive> zip = mozilla::Omnijar::GetReader(zipFile);
   if (zip) {
     mZip = zip;
     return NS_OK;
@@ -162,7 +162,7 @@ nsJAR::OpenInner(nsIZipReader *aZipReader, const nsACString &aZipEntry)
 
   mOuterZipEntry.Assign(aZipEntry);
 
-  nsRefPtr<nsZipHandle> handle;
+  RefPtr<nsZipHandle> handle;
   rv = nsZipHandle::Init(static_cast<nsJAR*>(aZipReader)->mZip.get(), PromiseFlatCString(aZipEntry).get(),
                          getter_AddRefs(handle));
   if (NS_FAILED(rv))
@@ -179,7 +179,7 @@ nsJAR::OpenMemory(void* aData, uint32_t aLength)
 
   mOpened = true;
 
-  nsRefPtr<nsZipHandle> handle;
+  RefPtr<nsZipHandle> handle;
   nsresult rv = nsZipHandle::Init(static_cast<uint8_t*>(aData), aLength,
                                   getter_AddRefs(handle));
   if (NS_FAILED(rv))
@@ -205,8 +205,8 @@ nsJAR::Close()
   mGlobalStatus = JAR_MANIFEST_NOT_PARSED;
   mTotalItemsInManifest = 0;
 
-  nsRefPtr<nsZipArchive> greOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
-  nsRefPtr<nsZipArchive> appOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
+  RefPtr<nsZipArchive> greOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
+  RefPtr<nsZipArchive> appOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
 
   if (mZip == greOmni || mZip == appOmni) {
     mZip = new nsZipArchive();
@@ -350,8 +350,8 @@ nsJAR::GetSigningCert(const nsACString& aFilename, nsIX509Cert** aSigningCert)
 
   
   
-  nsRefPtr<nsZipArchive> greOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
-  nsRefPtr<nsZipArchive> appOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
+  RefPtr<nsZipArchive> greOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
+  RefPtr<nsZipArchive> appOmni = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
 
   if (mZip == greOmni || mZip == appOmni)
     return NS_OK;
@@ -420,7 +420,7 @@ nsJAR::GetNSPRFileDesc(PRFileDesc** aNSPRFileDesc)
     return NS_ERROR_FAILURE;
   }
 
-  nsRefPtr<nsZipHandle> handle = mZip->GetFD();
+  RefPtr<nsZipHandle> handle = mZip->GetFD();
   if (!handle) {
     return NS_ERROR_FAILURE;
   }
@@ -1132,7 +1132,7 @@ nsZipReaderCache::GetZip(nsIFile* zipFile, nsIZipReader* *result)
 
   uri.Insert(NS_LITERAL_CSTRING("file:"), 0);
 
-  nsRefPtr<nsJAR> zip;
+  RefPtr<nsJAR> zip;
   mZips.Get(uri, getter_AddRefs(zip));
   if (zip) {
 #ifdef ZIP_CACHE_HIT_RATE
@@ -1178,7 +1178,7 @@ nsZipReaderCache::GetInnerZip(nsIFile* zipFile, const nsACString &entry,
   uri.AppendLiteral("!/");
   uri.Append(entry);
 
-  nsRefPtr<nsJAR> zip;
+  RefPtr<nsJAR> zip;
   mZips.Get(uri, getter_AddRefs(zip));
   if (zip) {
 #ifdef ZIP_CACHE_HIT_RATE
@@ -1221,7 +1221,7 @@ nsZipReaderCache::GetFd(nsIFile* zipFile, PRFileDesc** aRetVal)
   uri.Insert(NS_LITERAL_CSTRING("file:"), 0);
 
   MutexAutoLock lock(mLock);
-  nsRefPtr<nsJAR> zip;
+  RefPtr<nsJAR> zip;
   mZips.Get(uri, getter_AddRefs(zip));
   if (!zip) {
     return NS_ERROR_FAILURE;
@@ -1231,7 +1231,7 @@ nsZipReaderCache::GetFd(nsIFile* zipFile, PRFileDesc** aRetVal)
   rv = zip->GetNSPRFileDesc(aRetVal);
   
   MutexAutoUnlock unlock(mLock);
-  nsRefPtr<nsJAR> zipTemp = zip.forget();
+  RefPtr<nsJAR> zipTemp = zip.forget();
   return rv;
 #endif 
 }
@@ -1330,7 +1330,7 @@ nsZipReaderCache::ReleaseZip(nsJAR* zip)
   
   
   
-  nsRefPtr<nsJAR> removed;
+  RefPtr<nsJAR> removed;
   mZips.Remove(uri, getter_AddRefs(removed));
   NS_ASSERTION(removed, "botched");
   NS_ASSERTION(oldest == removed, "removed wrong entry");
@@ -1342,7 +1342,7 @@ nsZipReaderCache::ReleaseZip(nsJAR* zip)
 }
 
 static PLDHashOperator
-FindFlushableZip(const nsACString &aKey, nsRefPtr<nsJAR>& aCurrent, void*)
+FindFlushableZip(const nsACString &aKey, RefPtr<nsJAR>& aCurrent, void*)
 {
   if (aCurrent->GetReleaseTime() != PR_INTERVAL_NO_TIMEOUT) {
     aCurrent->SetZipReaderCache(nullptr);
@@ -1378,7 +1378,7 @@ nsZipReaderCache::Observe(nsISupports *aSubject,
 
     MutexAutoLock lock(mLock);
 
-    nsRefPtr<nsJAR> zip;
+    RefPtr<nsJAR> zip;
     mZips.Get(uri, getter_AddRefs(zip));
     if (!zip)
       return NS_OK;

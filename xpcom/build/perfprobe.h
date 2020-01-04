@@ -149,7 +149,7 @@ public:
 protected:
   ~ProbeManager();
 
-  nsresult StartSession(nsTArray<nsRefPtr<Probe>>& aProbes);
+  nsresult StartSession(nsTArray<RefPtr<Probe>>& aProbes);
   nsresult Init(const nsCID& aApplicationUID,
                 const nsACString& aApplicationName);
 
@@ -174,7 +174,7 @@ protected:
   
 
 
-  nsTArray<nsRefPtr<Probe>> mAllProbes;
+  nsTArray<RefPtr<Probe>> mAllProbes;
 
   
 

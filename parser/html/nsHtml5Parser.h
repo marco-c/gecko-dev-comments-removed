@@ -301,7 +301,7 @@ class nsHtml5Parser final : public nsIParser,
     
 
 
-    nsRefPtr<nsHtml5OwningUTF16Buffer>  mFirstBuffer;
+    RefPtr<nsHtml5OwningUTF16Buffer>  mFirstBuffer;
 
     
 
@@ -312,7 +312,7 @@ class nsHtml5Parser final : public nsIParser,
     
 
 
-    nsRefPtr<nsHtml5TreeOpExecutor>     mExecutor;
+    RefPtr<nsHtml5TreeOpExecutor>     mExecutor;
 
     
 
@@ -337,7 +337,7 @@ class nsHtml5Parser final : public nsIParser,
     
 
 
-    nsRefPtr<nsHtml5StreamListener>     mStreamListener;
+    RefPtr<nsHtml5StreamListener>     mStreamListener;
 
     
 

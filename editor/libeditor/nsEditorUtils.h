@@ -78,7 +78,7 @@ class MOZ_RAII nsAutoSelectionReset
 {
   private:
     
-    nsRefPtr<mozilla::dom::Selection> mSel;
+    RefPtr<mozilla::dom::Selection> mSel;
     nsEditor *mEd;  
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 

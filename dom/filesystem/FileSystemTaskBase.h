@@ -208,8 +208,8 @@ protected:
 
   nsresult mErrorValue;
 
-  nsRefPtr<FileSystemBase> mFileSystem;
-  nsRefPtr<FileSystemRequestParent> mRequestParent;
+  RefPtr<FileSystemBase> mFileSystem;
+  RefPtr<FileSystemRequestParent> mRequestParent;
 private:
   
 

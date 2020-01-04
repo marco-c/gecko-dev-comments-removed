@@ -10,7 +10,7 @@
 #include <stdint.h>                     
 #include "ImageTypes.h"                 
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 
 namespace mozilla {
