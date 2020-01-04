@@ -1124,16 +1124,20 @@ void
 JSCompartment::reportTelemetry()
 {
     
-    if (addonId || isSystem_)
+    if (isSystem_)
         return;
 
     
     JS::AutoSuppressGCAnalysis nogc;
 
+    int id = addonId
+             ? JS_TELEMETRY_DEPRECATED_LANGUAGE_EXTENSIONS_IN_ADDONS
+             : JS_TELEMETRY_DEPRECATED_LANGUAGE_EXTENSIONS_IN_CONTENT;
+
     
     for (size_t i = 0; i < DeprecatedLanguageExtensionCount; i++) {
         if (sawDeprecatedLanguageExtension[i])
-            runtime_->addTelemetry(JS_TELEMETRY_DEPRECATED_LANGUAGE_EXTENSIONS_IN_CONTENT, i);
+            runtime_->addTelemetry(id, i);
     }
 }
 
@@ -1141,7 +1145,7 @@ void
 JSCompartment::addTelemetry(const char* filename, DeprecatedLanguageExtension e)
 {
     
-    if (addonId || isSystem_ || !filename || strncmp(filename, "http", 4) != 0)
+    if (isSystem_ || (!addonId && (!filename || strncmp(filename, "http", 4) != 0)))
         return;
 
     sawDeprecatedLanguageExtension[e] = true;
