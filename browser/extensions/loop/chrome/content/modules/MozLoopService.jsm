@@ -948,6 +948,10 @@ var MozLoopServiceInternal = {
 
       let url = this.getChatURL(windowId);
 
+      
+      Services.perms.add(Services.io.newURI(url, null, null), "camera",
+                         Services.perms.ALLOW_ACTION, Services.perms.EXPIRE_SESSION);
+
       Chat.registerButton(kChatboxHangupButton);
 
       let callback = chatbox => {
