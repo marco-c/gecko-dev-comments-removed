@@ -3584,9 +3584,21 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   
   WidgetQueryContentEvent event(true, eQueryTextRect, mWidget);
   mWidget->InitEvent(event);
-  event.InitForQueryTextRect(acpStart, acpEnd - acpStart);
+
+  WidgetQueryContentEvent::Options options;
+  int64_t startOffset = acpStart;
+  if (mComposition.IsComposing()) {
+    
+    
+    
+    
+    options.mRelativeToInsertionPoint = true;
+    startOffset -= mComposition.mStart;
+  }
+  event.InitForQueryTextRect(startOffset, acpEnd - acpStart, options);
+
   DispatchEvent(event);
-  if (!event.mSucceeded) {
+  if (NS_WARN_IF(!event.mSucceeded)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
            ("TSF: 0x%p   TSFTextStore::GetTextExt() FAILED due to "
             "eQueryTextRect failure", this));
@@ -5092,15 +5104,24 @@ TSFTextStore::CreateNativeCaret()
     return;
   }
 
-  
-  
-  uint32_t caretOffset = currentSel.MaxOffset();
-
   WidgetQueryContentEvent queryCaretRect(true, eQueryCaretRect, mWidget);
-  queryCaretRect.InitForQueryCaretRect(caretOffset);
   mWidget->InitEvent(queryCaretRect);
+
+  WidgetQueryContentEvent::Options options;
+  
+  
+  int64_t caretOffset = currentSel.MaxOffset();
+  if (mComposition.IsComposing()) {
+    
+    
+    
+    options.mRelativeToInsertionPoint = true;
+    caretOffset -= mComposition.mStart;
+  }
+  queryCaretRect.InitForQueryCaretRect(caretOffset, options);
+
   DispatchEvent(queryCaretRect);
-  if (!queryCaretRect.mSucceeded) {
+  if (NS_WARN_IF(!queryCaretRect.mSucceeded)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
            ("TSF: 0x%p   TSFTextStore::CreateNativeCaret() FAILED due to "
             "eQueryCaretRect failure (offset=%d)", this, caretOffset));
