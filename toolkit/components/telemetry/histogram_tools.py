@@ -293,7 +293,7 @@ def from_nsDeprecatedOperationList(filename):
             op = match.group(1)
 
             def add_counter(context):
-                name = 'USE_COUNTER_DEPRECATED_%s_%s' % (op, context.upper())
+                name = 'USE_COUNTER2_DEPRECATED_%s_%s' % (op, context.upper())
                 histograms[name] = {
                     'expires_in_version': 'never',
                     'kind': 'boolean',
@@ -341,7 +341,7 @@ the histograms defined in filenames.
 
     
     
-    use_counter_indices = filter(lambda x: x[1].startswith("USE_COUNTER_"),
+    use_counter_indices = filter(lambda x: x[1].startswith("USE_COUNTER2_"),
                                  enumerate(all_histograms.iterkeys()));
     if use_counter_indices:
         lower_bound = use_counter_indices[0][0]
