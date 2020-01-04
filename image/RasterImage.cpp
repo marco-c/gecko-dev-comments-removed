@@ -1306,30 +1306,31 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   }
 
   
-  RefPtr<Decoder> decoder;
+  RefPtr<IDecodingTask> task;
   if (mAnim) {
-    decoder = DecoderFactory::CreateAnimationDecoder(mDecoderType, this,
-                                                     mSourceBuffer, decoderFlags,
-                                                     surfaceFlags);
+    task = DecoderFactory::CreateAnimationDecoder(mDecoderType, this,
+                                                  mSourceBuffer, decoderFlags,
+                                                  surfaceFlags);
   } else {
-    decoder = DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer,
-                                            targetSize, decoderFlags,
-                                            surfaceFlags,
-                                            mRequestedSampleSize);
+    task = DecoderFactory::CreateDecoder(mDecoderType, this, mSourceBuffer,
+                                         targetSize, decoderFlags,
+                                         surfaceFlags,
+                                         mRequestedSampleSize);
   }
 
   
-  if (!decoder) {
+  if (!task) {
     return NS_ERROR_FAILURE;
   }
 
   
   
+  SurfaceKey surfaceKey =
+    RasterSurfaceKey(aSize,
+                     task->GetDecoder()->GetSurfaceFlags(),
+                      0);
   InsertOutcome outcome =
-    SurfaceCache::InsertPlaceholder(ImageKey(this),
-                                    RasterSurfaceKey(aSize,
-                                                     decoder->GetSurfaceFlags(),
-                                                      0));
+    SurfaceCache::InsertPlaceholder(ImageKey(this), surfaceKey);
   if (outcome != InsertOutcome::SUCCESS) {
     return NS_ERROR_FAILURE;
   }
@@ -1337,7 +1338,6 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   mDecodeCount++;
 
   
-  RefPtr<IDecodingTask> task = new DecodingTask(WrapNotNull(decoder));
   LaunchDecodingTask(task, this, aFlags, mHasSourceData);
   return NS_OK;
 }
@@ -1352,17 +1352,16 @@ RasterImage::DecodeMetadata(uint32_t aFlags)
   MOZ_ASSERT(!mHasSize, "Should not do unnecessary metadata decodes");
 
   
-  RefPtr<Decoder> decoder =
+  RefPtr<IDecodingTask> task =
     DecoderFactory::CreateMetadataDecoder(mDecoderType, this, mSourceBuffer,
                                           mRequestedSampleSize);
 
   
-  if (!decoder) {
+  if (!task) {
     return NS_ERROR_FAILURE;
   }
 
   
-  RefPtr<IDecodingTask> task = new MetadataDecodingTask(WrapNotNull(decoder));
   LaunchDecodingTask(task, this, aFlags, mHasSourceData);
   return NS_OK;
 }

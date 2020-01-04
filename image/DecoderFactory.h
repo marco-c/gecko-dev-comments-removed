@@ -20,6 +20,7 @@ namespace mozilla {
 namespace image {
 
 class Decoder;
+class IDecodingTask;
 class RasterImage;
 class SourceBuffer;
 
@@ -64,7 +65,7 @@ public:
 
 
 
-  static already_AddRefed<Decoder>
+  static already_AddRefed<IDecodingTask>
   CreateDecoder(DecoderType aType,
                 RasterImage* aImage,
                 SourceBuffer* aSourceBuffer,
@@ -86,7 +87,7 @@ public:
 
 
 
-  static already_AddRefed<Decoder>
+  static already_AddRefed<IDecodingTask>
   CreateAnimationDecoder(DecoderType aType,
                          RasterImage* aImage,
                          SourceBuffer* aSourceBuffer,
@@ -107,7 +108,7 @@ public:
 
 
 
-  static already_AddRefed<Decoder>
+  static already_AddRefed<IDecodingTask>
   CreateMetadataDecoder(DecoderType aType,
                         RasterImage* aImage,
                         SourceBuffer* aSourceBuffer,
