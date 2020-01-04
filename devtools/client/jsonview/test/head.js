@@ -59,7 +59,7 @@ function addJsonViewTab(url) {
 
 
 
-function expandJsonNode(selector) {
+function clickJsonNode(selector) {
   info("Expanding node: '" + selector + "'");
 
   let browser = gBrowser.selectedBrowser;
