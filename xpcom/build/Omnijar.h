@@ -13,6 +13,8 @@
 #include "nsIFile.h"
 #include "nsZipArchive.h"
 
+#include "mozilla/StaticPtr.h"
+
 namespace mozilla {
 
 class Omnijar
@@ -24,17 +26,24 @@ private:
 
 
 
-  static nsIFile* sPath[2];
+  static StaticRefPtr<nsIFile> sPath[2];
 
   
 
 
-  static nsZipArchive* sReader[2];
+  static StaticRefPtr<nsZipArchive> sReader[2];
 
   
 
 
   static bool sInitialized;
+
+  
+
+
+  static bool sIsUnified;
+
+  static bool sIsNested[2];
 
 public:
   enum Type
@@ -71,7 +80,7 @@ public:
   static inline already_AddRefed<nsIFile> GetPath(Type aType)
   {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
-    nsCOMPtr<nsIFile> path = sPath[aType];
+    nsCOMPtr<nsIFile> path = sPath[aType].get();
     return path.forget();
   }
 
@@ -92,7 +101,7 @@ public:
   static inline already_AddRefed<nsZipArchive> GetReader(Type aType)
   {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
-    RefPtr<nsZipArchive> reader = sReader[aType];
+    RefPtr<nsZipArchive> reader = sReader[aType].get();
     return reader.forget();
   }
 
