@@ -111,7 +111,7 @@ var inputTests = [
     input: '["' + testStrIn + '", "' + testStrIn + '", "' + testStrIn + '"]',
     output: 'Array [ "' + testStrOut + '", "' + testStrOut + '", "' +
             testStrOut + '" ]',
-    inspectable: false,
+    inspectable: true,
     printOutput: "SHOW\nALL\nOF\nTHIS\nON\nA\nSINGLE\nLINE ONLY. ESCAPE " +
                  "ALL NEWLINE,SHOW\nALL\nOF\nTHIS\nON\nA\nSINGLE\nLINE ONLY. " +
                  "ESCAPE ALL NEWLINE,SHOW\nALL\nOF\nTHIS\nON\nA\nSINGLE\n" +
@@ -124,7 +124,8 @@ var inputTests = [
     input: '({0: "a", 1: "b"})',
     output: 'Object [ "a", "b" ]',
     printOutput: "[object Object]",
-    inspectable: false,
+    inspectable: true,
+    variablesViewLabel: "Object[2]",
   },
 
   
@@ -132,7 +133,8 @@ var inputTests = [
     input: '({0: "a", 42: "b"})',
     output: 'Object { 0: "a", 42: "b" }',
     printOutput: "[object Object]",
-    inspectable: false,
+    inspectable: true,
+    variablesViewLabel: "Object",
   },
 
   
@@ -161,6 +163,96 @@ var inputTests = [
   {
     input: '({" ": "a"})',
     output: 'Object {  : "a" }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({})',
+    output: 'Object {  }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({length: 0})',
+    output: 'Object [  ]',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object[0]",
+  },
+
+  
+  {
+    input: '({length: 1})',
+    output: 'Object { length: 1 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({0: "a", 1: "b", length: 1})',
+    output: 'Object { 1: "b", length: 1, 1 more\u2026 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({0: "a", 1: "b", length: 2})',
+    output: 'Object [ "a", "b" ]',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object[2]",
+  },
+
+  
+  {
+    input: '({0: "a", 1: "b", length: 3})',
+    output: 'Object { length: 3, 2 more\u2026 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({0: "a", 2: "b", length: 2})',
+    output: 'Object { 2: "b", length: 2, 1 more\u2026 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({0: "a", 2: "b", length: 3})',
+    output: 'Object { length: 3, 2 more\u2026 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({0: "a", b: "b", length: 1})',
+    output: 'Object { b: "b", length: 1, 1 more\u2026 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({0: "a", b: "b", length: 2})',
+    output: 'Object { b: "b", length: 2, 1 more\u2026 }',
     printOutput: "[object Object]",
     inspectable: true,
     variablesViewLabel: "Object",
