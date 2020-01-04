@@ -26,7 +26,8 @@ public:
                 layers::LayersBackend aLayersBackend,
                 layers::ImageContainer* aImageContainer,
                 FlushableTaskQueue* aVideoTaskQueue,
-                MediaDataDecoderCallback* aCallback);
+                MediaDataDecoderCallback* aCallback,
+                DecoderDoctorDiagnostics* aDiagnostics);
   virtual ~H264Converter();
 
   RefPtr<InitPromise> Init() override;
@@ -51,7 +52,7 @@ private:
   
   
   
-  nsresult CreateDecoder();
+  nsresult CreateDecoder(DecoderDoctorDiagnostics* aDiagnostics);
   nsresult CreateDecoderAndInit(MediaRawData* aSample);
   nsresult CheckForSPSChange(MediaRawData* aSample);
   void UpdateConfigFromExtraData(MediaByteBuffer* aExtraData);

@@ -395,7 +395,8 @@ MediaFormatReader::EnsureDecoderCreated(TrackType aTrack)
                                    *decoder.mInfo->GetAsAudioInfo() :
                                    mInfo.mAudio,
                                  decoder.mTaskQueue,
-                                 decoder.mCallback);
+                                 decoder.mCallback,
+                                  nullptr);
       break;
     case TrackType::kVideoTrack:
       
@@ -406,6 +407,7 @@ MediaFormatReader::EnsureDecoderCreated(TrackType aTrack)
                                    mInfo.mVideo,
                                  decoder.mTaskQueue,
                                  decoder.mCallback,
+                                  nullptr,
                                  mLayersBackendType,
                                  GetImageContainer());
       break;

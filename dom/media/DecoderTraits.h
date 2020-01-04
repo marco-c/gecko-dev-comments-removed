@@ -15,6 +15,7 @@ class nsACString;
 namespace mozilla {
 
 class AbstractMediaDecoder;
+class DecoderDoctorDiagnostics;
 class MediaDecoder;
 class MediaDecoderOwner;
 class MediaDecoderReader;
@@ -35,7 +36,8 @@ public:
   
   static CanPlayStatus CanHandleMediaType(const char* aMIMEType,
                                           bool aHaveRequestedCodecs,
-                                          const nsAString& aRequestedCodecs);
+                                          const nsAString& aRequestedCodecs,
+                                          DecoderDoctorDiagnostics* aDiagnostics);
 
   
   
@@ -43,18 +45,21 @@ public:
   
   
   static CanPlayStatus CanHandleCodecsType(const char* aMIMEType,
-                                           const nsAString& aRequestedCodecs);
+                                           const nsAString& aRequestedCodecs,
+                                           DecoderDoctorDiagnostics* aDiagnostics);
 
   
   
   
   
-  static bool ShouldHandleMediaType(const char* aMIMEType);
+  static bool ShouldHandleMediaType(const char* aMIMEType,
+                                    DecoderDoctorDiagnostics* aDiagnostics);
 
   
   
   static already_AddRefed<MediaDecoder> CreateDecoder(const nsACString& aType,
-                                                      MediaDecoderOwner* aOwner);
+                                                      MediaDecoderOwner* aOwner,
+                                                      DecoderDoctorDiagnostics* aDiagnostics);
 
   
   
@@ -72,7 +77,8 @@ public:
 
   static bool IsWebMTypeAndEnabled(const nsACString& aType);
   static bool IsWebMAudioType(const nsACString& aType);
-  static bool IsMP4TypeAndEnabled(const nsACString& aType);
+  static bool IsMP4TypeAndEnabled(const nsACString& aType,
+                                  DecoderDoctorDiagnostics* aDiagnostics);
 };
 
 } 

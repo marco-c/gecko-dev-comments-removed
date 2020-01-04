@@ -20,6 +20,7 @@ class TrackInfo;
 class AudioInfo;
 class VideoInfo;
 class MediaRawData;
+class DecoderDoctorDiagnostics;
 
 namespace layers {
 class ImageContainer;
@@ -53,7 +54,8 @@ public:
   virtual nsresult Startup() { return NS_OK; };
 
   
-  virtual bool SupportsMimeType(const nsACString& aMimeType) const = 0;
+  virtual bool SupportsMimeType(const nsACString& aMimeType,
+                                DecoderDoctorDiagnostics* aDiagnostics) const = 0;
 
   enum ConversionRequired {
     kNeedNone,
@@ -89,7 +91,8 @@ protected:
                      layers::LayersBackend aLayersBackend,
                      layers::ImageContainer* aImageContainer,
                      FlushableTaskQueue* aVideoTaskQueue,
-                     MediaDataDecoderCallback* aCallback) = 0;
+                     MediaDataDecoderCallback* aCallback,
+                     DecoderDoctorDiagnostics* aDiagnostics) = 0;
 
   
   
@@ -104,7 +107,8 @@ protected:
   virtual already_AddRefed<MediaDataDecoder>
   CreateAudioDecoder(const AudioInfo& aConfig,
                      FlushableTaskQueue* aAudioTaskQueue,
-                     MediaDataDecoderCallback* aCallback) = 0;
+                     MediaDataDecoderCallback* aCallback,
+                     DecoderDoctorDiagnostics* aDiagnostics) = 0;
 };
 
 

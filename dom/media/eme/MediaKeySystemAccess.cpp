@@ -361,7 +361,8 @@ GMPDecryptsAndGeckoDecodesH264(mozIGeckoMediaPluginService* aGMPService,
                      NS_ConvertUTF16toUTF8(aKeySystem),
                      NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
                      NS_LITERAL_CSTRING("h264")) &&
-         MP4Decoder::CanHandleMediaType(aContentType);
+         MP4Decoder::CanHandleMediaType(aContentType,
+                                         nullptr);
 }
 
 static bool
@@ -386,7 +387,8 @@ GMPDecryptsAndGeckoDecodesAAC(mozIGeckoMediaPluginService* aGMPService,
          
         (!aKeySystem.EqualsLiteral("com.widevine.alpha") || WMFDecoderModule::HasAAC()) &&
 #endif
-    MP4Decoder::CanHandleMediaType(aContentType);
+    MP4Decoder::CanHandleMediaType(aContentType,
+                                    nullptr);
 }
 
 static bool
