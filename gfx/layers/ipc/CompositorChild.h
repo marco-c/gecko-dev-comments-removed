@@ -11,7 +11,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/PCompositorChild.h"
+#include "mozilla/layers/PCompositorBridgeChild.h"
 #include "nsAutoPtr.h"                  
 #include "nsClassHashtable.h"           
 #include "nsCOMPtr.h"                   
@@ -34,7 +34,7 @@ class ClientLayerManager;
 class CompositorParent;
 struct FrameMetrics;
 
-class CompositorChild final : public PCompositorChild
+class CompositorChild final : public PCompositorBridgeChild
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorChild)
 
@@ -55,7 +55,7 @@ public:
 
 
 
-  static PCompositorChild*
+  static PCompositorBridgeChild*
   Create(Transport* aTransport, ProcessId aOtherProcess);
 
   

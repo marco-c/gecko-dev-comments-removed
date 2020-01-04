@@ -53,7 +53,7 @@
 #include "mozilla/layers/AxisPhysicsMSDModel.h" 
 #include "mozilla/layers/CompositorParent.h" 
 #include "mozilla/layers/LayerTransactionParent.h" 
-#include "mozilla/layers/PCompositorParent.h" 
+#include "mozilla/layers/PCompositorBridgeParent.h" 
 #include "mozilla/layers/ScrollInputMethods.h" 
 #include "mozilla/mozalloc.h"           
 #include "mozilla/unused.h"             
@@ -884,7 +884,7 @@ AsyncPanZoomController::~AsyncPanZoomController()
   MOZ_ASSERT(IsDestroyed());
 }
 
-PCompositorParent*
+PCompositorBridgeParent*
 AsyncPanZoomController::GetSharedFrameMetricsCompositor()
 {
   APZThreadUtils::AssertOnCompositorThread();
@@ -892,7 +892,7 @@ AsyncPanZoomController::GetSharedFrameMetricsCompositor()
   if (mSharingFrameMetricsAcrossProcesses) {
     
     if (const CompositorParent::LayerTreeState* state = CompositorParent::GetIndirectShadowTree(mLayersId)) {
-      return state->CrossProcessPCompositor();
+      return state->CrossProcessPCompositorBridge();
     }
     return nullptr;
   }
@@ -933,7 +933,7 @@ AsyncPanZoomController::Destroy()
   mParent = nullptr;
   mTreeManager = nullptr;
 
-  PCompositorParent* compositor = GetSharedFrameMetricsCompositor();
+  PCompositorBridgeParent* compositor = GetSharedFrameMetricsCompositor();
   
   if (compositor && mSharedFrameMetricsBuffer) {
     Unused << compositor->SendReleaseSharedCompositorFrameMetrics(mFrameMetrics.GetScrollId(), mAPZCId);
@@ -3869,7 +3869,7 @@ void AsyncPanZoomController::UpdateSharedCompositorFrameMetrics()
 
 void AsyncPanZoomController::ShareCompositorFrameMetrics() {
 
-  PCompositorParent* compositor = GetSharedFrameMetricsCompositor();
+  PCompositorBridgeParent* compositor = GetSharedFrameMetricsCompositor();
 
   
   

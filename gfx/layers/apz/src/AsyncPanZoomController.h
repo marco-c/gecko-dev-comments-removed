@@ -44,7 +44,7 @@ class AsyncDragMetrics;
 struct ScrollableLayerGuid;
 class CompositorParent;
 class GestureEventListener;
-class PCompositorParent;
+class PCompositorBridgeParent;
 struct AsyncTransform;
 class AsyncPanZoomAnimation;
 class FlingAnimation;
@@ -676,7 +676,7 @@ protected:
   bool mSharingFrameMetricsAcrossProcesses;
   
 
-  PCompositorParent* GetSharedFrameMetricsCompositor();
+  PCompositorBridgeParent* GetSharedFrameMetricsCompositor();
 
 protected:
   

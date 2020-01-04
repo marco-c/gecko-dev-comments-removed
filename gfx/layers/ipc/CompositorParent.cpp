@@ -1930,8 +1930,7 @@ CompositorParent::RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUp
 
 
 
-
-class CrossProcessCompositorParent final : public PCompositorParent,
+class CrossProcessCompositorParent final : public PCompositorBridgeParent,
                                            public ShadowLayersManager
 {
   friend class CompositorParent;
@@ -2080,8 +2079,8 @@ private:
   bool mNotifyAfterRemotePaint;
 };
 
-PCompositorParent*
-CompositorParent::LayerTreeState::CrossProcessPCompositor() const
+PCompositorBridgeParent*
+CompositorParent::LayerTreeState::CrossProcessPCompositorBridge() const
 {
   return mCrossProcessParent;
 }
@@ -2115,7 +2114,7 @@ CompositorParent::InvalidateRemoteLayers()
 {
   MOZ_ASSERT(CompositorLoop() == MessageLoop::current());
 
-  Unused << PCompositorParent::SendInvalidateLayers(0);
+  Unused << PCompositorBridgeParent::SendInvalidateLayers(0);
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   ForEachIndirectLayerTree([] (LayerTreeState* lts, const uint64_t& aLayersId) -> void {
@@ -2221,7 +2220,7 @@ OpenCompositor(CrossProcessCompositorParent* aCompositor,
   MOZ_ASSERT(ok);
 }
 
- PCompositorParent*
+ PCompositorBridgeParent*
 CompositorParent::Create(Transport* aTransport, ProcessId aOtherPid)
 {
   gfxPlatform::InitLayersIPC();
@@ -2732,7 +2731,7 @@ CrossProcessCompositorParent::CloneToplevel(const InfallibleTArray<mozilla::ipc:
     if (aFds[i].protocolId() == (unsigned)GetProtocolId()) {
       Transport* transport = OpenDescriptor(aFds[i].fd(),
                                             Transport::MODE_SERVER);
-      PCompositorParent* compositor =
+      PCompositorBridgeParent* compositor =
         CompositorParent::Create(transport, base::GetProcId(aPeerProcess));
       compositor->CloneManagees(this, aCtx);
       compositor->IToplevelProtocol::SetTransport(transport);

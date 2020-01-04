@@ -31,7 +31,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/layers/PCompositorParent.h"
+#include "mozilla/layers/PCompositorBridgeParent.h"
 #include "mozilla/layers/ShadowLayersManager.h" 
 #include "mozilla/layers/APZTestData.h"
 #include "nsAutoPtr.h"                  
@@ -214,7 +214,7 @@ protected:
   virtual ~CompositorUpdateObserver() {}
 };
 
-class CompositorParent final : public PCompositorParent,
+class CompositorParent final : public PCompositorBridgeParent,
                                public ShadowLayersManager
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorParent)
@@ -409,7 +409,7 @@ public:
 
 
 
-  static PCompositorParent*
+  static PCompositorBridgeParent*
   Create(Transport* aTransport, ProcessId aOtherProcess);
 
   struct LayerTreeState {
@@ -431,7 +431,7 @@ public:
     RefPtr<CompositorUpdateObserver> mLayerTreeReadyObserver;
     RefPtr<CompositorUpdateObserver> mLayerTreeClearedObserver;
 
-    PCompositorParent* CrossProcessPCompositor() const;
+    PCompositorBridgeParent* CrossProcessPCompositorBridge() const;
   };
 
   

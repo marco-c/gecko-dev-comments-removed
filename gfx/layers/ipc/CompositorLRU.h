@@ -18,11 +18,11 @@
 namespace mozilla {
 namespace layers {
 
-class PCompositorParent;
+class PCompositorBridgeParent;
 
 class CompositorLRU final
 {
-  typedef std::pair<PCompositorParent*, uint64_t> CompositorLayerPair;
+  typedef std::pair<PCompositorBridgeParent*, uint64_t> CompositorLayerPair;
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorLRU)
 
@@ -34,17 +34,17 @@ public:
 
 
 
-  void Add(PCompositorParent* aCompositor, const uint64_t& id);
+  void Add(PCompositorBridgeParent* aCompositor, const uint64_t& id);
 
   
 
 
-  void Remove(PCompositorParent* aCompositor, const uint64_t& id);
+  void Remove(PCompositorBridgeParent* aCompositor, const uint64_t& id);
 
   
 
 
-  void Remove(PCompositorParent* aCompositor);
+  void Remove(PCompositorBridgeParent* aCompositor);
 
 private:
   static StaticRefPtr<CompositorLRU> sSingleton;
