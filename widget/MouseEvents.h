@@ -451,15 +451,15 @@ private:
     : mDeltaX(0.0)
     , mDeltaY(0.0)
     , mDeltaZ(0.0)
+    , mOverflowDeltaX(0.0)
+    , mOverflowDeltaY(0.0)
     , mDeltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
-    , mCustomizedByUserPrefs(false)
-    , mIsMomentum(false)
-    , mIsNoLineOrPageDelta(false)
     , mLineOrPageDeltaX(0)
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
-    , mOverflowDeltaX(0.0)
-    , mOverflowDeltaY(0.0)
+    , mCustomizedByUserPrefs(false)
+    , mIsMomentum(false)
+    , mIsNoLineOrPageDelta(false)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
     , mAllowToOverrideSystemScrollSpeed(false)
@@ -474,16 +474,16 @@ public:
     , mDeltaX(0.0)
     , mDeltaY(0.0)
     , mDeltaZ(0.0)
+    , mOverflowDeltaX(0.0)
+    , mOverflowDeltaY(0.0)
     , mDeltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
+    , mLineOrPageDeltaX(0)
+    , mLineOrPageDeltaY(0)
+    , mScrollType(SCROLL_DEFAULT)
     , mCustomizedByUserPrefs(false)
     , mMayHaveMomentum(false)
     , mIsMomentum(false)
     , mIsNoLineOrPageDelta(false)
-    , mLineOrPageDeltaX(0)
-    , mLineOrPageDeltaY(0)
-    , mScrollType(SCROLL_DEFAULT)
-    , mOverflowDeltaX(0.0)
-    , mOverflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
     , mAllowToOverrideSystemScrollSpeed(true)
@@ -520,25 +520,19 @@ public:
   double mDeltaZ;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  double mOverflowDeltaX;
+  double mOverflowDeltaY;
+
+  
   uint32_t mDeltaMode;
-
-  
-
-  
-  
-  bool mCustomizedByUserPrefs;
-
-  
-  bool mMayHaveMomentum;
-  
-  bool mIsMomentum;
-
-  
-  
-  
-  
-  
-  bool mIsNoLineOrPageDelta;
 
   
   
@@ -570,7 +564,7 @@ public:
   
   
   
-  enum ScrollType
+  enum ScrollType : uint8_t
   {
     SCROLL_DEFAULT,
     SCROLL_SYNCHRONOUSLY,
@@ -581,15 +575,19 @@ public:
 
   
   
+  bool mCustomizedByUserPrefs;
+
+  
+  bool mMayHaveMomentum;
+  
+  bool mIsMomentum;
+
   
   
   
   
   
-  
-  
-  double mOverflowDeltaX;
-  double mOverflowDeltaY;
+  bool mIsNoLineOrPageDelta;
 
   
   
