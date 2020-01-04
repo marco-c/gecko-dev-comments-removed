@@ -34,7 +34,7 @@ namespace js {
 
 class StringBuffer;
 
-extern bool
+extern MOZ_MUST_USE bool
 InitRuntimeNumberState(JSRuntime* rt);
 
 #if !EXPOSE_INTL_API
@@ -83,7 +83,7 @@ Int32ToAtom(ExclusiveContext* cx, int32_t si);
 
 
 
-extern bool JS_FASTCALL
+extern MOZ_MUST_USE bool JS_FASTCALL
 NumberValueToStringBuffer(JSContext* cx, const Value& v, StringBuffer& sb);
 
 
@@ -151,7 +151,7 @@ ParseDecimalNumber(const mozilla::Range<const CharT> chars);
 
 
 template <typename CharT>
-extern bool
+extern MOZ_MUST_USE bool
 GetPrefixInteger(ExclusiveContext* cx, const CharT* start, const CharT* end, int base,
                  const CharT** endp, double* dp);
 
@@ -160,14 +160,14 @@ GetPrefixInteger(ExclusiveContext* cx, const CharT* start, const CharT* end, int
 
 
 
-extern bool
+extern MOZ_MUST_USE bool
 GetDecimalInteger(ExclusiveContext* cx, const char16_t* start, const char16_t* end, double* dp);
 
-extern bool
+extern MOZ_MUST_USE bool
 StringToNumber(ExclusiveContext* cx, JSString* str, double* result);
 
 
-MOZ_ALWAYS_INLINE bool
+MOZ_ALWAYS_INLINE MOZ_MUST_USE bool
 ToNumber(JSContext* cx, JS::MutableHandleValue vp)
 {
     if (vp.isNumber())
@@ -181,7 +181,7 @@ ToNumber(JSContext* cx, JS::MutableHandleValue vp)
     return true;
 }
 
-bool
+MOZ_MUST_USE bool
 num_parseInt(JSContext* cx, unsigned argc, Value* vp);
 
 }  
@@ -199,16 +199,16 @@ num_parseInt(JSContext* cx, unsigned argc, Value* vp);
 
 
 template <typename CharT>
-extern bool
+extern MOZ_MUST_USE bool
 js_strtod(js::ExclusiveContext* cx, const CharT* begin, const CharT* end,
           const CharT** dEnd, double* d);
 
 namespace js {
 
-extern bool
+extern MOZ_MUST_USE bool
 num_toString(JSContext* cx, unsigned argc, Value* vp);
 
-extern bool
+extern MOZ_MUST_USE bool
 num_valueOf(JSContext* cx, unsigned argc, Value* vp);
 
 static MOZ_ALWAYS_INLINE bool
@@ -248,7 +248,7 @@ IsDefinitelyIndex(const Value& v, uint32_t* indexp)
 }
 
 
-static inline bool
+static MOZ_MUST_USE inline bool
 ToInteger(JSContext* cx, HandleValue v, double* dp)
 {
     if (v.isInt32()) {
@@ -273,7 +273,7 @@ ToInteger(JSContext* cx, HandleValue v, double* dp)
 
 
 template<typename T>
-bool ToLengthClamped(T* cx, HandleValue v, uint32_t* out, bool* overflow);
+MOZ_MUST_USE bool ToLengthClamped(T* cx, HandleValue v, uint32_t* out, bool* overflow);
 
 
 
@@ -293,9 +293,9 @@ bool ToLengthClamped(T* cx, HandleValue v, uint32_t* out, bool* overflow);
 
 
 
-bool ToIntegerIndex(JSContext* cx, JS::HandleValue v, uint64_t* index);
+MOZ_MUST_USE bool ToIntegerIndex(JSContext* cx, JS::HandleValue v, uint64_t* index);
 
-inline bool
+MOZ_MUST_USE inline bool
 SafeAdd(int32_t one, int32_t two, int32_t* res)
 {
 #if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_sadd_overflow)
@@ -310,7 +310,7 @@ SafeAdd(int32_t one, int32_t two, int32_t* res)
 #endif
 }
 
-inline bool
+MOZ_MUST_USE inline bool
 SafeSub(int32_t one, int32_t two, int32_t* res)
 {
 #if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_ssub_overflow)
@@ -322,7 +322,7 @@ SafeSub(int32_t one, int32_t two, int32_t* res)
 #endif
 }
 
-inline bool
+MOZ_MUST_USE inline bool
 SafeMul(int32_t one, int32_t two, int32_t* res)
 {
 #if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_smul_overflow)
@@ -334,12 +334,12 @@ SafeMul(int32_t one, int32_t two, int32_t* res)
 #endif
 }
 
-extern bool
+extern MOZ_MUST_USE bool
 ToNumberSlow(ExclusiveContext* cx, Value v, double* dp);
 
 
 
-MOZ_ALWAYS_INLINE bool
+MOZ_ALWAYS_INLINE MOZ_MUST_USE bool
 ToNumber(ExclusiveContext* cx, const Value& v, double* out)
 {
     if (v.isNumber()) {
