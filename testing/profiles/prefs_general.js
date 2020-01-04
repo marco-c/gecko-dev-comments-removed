@@ -98,6 +98,8 @@ user_pref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-a
 
 user_pref("extensions.update.enabled", false);
 
+user_pref("extensions.pocket.enabled", false);
+
 user_pref("extensions.webservice.discoverURL", "http://%(server)s/extensions-dummy/discoveryURL");
 
 user_pref("extensions.getAddons.maxResults", 0);

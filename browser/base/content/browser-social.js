@@ -1348,9 +1348,8 @@ SocialMarks = {
     
     
     
-    let tbh = this._toolbarHelper;
     return [p for (p of Social.providers) if (p.markURL &&
-                                              document.getElementById(tbh.idFromOrigin(p.origin)))];
+                                              document.getElementById(this._toolbarHelper.idFromOrigin(p.origin)))];
   },
 
   populateContextMenu: function() {

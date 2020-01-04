@@ -42,6 +42,13 @@
 
 
 
+const {classes: Cc, interfaces: Ci, utils: Cu, manager: Cm} = Components;
+this.EXPORTED_SYMBOLS = ["pktApi"];
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+
+
 var pktApi = (function() {
 
     
@@ -49,20 +56,20 @@ var pktApi = (function() {
 
 
     
-    var pocketAPIhost = Services.prefs.getCharPref("browser.pocket.api"); 	
-    var pocketSiteHost = Services.prefs.getCharPref("browser.pocket.site"); 
+    var pocketAPIhost = Services.prefs.getCharPref("extensions.pocket.api"); 	
+    var pocketSiteHost = Services.prefs.getCharPref("extensions.pocket.site"); 
     var baseAPIUrl = "https://" + pocketAPIhost + "/v3";
 
 
     
 
 
-    var oAuthConsumerKey = Services.prefs.getCharPref("browser.pocket.oAuthConsumerKey");
+    var oAuthConsumerKey = Services.prefs.getCharPref("extensions.pocket.oAuthConsumerKey");
 
 	
 
 
-	var prefBranch = Services.prefs.getBranch("browser.pocket.settings.");
+	var prefBranch = Services.prefs.getBranch("extensions.pocket.settings.");
 
     
 

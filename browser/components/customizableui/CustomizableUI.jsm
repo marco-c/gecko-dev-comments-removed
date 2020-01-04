@@ -56,7 +56,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 5;
+var kVersion = 6;
 
 
 
@@ -64,7 +64,8 @@ var kVersion = 5;
 
 
 var ObsoleteBuiltinButtons = {
-  "loop-button": 5
+  "loop-button": 5,
+  "pocket-button": 6
 };
 
 
@@ -221,15 +222,6 @@ var CustomizableUIInternal = {
       "home-button",
       "loop-button",
     ];
-
-    
-    for (let widgetDefinition of CustomizableWidgets) {
-      if (widgetDefinition.id == "pocket-button") {
-        let idx = navbarPlacements.indexOf("bookmarks-menu-button") + 1;
-        navbarPlacements.splice(idx, 0, widgetDefinition.id);
-        break;
-      }
-    }
 
     if (Services.prefs.getBoolPref(kPrefWebIDEInNavbar)) {
       navbarPlacements.push("webide-button");
@@ -3473,8 +3465,8 @@ this.CustomizableUI = {
 
 
 
-  getPlacementOfWidget: function(aWidgetId) {
-    return CustomizableUIInternal.getPlacementOfWidget(aWidgetId, true);
+  getPlacementOfWidget: function(aWidgetId, aOnlyRegistered=true, aDeadAreas=false) {
+    return CustomizableUIInternal.getPlacementOfWidget(aWidgetId, aOnlyRegistered, aDeadAreas);
   },
   
 
