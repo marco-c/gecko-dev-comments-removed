@@ -639,6 +639,10 @@ pref("browser.safebrowsing.downloads.enabled", true);
 pref("browser.safebrowsing.downloads.remote.enabled", true);
 pref("browser.safebrowsing.downloads.remote.timeout_ms", 10000);
 pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
+pref("browser.safebrowsing.downloads.remote.block_dangerous",            true);
+pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
+pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", false);
+pref("browser.safebrowsing.downloads.remote.block_uncommon",             false);
 pref("browser.safebrowsing.debug", false);
 
 pref("browser.safebrowsing.provider.google.lists", "goog-badbinurl-shavar,goog-downloadwhite-digest256,goog-phish-shavar,goog-malware-shavar,goog-unwanted-shavar");
@@ -922,10 +926,6 @@ pref("layout.accessiblecaret.enabled", true);
 #else
 pref("layout.accessiblecaret.enabled", false);
 #endif
-
-
-pref("layout.accessiblecaret.timeout_ms", 0);
-
 
 pref("layout.accessiblecaret.use_long_tap_injector", false);
 

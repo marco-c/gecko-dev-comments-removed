@@ -72,6 +72,12 @@ using safe_browsing::ClientDownloadRequest_SignatureInfo;
 #define PREF_DOWNLOAD_ALLOW_TABLE "urlclassifier.downloadAllowTable"
 
 
+#define PREF_BLOCK_DANGEROUS            "browser.safebrowsing.downloads.remote.block_dangerous"
+#define PREF_BLOCK_DANGEROUS_HOST       "browser.safebrowsing.downloads.remote.block_dangerous_host"
+#define PREF_BLOCK_POTENTIALLY_UNWANTED "browser.safebrowsing.downloads.remote.block_potentially_unwanted"
+#define PREF_BLOCK_UNCOMMON             "browser.safebrowsing.downloads.remote.block_uncommon"
+
+
 PRLogModuleInfo *ApplicationReputationService::prlog = nullptr;
 #define LOG(args) MOZ_LOG(ApplicationReputationService::prlog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(ApplicationReputationService::prlog, mozilla::LogLevel::Debug)
@@ -1098,8 +1104,6 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
     return NS_ERROR_CANNOT_CONVERT_DATA;
   }
 
-  
-  
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
     SERVER_RESPONSE_VALID);
   
@@ -1107,10 +1111,19 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
     std::min<uint32_t>(response.verdict(), 7));
   switch(response.verdict()) {
     case safe_browsing::ClientDownloadResponse::DANGEROUS:
+      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_DANGEROUS, true);
+      break;
     case safe_browsing::ClientDownloadResponse::DANGEROUS_HOST:
-      *aShouldBlock = true;
+      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_DANGEROUS_HOST, true);
+      break;
+    case safe_browsing::ClientDownloadResponse::POTENTIALLY_UNWANTED:
+      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_POTENTIALLY_UNWANTED, false);
+      break;
+    case safe_browsing::ClientDownloadResponse::UNCOMMON:
+      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_UNCOMMON, false);
       break;
     default:
+      
       break;
   }
 
