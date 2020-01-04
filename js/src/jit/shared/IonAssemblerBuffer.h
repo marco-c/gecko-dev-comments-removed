@@ -152,8 +152,13 @@ class AssemblerBuffer
 
     bool ensureSpace(int size) {
         
-        if (tail && tail->length() + size <= tail->Capacity())
+        if (tail && tail->length() + size <= tail->Capacity()) {
+            
+            if (js::oom::ShouldFailWithOOM())
+                return fail_oom();
+
             return true;
+        }
 
         
         Slice* slice = newSlice(lifoAlloc_);
