@@ -316,26 +316,7 @@ public:
 
   ShmemAllocator* GetShmAllocator() { return mShmProvider->AsShmemAllocator(); }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool IPCOpen() const { return mShmProvider->AsShmemAllocator() && mShmProvider->IPCOpen(); }
+  bool IPCOpen() const { return mShmProvider->IPCOpen(); }
 
 protected:
   std::vector<mozilla::ipc::Shmem> mUsedShmems;
