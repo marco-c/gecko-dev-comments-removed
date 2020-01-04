@@ -83,6 +83,7 @@ nsHttpConnection::nsHttpConnection()
     , mTransactionCaps(0)
     , mResponseTimeoutEnabled(false)
     , mTCPKeepaliveConfig(kTCPKeepaliveDisabled)
+    , mForceSendPending(false)
 {
     LOG(("Creating nsHttpConnection @%p\n", this));
 
@@ -112,6 +113,10 @@ nsHttpConnection::~nsHttpConnection()
                               Telemetry::SPDY_KBREAD_PER_CONN :
                               Telemetry::HTTP_KBREAD_PER_CONN,
                               totalKBRead);
+    }
+    if (mForceSendTimer) {
+        mForceSendTimer->Cancel();
+        mForceSendTimer = nullptr;
     }
 }
 
@@ -568,6 +573,10 @@ nsHttpConnection::Close(nsresult reason)
     if (mTCPKeepaliveTransitionTimer) {
         mTCPKeepaliveTransitionTimer->Cancel();
         mTCPKeepaliveTransitionTimer = nullptr;
+    }
+    if (mForceSendTimer) {
+        mForceSendTimer->Cancel();
+        mForceSendTimer = nullptr;
     }
 
     if (NS_FAILED(reason)) {
@@ -1340,10 +1349,10 @@ nsHttpConnection::ResumeRecv()
 }
 
 
-class nsHttpConnectionForceIO : public nsRunnable
+class HttpConnectionForceIO : public nsRunnable
 {
 public:
-  nsHttpConnectionForceIO(nsHttpConnection *aConn, bool doRecv)
+  HttpConnectionForceIO(nsHttpConnection *aConn, bool doRecv)
      : mConn(aConn)
      , mDoRecv(doRecv)
     {}
@@ -1357,14 +1366,49 @@ public:
                 return NS_OK;
             return mConn->OnInputStreamReady(mConn->mSocketIn);
         }
-        if (!mConn->mSocketOut)
+
+        MOZ_ASSERT(mConn->mForceSendPending);
+        mConn->mForceSendPending = false;
+        if (!mConn->mSocketOut) {
             return NS_OK;
+        }
         return mConn->OnOutputStreamReady(mConn->mSocketOut);
     }
 private:
     RefPtr<nsHttpConnection> mConn;
     bool mDoRecv;
 };
+
+void
+nsHttpConnection::ForceSendIO(nsITimer *aTimer, void *aClosure)
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    nsHttpConnection *self = static_cast<nsHttpConnection *>(aClosure);
+    MOZ_ASSERT(aTimer == self->mForceSendTimer);
+    self->mForceSendTimer = nullptr;
+    NS_DispatchToCurrentThread(new HttpConnectionForceIO(self, false));
+}
+
+nsresult
+nsHttpConnection::MaybeForceSendIO()
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    
+    
+    
+    
+    
+    static const uint32_t kForceDelay = 17; 
+
+    if (mForceSendPending) {
+        return NS_OK;
+    }
+    MOZ_ASSERT(!mForceSendTimer);
+    mForceSendPending = true;
+    mForceSendTimer = do_CreateInstance("@mozilla.org/timer;1");
+    return mForceSendTimer->InitWithFuncCallback(
+        nsHttpConnection::ForceSendIO, this, kForceDelay, nsITimer::TYPE_ONE_SHOT);
+}
 
 
 nsresult
@@ -1373,7 +1417,7 @@ nsHttpConnection::ForceRecv()
     LOG(("nsHttpConnection::ForceRecv [this=%p]\n", this));
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
 
-    return NS_DispatchToCurrentThread(new nsHttpConnectionForceIO(this, true));
+    return NS_DispatchToCurrentThread(new HttpConnectionForceIO(this, true));
 }
 
 
@@ -1386,8 +1430,7 @@ nsHttpConnection::ForceSend()
     if (mTLSFilter) {
         return mTLSFilter->NudgeTunnel(this);
     }
-
-    return NS_DispatchToCurrentThread(new nsHttpConnectionForceIO(this, false));
+    return MaybeForceSendIO();
 }
 
 void
@@ -2052,7 +2095,6 @@ nsHttpConnection::OnOutputStreamReady(nsIAsyncOutputStream *out)
 {
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
     MOZ_ASSERT(out == mSocketOut, "unexpected socket");
-
     
     if (!mTransaction) {
         LOG(("  no transaction; ignoring event\n"));

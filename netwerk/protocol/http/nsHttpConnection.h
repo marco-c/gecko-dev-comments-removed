@@ -142,7 +142,7 @@ public:
     int64_t  MaxBytesRead() {return mMaxBytesRead;}
     uint8_t GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
-    friend class nsHttpConnectionForceIO;
+    friend class HttpConnectionForceIO;
     nsresult ForceSend();
     nsresult ForceRecv();
 
@@ -349,6 +349,13 @@ private:
     
     uint32_t                        mTCPKeepaliveConfig;
     nsCOMPtr<nsITimer>              mTCPKeepaliveTransitionTimer;
+
+private:
+    
+    static void                     ForceSendIO(nsITimer *aTimer, void *aClosure);
+    nsresult                        MaybeForceSendIO();
+    bool                            mForceSendPending;
+    nsCOMPtr<nsITimer>              mForceSendTimer;
 };
 
 } 
