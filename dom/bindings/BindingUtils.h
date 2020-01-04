@@ -1895,6 +1895,19 @@ struct FakeString {
     mLength = aLength;
   }
 
+  
+  
+  
+  void ShareOrDependUpon(const nsAString& aString) {
+    RefPtr<nsStringBuffer> sharedBuffer = nsStringBuffer::FromString(aString);
+    if (!sharedBuffer) {
+      Rebind(aString.Data(), aString.Length());
+    } else {
+      AssignFromStringBuffer(sharedBuffer.forget());
+      mLength = aString.Length();
+    }
+  }
+
   void Truncate() {
     MOZ_ASSERT(mFlags == nsString::F_TERMINATED);
     mData = nsString::char_traits::sEmptyBuffer;
