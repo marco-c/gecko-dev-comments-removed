@@ -36,7 +36,6 @@ const PREF_SERVER = PREF_BRANCH + "server";
 const PREF_LOG_LEVEL = PREF_BRANCH_LOG + "level";
 const PREF_LOG_DUMP = PREF_BRANCH_LOG + "dump";
 const PREF_CACHED_CLIENTID = PREF_BRANCH + "cachedClientID";
-const PREF_FHR_ENABLED = "datareporting.healthreport.service.enabled";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_SESSIONS_BRANCH = "datareporting.sessions.";
 const PREF_UNIFIED = PREF_BRANCH + "unified";
@@ -707,20 +706,17 @@ var Impl = {
     }
 
     
-    
-    
-    if (!this._sessionRecorder &&
-        (Preferences.get(PREF_FHR_ENABLED, true) || IS_UNIFIED_TELEMETRY)) {
-      this._sessionRecorder = new SessionRecorder(PREF_SESSIONS_BRANCH);
-      this._sessionRecorder.onStartup();
-    }
-
-    
     TelemetryReportingPolicy.setup();
 
     if (!this.enableTelemetryRecording()) {
       this._log.config("setupChromeProcess - Telemetry recording is disabled, skipping Chrome process setup.");
       return Promise.resolve();
+    }
+
+    
+    if (!this._sessionRecorder) {
+      this._sessionRecorder = new SessionRecorder(PREF_SESSIONS_BRANCH);
+      this._sessionRecorder.onStartup();
     }
 
     this._attachObservers();

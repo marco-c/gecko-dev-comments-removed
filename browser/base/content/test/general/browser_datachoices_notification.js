@@ -11,7 +11,6 @@ var TelemetryReportingPolicy =
   Cu.import("resource://gre/modules/TelemetryReportingPolicy.jsm", {}).TelemetryReportingPolicy;
 
 const PREF_BRANCH = "datareporting.policy.";
-const PREF_DRS_ENABLED = "datareporting.healthreport.service.enabled";
 const PREF_BYPASS_NOTIFICATION = PREF_BRANCH + "dataSubmissionPolicyBypassNotification";
 const PREF_CURRENT_POLICY_VERSION = PREF_BRANCH + "currentPolicyVersion";
 const PREF_ACCEPTED_POLICY_VERSION = PREF_BRANCH + "dataSubmissionPolicyAcceptedVersion";
@@ -98,21 +97,17 @@ var checkInfobarButton = Task.async(function* (aNotification) {
 });
 
 add_task(function* setup(){
-  const drsEnabled = Preferences.get(PREF_DRS_ENABLED, true);
   const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, true);
   const currentPolicyVersion = Preferences.get(PREF_CURRENT_POLICY_VERSION, 1);
 
   
   registerCleanupFunction(() => {
-    Preferences.set(PREF_DRS_ENABLED, drsEnabled);
     Preferences.set(PREF_BYPASS_NOTIFICATION, bypassNotification);
     Preferences.set(PREF_CURRENT_POLICY_VERSION, currentPolicyVersion);
 
     return closeAllNotifications();
   });
 
-  
-  Preferences.set(PREF_DRS_ENABLED, false);
   
   Preferences.set(PREF_BYPASS_NOTIFICATION, false);
   
