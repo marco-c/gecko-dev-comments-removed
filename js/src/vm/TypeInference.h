@@ -146,7 +146,6 @@ enum : uint32_t {
     OBJECT_FLAG_ITERATED              = 0x00080000,
 
     
-    OBJECT_FLAG_REGEXP_FLAGS_SET      = 0x00100000,
 
     
 

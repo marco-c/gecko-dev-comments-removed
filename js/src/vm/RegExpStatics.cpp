@@ -64,20 +64,6 @@ RegExpStatics::create(ExclusiveContext* cx, Handle<GlobalObject*> parent)
     return obj;
 }
 
-void
-RegExpStatics::markFlagsSet(JSContext* cx)
-{
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(cx->global()->hasRegExpStatics(), this == cx->global()->getRegExpStatics(cx));
-
-    MarkObjectGroupFlags(cx, cx->global(), OBJECT_FLAG_REGEXP_FLAGS_SET);
-}
-
 bool
 RegExpStatics::executeLazy(JSContext* cx)
 {
