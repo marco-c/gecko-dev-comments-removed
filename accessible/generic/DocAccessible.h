@@ -577,7 +577,7 @@ protected:
 
   void SetIPCDoc(DocAccessibleChild* aIPCDoc) { mIPCDoc = aIPCDoc; }
 
-  friend class DocAccessibleChild;
+  friend class DocAccessibleChildBase;
 
   
 
