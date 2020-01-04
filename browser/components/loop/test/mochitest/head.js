@@ -16,10 +16,7 @@ const { LoopRooms } = Cu.import("resource:///modules/loop/LoopRooms.jsm", {});
 
 const WAS_OFFLINE = Services.io.offline;
 
-
-var gMozLoopAPI;
-
-function promiseGetMozLoopAPI() {
+function promisePanelLoaded() {
   return new Promise((resolve, reject) => {
     let loopPanel = document.getElementById("loop-notification-panel");
     let btn = document.getElementById("loop-button");
@@ -43,15 +40,10 @@ function promiseGetMozLoopAPI() {
 
       if (iframe.contentDocument &&
           iframe.contentDocument.readyState == "complete") {
-        gMozLoopAPI = iframe.contentWindow.navigator.wrappedJSObject.mozLoop;
-
         resolve();
       } else {
         iframe.addEventListener("load", function panelOnLoad(e) {
           iframe.removeEventListener("load", panelOnLoad, true);
-
-          gMozLoopAPI = iframe.contentWindow.navigator.wrappedJSObject.mozLoop;
-
           
           
           resolve();
@@ -125,7 +117,7 @@ function loadLoopPanel(aOverrideOptions = {}) {
   loopPanel.setAttribute("animate", "false");
 
   
-  return promiseGetMozLoopAPI();
+  return promisePanelLoaded();
 }
 
 function promiseOAuthParamsSetup(baseURL, params) {

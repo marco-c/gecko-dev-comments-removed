@@ -1,21 +1,13 @@
 
 
-
-
-
-
-
-
 "use strict";
 
-Components.utils.import("resource://gre/modules/Promise.jsm", this);
-
-add_task(loadLoopPanel);
+const { LoopAPI } = Cu.import("resource:///modules/loop/MozLoopAPI.jsm", {});
+var [, gHandlers] = LoopAPI.inspect();
 
 add_task(function* test_mozLoop_appVersionInfo() {
-  Assert.ok(gMozLoopAPI, "mozLoop should exist");
-
-  let appVersionInfo = gMozLoopAPI.appVersionInfo;
+  let appVersionInfo;
+  gHandlers.GetAppVersionInfo({}, result => appVersionInfo = result);
 
   Assert.ok(appVersionInfo, "should have appVersionInfo");
 
