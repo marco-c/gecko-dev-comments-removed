@@ -935,11 +935,6 @@ pref("consoleservice.logcat", true);
 
 pref("dom.vr.cardboard.enabled", true);
 
-#ifndef RELEASE_BUILD
-
-pref("dom.vr.enabled", true);
-#endif
-
 pref("browser.tabs.showAudioPlayingIcon", true);
 
 
