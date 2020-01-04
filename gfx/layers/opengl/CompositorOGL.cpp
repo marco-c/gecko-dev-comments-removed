@@ -22,6 +22,7 @@
 #include "mozilla/Preferences.h"        
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/Matrix.h"         
+#include "mozilla/gfx/gfxVars.h"        
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/CompositingRenderTargetOGL.h"
 #include "mozilla/layers/Effects.h"     
@@ -125,7 +126,7 @@ CompositorOGL::CreateContext()
   if (!context && gfxEnv::LayersPreferOffscreen()) {
     SurfaceCaps caps = SurfaceCaps::ForRGB();
     caps.preserve = false;
-    caps.bpp16 = gfxPlatform::GetPlatform()->GetOffscreenFormat() == SurfaceFormat::R5G6B5_UINT16;
+    caps.bpp16 = gfxVars::OffscreenFormat() == SurfaceFormat::R5G6B5_UINT16;
 
     nsCString discardFailureId;
     context = GLContextProvider::CreateOffscreen(mSurfaceSize,
