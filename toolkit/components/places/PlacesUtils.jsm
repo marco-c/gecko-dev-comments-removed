@@ -266,6 +266,29 @@ this.PlacesUtils = {
 
 
 
+
+  toPRTime(date) {
+    return date * 1000;
+  },
+
+  
+
+
+
+
+
+
+
+  toTime(time) {
+    return time / 1000;
+  },
+
+  
+
+
+
+
+
   toISupportsString: function PU_toISupportsString(aString) {
     let s = Cc["@mozilla.org/supports-string;1"].
             createInstance(Ci.nsISupportsString);
