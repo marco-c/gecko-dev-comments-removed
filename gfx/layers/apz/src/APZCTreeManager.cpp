@@ -692,8 +692,11 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
       
       
-      if (!apzc && mRootNode) {
-        apzc = mRootNode->GetApzc();
+      { 
+        MutexAutoLock lock(mTreeLock);
+        if (!apzc && mRootNode) {
+          apzc = mRootNode->GetApzc();
+        }
       }
 
       if (apzc) {
