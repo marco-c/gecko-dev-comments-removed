@@ -315,15 +315,62 @@ PullOutOldAnimationInCollection(const nsAString& aName,
   
   size_t oldIdx = aCollection->mAnimations.Length();
   while (oldIdx-- != 0) {
-    RefPtr<CSSAnimation> a = aCollection->mAnimations[oldIdx]->AsCSSAnimation();
+    CSSAnimation* a = aCollection->mAnimations[oldIdx]->AsCSSAnimation();
     MOZ_ASSERT(a, "All animations in the CSS Animation collection should"
-        " be CSSAnimation objects");
+      " be CSSAnimation objects");
     if (a->AnimationName() == aName) {
+      RefPtr<CSSAnimation> old = a;
       aCollection->mAnimations.RemoveElementAt(oldIdx);
-      return a.forget();
+      return old.forget();
     }
   }
   return nullptr;
+}
+
+static void
+UpdateOldAnimationPropertiesWithNew(CSSAnimation& aOld, Animation& aNew)
+{
+  bool animationChanged = false;
+
+  
+  
+  if (aOld.GetEffect() && aNew.GetEffect()) {
+    KeyframeEffectReadOnly* oldEffect = aOld.GetEffect();
+    KeyframeEffectReadOnly* newEffect = aNew.GetEffect();
+    animationChanged =
+      oldEffect->SpecifiedTiming() != newEffect->SpecifiedTiming() ||
+      oldEffect->Properties() != newEffect->Properties();
+    oldEffect->SetSpecifiedTiming(newEffect->SpecifiedTiming());
+    oldEffect->CopyPropertiesFrom(*newEffect);
+  }
+
+  
+  
+  if (aOld.PlayState() != AnimationPlayState::Idle) {
+    
+    
+    
+    
+    
+    
+    
+    if (!aOld.IsStylePaused() && aNew.IsPausedOrPausing()) {
+      aOld.PauseFromStyle();
+      animationChanged = true;
+    } else if (aOld.IsStylePaused() && !aNew.IsPausedOrPausing()) {
+      aOld.PlayFromStyle();
+      animationChanged = true;
+    }
+  }
+
+  aOld.CopyAnimationIndex(*aNew.AsCSSAnimation());
+
+  
+  
+  
+  if (animationChanged && aOld.IsRelevant()) {
+    nsNodeUtils::AnimationChanged(&aOld);
+  }
 }
 
 void
@@ -409,49 +456,7 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
           newAnim->AsCSSAnimation()->QueueEvents();
           continue;
         }
-
-        bool animationChanged = false;
-
-        
-        
-        if (oldAnim->GetEffect() && newAnim->GetEffect()) {
-          KeyframeEffectReadOnly* oldEffect = oldAnim->GetEffect();
-          KeyframeEffectReadOnly* newEffect = newAnim->GetEffect();
-          animationChanged =
-            oldEffect->SpecifiedTiming() != newEffect->SpecifiedTiming() ||
-            oldEffect->Properties() != newEffect->Properties();
-          oldEffect->SetSpecifiedTiming(newEffect->SpecifiedTiming());
-          oldEffect->CopyPropertiesFrom(*newEffect);
-        }
-
-        
-        
-        if (oldAnim->PlayState() != AnimationPlayState::Idle) {
-          
-          
-          
-          
-          
-          
-          
-          if (!oldAnim->IsStylePaused() && newAnim->IsPausedOrPausing()) {
-            oldAnim->PauseFromStyle();
-            animationChanged = true;
-          } else if (oldAnim->IsStylePaused() &&
-                    !newAnim->IsPausedOrPausing()) {
-            oldAnim->PlayFromStyle();
-            animationChanged = true;
-          }
-        }
-
-        oldAnim->CopyAnimationIndex(*newAnim->AsCSSAnimation());
-
-        
-        
-        
-        if (animationChanged && oldAnim->IsRelevant()) {
-          nsNodeUtils::AnimationChanged(oldAnim);
-        }
+        UpdateOldAnimationPropertiesWithNew(*oldAnim, *newAnim);
 
         
         
