@@ -8,7 +8,7 @@
 
 const {Cc, Ci, Cu, components} = require("chrome");
 const Services = require("Services");
-const {LocalizationHelper} = require("devtools/client/shared/l10n");
+const {LocalizationHelper} = require("devtools/shared/l10n");
 
 
 

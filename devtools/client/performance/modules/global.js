@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { MultiLocalizationHelper } = require("devtools/client/shared/l10n");
+const { MultiLocalizationHelper } = require("devtools/shared/l10n");
 const { PrefsHelper } = require("devtools/client/shared/prefs");
 
 
