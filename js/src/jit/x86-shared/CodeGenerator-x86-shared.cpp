@@ -1111,11 +1111,20 @@ CodeGeneratorX86Shared::visitDivPowTwoI(LDivPowTwoI* ins)
             if (negativeDivisor)
                 masm.negl(lhs);
         }
-    } else if (shift == 0 && negativeDivisor) {
-        
-        masm.negl(lhs);
-        if (!mir->isTruncated())
-            bailoutIf(Assembler::Overflow, ins->snapshot());
+    } else if (shift == 0) {
+        if (negativeDivisor) {
+            
+            masm.negl(lhs);
+            if (!mir->isTruncated())
+                bailoutIf(Assembler::Overflow, ins->snapshot());
+        }
+
+        else if (mir->isUnsigned() && !mir->isTruncated()) {
+            
+            
+            masm.test32(lhs, lhs);
+            bailoutIf(Assembler::Signed, ins->snapshot());
+        }
     }
 }
 
