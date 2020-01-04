@@ -170,6 +170,11 @@
 
 
 
+
+
+
+
+
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -367,10 +372,6 @@ class WriteBarrieredBase : public BarrieredBase<T>
     void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&this->value, prev, next); }
 };
 
-template <>
-class BarrieredBaseMixins<JS::Value> : public ValueOperations<WriteBarrieredBase<JS::Value>>
-{};
-
 
 
 
@@ -526,6 +527,20 @@ class RelocatablePtr : public WriteBarrieredBase<T>
 };
 
 
+template <typename T>
+class ReadBarrieredBase : public BarrieredBase<T>
+{
+  protected:
+    
+    explicit ReadBarrieredBase(T v) : BarrieredBase<T>(v) {}
+
+  public:
+    
+    T* unsafeGet() { return &this->value; }
+
+  protected:
+    void read() const { InternalGCMethods<T>::readBarrier(this->value); }
+};
 
 
 
@@ -536,24 +551,21 @@ class RelocatablePtr : public WriteBarrieredBase<T>
 
 
 template <class T>
-class ReadBarriered
+class ReadBarriered : public ReadBarrieredBase<T>
 {
-    T value;
-
   public:
-    ReadBarriered() : value(nullptr) {}
-    explicit ReadBarriered(T value) : value(value) {}
-    explicit ReadBarriered(const Rooted<T>& rooted) : value(rooted) {}
+    ReadBarriered() : ReadBarrieredBase<T>(GCMethods<T>::initial()) {}
+    explicit ReadBarriered(T v) : ReadBarrieredBase<T>(v) {}
 
     T get() const {
-        if (!InternalGCMethods<T>::isMarkable(value))
+        if (!InternalGCMethods<T>::isMarkable(this->value))
             return GCMethods<T>::initial();
-        InternalGCMethods<T>::readBarrier(value);
-        return value;
+        this->read();
+        return this->value;
     }
 
     T unbarrieredGet() const {
-        return value;
+        return this->value;
     }
 
     operator T() const { return get(); }
@@ -561,11 +573,17 @@ class ReadBarriered
     T& operator*() const { return *get(); }
     T operator->() const { return get(); }
 
-    T* unsafeGet() { return &value; }
-    T const * unsafeGet() const { return &value; }
+    T* unsafeGet() { return &this->value; }
+    T const* unsafeGet() const { return &this->value; }
 
-    void set(T v) { value = v; }
+    void set(T v) { this->value = v; }
 };
+
+
+
+template <>
+class BarrieredBaseMixins<JS::Value> : public ValueOperations<WriteBarrieredBase<JS::Value>>
+{};
 
 
 
