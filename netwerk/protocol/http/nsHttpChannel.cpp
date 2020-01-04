@@ -332,7 +332,15 @@ nsHttpChannel::Connect()
         
         
         
-        if (mLoadInfo && mLoadInfo->GetUpgradeInsecureRequests()) {
+        if (mLoadInfo) {
+            bool isPreload =
+              (mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_INTERNAL_SCRIPT_PRELOAD ||
+               mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD ||
+               mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD);
+            bool upgradeRequests =
+              ((isPreload && mLoadInfo->GetUpgradeInsecurePreloads()) ||
+               (mLoadInfo->GetUpgradeInsecureRequests()));
+
             
             
             
@@ -343,7 +351,7 @@ nsHttpChannel::Connect()
                 (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) &&
                 (!resultPrincipal->Equals(mLoadInfo->LoadingPrincipal()));
 
-            if (!crossOriginNavigation) {
+            if (upgradeRequests && !crossOriginNavigation) {
                 
                 nsAutoCString spec, scheme;
                 mURI->GetSpec(spec);

@@ -299,6 +299,11 @@ public:
   
 
 
+  virtual void ApplySettingsFromCSP(bool aSpeculative) = 0;
+
+  
+
+
 
   ReferrerPolicyEnum GetReferrerPolicy() const
   {
@@ -323,6 +328,14 @@ public:
   bool GetUpgradeInsecureRequests() const
   {
     return mUpgradeInsecureRequests;
+  }
+
+  
+
+
+  bool GetUpgradeInsecurePreloads() const
+  {
+    return mUpgradeInsecurePreloads;
   }
 
   
@@ -2713,6 +2726,7 @@ protected:
   ReferrerPolicyEnum mReferrerPolicy;
 
   bool mUpgradeInsecureRequests;
+  bool mUpgradeInsecurePreloads;
 
   mozilla::WeakPtr<nsDocShell> mDocumentContainer;
 

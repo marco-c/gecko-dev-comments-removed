@@ -1441,6 +1441,7 @@ nsIDocument::nsIDocument()
     mReferrerPolicySet(false),
     mReferrerPolicy(mozilla::net::RP_Default),
     mUpgradeInsecureRequests(false),
+    mUpgradeInsecurePreloads(false),
     mCharacterSet(NS_LITERAL_CSTRING("ISO-8859-1")),
     mNodeInfoManager(nullptr),
     mCompatMode(eCompatibility_FullStandards),
@@ -2574,6 +2575,8 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     if (sameTypeParent) {
       mUpgradeInsecureRequests =
         sameTypeParent->GetDocument()->GetUpgradeInsecureRequests();
+      mUpgradeInsecurePreloads =
+        sameTypeParent->GetDocument()->GetUpgradeInsecurePreloads();
     }
   }
 
@@ -2651,6 +2654,58 @@ nsDocument::IsLoopDocument(nsIChannel *aChannel)
     }
   }
   return isLoop;
+}
+
+void
+nsDocument::ApplySettingsFromCSP(bool aSpeculative)
+{
+  nsresult rv = NS_OK;
+  if (!aSpeculative) {
+    
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    NS_ENSURE_SUCCESS_VOID(rv);
+    if (csp) {
+      
+      bool hasReferrerPolicy = false;
+      uint32_t referrerPolicy = mozilla::net::RP_Default;
+      rv = csp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
+      NS_ENSURE_SUCCESS_VOID(rv);
+      if (hasReferrerPolicy) {
+        mReferrerPolicy = static_cast<ReferrerPolicy>(referrerPolicy);
+        mReferrerPolicySet = true;
+      }
+
+      
+      
+      if (!mUpgradeInsecureRequests) {
+        rv = csp->GetUpgradeInsecureRequests(&mUpgradeInsecureRequests);
+        NS_ENSURE_SUCCESS_VOID(rv);
+      }
+    }
+    return;
+  }
+
+  
+  nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
+  rv = NodePrincipal()->GetPreloadCsp(getter_AddRefs(preloadCsp));
+  if (preloadCsp) {
+    
+    bool hasReferrerPolicy = false;
+    uint32_t referrerPolicy = mozilla::net::RP_Default;
+    rv = preloadCsp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
+    NS_ENSURE_SUCCESS_VOID(rv);
+    if (hasReferrerPolicy) {
+      
+      
+      mReferrerPolicy = static_cast<ReferrerPolicy>(referrerPolicy);
+      mReferrerPolicySet = true;
+    }
+    if (!mUpgradeInsecurePreloads) {
+      rv = preloadCsp->GetUpgradeInsecureRequests(&mUpgradeInsecurePreloads);
+      NS_ENSURE_SUCCESS_VOID(rv);
+    }
+  }
 }
 
 nsresult
@@ -2815,33 +2870,12 @@ nsDocument::InitCSP(nsIChannel* aChannel)
     }
   }
 
-  
-  bool hasReferrerPolicy = false;
-  uint32_t referrerPolicy = mozilla::net::RP_Default;
-  rv = csp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (hasReferrerPolicy) {
-    
-    
-    mReferrerPolicy = static_cast<ReferrerPolicy>(referrerPolicy);
-    mReferrerPolicySet = true;
-
-    
-    
-    
-  }
-
-  
-  
-  if (!mUpgradeInsecureRequests) {
-    rv = csp->GetUpgradeInsecureRequests(&mUpgradeInsecureRequests);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
   rv = principal->SetCsp(csp);
   NS_ENSURE_SUCCESS(rv, rv);
   MOZ_LOG(gCspPRLog, LogLevel::Debug,
          ("Inserted CSP into principal %p", principal));
+
+  ApplySettingsFromCSP(false);
 
   return NS_OK;
 }
