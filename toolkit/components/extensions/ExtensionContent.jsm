@@ -216,10 +216,7 @@ var ExtensionManager;
 
 
 
-function ExtensionContext(extensionId, contentWindow, contextOptions = {}) {
-  let { isExtensionPage } = contextOptions;
-
-  this.isExtensionPage = isExtensionPage;
+function ExtensionContext(extensionId, contentWindow) {
   this.extension = ExtensionManager.get(extensionId);
   this.extensionId = extensionId;
   this.contentWindow = contentWindow;
@@ -246,27 +243,12 @@ function ExtensionContext(extensionId, contentWindow, contextOptions = {}) {
     prin = [contentPrincipal, extensionPrincipal];
   }
 
-  if (isExtensionPage) {
-    if (ExtensionManagement.getAddonIdForWindow(this.contentWindow) != extensionId) {
-      throw new Error("Invalid target window for this extension context");
-    }
-    
-    
-    
-    
-    this.sandbox = Cu.Sandbox(contentWindow, {
-      sandboxPrototype: contentWindow,
-      wantXrays: false,
-      isWebExtensionContentScript: true,
-    });
-  } else {
-    this.sandbox = Cu.Sandbox(prin, {
-      sandboxPrototype: contentWindow,
-      wantXrays: true,
-      isWebExtensionContentScript: true,
-      wantGlobalProperties: ["XMLHttpRequest"],
-    });
-  }
+  this.sandbox = Cu.Sandbox(prin, {
+    sandboxPrototype: contentWindow,
+    wantXrays: true,
+    isWebExtensionContentScript: true,
+    wantGlobalProperties: ["XMLHttpRequest"],
+  });
 
   let delegate = {
     getSender(context, target, sender) {
@@ -283,19 +265,12 @@ function ExtensionContext(extensionId, contentWindow, contextOptions = {}) {
   let filter = {extensionId, frameId};
   this.messenger = new Messenger(this, broker, sender, filter, delegate);
 
-  this.chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
+  let chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
 
   
   
-  Cu.waiveXrays(this.sandbox).chrome = this.chromeObj;
-
-  injectAPI(api(this), this.chromeObj);
-
-  
-  if (isExtensionPage) {
-    Cu.waiveXrays(this.contentWindow).chrome = this.chromeObj;
-    Cu.waiveXrays(this.contentWindow).browser = this.chromeObj;
-  }
+  Cu.waiveXrays(this.sandbox).chrome = Cu.waiveXrays(this.sandbox).browser;
+  injectAPI(api(this), chromeObj);
 }
 
 ExtensionContext.prototype = {
@@ -319,17 +294,7 @@ ExtensionContext.prototype = {
     for (let obj of this.onClose) {
       obj.close();
     }
-
-    
-    
-    if (this.isExtensionPage && !Cu.isDeadWrapper(this.contentWindow) &&
-        Cu.waiveXrays(this.contentWindow).browser === this.chromeObj) {
-      Cu.createObjectIn(this.contentWindow, { defineAs: "browser" });
-      Cu.createObjectIn(this.contentWindow, { defineAs: "chrome" });
-    }
-
     Cu.nukeSandbox(this.sandbox);
-    this.sandbox = null;
   },
 };
 
@@ -345,10 +310,7 @@ var DocumentManager = {
   extensionCount: 0,
 
   
-  contentScriptWindows: new Map(),
-
-  
-  extensionPageWindows: new Map(),
+  windows: new Map(),
 
   init() {
     Services.obs.addObserver(this, "document-element-inserted", false);
@@ -386,40 +348,23 @@ var DocumentManager = {
         return;
       }
 
-      
-      
-      const { CONTENTSCRIPT_PRIVILEGES } = ExtensionManagement.API_LEVELS;
-      let extensionId = ExtensionManagement.getAddonIdForWindow(window);
-
-      if (ExtensionManagement.getAPILevelForWindow(window, extensionId) == CONTENTSCRIPT_PRIVILEGES &&
-          ExtensionManager.get(extensionId)) {
-        DocumentManager.getExtensionPageContext(extensionId, window);
-      }
-
       this.trigger("document_start", window);
       
       window.addEventListener("DOMContentLoaded", this, true);
       window.addEventListener("load", this, true);
       
     } else if (topic == "inner-window-destroyed") {
-      let windowId = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-
-      
-      if (this.contentScriptWindows.has(windowId)) {
-        let extensions = this.contentScriptWindows.get(windowId);
-        for (let [, context] of extensions) {
-          context.close();
-        }
-
-        this.contentScriptWindows.delete(windowId);
+      let id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+      if (!this.windows.has(id)) {
+        return;
       }
 
-      
-      if (this.extensionPageWindows.has(windowId)) {
-        let context = this.extensionWindows.get(windowId);
+      let extensions = this.windows.get(id);
+      for (let [, context] of extensions) {
         context.close();
-        this.extensionPageWindows.delete(windowId);
       }
+
+      this.windows.delete(id);
     }
   },
 
@@ -444,7 +389,7 @@ var DocumentManager = {
 
   executeScript(global, extensionId, script) {
     let window = global.content;
-    let context = this.getContentScriptContext(extensionId, window);
+    let context = this.getContext(extensionId, window);
     if (!context) {
       return;
     }
@@ -468,31 +413,17 @@ var DocumentManager = {
     }
   },
 
-  getContentScriptContext(extensionId, window) {
+  getContext(extensionId, window) {
     let winId = windowId(window);
-    if (!this.contentScriptWindows.has(winId)) {
-      this.contentScriptWindows.set(winId, new Map());
+    if (!this.windows.has(winId)) {
+      this.windows.set(winId, new Map());
     }
-
-    let extensions = this.contentScriptWindows.get(winId);
+    let extensions = this.windows.get(winId);
     if (!extensions.has(extensionId)) {
       let context = new ExtensionContext(extensionId, window);
       extensions.set(extensionId, context);
     }
-
     return extensions.get(extensionId);
-  },
-
-  getExtensionPageContext(extensionId, window) {
-    let winId = windowId(window);
-
-    let context = this.extensionPageWindows.get(winId);
-    if (!context) {
-      let context = new ExtensionContext(extensionId, window, { isExtensionPage: true });
-      this.extensionPageWindows.set(winId, context);
-    }
-
-    return context;
   },
 
   startupExtension(extensionId) {
@@ -509,7 +440,7 @@ var DocumentManager = {
       for (let [window, state] of this.enumerateWindows(global.docShell)) {
         for (let script of extension.scripts) {
           if (script.matches(window)) {
-            let context = this.getContentScriptContext(extensionId, window);
+            let context = this.getContext(extensionId, window);
             context.execute(script, scheduled => isWhenBeforeOrSame(scheduled, state));
           }
         }
@@ -518,20 +449,11 @@ var DocumentManager = {
   },
 
   shutdownExtension(extensionId) {
-    
-    for (let [, extensions] of this.contentScriptWindows) {
+    for (let [, extensions] of this.windows) {
       let context = extensions.get(extensionId);
       if (context) {
         context.close();
         extensions.delete(extensionId);
-      }
-    }
-
-    
-    for (let [winId, context] of this.extensionPageWindows) {
-      if (context.extensionId == extensionId) {
-        context.close();
-        this.extensionPageWindows.delete(winId);
       }
     }
 
@@ -546,7 +468,7 @@ var DocumentManager = {
     for (let [extensionId, extension] of ExtensionManager.extensions) {
       for (let script of extension.scripts) {
         if (script.matches(window)) {
-          let context = this.getContentScriptContext(extensionId, window);
+          let context = this.getContext(extensionId, window);
           context.execute(script, scheduled => scheduled == state);
         }
       }

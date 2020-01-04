@@ -202,57 +202,17 @@ var Service = {
   
   
   extensionURIToAddonID(uri) {
+    if (this.extensionURILoadableByAnyone(uri)) {
+      
+      
+      return null;
+    }
+
     let uuid = uri.host;
     let extension = this.uuidMap.get(uuid);
     return extension ? extension.id : undefined;
   },
 };
-
-
-
-
-
-
-
-function getAddonIdForWindow(window) {
-  let principal = window.document.nodePrincipal;
-  return principal.originAttributes.addonId;
-}
-
-const API_LEVELS = Object.freeze({
-  NO_PRIVILEGES: 0,
-  CONTENTSCRIPT_PRIVILEGES: 1,
-  FULL_PRIVILEGES: 2,
-});
-
-
-
-function getAPILevelForWindow(window, addonId) {
-  const { NO_PRIVILEGES, CONTENTSCRIPT_PRIVILEGES, FULL_PRIVILEGES } = API_LEVELS;
-
-  
-  
-  if (!addonId && getAddonIdForWindow(window) != addonId) {
-    return NO_PRIVILEGES;
-  }
-
-  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIDocShell);
-
-  
-  
-  if (docShell.sameTypeParent) {
-    return CONTENTSCRIPT_PRIVILEGES;
-  }
-
-  
-  if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-    return CONTENTSCRIPT_PRIVILEGES;
-  }
-
-  
-  return FULL_PRIVILEGES;
-}
 
 this.ExtensionManagement = {
   startupExtension: Service.startupExtension.bind(Service),
@@ -266,9 +226,4 @@ this.ExtensionManagement = {
 
   getFrameId: Frames.getId.bind(Frames),
   getParentFrameId: Frames.getParentId.bind(Frames),
-
-  
-  getAddonIdForWindow,
-  getAPILevelForWindow,
-  API_LEVELS,
 };
