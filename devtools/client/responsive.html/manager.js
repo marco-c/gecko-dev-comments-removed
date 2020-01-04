@@ -5,7 +5,10 @@
 "use strict";
 
 const promise = require("promise");
+const { Task } = require("resource://gre/modules/Task.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
+
+const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
 
 
 
@@ -30,7 +33,8 @@ exports.ResponsiveUIManager = {
 
   toggle(window, tab) {
     if (this.isActiveForTab(tab)) {
-      this.activeTabs.get(tab).close();
+      this.activeTabs.get(tab).destroy();
+      this.activeTabs.delete(tab);
     } else {
       this.runIfNeeded(window, tab);
     }
@@ -48,7 +52,7 @@ exports.ResponsiveUIManager = {
 
   runIfNeeded(window, tab) {
     if (!this.isActiveForTab(tab)) {
-      
+      this.activeTabs.set(tab, new ResponsiveUI(window, tab));
     }
   },
 
@@ -64,6 +68,7 @@ exports.ResponsiveUIManager = {
   },
 
   
+
 
 
 
@@ -98,8 +103,8 @@ exports.ResponsiveUIManager = {
         break;
       case "resize off":
         if (this.isActiveForTab(tab)) {
-          
-          this.activeTabs.get(tab).close();
+          this.activeTabs.get(tab).destroy();
+          this.activeTabs.delete(tab);
         }
         break;
       case "resize toggle":
@@ -113,3 +118,74 @@ exports.ResponsiveUIManager = {
 
 
 EventEmitter.decorate(exports.ResponsiveUIManager);
+
+
+
+
+
+
+
+function ResponsiveUI(window, tab) {
+  this.window = window;
+  this.tab = tab;
+  this.init();
+}
+
+ResponsiveUI.prototype = {
+
+  
+
+
+  window: null,
+
+  
+
+
+  tab: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  init: Task.async(function*() {
+    let tabBrowser = this.tab.linkedBrowser;
+    let contentURI = tabBrowser.documentURI.spec;
+    tabBrowser.loadURI(TOOL_URL);
+    yield tabLoaded(this.tab);
+    let toolWindow = tabBrowser.contentWindow;
+    toolWindow.addViewport(contentURI);
+  }),
+
+  destroy() {
+    let tabBrowser = this.tab.linkedBrowser;
+    tabBrowser.goBack();
+    this.window = null;
+    this.tab = null;
+  },
+
+};
+
+function tabLoaded(tab) {
+  let deferred = promise.defer();
+
+  function handle(event) {
+    if (event.originalTarget != tab.linkedBrowser.contentDocument ||
+        event.target.location.href == "about:blank") {
+      return;
+    }
+    tab.linkedBrowser.removeEventListener("load", handle, true);
+    deferred.resolve(event);
+  }
+
+  tab.linkedBrowser.addEventListener("load", handle, true);
+  return deferred.promise;
+}
