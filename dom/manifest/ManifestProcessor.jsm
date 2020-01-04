@@ -90,6 +90,7 @@ this.ManifestProcessor = {
       ),
       'short_name': processShortNameMember(),
       'theme_color': processThemeColorMember(),
+      'background_color': processBackgroundColorMember(),
     };
     processedManifest.scope = processScopeMember();
     return processedManifest;
@@ -218,6 +219,17 @@ this.ManifestProcessor = {
         objectName: 'manifest',
         object: rawManifest,
         property: 'theme_color',
+        expectedType: 'string',
+        trim: true
+      };
+      return extractor.extractColorValue(spec);
+    }
+
+    function processBackgroundColorMember() {
+      const spec = {
+        objectName: 'manifest',
+        object: rawManifest,
+        property: 'background_color',
         expectedType: 'string',
         trim: true
       };
