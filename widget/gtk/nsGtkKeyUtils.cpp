@@ -1456,24 +1456,5 @@ KeymapWrapper::InitKeypressEvent(WidgetKeyboardEvent& aKeyEvent,
          altLatinCharCodes.mShiftedCharCode));
 }
 
- bool
-KeymapWrapper::IsKeyPressEventNecessary(GdkEventKey* aGdkKeyEvent)
-{
-    
-    switch (ComputeDOMKeyCode(aGdkKeyEvent)) {
-        case NS_VK_SHIFT:
-        case NS_VK_CONTROL:
-        case NS_VK_ALT:
-        case NS_VK_ALTGR:
-        case NS_VK_WIN:
-        case NS_VK_CAPS_LOCK:
-        case NS_VK_NUM_LOCK:
-        case NS_VK_SCROLL_LOCK:
-            return false;
-        default:
-            return true;
-    }
-}
-
 } 
 } 

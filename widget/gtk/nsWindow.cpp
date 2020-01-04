@@ -9,6 +9,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TouchEvents.h"
@@ -2507,8 +2508,7 @@ nsWindow::OnEnterNotifyEvent(GdkEventCrossing *aEvent)
                            WidgetMouseEvent::eReal);
 
     event.refPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
-    event.time = aEvent->time;
-    event.timeStamp = GetEventTimeStamp(aEvent->time);
+    event.AssignEventTime(GetWidgetEventTime(aEvent->time));
 
     LOG(("OnEnterNotify: %p\n", (void *)this));
 
@@ -2548,8 +2548,7 @@ nsWindow::OnLeaveNotifyEvent(GdkEventCrossing *aEvent)
                            WidgetMouseEvent::eReal);
 
     event.refPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
-    event.time = aEvent->time;
-    event.timeStamp = GetEventTimeStamp(aEvent->time);
+    event.AssignEventTime(GetWidgetEventTime(aEvent->time));
 
     event.exit = is_top_level_mouse_exit(mGdkWindow, aEvent)
         ? WidgetMouseEvent::eTopLevel : WidgetMouseEvent::eChild;
@@ -2623,23 +2622,20 @@ nsWindow::OnMotionNotifyEvent(GdkEventMotion *aEvent)
 
         modifierState = xevent.xmotion.state;
 
-        event.time = xevent.xmotion.time;
-        event.timeStamp = GetEventTimeStamp(xevent.xmotion.time);
+        event.AssignEventTime(GetWidgetEventTime(xevent.xmotion.time));
 #else
         event.refPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
 
         modifierState = aEvent->state;
 
-        event.time = aEvent->time;
-        event.timeStamp = GetEventTimeStamp(aEvent->time);
+        event.AssignEventTime(GetWidgetEventTime(aEvent->time));
 #endif 
     } else {
         event.refPoint = GetRefPoint(this, aEvent);
 
         modifierState = aEvent->state;
 
-        event.time = aEvent->time;
-        event.timeStamp = GetEventTimeStamp(aEvent->time);
+        event.AssignEventTime(GetWidgetEventTime(aEvent->time));
     }
 
     KeymapWrapper::InitInputEvent(event, modifierState);
@@ -2729,8 +2725,7 @@ nsWindow::InitButtonEvent(WidgetMouseEvent& aEvent,
 
     KeymapWrapper::InitInputEvent(aEvent, modifierState);
 
-    aEvent.time = aGdkEvent->time;
-    aEvent.timeStamp = GetEventTimeStamp(aGdkEvent->time);
+    aEvent.AssignEventTime(GetWidgetEventTime(aGdkEvent->time));
 
     switch (aGdkEvent->type) {
     case GDK_2BUTTON_PRESS:
@@ -2981,12 +2976,26 @@ nsWindow::DispatchKeyDownEvent(GdkEventKey *aEvent, bool *aCancelled)
         return false;
     }
 
-    
-    WidgetKeyboardEvent downEvent(true, eKeyDown, this);
-    KeymapWrapper::InitKeyEvent(downEvent, aEvent);
-    nsEventStatus status = DispatchInputEvent(&downEvent);
+    RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+    nsresult rv = dispatcher->BeginNativeInputTransaction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+        return FALSE;
+    }
+
+    WidgetKeyboardEvent keydownEvent(true, eKeyDown, this);
+    KeymapWrapper::InitKeyEvent(keydownEvent, aEvent);
+    nsEventStatus status = nsEventStatus_eIgnore;
+    bool dispatched =
+        dispatcher->DispatchKeyboardEvent(eKeyDown, keydownEvent,
+                                          status, aEvent);
     *aCancelled = (status == nsEventStatus_eConsumeNoDefault);
-    return true;
+    return dispatched ? TRUE : FALSE;
+}
+
+WidgetEventTime
+nsWindow::GetWidgetEventTime(guint32 aEventTime)
+{
+  return WidgetEventTime(aEventTime, GetEventTimeStamp(aEventTime));
 }
 
 TimeStamp
@@ -3025,6 +3034,9 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
 
     
     
+    
+    
+    
     bool IMEWasEnabled = false;
     if (mIMContext) {
         IMEWasEnabled = mIMContext->IsEnabled();
@@ -3032,8 +3044,6 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
             return TRUE;
         }
     }
-
-    nsEventStatus status;
 
     
     if (IsCtrlAltTab(aEvent)) {
@@ -3063,14 +3073,6 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
         if (mIMContext->OnKeyEvent(this, aEvent, true)) {
             return TRUE;
         }
-    }
-
-    
-    
-    
-    
-    if (!KeymapWrapper::IsKeyPressEventNecessary(aEvent)) {
-        return TRUE;
     }
 
 #ifdef MOZ_X11
@@ -3109,41 +3111,43 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
 #endif 
 #endif 
 
-    WidgetKeyboardEvent event(true, eKeyPress, this);
-    KeymapWrapper::InitKeyEvent(event, aEvent);
+    WidgetKeyboardEvent keypressEvent(true, eKeyPress, this);
+    KeymapWrapper::InitKeyEvent(keypressEvent, aEvent);
 
     
     
-    if (is_context_menu_key(event)) {
+    if (is_context_menu_key(keypressEvent)) {
         WidgetMouseEvent contextMenuEvent(true, eContextMenu, this,
                                           WidgetMouseEvent::eReal,
                                           WidgetMouseEvent::eContextMenuKey);
 
         contextMenuEvent.refPoint = LayoutDeviceIntPoint(0, 0);
-        contextMenuEvent.time = aEvent->time;
-        contextMenuEvent.timeStamp = GetEventTimeStamp(aEvent->time);
+        contextMenuEvent.AssignEventTime(GetWidgetEventTime(aEvent->time));
         contextMenuEvent.clickCount = 1;
         KeymapWrapper::InitInputEvent(contextMenuEvent, aEvent->state);
-        status = DispatchInputEvent(&contextMenuEvent);
-    }
-    else {
-        
-        
-        
-        if (IS_IN_BMP(event.charCode)) {
-            status = DispatchInputEvent(&event);
+        DispatchInputEvent(&contextMenuEvent);
+    } else {
+        RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+        nsresult rv = dispatcher->BeginNativeInputTransaction();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+            return TRUE;
         }
-        else {
-            WidgetCompositionEvent compositionChangeEvent(
-                                     true, eCompositionChange, this);
-            char16_t textString[3];
-            textString[0] = H_SURROGATE(event.charCode);
-            textString[1] = L_SURROGATE(event.charCode);
-            textString[2] = 0;
-            compositionChangeEvent.mData = textString;
-            compositionChangeEvent.time = event.time;
-            compositionChangeEvent.timeStamp = GetEventTimeStamp(aEvent->time);
-            DispatchEvent(&compositionChangeEvent, status);
+
+        
+        
+        
+        
+        
+        nsEventStatus status = nsEventStatus_eIgnore;
+        if (IS_IN_BMP(keypressEvent.charCode)) {
+            dispatcher->MaybeDispatchKeypressEvents(keypressEvent,
+                                                    status, aEvent);
+        } else {
+            nsAutoString str;
+            str.Append(H_SURROGATE(keypressEvent.charCode));
+            str.Append(L_SURROGATE(keypressEvent.charCode));
+            WidgetEventTime eventTime = GetWidgetEventTime(aEvent->time);
+            dispatcher->CommitComposition(status, &str, &eventTime);
         }
     }
 
@@ -3159,11 +3163,16 @@ nsWindow::OnKeyReleaseEvent(GdkEventKey *aEvent)
         return TRUE;
     }
 
-    
-    WidgetKeyboardEvent event(true, eKeyUp, this);
-    KeymapWrapper::InitKeyEvent(event, aEvent);
+    RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+    nsresult rv = dispatcher->BeginNativeInputTransaction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+        return false;
+    }
 
-    (void)DispatchInputEvent(&event);
+    WidgetKeyboardEvent keyupEvent(true, eKeyUp, this);
+    KeymapWrapper::InitKeyEvent(keyupEvent, aEvent);
+    nsEventStatus status = nsEventStatus_eIgnore;
+    dispatcher->DispatchKeyboardEvent(eKeyUp, keyupEvent, status, aEvent);
 
     return TRUE;
 }
@@ -3224,8 +3233,7 @@ nsWindow::OnScrollEvent(GdkEventScroll *aEvent)
 
     KeymapWrapper::InitInputEvent(wheelEvent, aEvent->state);
 
-    wheelEvent.time = aEvent->time;
-    wheelEvent.timeStamp = GetEventTimeStamp(aEvent->time);
+    wheelEvent.AssignEventTime(GetWidgetEventTime(aEvent->time));
 
     DispatchInputEvent(&wheelEvent);
 }
@@ -3380,8 +3388,7 @@ nsWindow::DispatchDragEvent(EventMessage aMsg, const LayoutDeviceIntPoint& aRefP
     }
 
     event.refPoint = aRefPoint;
-    event.time = aTime;
-    event.timeStamp = GetEventTimeStamp(aTime);
+    event.AssignEventTime(GetWidgetEventTime(aTime));
 
     DispatchInputEvent(&event);
 }
