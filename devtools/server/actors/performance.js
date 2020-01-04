@@ -5,25 +5,18 @@
 "use strict";
 
 const { Cu } = require("chrome");
-const protocol = require("devtools/shared/protocol");
 const { Task } = require("devtools/shared/task");
-const { Actor, custom, method, RetVal, Arg, Option, types, preEvent } = protocol;
-const { actorBridge } = require("devtools/server/actors/common");
-const { PerformanceRecordingActor, PerformanceRecordingFront } = require("devtools/server/actors/performance-recording");
+const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
+const { actorBridgeWithSpec } = require("devtools/server/actors/common");
+const { performanceSpec } = require("devtools/shared/specs/performance");
 
 loader.lazyRequireGetter(this, "events", "sdk/event/core");
 loader.lazyRequireGetter(this, "extend", "sdk/util/object", true);
 
 loader.lazyRequireGetter(this, "PerformanceRecorder",
   "devtools/server/performance/recorder", true);
-loader.lazyRequireGetter(this, "PerformanceIO",
-  "devtools/client/performance/modules/io");
 loader.lazyRequireGetter(this, "normalizePerformanceFeatures",
   "devtools/shared/performance/recording-utils", true);
-loader.lazyRequireGetter(this, "LegacyPerformanceFront",
-  "devtools/client/performance/legacy/front", true);
-loader.lazyRequireGetter(this, "getSystemInfo",
-  "devtools/shared/system", true);
 
 const PIPE_TO_FRONT_EVENTS = new Set([
   "recording-started", "recording-stopping", "recording-stopped",
@@ -40,9 +33,7 @@ const RECORDING_STATE_CHANGE_EVENTS = new Set([
 
 
 
-var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
-  typeName: "performance",
-
+var PerformanceActor = ActorClassWithSpec(performanceSpec, {
   traits: {
     features: {
       withMarkers: true,
@@ -52,31 +43,6 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
       withGCEvents: true,
       withDocLoadingEvents: true,
       withAllocations: true,
-    },
-  },
-
-  
-
-
-  events: {
-    "recording-started": {
-      recording: Arg(0, "performance-recording"),
-    },
-    "recording-stopping": {
-      recording: Arg(0, "performance-recording"),
-    },
-    "recording-stopped": {
-      recording: Arg(0, "performance-recording"),
-      data: Arg(1, "json"),
-    },
-    "profiler-status": {
-      data: Arg(0, "json"),
-    },
-    "console-profile-start": {},
-    "timeline-data": {
-      name: Arg(0, "string"),
-      data: Arg(1, "json"),
-      recordings: Arg(2, "array:performance-recording"),
     },
   },
 
@@ -98,24 +64,19 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
   destroy: function () {
     events.off(this.bridge, "*", this._onRecorderEvent);
     this.bridge.destroy();
-    protocol.Actor.prototype.destroy.call(this);
+    Actor.prototype.destroy.call(this);
   },
 
-  connect: method(function (config) {
+  connect: function (config) {
     this.bridge.connect({ systemClient: config.systemClient });
     return { traits: this.traits };
-  }, {
-    request: { options: Arg(0, "nullable:json") },
-    response: RetVal("json")
-  }),
+  },
 
-  canCurrentlyRecord: method(function () {
+  canCurrentlyRecord: function () {
     return this.bridge.canCurrentlyRecord();
-  }, {
-    response: { value: RetVal("json") }
-  }),
+  },
 
-  startRecording: method(Task.async(function* (options = {}) {
+  startRecording: Task.async(function* (options = {}) {
     if (!this.bridge.canCurrentlyRecord().success) {
       return null;
     }
@@ -125,40 +86,13 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
     this.manage(recording);
 
     return recording;
-  }), {
-    request: {
-      options: Arg(0, "nullable:json"),
-    },
-    response: {
-      recording: RetVal("nullable:performance-recording")
-    }
   }),
 
-  stopRecording: actorBridge("stopRecording", {
-    request: {
-      options: Arg(0, "performance-recording"),
-    },
-    response: {
-      recording: RetVal("performance-recording")
-    }
-  }),
-
-  isRecording: actorBridge("isRecording", {
-    response: { isRecording: RetVal("boolean") }
-  }),
-
-  getRecordings: actorBridge("getRecordings", {
-    response: { recordings: RetVal("array:performance-recording") }
-  }),
-
-  getConfiguration: actorBridge("getConfiguration", {
-    response: { config: RetVal("json") }
-  }),
-
-  setProfilerStatusInterval: actorBridge("setProfilerStatusInterval", {
-    request: { interval: Arg(0, "number") },
-    response: { oneway: true }
-  }),
+  stopRecording: actorBridgeWithSpec("stopRecording"),
+  isRecording: actorBridgeWithSpec("isRecording"),
+  getRecordings: actorBridgeWithSpec("getRecordings"),
+  getConfiguration: actorBridgeWithSpec("getConfiguration"),
+  setProfilerStatusInterval: actorBridgeWithSpec("setProfilerStatusInterval"),
 
   
 
@@ -179,116 +113,4 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
   },
 });
 
-exports.createPerformanceFront = function createPerformanceFront(target) {
-  
-  
-  
-  if (target.TEST_PERFORMANCE_LEGACY_FRONT || !target.form.performanceActor) {
-    return new LegacyPerformanceFront(target);
-  }
-  
-  
-  return new PerformanceFront(target.client, target.form);
-};
-
-const PerformanceFront = exports.PerformanceFront = protocol.FrontClass(PerformanceActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-    this.actorID = form.performanceActor;
-    this.manage(this);
-  },
-
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  
-
-
-
-  connect: custom(Task.async(function* () {
-    let systemClient = yield getSystemInfo();
-    let { traits } = yield this._connect({ systemClient });
-    this._traits = traits;
-
-    return this._traits;
-  }), {
-    impl: "_connect"
-  }),
-
-  get traits() {
-    if (!this._traits) {
-      Cu.reportError("Cannot access traits of PerformanceFront before calling `connect()`.");
-    }
-    return this._traits;
-  },
-
-  
-
-
-
-
-
-
-  getBufferUsageForRecording: function (recording) {
-    if (!recording.isRecording()) {
-      return void 0;
-    }
-    let { position: currentPosition, totalSize, generation: currentGeneration } = this._currentBufferStatus;
-    let { position: origPosition, generation: origGeneration } = recording.getStartingBufferStatus();
-
-    let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) + currentPosition;
-    let percent = (normalizedCurrent - origPosition) / totalSize;
-
-    
-    
-    
-    
-    return percent > 1 ? 1 : percent < 0 ? 0 : percent;
-  },
-
-  
-
-
-
-
-
-
-  importRecording: function (file) {
-    return PerformanceIO.loadRecordingFromFile(file).then(recordingData => {
-      let model = new PerformanceRecordingFront();
-      model._imported = true;
-      model._label = recordingData.label || "";
-      model._duration = recordingData.duration;
-      model._markers = recordingData.markers;
-      model._frames = recordingData.frames;
-      model._memory = recordingData.memory;
-      model._ticks = recordingData.ticks;
-      model._allocations = recordingData.allocations;
-      model._profile = recordingData.profile;
-      model._configuration = recordingData.configuration || {};
-      model._systemHost = recordingData.systemHost;
-      model._systemClient = recordingData.systemClient;
-      return model;
-    });
-  },
-
-  
-
-
-
-  _onProfilerStatus: preEvent("profiler-status", function (data) {
-    this._currentBufferStatus = data;
-  }),
-
-  
-
-
-
-
-  _onTimelineEvent: preEvent("timeline-data", function (type, data, recordings) {
-    for (let recording of recordings) {
-      recording._addTimelineData(type, data);
-    }
-  }),
-});
+exports.PerformanceActor = PerformanceActor;

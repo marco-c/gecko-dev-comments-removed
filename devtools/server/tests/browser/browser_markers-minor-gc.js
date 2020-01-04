@@ -6,7 +6,7 @@
 
 
 
-const { PerformanceFront } = require("devtools/server/actors/performance");
+const { PerformanceFront } = require("devtools/shared/fronts/performance");
 
 add_task(function* () {
   

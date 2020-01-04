@@ -5,7 +5,7 @@
 
 
 
-const { PerformanceFront } = require("devtools/server/actors/performance");
+const { PerformanceFront } = require("devtools/shared/fronts/performance");
 const MARKER_NAME = "GarbageCollection";
 
 add_task(function* () {
