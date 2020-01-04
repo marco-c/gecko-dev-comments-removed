@@ -287,31 +287,6 @@ intrinsic_DecompileArg(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-
-
-
-
-bool
-js::intrinsic_NewDenseArray(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    double lengthDouble = args[0].toNumber();
-    MOZ_ASSERT(lengthDouble >= 0);
-    MOZ_ASSERT(lengthDouble < INT32_MAX);
-    MOZ_ASSERT(uint32_t(lengthDouble) == lengthDouble);
-
-    uint32_t length = uint32_t(lengthDouble);
-
-    
-    RootedObject buffer(cx, NewFullyAllocatedArrayForCallingAllocationSite(cx, length));
-    if (!buffer)
-        return false;
-
-    args.rval().setObject(*buffer);
-    return true;
-}
-
 bool
 js::intrinsic_DefineDataProperty(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -1270,6 +1245,7 @@ intrinsic_ConstructorForTypedArray(JSContext* cx, unsigned argc, Value* vp)
 
 
 static const JSFunctionSpec intrinsic_functions[] = {
+    JS_FN("std_Array",                           ArrayConstructor,             1,0),
     JS_FN("std_Array_join",                      array_join,                   1,0),
     JS_FN("std_Array_push",                      array_push,                   1,0),
     JS_FN("std_Array_pop",                       array_pop,                    0,0),
@@ -1416,8 +1392,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
           CallNonGenericSelfhostedMethod<Is<StarGeneratorObject>>, 2, 0),
 
     JS_FN("IsWeakSet",               intrinsic_IsWeakSet,               1,0),
-
-    JS_FN("NewDenseArray",           intrinsic_NewDenseArray,           1,0),
 
     
     JS_FN("NewOpaqueTypedObject",           js::NewOpaqueTypedObject, 1, 0),
