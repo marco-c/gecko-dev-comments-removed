@@ -153,6 +153,11 @@ PresentationDeviceManager::GetAvailableDevices(nsIArray** aRetVal)
   NS_ENSURE_ARG_POINTER(aRetVal);
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
+  NS_DispatchToMainThread(
+      NS_NewRunnableMethod(this, &PresentationDeviceManager::ForceDiscovery));
+
   nsCOMPtr<nsIMutableArray> devices = do_CreateInstance(NS_ARRAY_CONTRACTID);
   for (uint32_t i = 0; i < mDevices.Length(); ++i) {
     devices->AppendElement(mDevices[i], false);
