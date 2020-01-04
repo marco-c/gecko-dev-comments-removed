@@ -22,7 +22,8 @@ enum class FeatureStatus
   Unavailable,
 
   
-  Crashed,
+  
+  CrashedInHandler,
 
   
   
