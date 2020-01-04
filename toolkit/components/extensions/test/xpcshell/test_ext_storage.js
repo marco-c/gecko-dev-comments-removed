@@ -1,16 +1,5 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <title>WebExtension test</title>
-  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/SpawnTask.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
-  <script type="text/javascript" src="head.js"></script>
-  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
-</head>
-<body>
 
-<script type="text/javascript">
+
 "use strict";
 
 function backgroundScript() {
@@ -50,9 +39,9 @@ function backgroundScript() {
     globalChanges = {};
   }
 
-  /* eslint-disable dot-notation */
+  
 
-  // Set some data and then test getters.
+  
   storage.set({"test-prop1": "value1", "test-prop2": "value2"}).then(() => {
     checkChanges({"test-prop1": {newValue: "value1"}, "test-prop2": {newValue: "value2"}});
     return check("test-prop1", "value1");
@@ -70,7 +59,7 @@ function backgroundScript() {
     browser.test.assertEq("value2", data["test-prop2"], "prop2 correct");
     browser.test.assertFalse("other" in data, "other correct");
 
-  // Remove data in various ways.
+  
   }).then(() => {
     return storage.remove("test-prop1");
   }).then(() => {
@@ -96,7 +85,7 @@ function backgroundScript() {
     browser.test.assertFalse("test-prop1" in data, "prop1 absent");
     browser.test.assertFalse("test-prop2" in data, "prop2 absent");
 
-  // test storage.clear
+  
   }).then(() => {
     return storage.set({"test-prop1": "value1", "test-prop2": "value2"});
   }).then(() => {
@@ -108,7 +97,7 @@ function backgroundScript() {
     browser.test.assertFalse("test-prop1" in data, "prop1 absent");
     browser.test.assertFalse("test-prop2" in data, "prop2 absent");
 
-  // Test cache invalidation.
+  
   }).then(() => {
     return storage.set({"test-prop1": "value1", "test-prop2": "value2"});
   }).then(() => {
@@ -120,7 +109,7 @@ function backgroundScript() {
   }).then(() => {
     return check("test-prop2", "value2");
 
-  // Make sure we can store complex JSON data.
+  
   }).then(() => {
     return storage.set({
       "test-prop1": {
@@ -171,7 +160,7 @@ function backgroundScript() {
 }
 
 let extensionData = {
-  background: "(" + backgroundScript.toString() + ")()",
+  background: backgroundScript,
   manifest: {
     permissions: ["storage"],
   },
@@ -183,14 +172,11 @@ add_task(function* test_backgroundScript() {
   yield extension.startup();
 
   yield extension.awaitMessage("invalidate");
-  SpecialPowers.invalidateExtensionStorageCache();
+
+  Services.obs.notifyObservers(null, "extension-invalidate-storage-cache", "");
+
   extension.sendMessage("invalidated");
 
   yield extension.awaitFinish("storage");
   yield extension.unload();
 });
-
-</script>
-
-</body>
-</html>
