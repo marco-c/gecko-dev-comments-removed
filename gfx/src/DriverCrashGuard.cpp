@@ -55,11 +55,24 @@ DriverCrashGuard::InitializeIfNeeded()
 void
 DriverCrashGuard::Initialize()
 {
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  return;
+#endif
+
   
   
   
   
   if (!NS_IsMainThread()) {
+    return;
+  }
+
+  
+  static bool sAllGuardsDisabled = !!PR_GetEnv("MOZ_DISABLE_CRASH_GUARD");
+  if (sAllGuardsDisabled) {
     return;
   }
 
@@ -467,6 +480,18 @@ D3D9VideoCrashGuard::LogFeatureDisabled()
 GLContextCrashGuard::GLContextCrashGuard(dom::ContentParent* aContentParent)
  : DriverCrashGuard(CrashGuardType::GLContext, aContentParent)
 {
+}
+
+void
+GLContextCrashGuard::Initialize()
+{
+  if (XRE_IsContentProcess()) {
+    
+    
+    return;
+  }
+
+  DriverCrashGuard::Initialize();
 }
 
 bool
