@@ -155,6 +155,7 @@ protected:
 
 
   bool SetTabContext(bool aIsMozBrowserElement,
+                     bool aIsPrerendered,
                      mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
                      const DocShellOriginAttributes& aOriginAttributes,
@@ -170,6 +171,11 @@ protected:
 
 
   bool UpdateTabContextAfterSwap(const TabContext& aContext);
+
+  
+
+
+  bool mIsPrerendered;
 
 private:
   
@@ -232,12 +238,14 @@ public:
 
   bool
   SetTabContext(bool aIsMozBrowserElement,
+                bool aIsPrerendered,
                 mozIApplication* aOwnApp,
                 mozIApplication* aAppFrameOwnerApp,
                 const DocShellOriginAttributes& aOriginAttributes,
                 const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
   {
     return TabContext::SetTabContext(aIsMozBrowserElement,
+                                     aIsPrerendered,
                                      aOwnApp,
                                      aAppFrameOwnerApp,
                                      aOriginAttributes,
