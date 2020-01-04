@@ -1097,17 +1097,6 @@ var generateRequestHandlers = function (actorSpec, actorProto) {
 
 
 
-exports.ActorClass = function (actorProto) {
-  return ActorClassWithSpec(generateActorSpec(actorProto), actorProto);
-};
-
-
-
-
-
-
-
-
 
 
 var ActorClassWithSpec = function (actorSpec, actorProto) {
@@ -1420,19 +1409,6 @@ var generateRequestMethods = function (actorSpec, frontProto) {
   frontProto._actorSpec = actorSpec;
 
   return frontProto;
-};
-
-
-
-
-
-
-
-
-
-
-exports.FrontClass = function (actorType, frontProto) {
-  return FrontClassWithSpec(prototypeOf(actorType)._actorSpec, frontProto);
 };
 
 
