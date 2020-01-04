@@ -333,6 +333,15 @@ HttpObserverManager = {
         windowId: loadInfo ? loadInfo.outerWindowID : 0,
         parentWindowId: loadInfo ? loadInfo.parentOuterWindowID : 0,
       };
+
+      let httpChannel = channel.QueryInterface(Ci.nsIHttpChannelInternal);
+      try {
+        data.ip = httpChannel.remoteAddress;
+      } catch (e) {
+        
+        
+      }
+
       if (extraData) {
         Object.assign(data, extraData);
       }

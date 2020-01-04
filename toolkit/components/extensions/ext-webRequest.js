@@ -41,6 +41,10 @@ function WebRequestEventManager(context, eventName) {
         parentFrameId: ExtensionManagement.getParentFrameId(data.parentWindowId, data.windowId),
       };
 
+      if ("ip" in data) {
+        data2.ip = data.ip;
+      }
+
       
       let result = {};
       extensions.emit("fill-browser-data", data.browser, data2, result);
