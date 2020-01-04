@@ -725,7 +725,7 @@ CSSFilterEditorWidget.prototype = {
         }
       }
 
-      this.add(name, value, quote);
+      this.add(name, value, quote, true);
     }
 
     this.emit("updated", this.getCssValue());
@@ -746,7 +746,11 @@ CSSFilterEditorWidget.prototype = {
 
 
 
-  add: function(name, value, quote) {
+
+
+
+
+  add: function(name, value, quote, noEvent) {
     const def = this._definition(name);
     if (!def) {
       return false;
@@ -794,7 +798,9 @@ CSSFilterEditorWidget.prototype = {
     }
 
     const index = this.filters.push({value, unit, name, quote}) - 1;
-    this.emit("updated", this.getCssValue());
+    if (!noEvent) {
+      this.emit("updated", this.getCssValue());
+    }
 
     return index;
   },

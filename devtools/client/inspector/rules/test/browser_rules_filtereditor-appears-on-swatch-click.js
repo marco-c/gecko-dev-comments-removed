@@ -17,12 +17,11 @@ add_task(function*() {
     .querySelector(".ruleview-filterswatch");
 
   let filterTooltip = view.tooltips.filterEditor;
-  let onShow = filterTooltip.tooltip.once("shown");
+  
+  
+  
   let onRuleViewChanged = view.once("ruleview-changed");
   swatch.click();
-  yield onShow;
-  
-  
   yield onRuleViewChanged;
 
   ok(true, "The shown event was emitted after clicking on swatch");
@@ -30,5 +29,5 @@ add_task(function*() {
   "The inplace editor wasn't shown as a result of the filter swatch click");
 
   yield filterTooltip.widget;
-  filterTooltip.hide();
+  yield hideTooltipAndWaitForRuleviewChanged(filterTooltip, view);
 });

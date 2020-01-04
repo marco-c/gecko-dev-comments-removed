@@ -286,6 +286,21 @@ function assertHoverTooltipOn(tooltip, element) {
 
 
 
+
+
+
+function* hideTooltipAndWaitForRuleviewChanged(tooltip, view) {
+  let onModified = view.once("ruleview-changed");
+  tooltip.hide();
+  yield onModified;
+}
+
+
+
+
+
+
+
 var waitForTab = Task.async(function*() {
   info("Waiting for a tab to open");
   yield once(gBrowser.tabContainer, "TabOpen");
