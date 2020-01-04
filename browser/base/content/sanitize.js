@@ -690,6 +690,7 @@ Sanitizer.PREF_SANITIZE_IN_PROGRESS = "privacy.sanitize.sanitizeInProgress";
 
 
 
+
 Sanitizer.PREF_SANITIZE_DID_SHUTDOWN = "privacy.sanitize.didShutdownSanitize";
 
 
@@ -779,10 +780,14 @@ Sanitizer.onStartup = Task.async(function*() {
   let shutownSanitizationWasInterrupted =
     Preferences.get(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
     !Preferences.has(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
-  
-  
-  Preferences.reset(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
-  Services.prefs.savePrefFile(null);
+
+  if (Preferences.has(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
+    
+    
+    
+    Preferences.reset(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
+    Services.prefs.savePrefFile(null);
+  }
 
   
   
@@ -812,8 +817,6 @@ Sanitizer.onStartup = Task.async(function*() {
     let itemsToClear = JSON.parse(lastInterruptedSanitization);
     yield s.sanitize(itemsToClear);
   } else if (shutownSanitizationWasInterrupted) {
-    
-    
     
     
     
