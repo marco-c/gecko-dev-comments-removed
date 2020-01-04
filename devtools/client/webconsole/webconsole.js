@@ -8,7 +8,8 @@
 
 const {Cc, Ci, Cu} = require("chrome");
 
-const {Utils: WebConsoleUtils, CONSOLE_WORKER_IDS} = require("devtools/shared/webconsole/utils");
+const {Utils: WebConsoleUtils, CONSOLE_WORKER_IDS} =
+  require("devtools/shared/webconsole/utils");
 const promise = require("promise");
 
 loader.lazyServiceGetter(this, "clipboardHelper",
@@ -68,8 +69,10 @@ const CATEGORY_NETWORK = 0;
 const CATEGORY_CSS = 1;
 const CATEGORY_JS = 2;
 const CATEGORY_WEBDEV = 3;
-const CATEGORY_INPUT = 4;   
-const CATEGORY_OUTPUT = 5;  
+
+const CATEGORY_INPUT = 4;
+
+const CATEGORY_OUTPUT = 5;
 const CATEGORY_SECURITY = 6;
 const CATEGORY_SERVER = 7;
 
@@ -105,16 +108,26 @@ const SEVERITY_CLASS_FRAGMENTS = [
 
 
 
-const MESSAGE_PREFERENCE_KEYS = [
 
-  [ "network",     "netwarn",    "netxhr",     "networkinfo", ],  
-  [ "csserror",    "cssparser",  null,         "csslog",      ],  
-  [ "exception",   "jswarn",     null,         "jslog",       ],  
-  [ "error",       "warn",       "info",       "log",         ],  
-  [ null,          null,         null,         null,          ],  
-  [ null,          null,         null,         null,          ],  
-  [ "secerror",    "secwarn",    null,         null,          ],  
-  [ "servererror", "serverwarn", "serverinfo", "serverlog",   ],  
+
+
+const MESSAGE_PREFERENCE_KEYS = [
+  
+  [ "network", "netwarn", "netxhr", "networkinfo", ],
+  
+  [ "csserror", "cssparser", null, "csslog", ],
+  
+  [ "exception", "jswarn", null, "jslog", ],
+  
+  [ "error", "warn", "info", "log", ],
+  
+  [ null, null, null, null, ],
+  
+  [ null, null, null, null, ],
+  
+  [ "secerror", "secwarn", null, null, ],
+  
+  [ "servererror", "serverwarn", "serverinfo", "serverlog", ],
 ];
 
 
@@ -141,7 +154,8 @@ const LEVELS = {
 
 
 
-const WORKERTYPES_PREFKEYS = [ 'sharedworkers', 'serviceworkers', 'windowlessworkers' ];
+const WORKERTYPES_PREFKEYS =
+  [ "sharedworkers", "serviceworkers", "windowlessworkers" ];
 
 
 const MIN_HTTP_ERROR_CODE = 400;
@@ -162,17 +176,18 @@ const MESSAGES_IN_INTERVAL = DEFAULT_LOG_LIMIT;
 
 
 
-const OUTPUT_INTERVAL = 20; 
+
+const OUTPUT_INTERVAL = 20;
 
 
 
 
-const MAX_CLEANUP_TIME = 10; 
+const MAX_CLEANUP_TIME = 10;
 
 
 
 
-const THROTTLE_UPDATES = 1000; 
+const THROTTLE_UPDATES = 1000;
 
 
 const FILTER_PREFS_PREFIX = "devtools.webconsole.filter.";
@@ -414,7 +429,8 @@ WebConsoleFrame.prototype = {
     
     
     
-    return this.owner._browserConsole || Services.prefs.getBoolPref(PREF_PERSISTLOG);
+    return this.owner._browserConsole ||
+           Services.prefs.getBoolPref(PREF_PERSISTLOG);
   },
 
   
@@ -460,9 +476,11 @@ WebConsoleFrame.prototype = {
     this._initDefer = promise.defer();
     this.proxy = new WebConsoleConnectionProxy(this, this.owner.target);
 
-    this.proxy.connect().then(() => { 
+    this.proxy.connect().then(() => {
+      
       this._initDefer.resolve(this);
-    }, (reason) => { 
+    }, (reason) => {
+      
       let node = this.createMessageNode(CATEGORY_JS, SEVERITY_ERROR,
                                         reason.error + ": " + reason.message);
       this.outputMessage(CATEGORY_JS, node, [reason]);
@@ -507,7 +525,8 @@ WebConsoleFrame.prototype = {
     this._initFilterButtons();
 
     let fontSize = this.owner._browserConsole ?
-                   Services.prefs.getIntPref("devtools.webconsole.fontSize") : 0;
+                   Services.prefs.getIntPref("devtools.webconsole.fontSize") :
+                   0;
 
     if (fontSize != 0) {
       fontSize = Math.max(MIN_FONT_SIZE, fontSize);
@@ -528,7 +547,8 @@ WebConsoleFrame.prototype = {
     
     this._updateCharSize();
 
-    let clearButton = doc.getElementsByClassName("webconsole-clear-console-button")[0];
+    let clearButton =
+      doc.getElementsByClassName("webconsole-clear-console-button")[0];
     clearButton.addEventListener("command", () => {
       this.owner._onClearButton();
       this.jsterm.clearOutput(true);
@@ -722,10 +742,12 @@ WebConsoleFrame.prototype = {
       let accesskey = net.getAttribute("accesskeyMacOSX");
       net.setAttribute("accesskey", accesskey);
 
-      let logging = this.document.querySelector("toolbarbutton[category=logging]");
+      let logging =
+        this.document.querySelector("toolbarbutton[category=logging]");
       logging.removeAttribute("accesskey");
 
-      let serverLogging = this.document.querySelector("toolbarbutton[category=server]");
+      let serverLogging =
+        this.document.querySelector("toolbarbutton[category=server]");
       serverLogging.removeAttribute("accesskey");
     }
   },
@@ -812,7 +834,7 @@ WebConsoleFrame.prototype = {
     let target = event.target;
     let tagName = target.tagName;
     
-    let isRightClick = (event.button === 2); 
+    let isRightClick = (event.button === 2);
     if (tagName != event.currentTarget.tagName || isRightClick) {
       return;
     }
@@ -974,7 +996,7 @@ WebConsoleFrame.prototype = {
 
     let searchStr = str.toLowerCase();
     let filterStrings = filter.toLowerCase().split(/\s+/);
-    return !filterStrings.some(function (f) {
+    return !filterStrings.some(function(f) {
       return searchStr.indexOf(f) == -1;
     });
   },
@@ -1094,7 +1116,8 @@ WebConsoleFrame.prototype = {
   mergeFilteredMessageNode: function(original, filtered) {
     let repeatNode = original.getElementsByClassName("message-repeats")[0];
     if (!repeatNode) {
-      return; 
+      
+      return;
     }
 
     let occurrences = parseInt(repeatNode.getAttribute("value")) + 1;
@@ -1139,7 +1162,8 @@ WebConsoleFrame.prototype = {
         return null;
       }
 
-      let lastRepeatNode = lastMessage.getElementsByClassName("message-repeats")[0];
+      let lastRepeatNode =
+        lastMessage.getElementsByClassName("message-repeats")[0];
       if (lastRepeatNode && lastRepeatNode._uid == uid) {
         dupeNode = lastMessage;
       }
@@ -1327,7 +1351,8 @@ WebConsoleFrame.prototype = {
     }
 
     if (level == "groupEnd") {
-      return null; 
+      
+      return null;
     }
 
     if (!node) {
@@ -1386,7 +1411,7 @@ WebConsoleFrame.prototype = {
       severity = 'log';
     }
 
-    switch(category) {
+    switch (category) {
       case CATEGORY_CSS:
         category = 'css';
         break;
@@ -1419,7 +1444,8 @@ WebConsoleFrame.prototype = {
     
     
     if (scriptError.category && scriptError.category == "SHA-1 Signature") {
-      let sourceURI = Services.io.newURI(scriptError.sourceName, null, null).QueryInterface(Ci.nsIURL);
+      let sourceURI = Services.io.newURI(scriptError.sourceName, null, null)
+                      .QueryInterface(Ci.nsIURL);
       displayOrigin = sourceURI.prePath;
     }
 
@@ -1590,7 +1616,8 @@ WebConsoleFrame.prototype = {
 
 
   makeMixedContentNode: function(linkNode) {
-    let mixedContentWarning = "[" + l10n.getStr("webConsoleMixedContentWarning") + "]";
+    let mixedContentWarning =
+      "[" + l10n.getStr("webConsoleMixedContentWarning") + "]";
 
     
     let mixedContentWarningNode = this.document.createElementNS(XHTML_NS, "a");
@@ -1724,12 +1751,14 @@ WebConsoleFrame.prototype = {
     let duration = Math.round((end - start) * 100) / 100;
     let node = this.document.createElementNS(XHTML_NS, "span");
     if (sourceURL) {
-      node.textContent = l10n.getFormatStr("reflow.messageWithLink", [duration]);
+      node.textContent =
+        l10n.getFormatStr("reflow.messageWithLink", [duration]);
       let a = this.document.createElementNS(XHTML_NS, "a");
       a.href = "#";
       a.draggable = "false";
       let filename = WebConsoleUtils.abbreviateSourceURL(sourceURL);
-      let functionName = message.functionName || l10n.getStr("stacktrace.anonymousFunction");
+      let functionName = message.functionName ||
+                         l10n.getStr("stacktrace.anonymousFunction");
       a.textContent = l10n.getFormatStr("reflow.messageLinkText",
                          [functionName, filename, sourceLine]);
       this._addMessageLinkCallback(a, () => {
@@ -1737,11 +1766,11 @@ WebConsoleFrame.prototype = {
       });
       node.appendChild(a);
     } else {
-      node.textContent = l10n.getFormatStr("reflow.messageWithNoLink", [duration]);
+      node.textContent =
+        l10n.getFormatStr("reflow.messageWithNoLink", [duration]);
     }
     return this.createMessageNode(CATEGORY_CSS, SEVERITY_LOG, node);
   },
-
 
   handleReflowActivity: function(message) {
     this.outputMessage(CATEGORY_CSS, this.logReflowActivity, [message]);
@@ -1814,7 +1843,8 @@ WebConsoleFrame.prototype = {
     let hasEventTimings = updates.indexOf("eventTimings") > -1;
     let hasResponseStart = updates.indexOf("responseStart") > -1;
     let request = networkInfo.request;
-    let methodText = (networkInfo.isXHR)? request.method + ' XHR' : request.method;
+    let methodText = (networkInfo.isXHR) ?
+                     request.method + ' XHR' : request.method;
     let response = networkInfo.response;
     let updated = false;
 
@@ -1993,8 +2023,8 @@ WebConsoleFrame.prototype = {
     
     
     
-    let scrolledToBottom = shouldPrune ||
-                           Utils.isOutputScrolledToBottom(outputNode, scrollNode);
+    let scrolledToBottom =
+      shouldPrune || Utils.isOutputScrolledToBottom(outputNode, scrollNode);
 
     
     let messages = new Set();
@@ -2105,7 +2135,7 @@ WebConsoleFrame.prototype = {
 
     
     
-    let message = (args && args.length) ? args[args.length-1] : null;
+    let message = (args && args.length) ? args[args.length - 1] : null;
 
     let node = typeof methodOrNode == "function" ?
                methodOrNode.apply(this, args || []) :
@@ -2126,7 +2156,6 @@ WebConsoleFrame.prototype = {
       let nodeID = node.getAttribute("id");
       Services.obs.notifyObservers(hudIdSupportsString,
                                    "web-console-message-created", nodeID);
-
     }
 
     if (node._onOutput) {
@@ -2218,7 +2247,8 @@ WebConsoleFrame.prototype = {
       } else if (typeof methodOrNode != "function") {
         connectionId = methodOrNode._connectionId;
       }
-      if (connectionId && this.webConsoleClient.hasNetworkRequest(connectionId)) {
+      if (connectionId &&
+          this.webConsoleClient.hasNetworkRequest(connectionId)) {
         this.webConsoleClient.removeNetworkRequest(connectionId);
         this._releaseObject(connectionId);
       }
@@ -2462,6 +2492,7 @@ WebConsoleFrame.prototype = {
 
 
 
+
   createLocationNode: function({url, line, column}, target) {
     if (!url) {
       url = "";
@@ -2485,7 +2516,8 @@ WebConsoleFrame.prototype = {
     }
 
     filenameNode.className = "filename";
-    filenameNode.textContent = " " + (filename || l10n.getStr("unknownLocation"));
+    filenameNode.textContent =
+      " " + (filename || l10n.getStr("unknownLocation"));
     locationNode.appendChild(filenameNode);
 
     locationNode.href = isScratchpad || !fullURL ? "#" : fullURL;
@@ -2522,7 +2554,8 @@ WebConsoleFrame.prototype = {
     if (line) {
       let lineNumberNode = this.document.createElementNS(XHTML_NS, "span");
       lineNumberNode.className = "line-number";
-      lineNumberNode.textContent = ":" + line + (column >= 0 ? ":" + column : "");
+      lineNumberNode.textContent =
+        ":" + line + (column >= 0 ? ":" + column : "");
       locationNode.appendChild(lineNumberNode);
       locationNode.sourceLine = line;
     }
@@ -2546,7 +2579,8 @@ WebConsoleFrame.prototype = {
     messageNode.severity = severity;
     messageNode.setAttribute("category", CATEGORY_CLASS_FRAGMENTS[category]);
     messageNode.setAttribute("severity", SEVERITY_CLASS_FRAGMENTS[severity]);
-    messageNode.setAttribute("filter", MESSAGE_PREFERENCE_KEYS[category][severity]);
+    messageNode.setAttribute("filter",
+      MESSAGE_PREFERENCE_KEYS[category][severity]);
   },
 
   
@@ -2801,11 +2835,9 @@ WebConsoleFrame.prototype = {
 
 
 
-
 function simpleValueEvalMacro(item, currentString) {
   return VariablesView.simpleValueEvalMacro(item, currentString, "_self");
 };
-
 
 
 
@@ -2817,12 +2849,9 @@ function overrideValueEvalMacro(item, currentString) {
 
 
 
-
 function getterOrSetterEvalMacro(item, currentString) {
   return VariablesView.getterOrSetterEvalMacro(item, currentString, "_self");
 }
-
-
 
 
 
@@ -2863,21 +2892,23 @@ JSTerm.prototype = {
     this.history = [];
     this.historyIndex = this.historyPlaceHolder = 0;
 
-    this.historyLoaded = asyncStorage.getItem("webConsoleHistory").then(value => {
-      if (Array.isArray(value)) {
-        
-        
-        this.history = value.concat(this.history);
+    this.historyLoaded = asyncStorage.getItem("webConsoleHistory")
+      .then(value => {
+        if (Array.isArray(value)) {
+          
+          
+          this.history = value.concat(this.history);
 
-        
-        
-        this.historyIndex = this.history.length;
+          
+          
+          this.historyIndex = this.history.length;
 
-        
-        
-        this.historyPlaceHolder = this.history.length;
-      }
-    }, console.error);
+          
+          
+          
+          this.historyPlaceHolder = this.history.length;
+        }
+      }, console.error);
   },
 
   
@@ -3045,9 +3076,9 @@ JSTerm.prototype = {
     } else {
       let okstring = l10n.getStr("selfxss.okstring");
       let msg = l10n.getFormatStr("selfxss.msg", [okstring]);
-      this._onPaste = WebConsoleUtils.pasteHandlerGen(this.inputNode,
-                                                      doc.getElementById("webconsole-notificationbox"),
-                                                      msg, okstring);
+      this._onPaste = WebConsoleUtils.pasteHandlerGen(
+        this.inputNode, doc.getElementById("webconsole-notificationbox"),
+        msg, okstring);
       this.inputNode.addEventListener("keypress", this._keyPress, false);
       this.inputNode.addEventListener("paste", this._onPaste);
       this.inputNode.addEventListener("drop", this._onPaste);
@@ -3101,7 +3132,8 @@ JSTerm.prototype = {
           break;
         case "inspectObject":
           this.openVariablesView({
-            label: VariablesView.getString(helperResult.object, { concise: true }),
+            label:
+              VariablesView.getString(helperResult.object, { concise: true }),
             objectActor: helperResult.object,
           });
           break;
@@ -3427,7 +3459,7 @@ JSTerm.prototype = {
     if (event.keyCode != Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE || event.shiftKey ||
         event.altKey || event.ctrlKey || event.metaKey ||
         ["input", "textarea", "select", "textbox"].indexOf(tag) > -1) {
-        return;
+      return;
     }
 
     this._sidebarDestroy();
@@ -3524,8 +3556,8 @@ JSTerm.prototype = {
     } else if (options.rawObject) {
       view._consoleLastObjectActor = null;
     } else {
-      throw new Error("Variables View cannot open without giving it an object " +
-                      "display.");
+      throw new Error(
+        "Variables View cannot open without giving it an object display.");
     }
 
     expanded.then(() => {
@@ -3576,8 +3608,8 @@ JSTerm.prototype = {
       bindObjectActor: options.objectActor.actor,
     };
 
-    this.requestEvaluation("delete _self" + variableObject.symbolicName, evalOptions)
-        .then(onEval, onEval);
+    this.requestEvaluation("delete _self" +
+      variableObject.symbolicName, evalOptions).then(onEval, onEval);
   },
 
   
@@ -3601,13 +3633,15 @@ JSTerm.prototype = {
       bindObjectActor: options.objectActor.actor,
     };
 
-    let newSymbolicName = variableObject.ownerView.symbolicName + '["' + newName + '"]';
+    let newSymbolicName =
+      variableObject.ownerView.symbolicName + '["' + newName + '"]';
     if (newSymbolicName == variableObject.symbolicName) {
       return;
     }
 
-    let code = "_self" + newSymbolicName + " = _self" + variableObject.symbolicName + ";" +
-               "delete _self" + variableObject.symbolicName;
+    let code = "_self" + newSymbolicName + " = _self" +
+      variableObject.symbolicName + ";" + "delete _self" +
+      variableObject.symbolicName;
 
     this.requestEvaluation(code, evalOptions).then(onEval, onEval);
   },
@@ -3663,7 +3697,6 @@ JSTerm.prototype = {
 
     callback && callback(response);
   },
-
 
   
 
@@ -3799,7 +3832,7 @@ JSTerm.prototype = {
           let lineEndPos = inputValue.length;
           if (this.hasMultilineInput()) {
             
-            for (let i = inputNode.selectionEnd; i<lineEndPos; i++) {
+            for (let i = inputNode.selectionEnd; i < lineEndPos; i++) {
               if (inputValue.charAt(i) == "\r" ||
                   inputValue.charAt(i) == "\n") {
                 lineEndPos = i;
@@ -3951,10 +3984,12 @@ JSTerm.prototype = {
 
       case Ci.nsIDOMKeyEvent.DOM_VK_END:
         if (this.autocompletePopup.isOpen) {
-          this.autocompletePopup.selectedIndex = this.autocompletePopup.itemCount - 1;
+          this.autocompletePopup.selectedIndex =
+            this.autocompletePopup.itemCount - 1;
           event.preventDefault();
         } else if (inputValue.length <= 0) {
-          this.hud.outputWrapper.scrollTop = this.hud.outputWrapper.scrollHeight;
+          this.hud.outputWrapper.scrollTop =
+            this.hud.outputWrapper.scrollHeight;
           event.preventDefault();
         }
         break;
@@ -4033,14 +4068,14 @@ JSTerm.prototype = {
       
       
       
-      if (this.historyPlaceHolder+1 == this.historyIndex) {
+      if (this.historyPlaceHolder + 1 == this.historyIndex) {
         this.history[this.historyIndex] = this.getInputValue() || "";
       }
 
       this.setInputValue(inputVal);
     } else if (direction == HISTORY_FORWARD) {
       
-      if (this.historyPlaceHolder >= (this.history.length-1)) {
+      if (this.historyPlaceHolder >= (this.history.length - 1)) {
         return false;
       }
 
@@ -4136,6 +4171,7 @@ JSTerm.prototype = {
 
 
 
+
   complete: function(type, callback) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
@@ -4158,7 +4194,8 @@ JSTerm.prototype = {
     }
 
     
-    if (this.lastCompletion.value != inputValue || frameActor != this._lastFrameActorId) {
+    if (this.lastCompletion.value != inputValue ||
+        frameActor != this._lastFrameActorId) {
       this._updateCompletionResult(type, callback);
       return false;
     }
@@ -4250,10 +4287,11 @@ JSTerm.prototype = {
       value: null,
     };
 
-    let autocompleteCallback = this._receiveAutocompleteProperties.bind(this, requestId,
-                                                            callback);
+    let autocompleteCallback =
+      this._receiveAutocompleteProperties.bind(this, requestId, callback);
 
-    this.webConsoleClient.autocomplete(input, cursor, autocompleteCallback, frameActor);
+    this.webConsoleClient.autocomplete(
+      input, cursor, autocompleteCallback, frameActor);
   },
 
   
@@ -4276,6 +4314,7 @@ JSTerm.prototype = {
         requestId != this.lastCompletion.requestId) {
       return;
     }
+    
     
     let cursor = inputNode.selectionStart;
     let inputUntilCursor = inputValue.substring(0, cursor);
@@ -4382,7 +4421,8 @@ JSTerm.prototype = {
                                                matchProp.length);
       let cursor = this.inputNode.selectionStart;
       let value = this.getInputValue();
-      this.setInputValue(value.substr(0, cursor) + suffix + value.substr(cursor));
+      this.setInputValue(value.substr(0, cursor) +
+        suffix + value.substr(cursor));
       let newCursor = cursor + suffix.length;
       this.inputNode.selectionStart = this.inputNode.selectionEnd = newCursor;
       updated = true;
@@ -4404,7 +4444,6 @@ JSTerm.prototype = {
     let prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
     this.completeNode.value = prefix + suffix;
   },
-
 
   
 
@@ -4605,6 +4644,7 @@ CommandController.prototype = {
       case "cmd_copy": {
         
         
+        
         return this.owner._contextMenuHandler.lastClickedMessage &&
               !this.owner.output.getSelectedMessages(1)[0];
       }
@@ -4687,7 +4727,8 @@ function WebConsoleConnectionProxy(webConsoleFrame, target) {
   this._onAttachConsole = this._onAttachConsole.bind(this);
   this._onCachedMessages = this._onCachedMessages.bind(this);
   this._connectionTimeout = this._connectionTimeout.bind(this);
-  this._onLastPrivateContextExited = this._onLastPrivateContextExited.bind(this);
+  this._onLastPrivateContextExited =
+    this._onLastPrivateContextExited.bind(this);
 }
 
 WebConsoleConnectionProxy.prototype = {
@@ -4791,7 +4832,8 @@ WebConsoleConnectionProxy.prototype = {
       client.addListener("fileActivity", this._onFileActivity);
       client.addListener("reflowActivity", this._onReflowActivity);
       client.addListener("serverLogCall", this._onServerLogCall);
-      client.addListener("lastPrivateContextExited", this._onLastPrivateContextExited);
+      client.addListener("lastPrivateContextExited",
+                         this._onLastPrivateContextExited);
     }
     this.target.on("will-navigate", this._onTabNavigated);
     this.target.on("navigate", this._onTabNavigated);
@@ -4886,7 +4928,8 @@ WebConsoleConnectionProxy.prototype = {
       Cu.reportError("Web Console getCachedMessages error: invalid state.");
     }
 
-    let messages = response.messages.concat(...this.webConsoleClient.getNetworkEvents());
+    let messages =
+      response.messages.concat(...this.webConsoleClient.getNetworkEvents());
     messages.sort((a, b) => a.timeStamp - b.timeStamp);
 
     this.webConsoleFrame.displayCachedMessages(messages);
@@ -5089,7 +5132,8 @@ WebConsoleConnectionProxy.prototype = {
     this.client.removeListener("fileActivity", this._onFileActivity);
     this.client.removeListener("reflowActivity", this._onReflowActivity);
     this.client.removeListener("serverLogCall", this._onServerLogCall);
-    this.client.removeListener("lastPrivateContextExited", this._onLastPrivateContextExited);
+    this.client.removeListener("lastPrivateContextExited",
+                               this._onLastPrivateContextExited);
     this.webConsoleClient.off("networkEvent", this._onNetworkEvent);
     this.webConsoleClient.off("networkEventUpdate", this._onNetworkEventUpdate);
     this.target.off("will-navigate", this._onTabNavigated);
