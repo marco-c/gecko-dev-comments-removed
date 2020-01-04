@@ -383,6 +383,11 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         return Boolean.parseBoolean(incrementVisits);
     }
 
+    private boolean shouldIncrementRemoteAggregates(Uri uri) {
+        final String incrementRemoteAggregates = uri.getQueryParameter(BrowserContract.PARAM_INCREMENT_REMOTE_AGGREGATES);
+        return Boolean.parseBoolean(incrementRemoteAggregates);
+    }
+
     @Override
     public String getType(Uri uri) {
         final int match = URI_MATCHER.match(uri);
@@ -1423,7 +1428,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         }
 
         
-        if (!shouldIncrementVisits(uri)) {
+        if (!shouldIncrementVisits(uri) && !shouldIncrementRemoteAggregates(uri)) {
             trace("Updating history meta data only");
             return db.update(TABLE_HISTORY, values, selection, selectionArgs);
         }
@@ -1435,12 +1440,28 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         }
 
         
-        final long incVisits = 1;
-
-        
         final ContentValues visits = new ContentValues();
-        visits.put(History.VISITS, History.VISITS + " + " + incVisits);
-        visits.put(History.LOCAL_VISITS, History.LOCAL_VISITS + " + " + incVisits);
+        if (shouldIncrementVisits(uri)) {
+            
+            final long incVisits = 1;
+
+            visits.put(History.VISITS, History.VISITS + " + " + incVisits);
+            visits.put(History.LOCAL_VISITS, History.LOCAL_VISITS + " + " + incVisits);
+        }
+
+        if (shouldIncrementRemoteAggregates(uri)) {
+            
+            if (!values.containsKey(History.REMOTE_VISITS)) {
+                throw new IllegalArgumentException(
+                        "Tried incrementing History.REMOTE_VISITS by unknown value");
+            }
+            visits.put(
+                    History.REMOTE_VISITS,
+                    History.REMOTE_VISITS + " + " + values.getAsInteger(History.REMOTE_VISITS)
+            );
+            
+            values.remove(History.REMOTE_VISITS);
+        }
 
         final ContentValues[] valuesAndVisits = { values,  visits };
         final UpdateOperation[] ops = { UpdateOperation.ASSIGN, UpdateOperation.EXPRESSION };

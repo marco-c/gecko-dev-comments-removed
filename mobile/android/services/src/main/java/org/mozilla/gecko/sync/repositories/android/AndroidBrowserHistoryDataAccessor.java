@@ -39,17 +39,12 @@ public class AndroidBrowserHistoryDataAccessor extends
     cv.put(BrowserContract.History.URL, rec.histURI);
     if (rec.visits != null) {
       JSONArray visits = rec.visits;
-      long mostRecent = 0;
-      for (int i = 0; i < visits.size(); i++) {
-        JSONObject visit = (JSONObject) visits.get(i);
-        long visitDate = (Long) visit.get(VisitsHelper.SYNC_DATE_KEY);
-        if (visitDate > mostRecent) {
-          mostRecent = visitDate;
-        }
-      }
+      long mostRecent = getLastVisited(visits);
+
       
       
       cv.put(BrowserContract.History.DATE_LAST_VISITED, mostRecent / 1000);
+      cv.put(BrowserContract.History.REMOTE_DATE_LAST_VISITED, mostRecent / 1000);
       cv.put(BrowserContract.History.VISITS, Long.toString(visits.size()));
     }
     return cv;
@@ -140,16 +135,54 @@ public class AndroidBrowserHistoryDataAccessor extends
                    size     + " records; continuing to update visits.");
     }
 
+    final ContentValues remoteVisitAggregateValues = new ContentValues();
+    final Uri historyIncrementRemoteAggregateUri = getUri().buildUpon()
+            .appendQueryParameter(BrowserContract.PARAM_INCREMENT_REMOTE_AGGREGATES, "true")
+            .build();
     for (Record record : records) {
       HistoryRecord rec = (HistoryRecord) record;
       if (rec.visits != null && rec.visits.size() != 0) {
-        context.getContentResolver().bulkInsert(
+        int remoteVisitsInserted = context.getContentResolver().bulkInsert(
                 BrowserContract.Visits.CONTENT_URI,
                 VisitsHelper.getVisitsContentValues(rec.guid, rec.visits)
         );
+
+        
+        
+        
+        
+        
+        if (remoteVisitsInserted > 0) {
+          
+          
+          remoteVisitAggregateValues.put(BrowserContract.History.REMOTE_VISITS, remoteVisitsInserted);
+          context.getContentResolver().update(
+                  historyIncrementRemoteAggregateUri,
+                  remoteVisitAggregateValues,
+                  BrowserContract.History.GUID + " = ?", new String[] {rec.guid}
+          );
+        }
       }
     }
 
     return inserted;
+  }
+
+  
+
+
+
+
+
+  private long getLastVisited(JSONArray visits) {
+    long mostRecent = 0;
+    for (int i = 0; i < visits.size(); i++) {
+      final JSONObject visit = (JSONObject) visits.get(i);
+      long visitDate = (Long) visit.get(VisitsHelper.SYNC_DATE_KEY);
+      if (visitDate > mostRecent) {
+        mostRecent = visitDate;
+      }
+    }
+    return mostRecent;
   }
 }
