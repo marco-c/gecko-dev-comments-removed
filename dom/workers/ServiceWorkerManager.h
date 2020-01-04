@@ -641,9 +641,8 @@ private:
   RemoveRegistrationInternal(ServiceWorkerRegistrationInfo* aRegistration);
 
   
-  
   void
-  RemoveAllRegistrations(PrincipalOriginAttributes* aParams);
+  RemoveAllRegistrations(OriginAttributesPattern* aPattern);
 
   RefPtr<ServiceWorkerManagerChild> mActor;
 
