@@ -20,6 +20,7 @@
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/SharedPlanarYCbCrImage.h"
 #include "mozilla/layers/SharedRGBImage.h"
+#include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "nsISupportsUtils.h"           
 #include "YCbCrUtils.h"                 
 #ifdef MOZ_WIDGET_GONK
@@ -356,6 +357,10 @@ ImageContainer::ClearCachedResources()
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
   if (mImageClient && mImageClient->AsImageClientSingle()) {
+    if (!mImageClient->HasTextureClientRecycler()) {
+      return;
+    }
+    mImageClient->GetTextureClientRecycler()->ShrinkToMinimumSize();
     return;
   }
   return mRecycleBin->ClearRecycledBuffers();

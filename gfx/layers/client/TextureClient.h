@@ -48,6 +48,7 @@ class SharedSurface_Gralloc;
 namespace layers {
 
 class AsyncTransactionWaiter;
+class BufferTextureData;
 class CompositableForwarder;
 class GrallocTextureData;
 class ClientIPCAllocator;
@@ -299,6 +300,8 @@ public:
 #endif
 
   virtual GrallocTextureData* AsGrallocTextureData() { return nullptr; }
+
+  virtual BufferTextureData* AsBufferTextureData() { return nullptr; }
 };
 
 
@@ -732,7 +735,9 @@ protected:
   
   bool mUpdated;
 
+  
   bool mAddedToCompositableClient;
+
   bool mWorkaroundAnnoyingSharedSurfaceLifetimeIssues;
   bool mWorkaroundAnnoyingSharedSurfaceOwnershipIssues;
 

@@ -7,6 +7,7 @@
 #include <stdint.h>                     
 #include "gfxPlatform.h"                
 #include "mozilla/layers/CompositableForwarder.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/TextureClientOGL.h"
 #include "mozilla/mozalloc.h"           
@@ -246,8 +247,40 @@ CompositableClient::GetTextureClientRecycler()
     return nullptr;
   }
 
-  mTextureClientRecycler =
-    new layers::TextureClientRecycleAllocator(mForwarder);
+  if(!mForwarder->UsesImageBridge()) {
+    MOZ_ASSERT(NS_IsMainThread());
+    mTextureClientRecycler = new layers::TextureClientRecycleAllocator(mForwarder);
+    return mTextureClientRecycler;
+  }
+
+  
+
+  if (InImageBridgeChildThread()) {
+    mTextureClientRecycler = new layers::TextureClientRecycleAllocator(mForwarder);
+    return mTextureClientRecycler;
+  }
+
+  ReentrantMonitor barrier("CompositableClient::GetTextureClientRecycler");
+  ReentrantMonitorAutoEnter mainThreadAutoMon(barrier);
+  bool done = false;
+
+  RefPtr<Runnable> runnable =
+    NS_NewRunnableFunction([&]() {
+      if (!mTextureClientRecycler) {
+        mTextureClientRecycler = new layers::TextureClientRecycleAllocator(mForwarder);
+      }
+      ReentrantMonitorAutoEnter childThreadAutoMon(barrier);
+      done = true;
+      barrier.NotifyAll();
+    });
+
+  ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(runnable.forget());
+
+  
+  while (!done) {
+    barrier.Wait();
+  }
+
   return mTextureClientRecycler;
 }
 
