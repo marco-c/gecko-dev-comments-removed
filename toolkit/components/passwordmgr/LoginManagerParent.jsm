@@ -169,21 +169,6 @@ var LoginManagerParent = {
       return;
     }
 
-    let allLoginsCount = Services.logins.countLogins(formOrigin, "", null);
-    
-    if (!allLoginsCount) {
-      try {
-        target.sendAsyncMessage("RemoteLogins:loginsFound", {
-          requestId: requestId,
-          logins: [],
-          recipes,
-        });
-      } catch (e) {
-        log("error sending message to target", e);
-      }
-      return;
-    }
-
     
     
     if (Services.logins.uiBusy) {
@@ -231,16 +216,6 @@ var LoginManagerParent = {
       logins: jsLogins,
       recipes,
     });
-
-    const PWMGR_FORM_ACTION_EFFECT =  Services.telemetry.getHistogramById("PWMGR_FORM_ACTION_EFFECT");
-    if (logins.length == 0) {
-      PWMGR_FORM_ACTION_EFFECT.add(2);
-    } else if (logins.length == allLoginsCount) {
-      PWMGR_FORM_ACTION_EFFECT.add(0);
-    } else {
-      
-      PWMGR_FORM_ACTION_EFFECT.add(1);
-    }
   }),
 
   doAutocompleteSearch: function({ formOrigin, actionOrigin,
