@@ -102,10 +102,14 @@ class InterceptedChannelContent : public InterceptedChannelBase
   
   
   RefPtr<InterceptStreamListener> mStreamListener;
+
+  
+  bool mSecureUpgrade;
 public:
   InterceptedChannelContent(HttpChannelChild* aChannel,
                             nsINetworkInterceptController* aController,
-                            InterceptStreamListener* aListener);
+                            InterceptStreamListener* aListener,
+                            bool aSecureUpgrade);
 
   NS_IMETHOD ResetInterception() override;
   NS_IMETHOD FinishSynthesizedResponse(const nsACString& aFinalURLSpec) override;
