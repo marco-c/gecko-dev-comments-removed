@@ -560,6 +560,8 @@ pref("layers.async-video.enabled", true);
 #ifdef MOZ_ANDROID_APZ
 pref("layers.async-pan-zoom.enabled", true);
 
+pref("apz.allow_immediate_handoff", false);
+
 pref("apz.axis_lock.mode", 2); 
 pref("apz.fling_curve_function_x1", "0.41");
 pref("apz.fling_curve_function_y1", "0.0");
