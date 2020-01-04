@@ -419,6 +419,7 @@ ModuleGenerator::finishCodegen()
     
 
     linkData_.outOfBoundsOffset = jumpTargets[JumpTarget::OutOfBounds].begin;
+    linkData_.unalignedAccessOffset = jumpTargets[JumpTarget::UnalignedAccess].begin;
     linkData_.interruptOffset = interruptExit.begin;
 
     

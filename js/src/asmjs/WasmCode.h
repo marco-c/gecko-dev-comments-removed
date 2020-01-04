@@ -51,6 +51,7 @@ class CodeSegment
     
     uint8_t* interruptCode_;
     uint8_t* outOfBoundsCode_;
+    uint8_t* unalignedAccessCode_;
 
     
     bool profilingEnabled_;
@@ -80,6 +81,7 @@ class CodeSegment
 
     uint8_t* interruptCode() const { return interruptCode_; }
     uint8_t* outOfBoundsCode() const { return outOfBoundsCode_; }
+    uint8_t* unalignedAccessCode() const { return unalignedAccessCode_; }
 
     
     
