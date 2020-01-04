@@ -3,8 +3,8 @@
 
 
 var xhr = new XMLHttpRequest();
-xhr.open("GET", "testXHR.txt");
+xhr.open("GET", "worker_testXHR.txt");
 xhr.send(null);
-xhr.open("GET", "testXHR.txt");
+xhr.open("GET", "worker_testXHR.txt");
 xhr.send(null);
 postMessage("done");
