@@ -4801,8 +4801,7 @@ UpdateExistingGetPropCallStubs(ICFallbackStub* fallbackStub,
                                HandleFunction getter)
 {
     MOZ_ASSERT(kind == ICStub::GetProp_CallScripted ||
-               kind == ICStub::GetProp_CallNative ||
-               kind == ICStub::GetProp_CallNativeGlobal);
+               kind == ICStub::GetProp_CallNative);
     MOZ_ASSERT(fallbackStub->isGetName_Fallback() ||
                fallbackStub->isGetProp_Fallback());
     MOZ_ASSERT(holder);
@@ -4833,13 +4832,6 @@ UpdateExistingGetPropCallStubs(ICFallbackStub* fallbackStub,
                 
                 
                 getPropStub->getter() = getter;
-
-                if (getPropStub->isGetProp_CallNativeGlobal()) {
-                    ICGetProp_CallNativeGlobal* globalStub =
-                        getPropStub->toGetProp_CallNativeGlobal();
-                    globalStub->globalShape() =
-                        receiver->as<ClonedBlockObject>().global().lastProperty();
-                }
 
                 if (getPropStub->receiverGuard().matches(receiverGuard))
                     foundMatchingStub = true;
@@ -5013,21 +5005,9 @@ TryAttachGlobalNameAccessorStub(JSContext* cx, HandleScript script, jsbytecode* 
         ICStub* monitorStub = stub->fallbackMonitorStub()->firstMonitorStub();
         RootedFunction getter(cx, &shape->getterObject()->as<JSFunction>());
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         JitSpew(JitSpew_BaselineIC, "  Generating GetName(GlobalName/NativeGetter) stub");
-        if (UpdateExistingGetPropCallStubs(stub, ICStub::GetProp_CallNativeGlobal, current,
-                                           globalLexical, getter))
+        if (UpdateExistingGetPropCallStubs(stub, ICStub::GetProp_CallNative, current, global,
+                                           getter))
         {
             *attached = true;
             return true;
