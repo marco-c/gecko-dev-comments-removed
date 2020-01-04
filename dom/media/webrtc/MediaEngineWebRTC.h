@@ -135,6 +135,7 @@ public:
     , mThread(aThread)
     , mCapIndex(aIndex)
     , mChannel(-1)
+    , mNrAllocations(0)
     , mInitDone(false)
     , mStarted(false)
     , mSampleFrequency(MediaEngine::DEFAULT_SAMPLE_RATE)
@@ -215,10 +216,11 @@ private:
   
   
   Monitor mMonitor;
-  nsTArray<nsRefPtr<SourceMediaStream>> mSources; 
+  nsTArray<nsRefPtr<SourceMediaStream>> mSources;
   nsCOMPtr<nsIThread> mThread;
   int mCapIndex;
   int mChannel;
+  int mNrAllocations; 
   TrackID mTrackID;
   bool mInitDone;
   bool mStarted;
