@@ -32,18 +32,14 @@ nsShmImage::nsShmImage(Display* aDisplay,
   , mSize(0, 0)
   , mPixmap(XCB_NONE)
   , mGC(XCB_NONE)
+  , mRequestPending(false)
   , mShmSeg(XCB_NONE)
   , mShmId(-1)
   , mShmAddr(nullptr)
 {
   mConnection = XGetXCBConnection(aDisplay);
-  mozilla::PodZero(&mLastRequest);
-  if (aDisplay == mozilla::DefaultXDisplay()) {
-    
-    
-    
-    NS_WARNING("Main thread X display used with nsShmImage!");
-  }
+  mozilla::PodZero(&mPutRequest);
+  mozilla::PodZero(&mSyncRequest);
 }
 
 nsShmImage::~nsShmImage()
@@ -250,13 +246,19 @@ nsShmImage::CreateDrawTarget(const mozilla::LayoutDeviceIntRegion& aRegion)
   
   
   
-  xcb_generic_error_t* error;
-  if (mLastRequest.sequence != XCB_NONE &&
-      (error = xcb_request_check(mConnection, mLastRequest)))
-  {
-    gShmAvailable = false;
-    free(error);
-    return nullptr;
+  if (mRequestPending) {
+    xcb_get_input_focus_reply_t* reply;
+    if ((reply = xcb_get_input_focus_reply(mConnection, mSyncRequest, nullptr))) {
+      free(reply);
+    }
+    mRequestPending = false;
+
+    xcb_generic_error_t* error;
+    if ((error = xcb_request_check(mConnection, mPutRequest))) {
+      gShmAvailable = false;
+      free(error);
+      return nullptr;
+    }
   }
 
   
@@ -301,16 +303,21 @@ nsShmImage::Put(const mozilla::LayoutDeviceIntRegion& aRegion)
                           xrects.Length(), xrects.Elements());
 
   if (mPixmap != XCB_NONE) {
-    mLastRequest = xcb_copy_area_checked(mConnection, mPixmap, mWindow, mGC,
-                                         0, 0, 0, 0, mSize.width, mSize.height);
+    mPutRequest = xcb_copy_area_checked(mConnection, mPixmap, mWindow, mGC,
+                                        0, 0, 0, 0, mSize.width, mSize.height);
   } else {
-    mLastRequest = xcb_shm_put_image_checked(mConnection, mWindow, mGC,
-                                             mSize.width, mSize.height,
-                                             0, 0, mSize.width, mSize.height,
-                                             0, 0, mDepth,
-                                             XCB_IMAGE_FORMAT_Z_PIXMAP, 0,
-                                             mShmSeg, 0);
+    mPutRequest = xcb_shm_put_image_checked(mConnection, mWindow, mGC,
+                                            mSize.width, mSize.height,
+                                            0, 0, mSize.width, mSize.height,
+                                            0, 0, mDepth,
+                                            XCB_IMAGE_FORMAT_Z_PIXMAP, 0,
+                                            mShmSeg, 0);
   }
+
+  
+  
+  mSyncRequest = xcb_get_input_focus(mConnection);
+  mRequestPending = true;
 
   xcb_flush(mConnection);
 }
