@@ -600,9 +600,15 @@ var BrowserApp = {
 
       if (AppConstants.NIGHTLY_BUILD) {
         InitLater(() => ShumwayUtils.init(), window, "ShumwayUtils");
-        InitLater(() => Telemetry.addData("FENNEC_TRACKING_PROTECTION_STATE", parseInt(BrowserApp.getTrackingProtectionState())));
         InitLater(() => WebcompatReporter.init());
       }
+
+      
+      
+      InitLater(() => {
+        Telemetry.addData("FENNEC_TRACKING_PROTECTION_STATE", parseInt(BrowserApp.getTrackingProtectionState()));
+        Telemetry.addData("ZOOMED_VIEW_ENABLED", Services.prefs.getBoolPref("ui.zoomedview.enabled"));
+      });
 
       InitLater(() => LightWeightThemeWebInstaller.init());
       InitLater(() => SpatialNavigation.init(BrowserApp.deck, null), window, "SpatialNavigation");
