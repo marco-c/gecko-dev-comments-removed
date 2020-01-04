@@ -21,6 +21,12 @@ for [name, prop, id, flags, pref, proptype] in propList:
     extendedAttrs = ["Throws", "TreatNullAs=EmptyString"]
     if pref is not "":
         extendedAttrs.append('Pref="%s"' % pref)
+
+    
+    
+    if (prop.startswith("Webkit")):
+        props += generateLine(prop, extendedAttrs)
+
     
     
     if not prop.startswith("Moz"):
