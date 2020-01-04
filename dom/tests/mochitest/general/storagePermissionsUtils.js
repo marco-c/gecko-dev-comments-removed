@@ -230,3 +230,27 @@ function task(fn) {
 }
 
 var thirdparty = "https://example.com/tests/dom/tests/mochitest/general/";
+
+
+
+var b2gOnly = (function() {
+  function pref(name) {
+    try {
+      return SpecialPowers.getBoolPref(name);
+    } catch (e) {
+      
+      
+      return true;
+    }
+  }
+
+  var isAndroid = !!navigator.userAgent.includes("Android");
+  var isMulet = pref("b2g.is_mulet");
+  var isB2g = isMulet || (!isAndroid && /Mobile|Tablet/.test(navigator.userAgent));
+  return isB2g ? true : undefined;
+})();
+
+
+if (b2gOnly) {
+  thirdparty = "http://example.com/tests/dom/tests/mochitest/general/";
+}
