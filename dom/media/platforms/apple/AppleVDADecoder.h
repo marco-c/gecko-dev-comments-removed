@@ -81,16 +81,9 @@ public:
     return true;
   }
 
-  void DispatchOutputTask(already_AddRefed<nsIRunnable> aTask)
-  {
-    nsCOMPtr<nsIRunnable> task = aTask;
-    if (mIsShutDown || mIsFlushing) {
-      return;
-    }
-    mTaskQueue->Dispatch(task.forget(), AbstractThread::DontAssertDispatchSuccess);
-  }
-
-  nsresult OutputFrame(CFRefPtr<CVPixelBufferRef> aImage,
+  
+  
+  nsresult OutputFrame(CVPixelBufferRef aImage,
                        AppleFrameRef aFrameRef);
 
 protected:
@@ -108,31 +101,33 @@ protected:
   nsRefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
   nsRefPtr<layers::ImageContainer> mImageContainer;
-  ReorderQueue mReorderQueue;
   uint32_t mPictureWidth;
   uint32_t mPictureHeight;
   uint32_t mDisplayWidth;
   uint32_t mDisplayHeight;
+  
   uint32_t mMaxRefFrames;
   
   
   Atomic<uint32_t> mInputIncoming;
   Atomic<bool> mIsShutDown;
 
-  bool mUseSoftwareImages;
-  bool mIs106;
+  const bool mUseSoftwareImages;
+  const bool mIs106;
 
   
   
   
-  uint32_t mQueuedSamples;
+  Atomic<uint32_t> mQueuedSamples;
 
+  
   
   Monitor mMonitor;
   
   
   
   Atomic<bool> mIsFlushing;
+  ReorderQueue mReorderQueue;
 
 private:
   VDADecoder mDecoder;
