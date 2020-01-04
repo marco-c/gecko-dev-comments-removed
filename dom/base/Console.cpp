@@ -1507,6 +1507,12 @@ Console::ProcessArguments(JSContext* aCx,
 
       case 'c':
       {
+        
+        
+        if (output.IsEmpty() && !aStyles.IsEmpty()) {
+          aStyles.TruncateLength(aStyles.Length() - 1);
+        }
+
         if (!FlushOutput(aCx, aSequence, output)) {
           return false;
         }
