@@ -54,11 +54,6 @@ public:
   
 
 
-  static bool IsServiceAvailable();
-
-  
-
-
   static nsresult ResetAndReadUserPrefs();
 
   

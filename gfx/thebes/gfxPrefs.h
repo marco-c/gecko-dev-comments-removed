@@ -9,9 +9,6 @@
 #include <cmath>                 
 #include <stdint.h>
 #include "mozilla/Assertions.h"
-#include "mozilla/Function.h"
-#include "mozilla/gfx/LoggingConstants.h"
-#include "nsTArray.h"
 
 
 
@@ -60,29 +57,23 @@
 
 
 
-
-
-#define DECL_GFX_PREF(Update, Prefname, Name, Type, Default)                  \
+#define DECL_GFX_PREF(Update, Pref, Name, Type, Default)                     \
 public:                                                                       \
 static Type Name() { MOZ_ASSERT(SingletonExists()); return GetSingleton().mPref##Name.mValue; } \
-static void Set##Name(Type aVal) { MOZ_ASSERT(SingletonExists());             \
+static void Set##Name(Type aVal) { MOZ_ASSERT(SingletonExists()); \
     GetSingleton().mPref##Name.Set(UpdatePolicy::Update, Get##Name##PrefName(), aVal); } \
-static const char* Get##Name##PrefName() { return Prefname; }                 \
+static const char* Get##Name##PrefName() { return Pref; }                     \
 static Type Get##Name##PrefDefault() { return Default; }                      \
 private:                                                                      \
-static Pref* Get##Name##PrefPtr() { return &GetSingleton().mPref##Name; }     \
 PrefTemplate<UpdatePolicy::Update, Type, Get##Name##PrefDefault, Get##Name##PrefName> mPref##Name
 
-namespace mozilla {
-namespace gfx {
-class GfxPrefValue;   
-} 
-} 
-
+class PreferenceAccessImpl;
 class gfxPrefs;
 class gfxPrefs final
 {
-  typedef mozilla::gfx::GfxPrefValue GfxPrefValue;
+private:
+  
+  PreferenceAccessImpl* mMoz2DPrefAccess;
 
 private:
   
@@ -92,81 +83,27 @@ private:
     Live  
   };
 
-public:
-  class Pref
-  {
-  public:
-    Pref() : mChangeCallback(nullptr)
-    {
-      mIndex = sGfxPrefList.Length();
-      sGfxPrefList.AppendElement(this);
-    }
-
-    size_t Index() const { return mIndex; }
-    void OnChange();
-
-    typedef void (*ChangeCallback)();
-    void SetChangeCallback(ChangeCallback aCallback);
-
-    virtual const char* Name() const = 0;
-
-    
-    virtual bool HasDefaultValue() const = 0;
-
-    
-    virtual void GetCachedValue(GfxPrefValue* aOutValue) const = 0;
-
-    
-    virtual void SetCachedValue(const GfxPrefValue& aOutValue) = 0;
-
-  protected:
-    void FireChangeCallback();
-
-  private:
-    size_t mIndex;
-    ChangeCallback mChangeCallback;
-  };
-
-  static const nsTArray<Pref*>& all() {
-    return sGfxPrefList;
-  }
-
-private:
   
-  template <UpdatePolicy Update, class T, T Default(void), const char* Prefname(void)>
-  class PrefTemplate : public Pref
+  template <UpdatePolicy Update, class T, T Default(void), const char* Pref(void)>
+  class PrefTemplate
   {
   public:
     PrefTemplate()
     : mValue(Default())
     {
-      
-      
-      if (IsPrefsServiceAvailable()) {
-        Register(Update, Prefname());
-      }
-      
-      
-      if (IsParentProcess() && Update == UpdatePolicy::Live) {
-        WatchChanges(Prefname(), this);
-      }
-    }
-    ~PrefTemplate() {
-      if (IsParentProcess() && Update == UpdatePolicy::Live) {
-        UnwatchChanges(Prefname(), this);
-      }
+      Register(Update, Pref());
     }
     void Register(UpdatePolicy aUpdate, const char* aPreference)
     {
       AssertMainThread();
-      switch (aUpdate) {
+      switch(aUpdate) {
         case UpdatePolicy::Skip:
           break;
         case UpdatePolicy::Once:
           mValue = PrefGet(aPreference, mValue);
           break;
         case UpdatePolicy::Live:
-          PrefAddVarCache(&mValue, aPreference, mValue);
+          PrefAddVarCache(&mValue,aPreference, mValue);
           break;
         default:
           MOZ_CRASH("Incomplete switch");
@@ -185,36 +122,6 @@ private:
           break;
         default:
           MOZ_CRASH("Incomplete switch");
-      }
-    }
-    const char *Name() const override {
-      return Prefname();
-    }
-    
-    
-    
-    T GetLiveValue() const {
-      if (IsPrefsServiceAvailable()) {
-        return PrefGet(Prefname(), mValue);
-      }
-      return mValue;
-    }
-    bool HasDefaultValue() const override {
-      return mValue == Default();
-    }
-    void GetCachedValue(GfxPrefValue* aOutValue) const override {
-      CopyPrefValue(&mValue, aOutValue);
-    }
-    void SetCachedValue(const GfxPrefValue& aOutValue) override {
-      
-      MOZ_ASSERT(!IsPrefsServiceAvailable());
-
-      T newValue;
-      CopyPrefValue(&aOutValue, &newValue);
-
-      if (mValue != newValue) {
-        mValue = newValue;
-        FireChangeCallback();
       }
     }
     T mValue;
@@ -355,7 +262,6 @@ private:
   DECL_GFX_PREF(Live, "gfx.layerscope.enabled",                LayerScopeEnabled, bool, false);
   DECL_GFX_PREF(Live, "gfx.layerscope.port",                   LayerScopePort, int32_t, 23456);
   
-  DECL_GFX_PREF(Live, "gfx.logging.level",                     GfxLoggingLevel, int32_t, mozilla::gfx::LOG_DEFAULT);
   DECL_GFX_PREF(Once, "gfx.logging.crash.length",              GfxLoggingCrashLength, uint32_t, 16);
   DECL_GFX_PREF(Live, "gfx.logging.painted-pixel-count.enabled",GfxLoggingPaintedPixelCountEnabled, bool, false);
   
@@ -575,7 +481,6 @@ public:
     MOZ_ASSERT(!sInstanceHasBeenDestroyed, "Should never recreate a gfxPrefs instance!");
     if (!sInstance) {
       sInstance = new gfxPrefs;
-      sInstance->Init();
     }
     MOZ_ASSERT(SingletonExists());
     return *sInstance;
@@ -586,16 +491,8 @@ public:
 private:
   static gfxPrefs* sInstance;
   static bool sInstanceHasBeenDestroyed;
-  static nsTArray<Pref*> sGfxPrefList;
 
 private:
-  
-  
-  
-  void Init();
-
-  static bool IsPrefsServiceAvailable();
-  static bool IsParentProcess();
   
   static void PrefAddVarCache(bool*, const char*, bool);
   static void PrefAddVarCache(int32_t*, const char*, int32_t);
@@ -609,17 +506,6 @@ private:
   static void PrefSet(const char* aPref, int32_t aValue);
   static void PrefSet(const char* aPref, uint32_t aValue);
   static void PrefSet(const char* aPref, float aValue);
-  static void WatchChanges(const char* aPrefname, Pref* aPref);
-  static void UnwatchChanges(const char* aPrefname, Pref* aPref);
-  
-  static void CopyPrefValue(const bool* aValue, GfxPrefValue* aOutValue);
-  static void CopyPrefValue(const int32_t* aValue, GfxPrefValue* aOutValue);
-  static void CopyPrefValue(const uint32_t* aValue, GfxPrefValue* aOutValue);
-  static void CopyPrefValue(const float* aValue, GfxPrefValue* aOutValue);
-  static void CopyPrefValue(const GfxPrefValue* aValue, bool* aOutValue);
-  static void CopyPrefValue(const GfxPrefValue* aValue, int32_t* aOutValue);
-  static void CopyPrefValue(const GfxPrefValue* aValue, uint32_t* aOutValue);
-  static void CopyPrefValue(const GfxPrefValue* aValue, float* aOutValue);
 
   static void AssertMainThread();
 

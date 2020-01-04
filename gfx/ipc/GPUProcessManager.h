@@ -106,11 +106,6 @@ public:
   void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;
 
-  
-  GPUChild* GetGPUChild() {
-    return mGPUChild;
-  }
-
 private:
   
   void OnXPCOMShutdown();
