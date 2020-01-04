@@ -35,7 +35,6 @@ namespace js {
 namespace jit {
 
 
-
  VMFunction* VMFunction::functions;
 
 AutoDetectInvalidation::AutoDetectInvalidation(JSContext* cx, MutableHandleValue rval)
@@ -48,11 +47,6 @@ AutoDetectInvalidation::AutoDetectInvalidation(JSContext* cx, MutableHandleValue
 void
 VMFunction::addToFunctions()
 {
-    static bool initialized = false;
-    if (!initialized) {
-        initialized = true;
-        functions = nullptr;
-    }
     this->next = functions;
     functions = this;
 }
