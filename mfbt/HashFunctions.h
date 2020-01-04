@@ -260,19 +260,6 @@ HashString(const unsigned char* aStr, size_t aLength)
 }
 
 MOZ_MUST_USE inline uint32_t
-HashString(const uint16_t* aStr)
-{
-  return detail::HashUntilZero(aStr);
-}
-
-MOZ_MUST_USE inline uint32_t
-HashString(const uint16_t* aStr, size_t aLength)
-{
-  return detail::HashKnownLength(aStr, aLength);
-}
-
-#ifdef MOZ_CHAR16_IS_NOT_WCHAR
-MOZ_MUST_USE inline uint32_t
 HashString(const char16_t* aStr)
 {
   return detail::HashUntilZero(aStr);
@@ -283,7 +270,6 @@ HashString(const char16_t* aStr, size_t aLength)
 {
   return detail::HashKnownLength(aStr, aLength);
 }
-#endif
 
 
 

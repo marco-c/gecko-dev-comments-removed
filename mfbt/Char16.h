@@ -17,38 +17,8 @@
 
 
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
-   
-
-
-
-
-
-
-
-
-
-
-
-
-#  define MOZ_UTF16_HELPER(s) L##s
-#  define _CHAR16T
-typedef wchar_t char16_t;
-typedef unsigned int char32_t;
-#else
-   
-#  define MOZ_UTF16_HELPER(s) u##s
-   
-
-
-
-#  define MOZ_CHAR16_IS_NOT_WCHAR
-#  ifdef WIN32
-#    define MOZ_USE_CHAR16_WRAPPER
-#  endif
-#endif
-
-#ifdef MOZ_USE_CHAR16_WRAPPER
+#ifdef WIN32
+# define MOZ_USE_CHAR16_WRAPPER
 # include <cstdint>
   
 
@@ -222,12 +192,15 @@ typedef const char16_t* char16ptr_t;
 
 
 
+#define MOZ_UTF16_HELPER(s) u##s
 #define MOZ_UTF16(s) MOZ_UTF16_HELPER(s)
 
 static_assert(sizeof(char16_t) == 2, "Is char16_t type 16 bits?");
 static_assert(char16_t(-1) > char16_t(0), "Is char16_t type unsigned?");
 static_assert(sizeof(MOZ_UTF16('A')) == 2, "Is char literal 16 bits?");
 static_assert(sizeof(MOZ_UTF16("")[0]) == 2, "Is string char 16 bits?");
+static_assert(sizeof(u'A') == 2, "Is unicode char literal 16 bits?");
+static_assert(sizeof(u""[0]) == 2, "Is unicode string char 16 bits?");
 
 #endif
 
