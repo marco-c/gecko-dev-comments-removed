@@ -47,6 +47,7 @@
 #include "nsPresArena.h"
 #include "nsMargin.h"
 #include "nsFrameState.h"
+#include "Visibility.h"
 
 #ifdef MOZ_B2G
 #include "nsIHardwareKeyHandler.h"
@@ -185,6 +186,7 @@ public:
 protected:
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::gfx::SourceSurface SourceSurface;
+  using VisibilityCounter = mozilla::VisibilityCounter;
 
   enum eRenderFlag {
     STATE_IGNORING_VIEWPORT_SCROLLING = 0x1,
@@ -1594,7 +1596,7 @@ public:
 
   
   
-  virtual void MarkFrameVisibleInDisplayPort(nsIFrame* aFrame) = 0;
+  virtual void MarkFrameVisible(nsIFrame* aFrame, VisibilityCounter aCounter) = 0;
 
   
   virtual void MarkFrameNonvisible(nsIFrame* aFrame) = 0;
