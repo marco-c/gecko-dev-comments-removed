@@ -13,11 +13,11 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Text.h"
 
-class nsHTMLEditor;
 class nsIDOMNode;
 
 namespace mozilla {
 
+class HTMLEditor;
 class HTMLEditRules;
 struct EditorDOMPoint;
 
@@ -165,13 +165,13 @@ public:
   enum {eAfter  = 1 << 1};
   enum {eBoth   = eBefore | eAfter};
 
-  WSRunObject(nsHTMLEditor* aHTMLEditor, nsINode* aNode, int32_t aOffset);
-  WSRunObject(nsHTMLEditor* aHTMLEditor, nsIDOMNode* aNode, int32_t aOffset);
+  WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aNode, int32_t aOffset);
+  WSRunObject(HTMLEditor* aHTMLEditor, nsIDOMNode* aNode, int32_t aOffset);
   ~WSRunObject();
 
   
   
-  static nsresult ScrubBlockBoundary(nsHTMLEditor* aHTMLEditor,
+  static nsresult ScrubBlockBoundary(HTMLEditor* aHTMLEditor,
                                      BlockBoundary aBoundary,
                                      nsINode* aBlock,
                                      int32_t aOffset = -1);
@@ -179,7 +179,7 @@ public:
   
   
   
-  static nsresult PrepareToJoinBlocks(nsHTMLEditor* aHTMLEditor,
+  static nsresult PrepareToJoinBlocks(HTMLEditor* aHTMLEditor,
                                       dom::Element* aLeftBlock,
                                       dom::Element* aRightBlock);
 
@@ -190,7 +190,7 @@ public:
   
   
   
-  static nsresult PrepareToDeleteRange(nsHTMLEditor* aHTMLEditor,
+  static nsresult PrepareToDeleteRange(HTMLEditor* aHTMLEditor,
                                        nsCOMPtr<nsINode>* aStartNode,
                                        int32_t* aStartOffset,
                                        nsCOMPtr<nsINode>* aEndNode,
@@ -199,7 +199,7 @@ public:
   
   
   
-  static nsresult PrepareToDeleteNode(nsHTMLEditor* aHTMLEditor,
+  static nsresult PrepareToDeleteNode(HTMLEditor* aHTMLEditor,
                                       nsIContent* aContent);
 
   
@@ -207,7 +207,7 @@ public:
   
   
   
-  static nsresult PrepareToSplitAcrossBlocks(nsHTMLEditor* aHTMLEditor,
+  static nsresult PrepareToSplitAcrossBlocks(HTMLEditor* aHTMLEditor,
                                              nsCOMPtr<nsINode>* aSplitNode,
                                              int32_t* aSplitOffset);
 
@@ -398,12 +398,12 @@ protected:
   WSFragment* mEndRun;
 
   
-  nsHTMLEditor* mHTMLEditor;
+  HTMLEditor* mHTMLEditor;
 
   
   friend class HTMLEditRules;
   
-  friend class nsHTMLEditor;
+  friend class HTMLEditor;
 };
 
 } 

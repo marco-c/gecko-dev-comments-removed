@@ -2,6 +2,8 @@
 
 
 
+#include "mozilla/HTMLEditor.h"
+
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/mozalloc.h"
@@ -11,7 +13,6 @@
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
-#include "nsHTMLEditor.h"
 #include "nsIAtom.h"
 #include "nsIContent.h"
 #include "nsID.h"
@@ -26,7 +27,6 @@
 #include "nsIDocument.h"
 #include "nsIDocumentObserver.h"
 #include "nsIHTMLAbsPosEditor.h"
-#include "nsIHTMLEditor.h"
 #include "nsIHTMLInlineTableEditor.h"
 #include "nsIHTMLObjectResizer.h"
 #include "nsIMutationObserver.h"
@@ -46,8 +46,9 @@
 class nsIDOMEventListener;
 class nsISelection;
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+
+using namespace dom;
 
 
 static int32_t GetCSSFloatValue(nsIDOMCSSStyleDeclaration * aDecl,
@@ -91,24 +92,28 @@ static int32_t GetCSSFloatValue(nsIDOMCSSStyleDeclaration * aDecl,
   return (int32_t) f;
 }
 
-class nsElementDeletionObserver final : public nsIMutationObserver
+class ElementDeletionObserver final : public nsIMutationObserver
 {
 public:
-  nsElementDeletionObserver(nsINode* aNativeAnonNode, nsINode* aObservedNode)
-  : mNativeAnonNode(aNativeAnonNode), mObservedNode(aObservedNode) {}
+  ElementDeletionObserver(nsINode* aNativeAnonNode, nsINode* aObservedNode)
+    : mNativeAnonNode(aNativeAnonNode)
+    , mObservedNode(aObservedNode)
+  {}
+
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMUTATIONOBSERVER
+
 protected:
-  ~nsElementDeletionObserver() {}
+  ~ElementDeletionObserver() {}
   nsINode* mNativeAnonNode;
   nsINode* mObservedNode;
 };
 
-NS_IMPL_ISUPPORTS(nsElementDeletionObserver, nsIMutationObserver)
-NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(nsElementDeletionObserver)
+NS_IMPL_ISUPPORTS(ElementDeletionObserver, nsIMutationObserver)
+NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(ElementDeletionObserver)
 
 void
-nsElementDeletionObserver::NodeWillBeDestroyed(const nsINode* aNode)
+ElementDeletionObserver::NodeWillBeDestroyed(const nsINode* aNode)
 {
   NS_ASSERTION(aNode == mNativeAnonNode || aNode == mObservedNode,
                "Wrong aNode!");
@@ -127,9 +132,11 @@ nsElementDeletionObserver::NodeWillBeDestroyed(const nsINode* aNode)
 
 
 nsresult
-nsHTMLEditor::CreateAnonymousElement(const nsAString & aTag, nsIDOMNode *  aParentNode,
-                                     const nsAString & aAnonClass, bool aIsCreatedHidden,
-                                     nsIDOMElement ** aReturn)
+HTMLEditor::CreateAnonymousElement(const nsAString& aTag,
+                                   nsIDOMNode* aParentNode,
+                                   const nsAString& aAnonClass,
+                                   bool aIsCreatedHidden,
+                                   nsIDOMElement** aReturn)
 {
   NS_ENSURE_ARG_POINTER(aParentNode);
   NS_ENSURE_ARG_POINTER(aReturn);
@@ -180,8 +187,8 @@ nsHTMLEditor::CreateAnonymousElement(const nsAString & aTag, nsIDOMNode *  aPare
     }
   }
 
-  nsElementDeletionObserver* observer =
-    new nsElementDeletionObserver(newContent, parentContent);
+  ElementDeletionObserver* observer =
+    new ElementDeletionObserver(newContent, parentContent);
   NS_ADDREF(observer); 
   parentContent->AddMutationObserver(observer);
   newContent->AddMutationObserver(observer);
@@ -204,12 +211,12 @@ nsHTMLEditor::CreateAnonymousElement(const nsAString & aTag, nsIDOMNode *  aPare
 
 
 void
-nsHTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
-                                         nsIDOMEventListener* aListener,
-                                         bool aUseCapture,
-                                         Element* aElement,
-                                         nsIContent * aParentContent,
-                                         nsIPresShell* aShell)
+HTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
+                                       nsIDOMEventListener* aListener,
+                                       bool aUseCapture,
+                                       Element* aElement,
+                                       nsIContent* aParentContent,
+                                       nsIPresShell* aShell)
 {
   nsCOMPtr<nsIDOMEventTarget> evtTarget(do_QueryInterface(aElement));
   if (evtTarget) {
@@ -220,9 +227,9 @@ nsHTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
 
 
 void
-nsHTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
-                                       nsIContent* aParentContent,
-                                       nsIPresShell* aShell)
+HTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
+                                     nsIContent* aParentContent,
+                                     nsIPresShell* aShell)
 {
   
   
@@ -265,7 +272,7 @@ nsHTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
 
 
 NS_IMETHODIMP
-nsHTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection * aSelection)
+HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
 {
   NS_ENSURE_ARG_POINTER(aSelection);
 
@@ -405,13 +412,15 @@ nsHTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection * aSelection)
 
 
 nsresult
-nsHTMLEditor::GetPositionAndDimensions(nsIDOMElement * aElement,
-                                       int32_t & aX, int32_t & aY,
-                                       int32_t & aW, int32_t & aH,
-                                       int32_t & aBorderLeft,
-                                       int32_t & aBorderTop,
-                                       int32_t & aMarginLeft,
-                                       int32_t & aMarginTop)
+HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
+                                     int32_t& aX,
+                                     int32_t& aY,
+                                     int32_t& aW,
+                                     int32_t& aH,
+                                     int32_t& aBorderLeft,
+                                     int32_t& aBorderTop,
+                                     int32_t& aMarginLeft,
+                                     int32_t& aMarginTop)
 {
   nsCOMPtr<Element> element = do_QueryInterface(aElement);
   NS_ENSURE_ARG_POINTER(element);
@@ -471,8 +480,12 @@ nsHTMLEditor::GetPositionAndDimensions(nsIDOMElement * aElement,
 
 
 void
-nsHTMLEditor::SetAnonymousElementPosition(int32_t aX, int32_t aY, nsIDOMElement *aElement)
+HTMLEditor::SetAnonymousElementPosition(int32_t aX,
+                                        int32_t aY,
+                                        nsIDOMElement* aElement)
 {
   mCSSEditUtils->SetCSSPropertyPixels(aElement, NS_LITERAL_STRING("left"), aX);
   mCSSEditUtils->SetCSSPropertyPixels(aElement, NS_LITERAL_STRING("top"), aY);
 }
+
+} 
