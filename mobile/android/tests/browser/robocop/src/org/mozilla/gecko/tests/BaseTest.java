@@ -582,7 +582,7 @@ abstract class BaseTest extends BaseRobocopTest {
         addTab();
 
         
-        inputAndLoadUrl(url);
+        loadUrlAndWait(url);
     }
 
     public void closeAddedTabs() {
