@@ -90,20 +90,10 @@ DownloadLegacyTransfer.prototype = {
     if ((aStateFlags & Ci.nsIWebProgressListener.STATE_START) &&
         (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
 
-      let blockedByParentalControls = false;
       
       
-      try {
-        
-        
-        blockedByParentalControls = aRequest instanceof Ci.nsIHttpChannel &&
+      let blockedByParentalControls = aRequest instanceof Ci.nsIHttpChannel &&
                                       aRequest.responseStatus == 450;
-      } catch (e) {
-        if (e.result == Cr.NS_ERROR_NOT_AVAILABLE) {
-          aRequest.cancel(Cr.NS_BINDING_ABORTED);
-        }
-      }
-
       if (blockedByParentalControls) {
         aRequest.cancel(Cr.NS_BINDING_ABORTED);
       }
