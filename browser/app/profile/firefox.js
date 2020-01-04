@@ -1658,6 +1658,9 @@ pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/
 pref("browser.newtabpage.directory.ping", "https://tiles.services.mozilla.com/v3/links/");
 
 
+pref("browser.newtabpage.remote", false);
+
+
 pref("full-screen-api.enabled", true);
 
 
@@ -1707,6 +1710,7 @@ pref("loop.feedback.baseUrl", "https://input.mozilla.org/api/v1/feedback");
 pref("loop.feedback.product", "Loop");
 pref("loop.debug.loglevel", "Error");
 pref("loop.debug.dispatcher", false);
+pref("loop.debug.websocket", false);
 pref("loop.debug.sdk", false);
 pref("loop.debug.twoWayMediaTelemetry", false);
 pref("loop.feedback.dateLastSeenSec", 0);
