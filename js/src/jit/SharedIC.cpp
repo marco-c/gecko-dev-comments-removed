@@ -2182,7 +2182,7 @@ JSObject*
 GetDOMProxyProto(JSObject* obj)
 {
     MOZ_ASSERT(IsCacheableDOMProxy(obj));
-    return obj->getTaggedProto().toObjectOrNull();
+    return obj->staticPrototype();
 }
 
 
@@ -2253,30 +2253,25 @@ IsCacheableProtoChain(JSObject* obj, JSObject* holder, bool isDOMProxy)
         }
     }
 
-    
-    
-    if (obj->hasUncacheableProto())
-        return false;
-
     JSObject* cur = obj;
     while (cur != holder) {
         
         
         
-        JSObject* proto;
-        if (isDOMProxy && cur == obj)
-            proto = cur->getTaggedProto().toObjectOrNull();
-        else
-            proto = cur->getProto();
+        MOZ_ASSERT(!cur->hasDynamicPrototype());
 
-        if (!proto || !proto->isNative())
+        
+        
+        if (cur->hasUncacheableProto())
             return false;
 
-        if (proto->hasUncacheableProto())
+        JSObject* proto = cur->staticPrototype();
+        if (!proto || !proto->isNative())
             return false;
 
         cur = proto;
     }
+
     return true;
 }
 
@@ -2714,7 +2709,7 @@ CheckHasNoSuchProperty(JSContext* cx, JSObject* obj, PropertyName* name,
             return false;
         }
 
-        JSObject* proto = curObj->getTaggedProto().toObjectOrNull();
+        JSObject* proto = curObj->staticPrototype();
         if (!proto)
             break;
 
@@ -3143,13 +3138,15 @@ ICGetPropNativeCompiler::generateStubCode(MacroAssembler& masm)
 bool
 GetProtoShapes(JSObject* obj, size_t protoChainDepth, MutableHandle<ShapeVector> shapes)
 {
-    JSObject* curProto = obj->getProto();
+    JSObject* curProto = obj->staticPrototype();
     for (size_t i = 0; i < protoChainDepth; i++) {
         if (!shapes.append(curProto->as<NativeObject>().lastProperty()))
             return false;
-        curProto = curProto->getProto();
+        curProto = curProto->staticPrototype();
     }
-    MOZ_ASSERT(!curProto);
+
+    MOZ_ASSERT(!curProto,
+               "longer prototype chain encountered than this stub permits!");
     return true;
 }
 

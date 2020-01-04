@@ -931,6 +931,7 @@ nsOuterWindowProxy::getPrototypeIfOrdinary(JSContext* cx,
   
   
   
+  
   *isOrdinary = false;
   return true;
 }

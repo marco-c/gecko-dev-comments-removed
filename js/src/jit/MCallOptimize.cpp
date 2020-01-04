@@ -2064,7 +2064,7 @@ IonBuilder::inlineObjectCreate(CallInfo& callInfo)
 
     
     MDefinition* arg = callInfo.getArg(0);
-    if (JSObject* proto = templateObject->getProto()) {
+    if (JSObject* proto = templateObject->staticPrototype()) {
         if (IsInsideNursery(proto))
             return InliningStatus_NotInlined;
 

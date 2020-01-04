@@ -111,8 +111,10 @@ Enumerate(JSContext* cx, HandleObject pobj, jsid id,
         
         
         
-        if ((pobj->is<ProxyObject>() || pobj->getProto() || pobj->getOpsEnumerate()) && !ht->add(p, id))
-            return false;
+        if (pobj->is<ProxyObject>() || pobj->staticPrototype() || pobj->getOpsEnumerate()) {
+            if (!ht->add(p, id))
+                return false;
+        }
     }
 
     
@@ -701,7 +703,11 @@ VectorToKeyIterator(JSContext* cx, HandleObject obj, unsigned flags, AutoIdVecto
         size_t ind = 0;
         do {
             ni->guard_array[ind++].init(ReceiverGuard(pobj));
-            pobj = pobj->getProto();
+
+            
+            
+            
+            pobj = pobj->staticPrototype();
         } while (pobj);
         MOZ_ASSERT(ind == numGuards);
     }
@@ -843,10 +849,10 @@ js::GetIterator(JSContext* cx, HandleObject obj, unsigned flags, MutableHandleOb
                 CanCompareIterableObjectToCache(obj) &&
                 ReceiverGuard(obj) == lastni->guard_array[0])
             {
-                JSObject* proto = obj->getProto();
+                JSObject* proto = obj->staticPrototype();
                 if (CanCompareIterableObjectToCache(proto) &&
                     ReceiverGuard(proto) == lastni->guard_array[1] &&
-                    !proto->getProto())
+                    !proto->staticPrototype())
                 {
                     objp.set(last);
                     UpdateNativeIterator(lastni, obj);
@@ -857,11 +863,8 @@ js::GetIterator(JSContext* cx, HandleObject obj, unsigned flags, MutableHandleOb
         }
 
         
-
-
-
-
-
+        
+        
         {
             JSObject* pobj = obj;
             do {
@@ -869,11 +872,13 @@ js::GetIterator(JSContext* cx, HandleObject obj, unsigned flags, MutableHandleOb
                     guards.clear();
                     goto miss;
                 }
+
                 ReceiverGuard guard(pobj);
                 key = (key + (key << 16)) ^ guard.hash();
                 if (!guards.append(guard))
                     return false;
-                pobj = pobj->getProto();
+
+                pobj = pobj->staticPrototype();
             } while (pobj);
         }
 

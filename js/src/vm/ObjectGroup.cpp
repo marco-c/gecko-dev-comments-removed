@@ -260,7 +260,7 @@ JSObject::shouldSplicePrototype(JSContext* cx)
 
 
 
-    if (getProto() != nullptr)
+    if (staticPrototype() != nullptr)
         return false;
     return isSingleton();
 }
@@ -327,7 +327,7 @@ JSObject::makeLazyGroup(JSContext* cx, HandleObject obj)
     if (obj->is<ArrayObject>() && obj->as<ArrayObject>().length() > INT32_MAX)
         initialFlags |= OBJECT_FLAG_LENGTH_OVERFLOW;
 
-    Rooted<TaggedProto> proto(cx, obj->getTaggedProto());
+    Rooted<TaggedProto> proto(cx, obj->taggedProto());
     ObjectGroup* group = ObjectGroupCompartment::makeGroup(cx, obj->getClass(), proto,
                                                            initialFlags);
     if (!group)
@@ -501,7 +501,7 @@ ObjectGroup::defaultNewGroup(ExclusiveContext* cx, const Class* clasp,
     }
 
     ObjectGroupFlags initialFlags = 0;
-    if (proto.isLazy() || (proto.isObject() && proto.toObject()->isNewGroupUnknown()))
+    if (proto.isDynamic() || (proto.isObject() && proto.toObject()->isNewGroupUnknown()))
         initialFlags = OBJECT_FLAG_DYNAMIC_MASK;
 
     Rooted<TaggedProto> protoRoot(cx, proto);
@@ -1220,7 +1220,7 @@ ObjectGroup::newPlainObject(ExclusiveContext* cx, IdValuePair* properties, size_
         
         
         if (obj->slotSpan() != nproperties) {
-            ObjectGroup* group = defaultNewGroup(cx, obj->getClass(), obj->getTaggedProto());
+            ObjectGroup* group = defaultNewGroup(cx, obj->getClass(), obj->taggedProto());
             if (!group)
                 return nullptr;
             obj->setGroup(group);
