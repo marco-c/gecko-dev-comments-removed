@@ -154,8 +154,8 @@ KeyShortcuts.prototype = {
     }
     
     
-    if (shortcut.shift != event.shiftKey &&
-        (shortcut.keyCode || (event.key.toLowerCase() !== shortcut.key))) {
+    if (shortcut.shift != event.shiftKey && event.key &&
+        event.key.match(/[a-zA-Z]/)) {
       return false;
     }
     if (shortcut.keyCode) {
