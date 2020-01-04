@@ -476,14 +476,12 @@ gfxWindowsPlatform::HandleDeviceReset()
   return true;
 }
 
-static const BackendType SOFTWARE_BACKEND = BackendType::CAIRO;
-
 void
 gfxWindowsPlatform::UpdateBackendPrefs()
 {
-  uint32_t canvasMask = BackendTypeBit(SOFTWARE_BACKEND);
-  uint32_t contentMask = BackendTypeBit(SOFTWARE_BACKEND);
-  BackendType defaultBackend = SOFTWARE_BACKEND;
+  uint32_t canvasMask = BackendTypeBit(BackendType::CAIRO);
+  uint32_t contentMask = BackendTypeBit(BackendType::CAIRO);
+  BackendType defaultBackend = BackendType::CAIRO;
   if (gfxConfig::IsEnabled(Feature::DIRECT2D) && Factory::GetD2D1Device()) {
     contentMask |= BackendTypeBit(BackendType::DIRECT2D1_1);
     canvasMask |= BackendTypeBit(BackendType::DIRECT2D1_1);
@@ -536,12 +534,18 @@ gfxWindowsPlatform::ForceDeviceReset(ForcedDeviceResetReason aReason)
 mozilla::gfx::BackendType
 gfxWindowsPlatform::GetContentBackendFor(mozilla::layers::LayersBackend aLayers)
 {
+  mozilla::gfx::BackendType defaultBackend = gfxPlatform::GetDefaultContentBackend();
   if (aLayers == LayersBackend::LAYERS_D3D11) {
-    return gfxPlatform::GetDefaultContentBackend();
+    return defaultBackend;
+  }
+
+  if (defaultBackend == BackendType::DIRECT2D1_1) {
+    
+    return BackendType::CAIRO;
   }
 
   
-  return SOFTWARE_BACKEND;
+  return defaultBackend;
 }
 
 gfxPlatformFontList*
