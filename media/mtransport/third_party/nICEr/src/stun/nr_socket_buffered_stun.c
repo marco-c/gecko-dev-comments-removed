@@ -165,7 +165,7 @@ int nr_socket_buffered_stun_create(nr_socket *inner, int max_pending,
 
   _status=0;
 abort:
-  if (_status) {
+  if (_status && sock) {
     void *sock_v = sock;
     sock->inner = 0;  
     nr_socket_buffered_stun_destroy(&sock_v);
