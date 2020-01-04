@@ -10007,7 +10007,10 @@ CodeGenerator::visitAtomicIsLockFree(LAtomicIsLockFree* lir)
     Register output = ToRegister(lir->output());
 
     
-    MOZ_ASSERT(!AtomicOperations::isLockfree(8));
+    MOZ_ASSERT(AtomicOperations::isLockfree(1));  
+    MOZ_ASSERT(AtomicOperations::isLockfree(2));  
+    MOZ_ASSERT(AtomicOperations::isLockfree(4));  
+    MOZ_ASSERT(!AtomicOperations::isLockfree(8)); 
 
     Label Ldone, Lfailed;
     masm.move32(Imm32(1), output);
