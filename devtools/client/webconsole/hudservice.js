@@ -628,7 +628,6 @@ WebConsole.prototype = {
 
 
 
-
 function BrowserConsole()
 {
   WebConsole.apply(this, arguments);

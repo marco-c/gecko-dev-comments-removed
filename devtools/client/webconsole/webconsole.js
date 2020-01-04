@@ -206,6 +206,8 @@ const PREF_NEW_FRONTEND_ENABLED = "devtools.webconsole.new-frontend-enabled";
 function WebConsoleFrame(webConsoleOwner) {
   this.owner = webConsoleOwner;
   this.hudId = this.owner.hudId;
+  this.isBrowserConsole = this.owner._browserConsole;
+
   this.window = this.owner.iframeWindow;
 
   this._repeatNodes = {};
@@ -433,7 +435,7 @@ WebConsoleFrame.prototype = {
     
     
     
-    return this.owner._browserConsole ||
+    return this.isBrowserConsole ||
            Services.prefs.getBoolPref(PREF_PERSISTLOG);
   },
 
@@ -501,7 +503,7 @@ WebConsoleFrame.prototype = {
   _initUI: function () {
     this.document = this.window.document;
     this.rootElement = this.document.documentElement;
-    this.NEW_CONSOLE_OUTPUT_ENABLED = !this.owner._browserConsole
+    this.NEW_CONSOLE_OUTPUT_ENABLED = !this.isBrowserConsole
       && !this.owner.target.chrome
       && Services.prefs.getBoolPref(PREF_NEW_FRONTEND_ENABLED);
 
@@ -673,7 +675,7 @@ WebConsoleFrame.prototype = {
     shortcuts.on(clearShortcut,
                  () => this.jsterm.clearOutput(true));
 
-    if (this.owner._browserConsole) {
+    if (this.isBrowserConsole) {
       shortcuts.on(l10n.getStr("webconsole.close.key"),
                    this.window.close.bind(this.window));
 
@@ -785,7 +787,7 @@ WebConsoleFrame.prototype = {
       button.setAttribute("aria-pressed", someChecked);
     }, this);
 
-    if (!this.owner._browserConsole) {
+    if (!this.isBrowserConsole) {
       
       
       
@@ -2166,7 +2168,8 @@ WebConsoleFrame.prototype = {
 
     
     
-    if (message && message.level == "clear") {
+    
+    if (message && message.level == "clear" && !this.isBrowserConsole) {
       
       
       this.jsterm.clearOutput(false);
@@ -3216,7 +3219,7 @@ WebConsoleConnectionProxy.prototype = {
 
     
     
-    let saveBodies = !this.webConsoleFrame.owner._browserConsole;
+    let saveBodies = !this.webConsoleFrame.isBrowserConsole;
     this.webConsoleFrame.setSaveRequestAndResponseBodies(saveBodies);
 
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);

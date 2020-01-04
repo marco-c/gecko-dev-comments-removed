@@ -264,7 +264,7 @@ JSTerm.prototype = {
     this.completeNode = doc.querySelector(".jsterm-complete-node");
     this.inputNode = doc.querySelector(".jsterm-input-node");
 
-    if (this.hud.owner._browserConsole &&
+    if (this.hud.isBrowserConsole &&
         !Services.prefs.getBoolPref("devtools.chrome.enabled")) {
       inputContainer.style.display = "none";
     } else {
@@ -767,7 +767,7 @@ JSTerm.prototype = {
     });
 
     if (options.objectActor &&
-        (!this.hud.owner._browserConsole ||
+        (!this.hud.isBrowserConsole ||
          Services.prefs.getBoolPref("devtools.chrome.enabled"))) {
       
       view.eval = this._variablesViewEvaluate.bind(this, options);
