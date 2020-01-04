@@ -72,7 +72,7 @@
 
 
 .theme-light .side-menu-widget-item:not(.selected) .checkbox-check {
-  filter: url(images/filters.svg#invert);
+  filter: invert(1);
 }
 
 

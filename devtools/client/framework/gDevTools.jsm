@@ -94,7 +94,6 @@ DevTools.prototype = {
 
 
 
-
   registerTool: function DT_registerTool(toolDefinition) {
     let toolId = toolDefinition.id;
 

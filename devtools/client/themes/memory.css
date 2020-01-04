@@ -118,18 +118,6 @@ html, body, #app, #memory-tool {
 
 
 
-
-
-
-
-.theme-light .devtools-toolbar > .devtools-toolbarbutton.take-snapshot::before {
-  filter: url(images/filters.svg#invert);
-}
-
-
-
-
-
 #memory-tool-container {
   
 

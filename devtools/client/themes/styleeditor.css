@@ -120,7 +120,7 @@
 
 
 .theme-light .splitview-nav > li:not(.splitview-active) .stylesheet-enabled {
-  filter: url(images/filters.svg#invert);
+  filter: invert(1);
 }
 
 .splitview-nav > li > .stylesheet-enabled:focus,
