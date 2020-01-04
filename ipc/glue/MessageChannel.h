@@ -250,7 +250,7 @@ class MessageChannel : HasResultCodes
     bool InterruptEventOccurred();
     bool HasPendingEvents();
 
-    void ProcessPendingRequests(int transaction, int prio);
+    void ProcessPendingRequests();
     bool ProcessPendingRequest(const Message &aUrgent);
 
     void MaybeUndeferIncall();
@@ -525,22 +525,16 @@ class MessageChannel : HasResultCodes
     class AutoSetValue {
       public:
         explicit AutoSetValue(T &var, const T &newValue)
-          : mVar(var), mPrev(var), mNew(newValue)
+          : mVar(var), mPrev(var)
         {
             mVar = newValue;
         }
         ~AutoSetValue() {
-            
-            
-            
-            if (mVar == mNew) {
-                mVar = mPrev;
-            }
+            mVar = mPrev;
         }
       private:
         T& mVar;
         T mPrev;
-        T mNew;
     };
 
     
@@ -630,6 +624,7 @@ class MessageChannel : HasResultCodes
     
     
     int32_t mTimedOutMessageSeqno;
+    int mTimedOutMessagePriority;
 
     
     
