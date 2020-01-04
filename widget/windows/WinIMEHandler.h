@@ -36,7 +36,7 @@ public:
   
 
 
-  static void* GetNativeData(uint32_t aDataType);
+  static void* GetNativeData(nsWindow* aWindow, uint32_t aDataType);
 
   
 

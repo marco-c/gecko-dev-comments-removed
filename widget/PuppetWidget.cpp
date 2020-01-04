@@ -675,11 +675,10 @@ PuppetWidget::GetInputContext()
   InputContext context;
   if (mTabChild) {
     int32_t enabled, open;
-    intptr_t nativeIMEContext;
-    mTabChild->SendGetInputContext(&enabled, &open, &nativeIMEContext);
+    
+    mTabChild->SendGetInputContext(&enabled, &open);
     context.mIMEState.mEnabled = static_cast<IMEState::Enabled>(enabled);
     context.mIMEState.mOpen = static_cast<IMEState::Open>(open);
-    context.mNativeIMEContext = reinterpret_cast<void*>(nativeIMEContext);
   }
   return context;
 }
@@ -1121,6 +1120,9 @@ PuppetWidget::GetNativeData(uint32_t aDataType)
   case NS_NATIVE_DISPLAY:
     
     break;
+  case NS_NATIVE_IME_CONTEXT:
+    
+    return nullptr;
   case NS_NATIVE_WINDOW:
   case NS_NATIVE_PLUGIN_PORT:
   case NS_NATIVE_GRAPHIC:

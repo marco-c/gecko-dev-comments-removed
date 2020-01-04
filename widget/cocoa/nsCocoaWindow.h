@@ -365,16 +365,6 @@ public:
                         const InputContextAction& aAction) override;
     NS_IMETHOD_(InputContext) GetInputContext() override
     {
-      NSView* view = mWindow ? [mWindow contentView] : nil;
-      if (view) {
-        mInputContext.mNativeIMEContext = [view inputContext];
-      }
-      
-      
-      
-      if (!mInputContext.mNativeIMEContext) {
-        mInputContext.mNativeIMEContext = this;
-      }
       return mInputContext;
     }
     NS_IMETHOD_(bool) ExecuteNativeKeyBinding(

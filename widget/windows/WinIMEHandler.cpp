@@ -94,8 +94,31 @@ IMEHandler::Terminate()
 
 
 void*
-IMEHandler::GetNativeData(uint32_t aDataType)
+IMEHandler::GetNativeData(nsWindow* aWindow, uint32_t aDataType)
 {
+  if (aDataType == NS_NATIVE_IME_CONTEXT) {
+#ifdef NS_ENABLE_TSF
+    if (IsTSFAvailable()) {
+      return TSFTextStore::GetThreadManager();
+    }
+#endif 
+    IMEContext context(aWindow);
+    if (context.IsValid()) {
+      return context.get();
+    }
+    
+    
+    const IMEContext& defaultIMC = aWindow->DefaultIMC();
+    if (defaultIMC.IsValid()) {
+      return defaultIMC.get();
+    }
+    
+    
+    
+    
+    return aWindow;
+  }
+
 #ifdef NS_ENABLE_TSF
   void* result = TSFTextStore::GetNativeData(aDataType);
   if (!result || !(*(static_cast<void**>(result)))) {
@@ -374,24 +397,17 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
   
   sPluginHasFocus = (aInputContext.mIMEState.mEnabled == IMEState::PLUGIN);
 
-  if (aAction.UserMightRequestOpenVKB()) {
-    IMEHandler::MaybeShowOnScreenKeyboard();
-  }
-
   bool enable = WinUtils::IsIMEEnabled(aInputContext);
   bool adjustOpenState = (enable &&
     aInputContext.mIMEState.mOpen != IMEState::DONT_CHANGE_OPEN_STATE);
   bool open = (adjustOpenState &&
     aInputContext.mIMEState.mOpen == IMEState::OPEN);
 
-  aInputContext.mNativeIMEContext = nullptr;
-
 #ifdef NS_ENABLE_TSF
   
   if (sIsInTSFMode) {
     TSFTextStore::SetInputContext(aWindow, aInputContext, aAction);
     if (IsTSFAvailable()) {
-      aInputContext.mNativeIMEContext = TSFTextStore::GetThreadManager();
       if (sIsIMMEnabled) {
         
         AssociateIMEContext(aWindow, enable);
@@ -417,15 +433,6 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
   if (adjustOpenState) {
     context.SetOpenState(open);
   }
-
-  if (aInputContext.mNativeIMEContext) {
-    return;
-  }
-
-  
-  
-  aInputContext.mNativeIMEContext = enable ?
-    static_cast<void*>(context.get()) : oldInputContext.mNativeIMEContext;
 }
 
 
@@ -456,8 +463,6 @@ IMEHandler::InitInputContext(nsWindow* aWindow, InputContext& aInputContext)
     TSFTextStore::SetInputContext(aWindow, aInputContext,
       InputContextAction(InputContextAction::CAUSE_UNKNOWN,
                          InputContextAction::GOT_FOCUS));
-    aInputContext.mNativeIMEContext = TSFTextStore::GetThreadManager();
-    MOZ_ASSERT(aInputContext.mNativeIMEContext);
     
     if (!sIsIMMEnabled) {
       AssociateIMEContext(aWindow, false);
@@ -466,15 +471,11 @@ IMEHandler::InitInputContext(nsWindow* aWindow, InputContext& aInputContext)
   }
 #endif 
 
+#ifdef DEBUG
   
   IMEContext context(aWindow);
-  aInputContext.mNativeIMEContext = static_cast<void*>(context.get());
-  MOZ_ASSERT(aInputContext.mNativeIMEContext || !CurrentKeyboardLayoutHasIME());
-  
-  
-  if (!aInputContext.mNativeIMEContext) {
-    aInputContext.mNativeIMEContext = static_cast<void*>(aWindow);
-  }
+  MOZ_ASSERT(context.IsValid() || !CurrentKeyboardLayoutHasIME());
+#endif 
 }
 
 #ifdef DEBUG

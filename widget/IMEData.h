@@ -223,11 +223,15 @@ struct IMEState final
   }
 };
 
+
+
+#define NS_ONLY_ONE_NATIVE_IME_CONTEXT \
+  (reinterpret_cast<void*>(static_cast<intptr_t>(-1)))
+
 struct InputContext final
 {
   InputContext()
-    : mNativeIMEContext(nullptr)
-    , mOrigin(XRE_IsParentProcess() ? ORIGIN_MAIN : ORIGIN_CONTENT)
+    : mOrigin(XRE_IsParentProcess() ? ORIGIN_MAIN : ORIGIN_CONTENT)
     , mMayBeIMEUnaware(false)
   {
   }
@@ -247,11 +251,6 @@ struct InputContext final
 
   
   nsString mActionHint;
-
-  
-
-
-  void* mNativeIMEContext;
 
   
 
@@ -341,7 +340,7 @@ struct InputContextAction final
   bool UserMightRequestOpenVKB() const
   {
     return (mFocusChange == FOCUS_NOT_CHANGED &&
-            (mCause == CAUSE_MOUSE || mCause == CAUSE_TOUCH));
+            mCause == CAUSE_MOUSE);
   }
 
   InputContextAction()
