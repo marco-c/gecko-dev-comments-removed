@@ -887,12 +887,7 @@ var UserContextIdNotifier = {
     
     
     this.uninit();
-
-    
-    
-    let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
-    let userContextId = loadContext.originAttributes.userContextId;
-
+    let userContextId = content.document.nodePrincipal.originAttributes.userContextId;
     sendAsyncMessage("Browser:WindowCreated", { userContextId });
   }
 };
