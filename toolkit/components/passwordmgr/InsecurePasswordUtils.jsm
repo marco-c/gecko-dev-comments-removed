@@ -29,7 +29,7 @@ this.InsecurePasswordUtils = {
     let flag = Ci.nsIScriptError.warningFlag;
     let message = l10n.getStr(messageTag);
     let consoleMsg = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
-    consoleMsg.initWithWindowID(message, "", 0, 0, 0, flag, category, windowId);
+    consoleMsg.initWithWindowID(message, domDoc.location.href, 0, 0, 0, flag, category, windowId);
 
     Services.console.logMessage(consoleMsg);
   },
@@ -85,6 +85,9 @@ this.InsecurePasswordUtils = {
     }
 
     let isFormSubmitHTTP = false, isFormSubmitHTTPS = false;
+    
+    
+    
     if (aForm.action.match(/^http:\/\//)) {
       this._sendWebConsoleMessage("InsecureFormActionPasswordsPresent", domDoc);
       isFormSubmitHTTP = true;
