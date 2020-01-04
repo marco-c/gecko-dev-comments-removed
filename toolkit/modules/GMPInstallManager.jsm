@@ -187,15 +187,6 @@ GMPInstallManager.prototype = {
       log.info("A version change occurred. Ignoring " +
                "media.gmp-manager.lastCheck to check immediately for " +
                "new or updated GMPs.");
-      
-      
-      
-      GMP_PLUGIN_IDS.concat("gmp-eme-clearkey").forEach(
-        function(id, index, array) {
-          log.info("Version change, resetting " +
-                   GMPPrefs.getPrefKey(GMPPrefs.KEY_PLUGIN_TRIAL_CREATE, id));
-          GMPPrefs.reset(GMPPrefs.KEY_PLUGIN_TRIAL_CREATE, id);
-        });
     } else {
       let secondsBetweenChecks =
         GMPPrefs.get(GMPPrefs.KEY_SECONDS_BETWEEN_CHECKS,
@@ -495,10 +486,6 @@ GMPDownloader.prototype = {
         
         let now = Math.round(Date.now() / 1000);
         GMPPrefs.set(GMPPrefs.KEY_PLUGIN_LAST_UPDATE, now, gmpAddon.id);
-        
-        
-        GMPPrefs.reset(GMPPrefs.KEY_PLUGIN_TRIAL_CREATE, gmpAddon.version,
-                       gmpAddon.id);
         
         
         
