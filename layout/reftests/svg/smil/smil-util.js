@@ -8,3 +8,19 @@ function setTimeAndSnapshot(timeInSeconds, pauseFlag) {
   svg.setCurrentTime(timeInSeconds);
   svg.removeAttribute("class");
 }
+
+
+
+function setTimeAndWaitToSnapshot(seekTimeInSeconds, minWaitTimeInSeconds) {
+  var svg = document.documentElement;
+  svg.setCurrentTime(seekTimeInSeconds);
+  var timeToTakeSnapshot =
+    window.performance.now() + minWaitTimeInSeconds * 1000;
+  requestAnimationFrame(function takeSnapshot(currentTime) {
+    if (currentTime > timeToTakeSnapshot) {
+      svg.removeAttribute("class");
+    } else {
+      requestAnimationFrame(takeSnapshot);
+    }
+  });
+}
