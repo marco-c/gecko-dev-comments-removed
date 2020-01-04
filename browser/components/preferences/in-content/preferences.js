@@ -179,9 +179,14 @@ function internalPrefCategoryNameToFriendlyName(aName) {
 
 
 
+
+
 const CONFIRM_RESTART_PROMPT_RESTART_NOW = 0;
 const CONFIRM_RESTART_PROMPT_CANCEL = 1;
-function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex) {
+const CONFIRM_RESTART_PROMPT_RESTART_LATER = 2;
+function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex,
+                              aWantRevertAsCancelButton,
+			      aWantRestartLaterButton) {
   let brandName = document.getElementById("bundleBrand").getString("brandShortName");
   let bundle = document.getElementById("bundlePreferences");
   let msg = bundle.getFormattedString(aRestartToEnable ?
@@ -198,9 +203,23 @@ function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex) {
 
 
   
-  let button1Text = bundle.getString("revertNoRestartButton");
-  buttonFlags += (Services.prompt.BUTTON_POS_1 *
-                  Services.prompt.BUTTON_TITLE_IS_STRING);
+  let button1Text = null;
+  if (aWantRevertAsCancelButton) {
+    button1Text = bundle.getString("revertNoRestartButton");
+    buttonFlags += (Services.prompt.BUTTON_POS_1 *
+                    Services.prompt.BUTTON_TITLE_IS_STRING);
+  } else {
+    buttonFlags += (Services.prompt.BUTTON_POS_1 *
+                    Services.prompt.BUTTON_TITLE_CANCEL);
+  }
+
+  
+  let button2Text = null;
+  if (aWantRestartLaterButton) {
+    button2Text = bundle.getString("restartLater");
+    buttonFlags += (Services.prompt.BUTTON_POS_2 *
+                    Services.prompt.BUTTON_TITLE_IS_STRING);
+  }
 
   switch(aDefaultButtonIndex) {
     case 0:
@@ -209,12 +228,15 @@ function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex) {
     case 1:
       buttonFlags += Services.prompt.BUTTON_POS_1_DEFAULT;
       break;
+    case 2:
+      buttonFlags += Services.prompt.BUTTON_POS_2_DEFAULT;
+      break;
     default:
       break;
   }
 
   let buttonIndex = prompts.confirmEx(window, title, msg, buttonFlags,
-                                      button0Text, button1Text, null,
+                                      button0Text, button1Text, button2Text,
                                       null, {});
   return buttonIndex;
 }
