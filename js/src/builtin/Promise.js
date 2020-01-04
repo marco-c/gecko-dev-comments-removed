@@ -124,6 +124,7 @@ function FulfillUnwrappedPromise(value) {
 }
 
 
+
 function ResolvePromise(promise, valueOrReason, reactionsSlot, state) {
     
     assert(GetPromiseState(promise) === PROMISE_STATE_PENDING,
@@ -151,11 +152,10 @@ function ResolvePromise(promise, valueOrReason, reactionsSlot, state) {
     UnsafeSetReservedSlot(promise, PROMISE_REJECT_FUNCTION_SLOT, null);
 
     
-    let site = _dbg_captureCurrentStack(0);
-    UnsafeSetReservedSlot(promise, PROMISE_RESOLUTION_SITE_SLOT, site);
-    UnsafeSetReservedSlot(promise, PROMISE_RESOLUTION_TIME_SLOT, std_Date_now());
+    
     _dbg_onPromiseSettled(promise);
 
+    
     
     return TriggerPromiseReactions(reactions, valueOrReason);
 }
@@ -221,6 +221,8 @@ function TriggerPromiseReactions(reactions, argument) {
         EnqueuePromiseReactionJob(reactions[i], argument);
     
 }
+
+
 
 
 function EnqueuePromiseReactionJob(reaction, argument) {
@@ -955,13 +957,26 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
     }
 
     
-    else if (state === PROMISE_STATE_REJECTED) {
+    else {
+        
+        assert(state === PROMISE_STATE_REJECTED, "Invalid Promise state " + state);
+
         
         let reason = UnsafeGetReservedSlot(promise, PROMISE_RESULT_SLOT);
 
         
+        if (UnsafeGetInt32FromReservedSlot(promise, PROMISE_IS_HANDLED_SLOT) !==
+            PROMISE_IS_HANDLED_STATE_HANDLED)
+        {
+            HostPromiseRejectionTracker(promise, PROMISE_REJECTION_TRACKER_OPERATION_HANDLE);
+        }
+
+        
         EnqueuePromiseReactionJob(rejectReaction, reason);
     }
+
+    
+    UnsafeSetReservedSlot(promise, PROMISE_IS_HANDLED_SLOT, PROMISE_IS_HANDLED_STATE_HANDLED);
 
     
     return resultCapability.promise;

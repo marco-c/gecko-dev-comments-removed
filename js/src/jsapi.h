@@ -606,6 +606,18 @@ typedef bool
 (* JSEnqueuePromiseJobCallback)(JSContext* cx, JS::HandleObject job,
                                 JS::HandleObject allocationSite, void* data);
 
+enum class PromiseRejectionHandlingState {
+    Unhandled,
+    Handled
+};
+
+typedef void
+(* JSPromiseRejectionTrackerCallback)(JSContext* cx, JS::HandleObject promise,
+                                      PromiseRejectionHandlingState state, void* data);
+
+typedef void
+(* JSProcessPromiseCallback)(JSContext* cx, JS::HandleObject promise);
+
 typedef void
 (* JSErrorReporter)(JSContext* cx, const char* message, JSErrorReport* report);
 
@@ -4416,6 +4428,15 @@ SetEnqueuePromiseJobCallback(JSRuntime* rt, JSEnqueuePromiseJobCallback callback
 
 
 
+extern JS_PUBLIC_API(void)
+SetPromiseRejectionTrackerCallback(JSRuntime* rt, JSPromiseRejectionTrackerCallback callback,
+                                   void* data = nullptr);
+
+
+
+
+
+
 
 extern JS_PUBLIC_API(JSObject*)
 NewPromiseObject(JSContext* cx, JS::HandleObject executor, JS::HandleObject proto = nullptr);
@@ -4455,7 +4476,7 @@ GetPromiseState(JS::HandleObject promise);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API(uint64_t)
 GetPromiseID(JS::HandleObject promise);
 
 
