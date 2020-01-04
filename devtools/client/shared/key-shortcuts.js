@@ -122,7 +122,7 @@ KeyShortcuts.parseElectronKey = function (window, str) {
     }
   }
 
-  if (key.match(/^\w$/)) {
+  if (typeof(key) === "string" && key.length === 1) {
     
     shortcut.key = key.toLowerCase();
   } else if (key in ElectronKeysMapping) {
