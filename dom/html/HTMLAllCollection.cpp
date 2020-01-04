@@ -160,12 +160,8 @@ HTMLAllCollection::NamedGetter(const nsAString& aID,
 }
 
 void
-HTMLAllCollection::GetSupportedNames(unsigned aFlags, nsTArray<nsString>& aNames)
+HTMLAllCollection::GetSupportedNames(nsTArray<nsString>& aNames)
 {
-  if (!(aFlags & JSITER_HIDDEN)) {
-    return;
-  }
-
   
   
   AutoTArray<nsIAtom*, 8> atoms;

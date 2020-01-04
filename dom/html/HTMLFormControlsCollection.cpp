@@ -390,13 +390,8 @@ HTMLFormControlsCollection::NamedGetter(const nsAString& aName,
 }
 
 void
-HTMLFormControlsCollection::GetSupportedNames(unsigned aFlags,
-                                              nsTArray<nsString>& aNames)
+HTMLFormControlsCollection::GetSupportedNames(nsTArray<nsString>& aNames)
 {
-  if (!(aFlags & JSITER_HIDDEN)) {
-    return;
-  }
-
   FlushPendingNotifications();
   
   

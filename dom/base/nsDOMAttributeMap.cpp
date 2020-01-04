@@ -164,13 +164,8 @@ nsDOMAttributeMap::NamedGetter(const nsAString& aAttrName, bool& aFound)
 }
 
 void
-nsDOMAttributeMap::GetSupportedNames(unsigned aFlags,
-                                     nsTArray<nsString>& aNames)
+nsDOMAttributeMap::GetSupportedNames(nsTArray<nsString>& aNames)
 {
-  if (!(aFlags & JSITER_HIDDEN)) {
-    return;
-  }
-
   
   
   

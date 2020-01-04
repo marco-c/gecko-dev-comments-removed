@@ -1539,7 +1539,7 @@ HTMLFormElement::NamedGetter(const nsAString& aName, bool &aFound)
 }
 
 void
-HTMLFormElement::GetSupportedNames(unsigned, nsTArray<nsString >& aRetval)
+HTMLFormElement::GetSupportedNames(nsTArray<nsString >& aRetval)
 {
   
 }
