@@ -1381,6 +1381,12 @@ pref("browser.newtabpage.remote", false);
 pref("browser.newtabpage.remote.mode", "production");
 
 
+pref("browser.newtabpage.remote.content-signing-test", false);
+
+
+pref("browser.newtabpage.remote.keys", "");
+
+
 pref("full-screen-api.enabled", true);
 
 
