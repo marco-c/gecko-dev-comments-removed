@@ -519,14 +519,16 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, bool callHook);
-    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac, MutableHandleValue vp, bool callHook,
+    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
+    JSTrapStatus handleUncaughtException(mozilla::Maybe<AutoCompartment>& ac,
+                                         MutableHandleValue vp,
                                          const mozilla::Maybe<HandleValue>& thisVForCheck = mozilla::Nothing(),
                                          AbstractFramePtr frame = NullFramePtr());
 
     JSTrapStatus handleUncaughtExceptionHelper(mozilla::Maybe<AutoCompartment>& ac,
-                                               MutableHandleValue* vp, bool callHook,
-                                               const mozilla::Maybe<HandleValue>& thisVForCheck, AbstractFramePtr frame);
+                                               MutableHandleValue* vp,
+                                               const mozilla::Maybe<HandleValue>& thisVForCheck,
+                                               AbstractFramePtr frame);
 
     
 
