@@ -777,44 +777,13 @@ BluetoothDaemonHandsfreeModule::ConnectionStateNtf(
     ConnectionStateInitOp(aPDU));
 }
 
-
-class BluetoothDaemonHandsfreeModule::AudioStateInitOp final
-  : private PDUInitOp
-{
-public:
-  AudioStateInitOp(DaemonSocketPDU& aPDU)
-    : PDUInitOp(aPDU)
-  { }
-
-  nsresult
-  operator () (BluetoothHandsfreeAudioState& aArg1,
-               BluetoothAddress& aArg2) const
-  {
-    DaemonSocketPDU& pdu = GetPDU();
-
-    
-    nsresult rv = UnpackPDU(pdu, aArg1);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    rv = UnpackPDU(pdu, aArg2);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    WarnAboutTrailingData();
-    return NS_OK;
-  }
-};
-
 void
 BluetoothDaemonHandsfreeModule::AudioStateNtf(
   const DaemonSocketPDUHeader& aHeader, DaemonSocketPDU& aPDU)
 {
   AudioStateNotification::Dispatch(
     &BluetoothHandsfreeNotificationHandler::AudioStateNotification,
-    AudioStateInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 
@@ -1381,44 +1350,13 @@ BluetoothDaemonHandsfreeModule::KeyPressedNtf(
     KeyPressedInitOp(aPDU));
 }
 
-
-class BluetoothDaemonHandsfreeModule::WbsInitOp final
-  : private PDUInitOp
-{
-public:
-  WbsInitOp(DaemonSocketPDU& aPDU)
-    : PDUInitOp(aPDU)
-  { }
-
-  nsresult
-  operator () (BluetoothHandsfreeWbsConfig& aArg1, BluetoothAddress& aArg2) const
-  {
-    DaemonSocketPDU& pdu = GetPDU();
-
-    
-    nsresult rv = UnpackPDU(pdu, aArg1);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    rv = UnpackPDU(pdu, aArg2);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    WarnAboutTrailingData();
-    return NS_OK;
-  }
-};
-
 void
 BluetoothDaemonHandsfreeModule::WbsNtf(
   const DaemonSocketPDUHeader& aHeader, DaemonSocketPDU& aPDU)
 {
   WbsNotification::Dispatch(
     &BluetoothHandsfreeNotificationHandler::WbsNotification,
-    WbsInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 void
