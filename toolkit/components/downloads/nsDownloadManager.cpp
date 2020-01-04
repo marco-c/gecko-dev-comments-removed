@@ -494,6 +494,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   case 2: 
     {
@@ -508,6 +509,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   case 3: 
     {
@@ -522,6 +524,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   case 4: 
     {
@@ -536,6 +539,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   case 5: 
     {
@@ -555,6 +559,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   case 6: 
     {
@@ -579,6 +584,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   case 7: 
     {
@@ -593,6 +599,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
     
     
@@ -627,6 +634,7 @@ nsDownloadManager::InitFileDB()
 
   
 #ifndef DEBUG
+    MOZ_FALLTHROUGH;
   case DM_SCHEMA_VERSION:
 #endif
     break;
@@ -643,6 +651,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
+    MOZ_FALLTHROUGH;
 
   
   
@@ -1803,7 +1812,6 @@ nsDownloadManager::RetryDownload(const nsACString& aGUID)
 
   return RetryDownload(dl);
 }
-
 
 NS_IMETHODIMP
 nsDownloadManager::RetryDownload(uint32_t aID)
