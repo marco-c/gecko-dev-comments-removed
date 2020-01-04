@@ -1905,14 +1905,24 @@ public:
 
 
 
-
-
-  virtual nsresult GetRenderedText(nsAString* aAppendToString = nullptr,
-                                   gfxSkipChars* aSkipChars = nullptr,
-                                   gfxSkipCharsIterator* aSkipIter = nullptr,
-                                   uint32_t aSkippedStartOffset = 0,
-                                   uint32_t aSkippedMaxLength = UINT32_MAX)
-  { return NS_ERROR_NOT_IMPLEMENTED; }
+  struct RenderedText {
+    nsAutoString mString;
+    uint32_t mOffsetWithinNodeRenderedText;
+    int32_t mOffsetWithinNodeText;
+    RenderedText() : mOffsetWithinNodeRenderedText(0),
+        mOffsetWithinNodeText(0) {}
+  };
+  enum class TextOffsetType {
+    
+    OFFSETS_IN_CONTENT_TEXT,
+    
+    OFFSETS_IN_RENDERED_TEXT
+  };
+  virtual RenderedText GetRenderedText(uint32_t aStartOffset = 0,
+                                       uint32_t aEndOffset = UINT32_MAX,
+                                       TextOffsetType aOffsetType =
+                                           TextOffsetType::OFFSETS_IN_CONTENT_TEXT)
+  { return RenderedText(); }
 
   
 

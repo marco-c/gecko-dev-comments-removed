@@ -139,8 +139,8 @@ nsTextEquivUtils::AppendTextEquivFromTextContent(nsIContent *aContent,
     if (aContent->TextLength() > 0) {
       nsIFrame *frame = aContent->GetPrimaryFrame();
       if (frame) {
-        nsresult rv = frame->GetRenderedText(aString);
-        NS_ENSURE_SUCCESS(rv, rv);
+        nsIFrame::RenderedText text = frame->GetRenderedText();
+        aString->Append(text.mString);
       } else {
         
         aContent->AppendTextTo(*aString);

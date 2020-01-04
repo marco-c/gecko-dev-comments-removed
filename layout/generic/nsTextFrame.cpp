@@ -3975,9 +3975,8 @@ a11y::AccType
 nsTextFrame::AccessibleType()
 {
   if (IsEmpty()) {
-    nsAutoString renderedWhitespace;
-    GetRenderedText(&renderedWhitespace, nullptr, nullptr, 0, 1);
-    if (renderedWhitespace.IsEmpty()) {
+    RenderedText text = GetRenderedText();
+    if (text.mString.IsEmpty()) {
       return a11y::eNoType;
     }
   }
@@ -4090,13 +4089,6 @@ public:
   virtual void AddInlinePrefISize(nsRenderingContext *aRenderingContext,
                                   InlinePrefISizeData *aData) override;
   
-  virtual nsresult GetRenderedText(nsAString* aString = nullptr,
-                                   gfxSkipChars* aSkipChars = nullptr,
-                                   gfxSkipCharsIterator* aSkipIter = nullptr,
-                                   uint32_t aSkippedStartOffset = 0,
-                                   uint32_t aSkippedMaxLength = UINT32_MAX) override
-  { return NS_ERROR_NOT_IMPLEMENTED; } 
-
 protected:
   explicit nsContinuingTextFrame(nsStyleContext* aContext) : nsTextFrame(aContext) {}
   nsIFrame* mPrevContinuation;
@@ -8983,24 +8975,41 @@ static char16_t TransformChar(nsTextFrame* aFrame, const nsStyleText* aStyle,
   return aChar;
 }
 
-nsresult nsTextFrame::GetRenderedText(nsAString* aAppendToString,
-                                      gfxSkipChars* aSkipChars,
-                                      gfxSkipCharsIterator* aSkipIter,
-                                      uint32_t aSkippedStartOffset,
-                                      uint32_t aSkippedMaxLength)
+static bool
+LineEndsInHardLineBreak(nsTextFrame* aFrame)
 {
+  nsIFrame* lineContainer = FindLineContainer(aFrame);
+  nsBlockFrame* block = do_QueryFrame(lineContainer);
+  if (!block) {
+    
+    
+    return true;
+  }
+  bool foundValidLine;
+  nsBlockInFlowLineIterator iter(block, aFrame, &foundValidLine);
+  if (!foundValidLine) {
+    NS_ERROR("Invalid line!");
+    return true;
+  }
+  return !iter.GetLine()->IsLineWrapped();
+}
+
+nsIFrame::RenderedText
+nsTextFrame::GetRenderedText(uint32_t aStartOffset,
+                             uint32_t aEndOffset,
+                             TextOffsetType aOffsetType)
+{
+  NS_ASSERTION(!GetPrevContinuation(), "Must be called on first-in-flow");
+
   
-  gfxSkipChars skipChars;
+  RenderedText result;
   nsTextFrame* textFrame;
   const nsTextFragment* textFrag = mContent->GetText();
-  uint32_t keptCharsLength = 0;
-  uint32_t validCharsLength = 0;
+  uint32_t offsetInRenderedString = 0;
+  bool haveOffsets = false;
 
-  
   for (textFrame = this; textFrame;
        textFrame = static_cast<nsTextFrame*>(textFrame->GetNextContinuation())) {
-    
-
     if (textFrame->GetStateBits() & NS_FRAME_IS_DIRTY) {
       
       break;
@@ -9009,54 +9018,108 @@ nsresult nsTextFrame::GetRenderedText(nsAString* aAppendToString,
     
     gfxSkipCharsIterator iter =
       textFrame->EnsureTextRun(nsTextFrame::eInflated);
-    if (!textFrame->mTextRun)
-      return NS_ERROR_FAILURE;
+    if (!textFrame->mTextRun) {
+      break;
+    }
+    gfxSkipCharsIterator tmpIter = iter;
 
     
-    
-    
-    
-    TrimmedOffsets trimmedContentOffsets = textFrame->GetTrimmedOffsets(textFrag, false);
-    int32_t startOfLineSkipChars = trimmedContentOffsets.mStart - textFrame->mContentOffset;
-    if (startOfLineSkipChars > 0) {
-      skipChars.SkipChars(startOfLineSkipChars);
-      iter.SetOriginalOffset(trimmedContentOffsets.mStart);
+    TrimmedOffsets trimmedOffsets = textFrame->GetTrimmedOffsets(textFrag,
+       textFrame->IsAtEndOfLine() && LineEndsInHardLineBreak(textFrame));
+    bool trimmedSignificantNewline =
+        trimmedOffsets.GetEnd() < GetContentEnd() &&
+        HasSignificantTerminalNewline();
+    uint32_t skippedToRenderedStringOffset = offsetInRenderedString -
+        tmpIter.ConvertOriginalToSkipped(trimmedOffsets.mStart);
+    uint32_t nextOffsetInRenderedString =
+        tmpIter.ConvertOriginalToSkipped(trimmedOffsets.GetEnd()) +
+        (trimmedSignificantNewline ? 1 : 0) + skippedToRenderedStringOffset;
+
+    if (aOffsetType == TextOffsetType::OFFSETS_IN_RENDERED_TEXT) {
+      if (nextOffsetInRenderedString <= aStartOffset) {
+        offsetInRenderedString = nextOffsetInRenderedString;
+        continue;
+      }
+      if (!haveOffsets) {
+        result.mOffsetWithinNodeText =
+            tmpIter.ConvertSkippedToOriginal(aStartOffset - skippedToRenderedStringOffset);
+        result.mOffsetWithinNodeRenderedText = aStartOffset;
+        haveOffsets = true;
+      }
+      if (offsetInRenderedString >= aEndOffset) {
+        break;
+      }
+    } else {
+      if (uint32_t(textFrame->GetContentEnd()) <= aStartOffset) {
+        offsetInRenderedString = nextOffsetInRenderedString;
+        continue;
+      }
+      if (!haveOffsets) {
+        result.mOffsetWithinNodeText = aStartOffset;
+        
+        int32_t clamped = std::max<int32_t>(aStartOffset, trimmedOffsets.mStart);
+        result.mOffsetWithinNodeRenderedText =
+            tmpIter.ConvertOriginalToSkipped(clamped) + skippedToRenderedStringOffset;
+        MOZ_ASSERT(result.mOffsetWithinNodeRenderedText >= offsetInRenderedString &&
+                   result.mOffsetWithinNodeRenderedText <= INT32_MAX,
+                   "Bad offset within rendered text");
+        haveOffsets = true;
+      }
+      if (uint32_t(textFrame->mContentOffset) >= aEndOffset) {
+        break;
+      }
     }
 
-    
+    int32_t startOffset;
+    int32_t endOffset;
+    if (aOffsetType == TextOffsetType::OFFSETS_IN_RENDERED_TEXT) {
+      startOffset =
+        tmpIter.ConvertSkippedToOriginal(aStartOffset - skippedToRenderedStringOffset);
+      endOffset =
+        tmpIter.ConvertSkippedToOriginal(aEndOffset - skippedToRenderedStringOffset);
+    } else {
+      startOffset = aStartOffset;
+      endOffset = std::min<uint32_t>(INT32_MAX, aEndOffset);
+    }
+    trimmedOffsets.mStart = std::max<uint32_t>(trimmedOffsets.mStart,
+        startOffset);
+    trimmedOffsets.mLength = std::min<uint32_t>(trimmedOffsets.GetEnd(),
+        endOffset) - trimmedOffsets.mStart;
+    if (trimmedOffsets.mLength <= 0) {
+      offsetInRenderedString = nextOffsetInRenderedString;
+      continue;
+    }
+
     const nsStyleText* textStyle = textFrame->StyleText();
-    while (iter.GetOriginalOffset() < trimmedContentOffsets.GetEnd() &&
-           keptCharsLength < aSkippedMaxLength) {
-      
-      if (iter.IsOriginalCharSkipped() || ++validCharsLength <= aSkippedStartOffset) {
-        skipChars.SkipChar();
-      } else {
-        ++keptCharsLength;
-        skipChars.KeepChar();
-        if (aAppendToString) {
-          aAppendToString->Append(
-              TransformChar(textFrame, textStyle, textFrame->mTextRun,
-                            iter.GetSkippedOffset(),
-                            textFrag->CharAt(iter.GetOriginalOffset())));
+    iter.SetOriginalOffset(trimmedOffsets.mStart);
+    while (iter.GetOriginalOffset() < trimmedOffsets.GetEnd()) {
+      char16_t ch = textFrag->CharAt(iter.GetOriginalOffset());
+      if (iter.IsOriginalCharSkipped()) {
+        if (ch == CH_SHY) {
+          
+          result.mString.Append(ch);
         }
+      } else {
+        result.mString.Append(
+              TransformChar(textFrame, textStyle, textFrame->mTextRun,
+                            iter.GetSkippedOffset(), ch));
       }
       iter.AdvanceOriginal(1);
     }
-    if (keptCharsLength >= aSkippedMaxLength) {
-      break; 
-    }
-  }
-  
-  if (aSkipChars) {
-    aSkipChars->TakeFrom(&skipChars); 
-    if (aSkipIter) {
+
+    if (trimmedSignificantNewline && GetContentEnd() <= endOffset) {
       
       
-      *aSkipIter = gfxSkipCharsIterator(*aSkipChars, GetContentLength());
+      result.mString.Append('\n');
     }
+    offsetInRenderedString = nextOffsetInRenderedString;
   }
 
-  return NS_OK;
+  if (!haveOffsets) {
+    result.mOffsetWithinNodeText = textFrag->GetLength();
+    result.mOffsetWithinNodeRenderedText = offsetInRenderedString;
+  }
+  return result;
 }
 
 nsIAtom*
