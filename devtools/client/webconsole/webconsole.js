@@ -2080,6 +2080,9 @@ WebConsoleFrame.prototype = {
 
     this._initOutputTimer();
 
+    
+    this.resize();
+
     this._lastOutputFlush = Date.now();
   },
 
