@@ -36,6 +36,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "ImageContainer.h"
 #ifdef DEBUG
   #include "imgIContainerDebug.h"
 #endif
@@ -366,6 +367,9 @@ private:
   
   
   WeakPtr<layers::ImageContainer> mImageContainer;
+
+  layers::ImageContainer::ProducerID mImageProducerID;
+  layers::ImageContainer::FrameID mLastFrameID
 
   
   
