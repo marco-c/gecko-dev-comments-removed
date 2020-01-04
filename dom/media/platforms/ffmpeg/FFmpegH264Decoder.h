@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegVideoDecoder_h__
-#define __FFmpegVideoDecoder_h__
+#ifndef __FFmpegH264Decoder_h__
+#define __FFmpegH264Decoder_h__
 
 #include "FFmpegDataDecoder.h"
 #include "mozilla/Pair.h"
@@ -15,12 +15,12 @@ namespace mozilla
 {
 
 template <int V>
-class FFmpegVideoDecoder : public FFmpegDataDecoder<V>
+class FFmpegH264Decoder : public FFmpegDataDecoder<V>
 {
 };
 
 template <>
-class FFmpegVideoDecoder<LIBAV_VER> : public FFmpegDataDecoder<LIBAV_VER>
+class FFmpegH264Decoder<LIBAV_VER> : public FFmpegDataDecoder<LIBAV_VER>
 {
   typedef mozilla::layers::Image Image;
   typedef mozilla::layers::ImageContainer ImageContainer;
@@ -32,11 +32,11 @@ class FFmpegVideoDecoder<LIBAV_VER> : public FFmpegDataDecoder<LIBAV_VER>
   };
 
 public:
-  FFmpegVideoDecoder(FlushableTaskQueue* aTaskQueue,
+  FFmpegH264Decoder(FlushableTaskQueue* aTaskQueue,
                     MediaDataDecoderCallback* aCallback,
                     const VideoInfo& aConfig,
                     ImageContainer* aImageContainer);
-  virtual ~FFmpegVideoDecoder();
+  virtual ~FFmpegH264Decoder();
 
   RefPtr<InitPromise> Init() override;
   nsresult Input(MediaRawData* aSample) override;
