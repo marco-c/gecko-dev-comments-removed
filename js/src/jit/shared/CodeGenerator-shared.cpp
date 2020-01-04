@@ -1508,64 +1508,33 @@ CodeGeneratorShared::emitWasmCallBase(LWasmCallBase* ins)
     masm.bind(&ok);
 #endif
 
-    wasm::CalleeDesc callee = mir->callee();
+    
+    
+    if (mir->saveTls())
+        masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), mir->tlsStackOffset()));
+
+    const wasm::CallSiteDesc& desc = mir->desc();
+    const wasm::CalleeDesc& callee = mir->callee();
     switch (callee.which()) {
-      case wasm::CalleeDesc::Internal: {
-        masm.call(mir->desc(), callee.internalFuncIndex());
+      case wasm::CalleeDesc::Internal:
+        masm.call(desc, callee.internalFuncIndex());
         break;
-      }
-      case wasm::CalleeDesc::Import: {
-        
-        uint32_t globalDataOffset = callee.importGlobalDataOffset();;
-        masm.loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, code), ABINonArgReg0);
-
-        
-        
-        masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), callee.importTlsStackOffset()));
-
-        
-        masm.loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportTls, tls), WasmTlsReg);
-        masm.loadWasmPinnedRegsFromTls();
-        masm.call(mir->desc(), ABINonArgReg0);
-
-        
-        masm.loadPtr(Address(masm.getStackPointer(), callee.importTlsStackOffset()), WasmTlsReg);
-        masm.loadWasmPinnedRegsFromTls();
+      case wasm::CalleeDesc::Import:
+        masm.wasmCallImport(desc, callee);
         break;
-      }
-      case wasm::CalleeDesc::WasmTable: {
-        
-        wasm::SigIdDesc sigId = callee.wasmTableSigId();
-        switch (sigId.kind()) {
-          case wasm::SigIdDesc::Kind::Global:
-            masm.loadWasmGlobalPtr(sigId.globalDataOffset(), WasmTableCallSigReg);
-            break;
-          case wasm::SigIdDesc::Kind::Immediate:
-            masm.move32(Imm32(sigId.immediate()), WasmTableCallSigReg);
-            break;
-          case wasm::SigIdDesc::Kind::None:
-            break;
-        }
-
-        
-        
-        masm.branch32(Assembler::Condition::AboveOrEqual,
-                      WasmTableCallIndexReg, Imm32(callee.wasmTableLength()),
-                      wasm::JumpTarget::OutOfBounds);
-
-        MOZ_FALLTHROUGH;
-      }
-      case wasm::CalleeDesc::AsmJSTable: {
-        masm.loadWasmGlobalPtr(callee.tableGlobalDataOffset(), WasmTableCallScratchReg);
-        masm.loadPtr(BaseIndex(WasmTableCallScratchReg, WasmTableCallIndexReg, ScalePointer),
-                     WasmTableCallScratchReg);
-        masm.call(mir->desc(), WasmTableCallScratchReg);
+      case wasm::CalleeDesc::WasmTable:
+      case wasm::CalleeDesc::AsmJSTable:
+        masm.wasmCallIndirect(desc, callee);
         break;
-      }
-      case wasm::CalleeDesc::Builtin: {
+      case wasm::CalleeDesc::Builtin:
         masm.call(callee.builtin());
         break;
-      }
+    }
+
+    
+    if (mir->saveTls()) {
+        masm.loadPtr(Address(masm.getStackPointer(), mir->tlsStackOffset()), WasmTlsReg);
+        masm.loadWasmPinnedRegsFromTls();
     }
 
     if (mir->spIncrement())
