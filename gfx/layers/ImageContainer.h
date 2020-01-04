@@ -117,6 +117,9 @@ protected:
 
 
 class EGLImageImage;
+#ifdef MOZ_WIDGET_ANDROID
+class SurfaceTextureImage;
+#endif
 
 
 
@@ -171,6 +174,9 @@ public:
 
   
   virtual EGLImageImage* AsEGLImageImage() { return nullptr; }
+#ifdef MOZ_WIDGET_ANDROID
+  virtual SurfaceTextureImage* AsSurfaceTextureImage() { return nullptr; }
+#endif
 
 protected:
   Image(void* aImplData, ImageFormat aFormat) :
