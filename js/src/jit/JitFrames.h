@@ -713,9 +713,6 @@ class IonOOLProxyExitFrameLayout
     JSObject* proxy_;
 
     
-    JSObject* receiver_;
-
-    
     jsid id_;
 
     
@@ -745,9 +742,6 @@ class IonOOLProxyExitFrameLayout
     }
     inline jsid* id() {
         return &id_;
-    }
-    inline JSObject** receiver() {
-        return &receiver_;
     }
     inline JSObject** proxy() {
         return &proxy_;
