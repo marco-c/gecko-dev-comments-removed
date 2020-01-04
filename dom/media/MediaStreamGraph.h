@@ -181,23 +181,39 @@ public:
 
 
   virtual void NotifyFinishedTrackCreation(MediaStreamGraph* aGraph) {}
+};
 
+class AudioDataListenerInterface {
+protected:
+  
+  virtual ~AudioDataListenerInterface() {}
+
+public:
   
   
 
 
 
 
-  virtual void NotifySpeakerData(MediaStreamGraph* aGraph,
-                                 AudioDataValue* aBuffer, size_t aFrames,
-                                 uint32_t aChannels) {}
+  virtual void NotifyOutputData(MediaStreamGraph* aGraph,
+                                AudioDataValue* aBuffer, size_t aFrames,
+                                uint32_t aChannels) = 0;
   
 
 
 
   virtual void NotifyInputData(MediaStreamGraph* aGraph,
                                AudioDataValue* aBuffer, size_t aFrames,
-                               uint32_t aChannels) {}
+                               uint32_t aChannels) = 0;
+};
+
+class AudioDataListener : public AudioDataListenerInterface {
+protected:
+  
+  virtual ~AudioDataListener() {}
+
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioDataListener)
 };
 
 
@@ -1192,10 +1208,10 @@ public:
   
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
 
-  virtual nsresult OpenAudioInput(char *aName, MediaStreamListener *aListener) {
+  virtual nsresult OpenAudioInput(char *aName, AudioDataListener *aListener) {
     return NS_ERROR_FAILURE;
   }
-  virtual void CloseAudioInput(MediaStreamListener *aListener) {}
+  virtual void CloseAudioInput(AudioDataListener *aListener) {}
 
   
   
@@ -1280,8 +1296,8 @@ public:
 
 
 
-  void NotifySpeakerData(AudioDataValue* aBuffer, size_t aFrames,
-                         uint32_t aChannels);
+  void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
+                        uint32_t aChannels);
 
 protected:
   explicit MediaStreamGraph(TrackRate aSampleRate)
@@ -1304,7 +1320,11 @@ protected:
 
   TrackRate mSampleRate;
 
-  nsTArray<RefPtr<MediaStreamListener>> mAudioInputs;
+  
+
+
+
+  nsTArray<AudioDataListener *> mAudioInputs;
 };
 
 } 
