@@ -3762,9 +3762,7 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
       return rv;
     }
   }
-  if (mPrintEngine->HasPrintCallbackCanvas()) {
-    mBeforeAndAfterPrint = beforeAndAfterPrint;
-  }
+
   dom::Element* root = mDocument->GetRootElement();
   if (root && root->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdisallowselectionprint)) {
     mPrintEngine->SetDisallowSelectionPrint(true);
@@ -3772,7 +3770,18 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   rv = mPrintEngine->Print(aPrintSettings, aWebProgressListener);
   if (NS_FAILED(rv)) {
     OnDonePrinting();
+  } else if (GetIsPrinting()) {
+    if (mPrintEngine->HasPrintCallbackCanvas() ||
+        mPrintEngine->MayHavePluginFrames()) {
+      mBeforeAndAfterPrint = beforeAndAfterPrint;
+    } else {
+      
+      
+      
+      SetIsPrinting(false);
+    }
   }
+
   return rv;
 }
 
@@ -3837,9 +3846,7 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
       return rv;
     }
   }
-  if (mPrintEngine->HasPrintCallbackCanvas()) {
-    mBeforeAndAfterPrint = beforeAndAfterPrint;
-  }
+
   dom::Element* root = doc->GetRootElement();
   if (root && root->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdisallowselectionprint)) {
     PR_PL(("PrintPreview: found mozdisallowselectionprint"));
@@ -3849,7 +3856,16 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
   mPrintPreviewZoomed = false;
   if (NS_FAILED(rv)) {
     OnDonePrinting();
+  } else if (GetIsPrintPreview() &&
+             (mPrintEngine->HasPrintCallbackCanvas() ||
+              mPrintEngine->MayHavePluginFrames())) {
+    mBeforeAndAfterPrint = beforeAndAfterPrint;
   }
+
+  
+  
+  
+
   return rv;
 #else
   return NS_ERROR_FAILURE;
