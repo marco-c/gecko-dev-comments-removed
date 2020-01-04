@@ -485,6 +485,9 @@ protected:
   media::MediaSink* CreateAudioSink();
 
   
+  already_AddRefed<media::MediaSink> CreateMediaSink(bool aAudioCaptured);
+
+  
   
   
   void StopMediaSink();
@@ -640,10 +643,12 @@ protected:
 private:
   
   
-  void OnMediaSinkComplete();
+  void OnMediaSinkAudioComplete();
+  void OnMediaSinkVideoComplete();
 
   
-  void OnMediaSinkError();
+  void OnMediaSinkAudioError();
+  void OnMediaSinkVideoError();
 
   
   
@@ -1192,7 +1197,9 @@ private:
   
   RefPtr<MediaResource> mResource;
 
-  MozPromiseRequestHolder<GenericPromise> mMediaSinkPromise;
+  
+  MozPromiseRequestHolder<GenericPromise> mMediaSinkAudioPromise;
+  MozPromiseRequestHolder<GenericPromise> mMediaSinkVideoPromise;
 
   MediaEventListener mAudioQueueListener;
   MediaEventListener mVideoQueueListener;
