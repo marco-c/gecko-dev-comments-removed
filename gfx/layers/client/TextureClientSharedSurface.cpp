@@ -52,7 +52,9 @@ SharedSurfaceTextureClient::SharedSurfaceTextureClient(SharedSurfaceTextureData*
                                                        TextureFlags aFlags,
                                                        ISurfaceAllocator* aAllocator)
 : TextureClient(aData, aFlags, aAllocator)
-{}
+{
+  mWorkaroundAnnoyingSharedSurfaceLifetimeIssues = true;
+}
 
 already_AddRefed<SharedSurfaceTextureClient>
 SharedSurfaceTextureClient::Create(UniquePtr<gl::SharedSurface> surf, gl::SurfaceFactory* factory,
@@ -125,6 +127,30 @@ SharedSurfaceTextureClient::GetAcquireFenceHandle() const
   }
 #endif
   return TextureClient::GetAcquireFenceHandle();
+}
+
+SharedSurfaceTextureClient::~SharedSurfaceTextureClient()
+{
+  
+  
+  
+  
+  
+  TextureData* data = mData;
+  mData = nullptr;
+
+  Destroy();
+
+  if (data) {
+    
+    
+    
+    
+    
+    
+    
+    delete data;
+  }
 }
 
 } 

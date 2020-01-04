@@ -221,8 +221,6 @@ public:
                                                   CompositableClient* aCompositable,
                                                   TextureClient* aTexture) override;
 
-  virtual void RemoveTexture(TextureClient* aTexture) override;
-
   
 
 

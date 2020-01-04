@@ -18,14 +18,6 @@ MacIOSurfaceTextureData::MacIOSurfaceTextureData(MacIOSurface* aSurface)
 MacIOSurfaceTextureData::~MacIOSurfaceTextureData()
 {}
 
-void
-MacIOSurfaceTextureData::FinalizeOnIPDLThread(TextureClient* aWrapper)
-{
-  if (mSurface) {
-    aWrapper->KeepUntilFullDeallocation(MakeUnique<TKeepAlive<MacIOSurface>>(mSurface));
-  }
-}
-
 
 MacIOSurfaceTextureData*
 MacIOSurfaceTextureData::Create(MacIOSurface* aSurface)
