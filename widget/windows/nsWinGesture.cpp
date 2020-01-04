@@ -394,13 +394,11 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
     break;
 
     case GID_TWOFINGERTAP:
-    {
       
       
-      evt.mMessage = NS_SIMPLE_GESTURE_TAP;
+      evt.mMessage = eTapGesture;
       evt.clickCount = 1;
-    }
-    break;
+      break;
 
     case GID_PRESSANDTAP:
       
