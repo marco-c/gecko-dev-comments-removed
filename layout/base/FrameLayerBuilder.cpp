@@ -2119,8 +2119,7 @@ ContainerState::GetLayerCreationHint(const nsIFrame* aAnimatedGeometryRoot)
   nsIFrame* fParent;
   for (const nsIFrame* f = aAnimatedGeometryRoot;
        f != mContainerAnimatedGeometryRoot;
-       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder,
-           fParent, mContainerAnimatedGeometryRoot)) {
+       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder, fParent)) {
     fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
     if (!fParent) {
       break;
@@ -2801,7 +2800,7 @@ PaintedLayerDataTree::GetParentAnimatedGeometryRoot(const nsIFrame* aAnimatedGeo
   }
 
   nsIFrame* agr = Builder()->FindAnimatedGeometryRootFor(
-    const_cast<nsIFrame*>(aAnimatedGeometryRoot), Builder()->RootReferenceFrame());
+    const_cast<nsIFrame*>(aAnimatedGeometryRoot));
   MOZ_ASSERT_IF(agr, nsLayoutUtils::IsAncestorFrameCrossDoc(Builder()->RootReferenceFrame(), agr));
   if (agr != aAnimatedGeometryRoot) {
     return agr;
@@ -2812,7 +2811,7 @@ PaintedLayerDataTree::GetParentAnimatedGeometryRoot(const nsIFrame* aAnimatedGeo
   if (!parent) {
     return nullptr;
   }
-  return Builder()->FindAnimatedGeometryRootFor(parent, Builder()->RootReferenceFrame());
+  return Builder()->FindAnimatedGeometryRootFor(parent);
 }
 
 void
@@ -3791,8 +3790,7 @@ GetScrollClipIntersection(nsDisplayListBuilder* aBuilder, const nsIFrame* aAnima
   nsIFrame* fParent;
   for (const nsIFrame* f = aAnimatedGeometryRoot;
        f != aStopAtAnimatedGeometryRoot;
-       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(aBuilder,
-           fParent, aStopAtAnimatedGeometryRoot)) {
+       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(aBuilder, fParent)) {
     fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
     if (!fParent) {
       
@@ -3906,7 +3904,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         animatedGeometryRootForScrollMetadata = nsLayoutUtils::GetAnimatedGeometryRootForFrame(
-            mBuilder, item->Frame(), item->ReferenceFrame());
+            mBuilder, item->Frame());
       } else {
         
         
@@ -4759,8 +4757,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
   nsIFrame* fParent;
   for (const nsIFrame* f = aEntry->mAnimatedGeometryRootForScrollMetadata;
        f != mContainerAnimatedGeometryRoot;
-       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(this->mBuilder,
-           fParent, mContainerAnimatedGeometryRoot)) {
+       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(this->mBuilder, fParent)) {
     fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
     if (!fParent) {
       
@@ -4904,8 +4901,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
     if (!e->mOpaqueRegion.IsEmpty()) {
       const nsIFrame* animatedGeometryRootToCover = animatedGeometryRootForOpaqueness;
       if (e->mOpaqueForAnimatedGeometryRootParent &&
-          nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder, e->mAnimatedGeometryRoot->GetParent(),
-                                                         mContainerAnimatedGeometryRoot)
+          nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder, e->mAnimatedGeometryRoot->GetParent())
             == mContainerAnimatedGeometryRoot) {
         animatedGeometryRootToCover = mContainerAnimatedGeometryRoot;
         data = FindOpaqueRegionEntry(opaqueRegions,

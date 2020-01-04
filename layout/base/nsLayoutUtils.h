@@ -276,7 +276,10 @@ public:
 
 
 
-  static nsIFrame* GetClosestFrameOfType(nsIFrame* aFrame, nsIAtom* aFrameType);
+
+  static nsIFrame* GetClosestFrameOfType(nsIFrame* aFrame,
+                                         nsIAtom* aFrameType,
+                                         nsIFrame* aStopAt = nullptr);
 
   
 
@@ -556,10 +559,8 @@ public:
 
 
 
-
   static nsIFrame* GetAnimatedGeometryRootForFrame(nsDisplayListBuilder* aBuilder,
-                                                   nsIFrame* aFrame,
-                                                   const nsIFrame* aStopAtAncestor);
+                                                   nsIFrame* aFrame);
 
   
 
