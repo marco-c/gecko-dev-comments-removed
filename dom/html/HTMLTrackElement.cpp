@@ -70,7 +70,8 @@ static MOZ_CONSTEXPR nsAttrValue::EnumTable kKindTable[] = {
 };
 
 
-static MOZ_CONSTEXPR const char* kKindTableDefaultString = kKindTable[0].tag;
+
+static MOZ_CONSTEXPR const nsAttrValue::EnumTable* kKindTableInvalidValueDefault = &kKindTable[4];
 
 
 HTMLTrackElement::HTMLTrackElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
@@ -96,7 +97,7 @@ NS_INTERFACE_MAP_END_INHERITING(nsGenericHTMLElement)
 void
 HTMLTrackElement::GetKind(DOMString& aKind) const
 {
-  GetEnumAttr(nsGkAtoms::kind, kKindTableDefaultString, aKind);
+  GetEnumAttr(nsGkAtoms::kind, kKindTable[0].tag, aKind);
 }
 
 void
@@ -170,7 +171,8 @@ HTMLTrackElement::ParseAttribute(int32_t aNamespaceID,
 {
   if (aNamespaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::kind) {
     
-    return aResult.ParseEnumValue(aValue, kKindTable, false, kKindTable);
+    return aResult.ParseEnumValue(aValue, kKindTable, false,
+                                  kKindTableInvalidValueDefault);
   }
 
   
