@@ -75,23 +75,22 @@ public class FeedSubscription {
 
 
     public boolean hasBeenUpdated(FeedFetcher.FeedResponse response) {
-        final Item otherItem = response.feed.getLastItem();
-        final Item lastItem = response.feed.getLastItem();
+        final Item responseItem = response.feed.getLastItem();
 
-        if (lastItem.getTimestamp() > otherItem.getTimestamp()) {
+        if (responseItem.getTimestamp() > lastItemTimestamp) {
             
             
             
             return true;
         }
 
-        if (lastItem.getTimestamp() == otherItem.getTimestamp() && lastItem.getTimestamp() != 0) {
+        if (responseItem.getTimestamp() == lastItemTimestamp && responseItem.getTimestamp() != 0) {
             
             
             return false;
         }
 
-        if (!lastItem.getURL().equals(otherItem.getURL())) {
+        if (!responseItem.getURL().equals(lastItemUrl)) {
             
             
             return true;
