@@ -4355,6 +4355,9 @@ BytecodeEmitter::emitSingleVariable(ParseNode* pn, ParseNode* binding, ParseNode
         MOZ_ASSERT(emitOption != DefineVars);
         if (!emit1(JSOP_UNDEFINED))
             return false;
+    } else {
+        
+        return true;
     }
 
     
