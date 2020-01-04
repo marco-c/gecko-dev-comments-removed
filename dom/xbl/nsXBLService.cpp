@@ -498,7 +498,7 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
     
     *aResolveStyle = newBinding->HasStyleSheets();
 
-    newBinding.swap(*aBinding);
+    newBinding.forget(aBinding);
   }
 
   return NS_OK;
