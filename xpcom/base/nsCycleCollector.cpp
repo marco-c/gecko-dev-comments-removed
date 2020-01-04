@@ -634,7 +634,7 @@ class NodePool
 private:
   
   
-  enum { BlockSize = 8 * 1024 - 2 };
+  enum { BlockSize = 4 * 1024 - 2 };
 
   struct Block
   {
@@ -647,8 +647,8 @@ private:
 
       
       static_assert(
-        sizeof(Block) == 163824 ||      
-        sizeof(Block) == 262120,        
+        sizeof(Block) ==  81904 ||      
+        sizeof(Block) == 131048,        
         "ill-sized NodePool::Block"
       );
     }
