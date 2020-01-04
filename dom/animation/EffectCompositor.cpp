@@ -519,33 +519,24 @@ EffectCompositor::GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame)
   
   Maybe<NonOwningAnimationTarget> result;
 
+  CSSPseudoElementType pseudoType =
+    aFrame->StyleContext()->GetPseudoType();
+
+  if (pseudoType != CSSPseudoElementType::NotPseudo &&
+      pseudoType != CSSPseudoElementType::before &&
+      pseudoType != CSSPseudoElementType::after) {
+    return result;
+  }
+
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return result;
   }
 
-  CSSPseudoElementType pseudoType = CSSPseudoElementType::NotPseudo;
-
-  if (aFrame->IsGeneratedContentFrame()) {
-    nsIFrame* parent = aFrame->GetParent();
-    if (parent->IsGeneratedContentFrame()) {
-      return result;
-    }
-    nsIAtom* name = content->NodeInfo()->NameAtom();
-    if (name == nsGkAtoms::mozgeneratedcontentbefore) {
-      pseudoType = CSSPseudoElementType::before;
-    } else if (name == nsGkAtoms::mozgeneratedcontentafter) {
-      pseudoType = CSSPseudoElementType::after;
-    } else {
-      return result;
-    }
+  if (pseudoType == CSSPseudoElementType::before ||
+      pseudoType == CSSPseudoElementType::after) {
     content = content->GetParent();
     if (!content) {
-      return result;
-    }
-  } else {
-    if (nsLayoutUtils::GetStyleFrame(content) != aFrame) {
-      
       return result;
     }
   }

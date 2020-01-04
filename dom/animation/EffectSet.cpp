@@ -49,42 +49,18 @@ EffectSet::GetEffectSet(dom::Element* aElement,
  EffectSet*
 EffectSet::GetEffectSet(const nsIFrame* aFrame)
 {
-  nsIContent* content = aFrame->GetContent();
-  if (!content) {
+  Maybe<NonOwningAnimationTarget> target =
+    EffectCompositor::GetAnimationElementAndPseudoForFrame(aFrame);
+
+  if (!target) {
     return nullptr;
   }
 
-  nsIAtom* propName;
-  if (aFrame->IsGeneratedContentFrame()) {
-    nsIFrame* parent = aFrame->GetParent();
-    if (parent->IsGeneratedContentFrame()) {
-      return nullptr;
-    }
-    nsIAtom* name = content->NodeInfo()->NameAtom();
-    if (name == nsGkAtoms::mozgeneratedcontentbefore) {
-      propName = nsGkAtoms::animationEffectsForBeforeProperty;
-    } else if (name == nsGkAtoms::mozgeneratedcontentafter) {
-      propName = nsGkAtoms::animationEffectsForAfterProperty;
-    } else {
-      return nullptr;
-    }
-    content = content->GetParent();
-    if (!content) {
-      return nullptr;
-    }
-  } else {
-    if (nsLayoutUtils::GetStyleFrame(content) != aFrame) {
-      
-      return nullptr;
-    }
-    propName = nsGkAtoms::animationEffectsProperty;
-  }
-
-  if (!content->MayHaveAnimations()) {
+  if (!target->mElement->MayHaveAnimations()) {
     return nullptr;
   }
 
-  return static_cast<EffectSet*>(content->GetProperty(propName));
+  return GetEffectSet(target->mElement, target->mPseudoType);
 }
 
  EffectSet*
