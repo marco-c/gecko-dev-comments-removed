@@ -1144,9 +1144,9 @@ loop.store.ActiveRoomStore = (function() {
       
       
       
-      if (nextState === ROOM_STATES.FAILED && !failedJoinRequest) {
+      if ((nextState === ROOM_STATES.FAILED || !this._isDesktop) && !failedJoinRequest) {
         loop.request("HangupNow", this._storeState.roomToken,
-          this._storeState.windowId);
+          this._storeState.sessionToken, this._storeState.windowId);
       }
 
       this.setStoreState({ roomState: nextState });
