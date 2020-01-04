@@ -1300,7 +1300,7 @@ HelperThread::destroy()
 void
 HelperThread::ThreadMain(void* arg)
 {
-    PR_SetCurrentThreadName("JS Helper");
+    ThisThread::SetName("JS Helper");
 
     
     
