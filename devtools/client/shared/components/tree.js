@@ -6,131 +6,88 @@ const { DOM: dom, createClass, createFactory, PropTypes } = require("devtools/cl
 const { ViewHelpers } = require("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
 
 const AUTO_EXPAND_DEPTH = 0; 
-
-
-
-
-
-const ArrowExpander = createFactory(createClass({
-  displayName: "ArrowExpander",
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return this.props.item !== nextProps.item
-      || this.props.visible !== nextProps.visible
-      || this.props.expanded !== nextProps.expanded;
-  },
-
-  render() {
-    const attrs = {
-      className: "arrow theme-twisty",
-      onClick: this.props.expanded
-        ? () => this.props.onCollapse(this.props.item)
-        : e => this.props.onExpand(this.props.item, e.altKey)
-    };
-
-    if (this.props.expanded) {
-      attrs.className += " open";
-    }
-
-    if (!this.props.visible) {
-      attrs.style = {
-        visibility: "hidden"
-      };
-    }
-
-    return dom.div(attrs);
-  }
-}));
-
-const TreeNode = createFactory(createClass({
-  componentDidMount() {
-    if (this.props.focused) {
-      this.refs.button.focus();
-    }
-  },
-
-  componentDidUpdate() {
-    if (this.props.focused) {
-      this.refs.button.focus();
-    }
-  },
-
-  render() {
-    const arrow = ArrowExpander({
-      item: this.props.item,
-      expanded: this.props.expanded,
-      visible: this.props.hasChildren,
-      onExpand: this.props.onExpand,
-      onCollapse: this.props.onCollapse,
-    });
-
-    let isOddRow = this.props.index % 2;
-    return dom.div(
-      {
-        className: `tree-node div ${isOddRow ? "tree-node-odd" : ""}`,
-        onFocus: this.props.onFocus,
-        onClick: this.props.onFocus,
-        onBlur: this.props.onBlur,
-        style: {
-          padding: 0,
-          margin: 0
-        }
-      },
-
-      this.props.renderItem(this.props.item,
-                            this.props.depth,
-                            this.props.focused,
-                            arrow,
-                            this.props.expanded),
-
-      
-      
-      dom.button(this._buttonAttrs)
-    );
-  },
-
-  _buttonAttrs: {
-    ref: "button",
-    style: {
-      opacity: 0,
-      width: "0 !important",
-      height: "0 !important",
-      padding: "0 !important",
-      outline: "none",
-      MozAppearance: "none",
-      
-      
-      
-      MozMarginStart: "-1000px !important",
-    }
-  }
-}));
-
-
-
-
-
-
-
-
-function oncePerAnimationFrame(fn) {
-  let animationId = null;
-  let argsToPass = null;
-  return function (...args) {
-    argsToPass = args;
-    if (animationId !== null) {
-      return;
-    }
-
-    animationId = requestAnimationFrame(() => {
-      fn.call(this, ...argsToPass);
-      animationId = null;
-      argsToPass = null;
-    });
-  };
-}
-
 const NUMBER_OF_OFFSCREEN_ITEMS = 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -145,19 +102,85 @@ const Tree = module.exports = createClass({
     
 
     
+    
+    
+    
+    
+    
+    
+    
     getParent: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
     
     getChildren: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     renderItem: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     getRoots: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
     
     getKey: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
     
     
     isExpanded: PropTypes.func.isRequired,
+
     
     
     itemHeight: PropTypes.number.isRequired,
@@ -166,10 +189,23 @@ const Tree = module.exports = createClass({
 
     
     focused: PropTypes.any,
+
     
     onFocus: PropTypes.func,
+
     
     autoExpandDepth: PropTypes.number,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     onExpand: PropTypes.func,
     onCollapse: PropTypes.func,
@@ -574,3 +610,126 @@ const Tree = module.exports = createClass({
     this._focus(parentIndex, parent);
   }),
 });
+
+
+
+
+
+const ArrowExpander = createFactory(createClass({
+  displayName: "ArrowExpander",
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return this.props.item !== nextProps.item
+      || this.props.visible !== nextProps.visible
+      || this.props.expanded !== nextProps.expanded;
+  },
+
+  render() {
+    const attrs = {
+      className: "arrow theme-twisty",
+      onClick: this.props.expanded
+        ? () => this.props.onCollapse(this.props.item)
+        : e => this.props.onExpand(this.props.item, e.altKey)
+    };
+
+    if (this.props.expanded) {
+      attrs.className += " open";
+    }
+
+    if (!this.props.visible) {
+      attrs.style = {
+        visibility: "hidden"
+      };
+    }
+
+    return dom.div(attrs);
+  }
+}));
+
+const TreeNode = createFactory(createClass({
+  componentDidMount() {
+    if (this.props.focused) {
+      this.refs.button.focus();
+    }
+  },
+
+  componentDidUpdate() {
+    if (this.props.focused) {
+      this.refs.button.focus();
+    }
+  },
+
+  render() {
+    const arrow = ArrowExpander({
+      item: this.props.item,
+      expanded: this.props.expanded,
+      visible: this.props.hasChildren,
+      onExpand: this.props.onExpand,
+      onCollapse: this.props.onCollapse,
+    });
+
+    let isOddRow = this.props.index % 2;
+    return dom.div(
+      {
+        className: `tree-node div ${isOddRow ? "tree-node-odd" : ""}`,
+        onFocus: this.props.onFocus,
+        onClick: this.props.onFocus,
+        onBlur: this.props.onBlur,
+        style: {
+          padding: 0,
+          margin: 0
+        }
+      },
+
+      this.props.renderItem(this.props.item,
+                            this.props.depth,
+                            this.props.focused,
+                            arrow,
+                            this.props.expanded),
+
+      
+      
+      dom.button(this._buttonAttrs)
+    );
+  },
+
+  _buttonAttrs: {
+    ref: "button",
+    style: {
+      opacity: 0,
+      width: "0 !important",
+      height: "0 !important",
+      padding: "0 !important",
+      outline: "none",
+      MozAppearance: "none",
+      
+      
+      
+      MozMarginStart: "-1000px !important",
+    }
+  }
+}));
+
+
+
+
+
+
+
+
+function oncePerAnimationFrame(fn) {
+  let animationId = null;
+  let argsToPass = null;
+  return function (...args) {
+    argsToPass = args;
+    if (animationId !== null) {
+      return;
+    }
+
+    animationId = requestAnimationFrame(() => {
+      fn.call(this, ...argsToPass);
+      animationId = null;
+      argsToPass = null;
+    });
+  };
+}
