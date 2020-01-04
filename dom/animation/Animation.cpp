@@ -519,9 +519,9 @@ Animation::HasLowerCompositeOrderThan(const Animation& aOther) const
 {
   
   
-  MOZ_ASSERT(mAnimationIndex != kNoIndex &&
-             aOther.mAnimationIndex != kNoIndex,
-             "Animations to compare should not be idle");
+  
+  
+  
   MOZ_ASSERT(mAnimationIndex != aOther.mAnimationIndex || &aOther == this,
              "Animation indices should be unique");
 
@@ -842,16 +842,6 @@ Animation::PauseAt(const TimeDuration& aReadyTime)
 void
 Animation::UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag)
 {
-  
-  
-  if (!IsUsingCustomCompositeOrder()) {
-    if (PlayState() == AnimationPlayState::Idle) {
-      mAnimationIndex = kNoIndex;
-    } else if (mAnimationIndex == kNoIndex) {
-      mAnimationIndex = sNextAnimationIndex++;
-    }
-  }
-
   
   
   UpdateFinishedState(aSeekFlag, aSyncNotifyFlag);

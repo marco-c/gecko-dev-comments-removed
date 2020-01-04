@@ -115,8 +115,17 @@ public:
   void CancelFromStyle() override
   {
     mOwningElement = OwningElementRef();
+
+    
+    
+    
+    
+    
+    
+    mAnimationIndex = sNextAnimationIndex++;
+    mNeedsNewAnimationIndexWhenRun = true;
+
     Animation::CancelFromStyle();
-    MOZ_ASSERT(mAnimationIndex == kNoIndex);
   }
 
   void Tick() override;
@@ -151,7 +160,10 @@ protected:
                                         "before a CSS transition is destroyed");
   }
 
-  virtual CommonAnimationManager* GetAnimationManager() const override;
+  
+  CommonAnimationManager* GetAnimationManager() const override;
+  void UpdateTiming(SeekFlag aSeekFlag,
+                    SyncNotifyFlag aSyncNotifyFlag) override;
 
   void QueueEvents();
   bool HasEndEventToQueue() const override;

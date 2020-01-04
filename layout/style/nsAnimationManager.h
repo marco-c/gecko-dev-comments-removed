@@ -98,8 +98,21 @@ public:
   void CancelFromStyle() override
   {
     mOwningElement = OwningElementRef();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mAnimationIndex = sNextAnimationIndex++;
+    mNeedsNewAnimationIndexWhenRun = true;
+
     Animation::CancelFromStyle();
-    MOZ_ASSERT(mAnimationIndex == kNoIndex);
   }
 
   void Tick() override;
@@ -148,7 +161,11 @@ protected:
     MOZ_ASSERT(!mOwningElement.IsSet(), "Owning element should be cleared "
                                         "before a CSS animation is destroyed");
   }
-  virtual CommonAnimationManager* GetAnimationManager() const override;
+
+  
+  CommonAnimationManager* GetAnimationManager() const override;
+  void UpdateTiming(SeekFlag aSeekFlag,
+                    SyncNotifyFlag aSyncNotifyFlag) override;
 
   nsString mAnimationName;
 
