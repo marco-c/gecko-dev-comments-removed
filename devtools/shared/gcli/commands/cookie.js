@@ -20,10 +20,6 @@
 
 
 
-
-
-
-
 const { Ci, Cc } = require("chrome");
 const l10n = require("gcli/l10n");
 const URL = require("sdk/url").URL;
@@ -86,8 +82,8 @@ exports.items = [
         throw new Error("The cookie gcli commands only work in a local tab, " +
                         "see bug 1221488");
       }
-      let host = sanitizeHost(context.environment.document.location.host);
-
+      let host = new URL(context.environment.target.url).host;
+      host = sanitizeHost(host);
       let enm = cookieMgr.getCookiesFromHost(host);
 
       let cookies = [];
@@ -128,7 +124,8 @@ exports.items = [
         throw new Error("The cookie gcli commands only work in a local tab, " +
                         "see bug 1221488");
       }
-      let host = sanitizeHost(context.environment.document.location.host);
+      let host = new URL(context.environment.target.url).host;
+      host = sanitizeHost(host);
       let enm = cookieMgr.getCookiesFromHost(host);
 
       while (enm.hasMoreElements()) {
@@ -268,7 +265,8 @@ exports.items = [
         throw new Error("The cookie gcli commands only work in a local tab, " +
                         "see bug 1221488");
       }
-      let host = sanitizeHost(context.environment.document.location.host);
+      let host = new URL(context.environment.target.url).host;
+      host = sanitizeHost(host);
       let time = Date.parse(args.expires) / 1000;
 
       cookieMgr.add(args.domain ? "." + args.domain : host,
