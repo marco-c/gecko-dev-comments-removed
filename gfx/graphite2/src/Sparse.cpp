@@ -30,7 +30,7 @@
 
 using namespace graphite2;
 
-sparse::chunk sparse::empty_chunk = {0,0};
+const sparse::chunk sparse::empty_chunk = {0,0};
 
 sparse::~sparse() throw()
 {

@@ -171,6 +171,7 @@ enum gr_bidirtl {
     gr_rtl = 1,
     
     
+    
     gr_nobidi = 2,
     
     gr_nomirror = 4
