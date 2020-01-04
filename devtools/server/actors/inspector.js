@@ -67,7 +67,7 @@ const {
   CustomHighlighterActor,
   isTypeRegistered,
 } = require("devtools/server/actors/highlighters");
-const {NodeFront, NodeListFront} = require("devtools/client/fronts/inspector");
+const {NodeFront, NodeListFront, WalkerFront} = require("devtools/client/fronts/inspector");
 const {
   isAnonymous,
   isNativeAnonymous,
@@ -81,7 +81,8 @@ const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
 const {EventParsers} = require("devtools/shared/event-parsers");
-const {nodeSpec, nodeListSpec} = require("devtools/shared/specs/inspector");
+const {nodeSpec, nodeListSpec, walkerSpec} = require("devtools/shared/specs/inspector");
+
 const FONT_FAMILY_PREVIEW_TEXT = "The quick brown fox jumps over the lazy dog";
 const FONT_FAMILY_PREVIEW_TEXT_SIZE = 20;
 const PSEUDO_CLASSES = [":hover", ":active", ":focus"];
@@ -762,69 +763,8 @@ exports.NodeListFront = NodeListFront;
 
 
 
-var nodeArrayMethod = {
-  request: {
-    node: Arg(0, "domnode"),
-    maxNodes: Option(1),
-    center: Option(1, "domnode"),
-    start: Option(1, "domnode"),
-    whatToShow: Option(1)
-  },
-  response: RetVal(types.addDictType("domtraversalarray", {
-    nodes: "array:domnode"
-  }))
-};
 
-var traversalMethod = {
-  request: {
-    node: Arg(0, "domnode"),
-    whatToShow: Option(1)
-  },
-  response: {
-    node: RetVal("nullable:domnode")
-  }
-};
-
-
-
-
-var WalkerActor = protocol.ActorClass({
-  typeName: "domwalker",
-
-  events: {
-    "new-mutations": {
-      type: "newMutations"
-    },
-    "picker-node-picked": {
-      type: "pickerNodePicked",
-      node: Arg(0, "disconnectedNode")
-    },
-    "picker-node-hovered": {
-      type: "pickerNodeHovered",
-      node: Arg(0, "disconnectedNode")
-    },
-    "picker-node-canceled": {
-      type: "pickerNodeCanceled"
-    },
-    "highlighter-ready": {
-      type: "highlighter-ready"
-    },
-    "highlighter-hide": {
-      type: "highlighter-hide"
-    },
-    "display-change": {
-      type: "display-change",
-      nodes: Arg(0, "array:domnode")
-    },
-    
-    
-    
-    
-    "resize": {
-      type: "resize"
-    }
-  },
-
+var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   
 
 
@@ -973,7 +913,7 @@ var WalkerActor = protocol.ActorClass({
     }
   },
 
-  release: method(function () {}, { release: true }),
+  release: function () {},
 
   unmanage: function (actor) {
     if (actor instanceof NodeActor) {
@@ -1071,14 +1011,9 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  pick: method(function () {}, {
-    request: {},
-    response: RetVal("disconnectedNode")
-  }),
-  cancelPick: method(function () {}),
-  highlight: method(function (node) {}, {
-    request: {node: Arg(0, "nullable:domnode")}
-  }),
+  pick: function () {},
+  cancelPick: function () {},
+  highlight: function (node) {},
 
   
 
@@ -1134,13 +1069,10 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  document: method(function (node) {
+  document: function (node) {
     let doc = isNodeDead(node) ? this.rootDoc : nodeDocument(node.rawNode);
     return this._ref(doc);
-  }, {
-    request: { node: Arg(0, "nullable:domnode") },
-    response: { node: RetVal("domnode") },
-  }),
+  },
 
   
 
@@ -1149,15 +1081,12 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  documentElement: method(function (node) {
+  documentElement: function (node) {
     let elt = isNodeDead(node)
               ? this.rootDoc.documentElement
               : nodeDocument(node.rawNode).documentElement;
     return this._ref(elt);
-  }, {
-    request: { node: Arg(0, "nullable:domnode") },
-    response: { node: RetVal("domnode") },
-  }),
+  },
 
   
 
@@ -1171,7 +1100,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  parents: method(function (node, options = {}) {
+  parents: function (node, options = {}) {
     if (isNodeDead(node)) {
       return [];
     }
@@ -1194,16 +1123,7 @@ var WalkerActor = protocol.ActorClass({
       parents.push(this._ref(cur));
     }
     return parents;
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      sameDocument: Option(1),
-      sameTypeRootTreeItem: Option(1)
-    },
-    response: {
-      nodes: RetVal("array:domnode")
-    },
-  }),
+  },
 
   parentNode: function (node) {
     let walker = this.getDocumentWalker(node.rawNode);
@@ -1260,32 +1180,26 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  retainNode: method(function (node) {
+  retainNode: function (node) {
     node.retained = true;
-  }, {
-    request: { node: Arg(0, "domnode") },
-    response: {}
-  }),
+  },
 
   
 
 
 
-  unretainNode: method(function (node) {
+  unretainNode: function (node) {
     node.retained = false;
     if (this._retainedOrphans.has(node)) {
       this._retainedOrphans.delete(node);
       this.releaseNode(node);
     }
-  }, {
-    request: { node: Arg(0, "domnode") },
-    response: {},
-  }),
+  },
 
   
 
 
-  releaseNode: method(function (node, options = {}) {
+  releaseNode: function (node, options = {}) {
     if (isNodeDead(node)) {
       return;
     }
@@ -1312,12 +1226,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     node.destroy();
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      force: Option(1)
-    }
-  }),
+  },
 
   
 
@@ -1366,7 +1275,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  children: method(function (node, options = {}) {
+  children: function (node, options = {}) {
     if (isNodeDead(node)) {
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
@@ -1435,7 +1344,7 @@ var WalkerActor = protocol.ActorClass({
       hasLast: nodes[nodes.length - 1].rawNode == lastChild,
       nodes: nodes
     };
-  }, nodeArrayMethod),
+  },
 
   
 
@@ -1464,7 +1373,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  siblings: method(function (node, options = {}) {
+  siblings: function (node, options = {}) {
     if (isNodeDead(node)) {
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
@@ -1484,7 +1393,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return this.children(this._ref(parentNode), options);
-  }, nodeArrayMethod),
+  },
 
   
 
@@ -1495,7 +1404,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  nextSibling: method(function (node, options = {}) {
+  nextSibling: function (node, options = {}) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -1503,7 +1412,7 @@ var WalkerActor = protocol.ActorClass({
     let walker = this.getDocumentWalker(node.rawNode, options.whatToShow);
     let sibling = walker.nextSibling();
     return sibling ? this._ref(sibling) : null;
-  }, traversalMethod),
+  },
 
   
 
@@ -1514,7 +1423,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  previousSibling: method(function (node, options = {}) {
+  previousSibling: function (node, options = {}) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -1522,7 +1431,7 @@ var WalkerActor = protocol.ActorClass({
     let walker = this.getDocumentWalker(node.rawNode, options.whatToShow);
     let sibling = walker.previousSibling();
     return sibling ? this._ref(sibling) : null;
-  }, traversalMethod),
+  },
 
   
 
@@ -1560,17 +1469,14 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  findInspectingNode: method(function () {
+  findInspectingNode: function () {
     let node = gInspectingNode;
     if (!node) {
       return {};
     }
 
     return this.attachElement(node);
-  }, {
-    request: {},
-    response: RetVal("disconnectedNode")
-  }),
+  },
 
   
 
@@ -1579,7 +1485,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  querySelector: method(function (baseNode, selector) {
+  querySelector: function (baseNode, selector) {
     if (isNodeDead(baseNode)) {
       return {};
     }
@@ -1590,13 +1496,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return this.attachElement(node);
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      selector: Arg(1)
-    },
-    response: RetVal("disconnectedNode")
-  }),
+  },
 
   
 
@@ -1605,7 +1505,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  querySelectorAll: method(function (baseNode, selector) {
+  querySelectorAll: function (baseNode, selector) {
     let nodeList = null;
 
     try {
@@ -1615,15 +1515,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return new NodeListActor(this, nodeList);
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      selector: Arg(1)
-    },
-    response: {
-      list: RetVal("domnodelist")
-    }
-  }),
+  },
 
   
 
@@ -1650,16 +1542,9 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  multiFrameQuerySelectorAll: method(function (selector) {
+  multiFrameQuerySelectorAll: function (selector) {
     return new NodeListActor(this, this._multiFrameQuerySelectorAll(selector));
-  }, {
-    request: {
-      selector: Arg(0)
-    },
-    response: {
-      list: RetVal("domnodelist")
-    }
-  }),
+  },
 
   
 
@@ -1671,7 +1556,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  search: method(function (query) {
+  search: function (query) {
     let results = this.walkerSearch.search(query);
     let nodeList = new NodeListActor(this, results.map(r => r.node));
 
@@ -1679,14 +1564,7 @@ var WalkerActor = protocol.ActorClass({
       list: nodeList,
       metadata: []
     };
-  }, {
-    request: {
-      query: Arg(0),
-    },
-    response: {
-      list: RetVal("searchresult"),
-    }
-  }),
+  },
 
   
 
@@ -1698,7 +1576,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getSuggestionsForQuery: method(function (query, completing, selectorState) {
+  getSuggestionsForQuery: function (query, completing, selectorState) {
     let sugs = {
       classes: new Map(),
       tags: new Map(),
@@ -1847,16 +1725,7 @@ var WalkerActor = protocol.ActorClass({
       query: query,
       suggestions: result
     };
-  }, {
-    request: {
-      query: Arg(0),
-      completing: Arg(1),
-      selectorState: Arg(2)
-    },
-    response: {
-      list: RetVal("array:array:string")
-    }
-  }),
+  },
 
   
 
@@ -1872,7 +1741,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  addPseudoClassLock: method(function (node, pseudo, options = {}) {
+  addPseudoClassLock: function (node, pseudo, options = {}) {
     if (isNodeDead(node)) {
       return;
     }
@@ -1889,14 +1758,7 @@ var WalkerActor = protocol.ActorClass({
       let curNode = this._ref(cur);
       this._addPseudoClassLock(curNode, pseudo);
     }
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      pseudoClass: Arg(1),
-      parents: Option(2)
-    },
-    response: {}
-  }),
+  },
 
   _queuePseudoClassMutation: function (node) {
     this.queueMutation({
@@ -1930,26 +1792,22 @@ var WalkerActor = protocol.ActorClass({
     }
   },
 
-  hideNode: method(function (node) {
+  hideNode: function (node) {
     if (isNodeDead(node)) {
       return;
     }
 
     this._installHelperSheet(node);
     node.rawNode.classList.add(HIDDEN_CLASS);
-  }, {
-    request: { node: Arg(0, "domnode") }
-  }),
+  },
 
-  unhideNode: method(function (node) {
+  unhideNode: function (node) {
     if (isNodeDead(node)) {
       return;
     }
 
     node.rawNode.classList.remove(HIDDEN_CLASS);
-  }, {
-    request: { node: Arg(0, "domnode") }
-  }),
+  },
 
   
 
@@ -1965,7 +1823,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  removePseudoClassLock: method(function (node, pseudo, options = {}) {
+  removePseudoClassLock: function (node, pseudo, options = {}) {
     if (isNodeDead(node)) {
       return;
     }
@@ -1982,14 +1840,7 @@ var WalkerActor = protocol.ActorClass({
       let curNode = this._ref(cur);
       this._removePseudoClassLock(curNode, pseudo);
     }
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      pseudoClass: Arg(1),
-      parents: Option(2)
-    },
-    response: {}
-  }),
+  },
 
   _removePseudoClassLock: function (node, pseudo) {
     if (node.rawNode.nodeType != Ci.nsIDOMNode.ELEMENT_NODE) {
@@ -2008,7 +1859,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  clearPseudoClassLocks: method(function (node) {
+  clearPseudoClassLocks: function (node) {
     if (node && isNodeDead(node)) {
       return;
     }
@@ -2024,30 +1875,18 @@ var WalkerActor = protocol.ActorClass({
         this._queuePseudoClassMutation(locked);
       }
     }
-  }, {
-    request: {
-      node: Arg(0, "nullable:domnode")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
-  innerHTML: method(function (node) {
+  innerHTML: function (node) {
     let html = "";
     if (!isNodeDead(node)) {
       html = node.rawNode.innerHTML;
     }
     return LongStringActor(this.conn, html);
-  }, {
-    request: {
-      node: Arg(0, "domnode")
-    },
-    response: {
-      value: RetVal("longstring")
-    }
-  }),
+  },
 
   
 
@@ -2055,7 +1894,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  setInnerHTML: method(function (node, value) {
+  setInnerHTML: function (node, value) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2065,33 +1904,20 @@ var WalkerActor = protocol.ActorClass({
       throw new Error("Can only change innerHTML to element nodes");
     }
     rawNode.innerHTML = value;
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      value: Arg(1, "string"),
-    },
-    response: {}
-  }),
+  },
 
   
 
 
 
 
-  outerHTML: method(function (node) {
+  outerHTML: function (node) {
     let outerHTML = "";
     if (!isNodeDead(node)) {
       outerHTML = node.rawNode.outerHTML;
     }
     return LongStringActor(this.conn, outerHTML);
-  }, {
-    request: {
-      node: Arg(0, "domnode")
-    },
-    response: {
-      value: RetVal("longstring")
-    }
-  }),
+  },
 
   
 
@@ -2099,7 +1925,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  setOuterHTML: method(function (node, value) {
+  setOuterHTML: function (node, value) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2147,13 +1973,7 @@ var WalkerActor = protocol.ActorClass({
     } else {
       rawNode.outerHTML = value;
     }
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      value: Arg(1, "string"),
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -2163,7 +1983,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  insertAdjacentHTML: method(function (node, position, value) {
+  insertAdjacentHTML: function (node, position, value) {
     if (isNodeDead(node)) {
       return {node: [], newParents: []};
     }
@@ -2220,29 +2040,17 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return this.attachElements(newRawNodes);
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      position: Arg(1, "string"),
-      value: Arg(2, "string")
-    },
-    response: RetVal("disconnectedNodeArray")
-  }),
+  },
 
   
 
 
 
 
-  duplicateNode: method(function ({rawNode}) {
+  duplicateNode: function ({rawNode}) {
     let clonedNode = rawNode.cloneNode(true);
     rawNode.parentNode.insertBefore(clonedNode, rawNode.nextSibling);
-  }, {
-    request: {
-      node: Arg(0, "domnode")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -2262,7 +2070,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  removeNode: method(function (node) {
+  removeNode: function (node) {
     if (isNodeDead(node) || this.isDocumentOrDocumentElementNode(node)) {
       throw Error("Cannot remove document, document elements or dead nodes.");
     }
@@ -2271,21 +2079,14 @@ var WalkerActor = protocol.ActorClass({
     node.rawNode.remove();
     
     return nextSibling;
-  }, {
-    request: {
-      node: Arg(0, "domnode")
-    },
-    response: {
-      nextSibling: RetVal("nullable:domnode")
-    }
-  }),
+  },
 
   
 
 
 
 
-  removeNodes: method(function (nodes) {
+  removeNodes: function (nodes) {
     
     for (let node of nodes) {
       if (isNodeDead(node) || this.isDocumentOrDocumentElementNode(node)) {
@@ -2297,17 +2098,12 @@ var WalkerActor = protocol.ActorClass({
       node.rawNode.remove();
       
     }
-  }, {
-    request: {
-      node: Arg(0, "array:domnode")
-    },
-    response: {}
-  }),
+  },
 
   
 
 
-  insertBefore: method(function (node, parent, sibling) {
+  insertBefore: function (node, parent, sibling) {
     if (isNodeDead(node) ||
         isNodeDead(parent) ||
         (sibling && isNodeDead(sibling))) {
@@ -2331,14 +2127,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     rawParent.insertBefore(rawNode, rawSibling);
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      parent: Arg(1, "domnode"),
-      sibling: Arg(2, "nullable:domnode")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -2346,7 +2135,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  editTagName: method(function (node, tagName) {
+  editTagName: function (node, tagName) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -2377,13 +2166,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     oldNode.remove();
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      tagName: Arg(1, "string")
-    },
-    response: {}
-  }),
+  },
 
   
 
@@ -2430,7 +2213,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getMutations: method(function (options = {}) {
+  getMutations: function (options = {}) {
     let pending = this._pendingMutations || [];
     this._pendingMutations = [];
 
@@ -2444,14 +2227,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return pending;
-  }, {
-    request: {
-      cleanup: Option(0)
-    },
-    response: {
-      mutations: RetVal("array:dommutation")
-    }
-  }),
+  },
 
   queueMutation: function (mutation) {
     if (!this.actorID || this._destroyed) {
@@ -2679,22 +2455,19 @@ var WalkerActor = protocol.ActorClass({
   
 
 
-  isInDOMTree: method(function (node) {
+  isInDOMTree: function (node) {
     if (isNodeDead(node)) {
       return false;
     }
     return this._isInDOMTree(node.rawNode);
-  }, {
-    request: { node: Arg(0, "domnode") },
-    response: { attached: RetVal("boolean") }
-  }),
+  },
 
   
 
 
 
 
-  getNodeActorFromObjectActor: method(function (objectActorID) {
+  getNodeActorFromObjectActor: function (objectActorID) {
     let actor = this.conn.getActor(objectActorID);
     if (!actor) {
       return null;
@@ -2714,14 +2487,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return this.attachElement(rawNode);
-  }, {
-    request: {
-      objectActorID: Arg(0, "string")
-    },
-    response: {
-      nodeFront: RetVal("nullable:disconnectedNode")
-    }
-  }),
+  },
 
   
 
@@ -2729,16 +2495,9 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getStyleSheetOwnerNode: method(function (styleSheetActorID) {
+  getStyleSheetOwnerNode: function (styleSheetActorID) {
     return this.getNodeFromActor(styleSheetActorID, ["ownerNode"]);
-  }, {
-    request: {
-      styleSheetActorID: Arg(0, "string")
-    },
-    response: {
-      ownerNode: RetVal("nullable:disconnectedNode")
-    }
-  }),
+  },
 
   
 
@@ -2770,7 +2529,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getNodeFromActor: method(function (actorID, path) {
+  getNodeFromActor: function (actorID, path) {
     let actor = this.conn.getActor(actorID);
     if (!actor) {
       return null;
@@ -2785,462 +2544,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     return this.attachElement(obj);
-  }, {
-    request: {
-      actorID: Arg(0, "string"),
-      path: Arg(1, "array:string")
-    },
-    response: {
-      node: RetVal("nullable:disconnectedNode")
-    }
-  })
-});
-
-
-
-
-var WalkerFront = protocol.FrontClass(WalkerActor, {
-  
-  autoCleanup: true,
-
-  
-
-
-
-  pick: protocol.custom(function () {
-    return this._pick().then(response => {
-      return response.node;
-    });
-  }, {impl: "_pick"}),
-
-  initialize: function (client, form) {
-    this._createRootNodePromise();
-    protocol.Front.prototype.initialize.call(this, client, form);
-    this._orphaned = new Set();
-    this._retainedOrphans = new Set();
   },
-
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  
-  form: function (json) {
-    this.actorID = json.actor;
-    this.rootNode = types.getType("domnode").read(json.root, this);
-    this._rootNodeDeferred.resolve(this.rootNode);
-    
-    this.traits = json.traits || {};
-  },
-
-  
-
-
-
-
-
-  getRootNode: function () {
-    return this._rootNodeDeferred.promise;
-  },
-
-  
-
-
-
-  _createRootNodePromise: function () {
-    this._rootNodeDeferred = promise.defer();
-    this._rootNodeDeferred.promise.then(() => {
-      events.emit(this, "new-root");
-    });
-  },
-
-  
-
-
-
-
-
-
-
-  ensureParentFront: function (id) {
-    let front = this.get(id);
-    if (front) {
-      return front;
-    }
-
-    return types.getType("domnode").read({ actor: id }, this, "standin");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  retainNode: protocol.custom(function (node) {
-    return this._retainNode(node).then(() => {
-      node.retained = true;
-    });
-  }, {
-    impl: "_retainNode",
-  }),
-
-  unretainNode: protocol.custom(function (node) {
-    return this._unretainNode(node).then(() => {
-      node.retained = false;
-      if (this._retainedOrphans.has(node)) {
-        this._retainedOrphans.delete(node);
-        this._releaseFront(node);
-      }
-    });
-  }, {
-    impl: "_unretainNode"
-  }),
-
-  releaseNode: protocol.custom(function (node, options = {}) {
-    
-    
-    let actorID = node.actorID;
-    this._releaseFront(node, !!options.force);
-    return this._releaseNode({ actorID: actorID });
-  }, {
-    impl: "_releaseNode"
-  }),
-
-  findInspectingNode: protocol.custom(function () {
-    return this._findInspectingNode().then(response => {
-      return response.node;
-    });
-  }, {
-    impl: "_findInspectingNode"
-  }),
-
-  querySelector: protocol.custom(function (queryNode, selector) {
-    return this._querySelector(queryNode, selector).then(response => {
-      return response.node;
-    });
-  }, {
-    impl: "_querySelector"
-  }),
-
-  getNodeActorFromObjectActor: protocol.custom(function (objectActorID) {
-    return this._getNodeActorFromObjectActor(objectActorID).then(response => {
-      return response ? response.node : null;
-    });
-  }, {
-    impl: "_getNodeActorFromObjectActor"
-  }),
-
-  getStyleSheetOwnerNode: protocol.custom(function (styleSheetActorID) {
-    return this._getStyleSheetOwnerNode(styleSheetActorID).then(response => {
-      return response ? response.node : null;
-    });
-  }, {
-    impl: "_getStyleSheetOwnerNode"
-  }),
-
-  getNodeFromActor: protocol.custom(function (actorID, path) {
-    return this._getNodeFromActor(actorID, path).then(response => {
-      return response ? response.node : null;
-    });
-  }, {
-    impl: "_getNodeFromActor"
-  }),
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  search: protocol.custom(Task.async(function*(query, options = { }) {
-    let nodeList;
-    let searchType;
-    let searchData = this.searchData = this.searchData || { };
-    let selectorOnly = !!options.selectorOnly;
-
-    
-    
-    
-    if (selectorOnly || !this.traits.textSearch) {
-      searchType = "selector";
-      if (this.traits.multiFrameQuerySelectorAll) {
-        nodeList = yield this.multiFrameQuerySelectorAll(query);
-      } else {
-        nodeList = yield this.querySelectorAll(this.rootNode, query);
-      }
-    } else {
-      searchType = "search";
-      let result = yield this._search(query, options);
-      nodeList = result.list;
-    }
-
-    
-    if (searchData.query !== query ||
-        searchData.selectorOnly !== selectorOnly) {
-      searchData.selectorOnly = selectorOnly;
-      searchData.query = query;
-      searchData.index = -1;
-    }
-
-    if (!nodeList.length) {
-      return null;
-    }
-
-    
-    searchData.index = options.reverse ? searchData.index - 1 :
-                                         searchData.index + 1;
-    if (searchData.index >= nodeList.length) {
-      searchData.index = 0;
-    }
-    if (searchData.index < 0) {
-      searchData.index = nodeList.length - 1;
-    }
-
-    
-    let node = yield nodeList.item(searchData.index);
-    return {
-      type: searchType,
-      node: node,
-      resultsLength: nodeList.length,
-      resultsIndex: searchData.index,
-    };
-  }), {
-    impl: "_search"
-  }),
-
-  _releaseFront: function (node, force) {
-    if (node.retained && !force) {
-      node.reparent(null);
-      this._retainedOrphans.add(node);
-      return;
-    }
-
-    if (node.retained) {
-      
-      this._retainedOrphans.delete(node);
-    }
-
-    
-    for (let child of node.treeChildren()) {
-      this._releaseFront(child, force);
-    }
-
-    
-    node.reparent(null);
-    node.destroy();
-  },
-
-  
-
-
-  getMutations: protocol.custom(function (options = {}) {
-    return this._getMutations(options).then(mutations => {
-      let emitMutations = [];
-      for (let change of mutations) {
-        
-        let targetID;
-        let targetFront;
-
-        if (change.type === "newRoot") {
-          this.rootNode = types.getType("domnode").read(change.target, this);
-          this._rootNodeDeferred.resolve(this.rootNode);
-          targetID = this.rootNode.actorID;
-          targetFront = this.rootNode;
-        } else {
-          targetID = change.target;
-          targetFront = this.get(targetID);
-        }
-
-        if (!targetFront) {
-          console.trace("Got a mutation for an unexpected actor: " + targetID +
-            ", please file a bug on bugzilla.mozilla.org!");
-          continue;
-        }
-
-        let emittedMutation = object.merge(change, { target: targetFront });
-
-        if (change.type === "childList" ||
-            change.type === "nativeAnonymousChildList") {
-          
-          let addedFronts = [];
-          let removedFronts = [];
-          for (let removed of change.removed) {
-            let removedFront = this.get(removed);
-            if (!removedFront) {
-              console.error("Got a removal of an actor we didn't know about: " +
-                removed);
-              continue;
-            }
-            
-            removedFront.reparent(null);
-
-            
-            
-            this._orphaned.add(removedFront);
-            removedFronts.push(removedFront);
-          }
-          for (let added of change.added) {
-            let addedFront = this.get(added);
-            if (!addedFront) {
-              console.error("Got an addition of an actor we didn't know " +
-                "about: " + added);
-              continue;
-            }
-            addedFront.reparent(targetFront);
-
-            
-            
-            this._orphaned.delete(addedFront);
-            addedFronts.push(addedFront);
-          }
-
-          if (change.singleTextChild) {
-            targetFront.singleTextChild =
-              types.getType("domnode").read(change.singleTextChild, this);
-          } else {
-            targetFront.singleTextChild = undefined;
-          }
-
-          
-          
-          emittedMutation.added = addedFronts;
-          emittedMutation.removed = removedFronts;
-
-          
-          
-          
-          if ("numChildren" in change) {
-            targetFront._form.numChildren = change.numChildren;
-          }
-        } else if (change.type === "frameLoad") {
-          
-          
-          
-          for (let child of targetFront.treeChildren()) {
-            if (child.nodeType === Ci.nsIDOMNode.DOCUMENT_NODE) {
-              console.trace("Got an unexpected frameLoad in the inspector, " +
-                "please file a bug on bugzilla.mozilla.org!");
-            }
-          }
-        } else if (change.type === "documentUnload") {
-          if (targetFront === this.rootNode) {
-            this._createRootNodePromise();
-          }
-
-          
-          
-          emittedMutation.target = targetFront.actorID;
-          emittedMutation.targetParent = targetFront.parentNode();
-
-          
-          this._releaseFront(targetFront, true);
-        } else if (change.type === "unretained") {
-          
-          
-          for (let released of change.nodes) {
-            let releasedFront = this.get(released);
-            this._retainedOrphans.delete(released);
-            this._releaseFront(releasedFront, true);
-          }
-        } else {
-          targetFront.updateMutation(change);
-        }
-
-        emitMutations.push(emittedMutation);
-      }
-
-      if (options.cleanup) {
-        for (let node of this._orphaned) {
-          
-          this._releaseFront(node);
-        }
-        this._orphaned = new Set();
-      }
-
-      events.emit(this, "mutations", emitMutations);
-    });
-  }, {
-    impl: "_getMutations"
-  }),
-
-  
-
-
-
-  onMutations: protocol.preEvent("new-mutations", function () {
-    
-    this.getMutations({cleanup: this.autoCleanup}).catch(() => {});
-  }),
-
-  isLocal: function () {
-    return !!this.conn._transport._serverConnection;
-  },
-
-  
-  
-  frontForRawNode: function (rawNode) {
-    if (!this.isLocal()) {
-      console.warn("Tried to use frontForRawNode on a remote connection.");
-      return null;
-    }
-    let walkerActor = this.conn._transport._serverConnection
-      .getActor(this.actorID);
-    if (!walkerActor) {
-      throw Error("Could not find client side for actor " + this.actorID);
-    }
-    let nodeActor = walkerActor._ref(rawNode);
-
-    
-    let nodeType = types.getType("domnode");
-    let returnNode = nodeType.read(
-      nodeType.write(nodeActor, walkerActor), this);
-    let top = returnNode;
-    let extras = walkerActor.parents(nodeActor, {sameTypeRootTreeItem: true});
-    for (let extraActor of extras) {
-      top = nodeType.read(nodeType.write(extraActor, walkerActor), this);
-    }
-
-    if (top !== this.rootNode) {
-      
-      this._orphaned.add(top);
-      walkerActor._orphaned
-        .add(this.conn._transport._serverConnection.getActor(top.actorID));
-    }
-    return returnNode;
-  },
-
-  removeNode: protocol.custom(Task.async(function* (node) {
-    let previousSibling = yield this.previousSibling(node);
-    let nextSibling = yield this._removeNode(node);
-    return {
-      previousSibling: previousSibling,
-      nextSibling: nextSibling,
-    };
-  }), {
-    impl: "_removeNode"
-  }),
 });
 
 exports.WalkerFront = WalkerFront;
