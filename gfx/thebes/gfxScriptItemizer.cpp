@@ -115,15 +115,6 @@ SameScript(int32_t runScript, int32_t currCharScript)
            currCharScript == runScript;
 }
 
-
-
-
-static inline bool
-HasMirroredChar(uint32_t aCh)
-{
-    return GetCharProps1(aCh).mMirrorOffsetIndex != 0;
-}
-
 gfxScriptItemizer::gfxScriptItemizer(const char16_t *src, uint32_t length)
     : textPtr(src), textLength(length)
 {
