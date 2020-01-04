@@ -38,15 +38,6 @@ public:
   virtual void SetMediaSeekable(bool aMediaSeekable) {}
 
   
-  virtual void ResetConnectionState() {}
-
-  
-  
-  virtual nsresult FinishDecoderSetup(MediaResource* aResource) {
-    return NS_OK;
-  }
-
-  
   virtual void NotifyNetworkError() {}
 
   

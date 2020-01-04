@@ -85,8 +85,6 @@ public:
     MediaDecoderOwner* GetMediaOwner() const override;
     void SetInfinite(bool aInfinite) override;
     void SetMediaSeekable(bool aMediaSeekable) override;
-    void ResetConnectionState() override;
-    nsresult FinishDecoderSetup(MediaResource* aResource) override;
     void NotifyNetworkError() override;
     void NotifyDecodeError() override;
     void NotifyDataArrived() override;
@@ -461,10 +459,6 @@ private:
   static bool IsOpusEnabled();
   static bool IsWaveEnabled();
   static bool IsWebMEnabled();
-
-#ifdef NECKO_PROTOCOL_rtsp
-  static bool IsRtspEnabled();
-#endif
 
 #ifdef MOZ_OMX_DECODER
   static bool IsOmxEnabled();
@@ -886,12 +880,6 @@ private:
   
   
   void SetInfinite(bool aInfinite);
-
-  
-  
-  void ResetConnectionState();
-
-  nsresult FinishDecoderSetup(MediaResource* aResource);
 
   
   

@@ -439,10 +439,6 @@ public:
     return mNetworkState;
   }
 
-  
-  
-  virtual void ResetConnectionState() final override;
-
   void NotifyXPCOMShutdown() final override;
 
   
@@ -718,13 +714,6 @@ public:
 
   
   bool IsCurrentlyPlaying() const;
-
-  
-
-
-  nsresult FinishDecoderSetup(MediaDecoder* aDecoder, MediaResource* aStream) {
-    return FinishDecoderSetup(aDecoder, aStream, nullptr);
-  }
 
   
   

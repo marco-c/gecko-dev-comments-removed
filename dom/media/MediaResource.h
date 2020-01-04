@@ -140,8 +140,6 @@ private:
 typedef media::Interval<int64_t> MediaByteRange;
 typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 
-class RtspMediaResource;
-
 
 
 
@@ -343,12 +341,6 @@ public:
   
   
   virtual const nsCString& GetContentType() const = 0;
-
-  
-  
-  virtual RtspMediaResource* GetRtspPointer() {
-    return nullptr;
-  }
 
   
   virtual bool IsRealTime() {
