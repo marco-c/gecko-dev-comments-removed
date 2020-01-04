@@ -793,15 +793,25 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 }
 
 void
-MessageChannel::ProcessPendingRequests()
+MessageChannel::ProcessPendingRequests(int transaction, int prio)
 {
+    IPC_LOG("ProcessPendingRequests");
+
     
     for (;;) {
         mozilla::Vector<Message> toProcess;
 
         for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); ) {
             Message &msg = *it;
-            if (!ShouldDeferMessage(msg)) {
+
+            bool defer = ShouldDeferMessage(msg);
+
+            
+            if (msg.is_sync() || msg.priority() == IPC::Message::PRIORITY_URGENT) {
+                IPC_LOG("ShouldDeferMessage(seqno=%d) = %d", msg.seqno(), defer);
+            }
+
+            if (!defer) {
                 if (!toProcess.append(Move(msg)))
                     MOZ_CRASH();
                 it = mPending.erase(it);
@@ -815,8 +825,18 @@ MessageChannel::ProcessPendingRequests()
 
         
         
+
         for (auto it = toProcess.begin(); it != toProcess.end(); it++)
             ProcessPendingRequest(*it);
+
+        
+        
+        
+        
+        
+        if (WasTransactionCanceled(transaction, prio)) {
+            return;
+        }
     }
 }
 
@@ -939,8 +959,11 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     int32_t transaction = mCurrentTransaction;
     msg->set_transaction_id(transaction);
 
-    ProcessPendingRequests();
+    IPC_LOG("Send seqno=%d, xid=%d", seqno, transaction);
+
+    ProcessPendingRequests(transaction, prio);
     if (WasTransactionCanceled(transaction, prio)) {
+        IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
         return false;
     }
 
@@ -948,23 +971,27 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     mLink->SendMessage(msg.forget());
 
     while (true) {
-        ProcessPendingRequests();
+        ProcessPendingRequests(transaction, prio);
         if (WasTransactionCanceled(transaction, prio)) {
+            IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
             return false;
         }
 
         
         if (mRecvdErrors) {
+            IPC_LOG("Error: seqno=%d, xid=%d", seqno, transaction);
             mRecvdErrors--;
             return false;
         }
 
         if (mRecvd) {
+            IPC_LOG("Got reply: seqno=%d, xid=%d", seqno, transaction);
             break;
         }
 
         MOZ_ASSERT(!mTimedOutMessageSeqno);
 
+        MOZ_ASSERT(mCurrentTransaction == transaction);
         bool maybeTimedOut = !WaitForSyncNotify(handleWindowsMessages);
 
         if (!Connected()) {
