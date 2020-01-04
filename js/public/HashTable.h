@@ -14,6 +14,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
+#include "mozilla/Opaque.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/ReentrancyGuard.h"
 #include "mozilla/TemplateLib.h"
@@ -33,6 +34,8 @@ namespace detail {
 } 
 
 
+
+using Generation = mozilla::Opaque<uint64_t>;
 
 
 
@@ -208,7 +211,9 @@ class HashMap
 
     
     
-    uint32_t generation() const                       { return impl.generation(); }
+    Generation generation() const {
+        return impl.generation();
+    }
 
     
 
@@ -446,7 +451,9 @@ class HashSet
 
     
     
-    uint32_t generation() const                       { return impl.generation(); }
+    Generation generation() const {
+        return impl.generation();
+    }
 
     
 
@@ -819,7 +826,7 @@ class HashTable : private AllocPolicy
         Entry* entry_;
 #ifdef JS_DEBUG
         const HashTable* table_;
-        uint32_t generation;
+        Generation generation;
 #endif
 
       protected:
@@ -927,7 +934,7 @@ class HashTable : private AllocPolicy
 #ifdef JS_DEBUG
         const HashTable* table_;
         uint64_t mutationCount;
-        uint32_t generation;
+        Generation generation;
         bool validEntry;
 #endif
 
@@ -1076,9 +1083,9 @@ class HashTable : private AllocPolicy
     static const size_t CAP_BITS = 30;
 
   public:
-    Entry*      table;                 
-    uint32_t    gen:24;                 
-    uint32_t    hashShift:8;            
+    uint64_t    gen:56;                 
+    uint64_t    hashShift:8;            
+    Entry*      table;                  
     uint32_t    entryCount;             
     uint32_t    removedCount;           
 
@@ -1175,9 +1182,9 @@ class HashTable : private AllocPolicy
   public:
     explicit HashTable(AllocPolicy ap)
       : AllocPolicy(ap)
-      , table(nullptr)
       , gen(0)
       , hashShift(sHashBits)
+      , table(nullptr)
       , entryCount(0)
       , removedCount(0)
 #ifdef JS_DEBUG
@@ -1616,10 +1623,10 @@ class HashTable : private AllocPolicy
         return JS_BIT(sHashBits - hashShift);
     }
 
-    uint32_t generation() const
+    Generation generation() const
     {
         MOZ_ASSERT(table);
-        return gen;
+        return Generation(gen);
     }
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const

@@ -1248,7 +1248,7 @@ struct ExpandoAndGeneration {
   }
 
   JS::Heap<JS::Value> expando;
-  uint32_t generation;
+  uint64_t generation;
 };
 
 typedef enum DOMProxyShadowsResult {

@@ -733,7 +733,7 @@ ByAllocationStack::report(JSContext* cx, CountBase& countBase, MutableHandleValu
 
 #ifdef DEBUG
     
-    uint32_t generation = count.table.generation();
+    Generation generation = count.table.generation();
 #endif
 
     
