@@ -153,10 +153,7 @@ AudioEventTimeline::GetValuesAtTimeHelper(TimeType aTime, float* aBuffer,
   const AudioTimelineEvent* previous = nullptr;
 
   
-  while (mEvents.Length() > 1 &&
-         aTime > TimeOf(mEvents[1])) {
-    mEvents.RemoveElementAt(0);
-  }
+  CleanupEventsOlderThan(aTime);
 
   for (size_t bufferIndex = 0; bufferIndex < aSize; ++bufferIndex, ++aTime) {
 
