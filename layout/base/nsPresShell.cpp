@@ -897,7 +897,7 @@ PresShell::Init(nsIDocument* aDocument,
 
   if (AccessibleCaretEnabled()) {
     
-    mAccessibleCaretEventHub = new AccessibleCaretEventHub();
+    mAccessibleCaretEventHub = new AccessibleCaretEventHub(this);
   }
 
   mSelection = new nsFrameSelection();
@@ -1679,7 +1679,7 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
 
     
     if (mAccessibleCaretEventHub) {
-      mAccessibleCaretEventHub->Init(this);
+      mAccessibleCaretEventHub->Init();
     }
 
     
