@@ -327,7 +327,10 @@ TrackUnionStream::TrackUnionStream(DOMMediaStream* aWrapper) :
         
         if (segment->GetType() == MediaSegment::AUDIO) {
           l->NotifyQueuedAudioData(Graph(), outputTrack->GetID(),
-                                   outputStart, *static_cast<AudioSegment*>(segment));
+                                   outputStart,
+                                   *static_cast<AudioSegment*>(segment),
+                                   map->mInputPort->GetSource(),
+                                   map->mInputTrackID);
         } else {
           
           l->NotifyQueuedTrackChanges(Graph(), outputTrack->GetID(),
