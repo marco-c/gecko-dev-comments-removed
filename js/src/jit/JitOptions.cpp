@@ -111,7 +111,7 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(disableScalarReplacement, false);
 
     
-    SET_DEFAULT(disableSharedStubs, true);
+    SET_DEFAULT(disableSharedStubs, false);
 
     
     
