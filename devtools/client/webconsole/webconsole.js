@@ -2571,16 +2571,10 @@ WebConsoleFrame.prototype = {
 
 
 
-
-  createLocationNode: function ({url, line, column}) {
+  createLocationNode: function (location) {
     let locationNode = this.document.createElementNS(XHTML_NS, "div");
     locationNode.className = "message-location devtools-monospace";
 
-    if (!url) {
-      url = "";
-    }
-
-    let fullURL = url.split(" -> ").pop();
     
     let onClick = ({ url, line }) => {
       let category = locationNode.closest(".message").category;
@@ -2619,12 +2613,11 @@ WebConsoleFrame.prototype = {
 
     const toolbox = gDevTools.getToolbox(this.owner.target);
 
+    let { url, line, column } = location;
+    let source = url ? url.split(" -> ").pop() : "";
+
     this.ReactDOM.render(this.FrameView({
-      frame: {
-        source: fullURL,
-        line,
-        column
-      },
+      frame: { source, line, column },
       showEmptyPathAsHost: true,
       onClick,
       sourceMapService: toolbox ? toolbox._sourceMapService : null,
