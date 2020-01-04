@@ -160,6 +160,22 @@ private:
   AudioChannelService::AudibleChangedReasons mReason;
 };
 
+bool
+IsEnableAudioCompetingForAllAgents()
+{
+  
+  
+  
+  
+  
+  
+#ifdef MOZ_WIDGET_ANDROID
+  return true;
+#else
+  return false;
+#endif
+}
+
 } 
 
 StaticRefPtr<AudioChannelService> gAudioChannelService;
@@ -1124,7 +1140,9 @@ AudioChannelService::AudioChannelWindow::IsAgentInvolvingInAudioCompeting(AudioC
 bool
 AudioChannelService::AudioChannelWindow::IsAudioCompetingInSameTab() const
 {
-  return (mOwningAudioFocus && mAudibleAgents.Length() > 1);
+  bool hasMultipleActiveAgents = IsEnableAudioCompetingForAllAgents() ?
+    mAgents.Length() > 1 : mAudibleAgents.Length() > 1;
+  return mOwningAudioFocus && hasMultipleActiveAgents;
 }
 
 void
@@ -1135,14 +1153,15 @@ AudioChannelService::AudioChannelWindow::AudioFocusChanged(AudioChannelAgent* aN
   
   MOZ_ASSERT(aNewPlayingAgent);
 
-  if (mAudibleAgents.IsEmpty()) {
+  if (IsInactiveWindow()) {
     
     
     
     
     mOwningAudioFocus = IsContainingPlayingAgent(aNewPlayingAgent);
   } else {
-    nsTObserverArray<AudioChannelAgent*>::ForwardIterator iter(mAudibleAgents);
+    nsTObserverArray<AudioChannelAgent*>::ForwardIterator
+      iter(IsEnableAudioCompetingForAllAgents() ? mAgents : mAudibleAgents);
     while (iter.HasMore()) {
       AudioChannelAgent* agent = iter.GetNext();
       MOZ_ASSERT(agent);
@@ -1188,7 +1207,8 @@ AudioChannelService::AudioChannelWindow::GetCompetingBehavior(AudioChannelAgent*
                                                               bool aIncomingChannelActive) const
 {
   MOZ_ASSERT(aAgent);
-  MOZ_ASSERT(mAudibleAgents.Contains(aAgent));
+  MOZ_ASSERT(IsEnableAudioCompetingForAllAgents() ?
+    mAgents.Contains(aAgent) : mAudibleAgents.Contains(aAgent));
 
   uint32_t competingBehavior = nsISuspendedTypes::NONE_SUSPENDED;
   int32_t presentChannelType = aAgent->AudioChannelType();
@@ -1228,6 +1248,8 @@ AudioChannelService::AudioChannelWindow::AppendAgent(AudioChannelAgent* aAgent,
     AudioAudibleChanged(aAgent,
                         AudibleState::eAudible,
                         AudibleChangedReasons::eDataAudibleChanged);
+  } else if (IsEnableAudioCompetingForAllAgents() && !aAudible) {
+    NotifyAudioCompetingChanged(aAgent, true);
   }
 }
 
@@ -1347,6 +1369,13 @@ bool
 AudioChannelService::AudioChannelWindow::IsLastAudibleAgent() const
 {
   return mAudibleAgents.IsEmpty();
+}
+
+bool
+AudioChannelService::AudioChannelWindow::IsInactiveWindow() const
+{
+  return IsEnableAudioCompetingForAllAgents() ?
+    mAudibleAgents.IsEmpty() && mAgents.IsEmpty() : mAudibleAgents.IsEmpty();
 }
 
 void
