@@ -9,10 +9,6 @@
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"
 
-#ifdef OS_MACOSX
-#include "nsCocoaFeatures.h"
-#endif
-
 namespace {
 
 struct MutexData {
@@ -46,15 +42,6 @@ CrossProcessMutex::CrossProcessMutex(const char*)
     : mMutex(nullptr)
     , mCount(nullptr)
 {
-#ifdef OS_MACOSX
-  if (!nsCocoaFeatures::OnLionOrLater()) {
-    
-    
-    
-    MOZ_CRASH();
-  }
-#endif
-
   mSharedBuffer = new ipc::SharedMemoryBasic;
   if (!mSharedBuffer->Create(sizeof(MutexData))) {
     MOZ_CRASH();
