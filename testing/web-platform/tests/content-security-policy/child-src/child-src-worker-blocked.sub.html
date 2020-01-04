@@ -20,6 +20,9 @@
             foo.onmessage = function(event) {
                 alert_assert("FAIL");
             };
+            foo.onerror = function(e) {
+                alert_assert("PASS");
+            }
         } catch (e) {
             alert_assert("PASS");
         }
