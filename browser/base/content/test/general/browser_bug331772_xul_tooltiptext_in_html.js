@@ -1,22 +1,19 @@
 
 
 
-function test () {
-  waitForExplicitFinish();
-  gBrowser.selectedTab = gBrowser.addTab();
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(() => {
-    let doc = gBrowser.contentDocument;
-    let tooltip = document.getElementById("aHTMLTooltip");
-
-    ok(tooltip.fillInPageTooltip(doc.getElementById("xulToolbarButton")), "should get tooltiptext");
-    is(tooltip.getAttribute("label"), "XUL tooltiptext");
-
-    gBrowser.removeCurrentTab();
-    finish();
+add_task(function*() {
+  yield BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: "http://mochi.test:8888/browser/browser/base/content/test/general/xul_tooltiptext.xhtml",
+  }, function*(browser) {
+    yield ContentTask.spawn(browser, "", function() {
+      let textObj = {};
+      let tttp = Cc["@mozilla.org/embedcomp/default-tooltiptextprovider;1"]
+                 .getService(Ci.nsITooltipTextProvider);
+      let xulToolbarButton = content.document.getElementById("xulToolbarButton");
+      ok(tttp.getNodeText(xulToolbarButton, textObj, {}), "should get tooltiptext");
+      is(textObj.value, "XUL tooltiptext");
+    });
   });
-
-  gBrowser.loadURI(
-    "http://mochi.test:8888/browser/browser/base/content/test/general/xul_tooltiptext.xhtml"
-  );
-}
+});
 
