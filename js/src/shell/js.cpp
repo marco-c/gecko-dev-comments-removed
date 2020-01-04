@@ -260,8 +260,10 @@ class ShellPrincipals final : public JSPrincipals {
     }
 
     bool write(JSContext* cx, JSStructuredCloneWriter* writer) override {
-        MOZ_ASSERT(false, "not implemented");
-        return false;
+        
+        
+        
+        return JS_WriteUint32Pair(writer, bits, 0);
     }
 
     static void destroy(JSPrincipals* principals) {
