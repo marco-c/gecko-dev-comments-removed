@@ -293,9 +293,15 @@ private:
   nsCString mStorageID;
 
   
-  bool const mUseDisk : 1;
   
-  bool const mSkipSizeCheck : 1;
+  
+  
+  
+  bool const mUseDisk;
+  
+  bool const mSkipSizeCheck;
+  
+  bool mIsDoomed;
 
   
 
@@ -315,10 +321,6 @@ private:
   
   
   bool mPinningKnown : 1;
-
-  
-  
-  bool mIsDoomed;
 
   static char const * StateString(uint32_t aState);
 
