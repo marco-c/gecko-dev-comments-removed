@@ -844,11 +844,6 @@ void CacheEntry::InvokeAvailableCallback(Callback const & aCallback)
     return;
   }
 
-  if (NS_SUCCEEDED(mFileStatus) && !aCallback.mSecret) {
-    
-    mFile->OnFetched();
-  }
-
   if (mIsDoomed || aCallback.mNotWanted) {
     LOG(("  doomed or not wanted, notifying OCEA with NS_ERROR_CACHE_KEY_NOT_FOUND"));
     aCallback.mCallback->OnCacheEntryAvailable(
@@ -864,6 +859,8 @@ void CacheEntry::InvokeAvailableCallback(Callback const & aCallback)
       mozilla::MutexAutoLock lock(mLock);
       BackgroundOp(Ops::FRECENCYUPDATE);
     }
+
+    OnFetched(aCallback);
 
     RefPtr<CacheEntryHandle> handle = NewHandle();
     aCallback.mCallback->OnCacheEntryAvailable(
@@ -886,6 +883,8 @@ void CacheEntry::InvokeAvailableCallback(Callback const & aCallback)
 
   
 
+  OnFetched(aCallback);
+
   RefPtr<CacheEntryHandle> handle = NewWriteHandle();
   rv = aCallback.mCallback->OnCacheEntryAvailable(
     handle, state == WRITING, nullptr, NS_OK);
@@ -899,6 +898,14 @@ void CacheEntry::InvokeAvailableCallback(Callback const & aCallback)
   }
 
   LOG(("  writing/revalidating"));
+}
+
+void CacheEntry::OnFetched(Callback const & aCallback)
+{
+  if (NS_SUCCEEDED(mFileStatus) && !aCallback.mSecret) {
+    
+    mFile->OnFetched();
+  }
 }
 
 CacheEntryHandle* CacheEntry::NewHandle()
