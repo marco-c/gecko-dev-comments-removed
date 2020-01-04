@@ -41,6 +41,7 @@ public:
 
   
   static int GetNumDecoderThreads();
+  static bool LowLatencyMFTEnabled();
 private:
   bool mWMFInitialized;
 };
