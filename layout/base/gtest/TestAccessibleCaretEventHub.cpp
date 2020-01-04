@@ -35,7 +35,7 @@ namespace mozilla
 class MockAccessibleCaretManager : public AccessibleCaretManager
 {
 public:
-  MockAccessibleCaretManager()
+  explicit MockAccessibleCaretManager()
     : AccessibleCaretManager(nullptr)
   {
   }
@@ -63,7 +63,7 @@ public:
   using AccessibleCaretEventHub::LongTapState;
   using AccessibleCaretEventHub::FireScrollEnd;
 
-  MockAccessibleCaretEventHub()
+  explicit MockAccessibleCaretEventHub()
     : AccessibleCaretEventHub(nullptr)
   {
     mManager = MakeUnique<MockAccessibleCaretManager>();
@@ -101,20 +101,10 @@ public:
 class AccessibleCaretEventHubTester : public ::testing::Test
 {
 public:
-  AccessibleCaretEventHubTester()
+  explicit AccessibleCaretEventHubTester()
   {
     DefaultValue<nsresult>::Set(NS_OK);
     EXPECT_EQ(mHub->GetState(), MockAccessibleCaretEventHub::NoActionState());
-
-    
-    
-    mHub->AddRef();
-  }
-
-  ~AccessibleCaretEventHubTester()
-  {
-    
-    mHub->Release();
   }
 
   static UniquePtr<WidgetEvent> CreateMouseEvent(EventMessage aMessage,
