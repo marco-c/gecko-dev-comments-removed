@@ -50,6 +50,10 @@ public:
 
   
   
+  DECL_GFX_ENV_ONCE("MOZ_DISABLE_FORCE_PRESENT", DisableForcePresent);
+
+  
+  
   
   
   
