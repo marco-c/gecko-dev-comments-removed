@@ -3357,9 +3357,11 @@ nsLineLayout::RelativePositionFrames(PerSpanData* psd, nsOverflowAreas& aOverflo
         
         
         
+        
         if (pfd->mRecomputeOverflow ||
             frame->StyleContext()->HasTextDecorationLines() ||
-            frame->StyleText()->HasTextEmphasis()) {
+            frame->StyleText()->HasTextEmphasis() ||
+            frame->StyleText()->HasWebkitTextStroke()) {
           nsTextFrame* f = static_cast<nsTextFrame*>(frame);
           r = f->RecomputeOverflow(mBlockReflowState->frame);
         }
