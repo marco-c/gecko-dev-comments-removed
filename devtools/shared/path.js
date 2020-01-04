@@ -4,14 +4,13 @@
 
 "use strict";
 
-const Services = require("Services");
+const URL = require("URL");
 
 
 
 
 exports.dirname = path => {
-  return Services.io.newURI(
-    ".", null, Services.io.newURI(path, null, null)).spec;
+  return new URL(".", new URL(path)).href;
 }
 
 
@@ -19,10 +18,10 @@ exports.dirname = path => {
 
 
 exports.joinURI = (initialPath, ...paths) => {
-  let uri;
+  let url;
 
   try {
-    uri = Services.io.newURI(initialPath, null, null);
+    url = new URL(initialPath);
   }
   catch(e) {
     return;
@@ -30,9 +29,9 @@ exports.joinURI = (initialPath, ...paths) => {
 
   for(let path of paths) {
     if (path) {
-      uri = Services.io.newURI(path, null, uri);
+      url = new URL(path, url);
     }
   }
 
-  return uri.spec;
+  return url.href;
 }
