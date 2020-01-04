@@ -4400,10 +4400,6 @@ pref("layers.tiles.edge-padding", true);
 #endif
 
 
-
-pref("layers.offmainthreadcomposition.testing.enabled", false);
-
-
 pref("layers.offmainthreadcomposition.async-animations", true);
 
 
