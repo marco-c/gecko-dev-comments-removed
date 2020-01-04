@@ -16,6 +16,7 @@
 #include "nsError.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsIOService.h"
 #include "prnetdb.h"
 #include "prio.h"
 #include "nsNetAddr.h"
@@ -332,6 +333,10 @@ nsUDPSocket::TryAttach()
   if (!gSocketTransportService)
     return NS_ERROR_FAILURE;
 
+  if (gIOService->IsNetTearingDown()) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   
@@ -580,6 +585,10 @@ nsUDPSocket::InitWithAddress(const NetAddr *aAddr, nsIPrincipal *aPrincipal,
                              bool aAddressReuse, uint8_t aOptionalArgc)
 {
   NS_ENSURE_TRUE(mFD == nullptr, NS_ERROR_ALREADY_INITIALIZED);
+
+  if (gIOService->IsNetTearingDown()) {
+    return NS_ERROR_FAILURE;
+  }
 
   bool addressReuse = (aOptionalArgc == 1) ? aAddressReuse : true;
 
