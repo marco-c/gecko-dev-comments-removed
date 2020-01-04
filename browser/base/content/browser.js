@@ -4049,10 +4049,6 @@ var XULBrowserWindow = {
     delete this.isImage;
     return this.isImage = document.getElementById("isImage");
   },
-  get canViewSource () {
-    delete this.canViewSource;
-    return this.canViewSource = document.getElementById("canViewSource");
-  },
 
   init: function () {
     
@@ -4210,7 +4206,6 @@ var XULBrowserWindow = {
       if (aRequest) {
         let msg = "";
         let location;
-        let canViewSource = true;
         
         if (aRequest instanceof nsIChannel || "URI" in aRequest) {
           location = aRequest.URI;
@@ -4218,9 +4213,6 @@ var XULBrowserWindow = {
           
           if (location.scheme == "keyword" && aWebProgress.isTopLevel)
             gBrowser.userTypedValue = null;
-
-          canViewSource = !Services.prefs.getBoolPref("view_source.tab") ||
-                          location.scheme != "view-source";
 
           if (location.spec != "about:blank") {
             switch (aStatus) {
@@ -4235,18 +4227,10 @@ var XULBrowserWindow = {
         this.setDefaultStatus(msg);
 
         
-        if (browser.documentContentType && BrowserUtils.mimeTypeIsTextBased(browser.documentContentType)) {
+        if (browser.documentContentType && BrowserUtils.mimeTypeIsTextBased(browser.documentContentType))
           this.isImage.removeAttribute('disabled');
-        } else {
-          canViewSource = false;
+        else
           this.isImage.setAttribute('disabled', 'true');
-        }
-
-        if (canViewSource) {
-          this.canViewSource.removeAttribute('disabled');
-        } else {
-          this.canViewSource.setAttribute('disabled', 'true');
-        }
       }
 
       this.isBusy = false;
