@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#include "mozilla/Logging.h"
+#include "mozilla/Function.h"
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+void NSPRLogModulesParser(const char* aLogModules,
+                          Function<void(const char*, LogLevel)> aCallback);
+
+} 
