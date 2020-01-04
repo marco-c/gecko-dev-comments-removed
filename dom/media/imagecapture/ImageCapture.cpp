@@ -78,7 +78,7 @@ ImageCapture::TakePhotoByMediaEngine()
   
   
   class TakePhotoCallback : public MediaEnginePhotoCallback,
-                            public DOMMediaStream::PrincipalChangeObserver
+                            public PrincipalChangeObserver<DOMMediaStream>
   {
   public:
     TakePhotoCallback(VideoStreamTrack* aVideoTrack, ImageCapture* aImageCapture)

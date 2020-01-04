@@ -16,6 +16,7 @@
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/CORSMode.h"
+#include "PrincipalChangeObserver.h"
 
 
 
@@ -456,17 +457,8 @@ public:
 
   void SetPrincipal(nsIPrincipal* aPrincipal);
 
-  
-
-
-
-  class PrincipalChangeObserver
-  {
-  public:
-    virtual void PrincipalChanged(DOMMediaStream* aMediaStream) = 0;
-  };
-  bool AddPrincipalChangeObserver(PrincipalChangeObserver* aObserver);
-  bool RemovePrincipalChangeObserver(PrincipalChangeObserver* aObserver);
+  bool AddPrincipalChangeObserver(dom::PrincipalChangeObserver<DOMMediaStream>* aObserver);
+  bool RemovePrincipalChangeObserver(dom::PrincipalChangeObserver<DOMMediaStream>* aObserver);
 
   
 
@@ -652,7 +644,7 @@ private:
   
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  nsTArray<PrincipalChangeObserver*> mPrincipalChangeObservers;
+  nsTArray<dom::PrincipalChangeObserver<DOMMediaStream>*> mPrincipalChangeObservers;
   
   
   nsAutoPtr<PeerIdentity> mPeerIdentity;

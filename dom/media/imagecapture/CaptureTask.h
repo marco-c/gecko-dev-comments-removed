@@ -28,7 +28,7 @@ class ImageCapture;
 
 
 class CaptureTask : public MediaStreamListener,
-                    public DOMMediaStream::PrincipalChangeObserver
+                    public dom::PrincipalChangeObserver<DOMMediaStream>
 {
 public:
   
