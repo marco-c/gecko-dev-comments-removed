@@ -19,7 +19,8 @@ add_task(function* test_empty_password() {
       
       
       let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "popupshown");
+                                                       "popupshown",
+                                                       (event) => event.target == PopupNotifications.panel);
       yield ContentTask.spawn(browser, null,
         function* () {
           let doc = content.document;
@@ -61,7 +62,8 @@ add_task(function* test_toggle_password() {
       
       
       let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "popupshown");
+                                                       "popupshown",
+                                                       (event) => event.target == PopupNotifications.panel);
       yield ContentTask.spawn(browser, null,
         function* () {
           let doc = content.document;
@@ -98,7 +100,8 @@ add_task(function* test_checkbox_disabled_if_has_master_password() {
       
       
       let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "popupshown");
+                                                       "popupshown",
+                                                       (event) => event.target == PopupNotifications.panel);
 
       LoginTestUtils.masterPassword.enable();
 

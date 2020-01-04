@@ -78,7 +78,8 @@ add_task(function* test_edit_password() {
       
       
       let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "popupshown");
+                                                       "popupshown",
+                                                       (event) => event.target == PopupNotifications.panel);
       yield ContentTask.spawn(browser, testCase,
         function* (testCase) {
           let doc = content.document;
@@ -87,18 +88,20 @@ add_task(function* test_edit_password() {
           doc.getElementById("form-basic").submit();
         });
       yield promiseShown;
-
       let notificationElement = PopupNotifications.panel.childNodes[0];
+      
+      notificationElement.querySelector("#password-notification-password").clientTop;
+
       
       if (testCase.usernameChangedTo) {
         notificationElement.querySelector("#password-notification-username")
-                .setAttribute("value", testCase.usernameChangedTo);
+                .value = testCase.usernameChangedTo;
       }
 
       
       if (testCase.passwordChangedTo) {
         notificationElement.querySelector("#password-notification-password")
-                .setAttribute("value", testCase.passwordChangedTo);
+                .value = testCase.passwordChangedTo;
       }
 
       
