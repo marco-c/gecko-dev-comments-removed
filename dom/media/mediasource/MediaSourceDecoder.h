@@ -12,7 +12,6 @@
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "MediaDecoder.h"
-#include "MediaSourceReader.h"
 
 class nsIStreamListener;
 
@@ -58,12 +57,6 @@ public:
   void AttachMediaSource(dom::MediaSource* aMediaSource);
   void DetachMediaSource();
 
-  already_AddRefed<SourceBufferDecoder> CreateSubDecoder(const nsACString& aType,
-                                                         int64_t aTimestampOffset );
-  void AddTrackBuffer(TrackBuffer* aTrackBuffer);
-  void RemoveTrackBuffer(TrackBuffer* aTrackBuffer);
-  void OnTrackBufferConfigured(TrackBuffer* aTrackBuffer, const MediaInfo& aInfo);
-
   void Ended(bool aEnded);
 
   
@@ -73,31 +66,14 @@ public:
   void SetMediaSourceDuration(double aDuration, MSRangeRemovalAction aAction);
   double GetMediaSourceDuration();
 
-  
-  
-  void NotifyTimeRangesChanged();
-
-  
-  
-  void PrepareReaderInitialization();
-
 #ifdef MOZ_EME
   virtual nsresult SetCDMProxy(CDMProxy* aProxy) override;
 #endif
 
-  MediaSourceReader* GetReader()
-  {
-    MOZ_ASSERT(!mIsUsingFormatReader);
-    return static_cast<MediaSourceReader*>(mReader.get());
-  }
   MediaSourceDemuxer* GetDemuxer()
   {
     return mDemuxer;
   }
-
-  
-  
-  bool IsActiveReader(MediaDecoderReader* aReader);
 
   
   
@@ -110,8 +86,6 @@ private:
   
   
   dom::MediaSource* mMediaSource;
-  nsRefPtr<MediaDecoderReader> mReader;
-  bool mIsUsingFormatReader;
   nsRefPtr<MediaSourceDemuxer> mDemuxer;
 
   Atomic<bool> mEnded;
