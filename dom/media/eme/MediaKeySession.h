@@ -101,6 +101,14 @@ private:
   ~MediaKeySession();
 
   void UpdateKeyStatusMap();
+
+  bool IsCallable() const {
+    
+    
+    
+    return !mSessionId.IsEmpty();
+  }
+
   already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,
                                                 const nsACString& aName);
 
