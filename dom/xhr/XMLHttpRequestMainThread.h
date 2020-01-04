@@ -543,6 +543,11 @@ public:
                              int64_t aLoaded, int64_t aTotal);
 
   
+  
+  
+  void MaybeDispatchProgressEvents(bool aFinalProgress);
+
+  
   nsresult Init();
 
   nsresult init(nsIPrincipal* principal,
@@ -599,12 +604,10 @@ protected:
   already_AddRefed<nsIJARChannel> GetCurrentJARChannel();
 
   bool IsSystemXHR() const;
-  bool InUploadPhase() const;
 
   void ChangeStateToDone();
 
   void StartProgressEventTimer();
-  void StopProgressEventTimer();
 
   nsresult OnRedirectVerifyCallback(nsresult result);
 
