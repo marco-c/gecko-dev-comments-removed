@@ -552,6 +552,12 @@ KeyframeEffectReadOnly::UpdateTargetRegistration()
     if (effectSet) {
       effectSet->RemoveEffect(*this);
     }
+    
+    
+    
+    for (bool& isRunningOnCompositor : mIsPropertyRunningOnCompositor) {
+      isRunningOnCompositor = false;
+    }
   }
 }
 
