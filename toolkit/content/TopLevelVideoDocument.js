@@ -9,9 +9,33 @@ let videoElement = document.getElementsByTagName("video")[0];
 
 
 
+
 document.addEventListener("keypress", ev => {
   if (ev.synthetic) 
     return;
+
+  
+  
+  if (ev.key == "F11") {
+    
+    
+    
+    if (window.fullScreen) {
+      return;
+    }
+
+    
+    
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    if (!document.mozFullScreenElement) {
+      videoElement.mozRequestFullScreen();
+    } else {
+      document.mozCancelFullScreen();
+    }
+    return;
+  }
 
   
   
