@@ -10,168 +10,44 @@
 
 
 
-const { interfaces: Ci, utils: Cu } = Components;
 
-Cu.import('resource://gre/modules/Services.jsm');
-
-
-
-
-const CURRENT_DIR =
-  'chrome://mochitests/content/browser/accessible/tests/browser/';
-
-
-
-
-const MOCHITESTS_DIR =
-  'chrome://mochitests/content/a11y/accessible/tests/mochitest/';
-
-
-
-const CURRENT_CONTENT_DIR =
-  'http://example.com/browser/accessible/tests/browser/';
-
-
-
-
-let Logger = {
-  
-
-
-  dumpToConsole: false,
-
-  
-
-
-  dumpToAppConsole: false,
-
-  
-
-
-  get enabled() {
-    return this.dumpToConsole || this.dumpToAppConsole;
-  },
-
-  
-
-
-  log(msg) {
-    if (this.enabled) {
-      this.logToConsole(msg);
-      this.logToAppConsole(msg);
-    }
-  },
-
-  
-
-
-  logToConsole(msg) {
-    if (this.dumpToConsole) {
-      dump(`\n${msg}\n`);
-    }
-  },
-
-  
-
-
-  logToAppConsole(msg) {
-    if (this.dumpToAppConsole) {
-      Services.console.logStringMessage(`${msg}`);
-    }
-  }
-};
-
-
-
-
-
-
-function isDefunct(accessible) {
-  let defunct = false;
-  try {
-    let extState = {};
-    accessible.getState({}, extState);
-    defunct = extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT;
-  } catch (x) {
-    defunct = true;
-  } finally {
-    if (defunct) {
-      Logger.log(`Defunct accessible: ${prettyName(accessible)}`);
-    }
-  }
-  return defunct;
+function setE10sPrefs() {
+  return new Promise(resolve =>
+    SpecialPowers.pushPrefEnv({
+      set: [
+        ['browser.tabs.remote.autostart', true],
+        ['browser.tabs.remote.force-enable', true],
+        ['extensions.e10sBlocksEnabling', false]
+      ]
+    }, resolve));
 }
 
 
 
 
 
-
-
-
-
-
-
-function invokeSetAttribute(browser, id, attr, value) {
-  if (value) {
-    Logger.log(`Setting ${attr} attribute to ${value} for node with id: ${id}`);
-  } else {
-    Logger.log(`Removing ${attr} attribute from node with id: ${id}`);
-  }
-  return ContentTask.spawn(browser, { id, attr, value },
-    ({ id, attr, value }) => {
-      let elm = content.document.getElementById(id);
-      if (value) {
-        elm.setAttribute(attr, value);
-      } else {
-        elm.removeAttribute(attr);
-      }
-    });
+function unsetE10sPrefs() {
+  return new Promise(resolve => {
+    SpecialPowers.popPrefEnv(resolve);
+  });
 }
 
 
+Services.scriptloader.loadSubScript(
+  'chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js',
+  this);
 
 
 
 
 
-
-
-
-
-function invokeSetStyle(browser, id, style, value) {
-  if (value) {
-    Logger.log(`Setting ${style} style to ${value} for node with id: ${id}`);
-  } else {
-    Logger.log(`Removing ${style} style from node with id: ${id}`);
-  }
-  return ContentTask.spawn(browser, { id, style, value },
-    ({ id, style, value }) => {
-      let elm = content.document.getElementById(id);
-      if (value) {
-        elm.style[style] = value;
-      } else {
-        delete elm.style[style];
-      }
-    });
-}
-
-
-
-
-
-
-
-
-function invokeFocus(browser, id) {
-  Logger.log(`Setting focus on a node with id: ${id}`);
-  return ContentTask.spawn(browser, id, id => {
-    let elm = content.document.getElementById(id);
-    if (elm instanceof Ci.nsIDOMNSEditableElement && elm.editor ||
-        elm instanceof Ci.nsIDOMXULTextBoxElement) {
-      elm.selectionStart = elm.selectionEnd = elm.value.length;
-    }
-    elm.focus();
+function a11yInitOrShutdownPromise() {
+  return new Promise(resolve => {
+    let observe = (subject, topic, data) => {
+      Services.obs.removeObserver(observe, 'a11y-init-or-shutdown');
+      resolve(data);
+    };
+    Services.obs.addObserver(observe, 'a11y-init-or-shutdown', false);
   });
 }
 
@@ -181,29 +57,8 @@ function invokeFocus(browser, id) {
 
 
 
-
-function findAccessibleChildByID(accessible, id) {
-  if (getAccessibleDOMNodeID(accessible) === id) {
-    return accessible;
-  }
-  for (let i = 0; i < accessible.children.length; ++i) {
-    let found = findAccessibleChildByID(accessible.getChildAt(i), id);
-    if (found) {
-      return found;
-    }
-  }
-}
-
-
-
-
-
-function loadScripts(...scripts) {
-  for (let script of scripts) {
-    let path = typeof script === 'string' ? `${CURRENT_DIR}${script}` :
-      `${script.dir}${script.name}`;
-    Services.scriptloader.loadSubScript(path, this);
-  }
+function contentA11yInitOrShutdownPromise(browser) {
+  return ContentTask.spawn(browser, {}, a11yInitOrShutdownPromise);
 }
 
 
@@ -211,25 +66,9 @@ function loadScripts(...scripts) {
 
 
 
-function loadFrameScripts(browser, ...scripts) {
-  let mm = browser.messageManager;
-  for (let script of scripts) {
-    let frameScript;
-    if (typeof script === 'string') {
-      if (script.includes('.js')) {
-        
-        
-        frameScript = `${CURRENT_DIR}${script}`;
-      } else {
-        
-        frameScript = `data:,${script}`;
-      }
-    } else {
-      
-      frameScript = `${script.dir}${script.name}`;
-    }
-    mm.loadFrameScript(frameScript, false, true);
-  }
+function promiseOK(promise, expected) {
+  return promise.then(flag =>
+    flag === expected ? Promise.resolve() : Promise.reject());
 }
 
 
@@ -241,63 +80,37 @@ function loadFrameScripts(browser, ...scripts) {
 
 
 
-function addAccessibleTask(doc, task) {
-  add_task(function*() {
-    let url;
-    if (doc.includes('doc_')) {
-      url = `${CURRENT_CONTENT_DIR}${doc}`;
-    } else {
-      
-      url = `data:text/html,
-        <html>
-          <head>
-            <meta charset="utf-8"/>
-            <title>Accessibility Test</title>
-          </head>
-          <body id="body">${doc}</body>
-        </html>`;
-    }
-
-    registerCleanupFunction(() => {
-      let observers = Services.obs.enumerateObservers('accessible-event');
-      while (observers.hasMoreElements()) {
-        Services.obs.removeObserver(
-          observers.getNext().QueryInterface(Ci.nsIObserver),
-          'accessible-event');
-      }
-    });
-
-    let onDocLoad = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, 'body');
-
-    yield BrowserTestUtils.withNewTab({
-      gBrowser,
-      url: url
-    }, function*(browser) {
-      registerCleanupFunction(() => {
-        if (browser) {
-          let tab = gBrowser.getTabForBrowser(browser);
-          if (tab && !tab.closing && tab.linkedBrowser) {
-            gBrowser.removeTab(tab);
-          }
-        }
-      });
-
-      yield SimpleTest.promiseFocus(browser);
-
-      loadFrameScripts(browser,
-        'let { document, window, navigator } = content;',
-        { name: 'common.js', dir: MOCHITESTS_DIR });
-
-      Logger.log(
-        `e10s enabled: ${Services.appinfo.browserTabsRemoteAutostart}`);
-      Logger.log(`Actually remote browser: ${browser.isRemoteBrowser}`);
-
-      let event = yield onDocLoad;
-      yield task(browser, event.accessible);
-    });
-  });
+function initPromise(contentBrowser) {
+  let a11yInitPromise = contentBrowser ?
+    contentA11yInitOrShutdownPromise(contentBrowser) :
+    a11yInitOrShutdownPromise();
+  return promiseOK(a11yInitPromise, '1').then(
+    () => ok(true, 'Service initialized correctly'),
+    () => ok(false, 'Service shutdown incorrectly'));
 }
 
 
 
-loadScripts({ name: 'common.js', dir: MOCHITESTS_DIR }, 'events.js');
+
+
+
+
+
+
+
+function shutdownPromise(contentBrowser) {
+  let a11yShutdownPromise = contentBrowser ?
+    contentA11yInitOrShutdownPromise(contentBrowser) :
+    a11yInitOrShutdownPromise();
+  return promiseOK(a11yShutdownPromise, '0').then(
+    () => ok(true, 'Service shutdown correctly'),
+    () => ok(false, 'Service initialized incorrectly'));
+}
+
+
+
+
+function forceGC() {
+  Cu.forceCC();
+  Cu.forceGC();
+}
