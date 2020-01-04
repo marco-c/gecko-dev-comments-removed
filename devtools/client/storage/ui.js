@@ -225,12 +225,15 @@ StorageUI.prototype = {
     return this.storageTypes[type];
   },
 
-  makeFieldsEditable: function* () {
-    let actor = this.getCurrentActor();
+  
 
-    if (typeof actor.getEditableFields !== "undefined") {
-      let fields = yield actor.getEditableFields();
-      this.table.makeFieldsEditable(fields);
+
+
+
+
+  makeFieldsEditable: function* (editableFields) {
+    if (editableFields && editableFields.length > 0) {
+      this.table.makeFieldsEditable(editableFields);
     } else if (this.table._editableFieldsEngine) {
       this.table._editableFieldsEngine.destroy();
     }
@@ -486,11 +489,25 @@ StorageUI.prototype = {
     }
 
     try {
+      if (reason === REASON.POPULATE) {
+        let subType = null;
+        
+        
+        
+        if (type == "indexedDB" && names) {
+          let [ dbName, objectStoreName ] = JSON.parse(names[0]);
+          if (dbName) {
+            subType = "database";
+          }
+          if (objectStoreName) {
+            subType = "object store";
+          }
+        }
+        yield this.resetColumns(type, host, subType);
+      }
+
       let {data} = yield storageType.getStoreObjects(host, names, fetchOpts);
       if (data.length) {
-        if (reason === REASON.POPULATE) {
-          yield this.resetColumns(data[0], type, host);
-        }
         this.populateTable(data, reason);
       }
       this.emit("store-objects-updated");
@@ -740,27 +757,37 @@ StorageUI.prototype = {
 
 
 
-  resetColumns: function* (data, type, host) {
-    let columns = {};
+  resetColumns: function* (type, host, subtype) {
+    this.table.host = host;
+    this.table.datatype = type;
+
     let uniqueKey = null;
-    for (let key in data) {
+    let columns = {};
+    let editableFields = [];
+    let fields = yield this.getCurrentActor().getFields(subtype);
+
+    fields.forEach(f => {
       if (!uniqueKey) {
-        this.table.uniqueId = uniqueKey = key;
+        this.table.uniqueId = uniqueKey = f.name;
       }
-      columns[key] = key;
+
+      if (f.editable) {
+        editableFields.push(f.name);
+      }
+
+      columns[f.name] = f.name;
       try {
-        columns[key] = L10N.getStr("table.headers." + type + "." + key);
+        columns[f.name] = L10N.getStr("table.headers." + type + "." + f.name);
       } catch (e) {
         console.error("Unable to localize table header type:" + type +
-                      " key:" + key);
+                      " key:" + f.name);
       }
-    }
+    });
+
     this.table.setColumns(columns, null, HIDDEN_COLUMNS);
-    this.table.datatype = type;
-    this.table.host = host;
     this.hideSidebar();
 
-    yield this.makeFieldsEditable();
+    yield this.makeFieldsEditable(editableFields);
   },
 
   
