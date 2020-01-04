@@ -109,9 +109,16 @@ public:
   WorkerThread* GetWorkerThread() { return mPinToThread; }
 
 protected:
+  
+  
+  
+  Job* mNextWaitingJob;
+
   RefPtr<SyncObject> mStartSync;
   RefPtr<SyncObject> mCompletionSync;
   WorkerThread* mPinToThread;
+
+  friend class SyncObject;
 };
 
 class EventObject;
@@ -205,9 +212,8 @@ private:
 
   void SubmitWaitingJobs();
 
-  std::vector<Job*> mWaitingJobs;
-  CriticalSection mWaitingJobsSection; 
   Atomic<int32_t> mSignals;
+  Atomic<Job*> mFirstWaitingJob;
 
 #ifdef DEBUG
   uint32_t mNumPrerequisites;

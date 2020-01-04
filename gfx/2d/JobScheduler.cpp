@@ -84,7 +84,8 @@ JobScheduler::GetQueueForJob(Job* aJob)
 }
 
 Job::Job(SyncObject* aStart, SyncObject* aCompletion, WorkerThread* aThread)
-: mStartSync(aStart)
+: mNextWaitingJob(nullptr)
+, mStartSync(aStart)
 , mCompletionSync(aCompletion)
 , mPinToThread(aThread)
 {
@@ -124,6 +125,7 @@ SetEventJob::~SetEventJob()
 
 SyncObject::SyncObject(uint32_t aNumPrerequisites)
 : mSignals(aNumPrerequisites)
+, mFirstWaitingJob(nullptr)
 #ifdef DEBUG
 , mNumPrerequisites(aNumPrerequisites)
 , mAddedPrerequisites(0)
@@ -132,7 +134,7 @@ SyncObject::SyncObject(uint32_t aNumPrerequisites)
 
 SyncObject::~SyncObject()
 {
-  MOZ_ASSERT(mWaitingJobs.size() == 0);
+  MOZ_ASSERT(mFirstWaitingJob == nullptr);
 }
 
 bool
@@ -184,28 +186,41 @@ SyncObject::Signal()
 void
 SyncObject::AddWaitingJob(Job* aJob)
 {
-  CriticalSectionAutoEnter lock(&mWaitingJobsSection);
-  mWaitingJobs.push_back(aJob);
+  
+  for (;;) {
+    Job* first = mFirstWaitingJob;
+    aJob->mNextWaitingJob = first;
+    if (mFirstWaitingJob.compareExchange(first, aJob)) {
+      break;
+    }
+  }
 }
 
 void SyncObject::SubmitWaitingJobs()
 {
-  std::vector<Job*> tasksToSubmit;
-  {
-    
-    
-    
-    
-    
-    RefPtr<SyncObject> kungFuDeathGrip(this);
+  
+  
+  
+  
+  
+  RefPtr<SyncObject> kungFuDeathGrip(this);
 
-    CriticalSectionAutoEnter lock(&mWaitingJobsSection);
-    tasksToSubmit = Move(mWaitingJobs);
-    mWaitingJobs.clear();
+  
+  Job* waitingJobs = nullptr;
+  for (;;) {
+    waitingJobs = mFirstWaitingJob;
+    if (mFirstWaitingJob.compareExchange(waitingJobs, nullptr)) {
+      break;
+    }
   }
 
-  for (Job* task : tasksToSubmit) {
-    JobScheduler::GetQueueForJob(task)->SubmitJob(task);
+  
+  
+  while (waitingJobs) {
+    Job* next = waitingJobs->mNextWaitingJob;
+    waitingJobs->mNextWaitingJob = nullptr;
+    JobScheduler::GetQueueForJob(waitingJobs)->SubmitJob(waitingJobs);
+    waitingJobs = next;
   }
 }
 
