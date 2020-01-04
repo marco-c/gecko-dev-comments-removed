@@ -84,11 +84,14 @@ public class GeckoThread extends Thread implements GeckoEventListener {
         public Method method;
         public Object target;
         public Object[] args;
+        public State state;
 
-        public QueuedCall(final Method method, final Object target, final Object[] args) {
+        public QueuedCall(final Method method, final Object target,
+                          final Object[] args, final State state) {
             this.method = method;
             this.target = target;
             this.args = args;
+            this.state = state;
         }
     }
 
@@ -161,7 +164,8 @@ public class GeckoThread extends Thread implements GeckoEventListener {
 
     
     private static void queueNativeCallLocked(final Class<?> cls, final String methodName,
-                                              final Object obj, final Object[] args) {
+                                              final Object obj, final Object[] args,
+                                              final State state) {
         final Class<?>[] argTypes = new Class<?>[args.length];
         for (int i = 0; i < args.length; i++) {
             Class<?> argType = args[i].getClass();
@@ -182,11 +186,11 @@ public class GeckoThread extends Thread implements GeckoEventListener {
             throw new UnsupportedOperationException("Cannot find method", e);
         }
 
-        if (QUEUED_CALLS.size() == 0 && isRunning()) {
+        if (QUEUED_CALLS.size() == 0 && isStateAtLeast(state)) {
             invokeMethod(method, obj, args);
             return;
         }
-        QUEUED_CALLS.add(new QueuedCall(method, obj, args));
+        QUEUED_CALLS.add(new QueuedCall(method, obj, args, state));
     }
 
     
@@ -194,12 +198,25 @@ public class GeckoThread extends Thread implements GeckoEventListener {
 
 
 
+
+
+
+
+
+    public static void queueNativeCallUntil(final State state, final Class<?> cls,
+                                            final String methodName, final Object... args) {
+        synchronized (QUEUED_CALLS) {
+            queueNativeCallLocked(cls, methodName, null, args, state);
+        }
+    }
+
+    
 
 
     public static void queueNativeCall(final Class<?> cls, final String methodName,
                                        final Object... args) {
         synchronized (QUEUED_CALLS) {
-            queueNativeCallLocked(cls, methodName, null, args);
+            queueNativeCallLocked(cls, methodName, null, args, State.RUNNING);
         }
     }
 
@@ -208,22 +225,44 @@ public class GeckoThread extends Thread implements GeckoEventListener {
 
 
 
+
+
+
+    public static void queueNativeCallUntil(final State state, final Object obj,
+                                            final String methodName, final Object... args) {
+        synchronized (QUEUED_CALLS) {
+            queueNativeCallLocked(obj.getClass(), methodName, obj, args, state);
+        }
+    }
+
+    
 
 
     public static void queueNativeCall(final Object obj, final String methodName,
                                        final Object... args) {
         synchronized (QUEUED_CALLS) {
-            queueNativeCallLocked(obj.getClass(), methodName, obj, args);
+            queueNativeCallLocked(obj.getClass(), methodName, obj, args, State.RUNNING);
         }
     }
 
     
     private static void flushQueuedNativeCalls(final State state) {
-        if (!state.is(State.RUNNING)) {
-            return;
-        }
         synchronized (QUEUED_CALLS) {
-            for (QueuedCall call : QUEUED_CALLS) {
+            int lastSkipped = -1;
+            for (int i = 0; i < QUEUED_CALLS.size(); i++) {
+                final QueuedCall call = QUEUED_CALLS.get(i);
+                if (call == null) {
+                    
+                    continue;
+                }
+                if (!state.isAtLeast(call.state)) {
+                    
+                    lastSkipped = i;
+                    continue;
+                }
+                
+                QUEUED_CALLS.set(i, null);
+
                 if (call.method == null) {
                     final GeckoEvent e = (GeckoEvent) call.target;
                     GeckoAppShell.notifyGeckoOfEvent(e);
@@ -232,8 +271,15 @@ public class GeckoThread extends Thread implements GeckoEventListener {
                 }
                 invokeMethod(call.method, call.target, call.args);
             }
-            QUEUED_CALLS.clear();
-            QUEUED_CALLS.trimToSize();
+            if (lastSkipped < 0) {
+                
+                QUEUED_CALLS.clear();
+                QUEUED_CALLS.trimToSize();
+            } else if (lastSkipped < QUEUED_CALLS.size() - 1) {
+                
+                
+                QUEUED_CALLS.subList(lastSkipped + 1, QUEUED_CALLS.size()).clear();
+            }
         }
     }
 
@@ -409,7 +455,7 @@ public class GeckoThread extends Thread implements GeckoEventListener {
                 GeckoAppShell.notifyGeckoOfEvent(e);
                 e.recycle();
             } else {
-                QUEUED_CALLS.add(new QueuedCall(null, e, null));
+                QUEUED_CALLS.add(new QueuedCall(null, e, null, State.RUNNING));
             }
         }
     }
