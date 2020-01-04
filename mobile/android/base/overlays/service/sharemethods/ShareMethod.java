@@ -33,9 +33,6 @@ public abstract class ShareMethod {
 
     public abstract Result handle(ShareData shareData);
 
-    public abstract String getSuccessMessage();
-    public abstract String getFailureMessage();
-
     
 
 
