@@ -296,6 +296,13 @@ private:
 
   private:
     bool mInitialized;
+    
+    
+    
+    
+    bool mIsReliableScrollLines;
+    bool mIsReliableScrollChars;
+
     int32_t mScrollLines;
     int32_t mScrollChars;
 
