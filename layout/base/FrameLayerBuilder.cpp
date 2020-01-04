@@ -3980,12 +3980,12 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot->mParentAGR,
-					     clipPtr,
-					     uniformColorPtr);
+                                             clipPtr,
+                                             uniformColorPtr);
       } else if (prerenderedTransform) {
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot,
-					     clipPtr,
-					     uniformColorPtr);
+                                             clipPtr,
+                                             uniformColorPtr);
       } else {
         
         
