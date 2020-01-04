@@ -25,7 +25,6 @@ InputQueue::InputQueue()
 }
 
 InputQueue::~InputQueue() {
-  mInputBlockQueue.Clear();
   mQueuedInputs.Clear();
 }
 
@@ -154,7 +153,6 @@ InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
     INPQ_LOG("dropping event due to block %p being in mini-slop\n", block);
     result = nsEventStatus_eConsumeNoDefault;
   }
-  block->AddEvent(aEvent.AsMultiTouchInput());
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMultiTouchInput(), *block));
   ProcessInputBlocks();
   return result;
@@ -197,8 +195,6 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
     INPQ_LOG("started new drag block %p id %" PRIu64 " for %sconfirmed target %p\n",
         block, block->GetBlockId(), aTargetConfirmed ? "" : "un", aTarget.get());
 
-    SweepDepletedBlocks();
-    mInputBlockQueue.AppendElement(block);
     mActiveDragBlock = block;
 
     CancelAnimationsForNewBlock(block);
@@ -209,7 +205,6 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
     *aOutInputBlockId = block->GetBlockId();
   }
 
-  block->AddEvent(aEvent.AsMouseInput());
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMouseInput(), *block));
   ProcessInputBlocks();
 
@@ -244,8 +239,6 @@ InputQueue::ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarge
     INPQ_LOG("started new scroll wheel block %p id %" PRIu64 " for target %p\n",
         block, block->GetBlockId(), aTarget.get());
 
-    SweepDepletedBlocks();
-    mInputBlockQueue.AppendElement(block);
     mActiveWheelBlock = block;
 
     CancelAnimationsForNewBlock(block);
@@ -267,7 +260,6 @@ InputQueue::ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarge
   
   
   
-  block->AddEvent(event);
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
   ProcessInputBlocks();
 
@@ -331,8 +323,6 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
       result = nsEventStatus_eIgnore;
     }
 
-    SweepDepletedBlocks();
-    mInputBlockQueue.AppendElement(block);
     mActivePanGestureBlock = block;
 
     CancelAnimationsForNewBlock(block);
@@ -350,7 +340,6 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
   
   
   
-  block->AddEvent(event.AsPanGestureInput());
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event.AsPanGestureInput(), *block));
   ProcessInputBlocks();
 
@@ -413,23 +402,6 @@ InputQueue::InjectNewTouchBlock(AsyncPanZoomController* aTarget)
   return block->GetBlockId();
 }
 
-void
-InputQueue::SweepDepletedBlocks()
-{
-  
-  
-  while (!mInputBlockQueue.IsEmpty()) {
-    CancelableBlockState* block = mInputBlockQueue[0].get();
-    if (!block->IsReadyForHandling() || block->HasEvents()) {
-      break;
-    }
-
-    INPQ_LOG("discarding depleted %s block %p\n", block->Type(), block);
-    ClearActiveBlock(block);
-    mInputBlockQueue.RemoveElementAt(0);
-  }
-}
-
 TouchBlockState*
 InputQueue::StartNewTouchBlock(const RefPtr<AsyncPanZoomController>& aTarget,
                                bool aTargetConfirmed,
@@ -446,10 +418,6 @@ InputQueue::StartNewTouchBlock(const RefPtr<AsyncPanZoomController>& aTarget,
     newBlock->CopyPropertiesFrom(*GetCurrentTouchBlock());
   }
 
-  SweepDepletedBlocks();
-
-  
-  mInputBlockQueue.AppendElement(newBlock);
   mActiveTouchBlock = newBlock;
   return newBlock;
 }
@@ -458,11 +426,7 @@ CancelableBlockState*
 InputQueue::GetCurrentBlock() const
 {
   APZThreadUtils::AssertOnControllerThread();
-
-  if (mInputBlockQueue.IsEmpty()) {
-    return nullptr;
-  }
-  return mInputBlockQueue[0].get();
+  return mQueuedInputs.IsEmpty() ? nullptr : mQueuedInputs[0]->Block();
 }
 
 TouchBlockState*
@@ -506,9 +470,9 @@ InputQueue::GetCurrentWheelTransaction() const
 bool
 InputQueue::HasReadyTouchBlock() const
 {
-  return !mInputBlockQueue.IsEmpty() &&
-         mInputBlockQueue[0]->AsTouchBlock() &&
-         mInputBlockQueue[0]->IsReadyForHandling();
+  return !mQueuedInputs.IsEmpty() &&
+      mQueuedInputs[0]->Block()->AsTouchBlock() &&
+      mQueuedInputs[0]->Block()->IsReadyForHandling();
 }
 
 bool
@@ -572,7 +536,6 @@ InputQueue::FindBlockForId(const uint64_t& aInputBlockId,
   }
   
   
-  MOZ_ASSERT(!block || !block->HasEvents());
   if (aOutFirstInput) {
     *aOutFirstInput = nullptr;
   }
@@ -683,60 +646,61 @@ void
 InputQueue::ProcessInputBlocks() {
   APZThreadUtils::AssertOnControllerThread();
 
-  do {
-    CancelableBlockState* curBlock = GetCurrentBlock();
-    if (!curBlock || !curBlock->IsReadyForHandling()) {
+  while (!mQueuedInputs.IsEmpty()) {
+    CancelableBlockState* curBlock = mQueuedInputs[0]->Block();
+    if (!curBlock->IsReadyForHandling()) {
       break;
     }
 
-    INPQ_LOG("processing input block %p; preventDefault %d target %p\n",
+    INPQ_LOG("processing input from block %p; preventDefault %d target %p\n",
         curBlock, curBlock->IsDefaultPrevented(),
         curBlock->GetTargetApzc().get());
     RefPtr<AsyncPanZoomController> target = curBlock->GetTargetApzc();
     
     
-    if (!target) {
-      curBlock->DropEvents(&mQueuedInputs);
-    } else if (curBlock->IsDefaultPrevented()) {
-      curBlock->DropEvents(&mQueuedInputs);
-      if (curBlock->AsTouchBlock()) {
-        target->ResetTouchInputState();
+    if (target) {
+      if (curBlock->IsDefaultPrevented()) {
+        if (curBlock->AsTouchBlock()) {
+          target->ResetTouchInputState();
+        }
+      } else {
+        UpdateActiveApzc(target);
+        curBlock->DispatchEvent(*(mQueuedInputs[0]->Input()));
       }
-    } else {
-      UpdateActiveApzc(curBlock->GetTargetApzc());
-      curBlock->HandleEvents(&mQueuedInputs);
     }
-    MOZ_ASSERT(!curBlock->HasEvents());
+    mQueuedInputs.RemoveElementAt(0);
+  }
 
-    if (mInputBlockQueue.Length() == 1 && curBlock->MustStayActive()) {
-      
-      
-      
-      
-      break;
-    }
-
-    
-    
-    INPQ_LOG("discarding processed %s block %p\n", curBlock->Type(), curBlock);
-    ClearActiveBlock(curBlock);
-    mInputBlockQueue.RemoveElementAt(0);
-  } while (!mInputBlockQueue.IsEmpty());
-}
-
-void
-InputQueue::ClearActiveBlock(CancelableBlockState* aBlock)
-{
-  
-  if (mActiveTouchBlock.get() == aBlock) {
+  if (CanDiscardBlock(mActiveTouchBlock)) {
     mActiveTouchBlock = nullptr;
-  } else if (mActiveWheelBlock.get() == aBlock) {
+  }
+  if (CanDiscardBlock(mActiveWheelBlock)) {
     mActiveWheelBlock = nullptr;
-  } else if (mActiveDragBlock.get() == aBlock) {
+  }
+  if (CanDiscardBlock(mActiveDragBlock)) {
     mActiveDragBlock = nullptr;
-  } else if (mActivePanGestureBlock.get() == aBlock) {
+  }
+  if (CanDiscardBlock(mActivePanGestureBlock)) {
     mActivePanGestureBlock = nullptr;
   }
+}
+
+bool
+InputQueue::CanDiscardBlock(CancelableBlockState* aBlock)
+{
+  if (!aBlock ||
+      !aBlock->IsReadyForHandling() ||
+      aBlock->MustStayActive()) {
+    return false;
+  }
+  InputData* firstInput = nullptr;
+  FindBlockForId(aBlock->GetBlockId(), &firstInput);
+  if (firstInput) {
+    
+    
+    return false;
+  }
+  return true;
 }
 
 void
@@ -753,7 +717,6 @@ InputQueue::Clear()
 {
   APZThreadUtils::AssertOnControllerThread();
 
-  mInputBlockQueue.Clear();
   mQueuedInputs.Clear();
   mActiveTouchBlock = nullptr;
   mActiveWheelBlock = nullptr;

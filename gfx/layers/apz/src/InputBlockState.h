@@ -186,22 +186,6 @@ public:
   
 
 
-  virtual bool HasEvents() const = 0;
-
-  
-
-
-  virtual void DropEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) = 0;
-
-  
-
-
-
-  virtual void HandleEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) = 0;
-
-  
-
-
 
   virtual bool MustStayActive() = 0;
 
@@ -228,16 +212,11 @@ public:
                   const ScrollWheelInput& aEvent);
 
   bool SetContentResponse(bool aPreventDefault) override;
-  bool HasEvents() const override;
-  void DropEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
-  void HandleEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
   bool MustStayActive() override;
   const char* Type() override;
   bool SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                               TargetConfirmationState aState,
                               InputData* aFirstInput) override;
-
-  void AddEvent(const ScrollWheelInput& aEvent);
 
   WheelBlockState *AsWheelBlock() override {
     return this;
@@ -297,7 +276,6 @@ protected:
   void UpdateTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc) override;
 
 private:
-  nsTArray<ScrollWheelInput> mEvents;
   TimeStamp mLastEventTime;
   TimeStamp mLastMouseMove;
   uint32_t mScrollSeriesCounter;
@@ -314,16 +292,11 @@ public:
                  bool aTargetConfirmed,
                  const MouseInput& aEvent);
 
-  bool HasEvents() const override;
-  void DropEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
-  void HandleEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
   bool MustStayActive() override;
   const char* Type() override;
 
   bool HasReceivedMouseUp();
   void MarkMouseUpReceived();
-
-  void AddEvent(const MouseInput& aEvent);
 
   DragBlockState *AsDragBlock() override {
     return this;
@@ -333,7 +306,6 @@ public:
 
   void DispatchEvent(const InputData& aEvent) const override;
 private:
-  nsTArray<MouseInput> mEvents;
   AsyncDragMetrics mDragMetrics;
   bool mReceivedMouseUp;
 };
@@ -351,16 +323,11 @@ public:
   bool SetContentResponse(bool aPreventDefault) override;
   bool HasReceivedAllContentNotifications() const override;
   bool IsReadyForHandling() const override;
-  bool HasEvents() const override;
-  void DropEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
-  void HandleEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
   bool MustStayActive() override;
   const char* Type() override;
   bool SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                               TargetConfirmationState aState,
                               InputData* aFirstInput) override;
-
-  void AddEvent(const PanGestureInput& aEvent);
 
   PanGestureBlockState *AsPanGestureBlock() override {
     return this;
@@ -376,7 +343,6 @@ public:
   void SetNeedsToWaitForContentResponse(bool aWaitForContentResponse);
 
 private:
-  nsTArray<PanGestureInput> mEvents;
   bool mInterrupted;
   bool mWaitingForContentResponse;
 };
@@ -465,11 +431,6 @@ public:
   
 
 
-  void AddEvent(const MultiTouchInput& aEvent);
-
-  
-
-
 
   bool TouchActionAllowsPinchZoom() const;
   
@@ -502,9 +463,6 @@ public:
 
   uint32_t GetActiveTouchCount() const;
 
-  bool HasEvents() const override;
-  void DropEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
-  void HandleEvents(nsTArray<UniquePtr<QueuedInput>>* aQueued) override;
   void DispatchEvent(const InputData& aEvent) const override;
   bool MustStayActive() override;
   const char* Type() override;
@@ -516,7 +474,6 @@ private:
   bool mSingleTapOccurred;
   bool mInSlop;
   ScreenIntPoint mSlopOrigin;
-  nsTArray<MultiTouchInput> mEvents;
   
   TouchCounter& mTouchCounter;
 };

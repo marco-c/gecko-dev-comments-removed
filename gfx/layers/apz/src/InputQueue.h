@@ -170,11 +170,6 @@ private:
   
 
 
-  void SweepDepletedBlocks();
-
-  
-
-
 
 
 
@@ -187,13 +182,10 @@ private:
                                  CancelableBlockState* aBlock);
   void MainThreadTimeout(const uint64_t& aInputBlockId);
   void ProcessInputBlocks();
-  void ClearActiveBlock(CancelableBlockState* aBlock);
+  bool CanDiscardBlock(CancelableBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);
 
 private:
-  
-  
-  nsTArray<RefPtr<CancelableBlockState>> mInputBlockQueue;
   
   
   nsTArray<UniquePtr<QueuedInput>> mQueuedInputs;

@@ -600,7 +600,8 @@ TEST_F(APZCGestureDetectorTester, LongPressInterruptedByWheel) {
   
   
   
-  EXPECT_CALL(*mcc, HandleTap(TapType::eLongTap, _, _, _, _)).Times(0);
+  
+  EXPECT_CALL(*mcc, HandleTap(TapType::eLongTap, _, _, _, _)).Times(1);
 
   uint64_t touchBlockId = 0;
   uint64_t wheelBlockId = 0;
