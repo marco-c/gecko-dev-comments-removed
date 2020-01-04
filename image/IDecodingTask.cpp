@@ -19,8 +19,8 @@ namespace image {
 
 
 
- void
-IDecodingTask::NotifyProgress(NotNull<Decoder*> aDecoder)
+static void
+NotifyProgress(NotNull<Decoder*> aDecoder)
 {
   MOZ_ASSERT(aDecoder->HasProgress() && !aDecoder->IsMetadataDecode());
 
