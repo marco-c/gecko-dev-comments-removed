@@ -235,18 +235,6 @@ class Module : public RefCounted<Module>
 
 typedef RefPtr<Module> SharedModule;
 
-
-
-
-extern bool
-IsExportedFunction(JSFunction* fun);
-
-extern Instance&
-ExportedFunctionToInstance(JSFunction* fun);
-
-extern uint32_t
-ExportedFunctionToExportIndex(JSFunction* fun);
-
 } 
 } 
 
