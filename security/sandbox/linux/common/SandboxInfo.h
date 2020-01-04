@@ -37,6 +37,8 @@ public:
     kHasUserNamespaces = 1 << 5,
     
     kHasPrivilegedUserNamespaces = 1 << 6,
+    
+    kPermissive        = 1 << 7,
   };
 
   bool Test(Flags aFlag) const { return (mFlags & aFlag) == aFlag; }

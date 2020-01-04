@@ -257,6 +257,11 @@ SandboxBroker::ThreadMain(void)
   snprintf(threadName, sizeof(threadName), "FS Broker %d", mChildPid);
   PlatformThread::SetName(threadName);
 
+  
+  
+  
+  bool permissive = SandboxInfo::Get().Test(SandboxInfo::kPermissive);
+
 #ifdef MOZ_WIDGET_GONK
 #ifdef __NR_setreuid32
   static const long nr_setreuid = __NR_setreuid32;
@@ -338,10 +343,15 @@ SandboxBroker::ThreadMain(void)
     if (perms & CRASH_INSTEAD) {
       
       resp.mError = ENOSYS;
-    } else if (perms & MAY_ACCESS) {
+    } else if (permissive || perms & MAY_ACCESS) {
+      
+      if (permissive && !(perms & MAY_ACCESS)) {
+        AuditDenial(req.mOp, req.mFlags, pathBuf);
+      }
+
       switch(req.mOp) {
       case SANDBOX_FILE_OPEN:
-        if (AllowOpen(req.mFlags, perms)) {
+        if (permissive || AllowOpen(req.mFlags, perms)) {
           
           
           
@@ -356,7 +366,7 @@ SandboxBroker::ThreadMain(void)
         break;
 
       case SANDBOX_FILE_ACCESS:
-        if (AllowAccess(req.mFlags, perms)) {
+        if (permissive || AllowAccess(req.mFlags, perms)) {
           
           
           
@@ -376,7 +386,7 @@ SandboxBroker::ThreadMain(void)
         break;
 
       case SANDBOX_FILE_STAT:
-        if (DoStat(pathBuf, &statBuf, req.mFlags) == 0) {
+        if (permissive || DoStat(pathBuf, &statBuf, req.mFlags) == 0) {
           resp.mError = 0;
           ios[1].iov_base = &statBuf;
           ios[1].iov_len = sizeof(statBuf);
@@ -399,6 +409,23 @@ SandboxBroker::ThreadMain(void)
       close(openedFd);
     }
   }
+}
+
+void
+SandboxBroker::AuditDenial(int aOp, int aFlags, const char* aPath)
+{
+  MOZ_RELEASE_ASSERT(SandboxInfo::Get().Test(SandboxInfo::kPermissive));
+
+  struct stat statBuf;
+
+  if (lstat(aPath, &statBuf) == 0) {
+    
+    errno = 0;
+  }
+
+  SANDBOX_LOG_ERROR("SandboxBroker: denied op=%d rflags=%o path=%s for pid=%d" \
+                    " permissive=1 error=\"%s\"", aOp, aFlags, aPath, mChildPid,
+                    strerror(errno));
 }
 
 } 
