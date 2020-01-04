@@ -2941,7 +2941,7 @@ nsPresContext::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 }
 
 bool
-nsPresContext::IsRootContentDocument()
+nsPresContext::IsRootContentDocument() const
 {
   
   
