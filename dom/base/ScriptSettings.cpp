@@ -507,8 +507,13 @@ AutoJSAPI::ReportException()
   
   
   JS::Rooted<JSObject*> errorGlobal(cx(), JS::CurrentGlobalOrNull(cx()));
-  if (!errorGlobal)
-    errorGlobal = xpc::PrivilegedJunkScope();
+  if (!errorGlobal) {
+    if (mIsMainThread) {
+      errorGlobal = xpc::PrivilegedJunkScope();
+    } else {
+      errorGlobal = workers::GetCurrentThreadWorkerGlobal();
+    }
+  }
   JSAutoCompartment ac(cx(), errorGlobal);
   JS::Rooted<JS::Value> exn(cx());
   js::ErrorReport jsReport(cx());
