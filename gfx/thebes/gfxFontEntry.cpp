@@ -1123,7 +1123,7 @@ class FontEntryStandardFaceComparator {
         return a->mStandardFace == b->mStandardFace;
     }
     bool LessThan(const nsRefPtr<gfxFontEntry>& a, const nsRefPtr<gfxFontEntry>& b) const {
-        return (a->mStandardFace == false && b->mStandardFace == true);
+        return (a->mStandardFace == true && b->mStandardFace == false);
     }
 };
 

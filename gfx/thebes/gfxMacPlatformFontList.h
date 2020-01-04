@@ -18,6 +18,7 @@
 
 #include "nsUnicharUtils.h"
 #include "nsTArray.h"
+#include "mozilla/LookAndFeel.h"
 
 class gfxMacPlatformFontList;
 
@@ -78,21 +79,31 @@ public:
 
     static int32_t AppleWeightToCSSWeight(int32_t aAppleWeight);
 
-    virtual gfxFontFamily* GetDefaultFont(const gfxFontStyle* aStyle);
+    gfxFontFamily* GetDefaultFont(const gfxFontStyle* aStyle) override;
 
-    virtual bool GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName);
+    bool GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName) override;
 
-    virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
-                                          uint16_t aWeight,
-                                          int16_t aStretch,
-                                          bool aItalic);
+    gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
+                                  uint16_t aWeight,
+                                  int16_t aStretch,
+                                  bool aItalic) override;
     
-    virtual gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
-                                           uint16_t aWeight,
-                                           int16_t aStretch,
-                                           bool aItalic,
-                                           const uint8_t* aFontData,
-                                           uint32_t aLength);
+    gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
+                                   uint16_t aWeight,
+                                   int16_t aStretch,
+                                   bool aItalic,
+                                   const uint8_t* aFontData,
+                                   uint32_t aLength) override;
+
+    gfxFontFamily* FindFamily(const nsAString& aFamily,
+                              gfxFontStyle* aStyle = nullptr) override;
+
+    
+    
+    void LookupSystemFont(mozilla::LookAndFeel::FontID aSystemFontID,
+                          nsAString& aSystemFontName,
+                          gfxFontStyle &aFontStyle,
+                          float aDevPixPerCSSPixel);
 
 private:
     friend class gfxPlatformMac;
@@ -101,10 +112,16 @@ private:
     virtual ~gfxMacPlatformFontList();
 
     
-    virtual nsresult InitFontList();
+    nsresult InitFontList() override;
 
     
     void InitSingleFaceList();
+
+    
+    void InitSystemFonts();
+
+    
+    gfxFontFamily* FindSystemFontFamily(const nsAString& aFamily);
 
     static void RegisteredFontsChangedNotificationCallback(CFNotificationCenterRef center,
                                                            void *observer,
@@ -113,15 +130,15 @@ private:
                                                            CFDictionaryRef userInfo);
 
     
-    virtual gfxFontEntry* GlobalFontFallback(const uint32_t aCh,
-                                             int32_t aRunScript,
-                                             const gfxFontStyle* aMatchStyle,
-                                             uint32_t& aCmapCount,
-                                             gfxFontFamily** aMatchedFamily);
+    gfxFontEntry* GlobalFontFallback(const uint32_t aCh,
+                                     int32_t aRunScript,
+                                     const gfxFontStyle* aMatchStyle,
+                                     uint32_t& aCmapCount,
+                                     gfxFontFamily** aMatchedFamily) override;
 
-    virtual bool UsesSystemFallback() { return true; }
+    bool UsesSystemFallback() override { return true; }
 
-    virtual already_AddRefed<FontInfoData> CreateFontInfoData();
+    already_AddRefed<FontInfoData> CreateFontInfoData() override;
 
     
     
@@ -140,6 +157,18 @@ private:
 
     
     CTFontRef mDefaultFont;
+
+    
+    
+    FontFamilyTable mSystemFontFamilies;
+
+    
+    
+    
+    
+    bool mUseSizeSensitiveSystemFont;
+    nsRefPtr<gfxFontFamily> mSystemTextFontFamily;
+    nsRefPtr<gfxFontFamily> mSystemDisplayFontFamily; 
 };
 
 #endif 

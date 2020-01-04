@@ -1623,7 +1623,7 @@ gfxFontGroup::AddPlatformFont(const nsAString& aName,
     
     if (!family) {
         gfxPlatformFontList* fontList = gfxPlatformFontList::PlatformFontList();
-        family = fontList->FindFamily(aName, mStyle.language, mStyle.systemFont);
+        family = fontList->FindFamily(aName, &mStyle);
     }
 
     if (family) {
@@ -3022,28 +3022,6 @@ gfxFontGroup::ContainsUserFont(const gfxUserFontEntry* aUserFont)
     }
     return false;
 }
-
-struct PrefFontCallbackData {
-    explicit PrefFontCallbackData(nsTArray<nsRefPtr<gfxFontFamily> >& aFamiliesArray)
-        : mPrefFamilies(aFamiliesArray)
-    {}
-
-    nsTArray<nsRefPtr<gfxFontFamily> >& mPrefFamilies;
-
-    static bool AddFontFamilyEntry(eFontPrefLang aLang, const nsAString& aName, void *aClosure)
-    {
-        PrefFontCallbackData *prefFontData = static_cast<PrefFontCallbackData*>(aClosure);
-
-        
-        nsIAtom* lang = gfxPlatformFontList::GetLangGroupForPrefLang(aLang);
-        gfxFontFamily *family =
-            gfxPlatformFontList::PlatformFontList()->FindFamily(aName, lang);
-        if (family) {
-            prefFontData->mPrefFamilies.AppendElement(family);
-        }
-        return true;
-    }
-};
 
 already_AddRefed<gfxFont>
 gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh)
