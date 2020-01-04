@@ -1039,15 +1039,15 @@ GLContextProviderEGL::CreateOffscreen(const mozilla::gfx::IntSize& size,
     }
 
     RefPtr<GLContext> gl;
-    SurfaceCaps offscreenCaps = minCaps;
+    SurfaceCaps minOffscreenCaps = minCaps;
 
     if (canOffscreenUseHeadless) {
         gl = CreateHeadless(flags);
         if (!gl)
             return nullptr;
     } else {
-        SurfaceCaps minBackbufferCaps = minCaps;
-        if (minCaps.antialias) {
+        SurfaceCaps minBackbufferCaps = minOffscreenCaps;
+        if (minOffscreenCaps.antialias) {
             minBackbufferCaps.antialias = false;
             minBackbufferCaps.depth = false;
             minBackbufferCaps.stencil = false;
@@ -1057,14 +1057,19 @@ GLContextProviderEGL::CreateOffscreen(const mozilla::gfx::IntSize& size,
         if (!gl)
             return nullptr;
 
-        offscreenCaps = gl->Caps();
-        if (minCaps.antialias) {
-            offscreenCaps.depth = minCaps.depth;
-            offscreenCaps.stencil = minCaps.stencil;
+        
+        
+        minOffscreenCaps.alpha = gl->Caps().alpha;
+        if (!minOffscreenCaps.antialias) {
+            
+            
+            minOffscreenCaps.depth = gl->Caps().depth;
+            minOffscreenCaps.stencil = gl->Caps().stencil;
         }
     }
 
-    if (!gl->InitOffscreen(size, offscreenCaps))
+    
+    if (!gl->InitOffscreen(size, minOffscreenCaps))
         return nullptr;
 
     return gl.forget();
