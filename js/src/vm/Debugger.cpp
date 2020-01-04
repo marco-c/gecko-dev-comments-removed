@@ -1735,7 +1735,7 @@ bool
 Debugger::appendAllocationSite(JSContext* cx, HandleObject obj, HandleSavedFrame frame,
                                double when)
 {
-    MOZ_ASSERT(trackingAllocationSites);
+    MOZ_ASSERT(trackingAllocationSites && enabled);
 
     AutoCompartment ac(cx, object);
     RootedObject wrappedFrame(cx, frame);
@@ -2332,6 +2332,7 @@ Debugger::addAllocationsTracking(JSContext* cx, GlobalObject& debuggee)
     }
 
     debuggee.compartment()->setObjectMetadataCallback(SavedStacksMetadataCallback);
+    debuggee.compartment()->chooseAllocationSamplingProbability();
     return true;
 }
 
@@ -2340,8 +2341,11 @@ Debugger::removeAllocationsTracking(GlobalObject& global)
 {
     
     
-    if (isObservedByDebuggerTrackingAllocations(global))
+    
+    if (isObservedByDebuggerTrackingAllocations(global)) {
+        global.compartment()->chooseAllocationSamplingProbability();
         return;
+    }
 
     global.compartment()->forgetObjectMetadataCallback();
 }
