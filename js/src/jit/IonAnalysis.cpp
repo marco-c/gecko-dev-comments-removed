@@ -1816,6 +1816,9 @@ TypeAnalyzer::specializeValidFloatOps()
             if (ins->type() == MIRType::Float32)
                 continue;
 
+            if (!alloc().ensureBallast())
+                return false;
+
             
             
             ins->trySpecializeFloat32(alloc());
