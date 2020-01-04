@@ -4,7 +4,7 @@
 
 
 
-var SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+var SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
 
 const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
 var blocklistURL = "http://example.com/browser/browser/base/content/test/social/blocklist.xml";

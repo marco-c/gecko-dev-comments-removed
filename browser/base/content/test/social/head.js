@@ -56,7 +56,7 @@ function defaultFinishChecks() {
 
 function runSocialTestWithProvider(manifest, callback, finishcallback) {
 
-  let SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+  let SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
 
   let manifests = Array.isArray(manifest) ? manifest : [manifest];
 
@@ -193,7 +193,7 @@ function runSocialTests(tests, cbPreTest, cbPostTest, cbFinish) {
 
 
 function checkSocialUI(win) {
-  let SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+  let SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
   
   
   if (SocialService.hasEnabledProviders) {
