@@ -75,7 +75,7 @@ function ensure_results(expected, searchTerm)
 
   
   
-  let input = new AutoCompleteInput(["history"]);
+  let input = new AutoCompleteInput(["unifiedcomplete"]);
 
   controller.input = input;
 
@@ -379,13 +379,11 @@ var deferEnsureResults;
 
 
 
-function run_test()
-{
-  run_next_test();
-}
-
 add_task(function* test_adaptive()
 {
+  
+  Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
+  do_register_cleanup(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
   for (let [, test] in Iterator(tests)) {
     
     PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.unfiledBookmarksFolderId);

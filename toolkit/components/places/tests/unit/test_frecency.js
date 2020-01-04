@@ -84,7 +84,7 @@ function ensure_results_internal(uris, searchTerm)
 
   
   
-  var input = new AutoCompleteInput(["history"]);
+  var input = new AutoCompleteInput(["unifiedcomplete"]);
 
   controller.input = input;
 
@@ -268,16 +268,11 @@ function*() {
 
 var deferEnsureResults;
 
-
-
-
-function run_test()
-{
-  run_next_test();
-}
-
 add_task(function* test_frecency()
 {
+  
+  Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
+  do_register_cleanup(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
   
   var prefs = Cc["@mozilla.org/preferences-service;1"].
               getService(Ci.nsIPrefBranch);

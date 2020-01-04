@@ -90,7 +90,7 @@ function continue_test()
 
   
   
-  var input = new AutoCompleteInput(["history"]);
+  var input = new AutoCompleteInput(["unifiedcomplete"]);
 
   controller.input = input;
 

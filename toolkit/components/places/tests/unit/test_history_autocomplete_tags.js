@@ -74,7 +74,7 @@ function ensure_tag_results(uris, searchTerm)
 
   
   
-  var input = new AutoCompleteInput(["history"]);
+  var input = new AutoCompleteInput(["unifiedcomplete"]);
 
   controller.input = input;
 
@@ -98,7 +98,7 @@ function ensure_tag_results(uris, searchTerm)
     for (var i=0; i<controller.matchCount; i++) {
       
       vals.push(controller.getValueAt(i));
-      do_check_eq(controller.getStyleAt(i), "tag");
+      do_check_eq(controller.getStyleAt(i), "bookmark-tag");
     }
     
     vals.sort().forEach((val, i) => do_check_eq(val, uris[i].spec))

@@ -197,13 +197,11 @@ AutoCompleteInput.prototype = {
   }
 }
 
-function run_test()
-{
-  run_next_test();
-}
-
 add_task(function* test_frecency()
 {
+  
+  Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
+  do_register_cleanup(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
   for (let bucket of bucketPrefs) {
     yield task_initializeBucket(bucket);
   }
@@ -223,7 +221,7 @@ add_task(function* test_frecency()
 
   
   
-  var input = new AutoCompleteInput(["history"]);
+  var input = new AutoCompleteInput(["unifiedcomplete"]);
 
   controller.input = input;
 

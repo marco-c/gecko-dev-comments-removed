@@ -1,9 +1,5 @@
 add_task(function*() {
-  
-  Services.prefs.setBoolPref("browser.urlbar.unifiedcomplete", true);
-
   registerCleanupFunction(function* () {
-    Services.prefs.clearUserPref("browser.urlbar.unifiedcomplete");
     yield PlacesUtils.bookmarks.remove(bm);
   });
 

@@ -1,11 +1,6 @@
 add_task(function*() {
-  
-  Services.prefs.setBoolPref("browser.urlbar.unifiedcomplete", true);
-
   registerCleanupFunction(() => {
     PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.unfiledBookmarksFolderId);
-    Services.prefs.clearUserPref("browser.urlbar.unifiedcomplete");
-    Services.prefs.clearUserPref("browser.urlbar.suggest.bookmark");
   });
 
   function* addTagItem(tagName) {
