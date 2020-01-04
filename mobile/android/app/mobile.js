@@ -866,30 +866,6 @@ pref("browser.snippets.syncPromo.enabled", true);
 pref("browser.snippets.firstrunHomepage.enabled", true);
 
 
-pref("browser.webapps.apkFactoryUrl", "https://controller.apk.firefox.com/application.apk");
-
-
-pref("browser.webapps.updateInterval", 86400);
-
-
-
-
-
-
-
-
-
-
-
-
-pref("browser.webapps.checkForUpdates", 1);
-
-
-
-
-pref("browser.webapps.updateCheckUrl", "https://controller.apk.firefox.com/app_updates");
-
-
 
 
 pref("home.sync.updateMode", 0);
