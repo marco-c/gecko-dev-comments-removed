@@ -3,6 +3,14 @@
 
 
 
+:root {
+  --eyedropper-image: url(images/command-eyedropper.svg);
+}
+
+.theme-firebug {
+  --eyedropper-image: url(images/firebug/command-eyedropper.svg);
+}
+
 
 
 
@@ -76,6 +84,17 @@
   white-space: nowrap;
   flex-shrink: 0;
   font: message-box;
+}
+
+
+
+#inspector-eyedropper-toggle {
+  
+  display: none;
+}
+
+#inspector-eyedropper-toggle::before {
+  background-image: var(--eyedropper-image);
 }
 
 
