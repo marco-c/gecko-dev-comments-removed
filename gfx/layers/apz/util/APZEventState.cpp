@@ -361,6 +361,9 @@ APZEventState::ProcessMouseEvent(const WidgetMouseEvent& aEvent,
 {
   
   
+  
+  
+  
   bool defaultPrevented = false;
   mContentReceivedInputBlockCallback(aGuid, aInputBlockId, defaultPrevented);
 }

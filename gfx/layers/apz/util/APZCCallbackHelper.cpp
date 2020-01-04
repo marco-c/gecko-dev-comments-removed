@@ -762,6 +762,9 @@ APZCCallbackHelper::SendSetTargetAPZCNotification(nsIWidget* aWidget,
       } else if (const WidgetWheelEvent* wheelEvent = aEvent.AsWheelEvent()) {
         waitForRefresh = PrepareForSetTargetAPZCNotification(aWidget, aGuid,
             rootFrame, wheelEvent->mRefPoint, &targets);
+      } else if (const WidgetMouseEvent* mouseEvent = aEvent.AsMouseEvent()) {
+        waitForRefresh = PrepareForSetTargetAPZCNotification(aWidget, aGuid,
+            rootFrame, mouseEvent->mRefPoint, &targets);
       }
       
 
