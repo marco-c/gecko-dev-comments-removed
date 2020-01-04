@@ -1,3 +1,4 @@
+
 if (!wasmIsSupported())
      quit();
 

@@ -1,3 +1,4 @@
+
 load(libdir + "wasm.js");
 
 var parsingError = /parsing wasm text at/;

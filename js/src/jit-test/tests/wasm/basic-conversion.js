@@ -1,3 +1,4 @@
+
 load(libdir + "wasm.js");
 
 function testConversion(resultType, opcode, paramType, op, expect) {

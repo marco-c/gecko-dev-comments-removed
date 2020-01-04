@@ -1,3 +1,4 @@
+
 load(libdir + "wasm.js");
 
 assertEq(wasmEvalText('(module (func (result f32) (f32.const -1)) (export "" 0))')(), -1);

@@ -1,3 +1,4 @@
+
 load(libdir + "wasm.js");
 
 function testConst(type, str, expect) {

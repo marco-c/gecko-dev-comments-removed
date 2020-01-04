@@ -1,3 +1,4 @@
+
 load(libdir + "wasm.js");
 
 var i = wasmEvalText(
