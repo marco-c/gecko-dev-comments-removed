@@ -433,8 +433,12 @@ private:
 
   void PostDispatchOnMainThread();
 
+  bool HoldWorker();
+  void ReleaseWorker();
+
 protected:
   WorkerPrivate* mWorkerPrivate;
+  UniquePtr<WorkerHolder> mWorkerHolder;
 };
 
 
