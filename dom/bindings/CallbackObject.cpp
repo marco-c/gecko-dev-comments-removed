@@ -90,6 +90,9 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
         
         
         if (!win->AsInner()->HasActiveDocument()) {
+          aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+            NS_LITERAL_CSTRING("Refusing to execute function from window "
+                               "whose document is no longer active."));
           return;
         }
         globalObject = win;
@@ -109,6 +112,9 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     
     
     if (!globalObject->GetGlobalJSObject()) {
+      aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        NS_LITERAL_CSTRING("Refusing to execute function from global which is "
+                           "being torn down."));
       return;
     }
 
@@ -125,6 +131,9 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       
       
       if (!incumbent->GetGlobalJSObject()) {
+      aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        NS_LITERAL_CSTRING("Refusing to execute function because our "
+                           "incumbent global is being torn down."));
         return;
       }
       mAutoIncumbentScript.emplace(incumbent);
@@ -151,6 +160,9 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       ScriptAllowed(js::GetGlobalForObjectCrossCompartment(realCallback));
 
     if (!allowed) {
+      aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        NS_LITERAL_CSTRING("Refusing to execute function from global in which "
+                           "script is disabled."));
       return;
     }
   }
