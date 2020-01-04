@@ -83,7 +83,10 @@ this.BrowserTestUtils = {
 
 
 
-  openNewForegroundTab(tabbrowser, opening = "about:blank", aWaitForLoad = true) {
+
+
+
+  openNewForegroundTab(tabbrowser, opening = "about:blank", aWaitForLoad = true, aWaitForStateStop = false) {
     let tab;
     let promises = [
       BrowserTestUtils.switchTab(tabbrowser, function () {
@@ -99,6 +102,9 @@ this.BrowserTestUtils = {
 
     if (aWaitForLoad) {
       promises.push(BrowserTestUtils.browserLoaded(tab.linkedBrowser));
+    }
+    if (aWaitForStateStop) {
+      promises.push(BrowserTestUtils.browserStopped(tab.linkedBrowser));
     }
 
     return Promise.all(promises).then(() => tab);
@@ -175,6 +181,42 @@ this.BrowserTestUtils = {
           resolve(msg.data.url);
         }
       });
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  browserStopped(browser) {
+    return new Promise(resolve => {
+      let wpl = {
+        onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
+          if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+              aWebProgress.isTopLevel) {
+            browser.webProgress.removeProgressListener(filter);
+            filter.removeProgressListener(wpl);
+            resolve();
+          };
+        },
+        onSecurityChange() {},
+        onStatusChange() {},
+        onLocationChange() {},
+        QueryInterface: XPCOMUtils.generateQI([
+          Ci.nsIWebProgressListener,
+          Ci.nsIWebProgressListener2,
+        ]),
+      };
+      const filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
+                       .createInstance(Ci.nsIWebProgress);
+      filter.addProgressListener(wpl, Ci.nsIWebProgress.NOTIFY_ALL);
+      browser.webProgress.addProgressListener(filter, Ci.nsIWebProgress.NOTIFY_ALL);
     });
   },
 
