@@ -48,7 +48,7 @@ JumpListBuilder::JumpListBuilder() :
   mHasCommit(false)
 {
   ::CoInitialize(nullptr);
-  
+
   CoCreateInstance(CLSID_DestinationList, nullptr, CLSCTX_INPROC_SERVER,
                    IID_ICustomDestinationList, getter_AddRefs(mJumpListMgr));
 
@@ -150,10 +150,10 @@ NS_IMETHODIMP JumpListBuilder::InitListBuild(nsIMutableArray *removedItems, bool
 
 
 
-nsresult JumpListBuilder::RemoveIconCacheForItems(nsIMutableArray *items) 
+nsresult JumpListBuilder::RemoveIconCacheForItems(nsIMutableArray *items)
 {
   NS_ENSURE_ARG_POINTER(items);
-  
+
   nsresult rv;
   uint32_t length;
   items->GetLength(&length);
@@ -176,14 +176,14 @@ nsresult JumpListBuilder::RemoveIconCacheForItems(nsIMutableArray *items)
         nsCOMPtr<nsIURI> uri;
         rv = shortcut->GetFaviconPageUri(getter_AddRefs(uri));
         if (NS_SUCCEEDED(rv) && uri) {
-          
+
           
           
           nsAutoCString spec;
           nsresult rv = uri->GetSpec(spec);
           NS_ENSURE_SUCCESS(rv, rv);
 
-          nsCOMPtr<nsIRunnable> event 
+          nsCOMPtr<nsIRunnable> event
             = new mozilla::widget::AsyncDeleteIconFromDisk(NS_ConvertUTF8toUTF16(spec));
           mIOThread->Dispatch(event, NS_DISPATCH_NORMAL);
 
@@ -202,11 +202,11 @@ nsresult JumpListBuilder::RemoveIconCacheForItems(nsIMutableArray *items)
 }
 
 
-nsresult JumpListBuilder::RemoveIconCacheForAllItems() 
+nsresult JumpListBuilder::RemoveIconCacheForAllItems()
 {
   
   nsCOMPtr<nsIFile> jumpListCacheDir;
-  nsresult rv = NS_GetSpecialDirectory("ProfLDS", 
+  nsresult rv = NS_GetSpecialDirectory("ProfLDS",
                                        getter_AddRefs(jumpListCacheDir));
   NS_ENSURE_SUCCESS(rv, rv);
   rv = jumpListCacheDir->AppendNative(nsDependentCString(
@@ -215,7 +215,7 @@ nsresult JumpListBuilder::RemoveIconCacheForAllItems()
   nsCOMPtr<nsISimpleEnumerator> entries;
   rv = jumpListCacheDir->GetDirectoryEntries(getter_AddRefs(entries));
   NS_ENSURE_SUCCESS(rv, rv);
-  
+
   
   do {
     bool hasMore = false;
@@ -454,7 +454,7 @@ bool JumpListBuilder::IsSeparator(nsCOMPtr<nsIJumpListItem>& item)
   item->GetType(&type);
   if (NS_FAILED(item->GetType(&type)))
     return false;
-    
+
   if (type == nsIJumpListItem::JUMPLIST_ITEM_SEPARATOR)
     return true;
   return false;
@@ -479,7 +479,7 @@ nsresult JumpListBuilder::TransferIObjectArrayToIMutableArray(IObjectArray *objA
     IShellItem * pItem = nullptr;
 
     if (SUCCEEDED(objArray->GetAt(idx, IID_IShellLinkW, (LPVOID*)&pLink))) {
-      nsCOMPtr<nsIJumpListShortcut> shortcut = 
+      nsCOMPtr<nsIJumpListShortcut> shortcut =
         do_CreateInstance(kJumpListShortcutCID, &rv);
       if (NS_FAILED(rv))
         return NS_ERROR_UNEXPECTED;
@@ -487,7 +487,7 @@ nsresult JumpListBuilder::TransferIObjectArrayToIMutableArray(IObjectArray *objA
       item = do_QueryInterface(shortcut);
     }
     else if (SUCCEEDED(objArray->GetAt(idx, IID_IShellItem, (LPVOID*)&pItem))) {
-      nsCOMPtr<nsIJumpListLink> link = 
+      nsCOMPtr<nsIJumpListLink> link =
         do_CreateInstance(kJumpListLinkCID, &rv);
       if (NS_FAILED(rv))
         return NS_ERROR_UNEXPECTED;
@@ -523,8 +523,8 @@ NS_IMETHODIMP JumpListBuilder::Observe(nsISupports* aSubject,
              nsDependentString(aData).EqualsASCII(kPrefTaskbarEnabled)) {
     bool enabled = Preferences::GetBool(kPrefTaskbarEnabled, true);
     if (!enabled) {
-      
-      nsCOMPtr<nsIRunnable> event = 
+
+      nsCOMPtr<nsIRunnable> event =
         new mozilla::widget::AsyncDeleteAllFaviconsFromDisk();
       mIOThread->Dispatch(event, NS_DISPATCH_NORMAL);
     }

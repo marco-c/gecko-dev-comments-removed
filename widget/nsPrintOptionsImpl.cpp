@@ -435,7 +435,7 @@ GetPrefName((_a2), aPrefName), (_a3));
 
 
 
-nsresult 
+nsresult
 nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
                           uint32_t aFlags)
 {
@@ -731,7 +731,7 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
 
 
 
-nsresult 
+nsresult
 nsPrintOptions::WritePrefs(nsIPrintSettings *aPS, const nsAString& aPrinterName,
                            uint32_t aFlags)
 {
@@ -796,7 +796,7 @@ nsPrintOptions::WritePrefs(nsIPrintSettings *aPS, const nsAString& aPrinterName,
     int16_t sizeUnit;
     double width, height;
     char16_t *name;
- 
+
     if (
       NS_SUCCEEDED(aPS->GetPaperSizeUnit(&sizeUnit)) &&
       NS_SUCCEEDED(aPS->GetPaperWidth(&width)) &&
@@ -1103,7 +1103,7 @@ nsPrintOptions::InitPrintSettingsFromPrinter(const char16_t *aPrinterName,
 
 
 
-static nsresult 
+static nsresult
 GetAdjustedPrinterName(nsIPrintSettings* aPS, bool aUsePNP,
                        nsAString& aPrinterName)
 {
@@ -1141,7 +1141,7 @@ GetAdjustedPrinterName(nsIPrintSettings* aPS, bool aUsePNP,
 }
 #endif
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintOptions::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
                                            bool aUsePNP, uint32_t aFlags)
 {
