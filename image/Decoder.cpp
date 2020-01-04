@@ -58,7 +58,6 @@ Decoder::Decoder(RasterImage* aImage)
   , mImage(aImage)
   , mProgress(NoProgress)
   , mFrameCount(0)
-  , mFailCode(NS_OK)
   , mChunkCount(0)
   , mDecoderFlags(DefaultDecoderFlags())
   , mSurfaceFlags(DefaultSurfaceFlags())
@@ -92,7 +91,7 @@ Decoder::~Decoder()
 
 
 
-void
+nsresult
 Decoder::Init()
 {
   
@@ -107,9 +106,11 @@ Decoder::Init()
   MOZ_ASSERT(ShouldUseSurfaceCache() || IsFirstFrameDecode());
 
   
-  InitInternal();
+  nsresult rv = InitInternal();
 
   mInitialized = true;
+
+  return rv;
 }
 
 nsresult
@@ -198,7 +199,7 @@ Decoder::CompleteDecode()
 
     
     
-    if (!HasDecoderError() && GetCompleteFrameCount() > 0) {
+    if (GetCompleteFrameCount() > 0) {
       
       
 
@@ -291,7 +292,7 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
                                uint8_t aPaletteDepth,
                                imgFrame* aPreviousFrame)
 {
-  if (mDataError || NS_FAILED(mFailCode)) {
+  if (HasError()) {
     return RawAccessFrameRef();
   }
 
@@ -388,7 +389,7 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
 
 
 
-void Decoder::InitInternal() { }
+nsresult Decoder::InitInternal() { return NS_OK; }
 void Decoder::BeforeFinishInternal() { }
 void Decoder::FinishInternal() { }
 void Decoder::FinishWithErrorInternal() { }
@@ -497,22 +498,6 @@ void
 Decoder::PostDataError()
 {
   mDataError = true;
-
-  if (mInFrame && mCurrentFrame) {
-    mCurrentFrame->Abort();
-  }
-}
-
-void
-Decoder::PostDecoderError(nsresult aFailureCode)
-{
-  MOZ_ASSERT(NS_FAILED(aFailureCode), "Not a failure code!");
-
-  mFailCode = aFailureCode;
-
-  
-  
-  NS_WARNING("Image decoding error - This is probably a bug!");
 
   if (mInFrame && mCurrentFrame) {
     mCurrentFrame->Abort();

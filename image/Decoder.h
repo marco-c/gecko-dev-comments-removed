@@ -38,7 +38,9 @@ public:
   
 
 
-  void Init();
+
+
+  nsresult Init();
 
   
 
@@ -184,11 +186,9 @@ public:
   bool HasAnimation() const { return mImageMetadata.HasAnimation(); }
 
   
-  bool HasError() const { return HasDataError() || HasDecoderError(); }
+  bool HasError() const { return HasDataError(); }
   bool HasDataError() const { return mDataError; }
-  bool HasDecoderError() const { return NS_FAILED(mFailCode); }
   bool ShouldReportError() const { return mShouldReportError; }
-  nsresult GetDecoderError() const { return mFailCode; }
 
   
   bool GetDecodeDone() const
@@ -289,7 +289,7 @@ protected:
 
 
 
-  virtual void InitInternal();
+  virtual nsresult InitInternal();
   virtual Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator) = 0;
   virtual void BeforeFinishInternal();
   virtual void FinishInternal();
@@ -360,7 +360,6 @@ protected:
 
   
   void PostDataError();
-  void PostDecoderError(nsresult aFailCode);
 
   
 
@@ -414,8 +413,6 @@ private:
   Progress mProgress;
 
   uint32_t mFrameCount; 
-
-  nsresult mFailCode;
 
   
   TimeDuration mDecodeTime;

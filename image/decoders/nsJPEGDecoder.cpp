@@ -128,7 +128,7 @@ nsJPEGDecoder::SpeedHistogram()
   return Telemetry::IMAGE_DECODE_SPEED_JPEG;
 }
 
-void
+nsresult
 nsJPEGDecoder::InitInternal()
 {
   mCMSMode = gfxPlatform::GetCMSMode();
@@ -144,8 +144,7 @@ nsJPEGDecoder::InitInternal()
   if (setjmp(mErr.setjmp_buffer)) {
     
     
-    PostDecoderError(NS_ERROR_FAILURE);
-    return;
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -166,6 +165,8 @@ nsJPEGDecoder::InitInternal()
   for (uint32_t m = 0; m < 16; m++) {
     jpeg_save_markers(&mInfo, JPEG_APP0 + m, 0xFFFF);
   }
+
+  return NS_OK;
 }
 
 void
@@ -217,7 +218,6 @@ nsJPEGDecoder::ReadJPEGData(const char* aData, size_t aLength)
              ("} (setjmp returned NS_ERROR_FAILURE)"));
     } else {
       
-      PostDecoderError(error_code);
       mState = JPEG_ERROR;
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
              ("} (setjmp returned an error)"));
