@@ -87,8 +87,7 @@ HasCPUIDBit(unsigned int level, CPUIDRegister reg, unsigned int bit)
 #define HAVE_CPU_DETECTION
 #else
 
-#if defined(_MSC_VER) && _MSC_VER >= 1600 && (defined(_M_IX86) || defined(_M_AMD64))
-
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64))
 
 #include <intrin.h>
 
