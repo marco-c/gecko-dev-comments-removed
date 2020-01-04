@@ -56,6 +56,10 @@ function test() {
       ]);
       checkState({ frame: 0, source: 0, line: 5 });
 
+      
+      
+      focusCurrentStackFrame();
+
       yield promise.all([
         waitForDebuggerEvents(gPanel, gDebugger.EVENTS.FETCHED_SCOPES),
         waitForSourceAndCaret(gPanel, "-02.js", 6),
@@ -64,13 +68,16 @@ function test() {
       ]);
       checkState({ frame: 1, source: 1, line: 6 });
 
+      
+      
+      focusCurrentStackFrame();
+
       yield promise.all([
         waitForDebuggerEvents(gPanel, gDebugger.EVENTS.FETCHED_SCOPES),
         waitForSourceAndCaret(gPanel, "-01.js", 5),
         waitForEditorLocationSet(gPanel),
         EventUtils.sendKey("HOME", gDebugger)
       ]);
-
       checkState({ frame: 0, source: 0, line: 5 });
     });
   }

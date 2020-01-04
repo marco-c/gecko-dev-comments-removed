@@ -30,7 +30,7 @@ const SAVE_ERROR = "error-save";
 
 
 
-const UPDATE_STYLESHEET_THROTTLE_DELAY = 500;
+const UPDATE_STYLESHEET_DELAY = 500;
 
 
 const AUTOCOMPLETION_PREF = "devtools.styleeditor.autocompletion-enabled";
@@ -108,6 +108,7 @@ function StyleSheetEditor(styleSheet, win, file, isNew, walker, highlighter) {
   this.markLinkedFileBroken = this.markLinkedFileBroken.bind(this);
   this.saveToFile = this.saveToFile.bind(this);
   this.updateStyleSheet = this.updateStyleSheet.bind(this);
+  this._updateStyleSheet = this._updateStyleSheet.bind(this);
   this._onMouseMove = this._onMouseMove.bind(this);
 
   this._focusOnSourceEditorReady = false;
@@ -470,21 +471,14 @@ StyleSheetEditor.prototype = {
   
 
 
-
-
-
-  updateStyleSheet: function(immediate) {
+  updateStyleSheet: function() {
     if (this._updateTask) {
       
       this._window.clearTimeout(this._updateTask);
     }
 
-    if (immediate) {
-      this._updateStyleSheet();
-    } else {
-      this._updateTask = this._window.setTimeout(this._updateStyleSheet.bind(this),
-                                           UPDATE_STYLESHEET_THROTTLE_DELAY);
-    }
+    this._updateTask = this._window.setTimeout(this._updateStyleSheet,
+                                               UPDATE_STYLESHEET_DELAY);
   },
 
   
