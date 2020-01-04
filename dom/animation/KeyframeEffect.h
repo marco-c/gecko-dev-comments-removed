@@ -191,7 +191,21 @@ public:
               Element* aTarget,
               JS::Handle<JSObject*> aFrames,
               const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
+              ErrorResult& aRv)
+  {
+    return Constructor(aGlobal, aTarget, aFrames,
+                       TimingParams::FromOptionsUnion(aOptions), aRv);
+  }
+
+  
+  
+  static already_AddRefed<KeyframeEffectReadOnly>
+  Constructor(const GlobalObject& aGlobal,
+              Element* aTarget,
+              JS::Handle<JSObject*> aFrames,
+              const TimingParams& aTiming,
               ErrorResult& aRv);
+
   Element* GetTarget() const {
     
     
@@ -332,9 +346,6 @@ protected:
   
   
   void UpdateTargetRegistration();
-
-  static TimingParams ConvertKeyframeEffectOptions(
-    const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions);
 
   static void BuildAnimationPropertyList(
     JSContext* aCx,
