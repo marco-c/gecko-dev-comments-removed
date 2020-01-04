@@ -651,30 +651,34 @@ GeckoMediaPluginServiceParent::UnloadPlugins()
         NS_LITERAL_CSTRING("Starting to unload plugins"));
 #endif
 
+  nsTArray<RefPtr<GMPParent>> plugins;
   {
     MutexAutoLock lock(mMutex);
-    LOGD(("%s::%s plugins:%u including async:%u", __CLASS__, __FUNCTION__,
-          mPlugins.Length(), mAsyncShutdownPlugins.Length()));
+    
+    
+    plugins = Move(mPlugins);
+  }
+
+  LOGD(("%s::%s plugins:%u including async:%u", __CLASS__, __FUNCTION__,
+        plugins.Length(), mAsyncShutdownPlugins.Length()));
 #ifdef DEBUG
-    for (const auto& plugin : mPlugins) {
-      LOGD(("%s::%s plugin: '%s'", __CLASS__, __FUNCTION__,
-            plugin->GetDisplayName().get()));
-    }
-    for (const auto& plugin : mAsyncShutdownPlugins) {
-      LOGD(("%s::%s async plugin: '%s'", __CLASS__, __FUNCTION__,
-            plugin->GetDisplayName().get()));
-    }
+  for (const auto& plugin : plugins) {
+    LOGD(("%s::%s plugin: '%s'", __CLASS__, __FUNCTION__,
+          plugin->GetDisplayName().get()));
+  }
+  for (const auto& plugin : mAsyncShutdownPlugins) {
+    LOGD(("%s::%s async plugin: '%s'", __CLASS__, __FUNCTION__,
+          plugin->GetDisplayName().get()));
+  }
 #endif
-    
-    
-    for (size_t i = 0; i < mPlugins.Length(); i++) {
+  
+  
+  for (const auto& plugin : plugins) {
 #ifdef MOZ_CRASHREPORTER
-      SetAsyncShutdownPluginState(mPlugins[i], 'S',
-          NS_LITERAL_CSTRING("CloseActive"));
+    SetAsyncShutdownPluginState(plugin, 'S',
+        NS_LITERAL_CSTRING("CloseActive"));
 #endif
-      mPlugins[i]->CloseActive(true);
-    }
-    mPlugins.Clear();
+    plugin->CloseActive(true);
   }
 
 #ifdef MOZ_CRASHREPORTER
