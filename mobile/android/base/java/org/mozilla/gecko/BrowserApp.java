@@ -2528,6 +2528,12 @@ public class BrowserApp extends GeckoApp
                 
                 panelId = tab.getMostRecentHomePanel();
                 panelRestoreData = tab.getMostRecentHomePanelData();
+            } else if (panelId.equals(HomeConfig.getIdForBuiltinPanelType(PanelType.RECENT_TABS))) {
+                
+                panelId = HomeConfig.getIdForBuiltinPanelType(PanelType.COMBINED_HISTORY);
+                panelRestoreData = new Bundle();
+                
+                panelRestoreData.putBoolean("goToRecentTabs", true);
             }
             showHomePager(panelId, panelRestoreData);
 

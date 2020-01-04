@@ -1457,9 +1457,12 @@ public abstract class GeckoApp
 
 
 
+
     protected void loadStartupTab(final int flags) {
         if (!mShouldRestore) {
             if (mLastSessionCrashed) {
+                
+                
                 Tabs.getInstance().loadUrl(AboutPages.getURLForBuiltinPanelType(PanelType.RECENT_TABS), flags);
             } else {
                 final String homepage = getHomepage();
