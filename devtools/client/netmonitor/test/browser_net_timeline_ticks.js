@@ -9,7 +9,7 @@ function test() {
   initNetMonitor(SIMPLE_URL).then(([aTab, aDebuggee, aMonitor]) => {
     info("Starting test... ");
 
-    let { document, L10N, NetMonitorView } = aMonitor.panelWin;
+    let { document, L10N, NetMonitorView, NetMonitorController } = aMonitor.panelWin;
     let { RequestsMenu } = NetMonitorView;
 
     
@@ -31,6 +31,11 @@ function test() {
       "No 2d context should be created when the frontend is opened.");
 
     waitForNetworkEvents(aMonitor, 1).then(() => {
+      
+      
+      NetMonitorController.NetworkEventsHandler.clearMarkers();
+      RequestsMenu._flushWaterfallViews(true);
+
       ok(!document.querySelector("#requests-menu-waterfall-label"),
         "The timeline label should be hidden after the first request.");
       ok(document.querySelectorAll(".requests-menu-timings-division").length >= 3,
