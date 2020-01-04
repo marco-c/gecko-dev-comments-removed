@@ -1415,25 +1415,22 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
   RefPtr<PledgeSourceSet> p = new PledgeSourceSet();
   uint32_t id = mOutstandingPledges.Append(*p);
 
-  
-  
-  
-  
-  
-  
-
   nsAdoptingCString audioLoopDev, videoLoopDev;
-  if (!aFakeTracks) {
-    if (aVideoType == dom::MediaSourceEnum::Camera) {
-      audioLoopDev = Preferences::GetCString("media.audio_loopback_dev");
+  if (!aFake) {
+    
+    
+    
+    if (aVideoType == MediaSourceEnum::Camera) {
       videoLoopDev = Preferences::GetCString("media.video_loopback_dev");
-
-      if (aFake && !audioLoopDev.IsEmpty() && !videoLoopDev.IsEmpty()) {
-        aFake = false;
-      }
-    } else {
-      aFake = false;
     }
+    if (aAudioType == MediaSourceEnum::Microphone) {
+      audioLoopDev = Preferences::GetCString("media.audio_loopback_dev");
+    }
+  }
+
+  if (!aFake) {
+    
+    aFakeTracks = false;
   }
 
   MediaManager::PostTask(FROM_HERE, NewTaskFrom([id, aWindowId, audioLoopDev,
