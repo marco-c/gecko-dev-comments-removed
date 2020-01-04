@@ -5507,8 +5507,7 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   
   
   
-  if (aDragEvent->mMessage == NS_DRAGDROP_ENTER ||
-      aDragEvent->mMessage == eDragOver) {
+  if (aDragEvent->mMessage == eDragEnter || aDragEvent->mMessage == eDragOver) {
     uint32_t action, effectAllowed;
     dragSession->GetDragAction(&action);
     aDragEvent->dataTransfer->GetEffectAllowedInt(&effectAllowed);

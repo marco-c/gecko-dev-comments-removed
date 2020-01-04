@@ -295,7 +295,7 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource,
   winDragService->SetIDataObject(pIDataSource);
 
   
-  ProcessDrag(NS_DRAGDROP_ENTER, grfKeyState, ptl, pdwEffect);
+  ProcessDrag(eDragEnter, grfKeyState, ptl, pdwEffect);
 
   return S_OK;
 }
