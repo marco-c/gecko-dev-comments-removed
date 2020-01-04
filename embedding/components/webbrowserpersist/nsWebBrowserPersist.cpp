@@ -2426,16 +2426,28 @@ nsWebBrowserPersist::CalcTotalProgress()
     mTotalCurrentProgress = 0;
     mTotalMaxProgress = 0;
 
-    if (mOutputMap.Count() > 0)
-    {
+    if (mOutputMap.Count() > 0) {
         
-        mOutputMap.EnumerateRead(EnumCalcProgress, this);
+        for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+            
+            OutputData* data = iter.UserData();
+            nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(data->mFile);
+            if (fileURL) {
+                mTotalCurrentProgress += data->mSelfProgress;
+                mTotalMaxProgress += data->mSelfProgressMax;
+            }
+        }
     }
 
-    if (mUploadList.Count() > 0)
-    {
+    if (mUploadList.Count() > 0) {
         
-        mUploadList.EnumerateRead(EnumCalcUploadProgress, this);
+        for (auto iter = mUploadList.Iter(); !iter.Done(); iter.Next()) {
+            UploadData* data = iter.UserData();
+            if (data) {
+                mTotalCurrentProgress += data->mSelfProgress;
+                mTotalMaxProgress += data->mSelfProgressMax;
+            }
+        }
     }
 
     
@@ -2445,33 +2457,6 @@ nsWebBrowserPersist::CalcTotalProgress()
         mTotalCurrentProgress = 10000;
         mTotalMaxProgress = 10000;
     }
-}
-
-PLDHashOperator
-nsWebBrowserPersist::EnumCalcProgress(nsISupports *aKey, OutputData *aData, void* aClosure)
-{
-    nsWebBrowserPersist *pthis = static_cast<nsWebBrowserPersist*>(aClosure);
-
-    
-    nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aData->mFile);
-    if (fileURL)
-    {
-        pthis->mTotalCurrentProgress += aData->mSelfProgress;
-        pthis->mTotalMaxProgress += aData->mSelfProgressMax;
-    }
-    return PL_DHASH_NEXT;
-}
-
-PLDHashOperator
-nsWebBrowserPersist::EnumCalcUploadProgress(nsISupports *aKey, UploadData *aData, void* aClosure)
-{
-    if (aData && aClosure)
-    {
-        nsWebBrowserPersist *pthis = static_cast<nsWebBrowserPersist*>(aClosure);
-        pthis->mTotalCurrentProgress += aData->mSelfProgress;
-        pthis->mTotalMaxProgress += aData->mSelfProgressMax;
-    }
-    return PL_DHASH_NEXT;
 }
 
 nsresult
