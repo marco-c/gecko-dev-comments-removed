@@ -80,13 +80,7 @@ protected:
 
   void StartProgressEventTimer();
   void ClearProgressEventTimer();
-
-  
-  
-  
-  
   void DispatchError(nsresult rv, nsAString& finalEvent);
-
   nsresult DispatchProgressEvent(const nsAString& aType);
 
   nsCOMPtr<nsITimer> mProgressNotifier;
