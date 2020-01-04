@@ -304,17 +304,10 @@ static int32_t gMinTimeoutValue;
 static int32_t gMinBackgroundTimeoutValue;
 inline int32_t
 nsGlobalWindow::DOMMinTimeoutValue() const {
-  bool isBackground = !mOuterWindow || mOuterWindow->IsBackground();
-  if (isBackground) {
-    
-    
-    for (const AudioContext* ctx : mAudioContexts) {
-      if (ctx->ActiveNodeCount() > 0) {
-        isBackground = false;
-        break;
-      }
-    }
-  }
+  
+  
+  bool isBackground = mAudioContexts.IsEmpty() &&
+    (!mOuterWindow || mOuterWindow->IsBackground());
   return
     std::max(isBackground ? gMinBackgroundTimeoutValue : gMinTimeoutValue, 0);
 }
