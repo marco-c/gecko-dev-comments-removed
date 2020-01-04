@@ -29,6 +29,7 @@ class SourceSurface;
 namespace widget {
 
 class WinCompositorWidget;
+class CompositorWidgetInitData;
 
 
 
@@ -37,6 +38,12 @@ class CompositorWidget
 {
 public:
   NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidget)
+
+  
+
+
+
+  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData, nsIWidget* aWidget);
 
   
 

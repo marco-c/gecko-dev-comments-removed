@@ -136,6 +136,7 @@
 #include "mozilla/TextEvents.h" 
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/widget/WinNativeEventData.h"
+#include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsThemeConstants.h"
 #include "nsBidiKeyboard.h"
 #include "nsThemeConstants.h"
@@ -3626,11 +3627,11 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
 
     
     
-    mCompositorWidget = new WinCompositorWidget(
-      mWnd,
-      reinterpret_cast<uintptr_t>(this),
-      mTransparencyMode,
-      this);
+    CompositorWidgetInitData initData(
+      reinterpret_cast<uintptr_t>(mWnd),
+      reinterpret_cast<uintptr_t>(static_cast<nsIWidget*>(this)),
+      mTransparencyMode);
+    mCompositorWidget = new WinCompositorWidget(initData, this);
     mLayerManager = CreateBasicLayerManager();
   }
 
@@ -3689,16 +3690,6 @@ nsWindow::OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect)
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
-}
-
-mozilla::widget::CompositorWidget*
-nsWindow::NewCompositorWidget()
-{
-  return new WinCompositorWidget(
-    mWnd,
-    reinterpret_cast<uintptr_t>(this),
-    mTransparencyMode,
-    this);
 }
 
 mozilla::widget::WinCompositorWidget*
@@ -7829,4 +7820,12 @@ DWORD ChildWindow::WindowStyle()
     style |= WS_CHILD; 
   VERIFY_WINDOW_STYLE(style);
   return style;
+}
+
+void
+nsWindow::GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData)
+{
+  aInitData->hWnd() = reinterpret_cast<uintptr_t>(mWnd);
+  aInitData->widgetKey() = reinterpret_cast<uintptr_t>(static_cast<nsIWidget*>(this));
+  aInitData->transparencyMode() = mTransparencyMode;
 }

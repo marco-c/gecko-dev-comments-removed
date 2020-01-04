@@ -66,6 +66,7 @@ namespace widget {
 class TextEventDispatcher;
 class TextEventDispatcherListener;
 class CompositorWidget;
+class CompositorWidgetInitData;
 } 
 } 
 
@@ -1633,7 +1634,9 @@ class nsIWidget : public nsISupports
     virtual void StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) = 0;
 
     
-    virtual mozilla::widget::CompositorWidget* NewCompositorWidget() = 0;
+    
+    virtual void GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData)
+    {}
 
 private:
   class LongTapInfo
