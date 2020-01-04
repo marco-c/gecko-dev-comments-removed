@@ -744,6 +744,8 @@ public:
   bool ComputedMuted() const;
   nsSuspendedTypes ComputedSuspended() const;
 
+  void SetMediaInfo(const MediaInfo aInfo);
+
 protected:
   virtual ~HTMLMediaElement();
 
@@ -1223,6 +1225,9 @@ protected:
 
   
   bool ShouldElementBePaused();
+
+  
+  void AudioCaptureStreamChangeIfNeeded();
 
   
 
