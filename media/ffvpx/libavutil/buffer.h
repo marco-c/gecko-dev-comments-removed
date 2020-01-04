@@ -257,6 +257,22 @@ AVBufferPool *av_buffer_pool_init(int size, AVBufferRef* (*alloc)(int size));
 
 
 
+
+
+
+
+AVBufferPool *av_buffer_pool_init2(int size, void *opaque,
+                                   AVBufferRef* (*alloc)(void *opaque, int size),
+                                   void (*pool_free)(void *opaque));
+
+
+
+
+
+
+
+
+
 void av_buffer_pool_uninit(AVBufferPool **pool);
 
 

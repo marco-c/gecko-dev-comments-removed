@@ -22,6 +22,7 @@
 #define AVUTIL_DISPLAY_H
 
 #include <stdint.h>
+#include "common.h"
 
 
 
