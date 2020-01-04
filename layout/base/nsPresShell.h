@@ -52,7 +52,14 @@ class nsPresShellEventCB;
 class nsAutoCauseReflowNotifier;
 
 namespace mozilla {
+
 class EventDispatchingCallback;
+
+
+
+
+typedef nsClassHashtable<nsUint64HashKey, mozilla::CSSIntRegion> VisibleRegions;
+
 } 
 
 
@@ -65,6 +72,9 @@ class PresShell final : public nsIPresShell,
                         public nsIObserver,
                         public nsSupportsWeakReference
 {
+  template <typename T> using Maybe = mozilla::Maybe<T>;
+  using VisibleRegions = mozilla::VisibleRegions;
+
 public:
   PresShell();
 
@@ -468,7 +478,7 @@ protected:
       : mResolution(aPresShell->mResolution)
       , mRenderFlags(aPresShell->mRenderFlags)
     { }
-    mozilla::Maybe<float> mResolution;
+    Maybe<float> mResolution;
     RenderFlags mRenderFlags;
   };
 
@@ -740,8 +750,11 @@ protected:
 
   void ClearVisibleImagesList(uint32_t aNonvisibleAction);
   static void ClearImageVisibilityVisited(nsView* aView, bool aClear);
-  static void MarkImagesInListVisible(const nsDisplayList& aList);
-  void MarkImagesInSubtreeVisible(nsIFrame* aFrame, const nsRect& aRect,
+  static void MarkImagesInListVisible(const nsDisplayList& aList,
+                                      Maybe<VisibleRegions>& aVisibleRegions);
+  void MarkImagesInSubtreeVisible(nsIFrame* aFrame,
+                                  const nsRect& aRect,
+                                  Maybe<VisibleRegions>& aVisibleRegions,
                                   bool aRemoveOnly = false);
 
   

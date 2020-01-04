@@ -496,11 +496,12 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
   const int verticalPadding = 10;
   const int horizontalPadding = 5;
   gfx::Color backgroundColor(0.3f, 0.3f, 0.3f, 0.3f);
-  gfx::Color tileActiveColor(1, 1, 1, 0.5f);
+  gfx::Color tileActiveColor(1, 1, 1, 0.4f);
   gfx::Color tileBorderColor(0, 0, 0, 0.1f);
   gfx::Color pageBorderColor(0, 0, 0);
   gfx::Color displayPortColor(0, 1.f, 0);
-  gfx::Color viewPortColor(0, 0, 1.f);
+  gfx::Color viewPortColor(0, 0, 1.f, 0.3f);
+  gfx::Color visibilityColor(1.f, 0, 0);
 
   
   const FrameMetrics& fm = aLayer->GetFrameMetrics(0);
@@ -551,12 +552,45 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
 
 
 
+  
   r = transform.TransformBounds(scrollRect.ToUnknownRect());
   compositor->SlowDrawRect(r, pageBorderColor, clipRect, aContainer->GetEffectiveTransform());
+
+  
+  if (gfxPrefs::APZMinimapVisibilityEnabled()) {
+    
+    
+    AsyncPanZoomController* controller = aLayer->GetAsyncPanZoomController(0);
+    MOZ_ASSERT(controller);
+
+    ScrollableLayerGuid guid = controller->GetGuid();
+
+    
+    static CSSIntRegion emptyRegion;
+    CSSIntRegion* visibleRegion = aManager->GetApproximatelyVisibleRegion(guid);
+    if (!visibleRegion) {
+      visibleRegion = &emptyRegion;
+    }
+
+    
+    for (CSSIntRegion::RectIterator iterator = visibleRegion->RectIter();
+         !iterator.Done();
+         iterator.Next())
+    {
+      CSSIntRect rect = iterator.Get();
+      LayerRect scaledRect = rect * fm.LayersPixelsPerCSSPixel();
+      Rect r = transform.TransformBounds(scaledRect.ToUnknownRect());
+      compositor->FillRect(r, visibilityColor, clipRect, aContainer->GetEffectiveTransform());
+    }
+  }
+
+  
   r = transform.TransformBounds(dp.ToUnknownRect());
   compositor->FillRect(r, tileActiveColor, clipRect, aContainer->GetEffectiveTransform());
   r = transform.TransformBounds(dp.ToUnknownRect());
   compositor->SlowDrawRect(r, displayPortColor, clipRect, aContainer->GetEffectiveTransform());
+
+  
   r = transform.TransformBounds(viewRect.ToUnknownRect());
   compositor->SlowDrawRect(r, viewPortColor, clipRect, aContainer->GetEffectiveTransform(), 2);
 }

@@ -8,6 +8,7 @@
 
 #include <stdint.h>                     
 #include "Units.h"                      
+#include "mozilla/HashFunctions.h"      
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/Rect.h"           
@@ -865,6 +866,11 @@ struct ScrollableLayerGuid {
       }
     }
     return false;
+  }
+
+  uint32_t Hash() const
+  {
+    return HashGeneric(mLayersId, mPresShellId, mScrollId);
   }
 };
 
