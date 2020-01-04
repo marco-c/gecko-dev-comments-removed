@@ -325,8 +325,8 @@ hasMultiAlias() {
 
 
 
-static const size_t AsmJSCheckedImmediateRange = 0;
-static const size_t AsmJSImmediateRange = 0;
+static const size_t WasmCheckedImmediateRange = 0;
+static const size_t WasmImmediateRange = 0;
 
 } 
 } 

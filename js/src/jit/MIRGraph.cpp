@@ -6,6 +6,7 @@
 
 #include "jit/MIRGraph.h"
 
+#include "asmjs/Wasm.h"
 #include "jit/BytecodeAnalysis.h"
 #include "jit/Ion.h"
 #include "jit/JitSpewer.h"
@@ -128,23 +129,32 @@ MIRGenerator::foldableOffsetRange(const MAsmJSHeapAccess* access) const
     
     
 
-#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
-    
+    static_assert(WasmCheckedImmediateRange <= WasmImmediateRange,
+                  "WasmImmediateRange should be the size of an unconstrained "
+                  "address immediate");
+
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+    static_assert(wasm::Uint32Range + WasmImmediateRange + sizeof(wasm::Val) < wasm::MappedSize,
+                  "When using signal handlers for bounds checking, a uint32 is added to the base "
+                  "address followed by an immediate in the range [0, WasmImmediateRange). An "
+                  "unaligned access (whose size is conservatively approximated by wasm::Val) may "
+                  "spill over, so ensure a space at the end.");
+
     
     if (usesSignalHandlersForAsmJSOOB_)
-        return AsmJSImmediateRange;
+        return WasmImmediateRange;
 #endif
 
     
     
     
     if (sizeof(intptr_t) == sizeof(int32_t) && !access->needsBoundsCheck())
-        return AsmJSImmediateRange;
+        return WasmImmediateRange;
 
     
     
     
-    return AsmJSCheckedImmediateRange;
+    return WasmCheckedImmediateRange;
 }
 
 void

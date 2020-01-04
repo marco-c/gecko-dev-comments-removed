@@ -28,6 +28,22 @@ namespace wasm {
 bool
 DefineTestingFunctions(JSContext* cx, JS::HandleObject globalObj);
 
+
+bool
+HasCompilerSupport(ExclusiveContext* cx);
+
+
+
+static const unsigned PageSize = 64 * 1024;
+
+
+
+
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+static const uint64_t Uint32Range = uint64_t(UINT32_MAX) + 1;
+static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
+#endif
+
 }  
 }  
 

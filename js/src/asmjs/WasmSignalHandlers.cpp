@@ -21,7 +21,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/PodOperations.h"
 
-#include "asmjs/AsmJS.h"
+#include "asmjs/Wasm.h"
 #include "asmjs/WasmModule.h"
 #include "jit/AtomicOperations.h"
 #include "jit/Disassembler.h"
@@ -647,7 +647,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
                        "faulting address range");
     MOZ_RELEASE_ASSERT(accessAddress >= module.heap(),
                        "Access begins outside the asm.js heap");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= module.heap() + AsmJSMappedSize,
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= module.heap() + MappedSize,
                        "Access extends beyond the asm.js heap guard region");
     MOZ_RELEASE_ASSERT(accessAddress + access.size() > module.heap() + module.heapLength(),
                        "Computed access address is not actually out of bounds");
@@ -764,7 +764,7 @@ HandleFault(PEXCEPTION_POINTERS exception)
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(record->ExceptionInformation[1]);
     if (!module.usesHeap() ||
         faultingAddress < module.heap() ||
-        faultingAddress >= module.heap() + AsmJSMappedSize)
+        faultingAddress >= module.heap() + MappedSize)
     {
         return false;
     }
@@ -909,7 +909,7 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(request.body.code[1]);
     if (!module.usesHeap() ||
         faultingAddress < module.heap() ||
-        faultingAddress >= module.heap() + AsmJSMappedSize)
+        faultingAddress >= module.heap() + MappedSize)
     {
         return false;
     }
@@ -1119,7 +1119,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(info->si_addr);
     if (!module.usesHeap() ||
         faultingAddress < module.heap() ||
-        faultingAddress >= module.heap() + AsmJSMappedSize)
+        faultingAddress >= module.heap() + MappedSize)
     {
         return false;
     }
