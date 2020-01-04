@@ -313,7 +313,7 @@ NS_EVENT_MESSAGE(eContentCommandPasteTransferable, eContentCommandEventFirst + 6
 
 
 
-NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_SCROLL,        eContentCommandEventFirst + 7)
+NS_EVENT_MESSAGE(eContentCommandScroll,            eContentCommandEventFirst + 7)
 
 
 NS_EVENT_MESSAGE(NS_GESTURENOTIFY_EVENT_START, 3900)

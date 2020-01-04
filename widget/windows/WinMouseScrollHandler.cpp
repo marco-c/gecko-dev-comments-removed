@@ -541,9 +541,7 @@ MouseScrollHandler::ProcessNativeScrollMessage(nsWindowBase* aWidget,
      aWParam, aLParam));
 
   
-  WidgetContentCommandEvent commandEvent(true, NS_CONTENT_COMMAND_SCROLL,
-                                         aWidget);
-
+  WidgetContentCommandEvent commandEvent(true, eContentCommandScroll, aWidget);
   commandEvent.mScroll.mIsHorizontal = (aMessage == WM_HSCROLL);
 
   switch (LOWORD(aWParam)) {
