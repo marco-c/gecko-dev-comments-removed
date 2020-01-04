@@ -26,6 +26,7 @@ protected:
     registration = MakeUnique<ScopedLayerTreeRegistration>(manager, 0, root, mcc);
     manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
     rootApzc = ApzcOf(root);
+    rootApzc->GetFrameMetrics().SetIsRootContent(true);  
   }
 
   void CreateScrollHandoffLayerTree2() {
@@ -296,6 +297,51 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202a) {
 
   
   TouchUp(manager, ScreenIntPoint(10, 90), mcc->Time());
+
+  
+  child->AdvanceAnimationsUntilEnd();
+  rootApzc->AdvanceAnimationsUntilEnd();
+
+  
+  EXPECT_FALSE(child->IsOverscrolled());
+  EXPECT_FALSE(rootApzc->IsOverscrolled());
+}
+
+TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202b) {
+  
+  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+
+  CreateScrollHandoffLayerTree1();
+
+  TestAsyncPanZoomController* child = ApzcOf(layers[1]);
+
+  
+  Pan(manager, mcc, 60, 90, true );
+  EXPECT_FALSE(child->IsOverscrolled());
+  EXPECT_TRUE(rootApzc->IsOverscrolled());
+
+  
+  
+  TouchUp(manager, ScreenIntPoint(10, 90), mcc->Time());
+
+  
+  
+  TouchDown(manager, ScreenIntPoint(10, 90), mcc->Time());
+
+  
+  
+  
+  
+  MultiTouchInput secondFingerDown(MultiTouchInput::MULTITOUCH_START, 0, TimeStamp(), 0);
+  
+  secondFingerDown.mTouches.AppendElement(SingleTouchData(0, ScreenIntPoint(10, 90), ScreenSize(0, 0), 0, 0));
+  secondFingerDown.mTouches.AppendElement(SingleTouchData(1, ScreenIntPoint(10, 80), ScreenSize(0, 0), 0, 0));
+  manager->ReceiveInputEvent(secondFingerDown, nullptr, nullptr);
+
+  
+  MultiTouchInput fingersUp = secondFingerDown;
+  fingersUp.mType = MultiTouchInput::MULTITOUCH_END;
+  manager->ReceiveInputEvent(fingersUp, nullptr, nullptr);
 
   
   child->AdvanceAnimationsUntilEnd();
