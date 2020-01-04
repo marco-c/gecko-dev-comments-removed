@@ -5,10 +5,16 @@ do {
 } while (!inIon());
 
 
-class B {};
-class D extends B {
-  constructor() { super(); }
-};
+function dontAbortWholeCompilation() {
+    class B {};
+    class D extends B {
+        constructor() { super(); }
+    };
+
+    return D;
+}
+var classImpl = dontAbortWholeCompilation();
+
 do {
-  new D(); 
+  new classImpl(); 
 } while (!inIon());
