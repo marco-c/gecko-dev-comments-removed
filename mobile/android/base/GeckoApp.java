@@ -1280,6 +1280,7 @@ public abstract class GeckoApp
         
         
         GeckoAppShell.setContextGetter(this);
+        GeckoAppShell.setApplicationContext(getApplicationContext());
         GeckoAppShell.setGeckoInterface(this);
 
         Tabs.getInstance().attachToContext(this);
