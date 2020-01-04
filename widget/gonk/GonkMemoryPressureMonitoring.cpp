@@ -4,6 +4,12 @@
 
 
 
+#include <android/log.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/sysinfo.h>
+
 #include "GonkMemoryPressureMonitoring.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/FileUtils.h"
@@ -14,11 +20,8 @@
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsMemoryPressure.h"
+#include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
-#include <errno.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <android/log.h>
 
 #define LOG(args...)  \
   __android_log_print(ANDROID_LOG_INFO, "GonkMemoryPressure" , ## args)
@@ -67,7 +70,12 @@ class MemoryPressureWatcher final
 public:
   MemoryPressureWatcher()
     : mMonitor("MemoryPressureWatcher")
+    , mLowMemTriggerKB(0)
+    , mPageSize(0)
     , mShuttingDown(false)
+    , mTriggerFd(-1)
+    , mShutdownPipeRead(-1)
+    , mShutdownPipeWrite(-1)
   {
   }
 
@@ -82,16 +90,12 @@ public:
     os->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID,  false);
 
     
-    
-    
-    
-    mPollMS = Preferences::GetUint("gonk.systemMemoryPressureRecoveryPollMS",
-                                    5000);
+    mPageSize = sysconf(_SC_PAGESIZE);
+    ReadPrefs();
+    nsresult rv = OpenFiles();
+    NS_ENSURE_SUCCESS(rv, rv);
+    SetLowMemTrigger(mSoftLowMemTriggerKB);
 
-    int pipes[2];
-    NS_ENSURE_STATE(!pipe(pipes));
-    mShutdownPipeRead = pipes[0];
-    mShutdownPipeWrite = pipes[1];
     return NS_OK;
   }
 
@@ -125,28 +129,31 @@ public:
     }
 #endif
 
-    int lowMemFd = open("/sys/kernel/mm/lowmemkiller/notify_trigger_active",
-                        O_RDONLY | O_CLOEXEC);
-    NS_ENSURE_STATE(lowMemFd != -1);
-    ScopedClose autoClose(lowMemFd);
-
-    nsresult rv = CheckForMemoryPressure(lowMemFd, nullptr);
+    int triggerResetTimeout = -1;
+    bool memoryPressure;
+    nsresult rv = CheckForMemoryPressure(&memoryPressure);
     NS_ENSURE_SUCCESS(rv, rv);
 
     while (true) {
       
       
       
+      
       struct pollfd pollfds[2];
-      pollfds[0].fd = lowMemFd;
+      pollfds[0].fd = mTriggerFd;
       pollfds[0].events = POLLPRI;
       pollfds[1].fd = mShutdownPipeRead;
       pollfds[1].events = POLLIN;
 
-      int pollRv;
-      do {
-        pollRv = poll(pollfds, ArrayLength(pollfds),  -1);
-      } while (pollRv == -1 && errno == EINTR);
+      int pollRv = MOZ_TEMP_FAILURE_RETRY(
+        poll(pollfds, ArrayLength(pollfds), triggerResetTimeout)
+      );
+
+      if (pollRv == 0) {
+        
+        triggerResetTimeout = AdjustTrigger(triggerResetTimeout);
+        continue;
+      }
 
       if (pollfds[1].revents) {
         
@@ -165,19 +172,20 @@ public:
       
       
       
-
-      
-      
       rv = DispatchMemoryPressure(MemPressure_New);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
+      if (mLowMemTriggerKB > mHardLowMemTriggerKB) {
+        SetLowMemTrigger(mHardLowMemTriggerKB);
+      }
+
       
       
       
       
       
-      bool memoryPressure;
+      
       do {
         {
           MonitorAutoLock lock(mMonitor);
@@ -197,7 +205,7 @@ public:
         }
 
         LOG("Checking to see if memory pressure is over.");
-        rv = CheckForMemoryPressure(lowMemFd, &memoryPressure);
+        rv = CheckForMemoryPressure(&memoryPressure);
         NS_ENSURE_SUCCESS(rv, rv);
 
         if (memoryPressure) {
@@ -206,6 +214,11 @@ public:
           continue;
         }
       } while (false);
+
+      if (XRE_IsParentProcess()) {
+        
+        triggerResetTimeout = mPollMS * 2;
+      }
 
       LOG("Memory pressure is over.");
     }
@@ -217,34 +230,93 @@ protected:
   ~MemoryPressureWatcher() {}
 
 private:
+  void ReadPrefs() {
+    
+    
+    
+    
+    Preferences::AddUintVarCache(&mPollMS,
+      "gonk.systemMemoryPressureRecoveryPollMS",  5000);
+
+    
+    
+    
+    
+    Preferences::AddUintVarCache(&mSoftLowMemTriggerKB,
+      "gonk.notifySoftLowMemUnderKB",  43008);
+    Preferences::AddUintVarCache(&mHardLowMemTriggerKB,
+      "gonk.notifyHardLowMemUnderKB",  14336);
+  }
+
+  nsresult OpenFiles() {
+    mTriggerFd = open("/sys/kernel/mm/lowmemkiller/notify_trigger_active",
+                      O_RDONLY | O_CLOEXEC);
+    NS_ENSURE_STATE(mTriggerFd != -1);
+
+    int pipes[2];
+    NS_ENSURE_STATE(!pipe(pipes));
+    mShutdownPipeRead = pipes[0];
+    mShutdownPipeWrite = pipes[1];
+    return NS_OK;
+  }
+
+  
+
+
+
+  void SetLowMemTrigger(uint32_t aValue) {
+    if (XRE_IsParentProcess()) {
+      nsPrintfCString str("%ld", (aValue * 1024) / mPageSize);
+      if (WriteSysFile("/sys/module/lowmemorykiller/parameters/notify_trigger",
+                       str.get())) {
+        mLowMemTriggerKB = aValue;
+      }
+    }
+  }
+
   
 
 
 
 
 
-
-  nsresult CheckForMemoryPressure(int aLowMemFd, bool* aOut)
+  nsresult CheckForMemoryPressure(bool* aOut)
   {
-    if (aOut) {
-      *aOut = false;
-    }
+    *aOut = false;
 
-    lseek(aLowMemFd, 0, SEEK_SET);
+    lseek(mTriggerFd, 0, SEEK_SET);
 
     char buf[2];
-    int nread;
-    do {
-      nread = read(aLowMemFd, buf, sizeof(buf));
-    } while(nread == -1 && errno == EINTR);
+    int nread = MOZ_TEMP_FAILURE_RETRY(read(mTriggerFd, buf, sizeof(buf)));
     NS_ENSURE_STATE(nread == 2);
 
     
     
-    if (aOut) {
-      *aOut = buf[0] == '1' && buf[1] == '\n';
-    }
+    *aOut = (buf[0] == '1');
     return NS_OK;
+  }
+
+  int AdjustTrigger(int timeout)
+  {
+    if (!XRE_IsParentProcess()) {
+      return -1; 
+    }
+
+    struct sysinfo info;
+    int rv = sysinfo(&info);
+    if (rv < 0) {
+      return -1; 
+    }
+
+    size_t freeMemory = (info.freeram * info.mem_unit) / 1024;
+
+    if (freeMemory > mSoftLowMemTriggerKB) {
+      SetLowMemTrigger(mSoftLowMemTriggerKB);
+      return -1; 
+    }
+
+    
+    return std::min(86400000, timeout * 2);
   }
 
   
@@ -263,9 +335,14 @@ private:
   }
 
   Monitor mMonitor;
-  uint32_t mPollMS;
+  uint32_t mPollMS; 
+  uint32_t mSoftLowMemTriggerKB; 
+  uint32_t mHardLowMemTriggerKB; 
+  uint32_t mLowMemTriggerKB; 
+  size_t mPageSize;
   bool mShuttingDown;
 
+  ScopedClose mTriggerFd;
   ScopedClose mShutdownPipeRead;
   ScopedClose mShutdownPipeWrite;
 };

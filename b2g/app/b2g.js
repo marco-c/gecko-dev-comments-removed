@@ -779,7 +779,12 @@ pref("hal.gonk.COMPOSITOR.nice", -4);
 
 
 
-pref("hal.processPriorityManager.gonk.notifyLowMemUnderKB", 14336);
+pref("gonk.notifyHardLowMemUnderKB", 14336);
+
+
+
+
+pref("gonk.notifySoftLowMemUnderKB", 43008);
 
 
 
