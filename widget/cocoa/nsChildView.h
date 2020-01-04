@@ -378,9 +378,9 @@ public:
   NS_IMETHOD              Enable(bool aState) override;
   virtual bool            IsEnabled() const override;
   NS_IMETHOD              SetFocus(bool aRaise) override;
-  NS_IMETHOD              GetBoundsUntyped(nsIntRect &aRect) override;
-  NS_IMETHOD              GetClientBoundsUntyped(nsIntRect &aRect) override;
-  NS_IMETHOD              GetScreenBoundsUntyped(nsIntRect &aRect) override;
+  NS_IMETHOD              GetBounds(mozilla::LayoutDeviceIntRect &aRect) override;
+  NS_IMETHOD              GetClientBounds(mozilla::LayoutDeviceIntRect &aRect) override;
+  NS_IMETHOD              GetScreenBounds(mozilla::LayoutDeviceIntRect &aRect) override;
 
   
   
