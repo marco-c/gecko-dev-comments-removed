@@ -820,7 +820,7 @@ InplaceEditor.prototype = {
   
 
 
-  _onBlur: function(event, doNotClear) {
+  _onBlur: function(event) {
     if (event && this.popup && this.popup.isOpen &&
         this.popup.selectedIndex >= 0) {
       let label, preLabel;
@@ -866,19 +866,11 @@ InplaceEditor.prototype = {
       };
       this.popup._panel.addEventListener("popuphidden", onPopupHidden);
       this.popup.hidePopup();
-      
-      
-      if (this.contentType != CONTENT_TYPES.CSS_MIXED) {
-        this._apply();
-      }
       return;
     }
 
     this._apply();
-
-    if (!doNotClear) {
-      this._clear();
-    }
+    this._clear();
   },
 
   
