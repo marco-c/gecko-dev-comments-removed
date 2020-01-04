@@ -6,42 +6,41 @@
 
 
 
-function runTests() {
+add_task(function* () {
   
   
   
   
-  yield whenPagesUpdatedAnd(resolve => setLinks([], resolve));
+  let updatedPromise = whenPagesUpdated();
+  let setLinksPromise = setLinks([]);
+  yield Promise.all([updatedPromise, setLinksPromise]);
 
   
   yield fillHistoryAndWaitForPageUpdate([1]);
-  yield addNewTabPageTab();
-  checkGrid("1,,,,,,,,");
+  yield* addNewTabPageTab();
+  yield* checkGrid("1,,,,,,,,");
 
   yield fillHistoryAndWaitForPageUpdate([2]);
-  yield addNewTabPageTab();
-  checkGrid("2,1,,,,,,,");
+  yield* addNewTabPageTab();
+  yield* checkGrid("2,1,,,,,,,");
 
   yield fillHistoryAndWaitForPageUpdate([1]);
-  yield addNewTabPageTab();
-  checkGrid("1,2,,,,,,,");
+  yield* addNewTabPageTab();
+  yield* checkGrid("1,2,,,,,,,");
 
   yield fillHistoryAndWaitForPageUpdate([2, 3, 4]);
-  yield addNewTabPageTab();
-  checkGrid("2,1,3,4,,,,,");
+  yield* addNewTabPageTab();
+  yield* checkGrid("2,1,3,4,,,,,");
 
   
-  is(getCell(1).site.link.type, "history", "added link is history");
-}
+  let type = yield performOnCell(1, cell => { return cell.site.link.type });
+  is(type, "history", "added link is history");
+});
 
 function fillHistoryAndWaitForPageUpdate(links) {
-  return whenPagesUpdatedAnd(resolve => fillHistory(links.map(link), resolve));
-}
-
-function whenPagesUpdatedAnd(promiseConstructor) {
-  let promise1 = new Promise(whenPagesUpdated);
-  let promise2 = new Promise(promiseConstructor);
-  return Promise.all([promise1, promise2]).then(TestRunner.next);
+  let updatedPromise = whenPagesUpdated;
+  let fillHistoryPromise = fillHistory(links.map(link));
+  return Promise.all([updatedPromise, fillHistoryPromise]);
 }
 
 function link(id) {
