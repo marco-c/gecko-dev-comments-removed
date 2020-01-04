@@ -61,9 +61,7 @@ public:
 
   
   
-  
-  
-  void SetPlaybackRateUnlocked(double aPlaybackRate);
+  void SetPlaybackRate(double aPlaybackRate);
   
   
   double GetPlaybackRate() const;
