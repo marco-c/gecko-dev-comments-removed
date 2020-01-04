@@ -4,6 +4,7 @@
 
 Cu.import("resource://gre/modules/Services.jsm");
 
+const DEFAULT_PREFS = Services.prefs.getDefaultBranch("social.manifest.");
 
 function run_test() {
   
@@ -15,25 +16,23 @@ function run_test() {
   let manifest = { 
     name: "provider 1",
     origin: "https://example1.com",
+    builtin: true 
   };
 
-  MANIFEST_PREFS.setCharPref(manifest.origin, JSON.stringify(manifest));
+  DEFAULT_PREFS.setCharPref(manifest.origin, JSON.stringify(manifest));
 
   
   let activeVal = Cc["@mozilla.org/supports-string;1"].
              createInstance(Ci.nsISupportsString);
   let active = {};
   active[manifest.origin] = 1;
+  
+  active["bad.origin"] = 1;
   activeVal.data = JSON.stringify(active);
   Services.prefs.setComplexValue("social.activeProviders",
                                  Ci.nsISupportsString, activeVal);
 
-  
-  
-  
-  Services.prefs.setBoolPref("social.enabled", false);
-
-  Cu.import("resource://gre/modules/SocialService.jsm");
+  Cu.import("resource:///modules/SocialService.jsm");
 
   let runner = new AsyncRunner();
   let next = runner.next.bind(runner);
@@ -44,18 +43,25 @@ function run_test() {
 function* testMigration(manifest, next) {
   
   
-  do_check_true(Services.prefs.prefHasUserValue("social.enabled"));
-  do_check_true(MANIFEST_PREFS.prefHasUserValue(manifest.origin));
+  do_check_false(MANIFEST_PREFS.prefHasUserValue(manifest.origin));
   
   yield SocialService.getProviderList(next);
-  do_check_false(SocialService.enabled);
-  do_check_false(Services.prefs.prefHasUserValue("social.enabled"));
+  do_check_true(SocialService.enabled);
   do_check_true(Services.prefs.prefHasUserValue("social.activeProviders"));
 
   let activeProviders;
   let pref = Services.prefs.getComplexValue("social.activeProviders",
-                                            Ci.nsISupportsString).data;
+                                            Ci.nsISupportsString);
   activeProviders = JSON.parse(pref);
-  do_check_true(activeProviders[manifest.origin] == undefined);
+  do_check_true(activeProviders[manifest.origin]);
   do_check_true(MANIFEST_PREFS.prefHasUserValue(manifest.origin));
+  do_check_true(JSON.parse(DEFAULT_PREFS.getCharPref(manifest.origin)).builtin);
+
+  let userPref = JSON.parse(MANIFEST_PREFS.getCharPref(manifest.origin));
+  do_check_true(parseInt(userPref.updateDate) > 0);
+  
+  do_check_true(userPref.installDate === 0);
+
+  
+  do_check_false(!!activeProviders["bad.origin"]);
 }
