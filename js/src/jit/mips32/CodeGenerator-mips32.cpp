@@ -1203,7 +1203,7 @@ CodeGeneratorMIPS::visitRound(LRound* lir)
     Label bail, negative, end, skipCheck;
 
     
-    masm.loadConstantDouble(0.5, temp);
+    masm.loadConstantDouble(GetBiggestNumberLessThan(0.5), temp);
 
     
     masm.loadConstantDouble(0.0, scratch);
@@ -1221,8 +1221,7 @@ CodeGeneratorMIPS::visitRound(LRound* lir)
     masm.ma_b(&end, ShortJump);
 
     masm.bind(&skipCheck);
-    masm.loadConstantDouble(0.5, scratch);
-    masm.addDouble(input, scratch);
+    masm.as_addd(scratch, input, temp);
     masm.as_floorwd(scratch, scratch);
 
     masm.moveFromDoubleLo(scratch, output);
@@ -1234,6 +1233,15 @@ CodeGeneratorMIPS::visitRound(LRound* lir)
 
     
     masm.bind(&negative);
+
+    
+    
+    Label loadJoin;
+    masm.loadConstantDouble(-0.5, scratch);
+    masm.branchDouble(Assembler::DoubleLessThan, input, scratch, &loadJoin);
+    masm.loadConstantDouble(0.5, temp);
+    masm.bind(&loadJoin);
+
     masm.addDouble(input, temp);
 
     
@@ -1262,7 +1270,7 @@ CodeGeneratorMIPS::visitRoundF(LRoundF* lir)
     Label bail, negative, end, skipCheck;
 
     
-    masm.loadConstantFloat32(0.5, temp);
+    masm.loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
 
     
     masm.loadConstantFloat32(0.0f, scratch);
@@ -1280,8 +1288,7 @@ CodeGeneratorMIPS::visitRoundF(LRoundF* lir)
     masm.ma_b(&end, ShortJump);
 
     masm.bind(&skipCheck);
-    masm.loadConstantFloat32(0.5, scratch);
-    masm.as_adds(scratch, input, scratch);
+    masm.as_adds(scratch, input, temp);
     masm.as_floorws(scratch, scratch);
 
     masm.moveFromFloat32(scratch, output);
@@ -1293,6 +1300,15 @@ CodeGeneratorMIPS::visitRoundF(LRoundF* lir)
 
     
     masm.bind(&negative);
+
+    
+    
+    Label loadJoin;
+    masm.loadConstantFloat32(-0.5f, scratch);
+    masm.branchFloat(Assembler::DoubleLessThan, input, scratch, &loadJoin);
+    masm.loadConstantFloat32(0.5f, temp);
+    masm.bind(&loadJoin);
+
     masm.as_adds(temp, input, temp);
 
     
