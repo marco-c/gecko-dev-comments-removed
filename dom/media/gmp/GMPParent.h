@@ -124,6 +124,7 @@ public:
   const nsCString& GetDisplayName() const;
   const nsCString& GetVersion() const;
   const uint32_t GetPluginId() const;
+  nsString GetPluginBaseName() const;
 
   
   bool CanBeSharedCrossNodeIds() const;
