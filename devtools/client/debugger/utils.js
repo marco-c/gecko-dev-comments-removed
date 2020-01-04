@@ -315,7 +315,11 @@ var SourceUtils = {
     }
     
     if (aSeq == 4) {
-      let host = aUrl.hostPort;
+      let host;
+      try {
+        
+        host = aUrl.hostPort;
+      } catch(e) {}
       if (host) {
         return this.trimUrl(aUrl, host + "/" + aLabel, aSeq + 1);
       }
