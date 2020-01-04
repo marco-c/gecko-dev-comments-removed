@@ -515,6 +515,13 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
   
   if (newState.mEnabled == IMEState::PLUGIN) {
     CreateIMEContentObserver(nullptr);
+    if (sActiveIMEContentObserver) {
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+        ("ISM:   IMEStateManager::OnChangeFocusInternal(), an "
+         "IMEContentObserver instance is created for plugin and trying to "
+         "flush its pending notifications..."));
+      sActiveIMEContentObserver->TryToFlushPendingNotifications();
+    }
   }
 
   return NS_OK;
@@ -684,6 +691,14 @@ IMEStateManager::OnFocusInEditor(nsPresContext* aPresContext,
   }
 
   CreateIMEContentObserver(aEditor);
+
+  
+  if (sActiveIMEContentObserver) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+      ("ISM:   IMEStateManager::OnFocusInEditor(), new IMEContentObserver is "
+       "created, trying to flush pending notifications..."));
+    sActiveIMEContentObserver->TryToFlushPendingNotifications();
+  }
 }
 
 
@@ -797,6 +812,9 @@ IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
   }
 
   if (createTextStateManager) {
+    
+    
+    
     CreateIMEContentObserver(aEditor);
   }
 }

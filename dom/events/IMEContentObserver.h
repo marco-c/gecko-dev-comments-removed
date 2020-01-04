@@ -103,6 +103,12 @@ public:
   nsresult GetSelectionAndRoot(nsISelection** aSelection,
                                nsIContent** aRoot) const;
 
+  
+
+
+
+  void TryToFlushPendingNotifications();
+
 private:
   ~IMEContentObserver() {}
 
@@ -223,6 +229,7 @@ private:
   public:
     explicit IMENotificationSender(IMEContentObserver* aIMEContentObserver)
       : AChangeEvent(aIMEContentObserver)
+      , mIsRunning(false)
     {
     }
     NS_IMETHOD Run() override;
@@ -232,6 +239,8 @@ private:
     void SendSelectionChange();
     void SendTextChange();
     void SendPositionChange();
+
+    bool mIsRunning;
   };
 
   

@@ -150,6 +150,12 @@ public:
 
 
 
+  void TryToFlushPendingNotificationsToIME();
+
+  
+
+
+
 
 
 
