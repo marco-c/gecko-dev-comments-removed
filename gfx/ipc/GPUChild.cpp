@@ -4,6 +4,7 @@
 
 
 #include "GPUChild.h"
+#include "gfxConfig.h"
 #include "gfxPrefs.h"
 #include "GPUProcessHost.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -42,7 +43,15 @@ GPUChild::Init()
   }
 
   nsTArray<GfxVarUpdate> updates = gfxVars::FetchNonDefaultVars();
-  SendInit(prefs, updates);
+
+  DevicePrefs devicePrefs;
+  devicePrefs.hwCompositing() = gfxConfig::GetValue(Feature::HW_COMPOSITING);
+  devicePrefs.d3d11Compositing() = gfxConfig::GetValue(Feature::D3D11_COMPOSITING);
+  devicePrefs.d3d9Compositing() = gfxConfig::GetValue(Feature::D3D9_COMPOSITING);
+  devicePrefs.oglCompositing() = gfxConfig::GetValue(Feature::OPENGL_COMPOSITING);
+  devicePrefs.useD2D1() = gfxConfig::GetValue(Feature::DIRECT2D);
+
+  SendInit(prefs, updates, devicePrefs);
 
   gfxVars::AddReceiver(this);
 }

@@ -311,8 +311,10 @@ DeviceManagerD3D11::CreateCompositorDevice(FeatureState& d3d11)
                          "RenderTargetViews need recreating");
   }
 
-  
-  D3D11Checks::WarnOnAdapterMismatch(mCompositorDevice);
+  if (XRE_IsParentProcess()) {
+    
+    D3D11Checks::WarnOnAdapterMismatch(mCompositorDevice);
+  }
 
   mCompositorDevice->SetExceptionMode(0);
   mIsWARP = false;

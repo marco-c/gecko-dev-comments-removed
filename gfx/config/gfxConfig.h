@@ -68,6 +68,9 @@ public:
   static void EnableByDefault(Feature aFeature);
 
   
+  static void Inherit(Feature aFeature, FeatureStatus aStatus);
+
+  
   
   
   
