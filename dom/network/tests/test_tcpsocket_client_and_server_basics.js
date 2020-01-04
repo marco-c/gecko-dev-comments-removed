@@ -171,17 +171,17 @@ function* test_basics() {
   
   let serverPort = 8085;
 
-  let TCPSocket = navigator.mozTCPSocket;
+  let mozTCPSocket = navigator.mozTCPSocket;
   
-  let listeningServer = TCPSocket.listen(serverPort,
+  let listeningServer = mozTCPSocket.listen(serverPort,
                                          { binaryType: 'arraybuffer' },
                                          SERVER_BACKLOG);
 
   let connectedPromise = waitForConnection(listeningServer);
 
   
-  let clientSocket = TCPSocket.open('127.0.0.1', serverPort,
-                                    { binaryType: 'arraybuffer' });
+  let clientSocket = new TCPSocket('127.0.0.1', serverPort,
+                                   { binaryType: 'arraybuffer' });
   let clientQueue = listenForEventsOnSocket(clientSocket, 'client');
 
   
@@ -287,8 +287,8 @@ function* test_basics() {
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = TCPSocket.open('127.0.0.1', serverPort,
-                                { binaryType: 'arraybuffer' });
+  clientSocket = new TCPSocket('127.0.0.1', serverPort,
+                               { binaryType: 'arraybuffer' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'open', 'got open event');
 
@@ -314,8 +314,8 @@ function* test_basics() {
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = TCPSocket.open('127.0.0.1', serverPort,
-                                { binaryType: 'arraybuffer' });
+  clientSocket = new TCPSocket('127.0.0.1', serverPort,
+                               { binaryType: 'arraybuffer' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'open', 'got open event');
 
@@ -348,8 +348,8 @@ function* test_basics() {
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = TCPSocket.open('127.0.0.1', serverPort,
-                                { binaryType: 'string' });
+  clientSocket = new TCPSocket('127.0.0.1', serverPort,
+                               { binaryType: 'string' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'open', 'got open event');
 
@@ -376,8 +376,8 @@ function* test_basics() {
   listeningServer.close();
 
   
-  clientSocket = TCPSocket.open('127.0.0.1', serverPort,
-                                { binaryType: 'arraybuffer' });
+  clientSocket = new TCPSocket('127.0.0.1', serverPort,
+                               { binaryType: 'arraybuffer' });
   clientQueue = listenForEventsOnSocket(clientSocket, 'client');
   is((yield clientQueue.waitForEvent()).type, 'error', 'fail to connect');
   is(clientSocket.readyState, 'closed',
