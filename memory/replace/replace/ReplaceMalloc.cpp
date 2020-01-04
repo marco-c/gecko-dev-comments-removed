@@ -15,9 +15,7 @@
 
 
 static const malloc_table_t* gFuncs = nullptr;
-
-
-static mozilla::Atomic<malloc_hook_table_t*> gHookTable(nullptr);
+static mozilla::Atomic<const malloc_hook_table_t*> gHookTable(nullptr);
 
 class GenericReplaceMallocBridge : public ReplaceMallocBridge
 {
