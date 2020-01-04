@@ -28,6 +28,7 @@ function AddonPolicyService()
 {
   this.wrappedJSObject = this;
   this.cspStrings = new Map();
+  this.backgroundPageUrlCallbacks = new Map();
   this.mayLoadURICallbacks = new Map();
   this.localizeCallbacks = new Map();
 
@@ -53,6 +54,16 @@ AddonPolicyService.prototype = {
   getAddonCSP(aAddonId) {
     let csp = this.cspStrings.get(aAddonId);
     return csp || this.defaultCSP;
+  },
+
+  
+
+
+
+
+  getGeneratedBackgroundPageUrl(aAddonId) {
+    let cb = this.backgroundPageUrlCallbacks.get(aAddonId);
+    return cb && cb(aAddonId) || '';
   },
 
   
@@ -131,6 +142,17 @@ AddonPolicyService.prototype = {
       this.cspStrings.set(aAddonId, aCSPString);
     } else {
       this.cspStrings.delete(aAddonId);
+    }
+  },
+
+  
+
+
+  setBackgroundPageUrlCallback(aAddonId, aCallback) {
+    if (aCallback) {
+      this.backgroundPageUrlCallbacks.set(aAddonId, aCallback);
+    } else {
+      this.backgroundPageUrlCallbacks.delete(aAddonId);
     }
   },
 
