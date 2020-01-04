@@ -263,6 +263,10 @@ private:
   RefPtr<TextEventDispatcher> mDispatcher;
   HKL mKeyboardLayout;
   MSG mMsg;
+  
+  
+  
+  nsTArray<MSG> mFollowingCharMsgs;
 
   uint32_t mDOMKeyCode;
   KeyNameIndex mKeyNameIndex;

@@ -886,10 +886,23 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   mIsExtended = WinUtils::IsExtendedScanCode(mMsg.lParam);
   switch (mMsg.message) {
     case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-    case MOZ_WM_KEYDOWN:
+    case WM_SYSKEYDOWN: {
+      
+      MSG charMsg;
+      while (GetFollowingCharMessage(charMsg)) {
+        
+        
+        if (charMsg.message == WM_NULL) {
+          continue;
+        }
+        NS_WARN_IF(charMsg.hwnd != mMsg.hwnd);
+        mFollowingCharMsgs.AppendElement(charMsg);
+      }
+      MOZ_FALLTHROUGH;
+    }
     case WM_KEYUP:
     case WM_SYSKEYUP:
+    case MOZ_WM_KEYDOWN:
     case MOZ_WM_KEYUP: {
       
       
@@ -1089,13 +1102,14 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
       
       
       
-      MSG followingCharMsg;
-      if (GetFollowingCharMessage(followingCharMsg, false) &&
-          !IsControlChar(static_cast<char16_t>(followingCharMsg.wParam))) {
-        mCommittedCharsAndModifiers.Clear();
-        mCommittedCharsAndModifiers.Append(
-          static_cast<char16_t>(followingCharMsg.wParam),
-          mModKeyState.GetModifiers());
+      mCommittedCharsAndModifiers.Clear();
+      for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
+        char16_t ch = static_cast<char16_t>(mFollowingCharMsgs[i].wParam);
+        
+        if (IsControlChar(ch)) {
+          continue;
+        }
+        mCommittedCharsAndModifiers.Append(ch, mModKeyState.GetModifiers());
       }
     }
   }
@@ -1217,36 +1231,20 @@ NativeKey::IsControlChar(char16_t aChar)
 bool
 NativeKey::IsFollowedByDeadCharMessage() const
 {
-  MSG nextMsg;
-  if (mFakeCharMsgs) {
-    nextMsg = mFakeCharMsgs->ElementAt(0).GetCharMsg(mMsg.hwnd);
-  } else if (IsKeyMessageOnPlugin()) {
+  if (mFollowingCharMsgs.IsEmpty()) {
     return false;
-  } else {
-    if (!WinUtils::PeekMessage(&nextMsg, mMsg.hwnd, WM_KEYFIRST, WM_KEYLAST,
-                               PM_NOREMOVE | PM_NOYIELD)) {
-      return false;
-    }
   }
-  return IsDeadCharMessage(nextMsg);
+  return IsDeadCharMessage(mFollowingCharMsgs[0]);
 }
 
 bool
 NativeKey::IsFollowedByNonControlCharMessage() const
 {
-  MSG nextMsg;
-  if (mFakeCharMsgs) {
-    nextMsg = mFakeCharMsgs->ElementAt(0).GetCharMsg(mMsg.hwnd);
-  } else if (IsKeyMessageOnPlugin()) {
+  if (mFollowingCharMsgs.IsEmpty()) {
     return false;
-  } else {
-    if (!WinUtils::PeekMessage(&nextMsg, mMsg.hwnd, WM_KEYFIRST, WM_KEYLAST,
-                               PM_NOREMOVE | PM_NOYIELD)) {
-      return false;
-    }
   }
-  return nextMsg.message == WM_CHAR &&
-         !IsControlChar(static_cast<char16_t>(nextMsg.wParam));
+  return mFollowingCharMsgs[0].message == WM_CHAR &&
+         !IsControlChar(static_cast<char16_t>(mFollowingCharMsgs[0].wParam));
 }
 
 bool
@@ -1817,16 +1815,17 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
             DispatchKeyPressEventsWithoutCharMessage());
   }
 
-  MSG followingCharMsg;
-  if (GetFollowingCharMessage(followingCharMsg)) {
-    
-    
-    
-    if (followingCharMsg.message == WM_NULL ||
-        followingCharMsg.hwnd != mMsg.hwnd) {
-      return false;
+  if (!mFollowingCharMsgs.IsEmpty()) {
+    bool consumed = false;
+    for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
+      consumed =
+        DispatchKeyPressEventForFollowingCharMessage(mFollowingCharMsgs[i]) ||
+        consumed;
+      if (mWidget->Destroyed()) {
+        return true;
+      }
     }
-    return DispatchKeyPressEventForFollowingCharMessage(followingCharMsg);
+    return consumed;
   }
 
   
@@ -2349,31 +2348,19 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg, bool aRemove) const
   return false;
 }
 
+
 bool
 NativeKey::DispatchPluginEventsAndDiscardsCharMessages() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(!IsKeyMessageOnPlugin());
 
-  
-  
-  
-  
   bool anyCharMessagesRemoved = false;
-  MSG msg;
-  while (GetFollowingCharMessage(msg)) {
-    if (msg.message == WM_NULL) {
-      continue;
-    }
+  for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
     anyCharMessagesRemoved = true;
-    
-    
-    if (msg.hwnd != mMsg.hwnd) {
-      break;
-    }
     MOZ_RELEASE_ASSERT(!mWidget->Destroyed(),
       "NativeKey tries to dispatch a plugin event on destroyed widget");
-    mWidget->DispatchPluginEvent(msg);
+    mWidget->DispatchPluginEvent(mFollowingCharMsgs[i]);
     if (mWidget->Destroyed()) {
       return true;
     }
@@ -2382,6 +2369,7 @@ NativeKey::DispatchPluginEventsAndDiscardsCharMessages() const
   if (!mFakeCharMsgs && !anyCharMessagesRemoved &&
       mDOMKeyCode == NS_VK_BACK && IsIMEDoingKakuteiUndo()) {
     
+    MSG msg;
     while (WinUtils::PeekMessage(&msg, mMsg.hwnd, WM_CHAR, WM_CHAR,
                                  PM_REMOVE | PM_NOYIELD)) {
       if (msg.message != WM_CHAR) {
