@@ -511,7 +511,7 @@ class MercurialSetupWizard(object):
         
         
         
-        have_modern_ssl = hasattr(ssl.SSLContext, 'load_default_certs')
+        have_modern_ssl = hasattr(ssl, 'SSLContext')
         if hg_version < LooseVersion('3.4') or not have_modern_ssl:
             c.add_mozilla_host_fingerprints()
 
