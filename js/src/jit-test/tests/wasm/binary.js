@@ -255,6 +255,13 @@ for (var i = 0; i < 20000; i++)
 wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:manyBlocks})])]));
 
 
+var tooBigNameSection = {
+    name: nameId,
+    body: [...varU32(2**31)] 
+};
+wasmEval(moduleWithSections([tooBigNameSection]));
+
+
 function runStartTraceTest(namesContent, expectedName) {
     var sections = [
         sigSection([v2vSig]),
