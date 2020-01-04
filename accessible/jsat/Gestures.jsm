@@ -37,10 +37,6 @@
 
 
 
-
-
-
-
 'use strict';
 
 const Ci = Components.interfaces;
@@ -77,12 +73,6 @@ const TAP_MAX_RADIUS = 0.2;
 
 
 const DIRECTNESS_COEFF = 1.44;
-
-const IS_ANDROID = Utils.MozBuildApp === 'mobile/android' &&
-  Utils.AndroidSdkVersion >= 14;
-
-
-const ANDROID_TRIPLE_SWIPE_DELAY = 50;
 
 const MOUSE_ID = 'mouse';
 
@@ -211,12 +201,6 @@ this.GestureTracker = {
     }
     let points = aDetail.points;
     let GestureConstructor = aGesture;
-    if (IS_ANDROID && GestureConstructor === Tap && points.length === 1 &&
-      points[0].identifier !== MOUSE_ID) {
-      
-      
-      GestureConstructor = AndroidTap;
-    }
     this._create(GestureConstructor);
     this._update(aDetail, aTimeStamp);
   },
@@ -743,54 +727,6 @@ function Tap(aTimeStamp, aPoints, aLastEvent) {
 Tap.prototype = Object.create(TapGesture.prototype);
 Tap.prototype.type = 'tap';
 
-
-
-
-
-
-
-
-function AndroidTap(aTimeStamp, aPoints, aLastEvent) {
-  
-  
-  TapGesture.call(this, aTimeStamp, aPoints, aLastEvent, TapHold, Swipe, TripleTap);
-}
-AndroidTap.prototype = Object.create(TapGesture.prototype);
-
-AndroidTap.prototype.type = 'doubletap';
-
-
-
-
-AndroidTap.prototype.clearThreeFingerSwipeTimer = function AndroidTap_clearThreeFingerSwipeTimer() {
-  clearTimeout(this._threeFingerSwipeTimer);
-  delete this._threeFingerSwipeTimer;
-};
-
-AndroidTap.prototype.pointerdown = function AndroidTap_pointerdown(aPoints, aTimeStamp) {
-  this.clearThreeFingerSwipeTimer();
-  TapGesture.prototype.pointerdown.call(this, aPoints, aTimeStamp);
-};
-
-AndroidTap.prototype.pointermove = function AndroidTap_pointermove(aPoints) {
-  this.clearThreeFingerSwipeTimer();
-  this._moved = true;
-  TapGesture.prototype.pointermove.call(this, aPoints);
-};
-
-AndroidTap.prototype.pointerup = function AndroidTap_pointerup(aPoints) {
-  if (this._moved) {
-    
-    TapGesture.prototype.pointerup.call(this, aPoints);
-  } else {
-    
-    
-    this._threeFingerSwipeTimer = setTimeout(() => {
-      delete this._threeFingerSwipeTimer;
-      TapGesture.prototype.pointerup.call(this, aPoints);
-    }, ANDROID_TRIPLE_SWIPE_DELAY);
-  }
-};
 
 
 
