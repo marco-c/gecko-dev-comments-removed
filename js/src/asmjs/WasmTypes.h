@@ -20,6 +20,7 @@
 #define wasm_types_h
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/EnumeratedArray.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Move.h"
 
@@ -555,6 +556,22 @@ enum class SymbolicAddress
 
 void*
 AddressOf(SymbolicAddress imm, ExclusiveContext* cx);
+
+
+
+
+
+
+enum class JumpTarget
+{
+    StackOverflow,
+    OutOfBounds,
+    ConversionError,
+    Throw,
+    Limit
+};
+
+typedef mozilla::EnumeratedArray<JumpTarget, JumpTarget::Limit, Uint32Vector> JumpSiteArray;
 
 
 

@@ -95,7 +95,7 @@ static const unsigned FramePushedForEntrySP = FramePushedAfterSave + sizeof(void
 
 
 static bool
-GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, bool usesHeap)
+GenerateEntry(ModuleGenerator& mg, unsigned exportIndex)
 {
     MacroAssembler& masm = mg.masm();
     const Sig& sig = mg.exportSig(exportIndex);
@@ -131,7 +131,7 @@ GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, bool usesHeap)
     
     
     
-    if (usesHeap)
+    if (mg.usesHeap())
         masm.loadAsmJSHeapRegisterFromGlobalData();
 
     
@@ -334,8 +334,7 @@ FillArgumentArray(MacroAssembler& masm, const ValTypeVector& args, unsigned argO
 
 
 static bool
-GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, Label* throwLabel,
-                       ProfilingOffsets* offsets)
+GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, ProfilingOffsets* offsets)
 {
     MacroAssembler& masm = mg.masm();
     const Sig& sig = *mg.import(importIndex).sig;
@@ -398,11 +397,11 @@ GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, Label* throwLa
     switch (sig.ret()) {
       case ExprType::Void:
         masm.call(SymbolicAddress::InvokeImport_Void);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         break;
       case ExprType::I32:
         masm.call(SymbolicAddress::InvokeImport_I32);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         masm.unboxInt32(argv, ReturnReg);
         break;
       case ExprType::I64:
@@ -411,7 +410,7 @@ GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, Label* throwLa
         MOZ_CRASH("Float32 shouldn't be returned from a FFI");
       case ExprType::F64:
         masm.call(SymbolicAddress::InvokeImport_F64);
-        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+        masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         masm.loadDouble(argv, ReturnDoubleReg);
         break;
       case ExprType::I32x4:
@@ -441,8 +440,7 @@ static const unsigned MaybeSavedGlobalReg = 0;
 
 
 static bool
-GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, bool usesHeap,
-                    Label* throwLabel, ProfilingOffsets* offsets)
+GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, ProfilingOffsets* offsets)
 {
     MacroAssembler& masm = mg.masm();
     const Sig& sig = *mg.import(importIndex).sig;
@@ -647,7 +645,7 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, bool usesHeap,
     unsigned nativeFramePushed = masm.framePushed();
     AssertStackAlignment(masm, ABIStackAlignment);
 
-    masm.branchTestMagic(Assembler::Equal, JSReturnOperand, throwLabel);
+    masm.branchTestMagic(Assembler::Equal, JSReturnOperand, JumpTarget::Throw);
 
     Label oolConvert;
     switch (sig.ret()) {
@@ -677,7 +675,7 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, bool usesHeap,
 
     
     
-    if (usesHeap)
+    if (mg.usesHeap())
         masm.loadAsmJSHeapRegisterFromGlobalData();
 
     GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::ImportJit, offsets);
@@ -714,12 +712,12 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, bool usesHeap,
         switch (sig.ret()) {
           case ExprType::I32:
             masm.call(SymbolicAddress::CoerceInPlace_ToInt32);
-            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
             masm.unboxInt32(Address(masm.getStackPointer(), offsetToCoerceArgv), ReturnReg);
             break;
           case ExprType::F64:
             masm.call(SymbolicAddress::CoerceInPlace_ToNumber);
-            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
             masm.loadDouble(Address(masm.getStackPointer(), offsetToCoerceArgv), ReturnDoubleReg);
             break;
           default:
@@ -739,18 +737,32 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, bool usesHeap,
     return true;
 }
 
+static void
+BindJumps(MacroAssembler& masm, JumpTarget target)
+{
+    for (uint32_t offset : masm.jumpSites()[target]) {
+        RepatchLabel label;
+        label.use(offset);
+        masm.bind(&label);
+    }
+}
+
 
 
 
 static bool
-GenerateStackOverflowStub(ModuleGenerator& mg, Label* throwLabel)
+GenerateStackOverflowStub(ModuleGenerator& mg)
 {
     MacroAssembler& masm = mg.masm();
-
     masm.haltingAlign(CodeAlignment);
+
+    if (masm.jumpSites()[JumpTarget::StackOverflow].empty())
+        return true;
+
+    BindJumps(masm, JumpTarget::StackOverflow);
+
     Offsets offsets;
     offsets.begin = masm.currentOffset();
-    masm.bind(masm.asmStackOverflowLabel());
 
     
     
@@ -769,7 +781,7 @@ GenerateStackOverflowStub(ModuleGenerator& mg, Label* throwLabel)
     
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::ReportOverRecursed);
-    masm.jump(throwLabel);
+    masm.jump(JumpTarget::Throw);
 
     if (masm.oom())
         return false;
@@ -782,14 +794,18 @@ GenerateStackOverflowStub(ModuleGenerator& mg, Label* throwLabel)
 
 
 static bool
-GenerateConversionErrorStub(ModuleGenerator& mg, Label* throwLabel)
+GenerateConversionErrorStub(ModuleGenerator& mg)
 {
     MacroAssembler& masm = mg.masm();
-
     masm.haltingAlign(CodeAlignment);
+
+    if (masm.jumpSites()[JumpTarget::ConversionError].empty())
+        return true;
+
+    BindJumps(masm, JumpTarget::ConversionError);
+
     Offsets offsets;
     offsets.begin = masm.currentOffset();
-    masm.bind(masm.asmOnConversionErrorLabel());
 
     
     
@@ -798,7 +814,7 @@ GenerateConversionErrorStub(ModuleGenerator& mg, Label* throwLabel)
     
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::OnImpreciseConversion);
-    masm.jump(throwLabel);
+    masm.jump(JumpTarget::Throw);
 
     if (masm.oom())
         return false;
@@ -811,14 +827,19 @@ GenerateConversionErrorStub(ModuleGenerator& mg, Label* throwLabel)
 
 
 static bool
-GenerateOutOfBoundsStub(ModuleGenerator& mg, Label* throwLabel)
+GenerateOutOfBoundsStub(ModuleGenerator& mg)
 {
     MacroAssembler& masm = mg.masm();
-
     masm.haltingAlign(CodeAlignment);
+
+    
+    
+    mg.defineOutOfBoundsExit(masm.currentOffset());
+
+    BindJumps(masm, JumpTarget::OutOfBounds);
+
     Offsets offsets;
     offsets.begin = masm.currentOffset();
-    masm.bind(masm.asmOnOutOfBoundsLabel());
 
     
     
@@ -827,13 +848,13 @@ GenerateOutOfBoundsStub(ModuleGenerator& mg, Label* throwLabel)
     
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::OnOutOfBounds);
-    masm.jump(throwLabel);
+    masm.jump(JumpTarget::Throw);
 
     if (masm.oom())
         return false;
 
     offsets.end = masm.currentOffset();
-    return mg.defineOutOfBoundsStub(offsets);
+    return mg.defineInlineStub(offsets);
 }
 
 static const LiveRegisterSet AllRegsExceptSP(
@@ -850,11 +871,15 @@ static const LiveRegisterSet AllRegsExceptSP(
 
 
 static bool
-GenerateInterruptStub(ModuleGenerator& mg, Label* throwLabel)
+GenerateInterruptStub(ModuleGenerator& mg)
 {
     MacroAssembler& masm = mg.masm();
-
     masm.haltingAlign(CodeAlignment);
+
+    
+    
+    mg.defineInterruptExit(masm.currentOffset());
+
     Offsets offsets;
     offsets.begin = masm.currentOffset();
 
@@ -884,7 +909,7 @@ GenerateInterruptStub(ModuleGenerator& mg, Label* throwLabel)
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-    masm.branchIfFalseBool(ReturnReg, throwLabel);
+    masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
 
     
     masm.moveToStackPtr(ABIArgGenerator::NonVolatileReg);
@@ -922,7 +947,7 @@ GenerateInterruptStub(ModuleGenerator& mg, Label* throwLabel)
 
     masm.addToStackPtr(Imm32(4 * sizeof(intptr_t)));
 
-    masm.branchIfFalseBool(ReturnReg, throwLabel);
+    masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
 
     
     masm.moveToStackPtr(s0);
@@ -965,7 +990,7 @@ GenerateInterruptStub(ModuleGenerator& mg, Label* throwLabel)
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-    masm.branchIfFalseBool(ReturnReg, throwLabel);
+    masm.branchIfFalseBool(ReturnReg, JumpTarget::Throw);
 
     
 
@@ -1005,7 +1030,7 @@ GenerateInterruptStub(ModuleGenerator& mg, Label* throwLabel)
         return false;
 
     offsets.end = masm.currentOffset();
-    return mg.defineInterruptStub(offsets);
+    return mg.defineInlineStub(offsets);
 }
 
 
@@ -1014,14 +1039,18 @@ GenerateInterruptStub(ModuleGenerator& mg, Label* throwLabel)
 
 
 static bool
-GenerateThrowStub(ModuleGenerator& mg, Label* throwLabel)
+GenerateThrowStub(ModuleGenerator& mg)
 {
     MacroAssembler& masm = mg.masm();
-
     masm.haltingAlign(CodeAlignment);
+
+    if (masm.jumpSites()[JumpTarget::Throw].empty())
+        return true;
+
+    BindJumps(masm, JumpTarget::Throw);
+
     Offsets offsets;
     offsets.begin = masm.currentOffset();
-    masm.bind(throwLabel);
 
     
     
@@ -1047,50 +1076,39 @@ GenerateThrowStub(ModuleGenerator& mg, Label* throwLabel)
 }
 
 bool
-wasm::GenerateStubs(ModuleGenerator& mg, bool usesHeap)
+wasm::GenerateStubs(ModuleGenerator& mg)
 {
-    MacroAssembler& masm = mg.masm();
-
     for (unsigned i = 0; i < mg.numExports(); i++) {
-        if (!GenerateEntry(mg, i, usesHeap))
+        if (!GenerateEntry(mg, i))
             return false;
     }
 
     for (size_t i = 0; i < mg.numImports(); i++) {
         ProfilingOffsets interp;
-        if (!GenerateInterpExitStub(mg, i, masm.asmThrowLabel(), &interp))
+        if (!GenerateInterpExitStub(mg, i, &interp))
             return false;
 
         ProfilingOffsets jit;
-        if (!GenerateJitExitStub(mg, i, usesHeap, masm.asmThrowLabel(), &jit))
+        if (!GenerateJitExitStub(mg, i, &jit))
             return false;
 
         if (!mg.defineImport(i, interp, jit))
             return false;
     }
 
-    if (masm.asmStackOverflowLabel()->used()) {
-        if (!GenerateStackOverflowStub(mg, masm.asmThrowLabel()))
-            return false;
-    }
+    if (!GenerateStackOverflowStub(mg))
+        return false;
 
-    if (masm.asmOnConversionErrorLabel()->used()) {
-        if (!GenerateConversionErrorStub(mg, masm.asmThrowLabel()))
-            return false;
-    }
+    if (!GenerateConversionErrorStub(mg))
+        return false;
 
-    
-    
-    if (!GenerateOutOfBoundsStub(mg, masm.asmThrowLabel()))
+    if (!GenerateOutOfBoundsStub(mg))
+        return false;
+
+    if (!GenerateInterruptStub(mg))
         return false;
 
     
-    if (!GenerateInterruptStub(mg, masm.asmThrowLabel()))
-        return false;
-
-    if (!GenerateThrowStub(mg, masm.asmThrowLabel()))
-        return false;
-
-    return true;
+    return GenerateThrowStub(mg);
 }
 

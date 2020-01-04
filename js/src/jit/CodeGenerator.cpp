@@ -8288,12 +8288,10 @@ CodeGenerator::generateAsmJS(wasm::FuncOffsets* offsets)
     
     Label onOverflow;
     if (!omitOverRecursedCheck()) {
-        
-        Label* target = frameSize() > 0 ? &onOverflow : masm.asmStackOverflowLabel();
         masm.branchPtr(Assembler::AboveOrEqual,
                        wasm::SymbolicAddress::StackLimit,
                        masm.getStackPointer(),
-                       target);
+                       &onOverflow);
     }
 
     if (!generateBody())
@@ -8302,13 +8300,17 @@ CodeGenerator::generateAsmJS(wasm::FuncOffsets* offsets)
     masm.bind(&returnLabel_);
     wasm::GenerateFunctionEpilogue(masm, frameSize(), offsets);
 
-    if (onOverflow.used()) {
+    if (!omitOverRecursedCheck()) {
         
         
         
-        masm.bind(&onOverflow);
-        masm.addToStackPtr(Imm32(frameSize()));
-        masm.jump(masm.asmStackOverflowLabel());
+        if (frameSize() > 0) {
+            masm.bind(&onOverflow);
+            masm.addToStackPtr(Imm32(frameSize()));
+            masm.jump(wasm::JumpTarget::StackOverflow);
+        } else {
+            masm.bindLater(&onOverflow, wasm::JumpTarget::StackOverflow);
+        }
     }
 
 #if defined(JS_ION_PERF)
@@ -10613,7 +10615,7 @@ CodeGenerator::visitAsmJSInterruptCheck(LAsmJSInterruptCheck* lir)
 
     MOZ_ASSERT((sizeof(AsmJSFrame) + masm.framePushed()) % ABIStackAlignment == 0);
     masm.call(wasm::SymbolicAddress::HandleExecutionInterrupt);
-    masm.branchIfFalseBool(ReturnReg, masm.asmThrowLabel());
+    masm.branchIfFalseBool(ReturnReg, wasm::JumpTarget::Throw);
 
     masm.bind(&rejoin);
 }

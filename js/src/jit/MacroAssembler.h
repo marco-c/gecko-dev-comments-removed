@@ -339,12 +339,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     NonAssertingLabel failureLabel_;
 
-    
-    NonAssertingLabel asmStackOverflowLabel_;
-    NonAssertingLabel asmOnConversionErrorLabel_;
-    NonAssertingLabel asmOnOutOfBoundsLabel_;
-    NonAssertingLabel asmThrowLabel_;
-
   public:
     MacroAssembler()
       : framePushed_(0),
@@ -870,7 +864,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
     
-    void branchIfFalseBool(Register reg, Label* label) {
+    template <class L>
+    void branchIfFalseBool(Register reg, L label) {
         
         branchTest32(Assembler::Zero, reg, Imm32(0xFF), label);
     }
@@ -1409,32 +1404,6 @@ class MacroAssembler : public MacroAssemblerSpecific
         return &failureLabel_;
     }
 
-    Label* asmStackOverflowLabel() {
-        return &asmStackOverflowLabel_;
-    }
-    const Label* asmStackOverflowLabel() const {
-        return &asmStackOverflowLabel_;
-    }
-    Label* asmOnOutOfBoundsLabel() {
-        return &asmOnOutOfBoundsLabel_;
-    }
-    const Label* asmOnOutOfBoundsLabel() const {
-        return &asmOnOutOfBoundsLabel_;
-    }
-    Label* asmOnConversionErrorLabel() {
-        return &asmOnConversionErrorLabel_;
-    }
-    const Label* asmOnConversionErrorLabel() const {
-        return &asmOnConversionErrorLabel_;
-    }
-    Label* asmThrowLabel() {
-        return &asmThrowLabel_;
-    }
-    const Label* asmThrowLabel() const {
-        return &asmThrowLabel_;
-    }
-
-    bool asmMergeWith(MacroAssembler& masm);
     void finish();
     void link(JitCode* code);
 
