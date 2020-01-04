@@ -19,6 +19,8 @@ const {Eyedropper} = require("devtools/client/eyedropper/eyedropper");
 const {gDevTools} = require("devtools/client/framework/devtools");
 const Services = require("Services");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
+const {HTMLTooltip} = require("devtools/client/shared/widgets/HTMLTooltip");
+const {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
 
 loader.lazyRequireGetter(this, "beautify", "devtools/shared/jsbeautify/beautify");
 loader.lazyRequireGetter(this, "setNamedTimeout", "devtools/client/shared/widgets/view-helpers", true);
@@ -31,11 +33,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "VariablesViewController",
   "resource://devtools/client/shared/widgets/VariablesViewController.jsm");
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
-const SPECTRUM_FRAME = "chrome://devtools/content/shared/widgets/spectrum-frame.xhtml";
-const CUBIC_BEZIER_FRAME =
-      "chrome://devtools/content/shared/widgets/cubic-bezier-frame.xhtml";
 const MDN_DOCS_FRAME = "chrome://devtools/content/shared/widgets/mdn-docs-frame.xhtml";
-const FILTER_FRAME = "chrome://devtools/content/shared/widgets/filter-frame.xhtml";
 const ESCAPE_KEYCODE = Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE;
 const RETURN_KEYCODE = Ci.nsIDOMKeyEvent.DOM_VK_RETURN;
 const POPUP_EVENTS = ["shown", "hidden", "showing", "hiding"];
@@ -562,99 +560,6 @@ Tooltip.prototype = {
 
 
 
-  setColorPickerContent: function (color) {
-    let dimensions = {width: "210", height: "216"};
-    let panel = this.panel;
-    return this.setIFrameContent(dimensions, SPECTRUM_FRAME).then(onLoaded);
-
-    function onLoaded(iframe) {
-      let win = iframe.contentWindow.wrappedJSObject;
-      let def = defer();
-      let container = win.document.getElementById("spectrum");
-      let spectrum = new Spectrum(container, color);
-
-      function finalizeSpectrum() {
-        spectrum.show();
-        def.resolve(spectrum);
-      }
-
-      
-      if (panel.state == "open") {
-        finalizeSpectrum();
-      } else {
-        panel.addEventListener("popupshown", function shown() {
-          panel.removeEventListener("popupshown", shown, true);
-          finalizeSpectrum();
-        }, true);
-      }
-      return def.promise;
-    }
-  },
-
-  
-
-
-
-
-  setCubicBezierContent: function (bezier) {
-    let dimensions = {width: "500", height: "360"};
-    let panel = this.panel;
-    return this.setIFrameContent(dimensions, CUBIC_BEZIER_FRAME).then(onLoaded);
-
-    function onLoaded(iframe) {
-      let win = iframe.contentWindow.wrappedJSObject;
-      let def = defer();
-      let container = win.document.getElementById("container");
-      let widget = new CubicBezierWidget(container, bezier);
-
-      
-      if (panel.state == "open") {
-        def.resolve(widget);
-      } else {
-        panel.addEventListener("popupshown", function shown() {
-          panel.removeEventListener("popupshown", shown, true);
-          def.resolve(widget);
-        }, true);
-      }
-      return def.promise;
-    }
-  },
-
-  
-
-
-
-
-  setFilterContent: function (filter) {
-    let dimensions = {width: "500", height: "200"};
-    let panel = this.panel;
-
-    return this.setIFrameContent(dimensions, FILTER_FRAME).then(onLoaded);
-
-    function onLoaded(iframe) {
-      let win = iframe.contentWindow.wrappedJSObject;
-      let def = defer();
-      let container = win.document.getElementById("container");
-      let widget = new CSSFilterEditorWidget(container, filter);
-
-      
-      if (panel.state === "open") {
-        def.resolve(widget);
-      } else {
-        panel.addEventListener("popupshown", function shown() {
-          panel.removeEventListener("popupshown", shown, true);
-          def.resolve(widget);
-        }, true);
-      }
-      return def.promise;
-    }
-  },
-
-  
-
-
-
-
 
 
 
@@ -683,27 +588,42 @@ Tooltip.prototype = {
 
 
 
-function SwatchBasedEditorTooltip(doc) {
+
+function SwatchBasedEditorTooltip(toolbox, stylesheet) {
   
   
   
   
-  this.tooltip = new Tooltip(doc, {
-    consumeOutsideClick: true,
-    closeOnKeys: [ESCAPE_KEYCODE, RETURN_KEYCODE],
-    noAutoFocus: false
+  this.tooltip = new HTMLTooltip(toolbox, {
+    type: "arrow",
+    consumeOutsideClicks: true,
+    useXulWrapper: true,
+    stylesheet
   });
 
   
   
-  this._onTooltipKeypress = (event, code) => {
-    if (code === ESCAPE_KEYCODE) {
-      this.revert();
-    } else if (code === RETURN_KEYCODE) {
-      this.commit();
+  this.shortcuts = new KeyShortcuts({
+    window: this.tooltip.topWindow
+  });
+  this.shortcuts.on("Escape", (name, event) => {
+    if (!this.tooltip.isVisible()) {
+      return;
     }
-  };
-  this.tooltip.on("keypress", this._onTooltipKeypress);
+    this.revert();
+    this.hide();
+    event.stopPropagation();
+    event.preventDefault();
+  });
+  this.shortcuts.on("Return", (name, event) => {
+    if (!this.tooltip.isVisible()) {
+      return;
+    }
+    this.commit();
+    this.hide();
+    event.stopPropagation();
+    event.preventDefault();
+  });
 
   
   this.swatches = new Map();
@@ -723,17 +643,13 @@ SwatchBasedEditorTooltip.prototype = {
 
       
       
-      
-      
-      this.tooltip.once("hiding", () => {
+      this.tooltip.once("hidden", () => {
         if (!this._reverted && !this.eyedropperOpen) {
           this.commit();
         }
         this._reverted = false;
-      });
 
-      
-      this.tooltip.once("hidden", () => {
+        
         if (!this.eyedropperOpen) {
           this.activeSwatch = null;
         }
@@ -825,7 +741,7 @@ SwatchBasedEditorTooltip.prototype = {
     if (this.activeSwatch) {
       this._reverted = true;
       let swatch = this.swatches.get(this.activeSwatch);
-      this.tooltip.once("hiding", () => {
+      this.tooltip.once("hidden", () => {
         swatch.callbacks.onRevert();
       });
     }
@@ -846,6 +762,7 @@ SwatchBasedEditorTooltip.prototype = {
     this.activeSwatch = null;
     this.tooltip.off("keypress", this._onTooltipKeypress);
     this.tooltip.destroy();
+    this.shortcuts.destroy();
   }
 };
 
@@ -858,12 +775,14 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
-function SwatchColorPickerTooltip(doc) {
-  SwatchBasedEditorTooltip.call(this, doc);
+
+function SwatchColorPickerTooltip(toolbox) {
+  let stylesheet = "chrome://devtools/content/shared/widgets/spectrum.css";
+  SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
 
   
   
-  this.spectrum = this.tooltip.setColorPickerContent([0, 0, 0, 1]);
+  this.spectrum = this.setColorPickerContent([0, 0, 0, 1]);
   this._onSpectrumColorChange = this._onSpectrumColorChange.bind(this);
   this._openEyeDropper = this._openEyeDropper.bind(this);
 }
@@ -876,6 +795,36 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
 
 
+  setColorPickerContent: function (color) {
+    let { doc } = this.tooltip;
+
+    let container = doc.createElementNS(XHTML_NS, "div");
+    container.id = "spectrum-tooltip";
+    let spectrumNode = doc.createElementNS(XHTML_NS, "div");
+    spectrumNode.id = "spectrum";
+    container.appendChild(spectrumNode);
+    let eyedropper = doc.createElementNS(XHTML_NS, "button");
+    eyedropper.id = "eyedropper-button";
+    eyedropper.className = "devtools-button";
+    container.appendChild(eyedropper);
+
+    this.tooltip.setContent(container, { width: 210, height: 216 });
+
+    let spectrum = new Spectrum(spectrumNode, color);
+
+    
+    
+    this.tooltip.once("shown", () => {
+      spectrum.show();
+    });
+
+    return spectrum;
+  },
+
+  
+
+
+
   show: function () {
     
     SwatchBasedEditorTooltip.prototype.show.call(this);
@@ -884,16 +833,13 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
       this.currentSwatchColor = this.activeSwatch.nextSibling;
       this._originalColor = this.currentSwatchColor.textContent;
       let color = this.activeSwatch.style.backgroundColor;
-      this.spectrum.then(spectrum => {
-        spectrum.off("changed", this._onSpectrumColorChange);
-        spectrum.rgb = this._colorToRgba(color);
-        spectrum.on("changed", this._onSpectrumColorChange);
-        spectrum.updateUI();
-      });
+      this.spectrum.off("changed", this._onSpectrumColorChange);
+      this.spectrum.rgb = this._colorToRgba(color);
+      this.spectrum.on("changed", this._onSpectrumColorChange);
+      this.spectrum.updateUI();
     }
 
-    let tooltipDoc = this.tooltip.content.contentDocument;
-    let eyeButton = tooltipDoc.querySelector("#eyedropper-button");
+    let eyeButton = this.tooltip.doc.querySelector("#eyedropper-button");
     eyeButton.addEventListener("click", this._openEyeDropper);
   },
 
@@ -967,10 +913,8 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
   destroy: function () {
     SwatchBasedEditorTooltip.prototype.destroy.call(this);
     this.currentSwatchColor = null;
-    this.spectrum.then(spectrum => {
-      spectrum.off("changed", this._onSpectrumColorChange);
-      spectrum.destroy();
-    });
+    this.spectrum.off("changed", this._onSpectrumColorChange);
+    this.spectrum.destroy();
   }
 });
 
@@ -983,12 +927,14 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
 
 
-function SwatchCubicBezierTooltip(doc) {
-  SwatchBasedEditorTooltip.call(this, doc);
+
+function SwatchCubicBezierTooltip(toolbox) {
+  let stylesheet = "chrome://devtools/content/shared/widgets/cubic-bezier.css";
+  SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
 
   
   
-  this.widget = this.tooltip.setCubicBezierContent([0, 0, 1, 1]);
+  this.widget = this.setCubicBezierContent([0, 0, 1, 1]);
   this._onUpdate = this._onUpdate.bind(this);
 }
 
@@ -996,6 +942,31 @@ module.exports.SwatchCubicBezierTooltip = SwatchCubicBezierTooltip;
 
 SwatchCubicBezierTooltip.prototype =
 Heritage.extend(SwatchBasedEditorTooltip.prototype, {
+  
+
+
+
+
+  setCubicBezierContent: function (bezier) {
+    let { doc } = this.tooltip;
+
+    let container = doc.createElementNS(XHTML_NS, "div");
+    container.className = "cubic-bezier-container";
+
+    this.tooltip.setContent(container, { width: 510, height: 370 });
+
+    let def = defer();
+
+    
+    
+    this.tooltip.once("shown", () => {
+      let widget = new CubicBezierWidget(container, bezier);
+      def.resolve(widget);
+    });
+
+    return def.promise;
+  },
+
   
 
 
@@ -1081,12 +1052,13 @@ CssDocsTooltip.prototype = {
 
 
 
-function SwatchFilterTooltip(doc) {
-  SwatchBasedEditorTooltip.call(this, doc);
+
+function SwatchFilterTooltip(toolbox) {
+  let stylesheet = "chrome://devtools/content/shared/widgets/filter-widget.css";
+  SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
 
   
-  
-  this.widget = this.tooltip.setFilterContent("none");
+  this.widget = this.setFilterContent("none");
   this._onUpdate = this._onUpdate.bind(this);
 }
 
@@ -1094,18 +1066,32 @@ exports.SwatchFilterTooltip = SwatchFilterTooltip;
 
 SwatchFilterTooltip.prototype =
 Heritage.extend(SwatchBasedEditorTooltip.prototype, {
+  
+
+
+
+
+  setFilterContent: function (filter) {
+    let { doc } = this.tooltip;
+
+    let container = doc.createElementNS(XHTML_NS, "div");
+    container.id = "filter-container";
+
+    this.tooltip.setContent(container, { width: 510, height: 200 });
+
+    return new CSSFilterEditorWidget(container, filter);
+  },
+
   show: function () {
     
     SwatchBasedEditorTooltip.prototype.show.call(this);
     
     if (this.activeSwatch) {
       this.currentFilterValue = this.activeSwatch.nextSibling;
-      this.widget.then(widget => {
-        widget.off("updated", this._onUpdate);
-        widget.on("updated", this._onUpdate);
-        widget.setCssValue(this.currentFilterValue.textContent);
-        widget.render();
-      });
+      this.widget.off("updated", this._onUpdate);
+      this.widget.on("updated", this._onUpdate);
+      this.widget.setCssValue(this.currentFilterValue.textContent);
+      this.widget.render();
     }
   },
 
@@ -1128,10 +1114,8 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
   destroy: function () {
     SwatchBasedEditorTooltip.prototype.destroy.call(this);
     this.currentFilterValue = null;
-    this.widget.then(widget => {
-      widget.off("updated", this._onUpdate);
-      widget.destroy();
-    });
+    this.widget.off("updated", this._onUpdate);
+    this.widget.destroy();
   },
 
   

@@ -6,21 +6,26 @@
 
 
 
-const TEST_URI = "chrome://devtools/content/shared/widgets/cubic-bezier-frame.xhtml";
 const {CubicBezierWidget} =
   require("devtools/client/shared/widgets/CubicBezierWidget");
 const {PREDEFINED} = require("devtools/client/shared/widgets/CubicBezierPresets");
 
+
+
+const TEST_URI = `data:text/html,
+  <html><body>
+    <div id="cubic-bezier-container"/>
+  </body></html>`;
+
 add_task(function* () {
-  yield addTab("about:blank");
   let [host, win, doc] = yield createHost("bottom", TEST_URI);
 
   
   
   
-  doc.body.setAttribute("style", "position: fixed");
+  doc.body.setAttribute("style", "position: fixed; margin: 0;");
 
-  let container = doc.querySelector("#container");
+  let container = doc.querySelector("#cubic-bezier-container");
   let w = new CubicBezierWidget(container, PREDEFINED.linear);
 
   let rect = w.curve.getBoundingClientRect();
@@ -34,7 +39,6 @@ add_task(function* () {
 
   w.destroy();
   host.destroy();
-  gBrowser.removeCurrentTab();
 });
 
 function* pointsCanBeDragged(widget, win, doc, offsets) {

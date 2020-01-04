@@ -47,7 +47,7 @@ add_task(function* () {
       value: "rgb(0, 255, 0)"
     });
 
-    let spectrum = yield cPicker.spectrum;
+    let spectrum = cPicker.spectrum;
     let onHidden = cPicker.tooltip.once("hidden");
     
     let onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
