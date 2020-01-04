@@ -128,6 +128,7 @@ let censusModel = exports.censusModel = PropTypes.shape({
   
   filter: PropTypes.string,
   
+  
   expanded: catchAndIgnore(function (census) {
     if (census.report) {
       assert(census.expanded,
