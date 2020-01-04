@@ -6555,9 +6555,7 @@ NS_IMETHODIMP
 SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
                                                 nsISelection* aSel, int16_t aReason)
 {
-  
-  
-  RefPtr<Selection> sel = static_cast<Selection*>(aSel);
+  RefPtr<Selection> sel = aSel->AsSelection();
 
   
   

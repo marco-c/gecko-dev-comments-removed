@@ -523,7 +523,7 @@ nsTextServicesDocument::LastSelectedBlock(TSDBlockSelectionStatus *aSelStatus,
     return result;
   }
 
-  RefPtr<Selection> selection = static_cast<Selection*>(domSelection.get());
+  RefPtr<Selection> selection = domSelection->AsSelection();
 
   bool isCollapsed = selection->IsCollapsed();
 
@@ -2526,7 +2526,7 @@ nsTextServicesDocument::GetCollapsedSelection(nsITextServicesDocument::TSDBlockS
   NS_ENSURE_SUCCESS(result, result);
   NS_ENSURE_TRUE(domSelection, NS_ERROR_FAILURE);
 
-  RefPtr<Selection> selection = static_cast<Selection*>(domSelection.get());
+  RefPtr<Selection> selection = domSelection->AsSelection();
 
   
   
@@ -2744,7 +2744,7 @@ nsTextServicesDocument::GetUncollapsedSelection(nsITextServicesDocument::TSDBloc
   NS_ENSURE_SUCCESS(result, result);
   NS_ENSURE_TRUE(domSelection, NS_ERROR_FAILURE);
 
-  RefPtr<Selection> selection = static_cast<Selection*>(domSelection.get());
+  RefPtr<Selection> selection = domSelection->AsSelection();
 
   
   
