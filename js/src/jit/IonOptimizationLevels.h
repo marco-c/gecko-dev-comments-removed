@@ -80,6 +80,9 @@ class OptimizationInfo
     bool loopUnrolling_;
 
     
+    bool reordering_;
+
+    
     bool autoTruncate_;
 
     
@@ -173,6 +176,10 @@ class OptimizationInfo
 
     bool loopUnrollingEnabled() const {
         return loopUnrolling_ && !js_JitOptions.disableLoopUnrolling;
+    }
+
+    bool instructionReorderingEnabled() const {
+        return reordering_ && !js_JitOptions.disableInstructionReordering;
     }
 
     bool autoTruncateEnabled() const {

@@ -99,6 +99,9 @@ JitOptions::JitOptions()
     SET_DEFAULT(disableLoopUnrolling, true);
 
     
+    SET_DEFAULT(disableInstructionReordering, false);
+
+    
     SET_DEFAULT(disableRangeAnalysis, false);
 
     
