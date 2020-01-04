@@ -451,7 +451,7 @@ private:
     : mDeltaX(0.0)
     , mDeltaY(0.0)
     , mDeltaZ(0.0)
-    , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
+    , mDeltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
     , isMomentum(false)
     , mIsNoLineOrPageDelta(false)
@@ -474,7 +474,7 @@ public:
     , mDeltaX(0.0)
     , mDeltaY(0.0)
     , mDeltaZ(0.0)
-    , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
+    , mDeltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
     , mayHaveMomentum(false)
     , isMomentum(false)
@@ -520,7 +520,7 @@ public:
   double mDeltaZ;
 
   
-  uint32_t deltaMode;
+  uint32_t mDeltaMode;
 
   
 
@@ -613,7 +613,7 @@ public:
     mDeltaX = aEvent.mDeltaX;
     mDeltaY = aEvent.mDeltaY;
     mDeltaZ = aEvent.mDeltaZ;
-    deltaMode = aEvent.deltaMode;
+    mDeltaMode = aEvent.mDeltaMode;
     customizedByUserPrefs = aEvent.customizedByUserPrefs;
     mayHaveMomentum = aEvent.mayHaveMomentum;
     isMomentum = aEvent.isMomentum;

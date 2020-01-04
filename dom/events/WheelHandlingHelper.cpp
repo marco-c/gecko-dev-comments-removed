@@ -362,7 +362,7 @@ WheelTransaction::AccelerateWheelDelta(WidgetWheelEvent* aEvent,
   DeltaValues result(aEvent);
 
   
-  if (aEvent->deltaMode != nsIDOMWheelEvent::DOM_DELTA_LINE) {
+  if (aEvent->mDeltaMode != nsIDOMWheelEvent::DOM_DELTA_LINE) {
     return result;
   }
 
@@ -405,7 +405,7 @@ WheelTransaction::GetAccelerationFactor()
 WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
 {
   MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
-  MOZ_ASSERT(aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE);
+  MOZ_ASSERT(aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE);
 
   
   

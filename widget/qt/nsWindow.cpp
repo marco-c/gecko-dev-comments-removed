@@ -1266,7 +1266,7 @@ nsWindow::wheelEvent(QWheelEvent* aEvent)
 {
     
     WidgetWheelEvent wheelEvent(true, eWheel, this);
-    wheelEvent.deltaMode = nsIDOMWheelEvent::DOM_DELTA_LINE;
+    wheelEvent.mDeltaMode = nsIDOMWheelEvent::DOM_DELTA_LINE;
 
     
     

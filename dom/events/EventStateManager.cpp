@@ -2184,7 +2184,7 @@ EventStateManager::DispatchLegacyMouseScrollEvents(nsIFrame* aTargetFrame,
   
   
   int32_t scrollDeltaX, scrollDeltaY, pixelDeltaX, pixelDeltaY;
-  switch (aEvent->deltaMode) {
+  switch (aEvent->mDeltaMode) {
     case nsIDOMWheelEvent::DOM_DELTA_PAGE:
       scrollDeltaX =
         !aEvent->lineOrPageDeltaX ? 0 :
@@ -2504,7 +2504,7 @@ EventStateManager::GetScrollAmount(nsPresContext* aPresContext,
   MOZ_ASSERT(aPresContext);
   MOZ_ASSERT(aEvent);
 
-  bool isPage = (aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PAGE);
+  bool isPage = (aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_PAGE);
   if (aScrollableFrame) {
     return isPage ? aScrollableFrame->GetPageScrollAmount() :
                     aScrollableFrame->GetLineScrollAmount();
@@ -2563,7 +2563,7 @@ EventStateManager::DoScrollText(nsIScrollableFrame* aScrollableFrame,
 
   nsIScrollbarMediator::ScrollSnapMode snapMode = nsIScrollbarMediator::DISABLE_SNAP;
   nsIAtom* origin = nullptr;
-  switch (aEvent->deltaMode) {
+  switch (aEvent->mDeltaMode) {
     case nsIDOMWheelEvent::DOM_DELTA_LINE:
       origin = nsGkAtoms::mouseWheel;
       snapMode = nsIScrollableFrame::ENABLE_SNAP;
@@ -2599,7 +2599,7 @@ EventStateManager::DoScrollText(nsIScrollableFrame* aScrollableFrame,
   }
 
   bool isDeltaModePixel =
-    (aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL);
+    (aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL);
 
   nsIScrollableFrame::ScrollMode mode;
   switch (aEvent->scrollType) {
@@ -5349,7 +5349,7 @@ EventStateManager::DeltaAccumulator::InitLineOrPageDelta(
   
   if (IsInTransaction()) {
     
-    if (mHandlingDeltaMode != aEvent->deltaMode ||
+    if (mHandlingDeltaMode != aEvent->mDeltaMode ||
         mIsNoLineOrPageDeltaDevice != aEvent->mIsNoLineOrPageDelta) {
       Reset();
     } else {
@@ -5364,7 +5364,7 @@ EventStateManager::DeltaAccumulator::InitLineOrPageDelta(
     }
   }
 
-  mHandlingDeltaMode = aEvent->deltaMode;
+  mHandlingDeltaMode = aEvent->mDeltaMode;
   mIsNoLineOrPageDeltaDevice = aEvent->mIsNoLineOrPageDelta;
 
   
@@ -5445,12 +5445,12 @@ EventStateManager::DeltaAccumulator::ComputeScrollAmountForDefaultAction(
   
   bool allowScrollSpeedOverride =
     (!aEvent->customizedByUserPrefs &&
-     aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE);
+     aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE);
   DeltaValues acceleratedDelta =
     WheelTransaction::AccelerateWheelDelta(aEvent, allowScrollSpeedOverride);
 
   nsIntPoint result(0, 0);
-  if (aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL) {
+  if (aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL) {
     mPendingScrollAmountX += acceleratedDelta.deltaX;
     mPendingScrollAmountY += acceleratedDelta.deltaY;
   } else {
