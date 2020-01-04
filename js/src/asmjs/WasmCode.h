@@ -227,30 +227,6 @@ typedef Vector<FuncImport, 0, SystemAllocPolicy> FuncImportVector;
 
 
 
-
-enum class TableKind
-{
-    AnyFunction,
-    TypedFunction
-};
-
-struct TableDesc
-{
-    TableKind kind;
-    bool external;
-    uint32_t globalDataOffset;
-    uint32_t initial;
-    uint32_t maximum;
-
-    TableDesc() { PodZero(this); }
-};
-
-WASM_DECLARE_POD_VECTOR(TableDesc, TableDescVector)
-
-
-
-
-
 class CodeRange
 {
   public:
