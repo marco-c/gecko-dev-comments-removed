@@ -1,6 +1,11 @@
 
 
 
+Cu.import("resource://testing-common/LoginTestUtils.jsm", this);
+
+
+
+
 
 add_task(function* test_initialize() {
   Services.prefs.setBoolPref("signon.ui.experimental", true);
