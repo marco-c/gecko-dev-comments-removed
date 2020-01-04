@@ -679,7 +679,8 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
 
 
 .PanelUI-remotetabs-instruction-box {
-  padding: 30px 15px 15px 15px;
+  padding-bottom: 30px;
+  padding-top: 15px;
 }
 
 .PanelUI-remotetabs-prefs-button {
