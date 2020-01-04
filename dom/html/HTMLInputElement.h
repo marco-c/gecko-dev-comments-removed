@@ -1390,12 +1390,10 @@ protected:
   RefPtr<GetFilesHelper> mGetFilesRecursiveHelper;
   RefPtr<GetFilesHelper> mGetFilesNonRecursiveHelper;
 
-#ifndef MOZ_CHILD_PERMISSIONS
   
 
 
   nsString mFirstFilePath;
-#endif
 
   RefPtr<FileList>  mFileList;
   Sequence<RefPtr<Entry>> mEntries;

@@ -2511,14 +2511,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     Unused << SendSetAudioSessionData(id, sessionName, iconPath);
   }
 #endif
-
-  RefPtr<ServiceWorkerRegistrar> swr = ServiceWorkerRegistrar::Get();
-  MOZ_ASSERT(swr);
-
-  nsTArray<ServiceWorkerRegistrationData> registrations;
-  swr->GetRegistrations(registrations);
-
-  Unused << SendInitServiceWorkers(ServiceWorkerConfiguration(registrations));
 }
 
 bool
@@ -4340,14 +4332,6 @@ ContentParent::RecvExtProtocolChannelConnectParent(const uint32_t& registrarId)
 bool
 ContentParent::HasNotificationPermission(const IPC::Principal& aPrincipal)
 {
-#ifdef MOZ_CHILD_PERMISSIONS
-  uint32_t permission = mozilla::CheckPermission(this, aPrincipal,
-                                                 "desktop-notification");
-  if (permission != nsIPermissionManager::ALLOW_ACTION) {
-    return false;
-  }
-#endif 
-
   return true;
 }
 
@@ -4482,16 +4466,6 @@ bool
 ContentParent::RecvAddGeolocationListener(const IPC::Principal& aPrincipal,
                                           const bool& aHighAccuracy)
 {
-#ifdef MOZ_CHILD_PERMISSIONS
-  if (!ContentParent::IgnoreIPCPrincipal()) {
-    uint32_t permission = mozilla::CheckPermission(this, aPrincipal,
-                                                   "geolocation");
-    if (permission != nsIPermissionManager::ALLOW_ACTION) {
-      return true;
-    }
-  }
-#endif 
-
   
   
   RecvRemoveGeolocationListener();
@@ -5509,6 +5483,18 @@ ContentParent::PermissionManagerRelease(const ContentParentId& aCpId,
     return true;
   }
   return false;
+}
+
+bool
+ContentParent::RecvGetServiceWorkerConfiguration(ServiceWorkerConfiguration* aConfig)
+{
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<ServiceWorkerRegistrar> swr = ServiceWorkerRegistrar::Get();
+  MOZ_ASSERT(swr);
+
+  swr->GetRegistrations(aConfig->serviceWorkerRegistrations());
+  return true;
 }
 
 bool

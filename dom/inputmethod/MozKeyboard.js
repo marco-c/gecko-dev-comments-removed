@@ -695,11 +695,20 @@ MozInputMethod.prototype = {
     cpmm.sendAsyncMessage('System:RemoveFocus', {});
   },
 
+  
+  
+  
   _hasInputManagePerm: function(win) {
-    let principal = win.document.nodePrincipal;
-    let perm = Services.perms.testExactPermissionFromPrincipal(principal,
-                                                               "input-manage");
-    return (perm === Ci.nsIPermissionManager.ALLOW_ACTION);
+    let url = win.location.href;
+    let systemAppIndex;
+    try {
+      systemAppIndex = Services.prefs.getCharPref('b2g.system_startup_url');
+    } catch(e) {
+      dump('MozKeyboard.jsm: no system app startup url set (pref is b2g.system_startup_url)');
+    }
+
+    dump(`MozKeyboard.jsm expecting ${systemAppIndex}\n`);
+    return url == systemAppIndex;
   }
 };
 
