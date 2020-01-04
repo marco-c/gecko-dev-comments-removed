@@ -70,6 +70,11 @@ class Pickle {
                                              header_->payload_size); }
 
   
+  uint32_t capacity() const {
+    return capacity_;
+  }
+
+  
   const void* data() const { return header_; }
 
   
@@ -237,10 +242,6 @@ class Pickle {
   const char* end_of_payload() const {
     
     return header_ ? payload() + payload_size() : nullptr;
-  }
-
-  uint32_t capacity() const {
-    return capacity_;
   }
 
   
