@@ -647,12 +647,6 @@ nsProtocolProxyService::PrefsChanged(nsIPrefBranch *prefBranch,
                           mProxyOverTLS);
     }
 
-    
-    if (!pref || !strcmp(pref, PROXY_PREF("use_direct_on_fail"))) {
-        proxy_GetBoolPref(prefBranch, PROXY_PREF("use_direct_on_fail"),
-                          mFailoverToDirect);
-    }
-
     if (!pref || !strcmp(pref, PROXY_PREF("failover_timeout")))
         proxy_GetIntPref(prefBranch, PROXY_PREF("failover_timeout"),
                          mFailedProxyTimeout);
@@ -1434,19 +1428,11 @@ nsProtocolProxyService::GetFailoverForProxy(nsIProxyInfo  *aProxy,
                                             nsresult       aStatus,
                                             nsIProxyInfo **aResult)
 {
-    if (mFailoverToDirect) {
-        if (mProxyConfig == PROXYCONFIG_DIRECT) {
-            return NS_ERROR_NOT_AVAILABLE;
-        }
-    } else {
-        
-        
-        if (mProxyConfig != PROXYCONFIG_PAC &&
-            mProxyConfig != PROXYCONFIG_WPAD &&
-            mProxyConfig != PROXYCONFIG_SYSTEM) {
-            return NS_ERROR_NOT_AVAILABLE;
-        }
-    }
+    
+    
+    if (mProxyConfig != PROXYCONFIG_PAC && mProxyConfig != PROXYCONFIG_WPAD &&
+        mProxyConfig != PROXYCONFIG_SYSTEM)
+        return NS_ERROR_NOT_AVAILABLE;
 
     
     nsCOMPtr<nsProxyInfo> pi = do_QueryInterface(aProxy);
@@ -2052,22 +2038,21 @@ nsProtocolProxyService::PruneProxyInfo(const nsProtocolInfo &info,
 
     
     
+    
 
     bool allDisabled = true;
-    nsProxyInfo *iter;
 
-    if (!mFailoverToDirect) {
-        for (iter = head; iter; iter = iter->mNext) {
-            if (!IsProxyDisabled(iter)) {
-                allDisabled = false;
-                break;
-            }
+    nsProxyInfo *iter;
+    for (iter = head; iter; iter = iter->mNext) {
+        if (!IsProxyDisabled(iter)) {
+            allDisabled = false;
+            break;
         }
     }
 
-    if (!mFailoverToDirect && allDisabled) {
+    if (allDisabled)
         LOG(("All proxies are disabled, so trying all again"));
-    } else {
+    else {
         
         nsProxyInfo *last = nullptr;
         for (iter = head; iter; ) {
@@ -2076,29 +2061,27 @@ nsProtocolProxyService::PruneProxyInfo(const nsProtocolInfo &info,
                 nsProxyInfo *reject = iter;
 
                 iter = iter->mNext;
-                if (last) {
+                if (last)
                     last->mNext = iter;
-                }
-            else
-                head = iter;
+                else
+                    head = iter;
 
                 reject->mNext = nullptr;
                 NS_RELEASE(reject);
                 continue;
             }
 
-            allDisabled = false;
+            
+            
+            
+            
+            
+            
             EnableProxy(iter);
 
             last = iter;
             iter = iter->mNext;
         }
-    }
-
-    if (mFailoverToDirect && allDisabled) {
-        LOG(("All proxies are disabled, try a DIRECT rule!"));
-        *list = nullptr;
-        return;
     }
 
     

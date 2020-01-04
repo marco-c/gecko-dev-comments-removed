@@ -1827,13 +1827,6 @@ pref("network.proxy.socks_remote_dns",      false);
 pref("network.proxy.proxy_over_tls",        true);
 pref("network.proxy.no_proxies_on",         "localhost, 127.0.0.1");
 pref("network.proxy.failover_timeout",      1800); 
-
-
-
-
-
-pref("network.proxy.use_direct_on_fail",    true);
-
 pref("network.online",                      true); 
 pref("network.cookie.cookieBehavior",       0); 
 #ifdef ANDROID
@@ -4894,9 +4887,6 @@ pref("layout.accessiblecaret.use_long_tap_injector", true);
 
 
 pref("layout.accessiblecaret.extendedvisibility", false);
-
-
-pref("layout.accessiblecaret.hapticfeedback", false);
 
 
 pref("dom.wakelock.enabled", false);

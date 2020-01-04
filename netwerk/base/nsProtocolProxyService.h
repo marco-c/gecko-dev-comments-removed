@@ -396,9 +396,6 @@ protected:
     nsFailedProxyTable           mFailedProxies;
     int32_t                      mFailedProxyTimeout;
 
-    
-    bool                         mFailoverToDirect;
-
 private:
     nsresult AsyncResolveInternal(nsIChannel *channel, uint32_t flags,
                                   nsIProtocolProxyCallback *callback,
