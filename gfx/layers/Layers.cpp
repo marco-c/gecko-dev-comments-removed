@@ -660,7 +660,9 @@ Layer::SnapTransformTranslation(const Matrix4x4& aTransform,
   }
 
   if(aTransform.IsSingular() ||
-     (aTransform._14 != 0 || aTransform._24 != 0 || aTransform._34 != 0)) {
+     aTransform.HasPerspectiveComponent() ||
+     aTransform.HasNonTranslation() ||
+     !aTransform.HasNonIntegerTranslation()) {
     
     
     
