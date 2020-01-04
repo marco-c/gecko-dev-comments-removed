@@ -589,11 +589,13 @@ WebConsole.prototype = {
     }
 
     let onDestroy = Task.async(function*() {
-      try {
-        yield this.target.activeTab.focus()
-      }
-      catch (ex) {
-        
+      if (!this._browserConsole) {
+        try {
+          yield this.target.activeTab.focus();
+        }
+        catch (ex) {
+          
+        }
       }
 
       let id = WebConsoleUtils.supportsString(this.hudId);
