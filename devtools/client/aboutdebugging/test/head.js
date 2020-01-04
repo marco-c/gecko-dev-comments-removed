@@ -48,7 +48,7 @@ function closeAboutDebugging(tab) {
   return removeTab(tab);
 }
 
-function addTab(url, win) {
+function addTab(url, win, backgroundTab = false) {
   info("Adding tab: " + url);
 
   return new Promise(done => {
@@ -56,7 +56,10 @@ function addTab(url, win) {
     let targetBrowser = targetWindow.gBrowser;
 
     targetWindow.focus();
-    let tab = targetBrowser.selectedTab = targetBrowser.addTab(url);
+    let tab = targetBrowser.addTab(url);
+    if (!backgroundTab) {
+      targetBrowser.selectedTab = tab;
+    }
     let linkedBrowser = tab.linkedBrowser;
 
     linkedBrowser.addEventListener("load", function onLoad() {
@@ -113,6 +116,17 @@ function getAddonList(document) {
 function getServiceWorkerList(document) {
   return document.querySelector("#service-workers .target-list") ||
     document.querySelector("#service-workers.targets");
+}
+
+
+
+
+
+
+
+function getTabList(document) {
+  return document.querySelector("#tabs .target-list") ||
+    document.querySelector("#tabs.targets");
 }
 
 function* installAddon(document, path, name, evt) {
