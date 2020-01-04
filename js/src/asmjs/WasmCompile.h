@@ -27,27 +27,41 @@ namespace wasm {
 
 
 
+struct ScriptedCaller
+{
+    UniqueChars filename;
+    unsigned line;
+    unsigned column;
+};
+
+
 
 struct CompileArgs
 {
     Assumptions assumptions;
-    UniqueChars filename;
+    ScriptedCaller scriptedCaller;
     bool alwaysBaseline;
 
-    CompileArgs(Assumptions&& assumptions, UniqueChars filename)
+    CompileArgs(Assumptions&& assumptions, ScriptedCaller&& scriptedCaller)
       : assumptions(Move(assumptions)),
-        filename(Move(filename)),
+        scriptedCaller(Move(scriptedCaller)),
         alwaysBaseline(false)
     {}
 
     
     
     CompileArgs() = default;
-    bool initFromContext(ExclusiveContext* cx, UniqueChars filename);
+    bool initFromContext(ExclusiveContext* cx, ScriptedCaller&& scriptedCaller);
 };
 
+
+
+
+
+
+
 SharedModule
-Compile(const ShareableBytes& bytecode, CompileArgs&& args, UniqueChars* error);
+Compile(const ShareableBytes& bytecode, const CompileArgs& args, UniqueChars* error);
 
 }  
 }  
