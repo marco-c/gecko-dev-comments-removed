@@ -1,0 +1,22 @@
+
+
+
+
+
+
+"use strict";
+
+exports.IdGenerator = class IdGenerator {
+  constructor() {
+    this.messageId = 1;
+  }
+
+  getNextId() {
+    
+    return "" + this.messageId++;
+  }
+
+  getCurrentId() {
+    return this.messageId;
+  }
+};
