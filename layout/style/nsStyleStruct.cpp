@@ -217,22 +217,16 @@ nsStyleFont::UnZoomText(nsPresContext *aPresContext, nscoord aSize)
  already_AddRefed<nsIAtom>
 nsStyleFont::GetLanguage(nsPresContext* aPresContext)
 {
-  nsAutoString language;
-  aPresContext->Document()->GetContentLanguage(language);
-  language.StripWhitespace();
-
-  
-  
-  if (!language.IsEmpty() &&
-      !language.Contains(char16_t(','))) {
-    return do_GetAtom(language);
+  RefPtr<nsIAtom> language = aPresContext->GetContentLanguage();
+  if (!language) {
     
     
-  } else {
     
     
-    return do_AddRef(aPresContext->GetLanguageFromCharset());
+    
+    language = aPresContext->GetLanguageFromCharset();
   }
+  return language.forget();
 }
 
 nsChangeHint nsStyleFont::CalcFontDifference(const nsFont& aFont1, const nsFont& aFont2)

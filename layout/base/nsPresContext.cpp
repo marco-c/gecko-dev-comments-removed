@@ -1521,6 +1521,24 @@ nsPresContext::GetDefaultFont(uint8_t aFontID, nsIAtom *aLanguage) const
   return font;
 }
 
+already_AddRefed<nsIAtom>
+nsPresContext::GetContentLanguage() const
+{
+  nsAutoString language;
+  Document()->GetContentLanguage(language);
+  language.StripWhitespace();
+
+  
+  
+  if (!language.IsEmpty() &&
+      !language.Contains(char16_t(','))) {
+    return do_GetAtom(language);
+    
+    
+  }
+  return nullptr;
+}
+
 void
 nsPresContext::SetFullZoom(float aZoom)
 {
