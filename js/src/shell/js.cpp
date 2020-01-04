@@ -134,7 +134,7 @@ static const size_t gMaxStackSize = 128 * sizeof(size_t) * 1024;
 
 
 
-static const double MAX_TIMEOUT_INTERVAL = 1800.0;  
+static const TimeDuration MAX_TIMEOUT_INTERVAL = TimeDuration::FromSeconds(1800.0);
 
 #ifdef NIGHTLY_BUILD
 # define SHARED_MEMORY_DEFAULT 1
@@ -3106,13 +3106,13 @@ Sleep_fn(JSContext* cx, unsigned argc, Value* vp)
         double t_secs;
         if (!ToNumber(cx, args[0], &t_secs))
             return false;
+        duration = TimeDuration::FromSeconds(Max(0.0, t_secs));
 
         
-        if (!(t_secs <= MAX_TIMEOUT_INTERVAL)) {
+        if (duration > MAX_TIMEOUT_INTERVAL) {
             JS_ReportError(cx, "Excessive sleep interval");
             return false;
         }
-        duration = TimeDuration::FromSeconds(Max(0.0, t_secs));
     }
     PR_Lock(sr->watchdogLock);
     TimeStamp toWakeup = TimeStamp::Now() + duration;
@@ -3298,7 +3298,7 @@ static bool
 SetTimeoutValue(JSContext* cx, double t)
 {
     
-    if (!(t <= MAX_TIMEOUT_INTERVAL)) {
+    if (TimeDuration::FromSeconds(t) > MAX_TIMEOUT_INTERVAL) {
         JS_ReportError(cx, "Excessive timeout value");
         return false;
     }
