@@ -72,6 +72,12 @@ addMessageListener("Test:JsonView:WaitForFilter", function(msg) {
     ".jsonPanelBox .domTable .memberRow");
 
   
+  if (firstRow.classList.contains("hidden")) {
+    sendAsyncMessage(msg.name);
+    return;
+  }
+
+  
   var observer = new content.MutationObserver(function(mutations) {
     for (let i = 0; i < mutations.length; i++) {
       let mutation = mutations[i];
