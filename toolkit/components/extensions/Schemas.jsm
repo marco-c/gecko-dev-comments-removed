@@ -82,39 +82,8 @@ function getValueBaseType(value) {
   return t;
 }
 
-
-
-const CONTEXT_FOR_VALIDATION = [
-  "checkLoadURL",
-  "hasPermission",
-  "logError",
-];
-
-
-
-const CONTEXT_FOR_INJECTION = [
-  ...CONTEXT_FOR_VALIDATION,
-  "callFunction",
-  "callFunctionNoReturn",
-  "callAsyncFunction",
-  "getProperty",
-  "setProperty",
-
-  "addListener",
-  "hasListener",
-  "removeListener",
-];
-
-
-
-
-
 class Context {
-  
-
-
-
-  constructor(params, overridableMethods = CONTEXT_FOR_VALIDATION) {
+  constructor(params) {
     this.params = params;
 
     this.path = [];
@@ -127,7 +96,13 @@ class Context {
     this.currentChoices = new Set();
     this.choicePathIndex = 0;
 
-    for (let method of overridableMethods) {
+    let methods = ["addListener", "callFunction",
+                   "callFunctionNoReturn", "callAsyncFunction",
+                   "hasPermission",
+                   "hasListener", "removeListener",
+                   "getProperty", "setProperty",
+                   "checkLoadURL", "logError"];
+    for (let method of methods) {
       if (method in params) {
         this[method] = params[method].bind(params);
       }
@@ -161,12 +136,6 @@ class Context {
   get principal() {
     return this.params.principal || Services.scriptSecurityManager.createNullPrincipal({});
   }
-
-  
-
-
-
-
 
   checkLoadURL(url) {
     let ssm = Services.scriptSecurityManager;
@@ -334,123 +303,6 @@ class Context {
 
 
 
-class InjectionContext extends Context {
-  constructor(params) {
-    super(params, CONTEXT_FOR_INJECTION);
-  }
-
-  
-
-
-
-
-
-
-
-
-  callFunction(path, name, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-  callFunctionNoReturn(path, name, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  callAsyncFunction(path, name, args, callback) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-  getProperty(path, name) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-  setProperty(path, name, value) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  addListener(path, name, listener, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  hasListener(path, name, listener) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-  removeListener(path, name, listener) {
-    throw new Error("Not implemented");
-  }
-}
-
-
-
-
-
-
 
 
 
@@ -607,16 +459,10 @@ class Entry {
   }
 
   
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
   inject(path, name, dest, context) {
   }
 }
@@ -1198,7 +1044,7 @@ class SubModuleProperty extends Entry {
     this.properties = properties;
   }
 
-  inject(path, name, dest, context) {
+  inject(path, name, dest, wrapperFuncs) {
     let obj = Cu.createObjectIn(dest, {defineAs: name});
 
     let ns = Schemas.namespaces.get(this.namespaceName);
@@ -1209,7 +1055,7 @@ class SubModuleProperty extends Entry {
 
     let functions = type.functions;
     for (let fun of functions) {
-      fun.inject(path.concat(name), fun.name, obj, context);
+      fun.inject(path.concat(name), fun.name, obj, wrapperFuncs);
     }
 
     
@@ -1383,12 +1229,12 @@ class Event extends CallEntry {
     let addStub = (listener, ...args) => {
       listener = this.checkListener(listener, context);
       let actuals = this.checkParameters(args, context);
-      context.addListener(this.path, name, listener, actuals);
+      return context.addListener(this.path, name, listener, actuals);
     };
 
     let removeStub = (listener) => {
       listener = this.checkListener(listener, context);
-      context.removeListener(this.path, name, listener);
+      return context.removeListener(this.path, name, listener);
     };
 
     let hasStub = (listener) => {
@@ -1804,16 +1650,8 @@ this.Schemas = {
     this.flushSchemas();
   },
 
-  
-
-
-
-
-
-
-
   inject(dest, wrapperFuncs) {
-    let context = new InjectionContext(wrapperFuncs);
+    let context = new Context(wrapperFuncs);
 
     for (let [namespace, ns] of this.namespaces) {
       if (ns.permissions && !ns.permissions.some(perm => context.hasPermission(perm))) {
@@ -1857,15 +1695,6 @@ this.Schemas = {
       }
     }
   },
-
-  
-
-
-
-
-
-
-
 
   normalize(obj, typeName, context) {
     let [namespaceName, prop] = typeName.split(".");
