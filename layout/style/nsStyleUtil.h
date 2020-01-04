@@ -31,6 +31,10 @@ public:
                                 const nsAString& aSelectorValue,
                                 const nsStringComparator& aComparator);
 
+ static bool ValueIncludes(const nsSubstring& aValueList,
+                           const nsSubstring& aValue,
+                           const nsStringComparator& aComparator);
+
   
   
   static void AppendEscapedCSSString(const nsAString& aString,
