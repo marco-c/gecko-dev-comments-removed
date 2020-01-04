@@ -1669,40 +1669,6 @@ this.PlacesUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-  getImageURLForResolution:
-  function PU_getImageURLForResolution(aWindow, aURL, aWidth = 16, aHeight = 16) {
-    
-    
-    let uri = Services.io.newURI(aURL, null, null);
-    if ((!(uri instanceof Ci.nsIURL) || uri.fileExtension.toLowerCase() != "ico") &&
-        !/^data:image\/(?:x-icon|icon|ico)/.test(aURL)) {
-      return aURL;
-    }
-    let width  = Math.round(aWidth * aWindow.devicePixelRatio);
-    let height = Math.round(aHeight * aWindow.devicePixelRatio);
-    return aURL + (aURL.includes("#") ? "&" : "#") +
-           "-moz-resolution=" + width + "," + height;
-  },
-
-  
-
-
-
-
-
-
-
-
-
   promiseItemGuid(aItemId) {
     return GuidHelper.getItemGuid(aItemId)
   },

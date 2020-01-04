@@ -676,9 +676,7 @@ ContentSearchUIController.prototype = {
   
   _getFaviconURIFromBuffer: function (buffer) {
     let blob = new Blob([buffer]);
-    let dpiSize = Math.round(16 * window.devicePixelRatio);
-    let sizeStr = dpiSize + "," + dpiSize;
-    return URL.createObjectURL(blob) + "#-moz-resolution=" + sizeStr;
+    return URL.createObjectURL(blob);
   },
 
   
