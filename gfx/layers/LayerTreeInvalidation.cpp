@@ -496,10 +496,40 @@ struct ImageLayerProperties : public LayerPropertiesBase
     , mLastFrameID(-1)
     , mIsMask(aIsMask)
   {
+    if (mContainer) {
+      mRect.SizeTo(mContainer->GetCurrentSize());
+    }
     if (mImageHost) {
+      mRect.SizeTo(mImageHost->GetImageSize());
       mLastProducerID = mImageHost->GetLastProducerID();
       mLastFrameID = mImageHost->GetLastFrameID();
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  IntRect NewTransformedBounds() override
+  {
+    IntRect rect;
+    ImageLayer* imageLayer = static_cast<ImageLayer*>(mLayer.get());
+    if (ImageContainer* container = imageLayer->GetContainer()) {
+      rect.SizeTo(container->GetCurrentSize());
+    }
+    if (ImageHost* host = GetImageHost(imageLayer)) {
+      rect.SizeTo(host->GetImageSize());
+    }
+    return TransformRect(rect, GetTransformForInvalidation(mLayer));
+  }
+
+  IntRect OldTransformedBounds() override
+  {
+    return TransformRect(mRect, mTransform);
   }
 
   virtual nsIntRegion ComputeChangeInternal(const char* aPrefix,
@@ -527,20 +557,6 @@ struct ImageLayerProperties : public LayerPropertiesBase
         (host && host->GetFrameID() != mLastFrameID)) {
       aGeometryChanged = true;
 
-      if (mIsMask) {
-        
-        
-        IntSize size;
-        if (container) {
-          size = container->GetCurrentSize();
-        }
-        if (host) {
-          size = host->GetImageSize();
-        }
-        IntRect rect(0, 0, size.width, size.height);
-        LTI_DUMP(rect, "mask");
-        return TransformRect(rect, GetTransformForInvalidation(mLayer));
-      }
       LTI_DUMP(NewTransformedBounds(), "bounds");
       return NewTransformedBounds();
     }
@@ -553,6 +569,7 @@ struct ImageLayerProperties : public LayerPropertiesBase
   Filter mFilter;
   gfx::IntSize mScaleToSize;
   ScaleMode mScaleMode;
+  IntRect mRect;
   int32_t mLastProducerID;
   int32_t mLastFrameID;
   bool mIsMask;
