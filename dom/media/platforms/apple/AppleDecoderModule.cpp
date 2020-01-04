@@ -7,8 +7,6 @@
 #include "AppleATDecoder.h"
 #include "AppleCMLinker.h"
 #include "AppleDecoderModule.h"
-#include "AppleVDADecoder.h"
-#include "AppleVDALinker.h"
 #include "AppleVTDecoder.h"
 #include "AppleVTLinker.h"
 #include "MacIOSurfaceImage.h"
@@ -22,7 +20,6 @@ bool AppleDecoderModule::sInitialized = false;
 bool AppleDecoderModule::sIsCoreMediaAvailable = false;
 bool AppleDecoderModule::sIsVTAvailable = false;
 bool AppleDecoderModule::sIsVTHWAvailable = false;
-bool AppleDecoderModule::sIsVDAAvailable = false;
 bool AppleDecoderModule::sCanUseHardwareVideoDecoder = true;
 
 AppleDecoderModule::AppleDecoderModule()
@@ -46,9 +43,6 @@ AppleDecoderModule::Init()
   const bool loaded = MacIOSurfaceLib::isInit();
 
   
-  sIsVDAAvailable = loaded && AppleVDALinker::Link();
-
-  
   sIsCoreMediaAvailable = AppleCMLinker::Link();
   
   
@@ -67,7 +61,7 @@ AppleDecoderModule::Init()
 nsresult
 AppleDecoderModule::Startup()
 {
-  if (!sInitialized || (!sIsVDAAvailable && !sIsVTAvailable)) {
+  if (!sInitialized || !sIsVTAvailable) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -76,27 +70,11 @@ AppleDecoderModule::Startup()
 already_AddRefed<MediaDataDecoder>
 AppleDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams)
 {
-  RefPtr<MediaDataDecoder> decoder;
-
-  if (sIsVDAAvailable && (!sIsVTHWAvailable || MediaPrefs::AppleForceVDA())) {
-    decoder =
-      AppleVDADecoder::CreateVDADecoder(aParams.VideoConfig(),
-                                        aParams.mTaskQueue,
-                                        aParams.mCallback,
-                                        aParams.mImageContainer);
-    if (decoder) {
-      return decoder.forget();
-    }
-  }
-  
-  
-  if (sIsVTAvailable) {
-    decoder =
-      new AppleVTDecoder(aParams.VideoConfig(),
-                         aParams.mTaskQueue,
-                         aParams.mCallback,
-                         aParams.mImageContainer);
-  }
+  RefPtr<MediaDataDecoder> decoder =
+    new AppleVTDecoder(aParams.VideoConfig(),
+                       aParams.mTaskQueue,
+                       aParams.mCallback,
+                       aParams.mImageContainer);
   return decoder.forget();
 }
 
@@ -117,9 +95,8 @@ AppleDecoderModule::SupportsMimeType(const nsACString& aMimeType,
   return (sIsCoreMediaAvailable &&
           (aMimeType.EqualsLiteral("audio/mpeg") ||
            aMimeType.EqualsLiteral("audio/mp4a-latm"))) ||
-    ((sIsVTAvailable || sIsVDAAvailable) &&
-     (aMimeType.EqualsLiteral("video/mp4") ||
-      aMimeType.EqualsLiteral("video/avc")));
+    (sIsVTAvailable && (aMimeType.EqualsLiteral("video/mp4") ||
+                        aMimeType.EqualsLiteral("video/avc")));
 }
 
 PlatformDecoderModule::ConversionRequired
