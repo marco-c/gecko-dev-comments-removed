@@ -598,6 +598,12 @@ public:
 
   static already_AddRefed<nsIURI>
   GetMarkerURI(nsIFrame* aFrame, FragmentOrURL nsStyleSVG::* aMarker);
+
+  
+
+
+  static already_AddRefed<nsIURI>
+  GetClipPathURI(nsIFrame* aFrame);
 };
 
 #endif 

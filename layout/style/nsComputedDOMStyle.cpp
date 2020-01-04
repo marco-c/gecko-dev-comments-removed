@@ -6032,8 +6032,10 @@ nsComputedDOMStyle::DoGetClipPath()
       return CreatePrimitiveValueForClipPath(nullptr,
                                              svg->mClipPath.GetSizingBox());
     case StyleClipPathType::URL: {
+      
+      nsCOMPtr<nsIURI> pathURI = svg->mClipPath.GetURL()->GetSourceURL();
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-      val->SetURI(svg->mClipPath.GetURL());
+      val->SetURI(pathURI);
       return val.forget();
     }
     case StyleClipPathType::None_: {
