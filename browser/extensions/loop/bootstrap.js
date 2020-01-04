@@ -35,6 +35,7 @@ var WindowListener = {
     let gBrowser = window.gBrowser;
     let xhrClass = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"];
     let FileReader = window.FileReader;
+    let menuItem = null;
 
     
     var LoopUI = {
@@ -67,20 +68,6 @@ var WindowListener = {
           this.browser = browser;
         }
         return browser;
-      },
-
-      
-
-
-
-
-      get selectedTab() {
-        if (!this.browser) {
-          return null;
-        }
-
-        let selectedTab = this.browser.contentDocument.querySelector(".tab-view > .selected");
-        return selectedTab && selectedTab.getAttribute("data-tab-name");
       },
 
       
@@ -278,6 +265,8 @@ var WindowListener = {
           }
         });
 
+        this.addMenuItem();
+
         
         
         if (window == Services.appShell.hiddenDOMWindow) {
@@ -292,6 +281,35 @@ var WindowListener = {
         Services.obs.addObserver(this, "loop-status-changed", false);
 
         this.updateToolbarState();
+      },
+
+      
+
+
+
+      addMenuItem: function() {
+        let menu = document.getElementById("menu_ToolsPopup");
+        if (!menu || menuItem) {
+          return;
+        }
+
+        menuItem = document.createElementNS(kNSXUL, "menuitem");
+        menuItem.setAttribute("id", "menu_openLoop");
+        menuItem.setAttribute("label", this._getString("loopMenuItem_label"));
+        menuItem.setAttribute("accesskey", this._getString("loopMenuItem_accesskey"));
+
+        menuItem.addEventListener("command", () => this.togglePanel());
+
+        menu.insertBefore(menuItem, document.getElementById("sync-setup"));
+      },
+
+      
+
+
+      removeMenuItem: function() {
+        if (menuItem) {
+          menuItem.parentNode.removeChild(menuItem);
+        }
       },
 
       
@@ -674,7 +692,10 @@ var WindowListener = {
 
     
     
-    
+    if (window.LoopUI) {
+      window.LoopUI.removeMenuItem();
+      
+    }
   },
 
   
