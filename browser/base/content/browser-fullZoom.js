@@ -273,8 +273,17 @@ var FullZoom = {
 
 
 
-  reset: function FullZoom_reset() {
-    let browser = gBrowser.selectedBrowser;
+  setZoom: function (value, browser = gBrowser.selectedBrowser) {
+    ZoomManager.setZoomForBrowser(browser, value);
+    this._ignorePendingZoomAccesses(browser);
+    this._applyZoomToPref(browser);
+  },
+
+  
+
+
+
+  reset: function FullZoom_reset(browser = gBrowser.selectedBrowser) {
     let token = this._getBrowserToken(browser);
     this._getGlobalValue(browser, function (value) {
       if (token.isCurrent) {
