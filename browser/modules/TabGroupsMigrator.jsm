@@ -37,6 +37,10 @@ this.TabGroupsMigrator = {
   migrate(stateAsSupportsString) {
     stateAsSupportsString.QueryInterface(Ci.nsISupportsString);
     let stateStr = stateAsSupportsString.data;
+    
+    if (!stateStr) {
+      return;
+    }
     let state;
     try {
       state = JSON.parse(stateStr);
