@@ -457,7 +457,7 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
 
   
   
-  nsSize prefSize = GetPrefSize(aState);
+  nsSize prefSize = GetXULPrefSize(aState);
   nsSize minSize = GetXULMinSize(aState); 
   nsSize maxSize = GetMaxSize(aState);
 

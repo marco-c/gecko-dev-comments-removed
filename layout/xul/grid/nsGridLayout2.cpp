@@ -132,9 +132,9 @@ nsGridLayout2::GetXULMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 }
 
 nsSize
-nsGridLayout2::GetPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
+nsGridLayout2::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
-  nsSize pref = nsStackLayout::GetPrefSize(aBox, aState); 
+  nsSize pref = nsStackLayout::GetXULPrefSize(aBox, aState); 
 
   
   

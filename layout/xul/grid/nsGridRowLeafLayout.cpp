@@ -35,7 +35,7 @@ nsGridRowLeafLayout::~nsGridRowLeafLayout()
 }
 
 nsSize
-nsGridRowLeafLayout::GetPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
+nsGridRowLeafLayout::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
@@ -44,7 +44,7 @@ nsGridRowLeafLayout::GetPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
   
   
   if (!grid) {
-    return nsGridRowLayout::GetPrefSize(aBox, aState); 
+    return nsGridRowLayout::GetXULPrefSize(aBox, aState); 
   }
   else {
     return grid->GetPrefRowSize(aState, index, isHorizontal);

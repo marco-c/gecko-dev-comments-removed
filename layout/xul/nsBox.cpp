@@ -392,7 +392,7 @@ nsBox::DoesNeedRecalc(nscoord aCoord)
 }
 
 nsSize
-nsBox::GetPrefSize(nsBoxLayoutState& aState)
+nsBox::GetXULPrefSize(nsBoxLayoutState& aState)
 {
   NS_ASSERTION(aState.GetRenderingContext(), "must have rendering context");
 
@@ -487,7 +487,7 @@ nsBox::GetBoxAscent(nsBoxLayoutState& aState)
   if (IsCollapsed())
     return 0;
 
-  return GetPrefSize(aState).height;
+  return GetXULPrefSize(aState).height;
 }
 
 bool
