@@ -672,8 +672,10 @@ public:
   DispatchDOMEvent(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                    DOMEventTargetHelper* aTarget, bool aIsMainThread)
   {
-    nsCOMPtr<nsIGlobalObject> parent = do_QueryInterface(aTarget->GetParentObject());
-    MOZ_ASSERT(parent);
+    nsCOMPtr<nsPIDOMWindowInner> parent;
+    if (aIsMainThread) {
+      parent = do_QueryInterface(aTarget->GetParentObject());
+    }
 
     JS::Rooted<JS::Value> messageData(aCx);
     ErrorResult rv;
@@ -6382,7 +6384,7 @@ WorkerPrivate::ConnectMessagePort(JSContext* aCx,
   
   
   ErrorResult rv;
-  RefPtr<MessagePort> port = MessagePort::Create(globalScope, aIdentifier, rv);
+  RefPtr<MessagePort> port = MessagePort::Create(nullptr, aIdentifier, rv);
   if (NS_WARN_IF(rv.Failed())) {
     return false;
   }
