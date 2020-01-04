@@ -72,6 +72,10 @@ function makeMemoryTest(url, generator) {
   });
 }
 
+function dumpn(msg) {
+  dump(`MEMORY-TEST: ${msg}\n`);
+}
+
 
 
 
