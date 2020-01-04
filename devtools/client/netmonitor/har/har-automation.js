@@ -3,12 +3,11 @@
 
 "use strict";
 
-const { Cu, Ci } = require("chrome");
+const { Ci } = require("chrome");
 const { Class } = require("sdk/core/heritage");
 const { resolve } = require("promise");
 const Services = require("Services");
-
-Cu.import("resource://gre/modules/Task.jsm");
+const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "HarCollector", "devtools/client/netmonitor/har/har-collector", true);
 loader.lazyRequireGetter(this, "HarExporter", "devtools/client/netmonitor/har/har-exporter", true);

@@ -4,7 +4,7 @@
 
 
 
-var {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
+var {Task} = require("devtools/shared/task");
 var {TargetFactory} = require("devtools/client/framework/target");
 
 function test() {

@@ -19,7 +19,7 @@ if (url.search.length > 1) {
   const { TargetFactory } = require("devtools/client/framework/target");
   const { DebuggerServer } = require("devtools/server/main");
   const { DebuggerClient } = require("devtools/shared/client/main");
-  const { Task } = require("resource://gre/modules/Task.jsm");
+  const { Task } = require("devtools/shared/task");
 
   
   let host = window.QueryInterface(Ci.nsIInterfaceRequestor)
