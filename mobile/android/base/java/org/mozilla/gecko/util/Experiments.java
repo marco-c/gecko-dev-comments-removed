@@ -23,9 +23,6 @@ public class Experiments {
     private static final String LOGTAG = "GeckoExperiments";
 
     
-    public static final String BOOKMARKS_HISTORY_MENU = "bookmark-history-menu";
-
-    
     public static final String SEARCH_TERM = "search-term";
 
     
