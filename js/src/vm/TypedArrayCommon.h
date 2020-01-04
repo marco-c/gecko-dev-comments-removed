@@ -31,9 +31,6 @@ namespace js {
 
 
 
-
-
-
 inline bool
 ValueIsLength(const Value& v, uint32_t* len)
 {
