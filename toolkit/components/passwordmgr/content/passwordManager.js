@@ -15,10 +15,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 
 let kSignonBundle;
-let kObserverService;
-
-
-let passwordmanager = null;
 
 let showingPasswords = false;
 
@@ -46,7 +42,7 @@ let signonReloadDisplay = {
           }
           break;
       }
-      kObserverService.notifyObservers(null, "passwordmgr-dialog-updated", null);
+      Services.obs.notifyObservers(null, "passwordmgr-dialog-updated", null);
     }
   }
 }
@@ -60,13 +56,7 @@ let dateAndTimeFormatter = new Intl.DateTimeFormat(undefined,
 
 function Startup() {
   
-  passwordmanager = Cc["@mozilla.org/login-manager;1"]
-                        .getService(Ci.nsILoginManager);
-
-  
-  kObserverService = Cc["@mozilla.org/observer-service;1"]
-                               .getService(Ci.nsIObserverService);
-  kObserverService.addObserver(signonReloadDisplay, "passwordmgr-storage-changed", false);
+  Services.obs.addObserver(signonReloadDisplay, "passwordmgr-storage-changed", false);
 
   signonsTree = document.getElementById("signonsTree");
 }
@@ -112,7 +102,7 @@ function SignonsStartup() {
 }
 
 function Shutdown() {
-  kObserverService.removeObserver(signonReloadDisplay, "passwordmgr-storage-changed");
+  Services.obs.removeObserver(signonReloadDisplay, "passwordmgr-storage-changed");
 }
 
 function setFilter(aFilterString) {
@@ -215,7 +205,7 @@ let signonsTreeView = {
       let existingLogin = table[row].clone();
       table[row][field] = value;
       table[row].timePasswordChanged = Date.now();
-      passwordmanager.modifyLogin(existingLogin, table[row]);
+      Services.logins.modifyLogin(existingLogin, table[row]);
       signonsTree.treeBoxObject.invalidateRow(row);
     }
 
@@ -302,7 +292,7 @@ function SortTree(tree, view, table, column, lastSortColumn, lastSortAscending, 
 function LoadSignons() {
   
   try {
-    signons = passwordmanager.getAllLogins();
+    signons = Services.logins.getAllLogins();
   } catch (e) {
     signons = [];
   }
@@ -464,7 +454,7 @@ function TogglePasswordVisible() {
 
   
   
-  kObserverService.notifyObservers(null, "passwordmgr-password-toggle-complete", null);
+  Services.obs.notifyObservers(null, "passwordmgr-password-toggle-complete", null);
   Services.telemetry.getHistogramById("PWMGR_MANAGE_VISIBILITY_TOGGLED").add(showingPasswords);
 }
 
@@ -481,14 +471,14 @@ function AskUserShowPasswords() {
 
 function FinalizeSignonDeletions(syncNeeded) {
   for (let s = 0; s < deletedSignons.length; s++) {
-    passwordmanager.removeLogin(deletedSignons[s]);
+    Services.logins.removeLogin(deletedSignons[s]);
     Services.telemetry.getHistogramById("PWMGR_MANAGE_DELETED").add(1);
   }
   
   
   if (syncNeeded) {
     try {
-      signons = passwordmanager.getAllLogins();
+      signons = Services.logins.getAllLogins();
     } catch (e) {
       signons = [];
     }
