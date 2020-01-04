@@ -622,7 +622,7 @@ void nsCSSValue::SetDependentListValue(nsCSSValueList* aList)
 }
 
 void
-nsCSSValue::AdoptListValue(nsCSSValueList*&& aValue)
+nsCSSValue::AdoptListValue(UniquePtr<nsCSSValueList> aValue)
 {
   
   
@@ -632,8 +632,7 @@ nsCSSValue::AdoptListValue(nsCSSValueList*&& aValue)
   mValue.mList->mValue = aValue->mValue;
   mValue.mList->mNext  = aValue->mNext;
   aValue->mNext = nullptr;
-  delete aValue;
-  aValue = nullptr;
+  aValue.reset();
 }
 
 nsCSSValuePairList* nsCSSValue::SetPairListValue()
@@ -655,7 +654,7 @@ void nsCSSValue::SetDependentPairListValue(nsCSSValuePairList* aList)
 }
 
 void
-nsCSSValue::AdoptPairListValue(nsCSSValuePairList*&& aValue)
+nsCSSValue::AdoptPairListValue(UniquePtr<nsCSSValuePairList> aValue)
 {
   
   
@@ -666,8 +665,7 @@ nsCSSValue::AdoptPairListValue(nsCSSValuePairList*&& aValue)
   mValue.mPairList->mYValue = aValue->mYValue;
   mValue.mPairList->mNext   = aValue->mNext;
   aValue->mNext = nullptr;
-  delete aValue;
-  aValue = nullptr;
+  aValue.reset();
 }
 
 void nsCSSValue::SetAutoValue()
