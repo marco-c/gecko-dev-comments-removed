@@ -303,6 +303,9 @@ class RunnableMethod : public mozilla::CancelableRunnable,
   Params params_;
 };
 
+namespace dont_add_new_uses_of_this {
+
+
 template <class T, class Method, typename... Args>
 inline already_AddRefed<mozilla::Runnable>
 NewRunnableMethod(T* object, Method method, Args&&... args) {
@@ -312,6 +315,8 @@ NewRunnableMethod(T* object, Method method, Args&&... args) {
                                              mozilla::MakeTuple(mozilla::Forward<Args>(args)...));
   return t.forget();
 }
+
+} 
 
 
 
