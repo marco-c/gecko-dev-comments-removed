@@ -465,7 +465,7 @@ var RemotePageManagerInternal = {
 
   
   initListener: function({ target: messageManager }) {
-    messageManager.sendAsyncMessage("RemotePage:Register", { urls: [u for (u of this.pages.keys())] })
+    messageManager.sendAsyncMessage("RemotePage:Register", { urls: Array.from(this.pages.keys()) })
   },
 
   

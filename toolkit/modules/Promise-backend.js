@@ -236,8 +236,7 @@ var PendingErrors = {
   flush: function() {
     
     
-    let keys = [key for (key of this._map.keys())];
-    for (let key of keys) {
+    for (let key of Array.from(this._map.keys())) {
       this.report(key);
     }
   },
