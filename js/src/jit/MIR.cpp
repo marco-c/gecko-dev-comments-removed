@@ -1739,12 +1739,55 @@ MPhi::operandIfRedundant()
 }
 
 MDefinition*
+MPhi::foldsFilterTypeSet()
+{
+    
+    
+
+    if (inputs_.length() == 0)
+        return nullptr;
+
+    MDefinition* subject = getOperand(0);
+    if (subject->isFilterTypeSet())
+        subject = subject->toFilterTypeSet()->input();
+
+    
+    if (subject->type() != type())
+        return nullptr;
+
+    
+    if (resultTypeSet() && !subject->resultTypeSet())
+        return nullptr;
+
+    
+    if (subject->resultTypeSet() && resultTypeSet()) {
+        if (!subject->resultTypeSet()->isSubset(resultTypeSet()))
+            return nullptr;
+    }
+
+    for (size_t i = 1, e = numOperands(); i < e; i++) {
+        MDefinition* op = getOperand(i);
+        if (op == subject)
+            continue;
+        if (op->isFilterTypeSet() && op->toFilterTypeSet()->input() == subject)
+            continue;
+
+        return nullptr;
+    }
+
+    return subject;
+}
+
+MDefinition*
 MPhi::foldsTo(TempAllocator& alloc)
 {
     if (MDefinition* def = operandIfRedundant())
         return def;
 
     if (MDefinition* def = foldsTernary())
+        return def;
+
+    if (MDefinition* def = foldsFilterTypeSet())
         return def;
 
     return this;
