@@ -47,6 +47,8 @@ protected:
   
   
   android::MediaStreamSource* mStreamSource;
+  
+  bool IsMonoAudioEnabled();
 };
 
 } 

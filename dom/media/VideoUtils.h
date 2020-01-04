@@ -168,6 +168,11 @@ int DownmixAudioToStereo(mozilla::AudioDataValue* buffer,
                          int channels,
                          uint32_t frames);
 
+
+
+void DownmixStereoToMono(mozilla::AudioDataValue* aBuffer,
+                         uint32_t aFrames);
+
 bool IsVideoContentType(const nsCString& aContentType);
 
 

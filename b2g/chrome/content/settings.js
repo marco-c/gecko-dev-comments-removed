@@ -80,6 +80,12 @@ SettingsListener.init();
 
 
 
+SettingsListener.observe('accessibility.monoaudio.enable', false, function(value) {
+  Services.prefs.setBoolPref('accessibility.monoaudio.enable', value);
+});
+
+
+
 SettingsListener.observe('debug.console.enabled', true, function(value) {
   Services.prefs.setBoolPref('consoleservice.enabled', value);
   Services.prefs.setBoolPref('layout.css.report_errors', value);

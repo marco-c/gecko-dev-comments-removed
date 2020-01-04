@@ -325,6 +325,8 @@ private:
   
   
   uint64_t mLastGoodPosition;
+  
+  bool mIsMonoAudioEnabled;
 };
 
 } 
