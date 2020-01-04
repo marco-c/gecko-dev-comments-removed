@@ -1,3 +1,7 @@
+
+
+
+
 const { DOM, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
 
 const Toolbar = module.exports = createClass({

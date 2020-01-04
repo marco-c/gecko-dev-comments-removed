@@ -1,3 +1,7 @@
+
+
+
+
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
 const { getSnapshotStatusText } = require("../utils");
 const { snapshotState: states } = require("../constants");
