@@ -3658,13 +3658,12 @@ pref("print.print_extra_margin", 0);
 #ifdef MOZ_ANDROID_APZ
 pref("layout.css.scroll-behavior.enabled", true);
 pref("layout.css.scroll-behavior.property-enabled", true);
+pref("layout.css.scroll-snap.enabled", true);
 #else
 pref("layout.css.scroll-behavior.enabled", false);
 pref("layout.css.scroll-behavior.property-enabled", false);
-#endif
-
-
 pref("layout.css.scroll-snap.enabled", false);
+#endif
 
 
 
