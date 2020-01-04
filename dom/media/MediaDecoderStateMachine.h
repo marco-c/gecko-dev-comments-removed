@@ -858,7 +858,9 @@ private:
   Watchable<bool> mVideoCompleted;
 
   
-  Maybe<bool> mPendingDormant;
+  
+  
+  bool mPendingDormant = false;
 
   
   

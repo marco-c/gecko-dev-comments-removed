@@ -1142,16 +1142,9 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
   }
 
   if (mMetadataRequest.Exists()) {
-    if (mPendingDormant && mPendingDormant.ref() != aDormant && !aDormant) {
-      
-      
-      mPendingDormant.reset();
-    } else {
-      mPendingDormant = Some(aDormant);
-    }
+    mPendingDormant = aDormant;
     return;
   }
-  mPendingDormant.reset();
 
   DECODER_LOG("SetDormant=%d", aDormant);
 
@@ -1203,7 +1196,7 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     
     
     mReader->ReleaseMediaResources();
-  } else if ((aDormant != true) && (mState == DECODER_STATE_DORMANT)) {
+  } else if (mState == DECODER_STATE_DORMANT) {
     mDecodingFirstFrame = true;
     SetState(DECODER_STATE_DECODING_METADATA);
     ReadMetadata();
@@ -1976,7 +1969,8 @@ MediaDecoderStateMachine::OnMetadataRead(MetadataHolder* aMetadata)
   mMetadataRequest.Complete();
 
   if (mPendingDormant) {
-    SetDormant(mPendingDormant.ref());
+    mPendingDormant = false;
+    SetDormant(true);
     return;
   }
 
