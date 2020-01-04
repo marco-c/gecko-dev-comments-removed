@@ -40,19 +40,19 @@ const NS_ERROR_DOM_SYNTAX_ERR = NS_ERROR_MODULE_DOM + 12;
 function WebContentConverter() {
 }
 WebContentConverter.prototype = {
-  convert: function WCC_convert() { },
-  asyncConvertData: function WCC_asyncConvertData() { },
-  onDataAvailable: function WCC_onDataAvailable() { },
-  onStopRequest: function WCC_onStopRequest() { },
-  
-  onStartRequest: function WCC_onStartRequest(request, context) {
-    var wccr = 
+  convert() { },
+  asyncConvertData() { },
+  onDataAvailable() { },
+  onStopRequest() { },
+
+  onStartRequest(request, context) {
+    let wccr =
         Cc[WCCR_CONTRACTID].
         getService(Ci.nsIWebContentConverterService);
     wccr.loadPreferredHandler(request);
   },
-  
-  QueryInterface: function WCC_QueryInterface(iid) {
+
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIStreamConverter) ||
         iid.equals(Ci.nsIStreamListener) ||
         iid.equals(Ci.nsISupports))
@@ -61,14 +61,14 @@ WebContentConverter.prototype = {
   }
 };
 
-var WebContentConverterFactory = {
-  createInstance: function WCCF_createInstance(outer, iid) {
+let WebContentConverterFactory = {
+  createInstance(outer, iid) {
     if (outer != null)
       throw Cr.NS_ERROR_NO_AGGREGATION;
     return new WebContentConverter().QueryInterface(iid);
   },
-    
-  QueryInterface: function WCC_QueryInterface(iid) {
+
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIFactory) ||
         iid.equals(Ci.nsISupports))
       return this;
@@ -88,11 +88,11 @@ ServiceInfo.prototype = {
   get name() {
     return this._name;
   },
-  
+
   
 
 
-  equals: function SI_equals(aHandlerApp) {
+  equals(aHandlerApp) {
     if (!aHandlerApp)
       throw Cr.NS_ERROR_NULL_POINTER;
 
@@ -121,11 +121,11 @@ ServiceInfo.prototype = {
   
 
 
-  getHandlerURI: function SI_getHandlerURI(uri) {
+  getHandlerURI(uri) {
     return this._uri.replace(/%s/gi, encodeURIComponent(uri));
   },
-  
-  QueryInterface: function SI_QueryInterface(iid) {
+
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIWebContentHandlerInfo) ||
         iid.equals(Ci.nsISupports))
       return this;
@@ -139,9 +139,10 @@ const Utils = {
   },
 
   checkAndGetURI(aURIString, aContentWindow) {
+    let uri;
     try {
       let baseURI = aContentWindow.document.baseURIObject;
-      var uri = this.makeURI(aURIString, null, baseURI);
+      uri = this.makeURI(aURIString, null, baseURI);
     } catch (ex) {
       throw NS_ERROR_DOM_SYNTAX_ERR;
     }
@@ -155,7 +156,7 @@ const Utils = {
 
     
     
-    var pb = Services.prefs;
+    let pb = Services.prefs;
     if ((!pb.prefHasUserValue(PREF_ALLOW_DIFFERENT_HOST) ||
          !pb.getBoolPref(PREF_ALLOW_DIFFERENT_HOST)) &&
         aContentWindow.location.hostname != uri.host)
@@ -172,7 +173,7 @@ const Utils = {
   checkProtocolHandlerAllowed(aProtocol, aURIString) {
     
     
-    var handler = Services.io.getProtocolHandler(aProtocol);
+    let handler = Services.io.getProtocolHandler(aProtocol);
     if (!(handler instanceof Ci.nsIExternalProtocolHandler)) {
       
       
@@ -181,8 +182,8 @@ const Utils = {
     }
 
     
-    var pb = Services.prefs;
-    var allowed;
+    let pb = Services.prefs;
+    let allowed;
     try {
       allowed = pb.getBoolPref(PREF_HANDLER_EXTERNAL_PREFIX + "." + aProtocol);
     }
@@ -211,49 +212,47 @@ const Utils = {
 };
 
 function WebContentConverterRegistrar() {
-  this._contentTypes = { };
-  this._autoHandleContentTypes = { };
+  this._contentTypes = {};
+  this._autoHandleContentTypes = {};
 }
 
 WebContentConverterRegistrar.prototype = {
   get stringBundle() {
-    var sb = Services.strings.createBundle(STRING_BUNDLE_URI);
+    let sb = Services.strings.createBundle(STRING_BUNDLE_URI);
     delete WebContentConverterRegistrar.prototype.stringBundle;
     return WebContentConverterRegistrar.prototype.stringBundle = sb;
   },
 
-  _getFormattedString: function WCCR__getFormattedString(key, params) {
+  _getFormattedString(key, params) {
     return this.stringBundle.formatStringFromName(key, params, params.length);
   },
-  
-  _getString: function WCCR_getString(key) {
+
+  _getString(key) {
     return this.stringBundle.GetStringFromName(key);
   },
 
   
 
 
-  getAutoHandler: 
-  function WCCR_getAutoHandler(contentType) {
+  getAutoHandler(contentType) {
     contentType = Utils.resolveContentType(contentType);
     if (contentType in this._autoHandleContentTypes)
       return this._autoHandleContentTypes[contentType];
     return null;
   },
-  
+
   
 
 
-  setAutoHandler:
-  function WCCR_setAutoHandler(contentType, handler) {
+  setAutoHandler(contentType, handler) {
     if (handler && !this._typeIsRegistered(contentType, handler.uri))
       throw Cr.NS_ERROR_NOT_AVAILABLE;
 
     contentType = Utils.resolveContentType(contentType);
     this._setAutoHandler(contentType, handler);
 
-    var ps = Services.prefs;
-    var autoBranch = ps.getBranch(PREF_CONTENTHANDLERS_AUTO);
+    let ps = Services.prefs;
+    let autoBranch = ps.getBranch(PREF_CONTENTHANDLERS_AUTO);
     if (handler)
       autoBranch.setCharPref(contentType, handler.uri);
     else if (autoBranch.prefHasUserValue(contentType))
@@ -261,65 +260,57 @@ WebContentConverterRegistrar.prototype = {
 
     ps.savePrefFile(null);
   },
-  
+
   
 
 
-  _setAutoHandler:
-  function WCCR__setAutoHandler(contentType, handler) {
-    if (handler) 
+  _setAutoHandler(contentType, handler) {
+    if (handler)
       this._autoHandleContentTypes[contentType] = handler;
     else if (contentType in this._autoHandleContentTypes)
       delete this._autoHandleContentTypes[contentType];
   },
-  
+
   
 
 
-  getWebContentHandlerByURI:
-  function WCCR_getWebContentHandlerByURI(contentType, uri) {
-    var handlers = this.getContentHandlers(contentType, { });
-    for (var i = 0; i < handlers.length; ++i) {
-      if (handlers[i].uri == uri) 
-        return handlers[i];
-    }
-    return null;
+  getWebContentHandlerByURI(contentType, uri) {
+    return this.getContentHandlers(contentType)
+               .find(e => e.uri == uri) || null;
   },
-  
+
   
 
 
-  loadPreferredHandler: 
-  function WCCR_loadPreferredHandler(request) {
-    var channel = request.QueryInterface(Ci.nsIChannel);
-    var contentType = Utils.resolveContentType(channel.contentType);
-    var handler = this.getAutoHandler(contentType);
+  loadPreferredHandler(request) {
+    let channel = request.QueryInterface(Ci.nsIChannel);
+    let contentType = Utils.resolveContentType(channel.contentType);
+    let handler = this.getAutoHandler(contentType);
     if (handler) {
       request.cancel(Cr.NS_ERROR_FAILURE);
-      
-      var webNavigation = 
+
+      let webNavigation =
           channel.notificationCallbacks.getInterface(Ci.nsIWebNavigation);
-      webNavigation.loadURI(handler.getHandlerURI(channel.URI.spec), 
-                            Ci.nsIWebNavigation.LOAD_FLAGS_NONE, 
+      webNavigation.loadURI(handler.getHandlerURI(channel.URI.spec),
+                            Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
                             null, null, null);
-    }      
+    }
   },
-  
+
   
 
 
-  removeProtocolHandler: 
-  function WCCR_removeProtocolHandler(aProtocol, aURITemplate) {
-    var eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
+  removeProtocolHandler(aProtocol, aURITemplate) {
+    let eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
               getService(Ci.nsIExternalProtocolService);
-    var handlerInfo = eps.getProtocolHandlerInfo(aProtocol);
-    var handlers =  handlerInfo.possibleApplicationHandlers;
+    let handlerInfo = eps.getProtocolHandlerInfo(aProtocol);
+    let handlers =  handlerInfo.possibleApplicationHandlers;
     for (let i = 0; i < handlers.length; i++) {
       try { 
         let handler = handlers.queryElementAt(i, Ci.nsIWebHandlerApp);
         if (handler.uriTemplate == aURITemplate) {
           handlers.removeElementAt(i);
-          var hs = Cc["@mozilla.org/uriloader/handler-service;1"].
+          let hs = Cc["@mozilla.org/uriloader/handler-service;1"].
                    getService(Ci.nsIHandlerService);
           hs.store(handlerInfo);
           return;
@@ -327,18 +318,17 @@ WebContentConverterRegistrar.prototype = {
       } catch (e) {  }
     }
   },
-  
+
   
 
 
-  removeContentHandler: 
-  function WCCR_removeContentHandler(contentType, uri) {
+  removeContentHandler(contentType, uri) {
     function notURI(serviceInfo) {
       return serviceInfo.uri != uri;
     }
-  
+
     if (contentType in this._contentTypes) {
-      this._contentTypes[contentType] = 
+      this._contentTypes[contentType] =
         this._contentTypes[contentType].filter(notURI);
     }
   },
@@ -361,12 +351,11 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _protocolHandlerRegistered:
-  function WCCR_protocolHandlerRegistered(aProtocol, aURITemplate) {
-    var eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
+  _protocolHandlerRegistered(aProtocol, aURITemplate) {
+    let eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
               getService(Ci.nsIExternalProtocolService);
-    var handlerInfo = eps.getProtocolHandlerInfo(aProtocol);
-    var handlers =  handlerInfo.possibleApplicationHandlers;
+    let handlerInfo = eps.getProtocolHandlerInfo(aProtocol);
+    let handlers =  handlerInfo.possibleApplicationHandlers;
     for (let i = 0; i < handlers.length; i++) {
       try { 
         let handler = handlers.queryElementAt(i, Ci.nsIWebHandlerApp);
@@ -380,11 +369,10 @@ WebContentConverterRegistrar.prototype = {
   
 
 
-  registerProtocolHandler: 
-  function WCCR_registerProtocolHandler(aProtocol, aURIString, aTitle, aBrowserOrWindow) {
+  registerProtocolHandler(aProtocol, aURIString, aTitle, aBrowserOrWindow) {
     LOG("registerProtocolHandler(" + aProtocol + "," + aURIString + "," + aTitle + ")");
-    var haveWindow = (aBrowserOrWindow instanceof Ci.nsIDOMWindow);
-    var uri;
+    let haveWindow = (aBrowserOrWindow instanceof Ci.nsIDOMWindow);
+    let uri;
     if (haveWindow) {
       uri = Utils.checkAndGetURI(aURIString, aBrowserOrWindow);
     } else {
@@ -397,7 +385,7 @@ WebContentConverterRegistrar.prototype = {
       return;
     }
 
-    var browser;
+    let browser;
     if (haveWindow) {
       let browserWindow =
         this._getBrowserWindowForContentWindow(aBrowserOrWindow);
@@ -418,30 +406,29 @@ WebContentConverterRegistrar.prototype = {
     Utils.checkProtocolHandlerAllowed(aProtocol, aURIString);
 
     
-    var message = this._getFormattedString("addProtocolHandler",
+    let message = this._getFormattedString("addProtocolHandler",
                                            [aTitle, uri.host, aProtocol]);
 
-    var notificationIcon = uri.prePath + "/favicon.ico";
-    var notificationValue = "Protocol Registration: " + aProtocol;
-    var addButton = {
+    let notificationIcon = uri.prePath + "/favicon.ico";
+    let notificationValue = "Protocol Registration: " + aProtocol;
+    let addButton = {
       label: this._getString("addProtocolHandlerAddButton"),
       accessKey: this._getString("addHandlerAddButtonAccesskey"),
       protocolInfo: { protocol: aProtocol, uri: uri.spec, name: aTitle },
 
-      callback:
-        function WCCR_addProtocolHandlerButtonCallback(aNotification, aButtonInfo) {
-          var protocol = aButtonInfo.protocolInfo.protocol;
-          var uri      = aButtonInfo.protocolInfo.uri;
-          var name     = aButtonInfo.protocolInfo.name;
+      callback(aNotification, aButtonInfo) {
+          let protocol = aButtonInfo.protocolInfo.protocol;
+          let uri      = aButtonInfo.protocolInfo.uri;
+          let name     = aButtonInfo.protocolInfo.name;
 
-          var handler = Cc["@mozilla.org/uriloader/web-handler-app;1"].
+          let handler = Cc["@mozilla.org/uriloader/web-handler-app;1"].
                         createInstance(Ci.nsIWebHandlerApp);
           handler.name = name;
           handler.uriTemplate = uri;
 
-          var eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
+          let eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
                     getService(Ci.nsIExternalProtocolService);
-          var handlerInfo = eps.getProtocolHandlerInfo(protocol);
+          let handlerInfo = eps.getProtocolHandlerInfo(protocol);
           handlerInfo.possibleApplicationHandlers.appendElement(handler, false);
 
           
@@ -450,12 +437,12 @@ WebContentConverterRegistrar.prototype = {
           
           handlerInfo.alwaysAskBeforeHandling = true;
 
-          var hs = Cc["@mozilla.org/uriloader/handler-service;1"].
+          let hs = Cc["@mozilla.org/uriloader/handler-service;1"].
                    getService(Ci.nsIHandlerService);
           hs.store(handlerInfo);
         }
     };
-    var notificationBox = browser.getTabBrowser().getNotificationBox(browser);
+    let notificationBox = browser.getTabBrowser().getNotificationBox(browser);
     notificationBox.appendNotification(message,
                                        notificationValue,
                                        notificationIcon,
@@ -468,26 +455,25 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  registerContentHandler:
-  function WCCR_registerContentHandler(aContentType, aURIString, aTitle, aWindowOrBrowser) {
+  registerContentHandler(aContentType, aURIString, aTitle, aWindowOrBrowser) {
     LOG("registerContentHandler(" + aContentType + "," + aURIString + "," + aTitle + ")");
 
     
     
     
-    var contentType = Utils.resolveContentType(aContentType);
+    let contentType = Utils.resolveContentType(aContentType);
     if (contentType != TYPE_MAYBE_FEED)
       return;
 
     if (aWindowOrBrowser) {
-      var haveWindow = (aWindowOrBrowser instanceof Ci.nsIDOMWindow);
-      var uri;
-      var notificationBox;
+      let haveWindow = (aWindowOrBrowser instanceof Ci.nsIDOMWindow);
+      let uri;
+      let notificationBox;
       if (haveWindow) {
         uri = Utils.checkAndGetURI(aURIString, aWindowOrBrowser);
 
-        var browserWindow = this._getBrowserWindowForContentWindow(aWindowOrBrowser);
-        var browserElement = this._getBrowserForContentWindow(browserWindow, aWindowOrBrowser);
+        let browserWindow = this._getBrowserWindowForContentWindow(aWindowOrBrowser);
+        let browserElement = this._getBrowserForContentWindow(browserWindow, aWindowOrBrowser);
         notificationBox = browserElement.getTabBrowser().getNotificationBox(browserElement);
       } else {
         
@@ -498,15 +484,15 @@ WebContentConverterRegistrar.prototype = {
 
       this._appendFeedReaderNotification(uri, aTitle, notificationBox);
     }
-    else
+    else {
       this._registerContentHandler(contentType, aURIString, aTitle);
+    }
   },
 
   
 
 
-  _getBrowserWindowForContentWindow:
-  function WCCR__getBrowserWindowForContentWindow(aContentWindow) {
+  _getBrowserWindowForContentWindow(aContentWindow) {
     return aContentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShellTreeItem)
@@ -526,15 +512,11 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _getBrowserForContentWindow:
-  function WCCR__getBrowserForContentWindow(aBrowserWindow, aContentWindow) {
+  _getBrowserForContentWindow(aBrowserWindow, aContentWindow) {
     
     aContentWindow = aContentWindow.top;
-    var browsers = aBrowserWindow.gBrowser.browsers;
-    for (var i = 0; i < browsers.length; ++i) {
-      if (browsers[i].contentWindow == aContentWindow)
-        return browsers[i];
-    }
+    return aBrowserWindow.gBrowser.browsers.find((browser) =>
+      browser.contentWindow == aContentWindow);
   },
 
   
@@ -558,35 +540,34 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _appendFeedReaderNotification:
-  function WCCR__appendFeedReaderNotification(aURI, aName, aNotificationBox) {
-    var uriSpec = aURI.spec;
-    var notificationValue = "feed reader notification: " + uriSpec;
-    var notificationIcon = aURI.prePath + "/favicon.ico";
+  _appendFeedReaderNotification(aURI, aName, aNotificationBox) {
+    let uriSpec = aURI.spec;
+    let notificationValue = "feed reader notification: " + uriSpec;
+    let notificationIcon = aURI.prePath + "/favicon.ico";
 
     
     
     if (aNotificationBox.getNotificationWithValue(notificationValue))
       return false;
 
-    var buttons, message;
+    let buttons;
+    let message;
     if (this.getWebContentHandlerByURI(TYPE_MAYBE_FEED, uriSpec))
       message = this._getFormattedString("handlerRegistered", [aName]);
     else {
       message = this._getFormattedString("addHandler", [aName, aURI.host]);
-      var self = this;
-      var addButton = {
+      let self = this;
+      let addButton = {
         _outer: self,
         label: self._getString("addHandlerAddButton"),
         accessKey: self._getString("addHandlerAddButtonAccesskey"),
         feedReaderInfo: { uri: uriSpec, name: aName },
 
         
-        callback:
-        function WCCR__addFeedReaderButtonCallback(aNotification, aButtonInfo) {
-          var uri = aButtonInfo.feedReaderInfo.uri;
-          var name = aButtonInfo.feedReaderInfo.name;
-          var outer = aButtonInfo._outer;
+        callback(aNotification, aButtonInfo) {
+          let uri = aButtonInfo.feedReaderInfo.uri;
+          let name = aButtonInfo.feedReaderInfo.name;
+          let outer = aButtonInfo._outer;
 
           
           if (!outer.getWebContentHandlerByURI(TYPE_MAYBE_FEED, uri))
@@ -624,13 +605,12 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _saveContentHandlerToPrefs: 
-  function WCCR__saveContentHandlerToPrefs(contentType, uri, title) {
-    var ps = Services.prefs;
-    var i = 0;
-    var typeBranch = null;
+  _saveContentHandlerToPrefs(contentType, uri, title) {
+    let ps = Services.prefs;
+    let i = 0;
+    let typeBranch = null;
     while (true) {
-      typeBranch = 
+      typeBranch =
         ps.getBranch(PREF_CONTENTHANDLERS_BRANCH + i + ".");
       try {
         typeBranch.getCharPref("type");
@@ -643,19 +623,19 @@ WebContentConverterRegistrar.prototype = {
     }
     if (typeBranch) {
       typeBranch.setCharPref("type", contentType);
-      var pls = 
+      let pls =
           Cc["@mozilla.org/pref-localizedstring;1"].
           createInstance(Ci.nsIPrefLocalizedString);
       pls.data = uri;
       typeBranch.setComplexValue("uri", Ci.nsIPrefLocalizedString, pls);
       pls.data = title;
       typeBranch.setComplexValue("title", Ci.nsIPrefLocalizedString, pls);
-    
+
       ps.savePrefFile(null);
     }
   },
+
   
-  
 
 
 
@@ -663,32 +643,27 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _typeIsRegistered: function WCCR__typeIsRegistered(contentType, uri) {
+  _typeIsRegistered(contentType, uri) {
     if (!(contentType in this._contentTypes))
       return false;
-      
-    var services = this._contentTypes[contentType];
-    for (var i = 0; i < services.length; ++i) {
-      
-      if (services[i].uri == uri)
-        return true;
-    }
-    return false;
+
+    return this._contentTypes[contentType]
+               .some(t => t.uri == uri);
   },
+
   
-  
 
 
 
 
 
 
-  _getConverterContractID: function WCCR__getConverterContractID(contentType) {
+  _getConverterContractID(contentType) {
     const template = "@mozilla.org/streamconv;1?from=%s&to=*/*";
     return template.replace(/%s/, contentType);
   },
+
   
-  
 
 
 
@@ -698,18 +673,17 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _registerContentHandler:
-  function WCCR__registerContentHandler(contentType, uri, title) {
+  _registerContentHandler(contentType, uri, title) {
     this._updateContentTypeHandlerMap(contentType, uri, title);
     this._saveContentHandlerToPrefs(contentType, uri, title);
 
     if (contentType == TYPE_MAYBE_FEED) {
       
       
-      var pb = Services.prefs.getBranch(null);
+      let pb = Services.prefs.getBranch(null);
       pb.setCharPref(PREF_SELECTED_READER, "web");
-  
-      var supportsString = 
+
+      let supportsString =
         Cc["@mozilla.org/supports-string;1"].
         createInstance(Ci.nsISupportsString);
         supportsString.data = uri;
@@ -730,59 +704,52 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-  _updateContentTypeHandlerMap: 
-  function WCCR__updateContentTypeHandlerMap(contentType, uri, title) {
+  _updateContentTypeHandlerMap(contentType, uri, title) {
     if (!(contentType in this._contentTypes))
       this._contentTypes[contentType] = [];
 
     
-    if (this._typeIsRegistered(contentType, uri)) 
+    if (this._typeIsRegistered(contentType, uri))
       return;
-    
+
     this._contentTypes[contentType].push(new ServiceInfo(contentType, uri, title));
-    
+
     if (!(contentType in this._blockedTypes)) {
-      var converterContractID = this._getConverterContractID(contentType);
-      var cr = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-      cr.registerFactory(WCC_CLASSID, WCC_CLASSNAME, converterContractID, 
+      let converterContractID = this._getConverterContractID(contentType);
+      let cr = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+      cr.registerFactory(WCC_CLASSID, WCC_CLASSNAME, converterContractID,
                          WebContentConverterFactory);
     }
   },
-  
+
   
 
 
-  getContentHandlers: 
-  function WCCR_getContentHandlers(contentType, countRef) {
-    countRef.value = 0;
+  getContentHandlers(contentType, countRef) {
+    if (countRef) {
+      countRef.value = 0;
+    }
     if (!(contentType in this._contentTypes))
       return [];
-    
-    var handlers = this._contentTypes[contentType];
-    countRef.value = handlers.length;
+
+    let handlers = this._contentTypes[contentType];
+    if (countRef) {
+      countRef.value = handlers.length;
+    }
     return handlers;
   },
-  
+
   
 
 
-  resetHandlersForType: 
-  function WCCR_resetHandlersForType(contentType) {
+  resetHandlersForType(contentType) {
     
     
     
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
+
   
-  
-
-
-
-
-
-
-  _registerContentHandlerWithBranch: function(branch) {
-    
 
 
 
@@ -790,76 +757,80 @@ WebContentConverterRegistrar.prototype = {
 
 
 
-    var vals = branch.getChildList("");
+
+
+
+
+
+
+  _registerContentHandlerHavingBranch(branch) {
+    let vals = branch.getChildList("");
     if (vals.length == 0)
       return;
 
-    try {
-      var type = branch.getCharPref("type");
-      var uri = branch.getComplexValue("uri", Ci.nsIPrefLocalizedString).data;
-      var title = branch.getComplexValue("title",
-                                         Ci.nsIPrefLocalizedString).data;
-      this._updateContentTypeHandlerMap(type, uri, title);
-    }
-    catch(ex) {
-      
-    }
+    let type = branch.getCharPref("type");
+    let uri = branch.getComplexValue("uri", Ci.nsIPrefLocalizedString).data;
+    let title = branch.getComplexValue("title",
+                                       Ci.nsIPrefLocalizedString).data;
+    this._updateContentTypeHandlerMap(type, uri, title);
   },
 
   
 
 
 
-  _init: function WCCR__init() {
-    var ps = Services.prefs;
+  _init() {
+    let ps = Services.prefs;
 
-    var kids = ps.getBranch(PREF_CONTENTHANDLERS_BRANCH)
-                 .getChildList("");
+    let children = ps.getBranch(PREF_CONTENTHANDLERS_BRANCH)
+                     .getChildList("");
 
     
-    var nums = [];
-    for (var i = 0; i < kids.length; i++) {
-      var match = /^(\d+)\.uri$/.exec(kids[i]);
-      if (!match)
-        continue;
-      else
-        nums.push(match[1]);
+    let nums = children.map((child) => {
+      let match = /^(\d+)\.uri$/.exec(child);
+      return match ? match[1] : "";
+    }).filter(child => !!child)
+      .sort();
+
+
+    
+    for (num of nums) {
+      let branch = ps.getBranch(PREF_CONTENTHANDLERS_BRANCH + num + ".");
+      try {
+        this._registerContentHandlerHavingBranch(branch);
+      } catch (ex) {
+        
+      }
     }
 
     
-    nums.sort(function(a, b) {return a - b;});
-
     
-    for (var i = 0; i < nums.length; i++) {
-      var branch = ps.getBranch(PREF_CONTENTHANDLERS_BRANCH + nums[i] + ".");
-      this._registerContentHandlerWithBranch(branch);
-    }
-
-    
-    
+    let autoBranch;
     try {
-      var autoBranch = ps.getBranch(PREF_CONTENTHANDLERS_AUTO);
-      var childPrefs = autoBranch.getChildList("");
-      for (var i = 0; i < childPrefs.length; ++i) {
-        var type = childPrefs[i];
-        var uri = autoBranch.getCharPref(type);
+      autoBranch = ps.getBranch(PREF_CONTENTHANDLERS_AUTO);
+    } catch (e) {
+      
+      
+    }
+
+    if (autoBranch) {
+      for (let type of autoBranch.getChildList("")) {
+        let uri = autoBranch.getCharPref(type);
         if (uri) {
-          var handler = this.getWebContentHandlerByURI(type, uri);
-          this._setAutoHandler(type, handler);
+          let handler = this.getWebContentHandlerByURI(type, uri);
+          if (handler) {
+            this._setAutoHandler(type, handler);
+          }
         }
       }
     }
-    catch (e) {
-      
-      
-    }
   },
 
   
 
 
-  observe: function WCCR_observe(subject, topic, data) {
-    var os = Services.obs;
+  observe(subject, topic, data) {
+    let os = Services.obs;
     switch (topic) {
     case "app-startup":
       os.addObserver(this, "browser-ui-startup-complete", false);
@@ -870,11 +841,11 @@ WebContentConverterRegistrar.prototype = {
       break;
     }
   },
-  
+
   
 
 
-  createInstance: function WCCR_createInstance(outer, iid) {
+  createInstance(outer, iid) {
     if (outer != null)
       throw Cr.NS_ERROR_NO_AGGREGATION;
     return this.QueryInterface(iid);
@@ -886,7 +857,7 @@ WebContentConverterRegistrar.prototype = {
 
 
   QueryInterface: XPCOMUtils.generateQI(
-     [Ci.nsIWebContentConverterService, 
+     [Ci.nsIWebContentConverterService,
       Ci.nsIWebContentHandlerRegistrar,
       Ci.nsIObserver,
       Ci.nsIFactory]),
@@ -898,9 +869,137 @@ WebContentConverterRegistrar.prototype = {
 };
 
 function WebContentConverterRegistrarContent() {
+  this._contentTypes = {};
 }
 
 WebContentConverterRegistrarContent.prototype = {
+
+  
+
+
+
+  _init() {
+    let ps = Services.prefs;
+
+    let children = ps.getBranch(PREF_CONTENTHANDLERS_BRANCH)
+                     .getChildList("");
+
+    
+    let nums = children.map((child) => {
+      let match = /^(\d+)\.uri$/.exec(child);
+      return match ? match[1] : "";
+    }).filter(child => !!child)
+      .sort();
+
+    
+    for (num of nums) {
+      let branch = ps.getBranch(PREF_CONTENTHANDLERS_BRANCH + num + ".");
+      try {
+        this._registerContentHandlerHavingBranch(branch);
+      } catch(ex) {
+        
+      }
+    }
+
+    
+    
+    let autoBranch;
+    try {
+      autoBranch = ps.getBranch(PREF_CONTENTHANDLERS_AUTO);
+    } catch (e) {
+      
+      
+    }
+
+    if (autoBranch) {
+      for (let type of autoBranch.getChildList("")) {
+        let uri = autoBranch.getCharPref(type);
+        if (uri) {
+          let handler = this.getWebContentHandlerByURI(type, uri);
+          if (handler) {
+            this._setAutoHandler(type, handler);
+          }
+        }
+      }
+    }
+  },
+
+  _typeIsRegistered(contentType, uri) {
+    return this._contentTypes[contentType]
+               .some(e => e.uri == uri);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _registerContentHandlerHavingBranch(branch) {
+    let vals = branch.getChildList("");
+    if (vals.length == 0)
+      return;
+
+    let type = branch.getCharPref("type");
+    let uri = branch.getComplexValue("uri", Ci.nsIPrefLocalizedString).data;
+    let title = branch.getComplexValue("title",
+                                       Ci.nsIPrefLocalizedString).data;
+    this._updateContentTypeHandlerMap(type, uri, title);
+  },
+
+  _updateContentTypeHandlerMap(contentType, uri, title) {
+    if (!(contentType in this._contentTypes))
+      this._contentTypes[contentType] = [];
+
+    
+    if (this._typeIsRegistered(contentType, uri))
+      return;
+
+    this._contentTypes[contentType].push(new ServiceInfo(contentType, uri, title));
+
+    if (!(contentType in this._blockedTypes)) {
+      let converterContractID = this._getConverterContractID(contentType);
+      let cr = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+      cr.registerFactory(WCC_CLASSID, WCC_CLASSNAME, converterContractID,
+                         WebContentConverterFactory);
+    }
+  },
+
+  
+
+
+  getContentHandlers(contentType, countRef) {
+    this._init();
+    if (countRef) {
+      countRef.value = 0;
+    }
+
+    if (!(contentType in this._contentTypes))
+      return [];
+
+    let handlers = this._contentTypes[contentType];
+    if (countRef) {
+      countRef.value = handlers.length;
+    }
+    return handlers;
+  },
+
+  setAutoHandler(contentType, handler) {
+    Services.cpmm.sendAsyncMessage("WCCR:setAutoHandler",
+                                   { contentType, handler });
+  },
+
+  getWebContentHandlerByURI(contentType, uri) {
+    return this.getContentHandlers(contentType)
+               .find(e => e.uri == uri) || null;
+  },
+
   
 
 
@@ -945,7 +1044,7 @@ WebContentConverterRegistrarContent.prototype = {
   
 
 
-  createInstance: function WCCR_createInstance(outer, iid) {
+  createInstance(outer, iid) {
     if (outer != null)
       throw Cr.NS_ERROR_NO_AGGREGATION;
     return this.QueryInterface(iid);
@@ -958,6 +1057,7 @@ WebContentConverterRegistrarContent.prototype = {
 
   QueryInterface: XPCOMUtils.generateQI(
                      [Ci.nsIWebContentHandlerRegistrar,
+                      Ci.nsIWebContentConverterService,
                       Ci.nsIFactory])
 };
 

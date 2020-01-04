@@ -92,7 +92,7 @@ function getPrefReaderForType(t) {
 }
 
 function safeGetCharPref(pref, defaultValue) {
-  var prefs =   
+  var prefs =
       Cc["@mozilla.org/preferences-service;1"].
       getService(Ci.nsIPrefBranch);
   try {
@@ -112,7 +112,7 @@ FeedConverter.prototype = {
 
 
   _data: null,
-  
+
   
 
 
@@ -127,37 +127,37 @@ FeedConverter.prototype = {
   
 
 
-  convert: function FC_convert(sourceStream, sourceType, destinationType, 
-                               context) {
+  convert(sourceStream, sourceType, destinationType,
+          context) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
-  
+
   
 
 
-  asyncConvertData: function FC_asyncConvertData(sourceType, destinationType,
-                                                 listener, context) {
+  asyncConvertData(sourceType, destinationType,
+                   listener, context) {
     this._listener = listener;
   },
-  
+
   
 
 
   _forcePreviewPage: false,
-  
+
   
 
 
-  _releaseHandles: function FC__releaseHandles() {
+  _releaseHandles() {
     this._listener = null;
     this._request = null;
     this._processor = null;
   },
-  
+
   
 
 
-  handleResult: function FC_handleResult(result) {
+  handleResult(result) {
     
     
     
@@ -189,19 +189,19 @@ FeedConverter.prototype = {
     
     
     try {
-      var feedService = 
+      let feedService =
           Cc["@mozilla.org/browser/feeds/result-service;1"].
           getService(Ci.nsIFeedResultService);
       if (!this._forcePreviewPage && result.doc) {
-        var feed = result.doc.QueryInterface(Ci.nsIFeed);
-        var handler = safeGetCharPref(getPrefActionForType(feed.type), "ask");
+        let feed = result.doc.QueryInterface(Ci.nsIFeed);
+        let handler = safeGetCharPref(getPrefActionForType(feed.type), "ask");
 
         if (handler != "ask") {
           if (handler == "reader")
             handler = safeGetCharPref(getPrefReaderForType(feed.type), "bookmarks");
           switch (handler) {
             case "web":
-              var wccr = 
+              let wccr =
                   Cc["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1"].
                   getService(Ci.nsIWebContentConverterService);
               if ((feed.type == Ci.nsIFeed.TYPE_FEED &&
@@ -220,25 +220,27 @@ FeedConverter.prototype = {
               
             case "bookmarks":
             case "client":
+            case "default":
               try {
-                var title = feed.title ? feed.title.plainText() : "";
-                var desc = feed.subtitle ? feed.subtitle.plainText() : "";
-                feedService.addToClientReader(result.uri.spec, title, desc, feed.type);
+                let title = feed.title ? feed.title.plainText() : "";
+                let desc = feed.subtitle ? feed.subtitle.plainText() : "";
+                let feedReader = safeGetCharPref(getPrefActionForType(feedType), "bookmarks");
+                feedService.addToClientReader(result.uri.spec, title, desc, feed.type, feedReader);
                 return;
               } catch(ex) {  }
           }
         }
       }
-          
-      var ios = 
+
+      let ios =
           Cc["@mozilla.org/network/io-service;1"].
           getService(Ci.nsIIOService);
-      var chromeChannel;
+      let chromeChannel;
 
       
       
-      var oldChannel = this._request.QueryInterface(Ci.nsIChannel);
-      var loadInfo = oldChannel.loadInfo;
+      let oldChannel = this._request.QueryInterface(Ci.nsIChannel);
+      let loadInfo = oldChannel.loadInfo;
 
       
       
@@ -250,7 +252,7 @@ FeedConverter.prototype = {
         feedService.addFeedResult(result);
 
         
-        var aboutFeedsURI = ios.newURI("about:feeds", null, null);
+        let aboutFeedsURI = ios.newURI("about:feeds", null, null);
         chromeChannel = ios.newChannelFromURIWithLoadInfo(aboutFeedsURI, loadInfo);
         chromeChannel.originalURI = result.uri;
         chromeChannel.owner =
@@ -266,27 +268,27 @@ FeedConverter.prototype = {
       this._releaseHandles();
     }
   },
-  
+
   
 
 
-  onDataAvailable: function FC_onDataAvailable(request, context, inputStream, 
-                                               sourceOffset, count) {
+  onDataAvailable(request, context, inputStream,
+                  sourceOffset, count) {
     if (this._processor)
       this._processor.onDataAvailable(request, context, inputStream,
                                       sourceOffset, count);
   },
-  
+
   
 
 
-  onStartRequest: function FC_onStartRequest(request, context) {
-    var channel = request.QueryInterface(Ci.nsIChannel);
+  onStartRequest(request, context) {
+    let channel = request.QueryInterface(Ci.nsIChannel);
 
     
     
     try {
-      var httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
+      let httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
       
       
       if (!httpChannel.requestSucceeded) {
@@ -294,17 +296,17 @@ FeedConverter.prototype = {
         request.cancel(Cr.NS_BINDING_ABORTED);
         return;
       }
-      var noSniff = httpChannel.getResponseHeader("X-Moz-Is-Feed");
+      let noSniff = httpChannel.getResponseHeader("X-Moz-Is-Feed");
     }
     catch (ex) {
       this._sniffed = true;
     }
 
     this._request = request;
+
     
     
-    
-    var feedService = 
+    let feedService =
         Cc["@mozilla.org/browser/feeds/result-service;1"].
         getService(Ci.nsIFeedResultService);
     this._forcePreviewPage = feedService.forcePreviewPage;
@@ -316,22 +318,22 @@ FeedConverter.prototype = {
         createInstance(Ci.nsIFeedProcessor);
     this._processor.listener = this;
     this._processor.parseAsync(null, channel.URI);
-    
+
     this._processor.onStartRequest(request, context);
   },
-  
+
   
 
 
-  onStopRequest: function FC_onStopRequest(request, context, status) {
+  onStopRequest(request, context, status) {
     if (this._processor)
       this._processor.onStopRequest(request, context, status);
   },
-  
+
   
 
 
-  QueryInterface: function FC_QueryInterface(iid) {
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIFeedResultListener) ||
         iid.equals(Ci.nsIStreamConverter) ||
         iid.equals(Ci.nsIStreamListener) ||
@@ -351,126 +353,98 @@ function FeedResultService() {
 
 FeedResultService.prototype = {
   classID: Components.ID("{2376201c-bbc6-472f-9b62-7548040a61c6}"),
-  
+
   
 
 
 
   _results: { },
-  
+
   
 
 
   forcePreviewPage: false,
+
   
-  
 
 
-  addToClientReader: function FRS_addToClientReader(spec, title, subtitle, feedType) {
-    var prefs =   
-        Cc["@mozilla.org/preferences-service;1"].
-        getService(Ci.nsIPrefBranch);
+  addToClientReader(spec, title, subtitle, feedType, feedReader) {
+    if (!feedReader) {
+      feedReader = "default";
+    }
 
-    var handler = safeGetCharPref(getPrefActionForType(feedType), "bookmarks");
+    let handler = safeGetCharPref(getPrefActionForType(feedType), "bookmarks");
     if (handler == "ask" || handler == "reader")
-      handler = safeGetCharPref(getPrefReaderForType(feedType), "bookmarks");
+      handler = feedReader;
 
     switch (handler) {
     case "client":
-      var clientApp = prefs.getComplexValue(getPrefAppForType(feedType), Ci.nsILocalFile);
-
-      
-      
-      
-      
-      
-      
-      
-      var ios = 
-          Cc["@mozilla.org/network/io-service;1"].
-          getService(Ci.nsIIOService);
-      var feedURI = ios.newURI(spec, null, null);
-      if (feedURI.schemeIs("http")) {
-        feedURI.scheme = "feed";
-        spec = feedURI.spec;
-      }
-      else
-        spec = "feed:" + spec;
-
-      
-      
-      try {
-        var ss =
-            Cc["@mozilla.org/browser/shell-service;1"].
-            getService(Ci.nsIShellService);
-        ss.openApplicationWithURI(clientApp, spec);
-      } catch(e) {
-        
-        
-        var p =
-            Cc["@mozilla.org/process/util;1"].
-            createInstance(Ci.nsIProcess);
-        p.init(clientApp);
-        p.run(false, [spec], 1);
-      }
+      Services.cpmm.sendAsyncMessage("FeedConverter:ExecuteClientApp",
+                                     { spec,
+                                       title,
+                                       subtitle,
+                                       feedHandler: getPrefAppForType(feedType) });
       break;
-
+    case "default":
+      
+      Services.cpmm.sendAsyncMessage("FeedConverter:ExecuteClientApp",
+                                     { spec,
+                                       title,
+                                       subtitle,
+                                       feedHandler: "default" });
+      break;
     default:
       
       LOG("unexpected handler: " + handler);
       
     case "bookmarks":
-      var wm = 
-          Cc["@mozilla.org/appshell/window-mediator;1"].
-          getService(Ci.nsIWindowMediator);
-      var topWindow = wm.getMostRecentWindow("navigator:browser");
-      topWindow.PlacesCommandHook.addLiveBookmark(spec, title, subtitle)
-                                 .catch(Components.utils.reportError);
+      Services.cpmm.sendAsyncMessage("FeedConverter:addLiveBookmark",
+                                     { spec, title, subtitle });
       break;
     }
   },
-  
+
   
 
 
-  addFeedResult: function FRS_addFeedResult(feedResult) {
+  addFeedResult(feedResult) {
     NS_ASSERT(feedResult.uri != null, "null URI!");
     NS_ASSERT(feedResult.uri != null, "null feedResult!");
-    var spec = feedResult.uri.spec;
-    if(!this._results[spec])  
+    let spec = feedResult.uri.spec;
+    if (!this._results[spec])
       this._results[spec] = [];
     this._results[spec].push(feedResult);
   },
-  
+
   
 
 
-  getFeedResult: function RFS_getFeedResult(uri) {
+  getFeedResult(uri) {
     NS_ASSERT(uri != null, "null URI!");
-    var resultList = this._results[uri.spec];
-    for (var i in resultList) {
-      if (resultList[i].uri == uri)
-        return resultList[i];
+    let resultList = this._results[uri.spec];
+    for (let result of resultList) {
+      if (result.uri == uri)
+        return result;
     }
     return null;
   },
-  
+
   
 
 
-  removeFeedResult: function FRS_removeFeedResult(uri) {
+  removeFeedResult(uri) {
     NS_ASSERT(uri != null, "null URI!");
-    var resultList = this._results[uri.spec];
+    let resultList = this._results[uri.spec];
     if (!resultList)
       return;
-    var deletions = 0;
-    for (var i = 0; i < resultList.length; ++i) {
+    let deletions = 0;
+    for (let i = 0; i < resultList.length; ++i) {
       if (resultList[i].uri == uri) {
         delete resultList[i];
         ++deletions;
       }
     }
-    
+
     
     resultList.sort();
     
@@ -479,13 +453,13 @@ FeedResultService.prototype = {
       delete this._results[uri.spec];
   },
 
-  createInstance: function FRS_createInstance(outer, iid) {
+  createInstance(outer, iid) {
     if (outer != null)
       throw Cr.NS_ERROR_NO_AGGREGATION;
     return this.QueryInterface(iid);
   },
-  
-  QueryInterface: function FRS_QueryInterface(iid) {
+
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIFeedResultService) ||
         iid.equals(Ci.nsIFactory) ||
         iid.equals(Ci.nsISupports))
@@ -501,8 +475,8 @@ FeedResultService.prototype = {
 function GenericProtocolHandler() {
 }
 GenericProtocolHandler.prototype = {
-  _init: function GPH_init(scheme) {
-    var ios = 
+  _init(scheme) {
+    let ios =
       Cc["@mozilla.org/network/io-service;1"].
       getService(Ci.nsIIOService);
     this._http = ios.getProtocolHandler("http");
@@ -512,46 +486,46 @@ GenericProtocolHandler.prototype = {
   get scheme() {
     return this._scheme;
   },
-  
+
   get protocolFlags() {
     return this._http.protocolFlags;
   },
-  
+
   get defaultPort() {
     return this._http.defaultPort;
   },
-  
-  allowPort: function GPH_allowPort(port, scheme) {
+
+  allowPort(port, scheme) {
     return this._http.allowPort(port, scheme);
   },
-  
-  newURI: function GPH_newURI(spec, originalCharset, baseURI) {
+
+  newURI(spec, originalCharset, baseURI) {
     
     
     
 
-    var scheme = this._scheme + ":";
+    let scheme = this._scheme + ":";
     if (spec.substr(0, scheme.length) != scheme)
       throw Cr.NS_ERROR_MALFORMED_URI;
 
-    var prefix = spec.substr(scheme.length, 2) == "//" ? "http:" : "";
-    var inner = Cc["@mozilla.org/network/io-service;1"].
+    let prefix = spec.substr(scheme.length, 2) == "//" ? "http:" : "";
+    let inner = Cc["@mozilla.org/network/io-service;1"].
                 getService(Ci.nsIIOService).newURI(spec.replace(scheme, prefix),
                                                    originalCharset, baseURI);
-    var netutil = Cc["@mozilla.org/network/util;1"].getService(Ci.nsINetUtil);
+    let netutil = Cc["@mozilla.org/network/util;1"].getService(Ci.nsINetUtil);
     const URI_INHERITS_SECURITY_CONTEXT = Ci.nsIProtocolHandler
                                             .URI_INHERITS_SECURITY_CONTEXT;
     if (netutil.URIChainHasFlags(inner, URI_INHERITS_SECURITY_CONTEXT))
       throw Cr.NS_ERROR_MALFORMED_URI;
 
-    var uri = netutil.newSimpleNestedURI(inner);
+    let uri = netutil.newSimpleNestedURI(inner);
     uri.spec = inner.spec.replace(prefix, scheme);
     return uri;
   },
-  
-  newChannel2: function GPH_newChannel(aUri, aLoadInfo) {
-    var inner = aUri.QueryInterface(Ci.nsINestedURI).innerURI;
-    var channel = Cc["@mozilla.org/network/io-service;1"].
+
+  newChannel2(aUri, aLoadInfo) {
+    let inner = aUri.QueryInterface(Ci.nsINestedURI).innerURI;
+    let channel = Cc["@mozilla.org/network/io-service;1"].
                   getService(Ci.nsIIOService).
                   newChannelFromURIWithLoadInfo(inner, aLoadInfo);
 
@@ -561,14 +535,13 @@ GenericProtocolHandler.prototype = {
     channel.originalURI = aUri;
     return channel;
   },
-  
 
-  QueryInterface: function GPH_QueryInterface(iid) {
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIProtocolHandler) ||
         iid.equals(Ci.nsISupports))
       return this;
     throw Cr.NS_ERROR_NO_INTERFACE;
-  }  
+  }
 };
 
 function FeedProtocolHandler() {
