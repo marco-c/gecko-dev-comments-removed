@@ -14,12 +14,15 @@ import org.mozilla.gecko.R;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.annotation.TargetApi;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.os.Build;
+import android.provider.Settings;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -47,6 +50,21 @@ public class TabQueueHelper {
     
     public static final int TAB_QUEUE_YES = 201;
     public static final int TAB_QUEUE_NO = 202;
+
+    
+
+
+
+
+
+
+    public static boolean canDrawOverlays(Context context) {
+        if (AppConstants.Versions.preM) {
+            return true; 
+        }
+
+        return Settings.canDrawOverlays(context);
+    }
 
     
 
