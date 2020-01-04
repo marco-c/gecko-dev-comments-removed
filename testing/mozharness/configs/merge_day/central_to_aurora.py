@@ -1,3 +1,6 @@
+import os
+
+ABS_WORK_DIR = os.path.join(os.getcwd(), "build")
 config = {
     "log_name": "central_to_aurora",
     "version_files": [
@@ -66,11 +69,10 @@ config = {
         "mobile/android/locales/all-locales"
     ],
 
-    
-    
+    "vcs_share_base": os.path.join(ABS_WORK_DIR, 'hg-shared'),
     
     "tools_repo_url": "https://hg.mozilla.org/build/tools",
-    "tools_repo_revision": "default",
+    "tools_repo_branch": "default",
     "from_repo_url": "ssh://hg.mozilla.org/mozilla-central",
     "to_repo_url": "ssh://hg.mozilla.org/releases/mozilla-aurora",
 

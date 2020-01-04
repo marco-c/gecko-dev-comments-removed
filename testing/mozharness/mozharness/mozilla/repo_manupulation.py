@@ -71,7 +71,7 @@ class MercurialRepoManipulationMixin(object):
             if os.path.exists(repo_path):
                 
                 self.run_command(
-                    hg + ["up", "-C", "-r", repo_config['revision']],
+                    hg + ["up", "-C", "-r", repo_config['branch']],
                     cwd=repo_path,
                     error_list=HgErrorList,
                     halt_on_failure=True,
@@ -93,7 +93,7 @@ class MercurialRepoManipulationMixin(object):
                 
                 
                 self.run_command(
-                    hg + ["up", "-C", "-r", repo_config['revision']],
+                    hg + ["up", "-C", "-r", repo_config['branch']],
                     cwd=repo_path,
                     error_list=HgErrorList,
                     halt_on_failure=True,
