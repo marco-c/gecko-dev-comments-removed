@@ -10,13 +10,12 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/Pair.h"
 #include "mozilla/dom/SourceBufferBinding.h"
 
 #include "MediaData.h"
 #include "MediaDataDemuxer.h"
 #include "MediaSourceDecoder.h"
+#include "SourceBufferTask.h"
 #include "TimeUnits.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
@@ -30,16 +29,43 @@ class MediaRawData;
 class MediaSourceDemuxer;
 class SourceBufferResource;
 
-namespace dom {
-  class SourceBufferAttributes;
-}
+class SourceBufferTaskQueue {
+public:
+  SourceBufferTaskQueue()
+  : mMonitor("SourceBufferTaskQueue")
+  {}
+
+  void Push(SourceBufferTask* aTask)
+  {
+    MonitorAutoLock mon(mMonitor);
+    mQueue.AppendElement(aTask);
+  }
+
+  already_AddRefed<SourceBufferTask> Pop()
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (!mQueue.Length()) {
+      return nullptr;
+    }
+    RefPtr<SourceBufferTask> task = Move(mQueue[0]);
+    mQueue.RemoveElementAt(0);
+    return task.forget();
+  }
+
+  nsTArray<SourceBufferTask>::size_type Length() const
+  {
+    MonitorAutoLock mon(mMonitor);
+    return mQueue.Length();
+  }
+
+private:
+  mutable Monitor mMonitor;
+  nsTArray<RefPtr<SourceBufferTask>> mQueue;
+};
 
 class TrackBuffersManager {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackBuffersManager);
-
-  typedef MozPromise<bool, nsresult,  true> AppendPromise;
-  typedef AppendPromise RangeRemovalPromise;
 
   enum class EvictDataResult : int8_t
   {
@@ -48,40 +74,30 @@ public:
     BUFFER_FULL,
   };
 
-  
-  
-  enum class AppendState : int32_t
-  {
-    WAITING_FOR_SEGMENT,
-    PARSING_INIT_SEGMENT,
-    PARSING_MEDIA_SEGMENT,
-  };
-
   typedef TrackInfo::TrackType TrackType;
   typedef MediaData::Type MediaType;
   typedef nsTArray<RefPtr<MediaRawData>> TrackBuffer;
+  typedef SourceBufferTask::AppendPromise AppendPromise;
+  typedef SourceBufferTask::RangeRemovalPromise RangeRemovalPromise;
 
   
-  TrackBuffersManager(dom::SourceBufferAttributes* aAttributes,
-                      MediaSourceDecoder* aParentDecoder,
+  TrackBuffersManager(MediaSourceDecoder* aParentDecoder,
                       const nsACString& aType);
 
   
   
-  bool AppendData(MediaByteBuffer* aData,
-                  media::TimeUnit aTimestampOffset);
+  
+  
+  RefPtr<AppendPromise> AppendData(MediaByteBuffer* aData,
+                                   const SourceBufferAttributes& aAttributes);
 
   
-  
-  
-  RefPtr<AppendPromise> BufferAppend();
-
   
   void AbortAppendData();
 
   
   
-  void ResetParserState();
+  void ResetParserState(SourceBufferAttributes& aAttributes);
 
   
   
@@ -111,14 +127,6 @@ public:
   
   void Detach();
 
-  AppendState GetAppendState()
-  {
-    return mAppendState;
-  }
-
-  void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp);
-  void RestartGroupStartTimestamp();
-  media::TimeUnit GroupEndTimestamp();
   int64_t EvictionThreshold() const;
 
   
@@ -150,10 +158,10 @@ private:
   friend class MediaSourceDemuxer;
   virtual ~TrackBuffersManager();
   
-  RefPtr<AppendPromise> InitSegmentParserLoop();
+  RefPtr<AppendPromise> DoAppendData(RefPtr<MediaByteBuffer> aData,
+                                     SourceBufferAttributes aAttributes);
   void ScheduleSegmentParserLoop();
   void SegmentParserLoop();
-  void AppendIncomingBuffers();
   void InitializationSegmentReceived();
   void ShutdownDemuxers();
   void CreateDemuxerforMIMEType();
@@ -169,7 +177,7 @@ private:
   RefPtr<RangeRemovalPromise>
     CodedFrameRemovalWithPromise(media::TimeInterval aInterval);
   bool CodedFrameRemoval(media::TimeInterval aInterval);
-  void SetAppendState(AppendState aAppendState);
+  void SetAppendState(SourceBufferAttributes::AppendState aAppendState);
 
   bool HasVideo() const
   {
@@ -180,16 +188,8 @@ private:
     return mAudioTracks.mNumTracks > 0;
   }
 
-  typedef Pair<RefPtr<MediaByteBuffer>, media::TimeUnit> IncomingBuffer;
-  void AppendIncomingBuffer(IncomingBuffer aData);
-  nsTArray<IncomingBuffer> mIncomingBuffers;
-
   
   RefPtr<MediaByteBuffer> mInputBuffer;
-  
-  
-  Atomic<AppendState> mAppendState;
-  
   
   
   Atomic<bool> mBufferFull;
@@ -197,8 +197,6 @@ private:
   
   bool mNewMediaSegmentStarted;
   bool mActiveTrack;
-  Maybe<media::TimeUnit> mGroupStartTimestamp;
-  media::TimeUnit mGroupEndTimestamp;
   nsCString mType;
 
   
@@ -245,7 +243,7 @@ private:
     OnDemuxFailed(TrackType::kAudioTrack, aFailure);
   }
 
-  void DoEvictData(const media::TimeUnit& aPlaybackTime, int64_t aThreshold);
+  void DoEvictData(const media::TimeUnit& aPlaybackTime, int64_t aSizeToEvict);
 
   struct TrackData {
     TrackData()
@@ -348,8 +346,6 @@ private:
   MozPromiseRequestHolder<CodedFrameProcessingPromise> mProcessingRequest;
   MozPromiseHolder<CodedFrameProcessingPromise> mProcessingPromise;
 
-  MozPromiseHolder<AppendPromise> mAppendPromise;
-
   
   nsTArray<TrackData*> GetTracksList();
   TrackData& GetTracksData(TrackType aTrack)
@@ -375,17 +371,29 @@ private:
   }
   RefPtr<TaskQueue> mTaskQueue;
 
+  
+  SourceBufferTaskQueue mQueue;
+  void ProcessTasks();
+  void CancelAllTasks();
+  
+  
+  RefPtr<SourceBufferTask> mCurrentTask;
+  
+  
+  
+  UniquePtr<SourceBufferAttributes> mSourceBufferAttributes;
+  
+  
   media::TimeInterval mAppendWindow;
-  media::TimeUnit mTimestampOffset;
-  media::TimeUnit mLastTimestampOffset;
-  void RestoreCachedVariables();
 
   
-  RefPtr<dom::SourceBufferAttributes> mSourceBufferAttributes;
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
 
   
   Atomic<bool> mEnded;
+  
+  
+  Atomic<bool> mDetached;
 
   
   Atomic<int64_t> mSizeSourceBuffer;
@@ -394,14 +402,10 @@ private:
   Atomic<bool> mEvictionOccurred;
 
   
-  
   mutable Monitor mMonitor;
-  
-  Atomic<bool> mAppendRunning;
   
   media::TimeIntervals mVideoBufferedRanges;
   media::TimeIntervals mAudioBufferedRanges;
-  media::TimeUnit mOfficialGroupEndTimestamp;
   
   MediaInfo mInfo;
 };
