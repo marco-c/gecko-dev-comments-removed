@@ -5286,13 +5286,7 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.audiochannel.mutedByDefault", false);
 
 
-#ifdef RELEASE_BUILD
-
-
-pref("dom.details_element.enabled", false);
-#else
 pref("dom.details_element.enabled", true);
-#endif
 
 
 #ifdef MOZ_SECUREELEMENT
