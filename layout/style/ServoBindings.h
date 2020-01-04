@@ -272,6 +272,9 @@ void Servo_ReleaseComputedValues(ServoComputedValues*);
 void Servo_Initialize();
 
 
+void Servo_Shutdown();
+
+
 void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
 void Servo_RestyleSubtree(RawGeckoNode* node, RawServoStyleSet* set);
 

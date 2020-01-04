@@ -313,9 +313,9 @@ nsLayoutStatics::Initialize()
 
   mozilla::dom::WebCryptoThreadPool::Initialize();
 
-#ifdef MOZ_STYLO
-  Servo_Initialize();
-#endif
+  
+  
+  
 
 #ifndef MOZ_WIDGET_ANDROID
   
@@ -330,6 +330,10 @@ nsLayoutStatics::Shutdown()
 {
   
   
+
+#ifdef MOZ_STYLO
+  Servo_Shutdown();
+#endif
 
   nsMessageManagerScriptExecutor::Shutdown();
   nsFocusManager::Shutdown();
