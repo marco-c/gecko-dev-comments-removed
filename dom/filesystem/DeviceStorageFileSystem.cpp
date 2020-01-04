@@ -31,12 +31,6 @@ DeviceStorageFileSystem::DeviceStorageFileSystem(
   mStorageType = aStorageType;
   mStorageName = aStorageName;
 
-  
-  mString.AppendLiteral("devicestorage-");
-  mString.Append(mStorageType);
-  mString.Append('-');
-  mString.Append(mStorageName);
-
   mRequiresPermissionChecks =
     !mozilla::Preferences::GetBool("device.storage.prompt.testing", false);
 
@@ -140,8 +134,24 @@ DeviceStorageFileSystem::IsSafeDirectory(Directory* aDir) const
     return false;
   }
 
+  nsAutoString fsSerialization;
+  fs->SerializeDOMPath(fsSerialization);
+
+  nsAutoString thisSerialization;
+  SerializeDOMPath(thisSerialization);
+
   
-  return fs->ToString() == mString;
+  return fsSerialization == thisSerialization;
+}
+
+void
+DeviceStorageFileSystem::SerializeDOMPath(nsAString& aString) const
+{
+  
+  aString.AssignLiteral("devicestorage-");
+  aString.Append(mStorageType);
+  aString.Append('-');
+  aString.Append(mStorageName);
 }
 
 } 

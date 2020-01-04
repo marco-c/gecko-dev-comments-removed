@@ -34,6 +34,9 @@ public:
   virtual bool
   IsSafeDirectory(Directory* aDir) const override;
 
+  virtual void
+  SerializeDOMPath(nsAString& aOutput) const override;
+
   
   virtual void Unlink() override;
   virtual void Traverse(nsCycleCollectionTraversalCallback &cb) override;

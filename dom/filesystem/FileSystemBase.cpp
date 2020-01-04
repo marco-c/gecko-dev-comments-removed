@@ -15,7 +15,7 @@ namespace dom {
 
 
 already_AddRefed<FileSystemBase>
-FileSystemBase::FromString(const nsAString& aString)
+FileSystemBase::DeserializeDOMPath(const nsAString& aString)
 {
   if (StringBeginsWith(aString, NS_LITERAL_STRING("devicestorage-"))) {
     
@@ -38,6 +38,7 @@ FileSystemBase::FromString(const nsAString& aString)
       new DeviceStorageFileSystem(storageType, storageName);
     return f.forget();
   }
+
   return RefPtr<OSFileSystem>(new OSFileSystem(aString)).forget();
 }
 
