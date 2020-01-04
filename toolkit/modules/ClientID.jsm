@@ -174,6 +174,9 @@ var ClientIDImpl = {
 
     
     let id = Preferences.get(PREF_CACHED_CLIENTID, null);
+    if (id === null) {
+      return null;
+    }
     if (!isValidClientID(id)) {
       this._log.error("getCachedClientID - invalid client id in preferences, resetting", id);
       Preferences.reset(PREF_CACHED_CLIENTID);
