@@ -5,11 +5,13 @@
 
 package org.mozilla.gecko.menu;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.R;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +22,7 @@ import android.widget.PopupWindow;
 
 
 public class MenuPopup extends PopupWindow {
-    private final FrameLayout mPanel;
+    private final CardView mPanel;
 
     private final int mPopupWidth;
 
@@ -37,8 +39,20 @@ public class MenuPopup extends PopupWindow {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
 
         LayoutInflater inflater = LayoutInflater.from(context);
-        mPanel = (FrameLayout) inflater.inflate(R.layout.menu_popup, null);
+        mPanel = (CardView) inflater.inflate(R.layout.menu_popup, null);
         setContentView(mPanel);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (AppConstants.Versions.preLollipop) {
+            mPanel.setRadius(0);
+        }
 
         setAnimationStyle(R.style.PopupAnimation);
     }
