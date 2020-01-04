@@ -2365,22 +2365,6 @@ HTMLInputElement::GetValueIfStepped(int32_t aStep,
     value += step * Decimal(aStep);
   }
 
-  
-  
-  
-  if (mType == NS_FORM_INPUT_DATE &&
-      NS_floorModulo(Decimal(value - GetStepBase()), GetStepScaleFactor()) != Decimal(0)) {
-    MOZ_ASSERT(GetStep() > Decimal(0));
-    Decimal validStep = EuclidLCM<Decimal>(GetStep().floor(),
-                                           GetStepScaleFactor().floor());
-    if (aStep > 0) {
-      value -= NS_floorModulo(value - GetStepBase(), validStep);
-      value += validStep;
-    } else if (aStep < 0) {
-      value -= NS_floorModulo(value - GetStepBase(), validStep);
-    }
-  }
-
   if (value < minimum) {
     value = minimum;
     deltaFromStep = NS_floorModulo(value - stepBase, step);
@@ -6903,6 +6887,11 @@ HTMLInputElement::GetStep() const
     step = GetDefaultStep();
   }
 
+  
+  if (mType == NS_FORM_INPUT_DATE) {
+    step = std::max(step.round(), Decimal(1));
+  }
+
   return step * GetStepScaleFactor();
 }
 
@@ -7505,16 +7494,6 @@ HTMLInputElement::GetValidationMessage(nsAString& aValidationMessage,
 
       Decimal step = GetStep();
       MOZ_ASSERT(step != kStepAny && step > Decimal(0));
-
-      
-      
-      
-      
-      
-      if (mType == NS_FORM_INPUT_DATE) {
-        step = EuclidLCM<Decimal>(step.floor(),
-                                  GetStepScaleFactor().floor());
-      }
 
       Decimal stepBase = GetStepBase();
 
