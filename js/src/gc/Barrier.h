@@ -538,6 +538,7 @@ class ReadBarrieredBase : public BarrieredBase<T>
 
   protected:
     void read() const { InternalGCMethods<T>::readBarrier(this->value); }
+    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&this->value, prev, next); }
 };
 
 
@@ -548,12 +549,22 @@ class ReadBarrieredBase : public BarrieredBase<T>
 
 
 
-template <class T>
+
+
+
+
+
+template <typename T>
 class ReadBarriered : public ReadBarrieredBase<T>
 {
   public:
     ReadBarriered() : ReadBarrieredBase<T>(GCMethods<T>::initial()) {}
-    explicit ReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {}
+    explicit ReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {
+        this->post(GCMethods<T>::initial(), v);
+    }
+    ~ReadBarriered() {
+        this->post(this->value, GCMethods<T>::initial());
+    }
 
     const T get() const {
         if (!InternalGCMethods<T>::isMarkable(this->value))
@@ -568,12 +579,16 @@ class ReadBarriered : public ReadBarrieredBase<T>
 
     operator const T() const { return get(); }
 
-    const T& operator*() const { return *get(); }
     const T operator->() const { return get(); }
 
     T const* unsafeGet() const { return &this->value; }
 
-    void set(const T& v) { this->value = v; }
+    void set(const T& v)
+    {
+        T tmp = this->value;
+        this->value = v;
+        this->post(tmp, v);
+    }
 };
 
 
