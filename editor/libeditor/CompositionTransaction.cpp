@@ -288,7 +288,10 @@ CompositionTransaction::SetIMESelection(EditorBase& aEditorBase,
 
     
     
-    aEditorBase.HideCaret(true);
+    
+    if (countOfRanges) {
+      aEditorBase.HideCaret(true);
+    }
   }
 
   rv = selection->EndBatchChangesInternal();
