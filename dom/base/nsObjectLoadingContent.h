@@ -578,6 +578,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent
                                       JS::MutableHandle<JSObject*> plugin_proto);
 
     
+    void MaybeFireErrorEvent();
+
+    
     nsCOMPtr<nsIStreamListener> mFinalListener;
 
     
