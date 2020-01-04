@@ -11,11 +11,11 @@ add_task(function*() {
   yield addTab(TEST_URL);
   let {view} = yield openRuleView();
 
-  info("Getting the filter swatch element");
+  info("Get the filter swatch element");
   let swatch = getRuleViewProperty(view, "body", "filter").valueSpan
     .querySelector(".ruleview-filterswatch");
 
-  let filterTooltip = view.tooltips.filterEditor;
+  info("Click on the filter swatch element");
   
   
   
@@ -23,17 +23,20 @@ add_task(function*() {
   swatch.click();
   yield onRuleViewChanged;
 
+  info("Get the cssfilter widget instance");
+  let filterTooltip = view.tooltips.filterEditor;
   let widget = yield filterTooltip.widget;
 
+  info("Set a new value in the cssfilter widget");
   onRuleViewChanged = view.once("ruleview-changed");
   widget.setCssValue("blur(2px)");
   yield waitForComputedStyleProperty("body", null, "filter", "blur(2px)");
   yield onRuleViewChanged;
-
   ok(true, "Changes previewed on the element");
 
-  onRuleViewChanged = view.once("ruleview-changed");
-  info("Pressing RETURN to commit changes");
+  info("Press RETURN to commit changes");
+  
+  onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
   EventUtils.sendKey("RETURN", widget.styleWindow);
   yield onRuleViewChanged;
 
