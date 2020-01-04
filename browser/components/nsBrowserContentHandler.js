@@ -710,6 +710,18 @@ nsDefaultCommandLineHandler.prototype = {
 
   
   handle : function dch_handle(cmdLine) {
+    
+    
+    
+    
+    
+    if (cmdLine.findFlag("url", false) &&
+        ShellService.isDefaultBrowser(false, false)) {
+      try {
+        Services.telemetry.getHistogramById("FX_STARTUP_EXTERNAL_CONTENT_HANDLER").add();
+      } catch (e) {}
+    }
+
     var urilist = [];
 
     if (AppConstants.platform == "win") {
