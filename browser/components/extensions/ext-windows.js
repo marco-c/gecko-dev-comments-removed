@@ -193,11 +193,6 @@ extensions.registerSchemaAPI("windows", null, (extension, context) => {
           WindowManager.setState(window, updateInfo.state);
         }
 
-        if (updateInfo.drawAttention) {
-          
-          window.getAttention();
-        }
-
         
 
         return Promise.resolve(WindowManager.convert(extension, window));
