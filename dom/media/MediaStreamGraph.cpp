@@ -830,10 +830,6 @@ MediaStreamGraphImpl::PlayAudio(MediaStream* aStream,
     AudioSegment* audio = track->Get<AudioSegment>();
     AudioSegment output;
 
-    
-    
-    
-    
     StreamTime offset = GraphTimeToStreamTime(aStream, aFrom);
 
     
