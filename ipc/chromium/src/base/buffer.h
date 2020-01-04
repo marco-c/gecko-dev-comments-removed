@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CHROME_BASE_BUFFER_H_
 #define CHROME_BASE_BUFFER_H_
 

@@ -11,9 +11,6 @@
 
 
 
-
-
-
 #ifndef base_atomicops_internals_mutex_h
 #define base_atomicops_internals_mutex_h
 
@@ -31,7 +28,7 @@ T Locked_CAS(volatile T* ptr, T old_value, T new_value) {
   T current_value = *ptr;
   if (current_value == old_value)
     *ptr = new_value;
-  
+
   return current_value;
 }
 
