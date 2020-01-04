@@ -667,16 +667,8 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-
-
-  _getCSSCharset: function (channelCharset)
+  _getCSSCharset: function ()
   {
-    
-    if (channelCharset && channelCharset.length > 0) {
-      
-      return channelCharset;
-    }
-
     let sheet = this.rawSheet;
     if (sheet) {
       
