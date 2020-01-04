@@ -738,13 +738,24 @@ nsIntRegion nsRegion::ScaleToNearestPixels (float aScaleX, float aScaleY,
 nsIntRegion nsRegion::ScaleToOutsidePixels (float aScaleX, float aScaleY,
                                             nscoord aAppUnitsPerPixel) const
 {
-  nsIntRegion result;
-  for (auto iter = RectIter(); !iter.Done(); iter.Next()) {
-    mozilla::gfx::IntRect deviceRect =
-      iter.Get().ScaleToOutsidePixels(aScaleX, aScaleY, aAppUnitsPerPixel);
-    result.Or(result, deviceRect);
+  
+  nsRegion region = *this;
+  int n;
+  pixman_box32_t *boxes = pixman_region32_rectangles(&region.mImpl, &n);
+  boxes = pixman_region32_rectangles(&region.mImpl, &n);
+  for (int i=0; i<n; i++) {
+    nsRect rect = BoxToRect(boxes[i]);
+    mozilla::gfx::IntRect irect = rect.ScaleToOutsidePixels(aScaleX, aScaleY, aAppUnitsPerPixel);
+    boxes[i] = RectToBox(irect);
   }
-  return result;
+
+  nsIntRegion iRegion;
+  
+  pixman_region32_fini(&iRegion.mImpl.mImpl);
+  
+  pixman_region32_init_rects(&iRegion.mImpl.mImpl, boxes, n);
+
+  return iRegion;
 }
 
 nsIntRegion nsRegion::ScaleToInsidePixels (float aScaleX, float aScaleY,
