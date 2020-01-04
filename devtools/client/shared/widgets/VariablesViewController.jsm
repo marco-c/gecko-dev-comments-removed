@@ -689,24 +689,28 @@ VariablesViewController.prototype = {
 
 
 
-  setSingleVariable: function(aOptions, aConfiguration = {}) {
-    this._setEvaluationMacros(aConfiguration);
+  setSingleVariable: function(options, configuration = {}) {
+    this._setEvaluationMacros(configuration);
     this.view.empty();
 
-    let scope = this.view.addScope(aOptions.label);
+    let scope = this.view.addScope(options.label);
     scope.expanded = true; 
     scope.locked = true; 
 
     let variable = scope.addItem("", { enumerable: true });
     let populated;
 
-    if (aOptions.objectActor) {
+    if (options.objectActor) {
       
-      this.objectActor = aOptions.objectActor;
-      populated = this.populate(variable, aOptions.objectActor);
-      variable.expand();
-    } else if (aOptions.rawObject) {
-      variable.populate(aOptions.rawObject, { expanded: true });
+      this.objectActor = options.objectActor;
+      if (VariablesView.isPrimitive({ value: this.objectActor })) {
+        populated = promise.resolve();
+      } else {
+        populated = this.populate(variable, options.objectActor);
+        variable.expand();
+      }
+    } else if (options.rawObject) {
+      variable.populate(options.rawObject, { expanded: true });
       populated = promise.resolve();
     }
 
