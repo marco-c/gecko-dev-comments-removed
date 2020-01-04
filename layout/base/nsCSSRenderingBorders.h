@@ -65,8 +65,10 @@ class nsCSSBorderRenderer final
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::Path Path;
+  typedef mozilla::gfx::Point Point;
   typedef mozilla::gfx::Rect Rect;
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
+  typedef mozilla::gfx::StrokeOptions StrokeOptions;
 
 public:
 
@@ -135,6 +137,9 @@ private:
   bool IsSolidCornerStyle(uint8_t aStyle, mozilla::css::Corner aCorner);
 
   
+  bool IsCornerMergeable(mozilla::css::Corner aCorner);
+
+  
   BorderColorStyle BorderColorStyleForSolidCorner(uint8_t aStyle, mozilla::css::Corner aCorner);
 
   
@@ -155,6 +160,11 @@ private:
   
   
   already_AddRefed<Path> GetSideClipSubPath(mozilla::css::Side aSide);
+
+  
+  Point GetStraightBorderPoint(mozilla::css::Side aSide,
+                               mozilla::css::Corner aCorner,
+                               bool* aIsUnfilled);
 
   
   
@@ -187,10 +197,15 @@ private:
   void DrawBorderSidesCompositeColors(int aSides, const nsBorderColors *compositeColors);
 
   
-  void DrawDashedSide (mozilla::css::Side aSide);
+  void SetupDashedOptions(StrokeOptions* aStrokeOptions,
+                          Float aDash[2], mozilla::css::Side aSide,
+                          Float aBorderLength);
 
   
-  void SetupStrokeStyle(mozilla::css::Side aSize);
+  void DrawDashedOrDottedSide(mozilla::css::Side aSide);
+
+  
+  void DrawDottedSideSlow(mozilla::css::Side aSide);
 
   
   bool AllBordersSameWidth();
