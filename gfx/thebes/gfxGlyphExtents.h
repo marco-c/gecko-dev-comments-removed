@@ -15,6 +15,12 @@
 class gfxContext;
 struct gfxRect;
 
+namespace mozilla {
+namespace gfx {
+class DrawTarget;
+} 
+} 
+
 
 
 
@@ -29,6 +35,8 @@ struct gfxRect;
 
 
 class gfxGlyphExtents {
+    typedef mozilla::gfx::DrawTarget DrawTarget;
+
 public:
     explicit gfxGlyphExtents(int32_t aAppUnitsPerDevUnit) :
         mAppUnitsPerDevUnit(aAppUnitsPerDevUnit) {

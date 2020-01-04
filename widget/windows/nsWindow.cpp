@@ -201,6 +201,7 @@
 #define WM_DPICHANGED 0x02E0
 #endif
 
+#include "mozilla/gfx/DeviceManagerD3D11.h"
 #include "mozilla/layers/APZCTreeManager.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/ScrollInputMethods.h"
@@ -7819,7 +7820,7 @@ nsWindow::ComputeShouldAccelerate()
   
   
   if (mTransparencyMode == eTransparencyTransparent ||
-      (IsPopup() && gfxWindowsPlatform::GetPlatform()->IsWARP()))
+      (IsPopup() && DeviceManagerD3D11::Get()->IsWARP()))
   {
     return false;
   }
