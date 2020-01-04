@@ -43,15 +43,6 @@ AdjustDisplayPortForScrollDelta(mozilla::layers::FrameMetrics& aFrameMetrics,
 {
   
   
-  
-  
-  
-  if (aFrameMetrics.IsScrollInfoLayer()) {
-    return;
-  }
-
-  
-  
   ScreenPoint shift =
       (aFrameMetrics.GetScrollOffset() - aActualScrollOffset) *
       aFrameMetrics.DisplayportPixelsPerCSSPixel();
@@ -137,9 +128,20 @@ ScrollFrame(nsIContent* aContent,
   CSSPoint actualScrollOffset = ScrollFrameTo(sf, apzScrollOffset, scrollUpdated);
 
   if (scrollUpdated) {
-    
-    
-    AdjustDisplayPortForScrollDelta(aMetrics, actualScrollOffset);
+    if (aMetrics.IsScrollInfoLayer()) {
+      
+      
+      
+      
+      
+      if (nsIFrame* frame = aContent->GetPrimaryFrame()) {
+        frame->SchedulePaint();
+      }
+    } else {
+      
+      
+      AdjustDisplayPortForScrollDelta(aMetrics, actualScrollOffset);
+    }
   } else {
     
     
