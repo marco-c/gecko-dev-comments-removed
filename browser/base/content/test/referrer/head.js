@@ -10,8 +10,13 @@ XPCOMUtils.defineLazyModuleGetter(this, "ContentTask",
 const REFERRER_URL_BASE = "/browser/browser/base/content/test/referrer/";
 const REFERRER_POLICYSERVER_URL =
   "test1.example.com" + REFERRER_URL_BASE + "file_referrer_policyserver.sjs";
+const REFERRER_POLICYSERVER_URL_ATTRIBUTE =
+  "test1.example.com" + REFERRER_URL_BASE + "file_referrer_policyserver_attr.sjs";
+
+SpecialPowers.pushPrefEnv({"set": [['network.http.enablePerElementReferrer', true]]});
 
 var gTestWindow = null;
+var rounds = 0;
 
 
 
@@ -52,17 +57,18 @@ var _referrerTests = [
   
   
   
+  
   {
     fromScheme: "https://",
     toScheme: "https://",
-    policy: "origin-when-cross-origin",
-    result: "https://test1.example.com/browser"  
+    policy: "no-referrer",
+    result: ""  
   },
   {
     fromScheme: "http://",
     toScheme: "https://",
-    policy: "origin-when-cross-origin",
-    result: "http://test1.example.com"  
+    policy: "no-referrer",
+    result: ""  
   },
 ];
 
@@ -191,7 +197,9 @@ function doContextMenuCommand(aWindow, aMenu, aItemId) {
 
 function referrerTestCaseLoaded(aTestNumber) {
   let test = getReferrerTest(aTestNumber);
-  let url = test.fromScheme + REFERRER_POLICYSERVER_URL +
+  let server = rounds == 0 ? REFERRER_POLICYSERVER_URL :
+                             REFERRER_POLICYSERVER_URL_ATTRIBUTE;
+  let url = test.fromScheme + server +
             "?scheme=" + escape(test.toScheme) +
             "&policy=" + escape(test.policy || "") +
             "&rel=" + escape(test.rel || "");
@@ -224,6 +232,12 @@ function checkReferrerAndStartNextTest(aTestNumber, aNewWindow, aNewTab,
     
     var nextTestNumber = aTestNumber + 1;
     if (getReferrerTest(nextTestNumber)) {
+      referrerTestCaseLoaded(nextTestNumber).then(function() {
+        aStartTestCase(nextTestNumber);
+      });
+    } else if (rounds == 0) {
+      nextTestNumber = 0;
+      rounds = 1;
       referrerTestCaseLoaded(nextTestNumber).then(function() {
         aStartTestCase(nextTestNumber);
       });
