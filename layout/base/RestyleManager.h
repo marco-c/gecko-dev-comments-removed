@@ -770,6 +770,8 @@ private:
   
   
   nsTArray<nsRefPtr<nsStyleContext>>& mSwappedStructOwners;
+  
+  bool mIsRootOfRestyle;
 
 #ifdef ACCESSIBILITY
   const DesiredA11yNotifications mDesiredA11yNotifications;
