@@ -5867,33 +5867,27 @@ BytecodeEmitter::emitComprehensionForInOrOfVariables(ParseNode* pn, bool* letBlo
     
     
     
-    
-    
-    
 
     *letBlockScope = pn->isKind(PNK_LEXICALSCOPE);
-    MOZ_ASSERT_IF(*letBlockScope, pn->isLexical());
+    if (*letBlockScope) {
+        
+        
+        
+        
+        
+        MOZ_ASSERT(pn->isLexical());
+    } else {
+        
+        
+        
+        
+        
+        MOZ_ASSERT(pn->isKind(PNK_LET));
+        MOZ_ASSERT(pn->pn_count == 1);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!*letBlockScope) {
         emittingForInit = true;
-        if (pn->isKind(PNK_VAR)) {
-            if (!emitVariables(pn, DefineVars))
-                return false;
-        } else {
-            MOZ_ASSERT(pn->isKind(PNK_LET));
-            if (!emitVariables(pn, InitializeVars))
-                return false;
-        }
+        if (!emitVariables(pn, InitializeVars))
+            return false;
         emittingForInit = false;
     }
 
