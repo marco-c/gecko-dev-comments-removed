@@ -516,18 +516,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
         }
         break;
       case LayersBackend::LAYERS_CLIENT:
-        {
-          result = listener->PaintWindow(
-            this, LayoutDeviceIntRegion::FromUnknownRegion(region));
-          ClientLayerManager* clientLM =
-            static_cast<ClientLayerManager*>(GetLayerManager());
-          IDXGISwapChain* swapChain = clientLM->GetTextureFactoryIdentifier().mSwapChain.get();
-          if (swapChain) {
-            
-            
-            swapChain->Present(0, 0);
-          }
-        }
+        result = listener->PaintWindow(
+          this, LayoutDeviceIntRegion::FromUnknownRegion(region));
         break;
       default:
         NS_ERROR("Unknown layers backend used!");
