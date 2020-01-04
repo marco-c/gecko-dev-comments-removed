@@ -972,6 +972,7 @@ public:
 
 
 
+
   virtual nsMargin GetUsedBorder() const;
   virtual mozilla::LogicalMargin
   GetLogicalUsedBorder(mozilla::WritingMode aWritingMode) const {
