@@ -5,20 +5,28 @@
 import sys
 import string
 
+
+
+
+def generateLine(propName, extendedAttrs):
+    return "  [%s] attribute DOMString %s;\n" % (", ".join(extendedAttrs),
+                                                 propName)
 propList = eval(sys.stdin.read())
 props = ""
 for [name, prop, id, flags, pref, proptype] in propList:
     if "CSS_PROPERTY_INTERNAL" in flags:
         continue
+    
+    
     extendedAttrs = ["Throws", "TreatNullAs=EmptyString"]
     if pref is not "":
         extendedAttrs.append('Pref="%s"' % pref)
+    
+    
     if not prop.startswith("Moz"):
         prop = prop[0].lower() + prop[1:]
-    
-    
-    props += "  [%s] attribute DOMString %s;\n" % (", ".join(extendedAttrs),
-                                                   prop)
+    props += generateLine(prop, extendedAttrs)
+
     
     
     
@@ -39,9 +47,8 @@ for [name, prop, id, flags, pref, proptype] in propList:
         extendedAttrs.append('BinaryName="%s"' % prop)
         
         
-        props += "  [%s] attribute DOMString _%s;\n" % (
-            ", ".join(extendedAttrs),
-            name)
+        props += generateLine("_" + name, extendedAttrs)
+
 
 idlFile = open(sys.argv[1], "r")
 idlTemplate = idlFile.read()
