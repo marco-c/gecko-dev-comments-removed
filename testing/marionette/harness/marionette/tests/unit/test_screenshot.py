@@ -6,6 +6,7 @@ import base64
 import hashlib
 import imghdr
 import struct
+import time
 import urllib
 
 from unittest import skip
@@ -86,21 +87,16 @@ class Chrome(ScreenCaptureTestCase):
     
     def test_secondary_windows(self):
         ss = self.marionette.screenshot()
-        self.marionette.execute_async_script("""
-            win = window.open('chrome://marionette/content/doesnotexist.xul',
+        self.marionette.execute_script("""
+            window.open('chrome://marionette/content/doesnotexist.xul',
             'foo',
             'chrome');
-
-            // Bug 1288339 - We don't wait for readyState to be complete yet
-            waitForWindow = function() {
-              if (win.document.readyState != 'complete') {
-                win.setTimeout(this, 100);
-              }
-
-              marionetteScriptFinished(true);
-            }()
             """)
         self.marionette.switch_to_window("foo")
+        
+        
+        
+        time.sleep(0.002)
         ss = self.marionette.screenshot()
         size = self.get_image_dimensions(ss)
         self.assert_png(ss)
