@@ -3,7 +3,7 @@
 
 
 
-#include "nsInternetCiter.h"
+#include "InternetCiter.h"
 
 #include "nsAString.h"
 #include "nsCOMPtr.h"
@@ -17,6 +17,8 @@
 #include "nsString.h"
 #include "nsStringIterator.h"
 
+namespace mozilla {
+
 const char16_t gt ('>');
 const char16_t space (' ');
 const char16_t nl ('\n');
@@ -25,8 +27,10 @@ const char16_t cr('\r');
 
 
 
+
 nsresult
-nsInternetCiter::GetCiteString(const nsAString& aInString, nsAString& aOutString)
+InternetCiter::GetCiteString(const nsAString& aInString,
+                             nsAString& aOutString)
 {
   aOutString.Truncate();
   char16_t uch = nl;
@@ -68,10 +72,10 @@ nsInternetCiter::GetCiteString(const nsAString& aInString, nsAString& aOutString
 }
 
 nsresult
-nsInternetCiter::StripCitesAndLinebreaks(const nsAString& aInString,
-                                         nsAString& aOutString,
-                                         bool aLinebreaksToo,
-                                         int32_t* aCiteLevel)
+InternetCiter::StripCitesAndLinebreaks(const nsAString& aInString,
+                                       nsAString& aOutString,
+                                       bool aLinebreaksToo,
+                                       int32_t* aCiteLevel)
 {
   if (aCiteLevel)
     *aCiteLevel = 0;
@@ -112,7 +116,8 @@ nsInternetCiter::StripCitesAndLinebreaks(const nsAString& aInString,
 }
 
 nsresult
-nsInternetCiter::StripCites(const nsAString& aInString, nsAString& aOutString)
+InternetCiter::StripCites(const nsAString& aInString,
+                          nsAString& aOutString)
 {
   return StripCitesAndLinebreaks(aInString, aOutString, false, 0);
 }
@@ -146,10 +151,11 @@ static inline bool IsSpace(char16_t c)
 }
 
 nsresult
-nsInternetCiter::Rewrap(const nsAString& aInString,
-                        uint32_t aWrapCol, uint32_t aFirstLineOffset,
-                        bool aRespectNewlines,
-                        nsAString& aOutString)
+InternetCiter::Rewrap(const nsAString& aInString,
+                      uint32_t aWrapCol,
+                      uint32_t aFirstLineOffset,
+                      bool aRespectNewlines,
+                      nsAString& aOutString)
 {
   
   
@@ -361,4 +367,4 @@ nsInternetCiter::Rewrap(const nsAString& aInString,
   return NS_OK;
 }
 
-
+} 

@@ -6,6 +6,7 @@
 #include "nsPlaintextEditor.h"
 
 #include "EditorUtils.h"  
+#include "InternetCiter.h"
 #include "TextEditUtils.h"
 #include "gfxFontUtils.h"
 #include "mozilla/Assertions.h"
@@ -47,7 +48,6 @@
 #include "nsISupportsPrimitives.h"
 #include "nsITransferable.h"
 #include "nsIWeakReferenceUtils.h"
-#include "nsInternetCiter.h"
 #include "nsLiteralString.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -1414,7 +1414,7 @@ nsPlaintextEditor::InsertAsQuotation(const nsAString& aQuotedText,
 
   
   nsString quotedStuff;
-  nsresult rv = nsInternetCiter::GetCiteString(aQuotedText, quotedStuff);
+  nsresult rv = InternetCiter::GetCiteString(aQuotedText, quotedStuff);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1502,8 +1502,8 @@ nsPlaintextEditor::Rewrap(bool aRespectNewlines)
 
   nsString wrapped;
   uint32_t firstLineOffset = 0;   
-  rv = nsInternetCiter::Rewrap(current, wrapCol, firstLineOffset, aRespectNewlines,
-                     wrapped);
+  rv = InternetCiter::Rewrap(current, wrapCol, firstLineOffset,
+                             aRespectNewlines, wrapped);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (isCollapsed)    
@@ -1522,7 +1522,7 @@ nsPlaintextEditor::StripCites()
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsString stripped;
-  rv = nsInternetCiter::StripCites(current, stripped);
+  rv = InternetCiter::StripCites(current, stripped);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (isCollapsed)    
