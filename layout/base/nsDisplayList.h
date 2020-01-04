@@ -226,7 +226,8 @@ public:
     EVENT_DELIVERY,
     PLUGIN_GEOMETRY,
     FRAME_VISIBILITY,
-    TRANSFORM_COMPUTATION
+    TRANSFORM_COMPUTATION,
+    GENERATE_GLYPH
   };
   nsDisplayListBuilder(nsIFrame* aReferenceFrame, Mode aMode, bool aBuildCaret);
   ~nsDisplayListBuilder();
@@ -267,6 +268,14 @@ public:
 
 
   bool IsForFrameVisibility() { return mMode == FRAME_VISIBILITY; }
+
+  
+
+
+
+
+
+  bool IsForGenerateGlyphPath() { return mMode == GENERATE_GLYPH; }
 
   bool WillComputePluginGeometry() { return mWillComputePluginGeometry; }
   

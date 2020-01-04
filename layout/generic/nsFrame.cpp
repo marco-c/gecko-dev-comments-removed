@@ -1857,8 +1857,13 @@ nsFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder*   aBuilder,
   
   
   
-  if (!IsVisibleForPainting(aBuilder))
+  if (!IsVisibleForPainting(aBuilder)) {
     return;
+  }
+
+  if (aBuilder->IsForGenerateGlyphPath()) {
+    return;
+  }
 
   nsCSSShadowArray* shadows = StyleEffects()->mBoxShadow;
   if (shadows && shadows->HasShadowWithInset(false)) {
@@ -2554,10 +2559,16 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   if (aBuilder->IsBackgroundOnly())
     return;
 
+  if (aBuilder->IsForGenerateGlyphPath()) {
+    if (nsGkAtoms::textFrame != aChild->GetType() && aChild->IsLeaf()) {
+      return;
+    }
+  }
+
   nsIFrame* child = aChild;
   if (child->GetStateBits() & NS_FRAME_TOO_DEEP_IN_FRAME_TREE)
     return;
-  
+
   bool isSVG = (child->GetStateBits() & NS_FRAME_SVG_LAYOUT);
 
   
