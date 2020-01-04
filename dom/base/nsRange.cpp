@@ -3154,6 +3154,12 @@ nsRange::Constructor(const GlobalObject& aGlobal,
   return window->GetDoc()->CreateRange(aRv);
 }
 
+static bool ExcludeIfNextToNonSelectable(nsIContent* aContent)
+{
+  return aContent->IsNodeOfType(nsINode::eTEXT) &&
+    aContent->HasFlag(NS_CREATE_FRAME_IF_NON_WHITESPACE);
+}
+
 void
 nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
 {
@@ -3172,6 +3178,10 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
 
     bool added = false;
     bool seenSelectable = false;
+    
+    
+    
+    
     nsIContent* firstNonSelectableContent = nullptr;
     while (true) {
       ErrorResult err;
@@ -3181,12 +3191,19 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
       nsIContent* content =
         node && node->IsContent() ? node->AsContent() : nullptr;
       if (content) {
-        nsIFrame* frame = content->GetPrimaryFrame();
-        for (nsIContent* p = content; !frame && (p = p->GetParent()); ) {
-          frame = p->GetPrimaryFrame();
+        if (firstNonSelectableContent && ExcludeIfNextToNonSelectable(content)) {
+          
+          
+          selectable = false;
         }
-        if (frame) {
-          frame->IsSelectable(&selectable, nullptr);
+        if (selectable) {
+          nsIFrame* frame = content->GetPrimaryFrame();
+          for (nsIContent* p = content; !frame && (p = p->GetParent()); ) {
+            frame = p->GetPrimaryFrame();
+          }
+          if (frame) {
+            frame->IsSelectable(&selectable, nullptr);
+          }
         }
       }
 
