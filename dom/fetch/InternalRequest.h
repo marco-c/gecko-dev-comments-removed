@@ -141,6 +141,12 @@ public:
     , mUnsafeRequest(false)
     , mUseURLCredentials(false)
   {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mURL.Find(NS_LITERAL_CSTRING("#")) == kNotFound);
   }
 
   already_AddRefed<InternalRequest> Clone();
