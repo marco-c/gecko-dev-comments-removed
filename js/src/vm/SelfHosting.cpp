@@ -1884,8 +1884,10 @@ CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
                                  ? gc::AllocKind::FUNCTION_EXTENDED
                                  : selfHostedFunction->getAllocKind();
         MOZ_ASSERT(!CanReuseScriptForClone(cx->compartment(), selfHostedFunction, cx->global()));
-        clone = CloneFunctionAndScript(cx, selfHostedFunction, cx->global(),
-                                        nullptr, kind);
+        Rooted<ClonedBlockObject*> globalLexical(cx, &cx->global()->lexicalScope());
+        RootedObject staticGlobalLexical(cx, &globalLexical->staticBlock());
+        clone = CloneFunctionAndScript(cx, selfHostedFunction, globalLexical,
+                                       staticGlobalLexical, kind);
         
         
         if (clone && hasName)
@@ -1977,8 +1979,15 @@ JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx, HandlePropertyName name,
     RootedScript sourceScript(cx, sourceFun->getOrCreateScript(cx));
     if (!sourceScript)
         return false;
-    MOZ_ASSERT(!sourceScript->enclosingStaticScope());
-    if (!CloneScriptIntoFunction(cx,  nullptr, targetFun, sourceScript))
+
+    
+    
+    
+    
+    
+    MOZ_ASSERT(IsStaticGlobalLexicalScope(sourceScript->enclosingStaticScope()));
+    Rooted<ScopeObject*> enclosingScope(cx, &cx->global()->lexicalScope().staticBlock());
+    if (!CloneScriptIntoFunction(cx, enclosingScope, targetFun, sourceScript))
         return false;
     MOZ_ASSERT(!targetFun->isInterpretedLazy());
 

@@ -1392,10 +1392,20 @@ HelperThread::handleParseWorkload()
                                               task->exclusiveContextGlobal->runtimeFromAnyThread());
         SourceBufferHolder srcBuf(task->chars, task->length,
                                   SourceBufferHolder::NoOwnership);
-        task->script = frontend::CompileScript(task->cx, &task->alloc,
-                                               nullptr, nullptr, nullptr,
-                                               task->options,
-                                               srcBuf,
+
+        
+        
+        
+        
+        
+        
+        
+        ExclusiveContext* parseCx = parseTask->cx;
+        Rooted<ClonedBlockObject*> globalLexical(parseCx, &parseCx->global()->lexicalScope());
+        Rooted<ScopeObject*> staticScope(parseCx, &globalLexical->staticBlock());
+        task->script = frontend::CompileScript(parseCx, &parseTask->alloc,
+                                               globalLexical, staticScope, nullptr,
+                                               parseTask->options, srcBuf,
                                                 nullptr,
                                                 nullptr,
                                                 &(task->sourceObject));

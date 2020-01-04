@@ -140,6 +140,7 @@ static inline void
 AssertDynamicScopeMatchesStaticScope(JSContext* cx, JSScript* script, JSObject* scope)
 {
 #ifdef DEBUG
+    RootedObject originalScope(cx, scope);
     RootedObject enclosingScope(cx, script->enclosingStaticScope());
     for (StaticScopeIter<NoGC> i(enclosingScope); !i.done(); i++) {
         if (i.type() == StaticScopeIter<NoGC>::NonSyntactic) {
@@ -258,7 +259,12 @@ InterpreterFrame::epilogue(JSContext* cx)
     }
 
     if (isGlobalFrame()) {
-        MOZ_ASSERT(!IsSyntacticScope(scopeChain()));
+        
+        
+        
+        
+        
+        MOZ_ASSERT(IsGlobalLexicalScope(scopeChain()) || !IsSyntacticScope(scopeChain()));
         return;
     }
 

@@ -879,8 +879,7 @@ HandleDynamicLinkFailure(JSContext* cx, const CallArgs& args, AsmJSModule& modul
                                               ? SourceBufferHolder::GiveOwnership
                                               : SourceBufferHolder::NoOwnership;
     SourceBufferHolder srcBuf(chars, end - begin, ownership);
-    if (!frontend::CompileFunctionBody(cx, &fun, options, formals, srcBuf,
-                                        nullptr))
+    if (!frontend::CompileFunctionBody(cx, &fun, options, formals, srcBuf))
         return false;
 
     
