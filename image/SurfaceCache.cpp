@@ -67,12 +67,6 @@ static StaticRefPtr<SurfaceCacheImpl> sInstance;
 
 typedef size_t Cost;
 
-
-
-
-
-static const Cost sPlaceholderCost = 1;
-
 static Cost
 ComputeCost(const IntSize& aSize, uint32_t aBytesPerPixel)
 {
@@ -141,8 +135,7 @@ public:
     , mImageKey(aImageKey)
     , mSurfaceKey(aSurfaceKey)
   {
-    MOZ_ASSERT(aProvider || mCost == sPlaceholderCost,
-               "Old-style placeholders should have trivial cost");
+    MOZ_ASSERT(aProvider);
     MOZ_ASSERT(mImageKey, "Must have a valid image key");
   }
 
@@ -1062,19 +1055,6 @@ SurfaceCache::Insert(NotNull<ISurfaceProvider*> aProvider,
   MutexAutoLock lock(sInstance->GetMutex());
   Cost cost = aProvider->LogicalSizeInBytes();
   return sInstance->Insert(aProvider.get(), cost, aImageKey, aSurfaceKey,
-                            false);
-}
-
- InsertOutcome
-SurfaceCache::InsertPlaceholder(const ImageKey    aImageKey,
-                                const SurfaceKey& aSurfaceKey)
-{
-  if (!sInstance) {
-    return InsertOutcome::FAILURE;
-  }
-
-  MutexAutoLock lock(sInstance->GetMutex());
-  return sInstance->Insert(nullptr, sPlaceholderCost, aImageKey, aSurfaceKey,
                             false);
 }
 

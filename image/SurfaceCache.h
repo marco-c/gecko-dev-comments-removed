@@ -304,41 +304,6 @@ struct SurfaceCache
 
 
 
-
-
-
-
-
-  static InsertOutcome InsertPlaceholder(const ImageKey    aImageKey,
-                                         const SurfaceKey& aSurfaceKey);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   static void SurfaceAvailable(NotNull<ISurfaceProvider*> aProvider,
                                const ImageKey    aImageKey,
                                const SurfaceKey& aSurfaceKey);
