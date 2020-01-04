@@ -2774,10 +2774,13 @@ nsContentUtils::IsCustomElementName(nsIAtom* aName)
   
   
   
+  
+  
+  
   nsDependentAtomString str(aName);
   const char16_t* colon;
-  if (NS_FAILED(nsContentUtils::CheckQName(str, false, &colon)) || colon ||
-      str.FindChar('-') == -1) {
+  if (str.FindChar('-') == -1 ||
+      NS_FAILED(nsContentUtils::CheckQName(str, false, &colon)) || colon) {
     return false;
   }
 
