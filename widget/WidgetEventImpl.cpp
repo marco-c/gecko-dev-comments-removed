@@ -569,9 +569,8 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   
   if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
-      mCodeNameIndex == CODE_NAME_INDEX_Space &&
-      pseudoCharCode != static_cast<uint32_t>(' ')) {
-    ShortcutKeyCandidate spaceKey(static_cast<uint32_t>(' '), false);
+      mCodeNameIndex == CODE_NAME_INDEX_Space && pseudoCharCode != ' ') {
+    ShortcutKeyCandidate spaceKey(' ', false);
     aCandidates.AppendElement(spaceKey);
   }
 }
@@ -585,8 +584,8 @@ WidgetKeyboardEvent::GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates)
   
   
   
-  if (charCode) {
-    uint32_t ch = charCode;
+  if (mCharCode) {
+    uint32_t ch = mCharCode;
     if (IS_IN_BMP(ch)) {
       ch = ToLowerCase(static_cast<char16_t>(ch));
     }
@@ -615,9 +614,8 @@ WidgetKeyboardEvent::GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates)
   
   
   if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
-      mCodeNameIndex == CODE_NAME_INDEX_Space &&
-      charCode != static_cast<uint32_t>(' ')) {
-    aCandidates.AppendElement(static_cast<uint32_t>(' '));
+      mCodeNameIndex == CODE_NAME_INDEX_Space && mCharCode != ' ') {
+    aCandidates.AppendElement(' ');
   }
   return;
 }

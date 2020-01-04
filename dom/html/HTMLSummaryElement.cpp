@@ -77,7 +77,7 @@ HTMLSummaryElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
     switch (event->mMessage) {
       case eKeyPress:
-        if (keyboardEvent->charCode == nsIDOMKeyEvent::DOM_VK_SPACE) {
+        if (keyboardEvent->mCharCode == ' ') {
           
           aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
         }

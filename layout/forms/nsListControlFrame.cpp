@@ -2271,18 +2271,18 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   
   
   
-  if (keyEvent->charCode != ' ') {
+  if (keyEvent->mCharCode != ' ') {
     mControlSelectMode = false;
   }
 
   bool isControlOrMeta = (keyEvent->IsControl() || keyEvent->IsMeta());
-  if (isControlOrMeta && keyEvent->charCode != ' ') {
+  if (isControlOrMeta && keyEvent->mCharCode != ' ') {
     return NS_OK;
   }
 
   
   
-  if (!keyEvent->charCode) {
+  if (!keyEvent->mCharCode) {
     
     
     if (keyEvent->mKeyCode == NS_VK_BACK) {
@@ -2315,10 +2315,10 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   if (keyEvent->mTime - gLastKeyTime > INCREMENTAL_SEARCH_KEYPRESS_TIME) {
     
     
-    if (keyEvent->charCode == ' ') {
+    if (keyEvent->mCharCode == ' ') {
       
       
-      PostHandleKeyEvent(mEndSelectionIndex, keyEvent->charCode,
+      PostHandleKeyEvent(mEndSelectionIndex, keyEvent->mCharCode,
                          keyEvent->IsShift(), isControlOrMeta);
 
       return NS_OK;
@@ -2330,7 +2330,7 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   gLastKeyTime = keyEvent->mTime;
 
   
-  char16_t uniChar = ToLowerCase(static_cast<char16_t>(keyEvent->charCode));
+  char16_t uniChar = ToLowerCase(static_cast<char16_t>(keyEvent->mCharCode));
   GetIncrementalString().Append(uniChar);
 
   

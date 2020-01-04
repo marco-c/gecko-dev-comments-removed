@@ -301,12 +301,12 @@ KeyEventDispatcher::DispatchKeyEventInternal(EventMessage aEventMessage)
     if (aEventMessage == eKeyPress) {
         
         
-        event.charCode = static_cast<uint32_t>(mChar);
+        event.mCharCode = static_cast<uint32_t>(mChar);
     }
-    if (!event.charCode) {
+    if (!event.mCharCode) {
         event.mKeyCode = mDOMKeyCode;
     }
-    event.isChar = !!event.charCode;
+    event.isChar = !!event.mCharCode;
     event.mIsRepeat = IsRepeat();
     event.mKeyNameIndex = mDOMKeyNameIndex;
     if (mDOMPrintableKeyValue) {

@@ -1689,7 +1689,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
        !KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode))) {
     WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
     if (!IsControlChar(static_cast<char16_t>(aCharMsg.wParam))) {
-      keypressEvent.charCode = static_cast<uint32_t>(aCharMsg.wParam);
+      keypressEvent.mCharCode = static_cast<uint32_t>(aCharMsg.wParam);
     } else {
       keypressEvent.mKeyCode = mDOMKeyCode;
     }
@@ -1766,8 +1766,8 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   }
 
   WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
-  keypressEvent.charCode = uniChar;
-  if (!keypressEvent.charCode) {
+  keypressEvent.mCharCode = uniChar;
+  if (!keypressEvent.mCharCode) {
     keypressEvent.mKeyCode = mDOMKeyCode;
   }
   nsEventStatus status = InitKeyEvent(keypressEvent, mModKeyState, &aCharMsg);

@@ -103,7 +103,7 @@ private:
 protected:
   WidgetKeyboardEvent()
     : mKeyCode(0)
-    , charCode(0)
+    , mCharCode(0)
     , mPseudoCharCode(0)
     , location(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
     , isChar(false)
@@ -132,7 +132,7 @@ public:
                       EventClassID aEventClassID = eKeyboardEventClass)
     : WidgetInputEvent(aIsTrusted, aMessage, aWidget, aEventClassID)
     , mKeyCode(0)
-    , charCode(0)
+    , mCharCode(0)
     , mPseudoCharCode(0)
     , location(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
     , isChar(false)
@@ -200,7 +200,7 @@ public:
   
   
   
-  uint32_t charCode;
+  uint32_t mCharCode;
   
   
   
@@ -280,12 +280,12 @@ public:
   
   uint32_t PseudoCharCode() const
   {
-    return mMessage == eKeyPress ? charCode : mPseudoCharCode;
+    return mMessage == eKeyPress ? mCharCode : mPseudoCharCode;
   }
   void SetCharCode(uint32_t aCharCode)
   {
     if (mMessage == eKeyPress) {
-      charCode = aCharCode;
+      mCharCode = aCharCode;
     } else {
       mPseudoCharCode = aCharCode;
     }
@@ -373,7 +373,7 @@ public:
     AssignInputEventData(aEvent, aCopyTargets);
 
     mKeyCode = aEvent.mKeyCode;
-    charCode = aEvent.charCode;
+    mCharCode = aEvent.mCharCode;
     mPseudoCharCode = aEvent.mPseudoCharCode;
     location = aEvent.location;
     alternativeCharCodes = aEvent.alternativeCharCodes;
