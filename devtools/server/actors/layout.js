@@ -31,28 +31,12 @@ const {method, Arg} = protocol;
 const events = require("sdk/event/core");
 const Heritage = require("sdk/core/heritage");
 const EventEmitter = require("devtools/shared/event-emitter");
+const {reflowSpec} = require("devtools/shared/specs/layout");
 
 
 
 
-var ReflowActor = exports.ReflowActor = protocol.ActorClass({
-  typeName: "reflow",
-
-  events: {
-    
-
-
-
-
-
-
-
-    "reflows": {
-      type: "reflows",
-      reflows: Arg(0, "array:json")
-    }
-  },
-
+var ReflowActor = exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
@@ -85,49 +69,30 @@ var ReflowActor = exports.ReflowActor = protocol.ActorClass({
 
 
 
-  start: method(function () {
+  start: function () {
     if (!this._isStarted) {
       this.observer.on("reflows", this._onReflow);
       this._isStarted = true;
     }
-  }, {oneway: true}),
+  },
 
   
 
 
 
 
-  stop: method(function () {
+  stop: function () {
     if (this._isStarted) {
       this.observer.off("reflows", this._onReflow);
       this._isStarted = false;
     }
-  }, {oneway: true}),
+  },
 
   _onReflow: function (event, reflows) {
     if (this._isStarted) {
       events.emit(this, "reflows", reflows);
     }
   }
-});
-
-
-
-
-
-
-
-
-
-exports.ReflowFront = protocol.FrontClass(ReflowActor, {
-  initialize: function (client, {reflowActor}) {
-    protocol.Front.prototype.initialize.call(this, client, {actor: reflowActor});
-    this.manage(this);
-  },
-
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
 });
 
 
