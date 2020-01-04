@@ -819,7 +819,13 @@ nsHTMLFramesetFrame::Reflow(nsPresContext*           aPresContext,
   nscoord height = (aDesiredSize.Height() <= aReflowState.AvailableHeight())
     ? aDesiredSize.Height() : aReflowState.AvailableHeight();
 
-  bool firstTime = (GetStateBits() & NS_FRAME_FIRST_REFLOW) != 0;
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!mChildFrameborder == !mChildBorderColors);
+  bool firstTime = !!mChildFrameborder;
 
   
   
