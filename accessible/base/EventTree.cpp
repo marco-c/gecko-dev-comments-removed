@@ -237,7 +237,7 @@ EventTree*
 EventTree::FindOrInsert(Accessible* aContainer)
 {
   if (!mFirst) {
-    return mFirst = new EventTree(aContainer);
+    return mFirst = new EventTree(aContainer, true);
   }
 
   EventTree* prevNode = nullptr;
@@ -253,76 +253,21 @@ EventTree::FindOrInsert(Accessible* aContainer)
     }
 
     
-    Accessible* tailRoot = aContainer->Document();
-    Accessible* tailParent = aContainer;
-
-    EventTree* matchNode = nullptr;
-    Accessible* matchParent = nullptr;
-    while (true) {
+    Accessible* top = mContainer ? mContainer : aContainer->Document();
+    Accessible* parent = aContainer;
+    while (parent) {
       
-      if (tailParent == tailRoot) {
-        
-        if (matchNode && node->mNext) {
-          node = node->mNext;
-          if (node->mContainer == aContainer) {
-            return node; 
-          }
-          tailParent = aContainer;
-          continue;
-        }
+      if (parent == top) {
         break;
       }
 
       
-      if (tailParent->Parent() == node->mContainer) {
-        matchNode = node;
-        matchParent = tailParent;
-
-        
-        if (node->mFirst) {
-          tailRoot = node->mContainer;
-          node = node->mFirst;
-          if (node->mContainer == aContainer) {
-            return node; 
-          }
-          tailParent = aContainer;
-          continue;
-        }
-        break;
+      if (parent->Parent() == node->mContainer) {
+        return node->FindOrInsert(aContainer);
       }
 
-      tailParent = tailParent->Parent();
-      MOZ_ASSERT(tailParent, "Wrong tree");
-      if (!tailParent) {
-        break;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    if (matchNode) {
-      uint32_t eventType = 0;
-      uint32_t count = matchNode->mDependentEvents.Length();
-      for (uint32_t idx = count - 1; idx < count; idx--) {
-        if (matchNode->mDependentEvents[idx]->mAccessible == matchParent) {
-          eventType = matchNode->mDependentEvents[idx]->mEventType;
-        }
-      }
-      MOZ_ASSERT(eventType != nsIAccessibleEvent::EVENT_HIDE,
-                 "Accessible tree was modified after it was removed");
-
-      
-      if (eventType == nsIAccessibleEvent::EVENT_SHOW) {
-        return nullptr;
-      }
-
-      node->mFirst = new EventTree(aContainer);
-      node->mFirst->mFireReorder = false;
-      return node->mFirst;
+      parent = parent->Parent();
+      MOZ_ASSERT(parent, "Wrong tree");
     }
 
     
@@ -341,7 +286,7 @@ EventTree::FindOrInsert(Accessible* aContainer)
       
       node->mFireReorder = false;
       nsAutoPtr<EventTree>& nodeOwnerRef = prevNode ? prevNode->mNext : mFirst;
-      nsAutoPtr<EventTree> newNode(new EventTree(aContainer));
+      nsAutoPtr<EventTree> newNode(new EventTree(aContainer, mDependentEvents.IsEmpty()));
       newNode->mFirst = Move(nodeOwnerRef);
       nodeOwnerRef = Move(newNode);
       nodeOwnerRef->mNext = Move(node->mNext);
@@ -383,7 +328,14 @@ EventTree::FindOrInsert(Accessible* aContainer)
   } while ((node = node->mNext));
 
   MOZ_ASSERT(prevNode, "Nowhere to insert");
-  return prevNode->mNext = new EventTree(aContainer);
+  MOZ_ASSERT(!prevNode->mNext, "Taken by another node");
+
+  
+  
+  
+  
+
+  return prevNode->mNext = new EventTree(aContainer, mDependentEvents.IsEmpty());
 }
 
 void
