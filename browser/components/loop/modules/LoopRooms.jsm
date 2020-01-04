@@ -67,6 +67,8 @@ var gRoomsCache = null;
 
 var gLinkClickerChannel = null;
 
+var gGetAllPromise = null;
+
 
 
 
@@ -533,20 +535,16 @@ var LoopRoomsInternal = {
 
 
 
-
-
-  getAll: function(version = null, callback = null) {
-    if (!callback) {
-      callback = version;
-      version = null;
+  getAll: function(version) {
+    if (gGetAllPromise && !version) {
+      return gGetAllPromise;
     }
 
-    Task.spawn(function* () {
-      if (!gDirty) {
-        callback(null, [...this.rooms.values()]);
-        return;
-      }
+    if (!gDirty) {
+      return Promise.resolve([...this.rooms.values()]);
+    }
 
+    gGetAllPromise = Task.spawn(function* () {
       
       let url = "/rooms" + (version ? "?version=" + encodeURIComponent(version) : "");
       let response = yield MozLoopService.hawkRequest(this.sessionType, url, "GET");
@@ -585,10 +583,15 @@ var LoopRoomsInternal = {
 
       
       gDirty = false;
-      callback(null, [...this.rooms.values()]);
+      gGetAllPromise = null;
+      return [...this.rooms.values()];
     }.bind(this)).catch(error => {
-      callback(error);
+      gGetAllPromise = null;
+      
+      throw error;
     });
+
+    return gGetAllPromise;
   },
 
   
@@ -940,6 +943,7 @@ var LoopRoomsInternal = {
 
     let oldDirty = gDirty;
     gDirty = true;
+
     
     
     
@@ -1037,7 +1041,13 @@ this.LoopRooms = {
   },
 
   getAll: function(version, callback) {
-    return LoopRoomsInternal.getAll(version, callback);
+    if (!callback) {
+      callback = version;
+      version = null;
+    }
+
+    LoopRoomsInternal.getAll(version).then(result => callback(null, result))
+      .catch(error => callback(error));
   },
 
   get: function(roomToken, callback) {
@@ -1107,6 +1117,10 @@ this.LoopRooms = {
   },
 
   promise: function(method, ...params) {
+    if (method == "getAll") {
+      return LoopRoomsInternal.getAll(...params);
+    }
+
     return new Promise((resolve, reject) => {
       this[method](...params, (error, result) => {
         if (error) {
@@ -1140,6 +1154,7 @@ this.LoopRooms = {
       for (let [key, value] of roomsCache) {
         LoopRoomsInternal.rooms.set(key, value);
       }
+      gGetAllPromise = null;
       gDirty = false;
     }
   }
