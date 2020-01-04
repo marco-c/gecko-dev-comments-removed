@@ -79,6 +79,8 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   
   
   
+  
+  
   { "npffaddon.dll", ALL_VERSIONS},
 
   
@@ -126,9 +128,6 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
 
   
   {"sprotector.dll", ALL_VERSIONS},
-
-  
-  {"qipcap.dll", MAKE_VERSION(7, 6, 815, 1)},
 
   
   { "mozdllblockingtest.dll", ALL_VERSIONS },
