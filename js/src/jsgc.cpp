@@ -4228,19 +4228,25 @@ js::gc::MarkingValidator::nonIncrementalMark()
     if (!markedWeakMaps.init())
         return;
 
-    for (GCZonesIter zone(runtime); !zone.done(); zone.next()) {
-        if (!WeakMapBase::saveZoneMarkedWeakMaps(zone, markedWeakMaps))
-            return;
-    }
+    
+
+
 
     gc::WeakKeyTable savedWeakKeys;
     if (!savedWeakKeys.init())
         return;
 
-    for (gc::WeakKeyTable::Range r = gc->marker.weakKeys.all(); !r.empty(); r.popFront()) {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!savedWeakKeys.put(Move(r.front().key), Move(r.front().value)))
-            oomUnsafe.crash("saving weak keys table for validator");
+    for (GCZonesIter zone(runtime); !zone.done(); zone.next()) {
+        if (!WeakMapBase::saveZoneMarkedWeakMaps(zone, markedWeakMaps))
+            return;
+
+        for (gc::WeakKeyTable::Range r = zone->gcWeakKeys.all(); !r.empty(); r.popFront()) {
+            AutoEnterOOMUnsafeRegion oomUnsafe;
+            if (!savedWeakKeys.put(Move(r.front().key), Move(r.front().value)))
+                oomUnsafe.crash("saving weak keys table for validator");
+        }
+
+        zone->gcWeakKeys.clear();
     }
 
     
@@ -4248,8 +4254,6 @@ js::gc::MarkingValidator::nonIncrementalMark()
 
 
     initialized = true;
-
-    gc->marker.weakKeys.clear();
 
     
     js::gc::State state = gc->incrementalState;
@@ -4311,14 +4315,17 @@ js::gc::MarkingValidator::nonIncrementalMark()
         Swap(*entry, *bitmap);
     }
 
-    for (GCZonesIter zone(runtime); !zone.done(); zone.next())
+    for (GCZonesIter zone(runtime); !zone.done(); zone.next()) {
         WeakMapBase::unmarkZone(zone);
+        zone->gcWeakKeys.clear();
+    }
+
     WeakMapBase::restoreMarkedWeakMaps(markedWeakMaps);
 
-    gc->marker.weakKeys.clear();
     for (gc::WeakKeyTable::Range r = savedWeakKeys.all(); !r.empty(); r.popFront()) {
         AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!gc->marker.weakKeys.put(Move(r.front().key), Move(r.front().value)))
+        Zone* zone = gc::TenuredCell::fromPointer(r.front().key.asCell())->zone();
+        if (!zone->gcWeakKeys.put(Move(r.front().key), Move(r.front().value)))
             oomUnsafe.crash("restoring weak keys table for validator");
     }
 
@@ -4987,25 +4994,17 @@ GCRuntime::beginSweepingZoneGroup()
 
     validateIncrementalMarking();
 
-    
-    for (WeakKeyTable::Range r = marker.weakKeys.all(); !r.empty(); ) {
-        auto key(r.front().key);
-        r.popFront();
-        if (gc::TenuredCell::fromPointer(key.asCell())->zone()->isGCSweeping()) {
-            bool found;
-            marker.weakKeys.remove(key, &found);
-            MOZ_ASSERT(found);
-        }
-    }
-
-    
     for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
+        
         for (auto edge : zone->gcWeakRefs) {
             
             if (*edge && IsAboutToBeFinalizedDuringSweep(**edge))
                 *edge = nullptr;
         }
         zone->gcWeakRefs.clear();
+
+        
+        zone->gcWeakKeys.clear();
     }
 
     FreeOp fop(rt);

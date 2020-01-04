@@ -300,6 +300,12 @@ struct Zone : public JS::shadow::Zone,
     WeakEdges gcWeakRefs;
 
     
+
+
+
+    js::gc::WeakKeyTable gcWeakKeys;
+
+    
     
     
     

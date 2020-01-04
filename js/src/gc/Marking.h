@@ -30,6 +30,7 @@ class GCMarker;
 class LazyScript;
 class NativeObject;
 class ObjectGroup;
+class WeakMapBase;
 namespace gc {
 struct ArenaHeader;
 } 
@@ -137,8 +138,6 @@ class MarkStack
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
-class WeakMapBase;
-
 namespace gc {
 
 struct WeakKeyTableHashPolicy {
@@ -157,12 +156,12 @@ struct WeakMarkable {
       : weakmap(weakmapArg), key(keyArg) {}
 };
 
-typedef Vector<WeakMarkable, 2, js::SystemAllocPolicy> WeakEntryVector;
+using WeakEntryVector = Vector<WeakMarkable, 2, js::SystemAllocPolicy>;
 
-typedef OrderedHashMap<JS::GCCellPtr,
-                       WeakEntryVector,
-                       WeakKeyTableHashPolicy,
-                       js::SystemAllocPolicy> WeakKeyTable;
+using WeakKeyTable = OrderedHashMap<JS::GCCellPtr,
+                                    WeakEntryVector,
+                                    WeakKeyTableHashPolicy,
+                                    js::SystemAllocPolicy>;
 
 } 
 
@@ -209,17 +208,7 @@ class GCMarker : public JSTracer
     uint32_t markColor() const { return color; }
 
     void enterWeakMarkingMode();
-
-    void leaveWeakMarkingMode() {
-        MOZ_ASSERT_IF(weakMapAction() == ExpandWeakMaps && !linearWeakMarkingDisabled_, tag_ == TracerKindTag::WeakMarking);
-        tag_ = TracerKindTag::Marking;
-
-        
-        
-        
-        weakKeys.clear();
-    }
-
+    void leaveWeakMarkingMode();
     void abortLinearWeakMarking() {
         leaveWeakMarkingMode();
         linearWeakMarkingDisabled_ = true;
@@ -248,12 +237,6 @@ class GCMarker : public JSTracer
 #endif
 
     void markEphemeronValues(gc::Cell* markedCell, gc::WeakEntryVector& entry);
-
-    
-
-
-
-    gc::WeakKeyTable weakKeys;
 
   private:
 #ifdef DEBUG
