@@ -1304,16 +1304,9 @@ ServiceWorkerManager::WorkerIsIdle(ServiceWorkerInfo* aWorker)
     return;
   }
 
-  if (reg->GetActive() != aWorker) {
-    return;
+  if (reg->GetActive() == aWorker) {
+    reg->TryToActivateAsync();
   }
-
-  if (!reg->IsControllingDocuments() && reg->mPendingUninstall) {
-    RemoveRegistration(reg);
-    return;
-  }
-
-  reg->TryToActivateAsync();
 }
 
 already_AddRefed<ServiceWorkerJobQueue>
@@ -2008,20 +2001,17 @@ void
 ServiceWorkerManager::StopControllingADocument(ServiceWorkerRegistrationInfo* aRegistration)
 {
   aRegistration->StopControllingADocument();
-  if (aRegistration->IsControllingDocuments() || !aRegistration->IsIdle()) {
-    return;
+  if (!aRegistration->IsControllingDocuments()) {
+    if (aRegistration->mPendingUninstall) {
+      RemoveRegistration(aRegistration);
+    } else {
+      
+      
+      
+      
+      aRegistration->TryToActivateAsync();
+    }
   }
-
-  if (aRegistration->mPendingUninstall) {
-    RemoveRegistration(aRegistration);
-    return;
-  }
-
-  
-  
-  
-  
-  aRegistration->TryToActivateAsync();
 }
 
 NS_IMETHODIMP
