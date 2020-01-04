@@ -54,6 +54,7 @@ class MediaStreamGraphImpl;
 
 class AudioCallbackDriver;
 class OfflineClockDriver;
+class SystemClockDriver;
 
 
 
@@ -162,6 +163,10 @@ public:
   }
 
   virtual OfflineClockDriver* AsOfflineClockDriver() {
+    return nullptr;
+  }
+
+  virtual SystemClockDriver* AsSystemClockDriver() {
     return nullptr;
   }
 
@@ -296,13 +301,20 @@ public:
   MediaTime GetIntervalForIteration() override;
   void WaitForNextIteration() override;
   void WakeUp() override;
-
+  void MarkAsFallback();
+  bool IsFallback();
+  SystemClockDriver* AsSystemClockDriver() {
+    return this;
+  }
 
 private:
   
   
   TimeStamp mInitialTimeStamp;
   TimeStamp mLastTimeStamp;
+  
+  
+  bool mIsFallback;
 };
 
 
@@ -525,6 +537,9 @@ private:
 
 
   bool mMicrophoneActive;
+  
+
+  bool mFromFallback;
 };
 
 class AsyncCubebTask : public Runnable
