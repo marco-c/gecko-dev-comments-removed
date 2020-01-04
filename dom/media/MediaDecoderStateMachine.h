@@ -173,13 +173,7 @@ private:
   void Shutdown();
 public:
 
-  void DispatchShutdown()
-  {
-    mDecodedStream->Shutdown();
-    nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::Shutdown);
-    OwnerThread()->Dispatch(runnable.forget());
-  }
+  void DispatchShutdown();
 
   void FinishShutdown();
 
@@ -456,8 +450,6 @@ protected:
   
   
   void UpdateNextFrameStatus();
-
-  int64_t GetStreamClock() const;
 
   
   
@@ -1273,7 +1265,7 @@ private:
   
   
   
-  nsRefPtr<DecodedStream> mDecodedStream;
+  nsRefPtr<DecodedStream> mStreamSink;
 
   
   nsRefPtr<MediaResource> mResource;
