@@ -3299,7 +3299,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
           numberControlFrame->HandlingInputEvent(false);
         }
       }
-      else if (aVisitor.mEvent->mMessage == NS_FORM_CHANGE) {
+      else if (aVisitor.mEvent->mMessage == eFormChange) {
         
         
         
