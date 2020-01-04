@@ -9,6 +9,12 @@ function jitTogglesMatch(opts) {
     if (k.indexOf(".enable") > 0 && opts[k] != currentOpts[k])
       return false;
   }
+
+  
+  
+  if (getBuildConfiguration()['arm64-simulator'] && opts['ion.enable'])
+    return false;
+
   return true;
 }
 
