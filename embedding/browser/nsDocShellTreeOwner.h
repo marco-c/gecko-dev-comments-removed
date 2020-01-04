@@ -101,6 +101,8 @@ protected:
   void AddToWatcher();
   void RemoveFromWatcher();
 
+  void EnsureContentTreeOwner();
+
   
   
   
@@ -127,6 +129,8 @@ protected:
   
   RefPtr<ChromeTooltipListener> mChromeTooltipListener;
   RefPtr<ChromeContextMenuListener> mChromeContextMenuListener;
+
+  RefPtr<nsDocShellTreeOwner> mContentTreeOwner;
 
   nsCOMPtr<nsIPrompt> mPrompter;
   nsCOMPtr<nsIAuthPrompt> mAuthPrompter;
