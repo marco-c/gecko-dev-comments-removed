@@ -48,9 +48,13 @@ enum class SurfacePipeFlags
 {
   DEINTERLACE         = 1 << 0,  
 
-  FLIP_VERTICALLY     = 1 << 1,  
+  ADAM7_INTERPOLATE   = 1 << 1,  
+                                 
+                                 
 
-  PROGRESSIVE_DISPLAY = 1 << 2   
+  FLIP_VERTICALLY     = 1 << 2,  
+
+  PROGRESSIVE_DISPLAY = 1 << 3   
                                  
                                  
                                  
@@ -103,8 +107,22 @@ public:
     
     
     
+    const bool adam7Interpolate = bool(aFlags & SurfacePipeFlags::ADAM7_INTERPOLATE) &&
+                                  progressiveDisplay;
+
+    if (deinterlace && adam7Interpolate) {
+      MOZ_ASSERT_UNREACHABLE("ADAM7 deinterlacing is handled by libpng");
+      return Nothing();
+    }
+
+    
+    
+    
+    
+    
     
     DeinterlacingConfig<uint32_t> deinterlacingConfig { progressiveDisplay };
+    ADAM7InterpolatingConfig interpolatingConfig;
     RemoveFrameRectConfig removeFrameRectConfig { aFrameRect };
     DownscalingConfig downscalingConfig { aInputSize, aFormat };
     SurfaceConfig surfaceConfig { aDecoder, aFrameNum, aOutputSize,
@@ -117,12 +135,17 @@ public:
         if (deinterlace) {
           pipe = MakePipe(deinterlacingConfig, removeFrameRectConfig,
                           downscalingConfig, surfaceConfig);
+        } else if (adam7Interpolate) {
+          pipe = MakePipe(interpolatingConfig, removeFrameRectConfig,
+                          downscalingConfig, surfaceConfig);
         } else {  
           pipe = MakePipe(removeFrameRectConfig, downscalingConfig, surfaceConfig);
         }
       } else {  
         if (deinterlace) {
           pipe = MakePipe(deinterlacingConfig, downscalingConfig, surfaceConfig);
+        } else if (adam7Interpolate) {
+          pipe = MakePipe(interpolatingConfig, downscalingConfig, surfaceConfig);
         } else {  
           pipe = MakePipe(downscalingConfig, surfaceConfig);
         }
@@ -131,12 +154,16 @@ public:
       if (removeFrameRect) {
         if (deinterlace) {
           pipe = MakePipe(deinterlacingConfig, removeFrameRectConfig, surfaceConfig);
+        } else if (adam7Interpolate) {
+          pipe = MakePipe(interpolatingConfig, removeFrameRectConfig, surfaceConfig);
         } else {  
           pipe = MakePipe(removeFrameRectConfig, surfaceConfig);
         }
       } else {  
         if (deinterlace) {
           pipe = MakePipe(deinterlacingConfig, surfaceConfig);
+        } else if (adam7Interpolate) {
+          pipe = MakePipe(interpolatingConfig, surfaceConfig);
         } else {  
           pipe = MakePipe(surfaceConfig);
         }
