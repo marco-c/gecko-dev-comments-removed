@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { SimpleStringFront } = require("devtools/server/actors/string");
+const { SimpleStringFront } = require("devtools/shared/fronts/string");
 const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
 const {
   oldStyleSheetSpec,
