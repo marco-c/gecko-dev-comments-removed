@@ -474,8 +474,6 @@ class JSString : public js::gc::TenuredCell
 
     inline void finalize(js::FreeOp* fop);
 
-    void fixupAfterMovingGC() {}
-
     
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);

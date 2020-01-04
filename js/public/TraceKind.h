@@ -98,15 +98,10 @@ JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 enum class RootKind : int8_t
 {
     
-    BaseShape = 0,
-    JitCode,
-    LazyScript,
-    Object,
-    ObjectGroup,
-    Script,
-    Shape,
-    String,
-    Symbol,
+#define EXPAND_ROOT_KIND(name, _0, _1) \
+    name,
+JS_FOR_EACH_TRACEKIND(EXPAND_ROOT_KIND)
+#undef EXPAND_ROOT_KIND
 
     
     Id,

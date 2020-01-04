@@ -261,52 +261,22 @@ const AllocKind gc::slotsToThingKind[] = {
 static_assert(JS_ARRAY_LENGTH(slotsToThingKind) == SLOTS_TO_THING_KIND_LIMIT,
               "We have defined a slot count for each kind.");
 
+#define CHECK_THING_SIZE(allocKind, traceKind, type, sizedType) \
+    static_assert(sizeof(sizedType) >= SortedArenaList::MinThingSize, \
+                  #sizedType " is smaller than SortedArenaList::MinThingSize!"); \
+    static_assert(sizeof(sizedType) >= sizeof(FreeSpan), \
+                  #sizedType " is smaller than FreeSpan"); \
+    static_assert(sizeof(sizedType) % CellSize == 0, \
+                  "Size of " #sizedType " is not a multiple of CellSize");
+FOR_EACH_ALLOCKIND(CHECK_THING_SIZE);
+#undef CHECK_THING_SIZE
 
-
-#define CHECK_THING_SIZE_INNER(x_)                                             \
-    static_assert(x_ >= SortedArenaList::MinThingSize,                         \
-                  #x_ " is less than SortedArenaList::MinThingSize!");         \
-    static_assert(x_ >= sizeof(FreeSpan),                                      \
-                  #x_ " is less than sizeof(FreeSpan)");                       \
-    static_assert(x_ % CellSize == 0,                                          \
-                  #x_ " not a multiple of CellSize");
-
-#define CHECK_THING_SIZE(...) { __VA_ARGS__ }; /* Define the array. */         \
-    MOZ_FOR_EACH(CHECK_THING_SIZE_INNER, (), (__VA_ARGS__ 0x20))
-
-#define CHECK_ZEAL(name, value)                                                \
-    static_assert(ZealMode::Limit >= ZealMode::name,                           \
-                  "ZealMode::Limit shouldn't be smaller than " #name);
-JS_FOR_EACH_ZEAL_MODE(CHECK_ZEAL)
-#undef CHECK_ZEAL
-
-const uint32_t Arena::ThingSizes[] = CHECK_THING_SIZE(
-    sizeof(JSFunction),         
-    sizeof(FunctionExtended),   
-    sizeof(JSObject_Slots0),    
-    sizeof(JSObject_Slots0),    
-    sizeof(JSObject_Slots2),    
-    sizeof(JSObject_Slots2),    
-    sizeof(JSObject_Slots4),    
-    sizeof(JSObject_Slots4),    
-    sizeof(JSObject_Slots8),    
-    sizeof(JSObject_Slots8),    
-    sizeof(JSObject_Slots12),   
-    sizeof(JSObject_Slots12),   
-    sizeof(JSObject_Slots16),   
-    sizeof(JSObject_Slots16),   
-    sizeof(JSScript),           
-    sizeof(LazyScript),         
-    sizeof(Shape),              
-    sizeof(AccessorShape),      
-    sizeof(BaseShape),          
-    sizeof(ObjectGroup),        
-    sizeof(JSFatInlineString),  
-    sizeof(JSString),           
-    sizeof(JSExternalString),   
-    sizeof(JS::Symbol),         
-    sizeof(jit::JitCode),       
-);
+const uint32_t Arena::ThingSizes[] = {
+#define EXPAND_THING_SIZE(allocKind, traceKind, type, sizedType) \
+    sizeof(sizedType),
+FOR_EACH_ALLOCKIND(EXPAND_THING_SIZE)
+#undef EXPAND_THING_SIZE
+    };
 
 FreeSpan ArenaLists::placeholder;
 
@@ -316,31 +286,10 @@ FreeSpan ArenaLists::placeholder;
 #define OFFSET(type) uint32_t(ArenaHeaderSize + (ArenaSize - ArenaHeaderSize) % sizeof(type))
 
 const uint32_t Arena::FirstThingOffsets[] = {
-    OFFSET(JSFunction),         
-    OFFSET(FunctionExtended),   
-    OFFSET(JSObject_Slots0),    
-    OFFSET(JSObject_Slots0),    
-    OFFSET(JSObject_Slots2),    
-    OFFSET(JSObject_Slots2),    
-    OFFSET(JSObject_Slots4),    
-    OFFSET(JSObject_Slots4),    
-    OFFSET(JSObject_Slots8),    
-    OFFSET(JSObject_Slots8),    
-    OFFSET(JSObject_Slots12),   
-    OFFSET(JSObject_Slots12),   
-    OFFSET(JSObject_Slots16),   
-    OFFSET(JSObject_Slots16),   
-    OFFSET(JSScript),           
-    OFFSET(LazyScript),         
-    OFFSET(Shape),              
-    OFFSET(AccessorShape),      
-    OFFSET(BaseShape),          
-    OFFSET(ObjectGroup),        
-    OFFSET(JSFatInlineString),  
-    OFFSET(JSString),           
-    OFFSET(JSExternalString),   
-    OFFSET(JS::Symbol),         
-    OFFSET(jit::JitCode),       
+#define EXPAND_FIRST_THING_OFFSET(allocKind, traceKind, type, sizedType) \
+    OFFSET(sizedType),
+FOR_EACH_ALLOCKIND(EXPAND_FIRST_THING_OFFSET)
+#undef EXPAND_FIRST_THING_OFFSET
 };
 
 #undef OFFSET
@@ -348,31 +297,10 @@ const uint32_t Arena::FirstThingOffsets[] = {
 #define COUNT(type) uint32_t((ArenaSize - ArenaHeaderSize) / sizeof(type))
 
 const uint32_t Arena::ThingsPerArena[] = {
-    COUNT(JSFunction),          
-    COUNT(FunctionExtended),    
-    COUNT(JSObject_Slots0),     
-    COUNT(JSObject_Slots0),     
-    COUNT(JSObject_Slots2),     
-    COUNT(JSObject_Slots2),     
-    COUNT(JSObject_Slots4),     
-    COUNT(JSObject_Slots4),     
-    COUNT(JSObject_Slots8),     
-    COUNT(JSObject_Slots8),     
-    COUNT(JSObject_Slots12),    
-    COUNT(JSObject_Slots12),    
-    COUNT(JSObject_Slots16),    
-    COUNT(JSObject_Slots16),    
-    COUNT(JSScript),            
-    COUNT(LazyScript),          
-    COUNT(Shape),               
-    COUNT(AccessorShape),       
-    COUNT(BaseShape),           
-    COUNT(ObjectGroup),         
-    COUNT(JSFatInlineString),   
-    COUNT(JSString),            
-    COUNT(JSExternalString),    
-    COUNT(JS::Symbol),          
-    COUNT(jit::JitCode),        
+#define EXPAND_THINGS_PER_ARENA(allocKind, traceKind, type, sizedType) \
+    COUNT(sizedType),
+FOR_EACH_ALLOCKIND(EXPAND_THINGS_PER_ARENA)
+#undef EXPAND_THINGS_PER_ARENA
 };
 
 #undef COUNT
@@ -604,43 +532,12 @@ FinalizeArenas(FreeOp* fop,
                ArenaLists::KeepArenasEnum keepArenas)
 {
     switch (thingKind) {
-      case AllocKind::FUNCTION:
-      case AllocKind::FUNCTION_EXTENDED:
-      case AllocKind::OBJECT0:
-      case AllocKind::OBJECT0_BACKGROUND:
-      case AllocKind::OBJECT2:
-      case AllocKind::OBJECT2_BACKGROUND:
-      case AllocKind::OBJECT4:
-      case AllocKind::OBJECT4_BACKGROUND:
-      case AllocKind::OBJECT8:
-      case AllocKind::OBJECT8_BACKGROUND:
-      case AllocKind::OBJECT12:
-      case AllocKind::OBJECT12_BACKGROUND:
-      case AllocKind::OBJECT16:
-      case AllocKind::OBJECT16_BACKGROUND:
-        return FinalizeTypedArenas<JSObject>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::SCRIPT:
-        return FinalizeTypedArenas<JSScript>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::LAZY_SCRIPT:
-        return FinalizeTypedArenas<LazyScript>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::SHAPE:
-        return FinalizeTypedArenas<Shape>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::ACCESSOR_SHAPE:
-        return FinalizeTypedArenas<AccessorShape>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::BASE_SHAPE:
-        return FinalizeTypedArenas<BaseShape>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::OBJECT_GROUP:
-        return FinalizeTypedArenas<ObjectGroup>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::STRING:
-        return FinalizeTypedArenas<JSString>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::FAT_INLINE_STRING:
-        return FinalizeTypedArenas<JSFatInlineString>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::EXTERNAL_STRING:
-        return FinalizeTypedArenas<JSExternalString>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::SYMBOL:
-        return FinalizeTypedArenas<JS::Symbol>(fop, src, dest, thingKind, budget, keepArenas);
-      case AllocKind::JITCODE:
-        return FinalizeTypedArenas<jit::JitCode>(fop, src, dest, thingKind, budget, keepArenas);
+#define EXPAND_CASE(allocKind, traceKind, type, sizedType) \
+      case AllocKind::allocKind: \
+        return FinalizeTypedArenas<type>(fop, src, dest, thingKind, budget, keepArenas);
+FOR_EACH_ALLOCKIND(EXPAND_CASE)
+#undef EXPAND_CASE
+
       default:
         MOZ_CRASH("Invalid alloc kind");
     }
@@ -2543,49 +2440,15 @@ static void
 UpdateArenaPointers(MovingTracer* trc, Arena* arena)
 {
     AllocKind kind = arena->getAllocKind();
-    JS::TraceKind traceKind = MapAllocToTraceKind(kind);
 
     switch (kind) {
-      case AllocKind::FUNCTION:
-      case AllocKind::FUNCTION_EXTENDED:
-      case AllocKind::OBJECT0:
-      case AllocKind::OBJECT0_BACKGROUND:
-      case AllocKind::OBJECT2:
-      case AllocKind::OBJECT2_BACKGROUND:
-      case AllocKind::OBJECT4:
-      case AllocKind::OBJECT4_BACKGROUND:
-      case AllocKind::OBJECT8:
-      case AllocKind::OBJECT8_BACKGROUND:
-      case AllocKind::OBJECT12:
-      case AllocKind::OBJECT12_BACKGROUND:
-      case AllocKind::OBJECT16:
-      case AllocKind::OBJECT16_BACKGROUND:
-        UpdateArenaPointersTyped<JSObject>(trc, arena, traceKind);
+#define EXPAND_CASE(allocKind, traceKind, type, sizedType) \
+      case AllocKind::allocKind: \
+        UpdateArenaPointersTyped<type>(trc, arena, JS::TraceKind::traceKind); \
         return;
-      case AllocKind::SCRIPT:
-        UpdateArenaPointersTyped<JSScript>(trc, arena, traceKind);
-        return;
-      case AllocKind::LAZY_SCRIPT:
-        UpdateArenaPointersTyped<LazyScript>(trc, arena, traceKind);
-        return;
-      case AllocKind::SHAPE:
-        UpdateArenaPointersTyped<Shape>(trc, arena, traceKind);
-        return;
-      case AllocKind::ACCESSOR_SHAPE:
-        UpdateArenaPointersTyped<AccessorShape>(trc, arena, traceKind);
-        return;
-      case AllocKind::BASE_SHAPE:
-        UpdateArenaPointersTyped<BaseShape>(trc, arena, traceKind);
-        return;
-      case AllocKind::OBJECT_GROUP:
-        UpdateArenaPointersTyped<ObjectGroup>(trc, arena, traceKind);
-        return;
-      case AllocKind::STRING:
-        UpdateArenaPointersTyped<JSString>(trc, arena, traceKind);
-        return;
-      case AllocKind::JITCODE:
-        UpdateArenaPointersTyped<jit::JitCode>(trc, arena, traceKind);
-        return;
+FOR_EACH_ALLOCKIND(EXPAND_CASE)
+#undef EXPAND_CASE
+
       default:
         MOZ_CRASH("Invalid alloc kind for UpdateArenaPointers");
     }
@@ -3961,11 +3824,13 @@ static const char*
 AllocKindToAscii(AllocKind kind)
 {
     switch(kind) {
-#define MAKE_CASE(name, _) case AllocKind:: name: return #name;
-      FOR_EACH_ALLOCKIND(MAKE_CASE)
+#define MAKE_CASE(allocKind, traceKind, type, sizedType) \
+      case AllocKind:: allocKind: return #allocKind;
+FOR_EACH_ALLOCKIND(MAKE_CASE)
 #undef MAKE_CASE
-      case AllocKind::LIMIT: MOZ_FALLTHROUGH;
-      default: MOZ_CRASH("Unknown AllocKind in AllocKindToAscii");
+
+      default:
+        MOZ_CRASH("Unknown AllocKind in AllocKindToAscii");
     }
 }
 #endif 

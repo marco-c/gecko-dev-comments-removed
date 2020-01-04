@@ -357,16 +357,16 @@ AssertRootMarkingPhase(JSTracer* trc)
 
 
 
-template <typename T,
-          JS::TraceKind = IsBaseOf<JSObject, T>::value     ? JS::TraceKind::Object
-                        : IsBaseOf<JSString, T>::value     ? JS::TraceKind::String
-                        : IsBaseOf<JS::Symbol, T>::value   ? JS::TraceKind::Symbol
-                        : IsBaseOf<JSScript, T>::value     ? JS::TraceKind::Script
-                        : IsBaseOf<Shape, T>::value        ? JS::TraceKind::Shape
-                        : IsBaseOf<BaseShape, T>::value    ? JS::TraceKind::BaseShape
-                        : IsBaseOf<jit::JitCode, T>::value ? JS::TraceKind::JitCode
-                        : IsBaseOf<LazyScript, T>::value   ? JS::TraceKind::LazyScript
-                        :                                    JS::TraceKind::ObjectGroup>
+
+
+
+template <typename T, JS::TraceKind =
+#define EXPAND_MATCH_TYPE(name, type, _) \
+          IsBaseOf<type, T>::value ? JS::TraceKind::name :
+JS_FOR_EACH_TRACEKIND(EXPAND_MATCH_TYPE)
+#undef EXPAND_MATCH_TYPE
+          JS::TraceKind::Null>
+
 struct BaseGCType;
 #define IMPL_BASE_GC_TYPE(name, type_, _) \
     template <typename T> struct BaseGCType<T, JS::TraceKind:: name> { typedef type_ type; };
