@@ -56,13 +56,15 @@ function consoleOpened(aHud) {
 
     
     
+    
     let selection = (HUD.iframeWindow.getSelection() + "")
-      .replace(/\r?\n|\r/g, " ");
+      .replace(/\r?\n|\r| /g, "");
     isnot(selection.indexOf("bug587617"), -1,
           "selection text includes 'bug587617'");
 
     waitForClipboard((str) => {
-      return selection.trim() == str.trim();
+      
+      return selection.trim() == str.trim().replace(/ /g, "");
     }, () => {
       goDoCommand("cmd_copy");
     }, deferred.resolve, deferred.resolve);
@@ -84,13 +86,15 @@ function testContextMenuCopy() {
 
   
   
+  
   let selection = (HUD.iframeWindow.getSelection() + "")
-    .replace(/\r?\n|\r/g, " ");
+    .replace(/\r?\n|\r| /g, "");
 
   copyItem.doCommand();
 
   waitForClipboard((str) => {
-    return selection.trim() == str.trim();
+    
+    return selection.trim() == str.trim().replace(/ /g, "");
   }, () => {
     goDoCommand("cmd_copy");
   }, deferred.resolve, deferred.resolve);
