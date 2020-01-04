@@ -614,29 +614,40 @@ AboutReader.prototype = {
     if (this._articlePromise) {
       article = yield this._articlePromise;
     } else {
-      article = yield this._getArticle(url);
+      try {
+        article = yield this._getArticle(url);
+      } catch (e) {
+        if (e && e.newURL) {
+          let readerURL = "about:reader?url=" + encodeURIComponent(e.newURL);
+          this._win.location.replace(readerURL);
+          return;
+        }
+      }
     }
 
     if (this._windowUnloaded) {
       return;
     }
 
-    if (article) {
-      this._showContent(article);
-    } else if (this._articlePromise) {
-      
+    
+    
+    
+    if (!article) {
       this._showError();
-    } else {
-      
-      
-      this._win.location.href = url;
+      return;
     }
+
+    this._showContent(article);
   }),
 
   _getArticle: function(url) {
     return new Promise((resolve, reject) => {
       let listener = (message) => {
         this._mm.removeMessageListener("Reader:ArticleData", listener);
+        if (message.data.newURL) {
+          reject({ newURL: message.data.newURL });
+          return;
+        }
         resolve(message.data.article);
       };
       this._mm.addMessageListener("Reader:ArticleData", listener);

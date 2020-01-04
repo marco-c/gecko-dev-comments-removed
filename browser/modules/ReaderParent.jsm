@@ -45,7 +45,10 @@ var ReaderParent = {
           }
         }, e => {
           if (e && e.newURL) {
-            message.target.loadURI("about:reader?url=" + encodeURIComponent(e.newURL));
+            
+            if (message.target.messageManager) {
+              message.target.messageManager.sendAsyncMessage("Reader:ArticleData", { newURL: e.newURL });
+            }
           }
         });
         break;
