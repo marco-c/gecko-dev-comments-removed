@@ -12,7 +12,6 @@
 #define mozilla_image_SurfaceCache_h
 
 #include "mozilla/Maybe.h"           
-#include "mozilla/NotNull.h"
 #include "mozilla/MemoryReporting.h" 
 #include "mozilla/HashFunctions.h"   
 #include "gfx2DGlue.h"
@@ -27,7 +26,7 @@ namespace mozilla {
 namespace image {
 
 class Image;
-class ISurfaceProvider;
+class imgFrame;
 class LookupResult;
 struct SurfaceMemoryCounter;
 
@@ -122,6 +121,7 @@ enum class InsertOutcome : uint8_t {
   FAILURE,                 
   FAILURE_ALREADY_PRESENT  
 };
+
 
 
 
@@ -249,8 +249,7 @@ struct SurfaceCache
 
 
 
-
-  static InsertOutcome Insert(NotNull<ISurfaceProvider*> aProvider,
+  static InsertOutcome Insert(imgFrame*         aSurface,
                               const ImageKey    aImageKey,
                               const SurfaceKey& aSurfaceKey);
 

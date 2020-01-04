@@ -923,7 +923,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
 
   
   
-  NotNull<RefPtr<imgFrame>> frame = WrapNotNull(new imgFrame);
+  RefPtr<imgFrame> frame = new imgFrame;
   nsresult rv =
     frame->InitWithDrawable(svgDrawable, aParams.size,
                             SurfaceFormat::B8G8R8A8,
@@ -944,9 +944,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
   }
 
   
-  NotNull<RefPtr<ISurfaceProvider>> provider =
-    WrapNotNull(new SimpleSurfaceProvider(frame));
-  SurfaceCache::Insert(provider, ImageKey(this),
+  SurfaceCache::Insert(frame, ImageKey(this),
                        VectorSurfaceKey(aParams.size,
                                         aParams.svgContext,
                                         aParams.animationTime));
