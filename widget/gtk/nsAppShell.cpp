@@ -112,12 +112,14 @@ nsAppShell::Init()
     for (GSList* iter = pixbufFormats; iter; iter = iter->next) {
         GdkPixbufFormat* format = static_cast<GdkPixbufFormat*>(iter->data);
         gchar* name = gdk_pixbuf_format_get_name(format);
-        bool isJasper = strcmp(name, "jpeg2000") == 0;
-        g_free(name);
-        if (isJasper) {
-            gdk_pixbuf_format_set_disabled(format, TRUE);
-            break;
+        if (strcmp(name, "jpeg") &&
+            strcmp(name, "png") &&
+            strcmp(name, "gif") &&
+            strcmp(name, "bmp") &&
+            strcmp(name, "ico")) {
+          gdk_pixbuf_format_set_disabled(format, TRUE);
         }
+        g_free(name);
     }
     g_slist_free(pixbufFormats);
 
