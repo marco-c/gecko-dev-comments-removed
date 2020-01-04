@@ -15,6 +15,7 @@
 #include "nsIRunnable.h"
 #include "nsIAsyncShutdown.h"
 #include "Latency.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "GraphDriver.h"
 #include "AudioMixer.h"
@@ -80,7 +81,7 @@ protected:
 class MessageBlock
 {
 public:
-  nsTArray<nsAutoPtr<ControlMessage> > mMessages;
+  nsTArray<UniquePtr<ControlMessage>> mMessages;
 };
 
 
@@ -139,7 +140,7 @@ public:
 
 
 
-  void AppendMessage(ControlMessage* aMessage);
+  void AppendMessage(UniquePtr<ControlMessage> aMessage);
 
   
 
@@ -293,7 +294,7 @@ public:
 
 
 
-  void RunMessageAfterProcessing(nsAutoPtr<ControlMessage> aMessage);
+  void RunMessageAfterProcessing(UniquePtr<ControlMessage> aMessage);
 
   
 
@@ -748,7 +749,7 @@ public:
 
 
 
-  nsTArray<nsAutoPtr<ControlMessage> > mCurrentTaskMessageQueue;
+  nsTArray<UniquePtr<ControlMessage>> mCurrentTaskMessageQueue;
   
 
 
