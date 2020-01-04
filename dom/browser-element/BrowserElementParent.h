@@ -109,26 +109,6 @@ public:
                       const nsACString& aFeatures,
                       nsIDOMWindow** aReturnWindow);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool
-  DispatchAsyncScrollEvent(dom::TabParent* aTabParent,
-                           const CSSRect& aContentRect,
-                           const CSSSize& aContentSize);
-
 private:
   static OpenWindowResult
   DispatchOpenWindowEvent(dom::Element* aOpenerFrameElement,

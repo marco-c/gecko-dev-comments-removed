@@ -540,8 +540,6 @@ pref("layout.event-regions.enabled", false);
 
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_zooming", false);
-pref("apz.asyncscroll.throttle", 100);
-pref("apz.asyncscroll.timeout", 300);
 
 
 

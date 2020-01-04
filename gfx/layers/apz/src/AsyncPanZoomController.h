@@ -261,12 +261,6 @@ public:
     const ParentLayerPoint& aVelocity,
     double aEstimatedPaintDuration);
 
-  
-
-
-
-  void SendAsyncScrollEvent();
-
   nsEventStatus HandleDragEvent(const MouseInput& aEvent,
                                 const AsyncDragMetrics& aDragMetrics);
 
@@ -623,14 +617,6 @@ protected:
 
 
 
-  void FireAsyncScrollOnTimeout();
-
-  
-
-
-
-
-
   bool ConvertToGecko(const ScreenIntPoint& aPoint, CSSPoint* aOut);
 
   enum AxisLockMode {
@@ -731,19 +717,6 @@ private:
   
   
   ParentLayerPoint mLastZoomFocus;
-
-  
-  
-  TimeStamp mLastAsyncScrollTime;
-  CSSPoint mLastAsyncScrollOffset;
-
-  
-  
-  CSSPoint mCurrentAsyncScrollOffset;
-
-  
-  
-  CancelableTask* mAsyncScrollTimeoutTask;
 
   RefPtr<AsyncPanZoomAnimation> mAnimation;
 

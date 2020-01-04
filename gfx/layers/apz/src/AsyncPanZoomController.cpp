@@ -338,14 +338,6 @@ using mozilla::gfx::PointTyped;
 
 
 
-
-
-
-
-
-
-
-
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -839,10 +831,6 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mPanDirRestricted(false),
      mZoomConstraints(false, false, MIN_ZOOM, MAX_ZOOM),
      mLastSampleTime(GetFrameTime()),
-     mLastAsyncScrollTime(GetFrameTime()),
-     mLastAsyncScrollOffset(0, 0),
-     mCurrentAsyncScrollOffset(0, 0),
-     mAsyncScrollTimeoutTask(nullptr),
      mState(NOTHING),
      mNotificationBlockers(0),
      mInputQueue(aInputQueue),
@@ -1302,7 +1290,6 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
   
   if (mState != NOTHING) {
     ReentrantMonitorAutoEnter lock(mMonitor);
-    SendAsyncScrollEvent();
   }
 
   switch (mState) {
@@ -2757,7 +2744,6 @@ void AsyncPanZoomController::RequestContentRepaint(FrameMetrics& aFrameMetrics, 
     return;
   }
 
-  SendAsyncScrollEvent();
   if (aThrottled) {
     mPaintThrottler->PostTask(
       FROM_HERE,
@@ -2801,16 +2787,6 @@ AsyncPanZoomController::DispatchRepaintRequest(const FrameMetrics& aFrameMetrics
   }
 }
 
-void
-AsyncPanZoomController::FireAsyncScrollOnTimeout()
-{
-  if (mCurrentAsyncScrollOffset != mLastAsyncScrollOffset) {
-    ReentrantMonitorAutoEnter lock(mMonitor);
-    SendAsyncScrollEvent();
-  }
-  mAsyncScrollTimeoutTask = nullptr;
-}
-
 bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
                                              Vector<Task*>* aOutDeferredTasks)
 {
@@ -2837,7 +2813,6 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
     } else {
       mAnimation = nullptr;
       SetState(NOTHING);
-      SendAsyncScrollEvent();
       RequestContentRepaint();
     }
     UpdateSharedCompositorFrameMetrics();
@@ -2916,8 +2891,6 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
     LogRendertraceRect(GetGuid(), "viewport", "red",
       CSSRect(mFrameMetrics.GetScrollOffset(),
               mFrameMetrics.CalculateCompositedSizeInCssPixels()));
-
-    mCurrentAsyncScrollOffset = mFrameMetrics.GetScrollOffset();
   }
 
   
@@ -2932,32 +2905,6 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   
   
   requestAnimationFrame |= (mAnimation != nullptr);
-
-  
-  
-  if (mAsyncScrollTimeoutTask) {
-    mAsyncScrollTimeoutTask->Cancel();
-    mAsyncScrollTimeoutTask = nullptr;
-  }
-  
-  
-  
-  
-  
-  TimeDuration delta = aSampleTime - mLastAsyncScrollTime;
-  if (delta.ToMilliseconds() > gfxPrefs::APZAsyncScrollThrottleTime() &&
-      mCurrentAsyncScrollOffset != mLastAsyncScrollOffset) {
-    ReentrantMonitorAutoEnter lock(mMonitor);
-    mLastAsyncScrollTime = aSampleTime;
-    mLastAsyncScrollOffset = mCurrentAsyncScrollOffset;
-    SendAsyncScrollEvent();
-  } else {
-    mAsyncScrollTimeoutTask =
-      NewRunnableMethod(this, &AsyncPanZoomController::FireAsyncScrollOnTimeout);
-    MessageLoop::current()->PostDelayedTask(FROM_HERE,
-                                            mAsyncScrollTimeoutTask,
-                                            gfxPrefs::APZAsyncScrollTimeout());
-  }
 
   return requestAnimationFrame;
 }
@@ -3466,27 +3413,6 @@ void AsyncPanZoomController::PostDelayedTask(Task* aTask, int aDelayMs) {
   if (controller) {
     controller->PostDelayedTask(aTask, aDelayMs);
   }
-}
-
-void AsyncPanZoomController::SendAsyncScrollEvent() {
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
-  if (!controller) {
-    return;
-  }
-
-  bool isRootContent;
-  CSSRect contentRect;
-  CSSSize scrollableSize;
-  {
-    ReentrantMonitorAutoEnter lock(mMonitor);
-
-    isRootContent = mFrameMetrics.IsRootContent();
-    scrollableSize = mFrameMetrics.GetScrollableRect().Size();
-    contentRect = mFrameMetrics.CalculateCompositedRectInCssPixels();
-    contentRect.MoveTo(mCurrentAsyncScrollOffset);
-  }
-
-  controller->SendAsyncScrollDOMEvent(isRootContent, contentRect, scrollableSize);
 }
 
 bool AsyncPanZoomController::Matches(const ScrollableLayerGuid& aGuid)

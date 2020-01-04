@@ -79,15 +79,6 @@ public:
 
 
 
-  virtual void SendAsyncScrollDOMEvent(bool aIsRootContent,
-                                       const CSSRect &aContentRect,
-                                       const CSSSize &aScrollableSize) = 0;
-
-  
-
-
-
-
   virtual void PostDelayedTask(Task* aTask, int aDelayMs) = 0;
 
   

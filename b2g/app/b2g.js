@@ -1015,7 +1015,6 @@ pref("apz.allow_zooming", true);
 
 
 
-pref("apz.asyncscroll.throttle", 40);
 pref("apz.pan_repaint_interval", 16);
 
 
