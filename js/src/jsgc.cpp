@@ -3911,6 +3911,10 @@ GCRuntime::checkForCompartmentMismatches()
     if (disableStrictProxyCheckingCount)
         return;
 
+    
+    MOZ_ASSERT(rt->isHeapBusy());
+    JS::AutoSuppressGCAnalysis noAnalysis;
+
     CompartmentCheckTracer trc(rt);
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
         trc.zone = zone;
