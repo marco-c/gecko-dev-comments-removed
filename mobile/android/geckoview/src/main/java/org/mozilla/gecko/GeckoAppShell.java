@@ -261,6 +261,8 @@ public class GeckoAppShell
 
     public static native void invalidateAndScheduleComposite();
 
+    public static native float computeRenderIntegrity();
+
     public static native void addPresentationSurface(Surface surface);
     public static native void removePresentationSurface(Surface surface);
 
@@ -856,36 +858,6 @@ public class GeckoAppShell
         default:
             Log.w(LOGTAG, "Error! Can't disable unknown SENSOR type " + aSensortype);
         }
-    }
-
-    @WrapForJNI
-    public static void startMonitoringGamepad() {
-        ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    AndroidGamepadManager.startup();
-                }
-            });
-    }
-
-    @WrapForJNI
-    public static void stopMonitoringGamepad() {
-        ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    AndroidGamepadManager.shutdown();
-                }
-            });
-    }
-
-    @WrapForJNI
-    public static void gamepadAdded(final int device_id, final int service_id) {
-        ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    AndroidGamepadManager.gamepadAdded(device_id, service_id);
-                }
-            });
     }
 
     @WrapForJNI
