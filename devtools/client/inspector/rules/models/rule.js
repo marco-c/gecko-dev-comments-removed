@@ -439,6 +439,12 @@ Rule.prototype = {
       
       
       
+      if (!name) {
+        continue;
+      }
+      
+      
+      
       
       let invisible = this.inherited && !domUtils.isInheritedProperty(name);
       let value = store.userProperties.getProperty(this.style, name,
