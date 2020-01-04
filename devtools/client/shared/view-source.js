@@ -50,14 +50,23 @@ exports.viewSourceInStyleEditor = Task.async(function* (toolbox, sourceURL,
 
 
 
-exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL,
-                                                     sourceLine) {
+exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL, sourceLine) {
   
   
   
   let debuggerAlreadyOpen = toolbox.getPanel("jsdebugger");
   let { panelWin: dbg } = yield toolbox.loadTool("jsdebugger");
 
+  
+  if (Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend")) {
+    yield toolbox.selectTool("jsdebugger");
+    
+    
+    dbg.actions.selectSourceURL(sourceURL);
+    return true;
+  }
+
+  
   if (!debuggerAlreadyOpen) {
     yield dbg.DebuggerController.waitForSourcesLoaded();
   }

@@ -14,6 +14,9 @@ let whitelist = [
   {sourceName: /codemirror\.css$/i,
    isFromDevTools: true},
   
+  {sourceName: /devtools\/client\/debugger\/new\/styles.css/i,
+   isFromDevTools: true},
+  
   {sourceName: /web\/viewer\.css$/i,
    errorMessage: /Unknown pseudo-class.*(fullscreen|selection)/i,
    isFromDevTools: false},
