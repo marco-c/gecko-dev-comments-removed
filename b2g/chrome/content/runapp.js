@@ -57,7 +57,7 @@ AppRunner.prototype = {
     
     frameLoader.QueryInterface(Ci.nsIFrameLoader);
     
-    if (!frameLoader.ownerIsBrowserOrAppFrame) {
+    if (!frameLoader.ownerIsMozBrowserOrAppFrame) {
       return;
     }
 

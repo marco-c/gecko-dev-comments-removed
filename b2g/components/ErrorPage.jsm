@@ -177,7 +177,7 @@ var ErrorPage = {
   observe: function errorPageObserve(aSubject, aTopic, aData) {
     let frameLoader = aSubject.QueryInterface(Ci.nsIFrameLoader);
     
-    if (!frameLoader.ownerIsBrowserOrAppFrame) {
+    if (!frameLoader.ownerIsMozBrowserOrAppFrame) {
       return;
     }
     this._listenError(frameLoader);

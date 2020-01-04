@@ -344,7 +344,7 @@ this.AccessFu = {
       {
         
         let frameLoader = aSubject.QueryInterface(Ci.nsIFrameLoader);
-        if (!frameLoader.ownerIsBrowserOrAppFrame) {
+        if (!frameLoader.ownerIsMozBrowserOrAppFrame) {
           return;
         }
         this._handleMessageManager(frameLoader.messageManager);

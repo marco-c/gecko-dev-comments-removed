@@ -243,7 +243,8 @@ private:
 
 
 
-  bool OwnerIsBrowserOrAppFrame();
+
+  bool OwnerIsMozBrowserOrAppFrame();
 
   
 
@@ -260,7 +261,17 @@ private:
   
 
 
-  bool OwnerIsBrowserFrame();
+
+  bool OwnerIsMozBrowserFrame();
+
+  
+
+
+
+
+
+
+  bool OwnerIsIsolatedMozBrowserFrame();
 
   
 

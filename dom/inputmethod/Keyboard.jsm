@@ -151,7 +151,7 @@ this.Keyboard = {
       }
     } else {
       
-      if (!frameLoader.ownerIsBrowserOrAppFrame) {
+      if (!frameLoader.ownerIsMozBrowserOrAppFrame) {
         return;
       }
       this.initFormsFrameScript(mm);

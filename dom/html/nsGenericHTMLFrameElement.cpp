@@ -551,6 +551,20 @@ nsGenericHTMLFrameElement::GetReallyIsWidget(bool *aOut)
 }
 
  NS_IMETHODIMP
+nsGenericHTMLFrameElement::GetIsolated(bool *aOut)
+{
+  *aOut = true;
+
+  if (!nsContentUtils::IsSystemPrincipal(NodePrincipal())) {
+    return NS_OK;
+  }
+
+  
+  *aOut = !HasAttr(kNameSpaceID_None, nsGkAtoms::noisolation);
+  return NS_OK;
+}
+
+ NS_IMETHODIMP
 nsGenericHTMLFrameElement::GetIsExpectingSystemMessage(bool *aOut)
 {
   *aOut = false;
@@ -705,4 +719,3 @@ nsGenericHTMLFrameElement::SwapFrameLoaders(nsXULElement& aOtherOwner,
 {
   aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
 }
-
