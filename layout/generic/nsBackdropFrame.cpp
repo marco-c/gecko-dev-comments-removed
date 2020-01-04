@@ -45,8 +45,8 @@ nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   auto display = StyleDisplay()->mDisplay;
-  if (display == NS_STYLE_DISPLAY_NONE ||
-      display == NS_STYLE_DISPLAY_CONTENTS) {
+  if (display == mozilla::StyleDisplay::None_ ||
+      display == mozilla::StyleDisplay::Contents) {
     return;
   }
 

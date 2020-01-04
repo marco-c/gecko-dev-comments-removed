@@ -2930,7 +2930,7 @@ nsBlockFrame::AttributeChanged(int32_t         aNameSpaceID,
   }
   if (nsGkAtoms::value == aAttribute) {
     const nsStyleDisplay* styleDisplay = StyleDisplay();
-    if (NS_STYLE_DISPLAY_LIST_ITEM == styleDisplay->mDisplay) {
+    if (mozilla::StyleDisplay::ListItem == styleDisplay->mDisplay) {
       
       
       
@@ -6042,7 +6042,7 @@ nsBlockFrame::AdjustFloatAvailableSpace(BlockReflowInput& aState,
   const nsStyleDisplay* floatDisplay = aFloatFrame->StyleDisplay();
   WritingMode wm = aState.mReflowInput.GetWritingMode();
 
-  if (NS_STYLE_DISPLAY_TABLE != floatDisplay->mDisplay ||
+  if (mozilla::StyleDisplay::Table != floatDisplay->mDisplay ||
       eCompatibility_NavQuirks != aState.mPresContext->CompatibilityMode() ) {
     availISize = aState.ContentISize();
   }
@@ -6876,7 +6876,7 @@ nsBlockFrame::SetInitialChildList(ChildListID     aListID,
       }
       possibleListItem = parent;
     }
-    if (NS_STYLE_DISPLAY_LIST_ITEM ==
+    if (mozilla::StyleDisplay::ListItem ==
           possibleListItem->StyleDisplay()->mDisplay &&
         !GetPrevInFlow()) {
       
@@ -6933,7 +6933,7 @@ bool
 nsBlockFrame::BulletIsEmpty() const
 {
   NS_ASSERTION(mContent->GetPrimaryFrame()->StyleDisplay()->mDisplay ==
-                 NS_STYLE_DISPLAY_LIST_ITEM && HasOutsideBullet(),
+               mozilla::StyleDisplay::ListItem && HasOutsideBullet(),
                "should only care when we have an outside bullet");
   const nsStyleList* list = StyleList();
   return list->GetCounterStyle()->IsNone() &&

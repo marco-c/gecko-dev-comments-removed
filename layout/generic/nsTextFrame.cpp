@@ -5219,10 +5219,10 @@ nsTextFrame::GetTextDecorations(
     
     
     
-    uint8_t display = f->GetDisplay();
-    if (display != NS_STYLE_DISPLAY_INLINE &&
+    mozilla::StyleDisplay display = f->GetDisplay();
+    if (display != mozilla::StyleDisplay::Inline &&
         (!nsStyleDisplay::IsRubyDisplayType(display) ||
-         display == NS_STYLE_DISPLAY_RUBY_TEXT_CONTAINER) &&
+         display == mozilla::StyleDisplay::RubyTextContainer) &&
         nsStyleDisplay::IsDisplayTypeInlineOutside(display)) {
       break;
     }

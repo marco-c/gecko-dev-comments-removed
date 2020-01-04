@@ -588,7 +588,7 @@ public:
 
   bool IsFloating() const;
 
-  uint8_t GetDisplay() const;
+  mozilla::StyleDisplay GetDisplay() const;
 
   
   

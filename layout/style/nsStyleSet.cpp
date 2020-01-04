@@ -1952,7 +1952,7 @@ nsStyleSet::ProbePseudoElementStyle(Element* aParentElement,
     const nsStyleDisplay *display = result->StyleDisplay();
     const nsStyleContent *content = result->StyleContent();
     
-    if (display->mDisplay == NS_STYLE_DISPLAY_NONE ||
+    if (display->mDisplay == StyleDisplay::None_ ||
         content->ContentCount() == 0) {
       result = nullptr;
     }

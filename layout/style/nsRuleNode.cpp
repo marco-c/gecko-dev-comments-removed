@@ -194,25 +194,25 @@ nsRuleNode::ChildrenHashOps = {
 
 
 void
-nsRuleNode::EnsureBlockDisplay(uint8_t& display,
+nsRuleNode::EnsureBlockDisplay(StyleDisplay& display,
                                bool aConvertListItem )
 {
   
   switch (display) {
-  case NS_STYLE_DISPLAY_LIST_ITEM :
+  case StyleDisplay::ListItem:
     if (aConvertListItem) {
-      display = NS_STYLE_DISPLAY_BLOCK;
+      display = StyleDisplay::Block;
       break;
     } 
     MOZ_FALLTHROUGH;
-  case NS_STYLE_DISPLAY_NONE :
-  case NS_STYLE_DISPLAY_CONTENTS :
+  case StyleDisplay::None_:
+  case StyleDisplay::Contents:
     
-  case NS_STYLE_DISPLAY_TABLE :
-  case NS_STYLE_DISPLAY_BLOCK :
-  case NS_STYLE_DISPLAY_FLEX :
-  case NS_STYLE_DISPLAY_WEBKIT_BOX :
-  case NS_STYLE_DISPLAY_GRID :
+  case StyleDisplay::Table:
+  case StyleDisplay::Block:
+  case StyleDisplay::Flex:
+  case StyleDisplay::WebkitBox:
+  case StyleDisplay::Grid:
     
     
     
@@ -220,29 +220,29 @@ nsRuleNode::EnsureBlockDisplay(uint8_t& display,
     
     break;
 
-  case NS_STYLE_DISPLAY_INLINE_TABLE :
+  case StyleDisplay::InlineTable:
     
-    display = NS_STYLE_DISPLAY_TABLE;
+    display = StyleDisplay::Table;
     break;
 
-  case NS_STYLE_DISPLAY_INLINE_FLEX:
+  case StyleDisplay::InlineFlex:
     
-    display = NS_STYLE_DISPLAY_FLEX;
+    display = StyleDisplay::Flex;
     break;
 
-  case NS_STYLE_DISPLAY_WEBKIT_INLINE_BOX:
+  case StyleDisplay::WebkitInlineBox:
     
-    display = NS_STYLE_DISPLAY_WEBKIT_BOX;
+    display = StyleDisplay::WebkitBox;
     break;
 
-  case NS_STYLE_DISPLAY_INLINE_GRID:
+  case StyleDisplay::InlineGrid:
     
-    display = NS_STYLE_DISPLAY_GRID;
+    display = StyleDisplay::Grid;
     break;
 
-  default :
+  default:
     
-    display = NS_STYLE_DISPLAY_BLOCK;
+    display = StyleDisplay::Block;
   }
 }
 
@@ -251,31 +251,33 @@ nsRuleNode::EnsureBlockDisplay(uint8_t& display,
 
 
 void
-nsRuleNode::EnsureInlineDisplay(uint8_t& display)
+nsRuleNode::EnsureInlineDisplay(StyleDisplay& display)
 {
   
   switch (display) {
-    case NS_STYLE_DISPLAY_BLOCK :
-      display = NS_STYLE_DISPLAY_INLINE_BLOCK;
+    case StyleDisplay::Block:
+      display = StyleDisplay::InlineBlock;
       break;
-    case NS_STYLE_DISPLAY_TABLE :
-      display = NS_STYLE_DISPLAY_INLINE_TABLE;
+    case StyleDisplay::Table:
+      display = StyleDisplay::InlineTable;
       break;
-    case NS_STYLE_DISPLAY_FLEX :
-      display = NS_STYLE_DISPLAY_INLINE_FLEX;
+    case StyleDisplay::Flex:
+      display = StyleDisplay::InlineFlex;
       break;
-    case NS_STYLE_DISPLAY_WEBKIT_BOX :
-      display = NS_STYLE_DISPLAY_WEBKIT_INLINE_BOX;
+    case StyleDisplay::WebkitBox:
+      display = StyleDisplay::WebkitInlineBox;
       break;
-    case NS_STYLE_DISPLAY_GRID :
-      display = NS_STYLE_DISPLAY_INLINE_GRID;
+    case StyleDisplay::Grid:
+      display = StyleDisplay::InlineGrid;
       break;
-    case NS_STYLE_DISPLAY_BOX:
-      display = NS_STYLE_DISPLAY_INLINE_BOX;
+    case StyleDisplay::Box:
+      display = StyleDisplay::InlineBox;
       break;
-    case NS_STYLE_DISPLAY_STACK:
-      display = NS_STYLE_DISPLAY_INLINE_STACK;
+    case StyleDisplay::Stack:
+      display = StyleDisplay::InlineStack;
       break;
+    default:
+      break; 
   }
 }
 
@@ -1345,6 +1347,11 @@ struct SetEnumValueHelper
   DEFINE_ENUM_CLASS_SETTER(StyleFloatEdge, ContentBox, MarginBox)
   DEFINE_ENUM_CLASS_SETTER(StyleUserFocus, None_, SelectMenu)
   DEFINE_ENUM_CLASS_SETTER(StyleUserSelect, None_, MozText)
+#ifdef MOZ_XUL
+  DEFINE_ENUM_CLASS_SETTER(StyleDisplay, None_, Popup)
+#else
+  DEFINE_ENUM_CLASS_SETTER(StyleDisplay, None_, InlineBox)
+#endif
 
 #undef DEF_SET_ENUMERATED_VALUE
 };
@@ -5821,7 +5828,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   SetValue(*aRuleData->ValueForDisplay(), display->mDisplay, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentDisplay->mDisplay,
-           NS_STYLE_DISPLAY_INLINE);
+           StyleDisplay::Inline);
 
   
   SetValue(*aRuleData->ValueForContain(), display->mContain, conditions,
@@ -6167,13 +6174,13 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            parentDisplay->mResize,
            NS_STYLE_RESIZE_NONE);
 
-  if (display->mDisplay != NS_STYLE_DISPLAY_NONE) {
+  if (display->mDisplay != StyleDisplay::None_) {
     
     
     
 
     nsIAtom* pseudo = aContext->GetPseudo();
-    if (pseudo && display->mDisplay == NS_STYLE_DISPLAY_CONTENTS) {
+    if (pseudo && display->mDisplay == StyleDisplay::Contents) {
       
       
       
@@ -6183,25 +6190,27 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       
-      display->mOriginalDisplay = display->mDisplay = NS_STYLE_DISPLAY_INLINE;
+      display->mOriginalDisplay = display->mDisplay = StyleDisplay::Inline;
       conditions.SetUncacheable();
     }
 
     
     if (pseudo == nsCSSAnonBoxes::fieldsetContent) {
-      MOZ_ASSERT(display->mDisplay == NS_STYLE_DISPLAY_BLOCK,
+      MOZ_ASSERT(display->mDisplay == StyleDisplay::Block,
                  "forms.css should have set 'display:block'");
       switch (parentDisplay->mDisplay) {
-        case NS_STYLE_DISPLAY_GRID:
-        case NS_STYLE_DISPLAY_INLINE_GRID:
-          display->mDisplay = NS_STYLE_DISPLAY_GRID;
+        case StyleDisplay::Grid:
+        case StyleDisplay::InlineGrid:
+          display->mDisplay = StyleDisplay::Grid;
           conditions.SetUncacheable();
           break;
-        case NS_STYLE_DISPLAY_FLEX:
-        case NS_STYLE_DISPLAY_INLINE_FLEX:
-          display->mDisplay = NS_STYLE_DISPLAY_FLEX;
+        case StyleDisplay::Flex:
+        case StyleDisplay::InlineFlex:
+          display->mDisplay = StyleDisplay::Flex;
           conditions.SetUncacheable();
           break;
+        default:
+          break; 
       }
     }
 
@@ -6209,7 +6218,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       
-      display->mOriginalDisplay = display->mDisplay = NS_STYLE_DISPLAY_INLINE;
+      display->mOriginalDisplay = display->mDisplay = StyleDisplay::Inline;
 
       
       
@@ -6249,8 +6258,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
 
       
       
-      if (display->mDisplay == NS_STYLE_DISPLAY_INLINE) {
-          display->mDisplay = NS_STYLE_DISPLAY_INLINE_BLOCK;
+      if (display->mDisplay == StyleDisplay::Inline) {
+        display->mDisplay = StyleDisplay::InlineBlock;
       }
     }
   }

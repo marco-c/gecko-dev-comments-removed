@@ -1892,7 +1892,7 @@ nsContainerFrame::RenumberFrameAndDescendants(int32_t* aOrdinal,
   
   
   
-  if (NS_STYLE_DISPLAY_LIST_ITEM == display->mDisplay) {
+  if (mozilla::StyleDisplay::ListItem == display->mDisplay) {
     
     
     nsBlockFrame* listItem = nsLayoutUtils::GetAsBlock(kid);
@@ -1936,9 +1936,9 @@ nsContainerFrame::RenumberFrameAndDescendants(int32_t* aOrdinal,
         kidRenumberedABullet = true;
       }
     }
-  } else if (display->mDisplay == NS_STYLE_DISPLAY_BLOCK ||
-             display->mDisplay == NS_STYLE_DISPLAY_FLEX ||
-             display->mDisplay == NS_STYLE_DISPLAY_GRID) {
+  } else if (display->mDisplay == mozilla::StyleDisplay::Block ||
+             display->mDisplay == mozilla::StyleDisplay::Flex ||
+             display->mDisplay == mozilla::StyleDisplay::Grid) {
     if (FrameStartsCounterScope(kid)) {
       
       

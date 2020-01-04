@@ -464,7 +464,7 @@ IsBreakElement(nsINode* aNode)
   
   
   return element->GetPrimaryFrame()->StyleDisplay()->mDisplay !=
-    NS_STYLE_DISPLAY_INLINE;
+    StyleDisplay::Inline;
 }
 
 struct CheckLeavingBreakElementClosure {

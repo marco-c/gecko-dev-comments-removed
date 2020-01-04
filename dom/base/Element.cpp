@@ -956,7 +956,7 @@ Element::GetClientAreaRect()
   }
 
   if (styledFrame &&
-      (styledFrame->StyleDisplay()->mDisplay != NS_STYLE_DISPLAY_INLINE ||
+      (styledFrame->StyleDisplay()->mDisplay != StyleDisplay::Inline ||
        styledFrame->IsFrameOfType(nsIFrame::eReplaced))) {
     
     
