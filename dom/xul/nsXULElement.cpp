@@ -1753,6 +1753,12 @@ nsXULElement::ClickWithInputSource(uint16_t aInputSource, bool aIsTrustedEvent)
             status = nsEventStatus_eIgnore;  
             EventDispatcher::Dispatch(static_cast<nsIContent*>(this),
                                       context, &eventClick, nullptr, &status);
+
+            
+            
+            if (status == nsEventStatus_eConsumeNoDefault) {
+                return NS_OK;
+            }
         }
     }
 
