@@ -4,33 +4,13 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, components } = require("chrome");
 const protocol = require("devtools/shared/protocol");
-const { method, RetVal, Arg, types } = protocol;
 const { Memory } = require("devtools/server/performance/memory");
-const { actorBridge } = require("devtools/server/actors/common");
-const { Task } = require("devtools/shared/task");
+const { actorBridgeWithSpec } = require("devtools/server/actors/common");
+const { memorySpec } = require("devtools/shared/specs/memory");
 loader.lazyRequireGetter(this, "events", "sdk/event/core");
 loader.lazyRequireGetter(this, "StackFrameCache",
                          "devtools/server/actors/utils/stack", true);
-loader.lazyRequireGetter(this, "FileUtils",
-                         "resource://gre/modules/FileUtils.jsm", true);
-loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
-loader.lazyRequireGetter(this, "HeapSnapshotFileUtils",
-                         "devtools/shared/heapsnapshot/HeapSnapshotFileUtils");
-loader.lazyRequireGetter(this, "ThreadSafeChromeUtils");
-
-types.addDictType("AllocationsRecordingOptions", {
-  
-  
-  
-  probability: "number",
-
-  
-  
-  
-  maxLogLength: "number"
-});
 
 
 
@@ -43,31 +23,7 @@ types.addDictType("AllocationsRecordingOptions", {
 
 
 
-var MemoryActor = exports.MemoryActor = protocol.ActorClass({
-  typeName: "memory",
-
-  
-
-
-
-
-  events: {
-    
-    
-    
-    "garbage-collection": {
-      type: "garbage-collection",
-      data: Arg(0, "json"),
-    },
-
-    
-    
-    "allocations": {
-      type: "allocations",
-      data: Arg(0, "json"),
-    },
-  },
-
+exports.MemoryActor = protocol.ActorClassWithSpec(memorySpec, {
   initialize: function (conn, parent, frameCache = new StackFrameCache()) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
@@ -85,88 +41,33 @@ var MemoryActor = exports.MemoryActor = protocol.ActorClass({
     protocol.Actor.prototype.destroy.call(this);
   },
 
-  attach: actorBridge("attach", {
-    request: {},
-    response: {
-      type: "attached"
-    }
-  }),
+  attach: actorBridgeWithSpec("attach"),
 
-  detach: actorBridge("detach", {
-    request: {},
-    response: {
-      type: "detached"
-    }
-  }),
+  detach: actorBridgeWithSpec("detach"),
 
-  getState: actorBridge("getState", {
-    response: {
-      state: RetVal(0, "string")
-    }
-  }),
+  getState: actorBridgeWithSpec("getState"),
 
-  saveHeapSnapshot: method(function () {
+  saveHeapSnapshot: function () {
     return this.bridge.saveHeapSnapshot();
-  }, {
-    response: {
-      snapshotId: RetVal("string")
-    }
-  }),
+  },
 
-  takeCensus: actorBridge("takeCensus", {
-    request: {},
-    response: RetVal("json")
-  }),
+  takeCensus: actorBridgeWithSpec("takeCensus"),
 
-  startRecordingAllocations: actorBridge("startRecordingAllocations", {
-    request: {
-      options: Arg(0, "nullable:AllocationsRecordingOptions")
-    },
-    response: {
-      
-      value: RetVal(0, "nullable:number")
-    }
-  }),
+  startRecordingAllocations: actorBridgeWithSpec("startRecordingAllocations"),
 
-  stopRecordingAllocations: actorBridge("stopRecordingAllocations", {
-    request: {},
-    response: {
-      
-      value: RetVal(0, "nullable:number")
-    }
-  }),
+  stopRecordingAllocations: actorBridgeWithSpec("stopRecordingAllocations"),
 
-  getAllocationsSettings: actorBridge("getAllocationsSettings", {
-    request: {},
-    response: {
-      options: RetVal(0, "json")
-    }
-  }),
+  getAllocationsSettings: actorBridgeWithSpec("getAllocationsSettings"),
 
-  getAllocations: actorBridge("getAllocations", {
-    request: {},
-    response: RetVal("json")
-  }),
+  getAllocations: actorBridgeWithSpec("getAllocations"),
 
-  forceGarbageCollection: actorBridge("forceGarbageCollection", {
-    request: {},
-    response: {}
-  }),
+  forceGarbageCollection: actorBridgeWithSpec("forceGarbageCollection"),
 
-  forceCycleCollection: actorBridge("forceCycleCollection", {
-    request: {},
-    response: {}
-  }),
+  forceCycleCollection: actorBridgeWithSpec("forceCycleCollection"),
 
-  measure: actorBridge("measure", {
-    request: {},
-    response: RetVal("json"),
-  }),
+  measure: actorBridgeWithSpec("measure"),
 
-  residentUnique: actorBridge("residentUnique", {
-    request: {},
-    response: { value: RetVal("number") }
-  }),
+  residentUnique: actorBridgeWithSpec("residentUnique"),
 
   _onGarbageCollection: function (data) {
     if (this.conn.transport) {
@@ -179,77 +80,4 @@ var MemoryActor = exports.MemoryActor = protocol.ActorClass({
       events.emit(this, "allocations", data);
     }
   },
-});
-
-exports.MemoryFront = protocol.FrontClass(MemoryActor, {
-  initialize: function (client, form, rootForm = null) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-    this._client = client;
-    this.actorID = form.memoryActor;
-    this.heapSnapshotFileActorID = rootForm
-      ? rootForm.heapSnapshotFileActor
-      : null;
-    this.manage(this);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  saveHeapSnapshot: protocol.custom(Task.async(function* (options = {}) {
-    const snapshotId = yield this._saveHeapSnapshotImpl();
-
-    if (!options.forceCopy &&
-        (yield HeapSnapshotFileUtils.haveHeapSnapshotTempFile(snapshotId))) {
-      return HeapSnapshotFileUtils.getHeapSnapshotTempFilePath(snapshotId);
-    }
-
-    return yield this.transferHeapSnapshot(snapshotId);
-  }), {
-    impl: "_saveHeapSnapshotImpl"
-  }),
-
-  
-
-
-
-
-
-
-
-
-  transferHeapSnapshot: protocol.custom(function (snapshotId) {
-    if (!this.heapSnapshotFileActorID) {
-      throw new Error("MemoryFront initialized without a rootForm");
-    }
-
-    const request = this._client.request({
-      to: this.heapSnapshotFileActorID,
-      type: "transferHeapSnapshot",
-      snapshotId
-    });
-
-    return new Promise((resolve, reject) => {
-      const outFilePath =
-        HeapSnapshotFileUtils.getNewUniqueHeapSnapshotTempFilePath();
-      const outFile = new FileUtils.File(outFilePath);
-
-      const outFileStream = FileUtils.openSafeFileOutputStream(outFile);
-      request.on("bulk-reply", Task.async(function* ({ copyTo }) {
-        yield copyTo(outFileStream);
-        FileUtils.closeSafeFileOutputStream(outFileStream);
-        resolve(outFilePath);
-      }));
-    });
-  })
 });
