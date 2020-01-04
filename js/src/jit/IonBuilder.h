@@ -846,6 +846,7 @@ class IonBuilder
     InliningStatus inlineGetNextMapEntryForIterator(CallInfo& callInfo);
 
     
+    InliningStatus inlineArrayBufferByteLength(CallInfo& callInfo);
     InliningStatus inlinePossiblyWrappedArrayBufferByteLength(CallInfo& callInfo);
 
     
