@@ -1311,7 +1311,7 @@ public:
         if (!mPixelStore_PremultiplyAlpha)
             flags |= nsLayoutUtils::SFE_PREFER_NO_PREMULTIPLY_ALPHA;
 
-        gfx::DrawTarget* idealDrawTarget = nullptr; 
+        RefPtr<gfx::DrawTarget> idealDrawTarget = nullptr; 
         return nsLayoutUtils::SurfaceFromElement(elem, flags, idealDrawTarget);
     }
 

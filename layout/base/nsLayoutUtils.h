@@ -2119,26 +2119,39 @@ public:
   
   static SurfaceFromElementResult
   SurfaceFromOffscreenCanvas(mozilla::dom::OffscreenCanvas *aOffscreenCanvas,
-                             uint32_t aSurfaceFlags = 0,
-                             DrawTarget *aTarget = nullptr);
+                             uint32_t aSurfaceFlags,
+                             RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult
+  SurfaceFromOffscreenCanvas(mozilla::dom::OffscreenCanvas *aOffscreenCanvas,
+                             uint32_t aSurfaceFlags = 0) {
+    RefPtr<DrawTarget> target = nullptr;
+    return SurfaceFromOffscreenCanvas(aOffscreenCanvas, aSurfaceFlags, target);
+  }
+
   static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::Element *aElement,
-                                                     uint32_t aSurfaceFlags = 0,
-                                                     DrawTarget *aTarget = nullptr);
+                                                     uint32_t aSurfaceFlags,
+                                                     RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::Element *aElement,
+                                                     uint32_t aSurfaceFlags = 0) {
+    RefPtr<DrawTarget> target = nullptr;
+    return SurfaceFromElement(aElement, aSurfaceFlags, target);
+  }
+
   static SurfaceFromElementResult SurfaceFromElement(nsIImageLoadingContent *aElement,
-                                                     uint32_t aSurfaceFlags = 0,
-                                                     DrawTarget *aTarget = nullptr);
+                                                     uint32_t aSurfaceFlags,
+                                                     RefPtr<DrawTarget>& aTarget);
   
   
   
   static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::HTMLImageElement *aElement,
-                                                     uint32_t aSurfaceFlags = 0,
-                                                     DrawTarget *aTarget = nullptr);
+                                                     uint32_t aSurfaceFlags,
+                                                     RefPtr<DrawTarget>& aTarget);
   static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::HTMLCanvasElement *aElement,
-                                                     uint32_t aSurfaceFlags = 0,
-                                                     DrawTarget *aTarget = nullptr);
+                                                     uint32_t aSurfaceFlags,
+                                                     RefPtr<DrawTarget>& aTarget);
   static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::HTMLVideoElement *aElement,
-                                                     uint32_t aSurfaceFlags = 0,
-                                                     DrawTarget *aTarget = nullptr);
+                                                     uint32_t aSurfaceFlags,
+                                                     RefPtr<DrawTarget>& aTarget);
 
   
 
