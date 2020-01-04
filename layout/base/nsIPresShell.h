@@ -63,8 +63,6 @@ class nsCaret;
 namespace mozilla {
 class AccessibleCaretEventHub;
 class CSSStyleSheet;
-class TouchCaret;
-class SelectionCarets;
 } 
 class nsFrameSelection;
 class nsFrameManager;
@@ -806,31 +804,6 @@ public:
 
 
   virtual void NotifyDestroyingFrame(nsIFrame* aFrame) = 0;
-
-  
-
-
-  virtual already_AddRefed<mozilla::TouchCaret> GetTouchCaret() const = 0;
-
-  
-
-
-  virtual mozilla::dom::Element* GetTouchCaretElement() const = 0;
-
-  
-
-
-  virtual already_AddRefed<mozilla::SelectionCarets> GetSelectionCarets() const = 0;
-
-  
-
-
-  virtual mozilla::dom::Element* GetSelectionCaretsStartElement() const = 0;
-
-  
-
-
-  virtual mozilla::dom::Element* GetSelectionCaretsEndElement() const = 0;
 
   
 

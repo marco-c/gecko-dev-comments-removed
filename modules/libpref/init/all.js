@@ -4857,25 +4857,6 @@ pref("browser.safebrowsing.allowOverride", true);
 pref("snav.enabled", false);
 
 
-pref("touchcaret.enabled", false);
-
-
-
-pref("touchcaret.inflatesize.threshold", 40);
-
-
-
-
-pref("touchcaret.expiration.time", 3000);
-
-
-pref("selectioncaret.enabled", false);
-
-
-
-pref("selectioncaret.inflatesize.threshold", 40);
-
-
 pref("layout.accessiblecaret.enabled", false);
 
 
