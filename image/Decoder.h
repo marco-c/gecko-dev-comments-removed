@@ -279,10 +279,38 @@ public:
 
 
 
+  gfx::IntRect FullFrame() const
+  {
+    return gfx::IntRect(gfx::IntPoint(), Size());
+  }
+
+  
+
+
+
+
+
+
   gfx::IntSize OutputSize() const
   {
     return mDownscaler ? mDownscaler->TargetSize()
                        : Size();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  gfx::IntRect FullOutputFrame() const
+  {
+    return gfx::IntRect(gfx::IntPoint(), OutputSize());
   }
 
   virtual Telemetry::ID SpeedHistogram();
@@ -411,8 +439,7 @@ protected:
 
   
   nsresult AllocateBasicFrame() {
-    return AllocateFrame(0, Size(), gfx::IntRect(gfx::IntPoint(), Size()),
-                         gfx::SurfaceFormat::B8G8R8A8);
+    return AllocateFrame(0, Size(), FullFrame(), gfx::SurfaceFormat::B8G8R8A8);
   }
 
 private:
