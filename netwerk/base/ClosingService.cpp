@@ -122,6 +122,11 @@ ClosingService::StartInternal()
 nsresult
 ClosingService::AttachIOLayer(PRFileDesc *aFd)
 {
+  
+  
+  
+  return NS_OK;
+
   if (!sTcpUdpPRCloseLayerMethodsPtr) {
     return NS_OK;
   }
