@@ -137,12 +137,6 @@ public:
   
 
 
-  virtual void
-  GetSettings(dom::MediaTrackSettings& aResult) {};
-
-  
-
-
   virtual void Stop() = 0;
 
   
@@ -218,9 +212,6 @@ public:
   {}
 
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
-
-  void
-  GetSettings(dom::MediaTrackSettings& aResult) override {}
 
   void Stop() override {}
 
@@ -445,6 +436,7 @@ protected:
   bool mEnabled;
   const bool mRemote;
   dom::MediaTrackConstraints mConstraints;
+  dom::MediaTrackSettings mSettings;
 };
 
 } 

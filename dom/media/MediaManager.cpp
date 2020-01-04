@@ -356,13 +356,6 @@ public:
            mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Browser;
   }
 
-  void GetSettings(dom::MediaTrackSettings& aOutSettings)
-  {
-    if (mVideoDevice) {
-      mVideoDevice->GetSource()->GetSettings(aOutSettings);
-    }
-  }
-
   
   
   void Stop();
@@ -1142,11 +1135,6 @@ public:
           return mListener->ApplyConstraintsToTrack(aWindow, mTrackID, aConstraints);
         }
 
-        void
-        GetSettings(dom::MediaTrackSettings& aOutSettings) override
-        {
-          mListener->GetSettings(aOutSettings);
-        }
 
         void Stop() override
         {
