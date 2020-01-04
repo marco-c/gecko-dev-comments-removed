@@ -471,7 +471,7 @@ private:
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::PathBuilder PathBuilder;
   typedef mozilla::gfx::SourceSurface SourceSurface;
-  
+
   struct AzureState {
     AzureState()
       : op(mozilla::gfx::CompositionOp::OP_OVER)
@@ -562,7 +562,7 @@ public:
   void SetContext(gfxContext *aContext) {
     NS_ASSERTION(!mContext, "Not going to call Restore() on some context!!!");
     mContext = aContext;
-    mContext->Save();    
+    mContext->Save();
   }
 
   void EnsureSaved(gfxContext *aContext) {
