@@ -987,8 +987,6 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
         if (!src)
             return nullptr;
 
-        bool exprBody = fun->isExprBody();
-
         
         
         
@@ -1001,7 +999,7 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
         
         
         MOZ_ASSERT_IF(funCon, !fun->isArrow());
-        MOZ_ASSERT_IF(funCon, !exprBody);
+        MOZ_ASSERT_IF(funCon, !fun->isExprBody());
         MOZ_ASSERT_IF(!funCon && !fun->isArrow(),
                       src->length() > 0 && src->latin1OrTwoByteChar(0) == '(');
 
