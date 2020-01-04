@@ -19,9 +19,13 @@ const constants = require("devtools/client/dom/content/constants");
 
 
 
+
+Services.prefs.setBoolPref("devtools.dom.enabled", true);
+
 registerCleanupFunction(() => {
   info("finish() was called, cleaning up...");
   Services.prefs.clearUserPref("devtools.dump.emit");
+  Services.prefs.clearUserPref("devtools.dom.enabled");
 });
 
 
