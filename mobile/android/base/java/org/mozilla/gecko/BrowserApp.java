@@ -317,7 +317,7 @@ public class BrowserApp extends GeckoApp
     @NonNull
     private SearchEngineManager mSearchEngineManager; 
 
-    private TelemetryDispatcher mTelemetryDispatcher;
+    private TelemetryDispatcher mTelemetryDispatcher; 
     private final SessionMeasurements mSessionMeasurements = new SessionMeasurements();
 
     private boolean mHasResumed;
@@ -687,7 +687,6 @@ public class BrowserApp extends GeckoApp
         distribution.addOnDistributionReadyCallback(new DistributionStoreCallback(this, profile.getName()));
 
         mSearchEngineManager = new SearchEngineManager(this, distribution);
-        mTelemetryDispatcher = new TelemetryDispatcher(profile.getDir().getAbsolutePath());
 
         
         final SuggestedSites suggestedSites = new SuggestedSites(appContext, distribution);
@@ -2424,7 +2423,7 @@ public class BrowserApp extends GeckoApp
         
         
         Telemetry.sendUIEvent(TelemetryContract.Event.SEARCH, where);
-        SearchCountMeasurements.incrementSearch(prefs, engineIdentifier, where.name());
+        SearchCountMeasurements.incrementSearch(prefs, engineIdentifier, where.toString());
     }
 
     
@@ -3908,7 +3907,11 @@ public class BrowserApp extends GeckoApp
     @Override
     public int getLayout() { return R.layout.gecko_app; }
 
+    @WorkerThread 
     public TelemetryDispatcher getTelemetryDispatcher() {
+        if (mTelemetryDispatcher == null) {
+            mTelemetryDispatcher = new TelemetryDispatcher(getProfile().getDir().getAbsolutePath());
+        }
         return mTelemetryDispatcher;
     }
 
