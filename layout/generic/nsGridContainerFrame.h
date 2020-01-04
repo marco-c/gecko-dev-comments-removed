@@ -68,9 +68,6 @@ protected:
   typedef mozilla::WritingMode WritingMode;
   typedef mozilla::css::GridNamedArea GridNamedArea;
   class GridItemCSSOrderIterator;
-  struct TrackSizingFunctions;
-  struct Tracks;
-  struct GridReflowState;
   friend nsContainerFrame* NS_NewGridContainerFrame(nsIPresShell* aPresShell,
                                                     nsStyleContext* aContext);
   explicit nsGridContainerFrame(nsStyleContext* aContext) : nsContainerFrame(aContext) {}
@@ -370,7 +367,10 @@ protected:
 
 
 
-  void PlaceGridItems(GridReflowState& aState);
+
+
+  void PlaceGridItems(GridItemCSSOrderIterator& aIter,
+                      const nsStylePosition* aStyle);
 
   
 
@@ -396,8 +396,10 @@ protected:
   
 
 
-  void CalculateTrackSizes(GridReflowState&            aState,
-                           const mozilla::LogicalSize& aContentBox);
+  void CalculateTrackSizes(const mozilla::LogicalSize& aPercentageBasis,
+                           const nsStylePosition*      aStyle,
+                           nsTArray<TrackSize>&        aColSizes,
+                           nsTArray<TrackSize>&        aRowSizes);
 
   
 
@@ -444,8 +446,12 @@ protected:
   
 
 
-  LogicalRect ContainingBlockFor(const GridReflowState& aState,
-                                 const GridArea&        aArea) const;
+
+
+  LogicalRect ContainingBlockFor(const WritingMode& aWM,
+                                 const GridArea& aArea,
+                                 const nsTArray<TrackSize>& aColSizes,
+                                 const nsTArray<TrackSize>& aRowSizes) const;
 
   
 
@@ -454,18 +460,25 @@ protected:
 
 
 
-  LogicalRect ContainingBlockForAbsPos(const GridReflowState& aState,
-                                       const GridArea&        aArea,
-                                       const LogicalPoint&    aGridOrigin,
-                                       const LogicalRect&     aGridCB) const;
+
+
+  LogicalRect ContainingBlockForAbsPos(const WritingMode& aWM,
+                                       const GridArea& aArea,
+                                       const nsTArray<TrackSize>& aColSizes,
+                                       const nsTArray<TrackSize>& aRowSizes,
+                                       const LogicalPoint& aGridOrigin,
+                                       const LogicalRect& aGridCB) const;
 
   
 
 
-  void ReflowChildren(GridReflowState&     aState,
-                      const LogicalRect&   aContentArea,
-                      nsHTMLReflowMetrics& aDesiredSize,
-                      nsReflowStatus&      aStatus);
+  void ReflowChildren(GridItemCSSOrderIterator&   aIter,
+                      const LogicalRect&          aContentArea,
+                      const nsTArray<TrackSize>&  aColSizes,
+                      const nsTArray<TrackSize>&  aRowSizes,
+                      nsHTMLReflowMetrics&        aDesiredSize,
+                      const nsHTMLReflowState&    aReflowState,
+                      nsReflowStatus&             aStatus);
 
 #ifdef DEBUG
   void SanityCheckAnonymousGridItems() const;
