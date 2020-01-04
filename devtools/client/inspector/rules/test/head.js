@@ -527,10 +527,9 @@ var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
   if (expectedChange) {
     info("Waiting for the style to be applied on the page");
     yield waitForSuccess(function*() {
-      let {element, name, value} = expectedChange;
-      yield getComputedStyleProperty(selector, null, name)
-      return content.getComputedStyle(element)[name] === value;
-    }, "Color picker change applied on the page");
+      let {selector, name, value} = expectedChange;
+      return (yield getComputedStyleProperty(selector, null, name)) === value;
+    }, `Color picker change applied on element "${expectedChange.selector}"`);
   }
 });
 
