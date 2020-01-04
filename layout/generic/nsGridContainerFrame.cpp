@@ -1166,32 +1166,21 @@ nsGridContainerFrame::AddImplicitNamedAreas(
 {
   
   
-  
-  
-  
-  
-  
   const uint32_t len =
     std::min(aLineNameLists.Length(), size_t(nsStyleGridLine::kMaxLine));
   nsTHashtable<nsStringHashKey> currentStarts;
   ImplicitNamedAreas* areas = GetImplicitNamedAreas();
   for (uint32_t i = 0; i < len; ++i) {
-    const nsTArray<nsString>& names(aLineNameLists[i]);
-    const uint32_t jLen = names.Length();
-    for (uint32_t j = 0; j < jLen; ++j) {
-      const nsString& name = names[j];
+    for (const nsString& name : aLineNameLists[i]) {
       uint32_t index;
-      if (::IsNameWithStartSuffix(name, &index)) {
-        currentStarts.PutEntry(nsDependentSubstring(name, 0, index));
-      } else if (::IsNameWithEndSuffix(name, &index)) {
+      if (::IsNameWithStartSuffix(name, &index) ||
+          ::IsNameWithEndSuffix(name, &index)) {
         nsDependentSubstring area(name, 0, index);
-        if (currentStarts.Contains(area)) {
-          if (!areas) {
-            areas = new ImplicitNamedAreas;
-            Properties().Set(ImplicitNamedAreasProperty(), areas);
-          }
-          areas->PutEntry(area);
+        if (!areas) {
+          areas = new ImplicitNamedAreas;
+          Properties().Set(ImplicitNamedAreasProperty(), areas);
         }
+        areas->PutEntry(area);
       }
     }
   }
@@ -1251,8 +1240,6 @@ nsGridContainerFrame::ResolveLine(
           lineName.AppendLiteral("-end");
           implicitLine = area ? area->*aAreaEnd : 0;
         }
-        
-        
         line = ::FindNamedLine(lineName, &aNth, aFromIndex, implicitLine,
                                aLineNameList);
       }
