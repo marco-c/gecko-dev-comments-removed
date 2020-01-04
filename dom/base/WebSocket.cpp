@@ -171,7 +171,7 @@ public:
 
   nsresult CancelInternal();
 
-  RefPtr<WebSocket> mWebSocket;
+  nsRefPtr<WebSocket> mWebSocket;
 
   nsCOMPtr<nsIWebSocketChannel> mChannel;
 
@@ -274,7 +274,7 @@ public:
   }
 
 private:
-  RefPtr<WebSocketImpl> mWebSocketImpl;
+  nsRefPtr<WebSocketImpl> mWebSocketImpl;
 };
 
 
@@ -336,7 +336,7 @@ WebSocketImpl::PrintErrorOnConsole(const char *aBundleURI,
   if (!NS_IsMainThread()) {
     MOZ_ASSERT(mWorkerPrivate);
 
-    RefPtr<PrintErrorOnConsoleRunnable> runnable =
+    nsRefPtr<PrintErrorOnConsoleRunnable> runnable =
       new PrintErrorOnConsoleRunnable(this, aBundleURI, aError, aFormatStrings,
                                       aFormatStringsLen);
     runnable->Dispatch(mWorkerPrivate->GetJSContext());
@@ -461,7 +461,7 @@ public:
   }
 
 private:
-  RefPtr<WebSocketImpl> mImpl;
+  nsRefPtr<WebSocketImpl> mImpl;
   uint16_t mReasonCode;
   const nsCString mReasonString;
 };
@@ -473,7 +473,7 @@ WebSocketImpl::CloseConnection(uint16_t aReasonCode,
                                const nsACString& aReasonString)
 {
   if (!IsTargetThread()) {
-    RefPtr<nsRunnable> runnable =
+    nsRefPtr<nsRunnable> runnable =
       new CloseConnectionRunnable(this, aReasonCode, aReasonString);
     return Dispatch(runnable, NS_DISPATCH_NORMAL);
   }
@@ -505,7 +505,7 @@ WebSocketImpl::CloseConnection(uint16_t aReasonCode,
       return mChannel->Close(aReasonCode, aReasonString);
     }
 
-    RefPtr<CancelWebSocketRunnable> runnable =
+    nsRefPtr<CancelWebSocketRunnable> runnable =
       new CancelWebSocketRunnable(mChannel, aReasonCode, aReasonString);
     return NS_DispatchToMainThread(runnable);
   }
@@ -620,14 +620,14 @@ WebSocketImpl::Disconnect()
   if (NS_IsMainThread()) {
     DisconnectInternal();
   } else {
-    RefPtr<DisconnectInternalRunnable> runnable =
+    nsRefPtr<DisconnectInternalRunnable> runnable =
       new DisconnectInternalRunnable(this);
     runnable->Dispatch(mWorkerPrivate->GetJSContext());
   }
 
   
   
-  RefPtr<WebSocketImpl> kungfuDeathGrip = this;
+  nsRefPtr<WebSocketImpl> kungfuDeathGrip = this;
 
   nsCOMPtr<nsIThread> mainThread;
   if (NS_FAILED(NS_GetMainThread(getter_AddRefs(mainThread))) ||
@@ -770,7 +770,7 @@ WebSocketImpl::OnStart(nsISupports* aContext)
 
   
   
-  RefPtr<WebSocket> webSocket = mWebSocket;
+  nsRefPtr<WebSocket> webSocket = mWebSocket;
 
   
   rv = webSocket->CreateAndDispatchSimpleEvent(NS_LITERAL_STRING("open"));
@@ -1218,8 +1218,8 @@ WebSocket::Constructor(const GlobalObject& aGlobal,
     protocolArray.AppendElement(protocolElement);
   }
 
-  RefPtr<WebSocket> webSocket = new WebSocket(ownerWindow);
-  RefPtr<WebSocketImpl> kungfuDeathGrip = webSocket->mImpl;
+  nsRefPtr<WebSocket> webSocket = new WebSocket(ownerWindow);
+  nsRefPtr<WebSocketImpl> kungfuDeathGrip = webSocket->mImpl;
 
   bool connectionFailed = true;
 
@@ -1241,7 +1241,7 @@ WebSocket::Constructor(const GlobalObject& aGlobal,
       NS_WARNING("Failed to get line number and filename in workers.");
     }
 
-    RefPtr<InitRunnable> runnable =
+    nsRefPtr<InitRunnable> runnable =
       new InitRunnable(webSocket->mImpl, aUrl, protocolArray,
                        nsAutoCString(file.get()), lineno, column, aRv,
                        &connectionFailed);
@@ -1310,7 +1310,7 @@ WebSocket::Constructor(const GlobalObject& aGlobal,
     MOZ_ASSERT(principal);
     webSocket->mImpl->AsyncOpen(principal, aRv);
   } else {
-    RefPtr<AsyncOpenRunnable> runnable =
+    nsRefPtr<AsyncOpenRunnable> runnable =
       new AsyncOpenRunnable(webSocket->mImpl, aRv);
     runnable->Dispatch(aGlobal.Context());
   }
@@ -1413,7 +1413,7 @@ WebSocketImpl::Init(JSContext* aCx,
 
   
   
-  RefPtr<WebSocketImpl> kungfuDeathGrip = this;
+  nsRefPtr<WebSocketImpl> kungfuDeathGrip = this;
 
   
   aRv = mWebSocket->CheckInnerWindowCorrectness();
@@ -1547,25 +1547,31 @@ WebSocketImpl::Init(JSContext* aCx,
                             false)) {
     
     
-    
-    nsCOMPtr<nsIGlobalObject> globalObject(GetEntryGlobal());
-    if (globalObject) {
-      nsCOMPtr<nsIPrincipal> principal(globalObject->PrincipalOrNull());
-      if (principal) {
-        nsCOMPtr<nsIURI> uri;
-        principal->GetURI(getter_AddRefs(uri));
-        if (uri) {
-          bool originIsHttps = false;
-          aRv = uri->SchemeIs("https", &originIsHttps);
-          if (NS_WARN_IF(aRv.Failed())) {
-            return;
-          }
+    nsCOMPtr<nsIPrincipal> principal;
+    nsCOMPtr<nsIURI> originURI;
+    if (mWorkerPrivate) {
+      
+      principal = mWorkerPrivate->GetPrincipal();
+    } else {
+      
+      nsCOMPtr<nsIGlobalObject> globalObject(GetEntryGlobal());
+      if (globalObject) {
+        principal = globalObject->PrincipalOrNull();
+      }
+    }
 
-          if (originIsHttps) {
-            aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-            return;
-          }
-        }
+    if (principal) {
+      principal->GetURI(getter_AddRefs(originURI));
+    }
+    if (originURI) {
+      bool originIsHttps = false;
+      aRv = originURI->SchemeIs("https", &originIsHttps);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return;
+      }
+      if (originIsHttps) {
+        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+        return;
       }
     }
   }
@@ -1638,7 +1644,7 @@ public:
     }
   }
 private:
-  RefPtr<WebSocketImpl> mWebSocketImpl;
+  nsRefPtr<WebSocketImpl> mWebSocketImpl;
 };
 
 nsresult
@@ -1716,7 +1722,7 @@ WebSocketImpl::DispatchConnectionCloseEvents()
 
   
   
-  RefPtr<WebSocket> webSocket = mWebSocket;
+  nsRefPtr<WebSocket> webSocket = mWebSocket;
 
   
   if (mFailed) {
@@ -1749,7 +1755,7 @@ WebSocket::CreateAndDispatchSimpleEvent(const nsAString& aName)
     return NS_OK;
   }
 
-  RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
+  nsRefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
 
   
   rv = event->InitEvent(aName, false, false);
@@ -1827,7 +1833,7 @@ WebSocket::CreateAndDispatchMessageEvent(JSContext* aCx,
   
   
 
-  RefPtr<MessageEvent> event = NS_NewDOMMessageEvent(this, nullptr, nullptr);
+  nsRefPtr<MessageEvent> event = NS_NewDOMMessageEvent(this, nullptr, nullptr);
 
   rv = event->InitMessageEvent(NS_LITERAL_STRING("message"), false, false,
                                jsData, mImpl->mUTF16Origin, EmptyString(),
@@ -1860,7 +1866,7 @@ WebSocket::CreateAndDispatchCloseEvent(bool aWasClean,
   init.mCode = aCode;
   init.mReason = aReason;
 
-  RefPtr<CloseEvent> event =
+  nsRefPtr<CloseEvent> event =
     CloseEvent::Constructor(this, NS_LITERAL_STRING("close"), init);
   event->SetTrusted(true);
 
@@ -2130,7 +2136,7 @@ WebSocketImpl::UpdateURI()
   AssertIsOnTargetThread();
 
   
-  RefPtr<BaseWebSocketChannel> channel;
+  nsRefPtr<BaseWebSocketChannel> channel;
   channel = static_cast<BaseWebSocketChannel*>(mChannel.get());
   MOZ_ASSERT(channel);
 
@@ -2487,7 +2493,7 @@ public:
   }
 
 private:
-  RefPtr<WebSocketImpl> mImpl;
+  nsRefPtr<WebSocketImpl> mImpl;
 };
 
 } 
@@ -2500,7 +2506,7 @@ WebSocketImpl::Cancel(nsresult aStatus)
 
   if (!mIsMainThread) {
     MOZ_ASSERT(mWorkerPrivate);
-    RefPtr<CancelRunnable> runnable =
+    nsRefPtr<CancelRunnable> runnable =
       new CancelRunnable(mWorkerPrivate, this);
     if (!runnable->Dispatch(nullptr)) {
       return NS_ERROR_FAILURE;
@@ -2617,7 +2623,7 @@ namespace {
 
 class WorkerRunnableDispatcher final : public WorkerRunnable
 {
-  RefPtr<WebSocketImpl> mWebSocketImpl;
+  nsRefPtr<WebSocketImpl> mWebSocketImpl;
 
 public:
   WorkerRunnableDispatcher(WebSocketImpl* aImpl, WorkerPrivate* aWorkerPrivate,
@@ -2694,7 +2700,7 @@ WebSocketImpl::Dispatch(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags)
 
   
   
-  RefPtr<WorkerRunnableDispatcher> event =
+  nsRefPtr<WorkerRunnableDispatcher> event =
     new WorkerRunnableDispatcher(this, mWorkerPrivate, event_ref.forget());
 
   if (!event->Dispatch(nullptr)) {
