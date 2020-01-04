@@ -188,6 +188,21 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   }
 
   InheritOriginAttributes(mLoadingPrincipal, mOriginAttributes);
+
+  
+  
+  
+  if (aLoadingContext) {
+    nsCOMPtr<nsIDocShell> docShell = aLoadingContext->OwnerDoc()->GetDocShell();
+    if (docShell) {
+      if (docShell->ItemType() == nsIDocShellTreeItem::typeContent) {
+        mOriginAttributes.SyncAttributesWithPrivateBrowsing(GetUsePrivateBrowsing());
+      } else if (docShell->ItemType() == nsIDocShellTreeItem::typeChrome) {
+        MOZ_ASSERT(mOriginAttributes.mPrivateBrowsingId == 0,
+                   "chrome docshell shouldn't have mPrivateBrowsingId set.");
+      }
+    }
+  }
 }
 
 
@@ -240,6 +255,15 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   MOZ_ASSERT(docShell);
   const DocShellOriginAttributes attrs =
     nsDocShell::Cast(docShell)->GetOriginAttributes();
+
+  if (docShell->ItemType() == nsIDocShellTreeItem::typeContent) {
+    MOZ_ASSERT(GetUsePrivateBrowsing() == (attrs.mPrivateBrowsingId != 0),
+               "docshell and mSecurityFlags have different value for PrivateBrowsing().");
+  } else if (docShell->ItemType() == nsIDocShellTreeItem::typeChrome) {
+    MOZ_ASSERT(attrs.mPrivateBrowsingId == 0,
+               "chrome docshell shouldn't have mPrivateBrowsingId set.");
+  }
+
   mOriginAttributes.InheritFromDocShellToNecko(attrs);
 }
 
