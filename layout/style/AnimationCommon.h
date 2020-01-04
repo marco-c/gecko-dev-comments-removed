@@ -44,19 +44,6 @@ public:
 
   void Disconnect();
 
-  
-  
-  static bool ContentOrAncestorHasAnimation(nsIContent* aContent) {
-    do {
-      if (aContent->GetProperty(nsGkAtoms::animationsProperty) ||
-          aContent->GetProperty(nsGkAtoms::transitionsProperty)) {
-        return true;
-      }
-    } while ((aContent = aContent->GetParent()));
-
-    return false;
-  }
-
   static bool ExtractComputedValueForTransition(
                   nsCSSProperty aProperty,
                   nsStyleContext* aStyleContext,
