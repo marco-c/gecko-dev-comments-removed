@@ -33,7 +33,7 @@ function testSharedArrayBuffer() {
     assertEq(b.abracadabra, "no wishing for wishes!");
 
     
-    assertEq(SharedArrayBuffer(b), b);
+    assertThrowsInstanceOf(() => SharedArrayBuffer(b), TypeError);
 
     
     assertThrowsInstanceOf(() => SharedArrayBuffer({}), TypeError);
