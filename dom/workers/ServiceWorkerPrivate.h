@@ -137,6 +137,15 @@ public:
   void
   Activated();
 
+  nsresult
+  GetDebugger(nsIWorkerDebugger** aResult);
+
+  nsresult
+  AttachDebugger();
+
+  nsresult
+  DetachDebugger();
+
 private:
   enum WakeUpReason {
     FetchEvent = 0,
@@ -144,7 +153,8 @@ private:
     PushSubscriptionChangeEvent,
     MessageEvent,
     NotificationClickEvent,
-    LifeCycleEvent
+    LifeCycleEvent,
+    AttachEvent
   };
 
   
@@ -155,7 +165,10 @@ private:
   TerminateWorkerCallback(nsITimer* aTimer, void *aPrivate);
 
   void
-  ResetIdleTimeout(WakeUpReason aWhy);
+  RenewKeepAliveToken(WakeUpReason aWhy);
+
+  void
+  ResetIdleTimeout();
 
   void
   AddToken();
@@ -192,6 +205,8 @@ private:
   
   
   RefPtr<KeepAliveToken> mKeepAliveToken;
+
+  uint64_t mDebuggerCount;
 
   uint64_t mTokenCount;
 
