@@ -42,10 +42,6 @@ const unsigned kDesktopUsagePage = 0x1;
 const unsigned kButtonUsagePage = 0x9;
 
 
-const unsigned kMaxButtons = 32;
-const unsigned kMaxAxes = 32;
-
-
 
 
 
@@ -104,7 +100,8 @@ WindowsGamepadService* MOZ_NON_OWNING_REF gService = nullptr;
 nsCOMPtr<nsIThread> gMonitorThread = nullptr;
 static bool sIsShutdown = false;
 
-struct Gamepad {
+class Gamepad {
+public:
   GamepadType type;
 
   
@@ -120,20 +117,38 @@ struct Gamepad {
   
   int id;
 
+
   
   unsigned numAxes;
   unsigned numButtons;
   bool hasDpad;
   HIDP_VALUE_CAPS dpadCaps;
 
-  bool buttons[kMaxButtons];
-  struct {
+  nsTArray<bool> buttons;
+  struct axisValue {
     HIDP_VALUE_CAPS caps;
     double value;
-  } axes[kMaxAxes];
+  };
+  nsTArray<axisValue> axes;
 
   
   bool present;
+
+  Gamepad(uint32_t aNumAxes,
+          uint32_t aNumButtons,
+          bool aHasDpad,
+          GamepadType aType) :
+    numAxes(aNumAxes),
+    numButtons(aNumButtons),
+    hasDpad(aHasDpad),
+    type(aType),
+    present(true)
+  {
+    buttons.SetLength(numButtons);
+    axes.SetLength(numAxes);
+  }
+private:
+  Gamepad() {}
 };
 
 
@@ -212,7 +227,7 @@ ScaleAxis(ULONG value, LONG min, LONG max)
 
 
 void
-UnpackDpad(LONG dpad_value, const Gamepad* gamepad, bool buttons[kMaxButtons])
+UnpackDpad(LONG dpad_value, const Gamepad* gamepad, nsTArray<bool>& buttons)
 {
   const unsigned kUp = gamepad->numButtons - 4;
   const unsigned kDown = gamepad->numButtons - 3;
@@ -449,13 +464,12 @@ WindowsGamepadService::ScanForXInputDevices()
     }
 
     
-    Gamepad gamepad = {};
-    gamepad.type = kXInputGamepad;
-    gamepad.present = true;
-    gamepad.state = state;
+    Gamepad gamepad(kStandardGamepadAxes,
+                    kStandardGamepadButtons,
+                    true,
+                    kXInputGamepad);
     gamepad.userIndex = i;
-    gamepad.numButtons = kStandardGamepadButtons;
-    gamepad.numAxes = kStandardGamepadAxes;
+    gamepad.state = state;
     gamepad.id = service->AddGamepad("xinput",
                                      GamepadMappingType::Standard,
                                      kStandardGamepadButtons,
@@ -621,8 +635,6 @@ WindowsGamepadService::GetRawGamepad(HANDLE handle)
     return false;
   }
 
-  Gamepad gamepad = {};
-
   
   if (GetRawInputDeviceInfo(handle, RIDI_DEVICENAME, nullptr, &size) == kRawInputError) {
     return false;
@@ -689,12 +701,12 @@ WindowsGamepadService::GetRawGamepad(HANDLE handle)
       != HIDP_STATUS_SUCCESS) {
     return false;
   }
+  uint32_t numButtons = 0;
   for (unsigned i = 0; i < count; i++) {
     
-    gamepad.numButtons +=
+    numButtons +=
       buttonCaps[i].Range.UsageMax - buttonCaps[i].Range.UsageMin + 1;
   }
-  gamepad.numButtons = std::min(gamepad.numButtons, kMaxButtons);
 
   
   count = caps.NumberInputValueCaps;
@@ -706,36 +718,41 @@ WindowsGamepadService::GetRawGamepad(HANDLE handle)
   }
   nsTArray<HIDP_VALUE_CAPS> axes;
   
+  bool hasDpad;
+  HIDP_VALUE_CAPS dpadCaps;
+
   HidValueComparator comparator;
   for (unsigned i = 0; i < count; i++) {
     if (valueCaps[i].UsagePage == kDesktopUsagePage
         && valueCaps[i].Range.UsageMin == kUsageDpad
         
-        && valueCaps[i].LogicalMax - valueCaps[i].LogicalMin == 7
-        
-        && gamepad.numButtons + 4 < kMaxButtons) {
+        && valueCaps[i].LogicalMax - valueCaps[i].LogicalMin == 7) {
       
       
       
-      gamepad.hasDpad = true;
-      gamepad.dpadCaps = valueCaps[i];
+      hasDpad = true;
+      dpadCaps = valueCaps[i];
       
-      gamepad.numButtons += 4;
+      numButtons += 4;
     } else {
       axes.InsertElementSorted(valueCaps[i], comparator);
     }
   }
 
-  gamepad.numAxes = std::min<size_t>(axes.Length(), kMaxAxes);
+  uint32_t numAxes = axes.Length();
+
+  
+  Gamepad gamepad(numAxes,
+                  numButtons,
+                  true,
+                  kRawInputGamepad);
+
+  gamepad.handle = handle;
+
   for (unsigned i = 0; i < gamepad.numAxes; i++) {
-    if (i >= kMaxAxes) {
-      break;
-    }
     gamepad.axes[i].caps = axes[i];
   }
-  gamepad.type = kRawInputGamepad;
-  gamepad.handle = handle;
-  gamepad.present = true;
+
   gamepad.id = service->AddGamepad(gamepad_id,
                                    GamepadMappingType::_empty,
                                    gamepad.numButtons,
@@ -798,8 +815,11 @@ WindowsGamepadService::HandleRawInput(HRAWINPUT handle)
     return false;
   }
 
-  bool buttons[kMaxButtons] = { false };
-  usageLength = std::min<ULONG>(usageLength, kMaxButtons);
+  nsTArray<bool> buttons(gamepad->numButtons);
+  buttons.SetLength(gamepad->numButtons);
+  
+  memset(buttons.Elements(), 0, gamepad->numButtons * sizeof(bool));
+
   for (unsigned i = 0; i < usageLength; i++) {
     buttons[usages[i] - 1] = true;
   }
