@@ -179,6 +179,12 @@ ServoRestyleManager::ProcessPendingRestyles()
   }
   ServoStyleSet* styleSet = StyleSet();
 
+  if (!styleSet->StylingStarted()) {
+    
+    
+    return;
+  }
+
   nsIDocument* doc = PresContext()->Document();
 
   Element* root = doc->GetRootElement();
@@ -197,7 +203,7 @@ ServoRestyleManager::ProcessPendingRestyles()
       }
     }
 
-    styleSet->RestyleSubtree(root,  false);
+    styleSet->RestyleSubtree(root);
     RecreateStyleContexts(root, nullptr, styleSet);
   }
 
