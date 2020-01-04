@@ -454,7 +454,7 @@ APZEventState::ProcessClusterHit()
 {
   
   
-#ifndef MOZ_ANDROID_APZ
+#ifndef MOZ_WIDGET_ANDROID
   MOZ_ASSERT(false);
 #endif
   mActiveElementManager->ClearActivation();

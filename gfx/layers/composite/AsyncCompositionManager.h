@@ -246,7 +246,7 @@ private:
 
   TimeStamp mPreviousFrameTimeStamp;
 
-#ifdef MOZ_ANDROID_APZ
+#ifdef MOZ_WIDGET_ANDROID
   
   
   

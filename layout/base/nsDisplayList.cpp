@@ -1846,9 +1846,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     
     
     
-#if !defined(MOZ_WIDGET_ANDROID) || defined(MOZ_ANDROID_APZ)
     content = document->GetDocumentElement();
-#endif
   }
 
 

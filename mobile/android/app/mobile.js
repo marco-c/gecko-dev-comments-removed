@@ -54,7 +54,7 @@ pref("browser.viewport.desktopWidth", 980);
 
 pref("browser.viewport.defaultZoom", -1);
 
-#ifdef MOZ_ANDROID_APZ
+#ifdef MOZ_WIDGET_ANDROID
 
 pref("ui.showHideScrollbars", 1);
 pref("ui.useOverlayScrollbars", 1);
@@ -141,7 +141,6 @@ pref("browser.sessionhistory.bfcacheIgnoreMemoryPressure", false);
 pref("browser.sessionstore.resume_session_once", false);
 pref("browser.sessionstore.resume_from_crash", true);
 pref("browser.sessionstore.interval", 10000); 
-pref("browser.sessionstore.backupInterval", 120000); 
 pref("browser.sessionstore.max_tabs_undo", 10);
 pref("browser.sessionstore.max_resumed_crashes", 1);
 pref("browser.sessionstore.privacy_level", 0); 
@@ -562,10 +561,6 @@ pref("ui.dragThresholdY", 25);
 pref("layers.acceleration.disabled", false);
 pref("layers.async-video.enabled", true);
 
-#ifndef MOZ_ANDROID_APZ
-pref("layers.async-pan-zoom.enabled", false);
-#endif
-
 pref("apz.content_response_timeout", 600);
 pref("apz.allow_immediate_handoff", false);
 pref("apz.touch_start_tolerance", "0.06");
@@ -624,8 +619,6 @@ pref("media.video-queue.default-size", 3);
 
 pref("media.android-media-codec.enabled", true);
 pref("media.android-media-codec.preferred", true);
-
-pref("media.android-remote-codec.enabled", false);
 
 
 pref("media.mediasource.enabled", true);
@@ -915,7 +908,7 @@ pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
 
 
-pref("dom.presentation.enabled", false);
+pref("dom.presentation.enabled", true);
 pref("dom.presentation.discovery.enabled", true);
 pref("dom.presentation.discovery.legacy.enabled", true); 
 

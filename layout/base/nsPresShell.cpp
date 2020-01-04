@@ -793,14 +793,7 @@ PresShell::PresShell()
   mIsActive = true;
   mIsHidden = false;
   
-#if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_ANDROID_APZ)
-  
-  
-  
-  mIsFirstPaint = false;
-#else
   mIsFirstPaint = true;
-#endif
   mPresShellId = sNextPresShellId++;
   mFrozen = false;
   mRenderFlags = 0;

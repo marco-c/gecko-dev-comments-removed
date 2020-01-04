@@ -793,7 +793,7 @@ ExpandRootClipRect(Layer* aLayer, const ScreenMargin& aFixedLayerMargins)
   }
 }
 
-#ifdef MOZ_ANDROID_APZ
+#ifdef MOZ_WIDGET_ANDROID
 static void
 MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
                             const ScreenMargin& aFixedLayerMargins)
@@ -930,7 +930,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
           const ScrollMetadata& scrollMetadata = layer->GetScrollMetadata(i);
           const FrameMetrics& metrics = scrollMetadata.GetMetrics();
 
-#if defined(MOZ_ANDROID_APZ)
+#if defined(MOZ_WIDGET_ANDROID)
           
           
           
@@ -1506,7 +1506,7 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     bool foundRoot = false;
     if (ApplyAsyncContentTransformToTree(root, &foundRoot)) {
-#if defined(MOZ_ANDROID_APZ)
+#if defined(MOZ_WIDGET_ANDROID)
       MOZ_ASSERT(foundRoot);
       if (foundRoot && mFixedLayerMargins != ScreenMargin()) {
         MoveScrollbarForLayerMargin(root, mRootScrollableId, mFixedLayerMargins);

@@ -891,11 +891,7 @@ nsLayoutUtils::AsyncPanZoomEnabled(nsIFrame* aFrame)
 
 float
 nsLayoutUtils::GetCurrentAPZResolutionScale(nsIPresShell* aShell) {
-#if !defined(MOZ_WIDGET_ANDROID) || defined(MOZ_ANDROID_APZ)
   return aShell ? aShell->GetCumulativeNonRootScaleResolution() : 1.0;
-#else
-  return 1.0f;
-#endif
 }
 
 
@@ -3476,7 +3472,6 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
         }
       }
     }
-#if !defined(MOZ_WIDGET_ANDROID) || defined(MOZ_ANDROID_APZ)
     else if (presShell->GetDocument() && presShell->GetDocument()->IsRootDisplayDocument()
         && !presShell->GetRootScrollFrame()) {
       
@@ -3487,7 +3482,6 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
         id = nsLayoutUtils::FindOrCreateIDFor(element);
       }
     }
-#endif
 
     nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(&builder, id);
 
@@ -8479,7 +8473,6 @@ nsLayoutUtils::CalculateScrollableRectForFrame(nsIScrollableFrame* aScrollableFr
     
     
     
-#if !defined(MOZ_WIDGET_ANDROID) || defined(MOZ_ANDROID_APZ)
     nsPoint scrollPosition = aScrollableFrame->GetScrollPosition();
     if (aScrollableFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
       contentBounds.y = scrollPosition.y;
@@ -8489,7 +8482,6 @@ nsLayoutUtils::CalculateScrollableRectForFrame(nsIScrollableFrame* aScrollableFr
       contentBounds.x = scrollPosition.x;
       contentBounds.width = 0;
     }
-#endif
 
     contentBounds.width += aScrollableFrame->GetScrollPortRect().width;
     contentBounds.height += aScrollableFrame->GetScrollPortRect().height;

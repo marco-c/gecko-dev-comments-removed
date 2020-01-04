@@ -1187,21 +1187,6 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   
   
   AsyncTransform viewTransform;
-#if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_ANDROID_APZ)
-  FrameMetrics contentMetrics = scrollAncestor.Metrics();
-  bool abortPaint = false;
-  
-  
-  
-  if (contentMetrics.GetScrollId() == mManager->GetRootScrollableLayerId()) {
-    FrameMetrics compositorMetrics = contentMetrics;
-    
-    abortPaint = mManager->ProgressiveUpdateCallback(!staleRegion.Contains(aInvalidRegion),
-                                                     compositorMetrics,
-                                                     !drawingLowPrecision);
-    viewTransform = ComputeViewTransform(contentMetrics, compositorMetrics);
-  }
-#else
   MOZ_ASSERT(mSharedFrameMetricsHelper);
 
   bool abortPaint =
@@ -1210,7 +1195,6 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
       !staleRegion.Contains(aInvalidRegion),
       drawingLowPrecision,
       viewTransform);
-#endif
 
   TILING_LOG("TILING %p: Progressive update view transform %s zoom %f abort %d\n",
       mPaintedLayer, ToString(viewTransform.mTranslation).c_str(), viewTransform.mScale.scale, abortPaint);

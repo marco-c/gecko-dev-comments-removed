@@ -567,7 +567,7 @@ GetRootDocumentElementFor(nsIWidget* aWidget)
 static nsIFrame*
 UpdateRootFrameForTouchTargetDocument(nsIFrame* aRootFrame)
 {
-#if defined(MOZ_ANDROID_APZ)
+#if defined(MOZ_WIDGET_ANDROID)
   
   
   
