@@ -683,7 +683,7 @@ protected:
 
 
 
-  nsTArray<nsIContent*> mInvalidationList;
+  nsTArray<RefPtr<nsIContent>> mInvalidationList;
 
   
 
