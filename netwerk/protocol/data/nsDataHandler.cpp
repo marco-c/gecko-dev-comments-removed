@@ -77,9 +77,10 @@ nsDataHandler::NewURI(const nsACString &aSpec,
         rv = uri->SetRef(spec);
     } else {
         
-        nsAutoCString contentType, contentCharset, dataBuffer;
+        nsAutoCString contentType;
         bool base64;
-        rv = ParseURI(spec, contentType, contentCharset, base64, dataBuffer);
+        rv = ParseURI(spec, contentType,  nullptr,
+                      base64,  nullptr);
         if (NS_FAILED(rv))
             return rv;
 
@@ -153,9 +154,9 @@ nsDataHandler::AllowPort(int32_t port, const char *scheme, bool *_retval) {
 nsresult
 nsDataHandler::ParseURI(nsCString& spec,
                         nsCString& contentType,
-                        nsCString& contentCharset,
+                        nsCString* contentCharset,
                         bool&    isBase64,
-                        nsCString& dataBuffer)
+                        nsCString* dataBuffer)
 {
     isBase64 = false;
 
@@ -192,25 +193,32 @@ nsDataHandler::ParseURI(nsCString& spec,
     if (comma == buffer) {
         
         contentType.AssignLiteral("text/plain");
-        contentCharset.AssignLiteral("US-ASCII");
+        if (contentCharset) {
+            contentCharset->AssignLiteral("US-ASCII");
+        }
     } else {
         
         char *semiColon = (char *) strchr(buffer, ';');
         if (semiColon)
             *semiColon = '\0';
-        
+
         if (semiColon == buffer || base64 == buffer) {
             
             contentType.AssignLiteral("text/plain");
         } else {
             contentType = buffer;
             ToLowerCase(contentType);
+            contentType.StripWhitespace();
         }
 
         if (semiColon) {
-            char *charset = PL_strcasestr(semiColon + 1, "charset=");
-            if (charset)
-                contentCharset = charset + sizeof("charset=") - 1;
+            if (contentCharset) {
+                char *charset = PL_strcasestr(semiColon + 1, "charset=");
+                if (charset) {
+                    contentCharset->Assign(charset + sizeof("charset=") - 1);
+                    contentCharset->StripWhitespace();
+                }
+            }
 
             *semiColon = ';';
         }
@@ -220,15 +228,14 @@ nsDataHandler::ParseURI(nsCString& spec,
     if (isBase64)
         *base64 = ';';
 
-    contentType.StripWhitespace();
-    contentCharset.StripWhitespace();
-
-    
-    char *data = comma + 1;
-    if (!hash) {
-        dataBuffer.Assign(data);
-    } else {
-        dataBuffer.Assign(data, hash - data);
+    if (dataBuffer) {
+        
+        char *data = comma + 1;
+        if (!hash) {
+            dataBuffer->Assign(data);
+        } else {
+            dataBuffer->Assign(data, hash - data);
+        }
     }
 
     return NS_OK;

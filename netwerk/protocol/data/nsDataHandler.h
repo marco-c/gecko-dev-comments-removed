@@ -30,11 +30,12 @@ public:
     
     
     
+    
     static nsresult ParseURI(nsCString& spec,
                              nsCString& contentType,
-                             nsCString& contentCharset,
+                             nsCString* contentCharset,
                              bool& isBase64,
-                             nsCString& dataBuffer);
+                             nsCString* dataBuffer);
 };
 
 #endif 
