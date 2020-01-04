@@ -395,6 +395,22 @@ Instance::~Instance()
 }
 
 void
+Instance::tracePrivate(JSTracer* trc)
+{
+    
+    
+    
+    
+    MOZ_ASSERT(!IsAboutToBeFinalized(&object_));
+    TraceEdge(trc, &object_, "wasm instance object");
+
+    for (const FuncImport& fi : metadata().funcImports)
+        TraceNullableEdge(trc, &funcImportTls(fi).obj, "wasm import");
+
+    TraceNullableEdge(trc, &memory_, "wasm buffer");
+}
+
+void
 Instance::trace(JSTracer* trc)
 {
     
@@ -402,12 +418,7 @@ Instance::trace(JSTracer* trc)
     
     
     
-    TraceEdge(trc, &object_, "wasm object");
-
-    for (const FuncImport& fi : metadata().funcImports)
-        TraceNullableEdge(trc, &funcImportTls(fi).obj, "wasm import");
-
-    TraceNullableEdge(trc, &memory_, "wasm buffer");
+    TraceEdge(trc, &object_, "wasm instance object");
 }
 
 SharedMem<uint8_t*>
