@@ -19,13 +19,9 @@
 
 #include "skia/include/core/SkTypeface.h"
 #include "skia/include/effects/SkGradientShader.h"
-#include "skia/include/effects/SkBlurDrawLooper.h"
-#include "skia/include/effects/SkBlurMaskFilter.h"
 #include "skia/include/core/SkColorFilter.h"
-#include "skia/include/effects/SkDropShadowImageFilter.h"
+#include "skia/include/effects/SkBlurImageFilter.h"
 #include "skia/include/effects/SkLayerRasterizer.h"
-#include "skia/include/effects/SkLayerDrawLooper.h"
-#include "skia/include/effects/SkDashPathEffect.h"
 #include "Logging.h"
 #include "Tools.h"
 #include "DataSurfaceHelpers.h"
@@ -429,15 +425,37 @@ DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface *aSurface,
   TempBitmap bitmap = GetBitmapForSurface(aSurface);
 
   SkPaint paint;
-
-  SkAutoTUnref<SkImageFilter> filter(SkDropShadowImageFilter::Create(aOffset.x, aOffset.y,
-                                                                     aSigma, aSigma,
-                                                                     ColorToSkColor(aColor, 1.0)));
-
-  paint.setImageFilter(filter.get());
   paint.setXfermodeMode(GfxOpToSkiaOp(aOperator));
 
-  mCanvas->drawBitmap(bitmap.mBitmap, aDest.x, aDest.y, &paint);
+  
+  
+  
+  
+  
+  
+  
+
+  SkPaint shadowPaint;
+  SkAutoTUnref<SkImageFilter> blurFilter(SkBlurImageFilter::Create(aSigma, aSigma));
+  SkAutoTUnref<SkColorFilter> colorFilter(
+    SkColorFilter::CreateModeFilter(ColorToSkColor(aColor, 1.0), SkXfermode::kSrcIn_Mode));
+
+  shadowPaint.setXfermode(paint.getXfermode());
+  shadowPaint.setImageFilter(blurFilter.get());
+  shadowPaint.setColorFilter(colorFilter.get());
+
+  
+  
+  
+  
+  
+  IntPoint shadowDest = RoundedToInt(aDest + aOffset);
+  mCanvas->drawSprite(bitmap.mBitmap, shadowDest.x, shadowDest.y, &shadowPaint);
+
+  
+  IntPoint dest = RoundedToInt(aDest);
+  mCanvas->drawSprite(bitmap.mBitmap, dest.x, dest.y, &paint);
+
   mCanvas->restore();
 }
 
