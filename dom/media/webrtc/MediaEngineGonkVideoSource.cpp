@@ -75,9 +75,7 @@ MediaEngineGonkVideoSource::NotifyPull(MediaStreamGraph* aGraph,
   MonitorAutoLock lock(mMonitor);
   
   
-  if (mState != kStarted) {
-    return;
-  }
+  
 
   
   RefPtr<layers::Image> image = mImage;
