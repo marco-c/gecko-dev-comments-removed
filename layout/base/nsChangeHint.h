@@ -73,6 +73,9 @@ enum nsChangeHint {
 
 
 
+
+
+
   nsChangeHint_ReconstructFrame = 1 << 10,
 
   
