@@ -51,6 +51,14 @@ StringToPropertyType(const nsAString& aString, BluetoothPropertyType& aType);
 
 
 
+nsresult
+NamedValueToProperty(const BluetoothNamedValue& aIn,
+                     BluetoothProperty& aProperty);
+
+
+
+
+
 void
 RemoteNameToString(const BluetoothRemoteName& aRemoteName, nsAString& aString);
 
