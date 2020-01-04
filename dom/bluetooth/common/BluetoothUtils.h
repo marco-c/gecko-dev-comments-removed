@@ -14,6 +14,7 @@ namespace mozilla {
 namespace dom {
 class GattPermissions;
 class GattCharacteristicProperties;
+class BluetoothAdvertisingData;
 }
 }
 
@@ -174,6 +175,19 @@ GattPropertiesToBits(const GattCharacteristicProperties& aProperties,
 void
 GeneratePathFromGattId(const BluetoothGattId& aId,
                        nsAString& aPath);
+
+
+
+
+
+
+
+
+
+nsresult
+AdvertisingDataToGattAdvertisingData(
+  const BluetoothAdvertisingData& aAdvData,
+  BluetoothGattAdvertisingData& aGattAdvData);
 
 
 

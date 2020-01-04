@@ -242,6 +242,18 @@ public:
   
 
 
+  virtual void
+  StartAdvertisingInternal(const BluetoothUuid& aAppUuid,
+                           const BluetoothGattAdvertisingData& aAdvData,
+                           BluetoothReplyRunnable* aRunnable) { }
+
+  virtual void
+  StopAdvertisingInternal(const BluetoothUuid& aAppUuid,
+                          BluetoothReplyRunnable* aRunnable) { }
+
+  
+
+
 
 
 
@@ -584,6 +596,11 @@ public:
     const BluetoothGattId& aCharacteristicId,
     const BluetoothGattId& aDescriptorId,
     const nsTArray<uint8_t>& aValue,
+    BluetoothReplyRunnable* aRunnable) = 0;
+
+  virtual void
+  GattServerRegisterInternal(
+    const BluetoothUuid& aAppUuid,
     BluetoothReplyRunnable* aRunnable) = 0;
 
   virtual void

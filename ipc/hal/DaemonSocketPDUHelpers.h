@@ -325,6 +325,42 @@ PackPDU(const PackReversed<PackArray<U>>& aIn, DaemonSocketPDU& aPDU)
   return NS_OK;
 }
 
+
+
+
+
+
+
+
+
+template<typename U>
+struct PackArray<PackReversed<U>>
+{
+  PackArray(const U* aData, size_t aLength)
+    : mData(aData)
+    , mLength(aLength)
+  { }
+
+  const U* mData;
+  size_t mLength;
+};
+
+
+
+
+template<typename U>
+inline nsresult
+PackPDU(const PackArray<PackReversed<U>>& aIn, DaemonSocketPDU& aPDU)
+{
+  for (size_t i = 0; i < aIn.mLength; ++i) {
+    nsresult rv = PackPDU(PackReversed<U>(aIn.mData[i]), aPDU);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+  return NS_OK;
+}
+
 template <typename T1, typename T2>
 inline nsresult
 PackPDU(const T1& aIn1, const T2& aIn2, DaemonSocketPDU& aPDU)
