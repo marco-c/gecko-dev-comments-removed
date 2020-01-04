@@ -108,7 +108,14 @@ public:
   
   
   
-  void IncrementAnimationGeneration() { ++mAnimationGeneration; }
+  void IncrementAnimationGeneration() {
+    
+    
+    
+    if (!mIsProcessingRestyles) {
+      ++mAnimationGeneration;
+    }
+  }
 
   
   bool SkipAnimationRules() const { return mSkipAnimationRules; }
@@ -565,9 +572,11 @@ private:
 
   RestyleTracker mPendingRestyles;
 
-#ifdef DEBUG
+  
+  
+  
+  
   bool mIsProcessingRestyles;
-#endif
 
 #ifdef RESTYLE_LOGGING
   int32_t mLoggingDepth;
