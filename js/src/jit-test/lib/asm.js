@@ -2,7 +2,6 @@
 
 
 
-const ASM_OK_STRING = "successfully compiled asm.js code";
 const ASM_TYPE_FAIL_STRING = "asm.js type error:";
 const ASM_DIRECTIVE_FAIL_STRING = "\"use asm\" is only meaningful in the Directive Prologue of a function body";
 
