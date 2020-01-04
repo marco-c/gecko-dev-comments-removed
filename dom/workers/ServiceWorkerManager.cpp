@@ -2740,7 +2740,8 @@ ServiceWorkerManager::ReportToAllClients(const nsCString& aScope,
                                                 uri,
                                                 aLine,
                                                 aLineNumber,
-                                                aColumnNumber);
+                                                aColumnNumber,
+                                                nsContentUtils::eOMIT_LOCATION);
   }
 
   
@@ -2772,7 +2773,8 @@ ServiceWorkerManager::ReportToAllClients(const nsCString& aScope,
                                                   uri,
                                                   aLine,
                                                   aLineNumber,
-                                                  aColumnNumber);
+                                                  aColumnNumber,
+                                                  nsContentUtils::eOMIT_LOCATION);
     }
 
     if (regList->IsEmpty()) {
@@ -2843,7 +2845,8 @@ ServiceWorkerManager::ReportToAllClients(const nsCString& aScope,
                                                 uri,
                                                 aLine,
                                                 aLineNumber,
-                                                aColumnNumber);
+                                                aColumnNumber,
+                                                nsContentUtils::eOMIT_LOCATION);
     return;
   }
 }
