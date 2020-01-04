@@ -841,11 +841,26 @@ public:
                                      const nsIFrame* aStopAtAncestor,
                                      nsIFrame** aOutResult);
 
-  void EnterSVGEffectsContents(nsDisplayList* aHoistedItemsStorage);
-  void ExitSVGEffectsContents();
+  void SetCommittedScrollInfoItemList(nsDisplayList* aScrollInfoItemStorage) {
+    mCommittedScrollInfoItems = aScrollInfoItemStorage;
+  }
+  nsDisplayList* CommittedScrollInfoItems() const {
+    return mCommittedScrollInfoItems;
+  }
+  bool ShouldBuildScrollInfoItemsForHoisting() const {
+    return IsPaintingToWindow();
+  }
 
-  bool ShouldBuildScrollInfoItemsForHoisting() const
-  { return mSVGEffectsBuildingDepth > 0; }
+  
+  
+  
+  
+  
+  
+  
+  
+  nsDisplayList* EnterScrollInfoItemHoisting(nsDisplayList* aScrollInfoItemStorage);
+  void LeaveScrollInfoItemHoisting(nsDisplayList* aScrollInfoItemStorage);
 
   void AppendNewScrollInfoItemForHoisting(nsDisplayScrollInfoLayer* aScrollInfoItem);
 
@@ -959,14 +974,15 @@ private:
   
   
   
-  nsDisplayList*                 mScrollInfoItemsForHoisting;
+  
+  nsDisplayList*                 mPendingScrollInfoItems;
+  nsDisplayList*                 mCommittedScrollInfoItems;
   nsTArray<DisplayItemClip*>     mDisplayItemClipsToDestroy;
   Mode                           mMode;
   ViewID                         mCurrentScrollParentId;
   ViewID                         mCurrentScrollbarTarget;
   uint32_t                       mCurrentScrollbarFlags;
   BlendModeSet                   mContainedBlendModes;
-  int32_t                        mSVGEffectsBuildingDepth;
   bool                           mBuildCaret;
   bool                           mIgnoreSuppression;
   bool                           mHadToIgnoreSuppression;
@@ -3265,10 +3281,20 @@ public:
   mozilla::UniquePtr<FrameMetrics> ComputeFrameMetrics(Layer* aLayer,
                                                        const ContainerLayerParameters& aContainerParameters);
 
+  void IgnoreIfCompositorSupportsBlending(BlendModeSet aBlendModes);
+  void UnsetIgnoreIfCompositorSupportsBlending();
+  bool ContainedInMixBlendMode() const;
+
 protected:
   nsIFrame* mScrollFrame;
   nsIFrame* mScrolledFrame;
   ViewID mScrollParentId;
+
+  
+  
+  
+  BlendModeSet mContainedBlendModes;
+  bool mIgnoreIfCompositorSupportsBlending;
 };
 
 
