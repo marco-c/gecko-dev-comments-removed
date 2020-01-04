@@ -321,7 +321,7 @@ pref("media.hardware-video-decoding.enabled", true);
 pref("media.hardware-video-decoding.force-enabled", false);
 
 pref("media.decoder.heuristic.dormant.enabled", true);
-pref("media.decoder.heuristic.dormant.timeout", 10000);
+pref("media.decoder.heuristic.dormant.timeout", 60000);
 
 #ifdef MOZ_DIRECTSHOW
 pref("media.directshow.enabled", true);
@@ -5079,6 +5079,10 @@ pref("dom.voicemail.defaultServiceId", 0);
 
 
 pref("dom.mapped_arraybuffer.enabled", true);
+
+
+
+pref("dom.fire_extra_xhr_loading_readystatechanges", false);
 
 
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
