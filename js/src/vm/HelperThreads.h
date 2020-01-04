@@ -481,6 +481,9 @@ struct ParseTask
     JSScript* script;
 
     
+    ScriptSourceObject* sourceObject;
+
+    
     
     Vector<frontend::CompileError*> errors;
     bool overRecursed;

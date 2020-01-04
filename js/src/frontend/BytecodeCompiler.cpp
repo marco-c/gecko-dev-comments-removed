@@ -62,6 +62,8 @@ class MOZ_STACK_CLASS BytecodeCompiler
     bool compileFunctionBody(MutableHandleFunction fun, Handle<PropertyNameVector> formals,
                              GeneratorKind generatorKind);
 
+    ScriptSourceObject* sourceObjectPtr() const;
+
   private:
     bool checkLength();
     bool createScriptSource();
@@ -714,6 +716,12 @@ BytecodeCompiler::compileFunctionBody(MutableHandleFunction fun,
 }
 
 ScriptSourceObject*
+BytecodeCompiler::sourceObjectPtr() const
+{
+    return sourceObject.get();
+}
+
+ScriptSourceObject*
 frontend::CreateScriptSourceObject(ExclusiveContext* cx, const ReadOnlyCompileOptions& options)
 {
     ScriptSource* ss = cx->new_<ScriptSource>();
@@ -752,7 +760,8 @@ frontend::CompileScript(ExclusiveContext* cx, LifoAlloc* alloc, HandleObject sco
                         const ReadOnlyCompileOptions& options,
                         SourceBufferHolder& srcBuf,
                         JSString* source_ ,
-                        SourceCompressionTask* extraSct )
+                        SourceCompressionTask* extraSct ,
+                        ScriptSourceObject** sourceObjectOut )
 {
     MOZ_ASSERT(srcBuf.get());
 
@@ -764,10 +773,32 @@ frontend::CompileScript(ExclusiveContext* cx, LifoAlloc* alloc, HandleObject sco
     MOZ_ASSERT_IF(evalCaller, options.forEval);
     MOZ_ASSERT_IF(evalCaller && evalCaller->strict(), options.strictOption);
 
+   MOZ_ASSERT_IF(sourceObjectOut, *sourceObjectOut == nullptr);
+
     BytecodeCompiler compiler(cx, alloc, options, srcBuf, enclosingStaticScope,
                               TraceLogger_ParserCompileScript);
     compiler.maybeSetSourceCompressor(extraSct);
-    return compiler.compileScript(scopeChain, evalCaller);
+    JSScript* script = compiler.compileScript(scopeChain, evalCaller);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (sourceObjectOut)
+        *sourceObjectOut = compiler.sourceObjectPtr();
+
+    return script;
 }
 
 ModuleObject*
