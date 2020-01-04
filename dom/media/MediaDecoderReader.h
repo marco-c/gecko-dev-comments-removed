@@ -153,7 +153,7 @@ public:
   
   
   
-  virtual bool IsWaitForDataSupported() { return false; }
+  virtual bool IsWaitForDataSupported() const { return false; }
 
   virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType)
   {
@@ -213,7 +213,7 @@ public:
   
   
   
-  virtual bool UseBufferingHeuristics() { return true; }
+  virtual bool UseBufferingHeuristics() const { return true; }
 
   
   
