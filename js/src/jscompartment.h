@@ -29,6 +29,7 @@ template<class Node> class ComponentFinder;
 } 
 
 struct NativeIterator;
+class ClonedBlockObject;
 
 
 
@@ -397,7 +398,8 @@ struct JSCompartment
                                 size_t* objectMetadataTables,
                                 size_t* crossCompartmentWrappers,
                                 size_t* regexpCompartment,
-                                size_t* savedStacksSet);
+                                size_t* savedStacksSet,
+                                size_t* nonSyntacticLexicalScopes);
 
     
 
@@ -442,6 +444,13 @@ struct JSCompartment
     
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
+  private:
+    
+    
+    
+    js::ObjectWeakMap* nonSyntacticLexicalScopes_;
+
+  public:
     
     unsigned                     gcIndex;
 
@@ -510,6 +519,11 @@ struct JSCompartment
     struct WrapperEnum : public js::WrapperMap::Enum {
         explicit WrapperEnum(JSCompartment* c) : js::WrapperMap::Enum(c->crossCompartmentWrappers) {}
     };
+
+    js::ClonedBlockObject* getOrCreateNonSyntacticLexicalScope(JSContext* cx,
+                                                               js::HandleObject enclosingStatic,
+                                                               js::HandleObject enclosingScope);
+    js::ClonedBlockObject* getNonSyntacticLexicalScope(JSObject* enclosingScope) const;
 
     
 

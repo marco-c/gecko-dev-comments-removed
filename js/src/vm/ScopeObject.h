@@ -250,9 +250,6 @@ ScopeCoordinateFunctionScript(JSScript* script, jsbytecode* pc);
 
 
 
-
-
-
 class ScopeObject : public NativeObject
 {
   protected:
@@ -466,6 +463,106 @@ class StaticEvalObject : public ScopeObject
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StaticNonSyntacticScopeObjects : public ScopeObject
 {
   public:
@@ -492,7 +589,8 @@ class NonSyntacticVariablesObject : public ScopeObject
     static const unsigned RESERVED_SLOTS = 1;
     static const Class class_;
 
-    static NonSyntacticVariablesObject* create(JSContext* cx, Handle<GlobalObject*> global);
+    static NonSyntacticVariablesObject* create(JSContext* cx,
+                                               Handle<ClonedBlockObject*> globalLexical);
 };
 
 class NestedScopeObject : public ScopeObject
@@ -703,8 +801,12 @@ class StaticBlockObject : public BlockObject
     }
 
     
-    bool isGlobal() {
+    bool isGlobal() const {
         return !enclosingStaticScope();
+    }
+
+    bool isSyntactic() const {
+        return !isExtensible() || isGlobal();
     }
 
     
@@ -765,6 +867,9 @@ class ClonedBlockObject : public BlockObject
 
     static ClonedBlockObject* createGlobal(JSContext* cx, Handle<GlobalObject*> global);
 
+    static ClonedBlockObject* createNonSyntactic(JSContext* cx, HandleObject enclosingStatic,
+                                                 HandleObject enclosingScope);
+
     static ClonedBlockObject* createHollowForDebug(JSContext* cx,
                                                    Handle<StaticBlockObject*> block);
 
@@ -793,6 +898,10 @@ class ClonedBlockObject : public BlockObject
     GlobalObject& global() const {
         MOZ_ASSERT(isGlobal());
         return enclosingScope().as<GlobalObject>();
+    }
+
+    bool isSyntactic() const {
+        return !isExtensible() || isGlobal();
     }
 
     
@@ -1179,9 +1288,25 @@ namespace js {
 inline bool
 IsSyntacticScope(JSObject* scope)
 {
-    return scope->is<ScopeObject>() &&
-           (!scope->is<DynamicWithObject>() || scope->as<DynamicWithObject>().isSyntactic()) &&
-           !scope->is<NonSyntacticVariablesObject>();
+    if (!scope->is<ScopeObject>())
+        return false;
+
+    if (scope->is<DynamicWithObject>())
+        return scope->as<DynamicWithObject>().isSyntactic();
+
+    if (scope->is<ClonedBlockObject>())
+        return scope->as<ClonedBlockObject>().isSyntactic();
+
+    if (scope->is<NonSyntacticVariablesObject>())
+        return false;
+
+    return true;
+}
+
+inline bool
+IsExtensibleLexicalScope(JSObject* scope)
+{
+    return scope->is<ClonedBlockObject>() && scope->as<ClonedBlockObject>().isExtensible();
 }
 
 inline bool
@@ -1239,8 +1364,7 @@ ScopeIter::hasNonSyntacticScopeObject() const
     if (ssi_.type() == StaticScopeIter<CanGC>::NonSyntactic) {
         MOZ_ASSERT_IF(scope_->is<DynamicWithObject>(),
                       !scope_->as<DynamicWithObject>().isSyntactic());
-        return scope_->is<DynamicWithObject>() ||
-               scope_->is<NonSyntacticVariablesObject>();
+        return scope_->is<ScopeObject>() && !IsSyntacticScope(scope_);
     }
     return false;
 }

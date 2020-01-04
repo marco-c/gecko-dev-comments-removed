@@ -1465,7 +1465,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
         xpc->SetFunctionThisTranslator(NS_GET_IID(nsITestXPCFunctionCallback), translator);
 #endif
 
-        RefPtr<BackstagePass> backstagePass;
+        nsRefPtr<BackstagePass> backstagePass;
         rv = NS_NewBackstagePass(getter_AddRefs(backstagePass));
         if (NS_FAILED(rv)) {
             fprintf(gErrFile, "+++ Failed to create BackstagePass: %8x\n",
@@ -1556,6 +1556,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
 
             JS_DropPrincipals(rt, gJSPrincipals);
             JS_SetAllNonReservedSlotsToUndefined(cx, glob);
+            JS_SetAllNonReservedSlotsToUndefined(cx, JS_GlobalLexicalScope(glob));
             JS_GC(rt);
         }
         JS_GC(rt);
