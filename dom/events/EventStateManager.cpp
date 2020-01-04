@@ -2954,7 +2954,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           
           
           
-          suppressBlur = (ui->mUserFocus == NS_STYLE_USER_FOCUS_IGNORE);
+          suppressBlur = (ui->mUserFocus == StyleUserFocus::Ignore);
 
           if (!suppressBlur) {
             nsCOMPtr<Element> element = do_QueryInterface(aEvent->mTarget);

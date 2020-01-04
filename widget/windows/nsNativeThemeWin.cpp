@@ -3198,7 +3198,7 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame, uint8_t
           aState |= DFCS_PUSHED;
           const nsStyleUserInterface *uiData = aFrame->StyleUserInterface();
           
-          if (uiData->mUserFocus == NS_STYLE_USER_FOCUS_NORMAL) {
+          if (uiData->mUserFocus == StyleUserFocus::Normal) {
             if (!aFrame->GetContent()->IsHTMLElement())
               aState |= DFCS_FLAT;
 
