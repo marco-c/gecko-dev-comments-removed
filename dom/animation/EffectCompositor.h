@@ -7,13 +7,17 @@
 #ifndef mozilla_EffectCompositor_h
 #define mozilla_EffectCompositor_h
 
+#include "mozilla/Maybe.h"
+#include "mozilla/Pair.h"
 #include "mozilla/RefPtr.h"
+#include "nsCSSPseudoElements.h"
 #include "nsTArray.h"
 
 namespace mozilla {
 
 namespace dom {
 class Animation;
+class Element;
 }
 
 class EffectCompositor
@@ -25,6 +29,18 @@ public:
   static nsTArray<RefPtr<dom::Animation>>
   GetAnimationsForCompositor(const nsIFrame* aFrame,
                              nsCSSProperty aProperty);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>>
+  GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
 };
 
 } 
