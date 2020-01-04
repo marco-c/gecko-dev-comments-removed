@@ -7,7 +7,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   let {client, walker, animations} =
     yield initAnimationsFrontForUrl(MAIN_DOMAIN + "animation.html");
 
@@ -29,9 +29,9 @@ function* playerHasCompleteStateAtAllTimes(walker, animations) {
   
   
   for (let i = 0; i < 10; i++) {
-    let state = yield player.getCurrentState();
+    yield player.refreshState();
     keys.forEach(key => {
-      ok(typeof state[key] !== "undefined",
+      ok(typeof player.state[key] !== "undefined",
          "The state retrieved has key " + key);
     });
   }
