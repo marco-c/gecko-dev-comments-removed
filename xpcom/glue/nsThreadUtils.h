@@ -258,22 +258,22 @@ private:
   CancelableRunnable& operator=(const CancelableRunnable&&) = delete;
 };
 
-} 
+namespace detail {
 
 
 
 
 template<typename StoredFunction>
-class nsRunnableFunction : public mozilla::Runnable
+class RunnableFunction : public Runnable
 {
 public:
   template <typename F>
-  explicit nsRunnableFunction(F&& aFunction)
-    : mFunction(mozilla::Forward<F>(aFunction))
+  explicit RunnableFunction(F&& aFunction)
+    : mFunction(Forward<F>(aFunction))
   { }
 
   NS_IMETHOD Run() {
-    static_assert(mozilla::IsVoid<decltype(mFunction())>::value,
+    static_assert(IsVoid<decltype(mFunction())>::value,
                   "The lambda must return void!");
     mFunction();
     return NS_OK;
@@ -282,11 +282,15 @@ private:
   StoredFunction mFunction;
 };
 
+} 
+
+} 
+
 template<typename Function>
-already_AddRefed<nsRunnableFunction<typename mozilla::RemoveReference<Function>::Type>>
+already_AddRefed<mozilla::Runnable>
 NS_NewRunnableFunction(Function&& aFunction)
 {
-  return do_AddRef(new nsRunnableFunction
+  return do_AddRef(new mozilla::detail::RunnableFunction
                    
                    <typename mozilla::RemoveReference<Function>::Type>
                    
