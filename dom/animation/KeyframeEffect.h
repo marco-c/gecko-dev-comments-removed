@@ -349,6 +349,10 @@ protected:
   already_AddRefed<nsStyleContext>
   GetTargetStyleContext();
 
+  
+  
+  void MarkCascadeNeedsUpdate();
+
   Maybe<OwningAnimationTarget> mTarget;
 
   KeyframeEffectParams mEffectOptions;
