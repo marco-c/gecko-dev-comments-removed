@@ -41,7 +41,7 @@ Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 
-let gPrefs = Cc["@mozilla.org/preferences-service;1"]
+var gPrefs = Cc["@mozilla.org/preferences-service;1"]
                .getService(Components.interfaces.nsIPrefBranch);
 
 
@@ -507,7 +507,7 @@ function signedPackagedAppContentHandler(metadata, response)
 }
 
 
-let dummyCacheListener = {
+var dummyCacheListener = {
   QueryInterface: function (iid) {
     if (iid.equals(Ci.nsICacheEntryOpenCallback) ||
         iid.equals(Ci.nsISupports))

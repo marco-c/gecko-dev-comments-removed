@@ -1,7 +1,7 @@
 
 
-const Cr = Components.results;
-const Cm = Components.manager;
+var Cr = Components.results;
+var Cm = Components.manager;
 
 
 var didFail = false;

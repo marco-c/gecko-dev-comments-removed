@@ -3,7 +3,7 @@
 
 
 
-const { utils: Cu } = Components;
+var { utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/UpdateUtils.jsm");

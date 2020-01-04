@@ -15,11 +15,11 @@ function debug(aStr) {
   
 }
 
-let window = Services.wm.getMostRecentWindow("navigator:browser");
+var window = Services.wm.getMostRecentWindow("navigator:browser");
 
 
 
-let MultiscreenHandler = {
+var MultiscreenHandler = {
 
   topLevelWindows: new Map(),
 

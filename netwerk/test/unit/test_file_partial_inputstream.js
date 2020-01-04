@@ -7,7 +7,7 @@
 
 
 
-const CC = Components.Constructor;
+var CC = Components.Constructor;
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
                              "nsIBinaryInputStream",
                              "setInputStream");

@@ -2,7 +2,7 @@
 
 "use strict";
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 var { Preferences } = Cu.import("resource://gre/modules/Preferences.jsm", {});
@@ -46,6 +46,9 @@ const INVERT_FLAME_PREF = "devtools.performance.ui.invert-flame-graph";
 const FLATTEN_PREF = "devtools.performance.ui.flatten-tree-recursion";
 const JIT_PREF = "devtools.performance.ui.enable-jit-optimizations";
 const EXPERIMENTAL_PREF = "devtools.performance.ui.experimental";
+
+
+const FRAMERATE_GRAPH_HIGH_RES_INTERVAL = 16; 
 
 
 waitForExplicitFinish();
@@ -423,7 +426,7 @@ function* stopRecording(panel, options = {
   
   while (!overviewRendered && options.waitForOverview) {
     let [_, res] = yield onceSpread(win.OverviewView, win.EVENTS.OVERVIEW_RENDERED);
-    if (res === win.FRAMERATE_GRAPH_HIGH_RES_INTERVAL) {
+    if (res === FRAMERATE_GRAPH_HIGH_RES_INTERVAL) {
       overviewRendered = true;
     }
   }

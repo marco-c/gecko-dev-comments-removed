@@ -4,7 +4,7 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 function scopedCuImport(path) {
   const scope = {};

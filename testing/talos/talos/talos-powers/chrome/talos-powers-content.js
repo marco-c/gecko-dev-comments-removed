@@ -2,7 +2,7 @@
 
 
 
-const { interfaces: Ci } = Components;
+var { interfaces: Ci } = Components;
 
 
 

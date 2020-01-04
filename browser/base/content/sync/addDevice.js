@@ -2,9 +2,9 @@
 
 
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
+var Ci = Components.interfaces;
+var Cc = Components.classes;
+var Cu = Components.utils;
 
 Cu.import("resource://services-sync/main.js");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");

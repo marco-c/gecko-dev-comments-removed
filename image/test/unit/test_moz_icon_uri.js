@@ -3,8 +3,8 @@
 
 
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cc = Components.classes;
 
 
 

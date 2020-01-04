@@ -510,6 +510,8 @@ const PanelUI = {
   },
 };
 
+XPCOMUtils.defineConstant(this, "PanelUI", PanelUI);
+
 
 
 

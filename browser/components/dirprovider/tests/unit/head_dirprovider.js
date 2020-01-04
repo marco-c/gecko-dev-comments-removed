@@ -2,8 +2,8 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
 
 var gProfD = do_get_profile();
 var gDirSvc = Cc["@mozilla.org/file/directory_service;1"].

@@ -5,7 +5,7 @@
 
 
 
-let actions = require("devtools/client/memory/actions/snapshot");
+var actions = require("devtools/client/memory/actions/snapshot");
 
 function run_test() {
   run_next_test();

@@ -1,7 +1,7 @@
 
 
 
-const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
+var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const { Services } = Cu.import('resource://gre/modules/Services.jsm');
 const { SystemAppProxy } = Cu.import('resource://gre/modules/SystemAppProxy.jsm');
 

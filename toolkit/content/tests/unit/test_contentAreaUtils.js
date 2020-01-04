@@ -3,9 +3,9 @@
 
 
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cr = Components.results;
+var Ci = Components.interfaces;
+var Cc = Components.classes;
+var Cr = Components.results;
 
 function loadUtilsScript() {
   var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"].

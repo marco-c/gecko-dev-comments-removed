@@ -1,6 +1,6 @@
 
 
-const { Constructor: CC } = Components;
+var { Constructor: CC } = Components;
 
 const UDPSocket = CC("@mozilla.org/network/udp-socket;1",
                      "nsIUDPSocket",

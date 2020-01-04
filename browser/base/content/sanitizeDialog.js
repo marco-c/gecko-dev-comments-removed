@@ -3,11 +3,11 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
 
-let {Sanitizer} = Cu.import("resource:///modules/Sanitizer.jsm", {});
+var {Sanitizer} = Cu.import("resource:///modules/Sanitizer.jsm", {});
 
 var gSanitizePromptDialog = {
 

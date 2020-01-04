@@ -2,7 +2,7 @@
 
 
 
-const { classes: Cc, utils: Cu, interfaces: Ci } = Components;
+var { classes: Cc, utils: Cu, interfaces: Ci } = Components;
 
 var reportURL;
 

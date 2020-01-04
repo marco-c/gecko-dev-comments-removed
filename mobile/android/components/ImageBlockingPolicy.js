@@ -13,7 +13,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 
 
 
-let PLACEHOLDER_IMG = "chrome://browser/skin/images/placeholder_image.svg";
+var PLACEHOLDER_IMG = "chrome://browser/skin/images/placeholder_image.svg";
 
 function ImageBlockingPolicy() {}
 

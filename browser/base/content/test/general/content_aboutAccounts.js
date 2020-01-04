@@ -5,7 +5,7 @@
 
 "use strict";
 
-const {interfaces: Ci, utils: Cu} = Components;
+var {interfaces: Ci, utils: Cu} = Components;
 
 addEventListener("load", function load(event) {
   if (event.target != content.document) {
