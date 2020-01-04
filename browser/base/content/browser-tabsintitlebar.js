@@ -79,7 +79,6 @@ var TabsInTitlebar = {
   _disallowed: {},
   _prefName: "browser.tabs.drawInTitlebar",
   _lastSizeMode: null,
-  haveUpdatedTitlebarDisplay: false,
 
   _readPref: function () {
     this.allowedBy("pref",
@@ -264,22 +263,6 @@ var TabsInTitlebar = {
 };
 
 function updateTitlebarDisplay() {
-  
-  
-  if (!TabsInTitlebar.haveUpdatedTitlebarDisplay) {
-    if (AppConstants.platform == "win" && Services.focus.activeWindow != window) {
-      if (!TabsInTitlebar._titlebarUpdateListener) {
-        TabsInTitlebar._titlebarUpdateListener = e => {
-          window.removeEventListener("activate", TabsInTitlebar._titlebarUpdateListener);
-          updateTitlebarDisplay();
-        };
-        window.addEventListener("activate", TabsInTitlebar._titlebarUpdateListener);
-      }
-      return;
-    }
-    TabsInTitlebar.haveUpdatedTitlebarDisplay = true;
-  }
-
   if (AppConstants.platform == "macosx") {
     
     
