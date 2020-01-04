@@ -7,6 +7,7 @@
 #define mozilla_net_SpdyStream31_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAHttpTransaction.h"
 
 namespace mozilla { namespace net {
@@ -205,7 +206,7 @@ private:
 
   
   
-  nsAutoArrayPtr<uint8_t>      mTxInlineFrame;
+  UniquePtr<uint8_t[]>         mTxInlineFrame;
   uint32_t                     mTxInlineFrameSize;
   uint32_t                     mTxInlineFrameUsed;
 
@@ -224,7 +225,7 @@ private:
   uint32_t             mDecompressBufferSize;
   uint32_t             mDecompressBufferUsed;
   uint32_t             mDecompressedBytes;
-  nsAutoArrayPtr<char> mDecompressBuffer;
+  UniquePtr<char[]>    mDecompressBuffer;
 
   
   
