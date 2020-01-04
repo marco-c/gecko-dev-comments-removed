@@ -81,6 +81,7 @@ private:
     PtsCorrectionContext();
     int64_t GuessCorrectPts(int64_t aPts, int64_t aDts);
     void Reset();
+    int64_t LastDts() const { return mLastDts; }
 
   private:
     int64_t mNumFaultyPts; 
@@ -96,18 +97,18 @@ private:
     typedef Pair<int64_t, int64_t> DurationElement;
 
     
-    void Insert(int64_t aDts, int64_t aDuration)
+    void Insert(int64_t aKey, int64_t aDuration)
     {
-      mMap.AppendElement(MakePair(aDts, aDuration));
+      mMap.AppendElement(MakePair(aKey, aDuration));
     }
     
     
     
-    bool Find(int64_t aDts, int64_t& aDuration)
+    bool Find(int64_t aKey, int64_t& aDuration)
     {
       for (uint32_t i = 0; i < mMap.Length(); i++) {
         DurationElement& element = mMap[i];
-        if (element.first() == aDts) {
+        if (element.first() == aKey) {
           aDuration = element.second();
           mMap.RemoveElementAt(i);
           return true;
