@@ -30,6 +30,8 @@ this.FinderIterator = {
   get kIterationSizeMax() { return kIterationSizeMax },
 
   get params() {
+    if (!this._currentParams && !this._previousParams)
+      return null;
     return Object.assign({}, this._currentParams || this._previousParams);
   },
 
@@ -65,7 +67,12 @@ this.FinderIterator = {
 
 
 
-  start({ caseSensitive, entireWord, finder, limit, linksOnly, onRange, useCache, word }) {
+
+
+
+
+
+  start({ caseSensitive, entireWord, finder, limit, linksOnly, listener, useCache, word }) {
     
     if (typeof limit != "number")
       limit = -1;
@@ -83,23 +90,27 @@ this.FinderIterator = {
       throw new Error("Missing required option 'finder'");
     if (!word)
       throw new Error("Missing required option 'word'");
-    if (typeof onRange != "function")
-      throw new TypeError("Missing valid, required option 'onRange'");
+    if (typeof listener != "object" || !listener.onIteratorRangeFound)
+      throw new TypeError("Missing valid, required option 'listener'");
 
     
-    if (this._listeners.has(onRange))
-      throw new Error("Already listening to iterator results");
+    
+    if (this._listeners.has(listener)) {
+      let { onEnd } = this._listeners.get(listener);
+      if (onEnd)
+        onEnd();
+    }
 
     let window = finder._getWindow();
     let resolver;
     let promise = new Promise(resolve => resolver = resolve);
     let iterParams = { caseSensitive, entireWord, linksOnly, useCache, word };
 
-    this._listeners.set(onRange, { limit, onEnd: resolver });
+    this._listeners.set(listener, { limit, onEnd: resolver });
 
     
     if (!this.running && this._previousResultAvailable(iterParams)) {
-      this._yieldPreviousResult(onRange, window);
+      this._yieldPreviousResult(listener, window);
       return promise;
     }
 
@@ -110,7 +121,7 @@ this.FinderIterator = {
         throw new Error(`We're currently iterating over '${this._currentParams.word}', not '${word}'`);
 
       
-      this._yieldIntermediateResult(onRange, window);
+      this._yieldIntermediateResult(listener, window);
 
       return promise;
     }
@@ -149,7 +160,27 @@ this.FinderIterator = {
 
     for (let [, { onEnd }] of this._listeners)
       onEnd();
-    this._listeners.clear();
+  },
+
+  
+
+
+
+
+
+  restart(finder) {
+    
+    let iterParams = this.params;
+    if (!iterParams)
+      return;
+    this.stop();
+
+    
+    this.running = true;
+    this._currentParams = iterParams;
+
+    this._findAllRanges(finder, finder._getWindow(), ++this._spawnId);
+    this._notifyListeners("restart", iterParams);
   },
 
   
@@ -165,6 +196,7 @@ this.FinderIterator = {
     this.ranges = [];
     this.running = false;
 
+    this._notifyListeners("reset");
     for (let [, { onEnd }] of this._listeners)
       onEnd();
     this._listeners.clear();
@@ -189,6 +221,26 @@ this.FinderIterator = {
       this._currentParams.entireWord === entireWord &&
       this._currentParams.linksOnly === linksOnly &&
       this._currentParams.word == word);
+  },
+
+  
+
+
+
+
+
+
+
+
+  _notifyListeners(callback, params, listeners = this._listeners.keys()) {
+    callback = "onIterator" + callback.charAt(0).toUpperCase() + callback.substr(1);
+    for (let listener of listeners) {
+      try {
+        listener[callback](params);
+      } catch (ex) {
+        Cu.reportError("FinderIterator Error: " + ex);
+      }
+    }
   },
 
   
@@ -239,11 +291,14 @@ this.FinderIterator = {
 
 
 
-  _yieldResult: function* (onRange, rangeSource, window) {
+
+
+
+  _yieldResult: function* (listener, rangeSource, window, withPause = true) {
     
     
     let iterCount = 0;
-    let { limit, onEnd } = this._listeners.get(onRange);
+    let { limit, onEnd } = this._listeners.get(listener);
     let ranges = rangeSource.slice(0, limit > -1 ? limit : undefined);
     for (let range of ranges) {
       try {
@@ -256,13 +311,13 @@ this.FinderIterator = {
 
       
       
-      onRange(range, !this.running);
+      listener.onIteratorRangeFound(range, !this.running);
       yield range;
 
-      if (++iterCount >= kIterationSizeMax) {
+      if (withPause && ++iterCount >= kIterationSizeMax) {
         iterCount = 0;
         
-        this._listeners.set(onRange, { limit, onEnd });
+        this._listeners.set(listener, { limit, onEnd });
         
         yield new Promise(resolve => window.setTimeout(resolve, 0));
         
@@ -271,14 +326,14 @@ this.FinderIterator = {
 
       if (limit !== -1 && --limit === 0) {
         
-        this._listeners.delete(onRange);
+        this._listeners.delete(listener);
         onEnd();
         return;
       }
     }
 
     
-    this._listeners.set(onRange, { limit, onEnd });
+    this._listeners.set(listener, { limit, onEnd });
   },
 
   
@@ -291,15 +346,14 @@ this.FinderIterator = {
 
 
 
-  _yieldPreviousResult: Task.async(function* (onRange, window) {
-    this._catchingUp.add(onRange);
-    yield* this._yieldResult(onRange, this._previousRanges, window);
-    this._catchingUp.delete(onRange);
-    let { onEnd } = this._listeners.get(onRange);
-    if (onEnd) {
+  _yieldPreviousResult: Task.async(function* (listener, window) {
+    this._notifyListeners("start", this.params, [listener]);
+    this._catchingUp.add(listener);
+    yield* this._yieldResult(listener, this._previousRanges, window);
+    this._catchingUp.delete(listener);
+    let { onEnd } = this._listeners.get(listener);
+    if (onEnd)
       onEnd();
-      this._listeners.delete(onRange);
-    }
   }),
 
   
@@ -312,10 +366,11 @@ this.FinderIterator = {
 
 
 
-  _yieldIntermediateResult: Task.async(function* (onRange, window) {
-    this._catchingUp.add(onRange);
-    yield* this._yieldResult(onRange, this.ranges, window);
-    this._catchingUp.delete(onRange);
+  _yieldIntermediateResult: Task.async(function* (listener, window) {
+    this._notifyListeners("start", this.params, [listener]);
+    this._catchingUp.add(listener);
+    yield* this._yieldResult(listener, this.ranges, window, false);
+    this._catchingUp.delete(listener);
   }),
 
   
@@ -329,6 +384,8 @@ this.FinderIterator = {
 
 
   _findAllRanges: Task.async(function* (finder, window, spawnId) {
+    this._notifyListeners("start", this.params);
+
     
     
     let frames = [window].concat(this._collectFrames(window, finder));
@@ -348,21 +405,21 @@ this.FinderIterator = {
         this.ranges.push(range);
 
         
-        for (let [onRange, { limit, onEnd }] of this._listeners) {
-          if (this._catchingUp.has(onRange))
+        for (let [listener, { limit, onEnd }] of this._listeners) {
+          if (this._catchingUp.has(listener))
             continue;
 
-          onRange(range);
+          listener.onIteratorRangeFound(range);
 
           if (limit !== -1 && --limit === 0) {
             
-            this._listeners.delete(onRange);
+            this._listeners.delete(listener);
             onEnd();
             continue;
           }
 
           
-          this._listeners.set(onRange, { limit, onEnd });
+          this._listeners.set(listener, { limit, onEnd });
         }
 
         yield range;
