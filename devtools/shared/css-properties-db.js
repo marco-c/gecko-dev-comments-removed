@@ -49,6 +49,21 @@ exports.ANGLE_TAKING_FUNCTIONS = ["linear-gradient", "-moz-linear-gradient",
 
 
 
+
+exports.PSEUDO_ELEMENTS = [":after", ":before", ":backdrop", ":first-letter",
+                           ":first-line", ":-moz-selection", ":-moz-focus-inner",
+                           ":-moz-focus-outer", ":-moz-list-bullet",
+                           ":-moz-list-number", ":-moz-math-anonymous",
+                           ":-moz-progress-bar", ":-moz-range-track",
+                           ":-moz-range-progress", ":-moz-range-thumb",
+                           ":-moz-meter-bar", ":-moz-placeholder",
+                           ":-moz-color-swatch"];
+
+
+
+
+
+
 exports.CSS_PROPERTIES = {
   "align-content": {
     isInherited: false,
@@ -1742,4 +1757,9 @@ exports.CSS_PROPERTIES = {
     isInherited: false,
     supports: []
   }
+};
+
+exports.CSS_PROPERTIES_DB = {
+  properties: exports.CSS_PROPERTIES,
+  pseudoElements: exports.PSEUDO_ELEMENTS
 };

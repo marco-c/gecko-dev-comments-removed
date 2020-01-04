@@ -6,7 +6,7 @@
 const { FrontClassWithSpec, Front } = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 const { Task } = require("devtools/shared/task");
-const { CSS_PROPERTIES } = require("devtools/shared/css-properties-db");
+const { CSS_PROPERTIES_DB } = require("devtools/shared/css-properties-db");
 
 
 
@@ -59,8 +59,9 @@ exports.CssPropertiesFront = CssPropertiesFront;
 
 
 
-function CssProperties(properties) {
-  this.properties = properties;
+function CssProperties(db) {
+  this.properties = db.properties;
+  this.pseudoElements = db.pseudoElements;
 
   this.isKnown = this.isKnown.bind(this);
   this.isInherited = this.isInherited.bind(this);
@@ -131,18 +132,28 @@ exports.initCssProperties = Task.async(function* (toolbox) {
     
     
     
+
     
-    if (!db.color.supports) {
-      for (let name in db) {
-        if (typeof CSS_PROPERTIES[name] === "object") {
-          db[name].supports = CSS_PROPERTIES[name].supports;
+    
+    if (!db.properties) {
+      db = { properties: db };
+    }
+
+    
+    db = Object.assign({}, CSS_PROPERTIES_DB, db);
+
+    
+    if (!db.properties.color.supports) {
+      for (let name in db.properties) {
+        if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
+          db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
         }
       }
     }
   } else {
     
     
-    db = CSS_PROPERTIES;
+    db = CSS_PROPERTIES_DB;
   }
 
   const cssProperties = new CssProperties(db);

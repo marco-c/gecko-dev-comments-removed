@@ -28,32 +28,45 @@ exports.CssPropertiesActor = ActorClassWithSpec(cssPropertiesSpec, {
   },
 
   getCSSDatabase() {
-    const db = {};
-    const properties = DOMUtils.getCSSPropertyNames(DOMUtils.INCLUDE_ALIASES);
+    const properties = generateCssProperties();
+    const pseudoElements = DOMUtils.getCSSPseudoElementNames();
 
-    properties.forEach(name => {
-      
-      let supports = [];
-      for (let type in CSS_TYPES) {
-        if (safeCssPropertySupportsType(name, DOMUtils["TYPE_" + type])) {
-          supports.push(CSS_TYPES[type]);
-        }
-      }
-
-      
-      
-      
-      const clientDefinition = CSS_PROPERTIES[name] || {};
-      const serverDefinition = {
-        isInherited: DOMUtils.isInheritedProperty(name),
-        supports
-      };
-      db[name] = Object.assign(clientDefinition, serverDefinition);
-    });
-
-    return db;
+    return { properties, pseudoElements };
   }
 });
+
+
+
+
+
+
+
+function generateCssProperties() {
+  const properties = {};
+  const propertyNames = DOMUtils.getCSSPropertyNames(DOMUtils.INCLUDE_ALIASES);
+
+  propertyNames.forEach(name => {
+    
+    let supports = [];
+    for (let type in CSS_TYPES) {
+      if (safeCssPropertySupportsType(name, DOMUtils["TYPE_" + type])) {
+        supports.push(CSS_TYPES[type]);
+      }
+    }
+
+    
+    
+    
+    const clientDefinition = CSS_PROPERTIES[name] || {};
+    const serverDefinition = {
+      isInherited: DOMUtils.isInheritedProperty(name),
+      supports
+    };
+    properties[name] = Object.assign(clientDefinition, serverDefinition);
+  });
+
+  return properties;
+}
 
 
 
