@@ -424,12 +424,12 @@ public:
   
 
 
-  void AddStream(MediaStream* aStream);
+  void AddStreamGraphThread(MediaStream* aStream);
   
 
 
 
-  void RemoveStream(MediaStream* aStream);
+  void RemoveStreamGraphThread(MediaStream* aStream);
   
 
 

@@ -86,7 +86,7 @@ MediaStreamGraphImpl::FinishStream(MediaStream* aStream)
 static const GraphTime START_TIME_DELAYED = -1;
 
 void
-MediaStreamGraphImpl::AddStream(MediaStream* aStream)
+MediaStreamGraphImpl::AddStreamGraphThread(MediaStream* aStream)
 {
   
   
@@ -113,7 +113,7 @@ MediaStreamGraphImpl::AddStream(MediaStream* aStream)
 }
 
 void
-MediaStreamGraphImpl::RemoveStream(MediaStream* aStream)
+MediaStreamGraphImpl::RemoveStreamGraphThread(MediaStream* aStream)
 {
   
   
@@ -1641,7 +1641,7 @@ public:
   explicit CreateMessage(MediaStream* aStream) : ControlMessage(aStream) {}
   virtual void Run() override
   {
-    mStream->GraphImpl()->AddStream(mStream);
+    mStream->GraphImpl()->AddStreamGraphThread(mStream);
   }
   virtual void RunDuringShutdown() override
   {
@@ -2055,7 +2055,7 @@ MediaStream::Destroy()
       mStream->RemoveAllListenersImpl();
       auto graph = mStream->GraphImpl();
       mStream->DestroyImpl();
-      graph->RemoveStream(mStream);
+      graph->RemoveStreamGraphThread(mStream);
     }
     virtual void RunDuringShutdown()
     { Run(); }
