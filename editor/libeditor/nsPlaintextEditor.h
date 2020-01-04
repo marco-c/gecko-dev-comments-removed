@@ -120,7 +120,7 @@ public:
   NS_IMETHOD EndOperation() override;
 
   
-  virtual nsresult SelectEntireDocument(mozilla::dom::Selection* aSelection) override;
+  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
 
   virtual nsresult HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent) override;
 
@@ -153,7 +153,7 @@ public:
 
 
 
-  nsresult ExtendSelectionForDelete(mozilla::dom::Selection* aSelection,
+  nsresult ExtendSelectionForDelete(Selection* aSelection,
                                     nsIEditor::EDirection *aAction);
 
   
@@ -180,9 +180,8 @@ protected:
   
   NS_IMETHOD CreateBR(nsIDOMNode *aNode, int32_t aOffset,
                       nsCOMPtr<nsIDOMNode> *outBRNode, EDirection aSelect = eNone);
-  mozilla::dom::Element* CreateBRImpl(nsCOMPtr<nsINode>* aInOutParent,
-                                      int32_t* aInOutOffset,
-                                      EDirection aSelect);
+  Element* CreateBRImpl(nsCOMPtr<nsINode>* aInOutParent, int32_t* aInOutOffset,
+                        EDirection aSelect);
   nsresult CreateBRImpl(nsCOMPtr<nsIDOMNode>* aInOutParent,
                         int32_t* aInOutOffset,
                         nsCOMPtr<nsIDOMNode>* outBRNode,

@@ -143,6 +143,11 @@ class nsEditor : public nsIEditor,
                  public nsIPhonetic
 {
 public:
+  typedef mozilla::ErrorResult        ErrorResult;
+  typedef mozilla::dom::Element       Element;
+  typedef mozilla::dom::Selection     Selection;
+  typedef mozilla::dom::Text          Text;
+  template<typename T> using OwningNonNull = mozilla::OwningNonNull<T>;
 
   enum IterDirection
   {
@@ -199,36 +204,33 @@ public:
                                   int32_t* aInOutOffset,
                                   nsIDocument* aDoc);
   nsresult InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
-                                      mozilla::dom::Text& aTextNode,
-                                      int32_t aOffset,
+                                      Text& aTextNode, int32_t aOffset,
                                       bool aSuppressIME = false);
   NS_IMETHOD DeleteSelectionImpl(EDirection aAction,
                                  EStripWrappers aStripWrappers);
 
-  already_AddRefed<mozilla::dom::Element>
-  DeleteSelectionAndCreateElement(nsIAtom& aTag);
+  already_AddRefed<Element> DeleteSelectionAndCreateElement(nsIAtom& aTag);
 
   
   nsresult DeleteNode(nsINode* aNode);
   nsresult InsertNode(nsIContent& aNode, nsINode& aParent, int32_t aPosition);
   enum ECloneAttributes { eDontCloneAttributes, eCloneAttributes };
-  already_AddRefed<mozilla::dom::Element> ReplaceContainer(
-                            mozilla::dom::Element* aOldContainer,
-                            nsIAtom* aNodeType,
-                            nsIAtom* aAttribute = nullptr,
-                            const nsAString* aValue = nullptr,
-                            ECloneAttributes aCloneAttributes = eDontCloneAttributes);
-  void CloneAttributes(mozilla::dom::Element* aDest,
-                       mozilla::dom::Element* aSource);
+  already_AddRefed<Element> ReplaceContainer(Element* aOldContainer,
+                                             nsIAtom* aNodeType,
+                                             nsIAtom* aAttribute = nullptr,
+                                             const nsAString* aValue = nullptr,
+                                             ECloneAttributes aCloneAttributes
+                                             = eDontCloneAttributes);
+  void CloneAttributes(Element* aDest, Element* aSource);
 
   nsresult RemoveContainer(nsIContent* aNode);
-  already_AddRefed<mozilla::dom::Element> InsertContainerAbove(
-                                nsIContent* aNode,
-                                nsIAtom* aNodeType,
-                                nsIAtom* aAttribute = nullptr,
-                                const nsAString* aValue = nullptr);
+  already_AddRefed<Element> InsertContainerAbove(nsIContent* aNode,
+                                                 nsIAtom* aNodeType,
+                                                 nsIAtom* aAttribute = nullptr,
+                                                 const nsAString* aValue =
+                                                 nullptr);
   nsIContent* SplitNode(nsIContent& aNode, int32_t aOffset,
-                        mozilla::ErrorResult& aResult);
+                        ErrorResult& aResult);
   nsresult JoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
   nsresult MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset);
 
@@ -236,7 +238,7 @@ public:
 
 
 
-  already_AddRefed<mozilla::dom::Element> CreateHTMLContent(nsIAtom* aTag);
+  already_AddRefed<Element> CreateHTMLContent(nsIAtom* aTag);
 
   
   virtual nsresult BeginIMEComposition(mozilla::WidgetCompositionEvent* aEvent);
@@ -253,15 +255,14 @@ protected:
 
 
   already_AddRefed<mozilla::dom::ChangeAttributeTxn>
-  CreateTxnForSetAttribute(mozilla::dom::Element& aElement,
-                           nsIAtom& aAttribute, const nsAString& aValue);
+  CreateTxnForSetAttribute(Element& aElement, nsIAtom& aAttribute,
+                           const nsAString& aValue);
 
   
 
 
   already_AddRefed<mozilla::dom::ChangeAttributeTxn>
-  CreateTxnForRemoveAttribute(mozilla::dom::Element& aElement,
-                              nsIAtom& aAttribute);
+  CreateTxnForRemoveAttribute(Element& aElement, nsIAtom& aAttribute);
 
   
 
@@ -270,9 +271,8 @@ protected:
                             nsINode& aParent,
                             int32_t aPosition);
 
-  already_AddRefed<mozilla::dom::Element> CreateNode(nsIAtom* aTag,
-                                                     nsINode* aParent,
-                                                     int32_t aPosition);
+  already_AddRefed<Element> CreateNode(nsIAtom* aTag, nsINode* aParent,
+                                       int32_t aPosition);
 
   
 
@@ -302,8 +302,8 @@ protected:
 
 
   already_AddRefed<mozilla::dom::InsertTextTxn>
-  CreateTxnForInsertText(const nsAString& aStringToInsert,
-                         mozilla::dom::Text& aTextNode, int32_t aOffset);
+  CreateTxnForInsertText(const nsAString& aStringToInsert, Text& aTextNode,
+                         int32_t aOffset);
 
   
   already_AddRefed<mozilla::dom::IMETextTxn>
@@ -365,7 +365,7 @@ protected:
   NS_IMETHOD NotifyDocumentListeners(TDocumentListenerNotification aNotificationType);
 
   
-  virtual nsresult SelectEntireDocument(mozilla::dom::Selection* aSelection);
+  virtual nsresult SelectEntireDocument(Selection* aSelection);
 
   
 
@@ -431,8 +431,8 @@ public:
   
 
   bool     ArePreservingSelection();
-  void     PreserveSelectionAcrossActions(mozilla::dom::Selection* aSel);
-  nsresult RestorePreservedSelection(mozilla::dom::Selection* aSel);
+  void     PreserveSelectionAcrossActions(Selection* aSel);
+  nsresult RestorePreservedSelection(Selection* aSel);
   void     StopPreservingSelection();
 
   
@@ -603,22 +603,22 @@ public:
   static nsCOMPtr<nsIDOMNode> GetChildAt(nsIDOMNode *aParent, int32_t aOffset);
   static nsCOMPtr<nsIDOMNode> GetNodeAtRangeOffsetPoint(nsIDOMNode* aParentOrNode, int32_t aOffset);
 
-  static nsresult GetStartNodeAndOffset(mozilla::dom::Selection* aSelection,
+  static nsresult GetStartNodeAndOffset(Selection* aSelection,
                                         nsIDOMNode** outStartNode,
                                         int32_t* outStartOffset);
-  static nsresult GetStartNodeAndOffset(mozilla::dom::Selection* aSelection,
+  static nsresult GetStartNodeAndOffset(Selection* aSelection,
                                         nsINode** aStartNode,
                                         int32_t* aStartOffset);
-  static nsresult GetEndNodeAndOffset(mozilla::dom::Selection* aSelection,
+  static nsresult GetEndNodeAndOffset(Selection* aSelection,
                                       nsIDOMNode** outEndNode,
                                       int32_t* outEndOffset);
-  static nsresult GetEndNodeAndOffset(mozilla::dom::Selection* aSelection,
+  static nsresult GetEndNodeAndOffset(Selection* aSelection,
                                       nsINode** aEndNode,
                                       int32_t* aEndOffset);
 #if DEBUG_JOE
   static void DumpNode(nsIDOMNode *aNode, int32_t indent=0);
 #endif
-  mozilla::dom::Selection* GetSelection(int16_t aSelectionType =
+  Selection* GetSelection(int16_t aSelectionType =
       nsISelectionController::SELECTION_NORMAL);
 
   
@@ -653,7 +653,7 @@ public:
   virtual nsresult HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent);
 
   nsresult HandleInlineSpellCheck(EditAction action,
-                                  mozilla::dom::Selection* aSelection,
+                                  Selection* aSelection,
                                     nsIDOMNode *previousSelectedNode,
                                     int32_t previousSelectedOffset,
                                     nsIDOMNode *aStartNode,
@@ -664,15 +664,15 @@ public:
   virtual already_AddRefed<mozilla::dom::EventTarget> GetDOMEventTarget() = 0;
 
   
-  mozilla::dom::Element *GetRoot();
+  Element* GetRoot();
 
   
   
-  virtual mozilla::dom::Element* GetEditorRoot();
+  virtual Element* GetEditorRoot();
 
   
   
-  mozilla::dom::Element* GetExposedRoot();
+  Element* GetExposedRoot();
 
   
   bool IsPlaintextEditor() const
@@ -835,8 +835,8 @@ protected:
   nsCOMPtr<nsIInlineSpellChecker> mInlineSpellChecker;
 
   RefPtr<nsTransactionManager> mTxnMgr;
-  nsCOMPtr<mozilla::dom::Element> mRootElement; 
-  RefPtr<mozilla::dom::Text>    mIMETextNode; 
+  nsCOMPtr<Element> mRootElement; 
+  RefPtr<Text>    mIMETextNode; 
   nsCOMPtr<mozilla::dom::EventTarget> mEventTarget; 
   nsCOMPtr<nsIDOMEventListener> mEventListener;
   nsWeakPtr        mSelConWeak;          
@@ -851,11 +851,11 @@ protected:
 
   
   
-  nsTArray<mozilla::OwningNonNull<nsIEditActionListener>> mActionListeners;
+  nsTArray<OwningNonNull<nsIEditActionListener>> mActionListeners;
   
-  nsTArray<mozilla::OwningNonNull<nsIEditorObserver>> mEditorObservers;
+  nsTArray<OwningNonNull<nsIEditorObserver>> mEditorObservers;
   
-  nsTArray<mozilla::OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
+  nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
   nsSelectionState  mSavedSel;           
   nsRangeUpdater    mRangeUpdater;       
