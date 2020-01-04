@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #ifndef jsshell_js_h
 #define jsshell_js_h
 
@@ -23,15 +29,21 @@ my_ErrorReporter(JSContext* cx, const char* message, JSErrorReport* report);
 JSString*
 FileAsString(JSContext* cx, const char* pathname);
 
-class AutoCloseInputFile
+class AutoCloseFile
 {
   private:
     FILE* f_;
   public:
-    explicit AutoCloseInputFile(FILE* f) : f_(f) {}
-    ~AutoCloseInputFile() {
-        if (f_ && f_ != stdin)
-            fclose(f_);
+    explicit AutoCloseFile(FILE* f) : f_(f) {}
+    ~AutoCloseFile() {
+        (void) release();
+    }
+    bool release() {
+        bool success = true;
+        if (f_ && f_ != stdin && f_ != stdout && f_ != stderr)
+            success = !fclose(f_);
+        f_ = nullptr;
+        return success;
     }
 };
 
