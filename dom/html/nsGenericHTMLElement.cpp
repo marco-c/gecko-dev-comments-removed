@@ -2722,11 +2722,12 @@ nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse,
   }
 
   int32_t tabIndex = TabIndex();
+  bool disabled = false;
+  bool disallowOverridingFocusability = true;
 
-  bool override, disabled = false;
   if (IsEditableRoot()) {
     
-    override = true;
+    disallowOverridingFocusability = true;
 
     
     
@@ -2737,7 +2738,7 @@ nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse,
     }
   }
   else {
-    override = false;
+    disallowOverridingFocusability = false;
 
     
     disabled = IsDisabled();
@@ -2751,10 +2752,10 @@ nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse,
   }
 
   
-  *aIsFocusable = 
+  *aIsFocusable =
     (tabIndex >= 0 || (!disabled && HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)));
 
-  return override;
+  return disallowOverridingFocusability;
 }
 
 void
