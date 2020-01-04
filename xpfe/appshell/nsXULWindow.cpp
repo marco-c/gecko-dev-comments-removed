@@ -577,44 +577,6 @@ NS_IMETHODIMP nsXULWindow::GetUnscaledDevicePixelsPerCSSPixel(double *aScale)
   return NS_OK;
 }
 
-DesktopToLayoutDeviceScale
-nsXULWindow::GetScaleForDestinationPosition(int32_t aX, int32_t aY)
-{
-  DesktopToLayoutDeviceScale scale(nsIWidget::DefaultScaleOverride());
-  if (scale.scale <= 0.0) {
-    
-    nsCOMPtr<nsIScreenManager> screenMgr(do_GetService(
-                                         "@mozilla.org/gfx/screenmanager;1"));
-    if (screenMgr) {
-      int32_t width, height;
-      
-      GetSize(&width, &height);
-      DesktopToLayoutDeviceScale curr = mWindow->GetDesktopToDeviceScale();
-      width /= curr.scale;
-      height /= curr.scale;
-      width = std::max(1, width);
-      height = std::max(1, height);
-      nsCOMPtr<nsIScreen> screen;
-      screenMgr->ScreenForRect(aX, aY, width, height,
-                               getter_AddRefs(screen));
-      if (screen) {
-        double contentsScaleFactor;
-        if (NS_SUCCEEDED(screen->GetContentsScaleFactor(
-                         &contentsScaleFactor))) {
-          scale = DesktopToLayoutDeviceScale(contentsScaleFactor);
-        } else {
-          
-          scale = mWindow->GetDesktopToDeviceScale();
-        }
-      }
-    } else {
-      
-      scale = mWindow->GetDesktopToDeviceScale();
-    }
-  }
-  return scale;
-}
-
 NS_IMETHODIMP nsXULWindow::SetPositionDesktopPix(int32_t aX, int32_t aY)
 {
   nsresult rv = mWindow->Move(aX, aY);
@@ -630,23 +592,15 @@ NS_IMETHODIMP nsXULWindow::SetPositionDesktopPix(int32_t aX, int32_t aY)
   return NS_OK;
 }
 
+
+
 NS_IMETHODIMP nsXULWindow::SetPosition(int32_t aX, int32_t aY)
 {
   
   
-  DesktopToLayoutDeviceScale scale = GetScaleForDestinationPosition(aX, aY);
-  DesktopPoint pos = LayoutDeviceIntPoint(aX, aY) / scale;
-  nsresult rv = mWindow->Move(pos.x, pos.y);
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-  if (!mChromeLoaded) {
-    
-    
-    mIgnoreXULPosition = true;
-    return NS_OK;
-  }
-  PersistentAttributesDirty(PAD_POSITION);
-  SavePersistentAttributes();
-  return NS_OK;
+  DesktopToLayoutDeviceScale currScale = mWindow->GetDesktopToDeviceScale();
+  DesktopPoint pos = LayoutDeviceIntPoint(aX, aY) / currScale;
+  return SetPositionDesktopPix(pos.x, pos.y);
 }
 
 NS_IMETHODIMP nsXULWindow::GetPosition(int32_t* aX, int32_t* aY)
@@ -1205,10 +1159,7 @@ bool nsXULWindow::LoadPositionFromXUL()
   }
   mWindow->ConstrainPosition(false, &specX, &specY);
   if (specX != currX || specY != currY) {
-    DesktopToLayoutDeviceScale destScale =
-      GetScaleForDestinationPosition(specX, specY);
-    LayoutDevicePoint devPos = DesktopIntPoint(specX, specY) * destScale;
-    SetPosition(devPos.x, devPos.y);
+    SetPositionDesktopPix(specX, specY);
   }
 
   return gotPosition;
