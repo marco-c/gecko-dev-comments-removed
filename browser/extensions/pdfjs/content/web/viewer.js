@@ -5186,6 +5186,9 @@ var THUMBNAIL_CANVAS_BORDER_WIDTH = 1;
 
 
 
+
+
+
 var PDFThumbnailView = (function PDFThumbnailViewClosure() {
   function getTempCanvas(width, height) {
     var tempCanvas = PDFThumbnailView.tempImageCache;
@@ -5217,6 +5220,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     var defaultViewport = options.defaultViewport;
     var linkService = options.linkService;
     var renderingQueue = options.renderingQueue;
+    var disableCanvasToImageConversion =
+      options.disableCanvasToImageConversion || false;
 
     this.id = id;
     this.renderingId = 'thumbnail' + id;
@@ -5231,6 +5236,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
     this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
+    this.disableCanvasToImageConversion = disableCanvasToImageConversion;
 
     this.pageWidth = this.viewport.width;
     this.pageHeight = this.viewport.height;
@@ -5335,6 +5341,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     _getPageDrawContext:
         function PDFThumbnailView_getPageDrawContext(noCtxScale) {
       var canvas = document.createElement('canvas');
+      
+      
       this.canvas = canvas;
 
       canvas.mozOpaque = true;
@@ -5349,18 +5357,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (!noCtxScale && outputScale.scaled) {
         ctx.scale(outputScale.sx, outputScale.sy);
       }
-
-      var image = document.createElement('img');
-      this.image = image;
-
-      image.id = this.renderingId;
-      image.className = 'thumbnailImage';
-      image.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
-        { page: this.id }, 'Thumbnail of Page {{page}}'));
-
-      image.style.width = canvas.style.width;
-      image.style.height = canvas.style.height;
-
       return ctx;
     },
 
@@ -5371,10 +5367,36 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (!this.canvas) {
         return;
       }
-      this.image.src = this.canvas.toDataURL();
+      if (this.renderingState !== RenderingStates.FINISHED) {
+        return;
+      }
+      var id = this.renderingId;
+      var className = 'thumbnailImage';
+      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.id },
+                                  'Thumbnail of Page {{page}}');
+
+      if (this.disableCanvasToImageConversion) {
+        this.canvas.id = id;
+        this.canvas.className = className;
+        this.canvas.setAttribute('aria-label', ariaLabel);
+
+        this.div.setAttribute('data-loaded', true);
+        this.ring.appendChild(this.canvas);
+        return;
+      }
+      var image = document.createElement('img');
+      image.id = id;
+      image.className = className;
+      image.setAttribute('aria-label', ariaLabel);
+
+      image.style.width = this.canvasWidth + 'px';
+      image.style.height = this.canvasHeight + 'px';
+
+      image.src = this.canvas.toDataURL();
+      this.image = image;
 
       this.div.setAttribute('data-loaded', true);
-      this.ring.appendChild(this.image);
+      this.ring.appendChild(image);
 
       
       
@@ -5633,7 +5655,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
             id: pageNum,
             defaultViewport: viewport.clone(),
             linkService: this.linkService,
-            renderingQueue: this.renderingQueue
+            renderingQueue: this.renderingQueue,
+            disableCanvasToImageConversion: false,
           });
           this.thumbnails.push(thumbnail);
         }
