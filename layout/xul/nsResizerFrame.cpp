@@ -285,7 +285,8 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
         }
       }
       else {
-        window->SetPositionAndSize(rect.x, rect.y, rect.width, rect.height, true); 
+        window->SetPositionAndSize(rect.x, rect.y, rect.width, rect.height,
+                                   nsIBaseWindow::eRepaint); 
       }
 
       doDefault = false;
