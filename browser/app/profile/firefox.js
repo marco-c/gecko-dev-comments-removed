@@ -1327,8 +1327,6 @@ pref("prompts.tab_modal.enabled", true);
 pref("browser.newtab.preload", true);
 
 
-
-
 pref("browser.newtabpage.introShown", false);
 
 
@@ -1349,10 +1347,8 @@ pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/
 
 pref("browser.newtabpage.directory.ping", "https://tiles.services.mozilla.com/v3/links/");
 
-#ifndef RELEASE_BUILD
 
 pref("browser.newtabpage.remote", false);
-#endif
 
 
 pref("full-screen-api.enabled", true);
