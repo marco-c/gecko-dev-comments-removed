@@ -31,10 +31,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "gContentSecurityManager",
                                    "@mozilla.org/contentsecuritymanager;1",
                                    "nsIContentSecurityManager");
 
-XPCOMUtils.defineLazyServiceGetter(this, "gPushNotifier",
-                                   "@mozilla.org/push/Notifier;1",
-                                   "nsIPushNotifier");
-
 this.EXPORTED_SYMBOLS = ["PushService"];
 
 XPCOMUtils.defineLazyGetter(this, "console", () => {
@@ -102,6 +98,8 @@ this.PushService = {
   
   
   _updateQuotaTestCallback: null,
+
+  _childListeners: new Set(),
 
   
   
@@ -594,6 +592,8 @@ this.PushService = {
   uninit: function() {
     console.debug("uninit()");
 
+    this._childListeners.clear();
+
     if (this._state == PUSH_SERVICE_UNINIT) {
       return;
     }
@@ -688,8 +688,38 @@ this.PushService = {
       return;
     }
 
+    
+    Services.obs.notifyObservers(
+      null,
+      "push-subscription-change",
+      record.scope
+    );
+
+    let data = {
+      originAttributes: record.originAttributes,
+      scope: record.scope
+    };
+
     Services.telemetry.getHistogramById("PUSH_API_NOTIFY_REGISTRATION_LOST").add();
-    gPushNotifier.notifySubscriptionChange(record.scope, record.principal);
+    this._notifyListeners('pushsubscriptionchange', data);
+  },
+
+  _notifyListeners: function(name, data) {
+    if (this._childListeners.size > 0) {
+      
+      
+      for (let listener of this._childListeners) {
+        try {
+          listener.sendAsyncMessage(name, data);
+        } catch(e) {
+          this._childListeners.delete(listener);
+        }
+      }
+    } else {
+      let ppmm = Cc['@mozilla.org/parentprocessmessagemanager;1']
+                   .getService(Ci.nsIMessageListenerManager);
+      ppmm.broadcastAsyncMessage(name, data);
+    }
   },
 
   
@@ -929,6 +959,29 @@ this.PushService = {
     }
 
     console.debug("notifyApp()", aPushRecord.scope);
+    
+    let notification = Cc["@mozilla.org/push/ObserverNotification;1"]
+                         .createInstance(Ci.nsIPushObserverNotification);
+    notification.pushEndpoint = aPushRecord.pushEndpoint;
+    notification.version = aPushRecord.version;
+
+    let payload = ArrayBuffer.isView(message) ?
+                  new Uint8Array(message.buffer) : message;
+    if (payload) {
+      notification.data = "";
+      for (let i = 0; i < payload.length; i++) {
+        notification.data += String.fromCharCode(payload[i]);
+      }
+    }
+
+    notification.lastPush = aPushRecord.lastPush;
+    notification.pushCount = aPushRecord.pushCount;
+
+    Services.obs.notifyObservers(
+      notification,
+      "push-notification",
+      aPushRecord.scope
+    );
 
     
     if (!aPushRecord.hasPermission()) {
@@ -936,22 +989,14 @@ this.PushService = {
       return false;
     }
 
-    let payload = ArrayBuffer.isView(message) ?
-                  new Uint8Array(message.buffer) : message;
+    let data = {
+      payload: payload,
+      originAttributes: aPushRecord.originAttributes,
+      scope: aPushRecord.scope
+    };
 
-    if (aPushRecord.quotaApplies()) {
-      
-      Services.telemetry.getHistogramById("PUSH_API_NOTIFY").add();
-    }
-
-    if (payload) {
-      gPushNotifier.notifyPushWithData(aPushRecord.scope,
-                                       aPushRecord.principal,
-                                       payload.length, payload);
-    } else {
-      gPushNotifier.notifyPush(aPushRecord.scope, aPushRecord.principal);
-    }
-
+    Services.telemetry.getHistogramById("PUSH_API_NOTIFY").add();
+    this._notifyListeners('push', data);
     return true;
   },
 
@@ -1041,7 +1086,14 @@ this.PushService = {
     throw reply.error;
   },
 
-  notificationsCleared() {
+  registerListener(listener) {
+    console.debug("registerListener: Adding child listener");
+    this._childListeners.add(listener);
+  },
+
+  unregisterListener(listener) {
+    console.debug("unregisterListener: Possibly removing child listener");
+    this._childListeners.delete(listener);
     this._visibleNotifications.clear();
   },
 

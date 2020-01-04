@@ -174,6 +174,23 @@ function makeStub(target, stubs) {
 
 
 
+
+function disableServiceWorkerEvents(...scopes) {
+  for (let scope of scopes) {
+    Services.perms.add(
+      Services.io.newURI(scope, null, null),
+      'desktop-notification',
+      Ci.nsIPermissionManager.DENY_ACTION
+    );
+  }
+}
+
+
+
+
+
+
+
 function setPrefs(prefs = {}) {
   let defaultPrefs = Object.assign({
     loglevel: 'all',
@@ -204,8 +221,6 @@ function setPrefs(prefs = {}) {
     'http2.reset_retry_count_after_ms': 60000,
     maxQuotaPerSubscription: 16,
     quotaUpdateDelay: 3000,
-    'testing.notifyWorkers': false,
-    'testing.notifyAllObservers': true,
   }, prefs);
   for (let pref in defaultPrefs) {
     servicePrefs.set(pref, defaultPrefs[pref]);
