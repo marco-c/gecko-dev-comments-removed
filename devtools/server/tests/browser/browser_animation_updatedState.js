@@ -17,37 +17,39 @@ add_task(function*() {
 });
 
 function* playStateIsUpdatedDynamically(walker, animations) {
-  let node = yield walker.querySelector(walker.rootNode, ".short-animation");
+  info("Getting the test node (which runs a very long animation)");
+  
+  let node = yield walker.querySelector(walker.rootNode, ".long-animation");
 
-  
-  
-  
-  let cpow = content.document.querySelector(".short-animation");
-  cpow.classList.remove("short-animation");
-  let reflow = cpow.offsetWidth;
-  cpow.classList.add("short-animation");
-
+  info("Getting the animation player front for this node");
   let [player] = yield animations.getAnimationPlayersForNode(node);
-
   yield player.ready();
+
   let state = yield player.getCurrentState();
-
   is(state.playState, "running",
-    "The playState is running while the transition is running");
+    "The playState is running while the animation is running");
 
-  info("Wait until the animation stops (more than 1000ms)");
+  info("Change the animation's currentTime to be near the end and wait for " +
+       "it to finish");
+  let onFinished = waitForAnimationPlayState(player, "finished");
   
-  yield wait(1500);
-
-  state = yield player.getCurrentState();
+  yield player.setCurrentTime(98 * 1000);
+  state = yield onFinished;
   is(state.playState, "finished",
     "The animation has ended and the state has been updated");
   ok(state.currentTime > player.initialState.currentTime,
     "The currentTime has been updated");
 }
 
+function* waitForAnimationPlayState(player, playState) {
+  let state = {};
+  while (state.playState !== playState) {
+    state = yield player.getCurrentState();
+    yield wait(500);
+  }
+  return state;
+}
+
 function wait(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
+  return new Promise(r => setTimeout(r, ms));
 }
