@@ -1941,6 +1941,11 @@ Debugger::slowPathOnLogAllocationSite(JSContext* cx, HandleObject obj, HandleSav
     
     Rooted<GCVector<JSObject*>> activeDebuggers(cx, GCVector<JSObject*>(cx));
     for (Debugger** dbgp = dbgs.begin(); dbgp < dbgs.end(); dbgp++) {
+        
+        
+        
+        
+        InternalBarrierMethods<JSObject*>::readBarrier((*dbgp)->object);
         if (!activeDebuggers.append((*dbgp)->object))
             return false;
     }
