@@ -18,6 +18,9 @@ DEBUG = False
 
 
 
+
+
+
 gCommonDir = None
 
 
@@ -39,6 +42,9 @@ REDIRECTIONS = {
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
                             BaseHTTPServer.HTTPServer):
     pass
+
+
+
 
 
 class HttpRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):

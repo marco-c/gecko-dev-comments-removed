@@ -34,6 +34,7 @@ loop.store.ConversationAppStore = (function() {
 
     this._activeRoomStore = options.activeRoomStore;
     this._dispatcher = options.dispatcher;
+    this._facebookEnabled = options.facebookEnabled;
     this._feedbackPeriod = options.feedbackPeriod;
     this._feedbackTimestamp = options.feedbackTimestamp;
     this._rootObj = ("rootObject" in options) ? options.rootObject : window;
@@ -41,7 +42,7 @@ loop.store.ConversationAppStore = (function() {
 
     
     this._eventHandlers = {};
-    ["unload", "LoopHangupNow", "socialFrameAttached", "socialFrameDetached"]
+    ["unload", "LoopHangupNow", "socialFrameAttached", "socialFrameDetached", "ToggleBrowserSharing"]
       .forEach(function(eventName) {
         var handlerName = eventName + "Handler";
         this._eventHandlers[eventName] = this[handlerName].bind(this);
@@ -58,6 +59,7 @@ loop.store.ConversationAppStore = (function() {
     getInitialStoreState: function() {
       return {
         chatWindowDetached: false,
+        facebookEnabled: this._facebookEnabled,
         
         feedbackPeriod: this._feedbackPeriod * 1000,
         
@@ -158,6 +160,17 @@ loop.store.ConversationAppStore = (function() {
           loop.shared.mixins.WindowCloseMixin.closeWindow();
           break;
       }
+    },
+
+    
+
+
+
+
+    ToggleBrowserSharingHandler: function(actionData) {
+      this._dispatcher.dispatch(new loop.shared.actions.ToggleBrowserSharing({
+        enabled: !actionData.detail
+      }));
     },
 
     

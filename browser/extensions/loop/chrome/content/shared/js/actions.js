@@ -133,6 +133,15 @@ loop.shared.actions = (function() {
     
 
 
+    ReceivedCursorData: Action.define("receivedCursorData", {
+      ratioX: Number,
+      ratioY: Number,
+      type: String
+    }),
+
+    
+
+
 
     SetupStreamElements: Action.define("setupStreamElements", {
       
@@ -215,6 +224,14 @@ loop.shared.actions = (function() {
 
 
     EndScreenShare: Action.define("endScreenShare", {
+    }),
+
+    
+
+
+    ToggleBrowserSharing: Action.define("toggleBrowserSharing", {
+      
+      enabled: Boolean
     }),
 
     

@@ -109,6 +109,10 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     CONTEXT_TILE: "context-tile"
   };
 
+  var CURSOR_MESSAGE_TYPES = {
+    POSITION: "cursor-position"
+  };
+
   
 
 
@@ -371,7 +375,14 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
 
 
-  function formatURL(url) {
+
+
+
+
+  function formatURL(url, suppressConsoleError) {
+    
+    
+    
     
     
     
@@ -379,16 +390,18 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     var urlObject;
     try {
       urlObject = new URL(url);
+      
+      return {
+        hostname: urlObject.hostname,
+        location: decodeURI(urlObject.href)
+      };
     } catch (ex) {
-      console.error("Error occurred whilst parsing URL:", ex);
+      if (suppressConsoleError ? !suppressConsoleError : true) {
+        console.log("Error occurred whilst parsing URL: ", ex);
+        console.trace();
+      }
       return null;
     }
-
-    
-    return {
-      hostname: urlObject.hostname,
-      location: decodeURI(urlObject.href)
-    };
   }
 
   
@@ -749,6 +762,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
   this.utils = {
     CALL_TYPES: CALL_TYPES,
     CHAT_CONTENT_TYPES: CHAT_CONTENT_TYPES,
+    CURSOR_MESSAGE_TYPES: CURSOR_MESSAGE_TYPES,
     FAILURE_DETAILS: FAILURE_DETAILS,
     REST_ERRNOS: REST_ERRNOS,
     STREAM_PROPERTIES: STREAM_PROPERTIES,

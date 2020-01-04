@@ -25,17 +25,13 @@ body {
   overflow: hidden;
   font: menu;
   background-color: #fbfbfb;
-  height: 410px;
   width: 330px;
 }
 
 
 .panel-content {
-  height: 410px;
   width: 330px;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: flex-start;
+  display: block;
 }
 
 .panel-content > .beta-ribbon {
@@ -148,26 +144,18 @@ body {
 
 
 .room-list-loading {
-  position: relative;
   text-align: center;
-  
-  flex: 1;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .room-list-loading > img {
   width: 66px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 
-
 .rooms {
-  flex: 1;
-  display: flex;
-  flex-flow: column nowrap;
+  display: block;
   width: 100%;
 }
 
@@ -207,21 +195,54 @@ body {
 }
 
 .room-list {
-  
-
-
-  flex: 1 1 0;
   overflow-y: auto;
   overflow-x: hidden;
-  display: flex;
   flex-flow: column nowrap;
   width: 100%;
+  
+  max-height: calc(5 * 28px);
+  
+  min-height: 53px;
+  padding-top: 4px;
+}
+
+.room-list-empty {
+  display: inline-block;
+  
+
+  min-height: 80px;
+}
+
+
+
+.room-list-blur {
+  
+  height: 2.4rem;
+  
+  width: calc(100% - 15px);
+  
+  position: absolute;
+  margin-top: -2.4rem;
+  
+  background: linear-gradient(
+    to bottom,
+    rgba(251, 251, 251, 0) 0%,
+    rgba(251, 251, 251, 0) 38%, 
+    rgba(251, 251, 251, 1) 65%, 
+    rgba(251, 251, 251, 1) 100%
+  );
+  pointer-events: none;
 }
 
 .room-list > .room-entry {
   padding: .2rem 15px;
   
   cursor: default;
+}
+
+
+.room-list-add-space > .room-entry:last-child {
+  margin-bottom: 8px;
 }
 
 .room-list > .room-entry > h2 {
@@ -622,6 +643,7 @@ html[dir="rtl"] .settings-menu .dropdown-menu {
   padding: 2rem 0 0;
   display: flex;
   flex-direction: column;
+  height: 553px;
 }
 
 .fte-title {

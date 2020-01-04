@@ -10,6 +10,8 @@ class TestDesktopUnits(BaseTestFrontendUnits):
 
     def setUp(self):
         super(TestDesktopUnits, self).setUp()
+        
+        
         self.set_server_prefix("../../../../")
 
     def test_units(self):

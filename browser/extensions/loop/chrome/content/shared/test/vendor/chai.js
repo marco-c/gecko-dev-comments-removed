@@ -1,4 +1,7 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.chai = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports = require('./lib/chai');
+
+},{"./lib/chai":2}],2:[function(require,module,exports){
 
 
 
@@ -12,7 +15,7 @@ var used = []
 
 
 
-exports.version = '3.0.0';
+exports.version = '3.5.0';
 
 
 
@@ -93,7 +96,7 @@ exports.use(should);
 var assert = require('./chai/interface/assert');
 exports.use(assert);
 
-},{"./chai/assertion":2,"./chai/config":3,"./chai/core/assertions":4,"./chai/interface/assert":5,"./chai/interface/expect":6,"./chai/interface/should":7,"./chai/utils":20,"assertion-error":28}],2:[function(require,module,exports){
+},{"./chai/assertion":3,"./chai/config":4,"./chai/core/assertions":5,"./chai/interface/assert":6,"./chai/interface/expect":7,"./chai/interface/should":8,"./chai/utils":22,"assertion-error":30}],3:[function(require,module,exports){
 
 
 
@@ -226,7 +229,7 @@ module.exports = function (_chai, util) {
   });
 };
 
-},{"./config":3}],3:[function(require,module,exports){
+},{"./config":4}],4:[function(require,module,exports){
 module.exports = {
 
   
@@ -283,7 +286,7 @@ module.exports = {
 
 };
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 
 
 
@@ -297,6 +300,7 @@ module.exports = function (chai, _) {
     , flag = _.flag;
 
   
+
 
 
 
@@ -347,11 +351,13 @@ module.exports = function (chai, _) {
 
 
 
+
   Assertion.addProperty('not', function () {
     flag(this, 'negate', true);
   });
 
   
+
 
 
 
@@ -387,6 +393,7 @@ module.exports = function (chai, _) {
 
 
 
+
   Assertion.addProperty('any', function () {
     flag(this, 'any', true);
     flag(this, 'all', false)
@@ -405,12 +412,15 @@ module.exports = function (chai, _) {
 
 
 
+
   Assertion.addProperty('all', function () {
     flag(this, 'all', true);
     flag(this, 'any', false);
   });
 
   
+
+
 
 
 
@@ -476,14 +486,18 @@ module.exports = function (chai, _) {
 
 
 
+
   function includeChainingBehavior () {
     flag(this, 'contains', true);
   }
 
   function include (val, msg) {
+    _.expectTypes(this, ['array', 'object', 'string']);
+
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
     var expected = false;
+
     if (_.type(obj) === 'array' && _.type(val) === 'object') {
       for (var i in obj) {
         if (_.eql(obj[i], val)) {
@@ -500,7 +514,7 @@ module.exports = function (chai, _) {
       for (var k in val) subset[k] = obj[k];
       expected = _.eql(subset, val);
     } else {
-      expected = obj && ~obj.indexOf(val);
+      expected = (obj != undefined) && ~obj.indexOf(val);
     }
     this.assert(
         expected
@@ -514,6 +528,7 @@ module.exports = function (chai, _) {
   Assertion.addChainableMethod('includes', include, includeChainingBehavior);
 
   
+
 
 
 
@@ -547,6 +562,7 @@ module.exports = function (chai, _) {
 
 
 
+
   Assertion.addProperty('true', function () {
     this.assert(
         true === flag(this, 'object')
@@ -557,6 +573,7 @@ module.exports = function (chai, _) {
   });
 
   
+
 
 
 
@@ -589,6 +606,7 @@ module.exports = function (chai, _) {
 
 
 
+
   Assertion.addProperty('null', function () {
     this.assert(
         null === flag(this, 'object')
@@ -598,6 +616,7 @@ module.exports = function (chai, _) {
   });
 
   
+
 
 
 
@@ -629,6 +648,27 @@ module.exports = function (chai, _) {
 
 
 
+  Assertion.addProperty('NaN', function () {
+    this.assert(
+        isNaN(flag(this, 'object'))
+        , 'expected #{this} to be NaN'
+        , 'expected #{this} not to be NaN'
+    );
+  });
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -644,6 +684,7 @@ module.exports = function (chai, _) {
 
 
   
+
 
 
 
@@ -689,6 +730,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function checkArguments () {
     var obj = flag(this, 'object')
       , type = Object.prototype.toString.call(obj);
@@ -703,6 +745,7 @@ module.exports = function (chai, _) {
   Assertion.addProperty('Arguments', checkArguments);
 
   
+
 
 
 
@@ -760,6 +803,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertEql(obj, msg) {
     if (msg) flag(this, 'message', msg);
     this.assert(
@@ -776,6 +820,7 @@ module.exports = function (chai, _) {
   Assertion.addMethod('eqls', assertEql);
 
   
+
 
 
 
@@ -846,6 +891,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertLeast (n, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
@@ -872,6 +918,7 @@ module.exports = function (chai, _) {
   Assertion.addMethod('gte', assertLeast);
 
   
+
 
 
 
@@ -942,6 +989,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertMost (n, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
@@ -968,6 +1016,7 @@ module.exports = function (chai, _) {
   Assertion.addMethod('lte', assertMost);
 
   
+
 
 
 
@@ -1028,6 +1077,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertInstanceOf (constructor, msg) {
     if (msg) flag(this, 'message', msg);
     var name = _.getName(constructor);
@@ -1042,6 +1092,7 @@ module.exports = function (chai, _) {
   Assertion.addMethod('instanceOf', assertInstanceOf);
 
   
+
 
 
 
@@ -1167,6 +1218,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertOwnProperty (name, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
@@ -1181,6 +1233,7 @@ module.exports = function (chai, _) {
   Assertion.addMethod('haveOwnProperty', assertOwnProperty);
 
   
+
 
 
 
@@ -1251,7 +1304,9 @@ module.exports = function (chai, _) {
 
 
 
+
   
+
 
 
 
@@ -1301,6 +1356,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertMatch(re, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
@@ -1327,6 +1383,7 @@ module.exports = function (chai, _) {
 
 
 
+
   Assertion.addMethod('string', function (str, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
@@ -1341,6 +1398,7 @@ module.exports = function (chai, _) {
 
 
   
+
 
 
 
@@ -1519,9 +1577,9 @@ module.exports = function (chai, _) {
       constructor = null;
       errMsg = null;
     } else if (typeof constructor === 'function') {
-      name = constructor.prototype.name || constructor.name;
-      if (name === 'Error' && constructor !== Error) {
-        name = (new constructor()).name;
+      name = constructor.prototype.name;
+      if (!name || (name === 'Error' && constructor !== Error)) {
+        name = constructor.name || (new constructor()).name;
       }
     } else {
       constructor = null;
@@ -1640,7 +1698,9 @@ module.exports = function (chai, _) {
 
 
 
-  Assertion.addMethod('respondTo', function (method, msg) {
+
+
+  function respondTo (method, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object')
       , itself = flag(this, 'itself')
@@ -1653,9 +1713,13 @@ module.exports = function (chai, _) {
       , 'expected #{this} to respond to ' + _.inspect(method)
       , 'expected #{this} to not respond to ' + _.inspect(method)
     );
-  });
+  }
+
+  Assertion.addMethod('respondTo', respondTo);
+  Assertion.addMethod('respondsTo', respondTo);
 
   
+
 
 
 
@@ -1688,7 +1752,9 @@ module.exports = function (chai, _) {
 
 
 
-  Assertion.addMethod('satisfy', function (matcher, msg) {
+
+
+  function satisfy (matcher, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
     var result = matcher(obj);
@@ -1699,7 +1765,10 @@ module.exports = function (chai, _) {
       , this.negate ? false : true
       , result
     );
-  });
+  }
+
+  Assertion.addMethod('satisfy', satisfy);
+  Assertion.addMethod('satisfies', satisfy);
 
   
 
@@ -1715,13 +1784,15 @@ module.exports = function (chai, _) {
 
 
 
-  Assertion.addMethod('closeTo', function (expected, delta, msg) {
+
+
+  function closeTo(expected, delta, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object');
 
     new Assertion(obj, msg).is.a('number');
     if (_.type(expected) !== 'number' || _.type(delta) !== 'number') {
-      throw new Error('the arguments to closeTo must be numbers');
+      throw new Error('the arguments to closeTo or approximately must be numbers');
     }
 
     this.assert(
@@ -1729,7 +1800,10 @@ module.exports = function (chai, _) {
       , 'expected #{this} to be close to ' + expected + ' +/- ' + delta
       , 'expected #{this} not to be close to ' + expected + ' +/- ' + delta
     );
-  });
+  }
+
+  Assertion.addMethod('closeTo', closeTo);
+  Assertion.addMethod('approximately', closeTo);
 
   function isSubsetOf(subset, superset, cmp) {
     return subset.every(function(elem) {
@@ -1742,6 +1816,7 @@ module.exports = function (chai, _) {
   }
 
   
+
 
 
 
@@ -1811,6 +1886,46 @@ module.exports = function (chai, _) {
 
 
 
+
+
+  function oneOf (list, msg) {
+    if (msg) flag(this, 'message', msg);
+    var expected = flag(this, 'object');
+    new Assertion(list).to.be.an('array');
+
+    this.assert(
+        list.indexOf(expected) > -1
+      , 'expected #{this} to be one of #{exp}'
+      , 'expected #{this} to not be one of #{exp}'
+      , list
+      , expected
+    );
+  }
+
+  Assertion.addMethod('oneOf', oneOf);
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   function assertChanges (object, prop, msg) {
     if (msg) flag(this, 'message', msg);
     var fn = flag(this, 'object');
@@ -1831,6 +1946,7 @@ module.exports = function (chai, _) {
   Assertion.addChainableMethod('changes', assertChanges);
 
   
+
 
 
 
@@ -1885,6 +2001,7 @@ module.exports = function (chai, _) {
 
 
 
+
   function assertDecreases (object, prop, msg) {
     if (msg) flag(this, 'message', msg);
     var fn = flag(this, 'object');
@@ -1904,9 +2021,134 @@ module.exports = function (chai, _) {
   Assertion.addChainableMethod('decrease', assertDecreases);
   Assertion.addChainableMethod('decreases', assertDecreases);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Assertion.addProperty('extensible', function() {
+    var obj = flag(this, 'object');
+
+    
+    
+    
+    
+
+    var isExtensible;
+
+    try {
+      isExtensible = Object.isExtensible(obj);
+    } catch (err) {
+      if (err instanceof TypeError) isExtensible = false;
+      else throw err;
+    }
+
+    this.assert(
+      isExtensible
+      , 'expected #{this} to be extensible'
+      , 'expected #{this} to not be extensible'
+    );
+  });
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Assertion.addProperty('sealed', function() {
+    var obj = flag(this, 'object');
+
+    
+    
+    
+    
+
+    var isSealed;
+
+    try {
+      isSealed = Object.isSealed(obj);
+    } catch (err) {
+      if (err instanceof TypeError) isSealed = true;
+      else throw err;
+    }
+
+    this.assert(
+      isSealed
+      , 'expected #{this} to be sealed'
+      , 'expected #{this} to not be sealed'
+    );
+  });
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Assertion.addProperty('frozen', function() {
+    var obj = flag(this, 'object');
+
+    
+    
+    
+    
+
+    var isFrozen;
+
+    try {
+      isFrozen = Object.isFrozen(obj);
+    } catch (err) {
+      if (err instanceof TypeError) isFrozen = true;
+      else throw err;
+    }
+
+    this.assert(
+      isFrozen
+      , 'expected #{this} to be frozen'
+      , 'expected #{this} to not be frozen'
+    );
+  });
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 
 
 
@@ -1928,6 +2170,7 @@ module.exports = function (chai, util) {
 
 
   
+
 
 
 
@@ -1963,6 +2206,7 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.fail = function (actual, expected, message, operator) {
     message = message || 'assert.fail()';
     throw new chai.AssertionError(message, {
@@ -1986,7 +2230,9 @@ module.exports = function (chai, util) {
 
 
 
-  assert.ok = function (val, msg) {
+
+
+  assert.isOk = function (val, msg) {
     new Assertion(val, msg).is.ok;
   };
 
@@ -2004,11 +2250,14 @@ module.exports = function (chai, util) {
 
 
 
-  assert.notOk = function (val, msg) {
+
+
+  assert.isNotOk = function (val, msg) {
     new Assertion(val, msg).is.not.ok;
   };
 
   
+
 
 
 
@@ -2048,6 +2297,7 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notEqual = function (act, exp, msg) {
     var test = new Assertion(act, msg, assert.notEqual);
 
@@ -2061,6 +2311,7 @@ module.exports = function (chai, util) {
   };
 
   
+
 
 
 
@@ -2092,11 +2343,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notStrictEqual = function (act, exp, msg) {
     new Assertion(act, msg).to.not.equal(exp);
   };
 
   
+
 
 
 
@@ -2128,11 +2381,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notDeepEqual = function (act, exp, msg) {
     new Assertion(act, msg).to.not.eql(exp);
   };
 
-  
+   
+
 
 
 
@@ -2164,11 +2419,53 @@ module.exports = function (chai, util) {
 
 
 
+
+
+  assert.isAtLeast = function (val, atlst, msg) {
+    new Assertion(val, msg).to.be.least(atlst);
+  };
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   assert.isBelow = function (val, blw, msg) {
     new Assertion(val, msg).to.be.below(blw);
   };
 
    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isAtMost = function (val, atmst, msg) {
+    new Assertion(val, msg).to.be.most(atmst);
+  };
+
+  
+
 
 
 
@@ -2200,11 +2497,51 @@ module.exports = function (chai, util) {
 
 
 
+
+  assert.isNotTrue = function (val, msg) {
+    new Assertion(val, msg).to.not.equal(true);
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   assert.isFalse = function (val, msg) {
     new Assertion(val, msg).is['false'];
   };
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isNotFalse = function (val, msg) {
+    new Assertion(val, msg).to.not.equal(false);
+  };
+
+  
+
 
 
 
@@ -2235,11 +2572,46 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isNotNull = function (val, msg) {
     new Assertion(val, msg).to.not.equal(null);
   };
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isNaN = function (val, msg) {
+    new Assertion(val, msg).to.be.NaN;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  assert.isNotNaN = function (val, msg) {
+    new Assertion(val, msg).not.to.be.NaN;
+  };
+
+  
+
 
 
 
@@ -2271,11 +2643,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isDefined = function (val, msg) {
     new Assertion(val, msg).to.not.equal(undefined);
   };
 
   
+
 
 
 
@@ -2307,11 +2681,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isNotFunction = function (val, msg) {
     new Assertion(val, msg).to.not.be.a('function');
   };
 
   
+
 
 
 
@@ -2345,11 +2721,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isNotObject = function (val, msg) {
     new Assertion(val, msg).to.not.be.a('object');
   };
 
   
+
 
 
 
@@ -2381,11 +2759,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isNotArray = function (val, msg) {
     new Assertion(val, msg).to.not.be.an('array');
   };
 
   
+
 
 
 
@@ -2417,6 +2797,7 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isNotString = function (val, msg) {
     new Assertion(val, msg).to.not.be.a('string');
   };
@@ -2435,11 +2816,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isNumber = function (val, msg) {
     new Assertion(val, msg).to.be.a('number');
   };
 
   
+
 
 
 
@@ -2474,11 +2857,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.isBoolean = function (val, msg) {
     new Assertion(val, msg).to.be.a('boolean');
   };
 
   
+
 
 
 
@@ -2519,6 +2904,7 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.typeOf = function (val, type, msg) {
     new Assertion(val, msg).to.be.a(type);
   };
@@ -2538,11 +2924,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notTypeOf = function (val, type, msg) {
     new Assertion(val, msg).to.not.be.a(type);
   };
 
   
+
 
 
 
@@ -2580,11 +2968,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notInstanceOf = function (val, type, msg) {
     new Assertion(val, msg).to.not.be.instanceOf(type);
   };
 
   
+
 
 
 
@@ -2620,11 +3010,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notInclude = function (exp, inc, msg) {
     new Assertion(exp, msg, assert.notInclude).not.include(inc);
   };
 
   
+
 
 
 
@@ -2656,11 +3048,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notMatch = function (exp, re, msg) {
     new Assertion(exp, msg).to.not.match(re);
   };
 
   
+
 
 
 
@@ -2692,11 +3086,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notProperty = function (obj, prop, msg) {
     new Assertion(obj, msg).to.not.have.property(prop);
   };
 
   
+
 
 
 
@@ -2730,11 +3126,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.notDeepProperty = function (obj, prop, msg) {
     new Assertion(obj, msg).to.not.have.deep.property(prop);
   };
 
   
+
 
 
 
@@ -2770,11 +3168,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.propertyNotVal = function (obj, prop, val, msg) {
     new Assertion(obj, msg).to.not.have.property(prop, val);
   };
 
   
+
 
 
 
@@ -2812,11 +3212,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.deepPropertyNotVal = function (obj, prop, val, msg) {
     new Assertion(obj, msg).to.not.have.deep.property(prop, val);
   };
 
   
+
 
 
 
@@ -2859,17 +3261,19 @@ module.exports = function (chai, util) {
 
 
 
-  assert.Throw = function (fn, errt, errs, msg) {
+
+  assert.throws = function (fn, errt, errs, msg) {
     if ('string' === typeof errt || errt instanceof RegExp) {
       errs = errt;
       errt = null;
     }
 
-    var assertErr = new Assertion(fn, msg).to.Throw(errt, errs);
+    var assertErr = new Assertion(fn, msg).to.throw(errt, errs);
     return flag(assertErr, 'object');
   };
 
   
+
 
 
 
@@ -2897,6 +3301,7 @@ module.exports = function (chai, util) {
   };
 
   
+
 
 
 
@@ -2964,11 +3369,33 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.closeTo = function (act, exp, delta, msg) {
     new Assertion(act, msg).to.be.closeTo(exp, delta);
   };
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.approximately = function (act, exp, delta, msg) {
+    new Assertion(act, msg).to.be.approximately(exp, delta);
+  };
+
+  
+
 
 
 
@@ -3002,6 +3429,7 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.sameDeepMembers = function (set1, set2, msg) {
     new Assertion(set1, msg).to.have.same.deep.members(set2);
   }
@@ -3021,11 +3449,53 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.includeMembers = function (superset, subset, msg) {
     new Assertion(superset, msg).to.include.members(subset);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.includeDeepMembers = function (superset, subset, msg) {
+    new Assertion(superset, msg).to.include.deep.members(subset);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.oneOf = function (inList, list, msg) {
+    new Assertion(inList, msg).to.be.oneOf(list);
+  }
+
    
+
 
 
 
@@ -3063,11 +3533,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.doesNotChange = function (fn, obj, prop) {
     new Assertion(fn).to.not.change(obj, prop);
   }
 
    
+
 
 
 
@@ -3105,11 +3577,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.doesNotIncrease = function (fn, obj, prop) {
     new Assertion(fn).to.not.increase(obj, prop);
   }
 
    
+
 
 
 
@@ -3147,11 +3621,13 @@ module.exports = function (chai, util) {
 
 
 
+
   assert.doesNotDecrease = function (fn, obj, prop) {
     new Assertion(fn).to.not.decrease(obj, prop);
   }
 
   
+
 
 
 
@@ -3176,15 +3652,150 @@ module.exports = function (chai, util) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+  assert.isExtensible = function (obj, msg) {
+    new Assertion(obj, msg).to.be.extensible;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isNotExtensible = function (obj, msg) {
+    new Assertion(obj, msg).to.not.be.extensible;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isSealed = function (obj, msg) {
+    new Assertion(obj, msg).to.be.sealed;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isNotSealed = function (obj, msg) {
+    new Assertion(obj, msg).to.not.be.sealed;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isFrozen = function (obj, msg) {
+    new Assertion(obj, msg).to.be.frozen;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  assert.isNotFrozen = function (obj, msg) {
+    new Assertion(obj, msg).to.not.be.frozen;
+  };
+
+  
+
+
+
   (function alias(name, as){
     assert[as] = assert[name];
     return alias;
   })
-  ('Throw', 'throw')
-  ('Throw', 'throws');
+  ('isOk', 'ok')
+  ('isNotOk', 'notOk')
+  ('throws', 'throw')
+  ('throws', 'Throw')
+  ('isExtensible', 'extensible')
+  ('isNotExtensible', 'notExtensible')
+  ('isSealed', 'sealed')
+  ('isNotSealed', 'notSealed')
+  ('isFrozen', 'frozen')
+  ('isNotFrozen', 'notFrozen');
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 
 
 
@@ -3209,6 +3820,7 @@ module.exports = function (chai, util) {
 
 
 
+
   chai.expect.fail = function (actual, expected, message, operator) {
     message = message || 'expect.fail()';
     throw new chai.AssertionError(message, {
@@ -3219,7 +3831,7 @@ module.exports = function (chai, util) {
   };
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 
 
 
@@ -3273,6 +3885,7 @@ module.exports = function (chai, util) {
 
 
 
+
     should.fail = function (actual, expected, message, operator) {
       message = message || 'should.fail()';
       throw new chai.AssertionError(message, {
@@ -3282,13 +3895,66 @@ module.exports = function (chai, util) {
       }, should.fail);
     };
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     should.equal = function (val1, val2, msg) {
       new Assertion(val1, msg).to.equal(val2);
     };
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     should.Throw = function (fn, errt, errs, msg) {
       new Assertion(fn, msg).to.Throw(errt, errs);
     };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     should.exist = function (val, msg) {
       new Assertion(val, msg).to.exist;
@@ -3297,13 +3963,62 @@ module.exports = function (chai, util) {
     
     should.not = {}
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     should.not.equal = function (val1, val2, msg) {
       new Assertion(val1, msg).to.not.equal(val2);
     };
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     should.not.Throw = function (fn, errt, errs, msg) {
       new Assertion(fn, msg).to.not.Throw(errt, errs);
     };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     should.not.exist = function (val, msg) {
       new Assertion(val, msg).to.not.exist;
@@ -3319,7 +4034,7 @@ module.exports = function (chai, util) {
   chai.Should = loadShould;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 
 
@@ -3349,6 +4064,7 @@ var excludeNames = /^(?:length|name|arguments|caller)$/;
 
 var call  = Function.prototype.call,
     apply = Function.prototype.apply;
+
 
 
 
@@ -3432,7 +4148,7 @@ module.exports = function (ctx, name, method, chainingBehavior) {
   });
 };
 
-},{"../config":3,"./flag":11,"./transferFlags":27}],9:[function(require,module,exports){
+},{"../config":4,"./flag":13,"./transferFlags":29}],10:[function(require,module,exports){
 
 
 
@@ -3440,6 +4156,7 @@ module.exports = function (ctx, name, method, chainingBehavior) {
 
 
 var config = require('../config');
+
 
 
 
@@ -3477,11 +4194,15 @@ module.exports = function (ctx, name, method) {
   };
 };
 
-},{"../config":3,"./flag":11}],10:[function(require,module,exports){
+},{"../config":4,"./flag":13}],11:[function(require,module,exports){
 
 
 
 
+
+
+var config = require('../config');
+var flag = require('./flag');
 
 
 
@@ -3511,7 +4232,11 @@ module.exports = function (ctx, name, method) {
 
 module.exports = function (ctx, name, getter) {
   Object.defineProperty(ctx, name,
-    { get: function () {
+    { get: function addProperty() {
+        var old_ssfi = flag(this, 'ssfi');
+        if (old_ssfi && config.includeStack === false)
+          flag(this, 'ssfi', addProperty);
+
         var result = getter.call(this);
         return result === undefined ? this : result;
       }
@@ -3519,7 +4244,52 @@ module.exports = function (ctx, name, getter) {
   });
 };
 
-},{}],11:[function(require,module,exports){
+},{"../config":4,"./flag":13}],12:[function(require,module,exports){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var AssertionError = require('assertion-error');
+var flag = require('./flag');
+var type = require('type-detect');
+
+module.exports = function (obj, types) {
+  var obj = flag(obj, 'object');
+  types = types.map(function (t) { return t.toLowerCase(); });
+  types.sort();
+
+  
+  var str = types.map(function (t, index) {
+    var art = ~[ 'a', 'e', 'i', 'o', 'u' ].indexOf(t.charAt(0)) ? 'an' : 'a';
+    var or = types.length > 1 && index === types.length - 1 ? 'or ' : '';
+    return or + art + ' ' + t;
+  }).join(', ');
+
+  if (!types.some(function (expected) { return type(obj) === expected; })) {
+    throw new AssertionError(
+      'object tested must be ' + str + ', but ' + type(obj) + ' given'
+    );
+  }
+};
+
+},{"./flag":13,"assertion-error":30,"type-detect":35}],13:[function(require,module,exports){
+
 
 
 
@@ -3553,7 +4323,9 @@ module.exports = function (obj, key, value) {
   }
 };
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
+
+
 
 
 
@@ -3573,7 +4345,8 @@ module.exports = function (obj, args) {
   return args.length > 4 ? args[4] : obj._obj;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
+
 
 
 
@@ -3600,7 +4373,7 @@ module.exports = function getEnumerableProperties(object) {
   return result;
 };
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 
 
@@ -3634,6 +4407,7 @@ var flag = require('./flag')
 
 
 
+
 module.exports = function (obj, args) {
   var negate = flag(obj, 'negate')
     , val = flag(obj, 'object')
@@ -3645,14 +4419,16 @@ module.exports = function (obj, args) {
   if(typeof msg === "function") msg = msg();
   msg = msg || '';
   msg = msg
-    .replace(/#{this}/g, objDisplay(val))
-    .replace(/#{act}/g, objDisplay(actual))
-    .replace(/#{exp}/g, objDisplay(expected));
+    .replace(/#\{this\}/g, function () { return objDisplay(val); })
+    .replace(/#\{act\}/g, function () { return objDisplay(actual); })
+    .replace(/#\{exp\}/g, function () { return objDisplay(expected); });
 
   return flagMsg ? flagMsg + ': ' + msg : msg;
 };
 
-},{"./flag":11,"./getActual":12,"./inspect":21,"./objDisplay":22}],15:[function(require,module,exports){
+},{"./flag":13,"./getActual":14,"./inspect":23,"./objDisplay":24}],17:[function(require,module,exports){
+
+
 
 
 
@@ -3674,7 +4450,7 @@ module.exports = function (func) {
   return match && match[1] ? match[1] : "";
 };
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 
 
 
@@ -3682,6 +4458,7 @@ module.exports = function (func) {
 
 
 var hasProperty = require('./hasProperty');
+
 
 
 
@@ -3786,7 +4563,7 @@ function _getPathValue (parsed, obj, index) {
   return res;
 }
 
-},{"./hasProperty":19}],17:[function(require,module,exports){
+},{"./hasProperty":21}],19:[function(require,module,exports){
 
 
 
@@ -3825,12 +4602,14 @@ var getPathInfo = require('./getPathInfo');
 
 
 
+
 module.exports = function(path, obj) {
   var info = getPathInfo(path, obj);
   return info.value;
-}; 
+};
 
-},{"./getPathInfo":16}],18:[function(require,module,exports){
+},{"./getPathInfo":18}],20:[function(require,module,exports){
+
 
 
 
@@ -3850,7 +4629,7 @@ module.exports = function(path, obj) {
 
 
 module.exports = function getProperties(object) {
-  var result = Object.getOwnPropertyNames(subject);
+  var result = Object.getOwnPropertyNames(object);
 
   function addProperty(property) {
     if (result.indexOf(property) === -1) {
@@ -3858,7 +4637,7 @@ module.exports = function getProperties(object) {
     }
   }
 
-  var proto = Object.getPrototypeOf(subject);
+  var proto = Object.getPrototypeOf(object);
   while (proto !== null) {
     Object.getOwnPropertyNames(proto).forEach(addProperty);
     proto = Object.getPrototypeOf(proto);
@@ -3867,7 +4646,7 @@ module.exports = function getProperties(object) {
   return result;
 };
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 
 
 
@@ -3875,6 +4654,7 @@ module.exports = function getProperties(object) {
 
 
 var type = require('type-detect');
+
 
 
 
@@ -3932,7 +4712,7 @@ module.exports = function hasProperty(name, obj) {
   return name in obj;
 };
 
-},{"type-detect":33}],20:[function(require,module,exports){
+},{"type-detect":35}],22:[function(require,module,exports){
 
 
 
@@ -3956,6 +4736,11 @@ exports.test = require('./test');
 
 
 exports.type = require('type-detect');
+
+
+
+
+exports.expectTypes = require('./expectTypes');
 
 
 
@@ -4059,8 +4844,7 @@ exports.addChainableMethod = require('./addChainableMethod');
 
 exports.overwriteChainableMethod = require('./overwriteChainableMethod');
 
-
-},{"./addChainableMethod":8,"./addMethod":9,"./addProperty":10,"./flag":11,"./getActual":12,"./getMessage":14,"./getName":15,"./getPathInfo":16,"./getPathValue":17,"./hasProperty":19,"./inspect":21,"./objDisplay":22,"./overwriteChainableMethod":23,"./overwriteMethod":24,"./overwriteProperty":25,"./test":26,"./transferFlags":27,"deep-eql":29,"type-detect":33}],21:[function(require,module,exports){
+},{"./addChainableMethod":9,"./addMethod":10,"./addProperty":11,"./expectTypes":12,"./flag":13,"./getActual":14,"./getMessage":16,"./getName":17,"./getPathInfo":18,"./getPathValue":19,"./hasProperty":21,"./inspect":23,"./objDisplay":24,"./overwriteChainableMethod":25,"./overwriteMethod":26,"./overwriteProperty":27,"./test":28,"./transferFlags":29,"deep-eql":31,"type-detect":35}],23:[function(require,module,exports){
 
 
 
@@ -4069,6 +4853,8 @@ var getProperties = require('./getProperties');
 var getEnumerableProperties = require('./getEnumerableProperties');
 
 module.exports = inspect;
+
+
 
 
 
@@ -4395,7 +5181,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-},{"./getEnumerableProperties":13,"./getName":15,"./getProperties":18}],22:[function(require,module,exports){
+},{"./getEnumerableProperties":15,"./getName":17,"./getProperties":20}],24:[function(require,module,exports){
 
 
 
@@ -4408,6 +5194,7 @@ function objectToString(o) {
 
 var inspect = require('./inspect');
 var config = require('../config');
+
 
 
 
@@ -4446,7 +5233,8 @@ module.exports = function (obj) {
   }
 };
 
-},{"../config":3,"./inspect":21}],23:[function(require,module,exports){
+},{"../config":4,"./inspect":23}],25:[function(require,module,exports){
+
 
 
 
@@ -4501,7 +5289,8 @@ module.exports = function (ctx, name, method, chainingBehavior) {
   };
 };
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
+
 
 
 
@@ -4554,7 +5343,8 @@ module.exports = function (ctx, name, method) {
   }
 };
 
-},{}],25:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
+
 
 
 
@@ -4610,7 +5400,7 @@ module.exports = function (ctx, name, getter) {
   });
 };
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 
 
 
@@ -4632,13 +5422,16 @@ var flag = require('./flag');
 
 
 
+
+
 module.exports = function (obj, args) {
   var negate = flag(obj, 'negate')
     , expr = args[0];
   return negate ? !expr : expr;
 };
 
-},{"./flag":11}],27:[function(require,module,exports){
+},{"./flag":13}],29:[function(require,module,exports){
+
 
 
 
@@ -4684,7 +5477,7 @@ module.exports = function (assertion, object, includeAll) {
   }
 };
 
-},{}],28:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 
 
 
@@ -4798,10 +5591,10 @@ AssertionError.prototype.toJSON = function (stack) {
   return props;
 };
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports = require('./lib/eql');
 
-},{"./lib/eql":30}],30:[function(require,module,exports){
+},{"./lib/eql":32}],32:[function(require,module,exports){
 
 
 
@@ -5060,10 +5853,10 @@ function objectEqual(a, b, m) {
   return true;
 }
 
-},{"buffer":undefined,"type-detect":31}],31:[function(require,module,exports){
+},{"buffer":undefined,"type-detect":33}],33:[function(require,module,exports){
 module.exports = require('./lib/type');
 
-},{"./lib/type":32}],32:[function(require,module,exports){
+},{"./lib/type":34}],34:[function(require,module,exports){
 
 
 
@@ -5207,9 +6000,9 @@ Library.prototype.test = function (obj, type) {
   }
 };
 
-},{}],33:[function(require,module,exports){
-arguments[4][31][0].apply(exports,arguments)
-},{"./lib/type":34,"dup":31}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"./lib/type":36,"dup":33}],36:[function(require,module,exports){
 
 
 
@@ -5345,8 +6138,5 @@ Library.prototype.test = function(obj, type) {
   }
 };
 
-},{}],35:[function(require,module,exports){
-module.exports = require('./lib/chai');
-
-},{"./lib/chai":1}]},{},[35])(35)
+},{}]},{},[1])(1)
 });

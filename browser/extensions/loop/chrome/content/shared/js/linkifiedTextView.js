@@ -78,7 +78,7 @@ loop.shared.views.LinkifiedTextView = function () {
       var elements = [];
       var result = loop.shared.urlRegExps.fullUrlMatch.exec(s);
       var reactElementsCounter = 0; 
-
+      var sanitizeURL;
       while (result) {
         
         
@@ -88,12 +88,18 @@ loop.shared.views.LinkifiedTextView = function () {
         }
 
         
-        elements.push(React.createElement(
-          "a",
-          _extends({}, this._generateLinkAttributes(result[0]), {
-            key: reactElementsCounter++ }),
-          result[0]
-        ));
+        
+        sanitizeURL = loop.shared.utils.formatURL(result[0]);
+        if (sanitizeURL && sanitizeURL.location) {
+          elements.push(React.createElement(
+            "a",
+            _extends({}, this._generateLinkAttributes(sanitizeURL.location), {
+              key: reactElementsCounter++ }),
+            sanitizeURL.location
+          ));
+        } else {
+          elements.push(result[0]);
+        }
         s = s.substr(result[0].length);
 
         

@@ -19,5 +19,14 @@ FIREFOX_PREFERENCES = {
     
     "media.navigator.permission.disabled": True,
     
-    "media.navigator.streams.fake": True
+    "media.navigator.streams.fake": True,
+
+    
+    "extensions.enabledScopes": 5,
+    "extensions.autoDisableScopes": 0,
+    "extensions.update.enabled": False,
+    "extensions.installDistroAddons": False,
+    "extensions.blocklist.enabled": False,
+    "extensions.update.notifyUser": False,
+    "xpinstall.signatures.required": False,
 }

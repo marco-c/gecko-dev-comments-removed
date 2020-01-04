@@ -31,19 +31,6 @@ const TWO_WAY_MEDIA_CONN_LENGTH = {
 
 
 
-const SHARING_STATE_CHANGE = {
-  WINDOW_ENABLED: 0,
-  WINDOW_DISABLED: 1,
-  BROWSER_ENABLED: 2,
-  BROWSER_DISABLED: 3
-};
-
-
-
-
-
-
-
 const SHARING_ROOM_URL = {
   COPY_FROM_PANEL: 0,
   COPY_FROM_CONVERSATION: 1,
@@ -73,16 +60,6 @@ const ROOM_DELETE = {
 };
 
 
-
-
-
-
-const ROOM_CONTEXT_ADD = {
-  ADD_FROM_PANEL: 0,
-  ADD_FROM_CONVERSATION: 1
-};
-
-
 const PREF_LOG_LEVEL = "loop.debug.loglevel";
 
 const kChatboxHangupButton = {
@@ -106,16 +83,13 @@ Cu.import("resource://gre/modules/FxAccountsOAuthClient.jsm");
 Cu.importGlobalProperties(["URL"]);
 
 this.EXPORTED_SYMBOLS = ["MozLoopService", "LOOP_SESSION_TYPE",
-  "TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_STATE_CHANGE", "SHARING_ROOM_URL",
-  "ROOM_CREATE", "ROOM_DELETE", "ROOM_CONTEXT_ADD"];
+  "TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_ROOM_URL", "ROOM_CREATE", "ROOM_DELETE"];
 
 XPCOMUtils.defineConstant(this, "LOOP_SESSION_TYPE", LOOP_SESSION_TYPE);
 XPCOMUtils.defineConstant(this, "TWO_WAY_MEDIA_CONN_LENGTH", TWO_WAY_MEDIA_CONN_LENGTH);
-XPCOMUtils.defineConstant(this, "SHARING_STATE_CHANGE", SHARING_STATE_CHANGE);
 XPCOMUtils.defineConstant(this, "SHARING_ROOM_URL", SHARING_ROOM_URL);
 XPCOMUtils.defineConstant(this, "ROOM_CREATE", ROOM_CREATE);
 XPCOMUtils.defineConstant(this, "ROOM_DELETE", ROOM_DELETE);
-XPCOMUtils.defineConstant(this, "ROOM_CONTEXT_ADD", ROOM_CONTEXT_ADD);
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoopAPI",
   "chrome://loop/content/modules/MozLoopAPI.jsm");
@@ -770,14 +744,20 @@ var MozLoopServiceInternal = {
       return gLocalizedStrings;
     }
 
-    let stringBundle =
-      Services.strings.createBundle("chrome://browser/locale/loop/loop.properties");
-
-    let enumerator = stringBundle.getSimpleEnumeration();
-    while (enumerator.hasMoreElements()) {
-      let string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
-      gLocalizedStrings.set(string.key, string.value);
+    
+    function loadAllStrings(location) {
+      let bundle = Services.strings.createBundle(location);
+      let enumerator = bundle.getSimpleEnumeration();
+      while (enumerator.hasMoreElements()) {
+        let string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
+        gLocalizedStrings.set(string.key, string.value);
+      }
     }
+
+    
+    loadAllStrings("chrome://loop-locale-fallback/content/loop.properties");
+    loadAllStrings("chrome://loop/locale/loop.properties");
+
     
     let brandBundle =
       Services.strings.createBundle("chrome://branding/locale/brand.properties");
@@ -866,15 +846,30 @@ var MozLoopServiceInternal = {
     return "about:loopconversation#" + chatWindowId;
   },
 
+  getChatWindows() {
+    let isLoopURL = ({ src }) => /^about:loopconversation#/.test(src);
+    return [...Chat.chatboxes].filter(isLoopURL);
+  },
+
   
 
 
   hangupAllChatWindows() {
-    let isLoopURL = ({ src }) => /^about:loopconversation#/.test(src);
-    let loopChatWindows = [...Chat.chatboxes].filter(isLoopURL);
-    for (let chatbox of loopChatWindows) {
+    for (let chatbox of this.getChatWindows()) {
       let window = chatbox.content.contentWindow;
       window.dispatchEvent(new window.CustomEvent("LoopHangupNow"));
+    }
+  },
+
+  
+
+
+  toggleBrowserSharing(on = true) {
+    for (let chatbox of this.getChatWindows()) {
+      let window = chatbox.content.contentWindow;
+      window.dispatchEvent(new window.CustomEvent("ToggleBrowserSharing", {
+        detail: on
+      }));
     }
   },
 
@@ -935,7 +930,13 @@ var MozLoopServiceInternal = {
         let window = chatbox.contentWindow;
 
         function socialFrameChanged(eventName) {
-          UITour.clearAvailableTargetsCache();
+          
+          
+          if ("clearAvailableTargetsCache" in UITour) {
+            UITour.clearAvailableTargetsCache();
+          } else {
+            UITour.availableTargetsCache.clear();
+          }
           UITour.notify(eventName);
 
           if (eventName == "Loop:ChatWindowDetached" || eventName == "Loop:ChatWindowAttached") {
@@ -1285,11 +1286,24 @@ this.MozLoopService = {
 
       let window = gWM.getMostRecentWindow("navigator:browser");
       if (window) {
+        
+        
+        let isOwnerInRoom = room.participants.concat(participant).some(p => p.owner);
+        let bundle = MozLoopServiceInternal.localizedStrings;
+
+        let localizedString;
+        if (isOwnerInRoom) {
+          localizedString = bundle.get("rooms_room_joined_owner_connected_label2");
+        } else {
+          let l10nString = bundle.get("rooms_room_joined_owner_not_connected_label");
+          let roomUrlHostname = new URL(room.decryptedContext.urls[0].location).hostname.replace(/^www\./, "");
+          localizedString = l10nString.replace("{{roomURLHostname}}", roomUrlHostname);
+        }
         window.LoopUI.showNotification({
           sound: "room-joined",
           
           title: room.roomName || MozLoopServiceInternal.localizedStrings.get("clientShortname2"),
-          message: MozLoopServiceInternal.localizedStrings.get("rooms_room_joined_label"),
+          message: localizedString,
           selectTab: "rooms"
         });
       }
@@ -1412,6 +1426,10 @@ this.MozLoopService = {
 
   hangupAllChatWindows() {
     return MozLoopServiceInternal.hangupAllChatWindows();
+  },
+
+  toggleBrowserSharing(on) {
+    return MozLoopServiceInternal.toggleBrowserSharing(on);
   },
 
   

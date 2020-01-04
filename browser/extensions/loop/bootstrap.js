@@ -9,7 +9,9 @@ const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
 
 const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const kBrowserSharingNotificationId = "loop-sharing-notification";
-const kPrefBrowserSharingInfoBar = "browserSharing.showInfoBar";
+
+const MIN_CURSOR_DELTA = 3;
+const MIN_CURSOR_INTERVAL = 100;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -188,14 +190,13 @@ var WindowListener = {
             this.LoopAPI.initialize();
 
             let anchor = event ? event.target : this.toolbarButton.anchor;
-            let setHeight = 410;
-            if (gBrowser.selectedBrowser.getAttribute("remote") === "true") {
-              setHeight = 262;
-            }
-            this.PanelFrame.showPopup(window, anchor,
-              "loop", null, "about:looppanel",
-              
-              { width: 330, height: setHeight },
+            this.PanelFrame.showPopup(
+              window,
+              anchor,
+              "loop", 
+              null,   
+              "about:looppanel", 
+              null, 
               callback);
           });
         });
@@ -486,6 +487,10 @@ var WindowListener = {
           
           gBrowser.addEventListener("DOMTitleChanged", this);
           this._browserSharePaused = false;
+
+          
+          
+          gBrowser.addEventListener("mousemove", this);
         }
 
         this._maybeShowBrowserSharingInfoBar();
@@ -506,6 +511,7 @@ var WindowListener = {
         this._hideBrowserSharingInfoBar();
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
         gBrowser.removeEventListener("DOMTitleChanged", this);
+        gBrowser.removeEventListener("mousemove", this);
         this._listeningToTabSelect = false;
         this._browserSharePaused = false;
       },
@@ -533,50 +539,44 @@ var WindowListener = {
       _maybeShowBrowserSharingInfoBar: function() {
         this._hideBrowserSharingInfoBar();
 
-        
-        if (!this.MozLoopService.getLoopPref(kPrefBrowserSharingInfoBar)) {
-          return;
-        }
-
         let box = gBrowser.getNotificationBox();
-        let pauseButtonLabel = this._getString(this._browserSharePaused ?
-                                               "infobar_button_resume_label" :
-                                               "infobar_button_pause_label");
-        let pauseButtonAccessKey = this._getString(this._browserSharePaused ?
-                                                   "infobar_button_resume_accesskey" :
-                                                   "infobar_button_pause_accesskey");
-        let barLabel = this._getString(this._browserSharePaused ?
-                                       "infobar_screenshare_paused_browser_message" :
-                                       "infobar_screenshare_browser_message2");
+        
+        let pausedStrings = {
+          label: this._getString("infobar_button_restart_label2"),
+          accesskey: this._getString("infobar_button_restart_accesskey"),
+          message: this._getString("infobar_screenshare_stop_sharing_message")
+        };
+        let unpausedStrings = {
+          label: this._getString("infobar_button_stop_label2"),
+          accesskey: this._getString("infobar_button_stop_accesskey"),
+          message: this._getString("infobar_screenshare_browser_message2")
+        };
+        let initStrings = this._browserSharePaused ? pausedStrings : unpausedStrings;
         let bar = box.appendNotification(
-          barLabel,
+          initStrings.message,
           kBrowserSharingNotificationId,
           
           null,
           box.PRIORITY_WARNING_LOW,
           [{
-            label: pauseButtonLabel,
-            accessKey: pauseButtonAccessKey,
+            label: initStrings.label,
+            accessKey: initStrings.accessKey,
             isDefault: false,
             callback: (event, buttonInfo, buttonNode) => {
               this._browserSharePaused = !this._browserSharePaused;
-              bar.label = this._getString(this._browserSharePaused ?
-                                          "infobar_screenshare_paused_browser_message" :
-                                          "infobar_screenshare_browser_message2");
+              let stringObj = this._browserSharePaused ? pausedStrings : unpausedStrings;
+              bar.label = stringObj.message;
               bar.classList.toggle("paused", this._browserSharePaused);
-              buttonNode.label = this._getString(this._browserSharePaused ?
-                                                 "infobar_button_resume_label" :
-                                                 "infobar_button_pause_label");
-              buttonNode.accessKey = this._getString(this._browserSharePaused ?
-                                                     "infobar_button_resume_accesskey" :
-                                                     "infobar_button_pause_accesskey");
+              buttonNode.label = stringObj.label;
+              buttonNode.accessKey = stringObj.accesskey;
+              LoopUI.MozLoopService.toggleBrowserSharing(this._browserSharePaused);
               return true;
             },
             type: "pause"
           },
           {
-            label: this._getString("infobar_button_stop_label"),
-            accessKey: this._getString("infobar_button_stop_accesskey"),
+            label: this._getString("infobar_button_disconnect_label"),
+            accessKey: this._getString("infobar_button_disconnect_accesskey"),
             isDefault: true,
             callback: () => {
               this._hideBrowserSharingInfoBar();
@@ -600,7 +600,8 @@ var WindowListener = {
 
 
 
-      _hideBrowserSharingInfoBar: function(permanently = false, browser) {
+
+      _hideBrowserSharingInfoBar: function(browser) {
         browser = browser || gBrowser.selectedBrowser;
         let box = gBrowser.getNotificationBox(browser);
         let notification = box.getNotificationWithValue(kBrowserSharingNotificationId);
@@ -610,17 +611,13 @@ var WindowListener = {
           removed = true;
         }
 
-        if (permanently) {
-          this.MozLoopService.setLoopPref(kPrefBrowserSharingInfoBar, false);
-        }
-
         return removed;
       },
 
       
 
 
-      _notifyBrowserSwitch() {
+      _notifyBrowserSwitch: function() {
          
         this.LoopAPI.broadcastPushMessage("BrowserSwitch",
           gBrowser.selectedBrowser.outerWindowID);
@@ -639,7 +636,7 @@ var WindowListener = {
             let wasVisible = false;
             
             if (event.detail.previousTab) {
-              wasVisible = this._hideBrowserSharingInfoBar(false, event.detail.previousTab.linkedBrowser);
+              wasVisible = this._hideBrowserSharingInfoBar(event.detail.previousTab.linkedBrowser);
             }
 
             
@@ -651,7 +648,42 @@ var WindowListener = {
               this._maybeShowBrowserSharingInfoBar();
             }
             break;
+          case "mousemove":
+            this.handleMousemove(event);
+            break;
           }
+      },
+
+      
+
+
+
+
+      handleMousemove: function(event) {
+        
+        let now = Date.now();
+        if (now - this.lastCursorTime < MIN_CURSOR_INTERVAL) {
+          return;
+        }
+        this.lastCursorTime = now;
+
+        
+        let browserBox = gBrowser.selectedBrowser.boxObject;
+        let deltaX = event.screenX - browserBox.screenX;
+        let deltaY = event.screenY - browserBox.screenY;
+        if (deltaX < 0 || deltaX > browserBox.width ||
+            deltaY < 0 || deltaY > browserBox.height ||
+            (Math.abs(deltaX - this.lastCursorX) < MIN_CURSOR_DELTA &&
+             Math.abs(deltaY - this.lastCursorY) < MIN_CURSOR_DELTA)) {
+          return;
+        }
+        this.lastCursorX = deltaX;
+        this.lastCursorY = deltaY;
+
+        this.LoopAPI.broadcastPushMessage("CursorPositionChange", {
+          ratioX: deltaX / browserBox.width,
+          ratioY: deltaY / browserBox.height
+        });
       },
 
       
