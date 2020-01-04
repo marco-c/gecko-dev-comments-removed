@@ -129,22 +129,6 @@ protected:
   
   
   
-  virtual bool
-  PreRun(WorkerPrivate* aWorkerPrivate);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   

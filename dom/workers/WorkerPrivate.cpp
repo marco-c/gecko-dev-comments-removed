@@ -498,10 +498,6 @@ public:
   { }
 
 private:
-  
-  
-  
-
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
@@ -1235,8 +1231,8 @@ private:
     JS::Rooted<JS::Value> callable(aCx, JS::ObjectValue(*mHandler->Callable()));
     JS::HandleValueArray args = JS::HandleValueArray::empty();
     JS::Rooted<JS::Value> rval(aCx);
-    if (!JS_CallFunctionValue(aCx, global, callable, args, &rval)) {
-      
+    if (!JS_CallFunctionValue(aCx, global, callable, args, &rval) &&
+        !JS_ReportPendingException(aCx)) {
       return false;
     }
 

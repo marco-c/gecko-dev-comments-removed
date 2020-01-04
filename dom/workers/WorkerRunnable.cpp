@@ -155,12 +155,6 @@ WorkerRunnable::PostDispatch(WorkerPrivate* aWorkerPrivate,
   }
 }
 
-bool
-WorkerRunnable::PreRun(WorkerPrivate* aWorkerPrivate)
-{
-  return true;
-}
-
 void
 WorkerRunnable::PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                         bool aRunResult)
@@ -189,6 +183,10 @@ WorkerRunnable::PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
 
   if (mBehavior == WorkerThreadModifyBusyCount) {
     aWorkerPrivate->ModifyBusyCountFromWorker(false);
+  }
+
+  if (!aRunResult) {
+    JS_ReportPendingException(aCx);
   }
 }
 
@@ -262,19 +260,6 @@ WorkerRunnable::Run()
     return NS_OK;
   }
 
-  bool result = PreRun(mWorkerPrivate);
-  if (!result) {
-    MOZ_ASSERT(targetIsWorkerThread,
-               "The only PreRun implementation that can fail is "
-               "ScriptExecutorRunnable");
-    mWorkerPrivate->AssertIsOnWorkerThread();
-    MOZ_ASSERT(!JS_IsExceptionPending(mWorkerPrivate->GetJSContext()));
-    
-    
-    PostRun(mWorkerPrivate->GetJSContext(), mWorkerPrivate, false);
-    return NS_ERROR_FAILURE;
-  }
-
   
   nsCOMPtr<nsIGlobalObject> globalObject;
   bool isMainThread = !targetIsWorkerThread && !mWorkerPrivate->GetParent();
@@ -292,12 +277,6 @@ WorkerRunnable::Run()
     } else {
       globalObject = DefaultGlobalObject();
     }
-
-    
-    
-    
-    
-    
   } else {
     kungFuDeathGrip = mWorkerPrivate;
     if (isMainThread) {
@@ -312,23 +291,21 @@ WorkerRunnable::Run()
   
   
   
-  Maybe<mozilla::dom::AutoJSAPI> maybeJSAPI;
+  
+  
+  
+  mozilla::dom::AutoJSAPI jsapi;
   Maybe<mozilla::dom::AutoEntryScript> aes;
   JSContext* cx;
-  AutoJSAPI* jsapi;
   if (globalObject) {
     aes.emplace(globalObject, "Worker runnable",
                 isMainThread,
                 isMainThread ? nullptr : GetCurrentThreadJSContext());
-    jsapi = aes.ptr();
     cx = aes->cx();
   } else {
-    maybeJSAPI.emplace();
-    maybeJSAPI->Init();
-    jsapi = maybeJSAPI.ptr();
-    cx = jsapi->cx();
+    jsapi.Init();
+    cx = jsapi.cx();
   }
-  jsapi->TakeOwnershipOfErrorReporting();
 
   
   
@@ -371,33 +348,17 @@ WorkerRunnable::Run()
     ac.emplace(cx, mWorkerPrivate->GetWrapper());
   }
 
-  result = WorkerRun(cx, mWorkerPrivate);
-  MOZ_ASSERT_IF(result, !jsapi->HasException());
-  jsapi->ReportException();
+  bool result = WorkerRun(cx, mWorkerPrivate);
 
   
   
+  if (targetIsWorkerThread && !aes && DefaultGlobalObject()) {
+    aes.emplace(DefaultGlobalObject(), "worker runnable",
+                false, GetCurrentThreadJSContext());
+    cx = aes->cx();
+  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   PostRun(cx, mWorkerPrivate, result);
-  MOZ_ASSERT(!jsapi->HasException());
 
   return result ? NS_OK : NS_ERROR_FAILURE;
 }
