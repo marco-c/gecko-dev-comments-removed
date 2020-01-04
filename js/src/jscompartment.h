@@ -33,12 +33,11 @@ template <typename Node, typename Derived> class ComponentFinder;
 } 
 
 namespace wasm {
-class Module;
+class Instance;
 } 
 
 class ClonedBlockObject;
 class ScriptSourceObject;
-class WasmModuleObject;
 struct NativeIterator;
 
 
@@ -521,7 +520,7 @@ struct JSCompartment
     
     
     
-    mozilla::LinkedList<js::wasm::Module> wasmModuleWeakList;
+    mozilla::LinkedList<js::wasm::Instance> wasmInstanceWeakList;
 
   private:
     

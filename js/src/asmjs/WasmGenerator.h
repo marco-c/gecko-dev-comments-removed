@@ -102,9 +102,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     jit::JitContext                 jcx_;
 
     
-    uint32_t                        globalDataLength_;
+    LinkData                        linkData_;
     MutableMetadata                 metadata_;
-    MutableExportMap                exportMap_;
+    ExportMap                       exportMap_;
 
     
     UniqueModuleGeneratorData       shared_;
@@ -134,8 +134,8 @@ class MOZ_STACK_CLASS ModuleGenerator
     const CodeRange& funcCodeRange(uint32_t funcIndex) const;
     MOZ_MUST_USE bool convertOutOfRangeBranchesToThunks();
     MOZ_MUST_USE bool finishTask(IonCompileTask* task);
-    MOZ_MUST_USE bool finishCodegen(StaticLinkData* link);
-    MOZ_MUST_USE bool finishStaticLinkData(uint8_t* code, uint32_t codeLength, StaticLinkData* link);
+    MOZ_MUST_USE bool finishCodegen();
+    MOZ_MUST_USE bool finishLinkData(Bytes& code);
     MOZ_MUST_USE bool addImport(const Sig& sig, uint32_t globalDataOffset);
     MOZ_MUST_USE bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
 
@@ -143,7 +143,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     explicit ModuleGenerator(ExclusiveContext* cx);
     ~ModuleGenerator();
 
-    MOZ_MUST_USE bool init(UniqueModuleGeneratorData shared, UniqueChars filename);
+    MOZ_MUST_USE bool init(UniqueModuleGeneratorData shared,
+                           UniqueChars filename,
+                           Metadata* maybeMetadata = nullptr);
 
     bool isAsmJS() const { return metadata_->kind == ModuleKind::AsmJS; }
     CompileArgs args() const { return metadata_->compileArgs; }
@@ -182,6 +184,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool finishFuncDefs();
 
     
+    void setFuncNames(CacheableCharsVector&& funcNames);
+
+    
     void initSig(uint32_t sigIndex, Sig&& sig);
     void initFuncSig(uint32_t funcIndex, uint32_t sigIndex);
     MOZ_MUST_USE bool initImport(uint32_t importIndex, uint32_t sigIndex);
@@ -192,11 +197,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     
     
-    MOZ_MUST_USE bool finish(CacheableCharsVector&& prettyFuncNames,
-                             UniqueCodeSegment* codeSegment,
-                             SharedMetadata* metadata,
-                             SharedStaticLinkData* staticLinkData,
-                             SharedExportMap* exportMap);
+    UniqueModule finish(ImportNameVector&& importNames, const ShareableBytes& bytecode);
 };
 
 

@@ -19,19 +19,13 @@
 #ifndef wasm_module_h
 #define wasm_module_h
 
-#include "mozilla/LinkedList.h"
-
 #include "asmjs/WasmCode.h"
-#include "gc/Barrier.h"
-#include "vm/MallocProvider.h"
-#include "vm/NativeObject.h"
+#include "js/TypeDecls.h"
 
 namespace js {
 
-class AsmJSModule;
-class WasmActivation;
-class WasmModuleObject;
-namespace jit { struct BaselineScript; }
+class ArrayBufferObjectMaybeShared;
+class WasmInstanceObject;
 
 namespace wasm {
 
@@ -41,8 +35,21 @@ namespace wasm {
 
 
 
-struct StaticLinkData : RefCounted<StaticLinkData>
+struct LinkDataCacheablePod
 {
+    uint32_t functionCodeLength;
+    uint32_t globalDataLength;
+    uint32_t interruptOffset;
+    uint32_t outOfBoundsOffset;
+
+    LinkDataCacheablePod() { mozilla::PodZero(this); }
+};
+
+struct LinkData : LinkDataCacheablePod
+{
+    LinkDataCacheablePod& pod() { return *this; }
+    const LinkDataCacheablePod& pod() const { return *this; }
+
     struct InternalLink {
         enum Kind {
             RawPointer,
@@ -62,33 +69,51 @@ struct StaticLinkData : RefCounted<StaticLinkData>
         WASM_DECLARE_SERIALIZABLE(SymbolicLinkArray)
     };
 
-    struct FuncPtrTable {
+    struct FuncTable {
         uint32_t globalDataOffset;
         Uint32Vector elemOffsets;
-        FuncPtrTable(uint32_t globalDataOffset, Uint32Vector&& elemOffsets)
+        FuncTable(uint32_t globalDataOffset, Uint32Vector&& elemOffsets)
           : globalDataOffset(globalDataOffset), elemOffsets(Move(elemOffsets))
         {}
-        FuncPtrTable(FuncPtrTable&& rhs)
+        FuncTable(FuncTable&& rhs)
           : globalDataOffset(rhs.globalDataOffset), elemOffsets(Move(rhs.elemOffsets))
         {}
-        FuncPtrTable() = default;
-        WASM_DECLARE_SERIALIZABLE(FuncPtrTable)
+        FuncTable() = default;
+        WASM_DECLARE_SERIALIZABLE(FuncTable)
     };
-    typedef Vector<FuncPtrTable, 0, SystemAllocPolicy> FuncPtrTableVector;
+    typedef Vector<FuncTable, 0, SystemAllocPolicy> FuncTableVector;
 
-    struct CacheablePod {
-        uint32_t        interruptOffset;
-        uint32_t        outOfBoundsOffset;
-    } pod;
     InternalLinkVector  internalLinks;
     SymbolicLinkArray   symbolicLinks;
-    FuncPtrTableVector  funcPtrTables;
+    FuncTableVector     funcTables;
 
-    WASM_DECLARE_SERIALIZABLE(StaticLinkData)
+    WASM_DECLARE_SERIALIZABLE(LinkData)
 };
 
-typedef RefPtr<StaticLinkData> MutableStaticLinkData;
-typedef RefPtr<const StaticLinkData> SharedStaticLinkData;
+typedef UniquePtr<LinkData> UniqueLinkData;
+typedef UniquePtr<const LinkData> UniqueConstLinkData;
+
+
+
+
+
+
+
+struct ImportName
+{
+    CacheableChars module;
+    CacheableChars func;
+
+    ImportName() = default;
+    ImportName(UniqueChars&& module, UniqueChars&& func)
+      : module(Move(module)), func(Move(func))
+    {}
+
+    WASM_DECLARE_SERIALIZABLE(ImportName)
+};
+
+typedef Vector<ImportName, 0, SystemAllocPolicy> ImportNameVector;
+
 
 
 
@@ -102,7 +127,7 @@ typedef RefPtr<const StaticLinkData> SharedStaticLinkData;
 
 static const uint32_t MemoryExport = UINT32_MAX;
 
-struct ExportMap : RefCounted<ExportMap>
+struct ExportMap
 {
     CacheableCharsVector fieldNames;
     Uint32Vector fieldsToExports;
@@ -110,8 +135,6 @@ struct ExportMap : RefCounted<ExportMap>
     WASM_DECLARE_SERIALIZABLE(ExportMap)
 };
 
-typedef RefPtr<ExportMap> MutableExportMap;
-typedef RefPtr<const ExportMap> SharedExportMap;
 
 
 
@@ -124,256 +147,59 @@ typedef RefPtr<const ExportMap> SharedExportMap;
 
 
 
-
-
-
-
-
-
-
-
-
-class Module : public mozilla::LinkedListElement<Module>
+class Module
 {
-    struct ImportExit {
-        void* code;
-        jit::BaselineScript* baselineScript;
-        GCPtrFunction fun;
-        static_assert(sizeof(GCPtrFunction) == sizeof(void*), "for JIT access");
-    };
-    struct EntryArg {
-        uint64_t lo;
-        uint64_t hi;
-    };
-    typedef int32_t (*EntryFuncPtr)(EntryArg* args, uint8_t* global);
-    struct FuncPtrTable {
-        uint32_t globalDataOffset;
-        uint32_t numElems;
-        explicit FuncPtrTable(const StaticLinkData::FuncPtrTable& table)
-          : globalDataOffset(table.globalDataOffset),
-            numElems(table.elemOffsets.length())
-        {}
-    };
-    typedef Vector<FuncPtrTable, 0, SystemAllocPolicy> FuncPtrTableVector;
-    typedef Vector<CacheableChars, 0, SystemAllocPolicy> FuncLabelVector;
-    typedef HeapPtr<ArrayBufferObjectMaybeShared*> BufferPtr;
-    typedef GCPtr<WasmModuleObject*> ModuleObjectPtr;
-
-    
-    const UniqueCodeSegment      codeSegment_;
-    const SharedMetadata         metadata_;
-
-    
-    bool                         staticallyLinked_;
-    uint8_t*                     interrupt_;
-    uint8_t*                     outOfBounds_;
-    FuncPtrTableVector           funcPtrTables_;
-
-    
-    bool                         dynamicallyLinked_;
-    BufferPtr                    heap_;
-
-    
-    bool                         profilingEnabled_;
-    FuncLabelVector              funcLabels_;
-
-    
-    ModuleObjectPtr              ownerObject_;
-
-    
-    Bytes                        source_;
-
-    uint8_t* rawHeapPtr() const;
-    uint8_t*& rawHeapPtr();
-    WasmActivation*& activation();
-    void specializeToHeap(ArrayBufferObjectMaybeShared* heap);
-    void despecializeFromHeap(ArrayBufferObjectMaybeShared* heap);
-    MOZ_MUST_USE bool sendCodeRangesToProfiler(JSContext* cx);
-    MOZ_MUST_USE bool setProfilingEnabled(JSContext* cx, bool enabled);
-    ImportExit& importToExit(const Import& import);
-
-    bool callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const uint64_t* argv,
-                    MutableHandleValue rval);
-    static int32_t callImport_void(int32_t importIndex, int32_t argc, uint64_t* argv);
-    static int32_t callImport_i32(int32_t importIndex, int32_t argc, uint64_t* argv);
-    static int32_t callImport_i64(int32_t importIndex, int32_t argc, uint64_t* argv);
-    static int32_t callImport_f64(int32_t importIndex, int32_t argc, uint64_t* argv);
-
-    friend class js::WasmActivation;
-    friend void* wasm::AddressOf(SymbolicAddress, ExclusiveContext*);
-
-  protected:
-    const CodeSegment& codeSegment() const { return *codeSegment_; }
-    const Metadata& metadata() const { return *metadata_; }
-    MOZ_MUST_USE bool clone(JSContext* cx, const StaticLinkData& link, Module* clone) const;
+    const Bytes            code_;
+    const LinkData         linkData_;
+    const ImportNameVector importNames_;
+    const ExportMap        exportMap_;
+    const SharedMetadata   metadata_;
+    const SharedBytes      bytecode_;
 
   public:
-    static const unsigned SizeOfImportExit = sizeof(ImportExit);
-    static const unsigned OffsetOfImportExitFun = offsetof(ImportExit, fun);
-    static const unsigned SizeOfEntryArg = sizeof(EntryArg);
+    Module(Bytes&& code,
+           LinkData&& linkData,
+           ImportNameVector&& importNames,
+           ExportMap&& exportMap,
+           const Metadata& metadata,
+           const ShareableBytes& bytecode)
+      : code_(Move(code)),
+        linkData_(Move(linkData)),
+        importNames_(Move(importNames)),
+        exportMap_(Move(exportMap)),
+        metadata_(&metadata),
+        bytecode_(&bytecode)
+    {}
 
-    explicit Module(UniqueCodeSegment codeSegment, const Metadata& metadata);
-    virtual ~Module();
-    virtual void trace(JSTracer* trc);
-    virtual void readBarrier();
-    virtual void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code, size_t* data);
-
-    void setOwner(WasmModuleObject* owner) { MOZ_ASSERT(!ownerObject_); ownerObject_ = owner; }
-    inline const GCPtr<WasmModuleObject*>& owner() const;
-
-    void setSource(Bytes&& source) { source_ = Move(source); }
-
-    uint8_t* code() const { return codeSegment_->code(); }
-    uint32_t codeLength() const { return codeSegment_->codeLength(); }
-    uint8_t* globalData() const { return codeSegment_->globalData(); }
-    uint32_t globalDataLength() const { return codeSegment_->globalDataLength(); }
-    HeapUsage heapUsage() const { return metadata_->heapUsage; }
-    bool usesHeap() const { return UsesHeap(metadata_->heapUsage); }
-    bool hasSharedHeap() const { return metadata_->heapUsage == HeapUsage::Shared; }
-    CompileArgs compileArgs() const { return metadata_->compileArgs; }
-    const ImportVector& imports() const { return metadata_->imports; }
-    const ExportVector& exports() const { return metadata_->exports; }
-    const CodeRangeVector& codeRanges() const { return metadata_->codeRanges; }
-    const char* filename() const { return metadata_->filename.get(); }
-    bool staticallyLinked() const { return staticallyLinked_; }
-    bool dynamicallyLinked() const { return dynamicallyLinked_; }
-
-    
-    
-    
-    
-
-    bool isAsmJS() const { return metadata_->kind == ModuleKind::AsmJS; }
-    AsmJSModule& asAsmJS() { MOZ_ASSERT(isAsmJS()); return *(AsmJSModule*)this; }
-    const AsmJSModule& asAsmJS() const { MOZ_ASSERT(isAsmJS()); return *(const AsmJSModule*)this; }
-    virtual bool mutedErrors() const;
-    virtual const char16_t* displayURL() const;
-    virtual ScriptSource* maybeScriptSource() const { return nullptr; }
-
-    
-    
-    
-    
-    
-
-    bool containsFunctionPC(void* pc) const;
-    bool containsCodePC(void* pc) const;
-    const CallSite* lookupCallSite(void* returnAddress) const;
-    const CodeRange* lookupCodeRange(void* pc) const;
-    const HeapAccess* lookupHeapAccess(void* pc) const;
-
-    
-    
-    
-
-    MOZ_MUST_USE bool staticallyLink(ExclusiveContext* cx, const StaticLinkData& link);
-
-    
-    
-    
-    
-
-    MOZ_MUST_USE bool dynamicallyLink(JSContext* cx,
-                                      Handle<WasmModuleObject*> moduleObj,
-                                      Handle<ArrayBufferObjectMaybeShared*> heap,
-                                      Handle<FunctionVector> imports,
-                                      const ExportMap& exportMap,
-                                      MutableHandleObject exportObj);
+    const Metadata& metadata() const { return *metadata_; }
+    const ImportNameVector& importNames() const { return importNames_; }
 
     
 
-    SharedMem<uint8_t*> heap() const;
-    size_t heapLength() const;
+    bool instantiate(JSContext* cx,
+                     Handle<FunctionVector> funcImports,
+                     Handle<ArrayBufferObjectMaybeShared*> heap,
+                     MutableHandle<WasmInstanceObject*> instanceObj) const;
 
     
-    
-    
 
-    MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t exportIndex, CallArgs args);
-
-    
-    
-    
-    
-    
-
-    void deoptimizeImportExit(uint32_t importIndex);
+    size_t serializedSize() const;
+    uint8_t* serialize(uint8_t* cursor) const;
+    static const uint8_t* deserialize(ExclusiveContext* cx, const uint8_t* cursor,
+                                      UniquePtr<Module>* module,
+                                      Metadata* maybeMetadata = nullptr);
 
     
-    
-    
 
-    uint8_t* interrupt() const { MOZ_ASSERT(staticallyLinked_); return interrupt_; }
-    uint8_t* outOfBounds() const { MOZ_ASSERT(staticallyLinked_); return outOfBounds_; }
-
-    
-    
-    
-
-    const char* maybePrettyFuncName(uint32_t funcIndex) const;
-    const char* getFuncName(JSContext* cx, uint32_t funcIndex, UniqueChars* owner) const;
-    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
-
-    
-    
-
-    JSString* createText(JSContext* cx);
-
-    
-    
-    
-    
-
-    bool profilingEnabled() const { return profilingEnabled_; }
-    const char* profilingLabel(uint32_t funcIndex) const;
+    void addSizeOfMisc(MallocSizeOf mallocSizeOf,
+                       Metadata::SeenSet* seenMetadata,
+                       ShareableBytes::SeenSet* seenBytes,
+                       size_t* code, size_t* data) const;
 };
 
 typedef UniquePtr<Module> UniqueModule;
 
-
-
-
-extern bool
-IsExportedFunction(JSFunction* fun);
-
-extern WasmModuleObject*
-ExportedFunctionToModuleObject(JSFunction* fun);
-
-extern uint32_t
-ExportedFunctionToIndex(JSFunction* fun);
-
 } 
-
-
-
-
-
-
-class WasmModuleObject : public NativeObject
-{
-    static const unsigned MODULE_SLOT = 0;
-    static const ClassOps classOps_;
-
-    bool hasModule() const;
-    static void finalize(FreeOp* fop, JSObject* obj);
-    static void trace(JSTracer* trc, JSObject* obj);
-  public:
-    static const unsigned RESERVED_SLOTS = 1;
-    static WasmModuleObject* create(ExclusiveContext* cx);
-    void init(wasm::Module& module);
-    wasm::Module& module() const;
-    void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code, size_t* data);
-    static const Class class_;
-};
-
-inline const GCPtr<WasmModuleObject*>&
-wasm::Module::owner() const {
-    MOZ_ASSERT(&ownerObject_->module() == this);
-    return ownerObject_;
-}
-
-using WasmModuleObjectVector = GCVector<WasmModuleObject*>;
-
 } 
 
 #endif 

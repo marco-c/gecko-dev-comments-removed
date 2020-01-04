@@ -40,7 +40,6 @@ static const unsigned COMPILATION_LIFO_DEFAULT_CHUNK_SIZE = 64 * 1024;
 ModuleGenerator::ModuleGenerator(ExclusiveContext* cx)
   : cx_(cx),
     jcx_(CompileRuntime::get(cx->compartment()->runtimeFromAnyThread())),
-    globalDataLength_(InitialGlobalDataBytes),
     numSigs_(0),
     lifo_(GENERATOR_LIFO_DEFAULT_CHUNK_SIZE),
     alloc_(&lifo_),
@@ -110,23 +109,26 @@ ParallelCompilationEnabled(ExclusiveContext* cx)
 }
 
 bool
-ModuleGenerator::init(UniqueModuleGeneratorData shared, UniqueChars filename)
+ModuleGenerator::init(UniqueModuleGeneratorData shared, UniqueChars file, Metadata* maybeMetadata)
 {
     if (!funcIndexToExport_.init())
         return false;
 
-    metadata_ = js_new<Metadata>();
-    if (!metadata_)
-        return false;
+    linkData_.globalDataLength = AlignBytes(InitialGlobalDataBytes, sizeof(void*));;
+
+    
+    if (maybeMetadata) {
+        metadata_ = maybeMetadata;
+    } else {
+        metadata_ = js_new<Metadata>();
+        if (!metadata_)
+            return false;
+    }
 
     metadata_->compileArgs = shared->args;
     metadata_->kind = shared->kind;
     metadata_->heapUsage = HeapUsage::None;
-    metadata_->filename = Move(filename);
-
-    exportMap_ = js_new<ExportMap>();
-    if (!exportMap_)
-        return false;
+    metadata_->filename = Move(file);
 
     shared_ = Move(shared);
 
@@ -135,24 +137,23 @@ ModuleGenerator::init(UniqueModuleGeneratorData shared, UniqueChars filename)
     
     
 
-    if (metadata_->kind == ModuleKind::Wasm) {
+    if (!isAsmJS()) {
         numSigs_ = shared_->sigs.length();
-        globalDataLength_ = AlignBytes(globalDataLength_, sizeof(void*));
 
         for (ImportModuleGeneratorData& import : shared_->imports) {
             MOZ_ASSERT(!import.globalDataOffset);
-            import.globalDataOffset = globalDataLength_;
-            globalDataLength_ += Module::SizeOfImportExit;
+            import.globalDataOffset = linkData_.globalDataLength;
+            linkData_.globalDataLength += sizeof(ImportExit);
             if (!addImport(*import.sig, import.globalDataOffset))
                 return false;
         }
 
-        MOZ_ASSERT(globalDataLength_ % sizeof(void*) == 0);
+        MOZ_ASSERT(linkData_.globalDataLength % sizeof(void*) == 0);
         MOZ_ASSERT(shared_->asmJSSigToTable.empty());
         MOZ_ASSERT(shared_->wasmTable.numElems == shared_->wasmTable.elemFuncIndices.length());
         MOZ_ASSERT(!shared_->wasmTable.globalDataOffset);
-        shared_->wasmTable.globalDataOffset = globalDataLength_;
-        globalDataLength_ += shared_->wasmTable.numElems * sizeof(void*);
+        shared_->wasmTable.globalDataOffset = linkData_.globalDataLength;
+        linkData_.globalDataLength += shared_->wasmTable.numElems * sizeof(void*);
     }
 
     return true;
@@ -339,7 +340,7 @@ ModuleGenerator::finishTask(IonCompileTask* task)
 }
 
 bool
-ModuleGenerator::finishCodegen(StaticLinkData* link)
+ModuleGenerator::finishCodegen()
 {
     uint32_t offsetInWhole = masm_.size();
 
@@ -414,8 +415,8 @@ ModuleGenerator::finishCodegen(StaticLinkData* link)
 
     
 
-    link->pod.outOfBoundsOffset = jumpTargets[JumpTarget::OutOfBounds].begin;
-    link->pod.interruptOffset = interruptExit.begin;
+    linkData_.outOfBoundsOffset = jumpTargets[JumpTarget::OutOfBounds].begin;
+    linkData_.interruptOffset = interruptExit.begin;
 
     
     
@@ -443,13 +444,16 @@ ModuleGenerator::finishCodegen(StaticLinkData* link)
 }
 
 bool
-ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeLength, StaticLinkData* link)
+ModuleGenerator::finishLinkData(Bytes& code)
 {
     
-    StaticLinkData::SymbolicLinkArray& symbolicLinks = link->symbolicLinks;
+    
+    linkData_.globalDataLength = AlignBytes(linkData_.globalDataLength, gc::SystemPageSize());
+
+    
     for (size_t i = 0; i < masm_.numAsmJSAbsoluteAddresses(); i++) {
         AsmJSAbsoluteAddress src = masm_.asmJSAbsoluteAddress(i);
-        if (!symbolicLinks[src.target].append(src.patchAt.offset()))
+        if (!linkData_.symbolicLinks[src.target].append(src.patchAt.offset()))
             return false;
     }
 
@@ -460,10 +464,10 @@ ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeLength, Static
     
     for (size_t i = 0; i < masm_.numCodeLabels(); i++) {
         CodeLabel cl = masm_.codeLabel(i);
-        StaticLinkData::InternalLink inLink(StaticLinkData::InternalLink::CodeLabel);
+        LinkData::InternalLink inLink(LinkData::InternalLink::CodeLabel);
         inLink.patchAtOffset = masm_.labelToPatchOffset(*cl.patchAt());
         inLink.targetOffset = cl.target()->offset();
-        if (!link->internalLinks.append(inLink))
+        if (!linkData_.internalLinks.append(inLink))
             return false;
     }
 
@@ -473,10 +477,10 @@ ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeLength, Static
     
     for (size_t i = 0; i < masm_.numAsmJSGlobalAccesses(); i++) {
         AsmJSGlobalAccess a = masm_.asmJSGlobalAccess(i);
-        StaticLinkData::InternalLink inLink(StaticLinkData::InternalLink::RawPointer);
+        LinkData::InternalLink inLink(LinkData::InternalLink::RawPointer);
         inLink.patchAtOffset = masm_.labelToPatchOffset(a.patchAt);
-        inLink.targetOffset = codeLength + a.globalDataOffset;
-        if (!link->internalLinks.append(inLink))
+        inLink.targetOffset = code.length() + a.globalDataOffset;
+        if (!linkData_.internalLinks.append(inLink))
             return false;
     }
 #elif defined(JS_CODEGEN_X64)
@@ -484,8 +488,8 @@ ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeLength, Static
     
     for (size_t i = 0; i < masm_.numAsmJSGlobalAccesses(); i++) {
         AsmJSGlobalAccess a = masm_.asmJSGlobalAccess(i);
-        void* from = code + a.patchAt.offset();
-        void* to = code + codeLength + a.globalDataOffset;
+        void* from = code.begin() + a.patchAt.offset();
+        void* to = code.end() + a.globalDataOffset;
         X86Encoding::SetRel32(from, to);
     }
 #else
@@ -504,7 +508,7 @@ ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeLength, Static
                 return false;
         }
 
-        if (!link->funcPtrTables.emplaceBack(table.globalDataOffset, Move(elemOffsets)))
+        if (!linkData_.funcTables.emplaceBack(table.globalDataOffset, Move(elemOffsets)))
             return false;
     }
 
@@ -518,7 +522,7 @@ ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeLength, Static
                 return false;
         }
 
-        if (!link->funcPtrTables.emplaceBack(table.globalDataOffset, Move(elemOffsets)))
+        if (!linkData_.funcTables.emplaceBack(table.globalDataOffset, Move(elemOffsets)))
             return false;
     }
 
@@ -538,13 +542,13 @@ ModuleGenerator::addImport(const Sig& sig, uint32_t globalDataOffset)
 bool
 ModuleGenerator::allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOffset)
 {
-    uint32_t pad = ComputeByteAlignment(globalDataLength_, align);
-    if (UINT32_MAX - globalDataLength_ < pad + bytes)
+    uint32_t pad = ComputeByteAlignment(linkData_.globalDataLength, align);
+    if (UINT32_MAX - linkData_.globalDataLength < pad + bytes)
         return false;
 
-    globalDataLength_ += pad;
-    *globalDataOffset = globalDataLength_;
-    globalDataLength_ += bytes;
+    linkData_.globalDataLength += pad;
+    *globalDataOffset = linkData_.globalDataLength;
+    linkData_.globalDataLength += bytes;
 
     return true;
 }
@@ -648,7 +652,7 @@ ModuleGenerator::initImport(uint32_t importIndex, uint32_t sigIndex)
     MOZ_ASSERT(isAsmJS());
 
     uint32_t globalDataOffset;
-    if (!allocateGlobalBytes(Module::SizeOfImportExit, sizeof(void*), &globalDataOffset))
+    if (!allocateGlobalBytes(sizeof(ImportExit), sizeof(void*), &globalDataOffset))
         return false;
 
     MOZ_ASSERT(importIndex == metadata_->imports.length());
@@ -678,14 +682,14 @@ ModuleGenerator::import(uint32_t index) const
 bool
 ModuleGenerator::declareExport(UniqueChars fieldName, uint32_t funcIndex, uint32_t* exportIndex)
 {
-    if (!exportMap_->fieldNames.append(Move(fieldName)))
+    if (!exportMap_.fieldNames.append(Move(fieldName)))
         return false;
 
     FuncIndexMap::AddPtr p = funcIndexToExport_.lookupForAdd(funcIndex);
     if (p) {
         if (exportIndex)
             *exportIndex = p->value();
-        return exportMap_->fieldsToExports.append(p->value());
+        return exportMap_.fieldsToExports.append(p->value());
     }
 
     uint32_t newExportIndex = metadata_->exports.length();
@@ -699,7 +703,7 @@ ModuleGenerator::declareExport(UniqueChars fieldName, uint32_t funcIndex, uint32
         return false;
 
     return metadata_->exports.emplaceBack(Move(copy), funcIndex) &&
-           exportMap_->fieldsToExports.append(newExportIndex) &&
+           exportMap_.fieldsToExports.append(newExportIndex) &&
            funcIndexToExport_.add(p, funcIndex, newExportIndex);
 }
 
@@ -712,8 +716,8 @@ ModuleGenerator::numExports() const
 bool
 ModuleGenerator::addMemoryExport(UniqueChars fieldName)
 {
-    return exportMap_->fieldNames.append(Move(fieldName)) &&
-           exportMap_->fieldsToExports.append(MemoryExport);
+    return exportMap_.fieldNames.append(Move(fieldName)) &&
+           exportMap_.fieldsToExports.append(MemoryExport);
 }
 
 bool
@@ -832,9 +836,16 @@ ModuleGenerator::finishFuncDefs()
     for (uint32_t funcIndex = 0; funcIndex < funcIndexToCodeRange_.length(); funcIndex++)
         MOZ_ASSERT(funcIsDefined(funcIndex));
 
-    metadata_->functionLength = masm_.size();
+    linkData_.functionCodeLength = masm_.size();
     finishedFuncDefs_ = true;
     return true;
+}
+
+void
+ModuleGenerator::setFuncNames(CacheableCharsVector&& funcNames)
+{
+    MOZ_ASSERT(metadata_->funcNames.empty());
+    metadata_->funcNames = Move(funcNames);
 }
 
 bool
@@ -868,60 +879,43 @@ ModuleGenerator::initSigTableElems(uint32_t sigIndex, Uint32Vector&& elemFuncInd
     table.elemFuncIndices = Move(elemFuncIndices);
 }
 
-bool
-ModuleGenerator::finish(CacheableCharsVector&& prettyFuncNames,
-                        UniqueCodeSegment* codeSegment,
-                        SharedMetadata* metadata,
-                        SharedStaticLinkData* staticLinkDataOut,
-                        SharedExportMap* exportMap)
+UniqueModule
+ModuleGenerator::finish(ImportNameVector&& importNames, const ShareableBytes& bytecode)
 {
     MOZ_ASSERT(!activeFunc_);
     MOZ_ASSERT(finishedFuncDefs_);
 
-    MutableStaticLinkData staticLinkData = js_new<StaticLinkData>();
-    if (!staticLinkData)
-        return false;
-
-    if (!finishCodegen(staticLinkData.get()))
-        return false;
-
-    metadata_->prettyFuncNames = Move(prettyFuncNames);
+    if (!finishCodegen())
+        return nullptr;
 
     
     
-    
-    uint32_t codeLength = AlignBytes(masm_.bytesNeeded(), gc::SystemPageSize());
+    uint32_t bytesNeeded = masm_.bytesNeeded();
+    uint32_t padding = ComputeByteAlignment(bytesNeeded, gc::SystemPageSize());
 
     
     
-    globalDataLength_ = AlignBytes(globalDataLength_, gc::SystemPageSize());
-
-    
-    UniqueCodeSegment cs = CodeSegment::allocate(cx_, codeLength, globalDataLength_);
-    if (!cs)
-        return false;
+    Bytes code;
+    if (!code.initLengthUninitialized(bytesNeeded + padding))
+        return nullptr;
 
     
     
-    AutoFlushICache afc("ModuleGenerator::finish",  true);
-    masm_.executableCopy(cs->code());
+    {
+        AutoFlushICache afc("ModuleGenerator::finish",  true);
+        masm_.executableCopy(code.begin());
+    }
 
     
-    MOZ_ASSERT(masm_.jumpRelocationTableBytes() == 0);
-    MOZ_ASSERT(masm_.dataRelocationTableBytes() == 0);
-    MOZ_ASSERT(masm_.preBarrierTableBytes() == 0);
-    MOZ_ASSERT(!masm_.hasSelfReference());
+    memset(code.begin() + bytesNeeded, 0, padding);
 
     
     
     if (!metadata_->callSites.appendAll(masm_.callSites()))
-        return false;
+        return nullptr;
 
     
     metadata_->heapAccesses = masm_.extractHeapAccesses();
-
-    if (!finishStaticLinkData(cs->code(), cs->codeLength(), staticLinkData.get()))
-        return false;
 
     
     
@@ -930,9 +924,18 @@ ModuleGenerator::finish(CacheableCharsVector&& prettyFuncNames,
     metadata_->callSites.podResizeToFit();
     metadata_->callThunks.podResizeToFit();
 
-    *codeSegment = Move(cs);
-    *metadata = metadata_.forget();
-    *staticLinkDataOut = staticLinkData.forget();
-    *exportMap = exportMap_.forget();
-    return true;
+    
+#ifdef DEBUG
+    uint32_t lastEnd = 0;
+    for (const CodeRange& codeRange : metadata_->codeRanges) {
+        MOZ_ASSERT(codeRange.begin() >= lastEnd);
+        lastEnd = codeRange.end();
+    }
+#endif
+
+    if (!finishLinkData(code))
+        return nullptr;
+
+    return cx_->make_unique<Module>(Move(code), Move(linkData_), Move(importNames),
+                                    Move(exportMap_), *metadata_, bytecode);
 }

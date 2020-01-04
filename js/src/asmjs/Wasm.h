@@ -22,11 +22,11 @@
 #include "NamespaceImports.h"
 
 #include "gc/Rooting.h"
-#include "js/Class.h"
 
 namespace js {
 
 class TypedArrayObject;
+class WasmInstanceObject;
 
 namespace wasm {
 
@@ -49,18 +49,10 @@ static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
 
 
 MOZ_MUST_USE bool
-Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
-     MutableHandleObject exportObj);
+Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject imports,
+     MutableHandle<WasmInstanceObject*> instance);
 
 }  
-
-
-
-extern const Class WasmClass;
-
-JSObject*
-InitWasmClass(JSContext* cx, HandleObject global);
-
 }  
 
 #endif 

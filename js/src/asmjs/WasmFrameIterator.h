@@ -32,9 +32,10 @@ namespace wasm {
 
 class CallSite;
 class CodeRange;
-class Module;
+class Instance;
 struct CallThunk;
 struct FuncOffsets;
+struct Metadata;
 struct ProfilingOffsets;
 
 
@@ -48,7 +49,7 @@ struct ProfilingOffsets;
 class FrameIterator
 {
     JSContext* cx_;
-    const Module* module_;
+    const Instance* instance_;
     const CallSite* callsite_;
     const CodeRange* codeRange_;
     uint8_t* fp_;
@@ -81,7 +82,7 @@ enum class ExitReason : uint32_t
 
 class ProfilingFrameIterator
 {
-    const Module* module_;
+    const Instance* instance_;
     const CodeRange* codeRange_;
     uint8_t* callerFP_;
     void* callerPC_;
@@ -119,13 +120,13 @@ GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOf
 
 
 void
-ToggleProfiling(const Module& module, const CallSite& callSite, bool enabled);
+ToggleProfiling(const Instance& instance, const CallSite& callSite, bool enabled);
 
 void
-ToggleProfiling(const Module& module, const CallThunk& callThunk, bool enabled);
+ToggleProfiling(const Instance& instance, const CallThunk& callThunk, bool enabled);
 
 void
-ToggleProfiling(const Module& module, const CodeRange& codeRange, bool enabled);
+ToggleProfiling(const Instance& instance, const CodeRange& codeRange, bool enabled);
 
 } 
 } 

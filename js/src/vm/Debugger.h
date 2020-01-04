@@ -18,7 +18,7 @@
 #include "jsweakmap.h"
 #include "jswrapper.h"
 
-#include "asmjs/WasmModule.h"
+#include "asmjs/WasmJS.h"
 #include "ds/TraceableFifo.h"
 #include "gc/Barrier.h"
 #include "js/Debug.h"
@@ -39,6 +39,7 @@ namespace js {
 
 class Breakpoint;
 class DebuggerMemory;
+class WasmInstanceObject;
 
 typedef HashSet<ReadBarrieredGlobalObject,
                 MovableCellHasher<ReadBarrieredGlobalObject>,
@@ -238,11 +239,11 @@ typedef JSObject Env;
 
 
 
-typedef mozilla::Variant<JSScript*, WasmModuleObject*> DebuggerScriptReferent;
+typedef mozilla::Variant<JSScript*, WasmInstanceObject*> DebuggerScriptReferent;
 
 
 
-typedef mozilla::Variant<ScriptSourceObject*, WasmModuleObject*> DebuggerSourceReferent;
+typedef mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*> DebuggerSourceReferent;
 
 class Debugger : private mozilla::LinkedListElement<Debugger>
 {
@@ -474,11 +475,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     ObjectWeakMap environments;
 
     
-    typedef DebuggerWeakMap<WasmModuleObject*> WasmModuleWeakMap;
-    WasmModuleWeakMap wasmModuleScripts;
+    typedef DebuggerWeakMap<WasmInstanceObject*> WasmInstanceWeakMap;
+    WasmInstanceWeakMap wasmInstanceScripts;
 
     
-    WasmModuleWeakMap wasmModuleSources;
+    WasmInstanceWeakMap wasmInstanceSources;
 
     
 
@@ -686,7 +687,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static JSTrapStatus slowPathOnDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
     static JSTrapStatus slowPathOnExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
     static void slowPathOnNewScript(JSContext* cx, HandleScript script);
-    static void slowPathOnNewWasmModule(JSContext* cx, Handle<WasmModuleObject*> wasmModule);
+    static void slowPathOnNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
     static void slowPathOnNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
     static bool slowPathOnLogAllocationSite(JSContext* cx, HandleObject obj, HandleSavedFrame frame,
                                             double when, GlobalObject::DebuggerVector& dbgs);
@@ -866,7 +867,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static inline bool onLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc, bool ok);
 
     static inline void onNewScript(JSContext* cx, HandleScript script);
-    static inline void onNewWasmModule(JSContext* cx, Handle<WasmModuleObject*> wasmModule);
+    static inline void onNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
     static inline void onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
     static inline bool onLogAllocationSite(JSContext* cx, JSObject* obj, HandleSavedFrame frame,
                                            double when);
@@ -1020,7 +1021,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSObject* wrapWasmScript(JSContext* cx, Handle<WasmModuleObject*> wasmModule);
+    JSObject* wrapWasmScript(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
 
     
 
@@ -1035,7 +1036,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSObject* wrapWasmSource(JSContext* cx, Handle<WasmModuleObject*> wasmModule);
+    JSObject* wrapWasmSource(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
 
   private:
     Debugger(const Debugger&) = delete;

@@ -9,6 +9,8 @@
 
 #include "vm/Debugger.h"
 
+#include "asmjs/WasmJS.h"
+
 #include "vm/Stack-inl.h"
 
  inline bool
@@ -67,13 +69,10 @@ js::Debugger::onExceptionUnwind(JSContext* cx, AbstractFramePtr frame)
 }
 
  void
-js::Debugger::onNewWasmModule(JSContext* cx, Handle<WasmModuleObject*> wasmModule)
+js::Debugger::onNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance)
 {
-    
-    
-    cx->compartment()->wasmModuleWeakList.insertBack(&wasmModule->module());
     if (cx->compartment()->isDebuggee())
-        slowPathOnNewWasmModule(cx, wasmModule);
+        slowPathOnNewWasmInstance(cx, wasmInstance);
 }
 
 inline js::Debugger*

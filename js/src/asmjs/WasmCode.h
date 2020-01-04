@@ -22,8 +22,13 @@
 #include "asmjs/WasmTypes.h"
 
 namespace js {
+
+struct AsmJSMetadata;
+
 namespace wasm {
 
+struct LinkData;
+struct Metadata;
 
 
 
@@ -32,17 +37,39 @@ typedef UniquePtr<CodeSegment> UniqueCodeSegment;
 
 class CodeSegment
 {
+    
+    
+    
+    
+    
     uint8_t* bytes_;
+    uint32_t functionCodeLength_;
     uint32_t codeLength_;
     uint32_t globalDataLength_;
 
+    
+    
+    uint8_t* interruptCode_;
+    uint8_t* outOfBoundsCode_;
+
+    
+    bool profilingEnabled_;
+
+    CodeSegment() { PodZero(this); }
+    template <class> friend struct js::MallocProvider;
+
     CodeSegment(const CodeSegment&) = delete;
+    CodeSegment(CodeSegment&&) = delete;
     void operator=(const CodeSegment&) = delete;
+    void operator=(CodeSegment&&) = delete;
 
   public:
-    static UniqueCodeSegment allocate(ExclusiveContext* cx, uint32_t codeLength, uint32_t dataLength);
-    static UniqueCodeSegment clone(ExclusiveContext* cx, const CodeSegment& code);
-    CodeSegment() : bytes_(nullptr), codeLength_(0), globalDataLength_(0) {}
+    static UniqueCodeSegment create(ExclusiveContext* cx,
+                                    const Bytes& code,
+                                    const LinkData& linkData,
+                                    const Metadata& metadata,
+                                    uint8_t* heapBase,
+                                    uint32_t heapLength);
     ~CodeSegment();
 
     uint8_t* code() const { return bytes_; }
@@ -51,8 +78,60 @@ class CodeSegment
     uint32_t globalDataLength() const { return globalDataLength_; }
     uint32_t totalLength() const { return codeLength_ + globalDataLength_; }
 
+    uint8_t* interruptCode() const { return interruptCode_; }
+    uint8_t* outOfBoundsCode() const { return outOfBoundsCode_; }
+
+    
+    
+    
+    
+    
+
+    bool containsFunctionPC(void* pc) const {
+        return pc >= code() && pc < (code() + functionCodeLength_);
+    }
+    bool containsCodePC(void* pc) const {
+        return pc >= code() && pc < (code() + codeLength_);
+    }
+
     WASM_DECLARE_SERIALIZABLE(CodeSegment)
 };
+
+
+
+
+
+template <class T>
+struct ShareableBase : RefCounted<T>
+{
+    using SeenSet = HashSet<const T*, DefaultHasher<const T*>, SystemAllocPolicy>;
+
+    size_t sizeOfIncludingThisIfNotSeen(MallocSizeOf mallocSizeOf, SeenSet* seen) const {
+        const T* self = static_cast<const T*>(this);
+        typename SeenSet::AddPtr p = seen->lookupForAdd(self);
+        if (p)
+            return 0;
+        bool ok = seen->add(p, self);
+        (void)ok;  
+        return mallocSizeOf(self) + self->sizeOfExcludingThis(mallocSizeOf);
+    }
+};
+
+
+
+
+struct ShareableBytes : ShareableBase<ShareableBytes>
+{
+    
+    Bytes bytes;
+    size_t sizeOfExcludingThis(MallocSizeOf m) const { return bytes.sizeOfExcludingThis(m); }
+    const uint8_t* begin() const { return bytes.begin(); }
+    const uint8_t* end() const { return bytes.end(); }
+    bool append(const uint8_t *p, uint32_t ct) { return bytes.append(p, ct); }
+};
+
+typedef RefPtr<ShareableBytes> MutableBytes;
+typedef RefPtr<const ShareableBytes> SharedBytes;
 
 
 
@@ -314,7 +393,6 @@ UsesHeap(HeapUsage heapUsage)
 
 struct MetadataCacheablePod
 {
-    uint32_t              functionLength;
     ModuleKind            kind;
     HeapUsage             heapUsage;
     CompileArgs           compileArgs;
@@ -322,8 +400,10 @@ struct MetadataCacheablePod
     MetadataCacheablePod() { mozilla::PodZero(this); }
 };
 
-struct Metadata : RefCounted<Metadata>, MetadataCacheablePod
+struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
 {
+    virtual ~Metadata() {}
+
     MetadataCacheablePod& pod() { return *this; }
     const MetadataCacheablePod& pod() const { return *this; }
 
@@ -333,10 +413,38 @@ struct Metadata : RefCounted<Metadata>, MetadataCacheablePod
     CodeRangeVector       codeRanges;
     CallSiteVector        callSites;
     CallThunkVector       callThunks;
-    CacheableCharsVector  prettyFuncNames;
+    CacheableCharsVector  funcNames;
     CacheableChars        filename;
 
-    WASM_DECLARE_SERIALIZABLE(Metadata);
+    bool usesHeap() const { return UsesHeap(heapUsage); }
+    bool hasSharedHeap() const { return heapUsage == HeapUsage::Shared; }
+
+    const char* getFuncName(ExclusiveContext* cx, uint32_t funcIndex, UniqueChars* owner) const;
+    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
+
+    
+    
+    
+    
+
+    bool isAsmJS() const {
+        return kind == ModuleKind::AsmJS;
+    }
+    const AsmJSMetadata& asAsmJS() const {
+        MOZ_ASSERT(isAsmJS());
+        return *(const AsmJSMetadata*)this;
+    }
+    virtual bool mutedErrors() const {
+        return false;
+    }
+    virtual const char16_t* displayURL() const {
+        return nullptr;
+    }
+    virtual ScriptSource* maybeScriptSource() const {
+        return nullptr;
+    }
+
+    WASM_DECLARE_SERIALIZABLE_VIRTUAL(Metadata);
 };
 
 typedef RefPtr<Metadata> MutableMetadata;
