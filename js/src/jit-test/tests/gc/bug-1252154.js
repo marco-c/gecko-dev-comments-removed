@@ -1,6 +1,9 @@
 
 
 
+if (!this.hasOwnProperty("TypedObject"))
+  quit();
+
 gczeal(7,1);
 enableShellObjectMetadataCallback();
 var T = TypedObject;

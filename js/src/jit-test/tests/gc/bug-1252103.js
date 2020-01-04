@@ -1,6 +1,9 @@
 
 
 
+if (!this.hasOwnProperty("TypedObject"))
+  quit();
+
 function foo() {
     enableTrackAllocations();
     gczeal(2, 10);
