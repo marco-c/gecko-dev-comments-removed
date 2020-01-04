@@ -1335,7 +1335,7 @@ public:
   uint8_t        mBorderImageRepeatH; 
   uint8_t        mBorderImageRepeatV; 
   mozilla::StyleFloatEdge mFloatEdge; 
-  uint8_t        mBoxDecorationBreak; 
+  mozilla::StyleBoxDecorationBreak mBoxDecorationBreak; 
 
 protected:
   
@@ -3431,10 +3431,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
 
   float         mBoxFlex;               
   uint32_t      mBoxOrdinal;            
-  uint8_t       mBoxAlign;              
-  uint8_t       mBoxDirection;          
-  uint8_t       mBoxOrient;             
-  uint8_t       mBoxPack;               
+  mozilla::StyleBoxAlign mBoxAlign;         
+  mozilla::StyleBoxDirection mBoxDirection; 
+  mozilla::StyleBoxOrient mBoxOrient;       
+  mozilla::StyleBoxPack mBoxPack;           
   bool          mStretchStack;          
 };
 

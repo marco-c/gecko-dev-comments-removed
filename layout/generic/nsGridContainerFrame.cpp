@@ -4880,7 +4880,7 @@ nsGridContainerFrame::ReflowInFragmentainer(GridReflowInput&     aState,
   const uint32_t startRow = aState.mStartRow;
   const uint32_t numRows = aState.mRows.mSizes.Length();
   bool isBDBClone = aState.mReflowInput->mStyleBorder->mBoxDecorationBreak ==
-                      NS_STYLE_BOX_DECORATION_BREAK_CLONE;
+                      StyleBoxDecorationBreak::Clone;
   nscoord bpBEnd = aState.mBorderPadding.BEnd(aState.mWM);
 
   
@@ -5070,7 +5070,7 @@ nsGridContainerFrame::ReflowRowsInFragmentainer(
   FrameHashtable incompleteItems;
   FrameHashtable overflowIncompleteItems;
   bool isBDBClone = aState.mReflowInput->mStyleBorder->mBoxDecorationBreak ==
-                      NS_STYLE_BOX_DECORATION_BREAK_CLONE;
+                      StyleBoxDecorationBreak::Clone;
   bool didGrowRow = false;
   
   
@@ -5685,7 +5685,7 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   if (!NS_FRAME_IS_COMPLETE(aStatus) &&
       !gridReflowInput.mSkipSides.BEnd() &&
       StyleBorder()->mBoxDecorationBreak !=
-        NS_STYLE_BOX_DECORATION_BREAK_CLONE) {
+        StyleBoxDecorationBreak::Clone) {
     bp.BEnd(wm) = nscoord(0);
   }
 
