@@ -100,13 +100,11 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
         
         int renderPhase = convolverRenderPhase + stagePhase;
 
-        bool useDirectConvolver = false;
-
         nsAutoPtr<ReverbConvolverStage> stage
           (new ReverbConvolverStage(response, totalResponseLength,
                                     reverbTotalLatency, stageOffset, stageSize,
                                     fftSize, renderPhase,
-                                    &m_accumulationBuffer, useDirectConvolver));
+                                    &m_accumulationBuffer));
 
         bool isBackgroundStage = false;
 
