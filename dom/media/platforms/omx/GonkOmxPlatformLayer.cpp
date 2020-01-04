@@ -17,6 +17,7 @@
 #include <media/IOMX.h>
 #include <utils/List.h>
 #include <media/stagefright/OMXCodec.h>
+#include <cutils/properties.h>
 
 extern mozilla::LogModule* GetPDMLog();
 
@@ -41,6 +42,13 @@ extern void GetPortIndex(nsTArray<uint32_t>& aPortIndex);
 bool IsSoftwareCodec(const char* aComponentName) {
   nsAutoCString str(aComponentName);
   return (str.Find(NS_LITERAL_CSTRING("OMX.google.")) == -1 ? false : true);
+}
+
+bool IsInEmulator()
+{
+  char propQemu[PROPERTY_VALUE_MAX];
+  property_get("ro.kernel.qemu", propQemu, "");
+  return !strncmp(propQemu, "1", 1);
 }
 
 class GonkOmxObserver : public BnOMXObserver {
@@ -289,7 +297,10 @@ GonkBufferData::GetPlatformMediaData()
     return nullptr;
   }
 
-  MOZ_RELEASE_ASSERT(mTextureClientRecycleHandler);
+  if (!mTextureClientRecycleHandler) {
+    
+    return nullptr;
+  }
 
   VideoInfo info;
   info.mDisplay = mGonkPlatformLayer->GetTrackInfo()->GetAsVideoInfo()->mDisplay;
@@ -520,35 +531,39 @@ GonkOmxPlatformLayer::InitOmxToStateLoaded(const TrackInfo* aInfo)
     return OMX_ErrorUndefined;
   }
 
+  bool useHardwareCodecOnly = false;
+
+  
+  
+  if (!IsInEmulator() &&
+      (mInfo->mMimeType.EqualsLiteral("video/avc") ||
+       mInfo->mMimeType.EqualsLiteral("video/mp4") ||
+       mInfo->mMimeType.EqualsLiteral("video/mp4v-es") ||
+       mInfo->mMimeType.EqualsLiteral("video/3gp"))) {
+    useHardwareCodecOnly = true;
+  }
+
+  LOG("find componenet for mime type %s", mInfo->mMimeType.Data());
   
   
   android::Vector<OMXCodec::CodecNameAndQuirks> matchingCodecs;
-  const char* swcomponent = nullptr;
+  nsTArray<const char*> components;
   OMXCodec::findMatchingCodecs(mInfo->mMimeType.Data(),
                                0,
                                nullptr,
                                0,
                                &matchingCodecs);
   for (uint32_t i = 0; i < matchingCodecs.size(); i++) {
-    const char* componentName = matchingCodecs.itemAt(i).mName.string();
-    if (IsSoftwareCodec(componentName)) {
-      swcomponent = componentName;
-    } else {
-      
-      if (LoadComponent(componentName)) {
-        mUsingHardwareCodec = true;
-        return OMX_ErrorNone;
-      }
-      LOG("failed to load component %s", componentName);
-    }
+    components.AppendElement(matchingCodecs.itemAt(i).mName.string());
   }
 
-  
-  
-  
-  
-  if (swcomponent && LoadComponent(swcomponent)) {
-    return OMX_ErrorNone;
+  for (auto name : components) {
+    if (IsSoftwareCodec(name) && useHardwareCodecOnly) {
+      continue;
+    }
+    if (LoadComponent(name)) {
+      return OMX_ErrorNone;
+    }
   }
 
   LOG("no component is loaded");

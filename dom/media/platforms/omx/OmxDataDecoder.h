@@ -12,8 +12,12 @@
 #include "OmxPromiseLayer.h"
 #include "MediaInfo.h"
 #include "AudioCompactor.h"
+#include "OMX_Component.h"
+#include "ImageContainer.h"
 
 namespace mozilla {
+
+class MediaDataHelper;
 
 typedef OmxPromiseLayer::OmxCommandPromise OmxCommandPromise;
 typedef OmxPromiseLayer::OmxBufferPromise OmxBufferPromise;
@@ -110,9 +114,7 @@ protected:
   
   void PortSettingsChanged();
 
-  void OutputAudio(BufferData* aBufferData);
-
-  void OutputVideo(BufferData* aBufferData);
+  void Output(BufferData* aData);
 
   
   
@@ -136,8 +138,6 @@ protected:
 
   BufferData* FindAvailableBuffer(OMX_DIRTYPE aType);
 
-  template<class T> void InitOmxParameter(T* aParam);
-
   
   RefPtr<OmxPromiseLayer::OmxBufferPromise::AllPromiseType>
   CollectBufferPromises(OMX_DIRTYPE aType);
@@ -148,6 +148,8 @@ protected:
   RefPtr<TaskQueue> mOmxTaskQueue;
 
   RefPtr<TaskQueue> mReaderTaskQueue;
+
+  RefPtr<layers::ImageContainer> mImageContainer;
 
   WatchManager<OmxDataDecoder> mWatchManager;
 
@@ -185,12 +187,7 @@ protected:
 
   BUFFERLIST mOutPortBuffers;
 
-  
-  
-  
-  MediaQueue<AudioData> mAudioQueue;
-
-  AudioCompactor mAudioCompactor;
+  RefPtr<MediaDataHelper> mMediaDataHelper;
 
   MediaDataDecoderCallback* mCallback;
 };
