@@ -82,7 +82,8 @@ SyncedTabsDeckComponent.prototype = {
 
     this._deckStore.on("change", state => this._deckView.render(state));
     
-    this._deckStore.setPanels([for (kv of Iterator(this.PANELS)) kv[1]]); 
+    
+    this._deckStore.setPanels(Object.keys(this.PANELS).map(k => this.PANELS[k]));
     
     this.updatePanel();
   },
