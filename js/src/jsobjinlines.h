@@ -796,18 +796,18 @@ NewObjectWithGroup(ExclusiveContext* cx, HandleObjectGroup group,
 
 
 static inline gc::AllocKind
-GuessObjectGCKind(size_t numElements)
+GuessObjectGCKind(size_t numSlots)
 {
-    if (numElements)
-        return gc::GetGCObjectKind(numElements);
+    if (numSlots)
+        return gc::GetGCObjectKind(numSlots);
     return gc::AllocKind::OBJECT4;
 }
 
 static inline gc::AllocKind
-GuessArrayGCKind(size_t numElements)
+GuessArrayGCKind(size_t numSlots)
 {
-    if (numElements)
-        return gc::GetGCArrayKind(numElements);
+    if (numSlots)
+        return gc::GetGCArrayKind(numSlots);
     return gc::AllocKind::OBJECT8;
 }
 

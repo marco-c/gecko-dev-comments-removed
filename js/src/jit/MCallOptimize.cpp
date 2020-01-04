@@ -442,9 +442,8 @@ IonBuilder::inlineArray(CallInfo& callInfo)
 
         
         initLength = arg->constantValue().toInt32();
-        if (initLength > NativeObject::MAX_DENSE_ELEMENTS_COUNT)
+        if (initLength >= NativeObject::NELEMENTS_LIMIT)
             return InliningStatus_NotInlined;
-        MOZ_ASSERT(initLength <= INT32_MAX);
 
         
         

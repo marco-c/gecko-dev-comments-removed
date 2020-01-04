@@ -6,8 +6,8 @@
 
 #include "vm/NativeObject-inl.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
+#include "mozilla/CheckedInt.h"
 
 #include "jswatchpoint.h"
 
@@ -398,7 +398,7 @@ NativeObject::growSlots(ExclusiveContext* cx, uint32_t oldCount, uint32_t newCou
 
 
     NativeObject::slotsSizeMustNotOverflow();
-    MOZ_ASSERT(newCount <= MAX_SLOTS_COUNT);
+    MOZ_ASSERT(newCount < NELEMENTS_LIMIT);
 
     if (!oldCount) {
         MOZ_ASSERT(!slots_);
@@ -520,7 +520,7 @@ NativeObject::willBeSparseElements(uint32_t requiredCapacity, uint32_t newElemen
     uint32_t cap = getDenseCapacity();
     MOZ_ASSERT(requiredCapacity >= cap);
 
-    if (requiredCapacity > MAX_DENSE_ELEMENTS_COUNT)
+    if (requiredCapacity >= NELEMENTS_LIMIT)
         return true;
 
     uint32_t minimalDenseCount = requiredCapacity / SPARSE_DENSITY_RATIO;
@@ -594,7 +594,7 @@ NativeObject::maybeDensifySparseElements(js::ExclusiveContext* cx, HandleNativeO
     if (numDenseElements * SPARSE_DENSITY_RATIO < newInitializedLength)
         return DenseElementResult::Incomplete;
 
-    if (newInitializedLength > MAX_DENSE_ELEMENTS_COUNT)
+    if (newInitializedLength >= NELEMENTS_LIMIT)
         return DenseElementResult::Incomplete;
 
     
@@ -672,7 +672,7 @@ NativeObject::maybeDensifySparseElements(js::ExclusiveContext* cx, HandleNativeO
 
 
  uint32_t
-NativeObject::goodElementsAllocationAmount(uint32_t reqAllocated, uint32_t length = 0)
+NativeObject::goodAllocated(uint32_t reqAllocated, uint32_t length = 0)
 {
     
     const uint32_t Mebi = 1 << 20;
@@ -722,9 +722,8 @@ NativeObject::goodElementsAllocationAmount(uint32_t reqAllocated, uint32_t lengt
         0x1700000, 0x1a00000, 0x1e00000, 0x2200000, 0x2700000, 0x2c00000,
         0x3200000, 0x3900000, 0x4100000, 0x4a00000, 0x5400000, 0x5f00000,
         0x6b00000, 0x7900000, 0x8900000, 0x9b00000, 0xaf00000, 0xc500000,
-        0xde00000, 0xfa00000, MAX_DENSE_ELEMENTS_ALLOCATION
+        0xde00000, 0xfa00000, NELEMENTS_LIMIT - 1
     };
-    MOZ_ASSERT(BigBuckets[ArrayLength(BigBuckets) - 2] <= MAX_DENSE_ELEMENTS_ALLOCATION);
 
     
     for (uint32_t b : BigBuckets) {
@@ -733,17 +732,12 @@ NativeObject::goodElementsAllocationAmount(uint32_t reqAllocated, uint32_t lengt
     }
 
     
-    return MAX_DENSE_ELEMENTS_ALLOCATION;
+    return NELEMENTS_LIMIT - 1;
 }
 
 bool
 NativeObject::growElements(ExclusiveContext* cx, uint32_t reqCapacity)
 {
-    if (reqCapacity > MAX_DENSE_ELEMENTS_COUNT) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
-
     MOZ_ASSERT(nonProxyIsExtensible());
     MOZ_ASSERT(canHaveNonEmptyElements());
     if (denseElementsAreCopyOnWrite())
@@ -752,9 +746,17 @@ NativeObject::growElements(ExclusiveContext* cx, uint32_t reqCapacity)
     uint32_t oldCapacity = getDenseCapacity();
     MOZ_ASSERT(oldCapacity < reqCapacity);
 
-    uint32_t reqAllocated = reqCapacity + ObjectElements::VALUES_PER_HEADER;
-    uint32_t oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER;
-    MOZ_ASSERT(oldAllocated <= MAX_DENSE_ELEMENTS_ALLOCATION);
+    using mozilla::CheckedInt;
+
+    CheckedInt<uint32_t> checkedOldAllocated =
+        CheckedInt<uint32_t>(oldCapacity) + ObjectElements::VALUES_PER_HEADER;
+    CheckedInt<uint32_t> checkedReqAllocated =
+        CheckedInt<uint32_t>(reqCapacity) + ObjectElements::VALUES_PER_HEADER;
+    if (!checkedOldAllocated.isValid() || !checkedReqAllocated.isValid())
+        return false;
+
+    uint32_t reqAllocated = checkedReqAllocated.value();
+    uint32_t oldAllocated = checkedOldAllocated.value();
 
     uint32_t newAllocated;
     if (is<ArrayObject>() && !as<ArrayObject>().lengthIsWritable()) {
@@ -764,15 +766,14 @@ NativeObject::growElements(ExclusiveContext* cx, uint32_t reqCapacity)
         
         newAllocated = reqAllocated;
     } else {
-        newAllocated = goodElementsAllocationAmount(reqAllocated, getElementsHeader()->length);
+        newAllocated = goodAllocated(reqAllocated, getElementsHeader()->length);
     }
 
     uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
     MOZ_ASSERT(newCapacity > oldCapacity && newCapacity >= reqCapacity);
 
-    
-    
-    MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+    if (newCapacity >= NELEMENTS_LIMIT)
+        return false;
 
     uint32_t initlen = getDenseInitializedLength();
 
@@ -813,13 +814,13 @@ NativeObject::shrinkElements(ExclusiveContext* cx, uint32_t reqCapacity)
 
     uint32_t oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER;
     uint32_t reqAllocated = reqCapacity + ObjectElements::VALUES_PER_HEADER;
-    uint32_t newAllocated = goodElementsAllocationAmount(reqAllocated);
+    uint32_t newAllocated = goodAllocated(reqAllocated);
     if (newAllocated == oldAllocated)
         return;  
 
     MOZ_ASSERT(newAllocated > ObjectElements::VALUES_PER_HEADER);
     uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
-    MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+    MOZ_ASSERT(newCapacity < NELEMENTS_LIMIT);
 
     HeapSlot* oldHeaderSlots = reinterpret_cast<HeapSlot*>(getElementsHeader());
     HeapSlot* newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(cx, this, oldHeaderSlots,
@@ -844,12 +845,12 @@ NativeObject::CopyElementsForWrite(ExclusiveContext* cx, NativeObject* obj)
 
     uint32_t initlen = obj->getDenseInitializedLength();
     uint32_t allocated = initlen + ObjectElements::VALUES_PER_HEADER;
-    uint32_t newAllocated = goodElementsAllocationAmount(allocated);
+    uint32_t newAllocated = goodAllocated(allocated);
 
     uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
 
-    
-    MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+    if (newCapacity >= NELEMENTS_LIMIT)
+        return false;
 
     JSObject::writeBarrierPre(obj->getElementsHeader()->ownerObject());
 

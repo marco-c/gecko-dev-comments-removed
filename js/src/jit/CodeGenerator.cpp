@@ -4303,7 +4303,7 @@ CodeGenerator::visitNewArray(LNewArray* lir)
     JSObject* templateObject = lir->mir()->templateObject();
     DebugOnly<uint32_t> length = lir->mir()->length();
 
-    MOZ_ASSERT(length <= NativeObject::MAX_DENSE_ELEMENTS_COUNT);
+    MOZ_ASSERT(length < NativeObject::NELEMENTS_LIMIT);
 
     if (lir->mir()->shouldUseVM()) {
         visitNewArrayCallVM(lir);
