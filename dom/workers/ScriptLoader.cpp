@@ -1779,6 +1779,8 @@ ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate)
     
     
     
+    
+    
     jsapi.ClearException();
     return false;
   }

@@ -521,6 +521,16 @@ private:
       rv.SuppressException();
       return false;
     }
+
+    WorkerGlobalScope* globalScope = aWorkerPrivate->GlobalScope();
+    if (NS_WARN_IF(!globalScope)) {
+      
+      
+      
+      rv.SuppressException();
+      return false;
+    }
+
     
     
     
@@ -530,9 +540,7 @@ private:
     
     
     
-    
-    JSAutoCompartment ac(aCx,
-                         aWorkerPrivate->GlobalScope()->GetGlobalJSObject());
+    JSAutoCompartment ac(aCx, globalScope->GetGlobalJSObject());
     if (rv.MaybeSetPendingException(aCx)) {
       return false;
     }
