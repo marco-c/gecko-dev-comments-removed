@@ -363,6 +363,9 @@ private:
   
   void VideoLatencyUpdate(uint64_t new_sample);
 
+  
+  bool DetermineREDAndULPFECPayloadTypes(uint8_t &payload_type_red, uint8_t &payload_type_ulpfec);
+
   webrtc::VideoEngine* mVideoEngine;
   mozilla::ReentrantMonitor mTransportMonitor;
   RefPtr<TransportInterface> mTransmitterTransport;
