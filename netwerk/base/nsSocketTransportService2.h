@@ -19,6 +19,8 @@
 #include "mozilla/net/DashboardTypes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
+#include "PollableEvent.h"
 
 class nsASocketHandler;
 struct PRPollDesc;
@@ -124,14 +126,7 @@ private:
     
 
     nsCOMPtr<nsIThread> mThread;    
-    PRFileDesc *mThreadEvent;
-                            
-                            
-                            
-                            
-                            
-                            
-                            
+    mozilla::UniquePtr<mozilla::net::PollableEvent> mPollableEvent;
     bool        mAutodialEnabled;
                             
 
@@ -173,6 +168,7 @@ private:
 
     SocketContext *mActiveList;                   
     SocketContext *mIdleList;                     
+    nsIThread     *mRawThread;
 
     uint32_t mActiveListSize;
     uint32_t mIdleListSize;
@@ -204,11 +200,9 @@ private:
     PRPollDesc *mPollList;                        
 
     PRIntervalTime PollTimeout();            
-    nsresult       DoPollIteration(bool wait,
-                                   mozilla::TimeDuration *pollDuration);
+    nsresult       DoPollIteration(mozilla::TimeDuration *pollDuration);
                                              
-    int32_t        Poll(bool wait,
-                        uint32_t *interval,
+    int32_t        Poll(uint32_t *interval,
                         mozilla::TimeDuration *pollDuration);
                                              
                                              
