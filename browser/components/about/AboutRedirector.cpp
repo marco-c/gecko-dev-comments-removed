@@ -7,14 +7,11 @@
 
 #include "AboutRedirector.h"
 #include "nsNetUtil.h"
-#include "nsIAboutNewTabService.h"
 #include "nsIChannel.h"
 #include "nsIURI.h"
 #include "nsIScriptSecurityManager.h"
-#include "nsIProtocolHandler.h"
 #include "mozilla/ArrayUtils.h"
 #include "nsDOMString.h"
-#include "nsServiceManagerUtils.h"
 
 namespace mozilla {
 namespace browser {
@@ -179,50 +176,14 @@ AboutRedirector::NewChannel(nsIURI* aURI,
 
   for (int i = 0; i < kRedirTotal; i++) {
     if (!strcmp(path.get(), kRedirMap[i].id)) {
-      nsAutoCString url;
-
-      
-      if (path.EqualsLiteral("newtab")) {
-        nsCOMPtr<nsIAboutNewTabService> aboutNewTabService =
-          do_GetService("@mozilla.org/browser/aboutnewtab-service;1", &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-        bool overridden = false;
-        rv = aboutNewTabService->GetOverridden(&overridden);
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (overridden) {
-          rv = aboutNewTabService->GetNewTabURL(url);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-      }
-      
-      if (url.IsEmpty()) {
-        url.AssignASCII(kRedirMap[i].url);
-      }
-
       nsCOMPtr<nsIChannel> tempChannel;
       nsCOMPtr<nsIURI> tempURI;
-      rv = NS_NewURI(getter_AddRefs(tempURI), url);
+      rv = NS_NewURI(getter_AddRefs(tempURI),
+                     nsDependentCString(kRedirMap[i].url));
       NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      
-      
-      
-      bool isUIResource = false;
-      rv = NS_URIChainHasFlags(tempURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                               &isUIResource);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsLoadFlags loadFlags =
-        isUIResource ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
-                     : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
-
       rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
                                  tempURI,
-                                 aLoadInfo,
-                                 nullptr, 
-                                 nullptr, 
-                                 loadFlags);
+                                 aLoadInfo);
       NS_ENSURE_SUCCESS(rv, rv);
 
       tempChannel->SetOriginalURI(aURI);
