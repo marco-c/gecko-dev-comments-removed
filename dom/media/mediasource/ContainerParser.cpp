@@ -185,18 +185,20 @@ public:
                                   int64_t& aStart, int64_t& aEnd) override
   {
     bool initSegment = IsInitSegmentPresent(aData);
+
+    if (mLastMapping && (initSegment || IsMediaSegmentPresent(aData))) {
+      
+      
+      
+      
+      mCompleteMediaSegmentRange = MediaByteRange(mLastMapping.ref().mSyncOffset,
+                                                  mOffset);
+      mLastMapping.reset();
+      MSE_DEBUG(WebMContainerParser, "New cluster found at start, ending previous one");
+      return false;
+    }
+
     if (initSegment) {
-      if (mLastMapping) {
-        
-        
-        
-        
-        mCompleteMediaSegmentRange = MediaByteRange(mLastMapping.ref().mSyncOffset,
-                                                    mOffset);
-        mLastMapping.reset();
-        MSE_DEBUG(WebMContainerParser, "New cluster found at start, ending previous one");
-        return false;
-      }
       mOffset = 0;
       mParser = WebMBufferedParser(0);
       mOverlappedMapping.Clear();
@@ -244,20 +246,6 @@ public:
       return false;
     }
 
-    if (mLastMapping &&
-        mLastMapping.ref().mSyncOffset != mapping[0].mSyncOffset) {
-      
-      
-      
-      
-      mCompleteMediaSegmentRange = MediaByteRange(mLastMapping.ref().mSyncOffset,
-                                                  mapping[0].mSyncOffset);
-      mOverlappedMapping.AppendElements(mapping);
-      mLastMapping.reset();
-      MSE_DEBUG(WebMContainerParser, "New cluster found at start, ending previous one");
-      return false;
-    }
-
     
 
     
@@ -292,8 +280,17 @@ public:
 
     if (foundNewCluster && mOffset >= mapping[endIdx].mEndOffset) {
       
+      int64_t endOffset = mapping[endIdx+1].mSyncOffset;
+      if (mapping[endIdx+1].mInitOffset > mapping[endIdx].mInitOffset) {
+        
+        endOffset = mapping[endIdx+1].mInitOffset;
+      }
       mCompleteMediaSegmentRange = MediaByteRange(mapping[endIdx].mSyncOffset,
-                                                  mapping[endIdx].mEndOffset);
+                                                  endOffset);
+    } else if (mapping[endIdx].mClusterEndOffset >= 0 &&
+               mOffset >= mapping[endIdx].mClusterEndOffset) {
+      mCompleteMediaSegmentRange = MediaByteRange(mapping[endIdx].mSyncOffset,
+                                                  mParser.EndSegmentOffset(mapping[endIdx].mClusterEndOffset));
     }
 
     if (!completeIdx) {
