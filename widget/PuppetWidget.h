@@ -56,11 +56,18 @@ protected:
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
+  
+  
   using nsBaseWidget::Create; 
-  NS_IMETHOD Create(nsIWidget* aParent,
-                    nsNativeWidget aNativeParent,
-                    const LayoutDeviceIntRect& aRect,
-                    nsWidgetInitData* aInitData = nullptr) override;
+  virtual nsresult Create(nsIWidget* aParent,
+                          nsNativeWidget aNativeParent,
+                          const LayoutDeviceIntRect& aRect,
+                          nsWidgetInitData* aInitData = nullptr)
+                          override;
+  void InfallibleCreate(nsIWidget* aParent,
+                        nsNativeWidget aNativeParent,
+                        const LayoutDeviceIntRect& aRect,
+                        nsWidgetInitData* aInitData = nullptr);
 
   void InitIMEState();
 

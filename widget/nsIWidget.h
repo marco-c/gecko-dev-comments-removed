@@ -421,10 +421,11 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD Create(nsIWidget* aParent,
-                      nsNativeWidget aNativeParent,
-                      const LayoutDeviceIntRect& aRect,
-                      nsWidgetInitData* aInitData = nullptr) = 0;
+    virtual MOZ_MUST_USE nsresult
+    Create(nsIWidget* aParent,
+           nsNativeWidget aNativeParent,
+           const LayoutDeviceIntRect& aRect,
+           nsWidgetInitData* aInitData = nullptr) = 0;
 
     
 
@@ -434,10 +435,11 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD Create(nsIWidget* aParent,
-                      nsNativeWidget aNativeParent,
-                      const DesktopIntRect& aRect,
-                      nsWidgetInitData* aInitData = nullptr)
+    virtual MOZ_MUST_USE nsresult
+    Create(nsIWidget* aParent,
+           nsNativeWidget aNativeParent,
+           const DesktopIntRect& aRect,
+           nsWidgetInitData* aInitData = nullptr)
     {
         LayoutDeviceIntRect devPixRect =
           RoundedToInt(aRect * GetDesktopToDeviceScale());

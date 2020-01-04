@@ -171,10 +171,11 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   }
 
   mWindow->SetWidgetListener(this);
-  mWindow->Create((nsIWidget *)parentWidget,          
-                  nullptr,                            
-                  deskRect,                           
-                  &widgetInitData);                   
+  rv = mWindow->Create((nsIWidget *)parentWidget, 
+                       nullptr,                   
+                       deskRect,                  
+                       &widgetInitData);          
+  NS_ENSURE_SUCCESS(rv, rv);
 
   LayoutDeviceIntRect r = mWindow->GetClientBounds();
   
