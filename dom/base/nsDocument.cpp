@@ -1749,18 +1749,6 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(nsDocument)
   return Element::CanSkipThis(tmp);
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
-static PLDHashOperator
-BoxObjectTraverser(nsIContent* key, nsPIBoxObject* boxObject, void* userArg)
-{
-  nsCycleCollectionTraversalCallback *cb =
-    static_cast<nsCycleCollectionTraversalCallback*>(userArg);
-
-  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*cb, "mBoxObjectTable entry");
-  cb->NoteXPCOMChild(boxObject);
-
-  return PL_DHASH_NEXT;
-}
-
 static const char* kNSURIs[] = {
   "([none])",
   "(xmlns)",
@@ -1854,7 +1842,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsDocument)
   
   
   if (tmp->mBoxObjectTable) {
-    tmp->mBoxObjectTable->EnumerateRead(BoxObjectTraverser, &cb);
+    for (auto iter = tmp->mBoxObjectTable->Iter(); !iter.Done(); iter.Next()) {
+      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mBoxObjectTable entry");
+      cb.NoteXPCOMChild(iter.UserData());
+    }
   }
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChannel)
@@ -3776,14 +3767,6 @@ nsIDocument::ShouldThrottleFrameRequests()
   return false;
 }
 
-PLDHashOperator RequestDiscardEnumerator(imgIRequest* aKey,
-                                         uint32_t aData,
-                                         void* userArg)
-{
-  aKey->RequestDiscard();
-  return PL_DHASH_NEXT;
-}
-
 void
 nsDocument::DeleteShell()
 {
@@ -3798,7 +3781,9 @@ nsDocument::DeleteShell()
   
   
   
-  mImageTracker.EnumerateRead(RequestDiscardEnumerator, nullptr);
+  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
+    iter.Key()->RequestDiscard();
+  }
 
   
   
@@ -10584,22 +10569,6 @@ nsDocument::SetImageLockingState(bool aLocked)
   return NS_OK;
 }
 
-PLDHashOperator IncrementAnimationEnumerator(imgIRequest* aKey,
-                                             uint32_t aData,
-                                             void*    userArg)
-{
-  aKey->IncrementAnimationConsumers();
-  return PL_DHASH_NEXT;
-}
-
-PLDHashOperator DecrementAnimationEnumerator(imgIRequest* aKey,
-                                             uint32_t aData,
-                                             void*    userArg)
-{
-  aKey->DecrementAnimationConsumers();
-  return PL_DHASH_NEXT;
-}
-
 void
 nsDocument::SetImagesNeedAnimating(bool aAnimating)
 {
@@ -10608,9 +10577,14 @@ nsDocument::SetImagesNeedAnimating(bool aAnimating)
     return;
 
   
-  mImageTracker.EnumerateRead(aAnimating ? IncrementAnimationEnumerator
-                                         : DecrementAnimationEnumerator,
-                              nullptr);
+  for (auto iter = mImageTracker.Iter(); !iter.Done(); iter.Next()) {
+    imgIRequest* image = iter.Key();
+    if (aAnimating) {
+      image->IncrementAnimationConsumers();
+    } else {
+      image->DecrementAnimationConsumers();
+    }
+  }
 
   
   mAnimatingImages = aAnimating;
