@@ -592,6 +592,8 @@ def apply_patches():
     
     
     os.system("patch -p1 < vp9_filter_restore_aligment.patch")
+    
+    os.system("patch -p3 < vpx_once.patch")
 
 def update_readme(commit):
     with open('README_MOZILLA') as f:
