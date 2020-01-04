@@ -201,7 +201,7 @@ protected:
   
   RefPtr<WorkerPrivate> mSelfRef;
 
-  WorkerPrivateParent(JSContext* aCx, WorkerPrivate* aParent,
+  WorkerPrivateParent(WorkerPrivate* aParent,
                       const nsAString& aScriptURL, bool aIsChromeWorker,
                       WorkerType aWorkerType,
                       const nsACString& aSharedWorkerName,
@@ -1337,7 +1337,7 @@ public:
   MaybeDispatchLoadFailedRunnable();
 
 private:
-  WorkerPrivate(JSContext* aCx, WorkerPrivate* aParent,
+  WorkerPrivate(WorkerPrivate* aParent,
                 const nsAString& aScriptURL, bool aIsChromeWorker,
                 WorkerType aWorkerType, const nsACString& aSharedWorkerName,
                 WorkerLoadInfo& aLoadInfo);
