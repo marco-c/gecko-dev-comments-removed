@@ -165,9 +165,10 @@ loop.store.TextChatStore = (function() {
       }
 
       
-      if (("urls" in actionData) && actionData.urls && actionData.urls.length) {
+      if (("roomContextUrls" in actionData) && actionData.roomContextUrls &&
+          actionData.roomContextUrls.length) {
         
-        var urlData = actionData.urls[0];
+        var urlData = actionData.roomContextUrls[0];
 
         this._appendTextChatMessage(CHAT_MESSAGE_TYPES.SPECIAL, {
           contentType: CHAT_CONTENT_TYPES.CONTEXT,
