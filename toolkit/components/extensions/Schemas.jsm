@@ -549,6 +549,69 @@ class Entry {
 
 class Type extends Entry {
   
+
+
+
+
+  static get EXTRA_PROPERTIES() {
+    return ["description", "deprecated", "preprocess", "restrictions"];
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    return new this(schema);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static checkSchemaProperties(schema, path, extra = []) {
+    let allowedSet = new Set([...this.EXTRA_PROPERTIES, ...extra]);
+
+    for (let prop of Object.keys(schema)) {
+      if (!allowedSet.has(prop)) {
+        throw new Error(`Internal error: Namespace ${path.join(".")} has invalid type property "${prop}" in type "${schema.id || JSON.stringify(schema)}"`);
+      }
+    }
+  }
+
+  
   
   
   
@@ -600,6 +663,17 @@ class AnyType extends Type {
 
 
 class ChoiceType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["choices", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    let choices = schema.choices.map(t => Schemas.parseSchema(t, path));
+    return new this(schema, choices);
+  }
+
   constructor(schema, choices) {
     super(schema);
     this.choices = choices;
@@ -648,6 +722,21 @@ class ChoiceType extends Type {
 
 
 class RefType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["$ref", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    let ref = schema.$ref;
+    let ns = path[0];
+    if (ref.includes(".")) {
+      [ns, ref] = ref.split(".");
+    }
+    return new this(schema, ns, ref);
+  }
+
   
   
   constructor(schema, namespaceName, reference) {
@@ -676,6 +765,50 @@ class RefType extends Type {
 }
 
 class StringType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["enum", "minLength", "maxLength", "pattern", "format",
+            ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    let enumeration = schema.enum || null;
+    if (enumeration) {
+      
+      
+      
+      enumeration = enumeration.map(e => {
+        if (typeof(e) == "object") {
+          return e.name;
+        }
+        return e;
+      });
+    }
+
+    let pattern = null;
+    if (schema.pattern) {
+      try {
+        pattern = parsePattern(schema.pattern);
+      } catch (e) {
+        throw new Error(`Internal error: Invalid pattern ${JSON.stringify(schema.pattern)}`);
+      }
+    }
+
+    let format = null;
+    if (schema.format) {
+      if (!(schema.format in FORMATS)) {
+        throw new Error(`Internal error: Invalid string format ${schema.format}`);
+      }
+      format = FORMATS[schema.format];
+    }
+    return new this(schema, enumeration,
+                    schema.minLength || 0,
+                    schema.maxLength || Infinity,
+                    pattern,
+                    format);
+  }
+
   constructor(schema, enumeration, minLength, maxLength, pattern, format) {
     super(schema);
     this.enumeration = enumeration;
@@ -743,7 +876,64 @@ class StringType extends Type {
   }
 }
 
+let SubModuleType;
 class ObjectType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["properties", "patternProperties", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    if ("functions" in schema) {
+      return SubModuleType.parseSchema(schema, path, extraProperties);
+    }
+
+    if (!("$extend" in schema)) {
+      
+      extraProperties = ["additionalProperties", "isInstanceOf", ...extraProperties];
+    }
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    let parseProperty = (schema, extraProps = []) => {
+      return {
+        type: Schemas.parseSchema(schema, path,
+                                  ["unsupported", "onError", "permissions", ...extraProps]),
+        optional: schema.optional || false,
+        unsupported: schema.unsupported || false,
+        onError: schema.onError || null,
+      };
+    };
+
+    
+    let properties = Object.create(null);
+    for (let propName of Object.keys(schema.properties || {})) {
+      properties[propName] = parseProperty(schema.properties[propName], ["optional"]);
+    }
+
+    
+    let patternProperties = [];
+    for (let propName of Object.keys(schema.patternProperties || {})) {
+      let pattern;
+      try {
+        pattern = parsePattern(propName);
+      } catch (e) {
+        throw new Error(`Internal error: Invalid property pattern ${JSON.stringify(propName)}`);
+      }
+
+      patternProperties.push({
+        pattern,
+        type: parseProperty(schema.patternProperties[propName]),
+      });
+    }
+
+    
+    let additionalProperties = null;
+    if (schema.additionalProperties) {
+      additionalProperties = Schemas.parseSchema(schema.additionalProperties, path);
+    }
+
+    return new this(schema, properties, additionalProperties, patternProperties, schema.isInstanceOf || null);
+  }
+
   constructor(schema, properties, additionalProperties, patternProperties, isInstanceOf) {
     super(schema);
     this.properties = properties;
@@ -770,30 +960,17 @@ class ObjectType extends Type {
   }
 
   
-  normalize(value, context) { 
-    let v = this.normalizeBase("object", value, context);
-    if (v.error) {
-      return v;
-    }
-    value = v.value;
 
-    if (this.isInstanceOf) {
-      if (Object.keys(this.properties).length ||
-          this.patternProperties.length ||
-          !(this.additionalProperties instanceof AnyType)) {
-        throw new Error("InternalError: isInstanceOf can only be used with objects that are otherwise unrestricted");
-      }
 
-      if (!instanceOf(value, this.isInstanceOf)) {
-        return context.error(`Object must be an instance of ${this.isInstanceOf}`,
-                             `be an instance of ${this.isInstanceOf}`);
-      }
 
-      
-      
-      return {value};
-    }
 
+
+
+
+
+
+
+  extractProperties(value, context) {
     
     
     
@@ -804,115 +981,161 @@ class ObjectType extends Type {
 
     let klass = Cu.getClassName(value, true);
     if (klass != "Object") {
-      return context.error(`Expected a plain JavaScript object, got a ${klass}`,
-                           `be a plain JavaScript object`);
+      throw context.error(`Expected a plain JavaScript object, got a ${klass}`,
+                          `be a plain JavaScript object`);
     }
 
     let properties = Object.create(null);
-    {
+
+    let waived = Cu.waiveXrays(value);
+    for (let prop of Object.getOwnPropertyNames(waived)) {
+      let desc = Object.getOwnPropertyDescriptor(waived, prop);
+      if (desc.get || desc.set) {
+        throw context.error("Objects cannot have getters or setters on properties",
+                            "contain no getter or setter properties");
+      }
       
-      
-      let waived = Cu.waiveXrays(value);
-      for (let prop of Object.getOwnPropertyNames(waived)) {
-        let desc = Object.getOwnPropertyDescriptor(waived, prop);
-        if (desc.get || desc.set) {
-          return context.error("Objects cannot have getters or setters on properties",
-                               "contain no getter or setter properties");
-        }
-        if (!desc.enumerable) {
-          
-          continue;
-        }
+      if (desc.enumerable) {
         properties[prop] = Cu.unwaiveXrays(desc.value);
       }
     }
 
-    let remainingProps = new Set(Object.keys(properties));
+    return properties;
+  }
 
-    let checkProperty = (prop, propType, result) => {
-      let {type, optional, unsupported} = propType;
-      if (unsupported) {
-        if (prop in properties) {
-          return context.error(`Property "${prop}" is unsupported by Firefox`,
-                               `not contain an unsupported "${prop}" property`);
-        }
-      } else if (prop in properties) {
-        if (optional && (properties[prop] === null || properties[prop] === undefined)) {
-          result[prop] = null;
+  checkProperty(context, prop, propType, result, properties, remainingProps) {
+    let {type, optional, unsupported, onError} = propType;
+    let error = null;
+
+    if (unsupported) {
+      if (prop in properties) {
+        error = context.error(`Property "${prop}" is unsupported by Firefox`,
+                              `not contain an unsupported "${prop}" property`);
+      }
+    } else if (prop in properties) {
+      if (optional && (properties[prop] === null || properties[prop] === undefined)) {
+        result[prop] = null;
+      } else {
+        let r = context.withPath(prop, () => type.normalize(properties[prop], context));
+        if (r.error) {
+          error = r;
         } else {
+          result[prop] = r.value;
+          properties[prop] = r.value;
+        }
+      }
+      remainingProps.delete(prop);
+    } else if (!optional) {
+      error = context.error(`Property "${prop}" is required`,
+                            `contain the required "${prop}" property`);
+    } else {
+      result[prop] = null;
+    }
+
+    if (error) {
+      if (onError == "warn") {
+        context.logError(error.error);
+      } else if (onError != "ignore") {
+        throw error;
+      }
+
+      result[prop] = null;
+    }
+  }
+
+  normalize(value, context) {
+    try {
+      let v = this.normalizeBase("object", value, context);
+      if (v.error) {
+        return v;
+      }
+      value = v.value;
+
+      if (this.isInstanceOf) {
+        if (Object.keys(this.properties).length ||
+            this.patternProperties.length ||
+            !(this.additionalProperties instanceof AnyType)) {
+          throw new Error("InternalError: isInstanceOf can only be used with objects that are otherwise unrestricted");
+        }
+
+        if (!instanceOf(value, this.isInstanceOf)) {
+          return context.error(`Object must be an instance of ${this.isInstanceOf}`,
+                               `be an instance of ${this.isInstanceOf}`);
+        }
+
+        
+        
+        return {value};
+      }
+
+      let properties = this.extractProperties(value, context);
+      let remainingProps = new Set(Object.keys(properties));
+
+      let result = {};
+      for (let prop of Object.keys(this.properties)) {
+        this.checkProperty(context, prop, this.properties[prop], result,
+                           properties, remainingProps);
+      }
+
+      for (let prop of Object.keys(properties)) {
+        for (let {pattern, type} of this.patternProperties) {
+          if (pattern.test(prop)) {
+            this.checkProperty(context, prop, type, result,
+                               properties, remainingProps);
+          }
+        }
+      }
+
+      if (this.additionalProperties) {
+        for (let prop of remainingProps) {
+          let type = this.additionalProperties;
           let r = context.withPath(prop, () => type.normalize(properties[prop], context));
           if (r.error) {
             return r;
           }
           result[prop] = r.value;
-          properties[prop] = r.value;
         }
-        remainingProps.delete(prop);
-      } else if (!optional) {
-        return context.error(`Property "${prop}" is required`,
-                             `contain the required "${prop}" property`);
-      } else {
-        result[prop] = null;
+      } else if (remainingProps.size == 1) {
+        return context.error(`Unexpected property "${[...remainingProps]}"`,
+                             `not contain an unexpected "${[...remainingProps]}" property`);
+      } else if (remainingProps.size) {
+        let props = [...remainingProps].sort().join(", ");
+        return context.error(`Unexpected properties: ${props}`,
+                             `not contain the unexpected properties [${props}]`);
       }
-    };
 
-    let result = {};
-    for (let prop of Object.keys(this.properties)) {
-      let error = checkProperty(prop, this.properties[prop], result);
-      if (error) {
-        let {onError} = this.properties[prop];
-        if (onError == "warn") {
-          context.logError(error.error);
-        } else if (onError != "ignore") {
-          return error;
-        }
-
-        result[prop] = null;
-        remainingProps.delete(prop);
+      return {value: result};
+    } catch (e) {
+      if (e.error) {
+        return e;
       }
+      throw e;
     }
-
-    for (let prop of Object.keys(properties)) {
-      for (let {pattern, type} of this.patternProperties) {
-        if (pattern.test(prop)) {
-          let error = checkProperty(prop, type, result);
-          if (error) {
-            return error;
-          }
-        }
-      }
-    }
-
-    if (this.additionalProperties) {
-      for (let prop of remainingProps) {
-        let type = this.additionalProperties;
-        let r = context.withPath(prop, () => type.normalize(properties[prop], context));
-        if (r.error) {
-          return r;
-        }
-        result[prop] = r.value;
-      }
-    } else if (remainingProps.size == 1) {
-      return context.error(`Unexpected property "${[...remainingProps]}"`,
-                           `not contain an unexpected "${[...remainingProps]}" property`);
-    } else if (remainingProps.size) {
-      let props = [...remainingProps].sort().join(", ");
-      return context.error(`Unexpected properties: ${props}`,
-                           `not contain the unexpected properties [${props}]`);
-    }
-
-    return {value: result};
   }
 }
 
 
 
-class SubModuleType extends Type {
+SubModuleType = class SubModuleType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["functions", "events", "properties", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    
+    path = [...path, schema.id];
+    let functions = schema.functions.map(fun => Schemas.parseFunction(path, fun));
+
+    return new this(functions);
+  }
+
   constructor(functions) {
     super();
     this.functions = functions;
   }
-}
+};
 
 class NumberType extends Type {
   normalize(value, context) {
@@ -935,6 +1158,16 @@ class NumberType extends Type {
 }
 
 class IntegerType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["minimum", "maximum", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    return new this(schema, schema.minimum || -Infinity, schema.maximum || Infinity);
+  }
+
   constructor(schema, minimum, maximum) {
     super(schema);
     this.minimum = minimum;
@@ -982,6 +1215,18 @@ class BooleanType extends Type {
 }
 
 class ArrayType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["items", "minItems", "maxItems", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    let items = Schemas.parseSchema(schema.items, path);
+
+    return new this(schema, items, schema.minItems || 0, schema.maxItems || Infinity);
+  }
+
   constructor(schema, itemType, minItems, maxItems) {
     super(schema);
     this.itemType = itemType;
@@ -1024,6 +1269,46 @@ class ArrayType extends Type {
 }
 
 class FunctionType extends Type {
+  static get EXTRA_PROPERTIES() {
+    return ["parameters", "async", "returns", ...super.EXTRA_PROPERTIES];
+  }
+
+  static parseSchema(schema, path, extraProperties = []) {
+    this.checkSchemaProperties(schema, path, extraProperties);
+
+    let isAsync = !!schema.async;
+    let parameters = null;
+    if ("parameters" in schema) {
+      parameters = [];
+      for (let param of schema.parameters) {
+        
+        
+        let isCallback = isAsync && param.name == schema.async;
+
+        parameters.push({
+          type: Schemas.parseSchema(param, path, ["name", "optional"]),
+          name: param.name,
+          optional: param.optional == null ? isCallback : param.optional,
+        });
+      }
+    }
+
+    let hasAsyncCallback = false;
+    if (isAsync) {
+      if (parameters && parameters.length && parameters[parameters.length - 1].name == schema.async) {
+        hasAsyncCallback = true;
+      }
+      if (schema.returns) {
+        throw new Error("Internal error: Async functions must not have return values.");
+      }
+      if (schema.allowAmbiguousOptionalArguments && !hasAsyncCallback) {
+        throw new Error("Internal error: Async functions with ambiguous arguments must declare the callback as the last parameter");
+      }
+    }
+
+    return new this(schema, parameters, isAsync, hasAsyncCallback);
+  }
+
   constructor(schema, parameters, isAsync, hasAsyncCallback) {
     super(schema);
     this.parameters = parameters;
@@ -1343,6 +1628,17 @@ class Event extends CallEntry {
   }
 }
 
+const TYPES = Object.freeze(Object.assign(Object.create(null), {
+  any: AnyType,
+  array: ArrayType,
+  boolean: BooleanType,
+  function: FunctionType,
+  integer: IntegerType,
+  number: NumberType,
+  object: ObjectType,
+  string: StringType,
+}));
+
 this.Schemas = {
   initialized: false,
 
@@ -1366,195 +1662,34 @@ this.Schemas = {
     ns.set(symbol, value);
   },
 
-  
-  parseType(path, type, extraProperties = []) { 
+  parseSchema(schema, path, extraProperties = []) {
     let allowedProperties = new Set(extraProperties);
 
-    
-    function checkTypeProperties(...extra) {
-      let allowedSet = new Set([...allowedProperties, ...extra, "description", "deprecated", "preprocess", "restrictions"]);
-      for (let prop of Object.keys(type)) {
-        if (!allowedSet.has(prop)) {
-          throw new Error(`Internal error: Namespace ${path.join(".")} has invalid type property "${prop}" in type "${type.id || JSON.stringify(type)}"`);
-        }
-      }
+    if ("choices" in schema) {
+      return ChoiceType.parseSchema(schema, path, allowedProperties);
+    } else if ("$ref" in schema) {
+      return RefType.parseSchema(schema, path, allowedProperties);
     }
 
-    if ("choices" in type) {
-      checkTypeProperties("choices");
-
-      let choices = type.choices.map(t => this.parseType(path, t));
-      return new ChoiceType(type, choices);
-    } else if ("$ref" in type) {
-      checkTypeProperties("$ref");
-      let ref = type.$ref;
-      let ns = path[0];
-      if (ref.includes(".")) {
-        [ns, ref] = ref.split(".");
-      }
-      return new RefType(type, ns, ref);
-    }
-
-    if (!("type" in type)) {
-      throw new Error(`Unexpected value for type: ${JSON.stringify(type)}`);
+    if (!("type" in schema)) {
+      throw new Error(`Unexpected value for type: ${JSON.stringify(schema)}`);
     }
 
     allowedProperties.add("type");
 
-    
-    if (type.type == "string") {
-      checkTypeProperties("enum", "minLength", "maxLength", "pattern", "format");
-
-      let enumeration = type.enum || null;
-      if (enumeration) {
-        
-        
-        
-        enumeration = enumeration.map(e => {
-          if (typeof(e) == "object") {
-            return e.name;
-          }
-          return e;
-        });
-      }
-
-      let pattern = null;
-      if (type.pattern) {
-        try {
-          pattern = parsePattern(type.pattern);
-        } catch (e) {
-          throw new Error(`Internal error: Invalid pattern ${JSON.stringify(type.pattern)}`);
-        }
-      }
-
-      let format = null;
-      if (type.format) {
-        if (!(type.format in FORMATS)) {
-          throw new Error(`Internal error: Invalid string format ${type.format}`);
-        }
-        format = FORMATS[type.format];
-      }
-      return new StringType(type, enumeration,
-                            type.minLength || 0,
-                            type.maxLength || Infinity,
-                            pattern,
-                            format);
-    } else if (type.type == "object" && "functions" in type) {
-      
-      
-      
-      
-      
-
-      checkTypeProperties("functions", "events", "properties");
-
-      
-      let functions = type.functions.map(fun => this.parseFunction(path.concat(type.id), fun));
-
-      return new SubModuleType(functions);
-    } else if (type.type == "object") {
-      let parseProperty = (type, extraProps = []) => {
-        return {
-          type: this.parseType(path, type,
-                               ["unsupported", "onError", "permissions", ...extraProps]),
-          optional: type.optional || false,
-          unsupported: type.unsupported || false,
-          onError: type.onError || null,
-        };
-      };
-
-      let properties = Object.create(null);
-      for (let propName of Object.keys(type.properties || {})) {
-        properties[propName] = parseProperty(type.properties[propName], ["optional"]);
-      }
-
-      let patternProperties = [];
-      for (let propName of Object.keys(type.patternProperties || {})) {
-        let pattern;
-        try {
-          pattern = parsePattern(propName);
-        } catch (e) {
-          throw new Error(`Internal error: Invalid property pattern ${JSON.stringify(propName)}`);
-        }
-
-        patternProperties.push({
-          pattern,
-          type: parseProperty(type.patternProperties[propName]),
-        });
-      }
-
-      let additionalProperties = null;
-      if (type.additionalProperties) {
-        additionalProperties = this.parseType(path, type.additionalProperties);
-      }
-
-      if ("$extend" in type) {
-        
-        checkTypeProperties("properties", "patternProperties");
-      } else {
-        checkTypeProperties("properties", "additionalProperties", "patternProperties", "isInstanceOf");
-      }
-      return new ObjectType(type, properties, additionalProperties, patternProperties, type.isInstanceOf || null);
-    } else if (type.type == "array") {
-      checkTypeProperties("items", "minItems", "maxItems");
-      return new ArrayType(type, this.parseType(path, type.items),
-                           type.minItems || 0, type.maxItems || Infinity);
-    } else if (type.type == "number") {
-      checkTypeProperties();
-      return new NumberType(type);
-    } else if (type.type == "integer") {
-      checkTypeProperties("minimum", "maximum");
-      return new IntegerType(type, type.minimum || -Infinity, type.maximum || Infinity);
-    } else if (type.type == "boolean") {
-      checkTypeProperties();
-      return new BooleanType(type);
-    } else if (type.type == "function") {
-      let isAsync = !!type.async;
-      let parameters = null;
-      if ("parameters" in type) {
-        parameters = [];
-        for (let param of type.parameters) {
-          
-          
-          let isCallback = isAsync && param.name == type.async;
-
-          parameters.push({
-            type: this.parseType(path, param, ["name", "optional"]),
-            name: param.name,
-            optional: param.optional == null ? isCallback : param.optional,
-          });
-        }
-      }
-
-      let hasAsyncCallback = false;
-      if (isAsync) {
-        if (parameters && parameters.length && parameters[parameters.length - 1].name == type.async) {
-          hasAsyncCallback = true;
-        }
-        if (type.returns) {
-          throw new Error("Internal error: Async functions must not have return values.");
-        }
-        if (type.allowAmbiguousOptionalArguments && !hasAsyncCallback) {
-          throw new Error("Internal error: Async functions with ambiguous arguments must declare the callback as the last parameter");
-        }
-      }
-
-      checkTypeProperties("parameters", "async", "returns");
-      return new FunctionType(type, parameters, isAsync, hasAsyncCallback);
-    } else if (type.type == "any") {
-      
-      checkTypeProperties("minimum", "maximum");
-      return new AnyType(type);
+    let type = TYPES[schema.type];
+    if (!type) {
+      throw new Error(`Unexpected type ${schema.type}`);
     }
-    throw new Error(`Unexpected type ${type.type}`);
+    return type.parseSchema(schema, path, allowedProperties);
   },
 
   parseFunction(path, fun) {
     let f = new FunctionEntry(fun, path, fun.name,
-                              this.parseType(path, fun,
-                                             ["name", "unsupported", "returns",
-                                              "permissions",
-                                              "allowAmbiguousOptionalArguments"]),
+                              this.parseSchema(fun, path,
+                                               ["name", "unsupported", "returns",
+                                                "permissions",
+                                                "allowAmbiguousOptionalArguments"]),
                               fun.unsupported || false,
                               fun.allowAmbiguousOptionalArguments || false,
                               fun.returns || null,
@@ -1566,7 +1701,7 @@ this.Schemas = {
     if ("$extend" in type) {
       this.extendType(namespaceName, type);
     } else {
-      this.register(namespaceName, type.id, this.parseType([namespaceName], type, ["id"]));
+      this.register(namespaceName, type.id, this.parseSchema(type, [namespaceName], ["id"]));
     }
   },
 
@@ -1583,7 +1718,7 @@ this.Schemas = {
       throw new Error(`Internal error: Attempt to extend a non-extensible type ${type.$extend}`);
     }
 
-    let parsed = this.parseType([namespaceName], type, ["$extend"]);
+    let parsed = this.parseSchema(type, [namespaceName], ["$extend"]);
     if (parsed.constructor !== targetType.constructor) {
       throw new Error(`Internal error: Bad attempt to extend ${type.$extend}`);
     }
@@ -1602,7 +1737,7 @@ this.Schemas = {
     } else {
       
       
-      let type = this.parseType([namespaceName], prop, ["optional", "writable"]);
+      let type = this.parseSchema(prop, [namespaceName], ["optional", "writable"]);
       this.register(namespaceName, name, new TypeProperty(prop, namespaceName, name, type, prop.writable || false));
     }
   },
@@ -1616,7 +1751,7 @@ this.Schemas = {
     let extras = event.extraParameters || [];
     extras = extras.map(param => {
       return {
-        type: this.parseType([namespaceName], param, ["name", "optional"]),
+        type: this.parseSchema(param, [namespaceName], ["name", "optional"]),
         name: param.name,
         optional: param.optional || false,
       };
@@ -1628,9 +1763,9 @@ this.Schemas = {
     let filters = event.filters;
     
 
-    let type = this.parseType([namespaceName], event,
-                              ["name", "unsupported", "permissions",
-                               "extraParameters", "returns", "filters"]);
+    let type = this.parseSchema(event, [namespaceName],
+                                ["name", "unsupported", "permissions",
+                                 "extraParameters", "returns", "filters"]);
 
     let e = new Event(event, [namespaceName], event.name, type, extras,
                       event.unsupported || false,
@@ -1683,13 +1818,13 @@ this.Schemas = {
     });
 
     for (let json of this.schemaJSON.values()) {
-      this.parseSchema(json);
+      this.loadSchema(json);
     }
 
     return this.namespaces;
   },
 
-  parseSchema(json) {
+  loadSchema(json) {
     for (let namespace of json) {
       let name = namespace.namespace;
 
