@@ -1719,6 +1719,8 @@ ScriptExecutorRunnable::IsDebuggerRunnable() const
 bool
 ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
 {
+  aWorkerPrivate->AssertIsOnWorkerThread();
+
   nsTArray<ScriptLoadInfo>& loadInfos = mScriptLoader.mLoadInfos;
 
   
@@ -1733,6 +1735,9 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
     }
   }
 
+  
+  MOZ_ASSERT(!mScriptLoader.mRv.Failed(), "Who failed it and why?");
+
   JS::Rooted<JSObject*> global(aCx);
 
   if (mIsWorkerScript) {
@@ -1745,6 +1750,8 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
 
     global.set(globalScope->GetWrapper());
   } else {
+    
+    
     global.set(JS::CurrentGlobalOrNull(aCx));
   }
 
@@ -1759,8 +1766,14 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
     NS_ASSERTION(loadInfo.mExecutionScheduled, "Should be scheduled!");
     NS_ASSERTION(!loadInfo.mExecutionResult, "Should not have executed yet!");
 
+    MOZ_ASSERT(!mScriptLoader.mRv.Failed(), "Who failed it and why?");
+    mScriptLoader.mRv.MightThrowJSException();
     if (NS_FAILED(loadInfo.mLoadResult)) {
       scriptloader::ReportLoadError(aCx, loadInfo.mLoadResult);
+      
+      if (JS_IsExceptionPending(aCx)) {
+        mScriptLoader.mRv.StealExceptionFromJSContext(aCx);
+      }
       
       if (mIsWorkerScript) {
         aWorkerPrivate->MaybeDispatchLoadFailedRunnable();
@@ -1787,8 +1800,11 @@ ScriptExecutorRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
     loadInfo.mScriptTextBuf = nullptr;
     loadInfo.mScriptTextLength = 0;
 
+    
+    MOZ_ASSERT(!mScriptLoader.mRv.Failed(), "Who failed it and why?");
     JS::Rooted<JS::Value> unused(aCx);
     if (!JS::Evaluate(aCx, options, srcBuf, &unused)) {
+      mScriptLoader.mRv.StealExceptionFromJSContext(aCx);
       return true;
     }
 
@@ -1802,6 +1818,9 @@ void
 ScriptExecutorRunnable::PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                                 bool aRunResult)
 {
+  aWorkerPrivate->AssertIsOnWorkerThread();
+  MOZ_ASSERT(!JS_IsExceptionPending(aCx), "Who left an exception on there?");
+
   nsTArray<ScriptLoadInfo>& loadInfos = mScriptLoader.mLoadInfos;
 
   if (mLastIndex == loadInfos.Length() - 1) {
@@ -1825,6 +1844,13 @@ ScriptExecutorRunnable::PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
       }
     }
 
+    
+    
+    
+    
+    MOZ_ASSERT_IF(!result && !mScriptLoader.mRv.Failed() &&
+                  NS_SUCCEEDED(loadResult),
+                  !aRunResult);
     ShutdownScriptLoader(aCx, aWorkerPrivate, result, loadResult, mutedError);
   }
 }
@@ -1846,6 +1872,8 @@ ScriptExecutorRunnable::ShutdownScriptLoader(JSContext* aCx,
                                              nsresult aLoadResult,
                                              bool aMutedError)
 {
+  aWorkerPrivate->AssertIsOnWorkerThread();
+
   MOZ_ASSERT(mLastIndex == mScriptLoader.mLoadInfos.Length() - 1);
 
   if (mIsWorkerScript && aWorkerPrivate->IsServiceWorker()) {
@@ -1855,9 +1883,28 @@ ScriptExecutorRunnable::ShutdownScriptLoader(JSContext* aCx,
   if (!aResult) {
     
     
-    if (aMutedError && JS_IsExceptionPending(aCx)) {
-      LogExceptionToConsole(aCx, aWorkerPrivate);
-      mScriptLoader.mRv.Throw(NS_ERROR_FAILURE);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mScriptLoader.mRv.Failed()) {
+      if (aMutedError && mScriptLoader.mRv.IsJSException()) {
+        LogExceptionToConsole(aCx, aWorkerPrivate);
+        mScriptLoader.mRv.Throw(NS_ERROR_FAILURE);
+      }
     } else if (NS_FAILED(aLoadResult)) {
       mScriptLoader.mRv.Throw(aLoadResult);
     } else {
@@ -1875,12 +1922,16 @@ ScriptExecutorRunnable::LogExceptionToConsole(JSContext* aCx,
 {
   aWorkerPrivate->AssertIsOnWorkerThread();
 
+  MOZ_ASSERT(mScriptLoader.mRv.IsJSException());
+
   JS::Rooted<JS::Value> exn(aCx);
-  if (!JS_GetPendingException(aCx, &exn)) {
+  if (!ToJSValue(aCx, mScriptLoader.mRv, &exn)) {
     return;
   }
 
-  JS_ClearPendingException(aCx);
+  
+  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
+  MOZ_ASSERT(!mScriptLoader.mRv.Failed());
 
   js::ErrorReport report(aCx);
   if (!report.init(aCx, exn)) {

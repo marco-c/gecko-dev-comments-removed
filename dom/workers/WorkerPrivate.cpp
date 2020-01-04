@@ -502,12 +502,29 @@ private:
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
+    aWorkerPrivate->AssertIsOnWorkerThread();
+
     ErrorResult rv;
     scriptloader::LoadMainScript(aCx, mScriptURL, WorkerScript, rv);
+    
+    
+    
+    rv.WouldReportJSException();
     if (NS_WARN_IF(rv.Failed())) {
-      
-      
-      rv.SuppressException();
+      if (rv.IsJSException()) {
+        
+        
+        
+        
+        
+        
+        
+        JSAutoCompartment ac(aCx,
+          aWorkerPrivate->GlobalScope()->GetGlobalJSObject());
+        rv.MaybeSetPendingException(aCx);
+      } else {
+        rv.SuppressException();
+      }
       return false;
     }
 
@@ -531,6 +548,8 @@ private:
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
+    aWorkerPrivate->AssertIsOnWorkerThread();
+
     WorkerDebuggerGlobalScope* globalScope =
       aWorkerPrivate->CreateDebuggerGlobalScope(aCx);
     if (!globalScope) {
@@ -543,10 +562,16 @@ private:
     ErrorResult rv;
     JSAutoCompartment ac(aCx, global);
     scriptloader::LoadMainScript(aCx, mScriptURL, DebuggerScript, rv);
+    
+    
+    
+    rv.WouldReportJSException();
     if (NS_WARN_IF(rv.Failed())) {
-      
-      
-      rv.SuppressException();
+      if (rv.IsJSException()) {
+        rv.MaybeSetPendingException(aCx);
+      } else {
+        rv.SuppressException();
+      }
       return false;
     }
 
