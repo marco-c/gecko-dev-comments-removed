@@ -2814,10 +2814,18 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   bool applyLoopCSP = IsLoopDocument(aChannel);
 
   
+  bool applySignedContentCSP = false;
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  if (loadInfo && loadInfo->GetVerifySignedContent()) {
+    applySignedContentCSP = true;
+  }
+
+  
   if (!applyAppDefaultCSP &&
       !applyAppManifestCSP &&
       !applyAddonCSP &&
       !applyLoopCSP &&
+      !applySignedContentCSP &&
       cspHeaderValue.IsEmpty() &&
       cspROHeaderValue.IsEmpty()) {
     if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
@@ -2888,6 +2896,15 @@ nsDocument::InitCSP(nsIChannel* aChannel)
     if (NS_SUCCEEDED(rv)) {
       csp->AppendPolicy(addonCSP, false, false);
     }
+  }
+
+  
+  
+  
+  if (applySignedContentCSP) {
+    nsAdoptingString signedContentCSP =
+      Preferences::GetString("security.signed_content.CSP.default");
+    csp->AppendPolicy(signedContentCSP, false, false);
   }
 
   
