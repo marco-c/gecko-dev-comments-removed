@@ -29,7 +29,8 @@ public:
     friend class gfxMacPlatformFontList;
 
     MacOSFontEntry(const nsAString& aPostscriptName, int32_t aWeight,
-                   bool aIsStandardFace = false);
+                   bool aIsStandardFace = false,
+                   double aSizeHint = 0.0);
 
     
     MacOSFontEntry(const nsAString& aPostscriptName, CGFontRef aFontRef,
@@ -63,6 +64,8 @@ protected:
     static void DestroyBlobFunc(void* aUserData);
 
     CGFontRef mFontRef; 
+
+    double mSizeHint;
 
     bool mFontRefInitialized;
     bool mRequiresAAT;
@@ -120,7 +123,7 @@ private:
     void InitSingleFaceList();
 
     
-    void InitSystemFonts();
+    void InitSystemFontNames();
 
     
     gfxFontFamily* FindSystemFontFamily(const nsAString& aFamily);
@@ -169,8 +172,8 @@ private:
     
     
     bool mUseSizeSensitiveSystemFont;
-    RefPtr<gfxFontFamily> mSystemTextFontFamily;
-    RefPtr<gfxFontFamily> mSystemDisplayFontFamily; 
+    nsString mSystemTextFontFamilyName;
+    nsString mSystemDisplayFontFamilyName; 
 };
 
 #endif 
