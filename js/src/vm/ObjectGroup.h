@@ -579,10 +579,7 @@ class ObjectGroupCompartment
     PlainObjectTable* plainObjectTable;
 
     struct AllocationSiteKey;
-    using AllocationSiteTable = JS::GCHashMap<AllocationSiteKey,
-                                              ReadBarrieredObjectGroup,
-                                              AllocationSiteKey,
-                                              SystemAllocPolicy>;
+    class AllocationSiteTable;
 
     
     AllocationSiteTable* allocationSiteTable;
