@@ -4,6 +4,7 @@
 
 
 #include "JobScheduler.h"
+#include "Logging.h"
 
 namespace mozilla {
 namespace gfx {
@@ -270,7 +271,7 @@ WorkerThread::Run()
     if (status == JobStatus::Error) {
       
       
-      MOZ_CRASH();
+      gfxDevCrash(LogReason::JobStatusError) << "Invalid job status " << (int)status;
     }
   }
 }
