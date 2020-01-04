@@ -136,6 +136,16 @@ public:
                      bool                aIsSVGMode = false);
 
   
+  
+  
+  void ParseLonghandProperty(const nsCSSProperty aPropID,
+                             const nsAString&    aPropValue,
+                             nsIURI*             aSheetURL,
+                             nsIURI*             aBaseURL,
+                             nsIPrincipal*       aSheetPrincipal,
+                             nsCSSValue&         aResult);
+
+  
   void ParseVariable(const nsAString&    aVariableName,
                      const nsAString&    aPropValue,
                      nsIURI*             aSheetURL,
