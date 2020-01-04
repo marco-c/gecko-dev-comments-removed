@@ -6,6 +6,8 @@
 
 #include "mozilla/TimingParams.h"
 
+#include "nsIDocument.h"
+
 namespace mozilla {
 
 template <class OptionsType>
@@ -32,10 +34,9 @@ GetTimingProperties(
 
 template <class OptionsType>
 static TimingParams
-TimingParamsFromOptionsUnion(
-  const OptionsType& aOptions,
-  const Nullable<dom::ElementOrCSSPseudoElement>& aTarget,
-  ErrorResult& aRv)
+TimingParamsFromOptionsUnion(const OptionsType& aOptions,
+                             nsIDocument* aDocument,
+                             ErrorResult& aRv)
 {
   TimingParams result;
   if (aOptions.IsUnrestrictedDouble()) {
@@ -47,21 +48,6 @@ TimingParamsFromOptionsUnion(
       aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
     }
   } else {
-    
-    
-    
-    
-    RefPtr<dom::Element> targetElement;
-    if (!aTarget.IsNull()) {
-      const dom::ElementOrCSSPseudoElement& target = aTarget.Value();
-      MOZ_ASSERT(target.IsElement() || target.IsCSSPseudoElement(),
-                 "Uninitialized target");
-      if (target.IsElement()) {
-        targetElement = &target.GetAsElement();
-      } else {
-        targetElement = target.GetAsCSSPseudoElement().ParentElement();
-      }
-    }
     const dom::AnimationEffectTimingProperties& timing =
       GetTimingProperties(aOptions);
 
@@ -82,8 +68,7 @@ TimingParamsFromOptionsUnion(
     result.mIterationStart = timing.mIterationStart;
     result.mDirection = timing.mDirection;
     result.mFill = timing.mFill;
-    result.mFunction =
-      AnimationUtils::ParseEasing(timing.mEasing, targetElement->OwnerDoc());
+    result.mFunction = AnimationUtils::ParseEasing(timing.mEasing, aDocument);
   }
   return result;
 }
@@ -91,19 +76,19 @@ TimingParamsFromOptionsUnion(
  TimingParams
 TimingParams::FromOptionsUnion(
   const dom::UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
-  const Nullable<dom::ElementOrCSSPseudoElement>& aTarget,
+  nsIDocument* aDocument,
   ErrorResult& aRv)
 {
-  return TimingParamsFromOptionsUnion(aOptions, aTarget, aRv);
+  return TimingParamsFromOptionsUnion(aOptions, aDocument, aRv);
 }
 
  TimingParams
 TimingParams::FromOptionsUnion(
   const dom::UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-  const Nullable<dom::ElementOrCSSPseudoElement>& aTarget,
+  nsIDocument* aDocument,
   ErrorResult& aRv)
 {
-  return TimingParamsFromOptionsUnion(aOptions, aTarget, aRv);
+  return TimingParamsFromOptionsUnion(aOptions, aDocument, aRv);
 }
 
 bool
