@@ -57,6 +57,10 @@ public class SuggestClient {
         mCheckNetwork = checkNetwork;
     }
 
+    public String getSuggestTemplate() {
+        return mSuggestTemplate;
+    }
+
     
 
 

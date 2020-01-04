@@ -736,7 +736,8 @@ public class BrowserSearch extends HomeFragment
     }
 
     private void ensureSuggestClientIsSet(final String suggestTemplate) {
-        if (mSuggestClient != null) {
+        
+        if (mSuggestClient != null && suggestTemplate.equals(mSuggestClient.getSuggestTemplate())) {
             return;
         }
 
