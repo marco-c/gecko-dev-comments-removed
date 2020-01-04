@@ -145,6 +145,9 @@ VideoSink::SetPlaying(bool aPlaying)
     mUpdateScheduler.Reset();
     
     RenderVideoFrames(1);
+    if (mContainer) {
+      mContainer->ClearCachedResources();
+    }
   }
 
   mAudioSink->SetPlaying(aPlaying);

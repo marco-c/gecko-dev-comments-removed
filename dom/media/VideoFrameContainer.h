@@ -74,6 +74,9 @@ public:
   double GetFrameDelay();
 
   
+  void ClearCachedResources();
+
+  
   
   
   ImageContainer::FrameID NewFrameID()
