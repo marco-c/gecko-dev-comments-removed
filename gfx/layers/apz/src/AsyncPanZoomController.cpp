@@ -3853,10 +3853,13 @@ AsyncPanZoomController::GetZoomConstraints() const
 
 void AsyncPanZoomController::PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs) {
   APZThreadUtils::AssertOnControllerThread();
+  RefPtr<Runnable> task = aTask;
   RefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (controller) {
-    controller->PostDelayedTask(Move(aTask), aDelayMs);
+    controller->PostDelayedTask(task.forget(), aDelayMs);
   }
+  
+  
   
 }
 
