@@ -741,7 +741,11 @@
     _(fromFloat32x4)                  \
     _(fromFloat32x4Bits)              \
     _(fromInt32x4)                    \
-    _(fromInt32x4Bits)
+    _(fromInt32x4Bits)                \
+    _(fromUint32x4)                   \
+    _(fromUint32x4Bits)
+
+
 
 
 #define FORALL_INT32X4_ASMJS_OP(_)    \
@@ -755,27 +759,9 @@
     FORALL_FLOAT_SIMD_OP(_)           \
     FOREACH_MEMORY_X4_SIMD_OP(_)      \
     _(fromInt32x4)                    \
-    _(fromInt32x4Bits)
-
-
-#define ION_COMMONX4_SIMD_OP(_)      \
-    FOREACH_NUMERIC_SIMD_BINOP(_)    \
-    _(extractLane)                   \
-    _(replaceLane)                   \
-    _(select)                        \
-    _(splat)                         \
-    _(neg)                           \
-    _(swizzle)                       \
-    _(shuffle)                       \
-    _(load)                          \
-    _(load1)                         \
-    _(load2)                         \
-    _(load3)                         \
-    _(store)                         \
-    _(store1)                        \
-    _(store2)                        \
-    _(store3)                        \
-    _(check)
+    _(fromInt32x4Bits)                \
+    _(fromUint32x4)                   \
+    _(fromUint32x4Bits)
 
 namespace js {
 
