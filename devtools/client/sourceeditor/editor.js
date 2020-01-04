@@ -51,7 +51,6 @@ const CM_STYLES = [
 ];
 
 const CM_SCRIPTS = [
-  "chrome://devtools/content/shared/theme-switching.js",
   "chrome://devtools/content/sourceeditor/codemirror/lib/codemirror.js",
   "chrome://devtools/content/sourceeditor/codemirror/addon/dialog/dialog.js",
   "chrome://devtools/content/sourceeditor/codemirror/addon/search/searchcursor.js",
@@ -257,6 +256,21 @@ Editor.prototype = {
 
 
 
+  get codeMirror() {
+    if (!editors.has(this)) {
+      throw new Error(
+        "CodeMirror instance does not exist. You must wait " +
+          "for it to be appended to the DOM."
+      );
+    }
+    return editors.get(this);
+  },
+
+  
+
+
+
+
 
 
 
@@ -275,199 +289,19 @@ Editor.prototype = {
     }
 
     let onLoad = () => {
-      
-      
-
-      env.removeEventListener("load", onLoad, true);
       let win = env.contentWindow.wrappedJSObject;
 
       if (!this.config.themeSwitching) {
         win.document.documentElement.setAttribute("force-theme", "light");
       }
 
-      let scriptsToInject = CM_SCRIPTS.concat(this.config.externalScripts);
-      scriptsToInject.forEach(url => {
-        if (url.startsWith("chrome://")) {
-          Services.scriptloader.loadSubScript(url, win, "utf8");
-        }
-      });
-      
-      
-      
-
-      const {
-        propertyKeywords,
-        colorKeywords,
-        valueKeywords
-      } = getCSSKeywords(this.config.cssProperties);
-
-      let cssSpec = win.CodeMirror.resolveMode("text/css");
-      cssSpec.propertyKeywords = propertyKeywords;
-      cssSpec.colorKeywords = colorKeywords;
-      cssSpec.valueKeywords = valueKeywords;
-      win.CodeMirror.defineMIME("text/css", cssSpec);
-
-      let scssSpec = win.CodeMirror.resolveMode("text/x-scss");
-      scssSpec.propertyKeywords = propertyKeywords;
-      scssSpec.colorKeywords = colorKeywords;
-      scssSpec.valueKeywords = valueKeywords;
-      win.CodeMirror.defineMIME("text/x-scss", scssSpec);
-
-      win.CodeMirror.commands.save = () => this.emit("saveRequested");
-
-      
-      
-      
-
-      cm = win.CodeMirror(win.document.body, this.config);
-      this.Doc = win.CodeMirror.Doc;
-
-      
-      
-      
-      cm.getScrollerElement().addEventListener("wheel", ev => {
-        
-        
-        
-        
-        ev.preventDefault();
-
-        let { deltaX, deltaY } = ev;
-
-        if (ev.deltaMode == ev.DOM_DELTA_LINE) {
-          deltaX *= cm.defaultCharWidth();
-          deltaY *= cm.defaultTextHeight();
-        } else if (ev.deltaMode == ev.DOM_DELTA_PAGE) {
-          deltaX *= cm.getWrapperElement().clientWidth;
-          deltaY *= cm.getWrapperElement().clientHeight;
-        }
-
-        cm.getScrollerElement().scrollBy(deltaX, deltaY);
-      });
-
-      cm.getWrapperElement().addEventListener("contextmenu", ev => {
-        ev.preventDefault();
-
-        if (!this.config.contextMenu) {
-          return;
-        }
-
-        let popup = this.config.contextMenu;
-        if (typeof popup == "string") {
-          popup = el.ownerDocument.getElementById(this.config.contextMenu);
-        }
-
-        this.emit("popupOpen", ev, popup);
-        popup.openPopupAtScreen(ev.screenX, ev.screenY, true);
-      }, false);
-
-      
-      
-
-      let findKey = L10N.getStr("find.commandkey");
-      let findAgainKey = L10N.getStr("findAgain.commandkey");
-      let [accel, modifier] = OS === "Darwin"
-                                      ? ["metaKey", "altKey"]
-                                      : ["ctrlKey", "shiftKey"];
-
-      cm.getWrapperElement().addEventListener("keydown", ev => {
-        let key = ev.key.toUpperCase();
-        let node = ev.originalTarget;
-        let isInput = node.tagName === "INPUT";
-        let isSearchInput = isInput && node.type === "search";
-
-        
-        
-        let isDialogInput = isInput &&
-                       node.parentNode &&
-                       node.parentNode.classList.contains("CodeMirror-dialog");
-
-        if (!ev[accel] || !(isSearchInput || isDialogInput)) {
-          return;
-        }
-
-        if (key === findKey) {
-          ev.preventDefault();
-
-          if (isSearchInput || ev[modifier]) {
-            node.select();
-          }
-        } else if (key === findAgainKey) {
-          ev.preventDefault();
-
-          if (!isSearchInput) {
-            return;
-          }
-
-          let query = node.value;
-
-          
-          
-          if (!cm.state.search || cm.state.search.query !== query) {
-            cm.state.search = {
-              posFrom: null,
-              posTo: null,
-              overlay: null,
-              query
-            };
-          }
-
-          if (ev.shiftKey) {
-            cm.execCommand("findPrev");
-          } else {
-            cm.execCommand("findNext");
-          }
-        }
-      });
-
-      cm.on("focus", () => this.emit("focus"));
-      cm.on("scroll", () => this.emit("scroll"));
-      cm.on("change", () => {
-        this.emit("change");
-        if (!this._lastDirty) {
-          this._lastDirty = true;
-          this.emit("dirty-change");
-        }
-      });
-      cm.on("cursorActivity", () => this.emit("cursorActivity"));
-
-      cm.on("gutterClick", (cmArg, line, gutter, ev) => {
-        let head = { line: line, ch: 0 };
-        let tail = { line: line, ch: this.getText(line).length };
-
-        
-        if (ev.shiftKey) {
-          cmArg.setSelection(head, tail);
-          return;
-        }
-
-        this.emit("gutterClick", line, ev.button);
-      });
-
-      win.CodeMirror.defineExtension("l10n", (name) => {
-        return L10N.getStr(name);
-      });
-
-      cm.getInputField().controllers.insertControllerAt(0, controller(this));
-
+      Services.scriptloader.loadSubScript(
+        "chrome://devtools/content/shared/theme-switching.js",
+        win, "utf8"
+      );
       this.container = env;
-      editors.set(this, cm);
-
-      this.reloadPreferences = this.reloadPreferences.bind(this);
-      this._prefObserver = new PrefObserver("devtools.editor.");
-      this._prefObserver.on(TAB_SIZE, this.reloadPreferences);
-      this._prefObserver.on(EXPAND_TAB, this.reloadPreferences);
-      this._prefObserver.on(KEYMAP, this.reloadPreferences);
-      this._prefObserver.on(AUTO_CLOSE, this.reloadPreferences);
-      this._prefObserver.on(AUTOCOMPLETE, this.reloadPreferences);
-      this._prefObserver.on(DETECT_INDENT, this.reloadPreferences);
-      this._prefObserver.on(ENABLE_CODE_FOLDING, this.reloadPreferences);
-
-      this.reloadPreferences();
-
-      win.editor = this;
-      let editorReadyEvent = new win.CustomEvent("editorReady");
-      win.dispatchEvent(editorReadyEvent);
+      this._setup(win.document.body);
+      env.removeEventListener("load", onLoad, true);
 
       def.resolve();
     };
@@ -478,6 +312,202 @@ Editor.prototype = {
 
     this.once("destroy", () => el.removeChild(env));
     return def.promise;
+  },
+
+  appendToLocalElement: function (el) {
+    this._setup(el);
+  },
+
+  
+
+
+
+
+  _setup: function (el) {
+    let win = el.ownerDocument.defaultView;
+
+    let scriptsToInject = CM_SCRIPTS.concat(this.config.externalScripts);
+    scriptsToInject.forEach(url => {
+      if (url.startsWith("chrome://")) {
+        Services.scriptloader.loadSubScript(url, win, "utf8");
+      }
+    });
+
+    
+    
+    
+    const {
+      propertyKeywords,
+      colorKeywords,
+      valueKeywords
+    } = getCSSKeywords(this.config.cssProperties);
+
+    let cssSpec = win.CodeMirror.resolveMode("text/css");
+    cssSpec.propertyKeywords = propertyKeywords;
+    cssSpec.colorKeywords = colorKeywords;
+    cssSpec.valueKeywords = valueKeywords;
+    win.CodeMirror.defineMIME("text/css", cssSpec);
+
+    let scssSpec = win.CodeMirror.resolveMode("text/x-scss");
+    scssSpec.propertyKeywords = propertyKeywords;
+    scssSpec.colorKeywords = colorKeywords;
+    scssSpec.valueKeywords = valueKeywords;
+    win.CodeMirror.defineMIME("text/x-scss", scssSpec);
+
+    win.CodeMirror.commands.save = () => this.emit("saveRequested");
+
+    
+    
+    
+
+    let cm = win.CodeMirror(el, this.config);
+    this.Doc = win.CodeMirror.Doc;
+
+    
+    
+    
+    cm.getScrollerElement().addEventListener("wheel", ev => {
+      
+      
+      
+      
+      ev.preventDefault();
+
+      let { deltaX, deltaY } = ev;
+
+      if (ev.deltaMode == ev.DOM_DELTA_LINE) {
+        deltaX *= cm.defaultCharWidth();
+        deltaY *= cm.defaultTextHeight();
+      } else if (ev.deltaMode == ev.DOM_DELTA_PAGE) {
+        deltaX *= cm.getWrapperElement().clientWidth;
+        deltaY *= cm.getWrapperElement().clientHeight;
+      }
+
+      cm.getScrollerElement().scrollBy(deltaX, deltaY);
+    });
+
+    cm.getWrapperElement().addEventListener("contextmenu", ev => {
+      ev.preventDefault();
+
+      if (!this.config.contextMenu) {
+        return;
+      }
+
+      let popup = this.config.contextMenu;
+      if (typeof popup == "string") {
+        popup = el.ownerDocument.getElementById(this.config.contextMenu);
+      }
+
+      this.emit("popupOpen", ev, popup);
+      popup.openPopupAtScreen(ev.screenX, ev.screenY, true);
+    }, false);
+
+    
+    
+
+    let findKey = L10N.getStr("find.commandkey");
+    let findAgainKey = L10N.getStr("findAgain.commandkey");
+    let [accel, modifier] = OS === "Darwin"
+        ? ["metaKey", "altKey"]
+        : ["ctrlKey", "shiftKey"];
+
+    cm.getWrapperElement().addEventListener("keydown", ev => {
+      let key = ev.key.toUpperCase();
+      let node = ev.originalTarget;
+      let isInput = node.tagName === "INPUT";
+      let isSearchInput = isInput && node.type === "search";
+
+      
+      
+      let isDialogInput = isInput &&
+          node.parentNode &&
+          node.parentNode.classList.contains("CodeMirror-dialog");
+
+      if (!ev[accel] || !(isSearchInput || isDialogInput)) {
+        return;
+      }
+
+      if (key === findKey) {
+        ev.preventDefault();
+
+        if (isSearchInput || ev[modifier]) {
+          node.select();
+        }
+      } else if (key === findAgainKey) {
+        ev.preventDefault();
+
+        if (!isSearchInput) {
+          return;
+        }
+
+        let query = node.value;
+
+        
+        
+        if (!cm.state.search || cm.state.search.query !== query) {
+          cm.state.search = {
+            posFrom: null,
+            posTo: null,
+            overlay: null,
+            query
+          };
+        }
+
+        if (ev.shiftKey) {
+          cm.execCommand("findPrev");
+        } else {
+          cm.execCommand("findNext");
+        }
+      }
+    });
+
+    cm.on("focus", () => this.emit("focus"));
+    cm.on("scroll", () => this.emit("scroll"));
+    cm.on("change", () => {
+      this.emit("change");
+      if (!this._lastDirty) {
+        this._lastDirty = true;
+        this.emit("dirty-change");
+      }
+    });
+    cm.on("cursorActivity", () => this.emit("cursorActivity"));
+
+    cm.on("gutterClick", (cmArg, line, gutter, ev) => {
+      let head = { line: line, ch: 0 };
+      let tail = { line: line, ch: this.getText(line).length };
+
+      
+      if (ev.shiftKey) {
+        cmArg.setSelection(head, tail);
+        return;
+      }
+
+      this.emit("gutterClick", line, ev.button);
+    });
+
+    win.CodeMirror.defineExtension("l10n", (name) => {
+      return L10N.getStr(name);
+    });
+
+    cm.getInputField().controllers.insertControllerAt(0, controller(this));
+
+    editors.set(this, cm);
+
+    this.reloadPreferences = this.reloadPreferences.bind(this);
+    this._prefObserver = new PrefObserver("devtools.editor.");
+    this._prefObserver.on(TAB_SIZE, this.reloadPreferences);
+    this._prefObserver.on(EXPAND_TAB, this.reloadPreferences);
+    this._prefObserver.on(KEYMAP, this.reloadPreferences);
+    this._prefObserver.on(AUTO_CLOSE, this.reloadPreferences);
+    this._prefObserver.on(AUTOCOMPLETE, this.reloadPreferences);
+    this._prefObserver.on(DETECT_INDENT, this.reloadPreferences);
+    this._prefObserver.on(ENABLE_CODE_FOLDING, this.reloadPreferences);
+
+    this.reloadPreferences();
+
+    win.editor = this;
+    let editorReadyEvent = new win.CustomEvent("editorReady");
+    win.dispatchEvent(editorReadyEvent);
   },
 
   
