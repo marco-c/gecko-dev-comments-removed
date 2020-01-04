@@ -72,11 +72,6 @@ onconnect = function(event) {
     throw new Error("'connect' event has data: " + event.data);
   }
 
-  
-  
-  
-  "".contains("");
-
   event.ports[0].onmessage = function(event) {
     if (!(event instanceof MessageEvent)) {
       throw new Error("'message' event is not a MessageEvent!");
