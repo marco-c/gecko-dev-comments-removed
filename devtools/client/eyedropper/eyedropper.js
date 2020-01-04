@@ -2,11 +2,13 @@
 
 
 
-const {Cc, Ci, Cu} = require("chrome");
+"use strict";
+
+const {Cc, Ci} = require("chrome");
 const {rgbToHsl, rgbToColorName} =
       require("devtools/client/shared/css-color").colorUtils;
 const Telemetry = require("devtools/client/shared/telemetry");
-const {EventEmitter} = Cu.import("resource://devtools/shared/event-emitter.js");
+const EventEmitter = require("devtools/shared/event-emitter");
 const promise = require("promise");
 const Services = require("Services");
 
@@ -182,7 +184,8 @@ Eyedropper.prototype = {
 
 
   get centerColor() {
-    let x = y = (this.centerCell * this.cellSize) + (this.cellSize / 2);
+    let x, y;
+    x = y = (this.centerCell * this.cellSize) + (this.cellSize / 2);
     let rgb = this._ctx.getImageData(x, y, 1, 1).data;
     return rgb;
   },
@@ -727,7 +730,8 @@ Eyedropper.prototype = {
 
 
   _drawCrosshair: function () {
-    let x = y = this.centerCell * this.cellSize;
+    let x, y;
+    x = y = this.centerCell * this.cellSize;
 
     this._ctx.lineWidth = 1;
     this._ctx.lineJoin = "miter";

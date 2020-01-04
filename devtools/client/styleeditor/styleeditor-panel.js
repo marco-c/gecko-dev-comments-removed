@@ -2,11 +2,7 @@
 
 
 
-
-
 "use strict";
-
-const {Cu} = require("chrome");
 
 var Services = require("Services");
 var promise = require("promise");
@@ -14,9 +10,8 @@ var {Task} = require("devtools/shared/task");
 var {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 var EventEmitter = require("devtools/shared/event-emitter");
 
-Cu.import("resource://devtools/client/styleeditor/StyleEditorUI.jsm");
-
-Cu.import("resource://devtools/client/styleeditor/StyleEditorUtil.jsm");
+var {StyleEditorUI} = require("resource://devtools/client/styleeditor/StyleEditorUI.jsm");
+var {getString} = require("resource://devtools/client/styleeditor/StyleEditorUtil.jsm");
 
 loader.lazyGetter(this, "StyleSheetsFront",
   () => require("devtools/shared/fronts/stylesheets").StyleSheetsFront);

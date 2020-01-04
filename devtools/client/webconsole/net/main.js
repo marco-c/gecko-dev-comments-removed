@@ -3,10 +3,9 @@
 
 "use strict";
 
-var { utils: Cu } = Components;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://devtools/client/shared/browser-loader.js");
+
+var { utils: Cu } = Components;
 
 
 

@@ -2,9 +2,11 @@
 
 
 
+"use strict";
+
 const Ci = Components.interfaces;
 const Cu = Components.utils;
-Cu.import("resource://gre/modules/Services.jsm");
+const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 this.EXPORTED_SYMBOLS = ["DOMHelpers"];
 

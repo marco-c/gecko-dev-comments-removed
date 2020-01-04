@@ -2,15 +2,13 @@
 
 
 
+"use strict";
 
 
-const { BreakpointActorMap, ThreadActor } = require("devtools/server/actors/script");
 
-function run_test()
-{
-  Cu.import("resource://gre/modules/jsdebugger.jsm");
-  addDebuggerToGlobal(this);
+const { BreakpointActorMap } = require("devtools/server/actors/script");
 
+function run_test() {
   test_get_actor();
   test_set_actor();
   test_delete_actor();

@@ -4,7 +4,7 @@
 "use strict";
 
 
-var {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
+const {AppConstants} = require("resource://gre/modules/AppConstants.jsm");
 
 const TEST_URL = URL_ROOT + "doc_inspector_search.html";
 

@@ -2,12 +2,9 @@
 
 
 
+"use strict";
 
-
-const {Cu} = require("chrome");
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
+var {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 var Services = require("Services");
 var {Task} = require("devtools/shared/task");
 var EventEmitter = require("devtools/shared/event-emitter");

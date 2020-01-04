@@ -1,7 +1,9 @@
 
 
 
-Cu.import("resource://gre/modules/jsdebugger.jsm");
+"use strict";
+
+const { addDebuggerToGlobal } = Cu.import("resource://gre/modules/jsdebugger.jsm", {});
 addDebuggerToGlobal(this);
 
 

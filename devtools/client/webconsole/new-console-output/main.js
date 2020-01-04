@@ -8,8 +8,8 @@
 
 var { utils: Cu } = Components;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://devtools/client/shared/browser-loader.js");
+const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const { BrowserLoader } = Cu.import("resource://devtools/client/shared/browser-loader.js", {});
 
 
 

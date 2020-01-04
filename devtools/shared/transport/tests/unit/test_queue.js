@@ -1,13 +1,14 @@
 
 
 
+"use strict";
+
 
 
 
 
 
 var { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});
-var { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 
 function run_test() {
   initTestDebuggerServer();

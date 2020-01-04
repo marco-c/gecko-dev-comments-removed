@@ -2,9 +2,10 @@
 
 
 
-const {Cu} = require("chrome");
+"use strict";
+
 const promise = require("promise");
-const {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm");
+const {AddonManager} = require("resource://gre/modules/AddonManager.jsm");
 const Services = require("Services");
 const {getJSON} = require("devtools/client/shared/getjson");
 const EventEmitter = require("devtools/shared/event-emitter");

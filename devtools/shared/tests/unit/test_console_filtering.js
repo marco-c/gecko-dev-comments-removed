@@ -1,8 +1,9 @@
 
 
 
-const { console, ConsoleAPI } = Cu.import("resource://gre/modules/Console.jsm");
+"use strict";
 
+const { console, ConsoleAPI } = require("resource://gre/modules/Console.jsm");
 const { ConsoleAPIListener } = require("devtools/shared/webconsole/utils");
 const Services = require("Services");
 

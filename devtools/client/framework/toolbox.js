@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const MAX_ORDINAL = 99;
@@ -26,9 +24,7 @@ var viewSource = require("devtools/client/shared/view-source");
 var { attachThread, detachThread } = require("./attach-thread");
 var Menu = require("devtools/client/framework/menu");
 var MenuItem = require("devtools/client/framework/menu-item");
-
-Cu.import("resource://devtools/client/scratchpad/scratchpad-manager.jsm");
-Cu.import("resource://devtools/client/shared/DOMHelpers.jsm");
+var { DOMHelpers } = require("resource://devtools/client/shared/DOMHelpers.jsm");
 
 const { BrowserLoader } =
   Cu.import("resource://devtools/client/shared/browser-loader.js", {});

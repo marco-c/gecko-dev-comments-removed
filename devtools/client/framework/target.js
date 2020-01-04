@@ -2,16 +2,14 @@
 
 
 
-
-
 "use strict";
 
-const { Ci, Cu } = require("chrome");
+const { Ci } = require("chrome");
 const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient",
   "devtools/shared/client/main", true);

@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 const { interfaces: Ci, utils: Cu } = Components;
@@ -22,7 +18,7 @@ const kDebuggerPrefs = [
   "devtools.debugger.remote-enabled",
   "devtools.chrome.enabled"
 ];
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 XPCOMUtils.defineLazyModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
 
 function DevToolsStartup() {}
@@ -126,7 +122,7 @@ DevToolsStartup.prototype = {
     if (!this._isRemoteDebuggingEnabled()) {
       return;
     }
-    Cu.import("resource://devtools/client/framework/ToolboxProcess.jsm");
+    const { BrowserToolboxProcess } = Cu.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
     BrowserToolboxProcess.init();
 
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {

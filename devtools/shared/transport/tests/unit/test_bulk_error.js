@@ -1,9 +1,7 @@
 
 
 
-var { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});
-var { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
-var Pipe = CC("@mozilla.org/pipe;1", "nsIPipe", "init");
+"use strict";
 
 function run_test() {
   initTestDebuggerServer();

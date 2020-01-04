@@ -1,10 +1,12 @@
 
 
 
+"use strict";
 
 
 
-Cu.import("resource://gre/modules/osfile.jsm");
+
+const { OS } = require("resource://gre/modules/osfile.jsm");
 
 const run_test = makeFullRuntimeMemoryActorTest(function* (client, memoryFront) {
   const snapshotFilePath = yield memoryFront.saveHeapSnapshot();

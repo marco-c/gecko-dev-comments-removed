@@ -2,10 +2,10 @@
 
 
 
-const {Ci, Cu, Cc} = require("chrome");
+"use strict";
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
+const {Ci, Cc} = require("chrome");
+const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const Services = require("Services");
 
 function MonitorActor(aConnection) {

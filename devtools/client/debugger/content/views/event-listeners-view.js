@@ -1,11 +1,15 @@
 
 
 
+
 "use strict";
+
+
 
 const actions = require("../actions/event-listeners");
 const { bindActionCreators } = require("devtools/client/shared/vendor/redux");
 const { Heritage, WidgetMethods } = require("devtools/client/shared/widgets/view-helpers");
+const { SideMenuWidget } = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
 
 
 

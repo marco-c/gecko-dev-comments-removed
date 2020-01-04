@@ -1,8 +1,13 @@
+
+
+
+
 "use strict";
 
-var { Ci, Cu } = require("chrome");
-var { DebuggerServer } = require("devtools/server/main");
-var Services = require("Services");
+const { Ci } = require("chrome");
+const { DebuggerServer } = require("devtools/server/main");
+const Services = require("Services");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const protocol = require("devtools/shared/protocol");
 const { Arg, method, RetVal } = protocol;
 const {
@@ -11,8 +16,6 @@ const {
 } = require("devtools/shared/specs/worker");
 
 loader.lazyRequireGetter(this, "ChromeUtils");
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(
   this, "wdm",

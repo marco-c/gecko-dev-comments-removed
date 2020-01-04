@@ -2,15 +2,17 @@
 
 
 
+"use strict";
 
 
 
 
 
 
-const {Ci, Cu} = require("chrome");
+
+const {Ci} = require("chrome");
 const Services = require("Services");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const protocol = require("devtools/shared/protocol");
 const {method, Arg, RetVal} = protocol;
 const events = require("sdk/event/core");

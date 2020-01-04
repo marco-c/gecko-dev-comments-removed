@@ -2,7 +2,7 @@
 
 
 
-
+"use strict";
 
 const { Cc, Ci, Cu } = require("chrome");
 const { Class } = require("sdk/core/heritage");
@@ -17,7 +17,7 @@ const { emit } = require("sdk/event/core");
 const { merge } = require("sdk/util/object");
 const promise = require("promise");
 const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
-const { DOMHelpers } = Cu.import("resource://devtools/client/shared/DOMHelpers.jsm");
+const { DOMHelpers } = require("resource://devtools/client/shared/DOMHelpers.jsm");
 const Services = require("Services");
 const { Task } = require("devtools/shared/task");
 const ITCHPAD_URL = "chrome://devtools/content/projecteditor/chrome/content/projecteditor.xul";

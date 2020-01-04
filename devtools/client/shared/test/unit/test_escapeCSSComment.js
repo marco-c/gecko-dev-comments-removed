@@ -1,13 +1,11 @@
 
 
 
-
-
 "use strict";
 
 var Cu = Components.utils;
-Cu.import("resource://devtools/shared/Loader.jsm");
-const {escapeCSSComment, _unescapeCSSComment} = devtools.require("devtools/shared/css-parsing-utils");
+const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {escapeCSSComment, _unescapeCSSComment} = require("devtools/shared/css-parsing-utils");
 
 const TEST_DATA = [
   {

@@ -1,8 +1,13 @@
-const {Ci, Cc, Cu, Cr} = require("chrome");
-Cu.import("resource://gre/modules/osfile.jsm");
-const {FileUtils} = Cu.import("resource://gre/modules/FileUtils.jsm");
-const {NetUtil} = Cu.import("resource://gre/modules/NetUtil.jsm");
-const Services = require("Services");
+
+
+
+
+"use strict";
+
+const {Ci, Cc, Cr} = require("chrome");
+const {OS} = require("resource://gre/modules/osfile.jsm");
+const {FileUtils} = require("resource://gre/modules/FileUtils.jsm");
+const {NetUtil} = require("resource://gre/modules/NetUtil.jsm");
 const promise = require("promise");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const EventEmitter = require("devtools/shared/event-emitter");

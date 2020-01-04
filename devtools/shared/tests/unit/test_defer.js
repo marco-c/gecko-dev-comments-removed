@@ -1,11 +1,8 @@
 
 
 
-
 "use strict";
 
-var Cu = Components.utils;
-var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const defer = require("devtools/shared/defer");
 
 function testResolve() {

@@ -3,7 +3,6 @@
 
 
 
-
 function run_test() {
   const name = "asyncUtils";
   const path = "devtools/shared/async-utils";

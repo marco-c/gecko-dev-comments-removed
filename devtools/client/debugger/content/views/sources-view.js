@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 const utils = require("../utils");
 const {
   getSelectedSource,
@@ -24,6 +26,7 @@ const {
   setNamedTimeout
 } = require("devtools/client/shared/widgets/view-helpers");
 const { Task } = require("devtools/shared/task");
+const { SideMenuWidget } = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
 
 const NEW_SOURCE_DISPLAY_DELAY = 200; 
 const FUNCTION_SEARCH_POPUP_POSITION = "topcenter bottomleft";
