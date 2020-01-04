@@ -246,6 +246,12 @@ extern bool gBluetoothDebugFlag;
 
 
 
+
+#define OBEX_PASSWORD_REQ_ID                 "obexpasswordreq"
+
+
+
+
 #define PULL_PHONEBOOK_REQ_ID                "pullphonebookreq"
 #define PULL_VCARD_ENTRY_REQ_ID              "pullvcardentryreq"
 #define PULL_VCARD_LISTING_REQ_ID            "pullvcardlistingreq"

@@ -86,16 +86,21 @@ public:
 
 
   IMPL_EVENT_HANDLER(attributechanged);
+  
   IMPL_EVENT_HANDLER(devicepaired);
   IMPL_EVENT_HANDLER(deviceunpaired);
   IMPL_EVENT_HANDLER(pairingaborted);
+  
   IMPL_EVENT_HANDLER(a2dpstatuschanged);
   IMPL_EVENT_HANDLER(hfpstatuschanged);
+  IMPL_EVENT_HANDLER(scostatuschanged);
+  IMPL_EVENT_HANDLER(requestmediaplaystatus);
+  
+  IMPL_EVENT_HANDLER(obexpasswordreq);
   IMPL_EVENT_HANDLER(pullphonebookreq);
   IMPL_EVENT_HANDLER(pullvcardentryreq);
   IMPL_EVENT_HANDLER(pullvcardlistingreq);
-  IMPL_EVENT_HANDLER(requestmediaplaystatus);
-  IMPL_EVENT_HANDLER(scostatuschanged);
+  
   IMPL_EVENT_HANDLER(mapfolderlistingreq);
   IMPL_EVENT_HANDLER(mapmessageslistingreq);
   IMPL_EVENT_HANDLER(mapgetmessagereq);
@@ -338,6 +343,15 @@ private:
 
 
   void HandlePullVCardListingReq(const BluetoothValue& aValue);
+
+  
+
+
+
+
+
+
+  void HandleObexPasswordReq(const BluetoothValue& aValue);
 
   
 

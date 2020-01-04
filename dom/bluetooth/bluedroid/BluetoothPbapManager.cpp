@@ -23,6 +23,7 @@
 #include "nsIInputStream.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsNetCID.h"
 
 USING_BLUETOOTH_NAMESPACE
 using namespace mozilla;
@@ -238,6 +239,18 @@ BluetoothPbapManager::ReceiveSocketData(BluetoothSocket* aSocket,
       
       if (!CompareHeaderTarget(pktHeaders)) {
         ReplyError(ObexResponseCode::BadRequest);
+        return;
+      }
+
+      
+      
+      
+      
+      if (pktHeaders.Has(ObexHeaderId::AuthChallenge)) {
+        ObexResponseCode response = NotifyPasswordRequest(pktHeaders);
+        if (response != ObexResponseCode::Success) {
+          ReplyError(response);
+        }
         return;
       }
 
@@ -499,6 +512,51 @@ BluetoothPbapManager::NotifyPbapRequest(const ObexHeaderSet& aHeader)
   return ObexResponseCode::Success;
 }
 
+ObexResponseCode
+BluetoothPbapManager::NotifyPasswordRequest(const ObexHeaderSet& aHeader)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aHeader.Has(ObexHeaderId::AuthChallenge));
+
+  
+  int dataLength;
+  nsAutoArrayPtr<uint8_t> dataPtr;
+  aHeader.GetAuthChallenge(dataPtr, &dataLength);
+
+  
+  
+  
+  
+  uint8_t offset = 0;
+  do {
+    uint8_t tagId = dataPtr[offset++];
+    uint8_t length = dataPtr[offset++];
+
+    BT_LOGR("AuthChallenge header includes tagId %d", tagId);
+    if (tagId == ObexDigestChallenge::Nonce) {
+      memcpy(mRemoteNonce, &dataPtr[offset], DIGEST_LENGTH);
+    }
+
+    offset += length;
+  } while (offset < dataLength);
+
+  
+  BluetoothService* bs = BluetoothService::Get();
+  if (!bs) {
+    return ObexResponseCode::PreconditionFailed;
+  }
+
+  
+  
+  
+  InfallibleTArray<BluetoothNamedValue> props;
+  bs->DistributeSignal(NS_LITERAL_STRING(OBEX_PASSWORD_REQ_ID),
+                       NS_LITERAL_STRING(KEY_ADAPTER),
+                       props);
+
+  return ObexResponseCode::Success;
+}
+
 void
 BluetoothPbapManager::AppendNamedValueByTagId(
   const ObexHeaderSet& aHeader,
@@ -660,7 +718,7 @@ BluetoothPbapManager::GetAddress(BluetoothAddress& aDeviceAddress)
 }
 
 void
-BluetoothPbapManager::ReplyToConnect()
+BluetoothPbapManager::ReplyToConnect(const nsAString& aPassword)
 {
   if (mConnected) {
     return;
@@ -683,7 +741,67 @@ BluetoothPbapManager::ReplyToConnect()
                            kPbapObexTarget.mUuid, sizeof(BluetoothUuid));
   index += AppendHeaderConnectionId(&res[index], 0x01);
 
+  
+  if (!aPassword.IsEmpty()) {
+    
+    
+    
+    uint32_t hashStringLength = DIGEST_LENGTH + aPassword.Length() + 1;
+    nsAutoArrayPtr<char> hashString(new char[hashStringLength]);
+
+    memcpy(hashString, mRemoteNonce, DIGEST_LENGTH);
+    hashString[DIGEST_LENGTH] = ':';
+    memcpy(&hashString[DIGEST_LENGTH + 1],
+           NS_ConvertUTF16toUTF8(aPassword).get(),
+           aPassword.Length());
+    MD5Hash(hashString, hashStringLength);
+
+    
+    uint8_t digestResponse[(DIGEST_LENGTH + 2) * 2];
+    int offset = AppendAppParameter(digestResponse, sizeof(digestResponse),
+                                    ObexDigestResponse::ReqDigest,
+                                    mHashRes, DIGEST_LENGTH);
+    offset += AppendAppParameter(&digestResponse[offset],
+                                 sizeof(digestResponse) - offset,
+                                 ObexDigestResponse::NonceChallenged,
+                                 mRemoteNonce, DIGEST_LENGTH);
+
+    index += AppendAuthResponse(&res[index], kObexLeastMaxSize - index,
+                                digestResponse, offset);
+  }
+
   SendObexData(res, ObexResponseCode::Success, index);
+}
+
+nsresult
+BluetoothPbapManager::MD5Hash(char *buf, uint32_t len)
+{
+  nsresult rv;
+
+  
+  
+  if (!mVerifier) {
+    mVerifier = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+    if (NS_FAILED(rv)) {
+      BT_LOGR("MD5Hash: no crypto hash!");
+      return rv;
+    }
+  }
+
+  rv = mVerifier->Init(nsICryptoHash::MD5);
+  if (NS_FAILED(rv)) return rv;
+
+  rv = mVerifier->Update((unsigned char*)buf, len);
+  if (NS_FAILED(rv)) return rv;
+
+  nsAutoCString hashString;
+  rv = mVerifier->Finish(false, hashString);
+  if (NS_FAILED(rv)) return rv;
+
+  NS_ENSURE_STATE(hashString.Length() == sizeof(mHashRes));
+  memcpy(mHashRes, hashString.get(), hashString.Length());
+
+  return rv;
 }
 
 void
@@ -740,6 +858,18 @@ BluetoothPbapManager::PackPropertiesMask(uint8_t* aData, int aSize)
   }
 
   return propSelector;
+}
+
+void
+BluetoothPbapManager::ReplyToAuthChallenge(const nsAString& aPassword)
+{
+  
+  if (aPassword.IsEmpty()) {
+    ReplyError(ObexResponseCode::Unauthorized);
+  }
+
+  ReplyToConnect(aPassword);
+  AfterPbapConnected();
 }
 
 bool

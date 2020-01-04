@@ -12,8 +12,10 @@
 #include "BluetoothSocketObserver.h"
 #include "mozilla/dom/bluetooth/BluetoothTypes.h"
 #include "mozilla/ipc/SocketBase.h"
+#include "nsICryptoHash.h"
 #include "ObexBase.h"
 
+class nsICryptoHash;
 class nsIInputStream;
 namespace mozilla {
   namespace dom {
@@ -62,6 +64,7 @@ public:
   }
 
   static const int MAX_PACKET_LENGTH = 0xFFFE;
+  static const int DIGEST_LENGTH = 16;
 
   static BluetoothPbapManager* Get();
   bool Listen();
@@ -74,9 +77,18 @@ public:
 
 
 
+  void ReplyToAuthChallenge(const nsAString& aPassword);
+
+  
+
+
+
+
+
+
+
 
   bool ReplyToPullPhonebook(BlobParent* aActor, uint16_t aPhonebookSize);
-
   
 
 
@@ -98,7 +110,6 @@ public:
 
 
   bool ReplyToPullvCardListing(BlobParent* aActor, uint16_t aPhonebookSize);
-
   
 
 
@@ -119,7 +130,6 @@ public:
 
 
   bool ReplyToPullvCardEntry(BlobParent* aActor);
-
   
 
 
@@ -138,7 +148,7 @@ private:
   bool Init();
   void HandleShutdown();
 
-  void ReplyToConnect();
+  void ReplyToConnect(const nsAString& aPassword = EmptyString());
   void ReplyToDisconnectOrAbort();
   void ReplyToSetPath();
   bool ReplyToGet(uint16_t aPhonebookSize = 0);
@@ -148,6 +158,7 @@ private:
   ObexResponseCode SetPhoneBookPath(const ObexHeaderSet& aHeader,
                                     uint8_t flags);
   ObexResponseCode NotifyPbapRequest(const ObexHeaderSet& aHeader);
+  ObexResponseCode NotifyPasswordRequest(const ObexHeaderSet& aHeader);
   void AppendNamedValueByTagId(const ObexHeaderSet& aHeader,
                                InfallibleTArray<BluetoothNamedValue>& aValues,
                                const AppParameterTag aTagId);
@@ -159,6 +170,15 @@ private:
   bool GetInputStreamFromBlob(Blob* aBlob);
   void AfterPbapConnected();
   void AfterPbapDisconnected();
+  nsresult MD5Hash(char *buf, uint32_t len); 
+
+  
+
+
+
+  uint8_t mRemoteNonce[DIGEST_LENGTH];
+  uint8_t mHashRes[DIGEST_LENGTH];
+  nsCOMPtr<nsICryptoHash> mVerifier;
 
   
 
