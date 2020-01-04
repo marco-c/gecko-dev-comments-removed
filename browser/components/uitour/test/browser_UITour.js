@@ -222,10 +222,8 @@ let tests = [
     waitForElementToBeVisible(highlight, () => {
 
       let searchbar = document.getElementById("searchbar");
-      if (searchbar.getAttribute("oneoffui")) {
-        done();
-        return; 
-      }
+      done();
+      return; 
 
       gContentAPI.showMenu("searchEngines", function() {
         isnot(searchbar, null, "Should have found searchbar");
