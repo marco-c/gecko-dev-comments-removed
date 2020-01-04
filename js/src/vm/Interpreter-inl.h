@@ -81,14 +81,14 @@ IsUninitializedLexical(const Value& val)
 static inline bool
 IsUninitializedLexicalSlot(HandleObject obj, HandleShape shape)
 {
+    MOZ_ASSERT(shape);
     if (obj->is<WithEnvironmentObject>())
         return false;
     
     
     
     
-    if (!shape ||
-        IsImplicitDenseOrTypedArrayElement(shape) ||
+    if (IsImplicitDenseOrTypedArrayElement(shape) ||
         !shape->hasSlot() ||
         !shape->hasDefaultGetter() ||
         !shape->hasDefaultSetter())
