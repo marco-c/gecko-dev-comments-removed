@@ -975,6 +975,10 @@ MarkupView.prototype = {
         
         continue;
       }
+
+      if (type === "attributes" && mutation.attributeName === "class") {
+        container.updateIsDisplayed();
+      }
       if (type === "attributes" || type === "characterData"
         || type === "events" || type === "pseudoClassLock") {
         container.update();
@@ -1013,7 +1017,7 @@ MarkupView.prototype = {
     for (let node of nodes) {
       let container = this.getContainer(node);
       if (container) {
-        container.isDisplayed = node.isDisplayed;
+        container.updateIsDisplayed();
       }
     }
   },
@@ -1891,7 +1895,7 @@ MarkupContainer.prototype = {
     }
 
     
-    this.isDisplayed = this.node.isDisplayed;
+    this.updateIsDisplayed();
   },
 
   toString: function () {
@@ -1914,9 +1918,12 @@ MarkupContainer.prototype = {
   
 
 
-  set isDisplayed(isDisplayed) {
+
+
+
+  updateIsDisplayed: function () {
     this.elt.classList.remove("not-displayed");
-    if (!isDisplayed) {
+    if (!this.node.isDisplayed || this.node.hidden) {
       this.elt.classList.add("not-displayed");
     }
   },
