@@ -23,6 +23,17 @@ classifierHelper._updates = [];
 
 classifierHelper._updatesToCleanup = [];
 
+classifierHelper._initsCB = [];
+
+
+
+classifierHelper.waitForInit = function() {
+  return new Promise(function(resolve, reject) {
+    classifierHelper._initsCB.push(resolve);
+    gScript.sendAsyncMessage("waitForInit");
+  });
+}
+
 
 
 
@@ -115,6 +126,17 @@ classifierHelper.resetDB = function() {
   });
 };
 
+classifierHelper.reloadDatabase = function() {
+  return new Promise(function(resolve, reject) {
+    gScript.addMessageListener("reloadSuccess", function handler() {
+      gScript.removeMessageListener('reloadSuccess', handler);
+      resolve();
+    });
+
+    gScript.sendAsyncMessage("doReload");
+  });
+}
+
 classifierHelper._update = function(testUpdate, onsuccess, onerror) {
   
   classifierHelper._updates.push({"data": testUpdate,
@@ -147,9 +169,17 @@ classifierHelper._updateError = function(errorCode) {
   }
 };
 
+classifierHelper._inited = function() {
+  classifierHelper._initsCB.forEach(function (cb) {
+    cb();
+  });
+  classifierHelper._initsCB = [];
+};
+
 classifierHelper._setup = function() {
   gScript.addMessageListener("updateSuccess", classifierHelper._updateSuccess);
   gScript.addMessageListener("updateError", classifierHelper._updateError);
+  gScript.addMessageListener("safeBrowsingInited", classifierHelper._inited);
 
   
   SimpleTest.registerCleanupFunction(classifierHelper._cleanup);

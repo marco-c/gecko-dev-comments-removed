@@ -6,7 +6,6 @@
 #include "LookupCache.h"
 #include "HashStore.h"
 #include "nsISeekableStream.h"
-#include "nsISafeOutputStream.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Logging.h"
 #include "nsNetUtil.h"
@@ -29,8 +28,6 @@
 
 
 
-#define CACHE_SUFFIX ".cache"
-
 
 #define PREFIXSET_SUFFIX  ".pset"
 
@@ -41,9 +38,6 @@ extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
 
 namespace mozilla {
 namespace safebrowsing {
-
-const uint32_t LOOKUPCACHE_MAGIC = 0x1231af3e;
-const uint32_t CURRENT_VERSION = 2;
 
 LookupCache::LookupCache(const nsACString& aTableName, nsIFile* aStoreDir)
   : mPrimed(false)
@@ -69,39 +63,9 @@ LookupCache::~LookupCache()
 nsresult
 LookupCache::Open()
 {
-  nsCOMPtr<nsIFile> storeFile;
-
-  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(storeFile));
+  LOG(("Reading Completions"));
+  nsresult rv = ReadCompletions();
   NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = storeFile->AppendNative(mTableName + NS_LITERAL_CSTRING(CACHE_SUFFIX));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIInputStream> inputStream;
-  rv = NS_NewLocalFileInputStream(getter_AddRefs(inputStream), storeFile,
-                                  PR_RDONLY | nsIFile::OS_READAHEAD);
-
-  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
-    Reset();
-    return rv;
-  }
-
-  if (rv == NS_ERROR_FILE_NOT_FOUND) {
-    
-    
-    
-    ClearCompleteCache();
-  } else {
-    
-    rv = ReadHeader(inputStream);
-    NS_ENSURE_SUCCESS(rv, rv);
-    LOG(("ReadCompletions"));
-    rv = ReadCompletions(inputStream);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = inputStream->Close();
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
   LOG(("Loading PrefixSet"));
   rv = LoadPrefixSet();
@@ -121,20 +85,13 @@ LookupCache::Reset()
 {
   LOG(("LookupCache resetting"));
 
-  nsCOMPtr<nsIFile> storeFile;
   nsCOMPtr<nsIFile> prefixsetFile;
-  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(storeFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = mStoreDirectory->Clone(getter_AddRefs(prefixsetFile));
+  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(prefixsetFile));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = storeFile->AppendNative(mTableName + NS_LITERAL_CSTRING(CACHE_SUFFIX));
-  NS_ENSURE_SUCCESS(rv, rv);
   rv = prefixsetFile->AppendNative(mTableName + NS_LITERAL_CSTRING(PREFIXSET_SUFFIX));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = storeFile->Remove(false);
-  NS_ENSURE_SUCCESS(rv, rv);
   rv = prefixsetFile->Remove(false);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -151,13 +108,13 @@ LookupCache::Build(AddPrefixArray& aAddPrefixes,
   Telemetry::Accumulate(Telemetry::URLCLASSIFIER_LC_COMPLETIONS,
                         static_cast<uint32_t>(aAddCompletes.Length()));
 
-  mCompletions.Clear();
-  mCompletions.SetCapacity(aAddCompletes.Length());
+  mUpdateCompletions.Clear();
+  mUpdateCompletions.SetCapacity(aAddCompletes.Length());
   for (uint32_t i = 0; i < aAddCompletes.Length(); i++) {
-    mCompletions.AppendElement(aAddCompletes[i].CompleteHash());
+    mUpdateCompletions.AppendElement(aAddCompletes[i].CompleteHash());
   }
   aAddCompletes.Clear();
-  mCompletions.Sort();
+  mUpdateCompletions.Sort();
 
   Telemetry::Accumulate(Telemetry::URLCLASSIFIER_LC_PREFIXES,
                         static_cast<uint32_t>(aAddPrefixes.Length()));
@@ -169,17 +126,43 @@ LookupCache::Build(AddPrefixArray& aAddPrefixes,
   return NS_OK;
 }
 
+nsresult
+LookupCache::AddCompletionsToCache(AddCompleteArray& aAddCompletes)
+{
+  for (uint32_t i = 0; i < aAddCompletes.Length(); i++) {
+    if (mGetHashCache.BinaryIndexOf(aAddCompletes[i].CompleteHash()) == mGetHashCache.NoIndex) {
+      mGetHashCache.AppendElement(aAddCompletes[i].CompleteHash());
+    }
+  }
+  mGetHashCache.Sort();
+
+  return NS_OK;
+}
+
 #if defined(DEBUG)
+void
+LookupCache::DumpCache()
+{
+  if (!LOG_ENABLED())
+    return;
+
+  for (uint32_t i = 0; i < mGetHashCache.Length(); i++) {
+    nsAutoCString str;
+    mGetHashCache[i].ToHexString(str);
+    LOG(("Caches: %s", str.get()));
+  }
+}
+
 void
 LookupCache::Dump()
 {
   if (!LOG_ENABLED())
     return;
 
-  for (uint32_t i = 0; i < mCompletions.Length(); i++) {
+  for (uint32_t i = 0; i < mUpdateCompletions.Length(); i++) {
     nsAutoCString str;
-    mCompletions[i].ToHexString(str);
-    LOG(("Completion: %s", str.get()));
+    mUpdateCompletions[i].ToHexString(str);
+    LOG(("Update: %s", str.get()));
   }
 }
 #endif
@@ -202,7 +185,9 @@ LookupCache::Has(const Completion& aCompletion,
     *aHas = true;
   }
 
-  if (mCompletions.BinaryIndexOf(aCompletion) != nsTArray<Completion>::NoIndex) {
+  
+  if ((mGetHashCache.BinaryIndexOf(aCompletion) != nsTArray<Completion>::NoIndex) ||
+      (mUpdateCompletions.BinaryIndexOf(aCompletion) != nsTArray<Completion>::NoIndex)) {
     LOG(("Complete in %s", mTableName.get()));
     *aComplete = true;
     *aHas = true;
@@ -214,36 +199,8 @@ LookupCache::Has(const Completion& aCompletion,
 nsresult
 LookupCache::WriteFile()
 {
-  nsCOMPtr<nsIFile> storeFile;
-  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(storeFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = storeFile->AppendNative(mTableName + NS_LITERAL_CSTRING(CACHE_SUFFIX));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIOutputStream> out;
-  rv = NS_NewSafeLocalFileOutputStream(getter_AddRefs(out), storeFile,
-                                       PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  UpdateHeader();
-  LOG(("Writing %d completions", mHeader.numCompletions));
-
-  uint32_t written;
-  rv = out->Write(reinterpret_cast<char*>(&mHeader), sizeof(mHeader), &written);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = WriteTArray(out, mCompletions);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsISafeOutputStream> safeOut = do_QueryInterface(out);
-  rv = safeOut->Finish();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = EnsureSizeConsistent();
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsCOMPtr<nsIFile> psFile;
-  rv = mStoreDirectory->Clone(getter_AddRefs(psFile));
+  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(psFile));
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = psFile->AppendNative(mTableName + NS_LITERAL_CSTRING(PREFIXSET_SUFFIX));
@@ -258,101 +215,38 @@ LookupCache::WriteFile()
 void
 LookupCache::ClearAll()
 {
-  ClearCompleteCache();
+  ClearCache();
+  ClearUpdatedCompletions();
   mPrefixSet->SetPrefixes(nullptr, 0);
   mPrimed = false;
 }
 
 void
-LookupCache::ClearCompleteCache()
+LookupCache::ClearUpdatedCompletions()
 {
-  mCompletions.Clear();
-  UpdateHeader();
+  mUpdateCompletions.Clear();
 }
 
 void
-LookupCache::UpdateHeader()
+LookupCache::ClearCache()
 {
-  mHeader.magic = LOOKUPCACHE_MAGIC;
-  mHeader.version = CURRENT_VERSION;
-  mHeader.numCompletions = mCompletions.Length();
+  mGetHashCache.Clear();
 }
 
 nsresult
-LookupCache::EnsureSizeConsistent()
+LookupCache::ReadCompletions()
 {
-  nsCOMPtr<nsIFile> storeFile;
-  nsresult rv = mStoreDirectory->Clone(getter_AddRefs(storeFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = storeFile->AppendNative(mTableName + NS_LITERAL_CSTRING(CACHE_SUFFIX));
+  HashStore store(mTableName, mStoreDirectory);
+
+  nsresult rv = store.Open();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  int64_t fileSize;
-  rv = storeFile->GetFileSize(&fileSize);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mUpdateCompletions.Clear();
 
-  if (fileSize < 0) {
-    return NS_ERROR_FAILURE;
+  const AddCompleteArray& addComplete = store.AddCompletes();
+  for (uint32_t i = 0; i < addComplete.Length(); i++) {
+    mUpdateCompletions.AppendElement(addComplete[i].complete);
   }
-
-  int64_t expectedSize = sizeof(mHeader)
-                        + mHeader.numCompletions*sizeof(Completion);
-  if (expectedSize != fileSize) {
-    NS_WARNING("File length does not match. Probably corrupted.");
-    Reset();
-    return NS_ERROR_FILE_CORRUPTED;
-  }
-
-  return NS_OK;
-}
-
-nsresult
-LookupCache::ReadHeader(nsIInputStream* aInputStream)
-{
-  if (!aInputStream) {
-    ClearCompleteCache();
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(aInputStream);
-  nsresult rv = seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  void *buffer = &mHeader;
-  rv = NS_ReadInputStreamToBuffer(aInputStream,
-                                  &buffer,
-                                  sizeof(Header));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (mHeader.magic != LOOKUPCACHE_MAGIC || mHeader.version != CURRENT_VERSION) {
-    NS_WARNING("Unexpected header data in the store.");
-    Reset();
-    return NS_ERROR_FILE_CORRUPTED;
-  }
-  LOG(("%d completions present", mHeader.numCompletions));
-
-  rv = EnsureSizeConsistent();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-nsresult
-LookupCache::ReadCompletions(nsIInputStream* aInputStream)
-{
-  if (!mHeader.numCompletions) {
-    mCompletions.Clear();
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(aInputStream);
-  nsresult rv = seekable->Seek(nsISeekableStream::NS_SEEK_SET, sizeof(Header));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = ReadTArray(aInputStream, &mCompletions, mHeader.numCompletions);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  LOG(("Read %d completions", mCompletions.Length()));
 
   return NS_OK;
 }

@@ -105,6 +105,7 @@ static bool gShuttingDownThread = false;
 static mozilla::Atomic<int32_t> gFreshnessGuarantee(CONFIRM_AGE_DEFAULT_SEC);
 
 NS_IMPL_ISUPPORTS(nsUrlClassifierDBServiceWorker,
+                  nsIUrlClassifierDBServiceWorker,
                   nsIUrlClassifierDBService)
 
 nsUrlClassifierDBServiceWorker::nsUrlClassifierDBServiceWorker()
@@ -628,6 +629,38 @@ nsUrlClassifierDBServiceWorker::ResetDatabase()
 }
 
 NS_IMETHODIMP
+nsUrlClassifierDBServiceWorker::ReloadDatabase()
+{
+  nsTArray<nsCString> tables;
+  nsTArray<int64_t> lastUpdateTimes;
+  nsresult rv = mClassifier->ActiveTables(tables);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  for (uint32_t table = 0; table < tables.Length(); table++) {
+    lastUpdateTimes.AppendElement(mClassifier->GetLastUpdateTime(tables[table]));
+  }
+
+  
+  rv = CloseDb();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = OpenDb();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  for (uint32_t table = 0; table < tables.Length(); table++) {
+    int64_t time = lastUpdateTimes[table];
+    if (time) {
+      mClassifier->SetLastUpdateTime(tables[table], lastUpdateTimes[table]);
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::CancelUpdate()
 {
   LOG(("nsUrlClassifierDBServiceWorker::CancelUpdate"));
@@ -658,7 +691,7 @@ nsUrlClassifierDBServiceWorker::CancelUpdate()
 
 
 
-nsresult
+NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::CloseDb()
 {
   if (mClassifier) {
@@ -672,7 +705,7 @@ nsUrlClassifierDBServiceWorker::CloseDb()
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::CacheCompletions(CacheResultArray *results)
 {
   LOG(("nsUrlClassifierDBServiceWorker::CacheCompletions [%p]", this));
@@ -720,7 +753,6 @@ nsUrlClassifierDBServiceWorker::CacheCompletions(CacheResultArray *results)
       if (NS_FAILED(rv)) {
         return rv;
       }
-      tu->SetLocalUpdate();
       updates.AppendElement(tu);
       pParse->ForgetTableUpdates();
     } else {
@@ -728,12 +760,12 @@ nsUrlClassifierDBServiceWorker::CacheCompletions(CacheResultArray *results)
     }
    }
 
-  mClassifier->ApplyUpdates(&updates);
+  mClassifier->ApplyFullHashes(&updates);
   mLastResults = *resultsPtr;
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::CacheMisses(PrefixArray *results)
 {
   LOG(("nsUrlClassifierDBServiceWorker::CacheMisses [%p] %d",
@@ -1588,6 +1620,14 @@ nsUrlClassifierDBService::ResetDatabase()
   NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
 
   return mWorkerProxy->ResetDatabase();
+}
+
+NS_IMETHODIMP
+nsUrlClassifierDBService::ReloadDatabase()
+{
+  NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
+
+  return mWorkerProxy->ReloadDatabase();
 }
 
 nsresult
