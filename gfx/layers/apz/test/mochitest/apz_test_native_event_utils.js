@@ -175,12 +175,46 @@ function synthesizeNativeMouseMove(aElement, aX, aY) {
   return true;
 }
 
+function equalPoints(aPt1, aPt2) {
+  if (!aPt1 || !aPt2) {
+    return false;
+  }
+  return aPt1.x == aPt2.x &&
+         aPt1.y == aPt2.y;
+}
+
 
 
 
 
 
 function synthesizeNativeMouseMoveAndWaitForMoveEvent(aElement, aX, aY, aCallback) {
+  
+  
+  var func = synthesizeNativeMouseMoveAndWaitForMoveEvent;  
+  if (typeof func.persistentState == 'undefined') {
+    
+    
+    
+    if (typeof window.statePersistentAcrossSubtests == 'undefined') {
+      func.persistentState = {}
+    } else {
+      func.persistentState = window.statePersistentAcrossSubtests;
+    }
+  }
+
+  
+  
+  
+  
+  
+  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  if (equalPoints(func.persistentState.lastMouseMoveLocation, pt)) {
+    setTimeout(aCallback, 0);
+    return true;
+  }
+  func.persistentState.lastMouseMoveLocation = pt;
+
   var targetWindow = aElement.ownerDocument.defaultView;
   targetWindow.addEventListener("mousemove", function mousemoveWaiter(e) {
     targetWindow.removeEventListener("mousemove", mousemoveWaiter);
@@ -241,11 +275,6 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
   });
   return true;
 }
-
-
-
-
-
 
 
 
