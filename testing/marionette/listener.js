@@ -214,6 +214,7 @@ let isElementDisplayedFn = dispatch(isElementDisplayed);
 let getElementValueOfCssPropertyFn = dispatch(getElementValueOfCssProperty);
 let switchToShadowRootFn = dispatch(switchToShadowRoot);
 let singleTapFn = dispatch(singleTap);
+let actionChainFn = dispatch(actionChain);
 
 
 
@@ -225,7 +226,7 @@ function startListeners() {
   addMessageListenerId("Marionette:executeAsyncScript", executeAsyncScript);
   addMessageListenerId("Marionette:executeJSScript", executeJSScript);
   addMessageListenerId("Marionette:singleTap", singleTapFn);
-  addMessageListenerId("Marionette:actionChain", actionChain);
+  addMessageListenerId("Marionette:actionChain", actionChainFn);
   addMessageListenerId("Marionette:multiAction", multiAction);
   addMessageListenerId("Marionette:get", get);
   addMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
@@ -331,7 +332,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:executeAsyncScript", executeAsyncScript);
   removeMessageListenerId("Marionette:executeJSScript", executeJSScript);
   removeMessageListenerId("Marionette:singleTap", singleTapFn);
-  removeMessageListenerId("Marionette:actionChain", actionChain);
+  removeMessageListenerId("Marionette:actionChain", actionChainFn);
   removeMessageListenerId("Marionette:multiAction", multiAction);
   removeMessageListenerId("Marionette:get", get);
   removeMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
@@ -1057,30 +1058,20 @@ function createATouch(el, corx, cory, touchId) {
 
 
 
-function actionChain(msg) {
-  let command_id = msg.json.command_id;
-  let args = msg.json.chain;
-  let touchId = msg.json.nextId;
-
-  let callbacks = {};
-  callbacks.onSuccess = value => sendResponse(value, command_id);
-  callbacks.onError = err => sendError(err, command_id);
-
+function actionChain(chain, touchId) {
   let touchProvider = {};
   touchProvider.createATouch = createATouch;
   touchProvider.emitTouchEvent = emitTouchEvent;
 
-  try {
+  return new Promise((resolve, reject) => {
     actions.dispatchActions(
-        args,
+        chain,
         touchId,
         curContainer,
         elementManager,
-        callbacks,
+        {onSuccess: resolve, onError: reject},
         touchProvider);
-  } catch (e) {
-    sendError(e, command_id);
-  }
+  });
 }
 
 
