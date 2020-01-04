@@ -93,7 +93,8 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
 public:
     
     explicit gfxFontconfigFontEntry(const nsAString& aFaceName,
-                                    FcPattern* aFontPattern);
+                                    FcPattern* aFontPattern,
+                                    bool aIgnoreFcCharmap);
 
     
     
@@ -154,6 +155,14 @@ protected:
     
     FT_Face   mFTFace;
     bool      mFTFaceInitialized;
+
+    
+    
+    
+    
+    
+    bool      mIgnoreFcCharmap;
+
     double    mAspect;
 
     
@@ -163,7 +172,9 @@ protected:
 class gfxFontconfigFontFamily : public gfxFontFamily {
 public:
     explicit gfxFontconfigFontFamily(const nsAString& aName) :
-        gfxFontFamily(aName) { }
+        gfxFontFamily(aName),
+        mContainsAppFonts(false)
+    { }
 
     void FindStyleVariations(FontInfoData *aFontInfoData = nullptr) override;
 
@@ -171,10 +182,17 @@ public:
     
     void AddFontPattern(FcPattern* aFontPattern);
 
+    void SetFamilyContainsAppFonts(bool aContainsAppFonts)
+    {
+        mContainsAppFonts = aContainsAppFonts;
+    }
+
 protected:
     virtual ~gfxFontconfigFontFamily() { }
 
     nsTArray<nsCountedRef<FcPattern> > mFontPatterns;
+
+    bool      mContainsAppFonts;
 };
 
 class gfxFontconfigFont : public gfxFT2FontBase {
@@ -259,7 +277,8 @@ protected:
     virtual ~gfxFcPlatformFontList();
 
     
-    void AddFontSetFamilies(FcFontSet* aFontSet);
+    
+    void AddFontSetFamilies(FcFontSet* aFontSet, bool aAppFonts);
 
     
     
