@@ -7488,30 +7488,40 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams={}) {
       return false;
     }
 
+    
+    function cleanURL(url, removeQuery, removeFragment) {
+      let ret = url;
+      if (removeFragment) {
+        ret = ret.split("#")[0];
+        if (removeQuery) {
+          
+          ret = ret.split("?")[0];
+        }
+      } else if (removeQuery) {
+        
+        let fragment = ret.split("#")[1];
+        ret = ret.split("?")[0].concat(
+          (fragment != undefined) ? "#".concat(fragment) : "");
+      }
+      return ret;
+    }
+
+    
+    
+    let requestedCompare = cleanURL(
+        aURI.spec, ignoreQueryString || replaceQueryString, ignoreFragment);
     let browsers = aWindow.gBrowser.browsers;
     for (let i = 0; i < browsers.length; i++) {
       let browser = browsers[i];
-      if (ignoreFragment ? browser.currentURI.equalsExceptRef(aURI) :
-                           browser.currentURI.equals(aURI)) {
-        
+      let browserCompare = cleanURL(
+          browser.currentURI.spec, ignoreQueryString || replaceQueryString, ignoreFragment);
+      if (requestedCompare == browserCompare) {
         aWindow.focus();
-        if (ignoreFragment) {
-          let spec = aURI.spec;
-          browser.loadURI(spec);
+        if (ignoreFragment || replaceQueryString) {
+          browser.loadURI(aURI.spec);
         }
         aWindow.gBrowser.tabContainer.selectedIndex = i;
         return true;
-      }
-      if (ignoreQueryString || replaceQueryString) {
-        if (browser.currentURI.spec.split("?")[0] == aURI.spec.split("?")[0]) {
-          
-          aWindow.focus();
-          if (replaceQueryString) {
-            browser.loadURI(aURI.spec);
-          }
-          aWindow.gBrowser.tabContainer.selectedIndex = i;
-          return true;
-        }
       }
     }
     return false;
