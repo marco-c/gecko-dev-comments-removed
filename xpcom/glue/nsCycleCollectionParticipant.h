@@ -184,6 +184,7 @@ public:
   NS_IMETHOD_(void) Trace(void* aPtr, const TraceCallbacks& aCb,
                           void* aClosure) override = 0;
 
+  
   static void NoteJSChild(JS::GCCellPtr aGCThing, const char* aName,
                           void* aClosure);
 };
