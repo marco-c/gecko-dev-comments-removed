@@ -276,10 +276,7 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
                 }
             }
 
-            
-            if (!ContextOptionsRef(cx).dontReportUncaught() &&
-                !ContextOptionsRef(cx).autoJSAPIOwnsErrorReporting())
-                JS_ReportPendingException(cx);
+            MOZ_ASSERT(ContextOptionsRef(cx).autoJSAPIOwnsErrorReporting());
         } else if (!success) {
             NS_WARNING("QI hook ran OOMed - this is probably a bug!");
         }
