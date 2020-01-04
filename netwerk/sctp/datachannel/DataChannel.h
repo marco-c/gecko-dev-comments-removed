@@ -527,7 +527,7 @@ public:
       case ON_DISCONNECTED:
         
         mConnection->CloseAll();
-        
+        MOZ_FALLTHROUGH;
       case ON_CHANNEL_CREATED:
       case ON_CONNECTION:
         

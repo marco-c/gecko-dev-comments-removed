@@ -123,7 +123,6 @@ public:
 
 NS_IMPL_ISUPPORTS(DataChannelShutdown, nsIObserver);
 
-
 BufferedMsg::BufferedMsg(struct sctp_sendv_spa &spa, const char *data,
                          size_t length) : mLength(length)
 {
@@ -699,7 +698,7 @@ DataChannelConnection::SctpDtlsOutput(void *addr, void *buffer, size_t length,
   
   
   
-  if (0 ) {
+  if ((0 )) {
     res = peer->SendPacket(static_cast<unsigned char *>(buffer), length, false);
   } else {
     unsigned char *data = new unsigned char[length];
@@ -1799,7 +1798,6 @@ void
 DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_event *strchg)
 {
   uint16_t stream;
-  uint32_t i;
   RefPtr<DataChannel> channel;
 
   if (strchg->strchange_flags == SCTP_STREAM_CHANGE_DENIED) {
@@ -1854,7 +1852,7 @@ DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_e
     
   }
 
-  for (i = 0; i < mStreams.Length(); ++i) {
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
     channel = mStreams[i];
     if (!channel)
       continue;
@@ -1885,7 +1883,6 @@ DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_e
     }
   }
 }
-
 
 
 void
