@@ -43,6 +43,7 @@ const TOPIC_MOZSETTINGS_CHANGED      = "mozsettings-changed";
 const TOPIC_CONNECTION_STATE_CHANGED = "network-connection-state-changed";
 const TOPIC_PREF_CHANGED             = "nsPref:changed";
 const TOPIC_XPCOM_SHUTDOWN           = "xpcom-shutdown";
+const PREF_MANAGE_OFFLINE_STATUS     = "network.gonk.manage-offline-status";
 const PREF_NETWORK_DEBUG_ENABLED     = "network.debugging.enabled";
 
 const POSSIBLE_USB_INTERFACE_NAME = "rndis0,usb0";
@@ -125,6 +126,14 @@ function TetheringService() {
   Services.obs.addObserver(this, TOPIC_MOZSETTINGS_CHANGED, false);
   Services.obs.addObserver(this, TOPIC_CONNECTION_STATE_CHANGED, false);
   Services.prefs.addObserver(PREF_NETWORK_DEBUG_ENABLED, this, false);
+  Services.prefs.addObserver(PREF_MANAGE_OFFLINE_STATUS, this, false);
+
+  try {
+    this._manageOfflineStatus =
+      Services.prefs.getBoolPref(PREF_MANAGE_OFFLINE_STATUS);
+  } catch(ex) {
+    
+  }
 
   this._dataDefaultServiceId = 0;
 
@@ -231,6 +240,12 @@ TetheringService.prototype = {
   _pendingWifiTetheringRequestArgs: null,
 
   
+  state: Ci.nsITetheringService.TETHERING_STATE_INACTIVE,
+
+  
+  _manageOfflineStatus: true,
+
+  
 
   observe: function(aSubject, aTopic, aData) {
     let network;
@@ -258,9 +273,18 @@ TetheringService.prototype = {
         Services.obs.removeObserver(this, TOPIC_MOZSETTINGS_CHANGED);
         Services.obs.removeObserver(this, TOPIC_CONNECTION_STATE_CHANGED);
         Services.prefs.removeObserver(PREF_NETWORK_DEBUG_ENABLED, this);
+        Services.prefs.removeObserver(PREF_MANAGE_OFFLINE_STATUS, this);
 
         this.dunConnectTimer.cancel();
         this.dunRetryTimer.cancel();
+        break;
+      case PREF_MANAGE_OFFLINE_STATUS:
+        try {
+          this._manageOfflineStatus =
+            Services.prefs.getBoolPref(PREF_MANAGE_OFFLINE_STATUS);
+        } catch(ex) {
+          
+        }
         break;
     }
   },
@@ -583,9 +607,30 @@ TetheringService.prototype = {
     this._wifiTetheringRequestOngoing = true;
     gNetworkService.setWifiTethering(aEnable, aConfig, (aError) => {
       
-      if (this.tetheringSettings[SETTINGS_DUN_REQUIRED] &&
-          (!aEnable || aError)) {
-        this.handleDunConnection(false);
+      if (aEnable && !aError) {
+        this.state = Ci.nsITetheringService.TETHERING_STATE_WIFI;
+      } else {
+        
+          
+
+        
+          
+          
+          
+        if (this.state != Ci.nsITetheringService.TETHERING_STATE_USB) {
+          this.state = Ci.nsITetheringService.TETHERING_STATE_INACTIVE;
+        }
+
+        
+        if (this.tetheringSettings[SETTINGS_DUN_REQUIRED]) {
+          this.handleDunConnection(false);
+        }
+      }
+
+      if (this._manageOfflineStatus) {
+        Services.io.offline = !this.isAnyConnected() &&
+                              (this.state ===
+                               Ci.nsITetheringService.TETHERING_STATE_INACTIVE);
       }
 
       let resetSettings = aError;
@@ -720,17 +765,34 @@ TetheringService.prototype = {
       
       this._usbTetheringRequestCount = 0;
       this._usbTetheringAction = TETHERING_STATE_IDLE;
+      
+        
+        
+      if (this.state != Ci.nsITetheringService.TETHERING_STATE_WIFI) {
+        this.state = Ci.nsITetheringService.TETHERING_STATE_INACTIVE;
+      }
       if (this.tetheringSettings[SETTINGS_DUN_REQUIRED]) {
         this.handleDunConnection(false);
       }
     } else {
       if (aEnable) {
         this._usbTetheringAction = TETHERING_STATE_ACTIVE;
+        this.state = Ci.nsITetheringService.TETHERING_STATE_USB;
       } else {
         this._usbTetheringAction = TETHERING_STATE_IDLE;
+        
+        if (this.state != Ci.nsITetheringService.TETHERING_STATE_WIFI) {
+          this.state = Ci.nsITetheringService.TETHERING_STATE_INACTIVE;
+        }
         if (this.tetheringSettings[SETTINGS_DUN_REQUIRED]) {
           this.handleDunConnection(false);
         }
+      }
+
+      if (this._manageOfflineStatus) {
+        Services.io.offline = !this.isAnyConnected() &&
+                              (this.state ===
+                               Ci.nsITetheringService.TETHERING_STATE_INACTIVE);
       }
 
       this.handleLastUsbTetheringRequest();
@@ -811,6 +873,17 @@ TetheringService.prototype = {
     this.wantConnectionEvent = null;
 
     callback.call(this);
+  },
+
+  isAnyConnected: function() {
+    let allNetworkInfo = gNetworkManager.allNetworkInfo;
+    for (let networkId in allNetworkInfo) {
+      if (allNetworkInfo.hasOwnProperty(networkId) &&
+          allNetworkInfo[networkId].state === Ci.nsINetworkInfo.NETWORK_STATE_CONNECTED) {
+          return true;
+      }
+    }
+    return false;
   },
 };
 
