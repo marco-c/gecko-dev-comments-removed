@@ -764,6 +764,9 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
 
 
+
+
+
     private void copyHistoryExtensionDataToVisitsTable(final SQLiteDatabase historyExtensionDb, final SQLiteDatabase db) {
         final String historyExtensionTable = "HistoryExtension";
         final String columnGuid = "guid";
@@ -1772,14 +1775,20 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
                     historyExtensionDb = SQLiteDatabase.openDatabase(historyExtensionsDatabase.getPath(), null,
                             SQLiteDatabase.OPEN_READONLY);
 
+                    if (historyExtensionDb != null) {
+                        copyHistoryExtensionDataToVisitsTable(historyExtensionDb, db);
+                    }
+
                 
                 } catch (SQLiteException e) {
                     Log.w(LOGTAG, "Couldn't open history extension database; synthesizing visits instead", e);
                     synthesizeAndInsertVisits(db, false);
-                }
 
-                if (historyExtensionDb != null) {
-                    copyHistoryExtensionDataToVisitsTable(historyExtensionDb, db);
+                
+                
+                } catch (IllegalStateException e) {
+                    Log.w(LOGTAG, "Couldn't copy over history extension data; synthesizing visits instead", e);
+                    synthesizeAndInsertVisits(db, false);
                 }
 
             
