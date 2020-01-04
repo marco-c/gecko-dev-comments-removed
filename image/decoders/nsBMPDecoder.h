@@ -16,6 +16,32 @@
 namespace mozilla {
 namespace image {
 
+namespace bmp {
+
+
+struct ColorTableEntry {
+  uint8_t mRed;
+  uint8_t mGreen;
+  uint8_t mBlue;
+};
+
+struct BitFields {
+  uint32_t red;
+  uint32_t green;
+  uint32_t blue;
+  uint8_t redLeftShift;
+  uint8_t redRightShift;
+  uint8_t greenLeftShift;
+  uint8_t greenRightShift;
+  uint8_t blueLeftShift;
+  uint8_t blueRightShift;
+
+  
+  static const size_t LENGTH = 12;
+};
+
+} 
+
 class RasterImage;
 
 
@@ -110,7 +136,7 @@ private:
 
   uint32_t mNumColors;      
                             
-  bmp::ColorTable* mColors; 
+  bmp::ColorTableEntry* mColors; 
   uint32_t mBytesPerColor;  
 
   
@@ -151,9 +177,10 @@ SetPixel(uint32_t*& aDecoded, uint8_t aRed, uint8_t aGreen,
 }
 
 static inline void
-SetPixel(uint32_t*& aDecoded, uint8_t idx, bmp::ColorTable* aColors)
+SetPixel(uint32_t*& aDecoded, uint8_t idx, bmp::ColorTableEntry* aColors)
 {
-  SetPixel(aDecoded, aColors[idx].red, aColors[idx].green, aColors[idx].blue);
+  SetPixel(aDecoded,
+           aColors[idx].mRed, aColors[idx].mGreen, aColors[idx].mBlue);
 }
 
 
@@ -163,7 +190,7 @@ SetPixel(uint32_t*& aDecoded, uint8_t idx, bmp::ColorTable* aColors)
 
 inline void
 Set4BitPixel(uint32_t*& aDecoded, uint8_t aData, uint32_t& aCount,
-             bmp::ColorTable* aColors)
+             bmp::ColorTableEntry* aColors)
 {
   uint8_t idx = aData >> 4;
   SetPixel(aDecoded, idx, aColors);
