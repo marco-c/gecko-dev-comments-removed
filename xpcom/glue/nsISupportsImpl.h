@@ -494,7 +494,9 @@ public:
 
 
 
-#define NS_INLINE_DECL_REFCOUNTING(_class, ...)                               \
+
+
+#define NS_INLINE_DECL_REFCOUNTING_WITH_DESTROY(_class, _destroy, ...)        \
 public:                                                                       \
   NS_METHOD_(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {              \
     MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                                \
@@ -511,7 +513,7 @@ public:                                                                       \
     NS_LOG_RELEASE(this, mRefCnt, #_class);                                   \
     if (mRefCnt == 0) {                                                       \
       mRefCnt = 1; /* stabilize */                                            \
-      delete this;                                                            \
+      _destroy;                                                               \
       return 0;                                                               \
     }                                                                         \
     return mRefCnt;                                                           \
@@ -521,6 +523,16 @@ protected:                                                                    \
   nsAutoRefCnt mRefCnt;                                                       \
   NS_DECL_OWNINGTHREAD                                                        \
 public:
+
+
+
+
+
+
+
+
+#define NS_INLINE_DECL_REFCOUNTING(_class, ...)                               \
+  NS_INLINE_DECL_REFCOUNTING_WITH_DESTROY(_class, delete(this), __VA_ARGS__)
 
 #define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, _decl, ...)        \
 public:                                                                       \
