@@ -29,24 +29,31 @@ ReadCachedScript(StartupCache* cache, nsACString& uri, JSContext* cx,
     if (NS_FAILED(rv))
         return rv; 
 
-    TranscodeResult code = JS_DecodeScript(cx, buf.get(), len, scriptp);
-    if (code == TranscodeResult_Ok)
-        return NS_OK;
-
-    if ((code & TranscodeResult_Failure) != 0)
-        return NS_ERROR_FAILURE;
-
-    MOZ_ASSERT((code & TranscodeResult_Throw) != 0);
-    JS_ClearPendingException(cx);
-    return NS_ERROR_OUT_OF_MEMORY;
+    scriptp.set(JS_DecodeScript(cx, buf.get(), len));
+    if (!scriptp)
+        return NS_ERROR_OUT_OF_MEMORY;
+    return NS_OK;
 }
 
 nsresult
 ReadCachedFunction(StartupCache* cache, nsACString& uri, JSContext* cx,
                    nsIPrincipal* systemPrincipal, JSFunction** functionp)
 {
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
+    return NS_ERROR_FAILURE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 nsresult
@@ -56,17 +63,14 @@ WriteCachedScript(StartupCache* cache, nsACString& uri, JSContext* cx,
     MOZ_ASSERT(JS_GetScriptPrincipals(script) == nsJSPrincipals::get(systemPrincipal));
 
     uint32_t size;
-    void* data = nullptr;
-    TranscodeResult code = JS_EncodeScript(cx, script, &size, &data);
-    if (code != TranscodeResult_Ok) {
-        if ((code & TranscodeResult_Failure) != 0)
-            return NS_ERROR_FAILURE;
-        MOZ_ASSERT((code & TranscodeResult_Throw) != 0);
+    void* data = JS_EncodeScript(cx, script, &size);
+    if (!data) {
+        
         JS_ClearPendingException(cx);
-        return NS_ERROR_OUT_OF_MEMORY;
+        return NS_ERROR_FAILURE;
     }
 
-    MOZ_ASSERT(size && data);
+    MOZ_ASSERT(size);
     nsresult rv = cache->PutBuffer(PromiseFlatCString(uri).get(), static_cast<char*>(data), size);
     js_free(data);
     return rv;
@@ -76,6 +80,19 @@ nsresult
 WriteCachedFunction(StartupCache* cache, nsACString& uri, JSContext* cx,
                     nsIPrincipal* systemPrincipal, JSFunction* function)
 {
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
+    return NS_ERROR_FAILURE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
