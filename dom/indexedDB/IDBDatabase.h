@@ -56,6 +56,9 @@ class IDBDatabase final
   class Observer;
   friend class Observer;
 
+  friend class IDBObjectStore;
+  friend class IDBIndex;
+
   
   
   
@@ -327,6 +330,14 @@ private:
              const nsAString& aFilename,
              uint32_t aLineNumber,
              uint32_t aColumnNumber);
+
+  
+  nsresult
+  RenameObjectStore(int64_t aObjectStoreId, const nsAString& aName);
+
+  
+  nsresult
+  RenameIndex(int64_t aObjectStoreId, int64_t aIndexId, const nsAString& aName);
 };
 
 } 
