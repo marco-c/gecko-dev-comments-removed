@@ -97,6 +97,10 @@ public:
   virtual ~NrSocketBase() {}
 
   
+  
+  static int CreateSocket(nr_transport_addr *addr, RefPtr<NrSocketBase> *sock);
+
+  
   virtual int create(nr_transport_addr *addr) = 0;
   virtual int sendto(const void *msg, size_t len,
                      int flags, nr_transport_addr *to) = 0;
@@ -132,8 +136,9 @@ public:
     return my_addr_;
   }
 
-protected:
   void fire_callback(int how);
+
+protected:
 
   bool connect_invoked_;
   nr_transport_addr my_addr_;
