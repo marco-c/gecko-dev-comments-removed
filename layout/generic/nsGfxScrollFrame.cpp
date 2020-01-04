@@ -5621,6 +5621,13 @@ ScrollFrameHelper::GetBorderRadii(const nsSize& aFrameSize,
   return true;
 }
 
+static nscoord
+SnapCoord(nscoord aCoord, double aRes, nscoord aAppUnitsPerPixel)
+{
+  double snappedToLayerPixels = NS_round((aRes*aCoord)/aAppUnitsPerPixel);
+  return NSToCoordRoundWithClamp(snappedToLayerPixels*aAppUnitsPerPixel/aRes);
+}
+
 nsRect
 ScrollFrameHelper::GetScrolledRect() const
 {
@@ -5634,30 +5641,82 @@ ScrollFrameHelper::GetScrolledRect() const
   if (result.height < mScrollPort.height) {
     NS_WARNING("Scrolled rect smaller than scrollport?");
   }
+
+  
+  
+  
+  
+  
+  
+  nsSize scrollPortSize = GetScrollPositionClampingScrollPortSize();
+  nsIFrame* referenceFrame = nsLayoutUtils::GetReferenceFrame(mOuter);
+  nsPoint toReferenceFrame = mOuter->GetOffsetToCrossDoc(referenceFrame);
+  nsRect scrollPort(mScrollPort.TopLeft() + toReferenceFrame, scrollPortSize);
+  nsRect scrolledRect = result + scrollPort.TopLeft();
+
+  if (scrollPort.Overflows() || scrolledRect.Overflows()) {
+    return result;
+  }
+
+  
+  
+  nscoord appUnitsPerDevPixel = mScrolledFrame->PresContext()->AppUnitsPerDevPixel();
+  gfxSize scale = FrameLayerBuilder::GetPaintedLayerScaleForFrame(mScrolledFrame);
+  if (scale.IsEmpty()) {
+    scale = gfxSize(1.0f, 1.0f);
+  }
+
+  
+  
+  nscoord snappedScrolledAreaBottom = SnapCoord(scrolledRect.YMost(), scale.height, appUnitsPerDevPixel);
+  nscoord snappedScrollPortBottom = SnapCoord(scrollPort.YMost(), scale.height, appUnitsPerDevPixel);
+  nscoord maximumScrollOffsetY = snappedScrolledAreaBottom - snappedScrollPortBottom;
+  result.SetBottomEdge(scrollPort.height + maximumScrollOffsetY);
+
+  if (GetScrolledFrameDir() == NS_STYLE_DIRECTION_LTR) {
+    nscoord snappedScrolledAreaRight = SnapCoord(scrolledRect.XMost(), scale.width, appUnitsPerDevPixel);
+    nscoord snappedScrollPortRight = SnapCoord(scrollPort.XMost(), scale.width, appUnitsPerDevPixel);
+    nscoord maximumScrollOffsetX = snappedScrolledAreaRight - snappedScrollPortRight;
+    result.SetRightEdge(scrollPort.width + maximumScrollOffsetX);
+  } else {
+    
+    
+    
+    
+    nscoord snappedScrolledAreaLeft = SnapCoord(scrolledRect.x, scale.width, appUnitsPerDevPixel);
+    nscoord snappedScrollPortLeft = SnapCoord(scrollPort.x, scale.width, appUnitsPerDevPixel);
+    nscoord minimumScrollOffsetX = snappedScrolledAreaLeft - snappedScrollPortLeft;
+    result.SetLeftEdge(minimumScrollOffsetX);
+  }
+
   return result;
 }
 
-nsRect
-ScrollFrameHelper::GetScrolledRectInternal(const nsRect& aScrolledFrameOverflowArea,
-                                               const nsSize& aScrollPortSize) const
-{
-  uint8_t frameDir = IsLTR() ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
 
+uint8_t
+ScrollFrameHelper::GetScrolledFrameDir() const
+{
   
   
   if (mScrolledFrame->StyleTextReset()->mUnicodeBidi &
       NS_STYLE_UNICODE_BIDI_PLAINTEXT) {
     nsIFrame* childFrame = mScrolledFrame->PrincipalChildList().FirstChild();
     if (childFrame) {
-      frameDir =
-        (nsBidiPresUtils::ParagraphDirection(childFrame) == NSBIDI_LTR)
+      return (nsBidiPresUtils::ParagraphDirection(childFrame) == NSBIDI_LTR)
           ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
     }
   }
 
+  return IsLTR() ? NS_STYLE_DIRECTION_LTR : NS_STYLE_DIRECTION_RTL;
+}
+
+nsRect
+ScrollFrameHelper::GetScrolledRectInternal(const nsRect& aScrolledFrameOverflowArea,
+                                               const nsSize& aScrollPortSize) const
+{
   return nsLayoutUtils::GetScrolledRect(mScrolledFrame,
                                         aScrolledFrameOverflowArea,
-                                        aScrollPortSize, frameDir);
+                                        aScrollPortSize, GetScrolledFrameDir());
 }
 
 nsMargin

@@ -5,6 +5,7 @@
 
 #include "nsRect.h"
 #include "mozilla/gfx/Types.h"          
+#include "mozilla/CheckedInt.h"         
 #include "nsDeviceContext.h"            
 #include "nsString.h"               
 #include "nsMargin.h"                   
@@ -18,6 +19,19 @@ static_assert((int(NS_SIDE_TOP) == 0) &&
 const mozilla::gfx::IntRect& GetMaxSizedIntRect() {
   static const mozilla::gfx::IntRect r(0, 0, INT32_MAX, INT32_MAX);
   return r;
+}
+
+
+bool nsRect::Overflows() const {
+#ifdef NS_COORD_IS_FLOAT
+  return false;
+#else
+  mozilla::CheckedInt<int32_t> xMost = this->x;
+  xMost += this->width;
+  mozilla::CheckedInt<int32_t> yMost = this->y;
+  yMost += this->height;
+  return !xMost.isValid() || !yMost.isValid();
+#endif
 }
 
 #ifdef DEBUG
