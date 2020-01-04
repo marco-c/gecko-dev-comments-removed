@@ -30,9 +30,6 @@ pref("network.predictor.enabled", true);
 
 pref("layout.accessiblecaret.enabled", false);
 
-pref("gfx.vsync.hw-vsync.enabled", true);
-pref("gfx.vsync.compositor", true);
-
 
 pref("devtools.debugger.unix-domain-socket", "6000");
 
