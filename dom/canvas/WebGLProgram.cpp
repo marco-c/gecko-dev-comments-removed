@@ -911,18 +911,26 @@ WebGLProgram::LinkProgram()
     gl::GLContext* gl = mContext->gl;
     gl->MakeCurrent();
 
-    
-    
-    size_t numSamplerUniforms_upperBound = mVertShader->CalcNumSamplerUniforms() +
-                                           mFragShader->CalcNumSamplerUniforms();
     if (gl->WorkAroundDriverBugs() &&
-        mContext->mIsMesa &&
-        numSamplerUniforms_upperBound > 16)
+        mContext->mIsMesa)
     {
-        mLinkLog.AssignLiteral("Programs with more than 16 samplers are disallowed on"
-                               " Mesa drivers to avoid crashing.");
-        mContext->GenerateWarning("linkProgram: %s", mLinkLog.BeginReading());
-        return false;
+        
+        
+        size_t numSamplerUniforms_upperBound = mVertShader->CalcNumSamplerUniforms() +
+                                               mFragShader->CalcNumSamplerUniforms();
+        if (numSamplerUniforms_upperBound > 16) {
+            mLinkLog.AssignLiteral("Programs with more than 16 samplers are disallowed on"
+                                   " Mesa drivers to avoid crashing.");
+            mContext->GenerateWarning("linkProgram: %s", mLinkLog.BeginReading());
+            return false;
+        }
+
+        
+        if (mVertShader->NumAttributes() > mContext->MaxVertexAttribs()) {
+            mLinkLog.AssignLiteral("Number of attributes exceeds Mesa's reported max attribute count.");
+            mContext->GenerateWarning("linkProgram: %s", mLinkLog.BeginReading());
+            return false;
+        }
     }
 
     

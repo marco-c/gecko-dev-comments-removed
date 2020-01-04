@@ -329,6 +329,12 @@ ShaderValidator::CalcNumSamplerUniforms() const
     return accum;
 }
 
+size_t
+ShaderValidator::NumAttributes() const
+{
+  return ShGetAttributes(mHandle)->size();
+}
+
 
 
 bool
