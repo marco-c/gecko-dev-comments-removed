@@ -1390,7 +1390,7 @@ public:
 
     float FUnitsToDevUnitsFactor() const {
         
-        NS_ASSERTION(mFUnitsConvFactor >= 0.0f, "mFUnitsConvFactor not valid");
+        NS_ASSERTION(mFUnitsConvFactor > 0.0f, "mFUnitsConvFactor not valid");
         return mFUnitsConvFactor;
     }
 
@@ -2032,10 +2032,7 @@ protected:
 
     gfxFloat                   mAdjustedSize;
 
-    
-    
-    
-    float                      mFUnitsConvFactor;
+    float                      mFUnitsConvFactor; 
 
     
     AntialiasOption            mAntialiasOption;

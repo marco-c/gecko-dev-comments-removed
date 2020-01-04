@@ -748,7 +748,7 @@ gfxFont::gfxFont(gfxFontEntry *aFontEntry, const gfxFontStyle *aFontStyle,
     mApplySyntheticBold(false),
     mStyle(*aFontStyle),
     mAdjustedSize(0.0),
-    mFUnitsConvFactor(-1.0f), 
+    mFUnitsConvFactor(0.0f),
     mAntialiasOption(anAAOption)
 {
 #ifdef DEBUG_TEXT_RUN_STORAGE_METRICS
@@ -785,10 +785,10 @@ gfxFont::GetGlyphHAdvance(gfxContext *aCtx, uint16_t aGID)
     if (ProvidesGlyphWidths()) {
         return GetGlyphWidth(*aCtx->GetDrawTarget(), aGID) / 65536.0;
     }
-    if (mFUnitsConvFactor < 0.0f) {
+    if (mFUnitsConvFactor == 0.0f) {
         GetMetrics(eHorizontal);
     }
-    NS_ASSERTION(mFUnitsConvFactor >= 0.0f,
+    NS_ASSERTION(mFUnitsConvFactor > 0.0f,
                  "missing font unit conversion factor");
     if (!mHarfBuzzShaper) {
         mHarfBuzzShaper = new gfxHarfBuzzShaper(this);
@@ -3215,7 +3215,7 @@ gfxFont::InitMetricsFromSfntTables(Metrics& aMetrics)
 
     uint32_t len;
 
-    if (mFUnitsConvFactor < 0.0) {
+    if (mFUnitsConvFactor == 0.0) {
         
         
         uint16_t unitsPerEm = GetFontEntry()->UnitsPerEm();
@@ -3451,7 +3451,7 @@ gfxFont::CreateVerticalMetrics()
     const float UNINITIALIZED_LEADING = -10000.0f;
     metrics->externalLeading = UNINITIALIZED_LEADING;
 
-    if (mFUnitsConvFactor < 0.0) {
+    if (mFUnitsConvFactor == 0.0) {
         uint16_t upem = GetFontEntry()->UnitsPerEm();
         if (upem != gfxFontEntry::kInvalidUPEM) {
             mFUnitsConvFactor = GetAdjustedSize() / upem;
@@ -3462,7 +3462,7 @@ gfxFont::CreateVerticalMetrics()
 #define SET_SIGNED(field,src)   metrics->field = int16_t(src) * mFUnitsConvFactor
 
     gfxFontEntry::AutoTable os2Table(mFontEntry, kOS_2TableTag);
-    if (os2Table && mFUnitsConvFactor >= 0.0) {
+    if (os2Table && mFUnitsConvFactor > 0.0) {
         const OS2Table *os2 =
             reinterpret_cast<const OS2Table*>(hb_blob_get_data(os2Table, &len));
         
@@ -3488,7 +3488,7 @@ gfxFont::CreateVerticalMetrics()
     
     if (!metrics->aveCharWidth) {
         gfxFontEntry::AutoTable hheaTable(mFontEntry, kHheaTableTag);
-        if (hheaTable && mFUnitsConvFactor >= 0.0) {
+        if (hheaTable && mFUnitsConvFactor > 0.0) {
             const MetricsHeader* hhea =
                 reinterpret_cast<const MetricsHeader*>
                     (hb_blob_get_data(hheaTable, &len));
@@ -3504,7 +3504,7 @@ gfxFont::CreateVerticalMetrics()
 
     
     gfxFontEntry::AutoTable vheaTable(mFontEntry, kVheaTableTag);
-    if (vheaTable && mFUnitsConvFactor >= 0.0) {
+    if (vheaTable && mFUnitsConvFactor > 0.0) {
         const MetricsHeader* vhea =
             reinterpret_cast<const MetricsHeader*>
                 (hb_blob_get_data(vheaTable, &len));
