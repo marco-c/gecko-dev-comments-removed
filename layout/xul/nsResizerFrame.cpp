@@ -228,12 +228,15 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
         nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
 
         nsPopupLevel popupLevel = menuPopupFrame->PopupLevel();
-        nsRect screenRect = menuPopupFrame->GetConstraintRect(frameRect, rootScreenRect, popupLevel);
-        
-        
-        
-        nsIntRect screenRectPixels = screenRect.ToInsidePixels(aPresContext->AppUnitsPerDevPixel());
-        rect.IntersectRect(rect, LayoutDeviceIntRect::FromUnknownRect(screenRectPixels));
+        int32_t appPerDev = aPresContext->AppUnitsPerDevPixel();
+        LayoutDeviceIntRect screenRect = menuPopupFrame->GetConstraintRect
+          (LayoutDeviceIntRect::FromAppUnitsToNearest(frameRect, appPerDev),
+           
+           
+           
+           LayoutDeviceIntRect::FromAppUnitsToInside(rootScreenRect, appPerDev),
+           popupLevel);
+        rect.IntersectRect(rect, screenRect);
       }
 
       if (contentToResize) {

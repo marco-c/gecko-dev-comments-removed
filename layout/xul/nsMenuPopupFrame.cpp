@@ -1428,8 +1428,17 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
 
   
   
-  if (mInContentShell || (mFlip != FlipType_None && (!aIsMove || mPopupType != ePopupTypePanel))) {
-    nsRect screenRect = GetConstraintRect(anchorRect, rootScreenRect, popupLevel);
+  if (mInContentShell || (mFlip != FlipType_None &&
+                          (!aIsMove || mPopupType != ePopupTypePanel))) {
+    int32_t appPerDev = presContext->AppUnitsPerDevPixel();
+    LayoutDeviceIntRect anchorRectDevPix =
+      LayoutDeviceIntRect::FromAppUnitsToNearest(anchorRect, appPerDev);
+    LayoutDeviceIntRect rootScreenRectDevPix =
+      LayoutDeviceIntRect::FromAppUnitsToNearest(rootScreenRect, appPerDev);
+    LayoutDeviceIntRect screenRectDevPix =
+      GetConstraintRect(anchorRectDevPix, rootScreenRectDevPix, popupLevel);
+    nsRect screenRect =
+      LayoutDeviceIntRect::ToAppUnits(screenRectDevPix, appPerDev);
 
     
     anchorRect = anchorRect.Intersect(screenRect);
@@ -1527,13 +1536,12 @@ nsMenuPopupFrame::GetCurrentMenuItem()
   return mCurrentMenu;
 }
 
-nsRect
-nsMenuPopupFrame::GetConstraintRect(const nsRect& aAnchorRect,
-                                    const nsRect& aRootScreenRect,
+LayoutDeviceIntRect
+nsMenuPopupFrame::GetConstraintRect(const LayoutDeviceIntRect& aAnchorRect,
+                                    const LayoutDeviceIntRect& aRootScreenRect,
                                     nsPopupLevel aPopupLevel)
 {
-  nsIntRect screenRectPixels;
-  nsPresContext* presContext = PresContext();
+  LayoutDeviceIntRect screenRectPixels;
 
   
   
@@ -1545,13 +1553,10 @@ nsMenuPopupFrame::GetConstraintRect(const nsRect& aAnchorRect,
     
     
     
-    nsRect rect = mInContentShell ? aRootScreenRect : aAnchorRect;
-    
-    int32_t width = std::max(1, nsPresContext::AppUnitsToIntCSSPixels(rect.width));
-    int32_t height = std::max(1, nsPresContext::AppUnitsToIntCSSPixels(rect.height));
-    sm->ScreenForRect(nsPresContext::AppUnitsToIntCSSPixels(rect.x),
-                      nsPresContext::AppUnitsToIntCSSPixels(rect.y),
-                      width, height, getter_AddRefs(screen));
+    LayoutDeviceIntRect rect = mInContentShell ? aRootScreenRect : aAnchorRect;
+    int32_t width = std::max(1, rect.width);
+    int32_t height = std::max(1, rect.height);
+    sm->ScreenForRect(rect.x, rect.y, width, height, getter_AddRefs(screen));
     if (screen) {
       
       
@@ -1559,20 +1564,19 @@ nsMenuPopupFrame::GetConstraintRect(const nsRect& aAnchorRect,
       
       if (!dontOverlapOSBar && mMenuCanOverlapOSBar && !mInContentShell)
         screen->GetRect(&screenRectPixels.x, &screenRectPixels.y,
-                        &screenRectPixels.width, &screenRectPixels.height);
+          &screenRectPixels.width, &screenRectPixels.height);
       else
         screen->GetAvailRect(&screenRectPixels.x, &screenRectPixels.y,
-                             &screenRectPixels.width, &screenRectPixels.height);
+          &screenRectPixels.width, &screenRectPixels.height);
     }
   }
 
-  nsRect screenRect = ToAppUnits(screenRectPixels, presContext->AppUnitsPerDevPixel());
   if (mInContentShell) {
     
-    screenRect.IntersectRect(screenRect, aRootScreenRect);
+    screenRectPixels.IntersectRect(screenRectPixels, aRootScreenRect);
   }
 
-  return screenRect;
+  return screenRectPixels;
 }
 
 void nsMenuPopupFrame::CanAdjustEdges(int8_t aHorizontalSide,

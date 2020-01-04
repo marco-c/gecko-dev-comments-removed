@@ -362,8 +362,11 @@ public:
   
   
   
-  nsRect GetConstraintRect(const nsRect& aAnchorRect, const nsRect& aRootScreenRect,
-                           nsPopupLevel aPopupLevel);
+  
+  mozilla::LayoutDeviceIntRect
+  GetConstraintRect(const mozilla::LayoutDeviceIntRect& aAnchorRect,
+                    const mozilla::LayoutDeviceIntRect& aRootScreenRect,
+                    nsPopupLevel aPopupLevel);
 
   
   

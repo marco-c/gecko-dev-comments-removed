@@ -340,8 +340,9 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   
-  double invScale;
+  DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScale();
 
+#ifdef XP_MACOSX
   
   
   
@@ -352,28 +353,26 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   
-  CSSToLayoutDeviceScale scale = widget->GetDefaultScale();
-  if (NSToIntRound(60.0 / scale.scale) == dx->AppUnitsPerDevPixelAtUnitFullZoom()) {
-    invScale = 1.0 / scale.scale;
-  } else {
-    invScale = dx->AppUnitsPerDevPixelAtUnitFullZoom() / 60.0;
+  
+  
+  int32_t appPerDev = dx->AppUnitsPerDevPixelAtUnitFullZoom();
+  if (NSToIntRound(60.0 / scale.scale) != appPerDev) {
+    scale = DesktopToLayoutDeviceScale(60.0 / appPerDev);
   }
+#endif
 
+  DesktopRect deskRect = newBounds / scale;
   if (changedPos) {
     if (changedSize && !aMoveOnly) {
-      widget->ResizeClient(newBounds.x * invScale,
-                           newBounds.y * invScale,
-                           newBounds.width * invScale,
-                           newBounds.height * invScale,
+      widget->ResizeClient(deskRect.x, deskRect.y,
+                           deskRect.width, deskRect.height,
                            aInvalidateChangedSize);
     } else {
-      widget->MoveClient(newBounds.x * invScale,
-                         newBounds.y * invScale);
+      widget->MoveClient(deskRect.x, deskRect.y);
     }
   } else {
     if (changedSize && !aMoveOnly) {
-      widget->ResizeClient(newBounds.width * invScale,
-                           newBounds.height * invScale,
+      widget->ResizeClient(deskRect.width, deskRect.height,
                            aInvalidateChangedSize);
     } 
   }

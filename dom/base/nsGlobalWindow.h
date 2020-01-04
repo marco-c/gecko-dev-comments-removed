@@ -1607,7 +1607,7 @@ protected:
   void PreloadLocalStorage();
 
   
-  nsIntPoint GetScreenXY(mozilla::ErrorResult& aError);
+  mozilla::DesktopIntPoint GetScreenXY(mozilla::ErrorResult& aError);
 
   nsGlobalWindow* InnerForSetTimeoutOrInterval(mozilla::ErrorResult& aError);
 

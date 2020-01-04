@@ -181,7 +181,7 @@ APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
 
   LayoutDevicePoint currentPoint =
       APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid)
-    * widget->GetDefaultScale();;
+    * widget->GetDefaultScale();
   if (!mActiveElementManager->ActiveElementUsesStyle()) {
     
     
