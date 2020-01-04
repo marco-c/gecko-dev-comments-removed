@@ -87,8 +87,24 @@ public:
 
 
 
+
+
+
+
+
+
+
   static void ApplySpacing(nsTArray<Keyframe>& aKeyframes,
-                           SpacingMode aSpacingMode);
+                           SpacingMode aSpacingMode,
+                           nsCSSProperty aProperty,
+                           nsTArray<ComputedKeyframeValues>& aComputedValues);
+
+  
+
+
+
+
+  static void ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes);
 
   
 

@@ -32,6 +32,10 @@ namespace mozilla {
 
 
 
+const double kNotPaceable = -1.0;
+
+
+
 enum class ListAllowance { eDisallow, eAllow };
 
 
@@ -392,7 +396,19 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
                           nsIDocument* aDocument);
 
 static void
-DistributeRange(const Range<Keyframe>& aKeyframes);
+DistributeRange(const Range<Keyframe>& aSpacingRange,
+                const Range<Keyframe>& aRangeToAdjust);
+
+static void
+DistributeRange(const Range<Keyframe>& aSpacingRange);
+
+static void
+PaceRange(const Range<Keyframe>& aKeyframes,
+          const Range<double>& aCumulativeDistances);
+
+static nsTArray<double>
+GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
+                       nsCSSProperty aProperty);
 
 
 
@@ -460,10 +476,24 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
 
  void
 KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
-                            SpacingMode aSpacingMode)
+                            SpacingMode aSpacingMode,
+                            nsCSSProperty aProperty,
+                            nsTArray<ComputedKeyframeValues>& aComputedValues)
 {
   if (aKeyframes.IsEmpty()) {
     return;
+  }
+
+  nsTArray<double> cumulativeDistances;
+  if (aSpacingMode == SpacingMode::paced) {
+    MOZ_ASSERT(IsAnimatableProperty(aProperty),
+               "Paced property should be animatable");
+
+    cumulativeDistances = GetCumulativeDistances(aComputedValues, aProperty);
+    
+    for (Keyframe& keyframe : aKeyframes) {
+      keyframe.mComputedOffset = Keyframe::kComputedOffsetNotSet;
+    }
   }
 
   
@@ -479,26 +509,85 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
 
   
   const Keyframe* const last = aKeyframes.cend() - 1;
-  RangedPtr<Keyframe> keyframeA(aKeyframes.begin(), aKeyframes.Length());
+  const RangedPtr<Keyframe> begin(aKeyframes.begin(), aKeyframes.Length());
+  RangedPtr<Keyframe> keyframeA = begin;
   while (keyframeA != last) {
     
     RangedPtr<Keyframe> keyframeB = keyframeA + 1;
-    while (keyframeB.get()->mOffset.isNothing() && keyframeB != last) {
+    while (keyframeB->mOffset.isNothing() && keyframeB != last) {
       ++keyframeB;
     }
-    keyframeB.get()->mComputedOffset = keyframeB.get()->mOffset.valueOr(1.0);
+    keyframeB->mComputedOffset = keyframeB->mOffset.valueOr(1.0);
 
     
     if (aSpacingMode == SpacingMode::distribute) {
+      
+      
       DistributeRange(Range<Keyframe>(keyframeA.get(),
                                       keyframeB - keyframeA + 1));
     } else {
       
-      MOZ_ASSERT(false, "not implement yet");
-    }
+      
+      RangedPtr<Keyframe> pacedA = keyframeA;
+      while (pacedA < keyframeB &&
+             cumulativeDistances[pacedA - begin] == kNotPaceable) {
+        ++pacedA;
+      }
+      RangedPtr<Keyframe> pacedB = keyframeB;
+      while (pacedB > keyframeA &&
+             cumulativeDistances[pacedB - begin] == kNotPaceable) {
+        --pacedB;
+      }
+      
+      
+      
+      if (pacedA > pacedB) {
+        pacedA = pacedB = keyframeB;
+      }
+      
+      
+      DistributeRange(Range<Keyframe>(keyframeA.get(),
+                                      keyframeB - keyframeA + 1),
+                      Range<Keyframe>((keyframeA + 1).get(),
+                                      pacedA - keyframeA));
+      DistributeRange(Range<Keyframe>(keyframeA.get(),
+                                      keyframeB - keyframeA + 1),
+                      Range<Keyframe>(pacedB.get(),
+                                      keyframeB - pacedB));
+      
+      
+      
+      PaceRange(Range<Keyframe>(pacedA.get(), pacedB - pacedA + 1),
+                Range<double>(&cumulativeDistances[pacedA - begin],
+                              pacedB - pacedA + 1));
+      
+      
+      
+      for (RangedPtr<Keyframe> frame = pacedA + 1; frame < pacedB; ++frame) {
+        if (frame->mComputedOffset != Keyframe::kComputedOffsetNotSet) {
+          continue;
+        }
 
+        RangedPtr<Keyframe> start = frame - 1;
+        RangedPtr<Keyframe> end = frame + 1;
+        while (end < pacedB &&
+               end->mComputedOffset == Keyframe::kComputedOffsetNotSet) {
+          ++end;
+        }
+        DistributeRange(Range<Keyframe>(start.get(), end - start + 1));
+        frame = end;
+      }
+    }
     keyframeA = keyframeB;
   }
+}
+
+ void
+KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
+{
+  nsTArray<ComputedKeyframeValues> emptyArray;
+  ApplySpacing(aKeyframes, SpacingMode::distribute, eCSSProperty_UNKNOWN,
+               emptyArray);
 }
 
  nsTArray<ComputedKeyframeValues>
@@ -1365,15 +1454,196 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
 
 
 
+
+
+
 static void
-DistributeRange(const Range<Keyframe>& aKeyframes)
+DistributeRange(const Range<Keyframe>& aSpacingRange,
+                const Range<Keyframe>& aRangeToAdjust)
 {
-  const size_t n = aKeyframes.length() - 1;
-  const double startOffset = aKeyframes[0].mComputedOffset;
-  const double diffOffset = aKeyframes[n].mComputedOffset - startOffset;
-  for (size_t i = 1; i < n; ++i) {
-    aKeyframes[i].mComputedOffset = startOffset + double(i) / n * diffOffset;
+  MOZ_ASSERT(aRangeToAdjust.start() >= aSpacingRange.start() &&
+             aRangeToAdjust.end() <= aSpacingRange.end(),
+             "Out of range");
+  const size_t n = aSpacingRange.length() - 1;
+  const double startOffset = aSpacingRange[0].mComputedOffset;
+  const double diffOffset = aSpacingRange[n].mComputedOffset - startOffset;
+  for (auto iter = aRangeToAdjust.start();
+       iter != aRangeToAdjust.end();
+       ++iter) {
+    size_t index = iter - aSpacingRange.start();
+    iter->mComputedOffset = startOffset + double(index) / n * diffOffset;
   }
+}
+
+
+
+
+
+
+
+
+static void
+DistributeRange(const Range<Keyframe>& aSpacingRange)
+{
+  
+  DistributeRange(aSpacingRange,
+                  Range<Keyframe>((aSpacingRange.start() + 1).get(),
+                                  aSpacingRange.end() - aSpacingRange.start()
+                                    - 2));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+PaceRange(const Range<Keyframe>& aKeyframes,
+          const Range<double>& aCumulativeDistances)
+{
+  MOZ_ASSERT(aKeyframes.length() == aCumulativeDistances.length(),
+             "Range length mismatch");
+
+  const size_t len = aKeyframes.length();
+  
+  if (len < 3) {
+    return;
+  }
+
+  const double distA = *(aCumulativeDistances.start());
+  const double distB = *(aCumulativeDistances.end() - 1);
+  MOZ_ASSERT(distA != kNotPaceable && distB != kNotPaceable,
+             "Both Paced A and Paced B should be paceable");
+
+  
+  
+  
+  if (distA == distB) {
+    return;
+  }
+
+  const RangedPtr<Keyframe> pacedA = aKeyframes.start();
+  const RangedPtr<Keyframe> pacedB = aKeyframes.end() - 1;
+  MOZ_ASSERT(pacedA->mComputedOffset != Keyframe::kComputedOffsetNotSet &&
+             pacedB->mComputedOffset != Keyframe::kComputedOffsetNotSet,
+             "Both Paced A and Paced B should have valid computed offsets");
+
+  
+  const double offsetA     = pacedA->mComputedOffset;
+  const double diffOffset  = pacedB->mComputedOffset - offsetA;
+  const double initialDist = distA;
+  const double totalDist   = distB - initialDist;
+  for (auto iter = pacedA + 1; iter != pacedB; ++iter) {
+    size_t k = iter - aKeyframes.start();
+    if (aCumulativeDistances[k] == kNotPaceable) {
+      continue;
+    }
+
+    double dist = aCumulativeDistances[k] - initialDist;
+    iter->mComputedOffset = offsetA + diffOffset * dist / totalDist;
+  }
+}
+
+
+
+
+
+
+
+
+
+static nsTArray<double>
+GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
+                       nsCSSProperty aPacedProperty)
+{
+  
+  
+  size_t pacedPropertyCount = 0;
+  nsCSSPropertySet pacedPropertySet;
+  bool isShorthand = nsCSSProps::IsShorthand(aPacedProperty);
+  if (isShorthand) {
+    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aPacedProperty,
+                                         CSSEnabledState::eForAllContent) {
+      pacedPropertySet.AddProperty(*p);
+      ++pacedPropertyCount;
+    }
+  } else {
+    pacedPropertySet.AddProperty(aPacedProperty);
+    pacedPropertyCount = 1;
+  }
+
+  
+  
+  const size_t len = aValues.Length();
+  nsTArray<double> cumulativeDistances(len);
+  
+  
+  cumulativeDistances.SetLength(len);
+  ComputedKeyframeValues prevPacedValues;
+  size_t preIdx = 0;
+  for (size_t i = 0; i < len; ++i) {
+    
+    ComputedKeyframeValues pacedValues;
+    for (const PropertyStyleAnimationValuePair& pair : aValues[i]) {
+      if (pacedPropertySet.HasProperty(pair.mProperty)) {
+        pacedValues.AppendElement(pair);
+      }
+    }
+
+    
+    if (pacedValues.Length() != pacedPropertyCount) {
+      
+      cumulativeDistances[i] = kNotPaceable;
+      continue;
+    }
+
+    if (prevPacedValues.IsEmpty()) {
+      
+      cumulativeDistances[i] = 0.0;
+    } else {
+      double dist = 0.0;
+      if (isShorthand) {
+        
+        
+        for (size_t propIdx = 0; propIdx < pacedPropertyCount; ++propIdx) {
+          nsCSSProperty prop = prevPacedValues[propIdx].mProperty;
+          MOZ_ASSERT(pacedValues[propIdx].mProperty == prop,
+                     "Property mismatch");
+
+          double componentDistance = 0.0;
+          if (StyleAnimationValue::ComputeDistance(
+                prop,
+                prevPacedValues[propIdx].mValue,
+                pacedValues[propIdx].mValue,
+                componentDistance)) {
+            dist += componentDistance * componentDistance;
+          }
+        }
+        dist = sqrt(dist);
+      } else {
+        
+        
+        
+        StyleAnimationValue::ComputeDistance(aPacedProperty,
+                                             prevPacedValues[0].mValue,
+                                             pacedValues[0].mValue,
+                                             dist);
+      }
+      cumulativeDistances[i] = cumulativeDistances[preIdx] + dist;
+    }
+    prevPacedValues.SwapElements(pacedValues);
+    preIdx = i;
+  }
+  return cumulativeDistances;
 }
 
 } 
