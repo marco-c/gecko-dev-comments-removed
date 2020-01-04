@@ -214,6 +214,8 @@ public:
 
     virtual bool DidRenderingDeviceReset(DeviceResetReason* aResetReason = nullptr);
 
+    mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) override;
+
     
     
     bool UseClearTypeForDownloadableFonts();
