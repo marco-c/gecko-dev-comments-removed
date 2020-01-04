@@ -8,14 +8,6 @@
 
 using namespace mozilla::a11y;
 
-
-
-
-
-AccCollector::~AccCollector()
-{
-}
-
 uint32_t
 EmbeddedObjCollector::Count()
 {
@@ -32,9 +24,6 @@ EmbeddedObjCollector::GetAccessibleAt(uint32_t aIndex)
 
   return EnsureNGetObject(aIndex);
 }
-
-
-
 
 Accessible*
 EmbeddedObjCollector::EnsureNGetObject(uint32_t aIndex)
@@ -69,10 +58,6 @@ EmbeddedObjCollector::EnsureNGetIndex(Accessible* aAccessible)
 
   return -1;
 }
-
-
-
-
 
 int32_t
 EmbeddedObjCollector::GetIndexAt(Accessible* aAccessible)

@@ -18,24 +18,7 @@ class Accessible;
 
 
 
-class AccCollector
-{
-public:
-  virtual ~AccCollector();
-
-protected:
-  AccCollector() {}
-
-private:
-  AccCollector(const AccCollector&);
-  AccCollector& operator =(const AccCollector&);
-};
-
-
-
-
-
-class EmbeddedObjCollector final : public AccCollector
+class EmbeddedObjCollector final
 {
 public:
   virtual ~EmbeddedObjCollector() { }
