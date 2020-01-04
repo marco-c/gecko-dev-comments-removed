@@ -7,11 +7,13 @@ import java.math.BigInteger;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mozilla.apache.commons.codec.binary.Base64;
 import org.mozilla.gecko.background.fxa.FxAccountUtils;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.crypto.KeyBundle;
 import org.mozilla.gecko.sync.net.SRPConstants;
+import org.robolectric.RobolectricGradleTestRunner;
 
 
 
@@ -19,6 +21,7 @@ import org.mozilla.gecko.sync.net.SRPConstants;
 
 
 
+@RunWith(RobolectricGradleTestRunner.class)
 public class TestFxAccountUtils {
   protected static void assertEncoding(String base16String, String utf8String) throws Exception {
     Assert.assertEquals(base16String, FxAccountUtils.bytes(utf8String));

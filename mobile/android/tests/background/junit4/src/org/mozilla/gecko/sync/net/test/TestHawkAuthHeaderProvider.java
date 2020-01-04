@@ -12,6 +12,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mozilla.gecko.sync.net.HawkAuthHeaderProvider;
 
 import ch.boye.httpclientandroidlib.Header;
@@ -23,11 +24,13 @@ import ch.boye.httpclientandroidlib.entity.StringEntity;
 import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import ch.boye.httpclientandroidlib.message.BasicHeader;
 import ch.boye.httpclientandroidlib.protocol.BasicHttpContext;
+import org.robolectric.RobolectricGradleTestRunner;
 
 
 
 
 
+@RunWith(RobolectricGradleTestRunner.class)
 public class TestHawkAuthHeaderProvider {
   
   protected static class LeakyHawkAuthHeaderProvider extends HawkAuthHeaderProvider {

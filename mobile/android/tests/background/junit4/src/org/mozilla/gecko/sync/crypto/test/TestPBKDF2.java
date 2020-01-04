@@ -10,8 +10,10 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.crypto.PBKDF2;
+import org.robolectric.RobolectricGradleTestRunner;
 
 
 
@@ -21,6 +23,7 @@ import org.mozilla.gecko.sync.crypto.PBKDF2;
 
 
 
+@RunWith(RobolectricGradleTestRunner.class)
 public class TestPBKDF2 {
 
   @Test
