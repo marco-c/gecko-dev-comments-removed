@@ -791,12 +791,30 @@ ProtocolParserProtobuf::ProcessOneResponse(const ListUpdateResponse& aResponse)
   
   nsCOMPtr<nsIUrlClassifierUtils> urlUtil =
     do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
-  nsCString listName;
-  nsresult rv = urlUtil->ConvertThreatTypeToListName(aResponse.threat_type(),
-                                                     listName);
+  nsCString possibleListNames;
+  nsresult rv = urlUtil->ConvertThreatTypeToListNames(aResponse.threat_type(),
+                                                      possibleListNames);
   if (NS_FAILED(rv)) {
     PARSER_LOG((nsPrintfCString("Threat type to list name conversion error: %d",
                                aResponse.threat_type())).get());
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  nsCString listName;
+  nsTArray<nsCString> possibleListNameArray;
+  Classifier::SplitTables(possibleListNames, possibleListNameArray);
+  for (auto possibleName : possibleListNameArray) {
+    if (mRequestedTables.Contains(possibleName)) {
+      listName = possibleName;
+      break;
+    }
+  }
+
+  if (listName.IsEmpty()) {
+    PARSER_LOG(("We received an update for a list we didn't ask for. Ignoring it."));
     return NS_ERROR_FAILURE;
   }
 

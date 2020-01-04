@@ -32,6 +32,11 @@ public:
 
   virtual void SetCurrentTable(const nsACString& aTable) = 0;
 
+  void SetRequestedTables(const nsTArray<nsCString>& aRequestTables)
+  {
+    mRequestedTables = aRequestTables;
+  }
+
   nsresult Begin();
   virtual nsresult AppendStream(const nsACString& aData) = 0;
 
@@ -64,6 +69,9 @@ protected:
 
   nsTArray<ForwardedUpdate> mForwards;
   nsCOMPtr<nsICryptoHash> mCryptoHash;
+
+  
+  nsTArray<nsCString> mRequestedTables;
 
 private:
   void CleanupUpdates();
