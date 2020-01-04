@@ -19,6 +19,7 @@
 #include "nsXPCOMPrivate.h"              
 #include "nsXULAppAPI.h"
 #include "BinaryPath.h"
+#include "buildid.h"
 
 const char kAPP_INI[] = "application.ini";
 const char kWEBAPP_INI[] = "webapp.ini";
