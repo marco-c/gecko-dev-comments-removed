@@ -272,12 +272,14 @@ enum class Expr
     I64Eqz                               = 0xba,
 
     
+    GetGlobal                            = 0xc0,
+    SetGlobal                            = 0xc1,
+
+    
     
     
 
     
-    LoadGlobal                           = 0xc0,
-    StoreGlobal,
     I32Min,
     I32Max,
     I32Neg,
