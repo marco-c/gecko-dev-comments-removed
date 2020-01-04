@@ -20,7 +20,7 @@ class GLContextEGL : public GLContext
     static already_AddRefed<GLContextEGL>
     CreateGLContext(CreateContextFlags flags,
                     const SurfaceCaps& caps,
-                    GLContextEGL *shareContext,
+                    GLContextEGL* shareContext,
                     bool isOffscreen,
                     EGLConfig config,
                     EGLSurface surface,
@@ -90,7 +90,7 @@ public:
 
     
     
-    void HoldSurface(gfxASurface *aSurf);
+    void HoldSurface(gfxASurface* aSurf);
 
     EGLSurface GetEGLSurface() const {
         return mSurface;
@@ -100,8 +100,8 @@ public:
         return sEGLLibrary.Display();
     }
 
-    bool BindTex2DOffscreen(GLContext *aOffscreen);
-    void UnbindTex2DOffscreen(GLContext *aOffscreen);
+    bool BindTex2DOffscreen(GLContext* aOffscreen);
+    void UnbindTex2DOffscreen(GLContext* aOffscreen);
     void BindOffscreenFramebuffer();
 
     static already_AddRefed<GLContextEGL>
