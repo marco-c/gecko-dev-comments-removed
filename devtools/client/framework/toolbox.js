@@ -356,7 +356,7 @@ Toolbox.prototype = {
       iframe.setAttribute("src", this._URL);
       iframe.setAttribute("aria-label", toolboxStrings("toolbox.label"));
       let domHelper = new DOMHelpers(iframe.contentWindow);
-      domHelper.onceDOMReady(() => domReady.resolve());
+      domHelper.onceDOMReady(() => domReady.resolve(), this._URL);
       
       
 
@@ -365,7 +365,6 @@ Toolbox.prototype = {
 
       
       this._threadClient = yield attachThread(this);
-
       yield domReady.promise;
 
       this.isReady = true;
