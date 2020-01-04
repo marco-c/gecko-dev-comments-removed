@@ -11,6 +11,7 @@
 
 namespace android {
 struct ALooper;
+class MediaBuffer;
 class MediaCodecProxy;
 } 
 
@@ -119,6 +120,34 @@ protected:
   nsTArray<int64_t> mWaitOutput;
 
   MediaDataDecoderCallback* mDecodeCallback; 
+};
+
+class AutoReleaseMediaBuffer
+{
+public:
+  AutoReleaseMediaBuffer(android::MediaBuffer* aBuffer, android::MediaCodecProxy* aCodec)
+    : mBuffer(aBuffer)
+    , mCodec(aCodec)
+  {}
+
+  ~AutoReleaseMediaBuffer()
+  {
+    MOZ_ASSERT(mCodec.get());
+    if (mBuffer) {
+      mCodec->ReleaseMediaBuffer(mBuffer);
+    }
+  }
+
+  android::MediaBuffer* forget()
+  {
+    android::MediaBuffer* tmp = mBuffer;
+    mBuffer = nullptr;
+    return tmp;
+  }
+
+private:
+  android::MediaBuffer* mBuffer;
+  android::sp<android::MediaCodecProxy> mCodec;
 };
 
 
