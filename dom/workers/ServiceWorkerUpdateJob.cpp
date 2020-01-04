@@ -229,9 +229,6 @@ ServiceWorkerUpdateJob2::Update()
   
   MOZ_ASSERT(mRegistration);
 
-  
-  mRegistration->mUpdating = true;
-
   if (Canceled()) {
     FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);
     return;
@@ -376,9 +373,6 @@ void
 ServiceWorkerUpdateJob2::ContinueUpdateAfterScriptEval(bool aScriptEvaluationResult)
 {
   AssertIsOnMainThread();
-
-  
-  mRegistration->mUpdating = false;
 
   if (Canceled()) {
     FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);

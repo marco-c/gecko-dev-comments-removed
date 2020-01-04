@@ -84,12 +84,6 @@ public:
   
   
   
-  
-  bool mUpdating;
-
-  
-  
-  
   bool mPendingUninstall;
 
   ServiceWorkerRegistrationInfo(const nsACString& aScope,

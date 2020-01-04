@@ -264,7 +264,6 @@ ServiceWorkerRegistrationInfo::ServiceWorkerRegistrationInfo(const nsACString& a
   , mLastUpdateCheckTime(0)
   , mScope(aScope)
   , mPrincipal(aPrincipal)
-  , mUpdating(false)
   , mPendingUninstall(false)
 {}
 
@@ -2898,15 +2897,13 @@ ServiceWorkerManager::SoftUpdate(const PrincipalOriginAttributes& aOriginAttribu
   
   
   
-  if (!registration->mUpdating) {
-    RefPtr<ServiceWorkerJobQueue2> queue = GetOrCreateJobQueue(scopeKey,
-                                                               aScope);
+  RefPtr<ServiceWorkerJobQueue2> queue = GetOrCreateJobQueue(scopeKey,
+                                                             aScope);
 
-    RefPtr<ServiceWorkerUpdateJob2> job =
-      new ServiceWorkerUpdateJob2(principal, registration->mScope,
-                                  newest->ScriptSpec(), nullptr);
-    queue->ScheduleJob(job);
-  }
+  RefPtr<ServiceWorkerUpdateJob2> job =
+    new ServiceWorkerUpdateJob2(principal, registration->mScope,
+                                newest->ScriptSpec(), nullptr);
+  queue->ScheduleJob(job);
 }
 
 namespace {
