@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 
 
 loadHelperScript("helper_disable_cache.js");
