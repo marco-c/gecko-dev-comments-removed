@@ -388,17 +388,11 @@ class MochitestArguments(ArgumentContainer):
           "help": "Breaks execution and enters the JS debugger on a test failure. Should "
                   "be used together with --jsdebugger."
           }],
-        [["--e10s"],
-         {"action": "store_true",
-          "default": False,
-          "help": "Run tests with electrolysis preferences and test filtering enabled.",
-          }],
         [["--disable-e10s"],
          {"action": "store_false",
-          "default": False,
+          "default": True,
           "dest": "e10s",
           "help": "Run tests with electrolysis preferences and test filtering disabled.",
-          "suppress": True,
           }],
         [["--store-chrome-manifest"],
          {"action": "store",
@@ -793,8 +787,12 @@ class MochitestArguments(ArgumentContainer):
                         '--use-test-media-devices' % f)
 
         if options.nested_oop:
-            if not options.e10s:
-                options.e10s = True
+            options.e10s = True
+
+        
+        if options.a11y or options.chrome:
+            options.e10s = False
+
         mozinfo.update({"e10s": options.e10s})  
 
         options.leakThresholds = {
@@ -1174,6 +1172,11 @@ class AndroidArguments(ArgumentContainer):
                     "Unable to find robocop APK '%s'" %
                     options.robocopApk)
             options.robocopApk = os.path.abspath(options.robocopApk)
+
+        
+        
+        options.e10s = False
+        mozinfo.update({'e10s': options.e10s})
 
         
         
