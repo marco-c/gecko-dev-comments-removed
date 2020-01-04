@@ -462,7 +462,7 @@ this.DownloadsCommon = {
       if (!shouldLaunch) {
         return;
       }
-  
+
       
       try {
         if (aMimeInfo && aMimeInfo.preferredAction == aMimeInfo.useHelperApp) {
@@ -470,7 +470,7 @@ this.DownloadsCommon = {
           return;
         }
       } catch (ex) { }
-  
+
       
       
       try {
@@ -534,36 +534,70 @@ this.DownloadsCommon = {
 
 
 
-  confirmUnblockDownload: Task.async(function* (aVerdict, aOwnerWindow) {
-    let s = DownloadsCommon.strings;
-    let title = s.unblockHeader;
-    let buttonFlags = (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0) +
-                      (Ci.nsIPrompt.BUTTON_TITLE_CANCEL * Ci.nsIPrompt.BUTTON_POS_1);
-    let type = "";
-    let message = s.unblockTip;
-    let unblockButton = s.unblockButtonContinue;
-    let confirmBlockButton = s.unblockButtonCancel;
 
-    switch (aVerdict) {
-      case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
-        type = s.unblockTypeUncommon;
-        buttonFlags += (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2) +
-                       Ci.nsIPrompt.BUTTON_POS_0_DEFAULT;
-        break;
-      case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
-        type = s.unblockTypePotentiallyUnwanted;
-        buttonFlags += (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2) +
-                       Ci.nsIPrompt.BUTTON_POS_2_DEFAULT;
-        break;
-      default: 
-        type = s.unblockTypeMalware;
+
+
+
+
+
+
+
+
+
+
+  confirmUnblockDownload: Task.async(function* ({ verdict, window,
+                                                  dialogType }) {
+    let s = DownloadsCommon.strings;
+
+    
+    
+    
+    
+    let title = s.unblockHeaderUnblock;
+    let firstButtonText = s.unblockButtonUnblock;
+    let firstButtonAction = "unblock";
+    let buttonFlags =
+        (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0) +
+        (Ci.nsIPrompt.BUTTON_TITLE_CANCEL * Ci.nsIPrompt.BUTTON_POS_1);
+
+    switch (dialogType) {
+      case "unblock":
+        
         buttonFlags += Ci.nsIPrompt.BUTTON_POS_1_DEFAULT;
         break;
+      case "chooseUnblock":
+        
+        buttonFlags +=
+          (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2) +
+          Ci.nsIPrompt.BUTTON_POS_2_DEFAULT;
+        break;
+      case "chooseOpen":
+        
+        title = s.unblockHeaderOpen;
+        firstButtonText = s.unblockButtonOpen;
+        firstButtonAction = "open";
+        buttonFlags +=
+          (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2) +
+          Ci.nsIPrompt.BUTTON_POS_0_DEFAULT;
+        break;
+      default:
+        Cu.reportError("Unexpected dialog type: " + dialogType);
+        return "cancel";
     }
 
-    if (type) {
-      message = type + "\n\n" + message;
+    let message;
+    switch (verdict) {
+      case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
+        message = s.unblockTypeUncommon;
+        break;
+      case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+        message = s.unblockTypePotentiallyUnwanted;
+        break;
+      default: 
+        message = s.unblockTypeMalware;
+        break;
     }
+    message += "\n\n" + s.unblockTip;
 
     Services.ww.registerNotification(function onOpen(subj, topic) {
       if (topic == "domwindowopened" && subj instanceof Ci.nsIDOMWindow) {
@@ -584,12 +618,10 @@ this.DownloadsCommon = {
       }
     });
 
-    
-    
-    let rv = Services.prompt.confirmEx(aOwnerWindow, title, message, buttonFlags,
-                                       unblockButton, null, confirmBlockButton,
-                                       null, {});
-    return ["unblock", "cancel", "confirmBlock"][rv];
+    let rv = Services.prompt.confirmEx(window, title, message, buttonFlags,
+                                       firstButtonText, null,
+                                       s.unblockButtonConfirmBlock, null, {});
+    return [firstButtonAction, "cancel", "confirmBlock"][rv];
   }),
 };
 

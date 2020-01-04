@@ -129,11 +129,20 @@ richlistitem.download button {
 
 
 .download-state:not(          [state="8"]  )
-                                           .downloadUnblock,
+                                           .downloadChooseUnblock,
 .download-state[state="8"]:not(.temporary-block)
-                                           .downloadUnblock,
-.download-state[state="8"].temporary-block[verdict="Malware"]
-                                           .downloadUnblock,
+                                           .downloadChooseUnblock,
+.download-state[state="8"].temporary-block:not([verdict="PotentiallyUnwanted"])
+                                           .downloadChooseUnblock,
+
+
+
+.download-state:not(          [state="8"]  )
+                                           .downloadChooseOpen,
+.download-state[state="8"]:not(.temporary-block)
+                                           .downloadChooseOpen,
+.download-state[state="8"].temporary-block:not([verdict="Uncommon"])
+                                           .downloadChooseOpen,
 
 .download-state:not(:-moz-any([state="2"], 
                               [state="3"]) )
