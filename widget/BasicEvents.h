@@ -233,27 +233,27 @@ class WidgetEventTime
 public:
   
   
-  uint64_t time;
+  uint64_t mTime;
   
   
   TimeStamp timeStamp;
 
   WidgetEventTime()
-    : time(0)
+    : mTime(0)
     , timeStamp(TimeStamp::Now())
   {
   }
 
   WidgetEventTime(uint64_t aTime,
                   TimeStamp aTimeStamp)
-    : time(aTime)
+    : mTime(aTime)
     , timeStamp(aTimeStamp)
   {
   }
 
   void AssignEventTime(const WidgetEventTime& aOther)
   {
-    time = aOther.time;
+    mTime = aOther.mTime;
     timeStamp = aOther.timeStamp;
   }
 };

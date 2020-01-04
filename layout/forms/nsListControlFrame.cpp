@@ -2303,7 +2303,7 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   
   
   
-  if (keyEvent->time - gLastKeyTime > INCREMENTAL_SEARCH_KEYPRESS_TIME) {
+  if (keyEvent->mTime - gLastKeyTime > INCREMENTAL_SEARCH_KEYPRESS_TIME) {
     
     
     if (keyEvent->charCode == ' ') {
@@ -2318,7 +2318,7 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
     GetIncrementalString().Truncate();
   }
 
-  gLastKeyTime = keyEvent->time;
+  gLastKeyTime = keyEvent->mTime;
 
   
   char16_t uniChar = ToLowerCase(static_cast<char16_t>(keyEvent->charCode));

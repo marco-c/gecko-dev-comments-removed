@@ -1000,7 +1000,7 @@ KeymapWrapper::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
     
     
     aKeyEvent.mPluginEvent.Copy(*aGdkKeyEvent);
-    aKeyEvent.time = aGdkKeyEvent->time;
+    aKeyEvent.mTime = aGdkKeyEvent->time;
     aKeyEvent.mNativeKeyEvent = static_cast<void*>(aGdkKeyEvent);
     aKeyEvent.mIsRepeat = sRepeatState == REPEATING &&
         aGdkKeyEvent->hardware_keycode == sLastRepeatableHardwareKeyCode;

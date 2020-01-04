@@ -608,7 +608,7 @@ AndroidGeckoEvent::MakeTouchEvent(nsIWidget* widget)
     }
 
     event.modifiers = DOMModifiers();
-    event.time = Time();
+    event.mTime = Time();
 
     const LayoutDeviceIntPoint& offset = widget->WidgetToScreenOffset();
     event.touches.SetCapacity(endIndex - startIndex);
@@ -728,7 +728,7 @@ AndroidGeckoEvent::MakeMouseEvent(nsIWidget* widget)
         event.clickCount = 1;
     }
     event.modifiers = DOMModifiers();
-    event.time = Time();
+    event.mTime = Time();
 
     
     
