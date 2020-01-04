@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdf = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.5.385';
-var pdfjsBuild = 'a9c37c2';
+var pdfjsVersion = '1.5.413';
+var pdfjsBuild = '6bb95e3';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -2840,7 +2840,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  function appendText(textDivs, viewport, geom, styles) {
+  function appendText(textDivs, viewport, geom, styles, bounds,
+                      enhanceTextSelection) {
     var style = styles[geom.fontName];
     var textDiv = document.createElement('div');
     textDivs.push(textDiv);
@@ -2896,6 +2897,34 @@ var renderTextLayer = (function renderTextLayerClosure() {
         textDiv.dataset.canvasWidth = geom.width * viewport.scale;
       }
     }
+    if (enhanceTextSelection) {
+      var angleCos = 1, angleSin = 0;
+      if (angle !== 0) {
+        angleCos = Math.cos(angle);
+        angleSin = Math.sin(angle);
+      }
+      var divWidth = (style.vertical ? geom.height : geom.width) *
+                     viewport.scale;
+      var divHeight = fontHeight;
+
+      var m, b;
+      if (angle !== 0) {
+        m = [angleCos, angleSin, -angleSin, angleCos, left, top];
+        b = Util.getAxialAlignedBoundingBox([0, 0, divWidth, divHeight], m);
+      } else {
+        b = [left, top, left + divWidth, top + divHeight];
+      }
+
+      bounds.push({
+        left: b[0],
+        top: b[1],
+        right: b[2],
+        bottom: b[3],
+        div: textDiv,
+        size: [divWidth, divHeight],
+        m: m
+      });
+    }
   }
 
   function render(task) {
@@ -2910,6 +2939,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     
     
     if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
+      task._renderingDone = true;
       capability.resolve();
       return;
     }
@@ -2937,24 +2967,290 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
 
       var width = ctx.measureText(textDiv.textContent).width;
+      textDiv.dataset.originalWidth = width;
       textLayerFrag.appendChild(textDiv);
-      var transform;
-      if (textDiv.dataset.canvasWidth !== undefined && width > 0) {
+       var transform;
+       if (textDiv.dataset.canvasWidth !== undefined && width > 0) {
         
-        var textScale = textDiv.dataset.canvasWidth / width;
-        transform = 'scaleX(' + textScale + ')';
-      } else {
-        transform = '';
-      }
-      var rotation = textDiv.dataset.angle;
-      if (rotation) {
-        transform = 'rotate(' + rotation + 'deg) ' + transform;
-      }
-      if (transform) {
-        CustomStyle.setProp('transform' , textDiv, transform);
-      }
+         var textScale = textDiv.dataset.canvasWidth / width;
+         transform = 'scaleX(' + textScale + ')';
+       } else {
+         transform = '';
+       }
+       var rotation = textDiv.dataset.angle;
+       if (rotation) {
+         transform = 'rotate(' + rotation + 'deg) ' + transform;
+       }
+       if (transform) {
+         textDiv.dataset.originalTransform = transform;
+         CustomStyle.setProp('transform' , textDiv, transform);
+       }
     }
+    task._renderingDone = true;
     capability.resolve();
+  }
+
+  function expand(bounds, viewport) {
+    var expanded = expandBounds(viewport.width, viewport.height, bounds);
+    for (var i = 0; i < expanded.length; i++) {
+      var div = bounds[i].div;
+      if (!div.dataset.angle) {
+        div.dataset.paddingLeft = bounds[i].left - expanded[i].left;
+        div.dataset.paddingTop = bounds[i].top - expanded[i].top;
+        div.dataset.paddingRight = expanded[i].right - bounds[i].right;
+        div.dataset.paddingBottom = expanded[i].bottom - bounds[i].bottom;
+        continue;
+      }
+      
+      
+      var e = expanded[i], b = bounds[i];
+      var m = b.m, c = m[0], s = m[1];
+      
+      var points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
+      var ts = new Float64Array(64);
+      points.forEach(function (p, i) {
+        var t = Util.applyTransform(p, m);
+        ts[i + 0] = c && (e.left - t[0]) / c;
+        ts[i + 4] = s && (e.top - t[1]) / s;
+        ts[i + 8] = c && (e.right - t[0]) / c;
+        ts[i + 12] = s && (e.bottom - t[1]) / s;
+
+        ts[i + 16] = s && (e.left - t[0]) / -s;
+        ts[i + 20] = c && (e.top - t[1]) / c;
+        ts[i + 24] = s && (e.right - t[0]) / -s;
+        ts[i + 28] = c && (e.bottom - t[1]) / c;
+
+        ts[i + 32] = c && (e.left - t[0]) / -c;
+        ts[i + 36] = s && (e.top - t[1]) / -s;
+        ts[i + 40] = c && (e.right - t[0]) / -c;
+        ts[i + 44] = s && (e.bottom - t[1]) / -s;
+
+        ts[i + 48] = s && (e.left - t[0]) / s;
+        ts[i + 52] = c && (e.top - t[1]) / -c;
+        ts[i + 56] = s && (e.right - t[0]) / s;
+        ts[i + 60] = c && (e.bottom - t[1]) / -c;
+      });
+      var findPositiveMin = function (ts, offset, count) {
+        var result = 0;
+          for (var i = 0; i < count; i++) {
+            var t = ts[offset++];
+            if (t > 0) {
+              result = result ? Math.min(t, result) : t;
+            }
+          }
+          return result;
+      };
+      
+      
+      var boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
+      div.dataset.paddingLeft = findPositiveMin(ts, 32, 16) / boxScale;
+      div.dataset.paddingTop = findPositiveMin(ts, 48, 16) / boxScale;
+      div.dataset.paddingRight = findPositiveMin(ts, 0, 16) / boxScale;
+      div.dataset.paddingBottom = findPositiveMin(ts, 16, 16) / boxScale;
+    }
+  }
+
+  function expandBounds(width, height, boxes) {
+    var bounds = boxes.map(function (box, i) {
+      return {
+        x1: box.left,
+        y1: box.top,
+        x2: box.right,
+        y2: box.bottom,
+        index: i,
+        x1New: undefined,
+        x2New: undefined
+      };
+    });
+    expandBoundsLTR(width, bounds);
+    var expanded = new Array(boxes.length);
+    bounds.forEach(function (b) {
+      var i = b.index;
+      expanded[i] = {
+        left: b.x1New,
+        top: 0,
+        right: b.x2New,
+        bottom: 0
+      };
+    });
+
+    
+    
+    boxes.map(function (box, i) {
+      var e = expanded[i], b = bounds[i];
+      b.x1 = box.top;
+      b.y1 = width - e.right;
+      b.x2 = box.bottom;
+      b.y2 = width - e.left;
+      b.index = i;
+      b.x1New = undefined;
+      b.x2New = undefined;
+    });
+    expandBoundsLTR(height, bounds);
+
+    bounds.forEach(function (b) {
+      var i = b.index;
+      expanded[i].top = b.x1New;
+      expanded[i].bottom = b.x2New;
+    });
+    return expanded;
+  }
+
+  function expandBoundsLTR(width, bounds) {
+    
+    bounds.sort(function (a, b) { return a.x1 - b.x1 || a.index - b.index; });
+
+    
+    var fakeBoundary = {
+      x1: -Infinity,
+      y1: -Infinity,
+      x2: 0,
+      y2: Infinity,
+      index: -1,
+      x1New: 0,
+      x2New: 0
+    };
+    var horizon = [{
+      start: -Infinity,
+      end: Infinity,
+      boundary: fakeBoundary
+    }];
+
+    bounds.forEach(function (boundary) {
+      
+      
+      var i = 0;
+      while (i < horizon.length && horizon[i].end <= boundary.y1) {
+        i++;
+      }
+      var j = horizon.length - 1;
+      while(j >= 0 && horizon[j].start >= boundary.y2) {
+        j--;
+      }
+
+      var horizonPart, affectedBoundary;
+      var q, k, maxXNew = -Infinity;
+      for (q = i; q <= j; q++) {
+        horizonPart = horizon[q];
+        affectedBoundary = horizonPart.boundary;
+        var xNew;
+        if (affectedBoundary.x2 > boundary.x1) {
+          
+          
+          
+          xNew = affectedBoundary.index > boundary.index ?
+            affectedBoundary.x1New : boundary.x1;
+        } else if (affectedBoundary.x2New === undefined) {
+          
+          
+          xNew = (affectedBoundary.x2 + boundary.x1) / 2;
+        } else {
+          
+          xNew = affectedBoundary.x2New;
+        }
+        if (xNew > maxXNew) {
+          maxXNew = xNew;
+        }
+      }
+
+      
+      boundary.x1New = maxXNew;
+
+      
+      for (q = i; q <= j; q++) {
+        horizonPart = horizon[q];
+        affectedBoundary = horizonPart.boundary;
+        if (affectedBoundary.x2New === undefined) {
+          
+          if (affectedBoundary.x2 > boundary.x1) {
+            
+            
+            if (affectedBoundary.index > boundary.index) {
+              affectedBoundary.x2New = affectedBoundary.x2;
+            }
+          } else {
+            affectedBoundary.x2New = maxXNew;
+          }
+        } else if (affectedBoundary.x2New > maxXNew) {
+          
+          affectedBoundary.x2New = Math.max(maxXNew, affectedBoundary.x2);
+        }
+      }
+
+      
+      var changedHorizon = [], lastBoundary = null;
+      for (q = i; q <= j; q++) {
+        horizonPart = horizon[q];
+        affectedBoundary = horizonPart.boundary;
+        
+        var useBoundary = affectedBoundary.x2 > boundary.x2 ?
+          affectedBoundary : boundary;
+        if (lastBoundary === useBoundary) {
+          
+          changedHorizon[changedHorizon.length - 1].end = horizonPart.end;
+        } else {
+          changedHorizon.push({
+            start: horizonPart.start,
+            end: horizonPart.end,
+            boundary: useBoundary
+          });
+          lastBoundary = useBoundary;
+        }
+      }
+      if (horizon[i].start < boundary.y1) {
+        changedHorizon[0].start = boundary.y1;
+        changedHorizon.unshift({
+          start: horizon[i].start,
+          end: boundary.y1,
+          boundary: horizon[i].boundary
+        });
+      }
+      if (boundary.y2 < horizon[j].end) {
+        changedHorizon[changedHorizon.length - 1].end = boundary.y2;
+        changedHorizon.push({
+          start: boundary.y2,
+          end: horizon[j].end,
+          boundary: horizon[j].boundary
+        });
+      }
+
+      
+      
+      
+      for (q = i; q <= j; q++) {
+        horizonPart = horizon[q];
+        affectedBoundary = horizonPart.boundary;
+        if (affectedBoundary.x2New !== undefined) {
+          continue;
+        }
+        var used = false;
+        for (k = i - 1; !used && k >= 0 &&
+        horizon[k].start >= affectedBoundary.y1; k--) {
+          used = horizon[k].boundary === affectedBoundary;
+        }
+        for (k = j + 1; !used && k < horizon.length &&
+        horizon[k].end <= affectedBoundary.y2; k++) {
+          used = horizon[k].boundary === affectedBoundary;
+        }
+        for (k = 0; !used && k < changedHorizon.length; k++) {
+          used = changedHorizon[k].boundary === affectedBoundary;
+        }
+        if (!used) {
+          affectedBoundary.x2New = maxXNew;
+        }
+      }
+
+      Array.prototype.splice.apply(horizon,
+        [i, j - i + 1].concat(changedHorizon));
+    });
+
+    
+    horizon.forEach(function (horizonPart) {
+      var affectedBoundary = horizonPart.boundary;
+      if (affectedBoundary.x2New === undefined) {
+        affectedBoundary.x2New = Math.max(width, affectedBoundary.x2);
+      }
+    });
   }
 
   
@@ -2966,15 +3262,21 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
 
 
-  function TextLayerRenderTask(textContent, container, viewport, textDivs) {
+
+  function TextLayerRenderTask(textContent, container, viewport, textDivs,
+                               enhanceTextSelection) {
     this._textContent = textContent;
     this._container = container;
     this._viewport = viewport;
     textDivs = textDivs || [];
     this._textDivs = textDivs;
+    this._renderingDone = false;
     this._canceled = false;
     this._capability = createPromiseCapability();
     this._renderTimer = null;
+    this._bounds = [];
+    this._enhanceTextSelection = !!enhanceTextSelection;
+    this._expanded = false;
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -2995,8 +3297,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
       var styles = this._textContent.styles;
       var textDivs = this._textDivs;
       var viewport = this._viewport;
+      var enhanceTextSelection = this._enhanceTextSelection;
+
       for (var i = 0, len = textItems.length; i < len; i++) {
-        appendText(textDivs, viewport, textItems[i], styles);
+        appendText(textDivs, viewport, textItems[i], styles, this._bounds,
+                   enhanceTextSelection);
       }
 
       if (!timeout) { 
@@ -3008,7 +3313,63 @@ var renderTextLayer = (function renderTextLayerClosure() {
           self._renderTimer = null;
         }, timeout);
       }
-    }
+    },
+
+    expandTextDivs: function TextLayer_expandTextDivs(expandDivs) {
+      if (!this._enhanceTextSelection || !this._renderingDone) {
+        return;
+      }
+      if (!this._expanded) {
+        expand(this._bounds, this._viewport);
+        this._expanded = true;
+        this._bounds.length = 0;
+      }
+      if (expandDivs) {
+        for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
+          var div = this._textDivs[i];
+          var transform;
+          var width = div.dataset.originalWidth;
+          if (div.dataset.canvasWidth !== undefined && width > 0) {
+            
+            var textScale = div.dataset.canvasWidth / width;
+            transform = 'scaleX(' + textScale + ')';
+          } else {
+            transform = '';
+          }
+          var rotation = div.dataset.angle;
+          if (rotation) {
+            transform = 'rotate(' + rotation + 'deg) ' + transform;
+          }
+          if (div.dataset.paddingLeft) {
+            div.style.paddingLeft =
+              (div.dataset.paddingLeft / textScale) + 'px';
+            transform += ' translateX(' +
+              (-div.dataset.paddingLeft / textScale) + 'px)';
+          }
+          if (div.dataset.paddingTop) {
+            div.style.paddingTop = div.dataset.paddingTop + 'px';
+            transform += ' translateY(' + (-div.dataset.paddingTop) + 'px)';
+          }
+          if (div.dataset.paddingRight) {
+            div.style.paddingRight =
+            div.dataset.paddingRight / textScale + 'px';
+          }
+          if (div.dataset.paddingBottom) {
+            div.style.paddingBottom = div.dataset.paddingBottom + 'px';
+          }
+          if (transform) {
+            CustomStyle.setProp('transform' , div, transform);
+          }
+        }
+      } else {
+        for (i = 0, ii = this._textDivs.length; i < ii; i++) {
+          div = this._textDivs[i];
+          div.style.padding = 0;
+          transform = div.dataset.originalTransform || '';
+          CustomStyle.setProp('transform', div, transform);
+        }
+      }
+    },
   };
 
 
@@ -3022,7 +3383,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     var task = new TextLayerRenderTask(renderParameters.textContent,
                                        renderParameters.container,
                                        renderParameters.viewport,
-                                       renderParameters.textDivs);
+                                       renderParameters.textDivs,
+                                       renderParameters.enhanceTextSelection);
     task._render(renderParameters.timeout);
     return task;
   }
@@ -6173,7 +6535,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
       if (this.cachedGetSinglePixelWidth === null) {
+        
+        
+        
+        
+        this.ctx.save();
         var inverse = this.ctx.mozCurrentTransformInverse;
+        this.ctx.restore();
         
         this.cachedGetSinglePixelWidth = Math.sqrt(Math.max(
           (inverse[0] * inverse[0] + inverse[1] * inverse[1]),

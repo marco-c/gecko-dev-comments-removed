@@ -52,6 +52,7 @@ var DEFAULT_PREFERENCES =
   "externalLinkTarget": 0
 }
 
+
 var PdfjsChromeUtils = {
   
   

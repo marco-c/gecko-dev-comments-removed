@@ -953,6 +953,7 @@ exports.PDFRenderingQueue = PDFRenderingQueue;
   "useOnlyCssZoom": false,
   "externalLinkTarget": 0
 }
+
   );
 
 function cloneObj(obj) {
@@ -3241,7 +3242,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         
         
         
-        this.pdfViewer.scrollPageIntoView(index + 1);
+        this.pdfViewer.currentPageNumber = index + 1;
       }
 
       var page = this.pdfViewer.getPageView(index);
@@ -4676,7 +4677,10 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
                           'Trying to navigate to a non-existent page.');
             return;
           }
-          self.pdfViewer.scrollPageIntoView(pageNumber, dest);
+          self.pdfViewer.scrollPageIntoView({
+            pageNumber: pageNumber,
+            destArray: dest,
+          });
 
           if (self.pdfHistory) {
             
@@ -4802,7 +4806,11 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
           }
         }
         if (dest) {
-          this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+          this.pdfViewer.scrollPageIntoView({
+            pageNumber: pageNumber || this.page,
+            destArray: dest,
+            allowNegativeOffset: true,
+          });
         } else if (pageNumber) {
           this.page = pageNumber; 
         }
@@ -5034,6 +5042,8 @@ var TEXT_LAYER_RENDER_DELAY = 200;
 
 
 
+
+
 var PDFPageView = (function PDFPageViewClosure() {
   
 
@@ -5047,6 +5057,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     var renderingQueue = options.renderingQueue;
     var textLayerFactory = options.textLayerFactory;
     var annotationLayerFactory = options.annotationLayerFactory;
+    var enhanceTextSelection = options.enhanceTextSelection || false;
 
     this.id = id;
     this.renderingId = 'page' + id;
@@ -5056,6 +5067,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
+    this.enhanceTextSelection = enhanceTextSelection;
 
     this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
     this.renderingQueue = renderingQueue;
@@ -5371,9 +5383,9 @@ var PDFPageView = (function PDFPageViewClosure() {
           div.appendChild(textLayerDiv);
         }
 
-        textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv,
-                                                                 this.id - 1,
-                                                                 this.viewport);
+        textLayer = this.textLayerFactory.
+          createTextLayerBuilder(textLayerDiv, this.id - 1, this.viewport,
+                                 this.enhanceTextSelection);
       }
       this.textLayer = textLayer;
 
@@ -5789,6 +5801,8 @@ exports.PDFThumbnailViewer = PDFThumbnailViewer;
 
 
 
+
+
 var TextLayerBuilder = (function TextLayerBuilderClosure() {
   function TextLayerBuilder(options) {
     this.textLayerDiv = options.textLayerDiv;
@@ -5802,6 +5816,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.textDivs = [];
     this.findController = options.findController || null;
     this.textLayerRenderTask = null;
+    this.enhanceTextSelection = options.enhanceTextSelection;
     this._bindMouse();
   }
 
@@ -5809,9 +5824,11 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     _finishRendering: function TextLayerBuilder_finishRendering() {
       this.renderingDone = true;
 
-      var endOfContent = document.createElement('div');
-      endOfContent.className = 'endOfContent';
-      this.textLayerDiv.appendChild(endOfContent);
+      if (!this.enhanceTextSelection) {
+        var endOfContent = document.createElement('div');
+        endOfContent.className = 'endOfContent';
+        this.textLayerDiv.appendChild(endOfContent);
+      }
 
       this.eventBus.dispatch('textlayerrendered', {
         source: this,
@@ -5841,7 +5858,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         container: textLayerFrag,
         viewport: this.viewport,
         textDivs: this.textDivs,
-        timeout: timeout
+        timeout: timeout,
+        enhanceTextSelection: this.enhanceTextSelection,
       });
       this.textLayerRenderTask.promise.then(function () {
         this.textLayerDiv.appendChild(textLayerFrag);
@@ -6059,7 +6077,12 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
     _bindMouse: function TextLayerBuilder_bindMouse() {
       var div = this.textLayerDiv;
+      var self = this;
       div.addEventListener('mousedown', function (e) {
+        if (self.enhanceTextSelection && self.textLayerRenderTask) {
+          self.textLayerRenderTask.expandTextDivs(true);
+          return;
+        }
         var end = div.querySelector('.endOfContent');
         if (!end) {
           return;
@@ -6067,6 +6090,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         end.classList.add('active');
       });
       div.addEventListener('mouseup', function (e) {
+        if (self.enhanceTextSelection && self.textLayerRenderTask) {
+          self.textLayerRenderTask.expandTextDivs(false);
+          return;
+        }
         var end = div.querySelector('.endOfContent');
         if (!end) {
           return;
@@ -6090,11 +6117,14 @@ DefaultTextLayerFactory.prototype = {
 
 
 
-  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
+
+  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport,
+                                    enhanceTextSelection) {
     return new TextLayerBuilder({
       textLayerDiv: textLayerDiv,
       pageIndex: pageIndex,
-      viewport: viewport
+      viewport: viewport,
+      enhanceTextSelection: enhanceTextSelection
     });
   }
 };
@@ -6279,6 +6309,8 @@ var DEFAULT_CACHE_SIZE = 10;
 
 
 
+
+
 var PDFViewer = (function pdfViewer() {
   function PDFPageViewBuffer(size) {
     var data = [];
@@ -6323,6 +6355,7 @@ var PDFViewer = (function pdfViewer() {
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.removePageBorders = options.removePageBorders || false;
+    this.enhanceTextSelection = options.enhanceTextSelection || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -6548,7 +6581,8 @@ var PDFViewer = (function pdfViewer() {
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
             textLayerFactory: textLayerFactory,
-            annotationLayerFactory: this
+            annotationLayerFactory: this,
+            enhanceTextSelection: this.enhanceTextSelection,
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -6654,7 +6688,11 @@ var PDFViewer = (function pdfViewer() {
           dest = [null, { name: 'XYZ' }, this._location.left,
                   this._location.top, null];
         }
-        this.scrollPageIntoView(page, dest);
+        this.scrollPageIntoView({
+          pageNumber: page,
+          destArray: dest,
+          allowNegativeOffset: true,
+        });
       }
 
       this._setScaleDispatchEvent(newScale, newValue, preset);
@@ -6732,11 +6770,20 @@ var PDFViewer = (function pdfViewer() {
 
 
 
-    scrollPageIntoView: function PDFViewer_scrollPageIntoView(pageNumber,
-                                                              dest) {
+
+
+
+    
+
+
+
+    scrollPageIntoView: function PDFViewer_scrollPageIntoView(params) {
       if (!this.pdfDocument) {
         return;
       }
+      var pageNumber = params.pageNumber || 0;
+      var dest = params.destArray || null;
+      var allowNegativeOffset = params.allowNegativeOffset || false;
 
       if (this.isInPresentationMode || !dest) {
         this._setCurrentPageNumber(pageNumber,  true);
@@ -6744,6 +6791,11 @@ var PDFViewer = (function pdfViewer() {
       }
 
       var pageView = this._pages[pageNumber - 1];
+      if (!pageView) {
+        console.error('PDFViewer_scrollPageIntoView: ' +
+                      'Invalid "pageNumber" parameter.');
+        return;
+      }
       var x = 0, y = 0;
       var width = 0, height = 0, widthScale, heightScale;
       var changeOrientation = (pageView.rotation % 180 === 0 ? false : true);
@@ -6824,6 +6876,13 @@ var PDFViewer = (function pdfViewer() {
       var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
       var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
+      if (!allowNegativeOffset) {
+        
+        
+        
+        left = Math.max(left, 0);
+        top = Math.max(top, 0);
+      }
       scrollIntoView(pageView.div, { left: left, top: top });
     },
 
@@ -6994,13 +7053,16 @@ var PDFViewer = (function pdfViewer() {
 
 
 
-    createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
+    createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport,
+                                      enhanceTextSelection) {
       return new TextLayerBuilder({
         textLayerDiv: textLayerDiv,
         eventBus: this.eventBus,
         pageIndex: pageIndex,
         viewport: viewport,
-        findController: this.isInPresentationMode ? null : this.findController
+        findController: this.isInPresentationMode ? null : this.findController,
+        enhanceTextSelection: this.isInPresentationMode ? false :
+                                                          enhanceTextSelection,
       });
     },
 
@@ -7091,6 +7153,7 @@ var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
+var ENHANCE_TEXT_SELECTION = false;
 
 function configure(PDFJS) {
   PDFJS.imageResourcesPath = './images/';
@@ -7191,7 +7254,8 @@ var PDFViewerApplication = {
       eventBus: eventBus,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
-      downloadManager: downloadManager
+      downloadManager: downloadManager,
+      enhanceTextSelection: ENHANCE_TEXT_SELECTION,
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -8084,7 +8148,7 @@ var PDFViewerApplication = {
 
     this.forceRendering();
 
-    this.pdfViewer.scrollPageIntoView(pageNumber);
+    this.pdfViewer.currentPageNumber = pageNumber;
   },
 
   requestPresentationMode: function pdfViewRequestPresentationMode() {
@@ -8159,8 +8223,8 @@ var PDFViewerApplication = {
     toolbarConfig.firstPage.disabled = (pageNumber <= 1);
     toolbarConfig.lastPage.disabled = (pageNumber >= pagesCount);
 
-    toolbarConfig.zoomOut.disabled = (scale === MIN_SCALE);
-    toolbarConfig.zoomIn.disabled = (scale === MAX_SCALE);
+    toolbarConfig.zoomOut.disabled = (scale <= MIN_SCALE);
+    toolbarConfig.zoomIn.disabled = (scale >= MAX_SCALE);
 
     selectScaleOption(scaleValue, scale);
   },
@@ -8475,7 +8539,7 @@ function webViewerNamedAction(e) {
   var action = e.action;
   switch (action) {
     case 'GoToPage':
-      PDFViewerApplication.appConfig.toolbar.pageNumber.focus();
+      PDFViewerApplication.appConfig.toolbar.pageNumber.select();
       break;
 
     case 'Find':
