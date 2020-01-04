@@ -30,7 +30,7 @@
 static const int TIME_TO_WAIT_ON_UPDATER = 15 * 60 * 1000;
 wchar_t* MakeCommandLine(int argc, wchar_t** argv);
 BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode);
-BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer,  LPCWSTR siblingFilePath, 
+BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer,  LPCWSTR siblingFilePath,
                             LPCWSTR newFileName);
 
 
@@ -295,6 +295,117 @@ StartUpdateProcess(int argc,
 
 
 
+
+
+
+static bool
+UpdaterIsValid(LPWSTR updater, LPWSTR installDir, LPWSTR updateDir)
+{
+  
+  
+  
+  BOOL isLocal = FALSE;
+  if (!IsLocalFile(updater, isLocal) || !isLocal) {
+    LOG_WARN(("Filesystem in path %ls is not supported (%d)",
+              updater, GetLastError()));
+    if (!WriteStatusFailure(updateDir, SERVICE_UPDATER_NOT_FIXED_DRIVE)) {
+      LOG_WARN(("Could not write update.status service update failure.  (%d)",
+                GetLastError()));
+    }
+    return false;
+  }
+
+  nsAutoHandle noWriteLock(CreateFileW(updater, GENERIC_READ, FILE_SHARE_READ,
+                                       nullptr, OPEN_EXISTING, 0, nullptr));
+  if (INVALID_HANDLE_VALUE == noWriteLock) {
+    LOG_WARN(("Could not set no write sharing access on file.  (%d)",
+              GetLastError()));
+    if (!WriteStatusFailure(updateDir, SERVICE_COULD_NOT_LOCK_UPDATER)) {
+      LOG_WARN(("Could not write update.status service update failure.  (%d)",
+                GetLastError()));
+    }
+    return false;
+  }
+
+  
+  
+  
+  WCHAR installDirUpdater[MAX_PATH + 1] = { L'\0' };
+  wcsncpy(installDirUpdater, installDir, MAX_PATH);
+  if (!PathAppendSafe(installDirUpdater, L"updater.exe")) {
+    LOG_WARN(("Install directory updater could not be determined."));
+    return false;
+  }
+
+  BOOL updaterIsCorrect;
+  if (!VerifySameFiles(updater, installDirUpdater, updaterIsCorrect)) {
+    LOG_WARN(("Error checking if the updaters are the same.\n"
+              "Path 1: %ls\nPath 2: %ls", updater, installDirUpdater));
+    return false;
+  }
+
+  if (!updaterIsCorrect) {
+    LOG_WARN(("The updaters do not match, updater will not run.\n"
+              "Path 1: %ls\nPath 2: %ls", updater, installDirUpdater));
+    if (!WriteStatusFailure(updateDir, SERVICE_UPDATER_COMPARE_ERROR)) {
+      LOG_WARN(("Could not write update.status updater compare failure."));
+    }
+    return false;
+  }
+
+  LOG(("updater.exe was compared successfully to the installation directory"
+       " updater.exe."));
+
+  
+  
+  
+  bool result = true;
+  HMODULE updaterModule = LoadLibraryEx(updater, nullptr,
+                                        LOAD_LIBRARY_AS_DATAFILE);
+  if (!updaterModule) {
+    LOG_WARN(("updater.exe module could not be loaded. (%d)", GetLastError()));
+    result = false;
+  } else {
+    char updaterIdentity[64];
+    if (!LoadStringA(updaterModule, IDS_UPDATER_IDENTITY,
+      updaterIdentity, sizeof(updaterIdentity))) {
+      LOG_WARN(("The updater.exe application does not contain the Mozilla"
+                " updater identity."));
+      result = false;
+    }
+
+    if (strcmp(updaterIdentity, UPDATER_IDENTITY_STRING)) {
+      LOG_WARN(("The updater.exe identity string is not valid."));
+      result = false;
+    }
+    FreeLibrary(updaterModule);
+  }
+
+  if (result) {
+    LOG(("The updater.exe application contains the Mozilla"
+         " updater identity."));
+  } else {
+    if (!WriteStatusFailure(updateDir, SERVICE_UPDATER_IDENTITY_ERROR)) {
+      LOG_WARN(("Could not write update.status no updater identity."));
+    }
+    return false;
+  }
+
+#ifndef DISABLE_UPDATER_AUTHENTICODE_CHECK
+  return DoesBinaryMatchAllowedCertificates(installDir, updater);
+#else
+  return true;
+#endif
+}
+
+
+
+
+
+
+
+
+
 BOOL
 ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR *argv)
 {
@@ -324,113 +435,7 @@ ProcessSoftwareUpdateCommand(DWORD argc, LPWSTR *argv)
     return FALSE;
   }
 
-  
-  
-  
-  BOOL isLocal = FALSE;
-  if (!IsLocalFile(argv[0], isLocal) || !isLocal) {
-    LOG_WARN(("Filesystem in path %ls is not supported (%d)",
-              argv[0], GetLastError()));
-    if (!WriteStatusFailure(argv[1],
-                            SERVICE_UPDATER_NOT_FIXED_DRIVE)) {
-      LOG_WARN(("Could not write update.status service update failure.  (%d)",
-                GetLastError()));
-    }
-    return FALSE;
-  }
-
-  nsAutoHandle noWriteLock(CreateFileW(argv[0], GENERIC_READ, FILE_SHARE_READ,
-                                       nullptr, OPEN_EXISTING, 0, nullptr));
-  if (INVALID_HANDLE_VALUE == noWriteLock) {
-      LOG_WARN(("Could not set no write sharing access on file.  (%d)",
-                GetLastError()));
-    if (!WriteStatusFailure(argv[1],
-                            SERVICE_COULD_NOT_LOCK_UPDATER)) {
-      LOG_WARN(("Could not write update.status service update failure.  (%d)",
-                GetLastError()));
-    }
-    return FALSE;
-  }
-
-  
-  
-  
-  WCHAR installDirUpdater[MAX_PATH + 1] = { L'\0' };
-  wcsncpy(installDirUpdater, installDir, MAX_PATH);
-  if (!PathAppendSafe(installDirUpdater, L"updater.exe")) {
-    LOG_WARN(("Install directory updater could not be determined."));
-    result = FALSE;
-  }
-
-  BOOL updaterIsCorrect;
-  if (result && !VerifySameFiles(argv[0], installDirUpdater,
-                                 updaterIsCorrect)) {
-    LOG_WARN(("Error checking if the updaters are the same.\n"
-              "Path 1: %ls\nPath 2: %ls", argv[0], installDirUpdater));
-    result = FALSE;
-  }
-
-  if (result && !updaterIsCorrect) {
-    LOG_WARN(("The updaters do not match, updater will not run.\n"
-              "Path 1: %ls\nPath 2: %ls", argv[0], installDirUpdater));
-    result = FALSE;
-  }
-
-  if (result) {
-    LOG(("updater.exe was compared successfully to the installation directory"
-         " updater.exe."));
-  } else {
-    if (!WriteStatusFailure(argv[1],
-                            SERVICE_UPDATER_COMPARE_ERROR)) {
-      LOG_WARN(("Could not write update.status updater compare failure."));
-    }
-    return FALSE;
-  }
-
-  
-  
-  
-  HMODULE updaterModule = LoadLibraryEx(argv[0], nullptr,
-                                        LOAD_LIBRARY_AS_DATAFILE);
-  if (!updaterModule) {
-    LOG_WARN(("updater.exe module could not be loaded. (%d)", GetLastError()));
-    result = FALSE;
-  } else {
-    char updaterIdentity[64];
-    if (!LoadStringA(updaterModule, IDS_UPDATER_IDENTITY,
-                     updaterIdentity, sizeof(updaterIdentity))) {
-      LOG_WARN(("The updater.exe application does not contain the Mozilla"
-                " updater identity."));
-      result = FALSE;
-    }
-
-    if (strcmp(updaterIdentity, UPDATER_IDENTITY_STRING)) {
-      LOG_WARN(("The updater.exe identity string is not valid."));
-      result = FALSE;
-    }
-    FreeLibrary(updaterModule);
-  }
-
-  if (result) {
-    LOG(("The updater.exe application contains the Mozilla"
-          " updater identity."));
-  } else {
-    if (!WriteStatusFailure(argv[1],
-                            SERVICE_UPDATER_IDENTITY_ERROR)) {
-      LOG_WARN(("Could not write update.status no updater identity."));
-    }
-    return TRUE;
-  }
-
-  
-  BOOL updaterSignProblem = FALSE;
-#ifndef DISABLE_UPDATER_AUTHENTICODE_CHECK
-  updaterSignProblem = !DoesBinaryMatchAllowedCertificates(installDir,
-                                                           argv[0]);
-#endif
-
-  
-  if (!updaterSignProblem) {
+  if (UpdaterIsValid(argv[0], installDir, argv[1])) {
     BOOL updateProcessWasStarted = FALSE;
     if (StartUpdateProcess(argc, argv, installDir,
                            updateProcessWasStarted)) {
@@ -584,20 +589,39 @@ ExecuteServiceCommand(int argc, LPWSTR *argv)
 
   BOOL result = FALSE;
   if (!lstrcmpi(argv[2], L"software-update")) {
+    
+    
+    
+    
+    
+    
+    WCHAR installDir[MAX_PATH + 1] = { L'\0' };
+    if (!GetInstallationDir(argc - 3, argv + 3, installDir)) {
+      LOG_WARN(("Could not get the installation directory"));
+      if (!WriteStatusFailure(argv[1],
+        SERVICE_INSTALLDIR_ERROR)) {
+        LOG_WARN(("Could not write update.status for GetInstallationDir failure."));
+      }
+      return FALSE;
+    }
+    WCHAR installDirUpdater[MAX_PATH + 1] = { L'\0' };
+    wcsncpy(installDirUpdater, installDir, MAX_PATH);
+    if (!PathAppendSafe(installDirUpdater, L"updater.exe")) {
+      LOG_WARN(("Install directory updater could not be determined."));
+      result = FALSE;
+    }
 
-    
-    
-    
-    
-    
-    LPWSTR oldUpdaterPath = argv[3];
+    result = UpdaterIsValid(installDirUpdater, installDir, argv[5]);
+
     WCHAR secureUpdaterPath[MAX_PATH + 1] = { L'\0' };
-    result = GetSecureUpdaterPath(secureUpdaterPath); 
+    if (result) {
+      result = GetSecureUpdaterPath(secureUpdaterPath); 
+    }
     if (result) {
       LOG(("Passed in path: '%ls'; Using this path for updating: '%ls'.",
-           oldUpdaterPath, secureUpdaterPath));
+        installDirUpdater, secureUpdaterPath));
       DeleteSecureUpdater(secureUpdaterPath);
-      result = CopyFileW(oldUpdaterPath, secureUpdaterPath, FALSE);
+      result = CopyFileW(installDirUpdater, secureUpdaterPath, FALSE);
     }
 
     if (!result) {
@@ -613,16 +637,16 @@ ExecuteServiceCommand(int argc, LPWSTR *argv)
       
       argv[3] = secureUpdaterPath;
 
-      WCHAR oldUpdaterINIPath[MAX_PATH + 1] = { L'\0' };
+      WCHAR installDirUpdaterINIPath[MAX_PATH + 1] = { L'\0' };
       WCHAR secureUpdaterINIPath[MAX_PATH + 1] = { L'\0' };
       if (PathGetSiblingFilePath(secureUpdaterINIPath, secureUpdaterPath,
                                  L"updater.ini") &&
-          PathGetSiblingFilePath(oldUpdaterINIPath, oldUpdaterPath,
+          PathGetSiblingFilePath(installDirUpdaterINIPath, installDirUpdater,
                                  L"updater.ini")) {
         
-        if (!CopyFileW(oldUpdaterINIPath, secureUpdaterINIPath, FALSE)) {
+        if (!CopyFileW(installDirUpdaterINIPath, secureUpdaterINIPath, FALSE)) {
           LOG_WARN(("Could not copy updater.ini from: '%ls' to '%ls'.  (%d)",
-                    oldUpdaterINIPath, secureUpdaterINIPath, GetLastError()));
+                    installDirUpdaterINIPath, secureUpdaterINIPath, GetLastError()));
         }
       }
 
