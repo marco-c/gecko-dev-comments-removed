@@ -13,10 +13,11 @@
 #include "nsWrapperCache.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/ComputedTimingFunction.h" 
-#include "mozilla/LayerAnimationInfo.h"     
+#include "mozilla/ComputedTiming.h"
+#include "mozilla/ComputedTimingFunction.h"
+#include "mozilla/LayerAnimationInfo.h" 
 #include "mozilla/NonOwningAnimationTarget.h"
-#include "mozilla/OwningNonNull.h"          
+#include "mozilla/OwningNonNull.h"      
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/TimeStamp.h"
@@ -49,57 +50,6 @@ enum class IterationCompositeOperation : uint32_t;
 enum class CompositeOperation : uint32_t;
 struct AnimationPropertyDetails;
 }
-
-
-
-
-
-struct ComputedTiming
-{
-  
-  
-  
-  StickyTimeDuration  mActiveDuration;
-  
-  
-  
-  StickyTimeDuration  mEndTime;
-  
-  
-  
-  
-  Nullable<double>    mProgress;
-  
-  uint64_t            mCurrentIteration = 0;
-  
-  
-  double              mIterations = 1.0;
-  double              mIterationStart = 0.0;
-  StickyTimeDuration  mDuration;
-
-  
-  dom::FillMode       mFill = dom::FillMode::None;
-  bool FillsForwards() const {
-    MOZ_ASSERT(mFill != dom::FillMode::Auto,
-               "mFill should not be Auto in ComputedTiming.");
-    return mFill == dom::FillMode::Both ||
-           mFill == dom::FillMode::Forwards;
-  }
-  bool FillsBackwards() const {
-    MOZ_ASSERT(mFill != dom::FillMode::Auto,
-               "mFill should not be Auto in ComputedTiming.");
-    return mFill == dom::FillMode::Both ||
-           mFill == dom::FillMode::Backwards;
-  }
-
-  enum class AnimationPhase {
-    Null,   
-    Before, 
-    Active, 
-    After   
-  };
-  AnimationPhase      mPhase = AnimationPhase::Null;
-};
 
 struct AnimationPropertySegment
 {
