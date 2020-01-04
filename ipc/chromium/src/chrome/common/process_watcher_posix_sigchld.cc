@@ -77,7 +77,7 @@ private:
 
 
 class ChildGrimReaper : public ChildReaper,
-                        public Task
+                        public mozilla::Runnable
 {
 public:
   explicit ChildGrimReaper(pid_t process) : ChildReaper(process)
@@ -91,11 +91,13 @@ public:
   }
 
   
-  virtual void Run()
+  NS_IMETHOD Run()
   {
     
     if (process_)
       KillProcess();
+
+    return NS_OK;
   }
 
 private:
@@ -200,11 +202,11 @@ ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
 
   MessageLoopForIO* loop = MessageLoopForIO::current();
   if (force) {
-    ChildGrimReaper* reaper = new ChildGrimReaper(process);
+    RefPtr<ChildGrimReaper> reaper = new ChildGrimReaper(process);
 
     loop->CatchSignal(SIGCHLD, reaper, reaper);
     
-    loop->PostDelayedTask(FROM_HERE, reaper, kMaxWaitMs);
+    loop->PostDelayedTask(reaper.forget(), kMaxWaitMs);
   } else {
     ChildLaxReaper* reaper = new ChildLaxReaper(process);
 

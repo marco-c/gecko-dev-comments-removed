@@ -10,9 +10,10 @@
 #include "mozilla/TimeStamp.h"  
 #include "nsITimer.h"
 
-class Task;
-
 namespace mozilla {
+
+class Runnable;
+
 namespace layers {
 
 class APZThreadUtils
@@ -50,12 +51,12 @@ public:
 
 
 
-  static void RunOnControllerThread(Task* aTask);
+  static void RunOnControllerThread(already_AddRefed<Runnable> aTask);
 
   
 
 
-  static void RunDelayedTaskOnCurrentThread(Task* aTask,
+  static void RunDelayedTaskOnCurrentThread(already_AddRefed<Runnable> aTask,
                                             const TimeDuration& aDelay);
 
   

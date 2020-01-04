@@ -111,15 +111,12 @@ public:
   
   
 
-  void PostTask(
-      const tracked_objects::Location& from_here, Task* task);
+  void PostTask(already_AddRefed<mozilla::Runnable> task);
 
-  void PostDelayedTask(
-      const tracked_objects::Location& from_here, Task* task, int delay_ms);
+  void PostDelayedTask(already_AddRefed<mozilla::Runnable> task, int delay_ms);
 
   
-  void PostIdleTask(
-      const tracked_objects::Location& from_here, Task* task);
+  void PostIdleTask(already_AddRefed<mozilla::Runnable> task);
 
   
   void Run();
@@ -137,10 +134,11 @@ public:
 
   
   
-  class QuitTask : public Task {
+  class QuitTask : public mozilla::Runnable {
    public:
-    virtual void Run() override {
+    NS_IMETHOD Run() override {
       MessageLoop::current()->Quit();
+      return NS_OK;
     }
   };
 
@@ -282,13 +280,36 @@ public:
 
   
   struct PendingTask {
-    Task* task;                        
+    RefPtr<mozilla::Runnable> task;    
     base::TimeTicks delayed_run_time;  
     int sequence_num;                  
     bool nestable;                     
 
-    PendingTask(Task* aTask, bool aNestable)
+    PendingTask(already_AddRefed<mozilla::Runnable> aTask, bool aNestable)
         : task(aTask), sequence_num(0), nestable(aNestable) {
+    }
+
+    PendingTask(PendingTask&& aOther)
+        : task(aOther.task.forget()),
+          delayed_run_time(aOther.delayed_run_time),
+          sequence_num(aOther.sequence_num),
+          nestable(aOther.nestable) {
+    }
+
+    
+    PendingTask(const PendingTask& aOther)
+        : task(aOther.task),
+          delayed_run_time(aOther.delayed_run_time),
+          sequence_num(aOther.sequence_num),
+          nestable(aOther.nestable) {
+    }
+    PendingTask& operator=(const PendingTask& aOther)
+    {
+      task = aOther.task;
+      delayed_run_time = aOther.delayed_run_time;
+      sequence_num = aOther.sequence_num;
+      nestable = aOther.nestable;
+      return *this;
     }
 
     
@@ -332,14 +353,14 @@ public:
   
   
   
-  bool QueueOrRunTask(Task* new_task);
+  bool QueueOrRunTask(already_AddRefed<mozilla::Runnable> new_task);
 
   
-  void RunTask(Task* task);
+  void RunTask(already_AddRefed<mozilla::Runnable> task);
 
   
   
-  bool DeferOrRunPendingTask(const PendingTask& pending_task);
+  bool DeferOrRunPendingTask(PendingTask&& pending_task);
 
   
   void AddToDelayedWorkQueue(const PendingTask& pending_task);
@@ -355,8 +376,7 @@ public:
   bool DeletePendingTasks();
 
   
-  void PostTask_Helper(const tracked_objects::Location& from_here, Task* task,
-                       int delay_ms);
+  void PostTask_Helper(already_AddRefed<mozilla::Runnable> task, int delay_ms);
 
   
   virtual bool DoWork() override;

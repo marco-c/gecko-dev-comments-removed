@@ -18,11 +18,12 @@
 namespace base {
 
 
-class ThreadQuitTask : public Task {
+class ThreadQuitTask : public mozilla::Runnable {
  public:
-  virtual void Run() {
+  NS_IMETHOD Run() override {
     MessageLoop::current()->Quit();
     Thread::SetThreadWasQuitProperly(true);
+    return NS_OK;
   }
 };
 
@@ -113,8 +114,10 @@ void Thread::Stop() {
   DCHECK_NE(thread_id_, PlatformThread::CurrentId());
 
   
-  if (message_loop_)
-    message_loop_->PostTask(FROM_HERE, new ThreadQuitTask());
+  if (message_loop_) {
+    RefPtr<ThreadQuitTask> task = new ThreadQuitTask();
+    message_loop_->PostTask(task.forget());
+  }
 
   
   
@@ -143,7 +146,8 @@ void Thread::StopSoon() {
   
   DCHECK(message_loop_);
 
-  message_loop_->PostTask(FROM_HERE, new ThreadQuitTask());
+  RefPtr<ThreadQuitTask> task = new ThreadQuitTask();
+  message_loop_->PostTask(task.forget());
 }
 
 void Thread::ThreadMain() {

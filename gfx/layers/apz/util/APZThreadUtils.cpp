@@ -53,44 +53,43 @@ APZThreadUtils::AssertOnCompositorThread()
 }
 
  void
-APZThreadUtils::RunOnControllerThread(Task* aTask)
+APZThreadUtils::RunOnControllerThread(already_AddRefed<Runnable> aTask)
 {
+  RefPtr<Runnable> task = aTask;
+
 #ifdef MOZ_ANDROID_APZ
   
   
   if (AndroidBridge::IsJavaUiThread()) {
-    aTask->Run();
-    delete aTask;
+    task->Run();
   } else {
-    AndroidBridge::Bridge()->PostTaskToUiThread(aTask, 0);
+    AndroidBridge::Bridge()->PostTaskToUiThread(task.forget(), 0);
   }
 #else
   if (!sControllerThread) {
     
     NS_WARNING("Dropping task posted to controller thread");
-    delete aTask;
     return;
   }
 
   if (sControllerThread == MessageLoop::current()) {
-    aTask->Run();
-    delete aTask;
+    task->Run();
   } else {
-    sControllerThread->PostTask(FROM_HERE, aTask);
+    sControllerThread->PostTask(task.forget());
   }
 #endif
 }
 
  void
-APZThreadUtils::RunDelayedTaskOnCurrentThread(Task* aTask,
+APZThreadUtils::RunDelayedTaskOnCurrentThread(already_AddRefed<Runnable> aTask,
                                               const TimeDuration& aDelay)
 {
   if (MessageLoop* messageLoop = MessageLoop::current()) {
-    messageLoop->PostDelayedTask(FROM_HERE, aTask, aDelay.ToMilliseconds());
+    messageLoop->PostDelayedTask(Move(aTask), aDelay.ToMilliseconds());
   } else {
 #ifdef MOZ_ANDROID_APZ
     
-    AndroidBridge::Bridge()->PostTaskToUiThread(aTask, aDelay.ToMilliseconds());
+    AndroidBridge::Bridge()->PostTaskToUiThread(Move(aTask), aDelay.ToMilliseconds());
 #else
     
     MOZ_RELEASE_ASSERT(false, "This non-Fennec platform should have a MessageLoop::current()");

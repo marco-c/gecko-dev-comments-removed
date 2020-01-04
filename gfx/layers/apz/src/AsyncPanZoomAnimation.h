@@ -46,7 +46,7 @@ public:
 
 
 
-  nsTArray<Task*> TakeDeferredTasks() {
+  nsTArray<RefPtr<Runnable>> TakeDeferredTasks() {
     return Move(mDeferredTasks);
   }
 
@@ -71,7 +71,7 @@ protected:
 
 
 
-  nsTArray<Task*> mDeferredTasks;
+  nsTArray<RefPtr<Runnable>> mDeferredTasks;
 };
 
 } 

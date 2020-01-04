@@ -661,16 +661,17 @@ public:
 
 
 
-class TextureClientReleaseTask : public Task
+class TextureClientReleaseTask : public Runnable
 {
 public:
     explicit TextureClientReleaseTask(TextureClient* aClient)
         : mTextureClient(aClient) {
     }
 
-    virtual void Run() override
+    NS_IMETHOD Run() override
     {
         mTextureClient = nullptr;
+        return NS_OK;
     }
 
 private:

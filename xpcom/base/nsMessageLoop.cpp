@@ -28,13 +28,13 @@ namespace {
 
 
 class MessageLoopIdleTask
-  : public Task
+  : public Runnable
   , public SupportsWeakPtr<MessageLoopIdleTask>
 {
 public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MessageLoopIdleTask)
   MessageLoopIdleTask(nsIRunnable* aTask, uint32_t aEnsureRunsAfterMS);
-  virtual void Run();
+  NS_IMETHOD Run() override;
 
 private:
   nsresult Init(uint32_t aEnsureRunsAfterMS);
@@ -102,7 +102,7 @@ MessageLoopIdleTask::Init(uint32_t aEnsureRunsAfterMS)
                                   nsITimer::TYPE_ONE_SHOT);
 }
 
- void
+NS_IMETHODIMP
 MessageLoopIdleTask::Run()
 {
   
@@ -118,6 +118,8 @@ MessageLoopIdleTask::Run()
     mTask->Run();
     mTask = nullptr;
   }
+
+  return NS_OK;
 }
 
 MessageLoopTimerCallback::MessageLoopTimerCallback(MessageLoopIdleTask* aTask)
@@ -150,8 +152,10 @@ nsMessageLoop::PostIdleTask(nsIRunnable* aTask, uint32_t aEnsureRunsAfterMS)
 {
   
   
-  MessageLoop::current()->PostIdleTask(FROM_HERE,
-    new MessageLoopIdleTask(aTask, aEnsureRunsAfterMS));
+  RefPtr<MessageLoopIdleTask> idle =
+    new MessageLoopIdleTask(aTask, aEnsureRunsAfterMS);
+  MessageLoop::current()->PostIdleTask(idle.forget());
+
   return NS_OK;
 }
 

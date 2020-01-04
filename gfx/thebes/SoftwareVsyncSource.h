@@ -14,8 +14,6 @@
 #include "nsISupportsImpl.h"
 #include "VsyncSource.h"
 
-class CancelableTask;
-
 class SoftwareDisplay final : public mozilla::gfx::VsyncSource::Display
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SoftwareDisplay)
@@ -38,7 +36,7 @@ private:
   mozilla::TimeDuration mVsyncRate;
   
   base::Thread* mVsyncThread;
-  CancelableTask* mCurrentVsyncTask; 
+  RefPtr<mozilla::CancelableRunnable> mCurrentVsyncTask; 
   bool mVsyncEnabled; 
 }; 
 

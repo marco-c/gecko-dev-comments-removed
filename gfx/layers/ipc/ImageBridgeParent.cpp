@@ -10,7 +10,6 @@
 #include "base/message_loop.h"          
 #include "base/process.h"               
 #include "base/task.h"                  
-#include "base/tracked.h"               
 #include "mozilla/gfx/Point.h"                   
 #include "mozilla/Hal.h"                
 #include "mozilla/HalTypes.h"           
@@ -83,8 +82,8 @@ ImageBridgeParent::~ImageBridgeParent()
 
   if (mTransport) {
     MOZ_ASSERT(XRE_GetIOMessageLoop());
-    XRE_GetIOMessageLoop()->PostTask(FROM_HERE,
-                                     new DeleteTask<Transport>(mTransport));
+    RefPtr<DeleteTask<Transport>> task(new DeleteTask<Transport>(mTransport));
+    XRE_GetIOMessageLoop()->PostTask(task.forget());
   }
 
   nsTArray<PImageContainerParent*> parents;
@@ -108,7 +107,6 @@ ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
   }
 
   MessageLoop::current()->PostTask(
-    FROM_HERE,
     NewRunnableMethod(this, &ImageBridgeParent::DeferredDestroy));
 
   
@@ -211,8 +209,7 @@ ImageBridgeParent::Create(Transport* aTransport, ProcessId aChildProcessId, Geck
     aProcessHost->AssociateActor();
   }
 
-  loop->PostTask(FROM_HERE,
-                 NewRunnableFunction(ConnectImageBridgeInParentProcess,
+  loop->PostTask(NewRunnableFunction(ConnectImageBridgeInParentProcess,
                                      bridge.get(), aTransport, aChildProcessId));
   return bridge.get();
 }

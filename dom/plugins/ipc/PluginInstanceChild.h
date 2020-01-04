@@ -259,7 +259,7 @@ public:
 
     void AsyncCall(PluginThreadCallback aFunc, void* aUserData);
     
-    void PostChildAsyncCall(ChildAsyncCall* aTask);
+    void PostChildAsyncCall(already_AddRefed<ChildAsyncCall> aTask);
 
     int GetQuirks();
 
@@ -384,7 +384,7 @@ private:
           mWindowed(isWindowed)
         {}
 
-        void Run() override;
+        NS_IMETHOD Run() override;
 
         WNDPROC GetProc();
         HWND GetWnd() { return mWnd; }
@@ -446,7 +446,7 @@ private:
 #endif
 
     mozilla::Mutex mAsyncInvalidateMutex;
-    CancelableTask *mAsyncInvalidateTask;
+    CancelableRunnable *mAsyncInvalidateTask;
 
     
     PluginScriptableObjectChild* mCachedWindowActor;
@@ -637,10 +637,10 @@ private:
     gfxSurfaceType mSurfaceType;
 
     
-    CancelableTask *mCurrentInvalidateTask;
+    RefPtr<CancelableRunnable> mCurrentInvalidateTask;
 
     
-    CancelableTask *mCurrentAsyncSetWindowTask;
+    RefPtr<CancelableRunnable> mCurrentAsyncSetWindowTask;
 
     
     

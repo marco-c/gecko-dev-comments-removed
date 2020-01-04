@@ -2101,12 +2101,12 @@ class AndroidBridge::DelayedTask
     using TimeDuration = mozilla::TimeDuration;
 
 public:
-    DelayedTask(Task* aTask)
+    DelayedTask(already_AddRefed<Runnable> aTask)
         : mTask(aTask)
         , mRunTime() 
     {}
 
-    DelayedTask(Task* aTask, int aDelayMs)
+    DelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs)
         : mTask(aTask)
         , mRunTime(TimeStamp::Now() + TimeDuration::FromMilliseconds(aDelayMs))
     {}
@@ -2129,25 +2129,25 @@ public:
         return 0;
     }
 
-    UniquePtr<Task>&& GetTask()
+    already_AddRefed<Runnable> TakeTask()
     {
-        return static_cast<UniquePtr<Task>&&>(mTask);
+        return mTask.forget();
     }
 
 private:
-    UniquePtr<Task> mTask;
+    RefPtr<Runnable> mTask;
     const TimeStamp mRunTime;
 };
 
 
 void
-AndroidBridge::PostTaskToUiThread(Task* aTask, int aDelayMs)
+AndroidBridge::PostTaskToUiThread(already_AddRefed<Runnable> aTask, int aDelayMs)
 {
     
     
     size_t i;
-    DelayedTask newTask(aDelayMs ? DelayedTask(aTask, aDelayMs)
-                                 : DelayedTask(aTask));
+    DelayedTask newTask(aDelayMs ? DelayedTask(mozilla::Move(aTask), aDelayMs)
+                                 : DelayedTask(mozilla::Move(aTask)));
 
     {
         MutexAutoLock lock(mUiTaskQueueLock);
@@ -2188,7 +2188,7 @@ AndroidBridge::RunDelayedUiThreadTasks()
         }
 
         
-        const UniquePtr<Task> nextTask(mUiTaskQueue[0].GetTask());
+        RefPtr<Runnable> nextTask(mUiTaskQueue[0].TakeTask());
         mUiTaskQueue.RemoveElementAt(0);
 
         

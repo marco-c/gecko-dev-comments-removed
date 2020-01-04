@@ -10,7 +10,8 @@ namespace base {
 
 
 
-struct ObjectWatcher::Watch : public Task {
+class ObjectWatcher::Watch : public mozilla::Runnable {
+public:
   ObjectWatcher* watcher;    
   HANDLE object;             
   HANDLE wait_object;        
@@ -18,16 +19,18 @@ struct ObjectWatcher::Watch : public Task {
   Delegate* delegate;        
   bool did_signal;           
 
-  virtual void Run() {
+  NS_IMETHOD Run() override {
     
     
     if (!watcher)
-      return;
+      return NS_OK;
 
     DCHECK(did_signal);
     watcher->StopWatching();
 
     delegate->OnObjectSignaled(object);
+
+    return NS_OK;
   }
 };
 
@@ -46,7 +49,7 @@ bool ObjectWatcher::StartWatching(HANDLE object, Delegate* delegate) {
     return false;
   }
 
-  Watch* watch = new Watch;
+  RefPtr<Watch> watch = new Watch;
   watch->watcher = this;
   watch->object = object;
   watch->origin_loop = MessageLoop::current();
@@ -58,13 +61,12 @@ bool ObjectWatcher::StartWatching(HANDLE object, Delegate* delegate) {
   DWORD wait_flags = WT_EXECUTEDEFAULT | WT_EXECUTEONLYONCE;
 
   if (!RegisterWaitForSingleObject(&watch->wait_object, object, DoneWaiting,
-                                   watch, INFINITE, wait_flags)) {
+                                   watch.get(), INFINITE, wait_flags)) {
     NOTREACHED() << "RegisterWaitForSingleObject failed: " << GetLastError();
-    delete watch;
     return false;
   }
 
-  watch_ = watch;
+  watch_ = watch.forget();
 
   
   
@@ -95,12 +97,6 @@ bool ObjectWatcher::StopWatching() {
   
   watch_->watcher = NULL;
 
-  
-  
-  
-  if (!watch_->did_signal)
-    delete watch_;
-
   watch_ = NULL;
 
   MessageLoop::current()->RemoveDestructionObserver(this);
@@ -119,6 +115,7 @@ void CALLBACK ObjectWatcher::DoneWaiting(void* param, BOOLEAN timed_out) {
   DCHECK(!timed_out);
 
   Watch* watch = static_cast<Watch*>(param);
+  RefPtr<Watch> addrefedWatch = watch;
 
   
   watch->did_signal = true;
@@ -126,7 +123,7 @@ void CALLBACK ObjectWatcher::DoneWaiting(void* param, BOOLEAN timed_out) {
   
   
   
-  watch->origin_loop->PostTask(FROM_HERE, watch);
+  watch->origin_loop->PostTask(addrefedWatch.forget());
 }
 
 void ObjectWatcher::WillDestroyCurrentMessageLoop() {

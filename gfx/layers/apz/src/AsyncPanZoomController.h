@@ -146,7 +146,7 @@ public:
 
 
 
-  void PostDelayedTask(Task* aTask, int aDelayMs);
+  void PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs);
 
   
   
@@ -162,7 +162,7 @@ public:
   bool AdvanceAnimations(const TimeStamp& aSampleTime);
 
   bool UpdateAnimation(const TimeStamp& aSampleTime,
-                       nsTArray<Task*>* aOutDeferredTasks);
+                       nsTArray<RefPtr<Runnable>>* aOutDeferredTasks);
 
   
 

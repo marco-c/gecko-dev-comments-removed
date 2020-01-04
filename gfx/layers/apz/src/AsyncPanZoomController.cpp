@@ -23,7 +23,6 @@
 #include "UnitTransforms.h"             
 #include "base/message_loop.h"          
 #include "base/task.h"                  
-#include "base/tracked.h"               
 #include "gfxPrefs.h"                   
 #include "gfxTypes.h"                   
 #include "LayersLogging.h"              
@@ -3062,7 +3061,7 @@ AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
 }
 
 bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
-                                             nsTArray<Task*>* aOutDeferredTasks)
+                                             nsTArray<RefPtr<Runnable>>* aOutDeferredTasks)
 {
   APZThreadUtils::AssertOnCompositorThread();
 
@@ -3163,7 +3162,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   
   mAsyncTransformAppliedToContent = false;
   bool requestAnimationFrame = false;
-  nsTArray<Task*> deferredTasks;
+  nsTArray<RefPtr<Runnable>> deferredTasks;
 
   {
     ReentrantMonitorAutoEnter lock(mMonitor);
@@ -3187,7 +3186,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   
   for (uint32_t i = 0; i < deferredTasks.Length(); ++i) {
     deferredTasks[i]->Run();
-    delete deferredTasks[i];
+    deferredTasks[i] = nullptr;
   }
 
   
@@ -3852,12 +3851,13 @@ AsyncPanZoomController::GetZoomConstraints() const
 }
 
 
-void AsyncPanZoomController::PostDelayedTask(Task* aTask, int aDelayMs) {
+void AsyncPanZoomController::PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs) {
   APZThreadUtils::AssertOnControllerThread();
   RefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (controller) {
-    controller->PostDelayedTask(aTask, aDelayMs);
+    controller->PostDelayedTask(Move(aTask), aDelayMs);
   }
+  
 }
 
 bool AsyncPanZoomController::Matches(const ScrollableLayerGuid& aGuid)

@@ -59,7 +59,8 @@ class Flag final {
 
 class AsyncWaiter final : public WaitableEvent::Waiter {
  public:
-  AsyncWaiter(MessageLoop* message_loop, Task* task, Flag* flag)
+  AsyncWaiter(MessageLoop* message_loop,
+	      already_AddRefed<mozilla::Runnable> task, Flag* flag)
       : message_loop_(message_loop),
         cb_task_(task),
         flag_(flag) { }
@@ -68,9 +69,9 @@ class AsyncWaiter final : public WaitableEvent::Waiter {
     if (flag_->value()) {
       
       
-      delete cb_task_;
+      cb_task_ = nullptr;
     } else {
-      message_loop_->PostTask(FROM_HERE, cb_task_);
+      message_loop_->PostTask(cb_task_.forget());
     }
 
     
@@ -89,7 +90,7 @@ class AsyncWaiter final : public WaitableEvent::Waiter {
 
  private:
   MessageLoop *const message_loop_;
-  Task *const cb_task_;
+  RefPtr<mozilla::Runnable> cb_task_;
   RefPtr<Flag> flag_;
 };
 
@@ -98,7 +99,7 @@ class AsyncWaiter final : public WaitableEvent::Waiter {
 
 
 
-class AsyncCallbackTask : public Task {
+class AsyncCallbackTask : public mozilla::Runnable {
  public:
   AsyncCallbackTask(Flag* flag, WaitableEventWatcher::Delegate* delegate,
                     WaitableEvent* event)
@@ -107,7 +108,7 @@ class AsyncCallbackTask : public Task {
         event_(event) {
   }
 
-  void Run() {
+  NS_IMETHOD Run() override {
     
     if (!flag_->value()) {
       
@@ -116,6 +117,7 @@ class AsyncCallbackTask : public Task {
       delegate_->OnWaitableEventSignaled(event_);
     }
 
+    return NS_OK;
     
   }
 
@@ -128,8 +130,7 @@ class AsyncCallbackTask : public Task {
 WaitableEventWatcher::WaitableEventWatcher()
     : event_(NULL),
       message_loop_(NULL),
-      cancel_flag_(NULL),
-      callback_task_(NULL) {
+      cancel_flag_(NULL) {
 }
 
 WaitableEventWatcher::~WaitableEventWatcher() {
@@ -172,7 +173,8 @@ bool WaitableEventWatcher::StartWatching
 
     
     
-    current_ml->PostTask(FROM_HERE, callback_task_);
+    RefPtr<AsyncCallbackTask> addrefedTask = callback_task_;
+    current_ml->PostTask(addrefedTask.forget());
     return true;
   }
 
@@ -181,7 +183,8 @@ bool WaitableEventWatcher::StartWatching
 
   event_ = event;
   kernel_ = kernel;
-  waiter_ = new AsyncWaiter(current_ml, callback_task_, cancel_flag_);
+  RefPtr<AsyncCallbackTask> addrefedTask = callback_task_;
+  waiter_ = new AsyncWaiter(current_ml, addrefedTask.forget(), cancel_flag_);
   event->Enqueue(waiter_);
 
   return true;
@@ -239,7 +242,7 @@ void WaitableEventWatcher::StopWatching() {
     
     
     delete waiter_;
-    delete callback_task_;
+    callback_task_ = nullptr;
     cancel_flag_ = NULL;
     return;
   }

@@ -464,14 +464,15 @@ class MessageChannel : HasResultCodes
 
     
     
+    
     class RefCountedTask
     {
       public:
-        explicit RefCountedTask(CancelableTask* aTask)
+        explicit RefCountedTask(already_AddRefed<CancelableRunnable> aTask)
           : mTask(aTask)
         { }
       private:
-        ~RefCountedTask() { delete mTask; }
+        ~RefCountedTask() { }
       public:
         void Run() { mTask->Run(); }
         void Cancel() { mTask->Cancel(); }
@@ -479,18 +480,21 @@ class MessageChannel : HasResultCodes
         NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedTask)
 
       private:
-        CancelableTask* mTask;
+        RefPtr<CancelableRunnable> mTask;
     };
 
     
     
-    class DequeueTask : public Task
+    class DequeueTask : public Runnable
     {
       public:
         explicit DequeueTask(RefCountedTask* aTask)
           : mTask(aTask)
         { }
-        void Run() override { mTask->Run(); }
+        NS_IMETHOD Run() override {
+          mTask->Run();
+          return NS_OK;
+        }
 
       private:
         RefPtr<RefCountedTask> mTask;
@@ -503,7 +507,7 @@ class MessageChannel : HasResultCodes
     Side mSide;
     MessageLink* mLink;
     MessageLoop* mWorkerLoop;           
-    CancelableTask* mChannelErrorTask;  
+    RefPtr<CancelableRunnable> mChannelErrorTask;  
 
     
     

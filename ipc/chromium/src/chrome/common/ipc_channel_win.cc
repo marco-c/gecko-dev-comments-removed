@@ -265,7 +265,7 @@ bool Channel::ChannelImpl::Connect() {
     
     
     
-    MessageLoopForIO::current()->PostTask(FROM_HERE, factory_.NewRunnableMethod(
+    MessageLoopForIO::current()->PostTask(factory_.NewRunnableMethod(
         &Channel::ChannelImpl::OnIOCompleted, &input_state_.context, 0, 0));
   }
 

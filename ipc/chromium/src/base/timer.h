@@ -69,7 +69,7 @@ class BaseTimer_Helper {
 
   
   bool IsRunning() const {
-    return delayed_task_ != NULL;
+    return !!delayed_task_;
   }
 
   
@@ -80,10 +80,10 @@ class BaseTimer_Helper {
   }
 
  protected:
-  BaseTimer_Helper() : delayed_task_(NULL) {}
+  BaseTimer_Helper() {}
 
   
-  class TimerTask : public Task {
+  class TimerTask : public mozilla::Runnable {
    public:
     explicit TimerTask(TimeDelta delay) : delay_(delay) {
       
@@ -100,7 +100,7 @@ class BaseTimer_Helper {
   
   void InitiateDelayedTask(TimerTask* timer_task);
 
-  TimerTask* delayed_task_;
+  RefPtr<TimerTask> delayed_task_;
 
   DISALLOW_COPY_AND_ASSIGN(BaseTimer_Helper);
 };
@@ -129,7 +129,7 @@ class BaseTimer : public BaseTimer_Helper {
   
   void Reset() {
     DCHECK(IsRunning());
-    InitiateDelayedTask(static_cast<TimerTask*>(delayed_task_)->Clone());
+    InitiateDelayedTask(static_cast<TimerTask*>(delayed_task_.get())->Clone());
   }
 
  private:
@@ -150,14 +150,15 @@ class BaseTimer : public BaseTimer_Helper {
       ClearBaseTimer();
     }
 
-    virtual void Run() {
+    NS_IMETHOD Run() override {
       if (!timer_)  
-        return;
+        return NS_OK;
       if (kIsRepeating)
         ResetBaseTimer();
       else
         ClearBaseTimer();
       DispatchToMethod(receiver_, method_, Tuple0());
+      return NS_OK;
     }
 
     TimerTask* Clone() const {

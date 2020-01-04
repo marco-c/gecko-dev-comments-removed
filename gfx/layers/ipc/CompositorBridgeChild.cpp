@@ -10,7 +10,6 @@
 #include "ClientLayerManager.h"         
 #include "base/message_loop.h"          
 #include "base/task.h"                  
-#include "base/tracked.h"               
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/mozalloc.h"           
@@ -46,8 +45,8 @@ CompositorBridgeChild::CompositorBridgeChild(ClientLayerManager *aLayerManager)
 
 CompositorBridgeChild::~CompositorBridgeChild()
 {
-  XRE_GetIOMessageLoop()->PostTask(FROM_HERE,
-                                   new DeleteTask<Transport>(GetTransport()));
+  RefPtr<DeleteTask<Transport>> task = new DeleteTask<Transport>(GetTransport());
+  XRE_GetIOMessageLoop()->PostTask(task.forget());
 
   if (mCanSend) {
     gfxCriticalError() << "CompositorBridgeChild was not deinitialized";
@@ -111,7 +110,7 @@ CompositorBridgeChild::Destroy()
   
 
   
-  MessageLoop::current()->PostTask(FROM_HERE,
+  MessageLoop::current()->PostTask(
              NewRunnableFunction(DeferredDestroyCompositor, mCompositorBridgeParent, selfRef));
 }
 

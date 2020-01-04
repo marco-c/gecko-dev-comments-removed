@@ -165,7 +165,7 @@ CamerasParent::Observe(nsISupports *aSubject,
 }
 
 nsresult
-CamerasParent::DispatchToVideoCaptureThread(Runnable *event)
+CamerasParent::DispatchToVideoCaptureThread(Runnable* event)
 {
   
   
@@ -182,8 +182,8 @@ CamerasParent::DispatchToVideoCaptureThread(Runnable *event)
   if (!mVideoCaptureThread || !mVideoCaptureThread->IsRunning()) {
     return NS_ERROR_FAILURE;
   }
-  mVideoCaptureThread->message_loop()->PostTask(FROM_HERE,
-                                                new RunnableTask(event));
+  RefPtr<Runnable> addrefedEvent = event;
+  mVideoCaptureThread->message_loop()->PostTask(addrefedEvent.forget());
   return NS_OK;
 }
 

@@ -129,7 +129,8 @@ protected:
   void CloseEngines();
   void StopIPC();
   void StopVideoCapture();
-  nsresult DispatchToVideoCaptureThread(Runnable *event);
+  
+  nsresult DispatchToVideoCaptureThread(Runnable* event);
 
   EngineHelper mEngines[CaptureEngine::MaxEngine];
   nsTArray<CallbackHelper*> mCallbacks;

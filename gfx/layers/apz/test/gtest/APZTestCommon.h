@@ -41,8 +41,6 @@ using ::testing::AtMost;
 using ::testing::MockFunction;
 using ::testing::InSequence;
 
-class Task;
-
 template<class T>
 class ScopedGfxPref {
 public:
@@ -81,7 +79,10 @@ public:
   MOCK_METHOD3(HandleDoubleTap, void(const CSSPoint&, Modifiers, const ScrollableLayerGuid&));
   MOCK_METHOD3(HandleSingleTap, void(const CSSPoint&, Modifiers, const ScrollableLayerGuid&));
   MOCK_METHOD4(HandleLongTap, void(const CSSPoint&, Modifiers, const ScrollableLayerGuid&, uint64_t));
-  MOCK_METHOD2(PostDelayedTask, void(Task* aTask, int aDelayMs));
+  
+  void PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs) {
+    RefPtr<Runnable> task = aTask;
+  }
   MOCK_METHOD3(NotifyAPZStateChange, void(const ScrollableLayerGuid& aGuid, APZStateChange aChange, int aArg));
   MOCK_METHOD0(NotifyFlushComplete, void());
 };
@@ -109,7 +110,8 @@ public:
     mTime = target;
   }
 
-  void PostDelayedTask(Task* aTask, int aDelayMs) {
+  void PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs) {
+    RefPtr<Runnable> task = aTask;
     TimeStamp runAtTime = mTime + TimeDuration::FromMilliseconds(aDelayMs);
     int insIndex = mTaskQueue.Length();
     while (insIndex > 0) {
@@ -118,7 +120,7 @@ public:
       }
       insIndex--;
     }
-    mTaskQueue.InsertElementAt(insIndex, std::make_pair(aTask, runAtTime));
+    mTaskQueue.InsertElementAt(insIndex, std::make_pair(task, runAtTime));
   }
 
   
@@ -127,7 +129,7 @@ public:
   
   
   int RunThroughDelayedTasks() {
-    nsTArray<std::pair<Task*, TimeStamp>> runQueue;
+    nsTArray<std::pair<RefPtr<Runnable>, TimeStamp>> runQueue;
     runQueue.SwapElements(mTaskQueue);
     int numTasks = runQueue.Length();
     for (int i = 0; i < numTasks; i++) {
@@ -136,25 +138,25 @@ public:
 
       
       
-      delete runQueue[i].first;
+      runQueue[i].first = nullptr;
     }
     return numTasks;
   }
 
 private:
   void RunNextDelayedTask() {
-    std::pair<Task*, TimeStamp> next = mTaskQueue[0];
+    std::pair<RefPtr<Runnable>, TimeStamp> next = mTaskQueue[0];
     mTaskQueue.RemoveElementAt(0);
     mTime = next.second;
     next.first->Run();
     
     
-    delete next.first;
+    next.first = nullptr;
   }
 
   
   
-  nsTArray<std::pair<Task*, TimeStamp>> mTaskQueue;
+  nsTArray<std::pair<RefPtr<Runnable>, TimeStamp>> mTaskQueue;
   TimeStamp mTime;
 };
 
