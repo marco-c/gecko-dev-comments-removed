@@ -272,14 +272,57 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
       let UITourHandler = {
         get(target, prop, receiver) {
           return (...args) => {
+            let browser = gTestTab.linkedBrowser;
+            const proxyFunctionName = "UITourHandler:proxiedfunction-";
+            
+            let callbackMap = new Map();
+            let fnIndices = [];
+            args = args.map((arg, index) => {
+              
+              
+              
+              
+              
+              if (typeof arg == "function") {
+                callbackMap.set(index, arg);
+                fnIndices.push(index);
+                let handler = function(msg) {
+                  browser.messageManager.removeMessageListener(proxyFunctionName + index, handler);
+                  callbackMap.get(index).apply(null, msg.data);
+                };
+                browser.messageManager.addMessageListener(proxyFunctionName + index, handler);
+                return "";
+              }
+              return arg;
+            });
             let taskArgs = {
               methodName: prop,
               args,
+              fnIndices,
             };
-            return ContentTask.spawn(gTestTab.linkedBrowser, taskArgs, args => {
+            return ContentTask.spawn(browser, taskArgs, function*(args) {
               let contentWin = Components.utils.waiveXrays(content);
-              return contentWin.Mozilla.UITour[args.methodName].apply(contentWin.Mozilla.UITour,
-                                                                      args.args);
+              let callbacksCalled = 0;
+              let resolveCallbackPromise;
+              let allCallbacksCalledPromise = new Promise(resolve => resolveCallbackPromise = resolve);
+              let argumentsWithFunctions = args.args.map((arg, index) => {
+                if (arg === "" && args.fnIndices.includes(index)) {
+                  return function() {
+                    callbacksCalled++;
+                    sendAsyncMessage("UITourHandler:proxiedfunction-" + index, Array.from(arguments));
+                    if (callbacksCalled >= args.fnIndices.length) {
+                      resolveCallbackPromise();
+                    }
+                  };
+                }
+                return arg;
+              });
+              let rv = contentWin.Mozilla.UITour[args.methodName].apply(contentWin.Mozilla.UITour,
+                                                                        argumentsWithFunctions);
+              if (args.fnIndices.length) {
+                yield allCallbacksCalledPromise;
+              }
+              return rv;
             });
           };
         },
