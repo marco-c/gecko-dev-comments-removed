@@ -55,7 +55,16 @@ WasmReportOverRecursed()
 static bool
 WasmHandleExecutionInterrupt()
 {
-    return CheckForInterrupt(JSRuntime::innermostWasmActivation()->cx());
+    WasmActivation* activation = JSRuntime::innermostWasmActivation();
+    bool success = CheckForInterrupt(activation->cx());
+
+    
+    
+    
+    
+    activation->setResumePC(nullptr);
+
+    return success;
 }
 
 static void

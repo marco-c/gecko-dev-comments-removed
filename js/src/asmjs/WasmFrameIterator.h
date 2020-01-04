@@ -41,6 +41,10 @@ struct ProfilingOffsets;
 
 
 
+
+
+
+
 class FrameIterator
 {
     JSContext* cx_;
@@ -48,6 +52,7 @@ class FrameIterator
     const CallSite* callsite_;
     const CodeRange* codeRange_;
     uint8_t* fp_;
+    bool missingFrameMessage_;
 
     void settle();
 
@@ -55,7 +60,7 @@ class FrameIterator
     explicit FrameIterator();
     explicit FrameIterator(const WasmActivation& activation);
     void operator++();
-    bool done() const { return !fp_; }
+    bool done() const;
     JSAtom* functionDisplayAtom() const;
     unsigned lineOrBytecode() const;
 };

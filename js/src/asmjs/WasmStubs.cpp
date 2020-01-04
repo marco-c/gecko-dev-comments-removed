@@ -949,8 +949,7 @@ wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
 }
 
 static const LiveRegisterSet AllRegsExceptSP(
-    GeneralRegisterSet(Registers::AllMask&
-                       ~(uint32_t(1) << Registers::StackPointer)),
+    GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
     FloatRegisterSet(FloatRegisters::AllMask));
 
 
@@ -1009,9 +1008,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
     
     masm.setFramePushed(0);
-    
-    
-    JS_STATIC_ASSERT(!SupportsSimd);
+    static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
     
     masm.PushRegsInMask(AllRegsExceptSP);
 
@@ -1070,10 +1067,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     masm.storePtr(IntArgReg1, Address(r6, 14 * sizeof(uint32_t*)));
 
     
-    
-
-    
-    JS_STATIC_ASSERT(!SupportsSimd);
+    static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
     masm.PushRegsInMask(LiveRegisterSet(GeneralRegisterSet(0),
                                         FloatRegisterSet(FloatRegisters::AllDoubleMask)));
 
