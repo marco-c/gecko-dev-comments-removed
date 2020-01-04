@@ -3703,7 +3703,7 @@ CodeGenerator::visitPostWriteElementBarrierV(LPostWriteElementBarrierV* lir)
 void
 CodeGenerator::visitCallNative(LCallNative* call)
 {
-    JSFunction* target = call->getSingleTarget();
+    WrappedFunction* target = call->getSingleTarget();
     MOZ_ASSERT(target);
     MOZ_ASSERT(target->isNative());
 
@@ -3732,7 +3732,7 @@ CodeGenerator::visitCallNative(LCallNative* call)
 
     
     
-    masm.Push(ObjectValue(*target));
+    masm.Push(ObjectValue(*target->rawJSFunction()));
 
     
     masm.loadJSContext(argContextReg);
@@ -3798,7 +3798,7 @@ LoadDOMPrivate(MacroAssembler& masm, Register obj, Register priv)
 void
 CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
 {
-    JSFunction* target = call->getSingleTarget();
+    WrappedFunction* target = call->getSingleTarget();
     MOZ_ASSERT(target);
     MOZ_ASSERT(target->isNative());
     MOZ_ASSERT(target->jitInfo());
@@ -3833,7 +3833,7 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
 
     
     
-    masm.Push(ObjectValue(*target));
+    masm.Push(ObjectValue(*target->rawJSFunction()));
 
     
     
@@ -4049,7 +4049,7 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     Register calleereg = ToRegister(call->getFunction());
     Register objreg    = ToRegister(call->getTempObject());
     uint32_t unusedStack = StackOffsetOfPassedArg(call->argslot());
-    JSFunction* target = call->getSingleTarget();
+    WrappedFunction* target = call->getSingleTarget();
     Label end, uncompiled;
 
     

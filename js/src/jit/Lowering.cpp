@@ -488,8 +488,7 @@ LIRGenerator::visitCall(MCall* call)
         return;
     }
 
-    
-    JSFunction* target = call->getSingleTarget();
+    WrappedFunction* target = call->getSingleTarget();
 
     LInstruction* lir;
 
