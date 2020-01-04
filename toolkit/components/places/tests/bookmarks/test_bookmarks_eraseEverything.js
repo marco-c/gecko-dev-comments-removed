@@ -81,6 +81,32 @@ add_task(function* test_eraseEverything_roots() {
   Assert.ok(yield PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.rootGuid));
 });
 
-function run_test() {
-  run_next_test();
-}
+add_task(function* test_eraseEverything_reparented() {
+  
+  let folder1 = yield PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER
+  });
+  let bookmark1 = yield PlacesUtils.bookmarks.insert({
+    parentGuid: folder1.guid,
+    url: "http://example.com/"
+  });
+  
+  let folder2 = yield PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER
+  });
+
+  
+  bookmark1.parentGuid = folder2.guid;
+  yield PlacesUtils.bookmarks.update(bookmark1);
+
+  
+  yield PlacesUtils.bookmarks.eraseEverything();
+
+  
+  for (let guid of [folder1.guid, bookmark1.guid, folder2.guid]) {
+    yield Assert.rejects(PlacesUtils.promiseItemId(guid),
+                         /no item found for the given GUID/);
+  }
+});
