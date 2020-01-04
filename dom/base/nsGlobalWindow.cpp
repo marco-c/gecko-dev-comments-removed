@@ -8637,9 +8637,10 @@ nsGlobalWindow::FinalClose()
   
   
   
-  bool indirect = GetContextInternal() && 
-                  (nsContentUtils::GetCurrentJSContext() ==
-                   GetContextInternal()->GetNativeContext());
+  nsCOMPtr<nsPIDOMWindowInner> entryWindow =
+    do_QueryInterface(GetEntryGlobal());
+  bool indirect =
+    entryWindow && entryWindow->GetOuterWindow() == this->AsOuter();
   if (NS_FAILED(nsCloseEvent::PostCloseEvent(this, indirect))) {
     ReallyCloseWindow();
   } else {
