@@ -1256,6 +1256,19 @@ var SessionStoreInternal = {
       
       
       
+      let isLastWindow =
+        Object.keys(this._windows).length == 1 &&
+        !this._closedWindows.some(win => win._shouldRestore || false);
+
+      
+      delete this._windows[aWindow.__SSi];
+
+      
+      
+      
+      
+      
+      
       
       
       
@@ -1265,7 +1278,7 @@ var SessionStoreInternal = {
       if (!winData.isPrivate) {
         
         PrivacyFilter.filterPrivateTabs(winData);
-        this.maybeSaveClosedWindow(winData);
+        this.maybeSaveClosedWindow(winData, isLastWindow);
       }
 
       
@@ -1292,11 +1305,9 @@ var SessionStoreInternal = {
           
           
           PrivacyFilter.filterPrivateTabs(winData);
-          this.maybeSaveClosedWindow(winData);
+          this.maybeSaveClosedWindow(winData, isLastWindow);
         }
 
-        
-        delete this._windows[aWindow.__SSi];
         
         
         this.cleanUpWindow(aWindow, winData);
@@ -1312,7 +1323,6 @@ var SessionStoreInternal = {
       this.onTabRemove(aWindow, tabbrowser.tabs[i], true);
     }
   },
-
 
   
 
@@ -1346,20 +1356,17 @@ var SessionStoreInternal = {
 
 
 
-  maybeSaveClosedWindow(winData) {
+
+
+
+
+
+
+
+  maybeSaveClosedWindow(winData, isLastWindow) {
     if (RunState.isRunning) {
       
       let hasSaveableTabs = winData.tabs.some(this._shouldSaveTabState);
-
-      
-      
-      
-      
-      
-      
-      let isLastWindow =
-        Object.keys(this._windows).length == 1 &&
-        !this._closedWindows.some(win => win._shouldRestore || false);
 
       
       
