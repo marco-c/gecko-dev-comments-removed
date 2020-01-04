@@ -373,168 +373,24 @@ bool JSXrayTraits::getOwnPropertyFromTargetIfSafe(JSContext* cx,
     return true;
 }
 
-bool
-JSXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsWrapper,
-                                 HandleObject wrapper, HandleObject holder,
-                                 HandleId id,
-                                 MutableHandle<PropertyDescriptor> desc)
+
+
+
+
+
+
+
+
+
+static bool
+TryResolvePropertyFromSpecs(JSContext* cx, HandleId id, HandleObject holder,
+                            const JSFunctionSpec* fs,
+                            const JSPropertySpec* ps,
+                            MutableHandle<PropertyDescriptor> desc)
 {
     
-    bool ok = XrayTraits::resolveOwnProperty(cx, jsWrapper, wrapper, holder,
-                                             id, desc);
-    if (!ok || desc.object())
-        return ok;
-
-    RootedObject target(cx, getTargetObject(wrapper));
-    JSProtoKey key = getProtoKey(holder);
-    if (!isPrototype(holder)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (key == JSProto_Object || key == JSProto_Array) {
-            return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
-        } else if (IsTypedArrayKey(key)) {
-            int32_t index = GetArrayIndexFromId(cx, id);
-            if (IsArrayIndex(index)) {
-                
-                
-                if (CompartmentPrivate::Get(CurrentGlobalOrNull(cx))->isWebExtensionContentScript) {
-                    Rooted<PropertyDescriptor> innerDesc(cx);
-                    {
-                        JSAutoCompartment ac(cx, target);
-                        if (!JS_GetOwnPropertyDescriptorById(cx, target, id, &innerDesc))
-                            return false;
-                    }
-                    if (innerDesc.isDataDescriptor() && innerDesc.value().isNumber()) {
-                        desc.setValue(innerDesc.value());
-                        desc.object().set(wrapper);
-                    }
-                    return true;
-                } else {
-                    JS_ReportError(cx, "Accessing TypedArray data over Xrays is slow, and forbidden "
-                                       "in order to encourage performant code. To copy TypedArrays "
-                                       "across origin boundaries, consider using Components.utils.cloneInto().");
-                    return false;
-                }
-            }
-        } else if (key == JSProto_Function) {
-            if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LENGTH)) {
-                FillPropertyDescriptor(desc, wrapper, JSPROP_PERMANENT | JSPROP_READONLY,
-                                       NumberValue(JS_GetFunctionArity(JS_GetObjectFunction(target))));
-                return true;
-            } else if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_NAME)) {
-                RootedString fname(cx, JS_GetFunctionId(JS_GetObjectFunction(target)));
-                FillPropertyDescriptor(desc, wrapper, JSPROP_PERMANENT | JSPROP_READONLY,
-                                       fname ? StringValue(fname) : JS_GetEmptyStringValue(cx));
-            } else if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_PROTOTYPE)) {
-                
-                JSProtoKey standardConstructor = constructorFor(holder);
-                if (standardConstructor != JSProto_Null) {
-                    RootedObject standardProto(cx);
-                    {
-                        JSAutoCompartment ac(cx, target);
-                        if (!JS_GetClassPrototype(cx, standardConstructor, &standardProto))
-                            return false;
-                        MOZ_ASSERT(standardProto);
-                    }
-                    if (!JS_WrapObject(cx, &standardProto))
-                        return false;
-                    FillPropertyDescriptor(desc, wrapper, JSPROP_PERMANENT | JSPROP_READONLY,
-                                           ObjectValue(*standardProto));
-                    return true;
-                }
-            }
-        } else if (IsErrorObjectKey(key)) {
-            
-            
-            
-            
-            
-            
-            
-            
-            bool isErrorIntProperty =
-                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LINENUMBER) ||
-                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_COLUMNNUMBER);
-            bool isErrorStringProperty =
-                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_FILENAME) ||
-                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_MESSAGE);
-            if (isErrorIntProperty || isErrorStringProperty) {
-                RootedObject waiver(cx, wrapper);
-                if (!WrapperFactory::WaiveXrayAndWrap(cx, &waiver))
-                    return false;
-                if (!JS_GetOwnPropertyDescriptorById(cx, waiver, id, desc))
-                    return false;
-                bool valueMatchesType = (isErrorIntProperty && desc.value().isInt32()) ||
-                                        (isErrorStringProperty && desc.value().isString());
-                if (desc.hasGetterOrSetter() || !valueMatchesType)
-                    FillPropertyDescriptor(desc, nullptr, 0, UndefinedValue());
-                return true;
-            }
-        } else if (key == JSProto_RegExp) {
-            if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LASTINDEX))
-                return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
-        }
-
-        
-        return true;
-    }
-
-    
-    
-    
-    
-    
-    if (!JS_GetOwnPropertyDescriptorById(cx, holder, id, desc))
-        return false;
-    if (desc.object()) {
-        desc.object().set(wrapper);
-        return true;
-    }
-
-    
-    if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_CONSTRUCTOR)) {
-        RootedObject constructor(cx);
-        {
-            JSAutoCompartment ac(cx, target);
-            if (!JS_GetClassObject(cx, key, &constructor))
-                return false;
-        }
-        if (!JS_WrapObject(cx, &constructor))
-            return false;
-        desc.object().set(wrapper);
-        desc.setAttributes(0);
-        desc.setGetter(nullptr);
-        desc.setSetter(nullptr);
-        desc.value().setObject(*constructor);
-        return true;
-    }
-
-    
-    if (IsErrorObjectKey(key) && id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_NAME)) {
-        RootedId className(cx);
-        ProtoKeyToId(cx, key, &className);
-        FillPropertyDescriptor(desc, wrapper, 0, UndefinedValue());
-        return JS_IdToValue(cx, className, desc.value());
-    }
-
-    
-    if (key == JSProto_RegExp && id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LASTINDEX))
-        return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
-
-    
-    const js::Class* clasp = js::GetObjectClass(target);
-    MOZ_ASSERT(clasp->spec.defined());
-
-    
     const JSFunctionSpec* fsMatch = nullptr;
-    for (const JSFunctionSpec* fs = clasp->spec.prototypeFunctions(); fs && fs->name; ++fs) {
+    for ( ; fs && fs->name; ++fs) {
         if (PropertySpecNameEqualsId(fs->name, id)) {
             fsMatch = fs;
             break;
@@ -550,6 +406,7 @@ JSXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsWrapper,
         
         
         
+        
         RootedObject funObj(cx, JS_GetFunctionObject(fun));
         return JS_DefinePropertyById(cx, holder, id, funObj, 0) &&
                JS_GetOwnPropertyDescriptorById(cx, holder, id, desc);
@@ -557,7 +414,7 @@ JSXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsWrapper,
 
     
     const JSPropertySpec* psMatch = nullptr;
-    for (const JSPropertySpec* ps = clasp->spec.prototypeProperties(); ps && ps->name; ++ps) {
+    for ( ; ps && ps->name; ++ps) {
         if (PropertySpecNameEqualsId(ps->name, id)) {
             psMatch = ps;
             break;
@@ -606,6 +463,214 @@ JSXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsWrapper,
                                      JS_PROPERTYOP_GETTER(desc.getter()),
                                      JS_PROPERTYOP_SETTER(desc.setter())) &&
                JS_GetOwnPropertyDescriptorById(cx, holder, id, desc);
+    }
+
+    return true;
+}
+
+static bool
+ShouldResolveStaticProperties(JSProtoKey key)
+{
+    
+    
+    
+    
+    
+    return key != JSProto_RegExp;
+}
+
+bool
+JSXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsWrapper,
+                                 HandleObject wrapper, HandleObject holder,
+                                 HandleId id,
+                                 MutableHandle<PropertyDescriptor> desc)
+{
+    
+    bool ok = XrayTraits::resolveOwnProperty(cx, jsWrapper, wrapper, holder,
+                                             id, desc);
+    if (!ok || desc.object())
+        return ok;
+
+    
+    
+    
+    
+    
+    if (!JS_GetOwnPropertyDescriptorById(cx, holder, id, desc))
+        return false;
+    if (desc.object()) {
+        desc.object().set(wrapper);
+        return true;
+    }
+
+    RootedObject target(cx, getTargetObject(wrapper));
+    JSProtoKey key = getProtoKey(holder);
+    if (!isPrototype(holder)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (key == JSProto_Object || key == JSProto_Array) {
+            return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
+        } else if (IsTypedArrayKey(key)) {
+            int32_t index = GetArrayIndexFromId(cx, id);
+            if (IsArrayIndex(index)) {
+                
+                
+                if (CompartmentPrivate::Get(CurrentGlobalOrNull(cx))->isWebExtensionContentScript) {
+                    Rooted<PropertyDescriptor> innerDesc(cx);
+                    {
+                        JSAutoCompartment ac(cx, target);
+                        if (!JS_GetOwnPropertyDescriptorById(cx, target, id, &innerDesc))
+                            return false;
+                    }
+                    if (innerDesc.isDataDescriptor() && innerDesc.value().isNumber()) {
+                        desc.setValue(innerDesc.value());
+                        desc.object().set(wrapper);
+                    }
+                    return true;
+                } else {
+                    JS_ReportError(cx, "Accessing TypedArray data over Xrays is slow, and forbidden "
+                                       "in order to encourage performant code. To copy TypedArrays "
+                                       "across origin boundaries, consider using Components.utils.cloneInto().");
+                    return false;
+                }
+            }
+        } else if (key == JSProto_Function) {
+            if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LENGTH)) {
+                FillPropertyDescriptor(desc, wrapper, JSPROP_PERMANENT | JSPROP_READONLY,
+                                       NumberValue(JS_GetFunctionArity(JS_GetObjectFunction(target))));
+                return true;
+            } else if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_NAME)) {
+                RootedString fname(cx, JS_GetFunctionId(JS_GetObjectFunction(target)));
+                FillPropertyDescriptor(desc, wrapper, JSPROP_PERMANENT | JSPROP_READONLY,
+                                       fname ? StringValue(fname) : JS_GetEmptyStringValue(cx));
+            } else {
+                
+                
+                JSProtoKey standardConstructor = constructorFor(holder);
+                if (standardConstructor != JSProto_Null) {
+                    
+                    
+                    if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_PROTOTYPE)) {
+                        RootedObject standardProto(cx);
+                        {
+                            JSAutoCompartment ac(cx, target);
+                            if (!JS_GetClassPrototype(cx, standardConstructor, &standardProto))
+                                return false;
+                            MOZ_ASSERT(standardProto);
+                        }
+
+                        if (!JS_WrapObject(cx, &standardProto))
+                            return false;
+                        FillPropertyDescriptor(desc, wrapper, JSPROP_PERMANENT | JSPROP_READONLY,
+                                               ObjectValue(*standardProto));
+                        return true;
+                    }
+
+                    if (ShouldResolveStaticProperties(standardConstructor)) {
+                        const js::Class* clasp = js::ProtoKeyToClass(standardConstructor);
+                        MOZ_ASSERT(clasp->spec.defined());
+
+                        if (!TryResolvePropertyFromSpecs(cx, id, holder,
+                               clasp->spec.constructorFunctions(),
+                               clasp->spec.constructorProperties(), desc)) {
+                            return false;
+                        }
+
+                        if (desc.object()) {
+                            desc.object().set(wrapper);
+                            return true;
+                        }
+                    }
+                }
+            }
+        } else if (IsErrorObjectKey(key)) {
+            
+            
+            
+            
+            
+            
+            
+            
+            bool isErrorIntProperty =
+                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LINENUMBER) ||
+                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_COLUMNNUMBER);
+            bool isErrorStringProperty =
+                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_FILENAME) ||
+                id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_MESSAGE);
+            if (isErrorIntProperty || isErrorStringProperty) {
+                RootedObject waiver(cx, wrapper);
+                if (!WrapperFactory::WaiveXrayAndWrap(cx, &waiver))
+                    return false;
+                if (!JS_GetOwnPropertyDescriptorById(cx, waiver, id, desc))
+                    return false;
+                bool valueMatchesType = (isErrorIntProperty && desc.value().isInt32()) ||
+                                        (isErrorStringProperty && desc.value().isString());
+                if (desc.hasGetterOrSetter() || !valueMatchesType)
+                    FillPropertyDescriptor(desc, nullptr, 0, UndefinedValue());
+                return true;
+            }
+        } else if (key == JSProto_RegExp) {
+            if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LASTINDEX))
+                return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
+        }
+
+        
+        return true;
+    }
+
+    
+    if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_CONSTRUCTOR)) {
+        RootedObject constructor(cx);
+        {
+            JSAutoCompartment ac(cx, target);
+            if (!JS_GetClassObject(cx, key, &constructor))
+                return false;
+        }
+        if (!JS_WrapObject(cx, &constructor))
+            return false;
+        desc.object().set(wrapper);
+        desc.setAttributes(0);
+        desc.setGetter(nullptr);
+        desc.setSetter(nullptr);
+        desc.value().setObject(*constructor);
+        return true;
+    }
+
+    
+    if (IsErrorObjectKey(key) && id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_NAME)) {
+        RootedId className(cx);
+        ProtoKeyToId(cx, key, &className);
+        FillPropertyDescriptor(desc, wrapper, 0, UndefinedValue());
+        return JS_IdToValue(cx, className, desc.value());
+    }
+
+    
+    if (key == JSProto_RegExp && id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_LASTINDEX))
+        return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
+
+    
+    const js::Class* clasp = js::GetObjectClass(target);
+    MOZ_ASSERT(clasp->spec.defined());
+
+    
+    
+    if (!TryResolvePropertyFromSpecs(cx, id, holder,
+                                     clasp->spec.prototypeFunctions(),
+                                     clasp->spec.prototypeProperties(),
+                                     desc)) {
+        return false;
+    }
+
+    if (desc.object()) {
+        desc.object().set(wrapper);
     }
 
     return true;
@@ -718,6 +783,33 @@ MaybeAppend(jsid id, unsigned flags, AutoIdVector& props)
     return props.append(id);
 }
 
+
+static bool
+AppendNamesFromFunctionAndPropertySpecs(JSContext* cx,
+                                        const JSFunctionSpec* fs,
+                                        const JSPropertySpec* ps,
+                                        unsigned flags,
+                                        AutoIdVector& props)
+{
+    
+    for ( ; fs && fs->name; ++fs) {
+        jsid id;
+        if (!PropertySpecNameToPermanentId(cx, fs->name, &id))
+            return false;
+        if (!MaybeAppend(id, flags, props))
+            return false;
+    }
+    for ( ; ps && ps->name; ++ps) {
+        jsid id;
+        if (!PropertySpecNameToPermanentId(cx, ps->name, &id))
+            return false;
+        if (!MaybeAppend(id, flags, props))
+            return false;
+    }
+
+    return true;
+}
+
 bool
 JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper, unsigned flags,
                              AutoIdVector& props)
@@ -766,9 +858,22 @@ JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper, unsigned flags
             if (!props.append(GetRTIdByIndex(cx, XPCJSRuntime::IDX_NAME)))
                 return false;
             
-            if (constructorFor(holder) != JSProto_Null) {
+            
+            JSProtoKey standardConstructor = constructorFor(holder);
+            if (standardConstructor != JSProto_Null) {
                 if (!props.append(GetRTIdByIndex(cx, XPCJSRuntime::IDX_PROTOTYPE)))
                     return false;
+
+                if (ShouldResolveStaticProperties(standardConstructor)) {
+                    const js::Class* clasp = js::ProtoKeyToClass(standardConstructor);
+                    MOZ_ASSERT(clasp->spec.defined());
+
+                    if (!AppendNamesFromFunctionAndPropertySpecs(
+                           cx, clasp->spec.constructorFunctions(),
+                           clasp->spec.constructorProperties(), flags, props)) {
+                        return false;
+                    }
+                }
             }
         } else if (IsErrorObjectKey(key)) {
             if (!props.append(GetRTIdByIndex(cx, XPCJSRuntime::IDX_FILENAME)) ||
@@ -804,23 +909,9 @@ JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper, unsigned flags
     const js::Class* clasp = js::GetObjectClass(target);
     MOZ_ASSERT(clasp->spec.defined());
 
-    
-    for (const JSFunctionSpec* fs = clasp->spec.prototypeFunctions(); fs && fs->name; ++fs) {
-        jsid id;
-        if (!PropertySpecNameToPermanentId(cx, fs->name, &id))
-            return false;
-        if (!MaybeAppend(id, flags, props))
-            return false;
-    }
-    for (const JSPropertySpec* ps = clasp->spec.prototypeProperties(); ps && ps->name; ++ps) {
-        jsid id;
-        if (!PropertySpecNameToPermanentId(cx, ps->name, &id))
-            return false;
-        if (!MaybeAppend(id, flags, props))
-            return false;
-    }
-
-    return true;
+    return AppendNamesFromFunctionAndPropertySpecs(
+        cx, clasp->spec.prototypeFunctions(),
+        clasp->spec.prototypeProperties(), flags, props);
 }
 
 JSObject*
