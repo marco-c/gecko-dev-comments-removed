@@ -2,8 +2,9 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.gecko.reader;
 
+import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.util.StringUtils;
 
 import android.net.Uri;
