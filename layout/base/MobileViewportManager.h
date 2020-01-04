@@ -59,13 +59,22 @@ private:
                                       const nsViewportInfo& aViewportInfo);
 
   
+  mozilla::LayoutDeviceToLayerScale
+  ScaleResolutionWithDisplayWidth(const mozilla::LayoutDeviceToLayerScale& aRes,
+                                  const float& aDisplayWidthChangeRatio,
+                                  const mozilla::CSSSize& aNewViewport,
+                                  const mozilla::CSSSize& aOldViewport);
+
+  
   mozilla::CSSToScreenScale UpdateResolution(const nsViewportInfo& aViewportInfo,
                                              const mozilla::ScreenIntSize& aDisplaySize,
                                              const mozilla::CSSSize& aViewport,
                                              const mozilla::Maybe<float>& aDisplayWidthChangeRatio);
+
   
   void UpdateSPCSPS(const mozilla::ScreenIntSize& aDisplaySize,
                     const mozilla::CSSToScreenScale& aZoom);
+
   
   void UpdateDisplayPortMargins();
 
