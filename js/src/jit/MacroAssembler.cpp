@@ -1062,12 +1062,6 @@ JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPED_ARRAY)
         MOZ_CRASH("Unsupported TypedArray type");
     }
 
-    
-    
-    
-    if (nbytes >= TypedArrayObject::SINGLETON_BYTE_LENGTH)
-        return;
-
     nbytes = JS_ROUNDUP(nbytes, sizeof(Value));
     Nursery& nursery = cx->runtime()->gc.nursery;
     void* buf = nursery.allocateBuffer(obj, nbytes);
