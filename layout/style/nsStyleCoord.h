@@ -90,6 +90,10 @@ public:
     bool operator!=(const CalcValue& aOther) const {
       return !(*this == aOther);
     }
+
+    
+    
+    bool IsDefinitelyZero() const { return mLength == 0 && mPercent == 0; }
   };
 
   

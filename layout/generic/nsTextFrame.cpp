@@ -5,6 +5,7 @@
 
 
 
+
 #include "nsTextFrame.h"
 
 #include "gfx2DGlue.h"
@@ -1628,8 +1629,10 @@ LetterSpacing(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
   return 0;
 }
 
+
 static nscoord
-WordSpacing(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
+WordSpacing(nsIFrame* aFrame, gfxTextRun* aTextRun,
+            const nsStyleText* aStyleText = nullptr)
 {
   if (aFrame->IsSVGText()) {
     return 0;
@@ -1639,8 +1642,9 @@ WordSpacing(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
   }
 
   const nsStyleCoord& coord = aStyleText->mWordSpacing;
-  if (eStyleUnit_Coord == coord.GetUnit()) {
-    return coord.GetCoordValue();
+  if (coord.IsCoordPercentCalcUnit()) {
+    nscoord pctBasis = coord.HasPercent() ? GetSpaceWidthAppUnits(aTextRun) : 0;
+    return nsRuleNode::ComputeCoordPercentCalc(coord, pctBasis);
   }
   return 0;
 }
@@ -1658,9 +1662,15 @@ GetSpacingFlags(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
   const nsStyleCoord& ls = styleText->mLetterSpacing;
   const nsStyleCoord& ws = styleText->mWordSpacing;
 
+  
+  
+  
+  
   bool nonStandardSpacing =
     (eStyleUnit_Coord == ls.GetUnit() && ls.GetCoordValue() != 0) ||
-    (eStyleUnit_Coord == ws.GetUnit() && ws.GetCoordValue() != 0);
+    (eStyleUnit_Coord == ws.GetUnit() && ws.GetCoordValue() != 0) ||
+    (eStyleUnit_Percent == ws.GetUnit() && ws.GetPercentValue() != 0) ||
+    (eStyleUnit_Calc == ws.GetUnit() && !ws.GetCalcValue()->IsDefinitelyZero());
 
   return nonStandardSpacing ? gfxTextRunFactory::TEXT_ENABLE_SPACING : 0;
 }
@@ -2902,7 +2912,7 @@ public:
       mFrame(aFrame), mStart(aStart), mTempIterator(aStart),
       mTabWidths(nullptr), mTabWidthsAnalyzedLimit(0),
       mLength(aLength),
-      mWordSpacing(WordSpacing(aFrame, aTextStyle)),
+      mWordSpacing(WordSpacing(aFrame, mTextRun, aTextStyle)),
       mLetterSpacing(LetterSpacing(aFrame, aTextStyle)),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
@@ -2927,7 +2937,7 @@ public:
       mFrame(aFrame), mStart(aStart), mTempIterator(aStart),
       mTabWidths(nullptr), mTabWidthsAnalyzedLimit(0),
       mLength(aFrame->GetContentLength()),
-      mWordSpacing(WordSpacing(aFrame)),
+      mWordSpacing(WordSpacing(aFrame, mTextRun)),
       mLetterSpacing(LetterSpacing(aFrame)),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(0),
