@@ -45,6 +45,13 @@ typedef struct AVMotionVector {
 
 
     uint64_t flags;
+    
+
+
+
+
+    int32_t motion_x, motion_y;
+    uint16_t motion_scale;
 } AVMotionVector;
 
 #endif 

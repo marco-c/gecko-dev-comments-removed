@@ -88,4 +88,20 @@ void av_thread_message_queue_set_err_send(AVThreadMessageQueue *mq,
 void av_thread_message_queue_set_err_recv(AVThreadMessageQueue *mq,
                                           int err);
 
+
+
+
+
+void av_thread_message_queue_set_free_func(AVThreadMessageQueue *mq,
+                                           void (*free_func)(void *msg));
+
+
+
+
+
+
+
+
+void av_thread_message_flush(AVThreadMessageQueue *mq);
+
 #endif 

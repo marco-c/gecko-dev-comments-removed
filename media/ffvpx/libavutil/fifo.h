@@ -91,6 +91,17 @@ int av_fifo_space(const AVFifoBuffer *f);
 
 
 
+
+int av_fifo_generic_peek_at(AVFifoBuffer *f, void *dest, int offset, int buf_size, void (*func)(void*, void*, int));
+
+
+
+
+
+
+
+
+
 int av_fifo_generic_peek(AVFifoBuffer *f, void *dest, int buf_size, void (*func)(void*, void*, int));
 
 

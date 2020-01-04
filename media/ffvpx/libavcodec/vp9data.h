@@ -26,13 +26,6 @@
 
 #include "vp9.h"
 
-enum BlockPartition {
-    PARTITION_NONE,    
-    PARTITION_H,       
-    PARTITION_V,       
-    PARTITION_SPLIT,   
-};
-
 static const int8_t vp9_partition_tree[3][2] = {
     { -PARTITION_NONE, 1 },               
      { -PARTITION_H, 2 },                 
@@ -210,13 +203,6 @@ static const uint8_t vp9_default_kf_uvmode_probs[10][9] = {
     { 116,  12,  64, 120, 140, 125,  49, 115, 121 } ,
     { 120,  12,  32, 145, 195, 142,  32,  38,  86 } ,
     { 102,  19,  66, 162, 182, 122,  35,  59, 128 } 
-};
-
-enum InterPredMode {
-    NEARESTMV = 10,
-    NEARMV = 11,
-    ZEROMV = 12,
-    NEWMV = 13,
 };
 
 static const int8_t vp9_inter_mode_tree[3][2] = {

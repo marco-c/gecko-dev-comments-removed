@@ -26,35 +26,47 @@
 
 #include "attributes.h"
 #include "pixfmt.h"
+#include "version.h"
 
 typedef struct AVComponentDescriptor {
     
 
 
-    uint16_t plane        : 2;
+    int plane;
 
     
 
 
 
-    uint16_t step_minus1  : 3;
+    int step;
 
     
 
 
 
-    uint16_t offset_plus1 : 3;
+    int offset;
 
     
 
 
 
-    uint16_t shift        : 3;
+    int shift;
 
     
 
 
-    uint16_t depth_minus1 : 4;
+    int depth;
+
+#if FF_API_PLUS1_MINUS1
+    
+    attribute_deprecated int step_minus1;
+
+    
+    attribute_deprecated int depth_minus1;
+
+    
+    attribute_deprecated int offset_plus1;
+#endif
 } AVComponentDescriptor;
 
 
@@ -87,9 +99,14 @@ typedef struct AVPixFmtDescriptor {
 
 
     uint8_t log2_chroma_h;
-    uint8_t flags;
 
     
+
+
+    uint64_t flags;
+
+    
+
 
 
 
@@ -154,27 +171,6 @@ typedef struct AVPixFmtDescriptor {
 
 
 #define AV_PIX_FMT_FLAG_ALPHA        (1 << 7)
-
-#if FF_API_PIX_FMT
-
-
-
-#define PIX_FMT_BE        AV_PIX_FMT_FLAG_BE
-#define PIX_FMT_PAL       AV_PIX_FMT_FLAG_PAL
-#define PIX_FMT_BITSTREAM AV_PIX_FMT_FLAG_BITSTREAM
-#define PIX_FMT_HWACCEL   AV_PIX_FMT_FLAG_HWACCEL
-#define PIX_FMT_PLANAR    AV_PIX_FMT_FLAG_PLANAR
-#define PIX_FMT_RGB       AV_PIX_FMT_FLAG_RGB
-#define PIX_FMT_PSEUDOPAL AV_PIX_FMT_FLAG_PSEUDOPAL
-#define PIX_FMT_ALPHA     AV_PIX_FMT_FLAG_ALPHA
-#endif
-
-#if FF_API_PIX_FMT_DESC
-
-
-
-extern attribute_deprecated const AVPixFmtDescriptor av_pix_fmt_descriptors[];
-#endif
 
 
 

@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "attributes.h"
+#include "version.h"
 
 
 
@@ -40,7 +41,11 @@ typedef enum {
     AV_CRC_32_IEEE,
     AV_CRC_32_IEEE_LE,  
     AV_CRC_16_ANSI_LE,  
+#if FF_API_CRC_BIG_TABLE
     AV_CRC_24_IEEE = 12,
+#else
+    AV_CRC_24_IEEE,
+#endif 
     AV_CRC_MAX,         
 }AVCRCId;
 

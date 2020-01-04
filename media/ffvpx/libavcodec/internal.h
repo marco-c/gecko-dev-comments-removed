@@ -48,10 +48,21 @@
 #define FF_CODEC_CAP_INIT_CLEANUP           (1 << 1)
 
 
+
+
+
+
+#define FF_CODEC_CAP_SETS_PKT_DTS           (1 << 2)
+
+
+
+
+#define FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM  (1 << 3)
+
 #ifdef TRACE
 #   define ff_tlog(ctx, ...) av_log(ctx, AV_LOG_TRACE, __VA_ARGS__)
 #else
-#   define ff_tlog(ctx, ...) while(0)
+#   define ff_tlog(ctx, ...) do { } while(0)
 #endif
 
 
@@ -114,14 +125,6 @@ typedef struct AVCodecInternal {
 
     int allocate_progress;
 
-#if FF_API_OLD_ENCODE_AUDIO
-    
-
-
-
-    int64_t sample_count;
-#endif
-
     
 
 
@@ -180,11 +183,11 @@ unsigned int avpriv_toupper4(unsigned int x);
 int ff_init_buffer_info(AVCodecContext *s, AVFrame *frame);
 
 
-void avpriv_color_frame(AVFrame *frame, const int color[4]);
+void ff_color_frame(AVFrame *frame, const int color[4]);
 
 extern volatile int ff_avcodec_locked;
 int ff_lock_avcodec(AVCodecContext *log_ctx, const AVCodec *codec);
-int ff_unlock_avcodec(void);
+int ff_unlock_avcodec(const AVCodec *codec);
 
 int avpriv_lock_avformat(void);
 int avpriv_unlock_avformat(void);
@@ -236,6 +239,25 @@ static av_always_inline int64_t ff_samples_to_time_base(AVCodecContext *avctx,
         return AV_NOPTS_VALUE;
     return av_rescale_q(samples, (AVRational){ 1, avctx->sample_rate },
                         avctx->time_base);
+}
+
+
+
+
+
+static av_always_inline float ff_exp2fi(int x) {
+    
+    if (-126 <= x && x <= 128)
+        return av_int2float(x+127 << 23);
+    
+    else if (x > 128)
+        return INFINITY;
+    
+    else if (x > -150)
+        return av_int2float(1 << (x+149));
+    
+    else
+        return 0;
 }
 
 
@@ -300,6 +322,11 @@ int ff_get_format(AVCodecContext *avctx, const enum AVPixelFormat *fmt);
 
 
 int ff_decode_frame_props(AVCodecContext *avctx, AVFrame *frame);
+
+
+
+
+AVCPBProperties *ff_add_cpb_side_data(AVCodecContext *avctx);
 
 int ff_side_data_set_encoder_stats(AVPacket *pkt, int quality, int64_t *error, int error_count, int pict_type);
 

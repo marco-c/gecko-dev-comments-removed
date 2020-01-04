@@ -27,7 +27,7 @@
 
 
 
-#define AV_QSORT(p, num, type, cmp) {\
+#define AV_QSORT(p, num, type, cmp) do {\
     void *stack[64][2];\
     int sp= 1;\
     stack[0][0] = p;\
@@ -89,7 +89,7 @@
             }\
         }\
     }\
-}
+} while (0)
 
 
 
@@ -97,7 +97,7 @@
 
 
 
-#define AV_MSORT(p, tmp, num, type, cmp) {\
+#define AV_MSORT(p, tmp, num, type, cmp) do {\
     unsigned i, j, step;\
     for(step=1; step<(num); step+=step){\
         for(i=0; i<(num); i+=2*step){\
@@ -114,4 +114,4 @@
         }\
         FFSWAP(type*, p, tmp);\
     }\
-}
+} while (0)

@@ -98,7 +98,6 @@
 
 
 
-
 enum AVCodecID {
     AV_CODEC_ID_NONE,
 
@@ -242,7 +241,7 @@ enum AVCodecID {
     AV_CODEC_ID_ANM,
     AV_CODEC_ID_BINKVIDEO,
     AV_CODEC_ID_IFF_ILBM,
-    AV_CODEC_ID_IFF_BYTERUN1,
+#define AV_CODEC_ID_IFF_BYTERUN1 AV_CODEC_ID_IFF_ILBM
     AV_CODEC_ID_KGV1,
     AV_CODEC_ID_YOP,
     AV_CODEC_ID_VP8,
@@ -275,56 +274,47 @@ enum AVCodecID {
     AV_CODEC_ID_MSS2,
     AV_CODEC_ID_VP9,
     AV_CODEC_ID_AIC,
-    AV_CODEC_ID_ESCAPE130_DEPRECATED,
-    AV_CODEC_ID_G2M_DEPRECATED,
-    AV_CODEC_ID_WEBP_DEPRECATED,
+    AV_CODEC_ID_ESCAPE130,
+    AV_CODEC_ID_G2M,
+    AV_CODEC_ID_WEBP,
     AV_CODEC_ID_HNM4_VIDEO,
-    AV_CODEC_ID_HEVC_DEPRECATED,
+    AV_CODEC_ID_HEVC,
+#define AV_CODEC_ID_H265 AV_CODEC_ID_HEVC
     AV_CODEC_ID_FIC,
     AV_CODEC_ID_ALIAS_PIX,
-    AV_CODEC_ID_BRENDER_PIX_DEPRECATED,
-    AV_CODEC_ID_PAF_VIDEO_DEPRECATED,
-    AV_CODEC_ID_EXR_DEPRECATED,
-    AV_CODEC_ID_VP7_DEPRECATED,
-    AV_CODEC_ID_SANM_DEPRECATED,
-    AV_CODEC_ID_SGIRLE_DEPRECATED,
-    AV_CODEC_ID_MVC1_DEPRECATED,
-    AV_CODEC_ID_MVC2_DEPRECATED,
+    AV_CODEC_ID_BRENDER_PIX,
+    AV_CODEC_ID_PAF_VIDEO,
+    AV_CODEC_ID_EXR,
+    AV_CODEC_ID_VP7,
+    AV_CODEC_ID_SANM,
+    AV_CODEC_ID_SGIRLE,
+    AV_CODEC_ID_MVC1,
+    AV_CODEC_ID_MVC2,
     AV_CODEC_ID_HQX,
     AV_CODEC_ID_TDSC,
     AV_CODEC_ID_HQ_HQA,
     AV_CODEC_ID_HAP,
     AV_CODEC_ID_DDS,
+    AV_CODEC_ID_DXV,
+    AV_CODEC_ID_SCREENPRESSO,
+    AV_CODEC_ID_RSCC,
 
-    AV_CODEC_ID_BRENDER_PIX= MKBETAG('B','P','I','X'),
-    AV_CODEC_ID_Y41P       = MKBETAG('Y','4','1','P'),
-    AV_CODEC_ID_ESCAPE130  = MKBETAG('E','1','3','0'),
-    AV_CODEC_ID_EXR        = MKBETAG('0','E','X','R'),
-    AV_CODEC_ID_AVRP       = MKBETAG('A','V','R','P'),
-
-    AV_CODEC_ID_012V       = MKBETAG('0','1','2','V'),
-    AV_CODEC_ID_G2M        = MKBETAG( 0 ,'G','2','M'),
-    AV_CODEC_ID_AVUI       = MKBETAG('A','V','U','I'),
-    AV_CODEC_ID_AYUV       = MKBETAG('A','Y','U','V'),
-    AV_CODEC_ID_TARGA_Y216 = MKBETAG('T','2','1','6'),
-    AV_CODEC_ID_V308       = MKBETAG('V','3','0','8'),
-    AV_CODEC_ID_V408       = MKBETAG('V','4','0','8'),
-    AV_CODEC_ID_YUV4       = MKBETAG('Y','U','V','4'),
-    AV_CODEC_ID_SANM       = MKBETAG('S','A','N','M'),
-    AV_CODEC_ID_PAF_VIDEO  = MKBETAG('P','A','F','V'),
-    AV_CODEC_ID_AVRN       = MKBETAG('A','V','R','n'),
-    AV_CODEC_ID_CPIA       = MKBETAG('C','P','I','A'),
-    AV_CODEC_ID_XFACE      = MKBETAG('X','F','A','C'),
-    AV_CODEC_ID_SGIRLE     = MKBETAG('S','G','I','R'),
-    AV_CODEC_ID_MVC1       = MKBETAG('M','V','C','1'),
-    AV_CODEC_ID_MVC2       = MKBETAG('M','V','C','2'),
-    AV_CODEC_ID_SNOW       = MKBETAG('S','N','O','W'),
-    AV_CODEC_ID_WEBP       = MKBETAG('W','E','B','P'),
-    AV_CODEC_ID_SMVJPEG    = MKBETAG('S','M','V','J'),
-    AV_CODEC_ID_HEVC       = MKBETAG('H','2','6','5'),
-#define AV_CODEC_ID_H265 AV_CODEC_ID_HEVC
-    AV_CODEC_ID_VP7        = MKBETAG('V','P','7','0'),
-    AV_CODEC_ID_APNG       = MKBETAG('A','P','N','G'),
+    AV_CODEC_ID_Y41P = 0x8000,
+    AV_CODEC_ID_AVRP,
+    AV_CODEC_ID_012V,
+    AV_CODEC_ID_AVUI,
+    AV_CODEC_ID_AYUV,
+    AV_CODEC_ID_TARGA_Y216,
+    AV_CODEC_ID_V308,
+    AV_CODEC_ID_V408,
+    AV_CODEC_ID_YUV4,
+    AV_CODEC_ID_AVRN,
+    AV_CODEC_ID_CPIA,
+    AV_CODEC_ID_XFACE,
+    AV_CODEC_ID_SNOW,
+    AV_CODEC_ID_SMVJPEG,
+    AV_CODEC_ID_APNG,
+    AV_CODEC_ID_DAALA,
 
     
     AV_CODEC_ID_FIRST_AUDIO = 0x10000,     
@@ -356,12 +346,12 @@ enum AVCodecID {
     AV_CODEC_ID_PCM_LXF,
     AV_CODEC_ID_S302M,
     AV_CODEC_ID_PCM_S8_PLANAR,
-    AV_CODEC_ID_PCM_S24LE_PLANAR_DEPRECATED,
-    AV_CODEC_ID_PCM_S32LE_PLANAR_DEPRECATED,
-    AV_CODEC_ID_PCM_S16BE_PLANAR_DEPRECATED,
-    AV_CODEC_ID_PCM_S24LE_PLANAR = MKBETAG(24,'P','S','P'),
-    AV_CODEC_ID_PCM_S32LE_PLANAR = MKBETAG(32,'P','S','P'),
-    AV_CODEC_ID_PCM_S16BE_PLANAR = MKBETAG('P','S','P',16),
+    AV_CODEC_ID_PCM_S24LE_PLANAR,
+    AV_CODEC_ID_PCM_S32LE_PLANAR,
+    AV_CODEC_ID_PCM_S16BE_PLANAR,
+    
+
+
 
     
     AV_CODEC_ID_ADPCM_IMA_QT = 0x11000,
@@ -394,17 +384,19 @@ enum AVCodecID {
     AV_CODEC_ID_ADPCM_IMA_ISS,
     AV_CODEC_ID_ADPCM_G722,
     AV_CODEC_ID_ADPCM_IMA_APC,
-    AV_CODEC_ID_ADPCM_VIMA_DEPRECATED,
-    AV_CODEC_ID_ADPCM_VIMA = MKBETAG('V','I','M','A'),
+    AV_CODEC_ID_ADPCM_VIMA,
 #if FF_API_VIMA_DECODER
-    AV_CODEC_ID_VIMA       = MKBETAG('V','I','M','A'),
+    AV_CODEC_ID_VIMA = AV_CODEC_ID_ADPCM_VIMA,
 #endif
-    AV_CODEC_ID_ADPCM_AFC  = MKBETAG('A','F','C',' '),
-    AV_CODEC_ID_ADPCM_IMA_OKI = MKBETAG('O','K','I',' '),
-    AV_CODEC_ID_ADPCM_DTK  = MKBETAG('D','T','K',' '),
-    AV_CODEC_ID_ADPCM_IMA_RAD = MKBETAG('R','A','D',' '),
-    AV_CODEC_ID_ADPCM_G726LE = MKBETAG('6','2','7','G'),
-    AV_CODEC_ID_ADPCM_THP_LE = MKBETAG('T','H','P','L'),
+
+    AV_CODEC_ID_ADPCM_AFC = 0x11800,
+    AV_CODEC_ID_ADPCM_IMA_OKI,
+    AV_CODEC_ID_ADPCM_DTK,
+    AV_CODEC_ID_ADPCM_IMA_RAD,
+    AV_CODEC_ID_ADPCM_G726LE,
+    AV_CODEC_ID_ADPCM_THP_LE,
+    AV_CODEC_ID_ADPCM_PSX,
+    AV_CODEC_ID_ADPCM_AICA,
 
     
     AV_CODEC_ID_AMR_NB = 0x12000,
@@ -419,6 +411,8 @@ enum AVCodecID {
     AV_CODEC_ID_INTERPLAY_DPCM,
     AV_CODEC_ID_XAN_DPCM,
     AV_CODEC_ID_SOL_DPCM,
+
+    AV_CODEC_ID_SDX2_DPCM = 0x14800,
 
     
     AV_CODEC_ID_MP2 = 0x15000,
@@ -484,26 +478,27 @@ enum AVCodecID {
     AV_CODEC_ID_RALF,
     AV_CODEC_ID_IAC,
     AV_CODEC_ID_ILBC,
-    AV_CODEC_ID_OPUS_DEPRECATED,
+    AV_CODEC_ID_OPUS,
     AV_CODEC_ID_COMFORT_NOISE,
-    AV_CODEC_ID_TAK_DEPRECATED,
+    AV_CODEC_ID_TAK,
     AV_CODEC_ID_METASOUND,
-    AV_CODEC_ID_PAF_AUDIO_DEPRECATED,
+    AV_CODEC_ID_PAF_AUDIO,
     AV_CODEC_ID_ON2AVC,
     AV_CODEC_ID_DSS_SP,
-    AV_CODEC_ID_FFWAVESYNTH = MKBETAG('F','F','W','S'),
-    AV_CODEC_ID_SONIC       = MKBETAG('S','O','N','C'),
-    AV_CODEC_ID_SONIC_LS    = MKBETAG('S','O','N','L'),
-    AV_CODEC_ID_PAF_AUDIO   = MKBETAG('P','A','F','A'),
-    AV_CODEC_ID_OPUS        = MKBETAG('O','P','U','S'),
-    AV_CODEC_ID_TAK         = MKBETAG('t','B','a','K'),
-    AV_CODEC_ID_EVRC        = MKBETAG('s','e','v','c'),
-    AV_CODEC_ID_SMV         = MKBETAG('s','s','m','v'),
-    AV_CODEC_ID_DSD_LSBF    = MKBETAG('D','S','D','L'),
-    AV_CODEC_ID_DSD_MSBF    = MKBETAG('D','S','D','M'),
-    AV_CODEC_ID_DSD_LSBF_PLANAR = MKBETAG('D','S','D','1'),
-    AV_CODEC_ID_DSD_MSBF_PLANAR = MKBETAG('D','S','D','8'),
-    AV_CODEC_ID_4GV         = MKBETAG('s','4','g','v'),
+
+    AV_CODEC_ID_FFWAVESYNTH = 0x15800,
+    AV_CODEC_ID_SONIC,
+    AV_CODEC_ID_SONIC_LS,
+    AV_CODEC_ID_EVRC,
+    AV_CODEC_ID_SMV,
+    AV_CODEC_ID_DSD_LSBF,
+    AV_CODEC_ID_DSD_MSBF,
+    AV_CODEC_ID_DSD_LSBF_PLANAR,
+    AV_CODEC_ID_DSD_MSBF_PLANAR,
+    AV_CODEC_ID_4GV,
+    AV_CODEC_ID_INTERPLAY_ACM,
+    AV_CODEC_ID_XMA1,
+    AV_CODEC_ID_XMA2,
 
     
     AV_CODEC_ID_FIRST_SUBTITLE = 0x17000,          
@@ -516,33 +511,35 @@ enum AVCodecID {
     AV_CODEC_ID_HDMV_PGS_SUBTITLE,
     AV_CODEC_ID_DVB_TELETEXT,
     AV_CODEC_ID_SRT,
-    AV_CODEC_ID_MICRODVD   = MKBETAG('m','D','V','D'),
-    AV_CODEC_ID_EIA_608    = MKBETAG('c','6','0','8'),
-    AV_CODEC_ID_JACOSUB    = MKBETAG('J','S','U','B'),
-    AV_CODEC_ID_SAMI       = MKBETAG('S','A','M','I'),
-    AV_CODEC_ID_REALTEXT   = MKBETAG('R','T','X','T'),
-    AV_CODEC_ID_STL        = MKBETAG('S','p','T','L'),
-    AV_CODEC_ID_SUBVIEWER1 = MKBETAG('S','b','V','1'),
-    AV_CODEC_ID_SUBVIEWER  = MKBETAG('S','u','b','V'),
-    AV_CODEC_ID_SUBRIP     = MKBETAG('S','R','i','p'),
-    AV_CODEC_ID_WEBVTT     = MKBETAG('W','V','T','T'),
-    AV_CODEC_ID_MPL2       = MKBETAG('M','P','L','2'),
-    AV_CODEC_ID_VPLAYER    = MKBETAG('V','P','l','r'),
-    AV_CODEC_ID_PJS        = MKBETAG('P','h','J','S'),
-    AV_CODEC_ID_ASS        = MKBETAG('A','S','S',' '),  
-    AV_CODEC_ID_HDMV_TEXT_SUBTITLE = MKBETAG('B','D','T','X'),
+
+    AV_CODEC_ID_MICRODVD   = 0x17800,
+    AV_CODEC_ID_EIA_608,
+    AV_CODEC_ID_JACOSUB,
+    AV_CODEC_ID_SAMI,
+    AV_CODEC_ID_REALTEXT,
+    AV_CODEC_ID_STL,
+    AV_CODEC_ID_SUBVIEWER1,
+    AV_CODEC_ID_SUBVIEWER,
+    AV_CODEC_ID_SUBRIP,
+    AV_CODEC_ID_WEBVTT,
+    AV_CODEC_ID_MPL2,
+    AV_CODEC_ID_VPLAYER,
+    AV_CODEC_ID_PJS,
+    AV_CODEC_ID_ASS,
+    AV_CODEC_ID_HDMV_TEXT_SUBTITLE,
 
     
     AV_CODEC_ID_FIRST_UNKNOWN = 0x18000,           
     AV_CODEC_ID_TTF = 0x18000,
-    AV_CODEC_ID_BINTEXT    = MKBETAG('B','T','X','T'),
-    AV_CODEC_ID_XBIN       = MKBETAG('X','B','I','N'),
-    AV_CODEC_ID_IDF        = MKBETAG( 0 ,'I','D','F'),
-    AV_CODEC_ID_OTF        = MKBETAG( 0 ,'O','T','F'),
-    AV_CODEC_ID_SMPTE_KLV  = MKBETAG('K','L','V','A'),
-    AV_CODEC_ID_DVD_NAV    = MKBETAG('D','N','A','V'),
-    AV_CODEC_ID_TIMED_ID3  = MKBETAG('T','I','D','3'),
-    AV_CODEC_ID_BIN_DATA   = MKBETAG('D','A','T','A'),
+
+    AV_CODEC_ID_BINTEXT    = 0x18800,
+    AV_CODEC_ID_XBIN,
+    AV_CODEC_ID_IDF,
+    AV_CODEC_ID_OTF,
+    AV_CODEC_ID_SMPTE_KLV,
+    AV_CODEC_ID_DVD_NAV,
+    AV_CODEC_ID_TIMED_ID3,
+    AV_CODEC_ID_BIN_DATA,
 
 
     AV_CODEC_ID_PROBE = 0x19000, 
@@ -552,10 +549,7 @@ enum AVCodecID {
     AV_CODEC_ID_MPEG4SYSTEMS = 0x20001, 
 
     AV_CODEC_ID_FFMETADATA = 0x21000,   
-
-#if FF_API_CODEC_ID
-#include "old_codec_ids.h"
-#endif
+    AV_CODEC_ID_WRAPPED_AVFRAME = 0x21001, 
 };
 
 
@@ -580,13 +574,17 @@ typedef struct AVCodecDescriptor {
 
 
     int             props;
-
     
 
 
 
 
     const char *const *mime_types;
+    
+
+
+
+    const struct AVProfile *profiles;
 } AVCodecDescriptor;
 
 
@@ -795,10 +793,10 @@ typedef struct RcOverride{
 
 
 #define AV_CODEC_FLAG_INTERLACED_ME   (1 << 29)
-
-
-
 #define AV_CODEC_FLAG_CLOSED_GOP      (1U << 31)
+
+
+
 
 #define AV_CODEC_FLAG2_FAST           (1 <<  0)
 
@@ -1191,23 +1189,49 @@ typedef struct AVPanScan{
     int16_t position[3][2];
 }AVPanScan;
 
+
+
+
+
+
+typedef struct AVCPBProperties {
+    
+
+
+
+    int max_bitrate;
+    
+
+
+
+    int min_bitrate;
+    
+
+
+
+    int avg_bitrate;
+
+    
+
+
+
+    int buffer_size;
+
+    
+
+
+
+
+
+
+    uint64_t vbv_delay;
+} AVCPBProperties;
+
 #if FF_API_QSCALE_TYPE
 #define FF_QSCALE_TYPE_MPEG1 0
 #define FF_QSCALE_TYPE_MPEG2 1
 #define FF_QSCALE_TYPE_H264  2
 #define FF_QSCALE_TYPE_VP56  3
-#endif
-
-#if FF_API_GET_BUFFER
-#define FF_BUFFER_TYPE_INTERNAL 1
-#define FF_BUFFER_TYPE_USER     2 ///< direct rendering buffers (image is (de)allocated by user)
-#define FF_BUFFER_TYPE_SHARED   4 ///< Buffer from somewhere else; don't deallocate image (data/base), all other tables are not shared.
-#define FF_BUFFER_TYPE_COPY     8 ///< Just a (modified) copy of some other buffer, don't deallocate anything.
-
-#define FF_BUFFER_HINTS_VALID    0x01 // Buffer hints value is meaningful (if 0 ignore).
-#define FF_BUFFER_HINTS_READABLE 0x02 // Codec will read from buffer.
-#define FF_BUFFER_HINTS_PRESERVE 0x04 // User must not alter buffer content.
-#define FF_BUFFER_HINTS_REUSABLE 0x08 // Codec will reuse the buffer (update).
 #endif
 
 
@@ -1308,6 +1332,19 @@ enum AVPacketSideDataType {
 
 
 
+    AV_PKT_DATA_FALLBACK_TRACK,
+
+    
+
+
+    AV_PKT_DATA_CPB_PROPERTIES,
+
+    
+
+
+
+
+
 
 
 
@@ -1397,6 +1434,12 @@ typedef struct AVPacketSideData {
 
 
 
+
+
+
+
+
+
 typedef struct AVPacket {
     
 
@@ -1438,33 +1481,19 @@ typedef struct AVPacket {
 
 
 
-    int   duration;
-#if FF_API_DESTRUCT_PACKET
-    attribute_deprecated
-    void  (*destruct)(struct AVPacket *);
-    attribute_deprecated
-    void  *priv;
-#endif
+    int64_t duration;
+
     int64_t pos;                            
 
+#if FF_API_CONVERGENCE_DURATION
     
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+    attribute_deprecated
     int64_t convergence_duration;
+#endif
 } AVPacket;
 #define AV_PKT_FLAG_KEY     0x0001 ///< The packet contains a keyframe
 #define AV_PKT_FLAG_CORRUPT 0x0002 ///< The packet content is corrupted
@@ -1564,7 +1593,7 @@ typedef struct AVCodecContext {
 
 
 
-    int bit_rate;
+    int64_t bit_rate;
 
     
 
@@ -2305,16 +2334,6 @@ typedef struct AVCodecContext {
 
     int cutoff;
 
-#if FF_API_REQUEST_CHANNELS
-    
-
-
-
-
-
-    attribute_deprecated int request_channels;
-#endif
-
     
 
 
@@ -2343,102 +2362,6 @@ typedef struct AVCodecContext {
 
 
     enum AVSampleFormat request_sample_fmt;
-
-#if FF_API_GET_BUFFER
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    int (*get_buffer)(struct AVCodecContext *c, AVFrame *pic);
-
-    
-
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    void (*release_buffer)(struct AVCodecContext *c, AVFrame *pic);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    int (*reget_buffer)(struct AVCodecContext *c, AVFrame *pic);
-#endif
 
     
 
@@ -2601,14 +2524,14 @@ typedef struct AVCodecContext {
 
 
 
-    int rc_max_rate;
+    int64_t rc_max_rate;
 
     
 
 
 
 
-    int rc_min_rate;
+    int64_t rc_min_rate;
 
 #if FF_API_MPV_OPT
     
@@ -2642,6 +2565,7 @@ typedef struct AVCodecContext {
 
     int rc_initial_buffer_occupancy;
 
+#if FF_API_CODER_TYPE
 #define FF_CODER_TYPE_VLC       0
 #define FF_CODER_TYPE_AC        1
 #define FF_CODER_TYPE_RAW       2
@@ -2652,9 +2576,9 @@ typedef struct AVCodecContext {
     
 
 
-
-
+    attribute_deprecated
     int coder_type;
+#endif 
 
     
 
@@ -2731,13 +2655,19 @@ typedef struct AVCodecContext {
 
     int64_t timecode_frame_start;
 
+#if FF_API_RTP_CALLBACK
+    
+
+
     
     
     
     
     
     
+    attribute_deprecated
     void (*rtp_callback)(struct AVCodecContext *avctx, void *data, int size, int mb_nb);
+#endif
 
     int rtp_payload_size;   
                             
@@ -2746,22 +2676,29 @@ typedef struct AVCodecContext {
                             
                             
 
+#if FF_API_STAT_BITS
     
+    attribute_deprecated
     int mv_bits;
+    attribute_deprecated
     int header_bits;
+    attribute_deprecated
     int i_tex_bits;
+    attribute_deprecated
     int p_tex_bits;
+    attribute_deprecated
     int i_count;
+    attribute_deprecated
     int p_count;
+    attribute_deprecated
     int skip_count;
+    attribute_deprecated
     int misc_bits;
 
     
-
-
-
-
+    attribute_deprecated
     int frame_bits;
+#endif
 
     
 
@@ -3092,14 +3029,6 @@ typedef struct AVCodecContext {
 
     int (*execute2)(struct AVCodecContext *c, int (*func)(struct AVCodecContext *c2, void *arg, int jobnr, int threadnr), void *arg2, int *ret, int count);
 
-#if FF_API_THREAD_OPAQUE
-    
-
-
-    attribute_deprecated
-    void *thread_opaque;
-#endif
-
     
 
 
@@ -3245,22 +3174,20 @@ typedef struct AVCodecContext {
     int error_rate;
 #endif
 
-#if FF_API_CODEC_PKT
+#if FF_API_VBV_DELAY
     
+
+
+
+
+
 
 
     attribute_deprecated
-    AVPacket *pkt;
+    uint64_t vbv_delay;
 #endif
 
-    
-
-
-
-
-
-    uint64_t vbv_delay;
-
+#if FF_API_SIDEDATA_ONLY_PKT
     
 
 
@@ -3271,10 +3198,9 @@ typedef struct AVCodecContext {
 
 
 
-
-
-
+    attribute_deprecated
     int side_data_only_packets;
+#endif
 
     
 
@@ -3435,6 +3361,16 @@ typedef struct AVCodecContext {
     unsigned properties;
 #define FF_CODEC_PROPERTY_LOSSLESS        0x00000001
 #define FF_CODEC_PROPERTY_CLOSED_CAPTIONS 0x00000002
+
+    
+
+
+
+
+
+    AVPacketSideData *coded_side_data;
+    int            nb_coded_side_data;
+
 } AVCodecContext;
 
 AVRational av_codec_get_pkt_timebase         (const AVCodecContext *avctx);
@@ -3728,6 +3664,8 @@ typedef struct AVHWAccel {
 
 
 
+#if FF_API_AVPICTURE
+
 
 
 
@@ -3742,13 +3680,16 @@ typedef struct AVHWAccel {
 
 
 typedef struct AVPicture {
+    attribute_deprecated
     uint8_t *data[AV_NUM_DATA_POINTERS];    
+    attribute_deprecated
     int linesize[AV_NUM_DATA_POINTERS];     
 } AVPicture;
 
 
 
 
+#endif
 
 enum AVSubtitleType {
     SUBTITLE_NONE,
@@ -3777,11 +3718,20 @@ typedef struct AVSubtitleRect {
     int h;         
     int nb_colors; 
 
+#if FF_API_AVPICTURE
+    
+
+
+    attribute_deprecated
+    AVPicture pict;
+#endif
     
 
 
 
-    AVPicture pict;
+    uint8_t *data[4];
+    int linesize[4];
+
     enum AVSubtitleType type;
 
     char *text;                     
@@ -3919,39 +3869,6 @@ const AVClass *avcodec_get_subtitle_rect_class(void);
 
 int avcodec_copy_context(AVCodecContext *dest, const AVCodecContext *src);
 
-#if FF_API_AVFRAME_LAVC
-
-
-
-attribute_deprecated
-AVFrame *avcodec_alloc_frame(void);
-
-
-
-
-
-
-
-
-attribute_deprecated
-void avcodec_get_frame_defaults(AVFrame *frame);
-
-
-
-
-
-
-
-
-
-
-
-
-
-attribute_deprecated
-void avcodec_free_frame(AVFrame **frame);
-#endif
-
 
 
 
@@ -4020,14 +3937,39 @@ void avsubtitle_free(AVSubtitle *sub);
 
 
 
-#if FF_API_DESTRUCT_PACKET
 
 
 
 
-attribute_deprecated
-void av_destruct_packet(AVPacket *pkt);
-#endif
+
+
+
+
+
+
+
+AVPacket *av_packet_alloc(void);
+
+
+
+
+
+
+
+
+
+
+
+AVPacket *av_packet_clone(AVPacket *src);
+
+
+
+
+
+
+
+
+void av_packet_free(AVPacket **pkt);
 
 
 
@@ -4080,12 +4022,15 @@ int av_grow_packet(AVPacket *pkt, int grow_by);
 
 int av_packet_from_data(AVPacket *pkt, uint8_t *data, int size);
 
+#if FF_API_AVPACKET_OLD_API
 
 
 
 
+
+
+attribute_deprecated
 int av_dup_packet(AVPacket *pkt);
-
 
 
 
@@ -4105,8 +4050,11 @@ int av_copy_packet_side_data(AVPacket *dst, const AVPacket *src);
 
 
 
-void av_free_packet(AVPacket *pkt);
 
+
+attribute_deprecated
+void av_free_packet(AVPacket *pkt);
+#endif
 
 
 
@@ -4117,6 +4065,22 @@ void av_free_packet(AVPacket *pkt);
 
 uint8_t* av_packet_new_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
                                  int size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_packet_add_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
+                            uint8_t *data, size_t size);
 
 
 
@@ -4263,12 +4227,6 @@ AVCodec *avcodec_find_decoder(enum AVCodecID id);
 
 AVCodec *avcodec_find_decoder_by_name(const char *name);
 
-#if FF_API_GET_BUFFER
-attribute_deprecated int avcodec_default_get_buffer(AVCodecContext *s, AVFrame *pic);
-attribute_deprecated void avcodec_default_release_buffer(AVCodecContext *s, AVFrame *pic);
-attribute_deprecated int avcodec_default_reget_buffer(AVCodecContext *s, AVFrame *pic);
-#endif
-
 
 
 
@@ -4331,66 +4289,6 @@ int avcodec_enum_to_chroma_pos(int *xpos, int *ypos, enum AVChromaLocation pos);
 
 
 enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
-
-#if FF_API_OLD_DECODE_AUDIO
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-attribute_deprecated int avcodec_decode_audio3(AVCodecContext *avctx, int16_t *samples,
-                         int *frame_size_ptr,
-                         AVPacket *avpkt);
-#endif
 
 
 
@@ -4587,24 +4485,13 @@ typedef struct AVCodecParserContext {
 
     int key_frame;
 
+#if FF_API_CONVERGENCE_DURATION
     
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    attribute_deprecated
     int64_t convergence_duration;
+#endif
 
     
     
@@ -4805,37 +4692,6 @@ AVCodec *avcodec_find_encoder(enum AVCodecID id);
 
 AVCodec *avcodec_find_encoder_by_name(const char *name);
 
-#if FF_API_OLD_ENCODE_AUDIO
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int attribute_deprecated avcodec_encode_audio(AVCodecContext *avctx,
-                                              uint8_t *buf, int buf_size,
-                                              const short *samples);
-#endif
-
-
 
 
 
@@ -4876,27 +4732,6 @@ int attribute_deprecated avcodec_encode_audio(AVCodecContext *avctx,
 
 int avcodec_encode_audio2(AVCodecContext *avctx, AVPacket *avpkt,
                           const AVFrame *frame, int *got_packet_ptr);
-
-#if FF_API_OLD_ENCODE_VIDEO
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-attribute_deprecated
-int avcodec_encode_video(AVCodecContext *avctx, uint8_t *buf, int buf_size,
-                         const AVFrame *pict);
-#endif
-
 
 
 
@@ -5039,6 +4874,7 @@ void av_resample_close(struct AVResampleContext *c);
 
 #endif
 
+#if FF_API_AVPICTURE
 
 
 
@@ -5047,72 +4883,26 @@ void av_resample_close(struct AVResampleContext *c);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+attribute_deprecated
 int avpicture_alloc(AVPicture *picture, enum AVPixelFormat pix_fmt, int width, int height);
 
 
 
 
-
-
-
-
+attribute_deprecated
 void avpicture_free(AVPicture *picture);
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+attribute_deprecated
 int avpicture_fill(AVPicture *picture, const uint8_t *ptr,
                    enum AVPixelFormat pix_fmt, int width, int height);
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+attribute_deprecated
 int avpicture_layout(const AVPicture *src, enum AVPixelFormat pix_fmt,
                      int width, int height,
                      unsigned char *dest, int dest_size);
@@ -5120,48 +4910,34 @@ int avpicture_layout(const AVPicture *src, enum AVPixelFormat pix_fmt,
 
 
 
-
-
-
-
-
-
-
-
-
+attribute_deprecated
 int avpicture_get_size(enum AVPixelFormat pix_fmt, int width, int height);
-
-#if FF_API_DEINTERLACE
-
 
 
 
 
 attribute_deprecated
-int avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
-                          enum AVPixelFormat pix_fmt, int width, int height);
-#endif
-
-
-
 void av_picture_copy(AVPicture *dst, const AVPicture *src,
                      enum AVPixelFormat pix_fmt, int width, int height);
 
 
 
 
+attribute_deprecated
 int av_picture_crop(AVPicture *dst, const AVPicture *src,
                     enum AVPixelFormat pix_fmt, int top_band, int left_band);
 
 
 
 
+attribute_deprecated
 int av_picture_pad(AVPicture *dst, const AVPicture *src, int height, int width, enum AVPixelFormat pix_fmt,
             int padtop, int padbottom, int padleft, int padright, int *color);
 
 
 
 
+#endif
 
 
 
@@ -5283,6 +5059,19 @@ void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode);
 
 const char *av_get_profile_name(const AVCodec *codec, int profile);
 
+
+
+
+
+
+
+
+
+
+
+
+const char *avcodec_profile_name(enum AVCodecID codec_id, int profile);
+
 int avcodec_default_execute(AVCodecContext *c, int (*func)(AVCodecContext *c2, void *arg2),void *arg, int *ret, int count, int size);
 int avcodec_default_execute2(AVCodecContext *c, int (*func)(AVCodecContext *c2, void *arg2, int, int),void *arg, int *ret, int count);
 
@@ -5367,6 +5156,11 @@ typedef struct AVBitStreamFilterContext {
     struct AVBitStreamFilter *filter;
     AVCodecParserContext *parser;
     struct AVBitStreamFilterContext *next;
+    
+
+
+
+    char *args;
 } AVBitStreamFilterContext;
 
 
@@ -5605,6 +5399,17 @@ const AVCodecDescriptor *avcodec_descriptor_next(const AVCodecDescriptor *prev);
 
 
 const AVCodecDescriptor *avcodec_descriptor_get_by_name(const char *name);
+
+
+
+
+
+
+
+
+
+
+AVCPBProperties *av_cpb_properties_alloc(size_t *size);
 
 
 

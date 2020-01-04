@@ -163,7 +163,9 @@ int av_dict_parse_string(AVDictionary **pm, const char *str,
 
 
 
-void av_dict_copy(AVDictionary **dst, const AVDictionary *src, int flags);
+
+
+int av_dict_copy(AVDictionary **dst, const AVDictionary *src, int flags);
 
 
 

@@ -203,17 +203,27 @@ char *av_strtok(char *s, const char *delim, char **saveptr);
 
 
 
-av_const int av_isdigit(int c);
+static inline av_const int av_isdigit(int c)
+{
+    return c >= '0' && c <= '9';
+}
 
 
 
 
-av_const int av_isgraph(int c);
+static inline av_const int av_isgraph(int c)
+{
+    return c > 32 && c < 127;
+}
 
 
 
 
-av_const int av_isspace(int c);
+static inline av_const int av_isspace(int c)
+{
+    return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' ||
+           c == '\v';
+}
 
 
 
@@ -238,7 +248,11 @@ static inline av_const int av_tolower(int c)
 
 
 
-av_const int av_isxdigit(int c);
+static inline av_const int av_isxdigit(int c)
+{
+    c = av_tolower(c);
+    return av_isdigit(c) || (c >= 'a' && c <= 'f');
+}
 
 
 
@@ -300,21 +314,14 @@ enum AVEscapeMode {
 
 
 
-#define AV_ESCAPE_FLAG_WHITESPACE 0x01
+#define AV_ESCAPE_FLAG_WHITESPACE (1 << 0)
 
 
 
 
 
 
-#define AV_ESCAPE_FLAG_STRICT 0x02
-
-
-
-
-
-
-
+#define AV_ESCAPE_FLAG_STRICT (1 << 1)
 
 
 
@@ -325,6 +332,14 @@ enum AVEscapeMode {
 
 
 
+
+
+
+
+
+
+
+av_warn_unused_result
 int av_escape(char **dst, const char *src, const char *special_chars,
               enum AVEscapeMode mode, int flags);
 
@@ -364,6 +379,7 @@ int av_escape(char **dst, const char *src, const char *special_chars,
 
 
 
+av_warn_unused_result
 int av_utf8_decode(int32_t *codep, const uint8_t **bufp, const uint8_t *buf_end,
                    unsigned int flags);
 

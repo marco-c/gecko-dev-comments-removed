@@ -241,11 +241,6 @@ typedef struct AVFrame {
 
     enum AVPictureType pict_type;
 
-#if FF_API_AVFRAME_LAVC
-    attribute_deprecated
-    uint8_t *base[AV_NUM_DATA_POINTERS];
-#endif
-
     
 
 
@@ -282,77 +277,17 @@ typedef struct AVFrame {
 
     int quality;
 
-#if FF_API_AVFRAME_LAVC
-    attribute_deprecated
-    int reference;
-
-    
-
-
-    attribute_deprecated
-    int8_t *qscale_table;
-    
-
-
-    attribute_deprecated
-    int qstride;
-
-    attribute_deprecated
-    int qscale_type;
-
-    
-
-
-
-    attribute_deprecated
-    uint8_t *mbskip_table;
-
-    
-
-
-
-
-
-
-
-
-
-    int16_t (*motion_val[2])[2];
-
-    
-
-
-
-    attribute_deprecated
-    uint32_t *mb_type;
-
-    
-
-
-    attribute_deprecated
-    short *dct_coeff;
-
-    
-
-
-
-    attribute_deprecated
-    int8_t *ref_index[2];
-#endif
-
     
 
 
     void *opaque;
 
+#if FF_API_ERROR_FRAME
     
 
 
-    uint64_t error[AV_NUM_DATA_POINTERS];
-
-#if FF_API_AVFRAME_LAVC
     attribute_deprecated
-    int type;
+    uint64_t error[AV_NUM_DATA_POINTERS];
 #endif
 
     
@@ -376,17 +311,6 @@ typedef struct AVFrame {
 
     int palette_has_changed;
 
-#if FF_API_AVFRAME_LAVC
-    attribute_deprecated
-    int buffer_hints;
-
-    
-
-
-    attribute_deprecated
-    struct AVPanScan *pan_scan;
-#endif
-
     
 
 
@@ -397,24 +321,6 @@ typedef struct AVFrame {
 
 
     int64_t reordered_opaque;
-
-#if FF_API_AVFRAME_LAVC
-    
-
-
-    attribute_deprecated void *hwaccel_picture_private;
-
-    attribute_deprecated
-    struct AVCodecContext *owner;
-    attribute_deprecated
-    void *thread_opaque;
-
-    
-
-
-
-    uint8_t motion_subsample_log2;
-#endif
 
     
 
@@ -574,10 +480,28 @@ typedef struct AVFrame {
 
     int pkt_size;
 
+#if FF_API_FRAME_QP
+    
+
+
+
+    attribute_deprecated
+    int8_t *qscale_table;
+    
+
+
+
+    attribute_deprecated
+    int qstride;
+
+    attribute_deprecated
+    int qscale_type;
+
     
 
 
     AVBufferRef *qp_table_buf;
+#endif
 } AVFrame;
 
 
@@ -604,8 +528,10 @@ void    av_frame_set_decode_error_flags   (AVFrame *frame, int     val);
 int     av_frame_get_pkt_size(const AVFrame *frame);
 void    av_frame_set_pkt_size(AVFrame *frame, int val);
 AVDictionary **avpriv_frame_get_metadatap(AVFrame *frame);
+#if FF_API_FRAME_QP
 int8_t *av_frame_get_qp_table(AVFrame *f, int *stride, int *type);
 int av_frame_set_qp_table(AVFrame *f, AVBufferRef *buf, int stride, int type);
+#endif
 enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame);
 void    av_frame_set_colorspace(AVFrame *frame, enum AVColorSpace val);
 enum AVColorRange av_frame_get_color_range(const AVFrame *frame);

@@ -39,6 +39,7 @@
 #include "timer.h"
 #include "cpu.h"
 #include "dict.h"
+#include "macros.h"
 #include "pixfmt.h"
 #include "version.h"
 
@@ -259,6 +260,63 @@ void avpriv_request_sample(void *avc,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+static av_always_inline av_const int64_t ff_rint64_clip(double a, int64_t amin, int64_t amax)
+{
+    int64_t res;
+#if defined(HAVE_AV_CONFIG_H) && defined(ASSERT_LEVEL) && ASSERT_LEVEL >= 2
+    if (amin > amax) abort();
+#endif
+    
+    
+    if (a >=  9223372036854775808.0)
+        return amax;
+    if (a <= -9223372036854775808.0)
+        return amin;
+
+    
+    res = llrint(a);
+    if (res > amax)
+        return amax;
+    if (res < amin)
+        return amin;
+    return res;
+}
+
+
+
+
+
+
+
+
+
+
+
+static av_always_inline double ff_exp10(double x)
+{
+    return exp2(M_LOG2_10 * x);
+}
+
+static av_always_inline float ff_exp10f(float x)
+{
+    return exp2f(M_LOG2_10 * x);
+}
+
+
+
+
+av_warn_unused_result
 int avpriv_open(const char *filename, int flags, ...);
 
 int avpriv_set_systematic_pal2(uint32_t pal[256], enum AVPixelFormat pix_fmt);
@@ -275,10 +333,6 @@ static av_always_inline av_const int avpriv_mirror(int x, int w)
     }
     return x;
 }
-
-#if FF_API_GET_CHANNEL_LAYOUT_COMPAT
-uint64_t ff_get_channel_layout(const char *name, int compat);
-#endif
 
 void ff_check_pixfmt_descriptors(void);
 
