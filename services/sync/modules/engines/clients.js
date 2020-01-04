@@ -126,11 +126,19 @@ ClientEngine.prototype = {
   },
 
   get localName() {
-    return this.localName = Utils.getDeviceName();
+    let name = Utils.getDeviceName();
+    
+    
+    
+    Svc.Prefs.set("client.name", name);
+    return name;
   },
   set localName(value) {
     Svc.Prefs.set("client.name", value);
-    fxAccounts.updateDeviceRegistration();
+    
+    fxAccounts.updateDeviceRegistration().catch(error => {
+      this._log.warn("failed to update fxa device registration", error);
+    });
   },
 
   get localType() {
