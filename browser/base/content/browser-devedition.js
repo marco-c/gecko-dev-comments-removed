@@ -120,11 +120,10 @@ var DevEdition = {
   }
 };
 
-#ifndef RELEASE_BUILD
 
 
 
-if (this != Services.appShell.hiddenDOMWindow && DevEdition.isThemeCurrentlyApplied) {
+if (!AppConstants.RELEASE_BUILD &&
+    this != Services.appShell.hiddenDOMWindow && DevEdition.isThemeCurrentlyApplied) {
   DevEdition.createStyleSheet();
 }
-#endif
