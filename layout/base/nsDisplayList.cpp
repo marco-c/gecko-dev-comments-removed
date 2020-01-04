@@ -4267,12 +4267,14 @@ IsItemTooSmallForActiveLayer(nsDisplayItem* aItem)
 bool
 nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder)
 {
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame, eCSSProperty_opacity) &&
-      !IsItemTooSmallForActiveLayer(this))
-    return true;
-  if (EffectCompositor::HasAnimationsForCompositor(mFrame,
+  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame,
+                                          eCSSProperty_opacity) ||
+      EffectCompositor::HasAnimationsForCompositor(mFrame,
                                                    eCSSProperty_opacity)) {
-    return true;
+    if (!IsItemTooSmallForActiveLayer(this)) {
+      return true;
+    }
+    
   }
   return false;
 }
@@ -5929,12 +5931,15 @@ nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder)
 {
   
   
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame, eCSSProperty_transform) &&
-      !IsItemTooSmallForActiveLayer(this))
-    return true;
-  if (EffectCompositor::HasAnimationsForCompositor(mFrame,
+  if (ActiveLayerTracker::IsStyleAnimated(aBuilder,
+                                          mFrame,
+                                          eCSSProperty_transform) ||
+      EffectCompositor::HasAnimationsForCompositor(mFrame,
                                                    eCSSProperty_transform)) {
-    return true;
+    if (!IsItemTooSmallForActiveLayer(this)) {
+      return true;
+    }
+    
   }
   return false;
 }
