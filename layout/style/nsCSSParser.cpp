@@ -5916,19 +5916,11 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
   bool isTreePseudo = false;
   CSSEnabledState enabledState = EnabledState();
   CSSPseudoElementType pseudoElementType =
-    nsCSSPseudoElements::GetPseudoType(pseudo);
+    nsCSSPseudoElements::GetPseudoType(pseudo, enabledState);
   CSSPseudoClassType pseudoClassType =
     nsCSSPseudoClasses::GetPseudoType(pseudo, enabledState);
   bool pseudoClassIsUserAction =
     nsCSSPseudoClasses::IsUserActionPseudoClass(pseudoClassType);
-
-  if (pseudoElementType < CSSPseudoElementType::Count && !AgentRulesEnabled() &&
-      nsCSSPseudoElements::PseudoElementIsUASheetOnly(pseudoElementType)) {
-    
-    REPORT_UNEXPECTED_TOKEN(PEPseudoSelUnknown);
-    UngetToken();
-    return eSelectorParsingStatus_Error;
-  }
 
   if (nsCSSAnonBoxes::IsNonElement(pseudo)) {
     
