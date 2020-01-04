@@ -2641,7 +2641,7 @@ function ElementEditor(container, node) {
     }
   });
 
-  let tagName = this.node.nodeName.toLowerCase();
+  let tagName = this.getTagName(this.node);
   this.tag.textContent = tagName;
   this.closeTag.textContent = tagName;
 
@@ -2667,6 +2667,24 @@ ElementEditor.prototype = {
       flashElementOff(this.getAttributeElement(attrName));
     }, this.markup.CONTAINER_FLASHING_DURATION);
   },
+
+  
+
+
+
+
+
+
+  getTagName: function(node) {
+    
+    if (node.namespaceURI === "http://www.w3.org/2000/svg") {
+      
+      return node.nodeName;
+    }
+
+    return node.nodeName.toLowerCase();
+  },
+
   
 
 
