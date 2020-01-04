@@ -19,16 +19,39 @@ const Store = require("devtools/client/memory/store");
 
 var gToolbox, gTarget, gFront, gHeapAnalysesClient;
 
+
+
+
+var gStore, unsubscribe, isHighlighted;
+
 function initialize () {
   return Task.spawn(function*() {
     let root = document.querySelector("#app");
-    let store = Store();
+    gStore = Store();
     let app = createElement(App, { front: gFront, heapWorker: gHeapAnalysesClient });
-    let provider = createElement(Provider, { store }, app);
+    let provider = createElement(Provider, { store: gStore }, app);
     render(provider, root);
+    unsubscribe = gStore.subscribe(onStateChange);
   });
 }
 
 function destroy () {
-  return Task.spawn(function*(){});
+  return Task.spawn(function*(){
+    unsubscribe();
+  });
+}
+
+
+
+
+
+function onStateChange () {
+  let isRecording = gStore.getState().allocations.recording;
+
+  if (isRecording !== isHighlighted) {
+    isRecording ?
+      gToolbox.highlightTool("memory") :
+      gToolbox.unhighlightTool("memory");
+    isHighlighted = isRecording;
+  }
 }
