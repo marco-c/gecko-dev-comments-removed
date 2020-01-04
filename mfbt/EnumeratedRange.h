@@ -171,6 +171,9 @@ private:
 #endif
 
 
+
+
+
 template<typename IntType, typename EnumType>
 inline detail::EnumeratedRange<IntType, EnumType>
 MakeEnumeratedRange(EnumType aBegin, EnumType aEnd)
@@ -189,11 +192,15 @@ MakeEnumeratedRange(EnumType aBegin, EnumType aEnd)
 
 
 
-template<typename IntType, typename EnumType>
-inline detail::EnumeratedRange<IntType, EnumType>
+
+
+template<typename EnumType>
+inline detail::EnumeratedRange<UnsignedStdintTypeForSize<sizeof(EnumType)>::Type,
+                               EnumType>
 MakeEnumeratedRange(EnumType aEnd)
 {
-  return MakeEnumeratedRange<IntType>(EnumType(0), aEnd);
+  return MakeEnumeratedRange<UnsignedStdintTypeForSize<sizeof(EnumType)>::Type>(
+      EnumType(0), aEnd);
 }
 
 #ifdef __GNUC__
