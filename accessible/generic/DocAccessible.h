@@ -11,7 +11,7 @@
 #include "HyperTextAccessibleWrap.h"
 #include "AccEvent.h"
 
-#include "nsAutoPtr.h"
+#include <memory>
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
 #include "nsIDocument.h"
@@ -671,7 +671,7 @@ protected:
   
 
 
-  typedef nsTArray<nsAutoPtr<AttrRelProvider> > AttrRelProviderArray;
+  typedef nsTArray<std::unique_ptr<AttrRelProvider>> AttrRelProviderArray;
   nsClassHashtable<nsStringHashKey, AttrRelProviderArray>
     mDependentIDsHash;
 
