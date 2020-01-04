@@ -72,6 +72,8 @@ public:
   RefPtr<ServiceWorkerInfo> mWaitingWorker;
   RefPtr<ServiceWorkerInfo> mInstallingWorker;
 
+  nsTArray<nsCOMPtr<nsIServiceWorkerRegistrationInfoListener>> mListeners;
+
   uint64_t mLastUpdateCheckTime;
 
   
@@ -138,6 +140,9 @@ public:
 
   bool
   IsLastUpdateCheckTimeOverOneDay() const;
+
+  void
+  NotifyListenersOnChange();
 };
 
 class ServiceWorkerUpdateFinishCallback
