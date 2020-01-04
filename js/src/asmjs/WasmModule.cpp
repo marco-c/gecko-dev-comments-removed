@@ -920,11 +920,19 @@ Module::staticallyLink(ExclusiveContext* cx, const StaticLinkData& linkData)
     for (StaticLinkData::InternalLink link : linkData.internalLinks) {
         uint8_t* patchAt = code() + link.patchAtOffset;
         void* target = code() + link.targetOffset;
+
+        
+        
+        
+        
+        
         if (profilingEnabled_) {
-            const CodeRange* codeRange = lookupCodeRange(target);
-            if (codeRange && codeRange->isFunction())
-                target = code() + codeRange->funcProfilingEntry();
+            if (const CodeRange* cr = lookupCodeRange(target)) {
+                if (cr->isFunction() && link.targetOffset == cr->funcNonProfilingEntry())
+                    target = code() + cr->funcProfilingEntry();
+            }
         }
+
         if (link.isRawPointerPatch())
             *(void**)(patchAt) = target;
         else
