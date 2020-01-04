@@ -272,6 +272,16 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   PROFILER_LABEL("ClientLayerManager", "EndTransactionInternal",
     js::ProfileEntry::Category::GRAPHICS);
 
+  if (!mForwarder || !mForwarder->IPCOpen()) {
+    gfxCriticalError() << "LayerManager::EndTransaction while IPC is dead.";
+    
+    
+    
+    
+    
+    return false;
+  }
+
 #ifdef MOZ_LAYERS_HAVE_LOG
   MOZ_LAYERS_LOG(("  ----- (beginning paint)"));
   Log();
