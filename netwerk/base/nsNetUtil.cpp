@@ -1266,14 +1266,24 @@ NS_GetOriginAttributes(nsIChannel *aChannel,
                        mozilla::NeckoOriginAttributes &aAttributes)
 {
     nsCOMPtr<nsILoadContext> loadContext;
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
     NS_QueryNotificationCallbacks(aChannel, loadContext);
-    if (!loadContext) {
+
+    if (!loadContext && !loadInfo) {
         return false;
     }
 
-    DocShellOriginAttributes doa;
-    loadContext->GetOriginAttributes(doa);
-    aAttributes.InheritFromDocShellToNecko(doa);
+    
+    
+    
+    
+    if (loadContext) {
+        DocShellOriginAttributes doa;
+        loadContext->GetOriginAttributes(doa);
+        aAttributes.InheritFromDocShellToNecko(doa);
+    } else {
+        loadInfo->GetOriginAttributes(&aAttributes);
+    }
     aAttributes.SyncAttributesWithPrivateBrowsing(NS_UsePrivateBrowsing(aChannel));
     return true;
 }
