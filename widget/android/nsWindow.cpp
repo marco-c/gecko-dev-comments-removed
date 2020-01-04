@@ -13,6 +13,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
+#include "mozilla/TypeTraits.h"
 #include "mozilla/WeakPtr.h"
 
 #include "mozilla/dom/ContentParent.h"
@@ -162,6 +163,45 @@ class nsWindow::Natives final
 {
     nsWindow& window;
 
+    template<typename T>
+    class WindowEvent : public nsAppShell::LambdaEvent<T>
+    {
+        typedef nsAppShell::LambdaEvent<T> Base;
+
+        
+        template<bool Static>
+        typename mozilla::EnableIf<Static, bool>::Type IsStaleCall()
+        { return false; }
+
+        template<bool Static>
+        typename mozilla::EnableIf<!Static, bool>::Type IsStaleCall()
+        {
+            JNIEnv* const env = mozilla::jni::GetEnvForThread();
+            const auto& thisArg = Base::lambda.GetThisArg();
+
+            const auto natives = reinterpret_cast<mozilla::WeakPtr<Natives>*>(
+                    jni::GetNativeHandle(env, thisArg.Get()));
+            jni::HandleUncaughtException(env);
+
+            
+            
+            
+            
+            
+            return natives && !natives->get();
+        }
+
+    public:
+        WindowEvent(T&& l) : Base(mozilla::Move(l)) {}
+
+        void Run() override
+        {
+            if (!IsStaleCall<T::isStatic>()) {
+                return Base::Run();
+            }
+        }
+    };
+
 public:
     typedef GeckoView::Window::Natives<Natives> Base;
     typedef GeckoEditable::Natives<Natives> EditableBase;
@@ -177,7 +217,8 @@ public:
             
             return aCall();
         }
-        return UsesGeckoThreadProxy::OnNativeCall(mozilla::Move(aCall));
+        return nsAppShell::gAppShell->PostEvent(mozilla::MakeUnique<
+                WindowEvent<Functor>>(mozilla::Move(aCall)));
     }
 
     Natives(nsWindow* aWindow) : window(*aWindow) {}
