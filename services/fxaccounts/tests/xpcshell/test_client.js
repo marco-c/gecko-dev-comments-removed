@@ -173,9 +173,13 @@ add_task(function* test_signUp() {
   let errorMessage = JSON.stringify({code: 400, errno: 101, error: "account exists"});
   let created = false;
 
+  
+  let unicodeUsername = "andr\xe9@example.org"; 
+  let unicodePassword = "p\xe4ssw\xf6rd"; 
   let server = httpd_setup({
     "/account/create": function(request, response) {
       let body = CommonUtils.readBytesFromInputStream(request.bodyInputStream);
+      body = CommonUtils.decodeUTF8(body);
       let jsonBody = JSON.parse(body);
 
       
@@ -187,7 +191,7 @@ add_task(function* test_signUp() {
         return;
       }
 
-      if (jsonBody.email == "andré@example.org") {
+      if (jsonBody.email == unicodeUsername) {
         do_check_eq("", request._queryString);
         do_check_eq(jsonBody.authPW, "247b675ffb4c46310bc87e26d712153abe5e1c90ef00a4784594f97ef54f2375");
 
@@ -207,12 +211,15 @@ add_task(function* test_signUp() {
                                         creationMessage_withKey.length);
         return;
       }
+      
+      
+      do_check_true(false, "unexpected email: " + jsonBody.email);
     },
   });
 
   
   let client = new FxAccountsClient(server.baseURI);
-  let result = yield client.signUp('andré@example.org', 'pässwörd');
+  let result = yield client.signUp(unicodeUsername, unicodePassword);
   do_check_eq("uid", result.uid);
   do_check_eq("sessionToken", result.sessionToken);
   do_check_eq(undefined, result.keyFetchToken);
@@ -229,7 +236,7 @@ add_task(function* test_signUp() {
 
   
   try {
-    result = yield client.signUp('andré@example.org', 'pässwörd');
+    result = yield client.signUp(unicodeUsername, unicodePassword);
     do_throw("Expected to catch an exception");
   } catch(expectedError) {
     do_check_eq(101, expectedError.errno);
@@ -258,12 +265,15 @@ add_task(function* test_signIn() {
     email: "you@example.com"
   });
 
+  
+  let unicodeUsername = "m\xe9@example.com" 
   let server = httpd_setup({
     "/account/login": function(request, response) {
       let body = CommonUtils.readBytesFromInputStream(request.bodyInputStream);
+      body = CommonUtils.decodeUTF8(body);
       let jsonBody = JSON.parse(body);
 
-      if (jsonBody.email == "mé@example.com") {
+      if (jsonBody.email == unicodeUsername) {
         do_check_eq("", request._queryString);
         do_check_eq(jsonBody.authPW, "08b9d111196b8408e8ed92439da49206c8ecfbf343df0ae1ecefcd1e0174a8b6");
         response.setStatusLine(request.httpVersion, 200, "OK");
@@ -298,7 +308,7 @@ add_task(function* test_signIn() {
 
   
   let client = new FxAccountsClient(server.baseURI);
-  let result = yield client.signIn('mé@example.com', 'bigsecret');
+  let result = yield client.signIn(unicodeUsername, 'bigsecret');
   do_check_eq(FAKE_SESSION_TOKEN, result.sessionToken);
   do_check_eq(result.unwrapBKey,
               "c076ec3f4af123a615157154c6e1d0d6293e514fd7b0221e32d50517ecf002b8");
