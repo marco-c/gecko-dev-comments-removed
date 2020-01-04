@@ -669,79 +669,50 @@ struct nsCSSRendering {
                                      nscoord              aEndBevelOffset = 0);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static void PaintDecorationLine(nsIFrame* aFrame,
-                                  DrawTarget& aDrawTarget,
-                                  const Rect& aDirtyRect,
-                                  const nscolor aColor,
-                                  const Point& aPt,
-                                  const Float aICoordInFrame,
-                                  const Size& aLineSize,
-                                  const gfxFloat aAscent,
-                                  const gfxFloat aOffset,
-                                  const uint8_t aDecoration,
-                                  const uint8_t aStyle,
-                                  bool aVertical,
-                                  const gfxFloat aDescentLimit = -1.0);
-
   
-
-
-
-
-
-  static Rect DecorationLineToPath(const Rect& aDirtyRect,
-                                   const Point& aPt,
-                                   const Size& aLineSize,
-                                   const Float aAscent,
-                                   const Float aOffset,
-                                   const uint8_t aDecoration,
-                                   const uint8_t aStyle,
-                                   bool aVertical,
-                                   const Float aDescentLimit = -1.0);
+  struct DecorationRectParams
+  {
+    
+    
+    
+    
+    Size lineSize;
+    
+    Float ascent = 0.0f;
+    
+    
+    Float offset = 0.0f;
+    
+    
+    
+    
+    
+    
+    
+    
+    Float descentLimit = -1.0f;
+    
+    
+    
+    
+    uint8_t decoration = NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE;
+    
+    
+    uint8_t style = NS_STYLE_TEXT_DECORATION_STYLE_NONE;
+    bool vertical = false;
+  };
+  struct PaintDecorationLineParams : DecorationRectParams
+  {
+    
+    Rect dirtyRect;
+    
+    Point pt;
+    
+    nscolor color = NS_RGBA(0, 0, 0, 0);
+    
+    
+    Float icoordInFrame = 0.0f;
+  };
 
   
 
@@ -750,23 +721,18 @@ struct nsCSSRendering {
 
 
 
+  static void PaintDecorationLine(nsIFrame* aFrame, DrawTarget& aDrawTarget,
+                                  const PaintDecorationLineParams& aParams);
+
+  
 
 
 
 
 
+  static Rect DecorationLineToPath(const PaintDecorationLineParams& aParams);
 
-
-
-
-
-
-
-
-
-
-
-
+  
 
 
 
@@ -777,13 +743,7 @@ struct nsCSSRendering {
 
 
   static nsRect GetTextDecorationRect(nsPresContext* aPresContext,
-                                      const Size& aLineSize,
-                                      const gfxFloat aAscent,
-                                      const gfxFloat aOffset,
-                                      const uint8_t aDecoration,
-                                      const uint8_t aStyle,
-                                      bool aVertical,
-                                      const gfxFloat aDescentLimit = -1.0);
+                                      const DecorationRectParams& aParams);
 
   static CompositionOp GetGFXBlendMode(uint8_t mBlendMode) {
     switch (mBlendMode) {
@@ -818,14 +778,8 @@ struct nsCSSRendering {
 
   }
 protected:
-  static gfxRect GetTextDecorationRectInternal(const Point& aPt,
-                                               const Size& aLineSize,
-                                               const gfxFloat aAscent,
-                                               const gfxFloat aOffset,
-                                               const uint8_t aDecoration,
-                                               const uint8_t aStyle,
-                                               bool aVertical,
-                                               const gfxFloat aDescentLimit);
+  static gfxRect GetTextDecorationRectInternal(
+      const Point& aPt, const DecorationRectParams& aParams);
 
   
 
