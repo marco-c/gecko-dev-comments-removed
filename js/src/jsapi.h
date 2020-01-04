@@ -4308,10 +4308,10 @@ JS_CheckForInterrupt(JSContext* cx);
 
 
 extern JS_PUBLIC_API(JSInterruptCallback)
-JS_SetInterruptCallback(JSRuntime* rt, JSInterruptCallback callback);
+JS_SetInterruptCallback(JSContext* cx, JSInterruptCallback callback);
 
 extern JS_PUBLIC_API(JSInterruptCallback)
-JS_GetInterruptCallback(JSRuntime* rt);
+JS_GetInterruptCallback(JSContext* cx);
 
 extern JS_PUBLIC_API(void)
 JS_RequestInterruptCallback(JSRuntime* rt);
@@ -4326,7 +4326,7 @@ namespace JS {
 
 
 extern JS_PUBLIC_API(void)
-SetGetIncumbentGlobalCallback(JSRuntime* rt, JSGetIncumbentGlobalCallback callback);
+SetGetIncumbentGlobalCallback(JSContext* cx, JSGetIncumbentGlobalCallback callback);
 
 
 
@@ -4338,7 +4338,7 @@ SetGetIncumbentGlobalCallback(JSRuntime* rt, JSGetIncumbentGlobalCallback callba
 
 
 extern JS_PUBLIC_API(void)
-SetEnqueuePromiseJobCallback(JSRuntime* rt, JSEnqueuePromiseJobCallback callback,
+SetEnqueuePromiseJobCallback(JSContext* cx, JSEnqueuePromiseJobCallback callback,
                              void* data = nullptr);
 
 
@@ -4347,7 +4347,7 @@ SetEnqueuePromiseJobCallback(JSRuntime* rt, JSEnqueuePromiseJobCallback callback
 
 
 extern JS_PUBLIC_API(void)
-SetPromiseRejectionTrackerCallback(JSRuntime* rt, JSPromiseRejectionTrackerCallback callback,
+SetPromiseRejectionTrackerCallback(JSContext* cx, JSPromiseRejectionTrackerCallback callback,
                                    void* data = nullptr);
 
 
