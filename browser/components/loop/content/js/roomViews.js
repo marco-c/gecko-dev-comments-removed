@@ -593,8 +593,20 @@ loop.roomViews = (function(mozL10n) {
         }));
     },
 
+    
+
+
+
+
     _shouldRenderInvitationOverlay: function() {
-      return (this.state.roomState !== ROOM_STATES.HAS_PARTICIPANTS);
+      var hasGuests = typeof this.state.participants === "object" &&
+        this.state.participants.filter(function(participant) {
+          return !participant.owner;
+        }).length > 0;
+
+      
+      
+      return this.state.roomState !== ROOM_STATES.HAS_PARTICIPANTS && !hasGuests;
     },
 
     
