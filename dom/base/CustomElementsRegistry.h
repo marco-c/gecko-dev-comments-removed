@@ -124,10 +124,6 @@ struct CustomElementDefinition
 
   
   
-  bool mElementIsBeingCreated;
-
-  
-  
 
   
   uint32_t mDocOrder;
