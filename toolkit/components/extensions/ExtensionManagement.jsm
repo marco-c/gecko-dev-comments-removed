@@ -236,17 +236,32 @@ function getAPILevelForWindow(window, addonId) {
     return NO_PRIVILEGES;
   }
 
-  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIDocShell);
-
   
   
-  if (docShell.sameTypeParent) {
+  if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
     return CONTENTSCRIPT_PRIVILEGES;
   }
 
+  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDocShell);
+
   
-  if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
+  if (docShell.sameTypeParent) {
+    let parentWindow = docShell.sameTypeParent.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIDOMWindow);
+
+    
+    
+    let parentDocument = parentWindow.document;
+    let parentIsSystemPrincipal = Services.scriptSecurityManager
+                                          .isSystemPrincipal(parentDocument.nodePrincipal);
+    if (parentDocument.location.href == "about:addons" && parentIsSystemPrincipal) {
+      return FULL_PRIVILEGES;
+    }
+
+    
+    
+    
     return CONTENTSCRIPT_PRIVILEGES;
   }
 
