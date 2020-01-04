@@ -52,11 +52,7 @@ public:
 
 
 
-  bool HasRect() const
-    {
-      const nsSVGViewBoxRect& rect = GetAnimValue();
-      return !rect.none && rect.width >= 0 && rect.height >= 0;
-    }
+  bool HasRect() const;
 
   
 

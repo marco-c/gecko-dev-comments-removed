@@ -70,6 +70,23 @@ nsSVGViewBox::Init()
   mAnimVal = nullptr;
 }
 
+bool
+nsSVGViewBox::HasRect() const
+{
+  
+  
+  const nsSVGViewBoxRect* rect = mAnimVal;
+  if (!rect) {
+    if (!mHasBaseVal) {
+      
+      return false;
+    }
+    rect = &mBaseVal;
+  }
+
+  return !rect->none && rect->width >= 0 && rect->height >= 0;
+}
+
 void
 nsSVGViewBox::SetAnimValue(const nsSVGViewBoxRect& aRect,
                            nsSVGElement *aSVGElement)
