@@ -137,6 +137,59 @@ intrinsic_IsConstructor(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+intrinsic_UnsafeCallWrappedFunction(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() >= 2);
+    MOZ_ASSERT(IsCallable(args[0]));
+    MOZ_ASSERT(IsWrapper(&args[0].toObject()));
+    MOZ_ASSERT(args[1].isObject() || args[1].isUndefined());
+
+    MOZ_RELEASE_ASSERT(args[0].isObject());
+    RootedObject wrappedFun(cx, &args[0].toObject());
+    RootedObject fun(cx, UncheckedUnwrap(wrappedFun));
+    MOZ_RELEASE_ASSERT(fun->is<JSFunction>());
+    MOZ_RELEASE_ASSERT(fun->as<JSFunction>().isSelfHostedBuiltin());
+
+    InvokeArgs args2(cx);
+    if (!args2.init(args.length() - 2))
+        return false;
+
+    args2.setThis(args[1]);
+
+    for (size_t i = 0; i < args2.length(); i++)
+        args2[i].set(args[i + 2]);
+
+    AutoWaivePolicy waivePolicy(cx, wrappedFun, JSID_VOIDHANDLE, BaseProxyHandler::CALL);
+    if (!CrossCompartmentWrapper::singleton.call(cx, wrappedFun, args2))
+        return false;
+    args.rval().set(args2.rval());
+    return true;
+}
+
 template<typename T>
 static bool
 intrinsic_IsInstanceOfBuiltin(JSContext* cx, unsigned argc, Value* vp)
@@ -1841,6 +1894,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
                     IntrinsicUnsafeGetStringFromReservedSlot),
     JS_INLINABLE_FN("UnsafeGetBooleanFromReservedSlot", intrinsic_UnsafeGetBooleanFromReservedSlot,2,0,
                     IntrinsicUnsafeGetBooleanFromReservedSlot),
+
+    JS_FN("UnsafeCallWrappedFunction", intrinsic_UnsafeCallWrappedFunction,2,0),
 
     JS_FN("IsPackedArray",           intrinsic_IsPackedArray,           1,0),
 
