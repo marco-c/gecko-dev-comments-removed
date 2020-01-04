@@ -335,9 +335,6 @@ struct SortedArenaListSegment
 
 
 
-
-
-
 class ArenaList {
     
     
@@ -457,7 +454,6 @@ class ArenaList {
     
     
     
-    
     void insertAtCursor(ArenaHeader* a) {
         check();
         a->next = *cursorp_;
@@ -466,6 +462,15 @@ class ArenaList {
         
         if (!a->hasFreeThings())
             cursorp_ = &a->next;
+        check();
+    }
+
+    
+    void insertBeforeCursor(ArenaHeader* a) {
+        check();
+        a->next = *cursorp_;
+        *cursorp_ = a;
+        cursorp_ = &a->next;
         check();
     }
 
@@ -590,7 +595,12 @@ class ArenaLists
 
 
 
-    AllAllocKindArray<FreeList> freeLists;
+    AllAllocKindArray<ArenaHeader*> freeLists;
+
+    
+    
+    
+    static ArenaHeader placeholder;
 
     AllAllocKindArray<ArenaList> arenaLists;
 
@@ -626,7 +636,7 @@ class ArenaLists
   public:
     explicit ArenaLists(JSRuntime* rt) : runtime_(rt) {
         for (auto i : AllAllocKinds())
-            freeLists[i].initAsEmpty();
+            freeLists[i] = &placeholder;
         for (auto i : AllAllocKinds())
             backgroundFinalizeState[i] = BFS_DONE;
         for (auto i : AllAllocKinds())
@@ -641,13 +651,8 @@ class ArenaLists
 
     ~ArenaLists();
 
-    static uintptr_t getFreeListOffset(AllocKind thingKind) {
-        uintptr_t offset = offsetof(ArenaLists, freeLists);
-        return offset + size_t(thingKind) * sizeof(FreeList);
-    }
-
-    const FreeList* getFreeList(AllocKind thingKind) const {
-        return &freeLists[thingKind];
+    const void* addressOfFreeList(AllocKind thingKind) const {
+        return reinterpret_cast<const void*>(&freeLists[thingKind]);
     }
 
     ArenaHeader* getFirstArena(AllocKind thingKind) const {
@@ -702,91 +707,21 @@ class ArenaLists
     
 
 
-
     void purge() {
         for (auto i : AllAllocKinds())
-            purge(i);
-    }
-
-    void purge(AllocKind i) {
-        FreeList* freeList = &freeLists[i];
-        if (!freeList->isEmpty()) {
-            ArenaHeader* aheader = freeList->arenaHeader();
-            aheader->setFirstFreeSpan(freeList->getHead());
-            freeList->initAsEmpty();
-        }
+            freeLists[i] = &placeholder;
     }
 
     inline void prepareForIncrementalGC(JSRuntime* rt);
 
     
-
-
-
-
-    void copyFreeListsToArenas() {
-        for (auto i : AllAllocKinds())
-            copyFreeListToArena(i);
-    }
-
-    void copyFreeListToArena(AllocKind thingKind) {
-        FreeList* freeList = &freeLists[thingKind];
-        if (!freeList->isEmpty()) {
-            ArenaHeader* aheader = freeList->arenaHeader();
-            MOZ_ASSERT(!aheader->hasFreeThings());
-            aheader->setFirstFreeSpan(freeList->getHead());
-        }
-    }
-
-    
-
-
-
-    void clearFreeListsInArenas() {
-        for (auto i : AllAllocKinds())
-            clearFreeListInArena(i);
-    }
-
-    void clearFreeListInArena(AllocKind kind) {
-        FreeList* freeList = &freeLists[kind];
-        if (!freeList->isEmpty()) {
-            ArenaHeader* aheader = freeList->arenaHeader();
-            MOZ_ASSERT(freeList->isSameNonEmptySpan(aheader->getFirstFreeSpan()));
-            aheader->setAsFullyUsed();
-        }
-    }
-
-    
-
-
-
-    bool isSynchronizedFreeList(AllocKind kind) {
-        FreeList* freeList = &freeLists[kind];
-        if (freeList->isEmpty())
-            return true;
-        ArenaHeader* aheader = freeList->arenaHeader();
-        if (aheader->hasFreeThings()) {
-            
-
-
-
-            MOZ_ASSERT(freeList->isSameNonEmptySpan(aheader->getFirstFreeSpan()));
-            return true;
-        }
-        return false;
-    }
-
-    
     bool arenaIsInUse(ArenaHeader* aheader, AllocKind kind) const {
         MOZ_ASSERT(aheader);
-        const FreeList& freeList = freeLists[kind];
-        if (freeList.isEmpty())
-            return false;
-        return aheader == freeList.arenaHeader();
+        return aheader == freeLists[kind];
     }
 
     MOZ_ALWAYS_INLINE TenuredCell* allocateFromFreeList(AllocKind thingKind, size_t thingSize) {
-        return freeLists[thingKind].allocate(thingSize);
+        return freeLists[thingKind]->allocate(thingSize);
     }
 
     
@@ -805,7 +740,7 @@ class ArenaLists
     }
 
     void checkEmptyFreeList(AllocKind kind) {
-        MOZ_ASSERT(freeLists[kind].isEmpty());
+        MOZ_ASSERT(!freeLists[kind]->hasFreeThings());
     }
 
     bool relocateArenas(Zone* zone, ArenaHeader*& relocatedListOut, JS::gcreason::Reason reason,
@@ -842,10 +777,8 @@ class ArenaLists
 
     TenuredCell* allocateFromArena(JS::Zone* zone, AllocKind thingKind,
                                    AutoMaybeStartBackgroundAllocation& maybeStartBGAlloc);
-
-    enum ArenaAllocMode { HasFreeThings = true, IsEmpty = false };
-    template <ArenaAllocMode hasFreeThings>
-    TenuredCell* allocateFromArenaInner(JS::Zone* zone, ArenaHeader* aheader, AllocKind kind);
+    inline TenuredCell* allocateFromArenaInner(JS::Zone* zone, ArenaHeader* aheader,
+                                               AllocKind kind);
 
     inline void normalizeBackgroundFinalizeState(AllocKind thingKind);
 

@@ -789,22 +789,31 @@ MacroAssembler::freeListAllocate(Register result, Register temp, gc::AllocKind a
 
     
     
-    loadPtr(AbsoluteAddress(zone->addressOfFreeListFirst(allocKind)), result);
-    branchPtr(Assembler::BelowOrEqual, AbsoluteAddress(zone->addressOfFreeListLast(allocKind)), result, &fallback);
-    computeEffectiveAddress(Address(result, thingSize), temp);
-    storePtr(temp, AbsoluteAddress(zone->addressOfFreeListFirst(allocKind)));
+    loadPtr(AbsoluteAddress(zone->addressOfFreeList(allocKind)), temp);
+    load16ZeroExtend(Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanFirst()), result);
+    load16ZeroExtend(Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanLast()), temp);
+    branch32(Assembler::AboveOrEqual, result, temp, &fallback);
+
+    
+    add32(Imm32(thingSize), result);
+    loadPtr(AbsoluteAddress(zone->addressOfFreeList(allocKind)), temp);
+    store16(result, Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanFirst()));
+    sub32(Imm32(thingSize), result);
+    addPtr(temp, result); 
     jump(&success);
 
     bind(&fallback);
     
     
     
-    branchPtr(Assembler::Equal, result, ImmPtr(0), fail);
+    branchTest32(Assembler::Zero, result, result, fail);
+    loadPtr(AbsoluteAddress(zone->addressOfFreeList(allocKind)), temp);
+    addPtr(temp, result); 
+    Push(result);
     
-    loadPtr(Address(result, js::gc::FreeSpan::offsetOfFirst()), temp);
-    storePtr(temp, AbsoluteAddress(zone->addressOfFreeListFirst(allocKind)));
-    loadPtr(Address(result, js::gc::FreeSpan::offsetOfLast()), temp);
-    storePtr(temp, AbsoluteAddress(zone->addressOfFreeListLast(allocKind)));
+    load32(Address(result, 0), result);
+    store32(result, Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanFirst()));
+    Pop(result);
 
     bind(&success);
 }
