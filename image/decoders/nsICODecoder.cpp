@@ -393,7 +393,7 @@ nsICODecoder::SniffResource(const char* aData)
     
     nsBMPDecoder* bmpDecoder = new nsBMPDecoder(mImage);
     mContainedDecoder = bmpDecoder;
-    bmpDecoder->SetUseAlphaData(true);
+    bmpDecoder->SetIsWithinICO();
     mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
     mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
     mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
@@ -527,7 +527,7 @@ nsICODecoder::PrepareForMask()
 
   
   
-  if ((bmpDecoder->GetBitsPerPixel() == 32 && bmpDecoder->HasAlphaData()) ||
+  if (bmpDecoder->HasTransparency() ||
       GetRealWidth() == 0 || GetRealHeight() == 0) {
     return Transition::ToUnbuffered(ICOState::FINISHED_RESOURCE,
                                     ICOState::SKIP_MASK,
@@ -658,7 +658,7 @@ nsICODecoder::FinishMask()
 
     RefPtr<nsBMPDecoder> bmpDecoder =
       static_cast<nsBMPDecoder*>(mContainedDecoder.get());
-    bmpDecoder->SetHasAlphaData();
+    bmpDecoder->SetHasTransparency();
   }
 
   return Transition::To(ICOState::FINISHED_RESOURCE, 0);

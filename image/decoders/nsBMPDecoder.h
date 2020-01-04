@@ -38,12 +38,26 @@ class BitFields {
     void Set(uint32_t aMask);
 
   public:
+    Value()
+    {
+      mMask = 0;
+      mRightShift = 0;
+      mBitWidth = 0;
+    }
+
+    
+    bool IsPresent() const { return mMask != 0x0; }
+
     
     uint8_t Get(uint32_t aVal) const;
 
     
+    uint8_t GetAlpha(uint32_t aVal, bool& aHasAlphaOut) const;
+
+    
     
     uint8_t Get5(uint32_t aVal) const;
+    uint8_t Get8(uint32_t aVal) const;
   };
 
 public:
@@ -51,15 +65,23 @@ public:
   Value mRed;
   Value mGreen;
   Value mBlue;
+  Value mAlpha;
 
   
   void SetR5G5B5();
 
   
+  void SetR8G8B8();
+
+  
   bool IsR5G5B5() const;
 
   
-  void ReadFromHeader(const char* aData);
+  bool IsR8G8B8() const;
+
+  
+  
+  void ReadFromHeader(const char* aData, bool aReadAlpha);
 
   
   static const size_t LENGTH = 12;
@@ -75,11 +97,6 @@ class nsBMPDecoder : public Decoder
 {
 public:
   ~nsBMPDecoder();
-
-  
-  
-  
-  void SetUseAlphaData(bool useAlphaData);
 
   
   int32_t GetBitsPerPixel() const;
@@ -98,11 +115,18 @@ public:
   int32_t GetCompressedImageSize() const;
 
   
-  
-  bool HasAlphaData() const { return mHaveAlphaData; }
+  void SetIsWithinICO() { mIsWithinICO = true; }
 
   
-  void SetHasAlphaData() { mHaveAlphaData = true; }
+  
+  bool HasTransparency() const { return mDoesHaveTransparency; }
+
+  
+  void SetHasTransparency()
+  {
+    mMayHaveTransparency = true;
+    mDoesHaveTransparency = true;
+  }
 
   virtual void WriteInternal(const char* aBuffer,
                              uint32_t aCount) override;
@@ -151,11 +175,18 @@ private:
   bmp::FileHeader mBFH;
   bmp::V5InfoHeader mBIH;
 
+  
+  bool mIsWithinICO;
+
   bmp::BitFields mBitFields;
 
   
   
   bool mMayHaveTransparency;
+
+  
+  
+  bool mDoesHaveTransparency;
 
   uint32_t mNumColors;      
                             
@@ -175,18 +206,6 @@ private:
 
   
   uint32_t mAbsoluteModeNumPixels;
-
-  
-  
-  
-  
-  
-  
-  
-  bool mUseAlphaData;
-
-  
-  bool mHaveAlphaData;
 };
 
 } 

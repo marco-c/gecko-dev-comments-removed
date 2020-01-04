@@ -194,13 +194,13 @@ ImageTestCase FirstFramePaddingGIFTestCase()
                        TEST_CASE_IS_TRANSPARENT);
 }
 
-ImageTestCase TransparentBMPWhenBMPAlphaEnabledTestCase()
+ImageTestCase TransparentIfWithinICOBMPTestCase(TestCaseFlags aFlags)
 {
   
   
   
-  
-  return ImageTestCase("transparent.bmp", "image/bmp", IntSize(32, 32));
+  return ImageTestCase("transparent-if-within-ico.bmp", "image/bmp",
+                       IntSize(32, 32), aFlags);
 }
 
 ImageTestCase RLE4BMPTestCase()

@@ -76,6 +76,12 @@
 
 
 
+
+
+
+
+
+
 #include <stdlib.h>
 
 #include "ImageLogging.h"
@@ -168,7 +174,9 @@ GetBMPLog()
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   : Decoder(aImage)
   , mLexer(Transition::To(State::FILE_HEADER, FileHeader::LENGTH))
+  , mIsWithinICO(false)
   , mMayHaveTransparency(false)
+  , mDoesHaveTransparency(false)
   , mNumColors(0)
   , mColors(nullptr)
   , mBytesPerColor(0)
@@ -176,8 +184,6 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   , mCurrentRow(0)
   , mCurrentPos(0)
   , mAbsoluteModeNumPixels(0)
-  , mUseAlphaData(false)
-  , mHaveAlphaData(false)
 {
   memset(&mBFH, 0, sizeof(mBFH));
   memset(&mBIH, 0, sizeof(mBIH));
@@ -186,13 +192,6 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
 nsBMPDecoder::~nsBMPDecoder()
 {
   delete[] mColors;
-}
-
-
-void
-nsBMPDecoder::SetUseAlphaData(bool useAlphaData)
-{
-  mUseAlphaData = useAlphaData;
 }
 
 
@@ -251,7 +250,8 @@ nsBMPDecoder::FinishInternal()
     nsIntRect r(0, 0, mBIH.width, GetHeight());
     PostInvalidation(r);
 
-    if (mUseAlphaData && mHaveAlphaData) {
+    if (mDoesHaveTransparency) {
+      MOZ_ASSERT(mMayHaveTransparency);
       PostFrameStop(Opacity::SOME_TRANSPARENCY);
     } else {
       PostFrameStop(Opacity::OPAQUE);
@@ -270,20 +270,38 @@ BitFields::Value::Set(uint32_t aMask)
   mMask = aMask;
 
   
-  bool started = false;
-  mRightShift = mBitWidth = 0;
-  for (uint8_t pos = 0; pos <= 31; pos++) {
-    if (!started && (aMask & (1 << pos))) {
-      mRightShift = pos;
-      started = true;
-    } else if (started && !(aMask & (1 << pos))) {
-      mBitWidth = pos - mRightShift;
+  
+  
+  
+  
+  
+  if (mMask == 0x0) {
+    mRightShift = 0;
+    mBitWidth = 1;
+    return;
+  }
+
+  
+  uint8_t i;
+  for (i = 0; i < 32; i++) {
+    if (mMask & (1 << i)) {
       break;
     }
   }
+  mRightShift = i;
+
+  
+  
+  
+  for (i = i + 1; i < 32; i++) {
+    if (!(mMask & (1 << i))) {
+      break;
+    }
+  }
+  mBitWidth = i - mRightShift;
 }
 
-inline uint8_t
+MOZ_ALWAYS_INLINE uint8_t
 BitFields::Value::Get(uint32_t aValue) const
 {
   
@@ -316,11 +334,29 @@ BitFields::Value::Get(uint32_t aValue) const
 }
 
 MOZ_ALWAYS_INLINE uint8_t
+BitFields::Value::GetAlpha(uint32_t aValue, bool& aHasAlphaOut) const
+{
+  if (mMask == 0x0) {
+    return 0xff;
+  }
+  aHasAlphaOut = true;
+  return Get(aValue);
+}
+
+MOZ_ALWAYS_INLINE uint8_t
 BitFields::Value::Get5(uint32_t aValue) const
 {
   MOZ_ASSERT(mBitWidth == 5);
   uint32_t v = (aValue & mMask) >> mRightShift;
   return (v << 3u) | (v >> 2u);
+}
+
+MOZ_ALWAYS_INLINE uint8_t
+BitFields::Value::Get8(uint32_t aValue) const
+{
+  MOZ_ASSERT(mBitWidth == 8);
+  uint32_t v = (aValue & mMask) >> mRightShift;
+  return v;
 }
 
 void
@@ -331,12 +367,30 @@ BitFields::SetR5G5B5()
   mBlue.Set(0x001f);
 }
 
+void
+BitFields::SetR8G8B8()
+{
+  mRed.Set(0xff0000);
+  mGreen.Set(0xff00);
+  mBlue.Set(0x00ff);
+}
+
 bool
 BitFields::IsR5G5B5() const
 {
   return mRed.mBitWidth == 5 &&
          mGreen.mBitWidth == 5 &&
-         mBlue.mBitWidth == 5;
+         mBlue.mBitWidth == 5 &&
+         mAlpha.mMask == 0x0;
+}
+
+bool
+BitFields::IsR8G8B8() const
+{
+  return mRed.mBitWidth == 8 &&
+         mGreen.mBitWidth == 8 &&
+         mBlue.mBitWidth == 8 &&
+         mAlpha.mMask == 0x0;
 }
 
 uint32_t*
@@ -459,6 +513,9 @@ nsBMPDecoder::ReadInfoHeaderSize(const char* aData, size_t aLength)
     PostDataError();
     return Transition::Terminate(State::FAILURE);
   }
+  
+  
+  MOZ_ASSERT_IF(mIsWithinICO, mBIH.bihsize == InfoHeaderLength::WIN_V3);
 
   return Transition::To(State::INFO_HEADER_REST,
                         mBIH.bihsize - BIHSIZE_FIELD_LENGTH);
@@ -542,23 +599,13 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
     mPixelRowSize += 4 - surplus;
   }
 
-  
-  
-  
-  mMayHaveTransparency = (mBIH.compression == Compression::RLE8) ||
-                         (mBIH.compression == Compression::RLE4) ||
-                         (mBIH.bpp == 32 && mUseAlphaData);
-  if (mMayHaveTransparency) {
-    PostHasTransparency();
-  }
-
   size_t bitFieldsLengthStillToRead = 0;
   if (mBIH.compression == Compression::BITFIELDS) {
     
     if (mBIH.bihsize >= InfoHeaderLength::WIN_V4) {
       
       
-      mBitFields.ReadFromHeader(aData + 36);
+      mBitFields.ReadFromHeader(aData + 36,  true);
     } else {
       
       
@@ -567,17 +614,23 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   } else if (mBIH.bpp == 16) {
     
     mBitFields.SetR5G5B5();
+  } else if (mBIH.bpp == 32) {
+    
+    mBitFields.SetR8G8B8();
   }
 
   return Transition::To(State::BITFIELDS, bitFieldsLengthStillToRead);
 }
 
 void
-BitFields::ReadFromHeader(const char* aData)
+BitFields::ReadFromHeader(const char* aData, bool aReadAlpha)
 {
   mRed.Set  (LittleEndian::readUint32(aData + 0));
   mGreen.Set(LittleEndian::readUint32(aData + 4));
   mBlue.Set (LittleEndian::readUint32(aData + 8));
+  if (aReadAlpha) {
+    mAlpha.Set(LittleEndian::readUint32(aData + 12));
+  }
 }
 
 LexerTransition<nsBMPDecoder::State>
@@ -588,7 +641,19 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
   
   
   if (aLength != 0) {
-    mBitFields.ReadFromHeader(aData);
+    mBitFields.ReadFromHeader(aData,  false);
+  }
+
+  
+  
+  mMayHaveTransparency =
+    (mBIH.compression == Compression::RGB && mIsWithinICO && mBIH.bpp == 32) ||
+    mBIH.compression == Compression::RLE8 ||
+    mBIH.compression == Compression::RLE4 ||
+    (mBIH.compression == Compression::BITFIELDS &&
+     mBitFields.mAlpha.IsPresent());
+  if (mMayHaveTransparency) {
+    PostHasTransparency();
   }
 
   
@@ -726,13 +791,19 @@ nsBMPDecoder::ReadPixelRow(const char* aData)
           src += 2;
         }
       } else {
+        bool anyHasAlpha = false;
         while (lpos > 0) {
           uint16_t val = LittleEndian::readUint16(src);
           SetPixel(dst, mBitFields.mRed.Get(val),
                         mBitFields.mGreen.Get(val),
-                        mBitFields.mBlue.Get(val));
+                        mBitFields.mBlue.Get(val),
+                        mBitFields.mAlpha.GetAlpha(val, anyHasAlpha));
           --lpos;
           src += 2;
+        }
+        if (anyHasAlpha) {
+          MOZ_ASSERT(mMayHaveTransparency);
+          mDoesHaveTransparency = true;
         }
       }
       break;
@@ -746,18 +817,53 @@ nsBMPDecoder::ReadPixelRow(const char* aData)
       break;
 
     case 32:
-      while (lpos > 0) {
-        if (mUseAlphaData) {
-          if (MOZ_UNLIKELY(!mHaveAlphaData && src[3])) {
-            PostHasTransparency();
-            mHaveAlphaData = true;
+      if (mBIH.compression == Compression::RGB && mIsWithinICO &&
+          mBIH.bpp == 32) {
+        
+        
+        while (lpos > 0) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (src[3] != 0) {
+            MOZ_ASSERT(mMayHaveTransparency);
+            mDoesHaveTransparency = true;
           }
           SetPixel(dst, src[2], src[1], src[0], src[3]);
-        } else {
-          SetPixel(dst, src[2], src[1], src[0]);
+          src += 4;
+          --lpos;
         }
-        --lpos;
-        src += 4;
+      } else if (mBitFields.IsR8G8B8()) {
+        
+        while (lpos > 0) {
+          uint32_t val = LittleEndian::readUint32(src);
+          SetPixel(dst, mBitFields.mRed.Get8(val),
+                        mBitFields.mGreen.Get8(val),
+                        mBitFields.mBlue.Get8(val));
+          --lpos;
+          src += 4;
+        }
+      } else {
+        bool anyHasAlpha = false;
+        while (lpos > 0) {
+          uint32_t val = LittleEndian::readUint32(src);
+          SetPixel(dst, mBitFields.mRed.Get(val),
+                        mBitFields.mGreen.Get(val),
+                        mBitFields.mBlue.Get(val),
+                        mBitFields.mAlpha.GetAlpha(val, anyHasAlpha));
+          --lpos;
+          src += 4;
+        }
+        if (anyHasAlpha) {
+          MOZ_ASSERT(mMayHaveTransparency);
+          mDoesHaveTransparency = true;
+        }
       }
       break;
 
@@ -842,11 +948,8 @@ nsBMPDecoder::ReadRLEDelta(const char* aData)
 {
   
   
-  if (MOZ_UNLIKELY(!mHaveAlphaData)) {
-    PostHasTransparency();
-    mHaveAlphaData = true;
-  }
-  mUseAlphaData = mHaveAlphaData = true;
+  MOZ_ASSERT(mMayHaveTransparency);
+  mDoesHaveTransparency = true;
 
   if (mDownscaler) {
     
