@@ -11,26 +11,31 @@
 
 const kWhitelist = [
   
-  {sourceName: /codemirror\.css/i},
+  {sourceName: /codemirror\.css$/i},
   
-  {sourceName: /web\/viewer\.css/i,
+  {sourceName: /web\/viewer\.css$/i,
    errorMessage: /Unknown pseudo-class.*(fullscreen|selection)/i},
   
-  {sourceName: /aboutaccounts\/(main|normalize)\.css/i},
+  {sourceName: /aboutaccounts\/(main|normalize)\.css$/i},
   
   {sourceName: /loop\/.*sdk-content\/.*\.css$/i},
   
-  {sourceName: /loop\/.*\.css/i,
+  {sourceName: /loop\/.*\.css$/i,
    errorMessage: /Unknown pseudo-class.*placeholder/i},
-  {sourceName: /loop\/.*shared\/css\/common.css/i,
+  {sourceName: /loop\/.*shared\/css\/common.css$/i,
    errorMessage: /Unknown property 'user-select'/i},
   
-  {sourceName: /highlighters\.css/i,
+  {sourceName: /highlighters\.css$/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i},
 ];
 
 var moduleLocation = gTestPath.replace(/\/[^\/]*$/i, "/parsingTestHelpers.jsm");
 var {generateURIsFromDirTree} = Cu.import(moduleLocation, {});
+
+
+
+
+const kPathSuffix = "?always-parse-css-" + Math.random();
 
 
 
@@ -135,17 +140,19 @@ function convertToChromeUri(fileUri) {
   }
 }
 
-function messageIsCSSError(msg, innerWindowID, outerWindowID) {
+function messageIsCSSError(msg) {
   
   if ((msg instanceof Ci.nsIScriptError) &&
       msg.category.includes("CSS") &&
-      msg.innerWindowID === innerWindowID && msg.outerWindowID === outerWindowID) {
+      msg.sourceName.endsWith(kPathSuffix)) {
+    let sourceName = msg.sourceName.slice(0, -kPathSuffix.length);
+    let msgInfo = { sourceName, errorMessage: msg.errorMessage };
     
-    if (!ignoredError(msg)) {
-      ok(false, "Got error message for " + msg.sourceName + ": " + msg.errorMessage);
+    if (!ignoredError(msgInfo)) {
+      ok(false, `Got error message for ${sourceName}: ${msg.errorMessage}`);
       return true;
     }
-    info("Ignored error for " + msg.sourceName + " because of filter.");
+    info(`Ignored error for ${sourceName} because of filter.`);
   }
   return false;
 }
@@ -167,10 +174,6 @@ add_task(function checkAllTheCSS() {
   iframe.contentWindow.location = testFile;
   yield iframeLoaded;
   let doc = iframe.contentWindow.document;
-  let windowUtils = iframe.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                                        .getInterface(Ci.nsIDOMWindowUtils);
-  let innerWindowID = windowUtils.currentInnerWindowID;
-  let outerWindowID = windowUtils.outerWindowID;
 
   
   
@@ -214,7 +217,7 @@ add_task(function checkAllTheCSS() {
     linkEl.addEventListener("error", onError);
     linkEl.setAttribute("type", "text/css");
     let chromeUri = convertToChromeUri(uri);
-    linkEl.setAttribute("href", chromeUri.spec);
+    linkEl.setAttribute("href", chromeUri.spec + kPathSuffix);
     allPromises.push(promiseForThisSpec.promise);
     doc.head.appendChild(linkEl);
   }
@@ -225,7 +228,7 @@ add_task(function checkAllTheCSS() {
   let messages = Services.console.getMessageArray();
   
   
-  let errors = messages.filter(m => messageIsCSSError(m, innerWindowID, outerWindowID));
+  let errors = messages.filter(messageIsCSSError);
   is(errors.length, 0, "All the styles (" + allPromises.length + ") loaded without errors.");
 
   
