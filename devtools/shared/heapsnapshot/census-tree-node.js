@@ -30,8 +30,8 @@ function isSavedFrame(obj) {
 
 
 
-function FrameCache() {}
-FrameCache.prototype = null;
+function CensusTreeNodeCache() {}
+CensusTreeNodeCache.prototype = null;
 
 
 
@@ -41,14 +41,14 @@ FrameCache.prototype = null;
 
 
 
-function FrameCacheValue(frame) {
+function CensusTreeNodeCacheValue() {
   
-  this.node = new CensusTreeNode(frame);
+  this.node = undefined;
   
   this.children = undefined;
 }
 
-FrameCacheValue.prototype = null;
+CensusTreeNodeCacheValue.prototype = null;
 
 
 
@@ -61,8 +61,12 @@ FrameCacheValue.prototype = null;
 
 
 
-FrameCache.hash = function (frame) {
-  return `${frame.functionDisplayName},${frame.source},${frame.line},${frame.column},${frame.asyncCause}`;
+
+
+
+
+CensusTreeNodeCache.hashFrame = function (frame) {
+  return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${frame.column},${frame.asyncCause}`;
 };
 
 
@@ -72,8 +76,39 @@ FrameCache.hash = function (frame) {
 
 
 
-FrameCache.insert = function (cache, frame, value) {
-  cache[FrameCache.hash(frame)] = value;
+
+
+
+
+CensusTreeNodeCache.hashNode = function (node) {
+  return isSavedFrame(node.name)
+    ? CensusTreeNodeCache.hashFrame(node.name)
+    : `NODE,${node.name}`;
+};
+
+
+
+
+
+
+
+
+CensusTreeNodeCache.insertFrame = function (cache, value) {
+  cache[CensusTreeNodeCache.hashFrame(value.node.name)] = value;
+};
+
+
+
+
+
+
+
+CensusTreeNodeCache.insertNode = function (cache, value) {
+  if (isSavedFrame(value.node.name)) {
+    CensusTreeNodeCache.insertFrame(cache, value);
+  } else {
+    cache[CensusTreeNodeCache.hashNode(value.node)] = value;
+  }
 };
 
 
@@ -84,8 +119,22 @@ FrameCache.insert = function (cache, frame, value) {
 
 
 
-FrameCache.lookup = function (cache, frame) {
-  return cache[FrameCache.hash(frame)];
+CensusTreeNodeCache.lookupFrame = function (cache, frame) {
+  return cache[CensusTreeNodeCache.hashFrame(frame)];
+};
+
+
+
+
+
+
+
+
+
+CensusTreeNodeCache.lookupNode = function (cache, node) {
+  return isSavedFrame(node.name)
+    ? CensusTreeNodeCache.lookupFrame(cache, node.name)
+    : cache[CensusTreeNodeCache.hashNode(node)];
 };
 
 
@@ -150,7 +199,7 @@ function getArrayOfFrames(stack) {
 
 
 
-function makeCensusTreeNodeSubTree(breakdown, report, edge, frameCache, outParams) {
+function makeCensusTreeNodeSubTree(breakdown, report, edge, cache, outParams) {
   if (!isSavedFrame(edge)) {
     const node = new CensusTreeNode(edge);
     outParams.top = outParams.bottom = node;
@@ -161,7 +210,7 @@ function makeCensusTreeNodeSubTree(breakdown, report, edge, frameCache, outParam
   
 
   const frames = getArrayOfFrames(edge);
-  let cache = frameCache;
+  let currentCache = cache;
   let prevNode;
   for (let i = 0, length = frames.length; i < length; i++) {
     const frame = frames[i];
@@ -173,12 +222,13 @@ function makeCensusTreeNodeSubTree(breakdown, report, edge, frameCache, outParam
     
     
     let isNewNode = false;
-    let val = FrameCache.lookup(cache, frame);
+    let val = CensusTreeNodeCache.lookupFrame(currentCache, frame);
     if (!val) {
       isNewNode = true;
-      val = new FrameCacheValue(frame);
+      val = new CensusTreeNodeCacheValue();
+      val.node = new CensusTreeNode(frame);
 
-      FrameCache.insert(cache, frame, val);
+      CensusTreeNodeCache.insertFrame(currentCache, val);
       if (prevNode) {
         addChild(prevNode, val.node);
       }
@@ -196,10 +246,10 @@ function makeCensusTreeNodeSubTree(breakdown, report, edge, frameCache, outParam
     if (i !== length - 1 && !val.children) {
       
       
-      val.children = new FrameCache();
+      val.children = new CensusTreeNodeCache();
     }
 
-    cache = val.children;
+    currentCache = val.children;
   }
 }
 
@@ -224,7 +274,7 @@ function CensusTreeNodeVisitor() {
 
   
   
-  this._frameCacheStack = [new FrameCache()];
+  this._cacheStack = [new CensusTreeNodeCache()];
 }
 
 CensusTreeNodeVisitor.prototype = Object.create(Visitor);
@@ -236,7 +286,7 @@ CensusTreeNodeVisitor.prototype = Object.create(Visitor);
 
 
 CensusTreeNodeVisitor.prototype.enter = function (breakdown, report, edge) {
-  const cache = this._frameCacheStack[this._frameCacheStack.length - 1];
+  const cache = this._cacheStack[this._cacheStack.length - 1];
   makeCensusTreeNodeSubTree(breakdown, report, edge, cache, this._outParams);
   const { top, bottom } = this._outParams;
 
@@ -248,7 +298,7 @@ CensusTreeNodeVisitor.prototype.enter = function (breakdown, report, edge) {
     }
   }
 
-  this._frameCacheStack.push(new FrameCache);
+  this._cacheStack.push(new CensusTreeNodeCache);
   this._nodeStack.push(top);
 };
 
@@ -281,7 +331,7 @@ CensusTreeNodeVisitor.prototype.exit = function (breakdown, report, edge) {
     node.totalBytes = node.bytes;
 
     if (node.children) {
-      node.children.sort(compareByTotalBytes);
+      node.children.sort(compareByTotal);
 
       for (let i = 0, length = node.children.length; i < length; i++) {
         node.totalCount += node.children[i].totalCount;
@@ -291,7 +341,7 @@ CensusTreeNodeVisitor.prototype.exit = function (breakdown, report, edge) {
   }
 
   const top = this._nodeStack.pop();
-  const cache = this._frameCacheStack.pop();
+  const cache = this._cacheStack.pop();
   dfs(top, cache);
 };
 
@@ -353,11 +403,111 @@ CensusTreeNode.prototype = null;
 
 
 
-function compareByTotalBytes (node1, node2) {
+function compareByTotal(node1, node2) {
   return node2.totalBytes - node1.totalBytes
-      || node2.bytes      - node1.bytes
       || node2.totalCount - node1.totalCount
+      || node2.bytes      - node1.bytes
       || node2.count      - node1.count;
+}
+
+
+
+
+
+
+
+
+
+
+
+function compareBySelf(node1, node2) {
+  return node2.bytes      - node1.bytes
+      || node2.count      - node1.count
+      || node2.totalBytes - node1.totalBytes
+      || node2.totalCount - node1.totalCount;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function invert(tree) {
+  const inverted = new CensusTreeNodeCacheValue();
+  inverted.node = new CensusTreeNode(null);
+
+  
+  
+  
+
+  const path = [];
+  (function addInvertedPaths(node) {
+    path.push(node);
+
+    if (node.children) {
+      for (let i = 0, length = node.children.length; i < length; i++) {
+        addInvertedPaths(node.children[i]);
+      }
+    } else {
+      
+
+      let current = inverted;
+      for (let i = path.length - 1; i >= 0; i--) {
+        const node = path[i];
+
+        if (!current.children) {
+          current.children = new CensusTreeNodeCache();
+        }
+
+        
+        
+        
+        
+        let val = CensusTreeNodeCache.lookupNode(current.children, node);
+        if (val) {
+          val.node.count += node.count;
+          val.node.totalCount += node.totalCount;
+          val.node.bytes += node.bytes;
+          val.node.totalBytes += node.totalBytes;
+        } else {
+          val = new CensusTreeNodeCacheValue();
+
+          val.node = new CensusTreeNode(node.name);
+          val.node.count = node.count;
+          val.node.totalCount = node.totalCount;
+          val.node.bytes = node.bytes;
+          val.node.totalBytes = node.totalBytes;
+
+          addChild(current.node, val.node);
+          CensusTreeNodeCache.insertNode(current.children, val);
+        }
+
+        current = val;
+      }
+    }
+
+    path.pop();
+  }(tree));
+
+  
+  
+
+  (function ensureSorted(node) {
+    if (node.children) {
+      node.children.sort(compareBySelf);
+      for (let i = 0, length = node.children.length; i < length; i++) {
+        ensureSorted(node.children[i]);
+      }
+    }
+  }(inverted.node));
+
+  return inverted.node;
 }
 
 
@@ -383,8 +533,15 @@ function compareByTotalBytes (node1, node2) {
 
 
 
-exports.censusReportToCensusTreeNode = function (breakdown, report) {
+
+
+
+
+
+exports.censusReportToCensusTreeNode = function (breakdown, report,
+                                                 options = { invert: false }) {
   const visitor = new CensusTreeNodeVisitor();
   walk(breakdown, report, visitor);
-  return visitor.root();
+  const root = visitor.root();
+  return options.invert ? invert(root) : root;
 };

@@ -175,13 +175,16 @@ function savedFrameReplacer(key, val) {
 
 
 
-function compareCensusViewData (breakdown, report, expected) {
+
+
+
+function compareCensusViewData (breakdown, report, expected, options) {
   dumpn("Generating CensusTreeNode from report:");
   dumpn("breakdown: " + JSON.stringify(breakdown, null, 4));
   dumpn("report: " + JSON.stringify(report, null, 4));
   dumpn("expected: " + JSON.stringify(expected, savedFrameReplacer, 4));
 
-  const actual = censusReportToCensusTreeNode(breakdown, report);
+  const actual = censusReportToCensusTreeNode(breakdown, report, options);
   dumpn("actual: " + JSON.stringify(actual, savedFrameReplacer, 4));
 
   assertStructurallyEquivalent(actual, expected);
