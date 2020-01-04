@@ -132,6 +132,16 @@ public :
   
 
 
+
+  void NotifyQueuedAudioData(MediaStreamGraph* aGraph, TrackID aID,
+                             StreamTime aTrackOffset,
+                             const AudioSegment& aQueuedMedia,
+                             MediaStream* aInputStream,
+                             TrackID aInputTrackID) override;
+
+  
+
+
   void NotifyEvent(MediaStreamGraph* aGraph,
                    MediaStreamListener::MediaStreamGraphEvent event) override;
 

@@ -185,12 +185,58 @@ MediaStreamGraphImpl::ExtractPendingInput(SourceMediaStream* aStream,
     for (int32_t i = aStream->mUpdateTracks.Length() - 1; i >= 0; --i) {
       SourceMediaStream::TrackData* data = &aStream->mUpdateTracks[i];
       aStream->ApplyTrackDisabling(data->mID, data->mData);
+      
+
+      
+      
       StreamTime offset = (data->mCommands & SourceMediaStream::TRACK_CREATE)
           ? data->mStart : aStream->mTracks.FindTrack(data->mID)->GetSegment()->GetDuration();
-      for (MediaStreamListener* l : aStream->mListeners) {
-        l->NotifyQueuedTrackChanges(this, data->mID,
-                                    offset, data->mCommands, *data->mData);
+
+      
+      if (data->mData->GetType() == MediaSegment::AUDIO) {
+        if (data->mCommands) {
+          MOZ_ASSERT(!(data->mCommands & SourceMediaStream::TRACK_UNUSED));
+          for (MediaStreamListener* l : aStream->mListeners) {
+            if (data->mCommands & SourceMediaStream::TRACK_END) {
+              l->NotifyQueuedAudioData(this, data->mID,
+                                       offset, *(static_cast<AudioSegment*>(data->mData.get())));
+            }
+            l->NotifyQueuedTrackChanges(this, data->mID,
+                                        offset, data->mCommands, *data->mData);
+            if (data->mCommands & SourceMediaStream::TRACK_CREATE) {
+              l->NotifyQueuedAudioData(this, data->mID,
+                                       offset, *(static_cast<AudioSegment*>(data->mData.get())));
+            }
+          }
+        } else {
+          for (MediaStreamListener* l : aStream->mListeners) {
+              l->NotifyQueuedAudioData(this, data->mID,
+                                       offset, *(static_cast<AudioSegment*>(data->mData.get())));
+          }
+        }
       }
+
+      
+      if (data->mData->GetType() == MediaSegment::VIDEO) {
+        if (data->mCommands) {
+          MOZ_ASSERT(!(data->mCommands & SourceMediaStream::TRACK_UNUSED));
+          for (MediaStreamListener* l : aStream->mListeners) {
+            l->NotifyQueuedTrackChanges(this, data->mID,
+                                        offset, data->mCommands, *data->mData);
+          }
+        } else {
+          
+          
+          
+
+          
+          for (MediaStreamListener* l : aStream->mListeners) {
+            l->NotifyQueuedTrackChanges(this, data->mID,
+                                        offset, data->mCommands, *data->mData);
+          }
+        }
+      }
+
       for (TrackBound<MediaStreamTrackListener>& b : aStream->mTrackListeners) {
         if (b.mTrackID != data->mID) {
           continue;

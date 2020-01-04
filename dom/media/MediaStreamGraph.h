@@ -159,9 +159,11 @@ public:
 
   virtual void NotifyEvent(MediaStreamGraph* aGraph, MediaStreamGraphEvent aEvent) {}
 
+  
   enum {
     TRACK_EVENT_CREATED = 0x01,
-    TRACK_EVENT_ENDED = 0x02
+    TRACK_EVENT_ENDED = 0x02,
+    TRACK_EVENT_UNUSED = ~(TRACK_EVENT_ENDED | TRACK_EVENT_CREATED),
   };
   
 
@@ -178,6 +180,16 @@ public:
                                         const MediaSegment& aQueuedMedia,
                                         MediaStream* aInputStream = nullptr,
                                         TrackID aInputTrackID = TRACK_INVALID) {}
+
+  
+
+
+
+  virtual void NotifyQueuedAudioData(MediaStreamGraph* aGraph, TrackID aID,
+                                     StreamTime aTrackOffset,
+                                     const AudioSegment& aQueuedMedia,
+                                     MediaStream* aInputStream = nullptr,
+                                     TrackID aInputTrackID = TRACK_INVALID) {}
 
   
 
@@ -1079,7 +1091,8 @@ public:
 protected:
   enum TrackCommands {
     TRACK_CREATE = MediaStreamListener::TRACK_EVENT_CREATED,
-    TRACK_END = MediaStreamListener::TRACK_EVENT_ENDED
+    TRACK_END = MediaStreamListener::TRACK_EVENT_ENDED,
+    TRACK_UNUSED = MediaStreamListener::TRACK_EVENT_UNUSED,
   };
   
 
