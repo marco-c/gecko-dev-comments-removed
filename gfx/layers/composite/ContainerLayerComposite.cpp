@@ -226,9 +226,11 @@ ContainerRenderVR(ContainerT* aContainer,
       
       
       if (layer->GetType() == Layer::TYPE_CANVAS) {
-        layerBounds = ToRect(static_cast<CanvasLayer*>(layer)->GetBounds());
+        layerBounds =
+          IntRectToRect(static_cast<CanvasLayer*>(layer)->GetBounds());
       } else {
-        layerBounds = ToRect(layer->GetEffectiveVisibleRegion().GetBounds());
+        layerBounds =
+          IntRectToRect(layer->GetEffectiveVisibleRegion().GetBounds());
       }
       const gfx::Matrix4x4 childTransform = layer->GetEffectiveTransform();
       layerBounds = childTransform.TransformBounds(layerBounds);
