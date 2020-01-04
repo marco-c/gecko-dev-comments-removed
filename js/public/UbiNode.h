@@ -644,25 +644,25 @@ class Base {
 
 
 
-template<typename Referent>
-struct Concrete {
-    
-    static const char16_t concreteTypeName[];
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static void construct(void* storage, Referent* referent);
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename Referent>
+class Concrete;
 
 
 
@@ -994,24 +994,24 @@ class MOZ_STACK_CLASS RootList {
 
 
 template<>
-struct Concrete<RootList> : public Base {
-    js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const override;
-    const char16_t* typeName() const override { return concreteTypeName; }
-
+class Concrete<RootList> : public Base {
   protected:
     explicit Concrete(RootList* ptr) : Base(ptr) { }
     RootList& get() const { return *static_cast<RootList*>(ptr); }
 
   public:
-    static const char16_t concreteTypeName[];
     static void construct(void* storage, RootList* ptr) { new (storage) Concrete(ptr); }
+
+    js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const override;
+
+    const char16_t* typeName() const override { return concreteTypeName; }
+    static const char16_t concreteTypeName[];
 };
 
 
 
 template<typename Referent>
 class TracerConcrete : public Base {
-    const char16_t* typeName() const override { return concreteTypeName; }
     js::UniquePtr<EdgeRange> edges(JSRuntime* rt, bool wantNames) const override;
     JS::Zone* zone() const override;
 
@@ -1020,7 +1020,6 @@ class TracerConcrete : public Base {
     Referent& get() const { return *static_cast<Referent*>(ptr); }
 
   public:
-    static const char16_t concreteTypeName[];
     static void construct(void* storage, Referent* ptr) { new (storage) TracerConcrete(ptr); }
 };
 
@@ -1042,9 +1041,7 @@ class TracerConcreteWithCompartment : public TracerConcrete<Referent> {
 
 
 template<>
-struct Concrete<JS::Symbol> : TracerConcrete<JS::Symbol> {
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-
+class Concrete<JS::Symbol> : TracerConcrete<JS::Symbol> {
   protected:
     explicit Concrete(JS::Symbol* ptr) : TracerConcrete(ptr) { }
 
@@ -1052,23 +1049,40 @@ struct Concrete<JS::Symbol> : TracerConcrete<JS::Symbol> {
     static void construct(void* storage, JS::Symbol* ptr) {
         new (storage) Concrete(ptr);
     }
+
+    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+
+    const char16_t* typeName() const override { return concreteTypeName; }
+    static const char16_t concreteTypeName[];
 };
 
-template<> struct Concrete<JSScript> : TracerConcreteWithCompartment<JSScript> {
-    CoarseType coarseType() const final { return CoarseType::Script; }
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-    const char* scriptFilename() const final;
-
+template<>
+class Concrete<JSScript> : TracerConcreteWithCompartment<JSScript> {
   protected:
     explicit Concrete(JSScript *ptr) : TracerConcreteWithCompartment<JSScript>(ptr) { }
 
   public:
     static void construct(void *storage, JSScript *ptr) { new (storage) Concrete(ptr); }
+
+    CoarseType coarseType() const final { return CoarseType::Script; }
+    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+    const char* scriptFilename() const final;
+
+    const char16_t* typeName() const override { return concreteTypeName; }
+    static const char16_t concreteTypeName[];
 };
 
 
 template<>
 class Concrete<JSObject> : public TracerConcreteWithCompartment<JSObject> {
+  protected:
+    explicit Concrete(JSObject* ptr) : TracerConcreteWithCompartment(ptr) { }
+
+  public:
+    static void construct(void* storage, JSObject* ptr) {
+        new (storage) Concrete(ptr);
+    }
+
     const char* jsObjectClassName() const override;
     MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
         const override;
@@ -1079,26 +1093,25 @@ class Concrete<JSObject> : public TracerConcreteWithCompartment<JSObject> {
 
     CoarseType coarseType() const final { return CoarseType::Object; }
 
-  protected:
-    explicit Concrete(JSObject* ptr) : TracerConcreteWithCompartment(ptr) { }
-
-  public:
-    static void construct(void* storage, JSObject* ptr) {
-        new (storage) Concrete(ptr);
-    }
+    const char16_t* typeName() const override { return concreteTypeName; }
+    static const char16_t concreteTypeName[];
 };
 
 
-template<> struct Concrete<JSString> : TracerConcrete<JSString> {
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-
-    CoarseType coarseType() const final { return CoarseType::String; }
-
+template<>
+class Concrete<JSString> : TracerConcrete<JSString> {
   protected:
     explicit Concrete(JSString *ptr) : TracerConcrete<JSString>(ptr) { }
 
   public:
     static void construct(void *storage, JSString *ptr) { new (storage) Concrete(ptr); }
+
+    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+
+    CoarseType coarseType() const final { return CoarseType::String; }
+
+    const char16_t* typeName() const override { return concreteTypeName; }
+    static const char16_t concreteTypeName[];
 };
 
 
@@ -1115,7 +1128,6 @@ class Concrete<void> : public Base {
 
   public:
     static void construct(void* storage, void* ptr) { new (storage) Concrete(ptr); }
-    static const char16_t concreteTypeName[];
 };
 
 
