@@ -11,7 +11,7 @@
 #error "This code is for Win32 only"
 #endif
 
-static void __fastcall
+extern "C" void __fastcall
 invoke_copy_to_stack(uint32_t* d, uint32_t paramCount, nsXPTCVariant* s)
 {
     for(; paramCount > 0; paramCount--, d++, s++)
@@ -43,32 +43,3 @@ invoke_copy_to_stack(uint32_t* d, uint32_t paramCount, nsXPTCVariant* s)
         }
     }
 }
-
-#pragma warning(disable : 4035) // OK to have no return value
-
-
-#pragma optimize( "y", off )
-extern "C" NS_EXPORT nsresult NS_FROZENCALL
-NS_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
-                 uint32_t paramCount, nsXPTCVariant* params)
-{
-    __asm {
-        mov     edx,paramCount      
-        test    edx,edx             
-        jz      noparams
-        mov     eax,edx             
-        shl     eax,3               
-        sub     esp,eax             
-        mov     ecx,esp
-        push    params
-        call    invoke_copy_to_stack 
-noparams:
-        mov     ecx,that            
-        push    ecx                 
-        mov     edx,[ecx]           
-        mov     eax,methodIndex
-        call    dword ptr[edx+eax*4] 
-        mov     esp,ebp
-    }
-}
-#pragma warning(default : 4035) // restore default
