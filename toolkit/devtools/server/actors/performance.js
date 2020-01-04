@@ -211,7 +211,12 @@ const PerformanceFront = exports.PerformanceFront = protocol.FrontClass(Performa
 
     let normalizedCurrent = (totalSize * (currentGeneration - origGeneration)) + currentPosition;
     let percent = (normalizedCurrent - origPosition) / totalSize;
-    return percent > 1 ? 1 : percent;
+
+    
+    
+    
+    
+    return percent > 1 ? 1 : percent < 0 ? 0 : percent;
   },
 
   
