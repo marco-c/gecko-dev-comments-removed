@@ -356,7 +356,7 @@ void
 NativeObject::setLastPropertyMakeNative(ExclusiveContext* cx, Shape* shape)
 {
     MOZ_ASSERT(getClass()->isNative());
-    MOZ_ASSERT(shape->isNative());
+    MOZ_ASSERT(shape->getObjectClass()->isNative());
     MOZ_ASSERT(!shape->inDictionary());
 
     
