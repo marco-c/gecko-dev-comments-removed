@@ -1092,6 +1092,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       images: this.isImage,
       media: this.isMedia,
       flash: this.isFlash,
+      ws: this.isWS,
       other: this.isOther,
       freetext: this.isFreetextMatch
     };
@@ -1232,8 +1233,10 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       mimeType.includes("/x-javascript"));
   },
 
-  isXHR: function({ attachment: { isXHR } }) {
-    return isXHR;
+  isXHR: function(item) {
+    
+    
+    return item.attachment.isXHR && !this.isWS(item);
   },
 
   isFont: function({ attachment: { url, mimeType } }) {
@@ -1268,6 +1271,36 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       url.includes(".flv");
   },
 
+  isWS: function({ attachment: { requestHeaders, responseHeaders } }) {
+    
+    
+
+    if (!requestHeaders || !Array.isArray(requestHeaders.headers)) {
+      return false;
+    }
+
+    
+    var upgradeHeader = requestHeaders.headers.find(header => {
+      return (header.name == "Upgrade");
+    });
+
+    
+    
+    
+    if (!upgradeHeader && responseHeaders && Array.isArray(responseHeaders.headers)) {
+      upgradeHeader = responseHeaders.headers.find(header => {
+        return (header.name == "Upgrade");
+      });
+    }
+
+    
+    if (!upgradeHeader || upgradeHeader.value != "websocket") {
+      return false;
+    }
+
+    return true;
+  },
+
   isOther: function(e) {
     return !this.isHtml(e) &&
            !this.isCss(e) &&
@@ -1276,7 +1309,8 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
            !this.isFont(e) &&
            !this.isImage(e) &&
            !this.isMedia(e) &&
-           !this.isFlash(e);
+           !this.isFlash(e) &&
+           !this.isWS(e);
   },
 
   isFreetextMatch: function({ attachment: { url } }, text) {
@@ -3604,7 +3638,8 @@ PerformanceStatisticsView.prototype = {
 
   _sanitizeChartDataSource: function(items, emptyCache) {
     let data = [
-      "html", "css", "js", "xhr", "fonts", "images", "media", "flash", "other"
+      "html", "css", "js", "xhr", "fonts", "images", "media", "flash", "ws",
+      "other"
     ].map(e => ({
       cached: 0,
       count: 0,
@@ -3638,13 +3673,16 @@ PerformanceStatisticsView.prototype = {
       } else if (RequestsMenuView.prototype.isFlash(requestItem)) {
         
         type = 7;
+      } else if (RequestsMenuView.prototype.isWS(requestItem)) {
+        
+        type = 8;
       } else if (RequestsMenuView.prototype.isXHR(requestItem)) {
         
         
         type = 3;
       } else {
         
-        type = 8;
+        type = 9;
       }
 
       if (emptyCache || !responseIsFresh(details)) {
