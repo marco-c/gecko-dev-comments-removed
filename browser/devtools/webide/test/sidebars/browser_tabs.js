@@ -11,8 +11,6 @@ function test() {
   Task.spawn(function*() {
     const { DebuggerServer } = require("devtools/server/main");
 
-    Services.prefs.setBoolPref("devtools.webide.sidebars", true);
-
     
     
     DebuggerServer.destroy();
