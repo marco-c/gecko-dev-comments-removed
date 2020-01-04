@@ -9,14 +9,16 @@
 
 #include "APZUtils.h"                       
 #include "FrameMetrics.h"                   
+#include "Layers.h"
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/LayersTypes.h"     
 #include "mozilla/Maybe.h"                  
-#include "mozilla/nsRefPtr.h"                       
+#include "mozilla/nsRefPtr.h"               
 
 namespace mozilla {
 namespace layers {
 
+class AsyncDragMetrics;
 class AsyncPanZoomController;
 
 
@@ -87,6 +89,13 @@ public:
                       const Maybe<ParentLayerIntRegion>& aClipRegion,
                       const EventRegionsOverride& aOverride);
   bool IsOutsideClip(const ParentLayerPoint& aPoint) const;
+
+  
+
+  void SetScrollbarData(FrameMetrics::ViewID aScrollViewId, Layer::ScrollDirection aDir, int32_t aScrollSize);
+  bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
+  int32_t GetScrollSize() const;
+
   
 
   Maybe<LayerPoint> Untransform(const ParentLayerPoint& aPoint) const;
@@ -110,6 +119,10 @@ private:
   bool mIsPrimaryApzcHolder;
 
   uint64_t mLayersId;
+
+  FrameMetrics::ViewID mScrollViewId;
+  Layer::ScrollDirection mScrollDir;
+  int32_t mScrollSize;
 
   
 
