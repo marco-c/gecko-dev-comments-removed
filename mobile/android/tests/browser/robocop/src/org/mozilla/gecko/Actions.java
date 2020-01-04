@@ -51,28 +51,39 @@ public interface Actions {
 
     void sendGeckoEvent(String geckoEvent, String data);
 
-    
+    public interface PrefWaiter {
+        boolean isFinished();
+        void waitForFinish();
+        void waitForFinish(long timeoutMillis, boolean failOnTimeout);
+    }
 
+    public abstract static class PrefHandlerBase implements PrefsHelper.PrefHandler {
+         Assert asserter;
 
+        @Override 
+        public void prefValue(String pref, boolean value) {
+            asserter.ok(false, "Unexpected pref callback", "");
+        }
 
+        @Override 
+        public void prefValue(String pref, int value) {
+            asserter.ok(false, "Unexpected pref callback", "");
+        }
 
+        @Override 
+        public void prefValue(String pref, String value) {
+            asserter.ok(false, "Unexpected pref callback", "");
+        }
 
-    void sendPreferencesGetEvent(int requestId, String[] prefNames);
+        @Override 
+        public void finish() {
+        }
+    }
 
-    
-
-
-
-
-
-    void sendPreferencesObserveEvent(int requestId, String[] prefNames);
-
-    
-
-
-
-
-    void sendPreferencesRemoveObserversEvent(int requestid);
+    PrefWaiter getPrefs(String[] prefNames, PrefHandlerBase handler);
+    void setPref(String pref, Object value, boolean flush);
+    PrefWaiter addPrefsObserver(String[] prefNames, PrefHandlerBase handler);
+    void removePrefsObserver(PrefWaiter handler);
 
     
 

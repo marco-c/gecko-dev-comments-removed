@@ -4,6 +4,7 @@
 
 package org.mozilla.gecko;
 
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -190,16 +191,112 @@ public class FennecNativeActions implements Actions {
         GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent(geckoEvent, data));
     }
 
-    public void sendPreferencesGetEvent(int requestId, String[] prefNames) {
-        PrefsHelper.getPrefsById(requestId, prefNames,  false);
+    public static final class PrefProxy implements PrefsHelper.PrefHandler, PrefWaiter {
+        public static final int MAX_WAIT_MS = 180000;
+
+         final PrefHandlerBase target;
+        private final String[] expectedPrefs;
+        private final ArrayList<String> seenPrefs = new ArrayList<>();
+        private boolean finished = false;
+
+         PrefProxy(PrefHandlerBase target, String[] expectedPrefs, Assert asserter) {
+            this.target = target;
+            this.expectedPrefs = expectedPrefs;
+            target.asserter = asserter;
+        }
+
+        @Override 
+        public void prefValue(String pref, boolean value) {
+            target.prefValue(pref, value);
+            seenPrefs.add(pref);
+        }
+
+        @Override 
+        public void prefValue(String pref, int value) {
+            target.prefValue(pref, value);
+            seenPrefs.add(pref);
+        }
+
+        @Override 
+        public void prefValue(String pref, String value) {
+            target.prefValue(pref, value);
+            seenPrefs.add(pref);
+        }
+
+        @Override 
+        public synchronized void finish() {
+            target.finish();
+
+            for (String pref : expectedPrefs) {
+                target.asserter.ok(seenPrefs.remove(pref), "Checking pref was seen", pref);
+            }
+            target.asserter.ok(seenPrefs.isEmpty(), "Checking unexpected prefs",
+                               TextUtils.join(", ", seenPrefs));
+
+            finished = true;
+            this.notifyAll();
+        }
+
+        @Override 
+        public synchronized boolean isFinished() {
+            return finished;
+        }
+
+        @Override 
+        public void waitForFinish() {
+            waitForFinish(MAX_WAIT_MS,  true);
+        }
+
+        @Override 
+        public synchronized void waitForFinish(long timeoutMillis, boolean failOnTimeout) {
+            final long startTime = System.nanoTime();
+            while (!finished) {
+                if (System.nanoTime() - startTime
+                        >= timeoutMillis * 1e6 ) {
+                    final String prefsLog = "expected " +
+                            TextUtils.join(", ", expectedPrefs) + "; got " +
+                            TextUtils.join(", ", seenPrefs.toArray()) + ".";
+                    if (failOnTimeout) {
+                        FennecNativeDriver.logAllStackTraces(FennecNativeDriver.LogLevel.ERROR);
+                        target.asserter.ok(false, "Timeout waiting for pref", prefsLog);
+                    } else {
+                        FennecNativeDriver.log(FennecNativeDriver.LogLevel.DEBUG,
+                                               "Pref timeout (" + prefsLog + ")");
+                    }
+                    break;
+                }
+                try {
+                    this.wait(1000); 
+                } catch (final InterruptedException e) {
+                    
+                }
+            }
+            finished = false;
+        }
     }
 
-    public void sendPreferencesObserveEvent(int requestId, String[] prefNames) {
-        PrefsHelper.getPrefsById(requestId, prefNames,  true);
+    @Override 
+    public PrefWaiter getPrefs(String[] prefNames, PrefHandlerBase handler) {
+        final PrefProxy proxy = new PrefProxy(handler, prefNames, mAsserter);
+        PrefsHelper.getPrefs(prefNames, proxy);
+        return proxy;
     }
 
-    public void sendPreferencesRemoveObserversEvent(int requestId) {
-        PrefsHelper.removePrefsObserver(requestId);
+    @Override 
+    public void setPref(String pref, Object value, boolean flush) {
+        PrefsHelper.setPref(pref, value, flush);
+    }
+
+    @Override 
+    public PrefWaiter addPrefsObserver(String[] prefNames, PrefHandlerBase handler) {
+        final PrefProxy proxy = new PrefProxy(handler, prefNames, mAsserter);
+        PrefsHelper.addObserver(prefNames, proxy);
+        return proxy;
+    }
+
+    @Override 
+    public void removePrefsObserver(PrefWaiter proxy) {
+        PrefsHelper.removeObserver((PrefProxy) proxy);
     }
 
     class PaintExpecter implements RepeatedEventExpecter {

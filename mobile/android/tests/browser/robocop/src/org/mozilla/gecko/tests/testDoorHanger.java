@@ -20,6 +20,8 @@ import org.mozilla.gecko.Actions;
 
 
 public class testDoorHanger extends BaseTest {
+    private boolean offlineAllowedByDefault = true;
+
     public void testDoorHanger() {
         String GEO_URL = getAbsoluteUrl(mStringHelper.ROBOCOP_GEOLOCATION_URL);
         String BLANK_URL = getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_01_URL);
@@ -62,38 +64,17 @@ public class testDoorHanger extends BaseTest {
 
 
 
-        boolean offlineAllowedByDefault = true;
         
-        final String[] prefNames = { "offline-apps.allow_by_default" };
-        final int ourRequestId = 0x7357;
-        final Actions.RepeatedEventExpecter eventExpecter = mActions.expectGeckoEvent("Preferences:Data");
-        mActions.sendPreferencesGetEvent(ourRequestId, prefNames);
-        try {
-            JSONObject data = null;
-            int requestId = -1;
-
-            
-            while (requestId != ourRequestId) {
-                data = new JSONObject(eventExpecter.blockForEventData());
-                requestId = data.getInt("requestId");
+        mActions.getPrefs(new String[] { "offline-apps.allow_by_default" },
+                          new Actions.PrefHandlerBase() {
+            @Override 
+            public void prefValue(String pref, boolean value) {
+                mAsserter.is(pref, "offline-apps.allow_by_default", "Expecting correct pref name");
+                offlineAllowedByDefault = value;
             }
-            eventExpecter.unregisterListener();
+        }).waitForFinish();
 
-            JSONArray preferences = data.getJSONArray("preferences");
-            if (preferences.length() > 0) {
-                JSONObject pref = (JSONObject) preferences.get(0);
-                offlineAllowedByDefault = pref.getBoolean("value");
-            }
-
-            
-            JSONObject jsonPref = new JSONObject();
-            jsonPref.put("name", "offline-apps.allow_by_default");
-            jsonPref.put("type", "bool");
-            jsonPref.put("value", false);
-            setPreferenceAndWaitForChange(jsonPref);
-        } catch (JSONException e) {
-            mAsserter.ok(false, "exception getting preference", e.toString());
-        }
+        setPreferenceAndWaitForChange("offline-apps.allow_by_default", false);
 
         
         loadUrlAndWait(OFFLINE_STORAGE_URL);
@@ -117,16 +98,8 @@ public class testDoorHanger extends BaseTest {
         loadUrlAndWait(OFFLINE_STORAGE_URL);
         mAsserter.is(mSolo.searchText(mStringHelper.OFFLINE_MESSAGE), false, "Offline storage doorhanger is no longer triggered");
 
-        try {
-            
-            JSONObject jsonPref = new JSONObject();
-            jsonPref.put("name", "offline-apps.allow_by_default");
-            jsonPref.put("type", "bool");
-            jsonPref.put("value", offlineAllowedByDefault);
-            setPreferenceAndWaitForChange(jsonPref);
-        } catch (JSONException e) {
-            mAsserter.ok(false, "exception setting preference", e.toString());
-        }
+        
+        setPreferenceAndWaitForChange("offline-apps.allow_by_default", offlineAllowedByDefault);
 
         
         loadUrlAndWait(getAbsoluteUrl(mStringHelper.ROBOCOP_LOGIN_01_URL));
@@ -152,15 +125,7 @@ public class testDoorHanger extends BaseTest {
     private void testPopupBlocking() {
         String POPUP_URL = getAbsoluteUrl(mStringHelper.ROBOCOP_POPUP_URL);
 
-        try {
-            JSONObject jsonPref = new JSONObject();
-            jsonPref.put("name", "dom.disable_open_during_load");
-            jsonPref.put("type", "bool");
-            jsonPref.put("value", true);
-            setPreferenceAndWaitForChange(jsonPref);
-        } catch (JSONException e) {
-            mAsserter.ok(false, "exception setting preference", e.toString());
-        }
+        setPreferenceAndWaitForChange("dom.disable_open_during_load", true);
 
         
         loadUrlAndWait(POPUP_URL);
@@ -204,15 +169,7 @@ public class testDoorHanger extends BaseTest {
         
         verifyUrl(POPUP_URL);
 
-        try {
-            JSONObject jsonPref = new JSONObject();
-            jsonPref.put("name", "dom.disable_open_during_load");
-            jsonPref.put("type", "bool");
-            jsonPref.put("value", false);
-            setPreferenceAndWaitForChange(jsonPref);
-        } catch (JSONException e) {
-            mAsserter.ok(false, "exception setting preference", e.toString());
-        }
+        setPreferenceAndWaitForChange("dom.disable_open_during_load", false);
     }
 
     
