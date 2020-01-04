@@ -32,19 +32,19 @@ import static org.junit.Assert.*;
 
 
 @RunWith(TestRunner.class)
-public class TestJSONFilePingStore {
+public class TestTelemetryJSONFilePingStore {
 
     private final Pattern ID_PATTERN = Pattern.compile("[^0-9]*([0-9]+)[^0-9]*");
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
     private File testDir;
-    private JSONFilePingStore testStore;
+    private TelemetryJSONFilePingStore testStore;
 
     @Before
     public void setUp() throws Exception {
         testDir = tempDir.newFolder();
-        testStore = new JSONFilePingStore(testDir);
+        testStore = new TelemetryJSONFilePingStore(testDir);
     }
 
     private ExtendedJSONObject generateTelemetryPayload() {
@@ -84,8 +84,8 @@ public class TestJSONFilePingStore {
         final String filename = testDir.list()[0];
         assertTrue("Filename contains expected ID", filename.contains(Integer.toString(expectedID)));
         final JSONObject actual = FileUtils.readJSONObjectFromFile(new File(testDir, filename));
-        assertEquals("Ping url paths are equal", expectedPing.getURLPath(), actual.getString(JSONFilePingStore.KEY_URL_PATH));
-        assertIsGeneratedPayload(new ExtendedJSONObject(actual.getString(JSONFilePingStore.KEY_PAYLOAD)));
+        assertEquals("Ping url paths are equal", expectedPing.getURLPath(), actual.getString(TelemetryJSONFilePingStore.KEY_URL_PATH));
+        assertIsGeneratedPayload(new ExtendedJSONObject(actual.getString(TelemetryJSONFilePingStore.KEY_PAYLOAD)));
     }
 
     @Test
@@ -126,7 +126,7 @@ public class TestJSONFilePingStore {
 
     @Test
     public void testMaybePrunePingsDoesNothingIfAtMax() throws Exception {
-        final int pingCount = JSONFilePingStore.MAX_PING_COUNT;
+        final int pingCount = TelemetryJSONFilePingStore.MAX_PING_COUNT;
         writeTestPingsToStore(pingCount, "whatever");
         assertStoreFileCount(pingCount);
         testStore.maybePrunePings();
@@ -135,13 +135,13 @@ public class TestJSONFilePingStore {
 
     @Test
     public void testMaybePrunePingsPrunesIfAboveMax() throws Exception {
-        final int pingCount = JSONFilePingStore.MAX_PING_COUNT + 1;
+        final int pingCount = TelemetryJSONFilePingStore.MAX_PING_COUNT + 1;
         writeTestPingsToStore(pingCount, "whatever");
         assertStoreFileCount(pingCount);
         testStore.maybePrunePings();
-        assertStoreFileCount(JSONFilePingStore.MAX_PING_COUNT);
+        assertStoreFileCount(TelemetryJSONFilePingStore.MAX_PING_COUNT);
 
-        final HashSet<Integer> existingIDs = new HashSet<>(JSONFilePingStore.MAX_PING_COUNT);
+        final HashSet<Integer> existingIDs = new HashSet<>(TelemetryJSONFilePingStore.MAX_PING_COUNT);
         for (final String filename : testDir.list()) {
             existingIDs.add(getIDFromFilename(filename));
         }
@@ -175,7 +175,7 @@ public class TestJSONFilePingStore {
     public void testGetIDFromFilename() throws Exception {
         final int expectedID = 465739201;
         final File file = testStore.getPingFile(expectedID);
-        assertEquals("Retrieved ID from filename", expectedID, JSONFilePingStore.getIDFromFilename(file.getName()));
+        assertEquals("Retrieved ID from filename", expectedID, TelemetryJSONFilePingStore.getIDFromFilename(file.getName()));
     }
 
     private int getIDFromFilename(final String filename) {
@@ -195,8 +195,8 @@ public class TestJSONFilePingStore {
     private void writeTestPingsToStore(final int count, final String urlPrefix) throws Exception {
         for (int i = 1; i <= count; ++i) {
             final JSONObject obj = new JSONObject()
-                    .put(JSONFilePingStore.KEY_URL_PATH, urlPrefix + i)
-                    .put(JSONFilePingStore.KEY_PAYLOAD, generateTelemetryPayload());
+                    .put(TelemetryJSONFilePingStore.KEY_URL_PATH, urlPrefix + i)
+                    .put(TelemetryJSONFilePingStore.KEY_PAYLOAD, generateTelemetryPayload());
             FileUtils.writeJSONObjectToFile(testStore.getPingFile(i), obj);
         }
     }
