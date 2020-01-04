@@ -526,7 +526,7 @@ private:
   webrtc::VoiceEngine* mVoiceEngine;
   RefPtr<mozilla::AudioInput> mAudioInput;
   bool mAudioEngineInit;
-  bool mFullDuplex;
+
   bool mHasTabVideoSource;
 
   

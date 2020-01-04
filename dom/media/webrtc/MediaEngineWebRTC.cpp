@@ -51,8 +51,7 @@ MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
   : mMutex("mozilla::MediaEngineWebRTC"),
     mVoiceEngine(nullptr),
     mAudioInput(nullptr),
-    mAudioEngineInit(false),
-    mFullDuplex(aPrefs.mFullDuplex)
+    mAudioEngineInit(false)
 {
 #ifndef MOZ_B2G_CAMERA
   nsCOMPtr<nsIComponentRegistrar> compMgr;
@@ -288,8 +287,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
   }
 
   if (!mAudioInput) {
-    if (mFullDuplex) {
-      
+    if (true ) {
       mAudioInput = new mozilla::AudioInputCubeb(mVoiceEngine);
     } else {
       mAudioInput = new mozilla::AudioInputWebRTC(mVoiceEngine);
@@ -332,9 +330,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
       aASources->AppendElement(aSource.get());
     } else {
       AudioInput* audioinput = mAudioInput;
-      if (mFullDuplex) {
-        
-
+      if (true ) {
         
         
         
