@@ -400,7 +400,7 @@ AddonSearchResult.prototype = {
 
 
 
-  isCompatibleWith: function(aAppVerison, aPlatformVersion) {
+  isCompatibleWith: function(aAppVersion, aPlatformVersion) {
     return true;
   },
 
