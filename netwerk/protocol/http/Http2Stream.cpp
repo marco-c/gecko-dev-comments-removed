@@ -82,7 +82,8 @@ Http2Stream::Http2Stream(nsAHttpTransaction *httpTransaction,
 
   mTxInlineFrame = MakeUnique<uint8_t[]>(mTxInlineFrameSize);
 
-  PR_STATIC_ASSERT(nsISupportsPriority::PRIORITY_LOWEST <= kNormalPriority);
+  static_assert(nsISupportsPriority::PRIORITY_LOWEST <= kNormalPriority,
+                "Lowest Priority should be less than kNormalPriority");
 
   
   

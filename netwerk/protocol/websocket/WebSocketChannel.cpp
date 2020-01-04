@@ -2183,7 +2183,7 @@ WebSocketChannel::PrimeNewOutgoingMessage()
     
     do {
       uint8_t *buffer;
-      PR_STATIC_ASSERT(4 == sizeof(mask));
+      static_assert(4 == sizeof(mask), "Size of the mask should be equal to 4");
       nsresult rv = mRandomGenerator->GenerateRandomBytes(sizeof(mask),
                                                           &buffer);
       if (NS_FAILED(rv)) {

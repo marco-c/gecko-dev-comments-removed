@@ -850,8 +850,7 @@ gfxFontEntry::HasGraphiteSpaceContextuals()
 
 #define FEATURE_SCRIPT_MASK 0x000000ff // script index replaces low byte of tag
 
-
-PR_STATIC_ASSERT(int(Script::NUM_SCRIPT_CODES) <= FEATURE_SCRIPT_MASK);
+static_assert(int(Script::NUM_SCRIPT_CODES) <= FEATURE_SCRIPT_MASK, "Too many script codes");
 
 
 #define SCRIPT_FEATURE(s,tag) (((~FEATURE_SCRIPT_MASK) & (tag)) | \

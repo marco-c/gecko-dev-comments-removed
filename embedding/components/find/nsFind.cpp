@@ -49,7 +49,7 @@ static NS_DEFINE_CID(kCPreContentIteratorCID, NS_PRECONTENTITERATOR_CID);
 
 
 
-PR_STATIC_ASSERT(CH_SHY <= 255);
+static_assert(CH_SHY <= 255, "CH_SHY is not an ascii character");
 
 
 

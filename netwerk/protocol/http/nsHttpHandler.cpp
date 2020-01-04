@@ -597,7 +597,7 @@ nsHttpHandler::Get32BitsOfPseudoRandom()
     
     
 
-    PR_STATIC_ASSERT(RAND_MAX >= 0xfff);
+    static_assert(RAND_MAX >= 0xfff, "RAND_MAX should be >= 12 bits");
 
 #if RAND_MAX < 0xffffU
     return ((uint16_t) rand() << 20) |
