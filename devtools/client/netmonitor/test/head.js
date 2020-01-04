@@ -254,7 +254,8 @@ function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
     let url = networkInfo.request.url;
     updateProgressForURL(url, event);
 
-    info("> Current state: " + JSON.stringify(progress, null, 2));
+    
+    
 
     
     
