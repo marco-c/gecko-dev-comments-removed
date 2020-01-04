@@ -133,7 +133,7 @@ MessagePortParent::ActorDestroy(ActorDestroyReason aWhy)
     
     
     RefPtr<MessagePortService> kungFuDeathGrip = mService;
-    mService->ParentDestroy(this);
+    kungFuDeathGrip->ParentDestroy(this);
   }
 }
 

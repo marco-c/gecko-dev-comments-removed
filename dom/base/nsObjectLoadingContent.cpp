@@ -3038,6 +3038,7 @@ nsObjectLoadingContent::SyncStartPluginInstance()
   }
 
   nsCOMPtr<nsIURI> kungFuURIGrip(mURI);
+  mozilla::Unused << kungFuURIGrip; 
   nsCString contentType(mContentType);
   return InstantiatePluginInstance();
 }

@@ -2106,7 +2106,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
             !StringBeginsWith(newValue, currentValue)) {
           
           currentLength = 0;
-          mSelCon->SelectAll();
+          kungFuDeathGrip->SelectAll();
         } else {
           
           mBoundFrame->SelectAllOrCollapseToEndOfText(false);

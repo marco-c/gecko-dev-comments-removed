@@ -1601,8 +1601,8 @@ IMEStateManager::CreateIMEContentObserver(nsIEditor* aEditor)
   
   
   
-  RefPtr<IMEContentObserver> kungFuDeathGrip(sActiveIMEContentObserver);
-  sActiveIMEContentObserver->Init(widget, sPresContext, sContent, aEditor);
+  RefPtr<IMEContentObserver> activeIMEContentObserver(sActiveIMEContentObserver);
+  activeIMEContentObserver->Init(widget, sPresContext, sContent, aEditor);
 }
 
 

@@ -47,7 +47,7 @@ static const nsAttrValue::EnumTable kButtonTypeTable[] = {
   { "button", NS_FORM_BUTTON_BUTTON },
   { "reset", NS_FORM_BUTTON_RESET },
   { "submit", NS_FORM_BUTTON_SUBMIT },
-  { nullptr, 0 }
+  { 0 }
 };
 
 
@@ -386,7 +386,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           
           
           RefPtr<HTMLFormElement> form(mForm);
-          presShell->HandleDOMEventWithTarget(mForm, &event, &status);
+          presShell->HandleDOMEventWithTarget(form, &event, &status);
           aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
         }
       }

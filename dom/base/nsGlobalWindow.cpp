@@ -449,7 +449,8 @@ nsGlobalWindow::DOMMinTimeoutValue() const {
       if (mIsClosed) {                                                        \
         return err_rval;                                                      \
       }                                                                       \
-      nsCOMPtr<nsIDocument> doc = GetDoc();                                   \
+      nsCOMPtr<nsIDocument> kungFuDeathGrip = GetDoc();                       \
+      ::mozilla::Unused << kungFuDeathGrip;                                   \
       if (!mInnerWindow) {                                                    \
         return err_rval;                                                      \
       }                                                                       \
@@ -2868,7 +2869,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
 
       
       JS::Rooted<JSObject*> obj(cx, newInnerGlobal);
-      rv = mContext->InitClasses(obj);
+      rv = kungFuDeathGrip->InitClasses(obj);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -2891,7 +2892,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
   }
 
   nsJSContext::PokeGC(JS::gcreason::SET_NEW_DOCUMENT);
-  mContext->DidInitializeContext();
+  kungFuDeathGrip->DidInitializeContext();
 
   
   
@@ -3434,7 +3435,10 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
 
   nsCOMPtr<nsIDOMEventTarget> kungFuDeathGrip1(mChromeEventHandler);
+  mozilla::Unused << kungFuDeathGrip1; 
   nsCOMPtr<nsIScriptContext> kungFuDeathGrip2(GetContextInternal());
+  mozilla::Unused << kungFuDeathGrip2; 
+
 
   if (aVisitor.mEvent->mMessage == eResize) {
     mIsHandlingResizeEvent = false;
@@ -3604,6 +3608,7 @@ nsPIDOMWindow<T>::MaybeCreateDoc()
     
     
     nsCOMPtr<nsIDocument> document = docShell->GetDocument();
+    Unused << document;
   }
 }
 
@@ -11866,6 +11871,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
       
       nsCOMPtr<nsIDocument> doc = (*aReturn)->GetDoc();
+      Unused << doc;
     }
   }
 

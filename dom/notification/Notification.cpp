@@ -2528,7 +2528,7 @@ NotificationWorkerHolder::Notify(Status aStatus)
 
     
     RefPtr<CloseNotificationRunnable> r =
-      new CloseNotificationRunnable(mNotification);
+      new CloseNotificationRunnable(kungFuDeathGrip);
     ErrorResult rv;
     r->Dispatch(rv);
     
@@ -2540,7 +2540,7 @@ NotificationWorkerHolder::Notify(Status aStatus)
     
     
     if (r->HadObserver()) {
-      mNotification->ReleaseObject();
+      kungFuDeathGrip->ReleaseObject();
     }
 
     

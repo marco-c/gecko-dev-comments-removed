@@ -207,6 +207,7 @@ void
 NodeInfo::DeleteCycleCollectable()
 {
   RefPtr<nsNodeInfoManager> kungFuDeathGrip = mOwnerManager;
+  mozilla::Unused << kungFuDeathGrip; 
   delete this;
 }
 

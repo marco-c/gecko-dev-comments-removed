@@ -1500,10 +1500,10 @@ BackgroundFactoryRequestChild::RecvBlocked(const uint64_t& aCurrentVersion)
   IDB_LOG_MARK("IndexedDB %s: Child  Request[%llu]: Firing \"blocked\" event",
                "IndexedDB %s: C R[%llu]: \"blocked\"",
                IDB_LOG_ID_STRING(),
-               mRequest->LoggingSerialNumber());
+               kungFuDeathGrip->LoggingSerialNumber());
 
   bool dummy;
-  if (NS_FAILED(mRequest->DispatchEvent(blockedEvent, &dummy))) {
+  if (NS_FAILED(kungFuDeathGrip->DispatchEvent(blockedEvent, &dummy))) {
     NS_WARNING("Failed to dispatch event!");
   }
 
@@ -1793,7 +1793,7 @@ BackgroundDatabaseChild::RecvVersionChange(const uint64_t& aOldVersion,
   RefPtr<IDBDatabase> kungFuDeathGrip = mDatabase;
 
   
-  if (nsPIDOMWindowInner* owner = mDatabase->GetOwner()) {
+  if (nsPIDOMWindowInner* owner = kungFuDeathGrip->GetOwner()) {
     
     bool shouldAbortAndClose = owner->IsFrozen();
 
@@ -1809,8 +1809,8 @@ BackgroundDatabaseChild::RecvVersionChange(const uint64_t& aOldVersion,
     if (shouldAbortAndClose) {
       
       
-      mDatabase->AbortTransactions( false);
-      mDatabase->Close();
+      kungFuDeathGrip->AbortTransactions( false);
+      kungFuDeathGrip->Close();
       return true;
     }
   }
@@ -1823,13 +1823,13 @@ BackgroundDatabaseChild::RecvVersionChange(const uint64_t& aOldVersion,
   switch (aNewVersion.type()) {
     case NullableVersion::Tnull_t:
       versionChangeEvent =
-        IDBVersionChangeEvent::Create(mDatabase, type, aOldVersion);
+        IDBVersionChangeEvent::Create(kungFuDeathGrip, type, aOldVersion);
       MOZ_ASSERT(versionChangeEvent);
       break;
 
     case NullableVersion::Tuint64_t:
       versionChangeEvent =
-        IDBVersionChangeEvent::Create(mDatabase,
+        IDBVersionChangeEvent::Create(kungFuDeathGrip,
                                       type,
                                       aOldVersion,
                                       aNewVersion.get_uint64_t());
@@ -1845,11 +1845,11 @@ BackgroundDatabaseChild::RecvVersionChange(const uint64_t& aOldVersion,
                IDB_LOG_ID_STRING());
 
   bool dummy;
-  if (NS_FAILED(mDatabase->DispatchEvent(versionChangeEvent, &dummy))) {
+  if (NS_FAILED(kungFuDeathGrip->DispatchEvent(versionChangeEvent, &dummy))) {
     NS_WARNING("Failed to dispatch event!");
   }
 
-  if (!mDatabase->IsClosed()) {
+  if (!kungFuDeathGrip->IsClosed()) {
     SendBlocked();
   }
 

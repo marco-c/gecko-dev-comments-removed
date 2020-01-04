@@ -424,9 +424,9 @@ nsSMILAnimationController::DoSample(bool aSkipUnchangedContainers)
     return;
   }
 
-  nsCOMPtr<nsIDocument> kungFuDeathGrip(mDocument);  
+  nsCOMPtr<nsIDocument> document(mDocument);  
   if (isStyleFlushNeeded) {
-    mDocument->FlushPendingNotifications(Flush_Style);
+    document->FlushPendingNotifications(Flush_Style);
   }
 
   
