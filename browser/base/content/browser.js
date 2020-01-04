@@ -6615,22 +6615,10 @@ var gIdentityHandler = {
   updateIdentity(state, uri) {
     let shouldHidePopup = this._uri && (this._uri.spec != uri.spec);
     this._state = state;
-    this._uri = uri;
-    this._isURILoadedFromFile = this.isURILoadedFromFile();
 
     
     
-
-    try {
-      this._uri.host;
-      this._uriHasHost = true;
-    } catch (ex) {
-      this._uriHasHost = false;
-    }
-
-    let whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
-    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.path);
-
+    this.setURI(uri);
     this._sslStatus = gBrowser.securityUI
                               .QueryInterface(Ci.nsISSLStatusProvider)
                               .SSLStatus;
@@ -6970,9 +6958,22 @@ var gIdentityHandler = {
     this.updateSitePermissions();
   },
 
-  isURILoadedFromFile() {
+  setURI(uri) {
+    this._uri = uri;
+
+    try {
+      this._uri.host;
+      this._uriHasHost = true;
+    } catch (ex) {
+      this._uriHasHost = false;
+    }
+
+    let whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
+    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.path);
+
     
     
+    this._isURILoadedFromFile = false;
     let chanOptions = {uri: this._uri, loadUsingSystemPrincipal: true};
     let resolvedURI;
     try {
@@ -6982,13 +6983,11 @@ var gIdentityHandler = {
         
         resolvedURI = NetUtil.newURI(resolvedURI.path);
       }
+      
+      this._isURILoadedFromFile = resolvedURI.schemeIs("file");
     } catch (ex) {
       
-      return false;
     }
-
-    
-    return resolvedURI.schemeIs("file");
   },
 
   
