@@ -10,9 +10,13 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include "jscompartment.h"
+#ifdef JS_DISASM_ARM
+#include "jsprf.h"
+#endif
 #include "jsutil.h"
 
 #include "gc/Marking.h"
+#include "jit/arm/disasm/Disasm-arm.h"
 #include "jit/arm/MacroAssembler-arm.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/JitCompartment.h"
@@ -1405,18 +1409,253 @@ Assembler::bytesNeeded() const
         preBarrierTableBytes();
 }
 
+#ifdef JS_DISASM_ARM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+Assembler::spew(Instruction* i)
+{
+    if (spewDisabled())
+        return;
+    disasm::NameConverter converter;
+    disasm::Disassembler dasm(converter);
+    disasm::EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+    uint8_t* loc = reinterpret_cast<uint8_t*>(const_cast<uint32_t*>(i->raw()));
+    dasm.InstructionDecode(buffer, loc);
+    spew("   %08x  %s", reinterpret_cast<uint32_t>(loc), buffer.start());
+}
+
+void
+Assembler::spewTarget(Label* target)
+{
+    if (spewDisabled())
+        return;
+    spew("                        -> %d%s", spewResolve(target), !target->bound() ? "f" : "");
+}
+
+
+
+
+
+
+void
+Assembler::spewBranch(Instruction* i, Label* target )
+{
+    if (spewDisabled())
+        return;
+    disasm::NameConverter converter;
+    disasm::Disassembler dasm(converter);
+    disasm::EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+    uint8_t* loc = reinterpret_cast<uint8_t*>(const_cast<uint32_t*>(i->raw()));
+    dasm.InstructionDecode(buffer, loc);
+    char labelBuf[128];
+    labelBuf[0] = 0;
+    if (!target)
+        JS_snprintf(labelBuf, sizeof(labelBuf), "  -> (link-time target)");
+    if (InstBranchImm::IsTHIS(*i)) {
+        InstBranchImm* bimm = InstBranchImm::AsTHIS(*i);
+        BOffImm destOff;
+        bimm->extractImm(&destOff);
+        if (destOff.isInvalid() || target) {
+            
+            
+            
+            
+            
+            
+            int i;
+            for ( i=8 ; i < buffer.length() && buffer[i] == ' ' ; i++ )
+                ;
+            for ( ; i < buffer.length() && buffer[i] != ' ' ; i++ )
+                ;
+            buffer[i] = 0;
+            if (target) {
+                JS_snprintf(labelBuf, sizeof(labelBuf), "  -> %d%s", spewResolve(target),
+                            !target->bound() ? "f" : "");
+                target = nullptr;
+            }
+        }
+    }
+    spew("   %08x  %s%s", reinterpret_cast<uint32_t>(loc), buffer.start(), labelBuf);
+    if (target)
+        spewTarget(target);
+}
+
+void
+Assembler::spewLabel(Label* l)
+{
+    if (spewDisabled())
+        return;
+    spew("                        %d:", spewResolve(l));
+}
+
+void
+Assembler::spewRetarget(Label* label, Label* target)
+{
+    if (spewDisabled())
+        return;
+    spew("                        %d: .retarget -> %d%s",
+         spewResolve(label), spewResolve(target), !target->bound() ? "f" : "");
+}
+
+void
+Assembler::spewData(BufferOffset addr, size_t numInstr, bool loadToPC)
+{
+    if (spewDisabled())
+        return;
+    uint32_t *instr = reinterpret_cast<uint32_t*>(m_buffer.getInst(addr));
+    for ( size_t k=0 ; k < numInstr ; k++ ) {
+        spew("   %08x  %08x       (patchable constant load%s)",
+             reinterpret_cast<uint32_t>(instr+k), *(instr+k), loadToPC ? " to PC" : "");
+    }
+}
+
+bool
+Assembler::spewDisabled()
+{
+    return !JitSpewEnabled(JitSpew_Codegen);
+}
+
+void
+Assembler::spew(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    spew(fmt, args);
+    va_end(args);
+}
+
+void
+Assembler::spew(const char* fmt, va_list va)
+{
+    js::jit::JitSpewVA(js::jit::JitSpew_Codegen, fmt, va);
+}
+
+uint32_t
+Assembler::spewResolve(Label* l)
+{
+    
+    
+    
+    
+    return l->used() || l->bound() ? spewProbe(l) : spewDefine(l);
+}
+
+uint32_t
+Assembler::spewProbe(Label* l)
+{
+    uint32_t key = reinterpret_cast<uint32_t>(l);
+    uint32_t value = 0;
+    spewNodes_.lookup(key, &value);
+    return value;
+}
+
+uint32_t
+Assembler::spewDefine(Label* l)
+{
+    uint32_t key = reinterpret_cast<uint32_t>(l);
+    spewNodes_.remove(key);
+    uint32_t value = spewNext_++;
+    if (!spewNodes_.add(key, value))
+        return 0;
+    return value;
+}
+
+Assembler::SpewNodes::~SpewNodes()
+{
+    Node* p = nodes;
+    while (p) {
+        Node* victim = p;
+        p = p->next;
+        js_free(victim);
+    }
+}
+
+bool
+Assembler::SpewNodes::lookup(uint32_t key, uint32_t* value)
+{
+    for ( Node* p = nodes ; p ; p = p->next ) {
+        if (p->key == key) {
+            *value = p->value;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool
+Assembler::SpewNodes::add(uint32_t key, uint32_t value)
+{
+    Node* node = (Node*)js_malloc(sizeof(Node));
+    if (!node)
+        return false;
+    node->key = key;
+    node->value = value;
+    node->next = nodes;
+    nodes = node;
+    return true;
+}
+
+bool
+Assembler::SpewNodes::remove(uint32_t key)
+{
+    for ( Node* p = nodes, *pp = nullptr ; p ; pp = p, p = p->next ) {
+        if (p->key == key) {
+            if (pp)
+                pp->next = p->next;
+            else
+                nodes = p->next;
+            js_free(p);
+            return true;
+        }
+    }
+    return false;
+}
+
+#endif 
+
 
 BufferOffset
 Assembler::writeInst(uint32_t x)
 {
-    return m_buffer.putInt(x);
+    BufferOffset offs = m_buffer.putInt(x);
+#ifdef JS_DISASM_ARM
+    spew(m_buffer.getInst(offs));
+#endif
+    return offs;
 }
 
 BufferOffset
-Assembler::writeBranchInst(uint32_t x)
+Assembler::writeBranchInst(uint32_t x, Label* documentation)
 {
-    return m_buffer.putInt(x,  true);
+    BufferOffset offs = m_buffer.putInt(x,  true);
+#ifdef JS_DISASM_ARM
+    spewBranch(m_buffer.getInst(offs), documentation);
+#endif
+    return offs;
 }
+
+
+
+
+BufferOffset
+Assembler::allocBranchInst()
+{
+    return m_buffer.putInt(Always | InstNOP::NopInst,  true);
+}
+
 void
 Assembler::WriteInstStatic(uint32_t x, uint32_t* dest)
 {
@@ -1867,12 +2106,34 @@ Assembler::as_dtm(LoadStore ls, Register rn, uint32_t mask,
     return writeInst(0x08000000 | RN(rn) | ls | mode | mask | c | wb);
 }
 
+
+
+
+
+
+BufferOffset
+Assembler::allocEntry(size_t numInst, unsigned numPoolEntries,
+                      uint8_t* inst, uint8_t* data, ARMBuffer::PoolEntry* pe,
+                      bool markAsBranch, bool loadToPC)
+{
+    BufferOffset offs = m_buffer.allocEntry(numInst, numPoolEntries, inst, data, pe, markAsBranch);
+#ifdef JS_DISASM_ARM
+    spewData(offs, numInst, loadToPC);
+#endif
+    return offs;
+}
+
+
+
+
 BufferOffset
 Assembler::as_Imm32Pool(Register dest, uint32_t value, Condition c)
 {
     PoolHintPun php;
     php.phd.init(0, c, PoolHintData::PoolDTR, dest);
-    return m_buffer.allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value);
+    BufferOffset offs = allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value, nullptr, false,
+                                   dest == pc);
+    return offs;
 }
 
  void
@@ -1891,12 +2152,13 @@ Assembler::WritePoolEntry(Instruction* addr, Condition c, uint32_t data)
 }
 
 BufferOffset
-Assembler::as_BranchPool(uint32_t value, RepatchLabel* label, ARMBuffer::PoolEntry* pe, Condition c)
+Assembler::as_BranchPool(uint32_t value, RepatchLabel* label, ARMBuffer::PoolEntry* pe, Condition c,
+                         Label* documentation)
 {
     PoolHintPun php;
     php.phd.init(0, c, PoolHintData::PoolBranch, pc);
-    BufferOffset ret = m_buffer.allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value, pe,
-                                            true);
+    BufferOffset ret = allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value, pe,
+                                   true,  true);
     
     
     if (label->bound()) {
@@ -1905,6 +2167,10 @@ Assembler::as_BranchPool(uint32_t value, RepatchLabel* label, ARMBuffer::PoolEnt
     } else {
         label->use(ret.getOffset());
     }
+#ifdef JS_DISASM_ARM
+    if (documentation)
+        spewTarget(documentation);
+#endif
     return ret;
 }
 
@@ -1914,7 +2180,7 @@ Assembler::as_FImm64Pool(VFPRegister dest, double value, Condition c)
     MOZ_ASSERT(dest.isDouble());
     PoolHintPun php;
     php.phd.init(0, c, PoolHintData::PoolVDTR, dest);
-    return m_buffer.allocEntry(1, 2, (uint8_t*)&php.raw, (uint8_t*)&value);
+    return allocEntry(1, 2, (uint8_t*)&php.raw, (uint8_t*)&value);
 }
 
 BufferOffset
@@ -1926,7 +2192,7 @@ Assembler::as_FImm32Pool(VFPRegister dest, float value, Condition c)
     MOZ_ASSERT(dest.isSingle());
     PoolHintPun php;
     php.phd.init(0, c, PoolHintData::PoolVDTR, dest);
-    return m_buffer.allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value);
+    return allocEntry(1, 1, (uint8_t*)&php.raw, (uint8_t*)&value);
 }
 
 
@@ -2086,9 +2352,9 @@ Assembler::WritePoolGuard(BufferOffset branch, Instruction* dest, BufferOffset a
 
 
 BufferOffset
-Assembler::as_b(BOffImm off, Condition c)
+Assembler::as_b(BOffImm off, Condition c, Label* documentation)
 {
-    BufferOffset ret = writeBranchInst(((int)c) | OpB | off.encode());
+    BufferOffset ret = writeBranchInst(((int)c) | OpB | off.encode(), documentation);
     return ret;
 }
 
@@ -2102,8 +2368,11 @@ Assembler::as_b(Label* l, Condition c)
 
     if (l->bound()) {
         
-        BufferOffset ret = writeBranchInst(Always | InstNOP::NopInst);
+        BufferOffset ret = allocBranchInst();
         as_b(BufferOffset(l).diffB<BOffImm>(ret), c, ret);
+#ifdef JS_DISASM_ARM
+        spewBranch(m_buffer.getInst(ret), l);
+#endif
         return ret;
     }
 
@@ -2117,11 +2386,11 @@ Assembler::as_b(Label* l, Condition c)
             m_buffer.fail_bail();
             return ret;
         }
-        ret = as_b(BOffImm(old), c);
+        ret = as_b(BOffImm(old), c, l);
     } else {
         old = LabelBase::INVALID_OFFSET;
         BOffImm inv;
-        ret = as_b(inv, c);
+        ret = as_b(inv, c, l);
     }
     DebugOnly<int32_t> check = l->use(ret.getOffset());
     MOZ_ASSERT(check == old);
@@ -2131,6 +2400,8 @@ Assembler::as_b(Label* l, Condition c)
 BufferOffset
 Assembler::as_b(BOffImm off, Condition c, BufferOffset inst)
 {
+    
+    
     *editSrc(inst) = InstBImm(off, c);
     return inst;
 }
@@ -2149,9 +2420,9 @@ Assembler::as_blx(Register r, Condition c)
 
 
 BufferOffset
-Assembler::as_bl(BOffImm off, Condition c)
+Assembler::as_bl(BOffImm off, Condition c, Label* documentation)
 {
-    return writeBranchInst(((int)c) | OpBl | off.encode());
+    return writeBranchInst(((int)c) | OpBl | off.encode(), documentation);
 }
 
 BufferOffset
@@ -2164,8 +2435,11 @@ Assembler::as_bl(Label* l, Condition c)
 
     if (l->bound()) {
         
-        BufferOffset ret = writeBranchInst(Always | InstNOP::NopInst);
+        BufferOffset ret = allocBranchInst();
         as_bl(BufferOffset(l).diffB<BOffImm>(ret), c, ret);
+#ifdef JS_DISASM_ARM
+        spewBranch(m_buffer.getInst(ret), l);
+#endif
         return ret;
     }
 
@@ -2180,11 +2454,11 @@ Assembler::as_bl(Label* l, Condition c)
             m_buffer.fail_bail();
             return ret;
         }
-        ret = as_bl(BOffImm(old), c);
+        ret = as_bl(BOffImm(old), c, l);
     } else {
         old = LabelBase::INVALID_OFFSET;
         BOffImm inv;
-        ret = as_bl(inv, c);
+        ret = as_bl(inv, c, l);
     }
     DebugOnly<int32_t> check = l->use(ret.getOffset());
     MOZ_ASSERT(check == old);
@@ -2508,6 +2782,9 @@ Assembler::nextLink(BufferOffset b, BufferOffset* next)
 void
 Assembler::bind(Label* label, BufferOffset boff)
 {
+#ifdef JS_DISASM_ARM
+    spewLabel(label);
+#endif
     if (label->used()) {
         bool more;
         
@@ -2535,6 +2812,9 @@ Assembler::bind(Label* label, BufferOffset boff)
 void
 Assembler::bind(RepatchLabel* label)
 {
+    
+    
+    
     BufferOffset dest = nextOffset();
     if (label->used()) {
         
@@ -2558,6 +2838,9 @@ Assembler::bind(RepatchLabel* label)
 void
 Assembler::retarget(Label* label, Label* target)
 {
+#ifdef JS_DISASM_ARM
+    spewRetarget(label, target);
+#endif
     if (label->used()) {
         if (target->bound()) {
             bind(label, BufferOffset(target));

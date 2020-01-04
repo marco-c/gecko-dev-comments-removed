@@ -1228,13 +1228,24 @@ class Assembler : public AssemblerShared
     }
 
   protected:
-    BufferOffset labelOffset (Label* l) {
-        return BufferOffset(l->bound());
-    }
+    
+    BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
+                            uint8_t* inst, uint8_t* data, ARMBuffer::PoolEntry* pe = nullptr,
+                            bool markAsBranch = false, bool loadToPC = false);
 
     Instruction* editSrc (BufferOffset bo) {
         return m_buffer.getInst(bo);
     }
+
+#ifdef JS_DISASM_ARM
+    void spew(Instruction* i);
+    void spewBranch(Instruction* i, Label* target);
+    void spewData(BufferOffset addr, size_t numInstr, bool loadToPC);
+    void spewLabel(Label* label);
+    void spewRetarget(Label* label, Label* target);
+    void spewTarget(Label* l);
+#endif
+
   public:
     void resetCounter();
     uint32_t actualOffset(uint32_t) const;
@@ -1272,11 +1283,45 @@ class Assembler : public AssemblerShared
 
     ARMBuffer m_buffer;
 
+#ifdef JS_DISASM_ARM
+  private:
+    class SpewNodes {
+        struct Node {
+            uint32_t key;
+            uint32_t value;
+            Node* next;
+        };
+
+        Node* nodes;
+
+    public:
+        SpewNodes() : nodes(nullptr) {}
+        ~SpewNodes();
+
+        bool lookup(uint32_t key, uint32_t* value);
+        bool add(uint32_t key, uint32_t value);
+        bool remove(uint32_t key);
+    };
+
+    SpewNodes spewNodes_;
+    uint32_t spewNext_;
+
+    bool spewDisabled();
+    uint32_t spewResolve(Label* l);
+    uint32_t spewProbe(Label* l);
+    uint32_t spewDefine(Label* l);
+    void spew(const char* fmt, ...);
+    void spew(const char* fmt, va_list args);
+#endif
+
   public:
     
     
     Assembler()
       : m_buffer(1, 1, 8, GetPoolMaxOffset(), 8, 0xe320f000, 0xeaffffff, GetNopFill()),
+#ifdef JS_DISASM_ARM
+        spewNext_(1000),
+#endif
         isFinished(false),
         dtmActive(false),
         dtmCond(Always)
@@ -1374,7 +1419,12 @@ class Assembler : public AssemblerShared
     BufferOffset writeInst(uint32_t x);
 
     
-    BufferOffset writeBranchInst(uint32_t x);
+    BufferOffset writeBranchInst(uint32_t x, Label* documentation = nullptr);
+
+    
+    
+    
+    BufferOffset allocBranchInst();
 
     
     
@@ -1486,7 +1536,8 @@ class Assembler : public AssemblerShared
     BufferOffset as_Imm32Pool(Register dest, uint32_t value, Condition c = Always);
     
     BufferOffset as_BranchPool(uint32_t value, RepatchLabel* label,
-                               ARMBuffer::PoolEntry* pe = nullptr, Condition c = Always);
+                               ARMBuffer::PoolEntry* pe = nullptr, Condition c = Always,
+                               Label* documentation = nullptr);
 
     
     BufferOffset as_FImm64Pool(VFPRegister dest, double value, Condition c = Always);
@@ -1528,7 +1579,7 @@ class Assembler : public AssemblerShared
 
     
     
-    BufferOffset as_b(BOffImm off, Condition c);
+    BufferOffset as_b(BOffImm off, Condition c, Label* documentation = nullptr);
 
     BufferOffset as_b(Label* l, Condition c = Always);
     BufferOffset as_b(BOffImm off, Condition c, BufferOffset inst);
@@ -1540,7 +1591,7 @@ class Assembler : public AssemblerShared
     BufferOffset as_blx(Label* l);
 
     BufferOffset as_blx(Register r, Condition c = Always);
-    BufferOffset as_bl(BOffImm off, Condition c);
+    BufferOffset as_bl(BOffImm off, Condition c, Label* documentation = nullptr);
     
     
     BufferOffset as_bl();
