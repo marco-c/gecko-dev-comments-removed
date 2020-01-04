@@ -865,6 +865,8 @@ protected:
 private:
   
   NSString* mIMECompositionString;
+  
+  uint32_t mIMECompositionStart;
 
   NSRange mMarkedRange;
   NSRange mSelectedRange;
