@@ -7055,7 +7055,7 @@ GenerateEntry(ModuleValidator& m, unsigned exportIndex)
     
 #if defined(JS_CODEGEN_ARM)
     masm.push(lr);
-#elif defined(JS_CODEGEN_MIPS32)
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     masm.push(ra);
 #elif defined(JS_CODEGEN_X86)
     static const unsigned EntryFrameSize = sizeof(void*);
@@ -7070,7 +7070,7 @@ GenerateEntry(ModuleValidator& m, unsigned exportIndex)
     
     
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     masm.movePtr(IntArgReg1, GlobalReg);
     masm.addPtr(Imm32(AsmJSGlobalRegBias), GlobalReg);
 #endif
@@ -7384,7 +7384,7 @@ GenerateFFIInterpExit(ModuleValidator& m, const Signature& sig, unsigned exitInd
     return !masm.oom() && m.finishGeneratingInterpExit(exitIndex, &begin, &profilingReturn);
 }
 
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
 static const unsigned MaybeSavedGlobalReg = sizeof(void*);
 #else
 static const unsigned MaybeSavedGlobalReg = 0;
@@ -7428,7 +7428,7 @@ GenerateFFIIonExit(ModuleValidator& m, const Signature& sig, unsigned exitIndex,
     m.masm().append(AsmJSGlobalAccess(masm.leaRipRelative(callee), globalDataOffset));
 #elif defined(JS_CODEGEN_X86)
     m.masm().append(AsmJSGlobalAccess(masm.movlWithPatch(Imm32(0), callee), globalDataOffset));
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
+#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     masm.computeEffectiveAddress(Address(GlobalReg, globalDataOffset - AsmJSGlobalRegBias), callee);
 #endif
 
@@ -7464,7 +7464,7 @@ GenerateFFIIonExit(ModuleValidator& m, const Signature& sig, unsigned exitIndex,
     
     
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     static_assert(MaybeSavedGlobalReg == sizeof(void*), "stack frame accounting");
     masm.storePtr(GlobalReg, Address(masm.getStackPointer(), ionFrameBytes));
 #endif
@@ -7580,7 +7580,7 @@ GenerateFFIIonExit(ModuleValidator& m, const Signature& sig, unsigned exitIndex,
     }
 
     
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     static_assert(MaybeSavedGlobalReg == sizeof(void*), "stack frame accounting");
     masm.loadPtr(Address(masm.getStackPointer(), ionFrameBytes), GlobalReg);
 #endif
@@ -7895,7 +7895,7 @@ GenerateAsyncInterruptExit(ModuleValidator& m, Label* throwLabel)
     masm.PopRegsInMask(AllRegsExceptSP); 
     masm.popFlags();              
     masm.ret();                   
-#elif defined(JS_CODEGEN_MIPS32)
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     
     masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
     
