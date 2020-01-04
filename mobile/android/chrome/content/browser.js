@@ -1010,8 +1010,8 @@ var BrowserApp = {
           return;
         }
         let message = Strings.browser.GetStringFromName("imageblocking.downloadedImage");
-        NativeWindow.toast.show(message, "short", {
-          button: {
+        Snackbars.show(message, Snackbars.LENGTH_SHORT, {
+          action: {
             label: Strings.browser.GetStringFromName("imageblocking.showAllImages"),
             callback: () => {
               UITelemetry.addEvent("action.1", "toast", null, "web_show_all_image");
