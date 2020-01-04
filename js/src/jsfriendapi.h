@@ -2028,10 +2028,12 @@ JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoChe
 extern JS_FRIEND_API(JSObject*)
 JS_GetArrayBufferViewBuffer(JSContext* cx, JS::HandleObject obj, bool* isSharedMemory);
 
-typedef enum {
+enum DetachDataDisposition {
     ChangeData,
     KeepData
-} NeuterDataDisposition;
+};
+
+
 
 
 
@@ -2043,8 +2045,8 @@ typedef enum {
 
 
 extern JS_FRIEND_API(bool)
-JS_NeuterArrayBuffer(JSContext* cx, JS::HandleObject obj,
-                     NeuterDataDisposition changeData);
+JS_DetachArrayBuffer(JSContext* cx, JS::HandleObject obj,
+                     DetachDataDisposition changeData);
 
 
 

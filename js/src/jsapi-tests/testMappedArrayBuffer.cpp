@@ -41,7 +41,7 @@ BEGIN_TEST(testMappedArrayBuffer_bug945152)
     CHECK(TestReleaseContents());
 
     
-    CHECK(TestNeuterObject());
+    CHECK(TestDetachObject());
 
     
     CHECK(TestCloneObject());
@@ -112,11 +112,11 @@ bool TestReleaseContents()
     return true;
 }
 
-bool TestNeuterObject()
+bool TestDetachObject()
 {
     JS::RootedObject obj(cx, CreateNewObject(8, 12));
     CHECK(obj);
-    JS_NeuterArrayBuffer(cx, obj, ChangeData);
+    JS_DetachArrayBuffer(cx, obj, ChangeData);
     CHECK(isNeutered(obj));
 
     return true;
