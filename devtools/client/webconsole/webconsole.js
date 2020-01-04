@@ -2531,7 +2531,7 @@ WebConsoleFrame.prototype = {
 
     let fullURL = url.split(" -> ").pop();
     
-    let onClick = ({ url, line }) => {
+    let onClick = () => {
       let category = locationNode.closest(".message").category;
       let target = null;
 
@@ -2541,11 +2541,7 @@ WebConsoleFrame.prototype = {
         target = "styleeditor";
       } else if (category === CATEGORY_JS || category === CATEGORY_WEBDEV) {
         target = "jsdebugger";
-      } else if (/\.js$/.test(url)) {
-        
-        
-        target = "jsdebugger";
-      } else {
+      } else if (/\.js$/.test(fullURL)) {
         
         
         target = "jsdebugger";
@@ -2556,17 +2552,16 @@ WebConsoleFrame.prototype = {
           this.owner.viewSourceInScratchpad(url, line);
           return;
         case "jsdebugger":
-          this.owner.viewSourceInDebugger(url, line);
+          this.owner.viewSourceInDebugger(fullURL, line);
           return;
         case "styleeditor":
-          this.owner.viewSourceInStyleEditor(url, line);
+          this.owner.viewSourceInStyleEditor(fullURL, line);
           return;
       }
       
-      this.owner.viewSource(url, line);
+      this.owner.viewSource(fullURL, line);
     };
 
-    const toolbox = gDevTools.getToolbox(this.owner.target);
     this.ReactDOM.render(this.FrameView({
       frame: {
         source: fullURL,
@@ -2575,7 +2570,6 @@ WebConsoleFrame.prototype = {
       },
       showEmptyPathAsHost: true,
       onClick,
-      sourceMapService: toolbox ? toolbox._sourceMapService : null,
     }), locationNode);
 
     return locationNode;

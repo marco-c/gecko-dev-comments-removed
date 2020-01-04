@@ -297,9 +297,6 @@ pref("devtools.webconsole.autoMultiline", true);
 pref("devtools.webconsole.new-frontend-enabled", false);
 
 
-pref("devtools.sourcemap.locations.enabled", false);
-
-
 pref("devtools.hud.loglimit", 1000);
 
 
