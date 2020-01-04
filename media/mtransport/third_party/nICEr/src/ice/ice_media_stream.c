@@ -739,10 +739,13 @@ int nr_ice_media_stream_send(nr_ice_peer_ctx *pctx, nr_ice_media_stream *str, in
       ABORT(R_NOT_FOUND);
 
     
+    if(!comp->can_send)
+      ABORT(R_FAILED);
+
+    
 
 
 
-    comp->keepalive_needed=0; 
     if(r=nr_socket_sendto(comp->active->local->osock,data,len,0,
                           &comp->active->remote->addr))
       ABORT(r);
@@ -841,6 +844,23 @@ int nr_ice_media_stream_pair_new_trickle_candidate(nr_ice_peer_ctx *pctx, nr_ice
     if (r=nr_ice_component_pair_candidate(pctx, comp, cand, 1))
       ABORT(r);
 
+    _status=0;
+  abort:
+    return(_status);
+  }
+
+int nr_ice_media_stream_get_consent_status(nr_ice_media_stream *stream, int
+component_id, int *can_send, struct timeval *ts)
+  {
+    int r,_status;
+    nr_ice_component *comp;
+
+    if ((r=nr_ice_media_stream_find_component(stream, component_id, &comp)))
+      ABORT(r);
+
+    *can_send = comp->can_send;
+    ts->tv_sec = comp->consent_last_seen.tv_sec;
+    ts->tv_usec = comp->consent_last_seen.tv_usec;
     _status=0;
   abort:
     return(_status);

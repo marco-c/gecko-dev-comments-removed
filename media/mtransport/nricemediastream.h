@@ -165,6 +165,10 @@ class NrIceMediaStream {
                          UniquePtr<NrIceCandidate>* remote);
 
   
+  
+  nsresult GetConsentStatus(int component, bool *can_send, struct timeval *ts);
+
+  
   size_t components() const { return components_; }
 
   

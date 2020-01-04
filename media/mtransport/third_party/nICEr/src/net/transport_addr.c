@@ -469,4 +469,7 @@ int nr_transport_addr_get_private_addr_range(nr_transport_addr *addr)
     return(0);
   }
 
-
+int nr_transport_addr_is_reliable_transport(nr_transport_addr *addr)
+  {
+    return addr->protocol == IPPROTO_TCP;
+  }

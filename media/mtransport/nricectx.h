@@ -231,6 +231,8 @@ class NrIceCtx {
   
   static void internal_DeinitializeGlobal();
 
+  
+  void internal_SetTimerAccelarator(int divider);
 
   nr_ice_ctx *ctx() { return ctx_; }
   nr_ice_peer_ctx *peer() { return peer_; }
