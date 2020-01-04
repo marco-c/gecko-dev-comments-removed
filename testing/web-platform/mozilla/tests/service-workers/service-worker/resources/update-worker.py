@@ -41,5 +41,6 @@ def main(request, response):
 
     headers.append(('Content-Type', content_type))
     
-    return headers, '/* %s */ %s' % (time.time(), extra_body)
+    
+    return headers, '/* %s %s */ %s' % (time.time(), time.clock(), extra_body)
 
