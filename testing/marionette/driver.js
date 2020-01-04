@@ -1908,25 +1908,6 @@ GeckoDriver.prototype.findElement = function(cmd, resp) {
 
 
 
-
-
-
-GeckoDriver.prototype.findChildElement = function(cmd, resp) {
-  resp.body.value = yield this.listener.findElementContent({
-    value: cmd.parameters.value,
-    using: cmd.parameters.using,
-    element: cmd.parameters.id,
-    searchTimeout: this.searchTimeout});
-};
-
-
-
-
-
-
-
-
-
 GeckoDriver.prototype.findElements = function(cmd, resp) {
   switch (this.context) {
     case Context.CHROME:
@@ -1950,25 +1931,6 @@ GeckoDriver.prototype.findElements = function(cmd, resp) {
         searchTimeout: this.searchTimeout});
       break;
   }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.findChildElements = function(cmd, resp) {
-  resp.body.value = yield this.listener.findElementsContent({
-    value: cmd.parameters.value,
-    using: cmd.parameters.using,
-    element: cmd.parameters.id,
-    searchTimeout: this.searchTimeout});
 };
 
 
@@ -2958,9 +2920,7 @@ GeckoDriver.prototype.commands = {
   "executeJSScript": GeckoDriver.prototype.executeJSScript,
   "setSearchTimeout": GeckoDriver.prototype.setSearchTimeout,
   "findElement": GeckoDriver.prototype.findElement,
-  "findChildElement": GeckoDriver.prototype.findChildElements, 
   "findElements": GeckoDriver.prototype.findElements,
-  "findChildElements":GeckoDriver.prototype.findChildElements, 
   "clickElement": GeckoDriver.prototype.clickElement,
   "getElementAttribute": GeckoDriver.prototype.getElementAttribute,
   "getElementText": GeckoDriver.prototype.getElementText,
