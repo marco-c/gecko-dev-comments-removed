@@ -173,9 +173,11 @@ BEGIN_TEST(testIncrementalRoots)
     MOZ_ASSERT(!leafHandle->asTenured().isMarked());
     MOZ_ASSERT(!leafOwnerHandle->asTenured().isMarked());
 
+#ifdef DEBUG
     
     
     auto currentGCNumber = rt->gc.gcNumber();
+#endif
 
     
     
