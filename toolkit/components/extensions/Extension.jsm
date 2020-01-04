@@ -468,7 +468,22 @@ GlobalManager = {
     let extension = this.extensionMap.get(id);
     let uri = contentWindow.document.documentURIObject;
     let incognito = PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
-    let context = new ExtensionPage(extension, {type: "tab", contentWindow, uri, docShell, incognito});
+
+    let browser = docShell.chromeEventHandler;
+
+    let type = "tab";
+    if (browser instanceof Ci.nsIDOMElement) {
+      if (browser.hasAttribute("webextension-view-type")) {
+        type = browser.getAttribute("webextension-view-type");
+      } else if (browser.classList.contains("inline-options-browser")) {
+        
+        
+        
+        type = "popup";
+      }
+    }
+
+    let context = new ExtensionPage(extension, {type, contentWindow, uri, docShell, incognito});
     inject(extension, context);
 
     let eventHandler = docShell.chromeEventHandler;
@@ -489,6 +504,36 @@ GlobalManager = {
 
 
 
+function getExtensionUUID(id) {
+  const PREF_NAME = "extensions.webextensions.uuids";
+
+  let pref = Preferences.get(PREF_NAME, "{}");
+  let map = {};
+  try {
+    map = JSON.parse(pref);
+  } catch (e) {
+    Cu.reportError(`Error parsing ${PREF_NAME}.`);
+  }
+
+  if (id in map) {
+    return map[id];
+  }
+
+  let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+  let uuid = uuidGenerator.generateUUID().number;
+  uuid = uuid.slice(1, -1); 
+
+  map[id] = uuid;
+  Preferences.set(PREF_NAME, JSON.stringify(map));
+  return uuid;
+}
+
+
+
+
+
+
+
 
 
 this.ExtensionData = function(rootURI) {
@@ -496,6 +541,7 @@ this.ExtensionData = function(rootURI) {
 
   this.manifest = null;
   this.id = null;
+  this.uuid = null;
   this.localeData = null;
   this._promiseLocales = null;
 
@@ -519,6 +565,26 @@ ExtensionData.prototype = {
   packagingError(message) {
     this.errors.push(message);
     this.logger.error(`Loading extension '${this.id}': ${message}`);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getURL(path = "") {
+    if (!(this.id || this.uuid)) {
+      throw new Error("getURL may not be called before an `id` or `uuid` has been set");
+    }
+    if (!this.uuid) {
+      this.uuid = getExtensionUUID(this.id);
+    }
+    return `moz-extension://${this.uuid}/${path}`;
   },
 
   readDirectory: Task.async(function* (path) {
@@ -783,36 +849,6 @@ ExtensionData.prototype = {
 
 
 
-
-
-
-
-function getExtensionUUID(id) {
-  const PREF_NAME = "extensions.webextensions.uuids";
-
-  let pref = Preferences.get(PREF_NAME, "{}");
-  let map = {};
-  try {
-    map = JSON.parse(pref);
-  } catch (e) {
-    Cu.reportError(`Error parsing ${PREF_NAME}.`);
-  }
-
-  if (id in map) {
-    return map[id];
-  }
-
-  let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-  let uuid = uuidGenerator.generateUUID().number;
-  uuid = uuid.slice(1, -1); 
-
-  map[id] = uuid;
-  Preferences.set(PREF_NAME, JSON.stringify(map));
-  return uuid;
-}
-
-
-
 this.Extension = function(addonData) {
   ExtensionData.call(this, addonData.resourceURI);
 
@@ -826,8 +862,7 @@ this.Extension = function(addonData) {
 
   this.addonData = addonData;
   this.id = addonData.id;
-  this.baseURI = Services.io.newURI("moz-extension://" + this.uuid, null, null);
-  this.baseURI.QueryInterface(Ci.nsIURL);
+  this.baseURI = NetUtil.newURI(this.getURL("")).QueryInterface(Ci.nsIURL);
   this.principal = this.createPrincipal();
 
   this.views = new Set();

@@ -3070,6 +3070,10 @@ this.AddonManager = {
   
   
   OPTIONS_TYPE_INLINE_INFO: 4,
+  
+  
+  
+  OPTIONS_TYPE_INLINE_BROWSER: 5,
 
   
   
