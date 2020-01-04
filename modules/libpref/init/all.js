@@ -139,8 +139,6 @@ pref("dom.select_events.enabled", false);
 
 pref("dom.workers.enabled", true);
 
-pref("dom.workers.maxPerDomain", 50);
-
 pref("dom.serviceWorkers.enabled", false);
 
 
