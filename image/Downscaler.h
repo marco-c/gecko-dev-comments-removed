@@ -71,9 +71,13 @@ public:
 
 
 
+
+
+
   nsresult BeginFrame(const nsIntSize& aOriginalSize,
                       uint8_t* aOutputBuffer,
-                      bool aHasAlpha);
+                      bool aHasAlpha,
+                      bool aFlipVertically = false);
 
   
   uint8_t* RowBuffer() { return mRowBuffer.get(); }
@@ -117,7 +121,8 @@ private:
   int32_t mCurrentOutLine;
   int32_t mCurrentInLine;
 
-  bool mHasAlpha;
+  bool mHasAlpha : 1;
+  bool mFlipVertically : 1;
 };
 
 #else
@@ -139,7 +144,7 @@ public:
   const nsIntSize& TargetSize() const { return nsIntSize(); }
   const gfxSize& Scale() const { return gfxSize(1.0, 1.0); }
 
-  nsresult BeginFrame(const nsIntSize&, uint8_t*, bool)
+  nsresult BeginFrame(const nsIntSize&, uint8_t*, bool, bool = false)
   {
     return NS_ERROR_FAILURE;
   }
