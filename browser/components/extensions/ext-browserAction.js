@@ -10,8 +10,9 @@ XPCOMUtils.defineLazyGetter(this, "colorUtils", () => {
 });
 
 Cu.import("resource://devtools/shared/event-emitter.js");
-
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
+
 var {
   EventManager,
   IconDetails,
@@ -21,6 +22,8 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 var browserActionMap = new WeakMap();
+
+global.browserActionOf = browserActionOf;
 
 
 
@@ -100,7 +103,6 @@ BrowserAction.prototype = {
         
         
         
-        
         if (popupURL) {
           try {
             new ViewPopup(this.extension, event.target, popupURL, this.browserStyle);
@@ -122,6 +124,42 @@ BrowserAction.prototype = {
 
     this.widget = widget;
   },
+
+  
+
+
+
+
+
+
+  triggerAction: Task.async(function* (window) {
+    let popup = ViewPopup.for(this.extension, window);
+    if (popup) {
+      popup.closePopup();
+      return;
+    }
+
+    let widget = this.widget.forWindow(window);
+    let tab = window.gBrowser.selectedTab;
+
+    if (!widget || !this.getProperty(tab, "enabled")) {
+      return;
+    }
+
+    
+    
+    
+    if (this.getProperty(tab, "popup")) {
+      if (this.widget.areaType == CustomizableUI.TYPE_MENU_PANEL) {
+        yield window.PanelUI.show();
+      }
+
+      let event = new window.CustomEvent("command", {bubbles: true, cancelable: true});
+      widget.node.dispatchEvent(event);
+    } else {
+      this.emit("click");
+    }
+  }),
 
   
   

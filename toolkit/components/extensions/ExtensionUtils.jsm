@@ -130,27 +130,22 @@ function extend(obj, ...args) {
 
 
 
-function DefaultWeakMap(defaultValue) {
-  this.defaultValue = defaultValue;
-  this.weakmap = new WeakMap();
-}
 
-DefaultWeakMap.prototype = {
+
+class DefaultWeakMap extends WeakMap {
+  constructor(defaultConstructor, init) {
+    super(init);
+    this.defaultConstructor = defaultConstructor;
+  }
+
   get(key) {
-    if (this.weakmap.has(key)) {
-      return this.weakmap.get(key);
+    if (!this.has(key)) {
+      this.set(key, this.defaultConstructor());
     }
-    return this.defaultValue;
-  },
 
-  set(key, value) {
-    if (key) {
-      this.weakmap.set(key, value);
-    } else {
-      this.defaultValue = value;
-    }
-  },
-};
+    return super.get(key);
+  }
+}
 
 class SpreadArgs extends Array {
   constructor(args) {
@@ -166,7 +161,7 @@ class BaseContext {
     this.onClose = new Set();
     this.checkedLastError = false;
     this._lastError = null;
-    this.contextId = `${++gContextId}-${Services.appinfo.uniqueProcessID}`;
+    this.contextId = ++gContextId;
     this.unloaded = false;
     this.extensionId = extensionId;
     this.jsonSandbox = null;
@@ -1334,7 +1329,8 @@ Messenger.prototype = {
   },
 
   connect(messageManager, name, recipient) {
-    let portId = `${gNextPortId++}-${Services.appinfo.uniqueProcessID}`;
+    
+    let portId = `${gNextPortId++}-${Services.appinfo.processType}`;
     let port = new Port(this.context, messageManager, name, portId, null);
     let msg = {name, portId};
     this._sendMessage(messageManager, "Extension:Connect", msg, recipient)
