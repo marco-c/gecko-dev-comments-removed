@@ -157,7 +157,7 @@ public abstract class SQLiteBridgeContentProvider extends ContentProvider {
         }
         return bridge;
     }
-    
+
     
 
 
@@ -202,7 +202,7 @@ public abstract class SQLiteBridgeContentProvider extends ContentProvider {
                 return db;
             }
             final String dbPath = getDatabasePathForProfile(profile, dbName);
-            if (dbPath == null) {   
+            if (dbPath == null) {
                 Log.e(mLogTag, "Failed to get a valid db path for profile '" + profile + "'' dbName '" + dbName + "'");
                 return null;
             }
