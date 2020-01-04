@@ -161,7 +161,7 @@ PrepareZoneForGC(Zone* zone);
 
 
 extern JS_PUBLIC_API(void)
-PrepareForFullGC(JSRuntime* rt);
+PrepareForFullGC(JSContext* cx);
 
 
 
@@ -169,14 +169,14 @@ PrepareForFullGC(JSRuntime* rt);
 
 
 extern JS_PUBLIC_API(void)
-PrepareForIncrementalGC(JSRuntime* rt);
+PrepareForIncrementalGC(JSContext* cx);
 
 
 
 
 
 extern JS_PUBLIC_API(bool)
-IsGCScheduled(JSRuntime* rt);
+IsGCScheduled(JSContext* cx);
 
 
 
@@ -201,7 +201,7 @@ SkipZoneForGC(Zone* zone);
 
 
 extern JS_PUBLIC_API(void)
-GCForReason(JSRuntime* rt, JSGCInvocationKind gckind, gcreason::Reason reason);
+GCForReason(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason);
 
 
 
