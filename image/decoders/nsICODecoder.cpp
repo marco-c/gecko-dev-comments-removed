@@ -223,6 +223,10 @@ nsICODecoder::ReadDirEntry(const char* aData)
 
   
   
+  const Maybe<IntSize> desiredSize = ExplicitOutputSize();
+
+  
+  
   
   IntSize entrySize(GetRealWidth(e), GetRealHeight(e));
   if (e.mBitCount >= mBiggestResourceColorDepth &&
@@ -232,12 +236,12 @@ nsICODecoder::ReadDirEntry(const char* aData)
     mBiggestResourceColorDepth = e.mBitCount;
     mBiggestResourceHotSpot = IntSize(e.mXHotspot, e.mYHotspot);
 
-    if (!mDownscaler) {
+    if (!desiredSize) {
       mDirEntry = e;
     }
   }
 
-  if (mDownscaler) {
+  if (desiredSize) {
     
     
     
@@ -245,9 +249,9 @@ nsICODecoder::ReadDirEntry(const char* aData)
     
     
     
-    IntSize desiredSize = mDownscaler->TargetSize();
-    int32_t delta = std::min(entrySize.width - desiredSize.width,
-                             entrySize.height - desiredSize.height);
+    
+    int32_t delta = std::min(entrySize.width - desiredSize->width,
+                             entrySize.height - desiredSize->height);
     if (e.mBitCount >= mBestResourceColorDepth &&
         ((mBestResourceDelta < 0 && delta >= mBestResourceDelta) ||
          (delta >= 0 && delta <= mBestResourceDelta))) {
@@ -280,7 +284,9 @@ nsICODecoder::ReadDirEntry(const char* aData)
 
     
     
-    if (mDownscaler && GetRealSize() == mDownscaler->TargetSize()) {
+    if (GetRealSize() == OutputSize()) {
+      MOZ_ASSERT_IF(desiredSize, GetRealSize() == *desiredSize);
+      MOZ_ASSERT_IF(!desiredSize, GetRealSize() == Size());
       mDownscaler.reset();
     }
 
