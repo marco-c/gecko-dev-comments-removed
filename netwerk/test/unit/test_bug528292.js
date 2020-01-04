@@ -1,5 +1,5 @@
 Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 const sentCookieVal     = "foo=bar";
 const responseBody      = "response body";
@@ -64,16 +64,11 @@ function run_test()
   
   
   
-  var chan = ioService.newChannel2(preRedirectURL,
-                                   "",
-                                   null,
-                                   null,      
-                                   Services.scriptSecurityManager.getSystemPrincipal(),
-                                   null,      
-                                   Ci.nsILoadInfo.SEC_NORMAL,
-                                   Ci.nsIContentPolicy.TYPE_OTHER).
-             QueryInterface(Ci.nsIHttpChannel).
-             QueryInterface(Ci.nsIHttpChannelInternal);
+  var chan = NetUtil.newChannel({
+    uri: preRedirectURL,
+    loadUsingSystemPrincipal: true
+  }).QueryInterface(Ci.nsIHttpChannel)
+    .QueryInterface(Ci.nsIHttpChannelInternal);
   chan.forceAllowThirdPartyCookie = true;
 
   
@@ -84,7 +79,7 @@ function run_test()
     setCookieString(postRedirectURI, null, sentCookieVal, chan);
 
   
-  chan.asyncOpen(new ChannelListener(finish_test, null), null);
+  chan.asyncOpen2(new ChannelListener(finish_test, null));
   do_test_pending();
 }
 
