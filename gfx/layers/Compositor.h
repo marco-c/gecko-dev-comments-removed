@@ -517,6 +517,16 @@ protected:
   
 
 
+
+
+  gfx::IntRect ComputeBackdropCopyRect(
+    const gfx::Rect& aRect,
+    const gfx::Rect& aClipRect,
+    const gfx::Matrix4x4& aTransform);
+
+  
+
+
   TimeStamp mCompositionTime;
   
 
@@ -541,6 +551,8 @@ protected:
 
   RefPtr<gfx::DrawTarget> mTarget;
   gfx::IntRect mTargetBounds;
+
+  gfx::Rect mRenderBounds;
 
 #if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
   FenceHandle mReleaseFenceHandle;

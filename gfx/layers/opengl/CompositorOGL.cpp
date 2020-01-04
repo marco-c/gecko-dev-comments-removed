@@ -486,7 +486,7 @@ CompositorOGL::PrepareViewport(CompositingRenderTargetOGL* aRenderTarget)
   
   mGLContext->fViewport(0, 0, size.width, size.height);
 
-  mRenderBound = Rect(0, 0, size.width, size.height);
+  mRenderBounds = Rect(0, 0, size.width, size.height);
 
   mViewportSize = size;
 
@@ -1007,7 +1007,7 @@ CompositorOGL::DrawQuad(const Rect& aRect,
   }
 
   IntPoint offset = mCurrentRenderTarget->GetOrigin();
-  Rect renderBound = mRenderBound;
+  Rect renderBound = mRenderBounds;
   renderBound.IntersectRect(renderBound, aClipRect);
   renderBound.MoveBy(offset);
 
@@ -1021,7 +1021,7 @@ CompositorOGL::DrawQuad(const Rect& aRect,
   
   destRect.Inflate(1, 1);
   destRect.MoveBy(-offset);
-  if (!mRenderBound.Intersects(destRect)) {
+  if (!mRenderBounds.Intersects(destRect)) {
     return;
   }
 
@@ -1099,11 +1099,6 @@ CompositorOGL::DrawQuad(const Rect& aRect,
     EffectBlendMode *blendEffect =
       static_cast<EffectBlendMode*>(aEffectChain.mSecondaryEffects[EffectTypes::BLEND_MODE].get());
     blendMode = blendEffect->mBlendMode;
-    if (BlendOpIsMixBlendMode(blendMode)) {
-      gfx::IntRect rect(gfx::IntPoint(0, 0), mCurrentRenderTarget->GetSize());
-
-      mixBlendBackdrop = CreateTexture(rect, true, mCurrentRenderTarget->GetFBO());
-    }
   }
 
   
@@ -1125,6 +1120,20 @@ CompositorOGL::DrawQuad(const Rect& aRect,
       EffectColorMatrix* effectColorMatrix =
         static_cast<EffectColorMatrix*>(aEffectChain.mSecondaryEffects[EffectTypes::COLOR_MATRIX].get());
       program->SetColorMatrix(effectColorMatrix->mColorMatrix);
+  }
+
+  if (BlendOpIsMixBlendMode(blendMode)) {
+    gfx::IntRect rect = ComputeBackdropCopyRect(aRect, aClipRect, aTransform);
+    mixBlendBackdrop = CreateTexture(rect, true, mCurrentRenderTarget->GetFBO());
+
+    
+    
+    
+    gfx::Matrix4x4 transform;
+    transform.PostScale(mRenderBounds.width, mRenderBounds.height, 1.0);
+    transform.PostTranslate(-rect.x, -rect.y, 0.0);
+    transform.PostScale(1 / float(rect.width), 1 / float(rect.height), 1.0);
+    program->SetBackdropTransform(transform);
   }
 
   program->SetRenderOffset(offset.x, offset.y);
