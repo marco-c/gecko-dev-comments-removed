@@ -1859,7 +1859,7 @@ IMContextWrapper::SetTextRange(PangoAttrIterator* aPangoAttrIter,
     
     else if (aTextRange.mStartOffset <= aUTF16CaretOffset &&
              aTextRange.mEndOffset > aUTF16CaretOffset) {
-        aTextRange.mRangeType = TextRangeType::NS_TEXTRANGE_SELECTEDCONVERTEDTEXT;
+        aTextRange.mRangeType = TextRangeType::eSelectedClause;
     }
     
     
