@@ -2,7 +2,7 @@
 
 
 
-#ifdef MOZ_JEMALLOC3
+#ifdef MOZ_JEMALLOC4
 
 #define MOZ_JEMALLOC_IMPL
 

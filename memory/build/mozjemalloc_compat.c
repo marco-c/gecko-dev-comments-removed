@@ -2,7 +2,7 @@
 
 
 
-#ifndef MOZ_JEMALLOC3
+#ifndef MOZ_JEMALLOC4
 #  error Should only compile this file when building with jemalloc 3
 #endif
 
