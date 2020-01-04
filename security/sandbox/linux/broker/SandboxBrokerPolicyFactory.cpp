@@ -5,6 +5,7 @@
 
 
 #include "SandboxBrokerPolicyFactory.h"
+#include "SandboxInfo.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
@@ -27,6 +28,12 @@ SandboxBrokerPolicyFactory::IsSystemSupported() {
   
   
   if (length > 0 && strcmp(hardware, "goldfish") == 0) {
+    return true;
+  }
+
+  
+  
+  if (SandboxInfo::Get().Test(SandboxInfo::kPermissive)) {
     return true;
   }
 #endif
