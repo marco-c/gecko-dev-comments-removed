@@ -735,6 +735,7 @@ nsHttpConnectionMgr::GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry)
 {
     if (!gHttpHandler->IsSpdyEnabled() ||
         !gHttpHandler->CoalesceSpdy() ||
+        aOriginalEntry->mConnInfo->GetNoSpdy() ||
         aOriginalEntry->mCoalescingKeys.IsEmpty()) {
         return nullptr;
     }
@@ -768,7 +769,7 @@ nsHttpConnectionMgr::GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry)
         
         
         RemovePreferredHash(preferred);
-        LOG(("nsHttpConnectionMgr::GetSpdyPreferredConnection "
+        LOG(("nsHttpConnectionMgr::GetSpdyPreferredEnt "
              "preferred host mapping %s to %s removed due to inactivity.\n",
              aOriginalEntry->mConnInfo->Origin(),
              preferred->mConnInfo->Origin()));
@@ -812,7 +813,7 @@ nsHttpConnectionMgr::GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry)
     }
 
     if (NS_FAILED(rv) || !isJoined) {
-        LOG(("nsHttpConnectionMgr::GetSpdyPreferredConnection "
+        LOG(("nsHttpConnectionMgr::GetSpdyPreferredEnt "
              "Host %s cannot be confirmed to be joined "
              "with %s connections. rv=%x isJoined=%d",
              preferred->mConnInfo->Origin(), aOriginalEntry->mConnInfo->Origin(),
@@ -822,7 +823,7 @@ nsHttpConnectionMgr::GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry)
     }
 
     
-    LOG(("nsHttpConnectionMgr::GetSpdyPreferredConnection "
+    LOG(("nsHttpConnectionMgr::GetSpdyPreferredEnt "
          "Host %s has cert valid for %s connections, "
          "so %s will be coalesced with %s",
          preferred->mConnInfo->Origin(), aOriginalEntry->mConnInfo->Origin(),
