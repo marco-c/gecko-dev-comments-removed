@@ -122,17 +122,16 @@ public:
   {
     MutexAutoLock lock(mMutex);
 
-    if (aReader->IsSuspended()) {
+    
+    
+    
+    DebugOnly<bool> suspended = mSuspended.RemoveElement(aReader);
+    bool active = mActive.RemoveElement(aReader);
+
+    MOZ_ASSERT(suspended || active, "Reader must be in the queue");
+
+    if (active && !mSuspended.IsEmpty()) {
       
-      DebugOnly<bool> result = mSuspended.RemoveElement(aReader);
-      MOZ_ASSERT(result, "Suspended reader must be in mSuspended");
-    } else {
-      
-      DebugOnly<bool> result = mActive.RemoveElement(aReader);
-      MOZ_ASSERT(result, "Non-suspended reader must be in mActive");
-      if (mSuspended.IsEmpty()) {
-        return;
-      }
       MediaDecoderReader* resumeReader = mSuspended.LastElement();
       mActive.AppendElement(resumeReader);
       mSuspended.RemoveElementAt(mSuspended.Length() - 1);
