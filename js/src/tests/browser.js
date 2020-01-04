@@ -169,14 +169,6 @@ function testPassesUnlessItThrows() {
 
 
 
-function include(file) {
-  outputscripttag(file, {language: "type", mimetype: "text/javascript"});
-}
-
-
-
-
-
 
 function setRestoreFunction(restore) {
   jstestsRestoreFunction = restore;
