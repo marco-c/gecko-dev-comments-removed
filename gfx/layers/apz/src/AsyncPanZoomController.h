@@ -613,7 +613,7 @@ protected:
 
 
 
-  bool ConvertToGecko(const ScreenIntPoint& aPoint, CSSPoint* aOut);
+  bool ConvertToGecko(const ScreenIntPoint& aPoint, LayoutDevicePoint* aOut);
 
   enum AxisLockMode {
     FREE,     
