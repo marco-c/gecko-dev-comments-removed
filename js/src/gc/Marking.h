@@ -471,13 +471,14 @@ struct DefaultGCPolicy<T*>
     static void trace(JSTracer* trc, T** thingp, const char* name) {
         
         
-        TraceManuallyBarrieredEdge(trc, thingp, name);
+        if (*thingp)
+            TraceManuallyBarrieredEdge(trc, thingp, name);
     }
 
     static bool needsSweep(T** thingp) {
         
         
-        return gc::IsAboutToBeFinalizedUnbarriered(thingp);
+        return *thingp && gc::IsAboutToBeFinalizedUnbarriered(thingp);
     }
 };
 

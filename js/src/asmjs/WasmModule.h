@@ -528,7 +528,7 @@ class Module
     
 
     bool dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> heap,
-                         const AutoVectorRooter<JSFunction*>& imports);
+                         Handle<FunctionVector> imports);
 
     
 
