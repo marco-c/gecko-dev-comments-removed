@@ -231,7 +231,7 @@ function InplaceEditor(options, event) {
     for (let i = 0; i < advanceChars.length; i++) {
       advanceCharcodes[advanceChars.charCodeAt(i)] = true;
     }
-    this._advanceChars = aCharCode => aCharCode in advanceCharcodes;
+    this._advanceChars = charCode => charCode in advanceCharcodes;
   }
 
   
@@ -306,9 +306,11 @@ InplaceEditor.prototype = {
     this.input.removeEventListener("keypress", this._onKeyPress, false);
     this.input.removeEventListener("keyup", this._onKeyup, false);
     this.input.removeEventListener("input", this._onInput, false);
-    this.input.removeEventListener("dblclick", this._stopEventPropagation, false);
+    this.input.removeEventListener("dblclick", this._stopEventPropagation,
+      false);
     this.input.removeEventListener("click", this._stopEventPropagation, false);
-    this.input.removeEventListener("mousedown", this._stopEventPropagation, false);
+    this.input.removeEventListener("mousedown", this._stopEventPropagation,
+      false);
 
     this._stopAutosize();
 
@@ -481,13 +483,15 @@ InplaceEditor.prototype = {
       if (type === "rgb" || type === "hsl") {
         info = {};
         let part = value.substring(range.start, selStart).split(",").length - 1;
-        if (part === 3) { 
+        if (part === 3) {
+          
           info.minValue = 0;
           info.maxValue = 1;
         } else if (type === "rgb") {
           info.minValue = 0;
           info.maxValue = 255;
-        } else if (part !== 0) { 
+        } else if (part !== 0) {
+          
           info.minValue = 0;
           info.maxValue = 100;
 
@@ -552,7 +556,7 @@ InplaceEditor.prototype = {
 
 
 
-   _parseCSSValue: function(value, offset) {
+  _parseCSSValue: function(value, offset) {
     const reSplitCSS = /(url\("?[^"\)]+"?\)?)|(rgba?\([^)]*\)?)|(hsla?\([^)]*\)?)|(#[\dA-Fa-f]+)|(-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
     let start = 0;
     let m;
@@ -621,8 +625,10 @@ InplaceEditor.prototype = {
       
       
       let pattern = "[" + (info ? "0-9." : "0-9") + "]*";
-      let before = new RegExp(pattern + "$").exec(value.substr(0, offset))[0].length;
-      let after = new RegExp("^" + pattern).exec(value.substr(offset))[0].length;
+      let before = new RegExp(pattern + "$")
+        .exec(value.substr(0, offset))[0].length;
+      let after = new RegExp("^" + pattern)
+        .exec(value.substr(offset))[0].length;
 
       start = offset - before;
       end = offset + after;
@@ -1204,7 +1210,8 @@ InplaceEditor.prototype = {
         
         let match = query.match(/([:;"'=]?)\s*([^"';:=]+)?$/);
         if (match && match.length >= 2) {
-          if (match[1] == ":") { 
+          if (match[1] == ":") {
+            
             let propertyName =
               query.match(/[;"'=]\s*([^"';:= ]+)\s*:\s*[^"';:=]*$/)[1];
             list =
@@ -1220,7 +1227,8 @@ InplaceEditor.prototype = {
               
               list.splice(0, 1);
             }
-          } else if (match[1]) { 
+          } else if (match[1]) {
+            
             list = CSSPropertyList;
             startCheckQuery = match[2];
           }
