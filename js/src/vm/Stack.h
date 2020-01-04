@@ -359,16 +359,11 @@ class InterpreterFrame
 
   private:
     mutable uint32_t    flags_;         
-    union {                             
-        JSScript*       script;        
-    } exec;
-    union {                             
-        unsigned        nactual;        
-        JSScript*       evalScript;    
-    } u;
-    mutable JSObject*   scopeChain_;   
+    JSScript*           script_;        
+    unsigned            nactual_;       
+    mutable JSObject*   scopeChain_;    
     Value               rval_;          
-    ArgumentsObject*    argsObj_;      
+    ArgumentsObject*    argsObj_;       
 
     
 
@@ -500,10 +495,6 @@ class InterpreterFrame
         return flags_ & EVAL;
     }
 
-    bool isEvalInFunction() const {
-        return (flags_ & (EVAL | FUNCTION)) == (EVAL | FUNCTION);
-    }
-
     bool isNonEvalFunctionFrame() const {
         return (flags_ & (FUNCTION | EVAL)) == FUNCTION;
     }
@@ -572,7 +563,7 @@ class InterpreterFrame
     bool copyRawFrameSlots(AutoValueVector* v);
 
     unsigned numFormalArgs() const { MOZ_ASSERT(hasArgs()); return callee().nargs(); }
-    unsigned numActualArgs() const { MOZ_ASSERT(hasArgs()); return u.nactual; }
+    unsigned numActualArgs() const { MOZ_ASSERT(hasArgs()); return nactual_; }
 
     
     Value* argv() const { MOZ_ASSERT(hasArgs()); return argv_; }
@@ -652,10 +643,7 @@ class InterpreterFrame
 
 
     JSScript* script() const {
-        if (isFunctionFrame())
-            return isEvalFrame() ? u.evalScript : callee().nonLazyScript();
-        MOZ_ASSERT(isGlobalOrModuleFrame());
-        return exec.script;
+        return script_;
     }
 
     
