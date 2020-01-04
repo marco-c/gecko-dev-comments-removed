@@ -456,6 +456,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
 
     
     static const MIRType typeArray[] = { MIRType::Pointer,   
+                                         MIRType::Pointer,   
                                          MIRType::Int32,     
                                          MIRType::Pointer }; 
     MIRTypeVector invokeArgTypes;
@@ -479,6 +480,15 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
 
     
     ABIArgMIRTypeIter i(invokeArgTypes);
+
+    
+    if (i->kind() == ABIArg::GPR) {
+        masm.loadWasmGlobalPtr(InstancePtrGlobalDataOffset, i->gpr());
+    } else {
+        masm.loadWasmGlobalPtr(InstancePtrGlobalDataOffset, scratch);
+        masm.storePtr(scratch, Address(masm.getStackPointer(), i->offsetFromArgBase()));
+    }
+    i++;
 
     
     if (i->kind() == ABIArg::GPR)
