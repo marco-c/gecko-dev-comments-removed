@@ -12,8 +12,8 @@ import sys
 import time
 import traceback
 import urllib
-import urlparse
 import utils
+import mozhttpd
 
 from talos.results import TalosResults
 from talos.ttest import TTest
@@ -68,28 +68,10 @@ def buildCommandLine(test):
 
 def setup_webserver(webserver):
     """use mozhttpd to setup a webserver"""
+    logging.info("starting webserver on %r" % webserver)
 
-    scheme = "http://"
-    if (webserver.startswith('http://') or
-        webserver.startswith('chrome://') or
-        webserver.startswith('file:///')):  
-
-        scheme = ""
-    elif '://' in webserver:
-        print "Unable to parse user defined webserver: '%s'" % (webserver)
-        sys.exit(2)
-
-    url = urlparse.urlparse('%s%s' % (scheme, webserver))
-    port = url.port
-
-    if port:
-        import mozhttpd
-        return mozhttpd.MozHttpd(host=url.hostname, port=int(port),
-                                 docroot=here)
-    else:
-        print ("WARNING: unable to start web server without custom port"
-               " configured")
-        return None
+    host, port = webserver.split(':')
+    return mozhttpd.MozHttpd(host=host, port=int(port), docroot=here)
 
 
 def run_tests(config, browser_config):
@@ -119,6 +101,8 @@ def run_tests(config, browser_config):
         test['setup'] = utils.interpolate(test['setup'])
         test['cleanup'] = utils.interpolate(test['cleanup'])
 
+    
+    
     
     if browser_config['develop']:
         browser_config['extra_args'] = '--no-remote'
@@ -195,51 +179,40 @@ def run_tests(config, browser_config):
         )
     talos_results.check_output_formats(results_urls)
 
-    
-    httpd = None
-    if browser_config['develop']:
-        httpd = setup_webserver(browser_config['webserver'])
-        if httpd:
-            httpd.start()
+    httpd = setup_webserver(browser_config['webserver'])
+    httpd.start()
 
-    
-    timer = utils.Timer()
-    logging.info("Starting test suite %s", title)
-    for test in tests:
-        testname = test['name']
-        testtimer = utils.Timer()
-        logging.info("Starting test %s", testname)
+    testname = None
+    try:
+        
+        timer = utils.Timer()
+        logging.info("Starting test suite %s", title)
+        for test in tests:
+            testname = test['name']
+            testtimer = utils.Timer()
+            logging.info("Starting test %s", testname)
 
-        try:
             mytest = TTest()
-            if mytest:
-                talos_results.add(mytest.runTest(browser_config, test))
-            else:
-                logging.error("Error found while running %s", testname)
-        except TalosRegression:
-            logging.error("Detected a regression for %s", testname)
-            if httpd:
-                httpd.stop()
-            
-            
-            return 1
-        except (TalosCrash, TalosError):
-            
-            
-            
-            traceback.print_exception(*sys.exc_info())
-            if httpd:
-                httpd.stop()
-            
-            return 2
+            talos_results.add(mytest.runTest(browser_config, test))
 
-        logging.info("Completed test %s (%s)", testname, testtimer.elapsed())
+            logging.info("Completed test %s (%s)", testname, testtimer.elapsed())
+
+    except TalosRegression:
+        logging.error("Detected a regression for %s", testname)
+        
+        
+        return 1
+    except (TalosCrash, TalosError):
+        
+        
+        
+        traceback.print_exception(*sys.exc_info())
+        
+        return 2
+    finally:
+        httpd.stop()
 
     logging.info("Completed test suite (%s)", timer.elapsed())
-
-    
-    if httpd:
-        httpd.stop()
 
     
     if results_urls:
