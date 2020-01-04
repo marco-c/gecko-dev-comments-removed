@@ -953,7 +953,10 @@ var MozLoopServiceInternal = {
               
               
               
-              LoopRooms.leave(conversationWindowData.roomToken);
+              LoopAPI.sendMessageToHandler({
+                name: "HangupNow",
+                data: [conversationWindowData.roomToken, windowId]
+              });
             }
           }
         }
@@ -1204,7 +1207,7 @@ var gServiceInitialized = false;
 
 this.MozLoopService = {
   _DNSService: gDNSService,
-  _activeScreenShares: [],
+  _activeScreenShares: new Set(),
 
   get channelIDs() {
     
@@ -1922,11 +1925,10 @@ this.MozLoopService = {
 
   setScreenShareState: function(windowId, active) {
     if (active) {
-      this._activeScreenShares.push(windowId);
+      this._activeScreenShares.add(windowId);
     } else {
-      var index = this._activeScreenShares.indexOf(windowId);
-      if (index != -1) {
-        this._activeScreenShares.splice(index, 1);
+      if (this._activeScreenShares.has(windowId)) {
+        this._activeScreenShares.delete(windowId);
       }
     }
 
@@ -1937,6 +1939,6 @@ this.MozLoopService = {
 
 
   get screenShareActive() {
-    return this._activeScreenShares.length > 0;
+    return this._activeScreenShares.size > 0;
   }
 };
