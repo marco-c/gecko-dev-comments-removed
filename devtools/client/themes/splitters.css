@@ -3,12 +3,12 @@
 
 
 
-:root[devtoolstheme="light"] .devtools-horizontal-splitter {
+:root[devtoolstheme="light"] {
   
   --devtools-splitter-color: #dde1e4;
 }
 
-:root[devtoolstheme="dark"] .devtools-horizontal-splitter {
+:root[devtoolstheme="dark"] {
   --devtools-splitter-color: #42484f;
 }
 
