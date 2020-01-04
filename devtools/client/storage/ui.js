@@ -849,12 +849,16 @@ StorageUI.prototype = {
 
 
   onTablePopupShowing: function (event) {
-    if (!this.getCurrentActor().removeItem) {
+    let selectedItem = this.tree.selectedItem;
+    let type = selectedItem[0];
+    let actor = this.getCurrentActor();
+
+    
+    if (!actor.removeItem || (type === "indexedDB" && selectedItem.length !== 4)) {
       event.preventDefault();
       return;
     }
 
-    let [type] = this.tree.selectedItem;
     let rowId = this.table.contextMenuRowId;
     let data = this.table.items.get(rowId);
     let name = addEllipsis(data[this.table.uniqueId]);
@@ -878,13 +882,20 @@ StorageUI.prototype = {
     let selectedItem = this.tree.selectedItem;
 
     if (selectedItem) {
-      
-      let actor = this.storageTypes[selectedItem[0]];
+      let type = selectedItem[0];
+      let actor = this.storageTypes[type];
 
-      let showDeleteAll = selectedItem.length == 2 && actor.removeAll;
+      
+      
+      
+      let showDeleteAll = actor.removeAll &&
+        (selectedItem.length === (type === "indexedDB" ? 4 : 2));
+
       this._treePopupDeleteAll.hidden = !showDeleteAll;
 
-      let showDeleteDb = selectedItem.length == 3 && actor.removeDatabase;
+      
+      
+      let showDeleteDb = actor.removeDatabase && selectedItem.length === 3;
       this._treePopupDeleteDatabase.hidden = !showDeleteDb;
       if (showDeleteDb) {
         let dbName = addEllipsis(selectedItem[2]);
@@ -904,12 +915,15 @@ StorageUI.prototype = {
 
 
   onRemoveItem: function () {
-    let [, host] = this.tree.selectedItem;
+    let [, host, ...path] = this.tree.selectedItem;
     let actor = this.getCurrentActor();
     let rowId = this.table.contextMenuRowId;
     let data = this.table.items.get(rowId);
-
-    actor.removeItem(host, data[this.table.uniqueId]);
+    let name = data[this.table.uniqueId];
+    if (path.length > 0) {
+      name = JSON.stringify([...path, name]);
+    }
+    actor.removeItem(host, name);
   },
 
   
@@ -919,10 +933,10 @@ StorageUI.prototype = {
     
     
     
-    let [type, host] = this.tree.selectedItem;
+    let [type, host, ...path] = this.tree.selectedItem;
     let actor = this.storageTypes[type];
-
-    actor.removeAll(host);
+    let name = path.length > 0 ? JSON.stringify(path) : undefined;
+    actor.removeAll(host, name);
   },
 
   
