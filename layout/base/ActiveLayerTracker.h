@@ -10,6 +10,7 @@
 class nsIFrame;
 class nsIContent;
 class nsDisplayListBuilder;
+class nsDOMCSSDeclaration;
 
 namespace mozilla {
 
@@ -48,7 +49,11 @@ public:
 
 
 
-  static void NotifyAnimated(nsIFrame* aFrame, nsCSSProperty aProperty);
+
+
+  static void NotifyAnimated(nsIFrame* aFrame, nsCSSProperty aProperty,
+                             const nsAString& aNewValue,
+                             nsDOMCSSDeclaration* aDOMCSSDecl);
   
 
 
@@ -61,7 +66,11 @@ public:
 
 
 
-  static void NotifyInlineStyleRuleModified(nsIFrame* aFrame, nsCSSProperty aProperty);
+
+
+  static void NotifyInlineStyleRuleModified(nsIFrame* aFrame, nsCSSProperty aProperty,
+                                            const nsAString& aNewValue,
+                                            nsDOMCSSDeclaration* aDOMCSSDecl);
   
 
 

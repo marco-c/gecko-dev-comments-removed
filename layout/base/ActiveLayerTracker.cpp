@@ -20,6 +20,7 @@
 #include "nsStyleTransformMatrix.h"
 #include "nsTransitionManager.h"
 #include "nsDisplayList.h"
+#include "nsDOMCSSDeclaration.h"
 
 namespace mozilla {
 
@@ -311,12 +312,21 @@ ActiveLayerTracker::NotifyOffsetRestyle(nsIFrame* aFrame)
 }
 
  void
-ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame, nsCSSProperty aProperty)
+ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame,
+                                   nsCSSProperty aProperty,
+                                   const nsAString& aNewValue,
+                                   nsDOMCSSDeclaration* aDOMCSSDecl)
 {
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   uint8_t& mutationCount = layerActivity->RestyleCountForProperty(aProperty);
-  
-  mutationCount = 0xFF;
+  if (mutationCount != 0xFF) {
+    nsAutoString oldValue;
+    aDOMCSSDecl->GetPropertyValue(aProperty, oldValue);
+    if (aNewValue != oldValue) {
+      
+      mutationCount = 0xFF;
+    }
+  }
 }
 
  void
@@ -354,10 +364,12 @@ IsPresContextInScriptAnimationCallback(nsPresContext* aPresContext)
 
  void
 ActiveLayerTracker::NotifyInlineStyleRuleModified(nsIFrame* aFrame,
-                                                  nsCSSProperty aProperty)
+                                                  nsCSSProperty aProperty,
+                                                  const nsAString& aNewValue,
+                                                  nsDOMCSSDeclaration* aDOMCSSDecl)
 {
   if (IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
-    NotifyAnimated(aFrame, aProperty);
+    NotifyAnimated(aFrame, aProperty, aNewValue, aDOMCSSDecl);
   }
   if (gLayerActivityTracker &&
       gLayerActivityTracker->mCurrentScrollHandlerFrame.IsAlive()) {
