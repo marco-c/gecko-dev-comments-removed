@@ -185,7 +185,7 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
 
   
   
-  bool newBlock = aEvent.mType == MouseInput::MOUSE_DOWN && aEvent.IsLeftButton();
+  bool newBlock = DragTracker::StartsDrag(aEvent);
 
   DragBlockState* block = nullptr;
   if (!newBlock && !mInputBlockQueue.IsEmpty()) {
@@ -195,6 +195,16 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
   if (block && block->HasReceivedMouseUp()) {
     block = nullptr;
   }
+
+  if (!block && mDragTracker.InDrag()) {
+    
+    
+    
+    INPQ_LOG("got a drag event outside a drag block, need to create a block to hold it\n");
+    newBlock = true;
+  }
+
+  mDragTracker.Update(aEvent);
 
   if (!newBlock && !block) {
     return nsEventStatus_eConsumeDoDefault;
@@ -230,8 +240,7 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
     block->AddEvent(aEvent.AsMouseInput());
   }
 
-  bool mouseUp = aEvent.mType == MouseInput::MOUSE_UP && aEvent.IsLeftButton();
-  if (mouseUp) {
+  if (DragTracker::EndsDrag(aEvent)) {
     block->MarkMouseUpReceived();
   }
 

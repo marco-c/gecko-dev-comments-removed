@@ -7,6 +7,7 @@
 #define mozilla_layers_InputQueue_h
 
 #include "APZUtils.h"
+#include "DragTracker.h"
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/UniquePtr.h"
@@ -182,6 +183,9 @@ private:
 
   
   TouchCounter mTouchCounter;
+
+  
+  DragTracker mDragTracker;
 };
 
 } 
