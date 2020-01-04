@@ -600,8 +600,9 @@ nsEditorSpellCheck::SetCurrentDictionary(const nsAString& aDictionary)
     uint32_t flags = 0;
     mEditor->GetFlags(&flags);
     if (!(flags & nsIPlaintextEditor::eEditorMailMask)) {
-      if (mPreferredLang.IsEmpty() ||
-          !mPreferredLang.Equals(aDictionary, nsCaseInsensitiveStringComparator())) {
+      if (!aDictionary.IsEmpty() && (mPreferredLang.IsEmpty() ||
+          !mPreferredLang.Equals(aDictionary,
+                                 nsCaseInsensitiveStringComparator()))) {
         
         
         
