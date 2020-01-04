@@ -2018,7 +2018,8 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
 
                 
                 
-                if (!queue.append(fun.getOrCreateScript(cx)))
+                JSScript* childScript = fun.getOrCreateScript(cx);
+                if (!childScript || !queue.append(childScript))
                     return false;
             }
         } while (!queue.empty());
