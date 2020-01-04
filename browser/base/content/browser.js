@@ -2279,12 +2279,18 @@ function BrowserViewSource(browser) {
 
 
 
-function BrowserPageInfo(doc, initialTab, imageElement, frameOuterWindowID) {
-  var args = {doc: doc, initialTab: initialTab, imageElement: imageElement,
-              frameOuterWindowID: frameOuterWindowID};
+function BrowserPageInfo(documentURL, initialTab, imageElement, frameOuterWindowID) {
+  if (documentURL instanceof HTMLDocument) {
+    Deprecated.warning("Please pass the location URL instead of the document " +
+                       "to BrowserPageInfo() as the first argument.",
+                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1238180");
+    documentURL = documentURL.location;
+  }
+
+  let args = { initialTab, imageElement, frameOuterWindowID };
   var windows = Services.wm.getEnumerator("Browser:page-info");
 
-  var documentURL = doc ? doc.location : window.gBrowser.selectedBrowser.currentURI.spec;
+  documentURL = documentURL || window.gBrowser.selectedBrowser.currentURI.spec;
 
   
   while (windows.hasMoreElements()) {
