@@ -8147,11 +8147,9 @@ IonBuilder::getStaticName(JSObject* staticObject, PropertyName* name, bool* psuc
     BarrierKind barrier = PropertyReadNeedsTypeBarrier(analysisContext, constraints(), staticKey,
                                                        name, types,  true);
 
-    JSObject* singleton = types->maybeSingleton();
-
-    MIRType knownType = types->getKnownMIRType();
     if (barrier == BarrierKind::NoBarrier) {
         
+        JSObject* singleton = types->maybeSingleton();
         if (singleton) {
             if (testSingletonProperty(staticObject, id) == singleton)
                 return pushConstant(ObjectValue(*singleton));
@@ -8161,8 +8159,23 @@ IonBuilder::getStaticName(JSObject* staticObject, PropertyName* name, bool* psuc
         Value constantValue;
         if (property.constant(constraints(), &constantValue))
             return pushConstant(constantValue);
+    }
 
+    if (!loadStaticSlot(staticObject, barrier, types, property.maybeTypes()->definiteSlot())) {
+        *psucceeded = false;
+        return false;
+    }
+
+    return true;
+}
+
+bool
+IonBuilder::loadStaticSlot(JSObject* staticObject, BarrierKind barrier, TemporaryTypeSet* types,
+                           uint32_t slot)
+{
+    if (barrier == BarrierKind::NoBarrier) {
         
+        MIRType knownType = types->getKnownMIRType();
         if (knownType == MIRType_Undefined)
             return pushConstant(UndefinedValue());
         if (knownType == MIRType_Null)
@@ -8175,13 +8188,7 @@ IonBuilder::getStaticName(JSObject* staticObject, PropertyName* name, bool* psuc
     if (barrier != BarrierKind::NoBarrier)
         rvalType = MIRType_Value;
 
-    if (!loadSlot(obj, property.maybeTypes()->definiteSlot(), NumFixedSlots(staticObject),
-                  rvalType, barrier, types)) {
-        *psucceeded = false;
-        return false;
-    }
-
-    return true;
+    return loadSlot(obj, slot, NumFixedSlots(staticObject), rvalType, barrier, types);
 }
 
 
@@ -8385,7 +8392,16 @@ IonBuilder::jsop_getimport(PropertyName* name)
     if (!getStaticName(targetEnv, localName, &emitted))
         return false;
 
-    MOZ_ASSERT(emitted);
+    if (!emitted) {
+        
+        TypeSet::ObjectKey* staticKey = TypeSet::ObjectKey::get(targetEnv);
+        TemporaryTypeSet* types = bytecodeTypes(pc);
+        BarrierKind barrier = PropertyReadNeedsTypeBarrier(analysisContext, constraints(), staticKey,
+                                                           name, types,  true);
+
+        if (!loadStaticSlot(targetEnv, barrier, types, shape->slot()))
+            return false;
+    }
 
     
     

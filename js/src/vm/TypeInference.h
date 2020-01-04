@@ -1220,7 +1220,9 @@ class RecompileInfo
     bool shouldSweep(TypeZone& types);
 };
 
-typedef Vector<RecompileInfo, 0, SystemAllocPolicy> RecompileInfoVector;
+
+
+typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
 
 struct AutoEnterAnalysis;
 

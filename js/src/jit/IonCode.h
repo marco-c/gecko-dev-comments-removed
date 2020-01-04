@@ -533,7 +533,7 @@ struct IonScript
     }
 
     
-    bool invalidate(JSContext* cx, bool resetUses, const char* reason);
+    void invalidate(JSContext* cx, bool resetUses, const char* reason);
 
     size_t invalidationCount() const {
         return invalidationCount_;
