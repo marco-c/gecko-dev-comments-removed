@@ -53,6 +53,7 @@ enum class ScopeKind : uint8_t
 
     
     Lexical,
+    SimpleCatch,
     Catch,
     NamedLambda,
     StrictNamedLambda,
@@ -71,6 +72,12 @@ enum class ScopeKind : uint8_t
     
     Module
 };
+
+static inline bool
+ScopeKindIsCatch(ScopeKind kind)
+{
+    return kind == ScopeKind::SimpleCatch || kind == ScopeKind::Catch;
+}
 
 const char* BindingKindString(BindingKind kind);
 const char* ScopeKindString(ScopeKind kind);
@@ -313,6 +320,9 @@ class Scope : public js::gc::TenuredCell
 
 
 
+
+
+
 class LexicalScope : public Scope
 {
     friend class Scope;
@@ -380,6 +390,7 @@ inline bool
 Scope::is<LexicalScope>() const
 {
     return kind_ == ScopeKind::Lexical ||
+           kind_ == ScopeKind::SimpleCatch ||
            kind_ == ScopeKind::Catch ||
            kind_ == ScopeKind::NamedLambda ||
            kind_ == ScopeKind::StrictNamedLambda;

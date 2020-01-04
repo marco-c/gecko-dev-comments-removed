@@ -3229,7 +3229,9 @@ CheckVarNameConflictsInEnv(JSContext* cx, HandleScript script, HandleObject obj)
         return true;
     }
 
-    if (env->isSyntactic() && !env->isGlobal() && env->scope().kind() == ScopeKind::Catch) {
+    if (env->isSyntactic() && !env->isGlobal() && env->scope().kind() == ScopeKind::SimpleCatch) {
+        
+        
         
         
         return true;
@@ -3249,8 +3251,6 @@ bool
 js::CheckEvalDeclarationConflicts(JSContext* cx, HandleScript script,
                                   HandleObject scopeChain, HandleObject varObj)
 {
-    
-    
     if (!script->bodyScope()->as<EvalScope>().hasBindings())
         return true;
 
