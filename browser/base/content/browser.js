@@ -266,7 +266,9 @@ var gInitialPages = [
 ];
 
 XPCOMUtils.defineLazyGetter(this, "Win7Features", function () {
-#ifdef XP_WIN
+  if (AppConstants.platform != "win")
+    return null;
+
   
   if (gMultiProcessBrowser)
     return null;
@@ -284,7 +286,6 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", function () {
       }
     };
   }
-#endif
   return null;
 });
 
