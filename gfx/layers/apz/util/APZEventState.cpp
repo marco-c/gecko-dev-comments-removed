@@ -265,14 +265,9 @@ APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
   switch (aEvent.mMessage) {
   case eTouchStart: {
     mTouchEndCancelled = false;
-    if (mPendingTouchPreventedResponse) {
-      
-      
-      mContentReceivedInputBlockCallback(mPendingTouchPreventedGuid,
-          mPendingTouchPreventedBlockId, false);
-      sentContentResponse = true;
-      mPendingTouchPreventedResponse = false;
-    }
+    sentContentResponse = SendPendingTouchPreventedResponse(false);
+    
+    
     if (isTouchPrevented) {
       mContentReceivedInputBlockCallback(aGuid, aInputBlockId, isTouchPrevented);
       sentContentResponse = true;
