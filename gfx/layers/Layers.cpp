@@ -1197,6 +1197,12 @@ ContainerLayer::SortChildrenBy3DZOrder(nsTArray<Layer*>& aArray)
       if (toSort.Length() > 0) {
         SortLayersBy3DZOrder(toSort);
         aArray.AppendElements(Move(toSort));
+        
+        
+        
+        
+        
+        toSort.ClearAndRetainStorage();
       }
       aArray.AppendElement(l);
     }
