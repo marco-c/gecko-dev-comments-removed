@@ -2195,7 +2195,7 @@ TabChild::RecvRealDragEvent(const WidgetDragEvent& aEvent,
     if (dragService) {
       
       
-      dragService->FireDragEventAtSource(NS_DRAGDROP_DRAG);
+      dragService->FireDragEventAtSource(eDrag);
     }
   }
 
