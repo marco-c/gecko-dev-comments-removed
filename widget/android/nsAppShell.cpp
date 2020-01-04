@@ -776,16 +776,6 @@ nsAppShell::LegacyGeckoEvent::Run()
         nsAppShell::Get()->AddObserver(curEvent->Characters(), curEvent->Observer());
         break;
 
-    case AndroidGeckoEvent::LOW_MEMORY:
-        
-        if (curEvent->MetaState() >= AndroidGeckoEvent::MEMORY_PRESSURE_MEDIUM) {
-            nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-            if (os) {
-                os->NotifyObservers(nullptr, "memory-pressure", u"low-memory");
-            }
-        }
-        break;
-
     case AndroidGeckoEvent::TELEMETRY_HISTOGRAM_ADD:
         
         if (!curEvent->CharactersExtra().IsVoid()) {
