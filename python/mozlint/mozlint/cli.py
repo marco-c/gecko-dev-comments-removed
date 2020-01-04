@@ -101,7 +101,11 @@ def run(paths, linters, fmt, rev, workdir, **lintargs):
     results = lint.roll(paths, rev=rev, workdir=workdir)
 
     formatter = formatters.get(fmt)
-    print(formatter(results))
+
+    
+    
+    
+    print(formatter(results).encode('utf-8', 'replace'))
     return 1 if results else 0
 
 
