@@ -4,11 +4,16 @@
 
 package org.mozilla.gecko.util;
 
+import android.util.Log;
+import org.mozilla.gecko.mozglue.ContextUtils.SafeIntent;
+
 
 
 
 
 public class Experiments {
+    private static final String LOGTAG = "GeckoExperiments";
+
     
     public static final String BOOKMARKS_HISTORY_MENU = "bookmark-history-menu";
 
@@ -20,4 +25,34 @@ public class Experiments {
     
     public static final String SEARCH_TERM = "search-term";
 
+    private static volatile Boolean disabled = null;
+
+    
+
+
+
+
+
+
+
+
+    public static boolean isDisabled(SafeIntent intent) {
+        if (disabled != null) {
+            return disabled;
+        }
+
+        String env = intent.getStringExtra("env0");
+        for (int i = 1; env != null; i++) {
+            if (env.startsWith("MOZ_DISABLE_SWITCHBOARD=")) {
+                if (!env.endsWith("=")) {
+                    Log.d(LOGTAG, "Switchboard disabled by MOZ_DISABLE_SWITCHBOARD environment variable");
+                    disabled = true;
+                    return disabled;
+                }
+            }
+            env = intent.getStringExtra("env" + i);
+        }
+        disabled = false;
+        return disabled;
+    }
 }

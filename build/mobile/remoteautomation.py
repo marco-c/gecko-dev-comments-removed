@@ -88,6 +88,10 @@ class RemoteAutomation(Automation):
 
         
         
+        env.setdefault('MOZ_DISABLE_SWITCHBOARD', '1')
+
+        
+        
         
         
         env.setdefault('R_LOG_LEVEL', '6')
