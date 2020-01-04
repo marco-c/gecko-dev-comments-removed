@@ -8,6 +8,7 @@ package org.mozilla.gecko.health;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.String;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,9 +39,15 @@ import org.mozilla.gecko.distribution.Distribution.DistributionDescriptor;
 import org.mozilla.gecko.util.GeckoEventListener;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import com.keepsafe.switchboard.SwitchBoard;
+
+import android.content.BroadcastReceiver;
 import android.content.ContentProviderClient;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 
@@ -59,7 +66,7 @@ import android.util.Log;
 
 
 
-public class BrowserHealthRecorder implements HealthRecorder, GeckoEventListener {
+public class BrowserHealthRecorder extends BroadcastReceiver implements HealthRecorder, GeckoEventListener {
     private static final String LOG_TAG = "GeckoHealthRec";
     private static final String PREF_ACCEPT_LANG = "intl.accept_languages";
     private static final String PREF_BLOCKLIST_ENABLED = "extensions.blocklist.enabled";
@@ -177,7 +184,7 @@ public class BrowserHealthRecorder implements HealthRecorder, GeckoEventListener
 
 
     @Override
-    public synchronized void close() {
+    public synchronized void close(final Context context) {
         switch (this.state) {
             case CLOSED:
                 Log.w(LOG_TAG, "Ignoring attempt to double-close closed BrowserHealthRecorder.");
@@ -191,6 +198,9 @@ public class BrowserHealthRecorder implements HealthRecorder, GeckoEventListener
 
         this.state = State.CLOSED;
         this.unregisterEventListeners();
+        if (AppConstants.MOZ_SWITCHBOARD) {
+            LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
+        }
 
         
         this.storage = null;
@@ -523,6 +533,12 @@ public class BrowserHealthRecorder implements HealthRecorder, GeckoEventListener
             this.profileCache.updateLocales(osLocale, appLocale);
             this.profileCache.completeInitialization();
 
+            
+            if (AppConstants.MOZ_SWITCHBOARD) {
+                IntentFilter intentFilter = new IntentFilter(SwitchBoard.ACTION_CONFIG_FETCHED);
+                LocalBroadcastManager.getInstance(context).registerReceiver(this, intentFilter);
+            }
+
             Log.d(LOG_TAG, "Successfully restored state. Initializing storage.");
             initializeStorage();
             return;
@@ -691,6 +707,71 @@ public class BrowserHealthRecorder implements HealthRecorder, GeckoEventListener
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, "Exception handling message \"" + event + "\":", e);
+        }
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        switch (action) {
+            case SwitchBoard.ACTION_CONFIG_FETCHED:
+                Log.d(LOG_TAG, "Handle the new experiments.");
+                
+                List<String> experiments = SwitchBoard.getActiveExperiments(context);
+
+                
+                
+                ArrayList<String> addToProfile = new ArrayList<String>();
+                for (String experiment : experiments) {
+                    addToProfile.add(experiment + "@experiments.mozilla.org");
+                }
+
+                
+                ArrayList<String> removeFromProfile = new ArrayList<String>();
+
+                
+                
+                JSONObject addons = this.profileCache.getAddonsJSON();
+                Iterator<?> keys = addons.keys();
+                while (keys.hasNext()) {
+                    String addon = (String) keys.next();
+                    if (addon.endsWith("@experiments.mozilla.org")) {
+                        if (addToProfile.contains(addon)) {
+                            
+                            addToProfile.remove(addon);
+                        } else {
+                            
+                            removeFromProfile.add(addon);
+                        }
+                    }
+                }
+
+                
+                if (addToProfile.isEmpty() && removeFromProfile.isEmpty()) {
+                    return;
+                }
+
+                
+                for (String fakeName : addToProfile) {
+                    try {
+                        
+                        JSONObject fakeAddon = new JSONObject();
+                        fakeAddon.put("type", "experiment");
+                        this.onAddonChanged(fakeName, fakeAddon);
+                        Log.d(LOG_TAG, "Add this experiment: " + fakeName);
+                    } catch (JSONException je) {
+                    }
+                }
+
+                
+                for (String fakeName : removeFromProfile) {
+                    this.onAddonUninstalling(fakeName);
+                    Log.d(LOG_TAG, "Remove this experiment: " + fakeName);
+                }
+
+                
+                this.onEnvironmentChanged();
+                break;
         }
     }
 
