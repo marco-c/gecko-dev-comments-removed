@@ -126,6 +126,18 @@ public:
   void swap(U& aOther)
   {
     mPtr.swap(aOther);
+#ifdef DEBUG
+    mInited = mPtr;
+#endif
+  }
+
+  
+  
+  
+  bool isInitialized() const
+  {
+    MOZ_ASSERT(!!mPtr == mInited, "mInited out of sync with mPtr?");
+    return mPtr;
   }
 
 protected:
