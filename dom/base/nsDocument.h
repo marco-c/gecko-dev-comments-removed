@@ -1651,11 +1651,7 @@ public:
   
   bool mParserAborted:1;
 
-  friend class nsPointerLockPermissionRequest;
   friend class nsCallRequestFullScreen;
-  
-  
-  bool mAllowRelocking:1;
 
   
   
@@ -1673,10 +1669,6 @@ public:
   
   
   bool mSSApplicableStateNotificationPending:1;
-
-  
-  
-  uint8_t mCancelledPointerLockRequests:2;
 
   
   
