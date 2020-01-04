@@ -753,6 +753,30 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
+  findEntryMatchingRule: function(node, filterRule) {
+    const options = {matchedSelectors: true, inherited: true};
+    let entries = [];
+    let parent = this.walker.parentNode(node);
+    while (parent && parent.rawNode.nodeType != Ci.nsIDOMNode.DOCUMENT_NODE) {
+      entries = entries.concat(this._getAllElementRules(parent, parent,
+                                                        options));
+      parent = this.walker.parentNode(parent);
+    }
+
+    return entries.filter(entry => entry.rule.rawRule === filterRule);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1626,11 +1650,9 @@ var StyleRuleActor = protocol.ActorClass({
 
 
   modifySelector2: method(function(node, value, editAuthored = false) {
-    let ruleProps = null;
-
     if (this.type === ELEMENT_STYLE ||
         this.rawRule.selectorText === value) {
-      return { ruleProps, isMatching: true };
+      return { ruleProps: null, isMatching: true };
     }
 
     let selectorPromise = this._addNewSelector(value, editAuthored);
@@ -1647,17 +1669,19 @@ var StyleRuleActor = protocol.ActorClass({
     }
 
     return selectorPromise.then((newCssRule) => {
-      if (newCssRule) {
-        ruleProps = this.pageStyle.getNewAppliedProps(node, newCssRule);
-      }
-
-      
-      
+      let ruleProps = null;
       let isMatching = false;
-      try {
-        isMatching = node.rawNode.matches(value);
-      } catch (e) {
-        
+
+      if (newCssRule) {
+        let ruleEntry = this.pageStyle.findEntryMatchingRule(node, newCssRule);
+        if (ruleEntry.length === 1) {
+          isMatching = true;
+          ruleProps =
+            this.pageStyle.getAppliedProps(node, ruleEntry,
+                                           { matchedSelectors: true });
+        } else {
+          ruleProps = this.pageStyle.getNewAppliedProps(node, newCssRule);
+        }
       }
 
       return { ruleProps, isMatching };
