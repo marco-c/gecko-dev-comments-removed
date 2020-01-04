@@ -47,7 +47,6 @@ namespace mozilla {
 MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
   : mMutex("mozilla::MediaEngineWebRTC"),
     mVoiceEngine(nullptr),
-    mAudioInput(nullptr),
     mAudioEngineInit(false)
 {
 #ifndef MOZ_B2G_CAMERA
@@ -240,6 +239,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
                                          nsTArray<RefPtr<MediaEngineAudioSource> >* aASources)
 {
   ScopedCustomReleasePtr<webrtc::VoEBase> ptrVoEBase;
+  ScopedCustomReleasePtr<webrtc::VoEHardware> ptrVoEHw;
   
   MutexAutoLock lock(mMutex);
 
@@ -283,16 +283,13 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
     mAudioEngineInit = true;
   }
 
-  if (!mAudioInput) {
-    if (true ) {
-      mAudioInput = new mozilla::AudioInputCubeb(mVoiceEngine);
-    } else {
-      mAudioInput = new mozilla::AudioInputWebRTC(mVoiceEngine);
-    }
+  ptrVoEHw = webrtc::VoEHardware::GetInterface(mVoiceEngine);
+  if (!ptrVoEHw)  {
+    return;
   }
 
   int nDevices = 0;
-  mAudioInput->GetNumOfRecordingDevices(nDevices);
+  ptrVoEHw->GetNumOfRecordingDevices(nDevices);
   int i;
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
   i = 0; 
@@ -308,9 +305,10 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
     deviceName[0] = '\0';
     uniqueId[0] = '\0';
 
-    int error = mAudioInput->GetRecordingDeviceName(i, deviceName, uniqueId);
+    int error = ptrVoEHw->GetRecordingDeviceName(i, deviceName, uniqueId);
     if (error) {
-      LOG((" VoEHardware:GetRecordingDeviceName: Failed %d", error));
+      LOG((" VoEHardware:GetRecordingDeviceName: Failed %d",
+           ptrVoEBase->LastError() ));
       continue;
     }
 
@@ -326,8 +324,8 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
       
       aASources->AppendElement(aSource.get());
     } else {
-      aSource = new MediaEngineWebRTCMicrophoneSource(mThread, mVoiceEngine, mAudioInput,
-                                                      i, deviceName, uniqueId);
+      aSource = new MediaEngineWebRTCMicrophoneSource(mThread, mVoiceEngine, i,
+                                                      deviceName, uniqueId);
       mAudioSources.Put(uuid, aSource); 
       aASources->AppendElement(aSource);
     }
