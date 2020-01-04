@@ -288,9 +288,6 @@ public:
   bool InFrame() const { return mInFrame; }
 
   
-  bool ShouldUseSurfaceCache() const { return bool(mImage); }
-
-  
 
 
 

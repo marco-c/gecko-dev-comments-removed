@@ -8,6 +8,7 @@
 #include "nsMimeTypes.h"
 #include "mozilla/RefPtr.h"
 
+#include "AnimationSurfaceProvider.h"
 #include "Decoder.h"
 #include "IDecodingTask.h"
 #include "nsPNGDecoder.h"
@@ -141,7 +142,7 @@ DecoderFactory::CreateDecoder(DecoderType aType,
   
   
   SurfaceKey surfaceKey =
-    RasterSurfaceKey(aOutputSize, aSurfaceFlags,  0);
+    RasterSurfaceKey(aOutputSize, aSurfaceFlags, PlaybackType::eStatic);
   NotNull<RefPtr<DecodedSurfaceProvider>> provider =
     WrapNotNull(new DecodedSurfaceProvider(aImage,
                                            WrapNotNull(decoder),
@@ -175,8 +176,9 @@ DecoderFactory::CreateAnimationDecoder(DecoderType aType,
   MOZ_ASSERT(aType == DecoderType::GIF || aType == DecoderType::PNG,
              "Calling CreateAnimationDecoder for non-animating DecoderType");
 
-  RefPtr<Decoder> decoder =
-    GetDecoder(aType, aImage,  true);
+  
+  
+  RefPtr<Decoder> decoder = GetDecoder(aType, nullptr,  true);
   MOZ_ASSERT(decoder, "Should have a decoder now");
 
   
@@ -192,14 +194,22 @@ DecoderFactory::CreateAnimationDecoder(DecoderType aType,
   
   
   SurfaceKey surfaceKey =
-    RasterSurfaceKey(aIntrinsicSize, aSurfaceFlags,  0);
+    RasterSurfaceKey(aIntrinsicSize, aSurfaceFlags, PlaybackType::eAnimated);
+  NotNull<RefPtr<AnimationSurfaceProvider>> provider =
+    WrapNotNull(new AnimationSurfaceProvider(aImage,
+                                             WrapNotNull(decoder),
+                                             surfaceKey));
+
+  
+  
   InsertOutcome outcome =
-    SurfaceCache::InsertPlaceholder(ImageKey(aImage.get()), surfaceKey);
+    SurfaceCache::Insert(provider, ImageKey(aImage.get()), surfaceKey);
   if (outcome != InsertOutcome::SUCCESS) {
     return nullptr;
   }
 
-  RefPtr<IDecodingTask> task = new AnimationDecodingTask(WrapNotNull(decoder));
+  
+  RefPtr<IDecodingTask> task = provider.get();
   return task.forget();
 }
 

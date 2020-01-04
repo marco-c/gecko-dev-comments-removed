@@ -116,6 +116,21 @@ AnimationSurfaceProvider::LogicalSizeInBytes() const
 }
 
 void
+AnimationSurfaceProvider::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
+                                                 size_t& aHeapSizeOut,
+                                                 size_t& aNonHeapSizeOut)
+{
+  
+  
+  
+  MutexAutoLock lock(mFramesMutex);
+
+  for (const RawAccessFrameRef& frame : mFrames) {
+    frame->AddSizeOfExcludingThis(aMallocSizeOf, aHeapSizeOut, aNonHeapSizeOut);
+  }
+}
+
+void
 AnimationSurfaceProvider::Run()
 {
   MutexAutoLock lock(mDecodingMutex);
@@ -233,6 +248,10 @@ AnimationSurfaceProvider::AnnounceSurfaceAvailable()
   mFramesMutex.AssertNotCurrentThreadOwns();
   MOZ_ASSERT(mImage);
 
+  
+  
+  
+  
   
   SurfaceCache::SurfaceAvailable(WrapNotNull(this),
                                  ImageKey(mImage.get()),

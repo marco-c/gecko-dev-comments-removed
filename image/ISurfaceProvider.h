@@ -13,6 +13,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
@@ -49,6 +50,21 @@ public:
   
   
   virtual size_t LogicalSizeInBytes() const = 0;
+
+  
+  
+  
+  virtual void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
+                                      size_t& aHeapSizeOut,
+                                      size_t& aNonHeapSizeOut)
+  {
+    DrawableFrameRef ref = DrawableRef( 0);
+    if (!ref) {
+      return;
+    }
+
+    ref->AddSizeOfExcludingThis(aMallocSizeOf, aHeapSizeOut, aNonHeapSizeOut);
+  }
 
   
   

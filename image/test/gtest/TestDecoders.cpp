@@ -419,17 +419,16 @@ TEST_F(ImageDecoders, AnimatedGIFWithExtraImageSubBlocks)
   EXPECT_TRUE(bool(imageProgress & FLAG_IS_ANIMATED) == true);
 
   
-  LookupResult firstFrameLookupResult =
+  LookupResult result =
     SurfaceCache::Lookup(ImageKey(image.get()),
                          RasterSurfaceKey(imageSize,
                                           DefaultSurfaceFlags(),
-                                           0));
-  EXPECT_EQ(MatchType::EXACT, firstFrameLookupResult.Type());
+                                          PlaybackType::eAnimated));
+  ASSERT_EQ(MatchType::EXACT, result.Type());
 
-  LookupResult secondFrameLookupResult =
-    SurfaceCache::Lookup(ImageKey(image.get()),
-                         RasterSurfaceKey(imageSize,
-                                          DefaultSurfaceFlags(),
-                                           1));
-  EXPECT_EQ(MatchType::EXACT, secondFrameLookupResult.Type());
+  EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));
+  EXPECT_TRUE(bool(result.Surface()));
+
+  EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(1)));
+  EXPECT_TRUE(bool(result.Surface()));
 }

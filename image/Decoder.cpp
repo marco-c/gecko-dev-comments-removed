@@ -100,8 +100,7 @@ Decoder::Init()
 
   
   
-  
-  MOZ_ASSERT(ShouldUseSurfaceCache() || IsFirstFrameDecode());
+  MOZ_ASSERT_IF(mImage, IsMetadataDecode());
 
   
   nsresult rv = InitInternal();
@@ -341,13 +340,6 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
     return RawAccessFrameRef();
   }
 
-  const uint32_t bytesPerPixel = aPaletteDepth == 0 ? 4 : 1;
-  if (ShouldUseSurfaceCache() &&
-      !SurfaceCache::CanHold(aFrameRect.Size(), bytesPerPixel)) {
-    NS_WARNING("Trying to add frame that's too large for the SurfaceCache");
-    return RawAccessFrameRef();
-  }
-
   NotNull<RefPtr<imgFrame>> frame = WrapNotNull(new imgFrame());
   bool nonPremult = bool(mSurfaceFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
   if (NS_FAILED(frame->InitForDecoder(aOutputSize, aFrameRect, aFormat,
@@ -360,29 +352,6 @@ Decoder::AllocateFrameInternal(uint32_t aFrameNum,
   if (!ref) {
     frame->Abort();
     return RawAccessFrameRef();
-  }
-
-  if (ShouldUseSurfaceCache()) {
-    NotNull<RefPtr<ISurfaceProvider>> provider =
-      WrapNotNull(new SimpleSurfaceProvider(frame));
-    InsertOutcome outcome =
-      SurfaceCache::Insert(provider, ImageKey(mImage.get()),
-                           RasterSurfaceKey(aOutputSize,
-                                            mSurfaceFlags,
-                                            aFrameNum));
-    if (outcome == InsertOutcome::FAILURE) {
-      
-      
-      
-      ref->Abort();
-      return RawAccessFrameRef();
-    } else if (outcome == InsertOutcome::FAILURE_ALREADY_PRESENT) {
-      
-      
-      mDecodeAborted = true;
-      ref->Abort();
-      return RawAccessFrameRef();
-    }
   }
 
   if (aFrameNum == 1) {

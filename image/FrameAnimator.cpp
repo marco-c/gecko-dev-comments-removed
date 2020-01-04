@@ -297,8 +297,6 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
 LookupResult
 FrameAnimator::GetCompositedFrame(uint32_t aFrameNum)
 {
-  MOZ_ASSERT(aFrameNum != 0, "First frame is never composited");
-
   
   if (mLastCompositedFrameIndex == int32_t(aFrameNum)) {
     return LookupResult(DrawableSurface(mCompositingFrame->DrawableRef()),
@@ -311,9 +309,20 @@ FrameAnimator::GetCompositedFrame(uint32_t aFrameNum)
     SurfaceCache::Lookup(ImageKey(mImage),
                          RasterSurfaceKey(mSize,
                                           DefaultSurfaceFlags(),
-                                          aFrameNum));
-  MOZ_ASSERT(!result || !result.Surface()->GetIsPaletted(),
+                                          PlaybackType::eAnimated));
+  if (!result) {
+    return result;
+  }
+
+  
+  
+  if (NS_FAILED(result.Surface().Seek(aFrameNum))) {
+    return LookupResult(MatchType::NOT_FOUND);
+  }
+
+  MOZ_ASSERT(!result.Surface()->GetIsPaletted(),
              "About to return a paletted frame");
+
   return result;
 }
 
@@ -339,7 +348,7 @@ DoCollectSizeOfCompositingSurfaces(const RawAccessFrameRef& aSurface,
   
   SurfaceKey key = RasterSurfaceKey(aSurface->GetImageSize(),
                                     DefaultSurfaceFlags(),
-                                     0);
+                                    PlaybackType::eStatic);
 
   
   SurfaceMemoryCounter counter(key,  true, aType);
@@ -381,9 +390,19 @@ FrameAnimator::GetRawFrame(uint32_t aFrameNum) const
     SurfaceCache::Lookup(ImageKey(mImage),
                          RasterSurfaceKey(mSize,
                                           DefaultSurfaceFlags(),
-                                          aFrameNum));
-  return result ? result.Surface()->RawAccessRef()
-                : RawAccessFrameRef();
+                                          PlaybackType::eAnimated));
+  if (!result) {
+    return RawAccessFrameRef();
+  }
+
+  
+  
+  
+  if (NS_FAILED(result.Surface().Seek(aFrameNum))) {
+    return RawAccessFrameRef();  
+  }
+
+  return result.Surface()->RawAccessRef();
 }
 
 

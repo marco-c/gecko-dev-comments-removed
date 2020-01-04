@@ -880,11 +880,15 @@ VectorImage::LookupCachedSurface(const SVGDrawingParameters& aParams)
     return nullptr;
   }
 
+  
+  
+  if (mHaveAnimations) {
+    return nullptr;
+  }
+
   LookupResult result =
     SurfaceCache::Lookup(ImageKey(this),
-                         VectorSurfaceKey(aParams.size,
-                                          aParams.svgContext,
-                                          aParams.animationTime));
+                         VectorSurfaceKey(aParams.size, aParams.svgContext));
   if (!result) {
     return nullptr;  
   }
@@ -961,9 +965,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
   NotNull<RefPtr<ISurfaceProvider>> provider =
     WrapNotNull(new SimpleSurfaceProvider(frame));
   SurfaceCache::Insert(provider, ImageKey(this),
-                       VectorSurfaceKey(aParams.size,
-                                        aParams.svgContext,
-                                        aParams.animationTime));
+                       VectorSurfaceKey(aParams.size, aParams.svgContext));
 
   
   RefPtr<gfxDrawable> drawable =

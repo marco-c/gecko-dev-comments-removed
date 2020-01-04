@@ -270,21 +270,16 @@ RasterImage::GetType(uint16_t* aType)
 }
 
 LookupResult
-RasterImage::LookupFrameInternal(uint32_t aFrameNum,
-                                 const IntSize& aSize,
-                                 uint32_t aFlags)
+RasterImage::LookupFrameInternal(const IntSize& aSize,
+                                 uint32_t aFlags,
+                                 PlaybackType aPlaybackType)
 {
-  if (!mAnimationState) {
-    NS_ASSERTION(aFrameNum == 0,
-                 "Don't ask for a frame > 0 if we're not animated!");
-    aFrameNum = 0;
-  }
-
-  if (mAnimationState && aFrameNum > 0) {
+  if (mAnimationState && aPlaybackType == PlaybackType::eAnimated) {
     MOZ_ASSERT(mFrameAnimator);
     MOZ_ASSERT(ToSurfaceFlags(aFlags) == DefaultSurfaceFlags(),
                "Can't composite frames with non-default surface flags");
-    return mFrameAnimator->GetCompositedFrame(aFrameNum);
+    const size_t index = mAnimationState->GetCurrentAnimationFrameIndex();
+    return mFrameAnimator->GetCompositedFrame(index);
   }
 
   SurfaceFlags surfaceFlags = ToSurfaceFlags(aFlags);
@@ -296,20 +291,20 @@ RasterImage::LookupFrameInternal(uint32_t aFrameNum,
     return SurfaceCache::Lookup(ImageKey(this),
                                 RasterSurfaceKey(aSize,
                                                  surfaceFlags,
-                                                 aFrameNum));
+                                                 PlaybackType::eStatic));
   }
 
   
   return SurfaceCache::LookupBestMatch(ImageKey(this),
                                        RasterSurfaceKey(aSize,
                                                         surfaceFlags,
-                                                        aFrameNum));
+                                                        PlaybackType::eStatic));
 }
 
 DrawableSurface
-RasterImage::LookupFrame(uint32_t aFrameNum,
-                         const IntSize& aSize,
-                         uint32_t aFlags)
+RasterImage::LookupFrame(const IntSize& aSize,
+                         uint32_t aFlags,
+                         PlaybackType aPlaybackType)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -325,7 +320,8 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
     return DrawableSurface();  
   }
 
-  LookupResult result = LookupFrameInternal(aFrameNum, requestedSize, aFlags);
+  LookupResult result =
+    LookupFrameInternal(requestedSize, aFlags, aPlaybackType);
 
   if (!result && !mHasSize) {
     
@@ -338,14 +334,15 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
     
     
     
-    MOZ_ASSERT(!mAnimationState || mAnimationState->KnownFrameCount() < 1,
+    MOZ_ASSERT(aPlaybackType != PlaybackType::eAnimated ||
+               !mAnimationState || mAnimationState->KnownFrameCount() < 1,
                "Animated frames should be locked");
 
-    Decode(requestedSize, aFlags);
+    Decode(requestedSize, aFlags, aPlaybackType);
 
     
     if (aFlags & FLAG_SYNC_DECODE) {
-      result = LookupFrameInternal(aFrameNum, requestedSize, aFlags);
+      result = LookupFrameInternal(requestedSize, aFlags, aPlaybackType);
     }
   }
 
@@ -378,22 +375,6 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
   }
 
   return Move(result.Surface());
-}
-
-uint32_t
-RasterImage::GetCurrentFrameIndex() const
-{
-  if (mAnimationState) {
-    return mAnimationState->GetCurrentAnimationFrameIndex();
-  }
-
-  return 0;
-}
-
-uint32_t
-RasterImage::GetRequestedFrameIndex(uint32_t aWhichFrame) const
-{
-  return aWhichFrame == FRAME_FIRST ? 0 : GetCurrentFrameIndex();
 }
 
 NS_IMETHODIMP_(bool)
@@ -508,7 +489,7 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   
   
   DrawableSurface surface =
-    LookupFrame(GetRequestedFrameIndex(aWhichFrame), aSize, aFlags);
+    LookupFrame(aSize, aFlags, ToPlaybackType(aWhichFrame));
   if (!surface) {
     
     return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
@@ -766,7 +747,7 @@ RasterImage::StartAnimation()
   }
 
   
-  if (GetCurrentFrameIndex() == 0 &&
+  if (mAnimationState->GetCurrentAnimationFrameIndex() == 0 &&
       mAnimationState->FirstFrameTimeout() == FrameTimeout::Forever()) {
     mAnimationFinished = true;
     return NS_ERROR_ABORT;
@@ -1063,8 +1044,8 @@ RasterImage::RequestDecodeForSize(const IntSize& aSize, uint32_t aFlags)
                  : aFlags & ~FLAG_SYNC_DECODE_IF_FAST;
 
   
-  
-  LookupFrame(0, aSize, flags);
+  LookupFrame(aSize, flags, mAnimationState ? PlaybackType::eAnimated
+                                            : PlaybackType::eStatic);
 
   return NS_OK;
 }
@@ -1100,7 +1081,9 @@ LaunchDecodingTask(IDecodingTask* aTask,
 }
 
 NS_IMETHODIMP
-RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
+RasterImage::Decode(const IntSize& aSize,
+                    uint32_t aFlags,
+                    PlaybackType aPlaybackType)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1144,7 +1127,7 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
 
   
   RefPtr<IDecodingTask> task;
-  if (mAnimationState) {
+  if (mAnimationState && aPlaybackType == PlaybackType::eAnimated) {
     task = DecoderFactory::CreateAnimationDecoder(mDecoderType, WrapNotNull(this),
                                                   mSourceBuffer, mSize,
                                                   decoderFlags, surfaceFlags);
@@ -1211,13 +1194,13 @@ RasterImage::RecoverFromInvalidFrames(const IntSize& aSize, uint32_t aFlags)
   
   
   if (mAnimationState) {
-    Decode(mSize, aFlags | FLAG_SYNC_DECODE);
+    Decode(mSize, aFlags | FLAG_SYNC_DECODE, PlaybackType::eAnimated);
     ResetAnimation();
     return;
   }
 
   
-  Decode(aSize, aFlags);
+  Decode(aSize, aFlags, PlaybackType::eStatic);
 }
 
 static bool
@@ -1343,7 +1326,7 @@ RasterImage::Draw(gfxContext* aContext,
                  : aFlags & ~FLAG_HIGH_QUALITY_SCALING;
 
   DrawableSurface surface =
-    LookupFrame(GetRequestedFrameIndex(aWhichFrame), aSize, flags);
+    LookupFrame(aSize, flags, ToPlaybackType(aWhichFrame));
   if (!surface) {
     
     if (mDrawStartTime.IsNull()) {
@@ -1519,6 +1502,8 @@ void
 RasterImage::NotifyProgress(Progress aProgress,
                             const IntRect& aInvalidRect ,
                             const Maybe<uint32_t>& aFrameCount ,
+                            DecoderFlags aDecoderFlags
+                              ,
                             SurfaceFlags aSurfaceFlags
                               )
 {
@@ -1534,16 +1519,18 @@ RasterImage::NotifyProgress(Progress aProgress,
     UpdateImageContainer();
   }
 
-  
-  MOZ_ASSERT_IF(aFrameCount && *aFrameCount > 1, mAnimationState || mError);
-  if (mAnimationState && aFrameCount) {
-    mAnimationState->UpdateKnownFrameCount(*aFrameCount);
-  }
+  if (!(aDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY)) {
+    
+    MOZ_ASSERT_IF(aFrameCount && *aFrameCount > 1, mAnimationState || mError);
+    if (mAnimationState && aFrameCount) {
+      mAnimationState->UpdateKnownFrameCount(*aFrameCount);
+    }
 
-  
-  if (mAnimationState && aFrameCount == Some(1u) &&
-      mPendingAnimation && ShouldAnimate()) {
-    StartAnimation();
+    
+    if (mAnimationState && aFrameCount == Some(1u) &&
+        mPendingAnimation && ShouldAnimate()) {
+      StartAnimation();
+    }
   }
 
   
@@ -1557,6 +1544,7 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
                                   Progress aProgress,
                                   const IntRect& aInvalidRect,
                                   const Maybe<uint32_t>& aFrameCount,
+                                  DecoderFlags aDecoderFlags,
                                   SurfaceFlags aSurfaceFlags)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1586,9 +1574,11 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
   }
 
   
-  NotifyProgress(aProgress, aInvalidRect, aFrameCount, aSurfaceFlags);
+  NotifyProgress(aProgress, aInvalidRect, aFrameCount,
+                 aDecoderFlags, aSurfaceFlags);
 
-  if (mHasBeenDecoded && mAnimationState) {
+  if (!(aDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY) &&
+      mHasBeenDecoded && mAnimationState) {
     
     
     mAnimationState->SetDoneDecoding(true);

@@ -65,33 +65,6 @@ protected:
 
 
 
-class AnimationDecodingTask final : public IDecodingTask
-{
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AnimationDecodingTask, override)
-
-  explicit AnimationDecodingTask(NotNull<Decoder*> aDecoder);
-
-  void Run() override;
-  bool ShouldPreferSyncRun() const override;
-
-  
-  
-  TaskPriority Priority() const override { return TaskPriority::eLow; }
-
-private:
-  virtual ~AnimationDecodingTask() { }
-
-  
-  Mutex mMutex;
-
-  NotNull<RefPtr<Decoder>> mDecoder;
-};
-
-
-
-
-
 class MetadataDecodingTask final : public IDecodingTask
 {
 public:

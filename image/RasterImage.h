@@ -40,6 +40,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "ImageContainer.h"
+#include "PlaybackType.h"
 #ifdef DEBUG
   #include "imgIContainerDebug.h"
 #endif
@@ -193,12 +194,17 @@ public:
 
 
 
+
+
+
   void NotifyProgress(Progress aProgress,
                       const gfx::IntRect& aInvalidRect = nsIntRect(),
                       const Maybe<uint32_t>& aFrameCount = Nothing(),
+                      DecoderFlags aDecoderFlags = DefaultDecoderFlags(),
                       SurfaceFlags aSurfaceFlags = DefaultSurfaceFlags());
 
   
+
 
 
 
@@ -222,6 +228,7 @@ public:
                             Progress aProgress,
                             const gfx::IntRect& aInvalidRect,
                             const Maybe<uint32_t>& aFrameCount,
+                            DecoderFlags aDecoderFlags,
                             SurfaceFlags aSurfaceFlags);
 
   
@@ -273,7 +280,29 @@ public:
 private:
   nsresult Init(const char* aMimeType, uint32_t aFlags);
 
-  DrawResult DrawInternal(DrawableSurface&& aSurface,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  DrawableSurface LookupFrame(const gfx::IntSize& aSize,
+                              uint32_t aFlags,
+                              PlaybackType aPlaybackType);
+
+  
+  LookupResult LookupFrameInternal(const gfx::IntSize& aSize,
+                                   uint32_t aFlags,
+                                   PlaybackType aPlaybackType);
+
+  DrawResult DrawInternal(DrawableSurface&& aFrameRef,
                           gfxContext* aContext,
                           const nsIntSize& aSize,
                           const ImageRegion& aRegion,
@@ -284,15 +313,6 @@ private:
     GetFrameInternal(const gfx::IntSize& aSize,
                      uint32_t aWhichFrame,
                      uint32_t aFlags);
-
-  LookupResult LookupFrameInternal(uint32_t aFrameNum,
-                                   const gfx::IntSize& aSize,
-                                   uint32_t aFlags);
-  DrawableSurface LookupFrame(uint32_t aFrameNum,
-                              const nsIntSize& aSize,
-                              uint32_t aFlags);
-  uint32_t GetCurrentFrameIndex() const;
-  uint32_t GetRequestedFrameIndex(uint32_t aWhichFrame) const;
 
   Pair<DrawResult, RefPtr<layers::Image>>
     GetCurrentImage(layers::ImageContainer* aContainer, uint32_t aFlags);
@@ -320,7 +340,11 @@ private:
 
 
 
-  NS_IMETHOD Decode(const gfx::IntSize& aSize, uint32_t aFlags);
+
+
+  NS_IMETHOD Decode(const gfx::IntSize& aSize,
+                    uint32_t aFlags,
+                    PlaybackType aPlaybackType);
 
   
 
