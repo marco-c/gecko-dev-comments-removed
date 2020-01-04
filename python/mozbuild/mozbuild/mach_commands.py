@@ -495,8 +495,21 @@ class Build(MachCommandBase):
 
             telemetry_handler = getattr(self._mach_context,
                                         'telemetry_handler', None)
-            usage = monitor.record_resource_usage()
-            telemetry_handler(self._mach_context, usage)
+            telemetry_data = monitor.record_resource_usage()
+
+            
+            
+            
+            try:
+                moz_artifact_builds = self.substs.get('MOZ_ARTIFACT_BUILDS',
+                                                      False)
+                telemetry_data['substs'] = {
+                    'MOZ_ARTIFACT_BUILDS': moz_artifact_builds,
+                }
+            except BuildEnvironmentNotFoundException:
+                pass
+
+            telemetry_handler(self._mach_context, telemetry_data)
 
         
         
