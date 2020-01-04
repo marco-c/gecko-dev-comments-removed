@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 const {AnimationsTimeline} = require("devtools/client/animationinspector/components/animation-timeline");
@@ -140,11 +141,12 @@ var AnimationsPanel = {
     gToolbox.off("picker-started", this.onPickerStarted);
     gToolbox.off("picker-stopped", this.onPickerStopped);
 
-    this.toggleAllButtonEl.removeEventListener("click", this.onToggleAllClicked);
-    this.playTimelineButtonEl.removeEventListener(
-      "click", this.onTimelinePlayClicked);
-    this.rewindTimelineButtonEl.removeEventListener(
-      "click", this.onTimelineRewindClicked);
+    this.toggleAllButtonEl.removeEventListener("click",
+      this.onToggleAllClicked);
+    this.playTimelineButtonEl.removeEventListener("click",
+      this.onTimelinePlayClicked);
+    this.rewindTimelineButtonEl.removeEventListener("click",
+      this.onTimelineRewindClicked);
 
     document.removeEventListener("keydown", this.onKeyDown, false);
 

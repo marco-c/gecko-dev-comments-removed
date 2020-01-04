@@ -8,10 +8,8 @@
 
 const {Cu} = require("chrome");
 Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
-const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 var {loader} = Cu.import("resource://devtools/shared/Loader.jsm");
-loader.lazyRequireGetter(this, "EventEmitter",
-                               "devtools/shared/event-emitter");
+loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 const STRINGS_URI = "chrome://devtools/locale/animationinspector.properties";
 const L10N = new ViewHelpers.L10N(STRINGS_URI);
@@ -62,6 +60,7 @@ function createNode(options) {
 }
 
 exports.createNode = createNode;
+
 
 
 
@@ -162,10 +161,10 @@ function formatStopwatchTime(time) {
 
   let pad = (nb, max) => {
     if (nb < max) {
-      return new Array((max+"").length - (nb+"").length + 1).join("0") + nb;
+      return new Array((max + "").length - (nb + "").length + 1).join("0") + nb;
     }
     return nb;
-  }
+  };
 
   minutes = pad(minutes, 10);
   seconds = pad(seconds, 10);

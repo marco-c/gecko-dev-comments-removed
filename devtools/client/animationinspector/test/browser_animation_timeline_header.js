@@ -8,10 +8,9 @@ requestLongerTimeout(2);
 
 
 
-const {
-  findOptimalTimeInterval,
-  TimeScale
-} = require("devtools/client/animationinspector/utils");
+const {findOptimalTimeInterval, TimeScale} = require("devtools/client/animationinspector/utils");
+
+
 
 const TIME_GRADUATION_MIN_SPACING = 40;
 

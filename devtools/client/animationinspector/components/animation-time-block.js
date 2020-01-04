@@ -1,11 +1,14 @@
+
+
+
+
+
+
 "use strict";
 
 const {Cu} = require("chrome");
 Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
-const {
-  createNode,
-  TimeScale
-} = require("devtools/client/animationinspector/utils");
+const {createNode, TimeScale} = require("devtools/client/animationinspector/utils");
 
 const STRINGS_URI = "chrome://devtools/locale/animationinspector.properties";
 const L10N = new ViewHelpers.L10N(STRINGS_URI);
@@ -52,7 +55,7 @@ AnimationTimeBlock.prototype = {
     let {x, iterationW, delayX, delayW, negativeDelayW} =
       TimeScale.getAnimationDimensions(animation);
 
-    let iterations = createNode({
+    createNode({
       parent: this.containerEl,
       attributes: {
         "class": "iterations" + (state.iterationCount ? "" : " infinite"),

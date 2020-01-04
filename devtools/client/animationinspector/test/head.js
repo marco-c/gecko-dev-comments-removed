@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 var Cu = Components.utils;
@@ -114,7 +115,7 @@ function getNodeFront(selector, {walker}) {
 
 
 
-var selectNode = Task.async(function*(data, inspector, reason="test") {
+var selectNode = Task.async(function*(data, inspector, reason = "test") {
   info("Selecting the node for '" + data + "'");
   let nodeFront = data;
   if (!data._form) {
@@ -258,7 +259,7 @@ function hasSideBarTab(inspector, id) {
 
 
 
-function once(target, eventName, useCapture=false) {
+function once(target, eventName, useCapture = false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
 
   let deferred = promise.defer();
@@ -312,7 +313,8 @@ function waitForContentMessage(name) {
 
 
 
-function executeInContent(name, data={}, objects={}, expectResponse=true) {
+function executeInContent(name, data = {}, objects = {},
+                          expectResponse = true) {
   info("Sending message " + name + " to content");
   let mm = gBrowser.selectedBrowser.messageManager;
 
@@ -327,7 +329,8 @@ function executeInContent(name, data={}, objects={}, expectResponse=true) {
 
 
 
-var getAnimationPlayerState = Task.async(function*(selector, animationIndex=0) {
+var getAnimationPlayerState = Task.async(function*(selector,
+                                                   animationIndex = 0) {
   let playState = yield executeInContent("Test:GetAnimationPlayerState",
                                          {selector, animationIndex});
   return playState;
@@ -366,7 +369,6 @@ var waitForAllAnimationTargets = Task.async(function*(panel) {
 
 function* assertScrubberMoving(panel, isMoving) {
   let timeline = panel.animationsTimelineComponent;
-  let scrubberEl = timeline.scrubberEl;
 
   if (isMoving) {
     
@@ -446,8 +448,8 @@ function* changeTimelinePlaybackRate(panel, rate) {
 
   
   
-  EventUtils.synthesizeMouseAtCenter(win.document.querySelector("#timeline-toolbar"),
-                                     {type: "mousemove"}, win);
+  EventUtils.synthesizeMouseAtCenter(
+    win.document.querySelector("#timeline-toolbar"), {type: "mousemove"}, win);
 }
 
 
@@ -519,6 +521,8 @@ function getKeyframeComponent(panel, animationIndex, propertyName) {
 
 
 function getKeyframeEl(panel, animationIndex, propertyName, keyframeIndex) {
-  let keyframeComponent = getKeyframeComponent(panel, animationIndex, propertyName);
-  return keyframeComponent.keyframesEl.querySelectorAll(".frame")[keyframeIndex];
+  let keyframeComponent = getKeyframeComponent(panel, animationIndex,
+                                               propertyName);
+  return keyframeComponent.keyframesEl
+                          .querySelectorAll(".frame")[keyframeIndex];
 }

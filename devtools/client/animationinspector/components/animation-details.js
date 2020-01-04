@@ -1,12 +1,16 @@
+
+
+
+
+
+
 "use strict";
 
 const {Cu} = require("chrome");
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
-const {
-  createNode,
-  TimeScale
-} = require("devtools/client/animationinspector/utils");
+const {createNode, TimeScale} = require("devtools/client/animationinspector/utils");
 const {Keyframes} = require("devtools/client/animationinspector/components/keyframes");
+
 
 
 

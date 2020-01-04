@@ -5,6 +5,11 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -15,10 +20,8 @@ Cu.import("resource://gre/modules/Console.jsm");
 Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
 
 loader.lazyRequireGetter(this, "promise");
-loader.lazyRequireGetter(this, "EventEmitter",
-                               "devtools/shared/event-emitter");
-loader.lazyRequireGetter(this, "AnimationsFront",
-                               "devtools/server/actors/animation", true);
+loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
+loader.lazyRequireGetter(this, "AnimationsFront", "devtools/server/actors/animation", true);
 
 const STRINGS_URI = "chrome://devtools/locale/animationinspector.properties";
 const L10N = new ViewHelpers.L10N(STRINGS_URI);

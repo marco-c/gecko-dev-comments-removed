@@ -2,7 +2,9 @@
 
 
 
+
 "use strict";
+
 
 
 
@@ -103,18 +105,18 @@ addMessageListener("Test:GetAnimationPlayerState", function(msg) {
 
 
 
-function superQuerySelector(superSelector, root=content.document) {
+function superQuerySelector(superSelector, root = content.document) {
   let frameIndex = superSelector.indexOf("||");
   if (frameIndex === -1) {
     return root.querySelector(superSelector);
-  } else {
-    let rootSelector = superSelector.substring(0, frameIndex).trim();
-    let childSelector = superSelector.substring(frameIndex+2).trim();
-    root = root.querySelector(rootSelector);
-    if (!root || !root.contentWindow) {
-      return null;
-    }
-
-    return superQuerySelector(childSelector, root.contentWindow.document);
   }
+
+  let rootSelector = superSelector.substring(0, frameIndex).trim();
+  let childSelector = superSelector.substring(frameIndex + 2).trim();
+  root = root.querySelector(rootSelector);
+  if (!root || !root.contentWindow) {
+    return null;
+  }
+
+  return superQuerySelector(childSelector, root.contentWindow.document);
 }
