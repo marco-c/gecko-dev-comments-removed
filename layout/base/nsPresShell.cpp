@@ -1468,7 +1468,8 @@ PresShell::AddAuthorSheet(nsISupports* aSheet)
 
   
   
-  StyleSheetHandle firstAuthorSheet = mDocument->FirstAdditionalAuthorSheet();
+  StyleSheetHandle firstAuthorSheet =
+    mDocument->GetFirstAdditionalAuthorSheet();
   if (firstAuthorSheet) {
     mStyleSet->InsertStyleSheetBefore(SheetType::Doc, sheet, firstAuthorSheet);
   } else {
