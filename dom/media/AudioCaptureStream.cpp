@@ -29,8 +29,8 @@ namespace mozilla
 
 static const uint32_t MONO = 1;
 
-AudioCaptureStream::AudioCaptureStream(DOMMediaStream* aWrapper, TrackID aTrackId)
-  : ProcessedMediaStream(aWrapper), mTrackId(aTrackId), mStarted(false), mTrackCreated(false)
+AudioCaptureStream::AudioCaptureStream(TrackID aTrackId)
+  : ProcessedMediaStream(), mTrackId(aTrackId), mStarted(false), mTrackCreated(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_COUNT_CTOR(AudioCaptureStream);

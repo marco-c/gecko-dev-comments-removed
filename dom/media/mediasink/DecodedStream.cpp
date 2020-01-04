@@ -162,7 +162,7 @@ DecodedStreamData::DecodedStreamData(OutputStreamManager* aOutputStreamManager,
   , mHaveSentFinish(false)
   , mHaveSentFinishAudio(false)
   , mHaveSentFinishVideo(false)
-  , mStream(aOutputStreamManager->Graph()->CreateSourceStream(nullptr))
+  , mStream(aOutputStreamManager->Graph()->CreateSourceStream())
   
   , mListener(new DecodedStreamGraphListener(mStream, Move(aPromise)))
   

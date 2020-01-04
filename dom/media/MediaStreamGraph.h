@@ -23,7 +23,6 @@
 #include "nsAutoPtr.h"
 #include "nsAutoRef.h"
 #include <speex/speex_resampler.h>
-#include "DOMMediaStream.h"
 
 class nsIRunnable;
 
@@ -79,7 +78,16 @@ namespace media {
 
 
 
+class AudioNodeEngine;
+class AudioNodeExternalInputStream;
+class AudioNodeStream;
+class CameraPreviewMediaStream;
+class MediaInputPort;
+class MediaStream;
 class MediaStreamGraph;
+class MediaStreamGraphImpl;
+class ProcessedMediaStream;
+class SourceMediaStream;
 
 
 
@@ -439,15 +447,6 @@ struct AudioNodeSizes
   nsCString mNodeType;
 };
 
-class MediaStreamGraphImpl;
-class SourceMediaStream;
-class ProcessedMediaStream;
-class MediaInputPort;
-class AudioNodeEngine;
-class AudioNodeExternalInputStream;
-class AudioNodeStream;
-class CameraPreviewMediaStream;
-
 
 
 
@@ -533,7 +532,7 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream>
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStream)
 
-  explicit MediaStream(DOMMediaStream* aWrapper);
+  MediaStream();
 
 protected:
   
@@ -798,12 +797,6 @@ public:
 
   virtual void ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment, MediaSegment* aRawSegment = nullptr);
 
-  DOMMediaStream* GetWrapper()
-  {
-    NS_ASSERTION(NS_IsMainThread(), "Only use DOMMediaStream on main thread");
-    return mWrapper;
-  }
-
   
   virtual bool MainThreadNeedsUpdates() const
   {
@@ -939,8 +932,6 @@ protected:
   bool mNotifiedHasCurrentData;
 
   
-  DOMMediaStream* mWrapper;
-  
   StreamTime mMainThreadCurrentTime;
   bool mMainThreadFinished;
   bool mFinishedNotificationSent;
@@ -962,8 +953,8 @@ protected:
 class SourceMediaStream : public MediaStream
 {
 public:
-  explicit SourceMediaStream(DOMMediaStream* aWrapper) :
-    MediaStream(aWrapper),
+  explicit SourceMediaStream() :
+    MediaStream(),
     mMutex("mozilla::media::SourceMediaStream"),
     mUpdateKnownTracksTime(0),
     mPullEnabled(false),
@@ -1385,8 +1376,8 @@ private:
 class ProcessedMediaStream : public MediaStream
 {
 public:
-  explicit ProcessedMediaStream(DOMMediaStream* aWrapper)
-    : MediaStream(aWrapper), mAutofinish(false), mCycleMarker(0)
+  explicit ProcessedMediaStream()
+    : MediaStream(), mAutofinish(false), mCycleMarker(0)
   {}
 
   
@@ -1545,7 +1536,7 @@ public:
 
 
 
-  SourceMediaStream* CreateSourceStream(DOMMediaStream* aWrapper);
+  SourceMediaStream* CreateSourceStream();
   
 
 
@@ -1560,12 +1551,11 @@ public:
 
 
 
-  ProcessedMediaStream* CreateTrackUnionStream(DOMMediaStream* aWrapper);
+  ProcessedMediaStream* CreateTrackUnionStream();
   
 
 
-  ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper,
-                                                 TrackID aTrackId);
+  ProcessedMediaStream* CreateAudioCaptureStream(TrackID aTrackId);
 
   
 

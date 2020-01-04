@@ -479,17 +479,6 @@ public:
   bool RemovePrincipalChangeObserver(dom::PrincipalChangeObserver<DOMMediaStream>* aObserver);
 
   
-
-
-
-
-  void NotifyMediaStreamGraphShutdown();
-  
-
-
-  void NotifyStreamFinished();
-
-  
   
   void AssignId(const nsAString& aID) { mID = aID; }
 
@@ -559,9 +548,7 @@ public:
 
   void AddConsumerToKeepAlive(nsISupports* aConsumer)
   {
-    if (!IsFinished() && !mNotifiedOfMediaStreamGraphShutdown) {
-      mConsumersToKeepAlive.AppendElement(aConsumer);
-    }
+    mConsumersToKeepAlive.AppendElement(aConsumer);
   }
 
   
@@ -685,7 +672,12 @@ protected:
   
   RefPtr<MediaStreamTrackSourceGetter> mTrackSourceGetter;
 
+  
+  
   RefPtr<OwnedStreamListener> mOwnedListener;
+
+  
+  
   RefPtr<PlaybackStreamListener> mPlaybackListener;
 
   nsTArray<nsAutoPtr<OnTracksAvailableCallback> > mRunOnTracksAvailable;
@@ -696,7 +688,7 @@ protected:
   nsString mID;
 
   
-  nsTArray<nsCOMPtr<nsISupports> > mConsumersToKeepAlive;
+  nsTArray<nsCOMPtr<nsISupports>> mConsumersToKeepAlive;
 
   bool mNotifiedOfMediaStreamGraphShutdown;
 

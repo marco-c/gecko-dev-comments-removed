@@ -25,7 +25,6 @@
 #include "mozilla/dom/AudioContextBinding.h"
 #include "mozilla/media/MediaUtils.h"
 #include <algorithm>
-#include "DOMMediaStream.h"
 #include "GeckoProfiler.h"
 #include "mozilla/unused.h"
 #include "mozilla/media/MediaUtils.h"
@@ -1622,10 +1621,6 @@ MediaStreamGraphImpl::ApplyStreamUpdate(StreamUpdate* aUpdate)
   stream->mMainThreadFinished = aUpdate->mNextMainThreadFinished;
 
   if (stream->ShouldNotifyStreamFinished()) {
-    if (stream->mWrapper) {
-      stream->mWrapper->NotifyStreamFinished();
-    }
-
     stream->NotifyMainThreadListeners();
   }
 }
@@ -1699,12 +1694,6 @@ public:
       
       NS_ASSERTION(mGraph->mForceShutDown || !mGraph->mRealtime,
                    "Not in forced shutdown?");
-      for (MediaStream* stream : mGraph->AllStreams()) {
-        DOMMediaStream* s = stream->GetWrapper();
-        if (s) {
-          s->NotifyMediaStreamGraphShutdown();
-        }
-      }
 
       mGraph->mLifecycleState =
         MediaStreamGraphImpl::LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION;
@@ -1983,7 +1972,7 @@ MediaStreamGraphImpl::AppendMessage(UniquePtr<ControlMessage> aMessage)
   EnsureRunInStableState();
 }
 
-MediaStream::MediaStream(DOMMediaStream* aWrapper)
+MediaStream::MediaStream()
   : mTracksStartTime(0)
   , mStartBlocking(GRAPH_TIME_MAX)
   , mSuspendedCount(0)
@@ -1992,7 +1981,6 @@ MediaStream::MediaStream(DOMMediaStream* aWrapper)
   , mNotifiedBlocked(false)
   , mHasCurrentData(false)
   , mNotifiedHasCurrentData(false)
-  , mWrapper(aWrapper)
   , mMainThreadCurrentTime(0)
   , mMainThreadFinished(false)
   , mFinishedNotificationSent(false)
@@ -2002,11 +1990,6 @@ MediaStream::MediaStream(DOMMediaStream* aWrapper)
   , mAudioChannelType(dom::AudioChannel::Normal)
 {
   MOZ_COUNT_CTOR(MediaStream);
-  
-  
-  
-  NS_ASSERTION(!aWrapper || !aWrapper->GetPlaybackStream(),
-               "Wrapper already has another media stream hooked up to it!");
 }
 
 size_t
@@ -2014,7 +1997,6 @@ MediaStream::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t amount = 0;
 
-  
   
   
   
@@ -2165,7 +2147,6 @@ MediaStream::Destroy()
     void RunDuringShutdown() override
     { Run(); }
   };
-  mWrapper = nullptr;
   GraphImpl()->AppendMessage(MakeUnique<Message>(this));
   
   
@@ -3552,26 +3533,25 @@ MediaStreamGraphImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
 }
 
 SourceMediaStream*
-MediaStreamGraph::CreateSourceStream(DOMMediaStream* aWrapper)
+MediaStreamGraph::CreateSourceStream()
 {
-  SourceMediaStream* stream = new SourceMediaStream(aWrapper);
+  SourceMediaStream* stream = new SourceMediaStream();
   AddStream(stream);
   return stream;
 }
 
 ProcessedMediaStream*
-MediaStreamGraph::CreateTrackUnionStream(DOMMediaStream* aWrapper)
+MediaStreamGraph::CreateTrackUnionStream()
 {
-  TrackUnionStream* stream = new TrackUnionStream(aWrapper);
+  TrackUnionStream* stream = new TrackUnionStream();
   AddStream(stream);
   return stream;
 }
 
 ProcessedMediaStream*
-MediaStreamGraph::CreateAudioCaptureStream(DOMMediaStream* aWrapper,
-                                           TrackID aTrackId)
+MediaStreamGraph::CreateAudioCaptureStream(TrackID aTrackId)
 {
-  AudioCaptureStream* stream = new AudioCaptureStream(aWrapper, aTrackId);
+  AudioCaptureStream* stream = new AudioCaptureStream(aTrackId);
   AddStream(stream);
   return stream;
 }
