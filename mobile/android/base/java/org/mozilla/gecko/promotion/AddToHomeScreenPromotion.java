@@ -134,6 +134,11 @@ public class AddToHomeScreenPromotion extends BrowserAppDelegate implements Tabs
             return;
         }
 
+        if (tab.isPrivate()) {
+            
+            return;
+        }
+
         if (!isInForeground) {
             
             
