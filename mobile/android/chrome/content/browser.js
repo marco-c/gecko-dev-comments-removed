@@ -1344,10 +1344,11 @@ var BrowserApp = {
 
 
 
-  selectOrOpenTab: function selectOrOpenTab(aURL, aFlags) {
+
+  selectOrAddTab: function selectOrAddTab(aURL, aParams, aFlags) {
     let tab = this.getTabWithURL(aURL, aFlags);
     if (tab == null) {
-      tab = this.addTab(aURL);
+      tab = this.addTab(aURL, aParams);
     } else {
       this.selectTab(tab);
     }
@@ -5952,7 +5953,7 @@ var XPInstallObserver = {
     }).show((data) => {
       if (data.button === 0) {
         
-        BrowserApp.addTab("about:addons", { parentId: BrowserApp.selectedTab.id });
+        BrowserApp.selectOrAddTab("about:addons", { parentId: BrowserApp.selectedTab.id });
       }
     });
   },
@@ -5980,7 +5981,7 @@ var XPInstallObserver = {
           button: {
             icon: "drawable://alert_addon",
             label: Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.action2"),
-            callback: () => { BrowserApp.addTab("about:addons#" + aAddon.id, { parentId: BrowserApp.selectedTab.id }); },
+            callback: () => { BrowserApp.selectOrAddTab("about:addons", { parentId: BrowserApp.selectedTab.id }); },
           }
         });
       }
