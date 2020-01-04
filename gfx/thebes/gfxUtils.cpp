@@ -1655,7 +1655,14 @@ gfxUtils::ThreadSafeGetFeatureStatus(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
     RefPtr<GetFeatureStatusRunnable> runnable =
       new GetFeatureStatusRunnable(workerPrivate, gfxInfo, feature, status);
 
-    runnable->Dispatch(workerPrivate->GetJSContext());
+    ErrorResult rv;
+    runnable->Dispatch(rv);
+    if (rv.Failed()) {
+        
+        
+        
+        return rv.StealNSResult();
+    }
 
     return runnable->GetNSResult();
   }
