@@ -158,7 +158,7 @@ add_task(function* test_clientWithTabsIconsDisabled() {
   equal(clients[0].tabs.length, 1);
   equal(clients[0].tabs[0].url, "http://foo.com/");
   
-  equal(clients[0].tabs[0].icon, faviconService.defaultFavicon.spec);
+  equal(clients[0].tabs[0].icon, "");
   Services.prefs.clearUserPref("services.sync.syncedTabs.showRemoteIcons");
 });
 
