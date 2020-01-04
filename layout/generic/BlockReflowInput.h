@@ -16,68 +16,91 @@ class nsBlockFrame;
 class nsFrameList;
 class nsOverflowContinuationTracker;
 
-
-
-
-
-
-
-#define BRS_UNCONSTRAINEDBSIZE    0x00000001
-
-
-
-
-
-
-#define BRS_ISBSTARTMARGINROOT    0x00000002
-
-
-
-
-
-
-#define BRS_ISBENDMARGINROOT      0x00000004
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define BRS_APPLYBSTARTMARGIN     0x00000008
-#define BRS_ISFIRSTINFLOW         0x00000010
-
-#define BRS_HAVELINEADJACENTTOTOP 0x00000020
-
-#define BRS_FLOAT_MGR             0x00000040
-
-
-#define BRS_LINE_LAYOUT_EMPTY     0x00000080
-#define BRS_ISOVERFLOWCONTAINER   0x00000100
-
-#define BRS_PROPTABLE_FLOATCLIST  0x00000200
-
-#define BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED 0x00000400
-#define BRS_LASTFLAG              BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED
-
 namespace mozilla {
 
 
 
 
 class BlockReflowInput {
-  using ReflowInput = mozilla::ReflowInput;
+
+  
+  struct Flags {
+    Flags()
+      : mHasUnconstrainedBSize(false)
+      , mIsBStartMarginRoot(false)
+      , mIsBEndMarginRoot(false)
+      , mShouldApplyBStartMargin(false)
+      , mIsFirstInflow(false)
+      , mHasLineAdjacentToTop(false)
+      , mBlockNeedsFloatManager(false)
+      , mIsLineLayoutEmpty(false)
+      , mIsOverflowContainer(false)
+      , mIsFloatListInBlockPropertyTable(false)
+      , mFloatFragmentsInsideColumnEnabled(false)
+    {}
+
+    
+    
+    
+    
+    bool mHasUnconstrainedBSize : 1;
+
+    
+    
+    
+    
+    
+    
+    bool mIsBStartMarginRoot : 1;
+
+    
+    
+    
+    
+    
+    
+    bool mIsBEndMarginRoot : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mShouldApplyBStartMargin : 1;
+
+    bool mIsFirstInflow : 1;
+
+    
+    bool mHasLineAdjacentToTop : 1;
+
+    
+    bool mBlockNeedsFloatManager : 1;
+
+    
+    
+    bool mIsLineLayoutEmpty : 1;
+
+    bool mIsOverflowContainer : 1;
+
+    
+    bool mIsFloatListInBlockPropertyTable : 1;
+
+    
+    bool mFloatFragmentsInsideColumnEnabled : 1;
+  };
 
 public:
   BlockReflowInput(const ReflowInput& aReflowInput,
@@ -192,8 +215,8 @@ public:
   void RecoverStateFrom(nsLineList::iterator aLine, nscoord aDeltaBCoord);
 
   void AdvanceToNextLine() {
-    if (GetFlag(BRS_LINE_LAYOUT_EMPTY)) {
-      SetFlag(BRS_LINE_LAYOUT_EMPTY, false);
+    if (mFlags.mIsLineLayoutEmpty) {
+      mFlags.mIsLineLayoutEmpty = false;
     } else {
       mLineNumber++;
     }
@@ -347,29 +370,12 @@ public:
 
   int32_t mLineNumber;
 
-  int16_t mFlags;
+  Flags mFlags;
 
   uint8_t mFloatBreakType;
 
   
   nscoord mConsumedBSize;
-
-  void SetFlag(uint32_t aFlag, bool aValue)
-  {
-    NS_ASSERTION(aFlag<=BRS_LASTFLAG, "bad flag");
-    if (aValue) { 
-      mFlags |= aFlag;
-    }
-    else {        
-      mFlags &= ~aFlag;
-    }
-  }
-
-  bool GetFlag(uint32_t aFlag) const
-  {
-    NS_ASSERTION(aFlag<=BRS_LASTFLAG, "bad flag");
-    return !!(mFlags & aFlag);
-  }
 
 private:
   bool CanPlaceFloat(nscoord aFloatISize,

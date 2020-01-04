@@ -1489,7 +1489,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 #ifdef NOISY_FINAL_SIZE
   ListTag(stdout);
   printf(": mBCoord=%d mIsBEndMarginRoot=%s mPrevBEndMargin=%d bp=%d,%d\n",
-         aState.mBCoord, aState.GetFlag(BRS_ISBENDMARGINROOT) ? "yes" : "no",
+         aState.mBCoord, aState.mFlags.mIsBEndMarginRoot ? "yes" : "no",
          aState.mPrevBEndMargin.get(),
          borderPadding.BStart(wm), borderPadding.BEnd(wm));
 #endif
@@ -1507,7 +1507,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
   
   
   nscoord nonCarriedOutBDirMargin = 0;
-  if (!aState.GetFlag(BRS_ISBENDMARGINROOT)) {
+  if (!aState.mFlags.mIsBEndMarginRoot) {
     
     
     
@@ -1526,7 +1526,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 
   nscoord blockEndEdgeOfChildren = aState.mBCoord + nonCarriedOutBDirMargin;
   
-  if (aState.GetFlag(BRS_ISBENDMARGINROOT) ||
+  if (aState.mFlags.mIsBEndMarginRoot ||
       NS_UNCONSTRAINEDSIZE != aReflowInput.ComputedBSize()) {
     
     
@@ -1542,7 +1542,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
                aState.mReflowInput.AvailableBSize());
     }
   }
-  if (aState.GetFlag(BRS_FLOAT_MGR)) {
+  if (aState.mFlags.mBlockNeedsFloatManager) {
     
     
     nscoord floatHeight =
@@ -3076,7 +3076,7 @@ nsBlockFrame::ShouldApplyBStartMargin(BlockReflowInput& aState,
                                       nsLineBox* aLine,
                                       nsIFrame* aChildFrame)
 {
-  if (aState.GetFlag(BRS_APPLYBSTARTMARGIN)) {
+  if (aState.mFlags.mShouldApplyBStartMargin) {
     
     return true;
   }
@@ -3087,26 +3087,26 @@ nsBlockFrame::ShouldApplyBStartMargin(BlockReflowInput& aState,
     
     
     
-    aState.SetFlag(BRS_APPLYBSTARTMARGIN, true);
+    aState.mFlags.mShouldApplyBStartMargin = true;
     return true;
   }
 
   
   line_iterator line = begin_lines();
-  if (aState.GetFlag(BRS_HAVELINEADJACENTTOTOP)) {
+  if (aState.mFlags.mHasLineAdjacentToTop) {
     line = aState.mLineAdjacentToTop;
   }
   while (line != aLine) {
     if (!line->CachedIsEmpty() || line->HasClearance()) {
       
       
-      aState.SetFlag(BRS_APPLYBSTARTMARGIN, true);
+      aState.mFlags.mShouldApplyBStartMargin = true;
       return true;
     }
     
     
     ++line;
-    aState.SetFlag(BRS_HAVELINEADJACENTTOTOP, true);
+    aState.mFlags.mHasLineAdjacentToTop = true;
     aState.mLineAdjacentToTop = line;
   }
 
@@ -3841,7 +3841,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
   nscoord iStart = lineRect.IStart(lineWM);
   nscoord availISize = lineRect.ISize(lineWM);
   nscoord availBSize;
-  if (aState.GetFlag(BRS_UNCONSTRAINEDBSIZE)) {
+  if (aState.mFlags.mHasUnconstrainedBSize) {
     availBSize = NS_UNCONSTRAINEDSIZE;
   }
   else {
@@ -3859,7 +3859,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
                               false, 
                               lineWM, aState.mContainerSize);
 
-  aState.SetFlag(BRS_LINE_LAYOUT_EMPTY, false);
+  aState.mFlags.mIsLineLayoutEmpty = false;
 
   
   
@@ -3938,13 +3938,13 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     }
   }
 
-  aState.SetFlag(BRS_LINE_LAYOUT_EMPTY, aLineLayout.LineIsEmpty());
+  aState.mFlags.mIsLineLayoutEmpty = aLineLayout.LineIsEmpty();
 
   
   bool needsBackup = aLineLayout.NeedsBackup() &&
     (lineReflowStatus == LINE_REFLOW_STOP || lineReflowStatus == LINE_REFLOW_OK);
   if (needsBackup && aLineLayout.HaveForcedBreakPosition()) {
-  	NS_WARNING("We shouldn't be backing up more than once! "
+    NS_WARNING("We shouldn't be backing up more than once! "
                "Someone must have set a break opportunity beyond the available width, "
                "even though there were better break opportunities before it");
     needsBackup = false;
@@ -4539,7 +4539,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
     
     
     
-    nscoord dy = aState.GetFlag(BRS_APPLYBSTARTMARGIN)
+    nscoord dy = aState.mFlags.mShouldApplyBStartMargin
                    ? -aState.mPrevBEndMargin.get() : 0;
     newBCoord = aState.mBCoord + dy;
   }
@@ -6072,7 +6072,7 @@ nsBlockFrame::AdjustFloatAvailableSpace(BlockReflowInput& aState,
                        : std::max(0, aState.ContentBEnd() - aState.mBCoord);
 
   if (availBSize != NS_UNCONSTRAINEDSIZE &&
-      !aState.GetFlag(BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED) &&
+      !aState.mFlags.mFloatFragmentsInsideColumnEnabled &&
       nsLayoutUtils::GetClosestFrameOfType(this, nsGkAtoms::columnSetFrame)) {
     
     
