@@ -34,6 +34,12 @@ let gEditItemOverlay = {
     let isItem = itemId != -1;
     let isFolderShortcut = isItem &&
       node.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT;
+    let isTag = node && PlacesUtils.nodeIsTagQuery(node);
+    if (isTag) {
+      itemId = PlacesUtils.getConcreteItemId(node);
+      
+      
+    }
     let isURI = node && PlacesUtils.nodeIsURI(node);
     let uri = isURI ? NetUtil.newURI(node.uri) : null;
     let title = node ? node.title : null;
@@ -55,7 +61,7 @@ let gEditItemOverlay = {
                               isURI, uri, title,
                               isBookmark, isFolderShortcut, isParentReadOnly,
                               bulkTagging, uris,
-                              visibleRows, postData };
+                              visibleRows, postData, isTag };
   },
 
   get initialized() {
@@ -91,10 +97,11 @@ let gEditItemOverlay = {
     
     
     
+    
     return !this.initialized ||
            this._paneInfo.isFolderShortcut ||
-           !this._paneInfo.isItem ||
-           (this._paneInfo.isParentReadOnly && !this._paneInfo.isBookmark);
+           (!this._paneInfo.isItem && !this._paneInfo.isTag) ||
+           (this._paneInfo.isParentReadOnly && !this._paneInfo.isBookmark && !this._paneInfo.isTag);
   },
 
   
@@ -518,7 +525,7 @@ let gEditItemOverlay = {
   },
 
   onNamePickerChange() {
-    if (this.readOnly || !this._paneInfo.isItem)
+    if (this.readOnly || !(this._paneInfo.isItem || this._paneInfo.isTag))
       return;
 
     
@@ -536,9 +543,13 @@ let gEditItemOverlay = {
         PlacesUtils.transactionManager.doTransaction(txn);
         return;
       }
-      let guid = this._paneInfo.itemGuid;
-      PlacesTransactions.EditTitle({ guid, title: newTitle })
-                        .transact().catch(Components.utils.reportError);
+      Task.spawn(function* () {
+        let guid = this._paneInfo.isTag
+                    ? (yield PlacesUtils.promiseItemGuid(this._paneInfo.itemId))
+                    : this._paneInfo.itemGuid;
+        PlacesTransactions.EditTitle({ guid, title: newTitle })
+                          .transact().catch(Components.utils.reportError);
+      }).catch(Cu.reportError);
     }
   },
 
