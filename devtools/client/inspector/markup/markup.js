@@ -59,6 +59,9 @@ loader.lazyGetter(this, "AutocompletePopup", () => {
   return require("devtools/client/shared/autocomplete-popup").AutocompletePopup;
 });
 
+XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
+  "resource://gre/modules/PluralForm.jsm");
+
 
 
 
@@ -1548,11 +1551,12 @@ MarkupView.prototype = {
         }
 
         if (!(children.hasFirst && children.hasLast)) {
+          let nodesCount = container.node.numChildren;
+          let showAllString = PluralForm.get(nodesCount,
+            this.strings.GetStringFromName("markupView.more.showAll2"));
           let data = {
             showing: this.strings.GetStringFromName("markupView.more.showing"),
-            showAll: this.strings.formatStringFromName(
-                      "markupView.more.showAll",
-                      [container.node.numChildren.toString()], 1),
+            showAll: showAllString.replace("#1", nodesCount),
             allButtonClick: () => {
               container.maxChildren = -1;
               container.childrenDirty = true;
@@ -3196,7 +3200,9 @@ function parseAttributeValues(attr, doc) {
     }
   }
 
-  return attributes;
+  
+  
+  return attributes.reverse();
 }
 
 
