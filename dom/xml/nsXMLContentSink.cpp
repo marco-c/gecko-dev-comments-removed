@@ -1304,7 +1304,6 @@ nsXMLContentSink::ReportError(const char16_t* aErrorText,
   mIsDocumentObserver = false;
 
   
-  
   nsCOMPtr<nsIDOMNode> node(do_QueryInterface(mDocument));
   if (node) {
     for (;;) {
@@ -1332,6 +1331,12 @@ nsXMLContentSink::ReportError(const char16_t* aErrorText,
   mContentStack.Clear();
   mNotifyLevel = 0;
 
+  
+  if (mDocument->SuppressParserErrorElement()) {
+    return NS_OK;
+  }
+
+  
   rv = HandleProcessingInstruction(u"xml-stylesheet",
                                    u"href=\"chrome://global/locale/intl.css\" type=\"text/css\"");
   NS_ENSURE_SUCCESS(rv, rv);

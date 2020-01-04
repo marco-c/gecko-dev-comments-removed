@@ -644,6 +644,8 @@ protected:
 
   nsCString mResponseCharset;
 
+  void MatchCharsetAndDecoderToResponseDocument();
+
   XMLHttpRequestResponseType mResponseType;
 
   
@@ -708,6 +710,7 @@ protected:
   void HandleTimeoutCallback();
 
   bool mErrorLoad;
+  bool mErrorParsingXML;
   bool mWaitingForOnStopRequest;
   bool mProgressTimerIsActive;
   bool mIsHtml;

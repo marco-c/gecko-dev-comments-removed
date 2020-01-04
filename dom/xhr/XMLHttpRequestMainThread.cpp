@@ -16,6 +16,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/FormData.h"
+#include "mozilla/dom/XMLDocument.h"
 #include "mozilla/dom/URLSearchParams.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
@@ -171,7 +172,8 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
     mUploadTransferred(0), mUploadTotal(0), mUploadComplete(true),
     mProgressSinceLastProgressEvent(false),
     mRequestSentTime(0), mTimeoutMilliseconds(0),
-    mErrorLoad(false), mWaitingForOnStopRequest(false),
+    mErrorLoad(false), mErrorParsingXML(false),
+    mWaitingForOnStopRequest(false),
     mProgressTimerIsActive(false),
     mIsHtml(false),
     mWarnAboutSyncHtml(false),
@@ -601,18 +603,13 @@ XMLHttpRequestMainThread::GetResponseText(nsAString& aResponseText,
   
   
   
-  if (!mResponseXML ||
+  if ((!mResponseXML && !mErrorParsingXML) ||
       mResponseBodyDecodedPos == mResponseBody.Length()) {
     aResponseText = mResponseText;
     return;
   }
 
-  if (mResponseCharset != mResponseXML->GetDocumentCharacterSet()) {
-    mResponseCharset = mResponseXML->GetDocumentCharacterSet();
-    mResponseText.Truncate();
-    mResponseBodyDecodedPos = 0;
-    mDecoder = EncodingUtils::DecoderForEncoding(mResponseCharset);
-  }
+  MatchCharsetAndDecoderToResponseDocument();
 
   NS_ASSERTION(mResponseBodyDecodedPos < mResponseBody.Length(),
                "Unexpected mResponseBodyDecodedPos");
@@ -1959,6 +1956,12 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
     nsCOMPtr<nsILoadGroup> loadGroup;
     channel->GetLoadGroup(getter_AddRefs(loadGroup));
 
+    
+    
+    if (!IsSystemXHR()) {
+      mResponseXML->SetSuppressParserErrorElement(true);
+    }
+
     rv = mResponseXML->StartDocumentLoad(kLoadAsData, channel, loadGroup,
                                          nullptr, getter_AddRefs(listener),
                                          !isCrossSite);
@@ -2079,6 +2082,10 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
 
   mFlagSyncLooping = false;
 
+  
+  
+  MatchCharsetAndDecoderToResponseDocument();
+
   if (NS_FAILED(status)) {
     
     
@@ -2119,6 +2126,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   
   
   if (!mResponseXML->GetRootElement()) {
+    mErrorParsingXML = true;
     mResponseXML = nullptr;
   }
   ChangeStateToDone();
@@ -2130,6 +2138,17 @@ XMLHttpRequestMainThread::OnBodyParseEnd()
 {
   mFlagParseBody = false;
   ChangeStateToDone();
+}
+
+void
+XMLHttpRequestMainThread::MatchCharsetAndDecoderToResponseDocument()
+{
+  if (mResponseXML && mResponseCharset != mResponseXML->GetDocumentCharacterSet()) {
+    mResponseCharset = mResponseXML->GetDocumentCharacterSet();
+    mResponseText.Truncate();
+    mResponseBodyDecodedPos = 0;
+    mDecoder = EncodingUtils::DecoderForEncoding(mResponseCharset);
+  }
 }
 
 void
@@ -2613,7 +2632,7 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
 
     
     if (mFlagSynchronous) {
-      return rv;
+      return NS_ERROR_DOM_NETWORK_ERR;
     }
   }
 
@@ -2874,7 +2893,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   if (!mChannel) {
     
     if (mFlagSynchronous) {
-      return NS_ERROR_FAILURE;
+      return NS_ERROR_DOM_NETWORK_ERR;
     } else {
       
       

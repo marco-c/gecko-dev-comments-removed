@@ -29,6 +29,9 @@ public:
   virtual void ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
                           nsIPrincipal* aPrincipal) override;
 
+  virtual void SetSuppressParserErrorElement(bool aSuppress) override;
+  virtual bool SuppressParserErrorElement() override;
+
   virtual nsresult StartDocumentLoad(const char* aCommand, nsIChannel* channel,
                                      nsILoadGroup* aLoadGroup,
                                      nsISupports* aContainer,
@@ -85,6 +88,10 @@ protected:
 
   
   bool mIsPlainDocument;
+
+  
+  
+  bool mSuppressParserErrorElement;
 };
 
 } 

@@ -672,6 +672,12 @@ XULContentSinkImpl::ReportError(const char16_t* aErrorText,
   
   mTextLength = 0;
 
+  
+  nsCOMPtr<nsIDocument> idoc = do_QueryReferent(mDocument);
+  if (idoc && idoc->SuppressParserErrorElement()) {
+    return NS_OK;
+  };
+
   nsCOMPtr<nsIXULDocument> doc = do_QueryReferent(mDocument);
   if (doc && !doc->OnDocumentParserError()) {
     
