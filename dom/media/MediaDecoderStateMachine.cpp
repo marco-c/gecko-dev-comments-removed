@@ -2100,7 +2100,7 @@ MediaDecoderStateMachine::SeekCompleted()
   
   bool isLiveStream = mResource->IsLiveStream();
   State nextState;
-  if (GetMediaTime() == Duration().ToMicroseconds() && !isLiveStream) {
+  if (newCurrentTime == Duration().ToMicroseconds() && !isLiveStream) {
     
     
     
