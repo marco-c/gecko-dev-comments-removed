@@ -530,12 +530,13 @@ private:
   
 
   Atomic<bool> mInCallback;
-
-#ifdef XP_MACOSX
   
 
 
   bool mMicrophoneActive;
+
+
+#ifdef XP_MACOSX
 
   
 

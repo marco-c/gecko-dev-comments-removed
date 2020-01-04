@@ -209,6 +209,11 @@ public:
   virtual void NotifyInputData(MediaStreamGraph* aGraph,
                                const AudioDataValue* aBuffer, size_t aFrames,
                                TrackRate aRate, uint32_t aChannels) = 0;
+
+  
+
+
+  virtual void DeviceChanged() = 0;
 };
 
 class AudioDataListener : public AudioDataListenerInterface {

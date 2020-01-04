@@ -23,7 +23,7 @@ extern mozilla::LazyLogModule gMediaStreamGraphLog;
 
 
 
-
+#define ENABLE_LIFECYCLE_LOG
 #ifdef ENABLE_LIFECYCLE_LOG
 #ifdef ANDROID
 #include "android/log.h"
@@ -660,12 +660,9 @@ AudioCallbackDriver::Init()
       return;
     }
   }
-#ifdef XP_MACOSX
-  
   bool aec;
   Unused << mGraphImpl->AudioTrackPresent(aec);
   SetMicrophoneActive(aec);
-#endif
 
   cubeb_stream_register_device_changed_callback(mAudioStream,
                                                 AudioCallbackDriver::DeviceChangedCallback_s);
@@ -1070,34 +1067,14 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive)
 
 void
 AudioCallbackDriver::DeviceChangedCallback() {
-#ifdef XP_MACOSX
+  
+  
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
+  if (mAudioInput) {
+    mAudioInput->DeviceChanged();
+  }
+#ifdef XP_MACOSX
   PanOutputIfNeeded(mMicrophoneActive);
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  if (!GraphImpl()->Running()) {
-    return;
-  }
-
-  if (mSelfReference) {
-    return;
-  }
-  STREAM_LOG(LogLevel::Error, ("Switching to SystemClockDriver during output switch"));
-  mSelfReference.Take(this);
-  mCallbackReceivedWhileSwitching = 0;
-  SetNextDriver(new SystemClockDriver(GraphImpl()));
-  RemoveCallback();
-  mNextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
-  mGraphImpl->SetCurrentDriver(mNextDriver);
-  mNextDriver->Start();
 #endif
 }
 
