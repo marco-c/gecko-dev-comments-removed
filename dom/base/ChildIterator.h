@@ -89,7 +89,7 @@ public:
   
   
   
-  nsIContent* Get();
+  nsIContent* Get() const;
 
   
   
@@ -177,6 +177,7 @@ protected:
 
 
 
+
 class AllChildrenIterator : private FlattenedChildIterator
 {
 public:
@@ -199,6 +200,13 @@ public:
   ~AllChildrenIterator() { MOZ_ASSERT(!mMutationGuard.Mutated(0)); }
 #endif
 
+  
+  
+  nsIContent* Get() const;
+
+  
+  
+  
   bool Seek(nsIContent* aChildToFind);
 
   nsIContent* GetNextChild();
