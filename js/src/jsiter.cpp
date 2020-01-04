@@ -136,6 +136,33 @@ Enumerate(JSContext* cx, HandleObject pobj, jsid id,
 }
 
 static bool
+EnumerateExtraProperties(JSContext* cx, HandleObject obj, unsigned flags, Maybe<IdSet>& ht,
+                         AutoIdVector* props)
+{
+    MOZ_ASSERT(obj->getOps()->enumerate);
+
+    AutoIdVector properties(cx);
+    bool enumerableOnly = !(flags & JSITER_HIDDEN);
+    if (!obj->getOps()->enumerate(cx, obj, properties, enumerableOnly))
+        return false;
+
+    RootedId id(cx);
+    for (size_t n = 0; n < properties.length(); n++) {
+        id = properties[n];
+
+        
+        
+        
+        
+        bool enumerable = true;
+        if (!Enumerate(cx, obj, id, enumerable, flags, ht, props))
+            return false;
+    }
+
+    return true;
+}
+
+static bool
 SortComparatorIntegerIds(jsid a, jsid b, bool* lessOrEqualp)
 {
     uint32_t indexA, indexB;
@@ -147,7 +174,7 @@ SortComparatorIntegerIds(jsid a, jsid b, bool* lessOrEqualp)
 
 static bool
 EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags, Maybe<IdSet>& ht,
-                          AutoIdVector* props)
+                          AutoIdVector* props, Handle<UnboxedPlainObject*> unboxed = nullptr)
 {
     bool enumerateSymbols;
     if (flags & JSITER_SYMBOLSONLY) {
@@ -204,6 +231,16 @@ EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags
             PodCopy(tmp.begin(), ids, n);
 
             if (!MergeSort(ids, n, tmp.begin(), SortComparatorIntegerIds))
+                return false;
+        }
+
+        if (unboxed) {
+            
+            
+            
+            
+            MOZ_ASSERT(pobj->is<UnboxedExpandoObject>());
+            if (!EnumerateExtraProperties(cx, unboxed, flags, ht, props))
                 return false;
         }
 
@@ -331,28 +368,23 @@ Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags, AutoIdVector* props)
     RootedObject pobj(cx, pobj_);
 
     do {
-        if (JSNewEnumerateOp enumerate = pobj->getOps()->enumerate) {
-            AutoIdVector properties(cx);
-            bool enumerableOnly = !(flags & JSITER_HIDDEN);
-            if (!enumerate(cx, pobj, properties, enumerableOnly))
-                 return false;
-
-            RootedId id(cx);
-            for (size_t n = 0; n < properties.length(); n++) {
-                id = properties[n];
-
+        if (pobj->getOps()->enumerate) {
+            if (pobj->is<UnboxedPlainObject>() && pobj->as<UnboxedPlainObject>().maybeExpando()) {
                 
-                
-                
-                
-                bool enumerable = true;
-                if (!Enumerate(cx, pobj, id, enumerable, flags, ht, props))
+                RootedNativeObject expando(cx, pobj->as<UnboxedPlainObject>().maybeExpando());
+                if (!EnumerateNativeProperties(cx, expando, flags, ht, props,
+                                               pobj.as<UnboxedPlainObject>()))
+                {
                     return false;
-            }
-
-            if (pobj->isNative()) {
-                if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags, ht, props))
+                }
+            } else {
+                if (!EnumerateExtraProperties(cx, pobj, flags, ht, props))
                     return false;
+
+                if (pobj->isNative()) {
+                    if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags, ht, props))
+                        return false;
+                }
             }
         } else if (pobj->isNative()) {
             
