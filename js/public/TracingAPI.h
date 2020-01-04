@@ -28,10 +28,12 @@ GCTraceKindToAscii(JS::TraceKind kind);
 
 enum WeakMapTraceKind {
     
+
+
+
     DoNotTraceWeakMaps,
 
     
-
 
 
 
@@ -59,11 +61,24 @@ class JS_PUBLIC_API(JSTracer)
     
     WeakMapTraceKind weakMapAction() const { return weakMapAction_; }
 
-    
     enum class TracerKindTag {
+        
+        
+        
         Marking,
-        WeakMarking, 
+
+        
+        
+        
+        
+        WeakMarking,
+
+        
+        
         Tenuring,
+
+        
+        
         Callback
     };
     bool isMarkingTracer() const { return tag_ == TracerKindTag::Marking || tag_ == TracerKindTag::WeakMarking; }

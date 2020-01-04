@@ -1883,6 +1883,10 @@ GCMarker::enterWeakMarkingMode()
 
     
     
+    
+    
+    
+    
     if (weakMapAction() == ExpandWeakMaps) {
         tag_ = TracerKindTag::WeakMarking;
 
