@@ -323,7 +323,11 @@ var DebuggerController = {
     this.ThreadState.connect();
     this.StackFrames.connect();
 
-    this._onNavigate();
+    
+    
+    
+    
+    this.dispatch(actions.loadSources());
   },
 
   
@@ -382,7 +386,8 @@ var DebuggerController = {
     
     
     
-
+    
+    
     this.dispatch(actions.loadSources());
   },
 
