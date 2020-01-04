@@ -94,7 +94,7 @@ function removeAllProjects() {
     yield AppProjects.load();
     
     
-    let projects = AppProjects.store.object.projects.map(p => p.location);
+    let projects = AppProjects.projects.map(p => p.location);
     for (let i = 0; i < projects.length; i++) {
       yield AppProjects.remove(projects[i]);
     }
