@@ -6,7 +6,7 @@
 
 
 
-const TEST_URI = TEST_URL_ROOT + "doc_pseudoelement.html";
+const TEST_URI = URL_ROOT + "doc_pseudoelement.html";
 const PSEUDO_PREF = "devtools.inspector.show_pseudo_elements";
 
 add_task(function*() {

@@ -1,55 +1,25 @@
 
 
 
-
 "use strict";
 
-var Cu = Components.utils;
-var {gDevTools} = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
-var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var {TargetFactory} = require("devtools/client/framework/target");
-var {CssRuleView, _ElementStyle} =
-    require("devtools/client/inspector/rules/rules");
-var {CssLogic, CssSelector} = require("devtools/shared/inspector/css-logic");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var promise = require("promise");
-var {editableField, getInplaceEditorForSpan: inplaceEditor} =
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
+  this);
+
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.defaultColorUnit");
+});
+
+var {CssLogic} = require("devtools/shared/inspector/css-logic");
+var {getInplaceEditorForSpan: inplaceEditor} =
   require("devtools/client/shared/inplace-editor");
-var {console} =
-  Components.utils.import("resource://gre/modules/Console.jsm", {});
 
-
-waitForExplicitFinish();
-
-const TEST_URL_ROOT =
-  "http://example.com/browser/devtools/client/inspector/rules/test/";
-const TEST_URL_ROOT_SSL =
-  "https://example.com/browser/devtools/client/inspector/rules/test/";
 const ROOT_TEST_DIR = getRootDirectory(gTestPath);
 const FRAME_SCRIPT_URL = ROOT_TEST_DIR + "doc_frame_script.js";
 
-
-registerCleanupFunction(function*() {
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-  yield gDevTools.closeToolbox(target);
-
-  while (gBrowser.tabs.length > 1) {
-    gBrowser.removeCurrentTab();
-  }
-});
-
-
-
-
-
-DevToolsUtils.testing = true;
-registerCleanupFunction(() => DevToolsUtils.testing = false);
-
-
-
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.inspector.activeSidebar");
-  Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.defaultColorUnit");
 });
 
@@ -60,6 +30,15 @@ registerCleanupFunction(() => {
 
 
 
+var _addTab = addTab;
+addTab = function(url) {
+  return _addTab(url).then(tab => {
+    info("Loading the helper frame script " + FRAME_SCRIPT_URL);
+    let browser = tab.linkedBrowser;
+    browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
+    return tab;
+  });
+}
 
 
 
@@ -68,58 +47,14 @@ registerCleanupFunction(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function addTab(url) {
-  info("Adding a new tab with URL: '" + url + "'");
-  let def = promise.defer();
-
-  window.focus();
-
-  let tab = window.gBrowser.selectedTab = window.gBrowser.addTab(url);
-  let browser = tab.linkedBrowser;
-
-  info("Loading the helper frame script " + FRAME_SCRIPT_URL);
-  browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
-
-  browser.addEventListener("load", function onload() {
-    browser.removeEventListener("load", onload, true);
-    info("URL '" + url + "' loading complete");
-
-    def.resolve(tab);
-  }, true);
-
-  return def.promise;
+function openRuleView() {
+  return openInspectorSidebarTab("ruleview").then(objects => {
+    return {
+      toolbox: objects.toolbox,
+      inspector: objects.inspector,
+      view: objects.view.view
+    };
+  });
 }
 
 
@@ -144,148 +79,11 @@ function getNode(nodeOrSelector) {
 
 
 
-
-function getNodeFront(selector, {walker}) {
-  return walker.querySelector(walker.rootNode, selector);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var selectNode = Task.async(function*(data, inspector, reason="test") {
-  info("Selecting the node for '" + data + "'");
-  let nodeFront = data;
-  if (!data._form) {
-    nodeFront = yield getNodeFront(data, inspector);
-  }
-  let updated = inspector.once("inspector-updated");
-  inspector.selection.setNodeFront(nodeFront, reason);
-  yield updated;
-});
-
-
-
-
-
-
-
-
 function clearCurrentNodeSelection(inspector) {
   info("Clearing the current selection");
   let updated = inspector.once("inspector-updated");
   inspector.selection.setNodeFront(null);
   return updated;
-}
-
-
-
-
-
-
-var openInspector = Task.async(function*() {
-  info("Opening the inspector");
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-
-  let inspector, toolbox;
-
-  
-  
-  
-  toolbox = gDevTools.getToolbox(target);
-  if (toolbox) {
-    inspector = toolbox.getPanel("inspector");
-    if (inspector) {
-      info("Toolbox and inspector already open");
-      return {
-        toolbox: toolbox,
-        inspector: inspector
-      };
-    }
-  }
-
-  info("Opening the toolbox");
-  toolbox = yield gDevTools.showToolbox(target, "inspector");
-  yield waitForToolboxFrameFocus(toolbox);
-  inspector = toolbox.getPanel("inspector");
-
-  info("Waiting for the inspector to update");
-  yield inspector.once("inspector-updated");
-
-  return {
-    toolbox: toolbox,
-    inspector: inspector
-  };
-});
-
-
-
-
-
-
-
-function waitForToolboxFrameFocus(toolbox) {
-  info("Making sure that the toolbox's frame is focused");
-  let def = promise.defer();
-  let win = toolbox.frame.contentWindow;
-  waitForFocus(def.resolve, win);
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-var openInspectorSideBar = Task.async(function*(id) {
-  let {toolbox, inspector} = yield openInspector();
-
-  if (!hasSideBarTab(inspector, id)) {
-    info("Waiting for the " + id + " sidebar to be ready");
-    yield inspector.sidebar.once(id + "-ready");
-  }
-
-  info("Selecting the " + id + " sidebar");
-  inspector.sidebar.select(id);
-
-  return {
-    toolbox: toolbox,
-    inspector: inspector,
-    view: inspector.sidebar.getWindowForTab(id)[id].view
-  };
-});
-
-
-
-
-
-
-
-
-function openComputedView() {
-  return openInspectorSideBar("computedview");
-}
-
-
-
-
-
-
-
-
-function openRuleView() {
-  return openInspectorSideBar("ruleview");
 }
 
 
@@ -324,21 +122,6 @@ function waitForNEvents(target, eventName, numTimes, useCapture = false) {
   }
 
   return deferred.promise;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function once(target, eventName, useCapture=false) {
-  return waitForNEvents(target, eventName, 1, useCapture);
 }
 
 
@@ -524,23 +307,6 @@ var waitForTab = Task.async(function*() {
 
 
 
-function waitForClipboard(setup, expected) {
-  let def = promise.defer();
-  SimpleTest.waitForClipboard(expected, setup, def.resolve, def.reject);
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function waitForSuccess(validatorFn, name="untitled") {
@@ -585,18 +351,6 @@ function addStyle(doc, style) {
 
 
 
-function hasSideBarTab(inspector, id) {
-  return !!inspector.sidebar.getWindowForTab(id);
-}
-
-
-
-
-
-
-
-
-
 
 var getFontFamilyDataURL = Task.async(function*(font, nodeFront) {
   let fillStyle = (Services.prefs.getCharPref("devtools.theme") === "light") ?
@@ -620,13 +374,6 @@ function synthesizeKeys(input, win) {
     EventUtils.synthesizeKey(key, {}, win);
   }
 }
-
-
-
-
-
-
-
 
 
 
@@ -880,109 +627,6 @@ var setSearchFilter = Task.async(function*(view, searchValue) {
   synthesizeKeys(searchValue, win);
   yield view.inspector.once("ruleview-filtered");
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getComputedViewProperty(view, name) {
-  let prop;
-  for (let property of view.styleDocument.querySelectorAll(".property-view")) {
-    let nameSpan = property.querySelector(".property-name");
-    let valueSpan = property.querySelector(".property-value");
-
-    if (nameSpan.textContent === name) {
-      prop = {nameSpan: nameSpan, valueSpan: valueSpan};
-      break;
-    }
-  }
-  return prop;
-}
-
-
-
-
-
-
-
-
-
-
-
-function getComputedViewPropertyValue(view, name, propertyName) {
-  return getComputedViewProperty(view, name, propertyName)
-    .valueSpan.textContent;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForStyleEditor(toolbox, href) {
-  let def = promise.defer();
-
-  info("Waiting for the toolbox to switch to the styleeditor");
-  toolbox.once("styleeditor-selected").then(() => {
-    let panel = toolbox.getCurrentPanel();
-    ok(panel && panel.UI, "Styleeditor panel switched to front");
-
-    
-    
-    let gotEditor = (event, editor) => {
-      let currentHref = editor.styleSheet.href;
-      if (!href || (href && currentHref.endsWith(href))) {
-        info("Stylesheet editor selected");
-        panel.UI.off("editor-selected", gotEditor);
-
-        editor.getSourceEditor().then(sourceEditor => {
-          info("Stylesheet editor fully loaded");
-          def.resolve(sourceEditor);
-        });
-
-        return true;
-      }
-
-      info("The editor was incorrect. Waiting for editor-selected event.");
-      return false;
-    };
-
-    
-    
-    
-    if (!gotEditor("styleeditor-selected", panel.UI.selectedEditor)) {
-      
-      panel.UI.on("editor-selected", gotEditor);
-    }
-  });
-
-  return def.promise;
-}
 
 
 

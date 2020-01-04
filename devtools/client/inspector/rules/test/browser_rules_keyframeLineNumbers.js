@@ -7,7 +7,7 @@
 
 
 
-const TESTCASE_URI = TEST_URL_ROOT + "doc_keyframeLineNumbers.html";
+const TESTCASE_URI = URL_ROOT + "doc_keyframeLineNumbers.html";
 
 add_task(function*() {
   yield addTab(TESTCASE_URI);

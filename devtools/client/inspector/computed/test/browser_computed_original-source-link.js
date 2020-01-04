@@ -7,7 +7,7 @@
 
 
 
-const TESTCASE_URI = TEST_URL_ROOT_SSL + "doc_sourcemaps.html";
+const TESTCASE_URI = URL_ROOT_SSL + "doc_sourcemaps.html";
 const PREF = "devtools.styleeditor.source-maps-enabled";
 const SCSS_LOC = "doc_sourcemaps.scss:4";
 const CSS_LOC = "doc_sourcemaps.css:1";

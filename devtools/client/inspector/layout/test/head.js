@@ -51,46 +51,23 @@ function selectAndHighlightNode(nodeOrSelector, inspector) {
 
 
 
+function openLayoutView() {
+  return openInspectorSidebarTab("layoutview").then(objects => {
+    
+    
+    function mockHighlighter({highlighter}) {
+      highlighter.showBoxModel = function(nodeFront, options) {
+        return promise.resolve();
+      };
+      highlighter.hideBoxModel = function() {
+        return promise.resolve();
+      };
+    }
+    mockHighlighter(objects.toolbox);
 
-function hasSideBarTab(inspector, id) {
-  return !!inspector.sidebar.getWindowForTab(id);
+    return objects;
+  });
 }
-
-
-
-
-
-
-
-var openLayoutView = Task.async(function*() {
-  let {toolbox, inspector} = yield openInspector();
-
-  
-  
-  function mockHighlighter({highlighter}) {
-    highlighter.showBoxModel = function(nodeFront, options) {
-      return promise.resolve();
-    };
-    highlighter.hideBoxModel = function() {
-      return promise.resolve();
-    };
-  }
-  mockHighlighter(toolbox);
-
-  if (!hasSideBarTab(inspector, "layoutview")) {
-    info("Waiting for the layoutview sidebar to be ready");
-    yield inspector.sidebar.once("layoutview-ready");
-  }
-
-  info("Selecting the layoutview sidebar");
-  inspector.sidebar.select("layoutview");
-
-  return {
-    toolbox: toolbox,
-    inspector: inspector,
-    view: inspector.sidebar.getWindowForTab("layoutview")["layoutview"]
-  };
-});
 
 
 

@@ -7,7 +7,7 @@
 
 
 
-const TEST_URI = TEST_URL_ROOT + "doc_cssom.html";
+const TEST_URI = URL_ROOT + "doc_cssom.html";
 
 add_task(function*() {
   yield addTab(TEST_URI);

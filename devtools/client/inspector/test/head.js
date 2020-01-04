@@ -15,11 +15,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-
-var ROOT_TEST_DIR = getRootDirectory(gTestPath);
-
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/commandline/test/helpers.js",
   this);
@@ -35,7 +30,6 @@ registerCleanupFunction(() => {
 });
 
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.inspector.activeSidebar");
 });
 
@@ -163,6 +157,43 @@ var openInspector = Task.async(function*(hostType) {
 function getActiveInspector() {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   return gDevTools.getToolbox(target).getPanel("inspector");
+}
+
+
+
+
+
+
+
+
+
+var openInspectorSidebarTab = Task.async(function*(id, hostType) {
+  let {toolbox, inspector} = yield openInspector();
+
+  if (!hasSideBarTab(inspector, id)) {
+    info("Waiting for the " + id + " sidebar to be ready");
+    yield inspector.sidebar.once(id + "-ready");
+  }
+
+  info("Selecting the " + id + " sidebar");
+  inspector.sidebar.select(id);
+
+  return {
+    toolbox: toolbox,
+    inspector: inspector,
+    view: inspector.sidebar.getWindowForTab(id)[id]
+  };
+});
+
+
+
+
+
+
+
+
+function hasSideBarTab(inspector, id) {
+  return !!inspector.sidebar.getWindowForTab(id);
 }
 
 
@@ -476,4 +507,72 @@ function waitForChildrenUpdated({markup}) {
         executeSoon(def.resolve);
     });
     return def.promise;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForStyleEditor(toolbox, href) {
+  let def = promise.defer();
+
+  info("Waiting for the toolbox to switch to the styleeditor");
+  toolbox.once("styleeditor-selected").then(() => {
+    let panel = toolbox.getCurrentPanel();
+    ok(panel && panel.UI, "Styleeditor panel switched to front");
+
+    
+    
+    let gotEditor = (event, editor) => {
+      let currentHref = editor.styleSheet.href;
+      if (!href || (href && currentHref.endsWith(href))) {
+        info("Stylesheet editor selected");
+        panel.UI.off("editor-selected", gotEditor);
+
+        editor.getSourceEditor().then(sourceEditor => {
+          info("Stylesheet editor fully loaded");
+          def.resolve(sourceEditor);
+        });
+
+        return true;
+      }
+
+      info("The editor was incorrect. Waiting for editor-selected event.");
+      return false;
+    };
+
+    
+    
+    
+    if (!gotEditor("styleeditor-selected", panel.UI.selectedEditor)) {
+      
+      panel.UI.on("editor-selected", gotEditor);
+    }
+  });
+
+  return def.promise;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForClipboard(setup, expected) {
+  let def = promise.defer();
+  SimpleTest.waitForClipboard(expected, setup, def.resolve, def.reject);
+  return def.promise;
 }
