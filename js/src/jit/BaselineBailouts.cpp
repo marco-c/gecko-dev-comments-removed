@@ -1090,16 +1090,13 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 
                 
                 
-                
-                
-                
                 jsbytecode* throwPC = script->offsetToPC(iter.pcOffset());
                 builder.setResumePC(throwPC);
-                nativeCodeForPC = nullptr;
+                nativeCodeForPC = baselineScript->nativeCodeForPC(script, throwPC);
             } else {
                 nativeCodeForPC = baselineScript->nativeCodeForPC(script, pc, &slotInfo);
-                MOZ_ASSERT(nativeCodeForPC);
             }
+            MOZ_ASSERT(nativeCodeForPC);
 
             unsigned numUnsynced = slotInfo.numUnsynced();
 
