@@ -631,7 +631,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
   case eMouseMove:
   case ePointerDown:
-  case NS_POINTER_MOVE: {
+  case ePointerMove: {
     
     
     
@@ -4148,7 +4148,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
       sLastRefPoint = aMouseEvent->refPoint;
 
     }
-  case NS_POINTER_MOVE:
+  case ePointerMove:
   case ePointerDown:
     {
       
