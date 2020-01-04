@@ -118,7 +118,7 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
     
     
     if (!primaryFrame) {
-      aContent->UnsetFlags(NODE_IS_DIRTY_FOR_SERVO);
+      aContent->UnsetIsDirtyForServo();
       return;
     }
 
@@ -175,7 +175,7 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
 
     
     
-    aContent->UnsetFlags(NODE_IS_DIRTY_FOR_SERVO);
+    aContent->UnsetIsDirtyForServo();
   }
 
   if (aContent->HasDirtyDescendantsForServo()) {
@@ -187,7 +187,7 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
       RecreateStyleContexts(n, primaryFrame->StyleContext(),
                             aStyleSet, aChangeListToProcess);
     }
-    aContent->UnsetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+    aContent->UnsetHasDirtyDescendantsForServo();
   }
 }
 
