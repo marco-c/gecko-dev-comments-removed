@@ -1034,7 +1034,7 @@ nsHTMLDocument::SetBody(nsIDOMHTMLElement* aBody)
 void
 nsHTMLDocument::SetBody(nsGenericHTMLElement* newBody, ErrorResult& rv)
 {
-  Element* root = GetRootElement();
+  nsCOMPtr<Element> root = GetRootElement();
 
   
   
