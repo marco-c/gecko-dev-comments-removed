@@ -44,7 +44,7 @@ public class SyncAction extends BaseAction {
 
 
 
-    private static final String CATALOG_ENDPOINT = "https://firefox.settings.services.mozilla.com/v1/buckets/fennec-dlc/collections/catalog/records";
+    private static final String CATALOG_ENDPOINT = "https://firefox.settings.services.mozilla.com/v1/buckets/fennec/collections/catalog/records";
 
     @Override
     public void perform(Context context, DownloadContentCatalog catalog) {
