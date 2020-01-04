@@ -11,7 +11,6 @@
 #include "GLUploadHelpers.h"
 #include "GLReadTexImageHelper.h"
 #include "gfx2DGlue.h"                  
-#include "gfxReusableSurfaceWrapper.h"  
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Logging.h"        

@@ -35,7 +35,6 @@
 #include "nsTArray.h"                   
 #include "nsExpirationTracker.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "gfxReusableSurfaceWrapper.h"
 #include "pratom.h"                     
 
 namespace mozilla {
