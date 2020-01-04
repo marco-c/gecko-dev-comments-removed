@@ -1803,7 +1803,7 @@ Toolbox.prototype = {
 
     
     
-    if (hostType === this._host.type) {
+    if (hostType === this.hostType) {
       if (hostType === Toolbox.HostType.BOTTOM) {
         hostType = Toolbox.HostType.SIDE;
       } else {
@@ -1822,7 +1822,7 @@ Toolbox.prototype = {
 
 
   switchHost: function (hostType) {
-    if (hostType == this._host.type || !this._target.isLocalTab) {
+    if (hostType == this.hostType || !this._target.isLocalTab) {
       return null;
     }
 
@@ -2127,7 +2127,7 @@ Toolbox.prototype = {
     this._threadClient = null;
 
     
-    let win = this.frame.ownerDocument.defaultView;
+    let win = this.win;
 
     if (this._requisition) {
       CommandUtils.destroyRequisition(this._requisition, this.target);
