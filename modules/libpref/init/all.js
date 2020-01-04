@@ -547,7 +547,6 @@ pref("media.getusermedia.screensharing.allow_on_old_platforms", false);
 pref("media.getusermedia.audiocapture.enabled", false);
 
 
-pref("media.webvtt.enabled", true);
 pref("media.webvtt.regions.enabled", false);
 
 
@@ -2555,9 +2554,6 @@ pref("layout.css.background-blend-mode.enabled", true);
 
 
 pref("layout.css.background-clip-text.enabled", true);
-
-
-pref("layout.css.vertical-text.enabled", true);
 
 
 pref("layout.css.text-combine-upright.enabled", true);
