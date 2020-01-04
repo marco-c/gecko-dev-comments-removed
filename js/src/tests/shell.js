@@ -14,9 +14,55 @@
 
 
 
+  var undefined; 
+
   var Error = global.Error;
   var Number = global.Number;
   var TypeError = global.TypeError;
+
+  var ArrayIsArray = global.Array.isArray;
+  var ObjectCreate = global.Object.create;
+  var ObjectDefineProperty = global.Object.defineProperty;
+  var ReflectApply = global.Reflect.apply;
+  var StringPrototypeEndsWith = global.String.prototype.endsWith;
+
+  
+
+
+
+  
+  
+  function ArrayPop(arr) {
+    assertEq(ArrayIsArray(arr), true,
+             "ArrayPop must only be used on actual arrays");
+
+    var len = arr.length;
+    if (len === 0)
+      return undefined;
+
+    var v = arr[len - 1];
+    arr.length--;
+    return v;
+  }
+
+  
+  
+  
+  function ArrayPush(arr, val) {
+    assertEq(ArrayIsArray(arr), true,
+             "ArrayPush must only be used on actual arrays");
+
+    var desc = ObjectCreate(null);
+    desc.value = val;
+    desc.enumerable = true;
+    desc.configurable = true;
+    desc.writable = true;
+    ObjectDefineProperty(arr, arr.length, desc);
+  }
+
+  function StringEndsWith(str, needle) {
+    return ReflectApply(StringPrototypeEndsWith, str, [needle]);
+  }
 
   
 
@@ -107,6 +153,57 @@
   }
   global.startTest = startTest;
 
+  var callStack = [];
+
+  
+
+
+
+  function enterFunc(funcName) {
+    assertEq(typeof funcName, "string",
+             "enterFunc must be given a string funcName");
+
+    if (!StringEndsWith(funcName, "()"))
+      funcName += "()";
+
+    ArrayPush(callStack, funcName);
+  }
+  global.enterFunc = enterFunc;
+
+  
+
+
+
+  function exitFunc(funcName) {
+    assertEq(typeof funcName === "string" || typeof funcName === "undefined",
+             true,
+             "exitFunc must be given no arguments or a string");
+
+    var lastFunc = ArrayPop(callStack);
+    assertEq(typeof lastFunc, "string", "exitFunc called too many times");
+
+    if (funcName) {
+      if (!StringEndsWith(funcName, "()"))
+        funcName += "()";
+
+      if (lastFunc !== funcName) {
+        
+        global.reportCompare(funcName, lastFunc,
+                             "Test driver failure wrong exit function ");
+      }
+    }
+  }
+  global.exitFunc = exitFunc;
+
+  
+  function currentFunc() {
+    assertEq(callStack.length > 0, true,
+             "must be a current function to examine");
+
+    return callStack[callStack.length - 1];
+  }
+  global.currentFunc = currentFunc;
+
   
 
 
@@ -134,7 +231,6 @@ var STATUS = "STATUS: ";
 var VERBOSE = false;
 var SECT_PREFIX = 'Section ';
 var SECT_SUFFIX = ' of test - ';
-var callStack = new Array();
 
 var gDelayTestDriverEnd = false;
 
@@ -453,18 +549,6 @@ function reportMatch (expectedRegExp, actual, description) {
 
 
 
-function enterFunc (funcName)
-{
-  if (!funcName.match(/\(\)$/))
-    funcName += "()";
-
-  callStack.push(funcName);
-}
-
-
-
-
-
 
 
 function *XorShiftGenerator(seed, size) {
@@ -493,32 +577,6 @@ function *Permutations(items) {
                 yield [items[0]].concat(e);
         }
     }
-}
-
-
-
-
-
-function exitFunc (funcName)
-{
-  var lastFunc = callStack.pop();
-
-  if (funcName)
-  {
-    if (!funcName.match(/\(\)$/))
-      funcName += "()";
-
-    if (lastFunc != funcName)
-      reportCompare(funcName, lastFunc, "Test driver failure wrong exit function ");
-  }
-}
-
-
-
-
-function currentFunc()
-{
-  return callStack[callStack.length - 1];
 }
 
 
