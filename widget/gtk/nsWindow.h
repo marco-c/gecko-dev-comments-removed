@@ -389,6 +389,8 @@ protected:
     
     bool                mHandleTouchEvent;
 #endif
+    
+    bool               mIsDragPopup;
 
 private:
     void               DestroyChildWindows();
