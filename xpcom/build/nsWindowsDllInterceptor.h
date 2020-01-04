@@ -6,6 +6,7 @@
 
 #ifndef NS_WINDOWS_DLL_INTERCEPTOR_H_
 #define NS_WINDOWS_DLL_INTERCEPTOR_H_
+
 #include <windows.h>
 #include <winternl.h>
 
@@ -65,6 +66,57 @@
 
 namespace mozilla {
 namespace internal {
+
+
+static size_t
+GetOpLengthByModRM(const uint8_t* aOp)
+{
+  uint8_t mod = *aOp >> 6;
+  uint8_t rm = *aOp & 0x7;
+
+  switch (mod) {
+  case 0:
+    if (rm == 4) {
+      
+      if ((*(aOp + 1) & 0x7) == 5) {
+        
+        return 6;
+      }
+      return 2;
+    } else if (rm == 5) {
+      
+      
+      
+      return 0;
+    }
+    
+    return 1;
+
+  case 1:
+    if (rm == 4) {
+      
+      return 3;
+    }
+    
+    return 2;
+
+  case 2:
+    if (rm == 4) {
+      
+      return 6;
+    }
+    
+    return 5;
+
+  case 3:
+    
+    return 1;
+
+  default:
+     break;
+  }
+  return 0;
+}
 
 class AutoVirtualProtect
 {
@@ -644,6 +696,24 @@ protected:
       } else if ((origBytes[nBytes] & 0xf0) == 0x50) {
         
         nBytes++;
+      } else if (origBytes[nBytes] == 0x65) {
+        
+        
+        
+        
+        
+        if (origBytes[nBytes + 1] == 0x48 &&
+            (origBytes[nBytes + 2] >= 0x88 && origBytes[nBytes + 2] <= 0x8b)) {
+          nBytes += 3;
+          size_t len = GetOpLengthByModRM(origBytes + nBytes);
+          if (!len) {
+            
+            return;
+          }
+          nBytes += len;
+        } else {
+          return;
+        }
       } else if (origBytes[nBytes] == 0x90) {
         
         nBytes++;
