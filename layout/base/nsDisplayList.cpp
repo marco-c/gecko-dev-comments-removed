@@ -4264,6 +4264,27 @@ IsItemTooSmallForActiveLayer(nsDisplayItem* aItem)
     nsIntSize(MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS, MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS);
 }
 
+static void
+SetAnimationPerformanceWarningForTooSmallItem(nsDisplayItem* aItem,
+                                              nsCSSProperty aProperty)
+{
+  
+  
+  nsIntRect visibleDevPixels = aItem->GetVisibleRect().ToNearestPixels(
+          aItem->Frame()->PresContext()->AppUnitsPerDevPixel());
+
+  
+  
+  if (visibleDevPixels.IsEmpty()) {
+    return;
+  }
+
+  EffectCompositor::SetPerformanceWarning(aItem->Frame(), aProperty,
+      AnimationPerformanceWarning(
+        AnimationPerformanceWarning::Type::ContentTooSmall,
+        { visibleDevPixels.Width(), visibleDevPixels.Height() }));
+}
+
 bool
 nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder)
 {
@@ -4274,7 +4295,7 @@ nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder)
     if (!IsItemTooSmallForActiveLayer(this)) {
       return true;
     }
-    
+    SetAnimationPerformanceWarningForTooSmallItem(this, eCSSProperty_opacity);
   }
   return false;
 }
@@ -5942,7 +5963,7 @@ nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder)
     if (!IsItemTooSmallForActiveLayer(this)) {
       return true;
     }
-    
+    SetAnimationPerformanceWarningForTooSmallItem(this, eCSSProperty_transform);
   }
   return false;
 }
