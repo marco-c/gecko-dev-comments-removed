@@ -899,6 +899,8 @@ class B2GArguments(ArgumentContainer):
 
     defaults = {
         'logFile': 'mochitest.log',
+        
+        
         'extensionsToExclude': ['specialpowers'],
         
         'defaultLeakThreshold': 5536,

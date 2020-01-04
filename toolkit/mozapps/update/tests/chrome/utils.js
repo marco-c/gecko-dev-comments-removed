@@ -1300,9 +1300,12 @@ function setupAddons(aCallback) {
       
       
       
+      
+      
       if (aAddon.type != "plugin" && !aAddon.appDisabled &&
           !aAddon.userDisabled &&
-          aAddon.scope != AddonManager.SCOPE_APPLICATION) {
+          aAddon.scope != AddonManager.SCOPE_APPLICATION &&
+          aAddon.id != "special-powers@mozilla.org") {
         disabledAddons.push(aAddon);
         aAddon.userDisabled = true;
       }
