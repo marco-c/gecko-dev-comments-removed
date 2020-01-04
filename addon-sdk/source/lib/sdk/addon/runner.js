@@ -62,31 +62,33 @@ function definePseudo(loader, id, exports) {
   loader.modules[uri] = { exports: exports };
 }
 
-function startup(reason, options) Startup.onceInitialized.then(() => {
-  
-  Object.defineProperties(options.loader.globals, descriptor(globals));
+function startup(reason, options) {
+  return Startup.onceInitialized.then(() => {
+    
+    Object.defineProperties(options.loader.globals, descriptor(globals));
 
-  
-  
-  let { ready } = require('../addon/window');
-  
-  
-  require('../l10n/loader').
-    load(rootURI).
-    then(null, function failure(error) {
-      if (!isNative)
-        console.info("Error while loading localization: " + error.message);
-    }).
-    then(function onLocalizationReady(data) {
-      
-      
-      definePseudo(options.loader, '@l10n/data', data ? data : null);
-      return ready;
-    }).then(function() {
-      run(options);
-    }).then(null, console.exception);
+    
+    
+    let { ready } = require('../addon/window');
+    
+    
+    require('../l10n/loader').
+      load(rootURI).
+      then(null, function failure(error) {
+        if (!isNative)
+          console.info("Error while loading localization: " + error.message);
+      }).
+      then(function onLocalizationReady(data) {
+        
+        
+        definePseudo(options.loader, '@l10n/data', data ? data : null);
+        return ready;
+      }).then(function() {
+        run(options);
+      }).then(null, console.exception);
     return void 0; 
-});
+  });
+}
 
 function run(options) {
   try {

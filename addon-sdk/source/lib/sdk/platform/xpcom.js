@@ -21,8 +21,8 @@ const { uuid } = require('../util/uuid');
 const Unknown = new function() {
   function hasInterface(component, iid) {
     return component && component.interfaces &&
-      ( component.interfaces.some(function(id) iid.equals(Ci[id])) ||
-        component.implements.some(function($) hasInterface($, iid)) ||
+      ( component.interfaces.some(id => iid.equals(Ci[id])) ||
+        component.implements.some($ => hasInterface($, iid)) ||
         hasInterface(Object.getPrototypeOf(component), iid));
   }
 
@@ -85,7 +85,9 @@ const Factory = Class({
 
 
 
-  lockFactory: function lockFactory(lock) undefined,
+  lockFactory: function lockFactory(lock) {
+    return undefined;
+  },
   
 
 
@@ -131,7 +133,9 @@ const Factory = Class({
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  create: function create() this.Component()
+  create: function create() {
+    return this.Component();
+  }
 });
 exports.Factory = Factory;
 
@@ -148,11 +152,15 @@ const Service = Class({
   
 
 
-  create: function create() this.component
+  create: function create() {
+    return this.component;
+  }
 });
 exports.Service = Service;
 
-function isRegistered({ id }) isCIDRegistered(id)
+function isRegistered({ id }) {
+  return isCIDRegistered(id);
+}
 exports.isRegistered = isRegistered;
 
 
@@ -216,7 +224,9 @@ exports.autoRegister = autoRegister;
 
 
 
-function factoryByID(id) classesByID[id] || null
+function factoryByID(id) {
+  return classesByID[id] || null;
+}
 exports.factoryByID = factoryByID;
 
 
@@ -225,5 +235,7 @@ exports.factoryByID = factoryByID;
 
 
 
-function factoryByContract(contract) factoryByID(Cm.contractIDToCID(contract))
+function factoryByContract(contract) {
+  return factoryByID(Cm.contractIDToCID(contract));
+}
 exports.factoryByContract = factoryByContract;

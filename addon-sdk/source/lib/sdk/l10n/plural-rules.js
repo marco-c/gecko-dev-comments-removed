@@ -185,8 +185,12 @@ const LOCALES_TO_RULES = {
 };
 
 
-function isIn(n, list) list.indexOf(n) !== -1;
-function isBetween(n, start, end) start <= n && n <= end;
+function isIn(n, list) {
+  return list.indexOf(n) !== -1;
+}
+function isBetween(n, start, end) {
+  return start <= n && n <= end;
+}
 
 
 const RULES = {

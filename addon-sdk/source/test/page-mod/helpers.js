@@ -48,7 +48,7 @@ function testPageMod(assert, done, testURL, pageModOptions,
     setTimeout(testCallback, timeout,
       b.contentWindow.wrappedJSObject,  
       function () {
-        pageMods.forEach(function(mod) mod.destroy());
+        pageMods.forEach(mod => mod.destroy());
         
         closeTab(newTab);
         loader.unload();

@@ -17,4 +17,4 @@ const { isBrowser } = require("../window/utils");
 
 
 
-exports.events = filter(events, function({target}) isBrowser(target));
+exports.events = filter(events, ({target}) => isBrowser(target));

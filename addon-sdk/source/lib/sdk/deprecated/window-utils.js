@@ -21,7 +21,9 @@ const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
                         getService(Ci.nsIAppShellService);
 
 
-function getWindows() windows(null, { includePrivate: isPrivateBrowsingSupported });
+function getWindows() {
+  return windows(null, { includePrivate: isPrivateBrowsingSupported });
+}
 
 
 

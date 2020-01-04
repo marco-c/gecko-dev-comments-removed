@@ -58,8 +58,12 @@ const Tab = Class({
 
 
 
-  get title() getTabTitle(tabNS(this).tab),
-  set title(title) setTabTitle(tabNS(this).tab, title),
+  get title() {
+    return getTabTitle(tabNS(this).tab);
+  },
+  set title(title) {
+    setTabTitle(tabNS(this).tab, title);
+  },
 
   
 
@@ -69,7 +73,9 @@ const Tab = Class({
   get url() {
     return tabNS(this).closed ? undefined : getTabURL(tabNS(this).tab);
   },
-  set url(url) setTabURL(tabNS(this).tab, url),
+  set url(url) {
+    setTabURL(tabNS(this).tab, url);
+  },
 
   getThumbnail: function() {
     
@@ -131,7 +137,9 @@ const Tab = Class({
 
 
 
-  get contentType() getTabContentType(tabNS(this).tab),
+  get contentType() {
+    return getTabContentType(tabNS(this).tab);
+  },
 
   
 

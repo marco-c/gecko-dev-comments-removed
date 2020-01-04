@@ -35,14 +35,14 @@ function tabEventsFor(window) {
   
   
   
-  let channels = TYPES.map(function(type) open(window, type));
+  let channels = TYPES.map(type => open(window, type));
   return merge(channels);
 }
 
 
-var readyEvents = filter(events, function(e) e.type === "DOMContentLoaded");
+var readyEvents = filter(events, e => e.type === "DOMContentLoaded");
 
-var futureWindows = map(readyEvents, function(e) e.target);
+var futureWindows = map(readyEvents, e => e.target);
 
 
 

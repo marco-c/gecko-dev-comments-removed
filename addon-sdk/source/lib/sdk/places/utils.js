@@ -44,7 +44,7 @@ var TreeNode = Class({
   },
   get: method(get),
   walk: method(walk),
-  toString: function () '[object TreeNode]'
+  toString: () => '[object TreeNode]'
 });
 exports.TreeNode = TreeNode;
 
@@ -103,8 +103,9 @@ exports.constructTree = constructTree;
 
 
 
-function fetchItem (item)
-  send('sdk-places-bookmarks-get', { id: item.id || item })
+function fetchItem (item) {
+  return send('sdk-places-bookmarks-get', { id: item.id || item });
+}
 exports.fetchItem = fetchItem;
 
 

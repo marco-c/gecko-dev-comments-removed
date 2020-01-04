@@ -32,14 +32,16 @@ var promised = (function() {
 
   
   
-  function execute (args) call.apply(call, args)
+  function execute (args) {
+    return call.apply(call, args);
+  }
 
   
   
   function promisedConcat(promises, unknown) {
     return promises.then(function (values) {
       return resolve(unknown)
-        .then(function (value) values.concat([value]));
+        .then(value => values.concat([value]));
     });
   }
 

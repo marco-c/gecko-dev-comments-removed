@@ -15,16 +15,18 @@ const { get, set, exists } = Cc['@mozilla.org/process/environment;1'].
 exports.env = Proxy.create({
   
   
-  getPropertyNames: function() [],
-  getOwnPropertyNames: function() [],
-  enumerate: function() [],
-  keys: function() [],
+  getPropertyNames: () => [],
+  getOwnPropertyNames: () => [],
+  enumerate: () => [],
+  keys: () => [],
   
   
-  fix: function() undefined,
+  fix: () => undefined,
   
   
-  getPropertyDescriptor: function(name) this.getOwnPropertyDescriptor(name),
+  getPropertyDescriptor: function(name) {
+    return this.getOwnPropertyDescriptor(name);
+  },
   
   
   
@@ -39,22 +41,24 @@ exports.env = Proxy.create({
 
   
   
-  defineProperty: function(name, { value }) set(name, value),
+  defineProperty: (name, { value }) => set(name, value),
   delete: function(name) {
     set(name, null);
     return true;
   },
 
   
-  has: function(name) this.hasOwn(name),
+  has: function(name) {
+    return this.hasOwn(name);
+  },
   
   
-  hasOwn: function(name) exists(name),
+  hasOwn: name => exists(name),
 
   
   
   
   
-  get: function(proxy, name) Object.prototype[name] || get(name) || undefined,
-  set: function(proxy, name, value) Object.prototype[name] || set(name, value)
+  get: (proxy, name) => Object.prototype[name] || get(name) || undefined,
+  set: (proxy, name, value) => Object.prototype[name] || set(name, value)
 });

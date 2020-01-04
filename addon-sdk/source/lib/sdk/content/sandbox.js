@@ -162,9 +162,15 @@ const WorkerSandbox = Class({
     let parent = window.parent === window ? content : content.parent;
     merge(content, {
       
-      get window() content,
-      get top() top,
-      get parent() parent
+      get window() {
+        return content;
+      },
+      get top() {
+        return top;
+      },
+      get parent() {
+        return parent;
+      }
     });
 
     

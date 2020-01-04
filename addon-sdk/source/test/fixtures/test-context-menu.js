@@ -2,4 +2,4 @@
 
 
 
-self.on("context", function () true);
+self.on("context", () => true);

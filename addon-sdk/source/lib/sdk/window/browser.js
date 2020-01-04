@@ -29,12 +29,18 @@ const BrowserWindow = Class({
     throw new Error(ERR_FENNEC_MSG);
     return null;
   },
-  get title() getWindowTitle(windowNS(this).window),
+  get title() {
+    return getWindowTitle(windowNS(this).window);
+  },
   
   
   
-  get tabs() require('../tabs'),
-  get activeTab() require('../tabs').activeTab,
+  get tabs() {
+    return require('../tabs');
+  },
+  get activeTab() {
+    return require('../tabs').activeTab;
+  },
   on: method(on),
   removeListener: method(off),
   once: method(once)

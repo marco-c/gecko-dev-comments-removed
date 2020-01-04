@@ -95,7 +95,9 @@ function setScriptState(panel, value) {
   view.setAttribute("sdkscriptenabled", "" + value);
 }
 
-function isDisposed(panel) !views.has(panel);
+function isDisposed(panel) {
+  return !views.has(panel);
+}
 
 var panels = new WeakMap();
 var models = new WeakMap();
@@ -201,27 +203,43 @@ const Panel = Class({
     views.delete(this);
   },
   
-  get width() modelFor(this).width,
-  set width(value) this.resize(value, this.height),
+  get width() {
+    return modelFor(this).width;
+  },
+  set width(value) {
+    this.resize(value, this.height);
+  },
   
-  get height() modelFor(this).height,
-  set height(value) this.resize(this.width, value),
+  get height() {
+    return modelFor(this).height;
+  },
+  set height(value) {
+    this.resize(this.width, value);
+  },
 
   
-  get focus() modelFor(this).focus,
+  get focus() {
+    return modelFor(this).focus;
+  },
 
   
-  get position() modelFor(this).position,
+  get position() {
+    return modelFor(this).position;
+  },
 
   
-  get contextMenu() modelFor(this).contextMenu,
+  get contextMenu() {
+    return modelFor(this).contextMenu;
+  },
   set contextMenu(allow) {
     let model = modelFor(this);
     model.contextMenu = panelContract({ contextMenu: allow }).contextMenu;
     domPanel.allowContextMenu(viewFor(this), model.contextMenu);
   },
 
-  get contentURL() modelFor(this).contentURL,
+  get contentURL() {
+    return modelFor(this).contentURL;
+  },
   set contentURL(value) {
     let model = modelFor(this);
     model.contentURL = panelContract({ contentURL: value }).contentURL;
@@ -238,7 +256,9 @@ const Panel = Class({
   },
 
   
-  get isShowing() !isDisposed(this) && domPanel.isOpen(viewFor(this)),
+  get isShowing() {
+    return !isDisposed(this) && domPanel.isOpen(viewFor(this));
+  },
 
   
   show: function show(options={}, anchor) {

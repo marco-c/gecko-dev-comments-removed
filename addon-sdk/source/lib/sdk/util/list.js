@@ -27,12 +27,16 @@ const listOptions = {
 
 
 
-  get length() listNS(this).keyValueMap.length,
+  get length() {
+    return listNS(this).keyValueMap.length;
+  },
    
 
 
 
-  toString: function toString() 'List(' + listNS(this).keyValueMap + ')',
+  toString: function toString() {
+    return 'List(' + listNS(this).keyValueMap + ')';
+  },
   
 
 

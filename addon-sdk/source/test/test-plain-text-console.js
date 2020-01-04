@@ -73,7 +73,7 @@ exports.testPlainTextConsole = function(assert) {
                    "PlainTextConsole.log() must stringify null.");
 
   
-  con.log("testing", { toString: function() "obj.toString()" });
+  con.log("testing", { toString: () => "obj.toString()" });
   assert.equal(lastPrint(), "console.log: " + name + ": testing {}\n",
                    "PlainTextConsole.log() doesn't printify custom toString.");
 

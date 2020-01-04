@@ -16,8 +16,9 @@ const { URL: parseURL } = require("../url");
 const LoginInfo = CC("@mozilla.org/login-manager/loginInfo;1",
                      "nsILoginInfo", "init");
 
-function filterMatchingLogins(loginInfo)
-  Object.keys(this).every(function(key) loginInfo[key] === this[key], this);
+function filterMatchingLogins(loginInfo) {
+  return Object.keys(this).every(key => loginInfo[key] === this[key], this);
+}
 
 
 
@@ -70,7 +71,9 @@ Login.prototype.toLoginInfo = function toLoginInfo() {
                        usernameField, passwordField);
 };
 
-function loginToJSON(value) Login(value).toJSON()
+function loginToJSON(value) {
+  return Login(value).toJSON();
+}
 
 
 

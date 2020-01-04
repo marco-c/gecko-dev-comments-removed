@@ -138,7 +138,7 @@ CONTEXTS.PageContext = Class({
     
     
     while (!(popupNode instanceof Ci.nsIDOMDocument)) {
-      if (NON_PAGE_CONTEXT_ELTS.some(function(type) popupNode instanceof type))
+      if (NON_PAGE_CONTEXT_ELTS.some(type => popupNode instanceof type))
         return false;
 
       popupNode = popupNode.parentNode;

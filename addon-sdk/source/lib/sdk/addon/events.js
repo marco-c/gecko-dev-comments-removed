@@ -51,4 +51,6 @@ exports.send = send;
 
 
 
-function clone (obj) JSON.parse(JSON.stringify(obj || {}))
+function clone (obj) {
+  return JSON.parse(JSON.stringify(obj || {}));
+}
