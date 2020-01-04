@@ -47,7 +47,7 @@ public:
   
 
 
-  void HandlePanStart();
+  void ClearActivation();
   
 
 

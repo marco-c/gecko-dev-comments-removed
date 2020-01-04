@@ -101,12 +101,9 @@ ActiveElementManager::TriggerElementActivation()
 }
 
 void
-ActiveElementManager::HandlePanStart()
+ActiveElementManager::ClearActivation()
 {
-  AEM_LOG("Handle pan start\n");
-
-  
-  
+  AEM_LOG("Clearing element activation\n");
   CancelTask();
   ResetActive();
 }
