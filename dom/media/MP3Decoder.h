@@ -19,6 +19,8 @@ public:
   
   
   static bool IsEnabled();
+  static bool CanHandleMediaType(const nsACString& aType,
+                                 const nsAString& aCodecs);
 };
 
 } 
