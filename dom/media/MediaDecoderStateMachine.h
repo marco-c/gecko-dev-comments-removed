@@ -215,7 +215,6 @@ public:
   
   void BreakCycles() {
     MOZ_ASSERT(NS_IsMainThread());
-    mReader->BreakCycles();
     mResource = nullptr;
   }
 

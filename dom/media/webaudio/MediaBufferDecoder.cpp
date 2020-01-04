@@ -145,7 +145,6 @@ private:
     MOZ_ASSERT(NS_IsMainThread());
     
     
-    mDecoderReader->BreakCycles();
     mDecoderReader = nullptr;
     mBufferDecoder = nullptr;
     JS_free(nullptr, mBuffer);
