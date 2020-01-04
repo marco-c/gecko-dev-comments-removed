@@ -126,8 +126,15 @@ public:
       return true;
     }
 
+    void FontsPrefsChanged(const char *aPref) override;
+
+    
+    uint32_t MaxGenericSubstitions();
+
 protected:
     static gfxFontconfigUtils *sFontconfigUtils;
+
+    int8_t mMaxGenericSubstitutions;
 
 private:
     virtual void GetPlatformCMSOutputProfile(void *&mem,

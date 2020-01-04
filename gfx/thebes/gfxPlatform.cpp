@@ -1772,8 +1772,8 @@ gfxPlatform::GetBidiNumeralOption()
     return mBidiNumeralOption;
 }
 
-static void
-FlushFontAndWordCaches()
+ void
+gfxPlatform::FlushFontAndWordCaches()
 {
     gfxFontCache *fontCache = gfxFontCache::GetCache();
     if (fontCache) {

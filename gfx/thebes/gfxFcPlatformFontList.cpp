@@ -29,6 +29,7 @@
 
 #ifdef MOZ_WIDGET_GTK
 #include <gdk/gdk.h>
+#include "gfxPlatformGtk.h"
 #endif
 
 using namespace mozilla;
@@ -1551,7 +1552,7 @@ gfxFcPlatformFontList::AddGenericFonts(mozilla::FontFamilyType aGenericType,
 void
 gfxFcPlatformFontList::ClearLangGroupPrefFonts()
 {
-    mGenericMappings.Clear();
+    ClearGenericMappings();
     gfxPlatformFontList::ClearLangGroupPrefFonts();
     mAlwaysUseFontconfigGenerics = PrefFontListsUseOnlyGenerics();
 }
@@ -1595,9 +1596,6 @@ gfxFcPlatformFontList::GetFTLibrary()
 
     return sCairoFTLibrary;
 }
-
-
-const uint32_t kMaxGenericFamilies = 3;
 
 gfxPlatformFontList::PrefFontList*
 gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
@@ -1651,6 +1649,7 @@ gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
 
     
     prefFonts = new PrefFontList; 
+    uint32_t limit = gfxPlatformGtk::GetPlatform()->MaxGenericSubstitions();
     for (int i = 0; i < faces->nfont; i++) {
         FcPattern* font = faces->fonts[i];
         FcChar8* mappedGeneric = nullptr;
@@ -1670,7 +1669,7 @@ gfxFcPlatformFontList::FindGenericFamilies(const nsAString& aGeneric,
             if (genericFamily && !prefFonts->Contains(genericFamily)) {
                 
                 prefFonts->AppendElement(genericFamily);
-                if (prefFonts->Length() >= kMaxGenericFamilies) {
+                if (prefFonts->Length() >= limit) {
                     break;
                 }
             }

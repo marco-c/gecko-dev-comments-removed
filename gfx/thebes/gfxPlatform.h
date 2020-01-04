@@ -514,6 +514,9 @@ public:
 
     int32_t GetBidiNumeralOption();
 
+    static void
+    FlushFontAndWordCaches();
+
     
 
 
