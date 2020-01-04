@@ -43,6 +43,7 @@ FFVPXRuntimeLinker::Init()
   }
 
   MOZ_ASSERT(NS_IsMainThread());
+  sLinkStatus = LinkStatus_FAILED;
 
   
   
@@ -85,8 +86,6 @@ FFVPXRuntimeLinker::Init()
     sLinkStatus = LinkStatus_SUCCEEDED;
     return true;
   }
-  sLinkStatus = LinkStatus_FAILED;
-
   return false;
 }
 
