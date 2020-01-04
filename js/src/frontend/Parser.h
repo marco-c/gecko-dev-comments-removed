@@ -598,7 +598,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node globalBody();
 
     
-    Node standaloneModule(Handle<ModuleObject*> module);
+    Node standaloneModule(Handle<ModuleObject*> module, ModuleBuilder& builder);
 
     
     
