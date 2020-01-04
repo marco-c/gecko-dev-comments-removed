@@ -208,7 +208,6 @@ AndroidBridge::AndroidBridge()
     mMessageQueueMessages = jEnv->GetFieldID(
             msgQueueClass.Get(), "mMessages", "Landroid/os/Message;");
 
-    mGLControllerObj = nullptr;
     mOpenedGraphicsLibraries = false;
     mHasNativeBitmapAccess = false;
     mHasNativeWindowAccess = false;
@@ -236,16 +235,6 @@ AndroidBridge::AndroidBridge()
     } else {
         
         jSurfacePointerField = 0;
-    }
-
-    AutoJNIClass egl(jEnv, "com/google/android/gles_jni/EGLSurfaceImpl");
-    jclass eglClass = egl.getGlobalRef();
-    if (eglClass) {
-        
-        const char* jniType = mAPIVersion >= 20 ? "J" : "I";
-        jEGLSurfacePointerField = egl.getField("mEGLSurface", jniType);
-    } else {
-        jEGLSurfacePointerField = 0;
     }
 
     AutoJNIClass channels(jEnv, "java/nio/channels/Channels");
@@ -686,37 +675,6 @@ void
 AndroidBridge::SetLayerClient(GeckoLayerClient::Param jobj)
 {
     mLayerClient = jobj;
-}
-
-void
-AndroidBridge::RegisterCompositor(JNIEnv *env)
-{
-    if (mGLControllerObj != nullptr) {
-        
-        return;
-    }
-
-    mGLControllerObj = GLController::LocalRef(
-            LayerView::RegisterCompositorWrapper());
-}
-
-EGLSurface
-AndroidBridge::CreateEGLSurfaceForCompositor()
-{
-    if (!jEGLSurfacePointerField) {
-        return nullptr;
-    }
-    MOZ_ASSERT(mGLControllerObj, "AndroidBridge::CreateEGLSurfaceForCompositor called with a null GL controller ref");
-
-    auto eglSurface = mGLControllerObj->CreateEGLSurfaceForCompositorWrapper();
-    if (!eglSurface) {
-        return nullptr;
-    }
-
-    JNIEnv* const env = GetEnvForThread(); 
-    return reinterpret_cast<EGLSurface>(mAPIVersion >= 20 ?
-            env->GetLongField(eglSurface.Get(), jEGLSurfacePointerField) :
-            env->GetIntField(eglSurface.Get(), jEGLSurfacePointerField));
 }
 
 bool

@@ -509,19 +509,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         return mTextureView.getSurfaceTexture();
     }
 
-    @WrapForJNI(allowMultithread = true, stubName = "RegisterCompositorWrapper")
-    public static GLController registerCxxCompositor() {
-        try {
-            LayerView layerView = GeckoAppShell.getLayerView();
-            GLController controller = layerView.getGLController();
-            controller.compositorCreated();
-            return controller;
-        } catch (Exception e) {
-            Log.e(LOGTAG, "Error registering compositor!", e);
-            return null;
-        }
-    }
-
     
     @WrapForJNI(allowMultithread = true, stubName = "updateZoomedView")
     public static void updateZoomedView(ByteBuffer data) {

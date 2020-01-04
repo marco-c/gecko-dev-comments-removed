@@ -261,8 +261,9 @@ public class GLController extends JNIObject {
         return mEGLSurfaceForCompositor != null;
     }
 
-    @WrapForJNI(allowMultithread = true, stubName = "CreateEGLSurfaceForCompositorWrapper")
-    private synchronized EGLSurface createEGLSurfaceForCompositor() {
+    @WrapForJNI(allowMultithread = true)
+    private synchronized EGLSurface createEGLSurface() {
+        compositorCreated();
         AttemptPreallocateEGLSurfaceForCompositor();
         EGLSurface result = mEGLSurfaceForCompositor;
         mEGLSurfaceForCompositor = null;
