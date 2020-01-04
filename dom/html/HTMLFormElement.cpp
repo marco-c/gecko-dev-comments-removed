@@ -464,7 +464,7 @@ HTMLFormElement::UnbindFromTree(bool aDeep, bool aNullParent)
     }
     ancestor = cur;
   } while (1);
-
+  
   CollectOrphans(ancestor, mControls->mElements
 #ifdef DEBUG
                  , this
@@ -667,24 +667,24 @@ HTMLFormElement::DoSubmit(WidgetEvent* aEvent)
 
   mSubmitInitiatedFromUserInput = EventStateManager::IsHandlingUserInput();
 
-  if(mDeferSubmission) {
+  if(mDeferSubmission) { 
     
     
     
     mPendingSubmission = submission;
     
     mIsSubmitting = false;
-    return NS_OK;
-  }
-
+    return NS_OK; 
+  } 
   
   
   
-  return SubmitSubmission(submission);
+  
+  return SubmitSubmission(submission); 
 }
 
 nsresult
-HTMLFormElement::BuildSubmission(nsFormSubmission** aFormSubmission,
+HTMLFormElement::BuildSubmission(nsFormSubmission** aFormSubmission, 
                                  WidgetEvent* aEvent)
 {
   NS_ASSERTION(!mPendingSubmission, "tried to build two submissions!");
@@ -1066,10 +1066,10 @@ HTMLFormElement::WalkFormElements(nsFormSubmission* aFormSubmission)
 
 
 NS_IMETHODIMP_(uint32_t)
-HTMLFormElement::GetElementCount() const
+HTMLFormElement::GetElementCount() const 
 {
   uint32_t count = 0;
-  mControls->GetLength(&count);
+  mControls->GetLength(&count); 
   return count;
 }
 
@@ -1262,7 +1262,7 @@ HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
     }
     PostPasswordEvent();
   }
-
+ 
   
   if (aChild->IsSubmitControl()) {
     
@@ -1270,7 +1270,7 @@ HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
 
     nsGenericHTMLFormElement** firstSubmitSlot =
       childInElements ? &mFirstSubmitInElements : &mFirstSubmitNotInElements;
-
+    
     
     
     
@@ -1334,7 +1334,7 @@ nsresult
 HTMLFormElement::AddElementToTable(nsGenericHTMLFormElement* aChild,
                                    const nsAString& aName)
 {
-  return mControls->AddElementToTable(aChild, aName);
+  return mControls->AddElementToTable(aChild, aName);  
 }
 
 
@@ -1357,7 +1357,7 @@ HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
   bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(aChild);
   nsTArray<nsGenericHTMLFormElement*>& controls = childInElements ?
       mControls->mElements :  mControls->mNotInElements;
-
+  
   
   
   size_t index = controls.IndexOf(aChild);
@@ -1780,7 +1780,7 @@ HTMLFormElement::GetDefaultSubmitElement() const
   NS_PRECONDITION(mDefaultSubmitElement == mFirstSubmitInElements ||
                   mDefaultSubmitElement == mFirstSubmitNotInElements,
                   "What happened here?");
-
+  
   return mDefaultSubmitElement;
 }
 
@@ -1839,7 +1839,7 @@ HTMLFormElement::GetEncoding(nsAString& aEncoding)
 {
   return GetEnctype(aEncoding);
 }
-
+ 
 NS_IMETHODIMP
 HTMLFormElement::SetEncoding(const nsAString& aEncoding)
 {
@@ -1852,7 +1852,7 @@ HTMLFormElement::Length()
   return mControls->Length();
 }
 
-NS_IMETHODIMP
+NS_IMETHODIMP    
 HTMLFormElement::GetLength(int32_t* aLength)
 {
   *aLength = Length();
@@ -2543,7 +2543,7 @@ HTMLFormElement::AddToPastNamesMap(const nsAString& aName,
     mPastNameLookupTable.Put(aName, aChild);
   }
 }
-
+ 
 JSObject*
 HTMLFormElement::WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
