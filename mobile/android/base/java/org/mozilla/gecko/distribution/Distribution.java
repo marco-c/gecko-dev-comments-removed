@@ -42,6 +42,7 @@ import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoEvent;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.Telemetry;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -50,6 +51,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 
@@ -464,7 +466,7 @@ public class Distribution {
         
         final boolean distributionSet =
                 checkIntentDistribution(referrer) ||
-                checkAPKDistribution() ||
+                copyAndCheckAPKDistribution() ||
                 checkSystemDistribution();
 
         
@@ -541,9 +543,7 @@ public class Distribution {
                     if (copyFilesFromStream(distro)) {
                         
                         
-                        
-                        this.distributionDir = new File(getDataDir(), DISTRIBUTION_PATH);
-                        return true;
+                        return checkDataDistribution();
                     }
                 } catch (SecurityException e) {
                     Log.e(LOGTAG, "Security exception copying files. Corrupt or malicious?", e);
@@ -640,15 +640,13 @@ public class Distribution {
     
 
 
-    private boolean checkAPKDistribution() {
+    private boolean copyAndCheckAPKDistribution() {
         try {
             
             if (copyFiles()) {
                 
                 
-                
-                this.distributionDir = new File(getDataDir(), DISTRIBUTION_PATH);
-                return true;
+                return checkDataDistribution();
             }
         } catch (IOException e) {
             Log.e(LOGTAG, "Error copying distribution files from APK.", e);
@@ -659,12 +657,27 @@ public class Distribution {
     
 
 
+    private boolean checkDataDistribution() {
+        return checkDirectories(getDataDistributionDirectories(context));
+    }
+
+    
+
+
     private boolean checkSystemDistribution() {
-        
-        final File distDir = getSystemDistributionDir();
-        if (distDir.exists()) {
-            this.distributionDir = distDir;
-            return true;
+        return checkDirectories(getSystemDistributionDirectories(context));
+    }
+
+    
+
+
+    private boolean checkDirectories(String[] directories) {
+        for (String path : directories) {
+            File directory = new File(path);
+            if (directory.exists()) {
+                distributionDir = directory;
+                return true;
+            }
         }
         return false;
     }
@@ -829,14 +842,10 @@ public class Distribution {
         
         
         
-        File copied = new File(getDataDir(), DISTRIBUTION_PATH);
-        if (copied.exists()) {
-            return this.distributionDir = copied;
+        if (checkDataDistribution() || checkSystemDistribution()) {
+            return distributionDir;
         }
-        File system = getSystemDistributionDir();
-        if (system.exists()) {
-            return this.distributionDir = system;
-        }
+
         return null;
     }
 
@@ -844,8 +853,69 @@ public class Distribution {
         return context.getApplicationInfo().dataDir;
     }
 
-    private File getSystemDistributionDir() {
-        return new File("/system/" + context.getPackageName() + "/distribution");
+    @WrapForJNI
+    public static String[] getDistributionDirectories() {
+        final Context context = GeckoAppShell.getApplicationContext();
+
+        final String[] dataDirectories = getDataDistributionDirectories(context);
+        final String[] systemDirectories = getSystemDistributionDirectories(context);
+
+        final String[] directories = new String[dataDirectories.length + systemDirectories.length];
+
+        System.arraycopy(dataDirectories, 0, directories, 0, dataDirectories.length);
+        System.arraycopy(systemDirectories, 0, directories, dataDirectories.length, systemDirectories.length);
+
+        return directories;
+    }
+
+    
+
+
+
+
+
+
+
+    private static String[] getSystemDistributionDirectories(Context context) {
+        final String baseDirectory = "/system/" + context.getPackageName() + "/distribution";
+        return getDistributionDirectoriesFromBaseDirectory(context, baseDirectory);
+    }
+
+    
+
+
+
+
+
+
+
+    private static String[] getDataDistributionDirectories(Context context) {
+        final String baseDirectory = new File(context.getApplicationInfo().dataDir, DISTRIBUTION_PATH).getAbsolutePath();
+        return getDistributionDirectoriesFromBaseDirectory(context, baseDirectory);
+    }
+
+    
+
+
+    private static String[] getDistributionDirectoriesFromBaseDirectory(Context context, String baseDirectory) {
+        final TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (telephonyManager != null && telephonyManager.getSimState() == TelephonyManager.SIM_STATE_READY) {
+            final String simOperator = telephonyManager.getSimOperator();
+
+            if (simOperator != null && simOperator.length() >= 5) {
+                final String mcc = simOperator.substring(0, 3);
+                final String mnc = simOperator.substring(3);
+
+                return new String[] {
+                        baseDirectory + "/" + mcc + "/" + mnc,
+                        baseDirectory + "/" + mcc,
+                        baseDirectory + "/default",
+                        baseDirectory
+                };
+            }
+        }
+
+        return new String[] { baseDirectory };
     }
 
     
