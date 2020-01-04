@@ -797,6 +797,7 @@ public class Tabs implements GeckoEventListener {
 
 
 
+    @RobocopTarget
     public Tab loadUrl(String url, int flags) {
         return loadUrl(url, null, -1, null, flags);
     }

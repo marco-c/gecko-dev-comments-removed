@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.Actions;
+import org.mozilla.gecko.Tabs;
 
 
 
@@ -22,14 +23,21 @@ public class testPrivateBrowsing extends ContentContextMenuTest {
         String bigLinkUrl = getAbsoluteUrl(mStringHelper.ROBOCOP_BIG_LINK_URL);
         String blank1Url = getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_01_URL);
         String blank2Url = getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_02_URL);
+        Tabs tabs = Tabs.getInstance();
 
         blockForGeckoReady();
 
-        inputAndLoadUrl(mStringHelper.ABOUT_BLANK_URL);
-
-        addTab(bigLinkUrl, mStringHelper.ROBOCOP_BIG_LINK_TITLE, true);
-
+        Actions.EventExpecter tabExpecter = mActions.expectGeckoEvent("Tab:Added");
+        Actions.EventExpecter contentExpecter = mActions.expectGeckoEvent("Content:PageShow");
+        tabs.loadUrl(bigLinkUrl, Tabs.LOADURL_NEW_TAB | Tabs.LOADURL_PRIVATE);
+        tabExpecter.blockForEvent();
+        tabExpecter.unregisterListener();
+        contentExpecter.blockForEvent();
+        contentExpecter.unregisterListener();
         verifyTabCount(1);
+
+        
+        mSolo.sleep(5000);
 
         
         verifyContextMenuItems(mStringHelper.CONTEXT_MENU_ITEMS_IN_PRIVATE_TAB);
@@ -38,17 +46,28 @@ public class testPrivateBrowsing extends ContentContextMenuTest {
         mAsserter.ok(!mSolo.searchText(mStringHelper.CONTEXT_MENU_ITEMS_IN_NORMAL_TAB[0]), "Checking that 'Open Link in New Tab' is not displayed in the context menu", "'Open Link in New Tab' is not displayed in the context menu");
 
         
-        Actions.EventExpecter privateTabEventExpector = mActions.expectGeckoEvent("Tab:Added");
+        tabExpecter = mActions.expectGeckoEvent("Tab:Added");
+        contentExpecter = mActions.expectGeckoEvent("Content:PageShow");
         mSolo.clickOnText(mStringHelper.CONTEXT_MENU_ITEMS_IN_PRIVATE_TAB[0]);
-        String eventData = privateTabEventExpector.blockForEventData();
-        privateTabEventExpector.unregisterListener();
-
+        String eventData = tabExpecter.blockForEventData();
+        tabExpecter.unregisterListener();
+        contentExpecter.blockForEvent();
+        contentExpecter.unregisterListener();
         mAsserter.ok(isTabPrivate(eventData), "Checking if the new tab opened from the context menu was a private tab", "The tab was a private tab");
         verifyTabCount(2);
 
         
-        addTab(blank2Url, mStringHelper.ROBOCOP_BLANK_PAGE_02_TITLE, false);
+        tabExpecter = mActions.expectGeckoEvent("Tab:Added");
+        contentExpecter = mActions.expectGeckoEvent("Content:PageShow");
+        tabs.loadUrl(blank2Url, Tabs.LOADURL_NEW_TAB);
+        tabExpecter.blockForEvent();
+        tabExpecter.unregisterListener();
+        contentExpecter.blockForEvent();
+        contentExpecter.unregisterListener();
         verifyTabCount(2);
+
+        
+        mSolo.sleep(3000);
 
         
         final ArrayList<String> firefoxHistory = mDatabaseHelper.getBrowserDBUrls(DatabaseHelper.BrowserDataType.HISTORY);
