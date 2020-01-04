@@ -1830,87 +1830,6 @@ public:
   }
 };
 
-class AutoHoistScrollInfoItems
-{
-  nsDisplayListBuilder& mBuilder;
-  nsDisplayList* mParentPendingList;
-  nsDisplayList mPendingList;
-
-public:
-  explicit AutoHoistScrollInfoItems(nsDisplayListBuilder& aBuilder)
-    : mBuilder(aBuilder),
-      mParentPendingList(nullptr)
-  {
-    if (!mBuilder.ShouldBuildScrollInfoItemsForHoisting()) {
-      return;
-    }
-    mParentPendingList = mBuilder.EnterScrollInfoItemHoisting(&mPendingList);
-  }
-  ~AutoHoistScrollInfoItems() {
-    if (!mParentPendingList) {
-      
-      
-      
-      return;
-    }
-    mParentPendingList->AppendToTop(&mPendingList);
-    mBuilder.LeaveScrollInfoItemHoisting(mParentPendingList);
-  }
-
-  
-  
-  
-  void Commit() {
-    nsDisplayItem* iter = nullptr;
-    while ((iter = mPendingList.RemoveBottom()) != nullptr) {
-      MOZ_ASSERT(iter->GetType() == nsDisplayItem::TYPE_SCROLL_INFO_LAYER);
-      auto item = static_cast<nsDisplayScrollInfoLayer*>(iter);
-
-      item->UnsetIgnoreIfCompositorSupportsBlending();
-      mBuilder.CommittedScrollInfoItems()->AppendToTop(item);
-    }
-  }
-
-  
-  
-  
-  void AnnotateForBlendModes(BlendModeSet aBlendModes) {
-    for (nsDisplayItem* iter = mPendingList.GetBottom(); iter; iter = iter->GetAbove()) {
-      MOZ_ASSERT(iter->GetType() == nsDisplayItem::TYPE_SCROLL_INFO_LAYER);
-      auto item = static_cast<nsDisplayScrollInfoLayer*>(iter);
-
-      item->IgnoreIfCompositorSupportsBlending(aBlendModes);
-    }
-  }
-
-  bool IsRootStackingContext() {
-    
-    
-    return !mParentPendingList;
-  }
-
-  
-  
-  void Finish(nsDisplayList* aResultList) {
-    MOZ_ASSERT(IsRootStackingContext());
-
-    nsDisplayItem* iter = nullptr;
-    while ((iter = mPendingList.RemoveBottom()) != nullptr) {
-      MOZ_ASSERT(iter->GetType() == nsDisplayItem::TYPE_SCROLL_INFO_LAYER);
-      nsDisplayScrollInfoLayer *item = static_cast<decltype(item)>(iter);
-
-      if (!item->ContainedInMixBlendMode()) {
-        
-        
-        item->~nsDisplayScrollInfoLayer();
-        continue;
-      }
-
-      aResultList->AppendToTop(item);
-    }
-  }
-};
-
 static void
 CheckForApzAwareEventHandlers(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
 {
@@ -2085,13 +2004,13 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     inTransform = true;
   }
 
-  AutoHoistScrollInfoItems hoistedScrollInfoItems(*aBuilder);
-
   bool usingSVGEffects = nsSVGIntegrationUtils::UsingEffectsForFrame(this);
   nsRect dirtyRectOutsideSVGEffects = dirtyRect;
+  nsDisplayList hoistedScrollInfoItemsStorage;
   if (usingSVGEffects) {
     dirtyRect =
       nsSVGIntegrationUtils::GetRequiredSourceForInvalidArea(this, dirtyRect);
+    aBuilder->EnterSVGEffectsContents(&hoistedScrollInfoItemsStorage);
   }
 
   bool useOpacity = HasVisualOpacity() && !nsSVGUtils::CanOptimizeOpacity(this);
@@ -2236,6 +2155,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplaySVGEffects(aBuilder, this, &resultList));
+    
+    
+    aBuilder->ExitSVGEffectsContents();
+    resultList.AppendToTop(&hoistedScrollInfoItemsStorage);
   }
   else if (useOpacity && !resultList.IsEmpty() && !is3DContextRoot) {
     
@@ -2354,25 +2277,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
   if (aBuilder->ContainsBlendMode()) {
-    resultList.AppendNewToTop(
-      new (aBuilder) nsDisplayBlendContainer(aBuilder, this, &resultList, aBuilder->ContainedBlendModes()));
-  }
-
-  if (aBuilder->ShouldBuildScrollInfoItemsForHoisting()) {
-    if (usingSVGEffects) {
-      
-      
-      hoistedScrollInfoItems.Commit();
-    } else if (aBuilder->ContainsBlendMode()) {
-      hoistedScrollInfoItems.AnnotateForBlendModes(aBuilder->ContainedBlendModes());
-    }
-
-    if (hoistedScrollInfoItems.IsRootStackingContext()) {
-      
-      
-      resultList.AppendToTop(aBuilder->CommittedScrollInfoItems());
-      hoistedScrollInfoItems.Finish(&resultList);
-    }
+      resultList.AppendNewToTop(
+        new (aBuilder) nsDisplayBlendContainer(aBuilder, this, &resultList, aBuilder->ContainedBlendModes()));
   }
 
   
