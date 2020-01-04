@@ -340,8 +340,6 @@ private:
   void GetUnprocessed(AudioBufferWriter& aWriter);
   void GetTimeStretched(AudioBufferWriter& aWriter);
 
-  void StartUnlocked();
-
   
   Monitor mMonitor;
 
