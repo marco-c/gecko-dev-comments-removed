@@ -464,29 +464,32 @@ CheckTracedThing(JSTracer* trc, T thing);
 
 
 
+
 template <typename T>
 struct DefaultGCPolicy<T*>
 {
-    static void trace(JSTracer* trc, T** t, const char* name) {
+    static void trace(JSTracer* trc, T** thingp, const char* name) {
         
         
-        TraceManuallyBarrieredEdge(trc, t, name);
+        TraceManuallyBarrieredEdge(trc, thingp, name);
     }
 
-    static bool needsSweep(T** t) {
-        return gc::IsAboutToBeFinalizedUnbarriered(t);
+    static bool needsSweep(T** thingp) {
+        
+        
+        return gc::IsAboutToBeFinalizedUnbarriered(thingp);
     }
 };
 
 
 
 template <typename T>
-struct DefaultGCPolicy<RelocatablePtr<T*>>
+struct DefaultGCPolicy<RelocatablePtr<T>>
 {
-    static void trace(JSTracer* trc, RelocatablePtr<T*> t, const char* name) {
-        TraceEdge(trc, t, name);
+    static void trace(JSTracer* trc, RelocatablePtr<T>* thingp, const char* name) {
+        TraceEdge(trc, thingp, name);
     }
-    static bool needsSweep(RelocatablePtr<T*>* thingp) {
+    static bool needsSweep(RelocatablePtr<T>* thingp) {
         return gc::IsAboutToBeFinalizedUnbarriered(thingp);
     }
 };
@@ -494,8 +497,8 @@ struct DefaultGCPolicy<RelocatablePtr<T*>>
 template <typename T>
 struct DefaultGCPolicy<ReadBarriered<T>>
 {
-    static void trace(JSTracer* trc, ReadBarriered<T> t, const char* name) {
-        TraceEdge(trc, t, name);
+    static void trace(JSTracer* trc, ReadBarriered<T>* thingp, const char* name) {
+        TraceEdge(trc, thingp, name);
     }
     static bool needsSweep(ReadBarriered<T>* thingp) {
         return gc::IsAboutToBeFinalized(thingp);
