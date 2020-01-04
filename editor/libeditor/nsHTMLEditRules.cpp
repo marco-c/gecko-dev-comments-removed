@@ -2660,8 +2660,7 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
         NS_ENSURE_SUCCESS(res, res);
       }
     } else {
-      res = MoveBlock(GetAsDOMNode(leftBlock), GetAsDOMNode(rightBlock),
-                      leftOffset, rightOffset);
+      res = MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
     }
     if (brNode) {
       mHTMLEditor->DeleteNode(brNode);
@@ -2751,9 +2750,10 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
         }
       }
 
-      res = MoveBlock(GetAsDOMNode(previousContentParent),
-                      GetAsDOMNode(rightBlock),
-                      previousContentOffset, rightOffset);
+      NS_ENSURE_TRUE(previousContentParent, NS_ERROR_NULL_POINTER);
+
+      res = MoveBlock(*previousContentParent->AsElement(), *rightBlock,
+          previousContentOffset, rightOffset);
       NS_ENSURE_SUCCESS(res, res);
     }
     if (brNode) {
@@ -2782,8 +2782,7 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
       }
     } else {
       
-      res = MoveBlock(GetAsDOMNode(leftBlock), GetAsDOMNode(rightBlock),
-                      leftOffset, rightOffset);
+      res = MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
       NS_ENSURE_SUCCESS(res, res);
     }
     if (brNode) {
@@ -2801,34 +2800,35 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
 
 
 
-
-
-
 nsresult
-nsHTMLEditRules::MoveBlock(nsIDOMNode *aLeftBlock, nsIDOMNode *aRightBlock, int32_t aLeftOffset, int32_t aRightOffset)
+nsHTMLEditRules::MoveBlock(Element& aLeftBlock, Element& aRightBlock,
+                           int32_t aLeftOffset, int32_t aRightOffset)
 {
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   
-  nsresult res = GetNodesFromPoint(::DOMPoint(aRightBlock,aRightOffset),
+  nsresult res = GetNodesFromPoint(::DOMPoint(&aRightBlock, aRightOffset),
                                    EditAction::makeList, arrayOfNodes,
                                    TouchContent::yes);
   NS_ENSURE_SUCCESS(res, res);
-  for (auto& curNode : arrayOfNodes) {
+  for (uint32_t i = 0; i < arrayOfNodes.Length(); i++) {
     
-    if (IsBlockNode(curNode)) {
+    if (IsBlockNode(arrayOfNodes[i])) {
       
-      res = MoveContents(GetAsDOMNode(curNode), aLeftBlock, &aLeftOffset);
+      res = MoveContents(arrayOfNodes[i]->AsDOMNode(), aLeftBlock.AsDOMNode(),
+                         &aLeftOffset);
       NS_ENSURE_SUCCESS(res, res);
       NS_ENSURE_STATE(mHTMLEditor);
-      res = mHTMLEditor->DeleteNode(curNode);
-    }
-    else
-    {
+      res = mHTMLEditor->DeleteNode(arrayOfNodes[i]);
+    } else {
       
-      res = MoveNodeSmart(GetAsDOMNode(curNode), aLeftBlock, &aLeftOffset);
+      res = MoveNodeSmart(arrayOfNodes[i]->AsDOMNode(), aLeftBlock.AsDOMNode(),
+                          &aLeftOffset);
     }
   }
-  return res;
+
+  
+  NS_ENSURE_SUCCESS(res, res);
+  return NS_OK;
 }
 
 
