@@ -24,8 +24,8 @@ namespace mozilla {
 
 
 
- 
-class AsyncEventDispatcher : public nsRunnable
+
+class AsyncEventDispatcher : public nsCancelableRunnable
 {
 public:
   
@@ -48,29 +48,28 @@ public:
     : mTarget(aTarget)
     , mEventType(aEventType)
     , mBubbles(aBubbles)
-    , mOnlyChromeDispatch(false)
   {
   }
 
   AsyncEventDispatcher(dom::EventTarget* aTarget, nsIDOMEvent* aEvent)
     : mTarget(aTarget)
     , mEvent(aEvent)
-    , mBubbles(false)
-    , mOnlyChromeDispatch(false)
   {
   }
 
   AsyncEventDispatcher(dom::EventTarget* aTarget, WidgetEvent& aEvent);
 
   NS_IMETHOD Run() override;
+  NS_IMETHOD Cancel() override;
   nsresult PostDOMEvent();
   void RunDOMEventWhenSafe();
 
   nsCOMPtr<dom::EventTarget> mTarget;
   nsCOMPtr<nsIDOMEvent> mEvent;
   nsString              mEventType;
-  bool                  mBubbles;
-  bool                  mOnlyChromeDispatch;
+  bool                  mBubbles = false;
+  bool                  mOnlyChromeDispatch = false;
+  bool                  mCanceled = false;
 };
 
 class LoadBlockingAsyncEventDispatcher final : public AsyncEventDispatcher
@@ -96,7 +95,7 @@ public:
       mBlockedDoc->BlockOnload();
     }
   }
-  
+
   ~LoadBlockingAsyncEventDispatcher();
 
 private:
