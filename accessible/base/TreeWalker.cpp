@@ -46,7 +46,7 @@ TreeWalker::~TreeWalker()
 
 
 Accessible*
-TreeWalker::NextChild()
+TreeWalker::Next()
 {
   if (mStateStack.IsEmpty())
     return nullptr;
@@ -82,7 +82,7 @@ TreeWalker::NextChild()
     top = PushState(parent);
     if (top->mDOMIter.Seek(mAnchorNode)) {
       mAnchorNode = parent;
-      return NextChild();
+      return Next();
     }
 
     

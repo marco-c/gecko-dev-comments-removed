@@ -50,7 +50,7 @@ public:
 
 
 
-  Accessible* NextChild();
+  Accessible* Next();
 
 private:
   TreeWalker();

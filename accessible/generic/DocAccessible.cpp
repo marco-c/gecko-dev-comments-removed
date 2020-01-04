@@ -1433,7 +1433,7 @@ DocAccessible::CacheChildren()
   
   TreeWalker walker(this, rootElm);
   Accessible* lastChild = nullptr;
-  while (Accessible* child = walker.NextChild()) {
+  while (Accessible* child = walker.Next()) {
     if (lastChild)
       AppendChild(lastChild);
 
