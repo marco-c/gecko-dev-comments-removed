@@ -11,6 +11,20 @@
 
 
 
+
+
+const MS_PER_SEC = 1000;
+
+
+
+
+
+
+
+
+
+
+
 function addDiv(t, attrs) {
   var div = document.createElement('div');
   if (attrs) {
