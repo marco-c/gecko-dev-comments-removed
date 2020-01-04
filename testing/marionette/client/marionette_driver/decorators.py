@@ -2,7 +2,7 @@
 
 
 
-from errors import MarionetteException, TimeoutException
+from errors import MarionetteException
 from functools import wraps
 import socket
 import sys
@@ -40,13 +40,16 @@ def do_process_check(func, always=False):
 
         try:
             return func(*args, **kwargs)
-        except (MarionetteException, socket.error, IOError) as e:
+        except (MarionetteException, IOError) as e:
             exc, val, tb = sys.exc_info()
+
+            
+            if type(e) in (socket.error, socket.timeout):
+                m.force_shutdown()
+
             if not isinstance(e, MarionetteException) or type(e) is MarionetteException:
                 if not always:
                     check_for_crash()
-            if not isinstance(e, MarionetteException) or type(e) is TimeoutException:
-                m.force_shutdown()
             raise exc, val, tb
         finally:
             if always:
