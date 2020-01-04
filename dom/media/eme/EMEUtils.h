@@ -9,8 +9,13 @@
 
 #include "mozilla/Logging.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla {
+
+namespace dom {
+class ArrayBufferViewOrArrayBuffer;
+}
 
 #ifndef EME_LOG
   LogModule* GetEMELog();
@@ -55,6 +60,49 @@ void
 ConstructKeySystem(const nsAString& aKeySystem,
                    const nsAString& aCDMVersion,
                    nsAString& aOutKeySystem);
+
+
+
+
+
+void
+CopyArrayBufferViewOrArrayBufferData(const dom::ArrayBufferViewOrArrayBuffer& aBufferOrView,
+                                     nsTArray<uint8_t>& aOutData);
+
+struct ArrayData {
+  explicit ArrayData(const uint8_t* aData, size_t aLength)
+    : mData(aData)
+    , mLength(aLength)
+  {
+  }
+  const uint8_t* mData;
+  const size_t mLength;
+  bool IsValid() const {
+    return mData != nullptr && mLength != 0;
+  }
+  bool operator== (const nsTArray<uint8_t>& aOther) const {
+    return mLength == aOther.Length() &&
+           memcmp(mData, aOther.Elements(), mLength) == 0;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ArrayData
+GetArrayBufferViewOrArrayBufferData(const dom::ArrayBufferViewOrArrayBuffer& aBufferOrView);
 
 } 
 
