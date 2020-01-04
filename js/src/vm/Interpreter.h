@@ -169,6 +169,15 @@ Call(JSContext* cx, HandleValue fval, JSObject* thisObj,
 
 
 
+extern bool
+CallFromStack(JSContext* cx, const CallArgs& args);
+
+
+
+
+
+
+
 
 
 
