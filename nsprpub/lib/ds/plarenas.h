@@ -25,6 +25,8 @@ PR_EXTERN(void) PL_InitArenaPool(
 
 
 
+
+
 PR_EXTERN(void) PL_ArenaFinish(void);
 
 
