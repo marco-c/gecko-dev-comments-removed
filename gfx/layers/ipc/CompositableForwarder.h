@@ -64,7 +64,10 @@ public:
   
 
 
-  virtual PTextureChild* CreateTexture(const SurfaceDescriptor& aSharedData, TextureFlags aFlags) = 0;
+  virtual PTextureChild* CreateTexture(
+    const SurfaceDescriptor& aSharedData,
+    LayersBackend aLayersBackend,
+    TextureFlags aFlags) = 0;
 
   
 
@@ -166,7 +169,7 @@ public:
 
 
 
-  virtual LayersBackend GetCompositorBackendType() const override
+  LayersBackend GetCompositorBackendType() const override
   {
     return mTextureFactoryIdentifier.mParentBackend;
   }

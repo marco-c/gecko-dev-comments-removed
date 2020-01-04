@@ -87,10 +87,6 @@ public:
 
 
 
-
-
-
-
   virtual LayersBackend GetCompositorBackendType() const = 0;
 
   

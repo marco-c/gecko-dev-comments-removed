@@ -463,16 +463,6 @@ public:
 
   static void AssertOnCompositorThread();
 
-  
-
-
-
-
-
-
-
-  static LayersBackend GetBackend();
-
   size_t GetFillRatio() {
     float fillRatio = 0;
     if (mPixelsFilled > 0 && mPixelsPerFrame > 0) {
@@ -520,11 +510,6 @@ protected:
                                uint32_t aFlashCounter);
 
   bool ShouldDrawDiagnostics(DiagnosticFlags);
-
-  
-
-
-  static void SetBackend(LayersBackend backend);
 
   
 
