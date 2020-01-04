@@ -10,6 +10,8 @@
 
 const {AnimationsTimeline} = require("devtools/client/animationinspector/components");
 
+var $ = (selector, target = document) => target.querySelector(selector);
+
 
 
 
@@ -29,22 +31,23 @@ var AnimationsPanel = {
     }
     this.initialized = promise.defer();
 
-    this.playersEl = document.querySelector("#players");
-    this.errorMessageEl = document.querySelector("#error-message");
-    this.pickerButtonEl = document.querySelector("#element-picker");
-    this.toggleAllButtonEl = document.querySelector("#toggle-all");
-    this.playTimelineButtonEl = document.querySelector("#pause-resume-timeline");
+    this.playersEl = $("#players");
+    this.errorMessageEl = $("#error-message");
+    this.pickerButtonEl = $("#element-picker");
+    this.toggleAllButtonEl = $("#toggle-all");
+    this.playTimelineButtonEl = $("#pause-resume-timeline");
+    this.rewindTimelineButtonEl = $("#rewind-timeline");
 
     
     
     if (!AnimationsController.traits.hasToggleAll) {
-      document.querySelector("#global-toolbar").style.display = "none";
+      $("#global-toolbar").style.display = "none";
     }
 
     
     for (let functionName of ["onPickerStarted", "onPickerStopped",
-      "refreshAnimations", "toggleAll", "onTabNavigated",
-      "onTimelineDataChanged", "playPauseTimeline"]) {
+      "refreshAnimationsUI", "toggleAll", "onTabNavigated",
+      "onTimelineDataChanged", "playPauseTimeline", "rewindTimeline"]) {
       this[functionName] = this[functionName].bind(this);
     }
     let hUtils = gToolbox.highlighterUtils;
@@ -55,7 +58,7 @@ var AnimationsPanel = {
 
     this.startListeners();
 
-    yield this.refreshAnimations();
+    yield this.refreshAnimationsUI();
 
     this.initialized.resolve();
 
@@ -80,14 +83,14 @@ var AnimationsPanel = {
 
     this.playersEl = this.errorMessageEl = null;
     this.toggleAllButtonEl = this.pickerButtonEl = null;
-    this.playTimelineButtonEl = null;
+    this.playTimelineButtonEl = this.rewindTimelineButtonEl = null;
 
     this.destroyed.resolve();
   }),
 
   startListeners: function() {
     AnimationsController.on(AnimationsController.PLAYERS_UPDATED_EVENT,
-      this.refreshAnimations);
+      this.refreshAnimationsUI);
 
     this.pickerButtonEl.addEventListener("click", this.togglePicker);
     gToolbox.on("picker-started", this.onPickerStarted);
@@ -95,6 +98,8 @@ var AnimationsPanel = {
 
     this.toggleAllButtonEl.addEventListener("click", this.toggleAll);
     this.playTimelineButtonEl.addEventListener("click", this.playPauseTimeline);
+    this.rewindTimelineButtonEl.addEventListener("click", this.rewindTimeline);
+
     gToolbox.target.on("navigate", this.onTabNavigated);
 
     this.animationsTimelineComponent.on("timeline-data-changed",
@@ -103,7 +108,7 @@ var AnimationsPanel = {
 
   stopListeners: function() {
     AnimationsController.off(AnimationsController.PLAYERS_UPDATED_EVENT,
-      this.refreshAnimations);
+      this.refreshAnimationsUI);
 
     this.pickerButtonEl.removeEventListener("click", this.togglePicker);
     gToolbox.off("picker-started", this.onPickerStarted);
@@ -111,6 +116,8 @@ var AnimationsPanel = {
 
     this.toggleAllButtonEl.removeEventListener("click", this.toggleAll);
     this.playTimelineButtonEl.removeEventListener("click", this.playPauseTimeline);
+    this.rewindTimelineButtonEl.removeEventListener("click", this.rewindTimeline);
+
     gToolbox.target.off("navigate", this.onTabNavigated);
 
     this.animationsTimelineComponent.off("timeline-data-changed",
@@ -147,16 +154,21 @@ var AnimationsPanel = {
 
 
 
-  playPauseTimeline: Task.async(function*() {
-    yield AnimationsController.toggleCurrentAnimations(this.timelineData.isMoving);
+  playPauseTimeline: function() {
+    AnimationsController.toggleCurrentAnimations(this.timelineData.isMoving)
+                        .then(() => this.refreshAnimationsStateAndUI())
+                        .catch(e => console.error(e));
+  },
 
-    
-    
-    for (let player of AnimationsController.animationPlayers) {
-      yield player.refreshState();
-    }
-    yield this.refreshAnimations();
-  }),
+  
+
+
+
+  rewindTimeline: function() {
+    AnimationsController.setCurrentTimeAll(0, true)
+                        .then(() => this.refreshAnimationsStateAndUI())
+                        .catch(e => console.error(e));
+  },
 
   onTabNavigated: function() {
     this.toggleAllButtonEl.classList.remove("paused");
@@ -180,7 +192,23 @@ var AnimationsPanel = {
     }
   },
 
-  refreshAnimations: Task.async(function*() {
+  
+
+
+
+
+  refreshAnimationsStateAndUI: Task.async(function*() {
+    for (let player of AnimationsController.animationPlayers) {
+      yield player.refreshState();
+    }
+    yield this.refreshAnimationsUI();
+  }),
+
+  
+
+
+
+  refreshAnimationsUI: Task.async(function*() {
     let done = gInspector.updating("animationspanel");
 
     
