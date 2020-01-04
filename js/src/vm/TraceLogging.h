@@ -211,19 +211,19 @@ class TraceLoggerThread
     
     
     
-    EventEntry* getEventsStartingAt(uint32_t* lastIteration, uint32_t* lastEntryId, size_t* num) {
+    EventEntry* getEventsStartingAt(uint32_t* lastIteration, uint32_t* lastSize, size_t* num) {
         EventEntry* start;
         if (iteration_ == *lastIteration) {
-            MOZ_ASSERT(*lastEntryId < events.size());
-            *num = events.lastEntryId() - *lastEntryId;
-            start = events.data() + *lastEntryId + 1;
+            MOZ_ASSERT(*lastSize <= events.size());
+            *num = events.size() - *lastSize;
+            start = events.data() + *lastSize;
         } else {
             *num = events.size();
             start = events.data();
         }
 
         *lastIteration = iteration_;
-        *lastEntryId = events.lastEntryId();
+        *lastSize = events.size();
         return start;
     }
 
@@ -233,16 +233,16 @@ class TraceLoggerThread
                               const char** lineno, size_t* lineno_len, const char** colno,
                               size_t* colno_len);
 
-    bool lostEvents(uint32_t lastIteration, uint32_t lastEntryId) {
+    bool lostEvents(uint32_t lastIteration, uint32_t lastSize) {
         
         if (lastIteration == iteration_) {
-            MOZ_ASSERT(lastEntryId < events.size());
+            MOZ_ASSERT(lastSize <= events.size());
             return false;
         }
 
         
         
-        if (lastIteration + 1 == iteration_ && lastEntryId == events.capacity())
+        if (lastIteration == iteration_ - 1 && lastSize == CONTINUOUSSPACE_LIMIT)
             return false;
 
         return true;
