@@ -275,6 +275,13 @@ extern bool gBluetoothDebugFlag;
 #define ATTRIBUTE_CHANGED_ID                 "attributechanged"
 
 
+
+
+
+#define ATTRIBUTE_READ_REQUEST               "attributereadreq"
+#define ATTRIBUTE_WRITE_REQUEST              "attributewritereq"
+
+
 #define BLUETOOTH_ADDRESS_LENGTH 17
 #define BLUETOOTH_ADDRESS_NONE   "00:00:00:00:00:00"
 #define BLUETOOTH_ADDRESS_BYTES  6
@@ -695,7 +702,8 @@ enum BluetoothGattAuthReq {
   GATT_AUTH_REQ_NO_MITM,
   GATT_AUTH_REQ_MITM,
   GATT_AUTH_REQ_SIGNED_NO_MITM,
-  GATT_AUTH_REQ_SIGNED_MITM
+  GATT_AUTH_REQ_SIGNED_MITM,
+  GATT_AUTH_REQ_END_GUARD
 };
 
 enum BluetoothGattWriteType {
@@ -821,12 +829,34 @@ struct BluetoothGattTestParam {
   uint16_t mU5;
 };
 
-struct BluetoothGattResponse {
+struct BluetoothAttributeHandle {
   uint16_t mHandle;
+
+  BluetoothAttributeHandle()
+    : mHandle(0x0000)
+  { }
+
+  bool operator==(const BluetoothAttributeHandle& aOther) const
+  {
+    return mHandle == aOther.mHandle;
+  }
+};
+
+struct BluetoothGattResponse {
+  BluetoothAttributeHandle mHandle;
   uint16_t mOffset;
   uint16_t mLength;
   BluetoothGattAuthReq mAuthReq;
   uint8_t mValue[BLUETOOTH_GATT_MAX_ATTR_LEN];
+
+  bool operator==(const BluetoothGattResponse& aOther) const
+  {
+    return mHandle == aOther.mHandle &&
+           mOffset == aOther.mOffset &&
+           mLength == aOther.mLength &&
+           mAuthReq == aOther.mAuthReq &&
+           !memcmp(mValue, aOther.mValue, mLength);
+  }
 };
 
 
@@ -843,19 +873,6 @@ enum BluetoothGapDataType {
   GAP_COMPLETE_UUID128   = 0X07, 
   GAP_SHORTENED_NAME     = 0X08, 
   GAP_COMPLETE_NAME      = 0X09, 
-};
-
-struct BluetoothAttributeHandle {
-  uint16_t mHandle;
-
-  BluetoothAttributeHandle()
-    : mHandle(0x0000)
-  { }
-
-  bool operator==(const BluetoothAttributeHandle& aOther) const
-  {
-    return mHandle == aOther.mHandle;
-  }
 };
 
 END_BLUETOOTH_NAMESPACE
