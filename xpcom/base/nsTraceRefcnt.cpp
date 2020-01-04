@@ -178,7 +178,7 @@ AssertActivityIsLegal()
   PR_END_MACRO
 #else
 #  define ASSERT_ACTIVITY_IS_LEGAL PR_BEGIN_MACRO PR_END_MACRO
-#endif  
+#endif 
 
 
 
@@ -458,7 +458,7 @@ GetBloatEntry(const char* aTypeName, uint32_t aInstanceSize)
       NS_ASSERTION(aInstanceSize == 0 ||
                    entry->GetClassSize() == aInstanceSize,
                    kMismatchedSizesMessage);
-#endif
+#endif 
     }
   }
   return entry;
@@ -643,7 +643,7 @@ GetCOMPtrCount(void* aPtr)
   }
   return nullptr;
 }
-#endif
+#endif 
 
 static void
 RecycleSerialNumberPtr(void* aPtr)
@@ -766,7 +766,7 @@ InitTraceLog()
   if (comptr_log) {
     fprintf(stdout, "### XPCOM_MEM_COMPTR_LOG defined -- but it will not work without dynamic_cast\n");
   }
-#endif
+#endif 
 
   if (classes) {
     
@@ -903,7 +903,7 @@ RecordStackFrame(uint32_t , void* aPC, void* ,
   auto locations = static_cast<std::vector<void*>*>(aClosure);
   locations->push_back(aPC);
 }
-#endif
+#endif 
 
 }
 
@@ -1005,7 +1005,7 @@ LogDMDFile()
 
   nsMemoryInfoDumper::DumpDMDToFile(logFile);
 }
-#endif
+#endif 
 
 namespace mozilla {
 void
@@ -1268,7 +1268,7 @@ NS_LogCOMPtrAddRef(void* aCOMPtr, nsISupports* aObject)
       WalkTheStackCached(gCOMPtrLog);
     }
   }
-#endif
+#endif 
 }
 
 
@@ -1309,7 +1309,7 @@ NS_LogCOMPtrRelease(void* aCOMPtr, nsISupports* aObject)
       WalkTheStackCached(gCOMPtrLog);
     }
   }
-#endif
+#endif 
 }
 
 void
