@@ -1129,7 +1129,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         let listener = handler.listenerObject;
         let listenerDO = this.globalDebugObject.makeDebuggeeValue(listener);
         
-        if (listenerDO.class == "Object" || listenerDO.class == "XULElement") {
+        if (!listenerDO.callable) {
           
           
           if (!listenerDO.unwrap()) {
