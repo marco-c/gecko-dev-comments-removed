@@ -7,7 +7,7 @@
 
 
 add_task(function*() {
-  yield addTab(TEST_URL_ROOT + "doc_layout_iframe1.html");
+  yield addTab(URL_ROOT + "doc_layout_iframe1.html");
   let {toolbox, inspector, view} = yield openLayoutView();
 
   info("Test that the layout-view works on the first page");

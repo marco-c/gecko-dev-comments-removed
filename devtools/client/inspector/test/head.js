@@ -6,7 +6,8 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
+  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
+  this);
 
 
 
@@ -19,13 +20,14 @@ Services.scriptloader.loadSubScript(
 var ROOT_TEST_DIR = getRootDirectory(gTestPath);
 
 
-var testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 Services.scriptloader.loadSubScript(
-  testDir + "../../../commandline/test/helpers.js", this);
+  "chrome://mochitests/content/browser/devtools/client/commandline/test/helpers.js",
+  this);
 
 
 Services.scriptloader.loadSubScript(
-  testDir + "../../../shared/test/test-actor-registry.js", this);
+  "chrome://mochitests/content/browser/devtools/client/shared/test/test-actor-registry.js",
+  this);
 
 DevToolsUtils.testing = true;
 registerCleanupFunction(() => {
