@@ -343,13 +343,14 @@ function testCut2(e) {
 
 
 var principal = SpecialPowers.wrap(document).nodePrincipal;
-var context = { 'url': SpecialPowers.wrap(principal.URI).spec,
-                'appId': principal.appId,
-                'isInBrowserElement': true };
+var context = { url: SpecialPowers.wrap(principal.URI).spec,
+                originAttributes: {
+                  appId: principal.appId,
+                  inBrowser: true }};
 
 addEventListener('testready', function() {
   SpecialPowers.pushPermissions([
-    {'type': 'browser', 'allow': 1, 'context': context}
+    {type: 'browser', allow: 1, context: context}
   ], runTest);
 });
 

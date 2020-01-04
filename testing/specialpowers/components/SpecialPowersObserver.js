@@ -234,7 +234,9 @@ SpecialPowersObserver.prototype = new SpecialPowersObserverAPI();
           
           
           msg.permission = {
-            principal: { appId: permission.principal.appId },
+            principal: {
+              originAttributes: {appId: permission.principal.appId}
+            },
             type: permission.type
           };
         default:
