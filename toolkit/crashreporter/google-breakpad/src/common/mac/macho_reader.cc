@@ -43,6 +43,10 @@
 #define CPU_TYPE_ARM 12
 #endif
 
+#if !defined(CPU_TYPE_ARM_64)
+#define CPU_TYPE_ARM_64 16777228
+#endif
+
 namespace google_breakpad {
 namespace mach_o {
 
@@ -97,22 +101,26 @@ bool FatReader::Read(const uint8_t *buffer, size_t size) {
       
       object_files_.resize(object_files_count);
       for (size_t i = 0; i < object_files_count; i++) {
-        struct fat_arch *objfile = &object_files_[i];
+        struct fat_arch objfile;
 
         
-        cursor >> objfile->cputype
-               >> objfile->cpusubtype
-               >> objfile->offset
-               >> objfile->size
-               >> objfile->align;
+        cursor >> objfile.cputype
+               >> objfile.cpusubtype
+               >> objfile.offset
+               >> objfile.size
+               >> objfile.align;
+
+        SuperFatArch super_fat_arch(objfile);
+        object_files_[i] = super_fat_arch;
+
         if (!cursor) {
           reporter_->TooShort();
           return false;
         }
         
         size_t fat_size = buffer_.Size();
-        if (objfile->offset > fat_size ||
-            objfile->size > fat_size - objfile->offset) {
+        if (objfile.offset > fat_size ||
+            objfile.size > fat_size - objfile.offset) {
           reporter_->MisplacedObjectFile();
           return false;
         }
@@ -135,16 +143,14 @@ bool FatReader::Read(const uint8_t *buffer, size_t size) {
       }
 
       object_files_[0].offset = 0;
-      object_files_[0].size = static_cast<uint32_t>(buffer_.Size());
+      object_files_[0].size = static_cast<uint64_t>(buffer_.Size());
       
       
       
       object_files_[0].align = 12;  
-      
       return true;
     }
   }
-  
   reporter_->BadHeader();
   return false;
 }
@@ -242,6 +248,7 @@ bool Reader::Read(const uint8_t *buffer,
       case CPU_TYPE_POWERPC:
         expected_magic = MH_MAGIC;
         break;
+      case CPU_TYPE_ARM_64:
       case CPU_TYPE_X86_64:
         expected_magic = MH_CIGAM_64;
         break;
@@ -310,7 +317,7 @@ bool Reader::WalkLoadCommands(Reader::LoadCommandHandler *handler) const {
     
     ByteBuffer command(list_cursor.here(), list_cursor.Available());
     ByteCursor cursor(&command, big_endian_);
-    
+
     
     uint32_t type, size;
     if (!(cursor >> type)) {
@@ -395,7 +402,7 @@ bool Reader::WalkLoadCommands(Reader::LoadCommandHandler *handler) const {
           return false;
         break;
       }
-      
+
       default: {
         if (!handler->UnknownCommand(type, command))
           return false;
@@ -414,7 +421,7 @@ class Reader::SegmentFinder : public LoadCommandHandler {
  public:
   
   
-  SegmentFinder(const string &name, Segment *segment) 
+  SegmentFinder(const string &name, Segment *segment)
       : name_(name), segment_(segment), found_() { }
 
   
@@ -474,10 +481,12 @@ bool Reader::WalkSegmentSections(const Segment &segment,
       reporter_->SectionsMissing(segment.name);
       return false;
     }
-    if ((section.flags & SECTION_TYPE) == S_ZEROFILL) {
+    const uint32_t section_type = section.flags & SECTION_TYPE;
+    if (section_type == S_ZEROFILL || section_type == S_THREAD_LOCAL_ZEROFILL ||
+            section_type == S_GB_ZEROFILL) {
       
       section.contents.start = section.contents.end = NULL;
-    } else if (segment.contents.start == NULL && 
+    } else if (segment.contents.start == NULL &&
                segment.contents.end == NULL) {
       
       

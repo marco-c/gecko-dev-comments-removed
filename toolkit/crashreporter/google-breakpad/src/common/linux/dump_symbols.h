@@ -41,11 +41,20 @@
 
 #include "common/symbol_data.h"
 #include "common/using_std_string.h"
-#include "google_breakpad/common/breakpad_types.h"
 
 namespace google_breakpad {
 
 class Module;
+
+struct DumpOptions {
+  DumpOptions(SymbolData symbol_data, bool handle_inter_cu_refs)
+      : symbol_data(symbol_data),
+        handle_inter_cu_refs(handle_inter_cu_refs) {
+  }
+
+  SymbolData symbol_data;
+  bool handle_inter_cu_refs;
+};
 
 
 
@@ -55,7 +64,7 @@ class Module;
 
 bool WriteSymbolFile(const string &obj_file,
                      const std::vector<string>& debug_dirs,
-                     SymbolData symbol_data,
+                     const DumpOptions& options,
                      std::ostream &sym_stream);
 
 
@@ -63,16 +72,8 @@ bool WriteSymbolFile(const string &obj_file,
 
 bool ReadSymbolData(const string& obj_file,
                     const std::vector<string>& debug_dirs,
-                    SymbolData symbol_data,
+                    const DumpOptions& options,
                     Module** module);
-
-
-
-bool ReadSymbolDataInternal(const uint8_t* obj_file,
-                            const string& obj_filename,
-                            const std::vector<string>& debug_dirs,
-                            SymbolData symbol_data,
-                            Module** module);
 
 }  
 

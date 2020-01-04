@@ -43,20 +43,18 @@
 #include <cxxabi.h>
 #endif
 #include <inttypes.h>
+#include <stdio.h>
 
 #include <algorithm>
-#include <set>
 #include <utility>
-#include <iomanip>
 
 #include "common/dwarf_line_to_module.h"
-#include "common/logging.h"
+#include "common/unordered.h"
 
 namespace google_breakpad {
 
 using std::map;
 using std::pair;
-using std::set;
 using std::sort;
 using std::vector;
 
@@ -92,7 +90,7 @@ struct DwarfCUToModule::Specification {
 
 struct AbstractOrigin {
   AbstractOrigin() : name() {}
-  AbstractOrigin(const string& name) : name(name) {}
+  explicit AbstractOrigin(const string& name) : name(name) {}
 
   string name;
 };
@@ -119,7 +117,7 @@ struct DwarfCUToModule::FilePrivate {
   
   
   
-  set<string> common_strings;
+  unordered_set<string> common_strings;
 
   
   
@@ -129,14 +127,42 @@ struct DwarfCUToModule::FilePrivate {
   AbstractOriginByOffset origins;
 };
 
-DwarfCUToModule::FileContext::FileContext(const string &filename_arg,
-                                          Module *module_arg)
-    : filename(filename_arg), module(module_arg) {
-  file_private = new FilePrivate();
+DwarfCUToModule::FileContext::FileContext(const string &filename,
+                                          Module *module,
+                                          bool handle_inter_cu_refs)
+    : filename_(filename),
+      module_(module),
+      handle_inter_cu_refs_(handle_inter_cu_refs),
+      file_private_(new FilePrivate()) {
 }
 
 DwarfCUToModule::FileContext::~FileContext() {
-  delete file_private;
+}
+
+void DwarfCUToModule::FileContext::AddSectionToSectionMap(
+    const string& name, const char* contents, uint64 length) {
+  section_map_[name] = std::make_pair(contents, length);
+}
+
+void DwarfCUToModule::FileContext::ClearSectionMapForTest() {
+  section_map_.clear();
+}
+
+const dwarf2reader::SectionMap&
+DwarfCUToModule::FileContext::section_map() const {
+  return section_map_;
+}
+
+void DwarfCUToModule::FileContext::ClearSpecifications() {
+  if (!handle_inter_cu_refs_)
+    file_private_->specifications.clear();
+}
+
+bool DwarfCUToModule::FileContext::IsUnhandledInterCUReference(
+    uint64 offset, uint64 compilation_unit_start) const {
+  if (handle_inter_cu_refs_)
+    return false;
+  return offset < compilation_unit_start;
 }
 
 
@@ -146,11 +172,13 @@ struct DwarfCUToModule::CUContext {
   CUContext(FileContext *file_context_arg, WarningReporter *reporter_arg)
       : file_context(file_context_arg),
         reporter(reporter_arg),
-        language(Language::CPlusPlus) { }
+        language(Language::CPlusPlus) {}
+
   ~CUContext() {
     for (vector<Module::Function *>::iterator it = functions.begin();
-         it != functions.end(); it++)
+         it != functions.end(); ++it) {
       delete *it;
+    }
   };
 
   
@@ -277,14 +305,19 @@ void DwarfCUToModule::GenericDIEHandler::ProcessAttributeReference(
     uint64 data) {
   switch (attr) {
     case dwarf2reader::DW_AT_specification: {
-      
-      
-      
-      
-      
       FileContext *file_context = cu_context_->file_context;
-      SpecificationByOffset *specifications
-          = &file_context->file_private->specifications;
+      if (file_context->IsUnhandledInterCUReference(
+              data, cu_context_->reporter->cu_offset())) {
+        cu_context_->reporter->UnhandledInterCUReference(offset_, data);
+        break;
+      }
+      
+      
+      
+      
+      
+      SpecificationByOffset *specifications =
+          &file_context->file_private_->specifications;
       SpecificationByOffset::iterator spec = specifications->find(data);
       if (spec != specifications->end()) {
         specification_ = &spec->second;
@@ -303,8 +336,8 @@ void DwarfCUToModule::GenericDIEHandler::ProcessAttributeReference(
 }
 
 string DwarfCUToModule::GenericDIEHandler::AddStringToPool(const string &str) {
-  pair<set<string>::iterator, bool> result =
-    cu_context_->file_context->file_private->common_strings.insert(str);
+  pair<unordered_set<string>::iterator, bool> result =
+    cu_context_->file_context->file_private_->common_strings.insert(str);
   return *result.first;
 }
 
@@ -318,9 +351,15 @@ void DwarfCUToModule::GenericDIEHandler::ProcessAttributeString(
       break;
     case dwarf2reader::DW_AT_MIPS_linkage_name: {
       char* demangled = NULL;
-#if !defined(__ANDROID__)
-      demangled = abi::__cxa_demangle(data.c_str(), NULL, NULL, NULL);
+      int status = -1;
+#if !defined(__ANDROID__)  
+      demangled = abi::__cxa_demangle(data.c_str(), NULL, NULL, &status);
 #endif
+      if (status != 0) {
+        cu_context_->reporter->DemangleError(data, status);
+        demangled_name_ = "";
+        break;
+      }
       if (demangled) {
         demangled_name_ = AddStringToPool(demangled);
         free(reinterpret_cast<void*>(demangled));
@@ -365,25 +404,30 @@ string DwarfCUToModule::GenericDIEHandler::ComputeQualifiedName() {
 
   
   
+  string return_value;
+  if (qualified_name) {
+    return_value = *qualified_name;
+  } else {
+    
+    
+    return_value = cu_context_->language->MakeQualifiedName(*enclosing_name,
+                                                            *unqualified_name);
+  }
+
+  
+  
   if (declaration_) {
-    FileContext *file_context = cu_context_->file_context;
     Specification spec;
-    if (qualified_name)
+    if (qualified_name) {
       spec.qualified_name = *qualified_name;
-    else {
+    } else {
       spec.enclosing_name = *enclosing_name;
       spec.unqualified_name = *unqualified_name;
     }
-    file_context->file_private->specifications[offset_] = spec;
+    cu_context_->file_context->file_private_->specifications[offset_] = spec;
   }
 
-  if (qualified_name)
-    return *qualified_name;
-
-  
-  
-  return cu_context_->language->MakeQualifiedName(*enclosing_name,
-                                                  *unqualified_name);
+  return return_value;
 }
 
 
@@ -458,10 +502,10 @@ void DwarfCUToModule::FuncHandler::ProcessAttributeReference(
     enum DwarfAttribute attr,
     enum DwarfForm form,
     uint64 data) {
-  switch(attr) {
+  switch (attr) {
     case dwarf2reader::DW_AT_abstract_origin: {
       const AbstractOriginByOffset& origins =
-          cu_context_->file_context->file_private->origins;
+          cu_context_->file_context->file_private_->origins;
       AbstractOriginByOffset::const_iterator origin = origins.find(data);
       if (origin != origins.end()) {
         abstract_origin_ = &(origin->second);
@@ -498,26 +542,27 @@ void DwarfCUToModule::FuncHandler::Finish() {
   if (low_pc_ < high_pc_) {
     
     
-    Module::Function *func = new Module::Function;
-    
-    
+    string name;
     if (!name_.empty()) {
-      func->name = name_;
+      name = name_;
     } else {
       cu_context_->reporter->UnnamedFunction(offset_);
-      func->name = "<name omitted>";
+      name = "<name omitted>";
     }
-    func->address = low_pc_;
+
+    
+    
+    scoped_ptr<Module::Function> func(new Module::Function(name, low_pc_));
     func->size = high_pc_ - low_pc_;
     func->parameter_size = 0;
     if (func->address) {
        
        
-       cu_context_->functions.push_back(func);
+       cu_context_->functions.push_back(func.release());
      }
   } else if (inline_) {
     AbstractOrigin origin(name_);
-    cu_context_->file_context->file_private->origins[offset_] = origin;
+    cu_context_->file_context->file_private_->origins[offset_] = origin;
   }
 }
 
@@ -559,54 +604,48 @@ dwarf2reader::DIEHandler *DwarfCUToModule::NamedScopeHandler::FindChildHandler(
 void DwarfCUToModule::WarningReporter::CUHeading() {
   if (printed_cu_header_)
     return;
-  BPLOG(INFO)
-    << filename_ << ": in compilation unit '" << cu_name_
-    << "' (offset 0x" << std::setbase(16) << cu_offset_ << std::setbase(10)
-    << "):";
+  fprintf(stderr, "%s: in compilation unit '%s' (offset 0x%llx):\n",
+          filename_.c_str(), cu_name_.c_str(), cu_offset_);
   printed_cu_header_ = true;
 }
 
 void DwarfCUToModule::WarningReporter::UnknownSpecification(uint64 offset,
                                                             uint64 target) {
   CUHeading();
-  BPLOG(INFO)
-    << filename_ << ": the DIE at offset 0x" 
-    << std::setbase(16) << offset << std::setbase(10)
-    << " has a DW_AT_specification attribute referring to the die at offset 0x"
-    << std::setbase(16) << target << std::setbase(10)
-    << ", which either was not marked as a declaration, or comes "
-    << "later in the file";
+  fprintf(stderr, "%s: the DIE at offset 0x%llx has a DW_AT_specification"
+          " attribute referring to the die at offset 0x%llx, which either"
+          " was not marked as a declaration, or comes later in the file\n",
+          filename_.c_str(), offset, target);
 }
 
 void DwarfCUToModule::WarningReporter::UnknownAbstractOrigin(uint64 offset,
                                                              uint64 target) {
   CUHeading();
-  BPLOG(INFO)
-    << filename_ << ": the DIE at offset 0x" 
-    << std::setbase(16) << offset << std::setbase(10)
-    << " has a DW_AT_abstract_origin attribute referring to the die at"
-    << " offset 0x" << std::setbase(16) << target << std::setbase(10)
-    << ", which either was not marked as an inline, or comes "
-    << "later in the file";
+  fprintf(stderr, "%s: the DIE at offset 0x%llx has a DW_AT_abstract_origin"
+          " attribute referring to the die at offset 0x%llx, which either"
+          " was not marked as an inline, or comes later in the file\n",
+          filename_.c_str(), offset, target);
 }
 
 void DwarfCUToModule::WarningReporter::MissingSection(const string &name) {
   CUHeading();
-  BPLOG(INFO) << filename_ << ": warning: couldn't find DWARF '"
-    << name << "' section";
+  fprintf(stderr, "%s: warning: couldn't find DWARF '%s' section\n",
+          filename_.c_str(), name.c_str());
 }
 
 void DwarfCUToModule::WarningReporter::BadLineInfoOffset(uint64 offset) {
   CUHeading();
-  BPLOG(INFO) << filename_ << ": warning: line number data offset beyond "
-    << "end of '.debug_line' section";
+  fprintf(stderr, "%s: warning: line number data offset beyond end"
+          " of '.debug_line' section\n",
+          filename_.c_str());
 }
 
 void DwarfCUToModule::WarningReporter::UncoveredHeading() {
   if (printed_unpaired_header_)
     return;
   CUHeading();
-  BPLOG(INFO) << filename_ << ": warning: skipping unpaired lines/functions:";
+  fprintf(stderr, "%s: warning: skipping unpaired lines/functions:\n",
+          filename_.c_str());
   printed_unpaired_header_ = true;
 }
 
@@ -615,36 +654,52 @@ void DwarfCUToModule::WarningReporter::UncoveredFunction(
   if (!uncovered_warnings_enabled_)
     return;
   UncoveredHeading();
-  BPLOG(INFO) << "    function" << (function.size == 0 ? " (zero-length)" : "")
-    << ": " << function.name;
+  fprintf(stderr, "    function%s: %s\n",
+          function.size == 0 ? " (zero-length)" : "",
+          function.name.c_str());
 }
 
 void DwarfCUToModule::WarningReporter::UncoveredLine(const Module::Line &line) {
   if (!uncovered_warnings_enabled_)
     return;
   UncoveredHeading();
-  BPLOG(INFO) << "    line" << (line.size == 0 ? " (zero-length)" : "")
-    << ": " << line.file->name << ":" << line.number
-    << " at 0x" << std::setbase(16) << line.address << std::setbase(10);
+  fprintf(stderr, "    line%s: %s:%d at 0x%" PRIx64 "\n",
+          (line.size == 0 ? " (zero-length)" : ""),
+          line.file->name.c_str(), line.number, line.address);
 }
 
 void DwarfCUToModule::WarningReporter::UnnamedFunction(uint64 offset) {
   CUHeading();
-  BPLOG(INFO) << filename_ << ": warning: function at offset 0x"
-    << std::setbase(16) << offset << std::setbase(10) << " has no name";
+  fprintf(stderr, "%s: warning: function at offset 0x%llx has no name\n",
+          filename_.c_str(), offset);
+}
+
+void DwarfCUToModule::WarningReporter::DemangleError(
+    const string &input, int error) {
+  CUHeading();
+  fprintf(stderr, "%s: warning: failed to demangle %s with error %d\n",
+          filename_.c_str(), input.c_str(), error);
+}
+
+void DwarfCUToModule::WarningReporter::UnhandledInterCUReference(
+    uint64 offset, uint64 target) {
+  CUHeading();
+  fprintf(stderr, "%s: warning: the DIE at offset 0x%llx has a "
+                  "DW_FORM_ref_addr attribute with an inter-CU reference to "
+                  "0x%llx, but inter-CU reference handling is turned off.\n",
+                  filename_.c_str(), offset, target);
 }
 
 DwarfCUToModule::DwarfCUToModule(FileContext *file_context,
                                  LineToModuleHandler *line_reader,
                                  WarningReporter *reporter)
-    : line_reader_(line_reader), has_source_line_info_(false) { 
-  cu_context_ = new CUContext(file_context, reporter);
-  child_context_ = new DIEContext();
+    : line_reader_(line_reader),
+      cu_context_(new CUContext(file_context, reporter)),
+      child_context_(new DIEContext()),
+      has_source_line_info_(false) {
 }
 
 DwarfCUToModule::~DwarfCUToModule() {
-  delete cu_context_;
-  delete child_context_;
 }
 
 void DwarfCUToModule::ProcessAttributeSigned(enum DwarfAttribute attr,
@@ -699,12 +754,13 @@ dwarf2reader::DIEHandler *DwarfCUToModule::FindChildHandler(
     enum DwarfTag tag) {
   switch (tag) {
     case dwarf2reader::DW_TAG_subprogram:
-      return new FuncHandler(cu_context_, child_context_, offset);
+      return new FuncHandler(cu_context_.get(), child_context_.get(), offset);
     case dwarf2reader::DW_TAG_namespace:
     case dwarf2reader::DW_TAG_class_type:
     case dwarf2reader::DW_TAG_structure_type:
     case dwarf2reader::DW_TAG_union_type:
-      return new NamedScopeHandler(cu_context_, child_context_, offset);
+      return new NamedScopeHandler(cu_context_.get(), child_context_.get(),
+                                   offset);
     default:
       return NULL;
   }
@@ -747,7 +803,7 @@ void DwarfCUToModule::SetLanguage(DwarfLanguage language) {
 
 void DwarfCUToModule::ReadSourceLines(uint64 offset) {
   const dwarf2reader::SectionMap &section_map
-      = cu_context_->file_context->section_map;
+      = cu_context_->file_context->section_map();
   dwarf2reader::SectionMap::const_iterator map_entry
       = section_map.find(".debug_line");
   
@@ -765,7 +821,7 @@ void DwarfCUToModule::ReadSourceLines(uint64 offset) {
     return;
   }
   line_reader_->ReadProgram(section_start + offset, section_length - offset,
-                            cu_context_->file_context->module, &lines_);
+                            cu_context_->file_context->module_, &lines_);
 }
 
 namespace {
@@ -932,7 +988,7 @@ void DwarfCUToModule::AssignLinesToFunctions() {
         
         
         
-        assert (func || line);
+        assert(func || line);
         if (func && line)
           next_transition = std::min(func->address, line->address);
         else if (func)
@@ -990,12 +1046,14 @@ void DwarfCUToModule::Finish() {
 
   
   
-  cu_context_->file_context->module->AddFunctions(functions->begin(),
-                                                  functions->end());
+  cu_context_->file_context->module_->AddFunctions(functions->begin(),
+                                                   functions->end());
 
   
   
   functions->clear();
+
+  cu_context_->file_context->ClearSpecifications();
 }
 
 bool DwarfCUToModule::StartCompilationUnit(uint64 offset,

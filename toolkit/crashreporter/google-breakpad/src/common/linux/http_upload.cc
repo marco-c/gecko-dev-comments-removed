@@ -69,7 +69,17 @@ bool HTTPUpload::SendRequest(const string &url,
   if (!CheckParameters(parameters))
     return false;
 
-  void *curl_lib = dlopen("libcurl.so", RTLD_NOW);
+  
+  
+  void* curl_lib = dlopen(NULL, RTLD_NOW);
+  if (!curl_lib || dlsym(curl_lib, "curl_easy_init") == NULL) {
+    dlerror();  
+    dlclose(curl_lib);
+    curl_lib = NULL;
+  }
+  if (!curl_lib) {
+    curl_lib = dlopen("libcurl.so", RTLD_NOW);
+  }
   if (!curl_lib) {
     if (error_description != NULL)
       *error_description = dlerror();

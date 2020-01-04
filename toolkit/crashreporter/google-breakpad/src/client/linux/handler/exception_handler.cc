@@ -68,6 +68,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/limits.h>
+#include <pthread.h>
 #include <sched.h>
 #include <signal.h>
 #include <stdio.h>
@@ -86,15 +87,19 @@
 #include <utility>
 #include <vector>
 
+#include "common/basictypes.h"
 #include "common/linux/linux_libc_support.h"
 #include "common/memory.h"
 #include "client/linux/log/log.h"
+#include "client/linux/microdump_writer/microdump_writer.h"
 #include "client/linux/minidump_writer/linux_dumper.h"
 #include "client/linux/minidump_writer/minidump_writer.h"
 #include "common/linux/eintr_wrapper.h"
 #include "third_party/lss/linux_syscall_support.h"
 
+#if defined(__ANDROID__)
 #include "linux/sched.h"
+#endif
 
 #ifndef PR_SET_PTRACER
 #define PR_SET_PTRACER 0x59616d61
@@ -139,13 +144,13 @@ void InstallAlternateStackLocked() {
   
   
   
-  static const unsigned kSigStackSize = std::max(8192, SIGSTKSZ);
+  static const unsigned kSigStackSize = std::max(16384, SIGSTKSZ);
 
   
   
   if (sys_sigaltstack(NULL, &old_stack) == -1 || !old_stack.ss_sp ||
       old_stack.ss_size < kSigStackSize) {
-    new_stack.ss_sp = malloc(kSigStackSize);
+    new_stack.ss_sp = calloc(1, kSigStackSize);
     new_stack.ss_size = kSigStackSize;
 
     if (sys_sigaltstack(&new_stack, NULL) == -1) {
@@ -183,13 +188,37 @@ void RestoreAlternateStackLocked() {
   stack_installed = false;
 }
 
+void InstallDefaultHandler(int sig) {
+#if defined(__ANDROID__)
+  
+  
+  
+  
+  
+  struct kernel_sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sys_sigemptyset(&sa.sa_mask);
+  sa.sa_handler_ = SIG_DFL;
+  sa.sa_flags = SA_RESTART;
+  sys_rt_sigaction(sig, &sa, NULL, sizeof(kernel_sigset_t));
+#else
+  signal(sig, SIG_DFL);
+#endif
+}
+
+
+
+
+std::vector<ExceptionHandler*>* g_handler_stack_ = NULL;
+pthread_mutex_t g_handler_stack_mutex_ = PTHREAD_MUTEX_INITIALIZER;
+
+
+
+
+
+ExceptionHandler::CrashContext g_crash_context_;
+
 }  
-
-
-
-std::vector<ExceptionHandler*>* ExceptionHandler::handler_stack_ = NULL;
-pthread_mutex_t ExceptionHandler::handler_stack_mutex_ =
-    PTHREAD_MUTEX_INITIALIZER;
 
 
 ExceptionHandler::ExceptionHandler(const MinidumpDescriptor& descriptor,
@@ -206,31 +235,44 @@ ExceptionHandler::ExceptionHandler(const MinidumpDescriptor& descriptor,
   if (server_fd >= 0)
     crash_generation_client_.reset(CrashGenerationClient::TryCreate(server_fd));
 
-  if (!IsOutOfProcess() && !minidump_descriptor_.IsFD())
+  if (!IsOutOfProcess() && !minidump_descriptor_.IsFD() &&
+      !minidump_descriptor_.IsMicrodumpOnConsole())
     minidump_descriptor_.UpdatePath();
 
-  pthread_mutex_lock(&handler_stack_mutex_);
-  if (!handler_stack_)
-    handler_stack_ = new std::vector<ExceptionHandler*>;
+#if defined(__ANDROID__)
+  if (minidump_descriptor_.IsMicrodumpOnConsole())
+    logger::initializeCrashLogWriter();
+#endif
+
+  pthread_mutex_lock(&g_handler_stack_mutex_);
+
+  
+  
+  memset(&g_crash_context_, 0, sizeof(g_crash_context_));
+
+  if (!g_handler_stack_)
+    g_handler_stack_ = new std::vector<ExceptionHandler*>;
   if (install_handler) {
     InstallAlternateStackLocked();
     InstallHandlersLocked();
   }
-  handler_stack_->push_back(this);
-  pthread_mutex_unlock(&handler_stack_mutex_);
+  g_handler_stack_->push_back(this);
+  pthread_mutex_unlock(&g_handler_stack_mutex_);
 }
 
 
 ExceptionHandler::~ExceptionHandler() {
-  pthread_mutex_lock(&handler_stack_mutex_);
+  pthread_mutex_lock(&g_handler_stack_mutex_);
   std::vector<ExceptionHandler*>::iterator handler =
-      std::find(handler_stack_->begin(), handler_stack_->end(), this);
-  handler_stack_->erase(handler);
-  if (handler_stack_->empty()) {
+      std::find(g_handler_stack_->begin(), g_handler_stack_->end(), this);
+  g_handler_stack_->erase(handler);
+  if (g_handler_stack_->empty()) {
+    delete g_handler_stack_;
+    g_handler_stack_ = NULL;
     RestoreAlternateStackLocked();
     RestoreHandlersLocked();
   }
-  pthread_mutex_unlock(&handler_stack_mutex_);
+  pthread_mutex_unlock(&g_handler_stack_mutex_);
 }
 
 
@@ -275,7 +317,7 @@ void ExceptionHandler::RestoreHandlersLocked() {
 
   for (int i = 0; i < kNumHandledSignals; ++i) {
     if (sigaction(kExceptionSignals[i], &old_handlers[i], NULL) == -1) {
-      signal(kExceptionSignals[i], SIG_DFL);
+      InstallDefaultHandler(kExceptionSignals[i]);
     }
   }
   handlers_installed = false;
@@ -290,7 +332,7 @@ void ExceptionHandler::RestoreHandlersLocked() {
 
 void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
   
-  pthread_mutex_lock(&handler_stack_mutex_);
+  pthread_mutex_lock(&g_handler_stack_mutex_);
 
   
   
@@ -315,15 +357,15 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
     if (sigaction(sig, &cur_handler, NULL) == -1) {
       
       
-      signal(sig, SIG_DFL);
+      InstallDefaultHandler(sig);
     }
-    pthread_mutex_unlock(&handler_stack_mutex_);
+    pthread_mutex_unlock(&g_handler_stack_mutex_);
     return;
   }
 
   bool handled = false;
-  for (int i = handler_stack_->size() - 1; !handled && i >= 0; --i) {
-    handled = (*handler_stack_)[i]->HandleSignal(sig, info, uc);
+  for (int i = g_handler_stack_->size() - 1; !handled && i >= 0; --i) {
+    handled = (*g_handler_stack_)[i]->HandleSignal(sig, info, uc);
   }
 
   
@@ -332,14 +374,16 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
   
   
   if (handled) {
-    signal(sig, SIG_DFL);
+    InstallDefaultHandler(sig);
   } else {
     RestoreHandlersLocked();
   }
 
-  pthread_mutex_unlock(&handler_stack_mutex_);
+  pthread_mutex_unlock(&g_handler_stack_mutex_);
 
-  if (info->si_code <= 0) {
+  
+  if (info->si_code <= 0 || sig == SIGABRT) {
+    
     
     
     
@@ -389,27 +433,39 @@ bool ExceptionHandler::HandleSignal(int sig, siginfo_t* info, void* uc) {
   bool signal_pid_trusted = info->si_code == SI_USER ||
       info->si_code == SI_TKILL;
   if (signal_trusted || (signal_pid_trusted && info->si_pid == getpid())) {
-    sys_prctl(PR_SET_DUMPABLE, 1);
+    sys_prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
   }
-  CrashContext context;
-  memcpy(&context.siginfo, info, sizeof(siginfo_t));
-  memcpy(&context.context, uc, sizeof(struct ucontext));
-#if !defined(__ARM_EABI__)
+
   
-  struct ucontext *uc_ptr = (struct ucontext*)uc;
+  memset(&g_crash_context_, 0, sizeof(g_crash_context_));
+  memcpy(&g_crash_context_.siginfo, info, sizeof(siginfo_t));
+  memcpy(&g_crash_context_.context, uc, sizeof(struct ucontext));
+#if defined(__aarch64__)
+  struct ucontext* uc_ptr = (struct ucontext*)uc;
+  struct fpsimd_context* fp_ptr =
+      (struct fpsimd_context*)&uc_ptr->uc_mcontext.__reserved;
+  if (fp_ptr->head.magic == FPSIMD_MAGIC) {
+    memcpy(&g_crash_context_.float_state, fp_ptr,
+           sizeof(g_crash_context_.float_state));
+  }
+#elif !defined(__ARM_EABI__) && !defined(__mips__)
+  
+  
+  
+  struct ucontext* uc_ptr = (struct ucontext*)uc;
   if (uc_ptr->uc_mcontext.fpregs) {
-    memcpy(&context.float_state,
-           uc_ptr->uc_mcontext.fpregs,
-           sizeof(context.float_state));
+    memcpy(&g_crash_context_.float_state, uc_ptr->uc_mcontext.fpregs,
+           sizeof(g_crash_context_.float_state));
   }
 #endif
-  context.tid = syscall(__NR_gettid);
+  g_crash_context_.tid = syscall(__NR_gettid);
   if (crash_handler_ != NULL) {
-    if (crash_handler_(&context, sizeof(context), callback_context_)) {
+    if (crash_handler_(&g_crash_context_, sizeof(g_crash_context_),
+                       callback_context_)) {
       return true;
     }
   }
-  return GenerateDump(&context);
+  return GenerateDump(&g_crash_context_);
 }
 
 
@@ -430,9 +486,11 @@ bool ExceptionHandler::GenerateDump(CrashContext *context) {
   if (IsOutOfProcess())
     return crash_generation_client_->RequestDump(context, sizeof(*context));
 
-  static const unsigned kChildStackSize = 8000;
+  
+  
+  static const unsigned kChildStackSize = 16000;
   PageAllocator allocator;
-  uint8_t* stack = (uint8_t*) allocator.Alloc(kChildStackSize);
+  uint8_t* stack = reinterpret_cast<uint8_t*>(allocator.Alloc(kChildStackSize));
   if (!stack)
     return false;
   
@@ -450,28 +508,34 @@ bool ExceptionHandler::GenerateDump(CrashContext *context) {
   
   
   
-  if(sys_pipe(fdes) == -1) {
+  if (sys_pipe(fdes) == -1) {
     
     
     
-    static const char no_pipe_msg[] = "ExceptionHandler::GenerateDump \
-                                       sys_pipe failed:";
+    static const char no_pipe_msg[] = "ExceptionHandler::GenerateDump "
+                                      "sys_pipe failed:";
     logger::write(no_pipe_msg, sizeof(no_pipe_msg) - 1);
     logger::write(strerror(errno), strlen(strerror(errno)));
     logger::write("\n", 1);
+
+    
+    fdes[0] = fdes[1] = -1;
   }
 
   const pid_t child = sys_clone(
       ThreadEntry, stack, CLONE_FILES | CLONE_FS | CLONE_UNTRACED,
       &thread_arg, NULL, NULL, NULL);
+  if (child == -1) {
+    sys_close(fdes[0]);
+    sys_close(fdes[1]);
+    return false;
+  }
 
-  int r, status;
   
-  sys_prctl(PR_SET_PTRACER, child);
+  sys_prctl(PR_SET_PTRACER, child, 0, 0, 0);
   SendContinueSignalToChild();
-  do {
-    r = sys_waitpid(child, &status, __WALL);
-  } while (r == -1 && errno == EINTR);
+  int status;
+  const int r = HANDLE_EINTR(sys_waitpid(child, &status, __WALL));
 
   sys_close(fdes[0]);
   sys_close(fdes[1]);
@@ -494,9 +558,9 @@ void ExceptionHandler::SendContinueSignalToChild() {
   static const char okToContinueMessage = 'a';
   int r;
   r = HANDLE_EINTR(sys_write(fdes[1], &okToContinueMessage, sizeof(char)));
-  if(r == -1) {
-    static const char msg[] = "ExceptionHandler::SendContinueSignalToChild \
-                               sys_write failed:";
+  if (r == -1) {
+    static const char msg[] = "ExceptionHandler::SendContinueSignalToChild "
+                              "sys_write failed:";
     logger::write(msg, sizeof(msg) - 1);
     logger::write(strerror(errno), strlen(strerror(errno)));
     logger::write("\n", 1);
@@ -509,9 +573,9 @@ void ExceptionHandler::WaitForContinueSignal() {
   int r;
   char receivedMessage;
   r = HANDLE_EINTR(sys_read(fdes[0], &receivedMessage, sizeof(char)));
-  if(r == -1) {
-    static const char msg[] = "ExceptionHandler::WaitForContinueSignal \
-                               sys_read failed:";
+  if (r == -1) {
+    static const char msg[] = "ExceptionHandler::WaitForContinueSignal "
+                              "sys_read failed:";
     logger::write(msg, sizeof(msg) - 1);
     logger::write(strerror(errno), strlen(strerror(errno)));
     logger::write("\n", 1);
@@ -522,6 +586,14 @@ void ExceptionHandler::WaitForContinueSignal() {
 
 bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                               size_t context_size) {
+  if (minidump_descriptor_.IsMicrodumpOnConsole()) {
+    return google_breakpad::WriteMicrodump(
+        crashing_process,
+        context,
+        context_size,
+        mapping_list_,
+        *minidump_descriptor_.microdump_extra_info());
+  }
   if (minidump_descriptor_.IsFD()) {
     return google_breakpad::WriteMinidump(minidump_descriptor_.fd(),
                                           minidump_descriptor_.size_limit(),
@@ -549,8 +621,16 @@ bool ExceptionHandler::WriteMinidump(const string& dump_path,
   return eh.WriteMinidump();
 }
 
+
+
+
+
+#if defined(__i386__) && defined(__GNUC__) && !defined(__clang__)
+__attribute__((optimize("no-omit-frame-pointer")))
+#endif
 bool ExceptionHandler::WriteMinidump() {
-  if (!IsOutOfProcess() && !minidump_descriptor_.IsFD()) {
+  if (!IsOutOfProcess() && !minidump_descriptor_.IsFD() &&
+      !minidump_descriptor_.IsMicrodumpOnConsole()) {
     
     
     
@@ -560,17 +640,40 @@ bool ExceptionHandler::WriteMinidump() {
     
     
     lseek(minidump_descriptor_.fd(), 0, SEEK_SET);
-    static_cast<void>(ftruncate(minidump_descriptor_.fd(), 0));
+    ignore_result(ftruncate(minidump_descriptor_.fd(), 0));
   }
 
   
-  sys_prctl(PR_SET_DUMPABLE, 1);
+  sys_prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
 
   CrashContext context;
   int getcontext_result = getcontext(&context.context);
   if (getcontext_result)
     return false;
-#if !defined(__ARM_EABI__)
+
+#if defined(__i386__)
+  
+  
+  
+  
+  
+  if (!context.context.uc_mcontext.gregs[REG_UESP]) {
+    
+    
+    
+    
+    
+    
+    context.context.uc_mcontext.gregs[REG_UESP] =
+      context.context.uc_mcontext.gregs[REG_EBP] - 16;
+    
+    
+    context.context.uc_mcontext.gregs[REG_ESP] =
+      context.context.uc_mcontext.gregs[REG_UESP];
+  }
+#endif
+
+#if !defined(__ARM_EABI__) && !defined(__aarch64__) && !defined(__mips__)
   
   memcpy(&context.float_state, context.context.uc_mcontext.fpregs,
          sizeof(context.float_state));
@@ -589,6 +692,12 @@ bool ExceptionHandler::WriteMinidump() {
 #elif defined(__arm__)
   context.siginfo.si_addr =
       reinterpret_cast<void*>(context.context.uc_mcontext.arm_pc);
+#elif defined(__aarch64__)
+  context.siginfo.si_addr =
+      reinterpret_cast<void*>(context.context.uc_mcontext.pc);
+#elif defined(__mips__)
+  context.siginfo.si_addr =
+      reinterpret_cast<void*>(context.context.uc_mcontext.pc);
 #else
 #error "This code has not been ported to your platform yet."
 #endif

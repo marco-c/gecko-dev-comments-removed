@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "google_breakpad/processor/dump_object.h"
+
+namespace google_breakpad {
+
+DumpObject::DumpObject() : valid_(false) {
+}
+
+}  

@@ -33,4 +33,25 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "testing/include/gmock/gmock.h"
 
+
+
+
+
+
+
+
+
+
+
+#if defined(__clang__) && defined(__has_feature)
+
+# if __has_feature(address_sanitizer)
+#  define ADDRESS_SANITIZER
+# endif
+#elif defined(__GNUC__) && defined(__SANITIZE_ADDRESS__)
+# define ADDRESS_SANITIZER
+#else
+# undef ADDRESS_SANITIZER
+#endif
+
 #endif  

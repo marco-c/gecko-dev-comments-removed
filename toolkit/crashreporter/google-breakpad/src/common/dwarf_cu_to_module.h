@@ -46,6 +46,7 @@
 #include "common/dwarf/bytereader.h"
 #include "common/dwarf/dwarf2diehandler.h"
 #include "common/dwarf/dwarf2reader.h"
+#include "common/scoped_ptr.h"
 #include "common/using_std_string.h"
 
 namespace google_breakpad {
@@ -65,7 +66,6 @@ using dwarf2reader::DwarfTag;
 class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   struct FilePrivate;
  public:
-
   
   
   
@@ -74,22 +74,51 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   
   
   
-  struct FileContext {
-    FileContext(const string &filename_arg, Module *module_arg);
+  
+  class FileContext {
+   public:
+    FileContext(const string &filename,
+                Module *module,
+                bool handle_inter_cu_refs);
     ~FileContext();
 
     
-    string filename;
+    void AddSectionToSectionMap(const string& name,
+                                const char* contents,
+                                uint64 length);
+
+    
+    void ClearSectionMapForTest();
+
+    const dwarf2reader::SectionMap& section_map() const;
+
+   private:
+    friend class DwarfCUToModule;
+
+    
+    void ClearSpecifications();
 
     
     
-    dwarf2reader::SectionMap section_map;
+    
+    bool IsUnhandledInterCUReference(uint64 offset,
+                                     uint64 compilation_unit_start) const;
 
     
-    Module *module;
+    const string filename_;
 
     
-    FilePrivate *file_private;
+    
+    dwarf2reader::SectionMap section_map_;
+
+    
+    Module *module_;
+
+    
+    const bool handle_inter_cu_refs_;
+
+    
+    scoped_ptr<FilePrivate> file_private_;
   };
 
   
@@ -170,9 +199,20 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
     
     virtual void UnnamedFunction(uint64 offset);
 
+    
+    virtual void DemangleError(const string &input, int error);
+
+    
+    
+    virtual void UnhandledInterCUReference(uint64 offset, uint64 target);
+
+    uint64 cu_offset() const {
+      return cu_offset_;
+    }
+
    protected:
-    string filename_;
-    uint64 cu_offset_;
+    const string filename_;
+    const uint64 cu_offset_;
     string cu_name_;
     bool printed_cu_header_;
     bool printed_unpaired_header_;
@@ -218,12 +258,11 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   bool StartRootDIE(uint64 offset, enum DwarfTag tag);
 
  private:
-
   
   
-  struct Specification;
   struct CUContext;
   struct DIEContext;
+  struct Specification;
   class GenericDIEHandler;
   class FuncHandler;
   class NamedScopeHandler;
@@ -233,7 +272,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
 
   
   void SetLanguage(DwarfLanguage language);
-  
+
   
   
   
@@ -256,10 +295,10 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   LineToModuleHandler *line_reader_;
 
   
-  CUContext *cu_context_;
+  scoped_ptr<CUContext> cu_context_;
 
   
-  DIEContext *child_context_;
+  scoped_ptr<DIEContext> child_context_;
 
   
   bool has_source_line_info_;
@@ -274,6 +313,6 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   vector<Module::Line> lines_;
 };
 
-} 
+}  
 
 #endif  

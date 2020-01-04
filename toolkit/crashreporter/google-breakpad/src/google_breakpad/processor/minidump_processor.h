@@ -35,6 +35,7 @@
 
 #include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
+#include "google_breakpad/processor/process_result.h"
 
 namespace google_breakpad {
 
@@ -44,41 +45,6 @@ class StackFrameSymbolizer;
 class SourceLineResolverInterface;
 class SymbolSupplier;
 struct SystemInfo;
-
-enum ProcessResult {
-  PROCESS_OK,                                 
-                                              
-                                              
-
-  PROCESS_ERROR_MINIDUMP_NOT_FOUND,           
-                                              
-
-  PROCESS_ERROR_NO_MINIDUMP_HEADER,           
-                                              
-
-  PROCESS_ERROR_NO_THREAD_LIST,               
-                                              
-
-  PROCESS_ERROR_GETTING_THREAD,               
-                                              
-                                              
-                                              
-
-  PROCESS_ERROR_GETTING_THREAD_ID,            
-                                              
-                                              
-                                              
-
-  PROCESS_ERROR_DUPLICATE_REQUESTING_THREADS, 
-                                              
-                                              
-
-  PROCESS_SYMBOL_SUPPLIER_INTERRUPTED         
-                                              
-                                              
-                                              
-                                              
-};
 
 class MinidumpProcessor {
  public:
@@ -126,6 +92,12 @@ class MinidumpProcessor {
   
   
   
+  static bool GetProcessCreateTime(Minidump* dump,
+                                   uint32_t* process_create_time);
+
+  
+  
+  
   
   
   
@@ -153,6 +125,8 @@ class MinidumpProcessor {
   
   static string GetAssertion(Minidump* dump);
 
+  void set_enable_objdump(bool enabled) { enable_objdump_ = enabled; }
+
  private:
   StackFrameSymbolizer* frame_symbolizer_;
   
@@ -162,6 +136,10 @@ class MinidumpProcessor {
   
   
   bool enable_exploitability_;
+
+  
+  
+  bool enable_objdump_;
 };
 
 }  

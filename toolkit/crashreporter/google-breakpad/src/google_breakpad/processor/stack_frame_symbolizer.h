@@ -62,7 +62,10 @@ class StackFrameSymbolizer {
     kError,
     
     
-    kInterrupt
+    kInterrupt,
+    
+    
+    kWarningCorruptSymbols,
   };
 
   StackFrameSymbolizer(SymbolSupplier* supplier,

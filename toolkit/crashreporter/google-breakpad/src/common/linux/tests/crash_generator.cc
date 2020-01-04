@@ -65,15 +65,26 @@ const char* const kProcFilesToCopy[] = {
 const size_t kNumProcFilesToCopy =
     sizeof(kProcFilesToCopy) / sizeof(kProcFilesToCopy[0]);
 
+int gettid() {
+  
+  return syscall(__NR_gettid);
+}
+
+int tkill(pid_t tid, int sig) {
+  
+  return syscall(__NR_tkill, tid, sig);
+}
+
 
 const rlim_t kCoreSizeLimit = 1024 * 1024;
 
 void *thread_function(void *data) {
   ThreadData* thread_data = reinterpret_cast<ThreadData*>(data);
-  volatile pid_t thread_id = syscall(__NR_gettid);
+  volatile pid_t thread_id = gettid();
   *(thread_data->thread_id_ptr) = thread_id;
   int result = pthread_barrier_wait(thread_data->barrier);
   if (result != 0 && result != PTHREAD_BARRIER_SERIAL_THREAD) {
+    perror("Failed to wait for sync barrier");
     exit(1);
   }
   while (true) {
@@ -160,11 +171,16 @@ bool CrashGenerator::SetCoreFileSizeLimit(rlim_t limit) const {
 bool CrashGenerator::CreateChildCrash(
     unsigned num_threads, unsigned crash_thread, int crash_signal,
     pid_t* child_pid) {
-  if (num_threads == 0 || crash_thread >= num_threads)
+  if (num_threads == 0 || crash_thread >= num_threads) {
+    fprintf(stderr, "CrashGenerator: Invalid thread counts; num_threads=%u"
+                    " crash_thread=%u\n", num_threads, crash_thread);
     return false;
+  }
 
-  if (!MapSharedMemory(num_threads * sizeof(pid_t)))
+  if (!MapSharedMemory(num_threads * sizeof(pid_t))) {
+    perror("CrashGenerator: Unable to map shared memory");
     return false;
+  }
 
   pid_t pid = fork();
   if (pid == 0) {
@@ -183,9 +199,35 @@ bool CrashGenerator::CreateChildCrash(
         fprintf(stderr, "CrashGenerator: Failed to copy proc files\n");
         exit(1);
       }
-      if (kill(*GetThreadIdPointer(crash_thread), crash_signal) == -1) {
-        perror("CrashGenerator: Failed to kill thread by signal");
+      
+      
+      
+      
+#if defined(__ANDROID__)
+      const int kRetries = 60;
+      const unsigned int kSleepTimeInSeconds = 1;
+#else
+      const int kRetries = 1;
+      const unsigned int kSleepTimeInSeconds = 600;
+#endif
+      for (int i = 0; i < kRetries; i++) {
+        if (tkill(*GetThreadIdPointer(crash_thread), crash_signal) == -1) {
+          perror("CrashGenerator: Failed to kill thread by signal");
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          sleep(kSleepTimeInSeconds);
+        }
       }
+    } else {
+      perror("CrashGenerator: Failed to set core limit");
     }
     exit(1);
   } else if (pid == -1) {
@@ -200,8 +242,8 @@ bool CrashGenerator::CreateChildCrash(
   }
   if (!WIFSIGNALED(status) || WTERMSIG(status) != crash_signal) {
     fprintf(stderr, "CrashGenerator: Child process not killed by the expected signal\n"
-                    "  exit status=0x%x signaled=%s sig=%d expected=%d\n",
-                    status, WIFSIGNALED(status) ? "true" : "false",
+                    "  exit status=0x%x pid=%u signaled=%s sig=%d expected=%d\n",
+                    status, pid, WIFSIGNALED(status) ? "true" : "false",
                     WTERMSIG(status), crash_signal);
     return false;
   }

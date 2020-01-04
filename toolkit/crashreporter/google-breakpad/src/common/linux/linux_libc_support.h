@@ -77,6 +77,8 @@ extern const char* my_read_decimal_ptr(uintptr_t* result, const char* s);
 
 extern void my_memset(void* ip, char c, size_t len);
 
+extern void* my_memchr(const void* src, int c, size_t len);
+
 
 
 #define my_memcpy  memcpy

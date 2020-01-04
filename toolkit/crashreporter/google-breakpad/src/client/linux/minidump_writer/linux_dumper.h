@@ -39,66 +39,36 @@
 #define CLIENT_LINUX_MINIDUMP_WRITER_LINUX_DUMPER_H_
 
 #include <elf.h>
+#if defined(__ANDROID__)
+#include <link.h>
+#endif
 #include <linux/limits.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/user.h>
 
+#include "client/linux/dump_writer_common/mapping_info.h"
+#include "client/linux/dump_writer_common/thread_info.h"
 #include "common/memory.h"
 #include "google_breakpad/common/minidump_format.h"
 
 namespace google_breakpad {
 
-#if defined(__i386) || defined(__x86_64)
-typedef typeof(((struct user*) 0)->u_debugreg[0]) debugreg_t;
-#endif
 
-
-#if defined(__i386) || defined(__ARM_EABI__)
+#if defined(__i386) || defined(__ARM_EABI__) || \
+ (defined(__mips__) && _MIPS_SIM == _ABIO32)
 typedef Elf32_auxv_t elf_aux_entry;
-#elif defined(__x86_64)
+#elif defined(__x86_64) || defined(__aarch64__) || \
+     (defined(__mips__) && _MIPS_SIM != _ABIO32)
 typedef Elf64_auxv_t elf_aux_entry;
 #endif
 
-typedef typeof(((elf_aux_entry*) 0)->a_un.a_val) elf_aux_val_t;
+typedef __typeof__(((elf_aux_entry*) 0)->a_un.a_val) elf_aux_val_t;
 
 
 
 
 const char kLinuxGateLibraryName[] = "linux-gate.so";
-
-
-struct ThreadInfo {
-  pid_t tgid;   
-  pid_t ppid;   
-
-  uintptr_t stack_pointer;  
-
-
-#if defined(__i386) || defined(__x86_64)
-  user_regs_struct regs;
-  user_fpregs_struct fpregs;
-  static const unsigned kNumDebugRegisters = 8;
-  debugreg_t dregs[8];
-#if defined(__i386)
-  user_fpxregs_struct fpxregs;
-#endif  
-
-#elif defined(__ARM_EABI__)
-  
-  struct user_regs regs;
-  struct user_fpregs fpregs;
-#endif
-};
-
-
-
-struct MappingInfo {
-  uintptr_t start_addr;
-  size_t size;
-  size_t offset;  
-  char name[NAME_MAX];
-};
 
 class LinuxDumper {
  public:
@@ -108,6 +78,12 @@ class LinuxDumper {
 
   
   virtual bool Init();
+
+  
+  
+  
+  
+  virtual bool LateInit();
 
   
   virtual bool IsPostMortem() const = 0;
@@ -136,7 +112,7 @@ class LinuxDumper {
 
   
   
-  virtual void CopyFromProcess(void* dest, pid_t child, const void* src,
+  virtual bool CopyFromProcess(void* dest, pid_t child, const void* src,
                                size_t length) = 0;
 
   
@@ -145,6 +121,7 @@ class LinuxDumper {
   
   virtual bool BuildProcPath(char* path, pid_t pid, const char* node) const = 0;
 
+  
   
   
   bool ElfFileIdentifierForMapping(const MappingInfo& mapping,
@@ -162,6 +139,17 @@ class LinuxDumper {
 
   pid_t crash_thread() const { return crash_thread_; }
   void set_crash_thread(pid_t crash_thread) { crash_thread_ = crash_thread; }
+
+  
+  
+  
+  
+  
+  static void GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
+                                             char* file_path,
+                                             size_t file_path_size,
+                                             char* file_name,
+                                             size_t file_name_size);
 
  protected:
   bool ReadAuxv();
@@ -203,6 +191,62 @@ class LinuxDumper {
 
   
   wasteful_vector<elf_aux_val_t> auxv_;
+
+#if defined(__ANDROID__)
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  bool GetLoadedElfHeader(uintptr_t start_addr, ElfW(Ehdr)* ehdr);
+
+  
+  
+  
+  
+  
+  void ParseLoadedElfProgramHeaders(ElfW(Ehdr)* ehdr,
+                                    uintptr_t start_addr,
+                                    uintptr_t* min_vaddr_ptr,
+                                    uintptr_t* dyn_vaddr_ptr,
+                                    size_t* dyn_count_ptr);
+
+  
+  
+  
+  bool HasAndroidPackedRelocations(uintptr_t load_bias,
+                                   uintptr_t dyn_vaddr,
+                                   size_t dyn_count);
+
+  
+  
+  
+  
+  
+  
+  
+  uintptr_t GetEffectiveLoadBias(ElfW(Ehdr)* ehdr, uintptr_t start_addr);
+
+  
+  
+  
+  
+  
+  
+  void LatePostprocessMappings();
+#endif  
 };
 
 }  

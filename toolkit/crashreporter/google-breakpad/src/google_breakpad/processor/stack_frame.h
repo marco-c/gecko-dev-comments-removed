@@ -45,12 +45,13 @@ struct StackFrame {
   
   
   enum FrameTrust {
-    FRAME_TRUST_NONE,     
-    FRAME_TRUST_SCAN,     
-    FRAME_TRUST_CFI_SCAN, 
-    FRAME_TRUST_FP,       
-    FRAME_TRUST_CFI,      
-    FRAME_TRUST_CONTEXT   
+    FRAME_TRUST_NONE,      
+    FRAME_TRUST_SCAN,      
+    FRAME_TRUST_CFI_SCAN,  
+    FRAME_TRUST_FP,        
+    FRAME_TRUST_CFI,       
+    FRAME_TRUST_PREWALKED, 
+    FRAME_TRUST_CONTEXT    
   };
 
   StackFrame()
@@ -70,6 +71,8 @@ struct StackFrame {
     switch (trust) {
       case StackFrame::FRAME_TRUST_CONTEXT:
         return "given as instruction pointer in context";
+      case StackFrame::FRAME_TRUST_PREWALKED:
+        return "recovered by external stack walker";
       case StackFrame::FRAME_TRUST_CFI:
         return "call frame info";
       case StackFrame::FRAME_TRUST_CFI_SCAN:

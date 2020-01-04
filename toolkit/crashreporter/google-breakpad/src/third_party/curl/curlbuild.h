@@ -154,7 +154,8 @@
 #endif
 
 
-#if defined(_M_X64) || (defined(__x86_64__) && !defined(__ILP32__))
+#if defined(_M_X64) || (defined(__x86_64__) && !defined(__ILP32__)) ||      \
+    defined(__aarch64__) || (defined(__mips__) && _MIPS_SIM == _ABI64)
 #define CURL_SIZEOF_LONG 8
 #else
 #define CURL_SIZEOF_LONG 4
@@ -170,7 +171,8 @@
 typedef CURL_TYPEOF_CURL_SOCKLEN_T curl_socklen_t;
 
 
-#if defined(_M_X64) || (defined(__x86_64__) && !defined(__ILP32__))
+#if defined(_M_X64) || (defined(__x86_64__) && !defined(__ILP32__)) ||      \
+    defined(__aarch64__)
 #define CURL_TYPEOF_CURL_OFF_T long
 #else
 #define CURL_TYPEOF_CURL_OFF_T int64_t

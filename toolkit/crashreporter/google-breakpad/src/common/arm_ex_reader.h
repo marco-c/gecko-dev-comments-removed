@@ -54,7 +54,6 @@
 
 
 
-
 #ifndef COMMON_ARM_EX_READER_H__
 #define COMMON_ARM_EX_READER_H__
 
@@ -110,6 +109,6 @@ class ExceptionTableInfo {
   int ExtabEntryDecode(const uint8_t* buf, size_t buf_size);
 };
 
-} 
+}  
 
 #endif 

@@ -228,6 +228,7 @@ class Context: public Section {
   
   Context(const Dump &dump, const MDRawContextX86 &context);
   Context(const Dump &dump, const MDRawContextARM &context);
+  Context(const Dump &dump, const MDRawContextMIPS &context);
   
   Context(const Dump &dump) : Section(dump) {}
   

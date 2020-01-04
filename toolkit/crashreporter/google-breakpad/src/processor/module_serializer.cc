@@ -52,6 +52,9 @@ size_t ModuleSerializer::SizeOf(const BasicSourceLineResolver::Module &module) {
   size_t total_size_alloc_ = 0;
 
   
+  total_size_alloc_ += SimpleSerializer<bool>::SizeOf(module.is_corrupt_);
+
+  
   int map_index = 0;
   map_sizes_[map_index++] = files_serializer_.SizeOf(module.files_);
   map_sizes_[map_index++] = functions_serializer_.SizeOf(module.functions_);
@@ -65,19 +68,22 @@ size_t ModuleSerializer::SizeOf(const BasicSourceLineResolver::Module &module) {
      module.cfi_delta_rules_);
 
   
-  total_size_alloc_ = kNumberMaps_ * sizeof(uint32_t);
+  total_size_alloc_ += kNumberMaps_ * sizeof(uint32_t);
 
-  for (int i = 0; i < kNumberMaps_; ++i)
-   total_size_alloc_ += map_sizes_[i];
+  for (int i = 0; i < kNumberMaps_; ++i) {
+    total_size_alloc_ += map_sizes_[i];
+  }
 
   
-  ++total_size_alloc_;
+  total_size_alloc_ += SimpleSerializer<char>::SizeOf(0);
 
   return total_size_alloc_;
 }
 
 char *ModuleSerializer::Write(const BasicSourceLineResolver::Module &module,
                               char *dest) {
+  
+  dest = SimpleSerializer<bool>::Write(module.is_corrupt_, dest);
   
   memcpy(dest, map_sizes_, kNumberMaps_ * sizeof(uint32_t));
   dest += kNumberMaps_ * sizeof(uint32_t);
@@ -189,8 +195,9 @@ char* ModuleSerializer::SerializeSymbolFileData(
   scoped_ptr<BasicSourceLineResolver::Module> module(
       new BasicSourceLineResolver::Module("no name"));
   scoped_array<char> buffer(new char[symbol_data.size() + 1]);
-  strcpy(buffer.get(), symbol_data.c_str());
-  if (!module->LoadMapFromMemory(buffer.get())) {
+  memcpy(buffer.get(), symbol_data.c_str(), symbol_data.size());
+  buffer.get()[symbol_data.size()] = '\0';
+  if (!module->LoadMapFromMemory(buffer.get(), symbol_data.size() + 1)) {
     return NULL;
   }
   buffer.reset(NULL);

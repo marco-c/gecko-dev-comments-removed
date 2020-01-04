@@ -30,8 +30,8 @@
 
 
 
-#ifndef COMMON_WINDOWS_STRING_UTILS_INL_H__
-#define COMMON_WINDOWS_STRING_UTILS_INL_H__
+#ifndef COMMON_WINDOWS_STRING_UTILS_INL_H_
+#define COMMON_WINDOWS_STRING_UTILS_INL_H_
 
 #include <stdarg.h>
 #include <wchar.h>

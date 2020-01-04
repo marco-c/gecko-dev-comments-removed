@@ -46,15 +46,17 @@ namespace google_breakpad {
 
 MemoryMappedFile::MemoryMappedFile() {}
 
-MemoryMappedFile::MemoryMappedFile(const char* path) {
-  Map(path);
+MemoryMappedFile::MemoryMappedFile(const char* path, size_t offset) {
+  Map(path, offset);
 }
 
 MemoryMappedFile::~MemoryMappedFile() {
   Unmap();
 }
 
-bool MemoryMappedFile::Map(const char* path) {
+#include <unistd.h>
+
+bool MemoryMappedFile::Map(const char* path, size_t offset) {
   Unmap();
 
   int fd = sys_open(path, O_RDONLY, 0);
@@ -62,7 +64,9 @@ bool MemoryMappedFile::Map(const char* path) {
     return false;
   }
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__aarch64__) || \
+   (defined(__mips__) && _MIPS_SIM == _ABI64)
+
   struct kernel_stat st;
   if (sys_fstat(fd, &st) == -1 || st.st_size < 0) {
 #else
@@ -74,24 +78,33 @@ bool MemoryMappedFile::Map(const char* path) {
   }
 
   
+  size_t file_len = static_cast<size_t>(st.st_size);
   
   
-  if (st.st_size == 0) {
+  
+  if (offset >= file_len) {
     sys_close(fd);
     return true;
   }
 
-#if defined(__x86_64__)
-  void* data = sys_mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+#if defined(__x86_64__) || defined(__aarch64__) || \
+   (defined(__mips__) && _MIPS_SIM == _ABI64)
+  void* data = sys_mmap(NULL, file_len, PROT_READ, MAP_PRIVATE, fd, offset);
 #else
-  void* data = sys_mmap2(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if ((offset & 4095) != 0) {
+    
+    sys_close(fd);
+    return false;
+  }
+  void* data = sys_mmap2(
+      NULL, file_len, PROT_READ, MAP_PRIVATE, fd, offset >> 12);
 #endif
   sys_close(fd);
   if (data == MAP_FAILED) {
     return false;
   }
 
-  content_.Set(data, st.st_size);
+  content_.Set(data, file_len - offset);
   return true;
 }
 

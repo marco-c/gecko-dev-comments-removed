@@ -69,7 +69,8 @@ class LinuxCoreDumper : public LinuxDumper {
   
   
   
-  virtual void CopyFromProcess(void* dest, pid_t child, const void* src,
+  
+  virtual bool CopyFromProcess(void* dest, pid_t child, const void* src,
                                size_t length);
 
   

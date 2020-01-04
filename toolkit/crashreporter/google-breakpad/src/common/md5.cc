@@ -58,7 +58,7 @@ void MD5Init(struct MD5Context *ctx)
 
 
 
-void MD5Update(struct MD5Context *ctx, unsigned char const *buf, unsigned len)
+void MD5Update(struct MD5Context *ctx, unsigned char const *buf, size_t len)
 {
   u32 t;
 
