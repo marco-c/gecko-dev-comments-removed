@@ -1213,8 +1213,6 @@ class Activation
 
     
     
-    
-    
     size_t savedFrameChain_;
 
     
@@ -1736,13 +1734,9 @@ class WasmActivation : public Activation
 
 
 
-
-
-
 class FrameIter
 {
   public:
-    enum SavedOption { STOP_AT_SAVED, GO_THROUGH_SAVED };
     enum ContextOption { CURRENT_CONTEXT, ALL_CONTEXTS };
     enum DebuggerEvalOption { FOLLOW_DEBUGGER_EVAL_PREV_LINK,
                               IGNORE_DEBUGGER_EVAL_PREV_LINK };
@@ -1753,7 +1747,6 @@ class FrameIter
     struct Data
     {
         JSContext * cx_;
-        SavedOption         savedOption_;
         ContextOption       contextOption_;
         DebuggerEvalOption  debuggerEvalOption_;
         JSPrincipals *      principals_;
@@ -1769,15 +1762,15 @@ class FrameIter
         unsigned ionInlineFrameNo_;
         wasm::FrameIterator wasmFrames_;
 
-        Data(JSContext* cx, SavedOption savedOption, ContextOption contextOption,
+        Data(JSContext* cx, ContextOption contextOption,
              DebuggerEvalOption debuggerEvalOption, JSPrincipals* principals);
         Data(const Data& other);
     };
 
-    FrameIter(JSContext* cx, SavedOption);
-    FrameIter(JSContext* cx, ContextOption, SavedOption,
+    explicit FrameIter(JSContext* cx);
+    FrameIter(JSContext* cx, ContextOption,
               DebuggerEvalOption = FOLLOW_DEBUGGER_EVAL_PREV_LINK);
-    FrameIter(JSContext* cx, ContextOption, SavedOption, DebuggerEvalOption, JSPrincipals*);
+    FrameIter(JSContext* cx, ContextOption, DebuggerEvalOption, JSPrincipals*);
     FrameIter(const FrameIter& iter);
     MOZ_IMPLICIT FrameIter(const Data& data);
     MOZ_IMPLICIT FrameIter(AbstractFramePtr frame);
@@ -1915,27 +1908,25 @@ class ScriptFrameIter : public FrameIter
     }
 
   public:
-    ScriptFrameIter(JSContext* cx, SavedOption savedOption)
-      : FrameIter(cx, savedOption)
+    explicit ScriptFrameIter(JSContext* cx)
+      : FrameIter(cx)
     {
         settle();
     }
 
     ScriptFrameIter(JSContext* cx,
                     ContextOption cxOption,
-                    SavedOption savedOption,
                     DebuggerEvalOption debuggerEvalOption = FOLLOW_DEBUGGER_EVAL_PREV_LINK)
-      : FrameIter(cx, cxOption, savedOption, debuggerEvalOption)
+      : FrameIter(cx, cxOption, debuggerEvalOption)
     {
         settle();
     }
 
     ScriptFrameIter(JSContext* cx,
                     ContextOption cxOption,
-                    SavedOption savedOption,
                     DebuggerEvalOption debuggerEvalOption,
                     JSPrincipals* prin)
-      : FrameIter(cx, cxOption, savedOption, debuggerEvalOption, prin)
+      : FrameIter(cx, cxOption, debuggerEvalOption, prin)
     {
         settle();
     }
@@ -1967,35 +1958,33 @@ class NonBuiltinFrameIter : public FrameIter
     void settle();
 
   public:
-    NonBuiltinFrameIter(JSContext* cx, FrameIter::SavedOption opt)
-      : FrameIter(cx, opt)
+    explicit NonBuiltinFrameIter(JSContext* cx)
+      : FrameIter(cx)
     {
         settle();
     }
 
     NonBuiltinFrameIter(JSContext* cx,
                         FrameIter::ContextOption contextOption,
-                        FrameIter::SavedOption savedOption,
                         FrameIter::DebuggerEvalOption debuggerEvalOption =
                         FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK)
-      : FrameIter(cx, contextOption, savedOption, debuggerEvalOption)
+      : FrameIter(cx, contextOption, debuggerEvalOption)
     {
         settle();
     }
 
     NonBuiltinFrameIter(JSContext* cx,
                         FrameIter::ContextOption contextOption,
-                        FrameIter::SavedOption savedOption,
                         FrameIter::DebuggerEvalOption debuggerEvalOption,
                         JSPrincipals* principals)
-      : FrameIter(cx, contextOption, savedOption, debuggerEvalOption, principals)
+      : FrameIter(cx, contextOption, debuggerEvalOption, principals)
     {
         settle();
     }
 
     NonBuiltinFrameIter(JSContext* cx, JSPrincipals* principals)
-        : FrameIter(cx, FrameIter::ALL_CONTEXTS, FrameIter::GO_THROUGH_SAVED,
-                    FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK, principals)
+        : FrameIter(cx, FrameIter::ALL_CONTEXTS, FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK,
+                    principals)
     {
         settle();
     }
@@ -2017,29 +2006,26 @@ class NonBuiltinScriptFrameIter : public ScriptFrameIter
     void settle();
 
   public:
-    explicit NonBuiltinScriptFrameIter(JSContext* cx,
-                                       ScriptFrameIter::SavedOption opt)
-      : ScriptFrameIter(cx, opt)
+    explicit NonBuiltinScriptFrameIter(JSContext* cx)
+      : ScriptFrameIter(cx)
     {
         settle();
     }
 
     NonBuiltinScriptFrameIter(JSContext* cx,
                               ScriptFrameIter::ContextOption contextOption,
-                              ScriptFrameIter::SavedOption savedOption,
                               ScriptFrameIter::DebuggerEvalOption debuggerEvalOption =
                               ScriptFrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK)
-      : ScriptFrameIter(cx, contextOption, savedOption, debuggerEvalOption)
+      : ScriptFrameIter(cx, contextOption, debuggerEvalOption)
     {
         settle();
     }
 
     NonBuiltinScriptFrameIter(JSContext* cx,
                               ScriptFrameIter::ContextOption contextOption,
-                              ScriptFrameIter::SavedOption savedOption,
                               ScriptFrameIter::DebuggerEvalOption debuggerEvalOption,
                               JSPrincipals* principals)
-      : ScriptFrameIter(cx, contextOption, savedOption, debuggerEvalOption, principals)
+      : ScriptFrameIter(cx, contextOption, debuggerEvalOption, principals)
     {
         settle();
     }
@@ -2063,7 +2049,7 @@ class AllFramesIter : public ScriptFrameIter
 {
   public:
     explicit AllFramesIter(JSContext* cx)
-      : ScriptFrameIter(cx, ScriptFrameIter::ALL_CONTEXTS, ScriptFrameIter::GO_THROUGH_SAVED,
+      : ScriptFrameIter(cx, ScriptFrameIter::ALL_CONTEXTS,
                         ScriptFrameIter::IGNORE_DEBUGGER_EVAL_PREV_LINK)
     {}
 };

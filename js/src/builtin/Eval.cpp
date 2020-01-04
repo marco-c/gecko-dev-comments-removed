@@ -438,7 +438,7 @@ bool
 js::DirectEval(JSContext* cx, HandleValue v, MutableHandleValue vp)
 {
     
-    ScriptFrameIter iter(cx, FrameIter::GO_THROUGH_SAVED);
+    ScriptFrameIter iter(cx);
     AbstractFramePtr caller = iter.abstractFramePtr();
 
     MOZ_ASSERT(JSOp(*iter.pc()) == JSOP_EVAL ||
