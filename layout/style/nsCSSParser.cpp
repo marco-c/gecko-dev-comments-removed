@@ -323,6 +323,9 @@ public:
     if (mUnsafeRulesEnabled) {
       enabledState |= nsCSSProps::eEnabledInUASheets;
     }
+    if (mIsChrome) {
+      enabledState |= nsCSSProps::eEnabledInChrome;
+    }
     return enabledState;
   }
 
@@ -1210,6 +1213,9 @@ protected:
   bool mUnsafeRulesEnabled : 1;
 
   
+  bool mIsChrome : 1;
+
+  
   bool mViewportUnitsEnabled : 1;
 
   
@@ -1332,6 +1338,7 @@ CSSParserImpl::CSSParserImpl()
     mHashlessColorQuirk(false),
     mUnitlessLengthQuirk(false),
     mUnsafeRulesEnabled(false),
+    mIsChrome(false),
     mViewportUnitsEnabled(true),
     mHTMLMediaMode(false),
     mParsingCompoundProperty(false),
@@ -1484,6 +1491,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   }
 
   mUnsafeRulesEnabled = aAllowUnsafeRules;
+  mIsChrome = nsContentUtils::IsSystemPrincipal(aSheetPrincipal);
   mReusableSheets = aReusableSheets;
 
   nsCSSToken* tk = &mToken;
@@ -1508,6 +1516,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   ReleaseScanner();
 
   mUnsafeRulesEnabled = false;
+  mIsChrome = false;
   mReusableSheets = nullptr;
 
   

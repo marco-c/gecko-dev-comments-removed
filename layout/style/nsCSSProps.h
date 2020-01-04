@@ -205,9 +205,18 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 
 
-#define CSS_PROPERTY_ALWAYS_ENABLED_IN_UA_SHEETS  (1<<22)
 
 
+
+
+
+
+
+#define CSS_PROPERTY_ENABLED_MASK                 (3<<22)
+#define CSS_PROPERTY_ENABLED_IN_UA_SHEETS         (1<<22)
+#define CSS_PROPERTY_ENABLED_IN_CHROME            (1<<23)
+#define CSS_PROPERTY_ENABLED_IN_UA_SHEETS_AND_CHROME \
+  (CSS_PROPERTY_ENABLED_IN_UA_SHEETS | CSS_PROPERTY_ENABLED_IN_CHROME)
 
 
 #define CSS_PROPERTY_NUMBERS_ARE_PIXELS           (1<<24)
@@ -298,6 +307,8 @@ public:
     eEnabledForAllContent = 0,
     
     eEnabledInUASheets    = 0x01,
+    
+    eEnabledInChrome      = 0x02,
     
     
     
@@ -571,7 +582,12 @@ public:
       return true;
     }
     if ((aEnabled & eEnabledInUASheets) &&
-        PropHasFlags(aProperty, CSS_PROPERTY_ALWAYS_ENABLED_IN_UA_SHEETS))
+        PropHasFlags(aProperty, CSS_PROPERTY_ENABLED_IN_UA_SHEETS))
+    {
+      return true;
+    }
+    if ((aEnabled & eEnabledInChrome) &&
+        PropHasFlags(aProperty, CSS_PROPERTY_ENABLED_IN_CHROME))
     {
       return true;
     }

@@ -29,6 +29,35 @@ using namespace mozilla;
 typedef nsCSSProps::KTableValue KTableValue;
 
 
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+
+
+
+
+#define CSS_PROP(name_, id_, method_, flags_, pref_, ...) \
+  static_assert(!((flags_) & CSS_PROPERTY_ENABLED_MASK) || pref_[0], \
+                "Internal-only property '" #name_ "' should be wrapped in " \
+                "#ifndef CSS_PROP_LIST_EXCLUDE_INTERNAL");
+#define CSS_PROP_LIST_INCLUDE_LOGICAL
+#define CSS_PROP_LIST_EXCLUDE_INTERNAL
+#include "nsCSSPropList.h"
+#undef CSS_PROP_LIST_EXCLUDE_INTERNAL
+#undef CSS_PROP_LIST_INCLUDE_LOGICAL
+#undef CSS_PROP
+#endif
+
+#define CSS_PROP(name_, id_, method_, flags_, pref_, ...) \
+  static_assert(!((flags_) & CSS_PROPERTY_ENABLED_IN_CHROME) || \
+                ((flags_) & CSS_PROPERTY_ENABLED_IN_UA_SHEETS), \
+                "Property '" #name_ "' is enabled in chrome, so it should " \
+                "also be enabled in UA sheets");
+#define CSS_PROP_LIST_INCLUDE_LOGICAL
+#include "nsCSSPropList.h"
+#undef CSS_PROP_LIST_INCLUDE_LOGICAL
+#undef CSS_PROP
+
+
 extern const char* const kCSSRawProperties[];
 
 
@@ -203,7 +232,8 @@ nsCSSProps::AddRefTable(void)
       
       
       static uint32_t flagsToCheck[] = {
-        CSS_PROPERTY_ALWAYS_ENABLED_IN_UA_SHEETS
+        CSS_PROPERTY_ENABLED_IN_UA_SHEETS,
+        CSS_PROPERTY_ENABLED_IN_CHROME
       };
       for (nsCSSProperty shorthand = eCSSProperty_COUNT_no_shorthands;
            shorthand < eCSSProperty_COUNT;
@@ -219,7 +249,7 @@ nsCSSProps::AddRefTable(void)
                ++p) {
             MOZ_ASSERT(nsCSSProps::PropHasFlags(*p, flag),
                        "all subproperties of a property with a "
-                       "CSS_PROPERTY_ALWAYS_ENABLED_* flag must also have "
+                       "CSS_PROPERTY_ENABLED_* flag must also have "
                        "the flag");
           }
         }
@@ -2954,16 +2984,24 @@ nsCSSProps::gPropertyIndexInStruct[eCSSProperty_COUNT_no_shorthands] = {
 
  bool
 nsCSSProps::gPropertyEnabled[eCSSProperty_COUNT_with_aliases] = {
+  
+  
+  
+  
+  
+  #define IS_ENABLED_BY_DEFAULT(flags_) \
+    (!((flags_) & CSS_PROPERTY_ENABLED_MASK))
+
   #define CSS_PROP(name_, id_, method_, flags_, pref_, parsevariant_,     \
                    kwtable_, stylestruct_, stylestructoffset_, animtype_) \
-    true,
+    IS_ENABLED_BY_DEFAULT(flags_),
   #define CSS_PROP_LIST_INCLUDE_LOGICAL
   #include "nsCSSPropList.h"
   #undef CSS_PROP_LIST_INCLUDE_LOGICAL
   #undef CSS_PROP
 
   #define  CSS_PROP_SHORTHAND(name_, id_, method_, flags_, pref_) \
-    true,
+    IS_ENABLED_BY_DEFAULT(flags_),
   #include "nsCSSPropList.h"
   #undef CSS_PROP_SHORTHAND
 
@@ -2971,6 +3009,8 @@ nsCSSProps::gPropertyEnabled[eCSSProperty_COUNT_with_aliases] = {
     true,
   #include "nsCSSPropAliasList.h"
   #undef CSS_PROP_ALIAS
+
+  #undef IS_ENABLED_BY_DEFAULT
 };
 
 #include "../../dom/base/PropertyUseCounterMap.inc"
