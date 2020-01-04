@@ -416,7 +416,7 @@ private:
   nsZipHandle();
   ~nsZipHandle();
 
-  void findDataStart();
+  nsresult findDataStart();
 
   PRFileMap *                       mMap;    
   mozilla::AutoFDClose              mNSPRFileDesc;
