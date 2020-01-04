@@ -37,7 +37,7 @@ RestyleManagerBase::ContentStateChangedInternal(Element* aElement,
   StyleSetHandle styleSet = PresContext()->StyleSet();
   NS_ASSERTION(styleSet, "couldn't get style set");
 
-  *aOutChangeHint = NS_STYLE_HINT_NONE;
+  *aOutChangeHint = nsChangeHint(0);
   
   
   

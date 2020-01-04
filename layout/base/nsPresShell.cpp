@@ -2918,7 +2918,7 @@ nsIPresShell::RestyleForAnimation(Element* aElement, nsRestyleHint aHint)
   
   
   mPresContext->RestyleManager()->PostRestyleEvent(aElement, aHint,
-                                                   NS_STYLE_HINT_NONE);
+                                                   nsChangeHint(0));
 }
 
 void
@@ -4235,7 +4235,7 @@ PresShell::DocumentStatesChanged(nsIDocument* aDocument,
                                                aStateMask)) {
     mPresContext->RestyleManager()->PostRestyleEvent(mDocument->GetRootElement(),
                                                      eRestyle_Subtree,
-                                                     NS_STYLE_HINT_NONE);
+                                                     nsChangeHint(0));
     VERIFY_STYLE_TREE;
   }
 
@@ -4513,11 +4513,11 @@ nsIPresShell::RestyleForCSSRuleChanges()
     
     
     restyleManager->PostRestyleEvent(root, eRestyle_Subtree,
-                                     NS_STYLE_HINT_NONE);
+                                     nsChangeHint(0));
   } else {
     for (Element* scopeRoot : scopeRoots) {
       restyleManager->PostRestyleEvent(scopeRoot, eRestyle_Subtree,
-                                       NS_STYLE_HINT_NONE);
+                                       nsChangeHint(0));
     }
   }
 }
