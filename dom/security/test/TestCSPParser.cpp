@@ -150,7 +150,7 @@ nsresult runTest(uint32_t aExpectedPolicyCount,
   
   nsString parsedPolicyStr;
   
-  rv = csp->GetPolicy(0, parsedPolicyStr);
+  rv = csp->GetPolicyString(0, parsedPolicyStr);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!NS_ConvertUTF16toUTF8(parsedPolicyStr).EqualsASCII(aExpextedResult)) {
