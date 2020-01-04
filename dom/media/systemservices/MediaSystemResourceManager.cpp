@@ -42,8 +42,7 @@ MediaSystemResourceManager::Shutdown()
  void
 MediaSystemResourceManager::Init()
 {
-  RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
-  if (!imageBridge) {
+  if (!ImageBridgeChild::IsCreated()) {
     NS_WARNING("ImageBridge does not exist");
     return;
   }
@@ -74,7 +73,7 @@ MediaSystemResourceManager::Init()
       barrier.NotifyAll();
     });
 
-  imageBridge->GetMessageLoop()->PostTask(runnable.forget());
+  ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(runnable.forget());
 
   
   while (!done) {
