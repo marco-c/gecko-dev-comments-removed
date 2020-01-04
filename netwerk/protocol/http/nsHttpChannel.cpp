@@ -5038,9 +5038,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
         gHttpHandler->OnOpeningRequest(this);
     }
 
-    
-    HttpBaseChannel::SetDocshellUserAgentOverride();
-
     mIsPending = true;
     mWasOpened = true;
 
