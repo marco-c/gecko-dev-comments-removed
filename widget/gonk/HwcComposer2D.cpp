@@ -770,7 +770,7 @@ HwcComposer2D::Render(nsIWidget* aWidget)
         mList->hwLayers[mList->numHwLayers - 1].acquireFenceFd = dispSurface->GetPrevDispAcquireFd();
     } else {
         
-        mScreenRect = screen->GetNaturalBounds();
+        mScreenRect = screen->GetNaturalBoundsUntyped();
 
         mList->flags = HWC_GEOMETRY_CHANGED;
         mList->numHwLayers = 2;
@@ -892,7 +892,7 @@ HwcComposer2D::TryRenderWithHwc(Layer* aRoot,
     
     mVisibleRegions.clear();
 
-    mScreenRect = screen->GetNaturalBounds();
+    mScreenRect = screen->GetNaturalBoundsUntyped();
     MOZ_ASSERT(mHwcLayerMap.IsEmpty());
     if (!PrepareLayerList(aRoot,
                           mScreenRect,

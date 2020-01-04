@@ -175,7 +175,7 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
                   nullptr,                            
                   r,                                  
                   &widgetInitData);                   
-  mWindow->GetClientBounds(r);
+  mWindow->GetClientBoundsUntyped(r);
   
   
   mWindow->SetBackgroundColor(NS_RGB(255,255,255));

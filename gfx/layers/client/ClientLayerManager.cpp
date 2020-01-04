@@ -203,7 +203,7 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
     hal::GetCurrentScreenConfiguration(&currentConfig);
     orientation = currentConfig.orientation();
   }
-  IntRect targetBounds = mWidget->GetNaturalBounds();
+  IntRect targetBounds = mWidget->GetNaturalBoundsUntyped();
   targetBounds.x = targetBounds.y = 0;
   mForwarder->BeginTransaction(targetBounds, mTargetRotation, orientation);
 
@@ -492,7 +492,7 @@ ClientLayerManager::MakeSnapshotIfRequired()
       
       
       IntRect outerBounds;
-      mWidget->GetBounds(outerBounds);
+      mWidget->GetBoundsUntyped(outerBounds);
 
       IntRect bounds = ToOutsideIntRect(mShadowTarget->GetClipExtents());
       if (mTargetRotation) {

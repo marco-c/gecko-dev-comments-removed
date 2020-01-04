@@ -212,7 +212,7 @@ public:
   
   nsIntPoint GetWindowPosition();
 
-  NS_IMETHOD GetScreenBounds(nsIntRect &aRect) override;
+  NS_IMETHOD GetScreenBoundsUntyped(nsIntRect &aRect) override;
 
   NS_IMETHOD StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
                             int32_t aPanelX, int32_t aPanelY,

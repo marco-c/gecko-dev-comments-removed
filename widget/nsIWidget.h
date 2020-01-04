@@ -805,30 +805,16 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetBounds(nsIntRect &aRect) = 0;
-
-    
 
 
 
-
-
-
-    NS_IMETHOD GetScreenBounds(nsIntRect &aRect) = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    NS_IMETHOD GetRestoredBounds(nsIntRect &aRect) = 0;
+    NS_IMETHOD GetBounds(mozilla::LayoutDeviceIntRect &aRect) {
+      nsIntRect tmp;
+      nsresult rv = GetBoundsUntyped(tmp);
+      aRect = mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
+      return rv;
+    }
+    NS_IMETHOD GetBoundsUntyped(nsIntRect &aRect) = 0;
 
     
 
@@ -839,7 +825,57 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD GetClientBounds(nsIntRect &aRect) = 0;
+
+    NS_IMETHOD GetScreenBounds(mozilla::LayoutDeviceIntRect &aRect) {
+      nsIntRect tmp;
+      nsresult rv = GetScreenBoundsUntyped(tmp);
+      aRect = mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
+      return rv;
+    }
+    NS_IMETHOD GetScreenBoundsUntyped(nsIntRect &aRect) = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    NS_IMETHOD GetRestoredBounds(mozilla::LayoutDeviceIntRect &aRect) {
+      nsIntRect tmp;
+      nsresult rv = GetRestoredBoundsUntyped(tmp);
+      aRect = mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
+      return rv;
+    }
+    NS_IMETHOD GetRestoredBoundsUntyped(nsIntRect &aRect) = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    NS_IMETHOD GetClientBounds(mozilla::LayoutDeviceIntRect &aRect) {
+      nsIntRect tmp;
+      nsresult rv = GetClientBoundsUntyped(tmp);
+      aRect = mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
+      return rv;
+    }
+    NS_IMETHOD GetClientBoundsUntyped(nsIntRect &aRect) = 0;
 
     
 
@@ -876,7 +912,7 @@ class nsIWidget : public nsISupports {
     virtual mozilla::gfx::IntSize GetClientSize() {
       
       
-      nsIntRect rect;
+      mozilla::LayoutDeviceIntRect rect;
       GetClientBounds(rect);
       return mozilla::gfx::IntSize(rect.width, rect.height);
     }
@@ -1917,7 +1953,7 @@ public:
        if (!IsVisible()) {
            return false;
        }
-       nsIntRect bounds;
+       mozilla::LayoutDeviceIntRect bounds;
        nsresult rv = GetBounds(bounds);
        NS_ENSURE_SUCCESS(rv, false);
        return !bounds.IsEmpty();
@@ -1935,9 +1971,16 @@ public:
 
 
 
-    virtual nsIntRect GetNaturalBounds() {
+
+
+
+    virtual mozilla::LayoutDeviceIntRect GetNaturalBounds() {
+        nsIntRect tmp = GetNaturalBoundsUntyped();
+        return mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
+    }
+    virtual nsIntRect GetNaturalBoundsUntyped() {
         nsIntRect bounds;
-        GetBounds(bounds);
+        GetBoundsUntyped(bounds);
         return bounds;
     }
 

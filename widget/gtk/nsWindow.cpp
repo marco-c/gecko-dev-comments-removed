@@ -1470,7 +1470,7 @@ nsWindow::SetFocus(bool aRaise)
 }
 
 NS_IMETHODIMP
-nsWindow::GetScreenBounds(nsIntRect &aRect)
+nsWindow::GetScreenBoundsUntyped(nsIntRect &aRect)
 {
     if (mIsTopLevel && mContainer) {
         
@@ -1486,7 +1486,7 @@ nsWindow::GetScreenBounds(nsIntRect &aRect)
     
     
     aRect.SizeTo(mBounds.Size());
-    LOG(("GetScreenBounds %d,%d | %dx%d\n",
+    LOG(("GetScreenBoundsUntyped %d,%d | %dx%d\n",
          aRect.x, aRect.y, aRect.width, aRect.height));
     return NS_OK;
 }
@@ -1498,12 +1498,12 @@ nsWindow::GetClientSize()
 }
 
 NS_IMETHODIMP
-nsWindow::GetClientBounds(nsIntRect &aRect)
+nsWindow::GetClientBoundsUntyped(nsIntRect &aRect)
 {
     
     
     
-    GetBounds(aRect);
+    GetBoundsUntyped(aRect);
     aRect.MoveBy(GetClientOffset());
 
     return NS_OK;
@@ -2187,7 +2187,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
                 nsAutoTArray<nsIntRect,1> clipRects;
                 kid->GetWindowClipRegion(&clipRects);
                 nsIntRect bounds;
-                kid->GetBounds(bounds);
+                kid->GetBoundsUntyped(bounds);
                 for (uint32_t i = 0; i < clipRects.Length(); ++i) {
                     nsIntRect r = clipRects[i] + bounds.TopLeft();
                     region.Sub(region, r);
@@ -2363,7 +2363,7 @@ nsWindow::OnConfigureEvent(GtkWidget *aWidget, GdkEventConfigure *aEvent)
          aEvent->x, aEvent->y, aEvent->width, aEvent->height));
 
     nsIntRect screenBounds;
-    GetScreenBounds(screenBounds);
+    GetScreenBoundsUntyped(screenBounds);
 
     if (mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog) {
         
