@@ -496,7 +496,7 @@ WINDOW_EVENT(languagechange,
 
 
 WINDOW_EVENT(message,
-             NS_MESSAGE,
+             eMessage,
              EventNameType_None,
              eBasicEventClass)
 WINDOW_EVENT(offline,
