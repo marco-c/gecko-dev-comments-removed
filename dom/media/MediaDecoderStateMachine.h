@@ -686,6 +686,7 @@ private:
 
   
   SeekJob mQueuedSeek;
+  SeekJob mCurrentSeek;
 
   
   RefPtr<SeekTask> mSeekTask;
