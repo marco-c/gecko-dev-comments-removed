@@ -2136,7 +2136,10 @@ CSSParserImpl::ParseSourceSizeList(const nsAString& aBuffer,
       query->SetNegated();
     }
 
-    if (ParseNonNegativeVariant(value, VARIANT_LPCALC, nullptr) !=
+    
+    
+    
+    if (ParseNonNegativeVariant(value, VARIANT_LCALC, nullptr) !=
         CSSParseResult::Ok) {
       hitError = true;
       break;
