@@ -196,18 +196,14 @@ ContainerRenderVR(ContainerT* aContainer,
     Layer* layer = layerToRender->GetLayer();
     uint32_t contentFlags = layer->GetContentFlags();
 
-    if (layer->IsBackfaceHidden()) {
+    if (layer->GetEffectiveVisibleRegion().IsEmpty() &&
+        !layer->AsContainerLayer()) {
       continue;
     }
 
-    if (!layer->IsVisible() && !layer->AsContainerLayer()) {
-      continue;
-    }
-
     
     
-    
-    if ((contentFlags & Layer::CONTENT_EXTEND_3D_CONTEXT) == 0) {
+    if ((contentFlags & Layer::CONTENT_PRESERVE_3D) == 0) {
       
       DUMP("%p Switching to pre-rendered VR\n", aContainer);
 
@@ -356,14 +352,10 @@ ContainerPrepare(ContainerT* aContainer,
     RenderTargetIntRect clipRect = layerToRender->GetLayer()->
         CalculateScissorRect(aClipRect);
 
-    if (layerToRender->GetLayer()->IsBackfaceHidden()) {
-      continue;
-    }
-
     
     
     if (!layerToRender->GetLayer()->AsContainerLayer()) {
-      if (!layerToRender->GetLayer()->IsVisible()) {
+      if (layerToRender->GetLayer()->GetEffectiveVisibleRegion().IsEmpty()) {
         CULLING_LOG("Sublayer %p has no effective visible region\n", layerToRender->GetLayer());
         continue;
       }

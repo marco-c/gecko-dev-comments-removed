@@ -537,8 +537,8 @@ AnimationCollection::CanAnimatePropertyOnCompositor(
     return false;
   }
   if (aProperty == eCSSProperty_transform) {
-    if (frame->Combines3DTransformWithAncestors() ||
-        frame->Extend3DContext()) {
+    if (frame->Preserves3D() ||
+        frame->Preserves3DChildren()) {
       if (shouldLog) {
         nsCString message;
         message.AppendLiteral("Gecko bug: Async animation of 'preserve-3d' transforms is not supported.  See bug 779598");

@@ -1251,18 +1251,14 @@ public:
 
 
 
-  bool Extend3DContext() const;
+  bool Preserves3DChildren() const;
 
   
 
 
 
 
-  bool Combines3DTransformWithAncestors() const;
-
-  bool IsPreserve3DLeaf() const {
-    return Combines3DTransformWithAncestors() && !Extend3DContext();
-  }
+  bool Preserves3D() const;
 
   bool HasPerspective() const;
 
@@ -3033,10 +3029,6 @@ NS_PTR_TO_INT32(frame->Properties().Get(nsIFrame::ParagraphDepthProperty()))
 
 
   virtual mozilla::dom::Element* GetPseudoElement(nsCSSPseudoElements::Type aType);
-
-  bool BackfaceIsHidden() {
-    return StyleDisplay()->BackfaceIsHidden();
-  }
 
 protected:
   

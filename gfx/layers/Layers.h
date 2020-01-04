@@ -785,7 +785,7 @@ public:
 
 
 
-    CONTENT_EXTEND_3D_CONTEXT = 0x08,
+    CONTENT_PRESERVE_3D = 0x08,
     
 
 
@@ -805,13 +805,7 @@ public:
 
 
 
-    CONTENT_DISABLE_FLATTENING = 0x40,
-
-    
-
-
-
-    CONTENT_BACKFACE_HIDDEN = 0x80
+    CONTENT_DISABLE_FLATTENING = 0x40
   };
   
 
@@ -1470,26 +1464,6 @@ public:
   const Maybe<ParentLayerIntRect>& GetEffectiveClipRect();
   const nsIntRegion& GetEffectiveVisibleRegion();
 
-  bool Extend3DContext() {
-    return GetContentFlags() & CONTENT_EXTEND_3D_CONTEXT;
-  }
-  bool Is3DContextLeaf() {
-    return !Extend3DContext() && GetParent() &&
-      reinterpret_cast<Layer*>(GetParent())->Extend3DContext();
-  }
-  
-
-
-
-
-  bool IsBackfaceHidden();
-  bool IsVisible() {
-    
-    
-    
-    return !GetEffectiveVisibleRegion().IsEmpty() || Extend3DContext();
-  }
-
   
 
 
@@ -1888,16 +1862,8 @@ public:
                  "Residual transform can only be a translation");
     if (!gfx::ThebesPoint(residual.GetTranslation()).WithinEpsilonOf(mResidualTranslation, 1e-3f)) {
       mResidualTranslation = gfx::ThebesPoint(residual.GetTranslation());
-      DebugOnly<mozilla::gfx::Point> transformedOrig =
-        idealTransform * mozilla::gfx::Point();
-#ifdef DEBUG
-      DebugOnly<mozilla::gfx::Point> transformed =
-        idealTransform * mozilla::gfx::Point(mResidualTranslation.x,
-                                             mResidualTranslation.y) -
-        *&transformedOrig;
-#endif
-      NS_ASSERTION(-0.5 <= (&transformed)->x && (&transformed)->x < 0.5 &&
-                   -0.5 <= (&transformed)->y && (&transformed)->y < 0.5,
+      NS_ASSERTION(-0.5 <= mResidualTranslation.x && mResidualTranslation.x < 0.5 &&
+                   -0.5 <= mResidualTranslation.y && mResidualTranslation.y < 0.5,
                    "Residual translation out of range");
       mValidRegion.SetEmpty();
     }
@@ -2142,8 +2108,6 @@ protected:
   void DidInsertChild(Layer* aLayer);
   void DidRemoveChild(Layer* aLayer);
 
-  void Collect3DContextLeaves(nsTArray<Layer*>& aToSort);
-
   ContainerLayer(LayerManager* aManager, void* aImplData);
 
   
@@ -2168,12 +2132,6 @@ protected:
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
 
   virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
-
-  
-
-
-
-  bool Creates3DContextWithExtendingChildren();
 
   Layer* mFirstChild;
   Layer* mLastChild;

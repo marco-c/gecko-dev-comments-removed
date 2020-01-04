@@ -78,13 +78,8 @@ static LayerSortOrder CompareDepth(Layer* aOne, Layer* aTwo) {
   gfxRect ourRect = aOne->GetEffectiveVisibleRegion().GetBounds();
   gfxRect otherRect = aTwo->GetEffectiveVisibleRegion().GetBounds();
 
-  MOZ_ASSERT(aOne->GetParent() && aOne->GetParent()->Extend3DContext() &&
-             aTwo->GetParent() && aTwo->GetParent()->Extend3DContext());
-  
-  Matrix4x4 ourTransform =
-    aOne->GetLocalTransform() * aOne->GetParent()->GetEffectiveTransform();
-  Matrix4x4 otherTransform =
-    aTwo->GetLocalTransform() * aTwo->GetParent()->GetEffectiveTransform();
+  Matrix4x4 ourTransform = aOne->GetTransform();
+  Matrix4x4 otherTransform = aTwo->GetTransform();
 
   
   gfxQuad ourTransformedRect = ourRect.TransformToQuad(ourTransform);
