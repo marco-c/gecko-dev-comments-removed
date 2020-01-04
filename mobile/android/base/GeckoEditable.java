@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.gfx.LayerView;
+import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.GeckoEventListener;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
@@ -43,7 +44,7 @@ import android.view.KeyEvent;
 
 
 
-final class GeckoEditable
+final class GeckoEditable extends JNIObject
         implements InvocationHandler, Editable,
                    GeckoEditableClient, GeckoEditableListener, GeckoEventListener {
 
@@ -74,6 +75,38 @@ final class GeckoEditable
     private boolean mGeckoFocused; 
     private volatile boolean mSuppressCompositions;
     private volatile boolean mSuppressKeyUp;
+
+    @WrapForJNI
+    private native void onKeyEvent(int action, int keyCode, int scanCode, int metaState,
+                                   long time, int unicodeChar, int baseUnicodeChar,
+                                   int domPrintableKeyValue, int repeatCount, int flags,
+                                   boolean isSynthesizedImeKey);
+
+    private void onKeyEvent(KeyEvent event, int action, int savedMetaState,
+                            boolean isSynthesizedImeKey) {
+        
+        
+        
+        
+        
+        
+        
+        
+        final int metaState = event.getMetaState() | savedMetaState;
+        final int unmodifiedMetaState = metaState &
+                ~(KeyEvent.META_ALT_MASK | KeyEvent.META_CTRL_MASK | KeyEvent.META_META_MASK);
+        final int unicodeChar = event.getUnicodeChar(metaState);
+        final int domPrintableKeyValue =
+                unicodeChar >= ' '               ? unicodeChar :
+                unmodifiedMetaState != metaState ? event.getUnicodeChar(unmodifiedMetaState) :
+                                                   0;
+        onKeyEvent(action, event.getKeyCode(), event.getScanCode(),
+                   metaState, event.getEventTime(), unicodeChar,
+                   
+                   
+                   event.getUnicodeChar(0), domPrintableKeyValue, event.getRepeatCount(),
+                   event.getFlags(), isSynthesizedImeKey);
+    }
 
     
 
@@ -293,7 +326,8 @@ final class GeckoEditable
                 if (DEBUG) {
                     Log.d(LOGTAG, "sending: " + event);
                 }
-                GeckoAppShell.sendEventToGecko(GeckoEvent.createIMEKeyEvent(event));
+                onKeyEvent(event, event.getAction(),
+                            0,  true);
             }
         }
 
@@ -367,6 +401,10 @@ final class GeckoEditable
                 PROXY_INTERFACES, this);
 
         mIcRunHandler = mIcPostHandler = ThreadUtils.getUiHandler();
+    }
+
+    @Override
+    protected void disposeNative() {
     }
 
     @WrapForJNI
@@ -579,10 +617,10 @@ final class GeckoEditable
     
 
     @Override
-    public void sendEvent(final GeckoEvent event) {
+    public void sendKeyEvent(final KeyEvent event, int action, int metaState) {
         if (DEBUG) {
             assertOnIcThread();
-            Log.d(LOGTAG, "sendEvent(" + event + ")");
+            Log.d(LOGTAG, "sendKeyEvent(" + event + ", " + action + ", " + metaState + ")");
         }
         
 
@@ -592,7 +630,7 @@ final class GeckoEditable
 
 
 
-        GeckoAppShell.sendEventToGecko(event);
+        onKeyEvent(event, action, metaState,  false);
         mActionQueue.offer(new Action(Action.TYPE_EVENT));
     }
 
