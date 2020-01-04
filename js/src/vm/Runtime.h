@@ -106,10 +106,6 @@ class Simulator;
 #endif
 } 
 
-namespace wasm {
-class Module;
-} 
-
 
 
 

@@ -402,6 +402,8 @@ class Sig
     bool operator!=(const Sig& rhs) const {
         return !(*this == rhs);
     }
+
+    WASM_DECLARE_SERIALIZABLE(Sig)
 };
 
 struct SigHashPolicy
@@ -410,6 +412,61 @@ struct SigHashPolicy
     static HashNumber hash(Lookup sig) { return sig.hash(); }
     static bool match(const Sig* lhs, Lookup rhs) { return *lhs == rhs; }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+class SigIdDesc
+{
+  public:
+    enum class Kind { None, Immediate, Global };
+    static const uintptr_t ImmediateBit = 0x1;
+
+  private:
+    Kind kind_;
+    size_t bits_;
+
+    SigIdDesc(Kind kind, size_t bits) : kind_(kind), bits_(bits) {}
+
+  public:
+    Kind kind() const { return kind_; }
+    static bool isGlobal(const Sig& sig);
+
+    SigIdDesc() : kind_(Kind::None), bits_(0) {}
+    static SigIdDesc global(const Sig& sig, uint32_t globalDataOffset);
+    static SigIdDesc immediate(const Sig& sig);
+
+    bool isGlobal() const { return kind_ == Kind::Global; }
+
+    size_t immediate() const { MOZ_ASSERT(kind_ == Kind::Immediate); return bits_; }
+    uint32_t globalDataOffset() const { MOZ_ASSERT(kind_ == Kind::Global); return bits_; }
+};
+
+
+
+
+
+struct SigWithId : Sig
+{
+    SigIdDesc id;
+
+    SigWithId() = default;
+    explicit SigWithId(Sig&& sig, SigIdDesc id) : Sig(Move(sig)), id(id) {}
+    void operator=(Sig&& rhs) { Sig::operator=(Move(rhs)); }
+
+    WASM_DECLARE_SERIALIZABLE(SigWithId)
+};
+
+typedef Vector<SigWithId, 0, SystemAllocPolicy> SigWithIdVector;
+typedef Vector<const SigWithId*, 0, SystemAllocPolicy> SigWithIdPtrVector;
 
 
 
@@ -425,22 +482,6 @@ struct GlobalDesc
 };
 
 typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
-
-
-
-
-
-
-
-struct DeclaredSig : Sig
-{
-    DeclaredSig() = default;
-    explicit DeclaredSig(Sig&& sig) : Sig(Move(sig)) {}
-    void operator=(Sig&& rhs) { Sig::operator=(Move(rhs)); }
-};
-
-typedef Vector<DeclaredSig, 0, SystemAllocPolicy> DeclaredSigVector;
-typedef Vector<const DeclaredSig*, 0, SystemAllocPolicy> DeclaredSigPtrVector;
 
 
 
@@ -893,4 +934,4 @@ static const unsigned MaxBrTableElems            = 4 * 1024 * 1024;
 } 
 } 
 
-#endif
+#endif 

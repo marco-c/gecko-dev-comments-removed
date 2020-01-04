@@ -442,8 +442,8 @@ Module::instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) c
 }
 
 bool
-Module::instantiateTable(JSContext* cx, const CodeSegment& codeSegment,
-                         HandleWasmTableObject tableImport, SharedTableVector* tables) const
+Module::instantiateTable(JSContext* cx, HandleWasmTableObject tableImport,
+                         SharedTableVector* tables) const
 {
     for (const TableDesc& tableDesc : metadata_->tables) {
         SharedTable table;
@@ -551,7 +551,7 @@ Module::instantiate(JSContext* cx,
         return false;
 
     SharedTableVector tables;
-    if (!instantiateTable(cx, *codeSegment, tableImport, &tables))
+    if (!instantiateTable(cx, tableImport, &tables))
         return false;
 
     
@@ -585,6 +585,9 @@ Module::instantiate(JSContext* cx,
 
         instanceObj->init(Move(instance));
     }
+
+    if (!instanceObj->instance().init(cx))
+        return false;
 
     
 
