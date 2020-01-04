@@ -205,6 +205,8 @@ nsHTMLScrollFrame::GetType() const
 
 
 
+namespace mozilla {
+
 struct MOZ_STACK_CLASS ScrollReflowState {
   const ReflowInput& mReflowState;
   nsBoxLayoutState mBoxState;
@@ -233,6 +235,8 @@ struct MOZ_STACK_CLASS ScrollReflowState {
     mStyles(aFrame->GetScrollbarStyles()) {
   }
 };
+
+} 
 
 
 static nsSize ComputeInsideBorderSize(ScrollReflowState* aState,
