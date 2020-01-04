@@ -740,7 +740,7 @@ NativeHandlerCallback(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
                                                         SLOT_NATIVEHANDLER));
   MOZ_ASSERT(v.isObject());
 
-  PromiseNativeHandler* handler;
+  PromiseNativeHandler* handler = nullptr;
   if (NS_FAILED(UNWRAP_OBJECT(PromiseNativeHandler, &v.toObject(),
                               handler))) {
     return Throw(aCx, NS_ERROR_UNEXPECTED);
@@ -781,6 +781,59 @@ CreateNativeHandlerFunction(JSContext* aCx, JS::Handle<JSObject*> aHolder,
   return obj;
 }
 
+namespace {
+
+class PromiseNativeHandlerShim final : public PromiseNativeHandler
+{
+  RefPtr<PromiseNativeHandler> mInner;
+
+  ~PromiseNativeHandlerShim()
+  {
+  }
+
+public:
+  explicit PromiseNativeHandlerShim(PromiseNativeHandler* aInner)
+    : mInner(aInner)
+  {
+    MOZ_ASSERT(mInner);
+  }
+
+  void
+  ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    mInner->ResolvedCallback(aCx, aValue);
+    mInner = nullptr;
+  }
+
+  void
+  RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    mInner->RejectedCallback(aCx, aValue);
+    mInner = nullptr;
+  }
+
+  bool
+  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
+             JS::MutableHandle<JSObject*> aWrapper)
+  {
+    return PromiseNativeHandlerBinding::Wrap(aCx, this, aGivenProto, aWrapper);
+  }
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(PromiseNativeHandlerShim)
+};
+
+NS_IMPL_CYCLE_COLLECTION(PromiseNativeHandlerShim, mInner)
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(PromiseNativeHandlerShim)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(PromiseNativeHandlerShim)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PromiseNativeHandlerShim)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+} 
+
 void
 Promise::AppendNativeHandler(PromiseNativeHandler* aRunnable)
 {
@@ -793,11 +846,18 @@ Promise::AppendNativeHandler(PromiseNativeHandler* aRunnable)
     return;
   }
 
+  
+  
+  
+  
+  RefPtr<PromiseNativeHandlerShim> shim =
+    new PromiseNativeHandlerShim(aRunnable);
+
   JSContext* cx = jsapi.cx();
   JS::Rooted<JSObject*> handlerWrapper(cx);
   
   
-  if (NS_WARN_IF(!aRunnable->WrapObject(cx, nullptr, &handlerWrapper))) {
+  if (NS_WARN_IF(!shim->WrapObject(cx, nullptr, &handlerWrapper))) {
     
     jsapi.ClearException();
     return;
@@ -851,7 +911,7 @@ Promise::CreateFromExisting(nsIGlobalObject* aGlobal,
   return p.forget();
 }
 
-#else 
+#else
 
 JSObject*
 Promise::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
@@ -923,7 +983,7 @@ Promise::MaybeReject(JSContext* aCx,
   MaybeRejectInternal(aCx, aValue);
 }
 
-#endif 
+#endif
 
 void
 Promise::MaybeResolveWithUndefined()
