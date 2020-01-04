@@ -1449,9 +1449,11 @@ public abstract class GeckoApp
 
 
 
-    protected void loadStartupTabWithAboutHome(final int flags) {
+
+    protected void loadStartupTab(final int flags) {
         if (!mShouldRestore) {
-            Tabs.getInstance().loadUrl(AboutPages.HOME, flags);
+            final String homepage = getHomepage();
+            Tabs.getInstance().loadUrl(!TextUtils.isEmpty(homepage) ? homepage : AboutPages.HOME, flags);
         }
     }
 
@@ -1466,11 +1468,15 @@ public abstract class GeckoApp
     protected void loadStartupTab(final String url, final SafeIntent intent, final int flags) {
         
         if (url == null) {
-            loadStartupTabWithAboutHome(flags);
+            loadStartupTab(flags);
             return;
         }
 
         Tabs.getInstance().loadUrlWithIntentExtras(url, intent, flags);
+    }
+
+    public String getHomepage() {
+        return null;
     }
 
     private void initialize() {
@@ -1538,7 +1544,7 @@ public abstract class GeckoApp
             });
         } else {
             if (!mIsRestoringActivity) {
-                loadStartupTabWithAboutHome(Tabs.LOADURL_NEW_TAB);
+                loadStartupTab(Tabs.LOADURL_NEW_TAB);
             }
 
             Tabs.getInstance().notifyListeners(null, Tabs.TabEvents.RESTORED);
