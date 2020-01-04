@@ -98,6 +98,12 @@ public:
   bool IsAnimating() const {
     return mAList->IsAnimating();
   }
+  
+
+
+  bool AnimListMirrorsBaseList() const {
+    return mAList->mAnimVal && !mAList->IsAnimating();
+  }
 
   uint32_t NumberOfItems() const
   {

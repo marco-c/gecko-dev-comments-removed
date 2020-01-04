@@ -370,16 +370,15 @@ DOMSVGLengthList::MaybeInsertNullInAnimValListAt(uint32_t aIndex)
 {
   MOZ_ASSERT(!IsAnimValList(), "call from baseVal to animVal");
 
-  DOMSVGLengthList* animVal = mAList->mAnimVal;
-
-  if (!animVal || mAList->IsAnimating()) {
-    
+  if (!AnimListMirrorsBaseList()) {
     return;
   }
 
+  DOMSVGLengthList* animVal = mAList->mAnimVal;
+
+  MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
   MOZ_ASSERT(animVal->mItems.Length() == mItems.Length(),
              "animVal list not in sync!");
-
   MOZ_ALWAYS_TRUE(animVal->mItems.InsertElementAt(aIndex, nullptr, fallible));
 
   UpdateListIndicesFromIndex(animVal->mItems, aIndex + 1);
@@ -390,15 +389,15 @@ DOMSVGLengthList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex)
 {
   MOZ_ASSERT(!IsAnimValList(), "call from baseVal to animVal");
 
+  if (!AnimListMirrorsBaseList()) {
+    return;
+  }
+
   
   
   RefPtr<DOMSVGLengthList> animVal = mAList->mAnimVal;
 
-  if (!animVal || mAList->IsAnimating()) {
-    
-    return;
-  }
-
+  MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
   MOZ_ASSERT(animVal->mItems.Length() == mItems.Length(),
              "animVal list not in sync!");
 

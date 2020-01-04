@@ -185,6 +185,13 @@ DOMSVGPointList::AttrIsAnimating() const
   return InternalAList().IsAnimating();
 }
 
+bool
+DOMSVGPointList::AnimListMirrorsBaseList() const
+{
+  return GetDOMWrapperIfExists(InternalAList().GetAnimValKey()) &&
+           !AttrIsAnimating();
+}
+
 SVGPointList&
 DOMSVGPointList::InternalList() const
 {
@@ -417,22 +424,17 @@ DOMSVGPointList::MaybeInsertNullInAnimValListAt(uint32_t aIndex)
 {
   MOZ_ASSERT(!IsAnimValList(), "call from baseVal to animVal");
 
-  if (AttrIsAnimating()) {
-    
+  if (!AnimListMirrorsBaseList()) {
     return;
   }
 
   
   DOMSVGPointList *animVal =
     GetDOMWrapperIfExists(InternalAList().GetAnimValKey());
-  if (!animVal) {
-    
-    return;
-  }
 
+  MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
   MOZ_ASSERT(animVal->mItems.Length() == mItems.Length(),
              "animVal list not in sync!");
-
   MOZ_ALWAYS_TRUE(animVal->mItems.InsertElementAt(aIndex, nullptr, fallible));
 
   UpdateListIndicesFromIndex(animVal->mItems, aIndex + 1);
@@ -443,8 +445,7 @@ DOMSVGPointList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex)
 {
   MOZ_ASSERT(!IsAnimValList(), "call from baseVal to animVal");
 
-  if (AttrIsAnimating()) {
-    
+  if (!AnimListMirrorsBaseList()) {
     return;
   }
 
@@ -452,11 +453,8 @@ DOMSVGPointList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex)
   
   RefPtr<DOMSVGPointList> animVal =
     GetDOMWrapperIfExists(InternalAList().GetAnimValKey());
-  if (!animVal) {
-    
-    return;
-  }
 
+  MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
   MOZ_ASSERT(animVal->mItems.Length() == mItems.Length(),
              "animVal list not in sync!");
 

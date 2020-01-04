@@ -128,6 +128,10 @@ public:
 
 
   bool AttrIsAnimating() const;
+  
+
+
+  bool AnimListMirrorsBaseList() const;
 
   uint32_t NumberOfItems() const
   {
