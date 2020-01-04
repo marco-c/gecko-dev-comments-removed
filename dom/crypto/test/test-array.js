@@ -88,6 +88,34 @@ function Test(name, test) {
   };
 }
 
+function WorkerTest(worker, name, test) {
+  this.name = `${name} (Worker)`;
+  this.startTime = null;
+  this.endTime = null;
+  this.result = null;
+  this.row = null;
+
+  this.run = function() {
+    
+    this.startTime = new Date();
+
+    
+    worker.postMessage(test.toSource());
+
+    
+    worker.onmessage = e => this.complete(e.data);
+    worker.onerror = e => this.complete(false);
+  };
+
+  var base = new Test(name, test);
+
+  
+  
+  for (var method of ["draw", "setRow", "next", "complete"]) {
+    this[method] = base[method].bind(this);
+  }
+}
+
 var TestArray = {
   tests: [],
   table: null,
@@ -98,13 +126,18 @@ var TestArray = {
   fail: 0,
   pending: 0,
   currTest: 0,
+  worker: new Worker("test-worker.js"),
 
   addTest: function(name, testFn) {
     
     var test = new Test(name, testFn);
     test.ta = this;
+
     
     this.tests.push(test);
+
+    
+    this.tests.push(new WorkerTest(this.worker, name, testFn));
   },
 
   updateSummary: function() {
@@ -174,6 +207,7 @@ function start() {
 MOCHITEST = ("SimpleTest" in window);
 if (MOCHITEST) {
   SimpleTest.waitForExplicitFinish();
+  SimpleTest.requestLongerTimeout(2);
   window.addEventListener("load", function() {
     SimpleTest.waitForFocus(start);
   });
