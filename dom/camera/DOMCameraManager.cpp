@@ -42,13 +42,10 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDOMCameraManager)
 
 
 
-PRLogModuleInfo*
+LogModule*
 GetCameraLog()
 {
-  static PRLogModuleInfo *sLog;
-  if (!sLog) {
-    sLog = PR_NewLogModule("Camera");
-  }
+  static LazyLogModule sLog("Camera");
   return sLog;
 }
 

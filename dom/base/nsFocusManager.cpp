@@ -77,8 +77,8 @@ using namespace mozilla::widget;
 
 
 
-PRLogModuleInfo* gFocusLog;
-PRLogModuleInfo* gFocusNavigationLog;
+LazyLogModule gFocusLog("Focus");
+LazyLogModule gFocusNavigationLog("FocusNavigation");
 
 #define LOGFOCUS(args) MOZ_LOG(gFocusLog, mozilla::LogLevel::Debug, args)
 #define LOGFOCUSNAVIGATION(args) MOZ_LOG(gFocusNavigationLog, mozilla::LogLevel::Debug, args)
@@ -192,9 +192,6 @@ nsFocusManager::Init()
   nsFocusManager* fm = new nsFocusManager();
   NS_ADDREF(fm);
   sInstance = fm;
-
-  gFocusLog = PR_NewLogModule("Focus");
-  gFocusNavigationLog = PR_NewLogModule("FocusNavigation");
 
   nsIContent::sTabFocusModelAppliesToXUL =
     Preferences::GetBool("accessibility.tabfocus_applies_to_xul",

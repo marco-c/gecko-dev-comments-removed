@@ -48,9 +48,9 @@
 class nsPluginLogging
 {
 public:
-  static PRLogModuleInfo* gNPNLog;  
-  static PRLogModuleInfo* gNPPLog;  
-  static PRLogModuleInfo* gPluginLog;  
+  static mozilla::LazyLogModule gNPNLog;  
+  static mozilla::LazyLogModule gNPPLog;  
+  static mozilla::LazyLogModule gPluginLog;  
 };
 
 #endif   
