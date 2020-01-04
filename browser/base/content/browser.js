@@ -3395,6 +3395,9 @@ const DOMLinkHandler = {
 
 const BrowserSearch = {
   addEngine: function(browser, engine, uri) {
+    if (!this.searchBar)
+      return;
+
     
     if (browser.engines) {
       if (browser.engines.some(e => e.title == engine.title))
@@ -3432,7 +3435,11 @@ const BrowserSearch = {
 
   updateOpenSearchBadge: function() {
     var searchBar = this.searchBar;
-    if (!searchBar)
+
+    
+    
+    
+    if (!searchBar || !searchBar.textbox)
       return;
 
     var engines = gBrowser.selectedBrowser.engines;
