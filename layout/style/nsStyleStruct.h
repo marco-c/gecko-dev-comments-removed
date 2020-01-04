@@ -2951,6 +2951,7 @@ struct nsStyleUIReset
   uint8_t   mUserSelect;      
   uint8_t   mForceBrokenImageIcon; 
   uint8_t   mIMEMode;         
+  uint8_t   mWindowDragging;  
   uint8_t   mWindowShadow;    
 };
 
@@ -3017,7 +3018,6 @@ struct nsStyleUserInterface
   uint8_t   mUserInput;       
   uint8_t   mUserModify;      
   uint8_t   mUserFocus;       
-  uint8_t   mWindowDragging;  
 
   uint8_t   mCursor;          
 
