@@ -1778,10 +1778,23 @@ Toolbox.prototype = {
 
 
 
+  isToolRegistered: function(toolId) {
+    return gDevTools.getToolDefinitionMap().has(toolId);
+  },
+
+  
+
+
+
+
+
 
   _toolRegistered: function(event, toolId) {
     let tool = gDevTools.getToolDefinition(toolId);
     this._buildTabForTool(tool);
+    
+    
+    this.emit("tool-registered", toolId);
   },
 
   
@@ -1833,6 +1846,9 @@ Toolbox.prototype = {
         key.parentNode.removeChild(key);
       }
     }
+    
+    
+    this.emit("tool-unregistered", toolId);
   },
 
   
