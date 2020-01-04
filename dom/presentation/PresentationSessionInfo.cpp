@@ -607,7 +607,7 @@ PresentationControllingInfo::NotifyClosed(nsresult aReason)
   
   SetControlChannel(nullptr);
 
-  if (NS_WARN_IF(NS_FAILED(aReason))) {
+  if (NS_WARN_IF(NS_FAILED(aReason) || !mIsResponderReady)) {
     
     
     SetState(nsIPresentationSessionListener::STATE_TERMINATED);
