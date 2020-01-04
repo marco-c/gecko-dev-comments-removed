@@ -228,12 +228,6 @@ SandboxBroker::SetSecurityLevelForPluginProcess(int32_t aSandboxLevel)
   result = mPolicy->SetProcessMitigations(mitigations);
   ret = ret && (sandbox::SBOX_ALL_OK == result);
 
-  mitigations =
-    sandbox::MITIGATION_STRICT_HANDLE_CHECKS;
-
-  result = mPolicy->SetDelayedProcessMitigations(mitigations);
-  ret = ret && (sandbox::SBOX_ALL_OK == result);
-
   
   
   
