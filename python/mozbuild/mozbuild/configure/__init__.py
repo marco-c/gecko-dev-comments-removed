@@ -25,6 +25,7 @@ from mozbuild.configure.options import (
 from mozbuild.configure.help import HelpFormatter
 from mozbuild.configure.util import (
     ConfigureOutputHandler,
+    getpreferredencoding,
     LineIO,
 )
 from mozbuild.util import (
@@ -157,8 +158,24 @@ class ConfigureSandbox(dict):
             def queue_debug():
                 yield
 
+        
+        
+        
+        encoding = getpreferredencoding()
+        def wrapped_log_method(logger, key):
+            method = getattr(logger, key)
+            if not encoding:
+                return method
+            def wrapped(*args, **kwargs):
+                out_args = [
+                    arg.decode(encoding) if isinstance(arg, str) else arg
+                    for arg in args
+                ]
+                return method(*out_args, **kwargs)
+            return wrapped
+
         log_namespace = {
-            k: getattr(logger, k)
+            k: wrapped_log_method(logger, k)
             for k in ('debug', 'info', 'warning', 'error')
         }
         log_namespace['queue_debug'] = queue_debug
