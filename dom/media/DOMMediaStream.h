@@ -409,12 +409,6 @@ public:
   virtual bool AddDirectListener(MediaStreamDirectListener *aListener) { return false; }
   virtual void RemoveDirectListener(MediaStreamDirectListener *aListener) {}
 
-  
-
-
-
-  virtual void SetTrackEnabled(TrackID aTrackID, bool aEnabled);
-
   virtual already_AddRefed<dom::Promise>
   ApplyConstraintsToTrack(TrackID aTrackID,
                           const MediaTrackConstraints& aConstraints,
