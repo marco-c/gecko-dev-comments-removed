@@ -111,6 +111,13 @@ private:
   
   
   
+  bool                 mKilled : 1;
+  
+  
+  
+  
+  
+  
   
   PinningStatus        mPinning;
 
