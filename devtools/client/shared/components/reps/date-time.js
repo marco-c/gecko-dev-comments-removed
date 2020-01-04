@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -21,17 +21,17 @@ define(function(require, exports, module) {
 
 
   let DateTime = React.createClass({
+    displayName: "Date",
+
     propTypes: {
       object: React.PropTypes.object.isRequired
     },
 
-    displayName: "Date",
-
-    getTitle: function(grip) {
+    getTitle: function (grip) {
       return new Date(grip.preview.timestamp).toString();
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
       return (
         ObjectLink({className: "Date"},

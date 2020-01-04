@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -21,21 +21,21 @@ define(function(require, exports, module) {
 
 
   let RegExp = React.createClass({
+    displayName: "regexp",
+
     propTypes: {
       object: React.PropTypes.object.isRequired,
     },
 
-    displayName: "regexp",
-
-    getTitle: function(grip) {
+    getTitle: function (grip) {
       return grip.class;
     },
 
-    getSource: function(grip) {
+    getSource: function (grip) {
       return grip.displayString;
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
       return (
         ObjectLink({className: "regexp"},

@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -19,18 +19,18 @@ define(function(require, exports, module) {
 
 
   let Func = React.createClass({
+    displayName: "Func",
+
     propTypes: {
       object: React.PropTypes.object.isRequired
     },
 
-    displayName: "Func",
-
-    summarizeFunction: function(grip) {
+    summarizeFunction: function (grip) {
       let name = grip.displayName || grip.name || "function";
       return cropString(name + "()", 100);
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
 
       return (

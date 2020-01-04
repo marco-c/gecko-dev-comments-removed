@@ -7,7 +7,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
   const { createFactories } = require("./rep-utils");
@@ -19,7 +19,7 @@ define(function(require, exports, module) {
   const StringRep = React.createClass({
     displayName: "StringRep",
 
-    render: function() {
+    render: function () {
       let text = this.props.object;
       let member = this.props.member;
       if (member && member.open) {

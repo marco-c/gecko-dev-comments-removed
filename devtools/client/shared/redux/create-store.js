@@ -22,7 +22,7 @@ const { history } = require("./middleware/history");
 
 
 
-module.exports = (opts={}) => {
+module.exports = (opts = {}) => {
   const middleware = [
     task,
     thunk,
@@ -48,4 +48,4 @@ module.exports = (opts={}) => {
   }
 
   return applyMiddleware(...middleware)(createStore);
-}
+};

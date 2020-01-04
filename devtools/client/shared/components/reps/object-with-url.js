@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -21,21 +21,21 @@ define(function(require, exports, module) {
 
 
   let ObjectWithURL = React.createClass({
+    displayName: "ObjectWithURL",
+
     propTypes: {
       object: React.PropTypes.object.isRequired,
     },
 
-    displayName: "ObjectWithURL",
-
-    getType: function(grip) {
+    getType: function (grip) {
       return grip.class;
     },
 
-    getDescription: function(grip) {
+    getDescription: function (grip) {
       return grip.preview.url;
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
       return (
         ObjectLink({className: this.getType(grip)},

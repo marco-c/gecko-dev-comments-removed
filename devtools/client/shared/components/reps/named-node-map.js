@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -22,6 +22,7 @@ define(function(require, exports, module) {
 
 
   let NamedNodeMap = React.createClass({
+
     propTypes: {
       object: React.PropTypes.object.isRequired,
       mode: React.PropTypes.string,
@@ -30,15 +31,15 @@ define(function(require, exports, module) {
 
     className: "NamedNodeMap",
 
-    getLength: function(object) {
+    getLength: function (object) {
       return object.preview.length;
     },
 
-    getTitle: function(object) {
+    getTitle: function (object) {
       return object.class ? object.class : "";
     },
 
-    getItems: function(array, max) {
+    getItems: function (array, max) {
       let items = this.propIterator(array, max);
 
       items = items.map(item => PropRep(item));
@@ -54,7 +55,7 @@ define(function(require, exports, module) {
       return items;
     },
 
-    propIterator: function(grip, max) {
+    propIterator: function (grip, max) {
       max = max || 3;
 
       let props = [];
@@ -85,7 +86,7 @@ define(function(require, exports, module) {
       return props;
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
       let mode = this.props.mode;
 
@@ -122,14 +123,14 @@ define(function(require, exports, module) {
 
 
   let PropRep = React.createFactory(React.createClass({
+    displayName: "PropRep",
+
     propTypes: {
       equal: React.PropTypes.string,
       delim: React.PropTypes.string,
     },
 
-    displayName: "PropRep",
-
-    render: function() {
+    render: function () {
       const { Rep } = createFactories(require("./rep"));
 
       return (

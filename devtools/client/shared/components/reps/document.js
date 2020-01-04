@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -22,26 +22,26 @@ define(function(require, exports, module) {
 
 
   let Document = React.createClass({
+    displayName: "Document",
+
     propTypes: {
       object: React.PropTypes.object.isRequired
     },
 
-    displayName: "Document",
-
-    getLocation: function(grip) {
+    getLocation: function (grip) {
       let location = grip.preview.location;
       return location ? getFileName(location) : "";
     },
 
-    getTitle: function(win, context) {
+    getTitle: function (win, context) {
       return "document";
     },
 
-    getTooltip: function(doc) {
+    getTooltip: function (doc) {
       return doc.location.href;
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
 
       return (

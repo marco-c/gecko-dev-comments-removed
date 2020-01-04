@@ -2,10 +2,11 @@
 
 
 
-const { DOM: dom, createClass, createFactory, PropTypes } = require("devtools/client/shared/vendor/react");
-const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
+"use strict";
 
-const AUTO_EXPAND_DEPTH = 0; 
+const { DOM: dom, createClass, createFactory, PropTypes } = require("devtools/client/shared/vendor/react");
+
+const AUTO_EXPAND_DEPTH = 0;
 const NUMBER_OF_OFFSCREEN_ITEMS = 1;
 
 
@@ -95,7 +96,7 @@ const NUMBER_OF_OFFSCREEN_ITEMS = 1;
 
 
 
-const Tree = module.exports = createClass({
+module.exports = createClass({
   displayName: "Tree",
 
   propTypes: {
@@ -231,13 +232,13 @@ const Tree = module.exports = createClass({
     this._updateHeight();
   },
 
-  componentWillUnmount() {
-    window.removeEventListener("resize", this._updateHeight);
-  },
-
   componentWillReceiveProps(nextProps) {
     this._autoExpand();
     this._updateHeight();
+  },
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this._updateHeight);
   },
 
   _autoExpand() {
@@ -269,72 +270,6 @@ const Tree = module.exports = createClass({
     for (let i = 0; i < length; i++) {
       autoExpand(roots[i], 0);
     }
-  },
-
-  render() {
-    const traversal = this._dfsFromRoots();
-
-    
-    
-    
-    
-    
-    const begin = Math.max(((this.state.scroll / this.props.itemHeight) | 0) - NUMBER_OF_OFFSCREEN_ITEMS, 0);
-    const end = begin + (2 * NUMBER_OF_OFFSCREEN_ITEMS) + ((this.state.height / this.props.itemHeight) | 0);
-    const toRender = traversal.slice(begin, end);
-
-    const nodes = [
-      dom.div({
-        key: "top-spacer",
-        style: {
-          padding: 0,
-          margin: 0,
-          height: begin * this.props.itemHeight + "px"
-        }
-      })
-    ];
-
-    for (let i = 0; i < toRender.length; i++) {
-      let { item, depth } = toRender[i];
-      nodes.push(TreeNode({
-        key: this.props.getKey(item),
-        index: begin + i,
-        item: item,
-        depth: depth,
-        renderItem: this.props.renderItem,
-        focused: this.props.focused === item,
-        expanded: this.props.isExpanded(item),
-        hasChildren: !!this.props.getChildren(item).length,
-        onExpand: this._onExpand,
-        onCollapse: this._onCollapse,
-        onFocus: () => this._focus(begin + i, item),
-      }));
-    }
-
-    nodes.push(dom.div({
-      key: "bottom-spacer",
-      style: {
-        padding: 0,
-        margin: 0,
-        height: (traversal.length - 1 - end) * this.props.itemHeight + "px"
-      }
-    }));
-
-    return dom.div(
-      {
-        className: "tree",
-        ref: "tree",
-        onKeyDown: this._onKeyDown,
-        onKeyPress: this._preventArrowKeyScrolling,
-        onKeyUp: this._preventArrowKeyScrolling,
-        onScroll: this._onScroll,
-        style: {
-          padding: 0,
-          margin: 0
-        }
-      },
-      nodes
-    );
   },
 
   _preventArrowKeyScrolling(e) {
@@ -609,6 +544,74 @@ const Tree = module.exports = createClass({
 
     this._focus(parentIndex, parent);
   }),
+
+  render() {
+    const traversal = this._dfsFromRoots();
+
+    
+    
+    
+    
+    
+    const begin = Math.max(((this.state.scroll / this.props.itemHeight) | 0)
+                           - NUMBER_OF_OFFSCREEN_ITEMS, 0);
+    const end = begin + (2 * NUMBER_OF_OFFSCREEN_ITEMS)
+                      + ((this.state.height / this.props.itemHeight) | 0);
+    const toRender = traversal.slice(begin, end);
+
+    const nodes = [
+      dom.div({
+        key: "top-spacer",
+        style: {
+          padding: 0,
+          margin: 0,
+          height: begin * this.props.itemHeight + "px"
+        }
+      })
+    ];
+
+    for (let i = 0; i < toRender.length; i++) {
+      let { item, depth } = toRender[i];
+      nodes.push(TreeNode({
+        key: this.props.getKey(item),
+        index: begin + i,
+        item: item,
+        depth: depth,
+        renderItem: this.props.renderItem,
+        focused: this.props.focused === item,
+        expanded: this.props.isExpanded(item),
+        hasChildren: !!this.props.getChildren(item).length,
+        onExpand: this._onExpand,
+        onCollapse: this._onCollapse,
+        onFocus: () => this._focus(begin + i, item),
+      }));
+    }
+
+    nodes.push(dom.div({
+      key: "bottom-spacer",
+      style: {
+        padding: 0,
+        margin: 0,
+        height: (traversal.length - 1 - end) * this.props.itemHeight + "px"
+      }
+    }));
+
+    return dom.div(
+      {
+        className: "tree",
+        ref: "tree",
+        onKeyDown: this._onKeyDown,
+        onKeyPress: this._preventArrowKeyScrolling,
+        onKeyUp: this._preventArrowKeyScrolling,
+        onScroll: this._onScroll,
+        style: {
+          padding: 0,
+          margin: 0
+        }
+      },
+      nodes
+    );
+  }
 });
 
 
@@ -659,6 +662,22 @@ const TreeNode = createFactory(createClass({
     }
   },
 
+  _buttonAttrs: {
+    ref: "button",
+    style: {
+      opacity: 0,
+      width: "0 !important",
+      height: "0 !important",
+      padding: "0 !important",
+      outline: "none",
+      MozAppearance: "none",
+      
+      
+      
+      MozMarginStart: "-1000px !important",
+    }
+  },
+
   render() {
     const arrow = ArrowExpander({
       item: this.props.item,
@@ -691,22 +710,6 @@ const TreeNode = createFactory(createClass({
       
       dom.button(this._buttonAttrs)
     );
-  },
-
-  _buttonAttrs: {
-    ref: "button",
-    style: {
-      opacity: 0,
-      width: "0 !important",
-      height: "0 !important",
-      padding: "0 !important",
-      outline: "none",
-      MozAppearance: "none",
-      
-      
-      
-      marginInlineStart: "-1000px !important",
-    }
   }
 }));
 

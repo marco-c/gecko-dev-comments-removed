@@ -8,7 +8,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   function parseURLParams(url) {
     url = new URL(url);
     return parseURLEncodedText(url.searchParams);

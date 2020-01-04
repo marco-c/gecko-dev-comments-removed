@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -18,15 +18,15 @@ define(function(require, exports, module) {
 
 
   let LabelCell = React.createClass({
+    displayName: "LabelCell",
+
     
     
     propTypes: {
       member: PropTypes.object.isRequired
     },
 
-    displayName: "LabelCell",
-
-    render: function() {
+    render: function () {
       let member = this.props.member;
       let level = member.level || 0;
 

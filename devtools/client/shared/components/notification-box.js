@@ -33,6 +33,8 @@ const PriorityLevels = {
 
 
 var NotificationBox = createClass({
+  displayName: "NotificationBox",
+
   propTypes: {
     
     notifications: PropTypes.arrayOf(PropTypes.shape({
@@ -73,8 +75,6 @@ var NotificationBox = createClass({
       eventCallback: PropTypes.func,
     })),
   },
-
-  displayName: "NotificationBox",
 
   getInitialState() {
     return {

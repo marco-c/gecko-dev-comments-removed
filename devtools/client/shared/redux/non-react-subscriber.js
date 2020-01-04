@@ -90,7 +90,7 @@ function makeStateBroadcaster(stillAliveFunc) {
           enqueuedChanges.forEach(([name, payload]) => {
             if (listeners[name]) {
               listeners[name].forEach(listener => {
-                listener(payload)
+                listener(payload);
               });
             }
           });
@@ -115,7 +115,7 @@ function enhanceStoreWithBroadcaster(store, broadcaster) {
   store.onChange = broadcaster.onChange;
   store.offChange = broadcaster.offChange;
   return store;
-};
+}
 
 
 
@@ -135,13 +135,16 @@ function combineBroadcastingReducers(reducers, emitChange) {
   
   
   function wrapReduce(newReducers, key) {
-    newReducers[key] = (state, action) => reducers[key](state, action, emitChange);
+    newReducers[key] = (state, action) => {
+      return reducers[key](state, action, emitChange);
+    };
     return newReducers;
   }
 
-  return combineReducers(Object.keys(reducers).reduce(wrapReduce, Object.create(null)));
+  return combineReducers(
+    Object.keys(reducers).reduce(wrapReduce, Object.create(null))
+  );
 }
-
 
 module.exports = {
   makeStateBroadcaster,

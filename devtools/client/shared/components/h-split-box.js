@@ -3,6 +3,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -30,20 +33,6 @@ const { assert } = require("devtools/shared/DevToolsUtils");
 module.exports = createClass({
   displayName: "HSplitBox",
 
-  getDefaultProps() {
-    return {
-      startWidth: 0.5,
-      minStartWidth: "20px",
-      minEndWidth: "20px",
-    };
-  },
-
-  getInitialState() {
-    return {
-      mouseDown: false
-    };
-  },
-
   propTypes: {
     
     start: PropTypes.any.isRequired,
@@ -66,6 +55,34 @@ module.exports = createClass({
     
     
     onResize: PropTypes.func.isRequired,
+  },
+
+  getDefaultProps() {
+    return {
+      startWidth: 0.5,
+      minStartWidth: "20px",
+      minEndWidth: "20px",
+    };
+  },
+
+  getInitialState() {
+    return {
+      mouseDown: false
+    };
+  },
+
+  componentDidMount() {
+    document.defaultView.top.addEventListener("mouseup", this._onMouseUp,
+                                              false);
+    document.defaultView.top.addEventListener("mousemove", this._onMouseMove,
+                                              false);
+  },
+
+  componentWillUnmount() {
+    document.defaultView.top.removeEventListener("mouseup", this._onMouseUp,
+                                                 false);
+    document.defaultView.top.removeEventListener("mousemove", this._onMouseMove,
+                                                 false);
   },
 
   _onMouseDown(event) {
@@ -100,21 +117,12 @@ module.exports = createClass({
     event.preventDefault();
   },
 
-  componentDidMount() {
-    document.defaultView.top.addEventListener("mouseup", this._onMouseUp, false);
-    document.defaultView.top.addEventListener("mousemove", this._onMouseMove, false);
-  },
-
-  componentWillUnmount() {
-    document.defaultView.top.removeEventListener("mouseup", this._onMouseUp, false);
-    document.defaultView.top.removeEventListener("mousemove", this._onMouseMove, false);
-  },
-
   render() {
+    
     const { start, end, startWidth, minStartWidth, minEndWidth } = this.props;
-    assert(0 <= startWidth && startWidth <= 1,
+    assert(startWidth => 0 && startWidth <= 1,
            "0 <= this.props.startWidth <= 1");
-
+    
     return dom.div(
       {
         className: "h-split-box",

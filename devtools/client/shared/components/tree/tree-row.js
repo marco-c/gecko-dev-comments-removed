@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
   const ReactDOM = require("devtools/client/shared/vendor/react-dom");
@@ -24,6 +24,8 @@ define(function(require, exports, module) {
 
 
   let TreeRow = React.createClass({
+    displayName: "TreeRow",
+
     
     
     propTypes: {
@@ -47,23 +49,6 @@ define(function(require, exports, module) {
       onClick: PropTypes.func.isRequired
     },
 
-    displayName: "TreeRow",
-
-    
-
-
-
-    shouldComponentUpdate: function(nextProps) {
-      let props = ["name", "open", "value", "loading"];
-      for (let p in props) {
-        if (nextProps.member[props[p]] != this.props.member[props[p]]) {
-          return true;
-        }
-      }
-
-      return false;
-    },
-
     componentWillReceiveProps(nextProps) {
       
       
@@ -77,7 +62,22 @@ define(function(require, exports, module) {
       }
     },
 
-    getRowClass: function(object) {
+    
+
+
+
+    shouldComponentUpdate: function (nextProps) {
+      let props = ["name", "open", "value", "loading"];
+      for (let p in props) {
+        if (nextProps.member[props[p]] != this.props.member[props[p]]) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    getRowClass: function (object) {
       let decorator = this.props.decorator;
       if (!decorator || !decorator.getRowClass) {
         return [];
@@ -96,7 +96,7 @@ define(function(require, exports, module) {
       return classNames;
     },
 
-    render: function() {
+    render: function () {
       let member = this.props.member;
       let decorator = this.props.decorator;
 

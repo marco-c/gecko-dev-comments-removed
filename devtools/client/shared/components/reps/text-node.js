@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -22,22 +22,22 @@ define(function(require, exports, module) {
 
 
   let TextNode = React.createClass({
+    displayName: "TextNode",
+
     propTypes: {
       object: React.PropTypes.object.isRequired,
       mode: React.PropTypes.string,
     },
 
-    displayName: "TextNode",
-
-    getTextContent: function(grip) {
+    getTextContent: function (grip) {
       return cropMultipleLines(grip.preview.textContent);
     },
 
-    getTitle: function(win, context) {
+    getTitle: function (win, context) {
       return "textNode";
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
       let mode = this.props.mode || "short";
 

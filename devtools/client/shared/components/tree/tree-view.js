@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -54,6 +54,8 @@ define(function(require, exports, module) {
 
 
   let TreeView = React.createClass({
+    displayName: "TreeView",
+
     
     
     propTypes: {
@@ -103,9 +105,7 @@ define(function(require, exports, module) {
       }))
     },
 
-    displayName: "TreeView",
-
-    getDefaultProps: function() {
+    getDefaultProps: function () {
       return {
         object: null,
         renderRow: null,
@@ -115,7 +115,7 @@ define(function(require, exports, module) {
       };
     },
 
-    getInitialState: function() {
+    getInitialState: function () {
       return {
         expandedNodes: this.props.expandedNodes,
         columns: ensureDefaultColumn(this.props.columns)
@@ -124,7 +124,7 @@ define(function(require, exports, module) {
 
     
 
-    toggle: function(nodePath) {
+    toggle: function (nodePath) {
       let nodes = this.state.expandedNodes;
       if (this.isExpanded(nodePath)) {
         nodes.delete(nodePath);
@@ -138,13 +138,13 @@ define(function(require, exports, module) {
       }));
     },
 
-    isExpanded: function(nodePath) {
+    isExpanded: function (nodePath) {
       return this.state.expandedNodes.has(nodePath);
     },
 
     
 
-    onClickRow: function(nodePath, event) {
+    onClickRow: function (nodePath, event) {
       event.stopPropagation();
       this.toggle(nodePath);
     },
@@ -155,12 +155,12 @@ define(function(require, exports, module) {
 
 
 
-    onFilter: function(object) {
+    onFilter: function (object) {
       let onFilter = this.props.onFilter;
       return onFilter ? onFilter(object) : true;
     },
 
-    onSort: function(parent, children) {
+    onSort: function (parent, children) {
       let onSort = this.props.onSort;
       return onSort ? onSort(parent, children) : children;
     },
@@ -171,7 +171,7 @@ define(function(require, exports, module) {
 
 
 
-    getMembers: function(parent, level, path) {
+    getMembers: function (parent, level, path) {
       
       
       
@@ -235,7 +235,7 @@ define(function(require, exports, module) {
     
 
 
-    renderRows: function(parent, level = 0, path = "") {
+    renderRows: function (parent, level = 0, path = "") {
       let rows = [];
       let decorator = this.props.decorator;
       let renderRow = this.props.renderRow || TreeRow;
@@ -285,7 +285,7 @@ define(function(require, exports, module) {
       return rows;
     },
 
-    render: function() {
+    render: function () {
       let root = this.props.object;
       let classNames = ["treeTable"];
 

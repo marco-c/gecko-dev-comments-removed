@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -23,17 +23,17 @@ define(function(require, exports, module) {
 
 
   let Attribute = React.createClass({
+    displayName: "Attr",
+
     propTypes: {
       object: React.PropTypes.object.isRequired
     },
 
-    displayName: "Attr",
-
-    getTitle: function(grip) {
+    getTitle: function (grip) {
       return grip.preview.nodeName;
     },
 
-    render: function() {
+    render: function () {
       let grip = this.props.object;
       let value = grip.preview.value;
 

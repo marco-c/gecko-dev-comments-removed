@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
 
   
@@ -18,6 +18,8 @@ define(function(require, exports, module) {
 
 
   let TreeCell = React.createClass({
+    displayName: "TreeCell",
+
     
     propTypes: {
       value: PropTypes.any,
@@ -27,18 +29,16 @@ define(function(require, exports, module) {
       renderValue: PropTypes.func.isRequired
     },
 
-    displayName: "TreeCell",
-
     
 
 
 
-    shouldComponentUpdate: function(nextProps) {
+    shouldComponentUpdate: function (nextProps) {
       return (this.props.value != nextProps.value) ||
         (this.props.member.open != nextProps.member.open);
     },
 
-    getCellClass: function(object, id) {
+    getCellClass: function (object, id) {
       let decorator = this.props.decorator;
       if (!decorator || !decorator.getCellClass) {
         return [];
@@ -57,7 +57,7 @@ define(function(require, exports, module) {
       return classNames;
     },
 
-    render: function() {
+    render: function () {
       let member = this.props.member;
       let type = member.type || "";
       let id = this.props.id;

@@ -7,7 +7,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
   const DOM = React.DOM;
@@ -18,7 +18,7 @@ define(function(require, exports, module) {
   const ObjectBox = React.createClass({
     displayName: "ObjectBox",
 
-    render: function() {
+    render: function () {
       let className = this.props.className;
       let boxClassName = className ? " objectBox-" + className : "";
 

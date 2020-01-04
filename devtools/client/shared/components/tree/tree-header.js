@@ -6,7 +6,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
@@ -19,6 +19,8 @@ define(function(require, exports, module) {
 
 
   let TreeHeader = React.createClass({
+    displayName: "TreeHeader",
+
     
     propTypes: {
       
@@ -29,9 +31,7 @@ define(function(require, exports, module) {
       columns: PropTypes.array
     },
 
-    displayName: "TreeHeader",
-
-    getDefaultProps: function() {
+    getDefaultProps: function () {
       return {
         columns: [{
           id: "default"
@@ -39,7 +39,7 @@ define(function(require, exports, module) {
       };
     },
 
-    getHeaderClass: function(colId) {
+    getHeaderClass: function (colId) {
       let decorator = this.props.decorator;
       if (!decorator || !decorator.getHeaderClass) {
         return [];
@@ -58,7 +58,7 @@ define(function(require, exports, module) {
       return classNames;
     },
 
-    render: function() {
+    render: function () {
       let cells = [];
       let visible = this.props.header;
 
