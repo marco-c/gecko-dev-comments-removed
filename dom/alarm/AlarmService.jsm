@@ -252,6 +252,18 @@ this.AlarmService = {
     debug("_onAlarmFired()");
 
     if (this._currentAlarm) {
+      let currentAlarmTime = this._getAlarmTime(this._currentAlarm);
+
+      
+      
+      if (currentAlarmTime > Date.now()) {
+        let currentAlarm = this._currentAlarm;
+        this._currentAlarm = currentAlarm;
+
+        this._debugCurrentAlarm();
+        return;
+      }
+
       this._removeAlarmFromDb(this._currentAlarm.id, null);
       this._notifyAlarmObserver(this._currentAlarm);
       this._currentAlarm = null;
@@ -415,6 +427,16 @@ this.AlarmService = {
         aNewAlarm['alarmFiredCb'] = aAlarmFiredCb;
 
         
+        
+        let aNewAlarmTime = this._getAlarmTime(aNewAlarm);
+        if (aNewAlarmTime < Date.now()) {
+          aSuccessCb(aNewId);
+          this._removeAlarmFromDb(aNewAlarm.id, null);
+          this._notifyAlarmObserver(aNewAlarm);
+          return;
+        }
+
+        
         if (this._currentAlarm == null) {
           this._currentAlarm = aNewAlarm;
           this._debugCurrentAlarm();
@@ -425,7 +447,6 @@ this.AlarmService = {
         
         
         let alarmQueue = this._alarmQueue;
-        let aNewAlarmTime = this._getAlarmTime(aNewAlarm);
         let currentAlarmTime = this._getAlarmTime(this._currentAlarm);
         if (aNewAlarmTime < currentAlarmTime) {
           alarmQueue.unshift(this._currentAlarm);
