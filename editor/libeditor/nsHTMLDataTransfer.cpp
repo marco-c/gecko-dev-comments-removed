@@ -381,8 +381,8 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
     NS_ENSURE_TRUE(parentNode, NS_ERROR_FAILURE);
 
     
-    NormalizeEOLInsertPosition(nodeList[0], address_of(parentNode),
-                               &offsetOfNewNode);
+    NormalizeEOLInsertPosition(GetAsDOMNode(nodeList[0]),
+                               address_of(parentNode), &offsetOfNewNode);
 
     
     
@@ -456,9 +456,7 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
     nsCOMPtr<nsIDOMNode> parentBlock, lastInsertNode, insertedContextParent;
     int32_t listCount = nodeList.Length();
     int32_t j;
-    nsCOMPtr<nsINode> parentNodeNode = do_QueryInterface(parentNode);
-    NS_ENSURE_STATE(parentNodeNode || !parentNode);
-    if (IsBlockNode(parentNodeNode))
+    if (IsBlockNode(parentNode))
       parentBlock = parentNode;
     else
       parentBlock = GetBlockNodeParent(parentNode);

@@ -1417,7 +1417,7 @@ nsHTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
 }
 
 void
-nsHTMLEditor::NormalizeEOLInsertPosition(nsINode* firstNodeToInsert,
+nsHTMLEditor::NormalizeEOLInsertPosition(nsIDOMNode *firstNodeToInsert,
                                      nsCOMPtr<nsIDOMNode> *insertParentNode,
                                      int32_t *insertOffset)
 {
@@ -1497,8 +1497,7 @@ nsHTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement, bool aDeleteSele
 
   nsresult res = NS_ERROR_NOT_INITIALIZED;
 
-  nsCOMPtr<Element> element = do_QueryInterface(aElement);
-  NS_ENSURE_TRUE(element, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aElement, NS_ERROR_NULL_POINTER);
 
   nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aElement);
 
@@ -1522,7 +1521,7 @@ nsHTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement, bool aDeleteSele
   {
     if (aDeleteSelection)
     {
-      if (!IsBlockNode(element)) {
+      if (!IsBlockNode(aElement)) {
         
         
         
@@ -1557,8 +1556,7 @@ nsHTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement, bool aDeleteSele
     if (NS_SUCCEEDED(res) && NS_SUCCEEDED(selection->GetAnchorOffset(&offsetForInsert)) && parentSelectedNode)
     {
       
-      NormalizeEOLInsertPosition(element, address_of(parentSelectedNode),
-                                 &offsetForInsert);
+      NormalizeEOLInsertPosition(node, address_of(parentSelectedNode), &offsetForInsert);
 
       res = InsertNodeAtPoint(node, address_of(parentSelectedNode), &offsetForInsert, false);
       NS_ENSURE_SUCCESS(res, res);

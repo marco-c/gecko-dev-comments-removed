@@ -624,7 +624,7 @@ protected:
 
   
 
-  void NormalizeEOLInsertPosition(nsINode* firstNodeToInsert,
+  void NormalizeEOLInsertPosition(nsIDOMNode *firstNodeToInsert,
                                   nsCOMPtr<nsIDOMNode> *insertParentNode,
                                   int32_t *insertOffset);
 
