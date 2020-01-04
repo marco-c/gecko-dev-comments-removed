@@ -89,8 +89,6 @@ public:
   void AddFontFaceSet(FontFaceSet* aFontFaceSet);
   void RemoveFontFaceSet(FontFaceSet* aFontFaceSet);
 
-  FontFaceSet* GetFontFaceSet() const { return mFontFaceSet; }
-
   
 
 

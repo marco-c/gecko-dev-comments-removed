@@ -399,21 +399,14 @@ FontFaceSet::Add(FontFace& aFontFace, ErrorResult& aRv)
 {
   FlushUserFontSet();
 
-  
-  
-  
-
-  if (aFontFace.GetFontFaceSet() != this) {
-    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-
   if (aFontFace.IsInFontFaceSet(this)) {
     return this;
   }
 
-  MOZ_ASSERT(!aFontFace.HasRule(),
-             "rule-backed FontFaces should always be in the FontFaceSet");
+  if (aFontFace.HasRule()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_MODIFICATION_ERR);
+    return nullptr;
+  }
 
   aFontFace.AddFontFaceSet(this);
 
