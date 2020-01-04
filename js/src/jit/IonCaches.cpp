@@ -542,6 +542,9 @@ IsOptimizableArgumentsObjectForGetElem(JSObject* obj, Value idval)
     if (argsObj.isAnyElementDeleted())
         return false;
 
+    if (argsObj.hasOverriddenElement())
+        return false;
+
     if (!idval.isInt32())
         return false;
 
@@ -4212,8 +4215,11 @@ GetPropertyIC::tryAttachArgumentsElement(JSContext* cx, HandleScript outerScript
     masm.branchTestObjClass(Assembler::NotEqual, object(), tmpReg, obj->getClass(), &failures);
 
     
+    
     masm.unboxInt32(Address(object(), ArgumentsObject::getInitialLengthSlotOffset()), tmpReg);
-    masm.branchTest32(Assembler::NonZero, tmpReg, Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT),
+    masm.branchTest32(Assembler::NonZero, tmpReg,
+                      Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT |
+                            ArgumentsObject::ELEMENT_OVERRIDDEN_BIT),
                       &failures);
     masm.rshiftPtr(Imm32(ArgumentsObject::PACKED_BITS_COUNT), tmpReg);
 

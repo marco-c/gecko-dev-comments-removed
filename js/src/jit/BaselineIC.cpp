@@ -1402,7 +1402,9 @@ TryAttachGetElemStub(JSContext* cx, JSScript* script, jsbytecode* pc, ICGetElem_
     RootedObject obj(cx, &lhs.toObject());
 
     
-    if (obj->is<ArgumentsObject>() && rhs.isInt32()) {
+    if (obj->is<ArgumentsObject>() && rhs.isInt32() &&
+        !obj->as<ArgumentsObject>().hasOverriddenElement())
+    {
         ICGetElem_Arguments::Which which = ICGetElem_Arguments::Mapped;
         if (obj->is<UnmappedArgumentsObject>())
             which = ICGetElem_Arguments::Unmapped;
@@ -2275,7 +2277,8 @@ ICGetElem_Arguments::Compiler::generateStubCode(MacroAssembler& masm)
     
     masm.branchTest32(Assembler::NonZero,
                       scratchReg,
-                      Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT),
+                      Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT |
+                            ArgumentsObject::ELEMENT_OVERRIDDEN_BIT),
                       &failure);
 
     
