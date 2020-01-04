@@ -50,6 +50,24 @@ class AutoCloseFile
     }
 };
 
+
+struct RCFile {
+    FILE* fp;
+    uint32_t numRefs;
+
+    RCFile() : fp(nullptr), numRefs(0) {}
+    explicit RCFile(FILE* fp) : fp(fp), numRefs(0) {}
+
+    void acquire() { numRefs++; }
+
+    
+    static RCFile* create(JSContext* cx, const char* filename, const char* mode);
+
+    void close();
+    bool isOpen() const { return fp; }
+    bool release();
+};
+
 } 
 } 
 

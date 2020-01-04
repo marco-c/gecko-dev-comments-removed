@@ -14,9 +14,13 @@
 namespace js {
 namespace shell {
 
+struct RCFile;
+
 
 bool
-DefineOS(JSContext* cx, JS::HandleObject global, bool fuzzingSafe);
+DefineOS(JSContext* cx, JS::HandleObject global,
+         bool fuzzingSafe,
+         RCFile** shellOut, RCFile** shellErr);
 
 enum PathResolutionMode {
     RootRelative,
