@@ -32,8 +32,6 @@ var AboutReader = function(mm, win, articlePromise) {
   let doc = win.document;
 
   this._mm = mm;
-  this._mm.addMessageListener("Reader:Added", this);
-  this._mm.addMessageListener("Reader:Removed", this);
   this._mm.addMessageListener("Reader:CloseDropdown", this);
   this._mm.addMessageListener("Reader:AddButton", this);
   this._mm.addMessageListener("Reader:RemoveButton", this);
@@ -67,14 +65,6 @@ var AboutReader = function(mm, win, articlePromise) {
 
   this._setupStyleDropdown();
   this._setupButton("close-button", this._onReaderClose.bind(this), "aboutReader.toolbar.close");
-
-  try {
-    if (Services.prefs.getBoolPref("browser.readinglist.enabled")) {
-      this._setupButton("toggle-button", this._onReaderToggle.bind(this, "button"), "aboutReader.toolbar.addToReadingList");
-    }
-  } catch (e) {
-    
-  }
 
   const gIsFirefoxDesktop = Services.appinfo.ID == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
   if (gIsFirefoxDesktop) {
@@ -111,10 +101,6 @@ var AboutReader = function(mm, win, articlePromise) {
   this._setFontType(fontType);
 
   this._setupFontSizeButtons();
-
-  
-  this._isReadingListItem = -1;
-  this._updateToggleButton();
 
   this._loadArticle();
 }
@@ -179,17 +165,6 @@ AboutReader.prototype = {
 
   receiveMessage: function (message) {
     switch (message.name) {
-      case "Reader:Added": {
-        
-        if (message.data.url == this._article.url) {
-          if (this._isReadingListItem != 1) {
-            this._isReadingListItem = 1;
-            this._updateToggleButton();
-          }
-        }
-        break;
-      }
-
       
       case "Reader:CloseDropdown": {
         
@@ -197,15 +172,6 @@ AboutReader.prototype = {
         break;
       }
 
-      case "Reader:Removed": {
-        if (message.data.url == this._article.url) {
-          if (this._isReadingListItem != 0) {
-            this._isReadingListItem = 0;
-            this._updateToggleButton();
-          }
-        }
-        break;
-      }
       case "Reader:AddButton": {
         if (message.data.id && message.data.image) {
           let btn = this._doc.createElement("button");
@@ -267,8 +233,6 @@ AboutReader.prototype = {
         
         this._closeDropdown();
 
-        this._mm.removeMessageListener("Reader:Added", this);
-        this._mm.removeMessageListener("Reader:Removed", this);
         this._mm.removeMessageListener("Reader:CloseDropdown", this);
         this._mm.removeMessageListener("Reader:AddButton", this);
         this._mm.removeMessageListener("Reader:RemoveButton", this);
@@ -277,61 +241,8 @@ AboutReader.prototype = {
     }
   },
 
-  _updateToggleButton: function() {
-    let button = this._doc.getElementById("toggle-button");
-
-    if (this._isReadingListItem == 1) {
-      button.classList.add("on");
-      button.setAttribute("title", gStrings.GetStringFromName("aboutReader.toolbar.removeFromReadingList"));
-    } else {
-      button.classList.remove("on");
-      button.setAttribute("title", gStrings.GetStringFromName("aboutReader.toolbar.addToReadingList"));
-    }
-  },
-
-  _requestReadingListStatus: function() {
-    let handleListStatusData = (message) => {
-      this._mm.removeMessageListener("Reader:ListStatusData", handleListStatusData);
-
-      let args = message.data;
-      if (args.url == this._article.url) {
-        if (this._isReadingListItem != args.inReadingList) {
-          let isInitialStateChange = (this._isReadingListItem == -1);
-          this._isReadingListItem = args.inReadingList;
-          this._updateToggleButton();
-
-          
-          if (isInitialStateChange) {
-            
-            this._win.setTimeout(() => {
-              this._toolbarElement.style.display = "block";
-              
-              this._win.setTimeout(() => this._setToolbarVisibility(true), 200);
-            }, 500);
-          }
-        }
-      }
-    };
-
-    this._mm.addMessageListener("Reader:ListStatusData", handleListStatusData);
-    this._mm.sendAsyncMessage("Reader:ListStatusRequest", { url: this._article.url });
-  },
-
   _onReaderClose: function() {
     this._win.location.href = this._getOriginalUrl();
-  },
-
-  _onReaderToggle: function(aMethod) {
-    if (!this._article)
-      return;
-
-    if (this._isReadingListItem == 0) {
-      this._mm.sendAsyncMessage("Reader:AddToList", { article: this._article });
-      UITelemetry.addEvent("save.1", aMethod, null, "reading_list");
-    } else {
-      this._mm.sendAsyncMessage("Reader:RemoveFromList", { url: this._article.url });
-      UITelemetry.addEvent("unsave.1", aMethod, null, "reading_list");
-    }
   },
 
   _setFontSize: function(newFontSize) {
@@ -712,7 +623,6 @@ AboutReader.prototype = {
 
     this._contentElement.style.display = "block";
     this._updateImageMargins();
-    this._requestReadingListStatus();
 
     this._requestFavicon();
     this._doc.body.classList.add("loaded");

@@ -929,9 +929,6 @@ pref("reader.color_scheme.values", "[\"dark\",\"auto\",\"light\"]");
 pref("reader.toolbar.vertical", false);
 
 
-pref("browser.readinglist.enabled", true);
-
-
 
 pref("toolkit.telemetry.unified", false);
 
