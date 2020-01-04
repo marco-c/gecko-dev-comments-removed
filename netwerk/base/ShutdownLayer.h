@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef SHUTDOWNLAYER_H___
+#define SHUTDOWNLAYER_H___
+
+#include "nscore.h"
+#include "prio.h"
+
+namespace mozilla { namespace net {
+
+
+
+extern nsresult AttachShutdownLayer(PRFileDesc *fd);
+
+} 
+} 
+
+#endif 

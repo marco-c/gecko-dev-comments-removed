@@ -39,6 +39,7 @@
 
 #if defined(XP_WIN)
 #include "nsNativeConnectionHelper.h"
+#include "ShutdownLayer.h"
 #endif
 
 
@@ -1356,6 +1357,20 @@ nsSocketTransport::InitiateSocket()
         opt.value.tos = mQoSBits;
         PR_SetSocketOption(fd, &opt);
     }
+
+#if defined(XP_WIN)
+    
+    
+    
+    
+    
+    
+    
+    opt.option =  PR_SockOpt_Linger;
+    opt.value.linger.polarity = 1;
+    opt.value.linger.linger = 0;
+    PR_SetSocketOption(fd, &opt);
+#endif
 
     
     rv = mSocketTransportService->AttachSocket(fd, this);
@@ -3062,7 +3077,11 @@ nsSocketTransport::PRFileDescAutoLock::SetKeepaliveVals(bool aEnabled,
 }
 
 void
-nsSocketTransport::CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled) {
+nsSocketTransport::CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled)
+{
+#if defined(XP_WIN)
+    mozilla::net::AttachShutdownLayer(aFd);
+#endif
 
     
     
