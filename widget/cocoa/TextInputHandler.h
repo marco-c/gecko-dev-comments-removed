@@ -236,6 +236,26 @@ public:
 
 
 
+
+
+
+
+
+
+  void WillDispatchKeyboardEvent(NSEvent* aNativeKeyEvent,
+                                 const nsAString* aInsertString,
+                                 WidgetKeyboardEvent& aKeyEvent);
+
+  
+
+
+
+
+
+
+
+
+
   uint32_t ComputeGeckoKeyCode(UInt32 aNativeKeyCode, UInt32 aKbType,
                                bool aCmdIsPressed);
 
@@ -299,10 +319,21 @@ protected:
 
 
 
-  void InitKeyPressEvent(NSEvent *aNativeKeyEvent,
-                         char16_t aInsertChar,
-                         WidgetKeyboardEvent& aKeyEvent,
-                         UInt32 aKbType);
+  void ComputeInsertStringForCharCode(NSEvent* aNativeKeyEvent,
+                                      const WidgetKeyboardEvent& aKeyEvent,
+                                      const nsAString* aInsertString,
+                                      nsAString& aResult);
+
+  
+
+
+
+  bool IsPrintableKeyEvent(NSEvent* aNativeKeyEvent) const;
+
+  
+
+
+  UInt32 GetKbdType() const;
 
   bool GetBoolProperty(const CFStringRef aKey);
   bool GetStringProperty(const CFStringRef aKey, CFStringRef &aStr);
@@ -468,6 +499,9 @@ protected:
     
     NSEvent* mKeyEvent;
     
+    
+    nsAString* mInsertString;
+    
     bool mKeyDownHandled;
     
     bool mKeyPressDispatched;
@@ -517,6 +551,7 @@ protected:
         [mKeyEvent release];
         mKeyEvent = nullptr;
       }
+      mInsertString = nullptr;
       mKeyDownHandled = false;
       mKeyPressDispatched = false;
       mKeyPressHandled = false;
@@ -551,6 +586,23 @@ protected:
     }
   private:
     RefPtr<TextInputHandlerBase> mHandler;
+  };
+
+  class MOZ_STACK_CLASS AutoInsertStringClearer
+  {
+  public:
+    explicit AutoInsertStringClearer(KeyEventState* aState)
+      : mState(aState)
+    {
+    }
+    ~AutoInsertStringClearer()
+    {
+      if (mState) {
+        mState->mInsertString = nullptr;
+      }
+    }
+  private:
+    KeyEventState* mState;
   };
 
   
@@ -616,6 +668,22 @@ protected:
     return mCurrentKeyEvents[mCurrentKeyEvents.Length() - 1];
   }
 
+  struct KeyboardLayoutOverride final
+  {
+    int32_t mKeyboardLayout;
+    bool mOverrideEnabled;
+
+    KeyboardLayoutOverride() :
+      mKeyboardLayout(0), mOverrideEnabled(false)
+    {
+    }
+  };
+
+  const KeyboardLayoutOverride& KeyboardLayoutOverrideRef() const
+  {
+    return mKeyboardOverride;
+  }
+
   
 
 
@@ -648,16 +716,6 @@ protected:
   static bool IsModifierKey(UInt32 aNativeKeyCode);
 
 private:
-  struct KeyboardLayoutOverride {
-    int32_t mKeyboardLayout;
-    bool mOverrideEnabled;
-
-    KeyboardLayoutOverride() :
-      mKeyboardLayout(0), mOverrideEnabled(false)
-    {
-    }
-  };
-
   KeyboardLayoutOverride mKeyboardOverride;
 
   static int32_t sSecureEventInputCount;
