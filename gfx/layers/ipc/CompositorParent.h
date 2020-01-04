@@ -383,6 +383,17 @@ public:
 
 
   bool UpdatePluginWindowState(uint64_t aId);
+
+  
+
+
+
+  void ScheduleShowAllPluginWindowsAPZ();
+  void ScheduleHideAllPluginWindowsAPZ();
+  void ShowAllPluginWindowsAPZ();
+  void HideAllPluginWindowsAPZ();
+  void ShowAllPluginWindows();
+  void HideAllPluginWindows();
 #endif
 
   
@@ -486,11 +497,12 @@ protected:
   nsIntPoint mPluginsLayerOffset;
   nsIntRegion mPluginsLayerVisibleRegion;
   nsTArray<PluginWindowData> mCachedPluginData;
-#endif
-#if defined(XP_WIN)
   
   
   bool mPluginUpdateResponsePending;
+  
+  
+  bool mDeferPluginWindows;
 #endif
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorParent);

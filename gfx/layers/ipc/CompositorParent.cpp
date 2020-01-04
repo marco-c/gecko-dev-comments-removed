@@ -586,9 +586,8 @@ CompositorParent::CompositorParent(nsIWidget* aWidget,
   , mCompositorScheduler(nullptr)
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   , mLastPluginUpdateLayerTreeId(0)
-#endif
-#if defined(XP_WIN)
   , mPluginUpdateResponsePending(false)
+  , mDeferPluginWindows(false)
 #endif
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1089,7 +1088,7 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
     return;
   }
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   
   if (mPluginUpdateResponsePending) {
     return;
@@ -1122,12 +1121,10 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
 
 
 
-#if defined(XP_WIN)
   if (pluginsUpdatedFlag) {
     mPluginUpdateResponsePending = true;
     return;
   }
-#endif
 
   
   
@@ -1135,11 +1132,9 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
       mCachedPluginData.Length()) {
     Unused << SendHideAllPlugins((uintptr_t)GetWidget());
     mCachedPluginData.Clear();
-#if defined(XP_WIN)
     
     mPluginUpdateResponsePending = true;
     return;
-#endif
   }
 #endif
 
@@ -1222,7 +1217,7 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
 bool
 CompositorParent::RecvRemotePluginsReady()
 {
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   mPluginUpdateResponsePending = false;
   ScheduleComposition();
   return true;
@@ -2133,6 +2128,12 @@ CompositorParent::UpdatePluginWindowState(uint64_t aId)
     pluginMetricsChanged = true;
   }
 
+  
+  if (mDeferPluginWindows) {
+    PLUGINS_LOG("[%" PRIu64 "] suppressing", aId);
+    return false;
+  }
+
   if (!lts.mPluginData.Length()) {
     
     
@@ -2184,6 +2185,61 @@ CompositorParent::UpdatePluginWindowState(uint64_t aId)
   mLastPluginUpdateLayerTreeId = aId;
   mCachedPluginData = lts.mPluginData;
   return true;
+}
+
+void
+CompositorParent::ScheduleShowAllPluginWindowsAPZ()
+{
+  CancelableTask *pluginTask =
+    NewRunnableMethod(this, &CompositorParent::ShowAllPluginWindowsAPZ);
+  MOZ_ASSERT(CompositorLoop());
+  CompositorLoop()->PostTask(FROM_HERE, pluginTask);
+}
+
+void
+CompositorParent::ShowAllPluginWindowsAPZ()
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  ShowAllPluginWindows();
+}
+
+void
+CompositorParent::ShowAllPluginWindows()
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  mDeferPluginWindows = false;
+  ScheduleComposition();
+}
+
+void
+CompositorParent::ScheduleHideAllPluginWindowsAPZ()
+{
+  CancelableTask *pluginTask =
+    NewRunnableMethod(this, &CompositorParent::HideAllPluginWindowsAPZ);
+  MOZ_ASSERT(CompositorLoop());
+  CompositorLoop()->PostTask(FROM_HERE, pluginTask);
+}
+
+void
+CompositorParent::HideAllPluginWindowsAPZ()
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  HideAllPluginWindows();
+}
+
+void
+CompositorParent::HideAllPluginWindows()
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  
+  
+  if (!mCachedPluginData.Length() || mDeferPluginWindows) {
+    return;
+  }
+  mDeferPluginWindows = true;
+  mPluginUpdateResponsePending = true;
+  Unused << SendHideAllPlugins((uintptr_t)GetWidget());
+  ScheduleComposition();
 }
 #endif 
 
