@@ -54,7 +54,12 @@ var gMenuBuilder = {
         let parentWindow = contextData.menu.ownerDocument.defaultView;
         let extension = root.extension;
 
-        let {icon} = IconDetails.getURL(extension.manifest.icons, parentWindow, extension, 16 );
+        let {icon} = IconDetails.getPreferredIcon(extension.manifest.icons, extension,
+                                                  16 * parentWindow.devicePixelRatio);
+
+        
+        
+        
         let resolvedURL = root.extension.baseURI.resolve(icon);
 
         if (rootElement.localName == "menu") {
