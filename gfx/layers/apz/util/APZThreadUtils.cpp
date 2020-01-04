@@ -98,6 +98,16 @@ APZThreadUtils::RunDelayedTaskOnCurrentThread(Task* aTask,
   }
 }
 
+ bool
+APZThreadUtils::IsControllerThread()
+{
+#ifdef MOZ_ANDROID_APZ
+  return AndroidBridge::IsJavaUiThread();
+#else
+  return sControllerThread == MessageLoop::current();
+#endif
+}
+
 NS_IMPL_ISUPPORTS(GenericTimerCallbackBase, nsITimerCallback)
 
 } 

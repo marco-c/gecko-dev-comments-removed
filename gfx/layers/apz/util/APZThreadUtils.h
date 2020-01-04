@@ -57,6 +57,11 @@ public:
 
   static void RunDelayedTaskOnCurrentThread(Task* aTask,
                                             const TimeDuration& aDelay);
+
+  
+
+
+  static bool IsControllerThread();
 };
 
 
