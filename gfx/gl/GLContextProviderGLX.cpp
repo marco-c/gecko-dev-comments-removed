@@ -15,6 +15,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "mozilla/unused.h"
 
 #include "prenv.h"
 #include "GLContextProvider.h"
@@ -940,6 +941,12 @@ GLContextGLX::MakeCurrentImpl(bool aForce)
     
     
     if (aForce || mGLX->xGetCurrentContext() != mContext) {
+        if (mGLX->IsMesa()) {
+          
+          
+          Unused << XPending(mDisplay);
+        }
+
         succeeded = mGLX->xMakeCurrent(mDisplay, mDrawable, mContext);
         NS_ASSERTION(succeeded, "Failed to make GL context current!");
 
