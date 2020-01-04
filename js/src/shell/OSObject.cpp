@@ -108,7 +108,7 @@ ResolvePath(JSContext* cx, HandleString filenameStr, PathResolutionMode resolveM
         return filenameStr;
 
     
-    JS::AutoFilename scriptFilename;
+    JS::UniqueChars scriptFilename;
     if (!DescribeScriptedCaller(cx, &scriptFilename))
         return nullptr;
 

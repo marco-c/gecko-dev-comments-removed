@@ -557,7 +557,7 @@ GetVariableBytecodeLength(jsbytecode* pc);
 
 
 
-UniquePtr<char[], JS::FreePolicy>
+UniqueChars
 DecompileValueGenerator(JSContext* cx, int spindex, HandleValue v,
                         HandleString fallback, int skipStackHits = 0);
 

@@ -10552,7 +10552,7 @@ nsGlobalWindow::ShowSlowScriptDialog()
   }
 
   
-  JS::AutoFilename filename;
+  JS::UniqueChars filename;
   unsigned lineno;
   bool hasFrame = JS::DescribeScriptedCaller(cx, &filename, &lineno);
 

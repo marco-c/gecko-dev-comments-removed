@@ -630,10 +630,10 @@ class ScriptSource
     uint32_t length_;
 
     
-    UniquePtr<char[], JS::FreePolicy> filename_;
+    UniqueChars filename_;
 
-    UniquePtr<char16_t[], JS::FreePolicy> displayURL_;
-    UniquePtr<char16_t[], JS::FreePolicy> sourceMapURL_;
+    UniqueTwoByteChars displayURL_;
+    UniqueTwoByteChars sourceMapURL_;
     bool mutedErrors_;
 
     
@@ -651,7 +651,7 @@ class ScriptSource
     
     
     
-    UniquePtr<char[], JS::FreePolicy> introducerFilename_;
+    UniqueChars introducerFilename_;
 
     
     

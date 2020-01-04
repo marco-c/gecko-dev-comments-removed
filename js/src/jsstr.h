@@ -123,15 +123,20 @@ InitStringClass(JSContext* cx, HandleObject obj);
 extern const char*
 ValueToPrintable(JSContext* cx, const Value&, JSAutoByteString* bytes, bool asSource = false);
 
-extern UniquePtr<char[], JS::FreePolicy>
+extern UniqueChars
 DuplicateString(ExclusiveContext* cx, const char* s);
 
-extern UniquePtr<char16_t[], JS::FreePolicy>
+extern UniqueTwoByteChars
 DuplicateString(ExclusiveContext* cx, const char16_t* s);
 
 
 
-extern UniquePtr<char16_t[], JS::FreePolicy>
+
+
+extern UniqueChars
+DuplicateString(const char* s);
+
+extern UniqueTwoByteChars
 DuplicateString(const char16_t* s);
 
 

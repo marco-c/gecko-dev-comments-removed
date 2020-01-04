@@ -1025,8 +1025,8 @@ class MOZ_STACK_CLASS TokenStream
     size_t              prevLinebase;       
     TokenBuf            userbuf;            
     const char*         filename;           
-    UniquePtr<char16_t[], JS::FreePolicy> displayURL_; 
-    UniquePtr<char16_t[], JS::FreePolicy> sourceMapURL_; 
+    UniqueTwoByteChars  displayURL_;        
+    UniqueTwoByteChars  sourceMapURL_;      
     CharBuffer          tokenbuf;           
     uint8_t             isExprEnding[TOK_LIMIT];
     ExclusiveContext*   const cx;

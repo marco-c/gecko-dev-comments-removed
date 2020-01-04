@@ -5312,8 +5312,6 @@ JS_IsIdentifier(const char16_t* chars, size_t length);
 
 namespace JS {
 
-typedef js::UniqueChars AutoFilename;
-
 
 
 
@@ -5323,7 +5321,7 @@ typedef js::UniqueChars AutoFilename;
 
 
 extern JS_PUBLIC_API(bool)
-DescribeScriptedCaller(JSContext* cx, AutoFilename* filename = nullptr,
+DescribeScriptedCaller(JSContext* cx, UniqueChars* filename = nullptr,
                        unsigned* lineno = nullptr, unsigned* column = nullptr);
 
 extern JS_PUBLIC_API(JSObject*)

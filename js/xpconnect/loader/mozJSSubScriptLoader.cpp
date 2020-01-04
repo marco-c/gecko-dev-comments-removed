@@ -600,7 +600,7 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
     nsAutoCString scheme;
 
     
-    JS::AutoFilename filename;
+    JS::UniqueChars filename;
     if (!JS::DescribeScriptedCaller(cx, &filename)) {
         
         return NS_ERROR_FAILURE;
