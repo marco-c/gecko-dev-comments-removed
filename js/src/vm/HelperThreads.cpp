@@ -331,13 +331,10 @@ EnsureParserCreatedClasses(JSContext* cx)
 {
     Handle<GlobalObject*> global = cx->global();
 
-    if (!EnsureConstructor(cx, global, JSProto_Object))
+    if (!EnsureConstructor(cx, global, JSProto_Function))
         return false; 
 
     if (!EnsureConstructor(cx, global, JSProto_Array))
-        return false; 
-
-    if (!EnsureConstructor(cx, global, JSProto_Function))
         return false; 
 
     if (!EnsureConstructor(cx, global, JSProto_RegExp))
@@ -346,7 +343,7 @@ EnsureParserCreatedClasses(JSContext* cx)
     if (!EnsureConstructor(cx, global, JSProto_Iterator))
         return false; 
 
-    if (!EnsureConstructor(cx, global, JSProto_GeneratorFunction))
+    if (!GlobalObject::initGeneratorClasses(cx, global))
         return false; 
 
     return true;
