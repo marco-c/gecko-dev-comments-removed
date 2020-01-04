@@ -6,12 +6,14 @@
 #ifndef mozilla_css_AnimationCommon_h
 #define mozilla_css_AnimationCommon_h
 
+#include <algorithm> 
 #include "nsIStyleRuleProcessor.h"
 #include "nsIStyleRule.h"
 #include "nsRefreshDriver.h"
 #include "nsChangeHint.h"
 #include "nsCSSProperty.h"
 #include "nsDisplayList.h" 
+#include "mozilla/AnimationComparator.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
@@ -502,11 +504,34 @@ template <class EventInfo>
 class DelayedEventDispatcher
 {
 public:
+  DelayedEventDispatcher() : mIsSorted(true) { }
+
   void QueueEvent(EventInfo&& aEventInfo)
   {
-    mPendingEvents.AppendElement(mozilla::Forward<EventInfo>(aEventInfo));
+    mPendingEvents.AppendElement(Forward<EventInfo>(aEventInfo));
+    mIsSorted = false;
   }
 
+  
+  
+  
+  
+  void SortEvents()
+  {
+    if (mIsSorted) {
+      return;
+    }
+
+    
+    
+    std::stable_sort(mPendingEvents.begin(), mPendingEvents.end(),
+                     EventInfoLessThan());
+    mIsSorted = true;
+  }
+
+  
+  
+  
   
   
   
@@ -516,8 +541,11 @@ public:
       return;
     }
 
+    SortEvents();
+
     EventArray events;
     mPendingEvents.SwapElements(events);
+    
     
     for (EventInfo& info : events) {
       EventDispatcher::Dispatch(info.mElement, aPresContext, &info.mEvent);
@@ -528,7 +556,11 @@ public:
     }
   }
 
-  void ClearEventQueue() { mPendingEvents.Clear(); }
+  void ClearEventQueue()
+  {
+    mPendingEvents.Clear();
+    mIsSorted = true;
+  }
   bool HasQueuedEvents() const { return !mPendingEvents.IsEmpty(); }
 
   
@@ -540,12 +572,31 @@ public:
       ImplCycleCollectionTraverse(*aCallback, info.mAnimation, aName);
     }
   }
-  void Unlink() { mPendingEvents.Clear(); }
+  void Unlink() { ClearEventQueue(); }
 
 protected:
-  typedef nsTArray<EventInfo> EventArray;
+  class EventInfoLessThan
+  {
+  public:
+    bool operator()(const EventInfo& a, const EventInfo& b) const
+    {
+      if (a.mTimeStamp != b.mTimeStamp) {
+        
+        if (a.mTimeStamp.IsNull() || b.mTimeStamp.IsNull()) {
+          return a.mTimeStamp.IsNull();
+        } else {
+          return a.mTimeStamp < b.mTimeStamp;
+        }
+      }
 
+      AnimationPtrComparator<nsRefPtr<dom::Animation>> comparator;
+      return comparator.LessThan(a.mAnimation, b.mAnimation);
+    }
+  };
+
+  typedef nsTArray<EventInfo> EventArray;
   EventArray mPendingEvents;
+  bool mIsSorted;
 };
 
 template <class EventInfo>
