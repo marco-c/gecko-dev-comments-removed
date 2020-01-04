@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.util;
+package org.mozilla.gecko;
 
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.util.ThreadUtils;
