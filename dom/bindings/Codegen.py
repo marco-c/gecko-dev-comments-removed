@@ -12530,6 +12530,10 @@ class CGDictionary(CGThing):
             "convert": string.Template(conversionInfo.template).substitute(replacements),
             "propGet": propGet
         }
+        
+        
+        
+        conversionReplacements["convert"] += "mIsAnyMemberPresent = true;\n"
         conversion = ("if (!isNull && !${propGet}) {\n"
                       "  return false;\n"
                       "}\n")

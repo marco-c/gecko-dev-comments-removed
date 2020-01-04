@@ -50,11 +50,19 @@ protected:
   struct FastDictionaryInitializer {
   };
 
+  bool mIsAnyMemberPresent = false;
+
 private:
   
   
   static bool AppendJSONToString(const char16_t* aJSONData,
                                  uint32_t aDataLength, void* aString);
+
+public:
+  bool IsAnyMemberPresent() const
+  {
+    return mIsAnyMemberPresent;
+  }
 };
 
 
