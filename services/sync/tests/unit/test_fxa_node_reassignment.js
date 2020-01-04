@@ -58,13 +58,23 @@ var numTokenRequests = 0;
 
 function prepareServer(cbAfterTokenFetch) {
   let config = makeIdentityConfig({username: "johndoe"});
-  let server = new SyncServer();
+  
+  
+  let callback = {
+    __proto__: SyncServerCallback,
+    onRequest(req, resp) {
+      let full = `${req.scheme}://${req.host}:${req.port}${req.path}`;
+      do_check_true(full.startsWith(config.fxaccount.token.endpoint),
+                    `request made to ${full}`);
+    }
+  }
+  let server = new SyncServer(callback);
   server.registerUser("johndoe");
   server.start();
 
   
   
-  config.fxaccount.token.endpoint = server.baseURI + "1.1/johndoe";
+  config.fxaccount.token.endpoint = server.baseURI + "1.1/johndoe/";
   
   let numReassigns = 0;
   return configureIdentity(config).then(() => {
@@ -85,7 +95,6 @@ function prepareServer(cbAfterTokenFetch) {
         }
       },
     };
-    Service.clusterURL = config.fxaccount.token.endpoint;
     return server;
   });
 }
@@ -147,14 +156,52 @@ function* syncAndExpectNodeReassignment(server, firstNotification, between,
   }
 
   
-  _("Making request to " + url + " which should 401");
-  let request = new RESTRequest(url);
-  request.get(function () {
-    do_check_eq(request.response.status, 401);
+  
+  if (Service.isLoggedIn) {
+    _("Making request to " + url + " which should 401");
+    let request = new RESTRequest(url);
+    request.get(function () {
+      do_check_eq(request.response.status, 401);
+      Utils.nextTick(onwards);
+    });
+  } else {
+    _("Skipping preliminary validation check for a 401 as we aren't logged in");
     Utils.nextTick(onwards);
-  });
+  }
   yield deferred.promise;
 }
+
+
+
+
+add_task(function* test_single_token_fetch() {
+  _("Test a normal sync only fetches 1 token");
+
+  let numTokenFetches = 0;
+
+  function afterTokenFetch() {
+    numTokenFetches++;
+  }
+
+  
+  
+  
+  
+  
+  Service.clusterURL = "http://example.com/";
+
+  let server = yield prepareServer(afterTokenFetch);
+
+  do_check_false(Service.isLoggedIn, "not already logged in");
+  Service.sync();
+  do_check_eq(Status.sync, SYNC_SUCCEEDED, "sync succeeded");
+  do_check_eq(numTokenFetches, 0, "didn't fetch a new token");
+  
+  
+  let expectedClusterURL = server.baseURI + "1.1/johndoe/";
+  do_check_eq(Service.clusterURL, expectedClusterURL);
+  yield new Promise(resolve => server.stop(resolve));
+});
 
 add_task(function* test_momentary_401_engine() {
   _("Test a failure for engine URLs that's resolved by reassignment.");

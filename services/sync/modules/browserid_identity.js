@@ -393,6 +393,9 @@ this.BrowserIDManager.prototype = {
   resetCredentials: function() {
     this.resetSyncKey();
     this._token = null;
+    
+    
+    Weave.Service.clusterURL = null;
   },
 
   

@@ -63,6 +63,9 @@ Sync11Service.prototype = {
   storageURL: null,
   metaURL: null,
   cryptoKeyURL: null,
+  
+  
+  _clusterURL: null,
 
   get serverURL() {
     return Svc.Prefs.get("serverURL");
@@ -76,16 +79,20 @@ Sync11Service.prototype = {
     if (value == this.serverURL)
       return;
 
-    
     Svc.Prefs.set("serverURL", value);
-    Svc.Prefs.reset("clusterURL");
+
+    
+    this._clusterURL = null;
   },
 
   get clusterURL() {
-    return Svc.Prefs.get("clusterURL", "");
+    return this._clusterURL || "";
   },
   set clusterURL(value) {
-    Svc.Prefs.set("clusterURL", value);
+    if (value != null && typeof value != "string") {
+      throw new Error("cluster must be a string, got " + (typeof value));
+    }
+    this._clusterURL = value;
     this._updateCachedURLs();
   },
 
@@ -163,8 +170,16 @@ Sync11Service.prototype = {
 
   _updateCachedURLs: function _updateCachedURLs() {
     
-    if (!this.clusterURL || !this.identity.username)
+    if (!this.clusterURL || !this.identity.username) {
+      
+      
+      
+      this.infoURL = undefined;
+      this.storageURL = undefined;
+      this.metaURL = undefined;
+      this.cryptoKeysURL = undefined;
       return;
+    }
 
     this._log.debug("Caching URLs under storage user base: " + this.userBaseURL);
 
@@ -889,6 +904,7 @@ Sync11Service.prototype = {
     this._ignorePrefObserver = true;
     Svc.Prefs.resetBranch("");
     this._ignorePrefObserver = false;
+    this.clusterURL = null;
 
     Svc.Prefs.set("lastversion", WEAVE_VERSION);
 
@@ -1277,20 +1293,23 @@ Sync11Service.prototype = {
       }
 
       
-      let meta = this.recordManager.get(this.metaURL);
-      if (!meta) {
-        this._log.warn("No meta/global; can't update declined state.");
-        return;
-      }
+      
+      if (this.metaURL) {
+        let meta = this.recordManager.get(this.metaURL);
+        if (!meta) {
+          this._log.warn("No meta/global; can't update declined state.");
+          return;
+        }
 
-      let declinedEngines = new DeclinedEngines(this);
-      let didChange = declinedEngines.updateDeclined(meta, this.engineManager);
-      if (!didChange) {
-        this._log.info("No change to declined engines. Not reuploading meta/global.");
-        return;
-      }
+        let declinedEngines = new DeclinedEngines(this);
+        let didChange = declinedEngines.updateDeclined(meta, this.engineManager);
+        if (!didChange) {
+          this._log.info("No change to declined engines. Not reuploading meta/global.");
+          return;
+        }
 
-      this.uploadMetaGlobal(meta);
+        this.uploadMetaGlobal(meta);
+      }
     }))();
   },
 

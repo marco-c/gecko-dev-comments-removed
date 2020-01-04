@@ -81,13 +81,15 @@ ClusterManager.prototype = {
     }
 
     
+    
+    cluster = cluster.toString();
+    
     if (cluster == this.service.clusterURL) {
       return false;
     }
 
     this._log.debug("Setting cluster to " + cluster);
     this.service.clusterURL = cluster;
-    Svc.Prefs.set("lastClusterUpdate", Date.now().toString());
 
     return true;
   },
