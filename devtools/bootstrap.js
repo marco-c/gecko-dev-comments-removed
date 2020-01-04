@@ -80,6 +80,10 @@ function reload(event) {
   
   const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
   devtools.reload(reloadToolbox);
+
+  
+  const {gDevTools} = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
+  gDevTools.reload();
 }
 
 let listener;

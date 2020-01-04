@@ -10,21 +10,34 @@ const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-const { require, loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-const promise = require("promise");
 
-loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
-loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
 
-XPCOMUtils.defineLazyModuleGetter(this, "console",
-                                  "resource://gre/modules/Console.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
-                                  "resource:///modules/CustomizableUI.jsm");
-loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
-loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
 
-const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
-  require("devtools/client/definitions");
+
+
+let require, loader, promise, DefaultTools, DefaultThemes;
+let loadDependencies = () => {
+  let l = Cu.import("resource://devtools/shared/Loader.jsm", {});
+  require = l.require;
+  loader = l.loader;
+  promise = require("promise");
+  
+  loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
+  loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
+
+  XPCOMUtils.defineLazyModuleGetter(this, "console",
+                                    "resource://gre/modules/Console.jsm");
+  XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
+                                    "resource:///modules/CustomizableUI.jsm");
+  loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
+  loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
+
+  let d = require("devtools/client/definitions");
+  DefaultTools = d.defaultTools;
+  DefaultThemes = d.defaultThemes;
+};
+loadDependencies();
+
 const EventEmitter = require("devtools/shared/event-emitter");
 const Telemetry = require("devtools/client/shared/telemetry");
 const {JsonView} = require("devtools/client/jsonview/main");
@@ -509,6 +522,11 @@ DevTools.prototype = {
     
     
     
+  },
+
+  
+  reload() {
+    loadDependencies();
   },
 
   
