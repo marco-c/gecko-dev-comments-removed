@@ -105,7 +105,6 @@ public:
 
 
 
-
 enum class LogReason : int {
   MustBeMoreThanThis = -1,
   
