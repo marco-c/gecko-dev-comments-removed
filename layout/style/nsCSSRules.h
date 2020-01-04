@@ -31,8 +31,8 @@
 #include "nsIDOMCSSMozDocumentRule.h"
 #include "nsIDOMCSSPageRule.h"
 #include "nsIDOMCSSSupportsRule.h"
-#include "nsIDOMMozCSSKeyframeRule.h"
-#include "nsIDOMMozCSSKeyframesRule.h"
+#include "nsIDOMCSSKeyframeRule.h"
+#include "nsIDOMCSSKeyframesRule.h"
 #include "nsTArray.h"
 
 class nsMediaList;
@@ -375,7 +375,7 @@ protected:
 };
 
 class nsCSSKeyframeRule final : public mozilla::css::Rule,
-                                public nsIDOMMozCSSKeyframeRule
+                                public nsIDOMCSSKeyframeRule
 {
 public:
   
@@ -407,7 +407,7 @@ public:
   NS_DECL_NSIDOMCSSRULE
 
   
-  NS_DECL_NSIDOMMOZCSSKEYFRAMERULE
+  NS_DECL_NSIDOMCSSKEYFRAMERULE
 
   const nsTArray<float>& GetKeys() const     { return mKeys; }
   mozilla::css::Declaration* Declaration()   { return mDeclaration; }
@@ -426,7 +426,7 @@ private:
 };
 
 class nsCSSKeyframesRule final : public mozilla::css::GroupRule,
-                                 public nsIDOMMozCSSKeyframesRule
+                                 public nsIDOMCSSKeyframesRule
 {
 public:
   nsCSSKeyframesRule(const nsSubstring& aName,
@@ -460,7 +460,7 @@ public:
   NS_DECL_NSIDOMCSSRULE
 
   
-  NS_DECL_NSIDOMMOZCSSKEYFRAMESRULE
+  NS_DECL_NSIDOMCSSKEYFRAMESRULE
 
   
   virtual bool UseForPresentation(nsPresContext* aPresContext,
