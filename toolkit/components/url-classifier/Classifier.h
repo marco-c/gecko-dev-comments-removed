@@ -34,6 +34,11 @@ public:
   
 
 
+  void ResetTables(const nsTArray<nsCString>& aTables);
+
+  
+
+
 
   void TableRequest(nsACString& aResult);
 
@@ -65,7 +70,7 @@ public:
 
 
 
-  nsresult MarkSpoiled(nsTArray<nsCString>& aTables);
+  nsresult MarkSpoiled(const nsTArray<nsCString>& aTables);
   void SetLastUpdateTime(const nsACString& aTableName, uint64_t updateTime);
   int64_t GetLastUpdateTime(const nsACString& aTableName);
   nsresult CacheCompletions(const CacheResultArray& aResults);
@@ -82,6 +87,8 @@ public:
 
 private:
   void DropStores();
+  void DeleteTables(const nsTArray<nsCString>& aTables);
+
   nsresult CreateStoreDirectory();
   nsresult SetupPathNames();
   nsresult RecoverBackups();
