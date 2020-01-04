@@ -720,16 +720,16 @@ ICStubCompiler::getStubCode()
         return nullptr;
 
     
-    if (!postGenerateStubCode(masm, newStubCode))
-        return nullptr;
-
-    
     if (cx->zone()->needsIncrementalBarrier())
         newStubCode->togglePreBarriers(true);
 
     
     if (!comp->putStubCode(cx, stubKey, newStubCode))
         return nullptr;
+
+    
+    
+    postGenerateStubCode(masm, newStubCode);
 
     MOZ_ASSERT(entersStubFrame_ == ICStub::CanMakeCalls(kind));
     MOZ_ASSERT(!inStubFrame_);
