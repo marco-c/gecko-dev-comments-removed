@@ -40,50 +40,26 @@ ServiceWorkerUnregisterJob2::AsyncExecute()
     return;
   }
 
-  PrincipalInfo principalInfo;
-  nsresult rv = PrincipalToPrincipalInfo(mPrincipal, &principalInfo);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    Finish(NS_OK);
-    return;
-  }
-
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
 
-  nsAutoCString scopeKey;
-  rv = swm->PrincipalToScopeKey(mPrincipal, scopeKey);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    Finish(NS_OK);
-    return;
-  }
-
   
   
-  ServiceWorkerManager::RegistrationDataPerPrincipal* data;
-  
-  if (!swm->mRegistrationInfos.Get(scopeKey, &data)) {
+  RefPtr<ServiceWorkerRegistrationInfo> registration =
+    swm->GetRegistration(mPrincipal, mScope);
+  if (!registration) {
     
     Finish(NS_OK);
     return;
   }
 
-  RefPtr<ServiceWorkerRegistrationInfo> registration;
-  if (!data->mInfos.Get(mScope, getter_AddRefs(registration))) {
-    
-    Finish(NS_OK);
-    return;
-  }
-
-  MOZ_ASSERT(registration);
-
   
   
   
   
   
   
-  
-  if (mSendToParent && !registration->mPendingUninstall && swm->mActor) {
-    swm->mActor->SendUnregister(principalInfo, NS_ConvertUTF8toUTF16(mScope));
+  if (mSendToParent && !registration->mPendingUninstall) {
+    swm->MaybeSendUnregister(mPrincipal, mScope);
   }
 
   
