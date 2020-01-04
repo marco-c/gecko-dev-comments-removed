@@ -156,7 +156,7 @@ public:
 
   void Destroy();
 
-  bool IsDestroyed() { return mDestroyed; }
+  bool IsConnected() const;
 
   PCompositableChild* GetIPDLActor() const;
 
@@ -238,7 +238,6 @@ protected:
   
   
   TextureFlags mTextureFlags;
-  bool mDestroyed;
   RefPtr<TextureClientRecycleAllocator> mTextureClientRecycler;
 
   friend class CompositableChild;

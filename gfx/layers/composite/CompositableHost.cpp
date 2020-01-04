@@ -19,6 +19,7 @@
 #include "nsISupportsImpl.h"            
 #include "gfxPlatform.h"                
 #include "mozilla/layers/PCompositableParent.h"
+#include "IPDLActor.h"
 
 namespace mozilla {
 
@@ -36,7 +37,7 @@ class Compositor;
 
 
 
-class CompositableParent : public PCompositableParent
+class CompositableParent : public ParentActor<PCompositableParent>
 {
 public:
   CompositableParent(CompositableParentManager* aMgr,
@@ -62,7 +63,7 @@ public:
     CompositableMap::Erase(mHost->GetAsyncID());
   }
 
-  virtual void ActorDestroy(ActorDestroyReason why) override
+  virtual void Destroy() override
   {
     if (mHost) {
       mHost->Detach(nullptr, CompositableHost::FORCE_DETACH);
