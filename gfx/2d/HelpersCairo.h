@@ -133,6 +133,10 @@ GfxExtendToCairoExtend(ExtendMode extend)
   {
     case ExtendMode::CLAMP:
       return CAIRO_EXTEND_PAD;
+    
+    
+    case ExtendMode::REPEAT_X:
+    case ExtendMode::REPEAT_Y:
     case ExtendMode::REPEAT:
       return CAIRO_EXTEND_REPEAT;
     case ExtendMode::REFLECT:

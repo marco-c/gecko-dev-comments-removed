@@ -459,7 +459,7 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
 
     RefPtr<gfxContext> tmpCtx = new gfxContext(target);
     tmpCtx->SetOp(OptimalFillOp());
-    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), true, Filter::LINEAR,
+    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), ExtendMode::REPEAT, Filter::LINEAR,
                     1.0, gfxMatrix::Translation(needed.TopLeft()));
     RefPtr<SourceSurface> surface = target->Snapshot();
 
@@ -683,7 +683,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
   RefPtr<gfxContext> tmpCtx = new gfxContext(scaledDT);
   scaledDT->SetTransform(ToMatrix(scaleMatrix));
   gfxRect gfxImageRect(aImageRect.x, aImageRect.y, aImageRect.width, aImageRect.height);
-  aDrawable->Draw(tmpCtx, gfxImageRect, true, aFilter, 1.0, gfxMatrix());
+  aDrawable->Draw(tmpCtx, gfxImageRect, ExtendMode::REPEAT, aFilter, 1.0, gfxMatrix());
 
   RefPtr<SourceSurface> scaledImage = scaledDT->Snapshot();
 
@@ -722,9 +722,7 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
 
     gfxRect imageRect(gfxPoint(0, 0), aImageSize);
     gfxRect region(aRegion.Rect());
-
-    bool doTile = !imageRect.Contains(region) &&
-                  !(aImageFlags & imgIContainer::FLAG_CLAMP);
+    ExtendMode extendMode = aRegion.GetExtendMode();
 
     RefPtr<gfxASurface> currentTarget = aContext->CurrentSurface();
     gfxMatrix deviceSpaceToImageSpace = DeviceToImageTransform(aContext);
@@ -745,10 +743,11 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
     
     
     
+
     if (aContext->CurrentMatrix().HasNonIntegerTranslation()) {
-        if (doTile || !aRegion.RestrictionContains(imageRect)) {
+        if ((extendMode != ExtendMode::CLAMP) || !aRegion.RestrictionContains(imageRect)) {
             if (drawable->DrawWithSamplingRect(aContext, aRegion.Rect(), aRegion.Restriction(),
-                                               doTile, aFilter, aOpacity)) {
+                                               extendMode, aFilter, aOpacity)) {
               return;
             }
 
@@ -773,13 +772,13 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
               
               
               
-              doTile = false;
+              extendMode = ExtendMode::CLAMP;
             }
 #endif
         }
     }
 
-    drawable->Draw(aContext, aRegion.Rect(), doTile, aFilter, aOpacity);
+    drawable->Draw(aContext, aRegion.Rect(), extendMode, aFilter, aOpacity, gfxMatrix());
 }
 
  int

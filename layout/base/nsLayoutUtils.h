@@ -119,6 +119,7 @@ class nsLayoutUtils
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::gfx::ExtendMode ExtendMode;
   typedef mozilla::gfx::Filter Filter;
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::Point Point;
@@ -1771,6 +1772,7 @@ public:
 
 
 
+
   static DrawResult DrawBackgroundImage(gfxContext&         aContext,
                                         nsPresContext*      aPresContext,
                                         imgIContainer*      aImage,
@@ -1780,7 +1782,8 @@ public:
                                         const nsRect&       aFill,
                                         const nsPoint&      aAnchor,
                                         const nsRect&       aDirty,
-                                        uint32_t            aImageFlags);
+                                        uint32_t            aImageFlags,
+                                        ExtendMode          aExtendMode);
 
   
 

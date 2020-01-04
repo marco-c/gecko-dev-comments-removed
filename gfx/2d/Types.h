@@ -202,10 +202,18 @@ enum class CompositionOp : int8_t {
   OP_COUNT
 };
 
+enum class Axis : int8_t {
+  X_AXIS,
+  Y_AXIS,
+  BOTH
+};
+
 enum class ExtendMode : int8_t {
-  CLAMP,
-  REPEAT,
-  REFLECT
+  CLAMP,    
+  REPEAT,   
+  REPEAT_X, 
+  REPEAT_Y, 
+  REFLECT   
 };
 
 enum class FillRule : int8_t {
