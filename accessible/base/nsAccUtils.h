@@ -206,17 +206,6 @@ public:
   
 
 
-  static bool IsEmbeddedObject(Accessible* aAcc)
-  {
-    uint32_t role = aAcc->Role();
-    return role != roles::TEXT_LEAF &&
-           role != roles::WHITESPACE &&
-           role != roles::STATICTEXT;
-  }
-
-  
-
-
   static inline uint64_t To64State(uint32_t aState1, uint32_t aState2)
   {
     return static_cast<uint64_t>(aState1) +

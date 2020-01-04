@@ -286,7 +286,7 @@ AccessibleWrap::GetNativeInterface(void** aOutAccessible)
   *aOutAccessible = nullptr;
 
   if (!mAtkObject) {
-    if (IsDefunct() || !nsAccUtils::IsEmbeddedObject(this)) {
+    if (IsDefunct() || IsText()) {
       
       
       return;
