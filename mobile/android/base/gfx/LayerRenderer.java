@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.gfx;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
@@ -156,9 +157,16 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
         mTasks = new CopyOnWriteArrayList<RenderTask>();
         mLastFrameTime = System.nanoTime();
 
-        mVertScrollLayer = new ScrollbarLayer(this, scrollbarImage, size, true);
-        mHorizScrollLayer = new ScrollbarLayer(this, diagonalFlip(scrollbarImage), new IntSize(size.height, size.width), false);
-        mFadeRunnable = new FadeRunnable();
+        if (!AppConstants.MOZ_ANDROID_APZ) {
+            mVertScrollLayer = new ScrollbarLayer(this, scrollbarImage, size, true);
+            mHorizScrollLayer = new ScrollbarLayer(this, diagonalFlip(scrollbarImage), new IntSize(size.height, size.width), false);
+            mFadeRunnable = new FadeRunnable();
+        } else {
+            
+            mVertScrollLayer = null;
+            mHorizScrollLayer = null;
+            mFadeRunnable = null;
+        }
 
         mFrameTimings = new int[60];
         mCurrentFrame = mFrameTimingsSum = mDroppedFrames = 0;
@@ -191,8 +199,10 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
             mCoordByteBuffer = null;
             mCoordBuffer = null;
         }
-        mHorizScrollLayer.destroy();
-        mVertScrollLayer.destroy();
+        if (!AppConstants.MOZ_ANDROID_APZ) {
+            mHorizScrollLayer.destroy();
+            mVertScrollLayer.destroy();
+        }
         Tabs.unregisterOnTabsChangedListener(this);
         mZoomedViewListeners.clear();
     }
@@ -467,32 +477,33 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
             
             runRenderTasks(mTasks, false, mFrameStartTime);
 
-            boolean hideScrollbars = (mView.getFullScreenState() == FullScreenState.NON_ROOT_ELEMENT);
-            if (!mPageContext.fuzzyEquals(mLastPageContext) && !hideScrollbars) {
-                
-                
-                
-                mVertScrollLayer.unfade();
-                mHorizScrollLayer.unfade();
-                mFadeRunnable.scheduleStartFade(ScrollbarLayer.FADE_DELAY);
-            } else if (mFadeRunnable.timeToFade()) {
-                final long currentMillis = SystemClock.elapsedRealtime();
-                final boolean stillFading = mVertScrollLayer.fade(mFadeRunnable.mRunAt, currentMillis) |
-                        mHorizScrollLayer.fade(mFadeRunnable.mRunAt, currentMillis);
-                if (stillFading) {
-                    mFadeRunnable.scheduleNextFadeFrame();
+            if (!AppConstants.MOZ_ANDROID_APZ) {
+                boolean hideScrollbars = (mView.getFullScreenState() == FullScreenState.NON_ROOT_ELEMENT);
+                if (!mPageContext.fuzzyEquals(mLastPageContext) && !hideScrollbars) {
+                    
+                    
+                    
+                    mVertScrollLayer.unfade();
+                    mHorizScrollLayer.unfade();
+                    mFadeRunnable.scheduleStartFade(ScrollbarLayer.FADE_DELAY);
+                } else if (mFadeRunnable.timeToFade()) {
+                    final long currentMillis = SystemClock.elapsedRealtime();
+                    final boolean stillFading = mVertScrollLayer.fade(mFadeRunnable.mRunAt, currentMillis) |
+                            mHorizScrollLayer.fade(mFadeRunnable.mRunAt, currentMillis);
+                    if (stillFading) {
+                        mFadeRunnable.scheduleNextFadeFrame();
+                    }
                 }
+                mLastPageContext = mPageContext;
+                mUpdated &= mVertScrollLayer.update(mPageContext);  
+                mUpdated &= mHorizScrollLayer.update(mPageContext); 
             }
-            mLastPageContext = mPageContext;
 
             
             if (rootLayer != null) {
                 
                 mUpdated &= rootLayer.update(mPageContext);
             }
-
-            mUpdated &= mVertScrollLayer.update(mPageContext);  
-            mUpdated &= mHorizScrollLayer.update(mPageContext); 
 
             for (Layer layer : mExtraLayers) {
                 mUpdated &= layer.update(mPageContext); 
@@ -537,13 +548,15 @@ public class LayerRenderer implements Tabs.OnTabsChangedListener {
                 }
             }
 
-            
-            if (mPageRect.height() > mFrameMetrics.getHeight())
-                mVertScrollLayer.draw(mPageContext);
+            if (!AppConstants.MOZ_ANDROID_APZ) {
+                
+                if (mPageRect.height() > mFrameMetrics.getHeight())
+                    mVertScrollLayer.draw(mPageContext);
 
-            
-            if (mPageRect.width() > mFrameMetrics.getWidth())
-                mHorizScrollLayer.draw(mPageContext);
+                
+                if (mPageRect.width() > mFrameMetrics.getWidth())
+                    mHorizScrollLayer.draw(mPageContext);
+            }
 
             
             Layer rootLayer = mView.getLayerClient().getRoot();
