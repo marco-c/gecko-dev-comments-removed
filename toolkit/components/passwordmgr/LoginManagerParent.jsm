@@ -511,6 +511,12 @@ var LoginManagerParent = {
   updateLoginAnchor: Task.async(function* (browser) {
     
     
+    if (!Services.prefs.getBoolPref("signon.ui.experimental")) {
+      return;
+    }
+
+    
+    
     
     let { loginFormOrigin, loginFormPresent } = this.stateForBrowser(browser);
 
@@ -519,16 +525,10 @@ var LoginManagerParent = {
     
     let hasLogins = loginFormOrigin &&
                     LoginHelper.searchLoginsWithObject({
-                      formSubmitURL: "",
+                      httpRealm: null,
                       hostname: loginFormOrigin,
                       schemeUpgrades: LoginHelper.schemeUpgrades,
                     }).length > 0;
-
-    
-    
-    if (!Services.prefs.getBoolPref("signon.ui.experimental")) {
-      return;
-    }
 
     let showLoginAnchor = loginFormPresent || hasLogins;
 
