@@ -3131,7 +3131,10 @@ bool AsyncPanZoomController::IsCurrentlyCheckerboarding() const {
   return true;
 }
 
-void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetrics, bool aIsFirstPaint) {
+void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetrics,
+                                                 bool aIsFirstPaint,
+                                                 bool aThisLayerTreeUpdated)
+{
   APZThreadUtils::AssertOnCompositorThread();
 
   ReentrantMonitorAutoEnter lock(mMonitor);
@@ -3140,15 +3143,28 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
   mLastContentPaintMetrics = aLayerMetrics;
 
   mFrameMetrics.SetScrollParentId(aLayerMetrics.GetScrollParentId());
-  APZC_LOG_FM(aLayerMetrics, "%p got a NotifyLayersUpdated with aIsFirstPaint=%d", this, aIsFirstPaint);
+  APZC_LOG_FM(aLayerMetrics, "%p got a NotifyLayersUpdated with aIsFirstPaint=%d, aThisLayerTreeUpdated=%d",
+    this, aIsFirstPaint, aThisLayerTreeUpdated);
 
   if (mCheckerboardEvent) {
     std::string str;
-    if (!aLayerMetrics.GetPaintRequestTime().IsNull()) {
-      TimeDuration paintTime = TimeStamp::Now() - aLayerMetrics.GetPaintRequestTime();
-      std::stringstream info;
-      info << " painttime " << paintTime.ToMilliseconds();
-      str = info.str();
+    if (aThisLayerTreeUpdated) {
+      if (!aLayerMetrics.GetPaintRequestTime().IsNull()) {
+        
+        
+        
+        
+        
+        
+        TimeDuration paintTime = TimeStamp::Now() - aLayerMetrics.GetPaintRequestTime();
+        std::stringstream info;
+        info << " painttime " << paintTime.ToMilliseconds();
+        str = info.str();
+      } else {
+        
+        
+        str = " (this layertree updated)";
+      }
     }
     mCheckerboardEvent->UpdateRendertraceProperty(
         CheckerboardEvent::Page, aLayerMetrics.GetScrollableRect());
@@ -3190,7 +3206,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
   
   
 
-  if (aIsFirstPaint || isDefault) {
+  if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
     
     
     CancelAnimation();
