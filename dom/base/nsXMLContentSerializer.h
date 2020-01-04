@@ -336,7 +336,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
   nsTArray<NameSpaceDecl> mNameSpaceStack;
 
   
-  uint32_t  mFlags;
+  MOZ_INIT_OUTSIDE_CTOR uint32_t  mFlags;
 
   
   nsString  mLineBreak;
@@ -348,20 +348,20 @@ class nsXMLContentSerializer : public nsIContentSerializer {
   uint32_t   mColPos;
 
   
-  bool mDoFormat;
+  MOZ_INIT_OUTSIDE_CTOR bool mDoFormat;
 
   
   
-  bool mDoRaw;
+  MOZ_INIT_OUTSIDE_CTOR bool mDoRaw;
 
   
-  bool mDoWrap;
+  MOZ_INIT_OUTSIDE_CTOR bool mDoWrap;
 
   
-  bool mAllowLineBreaking;
+  MOZ_INIT_OUTSIDE_CTOR bool mAllowLineBreaking;
 
   
-  uint32_t   mMaxColumn;
+  MOZ_INIT_OUTSIDE_CTOR uint32_t   mMaxColumn;
 
   
   nsString   mIndent;
@@ -397,7 +397,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 private:
   
-  int32_t       mPreLevel;
+  MOZ_INIT_OUTSIDE_CTOR int32_t mPreLevel;
 };
 
 nsresult
