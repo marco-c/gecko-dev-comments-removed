@@ -6,9 +6,8 @@
 
 #include "BluetoothDaemonSocketInterface.h"
 #include "BluetoothSocketMessageWatcher.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/unused.h"
 #include "nsXULAppAPI.h"
+#include "mozilla/unused.h"
 
 BEGIN_BLUETOOTH_NAMESPACE
 
@@ -33,9 +32,9 @@ BluetoothDaemonSocketModule::ListenCmd(BluetoothSocketType aType,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  UniquePtr<DaemonSocketPDU> pdu =
-    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_LISTEN,
-                                0);
+  nsAutoPtr<DaemonSocketPDU> pdu(
+    new DaemonSocketPDU(SERVICE_ID, OPCODE_LISTEN,
+                        0));
 
   nsresult rv = PackPDU(
     aType,
@@ -46,11 +45,11 @@ BluetoothDaemonSocketModule::ListenCmd(BluetoothSocketType aType,
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu.get(), aRes);
+  rv = Send(pdu, aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.release();
+  Unused << pdu.forget();
   return rv;
 }
 
@@ -64,9 +63,9 @@ BluetoothDaemonSocketModule::ConnectCmd(const BluetoothAddress& aBdAddr,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  UniquePtr<DaemonSocketPDU> pdu =
-    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_CONNECT,
-                                0);
+  nsAutoPtr<DaemonSocketPDU> pdu(
+    new DaemonSocketPDU(SERVICE_ID, OPCODE_CONNECT,
+                        0));
 
   nsresult rv = PackPDU(
     aBdAddr,
@@ -77,11 +76,11 @@ BluetoothDaemonSocketModule::ConnectCmd(const BluetoothAddress& aBdAddr,
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu.get(), aRes);
+  rv = Send(pdu, aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.release();
+  Unused << pdu.forget();
   return rv;
 }
 
@@ -101,7 +100,7 @@ public:
   }
 
 private:
-  UniquePtr<T> mPtr;
+  nsAutoPtr<T> mPtr;
 };
 
 
@@ -222,7 +221,11 @@ public:
   {
     DaemonSocketPDU& pdu = GetPDU();
 
-    aArg1 = pdu.AcquireFd();
+    auto receiveFds = pdu.AcquireFds();
+    if (NS_WARN_IF(receiveFds.Length() == 0)) {
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
+    aArg1 = receiveFds[0];
 
     if (NS_WARN_IF(aArg1 < 0)) {
       return NS_ERROR_ILLEGAL_VALUE;
@@ -279,7 +282,14 @@ BluetoothDaemonSocketModule::ConnectRsp(const DaemonSocketPDUHeader& aHeader,
                                         BluetoothSocketResultHandler* aRes)
 {
   
-  int fd = aPDU.AcquireFd();
+  auto receiveFds = aPDU.AcquireFds();
+  if (receiveFds.Length() == 0) {
+    ErrorRunnable::Dispatch(aRes, &BluetoothSocketResultHandler::OnError,
+                            ConstantInitOp1<BluetoothStatus>(STATUS_FAIL));
+    return;
+  }
+  int fd = -1;
+  fd = receiveFds[0];
   if (fd < 0) {
     ErrorRunnable::Dispatch(aRes, &BluetoothSocketResultHandler::OnError,
                             ConstantInitOp1<BluetoothStatus>(STATUS_FAIL));
