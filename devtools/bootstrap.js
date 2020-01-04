@@ -105,6 +105,24 @@ function reload(event) {
           }
         }, false);
       }
+
+      
+      
+      
+      const desc = Object.getOwnPropertyDescriptor(window, "DeveloperToolbar");
+      if (desc && !desc.get) {
+        let wasVisible = window.DeveloperToolbar.visible;
+        window.DeveloperToolbar.hide()
+          .then(() => {
+            window.DeveloperToolbar.destroy();
+
+            let { DeveloperToolbar } = devtools.require("devtools/client/shared/developer-toolbar");
+            window.DeveloperToolbar = new DeveloperToolbar(window, window.document.getElementById("developer-toolbar"));
+            if (wasVisible) {
+              window.DeveloperToolbar.show();
+            }
+          });
+      }
     } else if (windowtype === "devtools:webide") {
       window.location.reload();
     } else if (windowtype === "devtools:webconsole") {
