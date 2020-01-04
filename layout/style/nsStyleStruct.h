@@ -2528,7 +2528,7 @@ class StyleBasicShape final
 public:
   explicit StyleBasicShape(StyleBasicShapeType type)
     : mType(type),
-      mFillRule(NS_STYLE_FILL_RULE_NONZERO)
+      mFillRule(StyleFillRule::NonZero)
   {
     mPosition.SetInitialPercentValues(0.5f);
   }
@@ -2536,8 +2536,8 @@ public:
   StyleBasicShapeType GetShapeType() const { return mType; }
   nsCSSKeyword GetShapeTypeName() const;
 
-  int32_t GetFillRule() const { return mFillRule; }
-  void SetFillRule(int32_t aFillRule)
+  StyleFillRule GetFillRule() const { return mFillRule; }
+  void SetFillRule(StyleFillRule aFillRule)
   {
     MOZ_ASSERT(mType == StyleBasicShapeType::Polygon, "expected polygon");
     mFillRule = aFillRule;
@@ -2607,7 +2607,7 @@ private:
   ~StyleBasicShape() {}
 
   StyleBasicShapeType mType;
-  int32_t mFillRule;
+  StyleFillRule mFillRule;
 
   
   
@@ -3605,10 +3605,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   float            mStrokeMiterlimit; 
   float            mStrokeOpacity;    
 
-  uint8_t          mClipRule;         
+  mozilla::StyleFillRule    mClipRule;  
   uint8_t          mColorInterpolation; 
   uint8_t          mColorInterpolationFilters; 
-  uint8_t          mFillRule;         
+  mozilla::StyleFillRule    mFillRule;         
   uint8_t          mPaintOrder;       
   uint8_t          mShapeRendering;   
   uint8_t          mStrokeLinecap;    

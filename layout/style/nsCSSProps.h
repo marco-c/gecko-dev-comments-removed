@@ -309,12 +309,6 @@ enum nsStyleAnimType {
   eStyleAnimType_nscoord,
 
   
-  
-  
-  
-  eStyleAnimType_EnumU8,
-
-  
   eStyleAnimType_float,
 
   
@@ -325,6 +319,9 @@ enum nsStyleAnimType {
 
   
   eStyleAnimType_Shadow,
+
+  
+  eStyleAnimType_Discrete,
 
   
   eStyleAnimType_None
