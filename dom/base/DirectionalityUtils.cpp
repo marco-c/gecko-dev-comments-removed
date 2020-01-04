@@ -511,6 +511,12 @@ private:
                                                         oldTextNode);
     }
     if (newTextNode) {
+      nsINode* oldDirAutoSetBy = 
+        static_cast<nsTextNode*>(rootNode->GetProperty(nsGkAtoms::dirAutoSetBy));
+      if (oldDirAutoSetBy == newTextNode) {
+        
+        return OpNext;
+      }
       nsTextNodeDirectionalityMap::AddEntryToMap(newTextNode, rootNode);
     } else {
       rootNode->ClearHasDirAutoSet();
@@ -684,7 +690,9 @@ WalkDescendantsResetAutoDirection(Element* aElement)
     if (child->NodeType() == nsIDOMNode::TEXT_NODE &&
         child->HasTextNodeDirectionalityMap()) {
       nsTextNodeDirectionalityMap::ResetTextNodeDirection(static_cast<nsTextNode*>(child), nullptr);
-      nsTextNodeDirectionalityMap::EnsureMapIsClearFor(child);
+      
+      
+      
     }
     child = child->GetNextNode(aElement);
   }
