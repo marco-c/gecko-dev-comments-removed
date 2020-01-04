@@ -2030,6 +2030,9 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
                                     DeprecatedAbs(eo - so));
       *aHandled = true;
       NS_ENSURE_SUCCESS(res, res);
+
+      DeleteNodeIfCollapsedText(nodeAsText);
+
       res = InsertBRIfNeeded(aSelection);
       NS_ENSURE_SUCCESS(res, res);
 
@@ -2471,6 +2474,18 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
       }
     }
   }
+
+  
+  {
+    nsAutoTrackDOMPoint startTracker(mHTMLEditor->mRangeUpdater,
+                                     address_of(startNode), &startOffset);
+    nsAutoTrackDOMPoint endTracker(mHTMLEditor->mRangeUpdater,
+                                   address_of(endNode), &endOffset);
+
+    DeleteNodeIfCollapsedText(*startNode);
+    DeleteNodeIfCollapsedText(*endNode);
+  }
+
   
   
   
@@ -2486,6 +2501,28 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
   }
   NS_ENSURE_SUCCESS(res, res);
   return NS_OK;
+}
+
+
+
+
+
+
+
+
+
+void
+nsHTMLEditRules::DeleteNodeIfCollapsedText(nsINode& aNode)
+{
+  if (!aNode.GetAsText()) {
+    return;
+  }
+  bool empty;
+  nsresult res = mHTMLEditor->IsVisTextNode(aNode.AsContent(), &empty, false);
+  NS_ENSURE_SUCCESS_VOID(res);
+  if (empty) {
+    mHTMLEditor->DeleteNode(&aNode);
+  }
 }
 
 
