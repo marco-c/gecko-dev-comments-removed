@@ -10,13 +10,16 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Pair.h"
 #include "mozilla/dom/SourceBufferBinding.h"
 
-#include "SourceBufferContentManager.h"
+#include "MediaData.h"
 #include "MediaDataDemuxer.h"
 #include "MediaSourceDecoder.h"
+#include "TimeUnits.h"
 #include "nsProxyRelease.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -31,53 +34,96 @@ namespace dom {
   class SourceBufferAttributes;
 }
 
-class TrackBuffersManager : public SourceBufferContentManager {
+class TrackBuffersManager {
 public:
-  typedef MozPromise<bool, nsresult,  true> CodedFrameProcessingPromise;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackBuffersManager);
+
+  typedef MozPromise<bool, nsresult,  true> AppendPromise;
+  typedef AppendPromise RangeRemovalPromise;
+
+  enum class EvictDataResult : int8_t
+  {
+    NO_DATA_EVICTED,
+    DATA_EVICTED,
+    CANT_EVICT,
+    BUFFER_FULL,
+  };
+
+  
+  
+  enum class AppendState : int32_t
+  {
+    WAITING_FOR_SEGMENT,
+    PARSING_INIT_SEGMENT,
+    PARSING_MEDIA_SEGMENT,
+  };
+
   typedef TrackInfo::TrackType TrackType;
   typedef MediaData::Type MediaType;
   typedef nsTArray<RefPtr<MediaRawData>> TrackBuffer;
 
+  
   TrackBuffersManager(dom::SourceBufferAttributes* aAttributes,
                       MediaSourceDecoder* aParentDecoder,
                       const nsACString& aType);
 
+  
+  
   bool AppendData(MediaByteBuffer* aData,
-                  media::TimeUnit aTimestampOffset) override;
+                  media::TimeUnit aTimestampOffset);
 
-  RefPtr<AppendPromise> BufferAppend() override;
+  
+  
+  
+  RefPtr<AppendPromise> BufferAppend();
 
-  void AbortAppendData() override;
+  
+  void AbortAppendData();
 
-  void ResetParserState() override;
+  
+  
+  void ResetParserState();
 
+  
+  
   RefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
-                                             media::TimeUnit aEnd) override;
+                                             media::TimeUnit aEnd);
 
+  
+  
+  
+  
   EvictDataResult
   EvictData(media::TimeUnit aPlaybackTime,
             int64_t aThresholdReduct,
-            media::TimeUnit* aBufferStartTime) override;
+            media::TimeUnit* aBufferStartTime);
 
-  void EvictBefore(media::TimeUnit aTime) override;
+  
+  void EvictBefore(media::TimeUnit aTime);
 
-  media::TimeIntervals Buffered() override;
+  
+  
+  
+  media::TimeIntervals Buffered();
 
-  int64_t GetSize() override;
+  
+  int64_t GetSize();
 
-  void Ended() override;
+  
+  void Ended();
 
-  void Detach() override;
+  
+  void Detach();
 
-  AppendState GetAppendState() override
+  AppendState GetAppendState()
   {
     return mAppendState;
   }
 
-  void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp) override;
-  void RestartGroupStartTimestamp() override;
-  media::TimeUnit GroupEndTimestamp() override;
-  int64_t EvictionThreshold() const override;
+  void SetGroupStartTimestamp(const media::TimeUnit& aGroupStartTimestamp);
+  void RestartGroupStartTimestamp();
+  media::TimeUnit GroupEndTimestamp();
+  int64_t EvictionThreshold() const;
 
   
   MediaInfo GetMetadata();
@@ -102,6 +148,8 @@ public:
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 
 private:
+  typedef MozPromise<bool, nsresult,  true> CodedFrameProcessingPromise;
+
   
   friend class MediaSourceDemuxer;
   virtual ~TrackBuffersManager();
