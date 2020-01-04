@@ -242,10 +242,9 @@ function plInit() {
                      
                      
                      
-                     
                      if (browserWindow.gMultiProcessBrowser) {
-                       if (firstPageCanLoadAsRemote())
-                         browserWindow.XULBrowserWindow.forceInitialBrowserRemote();
+                       if (!firstPageCanLoadAsRemote())
+                         browserWindow.XULBrowserWindow.forceInitialBrowserNonRemote();
                        
                      }
 
