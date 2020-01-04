@@ -35,8 +35,11 @@ static LazyLogModule sPNGLog("PNGDecoder");
 static LazyLogModule sPNGDecoderAccountingLog("PNGDecoderAccounting");
 
 
-#ifndef MOZ_PNG_MAX_DIMENSION
-#  define MOZ_PNG_MAX_DIMENSION 32767
+#ifndef MOZ_PNG_MAX_WIDTH
+#  define MOZ_PNG_MAX_WIDTH 0x7fffffff // Unlimited
+#endif
+#ifndef MOZ_PNG_MAX_HEIGHT
+#  define MOZ_PNG_MAX_HEIGHT 0x7fffffff // Unlimited
 #endif
 
 nsPNGDecoder::AnimFrameInfo::AnimFrameInfo()
@@ -323,6 +326,7 @@ nsPNGDecoder::InitInternal()
 #endif
 
 #ifdef PNG_SET_USER_LIMITS_SUPPORTED
+  png_set_user_limits(mPNG, MOZ_PNG_MAX_WIDTH, MOZ_PNG_MAX_HEIGHT);
   if (mCMSMode != eCMSMode_Off) {
     png_set_chunk_malloc_max(mPNG, 4000000L);
   }
@@ -556,11 +560,6 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
   
   png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
                &interlace_type, &compression_type, &filter_type);
-
-  
-  if (width > MOZ_PNG_MAX_DIMENSION || height > MOZ_PNG_MAX_DIMENSION) {
-    png_longjmp(decoder->mPNG, 1);
-  }
 
   const IntRect frameRect(0, 0, width, height);
 
