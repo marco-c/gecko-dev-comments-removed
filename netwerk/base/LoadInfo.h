@@ -55,6 +55,12 @@ public:
            nsContentPolicyType aContentPolicyType);
 
   
+  LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
+           nsIPrincipal* aLoadingPrincipal,
+           nsIPrincipal* aTriggeringPrincipal,
+           nsSecurityFlags aSecurityFlags);
+
+  
   already_AddRefed<nsILoadInfo> Clone() const;
   
   

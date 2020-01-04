@@ -10570,11 +10570,39 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   bool isSrcdoc = !aSrcdoc.IsVoid();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsINode> requestingNode;
+  nsCOMPtr<nsPIDOMWindowOuter> requestingWindow;
+
+  nsCOMPtr<nsIPrincipal> loadingPrincipal;
   if (mScriptGlobal) {
     requestingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-    if (!requestingNode) {
-      requestingNode = mScriptGlobal->GetExtantDoc();
+    if (requestingNode) {
+      
+      loadingPrincipal = requestingNode->NodePrincipal();
+    } else {
+      MOZ_ASSERT(aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT);
+      requestingWindow = mScriptGlobal->AsOuter();
+    }
+  }
+
+  if (!loadingPrincipal) {
+    if (mItemType != typeChrome) {
+      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+      ssm->GetDocShellCodebasePrincipal(aURI, this, getter_AddRefs(loadingPrincipal));
+    } else {
+      
+      
+      loadingPrincipal = nsContentUtils::GetSystemPrincipal();
     }
   }
 
@@ -10605,19 +10633,19 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     securityFlags |= nsILoadInfo::SEC_SANDBOXED;
   }
 
+  nsCOMPtr<nsILoadInfo> loadInfo =
+    requestingWindow ?
+      new LoadInfo(requestingWindow, loadingPrincipal, triggeringPrincipal,
+                   securityFlags) :
+      new LoadInfo(loadingPrincipal, triggeringPrincipal, requestingNode,
+                   securityFlags, aContentPolicyType);
   if (!isSrcdoc) {
     rv = NS_NewChannelInternal(getter_AddRefs(channel),
                                aURI,
-                               requestingNode,
-                               requestingNode
-                                 ? requestingNode->NodePrincipal()
-                                 : triggeringPrincipal.get(),
-                                triggeringPrincipal,
-                                securityFlags,
-                                aContentPolicyType,
-                                nullptr,   
-                                static_cast<nsIInterfaceRequestor*>(this),
-                                loadFlags);
+                               loadInfo,
+                               nullptr,   
+                               static_cast<nsIInterfaceRequestor*>(this),
+                               loadFlags);
 
     if (NS_FAILED(rv)) {
       if (rv == NS_ERROR_UNKNOWN_PROTOCOL) {
@@ -10652,26 +10680,13 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       NS_ENSURE_TRUE(vsh, NS_ERROR_FAILURE);
 
       rv = vsh->NewSrcdocChannel(aURI, aBaseURI, aSrcdoc,
-                                 requestingNode,
-                                 requestingNode
-                                   ? requestingNode->NodePrincipal()
-                                   : triggeringPrincipal.get(),
-                                 triggeringPrincipal,
-                                 securityFlags,
-                                 aContentPolicyType,
-                                 getter_AddRefs(channel));
+                                 loadInfo, getter_AddRefs(channel));
     } else {
       rv = NS_NewInputStreamChannelInternal(getter_AddRefs(channel),
                                             aURI,
                                             aSrcdoc,
                                             NS_LITERAL_CSTRING("text/html"),
-                                            requestingNode,
-                                            requestingNode ?
-                                              requestingNode->NodePrincipal() :
-                                              triggeringPrincipal.get(),
-                                            triggeringPrincipal,
-                                            securityFlags,
-                                            aContentPolicyType,
+                                            loadInfo,
                                             true);
       NS_ENSURE_SUCCESS(rv, rv);
       nsCOMPtr<nsIInputStreamChannel> isc = do_QueryInterface(channel);
