@@ -9,7 +9,9 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "CubebUtils.h"
 
+#ifdef MOZ_WEBRTC
 #include "webrtc/MediaEngineWebRTC.h"
+#endif
 
 #ifdef XP_MACOSX
 #include <sys/sysctl.h>
@@ -612,10 +614,18 @@ AudioCallbackDriver::Init()
   CubebUtils::AudioDeviceID input_id = nullptr, output_id = nullptr;
   
   
-  if ((!mGraphImpl->mInputWanted ||
-       AudioInputCubeb::GetDeviceID(mGraphImpl->mInputDeviceID, input_id)) &&
-      (mGraphImpl->mOutputDeviceID == -1 || 
-       AudioInputCubeb::GetDeviceID(mGraphImpl->mOutputDeviceID, output_id)) &&
+  if ((!mGraphImpl->mInputWanted
+#ifdef MOZ_WEBRTC
+       || AudioInputCubeb::GetDeviceID(mGraphImpl->mInputDeviceID, input_id)
+#endif
+       ) &&
+      (mGraphImpl->mOutputDeviceID == -1 
+#ifdef MOZ_WEBRTC
+       
+       
+       || AudioInputCubeb::GetDeviceID(mGraphImpl->mOutputDeviceID, output_id)
+#endif
+       ) &&
       
       
       
