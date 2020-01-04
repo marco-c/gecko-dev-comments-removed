@@ -1342,7 +1342,9 @@ Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
-Messages.JavaScriptEvalOutput = function(evalResponse, errorMessage)
+
+
+Messages.JavaScriptEvalOutput = function(evalResponse, errorMessage, errorDocLink)
 {
   let severity = "log", msg, quoteStrings = true;
 
@@ -1365,7 +1367,13 @@ Messages.JavaScriptEvalOutput = function(evalResponse, errorMessage)
     severity: severity,
     quoteStrings: quoteStrings,
   };
-  Messages.Extended.call(this, [msg], options);
+
+  let messages = [msg];
+  if (errorDocLink) {
+    messages.push(errorDocLink);
+  }
+
+  Messages.Extended.call(this, messages, options);
 };
 
 Messages.JavaScriptEvalOutput.prototype = Messages.Extended.prototype;
