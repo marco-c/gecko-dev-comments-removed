@@ -402,7 +402,7 @@ ToInt32(double d)
 {
     
     
-#if defined (__arm__) && defined (__GNUC__) && !defined(__APPLE__)
+#if defined (__arm__) && defined (__GNUC__) && !defined(__clang__)
     int32_t i;
     uint32_t    tmp0;
     uint32_t    tmp1;
