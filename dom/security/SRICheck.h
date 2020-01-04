@@ -14,7 +14,6 @@
 
 class nsIChannel;
 class nsIDocument;
-class nsIIncrementalStreamLoader;
 class nsIUnicharStreamLoader;
 
 namespace mozilla {
@@ -42,17 +41,6 @@ public:
                                   nsIUnicharStreamLoader* aLoader,
                                   const CORSMode aCORSMode,
                                   const nsAString& aString,
-                                  const nsIDocument* aDocument);
-
-  
-
-
-
-  static nsresult VerifyIntegrity(const SRIMetadata& aMetadata,
-                                  nsIIncrementalStreamLoader* aLoader,
-                                  const CORSMode aCORSMode,
-                                  uint32_t aStringLen,
-                                  const uint8_t* aString,
                                   const nsIDocument* aDocument);
 };
 

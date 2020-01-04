@@ -12,6 +12,7 @@
 #define __nsScriptLoader_h__
 
 #include "nsCOMPtr.h"
+#include "nsIUnicodeDecoder.h"
 #include "nsIScriptElement.h"
 #include "nsCOMArray.h"
 #include "nsTArray.h"
@@ -20,8 +21,10 @@
 #include "nsIIncrementalStreamLoader.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/SRIMetadata.h"
+#include "mozilla/dom/SRICheck.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/net/ReferrerPolicy.h"
+#include "mozilla/Vector.h"
 
 class nsScriptLoadRequestList;
 class nsIURI;
@@ -217,6 +220,7 @@ class nsScriptLoader final : public nsISupports
   };
 
   friend class nsScriptRequestProcessor;
+  friend class nsScriptLoadHandler;
   friend class AutoCurrentScriptUpdater;
 
 public:
@@ -348,9 +352,10 @@ public:
 
   nsresult OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                             nsISupports* aContext,
-                            nsresult aStatus,
-                            uint32_t aStringLen,
-                            const uint8_t* aString);
+                            nsresult aChannelStatus,
+                            nsresult aSRIStatus,
+                            mozilla::Vector<char16_t> &aString,
+                            mozilla::dom::SRICheckDataVerifier* aSRIDataVerifier);
 
   
 
@@ -501,8 +506,7 @@ private:
   nsresult PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
                                 nsIIncrementalStreamLoader* aLoader,
                                 nsresult aStatus,
-                                uint32_t aStringLen,
-                                const uint8_t* aString);
+                                mozilla::Vector<char16_t> &aString);
 
   void AddDeferRequest(nsScriptLoadRequest* aRequest);
   bool MaybeRemovedDeferRequests();
@@ -552,7 +556,8 @@ class nsScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver
 {
 public:
   explicit nsScriptLoadHandler(nsScriptLoader* aScriptLoader,
-                               nsScriptLoadRequest *aRequest);
+                               nsScriptLoadRequest *aRequest,
+                               mozilla::dom::SRICheckDataVerifier *aSRIDataVerifier);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIINCREMENTALSTREAMLOADEROBSERVER
@@ -560,8 +565,38 @@ public:
 private:
   virtual ~nsScriptLoadHandler();
 
-  RefPtr<nsScriptLoader> mScriptLoader;
-  RefPtr<nsScriptLoadRequest> mRequest;
+  
+
+
+  nsresult TryDecodeRawData(const uint8_t* aData, uint32_t aDataLength,
+                            bool aEndOfStream);
+
+  
+
+
+
+
+  bool EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
+                     const uint8_t* aData, uint32_t aDataLength,
+                     bool aEndOfStream);
+
+  
+  RefPtr<nsScriptLoader>        mScriptLoader;
+
+  
+  RefPtr<nsScriptLoadRequest>   mRequest;
+
+  
+  nsAutoPtr<mozilla::dom::SRICheckDataVerifier> mSRIDataVerifier;
+
+  
+  nsresult                      mSRIStatus;
+
+  
+  nsCOMPtr<nsIUnicodeDecoder>   mDecoder;
+
+  
+  mozilla::Vector<char16_t>     mBuffer;
 };
 
 class nsAutoScriptLoaderDisabler
