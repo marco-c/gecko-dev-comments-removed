@@ -175,6 +175,7 @@ public class GeckoApplication extends Application
                     
                     
                     PushService.createInstance(context);
+                    PushService.registerGeckoEventListener();
 
                     try {
                         PushService.getInstance().onStartup();
