@@ -499,12 +499,14 @@ nsSAXXMLReader::ParseFromStream(nsIInputStream *aStream,
   nsCOMPtr<nsIPrincipal> nullPrincipal = nsNullPrincipal::Create();
   NS_ENSURE_TRUE(nullPrincipal, NS_ERROR_FAILURE);
 
+  
+  
   nsCOMPtr<nsIChannel> parserChannel;
   rv = NS_NewInputStreamChannel(getter_AddRefs(parserChannel),
                                 mBaseURI,
                                 aStream,
                                 nullPrincipal,
-                                nsILoadInfo::SEC_NORMAL,
+                                nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
                                 nsIContentPolicy::TYPE_OTHER,
                                 nsDependentCString(aContentType));
   if (!parserChannel || NS_FAILED(rv))

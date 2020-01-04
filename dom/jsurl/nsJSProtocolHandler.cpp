@@ -422,11 +422,13 @@ nsresult nsJSChannel::Init(nsIURI *aURI)
 
     
     
+    
+    
     rv = NS_NewInputStreamChannel(getter_AddRefs(channel),
                                   aURI,
                                   mIOThunk,
                                   nullPrincipal,
-                                  nsILoadInfo::SEC_NORMAL,
+                                  nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
                                   nsIContentPolicy::TYPE_OTHER,
                                   NS_LITERAL_CSTRING("text/html"));
     if (NS_FAILED(rv)) return rv;
