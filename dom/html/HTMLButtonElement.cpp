@@ -334,7 +334,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
       
       
-      case NS_MOUSE_BUTTON_UP:
+      case eMouseUp:
       case NS_MOUSE_DOUBLECLICK:
         {
           WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();

@@ -162,7 +162,7 @@ nsImageControlFrame::HandleEvent(nsPresContext* aPresContext,
 
   *aEventStatus = nsEventStatus_eIgnore;
 
-  if (aEvent->mMessage == NS_MOUSE_BUTTON_UP &&
+  if (aEvent->mMessage == eMouseUp &&
       aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
     
     
