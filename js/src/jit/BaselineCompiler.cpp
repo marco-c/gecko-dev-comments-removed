@@ -2599,7 +2599,8 @@ BaselineCompiler::emit_JSOP_GETIMPORT()
     
     
     if (targetEnv->getSlot(shape->slot()).isMagic(JS_UNINITIALIZED_LEXICAL))
-        emitUninitializedLexicalCheck(R0);
+        if (!emitUninitializedLexicalCheck(R0))
+            return false;
 
     if (ionCompileable_) {
         
