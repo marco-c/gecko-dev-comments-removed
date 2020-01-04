@@ -28,6 +28,9 @@ this.EXPORTED_SYMBOLS = ["PushRecord"];
 
 const prefs = new Preferences("dom.push.");
 
+
+
+
 function PushRecord(props) {
   this.pushEndpoint = props.pushEndpoint;
   this.scope = props.scope;
@@ -217,11 +220,12 @@ PushRecord.prototype = {
 
   toSubscription() {
     return {
-      pushEndpoint: this.pushEndpoint,
+      endpoint: this.pushEndpoint,
       lastPush: this.lastPush,
       pushCount: this.pushCount,
       p256dhKey: this.p256dhPublicKey,
       authenticationSecret: this.authenticationSecret,
+      quota: this.quotaApplies() ? this.quota : -1,
     };
   },
 };
