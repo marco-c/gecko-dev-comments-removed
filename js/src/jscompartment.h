@@ -430,7 +430,7 @@ struct JSCompartment
 
 
 
-    bool                         globalWriteBarriered;
+    uint32_t                     globalWriteBarriered;
 
     
     
