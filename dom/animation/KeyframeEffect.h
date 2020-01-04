@@ -18,6 +18,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTiming.h"
 #include "mozilla/ComputedTimingFunction.h"
+#include "mozilla/EffectCompositor.h"
 #include "mozilla/LayerAnimationInfo.h" 
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"      
@@ -363,6 +364,11 @@ protected:
   
   
   void UpdateTargetRegistration();
+
+  
+  void UnregisterTarget();
+
+  void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
 
   Maybe<OwningAnimationTarget> mTarget;
   RefPtr<Animation> mAnimation;
