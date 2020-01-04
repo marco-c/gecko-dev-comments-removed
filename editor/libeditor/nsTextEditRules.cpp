@@ -285,7 +285,8 @@ nsTextEditRules::WillDoAction(Selection* aSelection,
     case EditAction::insertElement:
       
       
-      return WillInsert(aSelection, aCancel);
+      WillInsert(*aSelection, aCancel);
+      return NS_OK;
     default:
       return NS_ERROR_FAILURE;
   }
@@ -345,25 +346,25 @@ nsTextEditRules::DocumentIsEmpty(bool *aDocumentIsEmpty)
 
 
 
-nsresult
-nsTextEditRules::WillInsert(Selection* aSelection, bool* aCancel)
+void
+nsTextEditRules::WillInsert(Selection& aSelection, bool* aCancel)
 {
-  NS_ENSURE_TRUE(aSelection && aCancel, NS_ERROR_NULL_POINTER);
+  MOZ_ASSERT(aCancel);
 
-  CANCEL_OPERATION_IF_READONLY_OR_DISABLED
+  if (IsReadonly() || IsDisabled()) {
+    *aCancel = true;
+    return;
+  }
 
   
   *aCancel = false;
 
   
-  if (mBogusNode)
-  {
-    NS_ENSURE_STATE(mEditor);
+  if (mBogusNode) {
+    NS_ENSURE_TRUE_VOID(mEditor);
     mEditor->DeleteNode(mBogusNode);
     mBogusNode = nullptr;
   }
-
-  return NS_OK;
 }
 
 nsresult
@@ -412,8 +413,7 @@ nsTextEditRules::WillInsertBreak(Selection* aSelection,
       NS_ENSURE_SUCCESS(res, res);
     }
 
-    res = WillInsert(aSelection, aCancel);
-    NS_ENSURE_SUCCESS(res, res);
+    WillInsert(*aSelection, aCancel);
     
     
     *aCancel = false;
@@ -651,8 +651,7 @@ nsTextEditRules::WillInsertText(EditAction aAction,
     NS_ENSURE_SUCCESS(res, res);
   }
 
-  res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
   
   
   *aCancel = false;

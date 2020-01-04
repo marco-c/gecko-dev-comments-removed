@@ -126,7 +126,7 @@ protected:
   void InitFields();
 
   
-  nsresult WillInsert(mozilla::dom::Selection* aSelection, bool* aCancel);
+  void WillInsert(mozilla::dom::Selection& aSelection, bool* aCancel);
   nsresult WillInsertText(  EditAction aAction,
                             mozilla::dom::Selection* aSelection,
                             bool            *aCancel,
