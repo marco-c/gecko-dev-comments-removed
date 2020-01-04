@@ -259,8 +259,6 @@ SocialUI = {
   
   
   updateState: function() {
-    if (location == "about:customizing")
-      return;
     goSetCommandEnabled("Social:PageShareOrMark", this.canShareOrMarkPage(gBrowser.currentURI));
     if (!SocialUI.enabled)
       return;

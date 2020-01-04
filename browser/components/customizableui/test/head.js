@@ -199,7 +199,7 @@ function endCustomizing(aWindow=window) {
     newTabBrowser.stop();
 
     
-    if (newTabBrowser.contentDocument.location.href == "about:blank") {
+    if (newTabBrowser.currentURI.spec == "about:blank") {
       return null;
     }
 
@@ -209,7 +209,7 @@ function endCustomizing(aWindow=window) {
       deferredLoadNewTab.resolve();
     }
     newTabBrowser.addEventListener("load", onNewTabLoaded, true);
-    newTabBrowser.contentDocument.location.replace("about:blank");
+    newTabBrowser.loadURI("about:blank");
     return deferredLoadNewTab.promise;
   });
 }
