@@ -262,7 +262,7 @@ var snapshotFormatters = {
     
     
     function addRows(where, trs) {
-      $.append($('graphics-' + where + '-tbody'), trs);
+      $.append($("graphics-" + where + "-tbody"), trs);
     }
 
     
@@ -408,7 +408,7 @@ var snapshotFormatters = {
       }
       addRow(id, "active", strings.GetStringFromName(active));
       addRows(id, trs);
-    };
+    }
     showGpu("gpu-1", "");
     showGpu("gpu-2", "2");
 
