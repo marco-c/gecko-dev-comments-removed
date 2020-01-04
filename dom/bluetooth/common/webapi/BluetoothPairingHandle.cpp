@@ -86,10 +86,15 @@ BluetoothPairingHandle::SetPinCode(const nsAString& aPinCode, ErrorResult& aRv)
                         promise,
                         NS_ERROR_DOM_INVALID_STATE_ERR);
 
+  BluetoothPinCode pinCode;
+  BT_ENSURE_TRUE_REJECT(NS_SUCCEEDED(StringToPinCode(aPinCode, pinCode)),
+                        promise,
+                        NS_ERROR_DOM_INVALID_STATE_ERR);
+
   BluetoothService* bs = BluetoothService::Get();
   BT_ENSURE_TRUE_REJECT(bs, promise, NS_ERROR_NOT_AVAILABLE);
 
-  bs->PinReplyInternal(deviceAddress, true , aPinCode,
+  bs->PinReplyInternal(deviceAddress, true , pinCode,
                        new BluetoothVoidReplyRunnable(nullptr, promise));
 
   return promise.forget();
@@ -154,7 +159,8 @@ BluetoothPairingHandle::Reject(ErrorResult& aRv)
   BT_ENSURE_TRUE_REJECT(bs, promise, NS_ERROR_NOT_AVAILABLE);
 
   if (mType.EqualsLiteral(PAIRING_REQ_TYPE_ENTERPINCODE)) { 
-    bs->PinReplyInternal(deviceAddress, false , EmptyString(),
+    bs->PinReplyInternal(deviceAddress, false ,
+                         BluetoothPinCode(),
                          new BluetoothVoidReplyRunnable(nullptr, promise));
   } else { 
     BluetoothSspVariant variant;
