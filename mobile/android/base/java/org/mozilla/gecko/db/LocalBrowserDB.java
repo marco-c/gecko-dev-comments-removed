@@ -572,7 +572,11 @@ public class LocalBrowserDB implements BrowserDB {
         
         
         
-        final String sortOrder = BrowserContract.getCombinedFrecencySortOrder(true, false);
+        
+        
+        
+        
+        final String sortOrder = BrowserContract.getFrecencySortOrder(true, false);
 
         return cr.query(combinedUriWithLimit(limit),
                         projection,
