@@ -68,7 +68,7 @@ gfxCharacterMap::NotifyReleased()
 }
 
 gfxFontEntry::gfxFontEntry() :
-    mItalic(false), mFixedPitch(false),
+    mStyle(NS_FONT_STYLE_NORMAL), mFixedPitch(false),
     mIsValid(true),
     mIsBadUnderlineFont(false),
     mIsUserFontContainer(false),
@@ -108,7 +108,7 @@ gfxFontEntry::gfxFontEntry() :
 }
 
 gfxFontEntry::gfxFontEntry(const nsAString& aName, bool aIsStandardFace) :
-    mName(aName), mItalic(false), mFixedPitch(false),
+    mName(aName), mStyle(NS_FONT_STYLE_NORMAL), mFixedPitch(false),
     mIsValid(true),
     mIsBadUnderlineFont(false),
     mIsUserFontContainer(false),
@@ -1155,40 +1155,49 @@ gfxFontFamily::FindFontForStyle(const gfxFontStyle& aFontStyle,
     return nullptr;
 }
 
-static inline uint32_t
-StyleStretchDistance(gfxFontEntry *aFontEntry, bool aTargetItalic,
-                     int16_t aTargetStretch)
-{
-    
-    
-    
+#define STYLE_SHIFT 2 // number of bits to contain style distance
 
+
+static inline uint32_t
+StyleDistance(uint32_t aFontStyle, uint32_t aTargetStyle)
+{
+    if (aFontStyle == aTargetStyle) {
+        return 0; 
+    }
+    if (aFontStyle == NS_FONT_STYLE_NORMAL ||
+        aTargetStyle == NS_FONT_STYLE_NORMAL) {
+        return 2; 
+    }
+    return 1; 
+}
+
+#define REVERSE_STRETCH_DISTANCE 5
+
+
+static inline uint32_t
+StretchDistance(int16_t aFontStretch, int16_t aTargetStretch)
+{
     int32_t distance = 0;
-    if (aTargetStretch != aFontEntry->mStretch) {
+    if (aTargetStretch != aFontStretch) {
         
         
         
         if (aTargetStretch > 0) {
-            distance = (aFontEntry->mStretch - aTargetStretch) * 2;
+            distance = (aFontStretch - aTargetStretch);
         } else {
-            distance = (aTargetStretch - aFontEntry->mStretch) * 2;
+            distance = (aTargetStretch - aFontStretch);
         }
         
         
         
         
         if (distance < 0) {
-            distance = -distance + 10;
+            distance = -distance + REVERSE_STRETCH_DISTANCE;
         }
-    }
-    if (aFontEntry->IsItalic() != aTargetItalic) {
-        distance += 1;
     }
     return uint32_t(distance);
 }
 
-#define NON_DESIRED_DIRECTION_DISTANCE 1000
-#define MAX_WEIGHT_DISTANCE            2000
 
 
 
@@ -1202,10 +1211,13 @@ StyleStretchDistance(gfxFontEntry *aFontEntry, bool aTargetItalic,
 
 
 
+
+#define REVERSE_WEIGHT_DISTANCE 600
+#define WEIGHT_SHIFT             11 // number of bits to contain weight distance
 
 
 static inline uint32_t
-WeightDistance(uint32_t aTargetWeight, uint32_t aFontWeight)
+WeightDistance(uint32_t aFontWeight, uint32_t aTargetWeight)
 {
     
     
@@ -1235,11 +1247,32 @@ WeightDistance(uint32_t aTargetWeight, uint32_t aFontWeight)
             }
         }
         if (distance < 0) {
-            distance = -distance + NON_DESIRED_DIRECTION_DISTANCE;
+            distance = -distance + REVERSE_WEIGHT_DISTANCE;
         }
         distance += addedDistance;
     }
     return uint32_t(distance);
+}
+
+#define MAX_DISTANCE 0xffffffff
+
+static inline uint32_t
+WeightStyleStretchDistance(gfxFontEntry* aFontEntry,
+                           const gfxFontStyle& aTargetStyle)
+{
+    
+    uint32_t stretchDist =
+        StretchDistance(aFontEntry->mStretch, aTargetStyle.stretch);
+    uint32_t styleDist = StyleDistance(aFontEntry->mStyle, aTargetStyle.style);
+    uint32_t weightDist =
+        WeightDistance(aFontEntry->Weight(), aTargetStyle.weight);
+
+    NS_ASSERTION(weightDist < (1 << WEIGHT_SHIFT), "weight value out of bounds");
+    NS_ASSERTION(styleDist < (1 << STYLE_SHIFT), "slope value out of bounds");
+
+    return (stretchDist << (STYLE_SHIFT + WEIGHT_SHIFT)) |
+           (styleDist << WEIGHT_SHIFT) |
+           weightDist;
 }
 
 void
@@ -1271,9 +1304,6 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
         return;
     }
 
-    bool wantItalic = (aFontStyle.style &
-                       (NS_FONT_STYLE_ITALIC | NS_FONT_STYLE_OBLIQUE)) != 0;
-
     
     
     
@@ -1285,6 +1315,7 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
         
         
         
+        bool wantItalic = (aFontStyle.style != NS_FONT_STYLE_NORMAL);
         uint8_t faceIndex = (wantItalic ? kItalicMask : 0) |
                             (wantBold ? kBoldMask : 0);
 
@@ -1332,16 +1363,14 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     
     
 
-    uint32_t minDistance = 0xffffffff;
+    uint32_t minDistance = MAX_DISTANCE;
     gfxFontEntry* matched = nullptr;
     
     
     for (uint32_t i = 0; i < count; i++) {
         fe = mAvailableFonts[i];
-        uint32_t distance =
-            WeightDistance(aFontStyle.weight, fe->Weight()) +
-            (StyleStretchDistance(fe, wantItalic, aFontStyle.stretch) *
-             MAX_WEIGHT_DISTANCE);
+        
+        uint32_t distance = WeightStyleStretchDistance(fe, aFontStyle);
         if (distance < minDistance) {
             matched = fe;
             if (!aFontEntryList.IsEmpty()) {
@@ -1391,8 +1420,9 @@ gfxFontFamily::CheckForSimpleFamily()
     gfxFontEntry *faces[4] = { 0 };
     for (uint8_t i = 0; i < count; ++i) {
         gfxFontEntry *fe = mAvailableFonts[i];
-        if (fe->Stretch() != firstStretch) {
-            return; 
+        if (fe->Stretch() != firstStretch || fe->IsOblique()) {
+            
+            return;
         }
         uint8_t faceIndex = (fe->IsItalic() ? kItalicMask : 0) |
                             (fe->Weight() >= 600 ? kBoldMask : 0);
@@ -1448,9 +1478,8 @@ CalcStyleMatch(gfxFontEntry *aFontEntry, const gfxFontStyle *aStyle)
     int32_t rank = 0;
     if (aStyle) {
          
-         bool wantItalic =
-             (aStyle->style & (NS_FONT_STYLE_ITALIC | NS_FONT_STYLE_OBLIQUE)) != 0;
-         if (aFontEntry->IsItalic() == wantItalic) {
+         bool wantUpright = (aStyle->style == NS_FONT_STYLE_NORMAL);
+         if (aFontEntry->IsUpright() == wantUpright) {
              rank += 10;
          }
 
@@ -1458,7 +1487,7 @@ CalcStyleMatch(gfxFontEntry *aFontEntry, const gfxFontStyle *aStyle)
         rank += 9 - DeprecatedAbs(aFontEntry->Weight() / 100 - aStyle->ComputeWeight());
     } else {
         
-        if (!aFontEntry->IsItalic()) {
+        if (aFontEntry->IsUpright()) {
             rank += 3;
         }
         if (!aFontEntry->IsBold()) {

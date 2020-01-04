@@ -177,9 +177,8 @@ gfxGDIFont::Initialize()
 
     
     GDIFontEntry* fe = static_cast<GDIFontEntry*>(GetFontEntry());
-    bool wantFakeItalic =
-        (mStyle.style & (NS_FONT_STYLE_ITALIC | NS_FONT_STYLE_OBLIQUE)) &&
-        !fe->IsItalic() && mStyle.allowSyntheticStyle;
+    bool wantFakeItalic = mStyle.style != NS_FONT_STYLE_NORMAL &&
+                          fe->IsUpright() && mStyle.allowSyntheticStyle;
 
     
     
