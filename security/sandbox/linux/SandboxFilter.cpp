@@ -438,6 +438,7 @@ public:
     case SYS_SOCKET: 
     case SYS_CONNECT: 
     case SYS_ACCEPT:
+    case SYS_BIND:
     case SYS_SETSOCKOPT:
     case SYS_GETSOCKNAME:
     case SYS_GETPEERNAME:
