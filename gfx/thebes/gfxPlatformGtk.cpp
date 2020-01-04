@@ -350,13 +350,8 @@ gfxPlatformGtk::GetDPIScale()
 bool
 gfxPlatformGtk::UseImageOffscreenSurfaces()
 {
-    
-    
-#if (MOZ_WIDGET_GTK == 3)
-    return gfxPrefs::UseImageOffscreenSurfaces();
-#else
-    return false;
-#endif
+    return GetDefaultContentBackend() != mozilla::gfx::BackendType::CAIRO ||
+           gfxPrefs::UseImageOffscreenSurfaces();
 }
 
 gfxImageFormat
