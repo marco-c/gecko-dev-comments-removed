@@ -316,6 +316,9 @@ protected:
   
   
   bool mIsPropertyRunningOnCompositor[LayerAnimationInfo::kRecords];
+
+private:
+  nsIFrame* GetAnimationFrame() const;
 };
 
 } 
