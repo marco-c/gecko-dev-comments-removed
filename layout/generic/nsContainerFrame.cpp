@@ -1814,7 +1814,7 @@ nsContainerFrame::FrameStartsCounterScope(nsIFrame* aFrame)
 }
 
 bool
-nsBlockFrame::RenumberLists(nsPresContext* aPresContext)
+nsBlockFrame::RenumberLists()
 {
   if (!nsContainerFrame::FrameStartsCounterScope(this)) {
     

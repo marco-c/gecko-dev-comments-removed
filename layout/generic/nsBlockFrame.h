@@ -789,7 +789,7 @@ protected:
   
   
   
-  bool RenumberLists(nsPresContext* aPresContext);
+  bool RenumberLists();
 
   void ReflowBullet(nsIFrame* aBulletFrame,
                     BlockReflowInput& aState,

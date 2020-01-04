@@ -674,7 +674,7 @@ nsBlockFrame::GetMinISize(nsRenderingContext *aRenderingContext)
     curFrame->LazyMarkLinesDirty();
   }
 
-  if (RenumberLists(PresContext())) {
+  if (RenumberLists()) {
     AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
   }
   if (GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION)
@@ -762,7 +762,7 @@ nsBlockFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
     curFrame->LazyMarkLinesDirty();
   }
 
-  if (RenumberLists(PresContext())) {
+  if (RenumberLists()) {
     AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
   }
   if (GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION)
@@ -1108,7 +1108,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   if (GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION)
     static_cast<nsBlockFrame*>(FirstContinuation())->ResolveBidi();
 
-  if (RenumberLists(aPresContext)) {
+  if (RenumberLists()) {
     AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
   }
 
@@ -2932,11 +2932,10 @@ nsBlockFrame::AttributeChanged(int32_t         aNameSpaceID,
   if (nsGkAtoms::start == aAttribute ||
       (nsGkAtoms::reversed == aAttribute &&
        mContent->IsHTMLElement(nsGkAtoms::ol))) {
-    nsPresContext* presContext = PresContext();
 
     
-    if (RenumberLists(presContext)) {
-      presContext->PresShell()->
+    if (RenumberLists()) {
+      PresContext()->PresShell()->
         FrameNeedsReflow(this, nsIPresShell::eStyleChange,
                          NS_FRAME_HAS_DIRTY_CHILDREN);
     }
@@ -2953,10 +2952,9 @@ nsBlockFrame::AttributeChanged(int32_t         aNameSpaceID,
       
       
       if (nullptr != blockParent) {
-        nsPresContext* presContext = PresContext();
         
-        if (blockParent->RenumberLists(presContext)) {
-          presContext->PresShell()->
+        if (blockParent->RenumberLists()) {
+          PresContext()->PresShell()->
             FrameNeedsReflow(blockParent, nsIPresShell::eStyleChange,
                              NS_FRAME_HAS_DIRTY_CHILDREN);
         }
