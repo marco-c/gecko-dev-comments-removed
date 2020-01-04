@@ -156,6 +156,7 @@ bool
 MP4AudioInfo::IsValid() const
 {
   return mChannels > 0 && mRate > 0 &&
+         
          (!mMimeType.Equals(MEDIA_MIMETYPE_AUDIO_AAC) ||
           mProfile > 0 || mExtendedProfile > 0);
 }
