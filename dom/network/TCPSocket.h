@@ -32,7 +32,8 @@ namespace dom {
 class DOMError;
 struct ServerSocketOptions;
 class TCPServerSocket;
-class USVStringOrArrayBuffer;
+class TCPSocketChild;
+class TCPSocketParent;
 
 
 class LegacyMozTCPSocket : public nsISupports
@@ -98,8 +99,9 @@ public:
   void Suspend();
   void Resume(ErrorResult& aRv);
   void Close();
-  bool Send(const nsCString& aData, ErrorResult& aRv);
-  bool Send(const ArrayBuffer& aData,
+  bool Send(JSContext* aCx, const nsACString& aData, ErrorResult& aRv);
+  bool Send(JSContext* aCx,
+            const ArrayBuffer& aData,
             uint32_t aByteOffset,
             const Optional<uint32_t>& aByteLength,
             ErrorResult& aRv);
@@ -116,8 +118,28 @@ public:
 
   
   
+  void SendWithTrackingNumber(const nsACString& aData,
+                              const uint32_t& aTrackingNumber,
+                              ErrorResult& aRv);
+  void SendWithTrackingNumber(JSContext* aCx,
+                              const ArrayBuffer& aData,
+                              uint32_t aByteOffset,
+                              const Optional<uint32_t>& aByteLength,
+                              const uint32_t& aTrackingNumber,
+                              ErrorResult& aRv);
+  
+  
   static already_AddRefed<TCPSocket>
   CreateAcceptedSocket(nsIGlobalObject* aGlobal, nsISocketTransport* aTransport, bool aUseArrayBuffers);
+  
+  
+  static already_AddRefed<TCPSocket>
+  CreateAcceptedSocket(nsIGlobalObject* aGlobal, TCPSocketChild* aSocketBridge, bool aUseArrayBuffers);
+
+  
+  void SetAppIdAndBrowser(uint32_t aAppId, bool aInBrowser);
+  
+  void SetSocketBridgeParent(TCPSocketParent* aBridgeParent);
 
   static bool SocketEnabled();
 
@@ -132,9 +154,23 @@ public:
   
   void NotifyCopyComplete(nsresult aStatus);
 
+  
+  
+  void UpdateBufferedAmount(uint32_t aAmount, uint32_t aTrackingNumber);
+  
+  void UpdateReadyState(uint32_t aReadyState);
+  
+  void FireErrorEvent(const nsAString& aName, const nsAString& aMessage);
+  
+  void FireEvent(const nsAString& aType);
+  
+  void FireDataEvent(JSContext* aCx, const nsAString& aType, JS::Handle<JS::Value> aData);
+
 private:
   ~TCPSocket();
 
+  
+  void InitWithSocketChild(TCPSocketChild* aBridge);
   
   nsresult InitWithTransport(nsISocketTransport* aTransport);
   
@@ -149,12 +185,6 @@ private:
   
   void ActivateTLS();
   
-  void FireErrorEvent(const nsAString& aName, const nsAString& aMessage);
-  
-  void FireEvent(const nsAString& aType);
-  
-  void FireDataEvent(JSContext* aCx, const nsAString& aType, JS::Handle<JS::Value> aData);
-  
   nsresult MaybeReportErrorAndCloseIfOpen(nsresult status);
 #ifdef MOZ_WIDGET_GONK
   
@@ -168,6 +198,11 @@ private:
   uint16_t mPort;
   
   bool mSsl;
+
+  
+  nsRefPtr<TCPSocketChild> mSocketBridgeChild;
+  
+  nsRefPtr<TCPSocketParent> mSocketBridgeParent;
 
   
   nsCOMPtr<nsISocketTransport> mTransport;
@@ -192,7 +227,15 @@ private:
   uint64_t mInnerWindowID;
 
   
+  uint64_t mBufferedAmount;
+
+  
   uint32_t mSuspendCount;
+
+  
+  
+  
+  uint32_t mTrackingNumber;
 
   
   

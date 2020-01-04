@@ -16,6 +16,9 @@ namespace dom {
 struct ServerSocketOptions;
 class GlobalObject;
 class TCPSocket;
+class TCPSocketChild;
+class TCPServerSocketChild;
+class TCPServerSocketParent;
 
 class TCPServerSocket final : public DOMEventTargetHelper
                             , public nsIServerSocketListener
@@ -35,6 +38,8 @@ public:
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
+  nsresult Init();
+
   uint16_t LocalPort();
   void Close();
 
@@ -48,14 +53,24 @@ public:
   IMPL_EVENT_HANDLER(connect);
   IMPL_EVENT_HANDLER(error);
 
+  
+  
+  nsresult AcceptChildSocket(TCPSocketChild* aSocketChild);
+  
+  
+  void SetServerBridgeParent(TCPServerSocketParent* aBridgeParent);
+
 private:
   ~TCPServerSocket();
-  nsresult Init();
   
   void FireEvent(const nsAString& aType, TCPSocket* aSocket);
 
   
   nsCOMPtr<nsIServerSocket> mServerSocket;
+  
+  nsRefPtr<TCPServerSocketChild> mServerBridgeChild;
+  
+  nsRefPtr<TCPServerSocketParent> mServerBridgeParent;
   int32_t mPort;
   uint16_t mBacklog;
   
