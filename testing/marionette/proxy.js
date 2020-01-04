@@ -72,11 +72,17 @@ var ContentSender = function(mmFn, sendAsyncFn) {
   this.curId = null;
   this.sendAsync = sendAsyncFn;
   this.mmFn_ = mmFn;
+  this._listeners = [];
 };
 
 Object.defineProperty(ContentSender.prototype, "mm", {
   get: function() { return this.mmFn_(); }
 });
+
+ContentSender.prototype.removeListeners = function () {
+  this._listeners.map(l => this.mm.removeMessageListener(l[0], l[1]));
+  this._listeners = [];
+}
 
 
 
@@ -94,6 +100,13 @@ Object.defineProperty(ContentSender.prototype, "mm", {
 
 
 ContentSender.prototype.send = function(name, args) {
+  if (this._listeners[0]) {
+    
+    
+    logger.warn("A previous failed command left content listeners behind!");
+    this.removeListeners();
+  }
+
   this.curId = uuidgen.generateUUID().toString();
 
   let proxy = new Promise((resolve, reject) => {
@@ -106,40 +119,33 @@ ContentSender.prototype.send = function(name, args) {
           return;
         }
 
-        listeners.remove();
+        this.removeListeners();
         modal.removeHandler(handleDialog);
 
         fn(msg);
         this.curId = null;
       };
 
-      listeners.push([n, rmFn]);
+      this._listeners.push([n, rmFn]);
       return rmFn;
     };
-
-    let listeners = [];
-    listeners.add = () => {
-      this.mm.addMessageListener(MARIONETTE_OK, removeListeners(MARIONETTE_OK, okListener));
-      this.mm.addMessageListener(MARIONETTE_DONE, removeListeners(MARIONETTE_DONE, valListener));
-      this.mm.addMessageListener(MARIONETTE_ERROR, removeListeners(MARIONETTE_ERROR, errListener));
-    };
-    listeners.remove = () =>
-        listeners.map(l => this.mm.removeMessageListener(l[0], l[1]));
 
     let okListener = () => resolve();
     let valListener = msg => resolve(msg.json.value);
     let errListener = msg => reject(msg.objects.error);
 
-    let handleDialog = function(subject, topic) {
-      listeners.remove();
+    let handleDialog = (subject, topic) => {
+      this.removeListeners()
       modal.removeHandler(handleDialog);
       this.sendAsync("cancelRequest");
       resolve();
-    }.bind(this);
+    };
 
     
     
-    listeners.add();
+    this.mm.addMessageListener(MARIONETTE_OK, removeListeners(MARIONETTE_OK, okListener));
+    this.mm.addMessageListener(MARIONETTE_DONE, removeListeners(MARIONETTE_DONE, valListener));
+    this.mm.addMessageListener(MARIONETTE_ERROR, removeListeners(MARIONETTE_ERROR, errListener));
     modal.addHandler(handleDialog);
 
     
