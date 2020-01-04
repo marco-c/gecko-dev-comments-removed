@@ -2646,7 +2646,7 @@ nsHTMLReflowState::CalculateBlockSideMargins(nsIAtom* aFrameType)
     
     const nsHTMLReflowState* prs = mParentReflowState;
     if (aFrameType == nsGkAtoms::tableFrame) {
-      NS_ASSERTION(prs->frame->GetType() == nsGkAtoms::tableOuterFrame,
+      NS_ASSERTION(prs->frame->GetType() == nsGkAtoms::tableWrapperFrame,
                    "table not inside table wrapper");
       
       

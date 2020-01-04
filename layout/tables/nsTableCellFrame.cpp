@@ -180,7 +180,7 @@ nsTableCellFrame::NeedsToObserve(const nsHTMLReflowState& aReflowState)
   
   return rs->frame == this &&
          (PresContext()->CompatibilityMode() == eCompatibility_NavQuirks ||
-          fType == nsGkAtoms::tableOuterFrame);
+          fType == nsGkAtoms::tableWrapperFrame);
 }
 
 nsresult

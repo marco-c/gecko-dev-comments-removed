@@ -833,7 +833,7 @@ nsBlockReflowState::FlowAndPlaceFloat(nsIFrame* aFloat)
       
       if(prevFrame) {
         
-        if (nsGkAtoms::tableOuterFrame == prevFrame->GetType()) {
+        if (nsGkAtoms::tableWrapperFrame == prevFrame->GetType()) {
           
           
           nsIContent* content = prevFrame->GetContent();

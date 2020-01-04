@@ -1940,7 +1940,7 @@ IsTablePseudo(nsIFrame* aFrame)
      (pseudoType == nsCSSAnonBoxes::cellContent &&
       aFrame->GetParent()->StyleContext()->GetPseudo() ==
         nsCSSAnonBoxes::tableCell) ||
-     (pseudoType == nsCSSAnonBoxes::tableOuter &&
+     (pseudoType == nsCSSAnonBoxes::tableWrapper &&
       (aFrame->PrincipalChildList().FirstChild()->StyleContext()->GetPseudo() ==
          nsCSSAnonBoxes::table ||
        aFrame->PrincipalChildList().FirstChild()->StyleContext()->GetPseudo() ==
@@ -2072,7 +2072,7 @@ nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   
   RefPtr<nsStyleContext> outerStyleContext;
   outerStyleContext = mPresShell->StyleSet()->
-    ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableOuter, styleContext);
+    ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableWrapper, styleContext);
 
   
   nsContainerFrame* newFrame;
@@ -6659,7 +6659,7 @@ GetAdjustedParentFrame(nsContainerFrame* aParentFrame,
                        nsIAtom*          aParentFrameType,
                        nsIContent*       aChildContent)
 {
-  NS_PRECONDITION(nsGkAtoms::tableOuterFrame != aParentFrameType,
+  NS_PRECONDITION(nsGkAtoms::tableWrapperFrame != aParentFrameType,
                   "Shouldn't be happening!");
 
   nsContainerFrame* newParent = nullptr;
@@ -7955,7 +7955,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
     }
 
     if (nsGkAtoms::tableFrame == frameType ||
-        nsGkAtoms::tableOuterFrame == frameType) {
+        nsGkAtoms::tableWrapperFrame == frameType) {
       PullOutCaptionFrames(frameItems, captionItems);
     }
   }
@@ -7986,8 +7986,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
                  !IsFramePartOfIBSplit(frame2),
                  "Neither should be ib-split");
     NS_ASSERTION((frame1->GetType() == nsGkAtoms::tableFrame &&
-                  frame2->GetType() == nsGkAtoms::tableOuterFrame) ||
-                 (frame1->GetType() == nsGkAtoms::tableOuterFrame &&
+                  frame2->GetType() == nsGkAtoms::tableWrapperFrame) ||
+                 (frame1->GetType() == nsGkAtoms::tableWrapperFrame &&
                   frame2->GetType() == nsGkAtoms::tableFrame) ||
                  frame1->GetType() == nsGkAtoms::fieldSetFrame ||
                  (frame1->GetParent() &&
@@ -8025,7 +8025,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
   
   if (captionItems.NotEmpty()) {
     NS_ASSERTION(nsGkAtoms::tableFrame == frameType ||
-                 nsGkAtoms::tableOuterFrame == frameType,
+                 nsGkAtoms::tableWrapperFrame == frameType,
                  "parent for caption is not table?");
     
     
@@ -8058,7 +8058,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
       
       
       
-      NS_ASSERTION(nsGkAtoms::tableOuterFrame == outerTable->GetType(),
+      NS_ASSERTION(nsGkAtoms::tableWrapperFrame == outerTable->GetType(),
                    "Pseudo frame construction failure; "
                    "a caption can be only a child of a table wrapper frame");
 
@@ -8821,7 +8821,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
   } else if (nsGkAtoms::pageFrame == frameType) {
     nsContainerFrame* canvasFrame;
     newFrame = ConstructPageFrame(shell, aParentFrame, aFrame, canvasFrame);
-  } else if (nsGkAtoms::tableOuterFrame == frameType) {
+  } else if (nsGkAtoms::tableWrapperFrame == frameType) {
     newFrame =
       CreateContinuingOuterTableFrame(shell, aPresContext, aFrame, aParentFrame,
                                       content, styleContext);

@@ -45,7 +45,7 @@ nsMathMLmrowFrame::AttributeChanged(int32_t  aNameSpaceID,
     nsIFrame* frame = mFrames.FirstChild();
     for ( ; frame; frame = frame->PrincipalChildList().FirstChild()) {
       
-      if (frame->GetType() == nsGkAtoms::tableOuterFrame)
+      if (frame->GetType() == nsGkAtoms::tableWrapperFrame)
         return frame->AttributeChanged(aNameSpaceID, aAttribute, aModType);
     }
     NS_NOTREACHED("mtable wrapper without the real table frame");
