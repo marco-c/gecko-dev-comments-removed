@@ -80,6 +80,8 @@ private:
                                     mozilla::net::MemoryDownloader::Data aData)
         override;
 
+    bool BypassServiceWorker() const;
+
     
     
     bool ShouldIntercept();
@@ -133,11 +135,8 @@ private:
     nsCString                       mJarEntry;
     nsCString                       mInnerJarEntry;
 
-    RefPtr<nsInputStreamPump>     mSynthesizedResponsePump;
+    nsRefPtr<nsInputStreamPump>     mSynthesizedResponsePump;
     int64_t                         mSynthesizedStreamLength;
-
-    
-    bool                            mForceNoIntercept;
 
     
     bool                            mBlockRemoteFiles;

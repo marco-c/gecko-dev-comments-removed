@@ -203,7 +203,6 @@ nsJARChannel::nsJARChannel()
     , mIsUnsafe(true)
     , mOpeningRemote(false)
     , mSynthesizedStreamLength(0)
-    , mForceNoIntercept(false)
     , mBlockRemoteFiles(false)
 {
     if (!gJarProtocolLog)
@@ -315,7 +314,7 @@ nsJARChannel::CreateJarInput(nsIZipReaderCache *jarCache, nsJARInputThunk **resu
     if (NS_FAILED(rv))
         return rv;
 
-    RefPtr<nsJARInputThunk> input = new nsJARInputThunk(reader,
+    nsRefPtr<nsJARInputThunk> input = new nsJARInputThunk(reader,
                                                           mJarURI,
                                                           mJarEntry,
                                                           jarCache != nullptr
@@ -368,7 +367,7 @@ nsJARChannel::LookupFile(bool aAllowAsync)
         nsAutoCString scheme;
         rv = mJarBaseURI->GetScheme(scheme);
         if (NS_SUCCEEDED(rv) && scheme.EqualsLiteral("remoteopenfile")) {
-            RefPtr<RemoteOpenFileChild> remoteFile = new RemoteOpenFileChild();
+            nsRefPtr<RemoteOpenFileChild> remoteFile = new RemoteOpenFileChild();
             rv = remoteFile->Init(mJarBaseURI, mAppURI);
             NS_ENSURE_SUCCESS(rv, rv);
             mJarFile = remoteFile;
@@ -448,7 +447,7 @@ nsJARChannel::OpenLocalFile()
     
     mIsUnsafe = false;
 
-    RefPtr<nsJARInputThunk> input;
+    nsRefPtr<nsJARInputThunk> input;
     nsresult rv = CreateJarInput(gJarHandler->JarCache(),
                                  getter_AddRefs(input));
     if (NS_SUCCEEDED(rv)) {
@@ -842,7 +841,7 @@ nsJARChannel::Open(nsIInputStream **stream)
         return NS_ERROR_NOT_IMPLEMENTED;
     }
 
-    RefPtr<nsJARInputThunk> input;
+    nsRefPtr<nsJARInputThunk> input;
     rv = CreateJarInput(gJarHandler->JarCache(), getter_AddRefs(input));
     if (NS_FAILED(rv))
         return rv;
@@ -864,6 +863,12 @@ nsJARChannel::Open2(nsIInputStream** aStream)
 }
 
 bool
+nsJARChannel::BypassServiceWorker() const
+{
+  return mLoadFlags & LOAD_BYPASS_SERVICE_WORKER;
+}
+
+bool
 nsJARChannel::ShouldIntercept()
 {
     LOG(("nsJARChannel::ShouldIntercept [this=%x]\n", this));
@@ -877,7 +882,7 @@ nsJARChannel::ShouldIntercept()
                                   NS_GET_IID(nsINetworkInterceptController),
                                   getter_AddRefs(controller));
     bool shouldIntercept = false;
-    if (controller && !mForceNoIntercept && mLoadInfo) {
+    if (controller && !BypassServiceWorker() && mLoadInfo) {
       bool isNavigation = mLoadFlags & LOAD_DOCUMENT_URI;
       nsContentPolicyType type = mLoadInfo->InternalContentPolicyType();
       nsresult rv = controller->ShouldPrepareForIntercept(mAppURI,
@@ -967,7 +972,7 @@ nsJARChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *ctx)
                                     getter_AddRefs(controller));
 
       bool isNavigation = mLoadFlags & LOAD_DOCUMENT_URI;
-      RefPtr<InterceptedJARChannel> intercepted =
+      nsRefPtr<InterceptedJARChannel> intercepted =
         new InterceptedJARChannel(this, controller, isNavigation);
       intercepted->NotifyController();
 
@@ -1124,7 +1129,7 @@ nsJARChannel::GetZipEntry(nsIZipEntry **aZipEntry)
 NS_IMETHODIMP
 nsJARChannel::ForceNoIntercept()
 {
-    mForceNoIntercept = true;
+    mLoadFlags |= LOAD_BYPASS_SERVICE_WORKER;
     return NS_OK;
 }
 
@@ -1221,7 +1226,7 @@ nsJARChannel::OnDownloadComplete(MemoryDownloader* aDownloader,
     if (NS_SUCCEEDED(status)) {
         mTempMem = Move(aData);
 
-        RefPtr<nsJARInputThunk> input;
+        nsRefPtr<nsJARInputThunk> input;
         rv = CreateJarInput(nullptr, getter_AddRefs(input));
         if (NS_SUCCEEDED(rv)) {
             
