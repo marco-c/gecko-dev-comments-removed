@@ -1,3 +1,7 @@
+
+
+
+
 package org.mozilla.gecko.background.db;
 
 import android.content.ContentProvider;
@@ -28,12 +32,7 @@ public class DelegatingTestContentProvider extends ContentProvider {
     }
 
     private Uri appendTestParam(Uri uri) {
-        try {
-            return appendUriParam(uri, BrowserContract.PARAM_IS_TEST, "1");
-        } catch (Exception e) {
-        }
-
-        return null;
+        return appendUriParam(uri, BrowserContract.PARAM_IS_TEST, "1");
     }
 
     @Override
