@@ -18,7 +18,7 @@ const CALL_STACK_PAGE_SIZE = 25;
 const EVENTS = {
   
   EDITOR_LOADED: "Debugger:EditorLoaded",
-  EDITOR_UNLOADED: "Debugger:EditorUnoaded",
+  EDITOR_UNLOADED: "Debugger:EditorUnloaded",
 
   
   NEW_SOURCE: "Debugger:NewSource",
