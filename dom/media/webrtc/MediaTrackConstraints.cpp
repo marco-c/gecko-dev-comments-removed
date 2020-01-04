@@ -286,6 +286,8 @@ NormalizedConstraints::NormalizedConstraints(
 
 
 
+
+
 NormalizedConstraints::NormalizedConstraints(
     const nsTArray<const NormalizedConstraints*>& aOthers)
   : NormalizedConstraintSet(*aOthers[0])
@@ -316,6 +318,32 @@ NormalizedConstraints::NormalizedConstraints(
   }
   for (auto& memberPtr : list) {
     (this->*memberPtr).FinalizeMerge();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  for (auto& other : aOthers) {
+    mWidth.TakeHighestIdeal(other->mWidth);
+    mHeight.TakeHighestIdeal(other->mHeight);
+
+    
+    
+    
+    auto frameRate = other->mFrameRate;
+    if (frameRate.mIdeal.isNothing()) {
+      frameRate.mIdeal.emplace(30);
+    }
+    mFrameRate.TakeHighestIdeal(frameRate);
   }
 }
 
