@@ -47,6 +47,7 @@ class SyntaxParseHandler
         NodeThrow,
         NodeEmptyStatement,
 
+        NodeSuperProperty,
         NodeSuperElement,
 
         
@@ -131,17 +132,13 @@ class SyntaxParseHandler
         
         
         
-        NodeUnparenthesizedAssignment,
-
-        
-        
-        NodeSuperBase
+        NodeUnparenthesizedAssignment
     };
     typedef Definition::Kind DefinitionNode;
 
     bool isPropertyAccess(Node node) {
         return node == NodeDottedProperty || node == NodeElement ||
-               node == NodeSuperElement;
+               node == NodeSuperProperty || node == NodeSuperElement;
     }
 
     bool isFunctionCall(Node node) {
@@ -277,12 +274,15 @@ class SyntaxParseHandler
     Node newObjectLiteral(uint32_t begin) { return NodeUnparenthesizedObject; }
     Node newClassMethodList(uint32_t begin) { return NodeGeneric; }
 
+    Node newSuperProperty(PropertyName* prop, const TokenPos& pos) {
+        return NodeSuperProperty;
+    }
+
     Node newSuperElement(Node expr, const TokenPos& pos) {
         return NodeSuperElement;
     }
     Node newNewTarget(Node newHolder, Node targetHolder) { return NodeGeneric; }
     Node newPosHolder(const TokenPos& pos) { return NodeGeneric; }
-    Node newSuperBase(const TokenPos& pos, ExclusiveContext* cx) { return NodeSuperBase; }
 
     bool addPrototypeMutation(Node literal, uint32_t begin, Node expr) { return true; }
     bool addPropertyDefinition(Node literal, Node name, Node expr) { return true; }
@@ -435,12 +435,6 @@ class SyntaxParseHandler
     bool isStatementPermittedAfterReturnStatement(Node pn) {
         return pn == NodeHoistableDeclaration || pn == NodeBreak || pn == NodeThrow ||
                pn == NodeEmptyStatement;
-    }
-
-    bool isSuperBase(Node pn, ExclusiveContext* cx) {
-        
-        
-        return pn == NodeSuperBase;
     }
 
     void setOp(Node pn, JSOp op) {}
