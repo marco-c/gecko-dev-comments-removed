@@ -585,13 +585,6 @@ nsJSContext::nsJSContext(bool aGCOnDestruction,
 
   ++sContextCount;
 
-  mContext = ::JS_NewContext(sRuntime, gStackSize);
-  if (mContext) {
-    ::JS_SetContextPrivate(mContext, static_cast<nsIScriptContext *>(this));
-
-    
-    JS::ContextOptionsRef(mContext).setPrivateIsNSISupports(true);
-  }
   mIsInitialized = false;
   mProcessingScriptTag = false;
   HoldJSObjects(this);
@@ -601,7 +594,7 @@ nsJSContext::~nsJSContext()
 {
   mGlobalObjectRef = nullptr;
 
-  DestroyJSContext();
+  Destroy();
 
   --sContextCount;
 
@@ -613,27 +606,13 @@ nsJSContext::~nsJSContext()
   }
 }
 
-
-
-
-
-
 void
-nsJSContext::DestroyJSContext()
+nsJSContext::Destroy()
 {
-  if (!mContext) {
-    return;
-  }
-
-  
-  ::JS_SetContextPrivate(mContext, nullptr);
-
   if (mGCOnDestruction) {
     PokeGC(JS::gcreason::NSJSCONTEXT_DESTROY);
   }
 
-  JS_DestroyContextNoGC(mContext);
-  mContext = nullptr;
   DropJSObjects(this);
 }
 
@@ -645,12 +624,10 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsJSContext)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsJSContext)
-  NS_ASSERTION(!tmp->mContext || !js::ContextHasOutstandingRequests(tmp->mContext),
-               "Trying to unlink a context with outstanding requests.");
   tmp->mIsInitialized = false;
   tmp->mGCOnDestruction = false;
   tmp->mWindowProxy = nullptr;
-  tmp->DestroyJSContext();
+  tmp->Destroy();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobalObjectRef)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsJSContext)
@@ -706,9 +683,7 @@ nsJSContext::InitContext()
   
   NS_ENSURE_TRUE(!mIsInitialized, NS_ERROR_ALREADY_INITIALIZED);
 
-  if (!mContext)
-    return NS_ERROR_OUT_OF_MEMORY;
-
+  
   return NS_OK;
 }
 
