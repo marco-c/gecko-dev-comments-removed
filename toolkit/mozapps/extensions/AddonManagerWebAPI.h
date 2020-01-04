@@ -4,6 +4,9 @@
 
 
 
+#ifndef addonmanagerwebapi_h_
+#define addonmanagerwebapi_h_
+
 #include "nsPIDOMWindow.h"
 
 namespace mozilla {
@@ -17,3 +20,5 @@ private:
 };
 
 } 
+
+#endif 
