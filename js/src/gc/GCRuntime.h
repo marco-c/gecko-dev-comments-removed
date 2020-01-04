@@ -1038,7 +1038,7 @@ class GCRuntime
     size_t maxMallocBytes;
 
     
-    mozilla::Atomic<uint64_t, mozilla::SequentiallyConsistent> nextCellUniqueId_;
+    mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> nextCellUniqueId_;
 
     
 
