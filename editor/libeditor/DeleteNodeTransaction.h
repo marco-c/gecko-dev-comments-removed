@@ -3,8 +3,8 @@
 
 
 
-#ifndef DeleteNodeTxn_h__
-#define DeleteNodeTxn_h__
+#ifndef DeleteNodeTransaction_h
+#define DeleteNodeTransaction_h
 
 #include "EditTxn.h"
 #include "nsCOMPtr.h"
@@ -17,29 +17,32 @@
 class nsEditor;
 class nsRangeUpdater;
 
+namespace mozilla {
 
 
 
-class DeleteNodeTxn : public EditTxn
+
+class DeleteNodeTransaction final : public EditTxn
 {
 public:
   
 
 
+
   nsresult Init(nsEditor* aEditor, nsINode* aNode,
                 nsRangeUpdater* aRangeUpdater);
 
-  DeleteNodeTxn();
+  DeleteNodeTransaction();
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteNodeTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteNodeTransaction, EditTxn)
 
   NS_DECL_EDITTXN
 
   NS_IMETHOD RedoTransaction() override;
 
 protected:
-  virtual ~DeleteNodeTxn();
+  virtual ~DeleteNodeTransaction();
 
   
   nsCOMPtr<nsINode> mNode;
@@ -57,4 +60,6 @@ protected:
   nsRangeUpdater* mRangeUpdater;
 };
 
-#endif
+} 
+
+#endif 
