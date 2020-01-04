@@ -687,6 +687,15 @@ NewObjectWithClassProto(ExclusiveContext* cx, const Class* clasp, HandleObject p
     return NewObjectWithClassProto(cx, clasp, proto, allocKind, newKind);
 }
 
+template<class T>
+inline T*
+NewObjectWithClassProto(ExclusiveContext* cx, HandleObject proto,
+                        NewObjectKind newKind = GenericObject)
+{
+    JSObject* obj = NewObjectWithClassProto(cx, &T::class_, proto, newKind);
+    return obj ? &obj->as<T>() : nullptr;
+}
+
 
 
 
