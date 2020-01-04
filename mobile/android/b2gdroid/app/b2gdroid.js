@@ -1012,6 +1012,9 @@ pref("dom.ipc.tabs.disabled", false);
 pref("dom.ipc.processCount", 100000);
 
 
+pref("layers.compositor-lru-size", 10);
+
+
 
 pref("dom.ipc.processPrelaunch.enabled", true);
 
