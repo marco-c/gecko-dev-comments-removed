@@ -37,26 +37,33 @@ ServoStyleSheet::HasRules() const
 nsIDocument*
 ServoStyleSheet::GetOwningDocument() const
 {
-  NS_ERROR("stylo: GetOwningDocument not implemented, returning null");
-
-  return nullptr;
+  return mDocument;
 }
 
 void
 ServoStyleSheet::SetOwningDocument(nsIDocument* aDocument)
 {
-  MOZ_CRASH("stylo: not implemented");
+  
+  
+
+  mDocument = aDocument;
 }
 
 StyleSheetHandle
 ServoStyleSheet::GetParentSheet() const
 {
+  
+  
+  
   MOZ_CRASH("stylo: not implemented");
 }
 
 void
 ServoStyleSheet::AppendStyleSheet(StyleSheetHandle aSheet)
 {
+  
+  
+  
   MOZ_CRASH("stylo: not implemented");
 }
 

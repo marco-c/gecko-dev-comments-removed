@@ -73,9 +73,17 @@ struct NonOwningStyleContextSource
   bool MatchesNoRules() const {
     if (IsGeckoRuleNodeOrNull()) {
       return AsGeckoRuleNode()->IsRoot();
-    } else {
-      MOZ_CRASH("stylo: not implemented");
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    return false;
   }
 
 private:

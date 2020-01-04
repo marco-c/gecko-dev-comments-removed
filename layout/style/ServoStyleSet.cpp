@@ -92,7 +92,10 @@ ServoStyleSet::ResolveStyleFor(Element* aElement,
                                nsStyleContext* aParentContext,
                                TreeMatchContext& aTreeMatchContext)
 {
-  MOZ_CRASH("stylo: not implemented");
+  
+  
+  
+  return ResolveStyleFor(aElement, aParentContext);
 }
 
 already_AddRefed<nsStyleContext>
