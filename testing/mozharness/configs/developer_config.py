@@ -23,7 +23,6 @@ config = {
 
     
     "exes": {
-        "hgtool.py": os.path.join(LOCAL_WORKDIR, "hgtool.py"),
         "gittool.py": os.path.join(LOCAL_WORKDIR, "gittool.py"),
     },
     "env": {
@@ -46,7 +45,6 @@ config = {
     "tooltool_cache_path": os.path.join(LOCAL_WORKDIR, "builds/tooltool_cache"),
 
     
-    "hgtool.py": 'http://hg.mozilla.org/build/puppet/raw-file/faaf5abd792e/modules/packages/files/hgtool.py',
     "gittool.py": 'http://hg.mozilla.org/build/puppet/raw-file/faaf5abd792e/modules/packages/files/gittool.py',
 
     

@@ -12,10 +12,6 @@ config = {
         
         "graph_server_branch_name": "MozillaTest",
         'graph_server': 'graphs.allizom.org',
-        "hgtool_base_bundle_urls": [
-            'http://dev-stage01.build.mozilla.org/pub/mozilla'
-            '.org/firefox/bundles',
-        ],
         'stage_server': 'upload.ffxbld.productdelivery.stage.mozaws.net',
         "sendchange_masters": ["dev-master1.srv.releng.scl3.mozilla.com:9038"],
         'taskcluster_index': 'index.garbage.staging',
@@ -29,9 +25,6 @@ config = {
         
         'clobberer_url': 'https://api.pub.build.mozilla.org/clobberer/lastclobber',
         'graph_server': 'graphs.mozilla.org',
-        "hgtool_base_bundle_urls": [
-            'https://ftp-ssl.mozilla.org/pub/mozilla.org/firefox/bundles'
-        ],
         
         
         "sendchange_masters": ["buildbot-master81.build.mozilla.org:9301"],
