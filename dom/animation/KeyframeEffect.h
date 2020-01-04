@@ -220,7 +220,7 @@ public:
   {
     Maybe<NonOwningAnimationTarget> result;
     if (mTarget) {
-      result.emplace(mTarget, mPseudoType);
+      result.emplace(*mTarget);
     }
     return result;
   }
@@ -364,11 +364,10 @@ protected:
   
   void UpdateTargetRegistration();
 
-  nsCOMPtr<Element> mTarget;
+  Maybe<OwningAnimationTarget> mTarget;
   RefPtr<Animation> mAnimation;
 
   RefPtr<AnimationEffectTimingReadOnly> mTiming;
-  CSSPseudoElementType mPseudoType;
 
   
   nsTArray<Keyframe>          mFrames;
