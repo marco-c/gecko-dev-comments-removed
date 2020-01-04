@@ -616,6 +616,15 @@ struct nsTArray_CopyWithConstructors
                              aCount, aElemSize);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static void MoveOverlappingRegion(void* aDest, void* aSrc, size_t aCount,
                                     size_t aElemSize)
   {
@@ -625,12 +634,15 @@ struct nsTArray_CopyWithConstructors
     ElemType* srcElemEnd = srcElem + aCount;
     if (destElem == srcElem) {
       return;  
-    } else if (srcElemEnd > destElem && srcElemEnd < destElemEnd) {
+    }
+
+    
+    if (srcElemEnd > destElem && srcElemEnd < destElemEnd) {
       while (destElemEnd != destElem) {
         --destElemEnd;
         --srcElemEnd;
         traits::Construct(destElemEnd, mozilla::Move(*srcElemEnd));
-        traits::Destruct(srcElem);
+        traits::Destruct(srcElemEnd);
       }
     } else {
       MoveNonOverlappingRegion(aDest, aSrc, aCount, aElemSize);
