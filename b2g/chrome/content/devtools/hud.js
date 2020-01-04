@@ -836,7 +836,8 @@ var performanceEntriesWatcher = {
       target._logHistogram({name: eventName, value: time});
 
       memoryWatcher.front(target).residentUnique().then(value => {
-        eventName = 'app_memory_' + name;
+        
+        eventName = 'app_memory_' + name + '_v2';
         target._logHistogram({name: eventName, value: value});
       }, err => {
         console.error(err);
