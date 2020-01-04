@@ -117,7 +117,9 @@ var fakeRooms = [
       switch(pref) {
         
         case "gettingStarted.seen":
+          return true;
       }
+      return null;
     },
     hasEncryptionKey: true,
     setLoopPref: function(){},
