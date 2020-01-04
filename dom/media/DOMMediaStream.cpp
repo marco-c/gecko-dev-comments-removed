@@ -390,15 +390,15 @@ DOMMediaStream::Destroy()
     mOwnedPort = nullptr;
   }
   if (mPlaybackStream) {
-    mPlaybackStream->Destroy();
+    mPlaybackStream->UnregisterUser();
     mPlaybackStream = nullptr;
   }
   if (mOwnedStream) {
-    mOwnedStream->Destroy();
+    mOwnedStream->UnregisterUser();
     mOwnedStream = nullptr;
   }
   if (mInputStream) {
-    mInputStream->Destroy();
+    mInputStream->UnregisterUser();
     mInputStream = nullptr;
   }
 }
@@ -596,6 +596,108 @@ DOMMediaStream::RemoveTrack(MediaStreamTrack& aTrack)
   LOG(LogLevel::Debug, ("DOMMediaStream %p Removed track %p", this, &aTrack));
 }
 
+class ClonedStreamSourceGetter :
+  public MediaStreamTrackSourceGetter
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ClonedStreamSourceGetter,
+                                           MediaStreamTrackSourceGetter)
+
+  explicit ClonedStreamSourceGetter(DOMMediaStream* aStream)
+    : mStream(aStream) {}
+
+  already_AddRefed<MediaStreamTrackSource>
+  GetMediaStreamTrackSource(TrackID aInputTrackID) override
+  {
+    MediaStreamTrack* sourceTrack =
+      mStream->FindOwnedDOMTrack(mStream->GetOwnedStream(), aInputTrackID);
+    MOZ_RELEASE_ASSERT(sourceTrack);
+
+    return do_AddRef(&sourceTrack->GetSource());
+  }
+
+protected:
+  virtual ~ClonedStreamSourceGetter() {}
+
+  RefPtr<DOMMediaStream> mStream;
+};
+
+NS_IMPL_ADDREF_INHERITED(ClonedStreamSourceGetter,
+                         MediaStreamTrackSourceGetter)
+NS_IMPL_RELEASE_INHERITED(ClonedStreamSourceGetter,
+                          MediaStreamTrackSourceGetter)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ClonedStreamSourceGetter)
+NS_INTERFACE_MAP_END_INHERITING(MediaStreamTrackSourceGetter)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ClonedStreamSourceGetter,
+                                   MediaStreamTrackSourceGetter,
+                                   mStream)
+
+already_AddRefed<DOMMediaStream>
+DOMMediaStream::Clone()
+{
+  return CloneInternal(TrackForwardingOption::CURRENT);
+}
+
+already_AddRefed<DOMMediaStream>
+DOMMediaStream::CloneInternal(TrackForwardingOption aForwarding)
+{
+  RefPtr<DOMMediaStream> newStream =
+    new DOMMediaStream(GetParentObject(), new ClonedStreamSourceGetter(this));
+
+  LOG(LogLevel::Info, ("DOMMediaStream %p created clone %p, forwarding %s tracks",
+                       this, newStream.get(),
+                       aForwarding == TrackForwardingOption::ALL
+                         ? "all" : "current"));
+
+  MOZ_RELEASE_ASSERT(mPlaybackStream);
+  MOZ_RELEASE_ASSERT(mPlaybackStream->Graph());
+  MediaStreamGraph* graph = mPlaybackStream->Graph();
+
+  
+  
+  
+  
+  newStream->InitOwnedStreamCommon(graph);
+  newStream->InitPlaybackStreamCommon(graph);
+
+  
+  TrackID allocatedTrackID = 1;
+  for (const RefPtr<TrackPort>& info : mTracks) {
+    MediaStreamTrack& track = *info->GetTrack();
+
+    LOG(LogLevel::Debug, ("DOMMediaStream %p forwarding external track %p to clone %p",
+                          this, &track, newStream.get()));
+    RefPtr<MediaStreamTrack> trackClone =
+      newStream->CreateClonedDOMTrack(track, allocatedTrackID++);
+  }
+
+  if (aForwarding == TrackForwardingOption::ALL) {
+    
+    
+    
+    
+    newStream->mInputStream = mInputStream;
+    if (mInputStream) {
+      
+      
+      
+      nsTArray<TrackID> tracksToBlock;
+      for (const RefPtr<TrackPort>& info : mOwnedTracks) {
+        tracksToBlock.AppendElement(info->GetTrack()->mTrackID);
+      }
+
+      newStream->mInputStream->RegisterUser();
+      newStream->mOwnedPort =
+        newStream->mOwnedStream->AllocateInputPort(mInputStream,
+                                                   TRACK_ANY, TRACK_ANY, 0, 0,
+                                                   &tracksToBlock);
+    }
+  }
+
+  return newStream.forget();
+}
+
 MediaStreamTrack*
 DOMMediaStream::GetTrackById(const nsString& aId)
 {
@@ -698,6 +800,7 @@ DOMMediaStream::InitInputStreamCommon(MediaStream* aStream,
   MOZ_ASSERT(!mOwnedStream, "Input stream must be initialized before owned stream");
 
   mInputStream = aStream;
+  mInputStream->RegisterUser();
 }
 
 void
@@ -709,6 +812,7 @@ DOMMediaStream::InitOwnedStreamCommon(MediaStreamGraph* aGraph)
   
   mOwnedStream = aGraph->CreateTrackUnionStream(nullptr);
   mOwnedStream->SetAutofinish(true);
+  mOwnedStream->RegisterUser();
   if (mInputStream) {
     mOwnedPort = mOwnedStream->AllocateInputPort(mInputStream);
   }
@@ -723,6 +827,7 @@ DOMMediaStream::InitPlaybackStreamCommon(MediaStreamGraph* aGraph)
 {
   mPlaybackStream = aGraph->CreateTrackUnionStream(this);
   mPlaybackStream->SetAutofinish(true);
+  mPlaybackStream->RegisterUser();
   if (mOwnedStream) {
     mPlaybackPort = mPlaybackStream->AllocateInputPort(mOwnedStream);
   }

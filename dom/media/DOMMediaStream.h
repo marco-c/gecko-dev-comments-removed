@@ -363,6 +363,23 @@ public:
   void RemoveTrack(MediaStreamTrack& aTrack);
 
   
+  already_AddRefed<DOMMediaStream> Clone();
+
+  
+
+  
+
+
+
+
+
+
+
+  enum class TrackForwardingOption {
+    CURRENT,
+    ALL
+  };
+  already_AddRefed<DOMMediaStream> CloneInternal(TrackForwardingOption aForwarding);
 
   MediaStreamTrack* GetTrackById(const nsString& aId);
 
