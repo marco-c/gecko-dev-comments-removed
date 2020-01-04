@@ -166,6 +166,15 @@ fetchXHR(corsServerURL + '?status=200&allowOrigin=*', function(xhr) {
 });
 
 
+var uriOrigin = encodeURIComponent(origin);
+fetchXHR('http://example.org' + corsServerPath + '?ignore&status=200&origin=' + uriOrigin +
+         '&allowOrigin=' + uriOrigin, function(xhr) {
+  my_ok(xhr.status == 200, "cross origin load with correct headers should be successful");
+  my_ok(xhr.getResponseHeader("access-control-allow-origin") == null, "cors headers should be filtered out");
+  finish();
+});
+
+
 
 fetchXHR(redirectURL([{ server: origin },
                       { server: 'http://example.org',
