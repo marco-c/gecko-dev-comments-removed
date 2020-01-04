@@ -528,21 +528,17 @@ imgFrame::SetRawAccessOnly()
 
 
 imgFrame::SurfaceWithFormat
-imgFrame::SurfaceForDrawing(bool               aDoPadding,
-                            bool               aDoPartialDecode,
+imgFrame::SurfaceForDrawing(bool               aDoPartialDecode,
                             bool               aDoTile,
-                            gfxContext*        aContext,
-                            const nsIntMargin& aPadding,
-                            gfxRect&           aImageRect,
                             ImageRegion&       aRegion,
                             SourceSurface*     aSurface)
 {
   MOZ_ASSERT(NS_IsMainThread());
   mMonitor.AssertCurrentThreadOwns();
 
-  IntSize size(int32_t(aImageRect.Width()), int32_t(aImageRect.Height()));
-  if (!aDoPadding && !aDoPartialDecode) {
-    return SurfaceWithFormat(new gfxSurfaceDrawable(aSurface, size), mFormat);
+  if (!aDoPartialDecode) {
+    return SurfaceWithFormat(new gfxSurfaceDrawable(aSurface, mImageSize),
+                                                    mFormat);
   }
 
   gfxRect available = gfxRect(mDecoded.x, mDecoded.y, mDecoded.width,
@@ -554,7 +550,7 @@ imgFrame::SurfaceForDrawing(bool               aDoPadding,
     
     RefPtr<DrawTarget> target =
       gfxPlatform::GetPlatform()->
-        CreateOffscreenContentDrawTarget(size, SurfaceFormat::B8G8R8A8);
+        CreateOffscreenContentDrawTarget(mImageSize, SurfaceFormat::B8G8R8A8);
     if (!target) {
       return SurfaceWithFormat();
     }
@@ -565,18 +561,15 @@ imgFrame::SurfaceForDrawing(bool               aDoPadding,
     target->FillRect(ToRect(aRegion.Intersect(available).Rect()), pattern);
 
     RefPtr<SourceSurface> newsurf = target->Snapshot();
-    return SurfaceWithFormat(new gfxSurfaceDrawable(newsurf, size),
+    return SurfaceWithFormat(new gfxSurfaceDrawable(newsurf, mImageSize),
                              target->GetFormat());
   }
 
   
   
-  gfxPoint paddingTopLeft(aPadding.left, aPadding.top);
-  aRegion = aRegion.Intersect(available) - paddingTopLeft;
-  aContext->Multiply(gfxMatrix::Translation(paddingTopLeft));
-  aImageRect = gfxRect(0, 0, mFrameRect.width, mFrameRect.height);
-
+  aRegion = aRegion.Intersect(available);
   IntSize availableSize(mDecoded.width, mDecoded.height);
+
   return SurfaceWithFormat(new gfxSurfaceDrawable(aSurface, availableSize),
                            mFormat);
 }
@@ -592,16 +585,16 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
   NS_ASSERTION(!aRegion.IsRestricted() ||
                !aRegion.Rect().Intersect(aRegion.Restriction()).IsEmpty(),
                "We must be allowed to sample *some* source pixels!");
-  NS_ASSERTION(!mPalettedImageData, "Directly drawing a paletted image!");
+  MOZ_ASSERT(mFrameRect.IsEqualEdges(IntRect(IntPoint(), mImageSize)),
+             "Directly drawing an image with a non-trivial frame rect!");
+
+  if (mPalettedImageData) {
+    MOZ_ASSERT_UNREACHABLE("Directly drawing a paletted image!");
+    return false;
+  }
 
   MonitorAutoLock lock(mMonitor);
 
-  nsIntMargin padding(mFrameRect.y,
-                      mImageSize.width - mFrameRect.XMost(),
-                      mImageSize.height - mFrameRect.YMost(),
-                      mFrameRect.x);
-
-  bool doPadding = padding != nsIntMargin(0,0,0,0);
   bool doPartialDecode = !AreAllPixelsWritten();
 
   RefPtr<SourceSurface> surf = GetSurfaceInternal();
@@ -614,16 +607,8 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
                 !(aImageFlags & imgIContainer::FLAG_CLAMP);
 
   ImageRegion region(aRegion);
-  
-  
-  
-  
-  
-  
-  gfxContextMatrixAutoSaveRestore autoSR(aContext);
   SurfaceWithFormat surfaceResult =
-    SurfaceForDrawing(doPadding, doPartialDecode, doTile, aContext,
-                      padding, imageRect, region, surf);
+    SurfaceForDrawing(doPartialDecode, doTile, region, surf);
 
   if (surfaceResult.IsValid()) {
     gfxUtils::DrawPixelSnapped(aContext, surfaceResult.mDrawable,
