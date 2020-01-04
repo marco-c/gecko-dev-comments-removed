@@ -8,6 +8,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
+#include "mozilla/Maybe.h"
 #include "AudioChannelService.h"
 
 namespace mozilla {
@@ -45,14 +46,17 @@ public:
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  bool Headphones() const
+  bool Headphones()
   {
     
     
     
     
-    return mState != hal::SWITCH_STATE_OFF &&
-           mState != hal::SWITCH_STATE_UNKNOWN;
+    if (mState.isNothing()) {
+      mState = Some(hal::GetCurrentSwitchState(hal::SWITCH_HEADPHONES));
+    }
+    return mState.value() != hal::SWITCH_STATE_OFF &&
+           mState.value() != hal::SWITCH_STATE_UNKNOWN;
   }
 
   bool SetVolumeControlChannel(const nsAString& aChannel);
@@ -67,7 +71,7 @@ protected:
 private:
   void NotifyVolumeControlChannelChanged();
 
-  hal::SwitchState mState;
+  Maybe<hal::SwitchState> mState;
   int32_t mVolumeChannel;
 };
 
