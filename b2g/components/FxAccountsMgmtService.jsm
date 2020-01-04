@@ -99,6 +99,17 @@ this.FxAccountsMgmtService = {
     }
 
     switch(data.method) {
+      case "getAssertion":
+        let principal = Services.scriptSecurityManager.getSystemPrincipal();
+        let audience = msg.audience || principal.originNoSuffix;
+        FxAccountsManager.getAssertion(audience, principal, {
+          silent: msg.silent || false
+        }).then(result => {
+          self._onFulfill(msg.id, result);
+        }, reason => {
+          self._onReject(msg.id, reason);
+        });
+        break;
       case "getAccount":
       case "getKeys":
         FxAccountsManager[data.method]().then(
