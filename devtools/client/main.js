@@ -13,11 +13,6 @@ defaultTools.forEach(definition => gDevTools.registerTool(definition));
 defaultThemes.forEach(definition => gDevTools.registerTheme(definition));
 
 
-
-exports.defaultTools = require("devtools/client/definitions").defaultTools;
-exports.defaultThemes = require("devtools/client/definitions").defaultThemes;
-exports.Tools = require("devtools/client/definitions").Tools;
-
 Object.defineProperty(exports, "Toolbox", {
   get: () => require("devtools/client/framework/toolbox").Toolbox
 });
