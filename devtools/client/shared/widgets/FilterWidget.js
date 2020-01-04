@@ -707,14 +707,7 @@ CSSFilterEditorWidget.prototype = {
       return;
     }
 
-    
-    
-    
-    let tmp = this.doc.createElement("i");
-    tmp.style.filter = cssValue;
-    const computedValue = this.win.getComputedStyle(tmp).filter;
-
-    for (let {name, value} of tokenizeComputedFilter(computedValue)) {
+    for (let {name, value} of tokenizeFilterValue(cssValue)) {
       this.add(name, value);
     }
 
@@ -880,14 +873,7 @@ function swapArrayIndices(array, a, b) {
 
 
 
-
-
-
-
-
-
-
-function tokenizeComputedFilter(css) {
+function tokenizeFilterValue(css) {
   let filters = [];
   let depth = 0;
 
@@ -907,7 +893,7 @@ function tokenizeComputedFilter(css) {
           state = "function";
           depth = 1;
         } else if (token.tokenType === "url" || token.tokenType === "bad_url") {
-          filters.push({name: "url", value: token.text});
+          filters.push({name: "url", value: token.text.trim()});
           
           
         }
@@ -917,7 +903,7 @@ function tokenizeComputedFilter(css) {
         if (token.tokenType === "symbol" && token.text === ")") {
           --depth;
           if (depth === 0) {
-            filters.push({name: name, value: contents});
+            filters.push({name: name, value: contents.trim()});
             state = "initial";
             break;
           }
