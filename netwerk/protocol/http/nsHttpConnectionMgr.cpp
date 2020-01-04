@@ -847,30 +847,6 @@ nsHttpConnectionMgr::ProcessAllTransactionsCB(const nsACString &key,
     return PL_DHASH_NEXT;
 }
 
-
-
-
-PLDHashOperator
-nsHttpConnectionMgr::PurgeExcessSpdyConnectionsCB(const nsACString &key,
-                                                  nsAutoPtr<nsConnectionEntry> &ent,
-                                                  void *closure)
-{
-    if (!ent->mUsingSpdy)
-        return PL_DHASH_NEXT;
-
-    nsHttpConnectionMgr *self = static_cast<nsHttpConnectionMgr *>(closure);
-    for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
-        nsHttpConnection *conn = ent->mActiveConns[index];
-        if (conn->UsingSpdy() && conn->CanReuse()) {
-            conn->DontReuse();
-            
-            if (self->mNumIdleConns + self->mNumActiveConns + 1 <= self->mMaxConns)
-                return PL_DHASH_STOP;
-        }
-    }
-    return PL_DHASH_NEXT;
-}
-
 PLDHashOperator
 nsHttpConnectionMgr::PruneDeadConnectionsCB(const nsACString &key,
                                             nsAutoPtr<nsConnectionEntry> &ent,
@@ -1467,7 +1443,33 @@ nsHttpConnectionMgr::MakeNewConnection(nsConnectionEntry *ent,
 
     if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) &&
         mNumActiveConns && gHttpHandler->IsSpdyEnabled())
-        mCT.Enumerate(PurgeExcessSpdyConnectionsCB, this);
+    {
+        
+        
+        
+        for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+            nsAutoPtr<nsConnectionEntry> &ent = iter.Data();
+            if (!ent->mUsingSpdy) {
+                continue;
+            }
+
+            for (uint32_t index = 0;
+                 index < ent->mActiveConns.Length();
+                 ++index) {
+                nsHttpConnection *conn = ent->mActiveConns[index];
+                if (conn->UsingSpdy() && conn->CanReuse()) {
+                    conn->DontReuse();
+                    
+                    
+                    if (mNumIdleConns + mNumActiveConns + 1 <= mMaxConns) {
+                        goto outerLoopEnd;
+                    }
+                }
+            }
+        }
+      outerLoopEnd:
+        ;
+    }
 
     if (AtActiveConnectionLimit(ent, trans->Caps()))
         return NS_ERROR_NOT_AVAILABLE;
