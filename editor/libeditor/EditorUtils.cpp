@@ -24,46 +24,52 @@
 class nsISupports;
 class nsRange;
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+
+using namespace dom;
 
 
 
 
 
-nsAutoSelectionReset::nsAutoSelectionReset(Selection* aSel, nsEditor* aEd
-                                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : mSel(nullptr), mEd(nullptr)
+AutoSelectionRestorer::AutoSelectionRestorer(
+                         Selection* aSelection,
+                         nsEditor* aEditor
+                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
+  : mEditor(nullptr)
 {
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  if (!aSel || !aEd) return;    
-  if (aEd->ArePreservingSelection()) return;   
-  mSel = aSel;
-  mEd = aEd;
-  if (mSel)
-  {
-    mEd->PreserveSelectionAcrossActions(mSel);
+  if (NS_WARN_IF(!aSelection) || NS_WARN_IF(!aEditor)) {
+    return;
   }
+  if (aEditor->ArePreservingSelection()) {
+    
+    return;
+  }
+  mSelection = aSelection;
+  mEditor = aEditor;
+  mEditor->PreserveSelectionAcrossActions(mSelection);
 }
 
-nsAutoSelectionReset::~nsAutoSelectionReset()
+AutoSelectionRestorer::~AutoSelectionRestorer()
 {
-  NS_ASSERTION(!mSel || mEd, "mEd should be non-null when mSel is");
-  if (mSel && mEd->ArePreservingSelection())   
-  {
-    mEd->RestorePreservedSelection(mSel);
+  NS_ASSERTION(!mSelection || mEditor,
+               "mEditor should be non-null when mSelection is");
+  
+  if (mSelection && mEditor->ArePreservingSelection()) {
+    mEditor->RestorePreservedSelection(mSelection);
   }
 }
 
 void
-nsAutoSelectionReset::Abort()
+AutoSelectionRestorer::Abort()
 {
-  NS_ASSERTION(!mSel || mEd, "mEd should be non-null when mSel is");
-  if (mSel)
-    mEd->StopPreservingSelection();
+  NS_ASSERTION(!mSelection || mEditor,
+               "mEditor should be non-null when mSelection is");
+  if (mSelection) {
+    mEditor->StopPreservingSelection();
+  }
 }
-
-namespace mozilla {
 
 
 

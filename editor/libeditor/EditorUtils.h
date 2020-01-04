@@ -72,30 +72,39 @@ class MOZ_RAII nsAutoEditBatch : public nsAutoPlaceHolderBatch
     ~nsAutoEditBatch() {}
 };
 
-
-
-
-
-class MOZ_RAII nsAutoSelectionReset
-{
-  private:
-    
-    RefPtr<mozilla::dom::Selection> mSel;
-    nsEditor *mEd;  
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-
-  public:
-    
-    nsAutoSelectionReset(mozilla::dom::Selection* aSel, nsEditor* aEd MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-
-    
-    ~nsAutoSelectionReset();
-
-    
-    void Abort();
-};
-
 namespace mozilla {
+
+
+
+
+
+class MOZ_RAII AutoSelectionRestorer final
+{
+private:
+  
+  RefPtr<dom::Selection> mSelection;
+  nsEditor* mEditor;  
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+public:
+  
+
+
+
+  AutoSelectionRestorer(dom::Selection* aSelection,
+                        nsEditor* aEditor
+                        MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+
+  
+
+
+  ~AutoSelectionRestorer();
+
+  
+
+
+  void Abort();
+};
 
 
 

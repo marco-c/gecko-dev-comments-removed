@@ -55,6 +55,7 @@ class nsTransactionManager;
 
 namespace mozilla {
 class AutoRules;
+class AutoSelectionRestorer;
 class AutoTransactionsConserveSelection;
 class ErrorResult;
 class TextComposition;
@@ -858,7 +859,8 @@ protected:
   
   nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
-  nsSelectionState  mSavedSel;           
+  
+  nsSelectionState  mSavedSel;
   nsRangeUpdater    mRangeUpdater;       
 
   uint32_t          mModCount;     
@@ -887,8 +889,8 @@ protected:
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
   friend class mozilla::AutoRules;
+  friend class mozilla::AutoSelectionRestorer;
   friend class mozilla::AutoTransactionsConserveSelection;
-  friend class nsAutoSelectionReset;
   friend class nsRangeUpdater;
 };
 

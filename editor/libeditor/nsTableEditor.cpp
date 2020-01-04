@@ -1927,7 +1927,7 @@ nsHTMLEditor::SwitchTableCellHeaderType(nsIDOMElement *aSourceCell, nsIDOMElemen
   
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
-  nsAutoSelectionReset selectionResetter(selection, this);
+  AutoSelectionRestorer selectionRestorer(selection, this);
 
   
   nsCOMPtr<nsIAtom> atom = nsEditor::GetTag(aSourceCell);
@@ -2474,7 +2474,7 @@ nsHTMLEditor::NormalizeTable(nsIDOMElement *aTable)
   NS_ENSURE_SUCCESS(res, res);
 
   
-  nsAutoSelectionReset selectionResetter(selection, this);
+  AutoSelectionRestorer selectionRestorer(selection, this);
 
   nsAutoEditBatch beginBatching(this);
   

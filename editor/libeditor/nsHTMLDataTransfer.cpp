@@ -353,9 +353,11 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
   else
   {
     
-    { 
-      
-      nsAutoSelectionReset selectionResetter(selection, this);
+
+    
+    
+    {
+      AutoSelectionRestorer selectionRestorer(selection, this);
       rv = DeleteTableCell(1);
       NS_ENSURE_SUCCESS(rv, rv);
     }
