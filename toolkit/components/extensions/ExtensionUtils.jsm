@@ -336,9 +336,7 @@ LocaleData.prototype = {
 
     
     if (message == "@@ui_locale") {
-      
-      
-      return Locale.getLocale().replace(/-/g, "_");
+      return this.uiLocale;
     } else if (message.startsWith("@@bidi_")) {
       let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIXULChromeRegistry);
       let rtl = registry.isLocaleRTL("global");
@@ -429,6 +427,13 @@ LocaleData.prototype = {
     this.messages.set(locale, result);
     return result;
   },
+
+  get uiLocale() {
+    
+    
+    return Locale.getLocale().replace(/-/g, "_");
+  },
+
 };
 
 
