@@ -37,7 +37,7 @@ public:
             const nsAString& aLabel,
             const nsAString& aLanguage,
             bool aEnabled,
-            TrackID aTrackId = TRACK_INVALID)
+            TrackID aTrackId)
     : mId(aId)
     , mKind(aKind)
     , mLabel(aLabel)
@@ -53,21 +53,17 @@ public:
   }
 
   
-  void Init(TrackType aType,
-            const nsAString& aId,
+  void Init(const nsAString& aId,
             const nsAString& aKind,
             const nsAString& aLabel,
             const nsAString& aLanguage,
-            bool aEnabled,
-            TrackID aTrackId = TRACK_INVALID)
+            bool aEnabled)
   {
     mId = aId;
     mKind = aKind;
     mLabel = aLabel;
     mLanguage = aLanguage;
     mEnabled = aEnabled;
-    mTrackId = aTrackId;
-    mType = aType;
   }
 
   
@@ -379,6 +375,17 @@ public:
   bool HasValidMedia() const
   {
     return HasVideo() || HasAudio();
+  }
+
+  void AssertValid() const
+  {
+    NS_ASSERTION(!HasAudio() || mAudio.mTrackId != TRACK_INVALID,
+                 "Audio track ID must be valid");
+    NS_ASSERTION(!HasVideo() || mVideo.mTrackId != TRACK_INVALID,
+                 "Audio track ID must be valid");
+    NS_ASSERTION(!HasAudio() || !HasVideo() ||
+                 mAudio.mTrackId != mVideo.mTrackId,
+                 "Duplicate track IDs");
   }
 
   

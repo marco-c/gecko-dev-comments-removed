@@ -259,6 +259,7 @@ MediaDecoderReader::AsyncReadMetadata()
   
   RefPtr<MetadataHolder> metadata = new MetadataHolder();
   nsresult rv = ReadMetadata(&metadata->mInfo, getter_Transfers(metadata->mTags));
+  metadata->mInfo.AssertValid();
 
   
   
