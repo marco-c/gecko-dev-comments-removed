@@ -266,6 +266,9 @@ private:
 
   
   void DoomFile();
+  
+  
+  void RemoveForcedValidity();
 
   already_AddRefed<CacheEntryHandle> ReopenTruncated(bool aMemoryOnly,
                                                      nsICacheEntryOpenCallback* aCallback);

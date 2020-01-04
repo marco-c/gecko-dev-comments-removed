@@ -769,6 +769,11 @@ NS_IMETHODIMP CacheStorageService::Clear()
     {
       mozilla::MutexAutoLock lock(mLock);
 
+      {
+        mozilla::MutexAutoLock forcedValidEntriesLock(mForcedValidEntriesLock);
+        mForcedValidEntries.Clear();
+      }
+
       NS_ENSURE_TRUE(!mShutdown, NS_ERROR_NOT_INITIALIZED);
 
       nsTArray<nsCString> keys;
@@ -1021,7 +1026,7 @@ CacheStorageService::RemoveEntry(CacheEntry* aEntry, bool aOnlyUnreferenced)
       return false;
     }
 
-    if (!aEntry->IsUsingDisk() && IsForcedValidEntry(entryKey)) {
+    if (!aEntry->IsUsingDisk() && IsForcedValidEntry(aEntry->GetStorageID(), entryKey)) {
       LOG(("  forced valid, not removing"));
       return false;
     }
@@ -1094,13 +1099,19 @@ CacheStorageService::RecordMemoryOnlyEntry(CacheEntry* aEntry,
 
 
 
-bool CacheStorageService::IsForcedValidEntry(nsACString &aCacheEntryKey)
+bool CacheStorageService::IsForcedValidEntry(nsACString const &aContextKey,
+                                             nsACString const &aEntryKey)
+{
+  return IsForcedValidEntry(aContextKey + aEntryKey);
+}
+
+bool CacheStorageService::IsForcedValidEntry(nsACString const &aContextEntryKey)
 {
   mozilla::MutexAutoLock lock(mForcedValidEntriesLock);
 
   TimeStamp validUntil;
 
-  if (!mForcedValidEntries.Get(aCacheEntryKey, &validUntil)) {
+  if (!mForcedValidEntries.Get(aContextEntryKey, &validUntil)) {
     return false;
   }
 
@@ -1114,13 +1125,14 @@ bool CacheStorageService::IsForcedValidEntry(nsACString &aCacheEntryKey)
   }
 
   
-  mForcedValidEntries.Remove(aCacheEntryKey);
+  mForcedValidEntries.Remove(aContextEntryKey);
   return false;
 }
 
 
 
-void CacheStorageService::ForceEntryValidFor(nsACString &aCacheEntryKey,
+void CacheStorageService::ForceEntryValidFor(nsACString const &aContextKey,
+                                             nsACString const &aEntryKey,
                                              uint32_t aSecondsToTheFuture)
 {
   mozilla::MutexAutoLock lock(mForcedValidEntriesLock);
@@ -1131,7 +1143,15 @@ void CacheStorageService::ForceEntryValidFor(nsACString &aCacheEntryKey,
   
   TimeStamp validUntil = now + TimeDuration::FromSeconds(aSecondsToTheFuture);
 
-  mForcedValidEntries.Put(aCacheEntryKey, validUntil);
+  mForcedValidEntries.Put(aContextKey + aEntryKey, validUntil);
+}
+
+void CacheStorageService::RemoveEntryForceValid(nsACString const &aContextKey,
+                                                nsACString const &aEntryKey)
+{
+  mozilla::MutexAutoLock lock(mForcedValidEntriesLock);
+
+  mForcedValidEntries.Remove(aContextKey + aEntryKey);
 }
 
 
@@ -1378,7 +1398,6 @@ nsresult
 CacheStorageService::AddStorageEntry(CacheStorage const* aStorage,
                                      nsIURI* aURI,
                                      const nsACString & aIdExtension,
-                                     bool aCreateIfNotExist,
                                      bool aReplace,
                                      CacheEntryHandle** aResult)
 {
@@ -1393,7 +1412,7 @@ CacheStorageService::AddStorageEntry(CacheStorage const* aStorage,
                          aStorage->WriteToDisk(),
                          aStorage->SkipSizeCheck(),
                          aStorage->Pinning(),
-                         aCreateIfNotExist, aReplace,
+                         aReplace,
                          aResult);
 }
 
@@ -1404,7 +1423,6 @@ CacheStorageService::AddStorageEntry(nsCSubstring const& aContextKey,
                                      bool aWriteToDisk,
                                      bool aSkipSizeCheck,
                                      bool aPin,
-                                     bool aCreateIfNotExist,
                                      bool aReplace,
                                      CacheEntryHandle** aResult)
 {
@@ -1440,7 +1458,7 @@ CacheStorageService::AddStorageEntry(nsCSubstring const& aContextKey,
     if (entryExists && !aReplace) {
       
       if (MOZ_UNLIKELY(!aWriteToDisk) && MOZ_LIKELY(entry->IsUsingDisk())) {
-        LOG(("  entry is persistnet but we want mem-only, replacing it"));
+        LOG(("  entry is persistent but we want mem-only, replacing it"));
         aReplace = true;
       }
     }
@@ -1457,10 +1475,20 @@ CacheStorageService::AddStorageEntry(nsCSubstring const& aContextKey,
 
       entry = nullptr;
       entryExists = false;
+
+      
+      
+      aReplace = false;
     }
 
     
-    if (!entryExists && (aCreateIfNotExist || aReplace)) {
+    if (!entryExists) {
+      
+      
+      if (aReplace) {
+        RemoveEntryForceValid(aContextKey, entryKey);
+      }
+
       
       entry = new CacheEntry(aContextKey, aURI, aIdExtension, aWriteToDisk, aSkipSizeCheck, aPin);
       entries->Put(entryKey, entry);
@@ -1639,6 +1667,10 @@ CacheStorageService::DoomStorageEntry(CacheStorage const* aStorage,
         }
       }
     }
+
+    if (!entry) {
+      RemoveEntryForceValid(contextKey, entryKey);
+    }
   }
 
   if (entry) {
@@ -1764,6 +1796,21 @@ CacheStorageService::DoomStorageEntries(nsCSubstring const& aContextKey,
     }
   }
 
+  {
+    mozilla::MutexAutoLock lock(mForcedValidEntriesLock);
+
+    for (auto iter = mForcedValidEntries.Iter(); !iter.Done(); iter.Next()) {
+      bool matches;
+      DebugOnly<nsresult> rv = CacheFileUtils::KeyMatchesLoadContextInfo(
+        iter.Key(), aContext, &matches);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+      if (matches) {
+        iter.Remove();
+      }
+    }
+  }
+
   
   
   
@@ -1824,24 +1871,28 @@ CacheStorageService::CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
 
   mozilla::MutexAutoLock lock(mLock);
 
-  if (mShutdown)
+  if (mShutdown) {
     return;
+  }
 
   CacheEntryTable* entries;
-  if (!sGlobalEntryTables->Get(contextKey, &entries))
-    return;
-
   RefPtr<CacheEntry> entry;
-  if (!entries->Get(entryKey, getter_AddRefs(entry)))
-    return;
 
-  if (!entry->IsFileDoomed())
-    return;
+  if (sGlobalEntryTables->Get(contextKey, &entries) &&
+      entries->Get(entryKey, getter_AddRefs(entry))) {
+    if (entry->IsFileDoomed()) {
+      
+      
+      RemoveExactEntry(entries, entryKey, entry, false);
+      entry->DoomAlreadyRemoved();
+    }
 
-  
-  
-  RemoveExactEntry(entries, entryKey, entry, false);
-  entry->DoomAlreadyRemoved();
+    
+    
+    return;
+  }
+
+  RemoveEntryForceValid(contextKey, entryKey);
 }
 
 bool

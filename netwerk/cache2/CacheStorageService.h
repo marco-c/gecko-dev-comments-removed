@@ -158,8 +158,22 @@ private:
 
 
 
-  void ForceEntryValidFor(nsACString &aCacheEntryKey,
+  void ForceEntryValidFor(nsACString const &aContextKey,
+                          nsACString const &aEntryKey,
                           uint32_t aSecondsToTheFuture);
+
+  
+
+
+  void RemoveEntryForceValid(nsACString const &aContextKey,
+                             nsACString const &aEntryKey);
+
+  
+
+
+
+  bool IsForcedValidEntry(nsACString const &aContextKey,
+                          nsACString const &aEntryKey);
 
 private:
   friend class CacheIndex;
@@ -169,9 +183,7 @@ private:
 
 
 
-
-
-  bool IsForcedValidEntry(nsACString &aCacheEntryKey);
+  bool IsForcedValidEntry(nsACString const &aEntryKeyWithContext);
 
 private:
   
@@ -190,7 +202,6 @@ private:
   nsresult AddStorageEntry(CacheStorage const* aStorage,
                            nsIURI* aURI,
                            const nsACString & aIdExtension,
-                           bool aCreateIfNotExist,
                            bool aReplace,
                            CacheEntryHandle** aResult);
 
@@ -286,7 +297,6 @@ private:
                            bool aWriteToDisk,
                            bool aSkipSizeCheck,
                            bool aPin,
-                           bool aCreateIfNotExist,
                            bool aReplace,
                            CacheEntryHandle** aResult);
 
