@@ -29,14 +29,20 @@ class JitContext;
 class DebugModeOSRVolatileJitFrameIterator;
 } 
 
+typedef HashSet<JSObject*> ObjectSet;
 typedef HashSet<Shape*> ShapeSet;
 
 
 class AutoCycleDetector
 {
-  public:
-    using Set = HashSet<JSObject*, MovableCellHasher<JSObject*>>;
+    JSContext* cx;
+    RootedObject obj;
+    bool cyclic;
+    uint32_t hashsetGenerationAtInit;
+    ObjectSet::AddPtr hashsetAddPointer;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
+  public:
     AutoCycleDetector(JSContext* cx, HandleObject objArg
                       MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : cx(cx), obj(cx, objArg), cyclic(true)
@@ -49,19 +55,11 @@ class AutoCycleDetector
     bool init();
 
     bool foundCycle() { return cyclic; }
-
-  private:
-    JSContext* cx;
-    RootedObject obj;
-    bool cyclic;
-    uint32_t hashsetGenerationAtInit;
-    Set::AddPtr hashsetAddPointer;
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 
 extern void
-TraceCycleDetectionSet(JSTracer* trc, AutoCycleDetector::Set& set);
+TraceCycleDetectionSet(JSTracer* trc, ObjectSet& set);
 
 struct AutoResolving;
 
@@ -348,7 +346,7 @@ struct JSContext : public js::ExclusiveContext,
 
   public:
     
-    js::AutoCycleDetector::Set cycleDetectorSet;
+    js::ObjectSet       cycleDetectorSet;
 
     
     void*               data;
