@@ -106,7 +106,7 @@ DataStorage::Init(bool& aDataWillPersist)
 
   nsresult rv;
   if (XRE_IsParentProcess()) {
-    rv = NS_NewThread(getter_AddRefs(mWorkerThread));
+    rv = NS_NewNamedThread("DataStorage", getter_AddRefs(mWorkerThread));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -148,9 +148,10 @@ DataStorage::Init(bool& aDataWillPersist)
   
   if (XRE_IsParentProcess()) {
     os->AddObserver(this, "profile-before-change", false);
-  } else {
-    os->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
   }
+  
+  
+  os->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
 
   
   mTimerDelay = Preferences::GetInt("test.datastorage.write_timer_ms",
@@ -864,8 +865,11 @@ DataStorage::Observe(nsISupports* aSubject, const char* aTopic,
   if (strcmp(aTopic, "last-pb-context-exited") == 0) {
     MutexAutoLock lock(mMutex);
     mPrivateDataTable.Clear();
-  } else if (strcmp(aTopic, "profile-before-change") == 0) {
+  } else if (strcmp(aTopic, "profile-before-change") == 0 ||
+             (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0 &&
+              XRE_IsParentProcess())) {
     MOZ_ASSERT(XRE_IsParentProcess());
+    
     {
       MutexAutoLock lock(mMutex);
       rv = AsyncWriteData(lock);
