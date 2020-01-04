@@ -78,7 +78,11 @@ typedef intptr_t Atomic64;
 
 
 
+#if defined(__OpenBSD__) && !defined(GOOGLE_PROTOBUF_ARCH_64_BIT)
+typedef Atomic32 AtomicWord;
+#else
 typedef intptr_t AtomicWord;
+#endif
 
 
 
