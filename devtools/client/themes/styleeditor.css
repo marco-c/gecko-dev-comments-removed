@@ -3,6 +3,14 @@
 
 
 
+.style-editor-newButton {
+  list-style-image: url(images/add.svg);
+}
+
+.style-editor-importButton {
+  list-style-image: url(images/import.svg);
+}
+
 .stylesheet-title,
 .stylesheet-name {
   text-decoration: none;
