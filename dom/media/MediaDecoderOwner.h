@@ -11,6 +11,7 @@
 namespace mozilla {
 
 class VideoFrameContainer;
+class MediaResult;
 
 namespace dom {
 class HTMLMediaElement;
@@ -67,7 +68,7 @@ public:
   
   
   
-  virtual void DecodeError() = 0;
+  virtual void DecodeError(const MediaResult& aError) = 0;
 
   
   virtual bool HasError() const = 0;

@@ -88,7 +88,7 @@ MediaKeys::Terminated()
 
   
   if (mElement) {
-    mElement->DecodeError();
+    mElement->DecodeError(NS_ERROR_DOM_MEDIA_CDM_ERR);
   }
 
   Shutdown();
