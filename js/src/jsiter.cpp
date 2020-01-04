@@ -1004,6 +1004,7 @@ const Class PropertyIteratorObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     finalize,
     nullptr, 
     nullptr, 
@@ -1358,6 +1359,7 @@ stopiter_hasInstance(JSContext* cx, HandleObject obj, MutableHandleValue v, bool
 const Class StopIterationObject::class_ = {
     "StopIteration",
     JSCLASS_HAS_CACHED_PROTO(JSProto_StopIteration),
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

@@ -3279,6 +3279,7 @@ const Class ArrayObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     {
         GenericCreateConstructor<ArrayConstructor, 1, AllocKind::FUNCTION, &jit::JitInfo_Array>,
         CreateArrayPrototype,

@@ -10,7 +10,6 @@
 using JS::RootedObject;
 using JS::RootedScript;
 using JS::RootedString;
-using namespace js;
 
 
 BEGIN_TEST(test_ubiNodeZone)

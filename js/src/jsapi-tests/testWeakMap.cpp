@@ -163,6 +163,7 @@ JSObject* newKey()
         nullptr, 
         nullptr, 
         nullptr, 
+        nullptr, 
         JS_NULL_CLASS_SPEC,
         {
             nullptr,
@@ -207,6 +208,7 @@ JSObject* newDelegate()
     static const js::Class delegateClass = {
         "delegate",
         JSCLASS_GLOBAL_FLAGS | JSCLASS_HAS_RESERVED_SLOTS(1),
+        nullptr, 
         nullptr, 
         nullptr, 
         nullptr, 

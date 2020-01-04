@@ -518,6 +518,15 @@ MakeTime(double hour, double min, double sec, double ms)
 
 
 
+static bool
+date_convert(JSContext* cx, HandleObject obj, JSType hint, MutableHandleValue vp)
+{
+    MOZ_ASSERT(hint == JSTYPE_NUMBER || hint == JSTYPE_STRING || hint == JSTYPE_VOID);
+    MOZ_ASSERT(obj->is<DateObject>());
+
+    return JS::OrdinaryToPrimitive(cx, obj, hint == JSTYPE_VOID ? JSTYPE_STRING : hint, vp);
+}
+
 
 
 static const char* const wtb[] = {
@@ -2903,30 +2912,6 @@ js::date_valueOf(JSContext* cx, unsigned argc, Value* vp)
     return CallNonGenericMethod<IsDate, date_valueOf_impl>(cx, args);
 }
 
-
-static bool
-date_toPrimitive(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    if (!args.thisv().isObject()) {
-        ReportIncompatible(cx, args);
-        return false;
-    }
-
-    
-    JSType hint;
-    if (!GetFirstArgumentAsTypeHint(cx, args, &hint))
-        return false;
-    if (hint == JSTYPE_VOID)
-        hint = JSTYPE_STRING;
-
-    args.rval().set(args.thisv());
-    RootedObject obj(cx, &args.thisv().toObject());
-    return OrdinaryToPrimitive(cx, obj, hint, args.rval());
-}
-
 static const JSFunctionSpec date_static_methods[] = {
     JS_FN("UTC",                 date_UTC,                7,0),
     JS_FN("parse",               date_parse,              1,0),
@@ -2990,7 +2975,6 @@ static const JSFunctionSpec date_methods[] = {
 #endif
     JS_FN(js_toString_str,       date_toString,           0,0),
     JS_FN(js_valueOf_str,        date_valueOf,            0,0),
-    JS_SYM_FN(toPrimitive,       date_toPrimitive,        1,JSPROP_READONLY),
     JS_FS_END
 };
 
@@ -3182,6 +3166,7 @@ const Class DateObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    date_convert,
     nullptr, 
     nullptr, 
     nullptr, 
@@ -3201,6 +3186,7 @@ const Class DateObject::class_ = {
 const Class DateObject::protoClass_ = {
     js_Object_str,
     JSCLASS_HAS_CACHED_PROTO(JSProto_Date),
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

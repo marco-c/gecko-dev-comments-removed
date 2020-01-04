@@ -114,6 +114,7 @@ const Class MapIteratorObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     MapIteratorObject::finalize
 };
 
@@ -223,6 +224,7 @@ const Class MapObject::class_ = {
     "Map",
     JSCLASS_HAS_PRIVATE | 
     JSCLASS_HAS_CACHED_PROTO(JSProto_Map),
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -836,6 +838,7 @@ const Class SetIteratorObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     SetIteratorObject::finalize
 };
 
@@ -969,6 +972,7 @@ const Class SetObject::class_ = {
     "Set",
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_CACHED_PROTO(JSProto_Set),
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

@@ -16,6 +16,22 @@
 
 using namespace js;
 
+
+
+
+
+
+
+
+bool
+Wrapper::defaultValue(JSContext* cx, HandleObject proxy, JSType hint, MutableHandleValue vp) const
+{
+    vp.set(ObjectValue(*proxy->as<ProxyObject>().target()));
+    if (hint == JSTYPE_VOID)
+        return ToPrimitive(cx, vp);
+    return ToPrimitive(cx, hint, vp);
+}
+
 JSObject*
 Wrapper::New(JSContext* cx, JSObject* obj, const Wrapper* handler,
              const WrapperOptions& options)

@@ -23546,6 +23546,7 @@ const JSClass NormalJSRuntime::kGlobalClass = {
    nullptr,
    nullptr,
    nullptr,
+   nullptr,
    JS_GlobalObjectTraceHook
 };
 

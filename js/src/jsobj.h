@@ -1009,24 +1009,17 @@ extern bool
 UnwatchProperty(JSContext* cx, HandleObject obj, HandleId id);
 
 
+
+
+
 extern bool
-ToPrimitiveSlow(JSContext* cx, JSType hint, MutableHandleValue vp);
+ToPrimitive(JSContext* cx, HandleObject obj, JSType hint, MutableHandleValue vp);
 
-inline bool
-ToPrimitive(JSContext* cx, MutableHandleValue vp)
-{
-    if (vp.isPrimitive())
-        return true;
-    return ToPrimitiveSlow(cx, JSTYPE_VOID, vp);
-}
+MOZ_ALWAYS_INLINE bool
+ToPrimitive(JSContext* cx, MutableHandleValue vp);
 
-inline bool
-ToPrimitive(JSContext* cx, JSType preferredType, MutableHandleValue vp)
-{
-    if (vp.isPrimitive())
-        return true;
-    return ToPrimitiveSlow(cx, preferredType, vp);
-}
+MOZ_ALWAYS_INLINE bool
+ToPrimitive(JSContext* cx, JSType preferredType, MutableHandleValue vp);
 
 
 

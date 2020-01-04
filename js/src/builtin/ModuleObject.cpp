@@ -235,6 +235,7 @@ ModuleObject::class_ = {
     nullptr,        
     nullptr,        
     nullptr,        
+    ModuleObject::finalize,
     nullptr,        
     nullptr,        
     nullptr,        

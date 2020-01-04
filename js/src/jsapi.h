@@ -1886,21 +1886,6 @@ JS_StringToId(JSContext* cx, JS::HandleString s, JS::MutableHandleId idp);
 extern JS_PUBLIC_API(bool)
 JS_IdToValue(JSContext* cx, jsid id, JS::MutableHandle<JS::Value> vp);
 
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-ToPrimitive(JSContext* cx, JS::HandleObject obj, JSType hint, JS::MutableHandleValue vp);
-
-
 
 
 
@@ -1908,9 +1893,8 @@ ToPrimitive(JSContext* cx, JS::HandleObject obj, JSType hint, JS::MutableHandleV
 
 
 extern JS_PUBLIC_API(bool)
-GetFirstArgumentAsTypeHint(JSContext* cx, CallArgs args, JSType *result);
-
-} 
+JS_DefaultValue(JSContext* cx, JS::Handle<JSObject*> obj, JSType hint,
+                JS::MutableHandle<JS::Value> vp);
 
 extern JS_PUBLIC_API(bool)
 JS_PropertyStub(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
@@ -2117,7 +2101,7 @@ struct JSFunctionSpec {
     JS_FNSPEC(name, call, nullptr, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
 #define JS_INLINABLE_FN(name,call,nargs,flags,native)                         \
     JS_FNSPEC(name, call, &js::jit::JitInfo_##native, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
-#define JS_SYM_FN(symbol,call,nargs,flags)                                    \
+#define JS_SYM_FN(name,call,nargs,flags)                                      \
     JS_SYM_FNSPEC(symbol, call, nullptr, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
 #define JS_FNINFO(name,call,info,nargs,flags)                                 \
     JS_FNSPEC(name, call, info, nargs, flags, nullptr)
@@ -3128,22 +3112,19 @@ extern JS_PUBLIC_API(JSFunction*)
 JS_NewFunction(JSContext* cx, JSNative call, unsigned nargs, unsigned flags,
                const char* name);
 
+
+
+
+
+extern JS_PUBLIC_API(JSFunction*)
+JS_NewFunctionById(JSContext* cx, JSNative call, unsigned nargs, unsigned flags,
+                   JS::Handle<jsid> id);
+
 namespace JS {
 
 extern JS_PUBLIC_API(JSFunction*)
-GetSelfHostedFunction(JSContext* cx, const char* selfHostedName, HandleId id,
+GetSelfHostedFunction(JSContext* cx, const char* selfHostedName, JS::Handle<jsid> id,
                       unsigned nargs);
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(JSFunction*)
-NewFunctionFromSpec(JSContext* cx, const JSFunctionSpec* fs, HandleId id);
 
 } 
 
@@ -4387,15 +4368,14 @@ GetSymbolDescription(HandleSymbol symbol);
 
 enum class SymbolCode : uint32_t {
     iterator,                       
-    match,
-    species,
-    toPrimitive,
+    match,                          
+    species,                        
     InSymbolRegistry = 0xfffffffe,  
     UniqueSymbol = 0xffffffff       
 };
 
 
-const size_t WellKnownSymbolLimit = 4;
+const size_t WellKnownSymbolLimit = 3;
 
 
 

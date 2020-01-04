@@ -776,6 +776,7 @@ XPCWrappedNative::Init(const XPCNativeScriptableCreateInfo* sci)
                jsclazz->name &&
                jsclazz->flags &&
                jsclazz->resolve &&
+               jsclazz->convert &&
                jsclazz->finalize, "bad class");
 
     

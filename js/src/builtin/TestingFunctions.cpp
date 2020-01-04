@@ -1111,6 +1111,7 @@ static const JSClass FinalizeCounterClass = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     finalize_counter_finalize
 };
 
@@ -1796,6 +1797,7 @@ class CloneBufferObject : public NativeObject {
 
 const Class CloneBufferObject::class_ = {
     "CloneBuffer", JSCLASS_HAS_RESERVED_SLOTS(CloneBufferObject::NUM_SLOTS),
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

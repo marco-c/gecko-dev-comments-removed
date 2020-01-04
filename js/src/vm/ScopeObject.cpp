@@ -331,6 +331,7 @@ const Class ModuleEnvironmentObject::class_ = {
     nullptr,        
     nullptr,        
     nullptr,        
+    nullptr,        
     JS_NULL_CLASS_SPEC,
     JS_NULL_CLASS_EXT,
     {
@@ -713,6 +714,7 @@ const Class DynamicWithObject::class_ = {
     "With",
     JSCLASS_HAS_RESERVED_SLOTS(DynamicWithObject::RESERVED_SLOTS) |
     JSCLASS_IS_ANONYMOUS,
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -1175,6 +1177,7 @@ const Class UninitializedLexicalObject::class_ = {
     "UninitializedLexical",
     JSCLASS_HAS_RESERVED_SLOTS(UninitializedLexicalObject::RESERVED_SLOTS) |
     JSCLASS_IS_ANONYMOUS,
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

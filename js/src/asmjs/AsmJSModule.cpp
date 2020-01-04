@@ -1013,6 +1013,7 @@ const Class AsmJSModuleObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     AsmJSModuleObject_finalize,
     nullptr, 
     nullptr, 
