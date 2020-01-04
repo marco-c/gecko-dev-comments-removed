@@ -138,7 +138,7 @@ ContentRestoreInternal.prototype = {
     
     let listener = new HistoryListener(this.docShell, () => {
       
-      this.restoreTabContent(null, callbacks.onLoadFinished);
+      this.restoreTabContent(null, false, callbacks.onLoadFinished);
     });
 
     webNavigation.sessionHistory.addSHistoryListener(listener);
@@ -175,7 +175,7 @@ ContentRestoreInternal.prototype = {
 
 
 
-  restoreTabContent: function (loadArguments, finishCallback) {
+  restoreTabContent: function (loadArguments, isRemotenessUpdate, finishCallback) {
     let tabData = this._tabData;
     this._tabData = null;
 
@@ -189,7 +189,7 @@ ContentRestoreInternal.prototype = {
     
     
     
-    if (!loadArguments) {
+    if (!isRemotenessUpdate) {
       webNavigation.setCurrentURI(Utils.makeURI("about:blank"));
     }
 

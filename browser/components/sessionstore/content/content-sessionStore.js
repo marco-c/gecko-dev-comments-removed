@@ -171,7 +171,7 @@ var MessageListener = {
     let epoch = gCurrentEpoch;
 
     
-    let didStartLoad = gContentRestore.restoreTabContent(loadArguments, () => {
+    let didStartLoad = gContentRestore.restoreTabContent(loadArguments, isRemotenessUpdate, () => {
       
       
       sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
