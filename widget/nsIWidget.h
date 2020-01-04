@@ -828,7 +828,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetSizeMode(nsSizeMode aMode) = 0;
+    virtual void SetSizeMode(nsSizeMode aMode) = 0;
 
     
 

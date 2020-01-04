@@ -1,7 +1,7 @@
-/* -*- Mode: c++; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include <android/log.h>
 #include <android/native_window.h>
@@ -81,7 +81,7 @@ using mozilla::Unused;
 #include "imgIEncoder.h"
 
 #include "nsString.h"
-#include "GeckoProfiler.h" // For PROFILER_LABEL
+#include "GeckoProfiler.h" 
 #include "nsIXULRuntime.h"
 #include "nsPrintfCString.h"
 
@@ -100,18 +100,18 @@ NS_IMPL_ISUPPORTS_INHERITED0(nsWindow, nsBaseWidget)
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 
-// All the toplevel windows that have been created; these are in
-// stacking order, so the window at gTopLevelWindows[0] is the topmost
-// one.
+
+
+
 static nsTArray<nsWindow*> gTopLevelWindows;
 
 static bool sFailedToCreateGLContext = false;
 
-// Multitouch swipe thresholds in inches
+
 static const double SWIPE_MAX_PINCH_DELTA_INCHES = 0.4;
 static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
 
-// Sync with GeckoEditableView class
+
 static const int IME_MONITOR_CURSOR_ONE_SHOT = 1;
 static const int IME_MONITOR_CURSOR_START_MONITOR = 2;
 static const int IME_MONITOR_CURSOR_END_MONITOR = 3;
@@ -127,7 +127,7 @@ class nsWindow::WindowEvent : public nsAppShell::LambdaEvent<Lambda>
     bool IsStaleCall()
     {
         if (IsStatic) {
-            // Static calls are never stale.
+            
             return false;
         }
 
@@ -137,11 +137,11 @@ class nsWindow::WindowEvent : public nsAppShell::LambdaEvent<Lambda>
                 jni::GetNativeHandle(env, mInstance.Get()));
         MOZ_CATCH_JNI_EXCEPTION(env);
 
-        // The call is stale if the nsWindow has been destroyed on the
-        // Gecko side, but the Java object is still attached to it through
-        // a weak pointer. Stale calls should be discarded. Note that it's
-        // an error if natives is nullptr here; we return false but the
-        // native call will throw an error.
+        
+        
+        
+        
+        
         return natives && !natives->get();
     }
 
@@ -295,9 +295,9 @@ public:
     static void OnNativeCall(Functor&& aCall)
     {
         if (aCall.IsTarget(&Open) && NS_IsMainThread()) {
-            // Gecko state probably just switched to PROFILE_READY, and the
-            // event loop is not running yet. Skip the event loop here so we
-            // can get a head start on opening our window.
+            
+            
+            
             return aCall();
         }
 
@@ -318,7 +318,7 @@ public:
         : window(*aWindow)
         , mEditable(GeckoEditable::New(aView))
         , mIMERanges(new TextRangeArray())
-        , mIMEMaskEventsCount(1) // Mask IME events since there's no focus yet
+        , mIMEMaskEventsCount(1) 
         , mIMEUpdatingContext(false)
         , mIMESelectionChanged(false)
         , mIMETextChangedDuringFlush(false)
@@ -333,43 +333,43 @@ public:
     using Base::DisposeNative;
     using EditableBase::DisposeNative;
 
-    /**
-     * GeckoView methods
-     */
+    
+
+
 private:
     nsCOMPtr<nsPIDOMWindowOuter> mDOMWindow;
 
 public:
-    // Create and attach a window.
+    
     static void Open(const jni::Class::LocalRef& aCls,
                      GeckoView::Window::Param aWindow,
                      GeckoView::Param aView, jni::Object::Param aCompositor,
                      jni::String::Param aChromeURI,
                      int32_t aWidth, int32_t aHeight);
 
-    // Close and destroy the nsWindow.
+    
     void Close();
 
-    // Reattach this nsWindow to a new GeckoView.
+    
     void Reattach(const GeckoView::Window::LocalRef& inst,
                   GeckoView::Param aView, jni::Object::Param aCompositor);
 
     void LoadUri(jni::String::Param aUri, int32_t aFlags);
 
-    /**
-     * GeckoEditable methods
-     */
-private:
-    /*
-        Rules for managing IME between Gecko and Java:
+    
 
-        * Gecko controls the text content, and Java shadows the Gecko text
-           through text updates
-        * Gecko and Java maintain separate selections, and synchronize when
-           needed through selection updates and set-selection events
-        * Java controls the composition, and Gecko shadows the Java
-           composition through update composition events
-    */
+
+private:
+    
+
+
+
+
+
+
+
+
+
 
     struct IMETextChange final {
         int32_t mStart, mOldEnd, mNewEnd;
@@ -393,13 +393,13 @@ private:
         bool IsEmpty() const { return mStart < 0; }
     };
 
-    // GeckoEditable instance used by this nsWindow;
+    
     java::GeckoEditable::GlobalRef mEditable;
     AutoTArray<mozilla::UniquePtr<mozilla::WidgetEvent>, 8> mIMEKeyEvents;
     AutoTArray<IMETextChange, 4> mIMETextChanges;
     InputContext mInputContext;
     RefPtr<mozilla::TextRangeArray> mIMERanges;
-    int32_t mIMEMaskEventsCount; // Mask events when > 0
+    int32_t mIMEMaskEventsCount; 
     bool mIMEUpdatingContext;
     bool mIMESelectionChanged;
     bool mIMETextChangedDuringFlush;
@@ -423,8 +423,8 @@ public:
                          const InputContextAction& aAction);
     InputContext GetInputContext();
 
-    // RAII helper class that automatically sends an event reply through
-    // OnImeSynchronize, as required by events like OnImeReplaceText.
+    
+    
     class AutoIMESynchronize {
         GeckoViewSupport* const mGVS;
     public:
@@ -432,40 +432,40 @@ public:
         ~AutoIMESynchronize() { mGVS->OnImeSynchronize(); }
     };
 
-    // Handle an Android KeyEvent.
+    
     void OnKeyEvent(int32_t aAction, int32_t aKeyCode, int32_t aScanCode,
                     int32_t aMetaState, int64_t aTime, int32_t aUnicodeChar,
                     int32_t aBaseUnicodeChar, int32_t aDomPrintableKeyValue,
                     int32_t aRepeatCount, int32_t aFlags,
                     bool aIsSynthesizedImeKey, jni::Object::Param originalEvent);
 
-    // Synchronize Gecko thread with the InputConnection thread.
+    
     void OnImeSynchronize();
 
-    // Acknowledge focus change and send new text and selection.
+    
     void OnImeAcknowledgeFocus();
 
-    // Replace a range of text with new text.
+    
     void OnImeReplaceText(int32_t aStart, int32_t aEnd,
                           jni::String::Param aText);
 
-    // Add styling for a range within the active composition.
+    
     void OnImeAddCompositionRange(int32_t aStart, int32_t aEnd,
             int32_t aRangeType, int32_t aRangeStyle, int32_t aRangeLineStyle,
             bool aRangeBoldLine, int32_t aRangeForeColor,
             int32_t aRangeBackColor, int32_t aRangeLineColor);
 
-    // Update styling for the active composition using previous-added ranges.
+    
     void OnImeUpdateComposition(int32_t aStart, int32_t aEnd);
 
-    // Set cursor mode whether IME requests
+    
     void OnImeRequestCursorUpdates(int aRequestMode);
 };
 
-/**
- * NativePanZoomController handles its native calls on the UI thread, so make
- * it separate from GeckoViewSupport.
- */
+
+
+
+
 class nsWindow::NPZCSupport final
     : public NativePanZoomController::Natives<NPZCSupport>
 {
@@ -493,37 +493,37 @@ public:
 
     void OnDetach()
     {
-        // There are several considerations when shutting down NPZC. 1) The
-        // Gecko thread may destroy NPZC at any time when nsWindow closes. 2)
-        // There may be pending events on the Gecko thread when NPZC is
-        // destroyed. 3) mWindow may not be available when the pending event
-        // runs. 4) The UI thread may destroy NPZC at any time when GeckoView
-        // is destroyed. 5) The UI thread may destroy NPZC at the same time as
-        // Gecko thread trying to destroy NPZC. 6) There may be pending calls
-        // on the UI thread when NPZC is destroyed. 7) mWindow may have been
-        // cleared on the Gecko thread when the pending call happens on the UI
-        // thread.
-        //
-        // 1) happens through OnDetach, which first notifies the UI
-        // thread through Destroy; Destroy then calls DisposeNative, which
-        // finally disposes the native instance back on the Gecko thread. Using
-        // Destroy to indirectly call DisposeNative here also solves 5), by
-        // making everything go through the UI thread, avoiding contention.
-        //
-        // 2) and 3) are solved by clearing mWindow, which signals to the
-        // pending event that we had shut down. In that case the event bails
-        // and does not touch mWindow.
-        //
-        // 4) happens through DisposeNative directly. OnDetach is not
-        // called.
-        //
-        // 6) is solved by keeping a destroyed flag in the Java NPZC instance,
-        // and only make a pending call if the destroyed flag is not set.
-        //
-        // 7) is solved by taking a lock whenever mWindow is modified on the
-        // Gecko thread or accessed on the UI thread. That way, we don't
-        // release mWindow until the UI thread is done using it, thus avoiding
-        // the race condition.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         typedef NativePanZoomController::GlobalRef NPZCRef;
         auto callDestroy = [] (const NPZCRef& npzc) {
@@ -550,7 +550,7 @@ public:
         }
 
         if (controller && compositor) {
-            // TODO: Pass in correct values for presShellId and viewId.
+            
             controller->CancelAnimation(ScrollableLayerGuid(
                     compositor->RootLayerTreeId(), 0, 0));
         }
@@ -629,7 +629,7 @@ public:
                     NativePanZoomController::LocalRef(env, npzc));
 
             if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
+                
                 env->ExceptionClear();
                 return;
             }
@@ -758,7 +758,7 @@ public:
                     NativePanZoomController::LocalRef(env, npzc));
 
             if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
+                
                 env->ExceptionClear();
                 return;
             }
@@ -811,8 +811,8 @@ public:
                 break;
             case sdk::MotionEvent::ACTION_UP:
             case sdk::MotionEvent::ACTION_POINTER_UP:
-                // for pointer-up events we only want the data from
-                // the one pointer that went up
+                
+                
                 type = MultiTouchInput::MULTITOUCH_END;
                 startIndex = aActionIndex;
                 endIndex = aActionIndex + 1;
@@ -846,8 +846,8 @@ public:
         for (size_t i = startIndex; i < endIndex; i++) {
 
             float orien = orientation[i] * 180.0f / M_PI;
-            // w3c touchevents spec does not allow orientations == 90
-            // this shifts it to -90, which will be shifted to zero below
+            
+            
             if (orien >= 90.0) {
                 orien -= 180.0f;
             }
@@ -855,13 +855,13 @@ public:
             nsIntPoint point = nsIntPoint(int32_t(floorf(x[i])),
                                           int32_t(floorf(y[i])));
 
-            // w3c touchevent radii are given with an orientation between 0 and
-            // 90. The radii are found by removing the orientation and
-            // measuring the x and y radii of the resulting ellipse. For
-            // Android orientations >= 0 and < 90, use the y radius as the
-            // major radius, and x as the minor radius. However, for an
-            // orientation < 0, we have to shift the orientation by adding 90,
-            // and reverse which radius is major and minor.
+            
+            
+            
+            
+            
+            
+            
             gfx::Size radius;
             if (orien < 0.0f) {
                 orien += 90.0f;
@@ -886,7 +886,7 @@ public:
             return true;
         }
 
-        // Dispatch APZ input event on Gecko thread.
+        
         NativePanZoomController::GlobalRef npzc = mNPZC;
         nsAppShell::PostEvent([npzc, input, guid, blockId, status] {
             MOZ_ASSERT(NS_IsMainThread());
@@ -896,7 +896,7 @@ public:
                     NativePanZoomController::LocalRef(env, npzc));
 
             if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
+                
                 env->ExceptionClear();
                 return;
             }
@@ -950,10 +950,10 @@ public:
 template<> const char
 nsWindow::NativePtr<nsWindow::NPZCSupport>::sName[] = "NPZCSupport";
 
-/**
- * Compositor has some unique requirements for its native calls, so make it
- * separate from GeckoViewSupport.
- */
+
+
+
+
 class nsWindow::LayerViewSupport final
     : public LayerView::Compositor::Natives<LayerViewSupport>
 {
@@ -965,9 +965,9 @@ class nsWindow::LayerViewSupport final
     Atomic<bool, ReleaseAcquire> mCompositorPaused;
     jni::Object::GlobalRef mSurface;
 
-    // In order to use Event::HasSameTypeAs in PostTo(), we cannot make
-    // LayerViewEvent a template because each template instantiation is
-    // a different type. So implement LayerViewEvent as a ProxyEvent.
+    
+    
+    
     class LayerViewEvent final : public nsAppShell::ProxyEvent
     {
         using Event = nsAppShell::Event;
@@ -984,8 +984,8 @@ class nsWindow::LayerViewSupport final
 
         void PostTo(LinkedList<Event>& queue) override
         {
-            // Give priority to compositor events, but keep in order with
-            // existing compositor events.
+            
+            
             nsAppShell::Event* event = queue.getFirst();
             while (event && event->HasSameTypeAs(this)) {
                 event = event->getNext();
@@ -1005,18 +1005,18 @@ public:
     static void OnNativeCall(Functor&& aCall)
     {
         if (aCall.IsTarget(&LayerViewSupport::CreateCompositor)) {
-            // This call is blocking.
+            
             nsAppShell::SyncRunEvent(WindowEvent<Functor>(
                     mozilla::Move(aCall)), &LayerViewEvent::MakeEvent);
             return;
 
         } else if (aCall.IsTarget(
                 &LayerViewSupport::SyncResumeResizeCompositor)) {
-            // This call is synchronous. Perform the original call using a copy
-            // of the lambda. Then redirect the original lambda to
-            // OnResumedCompositor, to be run on the Gecko thread. We use
-            // Functor instead of our own lambda so that Functor can handle
-            // object lifetimes for us.
+            
+            
+            
+            
+            
             (Functor(aCall))();
             aCall.SetTarget(&LayerViewSupport::OnResumedCompositor);
             nsAppShell::PostEvent(
@@ -1026,9 +1026,9 @@ public:
             return;
         }
 
-        // LayerViewEvent (i.e. prioritized event) applies to
-        // CreateCompositor, PauseCompositor, and OnResumedCompositor. For all
-        // other events, use regular WindowEvent.
+        
+        
+        
         nsAppShell::PostEvent(
                 mozilla::MakeUnique<WindowEvent<Functor>>(
                 mozilla::Move(aCall)));
@@ -1079,21 +1079,21 @@ private:
     {
         MOZ_ASSERT(NS_IsMainThread());
 
-        // When we receive this, the compositor has already been told to
-        // resume. (It turns out that waiting till we reach here to tell
-        // the compositor to resume takes too long, resulting in a black
-        // flash.) This means it's now safe for layer updates to occur.
-        // Since we might have prevented one or more draw events from
-        // occurring while the compositor was paused, we need to schedule
-        // a draw event now.
+        
+        
+        
+        
+        
+        
+        
         if (!mCompositorPaused) {
             mWindow->RedrawAll();
         }
     }
 
-    /**
-     * Compositor methods
-     */
+    
+
+
 public:
     void AttachToJava(jni::Object::Param aClient, jni::Object::Param aNPZC)
     {
@@ -1103,17 +1103,17 @@ public:
 
         AndroidBridge::Bridge()->SetLayerClient(layerClient);
 
-        // If resetting is true, Android destroyed our GeckoApp activity and we
-        // had to recreate it, but all the Gecko-side things were not
-        // destroyed.  We therefore need to link up the new java objects to
-        // Gecko, and that's what we do here.
+        
+        
+        
+        
         const bool resetting = !!mLayerClient;
         mLayerClient = layerClient;
 
         if (resetting) {
-            // Since we are re-linking the new java objects to Gecko, we need
-            // to get the viewport from the compositor (since the Java copy was
-            // thrown away) and we do that by setting the first-paint flag.
+            
+            
+            
             if (RefPtr<CompositorBridgeParent> bridge = mWindow->GetCompositorBridgeParent()) {
                 bridge->ForceIsFirstPaint();
             }
@@ -1136,7 +1136,7 @@ public:
         if (aWindowWidth != mWindow->mBounds.width ||
             aWindowHeight != mWindow->mBounds.height) {
 
-            mWindow->Resize(aWindowWidth, aWindowHeight, /* repaint */ false);
+            mWindow->Resize(aWindowWidth, aWindowHeight,  false);
         }
     }
 
@@ -1214,7 +1214,7 @@ public:
 template<> const char
 nsWindow::NativePtr<nsWindow::LayerViewSupport>::sName[] = "LayerViewSupport";
 
-/* PresentationMediaPlayerManager native calls access inner nsWindow functionality so PMPMSupport is a child class of nsWindow */
+
 class nsWindow::PMPMSupport final
     : public PresentationMediaPlayerManager::Natives<PMPMSupport>
 {
@@ -1231,7 +1231,7 @@ class nsWindow::PMPMSupport final
 
         LayerViewSupport* const lvs = LayerViewSupport::FromNative(compositor);
         if (!lvs) {
-            // There is a pending exception whenever FromNative returns nullptr.
+            
             compositor.Env()->ExceptionClear();
         }
         return lvs;
@@ -1274,8 +1274,8 @@ public:
         }
 
         if (sSurface) {
-            // Destroy the EGL surface! The compositor is paused so it should
-            // be okay to destroy the surface here.
+            
+            
             mozilla::gl::GLContextProvider::DestroyEGLSurface(sSurface);
             sSurface = nullptr;
         }
@@ -1302,9 +1302,9 @@ EGLSurface nsWindow::PMPMSupport::sSurface;
 
 nsWindow::GeckoViewSupport::~GeckoViewSupport()
 {
-    // Disassociate our GeckoEditable instance with our native object.
-    // OnDestroy will call disposeNative after any pending native calls have
-    // been made.
+    
+    
+    
     MOZ_ASSERT(mEditable);
     mEditable->OnViewChange(nullptr);
 
@@ -1317,7 +1317,7 @@ nsWindow::GeckoViewSupport::~GeckoViewSupport()
     }
 }
 
-/* static */ void
+ void
 nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
                                  GeckoView::Window::Param aWindow,
                                  GeckoView::Param aView,
@@ -1350,7 +1350,7 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
     nsCOMPtr<nsISupportsPRInt32> heightArg
             = do_CreateInstance(NS_SUPPORTS_PRINT32_CONTRACTID);
 
-    // Arguments are optional so it's okay if this fails.
+    
     if (args && widthArg && heightArg &&
             NS_SUCCEEDED(widthArg->SetData(aWidth)) &&
             NS_SUCCEEDED(heightArg->SetData(aHeight)))
@@ -1371,13 +1371,13 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
 
     const auto window = static_cast<nsWindow*>(widget.get());
 
-    // Attach a new GeckoView support object to the new window.
+    
     window->mGeckoViewSupport  = mozilla::MakeUnique<GeckoViewSupport>(
             window, GeckoView::Window::LocalRef(aCls.Env(), aWindow), aView);
 
     window->mGeckoViewSupport->mDOMWindow = pdomWindow;
 
-    // Attach the Compositor to the new window.
+    
     auto compositor = LayerView::Compositor::LocalRef(
             aCls.Env(), LayerView::Compositor::Ref::From(aCompositor));
     window->mLayerViewSupport.Attach(compositor, window, compositor);
@@ -1386,8 +1386,8 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
         nsCOMPtr<nsIXULWindow> xulWindow(
                 window->mWidgetListener->GetXULWindow());
         if (xulWindow) {
-            // Our window is not intrinsically sized, so tell nsXULWindow to
-            // not set a size for us.
+            
+            
             xulWindow->SetIntrinsicallySized(false);
         }
     }
@@ -1409,11 +1409,11 @@ nsWindow::GeckoViewSupport::Reattach(const GeckoView::Window::LocalRef& inst,
                                      GeckoView::Param aView,
                                      jni::Object::Param aCompositor)
 {
-    // Associate our previous GeckoEditable with the new GeckoView.
+    
     mEditable->OnViewChange(aView);
 
-    // mNPZCSupport might have already been detached through the Java side calling
-    // NativePanZoomController.destroy().
+    
+    
     if (window.mNPZCSupport) {
         window.mNPZCSupport.Detach();
     }
@@ -1578,15 +1578,15 @@ nsWindow::Destroy(void)
     nsBaseWidget::mOnDestroyCalled = true;
 
     if (mGeckoViewSupport) {
-        // Disassociate our native object with GeckoView.
+        
         mGeckoViewSupport = nullptr;
     }
 
-    // Stuff below may release the last ref to this
+    
     nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
     while (mChildren.Length()) {
-        // why do we still have children?
+        
         ALOG("### Warning: Destroying window %p and reparenting child %p to null!", (void*)this, (void*)mChildren[0]);
         mChildren[0]->SetParent(nullptr);
     }
@@ -1638,8 +1638,8 @@ nsWindow::SetParent(nsIWidget *aNewParent)
     if ((nsIWidget*)mParent == aNewParent)
         return NS_OK;
 
-    // If we had a parent before, remove ourselves from its list of
-    // children.
+    
+    
     if (mParent)
         mParent->mChildren.RemoveElement(this);
 
@@ -1648,7 +1648,7 @@ nsWindow::SetParent(nsIWidget *aNewParent)
     if (mParent)
         mParent->mChildren.AppendElement(this);
 
-    // if we are now in the toplevel window's hierarchy, schedule a redraw
+    
     if (FindTopLevel() == nsWindow::TopWindow())
         RedrawAll();
 
@@ -1710,20 +1710,20 @@ nsWindow::Show(bool aState)
     mIsVisible = aState;
 
     if (IsTopLevel()) {
-        // XXX should we bring this to the front when it's shown,
-        // if it's a toplevel widget?
+        
+        
 
-        // XXX we should synthesize a eMouseExitFromWidget (for old top
-        // window)/eMouseEnterIntoWidget (for new top window) since we need
-        // to pretend that the top window always has focus.  Not sure
-        // if Show() is the right place to do this, though.
+        
+        
+        
+        
 
         if (aState) {
-            // It just became visible, so bring it to the front.
+            
             BringToFront();
 
         } else if (nsWindow::TopWindow() == this) {
-            // find the next visible window to show
+            
             unsigned int i;
             for (i = 1; i < gTopLevelWindows.Length(); i++) {
                 nsWindow *win = gTopLevelWindows[i];
@@ -1766,7 +1766,7 @@ nsWindow::ConstrainPosition(bool aAllowSlop,
 {
     ALOG("nsWindow[%p]::ConstrainPosition %d [%d %d]", (void*)this, aAllowSlop, *aX, *aY);
 
-    // constrain toplevel windows; children we don't care about
+    
     if (IsTopLevel()) {
         *aX = 0;
         *aY = 0;
@@ -1821,7 +1821,7 @@ nsWindow::Resize(double aX,
         OnSizeChanged(gfx::IntSize::Truncate(aWidth, aHeight));
     }
 
-    // Should we skip honoring aRepaint here?
+    
     if (aRepaint && FindTopLevel() == nsWindow::TopWindow())
         RedrawAll();
 
@@ -1848,7 +1848,7 @@ nsWindow::PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
     return NS_OK;
 }
 
-NS_IMETHODIMP
+void
 nsWindow::SetSizeMode(nsSizeMode aMode)
 {
     switch (aMode) {
@@ -1861,7 +1861,6 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
         default:
             break;
     }
-    return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1910,10 +1909,10 @@ nsWindow::SetFocus(bool aRaise)
 void
 nsWindow::BringToFront()
 {
-    // If the window to be raised is the same as the currently raised one,
-    // do nothing. We need to check the focus manager as well, as the first
-    // window that is created will be first in the window list but won't yet
-    // be focused.
+    
+    
+    
+    
     nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
     nsCOMPtr<mozIDOMWindowProxy> existingTopWindow;
     fm->GetActiveWindow(getter_AddRefs(existingTopWindow));
@@ -2023,11 +2022,11 @@ nsWindow::CreateLayerManager(int aCompositorWidth, int aCompositorHeight)
 
     nsWindow *topLevelWindow = FindTopLevel();
     if (!topLevelWindow || topLevelWindow->mWindowType == eWindowType_invisible) {
-        // don't create a layer manager for an invisible top-level window
+        
         return;
     }
 
-    // Ensure that gfxPlatform is initialized first.
+    
     gfxPlatform::GetPlatform();
 
     if (ShouldUseOffMainThreadCompositing()) {
@@ -2036,7 +2035,7 @@ nsWindow::CreateLayerManager(int aCompositorWidth, int aCompositorHeight)
             return;
         }
 
-        // If we get here, then off main thread compositing failed to initialize.
+        
         sFailedToCreateGLContext = true;
     }
 
@@ -2094,7 +2093,7 @@ nsWindow::UpdateOverscrollOffset(const float aX, const float aY)
 void
 nsWindow::SetScrollingRootContent(const bool isRootContent)
 {
-    // On Android, the Controller thread and UI thread are the same.
+    
     MOZ_ASSERT(APZThreadUtils::IsControllerThread(), "nsWindow::SetScrollingRootContent must be called from the controller thread");
 
     if (NativePtr<NPZCSupport>::Locked npzcs{mNPZCSupport}) {
@@ -2114,7 +2113,7 @@ void *
 nsWindow::GetNativeData(uint32_t aDataType)
 {
     switch (aDataType) {
-        // used by GLContextProviderEGL, nullptr is EGL_DEFAULT_DISPLAY
+        
         case NS_NATIVE_DISPLAY:
             return nullptr;
 
@@ -2126,7 +2125,7 @@ nsWindow::GetNativeData(uint32_t aDataType)
             if (pseudoIMEContext) {
                 return pseudoIMEContext;
             }
-            // We assume that there is only one context per process on Android
+            
             return NS_ONLY_ONE_NATIVE_IME_CONTEXT;
         }
 
@@ -2160,10 +2159,10 @@ void
 nsWindow::DispatchHitTest(const WidgetTouchEvent& aEvent)
 {
     if (aEvent.mMessage == eTouchStart && aEvent.mTouches.Length() == 1) {
-        // Since touch events don't get retargeted by PositionedEventTargeting.cpp
-        // code on Fennec, we dispatch a dummy mouse event that *does* get
-        // retargeted. The Fennec browser.js code can use this to activate the
-        // highlight element in case the this touchstart is the start of a tap.
+        
+        
+        
+        
         WidgetMouseEvent hittest(true, eMouseHitTest, this,
                                  WidgetMouseEvent::eReal);
         hittest.mRefPoint = aEvent.mTouches[0]->mRefPoint;
@@ -2180,7 +2179,7 @@ nsWindow::DispatchHitTest(const WidgetTouchEvent& aEvent)
 
 static unsigned int ConvertAndroidKeyCodeToDOMKeyCode(int androidKeyCode)
 {
-    // Special-case alphanumeric keycodes because they are most common.
+    
     if (androidKeyCode >= AKEYCODE_A &&
         androidKeyCode <= AKEYCODE_Z) {
         return androidKeyCode - AKEYCODE_A + NS_VK_A;
@@ -2192,9 +2191,9 @@ static unsigned int ConvertAndroidKeyCodeToDOMKeyCode(int androidKeyCode)
     }
 
     switch (androidKeyCode) {
-        // KEYCODE_UNKNOWN (0) ... KEYCODE_HOME (3)
+        
         case AKEYCODE_BACK:               return NS_VK_ESCAPE;
-        // KEYCODE_CALL (5) ... KEYCODE_POUND (18)
+        
         case AKEYCODE_DPAD_UP:            return NS_VK_UP;
         case AKEYCODE_DPAD_DOWN:          return NS_VK_DOWN;
         case AKEYCODE_DPAD_LEFT:          return NS_VK_LEFT;
@@ -2202,7 +2201,7 @@ static unsigned int ConvertAndroidKeyCodeToDOMKeyCode(int androidKeyCode)
         case AKEYCODE_DPAD_CENTER:        return NS_VK_RETURN;
         case AKEYCODE_VOLUME_UP:          return NS_VK_VOLUME_UP;
         case AKEYCODE_VOLUME_DOWN:        return NS_VK_VOLUME_DOWN;
-        // KEYCODE_VOLUME_POWER (26) ... KEYCODE_Z (54)
+        
         case AKEYCODE_COMMA:              return NS_VK_COMMA;
         case AKEYCODE_PERIOD:             return NS_VK_PERIOD;
         case AKEYCODE_ALT_LEFT:           return NS_VK_ALT;
@@ -2211,36 +2210,36 @@ static unsigned int ConvertAndroidKeyCodeToDOMKeyCode(int androidKeyCode)
         case AKEYCODE_SHIFT_RIGHT:        return NS_VK_SHIFT;
         case AKEYCODE_TAB:                return NS_VK_TAB;
         case AKEYCODE_SPACE:              return NS_VK_SPACE;
-        // KEYCODE_SYM (63) ... KEYCODE_ENVELOPE (65)
+        
         case AKEYCODE_ENTER:              return NS_VK_RETURN;
-        case AKEYCODE_DEL:                return NS_VK_BACK; // Backspace
+        case AKEYCODE_DEL:                return NS_VK_BACK; 
         case AKEYCODE_GRAVE:              return NS_VK_BACK_QUOTE;
-        // KEYCODE_MINUS (69)
+        
         case AKEYCODE_EQUALS:             return NS_VK_EQUALS;
         case AKEYCODE_LEFT_BRACKET:       return NS_VK_OPEN_BRACKET;
         case AKEYCODE_RIGHT_BRACKET:      return NS_VK_CLOSE_BRACKET;
         case AKEYCODE_BACKSLASH:          return NS_VK_BACK_SLASH;
         case AKEYCODE_SEMICOLON:          return NS_VK_SEMICOLON;
-        // KEYCODE_APOSTROPHE (75)
+        
         case AKEYCODE_SLASH:              return NS_VK_SLASH;
-        // KEYCODE_AT (77) ... KEYCODE_MEDIA_FAST_FORWARD (90)
+        
         case AKEYCODE_MUTE:               return NS_VK_VOLUME_MUTE;
         case AKEYCODE_PAGE_UP:            return NS_VK_PAGE_UP;
         case AKEYCODE_PAGE_DOWN:          return NS_VK_PAGE_DOWN;
-        // KEYCODE_PICTSYMBOLS (94) ... KEYCODE_BUTTON_MODE (110)
+        
         case AKEYCODE_ESCAPE:             return NS_VK_ESCAPE;
         case AKEYCODE_FORWARD_DEL:        return NS_VK_DELETE;
         case AKEYCODE_CTRL_LEFT:          return NS_VK_CONTROL;
         case AKEYCODE_CTRL_RIGHT:         return NS_VK_CONTROL;
         case AKEYCODE_CAPS_LOCK:          return NS_VK_CAPS_LOCK;
         case AKEYCODE_SCROLL_LOCK:        return NS_VK_SCROLL_LOCK;
-        // KEYCODE_META_LEFT (117) ... KEYCODE_FUNCTION (119)
+        
         case AKEYCODE_SYSRQ:              return NS_VK_PRINTSCREEN;
         case AKEYCODE_BREAK:              return NS_VK_PAUSE;
         case AKEYCODE_MOVE_HOME:          return NS_VK_HOME;
         case AKEYCODE_MOVE_END:           return NS_VK_END;
         case AKEYCODE_INSERT:             return NS_VK_INSERT;
-        // KEYCODE_FORWARD (125) ... KEYCODE_MEDIA_RECORD (130)
+        
         case AKEYCODE_F1:                 return NS_VK_F1;
         case AKEYCODE_F2:                 return NS_VK_F2;
         case AKEYCODE_F3:                 return NS_VK_F3;
@@ -2272,23 +2271,23 @@ static unsigned int ConvertAndroidKeyCodeToDOMKeyCode(int androidKeyCode)
         case AKEYCODE_NUMPAD_COMMA:       return NS_VK_SEPARATOR;
         case AKEYCODE_NUMPAD_ENTER:       return NS_VK_RETURN;
         case AKEYCODE_NUMPAD_EQUALS:      return NS_VK_EQUALS;
-        // KEYCODE_NUMPAD_LEFT_PAREN (162) ... KEYCODE_CALCULATOR (210)
+        
 
-        // Needs to confirm the behavior.  If the key switches the open state
-        // of Japanese IME (or switches input character between Hiragana and
-        // Roman numeric characters), then, it might be better to use
-        // NS_VK_KANJI which is used for Alt+Zenkaku/Hankaku key on Windows.
+        
+        
+        
+        
         case AKEYCODE_ZENKAKU_HANKAKU:    return 0;
         case AKEYCODE_EISU:               return NS_VK_EISU;
         case AKEYCODE_MUHENKAN:           return NS_VK_NONCONVERT;
         case AKEYCODE_HENKAN:             return NS_VK_CONVERT;
         case AKEYCODE_KATAKANA_HIRAGANA:  return 0;
-        case AKEYCODE_YEN:                return NS_VK_BACK_SLASH; // Same as other platforms.
-        case AKEYCODE_RO:                 return NS_VK_BACK_SLASH; // Same as other platforms.
+        case AKEYCODE_YEN:                return NS_VK_BACK_SLASH; 
+        case AKEYCODE_RO:                 return NS_VK_BACK_SLASH; 
         case AKEYCODE_KANA:               return NS_VK_KANA;
         case AKEYCODE_ASSIST:             return NS_VK_HELP;
 
-        // the A key is the action key for gamepad devices.
+        
         case AKEYCODE_BUTTON_A:          return NS_VK_RETURN;
 
         default:
@@ -2302,7 +2301,7 @@ static KeyNameIndex
 ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
                                     int domPrintableKeyValue)
 {
-    // Special-case alphanumeric keycodes because they are most common.
+    
     if (keyCode >= AKEYCODE_A && keyCode <= AKEYCODE_Z) {
         return KEY_NAME_INDEX_USE_STRING;
     }
@@ -2320,26 +2319,26 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
 
 #undef NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX
 
-        // KEYCODE_0 (7) ... KEYCODE_9 (16)
-        case AKEYCODE_STAR:               // '*' key
-        case AKEYCODE_POUND:              // '#' key
+        
+        case AKEYCODE_STAR:               
+        case AKEYCODE_POUND:              
 
-        // KEYCODE_A (29) ... KEYCODE_Z (54)
+        
 
-        case AKEYCODE_COMMA:              // ',' key
-        case AKEYCODE_PERIOD:             // '.' key
+        case AKEYCODE_COMMA:              
+        case AKEYCODE_PERIOD:             
         case AKEYCODE_SPACE:
-        case AKEYCODE_GRAVE:              // '`' key
-        case AKEYCODE_MINUS:              // '-' key
-        case AKEYCODE_EQUALS:             // '=' key
-        case AKEYCODE_LEFT_BRACKET:       // '[' key
-        case AKEYCODE_RIGHT_BRACKET:      // ']' key
-        case AKEYCODE_BACKSLASH:          // '\' key
-        case AKEYCODE_SEMICOLON:          // ';' key
-        case AKEYCODE_APOSTROPHE:         // ''' key
-        case AKEYCODE_SLASH:              // '/' key
-        case AKEYCODE_AT:                 // '@' key
-        case AKEYCODE_PLUS:               // '+' key
+        case AKEYCODE_GRAVE:              
+        case AKEYCODE_MINUS:              
+        case AKEYCODE_EQUALS:             
+        case AKEYCODE_LEFT_BRACKET:       
+        case AKEYCODE_RIGHT_BRACKET:      
+        case AKEYCODE_BACKSLASH:          
+        case AKEYCODE_SEMICOLON:          
+        case AKEYCODE_APOSTROPHE:         
+        case AKEYCODE_SLASH:              
+        case AKEYCODE_AT:                 
+        case AKEYCODE_PLUS:               
 
         case AKEYCODE_NUMPAD_0:
         case AKEYCODE_NUMPAD_1:
@@ -2361,14 +2360,14 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
         case AKEYCODE_NUMPAD_LEFT_PAREN:
         case AKEYCODE_NUMPAD_RIGHT_PAREN:
 
-        case AKEYCODE_YEN:                // yen sign key
-        case AKEYCODE_RO:                 // Japanese Ro key
+        case AKEYCODE_YEN:                
+        case AKEYCODE_RO:                 
             return KEY_NAME_INDEX_USE_STRING;
 
         case AKEYCODE_ENDCALL:
-        case AKEYCODE_NUM:                // XXX Not sure
+        case AKEYCODE_NUM:                
         case AKEYCODE_HEADSETHOOK:
-        case AKEYCODE_NOTIFICATION:       // XXX Not sure
+        case AKEYCODE_NOTIFICATION:       
         case AKEYCODE_PICTSYMBOLS:
 
         case AKEYCODE_BUTTON_A:
@@ -2387,7 +2386,7 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
         case AKEYCODE_BUTTON_SELECT:
         case AKEYCODE_BUTTON_MODE:
 
-        case AKEYCODE_MUTE: // mutes the microphone
+        case AKEYCODE_MUTE: 
         case AKEYCODE_MEDIA_CLOSE:
 
         case AKEYCODE_DVR:
@@ -2418,8 +2417,8 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
             MOZ_ASSERT(
                 action != AKEY_EVENT_ACTION_MULTIPLE,
                 "Don't call this when action is AKEY_EVENT_ACTION_MULTIPLE!");
-            // It's actually an unknown key if the action isn't ACTION_MULTIPLE.
-            // However, it might cause text input.  So, let's check the value.
+            
+            
             return domPrintableKeyValue ?
                 KEY_NAME_INDEX_USE_STRING : KEY_NAME_INDEX_Unidentified;
 
@@ -2488,18 +2487,18 @@ InitKeyEvent(WidgetKeyboardEvent& event,
     event.mModifiers = GetModifiers(metaState);
 
     if (event.mMessage == eKeyPress) {
-        // Android gives us \n, so filter out some control characters.
+        
         event.mIsChar = (charCode >= ' ');
         event.mCharCode = event.mIsChar ? charCode : 0;
         event.mKeyCode = event.mIsChar ? 0 : domKeyCode;
         event.mPluginEvent.Clear();
 
-        // For keypress, if the unicode char already has modifiers applied, we
-        // don't specify extra modifiers. If UnicodeChar() != BaseUnicodeChar()
-        // it means UnicodeChar() already has modifiers applied.
-        // Note that on Android 4.x, Alt modifier isn't set when the key input
-        // causes text input even while right Alt key is pressed.  However,
-        // this is necessary for Android 2.3 compatibility.
+        
+        
+        
+        
+        
+        
         if (unicodeChar && unicodeChar != baseUnicodeChar) {
             event.mModifiers &= ~(MODIFIER_ALT | MODIFIER_CONTROL
                                                | MODIFIER_META);
@@ -2564,8 +2563,8 @@ nsWindow::GeckoViewSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
     } else if (aAction == sdk::KeyEvent::ACTION_UP) {
         msg = eKeyUp;
     } else if (aAction == sdk::KeyEvent::ACTION_MULTIPLE) {
-        // Keys with multiple action are handled in Java,
-        // and we should never see one here
+        
+        
         MOZ_CRASH("Cannot handle key with multiple action");
     } else {
         ALOG("Unknown key action event!");
@@ -2580,9 +2579,9 @@ nsWindow::GeckoViewSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
                  aRepeatCount, aFlags);
 
     if (aIsSynthesizedImeKey) {
-        // Keys synthesized by Java IME code are saved in the mIMEKeyEvents
-        // array until the next IME_REPLACE_TEXT event, at which point
-        // these keys are dispatched in sequence.
+        
+        
+        
         mIMEKeyEvents.AppendElement(
                 mozilla::UniquePtr<WidgetEvent>(event.Duplicate()));
 
@@ -2590,7 +2589,7 @@ nsWindow::GeckoViewSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
         window.DispatchEvent(&event, status);
 
         if (window.Destroyed() || status == nsEventStatus_eConsumeNoDefault) {
-            // Skip default processing.
+            
             return;
         }
 
@@ -2598,7 +2597,7 @@ nsWindow::GeckoViewSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
     }
 
     if (msg != eKeyDown || IsModifierKey(aKeyCode)) {
-        // Skip sending key press event.
+        
         return;
     }
 
@@ -2631,9 +2630,9 @@ ConvertAndroidColor(uint32_t aArgb)
                    (aArgb & 0xff000000) >> 24);
 }
 
-/*
- * Get the current composition object, if any.
- */
+
+
+
 RefPtr<mozilla::TextComposition>
 nsWindow::GetIMEComposition()
 {
@@ -2641,13 +2640,13 @@ nsWindow::GetIMEComposition()
     return mozilla::IMEStateManager::GetTextCompositionFor(this);
 }
 
-/*
-    Remove the composition but leave the text content as-is
-*/
+
+
+
 void
 nsWindow::RemoveIMEComposition()
 {
-    // Remove composition on Gecko side
+    
     const RefPtr<mozilla::TextComposition> composition(GetIMEComposition());
     if (!composition) {
         return;
@@ -2655,10 +2654,10 @@ nsWindow::RemoveIMEComposition()
 
     RefPtr<nsWindow> kungFuDeathGrip(this);
 
-    // We have to use eCompositionCommit instead of eCompositionCommitAsIs
-    // because TextComposition has a workaround for eCompositionCommitAsIs
-    // that prevents compositions containing a single ideographic space
-    // character from working (see bug 1209465)..
+    
+    
+    
+    
     WidgetCompositionEvent compositionCommitEvent(
             true, eCompositionCommit, this);
     compositionCommitEvent.mData = composition->String();
@@ -2666,11 +2665,11 @@ nsWindow::RemoveIMEComposition()
     DispatchEvent(&compositionCommitEvent);
 }
 
-/*
- * Send dummy key events for pages that are unaware of input events,
- * to provide web compatibility for pages that depend on key events.
- * Our dummy key events have 0 as the keycode.
- */
+
+
+
+
+
 void
 nsWindow::GeckoViewSupport::SendIMEDummyKeyEvents()
 {
@@ -2690,14 +2689,14 @@ nsWindow::GeckoViewSupport::AddIMETextChange(const IMETextChange& aChange)
 {
     mIMETextChanges.AppendElement(aChange);
 
-    // We may not be in the middle of flushing,
-    // in which case this flag is meaningless.
+    
+    
     mIMETextChangedDuringFlush = true;
 
-    // Now that we added a new range we need to go back and
-    // update all the ranges before that.
-    // Ranges that have offsets which follow this new range
-    // need to be updated to reflect new offsets
+    
+    
+    
+    
     const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
     for (int32_t i = mIMETextChanges.Length() - 2; i >= 0; i--) {
         IMETextChange& previousChange = mIMETextChanges[i];
@@ -2708,45 +2707,45 @@ nsWindow::GeckoViewSupport::AddIMETextChange(const IMETextChange& aChange)
         }
     }
 
-    // Now go through all ranges to merge any ranges that are connected
-    // srcIndex is the index of the range to merge from
-    // dstIndex is the index of the range to potentially merge into
+    
+    
+    
     int32_t srcIndex = mIMETextChanges.Length() - 1;
     int32_t dstIndex = srcIndex;
 
     while (--dstIndex >= 0) {
         IMETextChange& src = mIMETextChanges[srcIndex];
         IMETextChange& dst = mIMETextChanges[dstIndex];
-        // When merging a more recent change into an older
-        // change, we need to compare recent change's (start, oldEnd)
-        // range to the older change's (start, newEnd)
+        
+        
+        
         if (src.mOldEnd < dst.mStart || dst.mNewEnd < src.mStart) {
-            // No overlap between ranges
+            
             continue;
         }
-        // When merging two ranges, there are generally four posibilities:
-        // [----(----]----), (----[----]----),
-        // [----(----)----], (----[----)----]
-        // where [----] is the first range and (----) is the second range
-        // As seen above, the start of the merged range is always the lesser
-        // of the two start offsets. OldEnd and NewEnd then need to be
-        // adjusted separately depending on the case. In any case, the change
-        // in text length of the merged range should be the sum of text length
-        // changes of the two original ranges, i.e.,
-        // newNewEnd - newOldEnd == newEnd1 - oldEnd1 + newEnd2 - oldEnd2
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         dst.mStart = std::min(dst.mStart, src.mStart);
         if (src.mOldEnd < dst.mNewEnd) {
-            // New range overlaps or is within previous range; merge
+            
             dst.mNewEnd += src.mNewEnd - src.mOldEnd;
-        } else { // src.mOldEnd >= dst.mNewEnd
-            // New range overlaps previous range; merge
+        } else { 
+            
             dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
             dst.mNewEnd = src.mNewEnd;
         }
-        // src merged to dst; delete src.
+        
         mIMETextChanges.RemoveElementAt(srcIndex);
-        // Any ranges that we skip over between src and dst are not mergeable
-        // so we can safely continue the merge starting at dst
+        
+        
         srcIndex = dstIndex;
     }
 }
@@ -2755,11 +2754,11 @@ void
 nsWindow::GeckoViewSupport::PostFlushIMEChanges()
 {
     if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
-        // Already posted
+        
         return;
     }
 
-    // Keep a strong reference to the window to keep 'this' alive.
+    
     RefPtr<nsWindow> window(&this->window);
 
     nsAppShell::PostEvent([this, window] {
@@ -2772,19 +2771,19 @@ nsWindow::GeckoViewSupport::PostFlushIMEChanges()
 void
 nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
 {
-    // Only send change notifications if we are *not* masking events,
-    // i.e. if we have a focused editor,
+    
+    
     NS_ENSURE_TRUE_VOID(!mIMEMaskEventsCount);
 
     nsCOMPtr<nsISelection> imeSelection;
     nsCOMPtr<nsIContent> imeRoot;
 
-    // If we are receiving notifications, we must have selection/root content.
+    
     MOZ_ALWAYS_SUCCEEDS(IMEStateManager::GetFocusSelectionAndRoot(
             getter_AddRefs(imeSelection), getter_AddRefs(imeRoot)));
 
-    // Make sure we still have a valid selection/root. We can potentially get
-    // a stale selection/root if the editor becomes hidden, for example.
+    
+    
     NS_ENSURE_TRUE_VOID(imeRoot->IsInComposedDoc());
 
     RefPtr<nsWindow> kungFuDeathGrip(&window);
@@ -2807,13 +2806,13 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
         if (!mIMETextChangedDuringFlush) {
             return false;
         }
-        // A query event could have triggered more text changes to come in, as
-        // indicated by our flag. If that happens, try flushing IME changes
-        // again.
+        
+        
+        
         if (aFlags != FLUSH_FLAG_RETRY) {
             FlushIMEChanges(FLUSH_FLAG_RETRY);
         } else {
-            // Don't retry if already retrying, to avoid infinite loops.
+            
             __android_log_print(ANDROID_LOG_WARN, "GeckoViewSupport",
                     "Already retrying IME flush");
         }
@@ -2865,7 +2864,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
         selEnd = int32_t(event.GetSelectionEnd());
     }
 
-    // Commit the text change and selection change transaction.
+    
     mIMETextChanges.Clear();
 
     for (const TextRecord& record : textTransaction) {
@@ -2922,7 +2921,7 @@ nsWindow::GeckoViewSupport::UpdateCompositionRects()
 void
 nsWindow::GeckoViewSupport::AsyncNotifyIME(int32_t aNotification)
 {
-    // Keep a strong reference to the window to keep 'this' alive.
+    
     RefPtr<nsWindow> window(&this->window);
 
     nsAppShell::PostEvent([this, window, aNotification] {
@@ -2954,12 +2953,12 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
             ALOGIME("IME: REQUEST_TO_CANCEL_COMPOSITION");
             RefPtr<nsWindow> kungFuDeathGrip(&window);
 
-            // Cancel composition on Gecko side
+            
             if (window.GetIMEComposition()) {
                 WidgetCompositionEvent compositionCommitEvent(
                         true, eCompositionCommit, &window);
                 window.InitEvent(compositionCommitEvent, nullptr);
-                // Dispatch it with empty mData value for canceling composition.
+                
                 window.DispatchEvent(&compositionCommitEvent);
             }
 
@@ -2970,8 +2969,8 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
 
         case NOTIFY_IME_OF_FOCUS: {
             ALOGIME("IME: NOTIFY_IME_OF_FOCUS");
-            // IME will call requestCursorUpdates after getting context.
-            // So reset cursor update mode before getting context.
+            
+            
             mIMEMonitorCursor = false;
             mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_FOCUS);
             return true;
@@ -2980,9 +2979,9 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
         case NOTIFY_IME_OF_BLUR: {
             ALOGIME("IME: NOTIFY_IME_OF_BLUR");
 
-            // Mask events because we lost focus. On the next focus event,
-            // Gecko will notify Java, and Java will send an acknowledge focus
-            // event back to Gecko. That is where we unmask event handling
+            
+            
+            
             mIMEMaskEventsCount++;
 
             mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_BLUR);
@@ -3003,7 +3002,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
                     aIMENotification.mTextChangeData.mRemovedEndOffset,
                     aIMENotification.mTextChangeData.mAddedEndOffset);
 
-            /* Make sure Java's selection is up-to-date */
+            
             PostFlushIMEChanges();
             mIMESelectionChanged = true;
             AddIMETextChange(IMETextChange(aIMENotification));
@@ -3013,7 +3012,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
         case NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED: {
             ALOGIME("IME: NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED");
 
-            // Hardware keyboard support requires each string rect.
+            
             if (AndroidBridge::Bridge() && AndroidBridge::Bridge()->GetAPIVersion() >= 21 && mIMEMonitorCursor) {
                 UpdateCompositionRects();
             }
@@ -3035,8 +3034,8 @@ nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
             aContext.mIMEState.mEnabled, aContext.mIMEState.mOpen,
             aAction.mCause, aAction.mFocusChange);
 
-    // Ensure that opening the virtual keyboard is allowed for this specific
-    // InputContext depending on the content.ime.strict.policy pref
+    
+    
     if (aContext.mIMEState.mEnabled != IMEState::DISABLED &&
         aContext.mIMEState.mEnabled != IMEState::PLUGIN &&
         Preferences::GetBool("content.ime.strict_policy", false) &&
@@ -3047,8 +3046,8 @@ nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
 
     IMEState::Enabled enabled = aContext.mIMEState.mEnabled;
 
-    // Only show the virtual keyboard for plugins if mOpen is set appropriately.
-    // This avoids showing it whenever a plugin is focused. Bug 747492
+    
+    
     if (aContext.mIMEState.mEnabled == IMEState::PLUGIN &&
         aContext.mIMEState.mOpen != IMEState::OPEN) {
         enabled = IMEState::DISABLED;
@@ -3058,7 +3057,7 @@ nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
     mInputContext.mIMEState.mEnabled = enabled;
 
     if (enabled == IMEState::ENABLED && aAction.UserMightRequestOpenVKB()) {
-        // Don't reset keyboard when we should simply open the vkb
+        
         mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OPEN_VKB);
         return;
     }
@@ -3067,7 +3066,7 @@ nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
         return;
     }
 
-    // Keep a strong reference to the window to keep 'this' alive.
+    
     RefPtr<nsWindow> window(&this->window);
     mIMEUpdatingContext = true;
 
@@ -3109,18 +3108,18 @@ nsWindow::GeckoViewSupport::OnImeAcknowledgeFocus()
     AutoIMESynchronize as(this);
 
     if (--mIMEMaskEventsCount > 0) {
-        // Still not focused; reply to events, but don't do anything else.
+        
         return;
     }
 
-    // The focusing handshake sequence is complete, and Java is waiting
-    // on Gecko. Now we can notify Java of the newly focused content
+    
+    
     mIMETextChanges.Clear();
     mIMESelectionChanged = false;
-    // NotifyIMEOfTextChange also notifies selection
-    // Use 'INT32_MAX / 2' here because subsequent text changes might
-    // combine with this text change, and overflow might occur if
-    // we just use INT32_MAX
+    
+    
+    
+    
     IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
     notification.mTextChangeData.mStartOffset = 0;
     notification.mTextChangeData.mRemovedEndOffset =
@@ -3135,13 +3134,13 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
     AutoIMESynchronize as(this);
 
     if (mIMEMaskEventsCount > 0) {
-        // Not focused; still reply to events, but don't do anything else.
+        
         return;
     }
 
-    /*
-        Replace text in Gecko thread from aStart to aEnd with the string text.
-    */
+    
+
+
     RefPtr<nsWindow> kungFuDeathGrip(&window);
     nsString string(aText->ToString());
 
@@ -3153,14 +3152,14 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
                           composition->String().Length())
     {
-        // Only start a new composition if we have key events,
-        // if we don't have an existing composition, or
-        // the replaced text does not match our composition.
+        
+        
+        
         window.RemoveIMEComposition();
 
         {
-            // Use text selection to set target postion(s) for
-            // insert, or replace, of text.
+            
+            
             WidgetSelectionEvent event(true, eSetSelection, &window);
             window.InitEvent(event, nullptr);
             event.mOffset = uint32_t(aStart);
@@ -3179,11 +3178,11 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
                         status == nsEventStatus_eConsumeNoDefault) {
                     MOZ_ASSERT(i > 0 &&
                             mIMEKeyEvents[i - 1]->mMessage == eKeyDown);
-                    // The previous key down event resulted in eConsumeNoDefault
-                    // so we should not dispatch the current key press event.
+                    
+                    
                     continue;
                 }
-                // widget for duplicated events is initially nullptr.
+                
                 event->mWidget = &window;
                 window.DispatchEvent(event, status);
             }
@@ -3198,10 +3197,10 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         }
 
     } else if (composition->String().Equals(string)) {
-        /* If the new text is the same as the existing composition text,
-         * the NS_COMPOSITION_CHANGE event does not generate a text
-         * change notification. However, the Java side still expects
-         * one, so we manually generate a notification. */
+        
+
+
+
         IMETextChange dummyChange;
         dummyChange.mStart = aStart;
         dummyChange.mOldEnd = dummyChange.mNewEnd = aEnd;
@@ -3210,7 +3209,7 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
 
     const bool composing = !mIMERanges->IsEmpty();
 
-    // Previous events may have destroyed our composition; bail in that case.
+    
     if (window.GetIMEComposition()) {
         WidgetCompositionEvent event(true, eCompositionChange, &window);
         window.InitEvent(event, nullptr);
@@ -3221,7 +3220,7 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
             mIMERanges.swap(event.mRanges);
 
         } else if (event.mData.Length()) {
-            // Include proper text ranges to make the editor happy.
+            
             TextRange range;
             range.mStartOffset = 0;
             range.mEndOffset = event.mData.Length();
@@ -3233,11 +3232,11 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
         window.DispatchEvent(&event);
 
     } else if (composing) {
-        // Ensure IME ranges are empty.
+        
         mIMERanges->Clear();
     }
 
-    // Don't end composition when composing text or composition was destroyed.
+    
     if (!composing) {
         window.RemoveIMEComposition();
     }
@@ -3254,7 +3253,7 @@ nsWindow::GeckoViewSupport::OnImeAddCompositionRange(
         int32_t aRangeBackColor, int32_t aRangeLineColor)
 {
     if (mIMEMaskEventsCount > 0) {
-        // Not focused.
+        
         return;
     }
 
@@ -3280,13 +3279,13 @@ nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
     AutoIMESynchronize as(this);
 
     if (mIMEMaskEventsCount > 0) {
-        // Not focused.
+        
         return;
     }
 
     RefPtr<nsWindow> kungFuDeathGrip(&window);
 
-    // A composition with no ranges means we want to set the selection.
+    
     if (mIMERanges->IsEmpty()) {
         MOZ_ASSERT(aStart >= 0 && aEnd >= 0);
         window.RemoveIMEComposition();
@@ -3303,14 +3302,14 @@ nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
         return;
     }
 
-    /*
-        Update the composition from aStart to aEnd using
-          information from added ranges. This is only used for
-          visual indication and does not affect the text content.
-          Only the offsets are specified and not the text content
-          to eliminate the possibility of this event altering the
-          text content unintentionally.
-    */
+    
+
+
+
+
+
+
+
     const auto composition(window.GetIMEComposition());
     MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
 
@@ -3325,8 +3324,8 @@ nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
         uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
                           composition->String().Length())
     {
-        // Only start new composition if we don't have an existing one,
-        // or if the existing composition doesn't match the new one.
+        
+        
         window.RemoveIMEComposition();
 
         {
@@ -3355,8 +3354,8 @@ nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
         }
 
     } else {
-        // If the new composition matches the existing composition,
-        // reuse the old composition.
+        
+        
         event.mData = composition->String();
     }
 
@@ -3365,9 +3364,9 @@ nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
     const char* text = data.get();
     ALOGIME("IME: IME_SET_TEXT: text=\"%s\", length=%u, range=%u",
             text, event.mData.Length(), event.mRanges->Length());
-#endif // DEBUG_ANDROID_IME
+#endif 
 
-    // Previous events may have destroyed our composition; bail in that case.
+    
     if (window.GetIMEComposition()) {
         window.DispatchEvent(&event);
     }
@@ -3402,7 +3401,7 @@ nsWindow::NotifyIMEInternal(const IMENotification& aIMENotification)
     MOZ_ASSERT(this == FindTopLevel());
 
     if (!mGeckoViewSupport) {
-        // Non-GeckoView windows don't support IME operations.
+        
         return NS_ERROR_NOT_AVAILABLE;
     }
 
@@ -3420,14 +3419,14 @@ nsWindow::SetInputContext(const InputContext& aContext,
     MOZ_ASSERT(top);
 
     if (!top->mGeckoViewSupport) {
-        // Non-GeckoView windows don't support IME operations.
+        
         return;
     }
 
-    // We are using an IME event later to notify Java, and the IME event
-    // will be processed by the top window. Therefore, to ensure the
-    // IME event uses the correct mInputContext, we need to let the top
-    // window process SetInputContext
+    
+    
+    
+    
     top->mGeckoViewSupport->SetInputContext(aContext, aAction);
 }
 
@@ -3438,20 +3437,20 @@ nsWindow::GetInputContext()
     MOZ_ASSERT(top);
 
     if (!top->mGeckoViewSupport) {
-        // Non-GeckoView windows don't support IME operations.
+        
         return InputContext();
     }
 
-    // We let the top window process SetInputContext,
-    // so we should let it process GetInputContext as well.
+    
+    
     return top->mGeckoViewSupport->GetInputContext();
 }
 
 nsIMEUpdatePreference
 nsWindow::GetIMEUpdatePreference()
 {
-    // While a plugin has focus, nsWindow for Android doesn't need any
-    // notifications.
+    
+    
     if (GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN) {
       return nsIMEUpdatePreference();
     }
@@ -3471,18 +3470,18 @@ nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
     int eventType;
     switch (aPointerState) {
     case TOUCH_CONTACT:
-        // This could be a ACTION_DOWN or ACTION_MOVE depending on the
-        // existing state; it is mapped to the right thing in Java.
+        
+        
         eventType = sdk::MotionEvent::ACTION_POINTER_DOWN;
         break;
     case TOUCH_REMOVE:
-        // This could be turned into a ACTION_UP in Java
+        
         eventType = sdk::MotionEvent::ACTION_POINTER_UP;
         break;
     case TOUCH_CANCEL:
         eventType = sdk::MotionEvent::ACTION_CANCEL;
         break;
-    case TOUCH_HOVER:   // not supported for now
+    case TOUCH_HOVER:   
     default:
         return NS_ERROR_UNEXPECTED;
     }
@@ -3585,7 +3584,7 @@ bool
 nsWindow::NeedsPaint()
 {
     if (!mLayerViewSupport || mLayerViewSupport->CompositorPaused() ||
-            // FindTopLevel() != nsWindow::TopWindow() ||
+            
             !GetLayerManager(nullptr)) {
         return false;
     }

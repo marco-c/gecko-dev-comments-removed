@@ -1280,20 +1280,18 @@ nsWindow::SetZIndex(int32_t aZIndex)
     }
 }
 
-NS_IMETHODIMP
+void
 nsWindow::SetSizeMode(nsSizeMode aMode)
 {
-    nsresult rv;
-
     LOG(("nsWindow::SetSizeMode [%p] %d\n", (void *)this, aMode));
 
     
-    rv = nsBaseWidget::SetSizeMode(aMode);
+    nsBaseWidget::SetSizeMode(aMode);
 
     
     
     if (!mShell || mSizeState == mSizeMode) {
-        return rv;
+        return;
     }
 
     switch (aMode) {
@@ -1317,8 +1315,6 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
     }
 
     mSizeState = mSizeMode;
-
-    return rv;
 }
 
 typedef void (* SetUserTimeFunc)(GdkWindow* aWindow, guint32 aTimestamp);
