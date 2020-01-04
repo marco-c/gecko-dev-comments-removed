@@ -44,7 +44,7 @@ public:
   TextTrackCue* IndexedGetter(uint32_t aIndex, bool& aFound);
   TextTrackCue* operator[](uint32_t aIndex);
   TextTrackCue* GetCueById(const nsAString& aId);
-  TextTrackCueList& operator=(const TextTrackCueList& aOther);
+
   
   
   

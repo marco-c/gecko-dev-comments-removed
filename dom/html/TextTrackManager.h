@@ -22,9 +22,9 @@ class HTMLMediaElement;
 class CompareTextTracks {
 private:
   HTMLMediaElement* mMediaElement;
-  int32_t TrackChildPosition(TextTrack* aTrack) const;
 public:
   explicit CompareTextTracks(HTMLMediaElement* aMediaElement);
+  int32_t TrackChildPosition(TextTrack* aTrack) const;
   bool Equals(TextTrack* aOne, TextTrack* aTwo) const;
   bool LessThan(TextTrack* aOne, TextTrack* aTwo) const;
 };
@@ -94,30 +94,13 @@ public:
 
   
   RefPtr<HTMLMediaElement> mMediaElement;
-
-  void DispatchTimeMarchesOn();
-
 private:
-  void TimeMarchesOn();
-
   
   RefPtr<TextTrackList> mTextTracks;
   
   RefPtr<TextTrackList> mPendingTextTracks;
   
-
-  
   RefPtr<TextTrackCueList> mNewCues;
-  
-  RefPtr<TextTrackCueList> mLastActiveCues;
-
-  
-  
-  bool mHasSeeked;
-  
-  double mLastTimeMarchesOnCalled;
-
-  bool mTimeMarchesOnDispatched;
 
   static StaticRefPtr<nsIWebVTTParserWrapper> sParserWrapper;
 
