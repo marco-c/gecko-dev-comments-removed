@@ -19,7 +19,6 @@ class nsCOMPtr_helper;
 
 namespace mozilla {
 template<class T> class OwningNonNull;
-template<class T> class RefPtr;
 } 
 
 template <class T>
@@ -129,10 +128,6 @@ public:
   MOZ_IMPLICIT nsRefPtr(const mozilla::OwningNonNull<U>& aOther);
 
   
-  template<class U>
-  MOZ_IMPLICIT nsRefPtr(mozilla::RefPtr<U>&& aOther);
-
-  
 
   nsRefPtr<T>&
   operator=(const nsRefPtr<T>& aRhs)
@@ -191,11 +186,6 @@ public:
   template<class U>
   nsRefPtr<T>&
   operator=(const mozilla::OwningNonNull<U>& aOther);
-
-  
-  template<class U>
-  nsRefPtr<T>&
-  operator=(mozilla::RefPtr<U>&& aOther);
 
   
 
