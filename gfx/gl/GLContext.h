@@ -3652,6 +3652,28 @@ MarkBitfieldByStrings(const std::vector<nsCString>& strList,
     }
 }
 
+
+
+
+
+
+
+GLuint CreateTextureForOffscreen(GLContext* aGL, const GLFormats& aFormats,
+                                 const gfx::IntSize& aSize);
+
+
+
+
+
+
+
+
+
+
+
+GLuint CreateTexture(GLContext* aGL, GLenum aInternalFormat, GLenum aFormat,
+                     GLenum aType, const gfx::IntSize& aSize, bool linear = true);
+
 } 
 } 
 
