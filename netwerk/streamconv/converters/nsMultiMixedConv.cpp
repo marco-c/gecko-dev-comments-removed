@@ -664,6 +664,10 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
                     
                     
                     cursor = tokenPos;
+
+                    
+                    
+                    bufLen -= mPreamble.Length();
                 }
             } else {
                 
