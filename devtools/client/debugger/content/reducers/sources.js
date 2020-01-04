@@ -68,7 +68,14 @@ function update(state = initialState, action, emitChange) {
       });
 
       
-      emitChange('prettyprinted', s.sources[action.source.actor]);
+      
+      
+      
+      
+      
+      if(s.sourcesText[action.source.actor].text != null) {
+        emitChange('prettyprinted', s.sources[action.source.actor]);
+      }
     }
     else {
       s = _updateText(state, action);
