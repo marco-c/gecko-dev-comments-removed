@@ -180,15 +180,6 @@ var CustomizableUIInternal = {
     this._introduceNewBuiltinWidgets();
     this._markObsoleteBuiltinButtonsSeen();
 
-    
-
-
-
-
-
-
-
-
     let panelPlacements = [
       "edit-controls",
       "zoom-controls",
