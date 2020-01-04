@@ -311,6 +311,10 @@ def run_test_harness(options):
         raise ValueError("Invalid options specified, use --help for a list of valid options")
 
     options.runByDir = False
+    
+    
+    if not options.chrome:
+        options.extensionsToExclude.append('roboextender@mozilla.org')
 
     dm = options.dm
     auto.setDeviceManager(dm)
