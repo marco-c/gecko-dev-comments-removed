@@ -516,8 +516,6 @@ MediaDecoderReader::Shutdown()
   
   mWatchManager.Shutdown();
 
-  RefPtr<ShutdownPromise> p;
-
   mDecoder = nullptr;
 
   ReaderQueue::Instance().Remove(this);
