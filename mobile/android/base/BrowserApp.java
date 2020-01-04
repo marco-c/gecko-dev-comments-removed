@@ -2751,7 +2751,15 @@ public class BrowserApp extends GeckoApp
         
         fm.executePendingTransactions();
 
-        fm.beginTransaction().add(R.id.search_container, mBrowserSearch, BROWSER_SEARCH_TAG).commitAllowingStateLoss();
+        Fragment f = fm.findFragmentById(R.id.search_container);
+
+        
+        if (f != null) {
+            fm.beginTransaction().show(f).commitAllowingStateLoss();
+        } else {
+            
+            fm.beginTransaction().add(R.id.search_container, mBrowserSearch, BROWSER_SEARCH_TAG).commitAllowingStateLoss();
+        }
         mBrowserSearch.setUserVisibleHint(true);
 
         
@@ -2777,7 +2785,7 @@ public class BrowserApp extends GeckoApp
         mBrowserSearchContainer.setVisibility(View.INVISIBLE);
 
         getSupportFragmentManager().beginTransaction()
-                .remove(mBrowserSearch).commitAllowingStateLoss();
+                .hide(mBrowserSearch).commitAllowingStateLoss();
         mBrowserSearch.setUserVisibleHint(false);
 
         getWindow().setBackgroundDrawable(null);
