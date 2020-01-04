@@ -95,8 +95,17 @@ protected:
   nsCOMPtr<nsIGlobalObject> mWindow;
 
   
-  typedef nsTHashtable<nsRefPtrHashKey<dom::Animation>> AnimationSet;
-  AnimationSet mAnimations;
+  
+  
+  
+  
+  
+  
+  
+  typedef nsTHashtable<nsPtrHashKey<dom::Animation>> AnimationSet;
+  typedef nsTArray<nsRefPtr<dom::Animation>>         AnimationArray;
+  AnimationSet   mAnimations;
+  AnimationArray mAnimationOrder;
 };
 
 } 

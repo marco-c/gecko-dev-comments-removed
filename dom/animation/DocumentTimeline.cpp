@@ -111,19 +111,20 @@ DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime)
   MOZ_ASSERT(mIsObservingRefreshDriver);
 
   bool needsTicks = false;
+  AnimationArray animationsToKeep(mAnimationOrder.Length());
 
-  for (auto iter = mAnimations.Iter(); !iter.Done(); iter.Next()) {
-    Animation* animation = iter.Get()->GetKey();
-
-    
+  for (Animation* animation : mAnimationOrder) {
     if (animation->GetTimeline() != this ||
         (!animation->IsRelevant() && !animation->NeedsTicks())) {
-      iter.Remove();
+      mAnimations.RemoveEntry(animation);
       continue;
     }
 
     needsTicks |= animation->NeedsTicks();
+    animationsToKeep.AppendElement(animation);
   }
+
+  mAnimationOrder.SwapElements(animationsToKeep);
 
   if (!needsTicks) {
     
@@ -142,7 +143,7 @@ DocumentTimeline::NotifyRefreshDriverCreated(nsRefreshDriver* aDriver)
              "Timeline should not be observing the refresh driver before"
              " it is created");
 
-  if (mAnimations.Count()) {
+  if (!mAnimationOrder.IsEmpty()) {
     aDriver->AddRefreshObserver(this, Flush_Style);
     mIsObservingRefreshDriver = true;
   }

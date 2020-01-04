@@ -10,7 +10,8 @@
 namespace mozilla {
 namespace dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(AnimationTimeline, mWindow, mAnimations)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(AnimationTimeline, mWindow,
+                                      mAnimationOrder)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(AnimationTimeline)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(AnimationTimeline)
@@ -31,8 +32,9 @@ AnimationTimeline::GetAnimations(AnimationSequence& aAnimations)
     }
   }
 
-  for (auto iter = mAnimations.Iter(); !iter.Done(); iter.Next()) {
-    Animation* animation = iter.Get()->GetKey();
+  aAnimations.SetCapacity(mAnimationOrder.Length());
+
+  for (Animation* animation : mAnimationOrder) {
 
     
     
@@ -63,7 +65,12 @@ AnimationTimeline::GetAnimations(AnimationSequence& aAnimations)
 void
 AnimationTimeline::NotifyAnimationUpdated(Animation& aAnimation)
 {
+  if (mAnimations.Contains(&aAnimation)) {
+    return;
+  }
+
   mAnimations.PutEntry(&aAnimation);
+  mAnimationOrder.AppendElement(&aAnimation);
 }
 
 } 
