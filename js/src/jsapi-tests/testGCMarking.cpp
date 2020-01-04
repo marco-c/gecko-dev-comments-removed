@@ -86,7 +86,7 @@ BEGIN_TEST(testIncrementalRoots)
 
 #ifdef JS_GC_ZEAL
     
-    JS_SetGCZeal(cx, 0, 100);
+    JS_SetGCZeal(rt, 0, 100);
 #endif
 
     
