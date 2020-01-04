@@ -47,6 +47,9 @@ function amManager() {
   gParentMM = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                  .getService(Ci.nsIMessageListenerManager);
   gParentMM.addMessageListener(MSG_INSTALL_ENABLED, this);
+
+  
+  this.wrappedJSObject = this;
 }
 
 amManager.prototype = {

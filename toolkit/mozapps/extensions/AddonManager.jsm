@@ -2184,6 +2184,19 @@ var AddonManagerInternal = {
       return;
     }
 
+    
+    
+    
+    
+    
+    let topBrowser = aBrowser;
+    let docShell = aBrowser.ownerDocument.defaultView
+                           .QueryInterface(Ci.nsIInterfaceRequestor)
+                           .getInterface(Ci.nsIDocShell)
+                           .QueryInterface(Ci.nsIDocShellTreeItem);
+    if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent)
+      topBrowser = docShell.chromeEventHandler;
+
     try {
       let weblistener = Cc["@mozilla.org/addons/web-install-listener;1"].
                         getService(Ci.amIWebInstallListener);
@@ -2192,7 +2205,7 @@ var AddonManagerInternal = {
         for (let install of aInstalls)
           install.cancel();
 
-        weblistener.onWebInstallDisabled(aBrowser, aInstallingPrincipal.URI,
+        weblistener.onWebInstallDisabled(topBrowser, aInstallingPrincipal.URI,
                                          aInstalls, aInstalls.length);
         return;
       }
@@ -2201,7 +2214,7 @@ var AddonManagerInternal = {
           install.cancel();
 
         if (weblistener instanceof Ci.amIWebInstallListener2) {
-          weblistener.onWebInstallOriginBlocked(aBrowser, aInstallingPrincipal.URI,
+          weblistener.onWebInstallOriginBlocked(topBrowser, aInstallingPrincipal.URI,
                                                 aInstalls, aInstalls.length);
         }
         return;
@@ -2213,14 +2226,14 @@ var AddonManagerInternal = {
       new BrowserListener(aBrowser, aInstallingPrincipal, aInstalls);
 
       if (!this.isInstallAllowed(aMimetype, aInstallingPrincipal)) {
-        if (weblistener.onWebInstallBlocked(aBrowser, aInstallingPrincipal.URI,
+        if (weblistener.onWebInstallBlocked(topBrowser, aInstallingPrincipal.URI,
                                             aInstalls, aInstalls.length)) {
           aInstalls.forEach(function(aInstall) {
             aInstall.install();
           });
         }
       }
-      else if (weblistener.onWebInstallRequested(aBrowser, aInstallingPrincipal.URI,
+      else if (weblistener.onWebInstallRequested(topBrowser, aInstallingPrincipal.URI,
                                                  aInstalls, aInstalls.length)) {
         aInstalls.forEach(function(aInstall) {
           aInstall.install();

@@ -67,17 +67,38 @@ RemoteMediator.prototype = {
   },
 
   install: function(installs, principal, callback, window) {
-    let messageManager = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIWebNavigation)
-                         .QueryInterface(Ci.nsIDocShell)
-                         .QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIContentFrameMessageManager);
-
     let callbackID = this._addCallback(callback, installs.uris);
 
     installs.mimetype = XPINSTALL_MIMETYPE;
     installs.triggeringPrincipal = principal;
     installs.callbackID = callbackID;
+
+    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      
+      
+      
+      let element = window.frameElement;
+      let ssm = Services.scriptSecurityManager;
+      while (element && !ssm.isSystemPrincipal(element.ownerDocument.nodePrincipal))
+        element = element.ownerDocument.defaultView.frameElement;
+
+      if (element) {
+        let listener = Cc["@mozilla.org/addons/integration;1"].
+                       getService(Ci.nsIMessageListener);
+        return listener.wrappedJSObject.receiveMessage({
+          name: MSG_INSTALL_ADDONS,
+          target: element,
+          data: installs,
+        });
+      }
+    }
+
+    
+    let messageManager = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIWebNavigation)
+                               .QueryInterface(Ci.nsIDocShell)
+                               .QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIContentFrameMessageManager);
 
     return messageManager.sendSyncMessage(MSG_INSTALL_ADDONS, installs)[0];
   },
