@@ -13,6 +13,36 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const IFRAME_URL = "chrome://devtools/content/shared/widgets/tooltip-frame.xhtml";
 const IFRAME_CONTAINER_ID = "tooltip-iframe-container";
 
+const POSITION = {
+  TOP: "top",
+  BOTTOM: "bottom",
+};
+
+module.exports.POSITION = POSITION;
+
+const TYPE = {
+  NORMAL: "normal",
+  ARROW: "arrow",
+};
+
+module.exports.TYPE = TYPE;
+
+const ARROW_WIDTH = 32;
+
+
+const ARROW_OFFSET = 20;
+
+const EXTRA_HEIGHT = {
+  "normal": 0,
+  
+  "arrow": 13,
+};
+
+const EXTRA_BORDER = {
+  "normal": 0,
+  "arrow": 3,
+};
+
 
 
 
@@ -48,14 +78,16 @@ function HTMLTooltip(toolbox,
     if (this._isXUL()) {
       
       let onLoad = () => {
-        this.container.removeEventListener("load", onLoad, true);
+        this.frame.removeEventListener("load", onLoad, true);
         resolve();
       };
 
-      this.container.addEventListener("load", onLoad, true);
-      this.container.setAttribute("src", IFRAME_URL);
+      this.frame.addEventListener("load", onLoad, true);
+      this.frame.setAttribute("src", IFRAME_URL);
+      this.doc.querySelector("window").appendChild(this.container);
     } else {
       
+      this.doc.body.appendChild(this.container);
       resolve();
     }
   });
@@ -64,9 +96,35 @@ function HTMLTooltip(toolbox,
 module.exports.HTMLTooltip = HTMLTooltip;
 
 HTMLTooltip.prototype = {
-  position: {
-    TOP: "top",
-    BOTTOM: "bottom",
+  
+
+
+
+
+
+
+  get frame() {
+    return this.container.querySelector(".tooltip-panel");
+  },
+
+  
+
+
+
+  get panel() {
+    if (!this._isXUL()) {
+      return this.frame;
+    }
+    
+    let win = this.frame.contentWindow.wrappedJSObject;
+    return win.document.getElementById(IFRAME_CONTAINER_ID);
+  },
+
+  
+
+
+  get arrow() {
+    return this.container.querySelector(".tooltip-arrow");
   },
 
   
@@ -83,8 +141,11 @@ HTMLTooltip.prototype = {
 
 
   setContent: function (content, width, height) {
-    this.preferredWidth = width;
-    this.preferredHeight = height;
+    let themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
+    let themeWidth = 2 * EXTRA_BORDER[this.type];
+
+    this.preferredWidth = width + themeWidth;
+    this.preferredHeight = height + themeHeight;
 
     return this.containerReady.then(() => {
       this.panel.innerHTML = "";
@@ -106,25 +167,27 @@ HTMLTooltip.prototype = {
 
   show: function (anchor, {position} = {}) {
     this.containerReady.then(() => {
-      let {top, left, width, height} = this._findBestPosition(anchor, position);
+      let computedPosition = this._findBestPosition(anchor, position);
 
-      if (this._isXUL()) {
-        this.container.setAttribute("width", width);
-        this.container.setAttribute("height", height);
-      } else {
-        this.container.style.width = width + "px";
-        this.container.style.height = height + "px";
+      let isTop = computedPosition.position === POSITION.TOP;
+      this.container.classList.toggle("tooltip-top", isTop);
+      this.container.classList.toggle("tooltip-bottom", !isTop);
+
+      this.container.style.width = computedPosition.width + "px";
+      this.container.style.height = computedPosition.height + "px";
+      this.container.style.top = computedPosition.top + "px";
+      this.container.style.left = computedPosition.left + "px";
+
+      if (this.type === TYPE.ARROW) {
+        this.arrow.style.left = computedPosition.arrowLeft + "px";
       }
 
-      this.container.style.top = top + "px";
-      this.container.style.left = left + "px";
-      this.container.style.display = "block";
-
-      if (this.autofocus) {
-        this.container.focus();
-      }
+      this.container.classList.add("tooltip-visible");
 
       this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
+        if (this.autofocus) {
+          this.frame.focus();
+        }
         this.topWindow.addEventListener("click", this._onClick, true);
         this.emit("shown");
       }, 0);
@@ -140,18 +203,9 @@ HTMLTooltip.prototype = {
 
     if (this.isVisible()) {
       this.topWindow.removeEventListener("click", this._onClick, true);
-      this.container.style.display = "none";
+      this.container.classList.remove("tooltip-visible");
       this.emit("hidden");
     }
-  },
-
-  get panel() {
-    if (this._isXUL()) {
-      
-      let win = this.container.contentWindow.wrappedJSObject;
-      return win.document.getElementById(IFRAME_CONTAINER_ID);
-    }
-    return this.container;
   },
 
   
@@ -159,8 +213,7 @@ HTMLTooltip.prototype = {
 
 
   isVisible: function () {
-    let win = this.doc.defaultView;
-    return win.getComputedStyle(this.container).display != "none";
+    return this.container.classList.contains("tooltip-visible");
   },
 
   
@@ -173,19 +226,21 @@ HTMLTooltip.prototype = {
   },
 
   _createContainer: function () {
-    let container;
+    let container = this.doc.createElementNS(XHTML_NS, "div");
+    container.setAttribute("type", this.type);
+    container.classList.add("tooltip-container");
+
+    let html;
     if (this._isXUL()) {
-      container = this.doc.createElementNS(XHTML_NS, "iframe");
-      container.classList.add("devtools-tooltip-iframe");
-      this.doc.querySelector("window").appendChild(container);
+      html = '<iframe class="devtools-tooltip-iframe tooltip-panel"></iframe>';
     } else {
-      container = this.doc.createElementNS(XHTML_NS, "div");
-      this.doc.body.appendChild(container);
+      html = '<div class="tooltip-panel theme-body"></div>';
     }
 
-    container.classList.add("theme-body");
-    container.classList.add("devtools-htmltooltip-container");
-
+    if (this.type === TYPE.ARROW) {
+      html += '<div class="tooltip-arrow"></div>';
+    }
+    container.innerHTML = html;
     return container;
   },
 
@@ -221,48 +276,80 @@ HTMLTooltip.prototype = {
     return false;
   },
 
+  
+
+
+
+
+
+
+
+
   _findBestPosition: function (anchor, position) {
-    let top, left;
-    let {TOP, BOTTOM} = this.position;
+    let {TOP, BOTTOM} = POSITION;
 
-    let {left: anchorLeft, top: anchorTop, height: anchorHeight}
-      = this._getRelativeRect(anchor, this.doc);
+    
+    let {
+      left: anchorLeft, top: anchorTop,
+      height: anchorHeight, width: anchorWidth
+    } = this._getRelativeRect(anchor, this.doc);
 
+    
     let {bottom: docBottom, right: docRight} =
       this.doc.documentElement.getBoundingClientRect();
 
-    let height = this.preferredHeight;
     
     let availableTop = anchorTop;
-    let fitsAbove = availableTop >= height;
-    
-    let availableBelow = docBottom - (anchorTop + anchorHeight);
-    let fitsBelow = availableBelow >= height;
+    let availableBottom = docBottom - (anchorTop + anchorHeight);
 
-    let isPositionSuitable = (fitsAbove && position === TOP)
-      || (fitsBelow && position === BOTTOM);
-    if (!isPositionSuitable) {
-      
-      
-      position = availableTop > availableBelow ? TOP : BOTTOM;
+    
+    let keepPosition = false;
+    if (position === TOP) {
+      keepPosition = availableTop >= this.preferredHeight;
+    } else if (position === BOTTOM) {
+      keepPosition = availableBottom >= this.preferredHeight;
+    }
+    if (!keepPosition) {
+      position = availableTop > availableBottom ? TOP : BOTTOM;
     }
 
     
-    height = Math.min(height, Math.max(availableTop, availableBelow));
-    top = position === TOP ? anchorTop - height : anchorTop + anchorHeight;
+    let availableHeight = position === TOP ? availableTop : availableBottom;
+    let height = Math.min(this.preferredHeight, availableHeight);
+    height = Math.floor(height);
 
+    
+    let top = position === TOP ? anchorTop - height : anchorTop + anchorHeight;
+
+    
     let availableWidth = docRight;
     let width = Math.min(this.preferredWidth, availableWidth);
 
     
-    if (anchorLeft + width <= docRight) {
-      left = anchorLeft;
-    } else {
+    
+    
+    let left = Math.min(anchorLeft, docRight - width);
+
+    
+    let arrowLeft;
+    
+    if (this.type === TYPE.ARROW) {
+      let arrowCenter = left + ARROW_OFFSET + ARROW_WIDTH / 2;
+      let anchorCenter = anchorLeft + anchorWidth / 2;
       
-      left = docRight - width;
+      if (arrowCenter > anchorCenter) {
+        left = Math.max(0, left - (arrowCenter - anchorCenter));
+      }
+      
+      arrowLeft = Math.min(ARROW_OFFSET, (anchorWidth - ARROW_WIDTH) / 2) | 0;
+      
+      arrowLeft += anchorLeft - left;
+      
+      arrowLeft = Math.min(arrowLeft, width - ARROW_WIDTH);
+      arrowLeft = Math.max(arrowLeft, 0);
     }
 
-    return {top, left, width, height};
+    return {top, left, width, height, position, arrowLeft};
   },
 
   
@@ -274,13 +361,9 @@ HTMLTooltip.prototype = {
     
     let {width, height} = node.getBoundingClientRect();
 
-    
-    let top = Infinity, left = Infinity;
-    let quads = node.getBoxQuads({relativeTo: relativeTo});
-    for (let quad of quads) {
-      top = Math.min(top, quad.bounds.top);
-      left = Math.min(left, quad.bounds.left);
-    }
+    let quads = node.getBoxQuads({relativeTo});
+    let top = quads[0].bounds.top;
+    let left = quads[0].bounds.left;
 
     
     let right = left + width;
