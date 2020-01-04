@@ -213,10 +213,9 @@ class MachCommands(MachCommandBase):
             '--ext', ext,  
         ] + args
         
-        cmd_args += ['.']
+        cmd_args += [path]
 
         return self.run_process(cmd_args,
-            cwd=path,
             pass_thru=True,  
             ensure_exit_code=False,  
         )
