@@ -375,9 +375,6 @@ private:
   
   uint32_t mEventMode;
 
-  
-  mozilla::ScreenIntSize mLazySize;
-
   bool mIsPrerendered : 1;
   bool mDepthTooGreat : 1;
   bool mIsTopLevelContent : 1;
