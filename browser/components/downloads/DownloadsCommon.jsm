@@ -140,6 +140,11 @@ PrefObserver.register({
 
 
 this.DownloadsCommon = {
+  ATTENTION_NONE: "",
+  ATTENTION_SUCCESS: "success",
+  ATTENTION_WARNING: "warning",
+  ATTENTION_SEVERE: "severe",
+
   
 
 
@@ -722,7 +727,7 @@ DownloadsDataCtor.prototype = {
                .then(null, Cu.reportError);
     let indicatorData = this._isPrivate ? PrivateDownloadsIndicatorData
                                         : DownloadsIndicatorData;
-    indicatorData.attention = false;
+    indicatorData.attention = DownloadsCommon.ATTENTION_NONE;
   },
 
   
@@ -1153,8 +1158,29 @@ DownloadsIndicatorDataCtor.prototype = {
   },
 
   onDownloadStateChanged(download) {
-    if (download.succeeded || download.error) {
-      this.attention = true;
+    if (!download.succeeded && download.error && download.error.reputationCheckVerdict) {
+      switch (download.error.reputationCheckVerdict) {
+        case Downloads.Error.BLOCK_VERDICT_UNCOMMON: 
+        case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+          
+          if (this._attention != DownloadsCommon.ATTENTION_SEVERE) {
+            this.attention = DownloadsCommon.ATTENTION_WARNING;
+          }
+          break;
+        case Downloads.Error.BLOCK_VERDICT_MALWARE:
+          this.attention = DownloadsCommon.ATTENTION_SEVERE;
+          break;
+        default:
+          this.attention = DownloadsCommon.ATTENTION_SEVERE;
+          Cu.reportError("Unknown reputation verdict: " +
+                         download.error.reputationCheckVerdict);
+      }
+    } else if (download.succeeded || download.error) {
+      
+      if (this._attention != DownloadsCommon.ATTENTION_SEVERE &&
+          this._attention != DownloadsCommon.ATTENTION_WARNING) {
+        this.attention = DownloadsCommon.ATTENTION_SUCCESS;
+      }
     }
 
     
@@ -1189,7 +1215,7 @@ DownloadsIndicatorDataCtor.prototype = {
     this._updateViews();
     return aValue;
   },
-  _attention: false,
+  _attention: DownloadsCommon.ATTENTION_NONE,
 
   
 
@@ -1197,7 +1223,7 @@ DownloadsIndicatorDataCtor.prototype = {
 
   set attentionSuppressed(aValue) {
     this._attentionSuppressed = aValue;
-    this._attention = false;
+    this._attention = DownloadsCommon.ATTENTION_NONE;
     this._updateViews();
     return aValue;
   },
@@ -1227,7 +1253,8 @@ DownloadsIndicatorDataCtor.prototype = {
     aView.counter = this._counter;
     aView.percentComplete = this._percentComplete;
     aView.paused = this._paused;
-    aView.attention = this._attention && !this._attentionSuppressed;
+    aView.attention = this._attentionSuppressed ? DownloadsCommon.ATTENTION_NONE
+                                                : this._attention;
   },
 
   

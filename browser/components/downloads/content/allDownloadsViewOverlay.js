@@ -502,7 +502,7 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
 
   
   
-  DownloadsCommon.getIndicatorData(window).attention = false;
+  DownloadsCommon.getIndicatorData(window).attention = DownloadsCommon.ATTENTION_NONE;
 
   
   window.addEventListener("unload", () => {
