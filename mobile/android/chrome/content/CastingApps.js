@@ -350,12 +350,18 @@ var CastingApps = {
   },
 
   _getContentTypeForURI: function(aURI, aElement, aCallback) {
-    let channel = Services.io.newChannelFromURI2(aURI,
-                                                 aElement,
-                                                 null, 
-                                                 null, 
-                                                 Ci.nsILoadInfo.SEC_NORMAL,
-                                                 Ci.nsIContentPolicy.TYPE_OTHER);
+    let channel;
+    try {
+     channel = Services.io.newChannelFromURI2(aURI,
+                                              aElement,
+                                              null, 
+                                              null, 
+                                              Ci.nsILoadInfo.SEC_NORMAL,
+                                              Ci.nsIContentPolicy.TYPE_OTHER);
+     } catch(e) {
+      aCallback(null);
+      return;
+     }
 
     let listener = {
       onStartRequest: function(request, context) {
@@ -376,7 +382,12 @@ var CastingApps = {
       onStopRequest: function(request, context, statusCode)  {},
       onDataAvailable: function(request, context, stream, offset, count) {}
     };
-    channel.asyncOpen(listener, null)
+
+    if (channel) {
+      channel.asyncOpen(listener, null);
+    } else {
+      aCallback(null);
+    }
   },
 
   
@@ -443,20 +454,28 @@ var CastingApps = {
 
     
     
-    aCallback.fired = false;
-    for (let sourceURI of asyncURIs) {
+    var _getContentTypeForURIs = (aURIs) => {
       
+      let sourceURI = aURIs.pop();
       this._getContentTypeForURI(sourceURI, aElement, (aType) => {
-        if (!aCallback.fired && this.allowableMimeType(aType, aTypes)) {
-          aCallback.fired = true;
+        if (this.allowableMimeType(aType, aTypes)) {
+          
           aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI, type: aType });
+        } else {
+          
+          if (aURIs.length > 0) {
+            _getContentTypeForURIs(aURIs);
+          } else {
+            
+            aCallback(null);
+          }
         }
       });
     }
 
     
-    if (!aCallback.fired) {
-      aCallback(null);
+    if (asyncURIs.length > 0) {
+      _getContentTypeForURIs(asyncURIs);
     }
   },
 
