@@ -2578,6 +2578,11 @@ public:
   
 
 
+  nsRect GetDestArea() const { return mDestArea; }
+
+  
+
+
 
 
 
@@ -2615,6 +2620,7 @@ protected:
                                   gfxRect* aDestRect);
   bool IsNonEmptyFixedImage() const;
   nsRect GetBoundsInternal(nsDisplayListBuilder* aBuilder);
+  nsRect GetDestAreaInternal(nsDisplayListBuilder* aBuilder);
 
   void PaintInternal(nsDisplayListBuilder* aBuilder, nsRenderingContext* aCtx,
                      const nsRect& aBounds, nsRect* aClipRect);
@@ -2637,6 +2643,7 @@ protected:
   LayoutDeviceRect mImageLayerDestRect;
   
   nsRect mBounds;
+  nsRect mDestArea;
   uint32_t mLayer;
 };
 
