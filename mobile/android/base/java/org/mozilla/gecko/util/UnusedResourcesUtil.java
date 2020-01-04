@@ -91,6 +91,7 @@ final class UnusedResourcesUtil {
             R.xml.preferences_home,
             R.xml.preferences_privacy,
             R.xml.preferences_privacy_clear_tablet,
+            R.xml.preferences_default_browser_tablet
     };
 
     
