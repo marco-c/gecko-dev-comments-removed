@@ -182,9 +182,6 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
 
   
   { "nlsp.dll", MAKE_VERSION(6, 23, 2012, 19) },
-  
-  
-  { "flvsrvlib.dll", MAKE_VERSION(1, 0, 0, 0) },
 
   { nullptr, 0 }
 };
