@@ -249,6 +249,7 @@ protected:
 
 
 
+
   nsRect PredictedDestRect(const nsRect& aFrameContentBox);
 
 private:
@@ -425,6 +426,7 @@ public:
                                                         nsDisplayListBuilder* aBuilder) override;
 
   
+
 
 
   nsRect GetDestRect(bool* aSnap = nullptr);
