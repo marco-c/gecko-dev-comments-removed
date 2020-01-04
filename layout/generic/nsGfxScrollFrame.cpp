@@ -2350,6 +2350,9 @@ RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure)
   if (helper->IsAlwaysActive() || helper->mIsScrollParent) {
     
     
+    
+    
+    
     return;
   }
 
@@ -2366,6 +2369,7 @@ RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure)
   
   
   nsLayoutUtils::RemoveDisplayPort(helper->mOuter->GetContent());
+  nsLayoutUtils::ExpireDisplayPortOnAsyncScrollableAncestor(helper->mOuter);
   helper->mOuter->SchedulePaint();
 }
 
