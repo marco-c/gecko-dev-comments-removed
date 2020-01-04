@@ -5332,7 +5332,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   
   
   display->mDisplay = display->mOriginalDisplay;
-  display->mFloats = display->mOriginalFloats;
+  display->mFloat = display->mOriginalFloat;
 
   
   
@@ -6016,12 +6016,12 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
 
   
   SetValue(*aRuleData->ValueForFloat(),
-           display->mFloats, conditions,
+           display->mFloat, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
-           parentDisplay->mFloats,
+           parentDisplay->mFloat,
            NS_STYLE_FLOAT_NONE);
   
-  display->mOriginalFloats = display->mFloats;
+  display->mOriginalFloat = display->mFloat;
 
   
   SetValue(*aRuleData->ValueForOverflowX(),
@@ -6144,7 +6144,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       EnsureBlockDisplay(display->mDisplay);
-      display->mFloats = NS_STYLE_FLOAT_NONE;
+      display->mFloat = NS_STYLE_FLOAT_NONE;
 
       
       
@@ -6152,7 +6152,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       
-    } else if (display->mFloats != NS_STYLE_FLOAT_NONE) {
+    } else if (display->mFloat != NS_STYLE_FLOAT_NONE) {
       
       
       EnsureBlockDisplay(display->mDisplay);
