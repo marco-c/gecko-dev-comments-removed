@@ -60,10 +60,10 @@ EqualURIs(nsIURI *aURI1, nsIURI *aURI2)
 }
 
 static bool
-EqualURIs(mozilla::css::URLValue *aURI1, mozilla::css::URLValue *aURI2)
+MaybeUnresolvedURIEquals(css::URLValue *aURI1, css::URLValue *aURI2)
 {
   return aURI1 == aURI2 ||    
-         (aURI1 && aURI2 && aURI1->URIEquals(*aURI2));
+         (aURI1 && aURI2 && aURI1->MaybeUnresolvedURIEquals(*aURI2));
 }
 
 static
@@ -957,10 +957,10 @@ nsStyleSVG::nsStyleSVG(StyleStructContext aContext)
   , mFillOpacity(1.0f)
   , mStrokeMiterlimit(4.0f)
   , mStrokeOpacity(1.0f)
-  , mClipRule(StyleFillRule::Nonzero)
+  , mClipRule(NS_STYLE_FILL_RULE_NONZERO)
   , mColorInterpolation(NS_STYLE_COLOR_INTERPOLATION_SRGB)
   , mColorInterpolationFilters(NS_STYLE_COLOR_INTERPOLATION_LINEARRGB)
-  , mFillRule(StyleFillRule::Nonzero)
+  , mFillRule(NS_STYLE_FILL_RULE_NONZERO)
   , mPaintOrder(NS_STYLE_PAINT_ORDER_NORMAL)
   , mShapeRendering(NS_STYLE_SHAPE_RENDERING_AUTO)
   , mStrokeLinecap(NS_STYLE_STROKE_LINECAP_BUTT)
@@ -2492,11 +2492,19 @@ nsStyleImageLayers::HasLayerWithImage() const
 bool
 nsStyleImageLayers::Position::IsInitialValue(LayerType aType) const
 {
-  float intialValue = nsStyleImageLayers::Position::GetInitialValue(aType);
-  if (mXPosition.mPercent == intialValue && mXPosition.mLength == 0 &&
-      mXPosition.mHasPercent && mYPosition.mPercent == intialValue &&
-      mYPosition.mLength == 0 && mYPosition.mHasPercent) {
-    return true;
+  if (aType == LayerType::Background) {
+    if (mXPosition.mPercent == 0.0 && mXPosition.mLength == 0 &&
+        mXPosition.mHasPercent && mYPosition.mPercent == 0.0 &&
+        mYPosition.mLength == 0 && mYPosition.mHasPercent) {
+      return true;
+    }
+  } else {
+    MOZ_ASSERT(aType == LayerType::Mask);
+    if (mXPosition.mPercent == 0.5f && mXPosition.mLength == 0 &&
+        mXPosition.mHasPercent && mYPosition.mPercent == 0.5f &&
+        mYPosition.mLength == 0 && mYPosition.mHasPercent) {
+      return true;
+    }
   }
 
   return false;
@@ -2674,15 +2682,13 @@ nsStyleImageLayers::Layer::Initialize(nsStyleImageLayers::LayerType aType)
 {
   mRepeat.SetInitialValues(aType);
 
-  float initialPositionValue =
-    nsStyleImageLayers::Position::GetInitialValue(aType);
-  mPosition.SetInitialPercentValues(initialPositionValue);
-
   if (aType == LayerType::Background) {
     mOrigin = NS_STYLE_IMAGELAYER_ORIGIN_PADDING;
+    mPosition.SetInitialPercentValues(0.0f); 
   } else {
     MOZ_ASSERT(aType == LayerType::Mask, "unsupported layer type.");
     mOrigin = NS_STYLE_IMAGELAYER_ORIGIN_BORDER;
+    mPosition.SetInitialPercentValues(0.5f); 
   }
 }
 
@@ -3105,7 +3111,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 {
   nsChangeHint hint = nsChangeHint(0);
 
-  if (!EqualURIs(mBinding, aNewData.mBinding)
+  if (!MaybeUnresolvedURIEquals(mBinding, aNewData.mBinding)
       || mPosition != aNewData.mPosition
       || mDisplay != aNewData.mDisplay
       || mContain != aNewData.mContain
