@@ -35,7 +35,6 @@ var report;
 var noisy = false;
 var timeout = -1;
 var delay = 250;
-var timeoutEvent = -1;
 var running = false;
 var forceCC = true;
 var reportRSS = true;
@@ -67,6 +66,47 @@ var pageUrls;
 
 
 var gIOS = null;
+
+
+
+
+
+var SingleTimeout = function() {
+  this.timeoutEvent = undefined;
+};
+
+
+
+
+
+
+
+
+
+SingleTimeout.prototype.register = function(callback, timeout) {
+  if (timeout >= 0) {
+    if (this.timeoutEvent !== undefined) {
+      this.clear();
+    }
+    var that = this;
+    this.timeoutEvent = setTimeout(function() {
+      that.timeoutEvent = undefined;
+      callback();
+    }, timeout);
+  }
+};
+
+
+
+
+SingleTimeout.prototype.clear = function() {
+  if (this.timeoutEvent !== undefined) {
+    clearTimeout(this.timeoutEvent);
+    this.timeoutEvent = undefined;
+  }
+};
+
+var failTimeout = new SingleTimeout();
 
 function plInit() {
   if (running) {
@@ -346,9 +386,7 @@ function plLoadPage() {
     };
   }
 
-  if (timeout > 0) {
-    timeoutEvent = setTimeout(function () {loadFail(); }, timeout);
-  }
+  failTimeout.register(loadFail, timeout);
 
   
   Profiler.mark("Opening " + pages[pageIndex].url.path);
@@ -566,9 +604,7 @@ function plPaintedCapturing() {
 }
 
 function _loadHandlerCapturing() {
-  if (timeout > 0) { 
-    clearTimeout(timeoutEvent);
-  }
+  failTimeout.clear();
 
   if (!(plPageFlags() & TEST_DOES_OWN_TIMING)) {
     dumpLine("tp: Capturing onload handler used with page that doesn't do its own timing?");
@@ -625,9 +661,7 @@ function plPainted() {
 }
 
 function _loadHandler() {
-  if (timeout > 0) {
-    clearTimeout(timeoutEvent);
-  }
+  failTimeout.clear();
 
   var end_time = Date.now();
   var time = (end_time - start_time);
@@ -651,9 +685,7 @@ function _loadHandler() {
 
 
 function plLoadHandlerMessage() {
-  if (timeout > 0) {
-    clearTimeout(timeoutEvent);
-  }
+  failTimeout.clear();
 
   if ((plPageFlags() & EXECUTE_SCROLL_TEST)) {
     
