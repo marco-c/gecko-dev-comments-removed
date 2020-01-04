@@ -1690,7 +1690,7 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   
   
   for (uint32_t i = aStartIndex; i < data.Length(); i++) {
-    MediaRawData* sample = data[i].get();
+    const RefPtr<MediaRawData> sample = data[i];
     TimeInterval sampleInterval =
       TimeInterval(TimeUnit::FromMicroseconds(sample->mTime),
                    TimeUnit::FromMicroseconds(sample->GetEndTime()));
@@ -1709,7 +1709,7 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   
   
   for (uint32_t i = lastRemovedIndex + 1; i < data.Length(); i++) {
-    MediaRawData* sample = data[i].get();
+    const RefPtr<MediaRawData>& sample = data[i];
     if (sample->mKeyframe) {
       break;
     }
@@ -1719,7 +1719,7 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   int64_t maxSampleDuration = 0;
   TimeIntervals removedIntervals;
   for (uint32_t i = firstRemovedIndex.ref(); i <= lastRemovedIndex; i++) {
-    MediaRawData* sample = data[i].get();
+    const RefPtr<MediaRawData> sample = data[i];
     TimeInterval sampleInterval =
       TimeInterval(TimeUnit::FromMicroseconds(sample->mTime),
                    TimeUnit::FromMicroseconds(sample->GetEndTime()));
