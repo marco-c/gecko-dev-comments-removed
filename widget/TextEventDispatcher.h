@@ -96,6 +96,15 @@ public:
   
 
 
+
+  bool IsInNativeInputTransaction() const
+  {
+    return mInputTransactionType == eNativeInputTransaction;
+  }
+
+  
+
+
   bool IsDispatchingEvent() const { return mDispatchingEvent > 0; }
 
   

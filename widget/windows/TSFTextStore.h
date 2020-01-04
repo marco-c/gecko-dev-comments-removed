@@ -407,6 +407,14 @@ protected:
   
   Composition mComposition;
 
+  
+
+
+
+
+
+  bool IsComposingInContent() const;
+
   class Selection
   {
   public:
