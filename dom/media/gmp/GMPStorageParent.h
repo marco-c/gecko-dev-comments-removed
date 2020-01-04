@@ -54,6 +54,7 @@ private:
 
   const nsCString mNodeId;
   RefPtr<GMPParent> mPlugin;
+  
   bool mShutdown;
 };
 
