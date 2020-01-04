@@ -34,9 +34,6 @@ IdIsIndex(jsid id, uint32_t* indexp)
     return js::StringIsArrayIndex(JSID_TO_ATOM(id), indexp);
 }
 
-extern JSObject*
-InitArrayClass(JSContext* cx, js::HandleObject obj);
-
 
 
 
