@@ -23,6 +23,8 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
+#include "mozilla/RefCounted.h"
+#include "mozilla/RefPtr.h"
 
 #include "NamespaceImports.h"
 
@@ -44,6 +46,7 @@ using mozilla::EnumeratedArray;
 using mozilla::Maybe;
 using mozilla::Move;
 using mozilla::MallocSizeOf;
+using mozilla::RefCounted;
 
 typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
 
@@ -67,7 +70,6 @@ typedef Vector<Type, 0, SystemAllocPolicy> VectorName;
     size_t serializedSize() const;                                              \
     uint8_t* serialize(uint8_t* cursor) const;                                  \
     const uint8_t* deserialize(ExclusiveContext* cx, const uint8_t* cursor);    \
-    MOZ_MUST_USE bool clone(JSContext* cx, Type* out) const;                    \
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
 

@@ -119,8 +119,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     jit::JitContext                 jcx_;
 
     
-    UniqueModuleData                module_;
-    UniqueExportMap                 exportMap_;
+    uint32_t                        globalDataLength_;
+    MutableMetadata                 metadata_;
+    MutableExportMap                exportMap_;
     SlowFunctionVector              slowFuncs_;
 
     
@@ -152,7 +153,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool convertOutOfRangeBranchesToThunks();
     MOZ_MUST_USE bool finishTask(IonCompileTask* task);
     MOZ_MUST_USE bool finishCodegen(StaticLinkData* link);
-    MOZ_MUST_USE bool finishStaticLinkData(uint8_t* code, uint32_t codeBytes, StaticLinkData* link);
+    MOZ_MUST_USE bool finishStaticLinkData(uint8_t* code, uint32_t codeLength, StaticLinkData* link);
     MOZ_MUST_USE bool addImport(const Sig& sig, uint32_t globalDataOffset);
     MOZ_MUST_USE bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
 
@@ -162,8 +163,8 @@ class MOZ_STACK_CLASS ModuleGenerator
 
     MOZ_MUST_USE bool init(UniqueModuleGeneratorData shared, UniqueChars filename);
 
-    bool isAsmJS() const { return module_->kind == ModuleKind::AsmJS; }
-    CompileArgs args() const { return module_->compileArgs; }
+    bool isAsmJS() const { return metadata_->kind == ModuleKind::AsmJS; }
+    CompileArgs args() const { return metadata_->compileArgs; }
     jit::MacroAssembler& masm() { return masm_; }
 
     
@@ -211,9 +212,10 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     
     MOZ_MUST_USE bool finish(CacheableCharsVector&& prettyFuncNames,
-                             UniqueModuleData* module,
-                             UniqueStaticLinkData* staticLinkData,
-                             UniqueExportMap* exportMap,
+                             UniqueCodeSegment* codeSegment,
+                             SharedMetadata* metadata,
+                             SharedStaticLinkData* staticLinkData,
+                             SharedExportMap* exportMap,
                              SlowFunctionVector* slowFuncs);
 };
 
