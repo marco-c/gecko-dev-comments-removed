@@ -46,7 +46,7 @@ const EXPECTED_COLOR = "rgb(255, 255, 85)";
 
 
 
-add_task(function*() {
+add_task(function* () {
   
   clearTelemetry();
 

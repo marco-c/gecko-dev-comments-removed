@@ -7,7 +7,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   yield addTab(URL_ROOT + "doc_markup_image_and_canvas.html");
   let {inspector, testActor} = yield openInspector();
 

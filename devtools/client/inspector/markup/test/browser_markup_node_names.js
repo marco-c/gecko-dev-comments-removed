@@ -7,7 +7,7 @@
 
 const TEST_URL = URL_ROOT + "doc_markup_html_mixed_case.html";
 
-add_task(function*() {
+add_task(function* () {
   let {inspector} = yield openInspectorForURL(TEST_URL);
 
   

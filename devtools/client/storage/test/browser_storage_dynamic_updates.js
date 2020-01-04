@@ -4,7 +4,7 @@
 
 "use strict";
 
-add_task(function*() {
+add_task(function* () {
   yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-updates.html");
 
   let $ = id => gPanelWindow.document.querySelector(id);
@@ -200,7 +200,7 @@ add_task(function*() {
   
   
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
     return Task.spawn(content.wrappedJSObject.clear);
   });
 

@@ -11,7 +11,7 @@ requestLongerTimeout(2);
 
 
 
-add_task(function*() {
+add_task(function* () {
   yield addTab(URL_ROOT + "doc_end_delay.html");
   let {inspector, panel} = yield openAnimationInspector();
 

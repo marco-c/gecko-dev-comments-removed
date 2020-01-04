@@ -8,7 +8,7 @@
 
 const TESTCASE_URI = TEST_BASE_HTTPS + "simple.html";
 
-add_task(function*() {
+add_task(function* () {
   let { ui } = yield openStyleEditorForURL(TESTCASE_URI);
 
   yield rightClickStyleSheet(ui, ui.editors[0]);

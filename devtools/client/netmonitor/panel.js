@@ -28,7 +28,7 @@ NetMonitorPanel.prototype = {
 
 
 
-  open: Task.async(function*() {
+  open: Task.async(function* () {
     if (this._opening) {
       return this._opening;
     }
@@ -54,7 +54,7 @@ NetMonitorPanel.prototype = {
     return this._toolbox.target;
   },
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     if (this._destroying) {
       return this._destroying;
     }

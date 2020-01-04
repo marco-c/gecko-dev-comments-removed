@@ -37,7 +37,7 @@ module.exports = createClass({
 
 
 
-  componentDidMount: Task.async(function*() {
+  componentDidMount: Task.async(function* () {
     let { onContentResize } = this;
     let browser = this.refs.browserContainer.querySelector("iframe.browser");
     let mm = browser.frameLoader.messageManager;

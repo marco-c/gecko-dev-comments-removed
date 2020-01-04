@@ -400,7 +400,7 @@ StyleInspectorMenu.prototype = {
 
 
 
-  _onCopyImageDataUrl: Task.async(function*() {
+  _onCopyImageDataUrl: Task.async(function* () {
     if (!this._clickedNodeInfo) {
       return;
     }

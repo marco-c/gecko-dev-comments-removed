@@ -130,6 +130,8 @@ ElementStyle.prototype = {
           r.editor.destroy();
         }
       }
+
+      return undefined;
     }).then(null, e => {
       
       

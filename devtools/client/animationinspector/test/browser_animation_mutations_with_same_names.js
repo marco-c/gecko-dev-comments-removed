@@ -9,7 +9,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   yield addTab(URL_ROOT + "doc_negative_animation.html");
   let {controller, panel} = yield openAnimationInspector();
 

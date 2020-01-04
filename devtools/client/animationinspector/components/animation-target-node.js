@@ -41,7 +41,7 @@ AnimationTargetNode.prototype = {
     this.isDestroyed = true;
   },
 
-  render: Task.async(function*(playerFront) {
+  render: Task.async(function* (playerFront) {
     
     let nodeFront = nodeFronts.get(playerFront);
 

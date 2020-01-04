@@ -22,7 +22,7 @@ var AnimationsPanel = {
   UI_UPDATED_EVENT: "ui-updated",
   PANEL_INITIALIZED: "panel-initialized",
 
-  initialize: Task.async(function*() {
+  initialize: Task.async(function* () {
     if (AnimationsController.destroyed) {
       console.warn("Could not initialize the animation-panel, controller " +
                    "was destroyed");
@@ -79,7 +79,7 @@ var AnimationsPanel = {
     this.emit(this.PANEL_INITIALIZED);
   }),
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     if (!this.initialized) {
       return;
     }
@@ -205,7 +205,7 @@ var AnimationsPanel = {
 
 
 
-  toggleAll: Task.async(function*() {
+  toggleAll: Task.async(function* () {
     this.toggleAllButtonEl.classList.toggle("paused");
     yield AnimationsController.toggleAll();
   }),
@@ -280,7 +280,9 @@ var AnimationsPanel = {
       this.setCurrentTimeAllPromise =
         AnimationsController.setCurrentTimeAll(time, true)
                             .catch(error => console.error(error))
-                            .then(() => this.setCurrentTimeAllPromise = null);
+                            .then(() => {
+                              this.setCurrentTimeAllPromise = null;
+                            });
     }
 
     this.displayTimelineCurrentTime();
@@ -296,7 +298,7 @@ var AnimationsPanel = {
 
 
 
-  refreshAnimationsStateAndUI: Task.async(function*() {
+  refreshAnimationsStateAndUI: Task.async(function* () {
     for (let player of AnimationsController.animationPlayers) {
       yield player.refreshState();
     }
@@ -307,7 +309,7 @@ var AnimationsPanel = {
 
 
 
-  refreshAnimationsUI: Task.async(function*() {
+  refreshAnimationsUI: Task.async(function* () {
     
     this.togglePlayers(true);
 

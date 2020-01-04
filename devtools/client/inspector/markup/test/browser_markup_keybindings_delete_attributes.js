@@ -7,7 +7,7 @@
 
 
 
-const HTML = `<div id="id" class="class" data-id="id"></div>`;
+const HTML = '<div id="id" class="class" data-id="id"></div>';
 const TEST_URL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML);
 
 
@@ -24,7 +24,7 @@ const TEST_DATA = [{
   attribute: "data-id"
 }];
 
-add_task(function*() {
+add_task(function* () {
   let {inspector} = yield openInspectorForURL(TEST_URL);
   let {walker} = inspector;
 

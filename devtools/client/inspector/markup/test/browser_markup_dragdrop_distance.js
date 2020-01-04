@@ -14,7 +14,7 @@ const TEST_NODE = "#test";
 
 const MIN_DISTANCE = 10;
 
-add_task(function*() {
+add_task(function* () {
   let {inspector} = yield openInspectorForURL(TEST_URL);
 
   info("Drag the test node by half of the minimum distance");

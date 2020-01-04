@@ -7,7 +7,7 @@
 
 const TEST_URL = "http://example.org/";
 
-addRDMTask(TEST_URL, function*({ ui }) {
+addRDMTask(TEST_URL, function* ({ ui }) {
   let store = ui.toolWindow.store;
 
   
@@ -23,7 +23,7 @@ addRDMTask(TEST_URL, function*({ ui }) {
 
   
   yield waitForFrameLoad(ui, TEST_URL);
-  let location = yield spawnViewportTask(ui, {}, function*() {
+  let location = yield spawnViewportTask(ui, {}, function* () {
     return content.location.href;
   });
   is(location, TEST_URL, "Viewport location matches");

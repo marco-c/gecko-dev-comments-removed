@@ -93,7 +93,7 @@ function* openTabAndSetupStorage(url) {
   gWindow = content.wrappedJSObject;
 
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
     
 
 
@@ -138,7 +138,7 @@ function* openTabAndSetupStorage(url) {
 
 
 
-var openStoragePanel = Task.async(function*(cb) {
+var openStoragePanel = Task.async(function* (cb) {
   info("Opening the storage inspector");
   let target = TargetFactory.forTab(gBrowser.selectedTab);
 
@@ -223,7 +223,7 @@ function forceCollections() {
 function* finishTests() {
   
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
     
 
 

@@ -1,7 +1,7 @@
 
 "use strict";
 
-add_task(function*() {
+add_task(function* () {
   yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-search.html");
 
   let $$ = sel => gPanelWindow.document.querySelectorAll(sel);

@@ -17,7 +17,7 @@ const COMMON_FRAME_SCRIPT_URL = "chrome://devtools/content/shared/frame-script-u
 const TAB_NAME = "animationinspector";
 
 
-registerCleanupFunction(function*() {
+registerCleanupFunction(function* () {
   yield closeAnimationInspector();
 
   while (gBrowser.tabs.length > 1) {
@@ -75,7 +75,7 @@ function* reloadTab(inspector) {
 
 
 var selectNodeAndWaitForAnimations = Task.async(
-  function*(data, inspector, reason = "test") {
+  function* (data, inspector, reason = "test") {
     yield selectNode(data, inspector, reason);
 
     
@@ -107,7 +107,7 @@ function assertAnimationsDisplayed(panel, nbAnimations, msg = "") {
 
 
 
-var waitForAnimationInspectorReady = Task.async(function*(inspector) {
+var waitForAnimationInspectorReady = Task.async(function* (inspector) {
   let win = inspector.sidebar.getWindowForTab(TAB_NAME);
   let updated = inspector.once("inspector-updated");
 
@@ -127,7 +127,7 @@ var waitForAnimationInspectorReady = Task.async(function*(inspector) {
 
 
 
-var openAnimationInspector = Task.async(function*() {
+var openAnimationInspector = Task.async(function* () {
   let {inspector, toolbox} = yield openInspectorSidebarTab(TAB_NAME);
 
   info("Waiting for the inspector and sidebar to be ready");
@@ -161,7 +161,7 @@ var openAnimationInspector = Task.async(function*() {
 
 
 
-var closeAnimationInspector = Task.async(function*() {
+var closeAnimationInspector = Task.async(function* () {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   yield gDevTools.closeToolbox(target);
 });
@@ -214,8 +214,8 @@ function executeInContent(name, data = {}, objects = {},
 
 
 
-var getAnimationPlayerState = Task.async(function*(selector,
-                                                   animationIndex = 0) {
+var getAnimationPlayerState = Task.async(function* (selector,
+                                                    animationIndex = 0) {
   let playState = yield executeInContent("Test:GetAnimationPlayerState",
                                          {selector, animationIndex});
   return playState;
@@ -236,7 +236,7 @@ function isNodeVisible(node) {
 
 
 
-var waitForAllAnimationTargets = Task.async(function*(panel) {
+var waitForAllAnimationTargets = Task.async(function* (panel) {
   let targets = panel.animationsTimelineComponent.targetNodes;
   yield promise.all(targets.map(t => {
     if (!t.previewer.nodeFront) {
@@ -265,7 +265,9 @@ function* assertScrubberMoving(panel, isMoving) {
     
     
     let hasMoved = false;
-    timeline.once("timeline-data-changed", () => hasMoved = true);
+    timeline.once("timeline-data-changed", () => {
+      hasMoved = true;
+    });
     yield new Promise(r => setTimeout(r, 500));
     ok(!hasMoved, "The scrubber is not moving");
   }

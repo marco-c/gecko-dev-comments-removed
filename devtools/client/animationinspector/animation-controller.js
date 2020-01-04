@@ -35,7 +35,7 @@ var gToolbox, gInspector;
 
 
 
-var startup = Task.async(function*(inspector) {
+var startup = Task.async(function* (inspector) {
   gInspector = inspector;
   gToolbox = inspector.toolbox;
 
@@ -56,7 +56,7 @@ var startup = Task.async(function*(inspector) {
 
 
 
-var shutdown = Task.async(function*() {
+var shutdown = Task.async(function* () {
   yield AnimationsController.destroy();
   
   if (typeof AnimationsPanel !== "undefined") {
@@ -79,7 +79,7 @@ function destroy() {
 
 
 
-var getServerTraits = Task.async(function*(target) {
+var getServerTraits = Task.async(function* (target) {
   let config = [
     { name: "hasToggleAll", actor: "animations",
       method: "toggleAll" },
@@ -135,7 +135,7 @@ var AnimationsController = {
   PLAYERS_UPDATED_EVENT: "players-updated",
   ALL_ANIMATIONS_TOGGLED_EVENT: "all-animations-toggled",
 
-  initialize: Task.async(function*() {
+  initialize: Task.async(function* () {
     if (this.initialized) {
       yield this.initialized.promise;
       return;
@@ -169,7 +169,7 @@ var AnimationsController = {
     this.initialized.resolve();
   }),
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     if (!this.initialized) {
       return;
     }
@@ -215,13 +215,13 @@ var AnimationsController = {
            gInspector.sidebar.getCurrentTabID() == "animationinspector";
   },
 
-  onPanelVisibilityChange: Task.async(function*() {
+  onPanelVisibilityChange: Task.async(function* () {
     if (this.isPanelVisible()) {
       this.onNewNodeFront();
     }
   }),
 
-  onNewNodeFront: Task.async(function*() {
+  onNewNodeFront: Task.async(function* () {
     
     if (!this.isPanelVisible() ||
         this.nodeFront === gInspector.selection.nodeFront) {
@@ -265,7 +265,7 @@ var AnimationsController = {
 
 
 
-  toggleCurrentAnimations: Task.async(function*(shouldPause) {
+  toggleCurrentAnimations: Task.async(function* (shouldPause) {
     if (this.traits.hasToggleSeveral) {
       yield this.animationsFront.toggleSeveral(this.animationPlayers,
                                                shouldPause);
@@ -288,7 +288,7 @@ var AnimationsController = {
 
 
 
-  setCurrentTimeAll: Task.async(function*(time, shouldPause) {
+  setCurrentTimeAll: Task.async(function* (time, shouldPause) {
     if (this.traits.hasSetCurrentTimes) {
       yield this.animationsFront.setCurrentTimes(this.animationPlayers, time,
                                                  shouldPause);
@@ -309,7 +309,7 @@ var AnimationsController = {
 
 
 
-  setPlaybackRateAll: Task.async(function*(rate) {
+  setPlaybackRateAll: Task.async(function* (rate) {
     if (this.traits.hasSetPlaybackRates) {
       
       yield this.animationsFront.setPlaybackRates(this.animationPlayers, rate);
@@ -327,7 +327,7 @@ var AnimationsController = {
   
   animationPlayers: [],
 
-  refreshAnimationPlayers: Task.async(function*(nodeFront) {
+  refreshAnimationPlayers: Task.async(function* (nodeFront) {
     this.destroyAnimationPlayers();
 
     this.animationPlayers = yield this.animationsFront

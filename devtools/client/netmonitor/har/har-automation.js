@@ -215,7 +215,8 @@ var HarAutomation = Class({
 
 
 
-  _getFormDataSections: Task.async(function*(headers, uploadHeaders, postData) {
+  _getFormDataSections: Task.async(function* (headers, uploadHeaders,
+                                              postData) {
     let formDataSections = [];
 
     let { headers: requestHeaders } = headers;

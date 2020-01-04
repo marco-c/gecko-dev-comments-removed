@@ -20,7 +20,9 @@ SimpleTest.requestCompleteLog();
 
 
 DevToolsUtils.testing = true;
-registerCleanupFunction(() => DevToolsUtils.testing = false);
+registerCleanupFunction(() => {
+  DevToolsUtils.testing = false;
+});
 
 
 registerCleanupFunction(() => {
@@ -79,7 +81,7 @@ function getContainerForNodeFront(nodeFront, {markup}) {
 
 
 
-var getContainerForSelector = Task.async(function*(selector, inspector) {
+var getContainerForSelector = Task.async(function* (selector, inspector) {
   info("Getting the markup-container for node " + selector);
   let nodeFront = yield getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
@@ -112,7 +114,7 @@ function waitForChildrenUpdated({markup}) {
 
 
 
-var clickContainer = Task.async(function*(selector, inspector) {
+var clickContainer = Task.async(function* (selector, inspector) {
   info("Clicking on the markup-container for node " + selector);
 
   let nodeFront = yield getNodeFront(selector, inspector);
@@ -155,7 +157,7 @@ function setEditableFieldValue(field, value, inspector) {
 
 
 
-var addNewAttributes = Task.async(function*(selector, text, inspector) {
+var addNewAttributes = Task.async(function* (selector, text, inspector) {
   info(`Entering text "${text}" in new attribute field for node ${selector}`);
 
   let container = yield getContainerForSelector(selector, inspector);
@@ -178,7 +180,7 @@ var addNewAttributes = Task.async(function*(selector, text, inspector) {
 
 
 
-var assertAttributes = Task.async(function*(selector, expected, testActor) {
+var assertAttributes = Task.async(function* (selector, expected, testActor) {
   let {attributes: actual} = yield testActor.getNodeInfo(selector);
 
   is(actual.length, Object.keys(expected).length,
@@ -277,7 +279,7 @@ function wait(ms) {
 
 
 var isEditingMenuDisabled = Task.async(
-function*(nodeFront, inspector, assert = true) {
+function* (nodeFront, inspector, assert = true) {
   let doc = inspector.panelDoc;
   let deleteMenuItem = doc.getElementById("node-menu-delete");
   let editHTMLMenuItem = doc.getElementById("node-menu-edithtml");
@@ -315,7 +317,7 @@ function*(nodeFront, inspector, assert = true) {
 
 
 var isEditingMenuEnabled = Task.async(
-function*(nodeFront, inspector, assert = true) {
+function* (nodeFront, inspector, assert = true) {
   let doc = inspector.panelDoc;
   let deleteMenuItem = doc.getElementById("node-menu-delete");
   let editHTMLMenuItem = doc.getElementById("node-menu-edithtml");
@@ -348,7 +350,7 @@ function*(nodeFront, inspector, assert = true) {
 
 
 
-var reopenMenu = Task.async(function*(menu) {
+var reopenMenu = Task.async(function* (menu) {
   
   if (menu.state == "closing" || menu.state == "open") {
     let popuphidden = once(menu, "popuphidden", true);
@@ -422,7 +424,7 @@ function checkFocusedAttribute(attrName, editMode) {
 
 
 
-var getAttributesFromEditor = Task.async(function*(selector, inspector) {
+var getAttributesFromEditor = Task.async(function* (selector, inspector) {
   let nodeList = (yield getContainerForSelector(selector, inspector))
     .tagLine.querySelectorAll("[data-attr]");
 
@@ -440,6 +442,7 @@ function* waitForMultipleChildrenUpdates(inspector) {
     yield waitForChildrenUpdated(inspector);
     return yield waitForMultipleChildrenUpdates(inspector);
   }
+  return undefined;
 }
 
 

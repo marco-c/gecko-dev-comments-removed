@@ -42,7 +42,7 @@ exports.debugWorker = function(client, workerActor) {
 
 
 
-exports.getWorkerForms = Task.async(function*(client) {
+exports.getWorkerForms = Task.async(function* (client) {
   let registrations = [];
   let workers = [];
 

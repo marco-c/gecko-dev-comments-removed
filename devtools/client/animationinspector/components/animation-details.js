@@ -62,7 +62,7 @@ AnimationDetails.prototype = {
 
 
 
-  getTracks: Task.async(function*() {
+  getTracks: Task.async(function* () {
     let tracks = {};
 
     
@@ -112,7 +112,7 @@ AnimationDetails.prototype = {
     return tracks;
   }),
 
-  render: Task.async(function*(animation) {
+  render: Task.async(function* (animation) {
     this.unrender();
 
     if (!animation) {
