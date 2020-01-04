@@ -3101,7 +3101,7 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
                     continue;
                 }
                 
-                event->widget = &window;
+                event->mWidget = &window;
                 window.DispatchEvent(event, status);
             }
             mIMEKeyEvents.Clear();

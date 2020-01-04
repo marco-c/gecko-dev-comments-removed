@@ -105,7 +105,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
 
           
           Direction direction = GetDirection();
-          nsresult rv = aEvent->widget->BeginResizeDrag(aEvent,
+          nsresult rv = aEvent->mWidget->BeginResizeDrag(aEvent,
                         direction.mHorizontal, direction.mVertical);
           
           if (rv != NS_ERROR_NOT_IMPLEMENTED)
@@ -121,7 +121,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
         LayoutDeviceIntPoint refPoint;
         if (!GetEventPoint(aEvent, refPoint))
           return NS_OK;
-        mMouseDownPoint = refPoint + aEvent->widget->WidgetToScreenOffset();
+        mMouseDownPoint = refPoint + aEvent->mWidget->WidgetToScreenOffset();
 
         
         mTrackingMouseMove = true;
@@ -169,7 +169,8 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
       LayoutDeviceIntPoint refPoint;
       if (!GetEventPoint(aEvent, refPoint))
         return NS_OK;
-      LayoutDeviceIntPoint screenPoint = refPoint + aEvent->widget->WidgetToScreenOffset();
+      LayoutDeviceIntPoint screenPoint =
+        refPoint + aEvent->mWidget->WidgetToScreenOffset();
       LayoutDeviceIntPoint mouseMove(screenPoint - mMouseDownPoint);
 
       

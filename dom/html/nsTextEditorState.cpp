@@ -902,7 +902,7 @@ nsTextInputListener::HandleEvent(nsIDOMEvent* aEvent)
     mTxtCtrlElement->IsTextArea() ?
       nsIWidget::NativeKeyBindingsForMultiLineEditor :
       nsIWidget::NativeKeyBindingsForSingleLineEditor;
-  nsIWidget* widget = keyEvent->widget;
+  nsIWidget* widget = keyEvent->mWidget;
   
   if (!widget) {
     widget = mFrame->GetNearestWidget();

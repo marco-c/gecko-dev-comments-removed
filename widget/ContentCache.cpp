@@ -846,7 +846,7 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
   
   
   if (!mIsComposing) {
-    if (aEvent.widget && aEvent.widget->PluginHasFocus()) {
+    if (aEvent.mWidget && aEvent.mWidget->PluginHasFocus()) {
       
       mCompositionStart = 0;
     } else {

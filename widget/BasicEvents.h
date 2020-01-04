@@ -500,7 +500,7 @@ protected:
   WidgetGUIEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
                  EventClassID aEventClassID)
     : WidgetEvent(aIsTrusted, aMessage, aEventClassID)
-    , widget(aWidget)
+    , mWidget(aWidget)
   {
   }
 
@@ -513,7 +513,7 @@ public:
 
   WidgetGUIEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget)
     : WidgetEvent(aIsTrusted, aMessage, eGUIEventClass)
-    , widget(aWidget)
+    , mWidget(aWidget)
   {
   }
 
@@ -529,7 +529,7 @@ public:
   }
 
   
-  nsCOMPtr<nsIWidget> widget;
+  nsCOMPtr<nsIWidget> mWidget;
 
   
 

@@ -822,7 +822,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       WidgetCompositionEvent* compositionEvent = aEvent->AsCompositionEvent();
       WidgetQueryContentEvent selectedText(true, eQuerySelectedText,
-                                           compositionEvent->widget);
+                                           compositionEvent->mWidget);
       HandleQueryContentEvent(&selectedText);
       NS_ASSERTION(selectedText.mSucceeded, "Failed to get selected text");
       compositionEvent->mData = selectedText.mReply.mString;
@@ -1584,12 +1584,14 @@ EventStateManager::BeginTrackingDragGesture(nsPresContext* aPresContext,
                                             WidgetMouseEvent* inDownEvent,
                                             nsIFrame* inDownFrame)
 {
-  if (!inDownEvent->widget)
+  if (!inDownEvent->mWidget) {
     return;
+  }
 
   
   
-  mGestureDownPoint = inDownEvent->refPoint + inDownEvent->widget->WidgetToScreenOffset();
+  mGestureDownPoint =
+    inDownEvent->refPoint + inDownEvent->mWidget->WidgetToScreenOffset();
 
   if (inDownFrame) {
     inDownFrame->GetContentForEvent(inDownEvent,
@@ -1632,13 +1634,14 @@ EventStateManager::StopTrackingDragGesture()
 void
 EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent)
 {
-  NS_ASSERTION(aEvent->widget == mCurrentTarget->GetNearestWidget(),
+  NS_ASSERTION(aEvent->mWidget == mCurrentTarget->GetNearestWidget(),
                "Incorrect widget in event");
 
   
   
   
-  aEvent->refPoint = mGestureDownPoint - aEvent->widget->WidgetToScreenOffset();
+  aEvent->refPoint =
+    mGestureDownPoint - aEvent->mWidget->WidgetToScreenOffset();
   aEvent->mModifiers = mGestureModifiers;
   aEvent->buttons = mGestureDownButtons;
 }
@@ -1694,7 +1697,8 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
     }
 
     
-    LayoutDeviceIntPoint pt = aEvent->refPoint + aEvent->widget->WidgetToScreenOffset();
+    LayoutDeviceIntPoint pt =
+      aEvent->refPoint + aEvent->mWidget->WidgetToScreenOffset();
     LayoutDeviceIntPoint distance = pt - mGestureDownPoint;
     if (Abs(distance.x) > AssertedCast<uint32_t>(pixelThresholdX) ||
         Abs(distance.y) > AssertedCast<uint32_t>(pixelThresholdY)) {
@@ -2294,11 +2298,10 @@ EventStateManager::SendLineScrollEvent(nsIFrame* aTargetFrame,
   }
 
   WidgetMouseScrollEvent event(aEvent->IsTrusted(),
-                               eLegacyMouseLineOrPageScroll, aEvent->widget);
+                               eLegacyMouseLineOrPageScroll, aEvent->mWidget);
   event.mFlags.mDefaultPrevented = aState.mDefaultPrevented;
   event.mFlags.mDefaultPreventedByContent = aState.mDefaultPreventedByContent;
   event.refPoint = aEvent->refPoint;
-  event.widget = aEvent->widget;
   event.mTime = aEvent->mTime;
   event.mTimeStamp = aEvent->mTimeStamp;
   event.mModifiers = aEvent->mModifiers;
@@ -2334,11 +2337,10 @@ EventStateManager::SendPixelScrollEvent(nsIFrame* aTargetFrame,
   }
 
   WidgetMouseScrollEvent event(aEvent->IsTrusted(),
-                               eLegacyMousePixelScroll, aEvent->widget);
+                               eLegacyMousePixelScroll, aEvent->mWidget);
   event.mFlags.mDefaultPrevented = aState.mDefaultPrevented;
   event.mFlags.mDefaultPreventedByContent = aState.mDefaultPreventedByContent;
   event.refPoint = aEvent->refPoint;
-  event.widget = aEvent->widget;
   event.mTime = aEvent->mTime;
   event.mTimeStamp = aEvent->mTimeStamp;
   event.mModifiers = aEvent->mModifiers;
@@ -3423,8 +3425,8 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
         WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
         event.refPoint = mouseEvent->refPoint;
-        if (mouseEvent->widget) {
-          event.refPoint += mouseEvent->widget->WidgetToScreenOffset();
+        if (mouseEvent->mWidget) {
+          event.refPoint += mouseEvent->mWidget->WidgetToScreenOffset();
         }
         event.refPoint -= widget->WidgetToScreenOffset();
         event.mModifiers = mouseEvent->mModifiers;
@@ -3846,7 +3848,7 @@ CreateMouseOrPointerWidgetEvent(WidgetMouseEvent* aMouseEvent,
     nsAutoPtr<WidgetPointerEvent> newPointerEvent;
     newPointerEvent =
       new WidgetPointerEvent(aMouseEvent->IsTrusted(), aMessage,
-                             aMouseEvent->widget);
+                             aMouseEvent->mWidget);
     newPointerEvent->isPrimary = sourcePointer->isPrimary;
     newPointerEvent->pointerId = sourcePointer->pointerId;
     newPointerEvent->width = sourcePointer->width;
@@ -3860,7 +3862,7 @@ CreateMouseOrPointerWidgetEvent(WidgetMouseEvent* aMouseEvent,
   } else {
     aNewEvent =
       new WidgetMouseEvent(aMouseEvent->IsTrusted(), aMessage,
-                           aMouseEvent->widget, WidgetMouseEvent::eReal);
+                           aMouseEvent->mWidget, WidgetMouseEvent::eReal);
     aNewEvent->relatedTarget = aRelatedContent;
   }
   aNewEvent->refPoint = aMouseEvent->refPoint;
@@ -4205,7 +4207,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
       
       
       
-      if (sIsPointerLocked && aMouseEvent->widget) {
+      if (sIsPointerLocked && aMouseEvent->mWidget) {
         
         
         
@@ -4213,7 +4215,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
         
         
         LayoutDeviceIntPoint center =
-          GetWindowClientRectCenter(aMouseEvent->widget);
+          GetWindowClientRectCenter(aMouseEvent->mWidget);
         aMouseEvent->lastRefPoint = center;
         if (aMouseEvent->refPoint != center) {
           
@@ -4222,8 +4224,8 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
           
           
           sSynthCenteringPoint = center;
-          aMouseEvent->widget->SynthesizeNativeMouseMove(
-            center + aMouseEvent->widget->WidgetToScreenOffset(), nullptr);
+          aMouseEvent->mWidget->SynthesizeNativeMouseMove(
+            center + aMouseEvent->mWidget->WidgetToScreenOffset(), nullptr);
         } else if (aMouseEvent->refPoint == sSynthCenteringPoint) {
           
           
@@ -4290,7 +4292,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
 
       OverOutElementsWrapper* helper = GetWrapperByEventID(aMouseEvent);
       if (helper->mLastOverFrame &&
-          nsContentUtils::GetTopLevelWidget(aMouseEvent->widget) !=
+          nsContentUtils::GetTopLevelWidget(aMouseEvent->mWidget) !=
           nsContentUtils::GetTopLevelWidget(helper->mLastOverFrame->GetNearestWidget())) {
         
         
@@ -4471,7 +4473,7 @@ EventStateManager::FireDragEnterOrExit(nsPresContext* aPresContext,
                                        nsWeakFrame& aTargetFrame)
 {
   nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetDragEvent event(aDragEvent->IsTrusted(), aMessage, aDragEvent->widget);
+  WidgetDragEvent event(aDragEvent->IsTrusted(), aMessage, aDragEvent->mWidget);
   event.refPoint = aDragEvent->refPoint;
   event.mModifiers = aDragEvent->mModifiers;
   event.buttons = aDragEvent->buttons;
@@ -4507,7 +4509,8 @@ EventStateManager::FireDragEnterOrExit(nsPresContext* aPresContext,
 
   if (aMessage == eDragExit && IsRemoteTarget(aTargetContent)) {
     nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetDragEvent remoteEvent(aDragEvent->IsTrusted(), aMessage, aDragEvent->widget);
+    WidgetDragEvent remoteEvent(aDragEvent->IsTrusted(), aMessage,
+                                aDragEvent->mWidget);
     remoteEvent.AssignDragEventData(*aDragEvent, true);
     HandleCrossProcessEvent(&remoteEvent, &status);
   }
@@ -4625,7 +4628,7 @@ EventStateManager::CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
   if (0 != aEvent->clickCount) {
     
     
-    if (aEvent->widget && !aEvent->widget->IsEnabled()) {
+    if (aEvent->mWidget && !aEvent->mWidget->IsEnabled()) {
       return ret;
     }
     
@@ -4634,7 +4637,7 @@ EventStateManager::CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
       aEvent->button == WidgetMouseEvent::eRightButton);
 
     WidgetMouseEvent event(aEvent->IsTrusted(), eMouseClick,
-                           aEvent->widget, WidgetMouseEvent::eReal);
+                           aEvent->mWidget, WidgetMouseEvent::eReal);
     event.refPoint = aEvent->refPoint;
     event.clickCount = aEvent->clickCount;
     event.mModifiers = aEvent->mModifiers;
@@ -4668,7 +4671,7 @@ EventStateManager::CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
           mouseContent && mouseContent->IsInComposedDoc()) {
         
         WidgetMouseEvent event2(aEvent->IsTrusted(), eMouseDoubleClick,
-                                aEvent->widget, WidgetMouseEvent::eReal);
+                                aEvent->mWidget, WidgetMouseEvent::eReal);
         event2.refPoint = aEvent->refPoint;
         event2.clickCount = aEvent->clickCount;
         event2.mModifiers = aEvent->mModifiers;

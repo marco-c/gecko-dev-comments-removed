@@ -758,7 +758,7 @@ IMEContentObserver::OnMouseButtonEvent(nsPresContext* aPresContext,
   }
   if (!aMouseEvent->IsTrusted() ||
       aMouseEvent->DefaultPrevented() ||
-      !aMouseEvent->widget) {
+      !aMouseEvent->mWidget) {
     return false;
   }
   
@@ -776,7 +776,7 @@ IMEContentObserver::OnMouseButtonEvent(nsPresContext* aPresContext,
   RefPtr<IMEContentObserver> kungFuDeathGrip(this);
 
   WidgetQueryContentEvent charAtPt(true, eQueryCharacterAtPoint,
-                                   aMouseEvent->widget);
+                                   aMouseEvent->mWidget);
   charAtPt.refPoint = aMouseEvent->refPoint;
   ContentEventHandler handler(aPresContext);
   handler.OnQueryCharacterAtPoint(&charAtPt);
@@ -801,8 +801,8 @@ IMEContentObserver::OnMouseButtonEvent(nsPresContext* aPresContext,
   }
   
   
-  if (aMouseEvent->widget != mWidget) {
-    charAtPt.refPoint += aMouseEvent->widget->WidgetToScreenOffset() -
+  if (aMouseEvent->mWidget != mWidget) {
+    charAtPt.refPoint += aMouseEvent->mWidget->WidgetToScreenOffset() -
       mWidget->WidgetToScreenOffset();
   }
 
