@@ -44,7 +44,7 @@ public:
   
   static already_AddRefed<AndroidSurfaceTexture> Create();
 
-  static AndroidSurfaceTexture* Find(int id);
+  static AndroidSurfaceTexture* Find(int aId);
 
   
   
