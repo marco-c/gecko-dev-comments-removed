@@ -114,6 +114,63 @@ LocalizationHelper.prototype = {
   }
 };
 
+function getPropertiesForNode(node) {
+  let bundleEl = node.closest("[data-localization-bundle]");
+  if (!bundleEl) {
+    return null;
+  }
+
+  let propertiesUrl = bundleEl.getAttribute("data-localization-bundle");
+  return getProperties(propertiesUrl);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function localizeMarkup(root) {
+  let elements = root.querySelectorAll("[data-localization]");
+  for (let element of elements) {
+    let properties = getPropertiesForNode(element);
+    if (!properties) {
+      continue;
+    }
+
+    let attributes = element.getAttribute("data-localization").split(";");
+    for (let attribute of attributes) {
+      let [name, value] = attribute.trim().split("=");
+      if (name === "content") {
+        element.textContent = properties[value];
+      } else {
+        element.setAttribute(name, properties[value]);
+      }
+    }
+
+    element.removeAttribute("data-localization");
+  }
+}
+
 const sharedL10N = new LocalizationHelper("devtools-shared/locale/shared.properties");
 const ELLIPSIS = sharedL10N.getStr("ellipsis");
 
@@ -151,5 +208,6 @@ function MultiLocalizationHelper(...stringBundleNames) {
 }
 
 exports.LocalizationHelper = LocalizationHelper;
+exports.localizeMarkup = localizeMarkup;
 exports.MultiLocalizationHelper = MultiLocalizationHelper;
 exports.ELLIPSIS = ELLIPSIS;
