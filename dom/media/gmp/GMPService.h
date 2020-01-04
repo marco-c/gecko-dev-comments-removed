@@ -21,8 +21,11 @@
 #include "nsIWeakReference.h"
 #include "mozilla/AbstractThread.h"
 #include "nsClassHashtable.h"
+#include "nsISupportsImpl.h"
 
 template <class> struct already_AddRefed;
+
+
 
 
 
@@ -30,10 +33,20 @@ template <class> struct already_AddRefed;
 class GMPCrashHelper
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPCrashHelper)
+  NS_METHOD_(MozExternalRefCountType) AddRef(void);
+  NS_METHOD_(MozExternalRefCountType) Release(void);
+
+  
   virtual already_AddRefed<nsPIDOMWindowInner> GetPluginCrashedEventTarget() = 0;
+
 protected:
-  virtual ~GMPCrashHelper() {}
+  virtual ~GMPCrashHelper()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+  }
+  void Destroy();
+  mozilla::ThreadSafeAutoRefCnt mRefCnt;
+  NS_DECL_OWNINGTHREAD
 };
 
 namespace mozilla {
