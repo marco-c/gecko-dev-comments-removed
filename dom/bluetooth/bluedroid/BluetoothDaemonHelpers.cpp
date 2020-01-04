@@ -1826,14 +1826,8 @@ UnpackPDU(DaemonSocketPDU& aPDU, BluetoothGattWriteParam& aOut)
 nsresult
 UnpackPDU(DaemonSocketPDU& aPDU, BluetoothGattNotifyParam& aOut)
 {
-
   
-  BluetoothAddress address;
-  nsresult rv = UnpackPDU(aPDU, address);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  rv = Convert(address, aOut.mBdAddr);
+  nsresult rv = UnpackPDU(aPDU, aOut.mBdAddr);
   if (NS_FAILED(rv)) {
     return rv;
   }
