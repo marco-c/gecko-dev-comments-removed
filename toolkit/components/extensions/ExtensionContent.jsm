@@ -352,6 +352,7 @@ class ExtensionContext extends BaseContext {
     } else {
       
       
+      
       let metadata = {
         "inner-window-id": getInnerWindowID(contentWindow),
         addonId: attrs.addonId,
@@ -362,7 +363,7 @@ class ExtensionContext extends BaseContext {
         sandboxPrototype: contentWindow,
         wantXrays: true,
         isWebExtensionContentScript: true,
-        wantGlobalProperties: ["XMLHttpRequest"],
+        wantGlobalProperties: ["XMLHttpRequest", "fetch"],
       });
     }
 
