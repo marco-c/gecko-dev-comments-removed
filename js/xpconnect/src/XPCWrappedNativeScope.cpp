@@ -576,24 +576,6 @@ XPCWrappedNativeScope::UpdateWeakPointersAfterGC(XPCJSContext* cx)
 
 
 void
-XPCWrappedNativeScope::MarkAllWrappedNativesAndProtos()
-{
-    for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
-        for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
-            auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
-            entry->value->Mark();
-        }
-        
-        
-        for (auto i = cur->mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
-            auto entry = static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
-            entry->value->Mark();
-        }
-    }
-}
-
-
-void
 XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs()
 {
     for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {

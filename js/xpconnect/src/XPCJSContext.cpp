@@ -786,19 +786,6 @@ XPCJSContext::FinalizeCallback(JSFreeOp* fop,
 
             
             
-
-            
-            XPCWrappedNativeScope::MarkAllWrappedNativesAndProtos();
-
-            
-            
-            
-            
-            
-            
-
-            
-            
             if (!nsXPConnect::XPConnect()->IsShuttingDown()) {
 
                 
