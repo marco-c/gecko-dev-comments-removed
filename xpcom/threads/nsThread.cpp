@@ -581,7 +581,9 @@ nsresult
 nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags,
                            nsNestedEventTarget* aTarget)
 {
-  nsCOMPtr<nsIRunnable> event(aEvent);
+  
+  
+  LeakRefPtr<nsIRunnable> event(Move(aEvent));
   if (NS_WARN_IF(!event)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -592,8 +594,9 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
   }
 
 #ifdef MOZ_TASK_TRACER
-  nsCOMPtr<nsIRunnable> tracedRunnable = CreateTracedRunnable(event.forget());
+  nsCOMPtr<nsIRunnable> tracedRunnable = CreateTracedRunnable(event.take());
   (static_cast<TracedRunnable*>(tracedRunnable.get()))->DispatchTask();
+  
   event = tracedRunnable.forget();
 #endif
 
@@ -608,10 +611,14 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
     
 
     nsRefPtr<nsThreadSyncDispatch> wrapper =
-      new nsThreadSyncDispatch(thread, event.forget());
+      new nsThreadSyncDispatch(thread, event.take());
     nsresult rv = PutEvent(wrapper, aTarget); 
     
     if (NS_FAILED(rv)) {
+      
+      
+      
+      wrapper.get()->Release();
       return rv;
     }
 
@@ -619,11 +626,13 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
     while (wrapper->IsPending()) {
       NS_ProcessNextEvent(thread, true);
     }
+    
+    
     return wrapper->Result();
   }
 
   NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL, "unexpected dispatch flags");
-  return PutEvent(event.forget(), aTarget);
+  return PutEvent(event.take(), aTarget);
 }
 
 
