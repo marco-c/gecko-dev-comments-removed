@@ -1913,6 +1913,31 @@ ValidateCopyDestUsage(const char* funcName, WebGLContext* webgl,
     return dstUsage;
 }
 
+bool
+WebGLTexture::ValidateCopyTexImageForFeedback(const char* funcName, uint32_t level) const
+{
+    const auto& fb = mContext->mBoundReadFramebuffer;
+    if (fb) {
+        const auto readBuffer = fb->ReadBufferMode();
+        MOZ_ASSERT(readBuffer != LOCAL_GL_NONE);
+        const uint32_t colorAttachment = readBuffer - LOCAL_GL_COLOR_ATTACHMENT0;
+        const auto& attach = fb->ColorAttachment(colorAttachment);
+
+        if (attach.Texture() == this &&
+            attach.MipLevel() == uint32_t(level))
+        {
+            
+            
+            mContext->ErrorInvalidOperation("%s: Feedback loop detected, as this texture"
+                                            " is already attached to READ_FRAMEBUFFER's"
+                                            " READ_BUFFER-selected COLOR_ATTACHMENT%u.",
+                                            funcName, colorAttachment);
+            return false;
+        }
+    }
+    return true;
+}
+
 
 void
 WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level, GLenum internalFormat,
@@ -1950,6 +1975,9 @@ WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level, GLenum internal
                                         &srcMode))
         return;
     auto srcFormat = srcUsage->format;
+
+    if (!ValidateCopyTexImageForFeedback(funcName, level))
+        return;
 
     
     
@@ -2091,6 +2119,9 @@ WebGLTexture::CopyTexSubImage(const char* funcName, TexImageTarget target, GLint
                                         &srcMode))
         return;
     auto srcFormat = srcUsage->format;
+
+    if (!ValidateCopyTexImageForFeedback(funcName, level))
+        return;
 
     
     
