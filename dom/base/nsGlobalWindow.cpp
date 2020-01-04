@@ -1622,6 +1622,9 @@ nsGlobalWindow::FreeInnerObjects()
   
   
   NotifyDOMWindowDestroyed(this);
+  if (auto* reporter = nsWindowMemoryReporter::Get()) {
+    reporter->ObserveDOMWindowDetached(this);
+  }
 
   mInnerObjectsFreed = true;
 
@@ -2932,8 +2935,9 @@ nsGlobalWindow::DetachFromDocShell()
     inner->FreeInnerObjects();
   }
 
-  
-  NotifyDOMWindowDestroyed(this);
+  if (auto* reporter = nsWindowMemoryReporter::Get()) {
+    reporter->ObserveDOMWindowDetached(this);
+  }
 
   NotifyWindowIDDestroyed("outer-window-destroyed");
 
