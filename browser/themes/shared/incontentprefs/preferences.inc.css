@@ -271,7 +271,9 @@ description > html|a {
 }
 
 .indent {
-  -moz-margin-start: 33px;
+  
+
+  -moz-margin-start: 33px !important;
 }
 
 .text-link {
