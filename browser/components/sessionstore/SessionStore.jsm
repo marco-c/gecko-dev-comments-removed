@@ -312,6 +312,10 @@ this.SessionStore = {
 
   navigateAndRestore(tab, loadArguments, historyIndex) {
     return SessionStoreInternal.navigateAndRestore(tab, loadArguments, historyIndex);
+  },
+
+  getSessionHistory(tab, updatedCallback) {
+    return SessionStoreInternal.getSessionHistory(tab, updatedCallback);
   }
 };
 
@@ -2260,6 +2264,34 @@ let SessionStoreInternal = {
       
       this.restoreTab(tab, tabState, options);
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getSessionHistory(tab, updatedCallback) {
+    if (updatedCallback) {
+      TabStateFlusher.flush(tab.linkedBrowser).then(() => {
+        let sessionHistory = this.getSessionHistory(tab);
+        if (sessionHistory) {
+          updatedCallback(sessionHistory);
+        }
+      });
+    }
+
+    
+    if (tab.linkedBrowser) {
+      let tabState = TabState.collect(tab);
+      return { index: tabState.index - 1, entries: tabState.entries }
+    }
   },
 
   
