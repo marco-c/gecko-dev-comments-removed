@@ -41,7 +41,7 @@
 
 #include "builtin/MapObject.h"
 #include "js/Date.h"
-#include "js/TraceableHashTable.h"
+#include "js/GCHashTable.h"
 #include "vm/SavedFrame.h"
 #include "vm/SharedArrayObject.h"
 #include "vm/TypedArrayObject.h"
@@ -342,7 +342,7 @@ struct JSStructuredCloneWriter {
     
     
     
-    using CloneMemory = TraceableHashMap<JSObject*, uint32_t, MovableCellHasher<JSObject*>>;
+    using CloneMemory = GCHashMap<JSObject*, uint32_t, MovableCellHasher<JSObject*>>;
     Rooted<CloneMemory> memory;
 
     

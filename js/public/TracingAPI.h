@@ -374,12 +374,17 @@ struct StructGCPolicy {
         
         t->trace(trc);
     }
+
+    static bool needsSweep(T* t) {
+        return t->needsSweep();
+    }
 };
 
 
 template <typename T>
 struct IgnoreGCPolicy {
-    static void trace(JSTracer* trc, uint32_t* id, const char* name) {}
+    static void trace(JSTracer* trc, T* t, const char* name) {}
+    static bool needsSweep(T* v) { return false; }
 };
 
 
