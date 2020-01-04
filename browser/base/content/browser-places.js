@@ -9,6 +9,8 @@ var StarUI = {
   _itemId: -1,
   uri: null,
   _batching: false,
+  _isNewBookmark: false,
+  _autoCloseTimer: 0,
 
   _element: function(aID) {
     return document.getElementById(aID);
@@ -21,8 +23,11 @@ var StarUI = {
     
     
     element.hidden = false;
-    element.addEventListener("popuphidden", this, false);
     element.addEventListener("keypress", this, false);
+    element.addEventListener("mouseout", this, false);
+    element.addEventListener("mouseover", this, false);
+    element.addEventListener("popuphidden", this, false);
+    element.addEventListener("popupshown", this, false);
     return this.panel = element;
   },
 
@@ -58,7 +63,11 @@ var StarUI = {
   
   handleEvent(aEvent) {
     switch (aEvent.type) {
+      case "mouseover":
+        clearTimeout(this._autoCloseTimer);
+        break;
       case "popuphidden":
+        clearTimeout(this._autoCloseTimer);
         if (aEvent.originalTarget == this.panel) {
           if (!this._element("editBookmarkPanelContent").hidden)
             this.quitEditMode();
@@ -72,44 +81,42 @@ var StarUI = {
           if (this._batching)
             this.endBatch();
 
-          switch (this._actionOnHide) {
-            case "cancel": {
-              if (!PlacesUIUtils.useAsyncTransactions) {
+          if (this._uriForRemoval) {
+            if (this._isNewBookmark) {
+              if (!PlacesUtils.useAsyncTransactions) {
                 PlacesUtils.transactionManager.undoTransaction();
                 break;
               }
-              PlacesTransactions.undo().catch(Cu.reportError);
+              PlacesTransactions().undo().catch(Cu.reportError);
               break;
             }
-            case "remove": {
-              
-              
-              if (!PlacesUIUtils.useAsyncTransactions) {
-                let itemIds = PlacesUtils.getBookmarksForURI(this._uriForRemoval);
-                for (let itemId of itemIds) {
-                  let txn = new PlacesRemoveItemTransaction(itemId);
-                  PlacesUtils.transactionManager.doTransaction(txn);
-                }
-                break;
+            
+            
+            if (!PlacesUIUtils.useAsyncTransactions) {
+              let itemIds = PlacesUtils.getBookmarksForURI(this._uriForRemoval);
+              for (let itemId of itemIds) {
+                let txn = new PlacesRemoveItemTransaction(itemId);
+                PlacesUtils.transactionManager.doTransaction(txn);
               }
-
-              PlacesTransactions.RemoveBookmarksForUrls(this._uriForRemoval)
-                                .transact().catch(Cu.reportError);
               break;
             }
+
+            PlacesTransactions.RemoveBookmarksForUrls([this._uriForRemoval])
+                              .transact().catch(Cu.reportError);
           }
-          this._actionOnHide = "";
         }
         break;
       case "keypress":
+        clearTimeout(this._autoCloseTimer);
+
         if (aEvent.defaultPrevented) {
           
           break;
         }
+
         switch (aEvent.keyCode) {
           case KeyEvent.DOM_VK_ESCAPE:
-            if (!this._element("editBookmarkPanelContent").hidden)
-              this.cancelButtonOnCommand();
+            this.panel.hidePopup();
             break;
           case KeyEvent.DOM_VK_RETURN:
             if (aEvent.target.classList.contains("expander-up") ||
@@ -123,12 +130,40 @@ var StarUI = {
             break;
         }
         break;
+      case "mouseout": {
+        
+        if (aEvent.target != aEvent.currentTarget) {
+          break;
+        }
+        
+      }
+      case "popupshown":
+        
+        if (this._isNewBookmark) {
+          
+          
+          let delay = 3500;
+          if (this._closePanelQuickForTesting) {
+            delay /= 10;
+          }
+          this._autoCloseTimer = setTimeout(() => this.panel.hidePopup(), delay, this);
+        }
+        break;
     }
   },
 
   _overlayLoaded: false,
   _overlayLoading: false,
-  showEditBookmarkPopup: Task.async(function* (aNode, aAnchorElement, aPosition) {
+  showEditBookmarkPopup: Task.async(function* (aNode, aAnchorElement, aPosition, aIsNewBookmark) {
+    
+    
+    if (this.panel.state == "showing" ||
+        this.panel.state == "open") {
+      return;
+    }
+
+    this._isNewBookmark = aIsNewBookmark;
+    this._uriForRemoval = "";
     
     
     
@@ -179,12 +214,8 @@ var StarUI = {
 
     this._blockCommands(); 
 
-    
-    
-    
-    
     this._element("editBookmarkPanelTitle").value =
-      this._batching ?
+      this._isNewBookmark ?
         gNavigatorBundle.getString("editBookmarkPanel.pageBookmarkedTitle") :
         gNavigatorBundle.getString("editBookmarkPanel.editBookmarkTitle");
 
@@ -192,10 +223,6 @@ var StarUI = {
     this._element("editBookmarkPanelDescription").textContent = "";
     this._element("editBookmarkPanelBottomButtons").hidden = false;
     this._element("editBookmarkPanelContent").hidden = false;
-
-    
-    
-    this._element("editBookmarkPanelRemoveButton").hidden = this._batching;
 
     
     
@@ -250,14 +277,8 @@ var StarUI = {
     gEditItemOverlay.uninitPanel(true);
   },
 
-  cancelButtonOnCommand: function SU_cancelButtonOnCommand() {
-    this._actionOnHide = "cancel";
-    this.panel.hidePopup(true);
-  },
-
   removeBookmarkButtonCommand: function SU_removeBookmarkButtonCommand() {
     this._uriForRemoval = PlacesUtils.bookmarks.getBookmarkURI(this._itemId);
-    this._actionOnHide = "remove";
     this.panel.hidePopup();
   },
 
@@ -325,7 +346,8 @@ var PlacesCommandHook = {
 
     var uri = aBrowser.currentURI;
     var itemId = PlacesUtils.getMostRecentBookmarkForURI(uri);
-    if (itemId == -1) {
+    let isNewBookmark = itemId == -1;
+    if (isNewBookmark) {
       
       var title;
       var description;
@@ -342,7 +364,7 @@ var PlacesCommandHook = {
       }
       catch (e) { }
 
-      if (aShowEditUI) {
+      if (aShowEditUI && isNewBookmark) {
         
         
         
@@ -376,16 +398,16 @@ var PlacesCommandHook = {
     
     if (BookmarkingUI.anchor) {
       StarUI.showEditBookmarkPopup(itemId, BookmarkingUI.anchor,
-                                   "bottomcenter topright");
+                                   "bottomcenter topright", isNewBookmark);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
     if (isElementVisible(identityIcon)) {
       StarUI.showEditBookmarkPopup(itemId, identityIcon,
-                                   "bottomcenter topright");
+                                   "bottomcenter topright", isNewBookmark);
     } else {
-      StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap");
+      StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap", isNewBookmark);
     }
   }),
 
@@ -394,6 +416,7 @@ var PlacesCommandHook = {
   _bookmarkPagePT: Task.async(function* (aBrowser, aParentId, aShowEditUI) {
     let url = new URL(aBrowser.currentURI.spec);
     let info = yield PlacesUtils.bookmarks.fetch({ url });
+    let isNewBookmark = !info;
     if (!info) {
       let parentGuid = aParentId !== undefined ?
                          yield PlacesUtils.promiseItemGuid(aParentId) :
@@ -417,7 +440,7 @@ var PlacesCommandHook = {
         Components.utils.reportError(e);
       }
 
-      if (aShowEditUI) {
+      if (aShowEditUI && isNewBookmark) {
         
         
         
@@ -452,16 +475,16 @@ var PlacesCommandHook = {
     
     if (BookmarkingUI.anchor) {
       StarUI.showEditBookmarkPopup(node, BookmarkingUI.anchor,
-                                   "bottomcenter topright");
+                                   "bottomcenter topright", isNewBookmark);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
     if (isElementVisible(identityIcon)) {
       StarUI.showEditBookmarkPopup(node, identityIcon,
-                                   "bottomcenter topright");
+                                   "bottomcenter topright", isNewBookmark);
     } else {
-      StarUI.showEditBookmarkPopup(node, aBrowser, "overlap");
+      StarUI.showEditBookmarkPopup(node, aBrowser, "overlap", isNewBookmark);
     }
   }),
 
@@ -1704,18 +1727,14 @@ var BookmarkingUI = {
                                .forWindow(window);
     if (widget.overflowed) {
       
-      
-      if (isBookmarked)
-        widget.node.removeAttribute("closemenu");
-      else
-        widget.node.setAttribute("closemenu", "none");
+      widget.node.removeAttribute("closemenu");
     }
 
     
     if (!this._pendingStmt) {
       if (!isBookmarked)
         this._showBookmarkedNotification();
-      PlacesCommandHook.bookmarkCurrentPage(isBookmarked);
+      PlacesCommandHook.bookmarkCurrentPage(true);
     }
   },
 
