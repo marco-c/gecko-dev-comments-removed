@@ -140,7 +140,6 @@ inline bool operator!(const EditAction& aOp)
 class nsEditor : public nsIEditor,
                  public nsIEditorIMESupport,
                  public nsSupportsWeakReference,
-                 public nsIObserver,
                  public nsIPhonetic
 {
 public:
@@ -187,9 +186,6 @@ public:
 
   
   NS_DECL_NSIEDITORIMESUPPORT
-
-  
-  NS_DECL_NSIOBSERVER
 
   
   NS_DECL_NSIPHONETIC
@@ -248,9 +244,6 @@ public:
   void EndIMEComposition();
 
   void SwitchTextDirectionTo(uint32_t aDirection);
-
-  void StartWatchingDictionaryChanges();
-  void StopWatchingDictionaryChanges();
 
 protected:
   nsresult DetermineCurrentDirection();
@@ -894,7 +887,6 @@ protected:
   bool mDispatchInputEvent;
   bool mIsInEditAction;   
   bool mHidingCaret;      
-  bool mObservingDictionaryUpdates;  
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
   friend class nsAutoTxnsConserveSelection;

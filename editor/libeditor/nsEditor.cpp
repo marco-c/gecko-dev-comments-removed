@@ -24,7 +24,6 @@
 #include "PlaceholderTxn.h"             
 #include "SplitNodeTxn.h"               
 #include "mozFlushType.h"               
-#include "mozISpellCheckingEngine.h"
 #include "mozInlineSpellChecker.h"      
 #include "mozilla/CheckedInt.h"         
 #include "mozilla/IMEStateManager.h"    
@@ -79,7 +78,6 @@
 #include "nsIInlineSpellChecker.h"      
 #include "nsNameSpaceManager.h"        
 #include "nsINode.h"                    
-#include "nsIObserverService.h"         
 #include "nsIPlaintextEditor.h"         
 #include "nsIPresShell.h"               
 #include "nsISelectionController.h"     
@@ -148,7 +146,6 @@ nsEditor::nsEditor()
 ,  mDispatchInputEvent(true)
 ,  mIsInEditAction(false)
 ,  mHidingCaret(false)
-,  mObservingDictionaryUpdates(false)
 {
 }
 
@@ -204,7 +201,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsEditor)
  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
  NS_INTERFACE_MAP_ENTRY(nsIEditorIMESupport)
  NS_INTERFACE_MAP_ENTRY(nsIEditor)
- NS_INTERFACE_MAP_ENTRY(nsIObserver)
  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIEditor)
 NS_INTERFACE_MAP_END
 
@@ -304,13 +300,6 @@ nsEditor::PostCreate()
     
     NotifyDocumentListeners(eDocumentCreated);
     NotifyDocumentListeners(eDocumentStateChanged);
-
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs) {
-      obs->AddObserver(this,
-                       SPELLCHECK_DICTIONARY_REMOVE_NOTIFICATION,
-                       false);
-    }
   }
 
   
@@ -447,14 +436,6 @@ nsEditor::PreDestroy(bool aDestroyingFrames)
     return NS_OK;
 
   IMEStateManager::OnEditorDestroying(this);
-
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    obs->RemoveObserver(this,
-                        SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION);
-    obs->RemoveObserver(this,
-                        SPELLCHECK_DICTIONARY_REMOVE_NOTIFICATION);
-  }
 
   
   
@@ -1310,35 +1291,6 @@ NS_IMETHODIMP nsEditor::GetInlineSpellChecker(bool autoCreate,
   }
 
   NS_IF_ADDREF(*aInlineSpellChecker = mInlineSpellChecker);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsEditor::Observe(nsISupports* aSubj, const char *aTopic,
-                                const char16_t *aData)
-{
-  NS_ASSERTION(!strcmp(aTopic,
-                       SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION) ||
-               !strcmp(aTopic,
-                       SPELLCHECK_DICTIONARY_REMOVE_NOTIFICATION),
-               "Unexpected observer topic");
-
-  
-  SyncRealTimeSpell();
-
-  
-  if (mInlineSpellChecker) {
-    
-    
-    nsCOMPtr<nsIEditorSpellCheck> editorSpellCheck;
-    mInlineSpellChecker->GetSpellChecker(getter_AddRefs(editorSpellCheck));
-    if (editorSpellCheck) {
-      editorSpellCheck->CheckCurrentDictionary();
-    }
-
-    
-    mInlineSpellChecker->SpellCheckRange(nullptr); 
-  }
 
   return NS_OK;
 }
@@ -5204,29 +5156,6 @@ nsEditor::OnFocus(nsIDOMEventTarget* aFocusEventTarget)
   if (mInlineSpellChecker) {
     mInlineSpellChecker->UpdateCurrentDictionary();
   }
-}
-
-void
-nsEditor::StartWatchingDictionaryChanges()
-{
-  if (!mObservingDictionaryUpdates) {
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs) {
-      obs->AddObserver(this, SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION, false);
-    }
-    mObservingDictionaryUpdates = true;
-  }
-}
-
-void
-nsEditor::StopWatchingDictionaryChanges()
-{
-  
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    obs->RemoveObserver(this, SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION);
-  }
-  mObservingDictionaryUpdates = false;
 }
 
 NS_IMETHODIMP
