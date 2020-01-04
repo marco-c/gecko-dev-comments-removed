@@ -72,6 +72,7 @@ class Element;
 class HTMLImageElement;
 class HTMLCanvasElement;
 class HTMLVideoElement;
+class Selection;
 } 
 namespace gfx {
 struct RectCornerRadii;
@@ -2755,6 +2756,13 @@ public:
 
   static void AppendFrameTextContent(nsIFrame* aFrame, nsAString& aResult);
 
+  
+
+
+
+
+
+  static nsRect GetSelectionBoundingRect(mozilla::dom::Selection* aSel);
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
