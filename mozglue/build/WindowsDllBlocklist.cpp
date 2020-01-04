@@ -486,7 +486,10 @@ getFullPath (PWCHAR filePath, wchar_t* fname)
   
   
   
-  PWCHAR sanitizedFilePath = (intptr_t(filePath) < 4096) ? nullptr : filePath;
+  PWCHAR sanitizedFilePath = nullptr;
+  if ((uintptr_t(filePath) >= 65536) && ((uintptr_t(filePath) & 1) == 0)) {
+    sanitizedFilePath = filePath;
+  }
 
   
   DWORD pathlen = SearchPathW(sanitizedFilePath, fname, L".dll", 0, nullptr,
