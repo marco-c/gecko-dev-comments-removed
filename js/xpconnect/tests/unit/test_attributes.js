@@ -8,7 +8,7 @@ const Ci = Components.interfaces;
 function run_test() {
 
   
-  registerAppManifest(do_get_file('../components/native/xpctest.manifest'));
+  registerAppManifest(do_get_file('../components/native/chrome.manifest'));
   registerAppManifest(do_get_file('../components/js/xpctest.manifest'));
 
   
