@@ -2,13 +2,11 @@
 
 
 
-#ifndef _NSNSSCERTTRUST_H_
-#define _NSNSSCERTTRUST_H_
+#ifndef nsNSSCertTrust_h
+#define nsNSSCertTrust_h
 
-#include "certt.h"
 #include "certdb.h"
-
-
+#include "certt.h"
 
 
 
@@ -24,13 +22,7 @@ public:
   
   bool HasAnyCA();
   bool HasAnyUser();
-  bool HasCA(bool checkSSL = true, 
-               bool checkEmail = true,  
-               bool checkObjSign = true);
   bool HasPeer(bool checkSSL = true, 
-                 bool checkEmail = true,  
-                 bool checkObjSign = true);
-  bool HasUser(bool checkSSL = true, 
                  bool checkEmail = true,  
                  bool checkObjSign = true);
   bool HasTrustedCA(bool checkSSL = true, 
@@ -44,15 +36,7 @@ public:
   
   void SetValidCA();
   
-  void SetTrustedServerCA();
-  
-  void SetTrustedCA();
-  
   void SetValidPeer();
-  
-  void SetTrustedPeer();
-  
-  void SetUser();
 
   
   
@@ -83,4 +67,4 @@ private:
   CERTCertTrust mTrust;
 };
 
-#endif
+#endif 
