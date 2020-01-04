@@ -17,6 +17,12 @@ import org.mozilla.gecko.icons.IconResponse;
 public class ResizingProcessor implements Processor {
     @Override
     public void process(IconRequest request, IconResponse response) {
+        if (response.isFromMemory()) {
+            
+            
+            return;
+        }
+
         final Bitmap originalBitmap = response.getBitmap();
         final int size = originalBitmap.getWidth();
 
