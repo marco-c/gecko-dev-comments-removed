@@ -28,15 +28,22 @@ if (!window.assert_times_equal) {
 
 
 function createDiv(test, doc) {
+  return createElement(test, 'div', doc);
+}
+
+
+
+
+function createElement(test, tagName, doc) {
   if (!doc) {
     doc = document;
   }
-  var div = doc.createElement('div');
-  doc.body.appendChild(div);
+  var element = doc.createElement(tagName || 'div');
+  doc.body.appendChild(element);
   test.add_cleanup(function() {
-    div.remove();
+    element.remove();
   });
-  return div;
+  return element;
 }
 
 
