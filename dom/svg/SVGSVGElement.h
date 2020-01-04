@@ -33,6 +33,7 @@ class DOMSVGLength;
 class DOMSVGNumber;
 class EventChainPreVisitor;
 class SVGFragmentIdentifier;
+class AutoSVGViewHandler;
 
 namespace dom {
 class SVGAngle;
@@ -85,13 +86,29 @@ public:
   float height;
 };
 
+
+class SVGView {
+  friend class mozilla::AutoSVGViewHandler;
+  friend class mozilla::dom::SVGSVGElement;
+public:
+  SVGView();
+
+private:
+  nsSVGEnum                             mZoomAndPan;
+  nsSVGViewBox                          mViewBox;
+  SVGAnimatedPreserveAspectRatio        mPreserveAspectRatio;
+  nsAutoPtr<nsSVGAnimatedTransformList> mTransforms;
+};
+
 typedef SVGGraphicsElement SVGSVGElementBase;
 
 class SVGSVGElement final : public SVGSVGElementBase
 {
   friend class ::nsSVGOuterSVGFrame;
   friend class ::nsSVGInnerSVGFrame;
+  friend class mozilla::dom::SVGView;
   friend class mozilla::SVGFragmentIdentifier;
+  friend class mozilla::AutoSVGViewHandler;
   friend class mozilla::AutoSVGRenderingState;
 
   SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
@@ -141,6 +158,8 @@ public:
   virtual gfxMatrix PrependLocalTransformsTo(
     const gfxMatrix &aMatrix,
     SVGTransformTypes aWhich = eAllTransforms) const override;
+  virtual nsSVGAnimatedTransformList*
+	  GetAnimatedTransformList(uint32_t aFlags = 0) override;
   virtual bool HasValidDimensions() const override;
 
   
@@ -287,18 +306,10 @@ private:
   void ClearImageOverridePreserveAspectRatio();
 
   
+  
   bool SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR);
   const SVGPreserveAspectRatio* GetPreserveAspectRatioProperty() const;
   bool ClearPreserveAspectRatioProperty();
-  bool SetViewBoxProperty(const nsSVGViewBoxRect& aViewBox);
-  const nsSVGViewBoxRect* GetViewBoxProperty() const;
-  bool ClearViewBoxProperty();
-  bool SetZoomAndPanProperty(uint16_t aValue);
-  uint16_t GetZoomAndPanProperty() const;
-  bool ClearZoomAndPanProperty();
-  bool SetTransformProperty(const SVGTransformList& aValue);
-  const SVGTransformList* GetTransformProperty() const;
-  bool ClearTransformProperty();
 
   bool IsRoot() const {
     NS_ASSERTION((IsInDoc() && !GetParent()) ==
@@ -369,7 +380,10 @@ private:
   nsSVGViewBox                   mViewBox;
   SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
 
+  
+  
   nsAutoPtr<nsString>            mCurrentViewID;
+  nsAutoPtr<SVGView>             mSVGView;
 
   
   
@@ -401,7 +415,6 @@ private:
   bool     mImageNeedsTransformInvalidation;
   bool     mIsPaintingSVGImageElement;
   bool     mHasChildrenOnlyTransform;
-  bool     mUseCurrentView;
 };
 
 } 
