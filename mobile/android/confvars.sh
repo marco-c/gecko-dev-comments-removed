@@ -40,6 +40,7 @@ MOZ_RAW=1
 MOZ_PLACES=
 MOZ_SOCIAL=
 MOZ_ANDROID_HISTORY=1
+MOZ_DISABLE_EXPORT_JS=1
 
 # use custom widget for html:select
 MOZ_USE_NATIVE_POPUP_WINDOWS=1
@@ -59,9 +60,6 @@ MOZ_SERVICES_HEALTHREPORT=1
 
 # Enable runtime locale switching.
 MOZ_LOCALE_SWITCHER=1
-
-# Enable second screen and casting support for external devices.
-MOZ_DEVICES=1
 
 # Enable second screen using native Android libraries, provided we're
 # not resource constrained.
