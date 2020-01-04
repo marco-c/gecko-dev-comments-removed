@@ -68,11 +68,11 @@ ReverbConvolverStage::ReverbConvolverStage(const float* impulseResponse, size_t,
     size_t totalDelay = stageOffset + reverbTotalLatency;
 
     
-    size_t halfSize = fftSize / 2;
     if (!m_directMode) {
-        MOZ_ASSERT(totalDelay >= halfSize);
-        if (totalDelay >= halfSize)
-            totalDelay -= halfSize;
+        size_t fftLatency = m_fftConvolver->latencyFrames();
+        MOZ_ASSERT(totalDelay >= fftLatency);
+        if (totalDelay >= fftLatency)
+            totalDelay -= fftLatency;
     }
 
     m_postDelayLength = totalDelay;

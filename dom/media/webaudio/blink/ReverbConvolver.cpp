@@ -49,8 +49,8 @@ const int InputBufferSize = 8 * 16384;
 
 
 
-const size_t RealtimeFrameLimit = 8192  + 4096; 
-
+const size_t RealtimeFrameLimit = 8192 + 4096 
+                                  - WEBAUDIO_BLOCK_SIZE;
 const size_t MinFFTSize = 128;
 const size_t MaxRealtimeFFTSize = 4096;
 

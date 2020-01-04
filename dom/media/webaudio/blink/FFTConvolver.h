@@ -54,13 +54,15 @@ public:
     
     
     
-    
-    
     void process(FFTBlock* fftKernel, const float* sourceP, float* destP);
 
     void reset();
 
     size_t fftSize() const { return m_frame.FFTSize(); }
+
+    
+    
+    size_t latencyFrames() const;
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;

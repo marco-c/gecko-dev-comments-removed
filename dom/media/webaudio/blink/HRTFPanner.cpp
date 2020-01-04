@@ -310,7 +310,9 @@ int HRTFPanner::maxTailFrames() const
     
     
     
-    return m_delayLine.MaxDelayTicks() + fftSize();
+    
+    return m_delayLine.MaxDelayTicks() +
+        m_convolverL1.fftSize()/2 + m_convolverL1.latencyFrames();
 }
 
 } 
