@@ -151,6 +151,26 @@ AudioStreamAnalyser.prototype = {
 
 
 
+function createOscillatorStream(ac, frequency) {
+  var osc = ac.createOscillator();
+  osc.frequency.value = frequency;
+
+  var oscDest = ac.createMediaStreamDestination();
+  osc.connect(oscDest);
+  osc.start();
+  return oscDest.stream;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 function realCreateHTML(meta) {
