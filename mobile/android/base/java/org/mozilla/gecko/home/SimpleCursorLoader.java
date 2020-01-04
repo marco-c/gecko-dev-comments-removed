@@ -40,7 +40,7 @@ import org.mozilla.gecko.GeckoApplication;
 
 
 @Deprecated
-abstract class SimpleCursorLoader extends AsyncTaskLoader<Cursor> {
+public abstract class SimpleCursorLoader extends AsyncTaskLoader<Cursor> {
     final ForceLoadContentObserver mObserver;
     Cursor mCursor;
 
