@@ -508,17 +508,29 @@ this.DownloadsCommon = {
       
       let parent = aFile.parent;
       if (parent) {
-        try {
-          
-          parent.launch();
-        } catch (ex) {
-          
-          
-          Cc["@mozilla.org/uriloader/external-protocol-service;1"]
-            .getService(Ci.nsIExternalProtocolService)
-            .loadUrl(NetUtil.newURI(parent));
-        }
+        this.showDirectory(parent);
       }
+    }
+  },
+
+  
+
+
+
+
+
+  showDirectory(aDirectory) {
+    if (!(aDirectory instanceof Ci.nsIFile)) {
+      throw new Error("aDirectory must be a nsIFile object");
+    }
+    try {
+      aDirectory.launch();
+    } catch (ex) {
+      
+      
+      Cc["@mozilla.org/uriloader/external-protocol-service;1"]
+        .getService(Ci.nsIExternalProtocolService)
+        .loadUrl(NetUtil.newURI(aDirectory));
     }
   },
 
