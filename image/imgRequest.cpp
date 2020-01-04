@@ -64,6 +64,7 @@ imgRequest::imgRequest(imgLoader* aLoader, const ImageCacheKey& aCacheKey)
  : mLoader(aLoader)
  , mCacheKey(aCacheKey)
  , mLoadId(nullptr)
+ , mFirstProxy(nullptr)
  , mValidator(nullptr)
  , mInnerWindowId(0)
  , mCORSMode(imgIRequest::CORS_NONE)
@@ -217,6 +218,12 @@ imgRequest::AddProxy(imgRequestProxy* proxy)
 {
   NS_PRECONDITION(proxy, "null imgRequestProxy passed in");
   LOG_SCOPE_WITH_PARAM(GetImgLog(), "imgRequest::AddProxy", "proxy", proxy);
+
+  if (!mFirstProxy) {
+    
+    
+    mFirstProxy = proxy;
+  }
 
   
   
@@ -535,8 +542,7 @@ imgRequest::AdjustPriority(imgRequestProxy* proxy, int32_t delta)
   
   
   
-  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
-  if (!progressTracker->FirstObserverIs(proxy)) {
+  if (!mFirstProxy || proxy != mFirstProxy) {
     return;
   }
 

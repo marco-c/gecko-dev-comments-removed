@@ -256,6 +256,10 @@ private:
 
   void* mLoadId;
 
+  
+  
+  void* mFirstProxy;
+
   imgCacheValidator* mValidator;
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
   nsCOMPtr<nsIChannel> mNewRedirectChannel;

@@ -157,11 +157,6 @@ public:
 
   
   
-  
-  bool FirstObserverIs(IProgressObserver* aObserver);
-
-  
-  
   void ResetImage();
 
 private:
