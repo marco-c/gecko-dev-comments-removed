@@ -94,8 +94,14 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
 
         
         
-        if (stageSize + stageOffset > totalResponseLength)
+        if (stageSize + stageOffset > totalResponseLength) {
             stageSize = totalResponseLength - stageOffset;
+            
+            fftSize = MinFFTSize;
+            while (stageSize * 2 > fftSize) {
+              fftSize *= 2;
+            }
+        }
 
         
         int renderPhase = convolverRenderPhase + stagePhase;
