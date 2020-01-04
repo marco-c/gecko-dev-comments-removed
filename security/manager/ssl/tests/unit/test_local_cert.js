@@ -44,7 +44,7 @@ function removeCert(nickname) {
   });
 }
 
-add_task(function*() {
+add_task(function* () {
   
   ok(!certService.loginPromptRequired);
 
