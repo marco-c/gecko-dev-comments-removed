@@ -361,8 +361,11 @@ nsPACMan::AsyncGetProxyForURI(nsIURI *uri, uint32_t appId,
 
   
   if (!mPACURISpec.IsEmpty() && !mScheduledReload.IsNull() &&
-      TimeStamp::Now() > mScheduledReload)
+      TimeStamp::Now() > mScheduledReload) {
+    LOG(("nsPACMan::AsyncGetProxyForURI reload as scheduled\n"));
+
     LoadPACFromURI(EmptyCString());
+  }
 
   RefPtr<PendingPACQuery> query =
     new PendingPACQuery(this, uri, appId, isInIsolatedMozBrowser, callback,
@@ -404,6 +407,7 @@ nsPACMan::LoadPACFromURI(const nsCString &spec)
       do_CreateInstance(NS_STREAMLOADER_CONTRACTID);
   NS_ENSURE_STATE(loader);
 
+  LOG(("nsPACMan::LoadPACFromURI %s\n", spec.get()));
   
   
   
@@ -506,6 +510,9 @@ nsPACMan::OnLoadFailure()
 
   mScheduledReload = TimeStamp::Now() + TimeDuration::FromSeconds(interval);
 
+  LOG(("OnLoadFailure: retry in %d seconds (%d fails)\n",
+       interval, mLoadFailureCount));
+
   
   
   PostCancelPendingQ(NS_ERROR_NOT_AVAILABLE);
@@ -603,6 +610,7 @@ nsPACMan::ProcessPending()
       !PACURI.IsEmpty() &&
       !PACURI.Equals(mPACURISpec)) {
     query->UseAlternatePACFile(PACURI);
+    LOG(("Use PAC from system settings: %s\n", PACURI.get()));
     completed = true;
   }
 
@@ -613,6 +621,7 @@ nsPACMan::ProcessPending()
                    GetProxyForURI(query->mSpec, query->mScheme,
                                   query->mHost, query->mPort,
                                   pacString))) {
+    LOG(("Use proxy from system settings: %s\n", pacString.get()));
     query->Complete(NS_OK, pacString);
     completed = true;
   }
@@ -623,6 +632,7 @@ nsPACMan::ProcessPending()
                                           query->mAppId, query->mAppOrigin,
                                           query->mIsInIsolatedMozBrowser,
                                           pacString);
+    LOG(("Use proxy from PAC: %s\n", pacString.get()));
     query->Complete(status, pacString);
   }
 
@@ -646,9 +656,12 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader,
     
     
     
+    LOG(("OnStreamComplete: called more than once\n"));
     if (status == NS_ERROR_ABORT)
       return NS_OK;
   }
+
+  LOG(("OnStreamComplete: entry\n"));
 
   if (NS_SUCCEEDED(status) && HttpRequestSucceeded(loader)) {
     
@@ -681,12 +694,15 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader,
     if (mPACThread)
       mPACThread->Dispatch(pending, nsIEventTarget::DISPATCH_NORMAL);
 
+    LOG(("OnStreamComplete: process the PAC contents\n"));
+
     
     
     mLoadFailureCount = 0;
   } else {
     
     
+    LOG(("OnStreamComplete: unable to load PAC, retry later\n"));
     OnLoadFailure();
   }
 

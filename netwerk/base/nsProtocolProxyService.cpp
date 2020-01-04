@@ -216,12 +216,16 @@ private:
 
     void DoCallback()
     {
+        bool pacAvailable = true;
         if (mStatus == NS_ERROR_NOT_AVAILABLE && !mProxyInfo) {
             
             
             
             mPACString = NS_LITERAL_CSTRING("DIRECT;");
             mStatus = NS_OK;
+
+            LOG(("pac not available, use DIRECT\n"));
+            pacAvailable = false;
         }
 
         
@@ -239,7 +243,10 @@ private:
             else
                 mProxyInfo = nullptr;
 
-            LOG(("pac thread callback %s\n", mPACString.get()));
+            if(pacAvailable) {
+                
+                LOG(("pac thread callback %s\n", mPACString.get()));
+            }
             if (NS_SUCCEEDED(mStatus))
                 mPPS->MaybeDisableDNSPrefetch(mProxyInfo);
             mCallback->OnProxyAvailable(this, mChannel, mProxyInfo, mStatus);
