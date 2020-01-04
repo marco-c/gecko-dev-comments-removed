@@ -201,7 +201,7 @@ class BaseStackFrame {
 
     
     
-    virtual uintptr_t identifier() const { return reinterpret_cast<uintptr_t>(ptr); }
+    virtual uint64_t identifier() const { return reinterpret_cast<uint64_t>(ptr); }
 
     
     virtual StackFrame parent() const = 0;
@@ -376,7 +376,7 @@ class StackFrame : public JS::Traceable {
     
 
     void trace(JSTracer* trc) { base()->trace(trc); }
-    uintptr_t identifier() const { return base()->identifier(); }
+    uint64_t identifier() const { return base()->identifier(); }
     uint32_t line() const { return base()->line(); }
     uint32_t column() const { return base()->column(); }
     AtomOrTwoByteChars source() const { return base()->source(); }
@@ -415,7 +415,7 @@ class ConcreteStackFrame<void> : public BaseStackFrame {
   public:
     static void construct(void* storage, void*) { new (storage) ConcreteStackFrame(nullptr); }
 
-    uintptr_t identifier() const override { return 0; }
+    uint64_t identifier() const override { return 0; }
     void trace(JSTracer* trc) override { }
     bool constructSavedFrameStack(JSContext* cx, MutableHandleObject out) const override {
         out.set(nullptr);
@@ -477,7 +477,7 @@ class Base {
     
     
     
-    typedef uintptr_t Id;
+    using Id = uint64_t;
     virtual Id identifier() const { return reinterpret_cast<Id>(ptr); }
 
     
@@ -496,7 +496,8 @@ class Base {
     
     
     
-    virtual size_t size(mozilla::MallocSizeOf mallocSizeof) const { return 1; }
+    using Size = uint64_t;
+    virtual Size size(mozilla::MallocSizeOf mallocSizeof) const { return 1; }
 
     
     
@@ -688,7 +689,8 @@ class Node {
         return base()->jsObjectConstructorName(cx, outName);
     }
 
-    size_t size(mozilla::MallocSizeOf mallocSizeof) const {
+    using Size = Base::Size;
+    Size size(mozilla::MallocSizeOf mallocSizeof) const {
         return base()->size(mallocSizeof);
     }
 
@@ -701,7 +703,7 @@ class Node {
         return base()->allocationStack();
     }
 
-    typedef Base::Id Id;
+    using Id = Base::Id;
     Id identifier() const { return base()->identifier(); }
 
     
@@ -969,7 +971,7 @@ class Concrete<JSObject> : public TracerConcreteWithCompartment<JSObject> {
     const char* jsObjectClassName() const override;
     bool jsObjectConstructorName(JSContext* cx,
                                  UniquePtr<char16_t[], JS::FreePolicy>& outName) const override;
-    size_t size(mozilla::MallocSizeOf mallocSizeOf) const override;
+    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
     bool hasAllocationStack() const override;
     StackFrame allocationStack() const override;
@@ -985,7 +987,7 @@ class Concrete<JSObject> : public TracerConcreteWithCompartment<JSObject> {
 
 
 template<> struct Concrete<JSString> : TracerConcrete<JSString> {
-    size_t size(mozilla::MallocSizeOf mallocSizeOf) const override;
+    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
   protected:
     explicit Concrete(JSString *ptr) : TracerConcrete<JSString>(ptr) { }
@@ -998,7 +1000,7 @@ template<> struct Concrete<JSString> : TracerConcrete<JSString> {
 template<>
 class Concrete<void> : public Base {
     const char16_t* typeName() const override;
-    size_t size(mozilla::MallocSizeOf mallocSizeOf) const override;
+    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
     UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
     JS::Zone* zone() const override;
     JSCompartment* compartment() const override;
