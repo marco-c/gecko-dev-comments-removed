@@ -35,7 +35,7 @@ class mozIApplicationClearPrivateDataParams;
 
 namespace mozilla {
 
-class PrincipalOriginAttributes;
+class OriginAttributes;
 
 namespace dom {
 
@@ -47,11 +47,9 @@ class ServiceWorker;
 class ServiceWorkerClientInfo;
 class ServiceWorkerInfo;
 class ServiceWorkerJob;
-class ServiceWorkerRegisterJob;
 class ServiceWorkerJobQueue;
 class ServiceWorkerManagerChild;
 class ServiceWorkerPrivate;
-class ServiceWorkerUpdateFinishCallback;
 
 class ServiceWorkerRegistrationInfo final
   : public nsIServiceWorkerRegistrationInfo
@@ -79,7 +77,11 @@ public:
 
   uint64_t mLastUpdateCheckTime;
 
-  RefPtr<ServiceWorkerRegisterJob> mUpdateJob;
+  
+  
+  
+  
+  bool mUpdating;
 
   
   
@@ -149,12 +151,6 @@ public:
 
   void
   NotifyListenersOnChange();
-
-  bool
-  IsUpdating() const;
-
-  void
-  AppendUpdateCallback(ServiceWorkerUpdateFinishCallback* aCallback);
 };
 
 class ServiceWorkerUpdateFinishCallback
@@ -354,13 +350,13 @@ public:
   nsClassHashtable<nsCStringHashKey, InterceptionList> mNavigationInterceptions;
 
   bool
-  IsAvailable(const PrincipalOriginAttributes& aOriginAttributes, nsIURI* aURI);
+  IsAvailable(const OriginAttributes& aOriginAttributes, nsIURI* aURI);
 
   bool
   IsControlled(nsIDocument* aDocument, ErrorResult& aRv);
 
   already_AddRefed<nsIRunnable>
-  PrepareFetchEvent(const PrincipalOriginAttributes& aOriginAttributes,
+  PrepareFetchEvent(const OriginAttributes& aOriginAttributes,
                     nsIDocument* aDoc,
                     nsIInterceptedChannel* aChannel,
                     bool aIsReload,
@@ -373,17 +369,16 @@ public:
                              ErrorResult& aRv);
 
   void
-  SoftUpdate(nsIPrincipal* aPrincipal,
-             const nsACString& aScope,
-             ServiceWorkerUpdateFinishCallback* aCallback = nullptr);
+  Update(nsIPrincipal* aPrincipal,
+         const nsACString& aScope,
+         ServiceWorkerUpdateFinishCallback* aCallback);
 
   void
-  SoftUpdate(const PrincipalOriginAttributes& aOriginAttributes,
-             const nsACString& aScope,
-             ServiceWorkerUpdateFinishCallback* aCallback = nullptr);
+  SoftUpdate(const OriginAttributes& aOriginAttributes,
+             const nsACString& aScope);
 
   void
-  PropagateSoftUpdate(const PrincipalOriginAttributes& aOriginAttributes,
+  PropagateSoftUpdate(const OriginAttributes& aOriginAttributes,
                       const nsAString& aScope);
 
   void
@@ -489,11 +484,6 @@ private:
   void
   MaybeRemoveRegistrationInfo(const nsACString& aScopeKey);
 
-  void
-  SoftUpdate(const nsACString& aScopeKey,
-             const nsACString& aScope,
-             ServiceWorkerUpdateFinishCallback* aCallback = nullptr);
-
   already_AddRefed<ServiceWorkerRegistrationInfo>
   GetRegistration(const nsACString& aScopeKey,
                   const nsACString& aScope) const;
@@ -515,7 +505,7 @@ private:
                            nsISupports** aServiceWorker);
 
   ServiceWorkerInfo*
-  GetActiveWorkerInfoForScope(const PrincipalOriginAttributes& aOriginAttributes,
+  GetActiveWorkerInfoForScope(const OriginAttributes& aOriginAttributes,
                               const nsACString& aScope);
 
   ServiceWorkerInfo*
@@ -542,7 +532,7 @@ private:
   GetServiceWorkerRegistrationInfo(nsIPrincipal* aPrincipal, nsIURI* aURI);
 
   already_AddRefed<ServiceWorkerRegistrationInfo>
-  GetServiceWorkerRegistrationInfo(const PrincipalOriginAttributes& aOriginAttributes,
+  GetServiceWorkerRegistrationInfo(const OriginAttributes& aOriginAttributes,
                                    nsIURI* aURI);
 
   already_AddRefed<ServiceWorkerRegistrationInfo>
@@ -625,7 +615,7 @@ private:
   
   
   void
-  RemoveAllRegistrations(PrincipalOriginAttributes* aParams);
+  RemoveAllRegistrations(OriginAttributes* aParams);
 
   RefPtr<ServiceWorkerManagerChild> mActor;
 

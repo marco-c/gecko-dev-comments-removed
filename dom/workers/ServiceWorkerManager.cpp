@@ -375,6 +375,7 @@ ServiceWorkerRegistrationInfo::ServiceWorkerRegistrationInfo(const nsACString& a
   , mScope(aScope)
   , mPrincipal(aPrincipal)
   , mLastUpdateCheckTime(0)
+  , mUpdating(false)
   , mPendingUninstall(false)
 {}
 
@@ -721,7 +722,7 @@ GetRequiredScopeStringPrefix(nsIURI* aScriptURI, nsACString& aPrefix,
 class PropagateSoftUpdateRunnable final : public nsRunnable
 {
 public:
-  PropagateSoftUpdateRunnable(const PrincipalOriginAttributes& aOriginAttributes,
+  PropagateSoftUpdateRunnable(const OriginAttributes& aOriginAttributes,
                               const nsAString& aScope)
     : mOriginAttributes(aOriginAttributes)
     , mScope(aScope)
@@ -742,7 +743,7 @@ private:
   ~PropagateSoftUpdateRunnable()
   {}
 
-  const PrincipalOriginAttributes mOriginAttributes;
+  const OriginAttributes mOriginAttributes;
   const nsString mScope;
 };
 
@@ -863,7 +864,7 @@ class ServiceWorkerRegisterJob final : public ServiceWorkerJob,
   nsCString mScope;
   nsCString mScriptSpec;
   RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
-  nsTArray<RefPtr<ServiceWorkerUpdateFinishCallback>> mCallbacks;
+  RefPtr<ServiceWorkerUpdateFinishCallback> mCallback;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   RefPtr<ServiceWorkerInfo> mUpdateAndInstallInfo;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
@@ -892,6 +893,7 @@ public:
     : ServiceWorkerJob(aQueue)
     , mScope(aScope)
     , mScriptSpec(aScriptSpec)
+    , mCallback(aCallback)
     , mPrincipal(aPrincipal)
     , mLoadGroup(aLoadGroup)
     , mJobType(REGISTER_JOB)
@@ -900,8 +902,6 @@ public:
     AssertIsOnMainThread();
     MOZ_ASSERT(mLoadGroup);
     MOZ_ASSERT(aCallback);
-
-    mCallbacks.AppendElement(aCallback);
   }
 
   
@@ -910,29 +910,17 @@ public:
                            ServiceWorkerUpdateFinishCallback* aCallback)
     : ServiceWorkerJob(aQueue)
     , mRegistration(aRegistration)
+    , mCallback(aCallback)
     , mJobType(UPDATE_JOB)
     , mCanceled(false)
   {
     AssertIsOnMainThread();
-    MOZ_ASSERT(aCallback);
-
-    mCallbacks.AppendElement(aCallback);
   }
 
   bool
   IsRegisterJob() const override
   {
     return true;
-  }
-
-  void
-  AppendCallback(ServiceWorkerUpdateFinishCallback* aCallback)
-  {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(aCallback);
-    MOZ_ASSERT(!mCallbacks.Contains(aCallback));
-
-    mCallbacks.AppendElement(aCallback);
   }
 
   void
@@ -986,10 +974,6 @@ public:
       swm->StoreRegistration(mPrincipal, mRegistration);
     } else {
       MOZ_ASSERT(mJobType == UPDATE_JOB);
-      MOZ_ASSERT(mRegistration);
-      MOZ_ASSERT(mRegistration->mUpdateJob == nullptr);
-
-      mRegistration->mUpdateJob = this;
     }
 
     Update();
@@ -1121,8 +1105,6 @@ public:
   Fail(ErrorResult& aRv)
   {
     AssertIsOnMainThread();
-    MOZ_ASSERT(mCallbacks.Length());
-
     
     
     RefPtr<ServiceWorkerRegisterJob> kungFuDeathGrip = this;
@@ -1155,14 +1137,10 @@ public:
       aRv.ThrowTypeError<MSG_SW_INSTALL_ERROR>(scriptSpec, scope);
     }
 
-    for (uint32_t i = 1; i < mCallbacks.Length(); ++i) {
-      ErrorResult rv;
-      aRv.CloneTo(rv);
-      mCallbacks[i]->UpdateFailed(rv);
-      rv.SuppressException();
+    if (mCallback) {
+      mCallback->UpdateFailed(aRv);
+      mCallback = nullptr;
     }
-
-    mCallbacks[0]->UpdateFailed(aRv);
 
     
     aRv.SuppressException();
@@ -1179,7 +1157,6 @@ public:
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     swm->MaybeRemoveRegistration(mRegistration);
     
-    mRegistration->mUpdateJob = nullptr;
     mRegistration = nullptr;
     Done(origStatus);
   }
@@ -1195,10 +1172,13 @@ public:
   void
   ContinueInstall()
   {
+    AssertIsOnMainThread();
     
     if (!mRegistration) {
       return;
     }
+
+    mRegistration->mUpdating = false;
 
     
     
@@ -1275,12 +1255,16 @@ private:
   void
   Update()
   {
+    AssertIsOnMainThread();
+
     
     MOZ_ASSERT(!mCanceled);
     MOZ_ASSERT(mRegistration);
     nsCOMPtr<nsIRunnable> r =
       NS_NewRunnableMethod(this, &ServiceWorkerRegisterJob::ContinueUpdate);
     NS_DispatchToMainThread(r);
+
+    mRegistration->mUpdating = true;
   }
 
   
@@ -1323,12 +1307,11 @@ private:
   Succeed()
   {
     AssertIsOnMainThread();
-    MOZ_ASSERT(mCallbacks.Length());
-
-    for (uint32_t i = 0; i < mCallbacks.Length(); ++i) {
-      mCallbacks[i]->UpdateSucceeded(mRegistration);
+    
+    if (mCallback) {
+      mCallback->UpdateSucceeded(mRegistration);
+      mCallback = nullptr;
     }
-    mCallbacks.Clear();
   }
 
   void
@@ -1386,13 +1369,13 @@ private:
   void
   Done(nsresult aStatus)
   {
-    ServiceWorkerJob::Done(aStatus);
+    AssertIsOnMainThread();
 
-    if (mJobType == UPDATE_JOB && mRegistration) {
-      MOZ_ASSERT(NS_IsMainThread());
-      MOZ_ASSERT(mRegistration->mUpdateJob);
-      mRegistration->mUpdateJob = nullptr;
+    if (mRegistration) {
+      mRegistration->mUpdating = false;
     }
+
+    ServiceWorkerJob::Done(aStatus);
   }
 };
 
@@ -2000,7 +1983,7 @@ ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
 #ifdef MOZ_SIMPLEPUSH
   return NS_ERROR_NOT_AVAILABLE;
 #else
-  PrincipalOriginAttributes attrs;
+  OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginAttributes)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2033,7 +2016,7 @@ ServiceWorkerManager::SendPushSubscriptionChangeEvent(const nsACString& aOriginA
 #ifdef MOZ_SIMPLEPUSH
   return NS_ERROR_NOT_AVAILABLE;
 #else
-  PrincipalOriginAttributes attrs;
+  OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginAttributes)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2059,7 +2042,7 @@ ServiceWorkerManager::SendNotificationClickEvent(const nsACString& aOriginSuffix
                                                  const nsAString& aData,
                                                  const nsAString& aBehavior)
 {
-  PrincipalOriginAttributes attrs;
+  OriginAttributes attrs;
   if (!attrs.PopulateFromSuffix(aOriginSuffix)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2183,7 +2166,7 @@ ServiceWorkerManager::CheckReadyPromise(nsPIDOMWindow* aWindow,
 }
 
 ServiceWorkerInfo*
-ServiceWorkerManager::GetActiveWorkerInfoForScope(const PrincipalOriginAttributes& aOriginAttributes,
+ServiceWorkerManager::GetActiveWorkerInfoForScope(const OriginAttributes& aOriginAttributes,
                                                   const nsACString& aScope)
 {
   AssertIsOnMainThread();
@@ -2664,23 +2647,6 @@ ServiceWorkerRegistrationInfo::NotifyListenersOnChange()
   }
 }
 
-bool
-ServiceWorkerRegistrationInfo::IsUpdating() const
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  return mUpdateJob != nullptr;
-}
-
-void
-ServiceWorkerRegistrationInfo::AppendUpdateCallback(ServiceWorkerUpdateFinishCallback* aCallback)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCallback);
-  MOZ_ASSERT(mUpdateJob);
-
-  mUpdateJob->AppendCallback(aCallback);
-}
-
 void
 ServiceWorkerManager::LoadRegistration(
                              const ServiceWorkerRegistrationData& aRegistration)
@@ -2829,7 +2795,7 @@ ServiceWorkerManager::GetServiceWorkerRegistrationInfo(nsIPrincipal* aPrincipal,
 }
 
 already_AddRefed<ServiceWorkerRegistrationInfo>
-ServiceWorkerManager::GetServiceWorkerRegistrationInfo(const PrincipalOriginAttributes& aOriginAttributes,
+ServiceWorkerManager::GetServiceWorkerRegistrationInfo(const OriginAttributes& aOriginAttributes,
                                                        nsIURI* aURI)
 {
   MOZ_ASSERT(aURI);
@@ -3312,7 +3278,7 @@ public:
 } 
 
 already_AddRefed<nsIRunnable>
-ServiceWorkerManager::PrepareFetchEvent(const PrincipalOriginAttributes& aOriginAttributes,
+ServiceWorkerManager::PrepareFetchEvent(const OriginAttributes& aOriginAttributes,
                                         nsIDocument* aDoc,
                                         nsIInterceptedChannel* aChannel,
                                         bool aIsReload,
@@ -3401,7 +3367,7 @@ ServiceWorkerManager::DispatchPreparedFetchEvent(nsIInterceptedChannel* aChannel
 }
 
 bool
-ServiceWorkerManager::IsAvailable(const PrincipalOriginAttributes& aOriginAttributes,
+ServiceWorkerManager::IsAvailable(const OriginAttributes& aOriginAttributes,
                                   nsIURI* aURI)
 {
   MOZ_ASSERT(aURI);
@@ -3527,55 +3493,15 @@ ServiceWorkerManager::InvalidateServiceWorkerRegistrationWorker(ServiceWorkerReg
 }
 
 void
-ServiceWorkerManager::SoftUpdate(nsIPrincipal* aPrincipal,
-                                 const nsACString& aScope,
-                                 ServiceWorkerUpdateFinishCallback* aCallback)
+ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
+                                 const nsACString& aScope)
 {
-  MOZ_ASSERT(aPrincipal);
-
-  nsAutoCString scopeKey;
-  nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  SoftUpdate(scopeKey, aScope, aCallback);
-}
-
-void
-ServiceWorkerManager::SoftUpdate(const PrincipalOriginAttributes& aOriginAttributes,
-                                 const nsACString& aScope,
-                                 ServiceWorkerUpdateFinishCallback* aCallback)
-{
+  AssertIsOnMainThread();
   nsAutoCString scopeKey;
   aOriginAttributes.CreateSuffix(scopeKey);
-  SoftUpdate(scopeKey, aScope, aCallback);
-}
 
-namespace {
-
-
-class EmptyUpdateFinishCallback final : public ServiceWorkerUpdateFinishCallback
-{
-public:
-  void
-  UpdateSucceeded(ServiceWorkerRegistrationInfo* aInfo) override
-  {}
-
-  void
-  UpdateFailed(ErrorResult& aStatus) override
-  {}
-};
-
-} 
-
-void
-ServiceWorkerManager::SoftUpdate(const nsACString& aScopeKey,
-                                 const nsACString& aScope,
-                                 ServiceWorkerUpdateFinishCallback* aCallback)
-{
   RefPtr<ServiceWorkerRegistrationInfo> registration =
-    GetRegistration(aScopeKey, aScope);
+    GetRegistration(scopeKey, aScope);
   if (NS_WARN_IF(!registration)) {
     return;
   }
@@ -3601,28 +3527,71 @@ ServiceWorkerManager::SoftUpdate(const nsACString& aScopeKey,
   
   registration->mScriptSpec = newest->ScriptSpec();
 
-  ServiceWorkerJobQueue* queue =
-    GetOrCreateJobQueue(aScopeKey, aScope);
-  MOZ_ASSERT(queue);
-
-  RefPtr<ServiceWorkerUpdateFinishCallback> cb(aCallback);
-  if (!cb) {
-    cb = new EmptyUpdateFinishCallback();
-  }
-
   
   
-  if (registration->IsUpdating()) {
-    
-    
-    
-    
-    registration->AppendUpdateCallback(cb);
-  } else {
+  
+  
+  if (!registration->mUpdating) {
+    ServiceWorkerJobQueue* queue = GetOrCreateJobQueue(scopeKey, aScope);
+    MOZ_ASSERT(queue);
+
     RefPtr<ServiceWorkerRegisterJob> job =
-      new ServiceWorkerRegisterJob(queue, registration, cb);
+      new ServiceWorkerRegisterJob(queue, registration, nullptr);
     queue->Append(job);
   }
+}
+
+void
+ServiceWorkerManager::Update(nsIPrincipal* aPrincipal,
+                             const nsACString& aScope,
+                             ServiceWorkerUpdateFinishCallback* aCallback)
+{
+  MOZ_ASSERT(aPrincipal);
+  MOZ_ASSERT(aCallback);
+
+  nsAutoCString scopeKey;
+  nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  RefPtr<ServiceWorkerRegistrationInfo> registration =
+    GetRegistration(scopeKey, aScope);
+  if (NS_WARN_IF(!registration)) {
+    return;
+  }
+
+  
+  if (registration->mPendingUninstall) {
+    return;
+  }
+
+  
+  
+  
+  RefPtr<ServiceWorkerInfo> newest = registration->Newest();
+  if (!newest) {
+    ErrorResult error(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aCallback->UpdateFailed(error);
+
+    
+    error.SuppressException();
+
+    return;
+  }
+
+  
+  registration->mScriptSpec = newest->ScriptSpec();
+
+  ServiceWorkerJobQueue* queue =
+    GetOrCreateJobQueue(scopeKey, aScope);
+  MOZ_ASSERT(queue);
+
+  
+  
+  RefPtr<ServiceWorkerRegisterJob> job =
+    new ServiceWorkerRegisterJob(queue, registration, aCallback);
+  queue->Append(job);
 }
 
 namespace {
@@ -4068,7 +4037,7 @@ ServiceWorkerManager::PropagateRemoveAll()
 }
 
 void
-ServiceWorkerManager::RemoveAllRegistrations(PrincipalOriginAttributes* aParams)
+ServiceWorkerManager::RemoveAllRegistrations(OriginAttributes* aParams)
 {
   AssertIsOnMainThread();
 
@@ -4301,7 +4270,7 @@ ServiceWorkerManager::Observe(nsISupports* aSubject,
 
   if (strcmp(aTopic, CLEAR_ORIGIN_DATA) == 0) {
     MOZ_ASSERT(XRE_IsParentProcess());
-    PrincipalOriginAttributes attrs;
+    OriginAttributes attrs;
     MOZ_ALWAYS_TRUE(attrs.Init(nsAutoString(aData)));
 
     RemoveAllRegistrations(&attrs);
@@ -4344,7 +4313,7 @@ ServiceWorkerManager::PropagateSoftUpdate(JS::Handle<JS::Value> aOriginAttribute
 {
   AssertIsOnMainThread();
 
-  PrincipalOriginAttributes attrs;
+  OriginAttributes attrs;
   if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -4354,7 +4323,7 @@ ServiceWorkerManager::PropagateSoftUpdate(JS::Handle<JS::Value> aOriginAttribute
 }
 
 void
-ServiceWorkerManager::PropagateSoftUpdate(const PrincipalOriginAttributes& aOriginAttributes,
+ServiceWorkerManager::PropagateSoftUpdate(const OriginAttributes& aOriginAttributes,
                                           const nsAString& aScope)
 {
   AssertIsOnMainThread();
