@@ -22,16 +22,26 @@ package org.mozilla.gecko.home;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.os.CancellationSignal;
+import android.support.v4.os.OperationCanceledException;
 
 
 
 
 
-abstract class SimpleCursorLoader extends AsyncTaskLoader<Cursor> {
+
+
+
+
+
+
+abstract class SimpleCancellableCursorLoader extends AsyncTaskLoader<Cursor> {
     final ForceLoadContentObserver mObserver;
-    Cursor mCursor;
 
-    public SimpleCursorLoader(Context context) {
+    Cursor mCursor;
+    CancellationSignal mCancellationSignal;
+
+    public SimpleCancellableCursorLoader(Context context) {
         super(context);
         mObserver = new ForceLoadContentObserver();
     }
@@ -40,20 +50,46 @@ abstract class SimpleCursorLoader extends AsyncTaskLoader<Cursor> {
 
 
 
-    protected abstract Cursor loadCursor();
+    protected abstract Cursor loadCursor(CancellationSignal cancellationSignal);
 
     
     @Override
     public Cursor loadInBackground() {
-        Cursor cursor = loadCursor();
-
-        if (cursor != null) {
-            
-            cursor.getCount();
-            cursor.registerContentObserver(mObserver);
+        synchronized (this) {
+            if (isLoadInBackgroundCanceled()) {
+                throw new OperationCanceledException();
+            }
+            mCancellationSignal = new CancellationSignal();
         }
+        try {
+            Cursor cursor = loadCursor(mCancellationSignal);
+            if (cursor != null) {
+                try {
+                    
+                    cursor.getCount();
+                    cursor.registerContentObserver(mObserver);
+                } catch (RuntimeException ex) {
+                    cursor.close();
+                    throw ex;
+                }
+            }
+            return cursor;
+        } finally {
+            synchronized (this) {
+                mCancellationSignal = null;
+            }
+        }
+    }
 
-        return cursor;
+    @Override
+    public void cancelLoadInBackground() {
+        super.cancelLoadInBackground();
+
+        synchronized (this) {
+            if (mCancellationSignal != null) {
+                mCancellationSignal.cancel();
+            }
+        }
     }
 
     
