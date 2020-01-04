@@ -82,7 +82,12 @@ public class ExternalIntentDuringPrivateBrowsingPromptFragment extends DialogFra
         } else if (matchingActivities.size() > 1) {
             
             
-            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, intent);
+            
+            
+            final String androidChooserTitle =
+                    context.getResources().getString(R.string.intent_uri_private_browsing_multiple_match_title);
+            final Intent chooserIntent = Intent.createChooser(intent, androidChooserTitle);
+            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, chooserIntent);
         } else {
             
             
