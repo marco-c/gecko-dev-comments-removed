@@ -14,14 +14,17 @@ using namespace cdm;
 namespace mozilla {
 
 WidevineVideoDecoder::WidevineVideoDecoder(GMPVideoHost* aVideoHost,
-                                           RefPtr<CDMWrapper> aCDM)
+                                           RefPtr<CDMWrapper> aCDMWrapper)
   : mVideoHost(aVideoHost)
-  , mCDM(aCDM)
+  , mCDMWrapper(Move(aCDMWrapper))
   , mExtraData(new MediaByteBuffer())
   , mSentInput(false)
 {
+  
+  MOZ_ASSERT(mCDMWrapper);
   Log("WidevineVideoDecoder created this=%p", this);
 
+  
   AddRef();
 }
 
@@ -233,10 +236,11 @@ void
 WidevineVideoDecoder::DecodingComplete()
 {
   Log("WidevineVideoDecoder::DecodingComplete()");
-  if (mCDM) {
+  if (mCDMWrapper) {
     CDM()->DeinitializeDecoder(kStreamTypeVideo);
-    mCDM = nullptr;
+    mCDMWrapper = nullptr;
   }
+  
   Release();
 }
 
