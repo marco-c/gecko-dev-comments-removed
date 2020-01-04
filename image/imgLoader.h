@@ -246,10 +246,23 @@ public:
   NS_DECL_IMGICACHE
   NS_DECL_NSIOBSERVER
 
-  static imgLoader* Singleton();
-  static imgLoader* PBSingleton();
+  
+
+
+
+  static imgLoader* NormalLoader();
 
   
+
+
+
+
+
+
+  static imgLoader* PrivateBrowsingLoader();
+
+  
+
 
 
 
