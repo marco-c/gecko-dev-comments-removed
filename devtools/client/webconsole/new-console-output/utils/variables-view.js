@@ -1,0 +1,16 @@
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+exports.openVariablesView = (objectActor) => {
+  window.jsterm.openVariablesView({objectActor});
+}

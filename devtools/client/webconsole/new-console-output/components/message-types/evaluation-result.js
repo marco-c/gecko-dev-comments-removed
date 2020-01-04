@@ -1,0 +1,39 @@
+
+
+
+
+
+
+"use strict";
+
+
+const {
+  createElement,
+  DOM: dom,
+  PropTypes
+} = require("devtools/client/shared/vendor/react");
+const { MessageRepeat } = require("devtools/client/webconsole/new-console-output/components/message-repeat");
+
+EvaluationResult.displayName = "EvaluationResult";
+
+EvaluationResult.propTypes = {
+  message: PropTypes.object.isRequired,
+};
+
+function EvaluationResult(props) {
+  const { message } = props;
+  let PreviewComponent = getPreviewComponent(message.data);
+  return createElement(PreviewComponent, { data: message.data });
+}
+
+function getPreviewComponent(data) {
+  if (typeof data.class != "undefined") {
+    switch (data.class) {
+      case "Date":
+        return require("devtools/client/webconsole/new-console-output/components/message-types/date-preview").DatePreview;
+    }
+  }
+  return require("devtools/client/webconsole/new-console-output/components/message-types/default-renderer").DefaultRenderer;
+}
+
+module.exports.EvaluationResult = EvaluationResult;

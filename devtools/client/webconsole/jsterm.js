@@ -372,6 +372,11 @@ JSTerm.prototype = {
       return;
     }
 
+    if (this.hud.SUPER_FRONTEND_EXPERIMENT) {
+      this.hud.newConsoleOutput.dispatchMessageAdd(response);
+      
+      return;
+    }
     let msg = new Messages.JavaScriptEvalOutput(response,
                                                 errorMessage, errorDocLink);
     this.hud.output.addMessage(msg);
