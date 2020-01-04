@@ -8,15 +8,6 @@ import org.mozilla.gecko.R;
 
 @SuppressWarnings("unused")
 final class UnusedResourcesUtil {
-    
-
-
-
-    public static final int[] TEMPORARY_PRELANDED_BOOKMARK_ITEMS = {
-        R.string.bookmark_folder_items,
-        R.string.bookmark_folder_one_item,
-    };
-
     public static final int[] CONSTANTS = {
             R.dimen.match_parent,
             R.dimen.wrap_content,
