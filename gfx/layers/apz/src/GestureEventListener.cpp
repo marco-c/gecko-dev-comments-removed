@@ -35,6 +35,8 @@ static const uint32_t MAX_TAP_TIME = 300;
 
 static const float PINCH_START_THRESHOLD = 35.0f;
 
+static bool sLongTapEnabled = true;
+
 ParentLayerPoint GetCurrentFocus(const MultiTouchInput& aEvent)
 {
   const ParentLayerPoint& firstTouch = aEvent.mTouches[0].mLocalScreenPoint;
@@ -132,6 +134,11 @@ int32_t GestureEventListener::GetLastTouchIdentifier() const
 }
 
 
+void GestureEventListener::SetLongTapEnabled(bool aLongTapEnabled)
+{
+  sLongTapEnabled = aLongTapEnabled;
+}
+
 nsEventStatus GestureEventListener::HandleInputTouchSingleStart()
 {
   switch (mState) {
@@ -139,7 +146,9 @@ nsEventStatus GestureEventListener::HandleInputTouchSingleStart()
     SetState(GESTURE_FIRST_SINGLE_TOUCH_DOWN);
     mTouchStartPosition = mLastTouchInput.mTouches[0].mLocalScreenPoint;
 
-    CreateLongTapTimeoutTask();
+    if (sLongTapEnabled) {
+      CreateLongTapTimeoutTask();
+    }
     CreateMaxTapTimeoutTask();
     break;
   case GESTURE_FIRST_SINGLE_TOUCH_UP:

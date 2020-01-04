@@ -1339,6 +1339,7 @@ class JavaPanZoomController
 
 
 
+    @Override
     public void setIsLongpressEnabled(boolean isLongpressEnabled) {
         this.isLongpressEnabled = isLongpressEnabled;
     }

@@ -404,6 +404,14 @@ public:
 
   RefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain(const RefPtr<AsyncPanZoomController>& aInitialTarget);
 
+  
+
+
+
+
+
+  static void SetLongTapEnabled(bool aTapGestureEnabled);
+
 protected:
   
   virtual ~APZCTreeManager();

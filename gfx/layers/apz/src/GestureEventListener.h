@@ -60,6 +60,14 @@ public:
 
   int32_t GetLastTouchIdentifier() const;
 
+  
+
+
+
+
+
+  static void SetLongTapEnabled(bool aLongTapEnabled);
+
 private:
   
   ~GestureEventListener();
@@ -222,7 +230,6 @@ private:
   CancelableTask *mMaxTapTimeoutTask;
   void CancelMaxTapTimeoutTask();
   void CreateMaxTapTimeoutTask();
-
 };
 
 } 
