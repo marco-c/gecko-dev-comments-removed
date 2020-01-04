@@ -334,8 +334,10 @@ class BaseContext {
 
 
   wrapPromise(promise, callback = null) {
+    
+    
     let runSafe = this.runSafe.bind(this);
-    if (promise instanceof this.cloneScope.Promise) {
+    if (promise.constructor === this.cloneScope.Promise) {
       runSafe = this.runSafeWithoutClone.bind(this);
     }
 

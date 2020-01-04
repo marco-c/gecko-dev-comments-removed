@@ -1,6 +1,4 @@
 
-if (!('Promise' in this))
-    quit(0);
 
 var g = newGlobal();
 var dbg = new Debugger(g);
@@ -12,6 +10,6 @@ dbg.onNewPromise = function (promise) {
 };
 
 log = '';
-new g.Promise(function (){});
-new g.Promise(function (){});
+g.makeFakePromise();
+g.makeFakePromise();
 assertEq(log, 'n');
