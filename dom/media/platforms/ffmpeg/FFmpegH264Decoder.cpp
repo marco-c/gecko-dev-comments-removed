@@ -155,6 +155,13 @@ FFmpegH264Decoder<LIBAV_VER>::DoDecodeFrame(MediaRawData* aSample,
   packet.flags = aSample->mKeyframe ? AV_PKT_FLAG_KEY : 0;
   packet.pos = aSample->mOffset;
 
+  
+  
+  
+  
+  
+  mDurationMap.Insert(aSample->mTimecode, aSample->mDuration);
+
   if (!PrepareFrame()) {
     NS_WARNING("FFmpeg h264 decoder failed to allocate frame.");
     mCallback->Error();
@@ -185,6 +192,19 @@ FFmpegH264Decoder<LIBAV_VER>::DoDecodeFrame(MediaRawData* aSample,
     int64_t pts = mPtsContext.GuessCorrectPts(mFrame->pkt_pts, mFrame->pkt_dts);
     FFMPEG_LOG("Got one frame output with pts=%lld opaque=%lld",
                pts, mCodecContext->reordered_opaque);
+    
+    
+    
+
+    int64_t duration;
+    if (!mDurationMap.Find(mFrame->pkt_dts, duration)) {
+      NS_WARNING("Unable to retrieve duration from map");
+      duration = aSample->mDuration;
+      
+      
+      
+      mDurationMap.Clear();
+    }
 
     VideoInfo info;
     info.mDisplay = nsIntSize(mDisplayWidth, mDisplayHeight);
@@ -212,7 +232,7 @@ FFmpegH264Decoder<LIBAV_VER>::DoDecodeFrame(MediaRawData* aSample,
                                               mImageContainer,
                                               aSample->mOffset,
                                               pts,
-                                              aSample->mDuration,
+                                              duration,
                                               b,
                                               !!mFrame->key_frame,
                                               -1,
@@ -381,6 +401,7 @@ void
 FFmpegH264Decoder<LIBAV_VER>::ProcessFlush()
 {
   mPtsContext.Reset();
+  mDurationMap.Clear();
   FFmpegDataDecoder::ProcessFlush();
 }
 
