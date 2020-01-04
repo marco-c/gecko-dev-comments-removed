@@ -19,13 +19,31 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-
-
-
-
-const HANG_EXPIRATION_TIME = 10000;
-
 var ProcessHangMonitor = {
+  
+
+
+
+  get HANG_EXPIRATION_TIME() {
+    try {
+      return Services.prefs.getIntPref("browser.hangNotification.expiration");
+    } catch (ex) {
+      return 10000;
+    }
+  },
+
+  
+
+
+
+  get WAIT_EXPIRATION_TIME() {
+    try {
+      return Services.prefs.getIntPref("browser.hangNotification.waitPeriod");
+    } catch (ex) {
+      return 10000;
+    }
+  },
+
   
 
 
@@ -33,6 +51,12 @@ var ProcessHangMonitor = {
 
 
   _activeReports: new Map(),
+
+  
+
+
+
+  _pausedReports: new Map(),
 
   
 
@@ -73,6 +97,7 @@ var ProcessHangMonitor = {
 
 
 
+
   terminatePlugin: function(win) {
     this.handleUserInput(win, report => report.terminatePlugin());
   },
@@ -81,35 +106,66 @@ var ProcessHangMonitor = {
 
 
 
-  terminateProcess: function(win) {
-    this.handleUserInput(win, report => report.terminateProcess());
+  stopIt: function (win) {
+    let report = this.findActiveReport(win.gBrowser.selectedBrowser);
+    if (!report) {
+      return;
+    }
+
+    switch (report.hangType) {
+      case report.SLOW_SCRIPT:
+        this.terminateScript(win);
+        break;
+      case report.PLUGIN_HANG:
+        this.terminatePlugin(win);
+        break;
+    }
   },
 
   
 
 
 
-
-  refreshMenu: function(win) {
-    let report = this.findReport(win.gBrowser.selectedBrowser);
+  waitLonger: function(win) {
+    let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
       return;
     }
+    
+    this.removeActiveReport(report);
 
-    function setVisible(id, visible) {
-      let item = win.document.getElementById(id);
-      item.hidden = !visible;
-    }
+    
+    
+    
+    
 
-    if (report.hangType == report.SLOW_SCRIPT) {
-      setVisible("processHangTerminateScript", true);
-      setVisible("processHangDebugScript", true);
-      setVisible("processHangTerminatePlugin", false);
-    } else if (report.hangType == report.PLUGIN_HANG) {
-      setVisible("processHangTerminateScript", false);
-      setVisible("processHangDebugScript", false);
-      setVisible("processHangTerminatePlugin", true);
-    }
+    
+    let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer.initWithCallback(() => {
+      for (let [stashedReport, otherTimer] of this._pausedReports) {
+        if (otherTimer === timer) {
+          this.removePausedReport(stashedReport);
+
+          
+          let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+          timer.initWithCallback(this, this.HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
+
+          
+          
+          
+          
+          
+          
+          this._activeReports.set(report, timer);
+          break;
+        }
+      }
+    }, this.WAIT_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
+
+    this._pausedReports.set(report, timer);
+
+    
+    this.updateWindows();
   },
 
   
@@ -118,11 +174,11 @@ var ProcessHangMonitor = {
 
 
   handleUserInput: function(win, func) {
-    let report = this.findReport(win.gBrowser.selectedBrowser);
+    let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
       return;
     }
-    this.removeReport(report);
+    this.removeActiveReport(report);
 
     return func(report);
   },
@@ -155,7 +211,7 @@ var ProcessHangMonitor = {
   
 
 
-  findReport: function(browser) {
+  findActiveReport: function(browser) {
     let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
     for (let [report, timer] of this._activeReports) {
       if (report.isReportForBrowser(frameLoader)) {
@@ -163,6 +219,44 @@ var ProcessHangMonitor = {
       }
     }
     return null;
+  },
+
+  
+
+
+  findPausedReport: function(browser) {
+    let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
+    for (let [report, timer] of this._pausedReports) {
+      if (report.isReportForBrowser(frameLoader)) {
+        return report;
+      }
+    }
+    return null;
+  },
+
+  
+
+
+
+  removeActiveReport: function(report) {
+    let timer = this._activeReports.get(report);
+    if (timer) {
+      timer.cancel();
+    }
+    this._activeReports.delete(report);
+    this.updateWindows();
+  },
+
+  
+
+
+
+  removePausedReport: function(report) {
+    let timer = this._pausedReports.get(report);
+    if (timer) {
+      timer.cancel();
+    }
+    this._pausedReports.delete(report);
   },
 
   
@@ -191,7 +285,7 @@ var ProcessHangMonitor = {
 
 
   updateWindow: function(win) {
-    let report = this.findReport(win.gBrowser.selectedBrowser);
+    let report = this.findActiveReport(win.gBrowser.selectedBrowser);
 
     if (report) {
       this.showNotification(win, report);
@@ -212,19 +306,36 @@ var ProcessHangMonitor = {
 
     let bundle = win.gNavigatorBundle;
     let brandBundle = win.document.getElementById("bundle_brand");
-    let appName = brandBundle.getString("brandShortName");
-    let message = bundle.getFormattedString(
-      "processHang.message",
-      [appName]);
 
     let buttons = [{
-      label: bundle.getString("processHang.button.label"),
-      accessKey: bundle.getString("processHang.button.accessKey"),
-      popup: "processHangOptions",
-      callback: null,
-    }];
+        label: bundle.getString("processHang.button_stop.label"),
+        accessKey: bundle.getString("processHang.button_stop.accessKey"),
+        callback: function() {
+          ProcessHangMonitor.stopIt(win);
+        }
+      },
+      {
+        label: bundle.getString("processHang.button_wait.label"),
+        accessKey: bundle.getString("processHang.button_wait.accessKey"),
+        callback: function() {
+          ProcessHangMonitor.waitLonger(win);
+        }
+      }];
 
-    nb.appendNotification(message, "process-hang",
+#ifdef MOZ_DEV_EDITION
+    if (report.hangType == report.SLOW_SCRIPT) {
+      buttons.push({
+        label: bundle.getString("processHang.button_debug.label"),
+        accessKey: bundle.getString("processHang.button_debug.accessKey"),
+        callback: function() {
+          ProcessHangMonitor.debugScript(win);
+        }
+      });
+    }
+#endif
+
+    nb.appendNotification(bundle.getString("processHang.label"),
+                          "process-hang",
                           "chrome://browser/content/aboutRobots-icon.png",
                           nb.PRIORITY_WARNING_HIGH, buttons);
   },
@@ -274,7 +385,15 @@ var ProcessHangMonitor = {
     if (this._activeReports.has(report)) {
       let timer = this._activeReports.get(report);
       timer.cancel();
-      timer.initWithCallback(this, HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
+      timer.initWithCallback(this, this.HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
+      
+      
+      this.updateWindows();
+      return;
+    }
+
+    
+    if (this._pausedReports.has(report)) {
       return;
     }
 
@@ -291,18 +410,9 @@ var ProcessHangMonitor = {
 
     
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    timer.initWithCallback(this, HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
+    timer.initWithCallback(this, this.HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
 
     this._activeReports.set(report, timer);
-    this.updateWindows();
-  },
-
-  
-
-
-
-  removeReport: function(report) {
-    this._activeReports.delete(report);
     this.updateWindows();
   },
 
@@ -312,7 +422,7 @@ var ProcessHangMonitor = {
   notify: function(timer) {
     for (let [otherReport, otherTimer] of this._activeReports) {
       if (otherTimer === timer) {
-        this.removeReport(otherReport);
+        this.removeActiveReport(otherReport);
         otherReport.userCanceled();
         break;
       }
