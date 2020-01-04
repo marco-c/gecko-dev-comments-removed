@@ -93,6 +93,35 @@ CoverageCollector.prototype._getLinesCovered = function () {
   return coveredLines;
 }
 
+CoverageCollector.prototype._getUncoveredLines = function() {
+  let uncoveredLines = {};
+  this._scripts.forEach(s => {
+    let scriptName = s.url;
+    let scriptOffsets = s.getAllOffsets();
+
+    if (!uncoveredLines[scriptName]){
+      uncoveredLines[scriptName] = new Set();
+    }
+
+    
+    scriptOffsets.forEach( function(element, index) {
+      if (!element){
+        return;
+      }
+      uncoveredLines[scriptName].add(index);
+    });
+  });
+
+  
+  for (let scriptName in this._allCoverage){
+    for (let key in this._allCoverage[scriptName]){
+      let [lineNumber, columnNumber, offset] = key.split('#');
+      uncoveredLines[scriptName].delete(parseInt(lineNumber, 10));
+    }
+  }
+
+  return uncoveredLines;
+}
 
 
 
