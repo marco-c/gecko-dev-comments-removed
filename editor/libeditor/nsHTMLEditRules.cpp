@@ -2649,10 +2649,8 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
       }
     }
     
-    nsCOMPtr<nsIDOMNode> brNode;
-    res = CheckForInvisibleBR(GetAsDOMNode(leftBlock), kBlockEnd,
-                              address_of(brNode));
-    NS_ENSURE_SUCCESS(res, res);
+    nsCOMPtr<Element> brNode =
+      CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
     if (mergeLists) {
       
       
@@ -2696,10 +2694,8 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
       }
     }
     
-    nsCOMPtr<nsIDOMNode> brNode;
-    res = CheckForInvisibleBR(GetAsDOMNode(leftBlock), kBeforeBlock,
-                              address_of(brNode), leftOffset);
-    NS_ENSURE_SUCCESS(res, res);
+    nsCOMPtr<Element> brNode =
+      CheckForInvisibleBR(*leftBlock, BRLocation::beforeBlock, leftOffset);
     if (mergeLists) {
       res = MoveContents(GetAsDOMNode(rightList), GetAsDOMNode(leftList),
                          &leftOffset);
@@ -2773,10 +2769,8 @@ nsHTMLEditRules::JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
     res = nsWSRunObject::PrepareToJoinBlocks(mHTMLEditor, leftBlock, rightBlock);
     NS_ENSURE_SUCCESS(res, res);
     
-    nsCOMPtr<nsIDOMNode> brNode;
-    res = CheckForInvisibleBR(GetAsDOMNode(leftBlock), kBlockEnd,
-                              address_of(brNode));
-    NS_ENSURE_SUCCESS(res, res);
+    nsCOMPtr<Element> brNode =
+      CheckForInvisibleBR(*leftBlock, BRLocation::blockEnd);
     if (mergeLists || leftBlock->NodeInfo()->NameAtom() ==
                       rightBlock->NodeInfo()->NameAtom()) {
       
@@ -4951,55 +4945,39 @@ nsHTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
   return NS_OK;
 }
 
-nsresult
-nsHTMLEditRules::CheckForInvisibleBR(nsIDOMNode *aBlock,
-                                     BRLocation aWhere,
-                                     nsCOMPtr<nsIDOMNode> *outBRNode,
+Element*
+nsHTMLEditRules::CheckForInvisibleBR(Element& aBlock, BRLocation aWhere,
                                      int32_t aOffset)
 {
-  nsCOMPtr<nsINode> block = do_QueryInterface(aBlock);
-  NS_ENSURE_TRUE(block && outBRNode, NS_ERROR_NULL_POINTER);
-  *outBRNode = nullptr;
-
-  nsCOMPtr<nsIDOMNode> testNode;
+  nsCOMPtr<nsINode> testNode;
   int32_t testOffset = 0;
-  bool runTest = false;
 
-  if (aWhere == kBlockEnd)
-  {
-    nsCOMPtr<nsIDOMNode> rightmostNode =
-      
-      GetAsDOMNode(mHTMLEditor->GetRightmostChild(block, true));
+  if (aWhere == BRLocation::blockEnd) {
+    
+    nsCOMPtr<nsIContent> rightmostNode =
+      mHTMLEditor->GetRightmostChild(&aBlock, true);
 
-    if (rightmostNode)
-    {
-      int32_t nodeOffset;
-      nsCOMPtr<nsIDOMNode> nodeParent = nsEditor::GetNodeLocation(rightmostNode,
-                                                                  &nodeOffset);
-      runTest = true;
-      testNode = nodeParent;
-      
-      
-      testOffset = nodeOffset + 1;
+    if (!rightmostNode) {
+      return nullptr;
     }
-  }
-  else if (aOffset)
-  {
-    runTest = true;
-    testNode = aBlock;
+
+    testNode = rightmostNode->GetParentNode();
+    
+    testOffset = testNode->IndexOf(rightmostNode) + 1;
+  } else if (aOffset) {
+    testNode = &aBlock;
     
     testOffset = aOffset;
+  } else {
+    return nullptr;
   }
 
-  if (runTest)
-  {
-    nsWSRunObject wsTester(mHTMLEditor, testNode, testOffset);
-    if (WSType::br == wsTester.mStartReason) {
-      *outBRNode = GetAsDOMNode(wsTester.mStartReasonNode);
-    }
+  nsWSRunObject wsTester(mHTMLEditor, testNode, testOffset);
+  if (WSType::br == wsTester.mStartReason) {
+    return wsTester.mStartReasonNode->AsElement();
   }
 
-  return NS_OK;
+  return nullptr;
 }
 
 
