@@ -32,6 +32,34 @@ function addDiv(t, attrs) {
 
 
 
+
+
+
+
+
+
+
+function addStyle(t, rules) {
+  var extraStyle = document.createElement('style');
+  document.head.appendChild(extraStyle);
+  if (rules) {
+    var sheet = extraStyle.sheet;
+    for (var selector in rules) {
+      sheet.insertRule(selector + '{' + rules[selector] + '}',
+                       sheet.cssRules.length);
+    }
+  }
+
+  if (t && typeof t.add_cleanup === 'function') {
+    t.add_cleanup(function() {
+      extraStyle.remove();
+    });
+  }
+}
+
+
+
+
 function waitForFrame() {
   return new Promise(function(resolve, reject) {
     window.requestAnimationFrame(resolve);
