@@ -2308,7 +2308,7 @@ pref("layout.css.prefixes.font-features", true);
 pref("layout.css.prefixes.gradients", true);
 
 
-pref("layout.css.prefixes.webkit", false);
+pref("layout.css.prefixes.webkit", true);
 
 
 
