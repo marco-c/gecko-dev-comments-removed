@@ -798,6 +798,8 @@ add_task(function test_common_initialize()
   DownloadIntegration.dontOpenFileAndFolder = true;
   DownloadIntegration._deferTestOpenFile = Promise.defer();
   DownloadIntegration._deferTestShowDir = Promise.defer();
+  
+  DownloadIntegration.dontCheckRuntimePermissions = true;
 
   
   DownloadIntegration._deferTestOpenFile.promise.then(null, () => undefined);

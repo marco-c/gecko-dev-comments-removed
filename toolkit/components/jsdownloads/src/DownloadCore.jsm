@@ -462,6 +462,12 @@ this.Download.prototype = {
 
         
         
+        if (yield DownloadIntegration.shouldBlockForRuntimePermissions()) {
+          throw new DownloadError({ becauseBlockedByRuntimePermissions: true });
+        }
+
+        
+        
         
         if (this._promiseCanceled) {
           
@@ -1495,7 +1501,8 @@ this.DownloadError = function (aProperties)
     this.message = aProperties.message;
   } else if (aProperties.becauseBlocked ||
              aProperties.becauseBlockedByParentalControls ||
-             aProperties.becauseBlockedByReputationCheck) {
+             aProperties.becauseBlockedByReputationCheck ||
+             aProperties.becauseBlockedByRuntimePermissions) {
     this.message = "Download blocked.";
   } else {
     let exception = new Components.Exception("", this.result);
@@ -1522,6 +1529,9 @@ this.DownloadError = function (aProperties)
   } else if (aProperties.becauseBlockedByReputationCheck) {
     this.becauseBlocked = true;
     this.becauseBlockedByReputationCheck = true;
+  } else if (aProperties.becauseBlockedByRuntimePermissions) {
+    this.becauseBlocked = true;
+    this.becauseBlockedByRuntimePermissions = true;
   } else if (aProperties.becauseBlocked) {
     this.becauseBlocked = true;
   }
@@ -1574,6 +1584,15 @@ this.DownloadError.prototype = {
 
 
 
+
+
+  becauseBlockedByRuntimePermissions: false,
+
+  
+
+
+
+
   innerException: null,
 
   
@@ -1591,6 +1610,7 @@ this.DownloadError.prototype = {
       becauseBlocked: this.becauseBlocked,
       becauseBlockedByParentalControls: this.becauseBlockedByParentalControls,
       becauseBlockedByReputationCheck: this.becauseBlockedByReputationCheck,
+      becauseBlockedByRuntimePermissions: this.becauseBlockedByRuntimePermissions,
     };
 
     serializeUnknownProperties(this, serializable);
@@ -1615,7 +1635,8 @@ this.DownloadError.fromSerializable = function (aSerializable) {
     property != "becauseTargetFailed" &&
     property != "becauseBlocked" &&
     property != "becauseBlockedByParentalControls" &&
-    property != "becauseBlockedByReputationCheck");
+    property != "becauseBlockedByReputationCheck" &&
+    property != "becauseBlockedByRuntimePermissions");
 
   return e;
 };
@@ -2316,14 +2337,18 @@ this.DownloadLegacySaver.prototype = {
 
   onProgressBytes: function DLS_onProgressBytes(aCurrentBytes, aTotalBytes)
   {
+    this.progressWasNotified = true;
+
     
     if (!this.setProgressBytesFn) {
+      
+      this.currentBytes = aCurrentBytes;
+      this.totalBytes = aTotalBytes;
       return;
     }
 
     let hasPartFile = !!this.download.target.partFilePath;
 
-    this.progressWasNotified = true;
     this.setProgressBytesFn(aCurrentBytes, aTotalBytes,
                             aCurrentBytes > 0 && hasPartFile);
   },
@@ -2433,6 +2458,9 @@ this.DownloadLegacySaver.prototype = {
     }
 
     this.setProgressBytesFn = aSetProgressBytesFn;
+    if (this.progressWasNotified) {
+      this.onProgressBytes(this.currentBytes, this.totalBytes);
+    }
 
     return Task.spawn(function* task_DLS_execute() {
       try {
