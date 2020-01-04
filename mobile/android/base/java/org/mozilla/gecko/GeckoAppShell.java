@@ -1937,6 +1937,11 @@ public class GeckoAppShell
     static String[] getPluginDirectories() {
 
         
+        if ((new File("/system/lib/hw/power.dragon.so")).exists()) {
+            Log.w(LOGTAG, "Blocking plugins because of Pixel C device (bug 1255122)");
+            return null;
+        }
+        
         boolean isTegra = (new File("/system/lib/hw/gralloc.tegra.so")).exists() ||
                           (new File("/system/lib/hw/gralloc.tegra3.so")).exists() ||
                           (new File("/sys/class/nvidia-gpu")).exists();
