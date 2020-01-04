@@ -1963,9 +1963,9 @@ class Instruction
     }
     
     
-    void extractCond(Assembler::Condition* c) {
-        if (data >> 28 != 0xf )
-            *c = (Assembler::Condition)(data & 0xf0000000);
+    Assembler::Condition extractCond() {
+        MOZ_ASSERT(data >> 28 != 0xf, "The instruction does not have condition code");
+        return (Assembler::Condition)(data & 0xf0000000);
     }
     
     
