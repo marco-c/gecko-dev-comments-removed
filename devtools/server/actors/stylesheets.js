@@ -803,6 +803,9 @@ var StyleSheetActor = protocol.ActorClass({
 
 
   _setSourceMapRoot: function(aSourceMap, aAbsSourceMapURL, aScriptURL) {
+    if (aScriptURL.startsWith("blob:")) {
+      aScriptURL = aScriptURL.replace("blob:", "");
+    }
     const base = dirname(
       aAbsSourceMapURL.startsWith("data:")
         ? aScriptURL
