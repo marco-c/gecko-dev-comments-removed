@@ -269,6 +269,14 @@ APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
     sentContentResponse = SendPendingTouchPreventedResponse(false);
     
     
+    if (!aEvent.mFlags.mHandledByAPZ) {
+      
+      
+      
+      
+      
+      break;
+    }
     if (isTouchPrevented) {
       mContentReceivedInputBlockCallback(aGuid, aInputBlockId, isTouchPrevented);
       sentContentResponse = true;
