@@ -94,9 +94,7 @@ this.Context.fromString = function(s) {
 
 
 
-
-
-this.GeckoDriver = function(appName, device, stopSignal) {
+this.GeckoDriver = function(appName, stopSignal) {
   this.appName = appName;
   this.stopSignal_ = stopSignal;
 
@@ -150,7 +148,6 @@ this.GeckoDriver = function(appName, device, stopSignal) {
     
     "XULappId" : Services.appinfo.ID,
     "appBuildId" : Services.appinfo.appBuildID,
-    "device": device,
     "processId" : Services.appinfo.processID,
     "version": Services.appinfo.version,
   };

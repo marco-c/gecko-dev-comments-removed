@@ -57,15 +57,9 @@ this.MarionetteServer = function(port, forceLocal) {
 
 
 
-
 MarionetteServer.prototype.driverFactory = function() {
   let appName = isMulet() ? "B2G" : Services.appinfo.name;
-  let device = null;
   let bypassOffline = false;
-
-  if (!device) {
-    device = "desktop";
-  }
 
   Preferences.set(CONTENT_LISTENER_PREF, false);
 
@@ -77,7 +71,7 @@ MarionetteServer.prototype.driverFactory = function() {
   }
 
   let stopSignal = () => this.stop();
-  return new GeckoDriver(appName, device, stopSignal);
+  return new GeckoDriver(appName, stopSignal);
 };
 
 MarionetteServer.prototype.start = function() {
