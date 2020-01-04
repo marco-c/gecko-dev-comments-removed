@@ -13,6 +13,7 @@
 #include "CheckerboardEvent.h"          
 #include "Compositor.h"                 
 #include "FrameMetrics.h"               
+#include "GenericFlingAnimation.h"      
 #include "GestureEventListener.h"       
 #include "HitTestingTreeNode.h"         
 #include "InputData.h"                  
@@ -450,177 +451,6 @@ private:
   AsyncPanZoomController* mApzc;
   AsyncPanZoomController::PanZoomState mInitialState;
 };
-
-#if !defined(MOZ_ANDROID_APZ)
-class FlingAnimation: public AsyncPanZoomAnimation {
-public:
-  FlingAnimation(AsyncPanZoomController& aApzc,
-                 const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
-                 bool aApplyAcceleration,
-                 const RefPtr<const AsyncPanZoomController>& aScrolledApzc)
-    : mApzc(aApzc)
-    , mOverscrollHandoffChain(aOverscrollHandoffChain)
-    , mScrolledApzc(aScrolledApzc)
-  {
-    MOZ_ASSERT(mOverscrollHandoffChain);
-    TimeStamp now = aApzc.GetFrameTime();
-
-    
-    
-    
-    
-    if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, Layer::HORIZONTAL)) {
-      ReentrantMonitorAutoEnter lock(mApzc.mMonitor);
-      mApzc.mX.SetVelocity(0);
-    }
-    if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, Layer::VERTICAL)) {
-      ReentrantMonitorAutoEnter lock(mApzc.mMonitor);
-      mApzc.mY.SetVelocity(0);
-    }
-
-    ParentLayerPoint velocity = mApzc.GetVelocityVector();
-
-    
-    
-    
-    
-    
-    
-    
-    if (aApplyAcceleration && !mApzc.mLastFlingTime.IsNull()
-        && (now - mApzc.mLastFlingTime).ToMilliseconds() < gfxPrefs::APZFlingAccelInterval()) {
-      if (SameDirection(velocity.x, mApzc.mLastFlingVelocity.x)) {
-        velocity.x = Accelerate(velocity.x, mApzc.mLastFlingVelocity.x);
-        APZC_LOG("%p Applying fling x-acceleration from %f to %f (delta %f)\n",
-                 &mApzc, mApzc.mX.GetVelocity(), velocity.x, mApzc.mLastFlingVelocity.x);
-        mApzc.mX.SetVelocity(velocity.x);
-      }
-      if (SameDirection(velocity.y, mApzc.mLastFlingVelocity.y)) {
-        velocity.y = Accelerate(velocity.y, mApzc.mLastFlingVelocity.y);
-        APZC_LOG("%p Applying fling y-acceleration from %f to %f (delta %f)\n",
-                 &mApzc, mApzc.mY.GetVelocity(), velocity.y, mApzc.mLastFlingVelocity.y);
-        mApzc.mY.SetVelocity(velocity.y);
-      }
-    }
-
-    mApzc.mLastFlingTime = now;
-    mApzc.mLastFlingVelocity = velocity;
-  }
-
-  
-
-
-
-
-
-  virtual bool DoSample(FrameMetrics& aFrameMetrics,
-                        const TimeDuration& aDelta) override
-  {
-    float friction = gfxPrefs::APZFlingFriction();
-    float threshold = gfxPrefs::APZFlingStoppedThreshold();
-
-    bool shouldContinueFlingX = mApzc.mX.FlingApplyFrictionOrCancel(aDelta, friction, threshold),
-         shouldContinueFlingY = mApzc.mY.FlingApplyFrictionOrCancel(aDelta, friction, threshold);
-    
-    if (!shouldContinueFlingX && !shouldContinueFlingY) {
-      APZC_LOG("%p ending fling animation. overscrolled=%d\n", &mApzc, mApzc.IsOverscrolled());
-      
-      
-      
-      
-      
-      
-      
-      mDeferredTasks.AppendElement(
-            NewRunnableMethod<AsyncPanZoomController*>(mOverscrollHandoffChain.get(),
-                                                       &OverscrollHandoffChain::SnapBackOverscrolledApzc,
-                                                       &mApzc));
-      return false;
-    }
-
-    
-    
-    
-    
-    ParentLayerPoint velocity = mApzc.GetVelocityVector();
-
-    ParentLayerPoint offset = velocity * aDelta.ToMilliseconds();
-
-    
-    
-    
-    
-    ParentLayerPoint overscroll;
-    ParentLayerPoint adjustedOffset;
-    mApzc.mX.AdjustDisplacement(offset.x, adjustedOffset.x, overscroll.x);
-    mApzc.mY.AdjustDisplacement(offset.y, adjustedOffset.y, overscroll.y);
-
-    aFrameMetrics.ScrollBy(adjustedOffset / aFrameMetrics.GetZoom());
-
-    
-    if (!IsZero(overscroll)) {
-      
-
-      
-      
-      
-      if (FuzzyEqualsAdditive(overscroll.x, 0.0f, COORDINATE_EPSILON)) {
-        velocity.x = 0;
-      } else if (FuzzyEqualsAdditive(overscroll.y, 0.0f, COORDINATE_EPSILON)) {
-        velocity.y = 0;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      APZC_LOG("%p fling went into overscroll, handing off with velocity %s\n", &mApzc, Stringify(velocity).c_str());
-      mDeferredTasks.AppendElement(
-          NewRunnableMethod<ParentLayerPoint,
-                            RefPtr<const OverscrollHandoffChain>,
-                            RefPtr<const AsyncPanZoomController>>(&mApzc,
-                                                                  &AsyncPanZoomController::HandleFlingOverscroll,
-                                                                  velocity,
-                                                                  mOverscrollHandoffChain,
-                                                                  mScrolledApzc));
-
-      
-      
-      
-      
-      return !IsZero(mApzc.GetVelocityVector());
-    }
-
-    return true;
-  }
-
-private:
-  static bool SameDirection(float aVelocity1, float aVelocity2)
-  {
-    return (aVelocity1 == 0.0f)
-        || (aVelocity2 == 0.0f)
-        || (IsNegative(aVelocity1) == IsNegative(aVelocity2));
-  }
-
-  static float Accelerate(float aBase, float aSupplemental)
-  {
-    return (aBase * gfxPrefs::APZFlingAccelBaseMultiplier())
-         + (aSupplemental * gfxPrefs::APZFlingAccelSupplementalMultiplier());
-  }
-
-  AsyncPanZoomController& mApzc;
-  RefPtr<const OverscrollHandoffChain> mOverscrollHandoffChain;
-  RefPtr<const AsyncPanZoomController> mScrolledApzc;
-};
-#endif
 
 class ZoomAnimation: public AsyncPanZoomAnimation {
 public:
@@ -2578,7 +2408,7 @@ void AsyncPanZoomController::AcceptFling(FlingHandoffState& aHandoffState) {
         aHandoffState.mChain,
         aHandoffState.mScrolledApzc);
 #else
-    FlingAnimation *fling = new FlingAnimation(*this,
+    GenericFlingAnimation *fling = new GenericFlingAnimation(*this,
         aHandoffState.mChain,
         !aHandoffState.mIsHandoff,  
         aHandoffState.mScrolledApzc);
