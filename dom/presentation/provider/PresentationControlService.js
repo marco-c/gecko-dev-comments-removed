@@ -14,6 +14,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 Cu.import("resource://gre/modules/NetUtil.jsm");
 
+const kProtocolVersion = 1; 
+
 const DEBUG = Services.prefs.getBoolPref("dom.presentation.tcp_server.debug");
 function log(aMsg) {
   dump("-*- PresentationControlService.js: " + aMsg + "\n");
@@ -78,6 +80,11 @@ PresentationControlService.prototype = {
     Services.obs.addObserver(this, "network:offline-status-changed", false);
   },
 
+  isCompatibleServer: function(aVersion) {
+    
+    return this.version === aVersion;
+  },
+
   get id() {
     return this._id;
   },
@@ -88,6 +95,10 @@ PresentationControlService.prototype = {
 
   get port() {
     return this._port;
+  },
+
+  get version() {
+    return kProtocolVersion;
   },
 
   set listener(aListener) {
