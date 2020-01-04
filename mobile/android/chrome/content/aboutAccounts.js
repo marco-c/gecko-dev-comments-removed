@@ -37,6 +37,9 @@ const COMMAND_LOADED = "fxaccounts:loaded";
 
 const log = Cu.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("FxAccounts");
 
+XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
+  "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");
+
 
 
 
@@ -186,6 +189,19 @@ function updateDisplayedEmail(user) {
 }
 
 function init() {
+  
+  
+  if (!ParentalControls.isAllowed(ParentalControls.MODIFY_ACCOUNTS)) {
+    
+    
+    
+    
+    
+    log.e("This profile cannot connect to Firefox Accounts: showing restricted error.");
+    show("restrictedError");
+    return;
+  }
+
   Accounts.getFirefoxAccount().then(user => {
     
     
