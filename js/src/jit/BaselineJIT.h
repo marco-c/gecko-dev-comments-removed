@@ -123,6 +123,7 @@ struct BaselineScript
 
     
     
+    
     RelocatablePtrObject templateScope_;
 
     

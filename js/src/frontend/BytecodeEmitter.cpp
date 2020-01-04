@@ -1831,7 +1831,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
 
 
-        if (!sc->asFunctionBox()->isHeavyweight()) {
+        if (!sc->asFunctionBox()->needsCallObject()) {
             op = JSOP_CALLEE;
             pn->pn_dflags |= PND_CONST;
         }
@@ -3599,7 +3599,7 @@ BytecodeEmitter::maybeEmitVarDecl(JSOp prologueOp, ParseNode* pn, jsatomid* resu
     }
 
     if (JOF_OPTYPE(pn->getOp()) == JOF_ATOM &&
-        (!sc->isFunctionBox() || sc->asFunctionBox()->isHeavyweight()))
+        (!sc->isFunctionBox() || sc->asFunctionBox()->needsCallObject()))
     {
         switchToPrologue();
         if (!updateSourceCoordNotes(pn->pn_pos.begin))

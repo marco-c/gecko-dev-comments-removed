@@ -123,7 +123,7 @@ BaselineCompiler::compile()
     JSObject* templateScope = nullptr;
     if (script->functionNonDelazifying()) {
         RootedFunction fun(cx, script->functionNonDelazifying());
-        if (fun->isHeavyweight()) {
+        if (fun->needsCallObject()) {
             RootedScript scriptRoot(cx, script);
             templateScope = CallObject::createTemplateObject(cx, scriptRoot, gc::TenuredHeap);
             if (!templateScope)
@@ -630,13 +630,13 @@ BaselineCompiler::emitDebugPrologue()
     return true;
 }
 
-typedef bool (*StrictEvalPrologueFn)(JSContext*, BaselineFrame*);
-static const VMFunction StrictEvalPrologueInfo =
-    FunctionInfo<StrictEvalPrologueFn>(jit::StrictEvalPrologue);
+typedef bool (*InitStrictEvalScopeObjectsFn)(JSContext*, BaselineFrame*);
+static const VMFunction InitStrictEvalScopeObjectsInfo =
+    FunctionInfo<InitStrictEvalScopeObjectsFn>(jit::InitStrictEvalScopeObjects);
 
-typedef bool (*HeavyweightFunPrologueFn)(JSContext*, BaselineFrame*);
-static const VMFunction HeavyweightFunPrologueInfo =
-    FunctionInfo<HeavyweightFunPrologueFn>(jit::HeavyweightFunPrologue);
+typedef bool (*InitFunctionScopeObjectsFn)(JSContext*, BaselineFrame*);
+static const VMFunction InitFunctionScopeObjectsInfo =
+    FunctionInfo<InitFunctionScopeObjectsFn>(jit::InitFunctionScopeObjects);
 
 bool
 BaselineCompiler::initScopeChain()
@@ -656,14 +656,14 @@ BaselineCompiler::initScopeChain()
         masm.loadPtr(Address(callee, JSFunction::offsetOfEnvironment()), scope);
         masm.storePtr(scope, frame.addressOfScopeChain());
 
-        if (fun->isHeavyweight()) {
+        if (fun->needsCallObject()) {
             
             prepareVMCall();
 
             masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
             pushArg(R0.scratchReg());
 
-            if (!callVMNonOp(HeavyweightFunPrologueInfo, phase))
+            if (!callVMNonOp(InitFunctionScopeObjectsInfo, phase))
                 return false;
         }
     } else {
@@ -677,7 +677,7 @@ BaselineCompiler::initScopeChain()
             masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
             pushArg(R0.scratchReg());
 
-            if (!callVMNonOp(StrictEvalPrologueInfo, phase))
+            if (!callVMNonOp(InitStrictEvalScopeObjectsInfo, phase))
                 return false;
         }
     }

@@ -2531,11 +2531,11 @@ InlineFrameIterator::computeScopeChain(Value scopeChainValue, MaybeReadFallback&
         if (hasCallObj) {
             if (fallback.canRecoverResults()) {
                 RootedObject obj(fallback.maybeCx, &scopeChainValue.toObject());
-                *hasCallObj = isFunctionFrame() && callee(fallback)->isHeavyweight();
+                *hasCallObj = isFunctionFrame() && callee(fallback)->needsCallObject();
                 return obj;
             } else {
                 JS::AutoSuppressGCAnalysis nogc; 
-                *hasCallObj = isFunctionFrame() && callee(fallback)->isHeavyweight();
+                *hasCallObj = isFunctionFrame() && callee(fallback)->needsCallObject();
             }
         }
 

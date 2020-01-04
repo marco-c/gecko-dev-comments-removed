@@ -144,7 +144,7 @@ class JSFunction : public js::NativeObject
   public:
 
     
-    bool isHeavyweight() const {
+    bool needsCallObject() const {
         MOZ_ASSERT(!isInterpretedLazy());
         MOZ_ASSERT(!isBeingParsed());
 

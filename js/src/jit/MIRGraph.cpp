@@ -607,6 +607,7 @@ MBasicBlock::linkOsrValues(MStart* start)
 
             
             
+            
             MOZ_ASSERT_IF(def->isConstant(), def->toConstant()->value() == UndefinedValue());
 
             if (def->isOsrValue())

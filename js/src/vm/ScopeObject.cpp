@@ -283,7 +283,7 @@ CallObject::createForStrictEval(JSContext* cx, AbstractFramePtr frame)
 CallObject*
 CallObject::createHollowForDebug(JSContext* cx, HandleFunction callee)
 {
-    MOZ_ASSERT(!callee->isHeavyweight());
+    MOZ_ASSERT(!callee->needsCallObject());
 
     
     
@@ -1111,7 +1111,7 @@ ScopeIter::settle()
     
     
     if (frame_ && frame_.isNonEvalFunctionFrame() &&
-        frame_.fun()->isHeavyweight() && !frame_.hasCallObj())
+        frame_.fun()->needsCallObject() && !frame_.hasCallObj())
     {
         MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Function);
         incrementStaticScopeIter();
@@ -1884,7 +1884,7 @@ DebugScopeObject::isOptimizedOut() const
 
     if (s.is<CallObject>()) {
         return !s.as<CallObject>().isForEval() &&
-               !s.as<CallObject>().callee().isHeavyweight() &&
+               !s.as<CallObject>().callee().needsCallObject() &&
                !maybeSnapshot();
     }
 
@@ -2130,7 +2130,7 @@ DebugScopes::onPopCall(AbstractFramePtr frame, JSContext* cx)
 
     Rooted<DebugScopeObject*> debugScope(cx, nullptr);
 
-    if (frame.fun()->isHeavyweight()) {
+    if (frame.fun()->needsCallObject()) {
         
 
 
@@ -2846,7 +2846,7 @@ js::AnalyzeEntrainedVariables(JSContext* cx, HandleScript script)
             if (!innerScript)
                 return false;
 
-            if (script->functionDelazifying() && script->functionDelazifying()->isHeavyweight()) {
+            if (script->functionDelazifying() && script->functionDelazifying()->needsCallObject()) {
                 if (!AnalyzeEntrainedVariablesInScript(cx, script, innerScript))
                     return false;
             }

@@ -362,7 +362,7 @@ class FunctionBox : public ObjectBox, public SharedContext
         startColumn = tokenStream.getColumn();
     }
 
-    bool isHeavyweight()
+    bool needsCallObject()
     {
         
         return bindings.hasAnyAliasedBindings() ||

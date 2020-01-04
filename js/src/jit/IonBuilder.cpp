@@ -1218,7 +1218,7 @@ IonBuilder::initScopeChain(MDefinition* callee)
         
         
         
-        if (fun->isHeavyweight() && !info().isAnalysis()) {
+        if (fun->needsCallObject() && !info().isAnalysis()) {
             if (fun->isNamedLambda()) {
                 scope = createDeclEnvObject(callee, scope);
                 if (!scope)

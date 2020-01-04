@@ -3489,7 +3489,7 @@ LambdaIsGetElem(JSContext* cx, JSObject& lambda, MutableHandleNativeObject pobj)
 
 
 
-    if (JSOp(*pc) != JSOP_GETALIASEDVAR || fun->isHeavyweight())
+    if (JSOp(*pc) != JSOP_GETALIASEDVAR || fun->needsCallObject())
         return true;
     ScopeCoordinate sc(pc);
     ScopeObject* scope = &fun->environment()->as<ScopeObject>();

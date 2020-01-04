@@ -47,8 +47,9 @@ BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn)
         return false;
 
     
+    
     usesScopeChain_ = (script_->functionDelazifying() &&
-                       script_->functionDelazifying()->isHeavyweight());
+                       script_->functionDelazifying()->needsCallObject());
     MOZ_ASSERT_IF(script_->hasAnyAliasedBindings(), usesScopeChain_);
 
     jsbytecode* end = script_->codeEnd();
