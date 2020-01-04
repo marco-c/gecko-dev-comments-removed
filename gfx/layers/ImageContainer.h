@@ -359,7 +359,16 @@ public:
 
   enum Mode { SYNCHRONOUS = 0x0, ASYNCHRONOUS = 0x01 };
 
+  static const uint64_t sInvalidAsyncContainerId = 0;
+
   explicit ImageContainer(ImageContainer::Mode flag = SYNCHRONOUS);
+
+  
+
+
+
+
+  explicit ImageContainer(uint64_t aAsyncContainerID);
 
   typedef uint32_t FrameID;
   typedef uint32_t ProducerID;
@@ -626,6 +635,8 @@ private:
   
   
   ImageClient* mImageClient;
+
+  uint64_t mAsyncContainerID;
 
   nsTArray<FrameID> mFrameIDsNotYetComposited;
   
