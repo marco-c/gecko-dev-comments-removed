@@ -83,6 +83,22 @@ bool Gecko_IsUnvisitedLink(RawGeckoElement* element);
 bool Gecko_IsRootElement(RawGeckoElement* element);
 nsIAtom* Gecko_LocalName(RawGeckoElement* element);
 nsIAtom* Gecko_Namespace(RawGeckoElement* element);
+nsIAtom* Gecko_GetElementId(RawGeckoElement* element);
+
+
+
+
+
+
+
+
+
+
+
+
+
+uint32_t Gecko_ClassOrClassList(RawGeckoElement* element,
+                                nsIAtom** class_, nsIAtom*** classList);
 
 
 ServoNodeData* Gecko_GetNodeData(RawGeckoNode* node);

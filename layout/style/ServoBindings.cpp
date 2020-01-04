@@ -6,8 +6,10 @@
 
 #include "mozilla/ServoBindings.h"
 
+#include "nsAttrValueInlines.h"
 #include "nsCSSRuleProcessor.h"
 #include "nsContentUtils.h"
+#include "nsDOMTokenList.h"
 #include "nsIDOMNode.h"
 #include "nsIDocument.h"
 #include "nsINode.h"
@@ -151,6 +153,67 @@ Gecko_Namespace(RawGeckoElement* aElement)
 {
   int32_t id = aElement->NodeInfo()->NamespaceID();
   return nsContentUtils::NameSpaceManager()->NameSpaceURIAtom(id);
+}
+
+nsIAtom*
+Gecko_GetElementId(RawGeckoElement* aElement)
+{
+  const nsAttrValue* attr = aElement->GetParsedAttr(nsGkAtoms::id);
+  return attr ? attr->GetAtomValue() : nullptr;
+}
+
+uint32_t
+Gecko_ClassOrClassList(RawGeckoElement* aElement,
+                       nsIAtom** aClass, nsIAtom*** aClassList)
+{
+  const nsAttrValue* attr = aElement->GetParsedAttr(nsGkAtoms::_class);
+  if (!attr) {
+    return 0;
+  }
+
+  
+  
+  if (attr->Type() == nsAttrValue::eString) {
+    MOZ_ASSERT(nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
+                 attr->GetStringValue()).IsEmpty());
+    return 0;
+  }
+
+  
+  if (attr->Type() == nsAttrValue::eAtom) {
+    *aClass = attr->GetAtomValue();
+    return 1;
+  }
+
+  
+  
+  MOZ_ASSERT(attr->Type() == nsAttrValue::eAtomArray);
+  nsTArray<nsCOMPtr<nsIAtom>>* atomArray = attr->GetAtomArrayValue();
+  uint32_t length = atomArray->Length();
+
+  
+  if (length == 0) {
+    return 0;
+  }
+
+  
+  if (length == 1) {
+    *aClass = atomArray->ElementAt(0);
+    return 1;
+  }
+
+  
+  
+  
+  
+  
+  static_assert(sizeof(nsCOMPtr<nsIAtom>) == sizeof(nsIAtom*), "Bad simplification");
+  static_assert(alignof(nsCOMPtr<nsIAtom>) == alignof(nsIAtom*), "Bad simplification");
+
+  nsCOMPtr<nsIAtom>* elements = atomArray->Elements();
+  nsIAtom** rawElements = reinterpret_cast<nsIAtom**>(elements);
+  *aClassList = rawElements;
+  return atomArray->Length();
 }
 
 ServoNodeData*
