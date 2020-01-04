@@ -1939,7 +1939,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
         MOZ_CRASH("Unknown bailout kind!");
     }
 
-    if (!CheckFrequentBailouts(cx, outerScript))
+    if (!CheckFrequentBailouts(cx, outerScript, bailoutKind))
         return false;
 
     

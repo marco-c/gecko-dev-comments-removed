@@ -270,17 +270,21 @@ jit::EnsureHasScopeObjects(JSContext* cx, AbstractFramePtr fp)
 }
 
 bool
-jit::CheckFrequentBailouts(JSContext* cx, JSScript* script)
+jit::CheckFrequentBailouts(JSContext* cx, JSScript* script, BailoutKind bailoutKind)
 {
     if (script->hasIonScript()) {
         
         
         IonScript* ionScript = script->ionScript();
 
-        if (ionScript->numBailouts() >= js_JitOptions.frequentBailoutThreshold &&
-            !script->hadFrequentBailouts())
-        {
-            script->setHadFrequentBailouts();
+        if (ionScript->numBailouts() >= js_JitOptions.frequentBailoutThreshold) {
+            
+            
+            
+            
+            
+            if (bailoutKind != Bailout_FirstExecution && !script->hadFrequentBailouts())
+                script->setHadFrequentBailouts();
 
             JitSpew(JitSpew_IonInvalidate, "Invalidating due to too many bailouts");
 
