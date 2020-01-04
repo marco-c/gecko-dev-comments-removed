@@ -1231,6 +1231,23 @@ PresShell::Destroy()
     mViewManager = nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mFrameArena.ClearArenaRefPtrs();
+
   mStyleSet->BeginShutdown();
   nsRefreshDriver* rd = GetPresContext()->RefreshDriver();
 

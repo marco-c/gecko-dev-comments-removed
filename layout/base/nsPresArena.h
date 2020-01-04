@@ -11,10 +11,13 @@
 #define nsPresArena_h___
 
 #include "mozilla/ArenaObjectID.h"
+#include "mozilla/ArenaRefPtr.h"
 #include "mozilla/MemoryChecking.h" 
 #include "mozilla/MemoryReporting.h"
 #include <stdint.h>
 #include "nscore.h"
+#include "nsDataHashtable.h"
+#include "nsHashKeys.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "plarena.h"
@@ -70,12 +73,47 @@ public:
 
 
 
+
+
+
+
+
+
+  template<typename T>
+  void RegisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr);
+
+  
+
+
+
+  template<typename T>
+  void DeregisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr)
+  {
+    MOZ_ASSERT(mArenaRefPtrs.Contains(aPtr));
+    mArenaRefPtrs.Remove(aPtr);
+  }
+
+  
+
+
+
+
+  void ClearArenaRefPtrs();
+
+  
+
+
+
   void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               nsArenaMemoryStats* aArenaStats);
 
 private:
   void* Allocate(uint32_t aCode, size_t aSize);
   void Free(uint32_t aCode, void* aPtr);
+
+  inline void ClearArenaRefPtrWithoutDeregistering(
+      void* aPtr,
+      mozilla::ArenaObjectID aObjectID);
 
   
   
@@ -111,6 +149,7 @@ private:
 
   nsTHashtable<FreeList> mFreeLists;
   PLArenaPool mPool;
+  nsDataHashtable<nsPtrHashKey<void>, mozilla::ArenaObjectID> mArenaRefPtrs;
 };
 
 #endif
