@@ -245,6 +245,20 @@ Decoder::CompleteDecode()
 }
 
 nsresult
+Decoder::SetTargetSize(const nsIntSize& aSize)
+{
+  
+  if (MOZ_UNLIKELY(aSize.width <= 0 || aSize.height <= 0)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  mDownscaler.emplace(aSize);
+
+  return NS_OK;
+}
+
+nsresult
 Decoder::AllocateFrame(uint32_t aFrameNum,
                        const nsIntSize& aTargetSize,
                        const nsIntRect& aFrameRect,

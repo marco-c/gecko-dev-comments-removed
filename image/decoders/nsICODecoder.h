@@ -43,8 +43,6 @@ class nsICODecoder : public Decoder
 public:
   virtual ~nsICODecoder() { }
 
-  nsresult SetTargetSize(const nsIntSize& aSize) override;
-
   
   static uint32_t GetRealWidth(const IconDirEntry& aEntry)
   {
@@ -119,7 +117,6 @@ private:
   LexerTransition<ICOState> FinishResource();
 
   StreamingLexer<ICOState, 32> mLexer; 
-  Maybe<Downscaler> mDownscaler;       
   nsRefPtr<Decoder> mContainedDecoder; 
   char mBIHraw[40];                    
   IconDirEntry mDirEntry;              

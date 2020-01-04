@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "DecodePool.h"
 #include "DecoderFlags.h"
+#include "Downscaler.h"
 #include "ImageMetadata.h"
 #include "Orientation.h"
 #include "SourceBuffer.h"
@@ -119,12 +120,7 @@ public:
 
 
 
-
-
-  virtual nsresult SetTargetSize(const nsIntSize& aSize)
-  {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
+  nsresult SetTargetSize(const nsIntSize& aSize);
 
   
 
@@ -403,6 +399,8 @@ protected:
                                           imgFrame* aPreviousFrame);
 
 protected:
+  Maybe<Downscaler> mDownscaler;
+
   uint8_t* mImageData;  
   uint32_t mImageDataLength;
   uint32_t* mColormap;  

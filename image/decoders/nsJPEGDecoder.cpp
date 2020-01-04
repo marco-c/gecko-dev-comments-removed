@@ -136,20 +136,6 @@ nsJPEGDecoder::SpeedHistogram()
   return Telemetry::IMAGE_DECODE_SPEED_JPEG;
 }
 
-nsresult
-nsJPEGDecoder::SetTargetSize(const nsIntSize& aSize)
-{
-  
-  if (MOZ_UNLIKELY(aSize.width <= 0 || aSize.height <= 0)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  mDownscaler.emplace(aSize);
-
-  return NS_OK;
-}
-
 void
 nsJPEGDecoder::InitInternal()
 {

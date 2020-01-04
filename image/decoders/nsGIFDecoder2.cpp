@@ -99,20 +99,6 @@ nsGIFDecoder2::~nsGIFDecoder2()
   free(mGIFStruct.hold);
 }
 
-nsresult
-nsGIFDecoder2::SetTargetSize(const nsIntSize& aSize)
-{
-  
-  if (MOZ_UNLIKELY(aSize.width <= 0 || aSize.height <= 0)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  mDownscaler.emplace(aSize);
-
-  return NS_OK;
-}
-
 uint8_t*
 nsGIFDecoder2::GetCurrentRowBuffer()
 {
