@@ -305,14 +305,6 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
         aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
 
       
-      if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS && !mHasTextureFromPixmap) {
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
-        aFailureId = "FEATURE_FAILURE_NO_PIXMAP";
-        aSuggestedDriverVersion.AssignLiteral("<Anything with EXT_texture_from_pixmap support>");
-        return NS_OK;
-      }
-
-      
       
       
       
