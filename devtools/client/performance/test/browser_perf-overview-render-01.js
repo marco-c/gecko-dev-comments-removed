@@ -1,34 +1,34 @@
 
 
+"use strict";
 
 
 
 
-function* spawnTest() {
-  let { panel } = yield initPerformance(SIMPLE_URL);
+
+const { Constants } = require("devtools/client/performance/modules/constants");
+const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
+const { initPerformanceInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");
+const { startRecording, stopRecording } = require("devtools/client/performance/test/helpers/actions");
+const { times } = require("devtools/client/performance/test/helpers/event-utils");
+
+add_task(function*() {
+  let { panel } = yield initPerformanceInNewTab({
+    url: SIMPLE_URL,
+    win: window
+  });
+
   let { EVENTS, OverviewView } = panel.panelWin;
-
-  
-  Services.prefs.setBoolPref(MEMORY_PREF, true);
 
   yield startRecording(panel);
 
-  yield Promise.all([
-    once(OverviewView, EVENTS.FRAMERATE_GRAPH_RENDERED),
-    once(OverviewView, EVENTS.MARKERS_GRAPH_RENDERED),
-    once(OverviewView, EVENTS.MEMORY_GRAPH_RENDERED),
-    once(OverviewView, EVENTS.OVERVIEW_RENDERED),
-  ]);
+  
+  yield times(OverviewView, EVENTS.UI_OVERVIEW_RENDERED, 3, {
+    expectedArgs: { "1": Constants.FRAMERATE_GRAPH_LOW_RES_INTERVAL }
+  });
 
-  yield Promise.all([
-    once(OverviewView, EVENTS.FRAMERATE_GRAPH_RENDERED),
-    once(OverviewView, EVENTS.MARKERS_GRAPH_RENDERED),
-    once(OverviewView, EVENTS.MEMORY_GRAPH_RENDERED),
-    once(OverviewView, EVENTS.OVERVIEW_RENDERED),
-  ]);
+  ok(true, "Overview was rendered while recording.");
 
   yield stopRecording(panel);
-
-  yield teardown(panel);
-  finish();
-}
+  yield teardownToolboxAndRemoveTab(panel);
+});

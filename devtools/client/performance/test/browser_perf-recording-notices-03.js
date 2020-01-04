@@ -1,77 +1,117 @@
 
 
+"use strict";
 
 
 
 
 
 
-function* spawnTest() {
+
+const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
+const { PROFILER_BUFFER_SIZE_PREF } = require("devtools/client/performance/test/helpers/prefs");
+const { PMM_loadFrameScripts, PMM_stopProfiler, PMM_clearFrameScripts } = require("devtools/client/performance/test/helpers/profiler-mm-utils");
+const { initPerformanceInTab, initConsoleInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");
+const { startRecording, stopRecording } = require("devtools/client/performance/test/helpers/actions");
+const { waitUntil } = require("devtools/client/performance/test/helpers/wait-utils");
+const { once } = require("devtools/client/performance/test/helpers/event-utils");
+
+add_task(function*() {
+  
   PMM_loadFrameScripts(gBrowser);
+  yield PMM_stopProfiler();
+
   
   Services.prefs.setIntPref(PROFILER_BUFFER_SIZE_PREF, 1000000);
-  let { panel } = yield initPerformance(SIMPLE_URL);
+
+  let { target, console } = yield initConsoleInNewTab({
+    url: SIMPLE_URL,
+    win: window
+  });
+
+  let { panel } = yield initPerformanceInTab({ tab: target.tab });
   let { gFront, EVENTS, $, PerformanceController, PerformanceView, RecordingsView } = panel.panelWin;
 
   
   yield gFront.setProfilerStatusInterval(10);
 
-  yield startRecording(panel);
-
-  let percent = 0;
-  while (percent === 0) {
-    [,percent] = yield onceSpread(PerformanceView, EVENTS.UI_BUFFER_STATUS_UPDATED);
-  }
-
-  let bufferUsage = PerformanceController.getBufferUsageForRecording(PerformanceController.getCurrentRecording());
-  is($("#details-pane-container").getAttribute("buffer-status"), "in-progress",
-    "container has [buffer-status=in-progress]");
-  ok($("#recording-notice .buffer-status-message").value.indexOf(percent + "%") !== -1,
-    "buffer status text has correct percentage");
+  let DETAILS_CONTAINER = $("#details-pane-container");
+  let NORMAL_BUFFER_STATUS_MESSAGE = $("#recording-notice .buffer-status-message");
+  let CONSOLE_BUFFER_STATUS_MESSAGE = $("#console-recording-notice .buffer-status-message");
+  let gPercent;
 
   
-  yield consoleProfile(panel.panelWin, "rust");
+  yield startRecording(panel);
 
-  percent = 0;
-  while (percent <= (Math.floor(bufferUsage * 100))) {
-    [,percent] = yield onceSpread(PerformanceView, EVENTS.UI_BUFFER_STATUS_UPDATED);
-  }
+  yield waitUntil(function*() {
+    [, gPercent] = yield once(PerformanceView, EVENTS.UI_RECORDING_PROFILER_STATUS_RENDERED, { spreadArgs: true });
+    return gPercent > 0;
+  });
 
-  ok(percent > Math.floor(bufferUsage * 100), "buffer percentage increased in display");
+  ok(true, "Buffer percentage increased in display (1).");
+
+  let bufferUsage = PerformanceController.getBufferUsageForRecording(PerformanceController.getCurrentRecording());
+  either(DETAILS_CONTAINER.getAttribute("buffer-status"), "in-progress", "full",
+    "Container has [buffer-status=in-progress] or [buffer-status=full].");
+  ok(NORMAL_BUFFER_STATUS_MESSAGE.value.indexOf(gPercent + "%") !== -1,
+    "Buffer status text has correct percentage.");
+
+  
+  yield console.profile("rust");
+
+  yield waitUntil(function*() {
+    [, gPercent] = yield once(PerformanceView, EVENTS.UI_RECORDING_PROFILER_STATUS_RENDERED, { spreadArgs: true });
+    return gPercent > Math.floor(bufferUsage * 100);
+  });
+
+  ok(true, "Buffer percentage increased in display (2).");
+
   bufferUsage = PerformanceController.getBufferUsageForRecording(PerformanceController.getCurrentRecording());
+  either(DETAILS_CONTAINER.getAttribute("buffer-status"), "in-progress", "full",
+    "Container has [buffer-status=in-progress] or [buffer-status=full].");
+  ok(NORMAL_BUFFER_STATUS_MESSAGE.value.indexOf(gPercent + "%") !== -1,
+    "Buffer status text has correct percentage.");
 
-  is($("#details-pane-container").getAttribute("buffer-status"), "in-progress",
-    "container has [buffer-status=in-progress]");
-  ok($("#recording-notice .buffer-status-message").value.indexOf(percent + "%") !== -1,
-    "buffer status text has correct percentage");
-
+  
+  let selected = once(PerformanceController, EVENTS.RECORDING_SELECTED);
   RecordingsView.selectedIndex = 1;
-  percent = 0;
-  while (percent === 0) {
-    [,percent] = yield onceSpread(PerformanceView, EVENTS.UI_BUFFER_STATUS_UPDATED);
-  }
+  yield selected;
 
-  ok(percent < Math.floor(bufferUsage * 100), "percentage updated for newly selected recording");
-  is($("#details-pane-container").getAttribute("buffer-status"), "in-progress",
-    "container has [buffer-status=in-progress]");
-  ok($("#console-recording-notice .buffer-status-message").value.indexOf(percent + "%") !== -1,
-    "buffer status text has correct percentage for console recording");
+  yield waitUntil(function*() {
+    [, gPercent] = yield once(PerformanceView, EVENTS.UI_RECORDING_PROFILER_STATUS_RENDERED, { spreadArgs: true });
+    return gPercent > 0;
+  });
 
-  yield consoleProfileEnd(panel.panelWin, "rust");
+  ok(true, "Percentage updated for newly selected recording.");
+
+  either(DETAILS_CONTAINER.getAttribute("buffer-status"), "in-progress", "full",
+    "Container has [buffer-status=in-progress] or [buffer-status=full].");
+  ok(CONSOLE_BUFFER_STATUS_MESSAGE.value.indexOf(gPercent + "%") !== -1,
+    "Buffer status text has correct percentage for console recording.");
+
+  
+  yield console.profileEnd("rust");
+
+  selected = once(PerformanceController, EVENTS.RECORDING_SELECTED);
   RecordingsView.selectedIndex = 0;
+  yield selected;
 
-  percent = 0;
-  while (percent <= (Math.floor(bufferUsage * 100))) {
-    [,percent] = yield onceSpread(PerformanceView, EVENTS.UI_BUFFER_STATUS_UPDATED);
-  }
-  ok(percent > Math.floor(bufferUsage * 100), "percentage increased for original recording");
-  is($("#details-pane-container").getAttribute("buffer-status"), "in-progress",
-    "container has [buffer-status=in-progress]");
-  ok($("#recording-notice .buffer-status-message").value.indexOf(percent + "%") !== -1,
-    "buffer status text has correct percentage");
+  yield waitUntil(function*() {
+    [, gPercent] = yield once(PerformanceView, EVENTS.UI_RECORDING_PROFILER_STATUS_RENDERED, { spreadArgs: true });
+    return gPercent > Math.floor(bufferUsage * 100);
+  });
 
+  ok(true, "Buffer percentage increased in display (3).");
+
+  either(DETAILS_CONTAINER.getAttribute("buffer-status"), "in-progress", "full",
+    "Container has [buffer-status=in-progress] or [buffer-status=full].");
+  ok(NORMAL_BUFFER_STATUS_MESSAGE.value.indexOf(gPercent + "%") !== -1,
+    "Buffer status text has correct percentage.");
+
+  
   yield stopRecording(panel);
 
-  yield teardown(panel);
-  finish();
-}
+  yield teardownToolboxAndRemoveTab(panel);
+
+  PMM_clearFrameScripts();
+});

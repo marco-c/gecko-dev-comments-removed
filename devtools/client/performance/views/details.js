@@ -162,7 +162,7 @@ var DetailsView = {
     
     this._initialized = true;
 
-    this.emit(EVENTS.DETAILS_VIEW_SELECTED, viewName);
+    this.emit(EVENTS.UI_DETAILS_VIEW_SELECTED, viewName);
   }),
 
   
@@ -206,21 +206,6 @@ var DetailsView = {
 
     return false;
   },
-
-  
-
-
-
-
-
-
-  whenViewSelected: Task.async(function*(viewObject) {
-    if (this.isViewSelected(viewObject)) {
-      return promise.resolve();
-    }
-    yield this.once(EVENTS.DETAILS_VIEW_SELECTED);
-    return this.whenViewSelected(viewObject);
-  }),
 
   
 

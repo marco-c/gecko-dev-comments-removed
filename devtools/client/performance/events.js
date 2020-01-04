@@ -3,12 +3,56 @@
 
 "use strict";
 
-module.exports = {
+const ControllerEvents = {
+  
   
   PREF_CHANGED: "Performance:PrefChanged",
 
   
   THEME_CHANGED: "Performance:ThemeChanged",
+
+  
+  RECORDING_ADDED: "Performance:RecordingAdded",
+
+  
+  RECORDING_DELETED: "Performance:RecordingDeleted",
+
+  
+  RECORDING_STATE_CHANGE: "Performance:RecordingStateChange",
+
+  
+  RECORDING_PROFILER_STATUS_UPDATE: "Performance:RecordingProfilerStatusUpdate",
+
+  
+  RECORDING_SELECTED: "Performance:RecordingSelected",
+
+  
+  
+  BACKEND_FAILED_AFTER_RECORDING_START: "Performance:BackendFailedRecordingStart",
+
+  
+  BACKEND_READY_AFTER_RECORDING_START: "Performance:BackendReadyRecordingStart",
+
+  
+  BACKEND_READY_AFTER_RECORDING_STOP: "Performance:BackendReadyRecordingStop",
+
+  
+  RECORDING_EXPORTED: "Performance:RecordingExported",
+
+  
+  RECORDING_IMPORTED: "Performance:RecordingImported",
+
+  
+  SOURCE_SHOWN_IN_JS_DEBUGGER: "Performance:UI:SourceShownInJsDebugger",
+  SOURCE_NOT_FOUND_IN_JS_DEBUGGER: "Performance:UI:SourceNotFoundInJsDebugger",
+
+  
+  RECORDINGS_SEEDED: "Performance:RecordingsSeeded",
+};
+
+const ViewEvents = {
+  
+  UI_PREF_CHANGED: "Performance:UI:PrefChanged",
 
   
   
@@ -24,86 +68,41 @@ module.exports = {
 
   
   UI_IMPORT_RECORDING: "Performance:UI:ImportRecording",
-  
   UI_EXPORT_RECORDING: "Performance:UI:ExportRecording",
 
   
-  NEW_RECORDING: "Performance:NewRecording",
+  
+  UI_RECORDING_PROFILER_STATUS_RENDERED: "Performance:UI:RecordingProfilerStatusRendered",
 
   
-  NEW_RECORDING_FAILED: "Performance:NewRecordingFailed",
+  UI_RECORDING_SELECTED: "Performance:UI:RecordingSelected",
 
   
-  RECORDING_STATE_CHANGE: "Performance:RecordingStateChange",
+  UI_DETAILS_VIEW_SELECTED: "Performance:UI:DetailsViewSelected",
 
   
-  
-  RECORDING_SELECTED: "Performance:RecordingSelected",
+  UI_OVERVIEW_RENDERED: "Performance:UI:OverviewRendered",
+  UI_MARKERS_GRAPH_RENDERED: "Performance:UI:OverviewMarkersRendered",
+  UI_MEMORY_GRAPH_RENDERED: "Performance:UI:OverviewMemoryRendered",
+  UI_FRAMERATE_GRAPH_RENDERED: "Performance:UI:OverviewFramerateRendered",
 
   
-  RECORDINGS_CLEARED: "Performance:RecordingsCleared",
+  UI_OVERVIEW_RANGE_SELECTED: "Performance:UI:OverviewRangeSelected",
 
   
-  RECORDING_EXPORTED: "Performance:RecordingExported",
+  UI_WATERFALL_RENDERED: "Performance:UI:WaterfallRendered",
 
   
-  
-  
-  RECORDING_IMPORTED: "Performance:RecordingImported",
+  UI_JS_CALL_TREE_RENDERED: "Performance:UI:JsCallTreeRendered",
 
   
-  PROFILER_STATUS_UPDATED: "Performance:BufferUpdated",
+  UI_JS_FLAMEGRAPH_RENDERED: "Performance:UI:JsFlameGraphRendered",
 
   
-  UI_BUFFER_STATUS_UPDATED: "Performance:UI:BufferUpdated",
+  UI_MEMORY_CALL_TREE_RENDERED: "Performance:UI:MemoryCallTreeRendered",
 
   
-  
-  OPTIMIZATIONS_RESET: "Performance:UI:OptimizationsReset",
-  OPTIMIZATIONS_RENDERED: "Performance:UI:OptimizationsRendered",
-
-  
-  OVERVIEW_RENDERED: "Performance:UI:OverviewRendered",
-  FRAMERATE_GRAPH_RENDERED: "Performance:UI:OverviewFramerateRendered",
-  MARKERS_GRAPH_RENDERED: "Performance:UI:OverviewMarkersRendered",
-  MEMORY_GRAPH_RENDERED: "Performance:UI:OverviewMemoryRendered",
-
-  
-  OVERVIEW_RANGE_SELECTED: "Performance:UI:OverviewRangeSelected",
-
-  
-  DETAILS_VIEW_SELECTED: "Performance:UI:DetailsViewSelected",
-
-  
-  WATERFALL_RENDERED: "Performance:UI:WaterfallRendered",
-
-  
-  JS_CALL_TREE_RENDERED: "Performance:UI:JsCallTreeRendered",
-
-  
-  JS_FLAMEGRAPH_RENDERED: "Performance:UI:JsFlameGraphRendered",
-
-  
-  MEMORY_CALL_TREE_RENDERED: "Performance:UI:MemoryCallTreeRendered",
-
-  
-  MEMORY_FLAMEGRAPH_RENDERED: "Performance:UI:MemoryFlameGraphRendered",
-
-  
-  SOURCE_SHOWN_IN_JS_DEBUGGER: "Performance:UI:SourceShownInJsDebugger",
-  SOURCE_NOT_FOUND_IN_JS_DEBUGGER: "Performance:UI:SourceNotFoundInJsDebugger",
-
-  
-  
-  
-  RECORDING_STARTED: "Performance:RecordingStarted",
-  RECORDING_WILL_STOP: "Performance:RecordingWillStop",
-  RECORDING_STOPPED: "Performance:RecordingStopped",
-
-  
-  RECORDINGS_SEEDED: "Performance:RecordingsSeeded",
-
-  
-  
-  CONTROLLER_STOPPED_RECORDING: "Performance:Controller:StoppedRecording",
+  UI_MEMORY_FLAMEGRAPH_RENDERED: "Performance:UI:MemoryFlameGraphRendered",
 };
+
+module.exports = Object.assign({}, ControllerEvents, ViewEvents);

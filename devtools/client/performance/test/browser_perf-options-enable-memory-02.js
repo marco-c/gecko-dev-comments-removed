@@ -1,19 +1,30 @@
 
 
+"use strict";
 
 
 
 
 
-function* spawnTest() {
-  let { panel } = yield initPerformance(SIMPLE_URL);
-  let { EVENTS, PerformanceController, $ } = panel.panelWin;
+
+const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
+const { UI_ENABLE_MEMORY_PREF } = require("devtools/client/performance/test/helpers/prefs");
+const { initPerformanceInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");
+const { startRecording, stopRecording } = require("devtools/client/performance/test/helpers/actions");
+
+add_task(function*() {
+  let { panel } = yield initPerformanceInNewTab({
+    url: SIMPLE_URL,
+    win: window
+  });
+
+  let { $, PerformanceController } = panel.panelWin;
 
   
-  Services.prefs.setBoolPref(MEMORY_PREF, false);
+  Services.prefs.setBoolPref(UI_ENABLE_MEMORY_PREF, false);
   yield startRecording(panel);
 
-  Services.prefs.setBoolPref(MEMORY_PREF, true);
+  Services.prefs.setBoolPref(UI_ENABLE_MEMORY_PREF, true);
   yield stopRecording(panel);
 
   is(PerformanceController.getCurrentRecording().getConfiguration().withMemory, false,
@@ -23,7 +34,8 @@ function* spawnTest() {
 
   
   yield startRecording(panel);
-  Services.prefs.setBoolPref(MEMORY_PREF, false);
+
+  Services.prefs.setBoolPref(UI_ENABLE_MEMORY_PREF, false);
   yield stopRecording(panel);
 
   is(PerformanceController.getCurrentRecording().getConfiguration().withMemory, true,
@@ -31,6 +43,5 @@ function* spawnTest() {
   is(PerformanceController.getCurrentRecording().getConfiguration().withAllocations, false,
     "The recording still is not recording allocations.");
 
-  yield teardown(panel);
-  finish();
-}
+  yield teardownToolboxAndRemoveTab(panel);
+});

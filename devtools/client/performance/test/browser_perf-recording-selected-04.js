@@ -1,25 +1,35 @@
 
 
+"use strict";
 
 
 
 
 
+const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
+const { UI_ENABLE_MEMORY_PREF, UI_ENABLE_ALLOCATIONS_PREF } = require("devtools/client/performance/test/helpers/prefs");
+const { initPerformanceInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");
+const { startRecording, stopRecording, waitForAllWidgetsRendered } = require("devtools/client/performance/test/helpers/actions");
 
-var test = Task.async(function*() {
-  let { target, panel, toolbox } = yield initPerformance(SIMPLE_URL);
-  let { $, EVENTS, PerformanceController, DetailsView, DetailsSubview, RecordingsView } = panel.panelWin;
+add_task(function*() {
+  let { panel } = yield initPerformanceInNewTab({
+    url: SIMPLE_URL,
+    win: window
+  });
+
+  let { DetailsView, DetailsSubview, RecordingsView } = panel.panelWin;
 
   
-  Services.prefs.setBoolPref(MEMORY_PREF, true);
-  Services.prefs.setBoolPref(ALLOCATIONS_PREF, true);
+  Services.prefs.setBoolPref(UI_ENABLE_MEMORY_PREF, true);
 
   
-  
-  DetailsSubview.canUpdateWhileHidden = true;
+  Services.prefs.setBoolPref(UI_ENABLE_ALLOCATIONS_PREF, true);
 
   yield startRecording(panel);
   yield stopRecording(panel);
+
+  
+  DetailsSubview.canUpdateWhileHidden = true;
 
   
   
@@ -32,14 +42,17 @@ var test = Task.async(function*() {
   yield startRecording(panel);
   yield stopRecording(panel);
 
-  let rerender = waitForWidgetsRendered(panel);
+  let rerender = waitForAllWidgetsRendered(panel);
   RecordingsView.selectedIndex = 0;
   yield rerender;
 
-  rerender = waitForWidgetsRendered(panel);
+  ok(true, "All widgets were rendered when selecting the first recording.");
+
+  rerender = waitForAllWidgetsRendered(panel);
   RecordingsView.selectedIndex = 1;
   yield rerender;
 
-  yield teardown(panel);
-  finish();
+  ok(true, "All widgets were rendered when selecting the second recording.");
+
+  yield teardownToolboxAndRemoveTab(panel);
 });

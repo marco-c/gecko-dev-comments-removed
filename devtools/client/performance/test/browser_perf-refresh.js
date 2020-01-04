@@ -1,53 +1,36 @@
 
 
-
-requestLongerTimeout(2);
-
+"use strict";
 
 
 
-function* spawnTest() {
-  let { panel, target } = yield initPerformance(SIMPLE_URL);
-  let { EVENTS, PerformanceController } = panel.panelWin;
 
-  
-  
-  
-  
-  Services.prefs.setBoolPref(MEMORY_PREF, false);
-  
-  Services.prefs.setBoolPref(FRAMERATE_PREF, false);
+
+const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
+const { initPerformanceInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");
+const { startRecording, stopRecording, reload } = require("devtools/client/performance/test/helpers/actions");
+const { waitUntil } = require("devtools/client/performance/test/helpers/wait-utils");
+
+add_task(function*() {
+  let { panel, target } = yield initPerformanceInNewTab({
+    url: SIMPLE_URL,
+    win: window
+  });
+
+  let { PerformanceController } = panel.panelWin;
 
   yield startRecording(panel);
-
   yield reload(target);
 
-  let rec = PerformanceController.getCurrentRecording();
-  let { markers, memory, ticks } = rec.getAllData();
-  
-  let markersLength = markers.length;
-  let memoryLength = memory.length;
-  let ticksLength = ticks.length;
+  let recording = PerformanceController.getCurrentRecording();
+  let markersLength = recording.getAllData().markers.length;
 
-  ok(rec.isRecording(), "RecordingModel should still be recording after reload");
+  ok(recording.isRecording(),
+    "RecordingModel should still be recording after reload");
 
-  yield busyWait(100);
-  yield waitUntil(() => rec.getMarkers().length > markersLength);
-  
-  
-  
-  
-  ok("Markers, memory and ticks continue after reload");
+  yield waitUntil(() => recording.getMarkers().length > markersLength);
+  ok("Markers continue after reload.");
 
   yield stopRecording(panel);
-
-  let { allocations, profile, frames } = rec.getAllData();
-  
-  
-  ok(profile, "profile exists after refresh");
-  
-  
-
-  yield teardown(panel);
-  finish();
-}
+  yield teardownToolboxAndRemoveTab(panel);
+});
