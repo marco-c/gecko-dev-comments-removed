@@ -18,6 +18,17 @@ class DrawTargetRecording : public DrawTarget
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawTargetRecording, override)
   DrawTargetRecording(DrawEventRecorder *aRecorder, DrawTarget *aDT, bool aHasData = false);
+
+  
+
+
+
+
+
+
+  DrawTargetRecording(const DrawTargetRecording *aDT, const IntSize &aSize,
+                      SurfaceFormat aFormat);
+
   ~DrawTargetRecording();
 
   virtual DrawTargetType GetType() const override { return mFinalDT->GetType(); }
