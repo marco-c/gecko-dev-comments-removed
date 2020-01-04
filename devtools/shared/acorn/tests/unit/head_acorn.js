@@ -62,6 +62,11 @@ var listener = {
       }
     }
 
+    
+    if (string.includes("JavaScript Warning")) {
+      return;
+    }
+
     do_throw("head_acorn.js got console message: " + string + "\n");
   }
 };

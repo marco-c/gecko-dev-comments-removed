@@ -22,6 +22,7 @@ var _profileInitialized = false;
 _register_modules_protocol_handler();
 
 var _Promise = Components.utils.import("resource://gre/modules/Promise.jsm", {}).Promise;
+var _PromiseTestUtils = Components.utils.import("resource://testing-common/PromiseTestUtils.jsm", {}).PromiseTestUtils;
 
 
 var AssertCls = Components.utils.import("resource://testing-common/Assert.jsm", null).Assert;
@@ -213,7 +214,6 @@ function _do_main() {
 
 function _do_quit() {
   _testLogger.info("exiting test");
-  _Promise.Debugging.flushUncaughtErrors();
   _quit = true;
 }
 
@@ -499,16 +499,8 @@ function _execute_test() {
   
   _fakeIdleService.activate();
 
-  _Promise.Debugging.clearUncaughtErrorObservers();
-  _Promise.Debugging.addUncaughtErrorObserver(function observer({message, date, fileName, stack, lineNumber}) {
-    let text = " A promise chain failed to handle a rejection: " +
-        message + " - rejection date: " + date;
-    _testLogger.error(text,
-                      {
-                        stack: _format_stack(stack),
-                        source_file: fileName
-                      });
-  });
+  _PromiseTestUtils.init();
+  _PromiseTestUtils.Assert = Assert;
 
   
   _load_files(_HEAD_FILES);
@@ -539,6 +531,7 @@ function _execute_test() {
     }
     do_test_finished("MAIN run_test");
     _do_main();
+    _PromiseTestUtils.assertNoUncaughtRejections();
   } catch (e) {
     _passed = false;
     
@@ -625,8 +618,14 @@ function _execute_test() {
     _profileInitialized = false;
   }
 
-  if (!_passed)
-    return;
+  try {
+    _PromiseTestUtils.ensureDOMPromiseRejectionsProcessed();
+    _PromiseTestUtils.assertNoUncaughtRejections();
+    _PromiseTestUtils.assertNoMoreExpectedRejections();
+  } finally {
+    
+    _PromiseTestUtils.uninit();
+  }
 }
 
 
@@ -1517,7 +1516,7 @@ function run_next_test()
   {
     if (_gTestIndex < _gTests.length) {
       
-      _Promise.Debugging.flushUncaughtErrors();
+      _PromiseTestUtils.assertNoUncaughtRejections();
       let _properties;
       [_properties, _gRunningTest,] = _gTests[_gTestIndex++];
       if (typeof(_properties.skip_if) == "function" && _properties.skip_if()) {
@@ -1538,10 +1537,18 @@ function run_next_test()
 
       if (_properties._isTask) {
         _gTaskRunning = true;
-        _Task.spawn(_gRunningTest).then(
-          () => { _gTaskRunning = false; run_next_test(); },
-          (ex) => { _gTaskRunning = false; do_report_unexpected_exception(ex); }
-        );
+        _Task.spawn(_gRunningTest).then(() => {
+          _gTaskRunning = false;
+          run_next_test();
+        }, ex => {
+          _gTaskRunning = false;
+          try {
+            do_report_unexpected_exception(ex);
+          } catch (ex) {
+            
+            
+          }
+        });
       } else {
         
         try {

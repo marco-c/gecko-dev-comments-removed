@@ -125,7 +125,7 @@ this.DownloadStore.prototype = {
             if (!download.succeeded && !download.canceled && !download.error) {
               
               
-              download.start();
+              download.start().catch(() => {});
             } else {
               
               

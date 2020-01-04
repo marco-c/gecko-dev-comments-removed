@@ -458,7 +458,7 @@ this.PushService = {
         
         
         this._changeStateConnectionEnabledEvent(prefs.get("connection.enabled"));
-      });
+      }).catch(Cu.reportError);
 
     } else {
       

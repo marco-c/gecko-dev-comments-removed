@@ -35,6 +35,11 @@ var listener = {
       }
     }
 
+    
+    if (string.includes("JavaScript Warning")) {
+      return;
+    }
+
     do_throw("head_pretty-fast.js got console message: " + string + "\n");
   }
 };
