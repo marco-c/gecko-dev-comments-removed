@@ -463,6 +463,20 @@ nsPrinterEnumeratorWin::InitPrintSettingsFromPrinter(const char16_t *aPrinterNam
 
   AutoFreeGlobalPrinters autoFreeGlobalPrinters;
 
+  
+  
+  bool initializedFromPrefs;
+  nsresult rv =
+    aPrintSettings->GetIsInitializedFromPrefs(&initializedFromPrefs);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (initializedFromPrefs) {
+    
+    
+    return devSpecWin->GetDataFromPrinter(aPrinterName, aPrintSettings);
+  }
+
   devSpecWin->GetDataFromPrinter(aPrinterName);
 
   LPDEVMODEW devmode;
