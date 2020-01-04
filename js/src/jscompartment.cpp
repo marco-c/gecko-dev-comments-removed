@@ -599,7 +599,7 @@ JSCompartment::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime t
 {
     if (objectMetadataState.is<PendingMetadata>()) {
         TraceRoot(trc,
-                  objectMetadataState.as<PendingMetadata>().unsafeUnbarrieredForTracing(),
+                  &objectMetadataState.as<PendingMetadata>(),
                   "on-stack object pending metadata");
     }
 
@@ -694,17 +694,6 @@ JSCompartment::sweepGlobalObject(FreeOp* fop)
         if (isDebuggee())
             Debugger::detachAllDebuggersFromGlobal(fop, global_.unbarrieredGet());
         global_.set(nullptr);
-    }
-}
-
-void
-JSCompartment::sweepObjectPendingMetadata()
-{
-    if (objectMetadataState.is<PendingMetadata>()) {
-        
-        
-        
-        MOZ_ALWAYS_TRUE(!IsAboutToBeFinalized(&objectMetadataState.as<PendingMetadata>()));
     }
 }
 
