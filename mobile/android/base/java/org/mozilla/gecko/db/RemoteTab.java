@@ -4,12 +4,8 @@
 
 package org.mozilla.gecko.db;
 
-import org.mozilla.gecko.RemoteTabsExpandableListAdapter;
-
 import android.os.Parcel;
 import android.os.Parcelable;
-
-
 
 
 
