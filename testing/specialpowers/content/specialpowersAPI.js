@@ -456,6 +456,26 @@ SpecialPowersAPI.prototype = {
     return MockPermissionPrompt;
   },
 
+  
+
+
+
+  loadPrivilegedScript: function (aFunction) {
+    var str = "(" + aFunction.toString() + ")();";
+    var systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    var sb = Cu.Sandbox(systemPrincipal);
+    var window = this.window.get();
+    var mc = new window.MessageChannel();
+    sb.port = mc.port1;
+    try {
+      sb.eval(str);
+    } catch (e) {
+      throw wrapIfUnwrapped(e);
+    }
+
+    return mc.port2;
+  },
+
   loadChromeScript: function (urlOrFunction) {
     
     let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"]
