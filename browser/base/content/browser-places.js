@@ -25,7 +25,7 @@ var StarUI = {
     element.hidden = false;
     element.addEventListener("keypress", this, false);
     element.addEventListener("mouseout", this, false);
-    element.addEventListener("mouseover", this, false);
+    element.addEventListener("mousemove", this, false);
     element.addEventListener("popuphidden", this, false);
     element.addEventListener("popupshown", this, false);
     return this.panel = element;
@@ -63,7 +63,7 @@ var StarUI = {
   
   handleEvent(aEvent) {
     switch (aEvent.type) {
-      case "mouseover":
+      case "mousemove":
         clearTimeout(this._autoCloseTimer);
         break;
       case "popuphidden":
@@ -138,6 +138,9 @@ var StarUI = {
         
       }
       case "popupshown":
+        if (aEvent.target != aEvent.currentTarget) {
+          break;
+        }
         
         if (this._isNewBookmark) {
           
@@ -146,7 +149,9 @@ var StarUI = {
           if (this._closePanelQuickForTesting) {
             delay /= 10;
           }
-          this._autoCloseTimer = setTimeout(() => this.panel.hidePopup(), delay, this);
+          this._autoCloseTimer = setTimeout(() => {
+            this.panel.hidePopup();
+          }, delay);
         }
         break;
     }
