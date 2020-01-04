@@ -797,11 +797,6 @@ class MochitestArguments(ArgumentContainer):
 
         
         
-        if mozinfo.isWin:
-            options.ignoreMissingLeaks.append("tab")
-
-        
-        
         
         
         if options.test_paths and build_obj:
