@@ -1288,8 +1288,12 @@ class nsIWidget : public nsISupports {
 
 
 
+
+
+
     virtual already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawing() = 0;
-    virtual already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion) {
+    virtual already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
+                                                                                  mozilla::layers::BufferMode* aBufferMode) {
       return StartRemoteDrawing();
     }
 

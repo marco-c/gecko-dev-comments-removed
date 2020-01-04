@@ -2225,7 +2225,8 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         return TRUE;
     }
 
-    RefPtr<DrawTarget> dt = GetDrawTarget(region);
+    BufferMode layerBuffering = BufferMode::BUFFERED;
+    RefPtr<DrawTarget> dt = GetDrawTarget(region, &layerBuffering);
     if (!dt) {
         return FALSE;
     }
@@ -2245,7 +2246,6 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         gfxUtils::ClipToRegion(dt, region.ToUnknownRegion());
     }
 
-    BufferMode layerBuffering;
     if (shaped) {
         
         
@@ -2254,16 +2254,6 @@ nsWindow::OnExposeEvent(cairo_t *cr)
         RefPtr<DrawTarget> destDT = dt->CreateSimilarDrawTarget(boundsRect.Size(), SurfaceFormat::B8G8R8A8);
         ctx = new gfxContext(destDT, boundsRect.TopLeft());
     } else {
-#ifdef MOZ_HAVE_SHMIMAGE
-        if (nsShmImage::UseShm()) {
-            
-            layerBuffering = BufferMode::BUFFER_NONE;
-        } else
-#endif 
-        {
-            
-            layerBuffering = BufferMode::BUFFERED;
-        }
         ctx = new gfxContext(dt);
     }
 
@@ -6455,7 +6445,7 @@ nsWindow::GetSurfaceForGdkDrawable(GdkDrawable* aDrawable,
 #endif
 
 already_AddRefed<DrawTarget>
-nsWindow::GetDrawTarget(const LayoutDeviceIntRegion& aRegion)
+nsWindow::GetDrawTarget(const LayoutDeviceIntRegion& aRegion, BufferMode* aBufferMode)
 {
   if (!mGdkWindow) {
     return nullptr;
@@ -6474,12 +6464,14 @@ nsWindow::GetDrawTarget(const LayoutDeviceIntRegion& aRegion)
   if (nsShmImage::UseShm()) {
     dt = nsShmImage::EnsureShmImage(size,
                                     mXDisplay, mXVisual, mXDepth, mShmImage);
+    *aBufferMode = BufferMode::BUFFER_NONE;
   }
 #  endif  
   if (!dt) {
     RefPtr<gfxXlibSurface> surf = new gfxXlibSurface(mXDisplay, mXWindow, mXVisual, size.ToUnknownSize());
     if (!surf->CairoStatus()) {
       dt = gfxPlatform::GetPlatform()->CreateDrawTargetForSurface(surf.get(), surf->GetSize());
+      *aBufferMode = BufferMode::BUFFERED;
     }
   }
 #endif 
@@ -6488,9 +6480,9 @@ nsWindow::GetDrawTarget(const LayoutDeviceIntRegion& aRegion)
 }
 
 already_AddRefed<DrawTarget>
-nsWindow::StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion)
+nsWindow::StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion, BufferMode* aBufferMode)
 {
-  return GetDrawTarget(aInvalidRegion);
+  return GetDrawTarget(aInvalidRegion, aBufferMode);
 }
 
 void
