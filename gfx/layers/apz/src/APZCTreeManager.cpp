@@ -95,7 +95,6 @@ APZCTreeManager::APZCTreeManager()
       mTreeLock("APZCTreeLock"),
       mHitResultForInputBlock(HitNothing),
       mRetainedTouchIdentifier(-1),
-      mTouchCount(0),
       mApzcTreeLog("apzctree")
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -730,9 +729,6 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
       return nsEventStatus_eConsumeNoDefault;
     }
 
-    
-    
-    mTouchCount = aInput.mTouches.Length();
     mHitResultForInputBlock = HitNothing;
     nsRefPtr<AsyncPanZoomController> apzc = GetTouchInputBlockAPZC(aInput, &mHitResultForInputBlock);
     
@@ -802,21 +798,11 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     }
   }
 
-  if (aInput.mType == MultiTouchInput::MULTITOUCH_END) {
-    if (mTouchCount >= aInput.mTouches.Length()) {
-      
-      mTouchCount -= aInput.mTouches.Length();
-    } else {
-      NS_WARNING("Got an unexpected touchend/touchcancel");
-      mTouchCount = 0;
-    }
-  } else if (aInput.mType == MultiTouchInput::MULTITOUCH_CANCEL) {
-    mTouchCount = 0;
-  }
+  mTouchCounter.Update(aInput);
 
   
   
-  if (mTouchCount == 0) {
+  if (mTouchCounter.GetActiveTouchCount() == 0) {
     mApzcForInputBlock = nullptr;
     mHitResultForInputBlock = HitNothing;
     mRetainedTouchIdentifier = -1;

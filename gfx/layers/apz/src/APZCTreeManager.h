@@ -8,20 +8,22 @@
 
 #include <stdint.h>                     
 #include <map>                          
+
 #include "FrameMetrics.h"               
-#include "Units.h"                      
 #include "gfxPoint.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/EventForwards.h"      
-#include "mozilla/Monitor.h"            
+#include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Matrix.h"         
+#include "mozilla/layers/APZUtils.h"    
+#include "mozilla/layers/TouchCounter.h"
+#include "mozilla/Monitor.h"            
+#include "mozilla/Vector.h"             
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
-#include "mozilla/Vector.h"             
 #include "nsTArrayForwardDeclare.h"     
-#include "mozilla/gfx/Logging.h"        
-#include "mozilla/layers/APZUtils.h"    
+#include "Units.h"                      
 
 namespace mozilla {
 class InputData;
@@ -521,7 +523,8 @@ private:
 
   int32_t mRetainedTouchIdentifier;
   
-  uint32_t mTouchCount;
+
+  TouchCounter mTouchCounter;
   
 
   gfx::TreeLog mApzcTreeLog;
