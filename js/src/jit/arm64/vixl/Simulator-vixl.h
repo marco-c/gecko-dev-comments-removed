@@ -41,8 +41,8 @@
 #include "jit/arm64/vixl/Instructions-vixl.h"
 #include "jit/arm64/vixl/Instrument-vixl.h"
 #include "jit/arm64/vixl/Utils-vixl.h"
-
 #include "jit/IonTypes.h"
+#include "threading/Mutex.h"
 #include "vm/PosixNSPR.h"
 
 #define JS_CHECK_SIMULATOR_RECURSION_WITH_EXTRA(cx, extra, onerror)             \
@@ -2778,7 +2778,7 @@ class Simulator : public DecoderVisitor {
 
  protected:
   
-  PRLock* lock_;
+  js::Mutex lock_;
 #ifdef DEBUG
   PRThread* lockOwner_;
 #endif
