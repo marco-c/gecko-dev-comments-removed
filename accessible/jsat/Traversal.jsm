@@ -11,7 +11,7 @@
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-this.EXPORTED_SYMBOLS = ['TraversalRules']; 
+this.EXPORTED_SYMBOLS = ['TraversalRules', 'TraversalHelper']; 
 
 Cu.import('resource://gre/modules/accessibility/Utils.jsm');
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
@@ -26,7 +26,7 @@ XPCOMUtils.defineLazyModuleGetter(this, 'Prefilters',
 
 let gSkipEmptyImages = new PrefCache('accessibility.accessfu.skip_empty_images');
 
-function BaseTraversalRule(aRoles, aMatchFunc, aPreFilter) {
+function BaseTraversalRule(aRoles, aMatchFunc, aPreFilter, aContainerRule) {
   this._explicitMatchRoles = new Set(aRoles);
   this._matchRoles = aRoles;
   if (aRoles.length) {
@@ -40,6 +40,7 @@ function BaseTraversalRule(aRoles, aMatchFunc, aPreFilter) {
   }
   this._matchFunc = aMatchFunc || function() { return Filters.MATCH; };
   this.preFilter = aPreFilter || gSimplePreFilter;
+  this.containerRule = aContainerRule;
 }
 
 BaseTraversalRule.prototype = {
@@ -221,8 +222,7 @@ this.TraversalRules = {
     function Landmark_match(aAccessible) {
       return Utils.getLandmarkName(aAccessible) ? Filters.MATCH :
         Filters.IGNORE;
-    }
-  ),
+    }, null, true),
 
   Entry: new BaseTraversalRule(
     [Roles.ENTRY,
@@ -276,7 +276,8 @@ this.TraversalRules = {
 
   List: new BaseTraversalRule(
     [Roles.LIST,
-     Roles.DEFINITION_LIST]),
+     Roles.DEFINITION_LIST],
+    null, null, true),
 
   PageTab: new BaseTraversalRule(
     [Roles.PAGETAB]),
@@ -315,4 +316,52 @@ this.TraversalRules = {
     }
     return Filters.MATCH;
   }
+};
+
+this.TraversalHelper = {
+  _helperPivotCache: null,
+
+  get helperPivotCache() {
+    delete this.helperPivotCache;
+    this.helperPivotCache = new WeakMap();
+    return this.helperPivotCache;
+  },
+
+  getHelperPivot: function TraversalHelper_getHelperPivot(aRoot) {
+    let pivot = this.helperPivotCache.get(aRoot.DOMNode);
+    if (!pivot) {
+      pivot = Utils.AccRetrieval.createAccessiblePivot(aRoot);
+      this.helperPivotCache.set(aRoot.DOMNode, pivot);
+    }
+
+    return pivot;
+  },
+
+  move: function TraversalHelper_move(aVirtualCursor, aMethod, aRule) {
+    let rule = TraversalRules[aRule];
+
+    if (rule.containerRule) {
+      let moved = false;
+      let helperPivot = this.getHelperPivot(aVirtualCursor.root);
+      helperPivot.position = aVirtualCursor.position;
+
+      
+      
+      while (!moved) {
+        if (helperPivot[aMethod](rule)) {
+          aVirtualCursor.modalRoot = helperPivot.position;
+          moved = aVirtualCursor.moveFirst(TraversalRules.Simple);
+          aVirtualCursor.modalRoot = null;
+        } else {
+          
+          break;
+        }
+      }
+
+      return moved;
+    } else {
+      return aVirtualCursor[aMethod](rule);
+    }
+  }
+
 };
