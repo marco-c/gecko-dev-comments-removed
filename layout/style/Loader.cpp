@@ -21,6 +21,7 @@
 #include "mozilla/MemoryReporting.h"
 
 #include "mozilla/css/Loader.h"
+#include "mozilla/ServoStyleSheet.h"
 #include "nsIRunnable.h"
 #include "nsIUnicharStreamLoader.h"
 #include "nsSyncLoadService.h"
@@ -1237,7 +1238,11 @@ Loader::CreateSheet(nsIURI* aURI,
       SRICheck::IntegrityMetadata(aIntegrity, mDocument, &sriMetadata);
     }
 
-    *aSheet = new CSSStyleSheet(aCORSMode, aReferrerPolicy, sriMetadata);
+    if (GetStyleBackendType() == StyleBackendType::Gecko) {
+      *aSheet = new CSSStyleSheet(aCORSMode, aReferrerPolicy, sriMetadata);
+    } else {
+      *aSheet = new ServoStyleSheet(aCORSMode, aReferrerPolicy, sriMetadata);
+    }
     (*aSheet)->SetURIs(sheetURI, originalURI, baseURI);
   }
 
@@ -1739,18 +1744,26 @@ Loader::ParseSheet(const nsAString& aInput,
   aCompleted = false;
 
   
-  MOZ_ASSERT(aLoadData->mSheet->IsGecko(),
-             "stylo: can't parse ServoStyleSheets contents yet");
-  nsCSSParser parser(this, aLoadData->mSheet->AsGecko());
-
-  
   mParsingDatas.AppendElement(aLoadData);
   nsIURI* sheetURI = aLoadData->mSheet->GetSheetURI();
   nsIURI* baseURI = aLoadData->mSheet->GetBaseURI();
-  nsresult rv = parser.ParseSheet(aInput, sheetURI, baseURI,
-                                  aLoadData->mSheet->Principal(),
-                                  aLoadData->mLineNumber,
-                                  aLoadData->mParsingMode);
+
+  nsresult rv;
+
+  if (aLoadData->mSheet->IsGecko()) {
+    nsCSSParser parser(this, aLoadData->mSheet->AsGecko());
+    rv = parser.ParseSheet(aInput, sheetURI, baseURI,
+                           aLoadData->mSheet->Principal(),
+                           aLoadData->mLineNumber,
+                           aLoadData->mParsingMode);
+  } else {
+    aLoadData->mSheet->AsServo()->ParseSheet(aInput, sheetURI, baseURI,
+                                             aLoadData->mSheet->Principal(),
+                                             aLoadData->mLineNumber,
+                                             aLoadData->mParsingMode);
+    rv = NS_OK;
+  }
+
   mParsingDatas.RemoveElementAt(mParsingDatas.Length() - 1);
 
   if (NS_FAILED(rv)) {
