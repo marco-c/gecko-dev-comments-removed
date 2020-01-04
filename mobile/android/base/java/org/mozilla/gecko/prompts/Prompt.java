@@ -484,7 +484,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
     
 
 
-    private void notifyClosing(final JSONObject aReturn) {
+    private void notifyClosing(JSONObject aReturn) {
         try {
             aReturn.put("guid", mGuid);
         } catch(JSONException ex) { }
@@ -497,12 +497,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         GeckoAppShell.sendEventToGecko(GeckoEvent.createNoOpEvent());
 
         if (mCallback != null) {
-            ThreadUtils.postToBackgroundThread(new Runnable() {
-                @Override
-                public void run() {
-                    mCallback.onPromptFinished(aReturn.toString());
-                }
-            });
+            mCallback.onPromptFinished(aReturn.toString());
         }
     }
 
