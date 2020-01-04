@@ -615,6 +615,38 @@ DrawTargetSkia::FillRect(const Rect &aRect,
                          const Pattern &aPattern,
                          const DrawOptions &aOptions)
 {
+  
+  
+  
+  if (aPattern.GetType() == PatternType::SURFACE &&
+      aOptions.mCompositionOp != CompositionOp::OP_SOURCE) {
+    const SurfacePattern& pat = static_cast<const SurfacePattern&>(aPattern);
+    
+    if (pat.mSurface &&
+        (aOptions.mCompositionOp != CompositionOp::OP_OVER ||
+         GfxFormatToSkiaAlphaType(pat.mSurface->GetFormat()) != kOpaque_SkAlphaType) &&
+        !pat.mMatrix.HasNonAxisAlignedTransform()) {
+      
+      IntRect srcRect(IntPoint(0, 0), pat.mSurface->GetSize());
+      if (!pat.mSamplingRect.IsEmpty()) {
+        srcRect = srcRect.Intersect(pat.mSamplingRect);
+      }
+      
+      
+      Rect patRect = aRect - pat.mMatrix.GetTranslation();
+      patRect.Scale(1.0f / pat.mMatrix._11, 1.0f / pat.mMatrix._22);
+      
+      if (!patRect.IsEmpty() && srcRect.Contains(RoundedOut(patRect))) {
+        
+        
+        DrawSurface(pat.mSurface, aRect, patRect,
+                    DrawSurfaceOptions(pat.mSamplingFilter),
+                    aOptions);
+        return;
+      }
+    }
+  }
+
   MarkChanged();
   SkRect rect = RectToSkRect(aRect);
   AutoPaintSetup paint(mCanvas.get(), aOptions, aPattern, &aRect);
