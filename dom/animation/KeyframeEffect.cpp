@@ -574,11 +574,97 @@ KeyframeEffectReadOnly::ConvertKeyframeEffectOptions(
 
 
 
+struct KeyframeValue
+{
+  nsCSSProperty mProperty;
+  StyleAnimationValue mValue;
+};
 
-struct KeyframeValueEntry
+
+
+
+enum class ValuePosition
+{
+  First,  
+  Left,   
+  Right,  
+  Last    
+};
+
+
+
+
+
+struct OrderedKeyframeValueEntry : KeyframeValue
 {
   float mOffset;
-  nsCSSProperty mProperty;
+  const ComputedTimingFunction* mTimingFunction;
+  ValuePosition mPosition;
+
+  bool SameKeyframe(const OrderedKeyframeValueEntry& aOther) const
+  {
+    return mOffset == aOther.mOffset &&
+           !!mTimingFunction == !!aOther.mTimingFunction &&
+           (!mTimingFunction || *mTimingFunction == *aOther.mTimingFunction) &&
+           mPosition == aOther.mPosition;
+  }
+
+  struct ForKeyframeGenerationComparator
+  {
+    static bool Equals(const OrderedKeyframeValueEntry& aLhs,
+                       const OrderedKeyframeValueEntry& aRhs)
+    {
+      return aLhs.SameKeyframe(aRhs) &&
+             aLhs.mProperty == aRhs.mProperty;
+    }
+    static bool LessThan(const OrderedKeyframeValueEntry& aLhs,
+                         const OrderedKeyframeValueEntry& aRhs)
+    {
+      
+      if (aLhs.mOffset != aRhs.mOffset) {
+        return aLhs.mOffset < aRhs.mOffset;
+      }
+
+      
+      if (aLhs.mPosition != aRhs.mPosition) {
+        return aLhs.mPosition < aRhs.mPosition;
+      }
+
+      
+      if (aLhs.mTimingFunction) {
+        if (aRhs.mTimingFunction) {
+          int32_t order = aLhs.mTimingFunction->Compare(*aRhs.mTimingFunction);
+          if (order != 0) {
+            return order < 0;
+          }
+        } else {
+          return true;
+        }
+      } else {
+        if (aRhs.mTimingFunction) {
+          return false;
+        }
+      }
+
+      
+      return nsCSSProps::PropertyIDLNameSortPosition(aLhs.mProperty) <
+             nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
+    }
+  };
+};
+
+
+
+
+
+
+
+
+
+struct KeyframeValueEntry : KeyframeValue
+{
+  float mOffset;
+  ComputedTimingFunction mTimingFunction;
 
   struct PropertyOffsetComparator
   {
@@ -602,68 +688,6 @@ struct KeyframeValueEntry
       return aLhs.mOffset < aRhs.mOffset;
     }
   };
-
-protected:
-  KeyframeValueEntry() = default;
-};
-
-
-
-
-
-
-
-
-
-struct KeyframeStringValueEntry : KeyframeValueEntry
-{
-  nsString mValue;
-  const ComputedTimingFunction* mTimingFunction;
-
-  struct OffsetEasingPropertyComparator
-  {
-    bool Equals(const KeyframeStringValueEntry& aLhs,
-                const KeyframeStringValueEntry& aRhs) const
-    {
-      return aLhs.mOffset == aRhs.mOffset &&
-             aLhs.mProperty == aRhs.mProperty &&
-             *aLhs.mTimingFunction == *aRhs.mTimingFunction;
-    }
-    bool LessThan(const KeyframeStringValueEntry& aLhs,
-                  const KeyframeStringValueEntry& aRhs) const
-    {
-      
-      if (aLhs.mOffset != aRhs.mOffset) {
-        return aLhs.mOffset < aRhs.mOffset;
-      }
-
-      
-      int32_t order = aLhs.mTimingFunction->Compare(*aRhs.mTimingFunction);
-      if (order != 0) {
-        return order < 0;
-      }
-
-      
-      return nsCSSProps::PropertyIDLNameSortPosition(aLhs.mProperty) <
-             nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
-    }
-  };
-};
-
-
-
-
-
-
-
-
-
-
-
-struct KeyframeStyleAnimationValueEntry : KeyframeValueEntry
-{
-  StyleAnimationValue mValue;
-  ComputedTimingFunction mTimingFunction;
 };
 
 
@@ -1094,11 +1118,10 @@ ApplyDistributeSpacing(nsTArray<OffsetIndexedKeyframe>& aKeyframes)
 
 
 
-
 static void
 GenerateValueEntries(Element* aTarget,
                      nsTArray<OffsetIndexedKeyframe>& aKeyframes,
-                     nsTArray<KeyframeStyleAnimationValueEntry>& aResult,
+                     nsTArray<KeyframeValueEntry>& aResult,
                      ErrorResult& aRv)
 {
   nsCSSPropertySet properties;              
@@ -1140,7 +1163,6 @@ GenerateValueEntries(Element* aTarget,
                  "DOMString values from the property-values pairs");
       
       
-      
       nsTArray<PropertyStyleAnimationValuePair> values;
       if (StyleAnimationValue::ComputeValues(pair.mProperty,
                                              nsCSSProps::eEnabledForAllContent,
@@ -1155,7 +1177,7 @@ GenerateValueEntries(Element* aTarget,
             continue;
           }
 
-          KeyframeStyleAnimationValueEntry* entry = aResult.AppendElement();
+          KeyframeValueEntry* entry = aResult.AppendElement();
           entry->mOffset = offset;
           entry->mProperty = value.mProperty;
           entry->mValue = value.mValue;
@@ -1188,15 +1210,13 @@ GenerateValueEntries(Element* aTarget,
 
 
 static void
-BuildSegmentsFromValueEntries(
-    nsTArray<KeyframeStyleAnimationValueEntry>& aEntries,
-    nsTArray<AnimationProperty>& aResult)
+BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
+                              nsTArray<AnimationProperty>& aResult)
 {
   if (aEntries.IsEmpty()) {
     return;
   }
 
-  
   
   
   std::stable_sort(aEntries.begin(), aEntries.end(),
@@ -1331,7 +1351,7 @@ BuildAnimationPropertyListFromKeyframeSequence(
 
   
   
-  nsTArray<KeyframeStyleAnimationValueEntry> entries;
+  nsTArray<KeyframeValueEntry> entries;
   GenerateValueEntries(aTarget, keyframes, entries, aRv);
   if (aRv.Failed()) {
     return;
@@ -1607,71 +1627,93 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
                                   nsTArray<JSObject*>& aResult,
                                   ErrorResult& aRv)
 {
-  
-  
-  
-  
-  
-  nsAutoTArray<KeyframeStringValueEntry,4> entries;
+  nsTArray<OrderedKeyframeValueEntry> entries;
+
   for (const AnimationProperty& property : mProperties) {
-    if (property.mSegments.IsEmpty()) {
-      continue;
-    }
     for (size_t i = 0, n = property.mSegments.Length(); i < n; i++) {
       const AnimationPropertySegment& segment = property.mSegments[i];
-      KeyframeStringValueEntry* entry = entries.AppendElement();
-      entry->mOffset = segment.mFromKey;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      OrderedKeyframeValueEntry* entry = entries.AppendElement();
       entry->mProperty = property.mProperty;
+      entry->mValue = segment.mFromValue;
+      entry->mOffset = segment.mFromKey;
       entry->mTimingFunction = &segment.mTimingFunction;
-      StyleAnimationValue::UncomputeValue(property.mProperty,
-                                          segment.mFromValue,
-                                          entry->mValue);
+      entry->mPosition =
+        segment.mFromKey == segment.mToKey && segment.mFromKey == 0.0f ?
+          ValuePosition::First :
+          ValuePosition::Right;
+
+      if (i == n - 1 ||
+          segment.mToValue != property.mSegments[i + 1].mFromValue) {
+        entry = entries.AppendElement();
+        entry->mProperty = property.mProperty;
+        entry->mValue = segment.mToValue;
+        entry->mOffset = segment.mToKey;
+        entry->mTimingFunction = &segment.mTimingFunction;
+        entry->mPosition =
+          segment.mFromKey == segment.mToKey && segment.mToKey == 1.0f ?
+            ValuePosition::Last :
+            ValuePosition::Left;
+      }
     }
-    const AnimationPropertySegment& segment = property.mSegments.LastElement();
-    KeyframeStringValueEntry* entry = entries.AppendElement();
-    entry->mOffset = segment.mToKey;
-    entry->mProperty = property.mProperty;
-    
-    
-    
-    entry->mTimingFunction = &segment.mTimingFunction;
-    StyleAnimationValue::UncomputeValue(property.mProperty,
-                                        segment.mToValue,
-                                        entry->mValue);
   }
-  entries.Sort(KeyframeStringValueEntry::OffsetEasingPropertyComparator());
+
+  entries.Sort(OrderedKeyframeValueEntry::ForKeyframeGenerationComparator());
 
   for (size_t i = 0, n = entries.Length(); i < n; ) {
+    OrderedKeyframeValueEntry* entry = &entries[i];
+    OrderedKeyframeValueEntry* previousEntry = nullptr;
+
     
     ComputedKeyframe keyframeDict;
-    keyframeDict.mOffset.SetValue(entries[i].mOffset);
-    keyframeDict.mComputedOffset.Construct(entries[i].mOffset);
-    keyframeDict.mEasing.Truncate();
-    entries[i].mTimingFunction->AppendToString(keyframeDict.mEasing);
+    keyframeDict.mOffset.SetValue(entry->mOffset);
+    keyframeDict.mComputedOffset.Construct(entry->mOffset);
+    if (entry->mTimingFunction) {
+      
+      keyframeDict.mEasing.Truncate();
+      entry->mTimingFunction->AppendToString(keyframeDict.mEasing);
+    }
     keyframeDict.mComposite.SetValue(CompositeOperation::Replace);
 
-    JS::Rooted<JS::Value> keyframeValue(aCx);
-    if (!ToJSValue(aCx, keyframeDict, &keyframeValue)) {
+    JS::Rooted<JS::Value> keyframeJSValue(aCx);
+    if (!ToJSValue(aCx, keyframeDict, &keyframeJSValue)) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
-    JS::Rooted<JSObject*> keyframe(aCx, &keyframeValue.toObject());
-
-    
+    JS::Rooted<JSObject*> keyframe(aCx, &keyframeJSValue.toObject());
     do {
-      const KeyframeStringValueEntry& entry = entries[i];
-      const char* name = nsCSSProps::PropertyIDLName(entry.mProperty);
+      const char* name = nsCSSProps::PropertyIDLName(entry->mProperty);
+      nsString stringValue;
+      StyleAnimationValue::UncomputeValue(entry->mProperty,
+                                          entry->mValue,
+                                          stringValue);
       JS::Rooted<JS::Value> value(aCx);
-      if (!ToJSValue(aCx, entry.mValue, &value) ||
+      if (!ToJSValue(aCx, stringValue, &value) ||
           !JS_DefineProperty(aCx, keyframe, name, value, JSPROP_ENUMERATE)) {
         aRv.Throw(NS_ERROR_FAILURE);
         return;
       }
-      ++i;
-    } while (i < n &&
-             entries[i].mOffset == entries[i - 1].mOffset &&
-             *entries[i].mTimingFunction == *entries[i - 1].mTimingFunction);
+      if (++i == n) {
+        break;
+      }
+      previousEntry = entry;
+      entry = &entries[i];
+    } while (entry->SameKeyframe(*previousEntry));
 
     aResult.AppendElement(keyframe);
   }
