@@ -447,7 +447,6 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     if (obj->compartment() == this)
         return true;
 
-
     
     RootedValue key(cx, ObjectValue(*obj));
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
@@ -468,15 +467,27 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
         }
     }
 
-    obj.set(cb->wrap(cx, existing, obj));
-    if (!obj)
+    RootedObject wrapper(cx, cb->wrap(cx, existing, obj));
+    if (!wrapper)
         return false;
 
     
     
-    MOZ_ASSERT(Wrapper::wrappedObject(obj) == &key.get().toObject());
+    MOZ_ASSERT(Wrapper::wrappedObject(wrapper) == &key.get().toObject());
 
-    return putWrapper(cx, CrossCompartmentKey(key), ObjectValue(*obj));
+    if (!putWrapper(cx, CrossCompartmentKey(key), ObjectValue(*wrapper))) {
+        
+        
+        
+        
+        
+        if (wrapper->is<CrossCompartmentWrapperObject>())
+            NukeCrossCompartmentWrapper(cx, wrapper);
+        return false;
+    }
+
+    obj.set(wrapper);
+    return true;
 }
 
 bool
