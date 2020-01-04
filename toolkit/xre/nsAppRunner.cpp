@@ -4661,6 +4661,7 @@ enum {
   kE10sDisabledForBidi = 6,
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
+  kE10sDisabledForXPAcceleration = 9,
 };
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
@@ -4730,6 +4731,20 @@ MultiprocessBlockPolicy() {
     } else {
       disabledForA11y = true;
     }
+  }
+#endif 
+
+#if defined(XP_WIN)
+  
+
+
+
+  bool layersAccelerationRequested = !Preferences::GetBool("layers.acceleration.disabled") ||
+                                      Preferences::GetBool("layers.acceleration.force-enabled");
+
+  if (layersAccelerationRequested && !IsVistaOrLater()) {
+    gMultiprocessBlockPolicy = kE10sDisabledForXPAcceleration;
+    return gMultiprocessBlockPolicy;
   }
 #endif 
 
