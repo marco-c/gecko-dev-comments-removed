@@ -1085,6 +1085,7 @@ struct ssl3StateStr {
     PRUint16 dtlsSRTPCipherSuite; 
     PRBool fatalAlertSent;
     PRBool dheWeakGroupEnabled; 
+    const namedGroupDef *dhePreferredGroup;
 
     
 
