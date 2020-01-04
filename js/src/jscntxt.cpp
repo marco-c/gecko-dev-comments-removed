@@ -303,21 +303,7 @@ js::ReportAllocationOverflow(ExclusiveContext* cxArg)
 static bool
 checkReportFlags(JSContext* cx, unsigned* flags)
 {
-    if (JSREPORT_IS_STRICT_MODE_ERROR(*flags)) {
-        
-
-
-
-
-        jsbytecode* pc;
-        JSScript* script = cx->currentScript(&pc);
-        if (script && IsCheckStrictOp(JSOp(*pc)))
-            *flags &= ~JSREPORT_WARNING;
-        else if (cx->compartment()->behaviors().extraWarnings(cx))
-            *flags |= JSREPORT_WARNING;
-        else
-            return true;
-    } else if (JSREPORT_IS_STRICT(*flags)) {
+    if (JSREPORT_IS_STRICT(*flags)) {
         
         if (!cx->compartment()->behaviors().extraWarnings(cx))
             return true;
