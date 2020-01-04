@@ -621,7 +621,7 @@ ThreadActor.prototype = {
     this._debuggerSourcesSeen = new Set();
 
     update(this._options, aRequest.options || {});
-    this.sources.reconfigure(this._options);
+    this.sources.setOptions(this._options);
     this.sources.on('newSource', (name, source) => {
       this.onNewSource(source);
     });
@@ -678,10 +678,16 @@ ThreadActor.prototype = {
     if (this.state == "exited") {
       return { error: "wrongState" };
     }
+    const options = aRequest.options || {};
 
-    update(this._options, aRequest.options || {});
+    if ('observeAsmJS' in options) {
+      this.dbg.allowUnobservedAsmJS = !options.observeAsmJS;
+    }
+
+    update(this._options, options);
+
     
-    this.sources.reconfigure(this._options);
+    this.sources.setOptions(options);
 
     return {};
   },
@@ -1922,20 +1928,25 @@ ThreadActor.prototype = {
     let sourceActor = this.sources.createNonSourceMappedActor(aSource);
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    this.unsafeSynchronize(this.sources.createSourceActors(aSource));
-
-    
+    let bpActors = this.breakpointActorMap.findActors();
     let promises = [];
 
-    for (let _actor of this.breakpointActorMap.findActors()) {
+    
+    
+    
+    let sourceActorsCreated = this.sources.createSourceActors(aSource);
+
+    if (bpActors.length) {
+      
+      
+      
+      
+      
+      
+      this.unsafeSynchronize(sourceActorsCreated);
+    }
+
+    for (let _actor of bpActors) {
       
       
       let actor = _actor;

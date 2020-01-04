@@ -57,16 +57,22 @@ TabSources.prototype = {
   
 
 
-  reconfigure: function(options) {
+  setOptions: function(options) {
+    let shouldReset = false;
+
     if ('useSourceMaps' in options) {
+      shouldReset = true;
       this._useSourceMaps = options.useSourceMaps;
     }
 
     if ('autoBlackBox' in options) {
+      shouldReset = true;
       this._autoBlackBox = options.autoBlackBox;
     }
 
-    this.reset();
+    if (shouldReset) {
+      this.reset();
+    }
   },
 
   
@@ -391,6 +397,7 @@ TabSources.prototype = {
     }
     let result = this._fetchSourceMap(sourceMapURL, aSource.url);
 
+    
     
     
     this._sourceMaps.set(aSource, result);

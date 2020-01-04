@@ -117,9 +117,6 @@ exports.TargetFactory = {
 function TabTarget(tab) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
-  this._handleThreadState = this._handleThreadState.bind(this);
-  this.on("thread-resumed", this._handleThreadState);
-  this.on("thread-paused", this._handleThreadState);
   this.activeTab = this.activeConsole = null;
   
   
@@ -362,10 +359,6 @@ TabTarget.prototype = {
     return !this.window;
   },
 
-  get isThreadPaused() {
-    return !!this._isThreadPaused;
-  },
-
   
 
 
@@ -536,20 +529,6 @@ TabTarget.prototype = {
   
 
 
-  _handleThreadState: function(event) {
-    switch (event) {
-      case "thread-resumed":
-        this._isThreadPaused = false;
-        break;
-      case "thread-paused":
-        this._isThreadPaused = true;
-        break;
-    }
-  },
-
-  
-
-
   destroy: function() {
     
     
@@ -561,11 +540,6 @@ TabTarget.prototype = {
 
     
     this.emit("close");
-
-    
-    
-    this.off("thread-resumed", this._handleThreadState);
-    this.off("thread-paused", this._handleThreadState);
 
     if (this._tab) {
       this._teardownListeners();
@@ -612,6 +586,7 @@ TabTarget.prototype = {
     } else {
       promiseTargets.delete(this._form);
     }
+
     this.activeTab = null;
     this.activeConsole = null;
     this._client = null;
@@ -718,8 +693,6 @@ function WorkerTarget(workerClient) {
 
 
 WorkerTarget.prototype = {
-  destroy: function () {},
-
   get isRemote() {
     return true;
   },

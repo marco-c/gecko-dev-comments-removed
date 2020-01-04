@@ -224,7 +224,7 @@ var DebuggerController = {
       return;
     }
 
-    DebuggerView.initialize();
+    yield DebuggerView.initialize();
     this._startup = true;
   }),
 
@@ -259,26 +259,23 @@ var DebuggerController = {
 
 
   connect: Task.async(function*() {
-    if (this._connected) {
-      return;
-    }
-
     let target = this._target;
-    let { client, form: { chromeDebugger, actor } } = target;
+
+    let { client } = target;
     target.on("close", this._onTabDetached);
     target.on("navigate", this._onNavigate);
     target.on("will-navigate", this._onWillNavigate);
     this.client = client;
+    this.activeThread = this._toolbox.threadClient;
 
-    if (target.isAddon) {
-      yield this._startAddonDebugging(actor);
-    } else if (!target.isTabActor) {
-      
-      
-      yield this._startChromeDebugging(chromeDebugger);
-    } else {
-      yield this._startDebuggingTab();
-    }
+    
+    
+    yield this.reconfigureThread({ observeAsmJS: true });
+    yield this.connectThread();
+
+    
+    
+    this.ThreadState._update();
 
     this._hideUnsupportedFeatures();
   }),
@@ -307,7 +304,20 @@ var DebuggerController = {
     
     
     
-    this.dispatch(actions.loadSources());
+    this.dispatch(actions.loadSources()).then(() => {
+      
+      
+      if (this.activeThread) {
+        const pausedPacket = this.activeThread.getLastPausePacket();
+        DebuggerView.Toolbar.toggleResumeButtonState(
+          this.activeThread.state,
+          !!pausedPacket
+        );
+        if (pausedPacket) {
+          this.StackFrames._onPaused("paused", pausedPacket);
+        }
+      }
+    });
   },
 
   
@@ -383,113 +393,33 @@ var DebuggerController = {
 
 
 
+  reconfigureThread: function(opts) {
+    const deferred = promise.defer();
+    this.activeThread.reconfigure(
+      opts,
+      aResponse => {
+        if (aResponse.error) {
+          deferred.reject(aResponse.error);
+          return;
+        }
 
+        if (('useSourceMaps' in opts) || ('autoBlackBox' in opts)) {
+          
+          DebuggerView.handleTabNavigation();
+          this.dispatch(actions.unload());
+          this.dispatch(actions.loadSources());
 
-  _startDebuggingTab: function() {
-    let deferred = promise.defer();
-    let threadOptions = {
-      useSourceMaps: Prefs.sourceMapsEnabled,
-      autoBlackBox: Prefs.autoBlackBox
-    };
+          
+          if (this.activeThread.paused) {
+            this.activeThread._clearFrames();
+            this.activeThread.fillFrames(CALL_STACK_PAGE_SIZE);
+          }
+        }
 
-    this._target.activeTab.attachThread(threadOptions, (aResponse, aThreadClient) => {
-      if (!aThreadClient) {
-        deferred.reject(new Error("Couldn't attach to thread: " + aResponse.error));
-        return;
+        deferred.resolve();
       }
-      this.activeThread = aThreadClient;
-      this.connectThread();
-
-      if (aThreadClient.paused) {
-        aThreadClient.resume(res => {
-          this._ensureResumptionOrder(res)
-        });
-      }
-
-      deferred.resolve();
-    });
-
+    );
     return deferred.promise;
-  },
-
-  
-
-
-
-
-
-
-
-  _startAddonDebugging: function(aAddonActor) {
-    let deferred = promise.defer();
-
-    this.client.attachAddon(aAddonActor, aResponse => {
-      this._startChromeDebugging(aResponse.threadActor).then(deferred.resolve);
-    });
-
-    return deferred.promise;
-  },
-
-  
-
-
-
-
-
-
-
-  _startChromeDebugging: function(aChromeDebugger) {
-    let deferred = promise.defer();
-    let threadOptions = {
-      useSourceMaps: Prefs.sourceMapsEnabled,
-      autoBlackBox: Prefs.autoBlackBox
-    };
-
-    this.client.attachThread(aChromeDebugger, (aResponse, aThreadClient) => {
-      if (!aThreadClient) {
-        deferred.reject(new Error("Couldn't attach to thread: " + aResponse.error));
-        return;
-      }
-      this.activeThread = aThreadClient;
-      this.connectThread();
-
-      if (aThreadClient.paused) {
-        aThreadClient.resume(this._ensureResumptionOrder);
-      }
-
-      deferred.resolve();
-    }, threadOptions);
-
-    return deferred.promise;
-  },
-
-  
-
-
-
-  reconfigureThread: function({ useSourceMaps, autoBlackBox }) {
-    this.activeThread.reconfigure({
-      useSourceMaps: useSourceMaps,
-      autoBlackBox: autoBlackBox
-    }, aResponse => {
-      if (aResponse.error) {
-        let msg = "Couldn't reconfigure thread: " + aResponse.message;
-        Cu.reportError(msg);
-        dumpn(msg);
-        return;
-      }
-
-      
-      DebuggerView.handleTabNavigation();
-      this.dispatch(actions.unload());
-      this.dispatch(actions.loadSources());
-
-      
-      if (this.activeThread.paused) {
-        this.activeThread._clearFrames();
-        this.activeThread.fillFrames(CALL_STACK_PAGE_SIZE);
-      }
-    });
   },
 
   waitForSourcesLoaded: function() {
@@ -606,8 +536,6 @@ ThreadState.prototype = {
     dumpn("ThreadState is connecting...");
     this.activeThread.addListener("paused", this._update);
     this.activeThread.addListener("resumed", this._update);
-    this.activeThread.pauseOnExceptions(Prefs.pauseOnExceptions,
-                                        Prefs.ignoreCaughtExceptions);
   },
 
   
@@ -637,13 +565,12 @@ ThreadState.prototype = {
 
 
   _update: function(aEvent, aPacket) {
-    
-    
-    
     if (aEvent == "paused") {
       if (aPacket.why.type == "interrupted" &&
-          !this.interruptedByResumeButton) {
-        return;
+          this.interruptedByResumeButton) {
+        
+        
+        gTarget.emit("thread-paused", aPacket);
       } else if (aPacket.why.type == "breakpointConditionThrown" && aPacket.why.message) {
         let where = aPacket.frame.where;
         let aLocation = {
@@ -663,10 +590,6 @@ ThreadState.prototype = {
       this.activeThread.state,
       aPacket ? aPacket.frame : false
     );
-
-    if (gTarget && (aEvent == "paused" || aEvent == "resumed")) {
-      gTarget.emit("thread-" + aEvent);
-    }
   }
 };
 

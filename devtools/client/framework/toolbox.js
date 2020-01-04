@@ -20,6 +20,7 @@ var EventEmitter = require("devtools/shared/event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
 var HUDService = require("devtools/client/webconsole/hudservice");
 var viewSource = require("devtools/client/shared/view-source");
+var { attachThread, detachThread } = require("./attach-thread");
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://devtools/client/framework/gDevTools.jsm");
@@ -251,6 +252,10 @@ Toolbox.prototype = {
     return this._target;
   },
 
+  get threadClient() {
+    return this._threadClient;
+  },
+
   
 
 
@@ -348,12 +353,18 @@ Toolbox.prototype = {
       let iframe = yield this._host.create();
       let domReady = promise.defer();
 
-      
-      yield this._target.makeRemote();
       iframe.setAttribute("src", this._URL);
       iframe.setAttribute("aria-label", toolboxStrings("toolbox.label"));
       let domHelper = new DOMHelpers(iframe.contentWindow);
       domHelper.onceDOMReady(() => domReady.resolve());
+      
+      
+
+      
+      yield this._target.makeRemote();
+
+      
+      this._threadClient = yield attachThread(this);
 
       yield domReady.promise;
 
@@ -1951,6 +1962,10 @@ Toolbox.prototype = {
 
     
     outstanding.push(this.destroyPerformance());
+
+    
+    detachThread(this._threadClient);
+    this._threadClient = null;
 
     
     let win = this.frame.ownerGlobal;
