@@ -33,9 +33,6 @@ using mozilla::PodArrayZero;
 using mozilla::PodZero;
 
 
-static const int64_t SLICE_MIN_REPORT_TIME = 10 * PRMJ_USEC_PER_MSEC;
-
-
 
 
 
