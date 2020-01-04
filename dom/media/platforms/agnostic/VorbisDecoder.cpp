@@ -9,6 +9,7 @@
 #include "XiphExtradata.h"
 
 #include "mozilla/PodOperations.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsAutoPtr.h"
 
 #undef LOG
@@ -39,6 +40,7 @@ VorbisDataDecoder::VorbisDataDecoder(const AudioInfo& aConfig,
   , mCallback(aCallback)
   , mPacketCount(0)
   , mFrames(0)
+  , mIsFlushing(false)
 {
   
   
@@ -138,6 +140,9 @@ VorbisDataDecoder::Input(MediaRawData* aSample)
 void
 VorbisDataDecoder::ProcessDecode(MediaRawData* aSample)
 {
+  if (mIsFlushing) {
+    return;
+  }
   if (DoDecode(aSample) == -1) {
     mCallback->Error();
   } else if (mTaskQueue->IsEmpty()) {
@@ -269,12 +274,16 @@ VorbisDataDecoder::Drain()
 nsresult
 VorbisDataDecoder::Flush()
 {
-  mTaskQueue->Flush();
-  
-  
-  
-  vorbis_synthesis_restart(&mVorbisDsp);
-  mLastFrameTime.reset();
+  mIsFlushing = true;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([this] () {
+    
+    
+    
+    vorbis_synthesis_restart(&mVorbisDsp);
+    mLastFrameTime.reset();
+  });
+  SyncRunnable::DispatchToThread(mTaskQueue, r);
+  mIsFlushing = false;
   return NS_OK;
 }
 
