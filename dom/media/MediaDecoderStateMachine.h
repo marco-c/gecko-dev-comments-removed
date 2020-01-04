@@ -524,6 +524,10 @@ protected:
 
   
   
+  void MaybeStartBuffering();
+
+  
+  
   void StartDecoding();
 
   
