@@ -55,7 +55,7 @@ protected:
 public:
   media::TimeIntervals GetBuffered() override;
 
-  virtual bool ForceZeroStartTime() const override;
+  bool ForceZeroStartTime() const override;
 
   
   void ReleaseMediaResources() override;

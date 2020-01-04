@@ -33,15 +33,15 @@ public:
     NS_DECL_NSIOBSERVER
 
     
-    virtual void LoadChanged(float aSystemLoad, float aProcessLoad) override;
+    void LoadChanged(float aSystemLoad, float aProcessLoad) override;
     
     
-    virtual void OveruseDetected() override;
+    void OveruseDetected() override;
     
-    virtual void NormalUsage() override;
+    void NormalUsage() override;
     
-    virtual void AddObserver(webrtc::CPULoadStateObserver * aObserver) override;
-    virtual void RemoveObserver(webrtc::CPULoadStateObserver * aObserver) override;
+    void AddObserver(webrtc::CPULoadStateObserver * aObserver) override;
+    void RemoveObserver(webrtc::CPULoadStateObserver * aObserver) override;
 
 private:
     LoadManagerSingleton(int aLoadMeasurementInterval,

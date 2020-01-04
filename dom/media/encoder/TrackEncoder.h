@@ -146,10 +146,10 @@ public:
     , mAudioBitrate(0)
   {}
 
-  virtual void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                        StreamTime aTrackOffset,
-                                        uint32_t aTrackEvents,
-                                        const MediaSegment& aQueuedMedia) override;
+  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
+                                StreamTime aTrackOffset,
+                                uint32_t aTrackEvents,
+                                const MediaSegment& aQueuedMedia) override;
 
   template<typename T>
   static
@@ -194,7 +194,7 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  virtual void SetBitrate(const uint32_t aBitrate) override
+  void SetBitrate(const uint32_t aBitrate) override
   {
     mAudioBitrate = aBitrate;
   }
@@ -227,7 +227,7 @@ protected:
 
 
 
-  virtual void NotifyEndOfStream() override;
+  void NotifyEndOfStream() override;
 
   
 
@@ -268,16 +268,16 @@ public:
 
 
 
-  virtual void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                        StreamTime aTrackOffset,
-                                        uint32_t aTrackEvents,
-                                        const MediaSegment& aQueuedMedia) override;
+  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
+                                StreamTime aTrackOffset,
+                                uint32_t aTrackEvents,
+                                const MediaSegment& aQueuedMedia) override;
   
 
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  virtual void SetBitrate(const uint32_t aBitrate) override
+  void SetBitrate(const uint32_t aBitrate) override
   {
     mVideoBitrate = aBitrate;
   }
@@ -303,7 +303,7 @@ protected:
 
 
 
-  virtual void NotifyEndOfStream() override;
+  void NotifyEndOfStream() override;
 
   
 

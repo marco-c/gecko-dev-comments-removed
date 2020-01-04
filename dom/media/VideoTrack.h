@@ -22,9 +22,9 @@ public:
              const nsAString& aLabel,
              const nsAString& aLanguage);
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  virtual VideoTrack* AsVideoTrack() override
+  VideoTrack* AsVideoTrack() override
   {
     return this;
   }
@@ -34,7 +34,7 @@ public:
   
   
   
-  virtual void SetEnabledInternal(bool aEnabled, int aFlags) override;
+  void SetEnabledInternal(bool aEnabled, int aFlags) override;
 
   
   bool Selected() const

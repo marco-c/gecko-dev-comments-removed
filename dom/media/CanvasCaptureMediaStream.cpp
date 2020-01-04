@@ -44,7 +44,7 @@ public:
     mImage = aImage;
   }
 
-  virtual void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) override
+  void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) override
   {
     
     StreamTime delta = aDesiredTime - mSourceStream->GetEndOfAppendedData(mTrackId);
