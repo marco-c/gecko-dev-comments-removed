@@ -207,7 +207,7 @@ var ClientIDImpl = {
 
 
 
-  updateClientID: function (id){
+  updateClientID: function (id) {
     if (!isValidClientID(id)) {
       this._log.error("updateClientID - invalid client ID", id);
       return false;

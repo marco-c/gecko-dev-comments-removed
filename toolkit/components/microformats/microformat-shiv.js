@@ -43,7 +43,7 @@ var Microformats;
 
     modules.Parser.prototype = {
 
-        init: function(){
+        init: function() {
             this.rootNode = null;
             this.document = null;
             this.options = {
@@ -78,16 +78,16 @@ var Microformats;
             this.getDOMContext( options );
 
             
-            if(!this.rootNode || !this.document){
+            if(!this.rootNode || !this.document) {
                 this.errors.push(this.noContentErr);
             }else{
 
                 
                 
-                if(this.hasMicroformats(this.rootNode, options)){
+                if(this.hasMicroformats(this.rootNode, options)) {
                     this.prepareDOM( options );
 
-                    if(this.options.filters.length > 0){
+                    if(this.options.filters.length > 0) {
                         
                         var newRootNode = this.findFilterNodes(this.rootNode, this.options.filters);
                         data = this.walkRoot(newRootNode);
@@ -98,13 +98,13 @@ var Microformats;
 
                     out.items = data;
                     
-                    if(modules.domUtils.canCloneDocument(this.document) === false){
+                    if(modules.domUtils.canCloneDocument(this.document) === false) {
                         this.clearUpDom(this.rootNode);
                     }
                 }
 
                 
-                if(this.findRels){
+                if(this.findRels) {
                     rels = this.findRels(this.rootNode);
                     out.rels = rels.rels;
                     out['rel-urls'] = rels['rel-urls'];
@@ -112,7 +112,7 @@ var Microformats;
 
             }
 
-            if(this.errors.length > 0){
+            if(this.errors.length > 0) {
                 return this.formatError();
             }
             return out;
@@ -130,7 +130,7 @@ var Microformats;
             this.init();
             options = (options)? options : {};
 
-            if(node){
+            if(node) {
                 return this.getParentTreeWalk(node, options);
             }
             this.errors.push(this.noContentErr);
@@ -156,7 +156,7 @@ var Microformats;
             this.getDOMContext( options );
 
             
-            if(!this.rootNode || !this.document){
+            if(!this.rootNode || !this.document) {
                 return {'errors': [this.noContentErr]};
             }
             items = this.findRootNodes( this.rootNode, true );
@@ -166,7 +166,7 @@ var Microformats;
                 x = classItems.length;
                 while(x--) {
                     
-                    if(modules.utils.startWith( classItems[x], 'h-' )){
+                    if(modules.utils.startWith( classItems[x], 'h-' )) {
                         this.appendCount(classItems[x], 1, out);
                     }
                     
@@ -179,7 +179,7 @@ var Microformats;
                 }
             }
             var relCount = this.countRels( this.rootNode );
-            if(relCount > 0){
+            if(relCount > 0) {
                 out.rels = relCount;
             }
 
@@ -198,7 +198,7 @@ var Microformats;
             var classes,
                 i;
 
-            if(!node){
+            if(!node) {
                 return false;
             }
 
@@ -207,10 +207,10 @@ var Microformats;
 
             
             classes = this.getUfClassNames(node);
-            if(options && options.filters && modules.utils.isArray(options.filters)){
+            if(options && options.filters && modules.utils.isArray(options.filters)) {
                 i = options.filters.length;
                 while(i--) {
-                    if(classes.root.indexOf(options.filters[i]) > -1){
+                    if(classes.root.indexOf(options.filters[i]) > -1) {
                         return true;
                     }
                 }
@@ -231,7 +231,7 @@ var Microformats;
             var items,
                 i;
 
-            if(!node){
+            if(!node) {
                 return false;
             }
 
@@ -240,10 +240,10 @@ var Microformats;
 
             
             items = this.findRootNodes( node, true );
-            if(options && options.filters && modules.utils.isArray(options.filters)){
+            if(options && options.filters && modules.utils.isArray(options.filters)) {
                 i = items.length;
                 while(i--) {
-                    if( this.isMicroformat( items[i], options ) ){
+                    if( this.isMicroformat( items[i], options ) ) {
                         return true;
                     }
                 }
@@ -258,9 +258,9 @@ var Microformats;
 
 
 
-        add: function( maps ){
-            maps.forEach(function(map){
-                if(map && map.root && map.name && map.properties){
+        add: function( maps ) {
+            maps.forEach(function(map) {
+                if(map && map.root && map.name && map.properties) {
                 modules.maps[map.name] = JSON.parse(JSON.stringify(map));
                 }
             });
@@ -280,7 +280,7 @@ var Microformats;
 
             
             if (recursive === undefined) {
-                if (node.parentNode && node.nodeName !== 'HTML'){
+                if (node.parentNode && node.nodeName !== 'HTML') {
                     return this.getParentTreeWalk(node.parentNode, options, true);
                 }
                 return this.formatEmpty();
@@ -303,7 +303,7 @@ var Microformats;
 
 
 
-        getDOMContext: function( options ){
+        getDOMContext: function( options ) {
             var nodes = modules.domUtils.getDOMContext( options );
             this.rootNode = nodes.rootNode;
             this.document = nodes.document;
@@ -316,7 +316,7 @@ var Microformats;
 
 
 
-        prepareDOM: function( options ){
+        prepareDOM: function( options ) {
             var baseTag,
                 href;
 
@@ -334,7 +334,7 @@ var Microformats;
             baseTag = modules.domUtils.querySelector(this.document,'base');
             if(baseTag) {
                 href = modules.domUtils.getAttribute(baseTag, 'href');
-                if(href){
+                if(href) {
                     this.options.baseUrl = href;
                 }
             }
@@ -351,13 +351,13 @@ var Microformats;
             newRootNode = modules.domUtils.getNodeByPath(newDocument, path);
 
             
-            if(newDocument && newRootNode){
+            if(newDocument && newRootNode) {
                 this.document = newDocument;
                 this.rootNode = newRootNode;
             }
 
             
-            if(this.addIncludes){
+            if(this.addIncludes) {
                 this.addIncludes( this.document );
             }
 
@@ -370,7 +370,7 @@ var Microformats;
 
 
 
-        formatError: function(){
+        formatError: function() {
             var out = this.formatEmpty();
             out.errors = this.errors;
             return out;
@@ -382,7 +382,7 @@ var Microformats;
 
 
 
-        formatEmpty: function(){
+        formatEmpty: function() {
             return {
                 'items': [],
                 'rels': {},
@@ -393,7 +393,7 @@ var Microformats;
 
         
         findFilterNodes: function(rootNode, filters) {
-            if(modules.utils.isString(filters)){
+            if(modules.utils.isString(filters)) {
                 filters = [filters];
             }
             var newRootNode = modules.domUtils.createNode('div'),
@@ -405,19 +405,19 @@ var Microformats;
             
             y = filters.length;
             while (y--) {
-                if(this.getMapping(filters[y])){
+                if(this.getMapping(filters[y])) {
                     var v1Name = this.getMapping(filters[y]).root;
                     filters.push(v1Name);
                 }
             }
 
-            if(items){
+            if(items) {
                 i = items.length;
                 while(x < i) {
                     
                     y = filters.length;
                     while (y--) {
-                        if(modules.domUtils.hasAttributeValue(items[x], 'class', filters[y])){
+                        if(modules.domUtils.hasAttributeValue(items[x], 'class', filters[y])) {
                             var clone = modules.domUtils.clone(items[x]);
                             modules.domUtils.appendChild(newRootNode, clone);
                             break;
@@ -438,8 +438,8 @@ var Microformats;
 
 
 
-        appendCount: function(name, count, out){
-            if(out[name]){
+        appendCount: function(name, count, out) {
+            if(out[name]) {
                 out[name] = out[name] + count;
             }else{
                 out[name] = count;
@@ -538,7 +538,7 @@ var Microformats;
 
 
 
-        walkRoot: function(node){
+        walkRoot: function(node) {
             var context = this,
                 children = [],
                 child,
@@ -548,20 +548,20 @@ var Microformats;
 
             classes = this.getUfClassNames(node);
             
-            if(classes && classes.root.length > 0){
+            if(classes && classes.root.length > 0) {
                 items = this.walkTree(node);
 
-                if(items.length > 0){
+                if(items.length > 0) {
                     out = out.concat(items);
                 }
             }else{
                 
                 children = modules.domUtils.getChildren( node );
-                if(children && children.length > 0 && this.findRootNodes(node, true).length > -1){
+                if(children && children.length > 0 && this.findRootNodes(node, true).length > -1) {
                     for (var i = 0; i < children.length; i++) {
                         child = children[i];
                         items = context.walkRoot(child);
-                        if(items.length > 0){
+                        if(items.length > 0) {
                             out = out.concat(items);
                         }
                     }
@@ -585,14 +585,14 @@ var Microformats;
 
             
             classes = this.getUfClassNames(node);
-            if(classes && classes.root.length && classes.root.length > 0){
+            if(classes && classes.root.length && classes.root.length > 0) {
 
                 this.rootID++;
                 itemRootID = this.rootID;
                 obj = this.createUfObject(classes.root, classes.typeVersion);
 
                 this.walkChildren(node, obj, classes.root, itemRootID, classes);
-                if(this.impliedRules){
+                if(this.impliedRules) {
                     this.impliedRules(node, obj, classes);
                 }
                 out.push( this.cleanUfObject(obj) );
@@ -649,8 +649,8 @@ var Microformats;
                     propertyName = context.removePropPrefix(classes.properties[0][0]);
 
                     
-                    if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
-                        if(context.impliedValueRule){
+                    if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
+                        if(context.impliedValueRule) {
                             out = context.impliedValueRule(out, parentClasses.properties[0][0], classes.properties[0][0], value);
                         }
                     }
@@ -673,7 +673,7 @@ var Microformats;
                         context.walkChildren(child, rootItem, rootItem.type, itemRootID, classes);
                         x++;
                     }
-                    if(this.impliedRules){
+                    if(this.impliedRules) {
                         context.impliedRules(child, rootItem, classes);
                     }
                     this.cleanUfObject(rootItem);
@@ -692,8 +692,8 @@ var Microformats;
                         propertyVersion = classes.properties[x][1];
 
                         
-                        if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
-                            if(context.impliedValueRule){
+                        if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
+                            if(context.impliedValueRule) {
                                 out = context.impliedValueRule(out, parentClasses.properties[0][0], classes.properties[x][0], value);
                             }
                         }
@@ -701,7 +701,7 @@ var Microformats;
                         
                         if(!context.hasRootID(child, rootID, propertyName)) {
                             
-                            if( context.isAllowedPropertyVersion( out.typeVersion, propertyVersion ) ){
+                            if( context.isAllowedPropertyVersion( out.typeVersion, propertyVersion ) ) {
                                 
                                 if(out.properties[propertyName]) {
                                     out.properties[propertyName].push(value);
@@ -735,7 +735,7 @@ var Microformats;
                     );
 
                     
-                    if(!out.children){
+                    if(!out.children) {
                         out.children =  [];
                     }
 
@@ -752,7 +752,7 @@ var Microformats;
                         context.walkChildren(child, rootItem, rootItem.type, itemRootID, classes);
                         x++;
                     }
-                    if(this.impliedRules){
+                    if(this.impliedRules) {
                         context.impliedRules(child, rootItem, classes);
                     }
                     context.cleanUfObject( rootItem );
@@ -975,9 +975,9 @@ var Microformats;
 
 
         appendRootID: function(node, id, propertyName) {
-            if(this.hasRootID(node, id, propertyName) === false){
+            if(this.hasRootID(node, id, propertyName) === false) {
                 var rootids = [];
-                if(modules.domUtils.hasAttribute(node,'rootids')){
+                if(modules.domUtils.hasAttribute(node,'rootids')) {
                     rootids = modules.domUtils.getAttributeList(node,'rootids');
                 }
                 rootids.push('id' + id + '-' + propertyName);
@@ -996,7 +996,7 @@ var Microformats;
 
         hasRootID: function(node, id, propertyName) {
             var rootids = [];
-            if(!modules.domUtils.hasAttribute(node,'rootids')){
+            if(!modules.domUtils.hasAttribute(node,'rootids')) {
                 return false;
             }
             rootids = modules.domUtils.getAttributeList(node, 'rootids');
@@ -1093,9 +1093,9 @@ var Microformats;
 
 
 
-        hasHClass: function(node){
+        hasHClass: function(node) {
             var classes = this.getUfClassNames(node);
-            if(classes.root && classes.root.length > 0){
+            if(classes.root && classes.root.length > 0) {
                 return true;
             }
             return false;
@@ -1131,7 +1131,7 @@ var Microformats;
                 ufName;
 
             
-            if(modules.domUtils.hasTagName(node, this.excludeTags) === false){
+            if(modules.domUtils.hasTagName(node, this.excludeTags) === false) {
 
                 
                 classNames = modules.domUtils.getAttribute(node, 'class');
@@ -1145,7 +1145,7 @@ var Microformats;
 
                         
                         if(modules.utils.startWith(item, context.rootPrefix)) {
-                            if(out.root.indexOf(item) === -1){
+                            if(out.root.indexOf(item) === -1) {
                                 out.root.push(item);
                             }
                             out.typeVersion = 'v2';
@@ -1170,7 +1170,7 @@ var Microformats;
                                         out.properties.push(['p-' + modules.maps[key].root, 'v1']);
                                     } else {
                                         out.root.push(key);
-                                        if(!out.typeVersion){
+                                        if(!out.typeVersion) {
                                             out.typeVersion = 'v1';
                                         }
                                     }
@@ -1180,7 +1180,7 @@ var Microformats;
 
 
                         
-                        if(ufNameArr){
+                        if(ufNameArr) {
                             for (var a = 0; a < ufNameArr.length; a++) {
                                 ufName = ufNameArr[a];
                                 
@@ -1233,7 +1233,7 @@ var Microformats;
 
 
             
-            if(ufNameArr && this.findRelImpied){
+            if(ufNameArr && this.findRelImpied) {
                 for (var b = 0; b < ufNameArr.length; b++) {
                     ufName = ufNameArr[b];
                     impiedRel = this.findRelImpied(node, ufName);
@@ -1295,8 +1295,8 @@ var Microformats;
 
 
 
-        isAllowedPropertyVersion: function(typeVersion, propertyVersion){
-            if(this.options.overlappingVersions === true){
+        isAllowedPropertyVersion: function(typeVersion, propertyVersion) {
+            if(this.options.overlappingVersions === true) {
                 return true;
             }
             return (typeVersion === propertyVersion);
@@ -1376,7 +1376,7 @@ var Microformats;
 
 
 
-        expandURLs: function(node, attrName, baseUrl){
+        expandURLs: function(node, attrName, baseUrl) {
             var i,
                 nodes,
                 attr;
@@ -1392,7 +1392,7 @@ var Microformats;
                         attr = modules.url.resolve(attr, baseUrl);
                         modules.domUtils.setAttribute(nodes[i], attrName, attr);
                     }
-                }catch(err){
+                }catch(err) {
                     
                 }
             }
@@ -1420,7 +1420,7 @@ var Microformats;
 
 
 
-        removeRootIds: function(rootNode){
+        removeRootIds: function(rootNode) {
             var arr,
                 i;
 
@@ -1437,8 +1437,8 @@ var Microformats;
 
 
 
-        clearUpDom: function(rootNode){
-            if(this.removeIncludes){
+        clearUpDom: function(rootNode) {
+            if(this.removeIncludes) {
                 this.removeIncludes(rootNode);
             }
             this.removeRootIds(rootNode);
@@ -1452,7 +1452,7 @@ var Microformats;
 
 
     
-    if(modules.Parser){
+    if(modules.Parser) {
 
         
 
@@ -1467,13 +1467,13 @@ var Microformats;
             var typeVersion = (uf.typeVersion)? uf.typeVersion: 'v2';
 
             
-            if(this.options.impliedPropertiesByVersion === false){
+            if(this.options.impliedPropertiesByVersion === false) {
                 typeVersion = 'v2';
             }
 
             if(node && uf && uf.properties) {
                 uf = this.impliedBackwardComp( node, uf, parentClasses );
-                if(typeVersion === 'v2'){
+                if(typeVersion === 'v2') {
                     uf = this.impliedhFeedTitle( uf );
                     uf = this.impliedName( node, uf );
                     uf = this.impliedPhoto( node, uf );
@@ -1483,7 +1483,7 @@ var Microformats;
                 uf = this.impliedDate( uf );
 
                 
-                if(this.options.parseLatLonGeo === true){
+                if(this.options.parseLatLonGeo === true) {
                     uf = this.impliedGeo( uf );
                 }
             }
@@ -1526,7 +1526,7 @@ var Microformats;
                 }else{
                     name = [modules.text.parseText(this.document, value, textFormat)];
                 }
-                if(name && name[0] !== ''){
+                if(name && name[0] !== '') {
                     uf.properties.name = name;
                 }
             }
@@ -1637,15 +1637,15 @@ var Microformats;
             if(!value) {
                 
                 descendant = modules.domUtils.getSingleDescendantOfType( node, tagList);
-                if(descendant && this.hasHClass(descendant) === false){
+                if(descendant && this.hasHClass(descendant) === false) {
                     value = getAttrFunction(descendant);
                 }
-                if(node.children.length > 0 ){
+                if(node.children.length > 0 ) {
                     
                     child = modules.domUtils.getSingleDescendant(node);
-                    if(child && this.hasHClass(child) === false){
+                    if(child && this.hasHClass(child) === false) {
                         descendant = modules.domUtils.getSingleDescendantOfType(child, tagList);
-                        if(descendant && this.hasHClass(descendant) === false){
+                        if(descendant && this.hasHClass(descendant) === false) {
                             value = getAttrFunction(descendant);
                         }
                     }
@@ -1694,7 +1694,7 @@ var Microformats;
 
         modules.Parser.prototype.getURLAttr = function(node) {
             var value = null;
-            if(modules.domUtils.hasAttributeValue(node, 'class', 'include') === false){
+            if(modules.domUtils.hasAttributeValue(node, 'class', 'include') === false) {
 
                 value = modules.domUtils.getAttrValFromTagList(node, ['a'], 'href');
                 if(!value) {
@@ -1713,24 +1713,24 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.impliedValue = function(node, uf, parentClasses){
+        modules.Parser.prototype.impliedValue = function(node, uf, parentClasses) {
 
             
             if(uf.properties.name) {
-                if(uf.value && parentClasses.root.length > 0 && parentClasses.properties.length === 1){
+                if(uf.value && parentClasses.root.length > 0 && parentClasses.properties.length === 1) {
                     uf = this.getAltValue(uf, parentClasses.properties[0][0], 'p-name', uf.properties.name[0]);
                 }
             }
 
             
             if(uf.properties.url) {
-                if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
+                if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
                     uf = this.getAltValue(uf, parentClasses.properties[0][0], 'u-url', uf.properties.url[0]);
                 }
             }
 
             
-            if(uf.altValue !== null){
+            if(uf.altValue !== null) {
                 uf.value = uf.altValue.value;
             }
             delete uf.altValue;
@@ -1749,18 +1749,18 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value){
-            if(uf.value && !uf.altValue){
+        modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value) {
+            if(uf.value && !uf.altValue) {
                 
-                if(modules.utils.startWith(parentPropertyName,'p-') && propertyName === 'p-name'){
+                if(modules.utils.startWith(parentPropertyName,'p-') && propertyName === 'p-name') {
                     uf.altValue = {name: propertyName, value: value};
                 }
                 
-                if(modules.utils.startWith(parentPropertyName,'e-') && modules.utils.startWith(propertyName,'e-')){
+                if(modules.utils.startWith(parentPropertyName,'e-') && modules.utils.startWith(propertyName,'e-')) {
                     uf.altValue = {name: propertyName, value: value};
                 }
                 
-                if(modules.utils.startWith(parentPropertyName,'u-') && propertyName === 'u-url'){
+                if(modules.utils.startWith(parentPropertyName,'u-') && propertyName === 'u-url') {
                     uf.altValue = {name: propertyName, value: value};
                 }
             }
@@ -1774,13 +1774,13 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.impliedhFeedTitle = function( uf ){
-            if(uf.type && uf.type.indexOf('h-feed') > -1){
+        modules.Parser.prototype.impliedhFeedTitle = function( uf ) {
+            if(uf.type && uf.type.indexOf('h-feed') > -1) {
                 
-                if(uf.properties.name === undefined || uf.properties.name[0] === '' ){
+                if(uf.properties.name === undefined || uf.properties.name[0] === '' ) {
                     
                     var title = modules.domUtils.querySelector(this.document, 'title');
-                    if(title){
+                    if(title) {
                         uf.properties.name = [modules.domUtils.textContent(title)];
                     }
                 }
@@ -1796,45 +1796,45 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.impliedGeo = function( uf ){
+        modules.Parser.prototype.impliedGeo = function( uf ) {
             var geoPair,
                 parts,
                 longitude,
                 latitude,
                 valid = true;
 
-            if(uf.type && uf.type.indexOf('h-geo') > -1){
+            if(uf.type && uf.type.indexOf('h-geo') > -1) {
 
                 
-                if(uf.properties.latitude === undefined || uf.properties.longitude === undefined ){
+                if(uf.properties.latitude === undefined || uf.properties.longitude === undefined ) {
 
                     geoPair = (uf.properties.name)? uf.properties.name[0] : null;
                     geoPair = (!geoPair && uf.properties.value)? uf.properties.value : geoPair;
 
-                    if(geoPair){
+                    if(geoPair) {
                         
                         geoPair = geoPair.replace(';',',');
 
                         
-                        if(geoPair.indexOf(',') > -1 ){
+                        if(geoPair.indexOf(',') > -1 ) {
                             parts = geoPair.split(',');
 
                             
-                            if(parts.length > 1){
+                            if(parts.length > 1) {
 
                                 
                                 latitude = parseFloat( parts[0] );
-                                if(modules.utils.isNumber(latitude) && latitude > 90 || latitude < -90){
+                                if(modules.utils.isNumber(latitude) && latitude > 90 || latitude < -90) {
                                     valid = false;
                                 }
 
                                 
                                 longitude = parseFloat( parts[1] );
-                                if(modules.utils.isNumber(longitude) && longitude > 180 || longitude < -180){
+                                if(modules.utils.isNumber(longitude) && longitude > 180 || longitude < -180) {
                                     valid = false;
                                 }
 
-                                if(valid){
+                                if(valid) {
                                     uf.properties.latitude = [latitude];
                                     uf.properties.longitude  = [longitude];
                                 }
@@ -1854,7 +1854,7 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.impliedBackwardComp = function(node, uf, parentClasses){
+        modules.Parser.prototype.impliedBackwardComp = function(node, uf, parentClasses) {
 
             
             
@@ -1863,7 +1863,7 @@ var Microformats;
 
                     
                     
-                    if( modules.utils.hasProperties(uf.properties) === false ){
+                    if( modules.utils.hasProperties(uf.properties) === false ) {
                         uf = this.impliedName( node, uf );
                     }
                 }
@@ -1878,7 +1878,7 @@ var Microformats;
 
 
     
-    if(modules.Parser){
+    if(modules.Parser) {
 
 
         
@@ -1955,7 +1955,7 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.apppendInclude = function(node, id){
+        modules.Parser.prototype.apppendInclude = function(node, id) {
             var include,
                 clone;
 
@@ -1997,7 +1997,7 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.removeIncludes = function(rootNode){
+        modules.Parser.prototype.removeIncludes = function(rootNode) {
             var arr,
                 i;
 
@@ -2014,7 +2014,7 @@ var Microformats;
 
 
     
-    if(modules.Parser){
+    if(modules.Parser) {
 
         
 
@@ -2069,7 +2069,7 @@ var Microformats;
 
                             var resolved = modules.url.resolve(value, this.options.baseUrl);
                             
-                            if(out.rels[item].indexOf(resolved) === -1){
+                            if(out.rels[item].indexOf(resolved) === -1) {
                                 out.rels[item].push( resolved );
                             }
                         }
@@ -2078,9 +2078,9 @@ var Microformats;
 
 
                     var url = null;
-                    if(modules.domUtils.hasAttribute(arr[x], 'href')){
+                    if(modules.domUtils.hasAttribute(arr[x], 'href')) {
                         url = modules.domUtils.getAttribute(arr[x], 'href');
-                        if(url){
+                        if(url) {
                             url = modules.url.resolve(url, this.options.baseUrl );
                         }
                     }
@@ -2090,7 +2090,7 @@ var Microformats;
                     var relUrl = this.getRelProperties(arr[x]);
                     relUrl.rels = items;
                     
-                    if(url && out['rel-urls'][url] === undefined){
+                    if(url && out['rel-urls'][url] === undefined) {
                         out['rel-urls'][url] = relUrl;
                     }
 
@@ -2108,22 +2108,22 @@ var Microformats;
 
 
 
-        modules.Parser.prototype.getRelProperties = function(node){
+        modules.Parser.prototype.getRelProperties = function(node) {
             var obj = {};
 
-            if(modules.domUtils.hasAttribute(node, 'media')){
+            if(modules.domUtils.hasAttribute(node, 'media')) {
                 obj.media = modules.domUtils.getAttribute(node, 'media');
             }
-            if(modules.domUtils.hasAttribute(node, 'type')){
+            if(modules.domUtils.hasAttribute(node, 'type')) {
                 obj.type = modules.domUtils.getAttribute(node, 'type');
             }
-            if(modules.domUtils.hasAttribute(node, 'hreflang')){
+            if(modules.domUtils.hasAttribute(node, 'hreflang')) {
                 obj.hreflang = modules.domUtils.getAttribute(node, 'hreflang');
             }
-            if(modules.domUtils.hasAttribute(node, 'title')){
+            if(modules.domUtils.hasAttribute(node, 'title')) {
                 obj.title = modules.domUtils.getAttribute(node, 'title');
             }
-            if(modules.utils.trim(this.getPValue(node, false)) !== ''){
+            if(modules.utils.trim(this.getPValue(node, false)) !== '') {
                 obj.text = this.getPValue(node, false);
             }
 
@@ -2188,7 +2188,7 @@ var Microformats;
 
 
         modules.Parser.prototype.countRels = function(node) {
-            if(node){
+            if(node) {
                 return modules.domUtils.getNodesByAttribute(node, 'rel').length;
             }
             return 0;
@@ -2263,7 +2263,7 @@ var Microformats;
 
 
         trim: function( text ) {
-            if(text && this.isString(text)){
+            if(text && this.isString(text)) {
                 return (text.trim())? text.trim() : text.replace(/^\s+|\s+$/g, '');
             }
             return '';
@@ -2279,7 +2279,7 @@ var Microformats;
 
 
         replaceCharAt: function( text, index, character ) {
-            if(text && text.length > index){
+            if(text && text.length > index) {
                return text.substr(0, index) + character + text.substr(index+character.length);
             }
             return text;
@@ -2292,14 +2292,14 @@ var Microformats;
 
 
 
-        trimWhitespace: function( text ){
-            if(text && text.length){
+        trimWhitespace: function( text ) {
+            if(text && text.length) {
                 var i = text.length,
                     x = 0;
 
                 
                 while (i--) {
-                    if(this.isOnlyWhiteSpace(text[i])){
+                    if(this.isOnlyWhiteSpace(text[i])) {
                         text = this.replaceCharAt( text, i, ' ' );
                     }else{
                         break;
@@ -2309,7 +2309,7 @@ var Microformats;
                 
                 i = text.length;
                 while (x < i) {
-                    if(this.isOnlyWhiteSpace(text[x])){
+                    if(this.isOnlyWhiteSpace(text[x])) {
                         text = this.replaceCharAt( text, i, ' ' );
                     }else{
                         break;
@@ -2327,7 +2327,7 @@ var Microformats;
 
 
 
-        isOnlyWhiteSpace: function( text ){
+        isOnlyWhiteSpace: function( text ) {
             return !(/[^\t\n\r ]/.test( text ));
         },
 
@@ -2338,7 +2338,7 @@ var Microformats;
 
 
 
-        collapseWhiteSpace: function( text ){
+        collapseWhiteSpace: function( text ) {
             return text.replace(/[\t\n\r ]+/g, ' ');
         },
 
@@ -2417,16 +2417,16 @@ var Microformats;
 
 
 
-        getDOMContext: function( options ){
+        getDOMContext: function( options ) {
 
             
-            if(options.node){
+            if(options.node) {
                 this.rootNode = options.node;
             }
 
 
             
-            if(options.html){
+            if(options.html) {
                 
                 var domParser = this.getDOMParser();
                 this.rootNode = domParser.parseFromString( options.html, 'text/html' );
@@ -2434,8 +2434,8 @@ var Microformats;
 
 
             
-            if(this.rootNode !== null){
-                if(this.rootNode.nodeType === 9){
+            if(this.rootNode !== null) {
+                if(this.rootNode.nodeType === 9) {
                     this.document = this.rootNode;
                     this.rootNode = modules.domUtils.querySelector(this.rootNode, 'html');
                 }else{
@@ -2446,13 +2446,13 @@ var Microformats;
 
 
             
-            if(!this.rootNode && document){
+            if(!this.rootNode && document) {
                 this.rootNode = modules.domUtils.querySelector(document, 'html');
                 this.document = document;
             }
 
 
-            if(this.rootNode && this.document){
+            if(this.rootNode && this.document) {
                 return {document: this.document, rootNode: this.rootNode};
             }
 
@@ -2467,7 +2467,7 @@ var Microformats;
 
 
 
-        getTopMostNode: function( node ){
+        getTopMostNode: function( node ) {
             
             
             
@@ -2483,7 +2483,7 @@ var Microformats;
 
 
 
-        ownerDocument: function(node){
+        ownerDocument: function(node) {
             return node.ownerDocument;
         },
 
@@ -2494,10 +2494,10 @@ var Microformats;
 
 
 
-        textContent: function(node){
-            if(node.textContent){
+        textContent: function(node) {
+            if(node.textContent) {
                 return node.textContent;
-            }else if(node.innerText){
+            }else if(node.innerText) {
                 return node.innerText;
             }
             return '';
@@ -2510,7 +2510,7 @@ var Microformats;
 
 
 
-        innerHTML: function(node){
+        innerHTML: function(node) {
             return node.innerHTML;
         },
 
@@ -2559,7 +2559,7 @@ var Microformats;
 
 
 
-        setAttribute: function(node, attributeName, attributeValue){
+        setAttribute: function(node, attributeName, attributeValue) {
             node.setAttribute(attributeName, attributeValue);
         },
 
@@ -2691,7 +2691,7 @@ var Microformats;
 
 
 
-        getSingleDescendant: function(node){
+        getSingleDescendant: function(node) {
             return this.getDescendant( node, null, false );
         },
 
@@ -2703,7 +2703,7 @@ var Microformats;
 
 
 
-        getSingleDescendantOfType: function(node, tagNames){
+        getSingleDescendantOfType: function(node, tagNames) {
             return this.getDescendant( node, tagNames, true );
         },
 
@@ -2715,7 +2715,7 @@ var Microformats;
 
 
 
-        getDescendant: function( node, tagNames, onlyOfType ){
+        getDescendant: function( node, tagNames, onlyOfType ) {
             var i = node.children.length,
                 countAll = 0,
                 countOfType = 0,
@@ -2725,9 +2725,9 @@ var Microformats;
             while(i--) {
                 child = node.children[i];
                 if(child.nodeType === 1) {
-                    if(tagNames){
+                    if(tagNames) {
                         
-                        if(this.hasTagName(child, tagNames)){
+                        if(this.hasTagName(child, tagNames)) {
                             out = child;
                             countOfType++;
                         }
@@ -2738,7 +2738,7 @@ var Microformats;
                     }
                 }
             }
-            if(onlyOfType === true){
+            if(onlyOfType === true) {
                 return (countOfType === 1)? out : null;
             }
             return (countAll === 1)? out : null;
@@ -2752,7 +2752,7 @@ var Microformats;
 
 
 
-        hasTagName: function(node, tagNames){
+        hasTagName: function(node, tagNames) {
             var i = tagNames.length;
             while(i--) {
                 if(node.tagName.toLowerCase() === tagNames[i]) {
@@ -2770,7 +2770,7 @@ var Microformats;
 
 
 
-        appendChild: function(node, childNode){
+        appendChild: function(node, childNode) {
             return node.appendChild(childNode);
         },
 
@@ -2781,7 +2781,7 @@ var Microformats;
 
 
 
-        removeChild: function(childNode){
+        removeChild: function(childNode) {
             if (childNode.parentNode) {
                 return childNode.parentNode.removeChild(childNode);
             }
@@ -2808,8 +2808,8 @@ var Microformats;
 
 
 
-        getElementText: function( node ){
-            if(node && node.data){
+        getElementText: function( node ) {
+            if(node && node.data) {
                 return node.data;
             }
             return '';
@@ -2822,7 +2822,7 @@ var Microformats;
 
 
 
-        getOrderedAttributes: function( node ){
+        getOrderedAttributes: function( node ) {
             var nodeStr = node.outerHTML,
                 attrs = [];
 
@@ -2843,7 +2843,7 @@ var Microformats;
 
 
 
-        decodeEntities: function( doc, text ){
+        decodeEntities: function( doc, text ) {
             
             return doc.createTextNode( text ).nodeValue;
         },
@@ -2855,11 +2855,11 @@ var Microformats;
 
 
 
-        cloneDocument: function( document ){
+        cloneDocument: function( document ) {
             var newNode,
                 newDocument = null;
 
-            if( this.canCloneDocument( document )){
+            if( this.canCloneDocument( document )) {
                 newDocument = document.implementation.createHTMLDocument('');
                 newNode = newDocument.importNode( document.documentElement, true );
                 newDocument.replaceChild(newNode, newDocument.querySelector('html'));
@@ -2874,7 +2874,7 @@ var Microformats;
 
 
 
-        canCloneDocument: function( document ){
+        canCloneDocument: function( document ) {
             return (document && document.importNode && document.implementation && document.implementation.createHTMLDocument);
         },
 
@@ -2889,8 +2889,8 @@ var Microformats;
             var parent = node.parentNode,
                 i = -1,
                 child;
-            while (parent && (child = parent.childNodes[++i])){
-                 if (child === node){
+            while (parent && (child = parent.childNodes[++i])) {
+                 if (child === node) {
                      return i;
                  }
             }
@@ -2909,8 +2909,8 @@ var Microformats;
                 path = [],
                 index = this.getChildIndex(node);
 
-          if(parent && (path = this.getNodePath(parent))){
-               if(index > -1){
+          if(parent && (path = this.getNodePath(parent))) {
+               if(index > -1) {
                    path.push(index);
                }
           }
@@ -2929,7 +2929,7 @@ var Microformats;
             var node = document.documentElement,
                 i = 0,
                 index;
-          while ((index = path[++i]) > -1){
+          while ((index = path[++i]) > -1) {
               node = node.childNodes[index];
           }
           return node;
@@ -2942,7 +2942,7 @@ var Microformats;
 
 
 
-        getChildren: function( node ){
+        getChildren: function( node ) {
             return node.children;
         },
 
@@ -2953,7 +2953,7 @@ var Microformats;
 
 
 
-        createNode: function( tagName ){
+        createNode: function( tagName ) {
             return this.document.createElement(tagName);
         },
 
@@ -2965,7 +2965,7 @@ var Microformats;
 
 
 
-        createNodeWithText: function( tagName, text ){
+        createNodeWithText: function( tagName, text ) {
             var node = this.document.createElement(tagName);
             node.innerHTML = text;
             return node;
@@ -2982,7 +2982,7 @@ var Microformats;
         
 
 
-        init: function(){
+        init: function() {
             
             this._domParser = modules.domUtils.getDOMParser();
             
@@ -3002,19 +3002,19 @@ var Microformats;
 
         resolve: function(url, baseUrl) {
             
-            if(modules.utils.isString(url) && modules.utils.isString(baseUrl) && url.indexOf('://') === -1){
+            if(modules.utils.isString(url) && modules.utils.isString(baseUrl) && url.indexOf('://') === -1) {
                 
                 
                 try {
                     var resolved = new URL(url, baseUrl).toString();
                     
-                    if(resolved === '[object URL]'){
+                    if(resolved === '[object URL]') {
                         resolved = URI.resolve(baseUrl, url);
                     }
                     return resolved;
-                }catch(e){
+                }catch(e) {
                     
-                    if(this._domParser === undefined){
+                    if(this._domParser === undefined) {
                         this.init();
                     }
 
@@ -3026,7 +3026,7 @@ var Microformats;
                     return this._linkNode.href;
                 }
             }else{
-                if(modules.utils.isString(url)){
+                if(modules.utils.isString(url)) {
                     return url;
                 }
                 return '';
@@ -3064,7 +3064,7 @@ var Microformats;
 
 
 
-        clear: function(){
+        clear: function() {
             this.clearDate();
             this.clearTime();
             this.clearTimeZone();
@@ -3076,7 +3076,7 @@ var Microformats;
 
 
 
-        clearDate: function(){
+        clearDate: function() {
             this.dY = -1;
             this.dM = -1;
             this.dD = -1;
@@ -3088,7 +3088,7 @@ var Microformats;
 
 
 
-        clearTime: function(){
+        clearTime: function() {
             this.tH = -1;
             this.tM = -1;
             this.tS = -1;
@@ -3100,7 +3100,7 @@ var Microformats;
 
 
 
-        clearTimeZone: function(){
+        clearTimeZone: function() {
             this.tzH = -1;
             this.tzM = -1;
             this.tzPN = '+';
@@ -3112,7 +3112,7 @@ var Microformats;
 
 
 
-        setAutoProfileState: function(){
+        setAutoProfileState: function() {
             this.autoProfile = {
                sep: 'T',
                dsep: '-',
@@ -3140,7 +3140,7 @@ var Microformats;
                 timePart = '',
                 timeZonePart = '';
 
-            if(format){
+            if(format) {
                 this.format = format;
             }
 
@@ -3303,7 +3303,7 @@ var Microformats;
             this.clearTimeZone();
             var parts = [];
 
-            if(timeString.toLowerCase() === 'z'){
+            if(timeString.toLowerCase() === 'z') {
                 this.z = true;
                 
                 this.autoProfile.tzZulu = (timeString === 'z')? 'z' : 'Z';
@@ -3342,7 +3342,7 @@ var Microformats;
         toString: function( format ) {
             var output = '';
 
-            if(format){
+            if(format) {
                 this.format = format;
             }
             this.setFormatSep();
@@ -3379,7 +3379,7 @@ var Microformats;
         toTimeString: function( format ) {
             var out = '';
 
-            if(format){
+            if(format) {
                 this.format = format;
             }
             this.setFormatSep();
@@ -3388,11 +3388,11 @@ var Microformats;
             if(this.tH) {
                 if(this.tH > -1 && this.tH < 25) {
                     out += this.tH;
-                    if(this.tM > -1 && this.tM < 61){
+                    if(this.tM > -1 && this.tM < 61) {
                         out += this.tsep + this.tM;
-                        if(this.tS > -1 && this.tS < 61){
+                        if(this.tS > -1 && this.tS < 61) {
                             out += this.tsep + this.tS;
-                            if(this.tD > -1){
+                            if(this.tD > -1) {
                                 out += '.' + this.tD;
                             }
                         }
@@ -3406,7 +3406,7 @@ var Microformats;
                     } else {
                         if(this.tzH && this.tzH > -1 && this.tzH < 25) {
                             out += this.tzPN + this.tzH;
-                            if(this.tzM > -1 && this.tzM < 61){
+                            if(this.tzM > -1 && this.tzM < 61) {
                                 out += this.tzsep + this.tzM;
                             }
                         }
@@ -3543,9 +3543,9 @@ var Microformats;
 
 
         isDuration: function( text ) {
-            if(modules.utils.isString( text )){
+            if(modules.utils.isString( text )) {
                 text = text.toLowerCase();
-                if(modules.utils.startWith(text, 'p') ){
+                if(modules.utils.startWith(text, 'p') ) {
                     return true;
                 }
             }
@@ -3561,7 +3561,7 @@ var Microformats;
 
 
         isTime: function( text ) {
-            if(modules.utils.isString(text)){
+            if(modules.utils.isString(text)) {
                 text = text.toLowerCase();
                 text = modules.utils.trim( text );
                 
@@ -3579,8 +3579,8 @@ var Microformats;
                 }
 
                 
-                if(modules.utils.isNumber(text)){
-                    if(text.length === 2 || text.length === 4 || text.length === 6){
+                if(modules.utils.isNumber(text)) {
+                    if(text.length === 2 || text.length === 4 || text.length === 6) {
                         return true;
                     }
                 }
@@ -3659,7 +3659,7 @@ var Microformats;
                 isodate.tD = isotime.tD;
                 return isodate;
             }
-            if(isodate.hasFullDate()){
+            if(isodate.hasFullDate()) {
                 return isodate;
             }
             return new modules.ISODate();
@@ -3687,7 +3687,7 @@ var Microformats;
                 value = arr[i];
 
                 
-                if( value.charAt(4) === '-' && out.hasFullDate() === false ){
+                if( value.charAt(4) === '-' && out.hasFullDate() === false ) {
                     out.parseDate(value);
                 }
 
@@ -3702,14 +3702,14 @@ var Microformats;
                     out.parseTime(value);
 
                     
-                    if(items.length > 1){
+                    if(items.length > 1) {
                          out.parseTimeZone(items[1], format);
                     }
                 }
 
                 
                 if(value.charAt(0) === '-' || value.charAt(0) === '+' || value.toUpperCase() === 'Z') {
-                    if( out.hasTimeZone() === false ){
+                    if( out.hasTimeZone() === false ) {
                         out.parseTimeZone(value);
                     }
                 }
@@ -3725,13 +3725,13 @@ var Microformats;
 
 
 
-        splitTimeAndZone: function ( text ){
+        splitTimeAndZone: function ( text ) {
            var out = [text],
                chars = ['-','+','z','Z'],
                i = chars.length;
 
             while (i--) {
-              if(text.indexOf(chars[i]) > -1){
+              if(text.indexOf(chars[i]) > -1) {
                   out[0] = text.slice( 0, text.indexOf(chars[i]) );
                   out.push( text.slice( text.indexOf(chars[i]) ) );
                   break;
@@ -3766,12 +3766,12 @@ var Microformats;
 
 
 
-        parse: function(doc, node, textFormat){
+        parse: function(doc, node, textFormat) {
             var out;
             this.textFormat = (textFormat)? textFormat : this.textFormat;
-            if(this.textFormat === 'normalised'){
+            if(this.textFormat === 'normalised') {
                 out = this.walkTreeForText( node );
-                if(out !== undefined){
+                if(out !== undefined) {
                     return this.normalise( doc, out );
                 }
                 return '';
@@ -3788,7 +3788,7 @@ var Microformats;
 
 
 
-        parseText: function( doc, text, textFormat ){
+        parseText: function( doc, text, textFormat ) {
            var node = modules.domUtils.createNodeWithText( 'div', text );
            return this.parse( doc, node, textFormat );
         },
@@ -3801,9 +3801,9 @@ var Microformats;
 
 
 
-        formatText: function( doc, text, textFormat ){
+        formatText: function( doc, text, textFormat ) {
            this.textFormat = (textFormat)? textFormat : this.textFormat;
-           if(text){
+           if(text) {
               var out = '',
                   regex = /(<([^>]+)>)/ig;
 
@@ -3825,7 +3825,7 @@ var Microformats;
 
 
 
-        normalise: function( doc, text ){
+        normalise: function( doc, text ) {
             text = text.replace( /&nbsp;/g, ' ') ;    
             text = modules.utils.collapseWhiteSpace( text );     
             text = modules.domUtils.decodeEntities( doc, text );  
@@ -3844,27 +3844,27 @@ var Microformats;
             var out = '',
                 j = 0;
 
-            if(node.tagName && this.excludeTags.indexOf( node.tagName.toLowerCase() ) > -1){
+            if(node.tagName && this.excludeTags.indexOf( node.tagName.toLowerCase() ) > -1) {
                 return out;
             }
 
             
-            if(node.nodeType && node.nodeType === 3){
+            if(node.nodeType && node.nodeType === 3) {
                 out += modules.domUtils.getElementText( node );
             }
 
             
-            if(node.childNodes && node.childNodes.length > 0){
+            if(node.childNodes && node.childNodes.length > 0) {
                 for (j = 0; j < node.childNodes.length; j++) {
                     var text = this.walkTreeForText( node.childNodes[j] );
-                    if(text !== undefined){
+                    if(text !== undefined) {
                         out += text;
                     }
                 }
             }
 
             
-            if(node.tagName && this.blockLevelTags.indexOf( node.tagName.toLowerCase() ) !== -1){
+            if(node.tagName && this.blockLevelTags.indexOf( node.tagName.toLowerCase() ) !== -1) {
                 out += ' ';
             }
 
@@ -3886,15 +3886,15 @@ var Microformats;
 
 
 
-        parse: function( node ){
+        parse: function( node ) {
             var out = '',
                 j = 0;
 
             
-            if(node.childNodes && node.childNodes.length > 0){
+            if(node.childNodes && node.childNodes.length > 0) {
                 for (j = 0; j < node.childNodes.length; j++) {
                     var text = this.walkTreeForHtml( node.childNodes[j] );
-                    if(text !== undefined){
+                    if(text !== undefined) {
                         out += text;
                     }
                 }
@@ -3916,13 +3916,13 @@ var Microformats;
                 j = 0;
 
             
-            if(node.nodeType && node.nodeType === 3){
+            if(node.nodeType && node.nodeType === 3) {
                 out += modules.domUtils.getElementText( node );
             }
 
 
             
-            if(node.nodeType && node.nodeType === 1 && modules.domUtils.hasAttribute(node, 'data-include') === false){
+            if(node.nodeType && node.nodeType === 1 && modules.domUtils.hasAttribute(node, 'data-include') === false) {
 
                 
                 out += '<' + node.tagName.toLowerCase();
@@ -3933,23 +3933,23 @@ var Microformats;
                     out += ' ' + attrs[j].name +  '=' + '"' + attrs[j].value + '"';
                 }
 
-                if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) === -1){
+                if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) === -1) {
                     out += '>';
                 }
 
                 
-                if(node.childNodes && node.childNodes.length > 0){
+                if(node.childNodes && node.childNodes.length > 0) {
 
                     for (j = 0; j < node.childNodes.length; j++) {
                         var text = this.walkTreeForHtml( node.childNodes[j] );
-                        if(text !== undefined){
+                        if(text !== undefined) {
                             out += text;
                         }
                     }
                 }
 
                 
-                if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) > -1){
+                if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) > -1) {
                     out += ' />';
                 }else{
                     out += '</' + node.tagName.toLowerCase() + '>';
@@ -4470,44 +4470,44 @@ var Microformats;
     };
 
 
-    External.get = function(options){
+    External.get = function(options) {
         var parser = new modules.Parser();
         addV1(parser, options);
         return parser.get( options );
     };
 
 
-    External.getParent = function(node, options){
+    External.getParent = function(node, options) {
         var parser = new modules.Parser();
         addV1(parser, options);
         return parser.getParent( node, options );
     };
 
 
-    External.count = function(options){
+    External.count = function(options) {
         var parser = new modules.Parser();
         addV1(parser, options);
         return parser.count( options );
     };
 
 
-    External.isMicroformat = function( node, options ){
+    External.isMicroformat = function( node, options ) {
         var parser = new modules.Parser();
         addV1(parser, options);
         return parser.isMicroformat( node, options );
     };
 
 
-    External.hasMicroformats = function( node, options ){
+    External.hasMicroformats = function( node, options ) {
         var parser = new modules.Parser();
         addV1(parser, options);
         return parser.hasMicroformats( node, options );
     };
 
 
-    function addV1(parser, options){
-        if(options && options.maps){
-            if(Array.isArray(options.maps)){
+    function addV1(parser, options) {
+        if(options && options.maps) {
+            if(Array.isArray(options.maps)) {
                 parser.add(options.maps);
             }else{
                 parser.add([options.maps]);

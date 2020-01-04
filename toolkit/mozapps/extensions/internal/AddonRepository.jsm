@@ -1740,7 +1740,7 @@ var AddonDatabase = {
 
 
 
-  retrieveStoredData: function(){
+  retrieveStoredData: function() {
     return this.openConnection().then(db => db.addons);
   },
 

@@ -134,7 +134,7 @@ function* checkHistoryItems() {
 
 
 
-function isBookmarkAltered(){
+function isBookmarkAltered() {
   let options = PlacesUtils.history.getNewQueryOptions();
   options.queryType = Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS;
   options.maxResults = 1; 

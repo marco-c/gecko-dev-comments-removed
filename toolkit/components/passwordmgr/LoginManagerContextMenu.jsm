@@ -49,7 +49,7 @@ var LoginManagerContextMenu = {
 
         let username = login.username;
         
-        if (!username || duplicateUsernames.has(username)){
+        if (!username || duplicateUsernames.has(username)) {
           if (!username) {
             username = this._getLocalizedString("noUsername");
           }

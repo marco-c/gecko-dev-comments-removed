@@ -164,7 +164,7 @@ var closeFileOutputStream = function(aKind, aFileName) {
   
   if (aKind == "atomic") {
     FileUtils.closeAtomicFileOutputStream(fos);
-  } else if (aKind == "safe"){
+  } else if (aKind == "safe") {
     FileUtils.closeSafeFileOutputStream(fos);
   }
   do_check_throws(function () {

@@ -50,7 +50,7 @@ function destroyHiddenBrowser(aFrame, aBrowser) {
 
 
 
-add_task(function* test_windowless_UITour(){
+add_task(function* test_windowless_UITour() {
   
   let pageURL = getRootDirectory(gTestPath) + "uitour.html";
 

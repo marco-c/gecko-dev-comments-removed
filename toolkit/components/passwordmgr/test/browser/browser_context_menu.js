@@ -258,7 +258,7 @@ function* openPasswordContextMenu(browser, passwordInput, assertCallback = null)
 
 
 
-function* assertContextMenuFill(form, usernameField, passwordField, unchangedFields, loginIndex){
+function* assertContextMenuFill(form, usernameField, passwordField, unchangedFields, loginIndex) {
   let popupMenu = document.getElementById("fill-login-popup");
 
   
