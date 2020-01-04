@@ -2106,8 +2106,7 @@ DebugScopes::sweep(JSRuntime* rt)
 
 
     for (MissingScopeMap::Enum e(missingScopes); !e.empty(); e.popFront()) {
-        DebugScopeObject** debugScope = e.front().value().unsafeGet();
-        if (IsAboutToBeFinalizedUnbarriered(debugScope)) {
+        if (IsAboutToBeFinalized(&e.front().value())) {
             
 
 
@@ -2125,7 +2124,7 @@ DebugScopes::sweep(JSRuntime* rt)
 
 
 
-            liveScopes.remove(&(*debugScope)->scope());
+            liveScopes.remove(&e.front().value()->scope());
             e.removeFront();
         } else {
             MissingScopeKey key = e.front().key();

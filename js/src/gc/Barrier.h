@@ -333,6 +333,12 @@ class BarrieredBase : public BarrieredBaseMixins<T>
     
     T value;
 
+  public:
+    
+    
+    
+    T* unsafeUnbarrieredForTracing() { return &value; }
+
   private:
 #ifdef DEBUG
     
@@ -357,11 +363,7 @@ class WriteBarrieredBase : public BarrieredBase<T>
     const T& get() const { return this->value; }
 
     
-
-
-
-    T* unsafeGet() { return &this->value; }
-    const T* unsafeGet() const { return &this->value; }
+    
     void unsafeSet(T v) { this->value = v; }
 
     
@@ -534,10 +536,6 @@ class ReadBarrieredBase : public BarrieredBase<T>
     
     explicit ReadBarrieredBase(T v) : BarrieredBase<T>(v) {}
 
-  public:
-    
-    T* unsafeGet() { return &this->value; }
-
   protected:
     void read() const { InternalGCMethods<T>::readBarrier(this->value); }
 };
@@ -555,28 +553,27 @@ class ReadBarriered : public ReadBarrieredBase<T>
 {
   public:
     ReadBarriered() : ReadBarrieredBase<T>(GCMethods<T>::initial()) {}
-    explicit ReadBarriered(T v) : ReadBarrieredBase<T>(v) {}
+    explicit ReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {}
 
-    T get() const {
+    const T get() const {
         if (!InternalGCMethods<T>::isMarkable(this->value))
             return GCMethods<T>::initial();
         this->read();
         return this->value;
     }
 
-    T unbarrieredGet() const {
+    const T unbarrieredGet() const {
         return this->value;
     }
 
-    operator T() const { return get(); }
+    operator const T() const { return get(); }
 
-    T& operator*() const { return *get(); }
-    T operator->() const { return get(); }
+    const T& operator*() const { return *get(); }
+    const T operator->() const { return get(); }
 
-    T* unsafeGet() { return &this->value; }
     T const* unsafeGet() const { return &this->value; }
 
-    void set(T v) { this->value = v; }
+    void set(const T& v) { this->value = v; }
 };
 
 
@@ -635,8 +632,6 @@ class HeapSlot : public WriteBarrieredBase<Value>
     static void writeBarrierPost(NativeObject* owner, Kind kind, uint32_t slot, const Value& target) {
         reinterpret_cast<HeapSlot*>(const_cast<Value*>(&target))->post(owner, kind, slot, target);
     }
-
-    Value* unsafeGet() { return &value; }
 
   private:
     void post(NativeObject* owner, Kind kind, uint32_t slot, const Value& target) {
