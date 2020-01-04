@@ -219,41 +219,12 @@ nsBMPDecoder::~nsBMPDecoder()
 
 
 int32_t
-nsBMPDecoder::GetBitsPerPixel() const
-{
-  return mH.mBpp;
-}
-
-
-int32_t
-nsBMPDecoder::GetWidth() const
-{
-  return mH.mWidth;
-}
-
-
-
-int32_t
-nsBMPDecoder::GetHeight() const
-{
-  return abs(mH.mHeight);
-}
-
-
-uint32_t*
-nsBMPDecoder::GetImageData()
-{
-  return reinterpret_cast<uint32_t*>(mImageData);
-}
-
-
-int32_t
 nsBMPDecoder::GetCompressedImageSize() const
 {
   
   MOZ_ASSERT(mPixelRowSize != 0);
   return mH.mCompression == Compression::RGB
-       ? mPixelRowSize * GetHeight()
+       ? mPixelRowSize * AbsoluteHeight()
        : mH.mImageSize;
 }
 
@@ -270,7 +241,7 @@ nsBMPDecoder::FinishInternal()
   if (!IsMetadataDecode() && HasSize()) {
 
     
-    nsIntRect r(0, 0, mH.mWidth, GetHeight());
+    nsIntRect r(0, 0, mH.mWidth, AbsoluteHeight());
     PostInvalidation(r);
 
     if (mDoesHaveTransparency) {
@@ -597,9 +568,9 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   }
 
   
-  uint32_t realHeight = GetHeight();
-  PostSize(mH.mWidth, realHeight);
-  mCurrentRow = realHeight;
+  uint32_t absHeight = AbsoluteHeight();
+  PostSize(mH.mWidth, absHeight);
+  mCurrentRow = absHeight;
 
   
   

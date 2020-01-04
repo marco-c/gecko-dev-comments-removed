@@ -126,16 +126,9 @@ public:
   ~nsBMPDecoder();
 
   
-  int32_t GetBitsPerPixel() const;
+  uint32_t* GetImageData() { return reinterpret_cast<uint32_t*>(mImageData); }
 
   
-  int32_t GetWidth() const;
-
-  
-  int32_t GetHeight() const;
-
-  
-  uint32_t* GetImageData();
   size_t GetImageDataLength() const { return mImageDataLength; }
 
   
@@ -189,6 +182,8 @@ private:
 
   
   nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength);
+
+  int32_t AbsoluteHeight() const { return abs(mH.mHeight); }
 
   uint32_t* RowBuffer();
 
