@@ -970,9 +970,9 @@ CycleCollectedJSRuntime::UsefulToMergeZones() const
     if (!obj) {
       continue;
     }
-    MOZ_ASSERT(js::IsOuterObject(obj));
+    MOZ_ASSERT(js::IsWindowProxy(obj));
     
-    obj = JS_ObjectToInnerObject(cx, obj);
+    obj = js::ToWindowIfWindowProxy(obj);
     MOZ_ASSERT(JS_IsGlobalObject(obj));
     if (JS::ObjectIsMarkedGray(obj) &&
         !js::IsSystemCompartment(js::GetObjectCompartment(obj))) {

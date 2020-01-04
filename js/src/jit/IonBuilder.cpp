@@ -11847,9 +11847,12 @@ IonBuilder::tryInnerizeWindow(MDefinition* obj)
     if (!singleton)
         return obj;
 
-    JSObject* inner = GetInnerObject(singleton);
-    if (inner == singleton || inner != &script()->global())
+    if (!IsWindowProxy(singleton))
         return obj;
+
+    
+    
+    MOZ_ASSERT(ToWindowIfWindowProxy(singleton) == &script()->global());
 
     
     

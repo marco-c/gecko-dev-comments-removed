@@ -1046,59 +1046,6 @@ GetObjectClassName(JSContext* cx, HandleObject obj);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline JSObject*
-GetInnerObject(JSObject* obj)
-{
-    if (InnerObjectOp op = obj->getClass()->ext.innerObject) {
-        JS::AutoSuppressGCAnalysis nogc;
-        return op(obj);
-    }
-    return obj;
-}
-
-
-
-
-
-
-
-
-
-inline JSObject*
-GetOuterObject(JSContext* cx, HandleObject obj)
-{
-    if (ObjectOp op = obj->getClass()->ext.outerObject)
-        return op(cx, obj);
-    return obj;
-}
-
-
-
-
-
-
-
-
-
-
-
-
 inline bool
 GetThisValue(JSContext* cx, HandleObject obj, MutableHandleValue vp)
 {

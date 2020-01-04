@@ -148,14 +148,6 @@ JS_GetScriptPrincipals(JSScript* script);
 extern JS_FRIEND_API(bool)
 JS_ScriptHasMutedErrors(JSScript* script);
 
-
-extern JS_FRIEND_API(JSObject*)
-JS_ObjectToInnerObject(JSContext* cx, JS::HandleObject obj);
-
-
-extern JS_FRIEND_API(JSObject*)
-JS_ObjectToOuterObject(JSContext* cx, JS::HandleObject obj);
-
 extern JS_FRIEND_API(JSObject*)
 JS_CloneObject(JSContext* cx, JS::HandleObject obj, JS::HandleObject proto);
 
@@ -674,16 +666,6 @@ ParentKeyForStandardClass(JSProtoKey key)
 
     
     return JSProto_Object;
-}
-
-inline bool
-IsInnerObject(JSObject* obj) {
-    return !!GetObjectClass(obj)->ext.outerObject;
-}
-
-inline bool
-IsOuterObject(JSObject* obj) {
-    return !!GetObjectClass(obj)->ext.innerObject;
 }
 
 JS_FRIEND_API(bool)
@@ -2858,6 +2840,77 @@ ReportIsNotFunction(JSContext* cx, JS::HandleValue v);
 
 extern JS_FRIEND_API(JSObject*)
 ConvertArgsToArray(JSContext* cx, const JS::CallArgs& args);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API(void)
+SetWindowProxyClass(JSRuntime* rt, const Class* clasp);
+
+
+
+
+
+extern JS_FRIEND_API(void)
+SetWindowProxy(JSContext* cx, JS::HandleObject global, JS::HandleObject windowProxy);
+
+namespace detail {
+
+JS_FRIEND_API(bool)
+IsWindowSlow(JSObject* obj);
+
+} 
+
+
+
+
+
+inline bool
+IsWindow(JSObject* obj)
+{
+    if (GetObjectClass(obj)->flags & JSCLASS_IS_GLOBAL)
+        return detail::IsWindowSlow(obj);
+    return false;
+}
+
+
+
+
+JS_FRIEND_API(bool)
+IsWindowProxy(JSObject* obj);
+
+
+
+
+
+
+extern JS_FRIEND_API(JSObject*)
+ToWindowProxyIfWindow(JSObject* obj);
+
+
+
+
+
+
+extern JS_FRIEND_API(JSObject*)
+ToWindowIfWindowProxy(JSObject* obj);
 
 } 
 

@@ -76,23 +76,6 @@ using mozilla::DebugOnly;
 using mozilla::Maybe;
 using mozilla::UniquePtr;
 
-JS_FRIEND_API(JSObject*)
-JS_ObjectToInnerObject(JSContext* cx, HandleObject obj)
-{
-    if (!obj) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_INACTIVE);
-        return nullptr;
-    }
-    return GetInnerObject(obj);
-}
-
-JS_FRIEND_API(JSObject*)
-JS_ObjectToOuterObject(JSContext* cx, HandleObject obj)
-{
-    assertSameCompartment(cx, obj);
-    return GetOuterObject(cx, obj);
-}
-
 void
 js::ReportNotObject(JSContext* cx, const Value& v)
 {
@@ -2487,11 +2470,11 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
 
 
 
-    RootedObject outerObj(cx, GetOuterObject(cx, obj));
+    RootedObject objMaybeWindowProxy(cx, ToWindowProxyIfWindow(obj));
     RootedObject obj2(cx);
     for (obj2 = proto; obj2; ) {
-        MOZ_ASSERT(GetOuterObject(cx, obj2) == obj2);
-        if (obj2 == outerObj)
+        MOZ_ASSERT(!IsWindow(obj2));
+        if (obj2 == objMaybeWindowProxy)
             return result.fail(JSMSG_CANT_SET_PROTO_CYCLE);
 
         if (!GetPrototype(cx, obj2, &obj2))
@@ -2767,7 +2750,7 @@ js::GetPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
 bool
 js::WatchGuts(JSContext* cx, JS::HandleObject origObj, JS::HandleId id, JS::HandleObject callable)
 {
-    RootedObject obj(cx, GetInnerObject(origObj));
+    RootedObject obj(cx, ToWindowIfWindowProxy(origObj));
     if (obj->isNative()) {
         
         
@@ -2796,7 +2779,7 @@ js::UnwatchGuts(JSContext* cx, JS::HandleObject origObj, JS::HandleId id)
 {
     
     
-    RootedObject obj(cx, GetInnerObject(origObj));
+    RootedObject obj(cx, ToWindowIfWindowProxy(origObj));
     if (WatchpointMap* wpmap = cx->compartment()->watchpointMap)
         wpmap->unwatch(obj, id, nullptr, nullptr);
     return true;

@@ -42,8 +42,7 @@ XPCVariant::XPCVariant(JSContext* cx, Value aJSVal)
         
         
         
-        JS::RootedObject obj(cx, &mJSVal.toObject());
-        obj = JS_ObjectToInnerObject(cx, obj);
+        JSObject* obj = js::ToWindowIfWindowProxy(&mJSVal.toObject());
         mJSVal = JS::ObjectValue(*obj);
 
         JSObject* unwrapped = js::CheckedUnwrap(obj,  false);

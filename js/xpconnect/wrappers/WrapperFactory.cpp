@@ -98,7 +98,7 @@ WrapperFactory::WaiveXray(JSContext* cx, JSObject* objArg)
 {
     RootedObject obj(cx, objArg);
     obj = UncheckedUnwrap(obj);
-    MOZ_ASSERT(!js::IsInnerObject(obj));
+    MOZ_ASSERT(!js::IsWindow(obj));
 
     JSObject* waiver = GetXrayWaiver(obj);
     if (waiver)
@@ -155,20 +155,20 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     RootedObject obj(cx, objArg);
     
     
-    if (js::IsInnerObject(obj)) {
+    if (js::IsWindow(obj)) {
         JSAutoCompartment ac(cx, obj);
-        obj = JS_ObjectToOuterObject(cx, obj);
-        NS_ENSURE_TRUE(obj, nullptr);
+        obj = js::ToWindowProxyIfWindow(obj);
+        MOZ_ASSERT(obj);
         
         
         obj = js::UncheckedUnwrap(obj);
-        MOZ_ASSERT(js::IsOuterObject(obj));
+        MOZ_ASSERT(js::IsWindowProxy(obj));
     }
 
     
     
     
-    if (js::IsOuterObject(obj))
+    if (js::IsWindowProxy(obj))
         return waive ? WaiveXray(cx, obj) : obj;
 
     
@@ -400,7 +400,7 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
                js::GetObjectClass(obj)->ext.innerObject,
                "wrapped object passed to rewrap");
     MOZ_ASSERT(!XrayUtils::IsXPCWNHolderClass(JS_GetClass(obj)), "trying to wrap a holder");
-    MOZ_ASSERT(!js::IsInnerObject(obj));
+    MOZ_ASSERT(!js::IsWindow(obj));
     
     
     MOZ_ASSERT(XPCJSRuntime::Get()->GetJSContextStack()->Peek() == cx);
@@ -542,7 +542,7 @@ WrapperFactory::WaiveXrayAndWrap(JSContext* cx, MutableHandleObject argObj)
 {
     MOZ_ASSERT(argObj);
     RootedObject obj(cx, js::UncheckedUnwrap(argObj));
-    MOZ_ASSERT(!js::IsInnerObject(obj));
+    MOZ_ASSERT(!js::IsWindow(obj));
     if (js::IsObjectInContextCompartment(obj, cx)) {
         argObj.set(obj);
         return true;
