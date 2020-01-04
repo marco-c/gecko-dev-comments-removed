@@ -641,8 +641,7 @@ SSL_CanBypass(CERTCertificate *cert, SECKEYPrivateKey *srvPrivkey,
 
     for (i = 0; i < nsuites && (suite = *ciphersuites++) != 0; i++) {
         
-        if (SSL_GetCipherSuiteInfo(suite, &csdef, sizeof(csdef)) != SECSuccess ||
-            SSL_IS_SSL2_CIPHER(suite))
+        if (SSL_GetCipherSuiteInfo(suite, &csdef, sizeof(csdef)) != SECSuccess)
             continue;
         switch (csdef.keaType) {
             case ssl_kea_rsa:

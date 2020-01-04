@@ -3749,7 +3749,7 @@ int main(int argc, char **argv)
 
     
     if (bltest.commands[cmd_FIPS].activated) {
-	CK_RV ckrv = sftk_fipsPowerUpSelfTest();
+	CK_RV ckrv = sftk_FIPSEntryOK();
 	fprintf(stdout, "CK_RV: %ld.\n", ckrv);
         PORT_Free(cipherInfo);
         if (ckrv == CKR_OK)

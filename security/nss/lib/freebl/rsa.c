@@ -138,7 +138,7 @@ rsa_build_from_primes(const mp_int *p, const mp_int *q,
     CHECK_MPI_OK( mp_sub_d(p, 1, &psub1) );
     CHECK_MPI_OK( mp_sub_d(q, 1, &qsub1) );
     if (needPublicExponent || needPrivateExponent) {
-	CHECK_MPI_OK( mp_mul(&psub1, &qsub1, &phi) );
+	CHECK_MPI_OK( mp_lcm(&psub1, &qsub1, &phi) );
 	
 	
 	if (needPublicExponent) {
@@ -228,6 +228,45 @@ cleanup:
 
 
 
+static PRBool
+rsa_fips186_verify(mp_int *p, mp_int *q, mp_int *d, int keySizeInBits)
+{
+    mp_int pq_diff;
+    mp_err   err = MP_OKAY;
+    PRBool ret=PR_FALSE;
+
+    if (keySizeInBits < 250) {
+ 	
+	
+
+	return PR_TRUE;
+    }
+
+    
+    
+
+    
+    MP_DIGITS(&pq_diff) = 0;
+    CHECK_MPI_OK( mp_init(&pq_diff) );
+    
+    CHECK_MPI_OK( mp_sub(p,q,&pq_diff) );
+    if ((unsigned)mpl_significant_bits(&pq_diff) < (keySizeInBits/2 - 100)) {
+	goto cleanup;
+    }
+    
+    if ((unsigned)mpl_significant_bits(d) < (keySizeInBits/2)) {
+	goto cleanup;
+    }
+    ret = PR_TRUE;
+
+cleanup:
+    mp_clear(&pq_diff);
+    return ret;
+}
+
+
+
+
 
 
 
@@ -241,6 +280,7 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
     unsigned int primeLen;
     mp_int p, q, e, d;
     int kiter;
+    int max_attempts;
     mp_err   err = MP_OKAY;
     SECStatus rv = SECSuccess;
     int prerr = 0;
@@ -281,6 +321,7 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
     
     SECITEM_TO_MPINT(*publicExponent, &e);
     kiter = 0;
+    max_attempts = 5*(keySizeInBits/2); 
     do {
 	prerr = 0;
 	PORT_SetError(0);
@@ -298,12 +339,17 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
 			&e, PR_FALSE,  
 			&d, PR_TRUE,   
 			key, keySizeInBits);
-	if (rv == SECSuccess)
-	    break; 
-	prerr = PORT_GetError();
+	if (rv == SECSuccess) {
+	    if (rsa_fips186_verify(&p, &q, &d, keySizeInBits) ){
+		break;
+	    }
+	    prerr = SEC_ERROR_NEED_RANDOM; 
+	} else {
+	    prerr = PORT_GetError();
+	}
 	kiter++;
 	
-    } while (prerr == SEC_ERROR_NEED_RANDOM && kiter < MAX_KEY_GEN_ATTEMPTS);
+    } while (prerr == SEC_ERROR_NEED_RANDOM && kiter < max_attempts);
     if (prerr)
 	goto cleanup;
 cleanup:
