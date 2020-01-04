@@ -314,6 +314,12 @@ nsXBLWindowKeyHandler::InstallKeyboardEventListenersTo(
   aEventListenerManager->AddEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
                            TrustedEventsAtCapture());
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeydownonplugin"),
+                           TrustedEventsAtCapture());
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeyuponplugin"),
+                           TrustedEventsAtCapture());
 
   
   
@@ -326,6 +332,12 @@ nsXBLWindowKeyHandler::InstallKeyboardEventListenersTo(
   aEventListenerManager->AddEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
                            TrustedEventsAtSystemGroupCapture());
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeydownonplugin"),
+                           TrustedEventsAtSystemGroupCapture());
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeyuponplugin"),
+                           TrustedEventsAtSystemGroupCapture());
 
   
   aEventListenerManager->AddEventListenerByType(
@@ -336,6 +348,12 @@ nsXBLWindowKeyHandler::InstallKeyboardEventListenersTo(
                            TrustedEventsAtSystemGroupBubble());
   aEventListenerManager->AddEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
+                           TrustedEventsAtSystemGroupBubble());
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeydownonplugin"),
+                           TrustedEventsAtSystemGroupBubble());
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeyuponplugin"),
                            TrustedEventsAtSystemGroupBubble());
 }
 
@@ -352,6 +370,12 @@ nsXBLWindowKeyHandler::RemoveKeyboardEventListenersFrom(
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
                            TrustedEventsAtCapture());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeydownonplugin"),
+                           TrustedEventsAtCapture());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeyuponplugin"),
+                           TrustedEventsAtCapture());
 
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("keydown"),
@@ -362,6 +386,12 @@ nsXBLWindowKeyHandler::RemoveKeyboardEventListenersFrom(
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
                            TrustedEventsAtSystemGroupCapture());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeydownonplugin"),
+                           TrustedEventsAtSystemGroupCapture());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeyuponplugin"),
+                           TrustedEventsAtSystemGroupCapture());
 
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("keydown"),
@@ -372,6 +402,30 @@ nsXBLWindowKeyHandler::RemoveKeyboardEventListenersFrom(
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
                            TrustedEventsAtSystemGroupBubble());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeydownonplugin"),
+                           TrustedEventsAtSystemGroupBubble());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozkeyuponplugin"),
+                           TrustedEventsAtSystemGroupBubble());
+}
+
+nsIAtom*
+nsXBLWindowKeyHandler::ConvertEventToDOMEventType(
+                         const WidgetKeyboardEvent& aWidgetKeyboardEvent) const
+{
+  if (aWidgetKeyboardEvent.IsKeyDownOrKeyDownOnPlugin()) {
+    return nsGkAtoms::keydown;
+  }
+  if (aWidgetKeyboardEvent.IsKeyUpOrKeyUpOnPlugin()) {
+    return nsGkAtoms::keyup;
+  }
+  if (aWidgetKeyboardEvent.mMessage == eKeyPress) {
+    return nsGkAtoms::keypress;
+  }
+  MOZ_ASSERT_UNREACHABLE(
+    "All event messages which this instance listens to should be handled");
+  return nullptr;
 }
 
 NS_IMETHODIMP
@@ -391,11 +445,33 @@ nsXBLWindowKeyHandler::HandleEvent(nsIDOMEvent* aEvent)
     return NS_OK;
   }
 
-  nsAutoString eventType;
-  aEvent->GetType(eventType);
-  nsCOMPtr<nsIAtom> eventTypeAtom = NS_Atomize(eventType);
-  NS_ENSURE_TRUE(eventTypeAtom, NS_ERROR_OUT_OF_MEMORY);
+  WidgetKeyboardEvent* widgetKeyboardEvent =
+    aEvent->WidgetEventPtr()->AsKeyboardEvent();
+  if (widgetKeyboardEvent->IsKeyEventOnPlugin()) {
+    
+    
+    if (!widgetKeyboardEvent->mIsReserved) {
+      return NS_OK;
+    }
 
+    
+    if (!widgetKeyboardEvent->IsTrusted() ||
+        widgetKeyboardEvent->DefaultPrevented()) {
+      return NS_OK;
+    }
+
+    
+    
+    
+    
+    bool isReserved = false;
+    if (!HasHandlerForEvent(keyEvent, &isReserved)) {
+      return NS_OK;
+    }
+  }
+
+  nsCOMPtr<nsIAtom> eventTypeAtom =
+    ConvertEventToDOMEventType(*widgetKeyboardEvent);
   return WalkHandlers(keyEvent, eventTypeAtom);
 }
 
@@ -565,6 +641,16 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
                          bool aExecute,
                          bool* aOutReservedForChrome)
 {
+  if (aOutReservedForChrome) {
+    *aOutReservedForChrome = false;
+  }
+
+  WidgetKeyboardEvent* widgetKeyboardEvent =
+    aKeyEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
+  if (NS_WARN_IF(!widgetKeyboardEvent)) {
+    return false;
+  }
+
   
   for (nsXBLPrototypeHandler* handler = aFirstHandler;
        handler;
@@ -578,7 +664,15 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
     if (aExecute) {
       
       
-      if (!handler->EventTypeEquals(aEventType)) {
+      
+      if (widgetKeyboardEvent->mMessage == eKeyDownOnPlugin) {
+        if (!handler->EventTypeEquals(nsGkAtoms::keydown) &&
+            !handler->EventTypeEquals(nsGkAtoms::keypress)) {
+          continue;
+        }
+      
+      
+      } else if (!handler->EventTypeEquals(aEventType)) {
         continue;
       }
     } else {
@@ -642,6 +736,12 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
       continue;
     }
 
+    
+    
+    if (!isReserved && widgetKeyboardEvent->IsKeyEventOnPlugin()) {
+      return false;
+    }
+
     nsCOMPtr<EventTarget> target;
     nsCOMPtr<Element> chromeHandlerElement = GetElement();
     if (chromeHandlerElement) {
@@ -664,15 +764,11 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
   
   
   
-  if (!aIgnoreModifierState.mOS) {
-    WidgetKeyboardEvent* keyEvent =
-      aKeyEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
-    if (keyEvent && keyEvent->IsOS()) {
-      IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
-      ignoreModifierState.mOS = true;
-      return WalkHandlersAndExecute(aKeyEvent, aEventType, aFirstHandler,
-                                    aCharCode, ignoreModifierState, aExecute);
-    }
+  if (!aIgnoreModifierState.mOS && widgetKeyboardEvent->IsOS()) {
+    IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
+    ignoreModifierState.mOS = true;
+    return WalkHandlersAndExecute(aKeyEvent, aEventType, aFirstHandler,
+                                  aCharCode, ignoreModifierState, aExecute);
   }
 #endif
 
@@ -683,7 +779,9 @@ bool
 nsXBLWindowKeyHandler::HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
                                           bool* aOutReservedForChrome)
 {
-  if (!aEvent->AsEvent()->InternalDOMEvent()->IsTrusted()) {
+  WidgetKeyboardEvent* widgetKeyboardEvent =
+    aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
+  if (NS_WARN_IF(!widgetKeyboardEvent) || !widgetKeyboardEvent->IsTrusted()) {
     return false;
   }
 
@@ -696,11 +794,8 @@ nsXBLWindowKeyHandler::HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
     return false;
   }
 
-  nsAutoString eventType;
-  aEvent->AsEvent()->GetType(eventType);
-  nsCOMPtr<nsIAtom> eventTypeAtom = NS_Atomize(eventType);
-  NS_ENSURE_TRUE(eventTypeAtom, false);
-
+  nsCOMPtr<nsIAtom> eventTypeAtom =
+    ConvertEventToDOMEventType(*widgetKeyboardEvent);
   return WalkHandlersInternal(aEvent, eventTypeAtom, mHandler, false,
                               aOutReservedForChrome);
 }

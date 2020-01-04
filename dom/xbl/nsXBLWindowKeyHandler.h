@@ -7,6 +7,7 @@
 #ifndef nsXBLWindowKeyHandler_h__
 #define nsXBLWindowKeyHandler_h__
 
+#include "mozilla/EventForwards.h"
 #include "nsWeakPtr.h"
 #include "nsIDOMEventListener.h"
 
@@ -72,6 +73,12 @@ protected:
   
   bool HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
                           bool* aOutReservedForChrome = nullptr);
+
+  
+  
+  
+  nsIAtom* ConvertEventToDOMEventType(
+             const mozilla::WidgetKeyboardEvent& aWidgetKeyboardEvent) const;
 
   
   
