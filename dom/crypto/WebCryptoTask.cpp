@@ -8,6 +8,7 @@
 #include "cryptohi.h"
 #include "secerr.h"
 #include "ScopedNSSTypes.h"
+#include "nsNSSComponent.h"
 
 #include "jsapi.h"
 #include "mozilla/Telemetry.h"
@@ -17,6 +18,7 @@
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebCryptoCommon.h"
 #include "mozilla/dom/WebCryptoTask.h"
+#include "mozilla/dom/WebCryptoThreadPool.h"
 
 namespace mozilla {
 namespace dom {
@@ -286,9 +288,72 @@ CloneData(JSContext* aCx, CryptoBuffer& aDst, JS::Handle<JSObject*> aSrc)
 
 
 void
-WebCryptoTask::FailWithError(nsresult aRv)
+WebCryptoTask::DispatchWithPromise(Promise* aResultPromise)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  mResultPromise = aResultPromise;
+
+  
+  MAYBE_EARLY_FAIL(mEarlyRv)
+
+  
+  mEarlyRv = BeforeCrypto();
+  MAYBE_EARLY_FAIL(mEarlyRv)
+
+  
+  if (mEarlyComplete) {
+    CallCallback(mEarlyRv);
+    Skip();
+    return;
+  }
+
+  
+  
+  if (!EnsureNSSInitializedChromeOrContent()) {
+    mEarlyRv = NS_ERROR_DOM_UNKNOWN_ERR;
+    MAYBE_EARLY_FAIL(mEarlyRv)
+  }
+
+  
+  mOriginalThread = NS_GetCurrentThread();
+  mEarlyRv = WebCryptoThreadPool::Dispatch(this);
+  MAYBE_EARLY_FAIL(mEarlyRv)
+}
+
+NS_IMETHODIMP
+WebCryptoTask::Run()
+{
+  
+  if (!IsOnOriginalThread()) {
+    nsNSSShutDownPreventionLock locker;
+
+    if (isAlreadyShutDown()) {
+      mRv = NS_ERROR_NOT_AVAILABLE;
+    } else {
+      mRv = CalculateResult();
+    }
+
+    
+    mOriginalThread->Dispatch(this, NS_DISPATCH_NORMAL);
+    return NS_OK;
+  }
+
+  
+
+  
+  
+  
+  virtualDestroyNSSReference();
+
+  CallCallback(mRv);
+
+  return NS_OK;
+}
+
+void
+WebCryptoTask::FailWithError(nsresult aRv)
+{
+  MOZ_ASSERT(IsOnOriginalThread());
   Telemetry::Accumulate(Telemetry::WEBCRYPTO_RESOLVED, false);
 
   
@@ -302,7 +367,7 @@ WebCryptoTask::FailWithError(nsresult aRv)
 nsresult
 WebCryptoTask::CalculateResult()
 {
-  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(!IsOnOriginalThread());
 
   if (isAlreadyShutDown()) {
     return NS_ERROR_DOM_UNKNOWN_ERR;
@@ -314,7 +379,7 @@ WebCryptoTask::CalculateResult()
 void
 WebCryptoTask::CallCallback(nsresult rv)
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsOnOriginalThread());
   if (NS_FAILED(rv)) {
     FailWithError(rv);
     return;
@@ -1320,7 +1385,7 @@ public:
 
 protected:
   nsString mFormat;
-  RefPtr<CryptoKey> mKey;
+  nsRefPtr<CryptoKey> mKey;
   CryptoBuffer mKeyData;
   bool mDataIsSet;
   bool mDataIsJwk;
@@ -2145,7 +2210,7 @@ public:
   }
 
 private:
-  RefPtr<CryptoKey> mKey;
+  nsRefPtr<CryptoKey> mKey;
   size_t mLength;
   CK_MECHANISM_TYPE mMechanism;
   CryptoBuffer mKeyData;
@@ -2570,7 +2635,7 @@ public:
   }
 
 protected:
-  RefPtr<ImportSymmetricKeyTask> mTask;
+  nsRefPtr<ImportSymmetricKeyTask> mTask;
   bool mResolved;
 
 private:
@@ -2814,7 +2879,7 @@ public:
   }
 
 private:
-  RefPtr<KeyEncryptTask> mTask;
+  nsRefPtr<KeyEncryptTask> mTask;
   bool mResolved;
 
   virtual nsresult AfterCrypto() override {
@@ -2865,7 +2930,7 @@ public:
   {}
 
 private:
-  RefPtr<ImportKeyTask> mTask;
+  nsRefPtr<ImportKeyTask> mTask;
   bool mResolved;
 
   virtual void Resolve() override
@@ -3281,7 +3346,7 @@ WebCryptoTask::CreateUnwrapKeyTask(JSContext* aCx,
   }
 
   CryptoOperationData dummy;
-  RefPtr<ImportKeyTask> importTask;
+  nsRefPtr<ImportKeyTask> importTask;
   if (keyAlgName.EqualsASCII(WEBCRYPTO_ALG_AES_CBC) ||
       keyAlgName.EqualsASCII(WEBCRYPTO_ALG_AES_CTR) ||
       keyAlgName.EqualsASCII(WEBCRYPTO_ALG_AES_GCM) ||
