@@ -48,13 +48,7 @@ var format;
 var date = Date.UTC(2012, 11, 17, 3, 0, 42);
 
 
-
-
-var DateTimeFormat =
-  newGlobal({experimentalDateTimeFormatFormatToPartsEnabled:true}).Intl.DateTimeFormat;
-
-
-format = new DateTimeFormat("en-us", {timeZone: "UTC"});
+format = new Intl.DateTimeFormat("en-us", {timeZone: "UTC"});
 assertEq(deepEqual(format.formatToParts(date), [
   { type: 'month', value: '12' },
   { type: 'literal', value: '/' },
@@ -64,7 +58,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 ]), true);
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   year: 'numeric',
   month: 'numeric',
   day: 'numeric',
@@ -79,7 +73,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 assertEq(composeDate(format.formatToParts(date)), format.format(date));
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   hour: 'numeric',
   minute: 'numeric',
   second: 'numeric',
@@ -95,7 +89,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 assertEq(composeDate(format.formatToParts(date)), format.format(date));
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   hour: 'numeric',
   minute: 'numeric',
   second: 'numeric',
@@ -113,7 +107,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 assertEq(composeDate(format.formatToParts(date)), format.format(date));
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   month: "narrow",
   timeZone: "UTC"});
 assertEq(deepEqual(format.formatToParts(date), [
@@ -122,7 +116,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 assertEq(composeDate(format.formatToParts(date)), format.format(date));
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   weekday: "narrow",
   timeZone: "UTC"});
 assertEq(deepEqual(format.formatToParts(date), [
@@ -131,7 +125,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 assertEq(composeDate(format.formatToParts(date)), format.format(date));
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   year: "numeric",
   era: "short",
   timeZone: "UTC"});
@@ -143,7 +137,7 @@ assertEq(deepEqual(format.formatToParts(date), [
 assertEq(composeDate(format.formatToParts(date)), format.format(date));
 
 
-format = new DateTimeFormat("en-us", {
+format = new Intl.DateTimeFormat("en-us", {
   weekday: 'long',
   year: 'numeric',
   month: 'numeric',

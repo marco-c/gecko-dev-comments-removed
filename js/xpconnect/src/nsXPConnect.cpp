@@ -439,12 +439,6 @@ InitGlobalObjectOptions(JS::CompartmentOptions& aOptions,
     if (isSystem) {
         
         aOptions.creationOptions().setSecureContext(true);
-
-#if 0 
-        
-        aOptions.creationOptions()
-                .setExperimentalDateTimeFormatFormatToPartsEnabled(true);
-#endif
     }
 
     if (shouldDiscardSystemSource) {
