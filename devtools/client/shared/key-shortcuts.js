@@ -192,12 +192,17 @@ KeyShortcuts.prototype = {
     if (shortcut.alt != event.altKey) {
       return false;
     }
-    
-    
-    if (shortcut.shift != event.shiftKey && event.key &&
-        event.key.match(/[a-zA-Z]/)) {
-      return false;
+    if (shortcut.shift != event.shiftKey) {
+      
+      
+      let isAlphabetical = event.key && event.key.match(/[a-zA-Z]/);
+      
+      let cmdShortcut = shortcut.meta && !shortcut.alt && !shortcut.ctrl;
+      if (isAlphabetical || cmdShortcut) {
+        return false;
+      }
     }
+
     if (shortcut.keyCode) {
       return event.keyCode == shortcut.keyCode;
     } else if (event.key in ElectronKeysMapping) {
