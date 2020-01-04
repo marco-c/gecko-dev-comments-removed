@@ -22,32 +22,46 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 function promiseTabLoadEvent(tab, url, eventType="load")
 {
   let deferred = Promise.defer();
-  info("Wait tab event: " + eventType);
+  info(`Wait tab event: ${eventType}`);
 
-  function handle(event) {
-    if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-        event.target.location.href == "about:blank" ||
-        (url && event.target.location.href != url)) {
-      info("Skipping spurious '" + eventType + "'' event" +
-           " for " + event.target.location.href);
-      return;
+  function handle(loadedUrl) {
+    if (loadedUrl === "about:blank" || (url && loadedUrl !== url)) {
+      info(`Skipping spurious load event for ${loadedUrl}`);
+      return false;
     }
-    clearTimeout(timeout);
-    tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    info("Tab event received: " + eventType);
-    deferred.resolve(event);
+
+    info("Tab event received: load");
+    return true;
+  }
+
+  
+  
+  let loaded;
+  if (eventType === "load") {
+    loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
+  } else {
+    
+    loaded =
+      BrowserTestUtils.waitForContentEvent(tab.linkedBrowser, eventType,
+                                           true, undefined, true);
   }
 
   let timeout = setTimeout(() => {
-    tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    deferred.reject(new Error("Timed out while waiting for a '" + eventType + "'' event"));
+    deferred.reject(new Error(`Timed out while waiting for a ${eventType} event`));
   }, 30000);
 
-  tab.linkedBrowser.addEventListener(eventType, handle, true, true);
-  if (url) {
-    tab.linkedBrowser.loadURI(url);
-  }
-  return deferred.promise;
+  loaded.then(() => {
+    clearTimeout(timeout);
+    deferred.resolve()
+  });
+
+  if (url)
+    BrowserTestUtils.loadURI(tab.linkedBrowser, url);
+
+  
+  
+  
+  return Promise.all([deferred.promise, loaded]);
 }
 
 Services.prefs.setCharPref("urlclassifier.forbiddenTable", "test-forbid-simple");
