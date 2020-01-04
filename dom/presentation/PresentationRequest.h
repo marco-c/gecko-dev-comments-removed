@@ -56,6 +56,8 @@ private:
   void FindOrCreatePresentationConnection(const nsAString& aPresentationId,
                                           Promise* aPromise);
 
+  void FindOrCreatePresentationAvailability(RefPtr<Promise>& aPromise);
+
   
   bool IsProhibitMixedSecurityContexts(nsIDocument* aDocument);
 
