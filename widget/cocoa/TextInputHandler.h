@@ -706,19 +706,6 @@ public:
 
 
 
-
-
-  bool DispatchCompositionChangeEvent(const nsString& aText,
-                                      NSAttributedString* aAttrString,
-                                      NSRange& aSelectedRange);
-
-  
-
-
-
-
-
-
   bool DispatchCompositionCommitEvent(const nsAString* aCommitString = nullptr);
 
   
@@ -973,11 +960,6 @@ private:
   
 
 
-  void OnUpdateIMEComposition(NSString* aIMECompositionString);
-
-  
-
-
   void OnEndIMEComposition();
 
   
@@ -989,6 +971,23 @@ private:
 
 
   bool DispatchCompositionStartEvent();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  bool DispatchCompositionChangeEvent(const nsString& aText,
+                                      NSAttributedString* aAttrString,
+                                      NSRange& aSelectedRange);
 
   
   
