@@ -64,8 +64,44 @@ var loadedDeferred = null;
 
 
 
-function deferTransitionToRemoteAfterLoaded() {
+function deferTransitionToRemoteAfterLoaded(url) {
   log.d('Waiting for LOADED message.');
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let recordResultTelemetry; 
+  let isCustomized = Services.prefs.prefHasUserValue("identity.fxaccounts.remote.webchannel.uri");
+  if (!isCustomized) {
+    
+    let key = Services.io.newURI(url, null, null).path.split("?")[0];
+
+    let startTime = Cu.now();
+
+    let start = Services.telemetry.getKeyedHistogramById('ABOUT_ACCOUNTS_CONTENT_SERVER_LOAD_STARTED_COUNT');
+    start.add(key);
+
+    recordResultTelemetry = function(success) {
+      let rate = Services.telemetry.getKeyedHistogramById('ABOUT_ACCOUNTS_CONTENT_SERVER_LOADED_RATE');
+      rate.add(key, success);
+
+      
+      
+      let delta = Cu.now() - startTime; 
+      let time = success ?
+            Services.telemetry.getKeyedHistogramById('ABOUT_ACCOUNTS_CONTENT_SERVER_LOADED_TIME_MS') :
+            Services.telemetry.getKeyedHistogramById('ABOUT_ACCOUNTS_CONTENT_SERVER_FAILURE_TIME_MS');
+      time.add(key, Math.round(delta));
+    };
+  }
 
   loadedDeferred = PromiseUtils.defer();
   loadedDeferred.promise.then(() => {
@@ -73,9 +109,15 @@ function deferTransitionToRemoteAfterLoaded() {
     document.getElementById("remote").style.opacity = 0;
     show("remote");
     document.getElementById("remote").style.opacity = 1;
+    if (!isCustomized) {
+      recordResultTelemetry(true);
+    }
   })
   .catch((e) => {
     log.w('Did not get LOADED message: ' + e.toString());
+    if (!isCustomized) {
+      recordResultTelemetry(false);
+    }
   });
 }
 
@@ -90,7 +132,7 @@ var wrapper = {
 
   init: function (url) {
     this.url = url;
-    deferTransitionToRemoteAfterLoaded();
+    deferTransitionToRemoteAfterLoaded(this.url);
 
     let iframe = document.getElementById("remote");
     this.iframe = iframe;
@@ -106,7 +148,7 @@ var wrapper = {
   },
 
   retry: function () {
-    deferTransitionToRemoteAfterLoaded();
+    deferTransitionToRemoteAfterLoaded(this.url);
 
     let webNav = this.iframe.frameLoader.docShell.QueryInterface(Ci.nsIWebNavigation);
     webNav.loadURI(this.url, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY, null, null, null);
