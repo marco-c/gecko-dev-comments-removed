@@ -46,8 +46,10 @@ public:
 
 #ifdef USE_SKIA
   virtual SkTypeface* GetSkTypeface();
+  void GetFontDataFromSystemFonts(IDWriteFactory* aFactory);
 #endif
 
+  
   RefPtr<IDWriteFont> mFont;
   RefPtr<IDWriteFontFamily> mFontFamily;
   RefPtr<IDWriteFontFace> mFontFace;
