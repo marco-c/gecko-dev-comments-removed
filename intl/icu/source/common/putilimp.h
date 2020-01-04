@@ -486,6 +486,12 @@ U_INTERNAL const char* U_EXPORT2 uprv_tzname(int n);
 
 
 
+U_INTERNAL void uprv_tzname_clear_cache();
+
+
+
+
+
 
 
 U_INTERNAL UDate U_EXPORT2 uprv_getUTCtime(void);
