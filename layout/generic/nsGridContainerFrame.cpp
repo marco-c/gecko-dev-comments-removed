@@ -365,12 +365,62 @@ private:
 
 struct MOZ_STACK_CLASS nsGridContainerFrame::TrackSizingFunctions
 {
+  TrackSizingFunctions(const nsStyleGridTemplate& aGridTemplate,
+                       const nsStyleCoord&        aAutoMinSizing,
+                       const nsStyleCoord&        aAutoMaxSizing)
+    : mMinSizingFunctions(aGridTemplate.mMinTrackSizingFunctions)
+    , mMaxSizingFunctions(aGridTemplate.mMaxTrackSizingFunctions)
+    , mAutoMinSizing(aAutoMinSizing)
+    , mAutoMaxSizing(aAutoMaxSizing)
+    , mExplicitGridOffset(0)
+    , mRepeatAutoStart(aGridTemplate.HasRepeatAuto() ?
+                         aGridTemplate.mRepeatAutoIndex : 0)
+    , mRepeatAutoEnd(mRepeatAutoStart)
+    , mRepeatEndDelta(0)
+    , mHasRepeatAuto(aGridTemplate.HasRepeatAuto())
+  {
+    MOZ_ASSERT(mMinSizingFunctions.Length() == mMaxSizingFunctions.Length());
+    MOZ_ASSERT(!mHasRepeatAuto ||
+               (mMinSizingFunctions.Length() >= 1 &&
+                mRepeatAutoStart < mMinSizingFunctions.Length()));
+  }
+
+  
+
+
+
+  uint32_t InitRepeatTracks(nscoord aGridGap, nscoord aMinSize, nscoord aSize,
+                            nscoord aMaxSize)
+  {
+    uint32_t repeatTracks = 0; 
+    SetNumRepeatTracks(repeatTracks);
+    return repeatTracks;
+  }
+
+  
+
+
+
+  uint32_t ComputeExplicitGridEnd(uint32_t aGridTemplateAreasEnd)
+  {
+    uint32_t end = NumExplicitTracks() + 1;
+    end = std::max(end, aGridTemplateAreasEnd);
+    end = std::min(end, uint32_t(nsStyleGridLine::kMaxLine));
+    return end;
+  }
+
   const nsStyleCoord& MinSizingFor(uint32_t aTrackIndex) const
   {
     if (MOZ_UNLIKELY(aTrackIndex < mExplicitGridOffset)) {
       return mAutoMinSizing;
     }
     uint32_t index = aTrackIndex - mExplicitGridOffset;
+    if (index >= mRepeatAutoStart) {
+      if (index < mRepeatAutoEnd) {
+        return mMinSizingFunctions[mRepeatAutoStart];
+      }
+      index -= mRepeatEndDelta;
+    }
     return index < mMinSizingFunctions.Length() ?
       mMinSizingFunctions[index] : mAutoMinSizing;
   }
@@ -380,15 +430,47 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::TrackSizingFunctions
       return mAutoMaxSizing;
     }
     uint32_t index = aTrackIndex - mExplicitGridOffset;
+    if (index >= mRepeatAutoStart) {
+      if (index < mRepeatAutoEnd) {
+        return mMaxSizingFunctions[mRepeatAutoStart];
+      }
+      index -= mRepeatEndDelta;
+    }
     return index < mMaxSizingFunctions.Length() ?
       mMaxSizingFunctions[index] : mAutoMaxSizing;
   }
+  uint32_t NumExplicitTracks() const
+  {
+    return mMinSizingFunctions.Length() + mRepeatEndDelta;
+  }
+  uint32_t NumRepeatTracks() const
+  {
+    return mRepeatAutoEnd - mRepeatAutoStart;
+  }
+  void SetNumRepeatTracks(uint32_t aNumRepeatTracks)
+  {
+    MOZ_ASSERT(mHasRepeatAuto || aNumRepeatTracks == 0);
+    mRepeatAutoEnd = mRepeatAutoStart + aNumRepeatTracks;
+    mRepeatEndDelta = mHasRepeatAuto ?
+                        int32_t(aNumRepeatTracks) - 1 :
+                        0;
+  }
 
+  
   const nsTArray<nsStyleCoord>& mMinSizingFunctions;
   const nsTArray<nsStyleCoord>& mMaxSizingFunctions;
   const nsStyleCoord& mAutoMinSizing;
   const nsStyleCoord& mAutoMaxSizing;
+  
   uint32_t mExplicitGridOffset;
+  
+  const uint32_t mRepeatAutoStart;
+  
+  uint32_t mRepeatAutoEnd;
+  
+  int32_t mRepeatEndDelta;
+  
+  const bool mHasRepeatAuto;
 };
 
 
@@ -824,18 +906,12 @@ private:
     , mGridStyle(aGridStyle)
     , mCols(eLogicalAxisInline)
     , mRows(eLogicalAxisBlock)
-    , mColFunctions({
-        mGridStyle->mGridTemplateColumns.mMinTrackSizingFunctions,
-        mGridStyle->mGridTemplateColumns.mMaxTrackSizingFunctions,
-        mGridStyle->mGridAutoColumnsMin,
-        mGridStyle->mGridAutoColumnsMax,
-      })
-    , mRowFunctions({
-        mGridStyle->mGridTemplateRows.mMinTrackSizingFunctions,
-        mGridStyle->mGridTemplateRows.mMaxTrackSizingFunctions,
-        mGridStyle->mGridAutoRowsMin,
-        mGridStyle->mGridAutoRowsMax,
-      })
+    , mColFunctions(mGridStyle->mGridTemplateColumns,
+                    mGridStyle->mGridAutoColumnsMin,
+                    mGridStyle->mGridAutoColumnsMax)
+    , mRowFunctions(mGridStyle->mGridTemplateRows,
+                    mGridStyle->mGridAutoRowsMin,
+                    mGridStyle->mGridAutoRowsMax)
     , mReflowState(aReflowState)
     , mRenderingContext(aRenderingContext)
     , mWM(aWM)
@@ -1777,36 +1853,38 @@ nsGridContainerFrame::PlaceAutoAutoInColOrder(uint32_t aStartCol,
 }
 
 void
-nsGridContainerFrame::InitializeGridBounds(const nsStylePosition* aStyle)
-{
-  
-  
-  
-  uint32_t colEnd = aStyle->mGridTemplateColumns.mLineNameLists.Length();
-  uint32_t rowEnd = aStyle->mGridTemplateRows.mLineNameLists.Length();
-  auto areas = aStyle->mGridTemplateAreas.get();
-  mExplicitGridColEnd = std::max(colEnd, areas ? areas->mNColumns + 1 : 1);
-  mExplicitGridRowEnd = std::max(rowEnd, areas ? areas->NRows() + 1 : 1);
-  mExplicitGridColEnd =
-    std::min(mExplicitGridColEnd, uint32_t(nsStyleGridLine::kMaxLine));
-  mExplicitGridRowEnd =
-    std::min(mExplicitGridRowEnd, uint32_t(nsStyleGridLine::kMaxLine));
-  mGridColEnd = mExplicitGridColEnd;
-  mGridRowEnd = mExplicitGridRowEnd;
-}
-
-void
-nsGridContainerFrame::PlaceGridItems(GridReflowState& aState)
+nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
+                                     const LogicalSize& aComputedMinSize,
+                                     const LogicalSize& aComputedSize,
+                                     const LogicalSize& aComputedMaxSize)
 {
   const nsStylePosition* const gridStyle = aState.mGridStyle;
-
   mCellMap.ClearOccupied();
-  InitializeGridBounds(gridStyle);
 
-  uint32_t numRepeatCols = 0; 
+  
+  
+  
+  
+  
+  
+  
+  auto areas = gridStyle->mGridTemplateAreas.get();
+  uint32_t numRepeatCols = aState.mColFunctions.InitRepeatTracks(
+                             gridStyle->mGridColumnGap,
+                             aComputedMinSize.ISize(aState.mWM),
+                             aComputedSize.ISize(aState.mWM),
+                             aComputedMaxSize.ISize(aState.mWM));
+  mGridColEnd = mExplicitGridColEnd =
+    aState.mColFunctions.ComputeExplicitGridEnd(areas ? areas->mNColumns + 1 : 1);
   LineNameMap colLineNameMap(gridStyle->mGridTemplateColumns, numRepeatCols);
 
-  uint32_t numRepeatRows = 0; 
+  uint32_t numRepeatRows = aState.mRowFunctions.InitRepeatTracks(
+                             gridStyle->mGridRowGap,
+                             aComputedMinSize.BSize(aState.mWM),
+                             aComputedSize.BSize(aState.mWM),
+                             aComputedMaxSize.BSize(aState.mWM));
+  mGridRowEnd = mExplicitGridRowEnd =
+    aState.mRowFunctions.ComputeExplicitGridEnd(areas ? areas->NRows() + 1 : 1);
   LineNameMap rowLineNameMap(gridStyle->mGridTemplateRows, numRepeatRows);
 
   
@@ -2048,42 +2126,19 @@ nsGridContainerFrame::Tracks::Initialize(
   uint32_t                    aNumTracks,
   nscoord                     aContentBoxSize)
 {
+  MOZ_ASSERT(aNumTracks >= aFunctions.mExplicitGridOffset +
+                             aFunctions.NumExplicitTracks());
   mSizes.SetLength(aNumTracks);
   PodZero(mSizes.Elements(), mSizes.Length());
   nscoord percentageBasis = aContentBoxSize;
   if (percentageBasis == NS_UNCONSTRAINEDSIZE) {
     percentageBasis = 0;
   }
-
-  const uint32_t explicitGridOffset = aFunctions.mExplicitGridOffset;
-  MOZ_ASSERT(mSizes.Length() >=
-               explicitGridOffset + aFunctions.mMinSizingFunctions.Length());
-  MOZ_ASSERT(aFunctions.mMinSizingFunctions.Length() ==
-               aFunctions.mMaxSizingFunctions.Length());
-  
-  uint32_t i = 0;
-  uint32_t sentinel = std::min<uint32_t>(explicitGridOffset, mSizes.Length());
-  for (; i < sentinel; ++i) {
+  for (uint32_t i = 0, len = mSizes.Length(); i < len; ++i) {
     mSizes[i].Initialize(percentageBasis,
-                         aFunctions.mAutoMinSizing,
-                         aFunctions.mAutoMaxSizing);
+                         aFunctions.MinSizingFor(i),
+                         aFunctions.MaxSizingFor(i));
   }
-  
-  sentinel = std::min<uint32_t>(i + aFunctions.mMinSizingFunctions.Length(),
-                                mSizes.Length());
-  for (uint32_t j = 0; i < sentinel; ++i, ++j) {
-    mSizes[i].Initialize(percentageBasis,
-                         aFunctions.mMinSizingFunctions[j],
-                         aFunctions.mMaxSizingFunctions[j]);
-  }
-  
-  sentinel = mSizes.Length();
-  for (; i < sentinel; ++i) {
-    mSizes[i].Initialize(percentageBasis,
-                         aFunctions.mAutoMinSizing,
-                         aFunctions.mAutoMaxSizing);
-  }
-
   mGridGap = aGridGap;
   MOZ_ASSERT(mGridGap >= nscoord(0), "negative grid gap");
 }
@@ -3105,7 +3160,8 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   InitImplicitNamedAreas(stylePos);
   GridReflowState gridReflowState(this, aReflowState);
   mIsNormalFlowInCSSOrder = gridReflowState.mIter.ItemsAreAlreadyInOrder();
-  PlaceGridItems(gridReflowState);
+  LogicalSize indefinite(gridReflowState.mWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  PlaceGridItems(gridReflowState, indefinite, indefinite, indefinite);
 
   const nscoord computedBSize = aReflowState.ComputedBSize();
   const nscoord computedISize = aReflowState.ComputedISize();
@@ -3171,7 +3227,8 @@ nsGridContainerFrame::IntrinsicISize(nsRenderingContext* aRenderingContext,
   
   GridReflowState state(this, *aRenderingContext);
   InitImplicitNamedAreas(state.mGridStyle); 
-  PlaceGridItems(state);                    
+  LogicalSize indefinite(state.mWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  PlaceGridItems(state, indefinite, indefinite, indefinite);  
   if (mGridColEnd == 0) {
     return 0;
   }

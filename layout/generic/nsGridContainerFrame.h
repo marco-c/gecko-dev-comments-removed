@@ -471,16 +471,20 @@ protected:
 
 
 
-  void PlaceGridItems(GridReflowState& aState);
 
+
+
+
+
+
+  void PlaceGridItems(GridReflowState&   aState,
+                      const LogicalSize& aComputedMinSize,
+                      const LogicalSize& aComputedSize,
+                      const LogicalSize& aComputedMaxSize);
   
-
-
-
-
-
-
-  void InitializeGridBounds(const nsStylePosition* aStyle);
+  void PlaceGridItems(GridReflowState&   aState,
+                      const LineNameMap& aColLineNameMap,
+                      const LineNameMap& aRowLineNameMap);
 
   
 
