@@ -26,11 +26,12 @@ public:
   virtual void WriteInternal(const char* aBuffer, uint32_t aCount) override;
   virtual Telemetry::ID SpeedHistogram() override;
 
+  
+  bool IsValidICO() const;
+
 private:
   friend class DecoderFactory;
-  friend class nsICODecoder;
 
-  
   
   explicit nsPNGDecoder(RasterImage* aImage);
 
@@ -53,37 +54,6 @@ private:
   void PostInvalidationIfNeeded();
 
   void WriteRow(uint8_t* aRow);
-
-  
-  
-  bool IsValidICO() const
-  {
-    
-    
-    
-    
-    if (setjmp(png_jmpbuf(mPNG))) {
-      
-      return false;
-    }
-
-    png_uint_32
-        png_width,  
-        png_height; 
-
-    int png_bit_depth,
-        png_color_type;
-
-    if (png_get_IHDR(mPNG, mInfo, &png_width, &png_height, &png_bit_depth,
-                     &png_color_type, nullptr, nullptr, nullptr)) {
-
-      return ((png_color_type == PNG_COLOR_TYPE_RGB_ALPHA ||
-               png_color_type == PNG_COLOR_TYPE_RGB) &&
-              png_bit_depth == 8);
-    } else {
-      return false;
-    }
-  }
 
   enum class State
   {

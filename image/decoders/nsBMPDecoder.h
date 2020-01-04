@@ -156,7 +156,6 @@ public:
 
 private:
   friend class DecoderFactory;
-  friend class nsICODecoder;
 
   enum class State {
     FILE_HEADER,
@@ -175,8 +174,6 @@ private:
   
   explicit nsBMPDecoder(RasterImage* aImage);
 
-  
-  
   
   nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset);
 
