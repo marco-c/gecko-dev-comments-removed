@@ -29,8 +29,8 @@ NS_INTERFACE_MAP_BEGIN(nsSecCheckWrapChannelBase)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIHttpChannel)
   NS_INTERFACE_MAP_ENTRY(nsIRequest)
   NS_INTERFACE_MAP_ENTRY(nsIChannel)
-  NS_INTERFACE_MAP_ENTRY(nsIUploadChannel)
-  NS_INTERFACE_MAP_ENTRY(nsIUploadChannel2)
+  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIUploadChannel, mUploadChannel)
+  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIUploadChannel2, mUploadChannel2)
   NS_INTERFACE_MAP_ENTRY(nsISecCheckWrapChannel)
 NS_INTERFACE_MAP_END
 
@@ -93,18 +93,13 @@ nsSecCheckWrapChannel::MaybeWrap(nsIChannel* aChannel, nsILoadInfo* aLoadInfo)
   
   nsCOMPtr<nsIForcePendingChannel> isGeckoChannel = do_QueryInterface(aChannel);
 
-  nsCOMPtr<nsIChannel> channel = aChannel;
+  nsCOMPtr<nsIChannel> channel;
   if (isGeckoChannel) {
     
+    channel = aChannel;
     channel->SetLoadInfo(aLoadInfo);
   } else {
-    nsCOMPtr<nsIHttpChannel> httpChannel =
-      do_QueryInterface(aChannel);
-    
-    if (httpChannel) {
-      
-      channel = new nsSecCheckWrapChannel(aChannel, aLoadInfo);
-    }
+    channel = new nsSecCheckWrapChannel(aChannel, aLoadInfo);
   }
   return channel.forget();
 }
