@@ -546,6 +546,11 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
     }
 
     public interface PromptCallback {
+
+        
+
+
+
         public void onPromptFinished(String jsonResult);
     }
 }
