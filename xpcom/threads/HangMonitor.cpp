@@ -371,15 +371,9 @@ NotifyActivity(ActivityType aActivityType)
   gTimestamp = PR_IntervalNow();
 
   
-  
   if (aActivityType == kUIActivity) {
-    
-    
-    static const uint32_t kUIResponsivenessThresholdMS = 50;
-    if (cumulativeUILagMS > kUIResponsivenessThresholdMS) {
-      mozilla::Telemetry::Accumulate(mozilla::Telemetry::EVENTLOOP_UI_LAG_EXP_MS,
+    mozilla::Telemetry::Accumulate(mozilla::Telemetry::EVENTLOOP_UI_ACTIVITY_EXP_MS,
                                      cumulativeUILagMS);
-    }
     cumulativeUILagMS = 0;
   }
 
