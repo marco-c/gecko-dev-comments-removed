@@ -445,6 +445,18 @@ public:
 
   static bool ShouldHideScrollbars();
 
+  
+
+
+
+
+  static bool SanitizePath(const wchar_t* aInputPath, nsAString& aOutput);
+
+  
+
+
+  static bool GetAppInitDLLs(nsAString& aOutput);
+
 private:
   typedef HRESULT (WINAPI * SHCreateItemFromParsingNamePtr)(PCWSTR pszPath,
                                                             IBindCtx *pbc,
@@ -456,6 +468,9 @@ private:
                                                      HANDLE hToken,
                                                      PWSTR *ppszPath);
   static SHGetKnownFolderPathPtr sGetKnownFolderPath;
+
+  static void GetWhitelistedPaths(
+      nsTArray<mozilla::Pair<nsString,nsDependentString>>& aOutput);
 };
 
 #ifdef MOZ_PLACES
