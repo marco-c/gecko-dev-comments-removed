@@ -36,34 +36,6 @@ function test()
 
 
 
-  try
-  {
-    (x for each (c in []))
-      x
-      }
-  catch(ex)
-  {
-  }
-
-
-
-    try
-    {
-      (function(){for(; (this); ((window for (x in [])) for (y in []))) 0});
-    }
-    catch(ex)
-    {
-    }
-
-
-  eval(uneval( function(){
-        ((function()y)() for each (x in this))
-          } ))
-
-
-
-
-
     for (let a=0;a<3;++a) for (let b=0;b<3;++b) if ((g=a|(a%b))) with({}){}
 
 

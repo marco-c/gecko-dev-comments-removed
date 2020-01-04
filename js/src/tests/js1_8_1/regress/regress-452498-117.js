@@ -54,27 +54,6 @@ function test()
 
 
 
-  try
-  {
-    (function(){([]) ((function(q) { return q; })for (each in [1,2]))})();
-  }
-  catch(ex)
-  {
-  }
-
-
-
-
-  try
-  {
-    eval("((x1) > [(x)(function() { x;}) for each (x in x)])()");
-  }
-  catch(ex)
-  {
-  }
-
-
-
   uneval(function(){arguments = ({ get y(){} }); for(var [arguments] in y ) (x);});
 
 
@@ -82,16 +61,6 @@ function test()
   try
   {
     eval('(function(){{for(c in (function (){ for(x in (x1))window} )()) {const x = undefined;} }})();');
-  }
-  catch(ex)
-  {
-  }
-
-
-
-  try
-  {
-    (eval("(function(){let x , x =  (x for (x in null))});"))();
   }
   catch(ex)
   {

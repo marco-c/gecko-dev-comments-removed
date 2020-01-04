@@ -56,24 +56,6 @@ function test()
 
 
 
-  try
-  {
-    do {x} while([[] for (x in []) ]);
-  }
-  catch(ex)
-  {
-  }
-
-
-
-  try
-  {
-    {x} ((x=[] for (x in []))); x;
-  }
-  catch(ex)
-  {
-  }
-
 
 
 
