@@ -195,8 +195,9 @@ public:
   static void StartHandlingUserInput()
   {
     ++sUserInputEventDepth;
+    ++sUserInputCounter;
     if (sUserInputEventDepth == 1) {
-      sHandlingInputStart = TimeStamp::Now();
+      sLatestUserInputStart = sHandlingInputStart = TimeStamp::Now();
     }
   }
 
@@ -219,6 +220,27 @@ public:
 
 
   static bool IsHandlingUserInput();
+
+  
+
+
+
+
+  static uint64_t UserInputCount()
+  {
+    return sUserInputCounter;
+  }
+
+  
+
+
+
+
+
+  static TimeStamp LatestUserInputStart()
+  {
+    return sLatestUserInputStart;
+  }
 
   nsPresContext* GetPresContext() { return mPresContext; }
 
@@ -922,7 +944,12 @@ private:
   bool m_haveShutdown;
 
   
+  
   static TimeStamp sHandlingInputStart;
+
+  
+  
+  static TimeStamp sLatestUserInputStart;
 
   RefPtr<OverOutElementsWrapper> mMouseEnterLeaveHelper;
   nsRefPtrHashtable<nsUint32HashKey, OverOutElementsWrapper> mPointersEnterLeaveHelper;
@@ -932,6 +959,16 @@ public:
   
   nsCOMArray<nsIContent> mAccessKeys;
 
+  
+  
+  
+  static uint64_t sUserInputCounter;
+
+  
+  
+  
+  
+  
   static int32_t sUserInputEventDepth;
   
   static bool sNormalLMouseEventInProcess;
