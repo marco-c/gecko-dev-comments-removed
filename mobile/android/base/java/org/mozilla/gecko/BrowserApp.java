@@ -2174,16 +2174,16 @@ public class BrowserApp extends GeckoApp
 
             
             
-            String telemetryMsg;
+            final String telemetryMsg;
             if (!TextUtils.isEmpty(userSearchTerm)) {
                 url = userSearchTerm;
-                telemetryMsg = "urlbar-userEntered";
+                telemetryMsg = "urlbar-userentered";
             } else {
                 url = tab.getURL();
                 telemetryMsg = url.isEmpty() ? "urlbar-empty" : "urlbar-url";
             }
 
-            Telemetry.sendUIEvent(TelemetryContract.Event.SEARCH, TelemetryContract.Method.ACTIONBAR, telemetryMsg);
+            Telemetry.sendUIEvent(TelemetryContract.Event.SHOW, TelemetryContract.Method.ACTIONBAR, telemetryMsg);
         }
         enterEditingMode(url);
     }
@@ -2221,7 +2221,6 @@ public class BrowserApp extends GeckoApp
         final boolean isUserSearchTerm = !TextUtils.isEmpty(selectedTab.getUserRequested());
         if (isUserSearchTerm && AppConstants.NIGHTLY_BUILD) {
             showBrowserSearchAfterAnimation(animator);
-            hideWebContentOnPropertyAnimationEnd(animator);
         } else {
             showHomePagerWithAnimator(panelId, animator);
         }
@@ -2705,9 +2704,6 @@ public class BrowserApp extends GeckoApp
         
         
         showHomePager(Tabs.getInstance().getSelectedTab().getMostRecentHomePanel());
-
-        
-        mHideWebContentOnAnimationEnd = false;
 
         mBrowserSearchContainer.setVisibility(View.INVISIBLE);
 
