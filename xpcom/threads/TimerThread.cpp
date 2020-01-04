@@ -31,8 +31,7 @@ TimerThread::TimerThread() :
   mShutdown(false),
   mWaiting(false),
   mNotified(false),
-  mSleeping(false),
-  mLastTimerEventLoopRun(TimeStamp::Now())
+  mSleeping(false)
 {
 }
 
@@ -441,7 +440,6 @@ TimerThread::Run()
     } else {
       waitFor = PR_INTERVAL_NO_TIMEOUT;
       TimeStamp now = TimeStamp::Now();
-      mLastTimerEventLoopRun = now;
       nsTimerImpl* timer = nullptr;
 
       if (!mTimers.IsEmpty()) {
@@ -747,7 +745,6 @@ TimerThread::DoBeforeSleep()
 {
   
   MonitorAutoLock lock(mMonitor);
-  mLastTimerEventLoopRun = TimeStamp::Now();
   mSleeping = true;
 }
 
@@ -756,26 +753,10 @@ void
 TimerThread::DoAfterSleep()
 {
   
-  TimeStamp now = TimeStamp::Now();
-
   MonitorAutoLock lock(mMonitor);
-
-  
-  TimeDuration slept = now - mLastTimerEventLoopRun;
-
-  
-  
-  
-  
-  
-  
-  for (uint32_t i = 0; i < mTimers.Length(); i ++) {
-    nsTimerImpl* timer = mTimers[i];
-    timer->mTimeout += slept;
-  }
   mSleeping = false;
-  mLastTimerEventLoopRun = now;
 
+  
   
   mNotified = true;
   mMonitor.Notify();
