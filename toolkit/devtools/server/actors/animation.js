@@ -483,7 +483,17 @@ let AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
       return;
     }
 
-    this.autoRefreshTimer = setInterval(this.refreshState.bind(this), interval);
+    this.autoRefreshTimer = setInterval(() => {
+      
+      
+      
+      
+      
+      this.pendingRefreshStatePromise = this.refreshState();
+      this.pendingRefreshStatePromise.then(() => {
+        this.pendingRefreshStatePromise = null;
+      });
+    }, interval);
   },
 
   

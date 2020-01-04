@@ -45,7 +45,13 @@ add_task(function*() {
         info("Stop the auto-refresh");
         player.stopAutoRefresh();
 
-        resolve();
+        if (player.pendingRefreshStatePromise) {
+          
+          
+          player.pendingRefreshStatePromise.then(resolve);
+        } else {
+          resolve();
+        }
       }
     };
     player.on(player.AUTO_REFRESH_EVENT, onNewState);
