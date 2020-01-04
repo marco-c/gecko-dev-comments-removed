@@ -36,10 +36,10 @@ public:
   
   
   
-  virtual MOZ_MUST_USE nsresult GetFileTokenForPath(const char16_t * platformAppPath, nsIFile ** aFile);
+  virtual nsresult GetFileTokenForPath(const char16_t * platformAppPath, nsIFile ** aFile);
 
-  MOZ_MUST_USE nsresult OSProtocolHandlerExists(const char * aScheme,
-                                                bool * aHandlerExists);
+  nsresult OSProtocolHandlerExists(const char * aScheme,
+                                   bool * aHandlerExists);
 
 private:
   uint32_t mPermissions;

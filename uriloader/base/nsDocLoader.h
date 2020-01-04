@@ -58,7 +58,7 @@ public:
 
     nsDocLoader();
 
-    virtual MOZ_MUST_USE nsresult Init();
+    virtual nsresult Init();
 
     static already_AddRefed<nsDocLoader> GetAsDocLoader(nsISupports* aSupports);
     
@@ -67,7 +67,7 @@ public:
     }
 
     
-    static MOZ_MUST_USE nsresult AddDocLoaderAsChildOfRoot(nsDocLoader* aDocLoader);
+    static nsresult AddDocLoaderAsChildOfRoot(nsDocLoader* aDocLoader);
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIDOCUMENTLOADER
@@ -89,10 +89,10 @@ public:
 
     
     
-    MOZ_MUST_USE nsresult RemoveChildLoader(nsDocLoader *aChild);
+    nsresult RemoveChildLoader(nsDocLoader *aChild);
     
     
-    MOZ_MUST_USE nsresult AddChildLoader(nsDocLoader* aChild);
+    nsresult AddChildLoader(nsDocLoader* aChild);
     nsDocLoader* GetParent() const { return mParent; }
 
     struct nsListenerInfo {
@@ -112,7 +112,7 @@ public:
 protected:
     virtual ~nsDocLoader();
 
-    virtual MOZ_MUST_USE nsresult SetDocLoaderParent(nsDocLoader * aLoader);
+    virtual nsresult SetDocLoaderParent(nsDocLoader * aLoader);
 
     bool IsBusy();
 
@@ -164,7 +164,7 @@ protected:
                               nsIURI *aUri,
                               uint32_t aFlags);
 
-    MOZ_MUST_USE bool RefreshAttempted(nsIWebProgress* aWebProgress,
+    bool RefreshAttempted(nsIWebProgress* aWebProgress,
                             nsIURI *aURI,
                             int32_t aDelay,
                             bool aSameURI);
@@ -187,7 +187,7 @@ protected:
 
     
     
-    MOZ_MUST_USE bool ChildEnteringOnload(nsIDocumentLoader* aChild) {
+    bool ChildEnteringOnload(nsIDocumentLoader* aChild) {
         
         
         

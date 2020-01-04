@@ -67,7 +67,7 @@ public:
 
 
 
-  MOZ_MUST_USE nsresult Init();
+  nsresult Init();
  
   
 
