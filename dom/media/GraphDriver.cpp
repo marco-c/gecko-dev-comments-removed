@@ -227,7 +227,7 @@ void
 ThreadedDriver::Start()
 {
   LIFECYCLE_LOG("Starting thread for a SystemClockDriver  %p\n", mGraphImpl);
-  NS_WARN_IF(!mThread);
+  NS_WARN_IF(mThread);
   if (!mThread) { 
     nsCOMPtr<nsIRunnable> event = new MediaStreamGraphInitThreadRunnable(this);
     
