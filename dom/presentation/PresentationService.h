@@ -33,14 +33,23 @@ public:
   bool Init();
 
   already_AddRefed<PresentationSessionInfo>
-  GetSessionInfo(const nsAString& aSessionId)
+  GetSessionInfo(const nsAString& aSessionId, const uint8_t aRole)
   {
+    MOZ_ASSERT(aRole == nsIPresentationService::ROLE_CONTROLLER ||
+               aRole == nsIPresentationService::ROLE_RECEIVER);
+
     RefPtr<PresentationSessionInfo> info;
-    return mSessionInfo.Get(aSessionId, getter_AddRefs(info)) ?
-           info.forget() : nullptr;
+    if (aRole == nsIPresentationService::ROLE_CONTROLLER) {
+      return mSessionInfoAtController.Get(aSessionId, getter_AddRefs(info)) ?
+             info.forget() : nullptr;
+    } else {
+      return mSessionInfoAtReceiver.Get(aSessionId, getter_AddRefs(info)) ?
+             info.forget() : nullptr;
+    }
   }
 
   bool IsSessionAccessible(const nsAString& aSessionId,
+                           const uint8_t aRole,
                            base::ProcessId aProcessId);
 
 private:
@@ -61,7 +70,8 @@ private:
   
   nsRefPtrHashtable<nsUint64HashKey, nsIPresentationRespondingListener> mRespondingListeners;
 
-  nsRefPtrHashtable<nsStringHashKey, PresentationSessionInfo> mSessionInfo;
+  nsRefPtrHashtable<nsStringHashKey, PresentationSessionInfo> mSessionInfoAtController;
+  nsRefPtrHashtable<nsStringHashKey, PresentationSessionInfo> mSessionInfoAtReceiver;
 
   
   
