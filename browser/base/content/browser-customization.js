@@ -63,9 +63,8 @@ var CustomizationHandler = {
       gHomeButton.updateTooltip();
       XULBrowserWindow.init();
 
-#ifndef XP_MACOSX
-      updateEditUIVisibility();
-#endif
+      if (AppConstants.platform != "macosx")
+        updateEditUIVisibility();
 
       
       
