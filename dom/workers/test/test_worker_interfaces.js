@@ -174,7 +174,7 @@ var interfaceNamesInGlobalScope =
 
     "Response",
 
-    { name: "ServiceWorkerRegistration", b2g: false, android: false },
+    { name: "ServiceWorkerRegistration", b2g: false, releaseAndroid: false },
 
     "TextDecoder",
 
@@ -223,6 +223,7 @@ function createInterfaceMap(permissionMap, version, userAgent, isB2G) {
             (entry.android === !isAndroid) ||
             (entry.b2g === !isB2G) ||
             (entry.release === !isRelease) ||
+            (entry.releaseAndroid === !(isAndroid && isRelease)) ||
             (entry.permission && !permissionMap[entry.permission]) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
