@@ -71,6 +71,14 @@ NS_IMETHODIMP AppCacheStorage::AsyncOpenURI(nsIURI *aURI,
   rv = noRefURI->GetAsciiSpec(cacheKey);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  if (LoadInfo()->IsAnonymous()) {
+    cacheKey = NS_LITERAL_CSTRING("anon&") + cacheKey;
+  }
+
   nsAutoCString scheme;
   rv = noRefURI->GetScheme(scheme);
   NS_ENSURE_SUCCESS(rv, rv);
