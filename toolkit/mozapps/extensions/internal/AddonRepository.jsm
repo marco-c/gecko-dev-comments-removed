@@ -131,7 +131,7 @@ function getAddonsToCache(aIds, aCallback) {
 
   types = types.split(",");
 
-  AddonManager.getAddonsByIDs(aIds, function getAddonsToCache_getAddonsByIDs(aAddons) {
+  AddonManager.getAddonsByIDs(aIds, function(aAddons) {
     let enabledIds = [];
     for (var i = 0; i < aIds.length; i++) {
       var preference = PREF_GETADDONS_CACHE_ID_ENABLED.replace("%ID%", aIds[i]);
@@ -399,7 +399,7 @@ AddonSearchResult.prototype = {
 
 
 
-  isCompatibleWith: function ASR_isCompatibleWith(aAppVerison, aPlatformVersion) {
+  isCompatibleWith: function(aAppVerison, aPlatformVersion) {
     return true;
   },
 
@@ -416,7 +416,7 @@ AddonSearchResult.prototype = {
 
 
 
-  findUpdates: function ASR_findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
+  findUpdates: function(aListener, aReason, aAppVersion, aPlatformVersion) {
     if ("onNoCompatibilityUpdateAvailable" in aListener)
       aListener.onNoCompatibilityUpdateAvailable(this);
     if ("onNoUpdateAvailable" in aListener)
@@ -530,7 +530,7 @@ this.AddonRepository = {
 
 
 
-  shutdown: function AddonRepo_shutdown() {
+  shutdown: function() {
     this.cancelSearch();
 
     this._addons = null;
@@ -552,7 +552,7 @@ this.AddonRepository = {
     return now - lastUpdate;
   },
 
-  isMetadataStale: function AddonRepo_isMetadataStale() {
+  isMetadataStale: function() {
     let threshold = DEFAULT_METADATA_UPDATETHRESHOLD_SEC;
     try {
       threshold = Services.prefs.getIntPref(PREF_METADATA_UPDATETHRESHOLD_SEC);
@@ -570,7 +570,7 @@ this.AddonRepository = {
 
 
 
-  getCachedAddonByID: Task.async(function* (aId, aCallback) {
+  getCachedAddonByID: Task.async(function*(aId, aCallback) {
     if (!aId || !this.cacheEnabled) {
       aCallback(null);
       return;
@@ -611,7 +611,7 @@ this.AddonRepository = {
 
 
 
-  _clearCache: function () {
+  _clearCache: function() {
     this._addons = null;
     return AddonDatabase.delete().then(() =>
       new Promise((resolve, reject) =>
@@ -619,7 +619,7 @@ this.AddonRepository = {
     );
   },
 
-  _repopulateCacheInternal: Task.async(function* (aSendPerformance, aTimeout) {
+  _repopulateCacheInternal: Task.async(function*(aSendPerformance, aTimeout) {
     let allAddons = yield new Promise((resolve, reject) =>
       AddonManager.getAllAddons(resolve));
 
@@ -647,14 +647,14 @@ this.AddonRepository = {
 
     yield new Promise((resolve, reject) =>
       self._beginGetAddons(addonsToCache, {
-        searchSucceeded: function repopulateCacheInternal_searchSucceeded(aAddons) {
+        searchSucceeded: function(aAddons) {
           self._addons = new Map();
           for (let addon of aAddons) {
             self._addons.set(addon.id, addon);
           }
           AddonDatabase.repopulate(aAddons, resolve);
         },
-        searchFailed: function repopulateCacheInternal_searchFailed() {
+        searchFailed: function() {
           logger.warn("Search failed when repopulating cache");
           resolve();
         }
@@ -675,7 +675,7 @@ this.AddonRepository = {
 
 
 
-  cacheAddons: function AddonRepo_cacheAddons(aIds, aCallback) {
+  cacheAddons: function(aIds, aCallback) {
     logger.debug("cacheAddons: enabled " + this.cacheEnabled + " IDs " + aIds.toSource());
     if (!this.cacheEnabled) {
       if (aCallback)
@@ -684,7 +684,7 @@ this.AddonRepository = {
     }
 
     let self = this;
-    getAddonsToCache(aIds, function cacheAddons_getAddonsToCache(aAddons) {
+    getAddonsToCache(aIds, function(aAddons) {
       
       if (aAddons.length == 0) {
         if (aCallback)
@@ -693,13 +693,13 @@ this.AddonRepository = {
       }
 
       self.getAddonsByIDs(aAddons, {
-        searchSucceeded: function cacheAddons_searchSucceeded(aAddons) {
+        searchSucceeded: function(aAddons) {
           for (let addon of aAddons) {
             self._addons.set(addon.id, addon);
           }
           AddonDatabase.insertAddons(aAddons, aCallback);
         },
-        searchFailed: function cacheAddons_searchFailed() {
+        searchFailed: function() {
           logger.warn("Search failed when adding add-ons to cache");
           if (aCallback)
             aCallback();
@@ -729,7 +729,7 @@ this.AddonRepository = {
 
 
 
-  getRecommendedURL: function AddonRepo_getRecommendedURL() {
+  getRecommendedURL: function() {
     let url = this._formatURLPref(PREF_GETADDONS_BROWSERECOMMENDED, {});
     return (url != null) ? url : "about:blank";
   },
@@ -742,7 +742,7 @@ this.AddonRepository = {
 
 
 
-  getSearchURL: function AddonRepo_getSearchURL(aSearchTerms) {
+  getSearchURL: function(aSearchTerms) {
     let url = this._formatURLPref(PREF_GETADDONS_BROWSESEARCHRESULTS, {
       TERMS : encodeURIComponent(aSearchTerms)
     });
@@ -753,7 +753,7 @@ this.AddonRepository = {
 
 
 
-  cancelSearch: function AddonRepo_cancelSearch() {
+  cancelSearch: function() {
     this._searching = false;
     if (this._request) {
       this._request.abort();
@@ -771,7 +771,7 @@ this.AddonRepository = {
 
 
 
-  getAddonsByIDs: function AddonRepo_getAddonsByIDs(aIDs, aCallback) {
+  getAddonsByIDs: function(aIDs, aCallback) {
     return this._beginGetAddons(aIDs, aCallback, false);
   },
 
@@ -889,7 +889,7 @@ this.AddonRepository = {
 
 
 
-  backgroundUpdateCheck: function () {
+  backgroundUpdateCheck: function() {
     return this._repopulateCacheInternal(true);
   },
 
@@ -902,7 +902,7 @@ this.AddonRepository = {
 
 
 
-  retrieveRecommendedAddons: function AddonRepo_retrieveRecommendedAddons(aMaxResults, aCallback) {
+  retrieveRecommendedAddons: function(aMaxResults, aCallback) {
     let url = this._formatURLPref(PREF_GETADDONS_GETRECOMMENDED, {
       API_VERSION : API_VERSION,
 
@@ -912,7 +912,7 @@ this.AddonRepository = {
 
     let self = this;
     function handleResults(aElements, aTotalResults) {
-      self._getLocalAddonIds(function retrieveRecommendedAddons_getLocalAddonIds(aLocalAddonIds) {
+      self._getLocalAddonIds(function(aLocalAddonIds) {
         
         self._parseAddons(aElements, -1, aLocalAddonIds);
       });
@@ -932,7 +932,7 @@ this.AddonRepository = {
 
 
 
-  searchAddons: function AddonRepo_searchAddons(aSearchTerms, aMaxResults, aCallback) {
+  searchAddons: function(aSearchTerms, aMaxResults, aCallback) {
     let compatMode = "normal";
     if (!AddonManager.checkCompatibility)
       compatMode = "ignore";
@@ -951,7 +951,7 @@ this.AddonRepository = {
 
     let self = this;
     function handleResults(aElements, aTotalResults) {
-      self._getLocalAddonIds(function searchAddons_getLocalAddonIds(aLocalAddonIds) {
+      self._getLocalAddonIds(function(aLocalAddonIds) {
         self._parseAddons(aElements, aTotalResults, aLocalAddonIds);
       });
     }
@@ -960,7 +960,7 @@ this.AddonRepository = {
   },
 
   
-  _reportSuccess: function AddonRepo_reportSuccess(aResults, aTotalResults) {
+  _reportSuccess: function(aResults, aTotalResults) {
     this._searching = false;
     this._request = null;
     
@@ -971,7 +971,7 @@ this.AddonRepository = {
   },
 
   
-  _reportFailure: function AddonRepo_reportFailure() {
+  _reportFailure: function() {
     this._searching = false;
     this._request = null;
     
@@ -981,28 +981,28 @@ this.AddonRepository = {
   },
 
   
-  _getUniqueDescendant: function AddonRepo_getUniqueDescendant(aElement, aTagName) {
+  _getUniqueDescendant: function(aElement, aTagName) {
     let elementsList = aElement.getElementsByTagName(aTagName);
     return (elementsList.length == 1) ? elementsList[0] : null;
   },
 
   
   
-  _getUniqueDirectDescendant: function AddonRepo_getUniqueDirectDescendant(aElement, aTagName) {
+  _getUniqueDirectDescendant: function(aElement, aTagName) {
     let elementsList = Array.filter(aElement.children,
                                     aChild => aChild.tagName == aTagName);
     return (elementsList.length == 1) ? elementsList[0] : null;
   },
 
   
-  _getTextContent: function AddonRepo_getTextContent(aElement) {
+  _getTextContent: function(aElement) {
     let textContent = aElement.textContent.trim();
     return (textContent.length > 0) ? textContent : null;
   },
 
   
   
-  _getDescendantTextContent: function AddonRepo_getDescendantTextContent(aElement, aTagName) {
+  _getDescendantTextContent: function(aElement, aTagName) {
     let descendant = this._getUniqueDescendant(aElement, aTagName);
     return (descendant != null) ? this._getTextContent(descendant) : null;
   },
@@ -1010,7 +1010,7 @@ this.AddonRepository = {
   
   
   
-  _getDirectDescendantTextContent: function AddonRepo_getDirectDescendantTextContent(aElement, aTagName) {
+  _getDirectDescendantTextContent: function(aElement, aTagName) {
     let descendant = this._getUniqueDirectDescendant(aElement, aTagName);
     return (descendant != null) ? this._getTextContent(descendant) : null;
   },
@@ -1028,7 +1028,7 @@ this.AddonRepository = {
 
 
 
-  _parseAddon: function AddonRepo_parseAddon(aElement, aSkip, aCompatData) {
+  _parseAddon: function(aElement, aSkip, aCompatData) {
     let skipIDs = (aSkip && aSkip.ids) ? aSkip.ids : [];
     let skipSourceURIs = (aSkip && aSkip.sourceURIs) ? aSkip.sourceURIs : [];
 
@@ -1208,7 +1208,7 @@ this.AddonRepository = {
           break;
         case "all_compatible_os":
           let nodes = node.getElementsByTagName("os");
-          addon.isPlatformCompatible = Array.some(nodes, function parseAddon_platformCompatFilter(aNode) {
+          addon.isPlatformCompatible = Array.some(nodes, function(aNode) {
             let text = aNode.textContent.toLowerCase().trim();
             return text == "all" || text == Services.appinfo.OS.toLowerCase();
           });
@@ -1254,7 +1254,7 @@ this.AddonRepository = {
     return result;
   },
 
-  _parseAddons: function AddonRepo_parseAddons(aElements, aTotalResults, aSkip) {
+  _parseAddons: function(aElements, aTotalResults, aSkip) {
     let self = this;
     let results = [];
 
@@ -1270,7 +1270,7 @@ this.AddonRepository = {
         continue;
 
       let applications = tags.getElementsByTagName("appID");
-      let compatible = Array.some(applications, function parseAddons_applicationsCompatFilter(aAppNode) {
+      let compatible = Array.some(applications, function(aAppNode) {
         if (!isSameApplication(aAppNode))
           return false;
 
@@ -1337,7 +1337,7 @@ this.AddonRepository = {
     
     results.forEach(function(aResult) {
       let addon = aResult.addon;
-      let callback = function addonInstallCallback(aInstall) {
+      let callback = function(aInstall) {
         addon.install = aInstall;
         pendingResults--;
         if (pendingResults == 0)
@@ -1356,7 +1356,7 @@ this.AddonRepository = {
   },
 
   
-  _parseAddonCompatElement: function AddonRepo_parseAddonCompatElement(aResultObj, aElement) {
+  _parseAddonCompatElement: function(aResultObj, aElement) {
     let guid = this._getDescendantTextContent(aElement, "guid");
     if (!guid) {
         logger.debug("Compatibility override is missing guid.");
@@ -1437,7 +1437,7 @@ this.AddonRepository = {
   },
 
   
-  _parseAddonCompatData: function AddonRepo_parseAddonCompatData(aElements) {
+  _parseAddonCompatData: function(aElements) {
     let compatData = {};
     Array.forEach(aElements, this._parseAddonCompatElement.bind(this, compatData));
     return compatData;
@@ -1497,17 +1497,17 @@ this.AddonRepository = {
 
   
   
-  _getLocalAddonIds: function AddonRepo_getLocalAddonIds(aCallback) {
+  _getLocalAddonIds: function(aCallback) {
     let self = this;
     let localAddonIds = {ids: null, sourceURIs: null};
 
-    AddonManager.getAllAddons(function getLocalAddonIds_getAllAddons(aAddons) {
+    AddonManager.getAllAddons(function(aAddons) {
       localAddonIds.ids = aAddons.map(a => a.id);
       if (localAddonIds.sourceURIs)
         aCallback(localAddonIds);
     });
 
-    AddonManager.getAllInstalls(function getLocalAddonIds_getAllInstalls(aInstalls) {
+    AddonManager.getAllInstalls(function(aInstalls) {
       localAddonIds.sourceURIs = [];
       aInstalls.forEach(function(aInstall) {
         if (aInstall.state != AddonManager.STATE_AVAILABLE)
@@ -1520,7 +1520,7 @@ this.AddonRepository = {
   },
 
   
-  _formatURLPref: function AddonRepo_formatURLPref(aPreference, aSubstitutions) {
+  _formatURLPref: function(aPreference, aSubstitutions) {
     let url = null;
     try {
       url = Services.prefs.getCharPref(aPreference);
@@ -1529,7 +1529,7 @@ this.AddonRepository = {
       return null;
     }
 
-    url = url.replace(/%([A-Z_]+)%/g, function urlSubstitution(aMatch, aKey) {
+    url = url.replace(/%([A-Z_]+)%/g, function(aMatch, aKey) {
       return (aKey in aSubstitutions) ? aSubstitutions[aKey] : aMatch;
     });
 
@@ -1538,7 +1538,7 @@ this.AddonRepository = {
 
   
   
-  findMatchingCompatOverride: function AddonRepo_findMatchingCompatOverride(aAddonVersion,
+  findMatchingCompatOverride: function(aAddonVersion,
                                                                      aCompatOverrides,
                                                                      aAppVersion,
                                                                      aPlatformVersion) {
@@ -1675,7 +1675,7 @@ var AddonDatabase = {
 
 
 
-  shutdown: function AD_shutdown(aSkipFlush) {
+  shutdown: function(aSkipFlush) {
     this.databaseOk = true;
 
     if (!this.connectionPromise) {
@@ -1699,7 +1699,7 @@ var AddonDatabase = {
 
 
 
-  delete: function AD_delete(aCallback) {
+  delete: function(aCallback) {
     this.DB = BLANK_DB();
 
     this._deleting = this.Writer.flush()
@@ -1714,7 +1714,7 @@ var AddonDatabase = {
     return this._deleting;
   },
 
-  toJSON: function AD_toJSON() {
+  toJSON: function() {
     let json = {
       schema: this.DB.schema,
       addons: []
@@ -1759,7 +1759,7 @@ var AddonDatabase = {
 
 
 
-  retrieveStoredData: function (){
+  retrieveStoredData: function(){
     return this.openConnection().then(db => db.addons);
   },
 
@@ -1772,9 +1772,9 @@ var AddonDatabase = {
 
 
 
-  repopulate: function AD_repopulate(aAddons, aCallback) {
+  repopulate: function(aAddons, aCallback) {
     this.DB.addons.clear();
-    this.insertAddons(aAddons, function repopulate_insertAddons() {
+    this.insertAddons(aAddons, function() {
       let now = Math.round(Date.now() / 1000);
       logger.debug("Cache repopulated, setting " + PREF_METADATA_LASTUPDATE + " to " + now);
       Services.prefs.setIntPref(PREF_METADATA_LASTUPDATE, now);
@@ -1791,12 +1791,12 @@ var AddonDatabase = {
 
 
 
-  insertAddons: Task.async(function* (aAddons, aCallback) {
+  insertAddons: Task.async(function*(aAddons, aCallback) {
     yield this.openConnection();
     yield this._insertAddons(aAddons, aCallback);
   }),
 
-  _insertAddons: Task.async(function* (aAddons, aCallback) {
+  _insertAddons: Task.async(function*(aAddons, aCallback) {
     for (let addon of aAddons) {
       this._insertAddon(addon);
     }
@@ -1815,7 +1815,7 @@ var AddonDatabase = {
 
 
 
-  _insertAddon: function AD__insertAddon(aAddon) {
+  _insertAddon: function(aAddon) {
     let newAddon = this._parseAddon(aAddon);
     if (!newAddon ||
         !newAddon.id ||
@@ -1833,7 +1833,7 @@ var AddonDatabase = {
 
 
 
-  _parseAddon: function (aObj) {
+  _parseAddon: function(aObj) {
     if (aObj instanceof AddonSearchResult)
       return aObj;
 
@@ -1958,7 +1958,7 @@ var AddonDatabase = {
 
 
 
-  _makeDeveloper: function (aObj) {
+  _makeDeveloper: function(aObj) {
     let name = aObj.name;
     let url = aObj.url;
     return new AddonManagerPrivate.AddonAuthor(name, url);
@@ -1972,7 +1972,7 @@ var AddonDatabase = {
 
 
 
-  _makeScreenshot: function (aObj) {
+  _makeScreenshot: function(aObj) {
     let url = aObj.url;
     let width = aObj.width;
     let height = aObj.height;
@@ -1992,7 +1992,7 @@ var AddonDatabase = {
 
 
 
-  _makeCompatOverride: function (aObj) {
+  _makeCompatOverride: function(aObj) {
     let type = aObj.type;
     let minVersion = aObj.minVersion;
     let maxVersion = aObj.maxVersion;

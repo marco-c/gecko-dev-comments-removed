@@ -13,7 +13,7 @@ var gAddon = null;
 
 
 var EnableListener = {
-  onEnabling: function EnableListener_onEnabling(aAddon) {
+  onEnabling: function(aAddon) {
     if (aAddon.id == gAddon.id)
       window.close();
   }
@@ -38,7 +38,7 @@ function initialize() {
 
   let bundle = Services.strings.createBundle("chrome://mozapps/locale/extensions/newaddon.properties");
 
-  AddonManager.getAddonByID(id, function initialize_getAddonByID(aAddon) {
+  AddonManager.getAddonByID(id, function(aAddon) {
     
     
     

@@ -71,7 +71,7 @@ XPCOMUtils.defineLazyServiceGetter(this,
                                    "@mozilla.org/addons/policy-service;1",
                                    "nsIAddonPolicyService");
 
-XPCOMUtils.defineLazyGetter(this, "CertUtils", function certUtilsLazyGetter() {
+XPCOMUtils.defineLazyGetter(this, "CertUtils", function() {
   let certUtils = {};
   Components.utils.import("resource://gre/modules/CertUtils.jsm", certUtils);
   return certUtils;
@@ -320,7 +320,7 @@ function loadLazyObjects() {
 
 LAZY_OBJECTS.forEach(name => {
   Object.defineProperty(gGlobalScope, name, {
-    get: function lazyObjectGetter() {
+    get: function() {
       let objs = loadLazyObjects();
       return objs[name];
     },
@@ -404,7 +404,7 @@ SafeInstallOperation.prototype = {
   _installedFiles: null,
   _createdDirs: null,
 
-  _installFile: function SIO_installFile(aFile, aTargetDirectory, aCopy) {
+  _installFile: function(aFile, aTargetDirectory, aCopy) {
     let oldFile = aCopy ? null : aFile.clone();
     let newFile = aFile.clone();
     try {
@@ -421,7 +421,7 @@ SafeInstallOperation.prototype = {
     this._installedFiles.push({ oldFile: oldFile, newFile: newFile });
   },
 
-  _installDirectory: function SIO_installDirectory(aDirectory, aTargetDirectory, aCopy) {
+  _installDirectory: function(aDirectory, aTargetDirectory, aCopy) {
     let newDir = aTargetDirectory.clone();
     newDir.append(aDirectory.leafName);
     try {
@@ -469,7 +469,7 @@ SafeInstallOperation.prototype = {
     this._installedFiles.push({ oldFile: aDirectory, newFile: newDir });
   },
 
-  _installDirEntry: function SIO_installDirEntry(aDirEntry, aTargetDirectory, aCopy) {
+  _installDirEntry: function(aDirEntry, aTargetDirectory, aCopy) {
     let isDir = null;
 
     try {
@@ -510,7 +510,7 @@ SafeInstallOperation.prototype = {
 
 
 
-  moveUnder: function SIO_move(aFile, aTargetDirectory) {
+  moveUnder: function(aFile, aTargetDirectory) {
     try {
       this._installDirEntry(aFile, aTargetDirectory, false);
     }
@@ -551,7 +551,7 @@ SafeInstallOperation.prototype = {
 
 
 
-  copy: function SIO_copy(aFile, aTargetDirectory) {
+  copy: function(aFile, aTargetDirectory) {
     try {
       this._installDirEntry(aFile, aTargetDirectory, true);
     }
@@ -566,7 +566,7 @@ SafeInstallOperation.prototype = {
 
 
 
-  rollback: function SIO_rollback() {
+  rollback: function() {
     while (this._installedFiles.length > 0) {
       let move = this._installedFiles.pop();
       if (move.isMoveTo) {
@@ -853,7 +853,7 @@ function getRDFProperty(aDs, aResource, aProperty) {
 
 
 
-var loadManifestFromWebManifest = Task.async(function* loadManifestFromWebManifest(aUri) {
+var loadManifestFromWebManifest = Task.async(function*(aUri) {
   
   
   let uri = NetUtil.newURI("./", null, aUri);
@@ -1285,7 +1285,7 @@ function defineSyncGUID(aAddon) {
 
 
 
-var loadManifestFromDir = Task.async(function* loadManifestFromDir(aDir, aInstallLocation) {
+var loadManifestFromDir = Task.async(function*(aDir, aInstallLocation) {
   function getFileSize(aFile) {
     if (aFile.isSymlink())
       return 0;
@@ -1370,7 +1370,7 @@ var loadManifestFromDir = Task.async(function* loadManifestFromDir(aDir, aInstal
 
 
 
-var loadManifestFromZipReader = Task.async(function* loadManifestFromZipReader(aZipReader, aInstallLocation) {
+var loadManifestFromZipReader = Task.async(function*(aZipReader, aInstallLocation) {
   function loadFromRDF(aUri) {
     let zis = aZipReader.getInputStream(entry);
     let bis = Cc["@mozilla.org/network/buffered-input-stream;1"].
@@ -1441,7 +1441,7 @@ var loadManifestFromZipReader = Task.async(function* loadManifestFromZipReader(a
 
 
 
-var loadManifestFromZipFile = Task.async(function* loadManifestFromZipFile(aXPIFile, aInstallLocation) {
+var loadManifestFromZipFile = Task.async(function*(aXPIFile, aInstallLocation) {
   let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].
                   createInstance(Ci.nsIZipReader);
   try {
@@ -1798,7 +1798,7 @@ function escapeAddonURI(aAddon, aUri, aUpdateType, aAppVersion)
 }
 
 function removeAsync(aFile) {
-  return Task.spawn(function () {
+  return Task.spawn(function() {
     let info = null;
     try {
       info = yield OS.File.stat(aFile.path);
@@ -1927,7 +1927,7 @@ function getDirectoryEntries(aDir, aSortEntries) {
       entries.push(dirEnum.nextFile);
 
     if (aSortEntries) {
-      entries.sort(function sortDirEntries(a, b) {
+      entries.sort(function(a, b) {
         return a.path > b.path ? -1 : 1;
       });
     }
@@ -2365,7 +2365,7 @@ this.XPIProvider = {
   
 
 
-  setTelemetry: function XPI_setTelemetry(aId, aName, aValue) {
+  setTelemetry: function(aId, aName, aValue) {
     if (!this._telemetryDetails[aId])
       this._telemetryDetails[aId] = {};
     this._telemetryDetails[aId][aName] = aValue;
@@ -2374,11 +2374,11 @@ this.XPIProvider = {
   
   _inProgress: [],
 
-  doing: function XPI_doing(aCancellable) {
+  doing: function(aCancellable) {
     this._inProgress.push(aCancellable);
   },
 
-  done: function XPI_done(aCancellable) {
+  done: function(aCancellable) {
     let i = this._inProgress.indexOf(aCancellable);
     if (i != -1) {
       this._inProgress.splice(i, 1);
@@ -2387,7 +2387,7 @@ this.XPIProvider = {
     return false;
   },
 
-  cancelAll: function XPI_cancelAll() {
+  cancelAll: function() {
     
     while (this._inProgress.length > 0) {
       let c = this._inProgress.shift();
@@ -2407,7 +2407,7 @@ this.XPIProvider = {
 
 
 
-  _addURIMapping: function XPI__addURIMapping(aID, aFile) {
+  _addURIMapping: function(aID, aFile) {
     logger.info("Mapping " + aID + " to " + aFile.path);
     this._addonFileMap.set(aID, aFile.path);
 
@@ -2425,7 +2425,7 @@ this.XPIProvider = {
 
 
 
-  _resolveURIToFile: function XPI__resolveURIToFile(aURI) {
+  _resolveURIToFile: function(aURI) {
     switch (aURI.scheme) {
       case "jar":
       case "file":
@@ -2494,7 +2494,7 @@ this.XPIProvider = {
 
 
 
-  startup: function XPI_startup(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
+  startup: function(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
     function addDirectoryInstallLocation(aName, aKey, aPaths, aScope, aLocked) {
       try {
         var dir = FileUtils.getDir(aKey, aPaths);
@@ -2741,7 +2741,7 @@ this.XPIProvider = {
       
       
       Services.obs.addObserver({
-        observe: function shutdownObserver(aSubject, aTopic, aData) {
+        observe: function(aSubject, aTopic, aData) {
           XPIProvider._closing = true;
           for (let id in XPIProvider.bootstrappedAddons) {
             let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
@@ -2756,7 +2756,7 @@ this.XPIProvider = {
 
       
       Services.obs.addObserver({
-        observe: function uiStartupObserver(aSubject, aTopic, aData) {
+        observe: function(aSubject, aTopic, aData) {
           AddonManagerPrivate.recordTimestamp("XPI_finalUIStartup");
           XPIProvider.runPhase = XPI_AFTER_UI_STARTUP;
           Services.obs.removeObserver(this, "final-ui-startup");
@@ -2786,7 +2786,7 @@ this.XPIProvider = {
 
 
 
-  shutdown: function XPI_shutdown() {
+  shutdown: function() {
     logger.debug("shutdown");
 
     
@@ -2838,7 +2838,7 @@ this.XPIProvider = {
   
 
 
-  applyThemeChange: function XPI_applyThemeChange() {
+  applyThemeChange: function() {
     if (!Preferences.get(PREF_DSS_SWITCHPENDING, false))
       return;
 
@@ -2866,7 +2866,7 @@ this.XPIProvider = {
 
 
 
-  shouldForceUpdateCheck: function XPI_shouldForceUpdateCheck(aAppChanged) {
+  shouldForceUpdateCheck: function(aAppChanged) {
     AddonManagerPrivate.recordSimpleMeasure("XPIDB_metadata_age", AddonRepository.metadataAge());
 
     let startupChanges = AddonManager.getStartupChanges(AddonManager.STARTUP_CHANGE_DISABLED);
@@ -2904,7 +2904,7 @@ this.XPIProvider = {
 
 
 
-  showUpgradeUI: function XPI_showUpgradeUI(aAddonIDs) {
+  showUpgradeUI: function(aAddonIDs) {
     logger.debug("XPI_showUpgradeUI: " + aAddonIDs.toSource());
     
     Services.startup.interrupted = true;
@@ -2924,7 +2924,7 @@ this.XPIProvider = {
                                !XPIDatabase.writeAddonsList());
   },
 
-  updateSystemAddons: Task.async(function* XPI_updateSystemAddons() {
+  updateSystemAddons: Task.async(function*() {
     let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
     if (!systemAddonLocation)
       return;
@@ -3077,7 +3077,7 @@ this.XPIProvider = {
   
 
 
-  verifySignatures: function XPI_verifySignatures() {
+  verifySignatures: function() {
     XPIDatabase.getAddonList(a => true, (addons) => {
       Task.spawn(function*() {
         let changes = {
@@ -3116,7 +3116,7 @@ this.XPIProvider = {
   
 
 
-  persistBootstrappedAddons: function XPI_persistBootstrappedAddons() {
+  persistBootstrappedAddons: function() {
     
     let filtered = {};
     for (let id in this.bootstrappedAddons) {
@@ -3135,7 +3135,7 @@ this.XPIProvider = {
   
 
 
-  addAddonsToCrashReporter: function XPI_addAddonsToCrashReporter() {
+  addAddonsToCrashReporter: function() {
     if (!("nsICrashReporter" in Ci) ||
         !(Services.appinfo instanceof Ci.nsICrashReporter))
       return;
@@ -3170,7 +3170,7 @@ this.XPIProvider = {
 
 
 
-  processPendingFileChanges: function XPI_processPendingFileChanges(aManifests) {
+  processPendingFileChanges: function(aManifests) {
     let changed = false;
     this.installLocations.forEach(function(aLocation) {
       aManifests[aLocation.name] = {};
@@ -3388,7 +3388,7 @@ this.XPIProvider = {
 
 
 
-  installDistributionAddons: function XPI_installDistributionAddons(aManifests) {
+  installDistributionAddons: function(aManifests) {
     let distroDir;
     try {
       distroDir = FileUtils.getDir(KEY_APP_DISTRIBUTION, [DIR_EXTENSIONS]);
@@ -3503,7 +3503,7 @@ this.XPIProvider = {
 
 
 
-  importPermissions: function XPI_importPermissions() {
+  importPermissions: function() {
     PermissionsUtils.importFromPrefs(PREF_XPI_PERMISSIONS_BRANCH,
                                      XPI_PERMISSION);
   },
@@ -3526,7 +3526,7 @@ this.XPIProvider = {
 
 
 
-  checkForChanges: function XPI_checkForChanges(aAppChanged, aOldAppVersion,
+  checkForChanges: function(aAppChanged, aOldAppVersion,
                                                 aOldPlatformVersion) {
     logger.debug("checkForChanges");
 
@@ -3702,7 +3702,7 @@ this.XPIProvider = {
 
 
 
-  supportsMimetype: function XPI_supportsMimetype(aMimetype) {
+  supportsMimetype: function(aMimetype) {
     return aMimetype == "application/x-xpinstall";
   },
 
@@ -3711,7 +3711,7 @@ this.XPIProvider = {
 
 
 
-  isInstallEnabled: function XPI_isInstallEnabled() {
+  isInstallEnabled: function() {
     
     return Preferences.get(PREF_XPI_ENABLED, true);
   },
@@ -3722,7 +3722,7 @@ this.XPIProvider = {
 
 
 
-  isDirectRequestWhitelisted: function XPI_isDirectRequestWhitelisted() {
+  isDirectRequestWhitelisted: function() {
     
     return Preferences.get(PREF_XPI_DIRECT_WHITELISTED, true);
   },
@@ -3733,7 +3733,7 @@ this.XPIProvider = {
 
 
 
-  isFileRequestWhitelisted: function XPI_isFileRequestWhitelisted() {
+  isFileRequestWhitelisted: function() {
     
     return Preferences.get(PREF_XPI_FILE_WHITELISTED, true);
   },
@@ -3745,7 +3745,7 @@ this.XPIProvider = {
 
 
 
-  isInstallAllowed: function XPI_isInstallAllowed(aInstallingPrincipal) {
+  isInstallAllowed: function(aInstallingPrincipal) {
     if (!this.isInstallEnabled())
       return false;
 
@@ -3796,9 +3796,9 @@ this.XPIProvider = {
 
 
 
-  getInstallForURL: function XPI_getInstallForURL(aUrl, aHash, aName, aIcons,
-                                                  aVersion, aBrowser, aCallback) {
-    AddonInstall.createDownload(function getInstallForURL_createDownload(aInstall) {
+  getInstallForURL: function(aUrl, aHash, aName, aIcons, aVersion, aBrowser,
+                             aCallback) {
+    AddonInstall.createDownload(function(aInstall) {
       aCallback(aInstall.wrapper);
     }, aUrl, aHash, aName, aIcons, aVersion, aBrowser);
   },
@@ -3811,8 +3811,8 @@ this.XPIProvider = {
 
 
 
-  getInstallForFile: function XPI_getInstallForFile(aFile, aCallback) {
-    AddonInstall.createInstall(function getInstallForFile_createInstall(aInstall) {
+  getInstallForFile: function(aFile, aCallback) {
+    AddonInstall.createInstall(function(aInstall) {
       if (aInstall)
         aCallback(aInstall.wrapper);
       else
@@ -3831,8 +3831,7 @@ this.XPIProvider = {
 
 
 
-  installTemporaryAddon: Task.async(function*
-                                    XPI_installTemporaryAddon(aDirectory) {
+  installTemporaryAddon: Task.async(function*(aDirectory) {
     let addon = yield loadManifestFromFile(aDirectory, TemporaryInstallLocation);
 
     if (!addon.bootstrap) {
@@ -3911,7 +3910,7 @@ this.XPIProvider = {
 
 
 
-  removeActiveInstall: function XPI_removeActiveInstall(aInstall) {
+  removeActiveInstall: function(aInstall) {
     let where = this.installs.indexOf(aInstall);
     if (where == -1) {
       logger.warn("removeActiveInstall: could not find active install for "
@@ -3929,8 +3928,8 @@ this.XPIProvider = {
 
 
 
-  getAddonByID: function XPI_getAddonByID(aId, aCallback) {
-    XPIDatabase.getVisibleAddonForID (aId, function getAddonByID_getVisibleAddonForID(aAddon) {
+  getAddonByID: function(aId, aCallback) {
+    XPIDatabase.getVisibleAddonForID (aId, function(aAddon) {
       aCallback(aAddon ? aAddon.wrapper : null);
     });
   },
@@ -3943,10 +3942,10 @@ this.XPIProvider = {
 
 
 
-  getAddonsByTypes: function XPI_getAddonsByTypes(aTypes, aCallback) {
+  getAddonsByTypes: function(aTypes, aCallback) {
     let typesToGet = getAllAliasesForTypes(aTypes);
 
-    XPIDatabase.getVisibleAddons(typesToGet, function getAddonsByTypes_getVisibleAddons(aAddons) {
+    XPIDatabase.getVisibleAddons(typesToGet, function(aAddons) {
       aCallback(aAddons.map(a => a.wrapper));
     });
   },
@@ -3959,8 +3958,8 @@ this.XPIProvider = {
 
 
 
-  getAddonBySyncGUID: function XPI_getAddonBySyncGUID(aGUID, aCallback) {
-    XPIDatabase.getAddonBySyncGUID(aGUID, function getAddonBySyncGUID_getAddonBySyncGUID(aAddon) {
+  getAddonBySyncGUID: function(aGUID, aCallback) {
+    XPIDatabase.getAddonBySyncGUID(aGUID, function(aAddon) {
       aCallback(aAddon ? aAddon.wrapper : null);
     });
   },
@@ -3973,12 +3972,10 @@ this.XPIProvider = {
 
 
 
-  getAddonsWithOperationsByTypes:
-  function XPI_getAddonsWithOperationsByTypes(aTypes, aCallback) {
+  getAddonsWithOperationsByTypes: function(aTypes, aCallback) {
     let typesToGet = getAllAliasesForTypes(aTypes);
 
-    XPIDatabase.getVisibleAddonsWithPendingOperations(typesToGet,
-      function getAddonsWithOpsByTypes_getVisibleAddonsWithPendingOps(aAddons) {
+    XPIDatabase.getVisibleAddonsWithPendingOperations(typesToGet, function(aAddons) {
       let results = aAddons.map(a => a.wrapper);
       XPIProvider.installs.forEach(function(aInstall) {
         if (aInstall.state == AddonManager.STATE_INSTALLED &&
@@ -3998,7 +3995,7 @@ this.XPIProvider = {
 
 
 
-  getInstallsByTypes: function XPI_getInstallsByTypes(aTypes, aCallback) {
+  getInstallsByTypes: function(aTypes, aCallback) {
     let results = [];
     this.installs.forEach(function(aInstall) {
       if (!aTypes || aTypes.indexOf(getExternalType(aInstall.type)) >= 0)
@@ -4020,7 +4017,7 @@ this.XPIProvider = {
 
 
 
-  mapURIToAddonID: function XPI_mapURIToAddonID(aURI) {
+  mapURIToAddonID: function(aURI) {
     if (aURI.scheme == "moz-extension") {
       return AddonPolicyService.extensionURIToAddonId(aURI);
     }
@@ -4049,7 +4046,7 @@ this.XPIProvider = {
 
 
 
-  addonChanged: function XPI_addonChanged(aId, aType, aPendingRestart) {
+  addonChanged: function(aId, aType, aPendingRestart) {
     
     if (aType != "theme")
       return;
@@ -4107,7 +4104,7 @@ this.XPIProvider = {
   
 
 
-  updateAddonAppDisabledStates: function XPI_updateAddonAppDisabledStates() {
+  updateAddonAppDisabledStates: function() {
     let addons = XPIDatabase.getAddons();
     addons.forEach(function(aAddon) {
       this.updateAddonDisabledState(aAddon);
@@ -4120,9 +4117,9 @@ this.XPIProvider = {
 
 
 
-  updateAddonRepositoryData: function XPI_updateAddonRepositoryData(aCallback) {
+  updateAddonRepositoryData: function(aCallback) {
     let self = this;
-    XPIDatabase.getVisibleAddons(null, function UARD_getVisibleAddonsCallback(aAddons) {
+    XPIDatabase.getVisibleAddons(null, function(aAddons) {
       let pending = aAddons.length;
       logger.debug("updateAddonRepositoryData found " + pending + " visible add-ons");
       if (pending == 0) {
@@ -4136,8 +4133,7 @@ this.XPIProvider = {
       }
 
       for (let addon of aAddons) {
-        AddonRepository.getCachedAddonByID(addon.id,
-                                           function UARD_getCachedAddonCallback(aRepoAddon) {
+        AddonRepository.getCachedAddonByID(addon.id, function(aRepoAddon) {
           if (aRepoAddon) {
             logger.debug("updateAddonRepositoryData got info for " + addon.id);
             addon._repositoryAddon = aRepoAddon;
@@ -4155,7 +4151,7 @@ this.XPIProvider = {
 
 
 
-  enableDefaultTheme: function XPI_enableDefaultTheme() {
+  enableDefaultTheme: function() {
     logger.debug("Activating default theme");
     let addon = XPIDatabase.getVisibleAddonForInternalName(this.defaultSkin);
     if (addon) {
@@ -4195,7 +4191,7 @@ this.XPIProvider = {
 
 
 
-  observe: function XPI_observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (aTopic == NOTIFICATION_FLUSH_PERMISSIONS) {
       if (!aData || aData == XPI_PERMISSION) {
         this.importPermissions();
@@ -4235,7 +4231,7 @@ this.XPIProvider = {
 
 
 
-  enableRequiresRestart: function XPI_enableRequiresRestart(aAddon) {
+  enableRequiresRestart: function(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4272,7 +4268,7 @@ this.XPIProvider = {
 
 
 
-  disableRequiresRestart: function XPI_disableRequiresRestart(aAddon) {
+  disableRequiresRestart: function(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4318,7 +4314,7 @@ this.XPIProvider = {
 
 
 
-  installRequiresRestart: function XPI_installRequiresRestart(aAddon) {
+  installRequiresRestart: function(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4365,7 +4361,7 @@ this.XPIProvider = {
 
 
 
-  uninstallRequiresRestart: function XPI_uninstallRequiresRestart(aAddon) {
+  uninstallRequiresRestart: function(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4401,9 +4397,8 @@ this.XPIProvider = {
 
 
 
-  loadBootstrapScope: function XPI_loadBootstrapScope(aId, aFile, aVersion, aType,
-                                                      aMultiprocessCompatible,
-                                                      aRunInSafeMode) {
+  loadBootstrapScope: function(aId, aFile, aVersion, aType,
+                               aMultiprocessCompatible, aRunInSafeMode) {
     
     this.bootstrappedAddons[aId] = {
       version: aVersion,
@@ -4498,7 +4493,7 @@ this.XPIProvider = {
 
 
 
-  unloadBootstrapScope: function XPI_unloadBootstrapScope(aId) {
+  unloadBootstrapScope: function(aId) {
     
     
     Cu.setAddonInterposition(aId, null);
@@ -4530,7 +4525,7 @@ this.XPIProvider = {
 
 
 
-  callBootstrapMethod: function XPI_callBootstrapMethod(aAddon, aFile, aMethod, aReason, aExtraParams) {
+  callBootstrapMethod: function(aAddon, aFile, aMethod, aReason, aExtraParams) {
     if (!aAddon.id || !aAddon.version || !aAddon.type) {
       logger.error(new Error("aAddon must include an id, version, and type"));
       return;
@@ -4632,9 +4627,7 @@ this.XPIProvider = {
 
 
 
-  updateAddonDisabledState: function XPI_updateAddonDisabledState(aAddon,
-                                                                  aUserDisabled,
-                                                                  aSoftDisabled) {
+  updateAddonDisabledState: function(aAddon, aUserDisabled, aSoftDisabled) {
     if (!(aAddon.inDatabase))
       throw new Error("Can only update addon states for installed addons.");
     if (aUserDisabled !== undefined && aSoftDisabled !== undefined) {
@@ -4754,7 +4747,7 @@ this.XPIProvider = {
 
 
 
-  uninstallAddon: function XPI_uninstallAddon(aAddon) {
+  uninstallAddon: function(aAddon) {
     if (!(aAddon.inDatabase))
       throw new Error("Cannot uninstall addon " + aAddon.id + " because it is not installed");
 
@@ -4868,7 +4861,7 @@ this.XPIProvider = {
 
 
 
-  cancelUninstallAddon: function XPI_cancelUninstallAddon(aAddon) {
+  cancelUninstallAddon: function(aAddon) {
     if (!(aAddon.inDatabase))
       throw new Error("Can only cancel uninstall for installed addons.");
 
@@ -4984,7 +4977,7 @@ AddonInstall.prototype = {
 
 
 
-  initStagedInstall: function AI_initStagedInstall(aManifest) {
+  initStagedInstall: function(aManifest) {
     this.name = aManifest.name;
     this.type = aManifest.type;
     this.version = aManifest.version;
@@ -5009,7 +5002,7 @@ AddonInstall.prototype = {
 
 
 
-  initLocalInstall: function AI_initLocalInstall(aCallback) {
+  initLocalInstall: function(aCallback) {
     aCallback = makeSafe(aCallback);
     this.file = this.sourceURI.QueryInterface(Ci.nsIFileURL).file;
 
@@ -5056,7 +5049,7 @@ AddonInstall.prototype = {
 
     let self = this;
     this.loadManifest(this.file).then(() => {
-      XPIDatabase.getVisibleAddonForID(self.addon.id, function initLocalInstall_getVisibleAddon(aAddon) {
+      XPIDatabase.getVisibleAddonForID(self.addon.id, function(aAddon) {
         self.existingAddon = aAddon;
         if (aAddon)
           applyBlocklistChanges(aAddon, self.addon);
@@ -5067,7 +5060,7 @@ AddonInstall.prototype = {
           
           self.state = AddonManager.STATE_CHECKING;
           new UpdateChecker(self.addon, {
-            onUpdateFinished: function updateChecker_onUpdateFinished(aAddon) {
+            onUpdateFinished: function(aAddon) {
               self.state = AddonManager.STATE_DOWNLOADED;
               XPIProvider.installs.push(self);
               AddonManagerPrivate.callInstallListeners("onNewInstall",
@@ -5113,7 +5106,7 @@ AddonInstall.prototype = {
 
 
 
-  initAvailableDownload: function AI_initAvailableDownload(aName, aType, aIcons, aVersion, aCallback) {
+  initAvailableDownload: function(aName, aType, aIcons, aVersion, aCallback) {
     this.state = AddonManager.STATE_AVAILABLE;
     this.name = aName;
     this.type = aType;
@@ -5135,7 +5128,7 @@ AddonInstall.prototype = {
 
 
 
-  install: function AI_install() {
+  install: function() {
     switch (this.state) {
     case AddonManager.STATE_AVAILABLE:
       this.startDownload();
@@ -5170,7 +5163,7 @@ AddonInstall.prototype = {
 
 
 
-  cancel: function AI_cancel() {
+  cancel: function() {
     switch (this.state) {
     case AddonManager.STATE_DOWNLOADING:
       if (this.channel) {
@@ -5220,8 +5213,8 @@ AddonInstall.prototype = {
 
 
 
-  addListener: function AI_addListener(aListener) {
-    if (!this.listeners.some(function addListener_matchListener(i) { return i == aListener; }))
+  addListener: function(aListener) {
+    if (!this.listeners.some(function(i) { return i == aListener; }))
       this.listeners.push(aListener);
   },
 
@@ -5231,8 +5224,8 @@ AddonInstall.prototype = {
 
 
 
-  removeListener: function AI_removeListener(aListener) {
-    this.listeners = this.listeners.filter(function removeListener_filterListener(i) {
+  removeListener: function(aListener) {
+    this.listeners = this.listeners.filter(function(i) {
       return i != aListener;
     });
   },
@@ -5240,7 +5233,7 @@ AddonInstall.prototype = {
   
 
 
-  removeTemporaryFile: function AI_removeTemporaryFile() {
+  removeTemporaryFile: function() {
     
     if (!this.ownsTempFile) {
       this.logger.debug("removeTemporaryFile: " + this.sourceURI.spec + " does not own temp file");
@@ -5264,7 +5257,7 @@ AddonInstall.prototype = {
 
 
 
-  updateAddonURIs: function AI_updateAddonURIs() {
+  updateAddonURIs: function() {
     this.addon.sourceURI = this.sourceURI.spec;
     if (this.releaseNotesURI)
       this.addon.releaseNotesURI = this.releaseNotesURI.spec;
@@ -5278,7 +5271,7 @@ AddonInstall.prototype = {
 
 
 
-  _createLinkedInstalls: Task.async(function* AI_createLinkedInstalls(aFiles) {
+  _createLinkedInstalls: Task.async(function*(aFiles) {
     if (aFiles.length == 0)
       return;
 
@@ -5320,7 +5313,7 @@ AddonInstall.prototype = {
 
 
 
-  _loadMultipackageManifests: Task.async(function* AI_loadMultipackageManifests(aZipReader) {
+  _loadMultipackageManifests: Task.async(function*(aZipReader) {
     let files = [];
     let entries = aZipReader.findEntries("(*.[Xx][Pp][Ii]|*.[Jj][Aa][Rr])");
     while (entries.hasMore()) {
@@ -5382,7 +5375,7 @@ AddonInstall.prototype = {
 
 
 
-  loadManifest: Task.async(function* AI_loadManifest(file) {
+  loadManifest: Task.async(function*(file) {
     let zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].
                     createInstance(Ci.nsIZipReader);
     try {
@@ -5478,7 +5471,7 @@ AddonInstall.prototype = {
     this.addon.appDisabled = !isUsableAddon(this.addon);
   }),
 
-  observe: function AI_observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     
     this.cancel();
   },
@@ -5486,7 +5479,7 @@ AddonInstall.prototype = {
   
 
 
-  startDownload: function AI_startDownload() {
+  startDownload: function() {
     this.state = AddonManager.STATE_DOWNLOADING;
     if (!AddonManagerPrivate.callInstallListeners("onDownloadStarted",
                                                   this.listeners, this.wrapper)) {
@@ -5513,7 +5506,7 @@ AddonInstall.prototype = {
     this.openChannel();
   },
 
-  openChannel: function AI_openChannel() {
+  openChannel: function() {
     this.restartDownload = false;
 
     try {
@@ -5571,7 +5564,7 @@ AddonInstall.prototype = {
 
 
 
-  onDataAvailable: function AI_onDataAvailable(aRequest, aContext, aInputstream,
+  onDataAvailable: function(aRequest, aContext, aInputstream,
                                                aOffset, aCount) {
     this.crypto.updateFromStream(aInputstream, aCount);
     this.progress += aCount;
@@ -5587,7 +5580,7 @@ AddonInstall.prototype = {
 
 
 
-  asyncOnChannelRedirect: function AI_asyncOnChannelRedirect(aOldChannel, aNewChannel, aFlags, aCallback) {
+  asyncOnChannelRedirect: function(aOldChannel, aNewChannel, aFlags, aCallback) {
     if (!this.hash && aOldChannel.originalURI.schemeIs("https") &&
         aOldChannel instanceof Ci.nsIHttpChannel) {
       try {
@@ -5617,7 +5610,7 @@ AddonInstall.prototype = {
 
 
 
-  onStartRequest: function AI_onStartRequest(aRequest, aContext) {
+  onStartRequest: function(aRequest, aContext) {
     this.crypto = Cc["@mozilla.org/security/hash;1"].
                   createInstance(Ci.nsICryptoHash);
     if (this.hash) {
@@ -5658,7 +5651,7 @@ AddonInstall.prototype = {
 
 
 
-  onStopRequest: function AI_onStopRequest(aRequest, aContext, aStatus) {
+  onStopRequest: function(aRequest, aContext, aStatus) {
     this.stream.close();
     this.channel = null;
     this.badCerthandler = null;
@@ -5718,7 +5711,7 @@ AddonInstall.prototype = {
             
             self.state = AddonManager.STATE_CHECKING;
             new UpdateChecker(self.addon, {
-              onUpdateFinished: function onStopRequest_onUpdateFinished(aAddon) {
+              onUpdateFinished: function(aAddon) {
                 self.downloadCompleted();
               }
             }, AddonManager.UPDATE_WHEN_ADDON_INSTALLED);
@@ -5749,7 +5742,7 @@ AddonInstall.prototype = {
 
 
 
-  downloadFailed: function AI_downloadFailed(aReason, aError) {
+  downloadFailed: function(aReason, aError) {
     logger.warn("Download of " + this.sourceURI.spec + " failed", aError);
     this.state = AddonManager.STATE_DOWNLOAD_FAILED;
     this.error = aReason;
@@ -5771,9 +5764,9 @@ AddonInstall.prototype = {
   
 
 
-  downloadCompleted: function AI_downloadCompleted() {
+  downloadCompleted: function() {
     let self = this;
-    XPIDatabase.getVisibleAddonForID(this.addon.id, function downloadCompleted_getVisibleAddonForID(aAddon) {
+    XPIDatabase.getVisibleAddonForID(this.addon.id, function(aAddon) {
       if (aAddon)
         self.existingAddon = aAddon;
 
@@ -5814,7 +5807,7 @@ AddonInstall.prototype = {
   
 
 
-  startInstall: function AI_startInstall() {
+  startInstall: function() {
     this.state = AddonManager.STATE_INSTALLING;
     if (!AddonManagerPrivate.callInstallListeners("onInstallStarted",
                                                   this.listeners, this.wrapper)) {
@@ -6021,7 +6014,7 @@ AddonInstall.prototype = {
     });
   },
 
-  getInterface: function AI_getInterface(iid) {
+  getInterface: function(iid) {
     if (iid.equals(Ci.nsIAuthPrompt2)) {
       let win = this.window;
       if (!win && this.browser)
@@ -6053,7 +6046,7 @@ AddonInstall.prototype = {
 
 
 
-AddonInstall.createStagedInstall = function AI_createStagedInstall(aInstallLocation, aDir, aManifest) {
+AddonInstall.createStagedInstall = function(aInstallLocation, aDir, aManifest) {
   let url = Services.io.newFileURI(aDir);
 
   let install = new AddonInstall(aInstallLocation, aDir);
@@ -6069,7 +6062,7 @@ AddonInstall.createStagedInstall = function AI_createStagedInstall(aInstallLocat
 
 
 
-AddonInstall.createInstall = function AI_createInstall(aCallback, aFile) {
+AddonInstall.createInstall = function(aCallback, aFile) {
   let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
   let url = Services.io.newFileURI(aFile);
 
@@ -6101,7 +6094,7 @@ AddonInstall.createInstall = function AI_createInstall(aCallback, aFile) {
 
 
 
-AddonInstall.createDownload = function AI_createDownload(aCallback, aUri, aHash, aName, aIcons,
+AddonInstall.createDownload = function(aCallback, aUri, aHash, aName, aIcons,
                                        aVersion, aBrowser) {
   let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
   let url = NetUtil.newURI(aUri);
@@ -6123,7 +6116,7 @@ AddonInstall.createDownload = function AI_createDownload(aCallback, aUri, aHash,
 
 
 
-AddonInstall.createUpdate = function AI_createUpdate(aCallback, aAddon, aUpdate) {
+AddonInstall.createUpdate = function(aCallback, aAddon, aUpdate) {
   let url = NetUtil.newURI(aUpdate.updateURL);
   let releaseNotesURI = null;
   try {
@@ -6152,52 +6145,52 @@ AddonInstall.createUpdate = function AI_createUpdate(aCallback, aAddon, aUpdate)
 
 
 function AddonInstallWrapper(aInstall) {
-  this.__defineGetter__("__AddonInstallInternal__", function AIW_debugGetter() {
+  this.__defineGetter__("__AddonInstallInternal__", function() {
     return AppConstants.DEBUG ? aInstall : undefined;
   });
 
   ["name", "version", "icons", "releaseNotesURI", "file", "state", "error",
    "progress", "maxProgress", "certificate", "certName"].forEach(function(aProp) {
-    this.__defineGetter__(aProp, function AIW_propertyGetter() {
+    this.__defineGetter__(aProp, function() {
       return aInstall[aProp];
     });
   }, this);
 
   this.__defineGetter__("type", () => getExternalType(aInstall.type));
 
-  this.__defineGetter__("iconURL", function AIW_iconURL() {
+  this.__defineGetter__("iconURL", function() {
     return aInstall.icons[32];
   });
 
-  this.__defineGetter__("existingAddon", function AIW_existingAddonGetter() {
+  this.__defineGetter__("existingAddon", function() {
     return aInstall.existingAddon ? aInstall.existingAddon.wrapper : null;
   });
-  this.__defineGetter__("addon", function AIW_addonGetter() {
+  this.__defineGetter__("addon", function() {
     return aInstall.addon ? aInstall.addon.wrapper : null;
   });
-  this.__defineGetter__("sourceURI", function AIW_sourceURIGetter() {
+  this.__defineGetter__("sourceURI", function() {
     return aInstall.sourceURI;
   });
 
-  this.__defineGetter__("linkedInstalls", function AIW_linkedInstallsGetter() {
+  this.__defineGetter__("linkedInstalls", function() {
     if (!aInstall.linkedInstalls)
       return null;
     return aInstall.linkedInstalls.map(i => i.wrapper);
   });
 
-  this.install = function AIW_install() {
+  this.install = function() {
     aInstall.install();
   }
 
-  this.cancel = function AIW_cancel() {
+  this.cancel = function() {
     aInstall.cancel();
   }
 
-  this.addListener = function AIW_addListener(listener) {
+  this.addListener = function(listener) {
     aInstall.addListener(listener);
   }
 
-  this.removeListener = function AIW_removeListener(listener) {
+  this.removeListener = function(listener) {
     aInstall.removeListener(listener);
   }
 }
@@ -6269,7 +6262,7 @@ UpdateChecker.prototype = {
 
 
 
-  callListener: function UC_callListener(aMethod, ...aArgs) {
+  callListener: function(aMethod, ...aArgs) {
     if (!(aMethod in this.listener))
       return;
 
@@ -6287,7 +6280,7 @@ UpdateChecker.prototype = {
 
 
 
-  onUpdateCheckComplete: function UC_onUpdateCheckComplete(aUpdates) {
+  onUpdateCheckComplete: function(aUpdates) {
     XPIProvider.done(this.addon._updateCheck);
     this.addon._updateCheck = null;
     let AUC = AddonUpdateChecker;
@@ -6376,7 +6369,7 @@ UpdateChecker.prototype = {
       }
 
       let self = this;
-      AddonInstall.createUpdate(function onUpdateCheckComplete_createUpdate(aInstall) {
+      AddonInstall.createUpdate(function(aInstall) {
         sendUpdateAvailableMessages(self, aInstall);
       }, this.addon, update);
     }
@@ -6391,7 +6384,7 @@ UpdateChecker.prototype = {
 
 
 
-  onUpdateCheckError: function UC_onUpdateCheckError(aError) {
+  onUpdateCheckError: function(aError) {
     XPIProvider.done(this.addon._updateCheck);
     this.addon._updateCheck = null;
     this.callListener("onNoCompatibilityUpdateAvailable", this.addon.wrapper);
@@ -6402,7 +6395,7 @@ UpdateChecker.prototype = {
   
 
 
-  cancel: function UC_cancel() {
+  cancel: function() {
     let parser = this._parser;
     if (parser) {
       this._parser = null;
@@ -6502,7 +6495,7 @@ AddonInternal.prototype = {
     return matchedOS && !needsABI;
   },
 
-  isCompatibleWith: function AddonInternal_isCompatibleWith(aAppVersion, aPlatformVersion) {
+  isCompatibleWith: function(aAppVersion, aPlatformVersion) {
     let app = this.matchingTargetApplication;
     if (!app)
       return false;
@@ -6582,7 +6575,7 @@ AddonInternal.prototype = {
     return Blocklist.getAddonBlocklistURL(this.wrapper);
   },
 
-  applyCompatibilityUpdate: function AddonInternal_applyCompatibilityUpdate(aUpdate, aSyncCompatibility) {
+  applyCompatibilityUpdate: function(aUpdate, aSyncCompatibility) {
     this.targetApplications.forEach(function(aTargetApp) {
       aUpdate.targetApplications.forEach(function(aUpdateTarget) {
         if (aTargetApp.id == aUpdateTarget.id && (aSyncCompatibility ||
@@ -6626,7 +6619,7 @@ AddonInternal.prototype = {
 
 
 
-  toJSON: function AddonInternal_toJSON(aKey) {
+  toJSON: function(aKey) {
     let obj = {};
     for (let prop in this) {
       
@@ -6663,7 +6656,7 @@ AddonInternal.prototype = {
 
 
 
-  importMetadata: function AddonInternal_importMetaData(aObj) {
+  importMetadata: function(aObj) {
     PENDING_INSTALL_METADATA.forEach(function(aProp) {
       if (!(aProp in aObj))
         return;
@@ -6675,7 +6668,7 @@ AddonInternal.prototype = {
     this.appDisabled = !isUsableAddon(this);
   },
 
-  permissions: function AddonInternal_permissions() {
+  permissions: function() {
     let permissions = 0;
 
     
@@ -6712,7 +6705,7 @@ AddonInternal.prototype = {
 
 
 function AddonWrapper(aAddon) {
-  this.__defineGetter__("__AddonInternal__", function AW_debugGetter() {
+  this.__defineGetter__("__AddonInternal__", function() {
     return AppConstants.DEBUG ? aAddon : undefined;
   });
 
@@ -6733,7 +6726,7 @@ function AddonWrapper(aAddon) {
    "softDisabled", "skinnable", "size", "foreignInstall", "hasBinaryComponents",
    "strictCompatibility", "compatibilityOverrides", "updateURL",
    "getDataDirectory", "multiprocessCompatible", "signedState"].forEach(function(aProp) {
-     this.__defineGetter__(aProp, function AddonWrapper_propertyGetter() {
+     this.__defineGetter__(aProp, function() {
        return aAddon[aProp];
      });
   }, this);
@@ -6744,7 +6737,7 @@ function AddonWrapper(aAddon) {
    "contributionURL", "contributionAmount", "averageRating", "reviewCount",
    "reviewURL", "totalDownloads", "weeklyDownloads", "dailyUsers",
    "repositoryStatus"].forEach(function(aProp) {
-    this.__defineGetter__(aProp, function AddonWrapper_repoPropertyGetter() {
+    this.__defineGetter__(aProp, function() {
       if (aAddon._repositoryAddon)
         return aAddon._repositoryAddon[aProp];
 
@@ -6752,18 +6745,18 @@ function AddonWrapper(aAddon) {
     });
   }, this);
 
-  this.__defineGetter__("aboutURL", function AddonWrapper_aboutURLGetter() {
+  this.__defineGetter__("aboutURL", function() {
     return this.isActive ? aAddon["aboutURL"] : null;
   });
 
   ["installDate", "updateDate"].forEach(function(aProp) {
-    this.__defineGetter__(aProp, function AddonWrapper_datePropertyGetter() {
+    this.__defineGetter__(aProp, function() {
       return new Date(aAddon[aProp]);
     });
   }, this);
 
   ["sourceURI", "releaseNotesURI"].forEach(function(aProp) {
-    this.__defineGetter__(aProp, function AddonWrapper_URIPropertyGetter() {
+    this.__defineGetter__(aProp, function() {
       let [target, fromRepo] = chooseValue(aAddon, aProp);
       if (!target)
         return null;
@@ -6773,7 +6766,7 @@ function AddonWrapper(aAddon) {
     });
   }, this);
 
-  this.__defineGetter__("optionsURL", function AddonWrapper_optionsURLGetter() {
+  this.__defineGetter__("optionsURL", function() {
     if (this.isActive && aAddon.optionsURL)
       return aAddon.optionsURL;
 
@@ -6783,7 +6776,7 @@ function AddonWrapper(aAddon) {
     return null;
   }, this);
 
-  this.__defineGetter__("optionsType", function AddonWrapper_optionsTypeGetter() {
+  this.__defineGetter__("optionsType", function() {
     if (!this.isActive)
       return null;
 
@@ -6811,15 +6804,15 @@ function AddonWrapper(aAddon) {
     return null;
   }, this);
 
-  this.__defineGetter__("iconURL", function AddonWrapper_iconURLGetter() {
+  this.__defineGetter__("iconURL", function() {
     return AddonManager.getPreferredIconURL(this, 48);
   }, this);
 
-  this.__defineGetter__("icon64URL", function AddonWrapper_icon64URLGetter() {
+  this.__defineGetter__("icon64URL", function() {
     return AddonManager.getPreferredIconURL(this, 64);
   }, this);
 
-  this.__defineGetter__("icons", function AddonWrapper_iconsGetter() {
+  this.__defineGetter__("icons", function() {
     let icons = {};
 
     if (aAddon._repositoryAddon) {
@@ -6856,7 +6849,7 @@ function AddonWrapper(aAddon) {
   }, this);
 
   PROP_LOCALE_SINGLE.forEach(function(aProp) {
-    this.__defineGetter__(aProp, function AddonWrapper_singleLocaleGetter() {
+    this.__defineGetter__(aProp, function() {
       
       if (aProp == "creator" &&
           aAddon._repositoryAddon && aAddon._repositoryAddon.creator) {
@@ -6887,7 +6880,7 @@ function AddonWrapper(aAddon) {
   }, this);
 
   PROP_LOCALE_MULTI.forEach(function(aProp) {
-    this.__defineGetter__(aProp, function AddonWrapper_multiLocaleGetter() {
+    this.__defineGetter__(aProp, function() {
       let results = null;
       let usedRepository = false;
 
@@ -6910,7 +6903,7 @@ function AddonWrapper(aAddon) {
         [results, usedRepository] = chooseValue(aAddon.selectedLocale, aProp);
 
       if (results && !usedRepository) {
-        results = results.map(function mapResult(aResult) {
+        results = results.map(function(aResult) {
           return new AddonManagerPrivate.AddonAuthor(aResult);
         });
       }
@@ -6919,7 +6912,7 @@ function AddonWrapper(aAddon) {
     });
   }, this);
 
-  this.__defineGetter__("screenshots", function AddonWrapper_screenshotsGetter() {
+  this.__defineGetter__("screenshots", function() {
     let repositoryAddon = aAddon._repositoryAddon;
     if (repositoryAddon && ("screenshots" in repositoryAddon)) {
       let repositoryScreenshots = repositoryAddon.screenshots;
@@ -6935,10 +6928,10 @@ function AddonWrapper(aAddon) {
     return null;
   });
 
-  this.__defineGetter__("applyBackgroundUpdates", function AddonWrapper_applyBackgroundUpdatesGetter() {
+  this.__defineGetter__("applyBackgroundUpdates", function() {
     return aAddon.applyBackgroundUpdates;
   });
-  this.__defineSetter__("applyBackgroundUpdates", function AddonWrapper_applyBackgroundUpdatesSetter(val) {
+  this.__defineSetter__("applyBackgroundUpdates", function(val) {
     if (this.type == "experiment") {
       logger.warn("Setting applyBackgroundUpdates on an experiment is not supported.");
       return;
@@ -6962,7 +6955,7 @@ function AddonWrapper(aAddon) {
     return val;
   });
 
-  this.__defineSetter__("syncGUID", function AddonWrapper_syncGUIDGetter(val) {
+  this.__defineSetter__("syncGUID", function(val) {
     if (aAddon.syncGUID == val)
       return val;
 
@@ -6974,24 +6967,24 @@ function AddonWrapper(aAddon) {
     return val;
   });
 
-  this.__defineGetter__("install", function AddonWrapper_installGetter() {
+  this.__defineGetter__("install", function() {
     if (!("_install" in aAddon) || !aAddon._install)
       return null;
     return aAddon._install.wrapper;
   });
 
-  this.__defineGetter__("pendingUpgrade", function AddonWrapper_pendingUpgradeGetter() {
+  this.__defineGetter__("pendingUpgrade", function() {
     return aAddon.pendingUpgrade ? aAddon.pendingUpgrade.wrapper : null;
   });
 
-  this.__defineGetter__("scope", function AddonWrapper_scopeGetter() {
+  this.__defineGetter__("scope", function() {
     if (aAddon._installLocation)
       return aAddon._installLocation.scope;
 
     return AddonManager.SCOPE_PROFILE;
   });
 
-  this.__defineGetter__("pendingOperations", function AddonWrapper_pendingOperationsGetter() {
+  this.__defineGetter__("pendingOperations", function() {
     let pending = 0;
     if (!(aAddon.inDatabase)) {
       
@@ -7019,7 +7012,7 @@ function AddonWrapper(aAddon) {
     return pending;
   });
 
-  this.__defineGetter__("operationsRequiringRestart", function AddonWrapper_operationsRequiringRestartGetter() {
+  this.__defineGetter__("operationsRequiringRestart", function() {
     let ops = 0;
     if (XPIProvider.installRequiresRestart(aAddon))
       ops |= AddonManager.OP_NEEDS_RESTART_INSTALL;
@@ -7033,15 +7026,15 @@ function AddonWrapper(aAddon) {
     return ops;
   });
 
-  this.__defineGetter__("isDebuggable", function AddonWrapper_isDebuggable() {
+  this.__defineGetter__("isDebuggable", function() {
     return this.isActive && aAddon.bootstrap;
   });
 
-  this.__defineGetter__("permissions", function AddonWrapper_permisionsGetter() {
+  this.__defineGetter__("permissions", function() {
     return aAddon.permissions();
   });
 
-  this.__defineGetter__("isActive", function AddonWrapper_isActiveGetter() {
+  this.__defineGetter__("isActive", function() {
     if (!aAddon.active)
       return false;
     if (!Services.appinfo.inSafeMode)
@@ -7049,10 +7042,10 @@ function AddonWrapper(aAddon) {
     return aAddon.bootstrap && canRunInSafeMode(aAddon);
   });
 
-  this.__defineGetter__("userDisabled", function AddonWrapper_userDisabledGetter() {
+  this.__defineGetter__("userDisabled", function() {
     return aAddon.softDisabled || aAddon.userDisabled;
   });
-  this.__defineSetter__("userDisabled", function AddonWrapper_userDisabledSetter(val) {
+  this.__defineSetter__("userDisabled", function(val) {
     if (val == this.userDisabled) {
       return val;
     }
@@ -7077,7 +7070,7 @@ function AddonWrapper(aAddon) {
     return val;
   });
 
-  this.__defineSetter__("softDisabled", function AddonWrapper_softDisabledSetter(val) {
+  this.__defineSetter__("softDisabled", function(val) {
     if (val == aAddon.softDisabled)
       return val;
 
@@ -7101,7 +7094,7 @@ function AddonWrapper(aAddon) {
     return val;
   });
 
-  this.__defineGetter__("hidden", function AddonWrapper_hidden() {
+  this.__defineGetter__("hidden", function() {
     if (aAddon._installLocation.name == KEY_APP_TEMPORARY)
       return false;
 
@@ -7109,11 +7102,11 @@ function AddonWrapper(aAddon) {
             aAddon._installLocation.name == KEY_APP_SYSTEM_ADDONS);
   });
 
-  this.isCompatibleWith = function AddonWrapper_isCompatiblewith(aAppVersion, aPlatformVersion) {
+  this.isCompatibleWith = function(aAppVersion, aPlatformVersion) {
     return aAddon.isCompatibleWith(aAppVersion, aPlatformVersion);
   };
 
-  this.uninstall = function AddonWrapper_uninstall() {
+  this.uninstall = function() {
     if (!(aAddon.inDatabase))
       throw new Error("Cannot uninstall an add-on that isn't installed");
     if (aAddon.pendingUninstall)
@@ -7121,7 +7114,7 @@ function AddonWrapper(aAddon) {
     XPIProvider.uninstallAddon(aAddon);
   };
 
-  this.cancelUninstall = function AddonWrapper_cancelUninstall() {
+  this.cancelUninstall = function() {
     if (!(aAddon.inDatabase))
       throw new Error("Cannot cancel uninstall for an add-on that isn't installed");
     if (!aAddon.pendingUninstall)
@@ -7129,7 +7122,7 @@ function AddonWrapper(aAddon) {
     XPIProvider.cancelUninstallAddon(aAddon);
   };
 
-  this.findUpdates = function AddonWrapper_findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
+  this.findUpdates = function(aListener, aReason, aAppVersion, aPlatformVersion) {
     
     
     if (this.type == "experiment") {
@@ -7142,7 +7135,7 @@ function AddonWrapper(aAddon) {
   };
 
   
-  this.cancelUpdate = function AddonWrapper_cancelUpdate() {
+  this.cancelUpdate = function() {
     if (aAddon._updateCheck) {
       aAddon._updateCheck.cancel();
       return true;
@@ -7150,7 +7143,7 @@ function AddonWrapper(aAddon) {
     return false;
   };
 
-  this.hasResource = function AddonWrapper_hasResource(aPath) {
+  this.hasResource = function(aPath) {
     if (aAddon._hasResourceCache.has(aPath))
       return aAddon._hasResourceCache.get(aPath);
 
@@ -7204,7 +7197,7 @@ function AddonWrapper(aAddon) {
 
 
 
-  this.getResourceURI = function AddonWrapper_getResourceURI(aPath) {
+  this.getResourceURI = function(aPath) {
     if (!aPath)
       return NetUtil.newURI(aAddon._sourceBundle);
 
@@ -7257,7 +7250,7 @@ DirectoryInstallLocation.prototype = {
 
 
 
-  _readDirectoryFromFile: function DirInstallLocation__readDirectoryFromFile(aFile) {
+  _readDirectoryFromFile: function(aFile) {
     let fis = Cc["@mozilla.org/network/file-input-stream;1"].
               createInstance(Ci.nsIFileInputStream);
     fis.init(aFile, -1, -1, false);
@@ -7298,7 +7291,7 @@ DirectoryInstallLocation.prototype = {
   
 
 
-  _readAddons: function DirInstallLocation__readAddons() {
+  _readAddons: function() {
     
     
     
@@ -7378,7 +7371,7 @@ DirectoryInstallLocation.prototype = {
 
 
 
-  getLocationForID: function DirInstallLocation_getLocationForID(aId) {
+  getLocationForID: function(aId) {
     if (aId in this._IDToFileMap)
       return this._IDToFileMap[aId].clone();
     throw new Error("Unknown add-on ID " + aId);
@@ -7391,7 +7384,7 @@ DirectoryInstallLocation.prototype = {
 
 
 
-  isLinkedAddon: function DirInstallLocation__isLinkedAddon(aId) {
+  isLinkedAddon: function(aId) {
     return this._linkedAddons.indexOf(aId) != -1;
   }
 };
@@ -7421,7 +7414,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  getStagingDir: function DirInstallLocation_getStagingDir() {
+  getStagingDir: function() {
     let dir = this._directory.clone();
     dir.append(DIR_STAGE);
     return dir;
@@ -7501,7 +7494,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  getTrashDir: function DirInstallLocation_getTrashDir() {
+  getTrashDir: function() {
     let trashDir = this._directory.clone();
     trashDir.append(DIR_TRASH);
     let trashDirExists = trashDir.exists();
@@ -7532,9 +7525,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  installAddon: function DirInstallLocation_installAddon(aId, aSource,
-                                                         aExistingAddonID,
-                                                         aCopy) {
+  installAddon: function(aId, aSource, aExistingAddonID, aCopy) {
     let trashDir = this.getTrashDir();
 
     let transaction = new SafeInstallOperation();
@@ -7633,7 +7624,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  uninstallAddon: function DirInstallLocation_uninstallAddon(aId) {
+  uninstallAddon: function(aId) {
     let file = this._IDToFileMap[aId];
     if (!file) {
       logger.warn("Attempted to remove " + aId + " from " +
@@ -8017,7 +8008,7 @@ WinRegInstallLocation.prototype = {
 
 
 
-  _readAddons: function RegInstallLocation__readAddons(aKey) {
+  _readAddons: function(aKey) {
     let count = aKey.valueCount;
     for (let i = 0; i < count; ++i) {
       let id = aKey.getValueName(i);
@@ -8064,7 +8055,7 @@ WinRegInstallLocation.prototype = {
   
 
 
-  isLinkedAddon: function RegInstallLocation_isLinkedAddon(aId) {
+  isLinkedAddon: function(aId) {
     return true;
   }
 };

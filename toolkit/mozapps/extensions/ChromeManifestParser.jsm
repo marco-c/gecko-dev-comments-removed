@@ -45,7 +45,7 @@ this.ChromeManifestParser = {
 
 
 
-  parseSync: function CMP_parseSync(aURI) {
+  parseSync: function(aURI) {
     function parseLine(aLine) {
       let line = aLine.trim();
       if (line.length == 0 || line.charAt(0) == '#')
@@ -81,7 +81,7 @@ this.ChromeManifestParser = {
     return data;
   },
   
-  _readFromJar: function CMP_readFromJar(aURI) {
+  _readFromJar: function(aURI) {
     let data = "";
     let entries = [];
     let readers = [];
@@ -124,7 +124,7 @@ this.ChromeManifestParser = {
     return data;
   },
   
-  _readFromFile: function CMP_readFromFile(aURI) {
+  _readFromFile: function(aURI) {
     let file = aURI.QueryInterface(Ci.nsIFileURL).file;
     if (!file.exists() || !file.isFile())
       return "";
@@ -151,8 +151,8 @@ this.ChromeManifestParser = {
 
 
 
-  hasType: function CMP_hasType(aManifest, aType) {
-    return aManifest.some(function hasType_matchEntryType(aEntry) {
+  hasType: function(aManifest, aType) {
+    return aManifest.some(function(aEntry) {
       return aEntry.type == aType;
     });
   }

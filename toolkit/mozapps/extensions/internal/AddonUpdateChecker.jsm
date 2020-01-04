@@ -37,7 +37,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonRepository",
                                   "resource://gre/modules/addons/AddonRepository.jsm");
 
 
-XPCOMUtils.defineLazyGetter(this, "CertUtils", function certUtilsLazyGetter() {
+XPCOMUtils.defineLazyGetter(this, "CertUtils", function() {
   let certUtils = {};
   Components.utils.import("resource://gre/modules/CertUtils.jsm", certUtils);
   return certUtils;
@@ -79,7 +79,7 @@ RDFSerializer.prototype = {
 
 
 
-  escapeEntities: function RDFS_escapeEntities(aString) {
+  escapeEntities: function(aString) {
     aString = aString.replace(/&/g, "&amp;");
     aString = aString.replace(/</g, "&lt;");
     aString = aString.replace(/>/g, "&gt;");
@@ -97,8 +97,7 @@ RDFSerializer.prototype = {
 
 
 
-  serializeContainerItems: function RDFS_serializeContainerItems(aDs, aContainer,
-                                                                 aIndent) {
+  serializeContainerItems: function(aDs, aContainer, aIndent) {
     var result = "";
     var items = aContainer.GetElements();
     while (items.hasMoreElements()) {
@@ -124,9 +123,7 @@ RDFSerializer.prototype = {
 
 
 
-  serializeResourceProperties: function RDFS_serializeResourceProperties(aDs,
-                                                                         aResource,
-                                                                         aIndent) {
+  serializeResourceProperties: function(aDs, aResource, aIndent) {
     var result = "";
     var items = [];
     var arcs = aDs.ArcLabelsOut(aResource);
@@ -180,7 +177,7 @@ RDFSerializer.prototype = {
 
 
 
-  serializeResource: function RDFS_serializeResource(aDs, aResource, aIndent) {
+  serializeResource: function(aDs, aResource, aIndent) {
     if (this.resources.indexOf(aResource) != -1 ) {
       
       throw Components.Exception("Cannot serialize multiple references to " + aResource.Value);
@@ -586,9 +583,9 @@ function UpdateParser(aId, aUpdateKey, aUrl, aObserver) {
     this.request.setRequestHeader("Moz-XPI-Update", "1", true);
     this.request.timeout = TIMEOUT;
     var self = this;
-    this.request.addEventListener("load", function loadEventListener(event) { self.onLoad() }, false);
-    this.request.addEventListener("error", function errorEventListener(event) { self.onError() }, false);
-    this.request.addEventListener("timeout", function timeoutEventListener(event) { self.onTimeout() }, false);
+    this.request.addEventListener("load", function(event) { self.onLoad() }, false);
+    this.request.addEventListener("error", function(event) { self.onError() }, false);
+    this.request.addEventListener("timeout", function(event) { self.onTimeout() }, false);
     this.request.send(null);
   }
   catch (e) {
@@ -606,7 +603,7 @@ UpdateParser.prototype = {
   
 
 
-  onLoad: function UP_onLoad() {
+  onLoad: function() {
     let request = this.request;
     this.request = null;
     this._doneAt = new Error("place holder");
@@ -700,7 +697,7 @@ UpdateParser.prototype = {
   
 
 
-  onError: function UP_onError() {
+  onError: function() {
     if (!Components.isSuccessCode(this.request.status)) {
       logger.warn("Request failed: " + this.url + " - " + this.request.status);
     }
@@ -729,7 +726,7 @@ UpdateParser.prototype = {
   
 
 
-  notifyError: function UP_notifyError(aStatus) {
+  notifyError: function(aStatus) {
     if ("onUpdateCheckError" in this.observer) {
       try {
         this.observer.onUpdateCheckError(aStatus);
@@ -743,7 +740,7 @@ UpdateParser.prototype = {
   
 
 
-  cancel: function UP_cancel() {
+  cancel: function() {
     if (!this.request) {
       logger.error("Trying to cancel already-complete request", this._doneAt);
       return;
@@ -837,12 +834,9 @@ this.AddonUpdateChecker = {
 
 
 
-  getCompatibilityUpdate: function AUC_getCompatibilityUpdate(aUpdates, aVersion,
-                                                              aIgnoreCompatibility,
-                                                              aAppVersion,
-                                                              aPlatformVersion,
-                                                              aIgnoreMaxVersion,
-                                                              aIgnoreStrictCompat) {
+  getCompatibilityUpdate: function(aUpdates, aVersion, aIgnoreCompatibility,
+                                   aAppVersion, aPlatformVersion,
+                                   aIgnoreMaxVersion, aIgnoreStrictCompat) {
     if (!aAppVersion)
       aAppVersion = Services.appinfo.version;
     if (!aPlatformVersion)
@@ -883,12 +877,9 @@ this.AddonUpdateChecker = {
 
 
 
-  getNewestCompatibleUpdate: function AUC_getNewestCompatibleUpdate(aUpdates,
-                                                                    aAppVersion,
-                                                                    aPlatformVersion,
-                                                                    aIgnoreMaxVersion,
-                                                                    aIgnoreStrictCompat,
-                                                                    aCompatOverrides) {
+  getNewestCompatibleUpdate: function(aUpdates, aAppVersion, aPlatformVersion,
+                                      aIgnoreMaxVersion, aIgnoreStrictCompat,
+                                      aCompatOverrides) {
     if (!aAppVersion)
       aAppVersion = Services.appinfo.version;
     if (!aPlatformVersion)
@@ -928,8 +919,7 @@ this.AddonUpdateChecker = {
 
 
 
-  checkForUpdates: function AUC_checkForUpdates(aId, aUpdateKey, aUrl,
-                                                aObserver) {
+  checkForUpdates: function(aId, aUpdateKey, aUrl, aObserver) {
     return new UpdateParser(aId, aUpdateKey, aUrl, aObserver);
   }
 };
