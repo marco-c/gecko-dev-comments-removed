@@ -139,15 +139,14 @@ nsresult
 MediaEngineTabVideoSource::Allocate(const dom::MediaTrackConstraints& aConstraints,
                                     const MediaEnginePrefs& aPrefs,
                                     const nsString& aDeviceId,
-                                    const nsACString& aOrigin,
-                                    BaseAllocationHandle** aOutHandle)
+                                    const nsACString& aOrigin)
 {
   
   
 
   mWindowId = aConstraints.mBrowserWindow.WasPassed() ?
               aConstraints.mBrowserWindow.Value() : -1;
-  aOutHandle = nullptr;
+
   return Restart(aConstraints, aPrefs, aDeviceId);
 }
 
@@ -179,9 +178,8 @@ MediaEngineTabVideoSource::Restart(const dom::MediaTrackConstraints& aConstraint
 }
 
 nsresult
-MediaEngineTabVideoSource::Deallocate(BaseAllocationHandle* aHandle)
+MediaEngineTabVideoSource::Deallocate()
 {
-  MOZ_ASSERT(!aHandle);
   return NS_OK;
 }
 

@@ -119,16 +119,8 @@ public:
   
   virtual void GetUUID(nsACString&) = 0;
 
-  class BaseAllocationHandle
-  {
-  public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BaseAllocationHandle);
-  protected:
-    virtual ~BaseAllocationHandle() {}
-  };
-
   
-  virtual nsresult Deallocate(BaseAllocationHandle* aHandle) = 0;
+  virtual nsresult Deallocate() = 0;
 
   
 
@@ -187,8 +179,7 @@ public:
   virtual nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
                             const MediaEnginePrefs &aPrefs,
                             const nsString& aDeviceId,
-                            const nsACString& aOrigin,
-                            BaseAllocationHandle** aOutHandle) = 0;
+                            const nsACString& aOrigin) = 0;
 
   virtual uint32_t GetBestFitnessDistance(
       const nsTArray<const dom::MediaTrackConstraintSet*>& aConstraintSets,
