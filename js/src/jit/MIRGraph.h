@@ -57,8 +57,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     
     bool unreachable_;
 
-    MResumePoint* callerResumePoint_;
-
     
     void pushVariable(uint32_t slot);
 
@@ -635,6 +633,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     uint32_t numDominated_;
     jsbytecode* pc_;
     LBlock* lir_;
+
+    
+    
+    
+    MResumePoint* callerResumePoint_;
 
     
     
