@@ -12,6 +12,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/camera/PCamerasChild.h"
 #include "mozilla/camera/PCamerasParent.h"
+#include "DeviceChangeCallback.h"
 #include "mozilla/Mutex.h"
 #include "base/singleton.h"
 #include "nsCOMPtr.h"
@@ -118,6 +119,8 @@ private:
 
 CamerasChild* GetCamerasChild();
 
+CamerasChild* GetCamerasChildIfExists();
+
 
 
 
@@ -138,6 +141,7 @@ int GetChildAndCall(MEM_FUN&& f, ARGS&&... args)
 }
 
 class CamerasChild final : public PCamerasChild
+                          ,public DeviceChangeCallback
 {
   friend class mozilla::ipc::BackgroundChildImpl;
   template <class T> friend class mozilla::camera::LockAndDispatch;
@@ -154,6 +158,8 @@ public:
                                 const int64_t&) override;
   virtual bool RecvFrameSizeChange(const int&, const int&,
                                    const int& w, const int& h) override;
+
+  virtual bool RecvDeviceChange() override;
 
   
   virtual bool RecvReplyNumberOfCaptureDevices(const int&) override;

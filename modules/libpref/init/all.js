@@ -3870,9 +3870,16 @@ pref("print.print_paper_size", 0);
 
 pref("print.print_extra_margin", 0); 
 
+
+#ifdef MOZ_ANDROID_APZ
 pref("layout.css.scroll-behavior.enabled", true);
 pref("layout.css.scroll-behavior.property-enabled", true);
 pref("layout.css.scroll-snap.enabled", true);
+#else
+pref("layout.css.scroll-behavior.enabled", false);
+pref("layout.css.scroll-behavior.property-enabled", false);
+pref("layout.css.scroll-snap.enabled", false);
+#endif
 
 
 
@@ -4561,8 +4568,6 @@ pref("layers.componentalpha.enabled", true);
 
 pref("gfx.content.use-native-pushlayer", false);
 
-pref("gfx.content.always-paint", false);
-
 #ifdef ANDROID
 pref("gfx.apitrace.enabled",false);
 #endif
@@ -4788,6 +4793,9 @@ pref("dom.w3c_pointer_events.enabled", false);
 
 
 pref("dom.imagecapture.enabled", false);
+
+
+pref("media.ondevicechange.enabled", false);
 
 
 

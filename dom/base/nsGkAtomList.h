@@ -1957,6 +1957,9 @@ GK_ATOM(onmozinterruptbegin, "onmozinterruptbegin")
 GK_ATOM(onmozinterruptend, "onmozinterruptend")
 
 
+GK_ATOM(ondevicechange, "ondevicechange")
+
+
 
 
 

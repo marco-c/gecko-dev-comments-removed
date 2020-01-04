@@ -29,6 +29,17 @@ class VideoCaptureModule;
 
 
 
+class WEBRTC_DLLEXPORT ViEInputObserver {
+ public:
+  
+  virtual void DeviceChange() = 0;
+
+ protected:
+  virtual ~ViEInputObserver() {}
+};
+
+
+
 struct CaptureCapability {
   unsigned int width;
   unsigned int height;
@@ -216,8 +227,12 @@ class WEBRTC_DLLEXPORT ViECapture {
   virtual int RegisterObserver(const int capture_id,
                                ViECaptureObserver& observer) = 0;
 
+  virtual int RegisterInputObserver(ViEInputObserver* observer) = 0;
+
   
   virtual int DeregisterObserver(const int capture_id) = 0;
+
+  virtual int DeregisterInputObserver() = 0;
 
  protected:
   ViECapture() {}

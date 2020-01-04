@@ -126,6 +126,10 @@ MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
 #endif
   
   gFarendObserver = new AudioOutputObserver();
+
+  camera::GetChildAndCall(
+    &camera::CamerasChild::AddDeviceChangeCallback,
+    this);
 }
 
 void
@@ -420,6 +424,11 @@ MediaEngineWebRTC::Shutdown()
 {
   
   MutexAutoLock lock(mMutex);
+
+  if (camera::GetCamerasChildIfExists()) {
+    camera::GetChildAndCall(
+      &camera::CamerasChild::RemoveDeviceChangeCallback, this);
+  }
 
   LOG(("%s", __FUNCTION__));
   
