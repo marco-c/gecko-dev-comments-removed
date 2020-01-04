@@ -273,6 +273,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef PNG_H
 #define PNG_H
 
@@ -288,9 +319,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.21+apng"
+#define PNG_LIBPNG_VER_STRING "1.6.23+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.21+apng - January 15, 2016\n"
+     " libpng version 1.6.23+apng - June 9, 2016\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -298,7 +329,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 21
+#define PNG_LIBPNG_VER_RELEASE 23
 
 
 
@@ -329,7 +360,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10621 /* 1.6.21 */
+#define PNG_LIBPNG_VER 10623 /* 1.6.23 */
 
 
 
@@ -454,7 +485,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_21;
+typedef char* png_libpng_version_1_6_23;
 
 
 
@@ -755,24 +786,22 @@ typedef png_unknown_chunk * * png_unknown_chunkpp;
 
 
 
-#define PNG_INFO_gAMA 0x0001
-#define PNG_INFO_sBIT 0x0002
-#define PNG_INFO_cHRM 0x0004
-#define PNG_INFO_PLTE 0x0008
-#define PNG_INFO_tRNS 0x0010
-#define PNG_INFO_bKGD 0x0020
-#define PNG_INFO_hIST 0x0040
-#define PNG_INFO_pHYs 0x0080
-#define PNG_INFO_oFFs 0x0100
-#define PNG_INFO_tIME 0x0200
-#define PNG_INFO_pCAL 0x0400
-#define PNG_INFO_sRGB 0x0800   /* GR-P, 0.96a */
-#define PNG_INFO_iCCP 0x1000   /* ESR, 1.0.6 */
-#define PNG_INFO_sPLT 0x2000   /* ESR, 1.0.6 */
-#define PNG_INFO_sCAL 0x4000   /* ESR, 1.0.6 */
-#if INT_MAX >= 0x8000 
-#define PNG_INFO_IDAT 0x8000   /* ESR, 1.0.6 */
-#endif
+#define PNG_INFO_gAMA 0x0001U
+#define PNG_INFO_sBIT 0x0002U
+#define PNG_INFO_cHRM 0x0004U
+#define PNG_INFO_PLTE 0x0008U
+#define PNG_INFO_tRNS 0x0010U
+#define PNG_INFO_bKGD 0x0020U
+#define PNG_INFO_hIST 0x0040U
+#define PNG_INFO_pHYs 0x0080U
+#define PNG_INFO_oFFs 0x0100U
+#define PNG_INFO_tIME 0x0200U
+#define PNG_INFO_pCAL 0x0400U
+#define PNG_INFO_sRGB 0x0800U  /* GR-P, 0.96a */
+#define PNG_INFO_iCCP 0x1000U  /* ESR, 1.0.6 */
+#define PNG_INFO_sPLT 0x2000U  /* ESR, 1.0.6 */
+#define PNG_INFO_sCAL 0x4000U  /* ESR, 1.0.6 */
+#define PNG_INFO_IDAT 0x8000U  /* ESR, 1.0.6 */
 #ifdef PNG_APNG_SUPPORTED
 #define PNG_INFO_acTL 0x10000
 #define PNG_INFO_fcTL 0x20000
@@ -1351,7 +1380,7 @@ PNG_EXPORT(229, void, png_set_scale_16, (png_structrp png_ptr));
 #endif
 
 #ifdef PNG_READ_STRIP_16_TO_8_SUPPORTED
-#define PNG_READ_16_TO_8 SUPPORTED /* Name prior to 1.5.4 */
+#define PNG_READ_16_TO_8_SUPPORTED
 
 PNG_EXPORT(48, void, png_set_strip_16, (png_structrp png_ptr));
 #endif
@@ -1502,8 +1531,8 @@ PNG_EXPORT(67, void, png_set_filter, (png_structrp png_ptr, int method,
 #define PNG_FILTER_UP      0x20
 #define PNG_FILTER_AVG     0x40
 #define PNG_FILTER_PAETH   0x80
-#define PNG_ALL_FILTERS (PNG_FILTER_NONE | PNG_FILTER_SUB | PNG_FILTER_UP | \
-                         PNG_FILTER_AVG | PNG_FILTER_PAETH)
+#define PNG_FAST_FILTERS (PNG_FILTER_NONE | PNG_FILTER_SUB | PNG_FILTER_UP)
+#define PNG_ALL_FILTERS (PNG_FAST_FILTERS | PNG_FILTER_AVG | PNG_FILTER_PAETH)
 
 
 
@@ -1780,21 +1809,21 @@ PNG_EXPORT(99, void, png_data_freer, (png_const_structrp png_ptr,
 #define PNG_SET_WILL_FREE_DATA 1
 #define PNG_USER_WILL_FREE_DATA 2
 
-#define PNG_FREE_HIST 0x0008
-#define PNG_FREE_ICCP 0x0010
-#define PNG_FREE_SPLT 0x0020
-#define PNG_FREE_ROWS 0x0040
-#define PNG_FREE_PCAL 0x0080
-#define PNG_FREE_SCAL 0x0100
+#define PNG_FREE_HIST 0x0008U
+#define PNG_FREE_ICCP 0x0010U
+#define PNG_FREE_SPLT 0x0020U
+#define PNG_FREE_ROWS 0x0040U
+#define PNG_FREE_PCAL 0x0080U
+#define PNG_FREE_SCAL 0x0100U
 #ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
-#  define PNG_FREE_UNKN 0x0200
+#  define PNG_FREE_UNKN 0x0200U
 #endif
 
-#define PNG_FREE_PLTE 0x1000
-#define PNG_FREE_TRNS 0x2000
-#define PNG_FREE_TEXT 0x4000
-#define PNG_FREE_ALL  0x7fff
-#define PNG_FREE_MUL  0x4220 /* PNG_FREE_SPLT|PNG_FREE_TEXT|PNG_FREE_UNKN */
+#define PNG_FREE_PLTE 0x1000U
+#define PNG_FREE_TRNS 0x2000U
+#define PNG_FREE_TEXT 0x4000U
+#define PNG_FREE_ALL  0x7fffU
+#define PNG_FREE_MUL  0x4220U /* PNG_FREE_SPLT|PNG_FREE_TEXT|PNG_FREE_UNKN */
 
 #ifdef PNG_USER_MEM_SUPPORTED
 PNG_EXPORTA(100, png_voidp, png_malloc_default, (png_const_structrp png_ptr,
@@ -2920,9 +2949,16 @@ typedef struct
 
 
 
+
+
+
+
 #define PNG_IMAGE_BUFFER_SIZE(image, row_stride)\
    (PNG_IMAGE_PIXEL_COMPONENT_SIZE((image).format)*(image).height*(row_stride))
    
+
+
+
 
 
 
@@ -3044,7 +3080,6 @@ PNG_EXPORT(238, void, png_image_free, (png_imagep image));
 #endif 
 
 #ifdef PNG_SIMPLIFIED_WRITE_SUPPORTED
-#ifdef PNG_STDIO_SUPPORTED
 
 
 
@@ -3061,6 +3096,7 @@ PNG_EXPORT(238, void, png_image_free, (png_imagep image));
 
 
 
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
 PNG_EXPORT(239, int, png_image_write_to_file, (png_imagep image,
    const char *file, int convert_to_8bit, const void *buffer,
    png_int_32 row_stride, const void *colormap));
@@ -3070,26 +3106,117 @@ PNG_EXPORT(240, int, png_image_write_to_stdio, (png_imagep image, FILE *file,
    int convert_to_8_bit, const void *buffer, png_int_32 row_stride,
    const void *colormap));
    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PNG_EXPORT(245, int, png_image_write_to_memory, (png_imagep image, void *memory,
+   png_alloc_size_t * PNG_RESTRICT memory_bytes, int convert_to_8_bit,
+   const void *buffer, png_int_32 row_stride, const void *colormap));
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define png_image_write_get_memory_size(image, size, convert_to_8_bit, buffer,\
+   row_stride, colormap)\
+   png_image_write_to_memory(&(image), 0, &(size), convert_to_8_bit, buffer,\
+         row_stride, colormap)
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define PNG_IMAGE_DATA_SIZE(image) (PNG_IMAGE_SIZE(image)+(image).height)
+   
+
+
+
+
+
+
+
+
+#ifndef PNG_ZLIB_MAX_SIZE
+#  define PNG_ZLIB_MAX_SIZE(b) ((b)+(((b)+7U)>>3)+(((b)+63U)>>6)+11U)
+   
+
+
+
+
+
+#endif
+
+#define PNG_IMAGE_COMPRESSED_SIZE_MAX(image)\
+   PNG_ZLIB_MAX_SIZE((png_alloc_size_t)PNG_IMAGE_DATA_SIZE(image))
+   
+
+#define PNG_IMAGE_PNG_SIZE_MAX_(image, image_size)\
+   ((8U/*sig*/+25U/*IHDR*/+16U/*gAMA*/+44U/*cHRM*/+12U/*IEND*/+\
+    (((image).format&PNG_FORMAT_FLAG_COLORMAP)?/*colormap: PLTE, tRNS*/\
+     12U+3U*(image).colormap_entries/*PLTE data*/+\
+     (((image).format&PNG_FORMAT_FLAG_ALPHA)?\
+      12U/*tRNS*/+(image).colormap_entries:0U):0U)+\
+    12U)+(12U*((image_size)/PNG_ZBUF_SIZE))/*IDAT*/+(image_size))
+   
+
+
+
+
+
+#define PNG_IMAGE_PNG_SIZE_MAX(image)\
+   PNG_IMAGE_PNG_SIZE_MAX_(image, PNG_IMAGE_COMPRESSED_SIZE_MAX(image))
+   
+
+
+
+
 #endif 
 
 
@@ -3217,9 +3344,9 @@ PNG_EXPORT(264, void, png_write_frame_tail, (png_structp png_ptr,
 
 #ifdef PNG_EXPORT_LAST_ORDINAL
 #ifdef PNG_APNG_SUPPORTED
-  PNG_EXPORT_LAST_ORDINAL(264);
+  PNG_EXPORT_LAST_ORDINAL(265);
 #else
-  PNG_EXPORT_LAST_ORDINAL(244);
+  PNG_EXPORT_LAST_ORDINAL(245);
 #endif 
 #endif
 

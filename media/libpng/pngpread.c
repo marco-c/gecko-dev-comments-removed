@@ -293,12 +293,14 @@ png_push_read_chunk(png_structrp png_ptr, png_inforp info_ptr)
           (png_ptr->mode & PNG_HAVE_PLTE) == 0)
          png_error(png_ptr, "Missing PLTE before IDAT");
 
-      png_ptr->mode |= PNG_HAVE_IDAT;
       png_ptr->process_mode = PNG_READ_IDAT_MODE;
 
-      if ((png_ptr->mode & PNG_HAVE_CHUNK_AFTER_IDAT) == 0)
-         if (png_ptr->push_length == 0)
-            return;
+      if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
+         if ((png_ptr->mode & PNG_HAVE_CHUNK_AFTER_IDAT) == 0)
+            if (png_ptr->push_length == 0)
+               return;
+
+      png_ptr->mode |= PNG_HAVE_IDAT;
 
       if ((png_ptr->mode & PNG_AFTER_IDAT) != 0)
          png_benign_error(png_ptr, "Too many IDATs found");
@@ -599,7 +601,10 @@ png_push_save_buffer(png_structrp png_ptr)
          png_error(png_ptr, "Insufficient memory for save_buffer");
       }
 
-      memcpy(png_ptr->save_buffer, old_buffer, png_ptr->save_buffer_size);
+      if (old_buffer)
+         memcpy(png_ptr->save_buffer, old_buffer, png_ptr->save_buffer_size);
+      else if (png_ptr->save_buffer_size)
+         png_error(png_ptr, "save_buffer error");
       png_free(png_ptr, old_buffer);
       png_ptr->save_buffer_max = new_max;
    }

@@ -127,7 +127,10 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
       }
 
       else if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
+      {
+         png_ptr->mode |= PNG_HAVE_CHUNK_AFTER_IDAT;
          png_ptr->mode |= PNG_AFTER_IDAT;
+      }
 
       
 
@@ -865,6 +868,9 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
       png_uint_32 length = png_read_chunk_header(png_ptr);
       png_uint_32 chunk_name = png_ptr->chunk_name;
 
+      if (chunk_name != png_IDAT)
+         png_ptr->mode |= PNG_HAVE_CHUNK_AFTER_IDAT;
+
       if (chunk_name == png_IEND)
          png_handle_IEND(png_ptr, info_ptr, length);
 
@@ -879,9 +885,9 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
       {
          if (chunk_name == png_IDAT)
          {
-            if ((length > 0) ||
-                (png_ptr->mode & PNG_HAVE_CHUNK_AFTER_IDAT) != 0)
-               png_benign_error(png_ptr, "Too many IDATs found");
+            if ((length > 0 && !(png_ptr->flags & PNG_FLAG_ZSTREAM_ENDED))
+                || (png_ptr->mode & PNG_HAVE_CHUNK_AFTER_IDAT) != 0)
+               png_benign_error(png_ptr, ".Too many IDATs found");
          }
          png_handle_unknown(png_ptr, info_ptr, length, keep);
          if (chunk_name == png_PLTE)
@@ -894,8 +900,12 @@ png_read_end(png_structrp png_ptr, png_inforp info_ptr)
          
 
 
-         if ((length > 0) || (png_ptr->mode & PNG_HAVE_CHUNK_AFTER_IDAT) != 0)
-            png_benign_error(png_ptr, "Too many IDATs found");
+
+
+
+         if ((length > 0 && !(png_ptr->flags & PNG_FLAG_ZSTREAM_ENDED))
+             || (png_ptr->mode & PNG_HAVE_CHUNK_AFTER_IDAT) != 0)
+            png_benign_error(png_ptr, "..Too many IDATs found");
 
          png_crc_finish(png_ptr, length);
       }
@@ -3928,16 +3938,16 @@ png_image_read_direct(png_voidp argument)
             else
                filler = 255;
 
-#           ifdef PNG_FORMAT_AFIRST_SUPPORTED
-               if ((format & PNG_FORMAT_FLAG_AFIRST) != 0)
-               {
-                  where = PNG_FILLER_BEFORE;
-                  change &= ~PNG_FORMAT_FLAG_AFIRST;
-               }
+#ifdef PNG_FORMAT_AFIRST_SUPPORTED
+            if ((format & PNG_FORMAT_FLAG_AFIRST) != 0)
+            {
+               where = PNG_FILLER_BEFORE;
+               change &= ~PNG_FORMAT_FLAG_AFIRST;
+            }
 
-               else
-#           endif
-               where = PNG_FILLER_AFTER;
+            else
+#endif
+            where = PNG_FILLER_AFTER;
 
             png_set_add_alpha(png_ptr, filler, where);
          }
@@ -4045,12 +4055,12 @@ png_image_read_direct(png_voidp argument)
       if (info_ptr->bit_depth == 16)
          info_format |= PNG_FORMAT_FLAG_LINEAR;
 
-#     ifdef PNG_FORMAT_BGR_SUPPORTED
-         if ((png_ptr->transformations & PNG_BGR) != 0)
-            info_format |= PNG_FORMAT_FLAG_BGR;
-#     endif
+#ifdef PNG_FORMAT_BGR_SUPPORTED
+      if ((png_ptr->transformations & PNG_BGR) != 0)
+         info_format |= PNG_FORMAT_FLAG_BGR;
+#endif
 
-#     ifdef PNG_FORMAT_AFIRST_SUPPORTED
+#ifdef PNG_FORMAT_AFIRST_SUPPORTED
          if (do_local_background == 2)
          {
             if ((format & PNG_FORMAT_FLAG_AFIRST) != 0)
@@ -4151,58 +4161,84 @@ png_image_finish_read(png_imagep image, png_const_colorp background,
 {
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {
-      png_uint_32 check;
+      
 
-      if (row_stride == 0)
-         row_stride = PNG_IMAGE_ROW_STRIDE(*image);
 
-      if (row_stride < 0)
-         check = -row_stride;
 
-      else
-         check = row_stride;
+      const unsigned int channels = PNG_IMAGE_PIXEL_CHANNELS(image->format);
 
-      if (image->opaque != NULL && buffer != NULL &&
-         check >= PNG_IMAGE_ROW_STRIDE(*image))
+      if (image->width <= 0x7FFFFFFFU/channels) 
       {
-         if ((image->format & PNG_FORMAT_FLAG_COLORMAP) == 0 ||
-            (image->colormap_entries > 0 && colormap != NULL))
+         png_uint_32 check;
+         const png_uint_32 png_row_stride = image->width * channels;
+
+         if (row_stride == 0)
+            row_stride = (png_int_32)png_row_stride;
+
+         if (row_stride < 0)
+            check = -row_stride;
+
+         else
+            check = row_stride;
+
+         if (image->opaque != NULL && buffer != NULL && check >= png_row_stride)
          {
-            int result;
-            png_image_read_control display;
-
-            memset(&display, 0, (sizeof display));
-            display.image = image;
-            display.buffer = buffer;
-            display.row_stride = row_stride;
-            display.colormap = colormap;
-            display.background = background;
-            display.local_row = NULL;
-
             
 
 
-            if ((image->format & PNG_FORMAT_FLAG_COLORMAP) != 0)
-               result =
-                  png_safe_execute(image, png_image_read_colormap, &display) &&
-                  png_safe_execute(image, png_image_read_colormapped, &display);
+
+            if (image->height <= 0xFFFFFFFF/png_row_stride)
+            {
+               if ((image->format & PNG_FORMAT_FLAG_COLORMAP) == 0 ||
+                  (image->colormap_entries > 0 && colormap != NULL))
+               {
+                  int result;
+                  png_image_read_control display;
+
+                  memset(&display, 0, (sizeof display));
+                  display.image = image;
+                  display.buffer = buffer;
+                  display.row_stride = row_stride;
+                  display.colormap = colormap;
+                  display.background = background;
+                  display.local_row = NULL;
+
+                  
+
+
+                  if ((image->format & PNG_FORMAT_FLAG_COLORMAP) != 0)
+                     result = png_safe_execute(image,
+                                    png_image_read_colormap, &display) &&
+                              png_safe_execute(image,
+                                    png_image_read_colormapped, &display);
+
+                  else
+                     result =
+                        png_safe_execute(image,
+                              png_image_read_direct, &display);
+
+                  png_image_free(image);
+                  return result;
+               }
+
+               else
+                  return png_image_error(image,
+                     "png_image_finish_read[color-map]: no color-map");
+            }
 
             else
-               result =
-                  png_safe_execute(image, png_image_read_direct, &display);
-
-            png_image_free(image);
-            return result;
+               return png_image_error(image,
+                  "png_image_finish_read: image too large");
          }
 
          else
             return png_image_error(image,
-               "png_image_finish_read[color-map]: no color-map");
+               "png_image_finish_read: invalid argument");
       }
 
       else
          return png_image_error(image,
-            "png_image_finish_read: invalid argument");
+            "png_image_finish_read: row_stride too large");
    }
 
    else if (image != NULL)

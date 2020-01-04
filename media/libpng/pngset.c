@@ -957,12 +957,14 @@ png_set_tRNS(png_structrp png_ptr, png_inforp info_ptr,
 
        png_free_data(png_ptr, info_ptr, PNG_FREE_TRNS, 0);
 
-       
-       png_ptr->trans_alpha = info_ptr->trans_alpha = png_voidcast(png_bytep,
-         png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
-
        if (num_trans > 0 && num_trans <= PNG_MAX_PALETTE_LENGTH)
+       {
+         
+          info_ptr->trans_alpha = png_voidcast(png_bytep,
+             png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
           memcpy(info_ptr->trans_alpha, trans_alpha, (png_size_t)num_trans);
+       }
+       png_ptr->trans_alpha = info_ptr->trans_alpha;
    }
 
    if (trans_color != NULL)

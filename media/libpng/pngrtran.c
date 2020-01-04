@@ -159,7 +159,7 @@ png_set_background(png_structrp png_ptr,
    png_set_background_fixed(png_ptr, background_color, background_gamma_code,
       need_expand, png_fixed(png_ptr, background_gamma, "png_set_background"));
 }
-#  endif  
+#  endif 
 #endif 
 
 
@@ -291,7 +291,10 @@ png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
 
 
 
-   if (output_gamma < 70000 || output_gamma > 300000)
+
+
+
+   if (output_gamma < 1000 || output_gamma > 10000000)
       png_error(png_ptr, "output gamma out of expected range");
 
    
@@ -1912,7 +1915,7 @@ png_init_read_transformations(png_structrp png_ptr)
             png_ptr->palette[i].blue = (png_byte)component;
          }
    }
-#endif  
+#endif 
 }
 
 

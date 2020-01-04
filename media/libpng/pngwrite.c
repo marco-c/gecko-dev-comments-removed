@@ -12,9 +12,9 @@
 
 
 #include "pngpriv.h"
-#if defined(PNG_SIMPLIFIED_WRITE_SUPPORTED) && defined(PNG_STDIO_SUPPORTED)
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
 #  include <errno.h>
-#endif
+#endif 
 
 #ifdef PNG_WRITE_SUPPORTED
 
@@ -1461,7 +1461,6 @@ png_write_png(png_structrp png_ptr, png_inforp info_ptr,
 
 
 #ifdef PNG_SIMPLIFIED_WRITE_SUPPORTED
-# ifdef PNG_STDIO_SUPPORTED 
 
 static int
 png_image_write_init(png_imagep image)
@@ -1513,6 +1512,10 @@ typedef struct
    png_const_voidp first_row;
    ptrdiff_t       row_bytes;
    png_voidp       local_row;
+   
+   png_bytep        memory;
+   png_alloc_size_t memory_bytes; 
+   png_alloc_size_t output_bytes; 
 } png_image_write_control;
 
 
@@ -1941,8 +1944,42 @@ png_image_write_main(png_voidp argument)
 #   endif
 
    
-   if (display->row_stride == 0)
-      display->row_stride = PNG_IMAGE_ROW_STRIDE(*image);
+
+
+   {
+      const unsigned int channels = PNG_IMAGE_PIXEL_CHANNELS(image->format);
+
+      if (image->width <= 0x7FFFFFFFU/channels) 
+      {
+         png_uint_32 check;
+         const png_uint_32 png_row_stride = image->width * channels;
+
+         if (display->row_stride == 0)
+            display->row_stride = (png_int_32)png_row_stride;
+
+         if (display->row_stride < 0)
+            check = -display->row_stride;
+
+         else
+            check = display->row_stride;
+
+         if (check >= png_row_stride)
+         {
+            
+
+
+
+            if (image->height > 0xFFFFFFFF/png_row_stride)
+               png_error(image->opaque->png_ptr, "memory image too large");
+         }
+
+         else
+            png_error(image->opaque->png_ptr, "supplied row stride too small");
+      }
+
+      else
+         png_error(image->opaque->png_ptr, "image row stride too large");
+   }
 
    
    if ((format & PNG_FORMAT_FLAG_COLORMAP) != 0)
@@ -2119,6 +2156,122 @@ png_image_write_main(png_voidp argument)
    return 1;
 }
 
+
+static void (PNGCBAPI
+image_memory_write)(png_structp png_ptr, png_bytep data,
+   png_size_t size)
+{
+   png_image_write_control *display = png_voidcast(png_image_write_control*,
+      png_ptr->io_ptr);
+   const png_alloc_size_t ob = display->output_bytes;
+
+   
+   if (size <= ((png_alloc_size_t)-1) - ob)
+   {
+      
+      if (size > 0)
+      {
+         if (display->memory_bytes >= ob+size) 
+            memcpy(display->memory+ob, data, size);
+
+         
+         display->output_bytes = ob+size;
+      }
+   }
+
+   else
+      png_error(png_ptr, "png_image_write_to_memory: PNG too big");
+}
+
+static void (PNGCBAPI
+image_memory_flush)(png_structp png_ptr)
+{
+   PNG_UNUSED(png_ptr)
+}
+
+static int
+png_image_write_memory(png_voidp argument)
+{
+   png_image_write_control *display = png_voidcast(png_image_write_control*,
+      argument);
+
+   
+
+
+
+   png_set_write_fn(display->image->opaque->png_ptr, display,
+         image_memory_write, image_memory_flush);
+
+   return png_image_write_main(display);
+}
+
+int PNGAPI
+png_image_write_to_memory(png_imagep image, void *memory,
+   png_alloc_size_t * PNG_RESTRICT memory_bytes, int convert_to_8bit,
+   const void *buffer, png_int_32 row_stride, const void *colormap)
+{
+   
+   if (image != NULL && image->version == PNG_IMAGE_VERSION)
+   {
+      if (memory_bytes != NULL && buffer != NULL)
+      {
+         
+
+
+         if (memory == NULL)
+            *memory_bytes = 0;
+
+         if (png_image_write_init(image) != 0)
+         {
+            png_image_write_control display;
+            int result;
+
+            memset(&display, 0, (sizeof display));
+            display.image = image;
+            display.buffer = buffer;
+            display.row_stride = row_stride;
+            display.colormap = colormap;
+            display.convert_to_8bit = convert_to_8bit;
+            display.memory = png_voidcast(png_bytep, memory);
+            display.memory_bytes = *memory_bytes;
+            display.output_bytes = 0;
+
+            result = png_safe_execute(image, png_image_write_memory, &display);
+            png_image_free(image);
+
+            
+            if (result)
+            {
+               
+
+
+               if (memory != NULL && display.output_bytes > *memory_bytes)
+                  result = 0;
+
+               *memory_bytes = display.output_bytes;
+            }
+
+            return result;
+         }
+
+         else
+            return 0;
+      }
+
+      else
+         return png_image_error(image,
+            "png_image_write_to_memory: invalid argument");
+   }
+
+   else if (image != NULL)
+      return png_image_error(image,
+         "png_image_write_to_memory: incorrect PNG_IMAGE_VERSION");
+
+   else
+      return 0;
+}
+
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
 int PNGAPI
 png_image_write_to_stdio(png_imagep image, FILE *file, int convert_to_8bit,
    const void *buffer, png_int_32 row_stride, const void *colormap)
@@ -2126,7 +2279,7 @@ png_image_write_to_stdio(png_imagep image, FILE *file, int convert_to_8bit,
    
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {
-      if (file != NULL)
+      if (file != NULL && buffer != NULL)
       {
          if (png_image_write_init(image) != 0)
          {
@@ -2176,7 +2329,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
    
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {
-      if (file_name != NULL)
+      if (file_name != NULL && buffer != NULL)
       {
          FILE *fp = fopen(file_name, "wb");
 
@@ -2234,7 +2387,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
    else
       return 0;
 }
-# endif 
+#endif 
 #endif 
 
 #ifdef PNG_WRITE_APNG_SUPPORTED
