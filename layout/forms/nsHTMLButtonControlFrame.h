@@ -92,6 +92,12 @@ public:
 
 protected:
   virtual bool IsInput() { return false; }
+
+  
+  
+  
+  bool ShouldClipPaintingToBorderBox();
+
   
   
   void ReflowButtonContents(nsPresContext* aPresContext,
