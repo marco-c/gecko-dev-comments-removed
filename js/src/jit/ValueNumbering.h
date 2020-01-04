@@ -71,7 +71,6 @@ class ValueNumberer
     bool blocksRemoved_;              
     bool updateAliasAnalysis_;        
     bool dependenciesBroken_;         
-    bool hasOSRFixups_;               
 
     enum UseRemovedOption {
         DontSetUseRemoved,
@@ -101,7 +100,6 @@ class ValueNumberer
     bool visitBlock(MBasicBlock* block, const MBasicBlock* root);
     bool visitDominatorTree(MBasicBlock* root);
     bool visitGraph();
-    bool cleanupOSRFixups();
 
   public:
     ValueNumberer(MIRGenerator* mir, MIRGraph& graph);
