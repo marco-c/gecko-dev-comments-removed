@@ -1259,6 +1259,7 @@ nsXULAppInfo::SetTelemetrySessionId(const nsACString& id)
   return NS_OK;
 }
 
+
 NS_IMETHODIMP
 nsXULAppInfo::Callback(nsISupports* aData)
 {
