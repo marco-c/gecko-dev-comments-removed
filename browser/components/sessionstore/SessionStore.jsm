@@ -1247,6 +1247,9 @@ var SessionStoreInternal = {
       delete winData.busy;
 
       
+      delete this._windows[aWindow.__SSi];
+
+      
       
       
       
@@ -1291,8 +1294,6 @@ var SessionStoreInternal = {
           this.maybeSaveClosedWindow(winData);
         }
 
-        
-        delete this._windows[aWindow.__SSi];
         
         
         this.cleanUpWindow(aWindow, winData);
