@@ -1116,12 +1116,14 @@ this.LoopRooms = {
 
   _setRoomsCache: function(roomsCache) {
     LoopRoomsInternal.rooms.clear();
+    gDirty = true;
 
     if (roomsCache) {
       
       for (let [key, value] of roomsCache) {
         LoopRoomsInternal.rooms.set(key, value);
       }
+      gDirty = false;
     }
   }
 };
