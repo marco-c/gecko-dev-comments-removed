@@ -1827,6 +1827,11 @@ pref("media.eme.apiVisible", true);
 
 
 
+pref("media.fragmented-mp4.gmp.aac", 2);
+pref("media.fragmented-mp4.gmp.h264", 2);
+
+
+
 pref("media.gmp.trial-create.enabled", true);
 
 #ifdef MOZ_ADOBE_EME
