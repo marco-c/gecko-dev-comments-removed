@@ -234,7 +234,7 @@ public:
                                 TextureDumpMode aCompress);
 protected:
   CompositableChild* mCompositableChild;
-  CompositableForwarder* mForwarder;
+  RefPtr<CompositableForwarder> mForwarder;
   
   
   TextureFlags mTextureFlags;
