@@ -460,6 +460,14 @@ MediaPipelineFactory::CreateOrUpdateMediaPipeline(
     return NS_OK;
   }
 
+  if (aTrack.GetActive()) {
+    auto error = conduit->StartTransmitting();
+    if (error) {
+      MOZ_MTLOG(ML_ERROR, "StartTransmitting failed: " << error);
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   RefPtr<MediaPipeline> pipeline =
     stream->GetPipelineByTrackId_m(aTrack.GetTrackId());
 
@@ -786,6 +794,15 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
   }
 
   if (receiving) {
+    if (!aTrackPair.mSending) {
+      
+      
+      if (!conduit->SetLocalSSRC(aTrackPair.mRecvonlySsrc)) {
+        MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
+        return NS_ERROR_FAILURE;
+      }
+    }
+
     
     
     bool configuredH264 = false;
@@ -815,15 +832,6 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
     if (error) {
       MOZ_MTLOG(ML_ERROR, "ConfigureRecvMediaCodecs failed: " << error);
       return NS_ERROR_FAILURE;
-    }
-
-    if (!aTrackPair.mSending) {
-      
-      
-      if (!conduit->SetLocalSSRC(aTrackPair.mRecvonlySsrc)) {
-        MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
-        return NS_ERROR_FAILURE;
-      }
     }
   } else {
     
