@@ -804,7 +804,6 @@ PopupNotifications.prototype = {
     });
     if (!notificationsToShow.length)
       return;
-    let notificationIds = notificationsToShow.map(n => n.id);
 
     this._refreshPanel(notificationsToShow);
 
@@ -812,12 +811,6 @@ PopupNotifications.prototype = {
       notificationsToShow.forEach(function (n) {
         this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
       }, this);
-      
-      
-      
-      let event = new this.window.CustomEvent("PanelUpdated",
-                                              {"detail": notificationIds});
-      this.panel.dispatchEvent(event);
       return;
     }
 
@@ -879,9 +872,6 @@ PopupNotifications.prototype = {
         
         
         this.panel.dispatchEvent(new this.window.CustomEvent("Shown"));
-        let event = new this.window.CustomEvent("PanelUpdated",
-                                                {"detail": notificationIds});
-        this.panel.dispatchEvent(event);
       };
       this._popupshownListener = this._popupshownListener.bind(this);
       target.addEventListener("popupshown", this._popupshownListener, true);
