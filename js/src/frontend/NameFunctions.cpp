@@ -412,7 +412,6 @@ class NameResolver
           case PNK_SPREAD:
           case PNK_MUTATEPROTO:
           case PNK_EXPORT:
-          case PNK_EXPORT_DEFAULT:
             MOZ_ASSERT(cur->isArity(PN_UNARY));
             if (!resolve(cur->pn_kid, prefix))
                 return false;
@@ -517,13 +516,15 @@ class NameResolver
 
           case PNK_IMPORT:
           case PNK_EXPORT_FROM:
+          case PNK_EXPORT_DEFAULT:
             MOZ_ASSERT(cur->isArity(PN_BINARY));
             
             
             
             if (!resolve(cur->pn_left, prefix))
                 return false;
-            MOZ_ASSERT(cur->pn_right->isKind(PNK_STRING));
+            MOZ_ASSERT_IF(!cur->isKind(PNK_EXPORT_DEFAULT),
+                          cur->pn_right->isKind(PNK_STRING));
             break;
 
           
