@@ -23,33 +23,26 @@ PageError.propTypes = {
 
 function PageError(props) {
   const { message } = props;
-  const messageBody =
-    dom.span({className: "message-body devtools-monospace"},
-      message.data.errorMessage);
   const repeat = MessageRepeat({repeat: message.repeat});
   const icon = MessageIcon({severity: message.severity});
-  const children = [
-    messageBody,
-    repeat
-  ];
 
   
   
   
   return dom.div({
-    class: "message cm-s-mozilla",
+    class: "message",
     is: "fdt-message",
     category: message.category,
     severity: message.severity
   },
     icon,
-    dom.span({className: "message-body-wrapper"},
+    dom.span(
+      {className: "message-body-wrapper message-body devtools-monospace"},
       dom.span({},
-        dom.span({className: "message-flex-body"},
-          children
-        )
+        message.data.errorMessage
       )
-    )
+    ),
+    repeat
   );
 }
 
