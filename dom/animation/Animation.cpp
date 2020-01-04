@@ -98,11 +98,6 @@ Animation::Constructor(const GlobalObject& aGlobal,
     aRv.Throw(NS_ERROR_DOM_ANIM_NO_EFFECT_ERR);
     return nullptr;
   }
-  if (!aTimeline) {
-    
-    aRv.Throw(NS_ERROR_DOM_ANIM_NO_TIMELINE_ERR);
-    return nullptr;
-  }
 
   animation->SetTimeline(aTimeline);
   animation->SetEffect(aEffect);
