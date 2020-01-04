@@ -603,9 +603,6 @@ menuitem.spell-suggestion {
   font-weight: bold;
 }
 
-window:not([sizemode="normal"]) .notification-inner {
-  -moz-border-end-width: 0 !important;
-}
 
 window[chromehidden~="location"][chromehidden~="toolbar"] toolbar:not(.chromeclass-menubar),
 window[chromehidden~="toolbar"] toolbar:not(#nav-bar):not(#TabsToolbar):not(#print-preview-toolbar):not(.chromeclass-menubar) {
