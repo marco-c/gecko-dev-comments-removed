@@ -529,6 +529,14 @@ BytecodeParser::parse()
             continue;
         }
 
+        
+        
+        
+        if (BytecodeIsJumpTarget(op)) {
+            for (uint32_t n = 0; n < code->stackDepth; ++n)
+                offsetStack[n] = code->offsetStack[n];
+        }
+
         if (code->parsed) {
             
             continue;

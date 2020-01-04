@@ -252,19 +252,20 @@ LCovSource::writeScript(JSScript* script)
             
             int32_t low = GET_JUMP_OFFSET(pc + JUMP_OFFSET_LEN * 1);
             int32_t high = GET_JUMP_OFFSET(pc + JUMP_OFFSET_LEN * 2);
-            int32_t numCases = high - low + 1;
+            MOZ_ASSERT(high > low);
+            size_t numCases = high - low + 1;
             jsbytecode* jumpTable = pc + JUMP_OFFSET_LEN * 3;
 
             jsbytecode* firstcasepc = exitpc;
-            for (int j = 0; j < numCases; j++) {
+            for (size_t j = 0; j < numCases; j++) {
                 jsbytecode* testpc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * j);
                 if (testpc < firstcasepc)
                     firstcasepc = testpc;
             }
 
             jsbytecode* lastcasepc = firstcasepc;
-            uint64_t allCaseHits = 0;
-            for (int i = 0; i < numCases; i++) {
+            uint64_t fallsThroughHits = 0;
+            for (size_t i = 0; i < numCases; i++) {
                 jsbytecode* casepc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * i);
                 
                 if (casepc == pc)
@@ -272,7 +273,7 @@ LCovSource::writeScript(JSScript* script)
 
                 
                 lastcasepc = firstcasepc - 1;
-                for (int j = 0; j < numCases; j++) {
+                for (size_t j = 0; j < numCases; j++) {
                     jsbytecode* testpc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * j);
                     if (lastcasepc < testpc && testpc < casepc)
                         lastcasepc = testpc;
@@ -287,16 +288,17 @@ LCovSource::writeScript(JSScript* script)
                             caseHits = counts->numExec();
 
                         
+                        fallsThroughHits = 0;
                         if (casepc != firstcasepc) {
                             jsbytecode* endpc = lastcasepc;
                             while (GetNextPc(endpc) < casepc)
                                 endpc = GetNextPc(endpc);
 
                             if (BytecodeFallsThrough(JSOp(*endpc)))
-                                caseHits -= script->getHitCount(endpc);
+                                fallsThroughHits = script->getHitCount(endpc);
                         }
 
-                        allCaseHits += caseHits;
+                        caseHits -= fallsThroughHits;
                     }
 
                     outBRDA_.printf("BRDA:%d,%d,%d,", lineno, branchId, i);
@@ -315,14 +317,30 @@ LCovSource::writeScript(JSScript* script)
             uint64_t defaultHits = 0;
 
             if (sc) {
-                const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(defaultpc));
-                if (counts)
-                    defaultHits = counts->numExec();
+                
+                lastcasepc = firstcasepc - 1;
+                for (size_t j = 0; j < numCases; j++) {
+                    jsbytecode* testpc = pc + GET_JUMP_OFFSET(jumpTable + JUMP_OFFSET_LEN * j);
+                    if (lastcasepc < testpc && testpc < defaultpc)
+                        lastcasepc = testpc;
+                }
 
                 
                 
                 
-                defaultHits -= allCaseHits;
+                if (lastcasepc != pc) {
+                    jsbytecode* endpc = lastcasepc;
+                    while (GetNextPc(endpc) < defaultpc)
+                        endpc = GetNextPc(endpc);
+
+                    if (BytecodeFallsThrough(JSOp(*endpc)))
+                        fallsThroughHits = script->getHitCount(endpc);
+                }
+
+                const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(defaultpc));
+                if (counts)
+                    defaultHits = counts->numExec();
+                defaultHits -= fallsThroughHits;
             }
 
             outBRDA_.printf("BRDA:%d,%d,%d,", lineno, branchId, numCases);

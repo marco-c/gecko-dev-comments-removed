@@ -2180,14 +2180,23 @@
 
 
  \
-    macro(JSOP_NOP_DESTRUCTURING, 229, "nop-destructuring", NULL, 1, 0, 0, JOF_BYTE)
+    macro(JSOP_NOP_DESTRUCTURING, 229, "nop-destructuring", NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_JUMPTARGET,  230, "jumptarget",     NULL,  1,  0,  0,  JOF_BYTE)
 
 
 
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(macro) \
-    macro(230) \
     macro(231) \
     macro(232) \
     macro(233) \
