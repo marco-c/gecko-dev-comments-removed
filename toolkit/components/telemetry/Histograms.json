@@ -1524,12 +1524,6 @@
     "extended_statistics_ok": true,
     "description": "H2: Settings Initial Window (rounded to KB)"
   },
-  "SPDY_GOAWAY_PEER": {
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 32,
-    "description": "H2: goaway reason from peer from rfc 7540. 31 is none received."
-  },
   "DISK_CACHE_CORRUPT_DETAILS": {
     "expires_in_version": "40",
     "kind": "enumerated",
@@ -7247,7 +7241,7 @@
     "expires_in_version": "never",
     "kind": "enumerated",
     "n_values": 13,
-    "description": "OS of DevTools user (0:Windows XP, 1:Windows Vista, 2:Windows 7, 3:Windows 8, 4:Windows 8.1, 5:OSX, 6:Linux 7:reserved, 8:reserved, 9:reserved, 10:reserved, 11:reserved, 12:other)"
+    "description": "OS of DevTools user (0:Windows XP, 1:Windows Vista, 2:Windows 7, 3:Windows 8, 4:Windows 8.1, 5:OSX, 6:Linux 7:Windows 10, 8:reserved, 9:reserved, 10:reserved, 11:reserved, 12:other)"
   },
   "DEVTOOLS_OS_IS_64_BITS_PER_USER": {
     "expires_in_version": "never",
