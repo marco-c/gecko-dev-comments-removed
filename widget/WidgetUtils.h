@@ -86,6 +86,11 @@ public:
 
 
   static uint32_t IsTouchDeviceSupportPresent();
+
+  
+
+
+  static void SendBidiKeyboardInfoToContent();
 };
 
 } 

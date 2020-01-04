@@ -6,6 +6,11 @@
 
 
 #include "mozilla/WidgetUtils.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/unused.h"
+#include "nsContentUtils.h"
+#include "nsIBidiKeyboard.h"
+#include "nsTArray.h"
 #ifdef XP_WIN
 #include "WinUtils.h"
 #endif
@@ -107,6 +112,27 @@ WidgetUtils::IsTouchDeviceSupportPresent()
 #else
   return 0;
 #endif
+}
+
+
+void
+WidgetUtils::SendBidiKeyboardInfoToContent()
+{
+  nsCOMPtr<nsIBidiKeyboard> bidiKeyboard = nsContentUtils::GetBidiKeyboard();
+  if (!bidiKeyboard) {
+    return;
+  }
+
+  bool rtl;
+  if (NS_FAILED(bidiKeyboard->IsLangRTL(&rtl))) {
+    return;
+  }
+
+  nsTArray<dom::ContentParent*> children;
+  dom::ContentParent::GetAll(children);
+  for (uint32_t i = 0; i < children.Length(); i++) {
+    Unused << children[i]->SendBidiKeyboardNotify(rtl);
+  }
 }
 
 } 
