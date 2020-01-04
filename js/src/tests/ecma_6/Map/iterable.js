@@ -7,9 +7,22 @@ let iterable = {
    next() { length = arguments.length; return {done: true}; }
 };
 
-let m = new Map(iterable);
+new Map(iterable);
 
 assertEq(length, 0);
+
+let typeofThis;
+Object.defineProperty(Number.prototype, Symbol.iterator, {
+  value() {
+    "use strict";
+    typeofThis = typeof this;
+    return { next() { return {done: true}; } };
+  }
+});
+
+new Map(0);
+
+assertEq(typeofThis, "number");
 
 if (typeof reportCompare === "function")
   reportCompare(0, 0);
