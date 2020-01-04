@@ -819,12 +819,16 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
         tabId, *ipcContext, aChromeFlags,
         GetID(), IsForApp(), IsForBrowser());
 
-    nsAutoCString spec;
+    nsAutoCString url;
     if (aURI) {
-        aURI->GetSpec(spec);
+        aURI->GetSpec(url);
+    } else {
+        
+        
+        
+        url.SetIsVoid(true);
     }
 
-    NS_ConvertUTF8toUTF16 url(spec);
     nsString name(aName);
     nsAutoCString features(aFeatures);
     nsTArray<FrameScriptInfo> frameScripts;
@@ -832,7 +836,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
 
     if (aIframeMoz) {
         MOZ_ASSERT(aTabOpener);
-        newChild->SendBrowserFrameOpenWindow(aTabOpener, url, name,
+        newChild->SendBrowserFrameOpenWindow(aTabOpener, NS_ConvertUTF8toUTF16(url), name,
                                              NS_ConvertUTF8toUTF16(features),
                                              aWindowIsNew);
     } else {
@@ -854,7 +858,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
                               aChromeFlags, aCalledFromJS, aPositionSpecified,
                               aSizeSpecified, url,
                               name, features,
-                              NS_ConvertUTF8toUTF16(baseURIString),
+                              baseURIString,
                               &rv,
                               aWindowIsNew,
                               &frameScripts,
