@@ -392,13 +392,6 @@ public:
 
     
 
-
-
-
-    void SetContext(gfxContext *aContext) {}
-
-    
-
     void *GetUserData() const { return mUserData; }
     void SetUserData(void *aUserData) { mUserData = aUserData; }
 
