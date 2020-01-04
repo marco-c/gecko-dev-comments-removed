@@ -618,7 +618,6 @@ public final class GeckoProfile {
 
 
 
-
     
     @WorkerThread
     public String getClientId() throws IOException {
@@ -777,7 +776,7 @@ public final class GeckoProfile {
 
 
     @WorkerThread
-    public boolean ensureParentDirs(final String filename) {
+    protected boolean ensureParentDirs(final String filename) {
         final File file = new File(getDir(), filename);
         final File parentFile = file.getParentFile();
         return parentFile.mkdirs() || parentFile.isDirectory();
