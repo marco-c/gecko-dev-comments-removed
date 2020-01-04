@@ -152,9 +152,20 @@ AnimationTimeBlock.prototype = {
 
 
 
+
+
 function getFormattedAnimationTitle({state}) {
   
-  return state.type
-    ? L10N.getFormatStr("timeline." + state.type + ".nameLabel", state.name)
-    : state.name;
+  
+  
+  if (!state.type) {
+    return state.name;
+  }
+
+  
+  if (state.type === "scriptanimation" && !state.name) {
+    return L10N.getStr("timeline.scriptanimation.unnamedLabel");
+  }
+
+  return L10N.getFormatStr(`timeline.${state.type}.nameLabel`, state.name);
 }
