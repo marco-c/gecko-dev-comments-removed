@@ -5996,6 +5996,13 @@ GetSavedFrameParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject 
 extern JS_PUBLIC_API(bool)
 BuildStackString(JSContext* cx, HandleObject stack, MutableHandleString stringp, size_t indent = 0);
 
+
+
+
+
+extern JS_PUBLIC_API(bool)
+IsSavedFrame(JSObject* obj);
+
 } 
 
 
