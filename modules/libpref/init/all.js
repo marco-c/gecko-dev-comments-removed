@@ -365,6 +365,9 @@ pref("media.decoder-doctor.notifications-allowed", "MediaWidevineNoWMFNoSilverli
 
 pref("media.decoder-doctor.verbose", false);
 
+
+pref("media.suspend-bkgnd-video.enabled", true);
+
 #ifdef MOZ_WEBRTC
 pref("media.navigator.enabled", true);
 pref("media.navigator.video.enabled", true);
@@ -2410,11 +2413,7 @@ pref("layout.css.prefixes.font-features", true);
 pref("layout.css.prefixes.gradients", true);
 
 
-#ifdef RELEASE_BUILD
-pref("layout.css.prefixes.webkit", false);
-#else
 pref("layout.css.prefixes.webkit", true);
-#endif
 
 
 
@@ -2438,11 +2437,7 @@ pref("layout.css.scope-pseudo.enabled", true);
 pref("layout.css.background-blend-mode.enabled", true);
 
 
-#ifdef RELEASE_BUILD
-pref("layout.css.background-clip-text.enabled", false);
-#else
 pref("layout.css.background-clip-text.enabled", true);
-#endif
 
 
 pref("layout.css.vertical-text.enabled", true);
@@ -3289,10 +3284,6 @@ pref("plugin.scan.plid.all", true);
 
 
 pref("plugin.mousewheel.enabled", true);
-
-
-
-pref("network.autodial-helper.enabled", false);
 
 
 pref("intl.keyboard.per_window_layout", false);
