@@ -20,7 +20,6 @@ struct gfxRGBA;
 namespace mozilla {
   namespace gfx {
     class AlphaBoxBlur;
-    struct Color;
     struct RectCornerRadii;
     class SourceSurface;
     class DrawTarget;
@@ -136,44 +135,9 @@ public:
 
     static void ShutdownBlurCache();
 
-    
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void BlurInsetBox(gfxContext* aDestinationCtx,
-                      const mozilla::gfx::Rect aDestinationRect,
-                      const mozilla::gfx::Rect aShadowClipRect,
-                      const gfxIntSize aBlurRadius,
-                      const gfxIntSize aSpreadRadius,
-                      const mozilla::gfx::Color& aShadowColor,
-                      const bool aHasBorderRadius,
-                      const RectCornerRadii& aInnerClipRadii,
-                      const mozilla::gfx::Rect aSkipRect);
 
 protected:
-    already_AddRefed<mozilla::gfx::SourceSurface>
-                   GetInsetBlur(mozilla::gfx::Rect& aOuterRect,
-                                mozilla::gfx::Rect& aInnerRect,
-                                const gfxIntSize& aBlurRadius,
-                                const gfxIntSize& aSpreadRadius,
-                                const RectCornerRadii& aInnerClipRadii,
-                                const mozilla::gfx::Color& aShadowColor,
-                                const bool& aHasBorderRadius,
-                                mozilla::gfx::IntPoint& aOutTopLeft,
-                                gfxContext* aDestinationCtx);
-
     
 
 
