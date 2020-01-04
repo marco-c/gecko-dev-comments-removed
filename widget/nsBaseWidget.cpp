@@ -804,8 +804,9 @@ NS_IMETHODIMP nsBaseWidget::MakeFullScreen(bool aFullScreen, nsIScreen* aScreen)
   HideWindowChrome(aFullScreen);
 
   if (aFullScreen) {
-    if (!mOriginalBounds)
-      mOriginalBounds = new nsIntRect();
+    if (!mOriginalBounds) {
+      mOriginalBounds = new CSSIntRect();
+    }
     *mOriginalBounds = GetScaledScreenBounds();
 
     
@@ -1725,17 +1726,16 @@ nsBaseWidget::StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics)
     NewRunnableMethod(mAPZC.get(), &APZCTreeManager::StartScrollbarDrag, guid, aDragMetrics));
 }
 
-nsIntRect
+CSSIntRect
 nsBaseWidget::GetScaledScreenBounds()
 {
-  nsIntRect bounds;
-  GetScreenBoundsUntyped(bounds);
+  LayoutDeviceIntRect bounds;
+  GetScreenBounds(bounds);
+
+  
+  
   CSSToLayoutDeviceScale scale = GetDefaultScale();
-  bounds.x = NSToIntRound(bounds.x / scale.scale);
-  bounds.y = NSToIntRound(bounds.y / scale.scale);
-  bounds.width = NSToIntRound(bounds.width / scale.scale);
-  bounds.height = NSToIntRound(bounds.height / scale.scale);
-  return bounds;
+  return RoundedToInt(bounds / scale);
 }
 
 already_AddRefed<nsIScreen>
@@ -1747,7 +1747,7 @@ nsBaseWidget::GetWidgetScreen()
     return nullptr;
   }
 
-  nsIntRect bounds = GetScaledScreenBounds();
+  CSSIntRect bounds = GetScaledScreenBounds();
   nsCOMPtr<nsIScreen> screen;
   screenManager->ScreenForRect(bounds.x, bounds.y,
                                bounds.width, bounds.height,
