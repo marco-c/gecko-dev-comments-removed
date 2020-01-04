@@ -554,11 +554,11 @@ TokenStream::reportStrictModeErrorNumberVA(uint32_t offset, bool strictMode, uns
                                            va_list args)
 {
     
-    unsigned flags = JSREPORT_STRICT;
+    unsigned flags;
     if (strictMode)
-        flags |= JSREPORT_ERROR;
+        flags = JSREPORT_ERROR;
     else if (options().extraWarningsOption)
-        flags |= JSREPORT_WARNING;
+        flags = JSREPORT_WARNING | JSREPORT_STRICT;
     else
         return true;
 

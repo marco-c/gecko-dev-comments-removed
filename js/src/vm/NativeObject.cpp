@@ -1978,6 +1978,7 @@ js::GetPropertyForNameLookup(JSContext* cx, HandleObject obj, HandleId id, Mutab
 static bool
 MaybeReportUndeclaredVarAssignment(JSContext* cx, JSString* propname)
 {
+    unsigned flags;
     {
         jsbytecode* pc;
         JSScript* script = cx->currentScript(&pc, JSContext::ALLOW_CROSS_COMPARTMENT);
@@ -1986,16 +1987,17 @@ MaybeReportUndeclaredVarAssignment(JSContext* cx, JSString* propname)
 
         
         
-        if (!IsStrictSetPC(pc) && !cx->compartment()->options().extraWarnings(cx))
+        if (IsStrictSetPC(pc))
+            flags = JSREPORT_ERROR;
+        else if (cx->compartment()->options().extraWarnings(cx))
+            flags = JSREPORT_WARNING | JSREPORT_STRICT;
+        else
             return true;
     }
 
     JSAutoByteString bytes(cx, propname);
     return !!bytes &&
-           JS_ReportErrorFlagsAndNumber(cx,
-                                        (JSREPORT_WARNING | JSREPORT_STRICT
-                                         | JSREPORT_STRICT_MODE_ERROR),
-                                        GetErrorMessage, nullptr,
+           JS_ReportErrorFlagsAndNumber(cx, flags, GetErrorMessage, nullptr,
                                         JSMSG_UNDECLARED_VAR, bytes.ptr());
 }
 
