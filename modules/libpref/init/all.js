@@ -4814,6 +4814,8 @@ pref("browser.safebrowsing.provider.mozilla.lists", "mozstd-track-digest256,mozs
 pref("browser.safebrowsing.provider.mozilla.updateURL", "https://shavar.services.mozilla.com/downloads?client=SAFEBROWSING_ID&appver=%VERSION%&pver=2.2");
 pref("browser.safebrowsing.provider.mozilla.gethashURL", "https://shavar.services.mozilla.com/gethash?client=SAFEBROWSING_ID&appver=%VERSION%&pver=2.2");
 
+pref("browser.safebrowsing.provider.mozilla.nextupdatetime", "1");
+
 
 pref("browser.safebrowsing.provider.mozilla.lists.mozstd.name", "mozstdName");
 pref("browser.safebrowsing.provider.mozilla.lists.mozstd.description", "mozstdDesc");
