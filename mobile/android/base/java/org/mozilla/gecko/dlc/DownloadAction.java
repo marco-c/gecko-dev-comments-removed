@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,7 +82,10 @@ public class DownloadAction extends BaseAction {
 
                 
                 final String url = createDownloadURL(content);
-                download(client, url, temporaryFile);
+
+                if (!temporaryFile.exists() || temporaryFile.length() < content.getSize()) {
+                    download(client, url, temporaryFile);
+                }
 
                 if (!verify(temporaryFile, content.getDownloadChecksum())) {
                     Log.w(LOGTAG, "Wrong checksum after download, content=" + content.getId());
@@ -91,6 +95,7 @@ public class DownloadAction extends BaseAction {
 
                 if (!content.isAssetArchive()) {
                     Log.e(LOGTAG, "Downloaded content is not of type 'asset-archive': " + content.getType());
+                    temporaryFile.delete();
                     continue;
                 }
 
@@ -103,6 +108,10 @@ public class DownloadAction extends BaseAction {
                 if (callback != null) {
                     callback.onContentDownloaded(content);
                 }
+
+                if (temporaryFile != null && temporaryFile.exists()) {
+                    temporaryFile.delete();
+                }
             } catch (RecoverableDownloadContentException e) {
                 Log.w(LOGTAG, "Downloading content failed (Recoverable): " + content , e);
                 
@@ -110,7 +119,7 @@ public class DownloadAction extends BaseAction {
                 Log.w(LOGTAG, "Downloading content failed (Unrecoverable): " + content, e);
 
                 catalog.markAsPermanentlyFailed(content);
-            } finally {
+
                 if (temporaryFile != null && temporaryFile.exists()) {
                     temporaryFile.delete();
                 }
@@ -120,17 +129,22 @@ public class DownloadAction extends BaseAction {
         Log.v(LOGTAG, "Done");
     }
 
-     void download(HttpClient client, String source, File temporaryFile)
+    protected void download(HttpClient client, String source, File temporaryFile)
             throws RecoverableDownloadContentException, UnrecoverableDownloadContentException {
         InputStream inputStream = null;
         OutputStream outputStream = null;
 
         final HttpGet request = new HttpGet(source);
 
+        final long offset = temporaryFile.exists() ? temporaryFile.length() : 0;
+        if (offset > 0) {
+            request.setHeader("Range", "bytes=" + offset + "-");
+        }
+
         try {
             final HttpResponse response = client.execute(request);
             final int status = response.getStatusLine().getStatusCode();
-            if (status != HttpStatus.SC_OK) {
+            if (status != HttpStatus.SC_OK && status != HttpStatus.SC_PARTIAL_CONTENT) {
                 
                 
                 if (status >= 500) {
@@ -154,7 +168,7 @@ public class DownloadAction extends BaseAction {
             }
 
             inputStream = new BufferedInputStream(entity.getContent());
-            outputStream = new BufferedOutputStream(new FileOutputStream(temporaryFile));
+            outputStream = openFile(temporaryFile, status == HttpStatus.SC_PARTIAL_CONTENT);
 
             IOUtils.copy(inputStream, outputStream);
 
@@ -162,14 +176,15 @@ public class DownloadAction extends BaseAction {
             outputStream.close();
         } catch (IOException e) {
             
-            temporaryFile.delete();
-
-            
             throw new RecoverableDownloadContentException(e);
         } finally {
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);
         }
+    }
+
+    protected OutputStream openFile(File file, boolean append) throws FileNotFoundException {
+        return new BufferedOutputStream(new FileOutputStream(file, append));
     }
 
     protected void extract(File sourceFile, File destinationFile, String checksum)
@@ -202,8 +217,7 @@ public class DownloadAction extends BaseAction {
             move(temporaryFile, destinationFile);
         } catch (IOException e) {
             
-            
-            throw new UnrecoverableDownloadContentException(e);
+            throw new RecoverableDownloadContentException(e);
         } finally {
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);
@@ -275,9 +289,7 @@ public class DownloadAction extends BaseAction {
         } catch (IOException e) {
             
             
-            
-            
-            throw new UnrecoverableDownloadContentException(e);
+            throw new RecoverableDownloadContentException(e);
         } finally {
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);
