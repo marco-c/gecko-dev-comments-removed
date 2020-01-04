@@ -194,8 +194,6 @@ public:
                                  nsTArray<PluginTag>* aPlugins,
                                  uint32_t* aNewPluginEpoch) override;
 
-    virtual bool RecvUngrabPointer(const uint32_t& aTime) override;
-
     NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ContentParent, nsIObserver)
 
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -942,6 +940,9 @@ private:
 
     virtual bool RecvGetDeviceStorageLocation(const nsString& aType,
                                               nsString* aPath) override;
+
+    virtual bool RecvGetAndroidSystemInfo(AndroidSystemInfo* aInfo) override;
+
     
     
     
