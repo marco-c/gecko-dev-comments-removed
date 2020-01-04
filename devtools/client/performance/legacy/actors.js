@@ -12,7 +12,7 @@ const { Poller } = require("devtools/client/shared/poller");
 const CompatUtils = require("devtools/client/performance/legacy/compatibility");
 const RecordingUtils = require("devtools/shared/performance/recording-utils");
 const { TimelineFront } = require("devtools/shared/fronts/timeline");
-const { ProfilerFront } = require("devtools/shared/fronts/profiler");
+const { ProfilerFront } = require("devtools/server/actors/profiler");
 
 
 const PROFILER_CHECK_TIMER = 5000; 
