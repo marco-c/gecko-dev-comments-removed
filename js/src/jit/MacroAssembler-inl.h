@@ -553,6 +553,66 @@ MacroAssembler::branchTestMagicValue(Condition cond, const ValueOperand& val, JS
 
 
 
+void
+MacroAssembler::canonicalizeFloat(FloatRegister reg)
+{
+    Label notNaN;
+    branchFloat(DoubleOrdered, reg, reg, &notNaN);
+    loadConstantFloat32(float(JS::GenericNaN()), reg);
+    bind(&notNaN);
+}
+
+void
+MacroAssembler::canonicalizeFloatIfDeterministic(FloatRegister reg)
+{
+#ifdef JS_MORE_DETERMINISTIC
+    
+    canonicalizeFloat(reg);
+#endif 
+}
+
+void
+MacroAssembler::canonicalizeDouble(FloatRegister reg)
+{
+    Label notNaN;
+    branchDouble(DoubleOrdered, reg, reg, &notNaN);
+    loadConstantDouble(JS::GenericNaN(), reg);
+    bind(&notNaN);
+}
+
+void
+MacroAssembler::canonicalizeDoubleIfDeterministic(FloatRegister reg)
+{
+#ifdef JS_MORE_DETERMINISTIC
+    
+    canonicalizeDouble(reg);
+#endif 
+}
+
+
+
+template<class T> void
+MacroAssembler::storeDouble(FloatRegister src, const T& dest)
+{
+    canonicalizeDoubleIfDeterministic(src);
+    storeUncanonicalizedDouble(src, dest);
+}
+
+template void MacroAssembler::storeDouble(FloatRegister src, const Address& dest);
+template void MacroAssembler::storeDouble(FloatRegister src, const BaseIndex& dest);
+
+template<class T> void
+MacroAssembler::storeFloat32(FloatRegister src, const T& dest)
+{
+    canonicalizeFloatIfDeterministic(src);
+    storeUncanonicalizedFloat32(src, dest);
+}
+
+template void MacroAssembler::storeFloat32(FloatRegister src, const Address& dest);
+template void MacroAssembler::storeFloat32(FloatRegister src, const BaseIndex& dest);
+
+
+
 
 #ifndef JS_CODEGEN_ARM64
 
@@ -590,24 +650,6 @@ MacroAssembler::addStackPtrTo(T t)
 }
 
 #endif 
-
-void
-MacroAssembler::canonicalizeFloat(FloatRegister reg)
-{
-    Label notNaN;
-    branchFloat(DoubleOrdered, reg, reg, &notNaN);
-    loadConstantFloat32(float(JS::GenericNaN()), reg);
-    bind(&notNaN);
-}
-
-void
-MacroAssembler::canonicalizeDouble(FloatRegister reg)
-{
-    Label notNaN;
-    branchDouble(DoubleOrdered, reg, reg, &notNaN);
-    loadConstantDouble(JS::GenericNaN(), reg);
-    bind(&notNaN);
-}
 
 template <typename T>
 void
