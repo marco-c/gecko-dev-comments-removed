@@ -87,6 +87,8 @@ class TabsGridLayout extends GridView
         
         setClipToPadding(false);
 
+        setVerticalFadingEdgeEnabled(false);
+
         final Resources resources = getResources();
         columnWidth = resources.getDimensionPixelSize(R.dimen.tab_panel_column_width);
 
