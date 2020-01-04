@@ -541,9 +541,9 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
     complexEffects = true;
 
     aContext.Save();
-    nsRect clipRect =
+    nsRect overflowClipRect =
       aFrame->GetVisualOverflowRectRelativeToSelf() + toUserSpace;
-    aContext.Clip(NSRectToSnappedRect(clipRect,
+    aContext.Clip(NSRectToSnappedRect(overflowClipRect,
                                   aFrame->PresContext()->AppUnitsPerDevPixel(),
                                   *drawTarget));
 
@@ -571,26 +571,26 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
       
       
       
-      RefPtr<DrawTarget> targetDT =
+      RefPtr<DrawTarget> maskTargetDT =
         (aContext.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS) ?
           Factory::CreateDrawTarget(BackendType::SKIA, drawRect.Size(),
                                     SurfaceFormat::A8) :
           aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(),
                                                             SurfaceFormat::A8);
 
-      if (!targetDT || !targetDT->IsValid()) {
+      if (!maskTargetDT || !maskTargetDT->IsValid()) {
         aContext.Restore();
         return;
       }
 
-      RefPtr<gfxContext> target = gfxContext::ForDrawTarget(targetDT);
-      MOZ_ASSERT(target); 
-      target->SetMatrix(matrixAutoSaveRestore.Matrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
+      RefPtr<gfxContext> maskTarget = gfxContext::ForDrawTarget(maskTargetDT);
+      MOZ_ASSERT(maskTarget); 
+      maskTarget->SetMatrix(matrixAutoSaveRestore.Matrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
 
       
       uint32_t flags = aBuilder->GetBackgroundPaintFlags() |
                        nsCSSRendering::PAINTBG_MASK_IMAGE;
-      nsRenderingContext rc(target);
+      nsRenderingContext rc(maskTarget);
       
       Unused << nsCSSRendering::PaintBackgroundWithSC(aFrame->PresContext(),
                                                       rc,
@@ -600,7 +600,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
                                                       firstFrame->StyleContext(),
                                                       *aFrame->StyleBorder(),
                                                       flags);
-      maskSurface = targetDT->Snapshot();
+      maskSurface = maskTargetDT->Snapshot();
 
       
       Matrix mat = ToMatrix(aContext.CurrentMatrix());

@@ -4176,8 +4176,8 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
   
   
   nscoord textLength = 0;
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames);
-  TextRenderedRun run = it.Current();
+  TextRenderedRunIterator runIter(this, TextRenderedRunIterator::eAllFrames);
+  TextRenderedRun run = runIter.Current();
   while (run.mFrame) {
     
     
@@ -4195,16 +4195,16 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
       
       offset += run.mTextFrameContentOffset - run.mTextElementCharIndex;
 
-      gfxSkipCharsIterator it =
+      gfxSkipCharsIterator skipCharsIter =
         run.mFrame->EnsureTextRun(nsTextFrame::eInflated);
       gfxTextRun* textRun = run.mFrame->GetTextRun(nsTextFrame::eInflated);
-      Range range = ConvertOriginalToSkipped(it, offset, length);
+      Range range = ConvertOriginalToSkipped(skipCharsIter, offset, length);
 
       
       textLength += textRun->GetAdvanceWidth(range, nullptr);
     }
 
-    run = it.Next();
+    run = runIter.Next();
   }
 
   nsPresContext* presContext = PresContext();
@@ -5720,4 +5720,3 @@ SVGTextFrame::TransformFrameRectFromTextChild(const nsRect& aRect,
 
   return result - framePosition;
 }
-
