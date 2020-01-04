@@ -81,13 +81,11 @@ function initDebuggerServer() {
 
 
 function connectDebuggerClient(client) {
-  return new Promise(resolve => {
-    client.connect(() => {
-      client.listTabs(tabs => {
-        resolve(tabs.tabs[tabs.selected]);
-      });
+  return client.connect()
+    .then(() => client.listTabs())
+    .then(tabs => {
+      return tabs.tabs[tabs.selected];
     });
-  });
 }
 
 

@@ -731,7 +731,7 @@ var gDevToolsBrowser = {
     let client = new DebuggerClient(transport);
 
     let deferred = promise.defer();
-    client.connect(() => {
+    client.connect().then(() => {
       client.mainRoot.listProcesses(response => {
         
         let contentProcesses = response.processes.filter(p => (!p.parent));

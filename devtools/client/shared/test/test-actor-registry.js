@@ -78,9 +78,7 @@ exports.getTestActorWithoutToolbox = Task.async(function* (tab) {
   }
   let client = new DebuggerClient(DebuggerServer.connectPipe());
 
-  let deferred = promise.defer();
-  client.connect(deferred.resolve);
-  yield deferred.promise;
+  yield client.connect();
 
   
   yield registerTestActor(client);

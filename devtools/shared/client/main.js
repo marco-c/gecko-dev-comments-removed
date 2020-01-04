@@ -336,7 +336,14 @@ DebuggerClient.prototype = {
 
 
 
+
+
+
+
+
+
   connect: function (aOnConnected) {
+    let deferred = promise.defer();
     this.emit("connect");
 
     
@@ -348,9 +355,11 @@ DebuggerClient.prototype = {
       if (aOnConnected) {
         aOnConnected(aApplicationType, aTraits);
       }
+      deferred.resolve([aApplicationType, aTraits]);
     });
 
     this._transport.ready();
+    return deferred.promise;
   },
 
   

@@ -192,15 +192,13 @@ HUD_SERVICE.prototype =
       DebuggerServer.allowChromeProcess = true;
 
       let client = new DebuggerClient(DebuggerServer.connectPipe());
-      client.connect(() => {
-        client.getProcess().then(aResponse => {
+      return client.connect()
+        .then(() => client.getProcess())
+        .then(aResponse => {
           
           
-          deferred.resolve({ form: aResponse.form, client: client, chrome: false });
-        }, deferred.reject);
-      });
-
-      return deferred.promise;
+          return { form: aResponse.form, client: client, chrome: false };
+        });
     }
 
     let target;
