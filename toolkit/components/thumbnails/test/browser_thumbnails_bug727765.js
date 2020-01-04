@@ -4,6 +4,13 @@
 const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/" +
             "test/background_red_scroll.html";
 
+function isRedThumbnailFuzz(r, g, b, expectedR, expectedB, expectedG, aFuzz)
+{
+  return (Math.abs(r - expectedR) <= aFuzz) &&
+         (Math.abs(r - expectedR) <= aFuzz) &&
+         (Math.abs(r - expectedR) <= aFuzz);
+}
+
 
 function runTests() {
   
@@ -14,7 +21,9 @@ function runTests() {
   yield whenFileExists(URL);
   yield retrieveImageDataForURL(URL, function (aData) {
     let [r, g, b] = [].slice.call(aData, -4);
-    is("" + [r,g,b], "255,0,0", "we have a red thumbnail");
+    let fuzz = 2; 
+    var message = "Expected red thumbnail rgb(255, 0, 0), got " + r + "," + g + "," + b;
+    ok(isRedThumbnailFuzz(r, g, b, 255, 0, 0, fuzz), message);
     next();
   });
 }

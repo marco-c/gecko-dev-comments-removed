@@ -182,7 +182,7 @@ this.PageThumbs = {
 
     let deferred = Promise.defer();
 
-    let canvas = this.createCanvas();
+    let canvas = this.createCanvas(aBrowser.contentWindow);
     this.captureToCanvas(aBrowser, canvas, () => {
       canvas.toBlob(blob => {
         deferred.resolve(blob, this.contentType);
@@ -264,24 +264,7 @@ this.PageThumbs = {
       return;
     }
 
-    
-    let [width, height, scale] =
-      PageThumbUtils.determineCropSize(aBrowser.contentWindow, aCanvas);
-    let ctx = aCanvas.getContext("2d");
-
-    
-    ctx.save();
-    ctx.scale(scale, scale);
-
-    try {
-      
-      ctx.drawWindow(aBrowser.contentWindow, 0, 0, width, height,
-                     PageThumbUtils.THUMBNAIL_BG_COLOR,
-                     ctx.DRAWWINDOW_DO_NOT_FLUSH);
-    } catch (e) {
-      
-    }
-    ctx.restore();
+    aCanvas = PageThumbUtils.createSnapshotThumbnail(aBrowser.contentWindow, aCanvas);
 
     if (aCallback) {
       aCallback(aCanvas);

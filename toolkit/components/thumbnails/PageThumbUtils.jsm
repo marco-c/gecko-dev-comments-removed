@@ -14,6 +14,7 @@ const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm", this);
+Cu.import("resource://gre/modules/AppConstants.jsm");
 
 this.PageThumbUtils = {
   
@@ -29,14 +30,16 @@ this.PageThumbUtils = {
 
 
 
-  createCanvas: function (aWindow) {
+
+
+  createCanvas: function (aWindow, aWidth = 0, aHeight = 0) {
     let doc = (aWindow || Services.appShell.hiddenDOMWindow).document;
     let canvas = doc.createElementNS(this.HTML_NAMESPACE, "canvas");
     canvas.mozOpaque = true;
     canvas.mozImageSmoothingEnabled = true;
-    let [thumbnailWidth, thumbnailHeight] = this.getThumbnailSize();
-    canvas.width = thumbnailWidth;
-    canvas.height = thumbnailHeight;
+    let [thumbnailWidth, thumbnailHeight] = this.getThumbnailSize(aWindow);
+    canvas.width = aWidth ? aWidth : thumbnailWidth;
+    canvas.height = aHeight ? aHeight : thumbnailHeight;
     return canvas;
   },
 
@@ -47,16 +50,162 @@ this.PageThumbUtils = {
 
 
 
-  getThumbnailSize: function () {
+
+  getThumbnailSize: function (aWindow = null) {
     if (!this._thumbnailWidth || !this._thumbnailHeight) {
       let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
                             .getService(Ci.nsIScreenManager);
-      let left = {}, top = {}, width = {}, height = {};
-      screenManager.primaryScreen.GetRectDisplayPix(left, top, width, height);
-      this._thumbnailWidth = Math.round(width.value / 3);
-      this._thumbnailHeight = Math.round(height.value / 3);
+      let left = {}, top = {}, screenWidth = {}, screenHeight = {};
+      screenManager.primaryScreen.GetRectDisplayPix(left, top, screenWidth, screenHeight);
+
+      
+
+
+
+
+
+
+      let systemScale = screenManager.systemDefaultScale;
+      let windowScale = aWindow ? aWindow.devicePixelRatio : systemScale;
+      let scale = Math.max(systemScale, windowScale);
+
+      
+
+
+
+
+
+      if (AppConstants.platform == "macosx" && !aWindow) {
+        scale = 2;
+      }
+
+      
+
+
+
+
+      let prefWidth = Services.prefs.getIntPref("toolkit.pageThumbs.minWidth");
+      let prefHeight = Services.prefs.getIntPref("toolkit.pageThumbs.minHeight");
+      let divisor = Services.prefs.getIntPref("toolkit.pageThumbs.screenSizeDivisor");
+
+      prefWidth *= scale;
+      prefHeight *= scale;
+
+      this._thumbnailWidth = Math.max(Math.round(screenWidth.value / divisor), prefWidth);;
+      this._thumbnailHeight = Math.max(Math.round(screenHeight.value / divisor), prefHeight);
     }
+
     return [this._thumbnailWidth, this._thumbnailHeight];
+  },
+
+  
+
+
+
+  getContentSize: function(aWindow) {
+    let utils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDOMWindowUtils);
+    
+    let sbWidth = {}, sbHeight = {};
+
+    try {
+      utils.getScrollbarSize(false, sbWidth, sbHeight);
+    } catch (e) {
+      
+      Cu.reportError("Unable to get scrollbar size in determineCropSize.");
+      sbWidth.value = sbHeight.value = 0;
+    }
+
+    
+    
+    let width = aWindow.innerWidth - sbWidth.value;
+    let height = aWindow.innerHeight - sbHeight.value;
+
+    return [width, height];
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  createSnapshotThumbnail: function(aWindow, aDestCanvas = null) {
+    if (Cu.isCrossProcessWrapper(aWindow)) {
+      throw new Error('Do not pass cpows here.');
+    }
+
+    let [contentWidth, contentHeight] = this.getContentSize(aWindow);
+    let [thumbnailWidth, thumbnailHeight] = this.getThumbnailSize(aWindow);
+    let intermediateWidth = thumbnailWidth * 2;
+    let intermediateHeight = thumbnailHeight * 2;
+    let skipDownscale = false;
+    let snapshotCanvas = undefined;
+
+    
+    
+    
+    if ((intermediateWidth >= contentWidth) ||
+        (intermediateHeight >= contentHeight)) {
+      intermediateWidth = thumbnailWidth;
+      intermediateHeight = thumbnailHeight;
+      skipDownscale = true;
+      snapshotCanvas = aDestCanvas;
+    }
+
+    
+    
+    if (aDestCanvas &&
+        ((aDestCanvas.width >= intermediateWidth) ||
+        (aDestCanvas.height >= intermediateHeight))) {
+      intermediateWidth = aDestCanvas.width;
+      intermediateHeight = aDestCanvas.height;
+      skipDownscale = true;
+      snapshotCanvas = aDestCanvas;
+    }
+
+    if (!snapshotCanvas) {
+      snapshotCanvas = this.createCanvas(aWindow, intermediateWidth, intermediateHeight);
+    }
+
+    
+    
+    
+    let scale = Math.min(Math.max(intermediateWidth / contentWidth,
+                                  intermediateHeight / contentHeight), 1);
+
+    let snapshotCtx = snapshotCanvas.getContext("2d");
+    snapshotCtx.save();
+    snapshotCtx.scale(scale, scale);
+    snapshotCtx.drawWindow(aWindow, 0, 0, contentWidth, contentHeight,
+                           PageThumbUtils.THUMBNAIL_BG_COLOR,
+                           snapshotCtx.DRAWWINDOW_DO_NOT_FLUSH);
+    snapshotCtx.restore();
+    if (skipDownscale) {
+      return snapshotCanvas;
+    }
+
+    
+    let finalCanvas = aDestCanvas || this.createCanvas(aWindow, thumbnailWidth, thumbnailHeight);
+
+    let finalCtx = finalCanvas.getContext("2d");
+    finalCtx.save();
+    finalCtx.scale(0.5, 0.5);
+    finalCtx.drawImage(snapshotCanvas, 0, 0);
+    finalCtx.restore();
+    return finalCanvas;
   },
 
   

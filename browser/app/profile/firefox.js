@@ -1942,3 +1942,9 @@ pref("dom.serviceWorkers.interception.enabled", true);
 
 
 pref("dom.push.enabled", true);
+
+
+
+
+pref("toolkit.pageThumbs.minWidth", 280);
+pref("toolkit.pageThumbs.minHeight", 190);
