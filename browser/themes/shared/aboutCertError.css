@@ -96,7 +96,6 @@ body {
 
 
 #advancedPanel {
-  position: absolute;
   background-color: white;
   color: var(--in-content-text-color);
   border: 1px lightgray solid;
