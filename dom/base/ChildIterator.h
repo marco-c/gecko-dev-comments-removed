@@ -249,6 +249,33 @@ private:
 #endif
 };
 
+
+
+
+
+
+
+
+
+
+
+
+class StyleChildrenIterator : private AllChildrenIterator {
+public:
+  explicit StyleChildrenIterator(nsIContent* aContent)
+    : AllChildrenIterator(aContent, nsIContent::eAllChildren)
+  {
+    MOZ_COUNT_CTOR(StyleChildrenIterator);
+  }
+  ~StyleChildrenIterator() { MOZ_COUNT_DTOR(StyleChildrenIterator); }
+
+  nsIContent* GetNextChild();
+
+  
+  
+  static bool IsNeeded(Element* aParent);
+};
+
 } 
 } 
 

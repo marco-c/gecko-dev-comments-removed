@@ -12,6 +12,7 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIFrame.h"
+#include "nsCSSAnonBoxes.h"
 
 namespace mozilla {
 namespace dom {
@@ -513,6 +514,92 @@ AllChildrenIterator::GetPreviousChild()
   }
 
   mPhase = eAtBegin;
+  return nullptr;
+}
+
+static bool
+IsNativeAnonymousImplementationOfPseudoElement(nsIContent* aContent)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIFrame* f = aContent->GetPrimaryFrame();
+  if (!f) {
+    return false;
+  }
+
+  
+  CSSPseudoElementType pseudoType = f->StyleContext()->GetPseudoType();
+
+  
+  
+  
+  
+  
+  
+  
+  if (pseudoType == CSSPseudoElementType::AnonBox) {
+    MOZ_ASSERT(f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::mozText ||
+               f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::tableWrapper);
+    return false;
+  }
+
+  
+  bool isImpl = pseudoType != CSSPseudoElementType::NotPseudo;
+  MOZ_ASSERT_IF(isImpl, aContent->IsRootOfNativeAnonymousSubtree());
+  return isImpl;
+}
+
+ bool
+StyleChildrenIterator::IsNeeded(Element* aElement)
+{
+  
+  
+  if (aElement->IsInAnonymousSubtree()) {
+    return true;
+  }
+
+  
+  if (aElement->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+    nsBindingManager* manager = aElement->OwnerDoc()->BindingManager();
+    nsXBLBinding* binding = manager->GetBindingWithContent(aElement);
+    if (binding && binding->GetAnonymousContent()) {
+      return true;
+    }
+  }
+
+  
+  
+  nsIAnonymousContentCreator* ac = do_QueryFrame(aElement->GetPrimaryFrame());
+  return !!ac;
+}
+
+
+nsIContent*
+StyleChildrenIterator::GetNextChild()
+{
+  while (nsIContent* child = AllChildrenIterator::GetNextChild()) {
+    if (IsNativeAnonymousImplementationOfPseudoElement(child)) {
+      
+      
+      
+      
+    } else {
+      return child;
+    }
+  }
+
   return nullptr;
 }
 

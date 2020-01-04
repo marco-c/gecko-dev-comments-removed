@@ -4261,8 +4261,12 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
 
   if (ServoStyleSet* styleSet = mPresShell->StyleSet()->GetAsServo()) {
     
+    
+    
     for (auto& info : aContent) {
-      styleSet->StyleNewSubtree(info.mContent);
+      if (!info.mStyleContext) {
+        styleSet->StyleNewSubtree(info.mContent);
+      }
     }
   }
 
@@ -10551,8 +10555,6 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
                  "ProcessChildren() codepath for this frame");
 #endif
     
-    MOZ_ASSERT_IF(content->IsStyledByServo(), !!content->ServoData());
-    
     MOZ_ASSERT_IF(!content->IsStyledByServo(),
                   !content->IsElement() ||
                   !(content->GetFlags() & ELEMENT_ALL_RESTYLE_FLAGS));
@@ -10570,8 +10572,19 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     TreeMatchContext::AutoParentDisplayBasedStyleFixupSkipper
       parentDisplayBasedStyleFixupSkipper(aState.mTreeMatchContext);
     if (aAnonymousItems[i].mStyleContext) {
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT_IF(content->IsStyledByServo(), !content->ServoData());
       styleContext = aAnonymousItems[i].mStyleContext.forget();
     } else {
+      
+      
+      
+      MOZ_ASSERT_IF(content->IsStyledByServo(), !!content->ServoData());
       styleContext = ResolveStyleContext(aFrame, content, &aState);
     }
 
