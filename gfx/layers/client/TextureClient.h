@@ -409,8 +409,6 @@ public:
 
 
 
-
-
   void KeepUntilFullDeallocation(UniquePtr<KeepAlive> aKeep, bool aMainThreadOnly = false);
 
   
@@ -511,14 +509,7 @@ private:
 
 
 
-
   B2G_ACL_EXPORT void Finalize();
-
-  
-
-
-
-  virtual void FinalizeOnIPDLThread() {}
 
   friend class AtomicRefCountedWithFinalize<TextureClient>;
 
