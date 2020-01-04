@@ -170,6 +170,9 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  bool nsLayoutUtils::sInterruptibleReflowEnabled;
  bool nsLayoutUtils::sSVGTransformBoxEnabled;
  bool nsLayoutUtils::sTextCombineUprightDigitsEnabled;
+#ifdef MOZ_STYLO
+ bool nsLayoutUtils::sStyloEnabled;
+#endif
 
 static ViewID sScrollIdCounter = FrameMetrics::START_SCROLL_ID;
 
@@ -7840,6 +7843,10 @@ nsLayoutUtils::Initialize()
                                "svg.transform-box.enabled");
   Preferences::AddBoolVarCache(&sTextCombineUprightDigitsEnabled,
                                "layout.css.text-combine-upright-digits.enabled");
+#ifdef MOZ_STYLO
+  Preferences::AddBoolVarCache(&sStyloEnabled,
+                               "layout.css.servo.enabled");
+#endif
 
   for (auto& callback : kPrefCallbacks) {
     Preferences::RegisterCallbackAndCall(callback.func, callback.name);
@@ -9337,7 +9344,7 @@ nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame)
  bool
 nsLayoutUtils::SupportsServoStyleBackend(nsIDocument* aDocument)
 {
-  return nsPresContext::StyloEnabled() &&
+  return StyloEnabled() &&
          aDocument->IsHTMLOrXHTML() &&
          static_cast<nsDocument*>(aDocument)->IsContentDocument();
 }
