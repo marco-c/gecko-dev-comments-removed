@@ -174,7 +174,7 @@ SetDisplayPortMargins(nsIPresShell* aPresShell,
     return;
   }
 
-  bool hadDisplayPort = nsLayoutUtils::GetDisplayPort(aContent);
+  bool hadDisplayPort = nsLayoutUtils::HasDisplayPort(aContent);
   ScreenMargin margins = aMetrics.GetDisplayPortMargins();
   nsLayoutUtils::SetDisplayPortMargins(aContent, aPresShell, margins, 0);
   if (!hadDisplayPort) {
@@ -244,7 +244,7 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
   
   ScrollFrame(content, aMetrics);
 
-  MOZ_ASSERT(nsLayoutUtils::GetDisplayPort(content));
+  MOZ_ASSERT(nsLayoutUtils::HasDisplayPort(content));
   SetDisplayPortMargins(shell, content, aMetrics);
 }
 
@@ -653,7 +653,7 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
     dpElement, &(guid.mPresShellId), &(guid.mScrollId));
   aTargets->AppendElement(guid);
 
-  if (!guidIsValid || nsLayoutUtils::GetDisplayPort(dpElement, nullptr)) {
+  if (!guidIsValid || nsLayoutUtils::HasDisplayPort(dpElement)) {
     return false;
   }
 

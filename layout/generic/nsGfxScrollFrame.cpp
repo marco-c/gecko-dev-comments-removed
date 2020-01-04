@@ -2166,7 +2166,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
           mApzSmoothScrollDestination = Some(mDestination);
           mScrollGeneration = ++sScrollGenerationCounter;
 
-          if (!nsLayoutUtils::GetDisplayPort(mOuter->GetContent())) {
+          if (!nsLayoutUtils::HasDisplayPort(mOuter->GetContent())) {
             
             
             
@@ -2926,7 +2926,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
     bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-      nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
+      nsLayoutUtils::HasDisplayPort(mOuter->GetContent());
 
     
     
@@ -2977,7 +2977,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                !mIsRoot);
 
   bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-    nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
+    nsLayoutUtils::HasDisplayPort(mOuter->GetContent());
 
   
   
@@ -3224,7 +3224,7 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
   bool usingDisplayPort = false;
   nsIContent* content = mOuter->GetContent();
   if (aBuilder->IsPaintingToWindow()) {
-    wasUsingDisplayPort = nsLayoutUtils::GetDisplayPort(content);
+    wasUsingDisplayPort = nsLayoutUtils::HasDisplayPort(content);
 
     nsRect displayportBase = *aDirtyRect;
     nsPresContext* pc = mOuter->PresContext();

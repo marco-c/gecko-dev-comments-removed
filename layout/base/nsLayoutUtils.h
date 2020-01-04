@@ -168,7 +168,12 @@ public:
   
 
 
-  static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult = nullptr);
+  static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult);
+
+  
+
+
+  static bool HasDisplayPort(nsIContent* aContent);
 
   
 
@@ -218,7 +223,12 @@ public:
   
 
 
-  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult = nullptr);
+  static bool GetCriticalDisplayPort(nsIContent* aContent, nsRect* aResult);
+
+  
+
+
+  static bool HasCriticalDisplayPort(nsIContent* aContent);
 
   
 
