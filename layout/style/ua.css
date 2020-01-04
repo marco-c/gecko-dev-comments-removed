@@ -516,7 +516,7 @@ div:-moz-native-anonymous.moz-selectioncaret-right.hidden > div {
 div:-moz-native-anonymous.moz-custom-content-container {
   pointer-events: none;
   -moz-top-layer: top;
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
