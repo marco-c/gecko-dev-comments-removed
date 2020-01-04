@@ -2903,13 +2903,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
           *aBuilder, mOuter, displayportBase, &displayPort);
     }
 
-    bool usingLowPrecision = gfxPrefs::UseLowPrecisionBuffer();
-    if (usingDisplayport && usingLowPrecision) {
-      
-      nsRect critDp;
-      nsLayoutUtils::GetCriticalDisplayPort(mOuter->GetContent(), &critDp);
-    }
-
     
     if (usingDisplayport) {
       dirtyRect = displayPort;
