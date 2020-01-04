@@ -99,10 +99,10 @@ public:
 
 
 
-  explicit MediaStreamGraphImpl(bool aRealtime,
+
+  explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
                                 TrackRate aSampleRate,
-                                bool aStartWithAudioDriver = false,
-                                dom::AudioChannel aChannel = dom::AudioChannel::Normal);
+                                dom::AudioChannel aChannel);
 
   
 

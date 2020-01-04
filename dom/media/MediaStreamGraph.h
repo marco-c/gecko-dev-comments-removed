@@ -1202,6 +1202,7 @@ protected:
 class MediaStreamGraph
 {
 public:
+
   
   
   
@@ -1209,8 +1210,18 @@ public:
   
 
   
-  static MediaStreamGraph* GetInstance(bool aStartWithAudioDriver = false,
-                                       dom::AudioChannel aChannel = dom::AudioChannel::Normal);
+  
+  
+  
+  
+  enum GraphDriverType {
+    AUDIO_THREAD_DRIVER,
+    SYSTEM_THREAD_DRIVER,
+    OFFLINE_THREAD_DRIVER
+  };
+  
+  static MediaStreamGraph* GetInstance(GraphDriverType aGraphDriverRequested,
+                                       dom::AudioChannel aChannel);
   static MediaStreamGraph* CreateNonRealtimeInstance(TrackRate aSampleRate);
   
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
