@@ -145,10 +145,25 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
     insideEval(insideEval),
     insideNonGlobalEval(insideNonGlobalEval),
     insideModule(false),
-    emitterMode(emitterMode)
+    emitterMode(emitterMode),
+    functionBodyEndPosSet(false)
 {
     MOZ_ASSERT_IF(evalCaller, insideEval);
     MOZ_ASSERT_IF(emitterMode == LazyFunction, lazyScript);
+}
+
+BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
+                                 Parser<FullParseHandler>* parser, SharedContext* sc,
+                                 HandleScript script, Handle<LazyScript*> lazyScript,
+                                 bool insideEval, HandleScript evalCaller,
+                                 bool insideNonGlobalEval, TokenPos bodyPosition,
+                                 EmitterMode emitterMode)
+    : BytecodeEmitter(parent, parser, sc, script, lazyScript, insideEval,
+                      evalCaller, insideNonGlobalEval,
+                      parser->tokenStream.srcCoords.lineNum(bodyPosition.begin),
+                      emitterMode)
+{
+    setFunctionBodyEndPos(bodyPosition);
 }
 
 bool
@@ -3578,6 +3593,7 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
         switchToMain();
     }
 
+    setFunctionBodyEndPos(body->pn_pos);
     if (!emitTree(body))
         return false;
 
@@ -3683,6 +3699,7 @@ BytecodeEmitter::emitModuleScript(ParseNode* body)
     
     JSScript::linkToModuleFromEmitter(cx, script, modulebox);
 
+    setFunctionBodyEndPos(body->pn_pos);
     if (!emitTree(body))
         return false;
 
@@ -6349,10 +6366,9 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
             script->bindings = funbox->bindings;
 
-            uint32_t lineNum = parser->tokenStream.srcCoords.lineNum(pn->pn_pos.begin);
             BytecodeEmitter bce2(this, parser, funbox, script,  nullptr,
                                  insideEval, evalCaller,
-                                 insideNonGlobalEval, lineNum, emitterMode);
+                                 insideNonGlobalEval, pn->pn_pos, emitterMode);
             if (!bce2.init())
                 return false;
 
@@ -6722,6 +6738,13 @@ BytecodeEmitter::emitReturn(ParseNode* pn)
         if (!emitFinishIteratorResult(true))
             return false;
     }
+
+    
+    
+    
+    MOZ_ASSERT(functionBodyEndPosSet);
+    if (!updateSourceCoordNotes(functionBodyEndPos))
+        return false;
 
     
 
