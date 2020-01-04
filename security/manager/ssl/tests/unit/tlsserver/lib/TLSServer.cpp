@@ -447,7 +447,7 @@ ConfigSecureServerWithNamedCert(PRFileDesc* fd, const char* certName,
     certList->arena = arena.release();
     
     
-    certList->certs = reinterpret_cast<SECItem*>(
+    certList->certs = static_cast<SECItem*>(
       PORT_ArenaAlloc(certList->arena, 2 * sizeof(SECItem)));
     if (SECITEM_CopyItem(certList->arena, certList->certs, &cert->derCert)
           != SECSuccess) {
