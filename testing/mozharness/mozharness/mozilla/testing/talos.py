@@ -289,34 +289,28 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin):
         self.config['virtualenv_modules']. Since we are installing
         talos from its source, we have to wrap that method here."""
         
-        modules = ['pip>=1.5']
-        
         if not self.run_local:
-            tests_dir = os.path.join(
+            mozbase_requirements = os.path.join(
                 self.query_abs_dirs()['abs_work_dir'],
-                'tests')
-            mozbase_requirements = os.path.join(
-                tests_dir,
+                'tests',
                 'config',
                 'mozbase_requirements.txt'
             )
-            modules.append(os.path.join(tests_dir, 'tools', 'wptserve'))
         else:
-            testing_dir = os.path.dirname(self.talos_path)
             mozbase_requirements = os.path.join(
-                testing_dir,
+                os.path.dirname(self.talos_path),
                 'config',
                 'mozbase_requirements.txt'
             )
-            modules.append(
-                os.path.join(testing_dir,
-                             'web-platform', 'tests', 'tools', 'wptserve'))
         self.register_virtualenv_module(
             requirements=[mozbase_requirements],
             two_pass=True,
             editable=True,
         )
-        super(Talos, self).create_virtualenv(modules=modules)
+        
+        super(Talos, self).create_virtualenv(
+            modules=['pip>=1.5']
+        )
         
         
         self.install_module(
