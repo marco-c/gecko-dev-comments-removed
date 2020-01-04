@@ -3,7 +3,7 @@
 
 
 
-#include "SetDocTitleTxn.h"
+#include "SetDocumentTitleTransaction.h"
 #include "mozilla/dom/Element.h"        
 #include "nsAString.h"
 #include "nsCOMPtr.h"                   
@@ -20,18 +20,18 @@
 #include "nsIHTMLEditor.h"              
 #include "nsLiteralString.h"            
 
-using namespace mozilla;
+namespace mozilla {
 
 
-SetDocTitleTxn::SetDocTitleTxn()
-  : EditTxn()
-  , mEditor(nullptr)
+SetDocumentTitleTransaction::SetDocumentTitleTransaction()
+  : mEditor(nullptr)
   , mIsTransient(false)
 {
 }
 
-NS_IMETHODIMP SetDocTitleTxn::Init(nsIHTMLEditor *aEditor,
-                                   const nsAString *aValue)
+NS_IMETHODIMP
+SetDocumentTitleTransaction::Init(nsIHTMLEditor* aEditor,
+                                  const nsAString* aValue)
 
 {
   NS_ASSERTION(aEditor && aValue, "null args");
@@ -43,24 +43,28 @@ NS_IMETHODIMP SetDocTitleTxn::Init(nsIHTMLEditor *aEditor,
   return NS_OK;
 }
 
-NS_IMETHODIMP SetDocTitleTxn::DoTransaction(void)
+NS_IMETHODIMP
+SetDocumentTitleTransaction::DoTransaction()
 {
   return SetDomTitle(mValue);
 }
 
-NS_IMETHODIMP SetDocTitleTxn::UndoTransaction(void)
+NS_IMETHODIMP
+SetDocumentTitleTransaction::UndoTransaction()
 {
   
   return NS_OK;
 }
 
-NS_IMETHODIMP SetDocTitleTxn::RedoTransaction(void)
+NS_IMETHODIMP
+SetDocumentTitleTransaction::RedoTransaction()
 {
   
   return NS_OK;
 }
 
-nsresult SetDocTitleTxn::SetDomTitle(const nsAString& aTitle)
+nsresult
+SetDocumentTitleTransaction::SetDomTitle(const nsAString& aTitle)
 {
   nsCOMPtr<nsIEditor> editor = do_QueryInterface(mEditor);
   NS_ENSURE_TRUE(editor, NS_ERROR_FAILURE);
@@ -167,17 +171,20 @@ nsresult SetDocTitleTxn::SetDomTitle(const nsAString& aTitle)
   return res;
 }
 
-NS_IMETHODIMP SetDocTitleTxn::GetTxnDescription(nsAString& aString)
+NS_IMETHODIMP
+SetDocumentTitleTransaction::GetTxnDescription(nsAString& aString)
 {
-  aString.AssignLiteral("SetDocTitleTxn: ");
+  aString.AssignLiteral("SetDocumentTitleTransaction: ");
   aString += mValue;
   return NS_OK;
 }
 
-NS_IMETHODIMP SetDocTitleTxn::GetIsTransient(bool *aIsTransient)
+NS_IMETHODIMP
+SetDocumentTitleTransaction::GetIsTransient(bool* aIsTransient)
 {
   NS_ENSURE_TRUE(aIsTransient, NS_ERROR_NULL_POINTER);
   *aIsTransient = mIsTransient;
   return NS_OK;
 }
 
+} 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef SetDocTitleTxn_h__
-#define SetDocTitleTxn_h__
+#ifndef SetDocumentTitleTransaction_h
+#define SetDocumentTitleTransaction_h
 
 #include "EditTxn.h"                    
 #include "nsString.h"                   
@@ -12,21 +12,25 @@
 
 class nsIHTMLEditor;
 
+namespace mozilla {
 
 
 
 
 
-class SetDocTitleTxn : public EditTxn
+
+class SetDocumentTitleTransaction final : public EditTxn
 {
 public:
   
 
 
 
-  NS_IMETHOD Init(nsIHTMLEditor  *aEditor,
-                  const nsAString *aValue);
-  SetDocTitleTxn();
+
+  NS_IMETHOD Init(nsIHTMLEditor* aEditor,
+                  const nsAString* aValue);
+  SetDocumentTitleTransaction();
+
 private:
   nsresult SetDomTitle(const nsAString& aTitle);
 
@@ -39,16 +43,18 @@ public:
 protected:
 
   
-  nsIHTMLEditor*  mEditor;
+  nsIHTMLEditor* mEditor;
 
   
-  nsString    mValue;
+  nsString mValue;
 
   
-  nsString    mUndoValue;
+  nsString mUndoValue;
 
   
   bool mIsTransient;
 };
 
-#endif
+} 
+
+#endif 
