@@ -1410,7 +1410,8 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
                   identifier == "AvailableIn" or
                   identifier == "Func" or
                   identifier == "CheckAnyPermissions" or
-                  identifier == "CheckAllPermissions"):
+                  identifier == "CheckAllPermissions" or
+                  identifier == "Deprecated"):
                 
                 if not attr.hasValue():
                     raise WebIDLError("[%s] must have a value" % identifier,
