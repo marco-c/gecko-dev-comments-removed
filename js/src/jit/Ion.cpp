@@ -572,7 +572,7 @@ LinkBackgroundCodeGen(JSContext* cx, IonBuilder* builder,
     
     
     
-    codegen->masm.constructRoot(cx);
+    MacroAssembler::AutoRooter masm(cx, &codegen->masm);
 
     return LinkCodeGen(cx, builder, codegen, scripts, info);
 }
@@ -2231,8 +2231,8 @@ IonCompile(JSContext* cx, JSScript* script,
     Rooted<ScriptVector> debugScripts(cx, ScriptVector(cx));
     OnIonCompilationInfo debugInfo;
 
-    ScopedJSDeletePtr<CodeGenerator> codegen;
     {
+        ScopedJSDeletePtr<CodeGenerator> codegen;
         AutoEnterAnalysis enter(cx);
         codegen = CompileBackEnd(builder);
         if (!codegen) {
