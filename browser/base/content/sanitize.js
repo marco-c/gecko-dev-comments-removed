@@ -694,20 +694,21 @@ Sanitizer.sanitize = function(aParentWindow)
 Sanitizer.onStartup = Task.async(function*() {
   
   
-  let placesClient = Cc["@mozilla.org/browser/nav-history-service;1"]     .getService(Ci.nsPIPlacesDatabase)
-     .shutdownClient
-     .jsclient;
+  let placesClient = Cc["@mozilla.org/browser/nav-history-service;1"]
+                       .getService(Ci.nsPIPlacesDatabase)
+                       .shutdownClient
+                       .jsclient;
 
   let deferredSanitization = PromiseUtils.defer();
   let sanitizationInProgress = false;
   let doSanitize = function() {
-    if (sanitizationInProgress) {
-      return deferredSanitization.promise;
+    if (!sanitizationInProgress) {
+      sanitizationInProgress = true;
+      Sanitizer.onShutdown().catch(er => {Promise.reject(er) ;}).then(() =>
+        deferredSanitization.resolve()
+      );
     }
-    sanitizationInProgress = true;
-    Sanitizer.onShutdown().catch(er => {Promise.reject(er) ;}).then(() =>
-      deferredSanitization.resolve()
-    );
+    return deferredSanitization.promise;
   }
   placesClient.addBlocker("sanitize.js: Sanitize on shutdown", doSanitize);
 
