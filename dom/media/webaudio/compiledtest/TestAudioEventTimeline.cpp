@@ -4,7 +4,7 @@
 
 
 
-#include "AudioEventTimeline.h"
+#include "AudioEventTimeline.cpp"
 #include "TestHarness.h"
 #include <sstream>
 #include <limits>
@@ -92,7 +92,7 @@ private:
   nsresult mRv;
 };
 
-typedef AudioEventTimeline<ErrorResultMock> Timeline;
+typedef AudioEventTimeline Timeline;
 
 void TestSpecExample()
 {

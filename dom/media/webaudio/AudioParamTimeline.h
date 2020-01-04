@@ -23,9 +23,9 @@ namespace dom {
 
 
 
-class AudioParamTimeline : public AudioEventTimeline<ErrorResult>
+class AudioParamTimeline : public AudioEventTimeline
 {
-  typedef AudioEventTimeline<ErrorResult> BaseClass;
+  typedef AudioEventTimeline BaseClass;
 
 public:
   explicit AudioParamTimeline(float aDefaultValue)
