@@ -38,6 +38,12 @@ var TabsInTitlebar = {
     addEventListener("resolutionchange", this, false);
 
     this._initialized = true;
+    if (this._updateOnInit) {
+      
+      
+      
+      this._update();
+    }
   },
 
   allowedBy: function (condition, allow) {
@@ -84,6 +90,7 @@ var TabsInTitlebar = {
   },
 
   _initialized: false,
+  _updateOnInit: false,
   _disallowed: {},
   _prefName: "browser.tabs.drawInTitlebar",
   _lastSizeMode: null,
@@ -98,8 +105,15 @@ var TabsInTitlebar = {
     let rect = ele => ele.getBoundingClientRect();
     let verticalMargins = cstyle => parseFloat(cstyle.marginBottom) + parseFloat(cstyle.marginTop);
 
-    if (!this._initialized || window.fullScreen)
+    if (window.fullScreen)
       return;
+
+    
+    
+    if (!this._initialized) {
+      this._updateOnInit = true;
+      return;
+    }
 
     let allowed = true;
 
