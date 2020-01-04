@@ -88,6 +88,11 @@ test_description_schema = Schema({
 
     
     
+    
+    Optional('allow-software-gl-layers', default=True): bool,
+
+    
+    
     Optional('worker-implementation'): Any(
         'docker-worker',
         
