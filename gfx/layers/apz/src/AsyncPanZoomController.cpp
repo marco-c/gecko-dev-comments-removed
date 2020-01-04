@@ -3134,9 +3134,12 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
     
     
     
+    
+    bool zoomOut = false;
     if (aRect.IsEmpty() ||
         (currentZoom == localMaxZoom && targetZoom >= localMaxZoom) ||
         (currentZoom == localMinZoom && targetZoom <= localMinZoom)) {
+      zoomOut = true;
       CSSSize compositedSize = mFrameMetrics.CalculateCompositedSizeInCssPixels();
       float y = scrollOffset.y;
       float newHeight =
@@ -3168,6 +3171,14 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
     if (aRect.x + sizeAfterZoom.width > cssPageRect.width) {
       aRect.x = cssPageRect.width - sizeAfterZoom.width;
       aRect.x = aRect.x > 0 ? aRect.x : 0;
+    }
+
+    
+    if (!zoomOut && (sizeAfterZoom.height > aRect.height)) {
+      aRect.y -= (sizeAfterZoom.height - aRect.height) * 0.5f;
+      if (aRect.y < 0.0f) {
+        aRect.y = 0.0f;
+      }
     }
 
     endZoomToMetrics.SetScrollOffset(aRect.TopLeft());
