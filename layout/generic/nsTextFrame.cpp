@@ -5407,8 +5407,8 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
         
         
         if (aRangeStyle.IsUnderlineColorDefined() &&
-            aRangeStyle.IsForegroundColorDefined() &&
-            aRangeStyle.mUnderlineColor != aRangeStyle.mForegroundColor) {
+            (!aRangeStyle.IsForegroundColorDefined() ||
+             aRangeStyle.mUnderlineColor != aRangeStyle.mForegroundColor)) {
           color = aRangeStyle.mUnderlineColor;
         }
         
