@@ -8,7 +8,6 @@
 
 
 
-
 "use strict";
 
 var { utils: Cu, classes: Cc, interfaces: Ci } = Components;
@@ -274,23 +273,12 @@ function assertHasTarget(expected, document, type, name) {
 
 
 
+
 function waitForServiceWorkerRegistered(tab) {
-  
-  let frameScript = function () {
+  return ContentTask.spawn(tab.linkedBrowser, {}, function* () {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function (registration) {
-      sendAsyncMessage("sw-registered");
-    });
-  };
-  let mm = tab.linkedBrowser.messageManager;
-  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
-
-  return new Promise(done => {
-    mm.addMessageListener("sw-registered", function listener() {
-      mm.removeMessageListener("sw-registered", listener);
-      done();
-    });
+    yield sw;
   });
 }
 
@@ -299,27 +287,12 @@ function waitForServiceWorkerRegistered(tab) {
 
 
 
+
 function unregisterServiceWorker(tab) {
-  
-  let frameScript = function () {
+  return ContentTask.spawn(tab.linkedBrowser, {}, function* () {
     
     let { sw } = content.wrappedJSObject;
-    sw.then(function (registration) {
-      registration.unregister().then(function () {
-        sendAsyncMessage("sw-unregistered");
-      },
-      function (e) {
-        dump("SW not unregistered; " + e + "\n");
-      });
-    });
-  };
-  let mm = tab.linkedBrowser.messageManager;
-  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
-
-  return new Promise(done => {
-    mm.addMessageListener("sw-unregistered", function listener() {
-      mm.removeMessageListener("sw-unregistered", listener);
-      done();
-    });
+    let registration = yield sw;
+    yield registration.unregister();
   });
 }
