@@ -138,6 +138,13 @@ SourceBuffer::Compact()
     length += mChunks[i].Length();
   }
 
+  
+  
+  if (MOZ_UNLIKELY(length == 0)) {
+    mChunks.Clear();
+    return NS_OK;
+  }
+
   Maybe<Chunk> newChunk = CreateChunk(length,  false);
   if (MOZ_UNLIKELY(!newChunk || newChunk->AllocationFailed())) {
     NS_WARNING("Failed to allocate chunk for SourceBuffer compacting - OOM?");
