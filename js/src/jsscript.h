@@ -1613,6 +1613,18 @@ class JSScript : public js::gc::TenuredCell
     bool isForEval() { return isCachedEval() || isActiveEval(); }
 
     
+
+
+
+
+
+
+
+
+
+    bool isTopLevel() { return code() && !functionNonDelazifying(); }
+
+    
     inline bool ensureHasTypes(JSContext* cx);
 
     inline js::TypeScript* types();
