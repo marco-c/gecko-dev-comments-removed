@@ -51,7 +51,7 @@ nsGridLayout2::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aBoxLayoutState)
 {
   
   mGrid.SetBox(aBox);
-  NS_ASSERTION(aBox->GetLayoutManager() == this, "setting incorrect box");
+  NS_ASSERTION(aBox->GetXULLayoutManager() == this, "setting incorrect box");
 
   nsresult rv = nsStackLayout::XULLayout(aBox, aBoxLayoutState);
 #ifdef DEBUG_grid
@@ -75,7 +75,7 @@ nsGridLayout2::GetGrid(nsIFrame* aBox, int32_t* aIndex, nsGridRowLayout* aReques
 {
   
   mGrid.SetBox(aBox);
-  NS_ASSERTION(aBox->GetLayoutManager() == this, "setting incorrect box");
+  NS_ASSERTION(aBox->GetXULLayoutManager() == this, "setting incorrect box");
   return &mGrid;
 }
 
