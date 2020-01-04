@@ -349,6 +349,15 @@ for (bad of [6, 7, 100, Math.pow(2,31)-1, Math.pow(2,31), Math.pow(2,31)+1, Math
 }
 
 
+assertErrorMessage(() => wasmEvalText('(module (func (param i64)))'), TypeError, /NYI/);
+
+
+
+
+
+
+
+
 var {v2i, i2i, i2v} = wasmEvalText(`(module
     (type $a (func (result i32)))
     (type $b (func (param i32) (result i32)))
