@@ -80,6 +80,13 @@ add_task(function* () {
 
 
 add_task(function* () {
+  ok(sourceUtils.isScratchpadScheme("Scratchpad/1"), "Scratchpad/1 identified as scratchpad");
+  ok(sourceUtils.isScratchpadScheme("Scratchpad/20"), "Scratchpad/20 identified as scratchpad");
+  ok(!sourceUtils.isScratchpadScheme("http://www.mozilla.org"), "http://www.mozilla.org not identified as scratchpad");
+});
+
+
+add_task(function* () {
 
   
   let longMalformedURL = `example.com${new Array(100).fill("/a").join("")}/file.js`;
