@@ -332,7 +332,7 @@ public class TestAndroidBrowserBookmarksRepository extends AndroidBrowserReposit
     BookmarkRecord bmk3 = (BookmarkRecord) record3;
     record3.guid = Utils.generateGuid();
     record3.lastModified = timestampDelegate.records.get(0).lastModified + 3000;
-    assert(!record0.guid.equals(record3.guid));
+    assertFalse(record0.guid.equals(record3.guid));
 
     
     
