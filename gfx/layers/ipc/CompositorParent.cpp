@@ -875,6 +875,7 @@ CompositorParent::RecvFlushRendering()
 bool
 CompositorParent::RecvForcePresent()
 {
+  
   if (mLayerManager) {
     mLayerManager->ForcePresent();
   }
