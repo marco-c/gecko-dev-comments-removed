@@ -238,7 +238,6 @@ this.AddonWatcher = {
 
 
 
-
   get alerts() {
     let result = new Map();
     for (let [k, v] of this._alerts) {
