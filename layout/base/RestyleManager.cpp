@@ -2754,6 +2754,24 @@ ElementRestyler::AddLayerChangesForAnimation()
       }
       hint |= layerInfo.mChangeHint;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!layer &&
+        nsLayoutUtils::HasRelevantAnimationOfProperty(mFrame,
+                                                      layerInfo.mProperty)) {
+      hint |= layerInfo.mChangeHint;
+    }
   }
   if (hint) {
     mChangeList->AppendChange(mFrame, mContent, hint);
