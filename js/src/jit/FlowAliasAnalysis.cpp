@@ -207,8 +207,8 @@ LoadAliasesStore(MDefinition* load, MDefinition* store)
         return true;
 
     
-    if (!(load->getAliasSet() & store->getAliasSet()).isNone())
-        return true;
+    if ((load->getAliasSet() & store->getAliasSet()).isNone())
+        return false;
 
     
     MDefinition::AliasType type = load->mightAlias(store);
