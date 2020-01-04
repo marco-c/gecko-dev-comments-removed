@@ -795,6 +795,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   
   bool HasFixedBackground(nsIFrame* aFrame) const;
 
+  
+  
+  inline bool HasLocalBackground() const;
+
   const nsStyleImageLayers::Layer& BottomLayer() const { return mImage.BottomLayer(); }
 
   nsStyleImageLayers mImage;
