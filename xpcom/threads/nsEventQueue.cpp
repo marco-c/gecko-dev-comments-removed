@@ -32,7 +32,8 @@ nsEventQueue::~nsEventQueue()
 {
   
   
-  MOZ_ASSERT(IsEmpty());
+  NS_ASSERTION(IsEmpty(),
+               "Non-empty event queue being destroyed; events being leaked.");
 
   if (mHead) {
     FreePage(mHead);
