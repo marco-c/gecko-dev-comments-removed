@@ -2820,19 +2820,6 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
             chromeProperties=chromeProperties,
             name='"' + self.descriptor.interface.identifier.name + '"' if needInterfaceObject else "nullptr")
 
-        
-        
-        
-        
-        failureCode = dedent(
-            """
-            *protoCache = nullptr;
-            if (interfaceCache) {
-              *interfaceCache = nullptr;
-            }
-            return;
-            """)
-
         aliasedMembers = [m for m in self.descriptor.interface.members if m.isMethod() and m.aliases]
         if aliasedMembers:
             assert needInterfacePrototypeObject
@@ -2858,12 +2845,11 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
                     CGGeneric(fill(
                         """
                         if (!${defineFn}(aCx, proto, ${prop}, aliasedVal, JSPROP_ENUMERATE)) {
-                          $*{failureCode}
+                          return;
                         }
                         """,
                         defineFn=defineFn,
-                        prop=prop,
-                        failureCode=failureCode))
+                        prop=prop))
                 ], "\n")
 
             def defineAliasesFor(m):
@@ -2871,23 +2857,21 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
                     CGGeneric(fill(
                         """
                         if (!JS_GetProperty(aCx, proto, \"${prop}\", &aliasedVal)) {
-                          $*{failureCode}
+                          return;
                         }
                         """,
-                        failureCode=failureCode,
                         prop=m.identifier.name))
                 ] + [defineAlias(alias) for alias in sorted(m.aliases)])
 
             defineAliases = CGList([
-                CGGeneric(fill("""
+                CGGeneric(dedent("""
                     // Set up aliases on the interface prototype object we just created.
                     JS::Handle<JSObject*> proto = GetProtoObjectHandle(aCx, aGlobal);
                     if (!proto) {
-                      $*{failureCode}
+                      return;
                     }
 
-                    """,
-                    failureCode=failureCode)),
+                    """)),
                 CGGeneric("JS::Rooted<JS::Value> aliasedVal(aCx);\n\n")
             ] + [defineAliasesFor(m) for m in sorted(aliasedMembers)])
         else:
@@ -2913,6 +2897,14 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
             else:
                 holderClass = "Class.ToJSClass()"
                 holderProto = "*protoCache"
+            failureCode = dedent(
+                """
+                *protoCache = nullptr;
+                if (interfaceCache) {
+                  *interfaceCache = nullptr;
+                }
+                return;
+                """)
             createUnforgeableHolder = CGGeneric(fill(
                 """
                 JS::Rooted<JSObject*> unforgeableHolder(aCx);
@@ -2946,32 +2938,9 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
         else:
             unforgeableHolderSetup = None
 
-        if (self.descriptor.interface.isOnGlobalProtoChain() and
-            needInterfacePrototypeObject):
-            makeProtoPrototypeImmutable = CGGeneric(fill(
-                """
-                if (*${protoCache}) {
-                  bool succeeded;
-                  JS::Handle<JSObject*> prot = GetProtoObjectHandle(aCx, aGlobal);
-                  if (!JS_SetImmutablePrototype(aCx, prot, &succeeded)) {
-                    $*{failureCode}
-                  }
-
-                  MOZ_ASSERT(succeeded,
-                             "making a fresh prototype object's [[Prototype]] "
-                             "immutable can internally fail, but it should "
-                             "never be unsuccessful");
-                }
-                """,
-                protoCache=protoCache,
-                failureCode=failureCode))
-        else:
-            makeProtoPrototypeImmutable = None
-
         return CGList(
             [getParentProto, CGGeneric(getConstructorProto), initIds,
-             prefCache, CGGeneric(call), defineAliases, unforgeableHolderSetup,
-             makeProtoPrototypeImmutable],
+             prefCache, CGGeneric(call), defineAliases, unforgeableHolderSetup],
             "\n").define()
 
 

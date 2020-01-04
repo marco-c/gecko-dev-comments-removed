@@ -1040,25 +1040,6 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     {
         JSAutoCompartment ac(cx, sandbox);
 
-        nsCOMPtr<nsIScriptObjectPrincipal> sbp =
-            new SandboxPrivate(principal, sandbox);
-
-        
-        JS_SetPrivate(sandbox, sbp.forget().take());
-
-        {
-            
-            
-            
-            AutoSkipPropertyMirroring askip(CompartmentPrivate::Get(sandbox));
-
-            
-            
-            
-            if (!JS_EnumerateStandardClasses(cx, sandbox))
-                return NS_ERROR_XPC_UNEXPECTED;
-        }
-
         if (options.proto) {
             bool ok = JS_WrapObject(cx, &options.proto);
             if (!ok)
@@ -1093,10 +1074,16 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
                     return NS_ERROR_OUT_OF_MEMORY;
             }
 
-            ok = JS_SplicePrototype(cx, sandbox, options.proto);
+            ok = JS_SetPrototype(cx, sandbox, options.proto);
             if (!ok)
                 return NS_ERROR_XPC_UNEXPECTED;
         }
+
+        nsCOMPtr<nsIScriptObjectPrincipal> sbp =
+            new SandboxPrivate(principal, sandbox);
+
+        
+        JS_SetPrivate(sandbox, sbp.forget().take());
 
         
         AutoSkipPropertyMirroring askip(CompartmentPrivate::Get(sandbox));
@@ -1126,6 +1113,10 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
         
         
         if (!dom::PromiseBinding::GetConstructorObject(cx, sandbox))
+            return NS_ERROR_XPC_UNEXPECTED;
+
+        
+        if (options.writeToGlobalPrototype && !JS_EnumerateStandardClasses(cx, sandbox))
             return NS_ERROR_XPC_UNEXPECTED;
     }
 
