@@ -54,17 +54,7 @@ private:
 
 public:
   
-  
-  
-  nsresult SetStyleSheet(mozilla::CSSStyleSheet* aSheet);
 
-  
-  nsresult SetQuirkMode(bool aQuirkMode);
-
-  
-  nsresult SetChildLoader(mozilla::css::Loader* aChildLoader);
-
-  
 
 
 
