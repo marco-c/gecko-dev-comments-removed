@@ -37,13 +37,13 @@ struct AllocationIntegrityState
 
     
     
-    bool record();
+    MOZ_MUST_USE bool record();
 
     
     
     
     
-    bool check(bool populateSafepoints);
+    MOZ_MUST_USE bool check(bool populateSafepoints);
 
   private:
 
@@ -122,11 +122,11 @@ struct AllocationIntegrityState
     typedef HashSet<IntegrityItem, IntegrityItem, SystemAllocPolicy> IntegrityItemSet;
     IntegrityItemSet seen;
 
-    bool checkIntegrity(LBlock* block, LInstruction* ins, uint32_t vreg, LAllocation alloc,
-                        bool populateSafepoints);
-    bool checkSafepointAllocation(LInstruction* ins, uint32_t vreg, LAllocation alloc,
-                                  bool populateSafepoints);
-    bool addPredecessor(LBlock* block, uint32_t vreg, LAllocation alloc);
+    MOZ_MUST_USE bool checkIntegrity(LBlock* block, LInstruction* ins, uint32_t vreg,
+                                     LAllocation alloc, bool populateSafepoints);
+    MOZ_MUST_USE bool checkSafepointAllocation(LInstruction* ins, uint32_t vreg, LAllocation alloc,
+                                               bool populateSafepoints);
+    MOZ_MUST_USE bool addPredecessor(LBlock* block, uint32_t vreg, LAllocation alloc);
 
     void dump();
 };
@@ -233,7 +233,7 @@ class InstructionDataMap
       : insData_()
     { }
 
-    bool init(MIRGenerator* gen, uint32_t numInstructions) {
+    MOZ_MUST_USE bool init(MIRGenerator* gen, uint32_t numInstructions) {
         if (!insData_.init(gen->alloc(), numInstructions))
             return false;
         memset(&insData_[0], 0, sizeof(LNode*) * numInstructions);
@@ -297,7 +297,7 @@ class RegisterAllocator
         }
     }
 
-    bool init();
+    MOZ_MUST_USE bool init();
 
     TempAllocator& alloc() const {
         return mir->alloc();

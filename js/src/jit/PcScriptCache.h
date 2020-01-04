@@ -41,8 +41,8 @@ struct PcScriptCache
     }
 
     
-    bool get(JSRuntime* rt, uint32_t hash, uint8_t* addr,
-             JSScript** scriptRes, jsbytecode** pcRes)
+    MOZ_MUST_USE bool get(JSRuntime* rt, uint32_t hash, uint8_t* addr,
+                          JSScript** scriptRes, jsbytecode** pcRes)
     {
         
         if (gcNumber != rt->gc.gcNumber()) {

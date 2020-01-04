@@ -69,10 +69,10 @@ class RematerializedFrame
 
     
     
-    static bool RematerializeInlineFrames(JSContext* cx, uint8_t* top,
-                                          InlineFrameIterator& iter,
-                                          MaybeReadFallback& fallback,
-                                          Vector<RematerializedFrame*>& frames);
+    static MOZ_MUST_USE bool RematerializeInlineFrames(JSContext* cx, uint8_t* top,
+                                                       InlineFrameIterator& iter,
+                                                       MaybeReadFallback& fallback,
+                                                       Vector<RematerializedFrame*>& frames);
 
     
     
@@ -123,7 +123,7 @@ class RematerializedFrame
         return scopeChain_;
     }
     void pushOnScopeChain(ScopeObject& scope);
-    bool initFunctionScopeObjects(JSContext* cx);
+    MOZ_MUST_USE bool initFunctionScopeObjects(JSContext* cx);
 
     bool hasCallObj() const {
         MOZ_ASSERT(callee()->needsCallObject());

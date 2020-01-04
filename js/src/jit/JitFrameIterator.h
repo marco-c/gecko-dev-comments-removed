@@ -276,9 +276,9 @@ class JitProfilingFrameIterator
 
     inline JitFrameLayout* framePtr();
     inline JSScript* frameScript();
-    bool tryInitWithPC(void* pc);
-    bool tryInitWithTable(JitcodeGlobalTable* table, void* pc, JSRuntime* rt,
-                          bool forLastCallSite);
+    MOZ_MUST_USE bool tryInitWithPC(void* pc);
+    MOZ_MUST_USE bool tryInitWithTable(JitcodeGlobalTable* table, void* pc, JSRuntime* rt,
+                                       bool forLastCallSite);
     void fixBaselineReturnAddress();
 
     void moveToNextFrame(CommonFrameLayout* frame);
@@ -320,7 +320,7 @@ class RInstructionResults
 
     ~RInstructionResults();
 
-    bool init(JSContext* cx, uint32_t numResults);
+    MOZ_MUST_USE bool init(JSContext* cx, uint32_t numResults);
     bool isInitialized() const;
 #ifdef DEBUG
     size_t length() const;
@@ -444,7 +444,7 @@ class SnapshotIterator
     Value fromInstructionResult(uint32_t index) const;
 
     Value allocationValue(const RValueAllocation& a, ReadMethod rm = RM_Normal);
-    bool allocationReadable(const RValueAllocation& a, ReadMethod rm = RM_Normal);
+    MOZ_MUST_USE bool allocationReadable(const RValueAllocation& a, ReadMethod rm = RM_Normal);
     void writeAllocationValuePayload(const RValueAllocation& a, Value v);
     void warnUnreadableAllocation();
 
@@ -482,7 +482,7 @@ class SnapshotIterator
   public:
     
     uint32_t pcOffset() const;
-    inline bool resumeAfter() const {
+    inline MOZ_MUST_USE bool resumeAfter() const {
         
         
         
@@ -516,11 +516,11 @@ class SnapshotIterator
     
     
     
-    bool initInstructionResults(MaybeReadFallback& fallback);
+    MOZ_MUST_USE bool initInstructionResults(MaybeReadFallback& fallback);
 
     
     
-    bool computeInstructionResults(JSContext* cx, RInstructionResults* results) const;
+    MOZ_MUST_USE bool computeInstructionResults(JSContext* cx, RInstructionResults* results) const;
 
   public:
     
