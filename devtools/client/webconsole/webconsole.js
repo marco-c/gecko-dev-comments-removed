@@ -386,6 +386,7 @@ WebConsoleFrame.prototype = {
   _destroyer: null,
 
   _saveRequestAndResponseBodies: true,
+  _throttleData: null,
 
   
   _chevronWidth: 0,
@@ -414,6 +415,36 @@ WebConsoleFrame.prototype = {
     this.webConsoleClient.setPreferences(toSet, response => {
       if (!response.error) {
         this._saveRequestAndResponseBodies = newValue;
+        deferred.resolve(response);
+      } else {
+        deferred.reject(response.error);
+      }
+    });
+
+    return deferred.promise;
+  },
+
+  
+
+
+
+
+
+  setThrottleData: function(value) {
+    if (!this.webConsoleClient) {
+      
+      return promise.resolve(null);
+    }
+
+    let deferred = promise.defer();
+    let toSet = {
+      "NetworkMonitor.throttleData": value,
+    };
+
+    
+    this.webConsoleClient.setPreferences(toSet, response => {
+      if (!response.error) {
+        this._throttleData = value;
         deferred.resolve(response);
       } else {
         deferred.reject(response.error);
