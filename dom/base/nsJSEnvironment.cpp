@@ -128,7 +128,7 @@ static const uint32_t kMaxICCDuration = 2000;
 #define NS_CC_FORCED_PURPLE_LIMIT   10
 
 
-#define NS_MAX_CC_LOCKEDOUT_TIME    (15 * PR_USEC_PER_SEC) // 15 seconds
+#define NS_MAX_CC_LOCKEDOUT_TIME    (30 * PR_USEC_PER_SEC) // 30 seconds
 
 
 #define NS_CC_PURPLE_LIMIT          200
