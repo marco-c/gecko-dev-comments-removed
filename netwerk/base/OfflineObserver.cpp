@@ -63,6 +63,7 @@ OfflineObserver::RemoveOfflineObserverMainThread()
 }
 
 OfflineObserver::OfflineObserver(DisconnectableParent * parent)
+  : mLock("OfflineObserver")
 {
   mParent = parent;
   RegisterOfflineObserver();
@@ -71,8 +72,11 @@ OfflineObserver::OfflineObserver(DisconnectableParent * parent)
 void
 OfflineObserver::RemoveObserver()
 {
+  {
+    mozilla::MutexAutoLock lock(mLock);
+    mParent = nullptr;
+  }
   RemoveOfflineObserver();
-  mParent = nullptr;
 }
 
 NS_IMETHODIMP
@@ -80,6 +84,10 @@ OfflineObserver::Observe(nsISupports *aSubject,
                          const char *aTopic,
                          const char16_t *aData)
 {
+  mozilla::MutexAutoLock lock(mLock);
+  
+  
+  
   if (mParent &&
       !strcmp(aTopic, NS_IOSERVICE_APP_OFFLINE_STATUS_TOPIC)) {
     mParent->OfflineNotification(aSubject);
