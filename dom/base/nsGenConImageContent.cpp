@@ -50,7 +50,7 @@ public:
   {
     MOZ_ASSERT(IsInNativeAnonymousSubtree());
     if (aVisitor.mEvent->mMessage == NS_LOAD ||
-        aVisitor.mEvent->mMessage == NS_LOAD_ERROR) {
+        aVisitor.mEvent->mMessage == eLoadError) {
       
       return NS_OK;
     }
