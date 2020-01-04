@@ -65,6 +65,8 @@ public:
   
   
   void SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
+
+  void SetSpacing(JSContext* aCx, const nsAString& aSpacing, ErrorResult& aRv);
 };
 
 } 
