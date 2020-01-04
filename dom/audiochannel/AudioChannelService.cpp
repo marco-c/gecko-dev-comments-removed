@@ -83,6 +83,13 @@ public:
                                        ? u"active"
                                        : u"inactive");
 
+    
+    observerService->NotifyObservers(wrapper,
+                                     "media-playback",
+                                     mActive
+                                       ? u"active"
+                                       : u"inactive");
+
     MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
            ("NotifyChannelActiveRunnable, type = %d, active = %d\n",
             mAudioChannel, mActive));
