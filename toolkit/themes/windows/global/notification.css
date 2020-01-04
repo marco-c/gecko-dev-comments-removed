@@ -209,5 +209,7 @@ notification[type="critical"] {
 }
 
 @media (-moz-windows-default-theme) {
-  color: #aa1b08;
+  .popup-notification-warning {
+    color: #aa1b08;
+  }
 }
