@@ -9,7 +9,9 @@
 var { Ci, Cu } = require("chrome");
 var Services = require("Services");
 var promise = require("promise");
-var { ActorPool, createExtraActors, appendExtraActors } = require("devtools/server/actors/common");
+var {
+  ActorPool, createExtraActors, appendExtraActors, GeneratedLocation
+} = require("devtools/server/actors/common");
 var { DebuggerServer } = require("devtools/server/main");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
@@ -1903,6 +1905,43 @@ TabActor.prototype = {
       delete this._extraActors[aName];
     }
   },
+
+  
+
+
+
+
+
+
+
+
+
+  onResolveLocation: function (request) {
+    let { url, line } = request;
+    let column = request.column || 0;
+    let actor;
+
+    if (actor = this.sources.getSourceActorByURL(url)) {
+      
+      let generatedActor = actor.generatedSource ?
+                           this.sources.createNonSourceMappedActor(actor.generatedSource) :
+                           actor;
+      let generatedLocation = new GeneratedLocation(generatedActor, line, column);
+
+      return this.sources.getOriginalLocation(generatedLocation).then(loc => {
+        
+        if (loc.originalLine == null) {
+          return { from: this.actorID, type: "resolveLocation", error: "MAP_NOT_FOUND" };
+        }
+
+        loc = loc.toJSON();
+        return { from: this.actorID, url: loc.source.url, column: loc.column, line: loc.line };
+      });
+    }
+
+    
+    return promise.resolve({ from: this.actorID, type: "resolveLocation", error: "SOURCE_NOT_FOUND" });
+  },
 };
 
 
@@ -1917,7 +1956,8 @@ TabActor.prototype.requestTypes = {
   "reconfigure": TabActor.prototype.onReconfigure,
   "switchToFrame": TabActor.prototype.onSwitchToFrame,
   "listFrames": TabActor.prototype.onListFrames,
-  "listWorkers": TabActor.prototype.onListWorkers
+  "listWorkers": TabActor.prototype.onListWorkers,
+  "resolveLocation": TabActor.prototype.onResolveLocation
 };
 
 exports.TabActor = TabActor;

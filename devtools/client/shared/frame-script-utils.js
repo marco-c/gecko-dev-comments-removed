@@ -125,7 +125,6 @@ addMessageListener("devtools:test:profiler", function ({ data: { method, args, i
 
 
 
-
 addMessageListener("devtools:test:eval", function ({ data }) {
   sendAsyncMessage("devtools:test:eval:response", {
     value: content.eval(data.script),

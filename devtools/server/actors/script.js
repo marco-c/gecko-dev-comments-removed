@@ -437,7 +437,7 @@ function ThreadActor(aParent, aGlobal)
 
   this._allEventsListener = this._allEventsListener.bind(this);
   this.onNewGlobal = this.onNewGlobal.bind(this);
-  this.onNewSource = this.onNewSource.bind(this);
+  this.onSourceEvent = this.onSourceEvent.bind(this);
   this.uncaughtExceptionHook = this.uncaughtExceptionHook.bind(this);
   this.onDebuggerStatement = this.onDebuggerStatement.bind(this);
   this.onNewScript = this.onNewScript.bind(this);
@@ -583,6 +583,8 @@ ThreadActor.prototype = {
     this._sourceActorStore = null;
 
     events.off(this._parent, "window-ready", this._onWindowReady);
+    this.sources.off("newSource", this.onSourceEvent);
+    this.sources.off("updatedSource", this.onSourceEvent);
     this.clearDebuggees();
     this.conn.removeActorPool(this._threadLifetimePool);
     this._threadLifetimePool = null;
@@ -623,9 +625,8 @@ ThreadActor.prototype = {
 
     update(this._options, aRequest.options || {});
     this.sources.setOptions(this._options);
-    this.sources.on('newSource', (name, source) => {
-      this.onNewSource(source);
-    });
+    this.sources.on("newSource", this.onSourceEvent);
+    this.sources.on("updatedSource", this.onSourceEvent);
 
     
     
@@ -1894,12 +1895,29 @@ ThreadActor.prototype = {
     this._addSource(aScript.source);
   },
 
-  onNewSource: function (aSource) {
+  
+
+
+
+
+
+
+  onSourceEvent: function (name, source) {
     this.conn.send({
-      from: this.actorID,
-      type: "newSource",
-      source: aSource.form()
+      from: this._parent.actorID,
+      type: name,
+      source: source.form()
     });
+
+    
+    
+    if (name === "newSource") {
+      this.conn.send({
+        from: this.actorID,
+        type: name,
+        source: source.form()
+      });
+    }
   },
 
   
@@ -2024,7 +2042,7 @@ ThreadActor.prototype.requestTypes = {
   "releaseMany": ThreadActor.prototype.onReleaseMany,
   "sources": ThreadActor.prototype.onSources,
   "threadGrips": ThreadActor.prototype.onThreadGrips,
-  "prototypesAndProperties": ThreadActor.prototype.onPrototypesAndProperties
+  "prototypesAndProperties": ThreadActor.prototype.onPrototypesAndProperties,
 };
 
 exports.ThreadActor = ThreadActor;
