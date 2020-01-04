@@ -17,6 +17,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -198,6 +201,42 @@ public class FileUtils {
             
             
             outputStream.close();
+        }
+    }
+
+    public static class FilenameWhitelistFilter implements FilenameFilter {
+        private final Set<String> mFilenameWhitelist;
+
+        public FilenameWhitelistFilter(final Set<String> filenameWhitelist) {
+            mFilenameWhitelist = filenameWhitelist;
+        }
+
+        @Override
+        public boolean accept(final File dir, final String filename) {
+            return mFilenameWhitelist.contains(filename);
+        }
+    }
+
+    public static class FilenameRegexFilter implements FilenameFilter {
+        private final Pattern mPattern;
+
+        
+        
+        
+        private Matcher mCachedMatcher;
+
+        public FilenameRegexFilter(final Pattern pattern) {
+            mPattern = pattern;
+        }
+
+        @Override
+        public boolean accept(final File dir, final String filename) {
+            if (mCachedMatcher == null) {
+                mCachedMatcher = mPattern.matcher(filename);
+            } else {
+                mCachedMatcher.reset(filename);
+            }
+            return mCachedMatcher.matches();
         }
     }
 }
