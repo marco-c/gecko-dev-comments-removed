@@ -639,6 +639,12 @@ class Base {
         return true;
     }
 
+    
+
+    
+    
+    virtual const char* scriptFilename() const { return nullptr; }
+
   private:
     Base(const Base& rhs) = delete;
     Base& operator=(const Base& rhs) = delete;
@@ -778,6 +784,8 @@ class Node {
                                  UniquePtr<char16_t[], JS::FreePolicy>& outName) const {
         return base()->jsObjectConstructorName(cx, outName);
     }
+
+    const char* scriptFilename() const { return base()->scriptFilename(); }
 
     using Size = Base::Size;
     Size size(mozilla::MallocSizeOf mallocSizeof) const {
@@ -1052,6 +1060,7 @@ struct Concrete<JS::Symbol> : TracerConcrete<JS::Symbol> {
 template<> struct Concrete<JSScript> : TracerConcreteWithCompartment<JSScript> {
     CoarseType coarseType() const final { return CoarseType::Script; }
     Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+    const char* scriptFilename() const final;
 
   protected:
     explicit Concrete(JSScript *ptr) : TracerConcreteWithCompartment<JSScript>(ptr) { }
