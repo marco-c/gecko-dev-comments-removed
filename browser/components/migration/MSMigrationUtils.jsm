@@ -623,7 +623,7 @@ Cookies.prototype = {
       
       if (host.length > 0) {
         
-        Services.cookies.remove(host, name, path, {}, false);
+        Services.cookies.remove(host, name, path, false, {});
         
         if (host[0] != "." && !hostIsIPAddress(host))
           host = "." + host;
@@ -872,7 +872,6 @@ WindowsVaultFormPasswords.prototype = {
     if (aOnlyCheckExists) {
       return false;
     }
-    return undefined;
   }
 };
 

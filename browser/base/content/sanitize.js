@@ -249,7 +249,7 @@ Sanitizer.prototype = {
               if (cookie.creationTime > range[0]) {
                 
                 cookieMgr.remove(cookie.host, cookie.name, cookie.path,
-                                 cookie.originAttributes, false);
+                                 false, cookie.originAttributes);
 
                 if (++yieldCounter % YIELD_PERIOD == 0) {
                   yield new Promise(resolve => setTimeout(resolve, 0)); 
@@ -603,7 +603,6 @@ Sanitizer.prototype = {
           aWindow.skipNextCanClose = true;
           return true;
         }
-        return false;
       },
       _resetAllWindowClosures: function(aWindowList) {
         for (let win of aWindowList) {
@@ -666,7 +665,6 @@ Sanitizer.prototype = {
               e.stopPropagation();
               return false;
             }
-            return undefined;
           }
           newWindow.addEventListener("fullscreen", onFullScreen);
         }
