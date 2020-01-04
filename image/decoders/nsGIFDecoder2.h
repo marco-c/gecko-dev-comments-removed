@@ -9,6 +9,7 @@
 
 #include "Decoder.h"
 #include "GIF2.h"
+#include "StreamingLexer.h"
 #include "SurfacePipe.h"
 
 namespace mozilla {
@@ -54,31 +55,81 @@ private:
   
   void      FlushImageData();
 
-  nsresult  GifWrite(const uint8_t* buf, uint32_t numbytes);
-
   
   template <typename PixelSize> PixelSize
   ColormapIndexToPixel(uint8_t aIndex);
 
   
   template <typename PixelSize> NextPixel<PixelSize>
-  YieldPixel(const uint8_t*& aCurrentByte);
+  YieldPixel(const uint8_t* aData, size_t aLength, size_t* aBytesReadOut);
 
   
-  bool      DoLzw(const uint8_t* aData);
+  
+  bool CheckForTransparency(const gfx::IntRect& aFrameRect);
 
-  bool      SetHold(const uint8_t* buf, uint32_t count,
-                    const uint8_t* buf2 = nullptr, uint32_t count2 = 0);
-  bool      CheckForTransparency(const gfx::IntRect& aFrameRect);
-  gfx::IntRect ClampToImageRect(const gfx::IntRect& aFrameRect);
+  
+  int ClearCode() const { return 1 << mGIFStruct.datasize; }
 
-  inline int ClearCode() const { return 1 << mGIFStruct.datasize; }
+  enum class State
+  {
+    FAILURE,
+    SUCCESS,
+    GIF_HEADER,
+    SCREEN_DESCRIPTOR,
+    GLOBAL_COLOR_TABLE,
+    FINISHED_GLOBAL_COLOR_TABLE,
+    BLOCK_HEADER,
+    EXTENSION_HEADER,
+    GRAPHIC_CONTROL_EXTENSION,
+    APPLICATION_IDENTIFIER,
+    NETSCAPE_EXTENSION_SUB_BLOCK,
+    NETSCAPE_EXTENSION_DATA,
+    IMAGE_DESCRIPTOR,
+    LOCAL_COLOR_TABLE,
+    FINISHED_LOCAL_COLOR_TABLE,
+    IMAGE_DATA_BLOCK,
+    IMAGE_DATA_SUB_BLOCK,
+    LZW_DATA,
+    FINISHED_LZW_DATA,
+    SKIP_SUB_BLOCKS,
+    SKIP_DATA_THEN_SKIP_SUB_BLOCKS,
+    FINISHED_SKIPPING_DATA
+  };
+
+  LexerTransition<State> ReadGIFHeader(const char* aData);
+  LexerTransition<State> ReadScreenDescriptor(const char* aData);
+  LexerTransition<State> ReadGlobalColorTable(const char* aData, size_t aLength);
+  LexerTransition<State> FinishedGlobalColorTable();
+  LexerTransition<State> ReadBlockHeader(const char* aData);
+  LexerTransition<State> ReadExtensionHeader(const char* aData);
+  LexerTransition<State> ReadGraphicControlExtension(const char* aData);
+  LexerTransition<State> ReadApplicationIdentifier(const char* aData);
+  LexerTransition<State> ReadNetscapeExtensionSubBlock(const char* aData);
+  LexerTransition<State> ReadNetscapeExtensionData(const char* aData);
+  LexerTransition<State> ReadImageDescriptor(const char* aData);
+  LexerTransition<State> ReadLocalColorTable(const char* aData, size_t aLength);
+  LexerTransition<State> FinishedLocalColorTable();
+  LexerTransition<State> ReadImageDataBlock(const char* aData);
+  LexerTransition<State> ReadImageDataSubBlock(const char* aData);
+  LexerTransition<State> ReadLZWData(const char* aData, size_t aLength);
+  LexerTransition<State> SkipSubBlocks(const char* aData);
+
+  
+  
+  
+  
+  StreamingLexer<State, 16> mLexer;
 
   uint32_t mOldColor;        
 
   
   
   int32_t mCurrentFrameIndex;
+
+  
+  
+  
+  size_t mColorTablePos;
 
   uint8_t mColorMask;        
   bool mGIFOpen;

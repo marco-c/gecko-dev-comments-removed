@@ -41,6 +41,7 @@
 #include <stddef.h>
 
 #include "imgFrame.h"
+#include "mozilla/EndianUtils.h"
 #include "nsGIFDecoder2.h"
 #include "nsIInputStream.h"
 #include "RasterImage.h"
@@ -54,29 +55,35 @@
 
 using namespace mozilla::gfx;
 
+using std::max;
+
 namespace mozilla {
 namespace image {
 
 
 
 
+static const size_t GIF_HEADER_LEN = 6;
+static const size_t GIF_SCREEN_DESCRIPTOR_LEN = 7;
+static const size_t BLOCK_HEADER_LEN = 1;
+static const size_t SUB_BLOCK_HEADER_LEN = 1;
+static const size_t EXTENSION_HEADER_LEN = 2;
+static const size_t GRAPHIC_CONTROL_EXTENSION_LEN = 4;
+static const size_t APPLICATION_EXTENSION_LEN = 11;
+static const size_t IMAGE_DESCRIPTOR_LEN = 9;
 
 
-#define GETN(n,s)                      \
-  PR_BEGIN_MACRO                       \
-    mGIFStruct.bytes_to_consume = (n); \
-    mGIFStruct.state = (s);            \
-  PR_END_MACRO
 
-
-#define GETINT16(p)   ((p)[1]<<8|(p)[0])
-
-
+static const uint8_t PACKED_FIELDS_COLOR_TABLE_BIT = 0x80;
+static const uint8_t PACKED_FIELDS_INTERLACED_BIT = 0x40;
+static const uint8_t PACKED_FIELDS_TABLE_DEPTH_MASK = 0x07;
 
 nsGIFDecoder2::nsGIFDecoder2(RasterImage* aImage)
   : Decoder(aImage)
+  , mLexer(Transition::To(State::GIF_HEADER, GIF_HEADER_LEN))
   , mOldColor(0)
   , mCurrentFrameIndex(-1)
+  , mColorTablePos(0)
   , mGIFOpen(false)
   , mSawTransparency(false)
 {
@@ -85,16 +92,11 @@ nsGIFDecoder2::nsGIFDecoder2(RasterImage* aImage)
 
   
   mGIFStruct.loop_count = 1;
-
-  
-  mGIFStruct.state = gif_type;
-  mGIFStruct.bytes_to_consume = 6;
 }
 
 nsGIFDecoder2::~nsGIFDecoder2()
 {
   free(mGIFStruct.local_colormap);
-  free(mGIFStruct.hold);
 }
 
 void
@@ -166,22 +168,6 @@ nsGIFDecoder2::CheckForTransparency(const IntRect& aFrameRect)
   return false;
 }
 
-IntRect
-nsGIFDecoder2::ClampToImageRect(const IntRect& aRect)
-{
-  IntRect imageRect(0, 0, mGIFStruct.screen_width, mGIFStruct.screen_height);
-  IntRect visibleFrameRect = aRect.Intersect(imageRect);
-
-  
-  
-  
-  if (visibleFrameRect.IsEmpty()) {
-    visibleFrameRect.MoveTo(0, 0);
-  }
-
-  return visibleFrameRect;
-}
-
 
 nsresult
 nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
@@ -244,7 +230,6 @@ nsGIFDecoder2::EndImageFrame()
 {
   Opacity opacity = Opacity::SOME_TRANSPARENCY;
 
-  
   if (mGIFStruct.images_decoded == 0) {
     
     FlushImageData();
@@ -304,19 +289,26 @@ nsGIFDecoder2::ColormapIndexToPixel<uint8_t>(uint8_t aIndex)
 
 template <typename PixelSize>
 NextPixel<PixelSize>
-nsGIFDecoder2::YieldPixel(const uint8_t*& aCurrentByteInOut)
+nsGIFDecoder2::YieldPixel(const uint8_t* aData,
+                          size_t aLength,
+                          size_t* aBytesReadOut)
 {
+  MOZ_ASSERT(aData);
+  MOZ_ASSERT(aBytesReadOut);
   MOZ_ASSERT(mGIFStruct.stackp >= mGIFStruct.stack);
+
+  
+  const uint8_t* data = aData + *aBytesReadOut;
 
   
   
   if (mGIFStruct.stackp == mGIFStruct.stack) {
-    while (mGIFStruct.bits < mGIFStruct.codesize && mGIFStruct.count > 0) {
+    while (mGIFStruct.bits < mGIFStruct.codesize && *aBytesReadOut < aLength) {
       
-      mGIFStruct.datum += int32_t(*aCurrentByteInOut) << mGIFStruct.bits;
+      mGIFStruct.datum += int32_t(*data) << mGIFStruct.bits;
       mGIFStruct.bits += 8;
-      ++aCurrentByteInOut;
-      --mGIFStruct.count;
+      data += 1;
+      *aBytesReadOut += 1;
     }
 
     if (mGIFStruct.bits < mGIFStruct.codesize) {
@@ -412,32 +404,6 @@ nsGIFDecoder2::YieldPixel(const uint8_t*& aCurrentByteInOut)
   return AsVariant(ColormapIndexToPixel<PixelSize>(*--mGIFStruct.stackp));
 }
 
-bool
-nsGIFDecoder2::DoLzw(const uint8_t* aData)
-{
-  const uint8_t* currentByte = aData;
-  while (mGIFStruct.count > 0 && mGIFStruct.pixels_remaining > 0) {
-    auto result = mGIFStruct.images_decoded > 0
-                ? mPipe.WritePixels<uint8_t>([&]() { return YieldPixel<uint8_t>(currentByte); })
-                : mPipe.WritePixels<uint32_t>([&]() { return YieldPixel<uint32_t>(currentByte); });
-
-    switch (result) {
-      case WriteState::NEED_MORE_DATA:
-        continue;
-
-      case WriteState::FINISHED:
-        NS_WARN_IF(mGIFStruct.pixels_remaining > 0);
-        mGIFStruct.pixels_remaining = 0;
-        return true;
-
-      case WriteState::FAILURE:
-        return false;
-    }
-  }
-
-  return true;
-}
-
 
 
 static void
@@ -490,597 +456,621 @@ void
 nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
 {
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aCount > 0);
 
-  
-  const uint8_t* buf = (const uint8_t*)aBuffer;
-  uint32_t len = aCount;
-
-  const uint8_t* q = buf;
-
-  
-  
-  
-  uint8_t* p =
-    (mGIFStruct.state ==
-      gif_global_colormap) ? (uint8_t*) mGIFStruct.global_colormap :
-        (mGIFStruct.state == gif_image_colormap) ? (uint8_t*) mColormap :
-          (mGIFStruct.bytes_in_hold) ? mGIFStruct.hold : nullptr;
-
-  if (len == 0 && buf == nullptr) {
-    
-    
-    len = mGIFStruct.bytes_in_hold;
-    q = buf = p;
-  } else if (p) {
-    
-    uint32_t l = std::min(len, mGIFStruct.bytes_to_consume);
-    memcpy(p+mGIFStruct.bytes_in_hold, buf, l);
-
-    if (l < mGIFStruct.bytes_to_consume) {
-      
-      mGIFStruct.bytes_in_hold += l;
-      mGIFStruct.bytes_to_consume -= l;
-      return;
-    }
-    
-    q = p;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  for (;len >= mGIFStruct.bytes_to_consume; q=buf, mGIFStruct.bytes_in_hold = 0)
-  {
-    
-    buf += mGIFStruct.bytes_to_consume;
-    len -= mGIFStruct.bytes_to_consume;
-
-    switch (mGIFStruct.state) {
-    case gif_lzw:
-      if (!DoLzw(q)) {
-        mGIFStruct.state = gif_error;
-        break;
-      }
-      GETN(1, gif_sub_block);
-      break;
-
-    case gif_lzw_start: {
-      
-      if (mGIFStruct.is_transparent) {
-        
-        if (mColormap == mGIFStruct.global_colormap) {
-            mOldColor = mColormap[mGIFStruct.tpixel];
+  Maybe<TerminalState> terminalState =
+    mLexer.Lex(aBuffer, aCount, [=](State aState,
+                                    const char* aData, size_t aLength) {
+        switch(aState) {
+          case State::GIF_HEADER:
+            return ReadGIFHeader(aData);
+          case State::SCREEN_DESCRIPTOR:
+            return ReadScreenDescriptor(aData);
+          case State::GLOBAL_COLOR_TABLE:
+            return ReadGlobalColorTable(aData, aLength);
+          case State::FINISHED_GLOBAL_COLOR_TABLE:
+            return FinishedGlobalColorTable();
+          case State::BLOCK_HEADER:
+            return ReadBlockHeader(aData);
+          case State::EXTENSION_HEADER:
+            return ReadExtensionHeader(aData);
+          case State::GRAPHIC_CONTROL_EXTENSION:
+            return ReadGraphicControlExtension(aData);
+          case State::APPLICATION_IDENTIFIER:
+            return ReadApplicationIdentifier(aData);
+          case State::NETSCAPE_EXTENSION_SUB_BLOCK:
+            return ReadNetscapeExtensionSubBlock(aData);
+          case State::NETSCAPE_EXTENSION_DATA:
+            return ReadNetscapeExtensionData(aData);
+          case State::IMAGE_DESCRIPTOR:
+            return ReadImageDescriptor(aData);
+          case State::LOCAL_COLOR_TABLE:
+            return ReadLocalColorTable(aData, aLength);
+          case State::FINISHED_LOCAL_COLOR_TABLE:
+            return FinishedLocalColorTable();
+          case State::IMAGE_DATA_BLOCK:
+            return ReadImageDataBlock(aData);
+          case State::IMAGE_DATA_SUB_BLOCK:
+            return ReadImageDataSubBlock(aData);
+          case State::LZW_DATA:
+            return ReadLZWData(aData, aLength);
+          case State::FINISHED_LZW_DATA:
+            return Transition::To(State::IMAGE_DATA_SUB_BLOCK, SUB_BLOCK_HEADER_LEN);
+          case State::SKIP_SUB_BLOCKS:
+            return SkipSubBlocks(aData);
+          case State::SKIP_DATA_THEN_SKIP_SUB_BLOCKS:
+            return Transition::ContinueUnbuffered(State::SKIP_DATA_THEN_SKIP_SUB_BLOCKS);
+          case State::FINISHED_SKIPPING_DATA:
+            return Transition::To(State::SKIP_SUB_BLOCKS, SUB_BLOCK_HEADER_LEN);
+          default:
+            MOZ_CRASH("Unknown State");
         }
-        mColormap[mGIFStruct.tpixel] = 0;
-      }
+      });
 
-      
-      mGIFStruct.datasize = *q;
-      const int clear_code = ClearCode();
-      if (mGIFStruct.datasize > MAX_LZW_BITS ||
-          clear_code >= MAX_BITS) {
-        mGIFStruct.state = gif_error;
-        break;
-      }
-
-      mGIFStruct.avail = clear_code + 2;
-      mGIFStruct.oldcode = -1;
-      mGIFStruct.codesize = mGIFStruct.datasize + 1;
-      mGIFStruct.codemask = (1 << mGIFStruct.codesize) - 1;
-      mGIFStruct.datum = mGIFStruct.bits = 0;
-
-      
-      for (int i = 0; i < clear_code; i++) {
-        mGIFStruct.suffix[i] = i;
-      }
-
-      mGIFStruct.stackp = mGIFStruct.stack;
-
-      GETN(1, gif_sub_block);
-    }
-    break;
-
-    
-    case gif_type:
-      if (!strncmp((char*)q, "GIF89a", 6)) {
-        mGIFStruct.version = 89;
-      } else if (!strncmp((char*)q, "GIF87a", 6)) {
-        mGIFStruct.version = 87;
-      } else {
-        mGIFStruct.state = gif_error;
-        break;
-      }
-      GETN(7, gif_global_header);
-      break;
-
-    case gif_global_header:
-      
-      
-      
-      
-      
-
-      mGIFStruct.screen_width = GETINT16(q);
-      mGIFStruct.screen_height = GETINT16(q + 2);
-      mGIFStruct.global_colormap_depth = (q[4]&0x07) + 1;
-
-      
-      
-      
-      
-      
-
-      if (q[4] & 0x80) {
-        
-        const uint32_t size = (3 << mGIFStruct.global_colormap_depth);
-        if (len < size) {
-          
-          GETN(size, gif_global_colormap);
-          break;
-        }
-        
-        memcpy(mGIFStruct.global_colormap, buf, size);
-        buf += size;
-        len -= size;
-        GETN(0, gif_global_colormap);
-        break;
-      }
-
-      GETN(1, gif_image_start);
-      break;
-
-    case gif_global_colormap:
-      
-      
-      ConvertColormap(mGIFStruct.global_colormap,
-                      1<<mGIFStruct.global_colormap_depth);
-      GETN(1, gif_image_start);
-      break;
-
-    case gif_image_start:
-      switch (*q) {
-        case GIF_TRAILER:
-          if (IsMetadataDecode()) {
-            return;
-          }
-          mGIFStruct.state = gif_done;
-          break;
-
-        case GIF_EXTENSION_INTRODUCER:
-          GETN(2, gif_extension);
-          break;
-
-        case GIF_IMAGE_SEPARATOR:
-          GETN(9, gif_image_header);
-          break;
-
-        default:
-          
-          
-          
-          
-          
-          if (mGIFStruct.images_decoded > 0) {
-            
-            
-            
-            
-            mGIFStruct.state = gif_done;
-          } else {
-            
-            mGIFStruct.state = gif_error;
-          }
-      }
-      break;
-
-    case gif_extension:
-      mGIFStruct.bytes_to_consume = q[1];
-      if (mGIFStruct.bytes_to_consume) {
-        switch (*q) {
-        case GIF_GRAPHIC_CONTROL_LABEL:
-          
-          
-          
-          
-          
-          mGIFStruct.state = gif_control_extension;
-          mGIFStruct.bytes_to_consume =
-            std::max(mGIFStruct.bytes_to_consume, 4u);
-          break;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        case GIF_APPLICATION_EXTENSION_LABEL:
-          mGIFStruct.state = gif_application_extension;
-          break;
-
-        case GIF_PLAIN_TEXT_LABEL:
-          mGIFStruct.state = gif_skip_block;
-          break;
-
-        case GIF_COMMENT_LABEL:
-          mGIFStruct.state = gif_consume_comment;
-          break;
-
-        default:
-          mGIFStruct.state = gif_skip_block;
-        }
-      } else {
-        GETN(1, gif_image_start);
-      }
-      break;
-
-    case gif_consume_block:
-      if (!*q) {
-        GETN(1, gif_image_start);
-      } else {
-        GETN(*q, gif_skip_block);
-      }
-      break;
-
-    case gif_skip_block:
-      GETN(1, gif_consume_block);
-      break;
-
-    case gif_control_extension:
-      mGIFStruct.is_transparent = *q & 0x1;
-      mGIFStruct.tpixel = q[3];
-      mGIFStruct.disposal_method = ((*q) >> 2) & 0x7;
-
-      if (mGIFStruct.disposal_method == 4) {
-        
-        
-        mGIFStruct.disposal_method = 3;
-      } else if (mGIFStruct.disposal_method > 4) {
-        
-        
-        mGIFStruct.disposal_method = 0;
-      }
-
-      {
-        DisposalMethod method = DisposalMethod(mGIFStruct.disposal_method);
-        if (method == DisposalMethod::CLEAR_ALL ||
-            method == DisposalMethod::CLEAR) {
-          
-          
-          PostHasTransparency();
-        }
-      }
-
-      mGIFStruct.delay_time = GETINT16(q + 1) * 10;
-
-      if (mGIFStruct.delay_time > 0) {
-        PostIsAnimated(mGIFStruct.delay_time);
-      }
-
-      GETN(1, gif_consume_block);
-      break;
-
-    case gif_comment_extension:
-      if (*q) {
-        GETN(*q, gif_consume_comment);
-      } else {
-        GETN(1, gif_image_start);
-      }
-      break;
-
-    case gif_consume_comment:
-      GETN(1, gif_comment_extension);
-      break;
-
-    case gif_application_extension:
-      
-      if (mGIFStruct.bytes_to_consume == 11 &&
-          (!strncmp((char*)q, "NETSCAPE2.0", 11) ||
-           !strncmp((char*)q, "ANIMEXTS1.0", 11))) {
-        GETN(1, gif_netscape_extension_block);
-      } else {
-        GETN(1, gif_consume_block);
-      }
-      break;
-
-    
-    case gif_netscape_extension_block:
-      if (*q) {
-        
-        
-        GETN(std::max(3, static_cast<int>(*q)), gif_consume_netscape_extension);
-      } else {
-        GETN(1, gif_image_start);
-      }
-      break;
-
-    
-    case gif_consume_netscape_extension:
-      switch (q[0] & 7) {
-        case 1:
-          
-          
-          mGIFStruct.loop_count = GETINT16(q + 1);
-          GETN(1, gif_netscape_extension_block);
-          break;
-
-        case 2:
-          
-
-          
-          
-          
-          
-          GETN(1, gif_netscape_extension_block);
-          break;
-
-        default:
-          
-          mGIFStruct.state = gif_error;
-      }
-      break;
-
-    case gif_image_header: {
-      if (mGIFStruct.images_decoded == 1) {
-        if (!HasAnimation()) {
-          
-          
-          
-          
-          PostIsAnimated( 0);
-        }
-
-        if (IsFirstFrameDecode()) {
-          
-          
-          mGIFStruct.state = gif_done;
-          break;
-        }
-
-        if (mDownscaler) {
-          MOZ_ASSERT_UNREACHABLE("Doing downscale-during-decode "
-                                 "for an animated image?");
-          mDownscaler.reset();
-        }
-      }
-
-      IntRect frameRect;
-
-      
-      frameRect.x = GETINT16(q);
-      frameRect.y = GETINT16(q + 2);
-
-      
-      frameRect.width  = GETINT16(q + 4);
-      frameRect.height = GETINT16(q + 6);
-
-      if (!mGIFStruct.images_decoded) {
-        
-        
-        
-        if ((mGIFStruct.screen_height < frameRect.height) ||
-            (mGIFStruct.screen_width < frameRect.width) ||
-            (mGIFStruct.version == 87)) {
-          mGIFStruct.screen_height = frameRect.height;
-          mGIFStruct.screen_width = frameRect.width;
-          frameRect.MoveTo(0, 0);
-        }
-        
-        BeginGIF();
-        if (HasError()) {
-          
-          mGIFStruct.state = gif_error;
-          return;
-        }
-
-        
-        if (IsMetadataDecode()) {
-          CheckForTransparency(frameRect);
-          return;
-        }
-      }
-
-      
-      if (!frameRect.height || !frameRect.width) {
-        frameRect.height = mGIFStruct.screen_height;
-        frameRect.width = mGIFStruct.screen_width;
-        if (!frameRect.height || !frameRect.width) {
-          mGIFStruct.state = gif_error;
-          break;
-        }
-      }
-
-      
-      
-      
-      uint32_t depth = mGIFStruct.global_colormap_depth;
-      if (q[8] & 0x80) {
-        depth = (q[8]&0x07) + 1;
-      }
-      uint32_t realDepth = depth;
-      while (mGIFStruct.tpixel >= (1 << realDepth) && (realDepth < 8)) {
-        realDepth++;
-      }
-
-      
-      mColorMask = 0xFF >> (8 - realDepth);
-
-      
-      const bool isInterlaced = q[8] & 0x40;
-
-      if (NS_FAILED(BeginImageFrame(frameRect, realDepth, isInterlaced))) {
-        mGIFStruct.state = gif_error;
-        return;
-      }
-
-      
-      
-      
-      memset(mImageData, 0, mImageDataLength);
-      if (mColormap) {
-        memset(mColormap, 0, mColormapSize);
-      }
-
-      
-      mGIFStruct.pixels_remaining = frameRect.width * frameRect.height;
-
-      
-      if (q[8] & 0x80) {
-        mGIFStruct.local_colormap_size = 1 << depth;
-        if (!mGIFStruct.images_decoded) {
-          
-          
-          mColormapSize = sizeof(uint32_t) << realDepth;
-          if (!mGIFStruct.local_colormap) {
-            mGIFStruct.local_colormap = (uint32_t*)moz_xmalloc(mColormapSize);
-          }
-          mColormap = mGIFStruct.local_colormap;
-        }
-        const uint32_t size = 3 << depth;
-        if (mColormapSize > size) {
-          
-          memset(((uint8_t*)mColormap) + size, 0, mColormapSize - size);
-        }
-        if (len < size) {
-          
-          GETN(size, gif_image_colormap);
-          break;
-        }
-        
-        memcpy(mColormap, buf, size);
-        buf += size;
-        len -= size;
-        GETN(0, gif_image_colormap);
-        break;
-      } else {
-        
-        if (mGIFStruct.images_decoded) {
-          
-          memcpy(mColormap, mGIFStruct.global_colormap, mColormapSize);
-        } else {
-          mColormap = mGIFStruct.global_colormap;
-        }
-      }
-      GETN(1, gif_lzw_start);
-    }
-    break;
-
-    case gif_image_colormap:
-      
-      
-      ConvertColormap(mColormap, mGIFStruct.local_colormap_size);
-      GETN(1, gif_lzw_start);
-      break;
-
-    case gif_sub_block:
-      mGIFStruct.count = *q;
-      if (mGIFStruct.count) {
-        
-        
-        
-        if (mGIFStruct.pixels_remaining <= 0) {
-#ifdef DONT_TOLERATE_BROKEN_GIFS
-          mGIFStruct.state = gif_error;
-          break;
-#else
-          
-          GETN(1, gif_sub_block);
-#endif
-          if (mGIFStruct.count == GIF_TRAILER) {
-            
-            GETN(1, gif_done);
-            break;
-          }
-        }
-        GETN(mGIFStruct.count, gif_lzw);
-      } else {
-        
-        EndImageFrame();
-        GETN(1, gif_image_start);
-      }
-      break;
-
-    case gif_done:
-      MOZ_ASSERT(!IsMetadataDecode(),
-                 "Metadata decodes shouldn't reach gif_done");
-      FinishInternal();
-      goto done;
-
-    case gif_error:
-      PostDataError();
-      return;
-
-    
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unexpected mGIFStruct.state");
-      PostDecoderError(NS_ERROR_UNEXPECTED);
-      return;
-    }
-  }
-
-  
-  if (mGIFStruct.state == gif_error) {
-      PostDataError();
-      return;
-  }
-
-  
-  if (len) {
-    
-    if (mGIFStruct.state != gif_global_colormap &&
-        mGIFStruct.state != gif_image_colormap) {
-      if (!SetHold(buf, len)) {
-        PostDataError();
-        return;
-      }
-    } else {
-      uint8_t* p = (mGIFStruct.state == gif_global_colormap) ?
-                    (uint8_t*)mGIFStruct.global_colormap :
-                    (uint8_t*)mColormap;
-      memcpy(p, buf, len);
-      mGIFStruct.bytes_in_hold = len;
-    }
-
-    mGIFStruct.bytes_to_consume -= len;
-  }
-
-
-done:
-  if (!mGIFStruct.images_decoded) {
-    FlushImageData();
+  if (terminalState == Some(TerminalState::FAILURE)) {
+    PostDataError();
   }
 }
 
-bool
-nsGIFDecoder2::SetHold(const uint8_t* buf1, uint32_t count1,
-                       const uint8_t* buf2 ,
-                       uint32_t count2 )
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadGIFHeader(const char* aData)
 {
   
-  uint8_t* newHold = (uint8_t*) malloc(std::max(uint32_t(MIN_HOLD_SIZE),
-                                       count1 + count2));
-  if (!newHold) {
-    mGIFStruct.state = gif_error;
-    return false;
+  
+  
+  if (strncmp(aData, "GIF87a", GIF_HEADER_LEN) == 0) {
+    mGIFStruct.version = 87;
+  } else if (strncmp(aData, "GIF89a", GIF_HEADER_LEN) == 0) {
+    mGIFStruct.version = 89;
+  } else {
+    return Transition::TerminateFailure();
   }
 
-  memcpy(newHold, buf1, count1);
-  if (buf2) {
-    memcpy(newHold + count1, buf2, count2);
+  return Transition::To(State::SCREEN_DESCRIPTOR, GIF_SCREEN_DESCRIPTOR_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadScreenDescriptor(const char* aData)
+{
+  mGIFStruct.screen_width  = LittleEndian::readUint16(aData + 0);
+  mGIFStruct.screen_height = LittleEndian::readUint16(aData + 2);
+
+  const uint8_t packedFields = aData[4];
+
+  
+  
+  mGIFStruct.global_colormap_depth =
+    (packedFields & PACKED_FIELDS_TABLE_DEPTH_MASK) + 1;
+  mGIFStruct.global_colormap_count = 1 << mGIFStruct.global_colormap_depth;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (packedFields & PACKED_FIELDS_COLOR_TABLE_BIT) {
+    MOZ_ASSERT(mColorTablePos == 0);
+
+    
+    
+    const size_t globalColorTableSize = 3 * mGIFStruct.global_colormap_count;
+    return Transition::ToUnbuffered(State::FINISHED_GLOBAL_COLOR_TABLE,
+                                    State::GLOBAL_COLOR_TABLE,
+                                    globalColorTableSize);
   }
 
-  free(mGIFStruct.hold);
-  mGIFStruct.hold = newHold;
-  mGIFStruct.bytes_in_hold = count1 + count2;
-  return true;
+  return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadGlobalColorTable(const char* aData, size_t aLength)
+{
+  uint8_t* dest = reinterpret_cast<uint8_t*>(mGIFStruct.global_colormap)
+                + mColorTablePos;
+  memcpy(dest, aData, aLength);
+  mColorTablePos += aLength;
+  return Transition::ContinueUnbuffered(State::GLOBAL_COLOR_TABLE);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::FinishedGlobalColorTable()
+{
+  ConvertColormap(mGIFStruct.global_colormap, mGIFStruct.global_colormap_count);
+  mColorTablePos = 0;
+  return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadBlockHeader(const char* aData)
+{
+  
+  switch (aData[0]) {
+    case GIF_EXTENSION_INTRODUCER:
+      return Transition::To(State::EXTENSION_HEADER, EXTENSION_HEADER_LEN);
+
+    case GIF_IMAGE_SEPARATOR:
+      return Transition::To(State::IMAGE_DESCRIPTOR, IMAGE_DESCRIPTOR_LEN);
+
+    case GIF_TRAILER:
+      FinishInternal();
+      return Transition::TerminateSuccess();
+
+    default:
+      
+      
+      
+      
+      
+
+      if (mGIFStruct.images_decoded > 0) {
+        
+        
+        FinishInternal();
+        return Transition::TerminateSuccess();
+      }
+
+      
+      return Transition::TerminateFailure();
+  }
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadExtensionHeader(const char* aData)
+{
+  const uint8_t label = aData[0];
+  const uint8_t extensionHeaderLength = aData[1];
+
+  
+  
+  if (extensionHeaderLength == 0) {
+    return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
+  }
+
+  switch (label) {
+    case GIF_GRAPHIC_CONTROL_LABEL:
+      
+      
+      
+      
+      
+      return Transition::To(State::GRAPHIC_CONTROL_EXTENSION,
+                            max<uint8_t>(extensionHeaderLength,
+                                         GRAPHIC_CONTROL_EXTENSION_LEN));
+
+    case GIF_APPLICATION_EXTENSION_LABEL:
+      
+      
+      
+      
+      
+      
+      
+      return extensionHeaderLength == APPLICATION_EXTENSION_LEN
+           ? Transition::To(State::APPLICATION_IDENTIFIER, extensionHeaderLength)
+           : Transition::ToUnbuffered(State::FINISHED_SKIPPING_DATA,
+                                      State::SKIP_DATA_THEN_SKIP_SUB_BLOCKS,
+                                      extensionHeaderLength);
+
+    default:
+      
+      
+      return Transition::ToUnbuffered(State::FINISHED_SKIPPING_DATA,
+                                      State::SKIP_DATA_THEN_SKIP_SUB_BLOCKS,
+                                      extensionHeaderLength);
+  }
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadGraphicControlExtension(const char* aData)
+{
+  mGIFStruct.is_transparent = aData[0] & 0x1;
+  mGIFStruct.tpixel = uint8_t(aData[3]);
+  mGIFStruct.disposal_method = (aData[0] >> 2) & 0x7;
+
+  if (mGIFStruct.disposal_method == 4) {
+    
+    
+    
+    mGIFStruct.disposal_method = 3;
+  } else if (mGIFStruct.disposal_method > 4) {
+    
+    
+    mGIFStruct.disposal_method = 0;
+  }
+
+  DisposalMethod method = DisposalMethod(mGIFStruct.disposal_method);
+  if (method == DisposalMethod::CLEAR_ALL || method == DisposalMethod::CLEAR) {
+    
+    
+    PostHasTransparency();
+  }
+
+  mGIFStruct.delay_time = LittleEndian::readUint16(aData + 1) * 10;
+  if (mGIFStruct.delay_time > 0) {
+    PostIsAnimated(mGIFStruct.delay_time);
+  }
+
+  return Transition::To(State::SKIP_SUB_BLOCKS, SUB_BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadApplicationIdentifier(const char* aData)
+{
+  if ((strncmp(aData, "NETSCAPE2.0", 11) == 0) ||
+      (strncmp(aData, "ANIMEXTS1.0", 11) == 0)) {
+    
+    return Transition::To(State::NETSCAPE_EXTENSION_SUB_BLOCK,
+                          SUB_BLOCK_HEADER_LEN);
+  }
+
+  
+  return Transition::To(State::SKIP_SUB_BLOCKS, SUB_BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadNetscapeExtensionSubBlock(const char* aData)
+{
+  const uint8_t blockLength = aData[0];
+  if (blockLength == 0) {
+    
+    return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
+  }
+
+  
+  
+  const size_t extensionLength = max<uint8_t>(blockLength, 3);
+  return Transition::To(State::NETSCAPE_EXTENSION_DATA, extensionLength);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadNetscapeExtensionData(const char* aData)
+{
+  
+  
+  static const uint8_t NETSCAPE_LOOPING_EXTENSION_SUB_BLOCK_ID = 1;
+  static const uint8_t NETSCAPE_BUFFERING_EXTENSION_SUB_BLOCK_ID = 2;
+
+  const uint8_t subBlockID = aData[0] & 7;
+  switch (subBlockID) {
+    case NETSCAPE_LOOPING_EXTENSION_SUB_BLOCK_ID:
+      
+      mGIFStruct.loop_count = LittleEndian::readUint16(aData + 1);
+      return Transition::To(State::NETSCAPE_EXTENSION_SUB_BLOCK,
+                            SUB_BLOCK_HEADER_LEN);
+
+    case NETSCAPE_BUFFERING_EXTENSION_SUB_BLOCK_ID:
+      
+      return Transition::To(State::NETSCAPE_EXTENSION_SUB_BLOCK,
+                            SUB_BLOCK_HEADER_LEN);
+
+    default:
+      return Transition::TerminateFailure();
+  }
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadImageDescriptor(const char* aData)
+{
+  if (mGIFStruct.images_decoded == 1) {
+    if (!HasAnimation()) {
+      
+      
+      
+      
+      PostIsAnimated(0);
+    }
+
+    if (IsFirstFrameDecode()) {
+      
+      
+      FinishInternal();
+      return Transition::TerminateSuccess();
+    }
+
+    if (mDownscaler) {
+      MOZ_ASSERT_UNREACHABLE("Doing downscale-during-decode for an animated "
+                             "image?");
+      mDownscaler.reset();
+    }
+  }
+
+  IntRect frameRect;
+
+  
+  frameRect.x = LittleEndian::readUint16(aData + 0);
+  frameRect.y = LittleEndian::readUint16(aData + 2);
+  frameRect.width = LittleEndian::readUint16(aData + 4);
+  frameRect.height = LittleEndian::readUint16(aData + 6);
+
+  if (!mGIFStruct.images_decoded) {
+    
+    
+    
+    
+    
+    if (mGIFStruct.screen_height < frameRect.height ||
+        mGIFStruct.screen_width < frameRect.width ||
+        mGIFStruct.version == 87) {
+      mGIFStruct.screen_height = frameRect.height;
+      mGIFStruct.screen_width = frameRect.width;
+      frameRect.MoveTo(0, 0);
+    }
+
+    
+    BeginGIF();
+    if (HasError()) {
+      
+      return Transition::TerminateFailure();
+    }
+
+    
+    if (IsMetadataDecode()) {
+      CheckForTransparency(frameRect);
+      FinishInternal();
+      return Transition::TerminateSuccess();
+    }
+  }
+
+  
+  
+  if (frameRect.height == 0 || frameRect.width == 0) {
+    frameRect.height = mGIFStruct.screen_height;
+    frameRect.width = mGIFStruct.screen_width;
+
+    
+    if (frameRect.height == 0 || frameRect.width == 0) {
+      return Transition::TerminateFailure();
+    }
+  }
+
+  
+  bool haveLocalColorTable = false;
+  uint16_t depth = 0;
+  uint8_t packedFields = aData[8];
+
+  if (packedFields & PACKED_FIELDS_COLOR_TABLE_BIT) {
+    
+    depth = (packedFields & PACKED_FIELDS_TABLE_DEPTH_MASK) + 1;
+    haveLocalColorTable = true;
+  } else {
+    
+    depth = mGIFStruct.global_colormap_depth;
+  }
+
+  
+  
+  
+  
+  
+  uint16_t realDepth = depth;
+  while (mGIFStruct.tpixel >= (1 << realDepth) &&
+         realDepth < 8) {
+    realDepth++;
+  }
+
+  
+  mColorMask = 0xFF >> (8 - realDepth);
+
+  
+  const bool isInterlaced = packedFields & PACKED_FIELDS_INTERLACED_BIT;
+
+  
+  if (NS_FAILED(BeginImageFrame(frameRect, realDepth, isInterlaced))) {
+    return Transition::TerminateFailure();
+  }
+
+  
+  
+  
+  
+  
+  
+  memset(mImageData, 0, mImageDataLength);
+  if (mColormap) {
+    memset(mColormap, 0, mColormapSize);
+  }
+
+  
+  mGIFStruct.pixels_remaining = frameRect.width * frameRect.height;
+
+  if (haveLocalColorTable) {
+    
+    
+    mGIFStruct.local_colormap_size = 1 << depth;
+
+    if (mGIFStruct.images_decoded == 0) {
+      
+      
+      
+      mColormapSize = sizeof(uint32_t) << realDepth;
+      if (!mGIFStruct.local_colormap) {
+        mGIFStruct.local_colormap =
+          static_cast<uint32_t*>(moz_xmalloc(mColormapSize));
+      }
+      mColormap = mGIFStruct.local_colormap;
+    }
+
+    const size_t size = 3 << depth;
+    if (mColormapSize > size) {
+      
+      memset(reinterpret_cast<uint8_t*>(mColormap) + size, 0,
+             mColormapSize - size);
+    }
+
+    MOZ_ASSERT(mColorTablePos == 0);
+
+    
+    
+    return Transition::ToUnbuffered(State::FINISHED_LOCAL_COLOR_TABLE,
+                                    State::LOCAL_COLOR_TABLE,
+                                    size);
+  }
+
+  
+  
+  if (mGIFStruct.images_decoded > 0) {
+    memcpy(mColormap, mGIFStruct.global_colormap, mColormapSize);
+  } else {
+    mColormap = mGIFStruct.global_colormap;
+  }
+
+  return Transition::To(State::IMAGE_DATA_BLOCK, BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadLocalColorTable(const char* aData, size_t aLength)
+{
+  uint8_t* dest = reinterpret_cast<uint8_t*>(mColormap) + mColorTablePos;
+  memcpy(dest, aData, aLength);
+  mColorTablePos += aLength;
+  return Transition::ContinueUnbuffered(State::LOCAL_COLOR_TABLE);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::FinishedLocalColorTable()
+{
+  ConvertColormap(mColormap, mGIFStruct.local_colormap_size);
+  mColorTablePos = 0;
+  return Transition::To(State::IMAGE_DATA_BLOCK, BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadImageDataBlock(const char* aData)
+{
+  
+  if (mGIFStruct.is_transparent) {
+    
+    if (mColormap == mGIFStruct.global_colormap) {
+        mOldColor = mColormap[mGIFStruct.tpixel];
+    }
+    mColormap[mGIFStruct.tpixel] = 0;
+  }
+
+  
+  mGIFStruct.datasize = uint8_t(aData[0]);
+  const int clearCode = ClearCode();
+  if (mGIFStruct.datasize > MAX_LZW_BITS || clearCode >= MAX_BITS) {
+    return Transition::TerminateFailure();
+  }
+
+  mGIFStruct.avail = clearCode + 2;
+  mGIFStruct.oldcode = -1;
+  mGIFStruct.codesize = mGIFStruct.datasize + 1;
+  mGIFStruct.codemask = (1 << mGIFStruct.codesize) - 1;
+  mGIFStruct.datum = mGIFStruct.bits = 0;
+
+  
+  for (int i = 0; i < clearCode; i++) {
+    mGIFStruct.suffix[i] = i;
+  }
+
+  mGIFStruct.stackp = mGIFStruct.stack;
+
+  
+  return Transition::To(State::IMAGE_DATA_SUB_BLOCK, SUB_BLOCK_HEADER_LEN);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadImageDataSubBlock(const char* aData)
+{
+  const uint8_t subBlockLength = aData[0];
+  if (subBlockLength == 0) {
+    
+    EndImageFrame();
+    return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
+  }
+
+  if (mGIFStruct.pixels_remaining == 0) {
+    
+    
+    if (subBlockLength == GIF_TRAILER) {
+      
+      
+      FinishInternal();
+      return Transition::TerminateSuccess();
+    }
+
+    return Transition::To(State::IMAGE_DATA_SUB_BLOCK, SUB_BLOCK_HEADER_LEN);
+  }
+
+  
+  
+  
+  return Transition::ToUnbuffered(State::FINISHED_LZW_DATA,
+                                  State::LZW_DATA,
+                                  subBlockLength);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::ReadLZWData(const char* aData, size_t aLength)
+{
+  const uint8_t* data = reinterpret_cast<const uint8_t*>(aData);
+  size_t length = aLength;
+
+  while (length > 0 && mGIFStruct.pixels_remaining > 0) {
+    size_t bytesRead = 0;
+
+    auto result = mGIFStruct.images_decoded == 0
+      ? mPipe.WritePixels<uint32_t>([&]{ return YieldPixel<uint32_t>(data, length, &bytesRead); })
+      : mPipe.WritePixels<uint8_t>([&]{ return YieldPixel<uint8_t>(data, length, &bytesRead); });
+
+    if (MOZ_UNLIKELY(bytesRead > length)) {
+      MOZ_ASSERT_UNREACHABLE("Overread?");
+      bytesRead = length;
+    }
+
+    
+    data += bytesRead;
+    length -= bytesRead;
+
+    switch (result) {
+      case WriteState::NEED_MORE_DATA:
+        continue;
+
+      case WriteState::FINISHED:
+        NS_WARN_IF(mGIFStruct.pixels_remaining > 0);
+        mGIFStruct.pixels_remaining = 0;
+        break;
+
+      case WriteState::FAILURE:
+        return Transition::TerminateFailure();
+    }
+  }
+
+  
+  return Transition::ContinueUnbuffered(State::LZW_DATA);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::SkipSubBlocks(const char* aData)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  const uint8_t nextSubBlockLength = aData[0];
+  if (nextSubBlockLength == 0) {
+    
+    
+    return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
+  }
+
+  
+  return Transition::ToUnbuffered(State::FINISHED_SKIPPING_DATA,
+                                  State::SKIP_DATA_THEN_SKIP_SUB_BLOCKS,
+                                  nextSubBlockLength);
 }
 
 Telemetry::ID
