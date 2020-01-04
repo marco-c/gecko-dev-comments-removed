@@ -32,7 +32,7 @@ function run_test()
 
   for (var i = 0; i < tests.length; i++)
     tests[i]();
-    
+
   cleanup();
 }
 

@@ -1,7 +1,4 @@
 
- 
-
-
 
 
 function run_test() {
@@ -16,7 +13,7 @@ function run_test() {
     var file = getTestDB();
     var storageService = Components.classes["@mozilla.org/storage/service;1"].
                          getService(Components.interfaces.mozIStorageService);
-    var conn = storageService.openDatabase(file); 
+    var conn = storageService.openDatabase(file);
     var statement = conn.createStatement(sql);
     try {
       

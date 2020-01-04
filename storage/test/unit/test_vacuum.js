@@ -87,136 +87,129 @@ function run_test()
   run_next_test();
 }
 
-function run_next_test()
-{
-  if (TESTS.length == 0) {
-    Services.obs.notifyObservers(null, "test-options", "dispose");
-    do_test_finished();
-  }
-  else {
-    
-    Services.prefs.setIntPref("storage.vacuum.last.testVacuum.sqlite",
-                              parseInt(Date.now() / 1000 - 31 * 86400));
-    do_execute_soon(TESTS.shift());
-  }
-}
-
 const TESTS = [
 
-function test_common_vacuum()
-{
-  print("\n*** Test that a VACUUM correctly happens and all notifications are fired.");
-  
-  let beginVacuumReceived = false;
-  Services.obs.addObserver(function onVacuum(aSubject, aTopic, aData) {
-    Services.obs.removeObserver(onVacuum, aTopic);
-    beginVacuumReceived = true;
-  }, "test-begin-vacuum", false);
-
-  
-  let heavyIOTaskBeginReceived = false;
-  let heavyIOTaskEndReceived = false;
-  Services.obs.addObserver(function onVacuum(aSubject, aTopic, aData) {
-    if (heavyIOTaskBeginReceived && heavyIOTaskEndReceived) {
+  function test_common_vacuum()
+  {
+    print("\n*** Test that a VACUUM correctly happens and all notifications are fired.");
+    
+    let beginVacuumReceived = false;
+    Services.obs.addObserver(function onVacuum(aSubject, aTopic, aData) {
       Services.obs.removeObserver(onVacuum, aTopic);
+      beginVacuumReceived = true;
+    }, "test-begin-vacuum", false);
+
+    
+    let heavyIOTaskBeginReceived = false;
+    let heavyIOTaskEndReceived = false;
+    Services.obs.addObserver(function onVacuum(aSubject, aTopic, aData) {
+      if (heavyIOTaskBeginReceived && heavyIOTaskEndReceived) {
+        Services.obs.removeObserver(onVacuum, aTopic);
+      }
+
+      if (aData == "vacuum-begin") {
+        heavyIOTaskBeginReceived = true;
+      }
+      else if (aData == "vacuum-end") {
+        heavyIOTaskEndReceived = true;
+      }
+    }, "heavy-io-task", false);
+
+    
+    Services.obs.addObserver(function onVacuum(aSubject, aTopic, aData) {
+      Services.obs.removeObserver(onVacuum, aTopic);
+      print("Check we received onBeginVacuum");
+      do_check_true(beginVacuumReceived);
+      print("Check we received heavy-io-task notifications");
+      do_check_true(heavyIOTaskBeginReceived);
+      do_check_true(heavyIOTaskEndReceived);
+      print("Received onEndVacuum");
+      run_next_test();
+    }, "test-end-vacuum", false);
+
+    synthesize_idle_daily();
+  },
+
+  function test_skipped_if_recent_vacuum()
+  {
+    print("\n*** Test that a VACUUM is skipped if it was run recently.");
+    Services.prefs.setIntPref("storage.vacuum.last.testVacuum.sqlite",
+                              parseInt(Date.now() / 1000));
+
+    
+    let vacuumObserver = {
+      gotNotification: false,
+      observe: function VO_observe(aSubject, aTopic, aData) {
+        this.gotNotification = true;
+      },
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
+    };
+    Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
+
+    
+    do_timeout(2000, function () {
+      print("Check VACUUM did not run.");
+      do_check_false(vacuumObserver.gotNotification);
+      Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
+      run_next_test();
+    });
+
+    synthesize_idle_daily();
+  },
+
+  function test_page_size_change()
+  {
+    print("\n*** Test that a VACUUM changes page_size");
+
+    
+    
+    print("Check that page size was updated.");
+    let conn = getDatabase(new_db_file("testVacuum"));
+    let stmt = conn.createStatement("PRAGMA page_size");
+    try {
+      while (stmt.executeStep()) {
+        do_check_eq(stmt.row.page_size, conn.defaultPageSize);
+      }
+    }
+    finally {
+      stmt.finalize();
     }
 
-    if (aData == "vacuum-begin") {
-      heavyIOTaskBeginReceived = true;
-    }
-    else if (aData == "vacuum-end") {
-      heavyIOTaskEndReceived = true;
-    }
-  }, "heavy-io-task", false);
-
-  
-  Services.obs.addObserver(function onVacuum(aSubject, aTopic, aData) {
-    Services.obs.removeObserver(onVacuum, aTopic);
-    print("Check we received onBeginVacuum");
-    do_check_true(beginVacuumReceived);
-    print("Check we received heavy-io-task notifications");
-    do_check_true(heavyIOTaskBeginReceived);
-    do_check_true(heavyIOTaskEndReceived);
-    print("Received onEndVacuum");
     run_next_test();
-  }, "test-end-vacuum", false);
+  },
 
-  synthesize_idle_daily();
-},
+  function test_skipped_optout_vacuum()
+  {
+    print("\n*** Test that a VACUUM is skipped if the participant wants to opt-out.");
+    Services.obs.notifyObservers(null, "test-options", "opt-out");
 
-function test_skipped_if_recent_vacuum()
-{
-  print("\n*** Test that a VACUUM is skipped if it was run recently.");
-  Services.prefs.setIntPref("storage.vacuum.last.testVacuum.sqlite",
-                            parseInt(Date.now() / 1000));
+    
+    let vacuumObserver = {
+      gotNotification: false,
+      observe: function VO_observe(aSubject, aTopic, aData) {
+        this.gotNotification = true;
+      },
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
+    };
+    Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
 
-  
-  let vacuumObserver = {
-    gotNotification: false,
-    observe: function VO_observe(aSubject, aTopic, aData) {
-      this.gotNotification = true;
-    },
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
-  }
-  Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
+    
+    do_timeout(2000, function () {
+      print("Check VACUUM did not run.");
+      do_check_false(vacuumObserver.gotNotification);
+      Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
+      run_next_test();
+    });
 
-  
-  do_timeout(2000, function () {
-    print("Check VACUUM did not run.");
-    do_check_false(vacuumObserver.gotNotification);
-    Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
-    run_next_test();
-  });
-
-  synthesize_idle_daily();
-},
-
-function test_page_size_change()
-{
-  print("\n*** Test that a VACUUM changes page_size");
+    synthesize_idle_daily();
+  },
 
   
-  
-  print("Check that page size was updated.");
-  let conn = getDatabase(new_db_file("testVacuum"));
-  let stmt = conn.createStatement("PRAGMA page_size");
-  try {
-    while (stmt.executeStep()) {
-      do_check_eq(stmt.row.page_size,  conn.defaultPageSize);
-    }
-  }
-  finally {
-    stmt.finalize();
-  }
 
-  run_next_test();
-},
 
-function test_skipped_optout_vacuum()
-{
-  print("\n*** Test that a VACUUM is skipped if the participant wants to opt-out.");
-  Services.obs.notifyObservers(null, "test-options", "opt-out");
 
-  
-  let vacuumObserver = {
-    gotNotification: false,
-    observe: function VO_observe(aSubject, aTopic, aData) {
-      this.gotNotification = true;
-    },
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
-  }
-  Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
 
-  
-  do_timeout(2000, function () {
-    print("Check VACUUM did not run.");
-    do_check_false(vacuumObserver.gotNotification);
-    Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
-    run_next_test();
-  });
 
-  synthesize_idle_daily();
-},
 
 
 
@@ -278,40 +271,33 @@ function test_skipped_optout_vacuum()
 
 
 
+  function test_memory_database_crash()
+  {
+    print("\n*** Test that we don't crash trying to vacuum a memory database");
+    Services.obs.notifyObservers(null, "test-options", "memory");
 
+    
+    let vacuumObserver = {
+      gotNotification: false,
+      observe: function VO_observe(aSubject, aTopic, aData) {
+        this.gotNotification = true;
+      },
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
+    };
+    Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
 
+    
+    do_timeout(2000, function () {
+      print("Check VACUUM did not run.");
+      do_check_false(vacuumObserver.gotNotification);
+      Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
+      run_next_test();
+    });
 
-
-
-
-
-function test_memory_database_crash()
-{
-  print("\n*** Test that we don't crash trying to vacuum a memory database");
-  Services.obs.notifyObservers(null, "test-options", "memory");
+    synthesize_idle_daily();
+  },
 
   
-  let vacuumObserver = {
-    gotNotification: false,
-    observe: function VO_observe(aSubject, aTopic, aData) {
-      this.gotNotification = true;
-    },
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
-  }
-  Services.obs.addObserver(vacuumObserver, "test-begin-vacuum", false);
-
-  
-  do_timeout(2000, function () {
-    print("Check VACUUM did not run.");
-    do_check_false(vacuumObserver.gotNotification);
-    Services.obs.removeObserver(vacuumObserver, "test-begin-vacuum");
-    run_next_test();
-  });
-
-  synthesize_idle_daily();
-},
-
-
 
 
 
@@ -333,3 +319,17 @@ function test_memory_database_crash()
 
 
 ];
+
+function run_next_test()
+{
+  if (TESTS.length == 0) {
+    Services.obs.notifyObservers(null, "test-options", "dispose");
+    do_test_finished();
+  }
+  else {
+    
+    Services.prefs.setIntPref("storage.vacuum.last.testVacuum.sqlite",
+                              parseInt(Date.now() / 1000 - 31 * 86400));
+    do_execute_soon(TESTS.shift());
+  }
+}
