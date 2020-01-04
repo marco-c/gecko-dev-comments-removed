@@ -1890,9 +1890,11 @@ BluetoothServiceBluedroid::AdapterStateChangedNotification(bool aState)
 
   if (!mEnabled) {
     static void (* const sDeinitManager[])(BluetoothProfileResultHandler*) = {
-      BluetoothHfpManager::DeinitHfpInterface,
+      
+      BluetoothGattManager::DeinitGattInterface,
+      BluetoothAvrcpManager::DeinitAvrcpInterface,
       BluetoothA2dpManager::DeinitA2dpInterface,
-      BluetoothGattManager::DeinitGattInterface
+      BluetoothHfpManager::DeinitHfpInterface
     };
 
     
