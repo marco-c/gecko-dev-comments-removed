@@ -766,7 +766,11 @@ Sync11Service.prototype = {
           }
 
           
-          this.status.login = LOGIN_FAILED_LOGIN_REJECTED;
+          
+          
+          
+          
+          this.status.login = this.identity.loginStatusFromVerification404();
           return false;
 
         default:
@@ -990,6 +994,7 @@ Sync11Service.prototype = {
       }
 
       
+      this._log.info("Logging in the user.");
       let cb = Async.makeSpinningCallback();
       this.identity.ensureLoggedIn().then(
         () => cb(null),
@@ -1005,9 +1010,9 @@ Sync11Service.prototype = {
           && (username || password || passphrase)) {
         Svc.Obs.notify("weave:service:setup-complete");
       }
-      this._log.info("Logging in the user.");
       this._updateCachedURLs();
 
+      this._log.info("User logged in successfully - verifying login.");
       if (!this.verifyLogin()) {
         
         throw "Login failed: " + this.status.login;

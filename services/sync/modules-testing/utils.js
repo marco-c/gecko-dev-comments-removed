@@ -7,6 +7,7 @@
 this.EXPORTED_SYMBOLS = [
   "btoa", 
   "encryptPayload",
+  "isConfiguredWithLegacyIdentity",
   "ensureLegacyIdentityManager",
   "setBasicCredentials",
   "makeIdentityConfig",
@@ -92,6 +93,18 @@ this.waitForZeroTimer = function waitForZeroTimer(callback) {
     callback();
   }
   CommonUtils.namedTimer(wait, 150, {}, "timer");
+}
+
+
+
+
+this.isConfiguredWithLegacyIdentity = function() {
+  let ns = {};
+  Cu.import("resource://services-sync/service.js", ns);
+
+  
+  
+  return Object.getPrototypeOf(ns.Service.identity) === IdentityManager.prototype;
 }
 
 

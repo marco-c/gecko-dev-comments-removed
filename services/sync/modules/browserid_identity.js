@@ -692,6 +692,10 @@ this.BrowserIDManager.prototype = {
   _getAuthenticationHeader: function(httpObject, method) {
     let cb = Async.makeSpinningCallback();
     this._ensureValidToken().then(cb, cb);
+    
+    
+    
+    
     try {
       cb.wait();
     } catch (ex if !Async.isShutdownException(ex)) {
@@ -730,8 +734,17 @@ this.BrowserIDManager.prototype = {
 
   createClusterManager: function(service) {
     return new BrowserIDClusterManager(service);
-  }
+  },
 
+  
+  
+  
+  
+  
+  
+  loginStatusFromVerification404() {
+    return LOGIN_FAILED_NETWORK_ERROR;
+  },
 };
 
 
@@ -777,7 +790,7 @@ BrowserIDClusterManager.prototype = {
           
           
           if (this.service.clusterURL) {
-            log.debug("_findCluster found existing clusterURL, so discarding the current token");
+            log.debug("_findCluster has a pre-existing clusterURL, so discarding the current token");
             this.identity._token = null;
           }
           return this.identity._ensureValidToken();
