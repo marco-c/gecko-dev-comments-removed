@@ -937,8 +937,13 @@ nsAppShell::CheckPowerKey()
     
     
     
-    Preferences::SetCString("b2g.safe_mode",
-                            (powerState == AKEY_STATE_DOWN) ? "yes" : "no");
+    nsCOMPtr<nsIRunnable> prefSetter = 
+    NS_NewRunnableFunction([powerState] () -> void {
+        Preferences::SetCString("b2g.safe_mode",
+                                (powerState == AKEY_STATE_DOWN) ? "yes" : "no");
+    });
+    NS_DispatchToMainThread(prefSetter.forget());
+
     mPowerKeyChecked = true;
 }
 
