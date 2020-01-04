@@ -19,8 +19,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BookmarkHTMLUtils",
                                   "resource://gre/modules/BookmarkHTMLUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
-                                  "resource://gre/modules/PromiseUtils.jsm");
 
 var gMigrators = null;
 var gProfileStartup = null;
@@ -230,14 +228,7 @@ this.MigratorPrototype = {
       resources = resources.filter(r => aItems & r.type);
 
     
-    let unblockMainThread = function () {
-      return new Promise(resolve => {
-        Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
-      });
-    };
-
-    
-    let doMigrate = Task.async(function*() {
+    function doMigrate() {
       
       
       let resourcesGroupedByItems = new Map();
@@ -265,7 +256,6 @@ this.MigratorPrototype = {
         let itemSuccess = false;
         for (let res of itemResources) {
           let resource = res;
-          let completeDeferred = PromiseUtils.defer();
           let resourceDone = function(aSuccess) {
             let resourceIndex = itemResources.indexOf(resource);
             if (resourceIndex != -1) {
@@ -279,31 +269,23 @@ this.MigratorPrototype = {
                 if (resourcesGroupedByItems.size == 0)
                   notify("Migration:Ended");
               }
-              completeDeferred.resolve();
             }
           }
 
-          
-          
-          try {
-            resource.migrate(resourceDone);
-          }
-          catch(ex) {
-            Cu.reportError(ex);
-            resourceDone(false);
-          }
-
-          
-          
-          if (key == MigrationUtils.resourceTypes.BOOKMARKS ||
-              key == MigrationUtils.resourceTypes.HISTORY) {
-            yield completeDeferred.promise;
-          }
-
-          yield unblockMainThread();
+          Services.tm.mainThread.dispatch(function() {
+            
+            
+            try {
+              resource.migrate(resourceDone);
+            }
+            catch(ex) {
+              Cu.reportError(ex);
+              resourceDone(false);
+            }
+          }, Ci.nsIThread.DISPATCH_NORMAL);
         }
       }
-    });
+    }
 
     if (MigrationUtils.isStartupMigration && !this.startupOnlyMigrator) {
       MigrationUtils.profileStartup.doStartup();
