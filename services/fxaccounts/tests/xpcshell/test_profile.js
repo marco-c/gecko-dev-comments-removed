@@ -168,7 +168,7 @@ add_test(function fetchAndCacheProfile_ok() {
 
 
 
-add_task(function* fetchAndCacheProfileOnce() {
+add_task(function fetchAndCacheProfileOnce() {
   
   
   let resolveProfile;
@@ -205,7 +205,7 @@ add_task(function* fetchAndCacheProfileOnce() {
 
 
 
-add_task(function* fetchAndCacheProfileOnce() {
+add_task(function fetchAndCacheProfileOnce() {
   
   
   let rejectProfile;
@@ -251,7 +251,7 @@ add_task(function* fetchAndCacheProfileOnce() {
 
 
 
-add_task(function* fetchAndCacheProfileAfterThreshold() {
+add_task(function fetchAndCacheProfileAfterThreshold() {
   let numFetches = 0;
   let client = mockClient(mockFxa());
   client.fetchProfile = function () {
@@ -278,7 +278,7 @@ add_task(function* fetchAndCacheProfileAfterThreshold() {
 
 
 
-add_task(function* fetchAndCacheProfileBeforeThresholdOnNotification() {
+add_task(function fetchAndCacheProfileBeforeThresholdOnNotification() {
   let numFetches = 0;
   let client = mockClient(mockFxa());
   client.fetchProfile = function () {
