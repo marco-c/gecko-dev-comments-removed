@@ -1,4 +1,4 @@
-const kTransitionalProcessing = true;
+const kTransitionalProcessing = false;
 
 
 const labels = [

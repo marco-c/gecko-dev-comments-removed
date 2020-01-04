@@ -23,7 +23,7 @@
 
 
 
-const bool kIDNA2008_TransitionalProcessing = true;
+const bool kIDNA2008_TransitionalProcessing = false;
 
 #include "ICUUtils.h"
 #endif
