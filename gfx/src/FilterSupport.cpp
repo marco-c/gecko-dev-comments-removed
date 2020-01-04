@@ -310,6 +310,13 @@ FilterCachedColorModels::FilterCachedColorModels(DrawTarget* aDT,
 already_AddRefed<FilterNode>
 FilterCachedColorModels::ForColorModel(ColorModel aColorModel)
 {
+  if (aColorModel == mOriginalColorModel) {
+    
+    
+    RefPtr<FilterNode> filter = mFilterForColorModel[mOriginalColorModel.ToIndex()];
+    return filter.forget();
+  }
+
   if (!mFilterForColorModel[aColorModel.ToIndex()]) {
     mFilterForColorModel[aColorModel.ToIndex()] = WrapForColorModel(aColorModel);
   }
