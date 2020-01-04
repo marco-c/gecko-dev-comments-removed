@@ -247,7 +247,52 @@ struct VariantImplementation<N, T, Ts...>
   }
 };
 
+
+
+
+
+
+
+template <typename T>
+struct AsVariantTemporary
+{
+  explicit AsVariantTemporary(const T& aValue)
+    : mValue(aValue)
+  {}
+
+  template<typename U>
+  explicit AsVariantTemporary(U&& aValue)
+    : mValue(Forward<U>(aValue))
+  {}
+
+  AsVariantTemporary(const AsVariantTemporary& aOther)
+    : mValue(aOther.mValue)
+  {}
+
+  AsVariantTemporary(AsVariantTemporary&& aOther)
+    : mValue(Move(aOther.mValue))
+  {}
+
+  AsVariantTemporary() = delete;
+  void operator=(const AsVariantTemporary&) = delete;
+  void operator=(AsVariantTemporary&&) = delete;
+
+  typename RemoveConst<typename RemoveReference<T>::Type>::Type mValue;
+};
+
 } 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -392,6 +437,19 @@ public:
   }
 
   
+
+
+
+
+  template<typename RefT,
+           typename T = typename detail::SelectVariantType<RefT, Ts...>::Type>
+  MOZ_IMPLICIT Variant(detail::AsVariantTemporary<RefT>&& aValue)
+    : tag(Impl::template tag<T>())
+  {
+    new (ptr()) T(Move(aValue.mValue));
+  }
+
+  
   Variant(const Variant& aRhs)
     : tag(aRhs.tag)
   {
@@ -418,6 +476,15 @@ public:
     MOZ_ASSERT(&aRhs != this, "self-assign disallowed");
     this->~Variant();
     new (this) Variant(Move(aRhs));
+    return *this;
+  }
+
+  
+  template <typename T>
+  Variant& operator=(detail::AsVariantTemporary<T>&& aValue)
+  {
+    this->~Variant();
+    new (this) Variant(Move(aValue));
     return *this;
   }
 
@@ -501,6 +568,26 @@ public:
     return Impl::match(aMatcher, *this);
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+detail::AsVariantTemporary<T>
+AsVariant(T&& aValue)
+{
+  return detail::AsVariantTemporary<T>(Forward<T>(aValue));
+}
 
 } 
 
