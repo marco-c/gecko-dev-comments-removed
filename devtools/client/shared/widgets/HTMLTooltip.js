@@ -200,7 +200,7 @@ function HTMLTooltip(toolbox, {
     type = "normal",
     autofocus = false,
     consumeOutsideClicks = true,
-    useXulWrapper = true,
+    useXulWrapper = false,
   } = {}) {
   EventEmitter.decorate(this);
 
