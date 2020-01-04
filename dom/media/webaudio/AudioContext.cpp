@@ -841,6 +841,15 @@ AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState)
     return;
   }
 
+  
+  
+  
+  
+  if (mAudioContextState == AudioContextState::Closed &&
+      aNewState == AudioContextState::Suspended) {
+    return;
+  }
+
 #ifndef WIN32 
 #ifndef XP_MACOSX
 #ifdef DEBUG
