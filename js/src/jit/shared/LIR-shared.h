@@ -3209,6 +3209,20 @@ class LClzI : public LInstructionHelper<1, 1, 0>
 };
 
 
+class LCtzI : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(CtzI)
+    explicit LCtzI(const LAllocation& num) {
+        setOperand(0, num);
+    }
+
+    MCtz* mir() const {
+        return mir_->toCtz();
+    }
+};
+
+
 class LPopcntI : public LInstructionHelper<1, 1, 1>
 {
   public:
