@@ -20,6 +20,7 @@
 #include "nsCSSProperty.h"
 #include "nsColor.h"
 #include "nsCoord.h"
+#include "nsProxyRelease.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsStringBuffer.h"
@@ -95,11 +96,15 @@ struct URLValueData
   
   
   
-  URLValueData(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
-               nsIPrincipal* aOriginPrincipal);
+  URLValueData(nsStringBuffer* aString,
+               already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
+               already_AddRefed<PtrHolder<nsIURI>> aReferrer,
+               already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPricinpal);
   
-  URLValueData(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
-               nsIPrincipal* aOriginPrincipal);
+  URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
+               nsStringBuffer* aString,
+               already_AddRefed<PtrHolder<nsIURI>> aReferrer,
+               already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
 
   bool operator==(const URLValueData& aOther) const;
 
@@ -117,11 +122,11 @@ private:
   
   
   
-  mutable nsCOMPtr<nsIURI> mURI;
+  mutable PtrHandle<nsIURI> mURI;
 public:
   RefPtr<nsStringBuffer> mString;
-  nsCOMPtr<nsIURI> mReferrer;
-  nsCOMPtr<nsIPrincipal> mOriginPrincipal;
+  PtrHandle<nsIURI> mReferrer;
+  PtrHandle<nsIPrincipal> mOriginPrincipal;
 private:
   mutable bool mURIResolved;
 
@@ -131,12 +136,22 @@ private:
 
 struct URLValue : public URLValueData
 {
+  
   URLValue(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
-           nsIPrincipal* aOriginPrincipal)
-    : URLValueData(aString, aBaseURI, aReferrer, aOriginPrincipal) {}
+           nsIPrincipal* aOriginPrincipal);
   URLValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
-           nsIPrincipal* aOriginPrincipal)
-    : URLValueData(aURI, aString, aReferrer, aOriginPrincipal) {}
+           nsIPrincipal* aOriginPrincipal);
+
+  
+  URLValue(nsStringBuffer* aString,
+           already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
+           already_AddRefed<PtrHolder<nsIURI>> aReferrer,
+           already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal)
+    : URLValueData(aString, Move(aBaseURI), Move(aReferrer),
+                   Move(aOriginPrincipal)) {}
+
+  URLValue(const URLValue&) = delete;
+  URLValue& operator=(const URLValue&) = delete;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -144,7 +159,7 @@ protected:
   ~URLValue() {}
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(URLValue)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValue)
 };
 
 struct ImageValue : public URLValueData
@@ -153,8 +168,13 @@ struct ImageValue : public URLValueData
   
   
   
+  
+  
   ImageValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
              nsIPrincipal* aOriginPrincipal, nsIDocument* aDocument);
+
+  ImageValue(const ImageValue&) = delete;
+  ImageValue& operator=(const ImageValue&) = delete;
 
   
 
