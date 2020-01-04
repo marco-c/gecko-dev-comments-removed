@@ -20,6 +20,10 @@
 
 namespace mozilla {
 
+namespace dom {
+class DataStorageItem;
+}
+
 
 
 
@@ -83,6 +87,8 @@ enum DataStorageType {
 
 class DataStorage : public nsIObserver
 {
+  typedef dom::DataStorageItem DataStorageItem;
+
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -108,6 +114,9 @@ public:
   void Remove(const nsCString& aKey, DataStorageType aType);
   
   nsresult Clear();
+
+  
+  void GetAll(InfallibleTArray<DataStorageItem>* aItems);
 
 private:
   explicit DataStorage(const nsString& aFilename);
@@ -162,6 +171,10 @@ private:
   DataStorageTable& GetTableForType(DataStorageType aType,
                                     const MutexAutoLock& aProofOfLock);
 
+  void ReadAllFromTable(DataStorageType aType,
+                        InfallibleTArray<DataStorageItem>* aItems,
+                        const MutexAutoLock& aProofOfLock);
+
   Mutex mMutex; 
   DataStorageTable  mPersistentDataTable;
   DataStorageTable  mTemporaryDataTable;
@@ -172,6 +185,7 @@ private:
   uint32_t mTimerDelay; 
   bool mPendingWrite; 
   bool mShuttingDown;
+  bool mInitCalled; 
   
 
   Monitor mReadyMonitor; 

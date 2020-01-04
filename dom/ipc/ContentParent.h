@@ -742,6 +742,9 @@ private:
     virtual bool RecvReadPrefsArray(InfallibleTArray<PrefSetting>* aPrefs) override;
     virtual bool RecvReadFontList(InfallibleTArray<FontListEntry>* retValue) override;
 
+    virtual bool RecvReadDataStorageArray(const nsString& aFilename,
+                                          InfallibleTArray<DataStorageItem>* aValues) override;
+
     virtual bool RecvReadPermissions(InfallibleTArray<IPC::Permission>* aPermissions) override;
 
     virtual bool RecvSetClipboard(const IPCDataTransfer& aDataTransfer,
@@ -940,9 +943,6 @@ private:
 
     virtual bool RecvGetDeviceStorageLocation(const nsString& aType,
                                               nsString* aPath) override;
-
-    virtual bool RecvGetAndroidSystemInfo(AndroidSystemInfo* aInfo) override;
-
     
     
     
