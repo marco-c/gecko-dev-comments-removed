@@ -1162,7 +1162,7 @@ public abstract class GeckoApp
             enableStrictMode();
         }
 
-        if (!isSupportedSystem()) {
+        if (!HardwareUtils.isSupportedSystem()) {
             
             super.onCreate(savedInstanceState);
             showSDKVersionError();
@@ -2085,7 +2085,7 @@ public abstract class GeckoApp
 
     @Override
     public void onDestroy() {
-        if (!isSupportedSystem()) {
+        if (!HardwareUtils.isSupportedSystem()) {
             
             
             super.onDestroy();
@@ -2191,32 +2191,6 @@ public abstract class GeckoApp
             
             Process.killProcess(Process.myPid());
         }
-    }
-
-    protected boolean isSupportedSystem() {
-        if (Build.VERSION.SDK_INT < Versions.MIN_SDK_VERSION ||
-            Build.VERSION.SDK_INT > Versions.MAX_SDK_VERSION) {
-            return false;
-        }
-
-        
-        boolean isSystemARM = Build.CPU_ABI != null && Build.CPU_ABI.startsWith("arm");
-        boolean isSystemX86 = Build.CPU_ABI != null && Build.CPU_ABI.startsWith("x86");
-
-        boolean isAppARM = AppConstants.ANDROID_CPU_ARCH.startsWith("arm");
-        boolean isAppX86 = AppConstants.ANDROID_CPU_ARCH.startsWith("x86");
-
-        
-        if ((isSystemX86 && isAppARM) || (isSystemARM && isAppX86)) {
-            return false;
-        }
-
-        if ((isSystemX86 && isAppX86) || (isSystemARM && isAppARM)) {
-            return true;
-        }
-
-        Log.w(LOGTAG, "Unknown app/system ABI combination: " + AppConstants.MOZ_APP_ABI + " / " + Build.CPU_ABI);
-        return true;
     }
 
     public void showSDKVersionError() {
