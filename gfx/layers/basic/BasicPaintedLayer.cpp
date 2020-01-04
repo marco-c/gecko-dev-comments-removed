@@ -162,7 +162,8 @@ BasicPaintedLayer::Validate(LayerManager::DrawPaintedLayerCallback aCallback,
     mContentClient->BeginPaintBuffer(this, flags);
   mValidRegion.Sub(mValidRegion, state.mRegionToInvalidate);
 
-  if (DrawTarget* target = mContentClient->BorrowDrawTargetForPainting(state)) {
+  DrawTarget* target = mContentClient->BorrowDrawTargetForPainting(state);
+  if (target && target->IsValid()) {
     
     
     
@@ -183,16 +184,22 @@ BasicPaintedLayer::Validate(LayerManager::DrawPaintedLayerCallback aCallback,
     Mutated();
     ctx = nullptr;
     mContentClient->ReturnDrawTargetToBuffer(target);
+    target = nullptr;
 
     RenderTraceInvalidateEnd(this, "FFFF00");
   } else {
+    if (target) {
+      mContentClient->ReturnDrawTargetToBuffer(target);
+      target = nullptr;
+    }
+
     
     
     
     NS_WARN_IF_FALSE(state.mRegionToDraw.IsEmpty(),
                      "No context when we have something to draw, resource exhaustion?");
   }
-  
+
   for (uint32_t i = 0; i < readbackUpdates.Length(); ++i) {
     ReadbackProcessor::Update& update = readbackUpdates[i];
     nsIntPoint offset = update.mLayer->GetBackgroundLayerOffset();

@@ -586,15 +586,21 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
   
   
   
-  RefPtr<SourceSurface> surf = mFrontClient->BorrowDrawTarget()->Snapshot();
-  RefPtr<SourceSurface> surfOnWhite = mFrontClientOnWhite
-    ? mFrontClientOnWhite->BorrowDrawTarget()->Snapshot()
-    : nullptr;
-  SourceRotatedBuffer frontBuffer(surf,
-                                  surfOnWhite,
-                                  mFrontBufferRect,
-                                  mFrontBufferRotation);
-  UpdateDestinationFrom(frontBuffer, updateRegion);
+  gfx::DrawTarget* dt = mFrontClient->BorrowDrawTarget();
+  gfx::DrawTarget* dtw = mFrontClientOnWhite ? mFrontClientOnWhite->BorrowDrawTarget() : nullptr;
+  if (dt && dt->IsValid()) {
+    RefPtr<SourceSurface> surf = dt->Snapshot();
+    RefPtr<SourceSurface> surfOnWhite = dtw ? dtw->Snapshot() : nullptr;
+    SourceRotatedBuffer frontBuffer(surf,
+                                    surfOnWhite,
+                                    mFrontBufferRect,
+                                    mFrontBufferRotation);
+    UpdateDestinationFrom(frontBuffer, updateRegion);
+  } else {
+    
+    
+    gfxCriticalNote << "Invalid draw target(s) " << hexa(dt) << " and " << hexa(dtw);
+  }
 }
 
 void

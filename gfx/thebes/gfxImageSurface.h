@@ -77,8 +77,18 @@ public:
     gfxImageFormat Format() const { return mFormat; }
 
     virtual const mozilla::gfx::IntSize GetSize() const override { return mSize; }
-    int32_t Width() const { return mSize.width; }
-    int32_t Height() const { return mSize.height; }
+    int32_t Width() const {
+        if (mSize.width < 0) {
+            return 0;
+        }
+        return mSize.width;
+    }
+    int32_t Height() const {
+        if (mSize.height < 0) {
+            return 0;
+        }
+        return mSize.height;
+    }
 
     
 
@@ -93,7 +103,12 @@ public:
     
 
 
-    int32_t GetDataSize() const { return mStride*mSize.height; }
+    int32_t GetDataSize() const {
+        if (mStride < 0 || mSize.height < 0) {
+            return 0;
+        }
+        return mStride*mSize.height;
+    }
 
     
     bool CopyFrom (gfxImageSurface *other);
@@ -144,8 +159,12 @@ protected:
     void AllocateAndInit(long aStride, int32_t aMinimalAllocation, bool aClear);
     void InitFromSurface(cairo_surface_t *csurf);
 
-    long ComputeStride() const { return ComputeStride(mSize, mFormat); }
-
+    long ComputeStride() const { 
+        if (mSize.height < 0 || mSize.width < 0) {
+            return 0;
+        }
+        return ComputeStride(mSize, mFormat);
+    }
 
     void MakeInvalid();
 
