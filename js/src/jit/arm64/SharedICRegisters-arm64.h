@@ -49,9 +49,8 @@ static constexpr Register ExtractTemp1 = r25;
 
 
 
-
-static constexpr FloatRegister FloatReg0 = { FloatRegisters::v0, FloatRegisters::Single };
-static constexpr FloatRegister FloatReg1 = { FloatRegisters::v1, FloatRegisters::Single };
+static constexpr FloatRegister FloatReg0 = { FloatRegisters::d0, FloatRegisters::Double };
+static constexpr FloatRegister FloatReg1 = { FloatRegisters::d1, FloatRegisters::Double };
 
 } 
 } 
