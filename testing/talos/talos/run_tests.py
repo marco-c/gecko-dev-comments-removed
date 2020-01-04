@@ -169,7 +169,7 @@ def run_tests(config, browser_config):
     talos_results = TalosResults()
 
     
-    if not browser_config['develop']:
+    if not browser_config['develop'] and not config['sps_profile']:
         results_urls = dict(
             
             
@@ -185,6 +185,9 @@ def run_tests(config, browser_config):
     
     if config['e10s']:
         talos_results.add_extra_option('e10s')
+
+    if config['sps_profile']:
+        talos_results.add_extra_option('spsProfile')
 
     testname = None
     
@@ -224,7 +227,7 @@ def run_tests(config, browser_config):
     
     if results_urls:
         talos_results.output(results_urls)
-        if browser_config['develop']:
+        if browser_config['develop'] or config['sps_profile']:
             print ("Thanks for running Talos locally. Results are in %s"
                    % (results_urls['output_urls']))
 
