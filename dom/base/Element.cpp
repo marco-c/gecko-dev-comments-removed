@@ -3339,7 +3339,7 @@ Element::Animate(JSContext* aContext,
   
   RefPtr<KeyframeEffectReadOnly> effect =
     KeyframeEffectReadOnly::Constructor(global, this, frames,
-      TimingParams::FromOptionsUnion(aOptions), aError);
+      TimingParams::FromOptionsUnion(aOptions, this), aError);
   if (aError.Failed()) {
     return nullptr;
   }
