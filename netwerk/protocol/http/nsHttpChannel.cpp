@@ -1868,29 +1868,11 @@ nsHttpChannel::HandleAsyncRedirectChannelToHttps()
 nsresult
 nsHttpChannel::StartRedirectChannelToHttps()
 {
-    nsresult rv = NS_OK;
     LOG(("nsHttpChannel::HandleAsyncRedirectChannelToHttps() [STS]\n"));
 
     nsCOMPtr<nsIURI> upgradedURI;
-
-    rv = mURI->Clone(getter_AddRefs(upgradedURI));
+    nsresult rv = GetSecureUpgradedURI(mURI, getter_AddRefs(upgradedURI));
     NS_ENSURE_SUCCESS(rv,rv);
-
-    upgradedURI->SetScheme(NS_LITERAL_CSTRING("https"));
-
-    int32_t oldPort = -1;
-    rv = mURI->GetPort(&oldPort);
-    if (NS_FAILED(rv)) return rv;
-
-    
-    
-    
-    
-
-    if (oldPort == 80 || oldPort == -1)
-        upgradedURI->SetPort(-1);
-    else
-        upgradedURI->SetPort(oldPort);
 
     return StartRedirectChannelToURI(upgradedURI,
                                      nsIChannelEventSink::REDIRECT_PERMANENT |
