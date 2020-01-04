@@ -4,10 +4,10 @@
 
 
 
+#include "ssl.h"
 #include <functional>
 #include <memory>
 #include "secerr.h"
-#include "ssl.h"
 #include "sslerr.h"
 #include "sslproto.h"
 
@@ -53,8 +53,6 @@ TEST_P(TlsConnectGeneric, ConnectAlpn) {
 
 TEST_P(TlsConnectGeneric, ConnectAlpnClone) {
   EnsureModelSockets();
-  client_model_->EnableAlpn(alpn_dummy_val_, sizeof(alpn_dummy_val_));
-  server_model_->EnableAlpn(alpn_dummy_val_, sizeof(alpn_dummy_val_));
   Connect();
   CheckAlpn("a");
 }

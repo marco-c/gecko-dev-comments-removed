@@ -4,8 +4,8 @@
 
 
 
-#include "secerr.h"
 #include "ssl.h"
+#include "secerr.h"
 #include "sslerr.h"
 #include "sslproto.h"
 
@@ -22,19 +22,20 @@ extern "C" {
 
 namespace nss_test {
 
-TEST_P(TlsConnectTls13, ZeroRtt) {
+TEST_F(TlsConnectTest, DamageSecretHandleZeroRttClientFinished) {
   SetupForZeroRtt();
   client_->Set0RttEnabled(true);
   server_->Set0RttEnabled(true);
-  ExpectResumption(RESUME_TICKET);
-  ZeroRttSendReceive(true);
-  Handshake();
-  ExpectEarlyDataAccepted(true);
-  CheckConnected();
-  SendReceive();
+  client_->SetPacketFilter(new AfterRecordN(
+      client_, server_,
+      0,  
+      [this]() { SSLInt_DamageEarlyTrafficSecret(server_->ssl_fd()); }));
+  ConnectExpectFail();
+  client_->CheckErrorCode(SSL_ERROR_DECRYPT_ERROR_ALERT);
+  server_->CheckErrorCode(SSL_ERROR_BAD_HANDSHAKE_HASH_VALUE);
 }
 
-TEST_P(TlsConnectTls13, ZeroRttServerRejectByOption) {
+TEST_F(TlsConnectTest, ZeroRttServerRejectByOption) {
   SetupForZeroRtt();
   client_->Set0RttEnabled(true);
   ExpectResumption(RESUME_TICKET);
@@ -44,7 +45,7 @@ TEST_P(TlsConnectTls13, ZeroRttServerRejectByOption) {
   SendReceive();
 }
 
-TEST_P(TlsConnectTls13, ZeroRttServerForgetTicket) {
+TEST_F(TlsConnectTest, ZeroRttServerForgetTicket) {
   SetupForZeroRtt();
   client_->Set0RttEnabled(true);
   server_->Set0RttEnabled(true);
@@ -57,7 +58,11 @@ TEST_P(TlsConnectTls13, ZeroRttServerForgetTicket) {
   SendReceive();
 }
 
-TEST_P(TlsConnectTls13, ZeroRttServerOnly) {
+TEST_F(TlsConnectTest, ZeroRttServerOnly) {
+  client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
+                           SSL_LIBRARY_VERSION_TLS_1_3);
+  server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
+                           SSL_LIBRARY_VERSION_TLS_1_3);
   ExpectResumption(RESUME_NONE);
   server_->Set0RttEnabled(true);
   client_->StartConnect();
@@ -79,7 +84,19 @@ TEST_P(TlsConnectTls13, ZeroRttServerOnly) {
   CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
 }
 
-TEST_P(TlsConnectTls13, TestTls13ZeroRttAlpn) {
+TEST_F(TlsConnectTest, ZeroRtt) {
+  SetupForZeroRtt();
+  client_->Set0RttEnabled(true);
+  server_->Set0RttEnabled(true);
+  ExpectResumption(RESUME_TICKET);
+  ZeroRttSendReceive(true);
+  Handshake();
+  ExpectEarlyDataAccepted(true);
+  CheckConnected();
+  SendReceive();
+}
+
+TEST_F(TlsConnectTest, TestTls13ZeroRttAlpn) {
   EnableAlpn();
   SetupForZeroRtt();
   EnableAlpn();
@@ -98,8 +115,27 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttAlpn) {
 }
 
 
+TEST_F(TlsConnectTest, TestTls13ZeroRttAlpnChangeBoth) {
+  EnableAlpn();
+  SetupForZeroRtt();
+  static const uint8_t alpn[] = {0x01, 0x62};  
+  EnableAlpn(alpn, sizeof(alpn));
+  client_->Set0RttEnabled(true);
+  server_->Set0RttEnabled(true);
+  ExpectResumption(RESUME_TICKET);
+  ZeroRttSendReceive(false, [this]() {
+    client_->CheckAlpn(SSL_NEXT_PROTO_NO_SUPPORT);
+    return false;
+  });
+  Handshake();
+  CheckConnected();
+  SendReceive();
+  CheckAlpn("b");
+}
 
-TEST_P(TlsConnectTls13, TestTls13ZeroRttAlpnChangeServer) {
+
+
+TEST_F(TlsConnectTest, TestTls13ZeroRttAlpnChangeServer) {
   EnableAlpn();
   SetupForZeroRtt();
   static const uint8_t client_alpn[] = {0x01, 0x61, 0x01, 0x62};  
@@ -123,7 +159,7 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttAlpnChangeServer) {
 
 
 
-TEST_P(TlsConnectTls13, TestTls13ZeroRttNoAlpnServer) {
+TEST_F(TlsConnectTest, TestTls13ZeroRttNoAlpnServer) {
   EnableAlpn();
   SetupForZeroRtt();
   client_->Set0RttEnabled(true);
@@ -145,7 +181,7 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttNoAlpnServer) {
 
 
 
-TEST_P(TlsConnectTls13, TestTls13ZeroRttNoAlpnClient) {
+TEST_F(TlsConnectTest, TestTls13ZeroRttNoAlpnClient) {
   SetupForZeroRtt();
   client_->Set0RttEnabled(true);
   server_->Set0RttEnabled(true);
@@ -159,38 +195,6 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttNoAlpnClient) {
   Handshake();
   client_->CheckErrorCode(SSL_ERROR_NEXT_PROTOCOL_DATA_INVALID);
   server_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
-}
-
-
-TEST_P(TlsConnectTls13, TestTls13ZeroRttAlpnChangeBoth) {
-  EnableAlpn();
-  SetupForZeroRtt();
-  static const uint8_t alpn[] = {0x01, 0x62};  
-  EnableAlpn(alpn, sizeof(alpn));
-  client_->Set0RttEnabled(true);
-  server_->Set0RttEnabled(true);
-  ExpectResumption(RESUME_TICKET);
-  ZeroRttSendReceive(false, [this]() {
-    client_->CheckAlpn(SSL_NEXT_PROTO_NO_SUPPORT);
-    return false;
-  });
-  Handshake();
-  CheckConnected();
-  SendReceive();
-  CheckAlpn("b");
-}
-
-TEST_F(TlsConnectTest, DamageSecretHandleZeroRttClientFinished) {
-  SetupForZeroRtt();
-  client_->Set0RttEnabled(true);
-  server_->Set0RttEnabled(true);
-  client_->SetPacketFilter(new AfterRecordN(
-      client_, server_,
-      0,  
-      [this]() { SSLInt_DamageEarlyTrafficSecret(server_->ssl_fd()); }));
-  ConnectExpectFail();
-  client_->CheckErrorCode(SSL_ERROR_DECRYPT_ERROR_ALERT);
-  server_->CheckErrorCode(SSL_ERROR_BAD_HANDSHAKE_HASH_VALUE);
 }
 
 }  
