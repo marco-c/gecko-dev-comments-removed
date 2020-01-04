@@ -7,10 +7,10 @@
 #ifndef DecodedStream_h_
 #define DecodedStream_h_
 
-#include "nsTArray.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
 #include "MediaSink.h"
+#include "OutputStreamManager.h"
 
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Maybe.h"
@@ -20,73 +20,13 @@
 
 namespace mozilla {
 
-class DecodedStream;
 class DecodedStreamData;
 class MediaData;
-class MediaInputPort;
 class MediaStream;
-class MediaStreamGraph;
-class OutputStreamManager;
 class ProcessedMediaStream;
 class TimeStamp;
 
 template <class T> class MediaQueue;
-
-class OutputStreamData {
-public:
-  ~OutputStreamData();
-  void Init(OutputStreamManager* aOwner, ProcessedMediaStream* aStream);
-
-  
-  void Connect(MediaStream* aStream);
-  
-  
-  bool Disconnect();
-  
-  
-  bool Equals(MediaStream* aStream)
-  {
-    return mStream == aStream;
-  }
-  
-  MediaStreamGraph* Graph() const;
-
-private:
-  OutputStreamManager* mOwner;
-  RefPtr<ProcessedMediaStream> mStream;
-  
-  RefPtr<MediaInputPort> mPort;
-};
-
-class OutputStreamManager {
-public:
-  
-  void Add(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
-  
-  void Remove(MediaStream* aStream);
-  
-  bool IsEmpty() const
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mStreams.IsEmpty();
-  }
-  
-  void Connect(MediaStream* aStream);
-  
-  void Disconnect();
-  
-  MediaStreamGraph* Graph() const
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    return !IsEmpty() ? mStreams[0].Graph() : nullptr;
-  }
-
-private:
-  
-  
-  RefPtr<MediaStream> mInputStream;
-  nsTArray<OutputStreamData> mStreams;
-};
 
 class DecodedStream : public media::MediaSink {
   using media::MediaSink::PlaybackParams;
