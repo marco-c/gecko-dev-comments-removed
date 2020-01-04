@@ -66,6 +66,7 @@ included_inclnames_to_ignore = set([
     'jsautokw.h',               
     'jscustomallocator.h',      
     'js-config.h',              
+    'fdlibm.h',                 
     'pratom.h',                 
     'prcvar.h',                 
     'prerror.h',                
