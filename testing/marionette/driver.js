@@ -2325,8 +2325,7 @@ GeckoDriver.prototype.clearElement = function(cmd, resp) {
 
 
 GeckoDriver.prototype.getElementLocation = function(cmd, resp) {
-  resp.value = yield this.listener.getElementLocation(
-      {id: cmd.parameters.id});
+  return this.listener.getElementLocation(cmd.parameters.id);
 };
 
 
