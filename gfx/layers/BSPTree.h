@@ -15,25 +15,40 @@
 namespace mozilla {
 namespace layers {
 
-gfx::Polygon3D PopFront(std::deque<gfx::Polygon3D>& aPolygons);
+class Layer;
+
+
+struct LayerPolygon {
+  LayerPolygon(gfx::Polygon3D&& aGeometry, Layer *aLayer)
+    : layer(aLayer), geometry(Some(aGeometry)) {}
+
+  explicit LayerPolygon(Layer *aLayer)
+    : layer(aLayer) {}
+
+  Layer *layer;
+  Maybe<gfx::Polygon3D> geometry;
+};
+
+LayerPolygon PopFront(std::deque<LayerPolygon>& aLayers);
 
 
 
 
 struct BSPTreeNode {
-  explicit BSPTreeNode(gfx::Polygon3D && aPolygon)
+  explicit BSPTreeNode(LayerPolygon&& layer)
   {
-    polygons.push_back(std::move(aPolygon));
+    layers.push_back(std::move(layer));
   }
 
   const gfx::Polygon3D& First() const
   {
-    return polygons[0];
+    MOZ_ASSERT(layers[0].geometry);
+    return *layers[0].geometry;
   }
 
   UniquePtr<BSPTreeNode> front;
   UniquePtr<BSPTreeNode> back;
-  std::deque<gfx::Polygon3D> polygons;
+  std::deque<LayerPolygon> layers;
 };
 
 
@@ -46,10 +61,12 @@ struct BSPTreeNode {
 class BSPTree {
 public:
   
-  explicit BSPTree(std::deque<gfx::Polygon3D>& aPolygons)
-    : mRoot(new BSPTreeNode(PopFront(aPolygons)))
+  explicit BSPTree(std::deque<LayerPolygon>& aLayers)
   {
-    BuildTree(mRoot, aPolygons);
+    MOZ_ASSERT(!aLayers.empty());
+    mRoot.reset(new BSPTreeNode(PopFront(aLayers)));
+
+    BuildTree(mRoot, aLayers);
   }
 
   
@@ -59,31 +76,22 @@ public:
   }
 
   
-  nsTArray<gfx::Polygon3D> GetDrawOrder() const
+  nsTArray<LayerPolygon> GetDrawOrder() const
   {
-    nsTArray<gfx::Polygon3D> polygons;
-    BuildDrawOrder(mRoot, polygons);
-    return polygons;
+    nsTArray<LayerPolygon> layers;
+    BuildDrawOrder(mRoot, layers);
+    return layers;
   }
 
 private:
   UniquePtr<BSPTreeNode> mRoot;
 
+  
+  
   void BuildDrawOrder(const UniquePtr<BSPTreeNode>& aNode,
-                      nsTArray<gfx::Polygon3D>& aPolygons) const;
-
+                      nsTArray<LayerPolygon>& aLayers) const;
   void BuildTree(UniquePtr<BSPTreeNode>& aRoot,
-                 std::deque<gfx::Polygon3D>& aPolygons);
-
-  nsTArray<float> CalculateDotProduct(const gfx::Polygon3D& aFirst,
-                                      const gfx::Polygon3D& aSecond,
-                                      size_t& aPos, size_t& aNeg) const;
-
-  void SplitPolygon(const gfx::Polygon3D& aSplittingPlane,
-                    const gfx::Polygon3D& aPolygon,
-                    const nsTArray<float>& dots,
-                    nsTArray<gfx::Point3D>& backPoints,
-                    nsTArray<gfx::Point3D>& frontPoints);
+                 std::deque<LayerPolygon>& aLayers);
 };
 
 } 
