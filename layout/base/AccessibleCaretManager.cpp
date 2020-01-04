@@ -69,8 +69,6 @@ AccessibleCaretManager::sSelectionBarEnabled = false;
  bool
 AccessibleCaretManager::sCaretsExtendedVisibility = false;
  bool
-AccessibleCaretManager::sCaretsScriptUpdates = false;
- bool
 AccessibleCaretManager::sHapticFeedback = false;
 
 AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
@@ -91,8 +89,6 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
                                  "layout.accessiblecaret.bar.enabled");
     Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
                                  "layout.accessiblecaret.extendedvisibility");
-    Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
-      "layout.accessiblecaret.allow_script_change_updates");
     Preferences::AddBoolVarCache(&sHapticFeedback,
                                  "layout.accessiblecaret.hapticfeedback");
     addedPrefs = true;
@@ -133,7 +129,8 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
   
   if (aReason == nsISelectionListener::NO_REASON) {
     
-    if (sCaretsScriptUpdates &&
+    
+    if (sCaretsExtendedVisibility &&
         (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible())) {
         FlushLayout();
         UpdateCarets();
@@ -459,6 +456,11 @@ AccessibleCaretManager::TapCaret(const nsPoint& aPoint)
 nsresult
 AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
 {
+  auto UpdateCaretsWithHapticFeedback = [this] {
+    UpdateCarets();
+    ProvideHapticFeedback();
+  };
+
   if (!mPresShell) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -491,8 +493,7 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
     ChangeFocusToOrClearOldFocus(focusableFrame);
     
     
-    UpdateCarets();
-    ProvideHapticFeedback();
+    UpdateCaretsWithHapticFeedback();
     DispatchCaretStateChangedEvent(CaretChangedReason::Longpressonemptycontent);
     return NS_OK;
   }
@@ -517,13 +518,22 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   
   ChangeFocusToOrClearOldFocus(focusableFrame);
 
+  if (GetCaretMode() == CaretMode::Selection &&
+      !mFirstCaret->IsLogicallyVisible() && !mSecondCaret->IsLogicallyVisible()) {
+    
+    
+    
+    AC_LOG("%s: UpdateCarets() for current selection", __FUNCTION__);
+    UpdateCaretsWithHapticFeedback();
+    return NS_OK;
+  }
+
   
   nsPoint ptInFrame = aPoint;
   nsLayoutUtils::TransformPoint(rootFrame, ptFrame, ptInFrame);
 
   nsresult rv = SelectWord(ptFrame, ptInFrame);
-  UpdateCarets();
-  ProvideHapticFeedback();
+  UpdateCaretsWithHapticFeedback();
 
   return rv;
 }
