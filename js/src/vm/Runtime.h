@@ -1054,16 +1054,9 @@ struct JSRuntime : public JS::shadow::Runtime,
         return interpreterStack_;
     }
 
-    
-    
-    JSContext* maybeContextFromMainThread() {
+    JSContext* contextFromMainThread() {
         MOZ_ASSERT(CurrentThreadCanAccessRuntime(this));
         return context_;
-    }
-    JSContext* contextFromMainThread() {
-        JSContext* cx = maybeContextFromMainThread();
-        MOZ_ASSERT(cx);
-        return cx;
     }
 
     bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job, js::HandleObject promise);
@@ -1487,13 +1480,18 @@ struct JSRuntime : public JS::shadow::Runtime,
         return liveRuntimesCount > 0;
     }
 
-    explicit JSRuntime(JSRuntime* parentRuntime);
-    ~JSRuntime();
+  protected:
+    JSRuntime(JSContext* cx, JSRuntime* parentRuntime);
+
+    
+    
+    void destroyRuntime();
 
     bool init(uint32_t maxbytes, uint32_t maxNurseryBytes);
 
     JSRuntime* thisFromCtor() { return this; }
 
+  public:
     
 
 
