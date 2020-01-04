@@ -581,6 +581,7 @@ class InfluxRecordingMixin(object):
         self.recording = False
         self.post = None
         self.posturl = None
+        self.build_metrics_summary = None
         self.res_props = self.config.get('build_resources_path') % self.query_abs_dirs()
         self.info("build_resources.json path: %s" % self.res_props)
         if self.res_props:
@@ -727,6 +728,7 @@ class InfluxRecordingMixin(object):
                     "cpu_percent",
                 ],
             }
+
             
             
             
@@ -735,6 +737,13 @@ class InfluxRecordingMixin(object):
             iolen = len(resources['io_fields'])
             cpulen = len(resources['cpu_times_fields'])
 
+            if 'duration' in resources:
+                self.build_metrics_summary = {
+                    'name': 'build times',
+                    'value': resources['duration'],
+                    'subtests': [],
+                }
+
             
             
             data['points'].append(self._get_resource_usage(resources, 'TOTAL', iolen, cpulen))
@@ -742,6 +751,13 @@ class InfluxRecordingMixin(object):
             
             for tier in resources['tiers']:
                 data['points'].append(self._get_resource_usage(tier, tier['name'], iolen, cpulen))
+                if 'duration' not in tier:
+                    self.build_metrics_summary = None
+                elif self.build_metrics_summary:
+                    self.build_metrics_summary['subtests'].append({
+                        'name': tier['name'],
+                        'value': tier['duration'],
+                    })
 
             self.record_influx_stat([data])
 
