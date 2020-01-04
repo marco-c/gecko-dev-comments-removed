@@ -582,7 +582,6 @@ public:
      mDeltaY(aDeltaY),
      mLineOrPageDeltaX(0),
      mLineOrPageDeltaY(0),
-     mScrollSeriesNumber(0),
      mIsMomentum(false)
   {}
 
@@ -615,10 +614,6 @@ public:
   
   int32_t mLineOrPageDeltaX;
   int32_t mLineOrPageDeltaY;
-
-  
-  
-  uint32_t mScrollSeriesNumber;
 
   bool mIsMomentum;
 };

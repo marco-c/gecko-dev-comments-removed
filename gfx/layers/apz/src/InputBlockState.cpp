@@ -6,7 +6,6 @@
 
 #include "InputBlockState.h"
 #include "AsyncPanZoomController.h"         
-#include "AsyncScrollBase.h"                
 #include "gfxPrefs.h"                       
 #include "mozilla/MouseEvents.h"
 #include "mozilla/SizePrintfMacros.h"       
@@ -245,7 +244,6 @@ WheelBlockState::WheelBlockState(const RefPtr<AsyncPanZoomController>& aTargetAp
                                  bool aTargetConfirmed,
                                  const ScrollWheelInput& aInitialEvent)
   : CancelableBlockState(aTargetApzc, aTargetConfirmed)
-  , mScrollSeriesCounter(0)
   , mTransactionEnded(false)
 {
   sLastWheelBlockId = GetBlockId();
@@ -297,23 +295,13 @@ WheelBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aT
 }
 
 void
-WheelBlockState::Update(ScrollWheelInput& aEvent)
+WheelBlockState::Update(const ScrollWheelInput& aEvent)
 {
   
   
   if (!InTransaction()) {
     return;
   }
-
-  
-  
-  
-  
-  
-  if ((aEvent.mTimeStamp - mLastEventTime).ToMilliseconds() > kScrollSeriesTimeoutMs) {
-    mScrollSeriesCounter = 0;
-  }
-  aEvent.mScrollSeriesNumber = ++mScrollSeriesCounter;
 
   
   

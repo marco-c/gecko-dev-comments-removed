@@ -151,6 +151,8 @@ public:
                                           bool aAllowScrollSpeedOverride);
 
 protected:
+  static const uint32_t kScrollSeriesTimeout = 80; 
+
   static void BeginTransaction(nsIFrame* aTargetFrame,
                                WidgetWheelEvent* aEvent);
   
