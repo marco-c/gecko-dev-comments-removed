@@ -44,6 +44,44 @@ AndroidContentController::NotifyDefaultPrevented(IAPZCTreeManager* aManager,
 }
 
 void
+AndroidContentController::DispatchSingleTapToObservers(const LayoutDevicePoint& aPoint,
+                                                       const ScrollableLayerGuid& aGuid) const
+{
+    nsIContent* content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
+    nsIPresShell* shell = content
+        ? mozilla::layers::APZCCallbackHelper::GetRootContentDocumentPresShellForContent(content)
+        : nullptr;
+
+    if (!shell || !shell->GetPresContext()) {
+        return;
+    }
+
+    CSSPoint point = mozilla::layers::APZCCallbackHelper::ApplyCallbackTransform(
+        aPoint / shell->GetPresContext()->CSSToDevPixelScale(), aGuid);
+
+    if (shell->ScaleToResolution()) {
+        
+        
+        const float resolution = shell->GetResolution();
+        point.x /= resolution;
+        point.y /= resolution;
+    }
+
+    CSSIntPoint rounded = RoundedToInt(point);
+    nsAppShell::PostEvent([rounded] {
+        nsCOMPtr<nsIObserverService> obsServ =
+            mozilla::services::GetObserverService();
+        if (!obsServ) {
+            return;
+        }
+
+        nsPrintfCString data("{\"x\":%d,\"y\":%d}", rounded.x, rounded.y);
+        obsServ->NotifyObservers(nullptr, "Gesture:SingleTap",
+                                 NS_ConvertASCIItoUTF16(data).get());
+    });
+}
+
+void
 AndroidContentController::HandleTap(TapType aType, const LayoutDevicePoint& aPoint,
                                     Modifiers aModifiers,
                                     const ScrollableLayerGuid& aGuid,
@@ -55,38 +93,7 @@ AndroidContentController::HandleTap(TapType aType, const LayoutDevicePoint& aPoi
     
     
     if (NS_IsMainThread() && aType == TapType::eSingleTap) {
-        nsIContent* content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
-        nsIPresShell* shell = content
-            ? mozilla::layers::APZCCallbackHelper::GetRootContentDocumentPresShellForContent(content)
-            : nullptr;
-
-        if (!shell || !shell->GetPresContext()) {
-            return;
-        }
-
-        CSSPoint point = mozilla::layers::APZCCallbackHelper::ApplyCallbackTransform(
-            aPoint / shell->GetPresContext()->CSSToDevPixelScale(), aGuid);
-
-        if (shell->ScaleToResolution()) {
-            
-            
-            const float resolution = shell->GetResolution();
-            point.x /= resolution;
-            point.y /= resolution;
-        }
-
-        CSSIntPoint rounded = RoundedToInt(point);
-        nsAppShell::PostEvent([rounded] {
-            nsCOMPtr<nsIObserverService> obsServ =
-                mozilla::services::GetObserverService();
-            if (!obsServ) {
-                return;
-            }
-
-            nsPrintfCString data("{\"x\":%d,\"y\":%d}", rounded.x, rounded.y);
-            obsServ->NotifyObservers(nullptr, "Gesture:SingleTap",
-                                     NS_ConvertASCIItoUTF16(data).get());
-        });
+        DispatchSingleTapToObservers(aPoint, aGuid);
     }
 
     ChromeProcessController::HandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
