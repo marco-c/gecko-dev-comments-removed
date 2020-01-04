@@ -207,8 +207,6 @@ public:
 
   virtual media::TimeIntervals GetBuffered() = 0;
 
-  virtual int64_t GetEvictionOffset(media::TimeUnit aTime) = 0;
-
   
   
   virtual void BreakCycles()
