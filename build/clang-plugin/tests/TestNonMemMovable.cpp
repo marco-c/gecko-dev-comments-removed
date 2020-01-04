@@ -5,16 +5,16 @@
 
 
 
-struct MOZ_NON_MEMMOVABLE NonMovable {}; 
+struct MOZ_NON_MEMMOVABLE NonMovable {};
 struct Movable {};
 
 
-struct S_NonMovable : NonMovable {};
+struct S_NonMovable : NonMovable {}; 
 struct S_Movable : Movable {};
 
 
 struct W_NonMovable {
-  NonMovable m;
+  NonMovable m; 
 };
 struct W_Movable {
   Movable m;
@@ -22,23 +22,23 @@ struct W_Movable {
 
 
 struct WS_NonMovable {
-  S_NonMovable m;
+  S_NonMovable m; 
 };
 struct WS_Movable {
   S_Movable m;
 };
 
 
-struct SW_NonMovable : W_NonMovable {};
+struct SW_NonMovable : W_NonMovable {}; 
 struct SW_Movable : W_Movable {};
 
-struct SWS_NonMovable : WS_NonMovable {};
+struct SWS_NonMovable : WS_NonMovable {}; 
 struct SWS_Movable : WS_Movable {};
 
 
 template <class T>
 struct Template_Inline {
-  T m;
+  T m; 
 };
 
 template <class T>
@@ -50,7 +50,7 @@ template <class T>
 struct Template_Unused {};
 
 template <class T>
-struct MOZ_NON_MEMMOVABLE Template_NonMovable {}; 
+struct MOZ_NON_MEMMOVABLE Template_NonMovable {};
 
 
 
@@ -499,7 +499,7 @@ struct W_NeedyTemplate6 {
 template <class T>
 struct SW_NeedyTemplate6 : W_NeedyTemplate6<T> {};
 
-struct MOZ_NON_MEMMOVABLE NonMovable2 {}; 
+struct MOZ_NON_MEMMOVABLE NonMovable2 {};
 template <class T = NonMovable2>
 struct Defaulted_SW_NeedyTemplate6 {
   SW_NeedyTemplate6<T> m;
@@ -748,8 +748,8 @@ void good8() {
 
 
 
-struct MOZ_NON_MEMMOVABLE SpecializedNonMovable {}; 
-struct S_SpecializedNonMovable : SpecializedNonMovable {};
+struct MOZ_NON_MEMMOVABLE SpecializedNonMovable {};
+struct S_SpecializedNonMovable : SpecializedNonMovable {}; 
 
 
 template <>

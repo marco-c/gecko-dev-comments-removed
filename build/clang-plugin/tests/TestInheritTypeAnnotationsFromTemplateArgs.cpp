@@ -1,17 +1,37 @@
 #define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS                 \
   __attribute__((annotate("moz_inherit_type_annotations_from_template_args")))
 #define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
+#define MOZ_NON_MEMMOVABLE __attribute__((annotate("moz_non_memmovable")))
+#define MOZ_NEEDS_MEMMOVABLE_TYPE __attribute__((annotate("moz_needs_memmovable_type")))
 
 class Normal {};
 class MOZ_STACK_CLASS Stack {};
 class IndirectStack : Stack {}; 
+class ContainsStack { Stack m; }; 
+class MOZ_NON_MEMMOVABLE Pointery {};
+class IndirectPointery : Pointery {}; 
+class ContainsPointery { Pointery m; }; 
 
 template<class T>
 class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Template {}; 
 class IndirectTemplate : Template<Stack> {}; 
+class ContainsTemplate { Template<Stack> m; }; 
 
 static Template<Stack> a; 
 static Template<IndirectStack> b; 
-static Template<Normal> c;
+static Template<ContainsStack> c; 
 static IndirectTemplate d; 
+static ContainsTemplate e; 
+static Template<Normal> f;
 
+template<class T>
+class MOZ_NEEDS_MEMMOVABLE_TYPE Mover { char mForceInstantiation[sizeof(T)]; }; 
+class IndirectTemplatePointery : Template<Pointery> {}; 
+class ContainsTemplatePointery { Template<Pointery> m; }; 
+
+static Mover<Template<Pointery>> n; 
+static Mover<Template<IndirectPointery>> o; 
+static Mover<Template<ContainsPointery>> p; 
+static Mover<IndirectTemplatePointery> q; 
+static Mover<ContainsTemplatePointery> r; 
+static Mover<Template<Normal>> s;
