@@ -196,7 +196,10 @@ this.HawkClient.prototype = {
 
 
 
-  request: function(path, method, credentials=null, payloadObj={}, retryOK=true) {
+
+
+  request: function(path, method, credentials=null, payloadObj={}, extraHeaders = {},
+                    retryOK=true) {
     method = method.toLowerCase();
 
     let deferred = Promise.defer();
@@ -237,7 +240,7 @@ this.HawkClient.prototype = {
         
         log.debug("Received 401 for " + path + ": retrying");
         return deferred.resolve(
-            self.request(path, method, credentials, payloadObj, false));
+            self.request(path, method, credentials, payloadObj, extraHeaders, false));
       }
 
       
@@ -278,6 +281,7 @@ this.HawkClient.prototype = {
     let extra = {
       now: this.now(),
       localtimeOffsetMsec: this.localtimeOffsetMsec,
+      headers: extraHeaders
     };
 
     let request = this.newHAWKAuthenticatedRESTRequest(uri, credentials, extra);

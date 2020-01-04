@@ -50,6 +50,8 @@ const Prefs = new Preferences("services.common.rest.");
 
 
 
+
+
 this.HAWKAuthenticatedRESTRequest =
  function HawkAuthenticatedRESTRequest(uri, credentials, extra={}) {
   RESTRequest.call(this, uri);
@@ -58,6 +60,7 @@ this.HAWKAuthenticatedRESTRequest =
   this.now = extra.now || Date.now();
   this.localtimeOffsetMsec = extra.localtimeOffsetMsec || 0;
   this._log.trace("local time, offset: " + this.now + ", " + (this.localtimeOffsetMsec));
+  this.extraHeaders = extra.headers || {};
 
   
   this._intl = getIntl();
@@ -81,6 +84,10 @@ HAWKAuthenticatedRESTRequest.prototype = {
       let header = CryptoUtils.computeHAWK(this.uri, method, options);
       this.setHeader("Authorization", header.field);
       this._log.trace("hawk auth header: " + header.field);
+    }
+
+    for (let header in this.extraHeaders) {
+      this.setHeader(header, this.extraHeaders[header]);
     }
 
     this.setHeader("Content-Type", contentType);
