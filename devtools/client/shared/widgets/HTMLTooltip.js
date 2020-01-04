@@ -159,11 +159,11 @@ HTMLTooltip.prototype = {
 
     this.container.classList.add("tooltip-visible");
 
+    
+    this._focusedElement = this.doc.activeElement;
+
     this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
-	  this._focusedElement = this.doc.activeElement;
-      if (this.autofocus) {
-        this.panel.focus();
-      }
+      this._maybeFocusTooltip();
       this.topWindow.addEventListener("click", this._onClick, true);
       this.emit("shown");
     }, 0);
@@ -175,16 +175,18 @@ HTMLTooltip.prototype = {
 
   hide: function () {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
+    if (!this.isVisible()) {
+      return;
+    }
 
-    if (this.isVisible()) {
-      this.topWindow.removeEventListener("click", this._onClick, true);
-      this.container.classList.remove("tooltip-visible");
-      this.emit("hidden");
+    this.topWindow.removeEventListener("click", this._onClick, true);
+    this.container.classList.remove("tooltip-visible");
+    this.emit("hidden");
 
-      if (this.container.contains(this.doc.activeElement) && this._focusedElement) {
-        this._focusedElement.focus();
-        this._focusedElement = null;
-      }
+    let tooltipHasFocus = this.container.contains(this.doc.activeElement);
+    if (tooltipHasFocus && this._focusedElement) {
+      this._focusedElement.focus();
+      this._focusedElement = null;
     }
   },
 
@@ -233,16 +235,16 @@ HTMLTooltip.prototype = {
   },
 
   _isInTooltipContainer: function (node) {
-    let tooltipWindow = this.panel.ownerDocument.defaultView;
-    let win = node.ownerDocument.defaultView;
-
+    
     if (this.arrow && this.arrow === node) {
       return true;
     }
 
+    let tooltipWindow = this.panel.ownerDocument.defaultView;
+    let win = node.ownerDocument.defaultView;
+
+    
     if (win === tooltipWindow) {
-      
-      
       return this.panel.contains(node);
     }
 
@@ -353,7 +355,24 @@ HTMLTooltip.prototype = {
     return {top, right, bottom, left, width, height};
   },
 
+  
+
+
   _isXUL: function () {
     return this.doc.documentElement.namespaceURI === XUL_NS;
+  },
+
+  
+
+
+
+  _maybeFocusTooltip: function () {
+    
+    
+    let focusableSelector = "a, button, iframe, input, select, textarea";
+    let focusableElement = this.panel.querySelector(focusableSelector);
+    if (this.autofocus && focusableElement) {
+      focusableElement.focus();
+    }
   },
 };
