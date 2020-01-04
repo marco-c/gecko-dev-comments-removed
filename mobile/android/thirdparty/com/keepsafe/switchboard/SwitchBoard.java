@@ -178,45 +178,21 @@ public class SwitchBoard {
 
 
     public static boolean isInExperiment(Context c, String experimentName) {
-        return isInExperiment(c, experimentName, false);
-    }
+        final String config = Preferences.getDynamicConfigJson(c);
 
-    
-
-
-
-
-
-
-    public static boolean isInExperiment(Context c, String experimentName, boolean defaultReturnVal) {
-        
-        String config = Preferences.getDynamicConfigJson(c);
-
-        
-        if(config == null)
+        if (config == null) {
             return false;
-        else {
-
-            try {
-                JSONObject experiment = (JSONObject) new JSONObject(config).get(experimentName);
-                if(DEBUG) Log.d(TAG, "experiment " + experimentName + " JSON object: " + experiment.toString());
-                if(experiment == null)
-                    return defaultReturnVal;
-
-                boolean returnValue = defaultReturnVal;
-                returnValue = experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
-
-                return returnValue;
-            } catch (JSONException e) {
-                Log.e(TAG, "Config: " + config);
-                e.printStackTrace();
-
-            }
-
-            
-            return defaultReturnVal;
         }
 
+        try {
+            final JSONObject experiment = new JSONObject(config).getJSONObject(experimentName);
+            if(DEBUG) Log.d(TAG, "experiment " + experimentName + " JSON object: " + experiment.toString());
+
+            return experiment != null && experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error getting experiment from config", e);
+            return false;
+        }
     }
 
     

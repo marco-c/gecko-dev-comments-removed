@@ -54,16 +54,6 @@ public class Switch {
 
 
 
-
-
-    public boolean isActive(boolean defaultValue) {
-        return SwitchBoard.isInExperiment(context, experimentName, defaultValue);
-    }
-
-    
-
-
-
     public boolean hasValues() {
         return SwitchBoard.hasExperimentValues(context, experimentName);
     }
