@@ -3294,7 +3294,9 @@ TEST_F(WebRtcIceConnectTest, TestPollCandPairsAfterConnect) {
   ASSERT_TRUE(ContainsSucceededPair(pairs));
 }
 
-TEST_F(WebRtcIceConnectTest, TestHostCandPairingFilter) {
+
+
+TEST_F(WebRtcIceConnectTest, DISABLED_TestHostCandPairingFilter) {
   Init(false, false, false, false);
   AddStream("first", 1);
   ASSERT_TRUE(Gather());
