@@ -2998,6 +2998,8 @@ this.AddonManager = {
   SIGNEDSTATE_PRELIMINARY: 1,
   
   SIGNEDSTATE_SIGNED: 2,
+  
+  SIGNEDSTATE_SYSTEM: 3,
 
   
   

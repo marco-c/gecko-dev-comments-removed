@@ -1604,7 +1604,7 @@ this.XPIDatabaseReconcile = {
         
         let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.persistentDescriptor = aAddonState.descriptor;
-        aNewAddon = syncLoadManifestFromFile(file);
+        aNewAddon = syncLoadManifestFromFile(file, aInstallLocation);
       }
       
       if (aNewAddon.id != aId) {
@@ -1625,7 +1625,6 @@ this.XPIDatabaseReconcile = {
     }
 
     
-    aNewAddon._installLocation = aInstallLocation;
     aNewAddon.installDate = aAddonState.mtime;
     aNewAddon.updateDate = aAddonState.mtime;
 
@@ -1728,7 +1727,7 @@ this.XPIDatabaseReconcile = {
       if (!aNewAddon) {
         let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.persistentDescriptor = aAddonState.descriptor;
-        aNewAddon = syncLoadManifestFromFile(file);
+        aNewAddon = syncLoadManifestFromFile(file, aInstallLocation);
         applyBlocklistChanges(aOldAddon, aNewAddon);
 
         
@@ -1756,7 +1755,6 @@ this.XPIDatabaseReconcile = {
     }
 
     
-    aNewAddon._installLocation = aInstallLocation;
     aNewAddon.updateDate = aAddonState.mtime;
 
     
@@ -1814,7 +1812,7 @@ this.XPIDatabaseReconcile = {
         SIGNED_TYPES.has(aOldAddon.type)) {
       let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
       file.persistentDescriptor = aAddonState.descriptor;
-      let manifest = syncLoadManifestFromFile(file);
+      let manifest = syncLoadManifestFromFile(file, aInstallLocation);
       aOldAddon.signedState = manifest.signedState;
     }
     
