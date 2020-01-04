@@ -3688,10 +3688,10 @@ CacheFileIOManager::CheckAndCreateDir(nsIFile *aFile, const char *aDir,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!isEmpty) {
-      rv = TrashDirectory(file);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      exists = false;
+      
+      
+      
+      TrashDirectory(file);
     }
   }
 
