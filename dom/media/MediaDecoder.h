@@ -550,7 +550,7 @@ public:
   
   
   void DispatchPlaybackStarted() {
-    RefPtr<MediaDecoder> self = this;
+    nsRefPtr<MediaDecoder> self = this;
     nsCOMPtr<nsIRunnable> r =
       NS_NewRunnableFunction([self] () { self->mPlaybackStatistics->Start(); });
     AbstractThread::MainThread()->Dispatch(r.forget());
@@ -559,7 +559,7 @@ public:
   
   
   void DispatchPlaybackStopped() {
-    RefPtr<MediaDecoder> self = this;
+    nsRefPtr<MediaDecoder> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
       self->mPlaybackStatistics->Stop();
       self->ComputePlaybackRate();
@@ -658,11 +658,11 @@ public:
   MediaDecoderOwner* GetOwner() override;
 
 #ifdef MOZ_EME
-  typedef MozPromise<RefPtr<CDMProxy>, bool ,  true> CDMProxyPromise;
+  typedef MozPromise<nsRefPtr<CDMProxy>, bool ,  true> CDMProxyPromise;
 
   
   
-  RefPtr<CDMProxyPromise> RequestCDMProxy() const;
+  nsRefPtr<CDMProxyPromise> RequestCDMProxy() const;
 
   void SetCDMProxy(CDMProxy* aProxy);
 #endif
@@ -796,7 +796,7 @@ protected:
 
 
   
-  RefPtr<MediaResource> mResource;
+  nsRefPtr<MediaResource> mResource;
 
 private:
   
@@ -806,16 +806,11 @@ private:
   
   
   
-  RefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
-
-  
-  
-  
-  ReentrantMonitor mReentrantMonitor;
+  nsRefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
 
 #ifdef MOZ_EME
   MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
-  RefPtr<CDMProxyPromise> mCDMProxyPromise;
+  nsRefPtr<CDMProxyPromise> mCDMProxyPromise;
 #endif
 
 protected:
@@ -853,12 +848,12 @@ protected:
   
   FrameStatistics mFrameStats;
 
-  RefPtr<VideoFrameContainer> mVideoFrameContainer;
+  nsRefPtr<VideoFrameContainer> mVideoFrameContainer;
 
   
   
   
-  RefPtr<MediaChannelStatistics> mPlaybackStatistics;
+  nsRefPtr<MediaChannelStatistics> mPlaybackStatistics;
 
   
   
