@@ -322,7 +322,6 @@ class Simulator : public DecoderVisitor {
   ~Simulator();
 
   
-  explicit Simulator();
   void init(Decoder* decoder, FILE* stream);
   static Simulator* Current();
   static Simulator* Create();
@@ -975,6 +974,14 @@ class Simulator : public DecoderVisitor {
   
   bool print_exclusive_access_warning_;
   void PrintExclusiveAccessWarning();
+
+  
+  
+  bool oom_;
+
+ public:
+  
+  bool oom() const { return oom_; }
 
  protected:
   
