@@ -22,257 +22,257 @@ var Microformats;
     var modules = {};
 
 
-	modules.version = '1.3.3';
-	modules.livingStandard = '2015-09-25T12:26:04Z';
+    modules.version = '1.3.3';
+    modules.livingStandard = '2015-09-25T12:26:04Z';
 
-	
+    
 
 
 
-	modules.Parser = function () {
-		this.rootPrefix = 'h-';
-		this.propertyPrefixes = ['p-', 'dt-', 'u-', 'e-'];
-		this.excludeTags = ['br', 'hr'];
-	};
+    modules.Parser = function () {
+        this.rootPrefix = 'h-';
+        this.propertyPrefixes = ['p-', 'dt-', 'u-', 'e-'];
+        this.excludeTags = ['br', 'hr'];
+    };
 
 
-	
-	modules.maps = (modules.maps)? modules.maps : {};
-	modules.rels = (modules.rels)? modules.rels : {};
+    
+    modules.maps = (modules.maps)? modules.maps : {};
+    modules.rels = (modules.rels)? modules.rels : {};
 
 
-	modules.Parser.prototype = {
+    modules.Parser.prototype = {
 
-		init: function(){
-			this.rootNode = null;
-			this.document = null;
-			this.options = {
-				'baseUrl': '',
-				'filters': [],
-				'textFormat': 'whitespacetrimmed',
-				'dateFormat': 'auto', 
-				'overlappingVersions': false,
-				'impliedPropertiesByVersion': true,
-				'parseLatLonGeo': false
-			};
-			this.rootID = 0;
-			this.errors = [];
-			this.noContentErr = 'No options.node or options.html was provided and no document object could be found.';
-		},
+        init: function(){
+            this.rootNode = null;
+            this.document = null;
+            this.options = {
+                'baseUrl': '',
+                'filters': [],
+                'textFormat': 'whitespacetrimmed',
+                'dateFormat': 'auto', 
+                'overlappingVersions': false,
+                'impliedPropertiesByVersion': true,
+                'parseLatLonGeo': false
+            };
+            this.rootID = 0;
+            this.errors = [];
+            this.noContentErr = 'No options.node or options.html was provided and no document object could be found.';
+        },
 
 
-		
+        
 
 
 
 
 
-		get: function(options) {
-			var out = this.formatEmpty(),
-				data = [],
-				rels;
+        get: function(options) {
+            var out = this.formatEmpty(),
+                data = [],
+                rels;
 
-			this.init();
-			options = (options)? options : {};
-			this.mergeOptions(options);
-			this.getDOMContext( options );
+            this.init();
+            options = (options)? options : {};
+            this.mergeOptions(options);
+            this.getDOMContext( options );
 
-			
-			if(!this.rootNode || !this.document){
-				this.errors.push(this.noContentErr);
-			}else{
+            
+            if(!this.rootNode || !this.document){
+                this.errors.push(this.noContentErr);
+            }else{
 
-				
-				
-				if(this.hasMicroformats(this.rootNode, options)){
-					this.prepareDOM( options );
+                
+                
+                if(this.hasMicroformats(this.rootNode, options)){
+                    this.prepareDOM( options );
 
-					if(this.options.filters.length > 0){
-						
-						var newRootNode = this.findFilterNodes(this.rootNode, this.options.filters);
-						data = this.walkRoot(newRootNode);
-					}else{
-						
-						data = this.walkRoot(this.rootNode);
-					}
+                    if(this.options.filters.length > 0){
+                        
+                        var newRootNode = this.findFilterNodes(this.rootNode, this.options.filters);
+                        data = this.walkRoot(newRootNode);
+                    }else{
+                        
+                        data = this.walkRoot(this.rootNode);
+                    }
 
-					out.items = data;
-					
-					if(modules.domUtils.canCloneDocument(this.document) === false){
-						this.clearUpDom(this.rootNode);
-					}
-				}
+                    out.items = data;
+                    
+                    if(modules.domUtils.canCloneDocument(this.document) === false){
+                        this.clearUpDom(this.rootNode);
+                    }
+                }
 
-				
-				if(this.findRels){
-					rels = this.findRels(this.rootNode);
-					out.rels = rels.rels;
-					out['rel-urls'] = rels['rel-urls'];
-				}
+                
+                if(this.findRels){
+                    rels = this.findRels(this.rootNode);
+                    out.rels = rels.rels;
+                    out['rel-urls'] = rels['rel-urls'];
+                }
 
-			}
+            }
 
-			if(this.errors.length > 0){
-				return this.formatError();
-			}
-			return out;
-		},
+            if(this.errors.length > 0){
+                return this.formatError();
+            }
+            return out;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		getParent: function(node, options) {
-			this.init();
-			options = (options)? options : {};
+        getParent: function(node, options) {
+            this.init();
+            options = (options)? options : {};
 
-			if(node){
-				return this.getParentTreeWalk(node, options);
-			}else{
-				this.errors.push(this.noContentErr);
-				return this.formatError();
-			}
-		},
+            if(node){
+                return this.getParentTreeWalk(node, options);
+            }else{
+                this.errors.push(this.noContentErr);
+                return this.formatError();
+            }
+        },
 
 
-	    
+        
 
 
 
 
 
-		count: function( options ) {
-			var out = {},
-				items,
-				classItems,
-				x,
-				i;
+        count: function( options ) {
+            var out = {},
+                items,
+                classItems,
+                x,
+                i;
 
-			this.init();
-			options = (options)? options : {};
-			this.getDOMContext( options );
+            this.init();
+            options = (options)? options : {};
+            this.getDOMContext( options );
 
-			
-			if(!this.rootNode || !this.document){
-				return {'errors': [this.noContentErr]};
-			}else{
+            
+            if(!this.rootNode || !this.document){
+                return {'errors': [this.noContentErr]};
+            }else{
 
-				items = this.findRootNodes( this.rootNode, true );
-				i = items.length;
-				while(i--) {
-					classItems = modules.domUtils.getAttributeList(items[i], 'class');
-					x = classItems.length;
-					while(x--) {
-						
-						if(modules.utils.startWith( classItems[x], 'h-' )){
-							this.appendCount(classItems[x], 1, out);
-						}
-						
-						for(var key in modules.maps) {
-							
-							if(modules.maps[key].root === classItems[x] && classItems.indexOf(key) === -1) {
-								this.appendCount(key, 1, out);
-							}
-						}
-					}
-				}
-				var relCount = this.countRels( this.rootNode );
-				if(relCount > 0){
-					out.rels = relCount;
-				}
+                items = this.findRootNodes( this.rootNode, true );
+                i = items.length;
+                while(i--) {
+                    classItems = modules.domUtils.getAttributeList(items[i], 'class');
+                    x = classItems.length;
+                    while(x--) {
+                        
+                        if(modules.utils.startWith( classItems[x], 'h-' )){
+                            this.appendCount(classItems[x], 1, out);
+                        }
+                        
+                        for(var key in modules.maps) {
+                            
+                            if(modules.maps[key].root === classItems[x] && classItems.indexOf(key) === -1) {
+                                this.appendCount(key, 1, out);
+                            }
+                        }
+                    }
+                }
+                var relCount = this.countRels( this.rootNode );
+                if(relCount > 0){
+                    out.rels = relCount;
+                }
 
-				return out;
-			}
-		},
+                return out;
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		isMicroformat: function( node, options ) {
-			var classes,
-				i;
+        isMicroformat: function( node, options ) {
+            var classes,
+                i;
 
-			if(!node){
-				return false;
-			}
+            if(!node){
+                return false;
+            }
 
-			
-			node = modules.domUtils.getTopMostNode( node );
+            
+            node = modules.domUtils.getTopMostNode( node );
 
-			
-			classes = this.getUfClassNames(node);
-			if(options && options.filters && modules.utils.isArray(options.filters)){
-				i = options.filters.length;
-				while(i--) {
-					if(classes.root.indexOf(options.filters[i]) > -1){
-						return true;
-					}
-				}
-				return false;
-			}else{
-				return (classes.root.length > 0);
-			}
-		},
+            
+            classes = this.getUfClassNames(node);
+            if(options && options.filters && modules.utils.isArray(options.filters)){
+                i = options.filters.length;
+                while(i--) {
+                    if(classes.root.indexOf(options.filters[i]) > -1){
+                        return true;
+                    }
+                }
+                return false;
+            }else{
+                return (classes.root.length > 0);
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		hasMicroformats: function( node, options ) {
-			var items,
-				i;
+        hasMicroformats: function( node, options ) {
+            var items,
+                i;
 
-			if(!node){
-				return false;
-			}
+            if(!node){
+                return false;
+            }
 
-			
-			node = modules.domUtils.getTopMostNode( node );
+            
+            node = modules.domUtils.getTopMostNode( node );
 
-			
-			items = this.findRootNodes( node, true );
-			if(options && options.filters && modules.utils.isArray(options.filters)){
-				i = items.length;
-				while(i--) {
-					if( this.isMicroformat( items[i], options ) ){
-						return true;
-					}
-				}
-				return false;
-			}else{
-				return (items.length > 0);
-			}
-		},
+            
+            items = this.findRootNodes( node, true );
+            if(options && options.filters && modules.utils.isArray(options.filters)){
+                i = items.length;
+                while(i--) {
+                    if( this.isMicroformat( items[i], options ) ){
+                        return true;
+                    }
+                }
+                return false;
+            }else{
+                return (items.length > 0);
+            }
+        },
 
 
-		
+        
 
 
 
 
-		add: function( maps ){
-			maps.forEach(function(map){
-				if(map && map.root && map.name && map.properties){
-				modules.maps[map.name] = JSON.parse(JSON.stringify(map));
-				}
-			});
-		},
+        add: function( maps ){
+            maps.forEach(function(map){
+                if(map && map.root && map.name && map.properties){
+                modules.maps[map.name] = JSON.parse(JSON.stringify(map));
+                }
+            });
+        },
 
 
-		
+        
 
 
 
@@ -280,53 +280,53 @@ var Microformats;
 
 
 
-		getParentTreeWalk: function (node, options, recursive) {
-			options = (options)? options : {};
+        getParentTreeWalk: function (node, options, recursive) {
+            options = (options)? options : {};
 
-			
-		    if (recursive === undefined) {
-		        if (node.parentNode && node.nodeName !== 'HTML'){
-		            return this.getParentTreeWalk(node.parentNode, options, true);
-				}else{
-		            return this.formatEmpty();
-				}
-		    }
-		    if (node !== null && node !== undefined && node.parentNode) {
-		        if (this.isMicroformat( node, options )) {
-					
-					options.node = node;
-		            return this.get( options );
-		        }else{
-		            return this.getParentTreeWalk(node.parentNode, options, true);
-		        }
-		    }else{
-		        return this.formatEmpty();
-		    }
-		},
+            
+            if (recursive === undefined) {
+                if (node.parentNode && node.nodeName !== 'HTML'){
+                    return this.getParentTreeWalk(node.parentNode, options, true);
+                }else{
+                    return this.formatEmpty();
+                }
+            }
+            if (node !== null && node !== undefined && node.parentNode) {
+                if (this.isMicroformat( node, options )) {
+                    
+                    options.node = node;
+                    return this.get( options );
+                }else{
+                    return this.getParentTreeWalk(node.parentNode, options, true);
+                }
+            }else{
+                return this.formatEmpty();
+            }
+        },
 
 
 
-		
+        
 
 
 
 
-		getDOMContext: function( options ){
-			var nodes = modules.domUtils.getDOMContext( options );
-			this.rootNode = nodes.rootNode;
-			this.document = nodes.document;
-		},
+        getDOMContext: function( options ){
+            var nodes = modules.domUtils.getDOMContext( options );
+            this.rootNode = nodes.rootNode;
+            this.document = nodes.document;
+        },
 
 
-		
+        
 
 
 
 
 
-		prepareDOM: function( options ){
-			var baseTag,
-				href;
+        prepareDOM: function( options ){
+            var baseTag,
+                href;
 
             
             try {
@@ -338,277 +338,277 @@ var Microformats;
             }
 
 
-			
-			baseTag = modules.domUtils.querySelector(this.document,'base');
-			if(baseTag) {
-				href = modules.domUtils.getAttribute(baseTag, 'href');
-				if(href){
-					this.options.baseUrl = href;
-				}
-			}
+            
+            baseTag = modules.domUtils.querySelector(this.document,'base');
+            if(baseTag) {
+                href = modules.domUtils.getAttribute(baseTag, 'href');
+                if(href){
+                    this.options.baseUrl = href;
+                }
+            }
 
-			
-			
-			
-			var path,
-				newDocument,
-				newRootNode;
+            
+            
+            
+            var path,
+                newDocument,
+                newRootNode;
 
-			path = modules.domUtils.getNodePath(this.rootNode);
-			newDocument = modules.domUtils.cloneDocument(this.document);
-			newRootNode = modules.domUtils.getNodeByPath(newDocument, path);
+            path = modules.domUtils.getNodePath(this.rootNode);
+            newDocument = modules.domUtils.cloneDocument(this.document);
+            newRootNode = modules.domUtils.getNodeByPath(newDocument, path);
 
-			
-			if(newDocument && newRootNode){
-				this.document = newDocument;
-				this.rootNode = newRootNode;
-			}
+            
+            if(newDocument && newRootNode){
+                this.document = newDocument;
+                this.rootNode = newRootNode;
+            }
 
-			
-			if(this.addIncludes){
-				this.addIncludes( this.document );
-			}
+            
+            if(this.addIncludes){
+                this.addIncludes( this.document );
+            }
 
-			return (this.rootNode && this.document);
-		},
+            return (this.rootNode && this.document);
+        },
 
 
-		
+        
 
 
 
 
-		formatError: function(){
-			var out = this.formatEmpty();
-			out.errors = this.errors;
-			return out;
-		},
+        formatError: function(){
+            var out = this.formatEmpty();
+            out.errors = this.errors;
+            return out;
+        },
 
 
-		
+        
 
 
 
 
-		formatEmpty: function(){
-			return {
-			    'items': [],
-			    'rels': {},
-			    'rel-urls': {}
-			};
-		},
+        formatEmpty: function(){
+            return {
+                'items': [],
+                'rels': {},
+                'rel-urls': {}
+            };
+        },
 
 
-		
-		findFilterNodes: function(rootNode, filters) {
-			var newRootNode = modules.domUtils.createNode('div'),
-				items = this.findRootNodes(rootNode, true),
-				i = 0,
-				x = 0,
-				y = 0;
+        
+        findFilterNodes: function(rootNode, filters) {
+            var newRootNode = modules.domUtils.createNode('div'),
+                items = this.findRootNodes(rootNode, true),
+                i = 0,
+                x = 0,
+                y = 0;
 
-			if(items){
-				i = items.length;
-				while(x < i) {
-					
-					y = filters.length;
-					while (y--) {
-						if(this.getMapping(filters[y])){
-							var v1Name = this.getMapping(filters[y]).root;
-							filters.push(v1Name);
-						}
-					}
-					
-					y = filters.length;
-					while (y--) {
-						if(modules.domUtils.hasAttributeValue(items[x], 'class', filters[y])){
-							var clone = modules.domUtils.clone(items[x]);
-							modules.domUtils.appendChild(newRootNode, clone);
-							break;
-						}
-					}
-					x++;
-				}
-			}
+            if(items){
+                i = items.length;
+                while(x < i) {
+                    
+                    y = filters.length;
+                    while (y--) {
+                        if(this.getMapping(filters[y])){
+                            var v1Name = this.getMapping(filters[y]).root;
+                            filters.push(v1Name);
+                        }
+                    }
+                    
+                    y = filters.length;
+                    while (y--) {
+                        if(modules.domUtils.hasAttributeValue(items[x], 'class', filters[y])){
+                            var clone = modules.domUtils.clone(items[x]);
+                            modules.domUtils.appendChild(newRootNode, clone);
+                            break;
+                        }
+                    }
+                    x++;
+                }
+            }
 
-			return newRootNode;
-		},
+            return newRootNode;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		appendCount: function(name, count, out){
-			if(out[name]){
-				out[name] = out[name] + count;
-			}else{
-				out[name] = count;
-			}
-		},
+        appendCount: function(name, count, out){
+            if(out[name]){
+                out[name] = out[name] + count;
+            }else{
+                out[name] = count;
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		shouldInclude: function(uf, filters) {
-			var i;
+        shouldInclude: function(uf, filters) {
+            var i;
 
-			if(modules.utils.isArray(filters) && filters.length > 0) {
-				i = filters.length;
-				while(i--) {
-					if(uf.type[0] === filters[i]) {
-						return true;
-					}
-				}
-				return false;
-			} else {
-				return true;
-			}
-		},
+            if(modules.utils.isArray(filters) && filters.length > 0) {
+                i = filters.length;
+                while(i--) {
+                    if(uf.type[0] === filters[i]) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                return true;
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		findRootNodes: function(rootNode, includeRoot) {
-			var arr = null,
-				out = [],
-				classList = [],
-				items,
-				x,
-				i,
-				y,
-				key;
+        findRootNodes: function(rootNode, includeRoot) {
+            var arr = null,
+                out = [],
+                classList = [],
+                items,
+                x,
+                i,
+                y,
+                key;
 
 
-			
-			for(key in modules.maps) {
-				if (modules.maps.hasOwnProperty(key)) {
-					classList.push(modules.maps[key].root);
-				}
-			}
+            
+            for(key in modules.maps) {
+                if (modules.maps.hasOwnProperty(key)) {
+                    classList.push(modules.maps[key].root);
+                }
+            }
 
-			
-			includeRoot = (includeRoot) ? includeRoot : false;
-			if(includeRoot && rootNode.parentNode) {
-				arr = modules.domUtils.getNodesByAttribute(rootNode.parentNode, 'class');
-			} else {
-				arr = modules.domUtils.getNodesByAttribute(rootNode, 'class');
-			}
+            
+            includeRoot = (includeRoot) ? includeRoot : false;
+            if(includeRoot && rootNode.parentNode) {
+                arr = modules.domUtils.getNodesByAttribute(rootNode.parentNode, 'class');
+            } else {
+                arr = modules.domUtils.getNodesByAttribute(rootNode, 'class');
+            }
 
-			
-			x = 0;
-			i = arr.length;
-			while(x < i) {
+            
+            x = 0;
+            i = arr.length;
+            while(x < i) {
 
-				items = modules.domUtils.getAttributeList(arr[x], 'class');
+                items = modules.domUtils.getAttributeList(arr[x], 'class');
 
-				
-				y = items.length;
-				while(y--) {
-					
-					if(classList.indexOf(items[y]) > -1) {
-						out.push(arr[x]);
-						break;
-					}
+                
+                y = items.length;
+                while(y--) {
+                    
+                    if(classList.indexOf(items[y]) > -1) {
+                        out.push(arr[x]);
+                        break;
+                    }
 
-					
-					if(modules.utils.startWith(items[y], 'h-')) {
-						out.push(arr[x]);
-						break;
-					}
-				}
+                    
+                    if(modules.utils.startWith(items[y], 'h-')) {
+                        out.push(arr[x]);
+                        break;
+                    }
+                }
 
-				x++;
-			}
-			return out;
-		},
+                x++;
+            }
+            return out;
+        },
 
 
-		
+        
 
 
 
 
 
-		walkRoot: function(node){
-			var context = this,
-				children = [],
-				child,
-				classes,
-				items = [],
-				out = [];
+        walkRoot: function(node){
+            var context = this,
+                children = [],
+                child,
+                classes,
+                items = [],
+                out = [];
 
-			classes = this.getUfClassNames(node);
-			
-			if(classes && classes.root.length > 0){
-				items = this.walkTree(node);
+            classes = this.getUfClassNames(node);
+            
+            if(classes && classes.root.length > 0){
+                items = this.walkTree(node);
 
-				if(items.length > 0){
-					out = out.concat(items);
-				}
-			}else{
-				
-				children = modules.domUtils.getChildren( node );
-				if(children && children.length > 0 && this.findRootNodes(node, true).length > -1){
-					for (var i = 0; i < children.length; i++) {
-						child = children[i];
-						items = context.walkRoot(child);
-						if(items.length > 0){
-							out = out.concat(items);
-						}
-					}
-				}
-			}
-			return out;
-		},
+                if(items.length > 0){
+                    out = out.concat(items);
+                }
+            }else{
+                
+                children = modules.domUtils.getChildren( node );
+                if(children && children.length > 0 && this.findRootNodes(node, true).length > -1){
+                    for (var i = 0; i < children.length; i++) {
+                        child = children[i];
+                        items = context.walkRoot(child);
+                        if(items.length > 0){
+                            out = out.concat(items);
+                        }
+                    }
+                }
+            }
+            return out;
+        },
 
 
-		
+        
 
 
 
 
 
-		walkTree: function(node) {
-			var classes,
-				out = [],
-				obj,
-				itemRootID;
+        walkTree: function(node) {
+            var classes,
+                out = [],
+                obj,
+                itemRootID;
 
-			
-			classes = this.getUfClassNames(node);
-			if(classes && classes.root.length && classes.root.length > 0){
+            
+            classes = this.getUfClassNames(node);
+            if(classes && classes.root.length && classes.root.length > 0){
 
-				this.rootID++;
-				itemRootID = this.rootID;
-				obj = this.createUfObject(classes.root, classes.typeVersion);
+                this.rootID++;
+                itemRootID = this.rootID;
+                obj = this.createUfObject(classes.root, classes.typeVersion);
 
-				this.walkChildren(node, obj, classes.root, itemRootID, classes);
-				if(this.impliedRules){
-					this.impliedRules(node, obj, classes);
-				}
-				out.push( this.cleanUfObject(obj) );
+                this.walkChildren(node, obj, classes.root, itemRootID, classes);
+                if(this.impliedRules){
+                    this.impliedRules(node, obj, classes);
+                }
+                out.push( this.cleanUfObject(obj) );
 
 
-			}
-			return out;
-		},
+            }
+            return out;
+        },
 
 
-		
+        
 
 
 
@@ -617,164 +617,164 @@ var Microformats;
 
 
 
-		walkChildren: function(node, out, ufName, rootID, parentClasses) {
-			var context = this,
-				children = [],
-				rootItem,
-				itemRootID,
-				value,
-				propertyName,
-				propertyVersion,
-				i,
-				x,
-				y,
-				z,
-				child;
+        walkChildren: function(node, out, ufName, rootID, parentClasses) {
+            var context = this,
+                children = [],
+                rootItem,
+                itemRootID,
+                value,
+                propertyName,
+                propertyVersion,
+                i,
+                x,
+                y,
+                z,
+                child;
 
-			children = modules.domUtils.getChildren( node );
+            children = modules.domUtils.getChildren( node );
 
-			y = 0;
-			z = children.length;
-			while(y < z) {
-				child = children[y];
+            y = 0;
+            z = children.length;
+            while(y < z) {
+                child = children[y];
 
-				
-				var classes = context.getUfClassNames(child, ufName);
+                
+                var classes = context.getUfClassNames(child, ufName);
 
-				
-				if(classes.root.length > 0 && classes.properties.length > 0 && !child.addedAsRoot) {
-					
-					rootItem = context.createUfObject(
-						classes.root,
-						classes.typeVersion,
-						modules.text.parse(this.document, child, context.options.textFormat)
-					);
+                
+                if(classes.root.length > 0 && classes.properties.length > 0 && !child.addedAsRoot) {
+                    
+                    rootItem = context.createUfObject(
+                        classes.root,
+                        classes.typeVersion,
+                        modules.text.parse(this.document, child, context.options.textFormat)
+                    );
 
-					
-					propertyName = context.removePropPrefix(classes.properties[0][0]);
+                    
+                    propertyName = context.removePropPrefix(classes.properties[0][0]);
 
-					
-					if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
-						if(context.impliedValueRule){
-							out = context.impliedValueRule(out, parentClasses.properties[0][0], classes.properties[0][0], value);
-						}
-					}
+                    
+                    if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
+                        if(context.impliedValueRule){
+                            out = context.impliedValueRule(out, parentClasses.properties[0][0], classes.properties[0][0], value);
+                        }
+                    }
 
-					if(out.properties[propertyName]) {
-						out.properties[propertyName].push(rootItem);
-					} else {
-						out.properties[propertyName] = [rootItem];
-					}
+                    if(out.properties[propertyName]) {
+                        out.properties[propertyName].push(rootItem);
+                    } else {
+                        out.properties[propertyName] = [rootItem];
+                    }
 
-					context.rootID++;
-					
-					child.addedAsRoot = true;
+                    context.rootID++;
+                    
+                    child.addedAsRoot = true;
 
 
-					x = 0;
-					i = rootItem.type.length;
-					itemRootID = context.rootID;
-					while(x < i) {
-						context.walkChildren(child, rootItem, rootItem.type, itemRootID, classes);
-						x++;
-					}
-					if(this.impliedRules){
-						context.impliedRules(child, rootItem, classes);
-					}
-					this.cleanUfObject(rootItem);
+                    x = 0;
+                    i = rootItem.type.length;
+                    itemRootID = context.rootID;
+                    while(x < i) {
+                        context.walkChildren(child, rootItem, rootItem.type, itemRootID, classes);
+                        x++;
+                    }
+                    if(this.impliedRules){
+                        context.impliedRules(child, rootItem, classes);
+                    }
+                    this.cleanUfObject(rootItem);
 
-				}
+                }
 
-				
-				if(classes.root.length === 0 && classes.properties.length > 0) {
+                
+                if(classes.root.length === 0 && classes.properties.length > 0) {
 
-					x = 0;
-					i = classes.properties.length;
-					while(x < i) {
+                    x = 0;
+                    i = classes.properties.length;
+                    while(x < i) {
 
-						value = context.getValue(child, classes.properties[x][0], out);
-						propertyName = context.removePropPrefix(classes.properties[x][0]);
-						propertyVersion = classes.properties[x][1];
+                        value = context.getValue(child, classes.properties[x][0], out);
+                        propertyName = context.removePropPrefix(classes.properties[x][0]);
+                        propertyVersion = classes.properties[x][1];
 
-						
-						if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
-							if(context.impliedValueRule){
-								out = context.impliedValueRule(out, parentClasses.properties[0][0], classes.properties[x][0], value);
-							}
-						}
+                        
+                        if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
+                            if(context.impliedValueRule){
+                                out = context.impliedValueRule(out, parentClasses.properties[0][0], classes.properties[x][0], value);
+                            }
+                        }
 
-						
-						if(!context.hasRootID(child, rootID, propertyName)) {
-							
-							if( context.isAllowedPropertyVersion( out.typeVersion, propertyVersion ) ){
-								
-								if(out.properties[propertyName]) {
-									out.properties[propertyName].push(value);
-								} else {
-									out.properties[propertyName] = [value];
-								}
-								
-								context.appendRootID(child, rootID, propertyName);
-							}
-						}
+                        
+                        if(!context.hasRootID(child, rootID, propertyName)) {
+                            
+                            if( context.isAllowedPropertyVersion( out.typeVersion, propertyVersion ) ){
+                                
+                                if(out.properties[propertyName]) {
+                                    out.properties[propertyName].push(value);
+                                } else {
+                                    out.properties[propertyName] = [value];
+                                }
+                                
+                                context.appendRootID(child, rootID, propertyName);
+                            }
+                        }
 
-						x++;
-					}
+                        x++;
+                    }
 
-					context.walkChildren(child, out, ufName, rootID, classes);
-				}
+                    context.walkChildren(child, out, ufName, rootID, classes);
+                }
 
-				
-				if(classes.root.length === 0 && classes.properties.length === 0) {
-					context.walkChildren(child, out, ufName, rootID, classes);
-				}
+                
+                if(classes.root.length === 0 && classes.properties.length === 0) {
+                    context.walkChildren(child, out, ufName, rootID, classes);
+                }
 
-				
-				if(classes.root.length > 0 && classes.properties.length === 0) {
+                
+                if(classes.root.length > 0 && classes.properties.length === 0) {
 
-					
-					rootItem = context.createUfObject(
-						classes.root,
-						classes.typeVersion,
-						modules.text.parse(this.document, child, context.options.textFormat)
-					);
+                    
+                    rootItem = context.createUfObject(
+                        classes.root,
+                        classes.typeVersion,
+                        modules.text.parse(this.document, child, context.options.textFormat)
+                    );
 
-					
-					if(!out.children){
-						out.children =  [];
-					}
+                    
+                    if(!out.children){
+                        out.children =  [];
+                    }
 
-					if(!context.hasRootID(child, rootID, 'child-root')) {
-						out.children.push( rootItem );
-						context.appendRootID(child, rootID, 'child-root');
-						context.rootID++;
-					}
+                    if(!context.hasRootID(child, rootID, 'child-root')) {
+                        out.children.push( rootItem );
+                        context.appendRootID(child, rootID, 'child-root');
+                        context.rootID++;
+                    }
 
-					x = 0;
-					i = rootItem.type.length;
-					itemRootID = context.rootID;
-					while(x < i) {
-						context.walkChildren(child, rootItem, rootItem.type, itemRootID, classes);
-						x++;
-					}
-					if(this.impliedRules){
-						context.impliedRules(child, rootItem, classes);
-					}
-					context.cleanUfObject( rootItem );
+                    x = 0;
+                    i = rootItem.type.length;
+                    itemRootID = context.rootID;
+                    while(x < i) {
+                        context.walkChildren(child, rootItem, rootItem.type, itemRootID, classes);
+                        x++;
+                    }
+                    if(this.impliedRules){
+                        context.impliedRules(child, rootItem, classes);
+                    }
+                    context.cleanUfObject( rootItem );
 
-				}
+                }
 
 
 
-				y++;
-			}
+                y++;
+            }
 
-		},
+        },
 
 
 
 
-		
+        
 
 
 
@@ -782,140 +782,140 @@ var Microformats;
 
 
 
-		getValue: function(node, className, uf) {
-			var value = '';
+        getValue: function(node, className, uf) {
+            var value = '';
 
-			if(modules.utils.startWith(className, 'p-')) {
-				value = this.getPValue(node, true);
-			}
+            if(modules.utils.startWith(className, 'p-')) {
+                value = this.getPValue(node, true);
+            }
 
-			if(modules.utils.startWith(className, 'e-')) {
-				value = this.getEValue(node);
-			}
+            if(modules.utils.startWith(className, 'e-')) {
+                value = this.getEValue(node);
+            }
 
-			if(modules.utils.startWith(className, 'u-')) {
-				value = this.getUValue(node, true);
-			}
+            if(modules.utils.startWith(className, 'u-')) {
+                value = this.getUValue(node, true);
+            }
 
-			if(modules.utils.startWith(className, 'dt-')) {
-				value = this.getDTValue(node, className, uf, true);
-			}
-			return value;
-		},
+            if(modules.utils.startWith(className, 'dt-')) {
+                value = this.getDTValue(node, className, uf, true);
+            }
+            return value;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		getPValue: function(node, valueParse) {
-			var out = '';
-			if(valueParse) {
-				out = this.getValueClass(node, 'p');
-			}
+        getPValue: function(node, valueParse) {
+            var out = '';
+            if(valueParse) {
+                out = this.getValueClass(node, 'p');
+            }
 
-			if(!out && valueParse) {
-				out = this.getValueTitle(node);
-			}
+            if(!out && valueParse) {
+                out = this.getValueTitle(node);
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['data','input'], 'value');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['data','input'], 'value');
+            }
 
-			if(node.name === 'br' || node.name === 'hr') {
-				out = '';
-			}
+            if(node.name === 'br' || node.name === 'hr') {
+                out = '';
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['img', 'area'], 'alt');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['img', 'area'], 'alt');
+            }
 
-			if(!out) {
-				out = modules.text.parse(this.document, node, this.options.textFormat);
-			}
+            if(!out) {
+                out = modules.text.parse(this.document, node, this.options.textFormat);
+            }
 
-			return(out) ? out : '';
-		},
+            return(out) ? out : '';
+        },
 
 
-		
+        
 
 
 
 
 
-		getEValue: function(node) {
+        getEValue: function(node) {
 
-			var out = {value: '', html: ''};
+            var out = {value: '', html: ''};
 
-			this.expandURLs(node, 'src', this.options.baseUrl);
-			this.expandURLs(node, 'href', this.options.baseUrl);
+            this.expandURLs(node, 'src', this.options.baseUrl);
+            this.expandURLs(node, 'href', this.options.baseUrl);
 
-			out.value = modules.text.parse(this.document, node, this.options.textFormat);
-			out.html = modules.html.parse(node);
+            out.value = modules.text.parse(this.document, node, this.options.textFormat);
+            out.html = modules.html.parse(node);
 
-			return out;
-		},
+            return out;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		getUValue: function(node, valueParse) {
-			var out = '';
-			if(valueParse) {
-				out = this.getValueClass(node, 'u');
-			}
+        getUValue: function(node, valueParse) {
+            var out = '';
+            if(valueParse) {
+                out = this.getValueClass(node, 'u');
+            }
 
-			if(!out && valueParse) {
-				out = this.getValueTitle(node);
-			}
+            if(!out && valueParse) {
+                out = this.getValueTitle(node);
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['a', 'area'], 'href');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['a', 'area'], 'href');
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['img','audio','video','source'], 'src');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['img','audio','video','source'], 'src');
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['object'], 'data');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['object'], 'data');
+            }
 
-			
-			if(out && out !== '' && out.indexOf('://') === -1) {
-				out = modules.url.resolve(out, this.options.baseUrl);
-			}
+            
+            if(out && out !== '' && out.indexOf('://') === -1) {
+                out = modules.url.resolve(out, this.options.baseUrl);
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['data','input'], 'value');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['data','input'], 'value');
+            }
 
-			if(!out) {
-				out = modules.text.parse(this.document, node, this.options.textFormat);
-			}
+            if(!out) {
+                out = modules.text.parse(this.document, node, this.options.textFormat);
+            }
 
-			return(out) ? out : '';
-		},
+            return(out) ? out : '';
+        },
 
 
-		
+        
 
 
 
@@ -924,76 +924,76 @@ var Microformats;
 
 
 
-		getDTValue: function(node, className, uf, valueParse) {
-			var out = '';
+        getDTValue: function(node, className, uf, valueParse) {
+            var out = '';
 
-			if(valueParse) {
-				out = this.getValueClass(node, 'dt');
-			}
+            if(valueParse) {
+                out = this.getValueClass(node, 'dt');
+            }
 
-			if(!out && valueParse) {
-				out = this.getValueTitle(node);
-			}
+            if(!out && valueParse) {
+                out = this.getValueTitle(node);
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['time', 'ins', 'del'], 'datetime');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['time', 'ins', 'del'], 'datetime');
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
+            }
 
-			if(!out) {
-				out = modules.domUtils.getAttrValFromTagList(node, ['data', 'input'], 'value');
-			}
+            if(!out) {
+                out = modules.domUtils.getAttrValFromTagList(node, ['data', 'input'], 'value');
+            }
 
-			if(!out) {
-				out = modules.text.parse(this.document, node, this.options.textFormat);
-			}
+            if(!out) {
+                out = modules.text.parse(this.document, node, this.options.textFormat);
+            }
 
-			if(out) {
-				if(modules.dates.isDuration(out)) {
-					
-					return out;
-				} else if(modules.dates.isTime(out)) {
-					
-					if(uf) {
-						uf.times.push([className, modules.dates.parseAmPmTime(out, this.options.dateFormat)]);
-					}
-					return modules.dates.parseAmPmTime(out, this.options.dateFormat);
-				} else {
-					
-					if(uf) {
-						uf.dates.push([className, new modules.ISODate(out).toString( this.options.dateFormat )]);
-					}
-					return new modules.ISODate(out).toString( this.options.dateFormat );
-				}
-			} else {
-				return '';
-			}
-		},
+            if(out) {
+                if(modules.dates.isDuration(out)) {
+                    
+                    return out;
+                } else if(modules.dates.isTime(out)) {
+                    
+                    if(uf) {
+                        uf.times.push([className, modules.dates.parseAmPmTime(out, this.options.dateFormat)]);
+                    }
+                    return modules.dates.parseAmPmTime(out, this.options.dateFormat);
+                } else {
+                    
+                    if(uf) {
+                        uf.dates.push([className, new modules.ISODate(out).toString( this.options.dateFormat )]);
+                    }
+                    return new modules.ISODate(out).toString( this.options.dateFormat );
+                }
+            } else {
+                return '';
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		appendRootID: function(node, id, propertyName) {
-			if(this.hasRootID(node, id, propertyName) === false){
-				var rootids = [];
-				if(modules.domUtils.hasAttribute(node,'rootids')){
-					rootids = modules.domUtils.getAttributeList(node,'rootids');
-				}
-				rootids.push('id' + id + '-' + propertyName);
-				modules.domUtils.setAttribute(node, 'rootids', rootids.join(' '));
-			}
-		},
+        appendRootID: function(node, id, propertyName) {
+            if(this.hasRootID(node, id, propertyName) === false){
+                var rootids = [];
+                if(modules.domUtils.hasAttribute(node,'rootids')){
+                    rootids = modules.domUtils.getAttributeList(node,'rootids');
+                }
+                rootids.push('id' + id + '-' + propertyName);
+                modules.domUtils.setAttribute(node, 'rootids', rootids.join(' '));
+            }
+        },
 
 
-		
+        
 
 
 
@@ -1001,470 +1001,470 @@ var Microformats;
 
 
 
-		hasRootID: function(node, id, propertyName) {
-			var rootids = [];
-			if(!modules.domUtils.hasAttribute(node,'rootids')){
-				return false;
-			} else {
-				rootids = modules.domUtils.getAttributeList(node, 'rootids');
-				return (rootids.indexOf('id' + id + '-' + propertyName) > -1);
-			}
-		},
+        hasRootID: function(node, id, propertyName) {
+            var rootids = [];
+            if(!modules.domUtils.hasAttribute(node,'rootids')){
+                return false;
+            } else {
+                rootids = modules.domUtils.getAttributeList(node, 'rootids');
+                return (rootids.indexOf('id' + id + '-' + propertyName) > -1);
+            }
+        },
 
 
 
-		
+        
 
 
 
 
 
 
-		getValueClass: function(node, propertyType) {
-			var context = this,
-				children = [],
-				out = [],
-				child,
-				x,
-				i;
+        getValueClass: function(node, propertyType) {
+            var context = this,
+                children = [],
+                out = [],
+                child,
+                x,
+                i;
 
-			children = modules.domUtils.getChildren( node );
+            children = modules.domUtils.getChildren( node );
 
-			x = 0;
-			i = children.length;
-			while(x < i) {
-				child = children[x];
-				var value = null;
-				if(modules.domUtils.hasAttributeValue(child, 'class', 'value')) {
-					switch(propertyType) {
-					case 'p':
-						value = context.getPValue(child, false);
-						break;
-					case 'u':
-						value = context.getUValue(child, false);
-						break;
-					case 'dt':
-						value = context.getDTValue(child, '', null, false);
-						break;
-					}
-					if(value) {
-						out.push(modules.utils.trim(value));
-					}
-				}
-				x++;
-			}
-			if(out.length > 0) {
-				if(propertyType === 'p') {
-					return modules.text.parseText( this.document, out.join(' '), this.options.textFormat);
-				}
-				if(propertyType === 'u') {
-					return out.join('');
-				}
-				if(propertyType === 'dt') {
-					return modules.dates.concatFragments(out,this.options.dateFormat).toString(this.options.dateFormat);
-				}
-			} else {
-				return null;
-			}
-		},
+            x = 0;
+            i = children.length;
+            while(x < i) {
+                child = children[x];
+                var value = null;
+                if(modules.domUtils.hasAttributeValue(child, 'class', 'value')) {
+                    switch(propertyType) {
+                    case 'p':
+                        value = context.getPValue(child, false);
+                        break;
+                    case 'u':
+                        value = context.getUValue(child, false);
+                        break;
+                    case 'dt':
+                        value = context.getDTValue(child, '', null, false);
+                        break;
+                    }
+                    if(value) {
+                        out.push(modules.utils.trim(value));
+                    }
+                }
+                x++;
+            }
+            if(out.length > 0) {
+                if(propertyType === 'p') {
+                    return modules.text.parseText( this.document, out.join(' '), this.options.textFormat);
+                }
+                if(propertyType === 'u') {
+                    return out.join('');
+                }
+                if(propertyType === 'dt') {
+                    return modules.dates.concatFragments(out,this.options.dateFormat).toString(this.options.dateFormat);
+                }
+            } else {
+                return null;
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		getValueTitle: function(node) {
-			var out = [],
-				items,
-				i,
-				x;
+        getValueTitle: function(node) {
+            var out = [],
+                items,
+                i,
+                x;
 
-			items = modules.domUtils.getNodesByAttributeValue(node, 'class', 'value-title');
-			x = 0;
-			i = items.length;
-			while(x < i) {
-				if(modules.domUtils.hasAttribute(items[x], 'title')) {
-					out.push(modules.domUtils.getAttribute(items[x], 'title'));
-				}
-				x++;
-			}
-			return out.join('');
-		},
+            items = modules.domUtils.getNodesByAttributeValue(node, 'class', 'value-title');
+            x = 0;
+            i = items.length;
+            while(x < i) {
+                if(modules.domUtils.hasAttribute(items[x], 'title')) {
+                    out.push(modules.domUtils.getAttribute(items[x], 'title'));
+                }
+                x++;
+            }
+            return out.join('');
+        },
 
 
-	   
+       
 
 
 
 
 
-		hasHClass: function(node){
-			var classes = this.getUfClassNames(node);
-			if(classes.root && classes.root.length > 0){
-				return true;
-			}else{
-				return false;
-			}
-		},
+        hasHClass: function(node){
+            var classes = this.getUfClassNames(node);
+            if(classes.root && classes.root.length > 0){
+                return true;
+            }else{
+                return false;
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		getUfClassNames: function(node, ufNameArr) {
-			var context = this,
-				out = {
-					'root': [],
-					'properties': []
-				},
-				classNames,
-				key,
-				items,
-				item,
-				i,
-				x,
-				z,
-				y,
-				map,
-				prop,
-				propName,
-				v2Name,
-				impiedRel,
-				ufName;
+        getUfClassNames: function(node, ufNameArr) {
+            var context = this,
+                out = {
+                    'root': [],
+                    'properties': []
+                },
+                classNames,
+                key,
+                items,
+                item,
+                i,
+                x,
+                z,
+                y,
+                map,
+                prop,
+                propName,
+                v2Name,
+                impiedRel,
+                ufName;
 
-			
-			if(modules.domUtils.hasTagName(node, this.excludeTags) === false){
+            
+            if(modules.domUtils.hasTagName(node, this.excludeTags) === false){
 
-				
-				classNames = modules.domUtils.getAttribute(node, 'class');
-				if(classNames) {
-					items = classNames.split(' ');
-					x = 0;
-					i = items.length;
-					while(x < i) {
+                
+                classNames = modules.domUtils.getAttribute(node, 'class');
+                if(classNames) {
+                    items = classNames.split(' ');
+                    x = 0;
+                    i = items.length;
+                    while(x < i) {
 
-						item = modules.utils.trim(items[x]);
+                        item = modules.utils.trim(items[x]);
 
-						
-						if(modules.utils.startWith(item, context.rootPrefix)) {
-							if(out.root.indexOf(item) === -1){
-								out.root.push(item);
-							}
-							out.typeVersion = 'v2';
-						}
+                        
+                        if(modules.utils.startWith(item, context.rootPrefix)) {
+                            if(out.root.indexOf(item) === -1){
+                                out.root.push(item);
+                            }
+                            out.typeVersion = 'v2';
+                        }
 
-						
-						z = context.propertyPrefixes.length;
-						while(z--) {
-							if(modules.utils.startWith(item, context.propertyPrefixes[z])) {
-								out.properties.push([item,'v2']);
-							}
-						}
+                        
+                        z = context.propertyPrefixes.length;
+                        while(z--) {
+                            if(modules.utils.startWith(item, context.propertyPrefixes[z])) {
+                                out.properties.push([item,'v2']);
+                            }
+                        }
 
-						
-						for(key in modules.maps) {
-							if(modules.maps.hasOwnProperty(key)) {
-								
-								if(modules.maps[key].root === item && out.root.indexOf(key) === -1) {
-									
-									
-									if(modules.maps[key].subTree) {
-										out.properties.push(['p-' + modules.maps[key].root, 'v1']);
-									} else {
-										out.root.push(key);
-										if(!out.typeVersion){
-											out.typeVersion = 'v1';
-										}
-									}
-								}
-							}
-						}
+                        
+                        for(key in modules.maps) {
+                            if(modules.maps.hasOwnProperty(key)) {
+                                
+                                if(modules.maps[key].root === item && out.root.indexOf(key) === -1) {
+                                    
+                                    
+                                    if(modules.maps[key].subTree) {
+                                        out.properties.push(['p-' + modules.maps[key].root, 'v1']);
+                                    } else {
+                                        out.root.push(key);
+                                        if(!out.typeVersion){
+                                            out.typeVersion = 'v1';
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
 
-						
-						if(ufNameArr){
-							for (var a = 0; a < ufNameArr.length; a++) {
-								ufName = ufNameArr[a];
-								
-								map = context.getMapping(ufName);
-								if(map) {
-									for(key in map.properties) {
-										if (map.properties.hasOwnProperty(key)) {
+                        
+                        if(ufNameArr){
+                            for (var a = 0; a < ufNameArr.length; a++) {
+                                ufName = ufNameArr[a];
+                                
+                                map = context.getMapping(ufName);
+                                if(map) {
+                                    for(key in map.properties) {
+                                        if (map.properties.hasOwnProperty(key)) {
 
-											prop = map.properties[key];
-											propName = (prop.map) ? prop.map : 'p-' + key;
+                                            prop = map.properties[key];
+                                            propName = (prop.map) ? prop.map : 'p-' + key;
 
-											if(key === item) {
-												if(prop.uf) {
-													
-													
-													
-													y = 0;
-													while(y < i) {
-														v2Name = context.getV2RootName(items[y]);
-														
-														if(prop.uf.indexOf(v2Name) > -1 && out.root.indexOf(v2Name) === -1) {
-															out.root.push(v2Name);
-															out.typeVersion = 'v1';
-														}
-														y++;
-													}
-													
-													if(out.properties.indexOf(propName) === -1) {
-														out.properties.push([propName,'v1']);
-													}
-												} else {
-													if(out.properties.indexOf(propName) === -1) {
-														out.properties.push([propName,'v1']);
-													}
-												}
-											}
-										}
+                                            if(key === item) {
+                                                if(prop.uf) {
+                                                    
+                                                    
+                                                    
+                                                    y = 0;
+                                                    while(y < i) {
+                                                        v2Name = context.getV2RootName(items[y]);
+                                                        
+                                                        if(prop.uf.indexOf(v2Name) > -1 && out.root.indexOf(v2Name) === -1) {
+                                                            out.root.push(v2Name);
+                                                            out.typeVersion = 'v1';
+                                                        }
+                                                        y++;
+                                                    }
+                                                    
+                                                    if(out.properties.indexOf(propName) === -1) {
+                                                        out.properties.push([propName,'v1']);
+                                                    }
+                                                } else {
+                                                    if(out.properties.indexOf(propName) === -1) {
+                                                        out.properties.push([propName,'v1']);
+                                                    }
+                                                }
+                                            }
+                                        }
 
-									}
-								}
-							}
+                                    }
+                                }
+                            }
 
-						}
+                        }
 
-						x++;
+                        x++;
 
-					}
-				}
-			}
+                    }
+                }
+            }
 
 
-			
-			if(ufNameArr && this.findRelImpied){
-				for (var b = 0; b < ufNameArr.length; b++) {
-					ufName = ufNameArr[b];
-					impiedRel = this.findRelImpied(node, ufName);
-					if(impiedRel && out.properties.indexOf(impiedRel) === -1) {
-						out.properties.push([impiedRel, 'v1']);
-					}
-				}
-			}
+            
+            if(ufNameArr && this.findRelImpied){
+                for (var b = 0; b < ufNameArr.length; b++) {
+                    ufName = ufNameArr[b];
+                    impiedRel = this.findRelImpied(node, ufName);
+                    if(impiedRel && out.properties.indexOf(impiedRel) === -1) {
+                        out.properties.push([impiedRel, 'v1']);
+                    }
+                }
+            }
 
 
-			
-			
-			
-			
-			
+            
+            
+            
+            
+            
 
-			return out;
-		},
+            return out;
+        },
 
 
-		
+        
 
 
 
 
 
-		getMapping: function(name) {
-			var key;
-			for(key in modules.maps) {
-				if(modules.maps[key].root === name || key === name) {
-					return modules.maps[key];
-				}
-			}
-			return null;
-		},
+        getMapping: function(name) {
+            var key;
+            for(key in modules.maps) {
+                if(modules.maps[key].root === name || key === name) {
+                    return modules.maps[key];
+                }
+            }
+            return null;
+        },
 
 
-		
+        
 
 
 
 
 
-		getV2RootName: function(name) {
-			var key;
-			for(key in modules.maps) {
-				if(modules.maps[key].root === name) {
-					return key;
-				}
-			}
-			return null;
-		},
+        getV2RootName: function(name) {
+            var key;
+            for(key in modules.maps) {
+                if(modules.maps[key].root === name) {
+                    return key;
+                }
+            }
+            return null;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		isAllowedPropertyVersion: function(typeVersion, propertyVersion){
-			if(this.options.overlappingVersions === true){
-				return true;
-			}else{
-				return (typeVersion === propertyVersion);
-			}
-		},
+        isAllowedPropertyVersion: function(typeVersion, propertyVersion){
+            if(this.options.overlappingVersions === true){
+                return true;
+            }else{
+                return (typeVersion === propertyVersion);
+            }
+        },
 
 
-		
+        
 
 
 
 
 
 
-		createUfObject: function(names, typeVersion, value) {
-			var out = {};
+        createUfObject: function(names, typeVersion, value) {
+            var out = {};
 
-			
-			if(value && modules.utils.isOnlyWhiteSpace(value) === false) {
-				out.value = value;
-			}
-			
-			if(modules.utils.isArray(names)) {
-				out.type = names;
-			} else {
-				out.type = [names];
-			}
-			out.properties = {};
-			
-			out.typeVersion = typeVersion;
-			out.times = [];
-			out.dates = [];
-			out.altValue = null;
+            
+            if(value && modules.utils.isOnlyWhiteSpace(value) === false) {
+                out.value = value;
+            }
+            
+            if(modules.utils.isArray(names)) {
+                out.type = names;
+            } else {
+                out.type = [names];
+            }
+            out.properties = {};
+            
+            out.typeVersion = typeVersion;
+            out.times = [];
+            out.dates = [];
+            out.altValue = null;
 
-			return out;
-		},
+            return out;
+        },
 
 
-		
+        
 
 
 
 
-		cleanUfObject: function( microformat ) {
-			delete microformat.times;
-			delete microformat.dates;
-			delete microformat.typeVersion;
-			delete microformat.altValue;
-			return microformat;
-		},
+        cleanUfObject: function( microformat ) {
+            delete microformat.times;
+            delete microformat.dates;
+            delete microformat.typeVersion;
+            delete microformat.altValue;
+            return microformat;
+        },
 
 
 
-		
+        
 
 
 
 
 
-		removePropPrefix: function(text) {
-			var i;
+        removePropPrefix: function(text) {
+            var i;
 
-			i = this.propertyPrefixes.length;
-			while(i--) {
-				var prefix = this.propertyPrefixes[i];
-				if(modules.utils.startWith(text, prefix)) {
-					text = text.substr(prefix.length);
-				}
-			}
-			return text;
-		},
+            i = this.propertyPrefixes.length;
+            while(i--) {
+                var prefix = this.propertyPrefixes[i];
+                if(modules.utils.startWith(text, prefix)) {
+                    text = text.substr(prefix.length);
+                }
+            }
+            return text;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		expandURLs: function(node, attrName, baseUrl){
-			var i,
-				nodes,
-				attr;
+        expandURLs: function(node, attrName, baseUrl){
+            var i,
+                nodes,
+                attr;
 
-			nodes = modules.domUtils.getNodesByAttribute(node, attrName);
-			i = nodes.length;
-			while (i--) {
-				try{
-					
-					attr = modules.domUtils.getAttribute(nodes[i], attrName);
-					if(attr && attr !== '' && baseUrl !== '' && attr.indexOf('://') === -1) {
-						
-						attr = modules.url.resolve(attr, baseUrl);
-						modules.domUtils.setAttribute(nodes[i], attrName, attr);
-					}
-				}catch(err){
-					
-				}
-			}
-		},
+            nodes = modules.domUtils.getNodesByAttribute(node, attrName);
+            i = nodes.length;
+            while (i--) {
+                try{
+                    
+                    attr = modules.domUtils.getAttribute(nodes[i], attrName);
+                    if(attr && attr !== '' && baseUrl !== '' && attr.indexOf('://') === -1) {
+                        
+                        attr = modules.url.resolve(attr, baseUrl);
+                        modules.domUtils.setAttribute(nodes[i], attrName, attr);
+                    }
+                }catch(err){
+                    
+                }
+            }
+        },
 
 
 
-		
+        
 
 
 
 
-		mergeOptions: function(options) {
-			var key;
-			for(key in options) {
-				if(options.hasOwnProperty(key)) {
-					this.options[key] = options[key];
-				}
-			}
-		},
+        mergeOptions: function(options) {
+            var key;
+            for(key in options) {
+                if(options.hasOwnProperty(key)) {
+                    this.options[key] = options[key];
+                }
+            }
+        },
 
 
-		
+        
 
 
 
 
-		removeRootIds: function(rootNode){
-			var arr,
-				i;
+        removeRootIds: function(rootNode){
+            var arr,
+                i;
 
-			arr = modules.domUtils.getNodesByAttribute(rootNode, 'rootids');
-			i = arr.length;
-			while(i--) {
-				modules.domUtils.removeAttribute(arr[i],'rootids');
-			}
-		},
+            arr = modules.domUtils.getNodesByAttribute(rootNode, 'rootids');
+            i = arr.length;
+            while(i--) {
+                modules.domUtils.removeAttribute(arr[i],'rootids');
+            }
+        },
 
 
-		
+        
 
 
 
 
-		clearUpDom: function(rootNode){
-			if(this.removeIncludes){
-				this.removeIncludes(rootNode);
-			}
-			this.removeRootIds(rootNode);
-		}
+        clearUpDom: function(rootNode){
+            if(this.removeIncludes){
+                this.removeIncludes(rootNode);
+            }
+            this.removeRootIds(rootNode);
+        }
 
 
-	};
+    };
 
 
-	modules.Parser.prototype.constructor = modules.Parser;
+    modules.Parser.prototype.constructor = modules.Parser;
 
 
-	
-	if(modules.Parser){
+    
+    if(modules.Parser){
 
-		
+        
 
 
 
@@ -1473,45 +1473,45 @@ var Microformats;
 
 
 
-		 modules.Parser.prototype.impliedRules = function(node, uf, parentClasses) {
-			var typeVersion = (uf.typeVersion)? uf.typeVersion: 'v2';
+         modules.Parser.prototype.impliedRules = function(node, uf, parentClasses) {
+            var typeVersion = (uf.typeVersion)? uf.typeVersion: 'v2';
 
-			
-			if(this.options.impliedPropertiesByVersion === false){
-				typeVersion = 'v2';
-			}
+            
+            if(this.options.impliedPropertiesByVersion === false){
+                typeVersion = 'v2';
+            }
 
-			if(node && uf && uf.properties) {
-				uf = this.impliedBackwardComp( node, uf, parentClasses );
-				if(typeVersion === 'v2'){
-					uf = this.impliedhFeedTitle( uf );
-					uf = this.impliedName( node, uf );
-					uf = this.impliedPhoto( node, uf );
-					uf = this.impliedUrl( node, uf );
-				}
-				uf = this.impliedValue( node, uf, parentClasses );
-				uf = this.impliedDate( uf );
+            if(node && uf && uf.properties) {
+                uf = this.impliedBackwardComp( node, uf, parentClasses );
+                if(typeVersion === 'v2'){
+                    uf = this.impliedhFeedTitle( uf );
+                    uf = this.impliedName( node, uf );
+                    uf = this.impliedPhoto( node, uf );
+                    uf = this.impliedUrl( node, uf );
+                }
+                uf = this.impliedValue( node, uf, parentClasses );
+                uf = this.impliedDate( uf );
 
-				
-				if(this.options.parseLatLonGeo === true){
-					uf = this.impliedGeo( uf );
-				}
-			}
+                
+                if(this.options.parseLatLonGeo === true){
+                    uf = this.impliedGeo( uf );
+                }
+            }
 
-			return uf;
-		};
+            return uf;
+        };
 
 
-		
+        
 
 
 
 
 
 
-		modules.Parser.prototype.impliedName = function(node, uf) {
-			
-			
+        modules.Parser.prototype.impliedName = function(node, uf) {
+            
+            
 
 
 
@@ -1524,37 +1524,37 @@ var Microformats;
 
 
 
-			var name,
-				value;
+            var name,
+                value;
 
-			if(!uf.properties.name) {
-				value = this.getImpliedProperty(node, ['img', 'area', 'abbr'], this.getNameAttr);
-				var textFormat = this.options.textFormat;
-				
-				if(!value) {
-					name = [modules.text.parse(this.document, node, textFormat)];
-				}else{
-					name = [modules.text.parseText(this.document, value, textFormat)];
-				}
-				if(name && name[0] !== ''){
-					uf.properties.name = name;
-				}
-			}
+            if(!uf.properties.name) {
+                value = this.getImpliedProperty(node, ['img', 'area', 'abbr'], this.getNameAttr);
+                var textFormat = this.options.textFormat;
+                
+                if(!value) {
+                    name = [modules.text.parse(this.document, node, textFormat)];
+                }else{
+                    name = [modules.text.parseText(this.document, value, textFormat)];
+                }
+                if(name && name[0] !== ''){
+                    uf.properties.name = name;
+                }
+            }
 
-			return uf;
-		};
+            return uf;
+        };
 
 
-		
+        
 
 
 
 
 
 
-		modules.Parser.prototype.impliedPhoto = function(node, uf) {
-			
-			
+        modules.Parser.prototype.impliedPhoto = function(node, uf) {
+            
+            
 
 
 
@@ -1562,75 +1562,75 @@ var Microformats;
 
 
 
-			var value;
-			if(!uf.properties.photo) {
-				value = this.getImpliedProperty(node, ['img', 'object'], this.getPhotoAttr);
-				if(value) {
-					
-					if(value && value !== '' && this.options.baseUrl !== '' && value.indexOf('://') === -1) {
-						value = modules.url.resolve(value, this.options.baseUrl);
-					}
-					uf.properties.photo = [modules.utils.trim(value)];
-				}
-			}
-			return uf;
-		};
+            var value;
+            if(!uf.properties.photo) {
+                value = this.getImpliedProperty(node, ['img', 'object'], this.getPhotoAttr);
+                if(value) {
+                    
+                    if(value && value !== '' && this.options.baseUrl !== '' && value.indexOf('://') === -1) {
+                        value = modules.url.resolve(value, this.options.baseUrl);
+                    }
+                    uf.properties.photo = [modules.utils.trim(value)];
+                }
+            }
+            return uf;
+        };
 
 
-		
+        
 
 
 
 
 
 
-		modules.Parser.prototype.impliedUrl = function(node, uf) {
-			
-			
+        modules.Parser.prototype.impliedUrl = function(node, uf) {
+            
+            
 
 
 
 
 
-			var value;
-			if(!uf.properties.url) {
-				value = this.getImpliedProperty(node, ['a', 'area'], this.getURLAttr);
-				if(value) {
-					
-					if(value && value !== '' && this.options.baseUrl !== '' && value.indexOf('://') === -1) {
-						value = modules.url.resolve(value, this.options.baseUrl);
-					}
-					uf.properties.url = [modules.utils.trim(value)];
-				}
-			}
-			return uf;
-		};
+            var value;
+            if(!uf.properties.url) {
+                value = this.getImpliedProperty(node, ['a', 'area'], this.getURLAttr);
+                if(value) {
+                    
+                    if(value && value !== '' && this.options.baseUrl !== '' && value.indexOf('://') === -1) {
+                        value = modules.url.resolve(value, this.options.baseUrl);
+                    }
+                    uf.properties.url = [modules.utils.trim(value)];
+                }
+            }
+            return uf;
+        };
 
 
-		
+        
 
 
 
 
 
 
-		modules.Parser.prototype.impliedDate = function(uf) {
-			
-			
-			
-			var newDate;
-			if(uf.times.length > 0 && uf.dates.length > 0) {
-				newDate = modules.dates.dateTimeUnion(uf.dates[0][1], uf.times[0][1], this.options.dateFormat);
-				uf.properties[this.removePropPrefix(uf.times[0][0])][0] = newDate.toString(this.options.dateFormat);
-			}
-			
-			delete uf.times;
-			delete uf.dates;
-			return uf;
-		};
+        modules.Parser.prototype.impliedDate = function(uf) {
+            
+            
+            
+            var newDate;
+            if(uf.times.length > 0 && uf.dates.length > 0) {
+                newDate = modules.dates.dateTimeUnion(uf.dates[0][1], uf.times[0][1], this.options.dateFormat);
+                uf.properties[this.removePropPrefix(uf.times[0][0])][0] = newDate.toString(this.options.dateFormat);
+            }
+            
+            delete uf.times;
+            delete uf.dates;
+            return uf;
+        };
 
 
-		
+        
 
 
 
@@ -1638,119 +1638,119 @@ var Microformats;
 
 
 
-		modules.Parser.prototype.getImpliedProperty = function(node, tagList, getAttrFunction) {
-			
-			var value = getAttrFunction(node),
-				descendant,
-				child;
+        modules.Parser.prototype.getImpliedProperty = function(node, tagList, getAttrFunction) {
+            
+            var value = getAttrFunction(node),
+                descendant,
+                child;
 
-			if(!value) {
-				
-				descendant = modules.domUtils.getSingleDescendantOfType( node, tagList);
-				if(descendant && this.hasHClass(descendant) === false){
-					value = getAttrFunction(descendant);
-				}
-				if(node.children.length > 0 ){
-					
-					child = modules.domUtils.getSingleDescendant(node);
-					if(child && this.hasHClass(child) === false){
-						descendant = modules.domUtils.getSingleDescendantOfType(child, tagList);
-						if(descendant && this.hasHClass(descendant) === false){
-							value = getAttrFunction(descendant);
-						}
-					}
-				}
-			}
+            if(!value) {
+                
+                descendant = modules.domUtils.getSingleDescendantOfType( node, tagList);
+                if(descendant && this.hasHClass(descendant) === false){
+                    value = getAttrFunction(descendant);
+                }
+                if(node.children.length > 0 ){
+                    
+                    child = modules.domUtils.getSingleDescendant(node);
+                    if(child && this.hasHClass(child) === false){
+                        descendant = modules.domUtils.getSingleDescendantOfType(child, tagList);
+                        if(descendant && this.hasHClass(descendant) === false){
+                            value = getAttrFunction(descendant);
+                        }
+                    }
+                }
+            }
 
-			return value;
-		};
+            return value;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.getNameAttr = function(node) {
-			var value = modules.domUtils.getAttrValFromTagList(node, ['img','area'], 'alt');
-			if(!value) {
-				value = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
-			}
-			return value;
-		};
+        modules.Parser.prototype.getNameAttr = function(node) {
+            var value = modules.domUtils.getAttrValFromTagList(node, ['img','area'], 'alt');
+            if(!value) {
+                value = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
+            }
+            return value;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.getPhotoAttr = function(node) {
-			var value = modules.domUtils.getAttrValFromTagList(node, ['img'], 'src');
-			if(!value && modules.domUtils.hasAttributeValue(node, 'class', 'include') === false) {
-				value = modules.domUtils.getAttrValFromTagList(node, ['object'], 'data');
-			}
-			return value;
-		};
+        modules.Parser.prototype.getPhotoAttr = function(node) {
+            var value = modules.domUtils.getAttrValFromTagList(node, ['img'], 'src');
+            if(!value && modules.domUtils.hasAttributeValue(node, 'class', 'include') === false) {
+                value = modules.domUtils.getAttrValFromTagList(node, ['object'], 'data');
+            }
+            return value;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.getURLAttr = function(node) {
-			var value = null;
-			if(modules.domUtils.hasAttributeValue(node, 'class', 'include') === false){
+        modules.Parser.prototype.getURLAttr = function(node) {
+            var value = null;
+            if(modules.domUtils.hasAttributeValue(node, 'class', 'include') === false){
 
-				value = modules.domUtils.getAttrValFromTagList(node, ['a'], 'href');
-				if(!value) {
-					value = modules.domUtils.getAttrValFromTagList(node, ['area'], 'href');
-				}
+                value = modules.domUtils.getAttrValFromTagList(node, ['a'], 'href');
+                if(!value) {
+                    value = modules.domUtils.getAttrValFromTagList(node, ['area'], 'href');
+                }
 
-			}
-			return value;
-		};
+            }
+            return value;
+        };
 
 
-		
+        
 
 
 
 
 
 
-		modules.Parser.prototype.impliedValue = function(node, uf, parentClasses){
+        modules.Parser.prototype.impliedValue = function(node, uf, parentClasses){
 
-			
-			if(uf.properties.name) {
-				if(uf.value && parentClasses.root.length > 0 && parentClasses.properties.length === 1){
-					uf = this.getAltValue(uf, parentClasses.properties[0][0], 'p-name', uf.properties.name[0]);
-				}
-			}
+            
+            if(uf.properties.name) {
+                if(uf.value && parentClasses.root.length > 0 && parentClasses.properties.length === 1){
+                    uf = this.getAltValue(uf, parentClasses.properties[0][0], 'p-name', uf.properties.name[0]);
+                }
+            }
 
-			
-			if(uf.properties.url) {
-				if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
-					uf = this.getAltValue(uf, parentClasses.properties[0][0], 'u-url', uf.properties.url[0]);
-				}
-			}
+            
+            if(uf.properties.url) {
+                if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
+                    uf = this.getAltValue(uf, parentClasses.properties[0][0], 'u-url', uf.properties.url[0]);
+                }
+            }
 
-			
-			if(uf.altValue !== null){
-				uf.value = uf.altValue.value;
-			}
-			delete uf.altValue;
+            
+            if(uf.altValue !== null){
+                uf.value = uf.altValue.value;
+            }
+            delete uf.altValue;
 
 
-			return uf;
-		};
+            return uf;
+        };
 
 
-		
+        
 
 
 
@@ -1759,529 +1759,529 @@ var Microformats;
 
 
 
-		modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value){
-			if(uf.value && !uf.altValue){
-				
-				if(modules.utils.startWith(parentPropertyName,'p-') && propertyName === 'p-name'){
-					uf.altValue = {name: propertyName, value: value};
-				}
-				
-				if(modules.utils.startWith(parentPropertyName,'e-') && modules.utils.startWith(propertyName,'e-')){
-					uf.altValue = {name: propertyName, value: value};
-				}
-				
-				if(modules.utils.startWith(parentPropertyName,'u-') && propertyName === 'u-url'){
-					uf.altValue = {name: propertyName, value: value};
-				}
-			}
-			return uf;
-		};
+        modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value){
+            if(uf.value && !uf.altValue){
+                
+                if(modules.utils.startWith(parentPropertyName,'p-') && propertyName === 'p-name'){
+                    uf.altValue = {name: propertyName, value: value};
+                }
+                
+                if(modules.utils.startWith(parentPropertyName,'e-') && modules.utils.startWith(propertyName,'e-')){
+                    uf.altValue = {name: propertyName, value: value};
+                }
+                
+                if(modules.utils.startWith(parentPropertyName,'u-') && propertyName === 'u-url'){
+                    uf.altValue = {name: propertyName, value: value};
+                }
+            }
+            return uf;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.impliedhFeedTitle = function( uf ){
-			if(uf.type && uf.type.indexOf('h-feed') > -1){
-				
-				if(uf.properties.name === undefined || uf.properties.name[0] === '' ){
-					
-					var title = modules.domUtils.querySelector(this.document, 'title');
-					if(title){
-						uf.properties.name = [modules.domUtils.textContent(title)];
-					}
-				}
-			}
-			return uf;
-		};
+        modules.Parser.prototype.impliedhFeedTitle = function( uf ){
+            if(uf.type && uf.type.indexOf('h-feed') > -1){
+                
+                if(uf.properties.name === undefined || uf.properties.name[0] === '' ){
+                    
+                    var title = modules.domUtils.querySelector(this.document, 'title');
+                    if(title){
+                        uf.properties.name = [modules.domUtils.textContent(title)];
+                    }
+                }
+            }
+            return uf;
+        };
 
 
 
-	    
+        
 
 
 
 
 
-		modules.Parser.prototype.impliedGeo = function( uf ){
-			var geoPair,
-				parts,
-				longitude,
-				latitude,
-				valid = true;
+        modules.Parser.prototype.impliedGeo = function( uf ){
+            var geoPair,
+                parts,
+                longitude,
+                latitude,
+                valid = true;
 
-			if(uf.type && uf.type.indexOf('h-geo') > -1){
+            if(uf.type && uf.type.indexOf('h-geo') > -1){
 
-				
-				if(uf.properties.latitude === undefined || uf.properties.longitude === undefined ){
+                
+                if(uf.properties.latitude === undefined || uf.properties.longitude === undefined ){
 
-					geoPair = (uf.properties.name)? uf.properties.name[0] : null;
-					geoPair = (!geoPair && uf.properties.value)? uf.properties.value : geoPair;
+                    geoPair = (uf.properties.name)? uf.properties.name[0] : null;
+                    geoPair = (!geoPair && uf.properties.value)? uf.properties.value : geoPair;
 
-					if(geoPair){
-						
-						geoPair = geoPair.replace(';',',');
+                    if(geoPair){
+                        
+                        geoPair = geoPair.replace(';',',');
 
-						
-						if(geoPair.indexOf(',') > -1 ){
-							parts = geoPair.split(',');
+                        
+                        if(geoPair.indexOf(',') > -1 ){
+                            parts = geoPair.split(',');
 
-							
-							if(parts.length > 1){
+                            
+                            if(parts.length > 1){
 
-								
-								latitude = parseFloat( parts[0] );
-								if(modules.utils.isNumber(latitude) && latitude > 90 || latitude < -90){
-									valid = false;
-								}
+                                
+                                latitude = parseFloat( parts[0] );
+                                if(modules.utils.isNumber(latitude) && latitude > 90 || latitude < -90){
+                                    valid = false;
+                                }
 
-								
-								longitude = parseFloat( parts[1] );
-								if(modules.utils.isNumber(longitude) && longitude > 180 || longitude < -180){
-									valid = false;
-								}
+                                
+                                longitude = parseFloat( parts[1] );
+                                if(modules.utils.isNumber(longitude) && longitude > 180 || longitude < -180){
+                                    valid = false;
+                                }
 
-								if(valid){
-									uf.properties.latitude = [latitude];
-									uf.properties.longitude  = [longitude];
-								}
-							}
+                                if(valid){
+                                    uf.properties.latitude = [latitude];
+                                    uf.properties.longitude  = [longitude];
+                                }
+                            }
 
-						}
-					}
-				}
-			}
-			return uf;
-		};
+                        }
+                    }
+                }
+            }
+            return uf;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.impliedBackwardComp = function(node, uf, parentClasses){
+        modules.Parser.prototype.impliedBackwardComp = function(node, uf, parentClasses){
 
-			
-			
-			if(parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
-				if(parentClasses.root[0].replace('h-','') === this.removePropPrefix(parentClasses.properties[0][0])) {
+            
+            
+            if(parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
+                if(parentClasses.root[0].replace('h-','') === this.removePropPrefix(parentClasses.properties[0][0])) {
 
-					
-					
-					if( modules.utils.hasProperties(uf.properties) === false ){
-						uf = this.impliedName( node, uf );
-					}
-				}
-			}
+                    
+                    
+                    if( modules.utils.hasProperties(uf.properties) === false ){
+                        uf = this.impliedName( node, uf );
+                    }
+                }
+            }
 
-			return uf;
-		};
+            return uf;
+        };
 
 
 
-	}
+    }
 
 
-	
-	if(modules.Parser){
+    
+    if(modules.Parser){
 
 
-		
+        
 
 
 
 
-		modules.Parser.prototype.addIncludes = function(rootNode) {
-			this.addAttributeIncludes(rootNode, 'itemref');
-			this.addAttributeIncludes(rootNode, 'headers');
-			this.addClassIncludes(rootNode);
-		};
+        modules.Parser.prototype.addIncludes = function(rootNode) {
+            this.addAttributeIncludes(rootNode, 'itemref');
+            this.addAttributeIncludes(rootNode, 'headers');
+            this.addClassIncludes(rootNode);
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.addAttributeIncludes = function(rootNode, attributeName) {
-			var arr,
-				idList,
-				i,
-				x,
-				z,
-				y;
+        modules.Parser.prototype.addAttributeIncludes = function(rootNode, attributeName) {
+            var arr,
+                idList,
+                i,
+                x,
+                z,
+                y;
 
-			arr = modules.domUtils.getNodesByAttribute(rootNode, attributeName);
-			x = 0;
-			i = arr.length;
-			while(x < i) {
-				idList = modules.domUtils.getAttributeList(arr[x], attributeName);
-				if(idList) {
-					z = 0;
-					y = idList.length;
-					while(z < y) {
-						this.apppendInclude(arr[x], idList[z]);
-						z++;
-					}
-				}
-				x++;
-			}
-		};
+            arr = modules.domUtils.getNodesByAttribute(rootNode, attributeName);
+            x = 0;
+            i = arr.length;
+            while(x < i) {
+                idList = modules.domUtils.getAttributeList(arr[x], attributeName);
+                if(idList) {
+                    z = 0;
+                    y = idList.length;
+                    while(z < y) {
+                        this.apppendInclude(arr[x], idList[z]);
+                        z++;
+                    }
+                }
+                x++;
+            }
+        };
 
 
-		
+        
 
 
 
 
-		modules.Parser.prototype.addClassIncludes = function(rootNode) {
-			var id,
-				arr,
-				x = 0,
-				i;
+        modules.Parser.prototype.addClassIncludes = function(rootNode) {
+            var id,
+                arr,
+                x = 0,
+                i;
 
-			arr = modules.domUtils.getNodesByAttributeValue(rootNode, 'class', 'include');
-			i = arr.length;
-			while(x < i) {
-				id = modules.domUtils.getAttrValFromTagList(arr[x], ['a'], 'href');
-				if(!id) {
-					id = modules.domUtils.getAttrValFromTagList(arr[x], ['object'], 'data');
-				}
-				this.apppendInclude(arr[x], id);
-				x++;
-			}
-		};
+            arr = modules.domUtils.getNodesByAttributeValue(rootNode, 'class', 'include');
+            i = arr.length;
+            while(x < i) {
+                id = modules.domUtils.getAttrValFromTagList(arr[x], ['a'], 'href');
+                if(!id) {
+                    id = modules.domUtils.getAttrValFromTagList(arr[x], ['object'], 'data');
+                }
+                this.apppendInclude(arr[x], id);
+                x++;
+            }
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.apppendInclude = function(node, id){
-			var include,
-				clone;
+        modules.Parser.prototype.apppendInclude = function(node, id){
+            var include,
+                clone;
 
-			id = modules.utils.trim(id.replace('#', ''));
-			include = modules.domUtils.getElementById(this.document, id);
-			if(include) {
-				clone = modules.domUtils.clone(include);
-				this.markIncludeChildren(clone);
-				modules.domUtils.appendChild(node, clone);
-			}
-		};
+            id = modules.utils.trim(id.replace('#', ''));
+            include = modules.domUtils.getElementById(this.document, id);
+            if(include) {
+                clone = modules.domUtils.clone(include);
+                this.markIncludeChildren(clone);
+                modules.domUtils.appendChild(node, clone);
+            }
+        };
 
 
-		
+        
 
 
 
 
-		modules.Parser.prototype.markIncludeChildren = function(rootNode) {
-			var arr,
-				x,
-				i;
+        modules.Parser.prototype.markIncludeChildren = function(rootNode) {
+            var arr,
+                x,
+                i;
 
-			
-			arr = this.findRootNodes(rootNode);
-			x = 0;
-			i = arr.length;
-			modules.domUtils.setAttribute(rootNode, 'data-include', 'true');
-			modules.domUtils.setAttribute(rootNode, 'style', 'display:none');
-			while(x < i) {
-				modules.domUtils.setAttribute(arr[x], 'data-include', 'true');
-				x++;
-			}
-		};
+            
+            arr = this.findRootNodes(rootNode);
+            x = 0;
+            i = arr.length;
+            modules.domUtils.setAttribute(rootNode, 'data-include', 'true');
+            modules.domUtils.setAttribute(rootNode, 'style', 'display:none');
+            while(x < i) {
+                modules.domUtils.setAttribute(arr[x], 'data-include', 'true');
+                x++;
+            }
+        };
 
 
-		
+        
 
 
 
 
-		modules.Parser.prototype.removeIncludes = function(rootNode){
-			var arr,
-				i;
+        modules.Parser.prototype.removeIncludes = function(rootNode){
+            var arr,
+                i;
 
-			
-			arr = modules.domUtils.getNodesByAttribute(rootNode, 'data-include');
-			i = arr.length;
-			while(i--) {
-				modules.domUtils.removeChild(rootNode,arr[i]);
-			}
-		};
+            
+            arr = modules.domUtils.getNodesByAttribute(rootNode, 'data-include');
+            i = arr.length;
+            while(i--) {
+                modules.domUtils.removeChild(rootNode,arr[i]);
+            }
+        };
 
 
-	}
+    }
 
 
-	
-	if(modules.Parser){
+    
+    if(modules.Parser){
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.findRels = function(rootNode) {
-			var out = {
-					'items': [],
-					'rels': {},
-					'rel-urls': {}
-				},
-				x,
-				i,
-				y,
-				z,
-				relList,
-				items,
-				item,
-				value,
-				arr;
+        modules.Parser.prototype.findRels = function(rootNode) {
+            var out = {
+                    'items': [],
+                    'rels': {},
+                    'rel-urls': {}
+                },
+                x,
+                i,
+                y,
+                z,
+                relList,
+                items,
+                item,
+                value,
+                arr;
 
-			arr = modules.domUtils.getNodesByAttribute(rootNode, 'rel');
-			x = 0;
-			i = arr.length;
-			while(x < i) {
-				relList = modules.domUtils.getAttribute(arr[x], 'rel');
+            arr = modules.domUtils.getNodesByAttribute(rootNode, 'rel');
+            x = 0;
+            i = arr.length;
+            while(x < i) {
+                relList = modules.domUtils.getAttribute(arr[x], 'rel');
 
-				if(relList) {
-					items = relList.split(' ');
+                if(relList) {
+                    items = relList.split(' ');
 
 
-					
-					z = 0;
-					y = items.length;
-					while(z < y) {
-						item = modules.utils.trim(items[z]);
+                    
+                    z = 0;
+                    y = items.length;
+                    while(z < y) {
+                        item = modules.utils.trim(items[z]);
 
-						
-						value = modules.domUtils.getAttrValFromTagList(arr[x], ['a', 'area'], 'href');
-						if(!value) {
-							value = modules.domUtils.getAttrValFromTagList(arr[x], ['link'], 'href');
-						}
+                        
+                        value = modules.domUtils.getAttrValFromTagList(arr[x], ['a', 'area'], 'href');
+                        if(!value) {
+                            value = modules.domUtils.getAttrValFromTagList(arr[x], ['link'], 'href');
+                        }
 
-						
-						if(!out.rels[item]) {
-							out.rels[item] = [];
-						}
+                        
+                        if(!out.rels[item]) {
+                            out.rels[item] = [];
+                        }
 
-						if(typeof this.options.baseUrl === 'string' && typeof value === 'string') {
+                        if(typeof this.options.baseUrl === 'string' && typeof value === 'string') {
 
-							var resolved = modules.url.resolve(value, this.options.baseUrl);
-							
-							if(out.rels[item].indexOf(resolved) === -1){
-								out.rels[item].push( resolved );
-							}
-						}
-						z++;
-					}
+                            var resolved = modules.url.resolve(value, this.options.baseUrl);
+                            
+                            if(out.rels[item].indexOf(resolved) === -1){
+                                out.rels[item].push( resolved );
+                            }
+                        }
+                        z++;
+                    }
 
 
-					var url = null;
-					if(modules.domUtils.hasAttribute(arr[x], 'href')){
-						url = modules.domUtils.getAttribute(arr[x], 'href');
-						if(url){
-							url = modules.url.resolve(url, this.options.baseUrl );
-						}
-					}
+                    var url = null;
+                    if(modules.domUtils.hasAttribute(arr[x], 'href')){
+                        url = modules.domUtils.getAttribute(arr[x], 'href');
+                        if(url){
+                            url = modules.url.resolve(url, this.options.baseUrl );
+                        }
+                    }
 
 
-					
-					var relUrl = this.getRelProperties(arr[x]);
-					relUrl.rels = items;
-					
-					if(url && out['rel-urls'][url] === undefined){
-						out['rel-urls'][url] = relUrl;
-					}
+                    
+                    var relUrl = this.getRelProperties(arr[x]);
+                    relUrl.rels = items;
+                    
+                    if(url && out['rel-urls'][url] === undefined){
+                        out['rel-urls'][url] = relUrl;
+                    }
 
 
-				}
-				x++;
-			}
-			return out;
-		};
+                }
+                x++;
+            }
+            return out;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.getRelProperties = function(node){
-			var obj = {};
+        modules.Parser.prototype.getRelProperties = function(node){
+            var obj = {};
 
-			if(modules.domUtils.hasAttribute(node, 'media')){
-				obj.media = modules.domUtils.getAttribute(node, 'media');
-			}
-			if(modules.domUtils.hasAttribute(node, 'type')){
-				obj.type = modules.domUtils.getAttribute(node, 'type');
-			}
-			if(modules.domUtils.hasAttribute(node, 'hreflang')){
-				obj.hreflang = modules.domUtils.getAttribute(node, 'hreflang');
-			}
-			if(modules.domUtils.hasAttribute(node, 'title')){
-				obj.title = modules.domUtils.getAttribute(node, 'title');
-			}
-			if(modules.utils.trim(this.getPValue(node, false)) !== ''){
-				obj.text = this.getPValue(node, false);
-			}
+            if(modules.domUtils.hasAttribute(node, 'media')){
+                obj.media = modules.domUtils.getAttribute(node, 'media');
+            }
+            if(modules.domUtils.hasAttribute(node, 'type')){
+                obj.type = modules.domUtils.getAttribute(node, 'type');
+            }
+            if(modules.domUtils.hasAttribute(node, 'hreflang')){
+                obj.hreflang = modules.domUtils.getAttribute(node, 'hreflang');
+            }
+            if(modules.domUtils.hasAttribute(node, 'title')){
+                obj.title = modules.domUtils.getAttribute(node, 'title');
+            }
+            if(modules.utils.trim(this.getPValue(node, false)) !== ''){
+                obj.text = this.getPValue(node, false);
+            }
 
-			return obj;
-		};
+            return obj;
+        };
 
 
-		
+        
 
 
 
 
 
 
-		modules.Parser.prototype.findRelImpied = function(node, ufName) {
-			var out,
-				map,
-				i;
+        modules.Parser.prototype.findRelImpied = function(node, ufName) {
+            var out,
+                map,
+                i;
 
-			map = this.getMapping(ufName);
-			if(map) {
-				for(var key in map.properties) {
-					if (map.properties.hasOwnProperty(key)) {
-						var prop = map.properties[key],
-							propName = (prop.map) ? prop.map : 'p-' + key,
-							relCount = 0;
+            map = this.getMapping(ufName);
+            if(map) {
+                for(var key in map.properties) {
+                    if (map.properties.hasOwnProperty(key)) {
+                        var prop = map.properties[key],
+                            propName = (prop.map) ? prop.map : 'p-' + key,
+                            relCount = 0;
 
-						
-						if(prop.relAlt && modules.domUtils.hasAttribute(node, 'rel')) {
-							i = prop.relAlt.length;
-							while(i--) {
-								if(modules.domUtils.hasAttributeValue(node, 'rel', prop.relAlt[i])) {
-									relCount++;
-								}
-							}
-							if(relCount === prop.relAlt.length) {
-								out = propName;
-							}
-						}
-					}
-				}
-			}
-			return out;
-		};
+                        
+                        if(prop.relAlt && modules.domUtils.hasAttribute(node, 'rel')) {
+                            i = prop.relAlt.length;
+                            while(i--) {
+                                if(modules.domUtils.hasAttributeValue(node, 'rel', prop.relAlt[i])) {
+                                    relCount++;
+                                }
+                            }
+                            if(relCount === prop.relAlt.length) {
+                                out = propName;
+                            }
+                        }
+                    }
+                }
+            }
+            return out;
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.hasRel = function(node) {
-			return (this.countRels(node) > 0);
-		};
+        modules.Parser.prototype.hasRel = function(node) {
+            return (this.countRels(node) > 0);
+        };
 
 
-		
+        
 
 
 
 
 
-		modules.Parser.prototype.countRels = function(node) {
-			if(node){
-				return modules.domUtils.getNodesByAttribute(node, 'rel').length;
-			}
-			return 0;
-		};
+        modules.Parser.prototype.countRels = function(node) {
+            if(node){
+                return modules.domUtils.getNodesByAttribute(node, 'rel').length;
+            }
+            return 0;
+        };
 
 
 
-	}
+    }
 
 
-	modules.utils = {
+    modules.utils = {
 
-		
+        
 
 
 
 
 
-		isString: function( obj ) {
-			return typeof( obj ) === 'string';
-		},
+        isString: function( obj ) {
+            return typeof( obj ) === 'string';
+        },
 
-		
+        
 
 
 
 
 
-		isNumber: function( obj ) {
-			return !isNaN(parseFloat( obj )) && isFinite( obj );
-		},
+        isNumber: function( obj ) {
+            return !isNaN(parseFloat( obj )) && isFinite( obj );
+        },
 
 
-		
+        
 
 
 
 
 
-		isArray: function( obj ) {
-			return obj && !( obj.propertyIsEnumerable( 'length' ) ) && typeof obj === 'object' && typeof obj.length === 'number';
-		},
+        isArray: function( obj ) {
+            return obj && !( obj.propertyIsEnumerable( 'length' ) ) && typeof obj === 'object' && typeof obj.length === 'number';
+        },
 
 
-		
+        
 
 
 
 
 
-		isFunction: function(obj) {
-			return !!(obj && obj.constructor && obj.call && obj.apply);
-		},
+        isFunction: function(obj) {
+            return !!(obj && obj.constructor && obj.call && obj.apply);
+        },
 
 
-		
+        
 
 
 
 
 
 
-		startWith: function( text, test ) {
-			return(text.indexOf(test) === 0);
-		},
+        startWith: function( text, test ) {
+            return(text.indexOf(test) === 0);
+        },
 
 
-		
+        
 
 
 
 
 
-		trim: function( text ) {
-			if(text && this.isString(text)){
-				return (text.trim())? text.trim() : text.replace(/^\s+|\s+$/g, '');
-			}else{
-				return '';
-			}
-		},
+        trim: function( text ) {
+            if(text && this.isString(text)){
+                return (text.trim())? text.trim() : text.replace(/^\s+|\s+$/g, '');
+            }else{
+                return '';
+            }
+        },
 
 
-		
+        
 
 
 
@@ -2289,122 +2289,122 @@ var Microformats;
 
 
 
-		replaceCharAt: function( text, index, character ) {
-			if(text && text.length > index){
-			   return text.substr(0, index) + character + text.substr(index+character.length);
-			}else{
-				return text;
-			}
-		},
+        replaceCharAt: function( text, index, character ) {
+            if(text && text.length > index){
+               return text.substr(0, index) + character + text.substr(index+character.length);
+            }else{
+                return text;
+            }
+        },
 
 
-		
+        
 
 
 
 
 
-		trimWhitespace: function( text ){
-			if(text && text.length){
-				var i = text.length,
-					x = 0;
+        trimWhitespace: function( text ){
+            if(text && text.length){
+                var i = text.length,
+                    x = 0;
 
-				
-				while (i--) {
-					if(this.isOnlyWhiteSpace(text[i])){
-						text = this.replaceCharAt( text, i, ' ' );
-					}else{
-						break;
-					}
-				}
+                
+                while (i--) {
+                    if(this.isOnlyWhiteSpace(text[i])){
+                        text = this.replaceCharAt( text, i, ' ' );
+                    }else{
+                        break;
+                    }
+                }
 
-				
-				i = text.length;
-				while (x < i) {
-					if(this.isOnlyWhiteSpace(text[x])){
-						text = this.replaceCharAt( text, i, ' ' );
-					}else{
-						break;
-					}
-					x++;
-				}
-			}
-			return this.trim(text);
-		},
+                
+                i = text.length;
+                while (x < i) {
+                    if(this.isOnlyWhiteSpace(text[x])){
+                        text = this.replaceCharAt( text, i, ' ' );
+                    }else{
+                        break;
+                    }
+                    x++;
+                }
+            }
+            return this.trim(text);
+        },
 
 
-		
+        
 
 
 
 
 
-		isOnlyWhiteSpace: function( text ){
-			return !(/[^\t\n\r ]/.test( text ));
-		},
+        isOnlyWhiteSpace: function( text ){
+            return !(/[^\t\n\r ]/.test( text ));
+        },
 
 
-		
+        
 
 
 
 
 
-		collapseWhiteSpace: function( text ){
-			return text.replace(/[\t\n\r ]+/g, ' ');
-		},
+        collapseWhiteSpace: function( text ){
+            return text.replace(/[\t\n\r ]+/g, ' ');
+        },
 
 
-		
+        
 
 
 
 
 
-		hasProperties: function( obj ) {
-			var key;
-			for(key in obj) {
-				if( obj.hasOwnProperty( key ) ) {
-					return true;
-				}
-			}
-			return false;
-		},
+        hasProperties: function( obj ) {
+            var key;
+            for(key in obj) {
+                if( obj.hasOwnProperty( key ) ) {
+                    return true;
+                }
+            }
+            return false;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		sortObjects: function(property, reverse) {
-			reverse = (reverse) ? -1 : 1;
-			return function (a, b) {
-				a = a[property];
-				b = b[property];
-				if (a < b) {
-					return reverse * -1;
-				}
-				if (a > b) {
-					return reverse * 1;
-				}
-				return 0;
-			};
-		}
+        sortObjects: function(property, reverse) {
+            reverse = (reverse) ? -1 : 1;
+            return function (a, b) {
+                a = a[property];
+                b = b[property];
+                if (a < b) {
+                    return reverse * -1;
+                }
+                if (a > b) {
+                    return reverse * 1;
+                }
+                return 0;
+            };
+        }
 
-	};
+    };
 
 
-	modules.domUtils = {
+    modules.domUtils = {
 
-		
-		document: null,
-		rootNode: null,
+        
+        document: null,
+        rootNode: null,
 
 
-	     
+         
 
 
 
@@ -2423,289 +2423,108 @@ var Microformats;
         },
 
 
-	     
+         
 
 
 
 
 
-		getDOMContext: function( options ){
+        getDOMContext: function( options ){
 
-			
-			if(options.node){
-				this.rootNode = options.node;
-			}
+            
+            if(options.node){
+                this.rootNode = options.node;
+            }
 
 
-			
-			if(options.html){
-				
+            
+            if(options.html){
+                
                 var domParser = this.getDOMParser();
-       			this.rootNode = domParser.parseFromString( options.html, 'text/html' );
-			}
+                this.rootNode = domParser.parseFromString( options.html, 'text/html' );
+            }
 
 
-			
-			if(this.rootNode !== null){
-				if(this.rootNode.nodeType === 9){
-					this.document = this.rootNode;
-					this.rootNode = modules.domUtils.querySelector(this.rootNode, 'html');
-				}else{
-					
-					this.document = modules.domUtils.ownerDocument(this.rootNode);
-				}
-			}
+            
+            if(this.rootNode !== null){
+                if(this.rootNode.nodeType === 9){
+                    this.document = this.rootNode;
+                    this.rootNode = modules.domUtils.querySelector(this.rootNode, 'html');
+                }else{
+                    
+                    this.document = modules.domUtils.ownerDocument(this.rootNode);
+                }
+            }
 
 
-			
-			if(!this.rootNode && document){
-				this.rootNode = modules.domUtils.querySelector(document, 'html');
-				this.document = document;
-			}
+            
+            if(!this.rootNode && document){
+                this.rootNode = modules.domUtils.querySelector(document, 'html');
+                this.document = document;
+            }
 
 
-			if(this.rootNode && this.document){
-				return {document: this.document, rootNode: this.rootNode};
-			}
+            if(this.rootNode && this.document){
+                return {document: this.document, rootNode: this.rootNode};
+            }
 
-			return {document: null, rootNode: null};
-		},
+            return {document: null, rootNode: null};
+        },
 
 
 
-		
+        
 
 
 
 
 
-		getTopMostNode: function( node ){
-			
-			
-			
-			
-			return node;
-		},
+        getTopMostNode: function( node ){
+            
+            
+            
+            
+            return node;
+        },
 
 
 
-		 
+         
 
 
 
 
 
-		ownerDocument: function(node){
-			return node.ownerDocument;
-		},
+        ownerDocument: function(node){
+            return node.ownerDocument;
+        },
 
 
-		
+        
 
 
 
 
 
-		textContent: function(node){
-			if(node.textContent){
-				return node.textContent;
-			}else if(node.innerText){
-				return node.innerText;
-			}
-			return '';
-		},
+        textContent: function(node){
+            if(node.textContent){
+                return node.textContent;
+            }else if(node.innerText){
+                return node.innerText;
+            }
+            return '';
+        },
 
 
-		
+        
 
 
 
 
 
-		innerHTML: function(node){
-			return node.innerHTML;
-		},
-
-
-		
-
-
-
-
-
-
-		hasAttribute: function(node, attributeName) {
-			return node.hasAttribute(attributeName);
-		},
-
-
-		
-
-
-
-
-
-
-
-		hasAttributeValue: function(node, attributeName, value) {
-			return (this.getAttributeList(node, attributeName).indexOf(value) > -1);
-		},
-
-
-		
-
-
-
-
-
-
-		getAttribute: function(node, attributeName) {
-			return node.getAttribute(attributeName);
-		},
-
-
-		
-
-
-
-
-
-
-		setAttribute: function(node, attributeName, attributeValue){
-			node.setAttribute(attributeName, attributeValue);
-		},
-
-
-		
-
-
-
-
-
-		removeAttribute: function(node, attributeName) {
-			node.removeAttribute(attributeName);
-		},
-
-
-		
-
-
-
-
-
-
-		getElementById: function(docNode, id) {
-			return docNode.querySelector( '#' + id );
-		},
-
-
-		
-
-
-
-
-
-
-		querySelector: function(docNode, selector) {
-			return docNode.querySelector( selector );
-		},
-
-
-		
-
-
-
-
-
-
-		getAttributeList: function(node, attributeName) {
-			var out = [],
-				attList;
-
-			attList = node.getAttribute(attributeName);
-			if(attList && attList !== '') {
-				if(attList.indexOf(' ') > -1) {
-					out = attList.split(' ');
-				} else {
-					out.push(attList);
-				}
-			}
-			return out;
-		},
-
-
-		
-
-
-
-
-
-
-		getNodesByAttribute: function(node, attributeName) {
-			var selector = '[' + attributeName + ']';
-			return node.querySelectorAll(selector);
-		},
-
-
-		
-
-
-
-
-
-
-		getNodesByAttributeValue: function(rootNode, name, value) {
-			var arr = [],
-				x = 0,
-				i,
-				out = [];
-
-			arr = this.getNodesByAttribute(rootNode, name);
-			if(arr) {
-				i = arr.length;
-				while(x < i) {
-					if(this.hasAttributeValue(arr[x], name, value)) {
-						out.push(arr[x]);
-					}
-					x++;
-				}
-			}
-			return out;
-		},
-
-
-		
-
-
-
-
-
-
-		getAttrValFromTagList: function(node, tagNames, attributeName) {
-			var i = tagNames.length;
-
-			while(i--) {
-				if(node.tagName.toLowerCase() === tagNames[i]) {
-					var attrValue = this.getAttribute(node, attributeName);
-					if(attrValue && attrValue !== '') {
-						return attrValue;
-					}
-				}
-			}
-			return null;
-		},
-
-
-	   
-
-
-
-
-
-
-		getSingleDescendant: function(node){
-			return this.getDescendant( node, null, false );
-		},
+        innerHTML: function(node){
+            return node.innerHTML;
+        },
 
 
         
@@ -2715,286 +2534,467 @@ var Microformats;
 
 
 
-		getSingleDescendantOfType: function(node, tagNames){
-			return this.getDescendant( node, tagNames, true );
-		},
+        hasAttribute: function(node, attributeName) {
+            return node.hasAttribute(attributeName);
+        },
 
 
-	    
+        
 
 
 
 
 
 
-		getDescendant: function( node, tagNames, onlyOfType ){
-			var i = node.children.length,
-				countAll = 0,
-				countOfType = 0,
-				child,
-				out = null;
 
-			while(i--) {
-				child = node.children[i];
-				if(child.nodeType === 1) {
-					if(tagNames){
-						
-						if(this.hasTagName(child, tagNames)){
-							out = child;
-							countOfType++;
-						}
-					}else{
-						
-						out = child;
-						countAll++;
-					}
-				}
-			}
-			if(onlyOfType === true){
-				return (countOfType === 1)? out : null;
-			}else{
-				return (countAll === 1)? out : null;
-			}
-		},
+        hasAttributeValue: function(node, attributeName, value) {
+            return (this.getAttributeList(node, attributeName).indexOf(value) > -1);
+        },
 
 
-	   
+        
 
 
 
 
 
 
-		hasTagName: function(node, tagNames){
-			var i = tagNames.length;
-			while(i--) {
-				if(node.tagName.toLowerCase() === tagNames[i]) {
-					return true;
-				}
-			}
-			return false;
-		},
+        getAttribute: function(node, attributeName) {
+            return node.getAttribute(attributeName);
+        },
 
 
-	   
+        
 
 
 
 
 
 
-		appendChild: function(node, childNode){
-			return node.appendChild(childNode);
-		},
+        setAttribute: function(node, attributeName, attributeValue){
+            node.setAttribute(attributeName, attributeValue);
+        },
 
 
-	   
+        
 
 
 
 
 
-		removeChild: function(childNode){
-			if (childNode.parentNode) {
-				return childNode.parentNode.removeChild(childNode);
-			}else{
-				return null;
-			}
-		},
+        removeAttribute: function(node, attributeName) {
+            node.removeAttribute(attributeName);
+        },
 
 
-		
+        
 
 
 
 
 
-		clone: function(node) {
-			var newNode = node.cloneNode(true);
-			newNode.removeAttribute('id');
-			return newNode;
-		},
 
+        getElementById: function(docNode, id) {
+            return docNode.querySelector( '#' + id );
+        },
 
-		
 
+        
 
 
 
 
-		getElementText: function( node ){
-			if(node && node.data){
-				return node.data;
-			}else{
-				return '';
-			}
-		},
 
 
-		
+        querySelector: function(docNode, selector) {
+            return docNode.querySelector( selector );
+        },
 
 
+        
 
 
 
-		getOrderedAttributes: function( node ){
-			var nodeStr = node.outerHTML,
-				attrs = [];
 
-			for (var i = 0; i < node.attributes.length; i++) {
-				var attr = node.attributes[i];
-					attr.indexNum = nodeStr.indexOf(attr.name);
 
-				attrs.push( attr );
-			}
-			return attrs.sort( modules.utils.sortObjects( 'indexNum' ) );
-		},
 
+        getAttributeList: function(node, attributeName) {
+            var out = [],
+                attList;
 
-		
+            attList = node.getAttribute(attributeName);
+            if(attList && attList !== '') {
+                if(attList.indexOf(' ') > -1) {
+                    out = attList.split(' ');
+                } else {
+                    out.push(attList);
+                }
+            }
+            return out;
+        },
 
 
+        
 
 
 
 
-		decodeEntities: function( doc, text ){
-			
-			return doc.createTextNode( text ).nodeValue;
-		},
 
 
-		
+        getNodesByAttribute: function(node, attributeName) {
+            var selector = '[' + attributeName + ']';
+            return node.querySelectorAll(selector);
+        },
 
 
+        
 
 
 
-		cloneDocument: function( document ){
-			var newNode,
-				newDocument = null;
 
-			if( this.canCloneDocument( document )){
-				newDocument = document.implementation.createHTMLDocument('');
-				newNode = newDocument.importNode( document.documentElement, true );
-				newDocument.replaceChild(newNode, newDocument.querySelector('html'));
-			}
-			return (newNode && newNode.nodeType && newNode.nodeType === 1)? newDocument : document;
-		},
 
 
-		
+        getNodesByAttributeValue: function(rootNode, name, value) {
+            var arr = [],
+                x = 0,
+                i,
+                out = [];
 
+            arr = this.getNodesByAttribute(rootNode, name);
+            if(arr) {
+                i = arr.length;
+                while(x < i) {
+                    if(this.hasAttributeValue(arr[x], name, value)) {
+                        out.push(arr[x]);
+                    }
+                    x++;
+                }
+            }
+            return out;
+        },
 
 
+        
 
 
-		canCloneDocument: function( document ){
-			return (document && document.importNode && document.implementation && document.implementation.createHTMLDocument);
-		},
 
 
-		
 
 
+        getAttrValFromTagList: function(node, tagNames, attributeName) {
+            var i = tagNames.length;
 
+            while(i--) {
+                if(node.tagName.toLowerCase() === tagNames[i]) {
+                    var attrValue = this.getAttribute(node, attributeName);
+                    if(attrValue && attrValue !== '') {
+                        return attrValue;
+                    }
+                }
+            }
+            return null;
+        },
 
 
-		getChildIndex: function (node) {
-		  	var parent = node.parentNode,
-		  		i = -1,
-		  		child;
-	  		while (parent && (child = parent.childNodes[++i])){
-				 if (child === node){
-					 return i;
-				 }
-			}
-	  		return -1;
-		},
+       
 
 
-		
 
 
 
 
+        getSingleDescendant: function(node){
+            return this.getDescendant( node, null, false );
+        },
 
-		getNodePath: function  (node) {
-		  	var parent = node.parentNode,
-			  	path = [],
-			  	index = this.getChildIndex(node);
 
-		  if(parent && (path = this.getNodePath(parent))){
-			   if(index > -1){
-				   path.push(index);
-			   }
-		  }
-		  return path;
-		},
+        
 
 
-		
 
 
 
 
+        getSingleDescendantOfType: function(node, tagNames){
+            return this.getDescendant( node, tagNames, true );
+        },
 
 
-		getNodeByPath: function (document, path) {
-		  	var node = document.documentElement,
-		  		i = 0,
-		  		index;
-		  while ((index = path[++i]) > -1){
-			  node = node.childNodes[index];
-		  }
-		  return node;
-		},
+        
 
 
-		
 
 
 
 
+        getDescendant: function( node, tagNames, onlyOfType ){
+            var i = node.children.length,
+                countAll = 0,
+                countOfType = 0,
+                child,
+                out = null;
 
-		getChildren: function( node ){
-			return node.children;
-		},
+            while(i--) {
+                child = node.children[i];
+                if(child.nodeType === 1) {
+                    if(tagNames){
+                        
+                        if(this.hasTagName(child, tagNames)){
+                            out = child;
+                            countOfType++;
+                        }
+                    }else{
+                        
+                        out = child;
+                        countAll++;
+                    }
+                }
+            }
+            if(onlyOfType === true){
+                return (countOfType === 1)? out : null;
+            }else{
+                return (countAll === 1)? out : null;
+            }
+        },
 
 
-		
+       
 
 
 
 
 
-		createNode: function( tagName ){
-			return this.document.createElement(tagName);
-		},
 
+        hasTagName: function(node, tagNames){
+            var i = tagNames.length;
+            while(i--) {
+                if(node.tagName.toLowerCase() === tagNames[i]) {
+                    return true;
+                }
+            }
+            return false;
+        },
 
-		
 
+       
 
 
 
 
 
-		createNodeWithText: function( tagName, text ){
-			var node = this.document.createElement(tagName);
-			node.innerHTML = text;
-			return node;
-		}
 
+        appendChild: function(node, childNode){
+            return node.appendChild(childNode);
+        },
 
 
-	};
+       
 
 
-	modules.url = {
 
 
-		
+
+        removeChild: function(childNode){
+            if (childNode.parentNode) {
+                return childNode.parentNode.removeChild(childNode);
+            }else{
+                return null;
+            }
+        },
+
+
+        
+
+
+
+
+
+        clone: function(node) {
+            var newNode = node.cloneNode(true);
+            newNode.removeAttribute('id');
+            return newNode;
+        },
+
+
+        
+
+
+
+
+
+        getElementText: function( node ){
+            if(node && node.data){
+                return node.data;
+            }else{
+                return '';
+            }
+        },
+
+
+        
+
+
+
+
+
+        getOrderedAttributes: function( node ){
+            var nodeStr = node.outerHTML,
+                attrs = [];
+
+            for (var i = 0; i < node.attributes.length; i++) {
+                var attr = node.attributes[i];
+                    attr.indexNum = nodeStr.indexOf(attr.name);
+
+                attrs.push( attr );
+            }
+            return attrs.sort( modules.utils.sortObjects( 'indexNum' ) );
+        },
+
+
+        
+
+
+
+
+
+
+        decodeEntities: function( doc, text ){
+            
+            return doc.createTextNode( text ).nodeValue;
+        },
+
+
+        
+
+
+
+
+
+        cloneDocument: function( document ){
+            var newNode,
+                newDocument = null;
+
+            if( this.canCloneDocument( document )){
+                newDocument = document.implementation.createHTMLDocument('');
+                newNode = newDocument.importNode( document.documentElement, true );
+                newDocument.replaceChild(newNode, newDocument.querySelector('html'));
+            }
+            return (newNode && newNode.nodeType && newNode.nodeType === 1)? newDocument : document;
+        },
+
+
+        
+
+
+
+
+
+        canCloneDocument: function( document ){
+            return (document && document.importNode && document.implementation && document.implementation.createHTMLDocument);
+        },
+
+
+        
+
+
+
+
+
+        getChildIndex: function (node) {
+            var parent = node.parentNode,
+                i = -1,
+                child;
+            while (parent && (child = parent.childNodes[++i])){
+                 if (child === node){
+                     return i;
+                 }
+            }
+            return -1;
+        },
+
+
+        
+
+
+
+
+
+        getNodePath: function  (node) {
+            var parent = node.parentNode,
+                path = [],
+                index = this.getChildIndex(node);
+
+          if(parent && (path = this.getNodePath(parent))){
+               if(index > -1){
+                   path.push(index);
+               }
+          }
+          return path;
+        },
+
+
+        
+
+
+
+
+
+
+        getNodeByPath: function (document, path) {
+            var node = document.documentElement,
+                i = 0,
+                index;
+          while ((index = path[++i]) > -1){
+              node = node.childNodes[index];
+          }
+          return node;
+        },
+
+
+        
+
+
+
+
+
+        getChildren: function( node ){
+            return node.children;
+        },
+
+
+        
+
+
+
+
+
+        createNode: function( tagName ){
+            return this.document.createElement(tagName);
+        },
+
+
+        
+
+
+
+
+
+
+        createNodeWithText: function( tagName, text ){
+            var node = this.document.createElement(tagName);
+            node.innerHTML = text;
+            return node;
+        }
+
+
+
+    };
+
+
+    modules.url = {
+
+
+        
 
 
         init: function(){
@@ -3008,26 +3008,26 @@ var Microformats;
         },
 
 
-		
+        
 
 
 
 
 
 
-		resolve: function(url, baseUrl) {
-			
-			if(modules.utils.isString(url) && modules.utils.isString(baseUrl) && url.indexOf('://') === -1){
-				
-				
-				try {
-					var resolved = new URL(url, baseUrl).toString();
-					
-					if(resolved === '[object URL]'){
-						resolved = URI.resolve(baseUrl, url);
-					}
-					return resolved;
-				}catch(e){
+        resolve: function(url, baseUrl) {
+            
+            if(modules.utils.isString(url) && modules.utils.isString(baseUrl) && url.indexOf('://') === -1){
+                
+                
+                try {
+                    var resolved = new URL(url, baseUrl).toString();
+                    
+                    if(resolved === '[object URL]'){
+                        resolved = URI.resolve(baseUrl, url);
+                    }
+                    return resolved;
+                }catch(e){
                     
                     if(this._domParser === undefined){
                         this.init();
@@ -3039,19 +3039,19 @@ var Microformats;
 
                     
                     return this._linkNode.href;
-				}
-			}else{
-				if(modules.utils.isString(url)){
-					return url;
-				}
-				return '';
-			}
-		},
+                }
+            }else{
+                if(modules.utils.isString(url)){
+                    return url;
+                }
+                return '';
+            }
+        },
 
-	};
+    };
 
 
-	
+    
 
 
 
@@ -3059,602 +3059,602 @@ var Microformats;
 
 
 
-	modules.ISODate = function ( dateString, format ) {
-		this.clear();
+    modules.ISODate = function ( dateString, format ) {
+        this.clear();
 
-		this.format = (format)? format : 'auto'; 
-		this.setFormatSep();
+        this.format = (format)? format : 'auto'; 
+        this.setFormatSep();
 
-		
-		if(arguments[0]) {
-			this.parse(dateString, format);
-		}
-	};
+        
+        if(arguments[0]) {
+            this.parse(dateString, format);
+        }
+    };
 
 
-	modules.ISODate.prototype = {
+    modules.ISODate.prototype = {
 
 
-		
+        
 
 
 
-		clear: function(){
-			this.clearDate();
-			this.clearTime();
-			this.clearTimeZone();
-			this.setAutoProfileState();
-		},
+        clear: function(){
+            this.clearDate();
+            this.clearTime();
+            this.clearTimeZone();
+            this.setAutoProfileState();
+        },
 
 
-		
+        
 
 
 
-		clearDate: function(){
-			this.dY = -1;
-			this.dM = -1;
-			this.dD = -1;
-			this.dDDD = -1;
-		},
+        clearDate: function(){
+            this.dY = -1;
+            this.dM = -1;
+            this.dD = -1;
+            this.dDDD = -1;
+        },
 
 
-		
+        
 
 
 
-		clearTime: function(){
-			this.tH = -1;
-			this.tM = -1;
-			this.tS = -1;
-			this.tD = -1;
-		},
+        clearTime: function(){
+            this.tH = -1;
+            this.tM = -1;
+            this.tS = -1;
+            this.tD = -1;
+        },
 
 
-		
+        
 
 
 
-		clearTimeZone: function(){
-			this.tzH = -1;
-			this.tzM = -1;
-			this.tzPN = '+';
-			this.z = false;
-		},
+        clearTimeZone: function(){
+            this.tzH = -1;
+            this.tzM = -1;
+            this.tzPN = '+';
+            this.z = false;
+        },
 
 
-		
+        
 
 
 
-		setAutoProfileState: function(){
-			this.autoProfile = {
-			   sep: 'T',
-			   dsep: '-',
-			   tsep: ':',
-			   tzsep: ':',
-			   tzZulu: 'Z'
-			};
-		},
+        setAutoProfileState: function(){
+            this.autoProfile = {
+               sep: 'T',
+               dsep: '-',
+               tsep: ':',
+               tzsep: ':',
+               tzZulu: 'Z'
+            };
+        },
 
 
-		
+        
 
 
 
 
 
 
-		parse: function( dateString, format ) {
-			this.clear();
+        parse: function( dateString, format ) {
+            this.clear();
 
-			var parts = [],
-				tzArray = [],
-				position = 0,
-				datePart = '',
-				timePart = '',
-				timeZonePart = '';
+            var parts = [],
+                tzArray = [],
+                position = 0,
+                datePart = '',
+                timePart = '',
+                timeZonePart = '';
 
-			if(format){
-				this.format = format;
-			}
+            if(format){
+                this.format = format;
+            }
 
 
 
-			
-			
-			if(dateString.indexOf('t') > -1) {
-				this.autoProfile.sep = 't';
-			}
-			if(dateString.indexOf('z') > -1) {
-				this.autoProfile.tzZulu = 'z';
-			}
-			if(dateString.indexOf('Z') > -1) {
-				this.autoProfile.tzZulu = 'Z';
-			}
-			if(dateString.toUpperCase().indexOf('T') === -1) {
-				this.autoProfile.sep = ' ';
-			}
+            
+            
+            if(dateString.indexOf('t') > -1) {
+                this.autoProfile.sep = 't';
+            }
+            if(dateString.indexOf('z') > -1) {
+                this.autoProfile.tzZulu = 'z';
+            }
+            if(dateString.indexOf('Z') > -1) {
+                this.autoProfile.tzZulu = 'Z';
+            }
+            if(dateString.toUpperCase().indexOf('T') === -1) {
+                this.autoProfile.sep = ' ';
+            }
 
 
-			dateString = dateString.toUpperCase().replace(' ','T');
+            dateString = dateString.toUpperCase().replace(' ','T');
 
-			
-			if(dateString.indexOf('T') > -1) {
-				parts = dateString.split('T');
-				datePart = parts[0];
-				timePart = parts[1];
+            
+            if(dateString.indexOf('T') > -1) {
+                parts = dateString.split('T');
+                datePart = parts[0];
+                timePart = parts[1];
 
-				
-				if(timePart.indexOf( 'Z' ) > -1) {
-					this.z = true;
-				}
+                
+                if(timePart.indexOf( 'Z' ) > -1) {
+                    this.z = true;
+                }
 
-				
-				if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
-					tzArray = timePart.split( 'Z' ); 
-					timePart = tzArray[0];
-					timeZonePart = tzArray[1];
+                
+                if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
+                    tzArray = timePart.split( 'Z' ); 
+                    timePart = tzArray[0];
+                    timeZonePart = tzArray[1];
 
-					
-					if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
-						position = 0;
+                    
+                    if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
+                        position = 0;
 
-						if(timePart.indexOf( '+' ) > -1) {
-							position = timePart.indexOf( '+' );
-						} else {
-							position = timePart.indexOf( '-' );
-						}
+                        if(timePart.indexOf( '+' ) > -1) {
+                            position = timePart.indexOf( '+' );
+                        } else {
+                            position = timePart.indexOf( '-' );
+                        }
 
-						timeZonePart = timePart.substring( position, timePart.length );
-						timePart = timePart.substring( 0, position );
-					}
-				}
+                        timeZonePart = timePart.substring( position, timePart.length );
+                        timePart = timePart.substring( 0, position );
+                    }
+                }
 
-			} else {
-				datePart = dateString;
-			}
+            } else {
+                datePart = dateString;
+            }
 
-			if(datePart !== '') {
-				this.parseDate( datePart );
-				if(timePart !== '') {
-					this.parseTime( timePart );
-					if(timeZonePart !== '') {
-						this.parseTimeZone( timeZonePart );
-					}
-				}
-			}
-			return this.toString( format );
-		},
+            if(datePart !== '') {
+                this.parseDate( datePart );
+                if(timePart !== '') {
+                    this.parseTime( timePart );
+                    if(timeZonePart !== '') {
+                        this.parseTimeZone( timeZonePart );
+                    }
+                }
+            }
+            return this.toString( format );
+        },
 
 
-		
+        
 
 
 
 
 
 
-		parseDate: function( dateString, format ) {
-			this.clearDate();
+        parseDate: function( dateString, format ) {
+            this.clearDate();
 
-			var parts = [];
+            var parts = [];
 
-			
-			if(dateString.indexOf('-') === -1) {
-				this.autoProfile.tsep = '';
-			}
+            
+            if(dateString.indexOf('-') === -1) {
+                this.autoProfile.tsep = '';
+            }
 
-			
-			parts = dateString.match( /(\d\d\d\d)-(\d\d\d)/ );
-			if(parts) {
-				if(parts[1]) {
-					this.dY = parts[1];
-				}
-				if(parts[2]) {
-					this.dDDD = parts[2];
-				}
-			}
+            
+            parts = dateString.match( /(\d\d\d\d)-(\d\d\d)/ );
+            if(parts) {
+                if(parts[1]) {
+                    this.dY = parts[1];
+                }
+                if(parts[2]) {
+                    this.dDDD = parts[2];
+                }
+            }
 
-			if(this.dDDD === -1) {
-				
-				parts = dateString.match( /(\d\d\d\d)?-?(\d\d)?-?(\d\d)?/ );
-				if(parts[1]) {
-					this.dY = parts[1];
-				}
-				if(parts[2]) {
-					this.dM = parts[2];
-				}
-				if(parts[3]) {
-					this.dD = parts[3];
-				}
-			}
-			return this.toString(format);
-		},
+            if(this.dDDD === -1) {
+                
+                parts = dateString.match( /(\d\d\d\d)?-?(\d\d)?-?(\d\d)?/ );
+                if(parts[1]) {
+                    this.dY = parts[1];
+                }
+                if(parts[2]) {
+                    this.dM = parts[2];
+                }
+                if(parts[3]) {
+                    this.dD = parts[3];
+                }
+            }
+            return this.toString(format);
+        },
 
 
-		
+        
 
 
 
 
 
 
-		parseTime: function( timeString, format ) {
-			this.clearTime();
-			var parts = [];
+        parseTime: function( timeString, format ) {
+            this.clearTime();
+            var parts = [];
 
-			
-			if(timeString.indexOf(':') === -1) {
-				this.autoProfile.tsep = '';
-			}
+            
+            if(timeString.indexOf(':') === -1) {
+                this.autoProfile.tsep = '';
+            }
 
-			
-			parts = timeString.match( /(\d\d)?:?(\d\d)?:?(\d\d)?.?([0-9]+)?/ );
-			if(parts[1]) {
-				this.tH = parts[1];
-			}
-			if(parts[2]) {
-				this.tM = parts[2];
-			}
-			if(parts[3]) {
-				this.tS = parts[3];
-			}
-			if(parts[4]) {
-				this.tD = parts[4];
-			}
-			return this.toTimeString(format);
-		},
+            
+            parts = timeString.match( /(\d\d)?:?(\d\d)?:?(\d\d)?.?([0-9]+)?/ );
+            if(parts[1]) {
+                this.tH = parts[1];
+            }
+            if(parts[2]) {
+                this.tM = parts[2];
+            }
+            if(parts[3]) {
+                this.tS = parts[3];
+            }
+            if(parts[4]) {
+                this.tD = parts[4];
+            }
+            return this.toTimeString(format);
+        },
 
 
-		
+        
 
 
 
 
 
 
-		parseTimeZone: function( timeString, format ) {
-			this.clearTimeZone();
-			var parts = [];
+        parseTimeZone: function( timeString, format ) {
+            this.clearTimeZone();
+            var parts = [];
 
-			if(timeString.toLowerCase() === 'z'){
-				this.z = true;
-				
-				this.autoProfile.tzZulu = (timeString === 'z')? 'z' : 'Z';
-			}else{
+            if(timeString.toLowerCase() === 'z'){
+                this.z = true;
+                
+                this.autoProfile.tzZulu = (timeString === 'z')? 'z' : 'Z';
+            }else{
 
-				
-				if(timeString.indexOf(':') === -1) {
-					this.autoProfile.tzsep = '';
-				}
+                
+                if(timeString.indexOf(':') === -1) {
+                    this.autoProfile.tzsep = '';
+                }
 
-				
-				parts = timeString.match( /([\-\+]{1})?(\d\d)?:?(\d\d)?/ );
-				if(parts[1]) {
-					this.tzPN = parts[1];
-				}
-				if(parts[2]) {
-					this.tzH = parts[2];
-				}
-				if(parts[3]) {
-					this.tzM = parts[3];
-				}
+                
+                parts = timeString.match( /([\-\+]{1})?(\d\d)?:?(\d\d)?/ );
+                if(parts[1]) {
+                    this.tzPN = parts[1];
+                }
+                if(parts[2]) {
+                    this.tzH = parts[2];
+                }
+                if(parts[3]) {
+                    this.tzM = parts[3];
+                }
 
 
-			}
-			this.tzZulu = 'z';
-			return this.toTimeString( format );
-		},
+            }
+            this.tzZulu = 'z';
+            return this.toTimeString( format );
+        },
 
 
-		
+        
 
 
 
 
 
-		toString: function( format ) {
-			var output = '';
+        toString: function( format ) {
+            var output = '';
 
-			if(format){
-				this.format = format;
-			}
-			this.setFormatSep();
+            if(format){
+                this.format = format;
+            }
+            this.setFormatSep();
 
-			if(this.dY  > -1) {
-				output = this.dY;
-				if(this.dM > 0 && this.dM < 13) {
-					output += this.dsep + this.dM;
-					if(this.dD > 0 && this.dD < 32) {
-						output += this.dsep + this.dD;
-						if(this.tH > -1 && this.tH < 25) {
-							output += this.sep + this.toTimeString( format );
-						}
-					}
-				}
-				if(this.dDDD > -1) {
-					output += this.dsep + this.dDDD;
-				}
-			} else if(this.tH > -1) {
-				output += this.toTimeString( format );
-			}
+            if(this.dY  > -1) {
+                output = this.dY;
+                if(this.dM > 0 && this.dM < 13) {
+                    output += this.dsep + this.dM;
+                    if(this.dD > 0 && this.dD < 32) {
+                        output += this.dsep + this.dD;
+                        if(this.tH > -1 && this.tH < 25) {
+                            output += this.sep + this.toTimeString( format );
+                        }
+                    }
+                }
+                if(this.dDDD > -1) {
+                    output += this.dsep + this.dDDD;
+                }
+            } else if(this.tH > -1) {
+                output += this.toTimeString( format );
+            }
 
-			return output;
-		},
+            return output;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		toTimeString: function( format ) {
-			var out = '';
+        toTimeString: function( format ) {
+            var out = '';
 
-			if(format){
-				this.format = format;
-			}
-			this.setFormatSep();
+            if(format){
+                this.format = format;
+            }
+            this.setFormatSep();
 
-			
-			if(this.tH) {
-				if(this.tH > -1 && this.tH < 25) {
-					out += this.tH;
-					if(this.tM > -1 && this.tM < 61){
-						out += this.tsep + this.tM;
-						if(this.tS > -1 && this.tS < 61){
-							out += this.tsep + this.tS;
-							if(this.tD > -1){
-								out += '.' + this.tD;
-							}
-						}
-					}
+            
+            if(this.tH) {
+                if(this.tH > -1 && this.tH < 25) {
+                    out += this.tH;
+                    if(this.tM > -1 && this.tM < 61){
+                        out += this.tsep + this.tM;
+                        if(this.tS > -1 && this.tS < 61){
+                            out += this.tsep + this.tS;
+                            if(this.tD > -1){
+                                out += '.' + this.tD;
+                            }
+                        }
+                    }
 
 
 
-					
-					if(this.z) {
-						out += this.tzZulu;
-					} else {
-						if(this.tzH && this.tzH > -1 && this.tzH < 25) {
-							out += this.tzPN + this.tzH;
-							if(this.tzM > -1 && this.tzM < 61){
-								out += this.tzsep + this.tzM;
-							}
-						}
-					}
-				}
-			}
-			return out;
-		},
+                    
+                    if(this.z) {
+                        out += this.tzZulu;
+                    } else {
+                        if(this.tzH && this.tzH > -1 && this.tzH < 25) {
+                            out += this.tzPN + this.tzH;
+                            if(this.tzM > -1 && this.tzM < 61){
+                                out += this.tzsep + this.tzM;
+                            }
+                        }
+                    }
+                }
+            }
+            return out;
+        },
 
 
-		
+        
 
 
 
-		setFormatSep: function() {
-			switch( this.format.toLowerCase() ) {
-				case 'rfc3339':
-					this.sep = 'T';
-					this.dsep = '';
-					this.tsep = '';
-					this.tzsep = '';
-					this.tzZulu = 'Z';
-					break;
-				case 'w3c':
-					this.sep = 'T';
-					this.dsep = '-';
-					this.tsep = ':';
-					this.tzsep = ':';
-					this.tzZulu = 'Z';
-					break;
-				case 'html5':
-					this.sep = ' ';
-					this.dsep = '-';
-					this.tsep = ':';
-					this.tzsep = ':';
-					this.tzZulu = 'Z';
-					break;
-				default:
-					
-					this.sep = this.autoProfile.sep;
-					this.dsep = this.autoProfile.dsep;
-					this.tsep = this.autoProfile.tsep;
-					this.tzsep = this.autoProfile.tzsep;
-					this.tzZulu = this.autoProfile.tzZulu;
-			}
-		},
+        setFormatSep: function() {
+            switch( this.format.toLowerCase() ) {
+                case 'rfc3339':
+                    this.sep = 'T';
+                    this.dsep = '';
+                    this.tsep = '';
+                    this.tzsep = '';
+                    this.tzZulu = 'Z';
+                    break;
+                case 'w3c':
+                    this.sep = 'T';
+                    this.dsep = '-';
+                    this.tsep = ':';
+                    this.tzsep = ':';
+                    this.tzZulu = 'Z';
+                    break;
+                case 'html5':
+                    this.sep = ' ';
+                    this.dsep = '-';
+                    this.tsep = ':';
+                    this.tzsep = ':';
+                    this.tzZulu = 'Z';
+                    break;
+                default:
+                    
+                    this.sep = this.autoProfile.sep;
+                    this.dsep = this.autoProfile.dsep;
+                    this.tsep = this.autoProfile.tsep;
+                    this.tzsep = this.autoProfile.tzsep;
+                    this.tzZulu = this.autoProfile.tzZulu;
+            }
+        },
 
 
-		
+        
 
 
 
 
-		hasFullDate: function() {
-			return(this.dY !== -1 && this.dM !== -1 && this.dD !== -1);
-		},
+        hasFullDate: function() {
+            return(this.dY !== -1 && this.dM !== -1 && this.dD !== -1);
+        },
 
 
-		
+        
 
 
 
 
-		hasDate: function() {
-			return(this.dY !== -1);
-		},
+        hasDate: function() {
+            return(this.dY !== -1);
+        },
 
 
-		
+        
 
 
 
 
-		hasTime: function() {
-			return(this.tH !== -1);
-		},
+        hasTime: function() {
+            return(this.tH !== -1);
+        },
 
-		
+        
 
 
 
 
-		hasTimeZone: function() {
-			return(this.tzH !== -1);
-		}
+        hasTimeZone: function() {
+            return(this.tzH !== -1);
+        }
 
-	};
+    };
 
-	modules.ISODate.prototype.constructor = modules.ISODate;
+    modules.ISODate.prototype.constructor = modules.ISODate;
 
 
-	modules.dates = {
+    modules.dates = {
 
 
-		
+        
 
 
 
 
 
-		hasAM: function( text ) {
-			text = text.toLowerCase();
-			return(text.indexOf('am') > -1 || text.indexOf('a.m.') > -1);
-		},
+        hasAM: function( text ) {
+            text = text.toLowerCase();
+            return(text.indexOf('am') > -1 || text.indexOf('a.m.') > -1);
+        },
 
 
-		
+        
 
 
 
 
 
-		hasPM: function( text ) {
-			text = text.toLowerCase();
-			return(text.indexOf('pm') > -1 || text.indexOf('p.m.') > -1);
-		},
+        hasPM: function( text ) {
+            text = text.toLowerCase();
+            return(text.indexOf('pm') > -1 || text.indexOf('p.m.') > -1);
+        },
 
 
-		
+        
 
 
 
 
 
-		removeAMPM: function( text ) {
-			return text.replace('pm', '').replace('p.m.', '').replace('am', '').replace('a.m.', '');
-		},
+        removeAMPM: function( text ) {
+            return text.replace('pm', '').replace('p.m.', '').replace('am', '').replace('a.m.', '');
+        },
 
 
-	   
+       
 
 
 
 
 
-		isDuration: function( text ) {
-			if(modules.utils.isString( text )){
-				text = text.toLowerCase();
-				if(modules.utils.startWith(text, 'p') ){
-					return true;
-				}
-			}
-			return false;
-		},
+        isDuration: function( text ) {
+            if(modules.utils.isString( text )){
+                text = text.toLowerCase();
+                if(modules.utils.startWith(text, 'p') ){
+                    return true;
+                }
+            }
+            return false;
+        },
 
 
-	   
+       
 
 
 
 
 
 
-		isTime: function( text ) {
-			if(modules.utils.isString(text)){
-				text = text.toLowerCase();
-				text = modules.utils.trim( text );
-				
-				if( text.match(':') && ( modules.utils.startWith(text, 'z') || modules.utils.startWith(text, '-')  || modules.utils.startWith(text, '+') )) {
-					return true;
-				}
-				
-				if( text.match(/^[0-9]/) &&
-					( this.hasAM(text) || this.hasPM(text) )) {
-					return true;
-				}
-				
-				if( text.match(':') && !text.match(/t|\s/) ) {
-					return true;
-				}
+        isTime: function( text ) {
+            if(modules.utils.isString(text)){
+                text = text.toLowerCase();
+                text = modules.utils.trim( text );
+                
+                if( text.match(':') && ( modules.utils.startWith(text, 'z') || modules.utils.startWith(text, '-')  || modules.utils.startWith(text, '+') )) {
+                    return true;
+                }
+                
+                if( text.match(/^[0-9]/) &&
+                    ( this.hasAM(text) || this.hasPM(text) )) {
+                    return true;
+                }
+                
+                if( text.match(':') && !text.match(/t|\s/) ) {
+                    return true;
+                }
 
-				
-				if(modules.utils.isNumber(text)){
-					if(text.length === 2 || text.length === 4 || text.length === 6){
-						return true;
-					}
-				}
-			}
-			return false;
-		},
+                
+                if(modules.utils.isNumber(text)){
+                    if(text.length === 2 || text.length === 4 || text.length === 6){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		parseAmPmTime: function( text ) {
-			var out = text,
-				times = [];
+        parseAmPmTime: function( text ) {
+            var out = text,
+                times = [];
 
-			
-			if(modules.utils.isString(out)) {
-				
-				text = text.replace(/[ ]+/g, '');
+            
+            if(modules.utils.isString(out)) {
+                
+                text = text.replace(/[ ]+/g, '');
 
-				if(text.match(':') || this.hasAM(text) || this.hasPM(text)) {
+                if(text.match(':') || this.hasAM(text) || this.hasPM(text)) {
 
-					if(text.match(':')) {
-						times = text.split(':');
-					} else {
-						
-						times[0] = text;
-						times[0] = this.removeAMPM(times[0]);
-					}
+                    if(text.match(':')) {
+                        times = text.split(':');
+                    } else {
+                        
+                        times[0] = text;
+                        times[0] = this.removeAMPM(times[0]);
+                    }
 
-					
-					if(this.hasPM(text)) {
-						if(times[0] < 12) {
-							times[0] = parseInt(times[0], 10) + 12;
-						}
-					}
+                    
+                    if(this.hasPM(text)) {
+                        if(times[0] < 12) {
+                            times[0] = parseInt(times[0], 10) + 12;
+                        }
+                    }
 
-					
-					if(times[0] && times[0].length === 1) {
-						times[0] = '0' + times[0];
-					}
+                    
+                    if(times[0] && times[0].length === 1) {
+                        times[0] = '0' + times[0];
+                    }
 
-					
-					if(times[0]) {
-						text = times.join(':');
-					}
-				}
-			}
+                    
+                    if(times[0]) {
+                        text = times.join(':');
+                    }
+                }
+            }
 
-			
-			return this.removeAMPM(text);
-		},
+            
+            return this.removeAMPM(text);
+        },
 
 
-	   
+       
 
 
 
@@ -3662,27 +3662,27 @@ var Microformats;
 
 
 
-		dateTimeUnion: function(date, time, format) {
-			var isodate = new modules.ISODate(date, format),
-				isotime = new modules.ISODate();
+        dateTimeUnion: function(date, time, format) {
+            var isodate = new modules.ISODate(date, format),
+                isotime = new modules.ISODate();
 
-			isotime.parseTime(this.parseAmPmTime(time), format);
-			if(isodate.hasFullDate() && isotime.hasTime()) {
-				isodate.tH = isotime.tH;
-				isodate.tM = isotime.tM;
-				isodate.tS = isotime.tS;
-				isodate.tD = isotime.tD;
-				return isodate;
-			} else {
-				if(isodate.hasFullDate()){
-					return isodate;
-				}
-				return new modules.ISODate();
-			}
-		},
+            isotime.parseTime(this.parseAmPmTime(time), format);
+            if(isodate.hasFullDate() && isotime.hasTime()) {
+                isodate.tH = isotime.tH;
+                isodate.tM = isotime.tM;
+                isodate.tS = isotime.tS;
+                isodate.tD = isotime.tD;
+                return isodate;
+            } else {
+                if(isodate.hasFullDate()){
+                    return isodate;
+                }
+                return new modules.ISODate();
+            }
+        },
 
 
-	   
+       
 
 
 
@@ -3690,117 +3690,117 @@ var Microformats;
 
 
 
-		concatFragments: function (arr, format) {
-			var out = new modules.ISODate(),
-				i = 0,
-				value = '';
+        concatFragments: function (arr, format) {
+            var out = new modules.ISODate(),
+                i = 0,
+                value = '';
 
-			
-			if(arr[0].toUpperCase().match('T')) {
-				return new modules.ISODate(arr[0], format);
-			}else{
-				for(i = 0; i < arr.length; i++) {
-				value = arr[i];
+            
+            if(arr[0].toUpperCase().match('T')) {
+                return new modules.ISODate(arr[0], format);
+            }else{
+                for(i = 0; i < arr.length; i++) {
+                value = arr[i];
 
-				
-				if( value.charAt(4) === '-' && out.hasFullDate() === false ){
-					out.parseDate(value);
-				}
+                
+                if( value.charAt(4) === '-' && out.hasFullDate() === false ){
+                    out.parseDate(value);
+                }
 
-				
-				if( (value.indexOf(':') > -1 || modules.utils.isNumber( this.parseAmPmTime(value) )) && out.hasTime() === false ) {
-					
-					var items = this.splitTimeAndZone(value);
-					value = items[0];
+                
+                if( (value.indexOf(':') > -1 || modules.utils.isNumber( this.parseAmPmTime(value) )) && out.hasTime() === false ) {
+                    
+                    var items = this.splitTimeAndZone(value);
+                    value = items[0];
 
-					
-					value = this.parseAmPmTime(value);
-					out.parseTime(value);
+                    
+                    value = this.parseAmPmTime(value);
+                    out.parseTime(value);
 
-					
-					if(items.length > 1){
-						 out.parseTimeZone(items[1], format);
-					}
-				}
+                    
+                    if(items.length > 1){
+                         out.parseTimeZone(items[1], format);
+                    }
+                }
 
-				
-				if(value.charAt(0) === '-' || value.charAt(0) === '+' || value.toUpperCase() === 'Z') {
-					if( out.hasTimeZone() === false ){
-						out.parseTimeZone(value);
-					}
-				}
+                
+                if(value.charAt(0) === '-' || value.charAt(0) === '+' || value.toUpperCase() === 'Z') {
+                    if( out.hasTimeZone() === false ){
+                        out.parseTimeZone(value);
+                    }
+                }
 
-			}
-			return out;
+            }
+            return out;
 
-			}
-		},
+            }
+        },
 
 
-	   
+       
 
 
 
 
 
-		splitTimeAndZone: function ( text ){
-		   var out = [text],
-			   chars = ['-','+','z','Z'],
-			   i = chars.length;
+        splitTimeAndZone: function ( text ){
+           var out = [text],
+               chars = ['-','+','z','Z'],
+               i = chars.length;
 
-			while (i--) {
-			  if(text.indexOf(chars[i]) > -1){
-				  out[0] = text.slice( 0, text.indexOf(chars[i]) );
-				  out.push( text.slice( text.indexOf(chars[i]) ) );
-				  break;
-			   }
-			}
-		   return out;
-		}
+            while (i--) {
+              if(text.indexOf(chars[i]) > -1){
+                  out[0] = text.slice( 0, text.indexOf(chars[i]) );
+                  out.push( text.slice( text.indexOf(chars[i]) ) );
+                  break;
+               }
+            }
+           return out;
+        }
 
-	};
+    };
 
 
-	modules.text = {
+    modules.text = {
 
-		
-		textFormat: 'whitespacetrimmed',
+        
+        textFormat: 'whitespacetrimmed',
 
-		
-		blockLevelTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'hr', 'pre', 'table',
-			'address', 'article', 'aside', 'blockquote', 'caption', 'col', 'colgroup', 'dd', 'div',
-			'dt', 'dir', 'fieldset', 'figcaption', 'figure', 'footer', 'form',  'header', 'hgroup', 'hr',
-			'li', 'map', 'menu', 'nav', 'optgroup', 'option', 'section', 'tbody', 'testarea',
-			'tfoot', 'th', 'thead', 'tr', 'td', 'ul', 'ol', 'dl', 'details'],
+        
+        blockLevelTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'hr', 'pre', 'table',
+            'address', 'article', 'aside', 'blockquote', 'caption', 'col', 'colgroup', 'dd', 'div',
+            'dt', 'dir', 'fieldset', 'figcaption', 'figure', 'footer', 'form',  'header', 'hgroup', 'hr',
+            'li', 'map', 'menu', 'nav', 'optgroup', 'option', 'section', 'tbody', 'testarea',
+            'tfoot', 'th', 'thead', 'tr', 'td', 'ul', 'ol', 'dl', 'details'],
 
-		
-		excludeTags: ['noframe', 'noscript', 'template', 'script', 'style', 'frames', 'frameset'],
+        
+        excludeTags: ['noframe', 'noscript', 'template', 'script', 'style', 'frames', 'frameset'],
 
 
-		
+        
 
 
 
 
 
 
-		parse: function(doc, node, textFormat){
-			var out;
-			this.textFormat = (textFormat)? textFormat : this.textFormat;
-			if(this.textFormat === 'normalised'){
-				out = this.walkTreeForText( node );
-				if(out !== undefined){
-					return this.normalise( doc, out );
-				}else{
-					return '';
-				}
-			}else{
-			   return this.formatText( doc, modules.domUtils.textContent(node), this.textFormat );
-			}
-		},
+        parse: function(doc, node, textFormat){
+            var out;
+            this.textFormat = (textFormat)? textFormat : this.textFormat;
+            if(this.textFormat === 'normalised'){
+                out = this.walkTreeForText( node );
+                if(out !== undefined){
+                    return this.normalise( doc, out );
+                }else{
+                    return '';
+                }
+            }else{
+               return this.formatText( doc, modules.domUtils.textContent(node), this.textFormat );
+            }
+        },
 
 
-		
+        
 
 
 
@@ -3808,680 +3808,680 @@ var Microformats;
 
 
 
-		parseText: function( doc, text, textFormat ){
-		   var node = modules.domUtils.createNodeWithText( 'div', text );
-		   return this.parse( doc, node, textFormat );
-		},
+        parseText: function( doc, text, textFormat ){
+           var node = modules.domUtils.createNodeWithText( 'div', text );
+           return this.parse( doc, node, textFormat );
+        },
 
 
-		
+        
 
 
 
 
 
 
-		formatText: function( doc, text, textFormat ){
-		   this.textFormat = (textFormat)? textFormat : this.textFormat;
-		   if(text){
-			  var out = '',
-				  regex = /(<([^>]+)>)/ig;
+        formatText: function( doc, text, textFormat ){
+           this.textFormat = (textFormat)? textFormat : this.textFormat;
+           if(text){
+              var out = '',
+                  regex = /(<([^>]+)>)/ig;
 
-			  out = text.replace(regex, '');
-			  if(this.textFormat === 'whitespacetrimmed') {
-				 out = modules.utils.trimWhitespace( out );
-			  }
+              out = text.replace(regex, '');
+              if(this.textFormat === 'whitespacetrimmed') {
+                 out = modules.utils.trimWhitespace( out );
+              }
 
-			  
-			  return modules.domUtils.decodeEntities( doc, out );
-		   }else{
-			  return '';
-		   }
-		},
+              
+              return modules.domUtils.decodeEntities( doc, out );
+           }else{
+              return '';
+           }
+        },
 
 
-		
+        
 
 
 
 
 
-		normalise: function( doc, text ){
-			text = text.replace( /&nbsp;/g, ' ') ;    
-			text = modules.utils.collapseWhiteSpace( text );     
-			text = modules.domUtils.decodeEntities( doc, text );  
-			text = text.replace( '–', '-' );          
-			return modules.utils.trim( text );
-		},
+        normalise: function( doc, text ){
+            text = text.replace( /&nbsp;/g, ' ') ;    
+            text = modules.utils.collapseWhiteSpace( text );     
+            text = modules.domUtils.decodeEntities( doc, text );  
+            text = text.replace( '–', '-' );          
+            return modules.utils.trim( text );
+        },
 
 
-		
+        
 
 
 
 
 
-		walkTreeForText: function( node ) {
-			var out = '',
-				j = 0;
+        walkTreeForText: function( node ) {
+            var out = '',
+                j = 0;
 
-			if(node.tagName && this.excludeTags.indexOf( node.tagName.toLowerCase() ) > -1){
-				return out;
-			}
+            if(node.tagName && this.excludeTags.indexOf( node.tagName.toLowerCase() ) > -1){
+                return out;
+            }
 
-			
-			if(node.nodeType && node.nodeType === 3){
-				out += modules.domUtils.getElementText( node );
-			}
+            
+            if(node.nodeType && node.nodeType === 3){
+                out += modules.domUtils.getElementText( node );
+            }
 
-			
-			if(node.childNodes && node.childNodes.length > 0){
-				for (j = 0; j < node.childNodes.length; j++) {
-					var text = this.walkTreeForText( node.childNodes[j] );
-					if(text !== undefined){
-						out += text;
-					}
-				}
-			}
+            
+            if(node.childNodes && node.childNodes.length > 0){
+                for (j = 0; j < node.childNodes.length; j++) {
+                    var text = this.walkTreeForText( node.childNodes[j] );
+                    if(text !== undefined){
+                        out += text;
+                    }
+                }
+            }
 
-			
-			if(node.tagName && this.blockLevelTags.indexOf( node.tagName.toLowerCase() ) !== -1){
-				out += ' ';
-			}
+            
+            if(node.tagName && this.blockLevelTags.indexOf( node.tagName.toLowerCase() ) !== -1){
+                out += ' ';
+            }
 
-			return (out === '')? undefined : out ;
-		}
+            return (out === '')? undefined : out ;
+        }
 
-	};
+    };
 
 
-	modules.html = {
+    modules.html = {
 
-		
-		selfClosingElt: ['area', 'base', 'br', 'col', 'hr', 'img', 'input', 'link', 'meta', 'param', 'command', 'keygen', 'source'],
+        
+        selfClosingElt: ['area', 'base', 'br', 'col', 'hr', 'img', 'input', 'link', 'meta', 'param', 'command', 'keygen', 'source'],
 
 
-		
+        
 
 
 
 
 
-		parse: function( node ){
-			var out = '',
-				j = 0;
+        parse: function( node ){
+            var out = '',
+                j = 0;
 
-			
-			if(node.childNodes && node.childNodes.length > 0){
-				for (j = 0; j < node.childNodes.length; j++) {
-					var text = this.walkTreeForHtml( node.childNodes[j] );
-					if(text !== undefined){
-						out += text;
-					}
-				}
-			}
+            
+            if(node.childNodes && node.childNodes.length > 0){
+                for (j = 0; j < node.childNodes.length; j++) {
+                    var text = this.walkTreeForHtml( node.childNodes[j] );
+                    if(text !== undefined){
+                        out += text;
+                    }
+                }
+            }
 
-			return out;
-		},
+            return out;
+        },
 
 
-		
+        
 
 
 
 
 
 
-		walkTreeForHtml: function( node ) {
-			var out = '',
-				j = 0;
+        walkTreeForHtml: function( node ) {
+            var out = '',
+                j = 0;
 
-			
-			if(node.nodeType && node.nodeType === 3){
-				out += modules.domUtils.getElementText( node );
-			}
+            
+            if(node.nodeType && node.nodeType === 3){
+                out += modules.domUtils.getElementText( node );
+            }
 
 
-			
-			if(node.nodeType && node.nodeType === 1 && modules.domUtils.hasAttribute(node, 'data-include') === false){
+            
+            if(node.nodeType && node.nodeType === 1 && modules.domUtils.hasAttribute(node, 'data-include') === false){
 
-				
-				out += '<' + node.tagName.toLowerCase();
+                
+                out += '<' + node.tagName.toLowerCase();
 
-				
-				var attrs = modules.domUtils.getOrderedAttributes(node);
-				for (j = 0; j < attrs.length; j++) {
-					out += ' ' + attrs[j].name +  '=' + '"' + attrs[j].value + '"';
-				}
+                
+                var attrs = modules.domUtils.getOrderedAttributes(node);
+                for (j = 0; j < attrs.length; j++) {
+                    out += ' ' + attrs[j].name +  '=' + '"' + attrs[j].value + '"';
+                }
 
-				if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) === -1){
-					out += '>';
-				}
+                if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) === -1){
+                    out += '>';
+                }
 
-				
-				if(node.childNodes && node.childNodes.length > 0){
+                
+                if(node.childNodes && node.childNodes.length > 0){
 
-					for (j = 0; j < node.childNodes.length; j++) {
-						var text = this.walkTreeForHtml( node.childNodes[j] );
-						if(text !== undefined){
-							out += text;
-						}
-					}
-				}
+                    for (j = 0; j < node.childNodes.length; j++) {
+                        var text = this.walkTreeForHtml( node.childNodes[j] );
+                        if(text !== undefined){
+                            out += text;
+                        }
+                    }
+                }
 
-				
-				if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) > -1){
-					out += ' />';
-				}else{
-					out += '</' + node.tagName.toLowerCase() + '>';
-				}
-			}
+                
+                if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) > -1){
+                    out += ' />';
+                }else{
+                    out += '</' + node.tagName.toLowerCase() + '>';
+                }
+            }
 
-			return (out === '')? undefined : out;
-		}
+            return (out === '')? undefined : out;
+        }
 
 
-	};
+    };
 
 
-	modules.maps['h-adr'] = {
-		root: 'adr',
-		name: 'h-adr',
-		properties: {
-			'post-office-box': {},
-			'street-address': {},
-			'extended-address': {},
-			'locality': {},
-			'region': {},
-			'postal-code': {},
-			'country-name': {}
-		}
-	};
+    modules.maps['h-adr'] = {
+        root: 'adr',
+        name: 'h-adr',
+        properties: {
+            'post-office-box': {},
+            'street-address': {},
+            'extended-address': {},
+            'locality': {},
+            'region': {},
+            'postal-code': {},
+            'country-name': {}
+        }
+    };
 
 
-	modules.maps['h-card'] =  {
-		root: 'vcard',
-		name: 'h-card',
-		properties: {
-			'fn': {
-				'map': 'p-name'
-			},
-			'adr': {
-				'map': 'p-adr',
-				'uf': ['h-adr']
-			},
-			'agent': {
-				'uf': ['h-card']
-			},
-			'bday': {
-				'map': 'dt-bday'
-			},
-			'class': {},
-			'category': {
-				'map': 'p-category',
-				'relAlt': ['tag']
-			},
-			'email': {
-				'map': 'u-email'
-			},
-			'geo': {
-				'map': 'p-geo',
-				'uf': ['h-geo']
-			},
-			'key': {
-				'map': 'u-key'
-			},
-			'label': {},
-			'logo': {
-				'map': 'u-logo'
-			},
-			'mailer': {},
-			'honorific-prefix': {},
-			'given-name': {},
-			'additional-name': {},
-			'family-name': {},
-			'honorific-suffix': {},
-			'nickname': {},
-			'note': {}, 
-			'org': {},
-			'p-organization-name': {},
-			'p-organization-unit': {},
-			'photo': {
-				'map': 'u-photo'
-			},
-			'rev': {
-				'map': 'dt-rev'
-			},
-			'role': {},
-			'sequence': {},
-			'sort-string': {},
-			'sound': {
-				'map': 'u-sound'
-			},
-			'title': {
-				'map': 'p-job-title'
-			},
-			'tel': {},
-			'tz': {},
-			'uid': {
-				'map': 'u-uid'
-			},
-			'url': {
-				'map': 'u-url'
-			}
-		}
-	};
+    modules.maps['h-card'] =  {
+        root: 'vcard',
+        name: 'h-card',
+        properties: {
+            'fn': {
+                'map': 'p-name'
+            },
+            'adr': {
+                'map': 'p-adr',
+                'uf': ['h-adr']
+            },
+            'agent': {
+                'uf': ['h-card']
+            },
+            'bday': {
+                'map': 'dt-bday'
+            },
+            'class': {},
+            'category': {
+                'map': 'p-category',
+                'relAlt': ['tag']
+            },
+            'email': {
+                'map': 'u-email'
+            },
+            'geo': {
+                'map': 'p-geo',
+                'uf': ['h-geo']
+            },
+            'key': {
+                'map': 'u-key'
+            },
+            'label': {},
+            'logo': {
+                'map': 'u-logo'
+            },
+            'mailer': {},
+            'honorific-prefix': {},
+            'given-name': {},
+            'additional-name': {},
+            'family-name': {},
+            'honorific-suffix': {},
+            'nickname': {},
+            'note': {}, 
+            'org': {},
+            'p-organization-name': {},
+            'p-organization-unit': {},
+            'photo': {
+                'map': 'u-photo'
+            },
+            'rev': {
+                'map': 'dt-rev'
+            },
+            'role': {},
+            'sequence': {},
+            'sort-string': {},
+            'sound': {
+                'map': 'u-sound'
+            },
+            'title': {
+                'map': 'p-job-title'
+            },
+            'tel': {},
+            'tz': {},
+            'uid': {
+                'map': 'u-uid'
+            },
+            'url': {
+                'map': 'u-url'
+            }
+        }
+    };
 
 
-	modules.maps['h-entry'] = {
-		root: 'hentry',
-		name: 'h-entry',
-		properties: {
-			'entry-title': {
-				'map': 'p-name'
-			},
-			'entry-summary': {
-				'map': 'p-summary'
-			},
-			'entry-content': {
-				'map': 'e-content'
-			},
-			'published': {
-				'map': 'dt-published'
-			},
-			'updated': {
-				'map': 'dt-updated'
-			},
-			'author': {
-				'uf': ['h-card']
-			},
-			'category': {
-				'map': 'p-category',
-				'relAlt': ['tag']
-			},
-			'geo': {
-				'map': 'p-geo',
-				'uf': ['h-geo']
-			},
-			'latitude': {},
-			'longitude': {},
-			'url': {
-				'map': 'u-url',
-				'relAlt': ['bookmark']
-			}
-		}
-	};
+    modules.maps['h-entry'] = {
+        root: 'hentry',
+        name: 'h-entry',
+        properties: {
+            'entry-title': {
+                'map': 'p-name'
+            },
+            'entry-summary': {
+                'map': 'p-summary'
+            },
+            'entry-content': {
+                'map': 'e-content'
+            },
+            'published': {
+                'map': 'dt-published'
+            },
+            'updated': {
+                'map': 'dt-updated'
+            },
+            'author': {
+                'uf': ['h-card']
+            },
+            'category': {
+                'map': 'p-category',
+                'relAlt': ['tag']
+            },
+            'geo': {
+                'map': 'p-geo',
+                'uf': ['h-geo']
+            },
+            'latitude': {},
+            'longitude': {},
+            'url': {
+                'map': 'u-url',
+                'relAlt': ['bookmark']
+            }
+        }
+    };
 
 
-	modules.maps['h-event'] = {
-		root: 'vevent',
-		name: 'h-event',
-		properties: {
-			'summary': {
-				'map': 'p-name'
-			},
-			'dtstart': {
-				'map': 'dt-start'
-			},
-			'dtend': {
-				'map': 'dt-end'
-			},
-			'description': {},
-			'url': {
-				'map': 'u-url'
-			},
-			'category': {
-				'map': 'p-category',
-				'relAlt': ['tag']
-			},
-			'location': {
-				'uf': ['h-card']
-			},
-			'geo': {
-				'uf': ['h-geo']
-			},
-			'latitude': {},
-			'longitude': {},
-			'duration': {
-				'map': 'dt-duration'
-			},
-			'contact': {
-				'uf': ['h-card']
-			},
-			'organizer': {
-				'uf': ['h-card']},
-			'attendee': {
-				'uf': ['h-card']},
-			'uid': {
-				'map': 'u-uid'
-			},
-			'attach': {
-				'map': 'u-attach'
-			},
-			'status': {},
-			'rdate': {},
-			'rrule': {}
-		}
-	};
+    modules.maps['h-event'] = {
+        root: 'vevent',
+        name: 'h-event',
+        properties: {
+            'summary': {
+                'map': 'p-name'
+            },
+            'dtstart': {
+                'map': 'dt-start'
+            },
+            'dtend': {
+                'map': 'dt-end'
+            },
+            'description': {},
+            'url': {
+                'map': 'u-url'
+            },
+            'category': {
+                'map': 'p-category',
+                'relAlt': ['tag']
+            },
+            'location': {
+                'uf': ['h-card']
+            },
+            'geo': {
+                'uf': ['h-geo']
+            },
+            'latitude': {},
+            'longitude': {},
+            'duration': {
+                'map': 'dt-duration'
+            },
+            'contact': {
+                'uf': ['h-card']
+            },
+            'organizer': {
+                'uf': ['h-card']},
+            'attendee': {
+                'uf': ['h-card']},
+            'uid': {
+                'map': 'u-uid'
+            },
+            'attach': {
+                'map': 'u-attach'
+            },
+            'status': {},
+            'rdate': {},
+            'rrule': {}
+        }
+    };
 
 
-	modules.maps['h-feed'] = {
-		root: 'hfeed',
-		name: 'h-feed',
-		properties: {
-			'category': {
-				'map': 'p-category',
-				'relAlt': ['tag']
-			},
-			'summary': {
-				'map': 'p-summary'
-			},
-			'author': {
-				'uf': ['h-card']
-			},
-			'url': {
-				'map': 'u-url'
-			},
-			'photo': {
-				'map': 'u-photo'
-			},
-		}
-	};
+    modules.maps['h-feed'] = {
+        root: 'hfeed',
+        name: 'h-feed',
+        properties: {
+            'category': {
+                'map': 'p-category',
+                'relAlt': ['tag']
+            },
+            'summary': {
+                'map': 'p-summary'
+            },
+            'author': {
+                'uf': ['h-card']
+            },
+            'url': {
+                'map': 'u-url'
+            },
+            'photo': {
+                'map': 'u-photo'
+            },
+        }
+    };
 
 
-	modules.maps['h-geo'] = {
-		root: 'geo',
-		name: 'h-geo',
-		properties: {
-			'latitude': {},
-			'longitude': {}
-		}
-	};
+    modules.maps['h-geo'] = {
+        root: 'geo',
+        name: 'h-geo',
+        properties: {
+            'latitude': {},
+            'longitude': {}
+        }
+    };
 
 
-	modules.maps['h-item'] = {
-		root: 'item',
-		name: 'h-item',
-		subTree: false,
-		properties: {
-			'fn': {
-				'map': 'p-name'
-			},
-			'url': {
-				'map': 'u-url'
-			},
-			'photo': {
-				'map': 'u-photo'
-			}
-		}
-	};
+    modules.maps['h-item'] = {
+        root: 'item',
+        name: 'h-item',
+        subTree: false,
+        properties: {
+            'fn': {
+                'map': 'p-name'
+            },
+            'url': {
+                'map': 'u-url'
+            },
+            'photo': {
+                'map': 'u-photo'
+            }
+        }
+    };
 
 
-	modules.maps['h-listing'] = {
-			root: 'hlisting',
-			name: 'h-listing',
-			properties: {
-				'version': {},
-				'lister': {
-					'uf': ['h-card']
-				},
-				'dtlisted': {
-					'map': 'dt-listed'
-				},
-				'dtexpired': {
-					'map': 'dt-expired'
-				},
-				'location': {},
-				'price': {},
-				'item': {
-					'uf': ['h-card','a-adr','h-geo']
-				},
-				'summary': {
-					'map': 'p-name'
-				},
-				'description': {
-					'map': 'e-description'
-				},
-				'listing': {}
-			}
-		};
+    modules.maps['h-listing'] = {
+            root: 'hlisting',
+            name: 'h-listing',
+            properties: {
+                'version': {},
+                'lister': {
+                    'uf': ['h-card']
+                },
+                'dtlisted': {
+                    'map': 'dt-listed'
+                },
+                'dtexpired': {
+                    'map': 'dt-expired'
+                },
+                'location': {},
+                'price': {},
+                'item': {
+                    'uf': ['h-card','a-adr','h-geo']
+                },
+                'summary': {
+                    'map': 'p-name'
+                },
+                'description': {
+                    'map': 'e-description'
+                },
+                'listing': {}
+            }
+        };
 
 
-	modules.maps['h-news'] = {
-			root: 'hnews',
-			name: 'h-news',
-			properties: {
-				'entry': {
-					'uf': ['h-entry']
-				},
-				'geo': {
-					'uf': ['h-geo']
-				},
-				'latitude': {},
-				'longitude': {},
-				'source-org': {
-					'uf': ['h-card']
-				},
-				'dateline': {
-					'uf': ['h-card']
-				},
-				'item-license': {
-					'map': 'u-item-license'
-				},
-				'principles': {
-					'map': 'u-principles',
-					'relAlt': ['principles']
-				}
-			}
-		};
+    modules.maps['h-news'] = {
+            root: 'hnews',
+            name: 'h-news',
+            properties: {
+                'entry': {
+                    'uf': ['h-entry']
+                },
+                'geo': {
+                    'uf': ['h-geo']
+                },
+                'latitude': {},
+                'longitude': {},
+                'source-org': {
+                    'uf': ['h-card']
+                },
+                'dateline': {
+                    'uf': ['h-card']
+                },
+                'item-license': {
+                    'map': 'u-item-license'
+                },
+                'principles': {
+                    'map': 'u-principles',
+                    'relAlt': ['principles']
+                }
+            }
+        };
 
 
-	modules.maps['h-org'] = {
-		root: 'h-x-org',  
-		name: 'h-org',
-		childStructure: true,
-		properties: {
-			'organization-name': {},
-			'organization-unit': {}
-		}
-	};
-
-
-	modules.maps['h-product'] = {
-			root: 'hproduct',
-			name: 'h-product',
-			properties: {
-				'brand': {
-					'uf': ['h-card']
-				},
-				'category': {
-					'map': 'p-category',
-					'relAlt': ['tag']
-				},
-				'price': {},
-				'description': {
-					'map': 'e-description'
-				},
-				'fn': {
-					'map': 'p-name'
-				},
-				'photo': {
-					'map': 'u-photo'
-				},
-				'url': {
-					'map': 'u-url'
-				},
-				'review': {
-					'uf': ['h-review', 'h-review-aggregate']
-				},
-				'listing': {
-					'uf': ['h-listing']
-				},
-				'identifier': {
-					'map': 'u-identifier'
-				}
-			}
-		};
-
-
-	modules.maps['h-recipe'] = {
-			root: 'hrecipe',
-			name: 'h-recipe',
-			properties: {
-				'fn': {
-					'map': 'p-name'
-				},
-				'ingredient': {
-					'map': 'e-ingredient'
-				},
-				'yield': {},
-				'instructions': {
-					'map': 'e-instructions'
-				},
-				'duration': {
-					'map': 'dt-duration'
-				},
-				'photo': {
-					'map': 'u-photo'
-				},
-				'summary': {},
-				'author': {
-					'uf': ['h-card']
-				},
-				'published': {
-					'map': 'dt-published'
-				},
-				'nutrition': {},
-				'category': {
-					'map': 'p-category',
-					'relAlt': ['tag']
-				},
-			}
-		};
-
-
-	modules.maps['h-resume'] = {
-		root: 'hresume',
-		name: 'h-resume',
-		properties: {
-			'summary': {},
-			'contact': {
-				'uf': ['h-card']
-			},
-			'education': {
-				'uf': ['h-card', 'h-event']
-			},
-			'experience': {
-				'uf': ['h-card', 'h-event']
-			},
-			'skill': {},
-			'affiliation': {
-				'uf': ['h-card']
-			}
-		}
-	};
-
-
-	modules.maps['h-review-aggregate'] = {
-		root: 'hreview-aggregate',
-		name: 'h-review-aggregate',
-		properties: {
-			'summary': {
-				'map': 'p-name'
-			},
-			'item': {
-				'map': 'p-item',
-				'uf': ['h-item', 'h-geo', 'h-adr', 'h-card', 'h-event', 'h-product']
-			},
-			'rating': {},
-			'average': {},
-			'best': {},
-			'worst': {},
-			'count': {},
-			'votes': {},
-			'category': {
-				'map': 'p-category',
-				'relAlt': ['tag']
-			},
-			'url': {
-				'map': 'u-url',
-				'relAlt': ['self', 'bookmark']
-			}
-		}
-	};
-
-
-	modules.maps['h-review'] = {
-		root: 'hreview',
-		name: 'h-review',
-		properties: {
-			'summary': {
-				'map': 'p-name'
-			},
-			'description': {
-				'map': 'e-description'
-			},
-			'item': {
-				'map': 'p-item',
-				'uf': ['h-item', 'h-geo', 'h-adr', 'h-card', 'h-event', 'h-product']
-			},
-			'reviewer': {
-				'uf': ['h-card']
-			},
-			'dtreviewer': {
-				'map': 'dt-reviewer'
-			},
-			'rating': {},
-			'best': {},
-			'worst': {},
-			'category': {
-				'map': 'p-category',
-				'relAlt': ['tag']
-			},
-			'url': {
-				'map': 'u-url',
-				'relAlt': ['self', 'bookmark']
-			}
-		}
-	};
-
-
-	modules.rels = {
-		
-		'friend': [ 'yes','external'],
-		'acquaintance': [ 'yes','external'],
-		'contact': [ 'yes','external'],
-		'met': [ 'yes','external'],
-		'co-worker': [ 'yes','external'],
-		'colleague': [ 'yes','external'],
-		'co-resident': [ 'yes','external'],
-		'neighbor': [ 'yes','external'],
-		'child': [ 'yes','external'],
-		'parent': [ 'yes','external'],
-		'sibling': [ 'yes','external'],
-		'spouse': [ 'yes','external'],
-		'kin': [ 'yes','external'],
-		'muse': [ 'yes','external'],
-		'crush': [ 'yes','external'],
-		'date': [ 'yes','external'],
-		'sweetheart': [ 'yes','external'],
-		'me': [ 'yes','external'],
-
-		
-		'license': [ 'yes','yes'],
-		'nofollow': [ 'no','external'],
-		'tag': [ 'no','yes'],
-		'self': [ 'no','external'],
-		'bookmark': [ 'no','external'],
-		'author': [ 'no','external'],
-		'home': [ 'no','external'],
-		'directory': [ 'no','external'],
-		'enclosure': [ 'no','external'],
-		'pronunciation': [ 'no','external'],
-		'payment': [ 'no','external'],
-		'principles': [ 'no','external']
-
-	};
+    modules.maps['h-org'] = {
+        root: 'h-x-org',  
+        name: 'h-org',
+        childStructure: true,
+        properties: {
+            'organization-name': {},
+            'organization-unit': {}
+        }
+    };
+
+
+    modules.maps['h-product'] = {
+            root: 'hproduct',
+            name: 'h-product',
+            properties: {
+                'brand': {
+                    'uf': ['h-card']
+                },
+                'category': {
+                    'map': 'p-category',
+                    'relAlt': ['tag']
+                },
+                'price': {},
+                'description': {
+                    'map': 'e-description'
+                },
+                'fn': {
+                    'map': 'p-name'
+                },
+                'photo': {
+                    'map': 'u-photo'
+                },
+                'url': {
+                    'map': 'u-url'
+                },
+                'review': {
+                    'uf': ['h-review', 'h-review-aggregate']
+                },
+                'listing': {
+                    'uf': ['h-listing']
+                },
+                'identifier': {
+                    'map': 'u-identifier'
+                }
+            }
+        };
+
+
+    modules.maps['h-recipe'] = {
+            root: 'hrecipe',
+            name: 'h-recipe',
+            properties: {
+                'fn': {
+                    'map': 'p-name'
+                },
+                'ingredient': {
+                    'map': 'e-ingredient'
+                },
+                'yield': {},
+                'instructions': {
+                    'map': 'e-instructions'
+                },
+                'duration': {
+                    'map': 'dt-duration'
+                },
+                'photo': {
+                    'map': 'u-photo'
+                },
+                'summary': {},
+                'author': {
+                    'uf': ['h-card']
+                },
+                'published': {
+                    'map': 'dt-published'
+                },
+                'nutrition': {},
+                'category': {
+                    'map': 'p-category',
+                    'relAlt': ['tag']
+                },
+            }
+        };
+
+
+    modules.maps['h-resume'] = {
+        root: 'hresume',
+        name: 'h-resume',
+        properties: {
+            'summary': {},
+            'contact': {
+                'uf': ['h-card']
+            },
+            'education': {
+                'uf': ['h-card', 'h-event']
+            },
+            'experience': {
+                'uf': ['h-card', 'h-event']
+            },
+            'skill': {},
+            'affiliation': {
+                'uf': ['h-card']
+            }
+        }
+    };
+
+
+    modules.maps['h-review-aggregate'] = {
+        root: 'hreview-aggregate',
+        name: 'h-review-aggregate',
+        properties: {
+            'summary': {
+                'map': 'p-name'
+            },
+            'item': {
+                'map': 'p-item',
+                'uf': ['h-item', 'h-geo', 'h-adr', 'h-card', 'h-event', 'h-product']
+            },
+            'rating': {},
+            'average': {},
+            'best': {},
+            'worst': {},
+            'count': {},
+            'votes': {},
+            'category': {
+                'map': 'p-category',
+                'relAlt': ['tag']
+            },
+            'url': {
+                'map': 'u-url',
+                'relAlt': ['self', 'bookmark']
+            }
+        }
+    };
+
+
+    modules.maps['h-review'] = {
+        root: 'hreview',
+        name: 'h-review',
+        properties: {
+            'summary': {
+                'map': 'p-name'
+            },
+            'description': {
+                'map': 'e-description'
+            },
+            'item': {
+                'map': 'p-item',
+                'uf': ['h-item', 'h-geo', 'h-adr', 'h-card', 'h-event', 'h-product']
+            },
+            'reviewer': {
+                'uf': ['h-card']
+            },
+            'dtreviewer': {
+                'map': 'dt-reviewer'
+            },
+            'rating': {},
+            'best': {},
+            'worst': {},
+            'category': {
+                'map': 'p-category',
+                'relAlt': ['tag']
+            },
+            'url': {
+                'map': 'u-url',
+                'relAlt': ['self', 'bookmark']
+            }
+        }
+    };
+
+
+    modules.rels = {
+        
+        'friend': [ 'yes','external'],
+        'acquaintance': [ 'yes','external'],
+        'contact': [ 'yes','external'],
+        'met': [ 'yes','external'],
+        'co-worker': [ 'yes','external'],
+        'colleague': [ 'yes','external'],
+        'co-resident': [ 'yes','external'],
+        'neighbor': [ 'yes','external'],
+        'child': [ 'yes','external'],
+        'parent': [ 'yes','external'],
+        'sibling': [ 'yes','external'],
+        'spouse': [ 'yes','external'],
+        'kin': [ 'yes','external'],
+        'muse': [ 'yes','external'],
+        'crush': [ 'yes','external'],
+        'date': [ 'yes','external'],
+        'sweetheart': [ 'yes','external'],
+        'me': [ 'yes','external'],
+
+        
+        'license': [ 'yes','yes'],
+        'nofollow': [ 'no','external'],
+        'tag': [ 'no','yes'],
+        'self': [ 'no','external'],
+        'bookmark': [ 'no','external'],
+        'author': [ 'no','external'],
+        'home': [ 'no','external'],
+        'directory': [ 'no','external'],
+        'enclosure': [ 'no','external'],
+        'pronunciation': [ 'no','external'],
+        'payment': [ 'no','external'],
+        'principles': [ 'no','external']
+
+    };
 
 
 
@@ -4492,48 +4492,48 @@ var Microformats;
 
 
     External.get = function(options){
-    	var parser = new modules.Parser();
+        var parser = new modules.Parser();
         addV1(parser, options);
-    	return parser.get( options );
+        return parser.get( options );
     };
 
 
     External.getParent = function(node, options){
-    	var parser = new modules.Parser();
+        var parser = new modules.Parser();
         addV1(parser, options);
-    	return parser.getParent( node, options );
+        return parser.getParent( node, options );
     };
 
 
     External.count = function(options){
-    	var parser = new modules.Parser();
+        var parser = new modules.Parser();
         addV1(parser, options);
-    	return parser.count( options );
+        return parser.count( options );
     };
 
 
     External.isMicroformat = function( node, options ){
-    	var parser = new modules.Parser();
+        var parser = new modules.Parser();
         addV1(parser, options);
-    	return parser.isMicroformat( node, options );
+        return parser.isMicroformat( node, options );
     };
 
 
     External.hasMicroformats = function( node, options ){
-    	var parser = new modules.Parser();
+        var parser = new modules.Parser();
         addV1(parser, options);
-    	return parser.hasMicroformats( node, options );
+        return parser.hasMicroformats( node, options );
     };
 
 
     function addV1(parser, options){
-		if(options && options.maps){
-			if(Array.isArray(options.maps)){
-				parser.add(options.maps);
-			}else{
-				parser.add([options.maps]);
-			}
-		}
+        if(options && options.maps){
+            if(Array.isArray(options.maps)){
+                parser.add(options.maps);
+            }else{
+                parser.add([options.maps]);
+            }
+        }
     }
 
 

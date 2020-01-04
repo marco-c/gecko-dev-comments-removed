@@ -51,41 +51,41 @@ XPCOMUtils.defineLazyModuleGetter(this, "pktApi",
 
 var pktUI = (function() {
 
-	
-	var inited = false;
-	var _currentPanelDidShow;
+    
+    var inited = false;
+    var _currentPanelDidShow;
     var _currentPanelDidHide;
-	var _isHidden = false;
-	var _notificationTimeout;
+    var _isHidden = false;
+    var _notificationTimeout;
 
     
     
     
     var _panelId = 0;
 
-	var prefBranch = Services.prefs.getBranch("extensions.pocket.settings.");
+    var prefBranch = Services.prefs.getBranch("extensions.pocket.settings.");
 
-	var overflowMenuWidth = 230;
-	var overflowMenuHeight = 475;
-	var savePanelWidth = 350;
-	var savePanelHeights = {collapsed: 153, expanded: 272};
+    var overflowMenuWidth = 230;
+    var overflowMenuHeight = 475;
+    var savePanelWidth = 350;
+    var savePanelHeights = {collapsed: 153, expanded: 272};
 
-	
+    
 
     
 
 
 
     function pocketPanelDidShow(event) {
-    	if (_currentPanelDidShow) {
-    		_currentPanelDidShow(event);
+        if (_currentPanelDidShow) {
+            _currentPanelDidShow(event);
         }
 
     }
 
     function pocketPanelDidHide(event) {
-    	if (_currentPanelDidHide) {
-    		_currentPanelDidHide(event);
+        if (_currentPanelDidHide) {
+            _currentPanelDidHide(event);
         }
 
         
@@ -105,20 +105,20 @@ var pktUI = (function() {
     
 
 
-	function tryToSaveCurrentPage() {
-		tryToSaveUrl(getCurrentUrl(), getCurrentTitle());
-	}
+    function tryToSaveCurrentPage() {
+        tryToSaveUrl(getCurrentUrl(), getCurrentTitle());
+    }
 
     function tryToSaveUrl(url, title) {
 
-    	
-    	if (pktApi.isUserLoggedIn()) {
-    		saveAndShowConfirmation(url, title);
+        
+        if (pktApi.isUserLoggedIn()) {
+            saveAndShowConfirmation(url, title);
             return;
-    	}
+        }
 
-    	
-    	showSignUp();
+        
+        showSignUp();
     }
 
 
@@ -136,7 +136,7 @@ var pktUI = (function() {
 
             if (inOverflowMenu)
             {
-            	startheight = overflowMenuHeight;
+                startheight = overflowMenuHeight;
             }
             else if (pktApi.getSignupAB().indexOf('storyboard') > -1)
             {
@@ -163,12 +163,12 @@ var pktUI = (function() {
                 variant = pktApi.getSignupAB();
             }
             var panelId = showPanel("about:pocket-signup?pockethost=" + Services.prefs.getCharPref("extensions.pocket.site") + "&fxasignedin=" + fxasignedin + "&variant=" + variant + '&inoverflowmenu=' + inOverflowMenu + "&locale=" + getUILocale(), {
-            		onShow: function() {
+                    onShow: function() {
                     },
-        			onHide: panelDidHide,
-            		width: inOverflowMenu ? overflowMenuWidth : 300,
-            		height: startheight
-            	});
+                    onHide: panelDidHide,
+                    width: inOverflowMenu ? overflowMenuWidth : 300,
+                    height: startheight
+                });
             });
     }
 
@@ -187,11 +187,11 @@ var pktUI = (function() {
         var inOverflowMenu = isInOverflowMenu();
         var startheight = pktApi.isPremiumUser() && isValidURL ? savePanelHeights.expanded : savePanelHeights.collapsed;
         if (inOverflowMenu) {
-        	startheight = overflowMenuHeight;
+            startheight = overflowMenuHeight;
         }
 
-    	var panelId = showPanel("about:pocket-saved?pockethost=" + Services.prefs.getCharPref("extensions.pocket.site") + "&premiumStatus=" + (pktApi.isPremiumUser() ? '1' : '0') + '&inoverflowmenu='+inOverflowMenu + "&locale=" + getUILocale(), {
-    		onShow: function() {
+        var panelId = showPanel("about:pocket-saved?pockethost=" + Services.prefs.getCharPref("extensions.pocket.site") + "&premiumStatus=" + (pktApi.isPremiumUser() ? '1' : '0') + '&inoverflowmenu='+inOverflowMenu + "&locale=" + getUILocale(), {
+            onShow: function() {
                 var saveLinkMessageId = 'saveLink';
 
                 
@@ -248,12 +248,12 @@ var pktUI = (function() {
                 }
 
                 
-				pktApi.addLink(url, options);
-			},
-			onHide: panelDidHide,
-    		width: inOverflowMenu ? overflowMenuWidth : savePanelWidth,
-    		height: startheight
-    	});
+                pktApi.addLink(url, options);
+            },
+            onHide: panelDidHide,
+            width: inOverflowMenu ? overflowMenuWidth : savePanelWidth,
+            height: startheight
+        });
     }
 
     
@@ -268,28 +268,28 @@ var pktUI = (function() {
         
         
         
-    	var iframe = getPanelFrame();
+        var iframe = getPanelFrame();
 
-		
-		registerEventMessages();
+        
+        registerEventMessages();
 
-    	
-    	iframe.setAttribute('src', url);
+        
+        iframe.setAttribute('src', url);
 
-    	
-    	
-    	
-    	
+        
+        
+        
+        
 
-    	
-    	
-    	_currentPanelDidShow = options.onShow;
-    	_currentPanelDidHide = options.onHide;
+        
+        
+        _currentPanelDidShow = options.onShow;
+        _currentPanelDidHide = options.onHide;
 
-    	resizePanel({
-    		width: options.width,
-    		height: options.height
-    	});
+        resizePanel({
+            width: options.width,
+            height: options.height
+        });
         return _panelId;
     }
 
@@ -327,25 +327,25 @@ var pktUI = (function() {
 
 
     function registerEventMessages() {
-    	var iframe = getPanelFrame();
+        var iframe = getPanelFrame();
 
-    	
+        
         var didInitAttributeKey = 'did_init';
         var didInitMessageListener = iframe.getAttribute(didInitAttributeKey);
-    	if (typeof didInitMessageListener !== "undefined" && didInitMessageListener == 1) {
+        if (typeof didInitMessageListener !== "undefined" && didInitMessageListener == 1) {
             return;
         }
-    	iframe.setAttribute(didInitAttributeKey, 1);
+        iframe.setAttribute(didInitAttributeKey, 1);
 
-		
-		
-		
-		
+        
+        
+        
+        
         var _showMessageId = "show";
-		pktUIMessaging.addMessageListener(_showMessageId, function(panelId, data) {
-			
-			pktUIMessaging.sendMessageToPanel(panelId, _showMessageId);
-		});
+        pktUIMessaging.addMessageListener(_showMessageId, function(panelId, data) {
+            
+            pktUIMessaging.sendMessageToPanel(panelId, _showMessageId);
+        });
 
         
         var _openTabWithUrlMessageId = "openTabWithUrl";
@@ -362,96 +362,96 @@ var pktUI = (function() {
             pktUIMessaging.sendResponseMessageToPanel(panelId, _openTabWithUrlMessageId, url);
         });
 
-		
+        
         var _closeMessageId = "close";
-		pktUIMessaging.addMessageListener(_closeMessageId, function(panelId, data) {
-			getPanel().hidePopup();
-		});
-
-		
-        var _getCurrentURLMessageId = "getCurrentURL";
-		pktUIMessaging.addMessageListener(_getCurrentURLMessageId, function(panelId, data) {
-            pktUIMessaging.sendResponseMessageToPanel(panelId, _getCurrentURLMessageId, getCurrentUrl());
-		});
-
-        var _resizePanelMessageId = "resizePanel";
-		pktUIMessaging.addMessageListener(_resizePanelMessageId, function(panelId, data) {
-			resizePanel(data);
+        pktUIMessaging.addMessageListener(_closeMessageId, function(panelId, data) {
+            getPanel().hidePopup();
         });
 
-		
-		pktUIMessaging.addMessageListener("listenerReady", function(panelId, data) {
+        
+        var _getCurrentURLMessageId = "getCurrentURL";
+        pktUIMessaging.addMessageListener(_getCurrentURLMessageId, function(panelId, data) {
+            pktUIMessaging.sendResponseMessageToPanel(panelId, _getCurrentURLMessageId, getCurrentUrl());
+        });
 
-		});
+        var _resizePanelMessageId = "resizePanel";
+        pktUIMessaging.addMessageListener(_resizePanelMessageId, function(panelId, data) {
+            resizePanel(data);
+        });
 
-		pktUIMessaging.addMessageListener("collapseSavePanel", function(panelId, data) {
-			if (!pktApi.isPremiumUser() && !isInOverflowMenu())
-				resizePanel({width:savePanelWidth, height:savePanelHeights.collapsed});
-		});
+        
+        pktUIMessaging.addMessageListener("listenerReady", function(panelId, data) {
 
-		pktUIMessaging.addMessageListener("expandSavePanel", function(panelId, data) {
-			if (!isInOverflowMenu())
-				resizePanel({width:savePanelWidth, height:savePanelHeights.expanded});
-		});
+        });
 
-		
-		var _getTagsMessageId = "getTags";
+        pktUIMessaging.addMessageListener("collapseSavePanel", function(panelId, data) {
+            if (!pktApi.isPremiumUser() && !isInOverflowMenu())
+                resizePanel({width:savePanelWidth, height:savePanelHeights.collapsed});
+        });
+
+        pktUIMessaging.addMessageListener("expandSavePanel", function(panelId, data) {
+            if (!isInOverflowMenu())
+                resizePanel({width:savePanelWidth, height:savePanelHeights.expanded});
+        });
+
+        
+        var _getTagsMessageId = "getTags";
         pktUIMessaging.addMessageListener(_getTagsMessageId, function(panelId, data) {
-			pktApi.getTags(function(tags, usedTags) {
+            pktApi.getTags(function(tags, usedTags) {
                 pktUIMessaging.sendResponseMessageToPanel(panelId, _getTagsMessageId, {
                     tags: tags,
                     usedTags: usedTags
                 });
-			});
-		});
+            });
+        });
 
-		
+        
         var _getSuggestedTagsMessageId = "getSuggestedTags";
-		pktUIMessaging.addMessageListener(_getSuggestedTagsMessageId, function(panelId, data) {
-			pktApi.getSuggestedTagsForURL(data.url, {
-				success: function(data, response) {
-					var suggestedTags = data.suggested_tags;
-					var successResponse = {
-						status: "success",
-						value: {
-							suggestedTags: suggestedTags
-						}
-					}
+        pktUIMessaging.addMessageListener(_getSuggestedTagsMessageId, function(panelId, data) {
+            pktApi.getSuggestedTagsForURL(data.url, {
+                success: function(data, response) {
+                    var suggestedTags = data.suggested_tags;
+                    var successResponse = {
+                        status: "success",
+                        value: {
+                            suggestedTags: suggestedTags
+                        }
+                    }
                     pktUIMessaging.sendResponseMessageToPanel(panelId, _getSuggestedTagsMessageId, successResponse);
-				},
-				error: function(error, response) {
+                },
+                error: function(error, response) {
                     pktUIMessaging.sendErrorResponseMessageToPanel(panelId, _getSuggestedTagsMessageId, error);
-				}
-			})
-		});
+                }
+            })
+        });
 
-		
+        
         var _addTagsMessageId = "addTags";
-		pktUIMessaging.addMessageListener(_addTagsMessageId, function(panelId, data) {
-			pktApi.addTagsToURL(data.url, data.tags, {
-				success: function(data, response) {
-				    var successResponse = {status: "success"};
+        pktUIMessaging.addMessageListener(_addTagsMessageId, function(panelId, data) {
+            pktApi.addTagsToURL(data.url, data.tags, {
+                success: function(data, response) {
+                    var successResponse = {status: "success"};
                     pktUIMessaging.sendResponseMessageToPanel(panelId, _addTagsMessageId, successResponse);
-				},
-				error: function(error, response) {
+                },
+                error: function(error, response) {
                     pktUIMessaging.sendErrorResponseMessageToPanel(panelId, _addTagsMessageId, error);
-				}
-			});
-		});
+                }
+            });
+        });
 
-		
+        
         var _deleteItemMessageId = "deleteItem";
-		pktUIMessaging.addMessageListener(_deleteItemMessageId, function(panelId, data) {
-			pktApi.deleteItem(data.itemId, {
-				success: function(data, response) {
-				    var successResponse = {status: "success"};
+        pktUIMessaging.addMessageListener(_deleteItemMessageId, function(panelId, data) {
+            pktApi.deleteItem(data.itemId, {
+                success: function(data, response) {
+                    var successResponse = {status: "success"};
                     pktUIMessaging.sendResponseMessageToPanel(panelId, _deleteItemMessageId, successResponse);
-				},
-				error: function(error, response) {
-				    pktUIMessaging.sendErrorResponseMessageToPanel(panelId, _deleteItemMessageId, error);
-				}
-			})
-		});
+                },
+                error: function(error, response) {
+                    pktUIMessaging.sendErrorResponseMessageToPanel(panelId, _deleteItemMessageId, error);
+                }
+            })
+        });
 
         var _initL10NMessageId = "initL10N";
         pktUIMessaging.addMessageListener(_initL10NMessageId, function(panelId, data) {
@@ -465,15 +465,15 @@ var pktUI = (function() {
             pktUIMessaging.sendResponseMessageToPanel(panelId, _initL10NMessageId, { strings: strings });
         });
 
-	}
+    }
 
-	
+    
 
-	
+    
 
 
 
-	function openTabWithUrl(url) {
+    function openTabWithUrl(url) {
         let recentWindow = Services.wm.getMostRecentWindow("navigator:browser");
         if (!recentWindow) {
           Cu.reportError("Pocket: No open browser windows to openTabWithUrl");
@@ -500,13 +500,13 @@ var pktUI = (function() {
 
         
         recentWindow.openUILinkIn(url, "window");
-	}
+    }
 
 
     
 
     function getCurrentUrl() {
-    	return getBrowser().currentURI.spec;
+        return getBrowser().currentURI.spec;
     }
 
     function getCurrentTitle() {
@@ -519,7 +519,7 @@ var pktUI = (function() {
         while (panel && panel.localName != "panel") {
             panel = panel.parentNode;
         }
-    	return panel;
+        return panel;
     }
 
     function getPanelFrame() {
@@ -547,41 +547,41 @@ var pktUI = (function() {
     }
 
     function hasLegacyExtension() {
-    	return !!document.getElementById('RIL_urlbar_add');
+        return !!document.getElementById('RIL_urlbar_add');
     }
 
     function isHidden() {
-    	return _isHidden;
+        return _isHidden;
     }
 
     function getFirefoxAccountSignedInUser(callback) {
-	    fxAccounts.getSignedInUser().then(userData => {
-    		callback(userData);
-    	}).then(null, error => {
-      		callback();
-	    });
+        fxAccounts.getSignedInUser().then(userData => {
+            callback(userData);
+        }).then(null, error => {
+            callback();
+        });
     }
 
     function getUILocale() {
-    	var locale = Cc["@mozilla.org/chrome/chrome-registry;1"].
+        var locale = Cc["@mozilla.org/chrome/chrome-registry;1"].
              getService(Ci.nsIXULChromeRegistry).
              getSelectedLocale("browser");
         return locale;
     }
 
-	
+    
 
 
     return {
-    	getPanelFrame: getPanelFrame,
+        getPanelFrame: getPanelFrame,
 
         openTabWithUrl: openTabWithUrl,
 
-    	pocketPanelDidShow: pocketPanelDidShow,
-    	pocketPanelDidHide: pocketPanelDidHide,
+        pocketPanelDidShow: pocketPanelDidShow,
+        pocketPanelDidHide: pocketPanelDidHide,
 
-    	tryToSaveUrl: tryToSaveUrl,
-    	tryToSaveCurrentPage: tryToSaveCurrentPage
+        tryToSaveUrl: tryToSaveUrl,
+        tryToSaveCurrentPage: tryToSaveCurrentPage
     };
 }());
 

@@ -56,7 +56,7 @@ var pktApi = (function() {
 
 
     
-    var pocketAPIhost = Services.prefs.getCharPref("extensions.pocket.api"); 	
+    var pocketAPIhost = Services.prefs.getCharPref("extensions.pocket.api");    
     var pocketSiteHost = Services.prefs.getCharPref("extensions.pocket.site"); 
     var baseAPIUrl = "https://" + pocketAPIhost + "/v3";
 
@@ -66,10 +66,10 @@ var pktApi = (function() {
 
     var oAuthConsumerKey = Services.prefs.getCharPref("extensions.pocket.oAuthConsumerKey");
 
-	
+    
 
 
-	var prefBranch = Services.prefs.getBranch("extensions.pocket.settings.");
+    var prefBranch = Services.prefs.getBranch("extensions.pocket.settings.");
 
     
 
@@ -119,13 +119,13 @@ var pktApi = (function() {
 
 
      function getSetting(key) {
-     	
-     	
+        
+        
 
-		if (!prefBranch.prefHasUserValue(key))
-			return undefined;
+        if (!prefBranch.prefHasUserValue(key))
+            return undefined;
 
-		return prefBranch.getComplexValue(key, Components.interfaces.nsISupportsString).data;
+        return prefBranch.getComplexValue(key, Components.interfaces.nsISupportsString).data;
      }
 
      
@@ -136,18 +136,18 @@ var pktApi = (function() {
 
 
     function setSetting(key, value) {
-     	
-     	
+        
+        
 
-     	if (!value)
-     		prefBranch.clearUserPref(key);
-     	else
-     	{
-     		
-     		var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
-			str.data = value;
-     		prefBranch.setComplexValue(key, Components.interfaces.nsISupportsString, str);
-     	}
+        if (!value)
+            prefBranch.clearUserPref(key);
+        else
+        {
+            
+            var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
+            str.data = value;
+            prefBranch.setComplexValue(key, Components.interfaces.nsISupportsString, str);
+        }
     }
 
     
@@ -261,9 +261,9 @@ var pktApi = (function() {
 
         var request = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);
         request.open("POST", url, true);
-		request.onreadystatechange = function(e){
-			if (request.readyState == 4) {
-				if (request.status === 200) {
+        request.onreadystatechange = function(e){
+            if (request.readyState == 4) {
+                if (request.status === 200) {
                     
                     
                     var response = parseJSON(request.response);
@@ -290,22 +290,22 @@ var pktApi = (function() {
                     var error = {message: errorMessage};
                     options.error(error, request);
                 }
-			}
-		};
-
-		
-		request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-		request.setRequestHeader('X-Accept',' application/json');
+            }
+        };
 
         
-		var str = [];
-		for(var p in data) {
-			if (data.hasOwnProperty(p)) {
-				str.push(encodeURIComponent(p) + "=" + encodeURIComponent(data[p]));
-			}
-		}
+        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+        request.setRequestHeader('X-Accept',' application/json');
 
-		request.send(str.join("&"));
+        
+        var str = [];
+        for(var p in data) {
+            if (data.hasOwnProperty(p)) {
+                str.push(encodeURIComponent(p) + "=" + encodeURIComponent(data[p]));
+            }
+        }
+
+        request.send(str.join("&"));
 
         return true;
     }
@@ -611,17 +611,17 @@ var pktApi = (function() {
 
 
     function getSignupAB() {
-    	var setting = getSetting('signupAB');
+        var setting = getSetting('signupAB');
         if (!setting || setting.contains('hero'))
         {
             var rand = (Math.floor(Math.random()*100+1));
             if (rand > 90)
             {
-            	setting = 'storyboard_nlm';
+                setting = 'storyboard_nlm';
             }
             else
             {
-            	setting = 'storyboard_lm';
+                setting = 'storyboard_lm';
             }
             setSetting('signupAB',setting);
         }

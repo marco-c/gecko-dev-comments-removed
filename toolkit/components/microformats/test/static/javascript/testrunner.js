@@ -12,7 +12,7 @@ var options = {
     };
 
 window.onload = function() {
-	var test  = testData.data[0],
+    var test  = testData.data[0],
         versionElt = document.querySelector('#version');
 
     versionElt.innerHTML = 'v' + testData.version;
@@ -35,23 +35,23 @@ function displayTest(e){
 
 
 function buildTest( test ){
-	var testDetailElt = document.querySelector('.test-detail'),
+    var testDetailElt = document.querySelector('.test-detail'),
         nameElt = document.querySelector('#test-name'),
-    	htmlElt = document.querySelector('#test-html pre code'),
-    	jsonElt = document.querySelector('#test-json pre code'),
-    	parserElt = document.querySelector('#parser-json pre code'),
-    	diffElt = document.querySelector('#test-diff pre code');
+        htmlElt = document.querySelector('#test-html pre code'),
+        jsonElt = document.querySelector('#test-json pre code'),
+        parserElt = document.querySelector('#parser-json pre code'),
+        diffElt = document.querySelector('#test-diff pre code');
 
-	nameElt.innerHTML = test.name;
-	htmlElt.innerHTML = htmlEscape( test.html );
-	jsonElt.innerHTML = htmlEscape( test.json );
+    nameElt.innerHTML = test.name;
+    htmlElt.innerHTML = htmlEscape( test.html );
+    jsonElt.innerHTML = htmlEscape( test.json );
 
     var dom = new DOMParser();
         doc = dom.parseFromString( test.html, 'text/html' );
 
     options.node = doc;
     var mfJSON = Microformats.get( options );
-	parserElt.innerHTML = htmlEscape( js_beautify( JSON.stringify(mfJSON) ) );
+    parserElt.innerHTML = htmlEscape( js_beautify( JSON.stringify(mfJSON) ) );
 
     
     var diff = DeepDiff(JSON.parse(test.json),  mfJSON);
