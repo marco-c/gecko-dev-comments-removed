@@ -7450,13 +7450,11 @@
     "bug_numbers": [1214352]
   },
   "DEVTOOLS_RESPONSIVE_TIME_ACTIVE_SECONDS": {
-    "expires_in_version": "55",
+    "expires_in_version": "never",
     "kind": "exponential",
     "high": 10000000,
     "n_buckets": 100,
-    "bug_numbers": [1242057],
-    "description": "How long has the responsive view been active (seconds)",
-    "releaseChannelCollection": "opt-out"
+    "description": "How long has the responsive view been active (seconds)"
   },
   "DEVTOOLS_DEVELOPERTOOLBAR_TIME_ACTIVE_SECONDS": {
     "expires_in_version": "never",
@@ -8771,15 +8769,15 @@
     "description": "Count of use of audio/video codecs in HTMLMediaElements and WebAudio. Those with 'resource' prefix are approximate; report based on HTTP ContentType or sniffing. Those with 'webaudio' prefix are for WebAudio."
   },
   "FX_SANITIZE_TOTAL": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
-    "expires_in_version": "never",
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
+    "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
     "n_buckets": 20,
     "description": "Sanitize: Total time it takes to sanitize (ms)"
   },
   "FX_SANITIZE_CACHE": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8787,7 +8785,7 @@
     "description": "Sanitize: Time it takes to sanitize the cache (ms)"
   },
   "FX_SANITIZE_COOKIES": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8810,26 +8808,8 @@
     "n_buckets": 20,
     "description": "Sanitize: Time it takes to sanitize plugin cookies (ms). A subset of FX_SANITIZE_COOKIES."
   },
-  "FX_SANITIZE_LOADED_FLASH": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
-    "bug_numbers": [1251469],
-    "expires_in_version": "50",
-    "kind": "exponential",
-    "high": 30000,
-    "n_buckets": 20,
-    "description": "Sanitize: Time it takes to sanitize Flash when it's already loaded (ms). A subset of FX_SANITIZE_PLUGINS."
-  },
-  "FX_SANITIZE_UNLOADED_FLASH": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
-    "bug_numbers": [1251469],
-    "expires_in_version": "50",
-    "kind": "exponential",
-    "high": 30000,
-    "n_buckets": 20,
-    "description": "Sanitize: Time it takes to sanitize Flash when it's not yet loaded (ms). A subset of FX_SANITIZE_PLUGINS."
-  },
   "FX_SANITIZE_OFFLINEAPPS": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8837,7 +8817,7 @@
     "description": "Sanitize: Time it takes to sanitize stored offline app data (ms)"
   },
   "FX_SANITIZE_HISTORY": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8845,7 +8825,7 @@
     "description": "Sanitize: Time it takes to sanitize history (ms)"
   },
   "FX_SANITIZE_FORMDATA": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8853,7 +8833,7 @@
     "description": "Sanitize: Time it takes to sanitize stored form data (ms)"
   },
   "FX_SANITIZE_DOWNLOADS": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8861,7 +8841,7 @@
     "description": "Sanitize: Time it takes to sanitize recent downloads (ms)"
   },
   "FX_SANITIZE_SESSIONS": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8869,7 +8849,7 @@
     "description": "Sanitize: Time it takes to sanitize saved sessions (ms)"
   },
   "FX_SANITIZE_SITESETTINGS": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -8877,7 +8857,7 @@
     "description": "Sanitize: Time it takes to sanitize site-specific settings (ms)"
   },
   "FX_SANITIZE_OPENWINDOWS": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
+    "alert_emails": ["firefox-dev@mozilla.org", "gavin@mozilla.com"],
     "expires_in_version": "50",
     "kind": "exponential",
     "high": 30000,
@@ -10347,6 +10327,16 @@
     "n_buckets": 50,
     "bug_numbers": [1238433],
     "description": "Percentage of frames decoded frames dropped in an HTMLVideoElement"
+  },
+  "VIDEO_DETAILED_DROPPED_FRAMES_PROPORTION" : {
+    "alert_emails": ["lchristie@mozilla.com", "cpearce@mozilla.com"],
+    "expires_in_version": "55",
+    "kind": "linear",
+    "high": 100,
+    "n_buckets": 50,
+    "keyed": true,
+    "bug_numbers": [1238433],
+    "description": "Percentage of frames decoded frames dropped in an HTMLVideoElement, keyed by MimeType, Resolution and Hardware Accelerated Decoding"
   },
   "TAB_SWITCH_CACHE_POSITION": {
     "expires_in_version": "55",
