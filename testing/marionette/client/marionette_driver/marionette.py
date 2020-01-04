@@ -680,7 +680,7 @@ class Marionette(object):
                 msg = self.client.request(name, params)
 
         except IOError:
-            if self.instance and not hasattr(self.instance, 'detached'):
+            if self.instance:
                 
                 
                 returncode = self.instance.runner.wait(timeout=self.DEFAULT_STARTUP_TIMEOUT)
@@ -1037,16 +1037,19 @@ class Marionette(object):
                 "eRestart",
             ]
             self._send_message("quitApplication", {"flags": restart_flags})
-            self.client.close()
-            
-            
-            self.instance.detached = True
+            self.delete_session()
         else:
             self.delete_session()
             self.instance.restart(clean=clean)
+
         self.raise_for_port(self.wait_for_port())
         self.start_session(session_id=self.session_id)
         self._reset_timeouts()
+
+        if in_app:
+            
+            
+            self.instance.runner.process_handler.check_for_detached(self.session['processId'])
 
     def absolute_url(self, relative_url):
         '''
