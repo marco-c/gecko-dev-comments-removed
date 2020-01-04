@@ -215,8 +215,8 @@ public:
 
   size_t output_for_input(uint32_t input_frames)
   {
-    return ceilf(input_frames * resampling_ratio) + 1
-           - resampling_in_buffer.length() / channels;
+    return size_t(ceilf(input_frames / resampling_ratio)
+                  - resampling_in_buffer.length() / channels);
   }
 
   
@@ -263,8 +263,8 @@ public:
 
   uint32_t input_needed_for_output(uint32_t output_frame_count)
   {
-    return ceilf(output_frame_count * resampling_ratio) + 1
-           - samples_to_frames(resampling_in_buffer.length());
+    return uint32_t(ceilf(output_frame_count * resampling_ratio) + 1
+                    - samples_to_frames(resampling_in_buffer.length()));
   }
 
   
