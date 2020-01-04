@@ -49,8 +49,7 @@ final class GeckoEditable extends JNIObject
         implements InvocationHandler, Editable,
                    GeckoEditableClient, GeckoEditableListener, GeckoEventListener {
 
-    
-    private static final boolean DEBUG = !AppConstants.RELEASE_BUILD;
+    private static final boolean DEBUG = false;
     private static final String LOGTAG = "GeckoEditable";
 
     

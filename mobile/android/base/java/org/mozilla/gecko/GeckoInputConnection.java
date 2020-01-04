@@ -44,8 +44,7 @@ class GeckoInputConnection
     extends BaseInputConnection
     implements InputConnectionListener, GeckoEditableListener {
 
-    
-    private static final boolean DEBUG = !AppConstants.RELEASE_BUILD;
+    private static final boolean DEBUG = false;
     protected static final String LOGTAG = "GeckoInputConnection";
 
     private static final String CUSTOM_HANDLER_TEST_METHOD = "testInputConnection";
