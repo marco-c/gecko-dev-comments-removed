@@ -961,7 +961,7 @@ protected:
 
 
 
-  void NoSupportedMediaSourceError(const nsACString& aErrorDetails = nsCString());
+  void NoSupportedMediaSourceError();
 
   
 
@@ -1127,7 +1127,7 @@ protected:
 
 
 
-  void Error(uint16_t aErrorCode, const nsACString& aErrorDetails = nsCString());
+  void Error(uint16_t aErrorCode, const MediaResult& aErrorDetails = NS_OK);
 
   
 
