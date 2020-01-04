@@ -30,7 +30,11 @@ add_task(function* () {
       let collectedSequence = [];
 
       browser.tabs.onUpdated.addListener(function(tabId, updatedInfo) {
-        collectedSequence.push(updatedInfo);
+        
+        
+        if ("status" in updatedInfo) {
+          collectedSequence.push(updatedInfo);
+        }
       });
 
       browser.runtime.onMessage.addListener(function() {
