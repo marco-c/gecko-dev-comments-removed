@@ -1315,7 +1315,7 @@ static nsresult pref_InitInitialObjects()
   
   
   
-  if (Preferences::GetDefaultType(kTelemetryPref) == PREF_INVALID) {
+  if (Preferences::GetDefaultType(kTelemetryPref) == nsIPrefBranch::PREF_INVALID) {
     bool prerelease = false;
 #ifdef MOZ_TELEMETRY_ON_BY_DEFAULT
     prerelease = true;

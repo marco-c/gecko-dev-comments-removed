@@ -114,17 +114,17 @@ pref_DoCallback(PrefParseState *ps)
     PrefValue  value;
 
     switch (ps->vtype) {
-    case PREF_STRING:
+    case PrefType::String:
         value.stringVal = ps->vb;
         break;
-    case PREF_INT:
+    case PrefType::Int:
         if ((ps->vb[0] == '-' || ps->vb[0] == '+') && ps->vb[1] == '\0') {
             NS_WARNING("malformed integer value");
             return false;
         }
         value.intVal = atoi(ps->vb);
         break;
-    case PREF_BOOL:
+    case PrefType::Bool:
         value.boolVal = (ps->vb == kTrue);
         break;
     default:
@@ -188,7 +188,7 @@ PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
             if (ps->lbcur != ps->lb) { 
                 ps->lbcur = ps->lb;
                 ps->vb    = nullptr;
-                ps->vtype = PREF_INVALID;
+                ps->vtype = PrefType::Invalid;
                 ps->fdefault = false;
                 ps->fstickydefault = false;
             }
@@ -200,10 +200,15 @@ PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
                 state = PREF_PARSE_UNTIL_EOL;
                 break;
             case 'u':       
-            case 'p':       
             case 's':       
-                ps->smatch = (c == 'u' ? kUserPref :
-                             (c == 's' ? kPrefSticky : kPref));
+            case 'p':       
+                if (c == 'u') {
+                  ps->smatch = kUserPref;
+                } else if (c == 's') {
+                  ps->smatch = kPrefSticky;
+                } else {
+                  ps->smatch = kPref;
+                }
                 ps->sindex = 1;
                 ps->nextstate = PREF_PARSE_UNTIL_OPEN_PAREN;
                 state = PREF_PARSE_MATCH_STRING;
@@ -248,6 +253,8 @@ PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
         case PREF_PARSE_UNTIL_NAME:
             if (c == '\"' || c == '\'') {
                 ps->fdefault = (ps->smatch == kPref || ps->smatch == kPrefSticky);
+                ps->fdefault = (ps->smatch == kPref ||
+                                ps->smatch == kPrefSticky);
                 ps->fstickydefault = (ps->smatch == kPrefSticky);
                 ps->quotechar = c;
                 ps->nextstate = PREF_PARSE_UNTIL_COMMA; 
@@ -284,21 +291,21 @@ PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
             
 
             if (c == '\"' || c == '\'') {
-                ps->vtype = PREF_STRING;
+                ps->vtype = PrefType::String;
                 ps->quotechar = c;
                 ps->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
                 state = PREF_PARSE_QUOTED_STRING;
             }
             else if (c == 't' || c == 'f') {
                 ps->vb = (char *) (c == 't' ? kTrue : kFalse);
-                ps->vtype = PREF_BOOL;
+                ps->vtype = PrefType::Bool;
                 ps->smatch = ps->vb;
                 ps->sindex = 1;
                 ps->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
                 state = PREF_PARSE_MATCH_STRING;
             }
             else if (isdigit(c) || (c == '-') || (c == '+')) {
-                ps->vtype = PREF_INT;
+                ps->vtype = PrefType::Int;
                 
                 if (ps->lbcur == ps->lbend && !pref_GrowBuf(ps))
                     return false; 
@@ -511,13 +518,12 @@ PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
             break;
         case PREF_PARSE_UNTIL_CLOSE_PAREN:
             
-            if (c == ')')
+            if (c == ')') {
                 state = PREF_PARSE_UNTIL_SEMICOLON;
-            else if (c == '/') {
+            } else if (c == '/') {
                 ps->nextstate = state; 
                 state = PREF_PARSE_COMMENT_MAYBE_START;
-            }
-            else if (!isspace(c)) {
+            } else if (!isspace(c)) {
                 NS_WARNING("malformed pref file");
                 return false;
             }
