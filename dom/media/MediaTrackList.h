@@ -45,7 +45,9 @@ public:
 
   void AddTrack(MediaTrack* aTrack);
 
-  void RemoveTrack(const RefPtr<MediaTrack>& aTrack);
+  
+  
+  virtual void RemoveTrack(const RefPtr<MediaTrack>& aTrack);
 
   void RemoveTracks();
 
