@@ -408,55 +408,6 @@ class TreeMetadataEmitter(LoggingMixin):
                     '%s %s of crate %s refers to a non-existent path' % (description, dep_crate_name, crate_name),
                     context)
 
-    def _verify_local_paths(self, context, crate_dir, config):
-        """Verify that a Cargo.toml config specifies local paths for all its dependencies."""
-        crate_name = config['package']['name']
-
-        
-        
-        
-        
-        if crate_name not in self._crate_directories:
-            self._crate_directories[crate_name] = crate_dir
-        else:
-            previous_dir = self._crate_directories[crate_name]
-            if crate_dir != previous_dir:
-                raise SandboxValidationError(
-                    'Crate %s found at multiple paths: %s, %s' % (crate_name, crate_dir, previous_dir),
-                    context)
-
-        
-        
-        
-        if crate_name in self._crate_verified_local:
-            return
-
-        crate_deps = config.get('dependencies', {})
-        if crate_deps:
-            self._verify_deps(context, crate_dir, crate_name, crate_deps)
-
-        has_custom_build = 'build' in config['package']
-        build_deps = config.get('build-dependencies', {})
-        if has_custom_build and build_deps:
-            self._verify_deps(context, crate_dir, crate_name, build_deps,
-                              description='Build dependency')
-
-        
-        
-        self._crate_verified_local.add(crate_name)
-
-        if crate_deps:
-            for dep_crate_name, values in crate_deps.iteritems():
-                rel_dep_dir = mozpath.normpath(mozpath.join(crate_dir, values['path']))
-                dep_toml = mozpath.join(context.config.topsrcdir, rel_dep_dir, 'Cargo.toml')
-                self._verify_local_paths(context, rel_dep_dir, self._parse_cargo_file(dep_toml))
-
-        if has_custom_build and build_deps:
-            for dep_crate_name, values in build_deps.iteritems():
-                rel_dep_dir = mozpath.normpath(mozpath.join(crate_dir, values['path']))
-                dep_toml = mozpath.join(context.config.topsrcdir, rel_dep_dir, 'Cargo.toml')
-                self._verify_local_paths(context, rel_dep_dir, self._parse_cargo_file(dep_toml))
-
     def _rust_library(self, context, libname, static_args):
         
         cargo_file = mozpath.join(context.srcdir, 'Cargo.toml')
@@ -490,7 +441,6 @@ class TreeMetadataEmitter(LoggingMixin):
                 'crate-type %s is not permitted for %s' % (crate_type, libname),
                 context)
 
-        self._verify_local_paths(context, context.relsrcdir, config)
 
         return RustLibrary(context, libname, cargo_file, crate_type, **static_args)
 
