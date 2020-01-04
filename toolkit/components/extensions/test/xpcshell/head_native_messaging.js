@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "MockRegistry",
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
 
-let {Subprocess, SubprocessImpl} = Cu.import("resource://gre/modules/Subprocess.jsm");
+Cu.import("resource://gre/modules/Subprocess.jsm");
 
 
 let tmpDir = FileUtils.getDir("TmpD", ["NativeMessaging"]);
@@ -109,13 +109,4 @@ function* setupHosts(scripts) {
     default:
       ok(false, `Native messaging is not supported on ${AppConstants.platform}`);
   }
-}
-
-
-function getSubprocessCount() {
-  return SubprocessImpl.Process.getWorker().call("getProcesses", [])
-                       .then(result => result.size);
-}
-function waitForSubprocessExit() {
-  return SubprocessImpl.Process.getWorker().call("waitForNoProcesses", []);
 }
