@@ -2512,8 +2512,12 @@ GeckoDriver.prototype.clearImportedScripts = function*(cmd, resp) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.takeScreenshot = function(cmd, resp) {
-  let {id, highlights, full} = cmd.parameters;
+  let {id, highlights, full, hash} = cmd.parameters;
   highlights = highlights || [];
 
   switch (this.context) {
@@ -2558,7 +2562,11 @@ GeckoDriver.prototype.takeScreenshot = function(cmd, resp) {
       break;
 
     case Context.CONTENT:
-      return this.listener.takeScreenshot(id, full, highlights);
+      if (hash) {
+        return this.listener.getScreenshotHash(id, full, highlights);
+      } else {
+        return this.listener.takeScreenshot(id, full, highlights);
+      }
   }
 };
 

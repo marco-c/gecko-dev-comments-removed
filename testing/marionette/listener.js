@@ -222,6 +222,7 @@ var switchToShadowRootFn = dispatch(switchToShadowRoot);
 var getCookiesFn = dispatch(getCookies);
 var singleTapFn = dispatch(singleTap);
 var takeScreenshotFn = dispatch(takeScreenshot);
+var getScreenshotHashFn = dispatch(getScreenshotHash);
 var actionChainFn = dispatch(actionChain);
 var multiActionFn = dispatch(multiAction);
 var addCookieFn = dispatch(addCookie);
@@ -272,6 +273,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getAppCacheStatus", getAppCacheStatus);
   addMessageListenerId("Marionette:setTestName", setTestName);
   addMessageListenerId("Marionette:takeScreenshot", takeScreenshotFn);
+  addMessageListenerId("Marionette:getScreenshotHash", getScreenshotHashFn);
   addMessageListenerId("Marionette:addCookie", addCookieFn);
   addMessageListenerId("Marionette:getCookies", getCookiesFn);
   addMessageListenerId("Marionette:deleteAllCookies", deleteAllCookiesFn);
@@ -376,6 +378,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getAppCacheStatus", getAppCacheStatus);
   removeMessageListenerId("Marionette:setTestName", setTestName);
   removeMessageListenerId("Marionette:takeScreenshot", takeScreenshotFn);
+  removeMessageListenerId("Marionette:getScreenshotHash", getScreenshotHashFn);
   removeMessageListenerId("Marionette:addCookie", addCookieFn);
   removeMessageListenerId("Marionette:getCookies", getCookiesFn);
   removeMessageListenerId("Marionette:deleteAllCookies", deleteAllCookiesFn);
@@ -1751,6 +1754,49 @@ function emulatorCmdResult(msg) {
 
 
 function takeScreenshot(id, full=true, highlights=[]) {
+  let canvas = screenshot(id, full, highlights);
+  return capture.toBase64(canvas);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getScreenshotHash(id, full=true, highlights=[]) {
+  let canvas = screenshot(id, full, highlights);
+  return capture.toHash(canvas);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function screenshot(id, full=true, highlights=[]) {
   let canvas;
 
   let highlightEls = [];
@@ -1775,7 +1821,7 @@ function takeScreenshot(id, full=true, highlights=[]) {
     canvas = capture.element(node, highlightEls);
   }
 
-  return capture.toBase64(canvas);
+  return canvas;
 }
 
 

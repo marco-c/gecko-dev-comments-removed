@@ -4,6 +4,9 @@
 
 "use strict";
 
+const {utils: Cu} = Components;
+Cu.importGlobalProperties(["crypto"]);
+
 this.EXPORTED_SYMBOLS = ["capture"];
 
 const CONTEXT_2D = "2d";
@@ -139,4 +142,41 @@ capture.highlight_ = function(context, highlights, top=0, left=0) {
 capture.toBase64 = function(canvas) {
   let u = canvas.toDataURL(PNG_MIME);
   return u.substring(u.indexOf(",") + 1);
+};
+
+
+
+
+
+
+
+
+
+
+capture.toHash = function(canvas) {
+  let u = capture.toBase64(canvas);
+  let buffer = new TextEncoder("utf-8").encode(u);
+  return crypto.subtle.digest("SHA-256", buffer).then(hash => hex(hash));
+};
+
+
+
+
+
+
+
+
+
+
+function hex(buffer) {
+  let hexCodes = [];
+  let view = new DataView(buffer);
+  for (let i = 0; i < view.byteLength; i += 4) {
+    let value = view.getUint32(i);
+    let stringValue = value.toString(16);
+    let padding = '00000000';
+    let paddedValue = (padding + stringValue).slice(-padding.length);
+    hexCodes.push(paddedValue);
+  }
+  return hexCodes.join("");
 };
