@@ -26,6 +26,8 @@ namespace layers {
 
 using namespace mozilla::gfx;
 
+static std::map<uint64_t, RefPtr<RemoteContentController>> sDestroyedControllers;
+
 RemoteContentController::RemoteContentController(uint64_t aLayersId)
   : mCompositorThread(MessageLoop::current())
   , mLayersId(aLayersId)
@@ -167,15 +169,24 @@ RemoteContentController::RecvUpdateHitRegion(const nsRegion& aRegion)
 void
 RemoteContentController::ActorDestroy(ActorDestroyReason aWhy)
 {
-  
-  
   mCanSend = false;
+
+  
+  
+  sDestroyedControllers.erase(mLayersId);
 }
 
 void
 RemoteContentController::Destroy()
 {
   if (mCanSend) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(sDestroyedControllers.find(mLayersId) == sDestroyedControllers.end());
+    sDestroyedControllers[mLayersId] = this;
     Unused << SendDestroy();
   }
 }
