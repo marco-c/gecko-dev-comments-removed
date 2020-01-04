@@ -2255,7 +2255,7 @@ var gDiscoverView = {
                         Ci.nsIWebProgressListener.STATE_IS_REQUEST |
                         Ci.nsIWebProgressListener.STATE_TRANSFERRING;
     
-    if (aStateFlags & transferStart)
+    if ((aStateFlags & transferStart) === transferStart)
       this.node.selectedPanel = this._browser;
 
     
