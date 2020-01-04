@@ -550,9 +550,8 @@ static const bool isthreaded = true;
 
 
 
-
 #ifdef MOZ_MEMORY_WINDOWS
-#define TINY_MIN_2POW           (sizeof(void*) == 8 ? 4 : 3)
+#define	TINY_MIN_2POW		1
 #else
 #define TINY_MIN_2POW           (sizeof(void*) == 8 ? 3 : 2)
 #endif
