@@ -8,13 +8,19 @@ this.EXPORTED_SYMBOLS = ["AutoMigrate"];
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
+const kAutoMigrateStartedPref = "browser.migrate.automigrate-started";
+const kAutoMigrateFinishedPref = "browser.migrate.automigrate-finished";
+
 Cu.import("resource:///modules/MigrationUtils.jsm");
+Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const AutoMigrate = {
   get resourceTypesToUse() {
-    let {BOOKMARKS, HISTORY, FORMDATA, PASSWORDS} = Ci.nsIBrowserProfileMigrator;
-    return BOOKMARKS | HISTORY | FORMDATA | PASSWORDS;
+    let {BOOKMARKS, HISTORY, PASSWORDS} = Ci.nsIBrowserProfileMigrator;
+    return BOOKMARKS | HISTORY | PASSWORDS;
   },
 
   
@@ -47,11 +53,13 @@ const AutoMigrate = {
         histogram.add(sawErrors ? "finished-with-errors" : "finished");
         Services.obs.removeObserver(migrationObserver, "Migration:Ended");
         Services.obs.removeObserver(migrationObserver, "Migration:ItemError");
+        Services.prefs.setCharPref(kAutoMigrateFinishedPref, Date.now().toString());
       }
     };
 
     Services.obs.addObserver(migrationObserver, "Migration:Ended", false);
     Services.obs.addObserver(migrationObserver, "Migration:ItemError", false);
+    Services.prefs.setCharPref(kAutoMigrateStartedPref, Date.now().toString());
     migrator.migrate(this.resourceTypesToUse, profileStartup, profileToMigrate);
     histogram.add("migrate-called-without-exceptions");
   },
@@ -109,5 +117,59 @@ const AutoMigrate = {
     }
     return profiles ? profiles[0].id : null;
   },
+
+  getUndoRange() {
+    let start, finish;
+    try {
+      start = parseInt(Services.prefs.getCharPref(kAutoMigrateStartedPref), 10);
+      finish = parseInt(Services.prefs.getCharPref(kAutoMigrateFinishedPref), 10);
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+    if (!finish || !start) {
+      return null;
+    }
+    return [new Date(start), new Date(finish)];
+  },
+
+  canUndo() {
+    if (!this.getUndoRange()) {
+      return Promise.resolve(false);
+    }
+    
+    
+    let {fxAccounts} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
+    return fxAccounts.getSignedInUser().then(user => !user, () => Promise.resolve(true));
+  },
+
+  undo: Task.async(function* () {
+    if (!(yield this.canUndo())) {
+      throw new Error("Can't undo!");
+    }
+
+    yield PlacesUtils.bookmarks.eraseEverything();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    let range = this.getUndoRange();
+    yield PlacesUtils.history.removeVisitsByFilter({
+      beginDate: new Date(0),
+      endDate: range[1]
+    });
+
+    try {
+      Services.logins.removeAllLogins();
+    } catch (ex) {
+      
+    }
+    Services.prefs.clearUserPref("browser.migrate.automigrate-started");
+    Services.prefs.clearUserPref("browser.migrate.automigrate-finished");
+  }),
 };
 
