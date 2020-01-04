@@ -119,6 +119,9 @@ FormSubmitObserver.prototype =
     }
 
     
+    this._validationMessage = element.validationMessage;
+
+    
     if (this._element == element) {
       this._showPopup(element);
       return;
@@ -126,8 +129,6 @@ FormSubmitObserver.prototype =
     this._element = element;
 
     element.focus();
-
-    this._validationMessage = element.validationMessage;
 
     
     element.addEventListener("input", this, false);
