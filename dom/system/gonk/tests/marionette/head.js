@@ -41,6 +41,7 @@ var radioInterface = ril.getRadioInterface(0);
 ok(radioInterface, "radioInterface.constructor is " + radioInterface.constrctor);
 
 var _pendingEmulatorShellCmdCount = 0;
+var _pendingEmulatorCmdCount = 0;
 
 
 
@@ -65,6 +66,41 @@ function runEmulatorShellCmdSafe(aCommands) {
 
       log("Emulator shell response: " + JSON.stringify(aResult));
       aResolve(aResult);
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function runEmulatorCmdSafe(aCommand) {
+  log(aCommand);
+  return new Promise(function(aResolve, aReject) {
+    ++_pendingEmulatorCmdCount;
+    runEmulatorCmd(aCommand, function(aResult) {
+      --_pendingEmulatorCmdCount;
+
+      log("Emulator console response: " + JSON.stringify(aResult));
+      if (Array.isArray(aResult) &&
+          aResult[aResult.length - 1] === "OK") {
+        aResolve(aResult);
+      } else {
+        aReject(aResult);
+      }
     });
   });
 }
@@ -286,10 +322,10 @@ function cleanUp() {
   ok(true, ":: CLEANING UP ::");
 
   waitFor(finish, function() {
-    return _pendingEmulatorShellCmdCount === 0;
+    return _pendingEmulatorShellCmdCount === 0 &&
+           _pendingEmulatorCmdCount === 0;
   });
 }
-
 
 
 
