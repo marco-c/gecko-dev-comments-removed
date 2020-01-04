@@ -52,6 +52,7 @@ Decoder::Decoder(RasterImage* aImage)
   , mImage(aImage)
   , mProgress(NoProgress)
   , mFrameCount(0)
+  , mLoopLength(FrameTimeout::Zero())
   , mDecoderFlags(DefaultDecoderFlags())
   , mSurfaceFlags(DefaultSurfaceFlags())
   , mInitialized(false)
@@ -423,8 +424,7 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
                          ,
                        DisposalMethod aDisposalMethod
                          ,
-                       FrameTimeout aTimeout
-                         ,
+                       FrameTimeout aTimeout ,
                        BlendMethod aBlendMethod ,
                        const Maybe<nsIntRect>& aBlendRect )
 {
@@ -440,6 +440,8 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
                         aBlendMethod, aBlendRect);
 
   mProgress |= FLAG_FRAME_COMPLETE;
+
+  mLoopLength += aTimeout;
 
   
   
@@ -475,6 +477,13 @@ Decoder::PostDecodeDone(int32_t aLoopCount )
   mDecodeDone = true;
 
   mImageMetadata.SetLoopCount(aLoopCount);
+
+  
+  
+  
+  if (!IsFirstFrameDecode()) {
+    mImageMetadata.SetLoopLength(mLoopLength);
+  }
 
   mProgress |= FLAG_DECODE_COMPLETE;
 }

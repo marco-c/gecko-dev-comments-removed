@@ -74,39 +74,28 @@ AnimationState::GetFirstFrameRefreshArea() const
   return mFirstFrameRefreshArea;
 }
 
-
-
-
-
-
 FrameTimeout
-FrameAnimator::GetSingleLoopTime(AnimationState& aState) const
+AnimationState::LoopLength() const
 {
   
-  if (!aState.mDoneDecoding) {
+  if (!mLoopLength) {
     return FrameTimeout::Forever();
   }
 
+  MOZ_ASSERT(mDoneDecoding, "We know the loop length but decoding isn't done?");
+
   
-  if (aState.mAnimationMode != imgIContainer::kNormalAnimMode) {
+  if (mAnimationMode != imgIContainer::kNormalAnimMode) {
     return FrameTimeout::Forever();
   }
 
-  
-  FrameTimeout loopTime = FrameTimeout::Zero();
-  for (uint32_t i = 0; i < mImage->GetNumFrames(); ++i) {
-    loopTime += GetTimeoutForFrame(i);
-  }
-
-  if (loopTime == FrameTimeout::Forever()) {
-    
-    
-    
-    NS_WARNING("Infinite frame timeout - how did this happen?");
-  }
-
-  return loopTime;
+  return *mLoopLength;
 }
+
+
+
+
+
 
 TimeStamp
 FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState) const
@@ -237,7 +226,8 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
   
   
   
-  FrameTimeout loopTime = GetSingleLoopTime(aState);
+  
+  FrameTimeout loopTime = aState.LoopLength();
   if (loopTime != FrameTimeout::Forever()) {
     TimeDuration delay = aTime - aState.mCurrentAnimationFrameTime;
     if (delay.ToMilliseconds() > loopTime.AsMilliseconds()) {

@@ -88,6 +88,16 @@ public:
   int32_t LoopCount() const { return mLoopCount; }
 
   
+  void SetLoopLength(FrameTimeout aLength) { mLoopLength = Some(aLength); }
+
+  
+
+
+
+
+  FrameTimeout LoopLength() const;
+
+  
 
 
 
@@ -111,6 +121,9 @@ private:
 
   
   int32_t mLoopCount;
+
+  
+  Maybe<FrameTimeout> mLoopLength;
 
   
   FrameTimeout mFirstFrameTimeout;
@@ -209,13 +222,6 @@ private:
 
 
   RawAccessFrameRef GetRawFrame(uint32_t aFrameNum) const;
-
-  
-
-
-
-
-  FrameTimeout GetSingleLoopTime(AnimationState& aState) const;
 
   
   FrameTimeout GetTimeoutForFrame(uint32_t aFrameNum) const;

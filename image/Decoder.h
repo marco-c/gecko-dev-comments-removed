@@ -343,7 +343,7 @@ protected:
   
   void PostFrameStop(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY,
                      DisposalMethod aDisposalMethod = DisposalMethod::KEEP,
-                     FrameTimeout aTimeout = FrameTimeout::FromRawMilliseconds(0),
+                     FrameTimeout aTimeout = FrameTimeout::Forever(),
                      BlendMethod aBlendMethod = BlendMethod::OVER,
                      const Maybe<nsIntRect>& aBlendRect = Nothing());
 
@@ -427,6 +427,7 @@ private:
   Progress mProgress;
 
   uint32_t mFrameCount; 
+  FrameTimeout mLoopLength;  
 
   
   TimeDuration mDecodeTime;
