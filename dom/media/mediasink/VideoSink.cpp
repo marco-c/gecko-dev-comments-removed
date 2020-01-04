@@ -415,7 +415,8 @@ VideoSink::UpdateRenderedVideoFrames()
   
   
   RefPtr<MediaData> currentFrame = VideoQueue().PeekFront();
-  mVideoFrameEndTime = currentFrame ? currentFrame->GetEndTime() : lastDisplayedFrameEndTime;
+  mVideoFrameEndTime = std::max(mVideoFrameEndTime,
+    currentFrame ? currentFrame->GetEndTime() : lastDisplayedFrameEndTime);
 
   
   if (VideoQueue().IsFinished() &&
