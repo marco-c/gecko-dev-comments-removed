@@ -46,6 +46,11 @@ static bool SchemeIs(nsIURI* aURI, const char* aScheme)
 static nsresult
 DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
 {
+  
+  if (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DTD) {
+    return NS_OK;
+  }
+
   nsresult rv = NS_OK;
 
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
