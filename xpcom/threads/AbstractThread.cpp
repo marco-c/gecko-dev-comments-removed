@@ -146,10 +146,17 @@ AbstractThread::DispatchDirectTask(already_AddRefed<nsIRunnable> aRunnable)
   GetCurrent()->TailDispatcher().AddDirectTask(Move(aRunnable));
 }
 
+
 already_AddRefed<AbstractThread>
-CreateXPCOMAbstractThreadWrapper(nsIThread* aThread, bool aRequireTailDispatch)
+AbstractThread::CreateXPCOMThreadWrapper(nsIThread* aThread, bool aRequireTailDispatch)
 {
   RefPtr<XPCOMThreadWrapper> wrapper = new XPCOMThreadWrapper(aThread, aRequireTailDispatch);
+  
+  
+  
+  nsCOMPtr<nsIRunnable> r =
+    NS_NewRunnableFunction([wrapper]() { sCurrentThreadTLS.set(wrapper); });
+  aThread->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
   return wrapper.forget();
 }
 
