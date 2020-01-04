@@ -10,6 +10,7 @@
 #define BROTLI_DEC_HUFFMAN_H_
 
 #include "./types.h"
+#include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -32,31 +33,25 @@ static const uint16_t kMaxHuffmanTableSize[] = {
 #define BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH 5
 
 typedef struct {
-  uint8_t bits;     
-  uint16_t value;   
+  uint8_t bits;    
+  uint16_t value;  
 } HuffmanCode;
 
 
-
-void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* root_table,
-                                        const uint8_t* const code_lengths,
-                                        uint16_t *count);
+BROTLI_INTERNAL void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* root_table,
+    const uint8_t* const code_lengths, uint16_t* count);
 
 
 
-uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
-                                 int root_bits,
-                                 const uint16_t* const symbol_lists,
-                                 uint16_t *count_arg);
+BROTLI_INTERNAL uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
+    int root_bits, const uint16_t* const symbol_lists, uint16_t* count_arg);
 
 
 
 
 
-uint32_t BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
-                                       int root_bits,
-                                       uint16_t *symbols,
-                                       uint32_t num_symbols);
+BROTLI_INTERNAL uint32_t BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
+    int root_bits, uint16_t* symbols, uint32_t num_symbols);
 
 
 typedef struct {
@@ -67,7 +62,7 @@ typedef struct {
 } HuffmanTreeGroup;
 
 #if defined(__cplusplus) || defined(c_plusplus)
-}    
+}  
 #endif
 
 #endif  

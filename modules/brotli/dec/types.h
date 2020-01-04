@@ -29,10 +29,10 @@ typedef __int64 int64_t;
 
 
 
-typedef void* (*brotli_alloc_func) (void* opaque, size_t size);
+typedef void* (*brotli_alloc_func)(void* opaque, size_t size);
 
 
 
-typedef void  (*brotli_free_func)  (void* opaque, void* address);
+typedef void (*brotli_free_func)(void* opaque, void* address);
 
 #endif  
