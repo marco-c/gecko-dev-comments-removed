@@ -149,6 +149,10 @@ public:
   
   void EnsureAudioBuffer();
 
+  
+  
+  bool IsAudible() const;
+
   const uint32_t mChannels;
   const uint32_t mRate;
   
