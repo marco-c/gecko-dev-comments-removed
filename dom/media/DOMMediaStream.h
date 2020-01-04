@@ -443,20 +443,7 @@ public:
     mPeerIdentity = aPeerIdentity;
   }
 
-  
 
-
-
-
-
-  bool CombineWithPrincipal(nsIPrincipal* aPrincipal);
-
-  
-
-
-
-
-  void SetPrincipal(nsIPrincipal* aPrincipal);
 
   
   void PrincipalChanged(MediaStreamTrack* aTrack) override;
