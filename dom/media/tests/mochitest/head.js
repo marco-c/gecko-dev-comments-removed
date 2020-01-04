@@ -421,6 +421,17 @@ var listenUntil = (target, eventName, onFire) => {
 };
 
 
+function mustThrowWith(msg, reason, f) {
+  try {
+    f();
+    ok(false, msg + " must throw");
+  } catch (e) {
+    is(e.name, reason, msg + " must throw: " + e.message);
+  }
+};
+
+
+
 
 
 
