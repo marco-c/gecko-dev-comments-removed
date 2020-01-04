@@ -158,7 +158,8 @@ this.PageThumbs = {
 
   getThumbnailURL: function PageThumbs_getThumbnailURL(aUrl) {
     return this.scheme + "://" + this.staticHost +
-           "/?url=" + encodeURIComponent(aUrl);
+           "/?url=" + encodeURIComponent(aUrl) +
+           "&revision=" + PageThumbsStorage.getRevision(aUrl);
   },
 
    
@@ -542,6 +543,44 @@ this.PageThumbsStorage = {
     return OS.Path.join(this.path, this.getLeafNameForURL(aURL));
   },
 
+  _revisionTable: {},
+
+  
+  
+  _updateRevision(aURL) {
+    
+    
+    let rev = this._revisionTable[aURL];
+    if (rev == null)
+      rev = Math.floor(Math.random() * this._revisionRange);
+    this._revisionTable[aURL] = (rev + 1) % this._revisionRange;
+  },
+
+  
+  
+  
+  
+  
+  
+  
+  _revisionRange: 8192,
+
+  
+
+
+
+
+
+
+  getRevision(aURL) {
+    let rev = this._revisionTable[aURL];
+    if (rev == null) {
+      this._updateRevision(aURL);
+      rev = this._revisionTable[aURL];
+    }
+    return rev;
+  },
+
   
 
 
@@ -571,7 +610,7 @@ this.PageThumbsStorage = {
       msg 
 
 ).
-      then(null, this._eatNoOverwriteError(aNoOverwrite));
+      then(() => this._updateRevision(aURL), this._eatNoOverwriteError(aNoOverwrite));
   },
 
   
@@ -590,7 +629,7 @@ this.PageThumbsStorage = {
     let targetFile = this.getFilePathForURL(aTargetURL);
     let options = { noOverwrite: aNoOverwrite };
     return PageThumbsWorker.post("copy", [sourceFile, targetFile, options]).
-      then(null, this._eatNoOverwriteError(aNoOverwrite));
+      then(() => this._updateRevision(aTargetURL), this._eatNoOverwriteError(aNoOverwrite));
   },
 
   
