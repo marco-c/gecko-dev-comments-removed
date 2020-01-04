@@ -116,6 +116,12 @@ struct BarrierMethods<nsXBLMaybeCompiled<UncompiledT>>
   }
 };
 
+template <class T>
+struct IsHeapConstructibleType<nsXBLMaybeCompiled<T>>
+{ 
+  static constexpr bool value = true;
+};
+
 template <class UncompiledT>
 class HeapBase<nsXBLMaybeCompiled<UncompiledT>>
 {

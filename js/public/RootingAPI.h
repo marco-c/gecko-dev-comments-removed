@@ -14,6 +14,8 @@
 #include "mozilla/Move.h"
 #include "mozilla/TypeTraits.h"
 
+#include <type_traits>
+
 #include "jspubtd.h"
 
 #include "js/GCAnnotations.h"
@@ -123,6 +125,14 @@ class MutableHandleBase {};
 template <typename T>
 class HeapBase {};
 
+
+template <typename T> struct IsHeapConstructibleType    { static constexpr bool value = false; };
+#define DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE(T) \
+    template <> struct IsHeapConstructibleType<T> { static constexpr bool value = true; };
+FOR_EACH_PUBLIC_GC_POINTER_TYPE(DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
+FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
+#undef DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE
+
 template <typename T>
 class PersistentRootedBase {};
 
@@ -219,6 +229,9 @@ AssertGCThingIsNotAnObjectSubclass(js::gc::Cell* cell) {}
 template <typename T>
 class Heap : public js::HeapBase<T>
 {
+    
+    static_assert(js::IsHeapConstructibleType<T>::value,
+                  "Type T must be a public GC pointer type");
   public:
     Heap() {
         static_assert(sizeof(T) == sizeof(Heap<T>),
