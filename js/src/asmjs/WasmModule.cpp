@@ -746,32 +746,15 @@ Module::instantiate(JSContext* cx,
     if (!code)
         return false;
 
-    
-    
-    
-
-    {
-        instanceObj.set(WasmInstanceObject::create(cx, instanceProto));
-        if (!instanceObj)
-            return false;
-
-        auto instance = cx->make_unique<Instance>(cx,
-                                                  instanceObj,
-                                                  Move(code),
-                                                  memory,
-                                                  Move(tables),
-                                                  funcImports,
-                                                  globalImports);
-        if (!instance)
-            return false;
-
-        instanceObj->init(Move(instance));
-    }
-
-    if (!instanceObj->instance().init(cx))
+    instanceObj.set(WasmInstanceObject::create(cx,
+                                               Move(code),
+                                               memory,
+                                               Move(tables),
+                                               funcImports,
+                                               globalImports,
+                                               instanceProto));
+    if (!instanceObj)
         return false;
-
-    
 
     RootedObject exportObj(cx);
     RootedWasmTableObject table(cx, tableImport);
