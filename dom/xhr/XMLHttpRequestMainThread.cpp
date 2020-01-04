@@ -161,7 +161,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
     mResponseType(XMLHttpRequestResponseType::_empty),
     mRequestObserver(nullptr),
     mState(State::unsent),
-    mFlagAsynchronous(true), mFlagAborted(false), mFlagParseBody(false),
+    mFlagSynchronous(false), mFlagAborted(false), mFlagParseBody(false),
     mFlagSyncLooping(false), mFlagBackgroundRequest(false),
     mFlagHadUploadListenersOnSend(false), mFlagACwithCredentials(false),
     mFlagTimedOut(false), mFlagDeleted(false),
@@ -719,13 +719,13 @@ XMLHttpRequestMainThread::SetResponseType(XMLHttpRequestResponseType aResponseTy
   }
 
   
-  if (HasOrHasHadOwner() && mState != State::unsent && !mFlagAsynchronous) {
+  if (HasOrHasHadOwner() && mState != State::unsent && mFlagSynchronous) {
     LogMessage("ResponseTypeSyncXHRWarning", GetOwner());
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
     return;
   }
 
-  if (!mFlagAsynchronous &&
+  if (mFlagSynchronous &&
       (aResponseType == XMLHttpRequestResponseType::Moz_chunked_text ||
        aResponseType == XMLHttpRequestResponseType::Moz_chunked_arraybuffer)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -1422,7 +1422,7 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
   mFlagAborted = false;
   mFlagTimedOut = false;
 
-  mFlagAsynchronous = async;
+  mFlagSynchronous = !async;
 
   nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
   if (!doc) {
@@ -1760,7 +1760,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   request->GetStatus(&status);
   mErrorLoad = mErrorLoad || NS_FAILED(status);
 
-  if (mUpload && !mUploadComplete && !mErrorLoad && mFlagAsynchronous) {
+  if (mUpload && !mUploadComplete && !mErrorLoad && !mFlagSynchronous) {
     if (mProgressTimerIsActive) {
       mProgressTimerIsActive = false;
       mProgressNotifier->Cancel();
@@ -1865,7 +1865,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
       
       
       
-      if (!mFlagAsynchronous) {
+      if (mFlagSynchronous) {
         
         
         mWarnAboutSyncHtml = true;
@@ -1958,8 +1958,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 
   
   
-  if (NS_SUCCEEDED(rv) &&
-      mFlagAsynchronous &&
+  if (NS_SUCCEEDED(rv) && !mFlagSynchronous &&
       HasListenersFor(nsGkAtoms::onprogress)) {
     StartProgressEventTimer();
   }
@@ -2754,7 +2753,7 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   mWaitingForOnStopRequest = true;
 
   
-  if (!mFlagAsynchronous) {
+  if (mFlagSynchronous) {
     mFlagSyncLooping = true;
 
     nsCOMPtr<nsIDocument> suspendedDoc;
@@ -2933,7 +2932,7 @@ XMLHttpRequestMainThread::SetTimeout(uint32_t aTimeout)
 void
 XMLHttpRequestMainThread::SetTimeout(uint32_t aTimeout, ErrorResult& aRv)
 {
-  if (!mFlagAsynchronous && mState != State::unsent && HasOrHasHadOwner()) {
+  if (mFlagSynchronous && mState != State::unsent && HasOrHasHadOwner()) {
     
 
     LogMessage("TimeoutSyncXHRWarning", GetOwner());
@@ -3114,7 +3113,7 @@ XMLHttpRequestMainThread::ChangeState(State aState, bool aBroadcast)
   if (aState != State::sent && 
       !droppingFromSENTtoOPENED && 
       aBroadcast &&
-      (mFlagAsynchronous || aState == State::opened || aState == State::done)) {
+      (!mFlagSynchronous || aState == State::opened || aState == State::done)) {
     nsCOMPtr<nsIDOMEvent> event;
     rv = CreateReadystatechangeEvent(getter_AddRefs(event));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -3206,7 +3205,7 @@ XMLHttpRequestMainThread::MaybeDispatchProgressEvents(bool aFinalProgress)
   if (mProgressTimerIsActive ||
       !mProgressSinceLastProgressEvent ||
       mErrorLoad ||
-      !mFlagAsynchronous) {
+      mFlagSynchronous) {
     return;
   }
 
