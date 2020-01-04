@@ -190,6 +190,7 @@ VorbisDataDecoder::DoDecode(MediaRawData* aSample)
   }
   while (frames > 0) {
     uint32_t channels = mVorbisDsp.vi->channels;
+    uint32_t rate = mVorbisDsp.vi->rate;
     AlignedAudioBuffer buffer(frames*channels);
     if (!buffer) {
       return -1;
@@ -201,13 +202,12 @@ VorbisDataDecoder::DoDecode(MediaRawData* aSample)
       }
     }
 
-    CheckedInt64 duration = FramesToUsecs(frames, mVorbisDsp.vi->rate);
+    CheckedInt64 duration = FramesToUsecs(frames, rate);
     if (!duration.isValid()) {
       NS_WARNING("Int overflow converting WebM audio duration");
       return -1;
     }
-    CheckedInt64 total_duration = FramesToUsecs(mFrames,
-                                                mVorbisDsp.vi->rate);
+    CheckedInt64 total_duration = FramesToUsecs(mFrames, rate);
     if (!total_duration.isValid()) {
       NS_WARNING("Int overflow converting WebM audio total_duration");
       return -1;
@@ -219,14 +219,24 @@ VorbisDataDecoder::DoDecode(MediaRawData* aSample)
       return -1;
     };
 
+    if (!mAudioConverter) {
+      AudioConfig in(AudioConfig::ChannelLayout(channels, VorbisLayout(channels)),
+                     rate);
+      AudioConfig out(channels, rate);
+      mAudioConverter = MakeUnique<AudioConverter>(in, out);
+    }
+    MOZ_ASSERT(mAudioConverter->CanWorkInPlace());
+    AudioSampleBuffer data(Move(buffer));
+    mAudioConverter->Process(data);
+
     aTotalFrames += frames;
     mCallback->Output(new AudioData(aOffset,
                                     time.value(),
                                     duration.value(),
                                     frames,
-                                    Move(buffer),
-                                    mVorbisDsp.vi->channels,
-                                    mVorbisDsp.vi->rate));
+                                    data.Forget(),
+                                    channels,
+                                    rate));
     mFrames += frames;
     if (vorbis_synthesis_read(&mVorbisDsp, frames) != 0) {
       return -1;
@@ -273,6 +283,58 @@ VorbisDataDecoder::IsVorbis(const nsACString& aMimeType)
          aMimeType.EqualsLiteral("audio/ogg; codecs=vorbis");
 }
 
+ const AudioConfig::Channel*
+VorbisDataDecoder::VorbisLayout(uint32_t aChannels)
+{
+  
+  
+  typedef AudioConfig::Channel Channel;
+
+  switch (aChannels) {
+    case 1: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_MONO };
+      return config;
+    }
+    case 2: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_RIGHT };
+      return config;
+    }
+    case 3: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT };
+      return config;
+    }
+    case 4: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS };
+      return config;
+    }
+    case 5: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS };
+      return config;
+    }
+    case 6: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS, AudioConfig::CHANNEL_LFE };
+      return config;
+    }
+    case 7: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS, AudioConfig::CHANNEL_RCENTER, AudioConfig::CHANNEL_LFE };
+      return config;
+    }
+    case 8: 
+    {
+      static const Channel config[] = { AudioConfig::CHANNEL_LEFT, AudioConfig::CHANNEL_CENTER, AudioConfig::CHANNEL_RIGHT, AudioConfig::CHANNEL_LS, AudioConfig::CHANNEL_RS, AudioConfig::CHANNEL_RLS, AudioConfig::CHANNEL_RRS, AudioConfig::CHANNEL_LFE };
+      return config;
+    }
+    default:
+      return nullptr;
+  }
+}
 
 } 
 #undef LOG
