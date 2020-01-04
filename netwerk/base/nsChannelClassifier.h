@@ -45,6 +45,8 @@ private:
     
     nsresult IsTrackerWhitelisted();
     
+    bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
+    
     static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
 
 public:
