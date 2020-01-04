@@ -13,6 +13,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsAHttpTransaction.h"
 #include "nsISupportsPriority.h"
+#include "SimpleBuffer.h"
 
 class nsStandardURL;
 class nsIInputStream;
@@ -327,8 +328,7 @@ private:
 
   
   
-  nsCOMPtr<nsIInputStream> mInputBufferIn;
-  nsCOMPtr<nsIOutputStream> mInputBufferOut;
+  SimpleBuffer mSimpleBuffer;
 
 
 public:
