@@ -299,106 +299,9 @@ GfxInfo::Init()
     deviceIndex++;
   }
 
-  
-  if (wcsnlen(displayDevice.DeviceKey, ArrayLength(displayDevice.DeviceKey))
-      == ArrayLength(displayDevice.DeviceKey)) {
-    
+  rv = UpdatePrimaryDeviceInfo(displayDevice);
+  if (rv != NS_OK) {
     return rv;
-  }
-
-  mDeviceKeyDebug = displayDevice.DeviceKey;
-
-  
-  
-  
-  if (_wcsnicmp(displayDevice.DeviceKey, DEVICE_KEY_PREFIX, ArrayLength(DEVICE_KEY_PREFIX)-1) != 0)
-    return rv;
-
-  
-  mDeviceKey = displayDevice.DeviceKey + ArrayLength(DEVICE_KEY_PREFIX)-1;
-
-  mDeviceID = displayDevice.DeviceID;
-  mDeviceString = displayDevice.DeviceString;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mWindowsVersion == kWindows8 &&
-      mDeviceID.Length() == 0 &&
-      mDeviceString.EqualsLiteral("RDPUDD Chained DD"))
-  {
-    WCHAR sysdir[255];
-    UINT len = GetSystemDirectory(sysdir, sizeof(sysdir));
-    if (len < sizeof(sysdir)) {
-      nsString rdpudd(sysdir);
-      rdpudd.AppendLiteral("\\rdpudd.dll");
-      gfxWindowsPlatform::GetDLLVersion(rdpudd.BeginReading(), mDriverVersion);
-      mDriverDate.AssignLiteral("01-01-1970");
-
-      
-      mDeviceID.AssignLiteral("PCI\\VEN_1414&DEV_FEFE&SUBSYS_00000000");
-    }
-  }
-
-  
-  HDEVINFO devinfo = SetupDiGetClassDevsW(nullptr, mDeviceID.get(), nullptr,
-                                          DIGCF_PRESENT | DIGCF_PROFILE | DIGCF_ALLCLASSES);
-
-  if (devinfo != INVALID_HANDLE_VALUE) {
-    HKEY key;
-    LONG result;
-    WCHAR value[255];
-    DWORD dwcbData;
-    SP_DEVINFO_DATA devinfoData;
-    DWORD memberIndex = 0;
-
-    devinfoData.cbSize = sizeof(devinfoData);
-    NS_NAMED_LITERAL_STRING(driverKeyPre, "System\\CurrentControlSet\\Control\\Class\\");
-    
-    while (SetupDiEnumDeviceInfo(devinfo, memberIndex++, &devinfoData)) {
-      
-      if (SetupDiGetDeviceRegistryPropertyW(devinfo,
-                                            &devinfoData,
-                                            SPDRP_DRIVER,
-                                            nullptr,
-                                            (PBYTE)value,
-                                            sizeof(value),
-                                            nullptr)) {
-        nsAutoString driverKey(driverKeyPre);
-        driverKey += value;
-        result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, driverKey.get(), 0, KEY_QUERY_VALUE, &key);
-        if (result == ERROR_SUCCESS) {
-          
-          dwcbData = sizeof(value);
-          result = RegQueryValueExW(key, L"DriverVersion", nullptr, nullptr,
-                                    (LPBYTE)value, &dwcbData);
-          if (result == ERROR_SUCCESS) {
-            mDriverVersion = value;
-          } else {
-            
-            mDriverVersion.AssignLiteral("0.0.0.0");
-          }
-          dwcbData = sizeof(value);
-          result = RegQueryValueExW(key, L"DriverDate", nullptr, nullptr,
-                                    (LPBYTE)value, &dwcbData);
-          if (result == ERROR_SUCCESS) {
-            mDriverDate = value;
-          } else {
-            
-            mDriverDate.AssignLiteral("01-01-1970");
-          }
-          RegCloseKey(key);
-          break;
-        }
-      }
-    }
-
-    SetupDiDestroyDeviceInfoList(devinfo);
   }
 
   mAdapterVendorID.AppendPrintf("0x%04x", ParseIDFromDeviceID(mDeviceID, "VEN_", 4));
@@ -406,7 +309,7 @@ GfxInfo::Init()
   mAdapterSubsysID.AppendPrintf("%08x", ParseIDFromDeviceID(mDeviceID,  "&SUBSYS_", 8));
 
   
-
+  HDEVINFO devinfo;
   
   CLSID GUID_DISPLAY_DEVICE_ARRIVAL;
   HRESULT hresult = CLSIDFromString(L"{1CA05180-A699-450A-9A0C-DE4FBE3DDD89}",
@@ -518,6 +421,183 @@ GfxInfo::Init()
     }
   }
 
+  CheckAndUpdateDriverInfo();
+
+  AddCrashReportAnnotations();
+
+  return rv;
+}
+
+nsresult
+GfxInfo::Reset(const nsAString& aVendorID, const nsAString& aDeviceID)
+{
+  nsresult rv = NS_OK;
+  if (aVendorID.IsEmpty() || aDeviceID.IsEmpty()) {
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
+
+  DISPLAY_DEVICEW displayDevice;
+  displayDevice.cb = sizeof(displayDevice);
+  int deviceIndex = 0;
+
+  nsString tempDeviceID;
+  nsString tempAdapterVendorID;
+  nsString tempAdapterDeviceID;
+  nsString tempAdapterSubsysID;
+
+  while (EnumDisplayDevicesW(nullptr, deviceIndex, &displayDevice, 0)) {
+    
+    tempAdapterVendorID = NS_LITERAL_STRING("");
+    tempAdapterDeviceID = NS_LITERAL_STRING("");
+    tempAdapterSubsysID = NS_LITERAL_STRING("");
+
+    tempDeviceID = displayDevice.DeviceID;
+    tempAdapterVendorID.AppendPrintf("0x%04x", ParseIDFromDeviceID(tempDeviceID, "VEN_", 4));
+    tempAdapterDeviceID.AppendPrintf("0x%04x", ParseIDFromDeviceID(tempDeviceID, "&DEV_", 4));
+    tempAdapterSubsysID.AppendPrintf("%08x", ParseIDFromDeviceID(tempDeviceID,  "&SUBSYS_", 8));
+
+    
+    if (mAdapterVendorID.Equals(aVendorID) && mAdapterDeviceID.Equals(aDeviceID)){
+      break;
+    }
+
+    deviceIndex++;
+  }
+
+  if (tempAdapterVendorID.Equals(aVendorID) && tempAdapterDeviceID.Equals(aDeviceID)) {
+    mDeviceID = tempDeviceID;
+    mAdapterVendorID = tempAdapterVendorID;
+    mAdapterDeviceID = tempAdapterDeviceID;
+    mAdapterSubsysID = tempAdapterSubsysID;
+  } else { 
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  rv = UpdatePrimaryDeviceInfo(displayDevice);
+  if (rv != NS_OK) {
+    return rv;
+  }
+
+  CheckAndUpdateDriverInfo();
+
+  AddCrashReportAnnotations();
+
+  return rv;
+}
+
+nsresult
+GfxInfo::UpdatePrimaryDeviceInfo(DISPLAY_DEVICEW &displayDevice)
+{
+  nsresult rv = NS_ERROR_FAILURE;
+  
+  if (wcsnlen(displayDevice.DeviceKey, ArrayLength(displayDevice.DeviceKey))
+      == ArrayLength(displayDevice.DeviceKey)) {
+    
+    return rv;
+  }
+
+  mDeviceKeyDebug = displayDevice.DeviceKey;
+
+  
+  
+  
+  if (_wcsnicmp(displayDevice.DeviceKey, DEVICE_KEY_PREFIX, ArrayLength(DEVICE_KEY_PREFIX)-1) != 0)
+    return rv;
+
+  
+  mDeviceKey = displayDevice.DeviceKey + ArrayLength(DEVICE_KEY_PREFIX)-1;
+
+  mDeviceID = displayDevice.DeviceID;
+  mDeviceString = displayDevice.DeviceString;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mWindowsVersion == kWindows8 &&
+      mDeviceID.Length() == 0 &&
+      mDeviceString.EqualsLiteral("RDPUDD Chained DD"))
+  {
+    WCHAR sysdir[255];
+    UINT len = GetSystemDirectory(sysdir, sizeof(sysdir));
+    if (len < sizeof(sysdir)) {
+      nsString rdpudd(sysdir);
+      rdpudd.AppendLiteral("\\rdpudd.dll");
+      gfxWindowsPlatform::GetDLLVersion(rdpudd.BeginReading(), mDriverVersion);
+      mDriverDate.AssignLiteral("01-01-1970");
+
+      
+      mDeviceID.AssignLiteral("PCI\\VEN_1414&DEV_FEFE&SUBSYS_00000000");
+    }
+  }
+
+  
+  HDEVINFO devinfo = SetupDiGetClassDevsW(nullptr, mDeviceID.get(), nullptr,
+                                          DIGCF_PRESENT | DIGCF_PROFILE | DIGCF_ALLCLASSES);
+
+  if (devinfo != INVALID_HANDLE_VALUE) {
+    HKEY key;
+    LONG result;
+    WCHAR value[255];
+    DWORD dwcbData;
+    SP_DEVINFO_DATA devinfoData;
+    DWORD memberIndex = 0;
+
+    devinfoData.cbSize = sizeof(devinfoData);
+    NS_NAMED_LITERAL_STRING(driverKeyPre, "System\\CurrentControlSet\\Control\\Class\\");
+    
+    while (SetupDiEnumDeviceInfo(devinfo, memberIndex++, &devinfoData)) {
+      
+      if (SetupDiGetDeviceRegistryPropertyW(devinfo,
+                                            &devinfoData,
+                                            SPDRP_DRIVER,
+                                            nullptr,
+                                            (PBYTE)value,
+                                            sizeof(value),
+                                            nullptr)) {
+        nsAutoString driverKey(driverKeyPre);
+        driverKey += value;
+        result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, driverKey.get(), 0, KEY_QUERY_VALUE, &key);
+        if (result == ERROR_SUCCESS) {
+          
+          dwcbData = sizeof(value);
+          result = RegQueryValueExW(key, L"DriverVersion", nullptr, nullptr,
+                                    (LPBYTE)value, &dwcbData);
+          if (result == ERROR_SUCCESS) {
+            mDriverVersion = value;
+          } else {
+            
+            mDriverVersion.AssignLiteral("0.0.0.0");
+          }
+          dwcbData = sizeof(value);
+          result = RegQueryValueExW(key, L"DriverDate", nullptr, nullptr,
+                                    (LPBYTE)value, &dwcbData);
+          if (result == ERROR_SUCCESS) {
+            mDriverDate = value;
+          } else {
+            
+            mDriverDate.AssignLiteral("01-01-1970");
+          }
+          RegCloseKey(key);
+          break;
+        }
+      }
+    }
+
+    SetupDiDestroyDeviceInfoList(devinfo);
+  }
+  return NS_OK;
+}
+
+
+void
+GfxInfo::CheckAndUpdateDriverInfo()
+{
+
   mHasDriverVersionMismatch = false;
   if (mAdapterVendorID == GfxDriverInfo::GetDeviceVendor(VendorIntel)) {
     
@@ -574,10 +654,6 @@ GfxInfo::Init()
   if (spoofedDevice) {
     mAdapterDeviceID.AssignASCII(spoofedDevice);
   }
-
-  AddCrashReportAnnotations();
-
-  return rv;
 }
 
 NS_IMETHODIMP
