@@ -1123,7 +1123,11 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   nsRect result = LayoutDeviceRect::ToAppUnits(screenRect / res, auPerDevPixel);
 
   
-  result = ApplyRectMultiplier(result, aMultiplier);
+  
+  
+  if (aMarginsData->mMargins != ScreenMargin()) {
+    result = ApplyRectMultiplier(result, aMultiplier);
+  }
 
   
   result = result.MoveInsideAndClamp(expandedScrollableRect - scrollPos);
