@@ -28,18 +28,6 @@ define(function (require, exports, module) {
       object: React.PropTypes.object.isRequired,
     },
 
-    getTitle: function (grip) {
-      let title = "StyleSheet";
-      if (this.props.objectLink) {
-        return ObjectBox({},
-          this.props.objectLink({
-            object: grip
-          }, title)
-        );
-      }
-      return title;
-    },
-
     getLocation: function (grip) {
       
       let url = grip.preview ? grip.preview.url : "";
@@ -51,7 +39,7 @@ define(function (require, exports, module) {
 
       return (
         ObjectBox({className: "object"},
-          this.getTitle(grip),
+          "StyleSheet ",
           DOM.span({className: "objectPropValue"},
             this.getLocation(grip)
           )
