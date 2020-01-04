@@ -147,7 +147,7 @@ function ResolvePromise(promise, valueOrReason, state) {
     
     
     
-    var reactions = UnsafeGetObjectFromReservedSlot(promise, PROMISE_REACTIONS_SLOT);
+    var reactions = UnsafeGetReservedSlot(promise, PROMISE_REACTIONS_SLOT);
     let jobType = state === PROMISE_STATE_FULFILLED
                   ? PROMISE_JOB_TYPE_FULFILL
                   : PROMISE_JOB_TYPE_REJECT;
@@ -171,7 +171,8 @@ function ResolvePromise(promise, valueOrReason, state) {
 
     
     
-    return TriggerPromiseReactions(reactions, jobType, valueOrReason);
+    if (reactions)
+        TriggerPromiseReactions(reactions, jobType, valueOrReason);
 }
 
 
@@ -648,9 +649,10 @@ function AddDependentPromise(dependentPromise) {
     let reactions = UnsafeGetReservedSlot(this, PROMISE_REACTIONS_SLOT);
 
     
+    
     if (!reactions) {
-        assert(GetPromiseState(this) !== PROMISE_STATE_PENDING,
-               "Pending promises must have reactions lists.");
+        if (GetPromiseState(this) === PROMISE_STATE_PENDING)
+            UnsafeSetReservedSlot(promise, PROMISE_REACTIONS_SLOT, [reaction]);
         return;
     }
     _DefineDataProperty(reactions, reactions.length, reaction);
@@ -900,8 +902,11 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
     if (state === PROMISE_STATE_PENDING) {
         
         
-        let reactions = UnsafeGetObjectFromReservedSlot(promise, PROMISE_REACTIONS_SLOT);
-        _DefineDataProperty(reactions, reactions.length, reaction);
+        let reactions = UnsafeGetReservedSlot(promise, PROMISE_REACTIONS_SLOT);
+        if (!reactions)
+            UnsafeSetReservedSlot(promise, PROMISE_REACTIONS_SLOT, [reaction]);
+        else
+            _DefineDataProperty(reactions, reactions.length, reaction);
     }
 
     

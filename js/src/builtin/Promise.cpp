@@ -116,10 +116,6 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto )
 
         
         
-        RootedArrayObject reactions(cx, NewDenseEmptyArray(cx));
-        if (!reactions)
-            return nullptr;
-        promise->setFixedSlot(PROMISE_REACTIONS_SLOT, ObjectValue(*reactions));
 
         
         promise->setFixedSlot(PROMISE_IS_HANDLED_SLOT,
