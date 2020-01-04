@@ -2430,7 +2430,7 @@ pref("layout.display-list.dump", false);
 pref("layout.frame_rate.precise", false);
 
 
-pref("layout.spammy_warnings.enabled", true);
+pref("layout.spammy_warnings.enabled", false);
 
 
 pref("layout.float-fragments-inside-column.enabled", true);
