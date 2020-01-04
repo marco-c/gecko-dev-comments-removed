@@ -1,0 +1,6 @@
+
+
+
+
+Components.utils.import("resource://gre/modules/Services.jsm");
+Services.cpmm.sendAsyncMessage("my-addon-1");

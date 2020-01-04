@@ -2120,7 +2120,7 @@ this.XPIDatabaseReconcile = {
           }
 
           
-          flushStartupCache();
+          flushChromeCaches();
 
           if (currentAddon.bootstrap) {
             
@@ -2177,7 +2177,7 @@ this.XPIDatabaseReconcile = {
       AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_UNINSTALLED, id);
 
       
-      flushStartupCache();
+      flushChromeCaches();
     }
 
     
