@@ -1610,10 +1610,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
           }
         }
         sugs.classes.delete("");
-        
-        
-        
-        sugs.classes.delete("moz-styleeditor-transitioning");
         sugs.classes.delete(HIDDEN_CLASS);
         for (let [className, count] of sugs.classes) {
           if (className.startsWith(completing)) {
@@ -1685,10 +1681,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
           id && result.push(["#" + id, count]);
         }
         sugs.classes.delete("");
-        
-        
-        
-        sugs.classes.delete("moz-styleeditor-transitioning");
         sugs.classes.delete(HIDDEN_CLASS);
         for (let [className, count] of sugs.classes) {
           className && result.push(["." + className, count]);
