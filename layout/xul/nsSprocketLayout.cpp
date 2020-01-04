@@ -115,7 +115,7 @@ HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState, nscoord& aX, nsco
 
   
   nsIFrame::Halignment halign = aBox->GetHAlign();
-  nsIFrame::Valignment valign = aBox->GetVAlign();
+  nsIFrame::Valignment valign = aBox->GetXULVAlign();
 
   
   
@@ -936,7 +936,7 @@ nsSprocketLayout::AlignChildren(nsIFrame* aBox,
   bool isLTR;
 
   if (isHorizontal) {
-    valign = aBox->GetVAlign();
+    valign = aBox->GetXULVAlign();
     if (valign == nsBoxFrame::vAlign_BaseLine) {
       maxAscent = aBox->GetXULBoxAscent(aState);
     }
