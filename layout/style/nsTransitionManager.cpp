@@ -426,7 +426,8 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     collection->UpdateCheckGeneration(mPresContext);
     mPresContext->EffectCompositor()->MaybeUpdateAnimationRule(aElement,
                                                                pseudoType,
-                                                               cascadeLevel);
+                                                               cascadeLevel,
+                                                               newStyleContext);
   }
 
   

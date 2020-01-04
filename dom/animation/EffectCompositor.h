@@ -123,13 +123,30 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  
+  
   void MaybeUpdateAnimationRule(dom::Element* aElement,
                                 CSSPseudoElementType aPseudoType,
-                                CascadeLevel aCascadeLevel);
+                                CascadeLevel aCascadeLevel,
+                                nsStyleContext *aStyleContext);
 
+  
+  
+  
+  
+  
+  
+  
+  
   nsIStyleRule* GetAnimationRule(dom::Element* aElement,
                                  CSSPseudoElementType aPseudoType,
-                                 CascadeLevel aCascadeLevel);
+                                 CascadeLevel aCascadeLevel,
+                                 nsStyleContext* aStyleContext);
 
   bool HasPendingStyleUpdates() const;
   bool HasThrottledStyleUpdates() const;
@@ -154,6 +171,8 @@ public:
   static void ClearIsRunningOnCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);
 
+  
+  
   
   
   

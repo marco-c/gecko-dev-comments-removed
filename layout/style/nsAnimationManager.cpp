@@ -447,7 +447,8 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
   mPresContext->EffectCompositor()->
     MaybeUpdateAnimationRule(aElement,
                              aStyleContext->GetPseudoType(),
-                             EffectCompositor::CascadeLevel::Animations);
+                             EffectCompositor::CascadeLevel::Animations,
+                             aStyleContext);
 
   
   
