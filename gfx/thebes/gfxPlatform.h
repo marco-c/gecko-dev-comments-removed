@@ -633,6 +633,11 @@ public:
     
     virtual void GetDeviceInitData(mozilla::gfx::DeviceInitData* aOut);
 
+    
+    virtual bool SupportsPluginDirectBitmapDrawing() {
+      return false;
+    }
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();

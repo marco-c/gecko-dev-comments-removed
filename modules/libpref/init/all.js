@@ -2589,6 +2589,9 @@ pref("dom.ipc.plugins.asyncInit.enabled", false);
 pref("dom.ipc.plugins.asyncInit.enabled", true);
 #endif
 
+
+pref("dom.ipc.plugins.asyncdrawing.enabled", false);
+
 pref("dom.ipc.processCount", 1);
 
 

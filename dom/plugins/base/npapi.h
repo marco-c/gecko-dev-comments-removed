@@ -59,7 +59,7 @@
 
 
 #define NP_VERSION_MAJOR 0
-#define NP_VERSION_MINOR 28
+#define NP_VERSION_MINOR 29
 
 
 
@@ -187,6 +187,33 @@ typedef enum {
 } NPFocusDirection;
 
 
+
+
+
+typedef enum {
+  
+  NPImageFormatBGRA32     = 0x1,
+  
+  NPImageFormatBGRX32     = 0x2
+} NPImageFormat;
+
+typedef struct _NPAsyncSurface
+{
+  uint32_t version;
+  NPSize size;
+  NPImageFormat format;
+  union {
+    struct {
+      uint32_t stride;
+      void *data;
+    } bitmap;
+#if defined(XP_WIN)
+    HANDLE sharedHandle;
+#endif
+  };
+} NPAsyncSurface;
+
+
 #define kNPEventNotHandled 0
 #define kNPEventHandled 1
 
@@ -248,11 +275,9 @@ typedef enum {
 #if defined(MOZ_X11)
   , NPDrawingModelSyncX = 6
 #endif
-#if 0 
-  , NPDrawingModelAsyncBitmapSurfaceOBSOLETE = 7
+  , NPDrawingModelAsyncBitmapSurface = 7
 #if defined(XP_WIN)
-  , NPDrawingModelAsyncWindowsDXGISurfaceOBSOLETE = 8
-#endif
+  , NPDrawingModelAsyncWindowsDXGISurface = 8
 #endif
 } NPDrawingModel;
 
@@ -398,11 +423,9 @@ typedef enum {
   , NPNVsupportsCoreAnimationBool = 2003
   , NPNVsupportsInvalidatingCoreAnimationBool = 2004
 #endif
-#if 0 
-  , NPNVsupportsAsyncBitmapSurfaceBoolOBSOLETE = 2007
+  , NPNVsupportsAsyncBitmapSurfaceBool = 2007
 #if defined(XP_WIN)
-  , NPNVsupportsAsyncWindowsDXGISurfaceBoolOBSOLETE = 2008
-#endif
+  , NPNVsupportsAsyncWindowsDXGISurfaceBool = 2008
 #endif
 #if defined(XP_MACOSX)
 #ifndef NP_NO_CARBON
@@ -850,6 +873,11 @@ NPBool      NPN_ConvertPoint(NPP instance, double sourceX, double sourceY, NPCoo
 NPBool      NPN_HandleEvent(NPP instance, void *event, NPBool handled);
 NPBool      NPN_UnfocusInstance(NPP instance, NPFocusDirection direction);
 void        NPN_URLRedirectResponse(NPP instance, void* notifyData, NPBool allow);
+NPError     NPN_InitAsyncSurface(NPP instance, NPSize *size,
+                                 NPImageFormat format, void *initData,
+                                 NPAsyncSurface *surface);
+NPError     NPN_FinalizeAsyncSurface(NPP instance, NPAsyncSurface *surface);
+void        NPN_SetCurrentAsyncSurface(NPP instance, NPAsyncSurface *surface, NPRect *changed);
 
 #ifdef __cplusplus
 }  
