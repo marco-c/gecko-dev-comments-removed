@@ -2773,14 +2773,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
 
   
   
-  
-  if (aBuilder->IsPaintingToWindow() && child->TrackingVisibility()) {
-    nsIPresShell* shell = child->PresContext()->PresShell();
-    shell->MarkFrameVisibleInDisplayPort(child);
-  }
-
-  
-  
   const nsStyleDisplay* disp = child->StyleDisplay();
   const nsStyleEffects* effects = child->StyleEffects();
   const nsStylePosition* pos = child->StylePosition();

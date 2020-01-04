@@ -4790,9 +4790,6 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
                             nsDisplayListBuilderMode::PAINTING,
                             flags);
 
-  
-  
-
   return NS_OK;
 }
 
@@ -6453,30 +6450,8 @@ PresShell::Paint(nsView*        aViewToPaint,
 
   if (frame) {
     
-    
-    VisibleFrames oldInDisplayPortFrames;
-    mInDisplayPortFrames.SwapElements(oldInDisplayPortFrames);
-
-    InitVisibleRegionsIfVisualizationEnabled(VisibilityCounter::IN_DISPLAYPORT);
-
-    
     nsLayoutUtils::PaintFrame(nullptr, frame, aDirtyRegion, bgcolor,
                               nsDisplayListBuilderMode::PAINTING, flags);
-
-    DecVisibleCount(oldInDisplayPortFrames, VisibilityCounter::IN_DISPLAYPORT);
-
-    if (mVisibleRegions &&
-        !mNotifyCompositorOfVisibleRegionsChangeEvent.IsPending()) {
-      
-      
-      
-      RefPtr<nsRunnableMethod<PresShell>> event =
-        NewRunnableMethod(this, &PresShell::NotifyCompositorOfVisibleRegionsChange);
-      if (NS_SUCCEEDED(NS_DispatchToMainThread(event))) {
-        mNotifyCompositorOfVisibleRegionsChangeEvent = event;
-      }
-    }
-
     return;
   }
 
