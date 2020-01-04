@@ -73,7 +73,7 @@ let SyncedTabsInternal = {
       } catch (ex) {  }
     }
     if (!icon) {
-      icon = "";
+      icon = PlacesUtils.favicons.defaultFavicon.spec;
     }
     return {
       type:  "tab",
