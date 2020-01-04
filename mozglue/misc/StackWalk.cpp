@@ -896,15 +896,7 @@ MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
   StackWalkInitCriticalAddress();
 
   
-  void** bp;
-#if defined(__i386)
-  __asm__("movl %%ebp, %0" : "=g"(bp));
-#else
-  
-  
-  
-  bp = (void**)__builtin_frame_address(0);
-#endif
+  void** bp = (void**)__builtin_frame_address(0);
 
   void* stackEnd;
 #if HAVE___LIBC_STACK_END
