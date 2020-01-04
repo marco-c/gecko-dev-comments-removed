@@ -3,13 +3,15 @@
 
 
 
+
+
 #ifndef nsRegion_h__
 #define nsRegion_h__
 
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include <sys/types.h>                  
-#include "mozilla/ToString.h"           
+#include <ostream>                      
 #include "nsCoord.h"                    
 #include "nsError.h"                    
 #include "nsPoint.h"                    
