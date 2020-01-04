@@ -34,24 +34,23 @@ public class IntentUtils {
 
 
 
-    public static HashMap<String, String> getEnvVarMap(@NonNull final Intent unsafeIntent) {
+    public static HashMap<String, String> getEnvVarMap(@NonNull final SafeIntent intent) {
         
         
         final Pattern envVarPattern = Pattern.compile(ENV_VAR_REGEX);
         final Matcher matcher = envVarPattern.matcher(""); 
 
         
-        final SafeIntent safeIntent = new SafeIntent(unsafeIntent);
         final HashMap<String, String> out = new HashMap<>();
         int i = 0;
         while (true) {
             final String envKey = "env" + i;
             i += 1;
-            if (!unsafeIntent.hasExtra(envKey)) {
+            if (!intent.hasExtra(envKey)) {
                 break;
             }
 
-            maybeAddEnvVarToEnvVarMap(out, safeIntent, envKey, matcher);
+            maybeAddEnvVarToEnvVarMap(out, intent, envKey, matcher);
         }
         return out;
     }

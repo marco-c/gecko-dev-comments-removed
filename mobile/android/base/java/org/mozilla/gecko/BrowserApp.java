@@ -564,7 +564,7 @@ public class BrowserApp extends GeckoApp
             return;
         }
 
-        final Intent intent = getIntent();
+        final SafeIntent intent = new SafeIntent(getIntent());
         final boolean isInAutomation = getIsInAutomationFromEnvironment(intent);
 
         
@@ -639,7 +639,7 @@ public class BrowserApp extends GeckoApp
             
             openMultipleTabsFromIntent(intent);
         } else if (GuestSession.NOTIFICATION_INTENT.equals(action)) {
-            GuestSession.handleIntent(this, intent);
+            GuestSession.onNotificationIntentReceived(this);
         } else if (TabQueueHelper.LOAD_URLS_ACTION.equals(action)) {
             Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.NOTIFICATION, "tabqueue");
         }
@@ -800,7 +800,7 @@ public class BrowserApp extends GeckoApp
 
 
     @CheckResult
-    private boolean getIsInAutomationFromEnvironment(final Intent intent) {
+    private boolean getIsInAutomationFromEnvironment(final SafeIntent intent) {
         final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
         return !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
     }
@@ -809,7 +809,7 @@ public class BrowserApp extends GeckoApp
 
 
 
-    private static void initSwitchboard(final Context context, final Intent intent, final boolean isInAutomation) {
+    private static void initSwitchboard(final Context context, final SafeIntent intent, final boolean isInAutomation) {
         if (isInAutomation) {
             Log.d(LOGTAG, "Switchboard disabled - in automation");
             return;
@@ -818,7 +818,7 @@ public class BrowserApp extends GeckoApp
             return;
         }
 
-        final String serverExtra = IntentUtils.getStringExtraSafe(intent, INTENT_KEY_SWITCHBOARD_SERVER);
+        final String serverExtra = intent.getStringExtra(INTENT_KEY_SWITCHBOARD_SERVER);
         final String serverUrl = TextUtils.isEmpty(serverExtra) ? SWITCHBOARD_SERVER : serverExtra;
         new AsyncConfigLoader(context, serverUrl).execute();
     }
@@ -1030,7 +1030,7 @@ public class BrowserApp extends GeckoApp
         }
     }
 
-    private void openMultipleTabsFromIntent(final Intent intent) {
+    private void openMultipleTabsFromIntent(final SafeIntent intent) {
         final List<String> urls = intent.getStringArrayListExtra("urls");
         if (urls != null) {
             openUrls(urls);
@@ -3782,7 +3782,8 @@ public class BrowserApp extends GeckoApp
 
 
     @Override
-    protected void onNewIntent(Intent intent) {
+    protected void onNewIntent(Intent externalIntent) {
+        final SafeIntent intent = new SafeIntent(externalIntent);
         String action = intent.getAction();
 
         final boolean isViewAction = Intent.ACTION_VIEW.equals(action);
@@ -3806,7 +3807,8 @@ public class BrowserApp extends GeckoApp
 
         showTabQueuePromptIfApplicable(intent);
 
-        super.onNewIntent(intent);
+        
+        super.onNewIntent(externalIntent);
 
         if (AppConstants.MOZ_ANDROID_BEAM && NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
             String uri = intent.getDataString();
@@ -3815,7 +3817,7 @@ public class BrowserApp extends GeckoApp
 
         
         if (GuestSession.NOTIFICATION_INTENT.equals(action)) {
-            GuestSession.handleIntent(this, intent);
+            GuestSession.onNotificationIntentReceived(this);
         }
 
         
@@ -3881,7 +3883,7 @@ public class BrowserApp extends GeckoApp
         }
     }
 
-    private void showTabQueuePromptIfApplicable(final Intent intent) {
+    private void showTabQueuePromptIfApplicable(final SafeIntent intent) {
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {

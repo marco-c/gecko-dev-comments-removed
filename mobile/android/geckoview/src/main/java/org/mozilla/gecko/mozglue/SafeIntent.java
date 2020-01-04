@@ -12,6 +12,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.util.ArrayList;
+
 
 
 
@@ -93,6 +95,18 @@ public class SafeIntent {
     public String getDataString() {
         try {
             return intent.getDataString();
+        } catch (OutOfMemoryError e) {
+            Log.w(LOGTAG, "Couldn't get intent data string: OOM. Malformed?");
+            return null;
+        } catch (RuntimeException e) {
+            Log.w(LOGTAG, "Couldn't get intent data string.", e);
+            return null;
+        }
+    }
+
+    public ArrayList<String> getStringArrayListExtra(final String name) {
+        try {
+            return intent.getStringArrayListExtra(name);
         } catch (OutOfMemoryError e) {
             Log.w(LOGTAG, "Couldn't get intent data string: OOM. Malformed?");
             return null;
