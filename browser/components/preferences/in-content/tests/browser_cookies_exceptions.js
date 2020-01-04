@@ -1,6 +1,8 @@
 
 
 
+requestLongerTimeout(2);
+
 function test() {
   waitForExplicitFinish();
   requestLongerTimeout(3);
