@@ -16,18 +16,13 @@ const Store = require("devtools/client/memory/store");
 
 
 
-var gToolbox, gTarget, gFront;
-
-
-
-
-var gToolbox, gTarget, gFront;
+var gToolbox, gTarget, gFront, gHeapAnalysesClient;
 
 function initialize () {
   return Task.spawn(function*() {
     let root = document.querySelector("#app");
     let store = Store();
-    let app = createElement(App, { front: gFront });
+    let app = createElement(App, { front: gFront, heapWorker: gHeapAnalysesClient });
     let provider = createElement(Provider, { store }, app);
     render(provider, root);
   });

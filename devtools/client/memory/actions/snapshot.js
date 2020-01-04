@@ -3,16 +3,82 @@
 
 "use strict";
 
-const { PROMISE } = require("devtools/client/shared/redux/middleware/promise");
-const { actions } = require("../constants");
+
+
+
+const { createSnapshot, assert } = require("../utils");
+const { actions, snapshotState: states } = require("../constants");
+
+
+
+
+
+
+
+
+
+const takeSnapshotAndCensus = exports.takeSnapshotAndCensus = function takeSnapshotAndCensus (front, heapWorker) {
+  return function *(dispatch, getStore) {
+    let snapshot = yield dispatch(takeSnapshot(front));
+    yield dispatch(readSnapshot(heapWorker, snapshot));
+    yield dispatch(takeCensus(heapWorker, snapshot));
+  };
+};
 
 
 
 
 const takeSnapshot = exports.takeSnapshot = function takeSnapshot (front) {
-  return {
-    type: actions.TAKE_SNAPSHOT,
-    [PROMISE]: front.saveHeapSnapshot()
+  return function *(dispatch, getStore) {
+    let snapshot = createSnapshot();
+    dispatch({ type: actions.TAKE_SNAPSHOT_START, snapshot });
+    dispatch(selectSnapshot(snapshot));
+
+    let path = yield front.saveHeapSnapshot();
+    dispatch({ type: actions.TAKE_SNAPSHOT_END, snapshot, path });
+
+    return snapshot;
+  };
+};
+
+
+
+
+
+
+
+
+const readSnapshot = exports.readSnapshot = function readSnapshot (heapWorker, snapshot) {
+  return function *(dispatch, getStore) {
+    
+    assert(snapshot.state === states.SAVED,
+      "Should only read a snapshot once");
+
+    dispatch({ type: actions.READ_SNAPSHOT_START, snapshot });
+    yield heapWorker.readHeapSnapshot(snapshot.path);
+    dispatch({ type: actions.READ_SNAPSHOT_END, snapshot });
+  };
+};
+
+
+
+
+
+
+
+
+
+const takeCensus = exports.takeCensus = function takeCensus (heapWorker, snapshot) {
+  return function *(dispatch, getStore) {
+    
+    assert([states.READ, states.SAVED_CENSUS].includes(snapshot.state),
+      "Can only take census of snapshots in READ or SAVED_CENSUS state");
+
+    let breakdown = getStore().breakdown;
+    dispatch({ type: actions.TAKE_CENSUS_START, snapshot, breakdown });
+
+    let census = yield heapWorker.takeCensus(snapshot.path, { breakdown }, { asTreeNode: true });
+    dispatch({ type: actions.TAKE_CENSUS_END, snapshot, census });
   };
 };
 
@@ -26,3 +92,4 @@ const selectSnapshot = exports.selectSnapshot = function takeSnapshot (snapshot)
     snapshot
   };
 };
+
