@@ -190,7 +190,15 @@ function removeBreakpoints(ctx) {
     meta.breakpoints = {};
   }
 
-  cm.doc.iter((line) => { removeBreakpoint(ctx, line); });
+  cm.doc.iter((line) => {
+    
+    
+    
+    if (line.wrapClass == null || !line.wrapClass.includes("breakpoint")) {
+      return;
+    }
+    removeBreakpoint(ctx, line);
+  });
 }
 
 
