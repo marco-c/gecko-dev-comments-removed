@@ -461,6 +461,13 @@ class TexturePacket : public ::google::protobuf::MessageLite {
   inline void set_allocated_data(::std::string* data);
 
   
+  inline bool has_ismask() const;
+  inline void clear_ismask();
+  static const int kIsMaskFieldNumber = 20;
+  inline bool ismask() const;
+  inline void set_ismask(bool value);
+
+  
  private:
   inline void set_has_layerref();
   inline void clear_has_layerref();
@@ -480,6 +487,8 @@ class TexturePacket : public ::google::protobuf::MessageLite {
   inline void clear_has_glcontext();
   inline void set_has_data();
   inline void clear_has_data();
+  inline void set_has_ismask();
+  inline void clear_has_ismask();
 
   ::std::string _unknown_fields_;
 
@@ -494,6 +503,7 @@ class TexturePacket : public ::google::protobuf::MessageLite {
   ::google::protobuf::uint32 dataformat_;
   ::google::protobuf::uint64 glcontext_;
   ::std::string* data_;
+  bool ismask_;
   #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
   friend void  protobuf_AddDesc_LayerScopePacket_2eproto_impl();
   #else
@@ -2661,6 +2671,30 @@ inline void TexturePacket::set_allocated_data(::std::string* data) {
     clear_has_data();
     data_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
+  
+}
+
+
+inline bool TexturePacket::has_ismask() const {
+  return (_has_bits_[0] & 0x00000200u) != 0;
+}
+inline void TexturePacket::set_has_ismask() {
+  _has_bits_[0] |= 0x00000200u;
+}
+inline void TexturePacket::clear_has_ismask() {
+  _has_bits_[0] &= ~0x00000200u;
+}
+inline void TexturePacket::clear_ismask() {
+  ismask_ = false;
+  clear_has_ismask();
+}
+inline bool TexturePacket::ismask() const {
+  
+  return ismask_;
+}
+inline void TexturePacket::set_ismask(bool value) {
+  set_has_ismask();
+  ismask_ = value;
   
 }
 
