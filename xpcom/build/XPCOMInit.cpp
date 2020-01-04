@@ -999,7 +999,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   if (PseudoStack* stack = mozilla_get_pseudo_stack()) {
-    stack->sampleRuntime(nullptr);
+    stack->sampleContext(nullptr);
   }
 #endif
 

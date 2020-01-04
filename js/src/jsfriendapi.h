@@ -493,9 +493,9 @@ IsAtomsZone(JS::Zone* zone);
 
 struct WeakMapTracer
 {
-    JSRuntime* runtime;
+    JSContext* context;
 
-    explicit WeakMapTracer(JSRuntime* rt) : runtime(rt) {}
+    explicit WeakMapTracer(JSContext* cx) : context(cx) {}
 
     
     
@@ -2982,7 +2982,7 @@ class MemProfiler
         return sActiveProfilerCount > 0;
     }
 
-    static MemProfiler* GetMemProfiler(JSRuntime* runtime);
+    static MemProfiler* GetMemProfiler(JSContext* context);
 
     static void SetNativeProfiler(NativeProfiler* aProfiler) {
         sNativeProfiler = aProfiler;

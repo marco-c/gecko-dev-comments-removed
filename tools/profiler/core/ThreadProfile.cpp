@@ -48,7 +48,7 @@ void ThreadProfile::StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
   
   if (!mUniqueStacks.isSome()) {
 #ifndef SPS_STANDALONE
-    mUniqueStacks.emplace(mPseudoStack->mRuntime);
+    mUniqueStacks.emplace(mPseudoStack->mContext);
 #else
     mUniqueStacks.emplace(nullptr);
 #endif
@@ -150,7 +150,7 @@ void ThreadProfile::StreamSamplesAndMarkers(SpliceableJSONWriter& aWriter, doubl
       }
       mBuffer->StreamSamplesToJSON(aWriter, mThreadId, aSinceTime,
 #ifndef SPS_STANDALONE
-                                   mPseudoStack->mRuntime,
+                                   mPseudoStack->mContext,
 #else
                                    nullptr,
 #endif
@@ -187,7 +187,7 @@ void ThreadProfile::FlushSamplesAndMarkers()
 {
   
   
-  MOZ_ASSERT(mPseudoStack->mRuntime);
+  MOZ_ASSERT(mPseudoStack->mContext);
 
   
   
@@ -197,7 +197,7 @@ void ThreadProfile::FlushSamplesAndMarkers()
   
   
 #ifndef SPS_STANDALONE
-  mUniqueStacks.emplace(mPseudoStack->mRuntime);
+  mUniqueStacks.emplace(mPseudoStack->mContext);
 #else
   mUniqueStacks.emplace(nullptr);
 #endif
@@ -208,7 +208,7 @@ void ThreadProfile::FlushSamplesAndMarkers()
     {
       mBuffer->StreamSamplesToJSON(b, mThreadId,  0,
 #ifndef SPS_STANDALONE
-                                   mPseudoStack->mRuntime,
+                                   mPseudoStack->mContext,
 #else
                                    nullptr,
 #endif

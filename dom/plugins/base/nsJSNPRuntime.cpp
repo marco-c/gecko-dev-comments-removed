@@ -336,7 +336,7 @@ RegisterGCCallbacks()
   }
 
   
-  JSContext* cx = JS_GetContext(xpc::GetJSRuntime());
+  JSContext* cx = dom::danger::GetJSContext();
   if (!JS_AddExtraGCRootsTracer(cx, TraceJSObjWrappers, nullptr)) {
     return false;
   }
@@ -356,7 +356,7 @@ UnregisterGCCallbacks()
   MOZ_ASSERT(sCallbackIsRegistered);
 
   
-  JSContext* cx = JS_GetContext(xpc::GetJSRuntime());
+  JSContext* cx = dom::danger::GetJSContext();
   JS_RemoveExtraGCRootsTracer(cx, TraceJSObjWrappers, nullptr);
 
   

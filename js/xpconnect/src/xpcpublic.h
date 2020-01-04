@@ -561,7 +561,7 @@ class ErrorReport {
 };
 
 void
-DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JSRuntime* rt, xpc::ErrorReport* xpcReport,
+DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JSContext* cx, xpc::ErrorReport* xpcReport,
                          JS::Handle<JS::Value> exception);
 
 
@@ -584,9 +584,6 @@ FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
 
 extern void
 GetCurrentCompartmentName(JSContext*, nsCString& name);
-
-JSRuntime*
-GetJSRuntime();
 
 void AddGCCallback(xpcGCCallback cb);
 void RemoveGCCallback(xpcGCCallback cb);

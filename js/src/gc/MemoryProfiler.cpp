@@ -4,6 +4,7 @@
 
 
 
+#include "jscntxt.h"
 #include "jsfriendapi.h"
 
 #include "vm/Runtime.h"
@@ -27,9 +28,9 @@ MemProfiler::GetGCHeapProfiler(JSRuntime* runtime)
 }
 
 MemProfiler*
-MemProfiler::GetMemProfiler(JSRuntime* runtime)
+MemProfiler::GetMemProfiler(JSContext* context)
 {
-    return &runtime->gc.mMemProfiler;
+    return &context->gc.mMemProfiler;
 }
 
 void

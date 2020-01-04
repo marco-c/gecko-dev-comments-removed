@@ -265,7 +265,7 @@ public:
     StackKey mStack;
   };
 
-  explicit UniqueStacks(JSRuntime* aRuntime);
+  explicit UniqueStacks(JSContext* aContext);
 
   Stack BeginStack(const OnStackFrameKey& aRoot);
   uint32_t LookupJITFrameDepth(void* aAddr);
@@ -283,7 +283,7 @@ public:
   UniqueJSONStrings mUniqueStrings;
 
 private:
-  JSRuntime* mRuntime;
+  JSContext* mContext;
 
   
   

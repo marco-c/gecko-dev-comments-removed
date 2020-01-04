@@ -1247,7 +1247,6 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
 {
     MOZ_ASSERT(aShellData);
 
-    JSRuntime* rt;
     JSContext* cx;
     int result = 0;
     nsresult rv;
@@ -1412,21 +1411,15 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
             return 1;
         }
 
-        rt = xpc::GetJSRuntime();
-        if (!rt) {
-            printf("failed to get JSRuntime from XPConnect!\n");
-            return 1;
-        }
+        AutoJSAPI jsapi;
+        jsapi.Init();
+        cx = jsapi.cx();
 
         
         
         
         sScriptedInterruptCallback = new PersistentRootedValue;
-        sScriptedInterruptCallback->init(rt, UndefinedValue());
-
-        AutoJSAPI jsapi;
-        jsapi.Init();
-        cx = jsapi.cx();
+        sScriptedInterruptCallback->init(cx, UndefinedValue());
 
         JS_SetInterruptCallback(cx, XPCShellInterruptCallback);
 

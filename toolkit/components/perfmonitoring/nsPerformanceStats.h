@@ -156,7 +156,7 @@ protected:
   
 
 
-  JSRuntime* const mRuntime;
+  JSContext* const mContext;
 
   
 
@@ -645,7 +645,7 @@ public:
 
 
   static nsPerformanceGroup*
-    Make(JSRuntime* rt,
+    Make(JSContext* cx,
          nsPerformanceStatsService* service,
          const nsAString& name,
          const nsAString& addonId,
