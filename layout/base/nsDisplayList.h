@@ -3785,7 +3785,7 @@ private:
 class nsDisplaySVGEffects: public nsDisplayWrapList {
 public:
   nsDisplaySVGEffects(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      nsDisplayList* aList, bool aOpacityItemCreated);
+                      nsDisplayList* aList, bool aHandleOpacity);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplaySVGEffects();
 #endif
@@ -3821,8 +3821,7 @@ protected:
   
   nsRect mEffectsBounds;
   
-  
-  bool mOpacityItemCreated;
+  bool mHandleOpacity;
 };
 
 
@@ -3832,7 +3831,7 @@ protected:
 class nsDisplayMask : public nsDisplaySVGEffects {
 public:
   nsDisplayMask(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      nsDisplayList* aList, bool aOpacityItemCreated);
+                      nsDisplayList* aList, bool aHandleOpacity);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayMask();
 #endif
@@ -3861,7 +3860,7 @@ public:
 class nsDisplayFilter : public nsDisplaySVGEffects {
 public:
   nsDisplayFilter(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      nsDisplayList* aList, bool aOpacityItemCreated);
+                  nsDisplayList* aList, bool aHandleOpacity);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayFilter();
 #endif
