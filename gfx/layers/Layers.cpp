@@ -1054,6 +1054,12 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
       
       siblingVisibleRegion.MoveBy(-siblingOffset.x, -siblingOffset.y);
       
+      
+      Maybe<ParentLayerIntRect> clipRect = sibling->GetEffectiveClipRect();
+      if (clipRect) {
+        siblingVisibleRegion.AndWith(ParentLayerIntRect::ToUntyped(*clipRect));
+      }
+      
       aResult.SubOut(siblingVisibleRegion);
     }
 
