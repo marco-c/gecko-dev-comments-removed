@@ -1922,7 +1922,7 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
     NS_ENSURE_STATE(mHTMLEditor);
     nsCOMPtr<Element> host = mHTMLEditor->GetActiveEditingHost();
     NS_ENSURE_TRUE(host, NS_ERROR_FAILURE);
-    res = CheckForEmptyBlock(startNode, host, aSelection, aHandled);
+    res = CheckForEmptyBlock(startNode, host, aSelection, aAction, aHandled);
     NS_ENSURE_SUCCESS(res, res);
     if (*aHandled) {
       return NS_OK;
@@ -4955,6 +4955,7 @@ nsresult
 nsHTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
                                     Element* aBodyNode,
                                     Selection* aSelection,
+                                    nsIEditor::EDirection aAction,
                                     bool* aHandled)
 {
   
@@ -5016,9 +5017,31 @@ nsHTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         
       }
     } else {
-      
-      res = aSelection->Collapse(blockParent, offset + 1);
-      NS_ENSURE_SUCCESS(res, res);
+      if (aAction == nsIEditor::eNext) {
+        
+        res = aSelection->Collapse(blockParent, offset + 1);
+        NS_ENSURE_SUCCESS(res, res);
+
+        
+        nsCOMPtr<nsIContent> nextNode = mHTMLEditor->GetNextNode(blockParent,
+                                                                 offset + 1, true);
+        if (mHTMLEditor->IsTextNode(nextNode)) {
+          res = aSelection->Collapse(nextNode, 0);
+          NS_ENSURE_SUCCESS(res, res);
+        }
+      } else {
+        
+        nsCOMPtr<nsIContent> priorNode = mHTMLEditor->GetPriorNode(blockParent,
+                                                                   offset,
+                                                                   true);
+        if (mHTMLEditor->IsTextNode(priorNode)) {
+          res = aSelection->Collapse(priorNode, priorNode->TextLength());
+          NS_ENSURE_SUCCESS(res, res);
+        } else {
+          res = aSelection->Collapse(blockParent, offset + 1);
+          NS_ENSURE_SUCCESS(res, res);
+        }
+      }
     }
     NS_ENSURE_STATE(mHTMLEditor);
     res = mHTMLEditor->DeleteNode(emptyBlock);
