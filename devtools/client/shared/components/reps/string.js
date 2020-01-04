@@ -38,8 +38,6 @@ define(function (require, exports, module) {
     },
   });
 
-  
-
   function supportsObject(object, type) {
     return (type == "string");
   }
