@@ -817,6 +817,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
         mPaintSyncId = 0;
       }
     }
+#else
+    
+    
+    mIsFirstPaint = false;
 #endif
 
     
