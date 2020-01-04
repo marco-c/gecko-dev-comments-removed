@@ -67,9 +67,6 @@ GetSriLog()
   return gSriPRLog;
 }
 
-
-
-
 NS_IMPL_ISUPPORTS0(nsScriptLoadRequest)
 
 nsScriptLoadRequestList::~nsScriptLoadRequestList()
