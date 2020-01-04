@@ -65,7 +65,7 @@
 
   add_task(function* waitForPushNotification() {
     yield Promise.all([
-      controlledFrame.waitOnWorkerMessage("finished"),
+      controlledFrame.waitOnPushMessage(),
       fetch("http://mochi.test:8888/tests/dom/push/test/push-server.sjs", {
         method: "PUT",
         headers: {
