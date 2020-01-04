@@ -2,7 +2,7 @@
 
 
 
-from marionette import MarionetteTestCase
+from marionette import MarionetteTestCase, skip_if_mobile
 
 
 class TestPageSource(MarionetteTestCase):
@@ -27,6 +27,7 @@ class TestPageSource(MarionetteTestCase):
         self.assertEqual(re.sub("\s", "", source), "<xml><foo><bar>baz</bar></foo></xml>")
 
 
+@skip_if_mobile
 class TestPageSourceChrome(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)

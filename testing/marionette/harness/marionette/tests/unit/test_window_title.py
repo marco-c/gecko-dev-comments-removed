@@ -2,8 +2,9 @@
 
 
 
-from marionette import MarionetteTestCase
+from marionette import MarionetteTestCase, skip_if_mobile
 
+@skip_if_mobile
 class TestTitleChrome(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)
