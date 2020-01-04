@@ -1601,6 +1601,7 @@ RasterImage::CanDownscaleDuringDecode(const IntSize& aSize, uint32_t aFlags)
   
   
   if (!mDownscaleDuringDecode || !mHasSize ||
+      !gfxPrefs::ImageHQDownscalingEnabled() ||
       !(aFlags & imgIContainer::FLAG_HIGH_QUALITY_SCALING)) {
     return false;
   }
