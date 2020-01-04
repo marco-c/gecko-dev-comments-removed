@@ -90,8 +90,8 @@ D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device *aDevice)
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     desc.MiscFlags = 0;
     desc.BindFlags = 0;
-    ID3D11Texture2D* cpuTexture;
-    hr = aDevice->CreateTexture2D(&desc, NULL, &cpuTexture);
+    RefPtr<ID3D11Texture2D> cpuTexture;
+    hr = aDevice->CreateTexture2D(&desc, NULL, getter_AddRefs(cpuTexture));
     if (FAILED(hr)) {
         gfxCriticalNote << "DoesRecreatingCreateCPUTextureFailed";
         return false;
@@ -107,7 +107,7 @@ D3D11Checks::DoesRenderTargetViewNeedRecreating(ID3D11Device *aDevice)
     }
     int resultColor = *(int*)mapped.pData;
     deviceContext->Unmap(cpuTexture, 0);
-    cpuTexture->Release();
+    cpuTexture = nullptr;
 
     
     
@@ -311,18 +311,19 @@ DoesTextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT format, UINT bi
   
   deviceContext->CopyResource(cpuTexture, sharedTexture);
 
+  
+  sharedMutex->ReleaseSync(0);
+
   D3D11_MAPPED_SUBRESOURCE mapped;
-  int resultColor = 0;
+  uint32_t resultColor = 0;
   if (SUCCEEDED(deviceContext->Map(cpuTexture, 0, D3D11_MAP_READ, 0, &mapped))) {
     
-    resultColor = *(int*)mapped.pData;
+    resultColor = *(uint32_t*)mapped.pData;
     deviceContext->Unmap(cpuTexture, 0);
   } else {
     gfxCriticalError() << "DoesD3D11TextureSharingWork_MapFailed";
     return false;
   }
-
-  sharedMutex->ReleaseSync(0);
 
   
   if (resultColor != color[0]) {
