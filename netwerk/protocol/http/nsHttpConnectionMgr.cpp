@@ -2057,28 +2057,53 @@ nsHttpConnectionMgr::GetSpdyPreferredConn(nsConnectionEntry *ent)
     MOZ_ASSERT(ent);
 
     nsConnectionEntry *preferred = GetSpdyPreferredEnt(ent);
-
     
-    if (preferred)
+    if (preferred) {
         
         ent->mUsingSpdy = true;
-    else
+    } else {
         preferred = ent;
+    }
 
-    nsHttpConnection *conn = nullptr;
+    if (!preferred->mUsingSpdy) {
+        return nullptr;
+    }
 
-    if (preferred->mUsingSpdy) {
-        for (uint32_t index = 0;
-             index < preferred->mActiveConns.Length();
-             ++index) {
-            if (preferred->mActiveConns[index]->CanDirectlyActivate()) {
-                conn = preferred->mActiveConns[index];
-                break;
-            }
+    nsHttpConnection *rv = nullptr;
+    uint32_t activeLen = preferred->mActiveConns.Length();
+    uint32_t index;
+
+    
+    
+    for (index = 0; index < activeLen; ++index) {
+        nsHttpConnection *tmp = preferred->mActiveConns[index];
+        if (tmp->CanDirectlyActivate() && tmp->IsExperienced()) {
+            rv = tmp;
+            break;
         }
     }
 
-    return conn;
+    
+    if (rv) {
+        for (index = 0; index < activeLen; ++index) {
+            nsHttpConnection *tmp = preferred->mActiveConns[index];
+            
+            if (tmp != rv) {
+                tmp->DontReuse();
+            }
+        }
+        return rv;
+    }
+
+    
+    for (index = 0; index < activeLen; ++index) {
+        nsHttpConnection *tmp = preferred->mActiveConns[index];
+        if (tmp->CanDirectlyActivate()) {
+            rv = tmp;
+            break;
+        }
+    }
+    return rv;
 }
 
 
