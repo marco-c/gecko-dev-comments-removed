@@ -9,6 +9,7 @@
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include "mozilla/Attributes.h"         
+#include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"             
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/AsyncTransactionTracker.h" 
@@ -316,7 +317,7 @@ protected:
                                   bool aUnsafe);
 
   CompositableTransaction* mTxn;
-  bool mShuttingDown;
+  Atomic<bool> mShuttingDown;
 };
 
 } 
