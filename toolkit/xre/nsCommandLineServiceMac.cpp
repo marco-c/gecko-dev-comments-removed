@@ -55,7 +55,9 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart)
   for (int arg = 0; arg < argc; arg++) {
     char* flag = argv[arg];
     
-    if (strncmp(flag, "-psn_", 5) != 0)
+    
+    if (strncmp(flag, "-psn_", 5) != 0 &&
+        strncmp(flag, "-foreground", 11) != 0)
       AddToCommandLine(flag);
   }
 
