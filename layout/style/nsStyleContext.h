@@ -249,13 +249,18 @@ public:
 
   
   
-  bool HasChildThatUsesGrandancestorStyle() const
-    { return !!(mBits & NS_STYLE_CHILD_USES_GRANDANCESTOR_STYLE); }
+  
+  bool UsesGrandancestorStyle() const
+    { return !!(mBits & NS_STYLE_USES_GRANDANCESTOR_STYLE); }
 
   
   
   bool IsShared() const
     { return !!(mBits & NS_STYLE_IS_SHARED); }
+
+  
+  
+  bool HasChildThatUsesGrandancestorStyle() const;
 
   
   void SetStyle(nsStyleStructID aSID, void* aStruct);
@@ -468,6 +473,10 @@ private:
   void* CreateEmptyStyleData(const nsStyleStructID& aSID);
 
   void ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup);
+
+  
+  static bool ListContainsStyleContextThatUsesGrandancestorStyle(
+                                                   const nsStyleContext* aHead);
 
 #ifdef DEBUG
   struct AutoCheckDependency {
