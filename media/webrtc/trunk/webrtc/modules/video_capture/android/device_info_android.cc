@@ -15,6 +15,7 @@
 #include <sstream>
 #include <vector>
 
+#include "webrtc/modules/utility/interface/helpers_android.h"
 #include "webrtc/modules/video_capture/android/video_capture_android.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
@@ -61,8 +62,9 @@ struct AndroidCameraInfo {
 };
 
 
-
 static std::vector<AndroidCameraInfo>* g_camera_info = NULL;
+
+static JavaVM* g_jvm = NULL;
 
 
 
@@ -86,7 +88,7 @@ static AndroidCameraInfo* FindCameraInfoByName(const std::string& name) {
 }
 
 
-void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
+void DeviceInfoAndroid::Initialize(JavaVM* javaVM) {
   
   
   
@@ -95,6 +97,17 @@ void DeviceInfoAndroid::Initialize(JNIEnv* jni) {
   
   if (g_camera_info)
     return;
+
+  g_jvm = javaVM;
+}
+
+void DeviceInfoAndroid::BuildDeviceList() {
+  if (!g_jvm) {
+    return;
+  }
+
+  AttachThreadScoped ats(g_jvm);
+  JNIEnv* jni = ats.env();
 
   g_camera_info = new std::vector<AndroidCameraInfo>();
   jclass j_info_class =
@@ -177,6 +190,13 @@ void DeviceInfoAndroid::DeInitialize() {
     delete g_camera_info;
     g_camera_info = NULL;
   }
+}
+
+int32_t DeviceInfoAndroid::Refresh() {
+  if (!g_camera_info || g_camera_info->size() == 0) {
+    DeviceInfoAndroid::BuildDeviceList();
+  }
+  return 0;
 }
 
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
