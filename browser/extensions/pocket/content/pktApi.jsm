@@ -609,31 +609,23 @@ var pktApi = (function() {
     
 
 
-    function getSignupPanelTabTestVariant() {
-        return getSimpleTestOption('panelTab', 0.1, 'tab');
-    }
-
-    function getSimpleTestOption(testName, threshold, testOptionName) {
-        
-        var settingName = 'test.' + testName;
-        var assignedValue = getSetting(settingName);
-
-        
-        if (!assignedValue)
+    function getSignupAB() {
+        var setting = getSetting('signupAB');
+        if (!setting || setting.includes('hero'))
         {
-            if (Math.random() <= threshold) {
-                assignedValue = testOptionName;
+            var rand = (Math.floor(Math.random()*100+1));
+            if (rand > 90)
+            {
+                setting = 'storyboard_nlm';
             }
-            else {
-                assignedValue = 'control';
+            else
+            {
+                setting = 'storyboard_lm';
             }
-
-            setSetting('test.'+testName, assignedValue);
+            setSetting('signupAB',setting);
         }
-
-        return assignedValue;
+        return setting;
     }
-
 
     
 
@@ -649,6 +641,6 @@ var pktApi = (function() {
         isPremiumUser: isPremiumUser,
         getSuggestedTagsForItem: getSuggestedTagsForItem,
         getSuggestedTagsForURL: getSuggestedTagsForURL,
-        getSignupPanelTabTestVariant: getSignupPanelTabTestVariant,
+        getSignupAB: getSignupAB
     };
 }());
