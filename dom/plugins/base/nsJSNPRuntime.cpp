@@ -59,7 +59,7 @@ struct JSObjWrapperHasher
   }
 };
 
-namespace js {
+namespace JS {
 template <>
 struct GCPolicy<nsJSObjWrapper*> {
     static void trace(JSTracer* trc, nsJSObjWrapper** wrapper, const char* name) {
@@ -85,7 +85,7 @@ public:
 
 
 
-typedef js::GCHashMap<nsJSObjWrapperKey,
+typedef JS::GCHashMap<nsJSObjWrapperKey,
                       nsJSObjWrapper*,
                       JSObjWrapperHasher,
                       js::SystemAllocPolicy> JSObjWrapperTable;

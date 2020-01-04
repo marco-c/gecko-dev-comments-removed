@@ -54,7 +54,7 @@ namespace JS {
 class Symbol;
 }
 
-namespace js {
+namespace JS {
 
 
 
@@ -114,10 +114,10 @@ template <typename T>
 struct GCPolicy<JS::Heap<T>>
 {
     static void trace(JSTracer* trc, JS::Heap<T>* thingp, const char* name) {
-        JS::TraceEdge(trc, thingp, name);
+        TraceEdge(trc, thingp, name);
     }
     static bool needsSweep(JS::Heap<T>* thingp) {
-        return gc::EdgeNeedsSweep(thingp);
+        return js::gc::EdgeNeedsSweep(thingp);
     }
 };
 
