@@ -1020,17 +1020,41 @@ var gBrowserInit = {
 
     
     if (!document.documentElement.hasAttribute("width")) {
-      const TARGET_WIDTH = 1280;
-      const TARGET_HEIGHT = 1040;
-      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
-      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
+      let defaultWidth;
+      let defaultHeight;
 
-      document.documentElement.setAttribute("width", width);
-      document.documentElement.setAttribute("height", height);
-
-      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
+      
+      
+      
+      
+      
+      if (screen.availHeight <= 600) {
         document.documentElement.setAttribute("sizemode", "maximized");
+        defaultWidth = 610;
+        defaultHeight = 450;
       }
+      else {
+        if (screen.availWidth <= screen.availHeight) {
+          defaultWidth = screen.availWidth * .9;
+          defaultHeight = screen.availHeight * .75;
+        }
+        else if (screen.availWidth >= 2048) {
+          defaultWidth = (screen.availWidth / 2) - 20;
+          defaultHeight = screen.availHeight - 10;
+        }
+        else {
+          defaultWidth = screen.availWidth * .75;
+          defaultHeight = screen.availHeight * .75;
+        }
+
+#if MOZ_WIDGET_GTK == 2
+        
+        
+        defaultHeight -= 28;
+#endif
+      }
+      document.documentElement.setAttribute("width", defaultWidth);
+      document.documentElement.setAttribute("height", defaultHeight);
     }
 
     if (!window.toolbar.visible) {
