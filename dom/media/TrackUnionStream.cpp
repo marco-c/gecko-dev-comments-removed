@@ -149,18 +149,6 @@ TrackUnionStream::TrackUnionStream(DOMMediaStream* aWrapper) :
     }
   }
 
-  
-  
-  void TrackUnionStream::ForwardTrackEnabled(TrackID aOutputID, bool aEnabled)
-  {
-    for (int32_t i = mTrackMap.Length() - 1; i >= 0; --i) {
-      if (mTrackMap[i].mOutputTrackID == aOutputID) {
-        mTrackMap[i].mInputPort->GetSource()->
-          SetTrackEnabled(mTrackMap[i].mInputTrackID, aEnabled);
-      }
-    }
-  }
-
   uint32_t TrackUnionStream::AddTrack(MediaInputPort* aPort, StreamBuffer::Track* aTrack,
                     GraphTime aFrom)
   {

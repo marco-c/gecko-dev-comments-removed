@@ -21,10 +21,6 @@ public:
   virtual void RemoveInput(MediaInputPort* aPort) override;
   virtual void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
-  
-  
-  virtual void ForwardTrackEnabled(TrackID aOutputID, bool aEnabled) override;
-
 protected:
   
   struct TrackMapEntry {

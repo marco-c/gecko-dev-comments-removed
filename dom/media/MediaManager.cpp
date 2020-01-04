@@ -800,17 +800,6 @@ public:
     }
   }
 
-  
-  virtual void SetTrackEnabled(TrackID aTrackID, bool aEnabled) override
-  {
-    
-    
-
-    
-    
-    GetInputStream()->AsProcessedStream()->ForwardTrackEnabled(aTrackID, aEnabled);
-  }
-
   virtual DOMLocalMediaStream* AsDOMLocalMediaStream() override
   {
     return this;
