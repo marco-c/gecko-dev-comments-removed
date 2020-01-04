@@ -18,6 +18,7 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoDecoderManagerChild)
 
   static VideoDecoderManagerChild* GetSingleton();
+  static nsIThread* GetManagerThread();
 
   
   void DeallocateSurfaceDescriptorGPUVideo(const SurfaceDescriptorGPUVideo& aSD);
@@ -27,6 +28,10 @@ public:
   
   static void Initialize();
   static void Shutdown();
+
+protected:
+  PVideoDecoderChild* AllocPVideoDecoderChild() override;
+  bool DeallocPVideoDecoderChild(PVideoDecoderChild* actor) override;
 
 private:
   VideoDecoderManagerChild()
