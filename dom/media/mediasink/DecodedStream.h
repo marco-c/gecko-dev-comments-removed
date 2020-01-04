@@ -26,16 +26,11 @@ class MediaData;
 class MediaInputPort;
 class MediaStream;
 class MediaStreamGraph;
-class OutputStreamListener;
 class OutputStreamManager;
 class ProcessedMediaStream;
 class TimeStamp;
 
 template <class T> class MediaQueue;
-
-namespace layers {
-class Image;
-} 
 
 class OutputStreamData {
 public:
@@ -47,9 +42,6 @@ public:
   
   
   bool Disconnect();
-  
-  
-  void Remove();
   
   
   bool Equals(MediaStream* aStream)
@@ -64,7 +56,6 @@ private:
   nsRefPtr<ProcessedMediaStream> mStream;
   
   nsRefPtr<MediaInputPort> mPort;
-  nsRefPtr<OutputStreamListener> mListener;
 };
 
 class OutputStreamManager {
