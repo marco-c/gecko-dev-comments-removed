@@ -529,9 +529,8 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
     nsCOMPtr<nsISupports> item;
     uint32_t len;
 
-  
     GdkAtom selectionTarget = gtk_selection_data_get_target(aSelectionData);
-  
+
     
     
     if (selectionTarget == gdk_atom_intern ("STRING", FALSE) ||
@@ -569,12 +568,11 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
         
         static const char* const imageMimeTypes[] = {
             kNativeImageMime, kPNGImageMime, kJPEGImageMime, kJPGImageMime, kGIFImageMime };
-        nsCOMPtr<nsISupports> item;
-        uint32_t len;
+        nsCOMPtr<nsISupports> imageItem;
         nsCOMPtr<nsISupportsInterfacePointer> ptrPrimitive;
         for (uint32_t i = 0; !ptrPrimitive && i < ArrayLength(imageMimeTypes); i++) {
-            rv = trans->GetTransferData(imageMimeTypes[i], getter_AddRefs(item), &len);
-            ptrPrimitive = do_QueryInterface(item);
+            rv = trans->GetTransferData(imageMimeTypes[i], getter_AddRefs(imageItem), &len);
+            ptrPrimitive = do_QueryInterface(imageItem);
         }
         if (!ptrPrimitive)
             return;

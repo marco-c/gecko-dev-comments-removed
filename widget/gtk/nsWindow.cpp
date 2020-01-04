@@ -2394,8 +2394,6 @@ nsWindow::OnSizeAllocate(GtkAllocation *aAllocation)
     if (mBounds.Size() == size)
         return;
 
-    nsIntRect rect;
-
     
     
     
