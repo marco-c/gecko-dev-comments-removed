@@ -21,7 +21,7 @@ ANDROID_BUILD_TOOLS_VERSION = '23.0.1'
 
 ANDROID_PACKAGES = [
     'tools',
-    'platform-tools-preview', 
+    'platform-tools',
     'build-tools-%s' % ANDROID_BUILD_TOOLS_VERSION,
     'android-%s' % ANDROID_TARGET_SDK,
     'extra-google-m2repository',
