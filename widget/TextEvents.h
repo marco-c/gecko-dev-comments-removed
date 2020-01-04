@@ -712,6 +712,16 @@ public:
     mRefPoint = aPoint;
   }
 
+  void InitForQueryTextRectArray(uint32_t aOffset, uint32_t aLength,
+                                 const Options& aOptions = Options())
+  {
+    NS_ASSERTION(mMessage == eQueryTextRectArray,
+                 "wrong initializer is called");
+    mInput.mOffset = aOffset;
+    mInput.mLength = aLength;
+    Init(aOptions);
+  }
+
   void RequestFontRanges()
   {
     NS_ASSERTION(mMessage == eQueryTextContent,
@@ -833,6 +843,8 @@ public:
     nsCOMPtr<nsITransferable> mTransferable;
     
     AutoTArray<mozilla::FontRange, 1> mFontRanges;
+    
+    nsTArray<mozilla::LayoutDeviceIntRect> mRectArray;
     
     bool mReversed;
     

@@ -54,6 +54,8 @@ public:
   
   nsresult OnQueryTextRect(WidgetQueryContentEvent* aEvent);
   
+  nsresult OnQueryTextRectArray(WidgetQueryContentEvent* aEvent);
+  
   nsresult OnQueryEditorRect(WidgetQueryContentEvent* aEvent);
   
   nsresult OnQueryContentState(WidgetQueryContentEvent* aEvent);
@@ -299,6 +301,9 @@ protected:
                                   FontRangeArray& aFontRanges,
                                   uint32_t& aLength,
                                   LineBreakType aLineBreakType);
+  nsresult QueryTextRectByRange(nsRange* aRange,
+                                LayoutDeviceIntRect& aRect,
+                                WritingMode& aWritingMode);
 };
 
 } 

@@ -243,6 +243,9 @@ NS_EVENT_MESSAGE(eQueryCaretRect)
 NS_EVENT_MESSAGE(eQueryTextRect)
 
 
+NS_EVENT_MESSAGE(eQueryTextRectArray)
+
+
 NS_EVENT_MESSAGE(eQueryEditorRect)
 
 
