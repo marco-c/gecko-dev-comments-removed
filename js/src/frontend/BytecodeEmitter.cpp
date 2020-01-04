@@ -6390,16 +6390,11 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
         SharedContext* outersc = sc;
         if (fun->isInterpretedLazy()) {
-            
-            
-            
-            
-            
-            
-            
-            ScriptSourceObject* source = &script->sourceObject()->as<ScriptSourceObject>();
-            JSObject* scope = innermostStaticScope();
-            fun->lazyScript()->setEnclosingScopeAndSource(scope, source);
+            if (!fun->lazyScript()->sourceObject()) {
+                JSObject* scope = innermostStaticScope();
+                JSObject* source = script->sourceObject();
+                fun->lazyScript()->setParent(scope, &source->as<ScriptSourceObject>());
+            }
             if (emittingRunOnceLambda)
                 fun->lazyScript()->setTreatAsRunOnce();
         } else {
