@@ -125,13 +125,7 @@ public:
 
   bool operator==(const Shmem& aRhs) const
   {
-    
-    
-    
-    
-    
-    
-    return mSegment == aRhs.mSegment && mId == aRhs.mId;
+    return mSegment == aRhs.mSegment;
   }
 
   
