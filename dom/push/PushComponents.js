@@ -493,6 +493,15 @@ PushSubscription.prototype = {
 
 
 
+
+  get isSystemSubscription() {
+    return !!this._props.systemRecord;
+  },
+
+  
+
+
+
   quotaApplies() {
     return this.quota >= 0;
   },
