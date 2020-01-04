@@ -277,12 +277,6 @@ function treeItem(aText, aOpen, aChildren)
     this.children = aChildren;
 }
 
-function createAtom(aName)
-{
-  return Components.classes["@mozilla.org/atom-service;1"]
-    .getService(Components.interfaces.nsIAtomService).getAtom(aName);
-}
-
 
 
 
