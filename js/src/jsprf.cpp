@@ -1021,7 +1021,7 @@ JS_vsnprintf(char* out, uint32_t outlen, const char* fmt, va_list ap)
     (void) dosprintf(&ss, fmt, ap);
 
     uint32_t charsWritten = ss.cur - ss.base;
-    MOZ_ASSERT(charsWritten > 0);
+    MOZ_RELEASE_ASSERT(charsWritten > 0);
 
     
     
