@@ -337,6 +337,12 @@ public:
 
 
 
+  bool AudioTrackPresent(bool& aNeedsAEC);
+
+  
+
+
+
 
   void UpdateStreamOrder();
 

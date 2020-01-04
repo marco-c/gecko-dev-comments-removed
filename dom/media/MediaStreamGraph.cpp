@@ -336,19 +336,19 @@ namespace {
   const uint32_t IN_MUTED_CYCLE = 1;
 } 
 
-void
-MediaStreamGraphImpl::UpdateStreamOrder()
+bool
+MediaStreamGraphImpl::AudioTrackPresent(bool& aNeedsAEC)
 {
 #ifdef MOZ_WEBRTC
   bool shouldAEC = false;
 #endif
   bool audioTrackPresent = false;
-  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+  for (uint32_t i = 0; i < mStreams.Length() && audioTrackPresent == false; ++i) {
     MediaStream* stream = mStreams[i];
+    SourceMediaStream* source = stream->AsSourceStream();
 #ifdef MOZ_WEBRTC
-    if (stream->AsSourceStream() &&
-        stream->AsSourceStream()->NeedsMixing()) {
-      shouldAEC = true;
+    if (source && source->NeedsMixing()) {
+      aNeedsAEC = true;
     }
 #endif
     
@@ -360,7 +360,28 @@ MediaStreamGraphImpl::UpdateStreamOrder()
         audioTrackPresent = true;
       }
     }
+    if (source) {
+      for (auto& data : source->mPendingTracks) {
+        if (data.mData->GetType() == MediaSegment::AUDIO) {
+          audioTrackPresent = true;
+          break;
+        }
+      }
+    }
   }
+
+#ifdef MOZ_WEBRTC
+  aNeedsAEC = shouldAEC;
+#endif
+  return audioTrackPresent;
+}
+
+void
+MediaStreamGraphImpl::UpdateStreamOrder()
+{
+  bool shouldAEC = false;
+  bool audioTrackPresent = AudioTrackPresent(shouldAEC);
+
   
   
   
@@ -1026,20 +1047,8 @@ MediaStreamGraphImpl::CloseAudioInputImpl(AudioDataListener *aListener)
   mAudioInputs.RemoveElement(aListener);
 
   
-  bool audioTrackPresent = false;
-  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
-    MediaStream* stream = mStreams[i];
-    
-    if (stream->AsAudioNodeStream()) {
-      audioTrackPresent = true;
-    } else if (CurrentDriver()->AsAudioCallbackDriver()) {
-      
-      for (StreamBuffer::TrackIter tracks(stream->GetStreamBuffer(), MediaSegment::AUDIO);
-           !tracks.IsEnded(); tracks.Next()) {
-        audioTrackPresent = true;
-      }
-    }
-  }
+  bool shouldAEC = false;
+  bool audioTrackPresent = AudioTrackPresent(shouldAEC);
 
   MonitorAutoLock mon(mMonitor);
   if (mLifecycleState == LIFECYCLE_RUNNING) {
@@ -3273,17 +3282,9 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
   
   
   if (aOperation != AudioContextOperation::Resume) {
-    bool audioTrackPresent = false;
-    for (uint32_t i = 0; i < mStreams.Length(); ++i) {
-      MediaStream* stream = mStreams[i];
-      if (stream->AsAudioNodeStream()) {
-        audioTrackPresent = true;
-      }
-      for (StreamBuffer::TrackIter tracks(stream->GetStreamBuffer(), MediaSegment::AUDIO);
-          !tracks.IsEnded(); tracks.Next()) {
-        audioTrackPresent = true;
-      }
-    }
+    bool shouldAEC = false;
+    bool audioTrackPresent = AudioTrackPresent(shouldAEC);
+
     if (!audioTrackPresent && CurrentDriver()->AsAudioCallbackDriver()) {
       CurrentDriver()->AsAudioCallbackDriver()->
         EnqueueStreamAndPromiseForOperation(aDestinationStream, aPromise,
