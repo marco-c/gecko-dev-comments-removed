@@ -26,7 +26,6 @@ const METHODS = {
   findNext: {},
   clearMatch: {},
   executeScript: { alwaysFails: true }, 
-  getStructuredData: {},
   getWebManifest: {},
   mute: {},
   unmute: {},
