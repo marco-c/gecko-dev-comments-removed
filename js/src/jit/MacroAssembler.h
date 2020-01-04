@@ -795,11 +795,26 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void rshift64(Imm32 imm, Register64 dest) PER_ARCH;
 
     
+    inline void lshift32(Register shift, Register srcDest) DEFINED_ON(x86_shared);
+    inline void rshift32(Register shift, Register srcDest) DEFINED_ON(x86_shared);
+    inline void rshift32Arithmetic(Register shift, Register srcDest) DEFINED_ON(x86_shared);
+
+    
     
     inline void rotateLeft(Imm32 count, Register input, Register dest) PER_SHARED_ARCH;
     inline void rotateLeft(Register count, Register input, Register dest) PER_SHARED_ARCH;
     inline void rotateRight(Imm32 count, Register input, Register dest) PER_SHARED_ARCH;
     inline void rotateRight(Register count, Register input, Register dest) PER_SHARED_ARCH;
+
+    
+    
+
+    
+    inline void clz32(Register src, Register dest, bool knownNotZero) DEFINED_ON(x86_shared);
+    inline void ctz32(Register src, Register dest, bool knownNotZero) DEFINED_ON(x86_shared);
+
+    
+    inline void popcnt32(Register src, Register dest, Register temp) DEFINED_ON(x86_shared);
 
     
     
