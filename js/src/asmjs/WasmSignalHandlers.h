@@ -38,7 +38,7 @@ namespace wasm {
 
 
 
-bool
+MOZ_MUST_USE bool
 EnsureSignalHandlersInstalled(JSRuntime* rt);
 
 #if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)

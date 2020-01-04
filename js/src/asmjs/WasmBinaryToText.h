@@ -33,7 +33,7 @@ namespace wasm {
 
 
 
-bool
+MOZ_MUST_USE bool
 BinaryToText(JSContext* cx, const uint8_t* bytes, size_t length, StringBuffer& buffer);
 
 }  

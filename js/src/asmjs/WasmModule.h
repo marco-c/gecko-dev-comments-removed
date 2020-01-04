@@ -45,7 +45,7 @@ namespace wasm {
     size_t serializedSize() const;                                              \
     uint8_t* serialize(uint8_t* cursor) const;                                  \
     const uint8_t* deserialize(ExclusiveContext* cx, const uint8_t* cursor);    \
-    bool clone(JSContext* cx, Type* out) const;                                 \
+    MOZ_MUST_USE bool clone(JSContext* cx, Type* out) const;                    \
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
 
@@ -516,7 +516,7 @@ class Module : public mozilla::LinkedListElement<Module>
     WasmActivation*& activation();
     void specializeToHeap(ArrayBufferObjectMaybeShared* heap);
     void despecializeFromHeap(ArrayBufferObjectMaybeShared* heap);
-    bool sendCodeRangesToProfiler(JSContext* cx);
+    MOZ_MUST_USE bool sendCodeRangesToProfiler(JSContext* cx);
     MOZ_MUST_USE bool setProfilingEnabled(JSContext* cx, bool enabled);
     ImportExit& importToExit(const Import& import);
 
@@ -524,7 +524,7 @@ class Module : public mozilla::LinkedListElement<Module>
 
   protected:
     const ModuleData& base() const { return *module_; }
-    bool clone(JSContext* cx, const StaticLinkData& link, Module* clone) const;
+    MOZ_MUST_USE bool clone(JSContext* cx, const StaticLinkData& link, Module* clone) const;
 
   public:
     static const unsigned SizeOfImportExit = sizeof(ImportExit);
@@ -586,19 +586,19 @@ class Module : public mozilla::LinkedListElement<Module>
     
     
 
-    bool staticallyLink(ExclusiveContext* cx, const StaticLinkData& link);
+    MOZ_MUST_USE bool staticallyLink(ExclusiveContext* cx, const StaticLinkData& link);
 
     
     
     
     
 
-    bool dynamicallyLink(JSContext* cx,
-                         Handle<WasmModuleObject*> moduleObj,
-                         Handle<ArrayBufferObjectMaybeShared*> heap,
-                         Handle<FunctionVector> imports,
-                         const ExportMap& exportMap,
-                         MutableHandleObject exportObj);
+    MOZ_MUST_USE bool dynamicallyLink(JSContext* cx,
+                                      Handle<WasmModuleObject*> moduleObj,
+                                      Handle<ArrayBufferObjectMaybeShared*> heap,
+                                      Handle<FunctionVector> imports,
+                                      const ExportMap& exportMap,
+                                      MutableHandleObject exportObj);
 
     
 
@@ -609,7 +609,7 @@ class Module : public mozilla::LinkedListElement<Module>
     
     
 
-    bool callExport(JSContext* cx, uint32_t exportIndex, CallArgs args);
+    MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t exportIndex, CallArgs args);
 
     
     
@@ -617,8 +617,8 @@ class Module : public mozilla::LinkedListElement<Module>
     
     
 
-    bool callImport(JSContext* cx, uint32_t importIndex, unsigned argc, const uint64_t* argv,
-                    MutableHandleValue rval);
+    MOZ_MUST_USE bool callImport(JSContext* cx, uint32_t importIndex, unsigned argc,
+                                 const uint64_t* argv, MutableHandleValue rval);
     void deoptimizeImportExit(uint32_t importIndex);
 
     
@@ -682,7 +682,7 @@ class WasmModuleObject : public NativeObject
   public:
     static const unsigned RESERVED_SLOTS = 1;
     static WasmModuleObject* create(ExclusiveContext* cx);
-    bool init(wasm::Module* module);
+    MOZ_MUST_USE bool init(wasm::Module* module);
     wasm::Module& module() const;
     void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code, size_t* data);
     static const Class class_;

@@ -263,7 +263,7 @@ class Sig
     Sig(Sig&& rhs) : args_(Move(rhs.args_)), ret_(rhs.ret_) {}
     Sig(ValTypeVector&& args, ExprType ret) : args_(Move(args)), ret_(ret) {}
 
-    bool clone(const Sig& rhs) {
+    MOZ_MUST_USE bool clone(const Sig& rhs) {
         ret_ = rhs.ret_;
         MOZ_ASSERT(args_.empty());
         return args_.appendAll(rhs.args_);
@@ -648,7 +648,7 @@ AddressOf(SymbolicAddress imm, ExclusiveContext* cx);
 
 
 
-bool ReadI64Object(JSContext* cx, HandleValue v, int64_t* val);
+MOZ_MUST_USE bool ReadI64Object(JSContext* cx, HandleValue v, int64_t* val);
 
 
 

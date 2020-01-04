@@ -48,7 +48,7 @@ static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
 
 
 
-bool
+MOZ_MUST_USE bool
 Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
      MutableHandleObject exportObj);
 
