@@ -1897,16 +1897,14 @@ PeerConnectionImpl::CreateNewRemoteTracks(RefPtr<PeerConnectionObserver>& aPco)
       
       
       nsCOMPtr<nsIPrincipal> principal;
+      nsIDocument* doc = GetWindow()->GetExtantDoc();
+      MOZ_ASSERT(doc);
       if (mDtlsConnected && !PrivacyRequested()) {
-        nsIDocument* doc = GetWindow()->GetExtantDoc();
-        MOZ_ASSERT(doc);
-        if (doc) {
-          principal = doc->NodePrincipal();
-        }
+        principal = doc->NodePrincipal();
       } else {
         
         
-        principal = do_CreateInstance(NS_NULLPRINCIPAL_CONTRACTID);
+        principal =  nsNullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
       }
 #endif
 
