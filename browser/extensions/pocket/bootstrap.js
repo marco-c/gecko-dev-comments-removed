@@ -14,8 +14,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
                                   "resource:///modules/RecentWindow.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
                                   "resource:///modules/CustomizableUI.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "SocialService",
-                                  "resource:///modules/SocialService.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
                                   "resource://gre/modules/AddonManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ReaderMode",
@@ -133,6 +131,14 @@ function CreatePocketWidget(reason) {
   
   
   
+  let SocialService;
+  try {
+    
+    SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
+  } catch (e) {
+    SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
+  }
+
   let origin = "https://getpocket.com";
   SocialService.getProvider(origin, provider => {
     if (provider) {
