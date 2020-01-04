@@ -841,13 +841,14 @@ MarkupView.prototype = {
         
         continue;
       }
-      if (type === "attributes" || type === "characterData"
-        || type === "events" || type === "pseudoClassLock") {
+      if (type === "attributes" || type === "characterData") {
         container.update();
       } else if (type === "childList" || type === "nativeAnonymousChildList") {
         container.childrenDirty = true;
         
         this._updateChildren(container, {flash: true});
+      } else if (type === "pseudoClassLock") {
+        container.update();
       }
     }
 
@@ -2546,6 +2547,7 @@ function ElementEditor(aContainer, aNode) {
   let tagName = this.node.nodeName.toLowerCase();
   this.tag.textContent = tagName;
   this.closeTag.textContent = tagName;
+  this.eventNode.style.display = this.node.hasEventListeners ? "inline-block" : "none";
 
   this.update();
   this.initialized = true;
@@ -2640,10 +2642,6 @@ ElementEditor.prototype = {
         }
       }
     }
-
-    
-    this.eventNode.style.display = this.node.hasEventListeners ?
-      "inline-block" : "none";
 
     this.updateTextEditor();
   },
