@@ -19,6 +19,10 @@ public:
                   FlushableTaskQueue* aTaskQueue,
                   MediaDataDecoderCallback* aCallback);
 
+  
+  static bool IsWave(const nsACString& aMimeType);
+
+private:
   RefPtr<InitPromise> Init() override;
   nsresult Input(MediaRawData* aSample) override;
   nsresult Flush() override;
@@ -29,10 +33,6 @@ public:
     return "wave audio decoder";
   }
 
-  
-  static bool IsWave(const nsACString& aMimeType);
-
-private:
   void Decode (MediaRawData* aSample);
   bool DoDecode (MediaRawData* aSample);
   void DoDrain ();
