@@ -44,22 +44,6 @@ function testAddContact(aIcc, aType, aMozContact, aPin2) {
       
       ok(aResult.tel.length == 1);
       ok(!aResult.email);
-
-      
-      return aIcc.readContacts(aType)
-        .then((aResult) => {
-          let contact = aResult[aResult.length - 1];
-          is(contact.name[0], aMozContact.name[0]);
-          
-          is(contact.tel[0].value, aMozContact.tel[0].value.substring(0, 40));
-          is(contact.id.substring(0, aIcc.iccInfo.iccid.length), aIcc.iccInfo.iccid);
-
-          return contact.id;
-        })
-        .then((aContactId) => {
-          
-          return removeContact(aIcc, aContactId, aType, aPin2);
-        });
     }, (aError) => {
       if (aType === "fdn" && aPin2 === undefined) {
         ok(aError.name === "SimPin2",
@@ -67,31 +51,61 @@ function testAddContact(aIcc, aType, aMozContact, aPin2) {
       } else {
         ok(false, "Cannot add " + aType + " contact: " + aError.name);
       }
-    })
+    });
 }
 
-function removeContact(aIcc, aContactId, aType, aPin2) {
-  log("removeContact: contactId=" + aContactId +
-      ", type=" + aType + ", pin2=" + aPin2);
+function removeContacts(aIcc, aContacts, aType, aPin2) {
+  log("removeContacts: type=" + aType + ", pin2=" + aPin2);
+  let promise = Promise.resolve();
 
-  let contact = new mozContact({});
-  contact.id = aContactId;
+  
+  for (let i = 0; i < aContacts.length ; i++) {
+    let contact = new mozContact({});
+    contact.id = aContacts[i].id;
+    promise = promise.then(() => aIcc.updateContact(aType, contact, aPin2));
+  }
+  return promise;
+}
 
-  return aIcc.updateContact(aType, contact, aPin2);
+function testAddContacts(aIcc, aType, aPin2) {
+  let promise = Promise.resolve();
+
+  for (let i = 0; i < TEST_ADD_DATA.length; i++) {
+    let test_data = TEST_ADD_DATA[i];
+
+    promise = promise.then(() => testAddContact(aIcc, aType, test_data, aPin2));
+  }
+
+  
+  promise = promise.then(() => aIcc.readContacts(aType))
+  .then((aResult) => {
+    aResult = aResult.slice(aResult.length - TEST_ADD_DATA.length);
+
+    for (let i = 0; i < aResult.length ; i++) {
+      let contact = aResult[i];
+      let expectedResult = TEST_ADD_DATA[i];
+
+      is(contact.name[0], expectedResult.name[0]);
+      
+      is(contact.tel[0].value, expectedResult.tel[0].value.substring(0, 40));
+      is(contact.id.substring(0, aIcc.iccInfo.iccid.length), aIcc.iccInfo.iccid);
+    }
+    return removeContacts(aIcc, aResult, aType, aPin2);
+  });
+
+
+  return promise;
 }
 
 
 startTestCommon(function() {
   let icc = getMozIcc();
-  let promise = Promise.resolve();
-  for (let i = 0; i < TEST_ADD_DATA.length; i++) {
-    let test_data = TEST_ADD_DATA[i];
+
+  return Promise.resolve()
     
-    promise = promise.then(() => testAddContact(icc, "adn", test_data))
-      
-      .then(() => testAddContact(icc, "fdn", test_data, "0000"))
-      
-      .then(() => testAddContact(icc, "fdn", test_data));
-  }
-  return promise;
+    .then(() => testAddContacts(icc, "adn"))
+    
+    .then(() => testAddContacts(icc, "fdn", "0000"))
+    
+    .then(() => testAddContact(icc, "fdn", TEST_ADD_DATA[0]));
 });
