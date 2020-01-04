@@ -901,9 +901,6 @@ pref("devtools.gcli.imgurUploadURL", "https://api.imgur.com/3/image");
 pref("devtools.commands.dir", "");
 
 
-pref("devtools.telemetry.supported_performance_marks", "contentInteractive,navigationInteractive,navigationLoaded,visuallyLoaded,fullyLoaded,mediaEnumerated,scanEnd");
-
-
 pref("view_source.syntax_highlight", true);
 pref("view_source.wrap_long_lines", false);
 pref("view_source.editor.external", false);
@@ -1460,10 +1457,6 @@ pref("network.http.packaged-apps-developer-mode", false);
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);
 
-
-
-
-pref("network.sts.serve_multiple_events_per_poll_iteration", true);
 
 pref("network.sts.max_time_for_events_between_two_polls", 100);
 
