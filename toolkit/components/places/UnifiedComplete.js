@@ -109,6 +109,8 @@ const SQL_BOOKMARK_TAGS_FRAGMENT =
 
 
 
+
+
 function defaultQuery(conditions = "") {
   let query =
     `SELECT :query_type, h.url, h.title, f.url, ${SQL_BOOKMARK_TAGS_FRAGMENT},
@@ -118,7 +120,12 @@ function defaultQuery(conditions = "") {
      LEFT JOIN moz_openpages_temp t ON t.url = h.url
      WHERE h.frecency <> 0
        AND AUTOCOMPLETE_MATCH(:searchString, h.url,
-                              IFNULL(btitle, h.title), tags,
+                              CASE WHEN bookmarked THEN
+                                IFNULL(btitle, h.title)
+                              ELSE h.title END,
+                              CASE WHEN bookmarked THEN
+                                tags
+                              ELSE '' END,
                               h.visit_count, h.typed,
                               bookmarked, t.open_count,
                               :matchBehavior, :searchBehavior)
