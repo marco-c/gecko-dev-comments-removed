@@ -1957,49 +1957,66 @@ const ThreadActor = ActorClass({
     this.scripts.addScripts(this.dbg.findScripts({ source: aSource }));
 
     let sourceActor = this.sources.createNonSourceMappedActor(aSource);
-
-    
     let bpActors = [...this.breakpointActorMap.findActors()];
-    let promises = [];
 
-    
-    
-    
-    let sourceActorsCreated = this.sources.createSourceActors(aSource);
+    if (this._options.useSourceMaps) {
+      let promises = [];
 
-    if (bpActors.length) {
       
       
       
-      
-      
-      
-      this.unsafeSynchronize(sourceActorsCreated);
-    }
+      let sourceActorsCreated = this.sources._createSourceMappedActors(aSource);
 
-    for (let _actor of bpActors) {
-      
-      
-      let actor = _actor;
-
-      if (actor.isPending) {
-        promises.push(actor.originalLocation.originalSourceActor._setBreakpoint(actor));
-      } else {
-        promises.push(this.sources.getAllGeneratedLocations(actor.originalLocation)
-                                  .then((generatedLocations) => {
-          if (generatedLocations.length > 0 &&
-              generatedLocations[0].generatedSourceActor.actorID === sourceActor.actorID) {
-            sourceActor._setBreakpointAtAllGeneratedLocations(
-              actor,
-              generatedLocations
-            );
-          }
-        }));
+      if (bpActors.length) {
+        
+        
+        
+        
+        
+        
+        this.unsafeSynchronize(sourceActorsCreated);
       }
-    }
 
-    if (promises.length > 0) {
-      this.unsafeSynchronize(promise.all(promises));
+      for (let _actor of bpActors) {
+        
+        
+        let actor = _actor;
+
+        if (actor.isPending) {
+          promises.push(actor.originalLocation.originalSourceActor._setBreakpoint(actor));
+        } else {
+          promises.push(this.sources.getAllGeneratedLocations(actor.originalLocation)
+                                    .then((generatedLocations) => {
+            if (generatedLocations.length > 0 &&
+                generatedLocations[0].generatedSourceActor.actorID === sourceActor.actorID) {
+              sourceActor._setBreakpointAtAllGeneratedLocations(
+                actor,
+                generatedLocations
+              );
+            }
+          }));
+        }
+      }
+
+      if (promises.length > 0) {
+        this.unsafeSynchronize(promise.all(promises));
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      for (let actor of bpActors) {
+        actor.originalLocation.originalSourceActor._setBreakpoint(actor);
+      }
     }
 
     this._debuggerSourcesSeen.add(aSource);
