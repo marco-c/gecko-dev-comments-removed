@@ -643,10 +643,10 @@ JSObject::writeBarrierPost(void* cellp, JSObject* prev, JSObject* next)
     if (next && (buffer = next->storeBuffer())) {
         
         
-        if (prev && prev->storeBuffer()) {
-            buffer->assertHasCellEdge(static_cast<js::gc::Cell**>(cellp));
+        
+        
+        if (prev && prev->storeBuffer())
             return;
-        }
         buffer->putCellFromAnyThread(static_cast<js::gc::Cell**>(cellp));
         return;
     }
