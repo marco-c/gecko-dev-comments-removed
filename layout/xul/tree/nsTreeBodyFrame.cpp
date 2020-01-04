@@ -3,6 +3,7 @@
 
 
 
+
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/DebugOnly.h"
@@ -79,20 +80,17 @@ using namespace mozilla::image;
 using namespace mozilla::layout;
 
 
-static PLDHashOperator
-CancelImageRequest(const nsAString& aKey,
-                   nsTreeImageCacheEntry aEntry, void* aData)
+void
+nsTreeBodyFrame::CancelImageRequests()
 {
-
-  
-  
-  nsTreeBodyFrame* frame = static_cast<nsTreeBodyFrame*>(aData);
-
-  nsLayoutUtils::DeregisterImageRequest(frame->PresContext(), aEntry.request,
-                                        nullptr);
-
-  aEntry.request->CancelAndForgetObserver(NS_BINDING_ABORTED);
-  return PL_DHASH_NEXT;
+  for (auto iter = mImageCache.Iter(); !iter.Done(); iter.Next()) {
+    
+    
+    nsTreeImageCacheEntry entry = iter.UserData();
+    nsLayoutUtils::DeregisterImageRequest(PresContext(), entry.request,
+                                          nullptr);
+    entry.request->CancelAndForgetObserver(NS_BINDING_ABORTED);
+  }
 }
 
 
@@ -143,7 +141,7 @@ nsTreeBodyFrame::nsTreeBodyFrame(nsStyleContext* aContext)
 
 nsTreeBodyFrame::~nsTreeBodyFrame()
 {
-  mImageCache.EnumerateRead(CancelImageRequest, this);
+  CancelImageRequests();
   DetachImageListeners();
   delete mSlots;
 }
@@ -4439,7 +4437,7 @@ nsresult
 nsTreeBodyFrame::ClearStyleAndImageCaches()
 {
   mStyleCache.Clear();
-  mImageCache.EnumerateRead(CancelImageRequest, this);
+  CancelImageRequests();
   mImageCache.Clear();
   return NS_OK;
 }
