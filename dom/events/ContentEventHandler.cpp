@@ -1592,6 +1592,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       return rv;
     }
 
+    bool startsBetweenLineBreaker = false;
     AutoTArray<nsRect, 16> charRects;
 
     bool isLineBreaker = ShouldBreakLineBefore(firstContent, mRootContent);
@@ -1601,6 +1602,20 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       
       FrameRelativeRect brRect = GetLineBreakerRectBefore(firstFrame);
       charRects.AppendElement(brRect.RectRelativeTo(firstFrame));
+      if (kBRLength > 1 && offset == aEvent->mInput.mOffset && offset) {
+        
+        
+        
+        
+        rv = SetRangeFromFlatTextOffset(range, aEvent->mInput.mOffset - 1, 1,
+                                        lineBreakType, true, nullptr);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return NS_ERROR_UNEXPECTED;
+        }
+        FrameAndNodeOffset frameForPrevious =
+          GetFirstFrameHavingFlatTextInRange(range);
+        startsBetweenLineBreaker = frameForPrevious.mFrame == firstFrame.mFrame;
+      }
     } else {
       rv = firstFrame->GetCharacterRectsInRange(firstFrame.mStartOffsetInNode,
                                                 kEndOffset - offset, charRects);
@@ -1639,6 +1654,15 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
         break;
       }
 
+      
+      
+      
+      if (startsBetweenLineBreaker) {
+        continue;
+      }
+
+      
+      
       
       
       aEvent->mReply.mRectArray.AppendElement(rect);
