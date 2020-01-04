@@ -794,4 +794,36 @@ this.BrowserTestUtils = {
       }, interval);
     });
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForNotificationBar(tabbrowser, browser, notificationValue) {
+    let notificationBox = tabbrowser.getNotificationBox(browser);
+    return new Promise((resolve) => {
+      let check = (event) => {
+        return event.target.value == notificationValue;
+      };
+
+      BrowserTestUtils.waitForEvent(notificationBox, "AlertActive",
+                                    false, check).then((event) => {
+        
+        
+        resolve(event.originalTarget);
+      });
+    });
+  },
 };
