@@ -158,7 +158,32 @@ class AudioStream final
 
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioStream)
-  AudioStream();
+
+  class Chunk {
+  public:
+    
+    virtual const AudioDataValue* Data() const = 0;
+    
+    virtual uint32_t Frames() const = 0;
+    
+    virtual AudioDataValue* GetWritable() const = 0;
+    virtual ~Chunk() {}
+  };
+
+  class DataSource {
+  public:
+    
+    
+    virtual UniquePtr<Chunk> PopFrames(uint32_t aFrames) = 0;
+    
+    virtual bool Ended() const = 0;
+    
+    virtual void Drained() = 0;
+  protected:
+    virtual ~DataSource() {}
+  };
+
+  explicit AudioStream(DataSource& aSource);
 
   
   
@@ -173,29 +198,10 @@ public:
 
   
   
-  
-  
-  nsresult Write(const AudioDataValue* aBuf, uint32_t aFrames);
-
-  
-  uint32_t Available();
-
-  
-  
   void SetVolume(double aVolume);
 
   
-  void Drain();
-
-  
-  void Cancel();
-
-  
   void Start();
-
-  
-  
-  int64_t GetWritten();
 
   
   void Pause();
@@ -254,14 +260,14 @@ private:
 
   nsresult EnsureTimeStretcherInitializedUnlocked();
 
+  
+  bool Downmix(AudioDataValue* aBuffer, uint32_t aFrames);
+
   long GetUnprocessed(void* aBuffer, long aFrames);
   long GetTimeStretched(void* aBuffer, long aFrames);
 
   void StartUnlocked();
 
-  
-  
-  
   
   Monitor mMonitor;
 
@@ -274,8 +280,6 @@ private:
 #if defined(__ANDROID__)
   dom::AudioChannel mAudioChannel;
 #endif
-  
-  int64_t mWritten;
   AudioClock mAudioClock;
   soundtouch::SoundTouch* mTimeStretcher;
 
@@ -284,12 +288,6 @@ private:
 
   
   FILE* mDumpFile;
-
-  
-  
-  
-  
-  CircularByteBuffer mBuffer;
 
   
   UniquePtr<cubeb_stream, CubebDestroyPolicy> mCubebStream;
@@ -311,10 +309,6 @@ private:
     STARTED,     
     RUNNING,     
     STOPPED,     
-    DRAINING,    
-                 
-                 
-                 
     DRAINED,     
     ERRORED,     
     SHUTDOWN     
@@ -324,6 +318,8 @@ private:
   bool mIsFirst;
   
   bool mIsMonoAudioEnabled;
+
+  DataSource& mDataSource;
 };
 
 } 
