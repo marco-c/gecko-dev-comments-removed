@@ -80,6 +80,8 @@ var getServerTraits = Task.async(function*(target) {
   let config = [
     { name: "hasToggleAll", actor: "animations",
       method: "toggleAll" },
+    { name: "hasToggleSeveral", actor: "animations",
+      method: "toggleSeveral" },
     { name: "hasSetCurrentTime", actor: "animationplayer",
       method: "setCurrentTime" },
     { name: "hasMutationEvents", actor: "animations",
@@ -252,6 +254,27 @@ var AnimationsController = {
 
 
 
+  toggleCurrentAnimations: Task.async(function*(shouldPause) {
+    if (this.traits.hasToggleSeveral) {
+      yield this.animationsFront.toggleSeveral(this.animationPlayers,
+                                               shouldPause);
+    } else {
+      
+      
+      for (let player of this.animationPlayers) {
+        if (shouldPause) {
+          yield player.pause();
+        } else {
+          yield player.play();
+        }
+      }
+    }
+  }),
+
+  
+
+
+
 
 
   setCurrentTimeAll: Task.async(function*(time, shouldPause) {
@@ -259,6 +282,8 @@ var AnimationsController = {
       yield this.animationsFront.setCurrentTimes(this.animationPlayers, time,
                                                  shouldPause);
     } else {
+      
+      
       for (let animation of this.animationPlayers) {
         if (shouldPause) {
           yield animation.pause();

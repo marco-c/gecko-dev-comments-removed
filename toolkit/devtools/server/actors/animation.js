@@ -846,6 +846,24 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
+  toggleSeveral: method(function(players, shouldPause) {
+    return promise.all(players.map(player => {
+      return shouldPause ? player.pause() : player.play();
+    }));
+  }, {
+    request: {
+      players: Arg(0, "array:animationplayer"),
+      shouldPause: Arg(1, "boolean")
+    },
+    response: {}
+  }),
+
+  
+
+
+
+
+
   setCurrentTimes: method(function(players, time, shouldPause) {
     return promise.all(players.map(player => {
       let pause = shouldPause ? player.pause() : promise.resolve();
