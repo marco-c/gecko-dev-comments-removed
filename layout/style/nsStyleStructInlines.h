@@ -144,30 +144,80 @@ nsStyleDisplay::HasTransform(const nsIFrame* aContextFrame) const
   return HasTransformStyle() && aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms);
 }
 
+template<class StyleContextLike>
+bool
+nsStyleDisplay::HasFixedPosContainingBlockStyleInternal(
+                  StyleContextLike* aStyleContext) const
+{
+  
+  
+  NS_ASSERTION(aStyleContext->StyleDisplay() == this,
+               "unexpected aStyleContext");
+  return IsContainPaint() ||
+         HasPerspectiveStyle() ||
+         (mWillChangeBitField & NS_STYLE_WILL_CHANGE_FIXPOS_CB) ||
+         aStyleContext->StyleEffects()->HasFilters();
+}
+
+template<class StyleContextLike>
+bool
+nsStyleDisplay::IsFixedPosContainingBlockForAppropriateFrame(
+                  StyleContextLike* aStyleContext) const
+{
+  
+  
+  return HasFixedPosContainingBlockStyleInternal(aStyleContext) ||
+         HasTransformStyle();
+}
+
 bool
 nsStyleDisplay::IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const
 {
   
   
-  NS_ASSERTION(aContextFrame->StyleDisplay() == this,
-               "unexpected aContextFrame");
-  return (IsContainPaint() || HasTransform(aContextFrame) ||
-          HasPerspectiveStyle() ||
-          (mWillChangeBitField & NS_STYLE_WILL_CHANGE_FIXPOS_CB) ||
-          aContextFrame->StyleEffects()->HasFilters()) &&
-      !aContextFrame->IsSVGText();
+  if (!HasFixedPosContainingBlockStyleInternal(aContextFrame->StyleContext()) &&
+      !HasTransform(aContextFrame)) {
+    return false;
+  }
+  return !aContextFrame->IsSVGText();
+}
+
+template<class StyleContextLike>
+bool
+nsStyleDisplay::HasAbsPosContainingBlockStyleInternal(
+                  StyleContextLike* aStyleContext) const
+{
+  
+  
+  NS_ASSERTION(aStyleContext->StyleDisplay() == this,
+               "unexpected aStyleContext");
+  return IsAbsolutelyPositionedStyle() ||
+         IsRelativelyPositionedStyle() ||
+         (mWillChangeBitField & NS_STYLE_WILL_CHANGE_ABSPOS_CB);
+}
+
+template<class StyleContextLike>
+bool
+nsStyleDisplay::IsAbsPosContainingBlockForAppropriateFrame(StyleContextLike* aStyleContext) const
+{
+  
+  
+  return HasAbsPosContainingBlockStyleInternal(aStyleContext) ||
+         IsFixedPosContainingBlockForAppropriateFrame(aStyleContext);
 }
 
 bool
 nsStyleDisplay::IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const
 {
-  NS_ASSERTION(aContextFrame->StyleDisplay() == this,
-               "unexpected aContextFrame");
-  return ((IsAbsolutelyPositionedStyle() ||
-           IsRelativelyPositionedStyle() ||
-           (mWillChangeBitField & NS_STYLE_WILL_CHANGE_ABSPOS_CB)) &&
-          !aContextFrame->IsSVGText()) ||
-         IsFixedPosContainingBlock(aContextFrame);
+  
+  
+  nsStyleContext* sc = aContextFrame->StyleContext();
+  if (!HasAbsPosContainingBlockStyleInternal(sc) &&
+      !HasFixedPosContainingBlockStyleInternal(sc) &&
+      !HasTransform(aContextFrame)) {
+    return false;
+  }
+  return !aContextFrame->IsSVGText();
 }
 
 bool

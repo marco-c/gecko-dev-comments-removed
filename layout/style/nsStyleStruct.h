@@ -3033,11 +3033,26 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   inline bool IsOriginalDisplayInlineOutside(const nsIFrame* aContextFrame) const;
   inline uint8_t GetDisplay(const nsIFrame* aContextFrame) const;
   inline bool IsFloating(const nsIFrame* aContextFrame) const;
-  inline bool IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const;
   inline bool IsRelativelyPositioned(const nsIFrame* aContextFrame) const;
   inline bool IsAbsolutelyPositioned(const nsIFrame* aContextFrame) const;
 
   
+
+  
+
+
+
+
+  inline bool IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const;
+
+  
+
+
+
+
+  template<class StyleContextLike>
+  inline bool IsAbsPosContainingBlockForAppropriateFrame(
+                StyleContextLike* aStyleContext) const;
 
   
 
@@ -3053,6 +3068,26 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   inline bool IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const;
 
+  
+
+
+
+
+  template<class StyleContextLike>
+  inline bool IsFixedPosContainingBlockForAppropriateFrame(
+                StyleContextLike* aStyleContext) const;
+
+private:
+  
+  
+  template<class StyleContextLike>
+  inline bool HasAbsPosContainingBlockStyleInternal(
+                StyleContextLike* aStyleContext) const;
+  template<class StyleContextLike>
+  inline bool HasFixedPosContainingBlockStyleInternal(
+                StyleContextLike* aStyleContext) const;
+
+public:
   
   
   
