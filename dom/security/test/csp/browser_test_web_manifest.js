@@ -176,6 +176,7 @@ const tests = [
   },
 ];
 
+
 add_task(function* () {
   
   const testPromises = tests.map((test) => {
@@ -190,8 +191,7 @@ add_task(function* () {
 });
 
 function* testObtainingManifest(aBrowser, aTest) {
-  const expectsBlocked = aTest.expected.includes("block");
-  const observer = (expectsBlocked) ? createNetObserver(aTest) : null;
+  const waitForObserver = waitForNetObserver(aTest);
   
   
   try {
@@ -200,38 +200,25 @@ function* testObtainingManifest(aBrowser, aTest) {
   } catch (e) {
     const wasBlocked = e.message.includes("NetworkError when attempting to fetch resource");
     ok(wasBlocked, `Expected promise rejection obtaining ${aTest.tabURL}: ${e.message}`);
-    if (observer) {
-      yield observer.untilFinished;
-    }
+  } finally {
+    yield waitForObserver;
   }
 }
 
 
-
-function createNetObserver(test) {
-  let finishedTest;
-  let success = false;
-  const finished = new Promise((resolver) => {
-    finishedTest = resolver;
-  });
-  const timeoutId = setTimeout(() => {
-    if (!success) {
-      test.run("This test timed out.");
-      finishedTest();
+function waitForNetObserver(aTest) {
+  return new Promise((resolve) => {
+    
+    if (!aTest.expected.includes("block")){
+      return resolve();
     }
-  }, 1000);
-  var observer = {
-    get untilFinished() {
-      return finished;
-    },
-    observe(subject, topic) {
-      SpecialPowers.removeObserver(observer, "csp-on-violate-policy");
-      test.run(topic);
-      finishedTest();
-      clearTimeout(timeoutId);
-      success = true;
-    },
-  };
-  SpecialPowers.addObserver(observer, "csp-on-violate-policy", false);
-  return observer;
+    const observer = {
+      observe(subject, topic) {
+        SpecialPowers.removeObserver(observer, "csp-on-violate-policy");
+        aTest.run(topic);
+        resolve();
+      },
+    };
+    SpecialPowers.addObserver(observer, "csp-on-violate-policy", false);
+  });
 }
