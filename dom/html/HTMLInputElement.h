@@ -1295,15 +1295,15 @@ protected:
   RefPtr<FileList>  mFileList;
 
   nsString mStaticDocFileList;
+
   
-  
 
 
 
 
 
 
-  nsString mFocusedValue;  
+  nsString mFocusedValue;
 
   
 
@@ -1411,7 +1411,7 @@ private:
         return false;
       }
     }
-    
+
     
     int32_t mFilterMask;
     
