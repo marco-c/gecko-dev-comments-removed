@@ -212,10 +212,6 @@ protected:
 
     static gfxPlatformFontList *sPlatformFontList;
 
-    static PLDHashOperator FindFontForCharProc(nsStringHashKey::KeyType aKey,
-                                               nsRefPtr<gfxFontFamily>& aFamilyEntry,
-                                               void* userArg);
-
     
     
     gfxFontFamily* FindFamilyByCanonicalName(const nsAString& aFamily) {
@@ -251,20 +247,10 @@ protected:
     
     void InitOtherFamilyNames();
 
-    static PLDHashOperator
-    InitOtherFamilyNamesProc(nsStringHashKey::KeyType aKey,
-                             nsRefPtr<gfxFontFamily>& aFamilyEntry,
-                             void* userArg);
-
     
     
     
     gfxFontEntry* SearchFamiliesForFaceName(const nsAString& aFaceName);
-
-    static PLDHashOperator
-    ReadFaceNamesProc(nsStringHashKey::KeyType aKey,
-                      nsRefPtr<gfxFontFamily>& aFamilyEntry,
-                      void* userArg);
 
     
     gfxFontEntry* FindFaceName(const nsAString& aFaceName);
