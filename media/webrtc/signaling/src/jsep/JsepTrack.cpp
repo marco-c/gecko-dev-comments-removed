@@ -345,12 +345,57 @@ JsepTrack::NegotiateCodecs(
   }
 
   
+  JsepVideoCodecDescription* red = nullptr;
+  JsepVideoCodecDescription* ulpfec = nullptr;
+  for (auto codec : *codecs) {
+    if (codec->mName == "red") {
+      red = static_cast<JsepVideoCodecDescription*>(codec);
+      break;
+    }
+    if (codec->mName == "ulpfec") {
+      ulpfec = static_cast<JsepVideoCodecDescription*>(codec);
+      break;
+    }
+  }
+  
+  if (red) {
+    
+    
+    
+    std::vector<uint8_t> unnegotiatedEncodings;
+    std::swap(unnegotiatedEncodings, red->mRedundantEncodings);
+    for (auto redundantPt : unnegotiatedEncodings) {
+      std::string pt = std::to_string(redundantPt);
+      for (auto codec : *codecs) {
+        if (pt == codec->mDefaultPt) {
+          red->mRedundantEncodings.push_back(redundantPt);
+          break;
+        }
+      }
+    }
+  }
+  
+  
+  
+  
+  if (red && ulpfec) {
+    for (auto codec : *codecs) {
+      if (codec->mName != "red" && codec->mName != "ulpfec") {
+        JsepVideoCodecDescription* videoCodec =
+            static_cast<JsepVideoCodecDescription*>(codec);
+        videoCodec->EnableFec();
+      }
+    }
+  }
+
+  
   
   std::stable_sort(codecs->begin(), codecs->end(), CompareCodec);
 
   
   
-  if (!codecs->empty()) {
+  
+  if (!codecs->empty() && !red) {
     for (size_t i = 1; i < codecs->size(); ++i) {
       delete (*codecs)[i];
       (*codecs)[i] = nullptr;

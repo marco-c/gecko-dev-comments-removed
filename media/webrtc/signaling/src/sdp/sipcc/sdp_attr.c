@@ -1509,7 +1509,7 @@ sdp_result_e sdp_parse_attr_fmtp (sdp_t *sdp_p, sdp_attr_t *attr_p,
             fmtp_p->annex_p_val_picture_resize = 0;
             fmtp_p->annex_p_val_warp = 0;
             tok = tmp;
-            tok++; temp=PL_strtok_r(tok, ",", &strtok_state);
+            tok++; temp = PL_strtok_r(tok, ",", &strtok_state);
             if (temp) {
                 iter=1;
                 while (temp != NULL) {
@@ -1525,7 +1525,7 @@ sdp_result_e sdp_parse_attr_fmtp (sdp_t *sdp_p, sdp_attr_t *attr_p,
                     else if (iter == 2)
                         fmtp_p->annex_p_val_warp = (uint16_t) strtoul_result;
 
-                    temp=PL_strtok_r(NULL, ",", &strtok_state);
+                    temp = PL_strtok_r(NULL, ",", &strtok_state);
                     iter++;
                 }
             }
@@ -1780,6 +1780,27 @@ sdp_result_e sdp_parse_attr_fmtp (sdp_t *sdp_p, sdp_attr_t *attr_p,
                 }
             } 
             done = TRUE;
+        } else if (strchr(tmp, '/')) {
+            
+            
+            
+            
+            temp=PL_strtok_r(tmp, "/", &strtok_state);
+            if (temp) {
+                iter = 0;
+                while (temp != NULL) {
+                    errno = 0;
+                    strtoul_result = strtoul(temp, &strtoul_end, 10);
+
+                    if (errno ||
+                        temp == strtoul_end || strtoul_result > USHRT_MAX) {
+                        continue;
+                    }
+                    fmtp_p->redundant_encodings[iter++] =
+                        (uint8_t)strtoul_result;
+                    temp=PL_strtok_r(NULL, "/", &strtok_state);
+                }
+            } 
         } else {
           
           

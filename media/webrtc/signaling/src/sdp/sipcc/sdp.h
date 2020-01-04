@@ -50,6 +50,9 @@
 #define SDP_SRTP_CRYPTO_SELECTION_FLAGS_UNKNOWN 0
 
 
+#define SDP_FMTP_MAX_REDUNDANT_ENCODINGS 128
+
+
 
 
 
@@ -709,6 +712,9 @@ typedef struct sdp_fmtp {
     
     uint16_t                       annex_k_val;
     uint16_t                       annex_n_val;
+
+    
+    uint8_t              redundant_encodings[SDP_FMTP_MAX_REDUNDANT_ENCODINGS];
 
     
     uint16_t                       annex_p_val_picture_resize; 
