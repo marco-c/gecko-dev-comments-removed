@@ -1667,3 +1667,8 @@ pref("dom.serviceWorkers.openWindow.enabled", true);
 
 pref("toolkit.pageThumbs.minWidth", 280);
 pref("toolkit.pageThumbs.minHeight", 190);
+
+#ifdef NIGHTLY_BUILD
+
+pref("media.webspeech.synth.enabled", true);
+#endif
