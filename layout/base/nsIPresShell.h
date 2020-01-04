@@ -1589,6 +1589,9 @@ public:
   nsresult HasRuleProcessorUsedByMultipleStyleSets(uint32_t aSheetType,
                                                    bool* aRetVal);
 
+  bool IsInFullscreenChange() const { return mIsInFullscreenChange; }
+  void SetIsInFullscreenChange(bool aValue);
+
   
 
 
@@ -1769,6 +1772,11 @@ protected:
   bool                      mIsDestroying : 1;
   bool                      mIsZombie : 1;
   bool                      mIsReflowing : 1;
+
+  
+  
+  
+  bool                      mIsInFullscreenChange : 1;
 
   
   bool                      mPaintingSuppressed : 1;

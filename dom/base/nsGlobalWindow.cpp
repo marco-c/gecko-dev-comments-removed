@@ -95,6 +95,7 @@
 #include "nsThreadUtils.h"
 #include "nsILoadContext.h"
 #include "nsIPresShell.h"
+#include "nsIScriptSecurityManager.h"
 #include "nsIScrollableFrame.h"
 #include "nsView.h"
 #include "nsViewManager.h"
@@ -191,7 +192,6 @@
 #include "nsRefreshDriver.h"
 
 #include "mozilla/AddonPathService.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
 #include "nsLocation.h"
@@ -256,8 +256,6 @@ static const char kStorageEnabled[] = "dom.storage.enabled";
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::dom::ipc;
-using mozilla::BasePrincipal;
-using mozilla::OriginAttributes;
 using mozilla::TimeStamp;
 using mozilla::TimeDuration;
 using mozilla::dom::cache::CacheStorage;
@@ -6385,7 +6383,8 @@ FullscreenTransitionTask::Run()
       mWindow->mFullScreen = mFullscreen;
     }
     
-    mWidget->MakeFullScreen(mFullscreen, mScreen);
+    mWindow->SetWidgetFullscreen(nsPIDOMWindow::eForFullscreenAPI,
+                                 mFullscreen, mWidget, mScreen);
     
     nsCOMPtr<nsIObserver> observer = new Observer(this);
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -6464,13 +6463,7 @@ MakeWidgetFullscreen(nsGlobalWindow* aWindow, gfx::VRHMDInfo* aHMD,
   }
   nsCOMPtr<nsIScreen> screen = aHMD ? aHMD->GetScreen() : nullptr;
   if (!performTransition) {
-    if (aReason == nsPIDOMWindow::eForFullscreenMode) {
-      
-      
-      widget->MakeFullScreenWithNativeTransition(aFullscreen, screen);
-    } else {
-      widget->MakeFullScreen(aFullscreen, screen);
-    }
+    aWindow->SetWidgetFullscreen(aReason, aFullscreen, widget, screen);
   } else {
     nsCOMPtr<nsIRunnable> task =
       new FullscreenTransitionTask(duration, aWindow, aFullscreen,
@@ -6574,6 +6567,27 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
   return NS_OK;
 }
 
+void
+nsGlobalWindow::SetWidgetFullscreen(FullscreenReason aReason, bool aIsFullscreen,
+                                    nsIWidget* aWidget, nsIScreen* aScreen)
+{
+  MOZ_ASSERT(IsOuterWindow());
+  MOZ_ASSERT(this == GetTop(), "Only topmost window should call this");
+  MOZ_ASSERT(!GetFrameElementInternal(), "Content window should not call this");
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+
+  if (nsCOMPtr<nsIPresShell> presShell = mDocShell->GetPresShell()) {
+    presShell->SetIsInFullscreenChange(true);
+  }
+  if (aReason == nsPIDOMWindow::eForFullscreenMode) {
+    
+    
+    aWidget->MakeFullScreenWithNativeTransition(aIsFullscreen, aScreen);
+  } else {
+    aWidget->MakeFullScreen(aIsFullscreen, aScreen);
+  }
+}
+
  void
 nsGlobalWindow::FinishFullscreenChange(bool aIsFullscreen)
 {
@@ -6605,6 +6619,11 @@ nsGlobalWindow::FinishFullscreenChange(bool aIsFullscreen)
   
   
   DispatchCustomEvent(NS_LITERAL_STRING("fullscreen"));
+
+  if (nsCOMPtr<nsIPresShell> presShell = mDocShell->GetPresShell()) {
+    MOZ_ASSERT(presShell->IsInFullscreenChange());
+    presShell->SetIsInFullscreenChange(false);
+  }
 
   if (!mWakeLock && mFullScreen) {
     nsRefPtr<power::PowerManagerService> pmService =
@@ -8588,14 +8607,21 @@ nsGlobalWindow::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> aMessa
       return;
     }
 
+    nsCOMPtr<nsIScriptSecurityManager> ssm =
+      nsContentUtils::GetSecurityManager();
+    MOZ_ASSERT(ssm);
+
     nsCOMPtr<nsIPrincipal> principal = nsContentUtils::SubjectPrincipal();
     MOZ_ASSERT(principal);
 
-    OriginAttributes attrs = BasePrincipal::Cast(principal)->OriginAttributesRef();
+    uint32_t appId = principal->GetAppId();
+    bool isInBrowser = principal->GetIsInBrowserElement();
+
     
     
-    providedPrincipal = BasePrincipal::CreateCodebasePrincipal(originURI, attrs);
-    if (NS_WARN_IF(!providedPrincipal)) {
+    nsresult rv = ssm->GetAppCodebasePrincipal(originURI, appId, isInBrowser,
+                                             getter_AddRefs(providedPrincipal));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
   }
