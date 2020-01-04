@@ -67,7 +67,10 @@ var gEMEHandler = {
     switch (status) {
       case "available":
       case "cdm-created":
-        this.showPopupNotificationForSuccess(browser, keySystem);
+        
+        if (keySystem != "org.w3.clearkey") {
+          this.showPopupNotificationForSuccess(browser, keySystem);
+        }
         
         return;
 
