@@ -11,6 +11,7 @@
 #ifndef mozilla_image_ISurfaceProvider_h
 #define mozilla_image_ISurfaceProvider_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/TimeStamp.h"
@@ -24,6 +25,7 @@ namespace mozilla {
 namespace image {
 
 class CachedSurface;
+class DrawableSurface;
 
 
 
@@ -38,7 +40,7 @@ public:
   NS_IMETHOD_(MozExternalRefCountType) Release() = 0;
 
   
-  virtual DrawableFrameRef DrawableRef() = 0;
+  virtual DrawableSurface Surface();
 
   
   virtual bool IsFinished() const = 0;
@@ -63,6 +65,9 @@ protected:
   virtual ~ISurfaceProvider() { }
 
   
+  virtual DrawableFrameRef DrawableRef() = 0;
+
+  
   
   
   virtual bool IsLocked() const = 0;
@@ -74,9 +79,90 @@ protected:
 
 private:
   friend class CachedSurface;
+  friend class DrawableSurface;
 
   AvailabilityState mAvailability;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS DrawableSurface final
+{
+public:
+  DrawableSurface() : mHaveSurface(false) { }
+
+  explicit DrawableSurface(DrawableFrameRef&& aDrawableRef)
+    : mDrawableRef(Move(aDrawableRef))
+    , mHaveSurface(bool(mDrawableRef))
+  { }
+
+  explicit DrawableSurface(NotNull<ISurfaceProvider*> aProvider)
+    : mProvider(aProvider)
+    , mHaveSurface(true)
+  { }
+
+  DrawableSurface(DrawableSurface&& aOther)
+    : mDrawableRef(Move(aOther.mDrawableRef))
+    , mProvider(Move(aOther.mProvider))
+    , mHaveSurface(aOther.mHaveSurface)
+  {
+    aOther.mHaveSurface = false;
+  }
+
+  DrawableSurface& operator=(DrawableSurface&& aOther)
+  {
+    MOZ_ASSERT(this != &aOther, "Self-moves are prohibited");
+    mDrawableRef = Move(aOther.mDrawableRef);
+    mProvider = Move(aOther.mProvider);
+    mHaveSurface = aOther.mHaveSurface;
+    aOther.mHaveSurface = false;
+    return *this;
+  }
+
+  explicit operator bool() const { return mHaveSurface; }
+  imgFrame* operator->() { return DrawableRef().get(); }
+
+private:
+  DrawableSurface(const DrawableSurface& aOther) = delete;
+  DrawableSurface& operator=(const DrawableSurface& aOther) = delete;
+
+  DrawableFrameRef& DrawableRef()
+  {
+    MOZ_ASSERT(mHaveSurface);
+
+    
+    
+    if (!mDrawableRef) {
+      MOZ_ASSERT(mProvider);
+      mDrawableRef = mProvider->DrawableRef();
+    }
+
+    MOZ_ASSERT(mDrawableRef);
+    return mDrawableRef;
+  }
+
+  DrawableFrameRef mDrawableRef;
+  RefPtr<ISurfaceProvider> mProvider;
+  bool mHaveSurface;
+};
+
+
+
+inline DrawableSurface
+ISurfaceProvider::Surface()
+{
+  return DrawableSurface(DrawableRef());
+}
+
 
 
 
@@ -91,7 +177,6 @@ public:
     , mSurface(aSurface)
   { }
 
-  DrawableFrameRef DrawableRef() override { return mSurface->DrawableRef(); }
   bool IsFinished() const override { return mSurface->IsFinished(); }
 
   size_t LogicalSizeInBytes() const override
@@ -101,6 +186,7 @@ public:
   }
 
 protected:
+  DrawableFrameRef DrawableRef() override { return mSurface->DrawableRef(); }
   bool IsLocked() const override { return bool(mLockRef); }
 
   void SetLocked(bool aLocked) override

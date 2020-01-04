@@ -215,13 +215,10 @@ struct SurfaceCache
 
 
 
-
   static LookupResult Lookup(const ImageKey    aImageKey,
                              const SurfaceKey& aSurfaceKey);
 
   
-
-
 
 
 
