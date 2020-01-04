@@ -3164,15 +3164,20 @@ const JSPropertySpec array_static_props[] = {
     JS_PS_END
 };
 
-
-bool
-js::ArrayConstructor(JSContext* cx, unsigned argc, Value* vp)
+static inline bool
+ArrayConstructorImpl(JSContext* cx, CallArgs& args, bool isConstructor)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-
     RootedObject proto(cx);
-    if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
-        return false;
+    if (isConstructor) {
+        if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+            return false;
+    } else {
+        
+        
+        proto = GlobalObject::getOrCreateArrayPrototype(cx, cx->global());
+        if (!proto)
+            return false;
+    }
 
     if (args.length() != 1 || !args[0].isNumber())
         return ArrayFromCallArgs(cx, args, proto);
@@ -3200,6 +3205,24 @@ js::ArrayConstructor(JSContext* cx, unsigned argc, Value* vp)
 
     args.rval().setObject(*obj);
     return true;
+}
+
+
+bool
+js::ArrayConstructor(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return ArrayConstructorImpl(cx, args,  true);
+}
+
+bool
+js::array_construct(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(!args.isConstructing());
+    MOZ_ASSERT(args.length() == 1);
+    MOZ_ASSERT(args[0].isNumber());
+    return ArrayConstructorImpl(cx, args,  false);
 }
 
 JSObject*

@@ -5472,7 +5472,7 @@ GetTemplateObjectForNative(JSContext* cx, JSFunction* target, const CallArgs& ar
     
     
 
-    if (native == ArrayConstructor) {
+    if (native == ArrayConstructor || native == array_construct) {
         
         
         
