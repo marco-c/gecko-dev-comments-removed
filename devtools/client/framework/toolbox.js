@@ -413,6 +413,7 @@ Toolbox.prototype = {
         this._addZoomKeys();
         this._loadInitialZoom();
       }
+      this._setToolbarKeyboardNavigation();
 
       this.webconsolePanel = this.doc.querySelector("#toolbox-panel-webconsole");
       this.webconsolePanel.height = Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF);
@@ -904,6 +905,72 @@ Toolbox.prototype = {
     for (let definition of gDevTools.getToolDefinitionArray()) {
       this._buildTabForTool(definition);
     }
+  },
+
+  
+
+
+  _setToolbarKeyboardNavigation() {
+    let toolbar = this.doc.querySelector(".devtools-tabbar");
+    
+    
+    toolbar.addEventListener("focus", event => {
+      let { target, rangeParent } = event;
+      let control, controlID = toolbar.getAttribute("aria-activedescendant");
+
+      if (controlID) {
+        control = this.doc.getElementById(controlID);
+      }
+      if (rangeParent || !control) {
+        
+        
+        
+        toolbar.setAttribute("aria-activedescendant", target.id);
+      } else {
+        
+        
+        event.preventDefault();
+        control.focus();
+      }
+    }, true)
+
+    toolbar.addEventListener("keypress", event => {
+      let { key, target } = event;
+      let win = this.doc.defaultView;
+      let elm, type;
+      if (key === "Tab") {
+        
+        
+        if (event.shiftKey) {
+          elm = toolbar;
+          type = Services.focus.MOVEFOCUS_BACKWARD;
+        } else {
+          
+          
+          let last = toolbar.lastChild;
+          while (last && last.lastChild) {
+            last = last.lastChild;
+          }
+          elm = last;
+          type = Services.focus.MOVEFOCUS_FORWARD;
+        }
+      } else if (key === "ArrowLeft") {
+        
+        
+        elm = target;
+        type = Services.focus.MOVEFOCUS_BACKWARD;
+      } else if (key === "ArrowRight") {
+        
+        
+        elm = target;
+        type = Services.focus.MOVEFOCUS_FORWARD;
+      } else {
+        
+        return;
+      }
+      event.preventDefault();
+      Services.focus.moveFocus(win, elm, type, 0);
+    });
   },
 
   
