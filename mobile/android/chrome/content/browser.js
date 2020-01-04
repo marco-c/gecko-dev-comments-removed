@@ -397,7 +397,6 @@ function InitLater(fn, object, name) {
 var BrowserApp = {
   _tabs: [],
   _selectedTab: null,
-  _prefObservers: [],
 
   get isTablet() {
     let sysInfo = Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2);
@@ -437,7 +436,6 @@ var BrowserApp = {
     Services.obs.addObserver(this, "Session:Stop", false);
     Services.obs.addObserver(this, "SaveAs:PDF", false);
     Services.obs.addObserver(this, "Browser:Quit", false);
-    Services.obs.addObserver(this, "Preferences:Set", false);
     Services.obs.addObserver(this, "ScrollTo:FocusedInput", false);
     Services.obs.addObserver(this, "Sanitize:ClearData", false);
     Services.obs.addObserver(this, "FullScreen:Exit", false);
@@ -445,6 +443,8 @@ var BrowserApp = {
     Services.obs.addObserver(this, "Viewport:Flush", false);
     Services.obs.addObserver(this, "Passwords:Init", false);
     Services.obs.addObserver(this, "FormHistory:Init", false);
+    Services.obs.addObserver(this, "android-get-pref", false);
+    Services.obs.addObserver(this, "android-set-pref", false);
     Services.obs.addObserver(this, "gather-telemetry", false);
     Services.obs.addObserver(this, "keyword-search", false);
     Services.obs.addObserver(this, "webapps-runtime-install", false);
@@ -1472,12 +1472,6 @@ var BrowserApp = {
     });
   },
 
-  notifyPrefObservers: function(aPref) {
-    this._prefObservers[aPref].forEach(function(aRequestId) {
-      this.getPreferences(aRequestId, [aPref], 1);
-    }, this);
-  },
-
   
   PREF_TRACKING_PROTECTION_ENABLED: "2",
   PREF_TRACKING_PROTECTION_ENABLED_PB: "1",
@@ -1495,205 +1489,6 @@ var BrowserApp = {
       return this.PREF_TRACKING_PROTECTION_ENABLED_PB;
     }
     return this.PREF_TRACKING_PROTECTION_DISABLED;
-  },
-
-  handlePreferencesRequest: function handlePreferencesRequest(aRequestId,
-                                                              aPrefNames,
-                                                              aListen) {
-
-    let prefs = [];
-
-    for (let prefName of aPrefNames) {
-      let pref = {
-        name: prefName,
-        type: "",
-        value: null
-      };
-
-      if (aListen) {
-        if (this._prefObservers[prefName])
-          this._prefObservers[prefName].push(aRequestId);
-        else
-          this._prefObservers[prefName] = [ aRequestId ];
-        Services.prefs.addObserver(prefName, this, false);
-      }
-
-      
-      
-      
-      switch (prefName) {
-        
-        
-        case "plugin.enable":
-          pref.type = "string";
-          pref.value = PluginHelper.getPluginPreference();
-          prefs.push(pref);
-          continue;
-        
-        case "privacy.masterpassword.enabled":
-          pref.type = "bool";
-          pref.value = MasterPassword.enabled;
-          prefs.push(pref);
-          continue;
-        case "privacy.trackingprotection.state": {
-          pref.type = "string";
-          pref.value = this.getTrackingProtectionState();
-          prefs.push(pref);
-          continue;
-        }
-        
-        case "datareporting.crashreporter.submitEnabled":
-          let crashReporterBuilt = "nsICrashReporter" in Ci && Services.appinfo instanceof Ci.nsICrashReporter;
-          if (crashReporterBuilt) {
-            pref.type = "bool";
-            pref.value = Services.appinfo.submitReports;
-            prefs.push(pref);
-          }
-          continue;
-      }
-
-      try {
-        switch (Services.prefs.getPrefType(prefName)) {
-          case Ci.nsIPrefBranch.PREF_BOOL:
-            pref.type = "bool";
-            pref.value = Services.prefs.getBoolPref(prefName);
-            break;
-          case Ci.nsIPrefBranch.PREF_INT:
-            pref.type = "int";
-            pref.value = Services.prefs.getIntPref(prefName);
-            break;
-          case Ci.nsIPrefBranch.PREF_STRING:
-          default:
-            pref.type = "string";
-            try {
-              
-              pref.value = Services.prefs.getComplexValue(prefName, Ci.nsIPrefLocalizedString).data;
-            } catch (e) {
-              pref.value = Services.prefs.getCharPref(prefName);
-            }
-            break;
-        }
-      } catch (e) {
-        dump("Error reading pref [" + prefName + "]: " + e);
-        
-        continue;
-      }
-
-      
-      
-      
-      
-      
-      switch (prefName) {
-        
-        case "browser.chrome.titlebarMode":
-        case "network.cookie.cookieBehavior":
-        case "font.size.inflation.minTwips":
-        case "home.sync.updateMode":
-        case "browser.image_blocking":
-          pref.type = "string";
-          pref.value = pref.value.toString();
-          break;
-      }
-
-      prefs.push(pref);
-    }
-
-    Messaging.sendRequest({
-      type: "Preferences:Data",
-      requestId: aRequestId,    
-      preferences: prefs
-    });
-  },
-
-  setPreferences: function (aPref) {
-    let json = JSON.parse(aPref);
-
-    switch (json.name) {
-      
-      
-      case "plugin.enable":
-        PluginHelper.setPluginPreference(json.value);
-        return;
-
-      
-      case "privacy.masterpassword.enabled":
-        if (MasterPassword.enabled)
-          MasterPassword.removePassword(json.value);
-        else
-          MasterPassword.setPassword(json.value);
-        return;
-
-      
-      
-      
-      case "privacy.trackingprotection.state": {
-        switch (json.value) {
-          
-          case this.PREF_TRACKING_PROTECTION_DISABLED:
-            Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", false);
-            Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
-            break;
-          
-          case this.PREF_TRACKING_PROTECTION_ENABLED_PB:
-            Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", true);
-            Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
-            break;
-          
-          case this.PREF_TRACKING_PROTECTION_ENABLED:
-            Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", true);
-            Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
-            break;
-        }
-        return;
-      }
-      
-      case SearchEngines.PREF_SUGGEST_ENABLED:
-        Services.prefs.setBoolPref(SearchEngines.PREF_SUGGEST_PROMPTED, true);
-        break;
-
-      
-      case "datareporting.crashreporter.submitEnabled":
-        let crashReporterBuilt = "nsICrashReporter" in Ci && Services.appinfo instanceof Ci.nsICrashReporter;
-        if (crashReporterBuilt) {
-          Services.appinfo.submitReports = json.value;
-        }
-        return;
-
-      
-      
-      
-      case "browser.chrome.titlebarMode":
-      case "network.cookie.cookieBehavior":
-      case "font.size.inflation.minTwips":
-      case "home.sync.updateMode":
-      case "browser.image_blocking":
-        json.type = "int";
-        json.value = parseInt(json.value);
-        break;
-    }
-
-    switch (json.type) {
-      case "bool":
-        Services.prefs.setBoolPref(json.name, json.value);
-        break;
-      case "int":
-        Services.prefs.setIntPref(json.name, json.value);
-        break;
-      default: {
-        let pref = Cc["@mozilla.org/pref-localizedstring;1"].createInstance(Ci.nsIPrefLocalizedString);
-        pref.data = json.value;
-        Services.prefs.setComplexValue(json.name, Ci.nsISupportsString, pref);
-        break;
-      }
-    }
-
-    
-    
-    
-    if (json.flush) {
-      Services.prefs.savePrefFile(null);
-    }
   },
 
   sanitize: function (aItems, callback) {
@@ -1998,10 +1793,6 @@ var BrowserApp = {
         this.saveAsPDF(browser);
         break;
 
-      case "Preferences:Set":
-        this.setPreferences(aData);
-        break;
-
       case "ScrollTo:FocusedInput":
         
         
@@ -2040,16 +1831,117 @@ var BrowserApp = {
         break;
       }
 
+      case "android-get-pref": {
+        
+        
+        
+        aSubject.QueryInterface(Ci.nsIWritableVariant);
+
+        switch (aData) {
+          
+          
+          case "plugin.enable":
+            aSubject.setAsAString(PluginHelper.getPluginPreference());
+            break;
+
+          
+          case "privacy.masterpassword.enabled":
+            aSubject.setAsBool(MasterPassword.enabled);
+            break;
+
+          case "privacy.trackingprotection.state": {
+            aSubject.setAsAString(this.getTrackingProtectionState());
+            break;
+          }
+
+          
+          
+          case "datareporting.crashreporter.submitEnabled":
+            let crashReporterBuilt = "nsICrashReporter" in Ci &&
+                Services.appinfo instanceof Ci.nsICrashReporter;
+            if (crashReporterBuilt) {
+              aSubject.setAsBool(Services.appinfo.submitReports);
+            }
+            break;
+        }
+        break;
+      }
+
+      case "android-set-pref": {
+        
+        
+        aSubject.QueryInterface(Ci.nsIWritableVariant);
+        let value = aSubject.QueryInterface(Ci.nsIVariant);
+
+        switch (aData) {
+          
+          
+          case "plugin.enable":
+            PluginHelper.setPluginPreference(value);
+            aSubject.setAsEmpty();
+            break;
+
+          
+          case "privacy.masterpassword.enabled":
+            if (MasterPassword.enabled) {
+              MasterPassword.removePassword(value);
+            } else {
+              MasterPassword.setPassword(value);
+            }
+            aSubject.setAsEmpty();
+            break;
+
+          
+          
+          
+          
+          case "privacy.trackingprotection.state": {
+            switch (value) {
+              
+              case this.PREF_TRACKING_PROTECTION_DISABLED:
+                Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", false);
+                Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
+                break;
+              
+              case this.PREF_TRACKING_PROTECTION_ENABLED_PB:
+                Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", true);
+                Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
+                break;
+              
+              case this.PREF_TRACKING_PROTECTION_ENABLED:
+                Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", true);
+                Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
+                break;
+            }
+            aSubject.setAsEmpty();
+            break;
+          }
+
+          
+          case SearchEngines.PREF_SUGGEST_ENABLED:
+            Services.prefs.setBoolPref(SearchEngines.PREF_SUGGEST_PROMPTED, true);
+            aSubject.setAsEmpty();
+            break;
+
+          
+          case "datareporting.crashreporter.submitEnabled":
+            let crashReporterBuilt = "nsICrashReporter" in Ci &&
+                Services.appinfo instanceof Ci.nsICrashReporter;
+            if (crashReporterBuilt) {
+              Services.appinfo.submitReports = value;
+              aSubject.setAsEmpty();
+            }
+            break;
+        }
+        break;
+      }
+
       case "sessionstore-state-purge-complete":
         Messaging.sendRequest({ type: "Session:StatePurged" });
         break;
 
       case "gather-telemetry":
         Messaging.sendRequest({ type: "Telemetry:Gather" });
-        break;
-
-      case "nsPref:changed":
-        this.notifyPrefObservers(aData);
         break;
 
       case "webapps-runtime-install":
@@ -2226,34 +2118,6 @@ var BrowserApp = {
 
   getUITelemetryObserver: function() {
     return UITelemetry;
-  },
-
-  getPreferences: function getPreferences(requestId, prefNames, count) {
-    this.handlePreferencesRequest(requestId, prefNames, false);
-  },
-
-  observePreferences: function observePreferences(requestId, prefNames, count) {
-    this.handlePreferencesRequest(requestId, prefNames, true);
-  },
-
-  removePreferenceObservers: function removePreferenceObservers(aRequestId) {
-    let newPrefObservers = [];
-    for (let prefName in this._prefObservers) {
-      let requestIds = this._prefObservers[prefName];
-      
-      let i = requestIds.indexOf(aRequestId);
-      if (i >= 0) {
-        requestIds.splice(i, 1);
-      }
-
-      
-      if (requestIds.length == 0) {
-        Services.prefs.removeObserver(prefName, this);
-      } else {
-        newPrefObservers[prefName] = requestIds;
-      }
-    }
-    this._prefObservers = newPrefObservers;
   },
 
   

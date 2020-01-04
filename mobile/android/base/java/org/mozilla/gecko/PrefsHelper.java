@@ -13,6 +13,7 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -24,6 +25,15 @@ public final class PrefsHelper {
 
     
     private static final SimpleArrayMap<String, Object> OBSERVERS = new SimpleArrayMap<>();
+    private static final HashSet<String> INT_TO_STRING_PREFS = new HashSet<>(8);
+
+    static {
+        INT_TO_STRING_PREFS.add("browser.chrome.titlebarMode");
+        INT_TO_STRING_PREFS.add("network.cookie.cookieBehavior");
+        INT_TO_STRING_PREFS.add("font.size.inflation.minTwips");
+        INT_TO_STRING_PREFS.add("home.sync.updateMode");
+        INT_TO_STRING_PREFS.add("browser.image_blocking");
+    }
 
     @WrapForJNI
     private static final int PREF_INVALID = -1;
@@ -73,7 +83,13 @@ public final class PrefsHelper {
         int intVal = 0;
         String strVal = null;
 
-        if (value instanceof Boolean) {
+        if (INT_TO_STRING_PREFS.contains(pref)) {
+            
+            
+            
+            type = PREF_INT;
+            intVal = Integer.parseInt(String.valueOf(value));
+        } else if (value instanceof Boolean) {
             type = PREF_BOOL;
             boolVal = (Boolean) value;
         } else if (value instanceof Integer) {
@@ -190,6 +206,16 @@ public final class PrefsHelper {
     @WrapForJNI
     private static void callPrefHandler(final PrefHandler handler, int type, final String pref,
                                         boolean boolVal, int intVal, String strVal) {
+
+        
+        
+        
+        
+        if (INT_TO_STRING_PREFS.contains(pref)) {
+            type = PREF_STRING;
+            strVal = String.valueOf(intVal);
+        }
+
         switch (type) {
             case PREF_FINISH:
                 handler.finish();
