@@ -173,6 +173,9 @@ public:
     
     static void SuppressDisplayport(const bool& aEnabled);
     static bool IsDisplayportSuppressed();
+
+private:
+  static uint64_t sLastTargetAPZCNotificationInputBlock;
 };
 
 } 
