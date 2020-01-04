@@ -25,8 +25,11 @@
 
 
 
+
+
 #define CHECK_WRITING_MODE(param) \
-   NS_ASSERTION(param == GetWritingMode(), "writing-mode mismatch")
+   NS_ASSERTION(param.IgnoreSideways() == GetWritingMode().IgnoreSideways(), \
+                "writing-mode mismatch")
 
 namespace mozilla {
 
@@ -258,6 +261,13 @@ public:
 
 
   bool IsSideways() const { return !!(mWritingMode & eSidewaysMask); }
+
+#ifdef DEBUG 
+             
+  WritingMode IgnoreSideways() const {
+    return WritingMode(mWritingMode & ~eSidewaysMask);
+  }
+#endif
 
   static mozilla::PhysicalAxis PhysicalAxisForLogicalAxis(
                                               uint8_t aWritingModeValue,
