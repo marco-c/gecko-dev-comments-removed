@@ -17,7 +17,7 @@ public class URLMetadataTable extends BaseTable {
     private static final String LOGTAG = "GeckoURLMetadataTable";
 
     private static final String TABLE = "metadata"; 
-    private static final int TABLE_ID_NUMBER = 1200;
+    private static final int TABLE_ID_NUMBER = BrowserProvider.METADATA;
 
     
     public static final Uri CONTENT_URI = Uri.withAppendedPath(BrowserContract.AUTHORITY_URI, "metadata");

@@ -54,6 +54,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import static org.mozilla.gecko.db.DBUtils.qualifyColumn;
+
 public class BrowserProvider extends SharedBrowserDatabaseProvider {
     public static final String ACTION_SHRINK_MEMORY = "org.mozilla.gecko.db.intent.action.SHRINK_MEMORY";
 
@@ -125,6 +127,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
     static final int TOPSITES = 1000;
 
     static final int VISITS = 1100;
+
+    static final int METADATA = 1200;
+
+    static final int HIGHLIGHTS = 1300;
 
     static final String DEFAULT_BOOKMARKS_SORT_ORDER = Bookmarks.TYPE
             + " ASC, " + Bookmarks.POSITION + " ASC, " + Bookmarks._ID
@@ -288,6 +294,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         
         URI_MATCHER.addURI(BrowserContract.AUTHORITY, "topsites", TOPSITES);
+
+        URI_MATCHER.addURI(BrowserContract.AUTHORITY, "highlights", HIGHLIGHTS);
     }
 
     private static class ShrinkMemoryReceiver extends BroadcastReceiver {
@@ -1136,6 +1144,60 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         }
     }
 
+    
+
+
+
+
+
+    public Cursor getHighlights(final SQLiteDatabase db, String limit) {
+        final int totalLimit = limit == null ? 20 : Integer.parseInt(limit);
+
+        final long threeDaysAgo = System.currentTimeMillis() - (1000 * 60 * 60 * 24 * 3);
+        final long bookmarkLimit = 1;
+
+        
+        final String bookmarksQuery = "SELECT * FROM (SELECT " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks._ID) + " AS " + Combined.BOOKMARK_ID + ", " +
+                "-1 AS " + Combined.HISTORY_ID + ", " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.URL) + ", " +
+                DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.TITLE) + " " +
+                "FROM " + Bookmarks.TABLE_NAME + " " +
+                "LEFT JOIN " + History.TABLE_NAME + " ON " +
+                    DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.URL) + " = " +
+                    DBUtils.qualifyColumn(History.TABLE_NAME, History.URL) + " " +
+                "WHERE " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.DATE_CREATED) + " > " + threeDaysAgo + " " +
+                "AND " + DBUtils.qualifyColumn(History.TABLE_NAME, History.VISITS) + " <= 3 " +
+                "AND " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.IS_DELETED)  + " = 0 " +
+                
+                "ORDER BY " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.DATE_CREATED) + " DESC " +
+                "LIMIT " + bookmarkLimit + ")";
+
+        final long last30Minutes = System.currentTimeMillis() - (1000 * 60 * 30);
+        final long historyLimit = totalLimit - bookmarkLimit;
+
+        
+        final String historyQuery = "SELECT * FROM (SELECT " +
+                History._ID + " AS " + Combined.HISTORY_ID + ", " +
+                "-1 AS " + Combined.BOOKMARK_ID + ", " +
+                History.URL + ", " +
+                History.TITLE + " " +
+                "FROM " + History.TABLE_NAME + " " +
+                "WHERE " + History.DATE_LAST_VISITED + " < " + last30Minutes + " " +
+                "AND " + History.VISITS + " <= 3 " +
+                "AND " + History.TITLE + " NOT NULL AND " + History.TITLE + " != '' " +
+                "AND " + History.IS_DELETED + " = 0 " +
+                
+                
+                
+                "ORDER BY " + History.DATE_LAST_VISITED + " DESC " +
+                "LIMIT " + historyLimit + ")";
+
+        final String query = "SELECT DISTINCT * FROM (" + bookmarksQuery + " UNION ALL " + historyQuery + ");";
+
+        return db.rawQuery(query, null);
+    }
+
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
@@ -1290,6 +1352,12 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                     qb.setTables(Combined.VIEW_NAME);
 
                 break;
+            }
+
+            case HIGHLIGHTS: {
+                debug("Highlights query: " + uri);
+
+                return getHighlights(db, limit);
             }
 
             default: {

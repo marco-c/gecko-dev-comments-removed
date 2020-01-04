@@ -175,4 +175,12 @@ public interface BrowserDB {
     public abstract boolean hasSuggestedImageUrl(String url);
     public abstract String getSuggestedImageUrlForUrl(String url);
     public abstract int getSuggestedBackgroundColorForUrl(String url);
+
+    
+
+
+
+
+
+    CursorLoader getHighlights(Context context, int limit);
 }
