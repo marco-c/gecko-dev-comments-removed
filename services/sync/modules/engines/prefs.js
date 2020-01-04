@@ -104,7 +104,7 @@ PrefStore.prototype = {
     for (let pref of this._getSyncPrefs()) {
       if (this._isSynced(pref)) {
         
-        values[pref] = this._prefs.get(pref, null);
+        values[pref] = this._prefs.isSet(pref) ? this._prefs.get(pref, null) : null;
       }
     }
     return values;
