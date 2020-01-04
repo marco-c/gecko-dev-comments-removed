@@ -65,7 +65,7 @@ Decoder::Decoder(RasterImage* aImage)
   , mInitialized(false)
   , mMetadataDecode(false)
   , mInFrame(false)
-  , mDataDone(false)
+  , mReachedTerminalState(false)
   , mDecodeDone(false)
   , mDataError(false)
   , mDecodeAborted(false)
@@ -143,8 +143,6 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
         return NS_OK;
 
       case SourceBufferIterator::COMPLETE:
-        mDataDone = true;
-
         
         
         
@@ -175,6 +173,7 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
   } while (!terminalState);
 
   MOZ_ASSERT(terminalState);
+  mReachedTerminalState = true;
 
   
   if (terminalState == Some(TerminalState::FAILURE)) {

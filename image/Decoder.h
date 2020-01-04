@@ -193,8 +193,8 @@ public:
   
   bool GetDecodeDone() const
   {
-    return mDecodeDone || (mMetadataDecode && HasSize()) ||
-           HasError() || mDataDone;
+    return mReachedTerminalState || mDecodeDone ||
+           (mMetadataDecode && HasSize()) || HasError();
   }
 
   
@@ -425,7 +425,7 @@ private:
   bool mInitialized : 1;
   bool mMetadataDecode : 1;
   bool mInFrame : 1;
-  bool mDataDone : 1;
+  bool mReachedTerminalState : 1;
   bool mDecodeDone : 1;
   bool mDataError : 1;
   bool mDecodeAborted : 1;
