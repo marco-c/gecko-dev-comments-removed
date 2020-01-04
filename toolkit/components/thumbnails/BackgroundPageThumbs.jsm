@@ -171,6 +171,7 @@ const BackgroundPageThumbs = {
     let browser = this._parentWin.document.createElementNS(XUL_NS, "browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("remote", "true");
+    browser.setAttribute("disableglobalhistory", "true");
 
     
     
