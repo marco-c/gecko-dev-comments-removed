@@ -48,16 +48,19 @@ var Debugger =
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 	
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-	
-	var _require = __webpack_require__(527);
+	var _require = __webpack_require__(556);
 	
 	var SourceMapConsumer = _require.SourceMapConsumer;
 	var SourceNode = _require.SourceNode;
 	var SourceMapGenerator = _require.SourceMapGenerator;
 	
-	var toPairs = __webpack_require__(538);
-	var includes = __webpack_require__(563);
+	var _require2 = __webpack_require__(365);
+	
+	var makeOriginalSource = _require2.makeOriginalSource;
+	var getGeneratedSourceId = _require2.getGeneratedSourceId;
+	
+	
+	var toPairs = __webpack_require__(491);
 	
 	var sourceMapConsumers = new Map();
 	var sourceNodes = new Map();
@@ -104,14 +107,6 @@ var Debugger =
 	  return sourceNode;
 	}
 	
-	function isOriginal(originalSource) {
-	  return !!getGeneratedSourceId(originalSource);
-	}
-	
-	function isGenerated(source) {
-	  return includes([].concat(_toConsumableArray(sourceMapConsumers.keys())), source.id);
-	}
-	
 	function getGeneratedSourceLocation(originalSource, originalLocation) {
 	  var generatedSourceId = getGeneratedSourceId(originalSource);
 	  var consumer = _getConsumer(generatedSourceId);
@@ -138,35 +133,32 @@ var Debugger =
 	  };
 	}
 	
-	function getGeneratedSourceId(originalSource) {
-	  var match = [].concat(_toConsumableArray(sourceMapConsumers)).find(_ref => {
-	    var _ref2 = _slicedToArray(_ref, 2);
-	
-	    var x = _ref2[0];
-	    var consumer = _ref2[1];
-	    return consumer.sources.includes(originalSource.url);
-	  });
-	
-	  return match ? match[0] : null;
-	}
-	
 	function getOriginalTexts(generatedSource, generatedText) {
 	  var sourceNode = _getSourceNode(generatedSource.id, generatedText);
 	
-	  return toPairs(sourceNode.sourceContents).map(_ref3 => {
-	    var _ref4 = _slicedToArray(_ref3, 2);
+	  return toPairs(sourceNode.sourceContents).map(_ref => {
+	    var _ref2 = _slicedToArray(_ref, 2);
 	
-	    var url = _ref4[0];
-	    var text = _ref4[1];
+	    var url = _ref2[0];
+	    var text = _ref2[1];
 	    return { url, text };
 	  });
 	}
 	
-	function getOriginalSourcePosition(generatedSource, _ref5) {
-	  var column = _ref5.column;
-	  var line = _ref5.line;
+	function getOriginalSourcePosition(generatedSource, _ref3) {
+	  var column = _ref3.column;
+	  var line = _ref3.line;
 	
 	  var consumer = _getConsumer(generatedSource.id);
+	
+	  
+	  if (!consumer) {
+	    return {
+	      url: generatedSource.url,
+	      line,
+	      column
+	    };
+	  }
 	
 	  
 	  if (column == undefined) {
@@ -194,24 +186,10 @@ var Debugger =
 	  }));
 	}
 	
-	function makeOriginalSource(_ref6) {
-	  var url = _ref6.url;
-	  var source = _ref6.source;
-	  var _ref6$id = _ref6.id;
-	  var id = _ref6$id === undefined ? 1 : _ref6$id;
-	
-	  var generatedSourceId = source.id;
-	  return {
-	    url,
-	    id: JSON.stringify({ generatedSourceId, id }),
-	    isPrettyPrinted: false
-	  };
-	}
-	
-	function createSourceMap(_ref7) {
-	  var source = _ref7.source;
-	  var mappings = _ref7.mappings;
-	  var code = _ref7.code;
+	function createSourceMap(_ref4) {
+	  var source = _ref4.source;
+	  var mappings = _ref4.mappings;
+	  var code = _ref4.code;
 	
 	  var generator = new SourceMapGenerator({ file: source.url });
 	  mappings.forEach(mapping => generator.addMapping(mapping));
@@ -232,11 +210,7 @@ var Debugger =
 	  createOriginalSources,
 	  getOriginalSourceUrls,
 	  getOriginalTexts,
-	  isOriginal,
-	  isGenerated,
-	  getGeneratedSourceId,
 	  createSourceMap,
-	  makeOriginalSource,
 	  clearData
 	};
 	
@@ -683,13 +657,752 @@ var Debugger =
 
  },
 
- 241:
+ 365:
+ function(module, exports) {
+
+	
+	function getGeneratedSourceId(originalSource) {
+	  var match = originalSource.id.match(/(.*)\/originalSource/);
+	  return match ? match[1] : null;
+	}
+	
+	function makeOriginalSource(_ref) {
+	  var url = _ref.url;
+	  var source = _ref.source;
+	  var _ref$id = _ref.id;
+	  var id = _ref$id === undefined ? 1 : _ref$id;
+	
+	  var generatedSourceId = source.id;
+	  return {
+	    url,
+	    id: `${ generatedSourceId }/originalSource${ id }`,
+	    isPrettyPrinted: false
+	  };
+	}
+	
+	module.exports = {
+	  makeOriginalSource,
+	  getGeneratedSourceId
+	};
+
+ },
+
+ 491:
  function(module, exports, __webpack_require__) {
 
-	var isObjectLike = __webpack_require__(7);
+	var createToPairs = __webpack_require__(492),
+	    keys = __webpack_require__(502);
 	
 	
-	var symbolTag = '[object Symbol]';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	var toPairs = createToPairs(keys);
+	
+	module.exports = toPairs;
+
+
+ },
+
+ 492:
+ function(module, exports, __webpack_require__) {
+
+	var baseToPairs = __webpack_require__(493),
+	    getTag = __webpack_require__(495),
+	    mapToArray = __webpack_require__(500),
+	    setToPairs = __webpack_require__(501);
+	
+	
+	var mapTag = '[object Map]',
+	    setTag = '[object Set]';
+	
+	
+
+
+
+
+
+
+	function createToPairs(keysFunc) {
+	  return function(object) {
+	    var tag = getTag(object);
+	    if (tag == mapTag) {
+	      return mapToArray(object);
+	    }
+	    if (tag == setTag) {
+	      return setToPairs(object);
+	    }
+	    return baseToPairs(object, keysFunc(object));
+	  };
+	}
+	
+	module.exports = createToPairs;
+
+
+ },
+
+ 493:
+ function(module, exports, __webpack_require__) {
+
+	var arrayMap = __webpack_require__(494);
+	
+	
+
+
+
+
+
+
+
+
+	function baseToPairs(object, props) {
+	  return arrayMap(props, function(key) {
+	    return [key, object[key]];
+	  });
+	}
+	
+	module.exports = baseToPairs;
+
+
+ },
+
+ 494:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function arrayMap(array, iteratee) {
+	  var index = -1,
+	      length = array ? array.length : 0,
+	      result = Array(length);
+	
+	  while (++index < length) {
+	    result[index] = iteratee(array[index], index, array);
+	  }
+	  return result;
+	}
+	
+	module.exports = arrayMap;
+
+
+ },
+
+ 495:
+ function(module, exports, __webpack_require__) {
+
+	var DataView = __webpack_require__(496),
+	    Map = __webpack_require__(231),
+	    Promise = __webpack_require__(497),
+	    Set = __webpack_require__(498),
+	    WeakMap = __webpack_require__(499),
+	    toSource = __webpack_require__(217);
+	
+	
+	var mapTag = '[object Map]',
+	    objectTag = '[object Object]',
+	    promiseTag = '[object Promise]',
+	    setTag = '[object Set]',
+	    weakMapTag = '[object WeakMap]';
+	
+	var dataViewTag = '[object DataView]';
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+	
+	
+	var dataViewCtorString = toSource(DataView),
+	    mapCtorString = toSource(Map),
+	    promiseCtorString = toSource(Promise),
+	    setCtorString = toSource(Set),
+	    weakMapCtorString = toSource(WeakMap);
+	
+	
+
+
+
+
+
+
+	function getTag(value) {
+	  return objectToString.call(value);
+	}
+	
+	
+	
+	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+	    (Map && getTag(new Map) != mapTag) ||
+	    (Promise && getTag(Promise.resolve()) != promiseTag) ||
+	    (Set && getTag(new Set) != setTag) ||
+	    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
+	  getTag = function(value) {
+	    var result = objectToString.call(value),
+	        Ctor = result == objectTag ? value.constructor : undefined,
+	        ctorString = Ctor ? toSource(Ctor) : undefined;
+	
+	    if (ctorString) {
+	      switch (ctorString) {
+	        case dataViewCtorString: return dataViewTag;
+	        case mapCtorString: return mapTag;
+	        case promiseCtorString: return promiseTag;
+	        case setCtorString: return setTag;
+	        case weakMapCtorString: return weakMapTag;
+	      }
+	    }
+	    return result;
+	  };
+	}
+	
+	module.exports = getTag;
+
+
+ },
+
+ 496:
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(209),
+	    root = __webpack_require__(215);
+	
+	
+	var DataView = getNative(root, 'DataView');
+	
+	module.exports = DataView;
+
+
+ },
+
+ 497:
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(209),
+	    root = __webpack_require__(215);
+	
+	
+	var Promise = getNative(root, 'Promise');
+	
+	module.exports = Promise;
+
+
+ },
+
+ 498:
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(209),
+	    root = __webpack_require__(215);
+	
+	
+	var Set = getNative(root, 'Set');
+	
+	module.exports = Set;
+
+
+ },
+
+ 499:
+ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(209),
+	    root = __webpack_require__(215);
+	
+	
+	var WeakMap = getNative(root, 'WeakMap');
+	
+	module.exports = WeakMap;
+
+
+ },
+
+ 500:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function mapToArray(map) {
+	  var index = -1,
+	      result = Array(map.size);
+	
+	  map.forEach(function(value, key) {
+	    result[++index] = [key, value];
+	  });
+	  return result;
+	}
+	
+	module.exports = mapToArray;
+
+
+ },
+
+ 501:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function setToPairs(set) {
+	  var index = -1,
+	      result = Array(set.size);
+	
+	  set.forEach(function(value) {
+	    result[++index] = [value, value];
+	  });
+	  return result;
+	}
+	
+	module.exports = setToPairs;
+
+
+ },
+
+ 502:
+ function(module, exports, __webpack_require__) {
+
+	var baseHas = __webpack_require__(503),
+	    baseKeys = __webpack_require__(504),
+	    indexKeys = __webpack_require__(505),
+	    isArrayLike = __webpack_require__(509),
+	    isIndex = __webpack_require__(514),
+	    isPrototype = __webpack_require__(515);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function keys(object) {
+	  var isProto = isPrototype(object);
+	  if (!(isProto || isArrayLike(object))) {
+	    return baseKeys(object);
+	  }
+	  var indexes = indexKeys(object),
+	      skipIndexes = !!indexes,
+	      result = indexes || [],
+	      length = result.length;
+	
+	  for (var key in object) {
+	    if (baseHas(object, key) &&
+	        !(skipIndexes && (key == 'length' || isIndex(key, length))) &&
+	        !(isProto && key == 'constructor')) {
+	      result.push(key);
+	    }
+	  }
+	  return result;
+	}
+	
+	module.exports = keys;
+
+
+ },
+
+ 503:
+ function(module, exports, __webpack_require__) {
+
+	var getPrototype = __webpack_require__(5);
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+
+
+
+	function baseHas(object, key) {
+	  
+	  
+	  
+	  return object != null &&
+	    (hasOwnProperty.call(object, key) ||
+	      (typeof object == 'object' && key in object && getPrototype(object) === null));
+	}
+	
+	module.exports = baseHas;
+
+
+ },
+
+ 504:
+ function(module, exports) {
+
+	
+	var nativeKeys = Object.keys;
+	
+	
+
+
+
+
+
+
+
+	function baseKeys(object) {
+	  return nativeKeys(Object(object));
+	}
+	
+	module.exports = baseKeys;
+
+
+ },
+
+ 505:
+ function(module, exports, __webpack_require__) {
+
+	var baseTimes = __webpack_require__(506),
+	    isArguments = __webpack_require__(507),
+	    isArray = __webpack_require__(201),
+	    isLength = __webpack_require__(512),
+	    isString = __webpack_require__(513);
+	
+	
+
+
+
+
+
+
+
+	function indexKeys(object) {
+	  var length = object ? object.length : undefined;
+	  if (isLength(length) &&
+	      (isArray(object) || isString(object) || isArguments(object))) {
+	    return baseTimes(length, String);
+	  }
+	  return null;
+	}
+	
+	module.exports = indexKeys;
+
+
+ },
+
+ 506:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function baseTimes(n, iteratee) {
+	  var index = -1,
+	      result = Array(n);
+	
+	  while (++index < n) {
+	    result[index] = iteratee(index);
+	  }
+	  return result;
+	}
+	
+	module.exports = baseTimes;
+
+
+ },
+
+ 507:
+ function(module, exports, __webpack_require__) {
+
+	var isArrayLikeObject = __webpack_require__(508);
+	
+	
+	var argsTag = '[object Arguments]';
+	
+	
+	var objectProto = Object.prototype;
+	
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+	
+	
+
+
+
+
+	var objectToString = objectProto.toString;
+	
+	
+	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isArguments(value) {
+	  
+	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
+	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+	}
+	
+	module.exports = isArguments;
+
+
+ },
+
+ 508:
+ function(module, exports, __webpack_require__) {
+
+	var isArrayLike = __webpack_require__(509),
+	    isObjectLike = __webpack_require__(7);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isArrayLikeObject(value) {
+	  return isObjectLike(value) && isArrayLike(value);
+	}
+	
+	module.exports = isArrayLikeObject;
+
+
+ },
+
+ 509:
+ function(module, exports, __webpack_require__) {
+
+	var getLength = __webpack_require__(510),
+	    isFunction = __webpack_require__(211),
+	    isLength = __webpack_require__(512);
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isArrayLike(value) {
+	  return value != null && isLength(getLength(value)) && !isFunction(value);
+	}
+	
+	module.exports = isArrayLike;
+
+
+ },
+
+ 510:
+ function(module, exports, __webpack_require__) {
+
+	var baseProperty = __webpack_require__(511);
+	
+	
+
+
+
+
+
+
+
+
+
+
+	var getLength = baseProperty('length');
+	
+	module.exports = getLength;
+
+
+ },
+
+ 511:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function baseProperty(key) {
+	  return function(object) {
+	    return object == null ? undefined : object[key];
+	  };
+	}
+	
+	module.exports = baseProperty;
+
+
+ },
+
+ 512:
+ function(module, exports) {
+
+	
+	var MAX_SAFE_INTEGER = 9007199254740991;
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isLength(value) {
+	  return typeof value == 'number' &&
+	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+	}
+	
+	module.exports = isLength;
+
+
+ },
+
+ 513:
+ function(module, exports, __webpack_require__) {
+
+	var isArray = __webpack_require__(201),
+	    isObjectLike = __webpack_require__(7);
+	
+	
+	var stringTag = '[object String]';
 	
 	
 	var objectProto = Object.prototype;
@@ -719,40 +1432,24 @@ var Debugger =
 
 
 
-	function isSymbol(value) {
-	  return typeof value == 'symbol' ||
-	    (isObjectLike(value) && objectToString.call(value) == symbolTag);
+	function isString(value) {
+	  return typeof value == 'string' ||
+	    (!isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag);
 	}
 	
-	module.exports = isSymbol;
+	module.exports = isString;
 
 
  },
 
- 382:
- function(module, exports, __webpack_require__) {
+ 514:
+ function(module, exports) {
 
-	var isFunction = __webpack_require__(211),
-	    isObject = __webpack_require__(212),
-	    isSymbol = __webpack_require__(241);
+	
+	var MAX_SAFE_INTEGER = 9007199254740991;
 	
 	
-	var NAN = 0 / 0;
-	
-	
-	var reTrim = /^\s+|\s+$/g;
-	
-	
-	var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-	
-	
-	var reIsBinary = /^0b[01]+$/i;
-	
-	
-	var reIsOctal = /^0o[0-7]+$/i;
-	
-	
-	var freeParseInt = parseInt;
+	var reIsUint = /^(?:0|[1-9]\d*)$/;
 	
 	
 
@@ -762,48 +1459,44 @@ var Debugger =
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function toNumber(value) {
-	  if (typeof value == 'number') {
-	    return value;
-	  }
-	  if (isSymbol(value)) {
-	    return NAN;
-	  }
-	  if (isObject(value)) {
-	    var other = isFunction(value.valueOf) ? value.valueOf() : value;
-	    value = isObject(other) ? (other + '') : other;
-	  }
-	  if (typeof value != 'string') {
-	    return value === 0 ? value : +value;
-	  }
-	  value = value.replace(reTrim, '');
-	  var isBinary = reIsBinary.test(value);
-	  return (isBinary || reIsOctal.test(value))
-	    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-	    : (reIsBadHex.test(value) ? NAN : +value);
+	function isIndex(value, length) {
+	  length = length == null ? MAX_SAFE_INTEGER : length;
+	  return !!length &&
+	    (typeof value == 'number' || reIsUint.test(value)) &&
+	    (value > -1 && value % 1 == 0 && value < length);
 	}
 	
-	module.exports = toNumber;
+	module.exports = isIndex;
 
 
  },
 
- 527:
+ 515:
+ function(module, exports) {
+
+	
+	var objectProto = Object.prototype;
+	
+	
+
+
+
+
+
+
+	function isPrototype(value) {
+	  var Ctor = value && value.constructor,
+	      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
+	
+	  return value === proto;
+	}
+	
+	module.exports = isPrototype;
+
+
+ },
+
+ 556:
  function(module, exports, __webpack_require__) {
 
 	
@@ -811,14 +1504,14 @@ var Debugger =
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(528).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(534).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(537).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(557).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(563).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(566).SourceNode;
 
 
  },
 
- 528:
+ 557:
  function(module, exports, __webpack_require__) {
 
 	
@@ -828,10 +1521,10 @@ var Debugger =
 
 
 	
-	var base64VLQ = __webpack_require__(529);
-	var util = __webpack_require__(531);
-	var ArraySet = __webpack_require__(532).ArraySet;
-	var MappingList = __webpack_require__(533).MappingList;
+	var base64VLQ = __webpack_require__(558);
+	var util = __webpack_require__(560);
+	var ArraySet = __webpack_require__(561).ArraySet;
+	var MappingList = __webpack_require__(562).MappingList;
 	
 	
 
@@ -1229,7 +1922,7 @@ var Debugger =
 
  },
 
- 529:
+ 558:
  function(module, exports, __webpack_require__) {
 
 	
@@ -1269,7 +1962,7 @@ var Debugger =
 
 
 	
-	var base64 = __webpack_require__(530);
+	var base64 = __webpack_require__(559);
 	
 	
 	
@@ -1376,7 +2069,7 @@ var Debugger =
 
  },
 
- 530:
+ 559:
  function(module, exports) {
 
 	
@@ -1450,7 +2143,7 @@ var Debugger =
 
  },
 
- 531:
+ 560:
  function(module, exports) {
 
 	
@@ -1874,7 +2567,7 @@ var Debugger =
 
  },
 
- 532:
+ 561:
  function(module, exports, __webpack_require__) {
 
 	
@@ -1884,7 +2577,7 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(531);
+	var util = __webpack_require__(560);
 	var has = Object.prototype.hasOwnProperty;
 	
 	
@@ -1985,7 +2678,7 @@ var Debugger =
 
  },
 
- 533:
+ 562:
  function(module, exports, __webpack_require__) {
 
 	
@@ -1995,7 +2688,7 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(531);
+	var util = __webpack_require__(560);
 	
 	
 
@@ -2071,7 +2764,7 @@ var Debugger =
 
  },
 
- 534:
+ 563:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2081,11 +2774,11 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(531);
-	var binarySearch = __webpack_require__(535);
-	var ArraySet = __webpack_require__(532).ArraySet;
-	var base64VLQ = __webpack_require__(529);
-	var quickSort = __webpack_require__(536).quickSort;
+	var util = __webpack_require__(560);
+	var binarySearch = __webpack_require__(564);
+	var ArraySet = __webpack_require__(561).ArraySet;
+	var base64VLQ = __webpack_require__(558);
+	var quickSort = __webpack_require__(565).quickSort;
 	
 	function SourceMapConsumer(aSourceMap) {
 	  var sourceMap = aSourceMap;
@@ -3160,7 +3853,7 @@ var Debugger =
 
  },
 
- 535:
+ 564:
  function(module, exports) {
 
 	
@@ -3278,7 +3971,7 @@ var Debugger =
 
  },
 
- 536:
+ 565:
  function(module, exports) {
 
 	
@@ -3399,7 +4092,7 @@ var Debugger =
 
  },
 
- 537:
+ 566:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3409,8 +4102,8 @@ var Debugger =
 
 
 	
-	var SourceMapGenerator = __webpack_require__(528).SourceMapGenerator;
-	var util = __webpack_require__(531);
+	var SourceMapGenerator = __webpack_require__(557).SourceMapGenerator;
+	var util = __webpack_require__(560);
 	
 	
 	
@@ -3809,1098 +4502,6 @@ var Debugger =
 	};
 	
 	exports.SourceNode = SourceNode;
-
-
- },
-
- 538:
- function(module, exports, __webpack_require__) {
-
-	var createToPairs = __webpack_require__(539),
-	    keys = __webpack_require__(549);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	var toPairs = createToPairs(keys);
-	
-	module.exports = toPairs;
-
-
- },
-
- 539:
- function(module, exports, __webpack_require__) {
-
-	var baseToPairs = __webpack_require__(540),
-	    getTag = __webpack_require__(542),
-	    mapToArray = __webpack_require__(547),
-	    setToPairs = __webpack_require__(548);
-	
-	
-	var mapTag = '[object Map]',
-	    setTag = '[object Set]';
-	
-	
-
-
-
-
-
-
-	function createToPairs(keysFunc) {
-	  return function(object) {
-	    var tag = getTag(object);
-	    if (tag == mapTag) {
-	      return mapToArray(object);
-	    }
-	    if (tag == setTag) {
-	      return setToPairs(object);
-	    }
-	    return baseToPairs(object, keysFunc(object));
-	  };
-	}
-	
-	module.exports = createToPairs;
-
-
- },
-
- 540:
- function(module, exports, __webpack_require__) {
-
-	var arrayMap = __webpack_require__(541);
-	
-	
-
-
-
-
-
-
-
-
-	function baseToPairs(object, props) {
-	  return arrayMap(props, function(key) {
-	    return [key, object[key]];
-	  });
-	}
-	
-	module.exports = baseToPairs;
-
-
- },
-
- 541:
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-	function arrayMap(array, iteratee) {
-	  var index = -1,
-	      length = array ? array.length : 0,
-	      result = Array(length);
-	
-	  while (++index < length) {
-	    result[index] = iteratee(array[index], index, array);
-	  }
-	  return result;
-	}
-	
-	module.exports = arrayMap;
-
-
- },
-
- 542:
- function(module, exports, __webpack_require__) {
-
-	var DataView = __webpack_require__(543),
-	    Map = __webpack_require__(231),
-	    Promise = __webpack_require__(544),
-	    Set = __webpack_require__(545),
-	    WeakMap = __webpack_require__(546),
-	    toSource = __webpack_require__(217);
-	
-	
-	var mapTag = '[object Map]',
-	    objectTag = '[object Object]',
-	    promiseTag = '[object Promise]',
-	    setTag = '[object Set]',
-	    weakMapTag = '[object WeakMap]';
-	
-	var dataViewTag = '[object DataView]';
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-
-
-
-
-	var objectToString = objectProto.toString;
-	
-	
-	var dataViewCtorString = toSource(DataView),
-	    mapCtorString = toSource(Map),
-	    promiseCtorString = toSource(Promise),
-	    setCtorString = toSource(Set),
-	    weakMapCtorString = toSource(WeakMap);
-	
-	
-
-
-
-
-
-
-	function getTag(value) {
-	  return objectToString.call(value);
-	}
-	
-	
-	
-	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
-	    (Map && getTag(new Map) != mapTag) ||
-	    (Promise && getTag(Promise.resolve()) != promiseTag) ||
-	    (Set && getTag(new Set) != setTag) ||
-	    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
-	  getTag = function(value) {
-	    var result = objectToString.call(value),
-	        Ctor = result == objectTag ? value.constructor : undefined,
-	        ctorString = Ctor ? toSource(Ctor) : undefined;
-	
-	    if (ctorString) {
-	      switch (ctorString) {
-	        case dataViewCtorString: return dataViewTag;
-	        case mapCtorString: return mapTag;
-	        case promiseCtorString: return promiseTag;
-	        case setCtorString: return setTag;
-	        case weakMapCtorString: return weakMapTag;
-	      }
-	    }
-	    return result;
-	  };
-	}
-	
-	module.exports = getTag;
-
-
- },
-
- 543:
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(209),
-	    root = __webpack_require__(215);
-	
-	
-	var DataView = getNative(root, 'DataView');
-	
-	module.exports = DataView;
-
-
- },
-
- 544:
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(209),
-	    root = __webpack_require__(215);
-	
-	
-	var Promise = getNative(root, 'Promise');
-	
-	module.exports = Promise;
-
-
- },
-
- 545:
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(209),
-	    root = __webpack_require__(215);
-	
-	
-	var Set = getNative(root, 'Set');
-	
-	module.exports = Set;
-
-
- },
-
- 546:
- function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(209),
-	    root = __webpack_require__(215);
-	
-	
-	var WeakMap = getNative(root, 'WeakMap');
-	
-	module.exports = WeakMap;
-
-
- },
-
- 547:
- function(module, exports) {
-
-	
-
-
-
-
-
-
-	function mapToArray(map) {
-	  var index = -1,
-	      result = Array(map.size);
-	
-	  map.forEach(function(value, key) {
-	    result[++index] = [key, value];
-	  });
-	  return result;
-	}
-	
-	module.exports = mapToArray;
-
-
- },
-
- 548:
- function(module, exports) {
-
-	
-
-
-
-
-
-
-	function setToPairs(set) {
-	  var index = -1,
-	      result = Array(set.size);
-	
-	  set.forEach(function(value) {
-	    result[++index] = [value, value];
-	  });
-	  return result;
-	}
-	
-	module.exports = setToPairs;
-
-
- },
-
- 549:
- function(module, exports, __webpack_require__) {
-
-	var baseHas = __webpack_require__(550),
-	    baseKeys = __webpack_require__(551),
-	    indexKeys = __webpack_require__(552),
-	    isArrayLike = __webpack_require__(556),
-	    isIndex = __webpack_require__(561),
-	    isPrototype = __webpack_require__(562);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function keys(object) {
-	  var isProto = isPrototype(object);
-	  if (!(isProto || isArrayLike(object))) {
-	    return baseKeys(object);
-	  }
-	  var indexes = indexKeys(object),
-	      skipIndexes = !!indexes,
-	      result = indexes || [],
-	      length = result.length;
-	
-	  for (var key in object) {
-	    if (baseHas(object, key) &&
-	        !(skipIndexes && (key == 'length' || isIndex(key, length))) &&
-	        !(isProto && key == 'constructor')) {
-	      result.push(key);
-	    }
-	  }
-	  return result;
-	}
-	
-	module.exports = keys;
-
-
- },
-
- 550:
- function(module, exports, __webpack_require__) {
-
-	var getPrototype = __webpack_require__(5);
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-	var hasOwnProperty = objectProto.hasOwnProperty;
-	
-	
-
-
-
-
-
-
-
-	function baseHas(object, key) {
-	  
-	  
-	  
-	  return object != null &&
-	    (hasOwnProperty.call(object, key) ||
-	      (typeof object == 'object' && key in object && getPrototype(object) === null));
-	}
-	
-	module.exports = baseHas;
-
-
- },
-
- 551:
- function(module, exports) {
-
-	
-	var nativeKeys = Object.keys;
-	
-	
-
-
-
-
-
-
-
-	function baseKeys(object) {
-	  return nativeKeys(Object(object));
-	}
-	
-	module.exports = baseKeys;
-
-
- },
-
- 552:
- function(module, exports, __webpack_require__) {
-
-	var baseTimes = __webpack_require__(553),
-	    isArguments = __webpack_require__(554),
-	    isArray = __webpack_require__(201),
-	    isLength = __webpack_require__(559),
-	    isString = __webpack_require__(560);
-	
-	
-
-
-
-
-
-
-
-	function indexKeys(object) {
-	  var length = object ? object.length : undefined;
-	  if (isLength(length) &&
-	      (isArray(object) || isString(object) || isArguments(object))) {
-	    return baseTimes(length, String);
-	  }
-	  return null;
-	}
-	
-	module.exports = indexKeys;
-
-
- },
-
- 553:
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-	function baseTimes(n, iteratee) {
-	  var index = -1,
-	      result = Array(n);
-	
-	  while (++index < n) {
-	    result[index] = iteratee(index);
-	  }
-	  return result;
-	}
-	
-	module.exports = baseTimes;
-
-
- },
-
- 554:
- function(module, exports, __webpack_require__) {
-
-	var isArrayLikeObject = __webpack_require__(555);
-	
-	
-	var argsTag = '[object Arguments]';
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-	var hasOwnProperty = objectProto.hasOwnProperty;
-	
-	
-
-
-
-
-	var objectToString = objectProto.toString;
-	
-	
-	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isArguments(value) {
-	  
-	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
-	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-	}
-	
-	module.exports = isArguments;
-
-
- },
-
- 555:
- function(module, exports, __webpack_require__) {
-
-	var isArrayLike = __webpack_require__(556),
-	    isObjectLike = __webpack_require__(7);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isArrayLikeObject(value) {
-	  return isObjectLike(value) && isArrayLike(value);
-	}
-	
-	module.exports = isArrayLikeObject;
-
-
- },
-
- 556:
- function(module, exports, __webpack_require__) {
-
-	var getLength = __webpack_require__(557),
-	    isFunction = __webpack_require__(211),
-	    isLength = __webpack_require__(559);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isArrayLike(value) {
-	  return value != null && isLength(getLength(value)) && !isFunction(value);
-	}
-	
-	module.exports = isArrayLike;
-
-
- },
-
- 557:
- function(module, exports, __webpack_require__) {
-
-	var baseProperty = __webpack_require__(558);
-	
-	
-
-
-
-
-
-
-
-
-
-
-	var getLength = baseProperty('length');
-	
-	module.exports = getLength;
-
-
- },
-
- 558:
- function(module, exports) {
-
-	
-
-
-
-
-
-
-	function baseProperty(key) {
-	  return function(object) {
-	    return object == null ? undefined : object[key];
-	  };
-	}
-	
-	module.exports = baseProperty;
-
-
- },
-
- 559:
- function(module, exports) {
-
-	
-	var MAX_SAFE_INTEGER = 9007199254740991;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isLength(value) {
-	  return typeof value == 'number' &&
-	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-	}
-	
-	module.exports = isLength;
-
-
- },
-
- 560:
- function(module, exports, __webpack_require__) {
-
-	var isArray = __webpack_require__(201),
-	    isObjectLike = __webpack_require__(7);
-	
-	
-	var stringTag = '[object String]';
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-
-
-
-
-	var objectToString = objectProto.toString;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function isString(value) {
-	  return typeof value == 'string' ||
-	    (!isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag);
-	}
-	
-	module.exports = isString;
-
-
- },
-
- 561:
- function(module, exports) {
-
-	
-	var MAX_SAFE_INTEGER = 9007199254740991;
-	
-	
-	var reIsUint = /^(?:0|[1-9]\d*)$/;
-	
-	
-
-
-
-
-
-
-
-	function isIndex(value, length) {
-	  length = length == null ? MAX_SAFE_INTEGER : length;
-	  return !!length &&
-	    (typeof value == 'number' || reIsUint.test(value)) &&
-	    (value > -1 && value % 1 == 0 && value < length);
-	}
-	
-	module.exports = isIndex;
-
-
- },
-
- 562:
- function(module, exports) {
-
-	
-	var objectProto = Object.prototype;
-	
-	
-
-
-
-
-
-
-	function isPrototype(value) {
-	  var Ctor = value && value.constructor,
-	      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
-	
-	  return value === proto;
-	}
-	
-	module.exports = isPrototype;
-
-
- },
-
- 563:
- function(module, exports, __webpack_require__) {
-
-	var baseIndexOf = __webpack_require__(564),
-	    isArrayLike = __webpack_require__(556),
-	    isString = __webpack_require__(560),
-	    toInteger = __webpack_require__(566),
-	    values = __webpack_require__(568);
-	
-	
-	var nativeMax = Math.max;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function includes(collection, value, fromIndex, guard) {
-	  collection = isArrayLike(collection) ? collection : values(collection);
-	  fromIndex = (fromIndex && !guard) ? toInteger(fromIndex) : 0;
-	
-	  var length = collection.length;
-	  if (fromIndex < 0) {
-	    fromIndex = nativeMax(length + fromIndex, 0);
-	  }
-	  return isString(collection)
-	    ? (fromIndex <= length && collection.indexOf(value, fromIndex) > -1)
-	    : (!!length && baseIndexOf(collection, value, fromIndex) > -1);
-	}
-	
-	module.exports = includes;
-
-
- },
-
- 564:
- function(module, exports, __webpack_require__) {
-
-	var indexOfNaN = __webpack_require__(565);
-	
-	
-
-
-
-
-
-
-
-
-	function baseIndexOf(array, value, fromIndex) {
-	  if (value !== value) {
-	    return indexOfNaN(array, fromIndex);
-	  }
-	  var index = fromIndex - 1,
-	      length = array.length;
-	
-	  while (++index < length) {
-	    if (array[index] === value) {
-	      return index;
-	    }
-	  }
-	  return -1;
-	}
-	
-	module.exports = baseIndexOf;
-
-
- },
-
- 565:
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-	function indexOfNaN(array, fromIndex, fromRight) {
-	  var length = array.length,
-	      index = fromIndex + (fromRight ? 1 : -1);
-	
-	  while ((fromRight ? index-- : ++index < length)) {
-	    var other = array[index];
-	    if (other !== other) {
-	      return index;
-	    }
-	  }
-	  return -1;
-	}
-	
-	module.exports = indexOfNaN;
-
-
- },
-
- 566:
- function(module, exports, __webpack_require__) {
-
-	var toFinite = __webpack_require__(567);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function toInteger(value) {
-	  var result = toFinite(value),
-	      remainder = result % 1;
-	
-	  return result === result ? (remainder ? result - remainder : result) : 0;
-	}
-	
-	module.exports = toInteger;
-
-
- },
-
- 567:
- function(module, exports, __webpack_require__) {
-
-	var toNumber = __webpack_require__(382);
-	
-	
-	var INFINITY = 1 / 0,
-	    MAX_INTEGER = 1.7976931348623157e+308;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function toFinite(value) {
-	  if (!value) {
-	    return value === 0 ? value : 0;
-	  }
-	  value = toNumber(value);
-	  if (value === INFINITY || value === -INFINITY) {
-	    var sign = (value < 0 ? -1 : 1);
-	    return sign * MAX_INTEGER;
-	  }
-	  return value === value ? value : 0;
-	}
-	
-	module.exports = toFinite;
-
-
- },
-
- 568:
- function(module, exports, __webpack_require__) {
-
-	var baseValues = __webpack_require__(569),
-	    keys = __webpack_require__(549);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function values(object) {
-	  return object ? baseValues(object, keys(object)) : [];
-	}
-	
-	module.exports = values;
-
-
- },
-
- 569:
- function(module, exports, __webpack_require__) {
-
-	var arrayMap = __webpack_require__(541);
-	
-	
-
-
-
-
-
-
-
-
-
-	function baseValues(object, props) {
-	  return arrayMap(props, function(key) {
-	    return object[key];
-	  });
-	}
-	
-	module.exports = baseValues;
 
 
  }
