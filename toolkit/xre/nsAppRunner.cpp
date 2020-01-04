@@ -4663,14 +4663,10 @@ enum {
   kE10sForceDisabled = 8,
 };
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_MACOSX)
 const char* kAccessibilityLastRunDatePref = "accessibility.lastLoadDate";
 const char* kAccessibilityLoadedLastSessionPref = "accessibility.loadedInLastSession";
-#endif 
-const char* kForceEnableE10sPref = "browser.tabs.remote.force-enable";
-const char* kForceDisableE10sPref = "browser.tabs.remote.force-disable";
 
-#ifdef XP_WIN
 static inline uint32_t
 PRTimeToSeconds(PRTime t_usec)
 {
@@ -4678,6 +4674,10 @@ PRTimeToSeconds(PRTime t_usec)
   return uint32_t(t_usec /= usec_per_sec);
 }
 #endif 
+
+const char* kForceEnableE10sPref = "browser.tabs.remote.force-enable";
+const char* kForceDisableE10sPref = "browser.tabs.remote.force-disable";
+
 
 uint32_t
 MultiprocessBlockPolicy() {
@@ -4704,7 +4704,7 @@ MultiprocessBlockPolicy() {
   }
 
   bool disabledForA11y = false;
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_MACOSX)
   
 
 
