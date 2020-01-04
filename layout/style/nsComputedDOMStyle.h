@@ -45,6 +45,7 @@ class nsStyleSides;
 struct nsTimingFunction;
 
 class nsComputedDOMStyle final : public nsDOMCSSDeclaration
+                               , public nsStubMutationObserver
 {
 public:
   typedef nsCSSProps::KTableValue KTableValue;
@@ -110,6 +111,9 @@ public:
   static void RegisterPrefChangeCallbacks();
   static void UnregisterPrefChangeCallbacks();
 
+  
+  NS_DECL_NSIMUTATIONOBSERVER_PARENTCHAINCHANGED
+
 private:
   virtual ~nsComputedDOMStyle();
 
@@ -127,6 +131,11 @@ private:
   
   void UpdateCurrentStyleSources(bool aNeedsLayoutFlush);
   void ClearCurrentStyleSources();
+
+  
+  void ClearStyleContext();
+  void SetResolvedStyleContext(nsRefPtr<nsStyleContext>&& aContext);
+  void SetFrameStyleContext(nsStyleContext* aContext);
 
 #define STYLE_STRUCT(name_, checkdata_cb_)                              \
   const nsStyle##name_ * Style##name_() {                               \
