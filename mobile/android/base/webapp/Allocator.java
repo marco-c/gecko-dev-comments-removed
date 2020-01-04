@@ -11,7 +11,6 @@ import org.mozilla.gecko.GeckoAppShell;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.util.Log;
 
 public class Allocator {
@@ -46,6 +45,8 @@ public class Allocator {
 
     SharedPreferences mPrefs;
 
+    @SuppressWarnings("deprecation") 
+                                     
     protected Allocator(Context context) {
         mPrefs = context.getSharedPreferences("webapps", Context.MODE_PRIVATE | Context.MODE_MULTI_PROCESS);
     }
