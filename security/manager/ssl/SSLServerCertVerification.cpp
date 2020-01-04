@@ -1088,7 +1088,7 @@ GatherEKUTelemetry(const ScopedCERTCertList& certList)
   }
 
   
-  ScopedCERTOidSequence ekuSequence(
+  UniqueCERTOidSequence ekuSequence(
     CERT_DecodeOidSequence(&ekuExtension->value));
   if (!ekuSequence) {
     return;
