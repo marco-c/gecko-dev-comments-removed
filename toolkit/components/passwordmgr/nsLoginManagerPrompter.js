@@ -269,6 +269,7 @@ LoginManagerPrompter.prototype = {
     
     
     
+    this.log("We have no chromeWindow so assume we're in a private context");
     return true;
   },
 
@@ -692,8 +693,12 @@ LoginManagerPrompter.prototype = {
   
 
 
-  init : function (aWindow, aFactory) {
-    if (aWindow instanceof Ci.nsIDOMChromeWindow) {
+  init : function (aWindow = null, aFactory = null) {
+    if (!aWindow) {
+      
+      this._chromeWindow = null;
+      this._browser = null;
+    } else if (aWindow instanceof Ci.nsIDOMChromeWindow) {
       this._chromeWindow = aWindow;
       
       this._browser = null;
