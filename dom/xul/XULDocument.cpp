@@ -3503,7 +3503,6 @@ XULDocument::ExecuteScript(nsXULPrototypeScript *aScript)
     
     
     AutoEntryScript aes(mScriptGlobalObject, "precompiled XUL <script> element");
-    aes.TakeOwnershipOfErrorReporting();
     JSContext* cx = aes.cx();
     JS::Rooted<JSObject*> baseGlobal(cx, JS::CurrentGlobalOrNull(cx));
     NS_ENSURE_TRUE(nsContentUtils::GetSecurityManager()->ScriptAllowed(baseGlobal), NS_OK);

@@ -72,7 +72,6 @@ TestShellCommandParent::RunCallback(const nsString& aResponse)
   
   
   dom::AutoEntryScript aes(&mCallback.toObject(), "TestShellCommand");
-  aes.TakeOwnershipOfErrorReporting();
   JSContext* cx = aes.cx();
   JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
 

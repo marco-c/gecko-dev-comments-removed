@@ -1373,9 +1373,8 @@ nsXULTemplateBuilder::InitHTMLTemplateRoot()
 
     
     
-    AutoEntryScript entryScript(innerWin, "nsXULTemplateBuilder creation", true);
-    entryScript.TakeOwnershipOfErrorReporting();
-    JSContext* jscontext = entryScript.cx();
+    AutoEntryScript aes(innerWin, "nsXULTemplateBuilder creation", true);
+    JSContext* jscontext = aes.cx();
 
     JS::Rooted<JS::Value> v(jscontext);
     rv = nsContentUtils::WrapNative(jscontext, mRoot, mRoot, &v);

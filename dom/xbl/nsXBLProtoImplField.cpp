@@ -400,9 +400,8 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
 
   
   
-  AutoEntryScript entryScript(globalObject, "XBL <field> initialization", true);
-  entryScript.TakeOwnershipOfErrorReporting();
-  JSContext* cx = entryScript.cx();
+  AutoEntryScript aes(globalObject, "XBL <field> initialization", true);
+  JSContext* cx = aes.cx();
 
   NS_ASSERTION(!::JS_IsExceptionPending(cx),
                "Shouldn't get here when an exception is pending!");
@@ -440,7 +439,7 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
   if (rv == NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW) {
     
     
-    entryScript.ReportException();
+    aes.ReportException();
   }
 
   

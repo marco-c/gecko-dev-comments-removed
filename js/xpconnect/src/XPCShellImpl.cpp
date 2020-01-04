@@ -1569,7 +1569,6 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
                 
                 
                 
-                aes.TakeOwnershipOfErrorReporting();
                 if (!ProcessArgs(aes, argv, argc, &dirprovider)) {
                     if (gExitCode) {
                         result = gExitCode;

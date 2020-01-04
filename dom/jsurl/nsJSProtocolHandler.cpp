@@ -240,13 +240,9 @@ nsresult nsJSThunk::EvaluateScript(nsIChannel *aChannel,
     
     
     nsAutoMicroTask mt;
-    AutoEntryScript entryScript(innerGlobal, "javascript: URI", true,
-                                scriptContext->GetNativeContext());
-    
-    
-    
-    entryScript.TakeOwnershipOfErrorReporting();
-    JSContext* cx = entryScript.cx();
+    AutoEntryScript aes(innerGlobal, "javascript: URI", true,
+                        scriptContext->GetNativeContext());
+    JSContext* cx = aes.cx();
     JS::Rooted<JSObject*> globalJSObject(cx, innerGlobal->GetGlobalJSObject());
     NS_ENSURE_TRUE(globalJSObject, NS_ERROR_UNEXPECTED);
 

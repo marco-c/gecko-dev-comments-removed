@@ -189,9 +189,6 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
   
   mCx = cx;
-
-  
-  mAutoEntryScript->TakeOwnershipOfErrorReporting();
 }
 
 bool

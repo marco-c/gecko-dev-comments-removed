@@ -279,7 +279,6 @@ WrapperAnswer::RecvGet(const ObjectId& objId, const JSVariant& receiverVar,
     
     AutoEntryScript aes(scopeForTargetObjects(),
                         "Cross-Process Object Wrapper 'get'");
-    aes.TakeOwnershipOfErrorReporting();
     JSContext* cx = aes.cx();
 
     
@@ -317,7 +316,6 @@ WrapperAnswer::RecvSet(const ObjectId& objId, const JSIDVariant& idVar, const JS
     
     AutoEntryScript aes(scopeForTargetObjects(),
                         "Cross-Process Object Wrapper 'set'");
-    aes.TakeOwnershipOfErrorReporting();
     JSContext* cx = aes.cx();
 
     RootedObject obj(cx, findObjectById(cx, objId));
@@ -379,7 +377,6 @@ WrapperAnswer::RecvCallOrConstruct(const ObjectId& objId,
 {
     AutoEntryScript aes(scopeForTargetObjects(),
                         "Cross-Process Object Wrapper call/construct");
-    aes.TakeOwnershipOfErrorReporting();
     JSContext* cx = aes.cx();
 
     
