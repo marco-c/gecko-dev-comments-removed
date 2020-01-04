@@ -122,14 +122,6 @@ ChannelFromScriptURL(nsIPrincipal* principal,
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
 
-  
-  
-  
-  
-  if (parentDoc && parentDoc->NodePrincipal() != principal) {
-    parentDoc = nullptr;
-  }
-
   int16_t shouldLoad = nsIContentPolicy::ACCEPT;
   rv = NS_CheckContentLoadPolicy(aContentPolicyType, uri,
                                  principal, parentDoc,
@@ -173,10 +165,7 @@ ChannelFromScriptURL(nsIPrincipal* principal,
 
   nsCOMPtr<nsIChannel> channel;
   
-  
-  
-  
-  if (parentDoc && parentDoc->NodePrincipal() == principal) {
+  if (parentDoc) {
     rv = NS_NewChannel(getter_AddRefs(channel),
                        uri,
                        parentDoc,
