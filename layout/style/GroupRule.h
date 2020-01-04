@@ -44,12 +44,10 @@ public:
 
   
   DECL_STYLE_RULE_INHERIT_NO_DOMRULE
-  virtual void SetStyleSheet(CSSStyleSheet* aSheet) override;
-
-  
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
+  virtual void SetStyleSheet(CSSStyleSheet* aSheet) override;
 
 public:
   void AppendStyleRule(Rule* aRule);
