@@ -77,7 +77,7 @@ PBackgroundInitializer::ActorCreated(mozilla::ipc::PBackgroundChild* aActor)
 
 
 
-class AsyncStartRunnable final : public nsCancelableRunnable
+class AsyncStartRunnable final : public CancelableRunnable
 {
 public:
   explicit AsyncStartRunnable(FileSystemTaskChildBase* aTask)

@@ -2533,7 +2533,7 @@ BackgroundRequestChild::Recv__delete__(const RequestResponse& aResponse)
 
 
 class BackgroundCursorChild::DelayedActionRunnable final
-  : public nsCancelableRunnable
+  : public CancelableRunnable
 {
   using ActionFunc = void (BackgroundCursorChild::*)();
 

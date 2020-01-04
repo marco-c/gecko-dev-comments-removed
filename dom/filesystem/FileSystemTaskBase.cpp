@@ -78,7 +78,7 @@ DispatchToIOThread(nsIRunnable* aRunnable)
 
 
 
-class ErrorRunnable final : public nsCancelableRunnable
+class ErrorRunnable final : public CancelableRunnable
 {
 public:
   explicit ErrorRunnable(FileSystemTaskChildBase* aTask)

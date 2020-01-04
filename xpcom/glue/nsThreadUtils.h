@@ -233,7 +233,7 @@ protected:
 };
 
 
-class nsCancelableRunnable : public nsRunnable,
+class CancelableRunnable : public nsRunnable,
                              public nsICancelableRunnable
 {
 public:
@@ -241,10 +241,10 @@ public:
   
   virtual nsresult Cancel() override;
 
-  nsCancelableRunnable() {}
+  CancelableRunnable() {}
 
 protected:
-  virtual ~nsCancelableRunnable() {}
+  virtual ~CancelableRunnable() {}
 };
 
 

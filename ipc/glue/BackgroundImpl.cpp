@@ -700,7 +700,7 @@ private:
 
 
 class ChildImpl::AlreadyCreatedCallbackRunnable final :
-  public nsCancelableRunnable
+  public CancelableRunnable
 {
 public:
   AlreadyCreatedCallbackRunnable()
