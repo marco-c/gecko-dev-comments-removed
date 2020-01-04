@@ -174,26 +174,7 @@ static const char* GetOmxLibraryName()
   if (version >= 17) {
     return "libomxpluginkk.so";
   }
-  else if (version == 13 || version == 12 || version == 11) {
-    return "libomxpluginhc.so";
-  }
-  else if (version == 10 && release_version >= NS_LITERAL_STRING("2.3.6")) {
-    
-    
-    return "libomxplugingb.so";
-  }
-  else if (version == 10 && release_version >= NS_LITERAL_STRING("2.3.4") &&
-           device.Find("HTC") == 0) {
-    
-    
-    return "libomxplugingb.so";
-  }
-  else if (version == 9 || (version == 10 && release_version <= NS_LITERAL_STRING("2.3.5"))) {
-    
-    
-    return "libomxplugingb235.so";
-  }
-  else if (version < 9) {
+  else if (version < 14) {
     
     return nullptr;
   }
