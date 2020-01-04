@@ -23,39 +23,47 @@ namespace mozilla {
 namespace image {
 
 static void
-CheckProgressConsistency(Progress aProgress)
+CheckProgressConsistency(Progress aOldProgress, Progress aNewProgress)
 {
   
 
-  if (aProgress & FLAG_SIZE_AVAILABLE) {
+  if (aNewProgress & FLAG_SIZE_AVAILABLE) {
     
   }
-  if (aProgress & FLAG_DECODE_COMPLETE) {
+  if (aNewProgress & FLAG_DECODE_COMPLETE) {
+    MOZ_ASSERT(aNewProgress & FLAG_SIZE_AVAILABLE);
+    MOZ_ASSERT(aNewProgress & (FLAG_FRAME_COMPLETE | FLAG_HAS_ERROR));
+  }
+  if (aNewProgress & FLAG_FRAME_COMPLETE) {
+    MOZ_ASSERT(aNewProgress & FLAG_SIZE_AVAILABLE);
+  }
+  if (aNewProgress & FLAG_LOAD_COMPLETE) {
+    MOZ_ASSERT(aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
+  }
+  if (aNewProgress & FLAG_ONLOAD_BLOCKED) {
     
   }
-  if (aProgress & FLAG_FRAME_COMPLETE) {
+  if (aNewProgress & FLAG_ONLOAD_UNBLOCKED) {
+    MOZ_ASSERT(aNewProgress & FLAG_ONLOAD_BLOCKED);
+    MOZ_ASSERT(aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
+  }
+  if (aNewProgress & FLAG_IS_ANIMATED) {
+    
+    
     
   }
-  if (aProgress & FLAG_LOAD_COMPLETE) {
+  if (aNewProgress & FLAG_HAS_TRANSPARENCY) {
     
-  }
-  if (aProgress & FLAG_ONLOAD_BLOCKED) {
     
+    
+    MOZ_ASSERT((aNewProgress & FLAG_IS_ANIMATED) ||
+               (aOldProgress & FLAG_HAS_TRANSPARENCY) ||
+               !(aOldProgress & FLAG_SIZE_AVAILABLE));
   }
-  if (aProgress & FLAG_ONLOAD_UNBLOCKED) {
-    MOZ_ASSERT(aProgress & FLAG_ONLOAD_BLOCKED);
-    MOZ_ASSERT(aProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
+  if (aNewProgress & FLAG_LAST_PART_COMPLETE) {
+    MOZ_ASSERT(aNewProgress & FLAG_LOAD_COMPLETE);
   }
-  if (aProgress & FLAG_IS_ANIMATED) {
-    MOZ_ASSERT(aProgress & FLAG_SIZE_AVAILABLE);
-  }
-  if (aProgress & FLAG_HAS_TRANSPARENCY) {
-    MOZ_ASSERT(aProgress & FLAG_SIZE_AVAILABLE);
-  }
-  if (aProgress & FLAG_LAST_PART_COMPLETE) {
-    MOZ_ASSERT(aProgress & FLAG_LOAD_COMPLETE);
-  }
-  if (aProgress & FLAG_HAS_ERROR) {
+  if (aNewProgress & FLAG_HAS_ERROR) {
     
   }
 }
@@ -371,6 +379,8 @@ ProgressTracker::SyncNotifyProgress(Progress aProgress,
     progress &= ~FLAG_ONLOAD_UNBLOCKED;
   }
 
+  CheckProgressConsistency(mProgress, mProgress | progress);
+
   
   
   
@@ -382,8 +392,6 @@ ProgressTracker::SyncNotifyProgress(Progress aProgress,
 
   
   mProgress |= progress;
-
-  CheckProgressConsistency(mProgress);
 
   
   mObservers.Read([&](const ObserverTable* aTable) {
@@ -510,7 +518,6 @@ ProgressTracker::ResetForNewRequest()
 {
   MOZ_ASSERT(NS_IsMainThread());
   mProgress = NoProgress;
-  CheckProgressConsistency(mProgress);
 }
 
 void
