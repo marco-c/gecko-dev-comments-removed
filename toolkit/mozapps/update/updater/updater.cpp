@@ -53,6 +53,9 @@
 #include <algorithm>
 
 #include "updatelogging.h"
+#ifdef XP_MACOSX
+#include "updaterfileutils_osx.h"
+#endif 
 
 #include "mozilla/Compiler.h"
 #include "mozilla/Types.h"
@@ -73,8 +76,19 @@
 
 #if defined(XP_MACOSX)
 
-void LaunchChild(int argc, char **argv);
+void CleanupElevatedMacUpdate(bool aFailureOccurred);
+bool IsOwnedByGroupAdmin(const char* aAppBundle);
+bool IsRecursivelyWritable(const char* aPath);
+void LaunchChild(int argc, const char** argv);
 void LaunchMacPostProcess(const char* aAppBundle);
+bool ObtainUpdaterArguments(int* argc, char*** argv);
+bool ServeElevatedUpdate(int argc, const char** argv);
+void SetGroupOwnershipAndPermissions(const char* aAppBundle);
+struct UpdateServerThreadArgs
+{
+  int argc;
+  const NS_tchar** argv;
+};
 #endif
 
 #ifndef _O_BINARY
@@ -1995,7 +2009,7 @@ LaunchCallbackApp(const NS_tchar *workingDir,
 #if defined(USE_EXECV)
   execv(argv[0], argv);
 #elif defined(XP_MACOSX)
-  LaunchChild(argc, argv);
+  LaunchChild(argc, (const char**)argv);
 #elif defined(XP_WIN)
   
   
@@ -2518,8 +2532,93 @@ UpdateThreadFunc(void *param)
   QuitProgressUI();
 }
 
+#ifdef XP_MACOSX
+static void
+ServeElevatedUpdateThreadFunc(void* param)
+{
+  UpdateServerThreadArgs* threadArgs = (UpdateServerThreadArgs*)param;
+  gSucceeded = ServeElevatedUpdate(threadArgs->argc, threadArgs->argv);
+  if (!gSucceeded) {
+    WriteStatusFile(ELEVATION_CANCELED);
+  }
+  QuitProgressUI();
+}
+
+void freeArguments(int argc, char** argv)
+{
+  for (int i = 0; i < argc; i++) {
+    free(argv[i]);
+  }
+  free(argv);
+}
+#endif
+
+int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
+                                     int callbackIndex
+#ifdef XP_WIN
+                                     , const WCHAR* elevatedLockFilePath
+                                     , HANDLE updateLockFileHandle
+#elif XP_MACOSX
+                                     , bool isElevated
+#endif
+                                     )
+{
+  if (argc > callbackIndex) {
+#if defined(XP_WIN)
+    if (gSucceeded) {
+      if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
+        fprintf(stderr, "The post update process was not launched");
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (!sUsingService) {
+        StartServiceUpdate(gInstallDirPath);
+      }
+    }
+    EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
+#elif XP_MACOSX
+    if (!isElevated) {
+      if (gSucceeded) {
+        LaunchMacPostProcess(gInstallDirPath);
+      }
+#endif
+
+    LaunchCallbackApp(argv[5],
+                      argc - callbackIndex,
+                      argv + callbackIndex,
+                      sUsingService);
+#ifdef XP_MACOSX
+    } 
+#endif 
+  }
+  return 0;
+}
+
 int NS_main(int argc, NS_tchar **argv)
 {
+  
+  
+  
+  const int callbackIndex = 6;
+
+#ifdef XP_MACOSX
+  bool isElevated =
+    strstr(argv[0], "/Library/PrivilegedHelperTools/org.mozilla.updater") != 0;
+  if (isElevated) {
+    if (!ObtainUpdaterArguments(&argc, &argv)) {
+      
+      
+      return 1;
+    }
+  }
+#endif
+
 #if defined(MOZ_WIDGET_GONK)
   if (EnvHasValue("LD_PRELOAD")) {
     
@@ -2552,7 +2651,13 @@ int NS_main(int argc, NS_tchar **argv)
   }
 #endif
 
-  InitProgressUI(&argc, &argv);
+#ifdef XP_MACOSX
+  if (!isElevated) {
+#endif
+    InitProgressUI(&argc, &argv);
+#ifdef XP_MACOSX
+  }
+#endif
 
   
   
@@ -2570,11 +2675,18 @@ int NS_main(int argc, NS_tchar **argv)
   
   if (argc < 4) {
     fprintf(stderr, "Usage: updater patch-dir install-dir apply-to-dir [wait-pid [callback-working-dir callback-path args...]]\n");
+#ifdef XP_MACOSX
+    if (isElevated) {
+      freeArguments(argc, argv);
+      CleanupElevatedMacUpdate(true);
+    }
+#endif
     return 1;
   }
 
   
   gPatchDirPath = argv[1];
+
   
   
   
@@ -2655,6 +2767,27 @@ int NS_main(int argc, NS_tchar **argv)
     *slash = NS_T('\0');
   }
 
+#ifdef XP_MACOSX
+  if (!isElevated && !IsRecursivelyWritable(argv[2])) {
+    
+    
+    UpdateServerThreadArgs threadArgs;
+    threadArgs.argc = argc;
+    threadArgs.argv = const_cast<const NS_tchar**>(argv);
+
+    Thread t1;
+    if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
+      
+      
+      ShowProgressUI(true);
+    }
+    t1.Join();
+
+    LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex, false);
+    return gSucceeded ? 0 : 1;
+  }
+#endif
+
   if (EnvHasValue("MOZ_OS_UPDATE")) {
     sIsOSUpdate = true;
     putenv(const_cast<char*>("MOZ_OS_UPDATE="));
@@ -2683,6 +2816,12 @@ int NS_main(int argc, NS_tchar **argv)
 
   if (!WriteStatusFile("applying")) {
     LOG(("failed setting status to 'applying'"));
+#ifdef XP_MACOSX
+    if (isElevated) {
+      freeArguments(argc, argv);
+      CleanupElevatedMacUpdate(true);
+    }
+#endif
     return 1;
   }
 
@@ -2777,11 +2916,6 @@ int NS_main(int argc, NS_tchar **argv)
     }
 #endif
   }
-
-  
-  
-  
-  const int callbackIndex = 6;
 
 #if defined(XP_WIN)
 #ifdef MOZ_MAINTENANCE_SERVICE
@@ -3118,10 +3252,22 @@ int NS_main(int argc, NS_tchar **argv)
         
         if (NS_tchdir(gWorkingDirPath) != 0) {
           
+#ifdef XP_MACOSX
+          if (isElevated) {
+            freeArguments(argc, argv);
+            CleanupElevatedMacUpdate(true);
+          }
+#endif
           return 1;
         }
       } else {
         
+#ifdef XP_MACOSX
+        if (isElevated) {
+          freeArguments(argc, argv);
+          CleanupElevatedMacUpdate(true);
+        }
+#endif
         return 1;
       }
     }
@@ -3337,9 +3483,14 @@ int NS_main(int argc, NS_tchar **argv)
   
   
   
+  
   Thread t;
   if (t.Run(UpdateThreadFunc, nullptr) == 0) {
-    if (!sStagedUpdate && !sReplaceRequest) {
+    if (!sStagedUpdate && !sReplaceRequest
+#ifdef XP_MACOSX
+        && !isElevated
+#endif
+       ) {
       ShowProgressUI();
     }
   }
@@ -3418,43 +3569,32 @@ int NS_main(int argc, NS_tchar **argv)
       }
     }
   }
+
+  if (isElevated) {
+    SetGroupOwnershipAndPermissions(gInstallDirPath);
+    freeArguments(argc, argv);
+    CleanupElevatedMacUpdate(false);
+  } else if (IsOwnedByGroupAdmin(gInstallDirPath)) {
+    
+    
+    
+    
+    SetGroupOwnershipAndPermissions(gInstallDirPath);
+  }
 #endif 
 
   LogFinish();
 
-  if (argc > callbackIndex) {
-#if defined(XP_WIN)
-    if (gSucceeded) {
-      if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
-        fprintf(stderr, "The post update process was not launched");
-      }
+  int retVal = LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex
+#ifdef XP_WIN
+                                                , elevatedLockFilePath
+                                                , updateLockFileHandle
+#elif XP_MACOSX
+                                                , isElevated
+#endif
+                                               );
 
-      
-      
-      
-      
-      
-      
-      
-      if (!sUsingService) {
-        StartServiceUpdate(gInstallDirPath);
-      }
-    }
-    EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
-#endif 
-#ifdef XP_MACOSX
-    if (gSucceeded) {
-      LaunchMacPostProcess(gInstallDirPath);
-    }
-#endif 
-
-    LaunchCallbackApp(argv[5],
-                      argc - callbackIndex,
-                      argv + callbackIndex,
-                      sUsingService);
-  }
-
-  return gSucceeded ? 0 : 1;
+  return retVal ? retVal : (gSucceeded ? 0 : 1);
 }
 
 class ActionList

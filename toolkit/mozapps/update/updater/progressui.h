@@ -4,38 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PROGRESSUI_H__
 #define PROGRESSUI_H__
 
@@ -56,6 +24,9 @@ int InitProgressUI(int *argc, NS_tchar ***argv);
   
   int ShowProgressUI(bool indeterminate = false, bool initUIStrings = true);
   int InitProgressUIStrings();
+#elif defined(XP_MACOSX)
+  
+  int ShowProgressUI(bool indeterminate = false);
 #else
   
   int ShowProgressUI();

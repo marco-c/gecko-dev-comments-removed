@@ -18,6 +18,7 @@ const XMLNS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul
 const PREF_APP_UPDATE_BACKGROUNDERRORS    = "app.update.backgroundErrors";
 const PREF_APP_UPDATE_BILLBOARD_TEST_URL  = "app.update.billboard.test_url";
 const PREF_APP_UPDATE_CERT_ERRORS         = "app.update.cert.errors";
+const PREF_APP_UPDATE_ELEVATE_NEVER       = "app.update.elevate.never";
 const PREF_APP_UPDATE_ENABLED             = "app.update.enabled";
 const PREF_APP_UPDATE_LOG                 = "app.update.log";
 const PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED = "app.update.notifiedUnsupported";
@@ -34,10 +35,11 @@ const URI_UPDATES_PROPERTIES  = "chrome://mozapps/locale/update/updates.properti
 
 const STATE_DOWNLOADING       = "downloading";
 const STATE_PENDING           = "pending";
-const STATE_PENDING_SVC       = "pending-service";
+const STATE_PENDING_SERVICE   = "pending-service";
+const STATE_PENDING_ELEVATE   = "pending-elevate";
 const STATE_APPLYING          = "applying";
 const STATE_APPLIED           = "applied";
-const STATE_APPLIED_SVC       = "applied-service";
+const STATE_APPLIED_SERVICE   = "applied-service";
 const STATE_SUCCEEDED         = "succeeded";
 const STATE_DOWNLOAD_FAILED   = "download-failed";
 const STATE_FAILED            = "failed";
@@ -235,8 +237,18 @@ var gUpdates = {
     
     
     
-    var neverPrefName = PREFBRANCH_APP_UPDATE_NEVER + this.update.appVersion;
+    
+    
+    
+    
+    let neverPrefName = PREFBRANCH_APP_UPDATE_NEVER + this.update.appVersion;
     Services.prefs.setBoolPref(neverPrefName, true);
+    let aus = CoC["@mozilla.org/updates/update-service;1"].
+              getService(CoI.nsIApplicationUpdateService);
+    if (aus.elevationRequired) {
+      Services.prefs.setCharPref(PREF_APP_UPDATE_ELEVATE_NEVER,
+                                 this.update.appVersion);
+    }
   },
 
   
@@ -414,9 +426,10 @@ var gUpdates = {
           
           switch (state) {
             case STATE_PENDING:
-            case STATE_PENDING_SVC:
+            case STATE_PENDING_SERVICE:
+            case STATE_PENDING_ELEVATE:
             case STATE_APPLIED:
-            case STATE_APPLIED_SVC:
+            case STATE_APPLIED_SERVICE:
               this.sourceEvent = SRCEVT_BACKGROUND;
               aCallback("finishedBackground");
               return;
@@ -525,16 +538,21 @@ var gCheckingPage = {
     
     
     Services.prefs.deleteBranch(PREFBRANCH_APP_UPDATE_NEVER);
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
+    }
 
     
     
-    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_BACKGROUNDERRORS))
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_BACKGROUNDERRORS)) {
       Services.prefs.clearUserPref(PREF_APP_UPDATE_BACKGROUNDERRORS);
+    }
 
     
     
-    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED))
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED)) {
       Services.prefs.clearUserPref(PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED);
+    }
 
     this._checker = CoC["@mozilla.org/updates/update-checker;1"].
                     createInstance(CoI.nsIUpdateChecker);
@@ -568,7 +586,7 @@ var gCheckingPage = {
           return;
         }
 
-        if (!aus.canApplyUpdates) {
+        if (!aus.canApplyUpdates || gUpdates.update.elevationFailure) {
           
           
           gUpdates.never();
@@ -1296,9 +1314,10 @@ var gDownloadingPage = {
       }
       this.cleanUp();
       if (aData == STATE_APPLIED ||
-          aData == STATE_APPLIED_SVC ||
+          aData == STATE_APPLIED_SERVICE ||
           aData == STATE_PENDING ||
-          aData == STATE_PENDING_SVC) {
+          aData == STATE_PENDING_SERVICE ||
+          aData == STATE_PENDING_ELEVATE) {
         
         
         gUpdates.wiz.goTo("finished");
@@ -1399,7 +1418,7 @@ var gErrorPatchingPage = {
   onWizardNext: function() {
     switch (gUpdates.update.selectedPatch.state) {
       case STATE_PENDING:
-      case STATE_PENDING_SVC:
+      case STATE_PENDING_SERVICE:
         gUpdates.wiz.goTo("finished");
         break;
       case STATE_DOWNLOADING:
@@ -1421,8 +1440,17 @@ var gFinishedPage = {
 
 
   onPageShow: function() {
-    gUpdates.setButtons("restartLaterButton", null, "restartNowButton",
-                        true);
+    let aus = CoC["@mozilla.org/updates/update-service;1"].
+              getService(CoI.nsIApplicationUpdateService);
+    if (aus.elevationRequired) {
+      LOG("gFinishedPage", "elevationRequired");
+      gUpdates.setButtons("restartLaterButton", "noThanksButton",
+                          "restartNowButton", true);
+    } else {
+      LOG("gFinishedPage", "not elevationRequired");
+      gUpdates.setButtons("restartLaterButton", null, "restartNowButton",
+                          true);
+    }
     gUpdates.wiz.getButton("finish").focus();
   },
 
@@ -1431,18 +1459,36 @@ var gFinishedPage = {
 
   onPageShowBackground: function() {
     this.onPageShow();
-    var updateFinishedName = document.getElementById("updateFinishedName");
+    let updateFinishedName = document.getElementById("updateFinishedName");
     updateFinishedName.value = gUpdates.update.name;
 
-    var link = document.getElementById("finishedBackgroundLink");
+    let link = document.getElementById("finishedBackgroundLink");
     if (gUpdates.update.detailsURL) {
       link.setAttribute("url", gUpdates.update.detailsURL);
       
       
       link.disabled = false;
-    }
-    else
+    } else {
       link.hidden = true;
+    }
+    let aus = CoC["@mozilla.org/updates/update-service;1"].
+              getService(CoI.nsIApplicationUpdateService);
+    if (aus.elevationRequired) {
+      let more = document.getElementById("finishedBackgroundMore");
+      more.setAttribute("hidden", "true");
+      let moreElevated =
+        document.getElementById("finishedBackgroundMoreElevated");
+      moreElevated.setAttribute("hidden", "false");
+      let moreElevatedLink =
+        document.getElementById("finishedBackgroundMoreElevatedLink");
+      moreElevatedLink.setAttribute("hidden", "false");
+      let moreElevatedLinkLabel =
+        document.getElementById("finishedBackgroundMoreElevatedLinkLabel");
+      let manualURL = Services.urlFormatter.formatURLPref(PREF_APP_UPDATE_URL_MANUAL);
+      moreElevatedLinkLabel.value = manualURL;
+      moreElevatedLinkLabel.setAttribute("url", manualURL);
+      moreElevatedLinkLabel.setAttribute("hidden", "false");
+    }
 
     if (getPref("getBoolPref", PREF_APP_UPDATE_TEST_LOOP, false)) {
       setTimeout(function () {
@@ -1458,6 +1504,16 @@ var gFinishedPage = {
   onWizardFinish: function() {
     
     LOG("gFinishedPage" , "onWizardFinish - restarting the application");
+
+    let aus = CoC["@mozilla.org/updates/update-service;1"].
+              getService(CoI.nsIApplicationUpdateService);
+    if (aus.elevationRequired) {
+      let um = CoC["@mozilla.org/updates/update-manager;1"].
+               getService(CoI.nsIUpdateManager);
+      if (um) {
+        um.elevationOptedIn();
+      }
+    }
 
     
     
@@ -1499,7 +1555,19 @@ var gFinishedPage = {
 
   onExtra1: function() {
     gUpdates.wiz.cancel();
-  }
+  },
+
+  
+
+
+  onExtra2: Task.async(function*() {
+    Services.obs.notifyObservers(null, "update-canceled", null);
+    let um = CoC["@mozilla.org/updates/update-manager;1"].
+               getService(CoI.nsIUpdateManager);
+    um.cleanupActiveUpdate();
+    gUpdates.never();
+    gUpdates.wiz.cancel();
+  }),
 };
 
 

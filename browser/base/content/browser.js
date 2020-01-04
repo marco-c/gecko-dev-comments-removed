@@ -1206,7 +1206,6 @@ var gBrowserInit = {
     gBrowser.tabContainer.updateVisibility();
 
     BookmarkingUI.init();
-    AutoShowBookmarksToolbar.init();
 
     gPrefService.addObserver(gHomeButton.prefDomain, gHomeButton, false);
 
@@ -1501,7 +1500,6 @@ var gBrowserInit = {
       IndexedDBPromptHelper.uninit();
       LightweightThemeListener.uninit();
       PanelUI.uninit();
-      AutoShowBookmarksToolbar.uninit();
     }
 
     
@@ -2568,6 +2566,7 @@ var gMenuButtonUpdateBadge = {
   enabled: false,
   badgeWaitTime: 0,
   timer: null,
+  cancelObserverRegistered: false,
 
   init: function () {
     try {
@@ -2592,6 +2591,10 @@ var gMenuButtonUpdateBadge = {
       Services.obs.removeObserver(this, "update-downloaded");
       this.enabled = false;
     }
+    if (this.cancelObserverRegistered) {
+      Services.obs.removeObserver(this, "update-canceled");
+      this.cancelObserverRegistered = false;
+    }
   },
 
   onMenuPanelCommand: function(event) {
@@ -2612,11 +2615,15 @@ var gMenuButtonUpdateBadge = {
   },
 
   observe: function (subject, topic, status) {
+    if (topic == "update-canceled") {
+      this.reset();
+      return;
+    }
     if (status == "failed") {
       
       
-      this.displayBadge(false);
       this.uninit();
+      this.displayBadge(false);
       return;
     }
 
@@ -2631,8 +2638,8 @@ var gMenuButtonUpdateBadge = {
     
     
     
-    this.displayBadge(true);
     this.uninit();
+    this.displayBadge(true);
   },
 
   displayBadge: function (succeeded) {
@@ -2648,6 +2655,8 @@ var gMenuButtonUpdateBadge = {
       stringId = "appmenu.restartNeeded.description";
       updateButtonText = gNavigatorBundle.getFormattedString(stringId,
                                                              [brandShortName]);
+      Services.obs.addObserver(this, "update-canceled", false);
+      this.cancelObserverRegistered = true;
     } else {
       stringId = "appmenu.updateFailed.description";
       updateButtonText = gNavigatorBundle.getString(stringId);
@@ -2657,6 +2666,15 @@ var gMenuButtonUpdateBadge = {
     updateButton.setAttribute("label", updateButtonText);
     updateButton.setAttribute("update-status", status);
     updateButton.hidden = false;
+  },
+
+  reset: function () {
+    gMenuButtonBadgeManager.removeBadge(
+      gMenuButtonBadgeManager.BADGEID_APPUPDATE);
+    let updateButton = document.getElementById("PanelUI-update-status");
+    updateButton.hidden = true;
+    this.uninit();
+    this.init();
   }
 };
 
@@ -7841,16 +7859,10 @@ TabModalPromptBox.prototype = {
     const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
     let newPrompt = document.createElementNS(XUL_NS, "tabmodalprompt");
     let browser = this.browser;
-    browser.parentNode.insertBefore(newPrompt, browser.nextSibling);
+    browser.parentNode.appendChild(newPrompt);
     browser.setAttribute("tabmodalPromptShowing", true);
 
     newPrompt.clientTop; 
-
-    let prompts = this.listPrompts();
-    if (prompts.length > 1) {
-      
-      newPrompt.hidden = true;
-    }
 
     let principalToAllowFocusFor = this._allowTabFocusByPromptPrincipal;
     delete this._allowTabFocusByPromptPrincipal;
@@ -7886,7 +7898,6 @@ TabModalPromptBox.prototype = {
     let prompts = this.listPrompts();
     if (prompts.length) {
       let prompt = prompts[prompts.length - 1];
-      prompt.hidden = false;
       prompt.Dialog.setDefaultFocus();
     } else {
       browser.removeAttribute("tabmodalPromptShowing");

@@ -10,6 +10,9 @@ Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
                                   "resource://gre/modules/UpdateUtils.jsm");
 
+const PREF_APP_UPDATE_CANCELATIONS_OSX = "app.update.cancelations.osx";
+const PREF_APP_UPDATE_ELEVATE_NEVER    = "app.update.elevate.never";
+
 var gAppUpdater;
 
 function onUnload(aEvent) {
@@ -76,7 +79,8 @@ function appUpdater()
   
   
   
-  if (!this.updateEnabled) {
+  if (!this.updateEnabled ||
+      Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
     this.selectPanel("checkForUpdates");
     return;
   }
@@ -98,11 +102,13 @@ appUpdater.prototype =
   get isPending() {
     if (this.update) {
       return this.update.state == "pending" ||
-             this.update.state == "pending-service";
+             this.update.state == "pending-service" ||
+             this.update.state == "pending-elevate";
     }
     return this.um.activeUpdate &&
            (this.um.activeUpdate.state == "pending" ||
-            this.um.activeUpdate.state == "pending-service");
+            this.um.activeUpdate.state == "pending-service" ||
+            this.um.activeUpdate.state == "pending-elevate");
   },
 
   
@@ -183,6 +189,13 @@ appUpdater.prototype =
 
 
   checkForUpdates: function() {
+    
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CANCELATIONS_OSX)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_CANCELATIONS_OSX);
+    }
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
+    }
     this.selectPanel("checkingForUpdates");
     this.isChecking = true;
     this.checker.checkForUpdates(this.updateCheckListener, true);
@@ -194,30 +207,32 @@ appUpdater.prototype =
 
 
   buttonRestartAfterDownload: function() {
-    if (!this.isPending && !this.isApplied)
+    if (!this.isPending && !this.isApplied) {
       return;
+    }
 
-      
-      let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"].
-                       createInstance(Components.interfaces.nsISupportsPRBool);
-      Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
+    
+    let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"].
+                     createInstance(Components.interfaces.nsISupportsPRBool);
+    Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
 
-      
-      if (cancelQuit.data)
-        return;
+    
+    if (cancelQuit.data) {
+      return;
+    }
 
-      let appStartup = Components.classes["@mozilla.org/toolkit/app-startup;1"].
-                       getService(Components.interfaces.nsIAppStartup);
+    let appStartup = Components.classes["@mozilla.org/toolkit/app-startup;1"].
+                     getService(Components.interfaces.nsIAppStartup);
 
-      
-      if (Services.appinfo.inSafeMode) {
-        appStartup.restartInSafeMode(Components.interfaces.nsIAppStartup.eAttemptQuit);
-        return;
-      }
+    
+    if (Services.appinfo.inSafeMode) {
+      appStartup.restartInSafeMode(Components.interfaces.nsIAppStartup.eAttemptQuit);
+      return;
+    }
 
-      appStartup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit |
-                      Components.interfaces.nsIAppStartup.eRestart);
-    },
+    appStartup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit |
+                    Components.interfaces.nsIAppStartup.eRestart);
+  },
 
   
 
@@ -371,7 +386,8 @@ appUpdater.prototype =
           
           let status = aData;
           if (status == "applied" || status == "applied-service" ||
-              status == "pending" || status == "pending-service") {
+              status == "pending" || status == "pending-service" ||
+              status == "pending-elevate") {
             
             
             
