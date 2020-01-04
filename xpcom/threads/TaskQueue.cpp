@@ -193,7 +193,7 @@ TaskQueue::Runner::Run()
   
   
   
-  nsresult rv = mQueue->mPool->Dispatch(this, NS_DISPATCH_NORMAL);
+  nsresult rv = mQueue->mPool->TailDispatch(this);
   if (NS_FAILED(rv)) {
     
     MonitorAutoLock mon(mQueue->mQueueMonitor);

@@ -55,6 +55,11 @@ public:
   
   NS_FORWARD_SAFE_NSITHREADPOOL(mPool);
 
+  
+  
+  
+  nsresult TailDispatch(nsIRunnable *event) { return Dispatch(event, NS_DISPATCH_TAIL); }
+
   NS_IMETHOD DispatchFromScript(nsIRunnable *event, uint32_t flags) override {
       return Dispatch(event, flags);
   }
