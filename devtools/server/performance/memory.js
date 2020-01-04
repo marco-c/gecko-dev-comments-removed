@@ -120,8 +120,8 @@ var Memory = exports.Memory = Class({
 
   _onWindowReady: function ({ isTopLevel }) {
     if (this.state == "attached") {
+      this._clearDebuggees();
       if (isTopLevel && this.isRecordingAllocations()) {
-        this._clearDebuggees();
         this._frameCache.initFrames();
       }
       this.dbg.addDebuggees();
@@ -142,13 +142,17 @@ var Memory = exports.Memory = Class({
 
 
 
-  saveHeapSnapshot: expectState("attached", function () {
+
+
+  saveHeapSnapshot: expectState("attached", function (boundaries = null) {
     
     
-    const opts = this.parent instanceof ChromeActor || this.parent instanceof ChildProcessActor
-      ? { runtime: true }
-      : { debugger: this.dbg };
-    const path = ThreadSafeChromeUtils.saveHeapSnapshot(opts);
+    if (!boundaries) {
+      boundaries = this.parent instanceof ChromeActor || this.parent instanceof ChildProcessActor
+        ? { runtime: true }
+        : { debugger: this.dbg };
+    }
+    const path = ThreadSafeChromeUtils.saveHeapSnapshot(boundaries);
     return HeapSnapshotFileUtils.getSnapshotIdFromPath(path);
   }, "saveHeapSnapshot"),
 

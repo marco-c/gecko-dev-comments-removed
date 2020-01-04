@@ -37,8 +37,12 @@ const MemoryFront = protocol.FrontClassWithSpec(memorySpec, {
 
 
 
+
+
+
+
   saveHeapSnapshot: protocol.custom(Task.async(function* (options = {}) {
-    const snapshotId = yield this._saveHeapSnapshotImpl();
+    const snapshotId = yield this._saveHeapSnapshotImpl(options.boundaries);
 
     if (!options.forceCopy &&
         (yield HeapSnapshotFileUtils.haveHeapSnapshotTempFile(snapshotId))) {

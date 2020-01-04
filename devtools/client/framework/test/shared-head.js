@@ -137,6 +137,19 @@ var removeTab = Task.async(function* (tab) {
 
 
 
+
+var refreshTab = Task.async(function*(tab) {
+  info("Refreshing tab.");
+  const finished = once(gBrowser.selectedBrowser, "load", true);
+  gBrowser.reloadTab(gBrowser.selectedTab);
+  yield finished;
+  info("Tab finished refreshing.");
+});
+
+
+
+
+
 function synthesizeKeyFromKeyTag(key) {
   is(key && key.tagName, "key", "Successfully retrieved the <key> node");
 
