@@ -14,6 +14,7 @@
 #include "jsobj.h"
 #include "jsscript.h"
 
+#include "asmjs/WasmModule.h"
 #include "gc/Heap.h"
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
@@ -395,6 +396,43 @@ AddClassInfo(Granularity granularity, CompartmentStats& cStats, const char* clas
     }
 }
 
+template <Granularity granularity>
+static void
+CollectScriptSourceStats(StatsClosure* closure, ScriptSource* ss)
+{
+    RuntimeStats* rtStats = closure->rtStats;
+
+    SourceSet::AddPtr entry = closure->seenSources.lookupForAdd(ss);
+    if (entry)
+        return;
+
+    bool ok = closure->seenSources.add(entry, ss);
+    (void)ok; 
+
+    JS::ScriptSourceInfo info;  
+    ss->addSizeOfIncludingThis(rtStats->mallocSizeOf_, &info);
+    MOZ_ASSERT(info.compressed == 0 || info.uncompressed == 0);
+
+    rtStats->runtime.scriptSourceInfo.add(info);
+
+    if (granularity == FineGrained) {
+        const char* filename = ss->filename();
+        if (!filename)
+            filename = "<no filename>";
+
+        JS::RuntimeSizes::ScriptSourcesHashMap::AddPtr p =
+            rtStats->runtime.allScriptSources->lookupForAdd(filename);
+        if (!p) {
+            bool ok = rtStats->runtime.allScriptSources->add(p, filename, info);
+            
+            (void)ok;
+        } else {
+            p->value().add(info);
+        }
+    }
+}
+
+
 
 
 
@@ -425,6 +463,11 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
             if (opv->getISupports_(obj, &iface) && iface)
                 cStats.objectsPrivate += opv->sizeOfIncludingThis(iface);
         }
+
+        if (obj->is<WasmModuleObject>()) {
+            if (ScriptSource* ss = obj->as<WasmModuleObject>().module().maybeScriptSource())
+                CollectScriptSourceStats<granularity>(closure, ss);
+        }
         break;
       }
 
@@ -437,36 +480,7 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
         jit::AddSizeOfBaselineData(script, rtStats->mallocSizeOf_, &cStats.baselineData,
                                    &cStats.baselineStubsFallback);
         cStats.ionData += jit::SizeOfIonData(script, rtStats->mallocSizeOf_);
-
-        ScriptSource* ss = script->scriptSource();
-        SourceSet::AddPtr entry = closure->seenSources.lookupForAdd(ss);
-        if (!entry) {
-            bool ok = closure->seenSources.add(entry, ss);
-            (void)ok; 
-
-            JS::ScriptSourceInfo info;  
-            ss->addSizeOfIncludingThis(rtStats->mallocSizeOf_, &info);
-            MOZ_ASSERT(info.compressed == 0 || info.uncompressed == 0);
-
-            rtStats->runtime.scriptSourceInfo.add(info);
-
-            if (granularity == FineGrained) {
-                const char* filename = ss->filename();
-                if (!filename)
-                    filename = "<no filename>";
-
-                JS::RuntimeSizes::ScriptSourcesHashMap::AddPtr p =
-                    rtStats->runtime.allScriptSources->lookupForAdd(filename);
-                if (!p) {
-                    bool ok = rtStats->runtime.allScriptSources->add(p, filename, info);
-                    
-                    (void)ok;
-                } else {
-                    p->value().add(info);
-                }
-            }
-        }
-
+        CollectScriptSourceStats<granularity>(closure, script->scriptSource());
         break;
       }
 

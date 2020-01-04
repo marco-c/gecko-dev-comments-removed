@@ -552,6 +552,7 @@ class Module : public mozilla::LinkedListElement<Module>
     const AsmJSModule& asAsmJS() const { MOZ_ASSERT(isAsmJS()); return *(const AsmJSModule*)this; }
     virtual bool mutedErrors() const;
     virtual const char16_t* displayURL() const;
+    virtual ScriptSource* maybeScriptSource() const { return nullptr; }
 
     
     
