@@ -201,6 +201,10 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "eoppmonitor.dll", ALL_VERSIONS },
 
+  
+  { "ss2osd.dll", ALL_VERSIONS },
+  { "ss2devprops.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
