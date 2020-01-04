@@ -105,9 +105,9 @@ function clearCache() {
 
 function clearCacheAndReload() {
   
-  debug('Reloading ' + getContentWindow().location);
+  debug('Reloading ' + shell.contentBrowser.contentWindow.location);
   clearCache();
-  getContentWindow().location.reload(true);
+  shell.contentBrowser.contentWindow.location.reload(true);
   once('mozbrowserlocationchange').then(
     evt => {
       shell.sendEvent(window, "ContentStart");
