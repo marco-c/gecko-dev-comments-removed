@@ -246,7 +246,7 @@ nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
       mBlockReflowState->mStyleDisplay->IsRelativelyPositionedStyle();
     if (pfd->mRelativePos) {
       MOZ_ASSERT(
-        mBlockReflowState->GetWritingMode() == frame->GetWritingMode(),
+        mBlockReflowState->GetWritingMode() == pfd->mWritingMode,
         "mBlockReflowState->frame == frame, "
         "hence they should have identical writing mode");
       pfd->mOffsets = mBlockReflowState->ComputedLogicalOffsets();
@@ -685,13 +685,13 @@ nsLineLayout::NewPerFrameData(nsIFrame* aFrame)
   pfd->mIsEmpty = false;
   pfd->mIsLinkedToBase = false;
 
-  WritingMode frameWM = aFrame->GetWritingMode();
+  pfd->mWritingMode = aFrame->GetWritingMode();
   WritingMode lineWM = mRootSpan->mWritingMode;
   pfd->mBounds = LogicalRect(lineWM);
   pfd->mOverflowAreas.Clear();
   pfd->mMargin = LogicalMargin(lineWM);
   pfd->mBorderPadding = LogicalMargin(lineWM);
-  pfd->mOffsets = LogicalMargin(frameWM);
+  pfd->mOffsets = LogicalMargin(pfd->mWritingMode);
 
   pfd->mJustificationInfo = JustificationInfo();
   pfd->mJustificationAssignment = JustificationAssignment();
@@ -836,7 +836,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
 
   
   
-  WritingMode frameWM = aFrame->GetWritingMode();
+  WritingMode frameWM = pfd->mWritingMode;
   WritingMode lineWM = mRootSpan->mWritingMode;
 
   
@@ -1437,7 +1437,7 @@ nsLineLayout::PlaceFrame(PerFrameData* pfd, nsHTMLReflowMetrics& aMetrics)
   
   
   
-  if (pfd->mFrame->GetWritingMode().GetBlockDir() != lineWM.GetBlockDir()) {
+  if (pfd->mWritingMode.GetBlockDir() != lineWM.GetBlockDir()) {
     pfd->mAscent = lineWM.IsLineInverted() ? 0 : aMetrics.BSize(lineWM);
   } else {
     if (aMetrics.BlockStartAscent() == nsHTMLReflowMetrics::ASK_FOR_BASELINE) {
@@ -1797,7 +1797,7 @@ nsLineLayout::VerticalAlignFrames(PerSpanData* psd)
          spanFramePFD->mBounds.BSize(lineWM),
          emptyContinuation ? "yes" : "no");
   if (psd != mRootSpan) {
-    WritingMode frameWM = spanFramePFD->mFrame->GetWritingMode();
+    WritingMode frameWM = spanFramePFD->mWritingMode;
     printf(" bp=%d,%d,%d,%d margin=%d,%d,%d,%d",
            spanFramePFD->mBorderPadding.Top(lineWM),
            spanFramePFD->mBorderPadding.Right(lineWM),
@@ -3259,7 +3259,7 @@ nsLineLayout::ApplyRelativePositioning(PerFrameData* aPFD)
   }
 
   nsIFrame* frame = aPFD->mFrame;
-  WritingMode frameWM = frame->GetWritingMode();
+  WritingMode frameWM = aPFD->mWritingMode;
   LogicalPoint origin = frame->GetLogicalPosition(ContainerSize());
   
   
