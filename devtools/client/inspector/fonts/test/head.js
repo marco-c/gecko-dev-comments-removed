@@ -9,6 +9,11 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
   this);
 
+Services.prefs.setBoolPref("devtools.fontinspector.enabled", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.fontinspector.enabled");
+});
+
 
 
 
