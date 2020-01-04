@@ -93,8 +93,6 @@ class CodeSegment
     bool containsCodePC(void* pc) const {
         return pc >= code() && pc < (code() + codeLength_);
     }
-
-    WASM_DECLARE_SERIALIZABLE(CodeSegment)
 };
 
 
