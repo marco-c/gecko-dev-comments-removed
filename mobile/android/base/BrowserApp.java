@@ -3309,7 +3309,7 @@ public class BrowserApp extends GeckoApp
                                tab.getContentType().startsWith("video/")));
         saveAsPDF.setEnabled(allowPDF);
         print.setEnabled(allowPDF);
-        print.setVisible(Versions.feature19Plus && AppConstants.NIGHTLY_BUILD);
+        print.setVisible(Versions.feature19Plus);
 
         
         findInPage.setEnabled(!isAboutHome(tab));
