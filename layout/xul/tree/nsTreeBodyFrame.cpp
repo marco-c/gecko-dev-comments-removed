@@ -3669,6 +3669,13 @@ nsTreeBodyFrame::PaintImage(int32_t              aRowIndex,
   return result;
 }
 
+
+
+
+
+#ifdef _MSC_VER
+# pragma optimize("g", off)
+#endif
 DrawResult
 nsTreeBodyFrame::PaintText(int32_t              aRowIndex,
                            nsTreeColumn*        aColumn,
@@ -3801,6 +3808,9 @@ nsTreeBodyFrame::PaintText(int32_t              aRowIndex,
 
   return result;
 }
+#ifdef _MSC_VER
+# pragma optimize("", on)
+#endif
 
 DrawResult
 nsTreeBodyFrame::PaintCheckbox(int32_t              aRowIndex,
