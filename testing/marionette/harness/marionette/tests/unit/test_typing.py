@@ -58,7 +58,7 @@ class TestTyping(MarionetteTestCase):
 
     def testCutAndPasteShortcuts(self):
         
-        if self.marionette.session_capabilities["platformName"] == "Darwin":
+        if self.marionette.session_capabilities["platformName"] == "darwin":
             mod_key = Keys.META
         else:
             mod_key = Keys.CONTROL
