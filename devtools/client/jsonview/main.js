@@ -7,11 +7,13 @@
 "use strict";
 
 const {Cu, Ci, Cc} = require("chrome");
-const JsonViewUtils = require("devtools/client/jsonview/utils");
 
-
+const {XPCOMUtils} = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
-const {makeInfallible} = require("devtools/shared/DevToolsUtils");
+
+XPCOMUtils.defineLazyGetter(this, "JsonViewService", function() {
+  return require("devtools/client/jsonview/utils");
+});
 
 
 
@@ -19,7 +21,7 @@ const {makeInfallible} = require("devtools/shared/DevToolsUtils");
 
 
 var JsonView = {
-  initialize: makeInfallible(function() {
+  initialize: function() {
     
     
     
@@ -33,12 +35,12 @@ var JsonView = {
     
     Services.ppmm.addMessageListener(
       "devtools:jsonview:save", this.onSaveListener);
-  }),
+  },
 
-  destroy: makeInfallible(function() {
+  destroy: function() {
     Services.ppmm.removeMessageListener(
       "devtools:jsonview:save", this.onSaveListener);
-  }),
+  },
 
   
 
