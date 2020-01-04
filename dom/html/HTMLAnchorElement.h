@@ -89,10 +89,8 @@ public:
   virtual bool HasDeferredDNSPrefetchRequest() override;
 
   
-  void GetHref(nsAString& aValue, ErrorResult& rv)
-  {
-    GetHTMLURIAttr(nsGkAtoms::href, aValue);
-  }
+
+  
   void SetHref(const nsAString& aValue, mozilla::ErrorResult& rv)
   {
     SetHTMLAttr(nsGkAtoms::href, aValue, rv);
@@ -156,8 +154,11 @@ public:
 
   
 
-  using Link::GetProtocol;
-  using Link::SetProtocol;
+  
+  
+
+  
+  
 
   
   
@@ -165,23 +166,20 @@ public:
   
   
 
-  using Link::GetHost;
-  using Link::SetHost;
+  
+  
 
-  using Link::GetHostname;
-  using Link::SetHostname;
+  
+  
 
-  using Link::GetPort;
-  using Link::SetPort;
+  
+  
 
-  using Link::GetPathname;
-  using Link::SetPathname;
+  
+  
 
-  using Link::GetSearch;
-  using Link::SetSearch;
-
-  using Link::GetHash;
-  using Link::SetHash;
+  
+  
 
   
   void GetCoords(DOMString& aValue)
@@ -224,9 +222,9 @@ public:
   {
     SetHTMLAttr(nsGkAtoms::shape, aValue, rv);
   }
-  void Stringify(nsAString& aResult, ErrorResult& aError)
+  void Stringify(nsAString& aResult)
   {
-    GetHref(aResult, aError);
+    GetHref(aResult);
   }
 
 protected:
