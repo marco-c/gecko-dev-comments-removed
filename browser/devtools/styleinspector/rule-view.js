@@ -59,6 +59,8 @@ const FILTER_CHANGED_TIMEOUT = 150;
 
 const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
 
+
+const FILTER_STRICT_RE = /\s*`(.*?)`\s*$/;
 const IOService = Cc["@mozilla.org/network/io-service;1"]
                   .getService(Ci.nsIIOService);
 
@@ -1604,14 +1606,57 @@ CssRuleView.prototype = {
         this.searchField.removeAttribute("filled");
       }
 
-      
-      
-      
-      this.searchPropertyMatch = FILTER_PROP_RE.exec(this.searchValue);
-      this.searchPropertyName = this.searchPropertyMatch ?
-                                this.searchPropertyMatch[1] : this.searchValue;
-      this.searchPropertyValue = this.searchPropertyMatch ?
-                                 this.searchPropertyMatch[2] : this.searchValue;
+      this.searchData = {
+        searchPropertyMatch: FILTER_PROP_RE.exec(this.searchValue),
+        searchPropertyName: this.searchValue,
+        searchPropertyValue: this.searchValue,
+        strictSearchValue: "",
+        strictSearchPropertyName: false,
+        strictSearchPropertyValue: false,
+        strictSearchAllValues: false
+      };
+
+      if (this.searchData.searchPropertyMatch) {
+        
+        
+        
+        
+        if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[1])) {
+          this.searchData.strictSearchPropertyName = true;
+          this.searchData.searchPropertyName =
+            FILTER_STRICT_RE.exec(this.searchData.searchPropertyMatch[1])[1];
+        } else {
+          this.searchData.searchPropertyName =
+            this.searchData.searchPropertyMatch[1];
+        }
+
+        if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[2])) {
+          this.searchData.strictSearchPropertyValue = true;
+          this.searchData.searchPropertyValue =
+            FILTER_STRICT_RE.exec(this.searchData.searchPropertyMatch[2])[1];
+        } else {
+          this.searchData.searchPropertyValue =
+            this.searchData.searchPropertyMatch[2];
+        }
+
+        
+        
+        
+        if (FILTER_STRICT_RE.test(this.searchValue)) {
+          this.searchData.strictSearchValue =
+            FILTER_STRICT_RE.exec(this.searchValue)[1];
+        }
+      } else if (FILTER_STRICT_RE.test(this.searchValue)) {
+        
+        
+        
+        
+        let searchValue = FILTER_STRICT_RE.exec(this.searchValue)[1];
+        this.searchData.strictSearchAllValues = true;
+        this.searchData.searchPropertyName = searchValue;
+        this.searchData.searchPropertyValue = searchValue;
+        this.searchData.strictSearchValue = searchValue;
+      }
 
       this._clearHighlight(this.element);
       this._clearRules();
@@ -2034,7 +2079,7 @@ CssRuleView.prototype = {
       }
 
       
-      if (this.searchValue) {
+      if (this.searchValue && this.searchData) {
         if (this.highlightRule(rule)) {
           seenSearchTerm = true;
         } else if (rule.domRule.type !== ELEMENT_STYLE) {
@@ -2131,7 +2176,11 @@ CssRuleView.prototype = {
 
     
     for (let selectorNode of selectorNodes) {
-      if (selectorNode.textContent.toLowerCase().includes(this.searchValue)) {
+      let selector = selectorNode.textContent.toLowerCase();
+      if ((this.searchData.strictSearchAllValues &&
+           selector === this.searchData.strictSearchValue) ||
+          (!this.searchData.strictSearchAllValues &&
+           selector.includes(this.searchValue))) {
         selectorNode.classList.add("ruleview-highlight");
         isSelectorHighlighted = true;
       }
@@ -2150,7 +2199,9 @@ CssRuleView.prototype = {
 
   _highlightStyleSheet: function(rule) {
     let styleSheetSource = rule.title.toLowerCase();
-    let isStyleSheetHighlighted = styleSheetSource.includes(this.searchValue);
+    let isStyleSheetHighlighted = this.searchData.strictSearchValue ?
+      styleSheetSource === this.searchData.strictSearchValue :
+      styleSheetSource.includes(this.searchValue);
 
     if (isStyleSheetHighlighted) {
       rule.editor.source.classList.add("ruleview-highlight");
@@ -2191,7 +2242,7 @@ CssRuleView.prototype = {
 
 
   _updatePropertyHighlight: function(editor) {
-    if (!this.searchValue) {
+    if (!this.searchValue || !this.searchData) {
       return;
     }
 
@@ -2217,15 +2268,8 @@ CssRuleView.prototype = {
     let propertyName = editor.prop.name.toLowerCase();
     let propertyValue = editor.valueSpan.textContent.toLowerCase();
 
-    let isPropertyHighlighted = this._highlightMatches(editor.container, {
-      searchName: this.searchPropertyName,
-      searchValue: this.searchPropertyValue,
-      propertyName: propertyName,
-      propertyValue: propertyValue,
-      propertyMatch: this.searchPropertyMatch
-    });
-
-    return isPropertyHighlighted;
+    return this._highlightMatches(editor.container, propertyName,
+                                  propertyValue);
   },
 
   
@@ -2249,13 +2293,8 @@ CssRuleView.prototype = {
         let computedName = computed.name.toLowerCase();
         let computedValue = computed.parsedValue.toLowerCase();
 
-        isComputedHighlighted = this._highlightMatches(computed.element, {
-          searchName: this.searchPropertyName,
-          searchValue: this.searchPropertyValue,
-          propertyName: computedName,
-          propertyValue: computedValue,
-          propertyMatch: this.searchPropertyMatch
-        }) ? true : isComputedHighlighted;
+        isComputedHighlighted = this._highlightMatches(computed.element,
+          computedName, computedValue) ? true : isComputedHighlighted;
       }
     }
 
@@ -2276,27 +2315,38 @@ CssRuleView.prototype = {
 
 
 
-
-
-
-
-
-
-
-  _highlightMatches: function(element, { searchName, searchValue, propertyName,
-      propertyValue, propertyMatch }) {
+  _highlightMatches: function(element, propertyName, propertyValue) {
+    let {
+      searchPropertyName,
+      searchPropertyValue,
+      searchPropertyMatch,
+      strictSearchPropertyName,
+      strictSearchPropertyValue,
+      strictSearchAllValues,
+    } = this.searchData;
     let matches = false;
 
     
     
     
     
-    if (propertyMatch && searchName && searchValue) {
-      matches = propertyName.includes(searchName) &&
-                propertyValue.includes(searchValue);
+    let hasNameAndValue = searchPropertyMatch &&
+                          searchPropertyName &&
+                          searchPropertyValue;
+    let isMatch = (value, query, isStrict) => {
+      return isStrict ? value === query : query && value.includes(query);
+    };
+
+    if (hasNameAndValue) {
+      matches =
+        isMatch(propertyName, searchPropertyName, strictSearchPropertyName) &&
+        isMatch(propertyValue, searchPropertyValue, strictSearchPropertyValue);
     } else {
-      matches = (searchName && propertyName.includes(searchName)) ||
-                (searchValue && propertyValue.includes(searchValue));
+      matches =
+        isMatch(propertyName, searchPropertyName,
+                strictSearchPropertyName || strictSearchAllValues) ||
+        isMatch(propertyValue, searchPropertyValue,
+                strictSearchPropertyValue || strictSearchAllValues);
     }
 
     if (matches) {
