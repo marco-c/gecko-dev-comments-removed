@@ -109,6 +109,9 @@ private:
     
     mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
 
+    
+    class PMPMSupport;
+
 public:
     static nsWindow* TopWindow();
 

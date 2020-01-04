@@ -4,6 +4,8 @@
 
 
 #include <android/log.h>
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
 #include <math.h>
 #include <unistd.h>
 
@@ -1036,6 +1038,12 @@ public:
                 mozilla::Move(aCall)));
     }
 
+    static LayerViewSupport*
+    FromNative(const LayerView::Compositor::LocalRef& instance)
+    {
+        return GetNative(instance);
+    }
+
     LayerViewSupport(NativePtr<LayerViewSupport>* aPtr, nsWindow* aWindow,
                      const LayerView::Compositor::LocalRef& aInstance)
         : mWindow(aPtr, aWindow)
@@ -1210,6 +1218,92 @@ public:
 template<> const char
 nsWindow::NativePtr<nsWindow::LayerViewSupport>::sName[] = "LayerViewSupport";
 
+
+class nsWindow::PMPMSupport final
+    : public PresentationMediaPlayerManager::Natives<PMPMSupport>
+{
+    PMPMSupport() = delete;
+
+    static LayerViewSupport* GetLayerViewSupport(jni::Object::Param aView)
+    {
+        const auto& layerView = LayerView::Ref::From(aView);
+
+        LayerView::Compositor::LocalRef compositor = layerView->GetCompositor();
+        if (!layerView->CompositorCreated() || !compositor) {
+            return nullptr;
+        }
+
+        LayerViewSupport* const lvs = LayerViewSupport::FromNative(compositor);
+        if (!lvs) {
+            
+            compositor.Env()->ExceptionClear();
+        }
+        return lvs;
+    }
+
+public:
+    static ANativeWindow* sWindow;
+    static EGLSurface sSurface;
+
+    static void InvalidateAndScheduleComposite(jni::Object::Param aView)
+    {
+        LayerViewSupport* const lvs = GetLayerViewSupport(aView);
+        if (lvs) {
+            lvs->SyncInvalidateAndScheduleComposite();
+        }
+    }
+
+    static void AddPresentationSurface(const jni::Class::LocalRef& aCls,
+                                       jni::Object::Param aView,
+                                       jni::Object::Param aSurface)
+    {
+        RemovePresentationSurface();
+
+        LayerViewSupport* const lvs = GetLayerViewSupport(aView);
+        if (!lvs) {
+            return;
+        }
+
+        ANativeWindow* const window = ANativeWindow_fromSurface(
+                aCls.Env(), aSurface.Get());
+        if (!window) {
+            return;
+        }
+
+        sWindow = window;
+
+        const bool wasAlreadyPaused = lvs->CompositorPaused();
+        if (!wasAlreadyPaused) {
+            lvs->SyncPauseCompositor();
+        }
+
+        if (sSurface) {
+            
+            
+            mozilla::gl::GLContextProvider::DestroyEGLSurface(sSurface);
+            sSurface = nullptr;
+        }
+
+        if (!wasAlreadyPaused) {
+            lvs->SyncResumeCompositor();
+        }
+
+        lvs->SyncInvalidateAndScheduleComposite();
+    }
+
+    static void RemovePresentationSurface()
+    {
+        if (sWindow) {
+            ANativeWindow_release(sWindow);
+            sWindow = nullptr;
+        }
+    }
+};
+
+ANativeWindow* nsWindow::PMPMSupport::sWindow;
+EGLSurface nsWindow::PMPMSupport::sSurface;
+
+
 nsWindow::GeckoViewSupport::~GeckoViewSupport()
 {
     
@@ -1379,6 +1473,7 @@ nsWindow::InitNatives()
     nsWindow::GeckoViewSupport::EditableBase::Init();
     nsWindow::LayerViewSupport::Init();
     nsWindow::NPZCSupport::Init();
+    nsWindow::PMPMSupport::Init();
 }
 
 nsWindow*
