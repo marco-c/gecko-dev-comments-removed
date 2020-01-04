@@ -2094,7 +2094,12 @@ Loader::LoadStyleLink(nsIContent* aElement,
 
   nsresult rv = CheckContentPolicy(principal, aURL, context, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    if (aElement) {
+    
+    
+    
+    
+    
+    if (aElement && !mDocument->IsLoadedAsData()) {
       
       RefPtr<AsyncEventDispatcher> loadBlockingAsyncDispatcher =
         new LoadBlockingAsyncEventDispatcher(aElement,
