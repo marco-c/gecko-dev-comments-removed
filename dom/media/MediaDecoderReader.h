@@ -466,7 +466,6 @@ private:
 
   
   
-  bool mAudioDiscontinuity;
   bool mVideoDiscontinuity;
   Canonical<bool> mIsSuspended;
 
