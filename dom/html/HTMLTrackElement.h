@@ -94,17 +94,6 @@ public:
   virtual nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) const override;
 
   
-  virtual void GetItemValueText(DOMString& aText) override
-  {
-    GetSrc(aText);
-  }
-  virtual void SetItemValueText(const nsAString& aText) override
-  {
-    ErrorResult rv;
-    SetSrc(aText, rv);
-  }
-
-  
   virtual bool ParseAttribute(int32_t aNamespaceID,
                               nsIAtom* aAttribute,
                               const nsAString& aValue,

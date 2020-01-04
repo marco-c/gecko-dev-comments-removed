@@ -2325,20 +2325,6 @@ HTMLMediaElement::~HTMLMediaElement()
   WakeLockRelease();
 }
 
-void
-HTMLMediaElement::GetItemValueText(DOMString& aValue)
-{
-  
-  GetURIAttr(nsGkAtoms::src, nullptr, aValue);
-}
-
-void
-HTMLMediaElement::SetItemValueText(const nsAString& aValue)
-{
-  
-  SetAttr(kNameSpaceID_None, nsGkAtoms::src, aValue, true);
-}
-
 void HTMLMediaElement::StopSuspendingAfterFirstFrame()
 {
   mAllowSuspendAfterFirstFrame = false;
