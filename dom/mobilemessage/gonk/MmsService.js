@@ -8,6 +8,7 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+Cu.importGlobalProperties(['Blob']);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/PhoneNumberUtils.jsm");
@@ -1294,7 +1295,7 @@ SendTransaction.prototype = Object.create(CancellableTransaction.prototype, {
 
       let numPartsToLoad = parts.length;
       parts.forEach((aPart) => {
-        if (!(aPart.content instanceof Ci.nsIDOMBlob)) {
+        if (!(aPart.content instanceof Blob)) {
           numPartsToLoad--;
           if (!numPartsToLoad) {
             callbackIfValid();
@@ -1822,8 +1823,13 @@ MmsService.prototype = {
                                        null,
                                        DELIVERY_STATUS_ERROR,
                                        null,
-                                       (rv, domMessage) =>
-                                         this.broadcastReceivedMessageEvent(domMessage));
+                                       (aRv, aDomMessage) => {
+        let mmsMessage = null;
+        try {
+          mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+        } catch (e) {}
+        this.broadcastReceivedMessageEvent(mmsMessage);
+      });
       return;
     }
 
@@ -1831,8 +1837,13 @@ MmsService.prototype = {
                                                      retrievedMessage,
                                                      savableMessage);
     gMobileMessageDatabaseService.saveReceivedMessage(savableMessage,
-                                                      (rv, domMessage) => {
-      let success = Components.isSuccessCode(rv);
+                                                      (aRv, aDomMessage) => {
+      let mmsMessage = null;
+      try {
+        mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+      } catch (e) {}
+
+      let success = Components.isSuccessCode(aRv);
 
       
       
@@ -1851,11 +1862,11 @@ MmsService.prototype = {
         
         
         
-        if (DEBUG) debug("Could not store MMS , error code " + rv);
+        if (DEBUG) debug("Could not store MMS , error code " + aRv);
         return;
       }
 
-      this.broadcastReceivedMessageEvent(domMessage);
+      this.broadcastReceivedMessageEvent(mmsMessage);
     });
   },
 
@@ -1968,12 +1979,17 @@ MmsService.prototype = {
 
       gMobileMessageDatabaseService
         .saveReceivedMessage(savableMessage,
-                             (aRv, aDomMessage) =>
-                               this.saveReceivedMessageCallback(mmsConnection,
-                                                                retrievalMode,
-                                                                savableMessage,
-                                                                aRv,
-                                                                aDomMessage));
+                             (aRv, aDomMessage) => {
+          let mmsMessage = null;
+          try {
+            mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+          } catch (e) {}
+          this.saveReceivedMessageCallback(mmsConnection,
+                                           retrievalMode,
+                                           savableMessage,
+                                           aRv,
+                                           mmsMessage);
+      });
     });
   },
 
@@ -2024,24 +2040,30 @@ MmsService.prototype = {
       .setMessageDeliveryStatusByEnvelopeId(envelopeId, address, deliveryStatus,
                                             (aRv, aDomMessage) => {
       if (DEBUG) debug("Marking the delivery status is done.");
+
+      let mmsMessage = null;
+      try {
+        mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+      } catch (e) {}
+
       
 
       let topic;
       if (mmsStatus === MMS.MMS_PDU_STATUS_RETRIEVED) {
         topic = kSmsDeliverySuccessObserverTopic;
         
-        this.broadcastMmsSystemMessage(topic, aDomMessage);
+        this.broadcastMmsSystemMessage(topic, mmsMessage);
       } else if (mmsStatus === MMS.MMS_PDU_STATUS_REJECTED) {
         topic = kSmsDeliveryErrorObserverTopic;
         
-        this.broadcastMmsSystemMessage(topic, aDomMessage);
+        this.broadcastMmsSystemMessage(topic, mmsMessage);
       } else {
         if (DEBUG) debug("Needn't fire event for this MMS status. Returning.");
         return;
       }
 
       
-      Services.obs.notifyObservers(aDomMessage, topic, null);
+      Services.obs.notifyObservers(mmsMessage, topic, null);
     });
   },
 
@@ -2073,6 +2095,11 @@ MmsService.prototype = {
     gMobileMessageDatabaseService
       .setMessageReadStatusByEnvelopeId(envelopeId, address, readStatus,
                                         (aRv, aDomMessage) => {
+      let mmsMessage = null;
+      try {
+        mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+      } catch (e) {}
+
       if (!Components.isSuccessCode(aRv)) {
         if (DEBUG) debug("Failed to update read status: " + aRv);
         return;
@@ -2084,13 +2111,13 @@ MmsService.prototype = {
         topic = kSmsReadSuccessObserverTopic;
 
         
-        this.broadcastMmsSystemMessage(topic, aDomMessage);
+        this.broadcastMmsSystemMessage(topic, mmsMessage);
       } else {
         topic = kSmsReadErrorObserverTopic;
       }
 
       
-      Services.obs.notifyObservers(aDomMessage, topic, null);
+      Services.obs.notifyObservers(mmsMessage, topic, null);
     });
   },
 
@@ -2305,21 +2332,27 @@ MmsService.prototype = {
                                        aEnvelopeId,
                                        (aRv, aDomMessage) => {
         if (DEBUG) debug("Marking the delivery state/staus is done. Notify sent or failed.");
+
+        let mmsMessage = null;
+        try {
+          mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+        } catch (e) {}
+
         
         if (!isSentSuccess) {
           if (DEBUG) debug("Sending MMS failed.");
-          aRequest.notifySendMessageFailed(aErrorCode, aDomMessage);
-          this.broadcastSentFailureMessageEvent(aDomMessage);
+          aRequest.notifySendMessageFailed(aErrorCode, mmsMessage);
+          this.broadcastSentFailureMessageEvent(mmsMessage);
           return;
         }
 
         if (DEBUG) debug("Sending MMS succeeded.");
 
         
-        this.broadcastSentMessageEvent(aDomMessage);
+        this.broadcastSentMessageEvent(mmsMessage);
 
         
-        aRequest.notifyMessageSent(aDomMessage);
+        aRequest.notifyMessageSent(mmsMessage);
       });
     };
 
@@ -2331,29 +2364,34 @@ MmsService.prototype = {
     gMobileMessageDatabaseService
       .saveSendingMessage(savableMessage,
                           (aRv, aDomMessage) => {
+      let mmsMessage = null;
+      try {
+        mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+      } catch (e) {}
+
       if (!Components.isSuccessCode(aRv)) {
         if (DEBUG) debug("Error! Fail to save sending message! rv = " + aRv);
         aRequest.notifySendMessageFailed(
           gMobileMessageDatabaseService.translateCrErrorToMessageCallbackError(aRv),
-          aDomMessage);
-        this.broadcastSentFailureMessageEvent(aDomMessage);
+          mmsMessage);
+        this.broadcastSentFailureMessageEvent(mmsMessage);
         return;
       }
 
       if (DEBUG) debug("Saving sending message is done. Start to send.");
 
-      Services.obs.notifyObservers(aDomMessage, kSmsSendingObserverTopic, null);
+      Services.obs.notifyObservers(mmsMessage, kSmsSendingObserverTopic, null);
 
       if (errorCode !== Ci.nsIMobileMessageCallback.SUCCESS_NO_ERROR) {
         if (DEBUG) debug("Error! The params for sending MMS are invalid.");
-        sendTransactionCb(aDomMessage, errorCode, null);
+        sendTransactionCb(mmsMessage, errorCode, null);
         return;
       }
 
       
       if (getRadioDisabledState()) {
         if (DEBUG) debug("Error! Radio is disabled when sending MMS.");
-        sendTransactionCb(aDomMessage,
+        sendTransactionCb(mmsMessage,
                           Ci.nsIMobileMessageCallback.RADIO_DISABLED_ERROR,
                           null);
         return;
@@ -2364,7 +2402,7 @@ MmsService.prototype = {
       
       if (mmsConnection.serviceId != this.mmsDefaultServiceId) {
         if (DEBUG) debug("RIL service is not active to send MMS.");
-        sendTransactionCb(aDomMessage,
+        sendTransactionCb(mmsMessage,
                           Ci.nsIMobileMessageCallback.NON_ACTIVE_SIM_CARD_ERROR,
                           null);
         return;
@@ -2374,11 +2412,11 @@ MmsService.prototype = {
       let sendTransaction;
       try {
         sendTransaction =
-          new SendTransaction(mmsConnection, aDomMessage.id, savableMessage,
+          new SendTransaction(mmsConnection, mmsMessage.id, savableMessage,
                               savableMessage["deliveryStatusRequested"]);
       } catch (e) {
         if (DEBUG) debug("Exception: fail to create a SendTransaction instance.");
-        sendTransactionCb(aDomMessage,
+        sendTransactionCb(mmsMessage,
                           Ci.nsIMobileMessageCallback.INTERNAL_ERROR, null);
         return;
       }
@@ -2400,7 +2438,7 @@ MmsService.prototype = {
         }
         let envelopeId =
           aMsg && aMsg.headers && aMsg.headers["message-id"] || null;
-        sendTransactionCb(aDomMessage, errorCode, envelopeId);
+        sendTransactionCb(mmsMessage, errorCode, envelopeId);
       });
     });
   },
@@ -2409,6 +2447,11 @@ MmsService.prototype = {
     if (DEBUG) debug("Retrieving message with ID " + aMessageId);
     gMobileMessageDatabaseService
       .getMessageRecordById(aMessageId, (aRv, aMessageRecord, aDomMessage) => {
+      let mmsMessage = null;
+      try {
+        mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+      } catch (e) {}
+
       if (!Components.isSuccessCode(aRv)) {
         if (DEBUG) debug("Function getMessageRecordById() return error: " + aRv);
         aRequest.notifyGetMessageFailed(
@@ -2546,23 +2589,28 @@ MmsService.prototype = {
                                                          aMessageRecord);
 
         gMobileMessageDatabaseService.saveReceivedMessage(aMessageRecord,
-                                                          (rv, domMessage) => {
-          let success = Components.isSuccessCode(rv);
+                                                          (aRv, aDomMessage) => {
+          let mmsMessage = null;
+          try {
+            mmsMessage = aDomMessage.QueryInterface(Ci.nsIMmsMessage);
+          } catch (e) {}
+
+          let success = Components.isSuccessCode(aRv);
           if (!success) {
             
             
             
-            if (DEBUG) debug("Could not store MMS, error code " + rv);
+            if (DEBUG) debug("Could not store MMS, error code " + aRv);
             aRequest.notifyGetMessageFailed(
-              gMobileMessageDatabaseService.translateCrErrorToMessageCallbackError(rv));
+              gMobileMessageDatabaseService.translateCrErrorToMessageCallbackError(aRv));
             return;
           }
 
           
-          this.broadcastReceivedMessageEvent(domMessage);
+          this.broadcastReceivedMessageEvent(mmsMessage);
 
           
-          aRequest.notifyMessageGot(domMessage);
+          aRequest.notifyMessageGot(mmsMessage);
 
           
           
@@ -2596,7 +2644,7 @@ MmsService.prototype = {
                                url,
                                (aMmsStatus, aRetrievedMsg) =>
                                  responseNotify(aMmsStatus, aRetrievedMsg),
-                               aDomMessage);
+                               mmsMessage);
         });
     });
   },

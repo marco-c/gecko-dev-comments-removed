@@ -322,11 +322,15 @@ SmsService.prototype = {
                                      RIL.GECKO_SMS_DELIVERY_STATUS_ERROR,
                                      null,
                                      (aRv, aDomMessage) => {
+      let smsMessage = null;
+      try {
+        smsMessage = aDomMessage.QueryInterface(Ci.nsISmsMessage);
+      } catch (e) {}
       
       this._broadcastSmsSystemMessage(
-        Ci.nsISmsMessenger.NOTIFICATION_TYPE_SENT_FAILED, aDomMessage);
-      aRequest.notifySendMessageFailed(aErrorCode, aDomMessage);
-      Services.obs.notifyObservers(aDomMessage, kSmsFailedObserverTopic, null);
+        Ci.nsISmsMessenger.NOTIFICATION_TYPE_SENT_FAILED, smsMessage);
+      aRequest.notifySendMessageFailed(aErrorCode, smsMessage);
+      Services.obs.notifyObservers(smsMessage, kSmsFailedObserverTopic, null);
     });
   },
 
@@ -424,17 +428,21 @@ SmsService.prototype = {
                                          sentMessage.deliveryStatus,
                                          null,
                                          (aRv, aDomMessage) => {
+          let smsMessage = null;
+          try {
+            smsMessage = aDomMessage.QueryInterface(Ci.nsISmsMessage);
+          } catch (e) {}
           
 
           if (requestStatusReport) {
             
-            sentMessage = aDomMessage;
+            sentMessage = smsMessage;
           }
 
           this._broadcastSmsSystemMessage(
-            Ci.nsISmsMessenger.NOTIFICATION_TYPE_SENT, aDomMessage);
-          aRequest.notifyMessageSent(aDomMessage);
-          Services.obs.notifyObservers(aDomMessage, kSmsSentObserverTopic, null);
+            Ci.nsISmsMessenger.NOTIFICATION_TYPE_SENT, smsMessage);
+          aRequest.notifyMessageSent(smsMessage);
+          Services.obs.notifyObservers(smsMessage, kSmsSentObserverTopic, null);
         });
 
         
@@ -450,6 +458,10 @@ SmsService.prototype = {
                                        aResponse.deliveryStatus,
                                        null,
                                        (aRv, aDomMessage) => {
+        let smsMessage = null;
+        try {
+          smsMessage = aDomMessage.QueryInterface(Ci.nsISmsMessage);
+        } catch (e) {}
         
 
         let [topic, notificationType] =
@@ -461,10 +473,10 @@ SmsService.prototype = {
 
         
         
-        this._broadcastSmsSystemMessage(notificationType, aDomMessage);
+        this._broadcastSmsSystemMessage(notificationType, smsMessage);
 
         
-        Services.obs.notifyObservers(aDomMessage, topic, null);
+        Services.obs.notifyObservers(smsMessage, topic, null);
       });
 
       
@@ -799,6 +811,10 @@ SmsService.prototype = {
     }
 
     let notifyReceived = (aRv, aDomMessage) => {
+      let smsMessage = null;
+      try {
+        smsMessage = aDomMessage.QueryInterface(Ci.nsISmsMessage);
+      } catch (e) {}
       let success = Components.isSuccessCode(aRv);
 
       this._sendAckSms(aRv, aMessage, aServiceId);
@@ -813,8 +829,8 @@ SmsService.prototype = {
       }
 
       this._broadcastSmsSystemMessage(
-        Ci.nsISmsMessenger.NOTIFICATION_TYPE_RECEIVED, aDomMessage);
-      Services.obs.notifyObservers(aDomMessage, kSmsReceivedObserverTopic, null);
+        Ci.nsISmsMessenger.NOTIFICATION_TYPE_RECEIVED, smsMessage);
+      Services.obs.notifyObservers(smsMessage, kSmsReceivedObserverTopic, null);
     };
 
     if (aMessage.messageClass != RIL.GECKO_SMS_MESSAGE_CLASSES[RIL.PDU_DCS_MSG_CLASS_0]) {
@@ -960,20 +976,25 @@ SmsService.prototype = {
       iccId: this._getIccId(aServiceId)
     };
 
-    let saveSendingMessageCallback = (aRv, aSendingMessage) => {
+    let saveSendingMessageCallback = (aRv, aDomMessage) => {
+      let smsMessage = null;
+      try {
+        smsMessage = aDomMessage.QueryInterface(Ci.nsISmsMessage);
+      } catch (e) {}
+
       if (!Components.isSuccessCode(aRv)) {
         if (DEBUG) debug("Error! Fail to save sending message! aRv = " + aRv);
         this._broadcastSmsSystemMessage(
-          Ci.nsISmsMessenger.NOTIFICATION_TYPE_SENT_FAILED, aSendingMessage);
+          Ci.nsISmsMessenger.NOTIFICATION_TYPE_SENT_FAILED, smsMessage);
         aRequest.notifySendMessageFailed(
           gMobileMessageDatabaseService.translateCrErrorToMessageCallbackError(aRv),
-          aSendingMessage);
-        Services.obs.notifyObservers(aSendingMessage, kSmsFailedObserverTopic, null);
+          smsMessage);
+        Services.obs.notifyObservers(smsMessage, kSmsFailedObserverTopic, null);
         return;
       }
 
       if (!aSilent) {
-        Services.obs.notifyObservers(aSendingMessage, kSmsSendingObserverTopic, null);
+        Services.obs.notifyObservers(smsMessage, kSmsSendingObserverTopic, null);
       }
 
       let connection =
@@ -994,11 +1015,11 @@ SmsService.prototype = {
         errorCode = Ci.nsIMobileMessageCallback.NO_SIM_CARD_ERROR;
       }
       if (errorCode) {
-        this._notifySendingError(errorCode, aSendingMessage, aSilent, aRequest);
+        this._notifySendingError(errorCode, smsMessage, aSilent, aRequest);
         return;
       }
 
-      this._scheduleSending(aServiceId, aSendingMessage, aSilent, options,
+      this._scheduleSending(aServiceId, smsMessage, aSilent, options,
         aRequest);
     }; 
 
