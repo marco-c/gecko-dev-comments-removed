@@ -155,8 +155,8 @@ nsresult SecondsToUsecs(double aSeconds, int64_t& aOutUsecs);
 
 
 
-static const int32_t MAX_VIDEO_WIDTH = 4000;
-static const int32_t MAX_VIDEO_HEIGHT = 3000;
+static const int32_t MAX_VIDEO_WIDTH = 8192;
+static const int32_t MAX_VIDEO_HEIGHT = 4608;
 
 
 
