@@ -7472,6 +7472,12 @@ nsContentUtils::TransferableToIPCTransferable(nsITransferable* aTransferable,
               IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
               item->flavor() = nsCString(flavorStr);
               item->data() = NS_ConvertUTF8toUTF16(flavorStr);
+            } else if (!data) {
+              
+              IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+              item->flavor() = nsCString(flavorStr);
+              item->data() = EmptyCString();
+              continue;
             }
           }
         }
