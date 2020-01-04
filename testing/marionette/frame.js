@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -40,115 +40,129 @@ frame.RemoteFrame = function(windowId, frameId) {
 
 
 
-frame.Manager = function(server) {
-  
-  
-
-  
-  
-  this.currentRemoteFrame = null;
-  
-  this.previousRemoteFrame = null;
-  
-  this.handledModal = false;
-  
-  this.server = server;
-};
-
-frame.Manager.prototype = {
-  QueryInterface: XPCOMUtils.generateQI(
-      [Ci.nsIMessageListener, Ci.nsISupportsWeakReference]),
-
-  
 
 
-  receiveMessage: function(message) {
+
+frame.Manager = class {
+  constructor(driver) {
+    
+    
+
+    
+    
+    this.currentRemoteFrame = null;
+    
+    this.previousRemoteFrame = null;
+    
+    this.handledModal = false;
+    this.driver = driver;
+  }
+
+  
+
+
+  receiveMessage(message) {
     switch (message.name) {
       case "MarionetteFrame:getInterruptedState":
         
         if (this.previousRemoteFrame) {
-          let interruptedFrame = Services.wm.getOuterWindowWithId(this.previousRemoteFrame.windowId);
-          if (this.previousRemoteFrame.frameId != null) {
-            interruptedFrame = interruptedFrame.document.getElementsByTagName("iframe")[this.previousRemoteFrame.frameId]; 
+          
+          let interruptedFrame = Services.wm.getOuterWindowWithId(
+              this.previousRemoteFrame.windowId);
+
+          if (this.previousRemoteFrame.frameId !== null) {
+            
+            let iframes = interruptedFrame.document.getElementsByTagName("iframe");
+            interruptedFrame = iframes[this.previousRemoteFrame.frameId];
           }
+
           
           if (interruptedFrame.src == message.target.src) {
             return {value: this.handledModal};
           }
-        }
-        else if (this.currentRemoteFrame == null) {
-          
+
+        
+        
+        
+        } else if (this.currentRemoteFrame === null) {
           return {value: this.handledModal};
         }
         return {value: false};
 
+      
+      
       case "MarionetteFrame:handleModal":
         
-
-
         
         
         
         let isLocal = true;
-        if (this.currentRemoteFrame != null) {
+        if (this.currentRemoteFrame !== null) {
           isLocal = false;
-          this.removeMessageManagerListeners(this.currentRemoteFrame.messageManager.get());
+          this.removeMessageManagerListeners(
+              this.currentRemoteFrame.messageManager.get());
+
+          
           
           this.previousRemoteFrame = this.currentRemoteFrame;
+
+          
           
           this.currentRemoteFrame = null;
-          this.server.messageManager = Cc["@mozilla.org/globalmessagemanager;1"]
-                                       .getService(Ci.nsIMessageBroadcaster);
+          this.driver.messageManager = Cc["@mozilla.org/globalmessagemanager;1"]
+              .getService(Ci.nsIMessageBroadcaster);
         }
+
         this.handledModal = true;
-        this.server.sendOk(this.server.command_id);
+        this.driver.sendOk(this.driver.command_id);
         return {value: isLocal};
 
       case "MarionetteFrame:getCurrentFrameId":
-        if (this.currentRemoteFrame != null) {
+        if (this.currentRemoteFrame !== null) {
           return this.currentRemoteFrame.frameId;
         }
     }
-  },
+  }
 
-  getOopFrame: function(winId, frameId) {
+  getOopFrame(winId, frameId) {
     
     let outerWin = Services.wm.getOuterWindowWithId(winId);
     
     let f = outerWin.document.getElementsByTagName("iframe")[frameId];
     return f;
-  },
+  }
 
-  getFrameMM: function(winId, frameId) {
+  getFrameMM(winId, frameId) {
     let oopFrame = this.getOopFrame(winId, frameId);
     let mm = oopFrame.QueryInterface(Ci.nsIFrameLoaderOwner)
         .frameLoader.messageManager;
     return mm;
-  },
+  }
 
   
 
 
 
-  switchToFrame: function(winId, frameId) {
+  switchToFrame(winId, frameId) {
     let oopFrame = this.getOopFrame(winId, frameId);
     let mm = this.getFrameMM(winId, frameId);
 
     
     
     for (let i = 0; i < remoteFrames.length; i++) {
-      let frame = remoteFrames[i];
-      let frameMessageManager = frame.messageManager.get();
+      let f = remoteFrames[i];
+      let fmm = f.messageManager.get();
       try {
-        frameMessageManager.sendAsyncMessage("aliveCheck", {});
+        fmm.sendAsyncMessage("aliveCheck", {});
       } catch (e) {
-        if (e.result ==  Components.results.NS_ERROR_NOT_INITIALIZED) {
+        if (e.result == Cr.NS_ERROR_NOT_INITIALIZED) {
           remoteFrames.splice(i--, 1);
           continue;
         }
       }
-      if (frameMessageManager == mm) {
-        this.currentRemoteFrame = frame;
+
+      if (fmm == mm) {
+        this.currentRemoteFrame = f;
         this.addMessageManagerListeners(mm);
 
         mm.sendAsyncMessage("Marionette:restart");
@@ -160,28 +174,31 @@ frame.Manager.prototype = {
     
     
     this.addMessageManagerListeners(mm);
-    let aFrame = new frame.RemoteFrame(winId, frameId);
-    aFrame.messageManager = Cu.getWeakReference(mm);
-    remoteFrames.push(aFrame);
-    this.currentRemoteFrame = aFrame;
+    let f = new frame.RemoteFrame(winId, frameId);
+    f.messageManager = Cu.getWeakReference(mm);
+    remoteFrames.push(f);
+    this.currentRemoteFrame = f;
 
     mm.loadFrameScript(FRAME_SCRIPT, true, true);
 
     return oopFrame.id;
-  },
+  }
 
   
 
 
 
-  switchToModalOrigin: function() {
+
+  switchToModalOrigin() {
     
-    if (this.previousRemoteFrame != null) {
+    
+    if (this.previousRemoteFrame !== null) {
       this.currentRemoteFrame = this.previousRemoteFrame;
-      this.addMessageManagerListeners(this.currentRemoteFrame.messageManager.get());
+      let mm = this.currentRemoteFrame.messageManager.get();
+      this.addMessageManagerListeners(mm);
     }
     this.handledModal = false;
-  },
+  }
 
   
 
@@ -193,26 +210,25 @@ frame.Manager.prototype = {
 
 
 
-
-  addMessageManagerListeners: function(mm) {
-    mm.addWeakMessageListener("Marionette:ok", this.server);
-    mm.addWeakMessageListener("Marionette:done", this.server);
-    mm.addWeakMessageListener("Marionette:error", this.server);
-    mm.addWeakMessageListener("Marionette:emitTouchEvent", this.server);
-    mm.addWeakMessageListener("Marionette:log", this.server);
-    mm.addWeakMessageListener("Marionette:runEmulatorCmd", this.server.emulator);
-    mm.addWeakMessageListener("Marionette:runEmulatorShell", this.server.emulator);
-    mm.addWeakMessageListener("Marionette:shareData", this.server);
-    mm.addWeakMessageListener("Marionette:switchToModalOrigin", this.server);
-    mm.addWeakMessageListener("Marionette:switchedToFrame", this.server);
-    mm.addWeakMessageListener("Marionette:getVisibleCookies", this.server);
-    mm.addWeakMessageListener("Marionette:register", this.server);
-    mm.addWeakMessageListener("Marionette:listenersAttached", this.server);
-    mm.addWeakMessageListener("Marionette:getFiles", this.server);
+  addMessageManagerListeners(mm) {
+    mm.addWeakMessageListener("Marionette:ok", this.driver);
+    mm.addWeakMessageListener("Marionette:done", this.driver);
+    mm.addWeakMessageListener("Marionette:error", this.driver);
+    mm.addWeakMessageListener("Marionette:emitTouchEvent", this.driver);
+    mm.addWeakMessageListener("Marionette:log", this.driver);
+    mm.addWeakMessageListener("Marionette:runEmulatorCmd", this.driver.emulator);
+    mm.addWeakMessageListener("Marionette:runEmulatorShell", this.driver.emulator);
+    mm.addWeakMessageListener("Marionette:shareData", this.driver);
+    mm.addWeakMessageListener("Marionette:switchToModalOrigin", this.driver);
+    mm.addWeakMessageListener("Marionette:switchedToFrame", this.driver);
+    mm.addWeakMessageListener("Marionette:getVisibleCookies", this.driver);
+    mm.addWeakMessageListener("Marionette:register", this.driver);
+    mm.addWeakMessageListener("Marionette:listenersAttached", this.driver);
+    mm.addWeakMessageListener("Marionette:getFiles", this.driver);
     mm.addWeakMessageListener("MarionetteFrame:handleModal", this);
     mm.addWeakMessageListener("MarionetteFrame:getCurrentFrameId", this);
     mm.addWeakMessageListener("MarionetteFrame:getInterruptedState", this);
-  },
+  }
 
   
 
@@ -226,20 +242,23 @@ frame.Manager.prototype = {
 
 
 
-  removeMessageManagerListeners: function(mm) {
-    mm.removeWeakMessageListener("Marionette:ok", this.server);
-    mm.removeWeakMessageListener("Marionette:done", this.server);
-    mm.removeWeakMessageListener("Marionette:error", this.server);
-    mm.removeWeakMessageListener("Marionette:log", this.server);
-    mm.removeWeakMessageListener("Marionette:shareData", this.server);
-    mm.removeWeakMessageListener("Marionette:runEmulatorCmd", this.server.emulator);
-    mm.removeWeakMessageListener("Marionette:runEmulatorShell", this.server.emulator);
-    mm.removeWeakMessageListener("Marionette:switchedToFrame", this.server);
-    mm.removeWeakMessageListener("Marionette:getVisibleCookies", this.server);
-    mm.removeWeakMessageListener("Marionette:listenersAttached", this.server);
-    mm.removeWeakMessageListener("Marionette:register", this.server);
-    mm.removeWeakMessageListener("Marionette:getFiles", this.server);
+  removeMessageManagerListeners(mm) {
+    mm.removeWeakMessageListener("Marionette:ok", this.driver);
+    mm.removeWeakMessageListener("Marionette:done", this.driver);
+    mm.removeWeakMessageListener("Marionette:error", this.driver);
+    mm.removeWeakMessageListener("Marionette:log", this.driver);
+    mm.removeWeakMessageListener("Marionette:shareData", this.driver);
+    mm.removeWeakMessageListener("Marionette:runEmulatorCmd", this.driver.emulator);
+    mm.removeWeakMessageListener("Marionette:runEmulatorShell", this.driver.emulator);
+    mm.removeWeakMessageListener("Marionette:switchedToFrame", this.driver);
+    mm.removeWeakMessageListener("Marionette:getVisibleCookies", this.driver);
+    mm.removeWeakMessageListener("Marionette:listenersAttached", this.driver);
+    mm.removeWeakMessageListener("Marionette:register", this.driver);
+    mm.removeWeakMessageListener("Marionette:getFiles", this.driver);
     mm.removeWeakMessageListener("MarionetteFrame:handleModal", this);
     mm.removeWeakMessageListener("MarionetteFrame:getCurrentFrameId", this);
   }
 };
+
+frame.Manager.prototype.QueryInterface = XPCOMUtils.generateQI(
+    [Ci.nsIMessageListener, Ci.nsISupportsWeakReference]);
