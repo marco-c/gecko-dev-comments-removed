@@ -3176,7 +3176,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
         action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
-      } else if (!wheelEvent->mayHaveMomentum &&
+      } else if (!wheelEvent->mMayHaveMomentum &&
             nsLayoutUtils::IsScrollFrameWithSnapping(frameToScroll)) {
         
         
