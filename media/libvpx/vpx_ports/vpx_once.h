@@ -13,63 +13,83 @@
 
 #include "vpx_config.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if CONFIG_MULTITHREAD && defined(_WIN32)
 #include <windows.h>
 #include <stdlib.h>
+
+
+
+
+
+
+
+static LONG once_state;
 static void once(void (*func)(void))
 {
-    static CRITICAL_SECTION *lock;
-    static LONG waiters;
-    static int done;
-    void *lock_ptr = &lock;
-
     
 
 
-
-    if(done)
-        return;
-
-    InterlockedIncrement(&waiters);
-
-    
-
-
-
-    {
+    if (InterlockedCompareExchange(&once_state, 1, 0) == 0) {
         
-        CRITICAL_SECTION *new_lock = malloc(sizeof(CRITICAL_SECTION));
-        InitializeCriticalSection(new_lock);
-        if (InterlockedCompareExchangePointer(lock_ptr, new_lock, NULL) != NULL)
-        {
-            DeleteCriticalSection(new_lock);
-            free(new_lock);
-        }
-    }
 
-    
-
-
-
-    EnterCriticalSection(lock);
-
-    if (!done)
-    {
         func();
-        done = 1;
+        
+        InterlockedIncrement(&once_state);
+        return;
     }
-
-    LeaveCriticalSection(lock);
 
     
 
 
-    if(!InterlockedDecrement(&waiters))
-    {
-        DeleteCriticalSection(lock);
-        free(lock);
-        lock = NULL;
+
+
+
+
+    while (InterlockedCompareExchange(&once_state, 2, 2) != 2) {
+        
+
+
+
+
+
+
+
+
+
+        Sleep(0);
     }
+
+    
+
+
+
+
+
+    return;
 }
 
 
