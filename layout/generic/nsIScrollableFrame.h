@@ -36,6 +36,13 @@ struct ContainerLayerParameters;
 namespace layers {
 class Layer;
 } 
+
+struct FrameMetricsAndClip
+{
+  layers::FrameMetrics metrics;
+  mozilla::Maybe<DisplayItemClip> clip;
+};
+
 } 
 
 
@@ -400,11 +407,11 @@ public:
 
 
 
-  virtual mozilla::Maybe<mozilla::layers::FrameMetrics> ComputeFrameMetrics(
+  virtual mozilla::Maybe<mozilla::FrameMetricsAndClip> ComputeFrameMetrics(
     mozilla::layers::Layer* aLayer,
     nsIFrame* aContainerReferenceFrame,
     const ContainerLayerParameters& aParameters,
-    const mozilla::DisplayItemClip* aClip) const = 0;
+    bool aIsForCaret) const = 0;
 
   
 
@@ -428,6 +435,8 @@ public:
 
 
   virtual bool UsesContainerScrolling() const = 0;
+
+  virtual mozilla::Maybe<mozilla::DisplayItemClip> ComputeScrollClip(bool aIsForCaret) const = 0;
 
   
 

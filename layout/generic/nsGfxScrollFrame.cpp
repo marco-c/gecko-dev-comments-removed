@@ -9,7 +9,6 @@
 
 #include "base/compiler_specific.h"
 #include "DisplayItemClip.h"
-#include "DisplayItemScrollClip.h"
 #include "nsCOMPtr.h"
 #include "nsPresContext.h"
 #include "nsView.h"
@@ -2816,42 +2815,32 @@ static void
 ClipItemsExceptCaret(nsDisplayList* aList,
                      nsDisplayListBuilder* aBuilder,
                      nsIFrame* aClipFrame,
-                     const DisplayItemClip* aNonCaretClip,
-                     const DisplayItemScrollClip* aNonCaretScrollClip)
+                     const DisplayItemClip& aNonCaretClip,
+                     bool aUsingDisplayPort)
 {
   for (nsDisplayItem* i = aList->GetBottom(); i; i = i->GetAbove()) {
     if (!ShouldBeClippedByFrame(aClipFrame, i->Frame())) {
       continue;
     }
 
-    if (i->GetType() != nsDisplayItem::TYPE_CARET) {
+    bool isCaret = i->GetType() == nsDisplayItem::TYPE_CARET;
+    if (aUsingDisplayPort && isCaret) {
+      static_cast<nsDisplayCaret*>(i)->SetNeedsCustomScrollClip();
+    }
+    if (!aUsingDisplayPort && !isCaret) {
       bool unused;
       nsRect bounds = i->GetBounds(aBuilder, &unused);
-      if (aNonCaretClip && aNonCaretClip->IsRectAffectedByClip(bounds)) {
+      if (aNonCaretClip.IsRectAffectedByClip(bounds)) {
         DisplayItemClip newClip;
         newClip.IntersectWith(i->GetClip());
-        newClip.IntersectWith(*aNonCaretClip);
+        newClip.IntersectWith(aNonCaretClip);
         i->SetClip(aBuilder, newClip);
-      }
-
-      if (aNonCaretScrollClip) {
-        const DisplayItemScrollClip* currentScrollClip = i->ScrollClip();
-        MOZ_ASSERT(DisplayItemScrollClip::IsAncestor(aNonCaretScrollClip->mParent,
-                                                     currentScrollClip));
-
-        
-        
-        
-        if (!currentScrollClip ||
-            currentScrollClip->mParent == aNonCaretScrollClip->mParent) {
-          i->SetScrollClip(aNonCaretScrollClip);
-        }
       }
     }
     nsDisplayList* children = i->GetSameCoordinateSystemChildren();
     if (children) {
       ClipItemsExceptCaret(children, aBuilder, aClipFrame, aNonCaretClip,
-                           aNonCaretScrollClip);
+                           aUsingDisplayPort);
     }
   }
 }
@@ -2860,15 +2849,17 @@ static void
 ClipListsExceptCaret(nsDisplayListCollection* aLists,
                      nsDisplayListBuilder* aBuilder,
                      nsIFrame* aClipFrame,
-                     const DisplayItemClip* aNonCaretClip,
-                     const DisplayItemScrollClip* aNonCaretScrollClip)
+                     const nsRect& aNonCaretClip,
+                     bool aUsingDisplayPort)
 {
-  ClipItemsExceptCaret(aLists->BorderBackground(), aBuilder, aClipFrame, aNonCaretClip, aNonCaretScrollClip);
-  ClipItemsExceptCaret(aLists->BlockBorderBackgrounds(), aBuilder, aClipFrame, aNonCaretClip, aNonCaretScrollClip);
-  ClipItemsExceptCaret(aLists->Floats(), aBuilder, aClipFrame, aNonCaretClip, aNonCaretScrollClip);
-  ClipItemsExceptCaret(aLists->PositionedDescendants(), aBuilder, aClipFrame, aNonCaretClip, aNonCaretScrollClip);
-  ClipItemsExceptCaret(aLists->Outlines(), aBuilder, aClipFrame, aNonCaretClip, aNonCaretScrollClip);
-  ClipItemsExceptCaret(aLists->Content(), aBuilder, aClipFrame, aNonCaretClip, aNonCaretScrollClip);
+  DisplayItemClip clip;
+  clip.SetTo(aNonCaretClip);
+  ClipItemsExceptCaret(aLists->BorderBackground(), aBuilder, aClipFrame, clip, aUsingDisplayPort);
+  ClipItemsExceptCaret(aLists->BlockBorderBackgrounds(), aBuilder, aClipFrame, clip, aUsingDisplayPort);
+  ClipItemsExceptCaret(aLists->Floats(), aBuilder, aClipFrame, clip, aUsingDisplayPort);
+  ClipItemsExceptCaret(aLists->PositionedDescendants(), aBuilder, aClipFrame, clip, aUsingDisplayPort);
+  ClipItemsExceptCaret(aLists->Outlines(), aBuilder, aClipFrame, clip, aUsingDisplayPort);
+  ClipItemsExceptCaret(aLists->Content(), aBuilder, aClipFrame, clip, aUsingDisplayPort);
 }
 
 void
@@ -2895,6 +2886,10 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       mScrollPosForLayerPixelAlignment = nsPoint(-1,-1);
     }
   }
+
+  
+  mAncestorClip = Nothing();
+  mAncestorClipForCaret = Nothing();
 
   
   
@@ -3032,9 +3027,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     }
   }
 
-  nsIScrollableFrame* sf = do_QueryFrame(mOuter);
-  MOZ_ASSERT(sf);
-
   nsDisplayListCollection scrolledContent;
   {
     
@@ -3047,6 +3039,12 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         couldBuildLayer && mScrolledFrame->GetContent()
             ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
             : aBuilder->GetCurrentScrollParentId());
+
+    
+    
+    
+    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+    DisplayListClipState::AutoSaveRestore* clipStatePtr = &clipState;
 
     nsRect clipRect = mScrollPort + aBuilder->ToReferenceFrame(mOuter);
     
@@ -3062,67 +3060,60 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       }
     }
 
-    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     if (mClipAllDescendants) {
       clipState.ClipContentDescendants(clipRect, haveRadii ? radii : nullptr);
     } else {
       clipState.ClipContainingBlockDescendants(clipRect, haveRadii ? radii : nullptr);
     }
 
-    DisplayItemScrollClip* inactiveScrollClip = nullptr;
-
-    {
-      DisplayListClipState::AutoSaveRestore contentBoxClipState(aBuilder);
-      if (contentBoxClipForCaret) {
-        if (mClipAllDescendants) {
-          contentBoxClipState.ClipContentDescendants(*contentBoxClipForCaret);
-        } else {
-          contentBoxClipState.ClipContainingBlockDescendants(*contentBoxClipForCaret);
-        }
-      }
-
-      DisplayListClipState::AutoSaveRestore clipStateForScrollClip(aBuilder);
-      if (usingDisplayPort) {
-        if (mClipAllDescendants) {
-          clipStateForScrollClip.TurnClipIntoScrollClipForContentDescendants(aBuilder, sf);
-        } else {
-          clipStateForScrollClip.TurnClipIntoScrollClipForContainingBlockDescendants(aBuilder, sf);
-        }
-      } else {
-        
-        if (mClipAllDescendants) {
-          inactiveScrollClip = clipStateForScrollClip.InsertInactiveScrollClipForContentDescendants(aBuilder, sf);
-        } else {
-          inactiveScrollClip = clipStateForScrollClip.InsertInactiveScrollClipForContainingBlockDescendants(aBuilder, sf);
-        }
-        MOZ_ASSERT(!inactiveScrollClip->mIsAsyncScrollable);
-      }
-
-      aBuilder->StoreDirtyRectForScrolledContents(mOuter, dirtyRect);
-      mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame, dirtyRect, scrolledContent);
-    }
-
-    if (contentBoxClipForNonCaretContent) {
-      DisplayListClipState::AutoSaveRestore contentBoxClipState(aBuilder);
+    Maybe<DisplayListClipState::AutoSaveRestore> clipStateCaret;
+    if (contentBoxClipForCaret) {
+      clipStateCaret.emplace(aBuilder);
+      clipStatePtr = &*clipStateCaret;
       if (mClipAllDescendants) {
-        contentBoxClipState.ClipContentDescendants(*contentBoxClipForNonCaretContent);
+        clipStateCaret->ClipContentDescendants(*contentBoxClipForCaret);
       } else {
-        contentBoxClipState.ClipContainingBlockDescendants(*contentBoxClipForNonCaretContent);
+        clipStateCaret->ClipContainingBlockDescendants(*contentBoxClipForCaret);
       }
+    }
 
-      DisplayListClipState::AutoSaveRestore clipStateForScrollClip(aBuilder);
-      if (usingDisplayPort) {
+    Maybe<DisplayListClipState::AutoSaveRestore> clipStateNonCaret;
+    if (usingDisplayPort) {
+      
+      
+      
+      mAncestorClipForCaret = ToMaybe(aBuilder->ClipState().GetCurrentCombinedClip(aBuilder));
+
+      
+      
+      if (contentBoxClipForNonCaretContent) {
+        clipStateNonCaret.emplace(aBuilder);
+        clipStatePtr = &*clipStateNonCaret;
         if (mClipAllDescendants) {
-          clipStateForScrollClip.TurnClipIntoScrollClipForContentDescendants(aBuilder, sf);
+          clipStateNonCaret->ClipContentDescendants(*contentBoxClipForNonCaretContent);
         } else {
-          clipStateForScrollClip.TurnClipIntoScrollClipForContainingBlockDescendants(aBuilder, sf);
+          clipStateNonCaret->ClipContainingBlockDescendants(*contentBoxClipForNonCaretContent);
         }
       }
-      const DisplayItemClip* clipNonCaret = aBuilder->ClipState().GetCurrentCombinedClip(aBuilder);
-      const DisplayItemScrollClip* scrollClipNonCaret = aBuilder->ClipState().GetCurrentInnermostScrollClip();
-      ClipListsExceptCaret(&scrolledContent, aBuilder, mScrolledFrame,
-                           clipNonCaret, scrollClipNonCaret);
+      mAncestorClip = ToMaybe(aBuilder->ClipState().GetCurrentCombinedClip(aBuilder));
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      clipStatePtr->Clear();
     }
+
+    aBuilder->StoreDirtyRectForScrolledContents(mOuter, dirtyRect);
+    mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame, dirtyRect, scrolledContent);
 
     if (idSetter.ShouldForceLayerForScrollParent() &&
         !gfxPrefs::LayoutUseContainersForRootFrames())
@@ -3133,9 +3124,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       MOZ_ASSERT(couldBuildLayer && mScrolledFrame->GetContent());
-      if (inactiveScrollClip) {
-        inactiveScrollClip->mIsAsyncScrollable = true;
-      }
       if (!mWillBuildScrollableLayer) {
         
         
@@ -3156,6 +3144,11 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   if (mWillBuildScrollableLayer && !gfxPrefs::LayoutUseContainersForRootFrames()) {
     aBuilder->ForceLayerForScrollParent();
+  }
+
+  if (contentBoxClipForNonCaretContent) {
+    ClipListsExceptCaret(&scrolledContent, aBuilder, mScrolledFrame,
+                         *contentBoxClipForNonCaretContent, usingDisplayPort);
   }
 
   if (couldBuildLayer) {
@@ -3257,23 +3250,36 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
 }
 
 
-Maybe<FrameMetrics>
+Maybe<DisplayItemClip>
+ScrollFrameHelper::ComputeScrollClip(bool aIsForCaret) const
+{
+  const Maybe<DisplayItemClip>& ancestorClip = aIsForCaret ? mAncestorClipForCaret : mAncestorClip;
+  if (!mWillBuildScrollableLayer || mIsScrollableLayerInRootContainer) {
+    return Nothing();
+  }
+
+  return ancestorClip;
+}
+
+Maybe<FrameMetricsAndClip>
 ScrollFrameHelper::ComputeFrameMetrics(Layer* aLayer,
                                        nsIFrame* aContainerReferenceFrame,
                                        const ContainerLayerParameters& aParameters,
-                                       const DisplayItemClip* aClip) const
+                                       bool aIsForCaret) const
 {
   if (!mWillBuildScrollableLayer || mIsScrollableLayerInRootContainer) {
     return Nothing();
   }
 
+  const Maybe<DisplayItemClip>& ancestorClip = aIsForCaret ? mAncestorClipForCaret : mAncestorClip;
+
   nsPoint toReferenceFrame = mOuter->GetOffsetToCrossDoc(aContainerReferenceFrame);
 
   Maybe<nsRect> parentLayerClip;
   
-  if (aClip &&
+  if (ancestorClip &&
       (!gfxPrefs::LayoutUseContainersForRootFrames() || mAddClipRectToLayer)) {
-    parentLayerClip = Some(aClip->GetClipRect());
+    parentLayerClip = Some(ancestorClip->GetClipRect());
   }
 
   bool isRootContent = mIsRoot && mOuter->PresContext()->IsRootContentDocument();
@@ -3311,12 +3317,16 @@ ScrollFrameHelper::ComputeFrameMetrics(Layer* aLayer,
 
   MOZ_ASSERT(mScrolledFrame->GetContent());
 
-  nsRect scrollport = mScrollPort + toReferenceFrame;
+  FrameMetricsAndClip result;
 
-  return Some(nsLayoutUtils::ComputeFrameMetrics(
+  nsRect scrollport = mScrollPort + toReferenceFrame;
+  result.metrics = nsLayoutUtils::ComputeFrameMetrics(
     mScrolledFrame, mOuter, mOuter->GetContent(),
     aContainerReferenceFrame, aLayer, mScrollParentID,
-    scrollport, parentLayerClip, isRootContent, aParameters));
+    scrollport, parentLayerClip, isRootContent, aParameters);
+  result.clip = ancestorClip;
+
+  return Some(result);
 }
 
 bool

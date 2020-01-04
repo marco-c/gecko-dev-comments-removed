@@ -2058,11 +2058,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     
-    
-    
-    
-    
-    clipState.ClearForStackingContextContents();
+    clipState.Clear();
   }
 
   nsDisplayListCollection set;
@@ -2179,19 +2175,10 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     
-    
-    
-    
-    
-    
-    const DisplayItemScrollClip* scrollClipForSameAGRChildren =
-      aBuilder->ClipState().GetCurrentInnermostScrollClip();
     DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
-    opacityClipState.ClearIncludingScrollClip();
+    opacityClipState.Clear();
     resultList.AppendNewToTop(
-        new (aBuilder) nsDisplayOpacity(aBuilder, this, &resultList,
-                                        scrollClipForSameAGRChildren,
-                                        opacityItemForEventsOnly));
+        new (aBuilder) nsDisplayOpacity(aBuilder, this, &resultList, opacityItemForEventsOnly));
   }
 
   
@@ -2508,8 +2495,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   if (savedOutOfFlowData) {
     clipState.SetClipForContainingBlockDescendants(
       &savedOutOfFlowData->mContainingBlockClip);
-    clipState.SetScrollClipForContainingBlockDescendants(
-      savedOutOfFlowData->mContainingBlockScrollClip);
   }
 
   

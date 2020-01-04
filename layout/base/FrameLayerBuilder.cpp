@@ -13,7 +13,6 @@
 #include "mozilla/gfx/Matrix.h"
 #include "ActiveLayerTracker.h"
 #include "BasicLayers.h"
-#include "DisplayItemScrollClip.h"
 #include "ImageContainer.h"
 #include "ImageLayers.h"
 #include "LayerTreeInvalidation.h"
@@ -409,7 +408,6 @@ class PaintedLayerData {
 public:
   PaintedLayerData() :
     mAnimatedGeometryRoot(nullptr),
-    mScrollClip(nullptr),
     mFixedPosFrameForLayerData(nullptr),
     mReferenceFrame(nullptr),
     mLayer(nullptr),
@@ -544,7 +542,7 @@ public:
   
 
 
-  const DisplayItemScrollClip* mScrollClip;
+  AnimatedGeometryRoot* mAnimatedGeometryRootForScrollMetadata;
   
 
 
@@ -670,7 +668,7 @@ public:
 struct NewLayerEntry {
   NewLayerEntry()
     : mAnimatedGeometryRoot(nullptr)
-    , mScrollClip(nullptr)
+    , mAnimatedGeometryRootForScrollMetadata(nullptr)
     , mFixedPosFrameForLayerData(nullptr)
     , mLayerContentsVisibleRect(0, 0, -1, -1)
     , mHideAllLayersBelow(false)
@@ -684,7 +682,12 @@ struct NewLayerEntry {
   
   RefPtr<Layer> mLayer;
   AnimatedGeometryRoot* mAnimatedGeometryRoot;
-  const DisplayItemScrollClip* mScrollClip;
+  
+  
+  
+  
+  
+  AnimatedGeometryRoot* mAnimatedGeometryRootForScrollMetadata;
   const nsIFrame* mFixedPosFrameForLayerData;
   
   
@@ -771,7 +774,6 @@ public:
   template<typename NewPaintedLayerCallbackType>
   PaintedLayerData* FindPaintedLayerFor(const nsIntRect& aVisibleRect,
                                         bool aBackfaceHidden,
-                                        const DisplayItemScrollClip* aScrollClip,
                                         NewPaintedLayerCallbackType aNewPaintedLayerCallback);
 
   
@@ -945,7 +947,6 @@ public:
 
   template<typename NewPaintedLayerCallbackType>
   PaintedLayerData* FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                        const DisplayItemScrollClip* aScrollClip,
                                         const nsIntRect& aVisibleRect,
                                         bool aForceOwnLayer,
                                         bool aBackfaceidden,
@@ -1044,14 +1045,12 @@ public:
                  ContainerLayer* aContainerLayer,
                  const ContainerLayerParameters& aParameters,
                  bool aFlattenToSingleLayer,
-                 nscolor aBackgroundColor,
-                 const DisplayItemScrollClip* aContainerScrollClip) :
+                 nscolor aBackgroundColor) :
     mBuilder(aBuilder), mManager(aManager),
     mLayerBuilder(aLayerBuilder),
     mContainerFrame(aContainerFrame),
     mContainerLayer(aContainerLayer),
     mContainerBounds(aContainerBounds),
-    mContainerScrollClip(aContainerScrollClip),
     mParameters(aParameters),
     mPaintedLayerDataTree(*this, aBackgroundColor),
     mFlattenToSingleLayer(aFlattenToSingleLayer)
@@ -1342,10 +1341,13 @@ protected:
 
 
 
+
+
+
   PaintedLayerData NewPaintedLayerData(nsDisplayItem* aItem,
                                        const nsIntRect& aVisibleRect,
                                        AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                       const DisplayItemScrollClip* aScrollClip,
+                                       AnimatedGeometryRoot* aAnimatedGeometryRootForScrollMetadata,
                                        const nsPoint& aTopLeft,
                                        bool aShouldFixToViewport);
 
@@ -1382,7 +1384,6 @@ protected:
   const nsIFrame*                  mContainerFixedPosFrame;
   ContainerLayer*                  mContainerLayer;
   nsRect                           mContainerBounds;
-  const DisplayItemScrollClip*     mContainerScrollClip;
   DebugOnly<nsRect>                mAccumulatedChildBounds;
   ContainerLayerParameters         mParameters;
   
@@ -2669,7 +2670,6 @@ template<typename NewPaintedLayerCallbackType>
 PaintedLayerData*
 PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
                                           bool aBackfaceHidden,
-                                          const DisplayItemScrollClip* aScrollClip,
                                           NewPaintedLayerCallbackType aNewPaintedLayerCallback)
 {
   if (!mPaintedLayerDataStack.IsEmpty()) {
@@ -2684,8 +2684,7 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
           break;
         }
         MOZ_ASSERT(!data.mExclusiveToOneItem);
-        if (data.mBackfaceHidden == aBackfaceHidden &&
-            data.mScrollClip == aScrollClip) {
+        if (data.mBackfaceHidden == aBackfaceHidden) {
           lowestUsableLayer = &data;
         }
         nsIntRegion visibleRegion = data.mVisibleRegion;
@@ -2832,7 +2831,6 @@ PaintedLayerDataTree::AddingOwnLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot
 template<typename NewPaintedLayerCallbackType>
 PaintedLayerData*
 PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                          const DisplayItemScrollClip* aScrollClip,
                                           const nsIntRect& aVisibleRect,
                                           bool aForceOwnLayer,
                                           bool aBackfaceHidden,
@@ -2845,7 +2843,7 @@ PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometr
     node->SetAllDrawingAbove();
   }
   PaintedLayerData* data =
-    node->FindPaintedLayerFor(aVisibleRect, aBackfaceHidden, aScrollClip,
+    node->FindPaintedLayerFor(aVisibleRect, aBackfaceHidden,
                               aNewPaintedLayerCallback);
   data->mExclusiveToOneItem = aForceOwnLayer;
   return data;
@@ -3176,7 +3174,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       NS_ASSERTION(!newLayerEntry->mLayer, "Slot already occupied?");
       newLayerEntry->mLayer = layer;
       newLayerEntry->mAnimatedGeometryRoot = data->mAnimatedGeometryRoot;
-      newLayerEntry->mScrollClip = data->mScrollClip;
+      newLayerEntry->mAnimatedGeometryRootForScrollMetadata = data->mAnimatedGeometryRootForScrollMetadata;
       newLayerEntry->mFixedPosFrameForLayerData = data->mFixedPosFrameForLayerData;
       newLayerEntry->mIsCaret = data->mIsCaret;
 
@@ -3572,13 +3570,13 @@ PaintedLayerData
 ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
                                     const nsIntRect& aVisibleRect,
                                     AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                    const DisplayItemScrollClip* aScrollClip,
+                                    AnimatedGeometryRoot* aAnimatedGeometryRootForScrollMetadata,
                                     const nsPoint& aTopLeft,
                                     bool aShouldFixToViewport)
 {
   PaintedLayerData data;
   data.mAnimatedGeometryRoot = aAnimatedGeometryRoot;
-  data.mScrollClip = aScrollClip;
+  data.mAnimatedGeometryRootForScrollMetadata = aAnimatedGeometryRootForScrollMetadata;
   data.mAnimatedGeometryRootOffset = aTopLeft;
   data.mFixedPosFrameForLayerData =
     FindFixedPosFrameForLayerData(aAnimatedGeometryRoot, aShouldFixToViewport);
@@ -3590,7 +3588,7 @@ ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
   data.mNewChildLayersIndex = mNewChildLayers.Length();
   NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
   newLayerEntry->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
-  newLayerEntry->mScrollClip = aScrollClip;
+  newLayerEntry->mAnimatedGeometryRootForScrollMetadata = aAnimatedGeometryRootForScrollMetadata;
   newLayerEntry->mFixedPosFrameForLayerData = data.mFixedPosFrameForLayerData;
   newLayerEntry->mIsCaret = data.mIsCaret;
   
@@ -3753,25 +3751,41 @@ ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
   return opaquePixels;
 }
 
-static const DisplayItemScrollClip*
-InnermostScrollClipApplicableToAGR(const DisplayItemScrollClip* aItemScrollClip,
-                                   AnimatedGeometryRoot* aAnimatedGeometryRoot)
+static bool
+IsCaretWithCustomClip(nsDisplayItem* aItem, nsDisplayItem::Type aItemType)
 {
-  
-  
-  
-  
-  
-  for (const DisplayItemScrollClip* scrollClip = aItemScrollClip;
-       scrollClip;
-       scrollClip = scrollClip->mParent) {
-    nsIFrame* scrolledFrame = scrollClip->mScrollableFrame->GetScrolledFrame();
-    if (nsLayoutUtils::IsAncestorFrameCrossDoc(scrolledFrame, *aAnimatedGeometryRoot)) {
+  return aItemType == nsDisplayItem::TYPE_CARET &&
+    static_cast<nsDisplayCaret*>(aItem)->NeedsCustomScrollClip();
+}
+
+static DisplayItemClip
+GetScrollClipIntersection(nsDisplayListBuilder* aBuilder, AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                          AnimatedGeometryRoot* aStopAtAnimatedGeometryRoot, bool aIsCaret)
+{
+  DisplayItemClip resultClip;
+  for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
+       agr != aStopAtAnimatedGeometryRoot;
+       agr = agr->mParentAGR) {
+    if (!agr) {
       
-      return scrollClip;
+      
+      
+      
+      
+      return DisplayItemClip();
+    }
+
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(*agr);
+    if (!scrollFrame) {
+      continue;
+    }
+
+    Maybe<DisplayItemClip> clip = scrollFrame->ComputeScrollClip(aIsCaret);
+    if (clip) {
+      resultClip.IntersectWith(*clip);
     }
   }
-  return nullptr;
+  return resultClip;
 }
 
 
@@ -3857,15 +3871,16 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
     bool forceInactive;
     AnimatedGeometryRoot* animatedGeometryRoot;
-    AnimatedGeometryRoot* animatedGeometryRootForClip = nullptr;
+    AnimatedGeometryRoot* animatedGeometryRootForScrollMetadata = nullptr;
+    AnimatedGeometryRoot* realAnimatedGeometryRootOfItem = item->GetAnimatedGeometryRoot();
     if (mFlattenToSingleLayer) {
       forceInactive = true;
       animatedGeometryRoot = lastAnimatedGeometryRoot;
     } else {
       forceInactive = false;
       if (mManager->IsWidgetLayerManager()) {
-        animatedGeometryRoot = item->GetAnimatedGeometryRoot();
-        animatedGeometryRootForClip = item->AnimatedGeometryRootForScrollMetadata();
+        animatedGeometryRoot = realAnimatedGeometryRootOfItem;
+        animatedGeometryRootForScrollMetadata = item->AnimatedGeometryRootForScrollMetadata();
       } else {
         
         
@@ -3875,42 +3890,17 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       }
       topLeft = (*animatedGeometryRoot)->GetOffsetToCrossDoc(mContainerReferenceFrame);
     }
-    if (!animatedGeometryRootForClip) {
-      animatedGeometryRootForClip = animatedGeometryRoot;
+    if (!animatedGeometryRootForScrollMetadata) {
+      animatedGeometryRootForScrollMetadata = animatedGeometryRoot;
     }
 
-    const DisplayItemScrollClip* itemScrollClip = item->ScrollClip();
-    if (itemType == nsDisplayItem::TYPE_OPACITY && layerState == LAYER_INACTIVE) {
+    if (animatedGeometryRoot != realAnimatedGeometryRootOfItem) {
       
-      
-      
-      
-      
-      
-      itemScrollClip = InnermostScrollClipApplicableToAGR(
-        static_cast<nsDisplayOpacity*>(item)->ScrollClipForSameAGRChildren(),
-        animatedGeometryRootForClip);
-      item->SetScrollClip(itemScrollClip);
-      item->UpdateBounds(mBuilder);
-    }
-    
-    
-    
-    
-    const DisplayItemScrollClip* agrScrollClip =
-      InnermostScrollClipApplicableToAGR(itemScrollClip, animatedGeometryRootForClip);
-    MOZ_ASSERT(DisplayItemScrollClip::IsAncestor(agrScrollClip, itemScrollClip));
-
-    if (agrScrollClip != itemScrollClip) {
-      
-      DisplayItemClip clip = item->GetClip();
-      for (const DisplayItemScrollClip* scrollClip = itemScrollClip;
-           scrollClip && scrollClip != agrScrollClip && scrollClip != mContainerScrollClip;
-           scrollClip = scrollClip->mParent) {
-        if (scrollClip->mClip) {
-          clip.IntersectWith(*scrollClip->mClip);
-        }
-      }
+      DisplayItemClip clip =
+        GetScrollClipIntersection(mBuilder, realAnimatedGeometryRootOfItem,
+                                  animatedGeometryRoot,
+                                  IsCaretWithCustomClip(item, itemType));
+      clip.IntersectWith(item->GetClip());
       item->SetClip(mBuilder, clip);
     }
 
@@ -3957,13 +3947,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       }
     }
     bounds = fixedToViewportClip.ApplyNonRoundedIntersection(bounds);
-    for (const DisplayItemScrollClip* scrollClip = itemScrollClip;
-         scrollClip && scrollClip != mContainerScrollClip;
-         scrollClip = scrollClip->mParent) {
-      if (scrollClip->mClip) {
-        bounds = scrollClip->mClip->ApplyNonRoundedIntersection(bounds);
-      }
-    }
     ((nsRect&)mAccumulatedChildBounds).UnionRect(mAccumulatedChildBounds, bounds);
 #endif
 
@@ -4065,7 +4048,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       }
 
       mParameters.mBackgroundColor = uniformColor;
-      mParameters.mScrollClip = DisplayItemScrollClip::PickInnermost(agrScrollClip, mContainerScrollClip);
 
       
       
@@ -4135,7 +4117,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
       newLayerEntry->mLayer = ownLayer;
       newLayerEntry->mAnimatedGeometryRoot = animatedGeometryRoot;
-      newLayerEntry->mScrollClip = agrScrollClip;
+      newLayerEntry->mAnimatedGeometryRootForScrollMetadata = animatedGeometryRootForScrollMetadata;
       newLayerEntry->mFixedPosFrameForLayerData = fixedPosFrame;
       if (itemType == nsDisplayItem::TYPE_PERSPECTIVE) {
         newLayerEntry->mIsPerspectiveItem = true;
@@ -4207,14 +4189,15 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                                          layerState,
                                          topLeft, nullptr);
     } else {
-      bool forceOwnLayer = shouldFixToViewport;
+      bool forceOwnLayer = shouldFixToViewport || IsCaretWithCustomClip(item, itemType);
       PaintedLayerData* paintedLayerData =
-        mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, agrScrollClip,
-                                                  itemVisibleRect, forceOwnLayer,
+        mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, itemVisibleRect,
+                                                  forceOwnLayer,
                                                   item->Frame()->BackfaceIsHidden(),
                                                   [&]() {
           return NewPaintedLayerData(item, itemVisibleRect, animatedGeometryRoot,
-                                     agrScrollClip, topLeft, shouldFixToViewport);
+                                     animatedGeometryRootForScrollMetadata,
+                                     topLeft, shouldFixToViewport);
         });
 
       if (itemType == nsDisplayItem::TYPE_LAYER_EVENT_REGIONS) {
@@ -4748,28 +4731,42 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
     
     MOZ_ASSERT(!aEntry->mBaseFrameMetrics->GetMaskLayerIndex());
   }
+  uint32_t baseLength = metricsArray.Length();
 
   
   nsTArray<RefPtr<Layer>> maskLayers;
 
-  for (const DisplayItemScrollClip* scrollClip = aEntry->mScrollClip;
-       scrollClip && scrollClip != mContainerScrollClip;
-       scrollClip = scrollClip->mParent) {
-    if (!scrollClip->mIsAsyncScrollable) {
+  nsIFrame* fParent;
+  for (AnimatedGeometryRoot* agr = aEntry->mAnimatedGeometryRootForScrollMetadata;
+       agr != mContainerAnimatedGeometryRoot;
+       agr = agr->mParentAGR) {
+    fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
+    if (!fParent) {
       
       
       
+      
+      
+      
+      
+      metricsArray.SetLength(baseLength);
+      aEntry->mLayer->SetFrameMetrics(metricsArray);
+      return;
+    }
+
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(*agr);
+    if (!scrollFrame) {
       continue;
     }
 
-    nsIScrollableFrame* scrollFrame = scrollClip->mScrollableFrame;
-    const DisplayItemClip* clip = scrollClip->mClip;
-
-    Maybe<FrameMetrics> metrics =
-      scrollFrame->ComputeFrameMetrics(aEntry->mLayer, mContainerReferenceFrame, mParameters, clip);
-    if (!metrics) {
+    Maybe<FrameMetricsAndClip> info =
+      scrollFrame->ComputeFrameMetrics(aEntry->mLayer, mContainerReferenceFrame, mParameters, aEntry->mIsCaret);
+    if (!info) {
       continue;
     }
+
+    FrameMetrics& metrics = info->metrics;
+    Maybe<DisplayItemClip> clip = info->clip;
 
     if (clip &&
         clip->HasClip() &&
@@ -4783,12 +4780,12 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
       RefPtr<Layer> maskLayer =
         CreateMaskLayer(aEntry->mLayer, *clip, aEntry->mVisibleRegion, nextIndex, clip->GetRoundedRectCount());
       if (maskLayer) {
-        metrics->SetMaskLayerIndex(nextIndex);
+        metrics.SetMaskLayerIndex(nextIndex);
         maskLayers.AppendElement(maskLayer);
       }
     }
 
-    metricsArray.AppendElement(*metrics);
+    metricsArray.AppendElement(metrics);
   }
 
   
@@ -4942,10 +4939,8 @@ ContainerState::Finish(uint32_t* aTextContentFlags, LayerManagerData* aData,
 {
   mPaintedLayerDataTree.Finish();
 
-  if (!mParameters.mForEventsOnly) {
-    NS_ASSERTION(mContainerBounds.IsEqualInterior(mAccumulatedChildBounds),
-                 "Bounds computation mismatch");
-  }
+  NS_ASSERTION(mContainerBounds.Contains(mAccumulatedChildBounds),
+               "Bounds computation mismatch");
 
   if (mLayerBuilder->IsBuildingRetainedLayers()) {
     nsIntRegion containerOpaqueRegion;
@@ -5283,10 +5278,8 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
     return containerLayer.forget();
   }
 
-  const DisplayItemScrollClip* containerScrollClip = aParameters.mScrollClip;
-
   ContainerLayerParameters scaleParameters;
-  nsRect bounds = aChildren->GetClippedBoundsUpTo(aBuilder, containerScrollClip);
+  nsRect bounds = aChildren->GetBounds(aBuilder);
   nsRect childrenVisible =
       aContainerItem ? aContainerItem->GetVisibleRectForChildren() :
           aContainerFrame->GetVisualOverflowRectRelativeToSelf();
@@ -5334,7 +5327,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
     ContainerState state(aBuilder, aManager, aManager->GetLayerBuilder(),
                          aContainerFrame, aContainerItem, bounds,
                          containerLayer, scaleParameters, flattenToSingleLayer,
-                         backgroundColor, containerScrollClip);
+                         backgroundColor);
 
     state.ProcessDisplayItems(aChildren);
 
