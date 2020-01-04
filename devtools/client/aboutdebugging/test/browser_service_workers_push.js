@@ -1,0 +1,98 @@
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+const HTTP_ROOT = CHROME_ROOT.replace(
+  "chrome://mochitests/content/", "http://mochi.test:8888/");
+const SERVICE_WORKER = HTTP_ROOT + "service-workers/push-sw.js";
+const TAB_URL = HTTP_ROOT + "service-workers/push-sw.html";
+
+add_task(function* () {
+  info("Turn on workers via mochitest http.");
+  yield new Promise(done => {
+    let options = { "set": [
+      
+      ["dom.serviceWorkers.testing.enabled", true],
+    ]};
+    SpecialPowers.pushPrefEnv(options, done);
+  });
+
+  let { tab, document } = yield openAboutDebugging("workers");
+
+  
+  let serviceWorkersElement = document.getElementById("service-workers");
+  let onMutation = waitForMutation(serviceWorkersElement, { childList: true });
+
+  
+  let swTab = yield addTab(TAB_URL);
+
+  info("Make the test page notify us when the service worker sends a message.");
+  let frameScript = function() {
+    let win = content.wrappedJSObject;
+    win.navigator.serviceWorker.addEventListener("message", function(event) {
+      sendAsyncMessage(event.data);
+    }, false);
+  };
+  let mm = swTab.linkedBrowser.messageManager;
+  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
+
+  
+  let onClaimed = new Promise(done => {
+    mm.addMessageListener("sw-claimed", function listener() {
+      mm.removeMessageListener("sw-claimed", listener);
+      done();
+    });
+  });
+
+  
+  yield onMutation;
+
+  
+  assertHasTarget(true, document, "service-workers", SERVICE_WORKER);
+
+  info("Ensure that the registration resolved before trying to interact with " +
+    "the service worker.");
+  yield waitForServiceWorkerRegistered(swTab);
+  ok(true, "Service worker registration resolved");
+
+  
+  let names = [...document.querySelectorAll("#service-workers .target-name")];
+  let name = names.filter(element => element.textContent === SERVICE_WORKER)[0];
+  ok(name, "Found the service worker in the list");
+  let targetElement = name.parentNode.parentNode;
+  let pushBtn = targetElement.querySelector(".push-button");
+  ok(pushBtn, "Found its push button");
+
+  info("Wait for the service worker to claim the test window before " +
+    "proceeding.");
+  yield onClaimed;
+
+  info("Click on the Push button and wait for the service worker to receive " +
+    "a push notification");
+  let onPushNotification = new Promise(done => {
+    mm.addMessageListener("sw-pushed", function listener() {
+      mm.removeMessageListener("sw-pushed", listener);
+      done();
+    });
+  });
+  pushBtn.click();
+  yield onPushNotification;
+  ok(true, "Service worker received a push notification");
+
+  
+  yield unregisterServiceWorker(swTab);
+  ok(true, "Service worker registration unregistered");
+
+  yield removeTab(swTab);
+  yield closeAboutDebugging(tab);
+});

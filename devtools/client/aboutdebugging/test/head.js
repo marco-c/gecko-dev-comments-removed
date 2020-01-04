@@ -5,12 +5,15 @@
 
 
 
+
+
+
 "use strict";
 
-var {utils: Cu, classes: Cc, interfaces: Ci} = Components;
+var { utils: Cu, classes: Cc, interfaces: Ci } = Components;
 
-const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-const {AddonManager} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
+const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm", {});
 const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 DevToolsUtils.testing = true;
@@ -144,5 +147,75 @@ function waitForMutation(target, mutationOptions) {
       resolve();
     });
     observer.observe(target, mutationOptions);
+  });
+}
+
+
+
+
+
+
+
+
+
+function assertHasTarget(expected, document, type, name) {
+  let names = [...document.querySelectorAll("#" + type + " .target-name")];
+  names = names.map(element => element.textContent);
+  is(names.includes(name), expected,
+    "The " + type + " url appears in the list: " + names);
+}
+
+
+
+
+
+
+function waitForServiceWorkerRegistered(tab) {
+  
+  let frameScript = function() {
+    
+    let { sw } = content.wrappedJSObject;
+    sw.then(function(registration) {
+      sendAsyncMessage("sw-registered");
+    });
+  };
+  let mm = tab.linkedBrowser.messageManager;
+  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
+
+  return new Promise(done => {
+    mm.addMessageListener("sw-registered", function listener() {
+      mm.removeMessageListener("sw-registered", listener);
+      done();
+    });
+  });
+}
+
+
+
+
+
+
+function unregisterServiceWorker(tab) {
+  
+  let frameScript = function() {
+    
+    let { sw } = content.wrappedJSObject;
+    sw.then(function(registration) {
+      registration.unregister().then(function() {
+        sendAsyncMessage("sw-unregistered");
+      },
+      function(e) {
+        dump("SW not unregistered; " + e + "\n");
+      });
+    });
+  };
+  let mm = tab.linkedBrowser.messageManager;
+  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
+
+  return new Promise(done => {
+    mm.addMessageListener("sw-unregistered", function listener() {
+      mm.removeMessageListener("sw-unregistered", listener);
+      done();
+    });
   });
 }
