@@ -2428,7 +2428,7 @@ pref("layout.css.control-characters.visible", true);
 #endif
 
 
-pref("layout.css.text-emphasis.enabled", true);
+pref("layout.css.text-emphasis.enabled", false);
 
 
 
