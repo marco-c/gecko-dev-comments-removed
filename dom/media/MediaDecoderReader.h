@@ -69,8 +69,8 @@ public:
   };
 
   typedef MozPromise<nsRefPtr<MetadataHolder>, ReadMetadataFailureReason,  true> MetadataPromise;
-  typedef MozPromise<nsRefPtr<AudioData>, NotDecodedReason,  true> AudioDataPromise;
-  typedef MozPromise<nsRefPtr<VideoData>, NotDecodedReason,  true> VideoDataPromise;
+  typedef MozPromise<nsRefPtr<MediaData>, NotDecodedReason,  true> AudioDataPromise;
+  typedef MozPromise<nsRefPtr<MediaData>, NotDecodedReason,  true> VideoDataPromise;
   typedef MozPromise<int64_t, nsresult,  true> SeekPromise;
 
   
