@@ -1255,6 +1255,14 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
     public void onOpen(SQLiteDatabase db) {
         debug("Opening browser.db: " + db.getPath());
 
+        
+        
+        
+        
+        
+        
+        SavedReaderViewHelper.getSavedReaderViewHelper(mContext).loadItems();
+
         Cursor cursor = null;
         try {
             cursor = db.rawQuery("PRAGMA foreign_keys=ON", null);

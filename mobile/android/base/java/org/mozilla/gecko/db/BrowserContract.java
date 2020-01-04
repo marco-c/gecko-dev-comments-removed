@@ -563,6 +563,11 @@ public class BrowserContract {
 
             public int getDBValue() { return dbValue; }
         }
+
+        
+
+
+        public static final String READER_VIEW_SAVED_VALUE = "true";
     }
 
     public static final class Numbers {

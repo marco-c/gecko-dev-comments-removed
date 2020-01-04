@@ -461,7 +461,6 @@ public final class GeckoProfile {
         return mDB;
     }
 
-
     
     public boolean locked() {
         if (mLocked != LockState.UNDEFINED) {
