@@ -257,7 +257,7 @@ public:
 
   void ScrollToRestoredPosition();
 
-  void SetRestoringHistoryScrollPosition(bool aValue);
+  bool PageIsStillLoading();
 
   
 
@@ -581,11 +581,6 @@ public:
   
   bool mSuppressScrollbarRepaints:1;
 
-  
-  
-  
-  bool mRestoringHistoryScrollPosition:1;
-
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
 protected:
@@ -849,9 +844,6 @@ public:
 
   virtual void ScrollToRestoredPosition() override {
     mHelper.ScrollToRestoredPosition();
-  }
-  virtual void SetRestoringHistoryScrollPosition(bool aValue) override {
-    mHelper.SetRestoringHistoryScrollPosition(aValue);
   }
   virtual void AddScrollPositionListener(nsIScrollPositionListener* aListener) override {
     mHelper.AddScrollPositionListener(aListener);
@@ -1261,9 +1253,6 @@ public:
 
   virtual void ScrollToRestoredPosition() override {
     mHelper.ScrollToRestoredPosition();
-  }
-  virtual void SetRestoringHistoryScrollPosition(bool aValue) override {
-    mHelper.SetRestoringHistoryScrollPosition(aValue);
   }
   virtual void AddScrollPositionListener(nsIScrollPositionListener* aListener) override {
     mHelper.AddScrollPositionListener(aListener);
