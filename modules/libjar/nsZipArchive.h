@@ -58,9 +58,11 @@ struct PRFileDesc;
 
 
 
-class nsZipItem
+class nsZipItem final
 {
 public:
+  nsZipItem();
+
   const char* Name() { return ((const char*)central) + ZIPCENTRAL_SIZE; }
 
   uint32_t LocalOffset();
@@ -91,7 +93,7 @@ class nsZipHandle;
 
 
 
-class nsZipArchive 
+class nsZipArchive final
 {
   friend class nsZipFind;
 
@@ -241,7 +243,7 @@ private:
 
 
 
-class nsZipFind
+class nsZipFind final
 {
 public:
   nsZipFind(nsZipArchive* aZip, char* aPattern, bool regExp);
@@ -263,7 +265,8 @@ private:
 
 
 
-class nsZipCursor {
+class nsZipCursor final
+{
 public:
   
 
@@ -318,7 +321,8 @@ private:
 
 
 
-class nsZipItemPtr_base {
+class nsZipItemPtr_base
+{
 public:
   
 
@@ -341,7 +345,8 @@ protected:
 };
 
 template <class T>
-class nsZipItemPtr : public nsZipItemPtr_base {
+class nsZipItemPtr final : public nsZipItemPtr_base
+{
 public:
   nsZipItemPtr(nsZipArchive *aZip, const char *aEntryName, bool doCRC = false) : nsZipItemPtr_base(aZip, aEntryName, doCRC) { }
   
@@ -376,7 +381,8 @@ public:
   }
 };
 
-class nsZipHandle {
+class nsZipHandle final
+{
 friend class nsZipArchive;
 friend class mozilla::FileLocation;
 public:
