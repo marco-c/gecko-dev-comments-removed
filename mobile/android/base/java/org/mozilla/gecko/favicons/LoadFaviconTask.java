@@ -445,11 +445,23 @@ public class LoadFaviconTask {
 
                 while (loadedBitmaps.getBitmaps().hasNext()) {
                     final Bitmap b = loadedBitmaps.getBitmaps().next();
-                    iconMap.put(b.getWidth(), b);
-                    sizes.add(b.getWidth());
+
+                    
+                    
+                    if (b != null) {
+                        iconMap.put(b.getWidth(), b);
+                        sizes.add(b.getWidth());
+                    }
                 }
 
                 int bestSize = Favicons.selectBestSizeFromList(sizes, targetWidthAndHeight);
+
+                if (bestSize == -1) {
+                    
+                    
+                    return null;
+                }
+
                 return iconMap.get(bestSize);
             }
         }
