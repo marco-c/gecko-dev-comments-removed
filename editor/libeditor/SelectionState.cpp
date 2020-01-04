@@ -3,7 +3,7 @@
 
 
 
-#include "SelectionState.h"
+#include "mozilla/SelectionState.h"
 
 #include "EditorUtils.h"                
 #include "mozilla/Assertions.h"         

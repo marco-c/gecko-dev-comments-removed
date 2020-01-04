@@ -4,8 +4,8 @@
 
 
 #include "DeleteTextTransaction.h"
-#include "SelectionState.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/SelectionState.h"
 #include "mozilla/dom/Selection.h"
 #include "nsDebug.h"
 #include "nsEditor.h"

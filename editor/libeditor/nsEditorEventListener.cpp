@@ -12,6 +12,7 @@
 #include "mozilla/Preferences.h"        
 #include "mozilla/TextEvents.h"         
 #include "mozilla/dom/Element.h"        
+#include "mozilla/dom/Event.h"          
 #include "mozilla/dom/EventTarget.h"    
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"

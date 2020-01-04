@@ -3,8 +3,8 @@
 
 
 
-#ifndef SelectionState_h
-#define SelectionState_h
+#ifndef mozilla_SelectionState_h
+#define mozilla_SelectionState_h
 
 #include "nsCOMPtr.h"
 #include "nsIDOMNode.h"

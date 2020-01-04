@@ -217,13 +217,13 @@ HTMLEditRules::~HTMLEditRules()
     mHTMLEditor->RemoveEditActionListener(this);
 }
 
-NS_IMPL_ADDREF_INHERITED(HTMLEditRules, nsTextEditRules)
-NS_IMPL_RELEASE_INHERITED(HTMLEditRules, nsTextEditRules)
+NS_IMPL_ADDREF_INHERITED(HTMLEditRules, TextEditRules)
+NS_IMPL_RELEASE_INHERITED(HTMLEditRules, TextEditRules)
 NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(HTMLEditRules)
   NS_INTERFACE_TABLE_INHERITED(HTMLEditRules, nsIEditActionListener)
-NS_INTERFACE_TABLE_TAIL_INHERITING(nsTextEditRules)
+NS_INTERFACE_TABLE_TAIL_INHERITING(TextEditRules)
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLEditRules, nsTextEditRules,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLEditRules, TextEditRules,
                                    mDocChangeRange, mUtilRange, mNewBlock,
                                    mRangeItem)
 
@@ -236,7 +236,7 @@ HTMLEditRules::Init(nsPlaintextEditor* aTextEditor)
   nsresult res;
 
   
-  res = nsTextEditRules::Init(aTextEditor);
+  res = TextEditRules::Init(aTextEditor);
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -261,7 +261,7 @@ HTMLEditRules::Init(nsPlaintextEditor* aTextEditor)
 
   
   
-  nsAutoLockRulesSniffing lockIt((nsTextEditRules*)this);
+  nsAutoLockRulesSniffing lockIt(static_cast<TextEditRules*>(this));
   if (!mDocChangeRange) {
     mDocChangeRange = new nsRange(node);
   }
@@ -286,7 +286,7 @@ HTMLEditRules::DetachEditor()
     mHTMLEditor->RemoveEditActionListener(this);
   }
   mHTMLEditor = nullptr;
-  return nsTextEditRules::DetachEditor();
+  return TextEditRules::DetachEditor();
 }
 
 NS_IMETHODIMP
@@ -575,7 +575,7 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
   if (info->action == EditAction::outputText ||
       info->action == EditAction::undo ||
       info->action == EditAction::redo) {
-    return nsTextEditRules::WillDoAction(aSelection, aInfo, aCancel, aHandled);
+    return TextEditRules::WillDoAction(aSelection, aInfo, aCancel, aHandled);
   }
 
   
@@ -652,8 +652,8 @@ HTMLEditRules::WillDoAction(Selection* aSelection,
     case EditAction::increaseZIndex:
       return WillRelativeChangeZIndex(aSelection, 1, aCancel, aHandled);
     default:
-      return nsTextEditRules::WillDoAction(aSelection, aInfo,
-                                           aCancel, aHandled);
+      return TextEditRules::WillDoAction(aSelection, aInfo,
+                                         aCancel, aHandled);
   }
 }
 
@@ -681,7 +681,7 @@ HTMLEditRules::DidDoAction(Selection* aSelection,
     }
     default:
       
-      return nsTextEditRules::DidDoAction(aSelection, aInfo, aResult);
+      return TextEditRules::DidDoAction(aSelection, aInfo, aResult);
   }
 }
 
@@ -1170,7 +1170,7 @@ HTMLEditRules::WillInsert(Selection& aSelection,
 {
   MOZ_ASSERT(aCancel);
 
-  nsTextEditRules::WillInsert(aSelection, aCancel);
+  TextEditRules::WillInsert(aSelection, aCancel);
 
   NS_ENSURE_TRUE_VOID(mHTMLEditor);
   nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
@@ -2938,7 +2938,7 @@ HTMLEditRules::DidDeleteSelection(Selection* aSelection,
   }
 
   
-  return nsTextEditRules::DidDeleteSelection(aSelection, aDir, aResult);
+  return TextEditRules::DidDeleteSelection(aSelection, aDir, aResult);
 }
 
 nsresult

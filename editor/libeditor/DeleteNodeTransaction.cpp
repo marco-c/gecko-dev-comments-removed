@@ -4,7 +4,7 @@
 
 
 #include "DeleteNodeTransaction.h"
-#include "SelectionState.h" 
+#include "mozilla/SelectionState.h" 
 #include "nsDebug.h"
 #include "nsEditor.h"
 #include "nsError.h"

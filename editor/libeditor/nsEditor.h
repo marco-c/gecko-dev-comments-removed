@@ -6,9 +6,9 @@
 #ifndef __editor_h__
 #define __editor_h__
 
-#include "SelectionState.h"             
 #include "mozilla/Assertions.h"         
 #include "mozilla/OwningNonNull.h"      
+#include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheetHandle.h"   
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"                   
