@@ -106,8 +106,6 @@ public:
                 MediaQueue<MediaData>& aAudioQueue,
                 MediaQueue<MediaData>& aVideoQueue);
 
-  void Shutdown();
-
   
   
   
@@ -134,9 +132,8 @@ protected:
   virtual ~DecodedStream();
 
 private:
+  ReentrantMonitor& GetReentrantMonitor() const;
   void CreateData(MozPromiseHolder<GenericPromise>&& aPromise);
-  void DestroyData(UniquePtr<DecodedStreamData> aData);
-  void OnDataCreated(UniquePtr<DecodedStreamData> aData);
   void InitTracks();
   void AdvanceTracks();
   void SendAudio(double aVolume, bool aIsSameOrigin);
@@ -152,18 +149,18 @@ private:
 
   const nsRefPtr<AbstractThread> mOwnerThread;
 
-  
-
-
+  UniquePtr<DecodedStreamData> mData;
   
   OutputStreamManager mOutputStreamManager;
-  
-  bool mShuttingDown;
 
   
-
-
-  UniquePtr<DecodedStreamData> mData;
+  
+  
+  
+  
+  
+  
+  mutable ReentrantMonitor mMonitor;
 
   bool mPlaying;
   double mVolume;

@@ -105,7 +105,7 @@ UpdateStreamBlocking(MediaStream* aStream, bool aBlocking)
 
 class DecodedStreamData {
 public:
-  DecodedStreamData(SourceMediaStream* aStream,
+  DecodedStreamData(SourceMediaStream* aStream, bool aPlaying,
                     MozPromiseHolder<GenericPromise>&& aPromise);
   ~DecodedStreamData();
   bool IsFinished() const;
@@ -142,7 +142,7 @@ public:
   bool mEOSVideoCompensation;
 };
 
-DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream,
+DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream, bool aPlaying,
                                      MozPromiseHolder<GenericPromise>&& aPromise)
   : mAudioFramesWritten(0)
   , mNextVideoTime(-1)
@@ -152,7 +152,7 @@ DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream,
   , mHaveSentFinishAudio(false)
   , mHaveSentFinishVideo(false)
   , mStream(aStream)
-  , mPlaying(true)
+  , mPlaying(aPlaying)
   , mEOSVideoCompensation(false)
 {
   
@@ -160,7 +160,9 @@ DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream,
   mStream->AddListener(mListener);
 
   
-  
+  if (!aPlaying) {
+    UpdateStreamBlocking(mStream, true);
+  }
 }
 
 DecodedStreamData::~DecodedStreamData()
@@ -356,7 +358,7 @@ DecodedStream::DecodedStream(AbstractThread* aOwnerThread,
                              MediaQueue<MediaData>& aAudioQueue,
                              MediaQueue<MediaData>& aVideoQueue)
   : mOwnerThread(aOwnerThread)
-  , mShuttingDown(false)
+  , mMonitor("DecodedStream::mMonitor")
   , mPlaying(false)
   , mVolume(1.0)
   , mAudioQueue(aAudioQueue)
@@ -369,17 +371,11 @@ DecodedStream::~DecodedStream()
   MOZ_ASSERT(mStartTime.isNothing(), "playback should've ended.");
 }
 
-void
-DecodedStream::Shutdown()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  mShuttingDown = true;
-}
-
 nsRefPtr<GenericPromise>
 DecodedStream::StartPlayback(int64_t aStartTime, const MediaInfo& aInfo)
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   MOZ_ASSERT(mStartTime.isNothing(), "playback already started.");
 
   mStartTime.emplace(aStartTime);
@@ -417,7 +413,7 @@ DecodedStream::StartPlayback(int64_t aStartTime, const MediaInfo& aInfo)
 void DecodedStream::StopPlayback()
 {
   AssertOwnerThread();
-
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   
   if (mStartTime.isNothing()) {
     return;
@@ -428,19 +424,12 @@ void DecodedStream::StopPlayback()
 
   
   
-  DestroyData(Move(mData));
-}
-
-void
-DecodedStream::DestroyData(UniquePtr<DecodedStreamData> aData)
-{
-  AssertOwnerThread();
-
-  if (!aData) {
+  DecodedStreamData* data = mData.release();
+  
+  if (!data) {
     return;
   }
 
-  DecodedStreamData* data = aData.release();
   nsRefPtr<DecodedStream> self = this;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
     self->mOutputStreamManager.Disconnect();
@@ -453,41 +442,35 @@ void
 DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+  MOZ_ASSERT(!mData, "Already created.");
 
   
   
   
-  if (!mOutputStreamManager.Graph() || mShuttingDown) {
+  
+  if (!mOutputStreamManager.Graph() || mStartTime.isNothing()) {
     
     aPromise.Resolve(true, __func__);
     return;
   }
 
   auto source = mOutputStreamManager.Graph()->CreateSourceStream(nullptr);
-  auto data = new DecodedStreamData(source, Move(aPromise));
-  mOutputStreamManager.Connect(data->mStream);
+  mData.reset(new DecodedStreamData(source, mPlaying, Move(aPromise)));
+  mOutputStreamManager.Connect(mData->mStream);
 
-  class R : public nsRunnable {
-    typedef void(DecodedStream::*Method)(UniquePtr<DecodedStreamData>);
-  public:
-    R(DecodedStream* aThis, Method aMethod, DecodedStreamData* aData)
-      : mThis(aThis), mMethod(aMethod), mData(aData) {}
-    NS_IMETHOD Run() override
-    {
-      (mThis->*mMethod)(Move(mData));
-      return NS_OK;
+  
+  nsRefPtr<DecodedStream> self = this;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+    ReentrantMonitorAutoEnter mon(self->GetReentrantMonitor());
+    
+    if (self->mStartTime.isSome()) {
+      self->SendData();
     }
-  private:
-    nsRefPtr<DecodedStream> mThis;
-    Method mMethod;
-    UniquePtr<DecodedStreamData> mData;
-  };
-
+  });
   
   
-  
-  nsCOMPtr<nsIRunnable> r = new R(this, &DecodedStream::OnDataCreated, data);
-  mOwnerThread->Dispatch(r.forget());
+  mOwnerThread->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
 }
 
 bool
@@ -496,22 +479,10 @@ DecodedStream::HasConsumers() const
   return !mOutputStreamManager.IsEmpty();
 }
 
-void
-DecodedStream::OnDataCreated(UniquePtr<DecodedStreamData> aData)
+ReentrantMonitor&
+DecodedStream::GetReentrantMonitor() const
 {
-  AssertOwnerThread();
-  MOZ_ASSERT(!mData, "Already created.");
-
-  
-  if (mStartTime.isSome()) {
-    aData->SetPlaying(mPlaying);
-    mData = Move(aData);
-    SendData();
-    return;
-  }
-
-  
-  DestroyData(Move(aData));
+  return mMonitor;
 }
 
 void
@@ -530,6 +501,7 @@ void
 DecodedStream::SetPlaying(bool aPlaying)
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   mPlaying = aPlaying;
   if (mData) {
     mData->SetPlaying(aPlaying);
@@ -540,6 +512,7 @@ void
 DecodedStream::SetVolume(double aVolume)
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   mVolume = aVolume;
 }
 
@@ -547,6 +520,7 @@ void
 DecodedStream::SetSameOrigin(bool aSameOrigin)
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   mSameOrigin = aSameOrigin;
 }
 
@@ -554,6 +528,7 @@ void
 DecodedStream::InitTracks()
 {
   AssertOwnerThread();
+  GetReentrantMonitor().AssertCurrentThreadIn();
 
   if (mData->mStreamInitialized) {
     return;
@@ -634,6 +609,7 @@ void
 DecodedStream::SendAudio(double aVolume, bool aIsSameOrigin)
 {
   AssertOwnerThread();
+  GetReentrantMonitor().AssertCurrentThreadIn();
 
   if (!mInfo.HasAudio()) {
     return;
@@ -699,6 +675,7 @@ void
 DecodedStream::SendVideo(bool aIsSameOrigin)
 {
   AssertOwnerThread();
+  GetReentrantMonitor().AssertCurrentThreadIn();
 
   if (!mInfo.HasVideo()) {
     return;
@@ -777,6 +754,7 @@ void
 DecodedStream::AdvanceTracks()
 {
   AssertOwnerThread();
+  GetReentrantMonitor().AssertCurrentThreadIn();
 
   StreamTime endPosition = 0;
 
@@ -801,6 +779,7 @@ void
 DecodedStream::SendData()
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   MOZ_ASSERT(mStartTime.isSome(), "Must be called after StartPlayback()");
 
   
@@ -831,6 +810,7 @@ int64_t
 DecodedStream::AudioEndTime() const
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   if (mStartTime.isSome() && mInfo.HasAudio() && mData) {
     CheckedInt64 t = mStartTime.ref() +
       FramesToUsecs(mData->mAudioFramesWritten, mInfo.mAudio.mRate);
@@ -845,6 +825,7 @@ int64_t
 DecodedStream::GetPosition() const
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   
   
   MOZ_ASSERT(mStartTime.isSome());
@@ -855,6 +836,7 @@ bool
 DecodedStream::IsFinished() const
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   return mData && mData->IsFinished();
 }
 
@@ -862,6 +844,7 @@ void
 DecodedStream::ConnectListener()
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
 
   mAudioPushListener = mAudioQueue.PushEvent().Connect(
     mOwnerThread, this, &DecodedStream::SendData);
@@ -877,6 +860,7 @@ void
 DecodedStream::DisconnectListener()
 {
   AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
 
   mAudioPushListener.Disconnect();
   mVideoPushListener.Disconnect();
