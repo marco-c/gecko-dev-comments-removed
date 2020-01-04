@@ -1246,8 +1246,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   
   
   
-  if (!siteSupportsSafeRenego &&
-      ioLayerHelpers.getWarnLevelMissingRFC5746() > 0) {
+  if (!siteSupportsSafeRenego) {
     nsXPIDLCString hostName;
     infoObject->GetHostName(getter_Copies(hostName));
 
