@@ -135,7 +135,7 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
       continue;
     }
     
-    if (appId == NECKO_NO_APP_ID && tabContext.HasOwnApp() {
+    if (appId == NECKO_NO_APP_ID && tabContext.HasOwnApp()) {
       
       continue;
     }
