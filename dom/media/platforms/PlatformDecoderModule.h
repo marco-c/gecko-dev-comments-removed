@@ -30,6 +30,8 @@ class MediaDataDecoderCallback;
 class TaskQueue;
 class CDMProxy;
 
+static LazyLogModule sPDMLog("PlatformDecoderModule");
+
 
 
 
