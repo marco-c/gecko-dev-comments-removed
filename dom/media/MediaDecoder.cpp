@@ -872,11 +872,16 @@ MediaDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
 
   
   
-  Invalidate();
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     mFiredMetadataLoaded = true;
     mOwner->MetadataLoaded(mInfo, nsAutoPtr<const MetadataTags>(aTags.forget()));
   }
+  
+  
+  
+  
+  
+  Invalidate();
 
   EnsureTelemetryReported();
 }
