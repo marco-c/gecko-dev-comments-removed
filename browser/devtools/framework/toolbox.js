@@ -189,6 +189,7 @@ Toolbox.prototype = {
   },
 
   currentToolId: null,
+  lastUsedToolId: null,
 
   
 
@@ -457,7 +458,16 @@ Toolbox.prototype = {
   },
 
   _buildOptions: function() {
-    let selectOptions = () => { this.selectTool("options"); };
+    let selectOptions = () => {
+      
+      
+      if (this.currentToolId === "options" &&
+          gDevTools.getToolDefinition(this.lastUsedToolId)) {
+        this.selectTool(this.lastUsedToolId);
+      } else {
+        this.selectTool("options");
+      }
+    };
     let key = this.doc.getElementById("toolbox-options-key");
     key.addEventListener("command", selectOptions, true);
     let key2 = this.doc.getElementById("toolbox-options-key2");
@@ -1283,6 +1293,7 @@ Toolbox.prototype = {
     let panel = this.doc.getElementById("toolbox-panel-" + id);
     deck.selectedPanel = panel;
 
+    this.lastUsedToolId = this.currentToolId;
     this.currentToolId = id;
     this._refreshConsoleDisplay();
     if (id != "options") {
