@@ -78,7 +78,7 @@ public:
   
   
 
-  uint32_t LineNumber() const;
+  uint32_t LineNumber(JSContext* aCx) const;
 
   uint32_t ColumnNumber() const;
 
