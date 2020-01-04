@@ -435,7 +435,11 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         break;
       }
     }
-    input_overflow_buf_.assign(p, end - p);
+    if (p != input_overflow_buf_.data()) {
+      
+      
+      input_overflow_buf_.assign(p, end - p);
+    }
 
     bytes_read = 0;  
   }
