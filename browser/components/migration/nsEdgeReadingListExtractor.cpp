@@ -50,7 +50,7 @@ nsEdgeReadingListExtractor::Extract(const nsAString& aDBPath, nsIArray** aItems)
   
   bool instanceCreated, sessionCreated, dbOpened, tableOpened;
 
-  char16_t* dbPath = ToNewUnicode(aDBPath);
+  char16ptr_t dbPath = ToNewUnicode(aDBPath);
 
   
   unsigned long pageSize;
