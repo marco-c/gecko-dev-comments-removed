@@ -88,6 +88,8 @@
 
 
 
+
+
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 
 #ifdef __MMX__
@@ -126,6 +128,16 @@
   
   #define MOZILLA_PRESUME_SSE4_2 1
 #endif
+#ifdef __AVX__
+  
+  #define MOZILLA_PRESUME_AVX 1
+#endif
+#ifdef __AVX2__
+  
+  #define MOZILLA_PRESUME_AVX2 1
+#endif
+
+
 
 #ifdef HAVE_CPUID_H
   #define MOZILLA_SSE_HAVE_CPUID_DETECTION
@@ -199,6 +211,14 @@ namespace mozilla {
 #if !defined(MOZILLA_PRESUME_SSE4_2)
     extern bool MFBT_DATA sse4_2_enabled;
 #endif
+#if !defined(MOZILLA_PRESUME_AVX)
+    extern bool MFBT_DATA avx_enabled;
+#endif
+#if !defined(MOZILLA_PRESUME_AVX2)
+    extern bool MFBT_DATA avx2_enabled;
+#endif
+
+
 #endif
   } 
 
@@ -285,6 +305,27 @@ namespace mozilla {
 #else
   inline bool supports_sse4_2() { return false; }
 #endif
+
+#if defined(MOZILLA_PRESUME_AVX)
+#define MOZILLA_MAY_SUPPORT_AVX 1
+  inline bool supports_avx() { return true; }
+#elif defined(MOZILLA_SSE_HAVE_CPUID_DETECTION)
+#define MOZILLA_MAY_SUPPORT_AVX 1
+  inline bool supports_avx() { return sse_private::avx_enabled; }
+#else
+  inline bool supports_avx() { return false; }
+#endif
+
+#if defined(MOZILLA_PRESUME_AVX2)
+#define MOZILLA_MAY_SUPPORT_AVX2 1
+  inline bool supports_avx2() { return true; }
+#elif defined(MOZILLA_SSE_HAVE_CPUID_DETECTION)
+#define MOZILLA_MAY_SUPPORT_AVX2 1
+  inline bool supports_avx2() { return sse_private::avx2_enabled; }
+#else
+  inline bool supports_avx2() { return false; }
+#endif
+
 
 } 
 
