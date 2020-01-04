@@ -20,6 +20,9 @@ from taskgraph.util.time import (
 logger = logging.getLogger(__name__)
 
 
+CONCURRENCY = 50
+
+
 def create_tasks(taskgraph, label_to_taskid):
     
     task_group_id = slugid()
@@ -29,7 +32,7 @@ def create_tasks(taskgraph, label_to_taskid):
 
     decision_task_id = os.environ.get('TASK_ID')
 
-    with futures.ThreadPoolExecutor(requests.adapters.DEFAULT_POOLSIZE) as e:
+    with futures.ThreadPoolExecutor(CONCURRENCY) as e:
         fs = {}
 
         
