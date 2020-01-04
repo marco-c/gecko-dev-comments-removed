@@ -953,8 +953,6 @@ NetworkMonitor.prototype = {
 
 
 
-
-
   createActivityObject: function(channel) {
     return {
       id: gSequenceId(),
