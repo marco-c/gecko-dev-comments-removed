@@ -9,26 +9,28 @@
 
 #include <limits>
 
-#include "NSSErrorsService.h"
+#include "cert.h"
+#include "cms.h"
+#include "cryptohi.h"
+#include "keyhi.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Scoped.h"
+#include "mozilla/UniquePtr.h"
+#include "nsDebug.h"
+#include "nsError.h"
+#include "NSSErrorsService.h"
+#include "pk11pub.h"
+#include "pkcs12.h"
+#include "prerror.h"
+#include "prio.h"
+#include "sechash.h"
+#include "secmod.h"
+#include "secpkcs7.h"
+#include "secport.h"
+
 #ifndef MOZ_NO_MOZALLOC
 #include "mozilla/mozalloc_oom.h"
 #endif
-#include "mozilla/Scoped.h"
-#include "nsError.h"
-#include "nsDebug.h"
-#include "prio.h"
-#include "cert.h"
-#include "cms.h"
-#include "keyhi.h"
-#include "cryptohi.h"
-#include "pk11pub.h"
-#include "pkcs12.h"
-#include "sechash.h"
-#include "secpkcs7.h"
-#include "secport.h"
-#include "prerror.h"
-#include "secmod.h"
 
 namespace mozilla {
 
@@ -343,6 +345,31 @@ MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedSECMODModule, SECMODModule,
                                           SECMOD_DestroyModule)
 
 
+#define MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(name, Type, Deleter) \
+struct name##DeletePolicy \
+{ \
+  void operator()(Type* aValue) { Deleter(aValue); } \
+}; \
+typedef UniquePtr<Type, name##DeletePolicy> name;
+
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueCERTCertificatePolicies,
+                                      CERTCertificatePolicies,
+                                      CERT_DestroyCertificatePoliciesExtension)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueCERTOidSequence,
+                                      CERTOidSequence,
+                                      CERT_DestroyOidSequence)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueCERTUserNotice,
+                                      CERTUserNotice,
+                                      CERT_DestroyUserNotice)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePLArenaPool,
+                                      PLArenaPool,
+                                      internal::PORT_FreeArena_false)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueSECItem,
+                                      SECItem,
+                                      internal::SECITEM_FreeItem_true)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueSECKEYPublicKey,
+                                      SECKEYPublicKey,
+                                      SECKEY_DestroyPublicKey)
 } 
 
 #endif 
