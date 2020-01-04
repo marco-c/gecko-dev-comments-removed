@@ -18,6 +18,7 @@
 
 
 
+
 var UBound = 0;
 var BUGNUMBER = 179524;
 var summary = "Don't crash on extraneous arguments to str.match(), etc.";
@@ -28,6 +29,7 @@ var actualvalues = [];
 var expect= '';
 var expectedvalues = [];
 
+enableMatchFlagArgument();
 
 str = 'ABC abc';
 var re = /z/ig;

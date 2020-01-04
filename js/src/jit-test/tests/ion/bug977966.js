@@ -101,6 +101,8 @@ function split_join_pattern(i) {
 
 
 function split_join_multiple(i) {
+    enableMatchFlagArgument();
+
     var s1 = i + "-\n-" + i + "-\n-" + i;
     assertEq(s1.split("-\n-").join("-")  , i + "-" + i + "-" + i);
     assertEq(s1.replace("-\n-", "-")     , i + "-" + i + "-\n-" + i);
