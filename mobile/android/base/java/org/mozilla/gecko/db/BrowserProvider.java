@@ -325,7 +325,6 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             return;
         }
 
-        final String sortOrder = BrowserContract.getFrecencySortOrder(false, true);
         final long toRemove = rows - retain;
         debug("Expiring at most " + toRemove + " rows earlier than " + keepAfter + ".");
 
@@ -335,12 +334,12 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                   "WHERE MAX(" + History.DATE_LAST_VISITED + ", " + History.DATE_MODIFIED + ") < " + keepAfter + " " +
                   " AND " + History._ID + " IN ( SELECT " +
                     History._ID + " FROM " + TABLE_HISTORY + " " +
-                    "ORDER BY " + sortOrder + " LIMIT " + toRemove +
+                    "ORDER BY " + History.DATE_LAST_VISITED + " ASC LIMIT " + toRemove +
                   ")";
         } else {
             sql = "DELETE FROM " + TABLE_HISTORY + " WHERE " + History._ID + " " +
                   "IN ( SELECT " + History._ID + " FROM " + TABLE_HISTORY + " " +
-                  "ORDER BY " + sortOrder + " LIMIT " + toRemove + ")";
+                  "ORDER BY " + History.DATE_LAST_VISITED + " ASC LIMIT " + toRemove + ")";
         }
         trace("Deleting using query: " + sql);
 
@@ -356,7 +355,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
     private void expireThumbnails(final SQLiteDatabase db) {
         Log.d(LOGTAG, "Expiring thumbnails.");
-        final String sortOrder = BrowserContract.getFrecencySortOrder(true, false);
+        final String sortOrder = BrowserContract.getCombinedFrecencySortOrder(true, false);
         final String sql = "DELETE FROM " + TABLE_THUMBNAILS +
                            " WHERE " + Thumbnails.URL + " NOT IN ( " +
                              " SELECT " + Combined.URL +
@@ -902,7 +901,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                        TopSites.TYPE_TOP + " AS " + TopSites.TYPE +
                        " FROM " + Combined.VIEW_NAME +
                        " WHERE " + ignoreForTopSitesWhereClause +
-                       " ORDER BY " + BrowserContract.getFrecencySortOrder(true, false) +
+                       " ORDER BY " + BrowserContract.getCombinedFrecencySortOrder(true, false) +
                        " LIMIT " + totalLimit,
 
                        ignoreForTopSitesArgs);
