@@ -138,7 +138,6 @@ class PackedScopeCoordinate
     /* Delete operations.  These must be sequential. */ \
     F(DELETENAME) \
     F(DELETEPROP) \
-    F(DELETESUPERPROP) \
     F(DELETEELEM) \
     F(DELETESUPERELEM) \
     F(DELETEEXPR) \
@@ -176,7 +175,6 @@ class PackedScopeCoordinate
     F(CLASSMETHOD) \
     F(CLASSMETHODLIST) \
     F(CLASSNAMES) \
-    F(SUPERPROP) \
     F(SUPERELEM) \
     F(NEWTARGET) \
     F(POSHOLDER) \
@@ -260,7 +258,6 @@ IsDeleteKind(ParseNodeKind kind)
 {
     return PNK_DELETENAME <= kind && kind <= PNK_DELETEEXPR;
 }
-
 
 
 
@@ -1324,6 +1321,11 @@ class PropertyAccess : public ParseNode
     PropertyName& name() const {
         return *pn_u.name.atom->asPropertyName();
     }
+
+    bool isSuper() const {
+        
+        return expression().isKind(PNK_POSHOLDER);
+    }
 };
 
 class PropertyByValue : public ParseNode
@@ -1444,22 +1446,6 @@ struct ClassNode : public TernaryNode {
     ObjectBox* scopeObject() const {
         MOZ_ASSERT(pn_kid3->is<LexicalScopeNode>());
         return pn_kid3->pn_objbox;
-    }
-};
-
-struct SuperProperty : public NullaryNode {
-    SuperProperty(JSAtom* atom, const TokenPos& pos)
-      : NullaryNode(PNK_SUPERPROP, JSOP_NOP, pos, atom)
-    { }
-
-    static bool test(const ParseNode& node) {
-        bool match = node.isKind(PNK_SUPERPROP);
-        MOZ_ASSERT_IF(match, node.isArity(PN_NULLARY));
-        return match;
-    }
-
-    JSAtom* propName() const {
-        return pn_atom;
     }
 };
 
