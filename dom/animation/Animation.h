@@ -238,11 +238,11 @@ public:
 
   bool HasInPlayEffect() const
   {
-    return GetEffect() && GetEffect()->IsInPlay(*this);
+    return GetEffect() && GetEffect()->IsInPlay();
   }
   bool HasCurrentEffect() const
   {
-    return GetEffect() && GetEffect()->IsCurrent(*this);
+    return GetEffect() && GetEffect()->IsCurrent();
   }
   bool IsInEffect() const
   {
@@ -289,7 +289,7 @@ public:
 
 
 
-  void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
+  void ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties,
                     bool& aNeedsRefreshes);
 
@@ -370,8 +370,8 @@ protected:
   virtual CommonAnimationManager* GetAnimationManager() const = 0;
   AnimationCollection* GetCollection() const;
 
-  RefPtr<AnimationTimeline> mTimeline;
-  RefPtr<KeyframeEffectReadOnly> mEffect;
+  nsRefPtr<AnimationTimeline> mTimeline;
+  nsRefPtr<KeyframeEffectReadOnly> mEffect;
   
   Nullable<TimeDuration> mStartTime; 
   Nullable<TimeDuration> mHoldTime;  
@@ -383,14 +383,14 @@ protected:
   
   
   
-  RefPtr<Promise> mReady;
+  nsRefPtr<Promise> mReady;
 
   
   
   
   
   
-  RefPtr<Promise> mFinished;
+  nsRefPtr<Promise> mFinished;
 
   
   

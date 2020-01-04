@@ -202,6 +202,8 @@ struct ElementPropertyTransition;
 
 namespace dom {
 
+class Animation;
+
 class KeyframeEffectReadOnly : public AnimationEffectReadOnly
 {
 public:
@@ -253,10 +255,7 @@ public:
   AnimationTiming& Timing() {
     return mTiming;
   }
-
-  
-  
-  void SetTiming(const AnimationTiming& aTiming, Animation& aOwningAnimtion);
+  void SetTiming(const AnimationTiming& aTiming);
 
   Nullable<TimeDuration> GetLocalTime() const {
     
@@ -289,9 +288,11 @@ public:
   static StickyTimeDuration
   ActiveDuration(const AnimationTiming& aTiming);
 
-  bool IsInPlay(const Animation& aAnimation) const;
-  bool IsCurrent(const Animation& aAnimation) const;
+  bool IsInPlay() const;
+  bool IsCurrent() const;
   bool IsInEffect() const;
+
+  void SetAnimation(Animation* aAnimation);
 
   const AnimationProperty*
   GetAnimationOfProperty(nsCSSProperty aProperty) const;
@@ -311,16 +312,17 @@ public:
   
   
   
-  void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
+  void ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties);
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
 
 protected:
-  virtual ~KeyframeEffectReadOnly() { }
+  virtual ~KeyframeEffectReadOnly();
   void ResetIsRunningOnCompositor();
 
   nsCOMPtr<Element> mTarget;
+  nsRefPtr<Animation> mAnimation;
   Nullable<TimeDuration> mParentTime;
 
   AnimationTiming mTiming;
