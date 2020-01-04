@@ -1051,6 +1051,10 @@ nsFilePicker::ShowW(int16_t *aReturnVal)
 
   
   
+  WinUtils::AutoSystemDpiAware dpiAwareness;
+
+  
+  
   
   
   
