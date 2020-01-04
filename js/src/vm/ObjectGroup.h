@@ -542,7 +542,6 @@ class ObjectGroupCompartment
 {
     friend class ObjectGroup;
 
-    struct NewEntry;
     class NewTable;
 
     
@@ -585,6 +584,8 @@ class ObjectGroupCompartment
     AllocationSiteTable* allocationSiteTable;
 
   public:
+    struct NewEntry;
+
     ObjectGroupCompartment();
     ~ObjectGroupCompartment();
 
