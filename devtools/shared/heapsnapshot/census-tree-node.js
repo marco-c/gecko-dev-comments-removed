@@ -521,18 +521,6 @@ function invert(tree) {
   }(tree));
 
   
-  
-
-  (function ensureSorted(node) {
-    if (node.children) {
-      node.children.sort(compareBySelf);
-      for (let i = 0, length = node.children.length; i < length; i++) {
-        ensureSorted(node.children[i]);
-      }
-    }
-  }(inverted.node));
-
-  
   inverted.node.totalBytes = tree.totalBytes;
   inverted.node.totalCount = tree.totalCount;
 
@@ -676,6 +664,18 @@ exports.censusReportToCensusTreeNode = function (breakdown, report,
     result.totalBytes = report[basisTotalBytes];
     result.totalCount = report[basisTotalCount];
   }
+
+  
+  
+  const comparator = options.invert ? compareBySelf : compareByTotal;
+  (function ensureSorted(node) {
+    if (node.children) {
+      node.children.sort(comparator);
+      for (let i = 0, length = node.children.length; i < length; i++) {
+        ensureSorted(node.children[i]);
+      }
+    }
+  }(result));
 
   return result;
 };
