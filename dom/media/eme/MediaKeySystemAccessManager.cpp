@@ -169,10 +169,7 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
   }
 
   MediaKeySystemConfiguration config;
-  
-  
-  if (MediaKeySystemAccess::GetSupportedConfig(keySystem, aConfigs, config, &diagnostics) ||
-      MediaKeySystemAccess::IsSupported(keySystem, aConfigs, &diagnostics)) {
+  if (MediaKeySystemAccess::GetSupportedConfig(keySystem, aConfigs, config, &diagnostics)) {
     RefPtr<MediaKeySystemAccess> access(
       new MediaKeySystemAccess(mWindow, keySystem, NS_ConvertUTF8toUTF16(cdmVersion), config));
     aPromise->MaybeResolve(access);
