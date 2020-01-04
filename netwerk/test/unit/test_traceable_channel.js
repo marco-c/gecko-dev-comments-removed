@@ -27,13 +27,11 @@ TracingListener.prototype = {
     request.QueryInterface(Components.interfaces.nsIHttpChannelInternal);
 
 
-
-
-
-
-
-
-
+    do_check_eq(request.localAddress, "127.0.0.1");
+    do_check_eq(request.localPort > 0, true);
+    do_check_neq(request.localPort, PORT);
+    do_check_eq(request.remoteAddress, "127.0.0.1");
+    do_check_eq(request.remotePort, PORT);
 
     
     request.QueryInterface(Components.interfaces.nsITraceableChannel);
