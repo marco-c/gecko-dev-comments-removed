@@ -326,16 +326,6 @@ class RegExpCompartment
 
     ReadBarriered<ArrayObject*> matchResultTemplateObject_;
 
-    
-
-
-
-
-
-
-
-    ReadBarriered<Shape*> optimizableRegExpPrototypeShape_;
-
     ArrayObject* createMatchResultTemplateObject(JSContext* cx);
 
   public:
@@ -357,17 +347,6 @@ class RegExpCompartment
         if (matchResultTemplateObject_)
             return matchResultTemplateObject_;
         return createMatchResultTemplateObject(cx);
-    }
-
-    Shape* getOptimizableRegExpPrototypeShape() {
-        return optimizableRegExpPrototypeShape_;
-    }
-    void setOptimizableRegExpPrototypeShape(Shape* shape) {
-        optimizableRegExpPrototypeShape_ = shape;
-    }
-
-    static size_t offsetOfOptimizableRegExpPrototypeShape() {
-        return offsetof(RegExpCompartment, optimizableRegExpPrototypeShape_);
     }
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
