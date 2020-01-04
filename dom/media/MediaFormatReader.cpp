@@ -1425,8 +1425,8 @@ MediaFormatReader::Seek(SeekTarget aTarget, int64_t aUnused)
     return SeekPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  mOriginalSeekTime = Some(aTarget.GetTime());
-  mPendingSeekTime = mOriginalSeekTime;
+  mOriginalSeekTarget = Some(aTarget);
+  mPendingSeekTime = Some(aTarget.GetTime());
 
   RefPtr<SeekPromise> p = mSeekPromise.Ensure(__func__);
 
@@ -1470,8 +1470,8 @@ MediaFormatReader::OnSeekFailed(TrackType aTrack, DemuxerFailureReason aResult)
 
   if (aResult == DemuxerFailureReason::WAITING_FOR_DATA) {
     if (HasVideo() && aTrack == TrackType::kAudioTrack &&
-        mOriginalSeekTime.isSome() &&
-        mPendingSeekTime.ref() != mOriginalSeekTime.ref()) {
+        mOriginalSeekTarget.isSome() &&
+        mPendingSeekTime.ref() != mOriginalSeekTarget.ref().GetTime()) {
       
       
       
@@ -1487,11 +1487,11 @@ MediaFormatReader::OnSeekFailed(TrackType aTrack, DemuxerFailureReason aResult)
         }
       }
       if (nextSeekTime.isNothing() ||
-          nextSeekTime.ref() > mOriginalSeekTime.ref()) {
-        nextSeekTime = mOriginalSeekTime;
+          nextSeekTime.ref() > mOriginalSeekTarget.ref().GetTime()) {
+        nextSeekTime = Some(mOriginalSeekTarget.ref().GetTime());
         LOG("Unable to seek audio to video seek time. A/V sync may be broken");
       } else {
-        mOriginalSeekTime.reset();
+        mOriginalSeekTarget.reset();
       }
       mPendingSeekTime = nextSeekTime;
       DoAudioSeek();
@@ -1525,8 +1525,12 @@ MediaFormatReader::OnVideoSeekCompleted(media::TimeUnit aTime)
   mVideo.mSeekRequest.Complete();
 
   if (HasAudio()) {
-    MOZ_ASSERT(mPendingSeekTime.isSome());
-    mPendingSeekTime = Some(aTime);
+    MOZ_ASSERT(mPendingSeekTime.isSome() && mOriginalSeekTarget.isSome());
+    if (mOriginalSeekTarget.ref().IsFast()) {
+      
+      
+      mPendingSeekTime = Some(aTime);
+    }
     DoAudioSeek();
   } else {
     mPendingSeekTime.reset();

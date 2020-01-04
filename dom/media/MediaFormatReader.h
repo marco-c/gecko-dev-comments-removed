@@ -466,7 +466,7 @@ private:
     OnSeekFailed(TrackType::kAudioTrack, aFailure);
   }
   
-  Maybe<media::TimeUnit> mOriginalSeekTime;
+  Maybe<SeekTarget> mOriginalSeekTarget;
   Maybe<media::TimeUnit> mPendingSeekTime;
   MozPromiseHolder<SeekPromise> mSeekPromise;
 
