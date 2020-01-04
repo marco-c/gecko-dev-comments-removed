@@ -4,7 +4,7 @@
 
 
 
-var gTestfile = "ArrayBuffer-slice-arguments-neutering.js";
+var gTestfile = "ArrayBuffer-slice-arguments-detaching.js";
 
 var BUGNUMBER = 991981;
 var summary =

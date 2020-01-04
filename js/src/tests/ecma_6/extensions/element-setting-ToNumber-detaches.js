@@ -5,7 +5,7 @@
 
 "use strict"; 
 
-var gTestfile = 'element-setting-ToNumber-neuters.js';
+var gTestfile = 'element-setting-ToNumber-detaches.js';
 
 var BUGNUMBER = 1001547;
 var summary =

@@ -4,7 +4,7 @@
 
 
 
-var gTestfile = "DataView-set-arguments-neutering.js";
+var gTestfile = "DataView-set-arguments-detaching.js";
 
 var BUGNUMBER = 991981;
 var summary =

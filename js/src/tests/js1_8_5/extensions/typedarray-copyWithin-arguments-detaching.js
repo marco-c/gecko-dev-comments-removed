@@ -4,11 +4,11 @@
 
 
 
-var gTestfile = "TypedArray-subarray-arguments-neutering.js";
+var gTestfile = "typedarray-copyWithin-arguments-detaching.js";
 
 var BUGNUMBER = 991981;
 var summary =
-  "%TypedArray.prototype.subarray shouldn't misbehave horribly if " +
+  "%TypedArray.prototype.copyWithin shouldn't misbehave horribly if " +
   "index-argument conversion detaches the underlying ArrayBuffer";
 
 print(BUGNUMBER + ": " + summary);
@@ -35,7 +35,7 @@ function testBegin(dataType)
   var ok = false;
   try
   {
-    ta.subarray(begin);
+    ta.copyWithin(0, begin, 0x1000);
   }
   catch (e)
   {
@@ -46,36 +46,6 @@ function testBegin(dataType)
 }
 testBegin("change-data");
 testBegin("same-data");
-
-function testBeginWithEnd(dataType)
-{
-  var ab = new ArrayBuffer(0x1000);
-
-  var begin =
-    {
-      valueOf: function()
-      {
-        detachArrayBuffer(ab, dataType);
-        return 0x800;
-      }
-    };
-
-  var ta = new Uint8Array(ab);
-
-  var ok = false;
-  try
-  {
-    ta.subarray(begin, 0x1000);
-  }
-  catch (e)
-  {
-    ok = true;
-  }
-  assertEq(ok, true, "start weirdness should have thrown");
-  assertEq(ab.byteLength, 0, "detaching should work for start weirdness");
-}
-testBeginWithEnd("change-data");
-testBeginWithEnd("same-data");
 
 function testEnd(dataType)
 {
@@ -95,7 +65,7 @@ function testEnd(dataType)
   var ok = false;
   try
   {
-    ta.subarray(0x800, end);
+    ta.copyWithin(0, 0x800, end);
   }
   catch (e)
   {
@@ -106,6 +76,36 @@ function testEnd(dataType)
 }
 testEnd("change-data");
 testEnd("same-data");
+
+function testDest(dataType)
+{
+  var ab = new ArrayBuffer(0x1000);
+
+  var dest =
+    {
+      valueOf: function()
+      {
+        detachArrayBuffer(ab, dataType);
+        return 0;
+      }
+    };
+
+  var ta = new Uint8Array(ab);
+
+  var ok = false;
+  try
+  {
+    ta.copyWithin(dest, 0x800, 0x1000);
+  }
+  catch (e)
+  {
+    ok = true;
+  }
+  assertEq(ok, true, "start weirdness should have thrown");
+  assertEq(ab.byteLength, 0, "detaching should work for start weirdness");
+}
+testDest("change-data");
+testDest("same-data");
 
 
 
