@@ -5593,9 +5593,10 @@ HTMLInputElement::SubmitNamesValues(nsFormSubmission* aFormSubmission)
     }
 
     if (files.IsEmpty()) {
-      
-      
-      aFormSubmission->AddNameFilePair(name, nullptr);
+      RefPtr<BlobImpl> blobImpl =
+        new BlobImplEmptyFile(NS_LITERAL_STRING("application/octet-stream"));
+      RefPtr<File> file = File::Create(OwnerDoc()->GetInnerWindow(), blobImpl);
+      aFormSubmission->AddNameFilePair(name, file);
     }
 
     return NS_OK;
