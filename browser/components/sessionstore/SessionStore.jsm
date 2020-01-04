@@ -1236,9 +1236,7 @@ var SessionStoreInternal = {
 
     var tabbrowser = aWindow.gBrowser;
 
-    
-    
-    let browsers = tabbrowser.browsers;
+    let browsers = Array.from(tabbrowser.browsers);
 
     TAB_EVENTS.forEach(function(aEvent) {
       tabbrowser.tabContainer.removeEventListener(aEvent, this, true);
@@ -1320,7 +1318,6 @@ var SessionStoreInternal = {
         
         
 
-        
         for (let browser of browsers) {
           if (this._closedWindowTabs.has(browser.permanentKey)) {
             let tabData = this._closedWindowTabs.get(browser.permanentKey);
