@@ -39,7 +39,7 @@ public:
   virtual nsresult Shutdown();
 
   
-  bool HasQueuedSample();
+  size_t NumQueuedSamples();
 
   
   
