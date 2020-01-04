@@ -340,7 +340,6 @@ CloneData(JSContext* aCx, CryptoBuffer& aDst, JS::Handle<JSObject*> aSrc)
 void
 WebCryptoTask::DispatchWithPromise(Promise* aResultPromise)
 {
-  MOZ_ASSERT(NS_IsMainThread());
   mResultPromise = aResultPromise;
 
   
@@ -355,13 +354,6 @@ WebCryptoTask::DispatchWithPromise(Promise* aResultPromise)
     CallCallback(mEarlyRv);
     Skip();
     return;
-  }
-
-  
-  
-  if (!EnsureNSSInitializedChromeOrContent()) {
-    mEarlyRv = NS_ERROR_DOM_UNKNOWN_ERR;
-    MAYBE_EARLY_FAIL(mEarlyRv)
   }
 
   
