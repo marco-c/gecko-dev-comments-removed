@@ -768,7 +768,7 @@ MakeSingletonTypeSetFromKey(CompilerConstraintList* constraints, TypeSet::Object
     
     
     MOZ_ASSERT(constraints);
-    key->hasStableClassAndProto(constraints);
+    (void)key->hasStableClassAndProto(constraints);
 
     LifoAlloc* alloc = GetJitContext()->temp->lifoAlloc();
     return alloc->new_<TemporaryTypeSet>(alloc, TypeSet::ObjectType(key));
