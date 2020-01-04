@@ -42,10 +42,6 @@
 
 const Services = require("Services");
 
-
-
-loader.lazyRequireGetter(this, "CSS", "CSS");
-
 loader.lazyRequireGetter(this, "CSSLexer", "devtools/shared/css-lexer");
 
 
