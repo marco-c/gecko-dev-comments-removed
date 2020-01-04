@@ -134,9 +134,9 @@ MediaStreamGraphImpl::RemoveStreamGraphThread(MediaStream* aStream)
     mStreams.RemoveElement(aStream);
   }
 
-  NS_RELEASE(aStream); 
+  STREAM_LOG(LogLevel::Debug, ("Removed media stream %p from the graph", aStream));
 
-  STREAM_LOG(LogLevel::Debug, ("Removing media stream %p from the graph", aStream));
+  NS_RELEASE(aStream); 
 }
 
 void
@@ -368,6 +368,15 @@ MediaStreamGraphImpl::AudioTrackPresent(bool& aNeedsAEC)
         }
       }
     }
+  }
+
+  
+  
+  
+  if (!audioTrackPresent && mInputDeviceUsers.Count() != 0) {
+    NS_WARNING("No audio tracks, but full-duplex audio is enabled!!!!!");
+    audioTrackPresent = true;
+    shouldAEC = true;
   }
 
 #ifdef MOZ_WEBRTC
