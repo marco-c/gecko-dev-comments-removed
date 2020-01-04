@@ -11,15 +11,9 @@
 
 
 
-
-
-
 this.EXPORTED_SYMBOLS = [ "gDevTools", "gDevToolsBrowser" ];
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
 
 const { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 

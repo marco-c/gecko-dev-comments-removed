@@ -52,7 +52,12 @@ devtoolsCommandlineHandler.prototype = {
     if (!window) {
       let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
       
-      Cu.import("resource://devtools/client/framework/gDevTools.jsm");
+      
+      
+      
+      
+      require("devtools/client/framework/devtools-browser");
+
       let hudservice = require("devtools/client/webconsole/hudservice");
       let { console } = Cu.import("resource://gre/modules/Console.jsm", {});
       hudservice.toggleBrowserConsole().then(null, console.error);
@@ -71,9 +76,10 @@ devtoolsCommandlineHandler.prototype = {
     Services.obs.addObserver(function onStartup(window) {
       Services.obs.removeObserver(onStartup,
                                   "browser-delayed-startup-finished");
-      const {gDevTools} = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
-      const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-      let target = devtools.TargetFactory.forTab(window.gBrowser.selectedTab);
+      const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+      const {gDevTools} = require("devtools/client/framework/devtools");
+      const {TargetFactory} = require("devtools/client/framework/target");
+      let target = TargetFactory.forTab(window.gBrowser.selectedTab);
       gDevTools.showToolbox(target);
     }, "browser-delayed-startup-finished", false);
   },
