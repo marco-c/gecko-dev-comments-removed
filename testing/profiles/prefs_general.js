@@ -110,7 +110,7 @@ user_pref("extensions.getAddons.getWithPerformance.url", "http://%(server)s/exte
 user_pref("extensions.getAddons.search.browseURL", "http://%(server)s/extensions-dummy/repositoryBrowseURL");
 user_pref("extensions.getAddons.search.url", "http://%(server)s/extensions-dummy/repositorySearchURL");
 
-user_pref("services.kinto.base", "http://%(server)s/dummy-kinto/v1");
+user_pref("services.settings.server", "http://%(server)s/dummy-kinto/v1");
 
 user_pref("plugins.update.url", "http://%(server)s/plugins-dummy/updateCheckURL");
 
