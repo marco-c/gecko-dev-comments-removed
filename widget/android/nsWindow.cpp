@@ -79,6 +79,7 @@ using mozilla::Unused;
 #include "nsString.h"
 #include "GeckoProfiler.h" 
 #include "nsIXULRuntime.h"
+#include "nsPrintfCString.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

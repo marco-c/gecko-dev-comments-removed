@@ -20,6 +20,7 @@
 #include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBVersionChangeTransactionChild.h"
+#include "mozilla/dom/indexedDB/PBackgroundIndexedDBUtilsChild.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
@@ -44,6 +45,7 @@ class IDBFactory;
 class IDBMutableFile;
 class IDBOpenDBRequest;
 class IDBRequest;
+class IndexedDatabaseManager;
 class Key;
 class PermissionRequestChild;
 class PermissionRequestParent;
@@ -804,6 +806,45 @@ private:
   
   bool
   SendContinue(const CursorRequestParams& aParams, const Key& aKey) = delete;
+
+  bool
+  SendDeleteMe() = delete;
+};
+
+class BackgroundUtilsChild final
+  : public PBackgroundIndexedDBUtilsChild
+{
+  friend class mozilla::ipc::BackgroundChildImpl;
+  friend class IndexedDatabaseManager;
+
+  IndexedDatabaseManager* mManager;
+
+#ifdef DEBUG
+  nsCOMPtr<nsIEventTarget> mOwningThread;
+#endif
+
+public:
+  void
+  AssertIsOnOwningThread() const
+#ifdef DEBUG
+  ;
+#else
+  { }
+#endif
+
+private:
+  
+  explicit BackgroundUtilsChild(IndexedDatabaseManager* aManager);
+
+  
+  ~BackgroundUtilsChild();
+
+  void
+  SendDeleteMeInternal();
+
+  
+  virtual void
+  ActorDestroy(ActorDestroyReason aWhy) override;
 
   bool
   SendDeleteMe() = delete;
