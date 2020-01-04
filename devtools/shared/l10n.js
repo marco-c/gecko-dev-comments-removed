@@ -3,8 +3,8 @@
 
 "use strict";
 
-const parsePropertiesFile = require("devtools/client/shared/vendor/node-properties");
-const { sprintf } = require("devtools/client/shared/vendor/sprintf");
+const parsePropertiesFile = require("devtools/shared/node-properties/node-properties");
+const { sprintf } = require("devtools/shared/sprintfjs/sprintf");
 
 
 
