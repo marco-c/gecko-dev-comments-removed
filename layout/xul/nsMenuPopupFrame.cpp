@@ -1583,17 +1583,6 @@ nsMenuPopupFrame::GetConstraintRect(const LayoutDeviceIntRect& aAnchorRect,
     
     screenRectPixels.IntersectRect(screenRectPixels, aRootScreenRect);
   }
-  else if (!mOverrideConstraintRect.IsEmpty()) {
-    LayoutDeviceIntRect overrideConstrainRect =
-      LayoutDeviceIntRect::FromAppUnitsToNearest(mOverrideConstraintRect,
-                                                 PresContext()->AppUnitsPerDevPixel());
-    
-    
-    
-    screenRectPixels.IntersectRect(screenRectPixels, overrideConstrainRect);
-    screenRectPixels.x = overrideConstrainRect.x;
-    screenRectPixels.width = overrideConstrainRect.width;
-  }
 
   return screenRectPixels;
 }
