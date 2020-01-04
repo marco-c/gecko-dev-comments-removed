@@ -740,7 +740,7 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
                                       "interface that already has %s "
                                       "declaration" %
                                       (member.maplikeOrSetlikeOrIterableType,
-                                       self.maplikeOrSetlike.maplikeOrSetlikeOrIterableType),
+                                       self.maplikeOrSetlikeOrIterable.maplikeOrSetlikeOrIterableType),
                                       [self.maplikeOrSetlikeOrIterable.location,
                                        member.location])
                 self.maplikeOrSetlikeOrIterable = member
@@ -6567,6 +6567,7 @@ class Parser(Tokenizer):
         interfaceStatements = [p for p in self._productions if
                                isinstance(p, IDLInterface)]
 
+        iterableIteratorIface = None
         for iface in interfaceStatements:
             iterable = None
             
@@ -6578,13 +6579,19 @@ class Parser(Tokenizer):
                     iterable = m
                     break
             if iterable:
+                def simpleExtendedAttr(str):
+                    return IDLExtendedAttribute(iface.location, (str, ))
+                nextMethod = IDLMethod(
+                    iface.location,
+                    IDLUnresolvedIdentifier(iface.location, "next"),
+                    BuiltinTypes[IDLBuiltinType.Types.object], [])
+                nextMethod.addExtendedAttributes([simpleExtendedAttr("Throws")])
                 itr_ident = IDLUnresolvedIdentifier(iface.location,
                                                     iface.identifier.name + "Iterator")
                 itr_iface = IDLInterface(iface.location, self.globalScope(),
-                                         itr_ident, None, [],
+                                         itr_ident, None, [nextMethod],
                                          isKnownNonPartial=True)
-                itr_iface.addExtendedAttributes([IDLExtendedAttribute(iface.location,
-                                                                      ("NoInterfaceObject", ))])
+                itr_iface.addExtendedAttributes([simpleExtendedAttr("NoInterfaceObject")])
                 
                 
                 
@@ -6593,18 +6600,9 @@ class Parser(Tokenizer):
                 
                 
                 
-                
                 itr_iface.iterableInterface = iface
                 self._productions.append(itr_iface)
                 iterable.iteratorType = IDLWrapperType(iface.location, itr_iface)
-                itrPlaceholder = IDLIdentifierPlaceholder(iface.location,
-                                                          IDLUnresolvedIdentifier(iface.location,
-                                                                                  "IterableIterator"))
-                implements = IDLImplementsStatement(iface.location,
-                                                    IDLIdentifierPlaceholder(iface.location,
-                                                                             itr_ident),
-                                                    itrPlaceholder)
-                self._productions.append(implements)
 
         
         
