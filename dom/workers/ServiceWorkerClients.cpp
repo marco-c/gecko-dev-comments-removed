@@ -615,10 +615,9 @@ private:
     }
 
     
-    nsCOMPtr<nsIDOMWindow> browserWindow;
-    rv = wm->GetMostRecentWindow(MOZ_UTF16("navigator:browser"),
-                                 getter_AddRefs(browserWindow));
-    if (NS_WARN_IF(NS_FAILED(rv)) || !browserWindow) {
+    nsCOMPtr<nsPIDOMWindow> browserWindow =
+      nsContentUtils::GetMostRecentNonPBWindow();
+    if (!browserWindow) {
       
       
       
