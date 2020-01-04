@@ -38,7 +38,7 @@ public:
 
 
 
-  bool IsFinished();
+  bool IsFinished(double aSmallestVisibleIncrement);
 
 protected:
   virtual double Acceleration(const State &aState);

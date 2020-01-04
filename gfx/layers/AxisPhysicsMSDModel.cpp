@@ -70,30 +70,23 @@ AxisPhysicsMSDModel::SetDestination(double aDestination)
 }
 
 bool
-AxisPhysicsMSDModel::IsFinished()
+AxisPhysicsMSDModel::IsFinished(double aSmallestVisibleIncrement)
 {
   
   
   
   
   
+  
+  
+  
+  
+  
+  
+  const double finishVelocity = aSmallestVisibleIncrement * 2;
 
-  
-  
-  
-  
-  const double kFinishDistance = 30.0;
-
-  
-  
-  
-  
-  
-  
-  const double kFinishVelocity = 60.0;
-
-  return fabs(mDestination - GetPosition ()) < kFinishDistance
-    && fabs(GetVelocity()) <= kFinishVelocity;
+  return fabs(mDestination - GetPosition ()) < aSmallestVisibleIncrement
+    && fabs(GetVelocity()) <= finishVelocity;
 }
 
 } 
