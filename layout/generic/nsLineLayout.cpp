@@ -2917,8 +2917,10 @@ nsLineLayout::ApplyFrameJustification(PerSpanData* aPSD,
       nscoord dw = 0;
       WritingMode lineWM = mRootSpan->mWritingMode;
       const auto& assign = pfd->mJustificationAssignment;
+      bool isInlineText = pfd->mIsTextFrame &&
+                          !pfd->mWritingMode.IsOrthogonalTo(lineWM);
 
-      if (true == pfd->mIsTextFrame) {
+      if (isInlineText) {
         if (aState.IsJustifiable()) {
           
           
@@ -2940,7 +2942,7 @@ nsLineLayout::ApplyFrameJustification(PerSpanData* aPSD,
 
       pfd->mBounds.ISize(lineWM) += dw;
       nscoord gapsAtEnd = 0;
-      if (!pfd->mIsTextFrame && assign.TotalGaps()) {
+      if (!isInlineText && assign.TotalGaps()) {
         
         
         deltaICoord += aState.Consume(assign.mGapsAtStart);

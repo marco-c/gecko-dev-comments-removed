@@ -3077,7 +3077,6 @@ PropertyProvider::ComputeJustification(Range aRange)
   
   
   
-  
   if (mFrame->StyleContext()->IsTextCombined()) {
     return;
   }
