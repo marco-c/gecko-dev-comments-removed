@@ -464,19 +464,6 @@ public:
 
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);
 
-  
-
-
-
-
-
-
-
-
-  static bool UpdateRemoteContentController(uint64_t aLayersId,
-                                            dom::ContentParent* aContentParent,
-                                            const dom::TabId& aTabId,
-                                            dom::TabParent* aBrowserParent);
   bool AsyncPanZoomEnabled() const {
     return !!mApzcTreeManager;
   }
@@ -505,6 +492,20 @@ private:
   static void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   static void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   static void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
+
+  
+
+
+
+
+
+
+
+
+  static bool UpdateRemoteContentController(uint64_t aLayersId,
+                                            dom::ContentParent* aContentParent,
+                                            const dom::TabId& aTabId,
+                                            dom::TabParent* aBrowserParent);
 
 protected:
   
