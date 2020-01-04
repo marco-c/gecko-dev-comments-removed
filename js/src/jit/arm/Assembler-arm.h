@@ -1781,6 +1781,10 @@ class Assembler : public AssemblerShared
         return;
     }
 
+    void comment(const char* msg) {
+        spew("; %s", msg);
+    }
+
     
     
     void executableCopy(uint8_t* buffer);
