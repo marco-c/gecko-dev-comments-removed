@@ -1411,7 +1411,9 @@ MediaFormatReader::Seek(int64_t aTime, int64_t aUnused)
 
   nsRefPtr<SeekPromise> p = mSeekPromise.Ensure(__func__);
 
-  AttemptSeek();
+  RefPtr<nsIRunnable> task(
+    NS_NewRunnableMethod(this, &MediaFormatReader::AttemptSeek));
+  OwnerThread()->Dispatch(task.forget());
 
   return p;
 }
@@ -1420,6 +1422,13 @@ void
 MediaFormatReader::AttemptSeek()
 {
   MOZ_ASSERT(OnTaskQueue());
+  if (mPendingSeekTime.isNothing()) {
+    return;
+  }
+  
+  
+  mAudio.mSeekRequest.DisconnectIfExists();
+  mVideo.mSeekRequest.DisconnectIfExists();
   if (HasVideo()) {
     DoVideoSeek();
   } else if (HasAudio()) {
