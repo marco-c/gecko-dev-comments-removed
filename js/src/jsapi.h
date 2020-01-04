@@ -4478,6 +4478,10 @@ JS_GetLocaleCallbacks(JSRuntime* rt);
 
 
 
+namespace JS {
+const uint16_t MaxNumErrorArguments = 10;
+};
+
 
 
 
