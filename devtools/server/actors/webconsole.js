@@ -161,6 +161,10 @@ WebConsoleActor.prototype =
 
 
 
+
+
+
+
   get window() {
     if (this.parentActor.isRootActor) {
       return this._getWindowForBrowserConsole();
@@ -736,7 +740,8 @@ WebConsoleActor.prototype =
             break;
           }
 
-          let requestStartTime = this.window ?
+          
+          let requestStartTime = this.window && this.window.performance ?
             this.window.performance.timing.requestStart : 0;
 
           let cache = this.consoleAPIListener
