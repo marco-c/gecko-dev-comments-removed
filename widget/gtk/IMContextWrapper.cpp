@@ -339,10 +339,6 @@ IMContextWrapper::GetIMEUpdatePreference() const
         notifications |= nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE;
     }
     nsIMEUpdatePreference updatePreference(notifications);
-    
-    
-    
-    updatePreference.DontNotifyChangesCausedByComposition();
     return updatePreference;
 }
 
