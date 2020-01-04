@@ -53,6 +53,24 @@ MediaSourceDemuxer::AttemptInit()
   return p;
 }
 
+void
+MediaSourceDemuxer::AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  nsRefPtr<MediaSourceDemuxer> self = this;
+  nsRefPtr<MediaSourceDecoder::ResourceSizes> sizes = aSizes;
+  nsCOMPtr<nsIRunnable> task =
+    NS_NewRunnableFunction([self, sizes] () {
+      for (TrackBuffersManager* manager : self->mSourceBuffers) {
+        manager->AddSizeOfResources(sizes);
+      }
+    });
+
+  GetTaskQueue()->Dispatch(task.forget());
+}
+
 void MediaSourceDemuxer::NotifyDataArrived()
 {
   nsRefPtr<MediaSourceDemuxer> self = this;

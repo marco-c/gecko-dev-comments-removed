@@ -53,6 +53,8 @@ public:
   
   void GetMozDebugReaderData(nsAString& aString);
 
+  void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
+
 private:
   ~MediaSourceDemuxer();
   friend class MediaSourceTrackDemuxer;

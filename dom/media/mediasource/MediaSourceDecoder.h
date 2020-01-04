@@ -75,6 +75,8 @@ public:
   
   void GetMozDebugReaderData(nsAString& aString);
 
+  void AddSizeOfResources(ResourceSizes* aSizes) override;
+
 private:
   void DoSetMediaSourceDuration(double aDuration);
 
