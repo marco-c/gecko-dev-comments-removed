@@ -17,9 +17,7 @@
 #include "nsStyleContext.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
-#include "mozilla/LookAndFeel.h"
 #include "LayerAnimationInfo.h" 
-#include "Layers.h"
 #include "FrameLayerBuilder.h"
 #include "nsDisplayList.h"
 #include "mozilla/MemoryReporting.h"
@@ -29,7 +27,6 @@
 #include "nsStyleSet.h"
 #include "nsStyleChangeList.h"
 
-using mozilla::layers::Layer;
 using mozilla::dom::Animation;
 using mozilla::dom::KeyframeEffectReadOnly;
 
@@ -603,91 +600,6 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
   }
 }
 
-bool
-AnimationCollection::CanThrottleTransformChanges(TimeStamp aTime)
-{
-  if (!nsLayoutUtils::AreAsyncAnimationsEnabled()) {
-    return false;
-  }
-
-  
-  
-
-  
-  if (LookAndFeel::GetInt(LookAndFeel::eIntID_ShowHideScrollbars) == 0) {
-    return true;
-  }
-
-  
-  if (!mStyleRuleRefreshTime.IsNull() &&
-      (aTime - mStyleRuleRefreshTime) < TimeDuration::FromMilliseconds(200)) {
-    return true;
-  }
-
-  dom::Element* element = GetElementToRestyle();
-  if (!element) {
-    return false;
-  }
-
-  
-  
-  nsIScrollableFrame* scrollable = nsLayoutUtils::GetNearestScrollableFrame(
-                                     nsLayoutUtils::GetStyleFrame(element));
-  if (!scrollable) {
-    return true;
-  }
-
-  ScrollbarStyles ss = scrollable->GetScrollbarStyles();
-  if (ss.mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
-      ss.mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
-      scrollable->GetLogicalScrollPosition() == nsPoint(0, 0)) {
-    return true;
-  }
-
-  return false;
-}
-
-bool
-AnimationCollection::CanThrottleAnimation(TimeStamp aTime)
-{
-  dom::Element* element = GetElementToRestyle();
-  if (!element) {
-    return false;
-  }
-  nsIFrame* frame = nsLayoutUtils::GetStyleFrame(element);
-  if (!frame) {
-    return false;
-  }
-
-  for (const LayerAnimationInfo::Record& record :
-        LayerAnimationInfo::sRecords) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!HasCurrentAnimationOfProperty(record.mProperty)) {
-      continue;
-    }
-
-    Layer* layer = FrameLayerBuilder::GetDedicatedLayer(
-                     frame, record.mLayerType);
-    if (!layer || mAnimationGeneration > layer->GetAnimationGeneration()) {
-      return false;
-    }
-
-    if (record.mProperty == eCSSProperty_transform &&
-        !CanThrottleTransformChanges(aTime)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 void
 AnimationCollection::ClearIsRunningOnCompositor(nsCSSProperty aProperty)
 {
@@ -727,15 +639,6 @@ AnimationCollection::RequestRestyle(RestyleType aRestyleType)
 
   if (mHasPendingAnimationRestyle) {
     return;
-  }
-
-  
-  
-  if (aRestyleType == RestyleType::Throttled) {
-    TimeStamp now = presContext->RefreshDriver()->MostRecentRefresh();
-    if (!CanThrottleAnimation(now)) {
-      aRestyleType = RestyleType::Standard;
-    }
   }
 
   if (aRestyleType >= RestyleType::Standard) {

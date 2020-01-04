@@ -9,8 +9,10 @@
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/PropertyIndexedKeyframesBinding.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/LookAndFeel.h" 
 #include "mozilla/StyleAnimationValue.h"
 #include "AnimationCommon.h"
+#include "Layers.h" 
 #include "nsCSSParser.h"
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h" 
@@ -1726,12 +1728,108 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
 bool
 KeyframeEffectReadOnly::CanThrottle() const
 {
+  
+  
+  MOZ_ASSERT(IsInEffect() && IsCurrent(),
+    "Effect should be in effect and current");
+
+  nsIFrame* frame = GetAnimationFrame();
+  if (!frame) {
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+
+  
+  
+  
+  
+  for (const LayerAnimationInfo::Record& record :
+        LayerAnimationInfo::sRecords) {
+    
+    
+    
+    if (!HasAnimationOfProperty(record.mProperty)) {
+      continue;
+    }
+
+    AnimationCollection* collection = GetCollection();
+    MOZ_ASSERT(collection,
+      "CanThrottle should be called on an effect associated with an animation");
+    layers::Layer* layer =
+      FrameLayerBuilder::GetDedicatedLayer(frame, record.mLayerType);
+    
+    if (!layer ||
+        collection->mAnimationGeneration > layer->GetAnimationGeneration()) {
+      return false;
+    }
+
+    
+    
+    if (record.mProperty == eCSSProperty_transform &&
+        !CanThrottleTransformChanges(*frame)) {
+      return false;
+    }
+  }
+
   for (const AnimationProperty& property : mProperties) {
     if (!IsPropertyRunningOnCompositor(property.mProperty)) {
       return false;
     }
   }
+
   return true;
+}
+
+bool
+KeyframeEffectReadOnly::CanThrottleTransformChanges(nsIFrame& aFrame) const
+{
+  
+  
+
+  
+  if (LookAndFeel::GetInt(LookAndFeel::eIntID_ShowHideScrollbars) == 0) {
+    return true;
+  }
+
+  nsPresContext* presContext = GetPresContext();
+  
+  
+  MOZ_ASSERT(presContext);
+
+  TimeStamp now =
+    presContext->RefreshDriver()->MostRecentRefresh();
+
+  AnimationCollection* collection = GetCollection();
+  MOZ_ASSERT(collection,
+    "CanThrottleTransformChanges should be involved with animation collection");
+  TimeStamp styleRuleRefreshTime = collection->mStyleRuleRefreshTime;
+  
+  if (!styleRuleRefreshTime.IsNull() &&
+      (now - styleRuleRefreshTime) < TimeDuration::FromMilliseconds(200)) {
+    return true;
+  }
+
+  
+  
+  nsIScrollableFrame* scrollable =
+    nsLayoutUtils::GetNearestScrollableFrame(&aFrame);
+  if (!scrollable) {
+    return true;
+  }
+
+  ScrollbarStyles ss = scrollable->GetScrollbarStyles();
+  if (ss.mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
+      ss.mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
+      scrollable->GetLogicalScrollPosition() == nsPoint(0, 0)) {
+    return true;
+  }
+
+  return false;
 }
 
 nsIFrame*
