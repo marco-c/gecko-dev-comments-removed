@@ -87,7 +87,7 @@ public:
     return Trap(BlockedSyscallTrap, nullptr);
   }
 
-  virtual ResultExpr ClonePolicy() const {
+  virtual ResultExpr ClonePolicy(ResultExpr failPolicy) const {
     
 
     
@@ -113,7 +113,7 @@ public:
       .Case(flags_common, Allow()) 
 #endif
       .Case(flags_modern, Allow()) 
-      .Default(InvalidSyscall());
+      .Default(failPolicy);
   }
 
   virtual ResultExpr PrctlPolicy() const {
@@ -225,7 +225,7 @@ public:
 
       
     case __NR_clone:
-      return ClonePolicy();
+      return ClonePolicy(InvalidSyscall());
 
       
 #ifdef __NR_set_robust_list
@@ -647,6 +647,15 @@ public:
 
     case __NR_mlock:
       return Allow();
+
+      
+      
+      
+      
+      
+      
+    case __NR_clone:
+      return ClonePolicy(Error(EPERM));
 
 #endif 
 
