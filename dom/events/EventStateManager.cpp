@@ -642,7 +642,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     
     
     
-    aEvent->mFlags.mNoCrossProcessBoundaryForwarding = true;
+    aEvent->StopCrossProcessForwarding();
     break;
   case eMouseExitFromWidget:
     
@@ -659,7 +659,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
     
     
-    aEvent->mFlags.mNoCrossProcessBoundaryForwarding = true;
+    aEvent->StopCrossProcessForwarding();
 
     
     

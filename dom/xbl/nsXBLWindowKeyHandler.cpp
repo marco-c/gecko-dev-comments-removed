@@ -417,7 +417,7 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInDefaultEventGroup(
     
     
     
-    widgetKeyboardEvent->mFlags.mNoCrossProcessBoundaryForwarding = true;
+    widgetKeyboardEvent->StopCrossProcessForwarding();
     
     
     

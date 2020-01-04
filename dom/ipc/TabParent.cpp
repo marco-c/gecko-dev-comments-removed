@@ -2109,8 +2109,7 @@ TabParent::RecvReplyKeyEvent(const WidgetKeyboardEvent& event)
 
   WidgetKeyboardEvent localEvent(event);
   
-  
-  localEvent.mFlags.mNoCrossProcessBoundaryForwarding = true;
+  localEvent.StopCrossProcessForwarding();
 
   
   
