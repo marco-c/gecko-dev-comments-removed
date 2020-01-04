@@ -13,8 +13,16 @@ const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 var DOMUtils = Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
             .getService(Ci.mozIJSSubScriptLoader);
-var EventUtils = {};
-loader.loadSubScript("chrome://marionette/content/EventUtils.js", EventUtils);
+
+
+
+
+let EventUtils = {};
+EventUtils.window = {};
+EventUtils.parent = {};
+EventUtils._EU_Ci = Components.interfaces;
+EventUtils._EU_Cc = Components.classes;
+loader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 
 const protocol = require("devtools/server/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
