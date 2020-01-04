@@ -116,15 +116,6 @@ static SECStatus tls13_ClientHandleKeyShareXtn(sslSocket *ss,
 static SECStatus tls13_ServerHandleKeyShareXtn(sslSocket *ss,
                                                PRUint16 ex_type,
                                                SECItem *data);
-static PRInt32 tls13_ClientSendPreSharedKeyXtn(sslSocket *ss, PRBool append,
-                                               PRUint32 maxBytes);
-static SECStatus tls13_ServerHandlePreSharedKeyXtn(sslSocket *ss,
-                                                   PRUint16 ex_type,
-                                                   SECItem *data);
-static SECStatus tls13_ClientHandlePreSharedKeyXtn(sslSocket *ss,
-                                                   PRUint16 ex_type,
-                                                   SECItem *data);
-
 
 
 
@@ -169,7 +160,7 @@ ssl3_AppendNumberToItem(SECItem *item, PRUint32 num, PRInt32 lenSize)
     return rv;
 }
 
-SECStatus
+static SECStatus
 ssl3_SessionTicketShutdown(void *appData, void *nssData)
 {
     if (session_ticket_enc_key_pkcs11) {
@@ -294,7 +285,6 @@ static const ssl3HelloExtensionHandler clientHelloHandlers[] = {
     { ssl_extended_master_secret_xtn, &ssl3_HandleExtendedMasterSecretXtn },
     { ssl_signed_cert_timestamp_xtn, &ssl3_ServerHandleSignedCertTimestampXtn },
     { ssl_tls13_key_share_xtn, &tls13_ServerHandleKeyShareXtn },
-    { ssl_tls13_pre_shared_key_xtn, &tls13_ServerHandlePreSharedKeyXtn },
     { -1, NULL }
 };
 
@@ -312,7 +302,6 @@ static const ssl3HelloExtensionHandler serverHelloHandlersTLS[] = {
     { ssl_extended_master_secret_xtn, &ssl3_HandleExtendedMasterSecretXtn },
     { ssl_signed_cert_timestamp_xtn, &ssl3_ClientHandleSignedCertTimestampXtn },
     { ssl_tls13_key_share_xtn, &tls13_ClientHandleKeyShareXtn },
-    { ssl_tls13_pre_shared_key_xtn, &tls13_ClientHandlePreSharedKeyXtn },
     { -1, NULL }
 };
 
@@ -341,23 +330,18 @@ static const ssl3HelloExtensionSender clientHelloSendersTLS[SSL_MAX_EXTENSIONS] 
       { ssl_app_layer_protocol_xtn, &ssl3_ClientSendAppProtoXtn },
       { ssl_use_srtp_xtn, &ssl3_ClientSendUseSRTPXtn },
       { ssl_cert_status_xtn, &ssl3_ClientSendStatusRequestXtn },
+      { ssl_signature_algorithms_xtn, &ssl3_ClientSendSigAlgsXtn },
       { ssl_tls13_draft_version_xtn, &ssl3_ClientSendDraftVersionXtn },
       { ssl_signed_cert_timestamp_xtn, &ssl3_ClientSendSignedCertTimestampXtn },
       { ssl_tls13_key_share_xtn, &tls13_ClientSendKeyShareXtn },
-      { ssl_tls13_pre_shared_key_xtn, &tls13_ClientSendPreSharedKeyXtn },
-      
-
-
-
-      { ssl_signature_algorithms_xtn, &ssl3_ClientSendSigAlgsXtn }
       
     };
 
-static const
-ssl3HelloExtensionSender clientHelloSendersSSL3[SSL_MAX_EXTENSIONS] = {
-    { ssl_renegotiation_info_xtn, &ssl3_SendRenegotiationInfoXtn }
-    
-};
+static const ssl3HelloExtensionSender clientHelloSendersSSL3[SSL_MAX_EXTENSIONS] =
+    {
+      { ssl_renegotiation_info_xtn, &ssl3_SendRenegotiationInfoXtn }
+      
+    };
 
 static PRBool
 arrayContainsExtension(const PRUint16 *array, PRUint32 len, PRUint16 ex_type)
@@ -378,7 +362,7 @@ ssl3_ExtensionNegotiated(sslSocket *ss, PRUint16 ex_type)
                                   xtnData->numNegotiated, ex_type);
 }
 
-PRBool
+static PRBool
 ssl3_ClientExtensionAdvertised(sslSocket *ss, PRUint16 ex_type)
 {
     TLSExtensionData *xtnData = &ss->xtnData;
@@ -559,13 +543,6 @@ ssl3_SendSessionTicketXtn(
     PRInt32 extension_length;
     NewSessionTicket *session_ticket = NULL;
     sslSessionID *sid = ss->sec.ci.sid;
-
-    
-
-    if (sid->cached == in_client_cache &&
-        sid->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        return 0;
-    }
 
     
     if (!ss->opt.enableSessionTickets)
@@ -1141,11 +1118,11 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     PRUint32 cert_length = 0;
     PRUint8 length_buf[4];
     PRUint32 now;
-    PK11SymKey *aes_key_pkcs11 = NULL;
-    PK11SymKey *mac_key_pkcs11 = NULL;
+    PK11SymKey *aes_key_pkcs11;
+    PK11SymKey *mac_key_pkcs11;
 #ifndef NO_PKCS11_BYPASS
-    const unsigned char *aes_key = NULL;
-    const unsigned char *mac_key = NULL;
+    const unsigned char *aes_key;
+    const unsigned char *mac_key;
     PRUint32 aes_key_length;
     PRUint32 mac_key_length;
     PRUint64 aes_ctx_buf[MAX_CIPHER_CONTEXT_LLONGS];
@@ -1166,8 +1143,6 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     PRUint32 srvNameLen = 0;
     CK_MECHANISM_TYPE msWrapMech = 0; 
 
-    ssl3CipherSpec *spec = ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 ?
-            ss->ssl3.cwSpec : ss->ssl3.pwSpec;
 
     SSL_TRC(3, ("%d: SSL3[%d]: send session_ticket handshake",
                 SSL_GETPID(), ss->fd));
@@ -1200,10 +1175,10 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     if (rv != SECSuccess)
         goto loser;
 
-    if (spec->msItem.len && spec->msItem.data) {
+    if (ss->ssl3.pwSpec->msItem.len && ss->ssl3.pwSpec->msItem.data) {
         
-        ms_item.data = spec->msItem.data;
-        ms_item.len = spec->msItem.len;
+        ms_item.data = ss->ssl3.pwSpec->msItem.data;
+        ms_item.len = ss->ssl3.pwSpec->msItem.len;
         ms_is_wrapped = PR_FALSE;
     } else {
         
@@ -1217,7 +1192,7 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
             effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
         }
 
-        rv = ssl3_CacheWrappedMasterSecret(ss, &sid, spec,
+        rv = ssl3_CacheWrappedMasterSecret(ss, &sid, ss->ssl3.pwSpec,
                                            effectiveExchKeyType);
         if (rv == SECSuccess) {
             if (sid.u.ssl3.keys.wrapped_master_secret_len > sizeof(wrapped_ms))
@@ -1234,7 +1209,7 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
         ms_is_wrapped = PR_TRUE;
     }
     
-    srvName = &ss->sec.ci.sid->u.ssl3.srvName;
+    srvName = &ss->ssl3.pwSpec->srvVirtName;
     if (srvName->data && srvName->len) {
         srvNameLen = 2 + srvName->len; 
     }
@@ -1393,8 +1368,6 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
 
 #ifndef NO_PKCS11_BYPASS
     if (ss->opt.bypassPKCS11) {
-        PORT_Assert(aes_key);
-
         aes_ctx = (AESContext *)aes_ctx_buf;
         rv = AES_InitContext(aes_ctx, aes_key, aes_key_length, iv,
                              NSS_AES_CBC, 1, AES_BLOCK_SIZE);
@@ -1535,428 +1508,433 @@ ssl3_ClientHandleSessionTicketXtn(sslSocket *ss, PRUint16 ex_type,
     return SECSuccess;
 }
 
-
-
-static SECStatus
-ssl3_ProcessSessionTicketCommon(sslSocket *ss, SECItem *data)
+SECStatus
+ssl3_ServerHandleSessionTicketXtn(sslSocket *ss, PRUint16 ex_type,
+                                  SECItem *data)
 {
     SECStatus rv;
     SECItem *decrypted_state = NULL;
     SessionTicket *parsed_session_ticket = NULL;
     sslSessionID *sid = NULL;
     SSL3Statistics *ssl3stats;
-    PRUint32 i;
-    SECItem extension_data;
-    EncryptedSessionTicket enc_session_ticket;
-    unsigned char computed_mac[TLS_EX_SESS_TICKET_MAC_LENGTH];
-    unsigned int computed_mac_length;
+
+    
+    if (!ss->opt.enableSessionTickets) {
+        return SECSuccess;
+    }
+
+    
+    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
+
+    
+
+
+
+    if (data->len == 0) {
+        ss->xtnData.emptySessionTicket = PR_TRUE;
+    } else {
+        PRUint32 i;
+        SECItem extension_data;
+        EncryptedSessionTicket enc_session_ticket;
+        unsigned char computed_mac[TLS_EX_SESS_TICKET_MAC_LENGTH];
+        unsigned int computed_mac_length;
 #ifndef NO_PKCS11_BYPASS
-    const SECHashObject *hashObj;
-    const unsigned char *aes_key = NULL;
-    const unsigned char *mac_key = NULL;
-    PRUint32 aes_key_length;
-    PRUint32 mac_key_length;
-    PRUint64 hmac_ctx_buf[MAX_MAC_CONTEXT_LLONGS];
-    HMACContext *hmac_ctx;
-    PRUint64 aes_ctx_buf[MAX_CIPHER_CONTEXT_LLONGS];
-    AESContext *aes_ctx;
+        const SECHashObject *hashObj;
+        const unsigned char *aes_key;
+        const unsigned char *mac_key;
+        PRUint32 aes_key_length;
+        PRUint32 mac_key_length;
+        PRUint64 hmac_ctx_buf[MAX_MAC_CONTEXT_LLONGS];
+        HMACContext *hmac_ctx;
+        PRUint64 aes_ctx_buf[MAX_CIPHER_CONTEXT_LLONGS];
+        AESContext *aes_ctx;
 #endif
-    PK11SymKey *aes_key_pkcs11 = NULL;
-    PK11SymKey *mac_key_pkcs11 = NULL;
-    PK11Context *hmac_ctx_pkcs11;
-    CK_MECHANISM_TYPE macMech = CKM_SHA256_HMAC;
-    PK11Context *aes_ctx_pkcs11;
-    CK_MECHANISM_TYPE cipherMech = CKM_AES_CBC;
-    unsigned char *padding;
-    PRUint32 padding_length;
-    unsigned char *buffer;
-    unsigned int buffer_len;
-    PRInt32 temp;
-    SECItem cert_item;
-    PRInt8 nameType = TLS_STE_NO_SERVER_NAME;
+        PK11SymKey *aes_key_pkcs11;
+        PK11SymKey *mac_key_pkcs11;
+        PK11Context *hmac_ctx_pkcs11;
+        CK_MECHANISM_TYPE macMech = CKM_SHA256_HMAC;
+        PK11Context *aes_ctx_pkcs11;
+        CK_MECHANISM_TYPE cipherMech = CKM_AES_CBC;
+        unsigned char *padding;
+        PRUint32 padding_length;
+        unsigned char *buffer;
+        unsigned int buffer_len;
+        PRInt32 temp;
+        SECItem cert_item;
+        PRInt8 nameType = TLS_STE_NO_SERVER_NAME;
 
-    
-
-
+        
 
 
-    if (ss->sec.ci.sid != NULL) {
-        if (ss->sec.uncache)
-            ss->sec.uncache(ss->sec.ci.sid);
-        ssl_FreeSID(ss->sec.ci.sid);
-        ss->sec.ci.sid = NULL;
-    }
-
-    extension_data.data = data->data; 
-    extension_data.len = data->len;
-
-    if (ssl3_ParseEncryptedSessionTicket(ss, data, &enc_session_ticket) !=
-        SECSuccess) {
-        return SECSuccess; 
-    }
-
-    
-#ifndef NO_PKCS11_BYPASS
-    if (ss->opt.bypassPKCS11) {
-        rv = ssl3_GetSessionTicketKeys(&aes_key, &aes_key_length,
-                                       &mac_key, &mac_key_length);
-    } else
-#endif
-    {
-        rv = ssl3_GetSessionTicketKeysPKCS11(ss, &aes_key_pkcs11,
-                                             &mac_key_pkcs11);
-    }
-    if (rv != SECSuccess) {
-        SSL_DBG(("%d: SSL[%d]: Unable to get/generate session ticket keys.",
-                 SSL_GETPID(), ss->fd));
-        goto loser;
-    }
-
-    
 
 
-    if (PORT_Memcmp(enc_session_ticket.key_name, key_name,
-                    SESS_TICKET_KEY_NAME_LEN) != 0) {
-        SSL_DBG(("%d: SSL[%d]: Session ticket key_name sent mismatch.",
-                 SSL_GETPID(), ss->fd));
-        goto no_ticket;
-    }
-
-    
-
-
-#ifndef NO_PKCS11_BYPASS
-    if (ss->opt.bypassPKCS11) {
-        PORT_Assert(mac_key);
-        hmac_ctx = (HMACContext *)hmac_ctx_buf;
-        hashObj = HASH_GetRawHashObject(HASH_AlgSHA256);
-        if (HMAC_Init(hmac_ctx, hashObj, mac_key,
-                      sizeof(session_ticket_mac_key), PR_FALSE) != SECSuccess)
-            goto no_ticket;
-        HMAC_Begin(hmac_ctx);
-        HMAC_Update(hmac_ctx, extension_data.data,
-                    extension_data.len - TLS_EX_SESS_TICKET_MAC_LENGTH);
-        if (HMAC_Finish(hmac_ctx, computed_mac, &computed_mac_length,
-                        sizeof(computed_mac)) != SECSuccess)
-            goto no_ticket;
-    } else
-#endif
-    {
-        SECItem macParam;
-        PORT_Assert(mac_key_pkcs11);
-        macParam.data = NULL;
-        macParam.len = 0;
-        hmac_ctx_pkcs11 = PK11_CreateContextBySymKey(macMech,
-                                                     CKA_SIGN, mac_key_pkcs11, &macParam);
-        if (!hmac_ctx_pkcs11) {
-            SSL_DBG(("%d: SSL[%d]: Unable to create HMAC context: %d.",
-                     SSL_GETPID(), ss->fd, PORT_GetError()));
-            goto no_ticket;
-        } else {
-            SSL_DBG(("%d: SSL[%d]: Successfully created HMAC context.",
-                     SSL_GETPID(), ss->fd));
+        if (ss->sec.ci.sid != NULL) {
+            if (ss->sec.uncache)
+                ss->sec.uncache(ss->sec.ci.sid);
+            ssl_FreeSID(ss->sec.ci.sid);
+            ss->sec.ci.sid = NULL;
         }
-        rv = PK11_DigestBegin(hmac_ctx_pkcs11);
+
+        extension_data.data = data->data; 
+        extension_data.len = data->len;
+
+        if (ssl3_ParseEncryptedSessionTicket(ss, data, &enc_session_ticket) !=
+            SECSuccess) {
+            return SECSuccess; 
+        }
+
+
+#ifndef NO_PKCS11_BYPASS
+        if (ss->opt.bypassPKCS11) {
+            rv = ssl3_GetSessionTicketKeys(&aes_key, &aes_key_length,
+                                           &mac_key, &mac_key_length);
+        } else
+#endif
+        {
+            rv = ssl3_GetSessionTicketKeysPKCS11(ss, &aes_key_pkcs11,
+                                                 &mac_key_pkcs11);
+        }
         if (rv != SECSuccess) {
+            SSL_DBG(("%d: SSL[%d]: Unable to get/generate session ticket keys.",
+                     SSL_GETPID(), ss->fd));
+            goto loser;
+        }
+
+        
+
+
+        if (PORT_Memcmp(enc_session_ticket.key_name, key_name,
+                        SESS_TICKET_KEY_NAME_LEN) != 0) {
+            SSL_DBG(("%d: SSL[%d]: Session ticket key_name sent mismatch.",
+                     SSL_GETPID(), ss->fd));
+            goto no_ticket;
+        }
+
+        
+
+
+#ifndef NO_PKCS11_BYPASS
+        if (ss->opt.bypassPKCS11) {
+            hmac_ctx = (HMACContext *)hmac_ctx_buf;
+            hashObj = HASH_GetRawHashObject(HASH_AlgSHA256);
+            if (HMAC_Init(hmac_ctx, hashObj, mac_key,
+                          sizeof(session_ticket_mac_key), PR_FALSE) != SECSuccess)
+                goto no_ticket;
+            HMAC_Begin(hmac_ctx);
+            HMAC_Update(hmac_ctx, extension_data.data,
+                        extension_data.len - TLS_EX_SESS_TICKET_MAC_LENGTH);
+            if (HMAC_Finish(hmac_ctx, computed_mac, &computed_mac_length,
+                            sizeof(computed_mac)) != SECSuccess)
+                goto no_ticket;
+        } else
+#endif
+        {
+            SECItem macParam;
+            macParam.data = NULL;
+            macParam.len = 0;
+            hmac_ctx_pkcs11 = PK11_CreateContextBySymKey(macMech,
+                                                         CKA_SIGN, mac_key_pkcs11, &macParam);
+            if (!hmac_ctx_pkcs11) {
+                SSL_DBG(("%d: SSL[%d]: Unable to create HMAC context: %d.",
+                         SSL_GETPID(), ss->fd, PORT_GetError()));
+                goto no_ticket;
+            } else {
+                SSL_DBG(("%d: SSL[%d]: Successfully created HMAC context.",
+                         SSL_GETPID(), ss->fd));
+            }
+            rv = PK11_DigestBegin(hmac_ctx_pkcs11);
+            rv = PK11_DigestOp(hmac_ctx_pkcs11, extension_data.data,
+                               extension_data.len -
+                                   TLS_EX_SESS_TICKET_MAC_LENGTH);
+            if (rv != SECSuccess) {
+                PK11_DestroyContext(hmac_ctx_pkcs11, PR_TRUE);
+                goto no_ticket;
+            }
+            rv = PK11_DigestFinal(hmac_ctx_pkcs11, computed_mac,
+                                  &computed_mac_length, sizeof(computed_mac));
             PK11_DestroyContext(hmac_ctx_pkcs11, PR_TRUE);
+            if (rv != SECSuccess)
+                goto no_ticket;
+        }
+        if (NSS_SecureMemcmp(computed_mac, enc_session_ticket.mac,
+                             computed_mac_length) !=
+            0) {
+            SSL_DBG(("%d: SSL[%d]: Session ticket MAC mismatch.",
+                     SSL_GETPID(), ss->fd));
             goto no_ticket;
         }
-        rv = PK11_DigestOp(hmac_ctx_pkcs11, extension_data.data,
-                           extension_data.len -
-                           TLS_EX_SESS_TICKET_MAC_LENGTH);
-        if (rv != SECSuccess) {
-            PK11_DestroyContext(hmac_ctx_pkcs11, PR_TRUE);
-            goto no_ticket;
-        }
-        rv = PK11_DigestFinal(hmac_ctx_pkcs11, computed_mac,
-                              &computed_mac_length, sizeof(computed_mac));
-        PK11_DestroyContext(hmac_ctx_pkcs11, PR_TRUE);
-        if (rv != SECSuccess)
-            goto no_ticket;
-    }
-    if (NSS_SecureMemcmp(computed_mac, enc_session_ticket.mac,
-                         computed_mac_length) !=
-        0) {
-        SSL_DBG(("%d: SSL[%d]: Session ticket MAC mismatch.",
-                 SSL_GETPID(), ss->fd));
-        goto no_ticket;
-    }
 
-    
+        
 
 
 
-    
+        
 
-    
-    decrypted_state = SECITEM_AllocItem(NULL, NULL,
-                                        enc_session_ticket.encrypted_state.len);
+        
+        decrypted_state = SECITEM_AllocItem(NULL, NULL,
+                                            enc_session_ticket.encrypted_state.len);
 
 #ifndef NO_PKCS11_BYPASS
-    if (ss->opt.bypassPKCS11) {
-        PORT_Assert(aes_key);
-        aes_ctx = (AESContext *)aes_ctx_buf;
-        rv = AES_InitContext(aes_ctx, aes_key,
-                             sizeof(session_ticket_enc_key), enc_session_ticket.iv,
-                             NSS_AES_CBC, 0, AES_BLOCK_SIZE);
-        if (rv != SECSuccess) {
-            SSL_DBG(("%d: SSL[%d]: Unable to create AES context.",
-                     SSL_GETPID(), ss->fd));
-            goto no_ticket;
-        }
+        if (ss->opt.bypassPKCS11) {
+            aes_ctx = (AESContext *)aes_ctx_buf;
+            rv = AES_InitContext(aes_ctx, aes_key,
+                                 sizeof(session_ticket_enc_key), enc_session_ticket.iv,
+                                 NSS_AES_CBC, 0, AES_BLOCK_SIZE);
+            if (rv != SECSuccess) {
+                SSL_DBG(("%d: SSL[%d]: Unable to create AES context.",
+                         SSL_GETPID(), ss->fd));
+                goto no_ticket;
+            }
 
-        rv = AES_Decrypt(aes_ctx, decrypted_state->data,
-                         &decrypted_state->len, decrypted_state->len,
-                         enc_session_ticket.encrypted_state.data,
-                         enc_session_ticket.encrypted_state.len);
-        if (rv != SECSuccess)
-            goto no_ticket;
-    } else
+            rv = AES_Decrypt(aes_ctx, decrypted_state->data,
+                             &decrypted_state->len, decrypted_state->len,
+                             enc_session_ticket.encrypted_state.data,
+                             enc_session_ticket.encrypted_state.len);
+            if (rv != SECSuccess)
+                goto no_ticket;
+        } else
 #endif
-    {
-        SECItem ivItem;
-        PORT_Assert(aes_key_pkcs11);
-        ivItem.data = enc_session_ticket.iv;
-        ivItem.len = AES_BLOCK_SIZE;
-        aes_ctx_pkcs11 = PK11_CreateContextBySymKey(cipherMech,
-                                                    CKA_DECRYPT, aes_key_pkcs11, &ivItem);
-        if (!aes_ctx_pkcs11) {
-            SSL_DBG(("%d: SSL[%d]: Unable to create AES context.",
-                     SSL_GETPID(), ss->fd));
-            goto no_ticket;
+        {
+            SECItem ivItem;
+            ivItem.data = enc_session_ticket.iv;
+            ivItem.len = AES_BLOCK_SIZE;
+            aes_ctx_pkcs11 = PK11_CreateContextBySymKey(cipherMech,
+                                                        CKA_DECRYPT, aes_key_pkcs11, &ivItem);
+            if (!aes_ctx_pkcs11) {
+                SSL_DBG(("%d: SSL[%d]: Unable to create AES context.",
+                         SSL_GETPID(), ss->fd));
+                goto no_ticket;
+            }
+
+            rv = PK11_CipherOp(aes_ctx_pkcs11, decrypted_state->data,
+                               (int *)&decrypted_state->len, decrypted_state->len,
+                               enc_session_ticket.encrypted_state.data,
+                               enc_session_ticket.encrypted_state.len);
+            PK11_Finalize(aes_ctx_pkcs11);
+            PK11_DestroyContext(aes_ctx_pkcs11, PR_TRUE);
+            if (rv != SECSuccess)
+                goto no_ticket;
         }
 
-        rv = PK11_CipherOp(aes_ctx_pkcs11, decrypted_state->data,
-                           (int *)&decrypted_state->len, decrypted_state->len,
-                           enc_session_ticket.encrypted_state.data,
-                           enc_session_ticket.encrypted_state.len);
-        PK11_Finalize(aes_ctx_pkcs11);
-        PK11_DestroyContext(aes_ctx_pkcs11, PR_TRUE);
-        if (rv != SECSuccess)
-            goto no_ticket;
-    }
-
-    
-    padding_length =
+        
+        padding_length =
             (PRUint32)decrypted_state->data[decrypted_state->len - 1];
-    if (padding_length == 0 || padding_length > AES_BLOCK_SIZE)
-        goto no_ticket;
-
-    padding = &decrypted_state->data[decrypted_state->len - padding_length];
-    for (i = 0; i < padding_length; i++, padding++) {
-        if (padding_length != (PRUint32)*padding)
+        if (padding_length == 0 || padding_length > AES_BLOCK_SIZE)
             goto no_ticket;
-    }
 
-    
-    buffer = decrypted_state->data;
-    buffer_len = decrypted_state->len;
-
-    parsed_session_ticket = PORT_ZAlloc(sizeof(SessionTicket));
-    if (parsed_session_ticket == NULL) {
-        rv = SECFailure;
-        goto loser;
-    }
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
-    if (temp != TLS_EX_SESS_TICKET_VERSION)
-        goto no_ticket;
-
-    parsed_session_ticket->ticket_version = (SSL3ProtocolVersion)temp;
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->ssl_version = (SSL3ProtocolVersion)temp;
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->cipher_suite = (ssl3CipherSuite)temp;
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->compression_method = (SSLCompressionMethod)temp;
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->authAlgorithm = (SSLSignType)temp;
-    temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->authKeyBits = (PRUint32)temp;
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->keaType = (SSLKEAType)temp;
-    temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->keaKeyBits = (PRUint32)temp;
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->ms_is_wrapped = (PRBool)temp;
-
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->exchKeyType = (SSL3KEAType)temp;
-
-    temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->msWrapMech = (CK_MECHANISM_TYPE)temp;
-
-    temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->ms_length = (PRUint16)temp;
-    if (parsed_session_ticket->ms_length == 0 || 
-        parsed_session_ticket->ms_length >
-        sizeof(parsed_session_ticket->master_secret))
-        goto no_ticket;
-
-    
-    if (buffer_len < parsed_session_ticket->ms_length)
-        goto no_ticket;
-    PORT_Memcpy(parsed_session_ticket->master_secret, buffer,
-                parsed_session_ticket->ms_length);
-    buffer += parsed_session_ticket->ms_length;
-    buffer_len -= parsed_session_ticket->ms_length;
-
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->client_identity.client_auth_type =
-            (ClientAuthenticationType)temp;
-    switch (parsed_session_ticket->client_identity.client_auth_type) {
-        case CLIENT_AUTH_ANONYMOUS:
-            break;
-        case CLIENT_AUTH_CERTIFICATE:
-            rv = ssl3_ConsumeHandshakeVariable(ss, &cert_item, 3,
-                                               &buffer, &buffer_len);
-            if (rv != SECSuccess)
+        padding = &decrypted_state->data[decrypted_state->len - padding_length];
+        for (i = 0; i < padding_length; i++, padding++) {
+            if (padding_length != (PRUint32)*padding)
                 goto no_ticket;
-            rv = SECITEM_CopyItem(NULL, &parsed_session_ticket->peer_cert,
-                                  &cert_item);
-            if (rv != SECSuccess)
-                goto no_ticket;
-            break;
-        default:
-            goto no_ticket;
-    }
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    parsed_session_ticket->timestamp = (PRUint32)temp;
+        }
 
-    
-    nameType =
-            ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (nameType != TLS_STE_NO_SERVER_NAME) {
-        SECItem name_item;
-        rv = ssl3_ConsumeHandshakeVariable(ss, &name_item, 2, &buffer,
-                                           &buffer_len);
-        if (rv != SECSuccess)
-            goto no_ticket;
-        rv = SECITEM_CopyItem(NULL, &parsed_session_ticket->srvName,
-                              &name_item);
-        if (rv != SECSuccess)
-            goto no_ticket;
-        parsed_session_ticket->srvName.type = nameType;
-    }
+        
+        buffer = decrypted_state->data;
+        buffer_len = decrypted_state->len;
 
-    
-    temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
-    if (temp < 0)
-        goto no_ticket;
-    PORT_Assert(temp == PR_TRUE || temp == PR_FALSE);
-    parsed_session_ticket->extendedMasterSecretUsed = (PRBool)temp;
-
-    
-    if (buffer_len != padding_length)
-        goto no_ticket;
-
-    
-
-
-    if (parsed_session_ticket->timestamp != 0 &&
-        parsed_session_ticket->timestamp +
-        TLS_EX_SESS_TICKET_LIFETIME_HINT >
-        ssl_Time()) {
-
-        sid = ssl3_NewSessionID(ss, PR_TRUE);
-        if (sid == NULL) {
+        parsed_session_ticket = PORT_ZAlloc(sizeof(SessionTicket));
+        if (parsed_session_ticket == NULL) {
             rv = SECFailure;
             goto loser;
         }
 
         
-        sid->version = parsed_session_ticket->ssl_version;
-        sid->u.ssl3.cipherSuite = parsed_session_ticket->cipher_suite;
-        sid->u.ssl3.compression = parsed_session_ticket->compression_method;
-        sid->authAlgorithm = parsed_session_ticket->authAlgorithm;
-        sid->authKeyBits = parsed_session_ticket->authKeyBits;
-        sid->keaType = parsed_session_ticket->keaType;
-        sid->keaKeyBits = parsed_session_ticket->keaKeyBits;
-       if (SECITEM_CopyItem(NULL, &sid->u.ssl3.locked.sessionTicket.ticket,
-                            &extension_data) != SECSuccess)
-           goto no_ticket;
+        temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
+        if (temp != TLS_EX_SESS_TICKET_VERSION)
+            goto no_ticket;
 
-       
-#ifndef NO_PKCS11_BYPASS
-        if (ss->opt.bypassPKCS11 &&
-            parsed_session_ticket->ms_is_wrapped)
-            goto no_ticket;
-#endif
-        if (parsed_session_ticket->ms_length >
-            sizeof(sid->u.ssl3.keys.wrapped_master_secret))
-            goto no_ticket;
-        PORT_Memcpy(sid->u.ssl3.keys.wrapped_master_secret,
-                    parsed_session_ticket->master_secret,
-                    parsed_session_ticket->ms_length);
-        sid->u.ssl3.keys.wrapped_master_secret_len =
-                parsed_session_ticket->ms_length;
-        sid->u.ssl3.exchKeyType = parsed_session_ticket->exchKeyType;
-        sid->u.ssl3.masterWrapMech = parsed_session_ticket->msWrapMech;
-        sid->u.ssl3.keys.msIsWrapped =
-                parsed_session_ticket->ms_is_wrapped;
-        sid->u.ssl3.masterValid = PR_TRUE;
-        sid->u.ssl3.keys.resumable = PR_TRUE;
-        sid->u.ssl3.keys.extendedMasterSecretUsed = parsed_session_ticket->extendedMasterSecretUsed;
+        parsed_session_ticket->ticket_version = (SSL3ProtocolVersion)temp;
 
         
-        if (parsed_session_ticket->peer_cert.data != NULL) {
-            if (sid->peerCert != NULL)
-                CERT_DestroyCertificate(sid->peerCert);
-            sid->peerCert = CERT_NewTempCertificate(ss->dbHandle,
-                                                    &parsed_session_ticket->peer_cert, NULL, PR_FALSE, PR_TRUE);
-            if (sid->peerCert == NULL) {
+        temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->ssl_version = (SSL3ProtocolVersion)temp;
+
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->cipher_suite = (ssl3CipherSuite)temp;
+
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->compression_method = (SSLCompressionMethod)temp;
+
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->authAlgorithm = (SSLSignType)temp;
+        temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->authKeyBits = (PRUint32)temp;
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->keaType = (SSLKEAType)temp;
+        temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->keaKeyBits = (PRUint32)temp;
+
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->ms_is_wrapped = (PRBool)temp;
+
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->exchKeyType = (SSL3KEAType)temp;
+
+        temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->msWrapMech = (CK_MECHANISM_TYPE)temp;
+
+        temp = ssl3_ConsumeHandshakeNumber(ss, 2, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->ms_length = (PRUint16)temp;
+        if (parsed_session_ticket->ms_length == 0 || 
+            parsed_session_ticket->ms_length >
+                sizeof(parsed_session_ticket->master_secret))
+            goto no_ticket;
+
+        
+        if (buffer_len < parsed_session_ticket->ms_length)
+            goto no_ticket;
+        PORT_Memcpy(parsed_session_ticket->master_secret, buffer,
+                    parsed_session_ticket->ms_length);
+        buffer += parsed_session_ticket->ms_length;
+        buffer_len -= parsed_session_ticket->ms_length;
+
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->client_identity.client_auth_type =
+            (ClientAuthenticationType)temp;
+        switch (parsed_session_ticket->client_identity.client_auth_type) {
+            case CLIENT_AUTH_ANONYMOUS:
+                break;
+            case CLIENT_AUTH_CERTIFICATE:
+                rv = ssl3_ConsumeHandshakeVariable(ss, &cert_item, 3,
+                                                   &buffer, &buffer_len);
+                if (rv != SECSuccess)
+                    goto no_ticket;
+                rv = SECITEM_CopyItem(NULL, &parsed_session_ticket->peer_cert,
+                                      &cert_item);
+                if (rv != SECSuccess)
+                    goto no_ticket;
+                break;
+            default:
+                goto no_ticket;
+        }
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 4, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        parsed_session_ticket->timestamp = (PRUint32)temp;
+
+        
+        nameType =
+            ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (nameType != TLS_STE_NO_SERVER_NAME) {
+            SECItem name_item;
+            rv = ssl3_ConsumeHandshakeVariable(ss, &name_item, 2, &buffer,
+                                               &buffer_len);
+            if (rv != SECSuccess)
+                goto no_ticket;
+            rv = SECITEM_CopyItem(NULL, &parsed_session_ticket->srvName,
+                                  &name_item);
+            if (rv != SECSuccess)
+                goto no_ticket;
+            parsed_session_ticket->srvName.type = nameType;
+        }
+
+        
+        temp = ssl3_ConsumeHandshakeNumber(ss, 1, &buffer, &buffer_len);
+        if (temp < 0)
+            goto no_ticket;
+        PORT_Assert(temp == PR_TRUE || temp == PR_FALSE);
+        parsed_session_ticket->extendedMasterSecretUsed = (PRBool)temp;
+
+        
+        if (buffer_len != padding_length)
+            goto no_ticket;
+
+        
+
+
+        if (parsed_session_ticket->timestamp != 0 &&
+            parsed_session_ticket->timestamp +
+                    TLS_EX_SESS_TICKET_LIFETIME_HINT >
+                ssl_Time()) {
+
+            sid = ssl3_NewSessionID(ss, PR_TRUE);
+            if (sid == NULL) {
                 rv = SECFailure;
                 goto loser;
             }
+
+            
+            sid->version = parsed_session_ticket->ssl_version;
+            sid->u.ssl3.cipherSuite = parsed_session_ticket->cipher_suite;
+            sid->u.ssl3.compression = parsed_session_ticket->compression_method;
+            sid->authAlgorithm = parsed_session_ticket->authAlgorithm;
+            sid->authKeyBits = parsed_session_ticket->authKeyBits;
+            sid->keaType = parsed_session_ticket->keaType;
+            sid->keaKeyBits = parsed_session_ticket->keaKeyBits;
+
+
+#ifndef NO_PKCS11_BYPASS
+            if (ss->opt.bypassPKCS11 &&
+                parsed_session_ticket->ms_is_wrapped)
+                goto no_ticket;
+#endif
+            if (parsed_session_ticket->ms_length >
+                sizeof(sid->u.ssl3.keys.wrapped_master_secret))
+                goto no_ticket;
+            PORT_Memcpy(sid->u.ssl3.keys.wrapped_master_secret,
+                        parsed_session_ticket->master_secret,
+                        parsed_session_ticket->ms_length);
+            sid->u.ssl3.keys.wrapped_master_secret_len =
+                parsed_session_ticket->ms_length;
+            sid->u.ssl3.exchKeyType = parsed_session_ticket->exchKeyType;
+            sid->u.ssl3.masterWrapMech = parsed_session_ticket->msWrapMech;
+            sid->u.ssl3.keys.msIsWrapped =
+                parsed_session_ticket->ms_is_wrapped;
+            sid->u.ssl3.masterValid = PR_TRUE;
+            sid->u.ssl3.keys.resumable = PR_TRUE;
+            sid->u.ssl3.keys.extendedMasterSecretUsed = parsed_session_ticket->extendedMasterSecretUsed;
+
+            
+            if (parsed_session_ticket->peer_cert.data != NULL) {
+                if (sid->peerCert != NULL)
+                    CERT_DestroyCertificate(sid->peerCert);
+                sid->peerCert = CERT_NewTempCertificate(ss->dbHandle,
+                                                        &parsed_session_ticket->peer_cert, NULL, PR_FALSE, PR_TRUE);
+                if (sid->peerCert == NULL) {
+                    rv = SECFailure;
+                    goto loser;
+                }
+            }
+            if (parsed_session_ticket->srvName.data != NULL) {
+                sid->u.ssl3.srvName = parsed_session_ticket->srvName;
+            }
+            ss->statelessResume = PR_TRUE;
+            ss->sec.ci.sid = sid;
         }
-        if (parsed_session_ticket->srvName.data != NULL) {
-            sid->u.ssl3.srvName = parsed_session_ticket->srvName;
-        }
-        ss->statelessResume = PR_TRUE;
-        ss->sec.ci.sid = sid;
     }
 
     if (0) {
-  no_ticket:
+    no_ticket:
         SSL_DBG(("%d: SSL[%d]: Session ticket parsing failed.",
                  SSL_GETPID(), ss->fd));
         ssl3stats = SSL_GetStatistics();
@@ -1985,36 +1963,6 @@ loser:
     }
 
     return rv;
-}
-
-SECStatus
-ssl3_ServerHandleSessionTicketXtn(sslSocket *ss, PRUint16 ex_type,
-                                  SECItem *data)
-{
-
-    
-    if (!ss->opt.enableSessionTickets) {
-        return SECSuccess;
-    }
-
-    
-    if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        return SECSuccess;
-    }
-
-    
-    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
-
-    
-
-
-
-    if (data->len == 0) {
-        ss->xtnData.emptySessionTicket = PR_TRUE;
-        return SECSuccess;
-    }
-
-    return ssl3_ProcessSessionTicketCommon(ss, data);
 }
 
 
@@ -2357,8 +2305,6 @@ ssl3_ClientSendUseSRTPXtn(sslSocket *ss, PRBool append, PRUint32 maxBytes)
             rv = ssl3_AppendHandshakeNumber(ss,
                                             ss->ssl3.dtlsSRTPCiphers[i],
                                             2);
-            if (rv != SECSuccess)
-                return -1;
         }
         
         ssl3_AppendHandshakeVariable(ss, NULL, 0, 1);
@@ -2684,11 +2630,8 @@ ssl3_CalculatePaddingExtensionLength(unsigned int clientHelloLength)
 
     extensionLength = 512 - recordLength;
     
-
-
-
-    if (extensionLength < 4 + 1) {
-        extensionLength = 4 + 1;
+    if (extensionLength < 4) {
+        extensionLength = 4;
     }
 
     return extensionLength;
@@ -3277,221 +3220,4 @@ tls13_ServerSendKeyShareXtn(sslSocket *ss, PRBool append,
 
 loser:
     return -1;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static PRInt32
-tls13_ClientSendPreSharedKeyXtn(sslSocket * ss,
-                                PRBool      append,
-                                PRUint32    maxBytes)
-{
-    PRInt32 extension_length;
-    NewSessionTicket *session_ticket = NULL;
-    sslSessionID *sid = ss->sec.ci.sid;
-
-    if (sid->cached == never_cached ||
-        sid->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        return 0;
-    }
-
-    
-
-
-
-
-
-
-    session_ticket = &sid->u.ssl3.locked.sessionTicket;
-    PORT_Assert(session_ticket && session_ticket->ticket.data);
-
-    
-
-    if (!append && (session_ticket->ticket_lifetime_hint == 0 ||
-        (session_ticket->ticket_lifetime_hint +
-         session_ticket->received_timestamp > ssl_Time()))) {
-        ss->xtnData.ticketTimestampVerified = PR_TRUE;
-    }
-
-    
-    if (!ss->xtnData.ticketTimestampVerified) {
-        return 0;
-    }
-
-    
-    extension_length = 2 + 2 + 2 + 2 +
-            session_ticket->ticket.len;
-
-    if (maxBytes < (PRUint32)extension_length) {
-        PORT_Assert(0);
-        return 0;
-    }
-
-    if (append) {
-        SECStatus rv;
-        
-        rv = ssl3_AppendHandshakeNumber(ss, ssl_tls13_pre_shared_key_xtn, 2);
-        if (rv != SECSuccess)
-            goto loser;
-        rv = ssl3_AppendHandshakeNumber(ss, extension_length - 4, 2);
-        if (rv != SECSuccess)
-            goto loser;
-        rv = ssl3_AppendHandshakeNumber(ss, session_ticket->ticket.len + 2, 2);
-        if (rv != SECSuccess)
-            goto loser;
-        rv = ssl3_AppendHandshakeVariable(ss, session_ticket->ticket.data,
-                                          session_ticket->ticket.len, 2);
-        PRINT_BUF(50, (ss, "Sending PreSharedKey value",
-                       session_ticket->ticket.data,
-                       session_ticket->ticket.len));
-        ss->xtnData.ticketTimestampVerified = PR_FALSE;
-        ss->xtnData.sentSessionTicketInClientHello = PR_TRUE;
-        if (rv != SECSuccess)
-            goto loser;
-
-        ss->xtnData.advertised[ss->xtnData.numAdvertised++] =
-                ssl_tls13_pre_shared_key_xtn;
-    }
-    return extension_length;
-
- loser:
-    ss->xtnData.ticketTimestampVerified = PR_FALSE;
-    return -1;
-}
-
-
-
-static SECStatus
-tls13_ServerHandlePreSharedKeyXtn(sslSocket *ss, PRUint16 ex_type,
-                                  SECItem *data)
-{
-    SECItem label;
-    PRInt32 len;
-    PRBool first = PR_TRUE;
-    SECStatus rv;
-
-    
-    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        return SECSuccess;
-    }
-
-    len = ssl3_ConsumeHandshakeNumber(ss, 2, &data->data, &data->len);
-    if (len < 0)
-        return SECFailure;
-
-    if (len != data->len) {
-        PORT_SetError(SSL_ERROR_MALFORMED_PRE_SHARED_KEY);
-        return SECFailure;
-    }
-
-    while (data->len) {
-        rv = ssl3_ConsumeHandshakeVariable(ss, &label, 2,
-                                           &data->data, &data->len);
-        if (rv != SECSuccess)
-            return rv;
-
-        if (first) {
-            first = PR_FALSE; 
-
-
-            PRINT_BUF(50, (ss, "Handling PreSharedKey value",
-                           label.data, label.len));
-
-            rv = ssl3_ProcessSessionTicketCommon(ss, &label);
-            
-
-
-            if (rv != SECSuccess)
-                return rv;
-        }
-    }
-
-    
-
-    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
-
-    return SECSuccess;
-}
-
-PRInt32
-tls13_ServerSendPreSharedKeyXtn(sslSocket * ss,
-                                PRBool      append,
-                                PRUint32    maxBytes)
-{
-    SECItem *session_ticket =
-            &ss->sec.ci.sid->u.ssl3.locked.sessionTicket.ticket;
-    PRInt32 extension_length =
-            2 + 2 + 2 + session_ticket->len; 
-
-    SECStatus rv;
-
-    PORT_Assert(session_ticket->len);
-
-    if (append) {
-        rv = ssl3_AppendHandshakeNumber(ss, ssl_tls13_pre_shared_key_xtn, 2);
-        if (rv != SECSuccess)
-            return -1;
-
-        rv = ssl3_AppendHandshakeNumber(ss, session_ticket->len + 2, 2);
-        if (rv != SECSuccess)
-            return -1;
-
-        rv = ssl3_AppendHandshakeVariable(ss, session_ticket->data,
-                                          session_ticket->len, 2);
-        if (rv != SECSuccess)
-            return -1;
-    }
-
-    return extension_length;
-}
-
-
-
-static SECStatus
-tls13_ClientHandlePreSharedKeyXtn(sslSocket *ss, PRUint16 ex_type,
-                                  SECItem *data)
-{
-    PRInt32 len;
-
-    
-    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        return SECSuccess;
-    }
-
-    len = ssl3_ConsumeHandshakeNumber(ss, 2, &data->data, &data->len);
-    if (len < 0)
-        return SECFailure;
-
-    if (len != data->len) {
-        PORT_SetError(SSL_ERROR_MALFORMED_PRE_SHARED_KEY);
-        return SECFailure;
-    }
-
-    
-    if (SECITEM_CompareItem(
-            &ss->sec.ci.sid->u.ssl3.locked.sessionTicket.ticket,
-                             data) != SECEqual) {
-        PORT_SetError(SSL_ERROR_MALFORMED_PRE_SHARED_KEY);
-        return SECFailure;
-    }
-
-    
-    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
-
-    return SECSuccess;
 }

@@ -350,7 +350,7 @@ struct SFTKSlotStr {
     PRInt32             rwSessionCount;    	
                                           	
     int			sessionObjectHandleCount;
-    CK_ULONG		index;			
+    int			index;			
     PLHashTable		*tokObjHashTable;	
     SFTKObject		**sessObjHashTable;	
     unsigned int	sessObjHashSize;	

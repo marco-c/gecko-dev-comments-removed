@@ -68,9 +68,6 @@ NSSLOWKEYDBHandle *lg_getKeyDB(SDB *sdb);
 const char *lg_EvaluateConfigDir(const char *configdir, char **domain);
 
 
-PRBool lg_FIPSEntryOK(void);
-
-
 
 
 

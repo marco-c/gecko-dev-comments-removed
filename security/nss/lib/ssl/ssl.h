@@ -1049,8 +1049,6 @@ SSL_IMPORT SECStatus SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info,
 
 
 
-
-
 SSL_IMPORT SECStatus
 SSL_GetPreliminaryChannelInfo(PRFileDesc *fd,
                               SSLPreliminaryChannelInfo *info,

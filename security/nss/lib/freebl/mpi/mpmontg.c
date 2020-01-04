@@ -21,6 +21,15 @@
 #endif
 #include <stddef.h> 
 
+
+
+#ifdef MP_CHAR_STORE_SLOW
+#if !defined(MP_IS_BIG_ENDIAN) && !defined(MP_IS_LITTLE_ENDIAN)
+#error "You must define MP_IS_BIG_ENDIAN or MP_IS_LITTLE_ENDIAN\n" \
+       "  if you define MP_CHAR_STORE_SLOW."
+#endif
+#endif
+
 #define STATIC
 
 #define MAX_ODD_INTS    32   /* 2 ** (WINDOW_BITS - 1) */
@@ -497,6 +506,7 @@ mp_err mp_set_safe_modexp(int value)
 #ifdef MP_USING_CACHE_SAFE_MOD_EXP
 #define WEAVE_WORD_SIZE 4
 
+#ifndef MP_CHAR_STORE_SLOW
 
 
 
@@ -534,19 +544,28 @@ mp_err mp_set_safe_modexp(int value)
 
 
 
-mp_err mpi_to_weave(const mp_int  *bignums,
-                    mp_digit *weaved,
-                    mp_size nDigits,  
-                    mp_size nBignums) 
+
+
+
+
+
+
+
+
+
+mp_err mpi_to_weave(const mp_int  *bignums, 
+                    unsigned char *weaved, 
+		    mp_size nDigits,  
+		    mp_size nBignums) 
 {
   mp_size i;
-  mp_digit *endDest = weaved + (nDigits * nBignums);
+  unsigned char * endDest = weaved + (nDigits * nBignums * sizeof(mp_digit));
 
   for (i=0; i < WEAVE_WORD_SIZE; i++) {
     mp_size used = MP_USED(&bignums[i]);
-    mp_digit *pSrc   = MP_DIGITS(&bignums[i]);
-    mp_digit *endSrc = pSrc + used;
-    mp_digit *pDest  = weaved + i;
+    unsigned char *pSrc   = (unsigned char *)MP_DIGITS(&bignums[i]);
+    unsigned char *endSrc = pSrc + (used * sizeof(mp_digit));
+    unsigned char *pDest  = weaved + i;
 
     ARGCHK(MP_SIGN(&bignums[i]) == MP_ZPOS, MP_BADARG);
     ARGCHK(used <= nDigits, MP_BADARG);
@@ -567,42 +586,264 @@ mp_err mpi_to_weave(const mp_int  *bignums,
 
 
 
-#define CONST_TIME_MSB(x) (0L - ((x) >> (8*sizeof(x) - 1)))
-#define CONST_TIME_EQ_Z(x) CONST_TIME_MSB(~(x) & ((x)-1))
-#define CONST_TIME_EQ(a, b) CONST_TIME_EQ_Z((a) ^ (b))
 
 
-
-
-
-
-mp_err weave_to_mpi(mp_int *a,                   
-                    const mp_digit *weaved, 
-                    mp_size index,               
-                    mp_size nDigits,             
-                    mp_size nBignums)            
+mp_err weave_to_mpi(mp_int *a,                
+                    const unsigned char *pSrc, 
+		    mp_size nDigits,          
+		    mp_size nBignums)         
 {
-  
-
-  mp_digit i, j;
-  mp_digit d;
-  mp_digit *pDest = MP_DIGITS(a);
+  unsigned char *pDest   = (unsigned char *)MP_DIGITS(a);
+  unsigned char *endDest = pDest + (nDigits * sizeof(mp_digit));
 
   MP_SIGN(a) = MP_ZPOS;
   MP_USED(a) = nDigits;
 
-  
-  for (i=0; i<nDigits; ++i) {
-    d = 0;
-    for (j=0; j<nBignums; ++j) {
-      d |= weaved[i*nBignums + j] & CONST_TIME_EQ(j, index);
-    }
-    pDest[i] = d;
+  for (; pDest < endDest; pSrc += nBignums, pDest++) {
+    *pDest = *pSrc;
   }
-
   s_mp_clamp(a);
   return MP_OKAY;
 }
+
+#else
+
+
+
+typedef unsigned int mp_weave_word;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mp_err mpi_to_weave(const mp_int *a, unsigned char *b, 
+					mp_size b_size, mp_size count)
+{
+  mp_size i;
+  mp_digit *digitsa0;
+  mp_digit *digitsa1;
+  mp_digit *digitsa2;
+  mp_digit *digitsa3;
+  mp_size   useda0;
+  mp_size   useda1;
+  mp_size   useda2;
+  mp_size   useda3;
+  mp_weave_word *weaved = (mp_weave_word *)b;
+
+  count = count/sizeof(mp_weave_word);
+
+  
+#if MP_ARGCHK == 2
+  assert(WEAVE_WORD_SIZE == 4); 
+  assert(sizeof(mp_weave_word) == 4);
+#endif
+
+  digitsa0 = MP_DIGITS(&a[0]);
+  digitsa1 = MP_DIGITS(&a[1]);
+  digitsa2 = MP_DIGITS(&a[2]);
+  digitsa3 = MP_DIGITS(&a[3]);
+  useda0 = MP_USED(&a[0]);
+  useda1 = MP_USED(&a[1]);
+  useda2 = MP_USED(&a[2]);
+  useda3 = MP_USED(&a[3]);
+
+  ARGCHK(MP_SIGN(&a[0]) == MP_ZPOS, MP_BADARG);
+  ARGCHK(MP_SIGN(&a[1]) == MP_ZPOS, MP_BADARG);
+  ARGCHK(MP_SIGN(&a[2]) == MP_ZPOS, MP_BADARG);
+  ARGCHK(MP_SIGN(&a[3]) == MP_ZPOS, MP_BADARG);
+  ARGCHK(useda0 <= b_size, MP_BADARG);
+  ARGCHK(useda1 <= b_size, MP_BADARG);
+  ARGCHK(useda2 <= b_size, MP_BADARG);
+  ARGCHK(useda3 <= b_size, MP_BADARG);
+
+#define SAFE_FETCH(digit, used, word) ((word) < (used) ? (digit[word]) : 0)
+
+  for (i=0; i < b_size; i++) {
+    mp_digit d0 = SAFE_FETCH(digitsa0,useda0,i);
+    mp_digit d1 = SAFE_FETCH(digitsa1,useda1,i);
+    mp_digit d2 = SAFE_FETCH(digitsa2,useda2,i);
+    mp_digit d3 = SAFE_FETCH(digitsa3,useda3,i);
+    register mp_weave_word acc;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef MP_IS_LITTLE_ENDIAN 
+#define MPI_WEAVE_ONE_STEP \
+    acc  = (d0 >> (MP_DIGIT_BIT-8))  & 0x000000ff; d0 <<= 8; /*b0*/ \
+    acc |= (d1 >> (MP_DIGIT_BIT-16)) & 0x0000ff00; d1 <<= 8; /*b1*/ \
+    acc |= (d2 >> (MP_DIGIT_BIT-24)) & 0x00ff0000; d2 <<= 8; /*b2*/ \
+    acc |= (d3 >> (MP_DIGIT_BIT-32)) & 0xff000000; d3 <<= 8; /*b3*/ \
+    *weaved = acc; weaved += count;
+#else 
+#define MPI_WEAVE_ONE_STEP \
+    acc  = (d0 >> (MP_DIGIT_BIT-32)) & 0xff000000; d0 <<= 8; /*b0*/ \
+    acc |= (d1 >> (MP_DIGIT_BIT-24)) & 0x00ff0000; d1 <<= 8; /*b1*/ \
+    acc |= (d2 >> (MP_DIGIT_BIT-16)) & 0x0000ff00; d2 <<= 8; /*b2*/ \
+    acc |= (d3 >> (MP_DIGIT_BIT-8))  & 0x000000ff; d3 <<= 8; /*b3*/ \
+    *weaved = acc; weaved += count;
+#endif 
+   switch (sizeof(mp_digit)) {
+   case 32:
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+   case 16:
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+   case 8:
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+   case 4:
+    MPI_WEAVE_ONE_STEP
+    MPI_WEAVE_ONE_STEP
+   case 2:
+    MPI_WEAVE_ONE_STEP
+   case 1:
+    MPI_WEAVE_ONE_STEP
+    break;
+   }
+  }
+
+  return MP_OKAY;
+}
+
+
+
+
+mp_err weave_to_mpi(mp_int *a, const unsigned char *b, 
+					mp_size b_size, mp_size count)
+{
+  mp_digit *pb = MP_DIGITS(a);
+  mp_digit *end = &pb[b_size];
+
+  MP_SIGN(a) = MP_ZPOS;
+  MP_USED(a) = b_size;
+
+  for (; pb < end; pb++) {
+    register mp_digit digit;
+
+    digit = *b << 8; b += count;
+#define MPI_UNWEAVE_ONE_STEP  digit |= *b; b += count; digit = digit << 8;
+    switch (sizeof(mp_digit)) {
+    case 32:
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+    case 16:
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+    case 8:
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+    case 4:
+	MPI_UNWEAVE_ONE_STEP 
+	MPI_UNWEAVE_ONE_STEP 
+    case 2:
+	break;
+    }
+    digit |= *b; b += count; 
+
+    *pb = digit;
+  }
+  s_mp_clamp(a);
+  return MP_OKAY;
+}
+#endif
+
 
 #define SQR(a,b) \
   MP_CHECKOK( mp_sqr(a, b) );\
@@ -618,7 +859,7 @@ mp_err weave_to_mpi(mp_int *a,
 #endif
 
 #define MUL(x,a,b) \
-  MP_CHECKOK( weave_to_mpi(&tmp, powers, (x), nLen, num_powers) ); \
+  MP_CHECKOK( weave_to_mpi(&tmp, powers + (x), nLen, num_powers) ); \
   MUL_NOWEAVE(&tmp,a,b)
 
 #define SWAPPA ptmp = pa1; pa1 = pa2; pa2 = ptmp
@@ -642,8 +883,8 @@ mp_err mp_exptmod_safe_i(const mp_int *   montBase,
   int     expOff;
   mp_int  accum1, accum2, accum[WEAVE_WORD_SIZE];
   mp_int  tmp;
-  mp_digit *powersArray = NULL;
-  mp_digit *powers = NULL;
+  unsigned char *powersArray = NULL;
+  unsigned char *powers = NULL;
 
   MP_DIGITS(&accum1) = 0;
   MP_DIGITS(&accum2) = 0;
@@ -674,13 +915,13 @@ mp_err mp_exptmod_safe_i(const mp_int *   montBase,
     MP_CHECKOK( mp_copy(montBase, &accum[1]) );
     SQR(montBase, &accum[2]);
     MUL_NOWEAVE(montBase, &accum[2], &accum[3]);
-    powersArray = (mp_digit *)malloc(num_powers*(nLen*sizeof(mp_digit)+1));
+    powersArray = (unsigned char *)malloc(num_powers*(nLen*sizeof(mp_digit)+1));
     if (!powersArray) {
       res = MP_MEM;
       goto CLEANUP;
     }
      \
-    powers = (mp_digit *)MP_ALIGN(powersArray,num_powers); \
+    powers = (unsigned char *)MP_ALIGN(powersArray,num_powers); \
     MP_CHECKOK( mpi_to_weave(accum, powers, nLen, num_powers) );
     if (first_window < 4) {
       MP_CHECKOK( mp_copy(&accum[first_window], &accum1) );
@@ -727,7 +968,7 @@ mp_err mp_exptmod_safe_i(const mp_int *   montBase,
 
 
       if (i > 2* WEAVE_WORD_SIZE) {
-        MP_CHECKOK(weave_to_mpi(&accum2, powers, i/2, nLen, num_powers));
+        MP_CHECKOK(weave_to_mpi(&accum2, powers+i/2, nLen, num_powers));
         SQR(&accum2, &accum[acc_index]);
       } else {
 	int half_power_index = (i/2) & (WEAVE_WORD_SIZE-1);
