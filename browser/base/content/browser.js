@@ -1284,9 +1284,6 @@ var gBrowserInit = {
     }
 
     
-    this._initializeSanitizer();
-
-    
     gBrowser.tabContainer.updateVisibility();
 
     BookmarkingUI.init();
@@ -1671,9 +1668,6 @@ var gBrowserInit = {
     BrowserOffline.init();
 
     
-    this._initializeSanitizer();
-
-    
     gPrivateBrowsingUI.init();
 
 #ifdef MOZ_SERVICES_SYNC
@@ -1697,52 +1691,6 @@ var gBrowserInit = {
     BrowserOffline.uninit();
   },
 #endif
-
-  _initializeSanitizer: function() {
-    const kDidSanitizeDomain = "privacy.sanitize.didShutdownSanitize";
-    if (gPrefService.prefHasUserValue(kDidSanitizeDomain)) {
-      gPrefService.clearUserPref(kDidSanitizeDomain);
-      
-      
-      gPrefService.savePrefFile(null);
-    }
-
-    
-
-
-
-
-
-    if (!gPrefService.getBoolPref("privacy.sanitize.migrateFx3Prefs")) {
-      let itemBranch = gPrefService.getBranch("privacy.item.");
-      let itemArray = itemBranch.getChildList("");
-
-      
-      let doMigrate = itemArray.some(function (name) itemBranch.prefHasUserValue(name));
-      
-      if (!doMigrate)
-        doMigrate = gPrefService.getBoolPref("privacy.sanitize.sanitizeOnShutdown");
-
-      if (doMigrate) {
-        let cpdBranch = gPrefService.getBranch("privacy.cpd.");
-        let clearOnShutdownBranch = gPrefService.getBranch("privacy.clearOnShutdown.");
-        for (let name of itemArray) {
-          try {
-            
-            
-            if (name != "passwords" && name != "offlineApps")
-              cpdBranch.setBoolPref(name, itemBranch.getBoolPref(name));
-            clearOnShutdownBranch.setBoolPref(name, itemBranch.getBoolPref(name));
-          }
-          catch(e) {
-            Cu.reportError("Exception thrown during privacy pref migration: " + e);
-          }
-        }
-      }
-
-      gPrefService.setBoolPref("privacy.sanitize.migrateFx3Prefs", true);
-    }
-  },
 }
 
 
