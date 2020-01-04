@@ -4310,18 +4310,27 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
   }
 
   
-  if (aItem.IsStretched()) {
-    MOZ_ASSERT(aItem.GetAlignSelf() == NS_STYLE_ALIGN_STRETCH,
-               "stretched item w/o 'align-self: stretch'?");
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aItem.IsStretched() ||
+      aItem.HasIntrinsicRatio()) {
     if (aAxisTracker.IsCrossAxisHorizontal()) {
       childReflowState.SetComputedWidth(aItem.GetCrossSize());
       didOverrideComputedWidth = true;
     } else {
-      
-      aItem.Frame()->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
       childReflowState.SetComputedHeight(aItem.GetCrossSize());
       didOverrideComputedHeight = true;
     }
+  }
+  if (aItem.IsStretched() && !aAxisTracker.IsCrossAxisHorizontal()) {
+    
+    aItem.Frame()->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
 
   
