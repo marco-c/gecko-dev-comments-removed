@@ -626,7 +626,7 @@ BasicCompositor::EndFrame()
   
   
   
-  LayoutDeviceIntRegion::RectIterator iter(mInvalidRegion);
+  LayoutDeviceIntRegion::OldRectIterator iter(mInvalidRegion);
   for (const LayoutDeviceIntRect *r = iter.Next(); r; r = iter.Next()) {
     dest->CopySurface(source,
                       IntRect(r->x - mInvalidRect.x, r->y - mInvalidRect.y, r->width, r->height),
