@@ -3356,10 +3356,7 @@ public class BrowserApp extends GeckoApp
 
         String url = tab.getURL();
         if (AboutPages.isAboutReader(url)) {
-            String urlFromReader = ReaderModeUtils.getUrlFromAboutReader(url);
-            if (urlFromReader != null) {
-                url = urlFromReader;
-            }
+            url = ReaderModeUtils.stripAboutReaderUrl(url);
         }
 
         
@@ -3538,9 +3535,7 @@ public class BrowserApp extends GeckoApp
             if (tab != null) {
                 String url = tab.getURL();
                 if (url != null) {
-                    if (AboutPages.isAboutReader(url)) {
-                        url = ReaderModeUtils.getUrlFromAboutReader(url);
-                    }
+                    url = ReaderModeUtils.stripAboutReaderUrl(url);
 
                     
                     Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST, "menu");
