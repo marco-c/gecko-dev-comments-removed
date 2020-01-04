@@ -79,14 +79,13 @@ enum class ScalarResult : uint8_t {
   Ok,
   
   OperationNotSupported,
+  InvalidType,
+  InvalidValue,
   
   StringTooLong,
-  StringInvalidType,
-  StringInvalidValue,
   
-  UnsignedInvalidValue,
   UnsignedNegativeValue,
-  UnsignedTruncatedValue,
+  UnsignedTruncatedValue
 };
 
 typedef nsBaseHashtableET<nsDepCharHashKey, mozilla::Telemetry::ScalarID>
@@ -110,9 +109,8 @@ MapToNsResult(ScalarResult aSr)
     case ScalarResult::StringTooLong:
       
       return NS_OK;
-    case ScalarResult::StringInvalidType:
-    case ScalarResult::StringInvalidValue:
-    case ScalarResult::UnsignedInvalidValue:
+    case ScalarResult::InvalidType:
+    case ScalarResult::InvalidValue:
       return NS_ERROR_ILLEGAL_VALUE;
     case ScalarResult::UnsignedNegativeValue:
     case ScalarResult::UnsignedTruncatedValue:
@@ -159,6 +157,7 @@ public:
   
   virtual void SetValue(uint32_t aValue) { mozilla::Unused << HandleUnsupported(); }
   virtual ScalarResult SetValue(const nsAString& aValue) { return HandleUnsupported(); }
+  virtual void SetValue(bool aValue) { mozilla::Unused << HandleUnsupported(); }
   virtual void AddValue(uint32_t aValue) { mozilla::Unused << HandleUnsupported(); }
   virtual void SetMaximum(uint32_t aValue) { mozilla::Unused << HandleUnsupported(); }
 
@@ -218,7 +217,7 @@ ScalarUnsigned::SetValue(nsIVariant* aValue)
   }
 
   if (NS_FAILED(aValue->GetAsUint32(&mStorage))) {
-    return ScalarResult::UnsignedInvalidValue;
+    return ScalarResult::InvalidValue;
   }
   return sr;
 }
@@ -240,7 +239,7 @@ ScalarUnsigned::AddValue(nsIVariant* aValue)
   uint32_t newAddend = 0;
   nsresult rv = aValue->GetAsUint32(&newAddend);
   if (NS_FAILED(rv)) {
-    return ScalarResult::UnsignedInvalidValue;
+    return ScalarResult::InvalidValue;
   }
   mStorage += newAddend;
   return sr;
@@ -263,7 +262,7 @@ ScalarUnsigned::SetMaximum(nsIVariant* aValue)
   uint32_t newValue = 0;
   nsresult rv = aValue->GetAsUint32(&newValue);
   if (NS_FAILED(rv)) {
-    return ScalarResult::UnsignedInvalidValue;
+    return ScalarResult::InvalidValue;
   }
   if (newValue > mStorage) {
     mStorage = newValue;
@@ -359,13 +358,13 @@ ScalarString::SetValue(nsIVariant* aValue)
       type != nsIDataType::VTYPE_UTF8STRING &&
       type != nsIDataType::VTYPE_CSTRING &&
       type != nsIDataType::VTYPE_ASTRING) {
-    return ScalarResult::StringInvalidType;
+    return ScalarResult::InvalidType;
   }
 
   nsAutoString convertedString;
   nsresult rv = aValue->GetAsAString(convertedString);
   if (NS_FAILED(rv)) {
-    return ScalarResult::StringInvalidValue;
+    return ScalarResult::InvalidValue;
   }
   return SetValue(convertedString);
 };
@@ -398,6 +397,78 @@ ScalarString::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   size_t n = aMallocSizeOf(this);
   n+= mStorage.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   return n;
+}
+
+
+
+
+class ScalarBoolean : public ScalarBase
+{
+public:
+  using ScalarBase::SetValue;
+
+  ScalarBoolean() : mStorage(false) {};
+  ~ScalarBoolean() {};
+
+  ScalarResult SetValue(nsIVariant* aValue) final;
+  void SetValue(bool aValue) final;
+  nsresult GetValue(nsCOMPtr<nsIVariant>& aResult) const final;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;
+
+private:
+  bool mStorage;
+
+  
+  ScalarBoolean(const ScalarBoolean& aOther) = delete;
+  void operator=(const ScalarBoolean& aOther) = delete;
+};
+
+ScalarResult
+ScalarBoolean::SetValue(nsIVariant* aValue)
+{
+  
+  uint16_t type;
+  aValue->GetDataType(&type);
+  if (type != nsIDataType::VTYPE_BOOL &&
+      type != nsIDataType::VTYPE_INT8 &&
+      type != nsIDataType::VTYPE_INT16 &&
+      type != nsIDataType::VTYPE_INT32 &&
+      type != nsIDataType::VTYPE_INT64 &&
+      type != nsIDataType::VTYPE_UINT8 &&
+      type != nsIDataType::VTYPE_UINT16 &&
+      type != nsIDataType::VTYPE_UINT32 &&
+      type != nsIDataType::VTYPE_UINT64) {
+    return ScalarResult::InvalidType;
+  }
+
+  if (NS_FAILED(aValue->GetAsBool(&mStorage))) {
+    return ScalarResult::InvalidValue;
+  }
+  return ScalarResult::Ok;
+};
+
+void
+ScalarBoolean::SetValue(bool aValue)
+{
+  mStorage = aValue;
+}
+
+nsresult
+ScalarBoolean::GetValue(nsCOMPtr<nsIVariant>& aResult) const
+{
+  nsCOMPtr<nsIWritableVariant> outVar(new nsVariant());
+  nsresult rv = outVar->SetAsBool(mStorage);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  aResult = outVar.forget();
+  return NS_OK;
+}
+
+size_t
+ScalarBoolean::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+{
+  return aMallocSizeOf(this);
 }
 
 typedef nsUint32HashKey ScalarIDHashKey;
@@ -586,6 +657,9 @@ internal_ScalarAllocate(const ScalarInfo& aInfo)
     break;
   case nsITelemetry::SCALAR_STRING:
     scalar = new ScalarString();
+    break;
+  case nsITelemetry::SCALAR_BOOLEAN:
+    scalar = new ScalarBoolean();
     break;
   default:
     MOZ_ASSERT(false, "Invalid scalar type");
@@ -914,6 +988,25 @@ TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, uint32_t aValue)
 
 void
 TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, const nsAString& aValue)
+{
+  StaticMutexAutoLock locker(gTelemetryScalarsMutex);
+
+  ScalarBase* scalar = internal_GetRecordableScalar(aId);
+  if (!scalar) {
+    return;
+  }
+
+  scalar->SetValue(aValue);
+}
+
+
+
+
+
+
+
+void
+TelemetryScalar::Set(mozilla::Telemetry::ScalarID aId, bool aValue)
 {
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
