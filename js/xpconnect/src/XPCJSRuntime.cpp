@@ -3474,7 +3474,7 @@ XPCJSRuntime::Initialize()
     
     
     
-    JS_SetGCParameter(runtime, JSGC_MAX_BYTES, 0xffffffff);
+    JS_SetGCParameter(cx, JSGC_MAX_BYTES, 0xffffffff);
 
     
     
