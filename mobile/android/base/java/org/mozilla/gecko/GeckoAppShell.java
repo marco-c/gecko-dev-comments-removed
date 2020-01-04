@@ -381,7 +381,25 @@ public class GeckoAppShell
     public static native void notifyGeckoOfEvent(GeckoEvent event);
 
     
-    public static native void notifyGeckoObservers(String subject, String data);
+    @WrapForJNI
+    public static native void syncNotifyObservers(String topic, String data);
+
+    @WrapForJNI(stubName = "NotifyObservers")
+    private static native void nativeNotifyObservers(String topic, String data);
+
+    public static void notifyObservers(final String topic, final String data) {
+        notifyObservers(topic, data, GeckoThread.State.RUNNING);
+    }
+
+    public static void notifyObservers(final String topic, final String data, final GeckoThread.State state) {
+        if (GeckoThread.isStateAtLeast(state)) {
+            nativeNotifyObservers(topic, data);
+        } else {
+            GeckoThread.queueNativeCallUntil(
+                    state, GeckoAppShell.class, "nativeNotifyObservers",
+                    String.class, topic, String.class, data);
+        }
+    }
 
     
 
