@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsXMLHttpRequest_h__
 #define nsXMLHttpRequest_h__
@@ -36,8 +36,8 @@
 #include "mozilla/dom/XMLHttpRequestBinding.h"
 
 #ifdef Status
-/* Xlib headers insist on this for some reason... Nuke it because
-   it'll override our member name */
+
+
 #undef Status
 #endif
 
@@ -53,16 +53,16 @@ namespace mozilla {
 namespace dom {
 class Blob;
 class BlobSet;
-} // namespace dom
+} 
 
-// A helper for building up an ArrayBuffer object's data
-// before creating the ArrayBuffer itself.  Will do doubling
-// based reallocation, up to an optional maximum growth given.
-//
-// When all the data has been appended, call getArrayBuffer,
-// passing in the JSContext* for which the ArrayBuffer object
-// is to be created.  This also implicitly resets the builder,
-// or it can be reset explicitly at any point by calling reset().
+
+
+
+
+
+
+
+
 class ArrayBufferBuilder
 {
   uint8_t* mDataPtr;
@@ -75,16 +75,16 @@ public:
 
   void reset();
 
-  // Will truncate if aNewCap is < length().
+  
   bool setCapacity(uint32_t aNewCap);
 
-  // Append aDataLen bytes from data to the current buffer.  If we
-  // need to grow the buffer, grow by doubling the size up to a
-  // maximum of aMaxGrowth (if given).  If aDataLen is greater than
-  // what the new capacity would end up as, then grow by aDataLen.
-  //
-  // The data parameter must not overlap with anything beyond the
-  // builder's current valid contents [0..length)
+  
+  
+  
+  
+  
+  
+  
   bool append(const uint8_t* aNewData, uint32_t aDataLen,
               uint32_t aMaxGrowth = 0);
 
@@ -93,12 +93,12 @@ public:
 
   JSObject* getArrayBuffer(JSContext* aCx);
 
-  // Memory mapping to starting position of file(aFile) in the zip
-  // package(aJarFile).
-  //
-  // The file in the zip package has to be uncompressed and the starting
-  // position of the file must be aligned according to array buffer settings
-  // in JS engine.
+  
+  
+  
+  
+  
+  
   nsresult mapToFileInPackage(const nsCString& aFile, nsIFile* aJarFile);
 
 protected:
@@ -106,7 +106,7 @@ protected:
                                     const uint8_t* aStart2, uint32_t aLength2);
 };
 
-} // namespace mozilla
+} 
 
 class nsXHREventTarget : public mozilla::DOMEventTargetHelper,
                          public nsIXMLHttpRequestEventTarget
@@ -177,8 +177,8 @@ private:
 
 class nsXMLHttpRequestXPCOMifier;
 
-// Make sure that any non-DOM interfaces added here are also added to
-// nsXMLHttpRequestXPCOMifier.
+
+
 class nsXMLHttpRequest final : public nsXHREventTarget,
                                public nsIXMLHttpRequest,
                                public nsIJSXMLHttpRequest,
@@ -205,7 +205,7 @@ public:
     return GetOwner();
   }
 
-  // The WebIDL constructors.
+  
   static already_AddRefed<nsXMLHttpRequest>
   Constructor(const mozilla::dom::GlobalObject& aGlobal,
               JSContext* aCx,
@@ -232,7 +232,7 @@ public:
               const nsAString& ignored,
               ErrorResult& aRv)
   {
-    // Pretend like someone passed null, so we can pick up the default values
+    
     mozilla::dom::MozXMLHttpRequestParameters params;
     if (!params.Init(aCx, JS::NullHandleValue)) {
       aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -266,30 +266,30 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIXMLHttpRequest
+  
   NS_DECL_NSIXMLHTTPREQUEST
 
   NS_FORWARD_NSIXMLHTTPREQUESTEVENTTARGET(nsXHREventTarget::)
 
-  // nsIStreamListener
+  
   NS_DECL_NSISTREAMLISTENER
 
-  // nsIRequestObserver
+  
   NS_DECL_NSIREQUESTOBSERVER
 
-  // nsIChannelEventSink
+  
   NS_DECL_NSICHANNELEVENTSINK
 
-  // nsIProgressEventSink
+  
   NS_DECL_NSIPROGRESSEVENTSINK
 
-  // nsIInterfaceRequestor
+  
   NS_DECL_NSIINTERFACEREQUESTOR
 
-  // nsITimerCallback
+  
   NS_DECL_NSITIMERCALLBACK
 
-  // nsISizeOfEventTarget
+  
   virtual size_t
     SizeOfEventTargetIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
@@ -299,13 +299,13 @@ public:
   void StaticAssertions();
 #endif
 
-  // event handler
+  
   IMPL_EVENT_HANDLER(readystatechange)
 
-  // states
+  
   uint16_t ReadyState();
 
-  // request
+  
   void Open(const nsACString& aMethod, const nsAString& aUrl, ErrorResult& aRv)
   {
     Open(aMethod, aUrl, true,
@@ -428,33 +428,33 @@ private:
 
   bool IsDeniedCrossSiteRequest();
 
-  // Tell our channel what network interface ID we were told to use.
-  // If it's an HTTP channel and we were told to use a non-default
-  // interface ID.
+  
+  
+  
   void PopulateNetworkInterfaceId();
 
 public:
-  void Send(JSContext* /*aCx*/, ErrorResult& aRv)
+  void Send(JSContext* , ErrorResult& aRv)
   {
     aRv = Send(Nullable<RequestBody>());
   }
-  void Send(JSContext* /*aCx*/,
+  void Send(JSContext* ,
             const mozilla::dom::ArrayBuffer& aArrayBuffer,
             ErrorResult& aRv)
   {
     aRv = Send(RequestBody(&aArrayBuffer));
   }
-  void Send(JSContext* /*aCx*/,
+  void Send(JSContext* ,
             const mozilla::dom::ArrayBufferView& aArrayBufferView,
             ErrorResult& aRv)
   {
     aRv = Send(RequestBody(&aArrayBufferView));
   }
-  void Send(JSContext* /*aCx*/, mozilla::dom::Blob& aBlob, ErrorResult& aRv)
+  void Send(JSContext* , mozilla::dom::Blob& aBlob, ErrorResult& aRv)
   {
     aRv = Send(RequestBody(aBlob));
   }
-  void Send(JSContext* /*aCx*/, nsIDocument& aDoc, ErrorResult& aRv)
+  void Send(JSContext* , nsIDocument& aDoc, ErrorResult& aRv)
   {
     aRv = Send(RequestBody(&aDoc));
   }
@@ -467,7 +467,7 @@ public:
       aRv = Send(RequestBody(aString));
     }
   }
-  void Send(JSContext* /*aCx*/, nsFormData& aFormData, ErrorResult& aRv)
+  void Send(JSContext* , nsFormData& aFormData, ErrorResult& aRv)
   {
     aRv = Send(RequestBody(aFormData));
   }
@@ -496,7 +496,7 @@ public:
 
   void Abort();
 
-  // response
+  
   void GetResponseURL(nsAString& aUrl);
   uint32_t Status();
   void GetStatusText(nsCString& aStatusText);
@@ -511,7 +511,7 @@ public:
       aResult.SetIsVoid(true);
     }
     else {
-      // The result value should be inflated:
+      
       CopyASCIItoUTF16(result, aResult);
     }
   }
@@ -519,7 +519,7 @@ public:
   bool IsSafeHeader(const nsACString& aHeaderName, nsIHttpChannel* aHttpChannel);
   void OverrideMimeType(const nsAString& aMimeType)
   {
-    // XXX Should we do some validation here?
+    
     mOverrideMimeType = aMimeType;
   }
   XMLHttpRequestResponseType ResponseType()
@@ -553,24 +553,24 @@ public:
     mNetworkInterfaceId = aId;
   }
 
-  // We need a GetInterface callable from JS for chrome JS
+  
   void GetInterface(JSContext* aCx, nsIJSID* aIID,
                     JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv);
 
-  // This creates a trusted readystatechange event, which is not cancelable and
-  // doesn't bubble.
+  
+  
   nsresult CreateReadystatechangeEvent(nsIDOMEvent** aDOMEvent);
   void DispatchProgressEvent(mozilla::DOMEventTargetHelper* aTarget,
                              const nsAString& aType,
                              bool aLengthComputable,
                              int64_t aLoaded, int64_t aTotal);
 
-  // Dispatch the "progress" event on the XHR or XHR.upload object if we've
-  // received data since the last "progress" event. Also dispatches
-  // "uploadprogress" as needed.
+  
+  
+  
   void MaybeDispatchProgressEvents(bool aFinalProgress);
 
-  // This is called by the factory constructor.
+  
   nsresult Init();
 
   nsresult init(nsIPrincipal* principal,
@@ -607,8 +607,8 @@ protected:
   nsresult CreateResponseParsedJSON(JSContext* aCx);
   void CreatePartialBlob();
   bool CreateDOMBlob(nsIRequest *request);
-  // Change the state of the object with this. The broadcast argument
-  // determines if the onreadystatechange listener should be called.
+  
+  
   nsresult ChangeState(uint32_t aState, bool aBroadcast = true);
   already_AddRefed<nsILoadGroup> GetLoadGroup() const;
   nsIURI *GetBaseURI();
@@ -620,13 +620,13 @@ protected:
 
   void ChangeStateToDone();
 
-  /**
-   * Check if aChannel is ok for a cross-site request by making sure no
-   * inappropriate headers are set, and no username/password is set.
-   *
-   * Also updates the XML_HTTP_REQUEST_USE_XSITE_AC bit.
-   */
-  nsresult CheckChannelForCrossSiteRequest(nsIChannel* aChannel);
+  
+
+
+
+
+
+  void CheckChannelForCrossSiteRequest(nsIChannel* aChannel);
 
   void StartProgressEventTimer();
 
@@ -647,7 +647,7 @@ protected:
 
   nsCOMPtr<nsIStreamListener> mXMLParserStreamListener;
 
-  // used to implement getAllResponseHeaders()
+  
   class nsHeaderVisitor : public nsIHttpHeaderVisitor
   {
   public:
@@ -664,27 +664,27 @@ protected:
     nsCOMPtr<nsIHttpChannel> mHttpChannel;
   };
 
-  // The bytes of our response body. Only used for DEFAULT, ARRAYBUFFER and
-  // BLOB responseTypes
+  
+  
   nsCString mResponseBody;
 
-  // The text version of our response body. This is incrementally decoded into
-  // as we receive network data. However for the DEFAULT responseType we
-  // lazily decode into this from mResponseBody only when .responseText is
-  // accessed.
-  // Only used for DEFAULT and TEXT responseTypes.
+  
+  
+  
+  
+  
   nsString mResponseText;
 
-  // For DEFAULT responseType we use this to keep track of how far we've
-  // lazily decoded from mResponseBody to mResponseText
+  
+  
   uint32_t mResponseBodyDecodedPos;
 
-  // Decoder used for decoding into mResponseText
-  // Only used for DEFAULT, TEXT and JSON responseTypes.
-  // In cases where we've only received half a surrogate, the decoder itself
-  // carries the state to remember this. Next time we receive more data we
-  // simply feed the new data into the decoder which will handle the second
-  // part of the surrogate.
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIUnicodeDecoder> mDecoder;
 
   nsCString mResponseCharset;
@@ -705,28 +705,28 @@ protected:
 
   ResponseTypeEnum mResponseType;
 
-  // It is either a cached blob-response from the last call to GetResponse,
-  // but is also explicitly set in OnStopRequest.
+  
+  
   nsRefPtr<mozilla::dom::Blob> mResponseBlob;
-  // Non-null only when we are able to get a os-file representation of the
-  // response, i.e. when loading from a file.
+  
+  
   nsRefPtr<mozilla::dom::Blob> mDOMBlob;
-  // We stream data to mBlobSet when response type is "blob" or "moz-blob"
-  // and mDOMBlob is null.
+  
+  
   nsAutoPtr<mozilla::dom::BlobSet> mBlobSet;
 
   nsString mOverrideMimeType;
 
-  /**
-   * The notification callbacks the channel had when Send() was
-   * called.  We want to forward things here as needed.
-   */
+  
+
+
+
   nsCOMPtr<nsIInterfaceRequestor> mNotificationCallbacks;
-  /**
-   * Sink interfaces that we implement that mNotificationCallbacks may
-   * want to also be notified for.  These are inited lazily if we're
-   * asked for the relevant interface.
-   */
+  
+
+
+
+
   nsCOMPtr<nsIChannelEventSink> mChannelEventSink;
   nsCOMPtr<nsIProgressEventSink> mProgressEventSink;
 
@@ -744,7 +744,7 @@ protected:
   bool mUploadComplete;
   bool mProgressSinceLastProgressEvent;
 
-  // Timeout support
+  
   PRTime mRequestSentTime;
   uint32_t mTimeoutMilliseconds;
   nsCOMPtr<nsITimer> mTimeoutTimer;
@@ -758,17 +758,17 @@ protected:
   bool mWarnAboutMultipartHtml;
   bool mWarnAboutSyncHtml;
   bool mLoadLengthComputable;
-  int64_t mLoadTotal; // 0 if not known.
-  // Amount of script-exposed (i.e. after undoing gzip compresion) data
-  // received.
+  int64_t mLoadTotal; 
+  
+  
   uint64_t mDataAvailable;
-  // Number of HTTP message body bytes received so far. This quantity is
-  // in the same units as Content-Length and mLoadTotal, and hence counts
-  // compressed bytes when the channel has gzip Content-Encoding. If the
-  // channel does not have Content-Encoding, this will be the same as
-  // mDataReceived except between the OnProgress that changes mLoadTransferred
-  // and the corresponding OnDataAvailable (which changes mDataReceived).
-  // Ordering of OnProgress and OnDataAvailable is undefined.
+  
+  
+  
+  
+  
+  
+  
   int64_t mLoadTransferred;
   nsCOMPtr<nsITimer> mProgressNotifier;
   void HandleProgressTimerCallback();
@@ -776,18 +776,18 @@ protected:
   bool mIsSystem;
   bool mIsAnon;
 
-  // A platform-specific identifer to represent the network interface
-  // that this request is associated with.
+  
+  
   nsCString mNetworkInterfaceId;
 
-  /**
-   * Close the XMLHttpRequest's channels and dispatch appropriate progress
-   * events.
-   *
-   * @param aType The progress event type.
-   * @param aFlag A XML_HTTP_REQUEST_* state flag defined in
-   *              nsXMLHttpRequest.cpp.
-   */
+  
+
+
+
+
+
+
+
   void CloseRequestWithError(const nsAString& aType, const uint32_t aFlag);
 
   bool mFirstStartRequestSeen;
@@ -813,7 +813,7 @@ protected:
 
   nsTHashtable<nsCStringHashKey> mAlreadySetHeaders;
 
-  // Helper object to manage our XPCOM scriptability bits
+  
   nsXMLHttpRequestXPCOMifier* mXPCOMifier;
 
   static bool sDontWarnAboutSyncXHR;
@@ -836,8 +836,8 @@ private:
   bool mOldVal;
 };
 
-// A shim class designed to expose the non-DOM interfaces of
-// XMLHttpRequest via XPCOM stuff.
+
+
 class nsXMLHttpRequestXPCOMifier final : public nsIStreamListener,
                                          public nsIChannelEventSink,
                                          public nsIProgressEventSink,
