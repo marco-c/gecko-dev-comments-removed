@@ -1088,6 +1088,10 @@ private:
   Mirror<bool> mSameOriginMedia;
 
   
+  
+  Mirror<PrincipalHandle> mMediaPrincipalHandle;
+
+  
   Mirror<double> mPlaybackBytesPerSecond;
 
   

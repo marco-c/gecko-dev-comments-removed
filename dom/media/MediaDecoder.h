@@ -783,6 +783,10 @@ protected:
   Canonical<bool> mSameOriginMedia;
 
   
+  
+  Canonical<PrincipalHandle> mMediaPrincipalHandle;
+
+  
   Canonical<double> mPlaybackBytesPerSecond;
 
   
@@ -828,6 +832,9 @@ public:
   }
   AbstractCanonical<bool>* CanonicalSameOriginMedia() {
     return &mSameOriginMedia;
+  }
+  AbstractCanonical<PrincipalHandle>* CanonicalMediaPrincipalHandle() {
+    return &mMediaPrincipalHandle;
   }
   AbstractCanonical<double>* CanonicalPlaybackBytesPerSecond() {
     return &mPlaybackBytesPerSecond;
