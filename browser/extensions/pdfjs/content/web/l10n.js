@@ -1,14 +1,14 @@
 
+
 'use strict';
 
 
 (function(window) {
   var gLanguage = '';
-  var gExternalLocalizerServices = null;
 
   
   function getL10nData(key) {
-    var response = gExternalLocalizerServices.getStrings(key);
+    var response = FirefoxCom.requestSync('getStrings', key);
     var data = JSON.parse(response);
     if (!data) {
       console.warn('[l10n] #' + key + ' missing for [' + gLanguage + ']');
@@ -94,8 +94,8 @@
     }
   }
 
-  function translateDocument() {
-    gLanguage = gExternalLocalizerServices.getLocale();
+  window.addEventListener('DOMContentLoaded', function() {
+    gLanguage = FirefoxCom.requestSync('getLocale', null);
 
     translateFragment();
 
@@ -104,13 +104,6 @@
     evtObject.initEvent('localized', false, false);
     evtObject.language = gLanguage;
     window.dispatchEvent(evtObject);
-  }
-
-  window.addEventListener('DOMContentLoaded', function() {
-    if (gExternalLocalizerServices) {
-      translateDocument();
-    }
-    
   });
 
   
@@ -133,16 +126,6 @@
       var shortCode = gLanguage.split('-')[0];
 
       return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
-    },
-
-    setExternalLocalizerServices: function (externalLocalizerServices) {
-      gExternalLocalizerServices = externalLocalizerServices;
-
-      
-      if (window.document.readyState === 'interactive' ||
-          window.document.readyState === 'complete') {
-        translateDocument();
-      }
     },
 
     
