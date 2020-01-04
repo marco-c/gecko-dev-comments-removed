@@ -182,7 +182,7 @@ public:
 
 
   void UpdateState(bool aNotify);
-  
+
   
 
 
@@ -980,7 +980,7 @@ public:
 
 
   static CORSMode StringToCORSMode(const nsAString& aValue);
-  
+
   
 
 
