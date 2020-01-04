@@ -13,8 +13,6 @@
 #include "nsCOMPtr.h"
 #include "ImageContainer.h"
 #include "MediaSegment.h"
-#include "MediaStreamVideoSink.h"
-#include "VideoSegment.h"
 
 namespace mozilla {
 
@@ -31,21 +29,19 @@ class HTMLMediaElement;
 
 
 
-class VideoFrameContainer : public MediaStreamVideoSink {
-  virtual ~VideoFrameContainer();
+class VideoFrameContainer {
+  ~VideoFrameContainer();
 
 public:
   typedef layers::ImageContainer ImageContainer;
   typedef layers::Image Image;
 
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoFrameContainer)
+
   VideoFrameContainer(dom::HTMLMediaElement* aElement,
                       already_AddRefed<ImageContainer> aContainer);
 
   
-  virtual void SetCurrentFrames(const VideoSegment& aSegment) override;
-  virtual void ClearFrames() override;
-  void SetCurrentFrame(const gfx::IntSize& aIntrinsicSize, Image* aImage,
-                       const TimeStamp& aTargetTime);
   
   PrincipalHandle GetLastPrincipalHandle();
   
@@ -53,13 +49,14 @@ public:
   
   void UpdatePrincipalHandleForFrameID(const PrincipalHandle& aPrincipalHandle,
                                        const ImageContainer::FrameID& aFrameID);
+  void SetCurrentFrame(const gfx::IntSize& aIntrinsicSize, Image* aImage,
+                       const TimeStamp& aTargetTime);
   void SetCurrentFrames(const gfx::IntSize& aIntrinsicSize,
                         const nsTArray<ImageContainer::NonOwningImage>& aImages);
   void ClearCurrentFrame(const gfx::IntSize& aIntrinsicSize)
   {
     SetCurrentFrames(aIntrinsicSize, nsTArray<ImageContainer::NonOwningImage>());
   }
-  VideoFrameContainer* AsVideoFrameContainer() override { return this; }
 
   void ClearCurrentFrame();
   
@@ -83,7 +80,7 @@ public:
     INVALIDATE_DEFAULT,
     INVALIDATE_FORCE
   };
-  void Invalidate() override { InvalidateWithFlags(INVALIDATE_DEFAULT); }
+  void Invalidate() { InvalidateWithFlags(INVALIDATE_DEFAULT); }
   void InvalidateWithFlags(uint32_t aFlags);
   ImageContainer* GetImageContainer();
   void ForgetElement() { mElement = nullptr; }
@@ -103,9 +100,6 @@ protected:
   Mutex mMutex;
   
   
-  RefPtr<Image> mBlackImage;
-  
-  
   
   
   
@@ -113,9 +107,6 @@ protected:
   
   
   ImageContainer::FrameID mFrameID;
-  
-  
-  VideoFrame mLastPlayedVideoFrame;
   
   
   
