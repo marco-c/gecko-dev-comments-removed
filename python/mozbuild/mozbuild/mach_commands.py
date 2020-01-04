@@ -559,7 +559,8 @@ class Build(MachCommandBase):
     
     
     @CommandArgument('-b', '--backend',
-        choices=['RecursiveMake', 'AndroidEclipse', 'CppEclipse', 'VisualStudio'],
+        choices=['RecursiveMake', 'AndroidEclipse', 'CppEclipse',
+                 'VisualStudio', 'FasterMake'],
         default='RecursiveMake',
         help='Which backend to build (default: RecursiveMake).')
     def build_backend(self, backend='RecursiveMake', diff=False):
