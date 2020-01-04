@@ -389,16 +389,17 @@ this.UnsubmittedCrashHandler = {
       reportIDs = yield CrashSubmit.pendingIDsAsync(dateLimit);
     } catch (e) {
       Cu.reportError(e);
-      return;
+      return null;
     }
 
     if (reportIDs.length) {
       if (CrashNotificationBar.autoSubmit) {
         CrashNotificationBar.submitReports(reportIDs);
       } else {
-        this.showPendingSubmissionsNotification(reportIDs);
+        return this.showPendingSubmissionsNotification(reportIDs);
       }
     }
+    return null;
   }),
 
   
@@ -408,10 +409,11 @@ this.UnsubmittedCrashHandler = {
 
 
 
+
   showPendingSubmissionsNotification(reportIDs) {
     let count = reportIDs.length;
     if (!count) {
-      return;
+      return null;
     }
 
     let messageTemplate =
@@ -419,7 +421,7 @@ this.UnsubmittedCrashHandler = {
 
     let message = PluralForm.get(count, messageTemplate).replace("#1", count);
 
-    CrashNotificationBar.show({
+    return CrashNotificationBar.show({
       notificationID: "pending-crash-reports",
       message,
       reportIDs,
@@ -451,19 +453,20 @@ this.CrashNotificationBar = {
 
 
 
+
   show({ notificationID, message, reportIDs }) {
     let chromeWin = RecentWindow.getMostRecentBrowserWindow();
     if (!chromeWin) {
       
       
       
-      return;
+      return null;
     }
 
     let nb =  chromeWin.document.getElementById("global-notificationbox");
     let notification = nb.getNotificationWithValue(notificationID);
     if (notification) {
-      return;
+      return null;
     }
 
     let buttons = [{
@@ -499,10 +502,10 @@ this.CrashNotificationBar = {
       }
     };
 
-    nb.appendNotification(message, notificationID,
-                          "chrome://browser/skin/tab-crashed.svg",
-                          nb.PRIORITY_INFO_HIGH, buttons,
-                          eventCallback);
+    return nb.appendNotification(message, notificationID,
+                                 "chrome://browser/skin/tab-crashed.svg",
+                                 nb.PRIORITY_INFO_HIGH, buttons,
+                                 eventCallback);
   },
 
   get autoSubmit() {
