@@ -373,11 +373,7 @@ MediaSource::SetLiveSeekableRange(double aStart, double aEnd, ErrorResult& aRv)
 
   
   
-  
-  
-  
-  if (mReadyState != MediaSourceReadyState::Open ||
-      mSourceBuffers->AnyUpdating()) {
+  if (mReadyState != MediaSourceReadyState::Open) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -404,11 +400,7 @@ MediaSource::ClearLiveSeekableRange(ErrorResult& aRv)
 
   
   
-  
-  
-  
-  if (mReadyState != MediaSourceReadyState::Open ||
-      mSourceBuffers->AnyUpdating()) {
+  if (mReadyState != MediaSourceReadyState::Open) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
