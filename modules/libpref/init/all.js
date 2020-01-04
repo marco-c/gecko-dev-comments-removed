@@ -1556,7 +1556,7 @@ pref("network.http.signed-packages.enabled", false);
 
 
 
-pref("network.http.keep_empty_response_headers_as_empty_string", false);
+pref("network.http.keep_empty_response_headers_as_empty_string", true);
 
 
 
