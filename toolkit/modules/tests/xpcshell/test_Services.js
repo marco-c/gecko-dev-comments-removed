@@ -78,33 +78,15 @@ function run_test()
   
   
   
-  
-  let contractID = "@mozilla.org/xre/app-info;1";
-  let mockFactory = {
-    createInstance: function (aOuter, aIid) {
-      return {
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIXULRuntime,
-                                               Ci.nsIXULAppInfo]),
-      }.QueryInterface(aIid);
-    }
-  };
-
-  let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-  let cid = registrar.contractIDToCID(contractID);
-  let oldFactory = Components.manager.getClassObject(Cc[contractID],
-                                                     Ci.nsIFactory);
-  registrar.unregisterFactory(cid, oldFactory);
-  registrar.registerFactory(cid, "", contractID, mockFactory);
+  let tmp = {};
+  Cu.import("resource://testing-common/AppInfo.jsm", tmp);
+  tmp.updateAppInfo();
 
   
   Cu.unload("resource://gre/modules/Services.jsm");
   Cu.import("resource://gre/modules/Services.jsm");
 
   checkService("appinfo", Ci.nsIXULAppInfo);
-
-  
-  registrar.unregisterFactory(cid, mockFactory);
-  registrar.registerFactory(cid, "", contractID, oldFactory);
 
   Cu.unload("resource://gre/modules/Services.jsm");
 }

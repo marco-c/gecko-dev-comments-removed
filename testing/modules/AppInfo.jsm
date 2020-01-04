@@ -5,50 +5,91 @@
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
+  "newAppInfo",
   "getAppInfo",
   "updateAppInfo",
 ];
 
 
-const {interfaces: Ci, results: Cr, utils: Cu} = Components;
+const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var APP_INFO = {
-  vendor: "Mozilla",
-  name: "xpcshell",
-  ID: "xpcshell@tests.mozilla.org",
-  version: "1",
-  appBuildID: "20121107",
-  platformVersion: "p-ver",
-  platformBuildID: "20121106",
-  inSafeMode: false,
-  logConsoleErrors: true,
-  OS: "XPCShell",
-  XPCOMABI: "noarch-spidermonkey",
 
-  invalidateCachesOnRestart() {},
 
-  
-  get userCanElevate() {
-    return false;
-  },
 
-  QueryInterface(iid) {
-    let interfaces = [ Ci.nsIXULAppInfo, Ci.nsIXULRuntime ];
-    if ("nsIWinAppHelper" in Ci)
-      interfaces.push(Ci.nsIWinAppHelper);
-    if (!interfaces.some(v => iid.equals(v)))
-      throw Cr.NS_ERROR_NO_INTERFACE;
-    return this;
+
+
+
+
+
+
+
+
+
+
+this.newAppInfo = function (options={}) {
+  let ID = ("ID" in options) ? options.ID : "xpcshell@tests.mozilla.org";
+  let name = ("name" in options) ? options.name : "xpcshell";
+  let version = ("version" in options) ? options.version : "1";
+  let platformVersion
+      = ("platformVersion" in options) ? options.platformVersion : "p-ver";
+  let OS = ("OS" in options) ? options.OS : "XPCShell";
+  let extraProps = ("extraProps" in options) ? options.extraProps : {};
+
+  let appInfo = {
+    
+    vendor: "Mozilla",
+    name: name,
+    ID: ID,
+    version: version,
+    appBuildID: "20160315",
+    platformVersion: platformVersion,
+    platformBuildID: "20160316",
+
+    
+    inSafeMode: false,
+    logConsoleErrors: true,
+    OS: OS,
+    XPCOMABI: "noarch-spidermonkey",
+    invalidateCachesOnRestart() {},
+
+    
+    get userCanElevate() {
+      return false;
+    },
+  };
+
+  let interfaces = [Ci.nsIXULAppInfo,
+                    Ci.nsIXULRuntime];
+  if ("nsIWinAppHelper" in Ci) {
+    interfaces.push(Ci.nsIWinAppHelper);
   }
+
+  if ("crashReporter" in options && options.crashReporter) {
+    
+    appInfo.annotations = {};
+    appInfo.annotateCrashReport = function(key, data) {
+      this.annotations[key] = data;
+    };
+    interfaces.push(Ci.nsICrashReporter);
+  }
+
+  for (let key of Object.keys(extraProps)) {
+    appInfo.browserTabsRemoteAutostart = extraProps[key];
+  }
+
+  appInfo.QueryInterface = XPCOMUtils.generateQI(interfaces);
+
+  return appInfo;
 };
 
+var currentAppInfo = newAppInfo();
 
 
 
 
-this.getAppInfo = function () { return APP_INFO; }
+this.getAppInfo = function () { return currentAppInfo; };
 
 
 
@@ -58,10 +99,8 @@ this.getAppInfo = function () { return APP_INFO; }
 
 
 
-
-this.updateAppInfo = function (obj) {
-  obj = obj || APP_INFO;
-  APP_INFO = obj;
+this.updateAppInfo = function (options) {
+  currentAppInfo = newAppInfo(options);
 
   let id = Components.ID("{fbfae60b-64a4-44ef-a911-08ceb70b9f31}");
   let cid = "@mozilla.org/xre/app-info;1";
@@ -79,7 +118,7 @@ this.updateAppInfo = function (obj) {
         throw Cr.NS_ERROR_NO_AGGREGATION;
       }
 
-      return obj.QueryInterface(iid);
+      return currentAppInfo.QueryInterface(iid);
     },
   };
 
