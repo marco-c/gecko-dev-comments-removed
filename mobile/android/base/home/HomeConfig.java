@@ -27,6 +27,7 @@ import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.util.Log;
 
 public final class HomeConfig {
     
@@ -1218,7 +1219,7 @@ public final class HomeConfig {
         private void findNewDefault() {
             
             
-            for (PanelConfig panelConfig : mConfigMap.values()) {
+            for (PanelConfig panelConfig : makeOrderedCopy(false)) {
                 if (!panelConfig.isDefault() && !panelConfig.isDisabled()) {
                     setDefault(panelConfig.getId());
                     return;
