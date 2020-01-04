@@ -271,7 +271,8 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
                            const nsIntSize& aSize,
                            const SurfaceFormat aFormat,
                            SamplingFilter aSamplingFilter,
-                           uint32_t aImageFlags)
+                           uint32_t aImageFlags,
+                           gfx::BackendType aBackend)
 {
   
   
@@ -336,8 +337,13 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
     
     MOZ_ASSERT(!mOptSurface, "Called imgFrame::InitWithDrawable() twice?");
 
-    target = gfxPlatform::GetPlatform()->
-      CreateOffscreenContentDrawTarget(mFrameRect.Size(), mFormat);
+    if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(aBackend)) {
+      target = gfxPlatform::GetPlatform()->
+        CreateDrawTargetForBackend(aBackend, mFrameRect.Size(), mFormat);
+    } else {
+      target = gfxPlatform::GetPlatform()->
+        CreateOffscreenContentDrawTarget(mFrameRect.Size(), mFormat);
+    }
   }
 
   if (!target || !target->IsValid()) {
@@ -394,12 +400,15 @@ imgFrame::CanOptimizeOpaqueImage()
 }
 
 nsresult
-imgFrame::Optimize()
+imgFrame::Optimize(DrawTarget* aTarget)
 {
   MOZ_ASSERT(NS_IsMainThread());
   mMonitor.AssertCurrentThreadOwns();
-  MOZ_ASSERT(mLockCount == 1,
-             "Should only optimize when holding the lock exclusively");
+  
+  if (mLockCount > 0 || !mOptimizable) {
+    
+    return NS_OK;
+  }
 
   
   static bool gDisableOptimize = false;
@@ -422,7 +431,7 @@ imgFrame::Optimize()
     mImageSurface = CreateLockedSurface(mVBuf, mFrameRect.Size(), mFormat);
   }
 
-  if (!mOptimizable || gDisableOptimize) {
+  if (gDisableOptimize) {
     return NS_OK;
   }
 
@@ -454,6 +463,7 @@ imgFrame::Optimize()
   
   mVBufPtr = nullptr;
   mImageSurface = nullptr;
+  mOptimizable = false;
 
   return NS_OK;
 }
@@ -547,6 +557,10 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
   }
 
   MonitorAutoLock lock(mMonitor);
+
+  
+  
+  Optimize(aContext->GetDrawTarget());
 
   bool doPartialDecode = !AreAllPixelsWritten();
 
@@ -749,21 +763,6 @@ imgFrame::AssertImageDataLocked() const
 #endif
 }
 
-class UnlockImageDataRunnable : public Runnable
-{
-public:
-  explicit UnlockImageDataRunnable(imgFrame* aTarget)
-    : mTarget(aTarget)
-  {
-    MOZ_ASSERT(mTarget);
-  }
-
-  NS_IMETHOD Run() override { return mTarget->UnlockImageData(); }
-
-private:
-  RefPtr<imgFrame> mTarget;
-};
-
 nsresult
 imgFrame::UnlockImageData()
 {
@@ -776,22 +775,6 @@ imgFrame::UnlockImageData()
 
   MOZ_ASSERT(mLockCount > 1 || mFinished || mAborted,
              "Should have Finish()'d or aborted before unlocking");
-
-  
-  
-  
-  if (mLockCount == 1 && !mPalettedImageData) {
-    
-    if (!NS_IsMainThread()) {
-      nsCOMPtr<nsIRunnable> runnable = new UnlockImageDataRunnable(this);
-      NS_DispatchToMainThread(runnable);
-      return NS_OK;
-    }
-
-    
-    
-    Optimize();
-  }
 
   mLockCount--;
 

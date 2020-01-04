@@ -231,11 +231,15 @@ public:
 
 
 
+
+
+
   nsresult InitWithDrawable(gfxDrawable* aDrawable,
                             const nsIntSize& aSize,
                             const SurfaceFormat aFormat,
                             SamplingFilter aSamplingFilter,
-                            uint32_t aImageFlags);
+                            uint32_t aImageFlags,
+                            gfx::BackendType aBackend);
 
   DrawableFrameRef DrawableRef();
   RawAccessFrameRef RawAccessRef();
@@ -348,7 +352,7 @@ private:
   nsresult LockImageData();
   nsresult UnlockImageData();
   bool     CanOptimizeOpaqueImage();
-  nsresult Optimize();
+  nsresult Optimize(gfx::DrawTarget* aTarget);
 
   void AssertImageDataLocked() const;
 
