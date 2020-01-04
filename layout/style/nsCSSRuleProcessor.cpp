@@ -56,6 +56,7 @@
 #include "mozilla/TypedEnumBits.h"
 #include "RuleProcessorCache.h"
 #include "nsIDOMMutationEvent.h"
+#include "nsIMozBrowserFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -543,7 +544,7 @@ RuleHash::~RuleHash()
         RuleValue* value = &(mUniversalRules[i]);
         nsAutoString selectorText;
         uint32_t lineNumber = value->mRule->GetLineNumber();
-        RefPtr<CSSStyleSheet> cssSheet = value->mRule->GetStyleSheet();
+        nsRefPtr<CSSStyleSheet> cssSheet = value->mRule->GetStyleSheet();
         value->mSelector->ToString(selectorText, cssSheet);
 
         printf("    line %d, %s\n",
@@ -2151,6 +2152,17 @@ static bool SelectorMatches(Element* aElement,
           if (!val ||
               (val->Type() == nsAttrValue::eInteger &&
                val->GetIntegerValue() == 0)) {
+            return false;
+          }
+        }
+        break;
+
+      case nsCSSPseudoClasses::ePseudoClass_mozBrowserFrame:
+        {
+          nsCOMPtr<nsIMozBrowserFrame>
+            browserFrame = do_QueryInterface(aElement);
+          if (!browserFrame ||
+              !browserFrame->GetReallyIsBrowserOrApp()) {
             return false;
           }
         }
