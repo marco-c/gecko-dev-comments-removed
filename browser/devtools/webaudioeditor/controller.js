@@ -185,9 +185,9 @@ var WebAudioEditorController = {
 
 
 
-  _onCreateNode: Task.async(function* (nodeActor) {
-    yield gAudioNodes.add(nodeActor);
-  }),
+  _onCreateNode: function (nodeActor) {
+    gAudioNodes.add(nodeActor);
+  },
 
   
 
