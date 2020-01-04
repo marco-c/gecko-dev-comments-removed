@@ -186,7 +186,6 @@ public:
     
     static void Open(const jni::ClassObject::LocalRef& cls,
                      GeckoView::Window::Param gvWindow,
-                     GeckoView::Param view,
                      int32_t width, int32_t height);
 
     
@@ -201,7 +200,6 @@ public:
 void
 nsWindow::Natives::Open(const jni::ClassObject::LocalRef& cls,
                         GeckoView::Window::Param gvWindow,
-                        GeckoView::Param view,
                         int32_t width, int32_t height)
 {
     MOZ_ASSERT(NS_IsMainThread());
@@ -212,10 +210,6 @@ nsWindow::Natives::Open(const jni::ClassObject::LocalRef& cls,
     if (gGeckoViewWindow) {
         
         MOZ_ASSERT(gGeckoViewWindow->mNatives);
-
-        
-        gGeckoViewWindow->mEditable->OnViewChange(view);
-
         AttachNative(GeckoView::Window::LocalRef(cls.Env(), gvWindow),
                      gGeckoViewWindow->mNatives.get());
         return;
@@ -258,7 +252,6 @@ nsWindow::Natives::Open(const jni::ClassObject::LocalRef& cls,
 
     
     gGeckoViewWindow->mEditable = GeckoEditable::New();
-    gGeckoViewWindow->mEditable->OnViewChange(view);
 
     AttachNative(GeckoView::Window::LocalRef(cls.Env(), gvWindow),
                  gGeckoViewWindow->mNatives.get());
