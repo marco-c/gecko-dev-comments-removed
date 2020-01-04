@@ -366,9 +366,28 @@ var AppManager = exports.AppManager = {
   _selectedProject: null,
   set selectedProject(project) {
     
-    if (JSON.stringify(this._selectedProject) ===
-        JSON.stringify(project)) {
+    let prev = this._selectedProject;
+    if (!prev && !project) {
       return;
+    } else if (prev && project && prev.type === project.type) {
+      let type = project.type;
+      if (type === "runtimeApp") {
+        if (prev.app.manifestURL === project.app.manifestURL) {
+          return;
+        }
+      } else if (type === "tab") {
+        if (prev.app.actor === project.app.actor) {
+          return;
+        }
+      } else if (type === "packaged" || type === "hosted") {
+        if (prev.location === project.location) {
+          return;
+        }
+      } else if (type === "mainProcess") {
+        return;
+      } else {
+        throw new Error("Unsupported project type: " + type);
+      }
     }
 
     let cancelled = false;
