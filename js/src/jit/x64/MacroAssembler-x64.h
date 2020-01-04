@@ -710,10 +710,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
         cond = testObject(cond, tag);
         j(cond, label);
     }
-    void branchTestNumber(Condition cond, Register tag, Label* label) {
-        cond = testNumber(cond, tag);
-        j(cond, label);
-    }
 
     
     
@@ -777,10 +773,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     }
     void branchTestObject(Condition cond, const ValueOperand& src, Label* label) {
         cond = testObject(cond, src);
-        j(cond, label);
-    }
-    void branchTestNumber(Condition cond, const ValueOperand& src, Label* label) {
-        cond = testNumber(cond, src);
         j(cond, label);
     }
 
