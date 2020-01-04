@@ -92,6 +92,20 @@ function coordinatesRelativeToScreen(aX, aY, aElement) {
 
 
 
+function rectRelativeToScreen(aElement) {
+  var targetWindow = aElement.ownerDocument.defaultView;
+  var scale = targetWindow.devicePixelRatio;
+  var rect = aElement.getBoundingClientRect();
+  return {
+    x: (targetWindow.mozInnerScreenX + rect.left) * scale,
+    y: (targetWindow.mozInnerScreenY + rect.top) * scale,
+    w: (rect.width * scale),
+    h: (rect.height * scale)
+  };
+}
+
+
+
 
 
 
