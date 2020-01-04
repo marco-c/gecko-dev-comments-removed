@@ -241,6 +241,14 @@ protected:
                                        uint32_t aXPEndOffset,
                                        LineBreakType aLineBreakType);
   
+  
+  
+  
+  
+  nsresult GenerateFlatTextContent(nsIContent* aContent,
+                                   nsAFlatString& aString,
+                                   LineBreakType aLineBreakType);
+  
   nsresult GenerateFlatTextContent(nsRange* aRange,
                                    nsAFlatString& aString,
                                    LineBreakType aLineBreakType);
@@ -394,6 +402,21 @@ protected:
   
   
   FrameRelativeRect GuessLineBreakerRectAfter(nsIContent* aTextContent);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FrameRelativeRect GuessFirstCaretRectIn(nsIFrame* aFrame);
 
   
   
