@@ -272,7 +272,7 @@ public:
   
   
   void TakeOwnershipOfErrorReporting();
-  bool OwnsErrorReporting() { return mOwnErrorReporting; }
+  bool OwnsErrorReporting() { return true; }
   
   
   void ReportException();
@@ -317,7 +317,6 @@ private:
   JSContext *mCx;
 
   
-  bool mOwnErrorReporting;
   bool mOldAutoJSAPIOwnsErrorReporting;
   
   bool mIsMainThread;
