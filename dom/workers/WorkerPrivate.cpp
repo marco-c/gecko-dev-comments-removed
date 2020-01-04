@@ -5104,7 +5104,7 @@ WorkerPrivate::ClearMainEventQueue(WorkerRanOrNot aRanOrNot)
 {
   AssertIsOnWorkerThread();
 
-  MOZ_ASSERT(!mSyncLoopStack.Length());
+  MOZ_ASSERT(mSyncLoopStack.IsEmpty());
   MOZ_ASSERT(!mCancelAllPendingRunnables);
   mCancelAllPendingRunnables = true;
 
@@ -5502,7 +5502,7 @@ WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex, nsIThreadInternal* aThread)
 
   MOZ_ALWAYS_SUCCEEDS(aThread->PopEventQueue(nestedEventTarget));
 
-  if (!mSyncLoopStack.Length() && mPendingEventQueueClearing) {
+  if (mSyncLoopStack.IsEmpty() && mPendingEventQueueClearing) {
     ClearMainEventQueue(WorkerRan);
     mPendingEventQueueClearing = false;
   }
@@ -5802,7 +5802,7 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
   if (previousStatus == Running) {
     
     
-    if (mSyncLoopStack.Length()) {
+    if (!mSyncLoopStack.IsEmpty()) {
       mPendingEventQueueClearing = true;
     } else {
       ClearMainEventQueue(WorkerRan);
