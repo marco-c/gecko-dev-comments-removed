@@ -214,34 +214,50 @@ GetPropertyNameFromPC(JSScript* script, jsbytecode* pc);
 
 
 
-extern JS_FRIEND_API(void)
-DumpString(JSString* str);
 
 extern JS_FRIEND_API(void)
-DumpAtom(JSAtom* atom);
+DumpString(JSString* str, FILE* fp);
 
 extern JS_FRIEND_API(void)
-DumpObject(JSObject* obj);
+DumpAtom(JSAtom* atom, FILE* fp);
 
 extern JS_FRIEND_API(void)
-DumpChars(const char16_t* s, size_t n);
+DumpObject(JSObject* obj, FILE* fp);
 
 extern JS_FRIEND_API(void)
-DumpValue(const JS::Value& val);
+DumpChars(const char16_t* s, size_t n, FILE* fp);
 
 extern JS_FRIEND_API(void)
-DumpId(jsid id);
+DumpValue(const JS::Value& val, FILE* fp);
 
 extern JS_FRIEND_API(void)
-DumpInterpreterFrame(JSContext* cx, InterpreterFrame* start = nullptr);
+DumpId(jsid id, FILE* fp);
+
+extern JS_FRIEND_API(void)
+DumpInterpreterFrame(JSContext* cx, FILE* fp, InterpreterFrame* start = nullptr);
 
 extern JS_FRIEND_API(bool)
-DumpPC(JSContext* cx);
+DumpPC(JSContext* cx, FILE* fp);
 
 extern JS_FRIEND_API(bool)
-DumpScript(JSContext* cx, JSScript* scriptArg);
+DumpScript(JSContext* cx, JSScript* scriptArg, FILE* fp);
+
+
+
+extern JS_FRIEND_API(void) DumpString(JSString* str);
+extern JS_FRIEND_API(void) DumpAtom(JSAtom* atom);
+extern JS_FRIEND_API(void) DumpObject(JSObject* obj);
+extern JS_FRIEND_API(void) DumpChars(const char16_t* s, size_t n);
+extern JS_FRIEND_API(void) DumpValue(const JS::Value& val);
+extern JS_FRIEND_API(void) DumpId(jsid id);
+extern JS_FRIEND_API(void) DumpInterpreterFrame(JSContext* cx, InterpreterFrame* start = nullptr);
+extern JS_FRIEND_API(bool) DumpPC(JSContext* cx);
+extern JS_FRIEND_API(bool) DumpScript(JSContext* cx, JSScript* scriptArg);
 
 #endif
+
+extern JS_FRIEND_API(void)
+DumpBacktrace(JSContext* cx, FILE* fp);
 
 extern JS_FRIEND_API(void)
 DumpBacktrace(JSContext* cx);
