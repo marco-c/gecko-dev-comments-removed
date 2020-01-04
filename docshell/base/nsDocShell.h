@@ -787,6 +787,7 @@ protected:
   nsIntRect mBounds;
   nsString mName;
   nsString mTitle;
+  nsString mCustomUserAgent;
 
   
 
