@@ -65,6 +65,19 @@ public:
   {
     *aOutput = aInput;
 
+    if (aInput.IsNull()) {
+      
+      
+      if (mChunksToProcess == 0) {
+        return;
+      }
+
+      --mChunksToProcess;
+    } else {
+      
+      mChunksToProcess = CHUNK_COUNT;
+    }
+
     nsRefPtr<TransferBuffer> transfer =
       new TransferBuffer(aStream, aInput.AsAudioChunk());
     NS_DispatchToMainThread(transfer);
@@ -74,6 +87,8 @@ public:
   {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
+
+  size_t mChunksToProcess = 0;
 };
 
 AnalyserNode::AnalyserNode(AudioContext* aContext)
