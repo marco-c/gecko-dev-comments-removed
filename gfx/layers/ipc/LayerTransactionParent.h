@@ -91,19 +91,6 @@ public:
 
   virtual void ReplyRemoveTexture(const OpReplyRemoveTexture& aReply) override;
 
-  void AddPendingCompositorUpdate() {
-    mPendingCompositorUpdates++;
-  }
-  void SetPendingCompositorUpdates(uint32_t aCount) {
-    
-    MOZ_ASSERT(mPendingCompositorUpdates == 0);
-    mPendingCompositorUpdates = aCount;
-  }
-  void AcknowledgeCompositorUpdate() {
-    MOZ_ASSERT(mPendingCompositorUpdates > 0);
-    mPendingCompositorUpdates--;
-  }
-
 protected:
   virtual bool RecvSyncWithCompositor() override { return true; }
 
@@ -203,11 +190,6 @@ private:
   uint64_t mId;
 
   uint64_t mPendingTransaction;
-
-  
-  
-  uint32_t mPendingCompositorUpdates;
-
   
   
   

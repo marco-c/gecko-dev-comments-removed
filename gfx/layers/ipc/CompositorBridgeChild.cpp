@@ -212,7 +212,7 @@ CompositorBridgeChild::RecvInvalidateLayers(const uint64_t& aLayersId)
 
 bool
 CompositorBridgeChild::RecvCompositorUpdated(const uint64_t& aLayersId,
-                                             const TextureFactoryIdentifier& aNewIdentifier)
+                                      const TextureFactoryIdentifier& aNewIdentifier)
 {
   if (mLayerManager) {
     
@@ -221,7 +221,6 @@ CompositorBridgeChild::RecvCompositorUpdated(const uint64_t& aLayersId,
     if (dom::TabChild* child = dom::TabChild::GetFrom(aLayersId)) {
       child->CompositorUpdated(aNewIdentifier);
     }
-    SendAcknowledgeCompositorUpdate(aLayersId);
   }
   return true;
 }
