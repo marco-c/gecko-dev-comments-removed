@@ -243,6 +243,8 @@ public:
   
   bool OwnerHasError() const;
 
+  already_AddRefed<GMPCrashHelper> GetCrashHelper() override;
+
 protected:
   
   
