@@ -1239,9 +1239,6 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   } else {
     state = nsIWebProgressListener::STATE_IS_SECURE |
             nsIWebProgressListener::STATE_SECURE_HIGH;
-    
-    ioLayerHelpers.removeInsecureFallbackSite(infoObject->GetHostName(),
-                                              infoObject->GetPort());
   }
   infoObject->SetSecurityState(state);
 
