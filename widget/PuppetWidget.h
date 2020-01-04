@@ -113,12 +113,6 @@ public:
   NS_IMETHOD Invalidate(const LayoutDeviceIntRect& aRect) override;
 
   
-  virtual void Scroll(const nsIntPoint& aDelta,
-                      const nsTArray<nsIntRect>& aDestRects,
-                      const nsTArray<Configuration>& aReconfigureChildren)
-  {  }
-
-  
   virtual void* GetNativeData(uint32_t aDataType) override;
 #if defined(XP_WIN)
   void SetNativeData(uint32_t aDataType, uintptr_t aVal) override;
