@@ -352,12 +352,7 @@ protected:
   
   
   
-  
-  
-  
   nsresult DoURILoad(nsIURI* aURI,
-                     nsIURI* aOriginalURI,
-                     bool aLoadReplace,
                      nsIURI* aReferrer,
                      bool aSendReferrer,
                      uint32_t aReferrerPolicy,
