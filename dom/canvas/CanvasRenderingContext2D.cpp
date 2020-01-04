@@ -3773,7 +3773,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
   }
 
   
-  nsAutoPtr<gfxTextRun> mTextRun;
+  UniquePtr<gfxTextRun> mTextRun;
 
   
   RefPtr<DrawTarget> mDrawTarget;

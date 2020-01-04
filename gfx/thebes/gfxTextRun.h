@@ -434,9 +434,10 @@ public:
 
     
     
-    static gfxTextRun *Create(const gfxTextRunFactory::Parameters *aParams,
-                              uint32_t aLength, gfxFontGroup *aFontGroup,
-                              uint32_t aFlags);
+    static mozilla::UniquePtr<gfxTextRun>
+    Create(const gfxTextRunFactory::Parameters *aParams,
+           uint32_t aLength, gfxFontGroup *aFontGroup,
+           uint32_t aFlags);
 
     
     struct GlyphRun {
@@ -797,29 +798,32 @@ public:
 
 
 
-    virtual gfxTextRun *MakeTextRun(const char16_t *aString, uint32_t aLength,
-                                    const Parameters *aParams, uint32_t aFlags,
-                                    gfxMissingFontRecorder *aMFR);
+    virtual mozilla::UniquePtr<gfxTextRun>
+    MakeTextRun(const char16_t *aString, uint32_t aLength,
+                const Parameters *aParams, uint32_t aFlags,
+                gfxMissingFontRecorder *aMFR);
     
 
 
 
 
 
-    virtual gfxTextRun *MakeTextRun(const uint8_t *aString, uint32_t aLength,
-                                    const Parameters *aParams, uint32_t aFlags,
-                                    gfxMissingFontRecorder *aMFR);
+    virtual mozilla::UniquePtr<gfxTextRun>
+    MakeTextRun(const uint8_t *aString, uint32_t aLength,
+                const Parameters *aParams, uint32_t aFlags,
+                gfxMissingFontRecorder *aMFR);
 
     
 
 
 
     template<typename T>
-    gfxTextRun* MakeTextRun(const T* aString, uint32_t aLength,
-                            DrawTarget* aRefDrawTarget,
-                            int32_t aAppUnitsPerDevUnit,
-                            uint32_t aFlags,
-                            gfxMissingFontRecorder *aMFR)
+    mozilla::UniquePtr<gfxTextRun>
+    MakeTextRun(const T* aString, uint32_t aLength,
+                DrawTarget* aRefDrawTarget,
+                int32_t aAppUnitsPerDevUnit,
+                uint32_t aFlags,
+                gfxMissingFontRecorder *aMFR)
     {
         gfxTextRunFactory::Parameters params = {
             aRefDrawTarget, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevUnit
@@ -842,8 +846,8 @@ public:
 
 
 
-    gfxTextRun* MakeHyphenTextRun(DrawTarget* aDrawTarget,
-                                  uint32_t aAppUnitsPerDevUnit);
+    mozilla::UniquePtr<gfxTextRun>
+    MakeHyphenTextRun(DrawTarget* aDrawTarget, uint32_t aAppUnitsPerDevUnit);
 
     
 
@@ -1096,10 +1100,15 @@ protected:
 
 
 
-    gfxTextRun *MakeEmptyTextRun(const Parameters *aParams, uint32_t aFlags);
-    gfxTextRun *MakeSpaceTextRun(const Parameters *aParams, uint32_t aFlags);
-    gfxTextRun *MakeBlankTextRun(uint32_t aLength,
-                                 const Parameters *aParams, uint32_t aFlags);
+    mozilla::UniquePtr<gfxTextRun>
+    MakeEmptyTextRun(const Parameters *aParams, uint32_t aFlags);
+
+    mozilla::UniquePtr<gfxTextRun>
+    MakeSpaceTextRun(const Parameters *aParams, uint32_t aFlags);
+
+    mozilla::UniquePtr<gfxTextRun>
+    MakeBlankTextRun(uint32_t aLength, const Parameters *aParams,
+                     uint32_t aFlags);
 
     
     void BuildFontList();
