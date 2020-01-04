@@ -433,10 +433,6 @@ KEY_MAP_GTK     (BrightnessUp, GDK_MonBrightnessUp)
 KEY_MAP_QT      (BrightnessUp, Qt::Key_MonBrightnessUp)
 
 
-KEY_MAP_QT      (Camera, Qt::Key_Camera)
-KEY_MAP_ANDROID (Camera, AKEYCODE_CAMERA)
-
-
 KEY_MAP_GTK     (Eject, GDK_Eject)
 KEY_MAP_QT      (Eject, Qt::Key_Eject)
 KEY_MAP_ANDROID (Eject, AKEYCODE_MEDIA_EJECT)
@@ -886,6 +882,14 @@ KEY_MAP_QT      (F35, Qt::Key_F35)
 
 
 
+KEY_MAP_WIN_CMD (ChannelDown, APPCOMMAND_MEDIA_CHANNEL_DOWN)
+KEY_MAP_ANDROID (ChannelDown, AKEYCODE_CHANNEL_DOWN)
+
+
+KEY_MAP_WIN_CMD (ChannelUp, APPCOMMAND_MEDIA_CHANNEL_UP)
+KEY_MAP_ANDROID (ChannelUp, AKEYCODE_CHANNEL_UP)
+
+
 
 
 KEY_MAP_WIN_CMD (Close, APPCOMMAND_CLOSE)
@@ -908,15 +912,34 @@ KEY_MAP_GTK     (MailSend, GDK_Send)
 KEY_MAP_QT      (MailSend, Qt::Key_Send)
 
 
+KEY_MAP_WIN_CMD (MediaPause, APPCOMMAND_MEDIA_PAUSE)
+KEY_MAP_GTK     (MediaPause, GDK_AudioPause)
+KEY_MAP_QT      (MediaPause, Qt::Key_MediaPause)
+KEY_MAP_ANDROID (MediaPause, AKEYCODE_MEDIA_PAUSE)
+
+
+KEY_MAP_WIN_CMD (MediaPlay, APPCOMMAND_MEDIA_PLAY)
+KEY_MAP_GTK     (MediaPlay, GDK_AudioPlay)
+KEY_MAP_QT      (MediaPlay, Qt::Key_MediaPlay)
+KEY_MAP_ANDROID (MediaPlay, AKEYCODE_MEDIA_PLAY)
+
+
 KEY_MAP_WIN     (MediaPlayPause, VK_MEDIA_PLAY_PAUSE)
 KEY_MAP_WIN_CMD (MediaPlayPause, APPCOMMAND_MEDIA_PLAY_PAUSE)
 KEY_MAP_QT      (MediaPlayPause, Qt::Key_MediaTogglePlayPause)
 KEY_MAP_ANDROID (MediaPlayPause, AKEYCODE_MEDIA_PLAY_PAUSE)
 
 
-KEY_MAP_WIN     (MediaSelect, VK_LAUNCH_MEDIA_SELECT)
-KEY_MAP_WIN_CMD (MediaSelect, APPCOMMAND_LAUNCH_MEDIA_SELECT)
-KEY_MAP_GTK     (MediaSelect, GDK_AudioMedia)
+KEY_MAP_WIN_CMD (MediaRecord, APPCOMMAND_MEDIA_RECORD)
+KEY_MAP_GTK     (MediaRecord, GDK_AudioRecord)
+KEY_MAP_QT      (MediaRecord, Qt::Key_MediaRecord)
+KEY_MAP_ANDROID (MediaRecord, AKEYCODE_MEDIA_RECORD)
+
+
+KEY_MAP_WIN_CMD (MediaRewind, APPCOMMAND_MEDIA_REWIND)
+KEY_MAP_GTK     (MediaRewind, GDK_AudioRewind)
+KEY_MAP_QT      (MediaRewind, Qt::Key_AudioRewind)
+KEY_MAP_ANDROID (MediaRewind, AKEYCODE_MEDIA_REWIND)
 
 
 KEY_MAP_WIN     (MediaStop, VK_MEDIA_STOP)
@@ -960,6 +983,17 @@ KEY_MAP_QT      (Save, Qt::Key_Save)
 KEY_MAP_WIN_CMD (SpellCheck, APPCOMMAND_SPELL_CHECK)
 KEY_MAP_GTK     (SpellCheck, GDK_Spell)
 KEY_MAP_QT      (SpellCheck, Qt::Key_Spell)
+
+
+
+
+
+KEY_MAP_WIN_CMD (AudioBassBoostDown, APPCOMMAND_BASS_DOWN)
+KEY_MAP_QT      (AudioBassBoostDown, Qt::Key_BassDown)
+
+
+KEY_MAP_WIN_CMD (AudioBassBoostUp, APPCOMMAND_BASS_UP)
+KEY_MAP_QT      (AudioBassBoostUp, Qt::Key_BassUp)
 
 
 KEY_MAP_WIN     (VolumeDown, VK_VOLUME_DOWN)
@@ -1013,6 +1047,11 @@ KEY_MAP_GTK     (LaunchMediaPlayer, GDK_Video)
 KEY_MAP_QT      (LaunchMediaPlayer, Qt::Key_LaunchMedia)
 KEY_MAP_QT      (LaunchMediaPlayer, Qt::Key_CD)
 KEY_MAP_QT      (LaunchMediaPlayer, Qt::Key_Video)
+
+
+KEY_MAP_WIN     (MediaSelect, VK_LAUNCH_MEDIA_SELECT)
+KEY_MAP_WIN_CMD (MediaSelect, APPCOMMAND_LAUNCH_MEDIA_SELECT)
+KEY_MAP_GTK     (MediaSelect, GDK_AudioMedia)
 
 
 KEY_MAP_GTK     (LaunchMusicPlayer, GDK_Music)
@@ -1173,26 +1212,39 @@ KEY_MAP_QT      (BrowserStop, Qt::Key_Stop)
 
 
 
-KEY_MAP_WIN_CMD (AudioBassBoostDown, APPCOMMAND_BASS_DOWN)
-KEY_MAP_QT      (AudioBassBoostDown, Qt::Key_BassDown)
+KEY_MAP_ANDROID (PhoneCall, AKEYCODE_CALL)
 
 
-KEY_MAP_WIN_CMD (AudioBassBoostUp, APPCOMMAND_BASS_UP)
-KEY_MAP_QT      (AudioBassBoostUp, Qt::Key_BassUp)
+KEY_MAP_QT      (Camera, Qt::Key_Camera)
+KEY_MAP_ANDROID (Camera, AKEYCODE_CAMERA)
+
+
+KEY_MAP_QT      (CameraFocusAdjust, Qt::Key_CameraFocus)
+KEY_MAP_ANDROID (CameraFocusAdjust, AKEYCODE_FOCUS)
+
+
+KEY_MAP_ANDROID (HomeScreen, AKEYCODE_HOME)
+
+
+
+
+
+KEY_MAP_ANDROID (TV, AKEYCODE_TV)
+
+
+KEY_MAP_ANDROID (TVInput, AKEYCODE_TV_INPUT)
+
+
+KEY_MAP_ANDROID (TVPower, AKEYCODE_TV_POWER)
+
+
+
 
 
 KEY_MAP_ANDROID (AVRInput, AKEYCODE_AVR_INPUT)
 
 
 KEY_MAP_ANDROID (AVRPower, AKEYCODE_AVR_POWER)
-
-
-KEY_MAP_WIN_CMD (ChannelDown, APPCOMMAND_MEDIA_CHANNEL_DOWN)
-KEY_MAP_ANDROID (ChannelDown, AKEYCODE_CHANNEL_DOWN)
-
-
-KEY_MAP_WIN_CMD (ChannelUp, APPCOMMAND_MEDIA_CHANNEL_UP)
-KEY_MAP_ANDROID (ChannelUp, AKEYCODE_CHANNEL_UP)
 
 
 KEY_MAP_GTK     (ColorF0Red, GDK_Red)
@@ -1234,30 +1286,6 @@ KEY_MAP_ANDROID (MediaFastForward, AKEYCODE_MEDIA_FAST_FORWARD)
 KEY_MAP_QT      (MediaLast, Qt::Key_MediaLast)
 
 
-KEY_MAP_WIN_CMD (MediaPause, APPCOMMAND_MEDIA_PAUSE)
-KEY_MAP_GTK     (MediaPause, GDK_AudioPause)
-KEY_MAP_QT      (MediaPause, Qt::Key_MediaPause)
-KEY_MAP_ANDROID (MediaPause, AKEYCODE_MEDIA_PAUSE)
-
-
-KEY_MAP_WIN_CMD (MediaPlay, APPCOMMAND_MEDIA_PLAY)
-KEY_MAP_GTK     (MediaPlay, GDK_AudioPlay)
-KEY_MAP_QT      (MediaPlay, Qt::Key_MediaPlay)
-KEY_MAP_ANDROID (MediaPlay, AKEYCODE_MEDIA_PLAY)
-
-
-KEY_MAP_WIN_CMD (MediaRecord, APPCOMMAND_MEDIA_RECORD)
-KEY_MAP_GTK     (MediaRecord, GDK_AudioRecord)
-KEY_MAP_QT      (MediaRecord, Qt::Key_MediaRecord)
-KEY_MAP_ANDROID (MediaRecord, AKEYCODE_MEDIA_RECORD)
-
-
-KEY_MAP_WIN_CMD (MediaRewind, APPCOMMAND_MEDIA_REWIND)
-KEY_MAP_GTK     (MediaRewind, GDK_AudioRewind)
-KEY_MAP_QT      (MediaRewind, Qt::Key_AudioRewind)
-KEY_MAP_ANDROID (MediaRewind, AKEYCODE_MEDIA_REWIND)
-
-
 KEY_MAP_ANDROID (PinPToggle, AKEYCODE_WINDOW)
 
 
@@ -1279,15 +1307,6 @@ KEY_MAP_QT      (Subtitle, Qt::Key_Subtitle)
 KEY_MAP_ANDROID (Subtitle, AKEYCODE_CAPTIONS)
 
 
-KEY_MAP_ANDROID (TV, AKEYCODE_TV)
-
-
-KEY_MAP_ANDROID (TVInput, AKEYCODE_TV_INPUT)
-
-
-KEY_MAP_ANDROID (TVPower, AKEYCODE_TV_POWER)
-
-
 KEY_MAP_GTK     (VideoModeNext, GDK_Next_VMode)
 
 
@@ -1296,17 +1315,6 @@ KEY_MAP_QT      (ZoomToggle, Qt::Key_Zoom)
 
 
 
-
-
-
-KEY_MAP_ANDROID (HomeScreen, AKEYCODE_HOME)
-
-
-KEY_MAP_QT      (CameraFocusAdjust, Qt::Key_CameraFocus)
-KEY_MAP_ANDROID (CameraFocusAdjust, AKEYCODE_FOCUS)
-
-
-KEY_MAP_ANDROID (PhoneCall, AKEYCODE_CALL)
 
 
 KEY_MAP_ANDROID (SoftLeft, AKEYCODE_SOFT_LEFT)
