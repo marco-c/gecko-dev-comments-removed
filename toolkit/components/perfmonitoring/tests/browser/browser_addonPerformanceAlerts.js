@@ -5,8 +5,6 @@
 
 
 add_task(function* init() {
-  AddonWatcher.uninit();
-
   
   let service = Cc["@mozilla.org/toolkit/performance-stats-service;1"].getService(
     Ci.nsIPerformanceStatsService);
