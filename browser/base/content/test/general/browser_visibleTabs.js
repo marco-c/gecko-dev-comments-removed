@@ -2,7 +2,11 @@
 
 
 
-function test() {
+add_task(function* () {
+  
+  
+  yield new Promise(resolve => TabView._initFrame(resolve));
+
   
   let [origTab] = gBrowser.visibleTabs;
 
@@ -100,4 +104,5 @@ function test() {
 
   if (tabViewWindow)
     tabViewWindow.GroupItems.groupItems[0].close();
-}
+});
+
