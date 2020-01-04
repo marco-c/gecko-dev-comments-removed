@@ -463,6 +463,12 @@
 
 
 
+
+
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
@@ -493,6 +499,8 @@
 #  define MOZ_NON_AUTOABLE __attribute__((annotate("moz_non_autoable")))
 #  define MOZ_INIT_OUTSIDE_CTOR \
     __attribute__((annotate("moz_ignore_ctor_initialization")))
+#  define MOZ_IS_CLASS_INIT \
+    __attribute__((annotate("moz_is_class_init")))
 
 
 
@@ -525,6 +533,7 @@
 #  define MOZ_NEEDS_MEMMOVABLE_MEMBERS
 #  define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
 #  define MOZ_INIT_OUTSIDE_CTOR
+#  define MOZ_IS_CLASS_INIT
 #  define MOZ_NON_AUTOABLE
 #endif 
 
