@@ -822,8 +822,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin
     return nsChangeHint(0);
   }
 
-  nsStyleSides  mMargin;          
-
   bool GetMargin(nsMargin& aMargin) const
   {
     if (mMargin.ConvertsToLength()) {
@@ -841,6 +839,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin
       aMargin.Side(side) = mMargin.ToLength(side);
     }
   }
+
+  
+  
+  inline bool HasBlockAxisAuto(mozilla::WritingMode aWM) const;
+  inline bool HasInlineAxisAuto(mozilla::WritingMode aWM) const;
+
+  nsStyleSides  mMargin; 
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding
