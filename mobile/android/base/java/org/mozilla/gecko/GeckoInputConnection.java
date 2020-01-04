@@ -454,17 +454,22 @@ class GeckoInputConnection
         return config.keyboard != Configuration.KEYBOARD_NOKEYS;
     }
 
-    @Override
+    
+    public Handler getHandler() {
+        if (isPhysicalKeyboardPresent()) {
+            return ThreadUtils.getUiHandler();
+        }
+
+        return getBackgroundHandler();
+    }
+
+    @Override 
     public Handler getHandler(Handler defHandler) {
         if (!canReturnCustomHandler()) {
             return defHandler;
         }
 
-        if (isPhysicalKeyboardPresent()) {
-            return mEditableClient.setInputConnectionHandler(defHandler);
-        }
-
-        return mEditableClient.setInputConnectionHandler(getBackgroundHandler());
+        return mEditableClient.setInputConnectionHandler(getHandler());
     }
 
     @Override
