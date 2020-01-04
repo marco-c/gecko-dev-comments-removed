@@ -2784,13 +2784,110 @@ var AddonManagerInternal = {
   },
 
   webAPI: {
-    getAddonByID(id) {
+    
+    installs: new Map(),
+    nextInstall: 0,
+
+    sendEvent: null,
+    setEventHandler(fn) {
+      this.sendEvent = fn;
+    },
+
+    getAddonByID(target, id) {
       return new Promise(resolve => {
         AddonManager.getAddonByID(id, (addon) => {
           resolve(webAPIForAddon(addon));
         });
       });
-    }
+    },
+
+    
+    copyProps(install, obj) {
+      obj.state = AddonManager.stateToString(install.state);
+      obj.error = AddonManager.errorToString(install.error);
+      obj.progress = install.progress;
+      obj.maxProgress = install.maxProgress;
+    },
+
+    makeListener(id, target) {
+      const events = [
+        "onDownloadStarted",
+        "onDownloadProgress",
+        "onDownloadEnded",
+        "onDownloadCancelled",
+        "onDownloadFailed",
+        "onInstallStarted",
+        "onInstallEnded",
+        "onInstallCancelled",
+        "onInstallFailed",
+      ];
+
+      let listener = {};
+      events.forEach(event => {
+        listener[event] = (install) => {
+          let data = {event, id};
+          AddonManager.webAPI.copyProps(install, data);
+          this.sendEvent(target, data);
+        }
+      });
+      return listener;
+    },
+
+    forgetInstall(id) {
+      let info = this.installs.get(id);
+      if (!info) {
+        throw new Error(`forgetInstall cannot find ${id}`);
+      }
+      info.install.removeListener(info.listener);
+      this.installs.delete(id);
+    },
+
+    createInstall(target, options) {
+      return new Promise((resolve) => {
+        let newInstall = install => {
+          let id = this.nextInstall++;
+          let listener = this.makeListener(id, target);
+          install.addListener(listener);
+
+          this.installs.set(id, {install, target, listener});
+
+          let result = {id};
+          this.copyProps(install, result);
+          resolve(result);
+        };
+        AddonManager.getInstallForURL(options.url, newInstall, "application/x-xpinstall");
+      });
+    },
+
+    addonInstallDoInstall(target, id) {
+      let state = this.installs.get(id);
+      if (!state) {
+        return Promise.reject(`invalid id ${id}`);
+      }
+      return Promise.resolve(state.install.install());
+    },
+
+    addonInstallCancel(target, id) {
+      let state = this.installs.get(id);
+      if (!state) {
+        return Promise.reject(`invalid id ${id}`);
+      }
+      return Promise.resolve(state.install.cancel());
+    },
+
+    clearInstalls(ids) {
+      for (let id of ids) {
+        this.forgetInstall(id);
+      }
+    },
+
+    clearInstallsFrom(mm) {
+      for (let [id, info] of this.installs) {
+        if (info.target == mm) {
+          this.forgetInstall(id);
+        }
+      }
+    },
   },
 };
 
@@ -2952,38 +3049,44 @@ this.AddonManagerPrivate = {
 this.AddonManager = {
   
   
-  STATE_AVAILABLE: 0,
-  
-  STATE_DOWNLOADING: 1,
-  
-  STATE_CHECKING: 2,
-  
-  STATE_DOWNLOADED: 3,
-  
-  STATE_DOWNLOAD_FAILED: 4,
-  
-  STATE_INSTALLING: 5,
-  
-  STATE_INSTALLED: 6,
-  
-  STATE_INSTALL_FAILED: 7,
-  
-  STATE_CANCELLED: 8,
+  _states: new Map([
+    
+    ["STATE_AVAILABLE",  0],
+    
+    ["STATE_DOWNLOADING",  1],
+    
+    ["STATE_CHECKING", 2],
+    
+    ["STATE_DOWNLOADED", 3],
+    
+    ["STATE_DOWNLOAD_FAILED", 4],
+    
+    ["STATE_INSTALLING", 5],
+    
+    ["STATE_INSTALLED", 6],
+    
+    ["STATE_INSTALL_FAILED", 7],
+    
+    ["STATE_CANCELLED", 8],
+  ]),
 
   
   
   
-  ERROR_NETWORK_FAILURE: -1,
-  
-  ERROR_INCORRECT_HASH: -2,
-  
-  ERROR_CORRUPT_FILE: -3,
-  
-  ERROR_FILE_ACCESS: -4,
-  
-  ERROR_SIGNEDSTATE_REQUIRED: -5,
-  
-  ERROR_UNEXPECTED_ADDON_TYPE: -6,
+  _errors: new Map([
+    
+    ["ERROR_NETWORK_FAILURE", -1],
+    
+    ["ERROR_INCORRECT_HASH", -2],
+    
+    ["ERROR_CORRUPT_FILE", -3],
+    
+    ["ERROR_FILE_ACCESS", -4],
+    
+    ["ERROR_SIGNEDSTATE_REQUIRED", -5],
+    
+    ["ERROR_UNEXPECTED_ADDON_TYPE", -6],
+  ]),
 
   
   
@@ -3163,6 +3266,27 @@ this.AddonManager = {
 
   get isReady() {
     return gStartupComplete && !gShutdownInProgress;
+  },
+
+  init() {
+    this._stateToString = new Map();
+    for (let [name, value] of this._states) {
+      this[name] = value;
+      this._stateToString.set(value, name);
+    }
+    this._errorToString = new Map();
+    for (let [name, value] of this._errors) {
+      this[name] = value;
+      this._errorToString.set(value, name);
+    }
+  },
+
+  stateToString(state) {
+    return this._stateToString.get(state);
+  },
+
+  errorToString(err) {
+    return err ? this._errorToString.get(err) : null;
   },
 
   getInstallForURL: function(aUrl, aCallback, aMimetype,
@@ -3381,6 +3505,8 @@ this.AddonManager = {
     return gShutdownBarrier.client;
   },
 };
+
+this.AddonManager.init();
 
 
 Cu.import("resource://gre/modules/TelemetryTimestamps.jsm", AddonManagerInternal);
