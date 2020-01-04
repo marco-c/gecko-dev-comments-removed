@@ -270,6 +270,10 @@ private:
   
   
   
+  nsTArray<MSG> mRemovedOddCharMsgs;
+  
+  
+  
   HWND mFocusedWndBeforeDispatch;
 
   uint32_t mDOMKeyCode;
@@ -375,6 +379,12 @@ private:
 
   
   uint32_t GetKeyLocation() const;
+
+  
+
+
+
+  void RemoveFollowingOddCharMessages();
 
   
 

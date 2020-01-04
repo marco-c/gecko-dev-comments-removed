@@ -1112,6 +1112,8 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
         mCommittedCharsAndModifiers.Append(ch, mModKeyState.GetModifiers());
       }
     }
+    
+    RemoveFollowingOddCharMessages();
   }
 }
 
@@ -1279,6 +1281,47 @@ NativeKey::IsIMEDoingKakuteiUndo() const
          charMsg.wParam == VK_BACK && charMsg.lParam == 0x1 &&
          startCompositionMsg.time <= compositionMsg.time &&
          compositionMsg.time <= charMsg.time;
+}
+
+void
+NativeKey::RemoveFollowingOddCharMessages()
+{
+  MOZ_ASSERT(IsKeyDownMessage());
+
+  
+  
+  if (mFakeCharMsgs) {
+    return;
+  }
+
+  
+  
+  if (!mFollowingCharMsgs.IsEmpty()) {
+    return;
+  }
+
+  
+  if (mOriginalVirtualKeyCode != VK_BACK) {
+    return;
+  }
+
+  
+  if (!IsIMEDoingKakuteiUndo()) {
+    return;
+  }
+
+  
+  
+  MSG msg;
+  while (WinUtils::PeekMessage(&msg, mMsg.hwnd, WM_CHAR, WM_CHAR,
+                               PM_REMOVE | PM_NOYIELD)) {
+    if (msg.message != WM_CHAR) {
+      MOZ_RELEASE_ASSERT(msg.message == WM_NULL,
+                         "Unexpected message was removed");
+      continue;
+    }
+    mRemovedOddCharMsgs.AppendElement(msg);
+  }
 }
 
 UINT
@@ -2350,9 +2393,7 @@ NativeKey::DispatchPluginEventsAndDiscardsCharMessages() const
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(!IsKeyMessageOnPlugin());
 
-  bool anyCharMessagesRemoved = false;
   for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
-    anyCharMessagesRemoved = true;
     MOZ_RELEASE_ASSERT(!mWidget->Destroyed(),
       "NativeKey tries to dispatch a plugin event on destroyed widget");
     mWidget->DispatchPluginEvent(mFollowingCharMsgs[i]);
@@ -2361,23 +2402,15 @@ NativeKey::DispatchPluginEventsAndDiscardsCharMessages() const
     }
   }
 
-  if (!mFakeCharMsgs && !anyCharMessagesRemoved &&
-      mDOMKeyCode == NS_VK_BACK && IsIMEDoingKakuteiUndo()) {
-    
-    MSG msg;
-    while (WinUtils::PeekMessage(&msg, mMsg.hwnd, WM_CHAR, WM_CHAR,
-                                 PM_REMOVE | PM_NOYIELD)) {
-      if (msg.message != WM_CHAR) {
-        MOZ_RELEASE_ASSERT(msg.message == WM_NULL,
-                           "Unexpected message was removed");
-        continue;
-      }
-      MOZ_RELEASE_ASSERT(!mWidget->Destroyed(),
-        "NativeKey tries to dispatch a plugin event on destroyed widget");
-      mWidget->DispatchPluginEvent(msg);
-      return mWidget->Destroyed();
+  
+  
+  for (size_t i = 0; i < mRemovedOddCharMsgs.Length(); ++i) {
+    MOZ_RELEASE_ASSERT(!mWidget->Destroyed(),
+      "NativeKey tries to dispatch a plugin event on destroyed widget");
+    mWidget->DispatchPluginEvent(mRemovedOddCharMsgs[i]);
+    if (mWidget->Destroyed() || IsFocusedWindowChanged()) {
+      return true;
     }
-    MOZ_CRASH("NativeKey failed to get WM_CHAR for ATOK or WXG");
   }
 
   return false;
