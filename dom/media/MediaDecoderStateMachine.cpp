@@ -1260,19 +1260,11 @@ MediaDecoderStateMachine::StartDecoding()
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mState == DECODER_STATE_DECODING);
 
-  if (mDecodingFirstFrame && mSentFirstFrameLoadedEvent) {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(mQueuedSeek.Exists() && mSentFirstFrameLoadedEvent,
-               "Return from dormant must have queued seek");
-
-    if (mQueuedSeek.Exists()) {
-      InitiateSeek(Move(mQueuedSeek));
-      return;
-    }
+  
+  
+  if (mSentFirstFrameLoadedEvent && mQueuedSeek.Exists()) {
+    InitiateSeek(Move(mQueuedSeek));
+    return;
   }
 
   if (CheckIfDecodeComplete()) {
