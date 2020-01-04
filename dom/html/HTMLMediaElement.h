@@ -805,7 +805,7 @@ protected:
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
 
-  nsresult PlayInternal(bool aCallerIsChrome);
+  nsresult PlayInternal();
 
   
 
@@ -1610,11 +1610,6 @@ protected:
   
   
   bool mDisableVideo;
-
-  
-  
-  
-  bool mPlayBlockedBecauseHidden;
 
   
   nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
