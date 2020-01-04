@@ -66,7 +66,7 @@ public:
 
 
 
-  virtual void EndUpdate(gfxContext* aContext, const gfx::IntRect& aRect) = 0;
+  virtual void EndUpdate(const gfx::IntRect& aRect) = 0;
 };
 
 
