@@ -113,6 +113,33 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+  State Advance() { return AdvanceOrScheduleResume(nullptr); }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   State AdvanceOrScheduleResume(IResumable* aConsumer);
 
   
