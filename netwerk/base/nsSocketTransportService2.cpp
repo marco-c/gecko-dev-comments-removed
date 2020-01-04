@@ -89,13 +89,13 @@ DebugMutexAutoLock::~DebugMutexAutoLock()
 
 nsSocketTransportService::nsSocketTransportService()
     : mThread(nullptr)
-    , mThreadEvent(nullptr)
     , mAutodialEnabled(false)
     , mLock("nsSocketTransportService::mLock")
     , mInitialized(false)
     , mShuttingDown(false)
     , mOffline(false)
     , mGoingOffline(false)
+    , mRawThread(nullptr)
     , mActiveListSize(SOCKET_LIMIT_MIN)
     , mIdleListSize(SOCKET_LIMIT_MIN)
     , mActiveCount(0)
@@ -133,9 +133,6 @@ nsSocketTransportService::~nsSocketTransportService()
 {
     NS_ASSERTION(NS_IsMainThread(), "wrong thread");
     NS_ASSERTION(!mInitialized, "not shutdown properly");
-    
-    if (mThreadEvent)
-        PR_DestroyPollableEvent(mThreadEvent);
 
     free(mActiveList);
     free(mIdleList);
@@ -437,7 +434,7 @@ nsSocketTransportService::PollTimeout()
 }
 
 int32_t
-nsSocketTransportService::Poll(bool wait, uint32_t *interval,
+nsSocketTransportService::Poll(uint32_t *interval,
                                TimeDuration *pollDuration)
 {
     PRPollDesc *pollList;
@@ -445,11 +442,16 @@ nsSocketTransportService::Poll(bool wait, uint32_t *interval,
     PRIntervalTime pollTimeout;
     *pollDuration = 0;
 
+    
+    
+    bool pendingEvents = false;
+    mRawThread->HasPendingEvents(&pendingEvents);
+
     if (mPollList[0].fd) {
         mPollList[0].out_flags = 0;
         pollList = mPollList;
         pollCount = mActiveCount + 1;
-        pollTimeout = PollTimeout();
+        pollTimeout = pendingEvents ? PR_INTERVAL_NO_WAIT : PollTimeout();
     }
     else {
         
@@ -458,11 +460,9 @@ nsSocketTransportService::Poll(bool wait, uint32_t *interval,
             pollList = &mPollList[1];
         else
             pollList = nullptr;
-        pollTimeout = PR_MillisecondsToInterval(25);
+        pollTimeout =
+            pendingEvents ? PR_INTERVAL_NO_WAIT : PR_MillisecondsToInterval(25);
     }
-
-    if (!wait)
-        pollTimeout = PR_INTERVAL_NO_WAIT;
 
     PRIntervalTime ts = PR_IntervalNow();
 
@@ -515,8 +515,8 @@ nsSocketTransportService::Init()
     if (mShuttingDown)
         return NS_ERROR_UNEXPECTED;
 
-    if (!mThreadEvent) {
-        mThreadEvent = PR_NewPollableEvent();
+    if (!mPollableEvent) {
+        mPollableEvent.reset(new PollableEvent());
         
         
         
@@ -527,7 +527,8 @@ nsSocketTransportService::Init()
         
         
         
-        if (!mThreadEvent) {
+        if (!mPollableEvent->Valid()) {
+            mPollableEvent = nullptr;
             NS_WARNING("running socket transport thread without a pollable event");
             SOCKET_LOG(("running socket transport thread without a pollable event"));
         }
@@ -586,9 +587,9 @@ nsSocketTransportService::Shutdown()
         
         mShuttingDown = true;
 
-        if (mThreadEvent)
-            PR_SetPollableEvent(mThreadEvent);
-        
+        if (mPollableEvent) {
+            mPollableEvent->Signal();
+        }
     }
 
     
@@ -639,8 +640,9 @@ nsSocketTransportService::SetOffline(bool offline)
     else if (mOffline && !offline) {
         mOffline = false;
     }
-    if (mThreadEvent)
-        PR_SetPollableEvent(mThreadEvent);
+    if (mPollableEvent) {
+        mPollableEvent->Signal();
+    }
 
     return NS_OK;
 }
@@ -763,9 +765,19 @@ nsSocketTransportService::SetAutodialEnabled(bool value)
 NS_IMETHODIMP
 nsSocketTransportService::OnDispatchedEvent(nsIThreadInternal *thread)
 {
+    if (PR_GetCurrentThread() == gSocketThread) {
+        
+        
+        
+        
+        SOCKET_LOG(("OnDispatchedEvent Same Thread Skip Signal\n"));
+        return NS_OK;
+    }
+
     DebugMutexAutoLock lock(mLock);
-    if (mThreadEvent)
-        PR_SetPollableEvent(mThreadEvent);
+    if (mPollableEvent) {
+        mPollableEvent->Signal();
+    }
     return NS_OK;
 }
 
@@ -813,14 +825,14 @@ nsSocketTransportService::Run()
     gSocketThread = PR_GetCurrentThread();
 
     
-    mPollList[0].fd = mThreadEvent;
-    mPollList[0].in_flags = PR_POLL_READ;
+    mPollList[0].fd = mPollableEvent ? mPollableEvent->PollableFD() : nullptr;
+    mPollList[0].in_flags = PR_POLL_READ | PR_POLL_EXCEPT;
     mPollList[0].out_flags = 0;
 
-    nsIThread *thread = NS_GetCurrentThread();
+    mRawThread = NS_GetCurrentThread();
 
     
-    nsCOMPtr<nsIThreadInternal> threadInt = do_QueryInterface(thread);
+    nsCOMPtr<nsIThreadInternal> threadInt = do_QueryInterface(mRawThread);
     threadInt->SetObserver(this);
 
     
@@ -849,7 +861,6 @@ nsSocketTransportService::Run()
 
     for (;;) {
         bool pendingEvents = false;
-        thread->HasPendingEvents(&pendingEvents);
 
         numberOfPendingEvents = 0;
         numberOfPendingEventsLastCycle = 0;
@@ -864,9 +875,7 @@ nsSocketTransportService::Run()
                 pollCycleStart = TimeStamp::NowLoRes();
             }
 
-            
-            
-            DoPollIteration(!pendingEvents, &singlePollDuration);
+            DoPollIteration(&singlePollDuration);
 
             if (mTelemetryEnabledPref && !pollCycleStart.IsNull()) {
                 Telemetry::Accumulate(Telemetry::STS_POLL_BLOCK_TIME,
@@ -878,11 +887,7 @@ nsSocketTransportService::Run()
                 pollDuration += singlePollDuration;
             }
 
-            
-            if (!pendingEvents) {
-                thread->HasPendingEvents(&pendingEvents);
-            }
-
+            mRawThread->HasPendingEvents(&pendingEvents);
             if (pendingEvents) {
                 if (!mServingPendingQueue) {
                     nsresult rv = Dispatch(NS_NewRunnableMethod(this,
@@ -906,10 +911,10 @@ nsSocketTransportService::Run()
                 }
                 TimeStamp eventQueueStart = TimeStamp::NowLoRes();
                 do {
-                    NS_ProcessNextEvent(thread);
+                    NS_ProcessNextEvent(mRawThread);
                     numberOfPendingEvents++;
                     pendingEvents = false;
-                    thread->HasPendingEvents(&pendingEvents);
+                    mRawThread->HasPendingEvents(&pendingEvents);
                 } while (pendingEvents && mServingPendingQueue &&
                          ((TimeStamp::NowLoRes() -
                            eventQueueStart).ToMilliseconds() <
@@ -967,7 +972,7 @@ nsSocketTransportService::Run()
 
     
     
-    NS_ProcessPendingEvents(thread);
+    NS_ProcessPendingEvents(mRawThread);
 
     gSocketThread = nullptr;
 
@@ -1008,12 +1013,11 @@ nsSocketTransportService::Reset(bool aGuardLocals)
 }
 
 nsresult
-nsSocketTransportService::DoPollIteration(bool wait, TimeDuration *pollDuration)
+nsSocketTransportService::DoPollIteration(TimeDuration *pollDuration)
 {
-    SOCKET_LOG(("STS poll iter [%d]\n", wait));
+    SOCKET_LOG(("STS poll iter\n"));
 
     int32_t i, count;
-
     
     
     
@@ -1068,15 +1072,14 @@ nsSocketTransportService::DoPollIteration(bool wait, TimeDuration *pollDuration)
 
     
     uint32_t pollInterval;
-
     int32_t n = 0;
 #if !defined(MOZILLA_XPCOMRT_API)
     if (!gIOService->IsNetTearingDown()) {
         
-        n = Poll(wait, &pollInterval, pollDuration);
+        n = Poll(&pollInterval, pollDuration);
     }
 #else
-    n = Poll(wait, &pollInterval, pollDuration);
+    n = Poll(&pollInterval, pollDuration);
 #endif 
 
     if (n < 0) {
@@ -1132,29 +1135,28 @@ nsSocketTransportService::DoPollIteration(bool wait, TimeDuration *pollDuration)
                 DetachSocket(mActiveList, &mActiveList[i]);
         }
 
-        if (n != 0 && mPollList[0].out_flags == PR_POLL_READ) {
+        if (n != 0 && (mPollList[0].out_flags & (PR_POLL_READ | PR_POLL_EXCEPT))) {
+            DebugMutexAutoLock lock(mLock);
+
             
-            if (PR_WaitForPollableEvent(mThreadEvent) != PR_SUCCESS) {
+            if (mPollableEvent &&
+                ((mPollList[0].out_flags & PR_POLL_EXCEPT) ||
+                 !mPollableEvent->Clear())) {
                 
                 
                 
                 
                 
                 
-                {
-                    DebugMutexAutoLock lock(mLock);
-                    PR_DestroyPollableEvent(mThreadEvent);
-                    mThreadEvent = PR_NewPollableEvent();
+                NS_WARNING("Trying to repair mPollableEvent");
+                mPollableEvent.reset(new PollableEvent());
+                if (!mPollableEvent->Valid()) {
+                    mPollableEvent = nullptr;
                 }
-                if (!mThreadEvent) {
-                    NS_WARNING("running socket transport thread without "
-                               "a pollable event");
-                    SOCKET_LOG(("running socket transport thread without "
-                         "a pollable event"));
-                }
-                mPollList[0].fd = mThreadEvent;
-                
-                
+                SOCKET_LOG(("running socket transport thread without "
+                            "a pollable event now valid=%d", mPollableEvent->Valid()));
+                mPollList[0].fd = mPollableEvent ? mPollableEvent->PollableFD() : nullptr;
+                mPollList[0].in_flags = PR_POLL_READ | PR_POLL_EXCEPT;
                 mPollList[0].out_flags = 0;
             }
         }
