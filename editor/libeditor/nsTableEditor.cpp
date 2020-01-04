@@ -125,7 +125,7 @@ nsHTMLEditor::InsertCell(nsIDOMElement *aCell, int32_t aRowSpan, int32_t aColSpa
   if(aAfter) cellOffset++;
 
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
   return InsertNode(newCell, cellParent, cellOffset);
 }
 
@@ -178,7 +178,7 @@ nsHTMLEditor::InsertTableCell(int32_t aNumber, bool aAfter)
   
   nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, newCellIndex, ePreviousColumn, false);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
   int32_t i;
   for (i = 0; i < aNumber; i++)
@@ -421,7 +421,7 @@ nsHTMLEditor::InsertTableColumn(int32_t aNumber, bool aAfter)
   
   nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, startColIndex, ePreviousRow, false);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
   
   
@@ -550,7 +550,7 @@ nsHTMLEditor::InsertTableRow(int32_t aNumber, bool aAfter)
   
   nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, startColIndex, ePreviousColumn, false);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
   nsCOMPtr<nsIDOMElement> cellForRowParent;
   int32_t cellsInRow = 0;
@@ -760,7 +760,7 @@ nsHTMLEditor::DeleteTableCell(int32_t aNumber)
 
     
     nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, startColIndex, ePreviousColumn, false);
-    nsAutoTxnsConserveSelection dontChangeSelection(this);
+    AutoTransactionsConserveSelection dontChangeSelection(this);
 
     bool    checkToDeleteRow = true;
     bool    checkToDeleteColumn = true;
@@ -896,7 +896,7 @@ nsHTMLEditor::DeleteTableCell(int32_t aNumber)
 
       
       nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, startColIndex, ePreviousColumn, false);
-      nsAutoTxnsConserveSelection dontChangeSelection(this);
+      AutoTransactionsConserveSelection dontChangeSelection(this);
 
       res = DeleteNode(cell);
       
@@ -928,7 +928,7 @@ nsHTMLEditor::DeleteTableCellContents()
   
   nsAutoRules beginRulesSniffing(this, EditAction::deleteNode, nsIEditor::eNext);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
 
   nsCOMPtr<nsIDOMElement> firstCell;
@@ -1206,7 +1206,7 @@ nsHTMLEditor::DeleteTableRow(int32_t aNumber)
   
   nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, startColIndex, ePreviousRow, false);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
   if (firstCell && rangeCount > 1)
   {
@@ -1706,7 +1706,7 @@ nsHTMLEditor::SplitTableCell()
   
   nsSetSelectionAfterTableEdit setCaret(this, table, startRowIndex, startColIndex, ePreviousColumn, false);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
   nsCOMPtr<nsIDOMElement> newCell;
   int32_t rowIndex = startRowIndex;
@@ -1972,7 +1972,7 @@ nsHTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
 
   nsAutoEditBatch beginBatching(this);
   
-  nsAutoTxnsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(this);
 
   
   

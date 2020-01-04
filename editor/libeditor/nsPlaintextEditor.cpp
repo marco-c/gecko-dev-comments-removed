@@ -784,7 +784,7 @@ NS_IMETHODIMP nsPlaintextEditor::InsertLineBreak()
     NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
 
     
-    nsAutoTxnsConserveSelection dontSpazMySelection(this);
+    AutoTransactionsConserveSelection dontSpazMySelection(this);
 
     
     res = InsertTextImpl(NS_LITERAL_STRING("\n"), address_of(selNode),

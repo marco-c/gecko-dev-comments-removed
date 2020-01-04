@@ -1482,7 +1482,7 @@ nsWSRunObject::ConvertToNBSP(WSPoint aPoint, AreaRestriction aAR)
   }
 
   
-  nsAutoTxnsConserveSelection dontSpazMySelection(mHTMLEditor);
+  AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
   nsAutoString nbspStr(nbsp);
   nsresult res = mHTMLEditor->InsertTextIntoTextNodeImpl(nbspStr,
       *aPoint.mTextNode, aPoint.mOffset, true);
@@ -1797,7 +1797,7 @@ nsWSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
     }
     if (leftCheck && rightCheck) {
       
-      nsAutoTxnsConserveSelection dontSpazMySelection(mHTMLEditor);
+      AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
       nsAutoString spaceStr(char16_t(32));
       res = mHTMLEditor->InsertTextIntoTextNodeImpl(spaceStr,
                                                     *thePoint.mTextNode,
@@ -1828,7 +1828,7 @@ nsWSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
       NS_ENSURE_SUCCESS(res, res);
 
       
-      nsAutoTxnsConserveSelection dontSpazMySelection(mHTMLEditor);
+      AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
       nsAutoString nbspStr(nbsp);
       res = mHTMLEditor->InsertTextIntoTextNodeImpl(nbspStr, *startNode,
                                                     startOffset, true);
@@ -1863,7 +1863,7 @@ nsWSRunObject::CheckTrailingNBSP(WSFragment* aRun, nsINode* aNode,
   }
   if (canConvert) {
     
-    nsAutoTxnsConserveSelection dontSpazMySelection(mHTMLEditor);
+    AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
     nsAutoString spaceStr(char16_t(32));
     nsresult res = mHTMLEditor->InsertTextIntoTextNodeImpl(spaceStr,
         *thePoint.mTextNode, thePoint.mOffset, true);
@@ -1904,7 +1904,7 @@ nsWSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
   }
   if (canConvert) {
     
-    nsAutoTxnsConserveSelection dontSpazMySelection(mHTMLEditor);
+    AutoTransactionsConserveSelection dontSpazMySelection(mHTMLEditor);
     nsAutoString spaceStr(char16_t(32));
     nsresult res = mHTMLEditor->InsertTextIntoTextNodeImpl(spaceStr,
         *thePoint.mTextNode, thePoint.mOffset, true);
