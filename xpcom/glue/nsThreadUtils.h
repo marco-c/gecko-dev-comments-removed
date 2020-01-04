@@ -283,14 +283,14 @@ private:
 };
 
 template<typename Function>
-nsRunnableFunction<typename mozilla::RemoveReference<Function>::Type>*
+already_AddRefed<nsRunnableFunction<typename mozilla::RemoveReference<Function>::Type>>
 NS_NewRunnableFunction(Function&& aFunction)
 {
-  return new nsRunnableFunction
-               
-               <typename mozilla::RemoveReference<Function>::Type>
-               
-               (mozilla::Forward<Function>(aFunction));
+  return do_AddRef(new nsRunnableFunction
+                   
+                   <typename mozilla::RemoveReference<Function>::Type>
+                   
+                   (mozilla::Forward<Function>(aFunction)));
 }
 
 
