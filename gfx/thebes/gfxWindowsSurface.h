@@ -27,7 +27,6 @@ public:
         FLAG_IS_TRANSPARENT = (1 << 2)
     };
 
-    gfxWindowsSurface(HWND wnd, uint32_t flags = 0);
     gfxWindowsSurface(HDC dc, uint32_t flags = 0);
 
     
@@ -35,11 +34,6 @@ public:
 
     
     gfxWindowsSurface(const mozilla::gfx::IntSize& size,
-                      gfxImageFormat imageFormat = mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32);
-
-    
-    gfxWindowsSurface(HDC dc,
-                      const mozilla::gfx::IntSize& size,
                       gfxImageFormat imageFormat = mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32);
 
     gfxWindowsSurface(cairo_surface_t *csurf);
