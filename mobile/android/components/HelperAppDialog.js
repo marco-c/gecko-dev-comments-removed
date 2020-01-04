@@ -63,7 +63,8 @@ HelperAppLauncherDialog.prototype = {
     if (url.schemeIs("chrome") ||
         url.schemeIs("jar") ||
         url.schemeIs("resource") ||
-        url.schemeIs("wyciwyg")) {
+        url.schemeIs("wyciwyg") ||
+        url.schemeIs("file")) {
       return false;
     }
 
@@ -79,31 +80,6 @@ HelperAppLauncherDialog.prototype = {
       if (!url.equals(innerURI)) {
         return this._canDownload(innerURI, true);
       }
-    }
-
-    if (url.schemeIs("file")) {
-      
-      
-      
-      let file = url.QueryInterface(Ci.nsIFileURL).file;
-
-      
-      
-      file.normalize();
-
-      
-
-      let appRoot = FileUtils.getFile("XREExeF", []);
-      if (appRoot.contains(file, true)) {
-        return false;
-      }
-
-      let profileRoot = FileUtils.getFile("ProfD", []);
-      if (profileRoot.contains(file, true)) {
-        return false;
-      }
-
-      return true;
     }
 
     
