@@ -128,14 +128,22 @@ public:
 class WinUtils
 {
 public:
+
+  static bool IsPerMonitorDPIAware();
   
 
 
 
-  static double LogToPhysFactor();
-  static double PhysToLogFactor();
-  static int32_t LogToPhys(double aValue);
-  static double PhysToLog(int32_t aValue);
+  static double LogToPhysFactor(HMONITOR aMonitor);
+  static double LogToPhysFactor(HWND aWnd) {
+    return LogToPhysFactor(::MonitorFromWindow(aWnd, MONITOR_DEFAULTTOPRIMARY));
+  }
+  static double LogToPhysFactor(HDC aDC) {
+    return LogToPhysFactor(::WindowFromDC(aDC));
+  }
+  static int32_t LogToPhys(HMONITOR aMonitor, double aValue);
+  static HMONITOR GetPrimaryMonitor();
+  static HMONITOR MonitorFromRect(const gfx::Rect& rect);
 
   
 

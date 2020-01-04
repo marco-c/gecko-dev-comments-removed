@@ -167,13 +167,6 @@ public:
     HRESULT CreateDevice(RefPtr<IDXGIAdapter1> &adapter1, int featureLevelIndex);
 #endif
 
-    
-
-
-
-
-    double GetDPIScale();
-
     nsresult GetFontList(nsIAtom *aLangGroup,
                          const nsACString& aGenericFamily,
                          nsTArray<nsString>& aListOfFonts) override;
