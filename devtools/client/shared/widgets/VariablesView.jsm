@@ -8,7 +8,7 @@
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-const DBG_STRINGS_URI = "devtools/locale/debugger.properties";
+const DBG_STRINGS_URI = "chrome://devtools/locale/debugger.properties";
 const LAZY_EMPTY_DELAY = 150; 
 const SCROLL_PAGE_SIZE_DEFAULT = 0;
 const PAGE_SIZE_SCROLL_HEIGHT_RATIO = 100;
@@ -30,8 +30,6 @@ const { Task } = require("devtools/shared/task");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 const {KeyCodes} = require("devtools/client/shared/keycodes");
 const {ELLIPSIS} = require("devtools/client/shared/l10n");
-const {LocalizationHelper} = require("devtools/client/shared/l10n");
-const L10N = new LocalizationHelper(DBG_STRINGS_URI);
 
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
   "resource://gre/modules/PluralForm.jsm");
@@ -57,6 +55,11 @@ Object.defineProperty(this, "NetworkHelper", {
 });
 
 this.EXPORTED_SYMBOLS = ["VariablesView", "escapeHTML"];
+
+
+
+
+const STR = Services.strings.createBundle(DBG_STRINGS_URI);
 
 
 
@@ -306,7 +309,7 @@ VariablesView.prototype = {
 
 
 
-  editableValueTooltip: L10N.getStr("variablesEditableValueTooltip"),
+  editableValueTooltip: STR.GetStringFromName("variablesEditableValueTooltip"),
 
   
 
@@ -315,7 +318,7 @@ VariablesView.prototype = {
 
 
 
-  editableNameTooltip: L10N.getStr("variablesEditableNameTooltip"),
+  editableNameTooltip: STR.GetStringFromName("variablesEditableNameTooltip"),
 
   
 
@@ -325,7 +328,7 @@ VariablesView.prototype = {
 
 
 
-  editButtonTooltip: L10N.getStr("variablesEditButtonTooltip"),
+  editButtonTooltip: STR.GetStringFromName("variablesEditButtonTooltip"),
 
   
 
@@ -334,7 +337,7 @@ VariablesView.prototype = {
 
 
 
-  domNodeValueTooltip: L10N.getStr("variablesDomNodeValueTooltip"),
+  domNodeValueTooltip: STR.GetStringFromName("variablesDomNodeValueTooltip"),
 
   
 
@@ -343,7 +346,7 @@ VariablesView.prototype = {
 
 
 
-  deleteButtonTooltip: L10N.getStr("variablesCloseButtonTooltip"),
+  deleteButtonTooltip: STR.GetStringFromName("variablesCloseButtonTooltip"),
 
   
 
@@ -359,7 +362,7 @@ VariablesView.prototype = {
 
 
 
-  separatorStr: L10N.getStr("variablesSeparatorLabel"),
+  separatorStr: STR.GetStringFromName("variablesSeparatorLabel"),
 
   
 
@@ -2459,13 +2462,13 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
 
     if (aGrip && (aGrip.optimizedOut || aGrip.uninitialized || aGrip.missingArguments)) {
       if (aGrip.optimizedOut) {
-        this._valueString = L10N.getStr("variablesViewOptimizedOut");
+        this._valueString = STR.GetStringFromName("variablesViewOptimizedOut");
       }
       else if (aGrip.uninitialized) {
-        this._valueString = L10N.getStr("variablesViewUninitialized");
+        this._valueString = STR.GetStringFromName("variablesViewUninitialized");
       }
       else if (aGrip.missingArguments) {
-        this._valueString = L10N.getStr("variablesViewMissingArgs");
+        this._valueString = STR.GetStringFromName("variablesViewMissingArgs");
       }
       this.eval = null;
     }
@@ -2710,7 +2713,7 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
     for (let type of labels) {
       let labelElement = this.document.createElement("label");
       labelElement.className = type;
-      labelElement.setAttribute("value", L10N.getStr(type + "Tooltip"));
+      labelElement.setAttribute("value", STR.GetStringFromName(type + "Tooltip"));
       tooltip.appendChild(labelElement);
     }
 
@@ -3695,7 +3698,7 @@ VariablesView.stringifiers.byObjectKind = {
               VariablesView.getString(preview.message, { noStringQuotes: true });
 
     if (!VariablesView.isFalsy({ value: preview.stack })) {
-      msg += "\n" + L10N.getStr("variablesViewErrorStacktrace") +
+      msg += "\n" + STR.GetStringFromName("variablesViewErrorStacktrace") +
              "\n" + preview.stack;
     }
 
@@ -3840,7 +3843,7 @@ VariablesView.stringifiers.byObjectKind = {
 
 
 VariablesView.stringifiers._getNMoreString = function (aNumber) {
-  let str = L10N.getStr("variablesViewMoreObjects");
+  let str = STR.GetStringFromName("variablesViewMoreObjects");
   return PluralForm.get(aNumber, str).replace("#1", aNumber);
 };
 
