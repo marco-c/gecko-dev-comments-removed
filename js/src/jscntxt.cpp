@@ -982,7 +982,7 @@ JSContext::currentlyRunning() const
 static bool
 ComputeIsJITBroken()
 {
-#if !defined(ANDROID) || defined(GONK)
+#if !defined(ANDROID)
     return false;
 #else  
     if (getenv("JS_IGNORE_JIT_BROKENNESS")) {
