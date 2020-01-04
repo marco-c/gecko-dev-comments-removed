@@ -926,10 +926,8 @@ private:
 
 
 extern const js::Class XPC_WN_NoHelper_JSClass;
-extern const js::Class XPC_WN_NoMods_WithCall_Proto_JSClass;
-extern const js::Class XPC_WN_NoMods_NoCall_Proto_JSClass;
-extern const js::Class XPC_WN_ModsAllowed_WithCall_Proto_JSClass;
-extern const js::Class XPC_WN_ModsAllowed_NoCall_Proto_JSClass;
+extern const js::Class XPC_WN_NoMods_Proto_JSClass;
+extern const js::Class XPC_WN_ModsAllowed_Proto_JSClass;
 extern const js::Class XPC_WN_Tearoff_JSClass;
 #define XPC_WN_TEAROFF_RESERVED_SLOTS 1
 #define XPC_WN_TEAROFF_FLAT_OBJECT_SLOT 0
@@ -942,18 +940,12 @@ extern bool
 XPC_WN_GetterSetter(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
-#define XPC_WN_WithCall_ObjectOps JS_NULL_OBJECT_OPS
-#define XPC_WN_NoCall_ObjectOps   JS_NULL_OBJECT_OPS
-
-
 
 
 static inline bool IS_PROTO_CLASS(const js::Class* clazz)
 {
-    return clazz == &XPC_WN_NoMods_WithCall_Proto_JSClass ||
-           clazz == &XPC_WN_NoMods_NoCall_Proto_JSClass ||
-           clazz == &XPC_WN_ModsAllowed_WithCall_Proto_JSClass ||
-           clazz == &XPC_WN_ModsAllowed_NoCall_Proto_JSClass;
+    return clazz == &XPC_WN_NoMods_Proto_JSClass ||
+           clazz == &XPC_WN_ModsAllowed_Proto_JSClass;
 }
 
 typedef js::HashSet<size_t,
