@@ -200,6 +200,11 @@ TextTrackManager::UpdateCueDisplay()
     return;
   }
 
+  
+  
+  nsTArray<RefPtr<TextTrackCue> > activeCues;
+  mTextTracks->UpdateAndGetShowingCues(activeCues);
+
   nsIFrame* frame = mMediaElement->GetPrimaryFrame();
   nsVideoFrame* videoFrame = do_QueryFrame(frame);
   if (!videoFrame) {
@@ -210,9 +215,6 @@ TextTrackManager::UpdateCueDisplay()
   if (!overlay) {
     return;
   }
-
-  nsTArray<RefPtr<TextTrackCue> > activeCues;
-  mTextTracks->UpdateAndGetShowingCues(activeCues);
 
   if (activeCues.Length() > 0) {
     RefPtr<nsVariantCC> jsCues = new nsVariantCC();
