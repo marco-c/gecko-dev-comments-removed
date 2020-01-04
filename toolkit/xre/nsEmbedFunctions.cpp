@@ -606,44 +606,13 @@ XRE_InitChildProcess(int aArgc,
       case GeckoProcessType_Content: {
           process = new ContentProcess(parentPID);
           
-          bool foundAppdir = false;
-
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
-          
-          bool foundProfile = false;
-#endif
-
+          nsCString appDir;
           for (int idx = aArgc; idx > 0; idx--) {
             if (aArgv[idx] && !strcmp(aArgv[idx], "-appdir")) {
-              MOZ_ASSERT(!foundAppdir);
-              if (foundAppdir) {
-                  continue;
-              }
-              nsCString appDir;
               appDir.Assign(nsDependentCString(aArgv[idx+1]));
               static_cast<ContentProcess*>(process.get())->SetAppDir(appDir);
-              foundAppdir = true;
-            }
-
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
-            if (aArgv[idx] && !strcmp(aArgv[idx], "-profile")) {
-              MOZ_ASSERT(!foundProfile);
-              if (foundProfile) {
-                continue;
-              }
-              nsCString profile;
-              profile.Assign(nsDependentCString(aArgv[idx+1]));
-              static_cast<ContentProcess*>(process.get())->SetProfile(profile);
-              foundProfile = true;
-            }
-            if (foundProfile && foundAppdir) {
               break;
             }
-#else
-            if (foundAppdir) {
-              break;
-            }
-#endif 
           }
         }
         break;
