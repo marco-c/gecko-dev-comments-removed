@@ -7,7 +7,6 @@
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
   this);
@@ -19,13 +18,14 @@ Services.prefs.setBoolPref("devtools.responsive.html.enabled", true);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.responsive.html.enabled");
 });
+const { ResponsiveUIManager } = Cu.import("resource://devtools/client/responsivedesign/responsivedesign.jsm", {});
 
 
 
 
 var openRDM = Task.async(function*(tab) {
   info("Opening responsive design mode");
-  let manager = ResponsiveUI.ResponsiveUIManager;
+  let manager = ResponsiveUIManager;
   let ui = yield manager.openIfNeeded(window, tab);
   info("Responsive design mode opened");
   return { ui, manager };
@@ -36,7 +36,7 @@ var openRDM = Task.async(function*(tab) {
 
 var closeRDM = Task.async(function*(tab) {
   info("Closing responsive design mode");
-  let manager = ResponsiveUI.ResponsiveUIManager;
+  let manager = ResponsiveUIManager;
   manager.closeIfNeeded(window, tab);
   info("Responsive design mode closed");
 });

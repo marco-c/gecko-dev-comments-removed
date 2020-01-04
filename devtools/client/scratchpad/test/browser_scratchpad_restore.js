@@ -2,8 +2,6 @@
 
 
 
-var ScratchpadManager = Scratchpad.ScratchpadManager;
-
 
 
 

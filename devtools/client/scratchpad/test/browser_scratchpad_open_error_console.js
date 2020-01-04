@@ -2,6 +2,8 @@
 
 
 
+const HUDService = require("devtools/client/webconsole/hudservice");
+
 function test()
 {
   waitForExplicitFinish();
