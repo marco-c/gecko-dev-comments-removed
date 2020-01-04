@@ -502,6 +502,10 @@ struct BluetoothPinCode {
   uint8_t mLength;
 };
 
+struct BluetoothServiceName {
+  uint8_t mName[255]; 
+};
+
 struct BluetoothServiceRecord {
   BluetoothUuid mUuid;
   uint16_t mChannel;

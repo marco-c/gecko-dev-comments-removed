@@ -51,6 +51,14 @@ RemoteNameToString(const BluetoothRemoteName& aRemoteName, nsAString& aString);
 
 
 
+nsresult
+StringToServiceName(const nsAString& aString,
+                    BluetoothServiceName& aServiceName);
+
+
+
+
+
 
 
 

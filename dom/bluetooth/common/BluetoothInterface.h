@@ -56,7 +56,7 @@ public:
   
 
   virtual void Listen(BluetoothSocketType aType,
-                      const nsAString& aServiceName,
+                      const BluetoothServiceName& aServiceName,
                       const BluetoothUuid& aServiceUuid,
                       int aChannel, bool aEncrypt, bool aAuth,
                       BluetoothSocketResultHandler* aRes) = 0;
