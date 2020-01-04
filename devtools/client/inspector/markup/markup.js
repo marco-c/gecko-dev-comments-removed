@@ -2645,25 +2645,23 @@ function MarkupElementContainer(markupView, node) {
 }
 
 MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
-  _buildEventTooltipContent: function (target, tooltip) {
+  _buildEventTooltipContent: Task.async(function* (target, tooltip) {
     if (target.hasAttribute("data-event")) {
-      tooltip.hide(target);
+      yield tooltip.hide();
 
-      this.node.getEventListenerInfo().then(listenerInfo => {
-        let toolbox = this.markup._inspector.toolbox;
-        setEventTooltip(tooltip, listenerInfo, toolbox);
+      let listenerInfo = yield this.node.getEventListenerInfo();
+
+      let toolbox = this.markup._inspector.toolbox;
+      setEventTooltip(tooltip, listenerInfo, toolbox);
+      
+      this.markup._disableImagePreviewTooltip();
+      tooltip.once("hidden", () => {
         
-        this.markup._disableImagePreviewTooltip();
-        tooltip.once("hidden", () => {
-          
-          this.markup._enableImagePreviewTooltip();
-        });
-        tooltip.show(target);
+        this.markup._enableImagePreviewTooltip();
       });
-      return true;
+      tooltip.show(target);
     }
-    return undefined;
-  },
+  }),
 
   
 
