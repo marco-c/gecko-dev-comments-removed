@@ -257,13 +257,32 @@ nsBaseWidget::Shutdown()
 
 void nsBaseWidget::DestroyCompositor()
 {
-  if (mCompositorBridgeChild) {
-    
-    
-    RefPtr<CompositorBridgeChild> compositorChild = mCompositorBridgeChild;
-    RefPtr<CompositorSession> compositorSession = mCompositorSession;
-    mCompositorSession->Shutdown();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mCompositorSession) {
+    ReleaseContentController();
+    mAPZC = nullptr;
     mCompositorBridgeChild = nullptr;
+
+    
+    
+    RefPtr<CompositorSession> session = mCompositorSession.forget();
+    session->Shutdown();
+
+    
+    
+    mCompositorWidgetProxy = nullptr;
   }
 
   
@@ -271,6 +290,14 @@ void nsBaseWidget::DestroyCompositor()
   if (mCompositorVsyncDispatcher) {
     mCompositorVsyncDispatcher->Shutdown();
     mCompositorVsyncDispatcher = nullptr;
+  }
+}
+
+void nsBaseWidget::ReleaseContentController()
+{
+  if (mRootContentController) {
+    mRootContentController->Destroy();
+    mRootContentController = nullptr;
   }
 }
 
@@ -1323,16 +1350,8 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   if (!success || !lf) {
     NS_WARNING("Failed to create an OMT compositor.");
-    mAPZC = nullptr;
-    if (mRootContentController) {
-      mRootContentController->Destroy();
-      mRootContentController = nullptr;
-    }
     DestroyCompositor();
     mLayerManager = nullptr;
-    mCompositorBridgeChild = nullptr;
-    mCompositorSession = nullptr;
-    mCompositorVsyncDispatcher = nullptr;
     return;
   }
 
@@ -1427,10 +1446,7 @@ void nsBaseWidget::OnDestroy()
   
   
   
-  if (mRootContentController) {
-    mRootContentController->Destroy();
-    mRootContentController = nullptr;
-  }
+  ReleaseContentController();
 }
 
 NS_METHOD nsBaseWidget::SetWindowClass(const nsAString& xulWinType)

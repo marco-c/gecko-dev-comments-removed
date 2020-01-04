@@ -111,10 +111,11 @@ InProcessCompositorSession::Shutdown()
 {
   
   
-  RefPtr<CompositorBridgeChild> compositorChild = mCompositorBridgeChild;
-  RefPtr<CompositorBridgeParent> compositorParent = mCompositorBridgeParent;
+  
+  
   mCompositorBridgeChild->Destroy();
   mCompositorBridgeChild = nullptr;
+  mCompositorBridgeParent = nullptr;
 }
 
 } 
