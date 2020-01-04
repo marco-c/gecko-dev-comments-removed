@@ -344,9 +344,9 @@ class TPSTestRunner(object):
 
         
         
-        dummy = {'fx_account': 'dummy@somewhere', 'sync_account': 'dummy'}
-        auth_type = self.config.get('auth_type', 'fx_account')
-        self.preferences.update({'services.sync.username': dummy[auth_type]})
+        
+        if self.config.get('auth_type', 'fx_account') != "fx_account":
+            self.preferences.update({'services.sync.username': "dummy"})
 
         if self.debug:
             self.preferences.update(self.debug_preferences)
