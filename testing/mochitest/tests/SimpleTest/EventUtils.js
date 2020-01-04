@@ -24,6 +24,7 @@
 
 
 
+
 window.__defineGetter__('_EU_Ci', function() {
   
   
@@ -422,8 +423,7 @@ function synthesizeTouchAtCenter(aTarget, aEvent, aWindow)
 
 
 
-
-function synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow)
+function synthesizeWheelAtPoint(aLeft, aTop, aEvent, aWindow)
 {
   var utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
@@ -480,12 +480,35 @@ function synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow)
     aEvent.lineOrPageDeltaY != null ? aEvent.lineOrPageDeltaY :
                   aEvent.deltaY > 0 ? Math.floor(aEvent.deltaY) :
                                       Math.ceil(aEvent.deltaY);
-
-  var rect = aTarget.getBoundingClientRect();
-  utils.sendWheelEvent(rect.left + aOffsetX, rect.top + aOffsetY,
+  utils.sendWheelEvent(aLeft, aTop,
                        aEvent.deltaX, aEvent.deltaY, aEvent.deltaZ,
                        aEvent.deltaMode, modifiers,
                        lineOrPageDeltaX, lineOrPageDeltaY, options);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeWheel(aTarget, aOffsetX, aOffsetY, aEvent, aWindow)
+{
+  var rect = aTarget.getBoundingClientRect();
+  synthesizeWheelAtPoint(rect.left + aOffsetX, rect.top + aOffsetY,
+                         aEvent, aWindow);
 }
 
 
