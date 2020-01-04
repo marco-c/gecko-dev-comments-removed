@@ -649,6 +649,24 @@ public:
 
 
 
+  MOZ_WARN_UNUSED_RESULT T* extractRawBuffer();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   MOZ_WARN_UNUSED_RESULT T* extractOrCopyRawBuffer();
 
   
@@ -1301,28 +1319,48 @@ Vector<T, N, AP>::popCopy()
 
 template<typename T, size_t N, class AP>
 inline T*
+Vector<T, N, AP>::extractRawBuffer()
+{
+  MOZ_REENTRANCY_GUARD_ET_AL;
+
+  if (usingInlineStorage()) {
+    return nullptr;
+  }
+
+  T* ret = mBegin;
+  mBegin = static_cast<T*>(mStorage.addr());
+  mLength = 0;
+  mCapacity = kInlineCapacity;
+#ifdef DEBUG
+  mReserved = 0;
+#endif
+  return ret;
+}
+
+template<typename T, size_t N, class AP>
+inline T*
 Vector<T, N, AP>::extractOrCopyRawBuffer()
 {
-  T* ret;
-  if (usingInlineStorage()) {
-    ret = this->template pod_malloc<T>(mLength);
-    if (!ret) {
-      return nullptr;
-    }
-    Impl::copyConstruct(ret, beginNoCheck(), endNoCheck());
-    Impl::destroy(beginNoCheck(), endNoCheck());
-    
-    mLength = 0;
-  } else {
-    ret = mBegin;
-    mBegin = static_cast<T*>(mStorage.addr());
-    mLength = 0;
-    mCapacity = kInlineCapacity;
-#ifdef DEBUG
-    mReserved = 0;
-#endif
+  if (T* ret = extractRawBuffer()) {
+    return ret;
   }
-  return ret;
+
+  MOZ_REENTRANCY_GUARD_ET_AL;
+
+  T* copy = this->template pod_malloc<T>(mLength);
+  if (!copy) {
+    return nullptr;
+  }
+
+  Impl::moveConstruct(copy, beginNoCheck(), endNoCheck());
+  Impl::destroy(beginNoCheck(), endNoCheck());
+  mBegin = static_cast<T*>(mStorage.addr());
+  mLength = 0;
+  mCapacity = kInlineCapacity;
+#ifdef DEBUG
+  mReserved = 0;
+#endif
+  return copy;
 }
 
 template<typename T, size_t N, class AP>
