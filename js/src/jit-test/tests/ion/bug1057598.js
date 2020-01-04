@@ -1,7 +1,7 @@
 
 
 
-enableShellObjectMetadataCallback(function( r, ... d)  {});
+enableShellAllocationMetadataBuilder(function( r, ... d)  {});
 setJitCompilerOption("ion.warmup.trigger", 20);
 var uceFault = function (i) {
     if (i > 98)

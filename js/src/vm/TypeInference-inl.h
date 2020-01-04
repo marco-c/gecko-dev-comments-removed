@@ -286,7 +286,7 @@ struct AutoEnterAnalysis
     RecompileInfoVector pendingRecompiles;
 
     
-    js::AutoSuppressObjectMetadataCallback suppressMetadata;
+    js::AutoSuppressAllocationMetadataBuilder suppressMetadata;
 
     FreeOp* freeOp;
     Zone* zone;

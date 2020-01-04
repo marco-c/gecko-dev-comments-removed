@@ -1475,7 +1475,7 @@ SavedStacks::chooseSamplingProbability(JSCompartment* compartment)
 }
 
 JSObject*
-SavedStacksMetadataCallback(JSContext* cx, HandleObject target)
+SavedStacksMetadataBuilder(JSContext* cx, HandleObject target)
 {
     RootedObject obj(cx, target);
 
@@ -1486,10 +1486,10 @@ SavedStacksMetadataCallback(JSContext* cx, HandleObject target)
     AutoEnterOOMUnsafeRegion oomUnsafe;
     RootedSavedFrame frame(cx);
     if (!stacks.saveCurrentStack(cx, &frame))
-        oomUnsafe.crash("SavedStacksMetadataCallback");
+        oomUnsafe.crash("SavedStacksMetadataBuilder");
 
     if (!Debugger::onLogAllocationSite(cx, obj, frame, JS_GetCurrentEmbedderTime()))
-        oomUnsafe.crash("SavedStacksMetadataCallback");
+        oomUnsafe.crash("SavedStacksMetadataBuilder");
 
     MOZ_ASSERT_IF(frame, !frame->is<WrapperObject>());
     return frame;

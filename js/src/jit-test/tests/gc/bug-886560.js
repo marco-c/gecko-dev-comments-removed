@@ -3,7 +3,7 @@
 
 
 
-enableShellObjectMetadataCallback(function(obj) {
+enableShellAllocationMetadataBuilder(function(obj) {
     var res = {};
     return res;
   });

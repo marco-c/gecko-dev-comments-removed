@@ -8,7 +8,7 @@ gczeal(14);
 
 
 
-enableShellObjectMetadataCallback(function() {});
+enableShellAllocationMetadataBuilder(function() {});
 function f() {
     (function() {
         '' ^ Object
@@ -22,7 +22,7 @@ for (var j = 0; j < 99; ++j) {
 try {
   x = true;
   
-  enableShellObjectMetadataCallback(function([x, y, z], ... Debugger) {});
+  enableShellAllocationMetadataBuilder(function([x, y, z], ... Debugger) {});
   for (var i = 0; i < 10; ++i) {
     var f = function() {
       function g() {

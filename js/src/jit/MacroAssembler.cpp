@@ -727,7 +727,7 @@ MacroAssembler::checkAllocatorState(Label* fail)
 
     
     
-    if (GetJitContext()->compartment->hasObjectMetadataCallback())
+    if (GetJitContext()->compartment->hasAllocationMetadataBuilder())
         jump(fail);
 }
 

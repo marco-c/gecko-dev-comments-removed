@@ -333,7 +333,7 @@ extern JS_FRIEND_DATA(const js::ObjectOps) ProxyObjectOps;
         name,                                                                           \
         js::Class::NON_NATIVE |                                                         \
             JSCLASS_IS_PROXY |                                                          \
-            JSCLASS_DELAY_METADATA_CALLBACK |                                           \
+            JSCLASS_DELAY_METADATA_BUILDER |                                            \
             flags,                                                                      \
         nullptr,                 /* addProperty */                                      \
         nullptr,                 /* delProperty */                                      \
@@ -2666,7 +2666,7 @@ class MOZ_RAII JS_FRIEND_API(AutoCTypesActivityCallback) {
 };
 
 typedef JSObject*
-(* ObjectMetadataCallback)(JSContext* cx, JS::HandleObject obj);
+(* AllocationMetadataBuilder)(JSContext* cx, JS::HandleObject obj);
 
 
 
@@ -2674,11 +2674,11 @@ typedef JSObject*
 
 
 JS_FRIEND_API(void)
-SetObjectMetadataCallback(JSContext* cx, ObjectMetadataCallback callback);
+SetAllocationMetadataBuilder(JSContext* cx, AllocationMetadataBuilder callback);
 
 
 JS_FRIEND_API(JSObject*)
-GetObjectMetadata(JSObject* obj);
+GetAllocationMetadata(JSObject* obj);
 
 JS_FRIEND_API(bool)
 GetElementsWithAdder(JSContext* cx, JS::HandleObject obj, JS::HandleObject receiver,

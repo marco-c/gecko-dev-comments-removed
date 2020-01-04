@@ -8,4 +8,4 @@
 
 
 
-newGlobal().eval('enableShellObjectMetadataCallback(); Array');
+newGlobal().eval('enableShellAllocationMetadataBuilder(); Array');

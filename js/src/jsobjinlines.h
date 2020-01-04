@@ -293,11 +293,11 @@ SetNewObjectMetadata(ExclusiveContext* cxArg, JSObject* obj)
     
     
     if (JSContext* cx = cxArg->maybeJSContext()) {
-        if (MOZ_UNLIKELY((size_t)cx->compartment()->hasObjectMetadataCallback()) &&
-            !cx->zone()->suppressObjectMetadataCallback)
+        if (MOZ_UNLIKELY((size_t)cx->compartment()->hasAllocationMetadataBuilder()) &&
+            !cx->zone()->suppressAllocationMetadataBuilder)
         {
             
-            AutoSuppressObjectMetadataCallback suppressMetadata(cx);
+            AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
             RootedObject rooted(cx, obj);
             cx->compartment()->setNewObjectMetadata(cx, rooted);
@@ -371,7 +371,7 @@ JSObject::create(js::ExclusiveContext* cx, js::gc::AllocKind kind, js::gc::Initi
         }
     }
 
-    if (group->clasp()->shouldDelayMetadataCallback())
+    if (group->clasp()->shouldDelayMetadataBuilder())
         cx->compartment()->setObjectPendingMetadata(cx, obj);
     else
         obj = SetNewObjectMetadata(cx, obj);

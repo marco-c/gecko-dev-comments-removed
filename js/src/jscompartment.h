@@ -367,7 +367,7 @@ struct JSCompartment
     void*                        data;
 
   private:
-    js::ObjectMetadataCallback   objectMetadataCallback;
+    js::AllocationMetadataBuilder     allocationMetadataBuilder;
 
     js::SavedStacks              savedStacks_;
 
@@ -605,16 +605,16 @@ struct JSCompartment
     void fixupAfterMovingGC();
     void fixupGlobal();
 
-    bool hasObjectMetadataCallback() const { return objectMetadataCallback; }
-    js::ObjectMetadataCallback getObjectMetadataCallback() const { return objectMetadataCallback; }
-    void setObjectMetadataCallback(js::ObjectMetadataCallback callback);
-    void forgetObjectMetadataCallback() {
-        objectMetadataCallback = nullptr;
+    bool hasAllocationMetadataBuilder() const { return allocationMetadataBuilder; }
+    js::AllocationMetadataBuilder getAllocationMetadataBuilder() const { return allocationMetadataBuilder; }
+    void setAllocationMetadataBuilder(js::AllocationMetadataBuilder builder);
+    void forgetAllocationMetadataBuilder() {
+        allocationMetadataBuilder = nullptr;
     }
     void setNewObjectMetadata(JSContext* cx, JS::HandleObject obj);
     void clearObjectMetadata();
-    const void* addressOfMetadataCallback() const {
-        return &objectMetadataCallback;
+    const void* addressOfMetadataBuilder() const {
+        return &allocationMetadataBuilder;
     }
 
     js::SavedStacks& savedStacks() { return savedStacks_; }
@@ -963,24 +963,24 @@ class MOZ_RAII AutoWrapperRooter : private JS::AutoGCRooter {
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class MOZ_RAII AutoSuppressObjectMetadataCallback {
+class MOZ_RAII AutoSuppressAllocationMetadataBuilder {
     JS::Zone* zone;
     bool saved;
 
   public:
-    explicit AutoSuppressObjectMetadataCallback(ExclusiveContext* cx)
-      : AutoSuppressObjectMetadataCallback(cx->compartment()->zone())
+    explicit AutoSuppressAllocationMetadataBuilder(ExclusiveContext* cx)
+      : AutoSuppressAllocationMetadataBuilder(cx->compartment()->zone())
     { }
 
-    explicit AutoSuppressObjectMetadataCallback(JS::Zone* zone)
+    explicit AutoSuppressAllocationMetadataBuilder(JS::Zone* zone)
       : zone(zone),
-        saved(zone->suppressObjectMetadataCallback)
+        saved(zone->suppressAllocationMetadataBuilder)
     {
-        zone->suppressObjectMetadataCallback = true;
+        zone->suppressAllocationMetadataBuilder = true;
     }
 
-    ~AutoSuppressObjectMetadataCallback() {
-        zone->suppressObjectMetadataCallback = saved;
+    ~AutoSuppressAllocationMetadataBuilder() {
+        zone->suppressAllocationMetadataBuilder = saved;
     }
 };
 
