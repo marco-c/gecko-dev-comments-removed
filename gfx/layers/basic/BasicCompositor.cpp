@@ -585,6 +585,7 @@ void
 BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
                             const gfx::Rect *aClipRectIn,
                             const gfx::Rect& aRenderBounds,
+                            bool aOpaque,
                             gfx::Rect *aClipRectOut ,
                             gfx::Rect *aRenderBoundsOut )
 {
@@ -635,7 +636,9 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   
   RefPtr<CompositingRenderTarget> target =
-    CreateRenderTargetForWindow(mInvalidRect.ToUnknownRect(), INIT_MODE_CLEAR, bufferMode);
+    CreateRenderTargetForWindow(mInvalidRect.ToUnknownRect(),
+                                aOpaque ? INIT_MODE_NONE : INIT_MODE_CLEAR,
+                                bufferMode);
   if (!target) {
     if (!mTarget) {
       mWidget->EndRemoteDrawingInRegion(mDrawTarget, mInvalidRegion);
