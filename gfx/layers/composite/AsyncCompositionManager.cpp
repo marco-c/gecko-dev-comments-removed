@@ -207,7 +207,7 @@ TransformClipRect(Layer* aLayer,
   MOZ_ASSERT(aTransform.Is2D());
   const Maybe<ParentLayerIntRect>& clipRect = aLayer->AsLayerComposite()->GetShadowClipRect();
   if (clipRect) {
-    ParentLayerIntRect transformed = TransformTo<ParentLayerPixel>(aTransform, *clipRect);
+    ParentLayerIntRect transformed = TransformBy(aTransform, *clipRect);
     aLayer->AsLayerComposite()->SetShadowClipRect(Some(transformed));
   }
 }
@@ -469,8 +469,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   auto localTransformTyped = ViewAs<LayerToParentLayerMatrix4x4>(localTransform);
-  ParentLayerPoint translation = TransformTo<ParentLayerPixel>(localTransformTyped, transformedAnchor)
-                               - TransformTo<ParentLayerPixel>(localTransformTyped, anchor);
+  ParentLayerPoint translation = TransformBy(localTransformTyped, transformedAnchor)
+                               - TransformBy(localTransformTyped, anchor);
 
   if (aLayer->GetIsStickyPosition()) {
     
@@ -897,7 +897,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     if (asyncClip && !metrics.UsesContainerScrolling()) {
       MOZ_ASSERT(asyncTransform.Is2D());
-      asyncClip = Some(TransformTo<ParentLayerPixel>(
+      asyncClip = Some(TransformBy(
           ViewAs<ParentLayerToParentLayerMatrix4x4>(asyncTransform), *asyncClip));
     }
 
