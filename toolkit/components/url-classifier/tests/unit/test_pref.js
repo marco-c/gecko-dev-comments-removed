@@ -1,0 +1,14 @@
+function run_test() {
+  let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
+                   .getService(Ci.nsIUrlClassifierUtils);
+
+  
+  
+  equal(urlUtils.getProtocolVersion("google"), "2.2");
+
+  
+  equal(urlUtils.getProtocolVersion("mozilla"), "2.2");
+
+  
+  equal(urlUtils.getProtocolVersion("unknown-provider"), "2.2");
+}
