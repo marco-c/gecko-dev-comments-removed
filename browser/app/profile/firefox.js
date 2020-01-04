@@ -1835,10 +1835,6 @@ pref("ui.key.menuAccessKeyFocuses", true);
 pref("media.eme.enabled", true);
 pref("media.eme.apiVisible", true);
 
-
-
-pref("media.gmp.trial-create.enabled", true);
-
 #ifdef MOZ_ADOBE_EME
 pref("browser.eme.ui.enabled", true);
 pref("media.gmp-eme-adobe.enabled", true);
@@ -1879,7 +1875,7 @@ pref("browser.polaris.enabled", false);
 pref("privacy.trackingprotection.ui.enabled", false);
 #endif
 pref("privacy.trackingprotection.introCount", 0);
-pref("privacy.trackingprotection.introURL", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/tracking-protection-pbm");
+pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tracking-protection/start/");
 
 #ifndef RELEASE_BUILD
 
