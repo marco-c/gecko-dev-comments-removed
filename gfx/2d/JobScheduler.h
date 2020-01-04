@@ -75,6 +75,12 @@ public:
   
   
   
+  static void Join(SyncObject* aCompletionSync);
+
+  
+  
+  
+  
   
   
   
