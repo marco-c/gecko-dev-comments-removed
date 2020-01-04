@@ -6447,19 +6447,67 @@ DescribeScriptedCaller(JSContext* cx, AutoFilename* filename, unsigned* lineno,
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+static bool
+GetScriptedCallerActivationFast(JSContext* cx, Activation** activation)
+{
+    ActivationIterator activationIter(cx->runtime());
+
+    while (!activationIter.done() && activationIter->cx() != cx)
+        ++activationIter;
+
+    if (activationIter.done()) {
+        *activation = nullptr;
+        return true;
+    }
+
+    *activation = activationIter.activation();
+
+    if (activationIter->isJit()) {
+        for (jit::JitFrameIterator iter(activationIter); !iter.done(); ++iter) {
+            if (iter.isScripted() && !iter.script()->selfHosted())
+                return true;
+        }
+    } else if (activationIter->isInterpreter()) {
+        for (InterpreterFrameIterator iter((*activation)->asInterpreter()); !iter.done(); ++iter) {
+            if (!iter.frame()->script()->selfHosted())
+                return true;
+        }
+    }
+
+    return false;
+}
+
 JS_PUBLIC_API(JSObject*)
 GetScriptedCallerGlobal(JSContext* cx)
 {
-    NonBuiltinFrameIter i(cx);
-    if (i.done())
-        return nullptr;
+    Activation* activation;
+
+    if (GetScriptedCallerActivationFast(cx, &activation)) {
+        if (!activation)
+            return nullptr;
+    } else {
+        NonBuiltinFrameIter i(cx);
+        if (i.done())
+            return nullptr;
+        activation = i.activation();
+    }
 
     
     
-    if (i.activation()->scriptedCallerIsHidden())
+    if (activation->scriptedCallerIsHidden())
         return nullptr;
 
-    GlobalObject* global = i.activation()->compartment()->maybeGlobal();
+    GlobalObject* global = activation->compartment()->maybeGlobal();
 
     
     
