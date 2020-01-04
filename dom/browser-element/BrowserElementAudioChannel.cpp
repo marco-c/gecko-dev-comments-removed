@@ -68,10 +68,6 @@ BrowserElementAudioChannel::Create(nsPIDOMWindow* aWindow,
     return nullptr;
   }
 
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("BrowserElementAudioChannel, Create, channel = %p, type = %d\n",
-          ac.get(), aAudioChannel));
-
   return ac.forget();
 }
 
@@ -203,7 +199,9 @@ public:
   NS_IMETHODIMP Run() override
   {
     RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
-    MOZ_ASSERT(service);
+    if (!service) {
+      return NS_OK;
+    }
 
     AutoJSAPI jsapi;
     if (!jsapi.Init(mParentWindow)) {
@@ -400,9 +398,9 @@ BrowserElementAudioChannel::SetVolume(float aVolume, ErrorResult& aRv)
   }
 
   RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
-  MOZ_ASSERT(service);
-
-  service->SetAudioChannelVolume(mFrameWindow, mAudioChannel, aVolume);
+  if (service) {
+    service->SetAudioChannelVolume(mFrameWindow, mAudioChannel, aVolume);
+  }
 
   RefPtr<DOMRequest> domRequest = new DOMRequest(GetOwner());
   nsCOMPtr<nsIRunnable> runnable = new FireSuccessRunnable(GetOwner(),
@@ -459,9 +457,9 @@ BrowserElementAudioChannel::SetMuted(bool aMuted, ErrorResult& aRv)
   }
 
   RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
-  MOZ_ASSERT(service);
-
-  service->SetAudioChannelMuted(mFrameWindow, mAudioChannel, aMuted);
+  if (service) {
+    service->SetAudioChannelMuted(mFrameWindow, mAudioChannel, aMuted);
+  }
 
   RefPtr<DOMRequest> domRequest = new DOMRequest(GetOwner());
   nsCOMPtr<nsIRunnable> runnable = new FireSuccessRunnable(GetOwner(),
@@ -612,10 +610,6 @@ BrowserElementAudioChannel::Observe(nsISupports* aSubject, const char* aTopic,
 void
 BrowserElementAudioChannel::ProcessStateChanged(const char16_t* aData)
 {
-  MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-         ("BrowserElementAudioChannel, ProcessStateChanged, this = %p, "
-          "type = %d\n", this, mAudioChannel));
-
   nsAutoString value(aData);
   mState = value.EqualsASCII("active") ? eStateActive : eStateInactive;
   DispatchTrustedEvent(NS_LITERAL_STRING("activestatechanged"));
