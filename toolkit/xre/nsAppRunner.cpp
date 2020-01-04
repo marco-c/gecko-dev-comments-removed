@@ -4638,7 +4638,7 @@ mozilla::BrowserTabsRemoteAutostart()
   
   
   bool e10sAllowed = Preferences::GetDefaultCString("app.update.channel").EqualsLiteral("beta") ||
-                     Preferences::GetBool("layers.offmainthreadcomposition.testing.enabled", false);
+                     gfxPrefs::GetSingleton().LayersOffMainThreadCompositionTestingEnabled();
 #endif
 
   
@@ -4662,8 +4662,8 @@ mozilla::BrowserTabsRemoteAutostart()
   
   if (gBrowserTabsRemoteAutostart) {
     
-    bool accelDisabled = Preferences::GetBool("layers.acceleration.disabled", false) &&
-                         !Preferences::GetBool("layers.acceleration.force-enabled", false);
+    bool accelDisabled = gfxPrefs::GetSingleton().LayersAccelerationDisabled() &&
+                         !gfxPrefs::LayersAccelerationForceEnabled();
 
     accelDisabled = accelDisabled || !nsCocoaFeatures::AccelerateByDefault();
 
