@@ -4,9 +4,8 @@
 
 
 
-function runTests() {
-  
-  Services.prefs.setIntPref("accessibility.tabfocus", 7);
+add_task(function* () {
+  yield pushPrefs(["accessibility.tabfocus", 7]);
 
   
   
@@ -18,43 +17,32 @@ function runTests() {
   yield setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  yield addNewTabPageTab();
+  yield* addNewTabPageTab();
   gURLBar.focus();
 
   
-  yield countFocus(FOCUS_COUNT);
+  countFocus(FOCUS_COUNT);
 
   
   NewTabUtils.allPages.enabled = false;
-  yield countFocus(1);
 
-  Services.prefs.clearUserPref("accessibility.tabfocus");
+  countFocus(4);
+
   NewTabUtils.allPages.enabled = true;
-}
+});
 
 
 
 
 function countFocus(aExpectedCount) {
   let focusCount = 0;
-  let contentDoc = getContentDocument();
-
-  window.addEventListener("focus", function onFocus() {
-    let focusedElement = document.commandDispatcher.focusedElement;
-    if (focusedElement && focusedElement.classList.contains("urlbar-input")) {
-      window.removeEventListener("focus", onFocus, true);
-      
-      ok(focusCount == aExpectedCount || focusCount == (aExpectedCount + 1),
-         "Validate focus count in the new tab page.");
-      executeSoon(TestRunner.next);
-    } else {
-      if (focusedElement && focusedElement.ownerDocument == contentDoc &&
-          focusedElement instanceof HTMLElement) {
-        focusCount++;
-      }
-      document.commandDispatcher.advanceFocus();
+  do {
+    EventUtils.synthesizeKey("VK_TAB", {});
+    if (document.activeElement == gBrowser.selectedBrowser) {
+      focusCount++;
     }
-  }, true);
+  } while (document.activeElement != gURLBar.inputField);
 
-  document.commandDispatcher.advanceFocus();
+  ok(focusCount == aExpectedCount || focusCount == (aExpectedCount + 1),
+     "Validate focus count in the new tab page.");
 }
