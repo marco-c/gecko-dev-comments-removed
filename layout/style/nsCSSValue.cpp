@@ -621,6 +621,21 @@ void nsCSSValue::SetDependentListValue(nsCSSValueList* aList)
   }
 }
 
+void
+nsCSSValue::AdoptListValue(nsCSSValueList*&& aValue)
+{
+  
+  
+  SetListValue();
+  
+  
+  mValue.mList->mValue = aValue->mValue;
+  mValue.mList->mNext  = aValue->mNext;
+  aValue->mNext = nullptr;
+  delete aValue;
+  aValue = nullptr;
+}
+
 nsCSSValuePairList* nsCSSValue::SetPairListValue()
 {
   Reset();
@@ -637,6 +652,22 @@ void nsCSSValue::SetDependentPairListValue(nsCSSValuePairList* aList)
     mUnit = eCSSUnit_PairListDep;
     mValue.mPairListDependent = aList;
   }
+}
+
+void
+nsCSSValue::AdoptPairListValue(nsCSSValuePairList*&& aValue)
+{
+  
+  
+  SetPairListValue();
+  
+  
+  mValue.mPairList->mXValue = aValue->mXValue;
+  mValue.mPairList->mYValue = aValue->mYValue;
+  mValue.mPairList->mNext   = aValue->mNext;
+  aValue->mNext = nullptr;
+  delete aValue;
+  aValue = nullptr;
 }
 
 void nsCSSValue::SetAutoValue()

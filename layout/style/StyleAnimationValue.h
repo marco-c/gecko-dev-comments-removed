@@ -9,6 +9,7 @@
 #define mozilla_StyleAnimationValue_h_
 
 #include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/UniquePtr.h"
 #include "nsStringFwd.h"
 #include "nsStringBuffer.h"
 #include "nsCoord.h"
@@ -207,8 +208,15 @@ public:
 
 
 
+
+
+
+
   static bool UncomputeValue(nsCSSProperty aProperty,
                              const StyleAnimationValue& aComputedValue,
+                             nsCSSValue& aSpecifiedValue);
+  static bool UncomputeValue(nsCSSProperty aProperty,
+                             StyleAnimationValue&& aComputedValue,
                              nsCSSValue& aSpecifiedValue);
   static bool UncomputeValue(nsCSSProperty aProperty,
                              const StyleAnimationValue& aComputedValue,
@@ -365,6 +373,19 @@ public:
 
   
   gfxSize GetScaleValue(const nsIFrame* aForFrame) const;
+
+  UniquePtr<nsCSSValueList> TakeCSSValueListValue() {
+    nsCSSValueList* list = GetCSSValueListValue();
+    mValue.mCSSValueList = nullptr;
+    mUnit = eUnit_Null;
+    return UniquePtr<nsCSSValueList>(list);
+  }
+  UniquePtr<nsCSSValuePairList> TakeCSSValuePairListValue() {
+    nsCSSValuePairList* list = GetCSSValuePairListValue();
+    mValue.mCSSValuePairList = nullptr;
+    mUnit = eUnit_Null;
+    return UniquePtr<nsCSSValuePairList>(list);
+  }
 
   explicit StyleAnimationValue(Unit aUnit = eUnit_Null) : mUnit(aUnit) {
     NS_ASSERTION(aUnit == eUnit_Null || aUnit == eUnit_Normal ||

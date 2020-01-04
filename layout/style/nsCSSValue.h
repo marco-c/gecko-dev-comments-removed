@@ -718,6 +718,10 @@ public:
   nsCSSValueList* SetListValue();
   nsCSSValuePairList* SetPairListValue();
 
+  
+  void AdoptListValue(nsCSSValueList*&& aValue);
+  void AdoptPairListValue(nsCSSValuePairList*&& aValue);
+
   void StartImageLoad(nsIDocument* aDocument) const;  
 
   
@@ -991,7 +995,7 @@ nsCSSValue::GetListValue()
   if (mUnit == eCSSUnit_List)
     return mValue.mList;
   else {
-    MOZ_ASSERT(mUnit == eCSSUnit_ListDep, "not a pairlist value");
+    MOZ_ASSERT(mUnit == eCSSUnit_ListDep, "not a list value");
     return mValue.mListDependent;
   }
 }
@@ -1002,7 +1006,7 @@ nsCSSValue::GetListValue() const
   if (mUnit == eCSSUnit_List)
     return mValue.mList;
   else {
-    MOZ_ASSERT(mUnit == eCSSUnit_ListDep, "not a pairlist value");
+    MOZ_ASSERT(mUnit == eCSSUnit_ListDep, "not a list value");
     return mValue.mListDependent;
   }
 }
