@@ -1526,9 +1526,8 @@ function setupShutdown(phaseName) {
 }
 
 
-if (isContent) {
-  setupShutdown("contentChildShutdown");
-} else {
+
+if (!isContent) {
   setupShutdown("profileBeforeChange")
 }
 File.shutdown = Barriers.shutdown.client;
