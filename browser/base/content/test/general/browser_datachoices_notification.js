@@ -100,11 +100,6 @@ let checkInfobarButton = Task.async(function* (aNotification) {
   
   let preferenceWindow = yield paneLoadedPromise;
   yield promiseNextTick();
-  
-  
-  if (!Services.prefs.getBoolPref("browser.preferences.inContent")) {
-    prefWin.close();
-  }
 });
 
 add_task(function* setup(){

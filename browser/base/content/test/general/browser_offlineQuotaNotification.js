@@ -18,25 +18,6 @@ registerCleanupFunction(function() {
 });
 
 
-
-
-function checkPreferences(prefsWin) {
-  
-  
-  prefsWin.addEventListener("paneload", function paneload(evt) {
-    prefsWin.removeEventListener("paneload", paneload);
-    is(evt.target.id, "paneAdvanced", "advanced pane loaded");
-    let tabPanels = evt.target.getElementsByTagName("tabpanels")[0];
-    tabPanels.addEventListener("select", function tabselect() {
-      tabPanels.removeEventListener("select", tabselect);
-      is(tabPanels.selectedPanel.id, "networkPanel", "networkPanel is selected");
-      
-      prefsWin.close();
-      finish();
-    });
-  });
-}
-
 function checkInContentPreferences(win) {
   let doc = win.document;
   let sel = doc.getElementById("categories").selectedItems[0].id;
@@ -72,26 +53,14 @@ function test() {
         ok(notification, "have offline-app-usage notification");
         
         
-        
-        
-        if (!Services.prefs.getBoolPref("browser.preferences.inContent")) {
-          Services.ww.registerNotification(function wwobserver(aSubject, aTopic, aData) {
-            if (aTopic != "domwindowopened")
-              return;
-            Services.ww.unregisterNotification(wwobserver);
-            checkPreferences(aSubject);
-          });
-        }
         PopupNotifications.panel.firstElementChild.button.click();
-        if (Services.prefs.getBoolPref("browser.preferences.inContent")) {
-          let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-          newTabBrowser.addEventListener("Initialized", function PrefInit() {
-            newTabBrowser.removeEventListener("Initialized", PrefInit, true);
-            executeSoon(function() {
-              checkInContentPreferences(newTabBrowser.contentWindow);
-            })
-          }, true);
-        }
+        let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
+        newTabBrowser.addEventListener("Initialized", function PrefInit() {
+          newTabBrowser.removeEventListener("Initialized", PrefInit, true);
+          executeSoon(function() {
+            checkInContentPreferences(newTabBrowser.contentWindow);
+          })
+        }, true);
       });
     };
     Services.prefs.setIntPref("offline-apps.quota.warn", 1);
