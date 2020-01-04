@@ -2430,7 +2430,7 @@ pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
 
-#if defined(MOZ_B2G) || defined(NIGHTLY_BUILD)
+#if defined(MOZ_B2G) || !defined(RELEASE_BUILD)
 pref("layout.css.float-logical-values.enabled", true);
 #else
 pref("layout.css.float-logical-values.enabled", false);
