@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { ViewHelpers } = require("resource:///modules/devtools/ViewHelpers.jsm");
+const { ViewHelpers } = require("resource:///modules/devtools/client/shared/widgets/ViewHelpers.jsm");
 
 
 

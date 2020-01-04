@@ -3,7 +3,7 @@
 
 
 
-var {ViewHelpers} = Cu.import("resource:///modules/devtools/ViewHelpers.jsm", {});
+var {ViewHelpers} = Cu.import("resource:///modules/devtools/client/shared/widgets/ViewHelpers.jsm", {});
 
 function test() {
   let originalJson = Services.prefs.getCharPref("devtools.performance.timeline.hidden-markers");

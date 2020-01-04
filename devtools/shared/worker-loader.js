@@ -494,12 +494,18 @@ this.worker = new WorkerDebuggerLoader({
     "xpcInspector": xpcInspector
   },
   paths: {
+    
     "": "resource://gre/modules/commonjs/",
-    "devtools": "resource:///modules/devtools",
-    "devtools/server": "resource://gre/modules/devtools/server",
-    "devtools/toolkit": "resource://gre/modules/devtools",
+    
+    "devtools": "resource://gre/modules/devtools",
+    
+    "devtools/client": "resource:///modules/devtools/client",
+    
     "promise": "resource://gre/modules/Promise-backend.js",
-    "source-map": "resource://gre/modules/devtools/source-map",
+    
+    "source-map": "resource://gre/modules/devtools/sourcemap/source-map.js",
+    
     "xpcshell-test": "resource://test"
+    
   }
 });

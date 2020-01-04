@@ -5,7 +5,7 @@
 "use strict";
 
 const { CanvasFrameAnonymousContentHelper } = require("./utils/markup");
-const { getAdjustedQuads } = require("devtools/toolkit/layout/utils");
+const { getAdjustedQuads } = require("devtools/shared/layout/utils");
 
 
 

@@ -6,8 +6,8 @@
 
 
 
-const {findOptimalTimeInterval} = require("devtools/animationinspector/utils");
-const {TimeScale} = require("devtools/animationinspector/components");
+const {findOptimalTimeInterval} = require("devtools/client/animationinspector/utils");
+const {TimeScale} = require("devtools/client/animationinspector/components");
 
 const TIME_GRADUATION_MIN_SPACING = 40;
 

@@ -389,7 +389,7 @@ var FileResource = Class({
 
 
   get contentCategory() {
-    const NetworkHelper = require("devtools/toolkit/webconsole/network-helper");
+    const NetworkHelper = require("devtools/shared/webconsole/network-helper");
     let category = NetworkHelper.mimeCategoryMap[this.contentType];
     
     if (!category && this.basename === "manifest.webapp") {

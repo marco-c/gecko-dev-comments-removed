@@ -11,13 +11,13 @@
 const { Cu, Ci } = require("chrome");
 
 loader.lazyRequireGetter(this, "L10N",
-  "devtools/performance/global", true);
+  "devtools/client/performance/modules/global", true);
 loader.lazyRequireGetter(this, "PREFS",
-  "devtools/performance/global", true);
+  "devtools/client/performance/modules/global", true);
 loader.lazyRequireGetter(this, "TIMELINE_BLUEPRINT",
-  "devtools/performance/markers", true);
+  "devtools/client/performance/modules/markers", true);
 loader.lazyRequireGetter(this, "WebConsoleUtils",
-  "devtools/toolkit/webconsole/utils");
+  "devtools/shared/webconsole/utils");
 
 
 const GECKO_SYMBOL = "(Gecko)";

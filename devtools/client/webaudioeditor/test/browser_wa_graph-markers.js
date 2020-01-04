@@ -5,7 +5,7 @@
 
 
 
-const { setTheme } = require("devtools/shared/theme");
+const { setTheme } = require("devtools/client/shared/theme");
 
 add_task(function*() {
   let { target, panel } = yield initWebAudioEditor(SIMPLE_CONTEXT_URL);

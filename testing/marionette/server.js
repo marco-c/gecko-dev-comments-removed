@@ -18,7 +18,7 @@ Cu.import("chrome://marionette/content/elements.js");
 Cu.import("chrome://marionette/content/simpletest.js");
 
 
-loader.loadSubScript("resource://gre/modules/devtools/transport/transport.js");
+loader.loadSubScript("resource://gre/modules/devtools/shared/transport/transport.js");
 
 
 var events = {};

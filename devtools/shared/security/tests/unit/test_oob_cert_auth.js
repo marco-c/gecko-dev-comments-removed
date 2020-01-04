@@ -3,7 +3,7 @@
 
 "use strict";
 
-var cert = require("devtools/toolkit/security/cert");
+var cert = require("devtools/shared/security/cert");
 
 
 

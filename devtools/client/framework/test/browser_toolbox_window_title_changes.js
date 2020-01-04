@@ -1,7 +1,7 @@
 
 
 
-var {Toolbox} = require("devtools/framework/toolbox");
+var {Toolbox} = require("devtools/client/framework/toolbox");
 
 function test() {
   const URL_1 = "data:text/plain;charset=UTF-8,abcde";

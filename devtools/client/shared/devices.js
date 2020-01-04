@@ -5,7 +5,7 @@
 "use strict";
 
 const { Ci, Cc } = require("chrome");
-const { getJSON } = require("devtools/shared/getjson");
+const { getJSON } = require("devtools/client/shared/getjson");
 const { Services } = require("resource://gre/modules/Services.jsm");
 const promise = require("promise");
 

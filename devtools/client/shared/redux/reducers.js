@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { combineReducers } = require("devtools/shared/vendor/redux");
+const { combineReducers } = require("devtools/client/shared/vendor/redux");
 
 
 

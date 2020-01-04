@@ -8,7 +8,7 @@
 
 
 var PREF_UA_STYLES = "devtools.inspector.showUserAgentStyles";
-const { PrefObserver } = require("devtools/styleeditor/utils");
+const { PrefObserver } = require("devtools/client/styleeditor/utils");
 
 const TEST_URI = `
   <style type='text/css'>

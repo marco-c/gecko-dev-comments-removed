@@ -36,7 +36,7 @@ function test() {
 function getHighlighterNumber() {
   
   
-  return require("devtools/toolkit/gcli/commands/highlight").highlighters.length;
+  return require("devtools/shared/gcli/commands/highlight").highlighters.length;
 }
 
 function* runCommand(cmd, options) {

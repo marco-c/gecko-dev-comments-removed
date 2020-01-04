@@ -5,9 +5,9 @@
 
 
 const { Class } = require("sdk/core/heritage");
-const { registerPlugin, Plugin } = require("projecteditor/plugins/core");
-const { confirm } = require("projecteditor/helpers/prompts");
-const { getLocalizedString } = require("projecteditor/helpers/l10n");
+const { registerPlugin, Plugin } = require("devtools/client/projecteditor/lib/plugins/core");
+const { confirm } = require("devtools/client/projecteditor/lib/helpers/prompts");
+const { getLocalizedString } = require("devtools/client/projecteditor/lib/helpers/l10n");
 
 var DeletePlugin = Class({
   extends: Plugin,

@@ -6,7 +6,7 @@
 
 
 
-const {PropertyView} = require("devtools/styleinspector/computed-view");
+const {PropertyView} = require("devtools/client/styleinspector/computed-view");
 const TEST_URI = TEST_URL_ROOT + "doc_matched_selectors.html";
 
 add_task(function*() {

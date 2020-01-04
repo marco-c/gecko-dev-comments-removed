@@ -11,7 +11,7 @@ const l10n = require("gcli/l10n");
 
 Object.defineProperty(this, "TiltManager", {
   get: function() {
-    return require("devtools/tilt/tilt").TiltManager;
+    return require("devtools/client/tilt/tilt").TiltManager;
   },
   enumerable: true
 });

@@ -5,7 +5,7 @@
 
 
 
-const { getTheme, setTheme } = require("devtools/shared/theme");
+const { getTheme, setTheme } = require("devtools/client/shared/theme");
 
 const TEST_URI = BASE_URI + "browser_fontinspector.html";
 const originalTheme = getTheme();

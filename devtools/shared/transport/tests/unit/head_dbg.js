@@ -9,12 +9,12 @@ const Cr = Components.results;
 const CC = Components.Constructor;
 
 const { require } =
-  Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+  Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
 const promise = require("promise");
 const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
 
 const Services = require("Services");
-const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
@@ -26,7 +26,7 @@ const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
 const { DebuggerServer } = require("devtools/server/main");
-const { DebuggerClient } = require("devtools/toolkit/client/main");
+const { DebuggerClient } = require("devtools/shared/client/main");
 
 function testExceptionHook(ex) {
   try {

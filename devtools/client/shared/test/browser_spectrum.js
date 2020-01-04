@@ -5,7 +5,7 @@
 
 
 const TEST_URI = "chrome://devtools/content/shared/widgets/spectrum-frame.xhtml";
-const {Spectrum} = require("devtools/shared/widgets/Spectrum");
+const {Spectrum} = require("devtools/client/shared/widgets/Spectrum");
 
 add_task(function*() {
   yield promiseTab("about:blank");

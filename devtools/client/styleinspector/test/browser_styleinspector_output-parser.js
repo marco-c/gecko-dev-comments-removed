@@ -9,7 +9,7 @@
 
 
 
-var {OutputParser} = require("devtools/output-parser");
+var {OutputParser} = require("devtools/shared/output-parser");
 
 const COLOR_CLASS = "color-class";
 const URL_CLASS = "url-class";

@@ -2,8 +2,8 @@
 
 
 
-const ObservableObject = require("devtools/shared/observable-object");
-const {Connection} = require("devtools/client/connection-manager");
+const ObservableObject = require("devtools/client/shared/observable-object");
+const {Connection} = require("devtools/shared/client/connection-manager");
 
 const _knownConnectionStores = new WeakMap();
 

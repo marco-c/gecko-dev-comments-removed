@@ -5,7 +5,7 @@
 
 
 var { Class } = require("sdk/core/heritage");
-var { registerPlugin, Plugin } = require("projecteditor/plugins/core");
+var { registerPlugin, Plugin } = require("devtools/client/projecteditor/lib/plugins/core");
 
 var LoggingPlugin = Class({
   extends: Plugin,

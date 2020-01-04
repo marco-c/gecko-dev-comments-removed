@@ -3,8 +3,8 @@
 
 
 const {Cu} = require("chrome");
-const ObservableObject = require("devtools/shared/observable-object");
-const {Devices} = Cu.import("resource://gre/modules/devtools/Devices.jsm");
+const ObservableObject = require("devtools/client/shared/observable-object");
+const {Devices} = Cu.import("resource://gre/modules/devtools/shared/apps/Devices.jsm");
 
 var store = new ObservableObject({versions:[]});
 

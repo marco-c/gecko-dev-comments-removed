@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { L10N } = require("devtools/performance/global");
-const { Formatters } = require("devtools/performance/marker-utils");
+const { L10N } = require("devtools/client/performance/modules/global");
+const { Formatters } = require("devtools/client/performance/modules/logic/marker-utils");
 
 
 

@@ -66,7 +66,7 @@ ContentProcessSingleton.prototype = {
     
     
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-      let {init} = Cu.import("resource://gre/modules/devtools/content-server.jsm", {});
+      let {init} = Cu.import("resource://gre/modules/devtools/server/content-server.jsm", {});
       init(message);
     }
   },

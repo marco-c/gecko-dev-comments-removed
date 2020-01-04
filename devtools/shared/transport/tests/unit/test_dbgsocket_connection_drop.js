@@ -8,7 +8,7 @@
 
 
 
-const { RawPacket } = require("devtools/toolkit/transport/packets");
+const { RawPacket } = require("devtools/shared/transport/packets");
 
 function run_test() {
   do_print("Starting test at " + new Date().toTimeString());

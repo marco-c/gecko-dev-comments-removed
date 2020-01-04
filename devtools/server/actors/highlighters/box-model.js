@@ -11,7 +11,7 @@ const {
   getBindingElementAndPseudo, hasPseudoClassLock, getComputedStyle,
   createSVGNode, createNode, isNodeValid } = require("./utils/markup");
 const { getCurrentZoom,
-  setIgnoreLayoutChanges } = require("devtools/toolkit/layout/utils");
+  setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
 
 
 

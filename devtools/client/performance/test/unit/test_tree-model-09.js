@@ -5,14 +5,14 @@
 
 
 
-var { CATEGORY_MASK } = require("devtools/performance/global");
+var { CATEGORY_MASK } = require("devtools/client/performance/modules/global");
 
 function run_test() {
   run_next_test();
 }
 
 add_task(function test() {
-  let { ThreadNode } = require("devtools/performance/tree-model");
+  let { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
   let url = (n) => `http://content/${n}`;
 
   

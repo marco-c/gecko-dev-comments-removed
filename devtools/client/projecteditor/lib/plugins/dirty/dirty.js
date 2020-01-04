@@ -5,7 +5,7 @@
 
 
 const { Class } = require("sdk/core/heritage");
-const { registerPlugin, Plugin } = require("projecteditor/plugins/core");
+const { registerPlugin, Plugin } = require("devtools/client/projecteditor/lib/plugins/core");
 const { emit } = require("sdk/event/core");
 
 var DirtyPlugin = Class({

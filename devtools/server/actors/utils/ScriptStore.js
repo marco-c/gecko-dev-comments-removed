@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { noop } = require("devtools/toolkit/DevToolsUtils");
+const { noop } = require("devtools/shared/DevToolsUtils");
 
 
 

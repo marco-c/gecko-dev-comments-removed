@@ -7,7 +7,7 @@
 "use strict";
 
 const {Cc, Ci, Cu} = require("chrome");
-const {colorUtils} = require("devtools/css-color");
+const {colorUtils} = require("devtools/shared/css-color");
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";

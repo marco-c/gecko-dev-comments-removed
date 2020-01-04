@@ -3,7 +3,7 @@
 
 
 function test() {
-  let {Toolbox} = require("devtools/framework/toolbox");
+  let {Toolbox} = require("devtools/client/framework/toolbox");
 
   let toolbox, iframe, target, tab;
 

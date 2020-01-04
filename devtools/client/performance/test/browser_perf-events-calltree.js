@@ -4,7 +4,7 @@
 
 
 
-const { ThreadNode } = require("devtools/performance/tree-model");
+const { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
 
 function* spawnTest() {
   let focus = 0;

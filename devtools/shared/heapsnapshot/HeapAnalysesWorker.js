@@ -10,7 +10,7 @@
 
 "use strict";
 
-importScripts("resource://gre/modules/devtools/shared/worker-helper.js");
+importScripts("resource://gre/modules/devtools/shared/shared/worker-helper.js");
 
 
 

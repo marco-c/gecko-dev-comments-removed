@@ -10,7 +10,7 @@ const {
   CanvasFrameAnonymousContentHelper, getComputedStyle,
   createSVGNode, createNode } = require("./utils/markup");
 const { setIgnoreLayoutChanges,
-  getNodeBounds } = require("devtools/toolkit/layout/utils");
+  getNodeBounds } = require("devtools/shared/layout/utils");
 
 
 const ARROW_LINE_MIN_DISTANCE = 10;

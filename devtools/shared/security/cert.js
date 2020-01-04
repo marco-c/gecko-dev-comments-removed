@@ -8,7 +8,7 @@
 
 var { Ci, Cc } = require("chrome");
 var promise = require("promise");
-var DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
+var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 DevToolsUtils.defineLazyGetter(this, "localCertService", () => {
   
   Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);

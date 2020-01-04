@@ -6,7 +6,7 @@
 
 
 const TEST_URI = "chrome://devtools/content/shared/widgets/filter-frame.xhtml";
-const {CSSFilterEditorWidget} = require("devtools/shared/widgets/FilterWidget");
+const {CSSFilterEditorWidget} = require("devtools/client/shared/widgets/FilterWidget");
 const LIST_ITEM_HEIGHT = 32;
 
 add_task(function*() {

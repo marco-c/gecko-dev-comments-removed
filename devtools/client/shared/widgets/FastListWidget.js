@@ -5,9 +5,9 @@
 
 "use strict";
 
-const EventEmitter = require("devtools/toolkit/event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 const { Cu, Ci } = require("chrome");
-const { ViewHelpers } = Cu.import("resource:///modules/devtools/ViewHelpers.jsm", {});
+const { ViewHelpers } = Cu.import("resource:///modules/devtools/client/shared/widgets/ViewHelpers.jsm", {});
 
 
 

@@ -4,7 +4,7 @@
 
 
 const TEST_DATA = [];
-var LineGraphWidget = require("devtools/shared/widgets/LineGraphWidget");
+var LineGraphWidget = require("devtools/client/shared/widgets/LineGraphWidget");
 
 add_task(function*() {
   yield promiseTab("about:blank");
