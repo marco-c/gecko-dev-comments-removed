@@ -836,19 +836,22 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther,
   
   bool compare = mRuleNode != aOther->mRuleNode;
 
+  DebugOnly<uint32_t> structsFound = 0;
+
   
   
   
   const nsStyleVariables* thisVariables = PeekStyleVariables();
   if (thisVariables) {
+    structsFound |= NS_STYLE_INHERIT_BIT(Variables);
     const nsStyleVariables* otherVariables = aOther->StyleVariables();
     if (thisVariables->mVariables == otherVariables->mVariables) {
-      *aEqualStructs |= nsCachedStyleData::GetBitForSID(eStyleStruct_Variables);
+      *aEqualStructs |= NS_STYLE_INHERIT_BIT(Variables);
     } else {
       compare = true;
     }
   } else {
-    *aEqualStructs |= nsCachedStyleData::GetBitForSID(eStyleStruct_Variables);
+    *aEqualStructs |= NS_STYLE_INHERIT_BIT(Variables);
   }
 
   DebugOnly<int> styleStructCount = 1;  
@@ -857,6 +860,7 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther,
   PR_BEGIN_MACRO                                                              \
     const nsStyle##struct_* this##struct_ = PeekStyle##struct_();             \
     if (this##struct_) {                                                      \
+      structsFound |= NS_STYLE_INHERIT_BIT(struct_);                          \
       const nsStyle##struct_* other##struct_ = aOther->Style##struct_();      \
       nsChangeHint maxDifference = nsStyle##struct_::MaxDifference();         \
       nsChangeHint differenceAlwaysHandledForDescendants =                    \
@@ -935,6 +939,16 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther,
 
   MOZ_ASSERT(styleStructCount == nsStyleStructID_Length,
              "missing a call to DO_STRUCT_DIFFERENCE");
+
+#ifdef DEBUG
+  #define STYLE_STRUCT(name_, callback_)                                      \
+    MOZ_ASSERT(!!(structsFound & NS_STYLE_INHERIT_BIT(name_)) ==              \
+               !!PeekStyle##name_(),                                          \
+               "PeekStyleData results must not change in the middle of "      \
+               "difference calculation.");
+  #include "nsStyleStructList.h"
+  #undef STYLE_STRUCT
+#endif
 
   
   
