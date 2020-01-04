@@ -16,6 +16,7 @@
 #include "gfxTypes.h"
 #include "gfxFontFamilyList.h"
 #include "gfxBlur.h"
+#include "gfxSkipChars.h"
 #include "nsRect.h"
 
 #include "qcms.h"
@@ -661,6 +662,8 @@ public:
     static bool IsGfxInfoStatusOkay(int32_t aFeature, nsCString* aOutMessage,
                                     nsCString& aFailureId);
 
+    const gfxSkipChars& EmptySkipChars() const { return kEmptySkipChars; }
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
@@ -812,6 +815,10 @@ private:
 
     
     uint64_t mDeviceCounter;
+
+    
+    
+    const gfxSkipChars kEmptySkipChars;
 };
 
 #endif 
