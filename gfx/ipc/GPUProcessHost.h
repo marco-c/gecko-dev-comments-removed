@@ -11,7 +11,10 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/TaskFactory.h"
+
+class nsITimer;
 
 namespace mozilla {
 namespace gfx {
@@ -27,10 +30,18 @@ class GPUChild;
 
 class GPUProcessHost final : public ipc::GeckoChildProcessHost
 {
+  friend class GPUChild;
+
 public:
   class Listener {
   public:
     virtual void OnProcessLaunchComplete(GPUProcessHost* aHost)
+    {}
+
+    
+    
+    
+    virtual void OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
     {}
   };
 
@@ -71,6 +82,8 @@ public:
   void OnChannelConnected(int32_t peer_pid) override;
   void OnChannelError() override;
 
+  void SetListener(Listener* aListener);
+
 private:
   
   void OnChannelConnectedTask();
@@ -78,6 +91,12 @@ private:
 
   
   void InitAfterConnect(bool aSucceeded);
+
+  
+  void OnChannelClosed();
+
+  
+  void KillHard(const char* aReason);
 
   void DestroyProcess();
 
@@ -95,6 +114,9 @@ private:
   LaunchPhase mLaunchPhase;
 
   UniquePtr<GPUChild> mGPUChild;
+  Listener* listener_;
+
+  bool mShutdownRequested;
 };
 
 } 
