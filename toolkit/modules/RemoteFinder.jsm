@@ -150,10 +150,9 @@ RemoteFinder.prototype = {
                                                     drawOutline: aDrawOutline });
   },
 
-  highlight: function (aHighlight, aWord, aLinksOnly) {
+  highlight: function (aHighlight, aWord) {
     this._browser.messageManager.sendAsyncMessage("Finder:Highlight",
                                                   { highlight: aHighlight,
-                                                    linksOnly: aLinksOnly,
                                                     word: aWord });
   },
 
@@ -188,6 +187,12 @@ RemoteFinder.prototype = {
   onModalHighlightChange: function(aUseModalHighlight) {
     this._browser.messageManager.sendAsyncMessage("Finder:ModalHighlightChange", {
       useModalHighlight: aUseModalHighlight
+    });
+  },
+
+  onHighlightAllChange: function(aHighlightAll) {
+    this._browser.messageManager.sendAsyncMessage("Finder:HighlightAllChange", {
+      highlightAll: aHighlightAll
     });
   },
 
@@ -229,6 +234,7 @@ RemoteFinderListener.prototype = {
     "Finder:SetSearchStringToSelection",
     "Finder:GetInitialSelection",
     "Finder:Highlight",
+    "Finder:HighlightAllChange",
     "Finder:EnableSelection",
     "Finder:RemoveSelection",
     "Finder:FocusContent",
@@ -293,7 +299,11 @@ RemoteFinderListener.prototype = {
         break;
 
       case "Finder:Highlight":
-        this._finder.highlight(data.highlight, data.word, data.linksOnly);
+        this._finder.highlight(data.highlight, data.word);
+        break;
+
+      case "Finder:HighlightAllChange":
+        this._finder.onHighlightAllChange(data.highlightAll);
         break;
 
       case "Finder:EnableSelection":

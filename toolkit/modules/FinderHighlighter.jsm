@@ -13,11 +13,8 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Color", "resource://gre/modules/Color.jsm");
-XPCOMUtils.defineLazyGetter(this, "kDebug", () => {
-  const kDebugPref = "findbar.modalHighlight.debug";
-  return Services.prefs.getPrefType(kDebugPref) && Services.prefs.getBoolPref(kDebugPref);
-});
 
+const kHighlightIterationSizeMax = 100;
 const kModalHighlightRepaintFreqMs = 10;
 const kModalHighlightPref = "findbar.modalHighlight";
 const kFontPropsCSS = ["color", "font-family", "font-kerning", "font-size",
@@ -54,10 +51,6 @@ const kModalStyle = `
   z-index: 2;
 }
 
-.findbar-modalHighlight-outline.findbar-debug {
-  z-index: 2147483647;
-}
-
 .findbar-modalHighlight-outline[grow] {
   transform: scaleX(1.5) scaleY(1.5)
 }
@@ -81,12 +74,6 @@ const kModalStyle = `
   z-index: 1;
 }
 
-.findbar-modalHighlight-outlineMask.findbar-debug {
-  z-index: 2147483646;
-  top: 0;
-  left: 0;
-}
-
 .findbar-modalHighlight-outlineMask[brighttext] {
   background: #fff;
 }
@@ -102,34 +89,6 @@ const kModalStyle = `
 }`;
 const kXULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
-function mockAnonymousContentNode(domNode) {
-  return {
-    setTextContentForElement(id, text) {
-      (domNode.querySelector("#" + id) || domNode).textContent = text;
-    },
-    getAttributeForElement(id, attrName) {
-      let node = domNode.querySelector("#" + id) || domNode;
-      if (!node.hasAttribute(attrName))
-        return undefined;
-      return node.getAttribute(attrName);
-    },
-    setAttributeForElement(id, attrName, attrValue) {
-      (domNode.querySelector("#" + id) || domNode).setAttribute(attrName, attrValue);
-    },
-    removeAttributeForElement(id, attrName) {
-      let node = domNode.querySelector("#" + id) || domNode;
-      if (!node.hasAttribute(attrName))
-        return;
-      node.removeAttribute(attrName);
-    },
-    remove() {
-      try {
-        domNode.parentNode.removeChild(domNode);
-      } catch (ex) {}
-    }
-  };
-}
-
 
 
 
@@ -142,13 +101,6 @@ function FinderHighlighter(finder) {
 }
 
 FinderHighlighter.prototype = {
-  get iterator() {
-    if (this._iterator)
-      return this._iterator;
-    this._iterator = Cu.import("resource://gre/modules/FinderIterator.jsm", null).FinderIterator;
-    return this._iterator;
-  },
-
   get modalStyleSheet() {
     if (!this._modalStyleSheet) {
       this._modalStyleSheet = kModalStyle.replace(/(\.|#)findbar-/g,
@@ -182,19 +134,56 @@ FinderHighlighter.prototype = {
 
 
 
+  maybeAbort() {
+    this.clear();
+    if (!this._abortHighlight) {
+      return;
+    }
+    this._abortHighlight();
+  },
+
+  
 
 
 
 
 
-  highlight: Task.async(function* (highlight, word, linksOnly) {
-    let window = this.finder._getWindow();
+
+
+
+  iterator: Task.async(function* (word, window, onFind) {
+    let count = 0;
+    for (let range of this.finder._findIterator(word, window)) {
+      onFind(range);
+      if (++count >= kHighlightIterationSizeMax) {
+        count = 0;
+        
+        yield new Promise(resolve => resolve());
+      }
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+
+  highlight: Task.async(function* (highlight, word, window) {
+    let finderWindow = this.finder._getWindow();
+    window = window || finderWindow;
+    let found = false;
+    for (let i = 0; window.frames && i < window.frames.length; i++) {
+      if (yield this.highlight(highlight, word, window.frames[i])) {
+        found = true;
+      }
+    }
+
     let controller = this.finder._getSelectionController(window);
     let doc = window.document;
-    let found = false;
-
-    this.clear();
-
     if (!controller || !doc || !doc.documentElement) {
       
       
@@ -202,19 +191,13 @@ FinderHighlighter.prototype = {
     }
 
     if (highlight) {
-      yield this.iterator.start({
-        linksOnly, word,
-        finder: this.finder,
-        onRange: range => {
-          this.highlightRange(range, controller, window);
-          found = true;
-        },
-        useCache: true
+      yield this.iterator(word, window, range => {
+        this.highlightRange(range, controller, finderWindow);
+        found = true;
       });
     } else {
       this.hide(window);
       this.clear();
-      this.iterator.reset();
 
       
       found = true;
@@ -409,8 +392,6 @@ FinderHighlighter.prototype = {
     if (!this._modalHighlightOutline)
       return;
 
-    if (kDebug)
-      this._modalHighlightOutline.remove();
     try {
       this.finder._getWindow().document
         .removeAnonymousContent(this._modalHighlightOutline);
@@ -432,6 +413,19 @@ FinderHighlighter.prototype = {
       this.clear();
     }
     this._modal = useModalHighlight;
+  },
+
+  
+
+
+
+
+
+  onHighlightAllChange(highlightAll) {
+    if (this._modal && !highlightAll) {
+      this.clear();
+      this._scheduleRepaintOfMask(this.finder._getWindow());
+    }
   },
 
   
@@ -577,6 +571,7 @@ FinderHighlighter.prototype = {
         x: dims.left + scrollX
       });
     }
+    range.collapse();
 
     if (!this._modalHighlightRectsMap)
       this._modalHighlightRectsMap = new Map();
@@ -622,7 +617,7 @@ FinderHighlighter.prototype = {
     
     let outlineBox = document.createElement("div");
     outlineBox.setAttribute("id", kModalOutlineId);
-    outlineBox.className = kModalOutlineId + (kDebug ? ` ${kModalIdPrefix}-findbar-debug` : "");
+    outlineBox.className = kModalOutlineId;
     let outlineBoxText = document.createElement("span");
     outlineBoxText.setAttribute("id", kModalOutlineId + "-text");
     outlineBox.appendChild(outlineBoxText);
@@ -631,9 +626,7 @@ FinderHighlighter.prototype = {
 
     this._repaintHighlightAllMask(window);
 
-    this._modalHighlightOutline = kDebug ?
-      mockAnonymousContentNode(document.body.appendChild(container.firstChild)) :
-      document.insertAnonymousContent(container);
+    this._modalHighlightOutline = document.insertAnonymousContent(container);
     return this._modalHighlightOutline;
   },
 
@@ -653,7 +646,7 @@ FinderHighlighter.prototype = {
     
     let {width, height} = this._getWindowDimensions(window);
     maskNode.setAttribute("id", kMaskId);
-    maskNode.setAttribute("class", kMaskId + (kDebug ? ` ${kModalIdPrefix}-findbar-debug` : ""));
+    maskNode.setAttribute("class", kMaskId);
     maskNode.setAttribute("style", `width: ${width}px; height: ${height}px;`);
     if (this._brightText)
       maskNode.setAttribute("brighttext", "true");
@@ -675,9 +668,7 @@ FinderHighlighter.prototype = {
     
     this._removeHighlightAllMask(window);
 
-    this._modalHighlightAllMask = kDebug ?
-      mockAnonymousContentNode(document.body.appendChild(maskNode)) :
-      document.insertAnonymousContent(maskNode);
+    this._modalHighlightAllMask = document.insertAnonymousContent(maskNode);
   },
 
   
@@ -689,8 +680,6 @@ FinderHighlighter.prototype = {
     if (this._modalHighlightAllMask) {
       
       
-      if (kDebug)
-        this._modalHighlightAllMask.remove();
       try {
         window.document.removeAnonymousContent(this._modalHighlightAllMask);
       } catch(ex) {}
