@@ -1946,6 +1946,24 @@ intrinsic_ModuleNamespaceExports(JSContext* cx, unsigned argc, Value* vp)
 
 
 
+static bool
+intrinsic_onPromiseSettled(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 1);
+    RootedObject promise(cx, &args[0].toObject());
+    JS::dbg::onPromiseSettled(cx, promise);
+    args.rval().setUndefined();
+    return true;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -2265,6 +2283,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("NewModuleNamespace", intrinsic_NewModuleNamespace, 2, 0),
     JS_FN("AddModuleNamespaceBinding", intrinsic_AddModuleNamespaceBinding, 4, 0),
     JS_FN("ModuleNamespaceExports", intrinsic_ModuleNamespaceExports, 1, 0),
+
+    JS_FN("_dbg_onPromiseSettled", intrinsic_onPromiseSettled, 1, 0),
 
     JS_FS_END
 };
