@@ -225,6 +225,7 @@ ToolSidebar.prototype = {
     this._tabbox.tabs.appendChild(tab);
     tab.setAttribute("label", ""); 
     tab.setAttribute("id", this.TAB_ID_PREFIX + id);
+    tab.setAttribute("crop", "end");
 
     
     let allTabsItem = this._addItemToAllTabsMenu(id, tab, selected);
