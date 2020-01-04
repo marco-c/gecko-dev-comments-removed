@@ -70,6 +70,7 @@ static const int DT_ANDROID_RELA = DT_LOOS + 4;
 
 static const char kMappedFileUnsafePrefix[] = "/dev/";
 static const char kDeletedSuffix[] = " (deleted)";
+static const char kReservedFlags[] = " ---p";
 
 inline static bool IsMappedFileOpenUnsafe(
     const google_breakpad::MappingInfo& mapping) {
@@ -84,186 +85,17 @@ inline static bool IsMappedFileOpenUnsafe(
 
 namespace google_breakpad {
 
-#if defined(__CHROMEOS__)
-
-namespace {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const unsigned int kHpageShift = 21;
-const size_t kHpageSize = (1 << kHpageShift);
-const size_t kHpageMask = (~(kHpageSize - 1));
-
-
-
-
-
-
-
-
-
-
-
-
-void TryRecoverMappings(MappingInfo *curr, MappingInfo *next) {
-  
-  if (curr->size == 0 || next->size == 0)
-    return;
-
-  if (curr->size >= kHpageSize &&
-      curr->exec &&
-      (curr->size & kHpageMask) == curr->size &&
-      (curr->start_addr & kHpageMask) == curr->start_addr &&
-      curr->name[0] == '\0' &&
-      next->name[0] != '\0' &&
-      curr->start_addr + curr->size == next->start_addr &&
-      curr->size == next->offset) {
-
-    
-    my_strlcpy(curr->name, next->name, NAME_MAX);
-    if (next->exec) {
-      
-      curr->size += next->size;
-      next->size = 0;
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-void TryRecoverMappings(MappingInfo *prev, MappingInfo *curr,
-    MappingInfo *next) {
-  
-  if (prev->size == 0 || curr->size == 0 || next->size == 0)
-    return;
-
-  if (curr->size >= kHpageSize &&
-      curr->exec &&
-      (curr->size & kHpageMask) == curr->size &&
-      (curr->start_addr & kHpageMask) == curr->start_addr &&
-      curr->name[0] == '\0' &&
-      next->name[0] != '\0' &&
-      curr->start_addr + curr->size == next->start_addr &&
-      prev->start_addr + prev->size == curr->start_addr &&
-      my_strncmp(prev->name, next->name, NAME_MAX) == 0 &&
-      next->offset == prev->offset + prev->size + curr->size) {
-
-    
-    my_strlcpy(curr->name, prev->name, NAME_MAX);
-    if (prev->exec) {
-      curr->offset = prev->offset;
-      curr->start_addr = prev->start_addr;
-      if (next->exec) {
-        
-        curr->size += prev->size + next->size;
-        prev->size = 0;
-        next->size = 0;
-      } else {
-        
-        curr->size += prev->size;
-        prev->size = 0;
-      }
-    } else {
-      curr->offset = prev->offset + prev->size;
-      if (next->exec) {
-        
-        curr->size += next->size;
-        next->size = 0;
-      } else {
-        
-      }
-    }
-  }
-}
-
-
-
-
-
-void CrOSPostProcessMappings(wasteful_vector<MappingInfo*>& mappings) {
-  
-  
-  size_t l = 1;
-  size_t r = mappings.size();
-  size_t next = mappings.size();
-  while (l < r) {
-    int m = (l + r) / 2;
-    if (mappings[m]->start_addr > mappings[0]->start_addr)
-      r = next = m;
-    else
-      l = m + 1;
-  }
-
-  
-  if (next < mappings.size()) {
-    TryRecoverMappings(mappings[0], mappings[next]);
-    if (next - 1 > 0)
-      TryRecoverMappings(mappings[next - 1], mappings[0], mappings[next]);
-  }
-
-  
-  
-  for (size_t i = 1; i < mappings.size() - 1; i++)
-    TryRecoverMappings(mappings[i], mappings[i + 1]);
-
-  
-  for (size_t i = 1; i < mappings.size() - 2; i++)
-    TryRecoverMappings(mappings[i], mappings[i + 1], mappings[i + 2]);
-
-  
-  size_t f, e;
-  for (f = e = 0; e < mappings.size(); e++)
-    if (mappings[e]->size > 0)
-      mappings[f++] = mappings[e];
-  mappings.resize(f);
-}
-
-}  
-#endif  
-
 
 #define AT_MAX AT_SYSINFO_EHDR
 
-LinuxDumper::LinuxDumper(pid_t pid, const char* root_prefix)
+LinuxDumper::LinuxDumper(pid_t pid)
     : pid_(pid),
-      root_prefix_(root_prefix),
       crash_address_(0),
       crash_signal_(0),
       crash_thread_(pid),
       threads_(&allocator_, 8),
       mappings_(&allocator_),
       auxv_(&allocator_, AT_MAX + 1) {
-  assert(root_prefix_ && my_strlen(root_prefix_) < PATH_MAX);
   
   
   auxv_.resize(AT_MAX + 1);
@@ -280,11 +112,6 @@ bool LinuxDumper::LateInit() {
 #if defined(__ANDROID__)
   LatePostprocessMappings();
 #endif
-
-#if defined(__CHROMEOS__)
-  CrOSPostProcessMappings(mappings_);
-#endif
-
   return true;
 }
 
@@ -292,8 +119,9 @@ bool
 LinuxDumper::ElfFileIdentifierForMapping(const MappingInfo& mapping,
                                          bool member,
                                          unsigned int mapping_id,
-                                         wasteful_vector<uint8_t>& identifier) {
+                                         uint8_t identifier[sizeof(MDGUID)]) {
   assert(!member || mapping_id < mappings_.size());
+  my_memset(identifier, 0, sizeof(MDGUID));
   if (IsMappedFileOpenUnsafe(mapping))
     return false;
 
@@ -311,9 +139,14 @@ LinuxDumper::ElfFileIdentifierForMapping(const MappingInfo& mapping,
     return FileID::ElfFileIdentifierFromMappedFile(linux_gate, identifier);
   }
 
-  char filename[PATH_MAX];
-  if (!GetMappingAbsolutePath(mapping, filename))
+  char filename[NAME_MAX];
+  size_t filename_len = my_strlen(mapping.name);
+  if (filename_len >= NAME_MAX) {
+    assert(false);
     return false;
+  }
+  my_memcpy(filename, mapping.name, filename_len);
+  filename[filename_len] = '\0';
   bool filename_modified = HandleDeletedFileInMapping(filename);
 
   MemoryMappedFile mapped_file(filename, mapping.offset);
@@ -323,17 +156,11 @@ LinuxDumper::ElfFileIdentifierForMapping(const MappingInfo& mapping,
   bool success =
       FileID::ElfFileIdentifierFromMappedFile(mapped_file.data(), identifier);
   if (success && member && filename_modified) {
-    mappings_[mapping_id]->name[my_strlen(mapping.name) -
+    mappings_[mapping_id]->name[filename_len -
                                 sizeof(kDeletedSuffix) + 1] = '\0';
   }
 
   return success;
-}
-
-bool LinuxDumper::GetMappingAbsolutePath(const MappingInfo& mapping,
-                                         char path[PATH_MAX]) const {
-  return my_strlcpy(path, root_prefix_, PATH_MAX) < PATH_MAX &&
-         my_strlcat(path, mapping.name, PATH_MAX) < PATH_MAX;
 }
 
 namespace {
@@ -385,16 +212,23 @@ bool ElfFileSoNameFromMappedFile(
 
 
 
-bool ElfFileSoName(const LinuxDumper& dumper,
+bool ElfFileSoName(
     const MappingInfo& mapping, char* soname, size_t soname_size) {
   if (IsMappedFileOpenUnsafe(mapping)) {
     
     return false;
   }
 
-  char filename[PATH_MAX];
-  if (!dumper.GetMappingAbsolutePath(mapping, filename))
+  char filename[NAME_MAX];
+  size_t filename_len = my_strlen(mapping.name);
+  if (filename_len >= NAME_MAX) {
+    assert(false);
+    
     return false;
+  }
+
+  my_memcpy(filename, mapping.name, filename_len);
+  filename[filename_len] = '\0';
 
   MemoryMappedFile mapped_file(filename, mapping.offset);
   if (!mapped_file.data() || mapped_file.size() < SELFMAG) {
@@ -406,6 +240,7 @@ bool ElfFileSoName(const LinuxDumper& dumper,
 }
 
 }  
+
 
 
 void LinuxDumper::GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
@@ -420,10 +255,8 @@ void LinuxDumper::GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
   
   
   bool mapped_from_archive = false;
-  if (mapping.exec && mapping.offset != 0) {
-    mapped_from_archive =
-        ElfFileSoName(*this, mapping, file_name, file_name_size);
-  }
+  if (mapping.exec && mapping.offset != 0)
+    mapped_from_archive = ElfFileSoName(mapping, file_name, file_name_size);
 
   if (mapped_from_archive) {
     
@@ -521,8 +354,24 @@ bool LinuxDumper::EnumerateMappings() {
             MappingInfo* module = mappings_.back();
             if ((start_addr == module->start_addr + module->size) &&
                 (my_strlen(name) == my_strlen(module->name)) &&
-                (my_strncmp(name, module->name, my_strlen(name)) == 0) &&
-                (exec == module->exec)) {
+                (my_strncmp(name, module->name, my_strlen(name)) == 0)) {
+              module->size = end_addr - module->start_addr;
+              line_reader->PopLine(line_len);
+              continue;
+            }
+          }
+          
+          
+          
+          
+          if (!name && !mappings_.empty()) {
+            MappingInfo* module = mappings_.back();
+            if ((start_addr == module->start_addr + module->size) &&
+                module->exec &&
+                module->name[0] == '/' &&
+                offset == 0 && my_strncmp(i2,
+                                          kReservedFlags,
+                                          sizeof(kReservedFlags) - 1) == 0) {
               module->size = end_addr - module->start_addr;
               line_reader->PopLine(line_len);
               continue;
@@ -731,13 +580,10 @@ bool LinuxDumper::HandleDeletedFileInMapping(char* path) const {
 
   
   char exe_link[NAME_MAX];
+  char new_path[NAME_MAX];
   if (!BuildProcPath(exe_link, pid_, "exe"))
     return false;
-  MappingInfo new_mapping = {0};
-  if (!SafeReadLink(exe_link, new_mapping.name))
-    return false;
-  char new_path[PATH_MAX];
-  if (!GetMappingAbsolutePath(new_mapping, new_path))
+  if (!SafeReadLink(exe_link, new_path))
     return false;
   if (my_strcmp(path, new_path) != 0)
     return false;

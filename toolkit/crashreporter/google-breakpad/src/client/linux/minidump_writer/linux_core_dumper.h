@@ -47,9 +47,7 @@ class LinuxCoreDumper : public LinuxDumper {
   
   
   
-  
-  LinuxCoreDumper(pid_t pid, const char* core_path, const char* procfs_path,
-                  const char* root_prefix = "");
+  LinuxCoreDumper(pid_t pid, const char* core_path, const char* procfs_path);
 
   
   
