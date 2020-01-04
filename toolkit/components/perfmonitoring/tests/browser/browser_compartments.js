@@ -311,5 +311,5 @@ add_task(function* test() {
   isShuttingDown = true;
 
   
-  gBrowser.removeTab(newTab);
+  gBrowser.removeTab(newTab, {skipPermitUnload: true});
 });
