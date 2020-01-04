@@ -53,8 +53,8 @@ extensions.registerSchemaAPI("history", "history", (extension, context) => {
       },
       deleteRange: function(filter) {
         let newFilter = {
-          beginDate: normalizeTime(filter.startTime),
-          endDate: normalizeTime(filter.endTime),
+          beginDate: new Date(filter.startTime),
+          endDate: new Date(filter.endTime),
         };
         
         return History.removeVisitsByFilter(newFilter).then(() => undefined);
