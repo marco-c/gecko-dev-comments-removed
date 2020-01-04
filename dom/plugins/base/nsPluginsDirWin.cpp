@@ -109,6 +109,20 @@ static char* GetVersion(void* verbuf)
   return nullptr;
 }
 
+
+
+static bool GetBooleanFlag(void* verbuf, const WCHAR* key,
+                           UINT language, UINT codepage)
+{
+  char* flagStr = GetKeyValue(verbuf, key, language, codepage);
+  if (!flagStr) {
+    return false;
+  }
+  bool result = (PL_strncmp("1", flagStr, 1) == 0);
+  PL_strfree(flagStr);
+  return result;
+}
+
 static uint32_t CalculateVariantCount(char* mimeTypes)
 {
   uint32_t variants = 1;
@@ -360,7 +374,8 @@ nsresult nsPluginFile::GetPluginInfo(nsPluginInfo& info, PRLibrary **outLibrary)
     UINT cp = 1252;   
     info.fName = GetKeyValue(verbuf, L"ProductName", lang, cp);
     info.fDescription = GetKeyValue(verbuf, L"FileDescription", lang, cp);
- 
+    info.fSupportsAsyncRender = GetBooleanFlag(verbuf, L"AsyncDrawingSupport", lang, cp);
+
     char *mimeType = GetKeyValue(verbuf, L"MIMEType", lang, cp);
     char *mimeDescription = GetKeyValue(verbuf, L"FileOpenName", lang, cp);
     char *extensions = GetKeyValue(verbuf, L"FileExtents", lang, cp);

@@ -2714,11 +2714,16 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
     if (mIsFlashPlugin) {
         parentInstance->InitMetadata(strPluginType, srcAttribute);
 #ifdef XP_WIN
-        
+        bool supportsAsyncRender = false;
+        CallModuleSupportsAsyncRender(&supportsAsyncRender);
 #ifdef _WIN64
-        {
+        
+        
+        if (!supportsAsyncRender) {
 #else
-        if (mSandboxLevel >= 2) {
+
+
+        if (!supportsAsyncRender && mSandboxLevel >= 2) {
 #endif
            NS_NAMED_LITERAL_CSTRING(wmodeAttributeName, "wmode");
            NS_NAMED_LITERAL_CSTRING(opaqueAttributeValue, "opaque");
