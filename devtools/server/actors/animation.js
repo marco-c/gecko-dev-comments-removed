@@ -196,6 +196,15 @@ var AnimationPlayerActor = ActorClass({
 
 
 
+
+  getIterationStart: function() {
+    return this.player.effect.getComputedTiming().iterationStart;
+  },
+
+  
+
+
+
   getState: function() {
     
     
@@ -221,6 +230,7 @@ var AnimationPlayerActor = ActorClass({
       duration: this.getDuration(),
       delay: this.getDelay(),
       iterationCount: this.getIterationCount(),
+      iterationStart: this.getIterationStart(),
       
       
       isRunningOnCompositor: this.player.isRunningOnCompositor,
@@ -292,6 +302,7 @@ var AnimationPlayerActor = ActorClass({
         let oldState = this.currentState;
         hasChanged = newState.delay !== oldState.delay ||
                      newState.iterationCount !== oldState.iterationCount ||
+                     newState.iterationStart !== oldState.iterationStart ||
                      newState.duration !== oldState.duration;
         break;
       }
@@ -432,6 +443,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
       duration: this._form.duration,
       delay: this._form.delay,
       iterationCount: this._form.iterationCount,
+      iterationStart: this._form.iterationStart,
       isRunningOnCompositor: this._form.isRunningOnCompositor,
       documentCurrentTime: this._form.documentCurrentTime
     };

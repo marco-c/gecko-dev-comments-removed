@@ -130,6 +130,15 @@ AnimationTimeBlock.prototype = {
     }
 
     
+    if (state.iterationStart !== 0) {
+      let iterationStartTime = state.iterationStart * state.duration / 1000;
+      text += L10N.getFormatStr("player.animationIterationStartLabel",
+                                state.iterationStart,
+                                L10N.numberWithDecimals(iterationStartTime, 2));
+      text += "\n";
+    }
+
+    
     if (state.playbackRate !== 1) {
       text += L10N.getStr("player.animationRateLabel") + " ";
       text += state.playbackRate;

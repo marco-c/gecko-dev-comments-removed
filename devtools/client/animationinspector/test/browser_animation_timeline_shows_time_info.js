@@ -30,5 +30,7 @@ add_task(function*() {
     } else {
       ok(!title.match(/Repeats: /), "The tooltip doesn't show the iterations");
     }
+    ok(!title.match(/Iteration start:/),
+      "The tooltip doesn't show the iteration start");
   });
 });
