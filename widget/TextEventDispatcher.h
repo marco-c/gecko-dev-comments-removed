@@ -57,7 +57,7 @@ public:
 
   nsresult BeginInputTransaction(TextEventDispatcherListener* aListener);
   nsresult BeginTestInputTransaction(TextEventDispatcherListener* aListener);
-  nsresult BeginNativeInputTransaction(TextEventDispatcherListener* aListener);
+  nsresult BeginNativeInputTransaction();
 
   
 
@@ -71,6 +71,8 @@ public:
 
 
   void OnDestroyWidget();
+
+  nsIWidget* GetWidget() const { return mWidget; }
 
   
 

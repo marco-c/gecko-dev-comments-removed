@@ -6,6 +6,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/TextEventDispatcher.h"
+#include "mozilla/TextEventDispatcherListener.h"
 
 #include "mozilla/layers/CompositorChild.h"
 #include "mozilla/layers/CompositorParent.h"
@@ -1750,37 +1751,49 @@ nsBaseWidget::NotifyIME(const IMENotification& aIMENotification)
       }
       
       return NotifyIMEInternal(aIMENotification);
-    case NOTIFY_IME_OF_FOCUS:
-      mIMEHasFocus = true;
-      
-      
-      if (mTextEventDispatcher) {
-        mTextEventDispatcher->NotifyIME(aIMENotification);
+    default: {
+      if (aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS) {
+        mIMEHasFocus = true;
       }
-      return NotifyIMEInternal(aIMENotification);
-    case NOTIFY_IME_OF_BLUR: {
+      EnsureTextEventDispatcher();
       
       
-      if (mTextEventDispatcher) {
-        mTextEventDispatcher->NotifyIME(aIMENotification);
+      
+      
+      
+      nsresult rv = mTextEventDispatcher->NotifyIME(aIMENotification);
+      nsresult rv2 = NotifyIMEInternal(aIMENotification);
+      if (aIMENotification.mMessage == NOTIFY_IME_OF_BLUR) {
+        mIMEHasFocus = false;
       }
-      nsresult rv = NotifyIMEInternal(aIMENotification);
-      mIMEHasFocus = false;
-      return rv;
+      return rv2 == NS_ERROR_NOT_IMPLEMENTED ? rv : rv2;
     }
-    default:
-      
-      return NotifyIMEInternal(aIMENotification);
   }
+}
+
+void
+nsBaseWidget::EnsureTextEventDispatcher()
+{
+  if (mTextEventDispatcher) {
+    return;
+  }
+  mTextEventDispatcher = new TextEventDispatcher(this);
 }
 
 NS_IMETHODIMP_(nsIWidget::TextEventDispatcher*)
 nsBaseWidget::GetTextEventDispatcher()
 {
-  if (!mTextEventDispatcher) {
-    mTextEventDispatcher = new TextEventDispatcher(this);
-  }
+  EnsureTextEventDispatcher();
   return mTextEventDispatcher;
+}
+
+NS_IMETHODIMP_(TextEventDispatcherListener*)
+nsBaseWidget::GetNativeTextEventDispatcherListener()
+{
+  
+  
+  
+  return nullptr;
 }
 
 void

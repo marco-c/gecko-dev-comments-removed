@@ -631,8 +631,11 @@ TextInputProcessor::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                               const IMENotification& aNotification)
 {
   
+  
+  
+  
   if (!mDispatcher) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_NOT_IMPLEMENTED;
   }
   MOZ_ASSERT(aTextEventDispatcher == mDispatcher,
              "Wrong TextEventDispatcher notifies this");

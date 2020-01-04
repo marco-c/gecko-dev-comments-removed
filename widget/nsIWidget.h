@@ -64,6 +64,7 @@ class SourceSurface;
 } 
 namespace widget {
 class TextEventDispatcher;
+class TextEventDispatcherListener;
 } 
 } 
 
@@ -342,6 +343,8 @@ class nsIWidget : public nsISupports {
     typedef mozilla::widget::NativeIMEContext NativeIMEContext;
     typedef mozilla::widget::SizeConstraints SizeConstraints;
     typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
+    typedef mozilla::widget::TextEventDispatcherListener
+      TextEventDispatcherListener;
     typedef mozilla::CompositorVsyncDispatcher CompositorVsyncDispatcher;
     typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
     typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
@@ -2041,6 +2044,14 @@ public:
 
 
     NS_IMETHOD_(TextEventDispatcher*) GetTextEventDispatcher() = 0;
+
+    
+
+
+
+
+    NS_IMETHOD_(TextEventDispatcherListener*)
+      GetNativeTextEventDispatcherListener() = 0;
 
     virtual void ZoomToRect(const uint32_t& aPresShellId,
                             const FrameMetrics::ViewID& aViewId,
