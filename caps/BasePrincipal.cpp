@@ -364,13 +364,25 @@ BasePrincipal::GetCsp(nsIContentSecurityPolicy** aCsp)
 }
 
 NS_IMETHODIMP
-BasePrincipal::SetCsp(nsIContentSecurityPolicy* aCsp)
+BasePrincipal::EnsureCSP(nsIDOMDocument* aDocument,
+                         nsIContentSecurityPolicy** aCSP)
 {
   if (mCSP) {
-    return NS_ERROR_ALREADY_INITIALIZED;
+    
+    
+    NS_IF_ADDREF(*aCSP = mCSP);
+    return NS_OK;
   }
 
-  mCSP = aCsp;
+  nsresult rv = NS_OK;
+  mCSP = do_CreateInstance("@mozilla.org/cspcontext;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = aDocument ? mCSP->SetRequestContext(aDocument, nullptr)
+                 : mCSP->SetRequestContext(nullptr, this);
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_IF_ADDREF(*aCSP = mCSP);
   return NS_OK;
 }
 
@@ -382,12 +394,25 @@ BasePrincipal::GetPreloadCsp(nsIContentSecurityPolicy** aPreloadCSP)
 }
 
 NS_IMETHODIMP
-BasePrincipal::SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP)
+BasePrincipal::EnsurePreloadCSP(nsIDOMDocument* aDocument,
+                                nsIContentSecurityPolicy** aPreloadCSP)
 {
   if (mPreloadCSP) {
-    return NS_ERROR_ALREADY_INITIALIZED;
+    
+    
+    NS_IF_ADDREF(*aPreloadCSP = mPreloadCSP);
+    return NS_OK;
   }
-  mPreloadCSP = aPreloadCSP;
+
+  nsresult rv = NS_OK;
+  mPreloadCSP = do_CreateInstance("@mozilla.org/cspcontext;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  rv = aDocument ? mPreloadCSP->SetRequestContext(aDocument, nullptr)
+                 : mPreloadCSP->SetRequestContext(nullptr, this);
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_IF_ADDREF(*aPreloadCSP = mPreloadCSP);
   return NS_OK;
 }
 

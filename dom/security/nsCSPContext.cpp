@@ -410,7 +410,9 @@ nsCSPContext::reportInlineViolation(nsContentPolicyType aContentType,
 
   
   nsAutoCString sourceFile;
-  mSelfURI->GetSpec(sourceFile);
+  if (mSelfURI) {
+    mSelfURI->GetSpec(sourceFile);
+  }
 
   nsAutoString codeSample(aContent);
   
