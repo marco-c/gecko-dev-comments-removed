@@ -397,6 +397,7 @@ pref("media.navigator.permission.disabled", false);
 pref("media.peerconnection.default_iceservers", "[]");
 pref("media.peerconnection.ice.loopback", false); 
 pref("media.peerconnection.ice.tcp", false);
+pref("media.peerconnection.ice.tcp_so_sock_count", 0); 
 pref("media.peerconnection.ice.link_local", false); 
 pref("media.peerconnection.ice.force_interface", ""); 
 pref("media.peerconnection.ice.relay_only", false); 
