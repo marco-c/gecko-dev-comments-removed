@@ -2492,18 +2492,11 @@ struct UnmarkGrayTracer : public JS::CallbackTracer
 
 
 
-    explicit UnmarkGrayTracer(JSRuntime* rt)
-      : JS::CallbackTracer(rt, DoNotTraceWeakMaps),
-        tracingShape(false),
-        previousShape(nullptr),
-        unmarkedAny(false)
-    {}
-
-    UnmarkGrayTracer(JSTracer* trc, bool tracingShape)
-      : JS::CallbackTracer(trc->runtime(), DoNotTraceWeakMaps),
-        tracingShape(tracingShape),
-        previousShape(nullptr),
-        unmarkedAny(false)
+    explicit UnmarkGrayTracer(JSRuntime *rt, bool tracingShape = false)
+      : JS::CallbackTracer(rt, DoNotTraceWeakMaps)
+      , tracingShape(tracingShape)
+      , previousShape(nullptr)
+      , unmarkedAny(false)
     {}
 
     void onChild(const JS::GCCellPtr& thing) override;
@@ -2589,7 +2582,7 @@ UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing)
     
     
     
-    UnmarkGrayTracer childTracer(this, thing.kind() == JS::TraceKind::Shape);
+    UnmarkGrayTracer childTracer(runtime(), thing.kind() == JS::TraceKind::Shape);
 
     if (thing.kind() != JS::TraceKind::Shape) {
         TraceChildren(&childTracer, &tenured, thing.kind());
@@ -2634,6 +2627,8 @@ TypedUnmarkGrayCellRecursively(T* t)
     }
 
     UnmarkGrayTracer trc(rt);
+    gcstats::AutoPhase outerPhase(rt->gc.stats, gcstats::PHASE_BARRIER);
+    gcstats::AutoPhase innerPhase(rt->gc.stats, gcstats::PHASE_UNMARK_GRAY);
     t->traceChildren(&trc);
 
     return unmarkedArg || trc.unmarkedAny;
