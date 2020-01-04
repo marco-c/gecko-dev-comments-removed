@@ -258,13 +258,25 @@ def parse_commit(message, jobs):
     parser.add_argument('-p', '--platform', nargs='?', dest='platforms', const='all', default='all')
     parser.add_argument('-u', '--unittests', nargs='?', dest='tests', const='all', default='all')
     parser.add_argument('-i', '--interactive', dest='interactive', action='store_true', default=False)
+    parser.add_argument('-j', '--job', dest='jobs', action='append')
     
     parser.add_argument('--trigger-tests', dest='trigger_tests', type=int, default=1)
     args, unknown = parser.parse_known_args(parts[try_idx:])
 
     
+    if args.jobs == ['all']:
+        args.jobs = None
+
+    
+    if args.jobs:
+        expanded = []
+        for job in args.jobs:
+            expanded.extend(j.strip() for j in job.split(','))
+        args.jobs = expanded
+
+    
     if args.build_types is None:
-        return []
+        args.build_types = []
 
     build_types = [ BUILD_TYPE_ALIASES.get(build_type, build_type) for
             build_type in args.build_types ]
@@ -318,6 +330,27 @@ def parse_commit(message, jobs):
                 'build_type': build_type,
                 'interactive': args.interactive,
             })
+
+    
+    for name, task in sorted(jobs.get('tasks', {}).items()):
+        
+        if args.jobs is not None and name not in args.jobs:
+            continue
+
+        
+        if not task.get('root', False):
+            continue
+
+        result.append({
+            'task': task['task'],
+            'post-build': [],
+            'dependents': [],
+            'additional-parameters': task.get('additional-parameters', {}),
+            'build_name': name,
+            
+            'build_type': name,
+            'interactive': args.interactive,
+        })
 
     
     trigger_tests = args.trigger_tests

@@ -162,24 +162,12 @@ builds:
     types:
       opt:
         task: tasks/builds/opt_macosx64_st-an.yml
-  android-api-15-frontend:
-    platforms:
-      - Android
-    types:
-      opt:
-        task: tasks/builds/android_api_15_frontend.yml
   android-b2gdroid:
     platforms:
       - Android
     types:
       opt:
         task: tasks/builds/android_api_15_b2gdroid.yml
-  eslint-gecko:
-    platforms:
-      - lint
-    types:
-      opt:
-        task: tasks/tests/eslint-gecko.yml
 
 tests:
   cppunit:
@@ -316,3 +304,9 @@ tests:
         task: tasks/tests/b2g_emulator_xpcshell_chunked.yml
       tasks/builds/dbg_linux64.yml:
         task: tasks/tests/fx_linux64_xpcshell.yml
+
+# Miscellaneous tasks.
+tasks:
+  eslint-gecko:
+    task: tasks/tests/eslint-gecko.yml
+    root: true
