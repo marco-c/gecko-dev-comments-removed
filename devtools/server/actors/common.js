@@ -213,7 +213,6 @@ exports.appendExtraActors = function appendExtraActors(aObject) {
 function ActorPool(aConnection)
 {
   this.conn = aConnection;
-  this._cleanups = {};
   this._actors = {};
 }
 
@@ -221,6 +220,13 @@ ActorPool.prototype = {
   
 
 
+  destroy: function AP_destroy() {
+    for (let id in this._actors) {
+      this.removeActor(this._actors[id]);
+    }
+  },
+
+  
 
 
 
@@ -238,14 +244,23 @@ ActorPool.prototype = {
       aActor.actorID = this.conn.allocID(prefix || undefined);
     }
 
+    
     if (aActor.registeredPool) {
-      aActor.registeredPool.removeActor(aActor);
+      delete aActor.registeredPool._actors[aActor.actorID];
     }
     aActor.registeredPool = this;
 
     this._actors[aActor.actorID] = aActor;
+  },
+
+  
+
+
+
+  removeActor: function AP_remove(aActor) {
+    delete this._actors[aActor.actorID];
     if (aActor.disconnect) {
-      this._cleanups[aActor.actorID] = aActor;
+      aActor.disconnect();
     }
   },
 
@@ -267,26 +282,8 @@ ActorPool.prototype = {
   
 
 
-  removeActor: function AP_remove(aActor) {
-    delete this._actors[aActor.actorID];
-    delete this._cleanups[aActor.actorID];
-  },
-
-  
-
-
   unmanage: function(aActor) {
     return this.removeActor(aActor);
-  },
-
-  
-
-
-  cleanup: function AP_cleanup() {
-    for (let id in this._cleanups) {
-      this._cleanups[id].disconnect();
-    }
-    this._cleanups = {};
   },
 
   forEach: function(callback) {
