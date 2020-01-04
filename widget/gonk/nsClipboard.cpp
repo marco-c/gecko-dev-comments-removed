@@ -120,13 +120,12 @@ nsClipboard::SetData(nsITransferable *aTransferable,
                  (flavorStr.EqualsLiteral(kNativeImageMime) ||
                   flavorStr.EqualsLiteral(kPNGImageMime) ||
                   flavorStr.EqualsLiteral(kJPEGImageMime) ||
-                  flavorStr.EqualsLiteral(kJPGImageMime) ||
-                  flavorStr.EqualsLiteral(kGIFImageMime))) {
+                  flavorStr.EqualsLiteral(kJPGImageMime))) {
         
 
         
         static const char* const imageMimeTypes[] = {
-          kNativeImageMime, kPNGImageMime, kJPEGImageMime, kJPGImageMime, kGIFImageMime };
+          kNativeImageMime, kPNGImageMime, kJPEGImageMime, kJPGImageMime };
 
         nsCOMPtr<nsISupportsInterfacePointer> imgPtr;
         for (uint32_t i = 0; !imgPtr && i < ArrayLength(imageMimeTypes); ++i) {
@@ -262,8 +261,7 @@ nsClipboard::GetData(nsITransferable *aTransferable,
       
       if ((flavorStr.EqualsLiteral(kPNGImageMime) ||
            flavorStr.EqualsLiteral(kJPEGImageMime) ||
-           flavorStr.EqualsLiteral(kJPGImageMime) ||
-           flavorStr.EqualsLiteral(kGIFImageMime)) &&
+           flavorStr.EqualsLiteral(kJPGImageMime)) &&
           mClipboard->HasImage() ) {
         
         RefPtr<gfx::DataSourceSurface> image = mClipboard->GetImage();
@@ -328,8 +326,7 @@ nsClipboard::HasDataMatchingFlavors(const char **aFlavorList,
         *aHasType = true;
       } else if (!strcmp(flavor, kJPEGImageMime) ||
                  !strcmp(flavor, kJPGImageMime) ||
-                 !strcmp(flavor, kPNGImageMime) ||
-                 !strcmp(flavor, kGIFImageMime)) {
+                 !strcmp(flavor, kPNGImageMime)) {
         
         
         if (mClipboard->HasImage()) {
