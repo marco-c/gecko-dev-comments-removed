@@ -159,6 +159,12 @@ public:
              mBits >> NS_STYLE_CONTEXT_TYPE_SHIFT);
   }
 
+  bool IsAnonBox() const {
+    return GetPseudoType() == mozilla::CSSPseudoElementType::AnonBox;
+  }
+  bool IsPseudoElement() const { return mPseudoTag && !IsAnonBox(); }
+
+
   
   
   
