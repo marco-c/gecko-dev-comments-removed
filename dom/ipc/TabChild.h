@@ -646,9 +646,6 @@ public:
       mAPZChild = aAPZChild;
   }
 
-  
-  void ForcePaint(uint64_t aLayerObserverEpoch);
-
 protected:
   virtual ~TabChild();
 
@@ -661,8 +658,7 @@ protected:
   virtual bool RecvSetUpdateHitRegion(const bool& aEnabled) override;
 
   virtual bool RecvSetDocShellIsActive(const bool& aIsActive,
-                                       const bool& aIsHidden,
-                                       const uint64_t& aLayerObserverEpoch) override;
+                                       const bool& aIsHidden) override;
 
   virtual bool RecvNavigateByKey(const bool& aForward,
                                  const bool& aForDocumentNavigation) override;
@@ -781,9 +777,6 @@ private:
   
   
   layers::APZChild* mAPZChild;
-
-  
-  uint64_t mLayerObserverEpoch;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
