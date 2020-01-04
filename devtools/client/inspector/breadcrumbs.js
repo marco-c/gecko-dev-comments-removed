@@ -886,6 +886,11 @@ HTMLBreadcrumbs.prototype = {
       this.scroll();
       this.inspector.emit("breadcrumbs-updated", this.selection.nodeFront);
       doneUpdating();
+    }, e => {
+      
+      if (!this.isDestroyed) {
+        console.error(e);
+      }
     });
   }
 };
