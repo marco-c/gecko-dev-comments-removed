@@ -110,7 +110,15 @@ struct DependentWasmModuleImport
 struct BaselineScript
 {
   public:
+    
+#if defined(JS_CODEGEN_ARM)
+    
+    
+    
+    static const uint32_t MAX_JSSCRIPT_LENGTH = 1000000u;
+#else
     static const uint32_t MAX_JSSCRIPT_LENGTH = 0x0fffffffu;
+#endif
 
     
     
