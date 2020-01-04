@@ -1156,13 +1156,13 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     if (mState == DECODER_STATE_SEEKING) {
       if (mQueuedSeek.Exists()) {
         
-      } else if (mSeekTask && mSeekTask->Exists()) {
+      } else if (mCurrentSeek.Exists()) {
         
         
         
         
-        if (mSeekTask->GetSeekTarget().IsVideoOnly()) {
-          mSeekTask->GetSeekTarget().SetType(SeekTarget::Accurate);
+        if (mCurrentSeek.mTarget.IsVideoOnly()) {
+          mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
         }
         mQueuedSeek = Move(mCurrentSeek);
         mSeekTaskRequest.DisconnectIfExists();

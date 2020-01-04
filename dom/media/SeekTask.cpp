@@ -84,15 +84,4 @@ SeekTask::GetSeekTarget()
   return mTarget;
 }
 
-bool
-SeekTask::Exists() const
-{
-  AssertOwnerThread();
-
-  
-  
-  
-  return !mSeekTaskPromise.IsEmpty() || mSeekJob.Exists();
-}
-
 } 
