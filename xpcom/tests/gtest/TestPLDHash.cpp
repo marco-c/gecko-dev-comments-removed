@@ -329,7 +329,11 @@ TEST(PLDHashTableTest, Iterator)
 
 
 
-#ifndef MOZ_WIDGET_ANDROID
+
+
+
+
+#ifdef HAVE_64BIT_BUILD
 TEST(PLDHashTableTest, GrowToMaxCapacity)
 {
   
