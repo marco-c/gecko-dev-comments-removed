@@ -8,9 +8,11 @@
 
 #UITourHighlightContainer {
   -moz-appearance: none;
+  -moz-window-shadow: none;
   border: none;
   background-color: transparent;
   
+
   padding: 4px;
 }
 
