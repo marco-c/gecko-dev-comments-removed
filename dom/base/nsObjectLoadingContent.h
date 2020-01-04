@@ -287,15 +287,14 @@ class nsObjectLoadingContent : public nsImageLoadingContent
       eSupportDocuments    = 1u << 2, 
                                         
                                         
-      eSupportSVG          = 1u << 3, 
-      eSupportClassID      = 1u << 4, 
+      eSupportClassID      = 1u << 3, 
 
       
       
       
       
       
-      eAllowPluginSkipChannel  = 1u << 5
+      eAllowPluginSkipChannel  = 1u << 4
     };
 
     
