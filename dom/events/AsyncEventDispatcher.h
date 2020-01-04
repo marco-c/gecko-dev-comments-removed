@@ -25,7 +25,7 @@ namespace mozilla {
 
 
 
-class AsyncEventDispatcher : public CancelableRunnable
+class AsyncEventDispatcher : public nsCancelableRunnable
 {
 public:
   
@@ -60,7 +60,7 @@ public:
   AsyncEventDispatcher(dom::EventTarget* aTarget, WidgetEvent& aEvent);
 
   NS_IMETHOD Run() override;
-  nsresult Cancel() override;
+  NS_IMETHOD Cancel() override;
   nsresult PostDOMEvent();
   void RunDOMEventWhenSafe();
 

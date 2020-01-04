@@ -29,8 +29,7 @@ class WorkerPrivate;
 
 
 
-class WorkerRunnable : public nsIRunnable,
-                       public nsICancelableRunnable
+class WorkerRunnable : public nsICancelableRunnable
 {
 public:
   enum TargetAndBusyBehavior {
@@ -72,8 +71,7 @@ public:
   
   
   
-  nsresult
-  Cancel() override;
+  NS_DECL_NSICANCELABLERUNNABLE
 
   
   
@@ -279,8 +277,7 @@ public:
 
   
   
-  nsresult
-  Cancel() override;
+  NS_DECL_NSICANCELABLERUNNABLE
 
 protected:
   virtual ~StopSyncLoopRunnable()
@@ -357,7 +354,7 @@ protected:
   virtual ~WorkerControlRunnable()
   { }
 
-  nsresult
+  NS_IMETHOD
   Cancel() override;
 
 public:

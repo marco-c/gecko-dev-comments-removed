@@ -233,18 +233,17 @@ protected:
 };
 
 
-class CancelableRunnable : public nsRunnable,
-                             public nsICancelableRunnable
+class nsCancelableRunnable : public nsICancelableRunnable
 {
 public:
-  NS_DECL_ISUPPORTS_INHERITED
-  
-  virtual nsresult Cancel() override;
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIRUNNABLE
+  NS_DECL_NSICANCELABLERUNNABLE
 
-  CancelableRunnable() {}
+  nsCancelableRunnable() {}
 
 protected:
-  virtual ~CancelableRunnable() {}
+  virtual ~nsCancelableRunnable() {}
 };
 
 

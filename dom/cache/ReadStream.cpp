@@ -117,7 +117,7 @@ private:
 
 
 
-class ReadStream::Inner::NoteClosedRunnable final : public CancelableRunnable
+class ReadStream::Inner::NoteClosedRunnable final : public nsCancelableRunnable
 {
 public:
   explicit NoteClosedRunnable(ReadStream::Inner* aStream)
@@ -133,7 +133,7 @@ public:
 
   
   
-  nsresult Cancel()
+  NS_IMETHOD Cancel()
   {
     Run();
     return NS_OK;
@@ -152,7 +152,7 @@ private:
 
 
 
-class ReadStream::Inner::ForgetRunnable final : public CancelableRunnable
+class ReadStream::Inner::ForgetRunnable final : public nsCancelableRunnable
 {
 public:
   explicit ForgetRunnable(ReadStream::Inner* aStream)
@@ -168,7 +168,7 @@ public:
 
   
   
-  nsresult Cancel()
+  NS_IMETHOD Cancel()
   {
     Run();
     return NS_OK;
