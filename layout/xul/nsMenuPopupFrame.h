@@ -355,6 +355,10 @@ public:
 
   nsIScrollableFrame* GetScrollFrame(nsIFrame* aStart);
 
+  void SetOverrideConstraintRect(mozilla::LayoutDeviceIntRect aRect) {
+    mOverrideConstraintRect = ToAppUnits(aRect, PresContext()->AppUnitsPerCSSPixel());
+  }
+
   
   
   
@@ -587,6 +591,8 @@ protected:
 
   
   MenuPopupAnchorType mAnchorType;
+
+  nsRect mOverrideConstraintRect;
 
   static int8_t sDefaultLevelIsTop;
 

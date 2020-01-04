@@ -133,12 +133,15 @@ class SourceSurface;
 
 #define CAPTURE_POINTERLOCK 8
 
+#define CAPTURE_PREVENTPOPUPRETARGET 16
+
 typedef struct CapturingContentInfo {
   
   bool mAllowed;
   bool mPointerLock;
   bool mRetargetToElement;
   bool mPreventDrag;
+  bool mPreventPopupRetarget;
   mozilla::StaticRefPtr<nsIContent> mContent;
 } CapturingContentInfo;
 
@@ -1328,6 +1331,10 @@ public:
 
 
 
+
+
+
+
   static void SetCapturingContent(nsIContent* aContent, uint8_t aFlags);
 
   
@@ -1344,6 +1351,15 @@ public:
   static void AllowMouseCapture(bool aAllowed)
   {
     gCaptureInfo.mAllowed = aAllowed;
+  }
+
+  
+
+
+  static void UpdateCapturingInfo(uint8_t aFlags, bool aNewValue) {
+    if (aFlags & CAPTURE_PREVENTPOPUPRETARGET) {
+      gCaptureInfo.mPreventPopupRetarget = aNewValue;
+    }
   }
 
   
