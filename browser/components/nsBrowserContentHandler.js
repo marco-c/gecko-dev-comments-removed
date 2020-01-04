@@ -715,12 +715,12 @@ nsDefaultCommandLineHandler.prototype = {
     
     
     
-    if (cmdLine.findFlag("url", false) &&
-        ShellService.isDefaultBrowser(false, false)) {
-      try {
+    try {
+      if (cmdLine.findFlag("url", false) &&
+          ShellService.isDefaultBrowser(false, false)) {
         Services.telemetry.getHistogramById("FX_STARTUP_EXTERNAL_CONTENT_HANDLER").add();
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
 
     var urilist = [];
 
