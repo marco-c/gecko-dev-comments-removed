@@ -1387,7 +1387,7 @@ js::IteratorMore(JSContext* cx, HandleObject iterobj, MutableHandleValue rval)
     
     if (!GetProperty(cx, iterobj, iterobj, cx->names().next, rval))
         return false;
-    
+
     if (!Invoke(cx, ObjectValue(*iterobj), rval, 0, nullptr, rval)) {
         
         if (!cx->isExceptionPending())
@@ -1403,39 +1403,7 @@ js::IteratorMore(JSContext* cx, HandleObject iterobj, MutableHandleValue rval)
         return true;
     }
 
-    if (!rval.isObject()) {
-        
-        return true;
-    }
-
-    
-    
-    RootedObject result(cx, &rval.toObject());
-    bool found = false;
-    if (!HasProperty(cx, result, cx->names().done, &found))
-        return false;
-    if (!found)
-        return true;
-    if (!HasProperty(cx, result, cx->names().value, &found))
-        return false;
-    if (!found)
-        return true;
-
-    
-
-    
-    
-    if (!GetProperty(cx, result, result, cx->names().done, rval))
-        return false;
-
-    bool done = ToBoolean(rval);
-    if (done) {
-         rval.setMagic(JS_NO_ITER_VALUE);
-         return true;
-     }
-
-    
-    return GetProperty(cx, result, result, cx->names().value, rval);
+    return true;
 }
 
 static bool
