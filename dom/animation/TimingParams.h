@@ -12,6 +12,7 @@
 #include "mozilla/dom/UnionTypes.h" 
 #include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/StickyTimeDuration.h"
 #include "mozilla/TimeStamp.h" 
 
 
