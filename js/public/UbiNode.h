@@ -25,6 +25,7 @@
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
+#include "js/Value.h"
 #include "js/Vector.h"
 
 
@@ -186,6 +187,7 @@ class DefaultDelete<JS::ubi::StackFrame> : public JS::DeletePolicy<JS::ubi::Stac
 namespace JS {
 namespace ubi {
 
+using mozilla::Forward;
 using mozilla::Maybe;
 using mozilla::Move;
 using mozilla::RangedPtr;
@@ -199,7 +201,29 @@ using mozilla::Variant;
 
 
 
-using AtomOrTwoByteChars = Variant<JSAtom*, const char16_t*>;
+class AtomOrTwoByteChars : public Variant<JSAtom*, const char16_t*> {
+    using Base = Variant<JSAtom*, const char16_t*>;
+
+  public:
+    template<typename T>
+    MOZ_IMPLICIT AtomOrTwoByteChars(T&& rhs) : Base(Forward<T>(rhs)) { }
+
+    template<typename T>
+    AtomOrTwoByteChars& operator=(T&& rhs) {
+        MOZ_ASSERT(this != &rhs, "self-move disallowed");
+        this->~AtomOrTwoByteChars();
+        new (this) AtomOrTwoByteChars(Forward<T>(rhs));
+        return *this;
+    }
+
+    
+    size_t length();
+
+    
+    
+    
+    size_t copyToBuffer(RangedPtr<char16_t> destination, size_t length);
+};
 
 
 
@@ -786,32 +810,30 @@ class Node {
 
 
 
+using EdgeName = UniquePtr<const char16_t[], JS::FreePolicy>;
+
 
 class Edge {
   public:
     Edge() : name(nullptr), referent() { }
 
     
-    Edge(char16_t* name, const Node& referent) {
-        this->name = name;
-        this->referent = referent;
-    }
+    Edge(char16_t* name, const Node& referent)
+        : name(name)
+        , referent(referent)
+    { }
 
     
-    Edge(Edge&& rhs) {
-        name = rhs.name;
-        referent = rhs.referent;
-        rhs.name = nullptr;
-    }
+    Edge(Edge&& rhs)
+        : name(mozilla::Move(rhs.name))
+        , referent(rhs.referent)
+    { }
+
     Edge& operator=(Edge&& rhs) {
         MOZ_ASSERT(&rhs != this);
         this->~Edge();
         new (this) Edge(mozilla::Move(rhs));
         return *this;
-    }
-
-    ~Edge() {
-        js_free(const_cast<char16_t*>(name));
     }
 
     Edge(const Edge&) = delete;
@@ -826,7 +848,7 @@ class Edge {
     
     
     
-    const char16_t* name;
+    EdgeName name;
 
     
     Node referent;

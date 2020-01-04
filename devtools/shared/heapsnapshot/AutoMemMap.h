@@ -4,6 +4,9 @@
 
 
 
+#ifndef mozilla_devtools_AutoMemMap_h
+#define mozilla_devtools_AutoMemMap_h
+
 #include <prio.h>
 #include "mozilla/GuardObjects.h"
 
@@ -68,3 +71,5 @@ public:
 
 } 
 } 
+
+#endif 

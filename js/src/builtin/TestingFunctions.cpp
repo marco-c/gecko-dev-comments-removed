@@ -2141,7 +2141,7 @@ struct FindPathHandler {
 
         
         
-        EdgeName edgeName = DuplicateString(cx, edge.name);
+        EdgeName edgeName = DuplicateString(cx, edge.name.get());
         if (!edgeName)
             return false;
         *backEdge = mozilla::Move(BackEdge(origin, Move(edgeName)));

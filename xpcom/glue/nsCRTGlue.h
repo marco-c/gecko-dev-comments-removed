@@ -66,7 +66,11 @@ char* NS_strdup(const char* aString);
 
 
 
-char16_t* NS_strndup(const char16_t* aString, uint32_t aLen);
+
+
+
+template<typename CharT>
+CharT* NS_strndup(const CharT* aString, uint32_t aLen);
 
 
 
