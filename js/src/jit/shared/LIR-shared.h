@@ -498,6 +498,22 @@ class LSimdBinaryArith : public LInstructionHelper<1, 2, 1>
 };
 
 
+class LSimdBinaryArithIx16 : public LSimdBinaryArith
+{
+  public:
+    LIR_HEADER(SimdBinaryArithIx16);
+    LSimdBinaryArithIx16() : LSimdBinaryArith() {}
+};
+
+
+class LSimdBinaryArithIx8 : public LSimdBinaryArith
+{
+  public:
+    LIR_HEADER(SimdBinaryArithIx8);
+    LSimdBinaryArithIx8() : LSimdBinaryArith() {}
+};
+
+
 class LSimdBinaryArithIx4 : public LSimdBinaryArith
 {
   public:
@@ -558,10 +574,10 @@ class LSimdUnaryArithFx4 : public LSimdUnaryArith
 };
 
 
-class LSimdBinaryBitwiseX4 : public LInstructionHelper<1, 2, 0>
+class LSimdBinaryBitwise : public LInstructionHelper<1, 2, 0>
 {
   public:
-    LIR_HEADER(SimdBinaryBitwiseX4);
+    LIR_HEADER(SimdBinaryBitwise);
     const LAllocation* lhs() {
         return getOperand(0);
     }
