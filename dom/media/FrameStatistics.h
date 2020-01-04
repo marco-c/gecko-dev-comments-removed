@@ -13,19 +13,19 @@ struct FrameStatisticsData
 {
   
   
-  uint32_t mParsedFrames = 0;
+  uint64_t mParsedFrames = 0;
 
   
   
-  uint32_t mDecodedFrames = 0;
+  uint64_t mDecodedFrames = 0;
 
   
   
-  uint32_t mPresentedFrames = 0;
+  uint64_t mPresentedFrames = 0;
 
   
   
-  uint32_t mDroppedFrames = 0;
+  uint64_t mDroppedFrames = 0;
 };
 
 
@@ -49,7 +49,7 @@ public:
 
   
   
-  uint32_t GetParsedFrames() const
+  uint64_t GetParsedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mParsedFrames;
@@ -57,7 +57,7 @@ public:
 
   
   
-  uint32_t GetDecodedFrames() const
+  uint64_t GetDecodedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mDecodedFrames;
@@ -66,7 +66,7 @@ public:
   
   
   
-  uint32_t GetPresentedFrames() const
+  uint64_t GetPresentedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mPresentedFrames;
@@ -74,7 +74,7 @@ public:
 
   
   
-  uint32_t GetDroppedFrames() const
+  uint64_t GetDroppedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mDroppedFrames;
@@ -82,8 +82,8 @@ public:
 
   
   
-  void NotifyDecodedFrames(uint32_t aParsed, uint32_t aDecoded,
-                           uint32_t aDropped)
+  void NotifyDecodedFrames(uint64_t aParsed, uint64_t aDecoded,
+                           uint64_t aDropped)
   {
     if (aParsed == 0 && aDecoded == 0 && aDropped == 0) {
       return;
