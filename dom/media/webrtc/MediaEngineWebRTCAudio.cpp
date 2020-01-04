@@ -357,6 +357,9 @@ MediaEngineWebRTCMicrophoneSource::Start(SourceMediaStream *aStream,
   aStream->RegisterForAudioMixing();
   LOG(("Start audio for stream %p", aStream));
 
+  if (!mListener) {
+    mListener = new mozilla::WebRTCAudioDataListener(this);
+  }
   if (mState == kStarted) {
     MOZ_ASSERT(aID == mTrackID);
     
@@ -418,6 +421,11 @@ MediaEngineWebRTCMicrophoneSource::Stop(SourceMediaStream *aSource, TrackID aID)
 
     mState = kStopped;
   }
+  if (mListener) {
+    
+    mListener->Shutdown();
+    mListener = nullptr;
+  }
 
   mAudioInput->StopRecording(aSource);
 
@@ -450,6 +458,7 @@ MediaEngineWebRTCMicrophoneSource::NotifyOutputData(MediaStreamGraph* aGraph,
                                                     uint32_t aChannels)
 {
 }
+
 
 
 void
@@ -553,6 +562,13 @@ MediaEngineWebRTCMicrophoneSource::Init()
 void
 MediaEngineWebRTCMicrophoneSource::Shutdown()
 {
+  if (mListener) {
+    
+    mListener->Shutdown();
+    
+    mListener = nullptr;
+  }
+
   if (!mInitDone) {
     
     if (mChannel != -1 && mVoENetwork) {
@@ -600,7 +616,6 @@ MediaEngineWebRTCMicrophoneSource::Shutdown()
   mVoEBase = nullptr;
 
   mAudioInput = nullptr;
-  mListener = nullptr; 
 
   mState = kReleased;
   mInitDone = false;
