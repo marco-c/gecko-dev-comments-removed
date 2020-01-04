@@ -87,6 +87,8 @@ var gSyncUI = {
       sidebarBroadcaster.removeAttribute("hidden");
     }
 
+    this.maybeMoveSyncedTabsButton();
+
     this.updateUI();
   },
 
@@ -330,6 +332,28 @@ var gSyncUI = {
       
       PanelUI.showSubView("PanelUI-remotetabs", anchor, area);
     }
+  },
+
+  
+
+
+
+
+
+
+  maybeMoveSyncedTabsButton() {
+    const prefName = "browser.migrated-sync-button";
+    let migrated = false;
+    try {
+      migrated = Services.prefs.getBoolPref(prefName);
+    } catch (_) {}
+    if (migrated) {
+      return;
+    }
+    if (!CustomizableUI.getPlacementOfWidget("sync-button")) {
+      CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
+    }
+    Services.prefs.setBoolPref(prefName, true);
   },
 
   
