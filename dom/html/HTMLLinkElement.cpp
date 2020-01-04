@@ -326,96 +326,77 @@ HTMLLinkElement::UpdatePreconnect()
 }
 
 nsresult
-HTMLLinkElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                         nsIAtom* aPrefix, const nsAString& aValue,
-                         bool aNotify)
+HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
+                              const nsAttrValue* aValue, bool aNotify)
 {
-  nsresult rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix,
-                                              aValue, aNotify);
-
   
   
   
   
   
   if (aName == nsGkAtoms::href && kNameSpaceID_None == aNameSpaceID) {
-    Link::ResetLinkState(!!aNotify, true);
+    bool hasHref = aValue;
+    Link::ResetLinkState(!!aNotify, hasHref);
     if (IsInUncomposedDoc()) {
       CreateAndDispatchEvent(OwnerDoc(), NS_LITERAL_STRING("DOMLinkChanged"));
     }
   }
 
-  if (NS_SUCCEEDED(rv) && aNameSpaceID == kNameSpaceID_None &&
-      (aName == nsGkAtoms::href ||
-       aName == nsGkAtoms::rel ||
-       aName == nsGkAtoms::title ||
-       aName == nsGkAtoms::media ||
-       aName == nsGkAtoms::type)) {
-    bool dropSheet = false;
-    if (aName == nsGkAtoms::rel) {
-      uint32_t linkTypes = nsStyleLinkElement::ParseLinkTypes(aValue,
-                                                              NodePrincipal());
-      if (GetSheet()) {
-        dropSheet = !(linkTypes & nsStyleLinkElement::eSTYLESHEET);
-      } else if (linkTypes & eHTMLIMPORT) {
+  if (aValue) {
+    if (aNameSpaceID == kNameSpaceID_None &&
+        (aName == nsGkAtoms::href ||
+         aName == nsGkAtoms::rel ||
+         aName == nsGkAtoms::title ||
+         aName == nsGkAtoms::media ||
+         aName == nsGkAtoms::type)) {
+      bool dropSheet = false;
+      if (aName == nsGkAtoms::rel) {
+        nsAutoString value;
+        aValue->ToString(value);
+        uint32_t linkTypes = nsStyleLinkElement::ParseLinkTypes(value,
+                                                                NodePrincipal());
+        if (GetSheet()) {
+          dropSheet = !(linkTypes & nsStyleLinkElement::eSTYLESHEET);
+        } else if (linkTypes & eHTMLIMPORT) {
+          UpdateImport();
+        } else if ((linkTypes & ePRECONNECT) && IsInComposedDoc()) {
+          UpdatePreconnect();
+        }
+      }
+
+      if (aName == nsGkAtoms::href) {
         UpdateImport();
-      } else if ((linkTypes & ePRECONNECT) && IsInComposedDoc()) {
-        UpdatePreconnect();
+        if (IsInComposedDoc()) {
+          UpdatePreconnect();
+        }
       }
-    }
 
-    if (aName == nsGkAtoms::href) {
-      UpdateImport();
-      if (IsInComposedDoc()) {
-        UpdatePreconnect();
-      }
+      UpdateStyleSheetInternal(nullptr, nullptr,
+                               dropSheet ||
+                               (aName == nsGkAtoms::title ||
+                                aName == nsGkAtoms::media ||
+                                aName == nsGkAtoms::type));
     }
+  } else {
     
-    UpdateStyleSheetInternal(nullptr, nullptr,
-                             dropSheet ||
-                             (aName == nsGkAtoms::title ||
-                              aName == nsGkAtoms::media ||
-                              aName == nsGkAtoms::type));
-  }
-
-  return rv;
-}
-
-nsresult
-HTMLLinkElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
-                           bool aNotify)
-{
-  nsresult rv = nsGenericHTMLElement::UnsetAttr(aNameSpaceID, aAttribute,
-                                                aNotify);
-  
-  
-  if (NS_SUCCEEDED(rv) && aNameSpaceID == kNameSpaceID_None) {
-    if (aAttribute == nsGkAtoms::href ||
-        aAttribute == nsGkAtoms::rel ||
-        aAttribute == nsGkAtoms::title ||
-        aAttribute == nsGkAtoms::media ||
-        aAttribute == nsGkAtoms::type) {
-      UpdateStyleSheetInternal(nullptr, nullptr, true);
-    }
-    if (aAttribute == nsGkAtoms::href ||
-        aAttribute == nsGkAtoms::rel) {
-      UpdateImport();
+    
+    if (aNameSpaceID == kNameSpaceID_None) {
+      if (aName == nsGkAtoms::href ||
+          aName == nsGkAtoms::rel ||
+          aName == nsGkAtoms::title ||
+          aName == nsGkAtoms::media ||
+          aName == nsGkAtoms::type) {
+        UpdateStyleSheetInternal(nullptr, nullptr, true);
+      }
+      if (aName == nsGkAtoms::href ||
+          aName == nsGkAtoms::rel) {
+        UpdateImport();
+      }
     }
   }
 
-  
-  
-  
-  
-  
-  if (aAttribute == nsGkAtoms::href && kNameSpaceID_None == aNameSpaceID) {
-    Link::ResetLinkState(!!aNotify, false);
-    if (IsInUncomposedDoc()) {
-      CreateAndDispatchEvent(OwnerDoc(), NS_LITERAL_STRING("DOMLinkChanged"));
-    }
-  }
-
-  return rv;
+  return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue,
+                                            aNotify);
 }
 
 nsresult
