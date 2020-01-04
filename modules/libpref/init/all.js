@@ -541,6 +541,7 @@ pref("apz.axis_lock.breakout_angle", "0.3926991");
 pref("apz.axis_lock.direct_pan_angle", "1.047197");   
 pref("apz.content_response_timeout", 300);
 pref("apz.cross_slide.enabled", false);
+pref("apz.drag.enabled", false);
 pref("apz.danger_zone_x", 50);
 pref("apz.danger_zone_y", 100);
 pref("apz.enlarge_displayport_when_clipped", false);
