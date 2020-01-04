@@ -1498,8 +1498,6 @@ nsDocument::nsDocument(const char* aContentType)
     
     sProcessingStack->AppendElement((CustomElementData*) nullptr);
   }
-
-  mEverInForeground = false;
 }
 
 void
@@ -4844,8 +4842,6 @@ nsDocument::SetScriptHandlingObject(nsIScriptGlobalObject* aScriptObject)
   NS_ASSERTION(!mScriptGlobalObject ||
                mScriptGlobalObject == aScriptObject,
                "Wrong script object!");
-  
-  nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(aScriptObject);
   if (aScriptObject) {
     mScopeObject = do_GetWeakReference(aScriptObject);
     mHasHadScriptHandlingObject = true;
@@ -7710,8 +7706,6 @@ nsDOMAttributeMap::BlastSubtreeToPieces(nsINode *aNode)
     Element *element = aNode->AsElement();
     const nsDOMAttributeMap *map = element->GetAttributeMap();
     if (map) {
-      nsCOMPtr<nsIAttribute> attr;
-
       
       
       
@@ -8764,7 +8758,6 @@ nsDocument::Sanitize()
 
   RefPtr<nsContentList> nodes = GetElementsByTagName(NS_LITERAL_STRING("input"));
 
-  nsCOMPtr<nsIContent> item;
   nsAutoString value;
 
   uint32_t length = nodes->Length(true);
@@ -10439,7 +10432,6 @@ nsDocument::GetStateObject(nsIVariant** aState)
   
   
 
-  nsCOMPtr<nsIVariant> stateObj;
   if (!mStateObjectCached && mStateObjectContainer) {
     AutoJSContext cx;
     nsIGlobalObject* sgo = GetScopeObject();
@@ -10880,7 +10872,6 @@ nsIDocument::CaretPositionFromPoint(float aX, float aY)
   if (nodeIsAnonymous) {
     node = ptFrame->GetContent();
     nsIContent* nonanon = node->FindFirstNonChromeOnlyAccessContent();
-    nsCOMPtr<nsIDOMHTMLInputElement> input = do_QueryInterface(nonanon);
     nsCOMPtr<nsIDOMHTMLTextAreaElement> textArea = do_QueryInterface(nonanon);
     nsITextControlFrame* textFrame = do_QueryFrame(nonanon->GetPrimaryFrame());
     nsNumberControlFrame* numberFrame = do_QueryFrame(nonanon->GetPrimaryFrame());
@@ -12605,10 +12596,6 @@ nsDocument::UpdateVisibilityState()
 
     EnumerateActivityObservers(NotifyActivityChanged, nullptr);
   }
-
-  if (mVisibilityState == dom::VisibilityState::Visible) {
-    MaybeActiveMediaComponents();
-  }
 }
 
 VisibilityState
@@ -12642,23 +12629,6 @@ nsDocument::PostVisibilityUpdateEvent()
   nsCOMPtr<nsIRunnable> event =
     NewRunnableMethod(this, &nsDocument::UpdateVisibilityState);
   NS_DispatchToMainThread(event);
-}
-
-void
-nsDocument::MaybeActiveMediaComponents()
-{
-  if (mEverInForeground) {
-    return;
-  }
-
-  if (!mWindow) {
-    return;
-  }
-
-  mEverInForeground = true;
-  if (GetWindow()->GetMediaSuspend() == nsISuspendedTypes::SUSPENDED_BLOCK) {
-    GetWindow()->SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
-  }
 }
 
 NS_IMETHODIMP

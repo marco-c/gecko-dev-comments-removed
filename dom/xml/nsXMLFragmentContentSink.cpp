@@ -167,8 +167,6 @@ nsXMLFragmentContentSink::WillBuildModel(nsDTDMode aDTDMode)
 NS_IMETHODIMP 
 nsXMLFragmentContentSink::DidBuildModel(bool aTerminated)
 {
-  RefPtr<nsParserBase> kungFuDeathGrip(mParser);
-
   
   
   mParser = nullptr;

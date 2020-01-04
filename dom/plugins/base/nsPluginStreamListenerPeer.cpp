@@ -411,7 +411,6 @@ nsPluginStreamListenerPeer::SetupPluginCacheFile(nsIChannel* channel)
       return rv;
 
     
-    nsCOMPtr<nsIOutputStream> outstream;
     rv = NS_NewLocalFileOutputStream(getter_AddRefs(mFileCacheOutputStream), pluginTmp, -1, 00600);
     if (NS_FAILED(rv))
       return rv;

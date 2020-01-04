@@ -8,7 +8,7 @@
 
 
 
- 
+
 #include "nsIDocumentEncoder.h"
 
 #include "nscore.h"
@@ -89,8 +89,8 @@ protected:
                                       nsAString& aStr);
   nsresult SerializeRangeToString(nsRange *aRange,
                                   nsAString& aOutputString);
-  nsresult SerializeRangeNodes(nsRange* aRange, 
-                               nsINode* aNode, 
+  nsresult SerializeRangeNodes(nsRange* aRange,
+                               nsINode* aNode,
                                nsAString& aString,
                                int32_t aDepth);
   nsresult SerializeRangeContextStart(const nsTArray<nsINode*>& aAncestorArray,
@@ -167,7 +167,7 @@ protected:
   AutoTArray<int32_t, 8>     mStartOffsets;
   AutoTArray<nsIContent*, 8> mEndNodes;
   AutoTArray<int32_t, 8>     mEndOffsets;
-  bool              mHaltRangeHint;  
+  bool              mHaltRangeHint;
   
   
   bool              mDisableContextSerialize;
@@ -412,14 +412,14 @@ nsDocumentEncoder::SerializeNodeStart(nsINode* aNode,
 {
   if (!IsVisibleNode(aNode))
     return NS_OK;
-  
+
   nsINode* node = nullptr;
   nsCOMPtr<nsINode> fixedNodeKungfuDeathGrip;
 
   
   if (!aOriginalNode) {
     aOriginalNode = aNode;
-    if (mNodeFixup) { 
+    if (mNodeFixup) {
       bool dummy;
       nsCOMPtr<nsIDOMNode> domNodeIn = do_QueryInterface(aNode);
       nsCOMPtr<nsIDOMNode> domNodeOut;
@@ -433,7 +433,7 @@ nsDocumentEncoder::SerializeNodeStart(nsINode* aNode,
   
   if (!node)
     node = aNode;
-  
+
   if (node->IsElement()) {
     if ((mFlags & (nsIDocumentEncoder::OutputPreformatted |
                    nsIDocumentEncoder::OutputDropInvisibleBreak)) &&
@@ -671,7 +671,7 @@ ConvertAndWrite(const nsAString& aString,
       NS_ENSURE_SUCCESS(rv, rv);
 
       nsAutoCString entString("&#");
-      if (NS_IS_HIGH_SURROGATE(unicodeBuf[unicodeLength - 1]) && 
+      if (NS_IS_HIGH_SURROGATE(unicodeBuf[unicodeLength - 1]) &&
           unicodeLength < startLength && NS_IS_LOW_SURROGATE(unicodeBuf[unicodeLength]))  {
         entString.AppendInt(SURROGATE_TO_UCS4(unicodeBuf[unicodeLength - 1],
                                               unicodeBuf[unicodeLength]));
@@ -889,12 +889,12 @@ nsDocumentEncoder::SerializeRangeNodes(nsRange* aRange,
         }
         if ((startNode == content) && !mHaltRangeHint) mStartDepth++;
         if ((endNode == content) && !mHaltRangeHint) mEndDepth++;
-      
+
         
         rv = SerializeNodeStart(aNode, 0, -1, aString);
         NS_ENSURE_SUCCESS(rv, rv);
       }
-      
+
       
       
       nsIContent* childAsNode = nullptr;
@@ -939,7 +939,7 @@ nsDocumentEncoder::SerializeRangeNodes(nsRange* aRange,
       if (aNode != mCommonParent)
       {
         rv = SerializeNodeEnd(aNode, aString);
-        NS_ENSURE_SUCCESS(rv, rv); 
+        NS_ENSURE_SUCCESS(rv, rv);
       }
     }
   }
@@ -1020,7 +1020,7 @@ nsDocumentEncoder::SerializeRangeToString(nsRange *aRange,
 
   if (!mCommonParent)
     return NS_OK;
-  
+
   nsINode* startParent = aRange->GetStartParent();
   NS_ENSURE_TRUE(startParent, NS_ERROR_FAILURE);
   int32_t startOffset = aRange->StartOffset();
@@ -1047,7 +1047,7 @@ nsDocumentEncoder::SerializeRangeToString(nsRange *aRange,
   nsCOMPtr<nsIContent> commonContent = do_QueryInterface(mCommonParent);
   mStartRootIndex = mStartNodes.IndexOf(commonContent);
   mEndRootIndex = mEndNodes.IndexOf(commonContent);
-  
+
   nsresult rv = NS_OK;
 
   rv = SerializeRangeContextStart(mCommonAncestors, aOutputString);
@@ -1108,7 +1108,7 @@ nsDocumentEncoder::EncodeToStringWithMaxLength(uint32_t aMaxLength,
   mCachedBuffer->ToString(0, output, true);
   
   mCachedBuffer = nullptr;
-  
+
 
   if (!mSerializer) {
     nsAutoCString progId(NS_CONTENTSERIALIZER_CONTRACTID_PREFIX);
@@ -1120,8 +1120,6 @@ nsDocumentEncoder::EncodeToStringWithMaxLength(uint32_t aMaxLength,
 
   nsresult rv = NS_OK;
 
-  nsCOMPtr<nsIAtom> charsetAtom;
-  
   bool rewriteEncodingDeclaration = !(mSelection || mRange || mNode) && !(mFlags & OutputDontRewriteEncodingDeclaration);
   mSerializer->Init(mFlags, mWrapColumn, mCharset.get(), mIsCopying, rewriteEncodingDeclaration);
 
@@ -1195,13 +1193,13 @@ nsDocumentEncoder::EncodeToStringWithMaxLength(uint32_t aMaxLength,
       NS_ENSURE_SUCCESS(rv, rv);
       mCommonAncestors.Clear();
       nsContentUtils::GetAncestors(p->GetParentNode(), mCommonAncestors);
-      mDisableContextSerialize = false; 
+      mDisableContextSerialize = false;
       rv = SerializeRangeContextEnd(mCommonAncestors, output);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
     
-    mDisableContextSerialize = false; 
+    mDisableContextSerialize = false;
 
     mSelection = nullptr;
   } else if (mRange) {
@@ -1226,7 +1224,7 @@ nsDocumentEncoder::EncodeToStringWithMaxLength(uint32_t aMaxLength,
 
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mSerializer->Flush(output);
- 
+
   mCachedBuffer = nsStringBuffer::FromString(output);
   
   
@@ -1335,12 +1333,12 @@ protected:
     kStart,
     kEnd
   };
-  
+
   nsresult PromoteRange(nsIDOMRange *inRange);
-  nsresult PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode, 
-                                int32_t *ioStartOffset, 
+  nsresult PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode,
+                                int32_t *ioStartOffset,
                                 int32_t *ioEndOffset);
-  nsresult GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t aOffset, 
+  nsresult GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t aOffset,
                             nsCOMPtr<nsIDOMNode> *outNode, int32_t *outOffset, nsIDOMNode *aCommon);
   nsCOMPtr<nsIDOMNode> GetChildAt(nsIDOMNode *aParent, int32_t aOffset);
   bool IsMozBR(nsIDOMNode* aNode);
@@ -1406,10 +1404,10 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   
   
   
-  
-  if (!aSelection) 
+
+  if (!aSelection)
     return NS_ERROR_NULL_POINTER;
-  
+
   nsCOMPtr<nsIDOMRange> range;
   nsCOMPtr<nsIDOMNode> commonParent;
   Selection* selection = aSelection->AsSelection();
@@ -1418,7 +1416,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   
   if (!rangeCount)
     return NS_ERROR_FAILURE;
-  
+
   
   
   
@@ -1481,7 +1479,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   }
 
   
-  if (mIsTextWidget) 
+  if (mIsTextWidget)
   {
     mSelection = aSelection;
     mMimeType.AssignLiteral("text/plain");
@@ -1496,13 +1494,13 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
     
     return NS_OK;
   }
-  
+
   
   
   
   NS_NewDomSelection(getter_AddRefs(mSelection));
   NS_ENSURE_TRUE(mSelection, NS_ERROR_FAILURE);
-  
+
   
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
     range = selection->GetRangeAt(rangeIdx);
@@ -1514,7 +1512,7 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
     
     rv = PromoteRange(myRange);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+
     rv = mSelection->AddRange(myRange);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -1556,7 +1554,7 @@ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
   if (count > 0)
     node = mCommonAncestors.ElementAt(0);
 
-  if (node && IsTextNode(node)) 
+  if (node && IsTextNode(node))
   {
     mCommonAncestors.RemoveElementAt(0);
     
@@ -1565,7 +1563,7 @@ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
     
     count--;
   }
-  
+
   i = count;
   while (i > 0)
   {
@@ -1587,7 +1585,7 @@ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
   infoString.Append(char16_t(','));
   infoString.AppendInt(mEndDepth);
   aInfoString = infoString;
-  
+
   return NS_OK;
 }
 
@@ -1629,14 +1627,14 @@ nsHTMLCopyEncoder::IncludeInContext(nsINode *aNode)
 }
 
 
-nsresult 
+nsresult
 nsHTMLCopyEncoder::PromoteRange(nsIDOMRange *inRange)
 {
   if (!inRange) return NS_ERROR_NULL_POINTER;
   nsresult rv;
   nsCOMPtr<nsIDOMNode> startNode, endNode, common;
   int32_t startOffset, endOffset;
-  
+
   rv = inRange->GetCommonAncestorContainer(getter_AddRefs(common));
   NS_ENSURE_SUCCESS(rv, rv);
   rv = inRange->GetStartContainer(getter_AddRefs(startNode));
@@ -1647,18 +1645,17 @@ nsHTMLCopyEncoder::PromoteRange(nsIDOMRange *inRange)
   NS_ENSURE_SUCCESS(rv, rv);
   rv = inRange->GetEndOffset(&endOffset);
   NS_ENSURE_SUCCESS(rv, rv);
-  
+
   nsCOMPtr<nsIDOMNode> opStartNode;
   nsCOMPtr<nsIDOMNode> opEndNode;
   int32_t opStartOffset, opEndOffset;
-  nsCOMPtr<nsIDOMRange> opRange;
-  
+
   
   rv = GetPromotedPoint( kStart, startNode, startOffset, address_of(opStartNode), &opStartOffset, common);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = GetPromotedPoint( kEnd, endNode, endOffset, address_of(opEndNode), &opEndOffset, common);
   NS_ENSURE_SUCCESS(rv, rv);
-  
+
   
   if ( (opStartNode == common) && (opEndNode == common) )
   {
@@ -1666,22 +1663,22 @@ nsHTMLCopyEncoder::PromoteRange(nsIDOMRange *inRange)
     NS_ENSURE_SUCCESS(rv, rv);
     opEndNode = opStartNode;
   }
-  
+
   
   rv = inRange->SetStart(opStartNode, opStartOffset);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = inRange->SetEnd(opEndNode, opEndOffset);
   return rv;
-} 
+}
 
 
 
 
 
 nsresult
-nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode, 
-                                        int32_t *ioStartOffset, 
-                                        int32_t *ioEndOffset) 
+nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode,
+                                        int32_t *ioStartOffset,
+                                        int32_t *ioEndOffset)
 {
   if (!ioNode || !ioStartOffset || !ioEndOffset) return NS_ERROR_NULL_POINTER;
 
@@ -1694,7 +1691,7 @@ nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode,
   
   nsCOMPtr<nsINode> node = do_QueryInterface(*ioNode);
   bool isEditable = node->IsEditable();
-  
+
   
   while (!done)
   {
@@ -1718,7 +1715,7 @@ nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode,
         done = true;
       else
       {
-        *ioNode = frontNode;  
+        *ioNode = frontNode;
         *ioStartOffset = frontOffset;
         *ioEndOffset = endOffset;
       }
@@ -1728,7 +1725,7 @@ nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsIDOMNode> *ioNode,
 }
 
 nsresult
-nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t aOffset, 
+nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t aOffset,
                                   nsCOMPtr<nsIDOMNode> *outNode, int32_t *outOffset, nsIDOMNode *common)
 {
   nsresult rv = NS_OK;
@@ -1736,14 +1733,14 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
   nsCOMPtr<nsIDOMNode> parent = aNode;
   int32_t offset = aOffset;
   bool    bResetPromotion = false;
-  
+
   
   *outNode = node;
   *outOffset = offset;
 
-  if (common == node) 
+  if (common == node)
     return NS_OK;
-    
+
   if (aWhere == kStart)
   {
     
@@ -1751,7 +1748,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
     if (IsTextNode(t))
     {
       
-      if (offset >  0) 
+      if (offset >  0)
       {
         
         
@@ -1798,9 +1795,9 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
             {
               bResetPromotion = false;
             }
-          }   
+          }
         }
-         
+
         node = parent;
         rv = GetNodeLocation(node, address_of(parent), &offset);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -1811,7 +1808,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
           offset = 0;
           break;
         }
-      } 
+      }
       if (bResetPromotion)
       {
         *outNode = aNode;
@@ -1825,7 +1822,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
       return rv;
     }
   }
-  
+
   if (aWhere == kEnd)
   {
     
@@ -1856,7 +1853,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
       node = GetChildAt(parent,offset);
     }
     if (!node) node = parent;
-    
+
     
     
     if (!IsRoot(node) && (parent != common))
@@ -1881,9 +1878,9 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
             {
               bResetPromotion = false;
             }
-          }   
+          }
         }
-          
+
         node = parent;
         rv = GetNodeLocation(node, address_of(parent), &offset);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -1894,7 +1891,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
           offset = 0;
           break;
         }
-      } 
+      }
       if (bResetPromotion)
       {
         *outNode = aNode;
@@ -1909,18 +1906,18 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsIDOMNode *aNode, int32_t 
       return rv;
     }
   }
-  
+
   return rv;
 }
 
-nsCOMPtr<nsIDOMNode> 
+nsCOMPtr<nsIDOMNode>
 nsHTMLCopyEncoder::GetChildAt(nsIDOMNode *aParent, int32_t aOffset)
 {
   nsCOMPtr<nsIDOMNode> resultNode;
-  
-  if (!aParent) 
+
+  if (!aParent)
     return resultNode;
-  
+
   nsCOMPtr<nsIContent> content = do_QueryInterface(aParent);
   NS_PRECONDITION(content, "null content in nsHTMLCopyEncoder::GetChildAt");
 
@@ -1929,7 +1926,7 @@ nsHTMLCopyEncoder::GetChildAt(nsIDOMNode *aParent, int32_t aOffset)
   return resultNode;
 }
 
-bool 
+bool
 nsHTMLCopyEncoder::IsMozBR(nsIDOMNode* aNode)
 {
   MOZ_ASSERT(aNode);
@@ -1940,7 +1937,7 @@ nsHTMLCopyEncoder::IsMozBR(nsIDOMNode* aNode)
                               NS_LITERAL_STRING("_moz"), eIgnoreCase);
 }
 
-nsresult 
+nsresult
 nsHTMLCopyEncoder::GetNodeLocation(nsIDOMNode *inChild,
                                    nsCOMPtr<nsIDOMNode> *outParent,
                                    int32_t *outOffset)
@@ -1986,16 +1983,16 @@ nsHTMLCopyEncoder::IsFirstNode(nsIDOMNode *aNode)
   nsCOMPtr<nsIDOMNode> parent;
   int32_t offset, j=0;
   nsresult rv = GetNodeLocation(aNode, address_of(parent), &offset);
-  if (NS_FAILED(rv)) 
+  if (NS_FAILED(rv))
   {
     NS_NOTREACHED("failure in IsFirstNode");
     return false;
   }
   if (offset == 0)  
     return true;
-  if (!parent)  
+  if (!parent)
     return true;
-  
+
   
   
   
@@ -2005,7 +2002,7 @@ nsHTMLCopyEncoder::IsFirstNode(nsIDOMNode *aNode)
   nsCOMPtr<nsIDOMNode> child;
 
   rv = parent->GetChildNodes(getter_AddRefs(childList));
-  if (NS_FAILED(rv) || !childList) 
+  if (NS_FAILED(rv) || !childList)
   {
     NS_NOTREACHED("failure in IsFirstNode");
     return true;
@@ -2013,7 +2010,7 @@ nsHTMLCopyEncoder::IsFirstNode(nsIDOMNode *aNode)
   while (j < offset)
   {
     childList->Item(j, getter_AddRefs(child));
-    if (!IsEmptyTextContent(child)) 
+    if (!IsEmptyTextContent(child))
       return false;
     j++;
   }
@@ -2027,7 +2024,7 @@ nsHTMLCopyEncoder::IsLastNode(nsIDOMNode *aNode)
   nsCOMPtr<nsIDOMNode> parent;
   int32_t offset,j;
   nsresult rv = GetNodeLocation(aNode, address_of(parent), &offset);
-  if (NS_FAILED(rv)) 
+  if (NS_FAILED(rv))
   {
     NS_NOTREACHED("failure in IsLastNode");
     return false;
@@ -2049,7 +2046,7 @@ nsHTMLCopyEncoder::IsLastNode(nsIDOMNode *aNode)
   nsCOMPtr<nsIDOMNodeList>childList;
   nsCOMPtr<nsIDOMNode> child;
   rv = parent->GetChildNodes(getter_AddRefs(childList));
-  if (NS_FAILED(rv) || !childList) 
+  if (NS_FAILED(rv) || !childList)
   {
     NS_NOTREACHED("failure in IsLastNode");
     return true;
@@ -2060,7 +2057,7 @@ nsHTMLCopyEncoder::IsLastNode(nsIDOMNode *aNode)
     j--;
     if (IsMozBR(child))  
       continue;
-    if (!IsEmptyTextContent(child)) 
+    if (!IsEmptyTextContent(child))
       return false;
   }
   return true;
@@ -2105,4 +2102,3 @@ nsHTMLCopyEncoder::GetImmediateContextCount(const nsTArray<nsINode*>& aAncestorA
   }
   return j;
 }
-

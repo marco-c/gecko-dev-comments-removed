@@ -3124,9 +3124,6 @@ void
 nsGenericHTMLElement::SetInnerText(const nsAString& aValue)
 {
   
-  nsCOMPtr<nsIContent> kungFuDeathGrip;
-
-  
   mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
   FireNodeRemovedForChildren();
 

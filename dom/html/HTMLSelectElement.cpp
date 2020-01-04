@@ -614,7 +614,6 @@ HTMLSelectElement::Add(nsIDOMHTMLElement* aElement,
   }
 
   nsCOMPtr<nsISupports> supports;
-  nsCOMPtr<nsIDOMHTMLElement> beforeElement;
 
   
   if (NS_SUCCEEDED(aBefore->GetAsISupports(getter_AddRefs(supports)))) {
