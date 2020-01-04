@@ -188,7 +188,7 @@ protected:
     
 
 
-    nsAutoArrayPtr<unsigned char> mData;
+    mozilla::UniquePtr<unsigned char[]> mData;
 
      
 
