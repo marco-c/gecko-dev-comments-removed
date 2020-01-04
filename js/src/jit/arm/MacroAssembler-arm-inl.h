@@ -269,6 +269,35 @@ MacroAssembler::subDouble(FloatRegister src, FloatRegister dest)
     ma_vsub(dest, src, dest);
 }
 
+void
+MacroAssembler::mul64(Imm64 imm, const Register64& dest)
+{
+    
+    
+    
+    
+
+    
+    ma_mov(Imm32(imm.value & 0xFFFFFFFFL), ScratchRegister);
+    as_mul(dest.high, dest.high, ScratchRegister);
+
+    
+    as_umull(secondScratchReg_, ScratchRegister, dest.low, ScratchRegister);
+
+    
+    as_add(dest.high, dest.high, O2Reg(secondScratchReg_));
+
+    
+    if (((imm.value >> 32) & 0xFFFFFFFFL) == 5)
+        as_add(secondScratchReg_, dest.low, lsl(dest.low, 2));
+    else
+        MOZ_CRASH("Not supported imm");
+    as_add(dest.high, dest.high, O2Reg(secondScratchReg_));
+
+    
+    ma_mov(ScratchRegister, dest.low);
+}
+
 
 
 

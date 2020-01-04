@@ -1634,32 +1634,6 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     void mulBy3(const Register& src, const Register& dest) {
         as_add(dest, src, lsl(src, 1));
     }
-    void mul64(Imm64 imm, const Register64& dest) {
-        
-        
-        
-        
-
-        
-        ma_mov(Imm32(imm.value & 0xFFFFFFFFL), ScratchRegister);
-        as_mul(dest.high, dest.high, ScratchRegister);
-
-        
-        as_umull(secondScratchReg_, ScratchRegister, dest.low, ScratchRegister);
-
-        
-        as_add(dest.high, dest.high, O2Reg(secondScratchReg_));
-
-        
-        if (((imm.value >> 32) & 0xFFFFFFFFL) == 5)
-            as_add(secondScratchReg_, dest.low, lsl(dest.low, 2));
-        else
-            MOZ_CRASH("Not supported imm");
-        as_add(dest.high, dest.high, O2Reg(secondScratchReg_));
-
-        
-        ma_mov(ScratchRegister, dest.low);
-    }
 
     void convertUInt64ToDouble(Register64 src, Register temp, FloatRegister dest);
     void mulDoublePtr(ImmPtr imm, Register temp, FloatRegister dest) {
