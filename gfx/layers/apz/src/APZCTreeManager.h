@@ -27,6 +27,7 @@ namespace layers {
 
 class Layer;
 class AsyncPanZoomController;
+class APZCTreeManagerParent;
 class CompositorBridgeParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
@@ -381,17 +382,19 @@ public:
 
   void SetLongTapEnabled(bool aTapGestureEnabled) override;
 
-protected:
   
-  virtual ~APZCTreeManager();
 
-  
   void TransformEventRefPoint(
       LayoutDeviceIntPoint* aRefPoint,
       ScrollableLayerGuid* aOutTargetGuid) override;
+
   void UpdateWheelTransaction(
       LayoutDeviceIntPoint aRefPoint,
       EventMessage aEventMessage) override;
+
+protected:
+  
+  virtual ~APZCTreeManager();
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,

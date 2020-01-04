@@ -21,18 +21,28 @@ class nsIWidget;
 
 namespace mozilla {
 
+namespace layers {
+class PAPZCTreeManagerParent;
+class APZCTreeManagerChild;
+}
+
 namespace dom {
 class Touch;
 } 
 
 enum InputType
 {
+  
+  
   MULTITOUCH_INPUT,
   MOUSE_INPUT,
   PANGESTURE_INPUT,
   PINCHGESTURE_INPUT,
   TAPGESTURE_INPUT,
-  SCROLLWHEEL_INPUT
+  SCROLLWHEEL_INPUT,
+
+  
+  SENTINEL_INPUT,
 };
 
 class MultiTouchInput;
@@ -62,6 +72,8 @@ class ScrollWheelInput;
 class InputData
 {
 public:
+  
+  
   InputType mInputType;
   
   
@@ -160,6 +172,9 @@ public:
 
   
   
+
+  
+  
   int32_t mIdentifier;
 
   
@@ -198,10 +213,15 @@ class MultiTouchInput : public InputData
 public:
   enum MultiTouchType
   {
+    
+    
     MULTITOUCH_START,
     MULTITOUCH_MOVE,
     MULTITOUCH_END,
-    MULTITOUCH_CANCEL
+    MULTITOUCH_CANCEL,
+
+    
+    MULTITOUCH_SENTINEL,
   };
 
   MultiTouchInput(MultiTouchType aType, uint32_t aTime, TimeStamp aTimeStamp,
@@ -245,6 +265,8 @@ public:
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
+  
+  
   MultiTouchType mType;
   nsTArray<SingleTouchData> mTouches;
   bool mHandledByAPZ;
@@ -252,9 +274,24 @@ public:
 
 class MouseInput : public InputData
 {
+protected:
+  friend mozilla::layers::PAPZCTreeManagerParent;
+  friend mozilla::layers::APZCTreeManagerChild;
+
+  MouseInput()
+    : InputData(MOUSE_INPUT)
+    , mType(MOUSE_NONE)
+    , mButtonType(NONE)
+    , mInputSource(0)
+    , mButtons(0)
+    , mHandledByAPZ(false)
+  {}
+
 public:
   enum MouseType
   {
+    
+    
     MOUSE_NONE,
     MOUSE_MOVE,
     MOUSE_DOWN,
@@ -263,14 +300,22 @@ public:
     MOUSE_DRAG_END,
     MOUSE_WIDGET_ENTER,
     MOUSE_WIDGET_EXIT,
+
+    
+    MOUSE_SENTINEL,
   };
 
   enum ButtonType
   {
+    
+    
     LEFT_BUTTON,
     MIDDLE_BUTTON,
     RIGHT_BUTTON,
-    NONE
+    NONE,
+
+    
+    BUTTON_SENTINEL,
   };
 
   MouseInput(MouseType aType, ButtonType aButtonType, uint16_t aInputSource, int16_t aButtons, const ScreenPoint& aPoint,
@@ -284,15 +329,6 @@ public:
     , mHandledByAPZ(false)
   {}
 
-  MouseInput()
-    : InputData(MOUSE_INPUT)
-    , mType(MOUSE_NONE)
-    , mButtonType(NONE)
-    , mInputSource(0)
-    , mButtons(0)
-    , mHandledByAPZ(false)
-  {}
-
   explicit MouseInput(const WidgetMouseEventBase& aMouseEvent);
 
   bool IsLeftButton() const { return mButtonType == LEFT_BUTTON; }
@@ -300,6 +336,8 @@ public:
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
   WidgetMouseEvent ToWidgetMouseEvent(nsIWidget* aWidget) const;
 
+  
+  
   MouseType mType;
   ButtonType mButtonType;
   uint16_t mInputSource;
@@ -315,9 +353,28 @@ public:
 
 class PanGestureInput : public InputData
 {
+protected:
+  friend mozilla::layers::PAPZCTreeManagerParent;
+  friend mozilla::layers::APZCTreeManagerChild;
+
+  PanGestureInput()
+    : InputData(PANGESTURE_INPUT),
+      mLineOrPageDeltaX(0),
+      mLineOrPageDeltaY(0),
+      mUserDeltaMultiplierX(1.0),
+      mUserDeltaMultiplierY(1.0),
+      mHandledByAPZ(false),
+      mFollowedByMomentum(false),
+      mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(false)
+  {
+  }
+
 public:
   enum PanGestureType
   {
+    
+    
+
     
     
     
@@ -359,7 +416,10 @@ public:
     
     
     
-    PANGESTURE_MOMENTUMEND
+    PANGESTURE_MOMENTUMEND,
+
+    
+    PANGESTURE_SENTINEL,
   };
 
   PanGestureInput(PanGestureType aType,
@@ -391,6 +451,8 @@ public:
   ScreenPoint UserMultipliedPanDisplacement() const;
   ParentLayerPoint UserMultipliedLocalPanDisplacement() const;
 
+  
+  
   PanGestureType mType;
   ScreenPoint mPanStartPoint;
 
@@ -432,12 +494,26 @@ public:
 
 class PinchGestureInput : public InputData
 {
+protected:
+  friend mozilla::layers::PAPZCTreeManagerParent;
+  friend mozilla::layers::APZCTreeManagerChild;
+
+  PinchGestureInput()
+    : InputData(PINCHGESTURE_INPUT)
+  {
+  }
+
 public:
   enum PinchGestureType
   {
+    
+    
     PINCHGESTURE_START,
     PINCHGESTURE_SCALE,
-    PINCHGESTURE_END
+    PINCHGESTURE_END,
+
+    
+    PINCHGESTURE_SENTINEL,
   };
 
   
@@ -476,6 +552,8 @@ public:
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
+  
+  
   PinchGestureType mType;
 
   
@@ -510,15 +588,29 @@ public:
 
 class TapGestureInput : public InputData
 {
+protected:
+  friend mozilla::layers::PAPZCTreeManagerParent;
+  friend mozilla::layers::APZCTreeManagerChild;
+
+  TapGestureInput()
+    : InputData(TAPGESTURE_INPUT)
+  {
+  }
+
 public:
   enum TapGestureType
   {
+    
+    
     TAPGESTURE_LONG,
     TAPGESTURE_LONG_UP,
     TAPGESTURE_UP,
     TAPGESTURE_CONFIRMED,
     TAPGESTURE_DOUBLE,
-    TAPGESTURE_CANCEL
+    TAPGESTURE_CANCEL,
+
+    
+    TAPGESTURE_SENTINEL,
   };
 
   
@@ -549,6 +641,8 @@ public:
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
+  
+  
   TapGestureType mType;
 
   
@@ -564,14 +658,36 @@ public:
 
 class ScrollWheelInput : public InputData
 {
+protected:
+  friend mozilla::layers::PAPZCTreeManagerParent;
+  friend mozilla::layers::APZCTreeManagerChild;
+
+  ScrollWheelInput()
+    : InputData(SCROLLWHEEL_INPUT)
+    , mHandledByAPZ(false)
+    , mLineOrPageDeltaX(0)
+    , mLineOrPageDeltaY(0)
+    , mScrollSeriesNumber(0)
+    , mUserDeltaMultiplierX(1.0)
+    , mUserDeltaMultiplierY(1.0)
+    , mMayHaveMomentum(false)
+    , mIsMomentum(false)
+  {}
+
 public:
   enum ScrollDeltaType
   {
     
     
+
+    
+    
     SCROLLDELTA_LINE,
     SCROLLDELTA_PAGE,
-    SCROLLDELTA_PIXEL
+    SCROLLDELTA_PIXEL,
+
+    
+    SCROLLDELTA_SENTINEL,
   };
 
   static ScrollDeltaType
@@ -608,8 +724,14 @@ public:
 
   enum ScrollMode
   {
+    
+    
+
     SCROLLMODE_INSTANT,
-    SCROLLMODE_SMOOTH
+    SCROLLMODE_SMOOTH,
+
+    
+    SCROLLMODE_SENTINEL,
   };
 
   ScrollWheelInput(uint32_t aTime,
@@ -645,6 +767,8 @@ public:
 
   bool IsCustomizedByUserPrefs() const;
 
+  
+  
   ScrollDeltaType mDeltaType;
   ScrollMode mScrollMode;
   ScreenPoint mOrigin;
