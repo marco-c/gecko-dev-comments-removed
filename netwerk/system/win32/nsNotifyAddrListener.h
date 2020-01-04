@@ -67,6 +67,11 @@ private:
     
     nsresult NetworkChanged();
 
+    
+    void calculateNetworkId(void);
+    void findMac(char *gateway);
+    nsCString mNetworkId;
+
     HANDLE mCheckEvent;
 
     
