@@ -1670,12 +1670,6 @@ public:
   virtual void ThemeChanged() = 0;
   virtual void BackingScaleFactorChanged() = 0;
 
-  nscoord MaxLineBoxWidth() {
-    return mMaxLineBoxWidth;
-  }
-
-  void SetMaxLineBoxWidth(nscoord aMaxLineBoxWidth);
-
   
 
 
@@ -1837,10 +1831,6 @@ protected:
   
   
   bool mReflowOnZoomPending;
-
-  
-  
-  nscoord mMaxLineBoxWidth;
 
   
   
