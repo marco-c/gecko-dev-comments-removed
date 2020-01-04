@@ -943,23 +943,6 @@ function ArraySpeciesCreate(originalArray, length) {
 }
 
 
-function IsConcatSpreadable(O) {
-    
-    if (!IsObject(O))
-        return false;
-
-    
-    var spreadable = O[std_isConcatSpreadable];
-
-    
-    if (spreadable !== undefined)
-        return ToBoolean(spreadable);
-
-    
-    return IsArray(O);
-}
-
-
 
 function ArrayConcat(arg1) {
     
@@ -982,7 +965,8 @@ function ArrayConcat(arg1) {
     var k, len;
     while (true) {
         
-        if (IsConcatSpreadable(E)) {
+        
+        if (IsArray(E)) {
             
             len = ToLength(E.length);
 
