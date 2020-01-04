@@ -350,9 +350,10 @@ CompositorOGL::Initialize(nsCString* const out_failureReason)
 
 
 
-    if (!mGLContext->IsExtensionSupported(gl::GLContext::ARB_texture_rectangle))
+    if (!mGLContext->IsExtensionSupported(gl::GLContext::ARB_texture_rectangle)){
       *out_failureReason = "FEATURE_FAILURE_OPENGL_ARB_EXT";
       return false;
+    }
   }
 
   
