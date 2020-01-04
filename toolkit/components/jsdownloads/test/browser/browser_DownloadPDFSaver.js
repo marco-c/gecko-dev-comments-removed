@@ -88,7 +88,7 @@ add_task(function* test_cancel_pdf_download() {
   });
 
   yield test_download_windowRef(tab, download);
-  download.start();
+  download.start().catch(() => {});
 
   
   yield download.cancel();

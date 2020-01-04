@@ -243,7 +243,7 @@ DownloadLegacyTransfer.prototype = {
       }
 
       
-      aDownload.start().then(null, () => {});
+      aDownload.start().catch(() => {});
 
       
       this._deferDownload.resolve(aDownload);
