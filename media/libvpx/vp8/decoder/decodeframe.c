@@ -71,10 +71,9 @@ void vp8_mb_init_dequantizer(VP8D_COMP *pbi, MACROBLOCKD *xd)
 
         
         else
-        {
             QIndex = pc->base_qindex + xd->segment_feature_data[MB_LVL_ALT_Q][mbmi->segment_id];
-            QIndex = (QIndex >= 0) ? ((QIndex <= MAXQ) ? QIndex : MAXQ) : 0;    
-        }
+
+        QIndex = (QIndex >= 0) ? ((QIndex <= MAXQ) ? QIndex : MAXQ) : 0;    
     }
     else
         QIndex = pc->base_qindex;
