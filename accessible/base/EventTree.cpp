@@ -185,7 +185,10 @@ EventTree::Process()
 {
   EventTree* node = mFirst;
   while (node) {
-    node->Process();
+    
+    if (node->mContainer->IsInDocument()) {
+      node->Process();
+    }
     node = node->mNext;
   }
 
