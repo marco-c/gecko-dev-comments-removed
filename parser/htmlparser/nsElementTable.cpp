@@ -144,6 +144,10 @@ const nsHTMLElement gHTMLElements[] = {
      kFlowEntity, false
   },
   {
+             eHTMLTag_details,
+     kBlock, false
+  },
+  {
              eHTMLTag_dfn,
      kPhrase, false
   },
@@ -478,6 +482,10 @@ const nsHTMLElement gHTMLElements[] = {
   {
              eHTMLTag_sub,
      kSpecial, false
+  },
+  {
+             eHTMLTag_summary,
+     kBlock, false
   },
   {
              eHTMLTag_sup,
