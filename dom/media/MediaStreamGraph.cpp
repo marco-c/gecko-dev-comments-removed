@@ -241,6 +241,16 @@ MediaStreamGraphImpl::ExtractPendingInput(SourceMediaStream* aStream,
             l->NotifyQueuedTrackChanges(this, data->mID,
                                         offset, static_cast<TrackEventCommand>(data->mCommands), *data->mData);
           }
+        } else {
+          
+          
+          
+
+          
+          for (MediaStreamListener* l : aStream->mListeners) {
+            l->NotifyQueuedTrackChanges(this, data->mID,
+                                        offset, static_cast<TrackEventCommand>(data->mCommands), *data->mData);
+          }
         }
       }
 
