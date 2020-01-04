@@ -43,15 +43,6 @@ loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/f
 loader.lazyImporter(this, "ResponsiveUIManager", "resource://devtools/client/responsivedesign/responsivedesign.jsm");
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 
-
-
-
-function isFirebugInstalled() {
-  let bootstrappedAddons = Services.prefs
-    .getCharPref("extensions.bootstrappedAddons");
-  return bootstrappedAddons.indexOf("firebug@software.joehewitt.com") != -1;
-}
-
 exports.menuitems = [
   { id: "menu_devToolbox",
     l10nKey: "devToolboxMenuItem",
@@ -66,11 +57,10 @@ exports.menuitems = [
       
       keytext: true,
     },
-    
-    additionalKeys: !isFirebugInstalled() ? [{
+    additionalKeys: [{
       id: "devToolboxMenuItemF12",
       l10nKey: "devToolsCmd",
-    }] : null,
+    }],
     checkbox: true
   },
   { id: "menu_devtools_separator",
