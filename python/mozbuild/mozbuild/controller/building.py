@@ -377,7 +377,7 @@ class BuildMonitor(MozbuildObject):
                 'Swap in/out (MB): {sin}/{sout}')
 
         o = dict(
-            version=2,
+            version=3,
             argv=sys.argv,
             start=self.start_time,
             end=self.end_time,
@@ -411,15 +411,6 @@ class BuildMonitor(MozbuildObject):
 
             o['resources'].append(entry)
 
-        
-        o['system'] = dict(
-            architecture=list(platform.architecture()),
-            machine=platform.machine(),
-            python_version=platform.python_version(),
-            release=platform.release(),
-            system=platform.system(),
-            version=platform.version(),
-        )
 
         
         
@@ -427,6 +418,8 @@ class BuildMonitor(MozbuildObject):
         
         
         
+        
+        o['system'] = {}
         if psutil:
             o['system'].update(dict(
                 logical_cpu_count=psutil.cpu_count(),
@@ -434,17 +427,6 @@ class BuildMonitor(MozbuildObject):
                 swap_total=psutil.swap_memory()[0],
                 vmem_total=psutil.virtual_memory()[0],
             ))
-
-        if platform.system() == 'Linux':
-            dist = list(platform.linux_distribution())
-            o['system']['linux_distribution'] = dist
-        elif platform.system() == 'Windows':
-            win32_ver=list((platform.win32_ver())),
-            o['system']['win32_ver'] = win32_ver
-        elif platform.system() == 'Darwin':
-            
-            r, v, m = platform.mac_ver()
-            o['system']['mac_ver'] = [r, list(v), m]
 
         return o
 
