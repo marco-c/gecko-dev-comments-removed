@@ -44,6 +44,25 @@ HistoryEngine.prototype = {
   applyIncomingBatchSize: HISTORY_STORE_BATCH_SIZE,
 
   syncPriority: 7,
+
+  _processIncoming: function (newitems) {
+    
+    
+    let observers = PlacesUtils.history.getObservers();
+    function notifyHistoryObservers(notification) {
+      for (let observer of observers) {
+        try {
+          observer[notification]();
+        } catch (ex) { }
+      }
+    }
+    notifyHistoryObservers("onBeginUpdateBatch");
+    try {
+      return SyncEngine.prototype._processIncoming.call(this, newitems);
+    } finally {
+      notifyHistoryObservers("onEndUpdateBatch");
+    }
+  },
 };
 
 function HistoryStore(name, engine) {

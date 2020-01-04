@@ -610,6 +610,19 @@ let PlacesProvider = {
   
 
 
+
+  _batchProcessingDepth: 0,
+
+  
+
+
+
+
+  _batchCalledFrecencyChanged: false,
+
+  
+
+
   maxNumLinks: HISTORY_RESULTS_LIMIT,
 
   
@@ -713,6 +726,18 @@ let PlacesProvider = {
   
 
 
+  onBeginUpdateBatch: function() {
+    this._batchProcessingDepth += 1;
+  },
+
+  onEndUpdateBatch: function() {
+    this._batchProcessingDepth -= 1;
+    if (this._batchProcessingDepth == 0 && this._batchCalledFrecencyChanged) {
+      this.onManyFrecenciesChanged();
+      this._batchCalledFrecencyChanged = false;
+    }
+  },
+
   onDeleteURI: function PlacesProvider_onDeleteURI(aURI, aGUID, aReason) {
     
     this._callObservers("onDeleteURI", {
@@ -728,6 +753,13 @@ let PlacesProvider = {
 
 
   onFrecencyChanged: function PlacesProvider_onFrecencyChanged(aURI, aNewFrecency, aGUID, aHidden, aLastVisitDate) {
+    
+    
+    
+    if (this._batchProcessingDepth > 0) {
+      this._batchCalledFrecencyChanged = true;
+      return;
+    }
     
     
     if (!aHidden && aLastVisitDate) {
