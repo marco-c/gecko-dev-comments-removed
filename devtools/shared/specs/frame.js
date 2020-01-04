@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Arg, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const {generateActorSpec} = require("devtools/shared/protocol");
 
 const frameSpec = generateActorSpec({
   typeName: "frame",
