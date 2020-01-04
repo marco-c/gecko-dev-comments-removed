@@ -10,6 +10,9 @@ testStorages(function(storageString) {
         function step0(msg)
         {
             iframe.onload = t.step_func(step1);
+            
+            
+            iframe.contentWindow.onstorage = null;
             iframe.src = "resources/event_setattribute_handler.html";
         }
 
