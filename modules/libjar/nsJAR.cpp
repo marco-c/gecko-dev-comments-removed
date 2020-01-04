@@ -2,6 +2,7 @@
 
 
 
+
 #include <string.h>
 #include "nsJARInputStream.h"
 #include "nsJAR.h"
@@ -1076,16 +1077,11 @@ nsZipReaderCache::Init(uint32_t cacheSize)
   return NS_OK;
 }
 
-static PLDHashOperator
-DropZipReaderCache(const nsACString &aKey, nsJAR* aZip, void*)
-{
-  aZip->SetZipReaderCache(nullptr);
-  return PL_DHASH_NEXT;
-}
-
 nsZipReaderCache::~nsZipReaderCache()
 {
-  mZips.EnumerateRead(DropZipReaderCache, nullptr);
+  for (auto iter = mZips.Iter(); !iter.Done(); iter.Next()) {
+    iter.UserData()->SetZipReaderCache(nullptr);
+  }
 
 #ifdef ZIP_CACHE_HIT_RATE
   printf("nsZipReaderCache size=%d hits=%d lookups=%d rate=%f%% flushes=%d missed %d\n",
@@ -1362,7 +1358,9 @@ nsZipReaderCache::Observe(nsISupports *aSubject,
   }
   else if (strcmp(aTopic, "chrome-flush-caches") == 0) {
     MutexAutoLock lock(mLock);
-    mZips.EnumerateRead(DropZipReaderCache, nullptr);
+    for (auto iter = mZips.Iter(); !iter.Done(); iter.Next()) {
+      iter.UserData()->SetZipReaderCache(nullptr);
+    }
     mZips.Clear();
   }
   else if (strcmp(aTopic, "flush-cache-entry") == 0) {
