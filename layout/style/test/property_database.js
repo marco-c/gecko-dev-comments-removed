@@ -4072,9 +4072,11 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     
-    initial_values: [ "auto", "stretch" ],
-    other_values: [ "flex-start", "flex-end", "center", "baseline" ],
-    invalid_values: [ "space-between", "abc", "30px" ]
+    initial_values: [ "auto", "start" ],
+    other_values: [ "flex-start", "flex-end", "center", "stretch",
+                    "baseline", "last-baseline", "right safe", "true center",
+                    "self-start", "self-end safe" ],
+    invalid_values: [ "space-between", "abc", "30px", "stretch safe", "safe" ]
   },
   "justify-content": {
     domProp: "justifyContent",

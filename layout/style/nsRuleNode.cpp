@@ -7820,54 +7820,26 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aRuleData->ValueForAlignSelf()->GetUnit() == eCSSUnit_Inherit) {
-    
-    
-    
-    uint8_t inheritedAlignSelf = parentPos->mAlignSelf;
-    if (inheritedAlignSelf == NS_STYLE_ALIGN_SELF_AUTO) {
-      if (!parentContext) {
-        
-        
-        inheritedAlignSelf = NS_STYLE_ALIGN_AUTO; 
-      } else {
-        
-        
-        nsStyleContext* grandparentContext = parentContext->GetParent();
-        if (!grandparentContext) {
-          
-          
-          inheritedAlignSelf = NS_STYLE_ALIGN_AUTO; 
-        } else {
-          
-          
-          const nsStylePosition* grandparentPos =
-            grandparentContext->StylePosition();
-          inheritedAlignSelf = grandparentPos->ComputedAlignItems(grandparentContext->StyleDisplay());
-          aContext->AddStyleBit(NS_STYLE_USES_GRANDANCESTOR_STYLE);
-        }
+  const auto& alignSelfValue = *aRuleData->ValueForAlignSelf();
+  if (MOZ_UNLIKELY(alignSelfValue.GetUnit() == eCSSUnit_Inherit)) {
+    if (MOZ_LIKELY(parentContext)) {
+      nsStyleContext* grandparentContext = parentContext->GetParent();
+      if (MOZ_LIKELY(grandparentContext)) {
+        aContext->AddStyleBit(NS_STYLE_USES_GRANDANCESTOR_STYLE);
       }
+      pos->mAlignSelf =
+        parentPos->ComputedAlignSelf(parentContext->StyleDisplay(),
+                                     grandparentContext);
+    } else {
+      pos->mAlignSelf = NS_STYLE_ALIGN_START;
     }
-
-    pos->mAlignSelf = inheritedAlignSelf;
     conditions.SetUncacheable();
   } else {
-    SetDiscrete(*aRuleData->ValueForAlignSelf(),
+    SetDiscrete(alignSelfValue,
                 pos->mAlignSelf, conditions,
                 SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
                 parentPos->mAlignSelf, 
-                NS_STYLE_ALIGN_SELF_AUTO, 
-                0, 0, 0, 0);
+                NS_STYLE_ALIGN_AUTO, 0, 0, 0, 0);
   }
 
   

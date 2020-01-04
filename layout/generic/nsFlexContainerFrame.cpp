@@ -1565,14 +1565,23 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
     mIsStretched(false),
     mIsStrut(false),
     
-    mWM(aFlexItemReflowState.GetWritingMode()),
-    mAlignSelf(aFlexItemReflowState.mStylePosition->mAlignSelf)
+    mWM(aFlexItemReflowState.GetWritingMode())
+    
 {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
   MOZ_ASSERT(mFrame->GetType() != nsGkAtoms::placeholderFrame,
              "placeholder frames should not be treated as flex items");
   MOZ_ASSERT(!(mFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW),
              "out-of-flow frames should not be treated as flex items");
+
+  mAlignSelf = aFlexItemReflowState.mStylePosition->ComputedAlignSelf(
+                 aFlexItemReflowState.mStyleDisplay,
+                 mFrame->StyleContext()->GetParent());
+  if (MOZ_UNLIKELY(mAlignSelf == NS_STYLE_ALIGN_AUTO)) {
+    
+    
+    mAlignSelf = NS_STYLE_ALIGN_STRETCH;
+  }
 
   SetFlexBaseSizeAndMainSize(aFlexBaseSize);
   CheckForMinSizeAuto(aFlexItemReflowState, aAxisTracker);
@@ -1591,13 +1600,6 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
     }
   }
 #endif 
-
-  
-  if (mAlignSelf == NS_STYLE_ALIGN_SELF_AUTO) {
-    auto parent = mFrame->StyleContext()->GetParent();
-    mAlignSelf =
-      parent->StylePosition()->ComputedAlignItems(parent->StyleDisplay());
-  }
 
   
   
