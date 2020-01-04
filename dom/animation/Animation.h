@@ -298,6 +298,19 @@ public:
                     nsCSSPropertySet& aSetProperties,
                     bool& aNeedsRefreshes);
 
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool HasEndEventToQueue() const { return false; }
+
   void NotifyEffectTimingUpdated();
 
 protected:

@@ -170,6 +170,7 @@ protected:
   virtual CommonAnimationManager* GetAnimationManager() const override;
 
   void QueueEvents();
+  bool HasEndEventToQueue() const override;
 
   
   
