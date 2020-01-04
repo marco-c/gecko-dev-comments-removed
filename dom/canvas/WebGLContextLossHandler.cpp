@@ -5,99 +5,237 @@
 
 #include "WebGLContextLossHandler.h"
 
-#include "mozilla/DebugOnly.h"
-#include "nsISupportsImpl.h"
 #include "nsITimer.h"
 #include "nsThreadUtils.h"
 #include "WebGLContext.h"
+#include "mozilla/dom/WorkerPrivate.h"
 
 namespace mozilla {
 
-class WatchdogTimerEvent final : public nsITimerCallback
+
+
+
+
+
+
+
+class ContextLossWorkerEventTarget final : public nsIEventTarget
 {
-    const WeakPtr<WebGLContextLossHandler> mHandler;
-
 public:
-    NS_DECL_ISUPPORTS
+    explicit ContextLossWorkerEventTarget(nsIEventTarget* aEventTarget)
+        : mEventTarget(aEventTarget)
+    {
+        MOZ_ASSERT(aEventTarget);
+    }
 
-    explicit WatchdogTimerEvent(WebGLContextLossHandler* handler)
-        : mHandler(handler)
-    { }
+    NS_DECL_NSIEVENTTARGET
+    NS_DECL_THREADSAFE_ISUPPORTS
+
+protected:
+    ~ContextLossWorkerEventTarget() {}
 
 private:
-    virtual ~WatchdogTimerEvent() { }
-
-    NS_IMETHOD Notify(nsITimer*) override {
-        if (mHandler) {
-            mHandler->TimerCallback();
-        }
-        return NS_OK;
-    }
+    nsCOMPtr<nsIEventTarget> mEventTarget;
 };
 
-NS_IMPL_ISUPPORTS(WatchdogTimerEvent, nsITimerCallback, nsISupports)
+class ContextLossWorkerRunnable final : public CancelableRunnable
+{
+public:
+    explicit ContextLossWorkerRunnable(nsIRunnable* aRunnable)
+        : mRunnable(aRunnable)
+    {
+    }
+
+    nsresult Cancel() override;
+
+    NS_FORWARD_NSIRUNNABLE(mRunnable->)
+
+protected:
+    ~ContextLossWorkerRunnable() {}
+
+private:
+    nsCOMPtr<nsIRunnable> mRunnable;
+};
+
+NS_IMPL_ISUPPORTS(ContextLossWorkerEventTarget, nsIEventTarget,
+                  nsISupports)
+
+NS_IMETHODIMP
+ContextLossWorkerEventTarget::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags)
+{
+    nsCOMPtr<nsIRunnable> event(aEvent);
+    return Dispatch(event.forget(), aFlags);
+}
+
+NS_IMETHODIMP
+ContextLossWorkerEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent,
+                                       uint32_t aFlags)
+{
+    nsCOMPtr<nsIRunnable> eventRef(aEvent);
+    RefPtr<ContextLossWorkerRunnable> wrappedEvent =
+        new ContextLossWorkerRunnable(eventRef);
+    return mEventTarget->Dispatch(wrappedEvent, aFlags);
+}
+
+NS_IMETHODIMP
+ContextLossWorkerEventTarget::DelayedDispatch(already_AddRefed<nsIRunnable>,
+                                              uint32_t)
+{
+    return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+ContextLossWorkerEventTarget::IsOnCurrentThread(bool* aResult)
+{
+    return mEventTarget->IsOnCurrentThread(aResult);
+}
+
+nsresult
+ContextLossWorkerRunnable::Cancel()
+{
+    mRunnable = nullptr;
+    return NS_OK;
+}
+
+
 
 
 
 WebGLContextLossHandler::WebGLContextLossHandler(WebGLContext* webgl)
-    : mWebGL(webgl)
+    : mWeakWebGL(webgl)
     , mTimer(do_CreateInstance(NS_TIMER_CONTRACTID))
-    , mTimerPending(false)
+    , mIsTimerRunning(false)
     , mShouldRunTimerAgain(false)
+    , mIsDisabled(false)
+    , mWorkerHolderAdded(false)
 #ifdef DEBUG
     , mThread(NS_GetCurrentThread())
 #endif
 {
-    MOZ_ASSERT(mThread);
 }
 
 WebGLContextLossHandler::~WebGLContextLossHandler()
 {
-    
-    const DebugOnly<nsIThread*> callingThread = NS_GetCurrentThread();
-    MOZ_ASSERT(callingThread == mThread || !callingThread);
+    MOZ_ASSERT(!mIsTimerRunning);
 }
-
-
 
 void
-WebGLContextLossHandler::RunTimer()
+WebGLContextLossHandler::StartTimer(unsigned long delayMS)
 {
-    MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+    
+    
+    this->AddRef();
 
-    
-    
-    
-    
-    if (mTimerPending) {
-        mShouldRunTimerAgain = true;
-        return;
-    }
-
-    const RefPtr<WatchdogTimerEvent> event = new WatchdogTimerEvent(this);
-    const uint32_t kDelayMS = 1000;
-    mTimer->InitWithCallback(event, kDelayMS, nsITimer::TYPE_ONE_SHOT);
-
-    mTimerPending = true;
+    mTimer->InitWithFuncCallback(StaticTimerCallback,
+                                 static_cast<void*>(this),
+                                 delayMS,
+                                 nsITimer::TYPE_ONE_SHOT);
 }
 
+ void
+WebGLContextLossHandler::StaticTimerCallback(nsITimer*, void* voidHandler)
+{
+    typedef WebGLContextLossHandler T;
+    T* handler = static_cast<T*>(voidHandler);
 
+    handler->TimerCallback();
+
+    
+    handler->Release();
+}
 
 void
 WebGLContextLossHandler::TimerCallback()
 {
     MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+    MOZ_ASSERT(mIsTimerRunning);
+    mIsTimerRunning = false;
 
-    mTimerPending = false;
+    if (mIsDisabled)
+        return;
 
-    const bool runOnceMore = mShouldRunTimerAgain;
-    mShouldRunTimerAgain = false;
-
-    mWebGL->UpdateContextLossStatus();
-
-    if (runOnceMore && !mTimerPending) {
+    
+    
+    
+    if (mShouldRunTimerAgain) {
         RunTimer();
+        MOZ_ASSERT(mIsTimerRunning);
     }
+
+    if (mWeakWebGL) {
+        mWeakWebGL->UpdateContextLossStatus();
+    }
+}
+
+void
+WebGLContextLossHandler::RunTimer()
+{
+    MOZ_ASSERT(!mIsDisabled);
+
+    
+    
+    
+    
+    if (mIsTimerRunning) {
+        mShouldRunTimerAgain = true;
+        return;
+    }
+
+    if (!NS_IsMainThread()) {
+        dom::workers::WorkerPrivate* workerPrivate =
+            dom::workers::GetCurrentThreadWorkerPrivate();
+        nsCOMPtr<nsIEventTarget> target = workerPrivate->GetEventTarget();
+        mTimer->SetTarget(new ContextLossWorkerEventTarget(target));
+        if (!mWorkerHolderAdded) {
+            HoldWorker(workerPrivate);
+            mWorkerHolderAdded = true;
+        }
+    }
+
+    StartTimer(1000);
+
+    mIsTimerRunning = true;
+    mShouldRunTimerAgain = false;
+}
+
+void
+WebGLContextLossHandler::DisableTimer()
+{
+    if (mIsDisabled)
+        return;
+
+    mIsDisabled = true;
+
+    if (mWorkerHolderAdded) {
+        dom::workers::WorkerPrivate* workerPrivate =
+            dom::workers::GetCurrentThreadWorkerPrivate();
+        MOZ_RELEASE_ASSERT(workerPrivate, "GFX: No private worker created.");
+        ReleaseWorker();
+        mWorkerHolderAdded = false;
+    }
+
+    
+    
+    
+
+    
+
+    if (!mIsTimerRunning)
+        return;
+
+    mTimer->SetDelay(0);
+}
+
+bool
+WebGLContextLossHandler::Notify(dom::workers::Status aStatus)
+{
+    bool isWorkerRunning = aStatus < dom::workers::Closing;
+    if (!isWorkerRunning && mIsTimerRunning) {
+        mIsTimerRunning = false;
+        this->Release();
+    }
+
+    return true;
 }
 
 } 
