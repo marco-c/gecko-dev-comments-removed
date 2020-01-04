@@ -32,18 +32,6 @@ function addDiv(t, attrs) {
 
 
 
-
-
-
-function cancelAllAnimationsOnEnd(t) {
-  t.add_cleanup(function() {
-    document.getAnimations().forEach(animation => animation.cancel());
-  });
-}
-
-
-
-
 function waitForFrame() {
   return new Promise(function(resolve, reject) {
     window.requestAnimationFrame(resolve);
