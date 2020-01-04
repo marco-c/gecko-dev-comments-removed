@@ -1275,7 +1275,6 @@ class nsIWidget : public nsISupports {
 
 
 
-
     virtual void UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries) = 0;
 
     

@@ -563,7 +563,6 @@ public:
 
 
 
-
   void RegisterThemeGeometry(uint8_t aWidgetType,
                              const nsIntRect& aRect) {
     if (mIsPaintingToWindow) {
