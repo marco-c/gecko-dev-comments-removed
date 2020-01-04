@@ -33,6 +33,15 @@ using namespace sandbox::bpf_dsl;
 #define CASES SANDBOX_BPF_DSL_CASES
 
 
+
+#ifndef MADV_NOHUGEPAGE
+#define MADV_NOHUGEPAGE 15
+#endif
+#ifndef MADV_DONTDUMP
+#define MADV_DONTDUMP 16
+#endif
+
+
 #ifndef ANDROID
 #define DESKTOP
 #endif
@@ -695,6 +704,10 @@ public:
     case __NR_madvise: {
       Arg<int> advice(2);
       return If(advice == MADV_DONTNEED, Allow())
+#ifdef MOZ_ASAN
+        .ElseIf(advice == MADV_NOHUGEPAGE, Allow())
+        .ElseIf(advice == MADV_DONTDUMP, Allow())
+#endif
         .Else(InvalidSyscall());
     }
 
