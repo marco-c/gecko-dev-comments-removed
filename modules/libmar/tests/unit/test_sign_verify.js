@@ -144,16 +144,11 @@ function run_test() {
 
     
     
-    var isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
-    var isOSX = ("nsILocalFileMac" in Components.interfaces);
-
     
     
     
     
-    
-    
-    if (isWindows || isOSX) {
+    if (mozinfo.os == "win" || mozinfo.os == "mac") {
       if (certs.length == 1 && useShortHandCmdLine) {
         args.push("-D", "data/" + certs[0] + ".der");
       } else {
