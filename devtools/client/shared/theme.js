@@ -14,12 +14,13 @@ const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 loader.lazyRequireGetter(this, "Services");
 loader.lazyImporter(this, "gDevTools", "resource:///modules/devtools/client/framework/gDevTools.jsm");
 
-const themeURIs = {
-  light: "chrome://devtools/skin/themes/light-theme.css",
-  dark: "chrome://devtools/skin/themes/dark-theme.css"
+const VARIABLES_URI = "chrome://devtools/skin/themes/variables.css";
+const THEME_SELECTOR_STRINGS = {
+  light: ":root.theme-light {",
+  dark: ":root.theme-dark {"
 }
 
-const cachedThemes = {};
+let variableFileContents;
 
 
 
@@ -41,15 +42,25 @@ function readURI (uri) {
 
 
 function getThemeFile (name) {
-  
-  let themeFile = cachedThemes[name] || readURI(themeURIs[name]).match(/--theme-.*: .*;/g).join("\n");
-
-  
-  if (!cachedThemes[name]) {
-    cachedThemes[name] = themeFile;
+  if (!variableFileContents) {
+    variableFileContents = readURI(VARIABLES_URI);
   }
 
-  return themeFile;
+  
+  let selector = THEME_SELECTOR_STRINGS[name] ||
+                 THEME_SELECTOR_STRINGS["light"];
+
+  
+  
+  
+  
+  
+  
+  let theme = variableFileContents;
+  theme = theme.substring(theme.indexOf(selector));
+  theme = theme.substring(0, theme.indexOf("}"));
+
+  return theme;
 }
 
 
@@ -66,17 +77,11 @@ const getTheme = exports.getTheme = () => Services.prefs.getCharPref("devtools.t
 
 const getColor = exports.getColor = (type, theme) => {
   let themeName = theme || getTheme();
-
-  
-  if (!themeURIs[themeName]) {
-    themeName = "light";
-  }
-
   let themeFile = getThemeFile(themeName);
-  let match;
+  let match = themeFile.match(new RegExp("--theme-" + type + ": (.*);"));
 
   
-  return (match = themeFile.match(new RegExp("--theme-" + type + ": (.*);"))) ? match[1] : null;
+  return match ? match[1] : null;
 };
 
 
