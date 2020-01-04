@@ -151,21 +151,44 @@ let InternalFaviconLoader = {
 
 
 
+
+
+
+
+  _removeLoadDataFromWindowMap(win, {innerWindowID, uri, callback}) {
+    let loadDataForWindow = gFaviconLoadDataMap.get(win);
+    if (loadDataForWindow) {
+      let itemIndex = loadDataForWindow.findIndex(loadData => {
+        return loadData.innerWindowID == innerWindowID &&
+               loadData.uri.equals(uri) &&
+               loadData.callback.request == callback.request;
+      });
+      if (itemIndex != -1) {
+        let loadData = loadDataForWindow[itemIndex];
+        loadDataForWindow.splice(itemIndex, 1);
+        return loadData;
+      }
+    }
+    return null;
+  },
+
+  
+
+
+
+
+
+
   _makeCompletionCallback(win, id) {
     return {
       onComplete(uri) {
-        let loadDataForWindow = gFaviconLoadDataMap.get(win);
-        if (loadDataForWindow) {
-          let itemIndex = loadDataForWindow.findIndex(loadData => {
-            return loadData.innerWindowID == id &&
-                   loadData.uri.equals(uri) &&
-                   loadData.callback.request == this.request;
-          });
-          if (itemIndex != -1) {
-            let loadData = loadDataForWindow[itemIndex];
-            clearTimeout(loadData.timerID);
-            loadDataForWindow.splice(itemIndex, 1);
-          }
+        let loadData = InternalFaviconLoader._removeLoadDataFromWindowMap(win, {
+          uri,
+          innerWindowID: id,
+          callback: this,
+        });
+        if (loadData) {
+          clearTimeout(loadData.timerID);
         }
         delete this.request;
       },
@@ -224,6 +247,7 @@ let InternalFaviconLoader = {
     let loadData = {innerWindowID, uri, callback};
     loadData.timerID = setTimeout(() => {
       this._cancelRequest(loadData, "it timed out");
+      this._removeLoadDataFromWindowMap(win, loadData);
     }, FAVICON_REQUEST_TIMEOUT);
     let loadDataForWindow = gFaviconLoadDataMap.get(win);
     loadDataForWindow.push(loadData);
