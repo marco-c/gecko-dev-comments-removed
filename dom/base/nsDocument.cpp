@@ -11354,6 +11354,15 @@ UpdateViewportScrollbarOverrideForFullscreen(nsIDocument* aDoc)
   }
 }
 
+static void
+ClearFullscreenStateOnElement(Element* aElement)
+{
+  
+  aElement->DeleteProperty(nsGkAtoms::vr_state);
+  
+  EventStateManager::SetFullScreenState(aElement, false);
+}
+
 void
 nsDocument::CleanupFullscreenState()
 {
@@ -11366,9 +11375,7 @@ nsDocument::CleanupFullscreenState()
   
   for (nsWeakPtr& weakPtr : Reversed(mFullScreenStack)) {
     if (nsCOMPtr<Element> element = do_QueryReferent(weakPtr)) {
-      
-      element->DeleteProperty(nsGkAtoms::vr_state);
-      EventStateManager::SetFullScreenState(element, false);
+      ClearFullscreenStateOnElement(element);
     }
   }
   mFullScreenStack.Clear();
@@ -11398,13 +11405,7 @@ nsDocument::FullScreenStackPop()
     return;
   }
 
-  Element* top = FullScreenStackTop();
-
-  
-  top->DeleteProperty(nsGkAtoms::vr_state);
-
-  
-  EventStateManager::SetFullScreenState(top, false);
+  ClearFullscreenStateOnElement(FullScreenStackTop());
 
   
   
