@@ -160,11 +160,6 @@ public:
 
     void VerifyD2DDevice(bool aAttemptForce);
 
-    
-
-
-    void InitHWVideoDecoodingConfig(mozilla::gfx::FeatureState& hwVideoDecFeature);
-
     virtual void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
                                         Script aRunScript,
                                         nsTArray<const char*>& aFontList) override;
@@ -175,6 +170,8 @@ public:
                     gfxTextPerfMetrics* aTextPerf,
                     gfxUserFontSet *aUserFontSet,
                     gfxFloat aDevToCssSize) override;
+
+    virtual bool CanUseHardwareVideoDecoding() override;
 
     
 
