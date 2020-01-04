@@ -299,6 +299,9 @@ TabSources.prototype = {
     let element = aSource.element ? aSource.element.unsafeDereference() : null;
     if (element && (element.tagName !== "SCRIPT" || !element.hasAttribute("src"))) {
       spec.isInlineSource = true;
+    } else if (aSource.introductionType === "wasm") {
+      
+      spec.contentType = "text/wasm";
     } else {
       if (url) {
         
