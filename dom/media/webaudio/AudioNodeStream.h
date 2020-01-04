@@ -169,14 +169,22 @@ public:
 
 
 
-
-
-  void CheckForInactive();
+  void ScheduleCheckForInactive();
 
 protected:
   class AdvanceAndResumeMessage;
+  class CheckForInactiveMessage;
 
   virtual void DestroyImpl() override;
+
+  
+
+
+
+
+
+
+  void CheckForInactive();
 
   void AdvanceOutputSegment();
   void FinishOutput();
