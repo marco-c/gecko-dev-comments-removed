@@ -20,6 +20,8 @@ namespace dom {
 
 
 
+
+
 class PushNotifier final : public nsIPushNotifier
 {
 public:
@@ -39,7 +41,6 @@ private:
                              const nsACString& aScope);
   bool ShouldNotifyWorkers(nsIPrincipal* aPrincipal);
 };
-
 
 
 
