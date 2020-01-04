@@ -95,21 +95,6 @@ ModuleGenerator::~ModuleGenerator()
     }
 }
 
-static bool
-ParallelCompilationEnabled(ExclusiveContext* cx)
-{
-    
-    
-    
-    
-    if (HelperThreadState().threadCount <= 1 || !CanUseExtraThreads())
-        return false;
-
-    
-    
-    return !cx->isJSContext() || cx->asJSContext()->runtime()->canUseOffthreadIonCompilation();
-}
-
 bool
 ModuleGenerator::init(UniqueModuleGeneratorData shared, UniqueChars file, Assumptions&& assumptions,
                       Metadata* maybeMetadata)
@@ -746,10 +731,22 @@ ModuleGenerator::startFuncDefs()
     MOZ_ASSERT(!startedFuncDefs_);
     MOZ_ASSERT(!finishedFuncDefs_);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    GlobalHelperThreadState& threads = HelperThreadState();
+    MOZ_ASSERT(threads.threadCount > 1);
+
     uint32_t numTasks;
-    if (ParallelCompilationEnabled(cx_) &&
-        HelperThreadState().wasmCompilationInProgress.compareExchange(false, true))
-    {
+    if (CanUseExtraThreads() && threads.wasmCompilationInProgress.compareExchange(false, true)) {
 #ifdef DEBUG
         {
             AutoLockHelperThreadState lock;
@@ -758,9 +755,8 @@ ModuleGenerator::startFuncDefs()
             MOZ_ASSERT(HelperThreadState().wasmFinishedList().empty());
         }
 #endif
-
         parallel_ = true;
-        numTasks = HelperThreadState().maxWasmCompilationThreads();
+        numTasks = threads.maxWasmCompilationThreads();
     } else {
         numTasks = 1;
     }
