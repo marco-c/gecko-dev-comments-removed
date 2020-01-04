@@ -169,24 +169,6 @@ public class GeckoApplication extends Application
 
         MulticastDNSManager.getInstance(context).init();
 
-        
-        
-        
-        
-        
-        
-        
-        
-        GeckoProfile.setBrowserDBFactory(new BrowserDB.Factory() {
-            @Override
-            public BrowserDB get(String profileName, File profileDir) {
-                
-                
-                
-                return new LocalBrowserDB(profileName);
-            }
-        });
-
         GeckoService.register();
 
         EventDispatcher.getInstance().registerBackgroundThreadListener(new EventListener(),

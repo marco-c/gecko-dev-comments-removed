@@ -68,7 +68,7 @@ import org.mozilla.gecko.util.IOUtils;
 
 import static org.mozilla.gecko.util.IOUtils.ConsumedInputStream;
 
-public class LocalBrowserDB implements BrowserDB {
+public class LocalBrowserDB extends BrowserDB {
     
     
     public static final int DEFAULT_FAVICON_BUFFER_SIZE_BYTES = 25000;

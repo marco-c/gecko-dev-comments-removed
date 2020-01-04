@@ -19,8 +19,6 @@ import org.json.JSONObject;
 import org.mozilla.gecko.GeckoProfileDirectories.NoMozillaDirectoryException;
 import org.mozilla.gecko.GeckoProfileDirectories.NoSuchProfileException;
 import org.mozilla.gecko.annotation.RobocopTarget;
-import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.db.StubBrowserDB;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.INIParser;
 import org.mozilla.gecko.util.INISection;
@@ -85,7 +83,7 @@ public final class GeckoProfile {
     private final File mMozillaDir;
     private final Context mApplicationContext;
 
-    private final BrowserDB mDB;
+    private Object mData;
 
     
 
@@ -157,7 +155,7 @@ public final class GeckoProfile {
     }
 
     public static GeckoProfile get(Context context) {
-        return get(context, null, null, null);
+        return get(context, null, (File) null);
     }
 
     public static GeckoProfile get(Context context, String profileName) {
@@ -182,30 +180,9 @@ public final class GeckoProfile {
     }
 
     
-    private static volatile BrowserDB.Factory sDBFactory;
-    public static void setBrowserDBFactory(BrowserDB.Factory factory) {
-        sDBFactory = factory;
-    }
-
+    
     @RobocopTarget
     public static GeckoProfile get(Context context, String profileName, File profileDir) {
-        if (sDBFactory == null) {
-            
-            
-            
-            
-            
-            
-            Log.d(LOGTAG, "Defaulting to StubBrowserDB.");
-            sDBFactory = StubBrowserDB.getFactory();
-        }
-        return GeckoProfile.get(context, profileName, profileDir, sDBFactory);
-    }
-
-    
-    
-    
-    public static GeckoProfile get(Context context, String profileName, File profileDir, BrowserDB.Factory dbFactory) {
         if (context == null) {
             throw new IllegalArgumentException("context must be non-null");
         }
@@ -250,7 +227,7 @@ public final class GeckoProfile {
 
         if (profile == null) {
             try {
-                newProfile = new GeckoProfile(context, profileName, profileDir, dbFactory);
+                newProfile = new GeckoProfile(context, profileName, profileDir);
             } catch (NoMozillaDirectoryException e) {
                 
                 throw new RuntimeException(e);
@@ -330,7 +307,7 @@ public final class GeckoProfile {
         }
     }
 
-    private GeckoProfile(Context context, String profileName, File profileDir, BrowserDB.Factory dbFactory) throws NoMozillaDirectoryException {
+    private GeckoProfile(Context context, String profileName, File profileDir) throws NoMozillaDirectoryException {
         if (profileName == null) {
             throw new IllegalArgumentException("Unable to create GeckoProfile for empty profile name.");
         } else if (CUSTOM_PROFILE.equals(profileName) && profileDir == null) {
@@ -345,14 +322,34 @@ public final class GeckoProfile {
         if (profileDir != null && !profileDir.isDirectory()) {
             throw new IllegalArgumentException("Profile directory must exist if specified.");
         }
-
-        
-        mDB = dbFactory.get(profileName, mProfileDir);
     }
 
-    @RobocopTarget
-    public BrowserDB getDB() {
-        return mDB;
+    
+
+
+
+
+
+
+
+
+
+
+
+    public Object getData() {
+        return mData;
+    }
+
+    
+
+
+
+
+
+
+
+    public void setData(final Object data) {
+        mData = data;
     }
 
     private void setDir(File dir) {

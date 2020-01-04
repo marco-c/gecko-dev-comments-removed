@@ -28,15 +28,7 @@ import android.support.v4.content.CursorLoader;
 
 
 
-
-
-
-
-public interface BrowserDB {
-    public interface Factory {
-        public BrowserDB get(String profileName, File profileDir);
-    }
-
+public abstract class BrowserDB {
     public static enum FilterFlags {
         EXCLUDE_PINNED_SITES
     }
@@ -44,7 +36,7 @@ public interface BrowserDB {
     public abstract Searches getSearches();
     public abstract TabsAccessor getTabsAccessor();
     public abstract URLMetadata getURLMetadata();
-    @RobocopTarget UrlAnnotations getUrlAnnotations();
+    @RobocopTarget public abstract UrlAnnotations getUrlAnnotations();
 
     
 
@@ -182,5 +174,22 @@ public interface BrowserDB {
 
 
 
-    CursorLoader getHighlights(Context context, int limit);
+    public abstract CursorLoader getHighlights(Context context, int limit);
+
+    public static BrowserDB from(final Context context) {
+        return from(GeckoProfile.get(context));
+    }
+
+    public static BrowserDB from(final GeckoProfile profile) {
+        synchronized (profile.getLock()) {
+            BrowserDB db = (BrowserDB) profile.getData();
+            if (db != null) {
+                return db;
+            }
+
+            db = new LocalBrowserDB(profile.getName());
+            profile.setData(db);
+            return db;
+        }
+    }
 }
