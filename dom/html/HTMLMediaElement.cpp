@@ -1084,8 +1084,28 @@ void HTMLMediaElement::QueueSelectResourceTask()
   RunInStableState(r);
 }
 
+static bool HasSourceChildren(nsIContent* aElement)
+{
+  for (nsIContent* child = aElement->GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    if (child->IsHTMLElement(nsGkAtoms::source))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 NS_IMETHODIMP HTMLMediaElement::Load()
 {
+  LOG(LogLevel::Debug,
+      ("%p Load() hasSrcAttrStream=%d hasSrcAttr=%d hasSourceChildren=%d "
+       "handlingInput=%d isCallerChromeOrNative=%d",
+       this, !!mSrcAttrStream, HasAttr(kNameSpaceID_None, nsGkAtoms::src),
+       HasSourceChildren(this), EventStateManager::IsHandlingUserInput(),
+       nsContentUtils::LegacyIsCallerChromeOrNativeCode()));
+
   if (mIsRunningLoadMethod) {
     return NS_OK;
   }
@@ -1100,6 +1120,15 @@ void HTMLMediaElement::DoLoad()
 {
   if (mIsRunningLoadMethod) {
     return;
+  }
+
+  
+  
+  
+  
+  if (EventStateManager::IsHandlingUserInput() ||
+      nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+    mHasUserInteraction = true;
   }
 
   SetPlayedOrSeeked(false);
@@ -1121,19 +1150,6 @@ void HTMLMediaElement::ResetState()
     mVideoFrameContainer->ForgetElement();
     mVideoFrameContainer = nullptr;
   }
-}
-
-static bool HasSourceChildren(nsIContent* aElement)
-{
-  for (nsIContent* child = aElement->GetFirstChild();
-       child;
-       child = child->GetNextSibling()) {
-    if (child->IsHTMLElement(nsGkAtoms::source))
-    {
-      return true;
-    }
-  }
-  return false;
 }
 
 void HTMLMediaElement::SelectResourceWrapper()
