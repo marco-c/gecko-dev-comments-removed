@@ -20,4 +20,12 @@ public class ActivityStream {
         return GeckoSharedPrefs.forApp(context)
                 .getBoolean(GeckoPreferences.PREFS_ACTIVITY_STREAM, false);
     }
+
+    
+
+
+
+    public static boolean isHomePanel() {
+        return false;
+    }
 }
