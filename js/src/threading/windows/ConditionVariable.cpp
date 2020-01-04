@@ -381,12 +381,10 @@ js::ConditionVariable::wait_for(UniqueLock<Mutex>& lock,
   CRITICAL_SECTION* cs = &lock.lock.platformData()->criticalSection;
 
   
-  
-  
   double msecd = rel_time.ToMilliseconds();
   DWORD msec = msecd < 0.0
                ? 0
-               : msecd > UINT32_MAX
+               : msecd > DBL_MAX
                  ? INFINITE
                  : static_cast<DWORD>(msecd);
 

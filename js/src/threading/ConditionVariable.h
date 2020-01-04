@@ -37,19 +37,11 @@ public:
   ConditionVariable();
   ~ConditionVariable();
 
-  
   void notify_one();
-
-  
   void notify_all();
 
-  
-  
   void wait(UniqueLock<Mutex>& lock);
 
-  
-  
-  
   template <typename Predicate>
   void wait(UniqueLock<Mutex>& lock, Predicate pred) {
     while (!pred()) {
@@ -57,18 +49,9 @@ public:
     }
   }
 
-  
-  
-  
-  
-  
   CVStatus wait_until(UniqueLock<Mutex>& lock,
                       const mozilla::TimeStamp& abs_time);
 
-  
-  
-  
-  
   template <typename Predicate>
   bool wait_until(UniqueLock<Mutex>& lock, const mozilla::TimeStamp& abs_time,
                   Predicate pred) {
@@ -80,18 +63,9 @@ public:
     return true;
   }
 
-  
-  
-  
-  
-  
   CVStatus wait_for(UniqueLock<Mutex>& lock,
                     const mozilla::TimeDuration& rel_time);
 
-  
-  
-  
-  
   template <typename Predicate>
   bool wait_for(UniqueLock<Mutex>& lock, const mozilla::TimeDuration& rel_time,
                 Predicate pred) {
