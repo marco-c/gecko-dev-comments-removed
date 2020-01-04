@@ -27,7 +27,8 @@ function test() {
   waitForExplicitFinish();
 
   runSocialTests(tests, undefined, undefined, function () {
-    ok(CustomizableUI.inDefaultState, "Should be in the default state when we finish");
+    
+    
     CustomizableUI.reset();
     finish();
   });
