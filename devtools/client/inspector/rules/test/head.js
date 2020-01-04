@@ -324,21 +324,22 @@ var waitForTab = Task.async(function*() {
 
 
 
-function waitForSuccess(validatorFn, name="untitled") {
-  let def = promise.defer();
-
-  function wait(validator) {
-    if (validator()) {
-      ok(true, "Validator function " + name + " returned true");
-      def.resolve();
-    } else {
-      setTimeout(() => wait(validator), 200);
+var waitForSuccess = Task.async(function*(validatorFn, desc = "untitled") {
+  let i = 0;
+  while (true) {
+    info("Checking: " + desc);
+    if (yield validatorFn()) {
+      ok(true, "Success: " + desc);
+      break;
     }
+    i++;
+    if (i > 10) {
+      ok(false, "Failure: " + desc);
+      break;
+    }
+    yield new Promise(r => setTimeout(r, 200));
   }
-  wait(validatorFn);
-
-  return def.promise;
-}
+});
 
 
 
@@ -525,8 +526,9 @@ var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
 
   if (expectedChange) {
     info("Waiting for the style to be applied on the page");
-    yield waitForSuccess(() => {
+    yield waitForSuccess(function*() {
       let {element, name, value} = expectedChange;
+      yield getComputedStyleProperty(selector, null, name)
       return content.getComputedStyle(element)[name] === value;
     }, "Color picker change applied on the page");
   }
