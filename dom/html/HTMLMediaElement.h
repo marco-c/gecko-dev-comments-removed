@@ -231,7 +231,12 @@ public:
   
   void PrincipalChanged(DOMMediaStream* aStream) override;
 
-  void UpdateSrcStreamVideoPrincipal(nsIPrincipal* aPrincipal);
+  void UpdateSrcStreamVideoPrincipal(const PrincipalHandle& aPrincipalHandle);
+
+  
+  
+  void PrincipalHandleChangedForVideoFrameContainer(VideoFrameContainer* aContainer,
+                                                    const PrincipalHandle& aNewPrincipalHandle);
 
   
   virtual nsresult DispatchAsyncEvent(const nsAString& aName) final override;

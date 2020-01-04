@@ -13,6 +13,7 @@
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "ImageContainer.h"
+#include "MediaSegment.h"
 
 namespace mozilla {
 
@@ -42,6 +43,13 @@ public:
                       already_AddRefed<ImageContainer> aContainer);
 
   
+  
+  PrincipalHandle GetLastPrincipalHandle();
+  
+  
+  
+  void UpdatePrincipalHandleForFrameID(const PrincipalHandle& aPrincipalHandle,
+                                       const ImageContainer::FrameID& aFrameID);
   B2G_ACL_EXPORT void SetCurrentFrame(const gfx::IntSize& aIntrinsicSize, Image* aImage,
                        const TimeStamp& aTargetTime);
   void SetCurrentFrames(const gfx::IntSize& aIntrinsicSize,
@@ -111,6 +119,13 @@ protected:
   
   
   bool mImageSizeChanged;
+  
+  PrincipalHandle mLastPrincipalHandle;
+  
+  
+  PrincipalHandle mPendingPrincipalHandle;
+  
+  ImageContainer::FrameID mFrameIDForPendingPrincipalHandle;
 };
 
 } 
