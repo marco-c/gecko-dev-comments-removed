@@ -37,7 +37,7 @@ VsyncBridgeChild::Create(RefPtr<VsyncIOThreadHolder> aThread,
 void
 VsyncBridgeChild::Open(Endpoint<PVsyncBridgeChild>&& aEndpoint)
 {
-  if (!aEndpoint.Bind(this, nullptr)) {
+  if (!aEndpoint.Bind(this)) {
     
     
     if (GPUProcessManager* gpm = GPUProcessManager::Get())

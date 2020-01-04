@@ -216,22 +216,13 @@ class Endpoint;
 
 
 
-class IToplevelProtocol : private LinkedListElement<IToplevelProtocol>
+class IToplevelProtocol
 {
-    friend class LinkedList<IToplevelProtocol>;
-    friend class LinkedListElement<IToplevelProtocol>;
-
     template<class PFooSide> friend class Endpoint;
 
 protected:
     explicit IToplevelProtocol(ProtocolId aProtoId);
     ~IToplevelProtocol();
-
-    
-
-
-
-    void AddOpenedActor(IToplevelProtocol* aActor);
 
 public:
     void SetTransport(UniquePtr<Transport> aTrans)
@@ -243,23 +234,9 @@ public:
 
     ProtocolId GetProtocolId() const { return mProtocolId; }
 
-    void GetOpenedActors(nsTArray<IToplevelProtocol*>& aActors);
-
     virtual MessageChannel* GetIPCChannel() = 0;
 
-    
-    
-    
-    
-    size_t GetOpenedActorsUnsafe(IToplevelProtocol** aActors, size_t aActorsMax);
-
 private:
-    void AddOpenedActorLocked(IToplevelProtocol* aActor);
-    void GetOpenedActorsLocked(nsTArray<IToplevelProtocol*>& aActors);
-
-    LinkedList<IToplevelProtocol> mOpenActors; 
-    IToplevelProtocol* mOpener;
-
     ProtocolId mProtocolId;
     UniquePtr<Transport> mTrans;
 };
@@ -514,12 +491,7 @@ public:
 
     
     
-    
-    
-    
-    
-    
-    bool Bind(PFooSide* aActor, IToplevelProtocol* aProcessActor)
+    bool Bind(PFooSide* aActor)
     {
         MOZ_RELEASE_ASSERT(mValid);
         MOZ_RELEASE_ASSERT(mMyPid == base::GetCurrentProcId());
@@ -534,9 +506,6 @@ public:
         }
         mValid = false;
         aActor->SetTransport(Move(t));
-        if (aProcessActor) {
-            aProcessActor->AddOpenedActor(aActor);
-        }
         return true;
     }
 
