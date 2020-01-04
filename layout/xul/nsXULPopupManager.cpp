@@ -2566,6 +2566,12 @@ nsXULPopupManager::KeyDown(nsIDOMKeyEvent* aKeyEvent)
   if (!mActiveMenuBar && (!item || item->PopupType() != ePopupTypeMenu))
     return NS_OK;
 
+  
+  
+  if (!item || item->IgnoreKeys() != eIgnoreKeys_Handled) {
+    aKeyEvent->AsEvent()->StopPropagation();
+  }
+
   int32_t menuAccessKey = -1;
 
   
@@ -2596,17 +2602,13 @@ nsXULPopupManager::KeyDown(nsIDOMKeyEvent* aKeyEvent)
           Rollup(0, false, nullptr, nullptr);
         else if (mActiveMenuBar)
           mActiveMenuBar->MenuClosed();
+
+        
+        item = nullptr; 
       }
       aKeyEvent->AsEvent()->StopPropagation();
       aKeyEvent->AsEvent()->PreventDefault();
     }
-  }
-
-  
-  
-
-  if (!item || item->IgnoreKeys() != eIgnoreKeys_Handled) {
-    aKeyEvent->AsEvent()->StopPropagation();
   }
 
   aKeyEvent->AsEvent()->StopCrossProcessForwarding();
