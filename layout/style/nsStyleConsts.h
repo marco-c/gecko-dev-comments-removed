@@ -272,6 +272,8 @@ enum class FillMode : uint32_t;
 #define NS_STYLE_IMAGELAYER_CLIP_PADDING             1
 #define NS_STYLE_IMAGELAYER_CLIP_CONTENT             2
 
+#define NS_STYLE_IMAGELAYER_CLIP_TEXT                3
+
 
 
 

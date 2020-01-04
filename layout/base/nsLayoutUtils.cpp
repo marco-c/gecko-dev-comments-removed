@@ -146,6 +146,7 @@ using namespace mozilla::gfx;
 #define DISPLAY_CONTENTS_ENABLED_PREF_NAME "layout.css.display-contents.enabled"
 #define TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME "layout.css.text-align-unsafe-value.enabled"
 #define FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME "layout.css.float-logical-values.enabled"
+#define BG_CLIP_TEXT_ENABLED_PREF_NAME "layout.css.background-clip-text.enabled"
 
 #ifdef DEBUG
 
@@ -390,6 +391,39 @@ FloatLogicalValuesEnabledPrefChangeCallback(const char* aPrefName,
   MOZ_ASSERT(sIndexOfInlineEndInClearTable >= 0);
   nsCSSProps::kClearKTable[sIndexOfInlineEndInClearTable].mKeyword =
     isFloatLogicalValuesEnabled ? eCSSKeyword_inline_end : eCSSKeyword_UNKNOWN;
+}
+
+
+
+
+
+static void
+BackgroundClipTextEnabledPrefChangeCallback(const char* aPrefName,
+                                            void* aClosure)
+{
+  NS_ASSERTION(strcmp(aPrefName, BG_CLIP_TEXT_ENABLED_PREF_NAME) == 0,
+               "Did you misspell " BG_CLIP_TEXT_ENABLED_PREF_NAME " ?");
+
+  static bool sIsBGClipKeywordIndexInitialized;
+  static int32_t sIndexOfTextInBGClipTable;
+  bool isBGClipTextEnabled =
+    Preferences::GetBool(BG_CLIP_TEXT_ENABLED_PREF_NAME, false);
+
+  if (!sIsBGClipKeywordIndexInitialized) {
+    
+    sIndexOfTextInBGClipTable =
+      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_text,
+                                     nsCSSProps::kBackgroundClipKTable);
+
+    sIsBGClipKeywordIndexInitialized = true;
+  }
+
+  
+  
+  if (sIndexOfTextInBGClipTable >= 0) {
+    nsCSSProps::kBackgroundClipKTable[sIndexOfTextInBGClipTable].mKeyword =
+      isBGClipTextEnabled ? eCSSKeyword_text : eCSSKeyword_UNKNOWN;
+  }
 }
 
 template<typename TestType>
@@ -7646,6 +7680,10 @@ nsLayoutUtils::Initialize()
   Preferences::RegisterCallback(FloatLogicalValuesEnabledPrefChangeCallback,
                                 FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME);
   FloatLogicalValuesEnabledPrefChangeCallback(FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME,
+                                              nullptr);
+  Preferences::RegisterCallback(BackgroundClipTextEnabledPrefChangeCallback,
+                                BG_CLIP_TEXT_ENABLED_PREF_NAME);
+  BackgroundClipTextEnabledPrefChangeCallback(BG_CLIP_TEXT_ENABLED_PREF_NAME,
                                               nullptr);
 
   nsComputedDOMStyle::RegisterPrefChangeCallbacks();
