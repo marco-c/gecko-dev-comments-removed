@@ -1470,6 +1470,12 @@ TabActor.prototype = {
       );
     }
 
+    if ((typeof options.customUserAgent !== "undefined") &&
+         options.customUserAgent !== this._getCustomUserAgent()) {
+      this._setCustomUserAgent(options.customUserAgent);
+      reload = true;
+    }
+
     
     
     
@@ -1488,6 +1494,7 @@ TabActor.prototype = {
     this._restoreJavascript();
     this._setCacheDisabled(false);
     this._setServiceWorkersTestingEnabled(false);
+    this._restoreUserAgent();
   },
 
   
@@ -1569,6 +1576,38 @@ TabActor.prototype = {
     let windowUtils = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsIDOMWindowUtils);
     return windowUtils.serviceWorkersTestingEnabled;
+  },
+
+  _previousCustomUserAgent: null,
+
+  
+
+
+  _getCustomUserAgent: function() {
+    if (!this.docShell) {
+      
+      return null;
+    }
+    return this.docShell.customUserAgent;
+  },
+
+  
+
+
+  _setCustomUserAgent: function(userAgent) {
+    if (this._previousCustomUserAgent === null) {
+      this._previousCustomUserAgent = this.docShell.customUserAgent;
+    }
+    this.docShell.customUserAgent = userAgent;
+  },
+
+  
+
+
+  _restoreUserAgent: function() {
+    if (this._previousCustomUserAgent !== null) {
+      this.docShell.customUserAgent = this._previousCustomUserAgent;
+    }
   },
 
   
