@@ -4,6 +4,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 
 
 const {findOptimalTimeInterval} = require("devtools/client/animationinspector/utils");
